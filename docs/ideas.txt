@@ -1,0 +1,125 @@
+Desc: Ideas for future expansion and features
+File: ideas.txt
+Date: 20 October 2003
+Auth: Russell Kroll <rkroll@exploits.org>
+
+Here are some ideas that have come up over the years but haven't
+been implemented yet.  This may be a good place to start if you're
+looking for a rainy day hacking project.
+
+Non-network "upsmon"
+====================
+
+Some systems don't want a daemon listening to the network.  This can be
+for security reasons, or perhaps because the system has been squashed
+down and doesn't have TCP/IP available.  For these situations you could
+run a driver and program that sits on top of the driver socket to do
+local monitoring.
+
+This also makes monitoring extremely easy to automate - you don't need
+to worry about ACLs, usernames and passwords, or firewalling.  Just
+start a driver and drop this program on top of it.
+
+ - Parse ups.conf and open the state socket for a driver
+
+ - Send DUMPALL and enter a select loop
+
+ - Parse SETINFOs that change ups.status
+
+ - When you get OB LB, shut down
+
+Completely unprivileged upsmon
+==============================
+
+upsmon currently retains root in a forked process so it can call the
+shutdown command.  The only reason it needs root on most systems is that
+only privileged users can signal init or send a message on /dev/initctl.
+
+In the case of systems running sysvinit (Slackware, others?), upsmon
+could just open /dev/initctl while it has root and then drop it
+completely.  When it's time to shut down, fire a control structure at
+init across the lingering socket and tell it to enter runlevel 0.
+
+This has been shown to work in local tests, but it's not portable.  It
+could only be offered as an option for those systems which run that
+flavor of init.  It also needs to be tested to see what happens to
+the lingering fd over time, such as when init restarts after an upgrade.
+
+For other systems, there is always the possibility of having a suid
+program which does nothing but prod init into starting a shutdown.  Lock
+down the group access so only upsmon's unprivileged user can access it,
+and make that your SHUTDOWNCMD.  Then it could drop root completely.
+
+Chrooted upsmon
+===============
+
+upsmon could run the network monitoring part in a chroot jail if it had
+a pipe to another process running outside for NOTIFY dispatches.  Such a
+pipe would have to be constructed extremely carefully so an attacker
+could not compromise it from the jailed process.
+
+A state machine with a tightly defined sequence could do this safely.
+All it has to do is dispatch the UPS name and event type.
+
+	[start] [type] [length] <name> [stop]
+
+Monitor program with interpreted language
+=========================================
+
+Once in awhile, I get requests for a way to shut down based on the UPS
+temperature, or ambient humidity, or at a certain battery charge level,
+or any number of things other than an "OB LB" status.  It should be
+obvious that adding a way to monitor all of that in upsmon would bloat
+upsmon for all those people who really don't need anything like that.
+
+A separate program that interprets a list of rules and uses it to
+monitor the UPS equipment is the way to solve this.  If you have a
+condition that needs to be tested, add a rule.
+
+Some of the tools that such a language would need include simple
+greater-than/less-than testing (if battery.charge < 20), equivalence
+testing (if ups.model = "SMART-UPS 700"), and some way to set and clear
+timers.
+
+Due to the expected size and limited audience for such a program, it
+might have to be distributed separately.
+
+Suspending to disk
+==================
+
+If your operating system supports the notion of suspending to disk, this
+may be a less-intrusive way to handle shutdowns.  Most modern laptops
+support this now, but few desktop systems implement it, so it is up to
+the OS to figure it out.
+
+This approach minimizes the amount of disruption which would be caused
+by an extended outage.  The UPS goes on battery, then reaches low
+battery, and the system takes a snapshot of itself and halts.  Then it
+is turned off and waits for the power to return.
+
+Once the power is back, the system reboots, pulls the snapshot back in,
+and keeps going from there.  If the user happened to be away when it
+happened, they may return and have no idea that their system actually
+shut down completely in the middle.
+
+For this to work, the normal instance of the driver must be used to
+shut off the power rather than using 'upsdrvctl shutdown', since it will
+need to keep running after the system resumes.  That means something
+like 'upscmd -u foo -p bar ups@host shutdown.return' will have to run in
+the suspend script, just before the system halts.
+
+There are some potential snags here.  upsd currently sets FSD as a
+latch.  That means you can't clear it without restarting upsd.  This
+could be fixed with another command, but read on for another option.
+
+Also, upsmon normally doesn't stay around when you hit the OB LB
+situation.  It normally kicks off the SHUTDOWNCMD and exits.  That means
+you have no upsmon once the system wakes up again.
+
+One way to solve both problems without changing any code would be to
+shut down upsd in the suspend script and then restart it in the resume
+script.  If you also restart upsmon after upsd comes back up, that
+should make the system ready for the next outage.
+
+This technique probably would not apply to many servers, but it could be
+very interesting for desktop systems.

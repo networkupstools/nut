@@ -1,0 +1,52 @@
+.TH UPSCLI_LIST_NEXT 3 "Tue May 13 2003" "" "Network UPS Tools (NUT)"
+.SH NAME
+upscli_list_next \- retrieve list items from a UPS
+.SH SYNOPSIS
+.nf
+.B #include <upsclient.h>
+.sp
+.BI "int upscli_list_next(UPSCONN *ups, int numq, const char **query,
+.BI "			int *numa, char ***answer)"
+.fi
+.SH DESCRIPTION
+The \fBupscli_list_next()\fP function takes the pointer \fIups\fP to a
+UPSCONN state structure, and the pointer \fIquery\fP to an array of
+\fInumq\fP query elements.  It performs a read from the network and
+expects to find either another list item or the end of a list.
+.PP
+You must call \fBupscli_list_start\fP(3) before calling this function.
+.PP
+This function will return 1 and set values in \fInuma\fP and
+\fIanswer\fP if a list item is received.  If the list is done, it will
+return 0, and the values in \fInuma\fP and \fIanswer\fP are undefined.
+.PP
+Calling this function after it returns something other than 1 is
+undefined.
+.PP
+.SH QUERY FORMATTING
+You may not change the values of \fInumq\fP or \fIquery\fP between the
+call to \fBupscli_list_start\fP(3) and the first call to this function.
+You also may not change the values between calls to this function.
+.PP
+.SH ANSWER FORMATTING
+The contents of \fInuma\fP and \fIanswer\fP work just like a call to
+\fBupscli_get\fP(3).  The values returned by \fBupsd\fP are identical to
+a single item request, so this is not surprising.
+.PP
+.SH "ERROR CHECKING"
+This function checks the response from \fBupsd\fP against your query.
+If the response is not part of the list you have requested, it will
+return an error code.
+.PP
+When this happens, \fBupscli_upserror\fP(3) will return
+\fIUPSCLI_ERR_PROTOCOL\fP.
+.PP
+.SH "RETURN VALUE"
+The \fBupscli_list_next()\fP function returns 1 when list data is
+present, 0 if the list is finished, or \-1 if an error occurs.
+.PP
+It is possible to have an empty list.  The function will return 0 for
+its first call in that case.
+.SH "SEE ALSO"
+.BR upscli_list_start "(3), "
+.BR upscli_strerror "(3), "upscli_upserror "(3) "

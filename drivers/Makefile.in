@@ -1,0 +1,191 @@
+# Network UPS Tools: drivers
+
+# directories
+
+prefix		= @prefix@
+exec_prefix	= @exec_prefix@
+DRVPATH 	= $(DESTDIR)@DRVPATH@
+
+# other definitions
+CC	= @CC@
+CFLAGS	= -I../include @CFLAGS@
+PROGS	= bestups fentonups apcsmart everups belkin masterguard powercom \
+	  cyberpower tripplite victronups genericups mge-utalk bestuferrups \
+	  isbmex etapro liebert sms esupssmart tripplitesu blazer safenet \
+	  belkinunv oneac ippon cpsups mustek metasys bestfcom powermust
+
+LIBDEP	= @LIBOBJ@
+LIBOBJ	= $(LIBDEP) @NETLIBS@ @SERLIBS@
+
+INSTALLCMD = @INSTALL@
+INSTALLMODE = 0755
+
+# DRIVER_BUILD_LIST is either "all-drivers" or a subset from configure time
+DRIVER_BUILD_LIST = @DRIVER_BUILD_LIST@
+
+SNMP_DRIVER_LIST = snmp-ups
+
+NETSNMP_CFLAGS = @NETSNMP_CFLAGS@
+NETSNMP_LIBS = @NETSNMP_LIBS@
+
+USB_DRIVER_LIST = hidups newhidups energizerups
+
+LIBUSB_CFLAGS = @LIBUSB_CFLAGS@
+LIBUSB_LIBS = @LIBUSB_LIBS@
+
+all: @DRIVER_BUILD_LIST@ upsdrvctl dummycons
+
+all-drivers: $(PROGS) mge-shut
+
+# ==========================================================================
+# Driver build details
+#
+# The rules are regenerated during 'make clean' with gendb.
+
+include Makefile.drvbuild
+
+# ==========================================================================
+# upsdrvctl: the new all-singing all-dancing driver control program
+
+upsdrvctl: upsdrvctl.c ../common/upsconf.o ../common/parseconf.o $(LIBDEP)
+	$(CC) $(CFLAGS) -o upsdrvctl upsdrvctl.c ../common/upsconf.o \
+		../common/parseconf.o $(LIBOBJ)
+
+# ==========================================================================
+# Testing driver for doing things without real UPS hardware attached
+
+dummycons: dummycons.c dstate.o ../common/state.o ../common/parseconf.o $(LIBDEP)
+	$(CC) $(CFLAGS) -o $@ $@.c dstate.o ../common/state.o ../common/parseconf.o $(LIBOBJ)
+
+# ==========================================================================
+# Special cases: drivers which need Linux includes
+#
+# Not built by default.
+
+hidups: hidups.o main.o dstate.o ../common/state.o \
+		../common/upsconf.o \
+		../common/parseconf.o $(LIBDEP)
+	$(CC) $(CFLAGS) -o hidups hidups.o main.o dstate.o \
+		../common/state.o ../common/upsconf.o ../common/parseconf.o \
+		$(LIBOBJ)
+
+hidups.o: hidups.c
+	$(CC) $(CFLAGS) -c hidups.c
+
+energizerups: energizerups.o main.o dstate.o ../common/state.o \
+		../common/upsconf.o \
+		../common/parseconf.o $(LIBDEP)
+	$(CC) $(CFLAGS) -o energizerups energizerups.o main.o dstate.o \
+		../common/state.o ../common/upsconf.o ../common/parseconf.o \
+		$(LIBOBJ)
+
+energizerups.o: energizerups.c
+	$(CC) $(CFLAGS) -c energizerups.c
+
+
+# ==========================================================================
+# Special case: newhidups driver - development version (early beta)
+
+newhidups: newhidups.o main.o dstate.o ../common/state.o \
+		../common/upsconf.o ../common/parseconf.o $(LIBDEP) \
+		$(STRLCPY) libhid.o libusb.o hidparser.o
+	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o $@ $@.o main.o dstate.o \
+		../common/state.o ../common/upsconf.o ../common/parseconf.o \
+		$(LIBOBJ) $(STRLCPY) $(LIBUSB_LIBS) libhid.o libusb.o hidparser.o
+
+newhidups.o: newhidups.c newhidups.h
+	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -c newhidups.c
+
+libhid.o: libhid.c libhid.h
+	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o libhid.o -c libhid.c
+
+libusb.o: libusb.c hid-usb.h
+	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o libusb.o -c libusb.c
+
+# ==========================================================================
+# Special case: mge-shut driver - development version (early beta)
+
+mge-shut: mge-shut.o hidparser.o main.o dstate.o serial.o \
+		../common/state.o \
+		../common/upsconf.o ../common/parseconf.o $(LIBDEP)
+	$(CC) $(CFLAGS) -o mge-shut mge-shut.o hidparser.o main.o \
+		dstate.o serial.o ../common/state.o ../common/upsconf.o \
+		../common/parseconf.o $(LIBOBJ)
+
+mge-shut.o: mge-shut.c mge-shut.h hidparser.h
+	$(CC) $(CFLAGS) -c mge-shut.c
+
+hidparser.o: hidparser.h hidparser.c
+	$(CC) $(CFLAGS) -c hidparser.c
+
+# ==========================================================================
+# Special case: snmp-ups driver - need OpenSSL and NetSNMP includes
+# and libraries
+# Not built by default.
+snmp-ups: snmp-ups.o main.o dstate.o ../common/state.o \
+		../common/upsconf.o ../common/parseconf.o $(LIBDEP)
+	$(CC) $(CFLAGS) $(NETSNMP_CFLAGS) -o $@ $@.o main.o dstate.o \
+		../common/state.o ../common/upsconf.o ../common/parseconf.o \
+		$(LIBOBJ) $(NETSNMP_LIBS)
+
+snmp-ups.o: snmp-ups.c snmp-ups.h \
+		ietfmib.h apccmib.h mgemib.h
+	$(CC) $(CFLAGS) $(NETSNMP_CFLAGS) -c snmp-ups.c
+
+
+# ==========================================================================
+# Housekeeping stuff
+# 
+# gendb runs here so that the source always goes out the door with a
+# current Makefile.drvbuild file
+
+clean:
+	rm -f *~ *.o $(PROGS) Makefile.drvbuild
+	rm -f dummycons snmp-ups energizerups newhidups hidups mge-shut upsdrvctl
+	./gendb $(PROGS)
+
+distclean: clean
+
+# ==========================================================================
+# Install handlers
+
+install: all install-@DRIVER_INSTALL_TARGET@
+	$(INSTALLCMD) -m $(INSTALLMODE) upsdrvctl $(DRVPATH);
+
+# Install every driver
+
+install-all-drivers:
+	@for f in $(PROGS) mge-shut; do \
+		echo $(INSTALLCMD) -m $(INSTALLMODE) $$f $(DRVPATH); \
+		$(INSTALLCMD) -m $(INSTALLMODE) $$f $(DRVPATH); \
+	done
+
+# Just install the drivers that were selected by the user
+
+install-some-drivers:
+	@for f in $(DRIVER_BUILD_LIST) ; do \
+		echo $(INSTALLCMD) -m $(INSTALLMODE) $$f $(DRVPATH); \
+		$(INSTALLCMD) -m $(INSTALLMODE) $$f $(DRVPATH); \
+	done
+
+# Just install the snmp drivers
+
+install-snmp:
+	@if (test ! -d $(DRVPATH)) then \
+		../install-sh -d $(DRVPATH) || exit 1; \
+	fi
+	@for f in $(SNMP_DRIVER_LIST) ; do \
+		echo $(INSTALLCMD) -m $(INSTALLMODE) $$f $(DRVPATH); \
+		$(INSTALLCMD) -m $(INSTALLMODE) $$f $(DRVPATH); \
+	done
+
+# Just install the usbups drivers (*hidups)
+
+install-usb:
+	@if (test ! -d $(DRVPATH)) then \
+		../install-sh -d $(DRVPATH) || exit 1; \
+	fi
+	@for f in $(USB_DRIVER_LIST) ; do \
+		echo $(INSTALLCMD) -m $(INSTALLMODE) $$f $(DRVPATH); \
+		$(INSTALLCMD) -m $(INSTALLMODE) $$f $(DRVPATH); \
+	done

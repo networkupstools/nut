@@ -1,0 +1,47 @@
+# Network UPS Tools: lib
+
+prefix		= @prefix@
+exec_prefix	= @exec_prefix@
+
+BINDIR		= $(DESTDIR)@bindir@
+LIBDIR		= $(DESTDIR)@libdir@
+
+INSTALLCMD  = @INSTALL@
+INSTALLMODE = 0644
+INSTALLMODE_X = 0755
+
+PKG_CFG_DIR = $(DESTDIR)@PKG_CFG_DIR@
+USE_PKG_CFG = @USE_PKG_CFG@
+
+all:
+
+clean:
+	rm -f *~ libupsclient.pc libupsclient-config
+
+distclean: clean
+
+install: install-lib
+
+install-lib: install-lib-helper install-lib-pkgconfig
+
+# just the pkg-config file (libupsclient.pc)
+install-lib-pkgconfig: 
+	@if (test "$(USE_PKG_CFG)" = "no") then \
+		echo "Missing pkg-config support: libupsclient.pc not installed" || exit 1;\
+	else \
+		if (test ! -d $(PKG_CFG_DIR)) then \
+			echo ../install-sh -d $(PKG_CFG_DIR) || exit 1;\
+			../install-sh -d $(PKG_CFG_DIR) || exit 1;\
+		fi;\
+		echo $(INSTALLCMD) -m $(INSTALLMODE) libupsclient.pc $(PKG_CFG_DIR) || exit 1; \
+		$(INSTALLCMD) -m $(INSTALLMODE) libupsclient.pc $(PKG_CFG_DIR) || exit 1; \
+	fi
+
+# just the helper script (libupsclient-config)
+install-lib-helper: 
+	@if (test ! -d $(BINDIR)) then \
+		echo ../install-sh -d $(BINDIR) || exit 1;\
+		../install-sh -d $(BINDIR) || exit 1;\
+	fi
+	@echo $(INSTALLCMD) -m $(INSTALLMODE_X) libupsclient-config $(BINDIR); \
+	$(INSTALLCMD) -m $(INSTALLMODE_X) libupsclient-config $(BINDIR);

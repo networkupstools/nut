@@ -1,0 +1,70 @@
+.TH DUMMYCONS 8 "Mon Jul 14 2003" "" "Network UPS Tools (NUT)"
+.SH NAME
+dummycons \- Driver for testing UPS software
+
+.SH SYNOPSIS
+.B dummycons [\fIport\fB]
+
+.SH DESCRIPTION
+This program looks like a standard UPS driver to \fBupsd\fR(8) and 
+allows you to set any value for testing purposes.  It is interactive,
+and does not enter the background.
+
+.SH ARGUMENTS
+With no arguments, dummycons will assume a port name of "null".  
+Otherwise, it will use the first argument that you supply as the port 
+name.  This port name must match the one given in \fBups.conf\fR(5).
+
+You can run multiple instances if needed, as long as they all have
+different port names.
+
+.SH INTERACTIVE MODE
+By default, you get 5 variables preloaded with information when the
+program starts.  They are:
+
+	driver.name	= dummycons
+
+	driver.version	= (varies)
+
+	ups.mfr		= Console testing
+
+	ups.model 	= Dummy UPS
+
+	ups.status	= OL
+
+To create more variables or change the existing values, use the (s)et
+command.  These variables may be deleted with the (d)elete command.  The
+(l)ist command will show everything that you have created.
+
+Variables can contain spaces if you remember to quote them just like
+in the config files.  That is, if you want to register both on battery and 
+low battery, you need to do something like this:
+
+	Command (? for help): s ups.status "OB LB"
+
+Other commands are available, and follow this general pattern.  Use ? in
+the program to see the full list.
+
+.SH BACKGROUND
+
+This driver was written in a bar one afternoon when I realized that I 
+had neither Xdialog to run \fBdummyups\fR (since removed from the
+tree) nor an actual UPS on hand.  It has also been used to debug things
+like \fBupsmon\fR(8) in places where you could never have a UPS \(hy like
+on a commercial airliner.
+
+.SH BUGS
+
+Instant commands and SET commands don't do anything useful.  You will
+get a notice on the screen when it is received from upsd, but nothing
+else happens.
+
+This will need to change in the future when the infrastructure for
+confirming these actions has been added.
+
+.SH SEE ALSO
+
+\fBups.conf\fR(5)
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

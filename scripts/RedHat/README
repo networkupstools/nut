@@ -1,0 +1,4 @@
+Install ups in /etc/rc.d/init.d
+
+/etc/sysconfig/ups is used only to store the POWERDOWNFLAG variable
+

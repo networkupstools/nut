@@ -1,0 +1,58 @@
+.TH UPSSET.CONF 5 "Wed Nov 26 2003" "" "Network UPS Tools (NUT)"
+.SH NAME
+upsset.conf \- Configuration for Network UPS Tools upsset.cgi
+
+.SH DESCRIPTION
+
+This file only does one job \(hy it lets you convince \fBupsset.cgi\fR(8)
+that your system's CGI directory is secure.  The program will not run
+until this file has been properly defined.
+
+.SH SECURITY REQUIREMENTS
+
+\fBupsset.cgi\fR(8) allows you to try login name and password combinations.
+There is no rate limiting, as the program shuts down between every request.
+Such is the nature of CGI programs.
+
+Normally, attackers would not be able to access your \fBupsd\fR(8) server
+directly as it would be protected by the ACL/ACCEPT/REJECT directives in
+your \fBupsd.conf\fR(5) file and hopefully local firewall settings in
+your OS.
+
+upsset runs on your web server, so upsd will see it as a connection from
+a host on an internal network.  It doesn't know that the connection is 
+actually coming from someone on the outside.  This is why you must 
+secure it.
+
+On Apache, you can use the .htaccess file or put the directives in your
+httpd.conf.  It looks something like this, assuming the .htaccess
+method:
+
+.IP
+.nf
+	<Files upsset.cgi>
+	deny from all
+	allow from your.network.addresses
+	</Files>
+.fi
+.LP
+
+You will probably have to set "AllowOverride Limit" for this directory 
+in your server\(hylevel configuration file as well.
+
+If this doesn't make sense, then stop reading and leave this program 
+alone.  It's not something you absolutely need to have anyway.
+
+Assuming you have all this done, and it actually works (test it!), then
+you may add the following directive to this file:
+
+	I_HAVE_SECURED_MY_CGI_DIRECTORY
+
+If you lie to the program and someone beats on your upsd through your
+web server, don't blame me.
+
+.SH SEE ALSO
+\fBupsset.cgi\fR(8)
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

@@ -1,0 +1,29 @@
+.TH CPSUPS 8 "Tue June 2 2004" "" "Network UPS Tools (NUT)"
+.SH NAME
+cpsups \- Driver for newer model CyberPower UPSs
+.SH NOTE
+This man page only documents the hardware\(hyspecific features of the
+cpsups driver.  For information about the core driver, see
+\fBnutupsdrv\fR(8).
+
+.SH SUPPORTED HARDWARE
+This driver supports the CyberPower CPS1100AVR, CPS1500AVR-HO and OP500TE
+models.  This hardware uses a text\(hybased protocol which bears no resemblance to
+the binary dumps used by other CyberPower equipment and the \fBcyberpower\fR
+driver.
+
+.SH EXTRA ARGUMENTS
+
+This driver does not support any extra settings in the
+\fBups.conf\fR(5).
+
+.SH AUTHOR
+Walt Holman <waltabbyh@comcast.net>
+
+.SH SEE ALSO
+
+.SS The core driver:
+\fBnutupsdrv\fR(8)
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

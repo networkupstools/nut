@@ -1,0 +1,62 @@
+Desc: Commands sent to the UPS drivers
+File: commands.txt
+Date: 9 January 2004
+Auth: Russell Kroll <rkroll@exploits.org>
+
+upsd can call drivers to store values in read/write variables and to kick
+off instant commands.  This is how you register handlers for those events.
+
+The driver core (drivers/main.c) has a structure called upsh.  You
+should populate it with function pointers in your upsdrv_initinfo()
+function.  Right now, there are only two possibilities:
+
+	- setvar  = setting UPS variables (SET VAR protocol command)
+	- instcmd = instant UPS commands (INSTCMD protocol command)
+
+SET
+---
+
+If your driver's function for handling variable set events is called 
+my_ups_set(), then you'd do this to add the pointer:
+
+	upsh.setvar = my_ups_set;
+
+my_ups_set() will receive two parameters:
+
+	const char * - the variable being changed
+	const char * - the new value
+
+You should return either STAT_SET_HANDLED if your driver recognizes the
+command, or STAT_SET_UNKNOWN if it doesn't.  Other possibilities will be
+added at some point in the future.
+
+INSTCMD
+-------
+
+This works just like the set process, with slightly different values
+arriving from the server.
+
+	upsh.instcmd = my_ups_cmd;
+
+Your function will receive two args:
+
+	const char * - the command name
+	const char * - (reserved)
+
+You should return either STAT_INSTCMD_HANDLED or STAT_INSTCMD_UNKNOWN
+depending on whether your driver can handle the requested command.
+
+Notes
+-----
+
+Use strcasecmp.  The command names arriving from upsd should be treated
+without regards to case.
+
+Responses
+---------
+
+Drivers will eventually be expected to send responses to commands.
+Right now, there is no channel to get these back through upsd to
+the client, so this is not implemented.
+
+This will probably be implemented with a polling scheme in the clients.

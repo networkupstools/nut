@@ -1,0 +1,72 @@
+.TH POWERMUST 8 "Fri May 14 2004" "" "Network UPS Tools (NUT)" 
+.SH NAME  
+powermust \(hy Driver for Mustek PowerMust series UPS equipment
+.SH NOTE
+This man page only documents the hardware\(hyspecific features of the
+powermust driver. For information about the core driver, see  
+\fBnutupsdrv\fR(8).
+
+.SH SUPPORTED HARDWARE
+The powermust driver is known to work with the following UPSes:
+
+    Mustek PowerMust 400VA Plus (12V)
+    Mustek PowerMust 600VA Plus (12V)
+    Mustek PowerMust 800VA Pro (12V)
+    Mustek PowerMust 1000VA Plus (24V)
+    OnLite AQUA 50 (12V)
+
+It may also work with other UPSes in the PowerMust series, but they
+haven't been tested.
+
+.SH EXTRA ARGUMENTS
+
+This driver does not support any extra settings in the    
+\fBups.conf\fR(5).
+
+.SH UPS COMMANDS
+
+This driver supports some extra commands (see \fBupscmd\fR(8)):
+
+.IP shutdown.return
+Turn off the load and return when power is back
+
+.IP shutdown.stayoff
+Turn off the load and remain off
+
+.IP shutdown.stop
+Stop a shutdown in progress
+
+.IP load.on
+Turn on the load immediately
+
+.IP load.off
+Turn off the load immediately
+
+.IP reset.input.minmax
+Reset minimum and maximum input voltage status
+
+.SH USER VARIABLES
+
+The behavior of the driver can be controlled by some user definable
+variables (see \fBupsrw\fR(8)):
+
+.IP ups.delay.shutdown
+Interval to wait after shutdown with delay command (seconds)
+
+.IP ups.delay.start
+Interval to wait before (re)starting the load (seconds)
+
+.SH BUGS
+
+No known bugs at the moment.
+
+.SH AUTHOR
+Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+.SH SEE ALSO
+
+.SS The core driver:
+\fBnutupsdrv\fR(8)
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

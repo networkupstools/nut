@@ -1,0 +1,52 @@
+Desc: MGE UPS SYSTEMS serial cable
+File: mgeups.txt
+Date: 10 April 2002
+Auth: Arnaud Quette <arnaud.quette@free.fr> or <arnaud.quette@mgeups.com>
+
+This document describes the cable for MGE smart protocols : UTalk (ASCII),
+and SHUT (Serial HID UPS Transfer, binary) .
+
+First notice that MGE UPS SYSTEMS supply a standard cable, bundled with
+the UPS unit and compatible with MS Windows and Unices (Ref 66049). For
+more information, see below note about serial cable, PnP and Unix.
+
+Cable description
+-----------------
+
+UPS                  COMPUTER
+MALE DB9             FEMALE DB9
+
+  2 ---------------- 2 TX
+  3 ---------------- 3 RX
+  5 ---------------- 5 GND
+                  -- 4
+                 |
+                  -- 6
+                  -- 7
+                 |
+                  -- 8
+
+
+UPS connector description
+-------------------------
+
+       5  4  3  2  1
+      _______________
+      \o  o  o  o  o/
+       \ o  o  o  o/
+         ---------
+         9  8  7  6
+
+  9 pin Male DB-9 connector on UPS
+
+
+Notes
+-----
+	- this is a universal serial cable, so it should work with
+	any MGE serial model.
+	- max. length of cable is 1,80 m.
+	- Computer pin 6 (RTS) is reserved for PnP use, which could
+	trouble communication on some Unices if cabled. However, new
+	models (such as Ellipse, Evolution, Pulsar and Comet EXtreme,
+	EXtreme C, ...) handle this, so you can safely cable pin 6 or
+	use a standard (bundled) "windows" cable (Ref 66049).

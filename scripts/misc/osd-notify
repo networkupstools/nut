@@ -1,0 +1,35 @@
+#!/bin/sh
+# **********************************************************#
+# osd-notify: script to make On Screen Display notification #
+# **********************************************************#
+# Copyright 2003 - Arnaud Quette                            #
+# Distributed under the GNU GPL v2                          #
+# See attached file (osd-notify.txt) for usage information  #
+# **********************************************************#
+
+# select your font with xfontsel
+# ******************************
+FONT="-adobe-courier-bold-*-*-*-34-*-100-*-*-*-*-*"
+
+# Position
+# ********
+POSITION="-p middle -A center"
+
+# Delay in seconds
+# ****************
+DELAY="10"
+
+# Color
+# *****
+COLOR="red"
+
+# You can use a combination of valid message values:
+#		$* => for full text
+#		$UPSNAME => for ups name
+#		$NOTIFYTYPE => depending on event (ONLINE, ONBATT, ...)
+# *********************************************************************
+MESSAGE="$*"
+
+# Processing part
+# ***************
+echo $MESSAGE | osd_cat - -c $COLOR -f $FONT -d $DELAY $POSITION

@@ -1,0 +1,46 @@
+.TH upsstats.cgi 8 "Mon Sep  2 2002" "" "Network UPS Tools (NUT)"
+.SH NAME
+upsstats.cgi \- Web\(hybased UPS status viewer
+.SH SYNOPSIS
+.B upsstats.cgi
+
+.SH NOTE
+As a CGI program, this should be invoked through your web server.
+If you run it from the command line, it will either complain about
+unauthorized access or spew a bunch of HTML at you.
+
+.SH DESCRIPTION
+.B upsstats.cgi
+uses template files to build web pages containing status information
+from UPS hardware.  It can repeat sections of those template files to
+monitor several UPSes simultaneously, or focus on a single UPS.
+
+These templates can also include references to \fBupsimage.cgi\fR(8)
+for graphical displays of battery charge levels, voltage readings, and
+the UPS load.
+
+.SH ACCESS CONTROL
+upsstats will only talk to \fBupsd\fR(8) servers that have been defined
+in your \fBhosts.conf\fR(5).  If it complains that "Access to that host
+is not authorized", check that file first.
+
+.SH TEMPLATES
+The web page that is displayed is actually a template containing
+commands to upsstats which are replaced by status information.  The
+default file used for the overview is upsstats.html.
+
+When monitoring a single UPS, the file displayed is
+upsstats\-single.html.
+
+The format of these files, including the possible commands, is
+documented in \fBupsstats.html\fR(5).
+
+
+.SH FILES
+\fBhosts.conf\fR(5) \fBupsstats.html\fR(5)
+
+.SH SEE ALSO
+\fBupsimage.cgi\fR(8)
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

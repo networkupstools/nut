@@ -1,0 +1,131 @@
+<!-- upsstats template file -->
+
+<!--
+	This is upsstats-single.html, a template for monitoring a single
+	host.  This mode is selected by adding "host=<host>" to the
+	upsstats.cgi URL.
+
+	Such URLs are generated automatically when using the HOSTLINK
+	command.
+
+	See upsstats.html(5) for more information on template files.
+-->
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+	"http://www.w3.org/TR/REC-html40/loose.dtd">
+
+<HTML>
+
+<HEAD>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+@REFRESH@
+<TITLE>
+@HOSTDESC@
+: 
+@VAR ups.model@
+on
+@HOST@
+</TITLE>
+</HEAD>
+<BODY BGCOLOR="#808080" TEXT="#00FC00" LINK="#0000EE" VLINK="#551A8B">
+
+<TABLE BORDER="1" CELLSPACING="0" CELLPADDING="10" ALIGN="CENTER" BGCOLOR="#000000">
+
+<TR>
+<TH COLSPAN="5">
+Network UPS Tools upsstats
+@VERSION@
+</TH>
+</TR>
+
+<TR>
+<TH>
+@DATE %a %b %d %X %Z %Y@
+</TH>
+
+<TH>Battery</TH>
+<TH>Input</TH>
+<TH>Output</TH>
+<TH>Load</TH>
+</TR>
+
+<TR>
+
+<TD BGCOLOR="#000000" VALIGN="TOP">
+
+<TABLE BORDER="0">	<!-- table 2 -->
+
+<TR>
+<TH ALIGN="RIGHT">Monitoring:</TH>
+<TD>
+@HOST@
+</TD>
+</TR>
+
+<TR>
+<TH ALIGN="RIGHT">UPS Model:</TH>
+<TD>
+@VAR ups.model@
+</TD>
+</TR>
+
+<TR>
+<TH ALIGN="RIGHT">Status:</TH>
+<TD>
+@STATUS@
+</TD>
+</TR>
+
+@IFSUPP input.voltage@
+<TR>
+<TH ALIGN="RIGHT">Input: </TH>
+<TD>
+@VAR input.voltage@
+ VAC
+</TD>
+</TR>
+@ENDIF@
+
+@IFSUPP output.voltage@
+<TR>
+<TH ALIGN="RIGHT">Output: </TH>
+<TD>
+@VAR output.voltage@
+ VAC
+</TD>
+</TR>
+@ENDIF@
+
+@IFSUPP input.frequency@
+<TR>
+<TH ALIGN="RIGHT">AC freq: </TH>
+<TD>
+@VAR input.frequency@
+ Hz
+</TD>
+</TR>
+@ENDIF@
+
+</TABLE>		<!-- table 2 -->
+</TD>
+
+<TD VALIGN="TOP" BGCOLOR="#000000">
+@IMG battery.charge@
+</TD>
+<TD VALIGN="TOP" BGCOLOR="#000000">
+@IMG input.voltage@
+</TD>
+
+<TD VALIGN="TOP" BGCOLOR="#000000">
+@IMG output.voltage@
+</TD>
+
+<TD VALIGN="TOP" BGCOLOR="#000000">
+@IMG ups.load@
+</TD>
+</TR>
+
+</TABLE>
+
+</BODY>
+</HTML>

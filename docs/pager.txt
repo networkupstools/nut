@@ -1,0 +1,68 @@
+Desc: Using upsmon and your pager together
+File: pager.txt
+Date: 28 May 2001
+Auth: Russell Kroll <rkroll@exploits.org>
+
+upsmon can call out to a helper script or program when the UPS changes
+state.  The example upsmon.conf has a full list of which state changes
+are available - ONLINE, ONBATT, LOWBATT, and more.
+
+The simple approach
+-------------------
+
+ - Set EXEC flags on various things in upsmon.conf
+
+   NOTIFYFLAG ONBATT EXEC
+   NOTIFYFLAG ONLINE EXEC
+
+   If you want other things like WALL or SYSLOG to happen, just add them.
+
+   NOTIFYFLAG ONBATT EXEC+WALL+SYSLOG
+
+   You get the idea.
+
+ - Tell upsmon where your script is
+
+   NOTIFYCMD /path/to/my/script
+
+ - Make a simple script like this at that location:   
+
+	#! /bin/bash
+	echo "$*" | sendmail -F"ups@mybox" bofh@pager.example.com
+
+ - Restart upsmon, pull the plug, and see what happens.
+
+That approach is bare-bones, but you should get the text content of the
+alert in the body of the message, since upsmon passes the alert text
+(from NOTIFYMSG) as an argument.
+
+This will send mail every time something happens which may become annoying
+rather quickly, especially for simple power fluctuations.  To only send
+messages after some interval, see the upssched.txt file for information
+on offset events.
+
+Using more advanced features
+----------------------------
+
+Your helper script will be run with a few environment variables set.  
+
+	   UPSNAME - the name of the system that generated the change.
+                     This will be one of your identifiers from the MONITOR
+                     lines in upsmon.conf.
+
+	NOTIFYTYPE - this will be ONLINE, ONBATT, or whatever event took
+                     place which made upsmon call your script.
+
+You can use these to do different things based on which system has
+changed state.  You could have it only send pages for an important
+system while totally ignoring a known trouble spot, for example.
+
+Suppressing notify storms
+-------------------------
+
+upsmon will call your script every time an event happens that has the
+EXEC flag set.  This means a quick power failure that lasts mere seconds
+might generate several pages in a row.  To suppress this sort of
+annoyance, use upssched as your NOTIFYCMD program, and configure it to
+send pages after a timer has elapsed.  See upssched.txt for more
+information.

@@ -1,0 +1,597 @@
+If you're upgrading from an earlier version, see the UPGRADING file.
+
+---------------------------------------------------------------------------
+Release notes for NUT 2.0.1 - what's new since 2.0.0:
+
+ - The bestuferrups driver has been forked into the new bestfcom driver
+   which has better handling of the inverter status alarm messages and
+   more.
+
+   [Kent Hill]
+
+ - Mustek UPS support returns with two drivers which have overlapping
+   coverage: mustek and powermust.
+
+   [powermust: Carlos Rodrigues, mustek: Martin Hajduch]
+
+ - Additional CyberPower Systems hardware is supported with the new
+   cpsups driver.  Three recognized models are the CPS1500AVR,
+   CPS1100VA, and OP500TE.
+
+   [Walt Holman, Brad Sawatzky]
+
+ - The genericups driver can now generate staleness warnings in
+   specific cases where the UPS provides a way to test for its
+   presence.  See the "CON" setting in ups.conf for more details.
+
+   [stan / saticed.me.uk]
+
+ - Documentation for monitoring a Back-UPS RS 500 on a system without
+   USB ports has been added to the cables directory.
+
+   [Martin Edlman]
+
+ - The everups driver now supports types 73-76 (NET 700/1000/1400/500-DPC)
+
+   [hunter]
+
+ - The new metasys driver supports Meta System models: Line, 
+   HF Millennium, HF Top Line, ECO Network, ECO, Ally HF, Megaline
+
+   [BlaXwan]
+
+ - The ippon driver now allows user-defined settings for the delay
+   before switching off, and the delay before powering on.
+
+   [Yuri Elizarov]
+
+ - The victonups driver is now at version 0.1.9, which adds many
+   instant commands: calibration control, battery and front panel tests,
+   and bypass control.
+
+   [Gert Lynge]
+
+ - The tripplite driver has recieved a major overhaul to bring it up to 
+   working condition for the 2.0 tree, including code cleanups, several
+   new variables, commands, and user-definable parameters.  See
+   CHANGES for more.
+
+   [Nicholas J Kain]
+
+ - The mge-utalk driver has been upgraded to version 0.81, which fixes
+   the lack of read-write variables and loss of sync on models which
+   don't support restoring settings.
+
+   [Arnaud Quette]  
+
+ - The Micro Ferrups model RE is now supported by the bestuferrups
+   driver.  The driver will also now read the ambient temperature and
+   will no longer constantly report the data as stale.
+
+   [Tim Thompson]
+
+ - The fentonups driver's init sequence has been reworked to work better
+   with some hardware, including a fix to the parser code.
+
+   [MLH]
+
+ - A workaround has been added to the hidups driver to avoid variables
+   which are stuck by calling HIDIOCINITREPORT in every poll.
+
+   [Stuart D. Gathman]
+
+ - SOLA 610 UPS hardware and others which do not support the ID command
+   may now be monitored by the bestups driver after forcing ID= in
+   ups.conf.
+
+   [Jason White]
+
+ - "pollinterval" is now available via driver.parameter for consistency.
+
+   [Arnaud Quette]
+
+ - The mge-shut and newhidups drivers, along with the supporting
+   hidparser/libhid code have received many updates, including lowering
+   USB bandwidth consumption, driver unbinding (only in Linux), code
+   cleanups, and more which can be seen in the CHANGES file.
+
+   [Arnaud Quette]
+
+ - The fentonups driver now recognizes several more Megatec protocol
+   units: 
+
+   SuperPower HP360, Hope-550	[Denis Zaika]
+   Unitek Alpha 1000is		[Antoine Cuvellard]
+
+ - Some variables like uc_sigmask were renamed to avoid clashes with
+   symbols on systems like HP/UX.
+
+ - All man pages have been reworked to switch literal "-" characaters to
+   hyphens or "\-" as appropriate.
+   
+   [Shaul Karl]
+
+ - upssched's CANCEL events were broken following the change to
+   text-based socket messages in 1.5 and have been fixed.
+
+   [Steven Schoch] 
+
+ - Calls to varargs functions with raw strings from the config files
+   without an intervening "%s" have been fixed in upsmon, upssched,
+   snmp-ups and upsd.
+
+   [Ulf Harnhammar]
+
+---------------------------------------------------------------------------
+Release notes for NUT 2.0.0 - what's new since 1.4.x:
+
+ - The new naming scheme for variables and commands (introduced in 1.4)
+   is now mandatory.  The 1.4 tree supported both the old (STATUS) and
+   the new (ups.status) as a transitional release, and now that time is
+   over.
+
+   This means that 2.0 is generally smaller than 1.4 code, since the
+   interim compatibility hacks have been removed.
+
+ - New serial handling code has been added, with greatly simplified
+   operations.  The old mess involving repeated calls to sigaction, 
+   alarm, and read has been condensed to a select-read loop. 
+
+   This change allows drivers which don't do any serial communications
+   at all (hidups, snmp-ups) to drop that baggage, so they are a bit
+   smaller when compiled.
+
+ - The drivers now recognize "chroot=' and 'user=' in the global section
+   of ups.conf.  This means you don't have to use -r and -u when
+   starting upsdrvctl.
+
+ - upsmon now supports the -K argument to check for the presence of the
+   POWERDOWNFLAG file.  If it exists and contains the magic string, then
+   upsmon will exit(EXIT_SUCCESS).  Otherwise, it will
+   exit(EXIT_FAILURE).
+
+   This feature can be used to simplify shutdown scripts, since now you
+   don't have to keep the script in sync with the upsmon.conf.
+
+ - Many small things like signed value comparisons, int vs. size_t and
+   proper use of const/struct were fixed throughout the source.  These
+   were mostly for correctness, but a few potential bugs involving very
+   big or very small numbers were fixed at the same time.
+
+ - The access control system in upsd.conf has been reworked and
+   simplified.  Since access levels have become meaningless in recent
+   releases, the new system is just ACCEPT <acl> or REJECT <acl>.
+
+   If you are upgrading from a previous version of the software, you
+   will have to edit your upsd.conf to use this method.  See
+   the UPGRADING file for more details.
+
+ - The build process now halts when make fails in one of the
+   subdirectories.
+   [Petter Reinholdtsen, Charles Lepple]
+
+ - Helper data for using upsclient via pkgconfig is now created if
+   pkgconfig is detected when configure runs.
+   [Arnaud Quette]
+
+ - The polling interval in drivers may now be set with 'pollinterval'
+   in ups.conf.
+   [Gabriel Faber]
+
+ - Blazer UPS equipment is now supported with the blazer driver.
+   [Phil Hutton]
+
+ - Energizer USB UPS hardware is now supported on Linux with a new
+   experimental driver.
+   [Viktor T. Toth]
+
+ - The newhidups driver has been merged as the first step towards
+   portable USB UPS support.  This will eventually replace the old 
+   Linux-only hidups driver.  The newhidups driver is tagged
+   experimental since it is under active development.
+   [Arnaud Quette, Charles Lepple]
+
+ - The newapc driver has been renamed to apcsmart, replacing the old
+   driver with that name. If you used the newapc driver, be sure to  
+   delete the old binary and fix your ups.conf.
+
+ - The apcsmart driver now supports asynchronous notification data
+   from the hardware, which means it can wake up as soon as something
+   happens.  This affects the OL/OB/LB/RB data in ups.status, and
+   generally reduces the latency in dispatching status changes by a few
+   seconds.
+
+ - The apcsmart driver can now support quirky hardware which does not
+   provide the usual listing of valid command characters.  This feature
+   is necessary to monitor new models like the APC CS 350 and old ones
+   like the Matrix 5000.  It also now has sdtype=4 to handle the strange
+   shutdown behavior on the CS series.
+
+ - The belkin driver now works around broken firmware version 001,
+   avoiding a lengthy delay at startup.  It also implements the shutdown
+   sequence differently, and should actually work on more hardware now.
+
+ - The bestups driver has been slowed down to play nicer with the
+   hardware, and is much more reliable as a result.  Among other things,
+   it should always detect the UPS on the first try, meaning no more
+   "dot dot dot" when it starts.
+
+ - The cyberpower driver is no longer tagged experimental, and now
+   supports powering off the load.  It also supports battery tests via
+   instcmds.
+
+ - Effekta MT 2000 RM hardware is now supported by the fentonups driver.
+   [christoph moar]
+
+ - The new safenet driver supports UPS hardware that uses the protocol
+   of the same name.  This includes models from many manufacturers,
+   including Fairstone, Fenton, Gemini, Powerwell, Repotec, Soltec and
+   Sweex.  See the README or driver.list for the full details.
+   [Arjen de Korte]
+
+ - The genericups driver now has type 20 to monitor the Powerware 5119
+   RM.  See http://lists.exploits.org/ups/Oct2003/00052.html.
+   [Daniel Thompson]
+
+ - The belkinunv driver has been added to allow monitoring Belkin
+   Universal UPS hardware.
+   [Peter Selinger]
+
+ - Cyber Power Systems 1100AVR hardware which has a different protocol
+   than the existing binary type (supported by 'cyberpower') is now
+   supported by the experimental cyberpower1100 driver.
+   [Walt Holman]
+
+ - upsdrvctl now returns success or failure information in the exit
+   code.  Any failure during a requested operation will result in a
+   nonzero value (specifically EXIT_FAILURE).
+
+---------------------------------------------------------------------------
+Release notes for NUT 1.4.0 - what's new since 1.2.x:
+
+ - The drivers and upsd now communicate over Unix domain sockets instead
+   of state files, shared memory, or state files with mmap.  This change
+   makes many things possible, including the new dynamic variable and
+   command naming scheme described below.
+
+   There is a new development tool called sockdebug in the server
+   directory for debugging driver-server communications on the sockets.
+
+ - The old static variable scheme has been replaced by a new dynamic
+   implementation.  Vague names have been turned into meaningful names
+   that fit into an organized system.  UTILITY is now input.voltage.
+   OUTVOLT is now output.voltage.
+
+   This also applies to the names of instant commands.  BTEST1 is
+   test.battery.start, and BTEST0 is test.battery.stop.
+
+   The old names are still supported for compatibility with older
+   clients.  This compatibility mode will be maintained throughout
+   the 1.4 series, and will be gone by the release of 2.0.  Users
+   with older clients are encouraged to upgrade their software
+   during this time.
+
+ - The network protocol has been expanded to handle these new names.
+   Older functions which only apply to the old names will continue to
+   be supported through the 1.4 series.
+
+ - The drivers and server (upsd) can now change their user ids and
+   chroot themselves with the new -u and -r arguments.  This lets you
+   create a "chroot jail" with the bare minimum components.
+
+   This technique is used to provide a higher degree of security.  If
+   someone exploited upsd to get a shell somehow, they would be stuck
+   in the jail.
+
+ - upssched now explicitly confirms reception of timer commands before
+   exiting.  This was done to avoid a race where one process would
+   exit right when another one was starting.  The second one would 
+   believe its command had been handled when it had been lost.   
+
+ - upslog has been reworked to use standard getopt parsing to provide
+   the monitoring settings.  The old way of specifying arguments is
+   still supported for backwards compatibility.
+
+   upslog has also been changed to only parse the format string once,
+   rather than doing it every time through the loop.  This should 
+   provide a minuscule drop in CPU utilization. 
+
+ - Usernames are now required in upsmon and upsd.  This means that you
+   must add a username to your MONITOR lines in upsmon.conf and then
+   create a matching user in upsd.users.  
+
+   Installations from the 1.2 era probably already use usernames, so
+   this mostly affects those from 1.0 and before.
+
+ - Drivers are now pinged regularly by upsd when they aren't posting
+   updates about the UPS status.  This provides another check in the
+   data validation process.  If upsd fails to get a response within
+   a few seconds, the UPS will be marked stale.
+
+ - A few minor memory leaks were discovered with valgrind and squashed.
+
+ - upsstats now reuses connections to upsd when cycling through multiple
+   entries in the hosts.conf.  This makes things a bit faster and
+   avoids some of the noise in the syslog.
+
+   This only applies to entries that are adjacent.  To take advantage
+   of this feature, you may have to rearrange them.
+
+	MONITOR ups-1@host-1 ...
+	MONITOR ups-1@host-2 ...
+	MONITOR ups-2@host-2 ...
+	MONITOR ups-3@host-3 ...
+
+   Connection reuse for nonadjacent entries may be considered in the
+   future.
+
+ - upsd now warns about insecure configuration files at startup.
+   These files (upsd.conf, upsd.users, and the certfile) should
+   only be readable by upsd.  Never make them world-readable.
+
+ - The programs no longer print "shutting down" when they are just
+   exiting.  This was changed to avoid confusion about the term, since
+   "shutting down" has a special meaning in UPS software.
+
+ - Signal handlers no longer do any significant amount of work.  Some of
+   the programs used to do numerous things in there, raising concerns
+   about reentrancy.  They now set flags and allow the main loop to do 
+   the actual work from there.
+
+ - A bug in upsmon where NOTIFYFLAG settings could be ignored was fixed.
+
+ - Group handling has been changed.  configure no longer accepts
+   --with-group, and the programs no longer setgid() to a hardcoded
+   value.  They now setgid() to the primary group of whatever the 
+   user value may be.
+
+   This may be compiled in with --with-user as before, and many programs
+   accept -u to override it at runtime.
+
+ - The state path is no longer created during 'make install'.  Users
+   are now expected to create it themselves.  This removes a lot of
+   evil complexity from the build and install sequences.
+
+ - upsd no longer implements the DROP access command, as it
+   could confuse the clients by getting them out of sync.  DROP is now
+   implemented as DENY, which sends an error message.  If you use DROP,
+   you should change it to DENY rather than relying on this
+   compatibility measure.
+
+ - The belkin driver no longer reports OFF and OL at the same time.
+
+ - The bestups driver no longer sleeps during polls, which makes it
+   more responsive to things like instant commands.
+
+ - The cyberpower driver now has much better hardware detection code
+   and no longer freezes at startup under some conditions.  It also now
+   supports the shutdown function.  Instant commands for shutdowns and
+   battery tests were also added.
+
+ - The dummyups testing driver has been removed.  The dummycons testing
+   driver can do everything that dummyups once did and much more.  
+   dummycons is also now built by default for easier testing.
+
+ - The newapc driver has been reworked to take advantage of the new
+   internal driver state functions.  Some variables without an obvious
+   purpose were dropped.
+
+ - The newapc driver now sends all five bytes when using sdtype 1.
+   Previously it didn't send the entire string, and it didn't work.
+   [Don Lewis]
+
+ - The hidups driver has been expanded to allow for setting variables,
+   a shutdown sequence, and more.
+   [Arnaud Quette]
+
+ - The mge-utalk driver had trouble establishing communications in 
+   some cases due to the RTS line being set.  This has been fixed.
+
+   The mge-shut driver has been added to the tree, and has replaced
+   the older mge-ellipse driver.
+   [Arnaud Quette, Philippe Marzouk]
+
+ - Outlet-level control has been defined in the variable tree, and will
+   be added to drivers where the hardware supports it.  This can be
+   used to shut down some components earlier than others to prolong
+   your runtime on battery.
+
+   This is supported in the mge-shut driver now, and may show up in
+   others before long.
+   [Arnaud Quette]
+
+ - KIN-2200AP hardware is now recognized by the powercom driver.  
+   This change may also support other KIN-xxxxAP equipment.
+   [Preston A. Elder]
+
+ - The 1.1kVA UPS is now supported by the bestuferrups driver.  This
+   driver was also changed to allow easy addition of more models
+   in the future.
+   [Bob Apodaca]
+
+ - The fentonups driver can now handle devices which implement the
+   "I" detection differently, and now supports the Giant/WELI 500
+   as a result.
+   [Joon Guillen]
+
+ - The serial number of the UPS being monitored can now be specified
+   with serial= in ups.conf in the genericups driver.
+   [Shaul Karl]
+
+ - The newapc driver now sends ESC to break out of menus when the
+   initial detection fails.  Some new APC models have interactive menus
+   on the serial port, and the driver couldn't handle them before.
+
+ - The snmp-ups driver now reports ambient temperature and humidity
+   data for APC equipment.  It also now supports the shutdown.reboot and
+   shutdown.reboot.graceful commands.
+   [Dmitry Frolov]
+
+ - The list of supported variables and commands in the snmp-ups driver
+   has been expanded.
+   [Arnaud Quette, J.W. Hoogervorst]
+
+ - Various drivers now report bypass mode with the BYP status word.
+   [Arnaud Quette]
+
+ - Energy Sistem equipment is now supported with the esupssmart driver.
+   [Antonio Trujillo Coronado]
+
+ - The Tripp-Lite SU series (SmartOnline) is supported with the new
+   tripplitesu driver.
+   [Allan Hessenflow]
+
+ - The HP PowerTrust A2994A is now recognized by the hp driver.
+   [Jan Sporbeck]
+
+ - Many drivers were cleaned up to perform basic sanity checks on the
+   status data before using it.
+
+ - An explicit cleanup function has been added to the driver core to
+   ensure that all dynamic resources are freed before exiting.  This
+   is part of the larger process to check for memory leaks and other
+   bad things.
+   [Arnaud Quette]
+
+ - upsd now provides variable descriptions from an auxiliary file.
+   This file is optional, which allows for a smaller memory footprint.
+   It can also be edited for localization or other customizations.
+
+ - upsimage and upsstats can now render BATTVOLT data.
+   [Andrew R. Ghali]
+
+ - String handling has been cleaned up throughout the tree.  Calls to
+   functions like strcpy and strcat were either replaced with other
+   (range-checking) functions or were rewritten to avoid it.
+
+ - Many compile-time defaults may now be overridden at runtime.  In
+   the environment NUT_CONFPATH and NUT_STATEPATH may be used.
+   upsdrvctl has been changed to execve to pass these along to the
+   drivers.  ups.conf now supports driverpath=, and upsd.conf supports
+   DATAPATH.
+   [Bryan Henderson]
+
+ - The configure --with-gd switches now actually do something useful
+   when gd has been installed outside the default search directories.
+   [Patrik Schindler]
+
+ - The inline keyword is now handled properly on systems which do not
+   support it or have it specified as another name.  This was breaking
+   compiles on some systems.
+   [Petter Reinholdtsen]  
+
+---------------------------------------------------------------------------
+Release notes for NUT 1.2.2 - what's new since 1.2.1:
+
+ - The snmp-ups driver has been upgraded and expanded.  It now supports
+   multiple MIBs, meaning it can handle RFC 1628, APCC, and MGE
+   equipment.  You can pick the right one with "mibs=" in ups.conf.
+
+   Support for setting variable and instant commands is also available.
+   [Arnaud Quette and Dmitry Frolov]
+
+ - The powernet driver has been upgraded.  It now supports more
+   variables, has cleaner logging, and may now be considered stable.
+   [Dmitry Frolov]
+
+ - The hidups driver now supports physical port IDs.  This avoids most
+   of the problems where the hiddev* names can jump around too easily.
+   It will now stay in the same place as long as you keep it plugged
+   into the same physical port.  See the CHANGES file for more details.
+   [David Brownell]
+
+ - The hidups driver now also supports the MFR variable on APC
+   Back-UPS ES equipment.
+   [Jonathan A. Davis]
+
+ - The sms driver has been updated to version 0.70.
+   [Marcio Gomes]
+
+ - The bestups driver now recognizes Best Power Axxium Rackmount
+   equipment.
+   [Ales Casar]
+
+ - The liebert driver now uses O_NONBLOCK, and should now work
+   consistently on OpenBSD as a result.
+   [Alex Cichowski]
+
+ - The liebert driver also now uses debouncing logic on the status
+   lines.  It was possible to get false readings that would start a 
+   shutdown or just annoy users with excessive onbatt/online notify
+   messages.  The new code forces the status to settle down for 3 polls
+   before accepting the new value.
+
+   This means that very short power events may not be detected.  The
+   alternative is having your machine shut down just because it decided
+   to wiggle over to OB LB for a few seconds.
+
+ - upsmon has had the disconnect logic fixed so the "communications
+   lost" (COMMBAD) notify will actually go out when the connection
+   fails.
+   [Steve Monett]
+
+ - upssched now uses a lock file to prevent a race where two could
+   start at the same time.  The second upssched would "win", and the
+   first one would be unreachable.  This had the side-effect of not
+   being able to cancel timers on the first one.	
+
+   If you use upssched, you must define the LOCKFN directive when
+   upgrading to this version, or it will not work.
+   [Gaspar Bakos]
+
+ - The packaging and scripts for Red Hat systems have been updated.
+   [Antonino Albanese]
+
+ - upsd is now a bit more lenient about access levels in the
+   'numlogins' check, which is what caused the problem in upsmon
+   (next item).
+
+ - upsmon no longer gets stuck in slavesync() when upsd is configured
+   to drop certain queries.  This usually happened at the worst
+   possible time: in the middle of a shutdown.
+   [John David Garza]
+
+ - The upsclient functions now do more sanity checking on data from
+   upsd so a short read won't return garbage to the callers.
+
+ - upsset now works properly with ENUM/VARTYPE values for multiple
+   UPSes on a single upsd.
+   [Dmitry Frolov]
+
+ - Various portability fixes for building on SGI were applied.
+   [Andrea Suatoni]
+
+ - upsd no longer tries to reference a deleted client structure if the
+   client disconnects at the wrong time.  Previously, it tried to use
+   that pointer after the sendback() function had already failed on 
+   write and deleted the client.  This could cause upsd to segfault
+   depending on what areas were accessed.
+   [Patrik Schindler]
+
+---------------------------------------------------------------------------
+
+Release notes for NUT 1.2.1 - what's new since 1.2.0:
+
+ - The sms driver is back, with support for Microlink Manager III
+   hardware. [Marcio Gomes]
+
+ - Fideltronik Ares Series hardware is now supported as genericups type
+   19.  [Tomek Orzechowski and Arkadiusz Mi¶kiewicz]
+
+ - The drivers no longer silently drop instant commands or set commands
+   from upsd that happen to get fragmented in transit.
+   [linux@horizon.com]
+
+ - The old multilink driver is back with a new name: liebert.  It
+   supports Liebert UPStation GXE hardware with the contact-closure
+   cable.  This is currently an experimental driver as there is no
+   way to power down the load.   
+
+ - configure now picks up the right flags for gd automatically if gd
+   2.0.8 or higher is installed.  This greatly simplifies the CGI build
+   process for most users.
+
+ - Shutdowns on FreeBSD using the genericups driver should work again.
+   [Petri Riihikallio]
+
+---------------------------------------------------------------------------

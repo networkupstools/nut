@@ -1,0 +1,50 @@
+Desc: Information about SNMP and Network UPS Tools
+File: snmp.txt
+Date: 16 March 2003
+Auth: Arnaud Quette <arnaud.quette@free.fr> or <arnaud.quette@mgeups.com>
+
+This document presents interactions between SNMP and Network UPS Tools.
+This work is mostly sponsored by:
+MGE UPS SYSTEMS <http://www.mgeups.com/opensource/>
+
+There are two part in NUT for SNMP support:
+
+1) the agent or server side
+
+An SNMP agent provides information for its hardware.
+In general, agents are embedded in SNMP card.
+
+This part has to be implemented as a Net-SNMP sub agent, acting
+as a NUT middleware (upsd level). Such software make a bridge
+between NUT data and SNMP, thus allowing to monitor, through
+SNMP, standard point to point UPSs (serial and USB).
+
+This is part of the "UPS Sub-Agent" project with Net-SNMP team.
+
+
+2) the client side
+
+	* Introduction
+	
+An SNMP client communicates with an agent to acquire data.
+
+This part, which has to be a NUT driver, is implemented by snmp-ups.
+snmp-ups acts as a bridge from SNMP to NUT, thus allowing to monitor
+in NUT any SNMP Agent (embedded or on a host).
+
+The new snmp-ups driver now support multiple MIBS (SNMP structures
+declaration). For more information on snmp-ups, have a look at its
+manpage (man 8 snmp-ups).
+
+	* Extending existing mib2nut information
+	
+	To be written...
+	
+	* Adding new mib2nut information
+
+	To be written...
+	
+	
+References:
+- NUT SNMP Protocols Library Available at:
+http://random.networkupstools.org/protocols/snmp/

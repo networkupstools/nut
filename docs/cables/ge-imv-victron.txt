@@ -1,0 +1,59 @@
+Desc: IMV Victron UPS cables
+File: victron.txt
+Date: 13 April 2002
+Auth: Daniel Prynych <Daniel.Prynych@hornet.cz>
+
+Data cable 1 for UPS:
+  GE/IMV/Victron Match - 500 700 700L 1000 1000L 1500 2200 3000
+  GE/IMV/Victron NetPro (NetPro 19 ") - 600 1000 1200 2000 3000 4000
+
+Driver: victronups (newvictronups)
+
+
+UPS         PC  9 pin [2~connector
+1 --------- 3
+2 --------- 2
+5 --------- 5 GND
+            4 DTR
+            |
+            1 DCD
+
+------------------------------------
+
+Data cable 2 for UPS:
+   GE/IMV Victron Match Lite (all types)
+
+
+Driver: victronups (newvictronups)
+                                
+UPS         PC  9 pin  connector
+2 --------- 3
+3 --------- 2
+4 --------- 5 GND
+            4 DTR
+            |
+            1 DCD
+
+-----------------------------------
+
+Crack cable: for UPS
+
+  Victron Lite (no IMV Victron Match Lite)
+   
+
+Driver: genericsups
+
+UPS          PC 9 pin connector
+1 ---------- 4 DTR
+7 ---------- 1 DCD ----------+ 
+9 ---------- 8 CTS -----+    |
+5 ---------- 5 GND      |    |
+                        |    |
+                        R    R 6,8k - 10k ohm
+                        |    |
+             7 RTS------+----+
+
+----------------------------------------------
+GE is General Electric Company.
+
+On July 31, 2001, the General Electric Company,  acquisited  IMV (Victron) company.

@@ -1,0 +1,31 @@
+.TH TRIPPLITESU 8 "Mon Jul 21 2003" "" "Network UPS Tools (NUT)"
+.SH NAME
+tripplitesu \- Driver for Tripp\(hyLite SmartOnline (SU) UPS equipment
+.SH NOTE
+This man page only documents the hardware\(hyspecific features of the
+tripplitesu driver.  For information about the core driver, see
+\fBnutupsdrv\fR(8).
+
+.SH SUPPORTED HARDWARE
+This driver supports the Tripp Lite SmartOnline family.
+
+.SH EXTRA ARGUMENTS
+This driver supports the following optional settings in the
+\fBups.conf\fR(5):
+
+.IP "lowbatt=\fInum\fR"
+Set the low battery warning threshold in percent at which shutdown is
+initiated by
+\fBupsmon\fR(8).  By default the UPS may not report low battery until
+there are only a few seconds left.  Common values are around 25 \(hy 30.
+
+.SH AUTHOR
+Allan N. Hessenflow <allanh@kallisti.com>
+
+.SH SEE ALSO
+
+.SS The core driver:
+\fBnutupsdrv\fR(8)
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

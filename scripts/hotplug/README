@@ -1,0 +1,25 @@
+Desc: Hotplug script for newhidups
+File: scripts/hotplug/README
+Date: 1 March 2004
+Auth: Arnaud Quette <arnaud.quette@mgeups.com>
+
+This document introduces Hotplug script for newhidups.
+These are needed to ensure the right privileges are
+set on the usb files (ie allowing nut user to read
+AND write to the UPS device
+
+Usage
+-----
+These scripts are to be used with Linux 2.4
+
+- possibly change libhidups to match NUT user
+- copy libhidups and libhid.usermap to /etc/hotplug/usb/
+- call update-usb.usermap
+
+You can then plug your UPS, and start NUT.
+
+TODO
+----
+- improve these script (add other mfrs when possible)
+- add configure rules and a Makefile for easier installation
+- check for the new udev on kernel 2.6

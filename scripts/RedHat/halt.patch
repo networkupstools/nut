@@ -1,0 +1,40 @@
+--- /etc/rc.d/init.d/halt	Thu Mar 28 00:21:19 2002
++++ halt.new	Fri Jan 31 15:29:49 2003
+@@ -8,8 +8,17 @@
+ #               Modified for RHS Linux by Damien Neil
+ #
+ 
++# 2003-01-31 Antonino Albanese <al.an@monkeysweb.net>
++# Modified ups shutdown for new NUT method
++#
+ # Set the path.
+ PATH=/sbin:/bin:/usr/bin:/usr/sbin
++# load /etc/sysconfig/ups if present I've put the POWERDOWNFLAG
++# in there so noboby have to manually modify the shutdown script
++if [ -f /etc/sysconfig/ups ]; then
++   . /etc/sysconfig/ups
++fi
++UPSCMD=`which upsdrvctl`
+ 
+ export NOLOCALE=1
+ . /etc/init.d/functions
+@@ -198,10 +208,15 @@
+ fi
+ 
+ if [ "$command" = halt ] ; then
+-    if [ -r /etc/ups/upsmon.conf -a -f /etc/killpower -a -f /etc/sysconfig/ups ] ; then
+-        . /etc/sysconfig/ups
+-        [ "$SERVER" = "yes" -a "$MODEL" != "NONE" -a -n "$MODEL" -a -n "$DEVICE" ] && $MODEL -k $DEVICE
+-    fi
++#    if [ -r /etc/ups/upsmon.conf -a -f /etc/killpower -a -f /etc/sysconfig/ups ] ; then
++#        . /etc/sysconfig/ups
++#        [ "$SERVER" = "yes" -a "$MODEL" != "NONE" -a -n "$MODEL" -a -n "$DEVICE" ] && $MODEL -k $DEVICE
++#    fi
++   if [ -n "$POWERDOWNFLAG" -a -n "$UPSCMD" ]; then
++      if [ -f $POWERDOWNFLAG ]; then
++         $UPSCMD shutdown
++      fi
++   fi
+ fi
+ 
+ if [ -x "/sbin/halt.local" ]; then

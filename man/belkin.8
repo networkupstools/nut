@@ -1,0 +1,36 @@
+.TH BELKIN 8 "Tue Jul 29 2003" "" "Network UPS Tools (NUT)" 
+.SH NAME  
+belkin \- Driver for Belkin serial UPS equipment
+.SH NOTE
+This man page only documents the hardware\(hyspecific features of the
+belkin driver.  For information about the core driver, see  
+\fBnutupsdrv\fR(8).
+
+.SH SUPPORTED HARDWARE
+The belkin driver is known to support the Regulator Pro 525 (F6C525\(hySER).
+Other similar models such as the 425 and 625 should also work.
+
+The Trust UPS and older Belkin units are not supported.
+
+.SH EXTRA ARGUMENTS
+
+This driver does not support any extra settings in the    
+\fBups.conf\fR(5).
+
+.SH BUGS
+
+There are dragons lurking within the protocol to this UPS.  I have one
+that essentially behaves like a glorified power strip due to some
+invasive probing on my part.  Don't mess with it directly.
+
+Note: the driver doesn't go anywhere near these character sequences,
+so it won't zap your UPS.  I only mention this here as yet another
+reminder of the perils of closed hardware.
+
+.SH SEE ALSO
+
+.SS The core driver:
+\fBnutupsdrv\fR(8)
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

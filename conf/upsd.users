@@ -1,0 +1,70 @@
+# Network UPS Tools: Example upsd.users
+#
+# This file sets the permissions for upsd - the UPS network daemon.
+# Users are defined here, are given passwords, and their privileges are
+# controlled here too.  Since this file will contain passwords, keep it
+# secure, with only enough permissions for upsd to read it.
+
+# --------------------------------------------------------------------------
+
+# Each user gets a section.  To start a section, put the username in
+# brackets on a line by itself.  To set something for that user, specify
+# it under that section heading.  The username is case-sensitive, so
+# admin and AdMiN are two different users.
+#
+# Possible settings:
+#
+# password: The user's password.  This is case-sensitive.
+#
+# --------------------------------------------------------------------------
+#
+# allowfrom: ACL names that this user may connect from.  ACLs are
+#            defined in upsd.conf.
+#
+# --------------------------------------------------------------------------
+#
+# actions: Let the user do certain things with upsd.  
+# 
+# Valid actions are:
+#
+# SET	- change the value of certain variables in the UPS
+# FSD   - set the "forced shutdown" flag in the UPS
+# 
+# --------------------------------------------------------------------------
+#
+# instcmds: Let the user initiate specific instant commands.  Use "ALL"
+# to grant all commands automatically.  There are many possible  
+# commands, so use 'upscmd -l' to see what your hardware supports.  Here
+# are a few examples:
+#
+# test.panel.start	- Start a front panel test
+# test.battery.start	- Start battery test
+# test.battery.stop	- Stop battery test
+# calibrate.start	- Start calibration
+# calibrate.stop	- Stop calibration
+#
+# --------------------------------------------------------------------------
+#
+# Example:
+#
+#	[admin]
+#		password = mypass
+#		allowfrom = admworkstation admhome
+#		actions = SET
+#		instcmds = ALL
+#
+
+#
+# --- Configuring for upsmon
+#
+# To add a user for your upsmon, use this example:
+#
+#	[monuser]
+#		password  = pass
+#		allowfrom = bigserver
+#
+#		upsmon master			(or upsmon slave)
+#
+# The matching MONITOR line in your upsmon.conf would look like this:
+#
+# MONITOR myups@myhost 1 monuser pass master	(or slave)

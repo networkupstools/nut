@@ -1,0 +1,731 @@
+dnl +------------------------------------------------------------------+
+dnl | Network UPS Tools: configure.in                                  |
+dnl +------------------------------------------------------------------+
+
+AC_INIT(server/upsd.c)
+AC_CONFIG_HEADER(include/config.h)
+AC_PREFIX_DEFAULT(/usr/local/ups)
+
+dnl Fix this early so we can expand with eval later
+test "$prefix" = NONE && prefix=/usr/local/ups
+
+CFLAGS=${CFLAGS-"-O"}
+
+AC_MSG_CHECKING(NUT version)
+
+dnl Pull this in for things that need to replace it later
+if (test -f include/version)
+then
+	NUT_VERSION=`head -1 include/version`
+	AC_MSG_RESULT($NUT_VERSION)
+else
+	AC_MSG_ERROR([Can't read include/version - broken source distribution?])
+fi
+
+
+
+AC_CANONICAL_SYSTEM
+
+dnl +------------------------------------------------------------------+
+dnl | default values for things later on (can be overridden)           |
+
+STATEPATH="/var/state/ups"
+
+DRVPATH='${prefix}/bin'
+CGIPATH='${prefix}/cgi-bin'
+
+RUN_AS_USER="nobody"
+PIDPATH="/var/run"
+LIBOBJ=../common/common.o
+BUILDOBJ=common.o
+
+dnl These are only used if gdlib-config is unusable and the user
+dnl fails to pass better values in --with arguments
+
+GD_INCLUDES=""
+GD_LIBS="-L/usr/X11R6/lib -lgd -lpng -lz -ljpeg -lfreetype -lm -lXpm -lX11"
+
+dnl +-------------------------------------------------------------------
+
+AC_PROG_CC
+AC_PROG_CPP
+AC_PROG_INSTALL
+AC_PROG_EGREP
+AC_PATH_PROG(AR, ar)
+AC_CHECK_TOOL(RANLIB, ranlib, :)
+AC_C_INLINE
+AC_CHECK_FUNCS(flock lockf fcvt fcvtl)
+AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
+AC_CHECK_FUNCS(seteuid setsid getpassphrase)
+
+AC_CHECK_FUNCS(vsnprintf snprintf, ,
+	LIBOBJ="$LIBOBJ ../common/snprintf.o"
+	BUILDOBJ="$BUILDOBJ snprintf.o"
+)
+AC_CHECK_FUNCS(setenv, ,
+	LIBOBJ="$LIBOBJ ../common/setenv.o"
+	BUILDOBJ="$BUILDOBJ setenv.o"
+)
+AC_CHECK_FUNCS(inet_aton, ,
+	LIBOBJ="$LIBOBJ ../common/inet_aton.o"
+	BUILDOBJ="$BUILDOBJ inet_aton.o"
+)
+AC_CHECK_FUNCS(strerror, ,
+	LIBOBJ="$LIBOBJ ../common/strerror.o"
+	BUILDOBJ="$BUILDOBJ strerror.o"
+)
+AC_CHECK_FUNCS(atexit, , [
+	LIBOBJ="$LIBOBJ ../common/atexit.o"
+	BUILDOBJ="$BUILDOBJ atexit.o"
+	AC_CHECK_FUNCS(on_exit)
+])
+
+dnl if we don't have AR, then don't build libupsclient.a
+if test -z "$AR" ; then
+	UPSCLI_OBJ="upsclient.o ../common/parseconf.o"
+	UPSCLI_LIBOBJ="upsclient.o parseconf.o"
+else
+	UPSCLI_OBJ="libupsclient.a"
+	UPSCLI_LIBOBJ="-lupsclient"
+fi	
+
+#
+# Only use these when compiling with gcc 
+#
+if ( test "x$GCC" = "xyes" )
+then
+  CFLAGS="$CFLAGS -Wall -Wsign-compare"
+fi  
+
+# Endianness handling, using default behavior
+# eg defines WORDS_BIGENDIAN if BigEnd,
+# nothing if LittleEnd, abort otherwise
+AC_C_BIGENDIAN
+
+# optind handling:
+# need to check if unistd.h is enough, else try getopt.h, else need decls
+AC_MSG_CHECKING(for getopt declarations)
+AC_TRY_COMPILE(
+  [#include <unistd.h>],
+  [int i = optind;],
+  nut_getopt_decl_in_unistd=yes,
+  nut_getopt_decl_in_unistd=no)
+if test $nut_getopt_decl_in_unistd = yes; then
+  AC_MSG_RESULT(in unistd.h)
+else
+  AC_CHECK_HEADER(getopt.h, [have_getopt_h=yes], [have_getopt_h=])
+  if test have_getopt_h = yes; then
+    AC_DEFINE(NEED_GETOPT_H, 1,
+		[Define if getopt.h is needed])
+    AC_MSG_RESULT(using getopt.h)
+  else
+    AC_DEFINE(NEED_GETOPT_DECLS, 1, 
+		[Define to use explicit getopt declarations])
+    AC_MSG_RESULT(using explicit getopt declarations)
+  fi
+fi
+
+# FreeBSD serial locking compatibility - look for uu_lock in libutil.h
+
+AC_MSG_CHECKING(whether to use uu_lock)
+AC_EGREP_HEADER(uu_lock, libutil.h, [
+		AC_MSG_RESULT(yes)
+		SERLIBS=-lutil
+		AC_DEFINE(HAVE_UU_LOCK, 1, 
+			[Use uu_lock for locking (FreeBSD)])  
+
+		# put in some better defaults for FreeBSD
+		RUN_AS_USER="uucp"
+],[
+		AC_MSG_RESULT(no)
+		SERLIBS=""
+])	
+
+# Solaris compatibility - check for -lnsl and -lsocket if connect() is gone
+
+AC_CHECK_FUNCS(connect)
+
+if ( test x"$ac_cv_func_connect" = x"no" ); then
+	AC_CHECK_LIB(nsl, printf, [
+	  	NETLIBS="-lnsl"
+	], [], [])
+
+	AC_CHECK_LIB(socket, printf, [
+		NETLIBS="$NETLIBS -lsocket"
+	], [], [])
+fi
+
+AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h sys/termios.h)
+
+AC_HEADER_TIME
+AC_CHECK_HEADERS(sys/time.h)
+
+TYPE_SOCKLEN_T
+
+CFLAGS_ORIG=$CFLAGS
+LDFLAGS_ORIG=$LDFLAGS
+
+AC_MSG_CHECKING(whether to enable SSL development code)
+AC_ARG_WITH(ssl,
+[ --with-ssl			Enable SSL development code         [default=no]],
+[	case "$withval" in
+	yes)
+		AC_MSG_RESULT(yes)
+
+		SSL_CFLAGS=""
+		SSL_LDFLAGS="-lssl -lcrypto"
+
+		CFLAGS=$SSL_CFLAGS
+		LDFLAGS=$SSL_LDFLAGS
+		AC_TRY_LINK([#include <openssl/ssl.h>], [SSL_library_init()], ssl_ok=yes, ssl_ok=no)
+
+		if test "$ssl_ok" != yes; then
+			SSL_CFLAGS="-I/usr/local/ssl/include"
+			SSL_LDFLAGS="-L/usr/local/ssl/lib -lssl -lcrypto"
+
+			CFLAGS=$SSL_CFLAGS
+			LDFLAGS=$SSL_LDFLAGS
+			AC_TRY_LINK([#include <openssl/ssl.h>], [SSL_library_init], ssl_ok=yes, ssl_ok=no)
+		fi
+
+		if test "$ssl_ok" != yes; then
+			AC_MSG_ERROR("OpenSSL not found")
+		fi
+
+		AC_DEFINE(HAVE_SSL, 1, 
+			[Define to enable SSL development code])
+		;;
+	*)
+		AC_MSG_RESULT(no)
+		;;
+	esac],
+
+	AC_MSG_RESULT(no)
+)	
+
+dnl put back the original versions
+CFLAGS=$CFLAGS_ORIG
+LDFLAGS=$LDFLAGS_ORIG
+
+dnl See if gdlib-config is out there and usable
+
+AC_MSG_CHECKING(for gd version via gdlib-config)
+
+GD_VERSION=`gdlib-config --version 2>/dev/null`
+if (test "$?" != "0")
+then
+	GD_VERSION="unknown"
+	AC_MSG_RESULT(not found)
+else
+	AC_MSG_RESULT($GD_VERSION)
+fi
+
+case "$GD_VERSION" in
+	unknown)
+		;;
+
+	2.0.5 | 2.0.6 | 2.0.7)
+		AC_MSG_WARN([[gd $GD_VERSION detected, unable to use gdlib-config script]])
+		AC_MSG_WARN([[If gd detection fails, upgrade gd or use --with-gd-libs]])
+		;;
+
+	*)
+		GD_LIBS="`gdlib-config --ldflags` `gdlib-config --libs` -lgd"
+		GD_INCLUDES="`gdlib-config --includes`"
+		;;
+	esac
+
+dnl Now allow overriding gd settings if the user knows best
+
+AC_MSG_CHECKING(for gd include flags)
+AC_ARG_WITH(gd-includes,
+[ --with-gd-includes		Include flags for the gd library],
+[	case "$withval" in
+	yes|no)
+		AC_MSG_RESULT(using defaults)
+		;;
+	*)
+		AC_MSG_RESULT(using $withval)
+		GD_INCLUDES=$withval
+		;;
+	esac],
+
+	AC_MSG_RESULT(using defaults)
+)
+
+AC_MSG_CHECKING(for gd library flags)
+AC_ARG_WITH(gd-libs,
+[ --with-gd-libs			Linker flags for gd],
+[	case "$withval" in
+	yes|no)
+		AC_MSG_RESULT(using defaults)
+		;;
+	*)
+		AC_MSG_RESULT(using $withval)
+		GD_LIBS=$withval
+		;;
+	esac],
+
+	AC_MSG_RESULT(using defaults)
+)
+
+AC_MSG_CHECKING(whether to build CGI programs)
+AC_ARG_WITH(cgi,
+[ --with-cgi			Build the CGI programs                      [no]],
+[	case "$withval" in
+	yes)
+
+		AC_MSG_RESULT(yes)
+		CGI_BUILD_TARGET="build-cgi"
+
+dnl +------------------------------------------------------------------+
+dnl | Check for libraries used by the CGI programs.                    |
+dnl +------------------------------------------------------------------+
+
+CFLAGS_ORIG=$CFLAGS
+CPPFLAGS_ORIG=$CPPFLAGS
+LDFLAGS_ORIG=$LDFLAGS
+
+		CFLAGS=$GD_INCLUDES
+		CPPFLAGS=$GD_INCLUDES
+		LDFLAGS=$GD_LIBS
+
+		AC_CHECK_HEADERS(gd.h)
+		AC_CHECK_LIB(gd, gdImagePng, 
+		AC_DEFINE(HAVE_LIBGD, 1, 
+			[Define if you have Boutell's libgd installed]),
+		AC_MSG_WARN([libgd not found - CGI build will fail]),
+		$GD_LIBS)
+
+dnl put back the original versions
+CFLAGS=$CFLAGS_ORIG
+CPPFLAGS=$CPPFLAGS_ORIG
+LDFLAGS=$LDFLAGS_ORIG
+
+dnl +------------------------------------------------------------------+
+dnl | End of CGI library checks.                                       |
+dnl +------------------------------------------------------------------+
+
+		;;	
+	no)
+		AC_MSG_RESULT(no)
+		CGI_BUILD_TARGET="build-cgi-fake"
+		;;
+	*)
+		AC_MSG_RESULT(no)
+		CGI_BUILD_TARGET="build-cgi-fake"
+		;;
+	esac],
+[
+	AC_MSG_RESULT(no)
+	CGI_BUILD_TARGET="build-cgi-fake"
+]
+)
+
+dnl Check for Net-SNMP libs and flags
+AC_MSG_CHECKING(for Net-SNMP cflags)
+NETSNMP_CFLAGS=`net-snmp-config --cflags 2>/dev/null`
+
+if (test "$?" != "0")
+then
+	AC_MSG_RESULT(not found)
+else
+	AC_MSG_RESULT($NETSNMP_CFLAGS)
+fi
+
+AC_MSG_CHECKING(for Net-SNMP libs)
+NETSNMP_LIBS=`net-snmp-config --libs 2>/dev/null`
+
+if (test "$?" != "0")
+then
+	AC_MSG_RESULT(not found)
+else
+	AC_MSG_RESULT($NETSNMP_LIBS)
+fi
+
+dnl Check for libusb libs and flags
+AC_MSG_CHECKING(for libusb cflags)
+LIBUSB_CFLAGS=`libusb-config --cflags 2>/dev/null`
+
+if (test "$?" != "0")
+then
+	AC_MSG_RESULT(not found)
+else
+	AC_MSG_RESULT($LIBUSB_CFLAGS)
+fi
+
+AC_MSG_CHECKING(for libusb libs)
+LIBUSB_LIBS=`libusb-config --libs 2>/dev/null`
+
+if (test "$?" != "0")
+then
+	AC_MSG_RESULT(not found)
+else
+	AC_MSG_RESULT($LIBUSB_LIBS)
+fi
+
+dnl Check for libusb "force driver unbind" availability
+dnl Need at least libusb 0.1.8
+AC_CHECK_LIB(usb, usb_detach_kernel_driver_np, [
+		AC_DEFINE(LIBUSB_HAS_DETACH_KRNL_DRV, 1,
+			[Define to 1 if libusb support `usb_detach_kernel_driver_np' function.])
+	], [], [])
+
+AC_MSG_CHECKING(for Linux hiddev.h)
+AC_ARG_WITH(linux-hiddev,
+[ --with-linux-hiddev=FILE	Linux hiddev.h     [/usr/include/linux/hiddev.h]],
+[	case "$withval" in
+	yes)
+		if (test -f /usr/include/linux/hiddev.h)
+		then
+			AC_MSG_RESULT(using default: /usr/include/linux/hiddev.h)
+			AC_DEFINE_UNQUOTED(LINUX_HIDDEV, "/usr/include/linux/hiddev.h",
+				[Complete path for Linux hiddev.h])
+			LINUX_HIDDEV=/usr/include/linux/hiddev.h
+		fi
+		;;
+	no)
+		AC_MSG_RESULT(no)
+		;;
+	*)
+		if (test -f $withval)
+		then
+			AC_MSG_RESULT($withval)
+			AC_DEFINE_UNQUOTED(LINUX_HIDDEV, "$withval",
+				[Complete path for Linux hiddev.h])
+			LINUX_HIDDEV=$withval
+		else
+			AC_MSG_RESULT($withval not found)
+		fi
+		;;
+	esac],
+[
+	if (test -f /usr/include/linux/hiddev.h)
+	then
+		AC_MSG_RESULT(using default: /usr/include/linux/hiddev.h)
+		AC_DEFINE_UNQUOTED(LINUX_HIDDEV, "/usr/include/linux/hiddev.h",
+			[Complete path for Linux hiddev.h])
+		LINUX_HIDDEV=/usr/include/linux/hiddev.h
+	else
+		AC_MSG_RESULT(no)
+	fi
+]
+)
+
+AC_MSG_CHECKING(state path)
+AC_ARG_WITH(statepath,
+[ --with-statepath=PATH		Path for ups state files        [/var/state/ups]],
+[	case "$withval" in
+	yes|no)
+		AC_MSG_RESULT(using default: $STATEPATH)
+		AC_DEFINE_UNQUOTED(STATEPATH, "$STATEPATH",
+			[Path for UPS driver state files])
+		;;
+	*)
+		AC_MSG_RESULT($withval)
+		AC_DEFINE_UNQUOTED(STATEPATH, "$withval",
+			[Path for UPS driver state files])
+		STATEPATH=$withval
+		;;
+	esac],
+	AC_MSG_RESULT(using default: $STATEPATH)
+	AC_DEFINE_UNQUOTED(STATEPATH, "$STATEPATH",
+		[Path for UPS driver state files])
+)
+
+dnl ---------------------------------------------------------------------
+dnl The 'alt pid path' is used by the drivers (via main.c) and upsd, since
+dnl ideally they do not run as root and won't be able to write to the usual
+dnl /var/run path.  This defaults to the STATEPATH since they should be
+dnl able to write there.
+dnl
+
+AC_MSG_CHECKING(alt pid path)
+AC_ARG_WITH(altpidpath,
+[ --with-altpidpath=PATH		Path for driver/upsd .pid files    [(statepath)]],
+[	case "$withval" in
+	yes|no)
+		AC_MSG_RESULT(using default: $STATEPATH)
+		AC_DEFINE_UNQUOTED(ALTPIDPATH, "$STATEPATH",
+		[Path for pid files of drivers and upsd (usually STATEPATH)])
+
+		ALTPIDPATH=$STATEPATH
+		;;
+	*)
+		AC_MSG_RESULT($withval)
+		AC_DEFINE_UNQUOTED(ALTPIDPATH, "$withval",
+		[Path for pid files of drivers and upsd (usually STATEPATH)])
+		ALTPIDPATH=$withval
+		;;
+	esac],
+	AC_MSG_RESULT(using default: $STATEPATH)
+	AC_DEFINE_UNQUOTED(ALTPIDPATH, "$STATEPATH",
+		[Path for pid files of drivers and upsd (usually STATEPATH)])
+	ALTPIDPATH=$STATEPATH
+)
+
+AC_MSG_CHECKING(driver path)
+AC_ARG_WITH(drvpath,
+[ --with-drvpath=PATH		Path for ups drivers              [<prefix>/bin]],
+[	case "$withval" in
+	yes|no)
+		AC_MSG_RESULT(using default)
+		eval conftemp=${DRVPATH}
+		AC_DEFINE_UNQUOTED(DRVPATH, "$conftemp",
+			[Default path for UPS drivers])
+		;;
+	*)
+		AC_MSG_RESULT($withval)
+		eval conftemp=${withval}
+		AC_DEFINE_UNQUOTED(DRVPATH, "$conftemp",
+			[Default path for UPS drivers])
+		DRVPATH=$withval
+		;;
+	esac],
+	AC_MSG_RESULT(using default)
+	eval conftemp=${DRVPATH}
+	AC_DEFINE_UNQUOTED(DRVPATH, "$conftemp",
+			[Default path for UPS drivers])
+)
+
+AC_MSG_CHECKING(cgi path)
+AC_ARG_WITH(cgipath,
+[ --with-cgipath=PATH		Path for CGI programs         [<prefix>/cgi-bin]],
+[	case "$withval" in
+	yes|no)
+		AC_MSG_RESULT(using default)
+		eval conftemp=${CGIPATH}
+		AC_DEFINE_UNQUOTED(CGIPATH, "$conftemp",
+			[Default path for CGI programs])
+		;;
+	*)
+		AC_MSG_RESULT($withval)
+		eval conftemp=${withval}
+		AC_DEFINE_UNQUOTED(CGIPATH, "$conftemp",
+			[Default path for CGI programs])
+		CGIPATH=$withval
+		;;
+	esac],
+	AC_MSG_RESULT(using default)
+	eval conftemp=${CGIPATH}
+	AC_DEFINE_UNQUOTED(CGIPATH, "$conftemp",
+			[Default path for CGI programs])
+	)
+
+AC_MSG_CHECKING(pidpath)
+AC_ARG_WITH(pidpath,
+[ --with-pidpath=PATH		Path for .pid files                   [/var/run]],
+[	case "$withval" in
+	yes|no)
+		AC_MSG_RESULT(using default: $PIDPATH)
+		AC_DEFINE_UNQUOTED(PIDPATH, "$PIDPATH",
+			[Path where the pid files should go])
+		;;
+	*)
+		AC_MSG_RESULT($withval)
+		AC_DEFINE_UNQUOTED(PIDPATH, "$withval",
+			[Path where the pid files should go])
+		PIDPATH=$withval
+		;;
+	esac],
+	AC_MSG_RESULT(using default: $PIDPATH)
+	AC_DEFINE_UNQUOTED(PIDPATH, "$PIDPATH",
+			[Path where the pid files should go])
+)
+
+AC_MSG_CHECKING(network port number)
+AC_ARG_WITH(port,
+[ --with-port=PORT		Port for network communications           [3493]],
+[	case "$withval" in
+	yes|no)
+		AC_MSG_RESULT(using default value: 3493)
+		AC_DEFINE_UNQUOTED(PORT, 3493,
+			[Port for network communications])
+		;;
+	*)
+		AC_MSG_RESULT($withval)
+		AC_DEFINE_UNQUOTED(PORT, $withval,
+			[Port for network communications])
+		;;
+	esac],
+	AC_MSG_RESULT(using default value: 3493)
+	AC_DEFINE_UNQUOTED(PORT, 3493,
+		[Port for network communications])
+)
+
+AC_MSG_CHECKING(user to run as)
+AC_ARG_WITH(user,
+[ --with-user=username		User for programs started as root       [nobody]],
+[	case "$withval" in
+	yes|no)
+		AC_MSG_RESULT(using default: $RUN_AS_USER)
+		AC_DEFINE_UNQUOTED(RUN_AS_USER, "$RUN_AS_USER",
+			[User to switch to if started as root])
+		;;
+	*)
+		AC_MSG_RESULT($withval)
+		AC_DEFINE_UNQUOTED(RUN_AS_USER, "$withval",
+			[User to switch to if started as root])
+		RUN_AS_USER=$withval
+		;;
+	esac],
+	AC_MSG_RESULT(using default: $RUN_AS_USER)
+	AC_DEFINE_UNQUOTED(RUN_AS_USER, "$RUN_AS_USER",
+		[User to switch to if started as root])
+)
+
+AC_MSG_CHECKING(facility for syslog)
+AC_ARG_WITH(logfacility,
+[ --with-logfacility=FACILITY	Facility for log messages           [LOG_DAEMON]],
+[	case "$withval" in
+	yes|no)
+		AC_MSG_RESULT(using default value: LOG_DAEMON)
+		AC_DEFINE_UNQUOTED(LOG_FACILITY, LOG_DAEMON,
+			[Desired syslog facility - see syslog(3)])
+		;;
+	*)
+		AC_MSG_RESULT($withval)
+		AC_DEFINE_UNQUOTED(LOG_FACILITY, $withval,
+			[Desired syslog facility - see syslog(3)])
+		;;
+	esac],
+	AC_MSG_RESULT(using default value: LOG_DAEMON)
+	AC_DEFINE_UNQUOTED(LOG_FACILITY, LOG_DAEMON,
+		[Desired syslog facility - see syslog(3)])
+)
+
+AC_MSG_CHECKING(which drivers to build)
+AC_ARG_WITH(drivers,
+
+[ --with-drivers=<driver>[,<driver>,...]	Only use specific drivers        [(all)]],
+[	case "$withval" in
+	yes | no)
+		# ignore calls without any arguments
+		DRIVER_BUILD_LIST="all-drivers"
+		DRIVER_INSTALL_TARGET="all-drivers"
+		AC_MSG_RESULT(all)
+		;;
+	*)
+		DRIVER_BUILD_LIST=`echo $withval | sed "s/,/ /g"`
+		DRIVER_INSTALL_TARGET="some-drivers"
+		AC_MSG_RESULT($DRIVER_BUILD_LIST)
+		;;
+	esac
+],
+[
+	DRIVER_BUILD_LIST="all-drivers"
+	DRIVER_INSTALL_TARGET="all-drivers"
+	AC_MSG_RESULT(all)
+]
+)
+
+AC_MSG_CHECKING(whether to strip debug symbols)
+AC_ARG_ENABLE(strip,
+[  --enable-strip		Strip debugging symbols from binaries	    [no]],
+[
+	case "$withval" in
+		no)
+			AC_MSG_RESULT(no)
+		;;
+		*)
+			AC_MSG_RESULT(yes)
+			CFLAGS="$CFLAGS -s"
+		;;
+	esac
+],
+[	AC_MSG_RESULT(no)
+])
+
+
+AC_MSG_CHECKING(whether to enable pkg-config support)
+AC_ARG_ENABLE(pkg-config,
+[  --with-pkgconfig-dir=PATH    Path to pkg-config *.pc files [/usr/lib/pkgconfig]],
+[
+	case "$withval" in
+		yes)
+			if (test -d /usr/lib/pkgconfig)
+			then
+				AC_MSG_RESULT(yes)
+				PKG_CFG_DIR="/usr/lib/pkgconfig"
+				USE_PKG_CFG=yes
+			else
+				AC_MSG_RESULT(no)
+				PKG_CFG_DIR=""
+				USE_PKG_CFG=no
+			fi
+		;;
+		no)
+			AC_MSG_RESULT(no)
+			PKG_CFG_DIR=""
+			USE_PKG_CFG=no
+		;;
+		*)
+			AC_MSG_RESULT(yes)
+			PKG_CFG_DIR=$withval
+			USE_PKG_CFG=yes
+		;;
+	esac
+],
+[       
+	if (test -d /usr/lib/pkgconfig)
+	then
+		AC_MSG_RESULT(yes)
+		PKG_CFG_DIR="/usr/lib/pkgconfig"
+		USE_PKG_CFG=yes
+	else
+		AC_MSG_RESULT(no)
+		PKG_CFG_DIR=""
+		USE_PKG_CFG=no
+	fi
+])
+
+
+# 'long long' check - this gets used down in snprintf.o
+#
+AC_CACHE_CHECK([for long long],nut_cv_have_longlong,[
+AC_TRY_RUN([#include <stdio.h>
+main() { long long x = 1000000; x *= x; exit(((x/1000000) == 1000000)? 0: 1); }],
+nut_cv_have_longlong=yes,nut_cv_have_longlong=no,nut_cv_have_longlong=cross)])
+if test x"$nut_cv_have_longlong" = x"yes"; then
+    AC_DEFINE(HAVE_LONGLONG, 1, [longlong support for snprintf])
+fi
+
+# expand $sysconfdir and write it out
+eval conftemp=${sysconfdir}
+AC_DEFINE_UNQUOTED(CONFPATH, "$conftemp",
+			[Default path for configuration files])
+
+# same for datadir
+eval datatemp=${datadir}
+AC_DEFINE_UNQUOTED(DATADIR, "$datatemp",
+			[Default path for data files])
+
+AC_SUBST(NUT_VERSION)
+AC_SUBST(UPSCLI_OBJ)
+AC_SUBST(UPSCLI_LIBOBJ)
+AC_SUBST(SSL_CFLAGS)
+AC_SUBST(SSL_LDFLAGS)
+AC_SUBST(CGI_BUILD_TARGET)
+AC_SUBST(GD_INCLUDES)
+AC_SUBST(GD_LIBS)
+AC_SUBST(NETSNMP_CFLAGS)
+AC_SUBST(NETSNMP_LIBS)
+AC_SUBST(LIBUSB_CFLAGS)
+AC_SUBST(LIBUSB_LIBS)
+AC_SUBST(DRIVER_BUILD_LIST)
+AC_SUBST(DRIVER_INSTALL_TARGET)
+AC_SUBST(STRLCPY)
+AC_SUBST(LIBOBJ)
+AC_SUBST(BUILDOBJ)
+AC_SUBST(NETLIBS)
+AC_SUBST(SERLIBS)
+AC_SUBST(STATEPATH)
+AC_SUBST(DRVPATH)
+AC_SUBST(CGIPATH)
+AC_SUBST(RUN_AS_USER)
+AC_SUBST(LINUX_HIDDEV)
+AC_SUBST(WORDS_BIGENDIAN)
+AC_SUBST(PKG_CFG_DIR)
+AC_SUBST(USE_PKG_CFG)
+
+AC_OUTPUT(clients/Makefile conf/Makefile data/Makefile drivers/Makefile server/Makefile Makefile common/Makefile man/Makefile lib/Makefile lib/libupsclient-config lib/libupsclient.pc scripts/hotplug/libhidups)
