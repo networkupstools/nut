@@ -26,7 +26,7 @@
 #include "hidparser.h"
 #include "hidtypes.h"
 
-#define DRIVER_VERSION "0.59"
+#define DRIVER_VERSION "0.60"
 
 #define DEFAULT_TIMEOUT 	3000
 #define MAX_STRING      	64
@@ -166,7 +166,7 @@ typedef struct {
   const char	*type;			/* INFO_* element                        */
   int	flags;				/* INFO-element flags to set in addinfo  */
   int	length;				/* INFO-element length of strings        */  
-  const char	item_path[MAX_STRING];	/* HID object (fully qualified string path) */
+  const char	*item_path;	/* HID object (fully qualified string path) */
   const char	fmt[6];			/* printf format string for INFO entry   */
   const char	*dfl;			/* default value */
   unsigned long	shut_flags;		/* specific SHUT flags */
@@ -181,14 +181,14 @@ typedef struct {
  */
 
 static mge_info_item mge_info[] = {
-	{ "driver.version.internal", ST_FLAG_STRING, 5, "", "%s", DRIVER_VERSION, SHUT_FLAG_ABSENT | SHUT_FLAG_OK },
+	{ "driver.version.internal", ST_FLAG_STRING, 5, NULL, "%s", DRIVER_VERSION, SHUT_FLAG_ABSENT | SHUT_FLAG_OK },
 	/* Battery page */
 	{ "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", "%i", NULL, SHUT_FLAG_OK },
 	{ "battery.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerSummary.RemainingCapacityLimitSetting", "%ld", NULL, SHUT_FLAG_OK }, /* RW, to be caught first if exists... */
 	{ "battery.charge.low", ST_FLAG_STRING, 5, "UPS.PowerSummary.RemainingCapacityLimit", "%ld", NULL, SHUT_FLAG_OK }, /* ... or Read only */
 	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", "%05d", NULL, SHUT_FLAG_OK },
 	/* UPS page */
-	{ "ups.mfr", ST_FLAG_STRING, 20, "", "%s", "MGE UPS SYSTEMS", SHUT_FLAG_ABSENT | SHUT_FLAG_OK },
+	{ "ups.mfr", ST_FLAG_STRING, 20, NULL, "%s", "MGE UPS SYSTEMS", SHUT_FLAG_ABSENT | SHUT_FLAG_OK },
 	{ "ups.load", 0, 0, "UPS.PowerSummary.PercentLoad", "%i", NULL, SHUT_FLAG_OK },
 	{ "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerSummary.DelayBeforeShutdown", "%ld", NULL, SHUT_FLAG_OK | SHUT_FLAG_DELAY},
 	{ "ups.delay.reboot", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerSummary.DelayBeforeReboot", "%ld", NULL, SHUT_FLAG_OK | SHUT_FLAG_DELAY},
@@ -206,17 +206,20 @@ static mge_info_item mge_info[] = {
 	/* Outlet page (using MGE UPS SYSTEMS - PowerShare technology) */
 	/* TODO: add an iterative semantic [%x] to factorise outlets */
 	{ "outlet.0.id", 0, 0, "UPS.OutletSystem.Outlet.[1].OutletID", "%i", NULL, SHUT_FLAG_OK },
-	{ "outlet.0.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "", "s", "Main Outlet", SHUT_FLAG_ABSENT | SHUT_FLAG_OK },
+	{ "outlet.0.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[1].OutletID",
+	  "s", "Main Outlet", SHUT_FLAG_ABSENT | SHUT_FLAG_OK },
 	{ "outlet.0.switchable", 0, 0, "UPS.OutletSystem.Outlet.[1].PresentStatus.Switchable", "%i", NULL, SHUT_FLAG_OK },
 	{ "outlet.1.id", 0, 0, "UPS.OutletSystem.Outlet.[2].OutletID", "%i", NULL, SHUT_FLAG_OK },	
-	{ "outlet.1.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "", "s", "PowerShare Outlet 1", SHUT_FLAG_ABSENT | SHUT_FLAG_OK },
+	{ "outlet.1.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[2].OutletID",
+	  "s", "PowerShare Outlet 1", SHUT_FLAG_ABSENT | SHUT_FLAG_OK },
 	{ "outlet.1.switchable", 0, 0, "UPS.OutletSystem.Outlet.[2].PresentStatus.Switchable", "%i", NULL, SHUT_FLAG_OK },
 	{ "outlet.1.switch", ST_FLAG_RW | ST_FLAG_STRING, 2, "UPS.OutletSystem.Outlet.[2].PresentStatus.SwitchOn/Off", "%i", NULL, SHUT_FLAG_OK },
 	{ "outlet.1.autoswitch.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet.[2].RemainingCapacityLimit", "%i", NULL, SHUT_FLAG_OK },
 	{ "outlet.1.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[2].DelayBeforeShutdown", "%i", NULL, SHUT_FLAG_OK },
 	{ "outlet.1.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[2].DelayBeforeStartup", "%i", NULL, SHUT_FLAG_OK },
 	{ "outlet.2.id", 0, 0, "UPS.OutletSystem.Outlet.[3].OutletID", "%i", NULL, SHUT_FLAG_OK },	
-	{ "outlet.2.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "", "s", "PowerShare Outlet 2", SHUT_FLAG_ABSENT | SHUT_FLAG_OK },
+	{ "outlet.2.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[3].OutletID",
+	  "s", "PowerShare Outlet 2", SHUT_FLAG_ABSENT | SHUT_FLAG_OK },
 	{ "outlet.2.switchable", 0, 0, "UPS.OutletSystem.Outlet.[3].PresentStatus.Switchable", "%i", NULL, SHUT_FLAG_OK },
 	{ "outlet.2.switch", ST_FLAG_RW | ST_FLAG_STRING, 2, "UPS.OutletSystem.Outlet.[3].PresentStatus.SwitchOn/Off", "%i", NULL, SHUT_FLAG_OK },
 	{ "outlet.2.autoswitch.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet.[3].RemainingCapacityLimit", "%i", NULL, SHUT_FLAG_OK },

@@ -97,6 +97,10 @@ void upsdrv_initinfo (void)
 	/* Get complete Model information */
 	shut_identify_ups ();
 
+	printf("Detected %s [%s] on %s\n", dstate_getinfo("ups.model"),
+		   dstate_getinfo("ups.serial"), device_path);
+
+
 	/* Device capabilities enumeration ----------------------------- */
 	for ( item = mge_info ; item->type != NULL ; item++ ) {
 		
@@ -106,10 +110,23 @@ void upsdrv_initinfo (void)
 		
 		/* Special case for handling server side variables */
 		if (item->shut_flags & SHUT_FLAG_ABSENT) {
-			dstate_setinfo(item->type, "%s", item->dfl);
-			dstate_setflags(item->type, item->flags);
-			/* disable reading now 
-			item->shut_flags &= ~SHUT_FLAG_OK;*/
+		  /* Check if exists (if necessary) before creation */
+		  if ((item->item_path != NULL) &&
+			  (hid_get_value(item->item_path) != 1 ) )
+			{
+			  continue;
+			}
+
+		  dstate_setinfo(item->type, "%s", item->dfl);
+		  dstate_setflags(item->type, item->flags);;
+		  
+		  /* Set max length for strings, if neede	d */
+		  if (item->flags & ST_FLAG_STRING)
+			dstate_setaux(item->type, item->length);
+
+		  /* disable reading now => needed?!
+			 item->shut_flags &= ~HU_FLAG_OK;*/
+
 		} else {
 			if (hid_get_value(item->item_path) != 0 ) {
 
@@ -416,7 +433,6 @@ int shut_identify_ups ()
 			format_model_name(model, NULL);
 
 		dstate_setinfo("ups.model", "%s", model);
-		upsdebugx (1, "Detected: %s", model);
 	}
 		
 	/* Get strings iSerialNumber */
@@ -1155,7 +1171,8 @@ int hid_get_value(const char *item_path)
 		return 0;
 	}
 
-	return 0;
+	/* all went fine */
+	return 1;
 }
 
   /* 
@@ -1306,6 +1323,18 @@ void format_model_name(char *iProduct, char *iModel)
 
 		return;
 	}
+
+	/* NOVA model range */
+	if(!strncmp(iProduct, "NOVA", 4)) {
+		/* This gives 600 for NOVA 600 AVR... */
+		if(hid_get_value("UPS.Flow.[4].ConfigApparentPower") != 0 )
+			sprintf(iProduct, "NOVA %ld AVR", hData.Value);
+		else
+			sprintf(iProduct, "NOVA AVR");
+
+		return;
+	}
+
 }
 
 /* set r/w INFO_ element to a value. */

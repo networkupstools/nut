@@ -21,6 +21,7 @@ VARDESC ups.test.interval "Interval between self tests (seconds)"
 VARDESC ups.test.result "Results of last self test"
 VARDESC ups.display.language "Language to use on front panel"
 VARDESC ups.contacts "UPS external contact sensors"
+VARDESC ups.power.nominal "UPS power rating"
 
 VARDESC input.voltage "Input voltage"
 VARDESC input.voltage.maximum "Maximum incoming voltage seen"

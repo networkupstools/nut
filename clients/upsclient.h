@@ -25,6 +25,10 @@
 #include <openssl/ssl.h>
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define UPSCLI_ERRBUF_LEN	256
 #define UPSCLI_NETBUF_LEN	512	/* network i/o buffer */
 
@@ -144,5 +148,9 @@ int upscli_ssl(UPSCONN *ups);
 
 #define UPSCLI_CONN_TRYSSL	0x0001	/* try SSL, OK if not supported       */
 #define UPSCLI_CONN_REQSSL	0x0002	/* try SSL, fail if not supported     */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif	/* UPSCLIENT_H_SEEN */

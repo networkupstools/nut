@@ -10,6 +10,11 @@ Changes from 2.0.0 to 2.0.1:
    the old binary and update your ups.conf 'driver=' setting with the
    new name.
 
+ - The upsstats.html template page has been changed slightly to reflect
+   better HTML compliance, so you may want to update your installed copy
+   accordingly.  If you've customized your file, don't just copy the new
+   one over it, or your changes will be lost!
+
 ---------------------------------------------------------------------------
 Changes from 1.4.0 to 2.0.0:
 

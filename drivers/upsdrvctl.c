@@ -296,6 +296,9 @@ static void start_driver(ups_t *ups)
 	if (ret < 0)
 		fatal("Can't start %s", dfn);
 
+	if (verbose)
+	    	printf("exec: %s -a %s", dfn, ups->upsname);
+
 	argv[arg++] = xstrdup(dfn);
 
 	argv[arg++] = "-a";
@@ -320,6 +323,8 @@ static void start_driver(ups_t *ups)
 
 	if (verbose)
 		printf("\n");
+	if (testmode)
+	    	return;
 
 	/* tie it off */
 	argv[arg++] = NULL;
@@ -364,7 +369,7 @@ static void start_all_drivers(void)
 static void help(const char *progname)
 {
 	printf("Starts and stops UPS drivers via ups.conf.\n\n");
-	printf("usage: %s [OPTIONS] (start | stop | shutdown [<ups>])\n\n", progname);
+	printf("usage: %s [OPTIONS] (start | stop | shutdown) [<ups>]\n\n", progname);
 
 	printf("  -h			display this help\n");
 	printf("  -r <path>		drivers will chroot to <path>\n");
@@ -389,6 +394,8 @@ static void shutdown_driver(ups_t *ups)
 
 	if (verbose)
 		printf("exec: %s -a %s -k\n", dfn, ups->upsname);
+	if (testmode)
+	    	return;
 
 	argv[0] = dfn;
 	argv[1] = "-a";

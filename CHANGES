@@ -1,3 +1,76 @@
+2.0.1:
+
+Thu Feb 24 00:55:20 CST 2005 / Russell Kroll <rkroll@exploits.org>
+
+ - Final version number bump for release.
+
+Wed Feb  2 22:35:12 CST 2005 / Russell Kroll <rkroll@exploits.org>
+
+ - clients/Makefile.in: add @MISC_UPSCLI_OBJ@ to the clean rule so I
+   don't leak .a files when distributing the tree.
+
+ - upsclient.h, parseconf.h: minor extern tweaks for C++ use
+
+   (Arnaud Quette) [patch-2.0.1-pre4_upsclient-cpp]
+
+Thu Oct 21 01:02:08 CDT 2004 / Russell Kroll <rkroll@exploits.org>
+
+ - mge-shut:
+
+   - enhance the server side variables handling, and particularly the
+     wrongly exposed PowerShare outlet description (outlet.*.desc) when
+     these doesn't exists,
+    - expose the detected model at upsdrv_initinfo() time
+     (this will be standardised in 2.1 tree),
+    - add NOVA models support,
+    - update manpage and driver.list accordingly,
+    - bump driver version to 0.60
+
+   (Arnaud Quette) [patch-2.0.1_nova-shut]
+
+Thu Oct 21 00:47:54 CDT 2004 / Russell Kroll <rkroll@exploits.org>
+
+ - ups.conf, upsmon.conf, cmdvartab: fix doubled "with", bad example
+   (old style hostname without ups@ in front), and add ups.power.nominal
+
+   (Niels Baggesen)
+
+Thu Oct 21 00:43:52 CDT 2004 / Russell Kroll <rkroll@exploits.org>
+
+ - conf/upsstats.html: add "" around the BGCOLOR hex triplet to make
+   the HTML pass validation checks
+
+   (Niels Baggesen)
+
+Thu Oct 21 00:40:21 CDT 2004 / Russell Kroll <rkroll@exploits.org>
+
+ - upsdrvctl: fix a nasty bug and make it actually honor -t every time.
+   Also added a missing printf for verbose-mode and cleaned up the help
+   text.
+
+   (Niels Baggesen)
+
+Thu Oct 21 00:38:49 CDT 2004 / Russell Kroll <rkroll@exploits.org>
+
+ - powercom.h: don't set MAX_NUM_OF_BYTES_FROM_UPS as 16U since it's
+   compared with signed numbers elsewhere
+
+   (Niels Baggesen)
+
+Thu Oct 21 00:36:30 CDT 2004 / Russell Kroll <rkroll@exploits.org>
+
+ - upslog: use data from getpid as a %ld in the format string, and cast
+   it to a long to avoid issues on 64 bit Solaris systems.
+
+   (Niels Baggesen)
+
+Thu Oct 21 00:32:21 CDT 2004 / Russell Kroll <rkroll@exploits.org>
+
+ - cpsups: use ups.voltage.nominal instead of ups.voltage for the VA
+   rating of the UPS.
+
+   (Walt H) [psups-changevoltage2upspowernominal.diff]
+
 2.0.1-pre4:
 
 Thu Sep 30 03:20:04 CDT 2004 / Russell Kroll <rkroll@exploits.org>

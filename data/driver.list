@@ -152,6 +152,7 @@
 "MGE UPS SYSTEMS"	"Pulsar Ellipse Premium USB"	""	"newhidups or hidups (experimental USB drivers)"
 "MGE UPS SYSTEMS"	"Pulsar Evolution"	"USB port"	"newhidups or hidups (experimental USB drivers)"
 "MGE UPS SYSTEMS"	"Comet / Galaxy (USB)"		"USB Card (ref 66067)"		"newhidups or hidups (experimental USB drivers)"
+"MGE UPS SYSTEMS"	"NOVA AVR Serial"		""	"mge-shut"
 "MGE UPS SYSTEMS"	"Pulsar Ellipse USBS"		"Serial cable"	"mge-shut"
 "MGE UPS SYSTEMS"	"Pulsar Ellipse S"		""	"mge-shut"
 "MGE UPS SYSTEMS"	"Pulsar Ellipse Premium USBS"		"Serial cable"	"mge-shut"

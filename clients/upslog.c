@@ -153,7 +153,7 @@ static void do_upshost(const char *arg)
 
 static void do_pid(const char *arg)
 {
-	snprintfcat(logbuffer, sizeof(logbuffer), "%d", getpid());
+	snprintfcat(logbuffer, sizeof(logbuffer), "%ld", (long)getpid());
 }
 
 static void do_time(const char *arg)

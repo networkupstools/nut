@@ -20,6 +20,10 @@
 #ifndef PARSECONF_H_SEEN
 #define PARSECONF_H_SEEN 1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define PCONF_CTX_MAGIC 0x00726630
 #define PCONF_ERR_LEN 256
 
@@ -63,5 +67,9 @@ int pconf_line(PCONF_CTX *ctx, const char *line);
 void pconf_finish(PCONF_CTX *ctx);
 char *pconf_encode(const char *src, char *dest, size_t destsize);
 int pconf_char(PCONF_CTX *ctx, char ch);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif	/* PARSECONF_H_SEEN */

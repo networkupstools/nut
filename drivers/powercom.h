@@ -36,7 +36,7 @@
 
 /* general constants */
 enum general {
-	MAX_NUM_OF_BYTES_FROM_UPS = 16U
+	MAX_NUM_OF_BYTES_FROM_UPS = 16
 };
 
 /* values for sending to UPS */

@@ -1,6 +1,6 @@
 # don't know how different I can do this
 %define majorver 2.0
-%define version 2.0.1pre4
+%define version 2.0.1
 %define relver 1
 %define nutuser nutmon
 

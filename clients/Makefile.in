@@ -77,7 +77,7 @@ cgilib.o: cgilib.c
 	$(CC) $(CFLAGS) -c cgilib.c
 
 clean:
-	rm -f *~ *.o *.a $(PROGS) $(SPROGS) $(CGIPROGS)
+	rm -f *~ *.o *.a $(PROGS) $(SPROGS) $(CGIPROGS) @MISC_UPSCLI_OBJ@
 
 distclean: clean
 
