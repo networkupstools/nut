@@ -167,7 +167,7 @@ snmp_info_t apcc_mib[] = {
 	{ "ups.temperature", 0, 1, APCC_OID_UPSTEMP, "", SU_FLAG_OK, NULL },
 	{ "input.frequency", 0, 1, APCC_OID_INFREQ, "", SU_FLAG_OK, NULL },
 	{ "ups.load", 0, 1, APCC_OID_LOADPCT, "", SU_FLAG_OK, NULL },
-	{ "ups.firmware", 0, 0, APCC_OID_FIRMREV, "",
+	{ "ups.firmware", ST_FLAG_STRING, 16, APCC_OID_FIRMREV, "",
 		SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "battery.runtime", 0, 1, APCC_OID_BATT_RUNTIME, "", SU_TYPE_TIME |  SU_FLAG_OK, NULL },
 	/* can't find appropriate OID for "battery.voltage". */

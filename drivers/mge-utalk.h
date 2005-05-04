@@ -1,26 +1,32 @@
-/* mge-utalk.h
-
-   Type Declarations and Constant Definitions for MGE UTalk Driver
-
-   Copyright (C) 2002 - 2004
-   
-   	Hans Ekkehard Plesser <hans.plesser@itf.nlh.no>
-	Arnaud Quette <arnaud.quette@free.fr>
-
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-*/
+/* mge-utalk.h - monitor MGE UPS for NUT with UTalk protocol
+ *
+ *  Copyright (C) 2002 - 2005
+ *     Arnaud Quette <arnaud.quette@free.fr>  & <arnaud.quette@mgeups.com>
+ *     Hans Ekkehard Plesser <hans.plesser@itf.nlh.no>
+ *     Martin Loyer <martin@ouifi.net>
+ *     Patrick Agrain <patrick.agrain@alcatel.fr>
+ *     Nicholas Reilly <nreilly@magma.ca>
+ *     Dave Abbott <d.abbott@dcs.shef.ac.uk>
+ *     Marek Kralewski <marek@mercy49.de>
+ *
+ *  This driver is a collaborative effort by the above people,
+ *  Sponsored by MGE UPS SYSTEMS <http://opensource.mgeups.com/>
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ */
 
 /* --------------------------------------------------------------- */
 /*                 Default Values for UPS Variables                */
@@ -34,6 +40,101 @@
 
 #define MIN_CONFIRM_TIME   3   /* shutdown must be confirmed in    */
 #define MAX_CONFIRM_TIME  15   /* this interval                    */
+
+/* --------------------------------------------------------------- */
+/*      Model Name formating entries                               */
+/* --------------------------------------------------------------- */
+typedef struct {
+  char	*basename; /* as returned by Si 1 <data 2> */
+  char	*finalname;
+} models_name_t;
+
+models_name_t Si1_models_names [] =
+  {
+	/* Pulsar EX */
+	{ "Pulsar EX7", "Pulsar EX 7" },
+	{ "Pulsar EX10", "Pulsar EX 10" },
+	{ "Pulsar EX15", "Pulsar EX 15" },
+	{ "Pulsar EX20", "Pulsar EX 20" },
+	{ "Pulsar EX30", "Pulsar EX 30" },
+	{ "Pulsar EX40", "Pulsar EX 40" },
+
+	/* Pulsar ES+ */
+	{ "Pulsar ES2+", "Pulsar ES 2+" },
+	{ "Pulsar ES5+", "Pulsar ES 5+" },
+
+	/* Pulsar ESV+ */
+	{ "Pulsar ESV5+", "Pulsar ESV 5+" },
+	{ "Pulsar ESV8+", "Pulsar ESV 8+" },
+	{ "Pulsar ESV11+", "Pulsar ESV 11+" },
+	{ "Pulsar ESV14+", "Pulsar ESV 14+" },
+	{ "Pulsar ESV22+", "Pulsar ESV 22+" },
+
+	/* Pulsar EXtreme */
+	{ "EXTREME 1500", "Pulsar EXtreme 1500" },
+	{ "EXTREME 2000", "Pulsar EXtreme 2000" },
+	{ "EXTREME 2500", "Pulsar EXtreme 2500" },
+	{ "EXTREME 3000", "Pulsar EXtreme 3000" },
+
+	/* Comet EXtreme */
+	{ "EXTREME 4.5", "Comet EXtreme 4.5" },
+	{ "EXTREME 6", "Comet EXtreme 6" },
+	{ "EXTREME 9", "Comet EXtreme 9" },
+	{ "EXTREME 12", "Comet EXtreme 12" },
+
+	/* Comet */
+	{ "COMET 5", "Comet 5" },
+	{ "COMET 7", "Comet 7.5" },
+	{ "COMET 10", "Comet 10" },
+	{ "COMET 15", "Comet 15" },
+	{ "COMET 20", "Comet 20" },
+	{ "COMET 30", "Comet 30" },
+	{ "COMET 12", "Comet 12" },
+	{ "COMET 18", "Comet 18" },
+	{ "COMET 24", "Comet 24" },
+	{ "COMET 36", "Comet 36" },
+
+	/* FIXME: complete with Pulsar ?EL 2/4/7?, EXL, SX, PSX/CSX, Evolution?,... */
+
+	/* end of structure. */
+	{ NULL, "Generic UTalk model" }
+};
+
+/* --------------------------------------------------------------- */
+/*      Model Information for legacy models                        */
+/* --------------------------------------------------------------- */
+
+/* Structure defining how to get name and model for a particular Si output
+ * This is for older UPS (Pulsar ESV,SV) which don't support Plug'n'Play 'Si 1' command
+ */
+typedef struct {
+  int   Data1;               /* Data1, Family model          */
+  int   Data2;               /* Data2, Type                  */
+  /* Data3, SoftLevel is not implemented here, while it's always null or zero.*/
+  const char *name;         /* ASCII model name (like 'Si 1' output */
+} mge_model_info;
+
+/* Array containing Model information for legacy models
+ * NOTE:
+ *      - Array is terminated by element with type NULL.
+ */
+
+static mge_model_info mge_model[] = {
+  /* Pulsar SV page */
+  { 3000, 5, "Pulsar SV3" },
+  { 3000, 6, "Pulsar SV5/8/11" },
+  { 3000, 7, "Pulsar SV3" },
+  { 3000, 8, "Pulsar SV5/8" },
+  { 3000, 10, "Pulsar SV11/ESV13" },
+  /* Pulsar ESV page */
+  { 3000, 11, "Pulsar ESV17" },
+  { 3000, 12, "Pulsar ESV20" },
+  { 3000, 13, "Pulsar ESV13" },
+  { 3000, 14, "Pulsar ESV17" },
+  { 3000, 15, "Pulsar ESV20" },
+  { 3000, 17, "Pulsar ESV8" },
+  { 0, 0, NULL }
+};
 
 /* --------------------------------------------------------------- */
 /*                       Multiplier Tables                         */

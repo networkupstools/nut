@@ -31,6 +31,9 @@ do
 		tripplite)
 			EXTRA="-lm"
 			;;
+		upscode2)
+			EXTRA="-lm"
+			;;
 		*)
 			EXTRA=""
 	esac	

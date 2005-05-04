@@ -1,4 +1,4 @@
-.TH FENTONUPS 8 "Mon Jul 14 2003" "" "Network UPS Tools (NUT)" 
+.TH FENTONUPS 8 "Tue May 03 2005" "" "Network UPS Tools (NUT)" 
 .SH NAME  
 fentonups \- Driver for Fenton Technologies (Megatec protocol) UPS equipment
 .SH NOTE
@@ -19,8 +19,16 @@ they will generate a warning since their battery information is not known.
 
 .SH EXTRA ARGUMENTS
 
-This driver does not support any extra settings in the    
-\fBups.conf\fR(5).
+This driver supports the following optional settings in the
+\fBups.conf\fR(5):
+
+.IP "lowbattvolt=\fIdecimal\fR"
+Sets a user-defined battery voltage under which the driver will consider that
+the UPS is on "low battery" condition when running on battery.
+This allows initiating a system shutdown before the UPS signals a low battery
+status by itself, and may be useful for some UPSes that don't have enough
+runtime left for properly shutting down the system when they start signaling
+a "low battery" status.
 
 .SH BUGS
 
@@ -42,7 +50,7 @@ probably need to be replaced.  Recently, a pair of 3.5 hour outages here
 test from the front panel before the "replace battery" LED will light.
 
 .SH AUTHOR
-Russell Kroll
+Russell Kroll, Michel Bouissou
 
 .SH SEE ALSO
 

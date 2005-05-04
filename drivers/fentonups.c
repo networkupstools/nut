@@ -1,6 +1,7 @@
 /* fentonups.c - model specific routines for Fenton Technologies units
 
    Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
+                 2005  Michel Bouissou <michel@bouissou.net>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -29,7 +30,7 @@
 #define	DRV_VERSION "1.22"
 
 static	int	cap_upstemp = 0;
-static	float	lowvolt = 0, voltrange;
+static	float	lowvolt = 0, voltrange, chrglow = 0, chrgrange;
 static	int	lownorm, highnorm;
 
 /* handle devices which don't give a properly formatted I string */
@@ -50,6 +51,8 @@ static int check_mtab2(const char *raw)
 			dstate_setinfo("ups.model", "%s", mtab2[i].model);
 			lowvolt = mtab2[i].lowvolt;
 			voltrange = mtab2[i].voltrange;
+			chrglow = mtab2[i].chrglow;
+			chrgrange = mtab2[i].chrgrange;
 			cap_upstemp = mtab2[i].has_temp;
 
 			dstate_setinfo("input.transfer.low", "%d",
@@ -162,7 +165,7 @@ static char *get_id(void)
 
 		if (temp[0] != '#') {
 			upslogx(LOG_ERR, "Bad UPS info start character [%c]",
-				temp[i]);
+				temp[i]); /* FIXME: should be temp[0]? */
 			continue;
 		}
 
@@ -206,6 +209,8 @@ void upsdrv_initinfo(void)
 			modelnum = i;
 			lowvolt = modeltab[i].lowvolt;
 			voltrange = modeltab[i].voltrange;
+			chrglow = modeltab[i].chrglow;
+			chrgrange = modeltab[i].chrgrange;
 			cap_upstemp = modeltab[i].has_temp;
 			break;
 		}
@@ -251,6 +256,7 @@ void upsdrv_updateinfo(void)
 		upstemp[16], pstat[16], outvolt[16];
 	int	util, ret;
 	double	bvoltp;
+	float   lowbattvolt = 0;
 
 	ret = ser_send(upsfd, "Q1\r");
 
@@ -306,13 +312,6 @@ void upsdrv_updateinfo(void)
 	dstate_setinfo("output.voltage", "%s", outvolt);
 	dstate_setinfo("battery.voltage", "%s", battvolt);
 
-	bvoltp = ((atof(battvolt) - lowvolt) / voltrange) * 100.0;
-
-	if (bvoltp > 100.0)
-		bvoltp = 100.0;
-
-	dstate_setinfo("battery.charge", "%02.1f", bvoltp);
-
 	status_init();
 
 	util = atoi(involt);
@@ -328,13 +327,32 @@ void upsdrv_updateinfo(void)
 			if (util > highnorm)
 				status_set("TRIM");
 		}
+		if (atof(battvolt) > chrglow) {
+			bvoltp = ((atof(battvolt) - chrglow) / chrgrange) * 100.0;
+		} else {
+			bvoltp = ((atof(battvolt) - lowvolt) / voltrange) * 100.0;
+		}
+
 
 	} else {
 		status_set("OB");		/* on battery */
+		bvoltp = ((atof(battvolt) - lowvolt) / voltrange) * 100.0;
 	}
 
-	if (pstat[1] == '1')
+	if (bvoltp > 100.0)
+		bvoltp = 100.0;
+	dstate_setinfo("battery.charge", "%02.1f", bvoltp);
+
+	if (pstat[1] == '1') {
 		status_set("LB");		/* low battery */
+	} else {
+		if (pstat[0] == '1' && getval("lowbattvolt")) {
+			lowbattvolt = atof(getval("lowbattvolt"));
+			if ((lowbattvolt > 0) && (lowbattvolt >= (atof(battvolt))))
+				status_set("LB");               /* low battery */
+		}
+	}
+
 
 	status_commit();
 
@@ -407,6 +425,7 @@ void upsdrv_help(void)
 
 void upsdrv_makevartable(void)
 {
+	addvar(VAR_VALUE, "lowbattvolt", "Set low battery level, in volts");
 }
 
 void upsdrv_banner(void)

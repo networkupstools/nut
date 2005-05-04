@@ -220,6 +220,17 @@ struct {
 	  TIOCM_ST			/* shutdown: ST (break)		*/
 	},
 
+	/* http://lists.exploits.org/upsdev/Oct2004/00004.html */
+
+	{ "Generic",
+	  "Generic RUPS 2000",
+	  "Generic RUPS 2000 (Megatec M2501 cable)",
+	  TIOCM_RTS,                    /* cable power: RTS             */
+	  TIOCM_CTS, TIOCM_CTS,         /* online: CTS                  */
+	  TIOCM_CD, 0,                  /* low battery: CD off          */
+	  TIOCM_RTS | TIOCM_DTR         /* shutdown: RTS+DTR            */
+	},
+
 	/* add any new entries directly above this line */
 
 	{ NULL,

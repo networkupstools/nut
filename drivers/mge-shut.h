@@ -1,6 +1,6 @@
 /*  mge-shut.h - monitor MGE UPS for NUT with SHUT protocol
  * 
- *  Copyright (C) 2002-2004
+ *  Copyright (C) 2002 - 2005
  *     Arnaud Quette <arnaud.quette@free.fr> & <arnaud.quette@mgeups.com>
  *     Philippe Marzouk <philm@users.sourceforge.net>
  *     Russell Kroll <rkroll@exploits.org>
@@ -26,7 +26,7 @@
 #include "hidparser.h"
 #include "hidtypes.h"
 
-#define DRIVER_VERSION "0.60"
+#define DRIVER_VERSION "0.63"
 
 #define DEFAULT_TIMEOUT 	3000
 #define MAX_STRING      	64
@@ -156,6 +156,139 @@ typedef union device_desc_data {
 #define SHUT_FLAG_DELAY	 (1 << 4)	/* delay type value: formated differently. */
 
 /* --------------------------------------------------------------- */
+/*      Model Name formating entries                               */
+/* --------------------------------------------------------------- */
+typedef struct {
+  char	*iProduct;
+  char	*iModel;
+  char	*finalname;
+} models_name_t;
+
+models_name_t models_names [] =
+  {
+	/* Ellipse models */
+	{ "ELLIPSE", "300", "ellipse 300" },
+	{ "ELLIPSE", "500", "ellipse 500" },
+	{ "ELLIPSE", "650", "ellipse 650" },
+	{ "ELLIPSE", "800", "ellipse 800" },
+	{ "ELLIPSE", "1200", "ellipse 1200" },
+	/* Ellipse Premium models */
+	{ "ellipse", "PR500", "ellipse premium 500" },
+	{ "ellipse", "PR650", "ellipse premium 650" },
+	{ "ellipse", "PR800", "ellipse premium 800" },
+	{ "ellipse", "PR1200", "ellipse premium 1200" },
+	/* Ellipse "Pro" */
+	{ "ELLIPSE", "600", "Ellipse 600" },
+	{ "ELLIPSE", "750", "Ellipse 750" },
+	{ "ELLIPSE", "1000", "Ellipse 1000" },
+	{ "ELLIPSE", "1500", "Ellipse 1500" },
+	/* Evolution models */
+	{ "Evolution", "500", "Pulsar Evolution 500" },
+	{ "Evolution", "800", "Pulsar Evolution 800" },
+	{ "Evolution", "1100", "Pulsar Evolution 1100" },
+	{ "Evolution", "1500", "Pulsar Evolution 1500" },
+	{ "Evolution", "2200", "Pulsar Evolution 2200" },
+	{ "Evolution", "3000", "Pulsar Evolution 3000" },
+	{ "Evolution", "3000XL", "Pulsar Evolution 3000 XL" },
+	/* NOVA models */	
+	{ "NOVA AVR", "600", "NOVA 600 AVR" },
+	{ "NOVA AVR", "1100", "NOVA 1100 AVR" },
+	/* EXtreme C (EMEA) */
+	{ "EXtreme", "700C", "Pulsar EXtreme 700C" },
+	{ "EXtreme", "1000C", "Pulsar EXtreme 1000C" },
+	{ "EXtreme", "1500C", "Pulsar EXtreme 1500C" },
+	{ "EXtreme", "1500CCLA", "Pulsar EXtreme 1500C CLA" },
+	{ "EXtreme", "2200C", "Pulsar EXtreme 2200C" },
+	{ "EXtreme", "3200C", "Pulsar EXtreme 3200C" },
+	/* EXtreme C (USA, aka "EX RT") */
+	{ "EX", "700RT", "Pulsar EX 700 RT" },
+	{ "EX", "1000RT", "Pulsar EX 1000 RT" },
+	{ "EX", "1500RT", "Pulsar EX 1500 RT" },
+	{ "EX", "2200RT", "Pulsar EX 2200 RT" },
+	{ "EX", "3200RT", "Pulsar EX 3200 RT" },
+	/* Comet EX RT */
+	{ "EX", "5RT", "EX 5 RT" },
+	{ "EX", "7RT", "EX 7 RT" },
+	{ "EX", "11RT", "EX 11 RT" },
+
+	/* Galaxy 3000 */
+	{ "GALAXY", "3000_10", "Galaxy 3000 10 kVA" },
+	{ "GALAXY", "3000_15", "Galaxy 3000 15 kVA" },
+	{ "GALAXY", "3000_20", "Galaxy 3000 20 kVA" },
+	{ "GALAXY", "3000_30", "Galaxy 3000 30 kVA" },
+
+	/* FIXME: To be completed (Comet, Galaxy, Esprit, ...) */
+
+	/* end of structure. */
+	{ NULL, NULL, "Generic SHUT model" }
+};
+/* for lookup between HID values and NUT values*/
+typedef struct {
+	long	hid_value;	/* HID value */
+	char	*nut_value;	/* NUT value */
+} info_lkp_t;
+
+/* Actual value lookup tables => should be fine for all Mfrs (TODO: validate it!) */
+/* --------------------------------------------------------------- */
+/*      Lookup values between NUT and HID                          */
+/* --------------------------------------------------------------- */
+info_lkp_t onbatt_info[] = {
+  { 0, "OB" },
+  { 1, "OL" },
+  { 0, "NULL" }
+};
+info_lkp_t discharging_info[] = {
+  { 1, "DISCHRG" },
+  { 0, "NULL" }
+};
+info_lkp_t charging_info[] = {
+  { 1, "CHRG" },
+  { 0, "NULL" }
+};
+info_lkp_t lowbatt_info[] = {
+  { 1, "LB" },
+  { 0, "NULL" }
+};
+info_lkp_t overbatt_info[] = {
+  { 1, "OVER" },
+  { 0, "NULL" }
+};
+info_lkp_t replacebatt_info[] = {
+  { 1, "RB" },
+  { 0, "NULL" }
+};
+info_lkp_t shutdownimm_info[] = {
+  { 1, "LB" },
+  { 0, "NULL" }
+};
+info_lkp_t trim_info[] = {
+  { 1, "TRIM" },
+  { 0, "NULL" }
+};
+info_lkp_t boost_info[] = {
+  { 1, "BOOST" },
+  { 0, "NULL" }
+};
+/* TODO: add BYPASS, OFF, CAL */
+
+info_lkp_t test_write_info[] = {
+  { 0, "No test" },
+  { 1, "Quick test" },
+  { 2, "Deep test" },
+  { 3, "Abort test" },
+  { 0, "NULL" }
+};
+info_lkp_t test_read_info[] = {
+  { 1, "Done and passed" },
+  { 2, "Done and warning" },
+  { 3, "Done and error" },
+  { 4, "Aborted" },
+  { 5, "In progress" },
+  { 6, "No test initiated" },
+  { 0, "NULL" }
+};
+
+/* --------------------------------------------------------------- */
 /*      Query Commands and their Mapping to INFO_ Variables        */
 /* --------------------------------------------------------------- */
 
@@ -163,13 +296,14 @@ typedef union device_desc_data {
    information to INFO structure.
 */
 typedef struct {
-  const char	*type;			/* INFO_* element                        */
-  int	flags;				/* INFO-element flags to set in addinfo  */
-  int	length;				/* INFO-element length of strings        */  
+  const char	*type;		/* INFO_* element                        */
+  int			flags;		/* INFO-element flags to set in addinfo  */
+  int			length;		/* INFO-element length of strings        */  
   const char	*item_path;	/* HID object (fully qualified string path) */
-  const char	fmt[6];			/* printf format string for INFO entry   */
-  const char	*dfl;			/* default value */
-  unsigned long	shut_flags;		/* specific SHUT flags */
+  const char	fmt[6];		/* printf format string for INFO entry   */
+  const char	*dfl;		/* default value */
+  unsigned long	shut_flags;	/* specific SHUT flags */
+  info_lkp_t	*hid2info;	/* lookup table between HID and NUT values */
 } mge_info_item;
 
 /* Array containing information to translate between UTalk and NUT info
@@ -180,57 +314,79 @@ typedef struct {
  *	- Array is NOT const, since "shut_flags" can be changed.
  */
 
+/* FIXME: should be shared with mgehid.h */
 static mge_info_item mge_info[] = {
-	{ "driver.version.internal", ST_FLAG_STRING, 5, NULL, "%s", DRIVER_VERSION, SHUT_FLAG_ABSENT | SHUT_FLAG_OK },
+	{ "driver.version.internal", ST_FLAG_STRING, 5, NULL, "%s", DRIVER_VERSION, SHUT_FLAG_ABSENT | SHUT_FLAG_OK, NULL },
 	/* Battery page */
-	{ "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", "%i", NULL, SHUT_FLAG_OK },
-	{ "battery.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerSummary.RemainingCapacityLimitSetting", "%ld", NULL, SHUT_FLAG_OK }, /* RW, to be caught first if exists... */
-	{ "battery.charge.low", ST_FLAG_STRING, 5, "UPS.PowerSummary.RemainingCapacityLimit", "%ld", NULL, SHUT_FLAG_OK }, /* ... or Read only */
-	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", "%05d", NULL, SHUT_FLAG_OK },
+	{ "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", "%i", NULL, SHUT_FLAG_OK, NULL },
+	{ "battery.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerSummary.RemainingCapacityLimitSetting",
+	  "%ld", NULL, SHUT_FLAG_OK, NULL }, /* RW, to be caught first if exists... */
+	{ "battery.charge.low", ST_FLAG_STRING, 5, "UPS.PowerSummary.RemainingCapacityLimit",
+	  "%ld", NULL, SHUT_FLAG_OK, NULL }, /* ... or Read only */
+	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", "%05d", NULL, SHUT_FLAG_OK, NULL },
 	/* UPS page */
-	{ "ups.mfr", ST_FLAG_STRING, 20, NULL, "%s", "MGE UPS SYSTEMS", SHUT_FLAG_ABSENT | SHUT_FLAG_OK },
-	{ "ups.load", 0, 0, "UPS.PowerSummary.PercentLoad", "%i", NULL, SHUT_FLAG_OK },
-	{ "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerSummary.DelayBeforeShutdown", "%ld", NULL, SHUT_FLAG_OK | SHUT_FLAG_DELAY},
-	{ "ups.delay.reboot", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerSummary.DelayBeforeReboot", "%ld", NULL, SHUT_FLAG_OK | SHUT_FLAG_DELAY},
-	{ "ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerSummary.DelayBeforeStartup", "%ld", NULL, SHUT_FLAG_OK | SHUT_FLAG_DELAY},
-	{ "ups.test.interval", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.BatterySystem.Battery.TestPeriod", "%i", NULL, SHUT_FLAG_OK },
-	{ "ups.test.result", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.BatterySystem.Battery.Test", "%i", NULL, SHUT_FLAG_OK },
+	{ "ups.mfr", ST_FLAG_STRING, 20, NULL, "%s", "MGE UPS SYSTEMS", SHUT_FLAG_ABSENT | SHUT_FLAG_OK, NULL },
+	{ "ups.load", 0, 0, "UPS.PowerSummary.PercentLoad", "%i", NULL, SHUT_FLAG_OK, NULL },
+	{ "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerSummary.DelayBeforeShutdown",
+	  "%ld", NULL, SHUT_FLAG_OK | SHUT_FLAG_DELAY, NULL },
+	{ "ups.delay.reboot", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerSummary.DelayBeforeReboot",
+	  "%ld", NULL, SHUT_FLAG_OK | SHUT_FLAG_DELAY, NULL },
+	{ "ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerSummary.DelayBeforeStartup",
+	  "%ld", NULL, SHUT_FLAG_OK | SHUT_FLAG_DELAY, NULL },
+	/* FIXME: miss ups.power */
+	{ "ups.power.nominal", ST_FLAG_STRING, 5, "UPS.Flow.[4].ConfigApparentPower",
+	  "%i", NULL, SHUT_FLAG_OK, NULL },
+	{ "ups.test.interval", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.BatterySystem.Battery.TestPeriod",
+	  "%i", NULL, SHUT_FLAG_OK, NULL },
+	{ "ups.test.result", ST_FLAG_STRING, 5, "UPS.BatterySystem.Battery.Test",
+	  "%i", NULL, SHUT_FLAG_OK, &test_read_info[0] },
 
 	/* Output page */
-	{ "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", "%i", NULL, SHUT_FLAG_OK },
-	{ "output.voltage.target.line", 0, 0, "UPS.PowerSummary.ConfigVoltage", "%i", NULL, SHUT_FLAG_OK },
-	{ "output.voltage.target.battery", 0, 0, "UPS.PowerSummary.ConfigVoltage", "%i", NULL, SHUT_FLAG_OK },
-	{ "output.current", 0, 0, "UPS.PowerSummary.Output.Current", "%i", NULL, SHUT_FLAG_OK },
-        { "output.frequency", 0, 0, "UPS.PowerConverter.Output.Frequency", "%i", NULL, SHUT_FLAG_OK },
+	{ "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", "%i", NULL, SHUT_FLAG_OK, NULL },
+	{ "output.voltage.target.line", 0, 0, "UPS.PowerSummary.ConfigVoltage", "%i", NULL, SHUT_FLAG_OK, NULL },
+	{ "output.voltage.target.battery", 0, 0, "UPS.PowerSummary.ConfigVoltage", "%i", NULL, SHUT_FLAG_OK, NULL },
+	{ "output.current", 0, 0, "UPS.PowerSummary.Output.Current", "%i", NULL, SHUT_FLAG_OK, NULL },
+    { "output.frequency", 0, 0, "UPS.PowerConverter.Output.Frequency", "%i", NULL, SHUT_FLAG_OK, NULL },
 
 	/* Outlet page (using MGE UPS SYSTEMS - PowerShare technology) */
 	/* TODO: add an iterative semantic [%x] to factorise outlets */
-	{ "outlet.0.id", 0, 0, "UPS.OutletSystem.Outlet.[1].OutletID", "%i", NULL, SHUT_FLAG_OK },
+	{ "outlet.0.id", 0, 0, "UPS.OutletSystem.Outlet.[1].OutletID", "%i", NULL, SHUT_FLAG_OK, NULL },
 	{ "outlet.0.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[1].OutletID",
-	  "s", "Main Outlet", SHUT_FLAG_ABSENT | SHUT_FLAG_OK },
-	{ "outlet.0.switchable", 0, 0, "UPS.OutletSystem.Outlet.[1].PresentStatus.Switchable", "%i", NULL, SHUT_FLAG_OK },
-	{ "outlet.1.id", 0, 0, "UPS.OutletSystem.Outlet.[2].OutletID", "%i", NULL, SHUT_FLAG_OK },	
+	  "%s", "Main Outlet", SHUT_FLAG_ABSENT | SHUT_FLAG_OK, NULL },
+	{ "outlet.0.switchable", 0, 0, "UPS.OutletSystem.Outlet.[1].PresentStatus.Switchable",
+	  "%i", NULL, SHUT_FLAG_OK, NULL },
+	{ "outlet.1.id", 0, 0, "UPS.OutletSystem.Outlet.[2].OutletID", "%i", NULL, SHUT_FLAG_OK, NULL },	
 	{ "outlet.1.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[2].OutletID",
-	  "s", "PowerShare Outlet 1", SHUT_FLAG_ABSENT | SHUT_FLAG_OK },
-	{ "outlet.1.switchable", 0, 0, "UPS.OutletSystem.Outlet.[2].PresentStatus.Switchable", "%i", NULL, SHUT_FLAG_OK },
-	{ "outlet.1.switch", ST_FLAG_RW | ST_FLAG_STRING, 2, "UPS.OutletSystem.Outlet.[2].PresentStatus.SwitchOn/Off", "%i", NULL, SHUT_FLAG_OK },
-	{ "outlet.1.autoswitch.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet.[2].RemainingCapacityLimit", "%i", NULL, SHUT_FLAG_OK },
-	{ "outlet.1.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[2].DelayBeforeShutdown", "%i", NULL, SHUT_FLAG_OK },
-	{ "outlet.1.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[2].DelayBeforeStartup", "%i", NULL, SHUT_FLAG_OK },
-	{ "outlet.2.id", 0, 0, "UPS.OutletSystem.Outlet.[3].OutletID", "%i", NULL, SHUT_FLAG_OK },	
+	  "%s", "PowerShare Outlet 1", SHUT_FLAG_ABSENT | SHUT_FLAG_OK, NULL },
+	{ "outlet.1.switchable", 0, 0, "UPS.OutletSystem.Outlet.[2].PresentStatus.Switchable",
+	  "%i", NULL, SHUT_FLAG_OK, NULL },
+	{ "outlet.1.switch", ST_FLAG_RW | ST_FLAG_STRING, 2, "UPS.OutletSystem.Outlet.[2].PresentStatus.SwitchOn/Off",
+	  "%i", NULL, SHUT_FLAG_OK, NULL },
+	{ "outlet.1.autoswitch.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 3,
+	  "UPS.OutletSystem.Outlet.[2].RemainingCapacityLimit", "%i", NULL, SHUT_FLAG_OK, NULL },
+	{ "outlet.1.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5,
+	  "UPS.OutletSystem.Outlet.[2].DelayBeforeShutdown", "%i", NULL, SHUT_FLAG_OK, NULL },
+	{ "outlet.1.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[2].DelayBeforeStartup", "%i", NULL, SHUT_FLAG_OK, NULL },
+	{ "outlet.2.id", 0, 0, "UPS.OutletSystem.Outlet.[3].OutletID", "%i", NULL, SHUT_FLAG_OK, NULL },	
 	{ "outlet.2.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[3].OutletID",
-	  "s", "PowerShare Outlet 2", SHUT_FLAG_ABSENT | SHUT_FLAG_OK },
-	{ "outlet.2.switchable", 0, 0, "UPS.OutletSystem.Outlet.[3].PresentStatus.Switchable", "%i", NULL, SHUT_FLAG_OK },
-	{ "outlet.2.switch", ST_FLAG_RW | ST_FLAG_STRING, 2, "UPS.OutletSystem.Outlet.[3].PresentStatus.SwitchOn/Off", "%i", NULL, SHUT_FLAG_OK },
-	{ "outlet.2.autoswitch.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet.[3].RemainingCapacityLimit", "%i", NULL, SHUT_FLAG_OK },
-	{ "outlet.2.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[3].DelayBeforeShutdown", "%i", NULL, SHUT_FLAG_OK },
-	{ "outlet.2.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[3].DelayBeforeStartup", "%i", NULL, SHUT_FLAG_OK },
+	  "%s", "PowerShare Outlet 2", SHUT_FLAG_ABSENT | SHUT_FLAG_OK, NULL },
+	{ "outlet.2.switchable", 0, 0, "UPS.OutletSystem.Outlet.[3].PresentStatus.Switchable",
+	  "%i", NULL, SHUT_FLAG_OK, NULL },
+	{ "outlet.2.switch", ST_FLAG_RW | ST_FLAG_STRING, 2, "UPS.OutletSystem.Outlet.[3].PresentStatus.SwitchOn/Off",
+	  "%i", NULL, SHUT_FLAG_OK, NULL },
+	{ "outlet.2.autoswitch.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 3,
+	  "UPS.OutletSystem.Outlet.[3].RemainingCapacityLimit", "%i", NULL, SHUT_FLAG_OK, NULL },
+	{ "outlet.2.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5,
+	  "UPS.OutletSystem.Outlet.[3].DelayBeforeShutdown", "%i", NULL, SHUT_FLAG_OK, NULL },
+	{ "outlet.2.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 5,
+	  "UPS.OutletSystem.Outlet.[3].DelayBeforeStartup", "%i", NULL, SHUT_FLAG_OK, NULL },
 
 	/* Input page */
-	{ "input.voltage", 0, 0, "UPS.PowerConverter.Input.[1].Voltage", "%i", NULL, SHUT_FLAG_OK },
-	{ "input.frequency", 0, 0, "UPS.PowerConverter.Input.[1].Frequency", "%i", NULL, SHUT_FLAG_OK },
+	{ "input.voltage", 0, 0, "UPS.PowerConverter.Input.[1].Voltage", "%i", NULL, SHUT_FLAG_OK, NULL },
+	{ "input.frequency", 0, 0, "UPS.PowerConverter.Input.[1].Frequency", "%i", NULL, SHUT_FLAG_OK, NULL },
+
 	/* terminating element */
-	{ NULL, 0, 0, "\0", "\0", NULL, 0 } 
+	{ NULL, 0, 0, "\0", "\0", NULL, 0, NULL } 
 };
 
 /* temporary usage code lookup */
@@ -267,9 +423,11 @@ static usage_lkp_t usage_lkp[] = {
 	{  "DelayBeforeStartup", 0x00840056 },
 	{  "DelayBeforeShutdown", 0x00840057 },
 	{  "Test", 0x00840058 },
+	{  "Good", 0x00840061 },
 	{  "OverLoad", 0x00840065 }, /* mispelled in usb.ids */
 	{  "SwitchOn/Off", 0x0084006b },	
 	{  "Switchable", 0x0084006c },	
+	{  "Used", 0x0084006d },
 	{  "Flow", 0x0084001e },
 	/* Battery System Page */
 	{  "RemainingCapacityLimit", 0x00850029 },
@@ -305,6 +463,7 @@ int   shut_wait_ack (void);
 void  shut_ups_status(void);
 
 int    hid_init_device(void);
+char  *get_model_name(char *iProduct, char *iModel);
 int    hid_lookup_usage(char *name);
 int    hid_get_value(const char *item_path);
 int    hid_set_value(const char *varname, const char *val);

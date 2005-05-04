@@ -19,7 +19,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define APC_DRIVER_VERSION	"1.99.6"
+#define APC_DRIVER_VERSION	"1.99.7"
 
 #include "main.h"
 #include "serial.h"
@@ -516,8 +516,28 @@ static int firmware_table_lookup(void)
 	ret = ser_get_line(upsfd, buf, sizeof(buf), ENDCHAR, IGNCHARS, 
 		SER_WAIT_SEC, SER_WAIT_USEC);
 
-	if ((ret < 1) || (!strcmp(buf, "NA")))
-		return 0;
+	/* see if this is an older version like an APC600 which doesn't
+	 * response to 'a' or 'b' queries
+	 */
+	if ((ret < 1) || (!strcmp(buf, "NA"))) {
+		upsdebugx(1, "Attempting to contact older Smart-UPS version");
+		ret = ser_send_char(upsfd, 'V');
+
+		if (ret != 1) {
+			upslog(LOG_ERR, "getbaseinfo: ser_send_char failed");
+			return 0;
+		}
+
+		ret = ser_get_line(upsfd, buf, sizeof(buf), ENDCHAR, IGNCHARS,
+			SER_WAIT_SEC, SER_WAIT_USEC);
+
+		/* found one, force the model information */
+		if (!strcmp(buf, "6QD")) {
+			upsdebugx(1, "Found Smart-UPS");
+			dstate_setinfo("ups.model", "Smart-UPS");
+		}
+		else return 0;
+	}
 
 	upsdebugx(2, "Firmware: [%s]", buf);
 

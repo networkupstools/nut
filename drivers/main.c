@@ -69,11 +69,14 @@ static void help(void)
 
 	printf("\nusage: %s [OPTIONS] [<device>]\n\n", progname);
 
+	printf("  -V             - print version, then exit\n");
+	printf("  -L             - print parseable list of driver variables\n");
 	printf("  -a <id>        - autoconfig using ups.conf section <id>\n");
 	printf("                 - note: -x after -a overrides ups.conf settings\n");
 	printf("  -D             - raise debugging level\n");
 	printf("  -h             - display this help\n");
 	printf("  -k             - force shutdown\n");
+	printf("  -i <int>       - poll interval\n");
 	printf("  -r <dir>       - chroot to <dir>\n");
 	printf("  -u <user>      - switch to <user> (if started as root)\n");
 	printf("  -x <var>=<val> - set driver variable <var> to <val>\n");
@@ -469,7 +472,7 @@ int main(int argc, char **argv)
 	/* build the driver's extra (-x) variable table */
 	upsdrv_makevartable();
 
-	while ((i = getopt(argc, argv, "+a:d:kDhx:Lr:u:Vi:")) != EOF) {
+	while ((i = getopt(argc, argv, "+a:kDhx:Lr:u:Vi:")) != EOF) {
 		switch (i) {
 			case 'a':
 				upsname = optarg;
@@ -537,18 +540,6 @@ int main(int argc, char **argv)
 
 	upsdebugx(1, "debug level is '%d'", nut_debug_level);
 
-	upsdrv_initups();
-
-	/* now see if things are very wrong out there */
-	if (broken_driver) {
-		printf("Fatal error: broken driver.  It probably needs to be converted.\n");
-		printf("Search for 'broken_driver = 1' in the source for more details.\n");
-		exit(EXIT_FAILURE);
-	}
-
-	if (do_forceshutdown)
-		forceshutdown();
-
 	if ((new_uid = get_user_pwent(user)) == NULL)
 		fatal("getpwnam(%s)", user);
 	
@@ -564,6 +555,18 @@ int main(int argc, char **argv)
 
 	/* clear out callback handler data */
 	memset(&upsh, '\0', sizeof(upsh));
+
+	upsdrv_initups();
+
+	/* now see if things are very wrong out there */
+	if (broken_driver) {
+		printf("Fatal error: broken driver. It probably needs to be converted.\n");
+		printf("Search for 'broken_driver = 1' in the source for more details.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	if (do_forceshutdown)
+		forceshutdown();
 
 	/* get the base data established before allowing connections */
 	upsdrv_initinfo();

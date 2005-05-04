@@ -20,6 +20,7 @@ CFLAGS	 = -I../include @CFLAGS@
 PROGS	 = upsc upslog upsrw upscmd
 SPROGS	 = upsmon upssched
 CGIPROGS = upsstats.cgi upsimage.cgi upsset.cgi
+LDFLAGS  = @LDFLAGS@
 LIBDEP   = @LIBOBJ@
 LIBOBJ	 = $(LIBDEP) @NETLIBS@
 
@@ -71,7 +72,7 @@ upsmon: upsmon.c $(UPSCLI_OBJ) $(LIBDEP)
 # other stuff
 
 upssched: upssched.c ../common/parseconf.o $(LIBDEP)
-	$(CC) $(CFLAGS) -o upssched upssched.c ../common/parseconf.o $(LIBOBJ)
+	$(CC) $(CFLAGS) -o upssched upssched.c ../common/parseconf.o $(LIBOBJ) $(LDFLAGS)
 
 cgilib.o: cgilib.c
 	$(CC) $(CFLAGS) -c cgilib.c

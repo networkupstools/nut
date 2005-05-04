@@ -61,11 +61,19 @@ etapro_get_response(const char *resp_type)
 {
 	char tmp[256];
 	char *cp;
-	int ret;
-	unsigned int val;
+	unsigned int n, val;
 
-	ret = ser_get_line(upsfd, tmp, sizeof(tmp), '\n', "", 3, 0);
-	if (ret < 0) {
+	/* Read until a newline is found or there is no room in the buffer.
+	   Unlike ser_get_line(), don't discard the following characters
+	   because we have to handle multi-line responses.  */
+	n = 0;
+	while (ser_get_char(upsfd, &tmp[n], 1, 0) == 1) {
+		if (n >= sizeof(tmp) - 1 || tmp[n] == '\n')
+			break;
+		n++;
+	}
+	tmp[n] = '\0';
+	if (n == 0) {
 		upslogx(LOG_ERR, "no response from UPS");
 		return -1;
 	}
@@ -187,7 +195,6 @@ upsdrv_initinfo(void)
 	/* First command after power on returns junk - ignore it.  */
 	ser_send(upsfd, "RI\r");
 	sleep(1);
-	ser_flush_in(upsfd, "", nut_debug_level);
 
 	upsdrv_updateinfo();
 
@@ -201,6 +208,7 @@ upsdrv_updateinfo(void)
 	int x, flags;
 	double utility, outvolt, battvolt, loadpct;
 
+	ser_flush_in(upsfd, "", nut_debug_level);
 	ser_send(upsfd, "RI\r");  /* identify */
 
 	x = etapro_get_response("SR");  /* manufacturer */

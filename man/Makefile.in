@@ -41,15 +41,17 @@ DRIVERPAGES = \
 	powermust.8	\
 	safenet.8	\
 	sms.8		\
-	snmp-ups.8	\
+	solis.8		\
 	tripplite.8	\
 	tripplitesu.8	\
+	upscode2.8	\
 	victronups.8	\
-	metasys.8
+	metasys.8	\
+	bcmxcp.8
 
 SNMPPAGES = snmp-ups.8
 
-USBPAGES = hidups.8 newhidups.8 energizerups.8
+USBPAGES = @USBPAGES@
 
 DRIVER_BUILD_LIST = @DRIVER_BUILD_LIST@
 

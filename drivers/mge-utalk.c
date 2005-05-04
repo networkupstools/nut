@@ -1,29 +1,32 @@
-/* mge-utalk.c 
-
-   Driver for MGE UPS SYSTEMS units with serial UTalk protocol
-
-   This driver is a collaborative effort by (Copyright (C) 2002 - 2004):
-
-     Hans Ekkehard Plesser <hans.plesser@itf.nlh.no>
-     Arnaud Quette <arnaud.quette@mgeups.com>
-     Nicholas Reilly <nreilly@magma.ca>
-     Dave Abbott <d.abbott@dcs.shef.ac.uk>
-     Marek Kralewski <marek@mercy49.de>
-
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-*/
+/* mge-utalk.c - monitor MGE UPS for NUT with UTalk protocol
+ *
+ *  Copyright (C) 2002 - 2005
+ *     Arnaud Quette <arnaud.quette@free.fr>  & <arnaud.quette@mgeups.com>
+ *     Hans Ekkehard Plesser <hans.plesser@itf.nlh.no>
+ *     Martin Loyer <martin@ouifi.net>
+ *     Patrick Agrain <patrick.agrain@alcatel.fr>
+ *     Nicholas Reilly <nreilly@magma.ca>
+ *     Dave Abbott <d.abbott@dcs.shef.ac.uk>
+ *     Marek Kralewski <marek@mercy49.de>
+ *
+ *  This driver is a collaborative effort by the above people,
+ *  Sponsored by MGE UPS SYSTEMS <http://opensource.mgeups.com/>
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ */
 
 #include <ctype.h>
 #include <sys/ioctl.h>
@@ -37,7 +40,7 @@
 /* --------------------------------------------------------------- */
 
 #define DRIVER_NAME    "MGE UPS SYSTEMS/U-Talk driver"
-#define DRIVER_VERSION "0.81.0"
+#define DRIVER_VERSION "0.85"
 
 /* delay after sending each char to UPS (in MICROSECONDS) */
 #define MGE_CHAR_DELAY 0
@@ -79,6 +82,7 @@ static struct {
 static int instcmd(const char *cmdname, const char *extra);
 static int setvar(const char *varname, const char *val);
 static void enable_ups_comm(void);
+static void disable_ups_comm(void);
 static void extract_info(const char *buf, const mge_info_item *mge, 
 			 char *infostr, int infolen);
 static const char *info_variable_cmd(const char *type);
@@ -187,12 +191,16 @@ void upsdrv_initinfo(void)
 	char *model = NULL;
 	char *firmware = NULL;
 	char *p;
+	char *v = NULL;  /* for parsing Si output, get Version ID */
 	int  table;
 	int  tries;
 	int  status_ok;
 	int  bytes_rcvd;
+	int  si_data1 = 0;
+	int  si_data2 = 0;
 	mge_info_item *item;
-	
+	mge_model_info *legacy_model;
+
 	/* manufacturer -------------------------------------------- */
 	dstate_setinfo("ups.mfr", "MGE UPS SYSTEMS");
 	dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION);
@@ -202,7 +210,7 @@ void upsdrv_initinfo(void)
 	do {
 	    printf(".");
 
-		/* get model information: <Family> <Model> <Firmware> */
+		/* get model information in ASCII string form: <Family> <Model> <Firmware> */
 		bytes_rcvd = mge_command(buf, sizeof(buf), "Si 1");
 
 		if(bytes_rcvd > 0 && buf[0] != '?') {
@@ -219,10 +227,51 @@ void upsdrv_initinfo(void)
 			if( firmware && strlen(firmware) < 1 )
 				firmware = NULL;   /* no firmware information */
 		}
+		else
+		  {
+			upsdebugx(1, "initinfo: 'Si 1' unavailable, switching to 'Si' command");
+
+			/* get model information, numbered form, : <Model ID> <Version ID> <Firmware> */
+			bytes_rcvd = mge_command(buf, sizeof(buf), "Si");
+
+			if(bytes_rcvd > 0 && buf[0] != '?') {
+			  upsdebugx(1, "initinfo: Si == >%s<", buf);
+
+			  printf("\nCAUTION : This is an older model. It may not support too much polling.\nPlease read man mge-utalk and use pollinterval\n");
+
+			  p = strchr(buf, ' ');
+
+			  if ( p != NULL ) {
+				*p = '\0';
+				si_data1 = atoi(buf);
+				v = p+1;
+			  }
+
+			  p = strchr(v, ' ');
+
+			  if ( p != NULL ) {
+				*p = '\0';
+				si_data2 = atoi(v);
+			  }
+
+			  /* Parsing legacy model table in order to found it */
+			  for ( legacy_model = mge_model ; legacy_model->name != NULL ; legacy_model++ ) {
+				if(legacy_model->Data1 == si_data1 && legacy_model->Data2 == si_data2){
+				  model = (char *)legacy_model->name;
+				  upsdebugx(1, "initinfo: UPS model == >%s<", model);
+				  break;
+				}
+			  }
+
+			  if( model == NULL )
+				printf("No model found by that model and version ID\nPlease contact us with UPS model, name and reminder info\nReminder info : Data1=%i , Data2=%i\n", si_data1, si_data2);
+
+			}
+		  }
 
 		if ( model ) {
-			format_model_name(model);
-			dstate_setinfo("ups.model", "%s", model);
+		  format_model_name(model);
+		  dstate_setinfo("ups.model", "%s", model);
 		}
 
 		if ( firmware && strcmp(firmware, ""))
@@ -294,6 +343,8 @@ void upsdrv_initinfo(void)
 	/* install handlers */
 	upsh.setvar = setvar;
 	upsh.instcmd = instcmd;
+
+	printf("Detected %s on %s\n", dstate_getinfo("ups.model"), device_path);
 }
 
 /* --------------------------------------------------------------- */
@@ -314,6 +365,9 @@ void upsdrv_updateinfo(void)
 	if ( !status_ok ) {
 		dstate_datastale();
 		upslogx(LOG_NOTICE, "updateinfo: Cannot update system status");
+		/* try to re enable communication */
+		disable_ups_comm();
+		enable_ups_comm();
 	} else {
 		dstate_dataok();
 	}
@@ -328,8 +382,13 @@ void upsdrv_updateinfo(void)
 				extract_info(buf, item, infostr, sizeof(infostr));
 				dstate_setinfo(item->type, infostr);
 				upsdebugx(2, "updateinfo: %s == >%s<", item->type, infostr);
+				dstate_dataok();
 			} else {
-				upslogx(LOG_NOTICE, "updateinfo: Cannot update %s", item->type);
+			  dstate_datastale();
+			  upslogx(LOG_NOTICE, "updateinfo: Cannot update %s", item->type);
+			  /* try to re enable communication */
+			  disable_ups_comm();
+			  enable_ups_comm();
 			}
 		} /* if item->ok */
 	}
@@ -349,6 +408,8 @@ void upsdrv_shutdown(void)
 		upslogx(LOG_INFO, "UPS response to Automatic Restart was %s", buf);
 	}
 	
+	/* Only call the effective shutoff if restart is ok */
+	/* or if we need only a stayoff... */
 	if (!strcmp(buf, "OK") || (sdtype == SD_STAYOFF)) {
 		/* shutdown UPS */
 		mge_command(buf, sizeof(buf), "Sx 0");
@@ -356,6 +417,9 @@ void upsdrv_shutdown(void)
 		upslogx(LOG_INFO, "UPS response to Shutdown was %s", buf);
 	}
 /*	if(strcmp(buf, "OK")) */
+
+	/* call the cleanup to disable/close the comm link */
+	upsdrv_cleanup();
 }
 
 /* --------------------------------------------------------------- */
@@ -371,6 +435,8 @@ void upsdrv_help(void)
 /* deal with truncated model names */
 void format_model_name(char *model)
 {
+	upsdebugx(2, "Got model name: %s", model);
+
 	if(!strncmp(model, "Evolutio", 8))
 		sprintf(model, "Evolution %i", atoi(strchr(model, ' ')));
 }
@@ -502,16 +568,32 @@ int setvar(const char *varname, const char *val)
 	
 	return STAT_SET_UNKNOWN;
 }
+
 /* --------------------------------------------------------------- */
+
+/* disable communication with UPS to avoid interference with
+ * kernel serial init at boot time (ie with V24 init) */
+static void disable_ups_comm(void)
+{
+  ser_flush_in(upsfd, "?\r\n", 0);
+  usleep(MGE_CONNECT_DELAY);
+  mge_command(NULL, 0, "Ax 0");
+}
 
 /* enable communication with UPS */
 static void enable_ups_comm(void)
 {
-	mge_command(NULL, 0, "Z");   /* send Z twice --- speeds up re-connect */
-	mge_command(NULL, 0, "Z");   
-	mge_command(NULL, 0, "Ax 1");   
-	usleep(MGE_CONNECT_DELAY);
-	ser_flush_in(upsfd, "?\r\n", nut_debug_level);
+  char buf[8];
+
+  /* only enable communication if needed! */
+  if ( mge_command(buf, 8, "Si") == -1)
+	{
+	  mge_command(NULL, 0, "Z");   /* send Z twice --- speeds up re-connect */
+	  mge_command(NULL, 0, "Z");
+	  mge_command(NULL, 0, "Ax 1");
+	  usleep(MGE_CONNECT_DELAY);
+	}
+  ser_flush_in(upsfd, "?\r\n", nut_debug_level);
 }
 
 /* --------------------------------------------------------------- */
@@ -551,7 +633,7 @@ static void extract_info(const char *buf, const mge_info_item *item,
    returns non-nil if successful           
 
    NOTE: MGE counts bytes/chars the opposite way as C, 
-         see mge-utalk.txt.  If status commands send two
+         see mge-utalk manpage.  If status commands send two
          data items, these are separated by a space, so
 	 the elements of the second item are in buf[16..9].
 */
@@ -632,7 +714,9 @@ static int get_ups_status(void)
 				status_set("LB");
 			}
 
-			if ( !(buf[9] == '1') )
+			/* FIXME: to be checked (MUST be buf[8]) !! */
+			/* if ( !(buf[9] == '1') ) */
+			if ( !(buf[8] == '1') )
 				status_set("OFF");
 		} /* if strlen */  
 
@@ -640,7 +724,12 @@ static int get_ups_status(void)
 		mge_command(buf, sizeof(buf), "Ps");
 		upsdebugx(1, "Bypass Stat >%s<", buf);
 		if ( strlen(buf) > 7 ) {
+		  /* FIXME: extend ups.status for BYPASS: */
+		  /* Manual Bypass */
 			if (buf[7] == '1')
+				status_set("BYPASS");
+		  /* Automatic Bypass */
+			if (buf[6] == '1')
 				status_set("BYPASS");
 		} /* if strlen */
 	
@@ -748,11 +837,15 @@ static int mge_command(char *reply, int replylen, const char *fmt, ...)
 
 	bytes_rcvd = ser_get_line(upsfd, reply, replylen,
 		MGE_REPLY_ENDCHAR, MGE_REPLY_IGNCHAR, 3, 0);
-	
+
+	upsdebugx(4, "mge_command: received %d byte(s)", bytes_rcvd);
+
 	return bytes_rcvd;
 }
 
 void upsdrv_cleanup(void)
 {
+	upsdebugx(1, "cleaning up");
+	disable_ups_comm();
 	ser_close(upsfd, device_path);
 }

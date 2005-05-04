@@ -79,7 +79,7 @@ void logical_to_physical(HIDData *Data);
 void physical_to_logical(HIDData *Data);
 const char *hid_lookup_path(int usage);
 int hid_lookup_usage(char *name);
-ushort lookup_path(const char *HIDpath, HIDData *data);
+ushort lookup_path(char *HIDpath, HIDData *data);
 void dump_hex (const char *msg, const unsigned char *buf, int len);
 long get_unit_expo(long UnitType);
 float expo(int a, int b);
@@ -125,9 +125,10 @@ HIDDevice *HIDOpenDevice(const char *port, MatchFlags *flg, int mode)
 	}
 
 	/* get and parse descriptors (dev, cfg and report) */
-	if ((ReportSize = libusb_open(&curDevice, flg, ReportDesc, mode)) == -1) {
-		return NULL;
-	}
+	ReportSize = libusb_open(&curDevice, flg, ReportDesc, mode);
+
+	if (ReportSize == -1)
+	  return NULL;
 	else
 	{
 		if ( mode == MODE_REOPEN )
@@ -144,29 +145,18 @@ HIDDevice *HIDOpenDevice(const char *port, MatchFlags *flg, int mode)
 		hParser.ReportDescSize = ReportSize;
 		memcpy(hParser.ReportDesc, ReportDesc, ReportSize);
 		HIDParse(&hParser, &hData);
-
-		/* CHeck for matching UsageCode (1rst collection == application == type of device) */
-		if ((hData.Path.Node[0].UPage == ((flg->UsageCode & 0xFFFF0000) / 0x10000))
-			&& (hData.Path.Node[0].Usage == (flg->UsageCode & 0x0000FFFF)))
-		{
-				TRACE(2, "Found a device matching UsageCode (0x%08x)", flg->UsageCode);
-		}
-		else
-		{
-			TRACE(2, "Found a device, but not matching UsageCode (0x%08x)", flg->UsageCode);
-			return NULL;
-		}
 	}
 	return &curDevice;
 }
 
+/* int HIDGetItem(hid_info_t *ItemInfo, HIDItem *item) */
 HIDItem *HIDGetItem(const char *ItemPath)
 {
   return NULL;
 }
 
 /* return 1 if OK, 0 on fail, <= -1 otherwise (ie disconnect) */
-float HIDGetItemValue(const char *path, float *Value)
+float HIDGetItemValue(char *path, float *Value)
 {
 	int i, retcode;
 	float tmpValue;
@@ -174,6 +164,7 @@ float HIDGetItemValue(const char *path, float *Value)
 	/* Prepare path of HID object */
 	hData.Type = ITEM_FEATURE;
 	hData.ReportID = 0;
+	hData.Path.Size = 0;
 
 	if((retcode = lookup_path(path, &hData)) > 0)
 	{
@@ -187,7 +178,7 @@ float HIDGetItemValue(const char *path, float *Value)
 		hData.Path.Size = retcode;
 
 		/* Get info on object (reportID, offset and size) */
-		if (FindObject(&hParser,&hData) == 1)
+		if (FindObject(&hParser, &hData) == 1)
 		{
 			/* Get report with data */
 			/* if ((replen=libusb_get_report(hData.ReportID,
@@ -199,7 +190,7 @@ float HIDGetItemValue(const char *path, float *Value)
 				/* Extract the data value */
 				GetValue((const unsigned char *) raw_buf, &hData);
 
-				TRACE(3, "=>> Before exponent: %ld, %i/%i)", hData.Value,
+				TRACE(4, "=>> Before exponent: %ld, %i/%i)", hData.Value,
 					(int)hData.UnitExp, (int)get_unit_expo(hData.Unit) );
 
 				/* Convert Logical Min, Max and Value in Physical */
@@ -214,6 +205,9 @@ float HIDGetItemValue(const char *path, float *Value)
 
 				/* Convert Logical Min, Max and Value into Physical */
 				logical_to_physical(&hData);
+
+				TRACE(4, "=>> After conversion: %ld, %i/%i)", hData.Value,
+					(int)hData.UnitExp, (int)get_unit_expo(hData.Unit) );
 
 				dump_hex ("Report ", raw_buf, replen);
 
@@ -234,13 +228,14 @@ float HIDGetItemValue(const char *path, float *Value)
 	return 0; /* TODO: should be checked */
 }
 
-char *HIDGetItemString(const char *path)
+char *HIDGetItemString(char *path)
 {
   int i, retcode;
   
   /* Prepare path of HID object */
   hData.Type = ITEM_FEATURE;
   hData.ReportID = 0;
+  hData.Path.Size = 0;
   
   if((retcode = lookup_path(path, &hData)) > 0) {
     TRACE(4, "Path depth = %i", retcode);
@@ -272,7 +267,7 @@ char *HIDGetItemString(const char *path)
   return NULL;
 }
  
-bool HIDSetItemValue(const char *path, float value)
+bool HIDSetItemValue(char *path, float value)
 {
   float Value;
   int retcode;
@@ -321,16 +316,56 @@ bool HIDSetItemValue(const char *path, float value)
   }
   return FALSE;
 }
-HIDItem *HIDGetNextEvent(HIDDevice *dev)
+int HIDGetEvents(HIDDevice *dev, HIDItem **eventsList)
 {
-  /*  unsigned char buf[20];
+  unsigned char buf[20];
+  char itemPath[128];
+  int size, offset = 0, itemCount = 0;
 
-  upsdebugx(1, "Waiting for notifications\n");*/
+  upsdebugx(1, "Waiting for notifications...");
 
-  /* TODO: To be written */
   /* needs libusb-0.1.8 to work => use ifdef and autoconf */
-  /* libusb_get_interrupt(&buf[0], 20, 5000); */
-  return NULL;
+  if ((size = libusb_get_interrupt(&buf[0], 20, 5000)) > -1)
+	{
+	  dump_hex ("Notification", buf, size);
+
+	  /* Convert report size in bits */
+	  size = (size - 1) * 8;
+
+	  /* Parse response Report and Set correspondant Django values */
+	  hData.ReportID = buf[0];
+	  hData.Type = ITEM_INPUT;
+
+	  while(offset < size)
+		{
+		  /* Set Offset */
+		  hData.Offset = offset;
+
+		  /* Reset HID Path but keep Report ID */
+		  memset(&hData.Path, '\0', sizeof(HIDPath));
+
+		  /* Get HID Object characteristics */
+		  if(FindObject(&hParser, &hData))
+			{
+			  /* Get HID Object value from report */
+			  GetValue(buf, &hData);
+			  memset(&itemPath, 0, sizeof(128));
+			  lookup_path(&itemPath[0], &hData);
+
+			  upsdebugx(3, "Object: %s = %ld", itemPath, hData.Value);
+
+			  eventsList[itemCount] = (HIDItem *)malloc(sizeof (HIDItem));
+			  eventsList[itemCount]->Path = strdup(itemPath);
+			  eventsList[itemCount]->Value = hData.Value;
+			  itemCount++;
+			}
+		  offset += hData.Size;
+		}
+	}
+  else
+	itemCount = size; /* propagate error code */
+
+  return itemCount;
 }
 void HIDCloseDevice(HIDDevice *dev)
 {
@@ -352,19 +387,19 @@ void logical_to_physical(HIDData *Data)
       float Factor = (float)(Data->PhyMax - Data->PhyMin) / (Data->LogMax - Data->LogMin);
       /* Convert Value */
       Data->Value=(long)((Data->Value - Data->LogMin) * Factor) + Data->PhyMin;
-
+	  
       if(Data->Value > Data->PhyMax)
-	Data->Value |= ~Data->PhyMax;
+		Data->Value |= ~Data->PhyMax;
     }
   else /* => nothing to do!? */
     {
       /* Value.m_Value=(long)(pConvPrm->HValue); */
       if(Data->Value > Data->LogMax)
-	Data->Value |= ~Data->LogMax;
+		Data->Value |= ~Data->LogMax;
     }
   
   /* if(Data->Value > Data->Value.m_Max)
-    Value.m_Value |= ~Value.m_Max;
+	 Value.m_Value |= ~Value.m_Max;
   */
 }
 
@@ -400,7 +435,7 @@ long get_unit_expo(long UnitType)
 }
 
 /* exponent function: return a^b */
-/* TODO: check if needed to replace libmath->pow */
+/* FIXME: check if needed/possible to replace libmath->pow */
 float expo(int a, int b)
 {
   if (b==0)
@@ -414,46 +449,77 @@ float expo(int a, int b)
   return -1;
 }
 
-/* translate HID string path to numeric path and return path depth */
+/* translate HID string path from/to numeric path and return path depth */
 /* TODO: use usbutils functions (need to be externalised!) */
-ushort lookup_path(const char *HIDpath, HIDData *data)
+ushort lookup_path(char *HIDpath, HIDData *data)
 {
   ushort i = 0, cond = 1;
   int cur_usage;
   char buf[MAX_STRING];
   char *start, *end; 
+    
+  TRACE(3, "entering lookup_path()");
+
+  /* Check the way we are called */
+  if (data->Path.Size != 0)
+	{
+	  /* FIXME: another bug? */
+	  strcat(HIDpath, "UPS.");
+
+	  // Numeric to String
+	  for (i = 1; i <= hData.Path.Size; i++)
+		{
+		  /* Deal with ?bogus? */
+		  if ( ((hData.Path.Node[i].UPage * 0x10000) + hData.Path.Node[i].Usage) == 0)
+			continue;
+
+		  /* manage indexed collection */
+		  if (hData.Path.Node[i].UPage == 0x00FF)
+			{
+			  TRACE(5, "Got an indexed collection");
+			  sprintf(strrchr(HIDpath, '.'), "[%i]", hData.Path.Node[i].Usage);
+			}
+		  else
+			strcat(HIDpath, hid_lookup_path((hData.Path.Node[i].UPage * 0x10000) + hData.Path.Node[i].Usage));
+			
+		  if (i < (hData.Path.Size - 1))
+			strcat (HIDpath, ".");
+		}
+	}
+  else
+	{
+	  // String to Numeric 
+	  strncpy(buf, HIDpath, strlen(HIDpath));
+	  buf[strlen(HIDpath)] = '\0';
+	  start = end = buf;
   
-  strncpy(buf, HIDpath, strlen(HIDpath));
-  buf[strlen(HIDpath)] = '\0';
-  start = end = buf;
-  
-  TRACE(3, "entering lookup_path(%s)", buf);
-  
-  while (cond) {
+	  while (cond) {
     
-    if ((end = strchr(start, '.')) == NULL) {
-      cond = 0;			
-    }
-    else
-      *end = '\0';
+		if ((end = strchr(start, '.')) == NULL) {
+		  cond = 0;			
+		}
+		else
+		  *end = '\0';
     
-    TRACE(4, "parsing %s", start);
+		TRACE(4, "parsing %s", start);
     
-    /* lookup code */
-    if ((cur_usage = hid_lookup_usage(start)) == -1) {
-      TRACE(4, "%s wasn't found", start);
-      return 0;
-    }
-    else {
-      data->Path.Node[i].UPage = (cur_usage & 0xFFFF0000) / 0x10000;
-      data->Path.Node[i].Usage = cur_usage & 0x0000FFFF; 
-      i++; 
-    }
+		/* lookup code */
+		if ((cur_usage = hid_lookup_usage(start)) == -1) {
+		  TRACE(4, "%s wasn't found", start);
+		  return 0;
+		}
+		else {
+		  data->Path.Node[i].UPage = (cur_usage & 0xFFFF0000) / 0x10000;
+		  data->Path.Node[i].Usage = cur_usage & 0x0000FFFF; 
+		  i++; 
+		}
     
-    if(cond)
-      start = end +1 ;
-  }
-  data->Path.Size = i;
+		if(cond)
+		  start = end +1 ;
+	  }
+	  data->Path.Size = i;
+	}
+
   return i;
 }
 
@@ -503,9 +569,11 @@ static usage_lkp_t usage_lkp[] = {
 	{  "Good", 0x00840061 },
 	{  "InternalFailure", 0x00840062 },
 	{  "OverLoad", 0x00840065 }, /* mispelled in usb.ids */
+	{  "OverTemperature", 0x00840067 },
 	{  "ShutdownImminent", 0x00840069 },
 	{  "SwitchOn/Off", 0x0084006b },
 	{  "Switchable", 0x0084006c },
+	{  "Used", 0x0084006d },
 	{  "Boost", 0x0084006e },
 	{  "Buck", 0x0084006f },
 	{  "CommunicationLost", 0x00840073 },
@@ -545,6 +613,8 @@ const char *hid_lookup_path(int usage)
 	int i;
 	static char raw_usage[10];
 	
+	TRACE(3, "Looking up %i", usage);
+
 	for (i = 0; (usage_lkp[i].usage_name[0] != '\0'); i++)
 	{
 		if (usage_lkp[i].usage_code == usage)
@@ -560,7 +630,7 @@ const char *hid_lookup_path(int usage)
 int hid_lookup_usage(char *name)
 {	
   int i;
-	
+
   TRACE(3, "Looking up %s", name);
 	
   if (name[0] == '[') /* manage indexed collection */

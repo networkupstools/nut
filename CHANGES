@@ -1,3 +1,199 @@
+2.0.2-pre1
+
+Wed May  4 07:09:02 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - bring testing release in sync with development release
+ - bump release to 2.0.2-pre1
+
+2.1.0:
+
+Wed May  4 07:09:02 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - solis: new driver for Microsol units
+
+   (Silvino B. Magalhaes) [Alioth Patch #301272]
+
+Tue May  3 09:09:07 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ * fentonups:
+   - fix a problem with establishing serial communication,
+   - fix UNITEK Alpha 500iC model exposure,
+   - add separate battery voltage scales to better determine charge
+     percentage when on AC/charging
+   - add a user-defined battery voltage under which the UPS is considered
+     on "low battery" condition when running on battery ("lowbattvolt")
+
+   (Michel Bouissou) [Alioth Patch #301574] 
+
+ - driver.list: add Powerware 3110 support, through genericups type=7
+
+   (Paul Andreassen) [Alioth Patch #301573]
+
+ - upscode2: merge this driver for Fiskars, Compaq and Powerware
+   devices.
+
+   (Niels Baggesen, Havard Lygre) [Alioth Patch #301144]
+
+ - newhidups, libhid, libusb: improve UBS support. Interrupt and
+   device reconnexion are now supported.
+
+Mon May  2 11:14:40 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - configure, man/Makefile: check which USB manpage(s) to install
+ - man/Makefile: suppress snmp-ups duplication
+
+ - pwmib.h, snmp-ups.ch8, driver.list: add Powerware MIB support for
+   Powerware devices with ConnectUPS SNMP cards
+
+   (Olli Salvia) [Alioth Patch #301568]
+
+Fri Apr 29 16:03:22 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
+
+ - apcsmart: fix APC600 support, and bump driver release to 1.99.7
+
+   (?) [Alioth Patch #301287]
+
+Thu Apr 28 18:03:22 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
+
+ - configure.in, drivers/Makefile: check which USB driver(s) to build
+
+Mon Apr 25 22:03:22 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
+
+ - Makefiles: add LDFLAGS support
+ - drivers/Makefile.in: remove unneeded STRLCPY flag for newhidups
+
+Sun Apr 24 19:03:22 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
+
+ - etapro.c: fix brokeness due to ser_get_line use
+
+   (Marek Michalkiewicz) [Alioth Patch #301505]
+
+Sat Apr 23 19:34:22 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
+
+ - cyberpower.c: add CyberPower 1000AVR support
+ - driver.list: complete the missing CyberPower models
+
+   (Dave Huang) [Alioth Patch #301288]
+
+ - drivers/main.c: move upsdrv_initups() to point after become_user().
+   This makes clear error message when user has no write privilege
+   on the device.
+ 
+   (?) [Alioth Patch #301284]
+
+Fri Apr 22 11:42:22 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - bcmxcp.ch8: reintegrate the new BCM/XCP driver (0.08) ; adjust
+   Makefile's accordingly
+ - driver.list: update according to the tested units
+   http://web.telia.com/~u50205618/compatibility.html
+
+   (Tore ï¿½petveit, Kjell Claesson) [Alioth Patch #301290]
+
+Thu Apr 15 11:04:53 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - netvisionmib.h, snmp-ups.ch8, driver.list: add Socomec SNMP
+   card/external box (Netvision MIB support)
+
+   (Thanos Chatziathanassiou) [Alioth Patch #301296]
+
+ - driver.list: add MicroDowell B.Box BP 500/750/1000/1500
+ - cpsups.ch: add MicroDowell support, and fix a segfault on upsdrv_shutdown
+
+   (Armin Diehl) [Alioth Patch #301282]
+
+ - upsstats.c: fix a case where upsstats.cgi crashes if hosts.conf has
+   no valid MONITOR lines
+
+   (Charles Lepple) [Alioth Patch #301461]
+
+Thu Apr 15 11:04:53 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - mge-shut.h: add Ellipse Pro models, and bump driver version to 0.63
+
+ * newhidups patch-set:
+   - libusb.c: enhance discovery performance (only search for MGE / APC),
+   - newhidups.c: 
+     - add the code to manage Interrupt Pipe (will improve USB flow
+       by lowering polling on device), and a pollfreq parameter
+       (default to 60 sec, newhidups will wait for Interrupt in the
+       meantime). This is disabled for the moment
+     - lower USB flow by only querying ups.status information within
+       the above pollfreq period.
+     - improve ups.status handling (needed for interrupt and partial
+       status update)
+     - enhance model name exposure
+     - factorise the data walking code
+     - a bit of code cleaning
+     - enable device reconnexion (still not working!)
+   - mge-hid.h: renamed from mgehid.h, and completed with the model names,
+     outlet collection, and some missing data
+   - apc-hid.h: add and complete this file
+   - prepare the future merge of mge-shut
+   - add Unitek VendorID
+
+Tue Mar 22 11:10:53 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - driver.list: add missing Mustek PowerMust 1400VA Plus and 2000VA USB
+
+   (Carlos Rodrigues) [Alioth Patch #301289]
+   
+ * MGE patch-set:
+   - driver.list: add Pulsar EXtreme C / EX RT, Comet EX RT, Pulsar SV,
+     Pulsar PSX and NOVA AVR USB
+   - mge-utalk.ch, mge-utalk.8: enhance support for old units, by adding
+     disable_ups_comm, and Si discovering ; rework the model names,
+     change driver version numbering to X.Y (instead of X.Y.Z) and
+     bump to 0.85 (thanks to Martin Loyer and Patrick Agrain)
+   - mgehid.h: add BYPASS management for newhidups
+   - libhid.c: add the HID "Used" usage for the mgehid.h BYPASS
+     management 
+   - newhidups.h: add the lookup values for mgehid.h/libhid.c
+     above changes
+   - mge-shut.ch, mge-shut.8: rework the model names, add value
+     lookup, bump the driver version to 0.62
+ 
+ - apccmib.h: minor change to get the firmware of the Silcon DP3160E
+   by interrogating an ap9606
+
+   (Christophe Grenier) [Alioth Patch #301283]
+   
+ - fentonups.h, driver.list: add support for Sysgration UPGUARDS Pro650
+
+   (Simon J. Rowe) [Alioth Patch #301281]
+   
+ - energizerups: fix for Linux 2.6 byte dropping
+
+   (Viktor T. Toth) [Alioth Patch #301279]
+   
+ - powermust.c, driver.list: rework initups/initinfo to follow NUT
+   standard recommendation, and add support for SquareOne Power QP1000
+
+   (Carlos Rodrigues) [Alioth Patch #301146]
+   
+Mon Mar 21 15:52:53 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - tripplite.c: fix the reporting of the battery voltage and charge
+
+   (Andrew Cook, Nicholas J. Kain) [Alioth Patch #301271]
+
+Fri Mar 18 13:36:20 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - driver.list: add the missing Powerware 5119 RM (genericups type=20)
+
+ - drivers/main.c, nutupsdrv.8: brings the drivers usage message and
+   the generic driver man page in line with the getopt processing.
+   It also remove an unused -d option from the getopt call.
+
+   (Niels Baggesen) [Alioth Patch #301145]
+
+ - genericups.h, genericups.8, driver.list: add Generic RUPS 2000
+   and AEC MiniGuard UPS 700 (using Megatec M2501 cable)
+
+   (Nick Barnes) [Alioth Patch #301143]
+
+ * Forked from 2.0.1 to start the new 2.1 dev tree.
+
 2.0.1:
 
 Thu Feb 24 00:55:20 CST 2005 / Russell Kroll <rkroll@exploits.org>
@@ -3168,7 +3364,7 @@ Mon Dec  2 06:11:22 CST 2002 / Russell Kroll <rkroll@exploits.org>
 Mon Dec  2 04:59:43 CST 2002 / Russell Kroll <rkroll@exploits.org>
 
  - genericups: applied patch from Tomek Orzechowski and 
-   Arkadiusz Mi¶kiewicz to support Fideltronik Ares Series as type 19.
+   Arkadiusz Mikiewicz to support Fideltronik Ares Series as type 19.
 
 1.2.1-pre1:
 

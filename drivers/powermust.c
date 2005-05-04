@@ -30,7 +30,7 @@
 #define ENDCHAR  '\r'
 #define IGNCHARS "(#"
 
-#define DRV_VERSION "1.0"
+#define DRV_VERSION "1.1"
 
 #define RECV_BUFFER_LEN 128
 
@@ -193,9 +193,49 @@ static int run_query(QueryValues *values)
 
 void upsdrv_initinfo(void)
 {
+	int i;
+	int success = 0;
+	FirmwareValues values;
+
+        /* try to detect the UPS */
+	for (i = 0; i < IDENT_MAXTRIES; i++) {
+		if (check_ups() == 0) {
+			success++;
+		}
+	}
+
+	if (success < IDENT_MINSUCCESS) {
+		fatalx("Mustek PowerMust UPS, or compatible, not detected.");
+	}
+	upslogx(LOG_INFO, "Mustek PowerMust UPS, or compatible, detected.");
+
 	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
 	dstate_setinfo("ups.mfr", "Mustek");
 	dstate_setinfo("ups.model", "PowerMust");
+        dstate_setinfo("ups.serial", "unknown");  
+
+	if (get_firmware_values(&values) < 0) {
+		fatalx("Error reading firmware values from UPS!");
+	}
+
+	if (values.battvolt == 12) {
+		battvolt_min = BATT_VOLT_MIN_12; 
+		battvolt_max = BATT_VOLT_MAX_12;
+	} else { /* 24V battery */
+		battvolt_min = BATT_VOLT_MIN_24;
+		battvolt_max = BATT_VOLT_MAX_24;
+	}
+
+	dstate_setinfo("output.voltage.target.battery", "%.1f", values.volt);
+	dstate_setinfo("battery.voltage.nominal", "%.1f", values.battvolt);
+
+	dstate_setinfo("ups.delay.start", "%d", start_delay);
+	dstate_setflags("ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING);
+	dstate_setaux("ups.delay.start", MAX_START_DELAY_LEN);
+
+	dstate_setinfo("ups.delay.shutdown", "%d", shutdown_delay);
+	dstate_setflags("ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING);
+	dstate_setaux("ups.delay.shutdown", MAX_SHUTDOWN_DELAY_LEN);
 
 	dstate_addcmd("test.battery.start");
 	dstate_addcmd("shutdown.return");
@@ -426,46 +466,8 @@ void upsdrv_banner(void)
 
 void upsdrv_initups(void)
 {
-	int i;
-	int success = 0;
-	FirmwareValues values;
-
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
-
-	for (i = 0; i < IDENT_MAXTRIES; i++) {
-		if (check_ups() == 0) {
-			success++;
-		}
-	}
-
-	if (success < IDENT_MINSUCCESS) {
-		fatalx("Mustek PowerMust UPS not detected.");
-	}
-	upslogx(LOG_INFO, "Mustek PowerMust UPS detected.");
-
-	if (get_firmware_values(&values) < 0) {
-		fatalx("Error reading firmware values from UPS!");
-	}
-
-	if (values.battvolt == 12) {
-		battvolt_min = BATT_VOLT_MIN_12; 
-		battvolt_max = BATT_VOLT_MAX_12;
-	} else { /* 24V battery */
-		battvolt_min = BATT_VOLT_MIN_24;
-		battvolt_max = BATT_VOLT_MAX_24;
-	}
-
-	dstate_setinfo("output.voltage.target.battery", "%.1f", values.volt);
-	dstate_setinfo("battery.voltage.nominal", "%.1f", values.battvolt);
-
-	dstate_setinfo("ups.delay.start", "%d", start_delay);
-	dstate_setflags("ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING);
-	dstate_setaux("ups.delay.start", MAX_START_DELAY_LEN);
-
-	dstate_setinfo("ups.delay.shutdown", "%d", shutdown_delay);
-	dstate_setflags("ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING);
-	dstate_setaux("ups.delay.shutdown", MAX_SHUTDOWN_DELAY_LEN);
 }
 
 

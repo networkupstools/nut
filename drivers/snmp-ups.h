@@ -126,7 +126,7 @@ typedef struct {
 
 #define SU_VAR_COMMUNITY	"community"
 #define SU_VAR_VERSION		"snmp_version"
-#define SU_VAR_MIBS			"mibs"
+#define SU_VAR_MIBS		"mibs"
 #define SU_VAR_SDTYPE		"sdtype"
 #define SU_VAR_POLLFREQ		"pollfreq"
 

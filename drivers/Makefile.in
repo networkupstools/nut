@@ -12,8 +12,9 @@ CFLAGS	= -I../include @CFLAGS@
 PROGS	= bestups fentonups apcsmart everups belkin masterguard powercom \
 	  cyberpower tripplite victronups genericups mge-utalk bestuferrups \
 	  isbmex etapro liebert sms esupssmart tripplitesu blazer safenet \
-	  belkinunv oneac ippon cpsups mustek metasys bestfcom powermust
-
+	  belkinunv oneac ippon cpsups mustek metasys bestfcom powermust \
+	  bcmxcp upscode2 solis
+LDFLAGS = @LDFLAGS@
 LIBDEP	= @LIBOBJ@
 LIBOBJ	= $(LIBDEP) @NETLIBS@ @SERLIBS@
 
@@ -28,7 +29,7 @@ SNMP_DRIVER_LIST = snmp-ups
 NETSNMP_CFLAGS = @NETSNMP_CFLAGS@
 NETSNMP_LIBS = @NETSNMP_LIBS@
 
-USB_DRIVER_LIST = hidups newhidups energizerups
+USB_DRIVER_LIST = @USB_DRIVER_LIST@
 
 LIBUSB_CFLAGS = @LIBUSB_CFLAGS@
 LIBUSB_LIBS = @LIBUSB_LIBS@
@@ -49,13 +50,13 @@ include Makefile.drvbuild
 
 upsdrvctl: upsdrvctl.c ../common/upsconf.o ../common/parseconf.o $(LIBDEP)
 	$(CC) $(CFLAGS) -o upsdrvctl upsdrvctl.c ../common/upsconf.o \
-		../common/parseconf.o $(LIBOBJ)
+		../common/parseconf.o $(LIBOBJ) $(LDFLAGS)
 
 # ==========================================================================
 # Testing driver for doing things without real UPS hardware attached
 
 dummycons: dummycons.c dstate.o ../common/state.o ../common/parseconf.o $(LIBDEP)
-	$(CC) $(CFLAGS) -o $@ $@.c dstate.o ../common/state.o ../common/parseconf.o $(LIBOBJ)
+	$(CC) $(CFLAGS) -o $@ $@.c dstate.o ../common/state.o ../common/parseconf.o $(LIBOBJ) $(LDFLAGS)
 
 # ==========================================================================
 # Special cases: drivers which need Linux includes
@@ -67,7 +68,7 @@ hidups: hidups.o main.o dstate.o ../common/state.o \
 		../common/parseconf.o $(LIBDEP)
 	$(CC) $(CFLAGS) -o hidups hidups.o main.o dstate.o \
 		../common/state.o ../common/upsconf.o ../common/parseconf.o \
-		$(LIBOBJ)
+		$(LIBOBJ) $(LDFLAGS)
 
 hidups.o: hidups.c
 	$(CC) $(CFLAGS) -c hidups.c
@@ -77,7 +78,7 @@ energizerups: energizerups.o main.o dstate.o ../common/state.o \
 		../common/parseconf.o $(LIBDEP)
 	$(CC) $(CFLAGS) -o energizerups energizerups.o main.o dstate.o \
 		../common/state.o ../common/upsconf.o ../common/parseconf.o \
-		$(LIBOBJ)
+		$(LIBOBJ) $(LDFLAGS)
 
 energizerups.o: energizerups.c
 	$(CC) $(CFLAGS) -c energizerups.c
@@ -91,7 +92,7 @@ newhidups: newhidups.o main.o dstate.o ../common/state.o \
 		$(STRLCPY) libhid.o libusb.o hidparser.o
 	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o $@ $@.o main.o dstate.o \
 		../common/state.o ../common/upsconf.o ../common/parseconf.o \
-		$(LIBOBJ) $(STRLCPY) $(LIBUSB_LIBS) libhid.o libusb.o hidparser.o
+		$(LIBOBJ) $(LIBUSB_LIBS) $(LDFLAGS) libhid.o libusb.o hidparser.o
 
 newhidups.o: newhidups.c newhidups.h
 	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -c newhidups.c
@@ -110,7 +111,7 @@ mge-shut: mge-shut.o hidparser.o main.o dstate.o serial.o \
 		../common/upsconf.o ../common/parseconf.o $(LIBDEP)
 	$(CC) $(CFLAGS) -o mge-shut mge-shut.o hidparser.o main.o \
 		dstate.o serial.o ../common/state.o ../common/upsconf.o \
-		../common/parseconf.o $(LIBOBJ)
+		../common/parseconf.o $(LIBOBJ) $(LDFLAGS)
 
 mge-shut.o: mge-shut.c mge-shut.h hidparser.h
 	$(CC) $(CFLAGS) -c mge-shut.c
@@ -126,7 +127,7 @@ snmp-ups: snmp-ups.o main.o dstate.o ../common/state.o \
 		../common/upsconf.o ../common/parseconf.o $(LIBDEP)
 	$(CC) $(CFLAGS) $(NETSNMP_CFLAGS) -o $@ $@.o main.o dstate.o \
 		../common/state.o ../common/upsconf.o ../common/parseconf.o \
-		$(LIBOBJ) $(NETSNMP_LIBS)
+		$(LIBOBJ) $(LDFLAGS) $(NETSNMP_LIBS)
 
 snmp-ups.o: snmp-ups.c snmp-ups.h \
 		ietfmib.h apccmib.h mgemib.h

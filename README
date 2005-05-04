@@ -157,6 +157,8 @@ that UPS.
 
 	apcsmart         - APC Smart-UPS, Back-UPS Pro, Matrix-UPS models
 
+	bcmxcp           - some Powerware models
+
 	belkin           - Belkin Regulator Pro
 
 	belkinunv	 - Belkin Universal UPS (F6C800-UNV, others)
@@ -264,8 +266,11 @@ that UPS.
 	mge-shut	 - MGE UPS SYSTEMS serial SHUT units:
 	
 					- Pulsar Ellipse / Ellipse Premium S,
+					- Pulsar Ellipse / Ellipse Premium USBS,
+					- NOVA AVR Serial
 					- Pulsar Evolution,
 					- Pulsar EXtreme C,
+					- Pulsar EXtreme C / EX RT,
 					- Pulsar Esprit,
 					- Pulsar / Comet EXtreme,
 					- Comet / Galaxy
@@ -275,8 +280,8 @@ that UPS.
 	mge-utalk	 - MGE UPS SYSTEMS serial UTalk units:
 	
 					- Pulsar Evolution,
-					- Pulsar EX / EXL / SX
-					- Pulsar ES+ / ESV / ESV+,
+					- Pulsar EX / EXL / PSX / SX
+					- Pulsar ES+ / SV / ESV / ESV+,
 					- Pulsar EXtreme C,
 					- Pulsar / Comet EXtreme,
 					- Comet / Galaxy
@@ -322,15 +327,24 @@ that UPS.
 
 	sms		 - Microlink Manager III
 
-	snmp-ups         - SNMP UPS equipment (RFC 1628)
+	snmp-ups         - SNMP UPS equipment
                            Experimental driver - not built by default.
 
+                           MIBs supported:
+			   - various RFC 1628 compliant devices,
+			   - MGE UPS SYSTEMS MIB,
+			   - APC Powernet MIB,
+			   - Powerware MIB,
+			   - Socomec Netvision MIB.
+			   
                            See docs/drivers/snmp-ups.txt for more
                            information.
 
 	tripplite	 - Tripp-Lite SmartUPS units
 
 	tripplitesu	 - Tripp-Lite SmartOnline units
+
+        upscode2         - Fiskars, Compaq and Powerware units
 
 	victronups	 - IMV/Victron hardware
 

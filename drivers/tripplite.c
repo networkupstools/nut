@@ -452,7 +452,7 @@ void upsdrv_updateinfo(void)
 
 	status_commit();
 	send_cmd(":B\r", buf, sizeof buf);
-	bv = hex2d(buf, 2) / 10;
+	bv = hex2d(buf, 2) / 10.0;
 
 	/* dq ~= sqrt(dV) is a reasonable approximation
 	 * Results fit well against the discrete function used in the Tripp Lite
@@ -462,7 +462,8 @@ void upsdrv_updateinfo(void)
 	else if (bv <= V_interval[0])
 		bp = 10;
 	else
-		bp = (int)sqrt(bv - V_interval[0]) / (V_interval[1] - V_interval[0]);
+		bp = (int) 100 * sqrt(bv - V_interval[0])
+			/ (V_interval[1] - V_interval[0]);
 
 	dstate_setinfo("battery.voltage", "%.1f", bv);
 	dstate_setinfo("battery.charge",  "%.3d", bp);

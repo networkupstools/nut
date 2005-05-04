@@ -37,6 +37,8 @@ struct {
         {  0,  0 }
 };
 
+#define POLL_UPSSTATUS  6
+
 #define ENDCHAR  	13     	/* replies end with CR */
 #define MAXTRIES 5
 #define UPSDELAY 50000  /* 50 ms delay required for reliable operation */

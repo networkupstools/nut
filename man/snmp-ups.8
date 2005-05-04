@@ -14,6 +14,10 @@ UPS that is RFC 1628 (UPS MIB) compliant, ie MGE UPS SYSTEMS, Liebert, perhaps o
 MGE UPS SYSTEMS devices with SNMP cards (ref 66062, 66045, 66074 and 66244)
 .IP "apcc:"
 APC AP9606 APC Web/SNMP management card, perhaps others
+.IP "netvision:"
+Socomec Sicon UPS with Netvision Web/SNMP management card/external box
+.IP "pw:"
+Powerware devices with ConnectUPS SNMP cards
 
 .SH EXTRA ARGUMENTS
 
@@ -21,7 +25,7 @@ This driver supports the following optional settings in the
 \fBups.conf\fR(5):
 
 .IP "mibs=\fIname\fR"
-Set MIB compliance (default=ietf, allowed mge,apcc)
+Set MIB compliance (default=ietf, allowed mge,apcc,netvision,pw)
 
 .IP "community=\fIname\fR"
 Set community name (default = public).

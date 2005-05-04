@@ -752,6 +752,20 @@ static void load_hosts_conf(void)
 	}
 
 	pconf_finish(&ctx);
+
+	if (!ulhead) {
+		printf("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\"\n");
+		printf("	\"http://www.w3.org/TR/REC-html40/loose.dtd\">\n");
+		printf("<HTML><HEAD>\n");
+		printf("<TITLE>Error: no hosts to monitor</TITLE>\n");
+		printf("</HEAD><BODY>\n");
+		printf("Error: no hosts to monitor (check <CODE>hosts.conf</CODE>)\n");
+		printf("</BODY></HTML>\n");
+
+		/* leave something for the admin */
+		fprintf(stderr, "upsstats: no hosts to monitor\n");
+		exit(EXIT_FAILURE);
+	}
 }
 
 static void display_single(void)

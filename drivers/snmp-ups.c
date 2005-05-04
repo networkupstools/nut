@@ -36,6 +36,8 @@
 #include "apccmib.h"
 #include "ietfmib.h"
 #include "mgemib.h"
+#include "netvisionmib.h"
+#include "pwmib.h"
 
 /* pointer to the Snmp2Nut lookup table */
 snmp_info_t *snmp_info;
@@ -111,7 +113,7 @@ void upsdrv_makevartable(void)
 {
   upsdebugx(1, "entering upsdrv_makevartable()");
 
-  addvar(VAR_VALUE, SU_VAR_MIBS, "Set MIB compliance (default=ietf, allowed mge,apcc)");
+  addvar(VAR_VALUE, SU_VAR_MIBS, "Set MIB compliance (default=ietf, allowed mge,apcc,netvision,pw)");
   addvar(VAR_VALUE | VAR_SENSITIVE, SU_VAR_COMMUNITY, "Set community name (default=public)");
   addvar(VAR_VALUE, SU_VAR_VERSION, "Set SNMP version (default=v1, allowed v2c)");
   addvar(VAR_VALUE, SU_VAR_POLLFREQ, "Set polling frequency in seconds, to reduce network flow (default=30)");
@@ -583,6 +585,16 @@ void load_mib2nut(const char *mib)
 		snmp_info = &mge_mib[0];
 		OID_pwr_status = "";
 /*		read_mibconf("mgemib"); */
+	} else if (!strcmp(mib, "netvision")) {
+		upsdebugx(1, "load_mib2nut: using netvision (SOCOMEC SICON UPS) mib");
+		snmp_info = &netvision_mib[0];
+		OID_pwr_status = "";
+/*             read_mibconf("netvisionmib"); */
+	} else if (!strcmp(mib, "pw")) {
+		upsdebugx(1, "load_mib2nut: using using pw (Powerware) mib");
+		snmp_info = &pw_mib[0];
+		OID_pwr_status = "";
+/*             read_mibconf("pw"); */
 	} else {
 		upsdebugx(1, "load_mib2nut: using ietf (RFC 1628) mib");
 		snmp_info = &ietf_mib[0];

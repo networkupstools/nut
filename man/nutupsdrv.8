@@ -1,4 +1,4 @@
-.TH NUTUPSDRV 8 "Fri Apr 23 2004" "" "Network UPS Tools (NUT)" 
+.TH NUTUPSDRV 8 "Mon Oct 25 2004" "" "Network UPS Tools (NUT)" 
 .SH NAME  
 nutupsdrv \- generic manual for unified NUT drivers
 .SH SYNOPSIS
@@ -40,12 +40,23 @@ options and parameters that generally are not needed by normal users.
 display an help message without doing anything else.  This will also list
 possible values for \fB\-x\fR in that driver, and other help text that the
 driver's author may have provided.
+
 .IP "\-a \fIid"
 autoconfigure this driver using the \fIid\fR section of \fBups.conf\fR(5).
 
 .IP \-D
 Raise the debugging level.  Use this multiple times to see more
 details.
+
+.IP "\-i \fIinterval\fR"
+Set the poll interval for the device
+
+.IP \-V
+print only version information, then exit
+
+.IP \-L
+print parseable list of driver variables. Mostly useful for configuration
+wizard and alike.
 
 .IP \-k
 ("kill" power) Force shutdown mode.  The UPS will power off the
