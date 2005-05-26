@@ -165,7 +165,7 @@ static char *get_id(void)
 
 		if (temp[0] != '#') {
 			upslogx(LOG_ERR, "Bad UPS info start character [%c]",
-				temp[i]); /* FIXME: should be temp[0]? */
+				temp[0]);
 			continue;
 		}
 

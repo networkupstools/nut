@@ -1,3 +1,28 @@
+Thu May 26 12:17:55 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - newhidups: fix typo error on offdelay vartable declaration
+ - libhid.usermap: add preliminary APC rules
+
+Wed May 25 14:09:02 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - newhidups.8: remove the staleness information (not needed anymore),
+   and add hotplug information.
+
+Thu May 24 14:06:02 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - mge-hid.h: add forgotten Protection Center definition
+
+Mon May 23 09:21:10 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - fentonups: complete the trace
+
+ (Michel Bouissou) [Alioth Patch #301574]
+
+Mon May 23 07:25:02 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - mge-hid.h: add low end (non backuped) outlet handling
+ - libusb: rework a bit the debug trace on device opening
+
 2.0.2-pre1
 
 Wed May  4 07:09:02 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>

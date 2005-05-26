@@ -1,4 +1,4 @@
-.TH HIDUPS 8 "Wed Mar 10 2004" "" "Network UPS Tools (NUT)"
+.TH HIDUPS 8 "Wed May 25 2005" "" "Network UPS Tools (NUT)"
 .SH NAME
 hidups \- Experimental Multi\(hyHID Driver for USB/HID UPS equipment
 .SH NOTE
@@ -49,6 +49,9 @@ internal ripped version.
 This driver is not built by default.  You can build it by using
 "make usb", and install it using "make install\(hyusb". Note that
 it will also install other USB drivers.
+You also need to install manually the hotplug files (libhidups and
+libhid.usermap), generally in etc/hotplug/usb/, to address the
+permission settings problem.
 
 .SH IMPLEMENTATION
 newhidups only support 1 UPS at this time. You can put the
@@ -61,17 +64,11 @@ newhidups only support 1 UPS at this time. You can put the
 .fi
 
 .SH KNOWN ISSUES AND BUGS
-.SS "Repetitive stale status \(hy Loss of communication"
+.SS "Got EPERM: Operation not permitted upon driver startup"
 
-Some models might report repetitive stale status, for
-1 sec or less. This is due to a small and temporary
-flood of the UPS µcontroler.
-
-To solve this point, simply add "pollinterval=15" in
-ups.conf. Also change the value of MAXAGE to 20 in
-upsd.conf, and optionally DEADTIME to 20 in upsmon.conf.
-You might adapt these values according to your tests
-and configuration.
+You have forgotten to install the hotplug files, as explained
+in the INSTALLATION section above. Don't forget to restart
+hotplug so that it applies these changes.
 
 .SH AUTHORS
 .SS Sponsored by MGE UPS SYSTEMS <http://opensource.mgeups.com/>

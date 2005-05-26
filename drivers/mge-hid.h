@@ -46,6 +46,10 @@ models_name_t mge_models_names [] =
 	{ "ELLIPSE", "750", -1, "Ellipse 750" },
 	{ "ELLIPSE", "1000", -1, "Ellipse 1000" },
 	{ "ELLIPSE", "1500", -1, "Ellipse 1500" },
+	/* Protection Center */
+	{ "PROTECTIONCENTER", "420", -1, "Protection Center 420" },
+	{ "PROTECTIONCENTER", "500", -1, "Protection Center 500" },
+	{ "PROTECTIONCENTER", "675", -1, "Protection Center 675" },
 	/* Evolution models */
 	{ "Evolution", "500", -1, "Pulsar Evolution 500" },
 	{ "Evolution", "800", -1, "Pulsar Evolution 800" },
@@ -199,6 +203,9 @@ hid_info_t hid_mge[] =
 	{ "outlet.1.switchable", 0, 0, "UPS.OutletSystem.Outlet.[2].PresentStatus.Switchable",
 	  NULL, "%.0f", HU_FLAG_OK | HU_FLAG_STATIC, NULL },
 	{ "outlet.1.switch", ST_FLAG_RW | ST_FLAG_STRING, 2, "UPS.OutletSystem.Outlet.[2].PresentStatus.SwitchOn/Off",
+	  NULL, "%.0f", HU_FLAG_OK, NULL },
+	/* For low end models, with 1 non backup'ed outlet */
+	{ "outlet.1.switch", ST_FLAG_RW | ST_FLAG_STRING, 2, "UPS.PowerSummary.PresentStatus.ACPresent",
 	  NULL, "%.0f", HU_FLAG_OK, NULL },
 	{ "outlet.1.autoswitch.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 3,
 	  "UPS.OutletSystem.Outlet.[2].RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_OK, NULL },

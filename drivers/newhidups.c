@@ -182,7 +182,7 @@ void upsdrv_makevartable(void)
   /* add command line/conf variables */
   sprintf(temp, "Set shutdown delay, in seconds (default=%d).",
 	  DEFAULT_OFFDELAY);
-  addvar (VAR_VALUE, HU_VAR_ONDELAY, temp);
+  addvar (VAR_VALUE, HU_VAR_OFFDELAY, temp);
   
   sprintf(temp, "Set startup delay, in ten seconds units for MGE (default=%d).",
 	  DEFAULT_ONDELAY);
