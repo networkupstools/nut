@@ -1,6 +1,16 @@
+Sat May 28 20:05:55 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ * newhidups, libhid, apc-hid:
+   - fix typo error on offdelay vartable declaration
+   - complete APC usages,
+   - improve APC support (should work with BackUPS Pro, Back-UPS ES,
+     Smart-UPS and BackUPS), but still lacks of shutdown on some models
+
+ (John Stamp)
+
 Thu May 26 12:17:55 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
- - newhidups: fix typo error on offdelay vartable declaration
+ - newhidups, libhid: code formating, and documentation
  - libhid.usermap: add preliminary APC rules
 
 Wed May 25 14:09:02 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>

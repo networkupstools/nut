@@ -27,18 +27,18 @@
 #include <unistd.h>
 #include "config.h"
 
-#define DRIVER_VERSION		"0.21"
+#define DRIVER_VERSION		"0.22"
 
 /* --------------------------------------------------------------- */
 /*      Supported Manufacturers IDs                                */
 /* --------------------------------------------------------------- */
 
 #define MGE_UPS_SYSTEMS		0x0463		/* All models */
-#define APC					0x051d		/* All models */
+#define APC			0x051d		/* All models */
 /* Unsupported! (need spec/hardware/help) */
-#define MUSTEK				0x0665		/* models: 0x5161... */
-#define TRIPPLITE			0x09ae		/* models IDs? */
-#define UNITEK				0x0F03		/* models: 0x0001... */
+#define MUSTEK			0x0665		/* models: 0x5161... */
+#define TRIPPLITE		0x09ae		/* models IDs? */
+#define UNITEK			0x0F03		/* models: 0x0001... */
 
 
 /* --------------------------------------------------------------- */
@@ -49,7 +49,7 @@ typedef struct
 {
 	char	*iProduct;
 	char	*iModel;
-	int		comp_size;	/* size of the comparison, -1 for full */
+	int	comp_size;	/* size of the comparison, -1 for full */
 	char	*finalname;
 } models_name_t;
 
@@ -60,39 +60,43 @@ typedef struct
 
 /* Parameters default values */
 #define DEFAULT_ONDELAY		30	/* Delay between return of utility power */
-								/* and powering up of load, in seconds */
-								/* CAUTION: ondelay > offdelay */
+					/* and powering up of load, in seconds */
+					/* CAUTION: ondelay > offdelay */
 #define DEFAULT_OFFDELAY	20	/* Delay before power off, in seconds */ 
 #define DEFAULT_POLLFREQ	30	/* Polling interval, in seconds */
-								/* The driver will wait for Interrupt */
-								/* and do "light poll" in the meantime */
+					/* The driver will wait for Interrupt */
+					/* and do "light poll" in the meantime */
 
 #define MAX_STRING_SIZE    	128
 
 
-/* TODO: remaining "unused" items => need integration */
+/* FIXME: remaining "unused" items => need integration */
 #define BATT_MFRDATE		0x850085	/* manufacturer date         */
 #define BATT_ICHEMISTRY		0x850089	/* battery type              */
 #define BATT_IOEMINFORMATION	0x85008f	/* battery OEM description   */
 
-/* For bitwise ups.status processing (needed at least for Interrupt) */
+
+/* --------------------------------------------------------------- */
+/* Struct & data for ups.status processing                         */
+/* --------------------------------------------------------------- */
+
 typedef struct {
 	char	*status_str;	/* ups.status string */
-	int		status_value;	/* ups.status value */
+	int	status_value;	/* ups.status value */
 } status_lkp_t;
 
 #define STATUS_CAL		1       /* calibration */
 #define STATUS_TRIM		2       /* SmartTrim */
-#define STATUS_BOOST	4       /* SmartBoost */
+#define STATUS_BOOST		4       /* SmartBoost */
 #define STATUS_OL		8       /* on line */
 #define STATUS_OB		16      /* on battery */
 #define STATUS_OVER		32      /* overload */
 #define STATUS_LB		64      /* low battery */
 #define STATUS_RB		128     /* replace battery */
-#define STATUS_BYPASS	256		/* on bypass */
-#define STATUS_OFF		512		/* ups is off */
+#define STATUS_BYPASS		256	/* on bypass */
+#define STATUS_OFF		512	/* ups is off */
 #define STATUS_CHRG		1024	/* charging */
-#define STATUS_DISCHRG	2048	/* discharging */
+#define STATUS_DISCHRG		2048	/* discharging */
 
 status_lkp_t status_info[] = {
   { "CAL", STATUS_CAL },
@@ -111,9 +115,11 @@ status_lkp_t status_info[] = {
 };
 
 
+/* --------------------------------------------------------------- */
+/* Struct & data for lookup between HID and NUT values             */
+/* (From USB/HID, Power Devices Class standard)                    */
+/* --------------------------------------------------------------- */
 
-
-/* for lookup between HID values and NUT values*/
 typedef struct {
 	long	hid_value;	/* HID value */
 	char	*nut_value;	/* NUT value */
@@ -185,21 +191,22 @@ info_lkp_t test_read_info[] = {
   { 0, "NULL" }
 };
 
-/* Structure containing info about one item that can be requested
-   from UPS and set in INFO.  If no interpreter functions is defined,
-   use sprintf with given format string.
-=> TODO: this description must be updated
-*/
+/* --------------------------------------------------------------- */
+/* Structure containing information about how to get/set data      */
+/* from/to the UPS and convert these to/from NUT standard          */
+/* --------------------------------------------------------------- */
+
 typedef struct {
-	char	*info_type;		/* INFO_ or CMD_ element */
-	int		info_flags;		/* flags to set in addinfo */
-	float	info_len;		/* length of strings if STR, */
-							/* cmd value if CMD, multiplier otherwise. */
-	char	*hidpath;		/* Full HID Object path or NULL */
-	int		**numericpath;	/* Full HID Object numeric path (for caching purpose) */
-	char	*dfl;			/* default value (hidflags = ABSENT), format otherwise */
-	unsigned long hidflags;	/* driver's own flags */
-	info_lkp_t *hid2info;	/* lookup table between HID and NUT values */
+	char	*info_type;		/* NUT variable name */
+	int	info_flags;		/* NUT flags (to set in addinfo) */
+	float	info_len;		/* if ST_FLAG_STRING: length of the string */
+					/* if HU_TYPE_CMD: command value ; multiplier otherwise */
+	char	*hidpath;		/* Full HID Object path (or NULL for server side vars) */
+	int	**numericpath;		/* Full HID Object numeric path (for caching purpose, filled at runtime) */
+	char	*dfl;			/* if HU_FLAG_ABSENT: default value ; format otherwise */
+	unsigned long hidflags;		/* driver's own flags */
+	info_lkp_t *hid2info;		/* lookup table between HID and NUT values */
+
 /*	char *info_HID_format;	*//* FFE: HID format for complex values */
 /*	interpreter interpret;	*//* FFE: interpreter fct, NULL if not needed  */
 /*	void *next;			*//* next hid_info_t */
@@ -207,16 +214,16 @@ typedef struct {
 
 
 /* Data walk modes */
-#define HU_WALKMODE_INIT				1
-#define HU_WALKMODE_QUICK_UPDATE		2
-#define HU_WALKMODE_FULL_UPDATE			3
+#define HU_WALKMODE_INIT		1
+#define HU_WALKMODE_QUICK_UPDATE	2
+#define HU_WALKMODE_FULL_UPDATE		3
 
 /* TODO: rework flags */
-#define HU_FLAG_OK				1		/* show element to upsd. */
+#define HU_FLAG_OK			1		/* show element to upsd. */
 #define HU_FLAG_STATIC			2		/* retrieve info only once. */
-#define HU_FLAG_SEMI_STATIC		4		/* retrieve info only once. */
+#define HU_FLAG_SEMI_STATIC		4		/* retrieve info smartly */
 #define HU_FLAG_ABSENT			8		/* data is absent in the device, */
-										/* use default value. */
+							/* use default value. */
 #define HU_FLAG_QUICK_POLL		16		/* Mandatory vars	*/		
 #define HU_FLAG_STALE			32		/* data stale, don't try too often. */
 

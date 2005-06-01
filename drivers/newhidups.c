@@ -2,6 +2,7 @@
  * 
  * Copyright (C) 2003 - 2005
  *   Arnaud Quette <arnaud.quette@free.fr> && <arnaud.quette@mgeups.com>
+ *   John Stamp <>
  *
  * This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
  *
@@ -43,6 +44,7 @@ static bool data_has_changed = FALSE; /* for SEMI_STATIC data polling */
 static time_t lastpoll; /* Timestamp the last polling */
 
 /* support functions */
+static int instcmd(const char *cmdname, const char *extradata);
 static int setvar(const char *varname, const char *val);
 static hid_info_t *find_nut_info(const char *varname);
 static hid_info_t *find_hid_info(const char *hidname);
@@ -59,115 +61,148 @@ static void reconnect_ups(void);
  * --------------------------------------------- */
 void upsdrv_shutdown(void)
 {
-  char delay[6];
+	char delay[7];
 
-  /* 1) set DelayBeforeStartup */
-  if ( getval(HU_VAR_ONDELAY) )
-    ondelay = atoi( getval(HU_VAR_ONDELAY) );
+	/* Retrieve user defined delay settings */
+	if ( getval(HU_VAR_ONDELAY) )
+		ondelay = atoi( getval(HU_VAR_ONDELAY) );
 
-  /* FIXME: HIDSetItemValue(find_info("ups.delay.start")->hidpath, ondelay); */
-  sprintf(&delay[0], "%i", ondelay);
-  if (setvar("ups.delay.start", &delay[0])!= STAT_SET_HANDLED)
-    fatalx("Shutoff command failed (setting ondelay)");
+	if ( getval(HU_VAR_OFFDELAY) )
+		offdelay = atoi( getval(HU_VAR_OFFDELAY) );
 
-  /* 2) set DelayBeforeShutdown */
-  if ( getval(HU_VAR_OFFDELAY) )
-    offdelay = atoi( getval(HU_VAR_OFFDELAY) );
-  
-  /* FIXME: HIDSetItemValue(find_info("ups.delay.shutdown")->hidpath, offdelay); */
-  sprintf(&delay[0], "%i", offdelay);
-  if (setvar("ups.delay.shutdown", &delay[0])!= STAT_SET_HANDLED)
-    fatalx("Shutoff command failed (setting offdelay)");
+	/* Apply specific method(s) */
+	switch (hd->VendorID)
+	{
+		case APC:
+			/* FIXME: the data (or command) should appear in
+			 * the hid2nut table, so that it can be autodetected
+			 * upon startup, and then calable through setvar()
+			 * or instcmd(), ie below
+			 */
+
+			/* From apcupsd, usb.c/killpower() */
+			/* 1) APCBattCapBeforeStartup */
+			/* 2) BackUPS Pro => */
+	
+			/* Misc method B */
+			upsdebugx(2, "upsdrv_shutdown: APC ForceShutdown style shutdown.\n");
+			if (instcmd("shutdown.return", NULL) != STAT_INSTCMD_HANDLED)
+				upsdebugx(2, "ForceShutdown command failed");
+
+
+		/* Don't "break" as the general method might also be supported! */;
+		case MGE_UPS_SYSTEMS:
+		default:
+			/* 1) set DelayBeforeStartup */
+			sprintf(&delay[0], "%i", ondelay);
+			if (setvar("ups.delay.start", &delay[0])!= STAT_SET_HANDLED)
+				fatalx("Shutoff command failed (setting ondelay)");
+			
+			/* 2) set DelayBeforeShutdown */
+			sprintf(&delay[0], "%i", offdelay);
+			if (setvar("ups.delay.shutdown", &delay[0])!= STAT_SET_HANDLED)
+				fatalx("Shutoff command failed (setting offdelay)");
+		break;
+	}
 }
 
 /* process instant command and take action. */
 static int instcmd(const char *cmdname, const char *extradata)
 {
-  hid_info_t *hidups_item;
+	hid_info_t *hidups_item;
+	
+	upsdebugx(2, "entering instcmd(%s, %s)\n", cmdname, extradata);
 
-  /* 1) retrieve and check netvar & item_path */	
-  hidups_item = find_nut_info(cmdname);
+	/* Retrieve and check netvar & item_path */	
+	hidups_item = find_nut_info(cmdname);
+	
+	/* Check validity of the found the item */
+	if (hidups_item == NULL || hidups_item->info_type == NULL ||
+		!(hidups_item->hidflags & HU_FLAG_OK))
+	{
+		upsdebugx(2, "instcmd: info element unavailable %s\n", cmdname);
+		/* TODO: manage items handled "manually" */
+		return STAT_INSTCMD_UNKNOWN;
+	}
 
-  if (hidups_item == NULL || hidups_item->info_type == NULL ||
-      !(hidups_item->hidflags & HU_FLAG_OK))
-    {
-      upsdebugx(2, "instcmd: info element unavailable %s\n", cmdname);
-      /* TODO: manage items handled "manually" */
-      return STAT_INSTCMD_UNKNOWN;
-    }
-
-  /* Checking if item is an instant command */
-  if (!hidups_item->hidflags & HU_TYPE_CMD) {
-    upsdebugx(2, "instcmd: %s is not an instant command\n", cmdname);
-    return STAT_INSTCMD_UNKNOWN;
-  }
-
-  /* Actual variable setting */
-  if (HIDSetItemValue(hidups_item->hidpath, atol(hidups_item->dfl))) {
-
-    upsdebugx(3, "SUCCEED\n");
-    /* Set the status so that SEMI_STATIC vars are polled */
-    data_has_changed = TRUE;
-    return STAT_INSTCMD_HANDLED;
-  }
-  else
-    upsdebugx(3, "FAILED\n"); /* TODO: HANDLED but FAILED, not UNKNOWN! */
-
-  /* TODO: to be completed */
-  return STAT_INSTCMD_UNKNOWN;
+	/* Check if the item is an instant command */
+	if (!hidups_item->hidflags & HU_TYPE_CMD)
+	{
+		upsdebugx(2, "instcmd: %s is not an instant command\n", cmdname);
+		return STAT_INSTCMD_UNKNOWN;
+	}
+	
+	/* Actual variable setting */
+	if (HIDSetItemValue(hidups_item->hidpath, atol(hidups_item->dfl)))
+	{
+		upsdebugx(3, "SUCCEED\n");
+		/* Set the status so that SEMI_STATIC vars are polled */
+		data_has_changed = TRUE;
+		return STAT_INSTCMD_HANDLED;
+	}
+	else
+		upsdebugx(3, "FAILED\n"); /* TODO: HANDLED but FAILED, not UNKNOWN! */
+	
+	/* TODO: to be completed */
+	return STAT_INSTCMD_UNKNOWN;
 }
 
-/* set r/w INFO_ element to a value. */
+/* set r/w variable to a value. */
 static int setvar(const char *varname, const char *val)
 {
-  hid_info_t *hidups_item;
+	hid_info_t *hidups_item;
+	
+	upsdebugx(2, "entering setvar(%s, %s)\n", varname, val);
+	
+	/* 1) retrieve and check netvar & item_path */	
+	hidups_item = find_nut_info(varname);
+	
+	if (hidups_item == NULL || hidups_item->info_type == NULL ||
+		!(hidups_item->hidflags & HU_FLAG_OK))
+	{
+		upsdebugx(2, "setvar: info element unavailable %s\n", varname);
+		return STAT_SET_UNKNOWN;
+	}
 
-  upsdebugx(2, "============== entering setvar(%s, %s) ==============\n", varname, val);
+	/* Checking item writability and HID Path */
+	if (!hidups_item->info_flags & ST_FLAG_RW)
+	{
+		upsdebugx(2, "setvar: not writable %s\n", varname);
+		return STAT_SET_UNKNOWN;
+	}
 
-  /* 1) retrieve and check netvar & item_path */	
-  hidups_item = find_nut_info(varname);
+	/* handle server side variable */
+	if (hidups_item->hidflags & HU_FLAG_ABSENT)
+	{
+		upsdebugx(2, "setvar: setting server side variable %s\n", varname);
+		dstate_setinfo(hidups_item->info_type, "%s", val);
+		return STAT_SET_HANDLED;
+	}
+	else
+	{
+		/* SHUT_FLAG_ABSENT is the only case of HID Path == NULL */
+		if (hidups_item->hidpath == NULL)
+		{
+			upsdebugx(2, "setvar: ID Path is NULL for %s\n", varname);
+			return STAT_SET_UNKNOWN;
+		}
+	}
 
-  if (hidups_item == NULL || hidups_item->info_type == NULL ||
-      !(hidups_item->hidflags & HU_FLAG_OK))
-    {
-      upsdebugx(2, "setvar: info element unavailable %s\n", varname);
-      return STAT_SET_UNKNOWN;
-    }
-
-  /* Checking item writability and HID Path */
-  if (!hidups_item->info_flags & ST_FLAG_RW) {
-    upsdebugx(2, "setvar: not writable %s\n", varname);
-    return STAT_SET_UNKNOWN;
-  }
-
-  /* handle server side variable */
-  if (hidups_item->hidflags & HU_FLAG_ABSENT) {
-    upsdebugx(2, "setvar: setting server side variable %s\n", varname);
-    dstate_setinfo(hidups_item->info_type, "%s", val);
-    return STAT_SET_HANDLED;
-  } else {
-    /* SHUT_FLAG_ABSENT is the only case of HID Path == NULL */
-    if (hidups_item->hidpath == NULL) {
-      upsdebugx(2, "setvar: ID Path is NULL for %s\n", varname);
-      return STAT_SET_UNKNOWN;
-    }
-  }
-
-  /* Actual variable setting */
-  if (HIDSetItemValue(hidups_item->hidpath, atol(val))) {
-
-    /* TODO: GetValue(hidups_item->hidpath) to ensure success */
-    upsdebugx(3, "SUCCEED\n");
-    /* Delay a bit not to flood the device */
-    sleep(1);
-    /* Set the status so that SEMI_STATIC vars are polled */
-    data_has_changed = TRUE;
-    return STAT_SET_HANDLED;
-  }
-  else
-    upsdebugx(3, "FAILED\n"); /* TODO: HANDLED but FAILED, not UNKNOWN! */
-
-  return STAT_SET_UNKNOWN;
+	/* Actual variable setting */
+	if (HIDSetItemValue(hidups_item->hidpath, atol(val)))
+	{
+		/* FIXME: GetValue(hidups_item->hidpath) to ensure success on non volatile */
+		upsdebugx(3, "SUCCEED\n");
+		/* Delay a bit not to flood the device */
+		sleep(1);
+		/* Set the status so that SEMI_STATIC vars are polled */
+		data_has_changed = TRUE;
+		return STAT_SET_HANDLED;
+	}
+	else
+		upsdebugx(3, "FAILED\n"); /* FIXME: HANDLED but FAILED, not UNKNOWN! */
+	
+	return STAT_SET_UNKNOWN;
 }
 
 void upsdrv_help(void)
@@ -177,33 +212,31 @@ void upsdrv_help(void)
 
 void upsdrv_makevartable(void) 
 {
-  char temp [MAX_STRING_SIZE];
-  
-  /* add command line/conf variables */
-  sprintf(temp, "Set shutdown delay, in seconds (default=%d).",
-	  DEFAULT_OFFDELAY);
-  addvar (VAR_VALUE, HU_VAR_OFFDELAY, temp);
-  
-  sprintf(temp, "Set startup delay, in ten seconds units for MGE (default=%d).",
-	  DEFAULT_ONDELAY);
-  addvar (VAR_VALUE, HU_VAR_ONDELAY, temp);
-  
-  sprintf(temp, "Set polling frequency, in seconds, to reduce USB flow (default=%i).",
-	  DEFAULT_POLLFREQ);
-  addvar(VAR_VALUE, HU_VAR_POLLFREQ, temp);
-
-  /* FIXME: getval (Mfr, Prod, Idx) */
+	char temp [MAX_STRING_SIZE];
+	
+	sprintf(temp, "Set shutdown delay, in seconds (default=%d).",
+		DEFAULT_OFFDELAY);
+	addvar (VAR_VALUE, HU_VAR_OFFDELAY, temp);
+	
+	sprintf(temp, "Set startup delay, in ten seconds units for MGE (default=%d).",
+		DEFAULT_ONDELAY);
+	addvar (VAR_VALUE, HU_VAR_ONDELAY, temp);
+	
+	sprintf(temp, "Set polling frequency, in seconds, to reduce USB flow (default=%i).",
+		DEFAULT_POLLFREQ);
+	addvar(VAR_VALUE, HU_VAR_POLLFREQ, temp);
+	
+	/* FIXME: autodetection values (Mfr, Product, Index, ...) */
 }
 
 void upsdrv_banner(void)
 {
-  printf("Network UPS Tools: New HID UPS driver %s (%s)\n\n",
-	 DRIVER_VERSION, UPS_VERSION);
+	printf("Network UPS Tools: New USB/HID UPS driver %s (%s)\n\n",
+		DRIVER_VERSION, UPS_VERSION);
 
-  experimental_driver = 1;
+	experimental_driver = 1;
 }
 
-/* TODO: merge {init,update}info in hidups_walk() */
 void upsdrv_updateinfo(void) 
 {
 	hid_info_t *item;
@@ -211,12 +244,8 @@ void upsdrv_updateinfo(void)
 	int retcode, evtCount = 0;
 	HIDItem *eventsList[10];
 
-	upsdebugx(1, "\n=>Updating...");
+	upsdebugx(1, "upsdrv_updateinfo...");
 
-
-	/* FIXME: wait for Interrupt or Poll? 
-	 * si pollinterval expiré ou data_has_changed == TRUE
-	 */
 
 	/* FIXME: check for device availability */
 	/* to set datastale! */
@@ -226,7 +255,7 @@ void upsdrv_updateinfo(void)
 		reconnect_ups();
 	  }
 
-	/* Only update by full polling every pollfreq 
+	/* Only do a full update (polling) every pollfreq 
 	 * or upon data change (ie setvar/instcmd) */
 	if ( (time(NULL) <= (lastpoll + pollfreq))
 		 && (data_has_changed != TRUE) )
@@ -289,42 +318,43 @@ void upsdrv_updateinfo(void)
 }
 
 
+/* Process status info globally to avoid inconsistencies */
 static void process_status_info(char *nutvalue)
 {
-  status_lkp_t *status_item;
+	status_lkp_t *status_item;
 
-  upsdebugx(2, "process_status_info: %s\n", nutvalue);
+	upsdebugx(2, "process_status_info: %s\n", nutvalue);
 
-  for (status_item = status_info; status_item->status_value != 0 ; status_item++)
+	for (status_item = status_info; status_item->status_value != 0 ; status_item++)
 	{
-	  if (!strcasecmp(status_item->status_str, nutvalue))
+		if (!strcasecmp(status_item->status_str, nutvalue))
 		{
-		  switch (status_item->status_value)
+			switch (status_item->status_value)
 			{
-			case STATUS_OL: /* clear OB, set OL */
-			  ups_status &= ~STATUS_OB;
-			  ups_status |= STATUS_OL;
-			  break;
-			case STATUS_OB: /* clear OL, set OB */
-			  ups_status &= ~STATUS_OL;
-			  ups_status |= STATUS_OB;
-			  break;
-			case STATUS_LB: /* set LB */ /* FIXME: ?clear OL? */
-			  ups_status |= STATUS_LB;   /* else, put in default! */ 
-			  break;
-			case STATUS_CHRG: /* clear DISCHRG, set CHRG */
-			  ups_status &= ~STATUS_DISCHRG;
-			  ups_status |= STATUS_CHRG;
-			  break;
-			case STATUS_DISCHRG: /* clear CHRG, set DISCHRG */
-			  ups_status &= ~STATUS_CHRG;
-			  ups_status |= STATUS_DISCHRG;
-			  break;
-			  /* FIXME: to be checked */
-			default: /* CAL, TRIM, BOOST, OVER, RB, BYPASS, OFF */
-			  ups_status |= status_item->status_value;
-			  /* FIXME: When do we reset these? */
-			  break;
+				case STATUS_OL: /* clear OB, set OL */
+					ups_status &= ~STATUS_OB;
+					ups_status |= STATUS_OL;
+				break;
+				case STATUS_OB: /* clear OL, set OB */
+					ups_status &= ~STATUS_OL;
+					ups_status |= STATUS_OB;
+				break;
+				case STATUS_LB: /* set LB */ /* FIXME: ?clear OL? */
+					ups_status |= STATUS_LB;   /* else, put in default! */ 
+				break;
+				case STATUS_CHRG: /* clear DISCHRG, set CHRG */
+					ups_status &= ~STATUS_DISCHRG;
+					ups_status |= STATUS_CHRG;
+				break;
+				case STATUS_DISCHRG: /* clear CHRG, set DISCHRG */
+					ups_status &= ~STATUS_CHRG;
+					ups_status |= STATUS_DISCHRG;
+				break;
+				/* FIXME: to be checked */
+				default: /* CAL, TRIM, BOOST, OVER, RB, BYPASS, OFF */
+					ups_status |= status_item->status_value;
+					/* FIXME: When do we reset these? */
+				break;
 			}
 		}
 	}
@@ -349,51 +379,44 @@ void upsdrv_initinfo(void)
 
 void upsdrv_initups(void)
 {
-  /* Search for the first supported UPS, no matter Mfr or exact product */
-  /* TODO: add vartable for VID, PID, Idx => getval*/
-  /*   flg.VendorID = MGE_UPS_SYSTEMS; *//* limiting to MGE is enough for now! */
-  /*   flg.ProductID = ANY; */
-  /*   flg.UsageCode = hid_lookup_usage("UPS"); */
-  /*   flg.Index = 0x0; */
-
-	/* Search for the first supported UPS */
+	/* Search for the first supported UPS, no matter Mfr or exact product */
 	if ((hd = HIDOpenDevice(device_path, &flg, MODE_OPEN)) == NULL)
 		fatalx("No USB/HID UPS found");
 	else
 		upslogx(1, "Detected an UPS: %s/%s\n", hd->Vendor, hd->Product);
 
-  /* See initinfo for WARNING */
-  switch (hd->VendorID)
-    {
-    case MGE_UPS_SYSTEMS:
-		hid_ups = hid_mge;
-		model_names = mge_models_names;
+	/* See initinfo for WARNING */
+	switch (hd->VendorID)
+	{
+		case MGE_UPS_SYSTEMS:
+			hid_ups = hid_mge;
+			model_names = mge_models_names;
 		break;
-    case APC:
-		hid_ups = hid_apc;
-		model_names = apc_models_names;
+		case APC:
+			hid_ups = hid_apc;
+			model_names = apc_models_names;
+      			HIDDumpTree(NULL);
 		break;
-    case MUSTEK:
-	case TRIPPLITE:
-    case UNITEK:
-    default:
-      upslogx(1, "Manufacturer not supported!");
-	  upslogx(1, "Contact the driver author <arnaud.quette@free.fr / @mgeups.com> with the below information");
-      HIDDumpTree(NULL);
-      fatalx("Aborting");
-      break;       
-    }
+		case MUSTEK:
+		case TRIPPLITE:
+		case UNITEK:
+		default:
+			upslogx(1, "Manufacturer not supported!");
+			upslogx(1, "Contact the driver author <arnaud.quette@free.fr / @mgeups.com> with the below information");
+      			HIDDumpTree(NULL);
+			fatalx("Aborting");
+		break;
+	}
 
 	/* init polling frequency */
 	if ( getval(HU_VAR_POLLFREQ) )
 		pollfreq = atoi ( getval(HU_VAR_POLLFREQ) );
-
 }
 
 void upsdrv_cleanup(void)
 {
-  if (hd != NULL)
-    HIDCloseDevice(hd);
+	if (hd != NULL)
+		HIDCloseDevice(hd);
 }
 
 /**********************************************************************
@@ -403,6 +426,7 @@ void upsdrv_cleanup(void)
 void identify_ups ()
 {
 	char *string;
+	char *ptr1, *ptr2, *str;
 	char *finalname = NULL;
 	float appPower;
 
@@ -410,31 +434,53 @@ void identify_ups ()
 			   hd->VendorID, /*FIXME: iManufacturer? */
 			   hd->iProduct);
 
-	/* Get strings iModel and iProduct */
-	if ((string = HIDGetItemString("UPS.PowerSummary.iModel")) != NULL)
-	  {
-		finalname = get_model_name(hd->Product, string);
-	  }
-	else
+	switch (hd->VendorID)
 	{
-	  /* FIXME: for MGE only */ 
-		/* Try with "UPS.Flow.[4].ConfigApparentPower" */
-		if (HIDGetItemValue("UPS.Flow.[4].ConfigApparentPower", &appPower) != 0 )
-		  {
-			string = xmalloc(16);
-			sprintf(string, "%i", (int)appPower);
-			finalname = get_model_name(hd->Product, string);
-			free (string);
-		  }
-		else /* FIXME: we sometimes fail to get Report Desc => should retry 3 times */
-		  finalname = hd->Product;
-		  /* finalname = get_model_name(hd->Product, NULL); */
+		case MGE_UPS_SYSTEMS:
+			/* Get iModel and iProduct strings */
+			if ((string = HIDGetItemString("UPS.PowerSummary.iModel")) != NULL)
+				finalname = get_model_name(hd->Product, string);
+			else
+			{
+				/* Try with ConfigApparentPower */
+				if (HIDGetItemValue("UPS.Flow.[4].ConfigApparentPower", &appPower) != 0 )
+				{
+					string = xmalloc(16);
+					sprintf(string, "%i", (int)appPower);
+					finalname = get_model_name(hd->Product, string);
+					free (string);
+				}
+				else
+				finalname = hd->Product;
+			}
+		break;
+		case APC:
+			/* FIXME?: what is the path "UPS.APC_UPS_FirmwareRevision"? */
+			str = hd->Product;
+			ptr1 = strstr(str, "FW:");
+			if (ptr1)
+			{
+				*(ptr1 - 1) = '\0';
+				ptr1 += strlen("FW:");
+				ptr2 = strstr(ptr1, "USB FW:");
+				if (ptr2)
+				{
+					*(ptr2 - 1) = '\0';
+					ptr2 += strlen("USB FW:");
+					dstate_setinfo("ups.firmware.aux", "%s", ptr2);
+				}
+				dstate_setinfo("ups.firmware", "%s", ptr1);
+			}
+			finalname = str;
+			break;
+		default: /* Nothing to do */
+		break;
 	}
 
+	/* Actual information setting */
 	dstate_setinfo("ups.mfr", "%s", hd->Vendor);
 	dstate_setinfo("ups.model", "%s", finalname);
-	dstate_setinfo("ups.serial", "%s", 
-		(hd->Serial != NULL)?hd->Serial:"unknown");
+	dstate_setinfo("ups.serial", "%s", (hd->Serial != NULL)?hd->Serial:"unknown");
 }
 
 /* walk ups variables and set elements of the info array. */

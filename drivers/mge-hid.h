@@ -94,6 +94,7 @@ models_name_t mge_models_names [] =
 /* --------------------------------------------------------------- */
 /*                 Data lookup table (HID <-> NUT)                 */
 /* --------------------------------------------------------------- */
+
 hid_info_t hid_mge[] =
 {
   /* Server side variables */

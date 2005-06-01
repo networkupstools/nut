@@ -1,7 +1,8 @@
 /*  mgehid.h - data to monitor MGE UPS SYSTEMS USB/HID devices with NUT
  *
- *  Copyright (C) 2004 
- *  			Arnaud Quette <arnaud.quette@free.fr>
+ *  Copyright (C)  
+ *	2003 - 2005	Arnaud Quette <arnaud.quette@free.fr>
+ *   2005		John Stamp <>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
  *
@@ -109,6 +110,12 @@ hid_info_t hid_apc[] = {
   { "load.on", 0, 0,
     "UPS.PowerSummary.DelayBeforeStartup", NULL, "0", /* point to good value */
     HU_TYPE_CMD | HU_FLAG_OK, NULL },
+
+	/* FIXME (@John): is it a good mapping considering the behaviour? */
+	{ "shutdown.return", 0, 0, "UPS.APC860052.APCForceShutdown",
+		NULL, "1", /* point to good value */
+		HU_TYPE_CMD | HU_FLAG_OK, NULL },
+
 
   /* TODO: beeper.on/off, bypass.start/stop, shutdown.return/stayoff/stop/reboot[.graceful] */
 
