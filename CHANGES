@@ -1,3 +1,12 @@
+Fri Jun  3 13:01:55 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - libhid.usermap: add a newline at the end, otherwise hotplug
+   won't be able to parse it
+ - libhid.c: change the dummy HIDItem test to remove exposed
+   path that are broken
+ 
+ (John Stamp)
+
 Sat May 28 20:05:55 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  * newhidups, libhid, apc-hid:

@@ -2,7 +2,7 @@
  * 
  * Copyright (C) 2003 - 2005
  *   Arnaud Quette <arnaud.quette@free.fr> && <arnaud.quette@mgeups.com>
- *   John Stamp <>
+ *   John Stamp <kinsayder@hotmail.com>
  *
  * This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
  *

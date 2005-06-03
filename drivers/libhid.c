@@ -2,10 +2,11 @@
  * @file libhid.c
  * @brief HID Library - User API (Generic HID Access using MGE HIDParser)
  *
- * @author Copyright (C) 2003
+ * @author Copyright (C) 2003 - 2005
  *	Arnaud Quette <arnaud.quette@free.fr> && <arnaud.quette@mgeups.com>
  *	Philippe Marzouk <philm@users.sourceforge.net> (dump_hex())
- *
+ *	John Stamp <kinsayder@hotmail.com>
+ *	
  * This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
  *
  *      The logic of this file is ripped from mge-shut driver (also from
@@ -361,7 +362,8 @@ int HIDGetEvents(HIDDevice *dev, HIDItem **eventsList)
 				upsdebugx(3, "Object: %s = %ld", itemPath, hData.Value);
 	
 				/* FIXME: enhance this or fix/change the HID parser (see libhid project) */
-				if ( strstr(itemPath, "000000") == NULL)
+				/* if ( strstr(itemPath, "000000") == NULL) */
+				if (strcmp(itemPath, "UPS.PowerSummary.PresentStatus.") > 0)
 				{
 					eventsList[itemCount] = (HIDItem *)malloc(sizeof (HIDItem));
 					eventsList[itemCount]->Path = strdup(itemPath);
