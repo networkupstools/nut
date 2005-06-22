@@ -103,6 +103,10 @@ void upsdrv_initinfo (void)
 	/* Device capabilities enumeration ----------------------------- */
 	for ( item = mge_info ; item->type != NULL ; item++ ) {
 		
+		/* Check if we are asked to stop (reactivity++) */
+		if (exit_flag != 0)
+		  return;
+
 		/* avoid redundancy when multiple defines (RO/RW) */
 		if (dstate_getinfo(item->type) != NULL)
 			continue;
@@ -185,6 +189,10 @@ void upsdrv_updateinfo (void)
 
 	/* Device data walk ----------------------------- */
 	for ( item = mge_info ; item->type != NULL; item++ ) {
+
+	  /* Check if we are asked to stop (reactivity++) */
+	  if (exit_flag != 0)
+		return;
 
     if (item->shut_flags & SHUT_FLAG_ABSENT)
 			continue;

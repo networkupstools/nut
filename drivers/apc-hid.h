@@ -23,7 +23,7 @@
  *
  */
 
-#define APC_HID_VERSION	"APC HID 0.6"
+#define APC_HID_VERSION	"APC HID 0.7"
 
 /* --------------------------------------------------------------- */
 /*      Model Name formating entries                               */
@@ -38,7 +38,6 @@ models_name_t apc_models_names [] =
 /*   { "Back-UPS ES", 11, NULL, "FW", 0 },  */
 /*   { "Smart-UPS", 9, NULL, "FW",  0 }, */
 /*   { "BackUPS ", 8, NULL, " ", 0 }, */
-
 
 	/* end of structure. */
 	{ NULL, NULL, -1, "Generic MGE HID model" }
@@ -61,13 +60,17 @@ hid_info_t hid_apc[] = {
   { "battery.voltage",  0, 0, "UPS.PowerSummary.Voltage", NULL, "%.1f", HU_FLAG_OK, NULL },
   { "battery.voltage.nominal", 0, 0, "UPS.Battery.ConfigVoltage", NULL,
     "%.1f", HU_FLAG_OK, NULL },
+  { "battery.temperature", 0, 0,
+    "UPS.Battery.Temperature", NULL, "%.1f", HU_FLAG_OK, NULL },
 
   /* UPS page */
-  { "ups.load", 0, 1, "UPS.DelayBeforeShutdown.PercentLoad", NULL, "%.0f", HU_FLAG_OK, NULL }, /* FIXME: strange path! */
+  { "ups.load", 0, 1, "UPS.Output.PercentLoad", NULL, "%.0f", HU_FLAG_OK, NULL },
   { "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5,
     "UPS.PowerSummary.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_OK, NULL},
   { "ups.test.result", 0, 0,
     "UPS.Battery.Test", NULL, "%s", HU_FLAG_OK, &test_read_info[0] },
+  { "ups.temperature", 0, 0,
+    "UPS.Battery.Temperature", NULL, "%.1f", HU_FLAG_OK, NULL },
 
   /* Special case: ups.status */
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.ACPresent", NULL,
@@ -86,10 +89,12 @@ hid_info_t hid_apc[] = {
     "%.0f", HU_FLAG_OK, &shutdownimm_info[0] },
 
   /* Input page */
-  
+  { "input.voltage", 0, 0, "UPS.Input.Voltage", NULL, "%.1f", HU_FLAG_OK, NULL },
+
   /* Output page */
-  
-  /* Outlet page (using MGE UPS SYSTEMS - PowerShare technology) */
+  { "output.voltage", 0, 0, "UPS.Output.Voltage", NULL, "%.1f", HU_FLAG_OK, NULL },
+  { "output.voltage.target.line", 0, 0,
+    "UPS.Output.ConfigVoltage", NULL, "%.1f", HU_FLAG_OK, NULL },
 
   /* instant commands. */
   /* splited into subset while waiting for extradata support

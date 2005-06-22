@@ -268,6 +268,10 @@ void upsdrv_updateinfo(void)
 			/* Process pending events (HID notifications on Interrupt pipe) */
 			while (evtCount > 0)
 			  {
+				/* Check if we are asked to stop (reactivity++) */
+				if (exit_flag != 0)
+				  return;
+
 				upsdebugx(3, "Object: %s = %ld", 
 						  eventsList[evtCount-1]->Path,
 						  eventsList[evtCount-1]->Value);
@@ -496,6 +500,10 @@ static bool hid_ups_walk(int mode)
 	/* Device data walk ----------------------------- */
 	for ( item = hid_ups ; item->info_type != NULL ; item++ )
 	  {
+		/* Check if we are asked to stop (reactivity++) */
+		if (exit_flag != 0)
+		  return TRUE;
+
 		/* filter data according to mode */
 		switch (mode)
 		  {

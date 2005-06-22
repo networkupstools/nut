@@ -66,6 +66,21 @@ struct my_usb_hid_descriptor {
         u_int16_t wDescriptorLength;
 };
 
+/* From usbutils: workaround libusb API goofs:  "byte" should never be sign extended;
+ * using "char" is trouble.  Likewise, sizes should never be negative.
+ */
+
+static inline int typesafe_control_msg(usb_dev_handle *dev,
+        unsigned char requesttype, unsigned char request,
+        int value, int index,
+        unsigned char *bytes, unsigned size, int timeout)
+{
+        return usb_control_msg(dev, requesttype, request, value, index,
+                (char *) bytes, (int) size, timeout);
+}
+
+#define usb_control_msg         typesafe_control_msg
+
 /* return report descriptor on success, NULL otherwise */
 /* mode: MODE_OPEN for the 1rst time, MODE_REOPEN to skip getting
     report descriptor (the longer part) */
@@ -78,7 +93,7 @@ int libusb_open(HIDDevice *curDevice, MatchFlags *flg, unsigned char *ReportDesc
 	struct my_usb_hid_descriptor *desc;
 
 	int ret = -1, res; 
-	char buf[20];
+	unsigned char buf[20];
 
 	/* libusb base init */
 	usb_init();
@@ -114,9 +129,6 @@ int libusb_open(HIDDevice *curDevice, MatchFlags *flg, unsigned char *ReportDesc
 				  continue;
 				}
 
-			  /* set default interface and claim it */
-			  usb_set_altinterface(udev, 0);
-
 #if LIBUSB_HAS_DETACH_KRNL_DRV
 			  /* this method requires libusb 0.1.8:
 			   * it force device claiming by unbinding
@@ -133,9 +145,13 @@ int libusb_open(HIDDevice *curDevice, MatchFlags *flg, unsigned char *ReportDesc
 				TRACE(2, "trying again to claim USB device...");
 			  }
 #else
-			  usb_claim_interface(udev, 0);
+			  if (usb_claim_interface(udev, 0) < 0)
+				TRACE(2, "failed to claim USB device...");
 #endif
 	
+			  /* set default interface and claim it */
+			  usb_set_altinterface(udev, 0);
+
 			  if (dev->descriptor.iManufacturer) {
 				ret = usb_get_string_simple(udev, dev->descriptor.iManufacturer, 
 											string, sizeof(string));
@@ -201,8 +217,8 @@ int libusb_open(HIDDevice *curDevice, MatchFlags *flg, unsigned char *ReportDesc
 			  }
 			  else {
 				/* USB_LE16_TO_CPU(desc->wDescriptorLength); */
-				desc->wDescriptorLength = buf[7] + (buf[8]<<8);
-				TRACE(2, "HID descriptor retrieved (Reportlen = %i)",
+				desc->wDescriptorLength = buf[7] | (buf[8] << 8);
+				TRACE(2, "HID descriptor retrieved (Reportlen = %5u)",
 					  desc->wDescriptorLength);
 			  }
 	

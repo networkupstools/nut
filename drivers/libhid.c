@@ -586,6 +586,7 @@ static usage_lkp_t usage_lkp[] = {
 	{  "InternalFailure",			0x00840062 },
 	{  "OverLoad",				0x00840065 }, /* mispelled in usb.ids */
 	{  "OverTemperature", 			0x00840067 },
+	{  "ShutdownRequested",			0x00840068 },
 	{  "ShutdownImminent",			0x00840069 },
 	{  "SwitchOn/Off",			0x0084006b },
 	{  "Switchable",			0x0084006c },
@@ -619,6 +620,7 @@ static usage_lkp_t usage_lkp[] = {
 	{ "iDeviceChemistry",			0x00850089 },
 	{ "ACPresent",				0x008500d0 },
 	{ "BatteryPresent",			0x008500d1 },
+	{ "VoltageNotRegulated",		0x008500db },
 /* TODO: per MFR specific usages */
 	/* MGE UPS SYSTEMS Page */
 	{ "iModel",				0xffff00f0 },
@@ -689,7 +691,7 @@ const char *hid_lookup_path(int usage)
 	int i;
 	static char raw_usage[10];
 	
-	TRACE(3, "Looking up %i", usage);
+	TRACE(3, "Looking up %08x", usage);
 
 	for (i = 0; (usage_lkp[i].usage_name[0] != '\0'); i++)
 	{

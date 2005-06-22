@@ -1,3 +1,25 @@
+Wed Jun 22 07:11:54 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - tripplite: fix a battery charge bug, remove some extraneous
+   leading zeros from integral variables (temperature, ...) and
+   bump driver release to 0.8 
+
+ (Cedric Tefft) [Alioth Patch #301783]
+
+Tue Jun 21 14:51:02 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - apc-hid: complete APC data for newhidups
+ - libhid.c: complete HID usages
+
+ (George Ross)
+
+ - libusb.c: improve Report Descriptor length calculation (thanks to
+   John Stamp for pointing out usbutils workaround), and minor type
+   declaration fix
+ - mge-shut, newhidups: improve exit reactivity for restart/shutdown
+   sequences (both imply driver stop and start, while the driver might
+   still be busy in its "long" update loop) by testing the exit_flag.
+
 Fri Jun  3 13:01:55 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - libhid.usermap: add a newline at the end, otherwise hotplug

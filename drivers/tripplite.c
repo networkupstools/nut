@@ -105,7 +105,7 @@
  *  KKK  INFO_ACFREQ * 10
  */
 
-#define DRV_VERSION "0.7"
+#define DRV_VERSION "0.8"
 
 #include "main.h"
 #include "serial.h"
@@ -120,7 +120,7 @@
 #define DEFAULT_OFFDELAY   64  /* seconds (max 0xFF) */
 #define DEFAULT_STARTDELAY 60  /* seconds (max 0xFFFFFF) */
 #define DEFAULT_BOOTDELAY  64  /* seconds (max 0xFF) */
-#define MAX_VOLT 13.0          /* Max battery voltage (100%) */
+#define MAX_VOLT 13.4          /* Max battery voltage (100%) */
 #define MIN_VOLT 11.0          /* Min battery voltage (10%) */
 
 /* We calculate battery charge (q) as a function of voltage (V).
@@ -383,10 +383,10 @@ void upsdrv_updateinfo(void)
 		return;
 	}
 
-	dstate_setinfo("input.voltage", "%03d", hex2d(buf + 2, 2));
-	dstate_setinfo("ups.temperature", "%03d",
+	dstate_setinfo("input.voltage", "%0d", hex2d(buf + 2, 2));
+	dstate_setinfo("ups.temperature", "%3d",
 			(int)(hex2d(buf + 6, 2)*0.3636 - 21.0));
-	dstate_setinfo("ups.load", "%03d", hex2d(buf + 12, 2));
+	dstate_setinfo("ups.load", "%3d", hex2d(buf + 12, 2));
 	dstate_setinfo("input.frequency", "%02.2f", hex2d(buf + 18, 3) / 10.0);
 
 	status_init();
@@ -452,7 +452,7 @@ void upsdrv_updateinfo(void)
 
 	status_commit();
 	send_cmd(":B\r", buf, sizeof buf);
-	bv = hex2d(buf, 2) / 10.0;
+	bv = (float)hex2d(buf, 2) / 10.0;
 
 	/* dq ~= sqrt(dV) is a reasonable approximation
 	 * Results fit well against the discrete function used in the Tripp Lite
@@ -462,11 +462,11 @@ void upsdrv_updateinfo(void)
 	else if (bv <= V_interval[0])
 		bp = 10;
 	else
-		bp = (int) 100 * sqrt(bv - V_interval[0])
-			/ (V_interval[1] - V_interval[0]);
+		bp = (int)(100*sqrt((bv - V_interval[0])
+							/ (V_interval[1] - V_interval[0])));
 
 	dstate_setinfo("battery.voltage", "%.1f", bv);
-	dstate_setinfo("battery.charge",  "%.3d", bp);
+	dstate_setinfo("battery.charge",  "%3d", bp);
 
 	send_cmd(":M\r", buf, sizeof buf);
 	dstate_setinfo("input.voltage.maximum", "%d", hex2d(buf, 2));
