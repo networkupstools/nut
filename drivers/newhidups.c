@@ -233,8 +233,6 @@ void upsdrv_banner(void)
 {
 	printf("Network UPS Tools: New USB/HID UPS driver %s (%s)\n\n",
 		DRIVER_VERSION, UPS_VERSION);
-
-	experimental_driver = 1;
 }
 
 void upsdrv_updateinfo(void) 

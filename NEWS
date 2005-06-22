@@ -1,6 +1,73 @@
 If you're upgrading from an earlier version, see the UPGRADING file.
 
 ---------------------------------------------------------------------------
+Release notes for NUT 2.0.2 - what's new since 2.0.1:
+
+ - the newhidups USB driver has been improved a lot and is no more
+   experimental. It also now as a basic APC support, which will
+   soon replace the legacy hidups driver.
+
+ - The mge-utalk driver has improved its support for old units.
+
+ - The mge-shut driver has been improved for restart/shutdown
+   sequences which was previously blocking the serial port.
+
+ - The general MGE support has been added Pulsar EXtreme C / EX RT,
+   Comet EX RT, Pulsar SV, Pulsar PSX, Ellipse Office and NOVA AVR USB.
+
+ - The genericups driver now supports Generic RUPS 2000, AEC MiniGuard
+   UPS 700 (using Megatec M2501 cable), and Powerware 3110.
+
+   [Nick Barnes, Paul Andreassen]
+
+ - The powermust driver now supports SquareOne Power QP1000, Mustek
+   PowerMust 1400VA Plus and 2000VA USB.
+   
+   [Carlos Rodrigues]
+
+ - The fentonups driver has been enhanced and now supports Sysgration
+   UPGUARDS Pro650.
+
+   [Michel Bouissou, Simon J. Rowe]
+
+ - The cpsups driver now supports MicroDowell B.Box BP 500/750/1000/1500.
+
+   [Armin Diehl]
+
+ - The snmp-ups driver now supports Socomec SNMP devices (Netvision MIB),
+   and Powerware ConnectUPS SNMP cards.
+
+   [Thanos Chatziathanassiou, Olli Salvia]
+
+ - The bcmxcp driver is back with support for Powerware UPSs.
+
+   [Tore �petveit, Kjell Claesson]
+
+ - The cyberpower driver now supports CyberPower 1000AVR.
+
+   [Dave Huang]
+
+ - The new solis driver supports Microsol units: Solis 1.0, 1.5,
+   2.0 and 3.0.
+
+   [Silvino B. Magalhaes]
+
+ - The apcsmart driver has fixed APC600 support.
+
+ - The etapro driver fixes brokeness due to ser_get_line use 
+
+   [Marek Michalkiewicz]
+
+ - The new upscode2 driver supports Fiskars, Compaq and Powerware
+   devices.
+
+  [Niels Baggesen, Havard Lygre]
+
+ - The tripplite driver has fixed a battery charge bug
+
+  [Cedric Tefft]
+
+---------------------------------------------------------------------------
 Release notes for NUT 2.0.1 - what's new since 2.0.0:
 
  - The bestuferrups driver has been forked into the new bestfcom driver
@@ -45,7 +112,7 @@ Release notes for NUT 2.0.1 - what's new since 2.0.0:
 
    [Yuri Elizarov]
 
- - The victonups driver is now at version 0.1.9, which adds many
+ - The victronups driver is now at version 0.1.9, which adds many
    instant commands: calibration control, battery and front panel tests,
    and bypass control.
 

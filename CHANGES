@@ -1,3 +1,5 @@
+2.0.2-pre1
+
 Wed Jun 22 07:11:54 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - tripplite: fix a battery charge bug, remove some extraneous
@@ -5,6 +7,11 @@ Wed Jun 22 07:11:54 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
    bump driver release to 0.8 
 
  (Cedric Tefft) [Alioth Patch #301783]
+
+ - newhidups: remove experimental flag
+ - driver.list: add MGE Ellipse Office, remove legacy hidups support for
+   MGE units, add newhidups for APC units and remove experimental flag
+   for newhidups only supported units
 
 Tue Jun 21 14:51:02 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 

@@ -25,10 +25,10 @@
 "APC"	"Matrix-UPS"		""	"apcsmart"
 "APC"	"Smart-UPS"		""	"apcsmart"
 
-"APC"	"Back-UPS Pro USB"	""	"hidups (experimental USB driver for Linux)"
-"APC"	"Back-UPS USB"		""	"hidups (experimental USB driver for Linux)"
-"APC"	"Back-UPS LS USB"	""	"hidups (experimental USB driver for Linux)"
-"APC"	"Back-UPS ES/CyberFort 350"	""	"hidups (experimental USB driver for Linux)"
+"APC"	"Back-UPS Pro USB"	""	"hidups or newhidups (experimental USB drivers for Linux)"
+"APC"	"Back-UPS USB"		""	"hidups or newhidups (experimental USB drivers for Linux)"
+"APC"	"Back-UPS LS USB"	""	"hidups or newhidups (experimental USB drivers for Linux)"
+"APC"	"Back-UPS ES/CyberFort 350"	""	"hidups or newhidups (experimental USB drivers for Linux)"
 
 "APC"	"Back-UPS"	"940-0095A/C cables"	"genericups upstype=1"
 "APC"	"Back-UPS"	"940-0020B/C cables"	"genericups upstype=2"
@@ -158,19 +158,21 @@
 "Meta System"	"Megaline 8750"		""	"metasys"
 "Meta System"	"Megaline 10000"	""	"metasys"
 
-"MGE UPS SYSTEMS"	"Protection Center"		""	"newhidups or hidups (experimental USB drivers)"
-"MGE UPS SYSTEMS"	"NOVA AVR USB"		""	"newhidups or hidups (experimental USB drivers)"
-"MGE UPS SYSTEMS"	"Pulsar Ellipse USBS"		"USB cable"	"newhidups or hidups (experimental USB drivers)"
-"MGE UPS SYSTEMS"	"Pulsar Ellipse USB"		""	"newhidups or hidups (experimental USB drivers)"
-"MGE UPS SYSTEMS"	"Pulsar Ellipse Premium USBS"		"USB cable"	"newhidups or hidups (experimental USB drivers)"
-"MGE UPS SYSTEMS"	"Pulsar Ellipse Premium USB"	""	"newhidups or hidups (experimental USB drivers)"
-"MGE UPS SYSTEMS"	"Pulsar Evolution"	"USB port"	"newhidups or hidups (experimental USB drivers)"
-"MGE UPS SYSTEMS"	"Comet / Galaxy (USB)"		"USB Card (ref 66067)"		"newhidups or hidups (experimental USB drivers)"
+"MGE UPS SYSTEMS"	"Protection Center"		""	"newhidups"
+"MGE UPS SYSTEMS"	"NOVA AVR USB"		""	"newhidups"
+"MGE UPS SYSTEMS"	"Pulsar Ellipse USBS"		"USB cable"	"newhidups"
+"MGE UPS SYSTEMS"	"Pulsar Ellipse USB"		""	"newhidups"
+"MGE UPS SYSTEMS"	"Pulsar Ellipse Premium USBS"		"USB cable"	"newhidups"
+"MGE UPS SYSTEMS"	"Pulsar Ellipse Premium USB"	""	"newhidups"
+"MGE UPS SYSTEMS"	"Ellipse Office 600/750/1000/1500"		"USB cable"	"newhidups"
+"MGE UPS SYSTEMS"	"Pulsar Evolution"	"USB port"	"newhidups"
+"MGE UPS SYSTEMS"	"Comet / Galaxy (USB)"		"USB Card (ref 66067)"		"newhidups"
 "MGE UPS SYSTEMS"	"NOVA AVR Serial"	""	"mge-shut"
 "MGE UPS SYSTEMS"	"Pulsar Ellipse USBS"		"Serial cable"	"mge-shut"
 "MGE UPS SYSTEMS"	"Pulsar Ellipse S"		""	"mge-shut"
 "MGE UPS SYSTEMS"	"Pulsar Ellipse Premium USBS"		"Serial cable"	"mge-shut"
 "MGE UPS SYSTEMS"	"Pulsar Ellipse Premium S"	""	"mge-shut"
+"MGE UPS SYSTEMS"	"Ellipse Office 600/750/1000/1500"		"Serial cable"	"mge-shut"
 "MGE UPS SYSTEMS"	"Pulsar EXtreme C / EX RT"	""	"mge-shut"
 "MGE UPS SYSTEMS"	"Comet EX RT"			""	"mge-shut"
 "MGE UPS SYSTEMS"	"Pulsar Esprit"			""	"mge-shut"
@@ -192,7 +194,11 @@
 "MGE UPS SYSTEMS"	"Pulsar / Comet / Galaxy (SNMP)"	"SNMP card (ref 66062)"	"snmp-ups (experimental)"
 "MGE UPS SYSTEMS"	"Pulsar (SNMP)"		"SNMP card (ref 66045)"	"snmp-ups (experimental)"
 "MGE UPS SYSTEMS"	"UM-Link (SNMP)"		"Not a UPS (ref 66850)"	"snmp-ups (experimental)"
- 
+ 	{ "ELLIPSE", "600", -1, "Ellipse 600" },
+	{ "ELLIPSE", "750", -1, "Ellipse 750" },
+	{ "ELLIPSE", "1000", -1, "Ellipse 1000" },
+	{ "ELLIPSE", "1500", -1, "Ellipse 1500" },
+
 "MicroDowell"	"B.Box BP  500"	""	"cpsups"
 "MicroDowell"	"B.Box BP  750"	""	"cpsups"
 "MicroDowell"	"B.Box BP 1000"	""	"cpsups"

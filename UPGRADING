@@ -3,6 +3,13 @@ of this software.  When upgrading from an older version, be sure to
 check this file to see if you need to make changes to your system.
 
 ---------------------------------------------------------------------------
+Changes from 2.0.1 to 2.0.2:
+
+ - The newhidups driver, which is the long run USB support approach,
+   needs hotplug files installed to setup the right permissions on
+   device file to operate. Check newhidups manual page for more information.
+
+---------------------------------------------------------------------------
 Changes from 2.0.0 to 2.0.1:
 
  - The cyberpower1100 driver is now called cpsups since it supports

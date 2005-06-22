@@ -37,7 +37,8 @@ S: Maintained: apcsmart, belkin, bestups, cyberpower, dummycons,
 P: Arnaud Quette
 M: arnaud.quette@free.fr
 M: arnaud.quette@mgeups.com
-S: Maintained: hidparser, hidups, mge-shut, mge-utalk, snmp-ups
+S: Maintained: hidparser, newhidups, hidups, mge-shut, mge-utalk,
+               snmp-ups
 
 P: Arjen de Korte
 M: arjen@de-korte.org
