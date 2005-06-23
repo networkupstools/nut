@@ -1,0 +1,35 @@
+#!/bin/sh -e
+
+case "$1" in
+
+  configure)
+    for file in hosts.conf upsset.conf ; do
+        if [ -f /etc/nut/$file ] ; then
+            chown root:nut /etc/nut/$file
+            chmod 644 /etc/nut/$file
+        fi
+    done
+    ;;
+
+  abort-upgrade)
+    # do nothing
+    ;;
+
+  abort-remove)
+    # do nothing
+    ;;
+
+  abort-deconfigure)
+    # do nothing
+    ;;
+
+  *)
+    echo "$0: incorrect arguments: $*" >&2
+    exit 1
+    ;;
+
+esac
+
+#DEBHELPER#
+
+exit 0

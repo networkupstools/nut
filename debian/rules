@@ -1,0 +1,121 @@
+#!/usr/bin/make -f
+
+#export DH_VERBOSE=1
+export DH_COMPAT=4
+export DH_OPTIONS=
+
+CFLAGS+=$(if $(findstring debug,$(DEB_BUILD_OPTIONS)),-g)
+CFLAGS+=$(if $(findstring noopt,$(DEB_BUILD_OPTIONS)),-O0,-O2)
+CONFIGUREFLAGS+=$(if $(findstring nostrip,$(DEB_BUILD_OPTIONS)),,--enable-strip)
+CONFIGUREFLAGS+=--build=$(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+CONFIGUREFLAGS+=--host=$(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+CONFIGUREFLAGS+=$(if $(wildcard /usr/include/linux/hiddev.h),--with-linux-hiddev=/usr/include/linux/hiddev.h,--without-linux-hiddev)
+
+configure: patch configure-stamp
+configure-stamp:
+	dh_testdir
+	CFLAGS='$(CFLAGS)' ./configure $(CONFIGUREFLAGS) \
+	    --prefix=/ \
+	    --sysconfdir=/etc/nut \
+	    --mandir=/usr/share/man \
+	    --libdir=/usr/lib \
+	    --includedir=/usr/include \
+	    --without-ssl \
+	    --with-cgi \
+	    --with-statepath=/var/run/nut \
+	    --with-altpidpath=/var/run/nut \
+	    --with-drvpath=/lib/nut \
+	    --with-cgipath=/usr/lib/cgi-bin/nut \
+	    --with-pidpath=/var/run/nut \
+	    --datadir=/usr/share/nut \
+	    --with-user=nut
+	touch $@
+
+build: configure
+build: build-stamp
+build-stamp:
+	dh_testdir
+	$(MAKE) all cgi snmp usb
+	touch $@
+
+clean: clean-patched unpatch
+clean-patched:
+	dh_testdir
+	dh_testroot
+	rm -f configure-stamp build-stamp install-stamp
+	-$(MAKE) distclean
+	dh_clean
+	-test -r /usr/share/misc/config.sub && \
+	  cp -f /usr/share/misc/config.sub config.sub
+	-test -r /usr/share/misc/config.guess && \
+	  cp -f /usr/share/misc/config.guess config.guess
+
+patch: patch-stamp
+patch-stamp:
+	dpatch apply-all
+	touch $@
+
+unpatch:
+	dpatch deapply-all
+	rm -rf patch-stamp debian/patched
+
+uninstall:
+	dh_testdir
+	dh_testroot
+	rm -f install-stamp
+	dh_clean -k
+
+install: build
+install: install-stamp
+install-stamp: DH_OPTIONS=
+install-stamp:
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+	dh_installdirs
+	$(MAKE) install \
+		DESTDIR=$(PWD)/debian/nut RUNUID=65534 RUNGID=65534
+	# workaround to remove snmp-ups.8 from nut (also installed by nut-snmp)
+	rm $(PWD)/debian/nut/usr/share/man/man8/snmp-ups.8
+	$(MAKE) install-lib \
+		DESTDIR=$(PWD)/debian/nut-dev RUNUID=65534 RUNGID=65534
+	# install dummycons test driver and its manpage
+	mkdir -p $(PWD)/debian/nut-dev/lib/nut
+	mkdir -p $(PWD)/debian/nut-dev/usr/share/man/man8/
+	cp $(PWD)/drivers/dummycons $(PWD)/debian/nut-dev/lib/nut
+	cp $(PWD)/man/dummycons.8 $(PWD)/debian/nut-dev/usr/share/man/man8/
+	$(MAKE) install-snmp \
+		DESTDIR=$(PWD)/debian/nut-snmp RUNUID=65534 RUNGID=65534
+	$(MAKE) install-usb \
+		DESTDIR=$(PWD)/debian/nut-usb RUNUID=65534 RUNGID=65534
+	$(MAKE) install-cgi \
+		DESTDIR=$(PWD)/debian/nut-cgi RUNUID=65534 RUNGID=65534
+	mv $(PWD)/debian/nut/lib/nut/upsdrvctl $(PWD)/debian/nut/sbin
+	# conf files workaround
+	#rm $(PWD)/debian/nut/etc/nut/* $(PWD)/debian/nut-cgi/etc/nut/*
+	dh_installexamples
+	dh_installdocs
+	dh_installchangelogs CHANGES
+	dh_installinit
+	dh_link
+	touch $@
+
+binary-indep: DH_OPTIONS=-i
+binary-indep: install
+
+binary-arch: DH_OPTIONS=-a
+binary-arch: install
+	dh_testdir
+	dh_testroot
+	dh_installdebconf
+	dh_strip
+	dh_compress
+	dh_fixperms
+	dh_installdeb
+	dh_shlibdeps -Xlibupsclient.a
+	dh_gencontrol 
+	dh_md5sums
+	dh_builddeb
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary configure install uninstall patch unpatch

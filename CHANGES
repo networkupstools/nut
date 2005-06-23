@@ -1,3 +1,12 @@
+
+Thu Jun 23 17:41:14 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - Integrate Mandriva and Debian official packaging files, and begin
+   to rework these for 2.0.2 (or future) release
+
+
+ * Forked from 2.0.2-pre2 to start the new 2.1 dev tree.
+
 2.0.2-pre2
 
 Wed Jun 22 07:11:54 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
@@ -264,8 +273,6 @@ Fri Mar 18 13:36:20 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
    and AEC MiniGuard UPS 700 (using Megatec M2501 cable)
 
    (Nick Barnes) [Alioth Patch #301143]
-
- * Forked from 2.0.1 to start the new 2.1 dev tree.
 
 2.0.1:
 

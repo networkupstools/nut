@@ -1,0 +1,175 @@
+#
+#    Translators, if you are not familiar with the PO format, gettext
+#    documentation is worth reading, especially sections dedicated to
+#    this format, e.g. by running:
+#         info -n '(gettext)PO Files'
+#         info -n '(gettext)Header Entry'
+#    Some information specific to po-debconf are available at
+#            /usr/share/doc/po-debconf/README-trans
+#         or http://www.debian.org/intl/l10n/po-debconf/README-trans#
+#    Developers do not need to manually edit POT or PO files.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: nut_1.4.1-pre3-5\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2005-04-19 15:41+0200\n"
+"PO-Revision-Date: 2004-01-11 18:34+0100\n"
+"Last-Translator: Michel Grentzinger <mic.grentz@online.fr>\n"
+"Language-Team: French <debian-l10n-french@lists.debian.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=ISO-8859-15\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:3
+msgid "Remove obsolete /etc/nut/debian.conf file?"
+msgstr "Faut-il supprimer le fichier obsolète /etc/nut/debian.conf ?"
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:3
+msgid ""
+"The upstream author has changed the behaviour of upsd and upsmon. This has "
+"necessited modifications in /etc/init.d/nut, the start up script for the "
+"daemons. The init script no longer looks for /etc/nut/debian.conf. Instead "
+"it reads /etc/nut/upsd.conf and /etc/nut/upsmon.conf directly."
+msgstr ""
+"L'auteur amont a changé le comportement d'upsd et d'upsmon. Cela a nécessité "
+"des changements dans /etc/init.d/nut, le script de lancement des démons. Le "
+"script d'initialisation ne consulte plus /etc/nut/debian.conf. Au lieu de "
+"cela, il lit directement /etc/nut/upsd.conf et /etc/nut/upsmon.conf."
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:3
+msgid ""
+"Therefore, /etc/nut/debian.conf will be removed. Note that in order to get "
+"upsmon to work, you will have to modify /etc/nut/upsmon.conf by adding a "
+"MONITOR line. Please read the instructions in /usr/share/doc/nut/README."
+"Debian."
+msgstr ""
+"Par conséquent, /etc/nut/debian.conf sera supprimé. Veuillez remarquer que "
+"pour faire fonctionner upsmon, vous devrez modifier /etc/nut/upsmon.conf en "
+"ajoutant une ligne MONITOR. Veuillez lire les instructions dans /usr/share/"
+"doc/nut/README.Debian."
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:16
+msgid ""
+"There has been a significant change by the upstream author to the syntax of "
+"the UPS lines in the /etc/nut/upsd.conf configuration file. The init script "
+"in this package takes advantage of this new syntax. You will need to "
+"manually modify your configuration file in order for the init script to work."
+msgstr ""
+"Une modification significative de la syntaxe des lignes UPS a été introduite "
+"par l'auteur amont dans le fichier de configuration /etc/nut/upsd.conf. Le "
+"script d'initialisation de ce paquet se sert de cette nouvelle syntaxe. Vous "
+"devrez modifier vous-même votre fichier de configuration afin que le script "
+"d'initialisation puisse fonctionner."
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:16
+msgid ""
+"There has been a significant change to the syntax of the SHUTDOWNCMD line in "
+"the /etc/nut/upsmon.conf file. The SHUTDOWNCMD must use \"quotes\" around "
+"the command or only the first word will be invoked. The new style is:\n"
+"  SHUTDOWNCMD \"/sbin/shutdown -h\""
+msgstr ""
+"Une modification significative de la syntaxe de la ligne SHUTDOWNCMD a eu "
+"lieu dans le fichier /etc/nut/upsmon.conf. L'instruction SHUTDOWNCMD doit "
+"utiliser des guillemets anglais (« \" », ) autour de la commande sinon seul "
+"le premier mot sera invoqué. La nouvelle syntaxe est :\n"
+"  SHUTDOWNCMD \"/sbin/shutdown -h\""
+
+#. Type: note
+#. Description
+#: ../nut.templates:32
+msgid "Remove user \"nut\" from dialout group. Continue?"
+msgstr "Suppression de l'utilisateur « nut » du groupe dialout."
+
+#. Type: note
+#. Description
+#: ../nut.templates:32
+msgid ""
+"The system user, \"nut\", will be removed from the dialout group.  A new "
+"system group, \"nut\", will be created.  Users must manually change the "
+"permissions on the serial port devices, /dev/ttyS*, to permit access by the "
+"nut group."
+msgstr ""
+"L'utilisateur système « nut » sera supprimé du groupe dialout. Un nouveau "
+"groupe système « nut » sera créé. Les utilisateurs doivent modifier eux-"
+"mêmes les permissions des périphériques de port série, dev/ttyS*, pour en "
+"permettre l'accès au groupe « nut »."
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:40
+msgid ""
+"There have been significant changes by the upstream author to the behaviour "
+"of this software.  Specifically, the configuration files in /etc/nut are "
+"completely different, most of the ups drivers have been rewritten (those "
+"that weren't rewritten have been dropped), and the TCP port on which upsd "
+"listens has changed."
+msgstr ""
+"L'auteur amont a apporté des modifications significatives au comportement de "
+"ce programme. Plus précisément, les fichiers de configuration dans /etc/nut "
+"sont totalement différents, la plupart des pilotes d'alimentation "
+"ininterruptibles (UPS) ont été réécrits (ceux qui n'ont pas été réécrits ont "
+"été abandonnés) et le port TCP sur lequel upsd écoute a changé."
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:40
+msgid ""
+"If you continue with the installation of this package, upsd/upsmon will NOT "
+"restart unless you manually change your configuration files and edit /etc/"
+"default/nut.  You have been warned!"
+msgstr ""
+"Si vous continuez l'installation de ce programme, upsd/upsmon ne redémarrera "
+"PAS tant que vous n'aurez pas changé vous-même votre fichier de "
+"configuration et modifié /etc/default/nut. Vous êtes avertis."
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:55
+msgid "Please manually modify your configuration files! Continue?"
+msgstr ""
+"Veuillez modifiez vous-même vos fichiers de configuration. Poursuivre ?"
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:55
+msgid "This is a serious advisory. Please take note."
+msgstr "Ceci est un avertissement sérieux. Veuillez en prendre bonne note."
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:55
+#, fuzzy
+msgid ""
+"There have been significant changes by the upstream author to the behaviour "
+"of this software. Specifically, the configuration files in /etc/nut are "
+"different, some ups drivers have been renamed, ..."
+msgstr ""
+"L'auteur amont a apporté des modifications significatives au comportement de "
+"ce programme. Plus précisément, les fichiers de configuration dans /etc/nut "
+"sont totalement différents, la plupart des pilotes d'alimentation "
+"ininterruptibles (UPS) ont été réécrits (ceux qui n'ont pas été réécrits ont "
+"été abandonnés) et le port TCP sur lequel upsd écoute a changé."
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:55
+#, fuzzy
+msgid ""
+"If you continue with the installation of this package, upsd/upsmon will NOT "
+"restart unless you manually change your configuration files. Please read /"
+"usr/share/doc/nut/UPGRADING.gz for the upgrading procedure."
+msgstr ""
+"Si vous continuez l'installation de ce programme, upsd/upsmon ne redémarrera "
+"PAS tant que vous n'aurez pas changé vous-même votre fichier de "
+"configuration et modifié /etc/default/nut. Vous êtes avertis."
