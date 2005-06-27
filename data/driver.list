@@ -29,6 +29,7 @@
 "APC"	"Back-UPS USB"		""	"hidups or newhidups (experimental USB drivers for Linux)"
 "APC"	"Back-UPS LS USB"	""	"hidups or newhidups (experimental USB drivers for Linux)"
 "APC"	"Back-UPS ES/CyberFort 350"	""	"hidups or newhidups (experimental USB drivers for Linux)"
+"APC"	"Smart-UPS USB"		""	"hidups or newhidups (experimental USB drivers for Linux)"
 
 "APC"	"Back-UPS"	"940-0095A/C cables"	"genericups upstype=1"
 "APC"	"Back-UPS"	"940-0020B/C cables"	"genericups upstype=2"

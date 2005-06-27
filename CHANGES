@@ -1,11 +1,19 @@
 
 Thu Jun 23 17:41:14 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
+ - remove mgehid.h (replaced by mge-hid.h for consistency)
  - Integrate Mandriva and Debian official packaging files, and begin
    to rework these for 2.0.2 (or future) release
 
+ * Forked from 2.0.2 to start the new 2.1 dev tree.
 
- * Forked from 2.0.2-pre2 to start the new 2.1 dev tree.
+2.0.2
+
+Mon Jun 27 08:11:54 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - Final version number bump for release.
+ - driver.list: add Smart-UPS USB support, and leave the experimental
+   flag for hidups/newhidups and APC units
 
 2.0.2-pre2
 
