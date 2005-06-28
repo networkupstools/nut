@@ -1,3 +1,8 @@
+Tue Jun 28 16:41:14 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - *mib.h: remove all references to SU_TYPE_TIME as it's not used
+   and cause some problems when exposing the data
+    
 2.0.2
 
 Mon Jun 27 08:11:54 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
