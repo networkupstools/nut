@@ -123,7 +123,7 @@ snmp_info_t mge_mib[] = {
  	{ "battery.voltage", 0, 0.1, MGE_OID_BATTVOLT, "", SU_FLAG_OK, NULL },
 
 /*	{ "ups.delay.shutdown", ST_FLAG_STRING | ST_FLAG_RW, 3, MGE_OID_GRACEDELAY, "",
-		SU_TYPE_TIME | SU_FLAG_OK, NULL },
+		SU_FLAG_OK, NULL },
 */
 	/* Outlet page */
 	{ "outlet.id", 0, 1, NULL, "0", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },

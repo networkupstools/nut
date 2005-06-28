@@ -169,7 +169,7 @@ snmp_info_t apcc_mib[] = {
 	{ "ups.load", 0, 1, APCC_OID_LOADPCT, "", SU_FLAG_OK, NULL },
 	{ "ups.firmware", ST_FLAG_STRING, 16, APCC_OID_FIRMREV, "",
 		SU_FLAG_STATIC | SU_FLAG_OK, NULL },
-	{ "battery.runtime", 0, 1, APCC_OID_BATT_RUNTIME, "", SU_TYPE_TIME |  SU_FLAG_OK, NULL },
+	{ "battery.runtime", 0, 1, APCC_OID_BATT_RUNTIME, "", SU_FLAG_OK, NULL },
 	/* can't find appropriate OID for "battery.voltage". */
 	/*{ "battery.voltage", 0, 1, APCC_OID_BATT_VOLTAGE, "", SU_FLAG_OK, NULL },*/
 	{ "output.voltage", 0, 1, APCC_OID_OUTVOLT, "", SU_FLAG_OK, NULL },
@@ -191,11 +191,11 @@ snmp_info_t apcc_mib[] = {
 	{ "input.sensitivity", ST_FLAG_STRING | ST_FLAG_RW, 1, APCC_OID_SENS, "",
 		SU_TYPE_INT | SU_FLAG_OK, NULL },
 	{ "ups.delay.shutdown", ST_FLAG_STRING | ST_FLAG_RW, 3, APCC_OID_GRACEDELAY, "",
-		SU_TYPE_TIME | SU_FLAG_OK, NULL },
+		SU_FLAG_OK, NULL },
 	{ "ups.delay.start", ST_FLAG_STRING | ST_FLAG_RW, 3, APCC_OID_RETDELAY, "",
-		SU_TYPE_TIME | SU_FLAG_OK, NULL },
+		SU_FLAG_OK, NULL },
 	{ "battery.charge.low", ST_FLAG_STRING | ST_FLAG_RW, 3, APCC_OID_LOBATTIME, "",
-		SU_TYPE_TIME | SU_FLAG_OK, NULL },
+		SU_FLAG_OK, NULL },
 
 	/* Measure-UPS ambient variables */
 	{ "ambient.temperature", 0, 1, APCC_OID_AMBTEMP, "", SU_FLAG_OK, NULL },
