@@ -2,7 +2,8 @@
 
 Thu Jun 30 13:13:02 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
- - solis: fix a naming colision on Solaris (thanks to Paweł Kierdelewicz)
+ - solis: fix a naming colision on Solaris, bump the driver release to
+   0.41 (thanks to Paweł Kierdelewicz)
 
 Tue Jun 28 16:41:14 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 

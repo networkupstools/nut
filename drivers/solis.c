@@ -27,7 +27,7 @@
 
 */
 
-#define DRV_VERSION "0.40"
+#define DRV_VERSION "0.41"
 
 #include <stdio.h>
 #include <time.h>
