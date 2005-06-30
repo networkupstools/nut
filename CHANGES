@@ -1,3 +1,9 @@
+2.0.3-pre1
+
+Thu Jun 30 13:13:02 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - solis: fix a naming colision on Solaris (thanks to Paweł Kierdelewicz)
+
 Tue Jun 28 16:41:14 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - *mib.h: remove all references to SU_TYPE_TIME as it's not used
