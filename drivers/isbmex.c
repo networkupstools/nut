@@ -20,7 +20,7 @@
 
 */
 
-#define DRV_VERSION "0.03"
+#define DRV_VERSION "0.04"
 
 #define xDEBUG
 
@@ -256,7 +256,7 @@ void upsdrv_banner(void)
 void upsdrv_initups(void)
 {
 	upsfd = ser_open(device_path);
-	ser_set_speed(upsfd, device_path, B2400);
+	ser_set_speed(upsfd, device_path, B9600);
 }
 
 void upsdrv_cleanup(void)

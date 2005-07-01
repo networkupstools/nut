@@ -1,5 +1,8 @@
 Fri Jul  1 08:15:56 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
+ - isbmex: revert back to B9600 instead of B2400, as it broke the
+   communication, and bump the driver release to 0.04 (thanks to
+   Ricardo Martinezgarza)
  - genericups: add a trace to expose overriden data, and bump the
    driver release to 1.31
 
