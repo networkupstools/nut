@@ -17,7 +17,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define DRV_VERSION "1.30"
+#define DRV_VERSION "1.31"
 
 #include <sys/ioctl.h>
 #include <sys/termios.h>
@@ -91,20 +91,32 @@ void upsdrv_initinfo(void)
 
 	/* see if the user wants to override the signal definitions */
 
-	if (getval("CP")) 
+	if (getval("CP")) {
 		parse_output_signals(getval("CP"), &upstab[upstype].line_norm); 
- 
-	if (getval("OL")) 
+		upsdebugx(2, "parse_output_signals: CP overriden with %s\n",
+			getval("CP"));	
+	}
+	
+	if (getval("OL")) {
 		parse_input_signals(getval("OL"), &upstab[upstype].line_ol, 
 			&upstab[upstype].val_ol); 
- 
-	if (getval("LB")) 
+		upsdebugx(2, "parse_input_signals: OL overriden with %s\n",
+			getval("OL"));	
+	}
+	
+	if (getval("LB")) {
 		parse_input_signals(getval("LB"), &upstab[upstype].line_bl, 
 			&upstab[upstype].val_bl); 
- 
-	if (getval("SD")) 
+ 		upsdebugx(2, "parse_input_signals: LB overriden with %s\n",
+			getval("LB"));
+	}
+	
+	if (getval("SD")) {
 		parse_output_signals(getval("SD"), &upstab[upstype].line_sd); 
-
+		upsdebugx(2, "parse_output_signals: SD overriden with %s\n",
+			getval("SD"));
+	}
+	
 	dstate_dataok();
 }
 

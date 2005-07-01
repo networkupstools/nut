@@ -27,7 +27,7 @@
 
 */
 
-#define DRV_VERSION "0.40"
+#define DRV_VERSION "0.41"
 
 #include <stdio.h>
 #include <time.h>
@@ -82,27 +82,27 @@
 static void prnInfo( void )
 {
 
-	int sun=0, mon=0, tue=0, wed=0, thu=0, fri=0, sat=0;
+	int sunday=0, monday=0, tuesday=0, wednesday=0, thursday=0, friday=0, saturday=0;
 
 	printf( UPS_DATE, Year, Month, Day );
 	printf( SYS_DATE, anon, mesn, dian, seman );
 
 	printf( UPS_TIME, ihour, imin, isec);
 
-	tue = ( ( DaysOnWeek & 0x40 ) == 0x40 );
-	wed = ( ( DaysOnWeek & 0x20 ) == 0x20 );
-	thu = ( ( DaysOnWeek & 0x10 ) == 0x10 );
- 	fri = ( ( DaysOnWeek & 0x08 ) == 0x08 );
-	sat = ( ( DaysOnWeek & 0x04 ) == 0x04 );
-	sun = ( ( DaysOnWeek & 0x02 ) == 0x02 );
-	mon = ( ( DaysOnWeek & 0x01 ) == 0x01 );
+	tuesday = ( ( DaysOnWeek & 0x40 ) == 0x40 );
+	wednesday = ( ( DaysOnWeek & 0x20 ) == 0x20 );
+	thursday = ( ( DaysOnWeek & 0x10 ) == 0x10 );
+ 	friday = ( ( DaysOnWeek & 0x08 ) == 0x08 );
+	saturday = ( ( DaysOnWeek & 0x04 ) == 0x04 );
+	sunday = ( ( DaysOnWeek & 0x02 ) == 0x02 );
+	monday = ( ( DaysOnWeek & 0x01 ) == 0x01 );
 
 	if( isprogram ){
 		printf( PRG_ONON );
 		printf( TIME_ON, lhour, lmin);
 		printf( TIME_OFF, dhour, dmin);
 		printf( PRG_DAYS );
-		printf( FMT_DAYS, sun, mon, tue, wed, thu, fri, sat);
+		printf( FMT_DAYS, sunday, monday, tuesday, wednesday, thursday, friday, saturday);
 	}
 	else
 		printf( PRG_ONOF );
