@@ -216,8 +216,6 @@ int parse_data_file(int upsfd)
 		if ((ptr = strchr(ctx.arglist[0], ':')) != NULL)
 			*ptr = '\0';
 
-		upslogx(LOG_NOTICE, "args (%i): %s, %s", ctx.numargs, ctx.arglist[0], ctx.arglist[1]);
-
 		/* From there, we get varname in arg[0], and values in other arg[x] */
 		/* FIXME: iteration on arg[2, 3, ...]
 			if ST_FLAG_STRING => all args are the value
