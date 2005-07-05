@@ -24,19 +24,19 @@ INSTALLMODE = 0755
 # DRIVER_BUILD_LIST is either "all-drivers" or a subset from configure time
 DRIVER_BUILD_LIST = @DRIVER_BUILD_LIST@
 
+# SNMP specific
 SNMP_DRIVER_LIST = snmp-ups
-
 NETSNMP_CFLAGS = @NETSNMP_CFLAGS@
 NETSNMP_LIBS = @NETSNMP_LIBS@
 
+# USB specific
 USB_DRIVER_LIST = @USB_DRIVER_LIST@
-
 LIBUSB_CFLAGS = @LIBUSB_CFLAGS@
 LIBUSB_LIBS = @LIBUSB_LIBS@
 
-all: @DRIVER_BUILD_LIST@ upsdrvctl dummycons
+all: $(DRIVER_BUILD_LIST) upsdrvctl
 
-all-drivers: $(PROGS) mge-shut
+all-drivers: $(PROGS) mge-shut dummy-ups
 
 # ==========================================================================
 # Driver build details
@@ -55,8 +55,10 @@ upsdrvctl: upsdrvctl.c ../common/upsconf.o ../common/parseconf.o $(LIBDEP)
 # ==========================================================================
 # Testing driver for doing things without real UPS hardware attached
 
-dummycons: dummycons.c dstate.o ../common/state.o ../common/parseconf.o $(LIBDEP)
-	$(CC) $(CFLAGS) -o $@ $@.c dstate.o ../common/state.o ../common/parseconf.o $(LIBOBJ) $(LDFLAGS)
+dummy-ups: dummy-ups.c dummy-ups.h main.o dstate.o ../common/state.o \
+	../common/upsconf.o ../common/parseconf.o $(LIBDEP)
+	$(CC) $(CFLAGS) -o $@ $@.c main.o dstate.o ../common/state.o \
+	../common/upsconf.o ../common/parseconf.o $(LIBOBJ) $(LDFLAGS)
 
 # ==========================================================================
 # Special cases: drivers which need Linux includes
@@ -142,7 +144,7 @@ snmp-ups.o: snmp-ups.c snmp-ups.h \
 
 clean:
 	rm -f *~ *.o $(PROGS) Makefile.drvbuild
-	rm -f dummycons snmp-ups energizerups newhidups hidups mge-shut upsdrvctl
+	rm -f dummy-ups snmp-ups energizerups newhidups hidups mge-shut upsdrvctl
 	./gendb $(PROGS)
 
 distclean: clean

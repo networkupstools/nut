@@ -1,5 +1,12 @@
 Fri Jul  1 08:15:56 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
+ - replaced the dummycons driver by the dummy-ups driver.
+   While the former was only usable through a console, the later
+   is a real driver, that load the set of data supported and their
+   values from a file, and that can be controled through upsc,
+   upsrw and upscmd (or any other tool like knutclient, ...). For
+   more information, check the dummy-ups driver manpage (5)
+
  - isbmex: revert back to B9600 instead of B2400, as it broke the
    communication, and bump the driver release to 0.04 (thanks to
    Ricardo Martinezgarza)

@@ -17,7 +17,8 @@ MAN8_PAGES  = upsc.8 upsrw.8 upscmd.8 upslog.8 upssched.8 \
 		upsmon.8 upsd.8 nutupsdrv.8 upsdrvctl.8
 
 DRIVERPAGES = \
-	apcsmart.8 	\
+	apcsmart.8	\
+	bcmxcp.8 	\
 	belkin.8 	\
 	belkinunv.8	\
 	bestuferrups.8	\
@@ -25,6 +26,7 @@ DRIVERPAGES = \
 	bestfcom.8	\
 	cpsups.8	\
 	cyberpower.8	\
+	dummy-ups.8	\
 	etapro.8	\
 	everups.8	\
 	fentonups.8 	\
@@ -33,6 +35,7 @@ DRIVERPAGES = \
 	isbmex.8	\
 	liebert.8	\
 	masterguard.8	\
+	metasys.8	\
 	mge-shut.8	\
 	mge-utalk.8	\
 	mustek.8	\
@@ -45,9 +48,7 @@ DRIVERPAGES = \
 	tripplite.8	\
 	tripplitesu.8	\
 	upscode2.8	\
-	victronups.8	\
-	metasys.8	\
-	bcmxcp.8
+	victronups.8
 
 SNMPPAGES = snmp-ups.8
 
