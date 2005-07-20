@@ -1,8 +1,9 @@
 /*
    isbmex.c - model specific routines for SOLA/BASIC Mexico (ISBMEX) models
 
+   Copyright (C) 2005 Ricardo Martinezgarza <ricardo@nexxis.com.mx>
    Copyright (C) 2002 Edscott Wilson Garcia <edscott@imp.mx>
-   Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
+   Copyright (C) 1999 Russell Kroll <rkroll@exploits.org>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,7 +21,7 @@
 
 */
 
-#define DRV_VERSION "0.04"
+#define DRV_VERSION "0.05"
 
 #define xDEBUG
 
@@ -40,14 +41,93 @@
 #define MAXTRIES 15
 /* #define IGNCHARS	""	*/
 
+float lagrange(unsigned int vbyte)
+{
+	float f0, f1, f2, f3, f4, f5, f6;
+	float a, b, c, d, e, g, h;
+	const float x0=144.0, x1=154.0, x2=184.0, x3=195.0, x4=215.0, x5=228.0, x6=249.0;
+	const float fX0=95.1, fX1=98.3, fX2=112.6, fX3=116.5, fX4=126.0, fX5=131.0, fX6=140.3;
+
+	if(vbyte < 144) return 0.0;
+
+	f0 = vbyte - x0;
+	f1 = vbyte - x1;
+	f2 = vbyte - x2;
+	f3 = vbyte - x3;
+	f4 = vbyte - x4;
+	f5 = vbyte - x5;
+	f6 = vbyte - x6;
+
+	b = (f1 * f2 * f3 * f4 * f5 * f6 * fX0)/((x0 - x1) * (x0 - x2));
+	b = b / ((x0 - x3) * (x0 - x4));
+	b = b / ((x0 - x5) * (x0 - x6));
+
+	c = (f0 * f2 * f3 * f4 * f5 * f6 * fX1)/((x1 - x0) * (x1 - x2));
+	c = c / ((x1 - x3) * (x1 - x4));
+	c = c / ((x1 - x5) * (x1 - x6));
+
+	d = (f0 * f1 * f3 * f4 * f5 * f6 * fX2)/((x2 - x0) * (x2 - x1));
+	d = d / ((x2 - x3) * (x2 - x4));
+	d = d / ((x2 - x5) * (x2 - x6));
+
+	e = (f0 * f1 * f2 * f4 * f5 * f6 * fX3)/((x3 - x0) * (x3 - x1));
+	e = e / ((x3 - x2) * (x3 - x4));
+	e = e / ((x3 - x5) * (x3 - x6));
+
+	a = (f0 * f1 * f2 * f3 * f5 * f6 * fX4)/((x4 - x0) * (x4 - x1));
+	a = a / ((x4 - x2) * (x4 - x3));
+	a = a / ((x4 - x5) * (x4 - x6));
+
+	g = (f0 * f1 * f2 * f3 * f4 * f6 * fX5)/((x5 - x0) * (x5 - x1));
+	g = g / ((x5 - x2) * (x5 - x3));
+	g = g / ((x5 - x4) * (x5 - x6));
+
+	h = (f0 * f1 * f2 * f3 * f4 * f5 * fX6)/((x6 - x0) * (x6 - x1));
+	h = h / ((x6 - x2) * (x6 - x3));
+	h = h / ((x6 - x4) * (x6 - x5));
+
+	return a + b + c + d + e + g + h;
+}
+
+float interpol(float vbytes)
+{
+	const int x[7]={75,83,87,98,103,118,145};
+	const float f[7]={96.0,102.0,105.0,113.0,116.0,124.0,140.0};
+	float l[7];
+	float t, volts;
+	const int n=6;
+	int i, j;
+
+	if(vbytes < x[0]) return 0.0;
+	if(vbytes > x[6]) return f[6];
+	for(i=0; i<=n; i++)
+	{
+		if((int)vbytes == x[i]) return f[i];
+	}
+	for(i=0; i<=n; i++)
+	{
+		l[i] = 1.0;
+		for(j=0; j<=n; j++)
+		{
+			if(j!=i) l[i] *= (float)(x[i] - x[j]);
+		}
+		l[i] = f[i] / l[i];
+	}
+	t = 1.0;
+	for(i=0; i<=n; i++) t *= (vbytes - (float)x[i]);
+	volts = 0.0;
+	for(i=0; i<=n; i++) volts += (l[i] * t / (vbytes - (float)x[i]));
+	return volts;
+}
+
 void upsdrv_initinfo(void)
 {
 	dstate_setinfo("ups.mfr", "Sola/Basic Mexico");
-	dstate_setinfo("ups.model", "SR-Inet 280/300/400/480/500/800");
+	dstate_setinfo("ups.model", "SR-Inet 280/300/400/480/500/800/1000");
 
 	/* high/low voltage */
-	dstate_setinfo("input.transfer.low", "95.0");	/* defined */
-	dstate_setinfo("input.transfer.high", "145.0");	/* defined */
+	dstate_setinfo("input.transfer.low", "102.0");	/* defined */
+	dstate_setinfo("input.transfer.high", "140.0");	/* defined */
 
 	dstate_setinfo("output.voltage", "120.0");	/* defined */
 	 
@@ -74,10 +154,10 @@ static const char *getpacket(int *we_know){
   FD_ZERO(&readfds);
   FD_SET(upsfd,&readfds);
 	/* Wait up to 2 seconds. */
-  tv.tv_sec = 2;
+  tv.tv_sec = 5;
   tv.tv_usec = 0;
  
-  ret=select(upsfd+1,  &readfds, NULL, NULL,&tv);
+  ret=select(upsfd+1,  &readfds, NULL, NULL, &tv);
   if (!ret) {
 	s="Nothing received from UPS. Check cable conexion";
 	upslogx(LOG_ERR, "%s", s);
@@ -94,7 +174,7 @@ static const char *getpacket(int *we_know){
 	     usleep(500000);
              tv.tv_sec = 2;
              tv.tv_usec = 0;
-             ret=select(upsfd+1,  &readfds, NULL, NULL,&tv);
+             ret=select(upsfd+1,  &readfds, NULL, NULL, &tv);
              if (!ret) return NULL;
 	     rr=read(upsfd,buf+r,255-r);
 	     r += rr;
@@ -146,7 +226,7 @@ void upsdrv_updateinfo(void)
   static int bytes_per_packet=0;
 
   for (i=0;i<5;i++) {
-	  if ((buf=getpacket(&bytes_per_packet))!=NULL) break;
+	  if ((buf=getpacket(&bytes_per_packet)) != NULL) break;
   }
   if (!bytes_per_packet || !buf) {
 	dstate_datastale();
@@ -160,10 +240,9 @@ void upsdrv_updateinfo(void)
      D(printf("parsing (%d bytes per packet)\n",bytes_per_packet);)
      /* input voltage :*/
      if (bytes_per_packet==9) {
-	 in_volt = (unsigned char)buf[3] -'A';    
+	 in_volt = lagrange((unsigned char)buf[3]);    
      } else {
-	 d=(unsigned char)buf[3]*256+(unsigned char)buf[4];    
-	 in_volt = (float) sqrt(d) + 10;
+	 in_volt = interpol(sqrt((float)((unsigned char)buf[3]*256+(unsigned char)buf[4])));    
      }
      snprintf(buf2,16,"%5.1f",in_volt);
      D(printf("utility=%s\n",buf2);)
@@ -179,7 +258,7 @@ void upsdrv_updateinfo(void)
      D(printf("lowvolt=%s\n",buf2);)
      dstate_setinfo("input.voltage.minimum", "%s", buf2);      
  
-     battpct = (double)((unsigned char)buf[(bytes_per_packet==10)?5:4])*100.0/255.0;
+     battpct = ((double)((unsigned char)buf[(bytes_per_packet==10)?5:4])-168.0)*(100.0/(215.0-168.0));
      snprintf(buf2,16,"%5.1f",battpct);
      D(printf("battpct=%s\n",buf2);)
      dstate_setinfo("battery.charge", "%s", buf2);    
@@ -233,8 +312,14 @@ void upsdrv_shutdown(void)
 	/* 
 	 * here try to do the pin 9 trick, if it does not
 	 * work, else:*/
-	fatalx("Shutdown only supported with the Generic Driver, type 6 and special cable");
+/*	fatalx("Shutdown only supported with the Generic Driver, type 6 and special cable");  */
 	/*fatalx("shutdown not supported");*/
+	int i, ret;
+	for(i=0;i<=5;i++)
+	{
+		ret = ser_send_char(upsfd, '#');
+		usleep(50000);
+	}
 }
 
 
