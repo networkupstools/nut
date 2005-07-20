@@ -1,5 +1,15 @@
 2.0.3-pre1
 
+Wed Jul 20 11:15:08 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - fix the ID string for Sysgration UPGUARDS Pro650
+
+ (Simon J. Rowe)
+
+ - various fixes in the RedHat spec file
+
+ (Thomas Jarosch)
+
 Fri Jul  1 08:15:56 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - isbmex: revert back to B9600 instead of B2400, as it broke the

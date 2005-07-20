@@ -91,7 +91,7 @@ struct {
 	
 	/* Sysgration model data from Simon J. Rowe */
 	
-	{ "Pro 650 4.01", "Sysgration", "UPGUARDS Pro650", 
+	{ "                Pro 650    4.01", "Sysgration", "UPGUARDS Pro650",
 		9.6, 2.4, 9.6, 2.4, 168, 196, 252, 284, 1 },
 
 	/* SuperPower model data from Denis Zaika */
