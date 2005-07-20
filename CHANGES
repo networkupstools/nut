@@ -2,6 +2,9 @@
 
 Wed Jul 20 11:15:08 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
+ - adapt newhidups to recognize units from Tripplite, Mustek and
+   Unitek for development purpose
+
  - isbmex: fix various errors in formulas, add shutdown capability
    and bump driver release to 0.05
 
