@@ -105,6 +105,8 @@
 
 "Gemini"	"UPS625/UPS1000"	""	"safenet"
 
+"INELT"		"Monolith 1000LT"	""	"fentonups"
+
 "Infosec"	"iPEL 350"	""	"esupssmart"
 "Infosec"	"iPEL 500"	""	"esupssmart"
 "Infosec"	"iPEL 750"	""	"esupssmart"
@@ -195,10 +197,6 @@
 "MGE UPS SYSTEMS"	"Pulsar / Comet / Galaxy (SNMP)"	"SNMP card (ref 66062)"	"snmp-ups (experimental)"
 "MGE UPS SYSTEMS"	"Pulsar (SNMP)"		"SNMP card (ref 66045)"	"snmp-ups (experimental)"
 "MGE UPS SYSTEMS"	"UM-Link (SNMP)"		"Not a UPS (ref 66850)"	"snmp-ups (experimental)"
- 	{ "ELLIPSE", "600", -1, "Ellipse 600" },
-	{ "ELLIPSE", "750", -1, "Ellipse 750" },
-	{ "ELLIPSE", "1000", -1, "Ellipse 1000" },
-	{ "ELLIPSE", "1500", -1, "Ellipse 1500" },
 
 "MicroDowell"	"B.Box BP  500"	""	"cpsups"
 "MicroDowell"	"B.Box BP  750"	""	"cpsups"

@@ -1,3 +1,18 @@
+Wed Jul 20 11:15:08 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - isbmex: fix various errors in formulas, add shutdown capability
+   and bump driver release to 0.05
+
+ (Ricardo Martinezgarza)
+
+ * fentonups:
+   - fix the ID string for Sysgration UPGUARDS Pro650 (Simon J. Rowe)
+   - add INELT Monolith 1000LT (Yuri V. Kurenkov)
+
+ - various fixes in the RedHat spec file
+
+ (Thomas Jarosch)
+
 Fri Jul  1 08:15:56 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - replaced the dummycons driver by the dummy-ups driver.
