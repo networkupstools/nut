@@ -46,8 +46,10 @@ struct usb_bus *bus;
 
 /* FIXME! */
 #define MGE_UPS_SYSTEMS		0x0463		/* All models */
-#define APC					0x051d		/* All models */
-
+#define APC			0x051d		/* All models */
+#define MUSTEK                  0x0665          /* models: 0x5161... */
+#define TRIPPLITE               0x09ae          /* models IDs? */
+#define UNITEK                  0x0F03          /* models: 0x0001... */
 
 /* TODO: rework all that */
 extern void upsdebugx(int level, const char *fmt, ...);
@@ -112,8 +114,11 @@ int libusb_open(HIDDevice *curDevice, MatchFlags *flg, unsigned char *ReportDesc
 
 			  /* Check the VendorID for matching flag */
 			  /* FIXME: temporary method, not generic/flexible enough */
-			  if ((dev->descriptor.idVendor == MGE_UPS_SYSTEMS)
-				  || (dev->descriptor.idVendor == APC))
+			  if ( (dev->descriptor.idVendor == MGE_UPS_SYSTEMS)
+				  || (dev->descriptor.idVendor == APC)
+				  || (dev->descriptor.idVendor == MUSTEK)
+				  || (dev->descriptor.idVendor == TRIPPLITE)
+				  || (dev->descriptor.idVendor == UNITEK) )
 				{
 				  TRACE(2, "Found 0x%x", dev->descriptor.idVendor);
 				  if (mode == MODE_REOPEN)
