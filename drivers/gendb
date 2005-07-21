@@ -39,5 +39,5 @@ do
 	esac	
 
 	echo "$i: $i.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o \$(LIBDEP)" >> $MFDB
-	echo "	\$(CC) \$(CFLAGS) -o $i $i.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o \$(LIBOBJ) $EXTRA" >> $MFDB
+	echo "	\$(CC) \$(CFLAGS) \$(LDFLAGS) -o $i $i.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o \$(LIBOBJ) $EXTRA" >> $MFDB
 done

@@ -1,5 +1,10 @@
 2.0.3-pre1
 
+Thu Jul 21 14:02:08 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - add the missing LDFLAGS to gendb
+ - add Belkin F6C1100-UNV to the driver.list (thanks to Dave Breiland)
+
 Wed Jul 20 11:15:08 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - adapt newhidups to recognize units from Tripplite, Mustek and
