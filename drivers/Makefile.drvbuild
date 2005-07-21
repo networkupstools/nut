@@ -62,8 +62,8 @@ bestfcom: bestfcom.o main.o serial.o dstate.o ../common/state.o ../common/upscon
 powermust: powermust.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o $(LIBDEP)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o powermust powermust.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o $(LIBOBJ) 
 bcmxcp: bcmxcp.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o $(LIBDEP)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o bcmxcp bcmxcp.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o $(LIBOBJ)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o bcmxcp bcmxcp.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o $(LIBOBJ) 
 upscode2: upscode2.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o $(LIBDEP)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o upscode2 upscode2.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o $(LIBOBJ) -lm
 solis: solis.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o $(LIBDEP)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o solis solis.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o $(LIBOBJ)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o solis solis.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o $(LIBOBJ) 
