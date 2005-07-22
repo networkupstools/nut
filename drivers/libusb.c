@@ -51,7 +51,6 @@ struct usb_bus *bus;
 #define TRIPPLITE               0x09ae          /* models IDs? */
 #define UNITEK                  0x0F03          /* models: 0x0001... */
 
-
 /* TODO: rework all that */
 extern void upsdebugx(int level, const char *fmt, ...);
 #define TRACE upsdebugx
@@ -122,8 +121,6 @@ int libusb_open(HIDDevice *curDevice, MatchFlags *flg, unsigned char *ReportDesc
 				  || (dev->descriptor.idVendor == UNITEK) )
 				{
 				  TRACE(2, "Found 0x%x", dev->descriptor.idVendor);
-				  if (mode == MODE_REOPEN)
-					return 1;
 
 				  curDevice->VendorID = dev->descriptor.idVendor;
 				  curDevice->iProduct = dev->descriptor.iProduct;
@@ -136,7 +133,7 @@ int libusb_open(HIDDevice *curDevice, MatchFlags *flg, unsigned char *ReportDesc
 				}
 
 #if LIBUSB_HAS_DETACH_KRNL_DRV
-			  /* this method requires libusb 0.1.8:
+			  /* this method requires at least libusb 0.1.8:
 			   * it force device claiming by unbinding
 			   * attached driver... From libhid */
 			  while ((ret = usb_claim_interface(udev, 0)) != 0 && retries-- > 0) {
@@ -155,12 +152,16 @@ int libusb_open(HIDDevice *curDevice, MatchFlags *flg, unsigned char *ReportDesc
 				TRACE(2, "failed to claim USB device...");
 #endif
 	
-			  /* set default interface and claim it */
+			  /* set default interface */
 			  usb_set_altinterface(udev, 0);
+
+			  /* we can safely exit here if we are reopening the device */
+			  if (mode == MODE_REOPEN)
+				return 1;
 
 			  if (dev->descriptor.iManufacturer) {
 				ret = usb_get_string_simple(udev, dev->descriptor.iManufacturer, 
-											string, sizeof(string));
+								string, sizeof(string));
 				if (ret > 0)
 				  {
 					TRACE(2, "- Manufacturer : %s", string);
