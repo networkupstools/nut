@@ -209,7 +209,7 @@ struct {
 	  TIOCM_RTS			/* shutdown: set RTS		*/
 	},
 
-	/* http://lists.exploits.org/ups/Oct2003/00052.html */
+	/* docs/cables/powerware.txt */
 
 	{ "Powerware",
 	  "5119 RM",

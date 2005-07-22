@@ -5,6 +5,7 @@ Fri Jul 22 08:20:08 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
    device reopening
  - dummy-ups: add the flags and string length for the user data parsed,
    and bump driver release to 0.02
+ - added back the Powerware 5119 RM Cable Layout from Daniel Thompson
 
 Thu Jul 21 14:02:08 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
