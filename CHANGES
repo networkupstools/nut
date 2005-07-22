@@ -1,3 +1,11 @@
+Fri Jul 22 08:20:08 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - newhidups: minor change in interface claiming to avoid message like
+   "process <pid> (<name>) did not claim interface X before use" upon
+   device reopening
+ - dummy-ups: add the flags and string length for the user data parsed,
+   and bump driver release to 0.02
+
 Thu Jul 21 14:02:08 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - add the missing LDFLAGS to gendb

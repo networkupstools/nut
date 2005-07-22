@@ -51,7 +51,8 @@ This driver is not built by default.  You can build it by using
 it will also install other USB drivers.
 You also need to install manually the hotplug files (libhidups and
 libhid.usermap), generally in etc/hotplug/usb/, to address the
-permission settings problem.
+permission settings problem. Lastly note that the libhidups file
+must have execution flag set (ie using chmod +x ...).
 
 .SH IMPLEMENTATION
 newhidups only support 1 UPS at this time. You can put the

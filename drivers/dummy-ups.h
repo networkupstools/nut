@@ -19,7 +19,7 @@
 
 /* This file list all valid data with their type and info.
  * this are then enable through a definition file, specified
- * as the "port" parameter.
+ * as the "port" parameter (only the file name, not the path).
  * The format of this file is the same as an upsc dump:
  * <varname>: <value>
  * ...
@@ -30,7 +30,7 @@
  */
 
 
-#define DRV_VERSION	"0.01"
+#define DRV_VERSION	"0.02"
 
 
 /* from newhidups.h */

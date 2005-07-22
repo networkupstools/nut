@@ -22,9 +22,10 @@
 #include "dummy-ups.h"
 
 static int setvar(const char *varname, const char *val);
+static int parse_data_file(int upsfd);
+static dummy_info_t *find_info(const char *varname);
 static int is_valid_data(const char* varname);
 static int is_valid_value(const char* varname, const char *value);
-static int parse_data_file(int upsfd);
 
 void upsdrv_initinfo(void)
 {
@@ -117,9 +118,10 @@ void upsdrv_cleanup(void)
 
 static int setvar(const char *varname, const char *val)
 {
+	dummy_info_t *item;
 	int ret;
 
-	upsdebugx(2, "entering setvar(%s, %s)\n", varname, val);
+	upsdebugx(2, "entering setvar(%s, %s)", varname, val);
 
 	if (!strncmp(varname, "ups.status", 10)) {
 		status_init();
@@ -135,6 +137,17 @@ static int setvar(const char *varname, const char *val)
 			/* Check value validity */
 			if (is_valid_value(varname, val)) {
 				dstate_setinfo(varname, "%s", val);
+
+				if ( (item = find_info(varname)) != NULL) {
+					dstate_setflags(item->info_type, item->info_flags);
+
+					/* Set max length for strings, if needed */
+					if (item->info_flags & ST_FLAG_STRING)
+						dstate_setaux(item->info_type, item->info_len);
+				}
+				else
+					
+						
 				ret = STAT_SET_HANDLED;
 			}
 			else {
@@ -155,27 +168,41 @@ static int setvar(const char *varname, const char *val)
 /*               Support functions               */
 /*************************************************/
 
-
-int is_valid_data(const char* varname)
+/* find info element definition in info array */
+static dummy_info_t *find_info(const char *varname)
 {
 	dummy_info_t *item;
 
 	for ( item = nut_data ; item->info_type != NULL ; item++ )	{
 		if (!strcasecmp(item->info_type, varname))
+			return item;
+	}
+
+	upsdebugx(2, "find_info: unknown variable: %s\n", varname);
+
+	return NULL;
+}
+
+/* check if data exists */
+static int is_valid_data(const char* varname)
+{
+	dummy_info_t *item;
+
+	if ( (item = find_info(varname)) != NULL) {
 			return 1;
 	}
 
 	return 0;
 }
 
-int is_valid_value(const char* varname, const char *value)
+/* check if data's value validity */
+static int is_valid_value(const char* varname, const char *value)
 {
 	dummy_info_t *item;
 
-	for ( item = nut_data ; item->info_type != NULL ; item++ )	{
-		if (!strcasecmp(item->info_type, varname))
-			/* FIXME: test enum or bound against value */
-			return 1;
+	if ( (item = find_info(varname)) != NULL) {
+		/* FIXME: test enum or bound against value */
+		return 1;
 	}
 
 	return 0;
@@ -187,7 +214,7 @@ static void upsconf_err(const char *errmsg)
 	upslogx(LOG_ERR, "Fatal error in parseconf(ups.conf): %s", errmsg);
 }
 
-int parse_data_file(int upsfd)
+static int parse_data_file(int upsfd)
 {
 	char	fn[SMALLBUF];
 	char	*ptr;
