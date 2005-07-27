@@ -696,7 +696,7 @@ void send_read_command(unsigned char command)
 	
 	while ((sent != 4) && (retry < PW_MAX_TRY)) {
 		buf[0]=PW_COMMAND_START_BYTE;
-		buf[1]=0x01;			/* data lenght */
+		buf[1]=0x01;			/* data length */
 		buf[2]=command;			/* command to send */
 		buf[3]=calc_checksum(buf);	/* checksum */
 		
@@ -736,7 +736,7 @@ void send_write_command(unsigned char *command, int command_length)
 /* get the answer of a command from the ups. And check that the answer is for this command */
 int get_answer(unsigned char *data, unsigned char command)
 {
-	unsigned char my_buf[128];	/* packet has a maximum lenght of 121+5 bytes */
+	unsigned char my_buf[128];	/* packet has a maximum length of 121+5 bytes */
 	int lenght, end_lenght, res, endblock, start;
 	unsigned char block_number, sequence, pre_sequence;
 

@@ -1,5 +1,9 @@
 2.0.3-pre1
 
+Wed Jul 27 07:08:01 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - bcmxcp: typo fixes (length instead of lenght)
+
 Fri Jul 22 08:20:08 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - newhidups: minor change in interface claiming to avoid message like
@@ -181,7 +185,7 @@ Fri Apr 29 16:03:22 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
 
  - apcsmart: fix APC600 support, and bump driver release to 1.99.7
 
-   (?) [Alioth Patch #301287]
+   (Bill Richter) [Alioth Patch #301287]
 
 Thu Apr 28 18:03:22 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
 
