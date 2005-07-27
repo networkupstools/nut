@@ -1,14 +1,14 @@
 # Network UPS Tools: top level
 
 # directory definitions
-prefix		= /
+prefix		= /usr/local/ups
 exec_prefix	= ${prefix}
 
 BINDIR		= $(DESTDIR)${exec_prefix}/bin
 SBINDIR		= $(DESTDIR)${exec_prefix}/sbin
-CONFPATH	= $(DESTDIR)/etc/nut
-CGIPATH		= $(DESTDIR)/usr/lib/cgi-bin/nut
-DRVPATH		= $(DESTDIR)/lib/nut
+CONFPATH	= $(DESTDIR)${prefix}/etc
+CGIPATH		= $(DESTDIR)${prefix}/cgi-bin
+DRVPATH		= $(DESTDIR)${prefix}/bin
 
 INSTALLDIRS	= $(CONFPATH) $(DRVPATH) $(BINDIR) $(SBINDIR)
 
@@ -65,7 +65,7 @@ install-dirs:
 	done
 
 # the target changes based on whether you did configure --with-cgi or not
-cgi: build-cgi
+cgi: build-cgi-fake
 
 build-cgi-fake:
 	@echo "Error: configured without CGI support."
@@ -89,6 +89,9 @@ install-cgi-man:
 
 install-cgi-conf:
 	@cd conf; $(MAKE) install-cgi-conf; cd ..;
+
+install-cgi-html:
+	@cd data/html; $(MAKE) install-cgi-html; cd ../..;
 
 install-lib:
 	@cd clients; $(MAKE) install-lib; cd ..;
