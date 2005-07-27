@@ -90,6 +90,9 @@ install-cgi-man:
 install-cgi-conf:
 	@cd conf; $(MAKE) install-cgi-conf; cd ..;
 
+install-cgi-html:
+	@cd data/html; $(MAKE) install-cgi-html; cd ../..;
+
 install-lib:
 	@cd clients; $(MAKE) install-lib; cd ..;
 	@cd man; $(MAKE) install-lib-man; cd ..;

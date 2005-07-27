@@ -1,3 +1,17 @@
+Wed Jul 27 07:08:01 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ * CGI
+   - add NUT HTML interface to ease the access to the various CGI
+     scripts (thanks to Dave Breiland for relanching that idea).
+     This one has to be configured with --with-htmlpath and is
+     installed by default by "make install-cgi".
+   - upsstats.cgi: add a "treemode" parameter to allow upsc like
+     data listing, and the RUNTIME variable to display smart
+     battery.runtime
+   - complete upsstats.html with the battery runtime and data
+     tree links
+ - bcmxcp: typo fixes (length instead of lenght, thanks to Bill Richter)
+
 Fri Jul 22 08:20:08 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - newhidups: minor change in interface claiming to avoid message like
@@ -198,7 +212,7 @@ Fri Apr 29 16:03:22 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
 
  - apcsmart: fix APC600 support, and bump driver release to 1.99.7
 
-   (?) [Alioth Patch #301287]
+   (Bill Richter) [Alioth Patch #301287]
 
 Thu Apr 28 18:03:22 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
 

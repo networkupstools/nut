@@ -310,7 +310,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA EGREP AR RANLIB ac_ct_RANLIB NUT_VERSION UPSCLI_OBJ UPSCLI_LIBOBJ SSL_CFLAGS SSL_LDFLAGS CGI_BUILD_TARGET GD_INCLUDES GD_LIBS NETSNMP_CFLAGS NETSNMP_LIBS LIBUSB_CFLAGS LIBUSB_LIBS DRIVER_BUILD_LIST USB_DRIVER_LIST USBPAGES DRIVER_INSTALL_TARGET STRLCPY LIBOBJ BUILDOBJ NETLIBS SERLIBS STATEPATH DRVPATH CGIPATH RUN_AS_USER LINUX_HIDDEV WORDS_BIGENDIAN PKG_CFG_DIR USE_PKG_CFG LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA EGREP AR RANLIB ac_ct_RANLIB NUT_VERSION UPSCLI_OBJ UPSCLI_LIBOBJ SSL_CFLAGS SSL_LDFLAGS CGI_BUILD_TARGET GD_INCLUDES GD_LIBS NETSNMP_CFLAGS NETSNMP_LIBS LIBUSB_CFLAGS LIBUSB_LIBS DRIVER_BUILD_LIST USB_DRIVER_LIST USBPAGES DRIVER_INSTALL_TARGET STRLCPY LIBOBJ BUILDOBJ NETLIBS SERLIBS STATEPATH DRVPATH CGIPATH HTMLPATH RUN_AS_USER LINUX_HIDDEV WORDS_BIGENDIAN PKG_CFG_DIR USE_PKG_CFG LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -861,6 +861,7 @@ Optional Packages:
  --with-altpidpath=PATH		Path for driver/upsd .pid files    (statepath)
  --with-drvpath=PATH		Path for ups drivers              <prefix>/bin
  --with-cgipath=PATH		Path for CGI programs         <prefix>/cgi-bin
+ --with-htmlpath=PATH		Path for HTML files           <prefix>/html
  --with-pidpath=PATH		Path for .pid files                   /var/run
  --with-port=PORT		Port for network communications           3493
  --with-user=username		User for programs started as root       nobody
@@ -1451,6 +1452,7 @@ STATEPATH="/var/state/ups"
 
 DRVPATH='${prefix}/bin'
 CGIPATH='${prefix}/cgi-bin'
+HTMLPATH='${prefix}/html'
 
 RUN_AS_USER="nobody"
 PIDPATH="/var/run"
@@ -6193,6 +6195,47 @@ _ACEOF
 
 fi;
 
+echo "$as_me:$LINENO: checking html path" >&5
+echo $ECHO_N "checking html path... $ECHO_C" >&6
+
+# Check whether --with-htmlpath or --without-htmlpath was given.
+if test "${with_htmlpath+set}" = set; then
+  withval="$with_htmlpath"
+  	case "$withval" in
+	yes|no)
+		echo "$as_me:$LINENO: result: using default" >&5
+echo "${ECHO_T}using default" >&6
+		eval conftemp=${HTMLPATH}
+
+cat >>confdefs.h <<_ACEOF
+#define HTMLPATH "$conftemp"
+_ACEOF
+
+		;;
+	*)
+		echo "$as_me:$LINENO: result: $withval" >&5
+echo "${ECHO_T}$withval" >&6
+		eval conftemp=${withval}
+
+cat >>confdefs.h <<_ACEOF
+#define HTMLPATH "$conftemp"
+_ACEOF
+
+		HTMLPATH=$withval
+		;;
+	esac
+else
+  echo "$as_me:$LINENO: result: using default" >&5
+echo "${ECHO_T}using default" >&6
+	eval conftemp=${HTMLPATH}
+
+cat >>confdefs.h <<_ACEOF
+#define HTMLPATH "$conftemp"
+_ACEOF
+
+
+fi;
+
 echo "$as_me:$LINENO: checking pidpath" >&5
 echo $ECHO_N "checking pidpath... $ECHO_C" >&6
 
@@ -6552,7 +6595,8 @@ _ACEOF
 
 
 
-                                                                                                                        ac_config_files="$ac_config_files clients/Makefile conf/Makefile data/Makefile drivers/Makefile server/Makefile Makefile common/Makefile man/Makefile lib/Makefile lib/libupsclient-config lib/libupsclient.pc scripts/hotplug/libhidups"
+
+                                                                                                                                            ac_config_files="$ac_config_files clients/Makefile conf/Makefile data/Makefile data/html/Makefile data/html/header.html drivers/Makefile server/Makefile Makefile common/Makefile man/Makefile lib/Makefile lib/libupsclient-config lib/libupsclient.pc scripts/hotplug/libhidups"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -7081,6 +7125,8 @@ do
   "clients/Makefile" ) CONFIG_FILES="$CONFIG_FILES clients/Makefile" ;;
   "conf/Makefile" ) CONFIG_FILES="$CONFIG_FILES conf/Makefile" ;;
   "data/Makefile" ) CONFIG_FILES="$CONFIG_FILES data/Makefile" ;;
+  "data/html/Makefile" ) CONFIG_FILES="$CONFIG_FILES data/html/Makefile" ;;
+  "data/html/header.html" ) CONFIG_FILES="$CONFIG_FILES data/html/header.html" ;;
   "drivers/Makefile" ) CONFIG_FILES="$CONFIG_FILES drivers/Makefile" ;;
   "server/Makefile" ) CONFIG_FILES="$CONFIG_FILES server/Makefile" ;;
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
@@ -7226,6 +7272,7 @@ s,@SERLIBS@,$SERLIBS,;t t
 s,@STATEPATH@,$STATEPATH,;t t
 s,@DRVPATH@,$DRVPATH,;t t
 s,@CGIPATH@,$CGIPATH,;t t
+s,@HTMLPATH@,$HTMLPATH,;t t
 s,@RUN_AS_USER@,$RUN_AS_USER,;t t
 s,@LINUX_HIDDEV@,$LINUX_HIDDEV,;t t
 s,@WORDS_BIGENDIAN@,$WORDS_BIGENDIAN,;t t
