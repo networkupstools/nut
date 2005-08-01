@@ -118,8 +118,8 @@ void upsdrv_cleanup(void)
 
 static int setvar(const char *varname, const char *val)
 {
+	int ret = STAT_SET_UNKNOWN;
 	dummy_info_t *item;
-	int ret;
 
 	upsdebugx(2, "entering setvar(%s, %s)", varname, val);
 
@@ -151,12 +151,12 @@ static int setvar(const char *varname, const char *val)
 				ret = STAT_SET_HANDLED;
 			}
 			else {
-				upslogx(LOG_ERR, "setvar: invalid value (%s) for variable (%s)", val, varname);
+				upsdebugx(2, "setvar: invalid value (%s) for variable (%s)", val, varname);
 				ret = STAT_SET_UNKNOWN;
 			}
 		}
 		else {
-			upslogx(LOG_ERR, "setvar: invalid variable name (%s)", varname);
+			upsdebugx(2, "setvar: invalid variable name (%s)", varname);
 			ret = STAT_SET_UNKNOWN;
 		}
 	}
@@ -230,7 +230,7 @@ static int parse_data_file(int upsfd)
 
 	while (pconf_file_next(&ctx)) {
 		if (pconf_parse_error(&ctx)) {
-			upslogx(LOG_ERR, "Parse error: %s:%d: %s",
+			upsdebugx(2, "Parse error: %s:%d: %s",
 				fn, ctx.linenum, ctx.errmsg);
 			continue;
 		}
@@ -243,14 +243,24 @@ static int parse_data_file(int upsfd)
 		if ((ptr = strchr(ctx.arglist[0], ':')) != NULL)
 			*ptr = '\0';
 
-		/* From there, we get varname in arg[0], and values in other arg[x] */
+		upsdebugx(2, "parse_data_file: variable \"%s\" with %d args", ctx.arglist[0], ctx.numargs);
+
+		/* skip the driver.* collection data */
+		if (!strncmp(ctx.arglist[0], "driver.", 7)) {
+			upsdebugx(2, "parse_data_file: skipping %s", ctx.arglist[0]);
+			continue;
+		}
+		else
+			upsdebugx(2, "parse_data_file: %s is not a driver. var", ctx.arglist[0]);
+
+		/* From there, we get varname in arg[0], and values in other arg[1...x] */
 		/* FIXME: iteration on arg[2, 3, ...]
 			if ST_FLAG_STRING => all args are the value
 			if ups.status, each arg is a value to be set (ie OB LB) + check against enum
 			else int/float values need to be check against bound/enum
 		*/
 		if (setvar(ctx.arglist[0], ctx.arglist[1]) == STAT_SET_UNKNOWN)
-			upslogx(LOG_ERR, "parse_data_file: can't add \"%s\" with value \"%s\"",
+			upsdebugx(2, "parse_data_file: can't add \"%s\" with value \"%s\"",
 				ctx.arglist[0], ctx.arglist[1]);
 	}
 

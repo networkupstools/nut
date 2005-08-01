@@ -30,7 +30,7 @@
  */
 
 
-#define DRV_VERSION	"0.02"
+#define DRV_VERSION	"0.03"
 
 
 /* from newhidups.h */

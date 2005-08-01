@@ -341,7 +341,7 @@ static void process_status_info(char *nutvalue)
 					ups_status &= ~STATUS_OL;
 					ups_status |= STATUS_OB;
 				break;
-				case STATUS_LB: /* set LB */ /* FIXME: ?clear OL? */
+				case STATUS_LB: /* set LB */
 					ups_status |= STATUS_LB;   /* else, put in default! */ 
 				break;
 				case STATUS_CHRG: /* clear DISCHRG, set CHRG */
