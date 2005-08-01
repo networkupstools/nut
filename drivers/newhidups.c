@@ -1,8 +1,8 @@
 /* newhidups.c - Driver for serial/USB HID UPS units
  * 
- * Copyright (C) 2003 - 2005
- *   Arnaud Quette <arnaud.quette@free.fr> && <arnaud.quette@mgeups.com>
- *   John Stamp <kinsayder@hotmail.com>
+ * Copyright (C)
+ *   2003-2005 Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
+ *   2005 John Stamp <kinsayder@hotmail.com>
  *
  * This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
  *
@@ -344,6 +344,9 @@ static void process_status_info(char *nutvalue)
 				case STATUS_LB: /* set LB */
 					ups_status |= STATUS_LB;   /* else, put in default! */ 
 				break;
+				case STATUS_CLEAR_LB: /* clear LB */
+					ups_status &= ~STATUS_LB;
+				break;
 				case STATUS_CHRG: /* clear DISCHRG, set CHRG */
 					ups_status &= ~STATUS_DISCHRG;
 					ups_status |= STATUS_CHRG;
@@ -352,7 +355,7 @@ static void process_status_info(char *nutvalue)
 					ups_status &= ~STATUS_CHRG;
 					ups_status |= STATUS_DISCHRG;
 				break;
-				/* FIXME: to be checked */
+				/* FIXME: to be checked (+ how to clear) */
 				default: /* CAL, TRIM, BOOST, OVER, RB, BYPASS, OFF */
 					ups_status |= status_item->status_value;
 					/* FIXME: When do we reset these? */

@@ -1,7 +1,7 @@
 /* newhidups.c - Driver for serial/USB HID UPS units
  *
- * Copyright (C) 2003 - 2005
- *   Arnaud Quette <arnaud.quette@free.fr> && <arnaud.quette@mgeups.com>
+ * Copyright (C)
+ *  2003 / 2005 - Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
  *
  * This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
  *
@@ -99,19 +99,22 @@ typedef struct {
 #define STATUS_DISCHRG		2048	/* discharging */
 
 status_lkp_t status_info[] = {
-  { "CAL", STATUS_CAL },
-  { "TRIM", STATUS_TRIM },
-  { "BOOST", STATUS_BOOST },
-  { "OL", STATUS_OL },
-  { "OB", STATUS_OB },
-  { "OVER", STATUS_OVER },
-  { "LB", STATUS_LB },
-  { "RB", STATUS_RB },
-  { "BYPASS", STATUS_BYPASS },
-  { "OFF", STATUS_OFF },
-  { "CHRG", STATUS_CHRG },
-  { "DISCHRG", STATUS_DISCHRG },
-  { "NULL", 0 },
+	/* NUT official status values */
+	{ "CAL", STATUS_CAL },
+	{ "TRIM", STATUS_TRIM },
+	{ "BOOST", STATUS_BOOST },
+	{ "OL", STATUS_OL },
+	{ "OB", STATUS_OB },
+	{ "OVER", STATUS_OVER },
+	{ "LB", STATUS_LB },
+	{ "RB", STATUS_RB },
+	{ "BYPASS", STATUS_BYPASS },
+	{ "OFF", STATUS_OFF },
+	{ "CHRG", STATUS_CHRG },
+	{ "DISCHRG", STATUS_DISCHRG },
+	/* Internal status */
+	{ "!LB", STATUS_CLEAR_LB },	/* To revert LB status */
+	{ "NULL", 0 },
 };
 
 
@@ -141,6 +144,7 @@ info_lkp_t charging_info[] = {
 };
 info_lkp_t lowbatt_info[] = {
   { 1, "LB" },
+  { 0, "!LB" },
   { 0, "NULL" }
 };
 info_lkp_t overbatt_info[] = {
@@ -153,6 +157,7 @@ info_lkp_t replacebatt_info[] = {
 };
 info_lkp_t shutdownimm_info[] = {
   { 1, "LB" },
+  { 0, "!LB" },
   { 0, "NULL" }
 };
 info_lkp_t trim_info[] = {
