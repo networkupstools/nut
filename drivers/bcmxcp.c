@@ -7,9 +7,9 @@
  * All rights reserved.*
 
  Copyright (C) 2004 Kjell Claesson <kjell.claesson-at-telia.com>
- and Tore Ørpetveit <tore-at-orpetveit.net>
+ and Tore ï¿½petveit <tore-at-orpetveit.net>
 
- Thanks to Tore Ørpetveit <tore-at-orpetveit.net> that sent me the
+ Thanks to Tore ï¿½petveit <tore-at-orpetveit.net> that sent me the
  manuals for bcm/xcp.
 
  And to Fabio Di Niro <fabio.diniro@email.it> and his metasys module.
@@ -696,7 +696,7 @@ void send_read_command(unsigned char command)
 	
 	while ((sent != 4) && (retry < PW_MAX_TRY)) {
 		buf[0]=PW_COMMAND_START_BYTE;
-		buf[1]=0x01;			/* data lenght */
+		buf[1]=0x01;			/* data length */
 		buf[2]=command;			/* command to send */
 		buf[3]=calc_checksum(buf);	/* checksum */
 		
@@ -736,11 +736,11 @@ void send_write_command(unsigned char *command, int command_length)
 /* get the answer of a command from the ups. And check that the answer is for this command */
 int get_answer(unsigned char *data, unsigned char command)
 {
-	unsigned char my_buf[128];	/* packet has a maximum lenght of 121+5 bytes */
-	int lenght, end_lenght, res, endblock, start;
+	unsigned char my_buf[128];	/* packet has a maximum length of 121+5 bytes */
+	int length, end_length, res, endblock, start;
 	unsigned char block_number, sequence, pre_sequence;
 
-	end_lenght = 0;
+	end_length = 0;
 	endblock = 0;
 	pre_sequence = 0;
 	start = 0;
@@ -789,16 +789,16 @@ int get_answer(unsigned char *data, unsigned char command)
 			}
 		}
 
-		/* Read data lenght byte */
+		/* Read data length byte */
 		res = ser_get_char(upsfd, (char*)(my_buf+2), 1, 0);
 		if (res != 1) {
-			ser_comm_fail("Receive error (lenght): %d!!!\n", res);
+			ser_comm_fail("Receive error (length): %d!!!\n", res);
 			return -1;
 		}
-		lenght = (unsigned char)my_buf[2];
+		length = (unsigned char)my_buf[2];
 
-		if (lenght < 1) {
-			ser_comm_fail("Receive error (lenght): packet lenght %x!!!\n", lenght);
+		if (length < 1) {
+			ser_comm_fail("Receive error (length): packet length %x!!!\n", length);
 			return -1;
 		}
 
@@ -822,14 +822,14 @@ int get_answer(unsigned char *data, unsigned char command)
 		pre_sequence = sequence;
 
 		/* Try to read all the remainig bytes */
-		res = ser_get_buf_len(upsfd, (char*)(my_buf+4), lenght, 1, 0);
-		if (res != lenght) {
-			ser_comm_fail("Receive error (data): got %d bytes instead of %d!!!\n", res, lenght);
+		res = ser_get_buf_len(upsfd, (char*)(my_buf+4), length, 1, 0);
+		if (res != length) {
+			ser_comm_fail("Receive error (data): got %d bytes instead of %d!!!\n", res, length);
 			return -1;
 		}
 
 		/* Get the checksum byte */
-		res = ser_get_char(upsfd, (char*)(my_buf+(4+lenght)), 1, 0);
+		res = ser_get_char(upsfd, (char*)(my_buf+(4+length)), 1, 0);
 
 		if (res != 1) {
 			ser_comm_fail("Receive error (checksum): %x!!!\n", res);
@@ -842,11 +842,11 @@ int get_answer(unsigned char *data, unsigned char command)
 		return -1;
 		}
 
-		memcpy(data+end_lenght, my_buf+4, lenght);
-		end_lenght += lenght;
+		memcpy(data+end_length, my_buf+4, length);
+		end_length += length;
 
 	}
-	return end_lenght;
+	return end_length;
 }
 
 /* Sends a single command (length=1). and get the answer */
@@ -876,13 +876,13 @@ int command_read_sequence(unsigned char command, unsigned char *data)
 }
 
 /* Sends a setup command (length > 1) */
-int command_write_sequence(unsigned char *command, int command_lenght, unsigned	char *answer)
+int command_write_sequence(unsigned char *command, int command_length, unsigned	char *answer)
 {
 	int bytes_read = 0;
 	int retry = 0;
 	
 	while ((bytes_read < 1) && (retry < 5)) {
-		send_write_command(command, command_lenght);
+		send_write_command(command, command_length);
 		bytes_read = get_answer(answer, command[0]);
 		
 		if (retry > 2) 
