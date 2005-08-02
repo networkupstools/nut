@@ -1,6 +1,7 @@
 Mon Aug 01 13:51:08 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
- - newhidups: handle the status clearing for LB
+ - newhidups: better handling of the status clearing for LB, and bump
+   release to 0.25
  
 Wed Jul 27 07:08:01 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 

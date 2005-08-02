@@ -341,11 +341,14 @@ static void process_status_info(char *nutvalue)
 					ups_status &= ~STATUS_OL;
 					ups_status |= STATUS_OB;
 				break;
-				case STATUS_LB: /* set LB */
-					ups_status |= STATUS_LB;   /* else, put in default! */ 
-				break;
 				case STATUS_CLEAR_LB: /* clear LB */
+					/* Note: the CLEAR flag is processed before the LB flag */
+					/* otherwise, we loose LB when it's really set by one var */
+					/* and cleared by another */	
 					ups_status &= ~STATUS_LB;
+				break;
+				case STATUS_LB: /* set LB */
+					ups_status |= STATUS_LB;
 				break;
 				case STATUS_CHRG: /* clear DISCHRG, set CHRG */
 					ups_status &= ~STATUS_DISCHRG;

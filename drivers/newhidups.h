@@ -27,7 +27,7 @@
 #include <unistd.h>
 #include "config.h"
 
-#define DRIVER_VERSION		"0.24"
+#define DRIVER_VERSION		"0.25"
 
 /* --------------------------------------------------------------- */
 /*      Supported Manufacturers IDs                                */
@@ -87,17 +87,17 @@ typedef struct {
 
 #define STATUS_CAL		1       /* calibration */
 #define STATUS_TRIM		2       /* SmartTrim */
-#define STATUS_BOOST		4       /* SmartBoost */
+#define STATUS_BOOST	4       /* SmartBoost */
 #define STATUS_OL		8       /* on line */
 #define STATUS_OB		16      /* on battery */
 #define STATUS_OVER		32      /* overload */
 #define STATUS_LB		64      /* low battery */
 #define STATUS_RB		128     /* replace battery */
-#define STATUS_BYPASS		256	/* on bypass */
-#define STATUS_OFF		512	/* ups is off */
+#define STATUS_BYPASS	256		/* on bypass */
+#define STATUS_OFF		512		/* ups is off */
 #define STATUS_CHRG		1024	/* charging */
-#define STATUS_DISCHRG		2048	/* discharging */
-
+#define STATUS_DISCHRG	2048	/* discharging */
+#define STATUS_CLEAR_LB	4096	/* clear low battery */
 status_lkp_t status_info[] = {
 	/* NUT official status values */
 	{ "CAL", STATUS_CAL },

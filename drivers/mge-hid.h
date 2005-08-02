@@ -22,7 +22,7 @@
  *
  */
 
-#define MGE_HID_VERSION	"MGE HID 0.7"
+#define MGE_HID_VERSION	"MGE HID 0.8"
 
 /* --------------------------------------------------------------- */
 /*      Model Name formating entries                               */
@@ -141,14 +141,14 @@ hid_info_t hid_mge[] =
     "%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &discharging_info[0] },
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.Charging", NULL, 
     "%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &charging_info[0] },
+  { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.ShutdownImminent", NULL,
+    "%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &shutdownimm_info[0] },
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL,
-    "%.0f", HU_FLAG_OK, &lowbatt_info[0] },
+    "%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &lowbatt_info[0] },
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.OverLoad", NULL,
     "%.0f", HU_FLAG_OK, &overbatt_info[0] },
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL,
     "%.0f", HU_FLAG_OK, &replacebatt_info[0] },
-  { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.ShutdownImminent", NULL,
-    "%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &shutdownimm_info[0] },
   { "ups.status", 0, 1, "UPS.PowerConverter.Input.[1].PresentStatus.Buck", NULL,
     "%.0f", HU_FLAG_OK, &trim_info[0] },
   { "ups.status", 0, 1, "UPS.PowerConverter.Input.[1].PresentStatus.Boost", NULL,

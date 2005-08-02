@@ -23,7 +23,7 @@
  *
  */
 
-#define APC_HID_VERSION	"APC HID 0.7"
+#define APC_HID_VERSION	"APC HID 0.8"
 
 /* --------------------------------------------------------------- */
 /*      Model Name formating entries                               */
@@ -79,14 +79,14 @@ hid_info_t hid_apc[] = {
     "%.0f", HU_FLAG_OK, &discharging_info[0] },
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.Charging", NULL,
     "%.0f", HU_FLAG_OK, &charging_info[0] },
+  { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.ShutdownImminent", NULL,
+    "%.0f", HU_FLAG_OK, &shutdownimm_info[0] },
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL,
     "%.0f", HU_FLAG_OK, &lowbatt_info[0] },
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.OverLoad", NULL,
     "%.0f", HU_FLAG_OK, &overbatt_info[0] },
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL,
     "%.0f", HU_FLAG_OK, &replacebatt_info[0] },
-  { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.ShutdownImminent", NULL,
-    "%.0f", HU_FLAG_OK, &shutdownimm_info[0] },
 
   /* Input page */
   { "input.voltage", 0, 0, "UPS.Input.Voltage", NULL, "%.1f", HU_FLAG_OK, NULL },
