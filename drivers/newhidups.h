@@ -27,7 +27,7 @@
 #include <unistd.h>
 #include "config.h"
 
-#define DRIVER_VERSION		"0.25"
+#define DRIVER_VERSION		"0.26"
 
 /* --------------------------------------------------------------- */
 /*      Supported Manufacturers IDs                                */
@@ -36,6 +36,7 @@
 #define MGE_UPS_SYSTEMS		0x0463		/* All models */
 #define APC			0x051d		/* All models */
 /* Unsupported! (need spec/hardware/help) */
+#define BELKIN			0x050d		/* models: 0x0551, IDs? */
 #define MUSTEK			0x0665		/* models: 0x5161... */
 #define TRIPPLITE		0x09ae		/* models IDs? */
 #define UNITEK			0x0F03		/* models: 0x0001... */

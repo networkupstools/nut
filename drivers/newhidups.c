@@ -405,6 +405,7 @@ void upsdrv_initups(void)
 			model_names = apc_models_names;
       			HIDDumpTree(NULL);
 		break;
+		case BELKIN:
 		case MUSTEK:
 		case TRIPPLITE:
 		case UNITEK:

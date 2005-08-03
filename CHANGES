@@ -1,3 +1,7 @@
+Wed Aug 03 09:11:52 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - newhidups: add basic Belkin recognition, and bump release to 0.26
+
 Mon Aug 01 13:51:08 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - newhidups: better handling of the status clearing for LB, and bump
