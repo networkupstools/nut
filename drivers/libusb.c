@@ -47,6 +47,7 @@ struct usb_bus *bus;
 /* FIXME! */
 #define MGE_UPS_SYSTEMS		0x0463		/* All models */
 #define APC			0x051d		/* All models */
+#define BELKIN			0x050d		/* models: 0x0551, IDs? */
 #define MUSTEK                  0x0665          /* models: 0x5161... */
 #define TRIPPLITE               0x09ae          /* models IDs? */
 #define UNITEK                  0x0F03          /* models: 0x0001... */
@@ -116,6 +117,8 @@ int libusb_open(HIDDevice *curDevice, MatchFlags *flg, unsigned char *ReportDesc
 			  /* FIXME: temporary method, not generic/flexible enough */
 			  if ( (dev->descriptor.idVendor == MGE_UPS_SYSTEMS)
 				  || (dev->descriptor.idVendor == APC)
+				  || ( (dev->descriptor.idVendor == BELKIN)
+					&& (dev->descriptor.idProduct == 0x0551) )
 				  || (dev->descriptor.idVendor == MUSTEK)
 				  || (dev->descriptor.idVendor == TRIPPLITE)
 				  || (dev->descriptor.idVendor == UNITEK) )
