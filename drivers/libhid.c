@@ -88,19 +88,58 @@ float expo(int a, int b);
 
 void HIDDumpTree(HIDDevice *hd)
 {
-	int i;
-	char str[128];
+	int 		i;
+	char 		path[128], type[10];
+	float		value;
+	HIDData 	tmpData;
+	HIDParser 	tmpParser;
 
-	while (HIDParse(&hParser, &hData) != FALSE)
+	while (HIDParse(&hParser, &tmpData) != FALSE)
 	{
-		str[0] = '\0';
-		for (i = 0; i < hData.Path.Size; i++)
+		/* Build the path */
+		path[0] = '\0';
+		for (i = 0; i < tmpData.Path.Size; i++)
 		{
-		  strcat(str, hid_lookup_path((hData.Path.Node[i].UPage * 0x10000) + hData.Path.Node[i].Usage));
-			if (i < (hData.Path.Size - 1))
-				strcat (str, ".");
+		  strcat(path, hid_lookup_path((tmpData.Path.Node[i].UPage * 0x10000) + tmpData.Path.Node[i].Usage));
+			if (i < (tmpData.Path.Size - 1))
+				strcat (path, ".");
 		}
-		TRACE(1, "Path: %s", str);
+
+		/* Get data type */
+		type[0] = '\0';
+		switch (tmpData.Type)
+		{
+			case ITEM_FEATURE:
+				strcat(type, "Feature");
+				break;
+			case ITEM_INPUT:
+				strcat(type, "Input");
+				break;
+			case ITEM_OUTPUT:
+				strcat(type, "Output");
+				break;
+			default:
+				strcat(type, "Unknown");
+				break;
+		}
+
+		/* FIXME: enhance this or fix/change the HID parser (see libhid project) */
+		if ( strstr(path, "000000") == NULL) {
+			/* Backup shared data */
+			memcpy(&tmpData, &hData, sizeof (hData));
+			memcpy(&tmpParser, &hParser, sizeof (hParser));
+
+			/* Get data value */
+			if (HIDGetItemValue(path, &value) > 0)
+				TRACE(1, "Path: %s, Type: %s, Value: %f", path, type, value);
+			
+			else
+				TRACE(1, "Path: %s, Type: %s", path, type);
+
+			/* Restore shared data */
+			memcpy(&hData, &tmpData, sizeof (tmpData));
+			memcpy(&hParser, &tmpParser, sizeof (tmpParser));
+		}
 	}
 }
 						
@@ -502,7 +541,7 @@ ushort lookup_path(char *HIDpath, HIDData *data)
 			strcat (HIDpath, ".");
 		}
 	}
-  else
+	else
 	{
 	  // String to Numeric 
 	  strncpy(buf, HIDpath, strlen(HIDpath));
@@ -729,6 +768,10 @@ int hid_lookup_usage(char *name)
 	return -1;
 }
 
+int get_current_data_attribute()
+{
+	return hData.Attribute;
+}
 #define NIBBLE(_i)    (((_i) < 10) ? '0' + (_i) : 'A' + (_i) - 10)
 
 void dump_hex (const char *msg, const unsigned char *buf, int len)

@@ -245,8 +245,7 @@ void upsdrv_updateinfo(void)
 	upsdebugx(1, "upsdrv_updateinfo...");
 
 
-	/* FIXME: check for device availability */
-	/* to set datastale! */
+	/* check for device availability to set datastale! */
 	if (hd == NULL)
 	  {
 		upsdebugx(1, "\n=>Got to reconnect!\n");
@@ -399,6 +398,9 @@ void upsdrv_initups(void)
 		case MGE_UPS_SYSTEMS:
 			hid_ups = hid_mge;
 			model_names = mge_models_names;
+
+      			HIDDumpTree(NULL);
+			fatalx("Aborting");
 		break;
 		case APC:
 			hid_ups = hid_apc;
@@ -616,8 +618,10 @@ static bool hid_ups_walk(int mode)
 				
 				if (mode == HU_WALKMODE_INIT)
 				  {
-					/* TODO: verify setability/RW with (hData.Attribute != ATTR_DATA_CST) */
 					dstate_setflags(item->info_type, item->info_flags);
+					/* Verify variable setability/RW */
+					if (get_current_data_attribute() != ATTR_DATA_CST)
+						dstate_setflags(item->info_type, ST_FLAG_RW);
 				  }
 			  }
 			if (mode == HU_WALKMODE_INIT)

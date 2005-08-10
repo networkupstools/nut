@@ -128,8 +128,10 @@ int HIDGetEvents(HIDDevice *dev, HIDItem **eventsList);
  * -------------------------------------------------------------------------- */
 void HIDCloseDevice(HIDDevice *dev);
 
-
-
+/*
+ * Support functions
+ * -------------------------------------------------------------------------- */
+int get_current_data_attribute();
 void HIDDumpTree(HIDDevice *hd);
 
 #endif /* _LIBHID_H */

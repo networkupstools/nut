@@ -17,12 +17,14 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
 	"http://www.w3.org/TR/REC-html40/loose.dtd">
 <html>
+
 <head>
 <title>
 Network UPS Tools upsstats 
 @VERSION@
 : UPS Status
 </title>
+<!-- link rel="stylesheet" type="text/css" href="nut.css" / -->
 </head>
 <body BGCOLOR="#FFFFFF" TEXT="#000000" LINK="#0000EE" VLINK="#551A8B">
 
@@ -31,7 +33,7 @@ Network UPS Tools upsstats
 
 <table CELLPADDING="5">
 <tr>
-<th COLSPAN="8" BGCOLOR="#60B0B0">
+<th COLSPAN="10" BGCOLOR="#60B0B0">
 
 <font SIZE="+2">Network UPS Tools upsstats
 @VERSION@
@@ -52,6 +54,8 @@ Network UPS Tools upsstats
 <th COLSPAN="1">Output</th>
 <th COLSPAN="1">Load</th>
 <th COLSPAN="1">UPS<br>Temp</th>
+<th COLSPAN="1">Battery<br>Runtime</th>
+<th COLSPAN="1">Data<br>Tree</th>
 </tr>
 
 @FOREACHUPS@
@@ -107,6 +111,16 @@ VAC
 @DEGREES@
 @ENDIF@
 </td>
+
+<td BGCOLOR="#00FF00">
+@IFSUPP battery.runtime@
+@RUNTIME@
+@ENDIF@
+</td>
+
+<td BGCOLOR="#00FF00">
+@TREELINK@
+</td>
 </tr>
 
 @ENDFOR@
@@ -114,4 +128,13 @@ VAC
 </table>
 
 </td></tr>
-</table></body></html>
+</table>
+
+    (void) puts ("<hr /><div><small>");
+    (void) puts ("<a href=\"http://jigsaw.w3.org/css-validator/check/referer\">");
+    (void) puts ("<img style=\"float:right\" src=\"http://jigsaw.w3.org/css-validator/images/vcss\" alt=\"Valid CSS!\" height=\"31\" width=\"88\"/></a>");
+    (void) puts ("<a href=\"http://validator.w3.org/check/referer\">");
+    (void) puts ("<img style=\"float:right\" src=\"http://www.w3.org/Icons/valid-xhtml11\" alt=\"Valid XHTML 1.1!\" height=\"31\" width=\"88\"/></a>");
+    (void) puts ("</small></div>");
+
+</body></html>

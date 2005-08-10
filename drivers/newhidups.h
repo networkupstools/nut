@@ -27,7 +27,7 @@
 #include <unistd.h>
 #include "config.h"
 
-#define DRIVER_VERSION		"0.26"
+#define DRIVER_VERSION		"0.27"
 
 /* --------------------------------------------------------------- */
 /*      Supported Manufacturers IDs                                */

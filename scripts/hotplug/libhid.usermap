@@ -1,4 +1,4 @@
-# This file is installed by the libhid Debian package.
+# This file is installed by the Network UPS Tools package.
 #
 # Sample entry (replace 0xVVVV and 0xPPPP with vendor ID and product ID respectively) :
 # libhidups      0x0003      0xVVVV   0xPPPP    0x0000       0x0000       0x00         0x00            0x00            0x00            0x00               0x00               0x00000000

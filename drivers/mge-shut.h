@@ -26,7 +26,7 @@
 #include "hidparser.h"
 #include "hidtypes.h"
 
-#define DRIVER_VERSION "0.64"
+#define DRIVER_VERSION "0.65"
 
 #define DEFAULT_TIMEOUT 	3000
 #define MAX_STRING      	64

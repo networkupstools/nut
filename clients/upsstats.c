@@ -1,6 +1,7 @@
 /* upsstats - cgi program to generate the main ups info page
 
    Copyright (C) 1998  Russell Kroll <rkroll@exploits.org>
+   Copyright (C) 2005  Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -29,7 +30,7 @@
 #define MAX_CGI_STRLEN 64
 
 static	char	*monhost = NULL;
-static	int	use_celsius = 1, refreshdelay = -1;
+static	int	use_celsius = 1, refreshdelay = -1, treemode = 0;
 
 	/* from cgilib's checkhost() */
 static	char	*monhostdesc = NULL;
@@ -61,6 +62,9 @@ void parsearg(char *var, char *value)
 
 	if (!strcmp(var, "refresh"))
 		refreshdelay = (int) strtol(value, (char **) NULL, 10);
+
+	if (!strcmp(var, "treemode"))
+		treemode = 1;
 }
 
 static void report_error(void)
@@ -168,6 +172,30 @@ static void do_status(void)
 
 		sp = ptr;
 	}
+}
+static void do_runtime(void)
+{
+	int 	total, hours, minutes, seconds;
+	char	runtime[SMALLBUF];
+
+	if (!get_var("battery.runtime", runtime, sizeof(runtime), 1))
+		return;
+
+	total = (int) strtol(runtime, (char **) NULL, 10);
+
+	hours = total / 3600;
+	minutes = (total - (hours * 3600)) / 60;
+	seconds = total % 60;
+
+	if (hours > 0) {
+		if (minutes > 0)
+			printf("%i h %02i mn %02i s", hours, minutes, seconds);
+		else
+			printf("%02i sec.", seconds);
+	}
+	else
+		printf("%02i mn %02i s", minutes, seconds);
+
 }
 
 static int do_date(const char *buf)
@@ -365,6 +393,15 @@ static void do_hostlink(void)
 		currups->sys, currups->desc);
 }
 
+static void do_treelink(void)
+{
+	if (!currups)
+		return;
+
+	printf("<a href=\"upsstats.cgi?host=%s&treemode\">All data</a>\n",
+		currups->sys);
+}
+
 /* see if the UPS supports this variable - skip to the next ENDIF if not */
 static void do_ifsupp(const char *var)
 {
@@ -558,6 +595,11 @@ static int parse_line(const char *buf)
 		return 1;
 	}
 
+	if (!strcmp(cmd, "RUNTIME")) {
+		do_runtime();
+		return 1;
+	}
+
 	if (!strcmp(cmd, "STATUS")) {
 		do_status();
 		return 1;
@@ -631,6 +673,11 @@ static int parse_line(const char *buf)
 		return 1;
 	}
 
+	if (!strcmp(cmd, "TREELINK")) {
+		do_treelink();
+		return 1;
+	}
+
 	if (!strncmp(cmd, "IFSUPP ", 7)) {
 		do_ifsupp(&cmd[7]);
 		return 1;
@@ -679,6 +726,88 @@ static void display_template(const char *tfn)
 	}
 
 	fclose(tf);
+}
+
+static void display_tree(int verbose)
+{
+	int	ret;
+	unsigned int	numq, numa;
+	const	char	*query[4];
+	char	**answer;
+
+	if (!upsname) {
+		if (verbose)
+			printf("[No UPS name specified]\n");
+
+		return;
+	}
+
+	query[0] = "VAR";
+	query[1] = upsname;
+	numq = 2;
+
+	ret = upscli_list_start(&ups, numq, query);
+
+	if (ret < 0) {
+		if (verbose)
+			report_error();
+		return;
+	}
+
+	if (numa < numq) {
+		if (verbose)
+			printf("[Invalid response]\n");
+		
+		return;
+	}
+
+	ret = upscli_list_next(&ups, numq, query, &numa, &answer);
+
+	printf("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\"\n");
+	printf("	\"http://www.w3.org/TR/REC-html40/loose.dtd\">\n");
+	printf("<HTML>\n");
+	printf("<HEAD><TITLE>upsstat: data tree of %s</TITLE></HEAD>\n", currups->desc);
+
+	printf("<BODY BGCOLOR=\"#FFFFFF\" TEXT=\"#000000\" LINK=\"#0000EE\" VLINK=\"#551A8B\">\n"); 
+
+	printf("<TABLE BGCOLOR=\"#50A0A0\" ALIGN=\"CENTER\">\n");
+	printf("<TR><TD>\n");
+
+	printf("<TABLE CELLPADDING=\"5\" CELLSPACING=\"0\" ALIGN=\"CENTER\" WIDTH=\"100%%\">\n");
+
+	/* include the description from checkhost() if present */
+	printf("<TR><TH COLSPAN=3 BGCOLOR=\"#50A0A0\">\n");
+	printf("<FONT SIZE=\"+2\">%s</FONT>\n", currups->desc);
+	printf("</TH></TR>\n");
+
+	printf("<TR><TH COLSPAN=3 BGCOLOR=\"#60B0B0\"></TH></TR>\n");
+
+	while (ret == 1) {
+
+		/* VAR <upsname> <varname> <val> */
+		if (numa < 4) {
+			if (verbose)
+				printf("[Invalid response]\n");
+		
+			return;
+		}
+
+		printf("<TR BGCOLOR=\"#60B0B0\" ALIGN=\"LEFT\">\n");
+	
+		printf("<TD>%s</TD>\n", answer[2]);
+		printf("<TD>:</TD>\n");
+		printf("<TD>%s<br></TD>\n", answer[3]);
+
+		printf("</TR>\n");
+
+		ret = upscli_list_next(&ups, numq, query, &numa, &answer);
+	}
+
+	printf("</TABLE>\n");
+	printf("</TD></TR></TABLE>\n");
+
+	/* FIXME (AQ): add a save button (?), and a checkbt for showing var.desc */
+	printf("</BODY></HTML>\n");
 }
 
 static void add_ups(char *sys, char *desc)
@@ -781,7 +910,11 @@ static void display_single(void)
 	currups = ulhead;
 	ups_connect();
 
-	display_template("upsstats-single.html");
+	/* switch between data tree view and standard single view */
+	if (treemode)
+		display_tree(1);
+	else
+		display_template("upsstats-single.html");
 
 	upscli_disconnect(&ups);
 }

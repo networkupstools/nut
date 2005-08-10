@@ -1,3 +1,14 @@
+Wed Aug 10 08:47:01 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ * newhidups: 
+   - enhance DumpTree, by adding data type and current value
+   - verify setability/RW of data at setinfo() time
+   - bump release to 0.27
+
+Thu Aug 09 09:11:52 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - mge-shut: enhance ups.model retrieving, and bump release to 0.65
+
 Wed Aug 03 09:11:52 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - newhidups: add basic Belkin recognition, and bump release to 0.26
