@@ -1,4 +1,9 @@
 
+Tue Aug 16 20:51:27 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
+
+ - driver.list: add Soyntec Sekury C 500 and C 800 support using
+   the powermust driver (contributed by Hanno Borns)
+
 Tue Aug 16 11:53:44 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - gamatronic: revive the sec driver as gamatronic to support officialy
