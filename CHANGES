@@ -1,3 +1,13 @@
+Thu Aug 11 09:21:41 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - genericups type 22: add Gamatronic UPSs with alarm interface
+
+   (Gamatronic, Nadav Moskovitch) [Alioth Patch #302015]
+
+ - Drivers now don't chroot to statepath if called for power off
+   (using -k). This avoid unneeded failure to poweroff the UPS if
+   /var is umounted (thanks to Gaspar Bakos).
+
 Wed Aug 10 08:47:01 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  * newhidups: 
@@ -30,6 +40,7 @@ Wed Jul 27 07:08:01 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
      battery.runtime
    - complete upsstats.html with the battery runtime and data
      tree links
+
  - bcmxcp: typo fixes (length instead of lenght, thanks to Bill Richter)
 
 Fri Jul 22 08:20:08 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
@@ -37,14 +48,16 @@ Fri Jul 22 08:20:08 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
  - newhidups: minor change in interface claiming to avoid message like
    "process <pid> (<name>) did not claim interface X before use" upon
    device reopening, and bump driver release to 0.24
+
  - dummy-ups: add the flags and string length for the user data parsed,
    and bump driver release to 0.02
+
  - added back the Powerware 5119 RM Cable Layout from Daniel Thompson
 
 Thu Jul 21 14:02:08 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - add the missing LDFLAGS to gendb
- - add Belkin F6C1100-UNV to the driver.list (thanks to Dave Breiland)
+ - driver.list: add Belkin F6C1100-UNV (thanks to Dave Breiland)
 
 Wed Jul 20 11:15:08 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
@@ -54,7 +67,7 @@ Wed Jul 20 11:15:08 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
  - isbmex: fix various errors in formulas, add shutdown capability
    and bump driver release to 0.05
 
- (Ricardo Martinezgarza)
+   (Ricardo Martinezgarza)
 
  * fentonups:
    - fix the ID string for Sysgration UPGUARDS Pro650 (Simon J. Rowe)
@@ -62,7 +75,7 @@ Wed Jul 20 11:15:08 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - various fixes in the RedHat spec file
 
- (Thomas Jarosch)
+   (Thomas Jarosch)
 
 Fri Jul  1 08:15:56 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
@@ -114,7 +127,7 @@ Wed Jun 22 07:11:54 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
    leading zeros from integral variables (temperature, ...) and
    bump driver release to 0.8 
 
- (Cedric Tefft) [Alioth Patch #301783]
+   (Cedric Tefft) [Alioth Patch #301783]
 
  - newhidups: remove experimental flag
  - driver.list: add MGE Ellipse Office, remove legacy hidups support for
@@ -126,7 +139,7 @@ Tue Jun 21 14:51:02 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
  - apc-hid: complete APC data for newhidups
  - libhid.c: complete HID usages
 
- (George Ross)
+   (George Ross)
 
  - libusb.c: improve Report Descriptor length calculation (thanks to
    John Stamp for pointing out usbutils workaround), and minor type
@@ -142,7 +155,7 @@ Fri Jun  3 13:01:55 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
  - libhid.c: change the dummy HIDItem test to remove exposed
    path that are broken
  
- (John Stamp)
+   (John Stamp)
 
 Sat May 28 20:05:55 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
@@ -152,7 +165,7 @@ Sat May 28 20:05:55 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
    - improve APC support (should work with BackUPS Pro, Back-UPS ES,
      Smart-UPS and BackUPS), but still lacks of shutdown on some models
 
- (John Stamp)
+   (John Stamp)
 
 Thu May 26 12:17:55 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
@@ -172,7 +185,7 @@ Mon May 23 09:21:10 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - fentonups: complete the trace
 
- (Michel Bouissou) [Alioth Patch #301574]
+   (Michel Bouissou) [Alioth Patch #301574]
 
 Mon May 23 07:25:02 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 

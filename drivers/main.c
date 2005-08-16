@@ -548,8 +548,11 @@ int main(int argc, char **argv)
 
 	become_user(new_uid);
 
-	if (chdir(dflt_statepath()))
-		fatal("Can't chdir to %s", dflt_statepath());
+	/* Only switch to statepath if we're not powering off */
+	/* This avoid case where ie /var is umounted */
+	if (!do_forceshutdown)
+		if (chdir(dflt_statepath()))
+			fatal("Can't chdir to %s", dflt_statepath());
 
 	setup_signals();
 

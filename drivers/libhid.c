@@ -580,9 +580,11 @@ ushort lookup_path(char *HIDpath, HIDData *data)
 
 /* Lookup this usage name to find its code (page + index) */
 /* temporary usage code lookup */
+/* FIXME: put as external data, like in usb.ids (or use
+ * this last?) */
 typedef struct {
 	const char *usage_name;
-	int usage_code;
+	unsigned int usage_code;
 } usage_lkp_t;
 
 static usage_lkp_t usage_lkp[] = {
@@ -725,7 +727,7 @@ static usage_lkp_t usage_lkp[] = {
 	{  "\0", 0x0 }
 };
 
-const char *hid_lookup_path(int usage)
+const char *hid_lookup_path(unsigned int usage)
 {
 	int i;
 	static char raw_usage[10];
