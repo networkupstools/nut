@@ -1,5 +1,16 @@
 2.0.3-pre1
 
+Thu Aug 16 10:51:17 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - genericups type 22: add Gamatronic UPSs with alarm interface
+
+   (Gamatronic, Nadav Moskovitch) [Alioth Patch #302015]
+
+ - mge-shut: enhance ups.model retrieving, and bump release to 0.65
+ - drivers now don't chroot to statepath if called for power off
+   (using -k). This avoid unneeded failure to poweroff the UPS if
+   /var is umounted (thanks to Gaspar Bakos).
+
 Wed Jul 27 07:08:01 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - bcmxcp: typo fixes (length instead of lenght, thanks to Bill Richter)

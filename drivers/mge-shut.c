@@ -437,7 +437,7 @@ int shut_identify_ups ()
 	char string[MAX_STRING];
 	char model[MAX_STRING];
 	char *finalname = NULL;
-	int retcode;
+	int retcode, tries=MAX_TRY;
 	
 	if (commstatus == 0)
 		return -1;
@@ -447,7 +447,8 @@ int shut_identify_ups ()
 				device_descriptor.dev_desc.iProduct);
 		     
 	/* Get strings iModel and iProduct */
-	if((shut_get_string(device_descriptor.dev_desc.iProduct, string, 0x25)) > 0) {
+	while ( ((shut_get_string(device_descriptor.dev_desc.iProduct, string, 0x25)) <= 0)
+		       && ((tries--) > 0) )	{
 		
 		strcpy(model, string);
 		

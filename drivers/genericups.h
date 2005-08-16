@@ -209,7 +209,7 @@ struct {
 	  TIOCM_RTS			/* shutdown: set RTS		*/
 	},
 
-	/* http://lists.exploits.org/ups/Oct2003/00052.html */
+	/* docs/cables/powerware.txt */
 
 	{ "Powerware",
 	  "5119 RM",
@@ -229,6 +229,16 @@ struct {
 	  TIOCM_CTS, TIOCM_CTS,         /* online: CTS                  */
 	  TIOCM_CD, 0,                  /* low battery: CD off          */
 	  TIOCM_RTS | TIOCM_DTR         /* shutdown: RTS+DTR            */
+	},
+	
+	
+	{ "Gamatronic Electronic Industries",
+	  "Generic Alarm UPS",
+	  "Gamatronic UPSs with alarm interface", 
+	  TIOCM_RTS,			/* cable power: RTS		*/
+	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
+	  TIOCM_CD, 0,			/* low battery: CD off		*/
+	  TIOCM_DTR			/* shutdown: set DTR		*/
 	},
 
 	/* add any new entries directly above this line */

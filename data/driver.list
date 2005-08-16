@@ -103,6 +103,8 @@
 "Fiskars"	"PowerServer 10"	""	"upcsode2"
 "Fiskars"	"PowerServer 30"	""	"upcsode2"
 
+"Gamatronic"	"All models with alarm interface"	""	"genericups upstype=22"
+
 "Gemini"	"UPS625/UPS1000"	""	"safenet"
 
 "INELT"		"Monolith 1000LT"	""	"fentonups"
