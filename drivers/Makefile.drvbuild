@@ -67,3 +67,5 @@ upscode2: upscode2.o main.o serial.o dstate.o ../common/state.o ../common/upscon
 	$(CC) $(CFLAGS) $(LDFLAGS) -o upscode2 upscode2.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o $(LIBOBJ) -lm
 solis: solis.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o $(LIBDEP)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o solis solis.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o $(LIBOBJ) 
+gamatronic: gamatronic.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o $(LIBDEP)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o gamatronic gamatronic.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o $(LIBOBJ) 

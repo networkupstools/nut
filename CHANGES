@@ -1,3 +1,16 @@
+
+Tue Aug 16 11:53:44 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - gamatronic: revive the sec driver as gamatronic to support officialy
+   the Gamatronic models MP110/210, MS-T, MS and µPS3/1.
+
+   (Gamatronic, Nadav Moskovitch)
+
+ - driver.list: add old sec compatibilities with gamatronic, which
+   are Clary ST-800 and various SEC protocol compatible units.
+
+ - README for hotplug scripts updated a bit.
+
 Thu Aug 11 09:21:41 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - genericups type 22: add Gamatronic UPSs with alarm interface
