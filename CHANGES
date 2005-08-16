@@ -2,6 +2,7 @@ Tue Aug 16 20:51:27 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
 
  - driver.list: add Soyntec Sekury C 500 and C 800 support using
    the powermust driver (contributed by Hanno Borns)
+ - complete the NEWS files
 
 2.0.3-pre1
 
@@ -39,15 +40,15 @@ Wed Jul 20 11:15:08 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
  - isbmex: fix various errors in formulas, add shutdown capability
    and bump driver release to 0.05
 
- (Ricardo Martinezgarza)
+   (Ricardo Martinezgarza)
 
- - fix the ID string for Sysgration UPGUARDS Pro650
+ - fentonups: fix the ID string for Sysgration UPGUARDS Pro650
 
- (Simon J. Rowe)
+   (Simon J. Rowe)
 
  - various fixes in the RedHat spec file
 
- (Thomas Jarosch)
+   (Thomas Jarosch)
 
 Fri Jul  1 08:15:56 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
@@ -66,7 +67,7 @@ Tue Jun 28 16:41:14 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - *mib.h: remove all references to SU_TYPE_TIME as it's not used
    and cause some problems when exposing the data
-    
+
 2.0.2
 
 Mon Jun 27 08:11:54 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
@@ -83,7 +84,7 @@ Wed Jun 22 07:11:54 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
    leading zeros from integral variables (temperature, ...) and
    bump driver release to 0.8 
 
- (Cedric Tefft) [Alioth Patch #301783]
+   (Cedric Tefft) [Alioth Patch #301783]
 
  - newhidups: remove experimental flag
  - driver.list: add MGE Ellipse Office, remove legacy hidups support for
@@ -95,7 +96,7 @@ Tue Jun 21 14:51:02 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
  - apc-hid: complete APC data for newhidups
  - libhid.c: complete HID usages
 
- (George Ross)
+   (George Ross)
 
  - libusb.c: improve Report Descriptor length calculation (thanks to
    John Stamp for pointing out usbutils workaround), and minor type
@@ -110,8 +111,8 @@ Fri Jun  3 13:01:55 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
    won't be able to parse it
  - libhid.c: change the dummy HIDItem test to remove exposed
    path that are broken
- 
- (John Stamp)
+
+   (John Stamp)
 
 Sat May 28 20:05:55 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
@@ -121,7 +122,7 @@ Sat May 28 20:05:55 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
    - improve APC support (should work with BackUPS Pro, Back-UPS ES,
      Smart-UPS and BackUPS), but still lacks of shutdown on some models
 
- (John Stamp)
+   (John Stamp)
 
 Thu May 26 12:17:55 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
@@ -141,7 +142,7 @@ Mon May 23 09:21:10 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - fentonups: complete the trace
 
- (Michel Bouissou) [Alioth Patch #301574]
+   (Michel Bouissou) [Alioth Patch #301574]
 
 Mon May 23 07:25:02 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
