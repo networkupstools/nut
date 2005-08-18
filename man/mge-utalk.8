@@ -61,11 +61,12 @@ enable_ups_comm() is called before each attempt to read/write data
 from/to the UPS to re synchronise the communication.
 
 .SH KNOWN ISSUES
-.SS "Repetitive stale status \(hy Loss of communication"
+.SS "Repetitive stale status \(hy Loss of communication \(hy Unattended shutdown"
 
-Older models, such as ES/ESV ones, might report repetitive "data stale"
-errors. This is due to the fact that these models doesn't support too
-much polling. To solve this problem, add "pollinterval=20" in ups.conf,
+Older models, such as ES/ES+/ESV/ESV+ ones, might report repetitive "data stale"
+errors or might briefly switch to on battery status while online. This is due to
+the fact that these models doesn't support too much polling (as the 2 seconds which
+NUT defaults to). To solve this problem, add "pollinterval=20" in ups.conf,
 and change the value of MAXAGE to 25 in upsd.conf, and DEADTIME to 25
 in upsmon.conf.
 

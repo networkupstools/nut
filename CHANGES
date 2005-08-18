@@ -1,3 +1,14 @@
+Thu Aug 18 09:47:07 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ * mge-utalk 0.86:
+   - improve the startup sequence not to overload old units
+     (such as ES/ES+/ESV/ESV+) at startup which can cause an immediate
+     shutdown. For these units, also read mge-utalk manpage for the
+     Known Issues.
+   - update a bit the manpage according to the above.
+   - improve the reactivity when asked to stop during an init/update
+     loop
+   - remove the OFF status handling (doesn't point the right data).
 
 Tue Aug 16 20:51:27 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
 
