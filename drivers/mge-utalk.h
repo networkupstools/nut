@@ -35,8 +35,8 @@
 #define DEFAULT_LOWBATT   30   /* low battery level, in %          */
 
 /* delay between return of utility power and powering up of load (in MINUTES) */
-#define DEFAULT_ONDELAY    1   
-#define DEFAULT_OFFDELAY 20   /* delay before power off, in SECONDS */ 
+#define DEFAULT_ONDELAY    1
+#define DEFAULT_OFFDELAY  20   /* delay before power off, in SECONDS */ 
 
 #define MIN_CONFIRM_TIME   3   /* shutdown must be confirmed in    */
 #define MAX_CONFIRM_TIME  15   /* this interval                    */

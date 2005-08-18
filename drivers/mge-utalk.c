@@ -40,7 +40,7 @@
 /* --------------------------------------------------------------- */
 
 #define DRIVER_NAME    "MGE UPS SYSTEMS/U-Talk driver"
-#define DRIVER_VERSION "0.85"
+#define DRIVER_VERSION "0.86"
 
 /* delay after sending each char to UPS (in MICROSECONDS) */
 #define MGE_CHAR_DELAY 0
@@ -62,6 +62,8 @@
 #define SD_STAYOFF	1
 
 int sdtype = SD_RETURN;
+static unsigned int pollinterval;
+static time_t lastpoll; /* Timestamp the last polling */
 
 /* --------------------------------------------------------------- */
 /*             Structure with information about UPS                */
@@ -149,6 +151,9 @@ void upsdrv_initups(void)
 	if (testvar ("oldmac"))
 		RTS = ~TIOCM_RTS;
 	
+	if (dstate_getinfo ("driver.parameter.pollinterval") != NULL)
+		pollinterval = atoi (dstate_getinfo ("driver.parameter.pollinterval"));
+
 	/* Init serial line */
 	ioctl(upsfd, TIOCMBIC, &RTS);
 	enable_ups_comm();
@@ -200,6 +205,8 @@ void upsdrv_initinfo(void)
 	int  si_data2 = 0;
 	mge_info_item *item;
 	mge_model_info *legacy_model;
+	char infostr[32];
+	int  chars_rcvd;
 
 	/* manufacturer -------------------------------------------- */
 	dstate_setinfo("ups.mfr", "MGE UPS SYSTEMS");
@@ -291,12 +298,12 @@ void upsdrv_initinfo(void)
 				mge_ups.MultTab = table;
 			}
 		}
-    
+
 		/* status --- try only system status, to get the really important
 		 * information (OL, OB, LB); all else is added later by updateinfo */
 		status_ok = get_ups_status();
 	
-	} while ( !status_ok && tries++ < MAXTRIES );
+	} while ( (!status_ok) && (tries++ < MAXTRIES) && (exit_flag != 0) );
   
 	if ( tries == MAXTRIES && !status_ok )
 		fatalx("Could not get status from UPS.");
@@ -307,8 +314,9 @@ void upsdrv_initinfo(void)
 	/* all other variables ------------------------------------ */
 	for ( item = mge_info ; item->type != NULL ; item++ ) {
 
-		char infostr[32];
-		int  chars_rcvd;
+		/* Check if we are asked to stop (reactivity++) */
+		if (exit_flag != 0)
+			return;
 
 		/* send request, read answer */
 		chars_rcvd = mge_command(buf, sizeof(buf), item->cmd);
@@ -328,6 +336,9 @@ void upsdrv_initinfo(void)
 				dstate_setaux(item->type, item->length);
 		}
 	} /* for item */
+
+	/* store timestamp */
+	lastpoll = time(NULL);
 
 	/* commands ----------------------------------------------- */
 	/* FIXME: check if available before adding! */
@@ -359,7 +370,7 @@ void upsdrv_updateinfo(void)
 
 	/* make sure that communication is enabled */
 	enable_ups_comm();
-   
+
 	/* update status */
 	status_ok = get_ups_status();  /* only sys status is critical */
 	if ( !status_ok ) {
@@ -372,8 +383,16 @@ void upsdrv_updateinfo(void)
 		dstate_dataok();
 	}
 
+	/* Don't overload old units (at startup) */
+	if ( (unsigned int)time(NULL) <= (unsigned int)(lastpoll + pollinterval) )
+		return;
+
 	/* update all other ok variables */
 	for ( item = mge_info ; item->type != NULL ; item++ ) {
+		/* Check if we are asked to stop (reactivity++) */
+		if (exit_flag != 0)
+			return;
+
 		if ( item->ok ) {
 			/* send request, read answer */
 			bytes_rcvd = mge_command(buf, sizeof(buf), item->cmd);
@@ -392,6 +411,9 @@ void upsdrv_updateinfo(void)
 			}
 		} /* if item->ok */
 	}
+
+	/* store timestamp */
+	lastpoll = time(NULL);
 }
 
 /* --------------------------------------------------------------- */
@@ -648,10 +670,16 @@ static int get_ups_status(void)
 	int bytes_rcvd = 0;
 	
 	do {
+		/* Check if we are asked to stop (reactivity++) */
+		if (exit_flag != 0)
+			return FALSE;
+
 		/* must clear status buffer before each round */
 		status_init();
 
 		/* system status */
+/* FIXME: some old units sometimes return "Syst Stat >1<"
+   resulting in an temporary OB status */
 		bytes_rcvd = mge_command(buf, sizeof(buf), "Ss");
 		upsdebugx(1, "Syst Stat >%s<", buf);
 		if ( bytes_rcvd > 0 && strlen(buf) > 7 ) {
@@ -675,9 +703,10 @@ static int get_ups_status(void)
 			/* buf[2] not used */
 			if (buf[1] == '1')
 				status_set("COMMFAULT"); /* self-invented */
-
+				/* FIXME: better to call datastale()?! */
 			if (buf[0] == '1')
 				status_set("ALARM");     /* self-invented */
+				/* FIXME: better to use ups.alarm */
 		}  /* if strlen */
 
 		/* battery status */
@@ -693,7 +722,7 @@ static int get_ups_status(void)
 			if (buf[0] == '1')
 				status_set("DISCHRG");
 		} /* if strlen */
-      
+
 		/* load status */
 		mge_command(buf, sizeof(buf), "Ls");
 		upsdebugx(1, "Load Stat >%s<", buf);
@@ -706,7 +735,7 @@ static int get_ups_status(void)
 
 			if (buf[2] == '1')
 			status_set("TRIM");
-		} /* if strlen */      
+		} /* if strlen */
 
 		if ( strlen(buf) > 15 ) {   /* second "byte", skip <SP> */
 			if (buf[16] == '1') {
@@ -716,8 +745,9 @@ static int get_ups_status(void)
 
 			/* FIXME: to be checked (MUST be buf[8]) !! */
 			/* if ( !(buf[9] == '1') ) */
+			/* This is not the OFF status!
 			if ( !(buf[8] == '1') )
-				status_set("OFF");
+				status_set("OFF"); */
 		} /* if strlen */  
 
 		/* Bypass status */
