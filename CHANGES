@@ -1,3 +1,15 @@
+Tue Aug 23 07:33:53 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - gamatronic: revive the sec driver as gamatronic to support officialy
+   the Gamatronic models MP110/210, MS-T, MS and µPS3/1.
+
+   (Gamatronic, Nadav Moskovitch)
+
+ - driver.list: add old sec compatibilities with gamatronic, which
+   are Clary ST-800 and various SEC protocol compatible units.
+
+ - README for hotplug scripts updated a bit.
+
 Thu Aug 18 09:47:07 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  * mge-utalk 0.86:

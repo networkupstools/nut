@@ -59,6 +59,8 @@
 
 "Centralion"	"Blazer"		""	"blazer"
 
+"Clary"		"ST-800"		""	"gamatronic"
+
 "Compaq"	"T1500h"	""	"upscode2 use_pre_lf"
 
 "Cyber Power Systems"	"320AVR"	""	"cyberpower"
@@ -104,6 +106,10 @@
 "Fiskars"	"PowerServer 30"	""	"upcsode2"
 
 "Gamatronic"	"All models with alarm interface"	""	"genericups upstype=22"
+"Gamatronic"	"MP110/210"	""	"gamatronic"
+"Gamatronic"	"MS-T"		""	"gamatronic"
+"Gamatronic"	"MS"		""	"gamatronic"
+"Gamatronic"	"µPS3/1"	""	"gamatronic"
 
 "Gemini"	"UPS625/UPS1000"	""	"safenet"
 
@@ -276,8 +282,8 @@
 
 "Soltec"	"Winmate 525/625/800/1000"	""	"safenet"
 
-"Soyntec"	"Sekury C 500"		""	"powermust"
-"Soyntec"	"Sekury C 800"		""	"powermust"
+"Soyntec"	"Sekury C 500"		""	"powermust"	
+"Soyntec"	"Sekury C 800"		""	"powermust"	
 
 "SquareOne Power"	"QP1000"		""	"powermust"
 
@@ -298,6 +304,7 @@
 "UPSonic"	"LAN Saver 600"		""	"genericups upstype=0"
 "UPSonic"	"Power Guardian"	""	"genericups upstype=7"
 
+"Various"	"(various)"	"SEC protocol"		"gamatronic"
 "Various"	"(various)"	"Generic RUPS model"	"genericups upstype=4"
 "Various"	"(various)"	"Generic RUPS 2000 (Megatec M2501 cable)"	"genericups upstype=21"
 "Various"	"(various)"	"Megatec protocol"	"fentonups"

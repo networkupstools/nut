@@ -28,6 +28,7 @@ DRIVERPAGES = \
 	etapro.8	\
 	everups.8	\
 	fentonups.8 	\
+	gamatronic.8	\
 	genericups.8	\
 	ippon.8		\
 	isbmex.8	\
