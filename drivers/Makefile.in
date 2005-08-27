@@ -38,6 +38,8 @@ all: $(DRIVER_BUILD_LIST) upsdrvctl
 
 all-drivers: $(PROGS) mge-shut dummy-ups
 
+build-usb: $(USB_DRIVER_LIST)
+
 # ==========================================================================
 # Driver build details
 #

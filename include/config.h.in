@@ -123,6 +123,9 @@
 /* Define to 1 if you have the `vsnprintf' function. */
 #undef HAVE_VSNPRINTF
 
+/* Default path for HTML files */
+#undef HTMLPATH
+
 /* Define to 1 if libusb support `usb_detach_kernel_driver_np' function. */
 #undef LIBUSB_HAS_DETACH_KRNL_DRV
 
