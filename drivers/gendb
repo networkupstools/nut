@@ -23,6 +23,9 @@ EOF
 for i in $*
 do
 
+	EXTRA=""
+	EXTRAOBJ=""
+
 	# tack on any per-driver portability extras
 	case $i in
 		isbmex)
@@ -34,10 +37,11 @@ do
 		upscode2)
 			EXTRA="-lm"
 			;;
-		*)
-			EXTRA=""
+		bcmxcp)
+			EXTRAOBJ="bcmxcp_ser.o"
+			;;
 	esac	
 
-	echo "$i: $i.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o \$(LIBDEP)" >> $MFDB
-	echo "	\$(CC) \$(CFLAGS) \$(LDFLAGS) -o $i $i.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o \$(LIBOBJ) $EXTRA" >> $MFDB
+	echo "$i: $i.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o $EXTRAOBJ \$(LIBDEP)" >> $MFDB
+	echo "	\$(CC) \$(CFLAGS) \$(LDFLAGS) -o $i $i.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o $EXTRAOBJ \$(LIBOBJ) $EXTRA" >> $MFDB
 done

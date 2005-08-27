@@ -1,6 +1,6 @@
 # Network UPS Tools: data/html
 
-prefix		= /
+prefix		= /usr/local/ups
 exec_prefix	= ${prefix}
 
 HTMLPATH	= $(DESTDIR)${prefix}/html

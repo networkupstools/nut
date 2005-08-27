@@ -7,10 +7,6 @@
 
 #include "timehead.h"
 
-
-char *FreqTol[3] = {"+/-2%", "+/-5%", "+/-7"};
-char *ABMStatus[4] = {"Charging", "Discharging", "Floating", "Resting"};
-
 #define PW_MAX_TRY 3 /* How many times we try to send data. */
 
 #define PW_COMMAND_START_BYTE (unsigned char)0xAB
@@ -29,7 +25,6 @@ char *ABMStatus[4] = {"Charging", "Discharging", "Floating", "Resting"};
 #define PW_COM_CAP_REQ		(unsigned char)0x42 /* Request communication capabilities. length 2	*/
 #define PW_UPS_TOP_DATA_REQ	(unsigned char)0x43 /* Requsest ups topology data requset. length 1	*/
 
-unsigned char AUTHOR[4] = {0xCF, 0x69, 0xE8, 0xD5};		/* Autorisation	command	*/
 /* Need autorisation before this commands */
 #define PW_UPS_ON		(unsigned char)0x89 /* UPS on command. length 1-2 */
 #define PW_LOAD_OFF_RESTART	(unsigned char)0x8A /* Delayed LoadPowerOff & Restart command. length 2-4 */
@@ -317,22 +312,8 @@ typedef	struct {				/* A place to store status info and other data not for NUT *
 BCMXCP_STATUS
 	bcmxcp_status;
 
-static int get_word(const unsigned char*);
-static long int get_long(const unsigned char*);
-static float get_float(const unsigned char *data);
-static int checksum_test(const unsigned	char*);
-static unsigned char calc_checksum(const unsigned char *buf);
-static void init_meter_map(void);
-static void init_alarm_map(void);
-static void init_ups_meter_map(const unsigned char *map, unsigned char len);
-static void init_ups_alarm_map(const unsigned char *map, unsigned char len);
-static void decode_meter_map_entry(const unsigned char *entry, const unsigned char format, char* value);
-static void send_read_command(unsigned char);
-static void send_write_command(unsigned char*, int);
-static int get_answer(unsigned char*, unsigned char);
-static int command_read_sequence(unsigned char, unsigned char*);
-static int command_write_sequence(unsigned char*, int, unsigned char*);
-static int instcmd(const char *cmdname, const char *extra);
-
+int checksum_test(const unsigned char*);
+unsigned char calc_checksum(const unsigned char *buf);
+	
 #endif /*_POWERWARE_H */
 
