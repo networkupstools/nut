@@ -78,7 +78,7 @@ const long HIDUnits[NB_HID_UNITS][2]=
 /* support functions */
 void logical_to_physical(HIDData *Data);
 void physical_to_logical(HIDData *Data);
-const char *hid_lookup_path(int usage);
+const char *hid_lookup_path(unsigned int usage);
 int hid_lookup_usage(char *name);
 ushort lookup_path(char *HIDpath, HIDData *data);
 void dump_hex (const char *msg, const unsigned char *buf, int len);
