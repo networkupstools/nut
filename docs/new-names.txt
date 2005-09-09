@@ -85,6 +85,9 @@ ups: General unit information
    | ups.power.nominal    | Nominal value of apparent    | 500              |
    |                      | power (Volt-Amps)            |                  |
    +------------------------------------------------------------------------+
+   | ups.beeper.status    | UPS beeper status            | enabled          |
+   |                      | (enabled, disabled or muted) |                  |
+   +------------------------------------------------------------------------+
 
 input: Incoming line/power information
 
