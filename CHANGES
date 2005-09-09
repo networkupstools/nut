@@ -1,10 +1,14 @@
 Fri Sep 09 10:25:05 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
- * bcmxcp:
+ * bcmxcp and bcmxcp_usb:
    - add support for usb units
-   - split the driver for serial and usb support
+   - split the driver in two drivers for serial and usb support
 
    (Wolfgang Ocker, Charles Lepple)
+
+ * tripplite_usb: add support for tripplite USB models
+
+   (Charles Lepple)
 
 Mon Aug 22 09:16:08 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 

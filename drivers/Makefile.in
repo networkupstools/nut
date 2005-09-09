@@ -89,7 +89,7 @@ energizerups.o: energizerups.c
 
 
 # ==========================================================================
-# Special case: newhidups driver - development version (early beta)
+# Special case: newhidups driver - development version
 
 newhidups: newhidups.o main.o dstate.o ../common/state.o \
 		../common/upsconf.o ../common/parseconf.o $(LIBDEP) \
@@ -106,6 +106,19 @@ libhid.o: libhid.c libhid.h
 
 libusb.o: libusb.c hid-usb.h
 	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o libusb.o -c libusb.c
+
+# ==========================================================================
+# Special case: tripplite_usb driver - development version (early beta)
+
+tripplite_usb: tripplite_usb.o main.o dstate.o ../common/state.o \
+		../common/upsconf.o ../common/parseconf.o $(LIBDEP) \
+		$(STRLCPY) libhid.o libusb.o hidparser.o
+	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o $@ $@.o main.o dstate.o \
+		../common/state.o ../common/upsconf.o ../common/parseconf.o \
+		$(LIBOBJ) $(LIBUSB_LIBS) $(LDFLAGS) -lm libhid.o libusb.o hidparser.o
+
+tripplite_usb.o: tripplite_usb.c newhidups.h libhid.h
+	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -c tripplite_usb.c
 
 # ==========================================================================
 # Special case: bcmxcp_usb.c driver - development version (early beta)
