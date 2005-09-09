@@ -1,14 +1,23 @@
 Fri Sep 09 10:25:05 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
+
  * bcmxcp and bcmxcp_usb:
    - add support for usb units
    - split the driver in two drivers for serial and usb support
 
    (Wolfgang Ocker, Charles Lepple)
 
- * tripplite_usb: add support for tripplite USB models
+ - tripplite_usb: add support for tripplite USB models
 
    (Charles Lepple)
+
+ * newhidups: apply partially the PSE patch set
+   - nut-cvs-patch-PARSER-2005-08-24
+   - nut-cvs-patch-APC-2005-08-24, minus the ups.test.panel declaration
+   - nut-cvs-patch-REOPEN-2005-08-24
+   - nut-cvs-patch-NUMPATH-2005-08-24
+
+   (Peter Selinger) [Alioth Patch #302101]
 
 Mon Aug 22 09:16:08 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 

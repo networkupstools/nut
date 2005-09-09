@@ -97,6 +97,15 @@ int libusb_open(HIDDevice *curDevice, MatchFlags *flg, unsigned char *ReportDesc
 
 	int ret = -1, res; 
 	unsigned char buf[20];
+	u_int16_t reopen_VendorID = 0; /* Device's Vendor ID */
+        u_char    reopen_iProduct = 0; /* Product ID */
+        char*     reopen_Serial = NULL;   /* Product serial number */
+
+	if (mode == MODE_REOPEN) {
+	  reopen_VendorID = curDevice->VendorID;
+	  reopen_iProduct = curDevice->iProduct;
+	  reopen_Serial = curDevice->Serial;
+	}
 
 	/* libusb base init */
 	usb_init();
@@ -123,7 +132,19 @@ int libusb_open(HIDDevice *curDevice, MatchFlags *flg, unsigned char *ReportDesc
 				  || (dev->descriptor.idVendor == TRIPPLITE)
 				  || (dev->descriptor.idVendor == UNITEK) )
 				{
-				  TRACE(2, "Found 0x%x", dev->descriptor.idVendor);
+
+				  TRACE(2, "Found 0x%x/0x%x", dev->descriptor.idVendor, dev->descriptor.iProduct);
+				  /* when reopening, try to find the
+				     same USB as before. */
+				  if (mode == MODE_REOPEN) {
+				    if (dev->descriptor.idVendor != reopen_VendorID ||
+					dev->descriptor.iProduct != reopen_iProduct) {
+				      TRACE(2, "Not the same device as before - not reopening it");
+				      usb_close(udev);
+				      udev = NULL;
+				      continue;
+				    }
+				  }
 
 				  curDevice->VendorID = dev->descriptor.idVendor;
 				  curDevice->iProduct = dev->descriptor.iProduct;
@@ -158,9 +179,16 @@ int libusb_open(HIDDevice *curDevice, MatchFlags *flg, unsigned char *ReportDesc
 			  /* set default interface */
 			  usb_set_altinterface(udev, 0);
 
-			  /* we can safely exit here if we are reopening the device */
-			  if (mode == MODE_REOPEN)
-				return 1;
+			  /* we can safely exit here if we are
+			     reopening the device */
+			  /* actually, this is not true. If the device
+			     has been disconnected and reconnected, a
+			     kernel driver might have attached itself
+			     to it. Reopening should go through the
+			     same steps as opening. */
+
+/*			  if (mode == MODE_REOPEN)
+				return 1; */
 
 			  if (dev->descriptor.iManufacturer) {
 				ret = usb_get_string_simple(udev, dev->descriptor.iManufacturer, 
@@ -203,6 +231,17 @@ int libusb_open(HIDDevice *curDevice, MatchFlags *flg, unsigned char *ReportDesc
 				  {
 					TRACE(2, "- Serial Number: %s", string);
 					curDevice->Serial = strdup(string);
+					/* when reopening, only open a
+					   device with the same serial
+					   number as before */
+					if (mode == MODE_REOPEN) {
+					  if (strcmp(reopen_Serial, curDevice->Serial) != 0) {
+					    TRACE(2, "Not the same serial number as before - not reopening");
+					    usb_close(udev);
+					    udev = NULL;
+                                            continue; 
+					  }
+					}
 				  }
 				else
 				  TRACE(2, "- Unable to fetch serial number string");
@@ -342,9 +381,9 @@ int libusb_get_interrupt(unsigned char *buf, int bufsize, int timeout)
 	  /* FIXME: hardcoded interrupt EP => need to get EP descr for IF descr */
 	  ret = usb_interrupt_read(udev, 0x81, buf, bufsize, timeout);
 	  if (ret > 0)
-		TRACE(2, " ok\n");
+		TRACE(5, " ok");
 	  else
-		TRACE(2, " none (%i)\n", ret);
+		TRACE(5, " none (%i)", ret);
 	}
 
   return ret;
@@ -354,7 +393,9 @@ void libusb_close(HIDDevice *curDevice)
 {
 	if (udev != NULL)
 	{
-		usb_release_interface(udev, 0);
+	        /* usb_release_interface() sometimes blocks and goes
+	           into uninterruptible sleep.  So don't do it. */
+	        /* usb_release_interface(udev, 0); */
 		usb_close(udev);
 	}
 	udev = NULL;

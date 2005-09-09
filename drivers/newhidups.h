@@ -127,74 +127,110 @@ status_lkp_t status_info[] = {
 typedef struct {
 	long	hid_value;	/* HID value */
 	char	*nut_value;	/* NUT value */
+        char    *(*fun)(long value); /* special case: if fun!=NULL, then
+				     ignore hid_value and nut_value,
+				     and use the conversion function
+				     instead. This is used for more
+				     complex formatting such as
+				     dates. Fun is expected to return
+				     a statically allocated string. */
 } info_lkp_t;
 
 /* Actual value lookup tables => should be fine for all Mfrs (TODO: validate it!) */
 info_lkp_t onbatt_info[] = {
-  { 0, "OB" },
-  { 1, "OL" },
-  { 0, "NULL" }
+  { 0, "OB", NULL },
+  { 1, "OL", NULL },
+  { 0, "NULL", NULL }
 };
 info_lkp_t discharging_info[] = {
-  { 1, "DISCHRG" },
-  { 0, "NULL" }
+  { 1, "DISCHRG", NULL },
+  { 0, "NULL", NULL }
 };
 info_lkp_t charging_info[] = {
-  { 1, "CHRG" },
-  { 0, "NULL" }
+  { 1, "CHRG", NULL },
+  { 0, "NULL", NULL }
 };
 info_lkp_t lowbatt_info[] = {
-  { 1, "LB" },
-  { 0, "!LB" },
-  { 0, "NULL" }
+  { 1, "LB", NULL },
+  { 0, "!LB", NULL },
+  { 0, "NULL", NULL }
 };
 info_lkp_t overbatt_info[] = {
-  { 1, "OVER" },
-  { 0, "NULL" }
+  { 1, "OVER", NULL },
+  { 0, "NULL", NULL }
 };
 info_lkp_t replacebatt_info[] = {
-  { 1, "RB" },
-  { 0, "NULL" }
+  { 1, "RB", NULL },
+  { 0, "NULL", NULL }
 };
 info_lkp_t shutdownimm_info[] = {
-  { 1, "LB" },
-  { 0, "!LB" },
-  { 0, "NULL" }
+  { 1, "LB", NULL },
+  { 0, "!LB", NULL },
+  { 0, "NULL", NULL }
 };
 info_lkp_t trim_info[] = {
-  { 1, "TRIM" },
-  { 0, "NULL" }
+  { 1, "TRIM", NULL },
+  { 0, "NULL", NULL }
 };
 info_lkp_t boost_info[] = {
-  { 1, "BOOST" },
-  { 0, "NULL" }
+  { 1, "BOOST", NULL },
+  { 0, "NULL", NULL }
 };
 /* FIXME: extend ups.status for BYPASS Manual/Automatic */
 info_lkp_t bypass_info[] = {
-  { 1, "BYPASS" },
-  { 0, "NULL" }
+  { 1, "BYPASS", NULL },
+  { 0, "NULL", NULL }
 };
 info_lkp_t off_info[] = {
-  { 0, "OFF" },
-  { 0, "NULL" }
+  { 0, "OFF", NULL },
+  { 0, "NULL", NULL }
 };
 /* FIXME: add CAL */
 
 info_lkp_t test_write_info[] = {
-  { 0, "No test" },
-  { 1, "Quick test" },
-  { 2, "Deep test" },
-  { 3, "Abort test" },
-  { 0, "NULL" }
+  { 0, "No test", NULL },
+  { 1, "Quick test", NULL },
+  { 2, "Deep test", NULL },
+  { 3, "Abort test", NULL },
+  { 0, "NULL", NULL }
 };
 info_lkp_t test_read_info[] = {
-  { 1, "Done and passed" },
-  { 2, "Done and warning" },
-  { 3, "Done and error" },
-  { 4, "Aborted" },
-  { 5, "In progress" },
-  { 6, "No test initiated" },
-  { 0, "NULL" }
+  { 1, "Done and passed", NULL },
+  { 2, "Done and warning", NULL },
+  { 3, "Done and error", NULL },
+  { 4, "Aborted", NULL },
+  { 5, "In progress", NULL },
+  { 6, "No test initiated", NULL },
+  { 0, "NULL", NULL }
+};
+
+info_lkp_t beeper_info[] = {
+  { 1, "disabled", NULL },
+  { 2, "enabled", NULL },
+  { 3, "muted", NULL },
+  { 0, "NULL", NULL }
+};
+
+/* returns statically allocated string - must not use it again before
+   done with result! */
+static char *date_conversion_fun(long value) {
+  static char buf[20];
+  int year, month, day;
+
+  if (value == 0) {
+    return "not set";
+  }
+
+  year = 1980 + (value >> 9); /* negative value represents pre-1980 date */ 
+  month = (value >> 5) & 0x0f;
+  day = value & 0x1f;
+  
+  sprintf(buf, "%04d/%02d/%02d", year, month, day);
+  return buf;
+}
+
+info_lkp_t date_conversion[] = {
+  { 0, NULL, date_conversion_fun }
 };
 
 /* --------------------------------------------------------------- */

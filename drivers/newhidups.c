@@ -47,6 +47,7 @@ static time_t lastpoll; /* Timestamp the last polling */
 static int instcmd(const char *cmdname, const char *extradata);
 static int setvar(const char *varname, const char *val);
 static hid_info_t *find_nut_info(const char *varname);
+static hid_info_t *find_nut_info_valid(const char *varname);
 static hid_info_t *find_hid_info(const char *hidname);
 static char *hu_find_infoval(info_lkp_t *hid2info, long value);
 static char *get_model_name(char *iProduct, char *iModel);
@@ -86,8 +87,14 @@ void upsdrv_shutdown(void)
 	
 			/* Misc method B */
 			upsdebugx(2, "upsdrv_shutdown: APC ForceShutdown style shutdown.\n");
-			if (instcmd("shutdown.return", NULL) != STAT_INSTCMD_HANDLED)
+			if (instcmd("load.off", NULL) != STAT_INSTCMD_HANDLED) {
 				upsdebugx(2, "ForceShutdown command failed");
+
+				upsdebugx(2, "upsdrv_shutdown: APC Delay style shutdown.\n");
+				if (instcmd("shutdown.return", NULL) != STAT_INSTCMD_HANDLED) {
+				  upsdebugx(2, "Delayed Shutdown command failed");
+				}
+			}
 
 
 		/* Don't "break" as the general method might also be supported! */;
@@ -114,7 +121,7 @@ static int instcmd(const char *cmdname, const char *extradata)
 	upsdebugx(2, "entering instcmd(%s, %s)\n", cmdname, extradata);
 
 	/* Retrieve and check netvar & item_path */	
-	hidups_item = find_nut_info(cmdname);
+	hidups_item = find_nut_info_valid(cmdname);
 	
 	/* Check validity of the found the item */
 	if (hidups_item == NULL || hidups_item->info_type == NULL ||
@@ -324,7 +331,7 @@ static void process_status_info(char *nutvalue)
 {
 	status_lkp_t *status_item;
 
-	upsdebugx(2, "process_status_info: %s\n", nutvalue);
+	upsdebugx(2, "process_status_info: %s", nutvalue);
 
 	for (status_item = status_info; status_item->status_value != 0 ; status_item++)
 	{
@@ -398,9 +405,7 @@ void upsdrv_initups(void)
 		case MGE_UPS_SYSTEMS:
 			hid_ups = hid_mge;
 			model_names = mge_models_names;
-
       			HIDDumpTree(NULL);
-			fatalx("Aborting");
 		break;
 		case APC:
 			hid_ups = hid_apc;
@@ -744,6 +749,26 @@ static hid_info_t *find_nut_info(const char *varname)
   return NULL;
 }
 
+/* find info element definition in info array by NUT varname. Only
+ * return items whose HID path actually exists.  By this, we enable
+ * multiple alternative definitions of an instant command; the first
+ * one that works for *this* UPS will be used. 
+ */
+static hid_info_t *find_nut_info_valid(const char *varname)
+{
+  hid_info_t *hidups_item;
+  float value;
+
+  for (hidups_item = hid_ups; hidups_item->info_type != NULL ; hidups_item++) {
+    if (!strcasecmp(hidups_item->info_type, varname))
+      if (HIDGetItemValue(hidups_item->hidpath, &value) == 1)
+	return hidups_item;
+  }
+
+  upsdebugx(2, "find_nut_info: unknown info type: %s\n", varname);
+  return NULL;
+}
+
 /* find info element definition in info array
  * by HID varname.
  */
@@ -789,9 +814,17 @@ static hid_info_t *find_hid_info(const char *hidname)
 static char *hu_find_infoval(info_lkp_t *hid2info, long value)
 {
   info_lkp_t *info_lkp;
+  char *nut_value;
   
   upsdebugx(3, "hu_find_infoval: searching for value = %ld\n", value);
   
+  if (hid2info->fun != NULL) {
+    nut_value = hid2info->fun(value);
+    upsdebugx(3, "hu_find_infoval: found %s (value: %ld)\n",
+	      nut_value, value);
+    return nut_value;
+  }
+
   for (info_lkp = hid2info; (info_lkp != NULL) &&
 	 (strcmp(info_lkp->nut_value, "NULL")); info_lkp++) {
     

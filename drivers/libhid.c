@@ -184,7 +184,8 @@ HIDDevice *HIDOpenDevice(const char *port, MatchFlags *flg, int mode)
 		ResetParser(&hParser);
 		hParser.ReportDescSize = ReportSize;
 		memcpy(hParser.ReportDesc, ReportDesc, ReportSize);
-		HIDParse(&hParser, &hData);
+		/* don't throw away first item */
+		//HIDParse(&hParser, &hData);
 	}
 	return &curDevice;
 }
@@ -368,7 +369,7 @@ int HIDGetEvents(HIDDevice *dev, HIDItem **eventsList)
 	char itemPath[128];
 	int size, offset = 0, itemCount = 0;
 	
-	upsdebugx(1, "Waiting for notifications...");
+	upsdebugx(2, "Waiting for notifications...");
 	
 	/* needs libusb-0.1.8 to work => use ifdef and autoconf */
 	if ((size = libusb_get_interrupt(&buf[0], 20, 5000)) > -1)
@@ -676,7 +677,6 @@ static usage_lkp_t usage_lkp[] = {
 	{ "APCBattReplaceDate",			0xff860016 },
 	{ "APCBattCapBeforeStartup",		0xFF860019 }, /* FIXME: need to be exploited */
 	{ "APC_UPS_FirmwareRevision",		0xff860042 },
-	{ "APC860052",				0xff860052 },  /* Needed for APCForceShutdown path */
 	{ "APCStatusFlag",			0xff860060 },
 	{ "APCPanelTest",			0xff860072 }, /* FIXME: need to be exploited */
 	{ "APCShutdownAfterDelay",		0xff860076 }, /* FIXME: need to be exploited */
@@ -749,6 +749,8 @@ const char *hid_lookup_path(unsigned int usage)
 int hid_lookup_usage(char *name)
 {
 	int i;
+	int value;
+	char buf[20];
 	
 	TRACE(3, "Looking up %s", name);
 	
@@ -767,7 +769,14 @@ int hid_lookup_usage(char *name)
 			}
 		}
 	}
-	return -1;
+	/* finally, translate unnamed path components such as
+	   "ff860024" */
+	value = strtoul(name, NULL, 16);
+	sprintf(buf, "%08x", value);
+	if (strcasecmp(buf, name) != 0) {
+	  return -1;
+	}
+	return value;
 }
 
 int get_current_data_attribute()
