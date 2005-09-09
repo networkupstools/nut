@@ -48,7 +48,7 @@
    input.voltage.nominal
    output.frequency
    output.voltage
-   ups.beeper.enable            (RW) yes/no
+   ups.beeper.status		(RW) enabled/disabled/muted
    ups.firmware
    ups.load
    ups.model
@@ -56,8 +56,8 @@
    ups.status
    ups.temperature
    ups.test.result
-   ups.timer.restart            read-only: time to restart
-   ups.timer.shutdown           read-only: time to shutdown
+   ups.delay.restart		read-only: time to restart
+   ups.delay.shutdown		read-only: time to shutdown
    ups.type                     ONLINE/OFFLINE/LINEINT
 				   
    COMMANDS:
@@ -916,12 +916,13 @@ void upsdrv_initinfo(void)
 
 	val = belkin_nut_read_int(REG_ALARMSTATUS);
         if (val!=-1) {
-	  dstate_setinfo("ups.beeper.enable", "%s", val&1 ? "no" : "yes");
+	  dstate_setinfo("ups.beeper.status", "%s", val==1 ? "disabled" : val&1 ? "muted" : "enabled");
 
 	  /* declare variable writable */
-	  dstate_setflags("ups.beeper.enable", ST_FLAG_RW);
-	  dstate_addenum("ups.beeper.enable", "yes");
-	  dstate_addenum("ups.beeper.enable", "no");
+	  dstate_setflags("ups.beeper.status", ST_FLAG_RW);
+	  dstate_addenum("ups.beeper.status", "enabled");
+	  dstate_addenum("ups.beeper.status", "disabled");
+	  dstate_addenum("ups.beeper.status", "muted");
         }
 
 	val = belkin_nut_read_int(REG_XFER_LO);
@@ -1053,17 +1054,17 @@ void upsdrv_updateinfo(void)
 
 	val = belkin_nut_read_int(REG_ALARMSTATUS);
 	if (val!=-1) {
-		dstate_setinfo("ups.beeper.enable", "%s", val&1 ? "no" : "yes");
+		dstate_setinfo("ups.beeper.status", "%s", val==1 ? "disabled" : val&1 ? "muted" : "enabled");
 	}
 
 	val = belkin_nut_read_int(REG_SHUTDOWNTIMER);
 	if (val!=-1) {
-		dstate_setinfo("ups.timer.shutdown", "%d", val);
+		dstate_setinfo("ups.delay.shutdown", "%d", val);
 	}
 
 	val = belkin_nut_read_int(REG_RESTARTTIMER);
 	if (val!=-1) {
-		dstate_setinfo("ups.timer.restart", "%d", 60*val);
+		dstate_setinfo("ups.delay.restart", "%d", 60*val);
 	}
 
 	val = belkin_nut_read_int(REG_INPUTVOLT);
@@ -1223,15 +1224,19 @@ static int setvar(const char *varname, const char *val)
 			}
 		}
 		return STAT_SET_HANDLED;  /* Future: failure */
-	} else if (!strcasecmp(varname, "ups.beeper.enable")) {
-		if (!strcasecmp(val, "yes") || 
-		    !strcasecmp(val, "on") ||
-		    !strcasecmp(val, "true")) {
+	} else if (!strcasecmp(varname, "ups.beeper.status")) {
+		if (!strcasecmp(val, "disabled")) {
 			i=1;
+		} else if (!strcasecmp(val, "on") ||
+			   !strcasecmp(val, "enabled")) {
+			i=2;
+		} else if (!strcasecmp(val, "off") ||
+			   !strcasecmp(val, "muted")) {
+			i=3;
 		} else {
 			i=atoi(val);
 		}
-		r = belkin_nut_write_int(REG_ALARMSTATUS, i ? 2 : 3);
+		r = belkin_nut_write_int(REG_ALARMSTATUS, i);
 		return STAT_SET_HANDLED;  /* Future: failure if r==-1 */
 	} else if (!strcasecmp(varname, "input.transfer.low")) {
 		r = belkin_nut_write_int(REG_XFER_LO, atoi(val));
@@ -1245,13 +1250,13 @@ static int setvar(const char *varname, const char *val)
 	return STAT_SET_UNKNOWN;
 }
 
-/* I have no idea what to put here */
+/* extra help text for "-h" option */
 void upsdrv_help(void)
 {
 	printf("\n");
 	printf("Writable variables:\n");
 	printf(" input.sensitivity: normal, medium, low\n");
-	printf(" ups.beeper.enable: 0=disabled, 1=enabled\n");
+	printf(" ups.beeper.status: enabled, disabled, muted\n");
 	printf(" input.transfer.low: (in V)\n");
 	printf(" input.transfer.high: (in V)\n");
 }

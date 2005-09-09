@@ -20,6 +20,10 @@ Fri Sep 09 10:25:05 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - docs/new-names.txt: completed as per the above nut-cvs-patch-APC
 
+ - belkinunv: NUT variable naming conformance
+
+   (Peter Selinger) [Alioth Patch #302117]
+
 Mon Aug 22 09:16:08 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - nut-html: also install the missing nut-banner.png
