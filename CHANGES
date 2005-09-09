@@ -1,6 +1,5 @@
 Fri Sep 09 10:25:05 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
-
  * bcmxcp and bcmxcp_usb:
    - add support for usb units
    - split the driver in two drivers for serial and usb support
@@ -18,6 +17,8 @@ Fri Sep 09 10:25:05 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
    - nut-cvs-patch-NUMPATH-2005-08-24
 
    (Peter Selinger) [Alioth Patch #302101]
+
+ - docs/new-names.txt: completed as per the above nut-cvs-patch-APC
 
 Mon Aug 22 09:16:08 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 

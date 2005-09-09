@@ -1,12 +1,14 @@
 Desc: New command and variable naming scheme
 File: new-names.txt
-Date: 29 September 2004
+Date: 09 September 2005
 Auth: Russell Kroll <rkroll@exploits.org>
+      Arnaud Quette <arnaud.quette@mgeups.com>
 
-This is a dump of the planning page for variables and command names.
+This is a dump of the standard variables and command names used in NUT.
 Don't use a name with any of the dstate functions unless it exists here.
 
-If you need a new variable or command name, contact me first.
+If you need a new variable or command name, contact the Development Team
+first.
 
 Put another way: if you make up a name that's not in this list and it
 gets into the tree, and then we come up with a better name later, clients
@@ -154,6 +156,10 @@ battery: Any battery details
    | battery.charge.restart  | Minimum battery level for    | 20            |
    |                         | UPS restart after power-off  |               |
    |-------------------------+------------------------------+---------------|
+   | battery.charge.warning  | Battery level when UPS       |               |
+   |                         | switches to "Warning" state  | 50            |
+   |                         | (percent)                    |               |
+   |-------------------------+------------------------------+---------------|
    | battery.voltage         | Battery charge (volts)       | 24.84         |
    |-------------------------+------------------------------+---------------|
    | battery.current         | Battery current (amps)       | 1.19          |
@@ -173,6 +179,9 @@ battery: Any battery details
    |-------------------------+------------------------------+---------------|
    | battery.date            | Battery change date (opaque  | 11/14/00      |
    |                         | string)                      |               |
+   |-------------------------+------------------------------+---------------|
+   | battery.mfr.date        | Battery manufacturing date   | 2005/04/02    |
+   |                         | (opaque string)              |               |
    |-------------------------+------------------------------+---------------|
    | battery.packs           | Number of battery packs      | 001           |
    |-------------------------+------------------------------+---------------|
