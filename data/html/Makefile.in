@@ -8,7 +8,7 @@ HTMLPATH	= $(DESTDIR)@HTMLPATH@
 INSTALLCMD  = @INSTALL@
 INSTALLMODE = 0644
 
-DATA_FILES  = index.html header.html bottom.html
+DATA_FILES  = index.html header.html bottom.html nut-banner.png
 
 all:
 

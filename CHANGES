@@ -1,3 +1,15 @@
+Fri Sep 09 10:25:05 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ * bcmxcp:
+   - add support for usb units
+   - split the driver for serial and usb support
+
+   (Wolfgang Ocker, Charles Lepple)
+
+Mon Aug 22 09:16:08 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
+
+ - nut-html: also install the missing nut-banner.png
+
 Thu Aug 18 09:47:07 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  * mge-utalk 0.86:
