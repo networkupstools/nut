@@ -1,5 +1,4 @@
-/*
-   metasys.c - driver for Meta System UPS
+/* metasys.c - driver for Meta System UPS
 
    Copyright (C) 2004  Fabio Di Niro <fabio.diniro@email.it>
 
@@ -25,10 +24,8 @@
 
 #include "main.h"
 #include "serial.h"
+#include "metasys.h"
 #include <string.h>
-
-
-#define DRV_VERSION	"0.05"
 
 /* Autorestart flag */
 int autorestart = 0;

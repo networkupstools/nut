@@ -125,8 +125,7 @@
 
 #include "main.h"
 #include "serial.h"
-
-#define DRV_VERSION	"0.02"
+#include "tripplitesu.h"
 
 #define MAX_RESPONSE_LENGTH 256
 

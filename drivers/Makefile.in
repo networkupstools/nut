@@ -48,6 +48,13 @@ build-usb: $(USB_DRIVER_LIST)
 include Makefile.drvbuild
 
 # ==========================================================================
+# Intermediate objects dependencies
+
+dstate.o: dstate.h
+main.o: main.h dstate.h
+serial.o: serial.h
+
+# ==========================================================================
 # upsdrvctl: the new all-singing all-dancing driver control program
 
 upsdrvctl: upsdrvctl.c ../common/upsconf.o ../common/parseconf.o $(LIBDEP)
@@ -57,8 +64,8 @@ upsdrvctl: upsdrvctl.c ../common/upsconf.o ../common/parseconf.o $(LIBDEP)
 # ==========================================================================
 # Testing driver for doing things without real UPS hardware attached
 
-dummy-ups: dummy-ups.c dummy-ups.h main.o dstate.o ../common/state.o \
-	../common/upsconf.o ../common/parseconf.o $(LIBDEP)
+dummy-ups: dummy-ups.c dummy-ups.h dstate.h main.o dstate.o \
+	../common/state.o ../common/upsconf.o ../common/parseconf.o $(LIBDEP)
 	$(CC) $(CFLAGS) -o $@ $@.c main.o dstate.o ../common/state.o \
 	../common/upsconf.o ../common/parseconf.o $(LIBOBJ) $(LDFLAGS)
 
@@ -74,7 +81,7 @@ hidups: hidups.o main.o dstate.o ../common/state.o \
 		../common/state.o ../common/upsconf.o ../common/parseconf.o \
 		$(LIBOBJ) $(LDFLAGS)
 
-hidups.o: hidups.c
+hidups.o: hidups.c main.h dstate.h hidups.h
 	$(CC) $(CFLAGS) -c hidups.c
 
 energizerups: energizerups.o main.o dstate.o ../common/state.o \
@@ -84,7 +91,7 @@ energizerups: energizerups.o main.o dstate.o ../common/state.o \
 		../common/state.o ../common/upsconf.o ../common/parseconf.o \
 		$(LIBOBJ) $(LDFLAGS)
 
-energizerups.o: energizerups.c
+energizerups.o: energizerups.c main.h dstate.h
 	$(CC) $(CFLAGS) -c energizerups.c
 
 
@@ -98,14 +105,17 @@ newhidups: newhidups.o main.o dstate.o ../common/state.o \
 		../common/state.o ../common/upsconf.o ../common/parseconf.o \
 		$(LIBOBJ) $(LIBUSB_LIBS) $(LDFLAGS) libhid.o libusb.o hidparser.o
 
-newhidups.o: newhidups.c newhidups.h
+newhidups.o: newhidups.c newhidups.h main.h dstate.h \
+		libhid.h hidtypes.h mge-hid.h apc-hid.h
 	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -c newhidups.c
 
-libhid.o: libhid.c libhid.h
+libhid.o: libhid.c hidparser.h hidtypes.h libhid.h hid-usb.h
 	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o libhid.o -c libhid.c
 
-libusb.o: libusb.c hid-usb.h
+libusb.o: libusb.c libhid.h hidtypes.h hid-usb.h
 	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o libusb.o -c libusb.c
+
+hidparser.o: hidparser.h hidtypes.h
 
 # ==========================================================================
 # Special case: tripplite_usb driver - development version (early beta)
@@ -141,13 +151,14 @@ nut_usb.o: nut_usb.c nut_usb.h
 # Special case: mge-shut driver - development version (early beta)
 
 mge-shut: mge-shut.o hidparser.o main.o dstate.o serial.o \
-		../common/state.o \
-		../common/upsconf.o ../common/parseconf.o $(LIBDEP)
+		../common/state.o ../common/upsconf.o \
+		../common/parseconf.o $(LIBDEP)
 	$(CC) $(CFLAGS) -o mge-shut mge-shut.o hidparser.o main.o \
 		dstate.o serial.o ../common/state.o ../common/upsconf.o \
 		../common/parseconf.o $(LIBOBJ) $(LDFLAGS)
 
-mge-shut.o: mge-shut.c mge-shut.h hidparser.h
+mge-shut.o: mge-shut.c mge-shut.h main.h dstate.h serial.h \
+		hidparser.h hidtypes.h
 	$(CC) $(CFLAGS) -c mge-shut.c
 
 hidparser.o: hidparser.h hidparser.c
@@ -163,10 +174,21 @@ snmp-ups: snmp-ups.o main.o dstate.o ../common/state.o \
 		../common/state.o ../common/upsconf.o ../common/parseconf.o \
 		$(LIBOBJ) $(LDFLAGS) $(NETSNMP_LIBS)
 
-snmp-ups.o: snmp-ups.c snmp-ups.h \
-		ietfmib.h apccmib.h mgemib.h
+snmp-ups.o: snmp-ups.c snmp-ups.h main.h dstate.h \
+		ietfmib.h apccmib.h mgemib.h netvisionmib.h pwmib.h
 	$(CC) $(CFLAGS) $(NETSNMP_CFLAGS) -c snmp-ups.c
 
+
+# ==========================================================================
+# Special case: skel driver - empty skeleton for new driver creation
+
+skel: skel.o
+	$(CC) $(CFLAGS) -o $@ $@.o main.o dstate.o \
+		../common/state.o ../common/upsconf.o ../common/parseconf.o \
+		$(LIBOBJ) $(LDFLAGS)
+
+skel.o: main.h dstate.h
+	$(CC) $(CFLAGS) -c skel.c
 
 # ==========================================================================
 # Housekeeping stuff

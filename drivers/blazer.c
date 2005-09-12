@@ -21,8 +21,7 @@
 
 #include "main.h"
 #include "serial.h"
-
-#define DRV_VERSION	"0.07"
+#include "blazer.h"
 
 #define ENDCHAR		13	/* replies end with CR */
 #define UPSDELAY 	5

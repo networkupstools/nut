@@ -50,11 +50,10 @@
       correctly connected to the serial port).
  */
 
-#define DRV_VERSION "0.03"
-
 #include <sys/ioctl.h>
 #include "main.h"
 #include "serial.h"
+#include "etapro.h"
 
 static int
 etapro_get_response(const char *resp_type)

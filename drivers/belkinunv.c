@@ -92,12 +92,10 @@
 
 #include "main.h"
 #include "serial.h"
+#include "belkinunv.h"
 #include <sys/ioctl.h>
 #include <sys/termios.h>
 	
-/* driver version */
-#define DRV_VERSION	"0.06"
-
 /* somewhat arbitrary buffer size - the longest actually occuring
    message is 18 bytes for the F6C800-UNV. But since message length is
    arbitrary in principle, we allow for some extra bytes. */

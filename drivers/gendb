@@ -2,10 +2,10 @@
 #
 # Network UPS Tools: drivers/gendb
 #
-# This is a hack to create a bunch of identical rules for building
-# the drivers without relying on either the % patterns of GNU Make or the
-# for...endfor of BSD Make.  They're both neat, but they're also not
-# portable.  Ugh.
+# This is a hack to create a bunch of identical rules and dependencies
+# for building the drivers without relying on either the % patterns of
+# GNU Make or the for...endfor of BSD Make.
+# They're both neat, but they're also not portable.  Ugh.
 #
 
 MFDB=Makefile.drvbuild
@@ -26,7 +26,7 @@ do
 	EXTRA=""
 	EXTRAOBJ=""
 
-	# tack on any per-driver portability extras
+	# tack on any per-driver portability/deps extras
 	case $i in
 		isbmex)
 			EXTRA="-lm"
@@ -42,6 +42,7 @@ do
 			;;
 	esac	
 
+	echo "$i.o: main.h dstate.h serial.h $i.c $i.h" >> $MFDB
 	echo "$i: $i.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o $EXTRAOBJ \$(LIBDEP)" >> $MFDB
 	echo "	\$(CC) \$(CFLAGS) \$(LDFLAGS) -o $i $i.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o $EXTRAOBJ \$(LIBOBJ) $EXTRA" >> $MFDB
 done

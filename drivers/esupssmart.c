@@ -1,34 +1,32 @@
-/*    
- 
- 
-    Copyright (C) 2003 Antonio Trujillo Coronado <lunatc@terra.es>
-    
-    Based on the file masterguard.c included in nut 1.2.2.
-    (Copyright (C) 2001 Michael Spanier <mail@michael-spanier.de>)
-    
-    epsupssmart.c created on 20.5.2003
-    epsupssmart.c updated on 04.6.2003: supporting 24 Volt "ES Advanced" series
-    epsupssmart.c updated on 07.6.2003: adapted to the nut 1.3.X series style 
+/* esupssmart.c - model specific routines for Energy Sistem and Infosec models
 
-    
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-    
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+   Copyright (C) 2003 Antonio Trujillo Coronado <lunatc@terra.es>
+
+   Based on the file masterguard.c included in nut 1.2.2.
+   (Copyright (C) 2001 Michael Spanier <mail@michael-spanier.de>)
+
+   epsupssmart.c created on 20.5.2003
+   epsupssmart.c updated on 04.6.2003: supporting 24 Volt "ES Advanced" series
+   epsupssmart.c updated on 07.6.2003: adapted to the nut 1.3.X series style 
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
-
 
 #include "main.h"
 #include "serial.h"
+#include "esupssmart.h"
 
 #define UPSDELAY	3
 #define MAXTRIES	10
@@ -44,8 +42,6 @@ static	int UPSFIRMSET = 0;
 
 #define Q1  1
 #define F  2
-
-#define DRIVERVERSION "0.22"
 
 static	int     DEBUG;
 static	int     type;
@@ -72,7 +68,7 @@ static void parse_str_num(const char *org, char *dest, int prec,
 	int numdec, float min, float max, float defval) {
       float num;
       char myfmtstr[7] = "%04.0f";
-           
+
       *dest='\0';
       if (prec < 0 || prec > 99) prec = 5;
       if (numdec < 0 || prec > 10) prec = 1;
@@ -89,7 +85,6 @@ static void get_battpct(char * org, char * dest, float minv, float maxv) {
    curvolt = (((curvolt < minv ? minv : curvolt) - minv) / (maxv - minv))*100;
    sprintf(dest, "%03.0f", curvolt);
 }
-                
 
 
 /********************************************************************
@@ -106,7 +101,7 @@ static char *StringSplit( char *source, char *word, int maxlen )
     int     i;
     int     len;
     int     wc=0;
-   
+
     word[0] = '\0';
     len = strlen( source );
     for( i = 0; i < len; i++ )
@@ -122,7 +117,7 @@ static char *StringSplit( char *source, char *word, int maxlen )
     word[wc] = '\0';
     return NULL;
 }
-     
+
 /********************************************************************
  * (From the original masterguard.c) 
  * Helper function to drop all whitespaces within a string.
@@ -505,7 +500,7 @@ static int ups_set_var(const char* varname, const char *val) {
  ********************************************************************/
 void upsdrv_initinfo(void)
 {
-    dstate_setinfo("driver.version.internal", "%s", DRIVERVERSION);
+    dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
 
   /* Q1 Query */ 
     dstate_setinfo( "ups.mfr", "%s", UPSMFR); /* INFO_MFR*/
@@ -650,7 +645,7 @@ void upsdrv_makevartable(void)
 void upsdrv_banner(void)
 {
 	printf("Network UPS Tools - Energy Sistems UPS Smart/Advanced UPS driver %s (%s)\n\n",
-            DRIVERVERSION, UPS_VERSION);
+            DRV_VERSION, UPS_VERSION);
 }
 
 /********************************************************************

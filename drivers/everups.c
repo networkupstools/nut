@@ -19,10 +19,8 @@
 
 #include "main.h"
 #include "serial.h"
+#include "everups.h"
 #include <sys/ioctl.h>
-
-#define DRV_VERSION "0.02"
-
 
 static	unsigned char	upstype = 0;
 

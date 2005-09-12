@@ -1,5 +1,4 @@
-/*
-   isbmex.c - model specific routines for SOLA/BASIC Mexico (ISBMEX) models
+/* isbmex.c - model specific routines for SOLA/BASIC Mexico (ISBMEX) models
 
    Copyright (C) 2005 Ricardo Martinezgarza <ricardo@nexxis.com.mx>
    Copyright (C) 2002 Edscott Wilson Garcia <edscott@imp.mx>
@@ -21,7 +20,12 @@
 
 */
 
-#define DRV_VERSION "0.05"
+#include "main.h"
+#include "serial.h"
+#include "isbmex.h"
+
+#include <math.h>		/* for sqrt */
+#include <string.h>
 
 #define xDEBUG
 
@@ -30,12 +34,6 @@
 #else
 #define D(x)
 #endif
-
-#include "main.h"
-#include "serial.h"
-
-#include <math.h>		/* for sqrt */
-#include <string.h>
 
 /*#define ENDCHAR	'&'*/
 #define MAXTRIES 15

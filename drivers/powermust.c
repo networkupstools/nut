@@ -1,4 +1,6 @@
 /* -*- mode: c; c-basic-offset: 8; indent-tabs-mode: t; -*-
+ * 
+ * powermust.c: support for Mustek (and others) models
  *
  * Copyright (C) 2003, 2004 Carlos Rodrigues <carlos.efr@mail.telepac.pt>
  *
@@ -22,6 +24,7 @@
 
 #include "main.h"
 #include "serial.h"
+#include "powermust.h"
 
 #include <stdio.h>
 #include <limits.h>
@@ -29,8 +32,6 @@
 
 #define ENDCHAR  '\r'
 #define IGNCHARS "(#"
-
-#define DRV_VERSION "1.1"
 
 #define RECV_BUFFER_LEN 128
 

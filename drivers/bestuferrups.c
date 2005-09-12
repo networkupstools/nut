@@ -7,7 +7,7 @@
    by itself. (same as Grant's driver in this respect)
 
    Support for model RE added by Tim Thompson (7/22/04)
-   
+
    Copyright (C) 2002  Andreas Wrede  <andreas@planix.com>
    Copyright (C) 2000  John Stone  <johns@megapixel.com>
    Copyright (C) 2000  Grant Taylor <gtaylor@picante.com>
@@ -29,10 +29,9 @@
 
 */
 
-#define DRV_VERSION "0.02"
-
 #include "main.h"
 #include "serial.h"
+#include "bestuferrups.h"
 
 #define ENDCHAR		'\r'
 #define IGNCHARS	"\012"

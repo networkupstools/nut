@@ -105,10 +105,9 @@
  *  KKK  INFO_ACFREQ * 10
  */
 
-#define DRV_VERSION "0.8"
-
 #include "main.h"
 #include "serial.h"
+#include "tripplite.h"
 #include <math.h>
 #include <ctype.h>
 

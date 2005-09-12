@@ -41,10 +41,9 @@
 
 */
 
-#define DRV_VERSION "0.11"
-
 #include "main.h"
 #include "serial.h"
+#include "bestfcom.h"
 
 #define ENDCHAR			'\r'
 #define IGNCHARS		"\012"
