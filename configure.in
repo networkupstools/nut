@@ -354,7 +354,7 @@ then
 else
 	AC_MSG_RESULT($LIBUSB_CFLAGS)
 	USB_DRIVER_LIST="newhidups bcmxcp_usb"
-	USBPAGES=newhidups.8
+	USBPAGES="newhidups.8 bcmxcp_usb.8"
 fi
 
 AC_MSG_CHECKING(for libusb libs)
