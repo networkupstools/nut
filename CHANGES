@@ -1,3 +1,8 @@
+Mon Sep 12 17:53:03 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: fixed logic in upsdrv_shutdown(): return after first
+   command succeeds, don't print "Shutdown command failed".
+
 Mon Sep 12 11:34:55 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - complete bcmxcp_usb support by adding a manpage and completing

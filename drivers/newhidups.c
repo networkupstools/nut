@@ -87,15 +87,16 @@ void upsdrv_shutdown(void)
 	
 			/* Misc method B */
 			upsdebugx(2, "upsdrv_shutdown: APC ForceShutdown style shutdown.\n");
-			if (instcmd("load.off", NULL) != STAT_INSTCMD_HANDLED) {
-				upsdebugx(2, "ForceShutdown command failed");
-
-				upsdebugx(2, "upsdrv_shutdown: APC Delay style shutdown.\n");
-				if (instcmd("shutdown.return", NULL) != STAT_INSTCMD_HANDLED) {
-				  upsdebugx(2, "Delayed Shutdown command failed");
-				}
+			if (instcmd("load.off", NULL) == STAT_INSTCMD_HANDLED) {
+				return;
 			}
+			upsdebugx(2, "ForceShutdown command failed");
 
+			upsdebugx(2, "upsdrv_shutdown: APC Delay style shutdown.\n");
+			if (instcmd("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
+				return;
+			}
+			upsdebugx(2, "Delayed Shutdown command failed");
 
 		/* Don't "break" as the general method might also be supported! */;
 		case MGE_UPS_SYSTEMS:
@@ -107,8 +108,9 @@ void upsdrv_shutdown(void)
 			
 			/* 2) set DelayBeforeShutdown */
 			sprintf(&delay[0], "%i", offdelay);
-			if (setvar("ups.delay.shutdown", &delay[0])!= STAT_SET_HANDLED)
-				fatalx("Shutoff command failed (setting offdelay)");
+			if (setvar("ups.delay.shutdown", &delay[0]) == STAT_SET_HANDLED)
+				return;
+			fatalx("Shutoff command failed (setting offdelay)");
 		break;
 	}
 }
