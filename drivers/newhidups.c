@@ -28,6 +28,7 @@
 /* include all known hid2nut lookup tables */
 #include "mge-hid.h"
 #include "apc-hid.h"
+#include "belkin-hid.h"
 
 /* pointer to the good lookup tables */
 static hid_info_t *hid_ups;
@@ -415,6 +416,10 @@ void upsdrv_initups(void)
       			HIDDumpTree(NULL);
 		break;
 		case BELKIN:
+	  	        hid_ups = hid_belkin;
+			model_names = belkin_model_names;
+			HIDDumpTree(NULL);
+		break;
 		case MUSTEK:
 		case TRIPPLITE:
 		case UNITEK:
@@ -490,6 +495,19 @@ void identify_ups ()
 				dstate_setinfo("ups.firmware", "%s", ptr1);
 			}
 			finalname = str;
+			break;
+		case BELKIN:
+		        finalname = hd->Product;
+			/* trim leading whitespace */
+			while (*hd->Vendor == ' ') {
+				hd->Vendor++;
+			}
+		        if (strlen(hd->Vendor) == 0) {
+			        hd->Vendor = "Belkin";
+			}
+			if (strlen(hd->Product) == 0) {
+			        finalname = "unknown";
+                        }
 			break;
 		default: /* Nothing to do */
 		break;

@@ -53,7 +53,15 @@ static int prev_report; /* previously retrieved report ID */
 static time_t prev_report_ts = 0; /* timestamp of the previously retrieved report */
 unsigned char ReportDesc[4096];
 
-#define MAX_REPORT_SIZE         0x1800
+/* FIXME: we currently "hard-wire" the report buffer size in the calls
+   to libusb_get_report() below to 8 bytes. This is not really a great
+   idea, but it is necessary because Belkin models will crash,
+   sometimes with permanent firmware damage, if called with a larger
+   buffer size (never mind the USB specification). Let's hope for now
+   that no other UPS needs a buffer greater than 8. Ideally, the
+   libhid library should calculate the *exact* size of the required
+   report buffer from the report descriptor. */
+#define REPORT_SIZE 8
 
 /* TODO: rework all that */
 extern void upsdebugx(int level, const char *fmt, ...);
@@ -223,11 +231,9 @@ float HIDGetItemValue(char *path, float *Value)
 		if (FindObject(&hParser, &hData) == 1)
 		{
 			/* Get report with data */
-			/* if ((replen=libusb_get_report(hData.ReportID,
-			raw_buf, MAX_REPORT_SIZE)) > 0) { => doesn't work! */
 			/* Bufferize at least the last report */
 			if ( ( (prev_report == hData.ReportID) && (time(NULL) <= (prev_report_ts + MAX_TS)) )
-				|| ((replen=libusb_get_report(hData.ReportID, raw_buf, 10)) > 0) )
+				|| ((replen=libusb_get_report(hData.ReportID, raw_buf, REPORT_SIZE)) > 0) )
 			{
 				/* Extract the data value */
 				GetValue((const unsigned char *) raw_buf, &hData);
@@ -291,7 +297,7 @@ char *HIDGetItemString(char *path)
     
     /* Get info on object (reportID, offset and size) */
     if (FindObject(&hParser,&hData) == 1) {
-      if (libusb_get_report(hData.ReportID, raw_buf, 8) > 0) { /* MAX_REPORT_SIZE) > 0) { */
+      if (libusb_get_report(hData.ReportID, raw_buf, REPORT_SIZE) > 0) { 
 	GetValue((const unsigned char *) raw_buf, &hData);
 
 	/* now get string */
@@ -523,7 +529,7 @@ ushort lookup_path(char *HIDpath, HIDData *data)
 	  strcat(HIDpath, "UPS.");
 
 	  // Numeric to String
-	  for (i = 1; i <= hData.Path.Size; i++)
+	  for (i = 1; i < hData.Path.Size; i++)
 		{
 		  /* Deal with ?bogus? */
 		  if ( ((hData.Path.Node[i].UPage * 0x10000) + hData.Path.Node[i].Usage) == 0)
@@ -684,8 +690,58 @@ static usage_lkp_t usage_lkp[] = {
 	{ "APCForceShutdown",			0xff86007c },
 	{ "APCDelayBeforeShutdown",		0xff86007d },
 	{ "APCDelayBeforeStartup",		0xff86007e }, /* FIXME: need to be exploited */
-	/* FIXME: The below one seems to have been wrongly encoded by APC */
+
+	/* FIXME: The below one seems to have been wrongly encoded by Belkin */
 	/* Pages 84 to 88 are reserved for official HID definition! */
+
+	{ "BELKINConfig",			0x00860026 },
+	{ "BELKINConfigVoltage",		0x00860040 }, /* (V) */
+	{ "BELKINConfigFrequency",		0x00860042 }, /* (Hz) */
+	{ "BELKINConfigApparentPower",		0x00860043 }, /* (VA) */
+	{ "BELKINConfigBatteryVoltage",		0x00860044 }, /* (V) */
+	{ "BELKINConfigOverloadTransfer",	0x00860045 }, /* (%) */
+	{ "BELKINLowVoltageTransfer",		0x00860053 }, /* R/W (V) */
+	{ "BELKINHighVoltageTransfer",		0x00860054 }, /* R/W (V)*/
+	{ "BELKINLowVoltageTransferMax",	0x0086005b }, /* (V) */
+	{ "BELKINLowVoltageTransferMin",	0x0086005c }, /* (V) */
+	{ "BELKINHighVoltageTransferMax",	0x0086005d }, /* (V) */
+	{ "BELKINHighVoltageTransferMin",	0x0086005e }, /* (V) */
+
+	{ "BELKINControls",			0x00860027 },
+	{ "BELKINLoadOn",			0x00860050 }, /* R/W: write: 1=do action. Read: 0=none, 1=started, 2=in progress, 3=complete */
+	{ "BELKINLoadOff",			0x00860051 }, /* R/W: ditto */
+	{ "BELKINLoadToggle",			0x00860052 }, /* R/W: ditto */
+	{ "BELKINDefaultShutdown",		0x00860055 }, /* R/W: write: 0=start shutdown using default delay. */
+	{ "BELKINDelayBeforeStartup",		0x00860056 }, /* R/W (minutes) */
+	{ "BELKINDelayBeforeShutdown",		0x00860057 }, /* R/W (seconds) */
+	{ "BELKINTest",				0x00860058 }, /* R/W: write: 0=no test, 1=quick test, 2=deep test, 3=abort test. Read: 0=no test, 1=passed, 2=warning, 3=error, 4=abort, 5=in progress */
+	{ "BELKINAudibleAlarmControl",		0x0086005a }, /* R/W: 1=disabled, 2=enabled, 3=muted */
+	
+	{ "BELKINDevice",			0x00860029 },
+	{ "BELKINVoltageSensitivity",		0x00860074 }, /* R/W: 0=normal, 1=reduced, 2=low */
+	{ "BELKINModelString",			0x00860075 },
+	{ "BELKINModelStringOffset",		0x00860076 }, /* offset of Model name in Model String */
+	{ "BELKINUPSType",			0x0086007c }, /* high nibble: firmware version. Low nibble: 0=online, 1=offline, 2=line-interactive, 3=simple online, 4=simple offline, 5=simple line-interactive */
+
+	{ "BELKINPowerState",			0x0086002a },
+	{ "BELKINInput",			0x0086001a },
+	{ "BELKINOutput",			0x0086001c },
+	{ "BELKINBatterySystem",		0x00860010 },
+	{ "BELKINVoltage",			0x00860030 }, /* (0.1 Volt) */
+	{ "BELKINFrequency",			0x00860032 }, /* (0.1 Hz) */
+	{ "BELKINPower",			0x00860034 }, /* (Watt) */
+	{ "BELKINPercentLoad",			0x00860035 }, /* (%) */
+	{ "BELKINTemperature",			0x00860036 }, /* (Celsius) */
+	{ "BELKINCharge",			0x00860039 }, /* (%) */
+	{ "BELKINRunTimeToEmpty",		0x0086006c }, /* (minutes) */
+
+	{ "BELKINStatus",			0x00860028 },
+	{ "BELKINBatteryStatus",		0x00860022 }, /* 1 byte: bit2=low battery, bit4=charging, bit5=discharging, bit6=battery empty, bit7=replace battery */
+	{ "BELKINPowerStatus",			0x00860021 }, /* 2 bytes: bit0=ac failure, bit4=overload, bit5=load is off, bit6=overheat, bit7=UPS fault, bit13=awaiting power, bit15=alarm status */
+
+	/* FIXME: The below one seems to have been wrongly encoded by APC */
+	/* FIXME: This also overlaps with Belkin */
+	/* FIXME: what is BUP anyway? */
 	{ "BUPHibernate",			0x00850058 }, /* FIXME: need to be exploited */
 	{ "BUPBattCapBeforeStartup",		0x00860012 }, /* FIXME: need to be exploited */
 	{ "BUPDelayBeforeStartup",		0x00860076 }, /* FIXME: need to be exploited */

@@ -1,3 +1,12 @@
+Tue Sep 13 20:50:14 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: added Belkin support. Also added some new variables and
+   instant commands (some of these were already used by other
+   drivers); see new-names.txt.
+
+ - newhidups: fixed return value bug in libusb.c:libusb_open() when no
+   device was found.
+
 Tue Sep 13 08:06:52 / Arnaud Quette <aquette.dev@gmail.com>
 
  - driver.list: add Exide NETUPS SE and Deltec PowerRite Pro II

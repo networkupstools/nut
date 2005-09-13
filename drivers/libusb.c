@@ -126,8 +126,7 @@ int libusb_open(HIDDevice *curDevice, MatchFlags *flg, unsigned char *ReportDesc
 			  /* FIXME: temporary method, not generic/flexible enough */
 			  if ( (dev->descriptor.idVendor == MGE_UPS_SYSTEMS)
 				  || (dev->descriptor.idVendor == APC)
-				  || ( (dev->descriptor.idVendor == BELKIN)
-					&& (dev->descriptor.idProduct == 0x0551) )
+				  || (dev->descriptor.idVendor == BELKIN)
 				  || (dev->descriptor.idVendor == MUSTEK)
 				  || (dev->descriptor.idVendor == TRIPPLITE)
 				  || (dev->descriptor.idVendor == UNITEK) )
@@ -313,10 +312,14 @@ int libusb_open(HIDDevice *curDevice, MatchFlags *flg, unsigned char *ReportDesc
 			} /* if udev */
 		}
 	}
-	TRACE(2, "found %i (%i)", found, ret);
-	fflush(stdout);
+	if (found) {
+		TRACE(2, "found %i (%i)", found, ret);
+		fflush(stdout);
 
-	return ret;
+		return ret;
+	} else {
+		return -1;
+	}
 }
 
 /* return the report of ID=type in report 

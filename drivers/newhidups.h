@@ -26,6 +26,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "config.h"
+#include "hid-usb.h"
 
 #define DRIVER_VERSION		"0.27"
 
@@ -35,8 +36,8 @@
 
 #define MGE_UPS_SYSTEMS		0x0463		/* All models */
 #define APC			0x051d		/* All models */
+#define BELKIN			0x050d		/* models: 0x0551, 0x0980, ... */
 /* Unsupported! (need spec/hardware/help) */
-#define BELKIN			0x050d		/* models: 0x0551, IDs? */
 #define MUSTEK			0x0665		/* models: 0x5161... */
 #define TRIPPLITE		0x09ae		/* models IDs? */
 #define UNITEK			0x0F03		/* models: 0x0001... */
@@ -231,6 +232,32 @@ static char *date_conversion_fun(long value) {
 
 info_lkp_t date_conversion[] = {
   { 0, NULL, date_conversion_fun }
+};
+
+/* returns statically allocated string - must not use it again before
+   done with result! */
+static char *hex_conversion_fun(long value) {
+	static char buf[20];
+	
+	sprintf(buf, "%08lx", value);
+	return buf;
+}
+
+info_lkp_t hex_conversion[] = {
+	{ 0, NULL, hex_conversion_fun }
+};
+
+/* returns statically allocated string - must not use it again before
+   done with result! */
+static char *stringid_conversion_fun(long value) {
+	static char buf[20];
+	libusb_get_string(value, buf);	
+	
+	return buf;
+}
+
+info_lkp_t stringid_conversion[] = {
+	{ 0, NULL, stringid_conversion_fun }
 };
 
 /* --------------------------------------------------------------- */

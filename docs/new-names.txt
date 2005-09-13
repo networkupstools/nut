@@ -53,6 +53,10 @@ ups: General unit information
    |----------------------+------------------------------+------------------|
    | ups.load             | Load on UPS (percent)        | 023.4            |
    |----------------------+------------------------------+------------------|
+   | ups.load.high        | Load on UPS when UPS         | 100              |
+   |                      | switches to overload         |                  |
+   |                      | condition ("OVER") (percent) |                  |
+   |----------------------+------------------------------+------------------|
    | ups.id               | UPS system identifier        | Sierra           |
    |                      | (opaque string)              |                  |
    |----------------------+------------------------------+------------------|
@@ -88,6 +92,13 @@ ups: General unit information
    | ups.beeper.status    | UPS beeper status            | enabled          |
    |                      | (enabled, disabled or muted) |                  |
    +------------------------------------------------------------------------+
+   | ups.type             | UPS type (*** opaque)        | offline          |
+   +------------------------------------------------------------------------+
+   | ups.devicechemistry  | Device chemistry (*** opaque)| PbAc             |
+   +------------------------------------------------------------------------+
+   | ups.beeper.status    | UPS beeper status            | enabled          |
+   |                      | (enabled, disabled or muted) |                  |
+   +------------------------------------------------------------------------+
 
 input: Incoming line/power information
 
@@ -107,10 +118,22 @@ input: Incoming line/power information
    | input.transfer.reason     | Reason for last transfer   | T             |
    |                           | to battery (*** opaque)    |               |
    |---------------------------+----------------------------+---------------|
-   | input.transfer.low        | Low voltage transfer point | 103           |
+   | input.transfer.low        | Low voltage transfer point | 91            |
    |---------------------------+----------------------------+---------------|
    | input.transfer.high       | High voltage transfer      | 132           |
    |                           | point                      |               |
+   |---------------------------+----------------------------+---------------|
+   | input.transfer.low.min    | smallest settable low      | 85            |
+   |                           | voltage transfer point     |               |
+   |---------------------------+----------------------------+---------------|
+   | input.transfer.low.max    | greatest settable low      | 95            |
+   |                           | voltage transfer point     |               |
+   |---------------------------+----------------------------+---------------|
+   | input.transfer.high.min   | smallest settable high     | 131           |
+   |                           | voltage transfer point     |               |
+   |---------------------------+----------------------------+---------------|
+   | input.transfer.high.max   | greatest settable high     | 136           |
+   |                           | voltage transfer point     |               |
    |---------------------------+----------------------------+---------------|
    | input.sensitivity         | Input power sensitivity    | H (high)      |
    |---------------------------+----------------------------+---------------|
@@ -118,6 +141,9 @@ input: Incoming line/power information
    |                           | opaque)                    |               |
    |---------------------------+----------------------------+---------------|
    | input.frequency           | Input line frequency (Hz)  | 60.00         |
+   |---------------------------+----------------------------+---------------|
+   | input.frequency.nominal   | Nominal input line         |               |
+   |			       | frequency (Hz)             | 60            |
    |---------------------------+----------------------------+---------------|
    | input.transfer.boost.low  | Low voltage boosting       | 190           |
    |                           | transfer point             |               |
@@ -316,6 +342,10 @@ server: Internal server information
    | test.failure.stop        | Stop simulating a power failure             |
    |--------------------------+---------------------------------------------|
    | test.battery.start       | Start a battery test                        |
+   |--------------------------+---------------------------------------------|
+   | test.battery.start.quick | Start a "quick" battery test                |
+   |--------------------------+---------------------------------------------|
+   | test.battery.start.deep  | Start a "deep" battery test                 |
    |--------------------------+---------------------------------------------|
    | test.battery.stop        | Stop the battery test                       |
    |--------------------------+---------------------------------------------|
