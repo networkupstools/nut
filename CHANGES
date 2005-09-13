@@ -1,3 +1,10 @@
+Tue Sep 13 08:06:52 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - driver.list: add Exide NETUPS SE and Deltec PowerRite Pro II
+   (rebranded models of Powerware 5119)
+
+   (Karl Schmidt) [Alioth Patch #301881]
+
 Tue Sep 13 01:35:47 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups: in libhid.h, removed iProduct from HIDDevice structure.
