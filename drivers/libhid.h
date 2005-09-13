@@ -58,7 +58,6 @@ typedef struct
 	u_int16_t ProductID; /*!< Device's Product ID */
 	int       Application; /*!< match Usage for HIDOpenDevice(Usage)) */
 	char*     Serial; /* Product serial number */
-	u_char    iProduct;
 	int       fd; /* "internal" file descriptor */
 } HIDDevice;
 

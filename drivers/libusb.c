@@ -97,13 +97,13 @@ int libusb_open(HIDDevice *curDevice, MatchFlags *flg, unsigned char *ReportDesc
 
 	int ret = -1, res; 
 	unsigned char buf[20];
-	u_int16_t reopen_VendorID = 0; /* Device's Vendor ID */
-        u_char    reopen_iProduct = 0; /* Product ID */
-        char*     reopen_Serial = NULL;   /* Product serial number */
+	u_int16_t reopen_VendorID = 0;  /* Device's Vendor ID */
+        u_int16_t reopen_ProductID = 0; /* Product ID */
+        char*     reopen_Serial = NULL; /* Product serial number */
 
 	if (mode == MODE_REOPEN) {
 	  reopen_VendorID = curDevice->VendorID;
-	  reopen_iProduct = curDevice->iProduct;
+	  reopen_ProductID = curDevice->ProductID;
 	  reopen_Serial = curDevice->Serial;
 	}
 
@@ -133,12 +133,12 @@ int libusb_open(HIDDevice *curDevice, MatchFlags *flg, unsigned char *ReportDesc
 				  || (dev->descriptor.idVendor == UNITEK) )
 				{
 
-				  TRACE(2, "Found 0x%x/0x%x", dev->descriptor.idVendor, dev->descriptor.iProduct);
+				  TRACE(2, "Found 0x%04x/0x%04x", dev->descriptor.idVendor, dev->descriptor.idProduct);
 				  /* when reopening, try to find the
 				     same USB as before. */
 				  if (mode == MODE_REOPEN) {
 				    if (dev->descriptor.idVendor != reopen_VendorID ||
-					dev->descriptor.iProduct != reopen_iProduct) {
+					dev->descriptor.idProduct != reopen_ProductID) {
 				      TRACE(2, "Not the same device as before - not reopening it");
 				      usb_close(udev);
 				      udev = NULL;
@@ -147,7 +147,7 @@ int libusb_open(HIDDevice *curDevice, MatchFlags *flg, unsigned char *ReportDesc
 				  }
 
 				  curDevice->VendorID = dev->descriptor.idVendor;
-				  curDevice->iProduct = dev->descriptor.iProduct;
+				  curDevice->ProductID = dev->descriptor.idProduct;
 				}
 			  else
 				{

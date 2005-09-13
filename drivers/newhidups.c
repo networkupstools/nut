@@ -449,8 +449,8 @@ void identify_ups ()
 	float appPower;
 
 	upsdebugx (2, "entering identify_ups(0x%04x, 0x%04x)\n", 
-			   hd->VendorID, /*FIXME: iManufacturer? */
-			   hd->iProduct);
+			   hd->VendorID,
+			   hd->ProductID);
 
 	switch (hd->VendorID)
 	{
