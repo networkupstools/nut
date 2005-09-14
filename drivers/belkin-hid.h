@@ -2,7 +2,6 @@
  *
  *  Copyright (C)  
  *	2003 - 2005	Arnaud Quette <arnaud.quette@free.fr>
- *	2005		John Stamp <kinsayder@hotmail.com>
  *      2005            Peter Selinger <selinger@users.sourceforge.net>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
@@ -188,32 +187,32 @@ hid_info_t hid_belkin[] = {
   { "battery.charge.low", ST_FLAG_STRING, 5, "UPS.PowerSummary.RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_OK, NULL },
   { "battery.charge.warning", ST_FLAG_STRING, 5, "UPS.PowerSummary.WarningCapacityLimit", NULL, "%.0f", HU_FLAG_OK, NULL }, /* Read only */
   { "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", HU_FLAG_OK, NULL },
+  { "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", HU_FLAG_OK, stringid_conversion },
   { "battery.voltage", 0, 0, "UPS.BELKINBatterySystem.BELKINVoltage", NULL, "%s", HU_FLAG_OK, belkin_10_conversion },
   { "battery.voltage.nominal", 0, 0, "UPS.BELKINConfig.BELKINConfigBatteryVoltage", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "ups.serial.internal", 0, 0, "UPS.PowerSummary.iSerialNumber", NULL, "%s", HU_FLAG_OK, stringid_conversion },  
-  { "ups.mfr.date", 0, 0, "UPS.PowerSummary.ManufacturerDate", NULL, "%s", HU_FLAG_OK, date_conversion },
   { "input.frequency", 0, 0, "UPS.BELKINPowerState.BELKINInput.BELKINFrequency", NULL, "%s", HU_FLAG_OK, belkin_10_conversion },
   { "input.frequency.nominal", 0, 0, "UPS.BELKINConfig.BELKINConfigFrequency", NULL, "%.0f", HU_FLAG_OK, NULL },
   { "input.sensitivity", ST_FLAG_RW, 0, "UPS.BELKINDevice.BELKINVoltageSensitivity", NULL, "%s", HU_FLAG_OK, belkin_sensitivity_conversion },
-  { "input.transfer.low", ST_FLAG_RW, 0, "UPS.BELKINConfig.BELKINLowVoltageTransfer", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "input.transfer.low.max", 0, 0, "UPS.BELKINConfig.BELKINLowVoltageTransferMax", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "input.transfer.low.min", 0, 0, "UPS.BELKINConfig.BELKINLowVoltageTransferMin", NULL, "%.0f", HU_FLAG_OK, NULL },
   { "input.transfer.high", ST_FLAG_RW, 0, "UPS.BELKINConfig.BELKINHighVoltageTransfer", NULL, "%.0f", HU_FLAG_OK, NULL },
   { "input.transfer.high.max", 0, 0, "UPS.BELKINConfig.BELKINHighVoltageTransferMax", NULL, "%.0f", HU_FLAG_OK, NULL },
   { "input.transfer.high.min", 0, 0, "UPS.BELKINConfig.BELKINHighVoltageTransferMin", NULL, "%.0f", HU_FLAG_OK, NULL },
+  { "input.transfer.low", ST_FLAG_RW, 0, "UPS.BELKINConfig.BELKINLowVoltageTransfer", NULL, "%.0f", HU_FLAG_OK, NULL },
+  { "input.transfer.low.max", 0, 0, "UPS.BELKINConfig.BELKINLowVoltageTransferMax", NULL, "%.0f", HU_FLAG_OK, NULL },
+  { "input.transfer.low.min", 0, 0, "UPS.BELKINConfig.BELKINLowVoltageTransferMin", NULL, "%.0f", HU_FLAG_OK, NULL },
   { "input.voltage", 0, 0, "UPS.BELKINPowerState.BELKINInput.BELKINVoltage", NULL, "%s", HU_FLAG_OK, belkin_10_conversion },
-  { "input.voltage.nominal", 0, 0, "UPS.BELKINConfig.BELKINConfigVoltage", NULL, "%.0f", HU_FLAG_OK, NULL },  
+  { "input.voltage.nominal", 0, 0, "UPS.BELKINConfig.BELKINConfigVoltage", NULL, "%.0f", HU_FLAG_OK, NULL },
   { "output.frequency", 0, 0, "UPS.BELKINPowerState.BELKINOutput.BELKINFrequency", NULL, "%s", HU_FLAG_OK, belkin_10_conversion },
   { "output.voltage", 0, 0, "UPS.BELKINPowerState.BELKINOutput.BELKINVoltage", NULL, "%s", HU_FLAG_OK, belkin_10_conversion },
   { "ups.beeper.status", 0, 0, "UPS.BELKINControls.BELKINAudibleAlarmControl", NULL, "%s", HU_FLAG_OK, beeper_info },
+  { "ups.delay.restart", ST_FLAG_RW, 0, "UPS.BELKINControls.BELKINDelayBeforeStartup", NULL, "%.0f", HU_FLAG_OK, NULL },
+  { "ups.delay.shutdown", ST_FLAG_RW, 0, "UPS.BELKINControls.BELKINDelayBeforeShutdown", NULL, "%.0f", HU_FLAG_OK, NULL },
   { "ups.firmware", 0, 0, "UPS.BELKINDevice.BELKINUPSType", NULL, "%s", HU_FLAG_OK, belkin_firmware_conversion },
   { "ups.load", 0, 0, "UPS.BELKINPowerState.BELKINOutput.BELKINPercentLoad", NULL, "%.0f", HU_FLAG_OK, NULL },
   { "ups.load.high", 0, 0, "UPS.BELKINConfig.BELKINConfigOverloadTransfer", NULL, "%.0f", HU_FLAG_OK, NULL },
+  { "ups.mfr.date", 0, 0, "UPS.PowerSummary.ManufacturerDate", NULL, "%s", HU_FLAG_OK, date_conversion },
   { "ups.power.nominal", 0, 0, "UPS.BELKINConfig.BELKINConfigApparentPower", NULL, "%.0f", HU_FLAG_OK, NULL },
+  { "ups.serial.internal", 0, 0, "UPS.PowerSummary.iSerialNumber", NULL, "%s", HU_FLAG_OK, stringid_conversion },
   { "ups.test.result", ST_FLAG_RW, 0, "UPS.BELKINControls.BELKINTest", NULL, "%s", HU_FLAG_OK, belkin_test_info },
-  { "ups.delay.shutdown", ST_FLAG_RW, 0, "UPS.BELKINControls.BELKINDelayBeforeShutdown", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "ups.delay.restart", ST_FLAG_RW, 0, "UPS.BELKINControls.BELKINDelayBeforeStartup", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "ups.devicechemistry", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", HU_FLAG_OK, stringid_conversion },
   { "ups.type", 0, 0, "UPS.BELKINDevice.BELKINUPSType", NULL, "%s", HU_FLAG_OK, belkin_upstype_conversion },
 
   /* status */

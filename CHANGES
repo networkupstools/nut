@@ -1,3 +1,8 @@
+Wed Sep 14 16:23:55 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: renamed ups.devicechemistry as battery.type, bumped 
+   newhidups driver release.
+
 Tue Sep 13 20:50:14 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups: added Belkin support. Also added some new variables and

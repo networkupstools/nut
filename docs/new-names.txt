@@ -94,8 +94,6 @@ ups: General unit information
    +------------------------------------------------------------------------+
    | ups.type             | UPS type (*** opaque)        | offline          |
    +------------------------------------------------------------------------+
-   | ups.devicechemistry  | Device chemistry (*** opaque)| PbAc             |
-   +------------------------------------------------------------------------+
    | ups.beeper.status    | UPS beeper status            | enabled          |
    |                      | (enabled, disabled or muted) |                  |
    +------------------------------------------------------------------------+
@@ -215,6 +213,9 @@ battery: Any battery details
    | battery.packs           | Number of battery packs      | 001           |
    |-------------------------+------------------------------+---------------|
    | battery.packs.bad       | Number of bad battery packs  | 000           |
+   +------------------------------------------------------------------------+
+   | battery.type            | Battery chemistry            | PbAc          |
+   |                         | (opaque string)              |               |
    +------------------------------------------------------------------------+
 
 ambient: Conditions from external probe equipment

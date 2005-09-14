@@ -28,7 +28,7 @@
 #include "config.h"
 #include "hid-usb.h"
 
-#define DRIVER_VERSION		"0.27"
+#define DRIVER_VERSION		"0.28"
 
 /* --------------------------------------------------------------- */
 /*      Supported Manufacturers IDs                                */
