@@ -297,6 +297,8 @@ that UPS.
 			   Some units that have been used with this driver:
 
 			   - All MGE UPS SYSTEMS USB models
+			   - APC Back-UPS ES 650
+			   - Belkin F6C800-UNV, F6C550-AVR
 
 			   NOTE: not built by default.  Read the FAQ
 			   to find out how to build/install/use this one.
