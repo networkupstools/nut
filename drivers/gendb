@@ -42,7 +42,11 @@ do
 			;;
 	esac	
 
-	echo "$i.o: main.h dstate.h serial.h $i.c $i.h" >> $MFDB
 	echo "$i: $i.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o $EXTRAOBJ \$(LIBDEP)" >> $MFDB
 	echo "	\$(CC) \$(CFLAGS) \$(LDFLAGS) -o $i $i.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o $EXTRAOBJ \$(LIBOBJ) $EXTRA" >> $MFDB
+done
+
+for i in *.c
+do
+	gcc -I../include -MG -MM "$i" >> $MFDB
 done

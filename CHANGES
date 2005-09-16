@@ -1,3 +1,8 @@
+Fri Sep 16 01:18:47 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - drivers/: updated gendb and Makefile.in to automatically generate
+   correct *.h dependencies. Added "make depend" target.
+
 Thu Sep 15 03:54:02 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
  - added Belkin and APC models to supported hardware list in README and
