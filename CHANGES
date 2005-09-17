@@ -1,3 +1,9 @@
+Sat Sep 17 00:25:23 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - drivers/Makefile.in: don't run gendb on "make clean", only on
+   "make depend". This way, only maintainers need to re-generate
+   dependencies.
+
 Fri Sep 16 01:18:47 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
  - drivers/: updated gendb and Makefile.in to automatically generate
