@@ -43,7 +43,7 @@ build-usb: $(USB_DRIVER_LIST)
 # ==========================================================================
 # Driver build details
 #
-# The rules are regenerated during 'make clean' with gendb.
+# The rules are regenerated during 'make depend' with gendb.
 
 include Makefile.drvbuild
 
@@ -187,7 +187,7 @@ skel.o:
 depend:
 	./gendb $(PROGS)
 
-clean: depend
+clean:
 	rm -f *~ *.o $(PROGS) Makefile.drvbuild
 	rm -f dummy-ups snmp-ups $(USB_DRIVER_LIST) mge-shut upsdrvctl
 
