@@ -184,11 +184,11 @@ skel.o:
 # gendb runs here so that the source always goes out the door with a
 # current Makefile.drvbuild file
 
-depend:
+depend Makefile.drvbuild:
 	./gendb $(PROGS)
 
 clean:
-	rm -f *~ *.o $(PROGS) Makefile.drvbuild
+	rm -f *~ *.o $(PROGS)
 	rm -f dummy-ups snmp-ups $(USB_DRIVER_LIST) mge-shut upsdrvctl
 
 distclean: clean
