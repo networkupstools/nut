@@ -1,3 +1,7 @@
+Mon Sep 19 16:43:57 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - drivers/Makefile.in: don't remove Makefile.drvbuild on "make clean".
+
 Mon Sep 19 16:11:17 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
  - drivers/gendb: added test for gcc availability.
