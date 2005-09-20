@@ -30,7 +30,7 @@
 /* previously: #define ERROR(x) if(x) __asm { int 3 }; */
 #define ERROR(x)
 
-const char ItemSize[4]={0,1,2,4};
+static const char ItemSize[4]={0,1,2,4};
 
 /*
  * ResetParser

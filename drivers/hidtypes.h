@@ -6,8 +6,8 @@
  * Header GPL 
  * -------------------------------------------------------------------------- */
 
-#ifndef TYPE_H
-#define TYPE_H
+#ifndef HIDTYPES_H
+#define HIDTYPES_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -147,4 +147,4 @@ typedef struct
 } /* extern "C" */
 #endif /* __cplusplus */
 
-#endif
+#endif /* HIDTYPES_H */

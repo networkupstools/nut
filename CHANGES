@@ -1,3 +1,12 @@
+Tue Sep 20 00:51:01 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: cleaned up code so that *.h files contain headers, *.c
+   files contain sources. Declared all non-exported variables and
+   functions as static. Moved code from X-hid.h to X-hid.c, where
+   X=mge,apc,belkin. Enclosed all header files in #ifndef/#endif
+   pairs.
+ - renamed drivers/hid-usb.h as drivers/libusb.h
+
 Mon Sep 19 16:43:57 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
  - drivers/Makefile.in: don't remove Makefile.drvbuild on "make clean".

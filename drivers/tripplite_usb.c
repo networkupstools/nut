@@ -87,7 +87,7 @@
 
 #include "main.h"
 #include "libhid.h"
-#include "hid-usb.h"
+#include "libusb.h"
 #include <math.h>
 #include <ctype.h>
 

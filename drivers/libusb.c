@@ -5,6 +5,7 @@
  * @author Copyright (C) 2003
  *	Arnaud Quette <arnaud.quette@free.fr> && <arnaud.quette@mgeups.com>
  *	Philippe Marzouk <philm@users.sourceforge.net> (dump_hex())
+ *      2005 Peter Selinger <selinger@users.sourceforge.net>
  *
  * This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
  *
@@ -32,14 +33,14 @@
 #include <string.h>
 #include "libhid.h"
 
-#include "hid-usb.h"
+#include "libusb.h"
 #include "config.h" /* for LIBUSB_HAS_DETACH_KRNL_DRV flag */
 
 #include "common.h" /* for xmalloc prototype */
 
 usb_dev_handle *udev = NULL;
-struct usb_device *dev;
-struct usb_bus *bus;
+static struct usb_device *dev;
+static struct usb_bus *bus;
 
 /* #define USB_TIMEOUT 5000 */
 #define USB_TIMEOUT 4000
@@ -53,10 +54,8 @@ struct usb_bus *bus;
 #define UNITEK                  0x0F03          /* models: 0x0001... */
 
 /* TODO: rework all that */
-extern void upsdebugx(int level, const char *fmt, ...);
+void upsdebugx(int level, const char *fmt, ...);
 #define TRACE upsdebugx
-
-extern void usb_fetch_and_parse_descriptors(usb_dev_handle *udev);
 
 /* HID descriptor, completed with desc{type,len} */
 struct my_usb_hid_descriptor {

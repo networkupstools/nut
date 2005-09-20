@@ -5,6 +5,7 @@
  * @author Copyright (C) 2003
  *      Arnaud Quette <arnaud.quette@free.fr> && <arnaud.quette@mgeups.com>
  *      Charles Lepple <clepple@ghz.cc>
+ *      2005 Peter Selinger <selinger@users.sourceforge.net>
  *
  * This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
  *

@@ -6,6 +6,7 @@
  *	Arnaud Quette <arnaud.quette@free.fr> && <arnaud.quette@mgeups.com>
  *	Philippe Marzouk <philm@users.sourceforge.net> (dump_hex())
  *	John Stamp <kinsayder@hotmail.com>
+ *      2005 Peter Selinger <selinger@users.sourceforge.net>
  *	
  * This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
  *
@@ -36,22 +37,20 @@
 #include "hidtypes.h"
 #include "libhid.h"
 
-#include "hid-usb.h"
+#include "libusb.h"
 
 #include <errno.h>
-extern int errno;
 
-HIDDevice curDevice;
+static HIDDevice curDevice;
 
 static HIDData   	hData;
 static HIDParser 	hParser;
 
-unsigned char raw_buf[100];
-unsigned char **report_buf;
-int replen; /* size of the last report retrieved */
+static unsigned char raw_buf[100];
+static int replen; /* size of the last report retrieved */
 static int prev_report; /* previously retrieved report ID */
 static time_t prev_report_ts = 0; /* timestamp of the previously retrieved report */
-unsigned char ReportDesc[4096];
+static unsigned char ReportDesc[4096];
 
 /* FIXME: we currently "hard-wire" the report buffer size in the calls
    to libusb_get_report() below to 8 bytes. This is not really a great
@@ -64,12 +63,12 @@ unsigned char ReportDesc[4096];
 #define REPORT_SIZE 8
 
 /* TODO: rework all that */
-extern void upsdebugx(int level, const char *fmt, ...);
+void upsdebugx(int level, const char *fmt, ...);
 #define TRACE upsdebugx
 
 /* Units and exponents table (HID PDC, 3.2.3) */
 #define NB_HID_UNITS 10
-const long HIDUnits[NB_HID_UNITS][2]=
+static const long HIDUnits[NB_HID_UNITS][2]=
 {
 	{0x00000000,0}, /* None */
 	{0x00F0D121,7}, /* Voltage */
@@ -84,14 +83,14 @@ const long HIDUnits[NB_HID_UNITS][2]=
 };
 
 /* support functions */
-void logical_to_physical(HIDData *Data);
-void physical_to_logical(HIDData *Data);
-const char *hid_lookup_path(unsigned int usage);
-int hid_lookup_usage(char *name);
-ushort lookup_path(char *HIDpath, HIDData *data);
-void dump_hex (const char *msg, const unsigned char *buf, int len);
-long get_unit_expo(long UnitType);
-float expo(int a, int b);
+static void logical_to_physical(HIDData *Data);
+static void physical_to_logical(HIDData *Data);
+static const char *hid_lookup_path(unsigned int usage);
+static int hid_lookup_usage(char *name);
+static ushort lookup_path(char *HIDpath, HIDData *data);
+static void dump_hex (const char *msg, const unsigned char *buf, int len);
+static long get_unit_expo(long UnitType);
+static float expo(int a, int b);
 
 
 void HIDDumpTree(HIDDevice *hd)
@@ -439,7 +438,7 @@ void HIDCloseDevice(HIDDevice *dev)
 
 #define MAX_STRING      		64
 
-void logical_to_physical(HIDData *Data)
+static void logical_to_physical(HIDData *Data)
 {
 	if(Data->PhyMax - Data->PhyMin > 0)
 	{
@@ -462,7 +461,7 @@ void logical_to_physical(HIDData *Data)
 	*/
 }
 
-void physical_to_logical(HIDData *Data)
+static void physical_to_logical(HIDData *Data)
 {
 	TRACE(2, "PhyMax = %ld, PhyMin = %ld, LogMax = %ld, LogMin = %ld",
 		Data->PhyMax, Data->PhyMin, Data->LogMax, Data->LogMin);
@@ -480,7 +479,7 @@ void physical_to_logical(HIDData *Data)
 	} */
 }
 
-long get_unit_expo(long UnitType)
+static long get_unit_expo(long UnitType)
 {
 	int i = 0, exp = -1;
 	
@@ -498,7 +497,7 @@ long get_unit_expo(long UnitType)
 
 /* exponent function: return a^b */
 /* FIXME: check if needed/possible to replace libmath->pow */
-float expo(int a, int b)
+static float expo(int a, int b)
 {
 	if (b==0)
 		return (float) 1;
@@ -513,7 +512,7 @@ float expo(int a, int b)
 
 /* translate HID string path from/to numeric path and return path depth */
 /* TODO: use usbutils functions (need to be externalised!) */
-ushort lookup_path(char *HIDpath, HIDData *data)
+static ushort lookup_path(char *HIDpath, HIDData *data)
 {
 	ushort i = 0, cond = 1;
 	int cur_usage;
@@ -783,7 +782,7 @@ static usage_lkp_t usage_lkp[] = {
 	{  "\0", 0x0 }
 };
 
-const char *hid_lookup_path(unsigned int usage)
+static const char *hid_lookup_path(unsigned int usage)
 {
 	int i;
 	static char raw_usage[10];
@@ -802,7 +801,7 @@ const char *hid_lookup_path(unsigned int usage)
 	return &raw_usage[0];
 }
 
-int hid_lookup_usage(char *name)
+static int hid_lookup_usage(char *name)
 {
 	int i;
 	int value;
@@ -841,7 +840,7 @@ int get_current_data_attribute()
 }
 #define NIBBLE(_i)    (((_i) < 10) ? '0' + (_i) : 'A' + (_i) - 10)
 
-void dump_hex (const char *msg, const unsigned char *buf, int len)
+static void dump_hex (const char *msg, const unsigned char *buf, int len)
 {
 	int i;
 	int nlocal;
