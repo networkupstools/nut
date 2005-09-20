@@ -41,7 +41,6 @@ void upsdrv_updateinfo(void)
 	 *	return;
 	 * }
 	 */
-	 */
 
 	/* dstate_setinfo("var.name", ""); */
 
@@ -138,7 +137,7 @@ void upsdrv_initups(void)
 	 *
 	 * to show the value of cable:
 	 *
-	 *      if ((cable == getval("cable")))
+	 *      if ((cable = getval("cable")))
 	 *		printf("cable is set to %s\n", cable);
 	 *	else
 	 *		printf("cable is not set!\n");

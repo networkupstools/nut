@@ -7,6 +7,19 @@ Tue Sep 20 00:51:01 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
    pairs.
  - renamed drivers/hid-usb.h as drivers/libusb.h
 
+Mon Sep 19 17:50:21 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: added -x bus=X option to open a device on a specific USB
+   bus. Here X is a regular expression. When reconnecting to a
+   previously opened device, the policy is that the bus name of the
+   reopened device must match the regular expression previously
+   specified, but need not be the exact same bus as when the device
+   was initially opened. Thus, e.g., -x bus='00[23]' allows the device
+   to be moved between busses 002 and 003. (This is different from how
+   e.g. a device serial number is treated, which must match the
+   regular expression when the device is initially opened, but must
+   match exactly when the device is reopened).
+
 Mon Sep 19 16:43:57 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
  - drivers/Makefile.in: don't remove Makefile.drvbuild on "make clean".
@@ -26,10 +39,51 @@ Fri Sep 16 01:18:47 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
  - drivers/: updated gendb and Makefile.in to automatically generate
    correct *.h dependencies. Added "make depend" target.
 
+Fri Sep 16 01:04:57 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: make sure correct matcher is used for reopenings. 
+
+Thu Sep 15 19:54:12 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: eliminated some unused arguments from functions
+
 Thu Sep 15 03:54:02 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
  - added Belkin and APC models to supported hardware list in README and
    data/driver.list. 
+
+Thu Sep 15 03:37:28 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: changed implementation of regular expression device
+   matching to use a callback function called a "matcher" (similar,
+   but not identical, to libhid's matchers). The public matcher
+   interface is documented in libhid.h. Two sample matchers are
+   provided: an exact matcher, used for reconnecting, and a regular
+   expression matcher, used to connect to a user-defined UPS.
+
+ - newhidups: replaced error numbers by cleartext error messages in
+   some debug output.
+
+Thu Sep 15 01:15:49 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: Belkin now detects serial number correctly; removed
+   temporary "ups.serial.internal" variable.
+
+ - newhidups: simplified and documented HIDDevice structure; this
+   structure is used as a "fingerprint" of a USB device and is used
+   for reopening, thus must not be modified by client code. 
+
+ - newhidups: further cleaned up logic in libusb.c:libusb_open() to
+   deal with NULL strings correctly. Slight cleanup of
+   newhidups.c:identify_ups().
+
+Wed Sep 14 18:31:47 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: cleaned up logic in libusb.c:libusb_open(), in
+   preparation for improvements to "device matching" mechanism.
+
+ - newhidups: fixed "free null pointer" error in regular expression
+   code.
 
 Wed Sep 14 16:23:55 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
@@ -51,6 +105,18 @@ Tue Sep 13 08:06:52 / Arnaud Quette <aquette.dev@gmail.com>
    (rebranded models of Powerware 5119)
 
    (Karl Schmidt) [Alioth Patch #301881]
+
+Tue Sep 13 05:22:49 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: added options -x vendor=X, -x vendorid=X, -x product=X,
+   -x productid=X, -x serial=X, that let the user select a specific
+   UPS if there is more than one present. The arguments "X" are
+   extended regular expressions that must match the whole string (in
+   case of vendor, product or serial number), or the whole 4-digit
+   hexadecimal code (in case of vendorid, productid). Examples:
+   -x vendor="APC.*", -x product=".*(Smart|Back)-?UPS.*", etc.
+
+ - skel.c: fixed typos
 
 Tue Sep 13 01:35:47 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 

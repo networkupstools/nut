@@ -92,6 +92,278 @@ static void dump_hex (const char *msg, const unsigned char *buf, int len);
 static long get_unit_expo(long UnitType);
 static float expo(int a, int b);
 
+/* ---------------------------------------------------------------------- */
+/* matchers */
+
+/* helper function: version of strcmp that tolerates NULL
+ * pointers. NULL is considered to come before all other strings
+ * alphabetically. */
+static inline int strcmp_null(char *s1, char *s2) {
+	if (s1 == NULL && s2 == NULL) {
+		return 0;
+	}
+	if (s1 == NULL) {
+		return -1;
+	}
+	if (s2 == NULL) {
+		return 1;
+	}
+	return strcmp(s1, s2);
+}
+
+/* private callback function for exact matches */
+static int match_function_exact(HIDDevice *d, void *privdata) {
+	HIDDevice *data = (HIDDevice *)privdata;
+	
+	if (d->VendorID != data->VendorID) {
+		return 0;
+	}
+	if (d->ProductID != data->ProductID) {
+		return 0;
+	}
+	if (strcmp_null(d->Vendor, data->Vendor) != 0) {
+		return 0;
+	}
+	if (strcmp_null(d->Product, data->Product) != 0) {
+		return 0;
+	}
+	if (strcmp_null(d->Serial, data->Serial) != 0) {
+		return 0;
+	}
+	/* note: the exact matcher ignores the "Bus" field, because
+	   it can change during a reconnect. */
+	return 1;
+}
+
+/* constructor: return a new matcher that matches the exact HIDDevice
+ * d. Return NULL with errno set on error. */
+HIDDeviceMatcher_t *new_exact_matcher(HIDDevice *d) {
+	HIDDeviceMatcher_t *m;
+	HIDDevice *data;
+
+	m = (HIDDeviceMatcher_t *)malloc(sizeof(HIDDeviceMatcher_t));
+	if (!m) {
+		return NULL;
+	}
+	data = (HIDDevice *)malloc(sizeof(HIDDevice));
+	if (!data) {
+		free(m);
+		return NULL;
+	}
+	data->VendorID = d->VendorID;
+	data->ProductID = d->ProductID;
+	data->Vendor = d->Vendor ? strdup(d->Vendor) : NULL;
+	data->Product = d->Product ? strdup(d->Product) : NULL;
+	data->Serial = d->Serial ? strdup(d->Serial) : NULL;
+
+	m->match_function = &match_function_exact;
+	m->privdata = (void *)data;
+	m->next = NULL;
+	return m;
+}
+
+/* destructor: free matcher previously created with new_exact_matcher */
+void free_exact_matcher(HIDDeviceMatcher_t *matcher) {
+	HIDDevice *data;
+
+	if (matcher) {
+		data = (HIDDevice *)matcher->privdata;
+		
+		free(data->Vendor);
+		free(data->Product);
+		free(data->Serial);
+		free(data);
+		free(matcher);
+	}
+}
+
+/* Private function for compiling a regular expression. On success,
+   store the compiled regular expression (or NULL) in *compiled, and
+   return 0. On error with errno set, return -1. If the supplied
+   regular expression is unparseable, return -2 (an error message can
+   then be retrieved with regerror(3)). Note that *compiled will be an
+   allocated value, and must be freed with regfree(), then free(), see
+   regex(3). As a special case, if regex==NULL, then set
+   *compiled=NULL (regular expression NULL is intended to match
+   anything). */
+static inline int compile_regex(regex_t **compiled, char *regex, int cflags) {
+	int r;
+	regex_t *preg;
+
+	if (regex == NULL) {
+		*compiled = NULL;
+		return 0;
+	}
+	preg = (regex_t *)malloc(sizeof(regex_t));
+	if (!preg) {
+		return -1;
+	}
+
+	r = regcomp(preg, regex, cflags);
+	if (r) {
+		return -2;
+	}
+	*compiled = preg;
+	return 0;
+}
+
+/* Private function for regular expression matching. Check if the
+   entire string str (minus any initial and trailing whitespace)
+   matches the compiled regular expression preg. Return 1 if it
+   matches, 0 if not. Return -1 on error with errno set. Special
+   cases: if preg==NULL, it matches everything (no contraint).  If
+   str==NULL, then it is treated as "". */
+static int match_regex(regex_t *preg, char *str) {
+  int r;
+  regmatch_t pmatch[1];
+  char *p, *q;
+  int len;
+
+  if (preg == NULL) {
+    return 1;
+  }
+  if (str == NULL) {
+    str = "";
+  }
+
+  /* make a copy of str with whitespace stripped */
+  for (q=str; *q==' ' || *q=='\t' || *q=='\n'; q++) {
+    /* empty */
+  }
+  len = strlen(q);
+  p = (char *)malloc(len+1);
+  if (!p) {
+	  return -1;
+  }
+  memcpy(p, q, len+1);
+  while (len>0 && (p[len-1]==' ' || p[len-1]=='\t' || p[len-1]=='\n')) {
+    len--;
+  }
+  p[len] = 0;
+
+  /* test the regular expression */
+  r = regexec(preg, p, 1, pmatch, 0);
+  free(p);
+  if (r) {
+    return 0;
+  }
+  /* check that the match is the entire string */
+  if (pmatch[0].rm_so != 0 || pmatch[0].rm_eo != len) {
+    return 0;
+  }
+  return 1;
+}
+
+/* Private function, similar to match_regex, but the argument being
+ * matched is a (hexadecimal) number, rather than a string. It is
+ * converted to a 4-digit hexadecimal string. */
+static inline int match_regex_hex(regex_t *preg, int n) {
+	char buf[10];
+	sprintf(buf, "%04x", n);
+	return match_regex(preg, buf);
+}
+
+/* private data type: hold a set of compiled regular expressions. */
+struct regex_matcher_data_s {
+	regex_t *regex[6];
+};
+typedef struct regex_matcher_data_s regex_matcher_data_t;
+
+/* private callback function for regex matches */
+static int match_function_regex(HIDDevice *d, void *privdata) {
+	regex_matcher_data_t *data = (regex_matcher_data_t *)privdata;
+	int r;
+	
+	r = match_regex_hex(data->regex[0], d->VendorID);
+	if (r != 1) {
+		return r;
+	}
+	r = match_regex_hex(data->regex[1], d->ProductID);
+	if (r != 1) {
+		return r;
+	}
+	r = match_regex(data->regex[2], d->Vendor);
+	if (r != 1) {
+		return r;
+	}
+	r = match_regex(data->regex[3], d->Product);
+	if (r != 1) {
+		return r;
+	}
+	r = match_regex(data->regex[4], d->Serial);
+	if (r != 1) {
+		return r;
+	}
+	r = match_regex(data->regex[5], d->Bus);
+	if (r != 1) {
+		return r;
+	}
+	return 1;
+}
+
+/* constructor: create a regular expression matcher. This matcher is
+   based on six regular expression strings in regex_array[0..5],
+   corresponding to: vendorid, productid, vendor, product, serial,
+   bus. Any of these strings can be NULL, which matches
+   everything. Cflags are as in regcomp(3). Typical values for cflags
+   are REG_ICASE (case insensitive matching) and REG_EXTENDED (use
+   extended regular expressions).  On success, return 0 and store the
+   matcher in *matcher. On error, return -1 with errno set, or return
+   i=1--5 to indicate that the regular expression regex_array[i] was
+   ill-formed (an error message can then be retrieved with
+   regerror(3)). */
+int new_regex_matcher(HIDDeviceMatcher_t **matcher, char *regex_array[6], int cflags) {
+	HIDDeviceMatcher_t *m = NULL;
+	regex_matcher_data_t *data = NULL;
+	int r, i;
+
+	m = (HIDDeviceMatcher_t *)malloc(sizeof(HIDDeviceMatcher_t));
+	if (!m) {
+		return -1;
+	}
+	data = (regex_matcher_data_t *)malloc(sizeof(regex_matcher_data_t));
+	if (!data) {
+		free(m);
+		return -1;
+	}
+	for (i=0; i<6; i++) {
+		r = compile_regex(&data->regex[i], regex_array[i], cflags);
+		if (r==-2) {
+			r = i;
+		}
+		if (r) {
+			free(m);
+			free(data);
+			return r;
+		}
+	}
+
+	m->match_function = &match_function_regex;
+	m->privdata = (void *)data;
+	m->next = NULL;
+	*matcher = m;
+	return 0;
+}
+
+void free_regex_matcher(HIDDeviceMatcher_t *matcher) {
+	int i;
+	regex_matcher_data_t *data;
+	
+	if (matcher) {
+		data = (regex_matcher_data_t *)matcher->privdata;
+		for (i=0; i<6; i++) {
+			if (data->regex[i]) {
+				regfree(data->regex[i]);
+				free(data->regex[i]);
+			}
+		}
+		free(data);
+		free(matcher);
+	}
+}
+
+/* ---------------------------------------------------------------------- */
+
 
 void HIDDumpTree(HIDDevice *hd)
 {
@@ -149,30 +421,20 @@ void HIDDumpTree(HIDDevice *hd)
 		}
 	}
 }
-						
-HIDDevice *HIDOpenDevice(const char *port, MatchFlags *flg, int mode)
+
+/* Matcher is a linked list of matchers (see libhid.h), and the opened
+    device must match all of them. */
+HIDDevice *HIDOpenDevice(HIDDeviceMatcher_t *matcher, int mode)
 {
 	int ReportSize;
 
-	if ( mode == MODE_OPEN )
-	{
-		/* Init structure */
-		curDevice.Name = NULL;
-		curDevice.Vendor = NULL;
-		curDevice.VendorID = -1;
-		curDevice.Product = NULL;
-		curDevice.ProductID = -1;
-		curDevice.Serial = NULL;
-		curDevice.Application = -1;
-		curDevice.fd = -1;
-	}
-	else
+	if ( mode == MODE_REOPEN )
 	{
 		TRACE(2, "Reopening device");
 	}
 
 	/* get and parse descriptors (dev, cfg and report) */
-	ReportSize = libusb_open(&curDevice, flg, ReportDesc, mode);
+	ReportSize = libusb_open(&curDevice, matcher, ReportDesc, mode);
 
 	if (ReportSize == -1)
 		return NULL;
@@ -265,7 +527,7 @@ float HIDGetItemValue(char *path, float *Value)
 			}
 			else
 			{
-				TRACE(2, "Can't retrieve Report %i (%i/%i)", hData.ReportID, replen, errno);
+				TRACE(2, "Can't retrieve Report %i (%i/%i): %s", hData.ReportID, replen, errno, strerror(errno));
 				return -errno;
 			}
 		}
@@ -425,10 +687,10 @@ int HIDGetEvents(HIDDevice *dev, HIDItem **eventsList)
 	return itemCount;
 }
 
-void HIDCloseDevice(HIDDevice *dev)
+void HIDCloseDevice()
 {
 	TRACE(2, "Closing device");
-	libusb_close(&curDevice);
+	libusb_close();
 }
 
 

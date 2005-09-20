@@ -36,7 +36,8 @@ static models_name_t *model_names;
 
 /* Global vars */
 static HIDDevice *hd;
-static MatchFlags flg;
+static HIDDeviceMatcher_t *reopen_matcher = NULL;
+static HIDDeviceMatcher_t *regex_matcher = NULL;
 static int offdelay = DEFAULT_OFFDELAY;
 static int ondelay = DEFAULT_ONDELAY;
 static int pollfreq = DEFAULT_POLLFREQ;
@@ -51,7 +52,7 @@ static hid_info_t *find_nut_info(const char *varname);
 static hid_info_t *find_nut_info_valid(const char *varname);
 static hid_info_t *find_hid_info(const char *hidname);
 static char *hu_find_infoval(info_lkp_t *hid2info, long value);
-static char *get_model_name(char *iProduct, char *iModel);
+static char *get_model_name(const char *iProduct, char *iModel);
 static void process_status_info(char *nutvalue);
 static void ups_status_set(void);
 static void identify_ups ();
@@ -384,7 +385,13 @@ void upsdrv_makevartable(void)
 		DEFAULT_POLLFREQ);
 	addvar(VAR_VALUE, HU_VAR_POLLFREQ, temp);
 	
-	/* FIXME: autodetection values (Mfr, Product, Index, ...) */
+	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
+	addvar(VAR_VALUE, "vendor", "Regular expression to match UPS Manufacturer string");
+	addvar(VAR_VALUE, "product", "Regular expression to match UPS Product string");
+	addvar(VAR_VALUE, "serial", "Regular expression to match UPS Serial number");
+	addvar(VAR_VALUE, "vendorid", "Regular expression to match UPS Manufacturer numerical ID (4 digits hexadecimal)");
+	addvar(VAR_VALUE, "productid", "Regular expression to match UPS Product numerical ID (4 digits hexadecimal)");
+	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
 }
 
 void upsdrv_banner(void)
@@ -544,11 +551,36 @@ void upsdrv_initinfo(void)
 
 void upsdrv_initups(void)
 {
+	char *regex_array[5];
+	int r;
+
+        /* process the UPS selection options */
+	regex_array[0] = getval("vendorid");
+	regex_array[1] = getval("productid");
+	regex_array[2] = getval("vendor");
+	regex_array[3] = getval("product");
+	regex_array[4] = getval("serial");
+	regex_array[5] = getval("bus");
+
+	r = new_regex_matcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
+	if (r==-1) {
+		fatalx("new_regex_matcher: %s", strerror(errno));
+	} else if (r) {
+		fatalx("invalid regular expression: %s", regex_array[r]);
+	}
 	/* Search for the first supported UPS, no matter Mfr or exact product */
-	if ((hd = HIDOpenDevice(device_path, &flg, MODE_OPEN)) == NULL)
-		fatalx("No USB/HID UPS found");
+	if ((hd = HIDOpenDevice(regex_matcher, MODE_OPEN)) == NULL)
+		fatalx("No matching USB/HID UPS found");
 	else
-		upslogx(1, "Detected an UPS: %s/%s\n", hd->Vendor, hd->Product);
+		upslogx(1, "Detected a UPS: %s/%s\n", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
+
+	/* create a new matcher for later reopening */
+	reopen_matcher = new_exact_matcher(hd);
+	if (!reopen_matcher) {
+		upsdebugx(2, "new_exact_matcher: %s", strerror(errno));
+	}
+	/* link the two matchers */
+	reopen_matcher->next = regex_matcher;
 
 	/* See initinfo for WARNING */
 	switch (hd->VendorID)
@@ -587,7 +619,7 @@ void upsdrv_initups(void)
 void upsdrv_cleanup(void)
 {
 	if (hd != NULL)
-		HIDCloseDevice(hd);
+		HIDCloseDevice();
 }
 
 /**********************************************************************
@@ -598,7 +630,10 @@ static void identify_ups ()
 {
 	char *string;
 	char *ptr1, *ptr2, *str;
-	char *finalname = NULL;
+	char *model = NULL;
+	char *mfr = NULL;
+	char *serial = NULL;
+	char *product;
 	float appPower;
 
 	upsdebugx (2, "entering identify_ups(0x%04x, 0x%04x)\n", 
@@ -607,64 +642,80 @@ static void identify_ups ()
 
 	switch (hd->VendorID)
 	{
-		case MGE_UPS_SYSTEMS:
-			/* Get iModel and iProduct strings */
-			if ((string = HIDGetItemString("UPS.PowerSummary.iModel")) != NULL)
-				finalname = get_model_name(hd->Product, string);
+	case MGE_UPS_SYSTEMS:
+		/* Get iModel and iProduct strings */
+		product = hd->Product ? hd->Product : "unknown";
+		if ((string = HIDGetItemString("UPS.PowerSummary.iModel")) != NULL)
+			model = get_model_name(product, string);
+		else
+		{
+			/* Try with ConfigApparentPower */
+			if (HIDGetItemValue("UPS.Flow.[4].ConfigApparentPower", &appPower) != 0 )
+			{
+				string = xmalloc(16);
+				sprintf(string, "%i", (int)appPower);
+				model = get_model_name(product, string);
+				free (string);
+			}
 			else
-			{
-				/* Try with ConfigApparentPower */
-				if (HIDGetItemValue("UPS.Flow.[4].ConfigApparentPower", &appPower) != 0 )
-				{
-					string = xmalloc(16);
-					sprintf(string, "%i", (int)appPower);
-					finalname = get_model_name(hd->Product, string);
-					free (string);
-				}
-				else
-				finalname = hd->Product;
-			}
+				model = product;
+		}
+		mfr = hd->Vendor ? hd->Vendor : "MGE";
+		serial = hd->Serial;
 		break;
-		case APC:
-			/* FIXME?: what is the path "UPS.APC_UPS_FirmwareRevision"? */
-			str = hd->Product;
-			ptr1 = strstr(str, "FW:");
-			if (ptr1)
+	case APC:
+		/* FIXME?: what is the path "UPS.APC_UPS_FirmwareRevision"? */
+		str = hd->Product ? hd->Product : "unknown";
+		ptr1 = strstr(str, "FW:");
+		if (ptr1)
+		{
+			*(ptr1 - 1) = '\0';
+			ptr1 += strlen("FW:");
+			ptr2 = strstr(ptr1, "USB FW:");
+			if (ptr2)
 			{
-				*(ptr1 - 1) = '\0';
-				ptr1 += strlen("FW:");
-				ptr2 = strstr(ptr1, "USB FW:");
-				if (ptr2)
-				{
-					*(ptr2 - 1) = '\0';
-					ptr2 += strlen("USB FW:");
-					dstate_setinfo("ups.firmware.aux", "%s", ptr2);
-				}
-				dstate_setinfo("ups.firmware", "%s", ptr1);
+				*(ptr2 - 1) = '\0';
+				ptr2 += strlen("USB FW:");
+				dstate_setinfo("ups.firmware.aux", "%s", ptr2);
 			}
-			finalname = str;
-			break;
-		case BELKIN:
-		        finalname = hd->Product;
-			/* trim leading whitespace */
-			while (*hd->Vendor == ' ') {
-				hd->Vendor++;
+			dstate_setinfo("ups.firmware", "%s", ptr1);
+		}
+		model = str;
+		mfr = hd->Vendor ? hd->Vendor : "APC";
+		serial = hd->Serial;
+		break;
+	case BELKIN:
+		model = hd->Product ? hd->Product : "unknown";
+		mfr = hd->Vendor ? hd->Vendor : "Belkin";
+		/* trim leading whitespace */
+		while (*mfr == ' ') {
+			mfr++;
+		}
+		if (strlen(mfr) == 0) {
+			mfr = "Belkin";
+		}
+		if (strlen(model) == 0) {
+			model = "unknown";
+		}
+		serial = hd->Serial;
+		if (serial == NULL) {
+			/* try UPS.PowerSummary.iSerialNumber */
+			string = HIDGetItemString("UPS.PowerSummary.iSerialNumber");
+			if (string != NULL) {
+				serial = strdup(string);
 			}
-		        if (strlen(hd->Vendor) == 0) {
-			        hd->Vendor = "Belkin";
-			}
-			if (strlen(hd->Product) == 0) {
-			        finalname = "unknown";
-                        }
-			break;
-		default: /* Nothing to do */
+		}
+		break;
+	default: /* Nothing to do */
 		break;
 	}
-
+	
 	/* Actual information setting */
-	dstate_setinfo("ups.mfr", "%s", hd->Vendor);
-	dstate_setinfo("ups.model", "%s", finalname);
-	dstate_setinfo("ups.serial", "%s", (hd->Serial != NULL)?hd->Serial:"unknown");
+	dstate_setinfo("ups.mfr", "%s", mfr);
+	dstate_setinfo("ups.model", "%s", model);
+	if (serial != NULL) {
+		dstate_setinfo("ups.serial", "%s", serial);
+	}
 }
 
 /* walk ups variables and set elements of the info array. */
@@ -837,7 +888,7 @@ static bool hid_ups_walk(int mode)
 	/* Reserved values: -1/-10 for nul delay, -2 can't get value */
 	/* device has been disconnected, try to reconnect */
 	if ( (retcode == -EPERM) || (retcode == -EPIPE)
-		 || (retcode == -ENODEV) || (retcode == -EACCES) )
+	     || (retcode == -ENODEV) || (retcode == -EACCES))
 	  {
 		hd = NULL;
 		reconnect_ups();
@@ -859,9 +910,9 @@ static void reconnect_ups(void)
 	  upsdebugx(2, "==================================================");
 	  
 	  /* Not really useful as the device is no more reachable */
-	  HIDCloseDevice(NULL);
+	  HIDCloseDevice();
 	  
-	  if ((hd = HIDOpenDevice(device_path, &flg, MODE_REOPEN)) == NULL)
+	  if ((hd = HIDOpenDevice(reopen_matcher, MODE_REOPEN)) == NULL)
 		dstate_datastale();
 	}
 }
@@ -1010,7 +1061,7 @@ static char *hu_find_infoval(info_lkp_t *hid2info, long value)
 }
 
 /* All the logic for formatting finely the UPS model name */
-static char *get_model_name(char *iProduct, char *iModel)
+static char *get_model_name(const char *iProduct, char *iModel)
 {
   models_name_t *model = NULL;
 
