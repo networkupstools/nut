@@ -1,6 +1,6 @@
 # Network UPS Tools: data/html
 
-prefix		= /usr/local/ups
+prefix		= /usr
 exec_prefix	= ${prefix}
 
 HTMLPATH	= $(DESTDIR)${prefix}/html
@@ -8,7 +8,7 @@ HTMLPATH	= $(DESTDIR)${prefix}/html
 INSTALLCMD  = /usr/bin/install -c
 INSTALLMODE = 0644
 
-DATA_FILES  = index.html header.html bottom.html
+DATA_FILES  = index.html header.html bottom.html nut-banner.png
 
 all:
 

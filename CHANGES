@@ -1,3 +1,8 @@
+Tue Sep 20 02:11:29 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - tripplite_usb: made minor adjustments reflecting recent changes in
+   libhid.h.
+
 Tue Sep 20 00:51:01 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups: cleaned up code so that *.h files contain headers, *.c
