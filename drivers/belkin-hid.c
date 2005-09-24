@@ -291,7 +291,7 @@ static char *belkin_format_serial(HIDDevice *hd) {
 	serial = hd->Serial;
 	if (serial == NULL) {
 		/* try UPS.PowerSummary.iSerialNumber */
-		string = HIDGetItemString("UPS.PowerSummary.iSerialNumber");
+		string = HIDGetItemString(udev, "UPS.PowerSummary.iSerialNumber");
 		if (string != NULL) {
 			serial = xstrdup(string);
 		}

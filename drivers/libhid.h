@@ -32,6 +32,7 @@
 #include <regex.h>
 #include "timehead.h"
 #include "hidtypes.h"
+#include "usb.h"
 
 /* use explicit booleans */
 #ifndef FALSE
@@ -144,7 +145,7 @@ typedef struct MatchFlags_s MatchFlags_t;
 /*
  * HIDOpenDevice
  * -------------------------------------------------------------------------- */
-HIDDevice *HIDOpenDevice(HIDDeviceMatcher_t *matcher, int mode);
+HIDDevice *HIDOpenDevice(usb_dev_handle **udevp, HIDDeviceMatcher_t *matcher, int mode);
 
 /*
  * HIDGetItem
@@ -154,32 +155,32 @@ HIDItem *HIDGetItem(const char *ItemPath);
 /*
  * HIDGetItemValue
  * -------------------------------------------------------------------------- */
-float HIDGetItemValue(char *path, float *Value);
+float HIDGetItemValue(usb_dev_handle *udev, char *path, float *Value);
 
 /*
  * HIDGetItemString
  * -------------------------------------------------------------------------- */
-char *HIDGetItemString(char *path);
+char *HIDGetItemString(usb_dev_handle *udev, char *path);
 
 /*
  * HIDSetItemValue
  * -------------------------------------------------------------------------- */
-bool HIDSetItemValue(char *path, float value);
+bool HIDSetItemValue(usb_dev_handle *udev, char *path, float value);
 
 /*
  * HIDGetNextEvent
  * -------------------------------------------------------------------------- */
-int HIDGetEvents(HIDDevice *dev, HIDItem **eventsList);
+int HIDGetEvents(usb_dev_handle *udev, HIDDevice *dev, HIDItem **eventsList);
 
 /*
  * HIDCloseDevice
  * -------------------------------------------------------------------------- */
-void HIDCloseDevice(void);
+void HIDCloseDevice(usb_dev_handle **udevp);
 
 /*
  * Support functions
  * -------------------------------------------------------------------------- */
 int get_current_data_attribute();
-void HIDDumpTree(HIDDevice *hd);
+void HIDDumpTree(usb_dev_handle *udev);
 
 #endif /* _LIBHID_H */

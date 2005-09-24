@@ -319,12 +319,12 @@ static char *mge_format_model(HIDDevice *hd) {
 
 	/* Get iModel and iProduct strings */
 	product = hd->Product ? hd->Product : "unknown";
-	if ((string = HIDGetItemString("UPS.PowerSummary.iModel")) != NULL)
+	if ((string = HIDGetItemString(udev, "UPS.PowerSummary.iModel")) != NULL)
 		model = get_model_name(product, string);
 	else
 	{
 		/* Try with ConfigApparentPower */
-		if (HIDGetItemValue("UPS.Flow.[4].ConfigApparentPower", &appPower) != 0 )
+		if (HIDGetItemValue(udev, "UPS.Flow.[4].ConfigApparentPower", &appPower) != 0 )
 		{
 			string = xmalloc(16);
 			sprintf(string, "%i", (int)appPower);

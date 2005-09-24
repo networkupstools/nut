@@ -41,10 +41,6 @@
 
 #include "common.h" /* for xmalloc prototype */
 
-usb_dev_handle *udev = NULL;
-static struct usb_device *dev;
-static struct usb_bus *bus;
-
 /* #define USB_TIMEOUT 5000 */
 #define USB_TIMEOUT 4000
 
@@ -86,7 +82,7 @@ static inline int typesafe_control_msg(usb_dev_handle *dev,
     buffer. There's no way to know the size ahead of time. Matcher is
     a linked list of matchers (see libhid.h), and the opened device
     must match all of them. */
-int libusb_open(HIDDevice *curDevice, HIDDeviceMatcher_t *matcher, unsigned char *ReportDesc, int mode)
+int libusb_open(usb_dev_handle **udevp, HIDDevice *curDevice, HIDDeviceMatcher_t *matcher, unsigned char *ReportDesc, int mode)
 {
 	int found = 0;
 #if LIBUSB_HAS_DETACH_KRNL_DRV
@@ -94,7 +90,10 @@ int libusb_open(HIDDevice *curDevice, HIDDeviceMatcher_t *matcher, unsigned char
 #endif
 	struct my_usb_hid_descriptor *desc;
 	HIDDeviceMatcher_t *m;
-
+	struct usb_device *dev;                                                
+	struct usb_bus *bus;                                                   
+	usb_dev_handle *udevx;
+	
 	int ret, res; 
 	unsigned char buf[20];
 	char string[256];
@@ -112,8 +111,8 @@ int libusb_open(HIDDevice *curDevice, HIDDeviceMatcher_t *matcher, unsigned char
 			   supplied matcher */
 
 			/* open the device */
-			udev = usb_open(dev);
-			if (!udev) {
+			*udevp = udevx = usb_open(dev);
+			if (!udevx) {
 				TRACE(2, "Failed to open device, skipping. (%s)", usb_strerror());
 				continue;
 			} 
@@ -132,21 +131,21 @@ int libusb_open(HIDDevice *curDevice, HIDDeviceMatcher_t *matcher, unsigned char
 			curDevice->Bus = bus->dirname;
 			
 			if (dev->descriptor.iManufacturer) {
-				ret = usb_get_string_simple(udev, dev->descriptor.iManufacturer, string, sizeof(string));
+				ret = usb_get_string_simple(udevx, dev->descriptor.iManufacturer, string, sizeof(string));
 				if (ret > 0) {
 					curDevice->Vendor = strdup(string);
 				}
 			}
 
 			if (dev->descriptor.iProduct) {
-				ret = usb_get_string_simple(udev, dev->descriptor.iProduct, string, sizeof(string));
+				ret = usb_get_string_simple(udevx, dev->descriptor.iProduct, string, sizeof(string));
 				if (ret > 0) {
 					curDevice->Product = strdup(string);
 				}
 			}
 
 			if (dev->descriptor.iSerialNumber) {
-				ret = usb_get_string_simple(udev, dev->descriptor.iSerialNumber, string, sizeof(string));
+				ret = usb_get_string_simple(udevx, dev->descriptor.iSerialNumber, string, sizeof(string));
 				if (ret > 0) {
 					curDevice->Serial = strdup(string);
 				}
@@ -182,24 +181,24 @@ int libusb_open(HIDDevice *curDevice, HIDDeviceMatcher_t *matcher, unsigned char
 			 * it force device claiming by unbinding
 			 * attached driver... From libhid */
 			retries = 3;
-			while (usb_claim_interface(udev, 0) != 0 && retries-- > 0) {
+			while (usb_claim_interface(udevx, 0) != 0 && retries-- > 0) {
 				
 				TRACE(2, "failed to claim USB device, trying %d more time(s)...", retries);
 				
 				TRACE(2, "detaching kernel driver from USB device...");
-				if (usb_detach_kernel_driver_np(udev, 0) < 0) {
+				if (usb_detach_kernel_driver_np(udevx, 0) < 0) {
 					TRACE(2, "failed to detach kernel driver from USB device...");
 				}
 				
 				TRACE(2, "trying again to claim USB device...");
 			}
 #else
-			if (usb_claim_interface(udev, 0) < 0)
+			if (usb_claim_interface(udevx, 0) < 0)
 				TRACE(2, "failed to claim USB device...");
 #endif
 			
 			/* set default interface */
-			usb_set_altinterface(udev, 0);
+			usb_set_altinterface(udevx, 0);
 			
 			if (mode == MODE_REOPEN) {
 				return 1; 
@@ -208,7 +207,7 @@ int libusb_open(HIDDevice *curDevice, HIDDeviceMatcher_t *matcher, unsigned char
 			/* Get HID descriptor */
 			desc = (struct my_usb_hid_descriptor *)buf;
 			/* res = usb_get_descriptor(udev, USB_DT_HID, 0, buf, 0x9); */
-			res = usb_control_msg(udev, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
+			res = usb_control_msg(udevx, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
 					      (USB_DT_HID << 8) + 0, 0, buf, 0x9, USB_TIMEOUT);
 			
 			if (res < 0) {
@@ -229,7 +228,7 @@ int libusb_open(HIDDevice *curDevice, HIDDeviceMatcher_t *matcher, unsigned char
 			}
 			
 			/* res = usb_get_descriptor(udev, USB_DT_REPORT, 0, bigbuf, desc->wDescriptorLength); */
-			res = usb_control_msg(udev, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
+			res = usb_control_msg(udevx, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
 					      (USB_DT_REPORT << 8) + 0, 0, ReportDesc, 
 					      desc->wDescriptorLength, USB_TIMEOUT);
 			if (res >= desc->wDescriptorLength) 
@@ -249,8 +248,8 @@ int libusb_open(HIDDevice *curDevice, HIDDeviceMatcher_t *matcher, unsigned char
 				TRACE(2, "Report descriptor too short (expected %d, got %d)", desc->wDescriptorLength, res);
 			}
 		next_device:
-			usb_close(udev);
-			udev = NULL;
+			usb_close(udevx);
+			udevx = NULL;
 		}
 	}
 	TRACE(2, "No appropriate HID device found");
@@ -263,7 +262,7 @@ int libusb_open(HIDDevice *curDevice, HIDDeviceMatcher_t *matcher, unsigned char
  * return -1 on failure, report length on success
  */
 
-int libusb_get_report(int ReportId, unsigned char *raw_buf, int ReportSize )
+int libusb_get_report(usb_dev_handle *udev, int ReportId, unsigned char *raw_buf, int ReportSize )
 {
 	TRACE(4, "Entering libusb_get_report");
 
@@ -280,7 +279,7 @@ int libusb_get_report(int ReportId, unsigned char *raw_buf, int ReportSize )
 }
 
 
-int libusb_set_report(int ReportId, unsigned char *raw_buf, int ReportSize )
+int libusb_set_report(usb_dev_handle *udev, int ReportId, unsigned char *raw_buf, int ReportSize )
 {
 	if (udev != NULL)
 	{
@@ -294,7 +293,7 @@ int libusb_set_report(int ReportId, unsigned char *raw_buf, int ReportSize )
 		return 0;
 }
 
-int libusb_get_string(int StringIdx, char *string)
+int libusb_get_string(usb_dev_handle *udev, int StringIdx, char *string)
 {
   int ret = -1;	
 
@@ -312,7 +311,7 @@ int libusb_get_string(int StringIdx, char *string)
   return ret;
 }
 
-int libusb_get_interrupt(unsigned char *buf, int bufsize, int timeout)
+int libusb_get_interrupt(usb_dev_handle *udev, unsigned char *buf, int bufsize, int timeout)
 {
   int ret = -1;
 
@@ -329,14 +328,14 @@ int libusb_get_interrupt(unsigned char *buf, int bufsize, int timeout)
   return ret;
 }
 
-void libusb_close(void)
+void libusb_close(usb_dev_handle **udevp)
 {
-	if (udev != NULL)
+	if (*udevp != NULL)
 	{
 	        /* usb_release_interface() sometimes blocks and goes
 	           into uninterruptible sleep.  So don't do it. */
 	        /* usb_release_interface(udev, 0); */
-		usb_close(udev);
+		usb_close(*udevp);
 	}
-	udev = NULL;
+	*udevp = NULL;
 }

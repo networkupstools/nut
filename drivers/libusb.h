@@ -38,16 +38,14 @@
 /* try to open the next available device matching the given MatchFlags
  * (in case mode=MODE_OPEN), or try to open the exact same device as
  * before (in case mode=MODE_REOPEN). */
-int libusb_open(HIDDevice *curDevice, HIDDeviceMatcher_t *matcher, unsigned char *ReportDesc, int mode);
-void libusb_close(void);
-
-extern usb_dev_handle *udev;
+int libusb_open(usb_dev_handle **udevp, HIDDevice *curDevice, HIDDeviceMatcher_t *matcher, unsigned char *ReportDesc, int mode);
+void libusb_close(usb_dev_handle **udevp);
 
 //extern int usb_get_descriptor(int type, int len, char *report);
-int libusb_get_report(int ReportId, unsigned char *raw_buf, int ReportSize );
-int libusb_set_report(int ReportId, unsigned char *raw_buf, int ReportSize );
-int libusb_get_string(int StringIdx, char *string);
-int libusb_get_interrupt(unsigned char *buf, int bufsize, int timeout);
+int libusb_get_report(usb_dev_handle *udev, int ReportId, unsigned char *raw_buf, int ReportSize );
+int libusb_set_report(usb_dev_handle *udev, int ReportId, unsigned char *raw_buf, int ReportSize );
+int libusb_get_string(usb_dev_handle *udev, int StringIdx, char *string);
+int libusb_get_interrupt(usb_dev_handle *udev, unsigned char *buf, int bufsize, int timeout);
 
 #endif /* LIBUSB_H */
 

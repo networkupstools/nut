@@ -50,6 +50,7 @@ static int pollfreq = DEFAULT_POLLFREQ;
 static int ups_status = 0;
 static bool data_has_changed = FALSE; /* for SEMI_STATIC data polling */
 static time_t lastpoll; /* Timestamp the last polling */
+usb_dev_handle *udev;
 
 /* support functions */
 static hid_info_t *find_nut_info(const char *varname);
@@ -201,7 +202,7 @@ info_lkp_t hex_conversion[] = {
    done with result! */
 static char *stringid_conversion_fun(long value) {
 	static char buf[20];
-	libusb_get_string(value, buf);	
+	libusb_get_string(udev, value, buf);	
 	
 	return buf;
 }
@@ -290,7 +291,7 @@ int instcmd(const char *cmdname, const char *extradata)
 	}
 	
 	/* Actual variable setting */
-	if (HIDSetItemValue(hidups_item->hidpath, atol(hidups_item->dfl)))
+	if (HIDSetItemValue(udev, hidups_item->hidpath, atol(hidups_item->dfl)))
 	{
 		upsdebugx(3, "SUCCEED\n");
 		/* Set the status so that SEMI_STATIC vars are polled */
@@ -346,7 +347,7 @@ int setvar(const char *varname, const char *val)
 	}
 
 	/* Actual variable setting */
-	if (HIDSetItemValue(hidups_item->hidpath, atol(val)))
+	if (HIDSetItemValue(udev, hidups_item->hidpath, atol(val)))
 	{
 		/* FIXME: GetValue(hidups_item->hidpath) to ensure success on non volatile */
 		upsdebugx(3, "SUCCEED\n");
@@ -421,7 +422,7 @@ void upsdrv_updateinfo(void)
 		 && (data_has_changed != TRUE) )
 	  {
 		/* Wait for HID notifications on Interrupt pipe */
-		if ((evtCount = HIDGetEvents(NULL, eventsList)) > 0)
+		if ((evtCount = HIDGetEvents(udev, NULL, eventsList)) > 0)
 		  {
 			upsdebugx(1, "\n=>Got %i HID Objects...", evtCount);
 			
@@ -572,7 +573,7 @@ void upsdrv_initups(void)
 
 	/* Search for the first supported UPS matching the regular
 	   expression */
-	if ((hd = HIDOpenDevice(regex_matcher, MODE_OPEN)) == NULL)
+	if ((hd = HIDOpenDevice(&udev, regex_matcher, MODE_OPEN)) == NULL)
 		fatalx("No matching USB/HID UPS found");
 	else
 		upslogx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
@@ -595,13 +596,13 @@ void upsdrv_initups(void)
 	if (!subdriver) {
 		upslogx(1, "Manufacturer not supported!");
 		upslogx(1, "Contact the driver author <arnaud.quette@free.fr / @mgeups.com> with the below information");
-		HIDDumpTree(NULL);
+		HIDDumpTree(udev);
 		fatalx("Aborting");
 	}
 
 	upslogx(2, "Using subdriver: %s", subdriver->name);
 
-	HIDDumpTree(NULL);
+	HIDDumpTree(udev);
 
 	/* init polling frequency */
 	if ( getval(HU_VAR_POLLFREQ) )
@@ -611,7 +612,7 @@ void upsdrv_initups(void)
 void upsdrv_cleanup(void)
 {
 	if (hd != NULL)
-		HIDCloseDevice();
+		HIDCloseDevice(&udev);
 }
 
 /**********************************************************************
@@ -682,7 +683,7 @@ static bool hid_ups_walk(int mode)
 			  /* Check instant commands availability */
 			  if (item->hidflags & HU_TYPE_CMD)
 				{
-				  if (HIDGetItemValue(item->hidpath, &value) == 1 )
+				  if (HIDGetItemValue(udev, item->hidpath, &value) == 1 )
 					dstate_addcmd(item->info_type);
 
 				  continue;
@@ -693,7 +694,7 @@ static bool hid_ups_walk(int mode)
 				  /* Check if exists (if necessary) before creation */
 				  if (item->hidpath != NULL)
 					{
-					  if ((retcode = HIDGetItemValue(item->hidpath, &value)) != 1 )
+					  if ((retcode = HIDGetItemValue(udev, item->hidpath, &value)) != 1 )
 						continue;
 					}
 				  else
@@ -744,7 +745,7 @@ static bool hid_ups_walk(int mode)
 			 && !(item->hidflags & HU_FLAG_OK) )
 		  continue;
 
-		if ((retcode = HIDGetItemValue(item->hidpath, &value)) == 1 )
+		if ((retcode = HIDGetItemValue(udev, item->hidpath, &value)) == 1 )
 		  {
 			/* deal with status items */
 			if (!strncmp(item->info_type, "ups.status", 10))
@@ -839,9 +840,9 @@ static void reconnect_ups(void)
 	  upsdebugx(2, "==================================================");
 	  
 	  /* Not really useful as the device is no more reachable */
-	  HIDCloseDevice();
+	  HIDCloseDevice(&udev);
 	  
-	  if ((hd = HIDOpenDevice(reopen_matcher, MODE_REOPEN)) == NULL)
+	  if ((hd = HIDOpenDevice(&udev, reopen_matcher, MODE_REOPEN)) == NULL)
 		dstate_datastale();
 	}
 }
@@ -909,7 +910,7 @@ static hid_info_t *find_nut_info_valid(const char *varname)
 
   for (hidups_item = subdriver->hid2nut; hidups_item->info_type != NULL ; hidups_item++) {
     if (!strcasecmp(hidups_item->info_type, varname))
-      if (HIDGetItemValue(hidups_item->hidpath, &value) == 1)
+      if (HIDGetItemValue(udev, hidups_item->hidpath, &value) == 1)
 	return hidups_item;
   }
 

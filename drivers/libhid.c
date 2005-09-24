@@ -365,7 +365,7 @@ void free_regex_matcher(HIDDeviceMatcher_t *matcher) {
 /* ---------------------------------------------------------------------- */
 
 
-void HIDDumpTree(HIDDevice *hd)
+void HIDDumpTree(usb_dev_handle *udev)
 {
 	int 		i;
 	char 		path[128], type[10];
@@ -409,7 +409,7 @@ void HIDDumpTree(HIDDevice *hd)
 			memcpy(&tmpParser, &hParser, sizeof (hParser));
 
 			/* Get data value */
-			if (HIDGetItemValue(path, &value) > 0)
+			if (HIDGetItemValue(udev, path, &value) > 0)
 				TRACE(1, "Path: %s, Type: %s, Value: %f", path, type, value);
 			
 			else
@@ -424,7 +424,7 @@ void HIDDumpTree(HIDDevice *hd)
 
 /* Matcher is a linked list of matchers (see libhid.h), and the opened
     device must match all of them. */
-HIDDevice *HIDOpenDevice(HIDDeviceMatcher_t *matcher, int mode)
+HIDDevice *HIDOpenDevice(usb_dev_handle **udevp, HIDDeviceMatcher_t *matcher, int mode)
 {
 	int ReportSize;
 
@@ -434,7 +434,7 @@ HIDDevice *HIDOpenDevice(HIDDeviceMatcher_t *matcher, int mode)
 	}
 
 	/* get and parse descriptors (dev, cfg and report) */
-	ReportSize = libusb_open(&curDevice, matcher, ReportDesc, mode);
+	ReportSize = libusb_open(udevp, &curDevice, matcher, ReportDesc, mode);
 
 	if (ReportSize == -1)
 		return NULL;
@@ -467,7 +467,7 @@ HIDItem *HIDGetItem(const char *ItemPath)
 }
 
 /* return 1 if OK, 0 on fail, <= -1 otherwise (ie disconnect) */
-float HIDGetItemValue(char *path, float *Value)
+float HIDGetItemValue(usb_dev_handle *udev, char *path, float *Value)
 {
 	int i, retcode;
 	float tmpValue;
@@ -494,7 +494,7 @@ float HIDGetItemValue(char *path, float *Value)
 			/* Get report with data */
 			/* Bufferize at least the last report */
 			if ( ( (prev_report == hData.ReportID) && (time(NULL) <= (prev_report_ts + MAX_TS)) )
-				|| ((replen=libusb_get_report(hData.ReportID, raw_buf, REPORT_SIZE)) > 0) )
+				|| ((replen=libusb_get_report(udev, hData.ReportID, raw_buf, REPORT_SIZE)) > 0) )
 			{
 				/* Extract the data value */
 				GetValue((const unsigned char *) raw_buf, &hData);
@@ -537,7 +537,7 @@ float HIDGetItemValue(char *path, float *Value)
 	return 0; /* TODO: should be checked */
 }
 
-char *HIDGetItemString(char *path)
+char *HIDGetItemString(usb_dev_handle *udev, char *path)
 {
   int i, retcode;
   
@@ -558,11 +558,11 @@ char *HIDGetItemString(char *path)
     
     /* Get info on object (reportID, offset and size) */
     if (FindObject(&hParser,&hData) == 1) {
-      if (libusb_get_report(hData.ReportID, raw_buf, REPORT_SIZE) > 0) { 
+      if (libusb_get_report(udev, hData.ReportID, raw_buf, REPORT_SIZE) > 0) { 
 	GetValue((const unsigned char *) raw_buf, &hData);
 
 	/* now get string */
-	libusb_get_string(hData.Value, raw_buf);
+	libusb_get_string(udev, hData.Value, raw_buf);
 	return raw_buf;
       }
       else
@@ -576,13 +576,13 @@ char *HIDGetItemString(char *path)
   return NULL;
 }
  
-bool HIDSetItemValue(char *path, float value)
+bool HIDSetItemValue(usb_dev_handle *udev, char *path, float value)
 {
 	float Value;
 	int retcode;
 	
 	/* Begin by a standard Get to fill in com structures ... */
-	retcode = HIDGetItemValue(path, &Value);
+	retcode = HIDGetItemValue(udev, path, &Value);
 	
 	/* ... And play with global vars */
 	if (retcode == 1) /* Get succeed */
@@ -609,7 +609,7 @@ bool HIDSetItemValue(char *path, float value)
 			
 			dump_hex ("==> Report after setvalue", raw_buf, replen);
 			
-			if (libusb_set_report(hData.ReportID, raw_buf, replen) > 0)
+			if (libusb_set_report(udev, hData.ReportID, raw_buf, replen) > 0)
 			{
 				TRACE(2, "Set report succeeded");
 				return TRUE;
@@ -630,7 +630,7 @@ bool HIDSetItemValue(char *path, float value)
 	return FALSE;
 }
 
-int HIDGetEvents(HIDDevice *dev, HIDItem **eventsList)
+int HIDGetEvents(usb_dev_handle *udev, HIDDevice *dev, HIDItem **eventsList)
 {
 	unsigned char buf[20];
 	char itemPath[128];
@@ -639,7 +639,7 @@ int HIDGetEvents(HIDDevice *dev, HIDItem **eventsList)
 	upsdebugx(2, "Waiting for notifications...");
 	
 	/* needs libusb-0.1.8 to work => use ifdef and autoconf */
-	if ((size = libusb_get_interrupt(&buf[0], 20, 5000)) > -1)
+	if ((size = libusb_get_interrupt(udev, &buf[0], 20, 5000)) > -1)
 	{
 		dump_hex ("Notification", buf, size);
 		
@@ -687,10 +687,10 @@ int HIDGetEvents(HIDDevice *dev, HIDItem **eventsList)
 	return itemCount;
 }
 
-void HIDCloseDevice()
+void HIDCloseDevice(usb_dev_handle **udevp)
 {
 	TRACE(2, "Closing device");
-	libusb_close();
+	libusb_close(udevp);
 }
 
 
