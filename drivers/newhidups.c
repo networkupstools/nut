@@ -292,7 +292,7 @@ int instcmd(const char *cmdname, const char *extradata)
 	}
 	
 	/* Actual variable setting */
-	if (HIDSetItemValue(udev, hidups_item->hidpath, atol(hidups_item->dfl)))
+	if (HIDSetItemValue(udev, hidups_item->hidpath, atol(hidups_item->dfl), subdriver->utab))
 	{
 		upsdebugx(3, "SUCCEED\n");
 		/* Set the status so that SEMI_STATIC vars are polled */
@@ -348,7 +348,7 @@ int setvar(const char *varname, const char *val)
 	}
 
 	/* Actual variable setting */
-	if (HIDSetItemValue(udev, hidups_item->hidpath, atol(val)))
+	if (HIDSetItemValue(udev, hidups_item->hidpath, atol(val), subdriver->utab))
 	{
 		/* FIXME: GetValue(hidups_item->hidpath) to ensure success on non volatile */
 		upsdebugx(3, "SUCCEED\n");
@@ -423,7 +423,7 @@ void upsdrv_updateinfo(void)
 		 && (data_has_changed != TRUE) )
 	  {
 		/* Wait for HID notifications on Interrupt pipe */
-		if ((evtCount = HIDGetEvents(udev, NULL, eventsList)) > 0)
+		if ((evtCount = HIDGetEvents(udev, NULL, eventsList, subdriver->utab)) > 0)
 		  {
 			upsdebugx(1, "\n=>Got %i HID Objects...", evtCount);
 			
@@ -597,13 +597,13 @@ void upsdrv_initups(void)
 	if (!subdriver) {
 		upslogx(1, "Manufacturer not supported!");
 		upslogx(1, "Contact the driver author <arnaud.quette@free.fr / @mgeups.com> with the below information");
-		HIDDumpTree(udev);
+		HIDDumpTree(udev, subdriver->utab);
 		fatalx("Aborting");
 	}
 
 	upslogx(2, "Using subdriver: %s", subdriver->name);
 
-	HIDDumpTree(udev);
+	HIDDumpTree(udev, subdriver->utab);
 
 	/* init polling frequency */
 	if ( getval(HU_VAR_POLLFREQ) )
@@ -686,7 +686,7 @@ static bool hid_ups_walk(int mode)
 			  /* Check instant commands availability */
 			  if (item->hidflags & HU_TYPE_CMD)
 				{
-				  if (HIDGetItemValue(udev, item->hidpath, &value) == 1 )
+				  if (HIDGetItemValue(udev, item->hidpath, &value, subdriver->utab) == 1 )
 					dstate_addcmd(item->info_type);
 
 				  continue;
@@ -697,7 +697,7 @@ static bool hid_ups_walk(int mode)
 				  /* Check if exists (if necessary) before creation */
 				  if (item->hidpath != NULL)
 					{
-					  if ((retcode = HIDGetItemValue(udev, item->hidpath, &value)) != 1 )
+					  if ((retcode = HIDGetItemValue(udev, item->hidpath, &value, subdriver->utab)) != 1 )
 						continue;
 					}
 				  else
@@ -748,7 +748,7 @@ static bool hid_ups_walk(int mode)
 			 && !(item->hidflags & HU_FLAG_OK) )
 		  continue;
 
-		if ((retcode = HIDGetItemValue(udev, item->hidpath, &value)) == 1 )
+		if ((retcode = HIDGetItemValue(udev, item->hidpath, &value, subdriver->utab)) == 1 )
 		  {
 			/* deal with status items */
 			if (!strncmp(item->info_type, "ups.status", 10))
@@ -914,7 +914,7 @@ static hid_info_t *find_nut_info_valid(const char *varname)
 
   for (hidups_item = subdriver->hid2nut; hidups_item->info_type != NULL ; hidups_item++) {
     if (!strcasecmp(hidups_item->info_type, varname))
-      if (HIDGetItemValue(udev, hidups_item->hidpath, &value) == 1)
+      if (HIDGetItemValue(udev, hidups_item->hidpath, &value, subdriver->utab) == 1)
 	return hidups_item;
   }
 

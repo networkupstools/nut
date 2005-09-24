@@ -391,6 +391,7 @@ void GetValue(const u_char* Buf, HIDData* pData)
 /*  if(pData->Value > pData->LogMax)
     pData->Value=FormatValue(pData->Value, (u_char)((pData->Size-1)/8+1));
 */
+  /* FIXME: this won't work if LogMax isn't a power of 2 */
   if (pData->Value > pData->LogMax)
     pData->Value |= ~pData->LogMax;
 }

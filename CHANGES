@@ -1,3 +1,12 @@
+Sat Sep 24 04:30:34 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: moved remaining vendor-specific code into the X-hid.c
+   subdrivers. Vendor specific usage strings are now defined in
+   subdrivers.
+
+ - libhid.c: replaced lookup_path() by two functions string_to_path()
+   and path_to_string().
+
 Sat Sep 24 02:34:05 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
  - libhid.c: reduced number of global variables in libhid to 3. Also

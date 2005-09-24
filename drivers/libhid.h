@@ -49,6 +49,18 @@ typedef int bool;
 
 /* ---------------------------------------------------------------------- */
 
+/* structure to describe an item in a usage table */
+typedef struct {
+	const char *usage_name;
+	unsigned int usage_code;
+} usage_lkp_t;
+
+extern usage_lkp_t hid_usage_lkp[];
+
+/* an object of type usage_tables_t is a NULL-terminated array of
+ * pointers to individual usage tables. */
+typedef usage_lkp_t *usage_tables_t;
+
 /*!
  * HIDDevice: Describe a USB device. This structure contains exactly
  * the 5 pieces of information by which a USB device identifies
@@ -155,22 +167,22 @@ HIDItem *HIDGetItem(const char *ItemPath);
 /*
  * HIDGetItemValue
  * -------------------------------------------------------------------------- */
-float HIDGetItemValue(usb_dev_handle *udev, char *path, float *Value);
+float HIDGetItemValue(usb_dev_handle *udev, char *path, float *Value, usage_tables_t *utab);
 
 /*
  * HIDGetItemString
  * -------------------------------------------------------------------------- */
-char *HIDGetItemString(usb_dev_handle *udev, char *path, unsigned char *rawbuf);
+char *HIDGetItemString(usb_dev_handle *udev, char *path, unsigned char *rawbuf, usage_tables_t *utab);
 
 /*
  * HIDSetItemValue
  * -------------------------------------------------------------------------- */
-bool HIDSetItemValue(usb_dev_handle *udev, char *path, float value);
+bool HIDSetItemValue(usb_dev_handle *udev, char *path, float value, usage_tables_t *utab);
 
 /*
  * HIDGetNextEvent
  * -------------------------------------------------------------------------- */
-int HIDGetEvents(usb_dev_handle *udev, HIDDevice *dev, HIDItem **eventsList);
+int HIDGetEvents(usb_dev_handle *udev, HIDDevice *dev, HIDItem **eventsList, usage_tables_t *utab);
 
 /*
  * HIDCloseDevice
@@ -181,6 +193,6 @@ void HIDCloseDevice(usb_dev_handle *udev);
  * Support functions
  * -------------------------------------------------------------------------- */
 int get_current_data_attribute();
-void HIDDumpTree(usb_dev_handle *udev);
+void HIDDumpTree(usb_dev_handle *udev, usage_tables_t *utab);
 
 #endif /* _LIBHID_H */

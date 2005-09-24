@@ -33,6 +33,28 @@
 #define MGE_VENDORID 0x0463
 
 /* --------------------------------------------------------------- */
+/*      Vendor-specific usage table */
+/* --------------------------------------------------------------- */
+
+/* MGE UPS SYSTEMS usage table */
+usage_lkp_t mge_usage_lkp[] = {
+	{ "iModel",				0xffff00f0 },
+	{ "RemainingCapacityLimitSetting",	0xffff004d },
+	{ "TestPeriod",				0xffff0045 },
+	{ "LowVoltageBoostTransfer",		0xffff0050 },
+	{ "HighVoltageBoostTransfer",		0xffff0051 },
+	{ "LowVoltageBuckTransfer",		0xffff0052 },
+	{ "HighVoltageBuckTransfer",		0xffff0053 },
+	{  "\0", 0x0 }
+};
+
+static usage_tables_t mge_utab[] = {
+	mge_usage_lkp,
+	hid_usage_lkp,
+	NULL,
+};
+
+/* --------------------------------------------------------------- */
 /*      Model Name formating entries                               */
 /* --------------------------------------------------------------- */
 
@@ -320,12 +342,12 @@ static char *mge_format_model(HIDDevice *hd) {
 
 	/* Get iModel and iProduct strings */
 	product = hd->Product ? hd->Product : "unknown";
-	if ((string = HIDGetItemString(udev, "UPS.PowerSummary.iModel", rawbuf)) != NULL)
+	if ((string = HIDGetItemString(udev, "UPS.PowerSummary.iModel", rawbuf, mge_utab)) != NULL)
 		model = get_model_name(product, string);
 	else
 	{
 		/* Try with ConfigApparentPower */
-		if (HIDGetItemValue(udev, "UPS.Flow.[4].ConfigApparentPower", &appPower) != 0 )
+		if (HIDGetItemValue(udev, "UPS.Flow.[4].ConfigApparentPower", &appPower, mge_utab) != 0 )
 		{
 			string = xmalloc(16);
 			sprintf(string, "%i", (int)appPower);
@@ -359,6 +381,7 @@ static int mge_claim(HIDDevice *hd) {
 subdriver_t mge_subdriver = {
 	MGE_HID_VERSION,
 	mge_claim,
+	mge_utab,
 	mge_hid2nut,
 	mge_shutdown,
 	mge_format_model,

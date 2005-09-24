@@ -35,6 +35,73 @@
 #define APC_VENDORID 0x051d
 
 /* --------------------------------------------------------------- */
+/*      Vendor-specific usage table */
+/* --------------------------------------------------------------- */
+
+/* APC usage table */
+usage_lkp_t apc_usage_lkp[] = {
+	{ "APCGeneralCollection",	0xff860005 },
+	{ "APCBattReplaceDate",		0xff860016 },
+	{ "APCBattCapBeforeStartup",	0xff860019 }, /* FIXME: exploit */
+	{ "APC_UPS_FirmwareRevision",	0xff860042 },
+	{ "APCStatusFlag",		0xff860060 },
+	{ "APCPanelTest",		0xff860072 }, /* FIXME: exploit */
+	{ "APCShutdownAfterDelay",	0xff860076 }, /* FIXME: exploit */
+	{ "APC_USB_FirmwareRevision",	0xff860079 }, /* FIXME: exploit */
+	{ "APCForceShutdown",		0xff86007c },
+	{ "APCDelayBeforeShutdown",	0xff86007d },
+	{ "APCDelayBeforeStartup",	0xff86007e }, /* FIXME: exploit */
+
+	/* FIXME: what is BUP? To what vendor do these Usages belong?
+	 They seem to be here by mistake. -PS */
+	{ "BUPHibernate",		0x00850058 }, /* FIXME: exploit */
+	{ "BUPBattCapBeforeStartup",	0x00860012 }, /* FIXME: exploit */
+	{ "BUPDelayBeforeStartup",	0x00860076 }, /* FIXME: exploit */
+	{ "BUPSelfTest",		0x00860010 }, /* FIXME: exploit */
+
+	{  "\0", 0x0 }
+};
+
+/*
+ * USB USAGE NOTES for APC (from Russell Kroll in the old hidups
+ *
+ * FIXME: read 0xff86.... instead of 0x(00)86....?
+ *
+ *  0x860013 == 44200155090 - capability again                   
+ *           == locale 4, 4 choices, 2 bytes, 00, 15, 50, 90     
+ *           == minimum charge to return online                  
+ *
+ *  0x860060 == "441HMLL" - looks like a 'capability' string     
+ *           == locale 4, 4 choices, 1 byte each                 
+ *           == line sensitivity (high, medium, low, low)        
+ *  NOTE! the above does not seem to correspond to my info 
+ *
+ *  0x860062 == D43133136127130                                  
+ *           == locale D, 4 choices, 3 bytes, 133, 136, 127, 130 
+ *           == high transfer voltage                            
+ *
+ *  0x860064 == D43103100097106                                  
+ *           == locale D, 4 choices, 3 bytes, 103, 100, 097, 106 
+ *           == low transfer voltage                             
+ *
+ *  0x860066 == 441HMLL (see 860060)                                   
+ *
+ *  0x860074 == 4410TLN                                          
+ *           == locale 4, 4 choices, 1 byte, 0, T, L, N          
+ *           == alarm setting (5s, 30s, low battery, none)       
+ *
+ *  0x860077 == 443060180300600                                  
+ *           == locale 4, 4 choices, 3 bytes, 060,180,300,600    
+ *           == wake-up delay (after power returns)              
+ */
+
+static usage_tables_t apc_utab[] = {
+	apc_usage_lkp,
+	hid_usage_lkp,
+	NULL,
+};
+
+/* --------------------------------------------------------------- */
 /*      HID2NUT lookup table                                       */
 /* --------------------------------------------------------------- */
 
@@ -228,6 +295,7 @@ static int apc_claim(HIDDevice *hd) {
 subdriver_t apc_subdriver = {
 	APC_HID_VERSION,
 	apc_claim,
+	apc_utab,
         apc_hid2nut,
 	apc_shutdown,
 	apc_format_model,

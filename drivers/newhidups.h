@@ -152,30 +152,6 @@ typedef struct {
 /*	void *next;			*//* next hid_info_t */
 } hid_info_t;
 
-/* --------------------------------------------------------------- */
-/*      Subdriver interface                                        */
-/* --------------------------------------------------------------- */
-
-/* subdriver structure. Each subdriver is intended to support a
- * particular manufacturer (e.g. MGE, APC, Belkin), or a particular
- * range of models. */
-
-struct subdriver_s {
-	char *name;                  /* name of this subdriver */
-	int (*claim)(HIDDevice *hd); /* return 1 if device covered by
-				      * this subdriver */
-	hid_info_t *hid2nut;         /* main table of vars and instcmds */
-	int (*shutdown)(int ondelay, int offdelay); 
-                                     /* driver-specific shutdown cmd.
-					Returns 1 on success, 0 on
-					failure */
-	char *(*format_model)(HIDDevice *hd);  /* driver-specific methods */
-	char *(*format_mfr)(HIDDevice *hd);    /* for preparing human-    */
-	char *(*format_serial)(HIDDevice *hd); /* readable information    */
-};
-typedef struct subdriver_s subdriver_t;
-
-
 /* Data walk modes */
 #define HU_WALKMODE_INIT		1
 #define HU_WALKMODE_QUICK_UPDATE	2
@@ -198,6 +174,31 @@ typedef struct subdriver_s subdriver_t;
 #define HU_INFOSIZE		128
 
 #define MAX_TRY		2		/* max number of GetItem retry */
+
+/* --------------------------------------------------------------- */
+/*      Subdriver interface                                        */
+/* --------------------------------------------------------------- */
+
+/* subdriver structure. Each subdriver is intended to support a
+ * particular manufacturer (e.g. MGE, APC, Belkin), or a particular
+ * range of models. */
+
+struct subdriver_s {
+	char *name;                  /* name of this subdriver */
+	int (*claim)(HIDDevice *hd); /* return 1 if device covered by
+				      * this subdriver */
+	usage_tables_t *utab;        /* points to array of usage tables */
+	hid_info_t *hid2nut;         /* main table of vars and instcmds */
+	int (*shutdown)(int ondelay, int offdelay); 
+                                     /* driver-specific shutdown cmd.
+					Returns 1 on success, 0 on
+					failure */
+	char *(*format_model)(HIDDevice *hd);  /* driver-specific methods */
+	char *(*format_mfr)(HIDDevice *hd);    /* for preparing human-    */
+	char *(*format_serial)(HIDDevice *hd); /* readable information    */
+};
+typedef struct subdriver_s subdriver_t;
+
 
 /* the following functions are exported for the benefit of subdrivers */
 int instcmd(const char *cmdname, const char *extradata);

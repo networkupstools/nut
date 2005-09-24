@@ -167,7 +167,66 @@ static info_lkp_t belkin_replacebatt_conversion[] = {
 	{ 0, NULL, belkin_replacebatt_conversion_fun }
 };
 
+/* --------------------------------------------------------------- */
+/*      Vendor-specific usage table */
+/* --------------------------------------------------------------- */
 
+/* BELKIN usage table */
+/* Note: these seem to have been wrongly encoded by Belkin */
+/* Pages 84 to 88 are reserved for official HID definition! */
+usage_lkp_t belkin_usage_lkp[] = {
+	{ "BELKINConfig",			0x00860026 },
+	{ "BELKINConfigVoltage",		0x00860040 }, /* (V) */
+	{ "BELKINConfigFrequency",		0x00860042 }, /* (Hz) */
+	{ "BELKINConfigApparentPower",		0x00860043 }, /* (VA) */
+	{ "BELKINConfigBatteryVoltage",		0x00860044 }, /* (V) */
+	{ "BELKINConfigOverloadTransfer",	0x00860045 }, /* (%) */
+	{ "BELKINLowVoltageTransfer",		0x00860053 }, /* R/W (V) */
+	{ "BELKINHighVoltageTransfer",		0x00860054 }, /* R/W (V)*/
+	{ "BELKINLowVoltageTransferMax",	0x0086005b }, /* (V) */
+	{ "BELKINLowVoltageTransferMin",	0x0086005c }, /* (V) */
+	{ "BELKINHighVoltageTransferMax",	0x0086005d }, /* (V) */
+	{ "BELKINHighVoltageTransferMin",	0x0086005e }, /* (V) */
+
+	{ "BELKINControls",			0x00860027 },
+	{ "BELKINLoadOn",			0x00860050 }, /* R/W: write: 1=do action. Read: 0=none, 1=started, 2=in progress, 3=complete */
+	{ "BELKINLoadOff",			0x00860051 }, /* R/W: ditto */
+	{ "BELKINLoadToggle",			0x00860052 }, /* R/W: ditto */
+	{ "BELKINDefaultShutdown",		0x00860055 }, /* R/W: write: 0=start shutdown using default delay. */
+	{ "BELKINDelayBeforeStartup",		0x00860056 }, /* R/W (minutes) */
+	{ "BELKINDelayBeforeShutdown",		0x00860057 }, /* R/W (seconds) */
+	{ "BELKINTest",				0x00860058 }, /* R/W: write: 0=no test, 1=quick test, 2=deep test, 3=abort test. Read: 0=no test, 1=passed, 2=warning, 3=error, 4=abort, 5=in progress */
+	{ "BELKINAudibleAlarmControl",		0x0086005a }, /* R/W: 1=disabled, 2=enabled, 3=muted */
+	
+	{ "BELKINDevice",			0x00860029 },
+	{ "BELKINVoltageSensitivity",		0x00860074 }, /* R/W: 0=normal, 1=reduced, 2=low */
+	{ "BELKINModelString",			0x00860075 },
+	{ "BELKINModelStringOffset",		0x00860076 }, /* offset of Model name in Model String */
+	{ "BELKINUPSType",			0x0086007c }, /* high nibble: firmware version. Low nibble: 0=online, 1=offline, 2=line-interactive, 3=simple online, 4=simple offline, 5=simple line-interactive */
+
+	{ "BELKINPowerState",			0x0086002a },
+	{ "BELKINInput",			0x0086001a },
+	{ "BELKINOutput",			0x0086001c },
+	{ "BELKINBatterySystem",		0x00860010 },
+	{ "BELKINVoltage",			0x00860030 }, /* (0.1 Volt) */
+	{ "BELKINFrequency",			0x00860032 }, /* (0.1 Hz) */
+	{ "BELKINPower",			0x00860034 }, /* (Watt) */
+	{ "BELKINPercentLoad",			0x00860035 }, /* (%) */
+	{ "BELKINTemperature",			0x00860036 }, /* (Celsius) */
+	{ "BELKINCharge",			0x00860039 }, /* (%) */
+	{ "BELKINRunTimeToEmpty",		0x0086006c }, /* (minutes) */
+
+	{ "BELKINStatus",			0x00860028 },
+	{ "BELKINBatteryStatus",		0x00860022 }, /* 1 byte: bit2=low battery, bit4=charging, bit5=discharging, bit6=battery empty, bit7=replace battery */
+	{ "BELKINPowerStatus",			0x00860021 }, /* 2 bytes: bit0=ac failure, bit4=overload, bit5=load is off, bit6=overheat, bit7=UPS fault, bit13=awaiting power, bit15=alarm status */
+	{  "\0", 0x0 }
+};
+
+static usage_tables_t belkin_utab[] = {
+	belkin_usage_lkp,
+	hid_usage_lkp,
+	NULL,
+};
 
 /* --------------------------------------------------------------- */
 /* HID2NUT lookup table                                            */
@@ -292,7 +351,7 @@ static char *belkin_format_serial(HIDDevice *hd) {
 	serial = hd->Serial;
 	if (serial == NULL) {
 		/* try UPS.PowerSummary.iSerialNumber */
-		string = HIDGetItemString(udev, "UPS.PowerSummary.iSerialNumber", rawbuf);
+		string = HIDGetItemString(udev, "UPS.PowerSummary.iSerialNumber", rawbuf, belkin_utab);
 		if (string != NULL) {
 			serial = xstrdup(string);
 		}
@@ -313,6 +372,7 @@ static int belkin_claim(HIDDevice *hd) {
 subdriver_t belkin_subdriver = {
 	BELKIN_HID_VERSION,
 	belkin_claim,
+	belkin_utab,
         belkin_hid2nut,
 	belkin_shutdown,
 	belkin_format_model,
