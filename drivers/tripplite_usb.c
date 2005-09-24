@@ -112,6 +112,7 @@
 #define USB_PID_TRIPP_LITE_OMNI	0x0001
 
 static HIDDevice *hd;
+static HIDDevice curDevice;
 static usb_dev_handle *udev;
 
 /* We calculate battery charge (q) as a function of voltage (V).
@@ -559,7 +560,7 @@ void upsdrv_banner(void)
 void upsdrv_initups(void)
 {
         /* Search for the first supported UPS, no matter Mfr or exact product */
-        if ((hd = HIDOpenDevice(&udev, NULL, MODE_OPEN)) == NULL)
+        if ((hd = HIDOpenDevice(&udev, &curDevice, NULL, MODE_OPEN)) == NULL)
                 fatalx("No USB HID UPS found");
         else
                 upslogx(1, "Detected an UPS: %s/%s\n", hd->Vendor, hd->Product);
@@ -583,7 +584,9 @@ void upsdrv_initups(void)
 
 void upsdrv_cleanup(void)
 {
-        if (hd != NULL)
-                HIDCloseDevice(&udev);
+        if (hd != NULL) {
+                HIDCloseDevice(udev);
+		udev = NULL;
+	}
 }
 

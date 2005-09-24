@@ -316,10 +316,11 @@ static char *mge_format_model(HIDDevice *hd) {
 	char *model;
         char *string;
 	float appPower;
+	unsigned char rawbuf[100];
 
 	/* Get iModel and iProduct strings */
 	product = hd->Product ? hd->Product : "unknown";
-	if ((string = HIDGetItemString(udev, "UPS.PowerSummary.iModel")) != NULL)
+	if ((string = HIDGetItemString(udev, "UPS.PowerSummary.iModel", rawbuf)) != NULL)
 		model = get_model_name(product, string);
 	else
 	{

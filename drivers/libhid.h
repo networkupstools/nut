@@ -145,7 +145,7 @@ typedef struct MatchFlags_s MatchFlags_t;
 /*
  * HIDOpenDevice
  * -------------------------------------------------------------------------- */
-HIDDevice *HIDOpenDevice(usb_dev_handle **udevp, HIDDeviceMatcher_t *matcher, int mode);
+HIDDevice *HIDOpenDevice(usb_dev_handle **udevp, HIDDevice *hd, HIDDeviceMatcher_t *matcher, int mode);
 
 /*
  * HIDGetItem
@@ -160,7 +160,7 @@ float HIDGetItemValue(usb_dev_handle *udev, char *path, float *Value);
 /*
  * HIDGetItemString
  * -------------------------------------------------------------------------- */
-char *HIDGetItemString(usb_dev_handle *udev, char *path);
+char *HIDGetItemString(usb_dev_handle *udev, char *path, unsigned char *rawbuf);
 
 /*
  * HIDSetItemValue
@@ -175,7 +175,7 @@ int HIDGetEvents(usb_dev_handle *udev, HIDDevice *dev, HIDItem **eventsList);
 /*
  * HIDCloseDevice
  * -------------------------------------------------------------------------- */
-void HIDCloseDevice(usb_dev_handle **udevp);
+void HIDCloseDevice(usb_dev_handle *udev);
 
 /*
  * Support functions

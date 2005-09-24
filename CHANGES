@@ -1,6 +1,12 @@
+Sat Sep 24 02:34:05 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - libhid.c: reduced number of global variables in libhid to 3. Also
+   simplified logic in HIDGetItemValue() and fixed a bug where the
+   report timestamp was refreshed even when an old report was used.
+
 Sat Sep 24 00:46:12 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
- - newhidups: eliminated global variables from libusb.
+ - libusb.c: eliminated global variables from libusb.
 
 Sat Sep 24 00:09:13 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 

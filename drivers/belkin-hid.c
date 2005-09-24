@@ -287,11 +287,12 @@ static char *belkin_format_mfr(HIDDevice *hd) {
 static char *belkin_format_serial(HIDDevice *hd) {
 	char *serial;
 	char *string;
+	unsigned char rawbuf[100];
 
 	serial = hd->Serial;
 	if (serial == NULL) {
 		/* try UPS.PowerSummary.iSerialNumber */
-		string = HIDGetItemString(udev, "UPS.PowerSummary.iSerialNumber");
+		string = HIDGetItemString(udev, "UPS.PowerSummary.iSerialNumber", rawbuf);
 		if (string != NULL) {
 			serial = xstrdup(string);
 		}

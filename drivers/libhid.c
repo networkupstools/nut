@@ -41,16 +41,21 @@
 
 #include <errno.h>
 
-static HIDDevice curDevice;
+/* structure to describe a retrieved report */
+struct report_s {
+	int id;                  /* report ID */
+	time_t ts;               /* timestamp when the report was retrieved */
+	int len;                 /* size of report data */
+	unsigned char data[100]; /* report data */
+};
+typedef struct report_s report_t;
+
+/* global variables */
 
 static HIDData   	hData;
 static HIDParser 	hParser;
-
-static unsigned char raw_buf[100];
-static int replen; /* size of the last report retrieved */
-static int prev_report; /* previously retrieved report ID */
-static time_t prev_report_ts = 0; /* timestamp of the previously retrieved report */
-static unsigned char ReportDesc[4096];
+/* the most recently retrieved report */
+static report_t cur_report_struct = {0, 0, 0, {0}};
 
 /* FIXME: we currently "hard-wire" the report buffer size in the calls
    to libusb_get_report() below to 8 bytes. This is not really a great
@@ -423,10 +428,12 @@ void HIDDumpTree(usb_dev_handle *udev)
 }
 
 /* Matcher is a linked list of matchers (see libhid.h), and the opened
-    device must match all of them. */
-HIDDevice *HIDOpenDevice(usb_dev_handle **udevp, HIDDeviceMatcher_t *matcher, int mode)
+    device must match all of them. On success, set *udevp and *hd and
+    return hd. On failure, return NULL. */
+HIDDevice *HIDOpenDevice(usb_dev_handle **udevp, HIDDevice *hd, HIDDeviceMatcher_t *matcher, int mode)
 {
 	int ReportSize;
+	unsigned char ReportDesc[4096];
 
 	if ( mode == MODE_REOPEN )
 	{
@@ -434,7 +441,7 @@ HIDDevice *HIDOpenDevice(usb_dev_handle **udevp, HIDDeviceMatcher_t *matcher, in
 	}
 
 	/* get and parse descriptors (dev, cfg and report) */
-	ReportSize = libusb_open(udevp, &curDevice, matcher, ReportDesc, mode);
+	ReportSize = libusb_open(udevp, hd, matcher, ReportDesc, mode);
 
 	if (ReportSize == -1)
 		return NULL;
@@ -443,7 +450,7 @@ HIDDevice *HIDOpenDevice(usb_dev_handle **udevp, HIDDeviceMatcher_t *matcher, in
 		if ( mode == MODE_REOPEN )
 		{
 			TRACE(2, "Device reopened successfully");
-			return &curDevice;
+			return hd;
 		}
 	
 		TRACE(2, "Report Descriptor size = %d", ReportSize);
@@ -456,7 +463,7 @@ HIDDevice *HIDOpenDevice(usb_dev_handle **udevp, HIDDeviceMatcher_t *matcher, in
 		/* don't throw away first item */
 		//HIDParse(&hParser, &hData);
 	}
-	return &curDevice;
+	return hd;
 }
 
 /* int HIDGetItem(hid_info_t *ItemInfo, HIDItem *item) */
@@ -471,73 +478,75 @@ float HIDGetItemValue(usb_dev_handle *udev, char *path, float *Value)
 {
 	int i, retcode;
 	float tmpValue;
+	report_t *cur_report = &cur_report_struct;
 
 	/* Prepare path of HID object */
 	hData.Type = ITEM_FEATURE;
 	hData.ReportID = 0;
 	hData.Path.Size = 0;
 
-	if((retcode = lookup_path(path, &hData)) > 0)
-	{
-		TRACE(4, "Path depth = %i", retcode);
-
-		for (i = 0; i<retcode; i++)
-			TRACE(4, "%i: UPage(%x), Usage(%x)", i,
-				hData.Path.Node[i].UPage,
-				hData.Path.Node[i].Usage);
-
-		hData.Path.Size = retcode;
-
-		/* Get info on object (reportID, offset and size) */
-		if (FindObject(&hParser, &hData) == 1)
-		{
-			/* Get report with data */
-			/* Bufferize at least the last report */
-			if ( ( (prev_report == hData.ReportID) && (time(NULL) <= (prev_report_ts + MAX_TS)) )
-				|| ((replen=libusb_get_report(udev, hData.ReportID, raw_buf, REPORT_SIZE)) > 0) )
-			{
-				/* Extract the data value */
-				GetValue((const unsigned char *) raw_buf, &hData);
-
-				TRACE(4, "=>> Before exponent: %ld, %i/%i)", hData.Value,
-					(int)hData.UnitExp, (int)get_unit_expo(hData.Unit) );
-
-				/* Convert Logical Min, Max and Value in Physical */
-				/* logical_to_physical(&hData); */
-
-				tmpValue = hData.Value;
-
-				/* Process exponents */
-				/* Value*=(float) pow(10,(int)hData.UnitExp - get_unit_expo(hData.Unit)); */
-				tmpValue*=(float) expo(10,(int)hData.UnitExp - get_unit_expo(hData.Unit));
-				hData.Value = (long) tmpValue;
-
-				/* Convert Logical Min, Max and Value into Physical */
-				logical_to_physical(&hData);
-
-				TRACE(4, "=>> After conversion: %ld, %i/%i)", hData.Value,
-					(int)hData.UnitExp, (int)get_unit_expo(hData.Unit) );
-
-				dump_hex ("Report ", raw_buf, replen);
-
-				*Value = hData.Value;
-				prev_report = hData.ReportID;
-				prev_report_ts = time(NULL);
-				return 1;
-			}
-			else
-			{
-				TRACE(2, "Can't retrieve Report %i (%i/%i): %s", hData.ReportID, replen, errno, strerror(errno));
-				return -errno;
-			}
-		}
-		else
-			TRACE(2, "Can't find object %s", path);
+	if((retcode = lookup_path(path, &hData)) <= 0) {
+		return 0; /* TODO: should be checked */
 	}
-	return 0; /* TODO: should be checked */
+
+	hData.Path.Size = retcode;
+	
+	TRACE(4, "Path depth = %i", hData.Path.Size);
+	
+	for (i = 0; i<hData.Path.Size; i++) {
+		TRACE(4, "%i: UPage(%x), Usage(%x)", i, hData.Path.Node[i].UPage, hData.Path.Node[i].Usage);
+	} 
+
+	/* Get info on object (reportID, offset and size) */
+	if (FindObject(&hParser, &hData) != 1) {
+		TRACE(2, "Can't find object %s", path);
+		return 0; /* TODO: should be checked */
+	} 
+	/* Get report with data */
+	/* Bufferize at least the last report */
+	if (cur_report->id != hData.ReportID || time(NULL) > cur_report->ts + MAX_TS) {
+		/* report is not in buffer or too old;
+		   need to retrieve report */
+		retcode = libusb_get_report(udev, hData.ReportID, cur_report->data, REPORT_SIZE);
+		if (retcode <= 0) {
+			TRACE(2, "Can't retrieve Report %i (%i/%i): %s", hData.ReportID, retcode, errno, strerror(errno));
+			return -errno;
+		} else {
+			cur_report->len = retcode;
+			cur_report->ts = time(NULL);
+		}
+	}
+	/* have valid report now */
+	
+	/* Extract the data value */
+	GetValue((const unsigned char *) cur_report->data, &hData);
+	cur_report->id = hData.ReportID;
+	
+	TRACE(4, "=>> Before exponent: %ld, %i/%i)", hData.Value,
+	      (int)hData.UnitExp, (int)get_unit_expo(hData.Unit) );
+	
+	tmpValue = hData.Value;
+	
+	/* Process exponents */
+	/* Value*=(float) pow(10,(int)hData.UnitExp - get_unit_expo(hData.Unit)); */
+	tmpValue*=(float) expo(10,(int)hData.UnitExp - get_unit_expo(hData.Unit));
+	hData.Value = (long) tmpValue;
+	
+	/* Convert Logical Min, Max and Value into Physical */
+	logical_to_physical(&hData);
+	
+	TRACE(4, "=>> After conversion: %ld, %i/%i)", hData.Value,
+	      (int)hData.UnitExp, (int)get_unit_expo(hData.Unit) );
+	
+	dump_hex ("Report ", cur_report->data, cur_report->len);
+	
+	*Value = hData.Value;
+	return 1;
 }
 
-char *HIDGetItemString(usb_dev_handle *udev, char *path)
+/* rawbuf must point to a large enough buffer to hold the resulting
+ * string. Return pointer to rawbuf on success, NULL on failure. */
+char *HIDGetItemString(usb_dev_handle *udev, char *path, unsigned char *rawbuf)
 {
   int i, retcode;
   
@@ -558,12 +567,12 @@ char *HIDGetItemString(usb_dev_handle *udev, char *path)
     
     /* Get info on object (reportID, offset and size) */
     if (FindObject(&hParser,&hData) == 1) {
-      if (libusb_get_report(udev, hData.ReportID, raw_buf, REPORT_SIZE) > 0) { 
-	GetValue((const unsigned char *) raw_buf, &hData);
+      if (libusb_get_report(udev, hData.ReportID, rawbuf, REPORT_SIZE) > 0) { 
+	GetValue((const unsigned char *) rawbuf, &hData);
 
 	/* now get string */
-	libusb_get_string(udev, hData.Value, raw_buf);
-	return raw_buf;
+	libusb_get_string(udev, hData.Value, rawbuf);
+	return rawbuf;
       }
       else
 	TRACE(2, "Can't retrieve Report %i", hData.ReportID);
@@ -580,7 +589,8 @@ bool HIDSetItemValue(usb_dev_handle *udev, char *path, float value)
 {
 	float Value;
 	int retcode;
-	
+	report_t *cur_report = &cur_report_struct;
+
 	/* Begin by a standard Get to fill in com structures ... */
 	retcode = HIDGetItemValue(udev, path, &Value);
 	
@@ -605,11 +615,11 @@ bool HIDSetItemValue(usb_dev_handle *udev, char *path, float value)
 			physical_to_logical(&hData);
 			TRACE(2, "=>> SET: after PL: %ld", hData.Value);
 			
-			SetValue(&hData, raw_buf);
+			SetValue(&hData, cur_report->data);
 			
-			dump_hex ("==> Report after setvalue", raw_buf, replen);
+			dump_hex ("==> Report after setvalue", cur_report->data, cur_report->len);
 			
-			if (libusb_set_report(udev, hData.ReportID, raw_buf, replen) > 0)
+			if (libusb_set_report(udev, hData.ReportID, cur_report->data, cur_report->len) > 0)
 			{
 				TRACE(2, "Set report succeeded");
 				return TRUE;
@@ -687,10 +697,10 @@ int HIDGetEvents(usb_dev_handle *udev, HIDDevice *dev, HIDItem **eventsList)
 	return itemCount;
 }
 
-void HIDCloseDevice(usb_dev_handle **udevp)
+void HIDCloseDevice(usb_dev_handle *udev)
 {
 	TRACE(2, "Closing device");
-	libusb_close(udevp);
+	libusb_close(udev);
 }
 
 

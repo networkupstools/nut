@@ -44,6 +44,7 @@ static subdriver_t *subdriver;
 
 /* Global vars */
 static HIDDevice *hd;
+static HIDDevice curDevice;
 static HIDDeviceMatcher_t *reopen_matcher = NULL;
 static HIDDeviceMatcher_t *regex_matcher = NULL;
 static int pollfreq = DEFAULT_POLLFREQ;
@@ -573,7 +574,7 @@ void upsdrv_initups(void)
 
 	/* Search for the first supported UPS matching the regular
 	   expression */
-	if ((hd = HIDOpenDevice(&udev, regex_matcher, MODE_OPEN)) == NULL)
+	if ((hd = HIDOpenDevice(&udev, &curDevice, regex_matcher, MODE_OPEN)) == NULL)
 		fatalx("No matching USB/HID UPS found");
 	else
 		upslogx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
@@ -611,8 +612,10 @@ void upsdrv_initups(void)
 
 void upsdrv_cleanup(void)
 {
-	if (hd != NULL)
-		HIDCloseDevice(&udev);
+	if (hd != NULL) {
+		HIDCloseDevice(udev);
+		udev = NULL;
+	}
 }
 
 /**********************************************************************
@@ -840,9 +843,10 @@ static void reconnect_ups(void)
 	  upsdebugx(2, "==================================================");
 	  
 	  /* Not really useful as the device is no more reachable */
-	  HIDCloseDevice(&udev);
+	  HIDCloseDevice(udev);
+	  udev = NULL;
 	  
-	  if ((hd = HIDOpenDevice(&udev, reopen_matcher, MODE_REOPEN)) == NULL)
+	  if ((hd = HIDOpenDevice(&udev, &curDevice, reopen_matcher, MODE_REOPEN)) == NULL)
 		dstate_datastale();
 	}
 }
