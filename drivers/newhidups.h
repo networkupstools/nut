@@ -34,19 +34,6 @@
 #define DRIVER_VERSION		"0.28"
 
 /* --------------------------------------------------------------- */
-/*      Supported Manufacturers IDs                                */
-/* --------------------------------------------------------------- */
-
-#define MGE_UPS_SYSTEMS		0x0463		/* All models */
-#define APC			0x051d		/* All models */
-#define BELKIN			0x050d		/* models: 0x0551, 0x0980, ... */
-/* Unsupported! (need spec/hardware/help) */
-#define MUSTEK			0x0665		/* models: 0x5161... */
-#define TRIPPLITE		0x09ae		/* models IDs? */
-#define UNITEK			0x0F03		/* models: 0x0001... */
-
-
-/* --------------------------------------------------------------- */
 /*      Model Name formating entries                               */
 /* --------------------------------------------------------------- */
 
@@ -163,6 +150,29 @@ typedef struct {
 /*	void *next;			*//* next hid_info_t */
 } hid_info_t;
 
+/* --------------------------------------------------------------- */
+/*      Subdriver interface                                        */
+/* --------------------------------------------------------------- */
+
+/* subdriver structure. Each subdriver is intended to support a
+ * particular manufacturer (e.g. MGE, APC, Belkin), or a particular
+ * range of models. */
+
+struct subdriver_s {
+	char *name;                  /* name of this subdriver */
+	int (*claim)(HIDDevice *hd); /* return 1 if device covered by
+				      * this subdriver */
+	hid_info_t *hid2nut;         /* main table of vars and instcmds */
+	int (*shutdown)(int ondelay, int offdelay); 
+                                     /* driver-specific shutdown cmd.
+					Returns 1 on success, 0 on
+					failure */
+	char *(*format_model)(HIDDevice *hd);  /* driver-specific methods */
+	char *(*format_mfr)(HIDDevice *hd);    /* for preparing human-    */
+	char *(*format_serial)(HIDDevice *hd); /* readable information    */
+};
+typedef struct subdriver_s subdriver_t;
+
 
 /* Data walk modes */
 #define HU_WALKMODE_INIT		1
@@ -187,6 +197,8 @@ typedef struct {
 
 #define MAX_TRY		2		/* max number of GetItem retry */
 
-/* TODO: create an Mfr table (int VendorID, hid_info_t *hid_mfr, ...) */
+/* the following functions are exported for the benefit of subdrivers */
+int instcmd(const char *cmdname, const char *extradata);
+int setvar(const char *varname, const char *val);
 
 #endif /* NEWHIDUPS_H */

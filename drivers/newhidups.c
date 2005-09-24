@@ -25,34 +25,37 @@
 #include "libhid.h"
 #include "newhidups.h"
 
-/* include all known hid2nut lookup tables */
+/* include all known subdrivers */
 #include "mge-hid.h"
 #include "apc-hid.h"
 #include "belkin-hid.h"
 
-/* pointer to the good lookup tables */
-static hid_info_t *hid_ups;
-static models_name_t *model_names;
+/* master list of avaiable subdrivers */
+static subdriver_t *subdriver_list[] = {
+	&mge_subdriver,
+	&apc_subdriver,
+	&belkin_subdriver,
+	NULL
+};
+
+/* pointer to the active subdriver object (set in upsdrv_initups, then
+   constant) */
+static subdriver_t *subdriver;
 
 /* Global vars */
 static HIDDevice *hd;
 static HIDDeviceMatcher_t *reopen_matcher = NULL;
 static HIDDeviceMatcher_t *regex_matcher = NULL;
-static int offdelay = DEFAULT_OFFDELAY;
-static int ondelay = DEFAULT_ONDELAY;
 static int pollfreq = DEFAULT_POLLFREQ;
 static int ups_status = 0;
 static bool data_has_changed = FALSE; /* for SEMI_STATIC data polling */
 static time_t lastpoll; /* Timestamp the last polling */
 
 /* support functions */
-static int instcmd(const char *cmdname, const char *extradata);
-static int setvar(const char *varname, const char *val);
 static hid_info_t *find_nut_info(const char *varname);
 static hid_info_t *find_nut_info_valid(const char *varname);
 static hid_info_t *find_hid_info(const char *hidname);
 static char *hu_find_infoval(info_lkp_t *hid2info, long value);
-static char *get_model_name(const char *iProduct, char *iModel);
 static void process_status_info(char *nutvalue);
 static void ups_status_set(void);
 static void identify_ups ();
@@ -208,11 +211,35 @@ info_lkp_t stringid_conversion[] = {
 };
 
 /* ---------------------------------------------
+ * subdriver matcher
+ * --------------------------------------------- */
+
+static int match_function_subdriver(HIDDevice *d, void *privdata) {
+	int i;
+
+	for (i=0; subdriver_list[i] != NULL; i++) {
+		if (subdriver_list[i]->claim(d)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+static HIDDeviceMatcher_t subdriver_matcher_struct = {
+	match_function_subdriver,
+	NULL,
+	NULL,
+};
+static HIDDeviceMatcher_t *subdriver_matcher = &subdriver_matcher_struct;
+
+/* ---------------------------------------------
  * driver functions implementations
  * --------------------------------------------- */
 void upsdrv_shutdown(void)
 {
-	char delay[7];
+	int offdelay = DEFAULT_OFFDELAY;
+	int ondelay = DEFAULT_ONDELAY;
+	int r;
 
 	/* Retrieve user defined delay settings */
 	if ( getval(HU_VAR_ONDELAY) )
@@ -221,52 +248,23 @@ void upsdrv_shutdown(void)
 	if ( getval(HU_VAR_OFFDELAY) )
 		offdelay = atoi( getval(HU_VAR_OFFDELAY) );
 
-	/* Apply specific method(s) */
-	switch (hd->VendorID)
-	{
-		case APC:
-			/* FIXME: the data (or command) should appear in
-			 * the hid2nut table, so that it can be autodetected
-			 * upon startup, and then calable through setvar()
-			 * or instcmd(), ie below
-			 */
-
-			/* From apcupsd, usb.c/killpower() */
-			/* 1) APCBattCapBeforeStartup */
-			/* 2) BackUPS Pro => */
-	
-			/* Misc method B */
-			upsdebugx(2, "upsdrv_shutdown: APC ForceShutdown style shutdown.\n");
-			if (instcmd("load.off", NULL) == STAT_INSTCMD_HANDLED) {
-				return;
-			}
-			upsdebugx(2, "ForceShutdown command failed");
-
-			upsdebugx(2, "upsdrv_shutdown: APC Delay style shutdown.\n");
-			if (instcmd("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
-				return;
-			}
-			upsdebugx(2, "Delayed Shutdown command failed");
-
-		/* Don't "break" as the general method might also be supported! */;
-		case MGE_UPS_SYSTEMS:
-		default:
-			/* 1) set DelayBeforeStartup */
-			sprintf(&delay[0], "%i", ondelay);
-			if (setvar("ups.delay.start", &delay[0])!= STAT_SET_HANDLED)
-				fatalx("Shutoff command failed (setting ondelay)");
-			
-			/* 2) set DelayBeforeShutdown */
-			sprintf(&delay[0], "%i", offdelay);
-			if (setvar("ups.delay.shutdown", &delay[0]) == STAT_SET_HANDLED)
-				return;
-			fatalx("Shutoff command failed (setting offdelay)");
-		break;
+	/* enforce ondelay > offdelay */
+	if (ondelay <= offdelay) {
+		ondelay = offdelay + 1;
+		upsdebugx(2, "Ondelay must be greater than offdelay; setting ondelay = %d (offdelay = %d)", ondelay, offdelay);
 	}
+
+	/* Apply specific method */
+	r = subdriver->shutdown(ondelay, offdelay);
+
+	if (r == 0) {
+		fatalx("Shutdown failed.");
+	}
+	upsdebugx(2, "Shutdown command succeeded.");
 }
 
 /* process instant command and take action. */
-static int instcmd(const char *cmdname, const char *extradata)
+int instcmd(const char *cmdname, const char *extradata)
 {
 	hid_info_t *hidups_item;
 	
@@ -307,7 +305,7 @@ static int instcmd(const char *cmdname, const char *extradata)
 }
 
 /* set r/w variable to a value. */
-static int setvar(const char *varname, const char *val)
+int setvar(const char *varname, const char *val)
 {
 	hid_info_t *hidups_item;
 	
@@ -553,6 +551,7 @@ void upsdrv_initups(void)
 {
 	char *regex_array[5];
 	int r;
+	int i;
 
         /* process the UPS selection options */
 	regex_array[0] = getval("vendorid");
@@ -568,11 +567,15 @@ void upsdrv_initups(void)
 	} else if (r) {
 		fatalx("invalid regular expression: %s", regex_array[r]);
 	}
-	/* Search for the first supported UPS, no matter Mfr or exact product */
+	/* link the matchers */
+	regex_matcher->next = subdriver_matcher;
+
+	/* Search for the first supported UPS matching the regular
+	   expression */
 	if ((hd = HIDOpenDevice(regex_matcher, MODE_OPEN)) == NULL)
 		fatalx("No matching USB/HID UPS found");
 	else
-		upslogx(1, "Detected a UPS: %s/%s\n", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
+		upslogx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
 
 	/* create a new matcher for later reopening */
 	reopen_matcher = new_exact_matcher(hd);
@@ -582,34 +585,23 @@ void upsdrv_initups(void)
 	/* link the two matchers */
 	reopen_matcher->next = regex_matcher;
 
-	/* See initinfo for WARNING */
-	switch (hd->VendorID)
-	{
-		case MGE_UPS_SYSTEMS:
-			hid_ups = hid_mge;
-			model_names = mge_models_names;
-      			HIDDumpTree(NULL);
-		break;
-		case APC:
-			hid_ups = hid_apc;
-			model_names = apc_models_names;
-      			HIDDumpTree(NULL);
-		break;
-		case BELKIN:
-	  	        hid_ups = hid_belkin;
-			model_names = belkin_model_names;
-			HIDDumpTree(NULL);
-		break;
-		case MUSTEK:
-		case TRIPPLITE:
-		case UNITEK:
-		default:
-			upslogx(1, "Manufacturer not supported!");
-			upslogx(1, "Contact the driver author <arnaud.quette@free.fr / @mgeups.com> with the below information");
-      			HIDDumpTree(NULL);
-			fatalx("Aborting");
-		break;
+	/* select the subdriver for this device */
+	for (i=0; subdriver_list[i] != NULL; i++) {
+		if (subdriver_list[i]->claim(hd)) {
+			break;
+		}
 	}
+	subdriver = subdriver_list[i];
+	if (!subdriver) {
+		upslogx(1, "Manufacturer not supported!");
+		upslogx(1, "Contact the driver author <arnaud.quette@free.fr / @mgeups.com> with the below information");
+		HIDDumpTree(NULL);
+		fatalx("Aborting");
+	}
+
+	upslogx(2, "Using subdriver: %s", subdriver->name);
+
+	HIDDumpTree(NULL);
 
 	/* init polling frequency */
 	if ( getval(HU_VAR_POLLFREQ) )
@@ -628,91 +620,28 @@ void upsdrv_cleanup(void)
 
 static void identify_ups ()
 {
-	char *string;
-	char *ptr1, *ptr2, *str;
-	char *model = NULL;
-	char *mfr = NULL;
-	char *serial = NULL;
-	char *product;
-	float appPower;
+	char *model;
+	char *mfr;
+	char *serial;
 
 	upsdebugx (2, "entering identify_ups(0x%04x, 0x%04x)\n", 
 			   hd->VendorID,
 			   hd->ProductID);
 
-	switch (hd->VendorID)
-	{
-	case MGE_UPS_SYSTEMS:
-		/* Get iModel and iProduct strings */
-		product = hd->Product ? hd->Product : "unknown";
-		if ((string = HIDGetItemString("UPS.PowerSummary.iModel")) != NULL)
-			model = get_model_name(product, string);
-		else
-		{
-			/* Try with ConfigApparentPower */
-			if (HIDGetItemValue("UPS.Flow.[4].ConfigApparentPower", &appPower) != 0 )
-			{
-				string = xmalloc(16);
-				sprintf(string, "%i", (int)appPower);
-				model = get_model_name(product, string);
-				free (string);
-			}
-			else
-				model = product;
-		}
-		mfr = hd->Vendor ? hd->Vendor : "MGE";
-		serial = hd->Serial;
-		break;
-	case APC:
-		/* FIXME?: what is the path "UPS.APC_UPS_FirmwareRevision"? */
-		str = hd->Product ? hd->Product : "unknown";
-		ptr1 = strstr(str, "FW:");
-		if (ptr1)
-		{
-			*(ptr1 - 1) = '\0';
-			ptr1 += strlen("FW:");
-			ptr2 = strstr(ptr1, "USB FW:");
-			if (ptr2)
-			{
-				*(ptr2 - 1) = '\0';
-				ptr2 += strlen("USB FW:");
-				dstate_setinfo("ups.firmware.aux", "%s", ptr2);
-			}
-			dstate_setinfo("ups.firmware", "%s", ptr1);
-		}
-		model = str;
-		mfr = hd->Vendor ? hd->Vendor : "APC";
-		serial = hd->Serial;
-		break;
-	case BELKIN:
-		model = hd->Product ? hd->Product : "unknown";
-		mfr = hd->Vendor ? hd->Vendor : "Belkin";
-		/* trim leading whitespace */
-		while (*mfr == ' ') {
-			mfr++;
-		}
-		if (strlen(mfr) == 0) {
-			mfr = "Belkin";
-		}
-		if (strlen(model) == 0) {
-			model = "unknown";
-		}
-		serial = hd->Serial;
-		if (serial == NULL) {
-			/* try UPS.PowerSummary.iSerialNumber */
-			string = HIDGetItemString("UPS.PowerSummary.iSerialNumber");
-			if (string != NULL) {
-				serial = strdup(string);
-			}
-		}
-		break;
-	default: /* Nothing to do */
-		break;
+	/* use vendor-specific method for calculating human-readable
+	   manufacturer, model, and serial strings */
+
+	model = subdriver->format_model(hd);
+	mfr = subdriver->format_mfr(hd);
+	serial = subdriver->format_serial(hd);
+
+	/* set corresponding variables */
+	if (mfr != NULL) {
+		dstate_setinfo("ups.mfr", "%s", mfr);
 	}
-	
-	/* Actual information setting */
-	dstate_setinfo("ups.mfr", "%s", mfr);
-	dstate_setinfo("ups.model", "%s", model);
+	if (model != NULL) {
+		dstate_setinfo("ups.model", "%s", model);
+	}
 	if (serial != NULL) {
 		dstate_setinfo("ups.serial", "%s", serial);
 	}
@@ -729,7 +658,7 @@ static bool hid_ups_walk(int mode)
 	/* 3 modes: HU_WALKMODE_INIT, HU_WALKMODE_QUICK_UPDATE and HU_WALKMODE_FULL_UPDATE */
 	
 	/* Device data walk ----------------------------- */
-	for ( item = hid_ups ; item->info_type != NULL ; item++ )
+	for ( item = subdriver->hid2nut ; item->info_type != NULL ; item++ )
 	  {
 		/* Check if we are asked to stop (reactivity++) */
 		if (exit_flag != 0)
@@ -959,7 +888,7 @@ static hid_info_t *find_nut_info(const char *varname)
 {
   hid_info_t *hidups_item;
 
-  for (hidups_item = hid_ups; hidups_item->info_type != NULL ; hidups_item++) {
+  for (hidups_item = subdriver->hid2nut; hidups_item->info_type != NULL ; hidups_item++) {
     if (!strcasecmp(hidups_item->info_type, varname))
       return hidups_item;
   }
@@ -978,7 +907,7 @@ static hid_info_t *find_nut_info_valid(const char *varname)
   hid_info_t *hidups_item;
   float value;
 
-  for (hidups_item = hid_ups; hidups_item->info_type != NULL ; hidups_item++) {
+  for (hidups_item = subdriver->hid2nut; hidups_item->info_type != NULL ; hidups_item++) {
     if (!strcasecmp(hidups_item->info_type, varname))
       if (HIDGetItemValue(hidups_item->hidpath, &value) == 1)
 	return hidups_item;
@@ -995,7 +924,7 @@ static hid_info_t *find_hid_info(const char *hidname)
 {
   hid_info_t *hidups_item;
 
-  for (hidups_item = hid_ups; hidups_item->info_type != NULL ; hidups_item++) {
+  for (hidups_item = subdriver->hid2nut; hidups_item->info_type != NULL ; hidups_item++) {
 
 	/* Skip NULL HID path (server side vars) */
 	if (hidups_item->hidpath == NULL)
@@ -1058,30 +987,5 @@ static char *hu_find_infoval(info_lkp_t *hid2info, long value)
   }
   upsdebugx(3, "hu_find_infoval: no matching INFO_* value for this HID value (%ld)\n", value);
   return NULL;
-}
-
-/* All the logic for formatting finely the UPS model name */
-static char *get_model_name(const char *iProduct, char *iModel)
-{
-  models_name_t *model = NULL;
-
-  upsdebugx(2, "get_model_name(%s, %s)\n", iProduct, iModel);
-
-  /* Search for formatting rules */
-  for ( model = model_names ; model->iProduct != NULL ; model++ )
-	{
-	  upsdebugx(2, "comparing with: %s", model->finalname);
-	  /* FIXME: use comp_size if not -1 */
-	  if ( (!strncmp(iProduct, model->iProduct, strlen(model->iProduct)))
-		   && (!strncmp(iModel, model->iModel, strlen(model->iModel))) )
-		{
-		  upsdebugx(2, "Found %s\n", model->finalname);
-		  break;
-		}
-	}
-  /* FIXME: if we end up with model->iProduct == NULL
-   * then process name in a generic way (not yet supported models!)
-   */
-  return model->finalname;
 }
 

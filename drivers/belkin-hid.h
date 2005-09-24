@@ -30,14 +30,6 @@
 
 #define BELKIN_HID_VERSION	"Belkin HID 0.1"
 
-/* --------------------------------------------------------------- */
-/*      Model Name formating entries                               */
-/* --------------------------------------------------------------- */
-
-extern models_name_t belkin_model_names [];
-
-
-/* HID2NUT lookup table */
-extern hid_info_t hid_belkin[];
+extern subdriver_t belkin_subdriver;
 
 #endif /* BELKIN_HID_H */

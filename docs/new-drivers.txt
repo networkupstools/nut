@@ -11,6 +11,14 @@ contact-closure.txt document for information on adding support.  It's a
 lot easier to add a few lines to a header file than it is to create a
 whole new driver.
 
+Serial vs. USB
+==============
+
+If your UPS connects to your computer via a USB port, then go straight
+to the document hid-subdrivers.txt. You can probably add support for
+your device by writing a new subdriver to the existing newhidups
+driver, which is easier than writing an entire new driver.
+
 Overall concept
 ===============
 

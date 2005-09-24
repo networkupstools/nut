@@ -24,30 +24,22 @@
  *
  */
 
+#include "newhidups.h"
 #include "apc-hid.h"
 #include "extstate.h" /* for ST_FLAG_STRING */
+#include "dstate.h"   /* for STAT_INSTCMD_HANDLED */
+#include "common.h"
+
+#define APC_HID_VERSION "APC HID 0.8"
+
+#define APC_VENDORID 0x051d
 
 /* --------------------------------------------------------------- */
-/*      Model Name formating entries                               */
+/*      HID2NUT lookup table                                       */
 /* --------------------------------------------------------------- */
-
-models_name_t apc_models_names [] =
-{
-
-  { "BackUPS 500", "500", -1, "BackUPS 500" },
-
-/*   { "BackUPS Pro", 11, NULL, "FW", 0 }, */
-/*   { "Back-UPS ES", 11, NULL, "FW", 0 },  */
-/*   { "Smart-UPS", 9, NULL, "FW",  0 }, */
-/*   { "BackUPS ", 8, NULL, " ", 0 }, */
-
-	/* end of structure. */
-	{ NULL, NULL, -1, "Generic APC HID model" }
-};
-
 
 /* HID2NUT lookup table */
-hid_info_t hid_apc[] = {
+static hid_info_t apc_hid2nut[] = {
   /* Server side variables */
   { "driver.version.internal", ST_FLAG_STRING, sizeof(DRIVER_VERSION), NULL, NULL,
     DRIVER_VERSION, HU_FLAG_ABSENT | HU_FLAG_OK, NULL },
@@ -162,4 +154,83 @@ hid_info_t hid_apc[] = {
 
   /* end of structure. */
   { NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
+};
+
+/* shutdown method for APC */
+static int apc_shutdown(int ondelay, int offdelay) {
+	/* FIXME: ondelay, offdelay currently not used */
+
+	/* FIXME: the data (or command) should appear in
+	 * the hid2nut table, so that it can be autodetected
+	 * upon startup, and then calable through setvar()
+	 * or instcmd(), ie below
+	 */
+	
+	/* From apcupsd, usb.c/killpower() */
+	/* 1) APCBattCapBeforeStartup */
+	/* 2) BackUPS Pro => */
+	
+	/* Misc method B */
+	upsdebugx(2, "Trying APC ForceShutdown style shutdown.");
+	if (instcmd("load.off", NULL) == STAT_INSTCMD_HANDLED) {
+		return 1;
+	}
+
+	upsdebugx(2, "ForceShutdown command failed, trying APC Delay style shutdown.");
+	if (instcmd("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
+		return 1;
+	}
+	upsdebugx(2, "Delayed Shutdown command failed.");
+	return 0;
+}
+
+static char *apc_format_model(HIDDevice *hd) {
+	char *model;
+        char *ptr1, *ptr2;
+
+	/* FIXME?: what is the path "UPS.APC_UPS_FirmwareRevision"? */
+	model = hd->Product ? hd->Product : "unknown";
+	ptr1 = strstr(model, "FW:");
+	if (ptr1)
+	{
+		*(ptr1 - 1) = '\0';
+		ptr1 += strlen("FW:");
+		ptr2 = strstr(ptr1, "USB FW:");
+		if (ptr2)
+		{
+			*(ptr2 - 1) = '\0';
+			ptr2 += strlen("USB FW:");
+			dstate_setinfo("ups.firmware.aux", "%s", ptr2);
+		}
+		dstate_setinfo("ups.firmware", "%s", ptr1);
+	}
+	return model;
+}
+
+static char *apc_format_mfr(HIDDevice *hd) {
+	return hd->Vendor ? hd->Vendor : "APC";
+}
+
+static char *apc_format_serial(HIDDevice *hd) {
+	return hd->Serial;
+}
+
+/* this function allows the subdriver to "claim" a device: return 1 if
+ * the device is supported by this subdriver, else 0. */
+static int apc_claim(HIDDevice *hd) {
+	if (hd->VendorID == APC_VENDORID) {
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
+subdriver_t apc_subdriver = {
+	APC_HID_VERSION,
+	apc_claim,
+        apc_hid2nut,
+	apc_shutdown,
+	apc_format_model,
+	apc_format_mfr,
+	apc_format_serial,
 };

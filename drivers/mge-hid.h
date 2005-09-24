@@ -27,18 +27,6 @@
 
 #include "newhidups.h"
 
-#define MGE_HID_VERSION	"MGE HID 0.8"
-
-/* --------------------------------------------------------------- */
-/*      Model Name formating entries                               */
-/* --------------------------------------------------------------- */
-
-extern models_name_t mge_models_names [];
-
-/* --------------------------------------------------------------- */
-/*                 Data lookup table (HID <-> NUT)                 */
-/* --------------------------------------------------------------- */
-
-extern hid_info_t hid_mge[];
+extern subdriver_t mge_subdriver;
 
 #endif /* MGE_HID_H */

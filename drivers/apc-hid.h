@@ -29,15 +29,6 @@
 
 #include "newhidups.h"
 
-#define APC_HID_VERSION	"APC HID 0.8"
-
-/* --------------------------------------------------------------- */
-/*      Model Name formating entries                               */
-/* --------------------------------------------------------------- */
-
-extern models_name_t apc_models_names[];
-
-/* HID2NUT lookup table */
-extern hid_info_t hid_apc[];
+extern subdriver_t apc_subdriver;
 
 #endif /* APC_HID_H */

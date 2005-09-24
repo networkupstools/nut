@@ -1,3 +1,15 @@
+Sat Sep 24 00:09:13 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: moved most vendor-specific code into X-hid.c, where
+   X=mge,apc,belkin. This eliminates the various switch(hd->VendorID)
+   statements throughout the driver. Subdrivers now declare themselves
+   by exporting a subdriver_t structure (defined in newhidups.h). This
+   structure contains functions and data that define the subdriver. In
+   particular, each driver implements a "claim()" method by which it
+   can claim a particular device. Driver availability is checked
+   inside libusb_open() via the general "matcher" mechanism, so that
+   libusb no longer contains vendor specific code.
+
 Tue Sep 20 02:11:29 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
  - tripplite_usb: made minor adjustments reflecting recent changes in

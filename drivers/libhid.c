@@ -1044,6 +1044,7 @@ static usage_lkp_t usage_lkp[] = {
 	{  "\0", 0x0 }
 };
 
+/* usage conversion numeric -> string */
 static const char *hid_lookup_path(unsigned int usage)
 {
 	int i;
@@ -1063,6 +1064,7 @@ static const char *hid_lookup_path(unsigned int usage)
 	return &raw_usage[0];
 }
 
+/* usage conversion string -> numeric */
 static int hid_lookup_usage(char *name)
 {
 	int i;

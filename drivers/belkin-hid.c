@@ -23,20 +23,15 @@
  *
  */
 
+#include "newhidups.h"
 #include "belkin-hid.h"
 #include "extstate.h" /* for ST_FLAG_STRING */
+#include "dstate.h"   /* for STAT_INSTCMD_HANDLED */
+#include "common.h"
 
-/* --------------------------------------------------------------- */
-/*      Model Name formating entries                               */
-/* --------------------------------------------------------------- */
+#define BELKIN_HID_VERSION      "Belkin HID 0.1"
 
-models_name_t belkin_model_names [] =
-{
-  /* not used for anything. */
-
-  /* end of structure. */
-  { NULL, NULL, -1, "Generic Belkin HID model" }
-};
+#define BELKIN_VENDORID 0x050d
 
 /* some conversion functions specific to Belkin */
 
@@ -174,14 +169,11 @@ static info_lkp_t belkin_replacebatt_conversion[] = {
 
 
 
-/* HID2NUT lookup table */
-hid_info_t hid_belkin[] = {
+/* --------------------------------------------------------------- */
+/* HID2NUT lookup table                                            */
+/* --------------------------------------------------------------- */
 
-  /* FIXME: the variable ups.serial.internal should not really exist;
-     it should be ups.serial. The problem is that the Belkin UPS does
-     not announce its serial number in the device descriptor (like a
-     good HID device should), but in a report. So this info is
-     unavailable at init-time. */
+static hid_info_t belkin_hid2nut[] = {
 
   /* interpreted Belkin variables */
   { "battery.charge", 0, 0, "UPS.BELKINBatterySystem.BELKINCharge", NULL, "%.0f", HU_FLAG_OK, NULL },
@@ -253,4 +245,76 @@ hid_info_t hid_belkin[] = {
 
   /* end of structure. */
   { NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
+};
+
+/* shutdown method for Belkin */
+static int belkin_shutdown(int ondelay, int offdelay) {
+	/* FIXME: ondelay, offdelay currently not used */
+	
+	/* Note: my Belkin does not have shutdown.return, and load.off
+	   does not come back after power returns. This is the best we
+	   can do. */
+	upsdebugx(2, "Trying load.off.");
+        if (instcmd("load.off", NULL) == STAT_INSTCMD_HANDLED) {
+                return 1;
+        }
+	upsdebugx(2, "Shutdown failed.");
+        return 0;
+}
+
+static char *belkin_format_model(HIDDevice *hd) {
+	char *model;
+	model = hd->Product ? hd->Product : "unknown";
+	if (strlen(model) == 0) {
+		model = "unknown";
+	}
+	return model;
+}
+
+static char *belkin_format_mfr(HIDDevice *hd) {
+	char *mfr;
+	mfr = hd->Vendor ? hd->Vendor : "Belkin";
+	/* trim leading whitespace */
+	while (*mfr == ' ') {
+		mfr++;
+	}
+	if (strlen(mfr) == 0) {
+		mfr = "Belkin";
+	}
+	return mfr;
+}
+
+static char *belkin_format_serial(HIDDevice *hd) {
+	char *serial;
+	char *string;
+
+	serial = hd->Serial;
+	if (serial == NULL) {
+		/* try UPS.PowerSummary.iSerialNumber */
+		string = HIDGetItemString("UPS.PowerSummary.iSerialNumber");
+		if (string != NULL) {
+			serial = xstrdup(string);
+		}
+	}
+	return serial;
+}
+
+/* this function allows the subdriver to "claim" a device: return 1 if
+ * the device is supported by this subdriver, else 0. */
+static int belkin_claim(HIDDevice *hd) {
+        if (hd->VendorID == BELKIN_VENDORID) {
+                return 1;
+        } else {
+                return 0;
+        }
+}
+
+subdriver_t belkin_subdriver = {
+	BELKIN_HID_VERSION,
+	belkin_claim,
+        belkin_hid2nut,
+	belkin_shutdown,
+	belkin_format_model,
+	belkin_format_mfr,
+	belkin_format_serial,
 };

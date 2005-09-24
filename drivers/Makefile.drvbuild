@@ -70,8 +70,8 @@ solis: solis.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ..
 	$(CC) $(CFLAGS) $(LDFLAGS) -o solis solis.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBOBJ) 
 gamatronic: gamatronic.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBDEP)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o gamatronic gamatronic.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBOBJ) 
-apc-hid.o: apc-hid.c apc-hid.h newhidups.h ../include/config.h libusb.h \
-  libhid.h ../include/timehead.h hidtypes.h ../include/extstate.h
+apc-hid.o: apc-hid.c newhidups.h ../include/config.h libusb.h libhid.h \
+  ../include/timehead.h hidtypes.h apc-hid.h ../include/extstate.h
 apcsmart.o: apcsmart.c main.h ../include/common.h ../include/attribute.h \
   ../include/config.h ../include/proto.h ../include/attribute.h \
   ../include/version.h ../include/upsconf.h dstate.h \
@@ -94,8 +94,8 @@ bcmxcp_usb.o: bcmxcp_usb.c main.h ../include/common.h \
   dstate.h ../include/parseconf.h ../include/upshandler.h \
   ../include/extstate.h bcmxcp.h ../include/timehead.h bcmxcp_io.h \
   nut_usb.h
-belkin-hid.o: belkin-hid.c belkin-hid.h newhidups.h ../include/config.h \
-  libusb.h libhid.h ../include/timehead.h hidtypes.h \
+belkin-hid.o: belkin-hid.c newhidups.h ../include/config.h libusb.h \
+  libhid.h ../include/timehead.h hidtypes.h belkin-hid.h \
   ../include/extstate.h
 belkin.o: belkin.c main.h ../include/common.h ../include/attribute.h \
   ../include/config.h ../include/proto.h ../include/attribute.h \
@@ -223,8 +223,8 @@ metasys.o: metasys.c main.h ../include/common.h ../include/attribute.h \
   ../include/version.h ../include/upsconf.h dstate.h \
   ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
   serial.h metasys.h
-mge-hid.o: mge-hid.c mge-hid.h newhidups.h ../include/config.h libusb.h \
-  libhid.h ../include/timehead.h hidtypes.h ../include/extstate.h
+mge-hid.o: mge-hid.c newhidups.h ../include/config.h libusb.h libhid.h \
+  ../include/timehead.h hidtypes.h mge-hid.h ../include/extstate.h
 mge-shut.o: mge-shut.c ../include/config.h main.h ../include/common.h \
   ../include/attribute.h ../include/config.h ../include/proto.h \
   ../include/attribute.h ../include/version.h ../include/upsconf.h \

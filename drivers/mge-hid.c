@@ -22,14 +22,21 @@
  *
  */
 
+#include "newhidups.h"
 #include "mge-hid.h"
 #include "extstate.h" /* for ST_FLAG_STRING */
+#include "dstate.h"   /* for STAT_INSTCMD_HANDLED */
+#include "common.h"
+
+#define MGE_HID_VERSION	"MGE HID 0.8"
+
+#define MGE_VENDORID 0x0463
 
 /* --------------------------------------------------------------- */
 /*      Model Name formating entries                               */
 /* --------------------------------------------------------------- */
 
-models_name_t mge_models_names [] =
+static models_name_t mge_model_names [] =
 {
 	/* Ellipse models */
 	{ "ELLIPSE", "300", -1, "ellipse 300" },
@@ -96,7 +103,7 @@ models_name_t mge_models_names [] =
 /*                 Data lookup table (HID <-> NUT)                 */
 /* --------------------------------------------------------------- */
 
-hid_info_t hid_mge[] =
+static hid_info_t mge_hid2nut[] =
 {
   /* Server side variables */
   { "driver.version.internal", ST_FLAG_STRING, 5, NULL, NULL,
@@ -253,4 +260,107 @@ hid_info_t hid_mge[] =
 
   /* end of structure. */
   { NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
+};
+
+/* shutdown method for MGE */
+static int mge_shutdown(int ondelay, int offdelay) {
+	char delay[7];
+
+	/* 1) set DelayBeforeStartup */
+	sprintf(delay, "%i", ondelay);
+	if (setvar("ups.delay.start", delay) != STAT_SET_HANDLED) {
+		upsdebugx(2, "Shutoff command failed (setting ondelay)");
+		return 0;
+	}	
+
+	/* 2) set DelayBeforeShutdown */
+	sprintf(delay, "%i", offdelay);
+	if (setvar("ups.delay.shutdown", delay) == STAT_SET_HANDLED) {
+		return 1;
+	}
+	upsdebugx(2, "Shutoff command failed (setting offdelay)");
+	return 0;
+}
+
+/* All the logic for finely formatting the MGE model name */
+static char *get_model_name(const char *iProduct, char *iModel)
+{
+  models_name_t *model = NULL;
+
+  upsdebugx(2, "get_model_name(%s, %s)\n", iProduct, iModel);
+
+  /* Search for formatting rules */
+  for ( model = mge_model_names ; model->iProduct != NULL ; model++ )
+	{
+	  upsdebugx(2, "comparing with: %s", model->finalname);
+	  /* FIXME: use comp_size if not -1 */
+	  if ( (!strncmp(iProduct, model->iProduct, strlen(model->iProduct)))
+		   && (!strncmp(iModel, model->iModel, strlen(model->iModel))) )
+		{
+		  upsdebugx(2, "Found %s\n", model->finalname);
+		  break;
+		}
+	}
+  /* FIXME: if we end up with model->iProduct == NULL
+   * then process name in a generic way (not yet supported models!)
+   * Will the following do?
+   */
+  if (model->iProduct == NULL) {
+	  return iModel;
+  }
+  return model->finalname;
+}
+
+static char *mge_format_model(HIDDevice *hd) {
+	char *product;
+	char *model;
+        char *string;
+	float appPower;
+
+	/* Get iModel and iProduct strings */
+	product = hd->Product ? hd->Product : "unknown";
+	if ((string = HIDGetItemString("UPS.PowerSummary.iModel")) != NULL)
+		model = get_model_name(product, string);
+	else
+	{
+		/* Try with ConfigApparentPower */
+		if (HIDGetItemValue("UPS.Flow.[4].ConfigApparentPower", &appPower) != 0 )
+		{
+			string = xmalloc(16);
+			sprintf(string, "%i", (int)appPower);
+			model = get_model_name(product, string);
+			free (string);
+		}
+		else
+			model = product;
+	}
+	return model;
+}
+
+static char *mge_format_mfr(HIDDevice *hd) {
+	return hd->Vendor ? hd->Vendor : "MGE";
+}
+
+static char *mge_format_serial(HIDDevice *hd) {
+	return hd->Serial;
+}
+
+/* this function allows the subdriver to "claim" a device: return 1 if
+ * the device is supported by this subdriver, else 0. */
+static int mge_claim(HIDDevice *hd) {
+        if (hd->VendorID == MGE_VENDORID) {
+                return 1;
+        } else {
+                return 0;
+        }
+}
+
+subdriver_t mge_subdriver = {
+	MGE_HID_VERSION,
+	mge_claim,
+	mge_hid2nut,
+	mge_shutdown,
+	mge_format_model,
+	mge_format_mfr,
+	mge_format_serial,
 };

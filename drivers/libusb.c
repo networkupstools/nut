@@ -48,14 +48,6 @@ static struct usb_bus *bus;
 /* #define USB_TIMEOUT 5000 */
 #define USB_TIMEOUT 4000
 
-/* FIXME! */
-#define MGE_UPS_SYSTEMS		0x0463		/* All models */
-#define APC			0x051d		/* All models */
-#define BELKIN			0x050d		/* models: 0x0551, IDs? */
-#define MUSTEK                  0x0665          /* models: 0x5161... */
-#define TRIPPLITE               0x09ae          /* models IDs? */
-#define UNITEK                  0x0F03          /* models: 0x0001... */
-
 /* TODO: rework all that */
 void upsdebugx(int level, const char *fmt, ...);
 #define TRACE upsdebugx
@@ -116,16 +108,8 @@ int libusb_open(HIDDevice *curDevice, HIDDeviceMatcher_t *matcher, unsigned char
 		for (dev = bus->devices; dev && !found; dev = dev->next) {
 			TRACE(2, "Checking device (%04X/%04X) (%s/%s)", dev->descriptor.idVendor, dev->descriptor.idProduct, bus->dirname, dev->filename);
 			
-			/* skip unsupported vendors */
-			if (dev->descriptor.idVendor != MGE_UPS_SYSTEMS
-			    && dev->descriptor.idVendor != APC
-			    && dev->descriptor.idVendor != BELKIN
-			    && dev->descriptor.idVendor != MUSTEK
-			    && dev->descriptor.idVendor != TRIPPLITE
-			    && dev->descriptor.idVendor != UNITEK) {
-				TRACE(2, "Unsupported vendor, skipping");
-				continue;
-			}
+			/* supported vendors are now checked by the
+			   supplied matcher */
 
 			/* open the device */
 			udev = usb_open(dev);
