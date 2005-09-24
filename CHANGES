@@ -1,3 +1,7 @@
+Sat Sep 24 00:46:12 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: eliminated global variables from libusb.
+
 Sat Sep 24 00:09:13 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups: moved most vendor-specific code into X-hid.c, where
