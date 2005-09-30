@@ -1,5 +1,10 @@
 Fri Sep 30 20:38:09 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
 
+ - bcmxcp: add the baud_rate parameter, which allows to support HP
+   R3000 XR (reported by Matthijs Sneijders)
+
+   (Kjell Claesson) [Alioth Patch #302281]
+
  - acpi.txt: start investigation on ACPI bridging (Alioth task #258)
 
 Sat Sep 24 04:30:34 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>

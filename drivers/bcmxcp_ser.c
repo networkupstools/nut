@@ -3,6 +3,20 @@
 #include "bcmxcp_io.h"
 #include "serial.h"
 
+#define PW_MAX_BAUD 5
+struct pw_baud_rate {
+	int rate;
+	int name;
+} pw_baud_rates[] = {
+	{ B1200,  1200 },
+	{ B2400,  2400 },
+	{ B4800,  4800 },
+	{ B9600,  9600 },
+	{ B19200, 19200 },
+};
+
+unsigned char AUT[4] = {0xCF, 0x69, 0xE8, 0xD5};		/* Autorisation	command	*/
+
 void send_read_command(unsigned char command)
 {
 	int retry, sent;
@@ -67,7 +81,7 @@ int get_answer(unsigned char *data, unsigned char command)
 			/* Read PW_COMMAND_START_BYTE byte */
 			res = ser_get_char(upsfd, (char*)my_buf, 1, 0);
 			if (res != 1) {
-				ser_comm_fail("Receive error (PW_COMMAND_START_BYTE): %d!!!\n", res);
+				upsdebugx(1,"Receive error (PW_COMMAND_START_BYTE): %d!!!\n", res);
 				return -1;
 			}
 			start++;
@@ -171,7 +185,7 @@ int command_read_sequence(unsigned char command, unsigned char *data)
 	int bytes_read = 0;
 	int retry = 0;
 	
-	while ((bytes_read < 1) && (retry < 5)) {
+	while ((bytes_read < 1) && (retry < 3)) {
 		send_read_command(command);
 		bytes_read = get_answer(data, command);
 		
@@ -197,7 +211,7 @@ int command_write_sequence(unsigned char *command, int command_length, unsigned	
 	int bytes_read = 0;
 	int retry = 0;
 	
-	while ((bytes_read < 1) && (retry < 5)) {
+	while ((bytes_read < 1) && (retry < 3)) {
 		send_write_command(command, command_length);
 		bytes_read = get_answer(answer, command[0]);
 		
@@ -222,16 +236,58 @@ void upsdrv_comm_good()
 	ser_comm_good();
 }
 
+void pw_comm_setup(const char *port)
+{
+    char answer[256];
+    int i = 0, baud, mybaud = 0, ret = -1 ;
+
+	if (getval("baud_rate") != NULL)
+	{
+		baud = atoi(getval("baud_rate"));
+		
+		for(i = 0; i < PW_MAX_BAUD; i++)
+			if(baud == pw_baud_rates[i].name){
+				mybaud = pw_baud_rates[i].rate;
+				break;
+			}
+
+        ser_set_speed(upsfd, device_path,mybaud);
+        	ser_send_char(upsfd, 0x1d);	/* send ESC to take it out of menu */
+        	usleep(90000);
+        	send_write_command(AUT, 4);
+        	usleep(500000);
+        	ret = command_read_sequence(PW_SET_REQ_ONLY_MODE, answer);
+	}
+
+	if (ret == -1)
+	{
+		for (i=0; i<PW_MAX_BAUD; i++) {
+
+			ser_set_speed(upsfd, device_path,pw_baud_rates[i].rate);
+        		ser_send_char(upsfd, 0x1d);	/* send ESC to take it out of menu */
+        		usleep(90000);
+        		send_write_command(AUT, 4);
+        		usleep(500000);
+        		ret = command_read_sequence(PW_SET_REQ_ONLY_MODE, answer);
+
+        		if (ret != -1) break;
+		}
+	}
+
+    if (i == 5) {
+	printf("Can't find the UPS on port %s!\n",port);
+	ser_close(upsfd, device_path);
+	exit (1);
+    }
+printf("Connected to UPS on %s baudrate: %d\n",port, pw_baud_rates[i].name);
+}
+
 void upsdrv_initups(void)
 {
-	int i;
 	experimental_driver=1;	
 
 	upsfd = ser_open(device_path);
-	ser_set_speed(upsfd, device_path, B9600);
-
-	for(i = 0;i < 2; i++)	/* send ESC two times to take it out of menu */
-	ser_send_char(upsfd, 0x1d);
+	pw_comm_setup(device_path);
 }
 
 void upsdrv_cleanup(void)

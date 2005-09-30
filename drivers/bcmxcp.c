@@ -40,7 +40,7 @@
 #include "bcmxcp_io.h"
 #include "bcmxcp.h"
 
-#define DRV_VERSION "0.09"
+#define DRV_VERSION "0.10"
 
 static int get_word(const unsigned char*);
 static long int get_long(const unsigned char*);
@@ -1208,6 +1208,7 @@ void upsdrv_help(void)
 void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE, "shutdown_delay", "Specify shutdown delay (seconds)");
+	addvar(VAR_VALUE, "baud_rate", "Specify communication speed (ex: 9600)");
 }
 
 void upsdrv_banner(void)
