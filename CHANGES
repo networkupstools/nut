@@ -1,3 +1,7 @@
+Fri Sep 30 20:38:09 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - acpi.txt: start investigation on ACPI bridging (Alioth task #258)
+
 Sat Sep 24 04:30:34 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups: moved remaining vendor-specific code into the X-hid.c
