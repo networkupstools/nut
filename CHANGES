@@ -1,3 +1,10 @@
+Fri Sep 30 20:38:09 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - bcmxcp: add the baud_rate parameter, which allows to support HP
+   R3000 XR (reported by Matthijs Sneijders)
+
+   (Kjell Claesson) [Alioth Patch #302284]
+
 Tue Aug 23 07:33:53 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - gamatronic: revive the sec driver as gamatronic to support officialy

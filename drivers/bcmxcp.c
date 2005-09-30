@@ -37,7 +37,7 @@
 #include "serial.h"
 #include "bcmxcp.h"
 
-#define DRV_VERSION "0.08"
+#define DRV_VERSION "0.09"
 
 /* get_word funktion from nut driver metasys.c */
 int get_word(const unsigned char *buffer)	/* return an integer reading a word in the supplied buffer */
@@ -751,7 +751,7 @@ int get_answer(unsigned char *data, unsigned char command)
 			/* Read PW_COMMAND_START_BYTE byte */
 			res = ser_get_char(upsfd, (char*)my_buf, 1, 0);
 			if (res != 1) {
-				ser_comm_fail("Receive error (PW_COMMAND_START_BYTE): %d!!!\n", res);
+				upsdebugx(1,"Receive error (PW_COMMAND_START_BYTE): %d!!!\n", res);
 				return -1;
 			}
 			start++;
@@ -975,7 +975,7 @@ void upsdrv_initinfo(void)
 	free(pTmp);
 
 	/* Display startup banner */
-	printf("Modell = %s\n", dstate_getinfo("ups.model"));
+	printf("Model = %s\n", dstate_getinfo("ups.model"));
 	printf("Firmware = %s\n", dstate_getinfo("ups.firmware"));
 	upslogx(LOG_INFO,"Shutdown delay =  %d seconds", bcmxcp_status.shutdowndelay);
 	
@@ -1406,6 +1406,7 @@ void upsdrv_help(void)
 void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE, "shutdown_delay", "Specify shutdown delay (seconds)");
+	addvar(VAR_VALUE, "baud_rate", "Specify communication speed (ex: 9600)");
 }
 
 void upsdrv_banner(void)
@@ -1414,16 +1415,58 @@ void upsdrv_banner(void)
 		DRV_VERSION, UPS_VERSION);
 }
 
+void pw_comm_setup(const char *port)
+{
+    char answer[256];
+    int i = 0, baud, mybaud = 0, ret = -1 ;
+
+	if (getval("baud_rate") != NULL)
+	{
+		baud = atoi(getval("baud_rate"));
+		
+		for(i = 0; i < PW_MAX_BAUD; i++)
+			if(baud == pw_baud_rates[i].name){
+				mybaud = pw_baud_rates[i].rate;
+				break;
+			}
+
+        ser_set_speed(upsfd, device_path,mybaud);
+        	ser_send_char(upsfd, 0x1d);	/* send ESC to take it out of menu */
+        	usleep(90000);
+        	send_write_command(AUTHOR, 4);
+        	usleep(500000);
+        	ret = command_read_sequence(PW_SET_REQ_ONLY_MODE, answer);
+	}
+
+	if (ret == -1)
+	{
+		for (i=0; i<PW_MAX_BAUD; i++) {
+
+			ser_set_speed(upsfd, device_path,pw_baud_rates[i].rate);
+        		ser_send_char(upsfd, 0x1d);	/* send ESC to take it out of menu */
+        		usleep(90000);
+        		send_write_command(AUTHOR, 4);
+        		usleep(500000);
+        		ret = command_read_sequence(PW_SET_REQ_ONLY_MODE, answer);
+
+        		if (ret != -1) break;
+		}
+	}
+
+    if (i == 5) {
+	printf("Can't find the UPS on port %s!\n",port);
+	ser_close(upsfd, device_path);
+	exit (1);
+    }
+printf("Connected to UPS on %s baudrate: %d\n",port, pw_baud_rates[i].name);
+}
+
 void upsdrv_initups(void)
 {
-	int i;
 	experimental_driver=1;	
 
 	upsfd = ser_open(device_path);
-	ser_set_speed(upsfd, device_path, B9600);
-
-	for(i = 0;i < 2; i++)	/* send ESC two times to take it out of menu */
-	ser_send_char(upsfd, 0x1d);
+	pw_comm_setup(device_path);
 }
 
 void upsdrv_cleanup(void)

@@ -11,7 +11,19 @@
 char *FreqTol[3] = {"+/-2%", "+/-5%", "+/-7"};
 char *ABMStatus[4] = {"Charging", "Discharging", "Floating", "Resting"};
 
+struct pw_baud_rate {
+	int rate;
+	int name;
+} pw_baud_rates[] = {
+	{ B1200,  1200 },
+	{ B2400,  2400 },
+	{ B4800,  4800 },
+	{ B9600,  9600 },
+	{ B19200, 19200 },
+};
+
 #define PW_MAX_TRY 3 /* How many times we try to send data. */
+#define PW_MAX_BAUD 5
 
 #define PW_COMMAND_START_BYTE (unsigned char)0xAB
 
@@ -333,6 +345,7 @@ static int get_answer(unsigned char*, unsigned char);
 static int command_read_sequence(unsigned char, unsigned char*);
 static int command_write_sequence(unsigned char*, int, unsigned char*);
 static int instcmd(const char *cmdname, const char *extra);
+static void pw_comm_setup(const char *port);
 
 #endif /*_POWERWARE_H */
 
