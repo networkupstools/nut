@@ -777,7 +777,7 @@ void upsdrv_initinfo(void)
 	free(pTmp);
 
 	/* Display startup banner */
-	printf("Modell = %s\n", dstate_getinfo("ups.model"));
+	printf("Model = %s\n", dstate_getinfo("ups.model"));
 	printf("Firmware = %s\n", dstate_getinfo("ups.firmware"));
 	upslogx(LOG_INFO,"Shutdown delay =  %d seconds", bcmxcp_status.shutdowndelay);
 	
