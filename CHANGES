@@ -2,6 +2,8 @@ Fri Sep 30 20:38:09 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
 
  - driver.list: add Dynex 975AVR (reported by Andrew Kalafut)
 
+   [Alioth Patch #302203]
+
  - bcmxcp: add the baud_rate parameter, which allows to support HP
    R3000 XR (reported by Matthijs Sneijders)
 
