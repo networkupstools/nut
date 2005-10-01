@@ -1,6 +1,6 @@
 Desc: How to use upssched
 File: upssched.txt
-Date: 13 October 2002
+Date: 01 October 2005
 Auth: Russell Kroll <rkroll@exploits.org>
 
 upssched is a helper for upsmon that will invoke commands for you at some
