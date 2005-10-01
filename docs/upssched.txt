@@ -1,6 +1,6 @@
 Desc: How to use upssched
 File: upssched.txt
-Date: 13 October 2002
+Date: 01 October 2005
 Auth: Russell Kroll <rkroll@exploits.org>
 
 upssched is a helper for upsmon that will invoke commands for you at some
@@ -44,7 +44,14 @@ use that here:
 
 	CMDSCRIPT /usr/local/ups/bin/upssched-cmd
 
-Now you can tell it what to do when it is called by upsmon.
+Then you have to define the variables PIPEFN and LOCKFN; the former
+sets the file name of the FIFO that will pass communications between
+processes to start and stop timers, while the latter sets the file name
+for a temporary file created by upssched in order to avoid a race condition
+under some circumstances. Please see the relevant comments in upssched.conf
+for additional information and advice about these variables.
+
+Now you can tell your CMDSCRIPT what to do when it is called by upsmon.
 
 The big picture
 ---------------
