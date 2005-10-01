@@ -1,3 +1,9 @@
+Sat Oct 01 18:17:54 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - upssched.txt: document the required PIPEFN and LOCKFN variables
+
+   (Cristian Rigamonti) [Alioth Patch #302107]
+
 Fri Sep 30 20:38:09 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
 
  - driver.list: add Dynex 975AVR (reported by Andrew Kalafut)
