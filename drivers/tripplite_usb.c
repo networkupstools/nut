@@ -268,6 +268,25 @@ static int battery_voltage_nominal = 12,
 static unsigned int offdelay = DEFAULT_OFFDELAY;
 /* static unsigned int bootdelay = DEFAULT_BOOTDELAY; */
 
+static void reconnect_ups(void)
+{
+	if (hd == NULL)
+	{
+		upsdebugx(2, "==================================================");
+		upsdebugx(2, "= device has been disconnected, try to reconnect =");
+		upsdebugx(2, "==================================================");
+
+		upsdrv_cleanup();
+
+		while ((hd = HIDOpenDevice(&udev, &curDevice, reopen_matcher, MODE_REOPEN)) == NULL) {
+			upslogx(LOG_INFO, "Reconnecting to UPS...");
+			dstate_datastale();
+			sleep(60);
+		}
+	}
+}
+
+
 /*!@brief Convert a string to printable characters (in-place)
  *
  * @param[in,out] str	String to convert
@@ -417,7 +436,8 @@ void usb_comm_fail(int res, const char *msg)
 			do {
 				sleep(RECONNECT_DELAY);
 				upslogx(LOG_NOTICE, "Reconnect attempt #%d", ++try);
-				find_tripplite_ups();
+				hd = NULL;
+				reconnect_ups();
 			} while (!hd && (try < MAX_RECONNECT_TRIES));
 
 			if(hd) {
@@ -977,34 +997,6 @@ void upsdrv_banner(void)
 			DRV_VERSION, UPS_VERSION);
 
 	experimental_driver = 1;
-}
-
-/*!@brief Find and open the UPS
- *
- * This function can be called either at startup, or when trying to reconnect
- * to an UPS that was found earlier.
- *
- * @return 0 if a Tripp Lite UPS was detected
- * @return -1 if HIDOpenDevice() returned NULL
- * @return -2 if the UPS was not a Tripp Lite UPS
- */
-int find_tripplite_ups(void)
-{
-        /* Search for the first supported UPS, no matter Mfr or exact product */
-        if ((hd = HIDOpenDevice(&udev, &curDevice, NULL, MODE_OPEN)) == NULL)
-		return -1;
-        else
-                upslogx(1, "Detected an UPS: %s/%s\n", hd->Vendor, hd->Product);
-
-	/* HIDDumpTree(NULL); */
-
-#if 0
-        if (hd->VendorID != USB_VID_TRIPP_LITE) {
-		upslogx(LOG_ERR, "This driver only supports Tripp Lite UPSes. Try the newhidups driver instead.");
-		return -2;
-	}
-#endif
-	return 0;
 }
 
 /*!@brief Initialize UPS and variables from ups.conf
