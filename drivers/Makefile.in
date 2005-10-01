@@ -119,7 +119,7 @@ tripplite_usb: tripplite_usb.o main.o dstate.o ../common/state.o \
 		../common/state.o ../common/upsconf.o ../common/parseconf.o \
 		$(LIBOBJ) $(LIBUSB_LIBS) $(LDFLAGS) -lm libhid.o libusb.o hidparser.o
 
-tripplite_usb.o:
+tripplite_usb.o: tripplite_usb.c newhidups.h libhid.h
 	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -c tripplite_usb.c
 
 # ==========================================================================

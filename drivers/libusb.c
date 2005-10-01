@@ -320,9 +320,9 @@ int libusb_get_interrupt(usb_dev_handle *udev, unsigned char *buf, int bufsize, 
 	  /* FIXME: hardcoded interrupt EP => need to get EP descr for IF descr */
 	  ret = usb_interrupt_read(udev, 0x81, buf, bufsize, timeout);
 	  if (ret > 0)
-		TRACE(5, " ok");
+		TRACE(6, " ok");
 	  else
-		TRACE(5, " none (%i)", ret);
+		TRACE(6, " none (%i)", ret);
 	}
 
   return ret;

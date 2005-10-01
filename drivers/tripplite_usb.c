@@ -1,6 +1,7 @@
-/* tripplite_usb.c - model specific routines for Tripp Lite entry-level USB
-   models.  (tested with: "OMNIVS1000")
-
+/*!@file tripplite_usb.c 
+ * @brief Driver for Tripp Lite entry-level USB models.  (tested with: "OMNIVS1000")
+ */
+/*
    tripplite_usb.c was derived from tripplite.c by Charles Lepple
    tripplite.c was derived from Russell Kroll's bestups.c by Rik Faith.
 
@@ -24,7 +25,11 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-/* UPS Commands: (capital letters are literals, lower-case are variables)
+#define DRV_VERSION "0.6"
+
+/* % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+ *
+ * OMNIVS Commands: (capital letters are literals, lower-case are variables)
  * :B     -> Bxxxxyy (xxxx/55.0: Hz in, yy/16: battery voltage)
  * :F     -> F1143_A (where _ = \0) Firmware version?
  * :L     -> LvvvvXX (vvvv/2.0: VAC out)
@@ -35,6 +40,8 @@
  *                   0 = disable; if UPS is not pinged in this interval, it
  *                   will power off the load, and then power it back on after
  *                   a delay.)
+ *
+ * % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
  *
  * The outgoing commands are sent with HID Set_Report commands over EP0
  * (control message), and incoming commands are received on EP1IN (interrupt
@@ -51,6 +58,33 @@
  * the command letter that was sent (no colon), and should be followed by
  * '\r'. If the command is not supported (or apparently if there is a serial
  * timeout internally), the previous response will be echoed back.
+ *
+ * % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+ *
+ * SMARTPRO commands:
+ *
+ * :A     -> ?          (start self-test)
+ * :D     -> D7187      (? - doesn't match tripplite.c)
+ * :F     -> F1019 A
+ * :K0/1  ->            (untested, but a switchable bank exists)
+ * :L     -> L290D_X
+ * :M     -> M007F      (127 - max voltage?)
+ * :P     -> P01500X    (max power)
+ * :Q     ->            (while online: reboot)
+ * :R     -> R<01><FF>
+ * :S     -> S100_Z0    (status?)
+ * :T     -> T7D2581    (temperature?)
+ * :U     -> U<FF><FF>
+ * :V     -> V1062XX
+ * :Z     -> Z
+ * 
+ * % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+ *
+ * The SMARTPRO unit seems to be slightly saner with regard to message
+ * polling. It specifies an interrupt in interval of 100 ms, but I just
+ * started at a 2 second timeout to obtain the above table. 
+ *
+ * % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
  *
  * Commands from serial tripplite.c:
  *
@@ -83,7 +117,96 @@
  * :S     -- enables remote reboot/remote power on
  */
 
-#define DRV_VERSION "0.2"
+/*
+
+POD ("Plain Old Documentation") - run through pod2html or perldoc. See
+perlpod(1) for more information.
+
+pod2man --name='TRIPPLITE_USB' --section=8 --release=' ' --center='Network UPS Tools (NUT)' tripplite_usb.c
+
+=head1 NAME
+
+tripplite_usb - Driver for Tripp Lite OMNISV1000 and OMNISV1500XL USB-based UPS
+equipment
+
+=head1 NOTE
+
+This  man  page  only  documents  the hardware-specific features of the
+tripplite driver.  For information about the core driver, see nutupsdrv(8).
+
+=head1 SUPPORTED HARDWARE
+
+This driver should work with the OMNISV series UPSes, which are detected as
+USB HID-class devices. If your Tripp Lite UPS uses a serial port, you may wish
+to investigate the tripplite(8) or tripplite_su(8) driver.
+
+=head1 EXTRA ARGUMENTS
+
+This driver supports the following optional setting in the ups.conf(5) file:
+
+=over
+
+=item offdelay
+
+This setting controls the delay between receiving the "kill" command (C<-k>)
+and actually cutting power to the computer.
+
+=back
+
+=head1 RUNTIME VARIABLES
+
+=over
+
+=item ups.delay.shutdown
+
+This variable is the same as the C<offdelay> setting, but it can be changed at
+runtime by upsrw(8).
+
+=back
+
+=head1 KNOWN ISSUES AND BUGS
+
+The driver was not developed with any official documentation from Tripp Lite,
+so certain events may confuse the driver. If you observe any strange behavior,
+please re-run the driver with "-DDD" to increase the verbosity.
+
+So far, the Tripp Lite UPSes do not seem to have any serial number or other
+unique identifier accessible through USB. Therefore, you are limited to one
+Tripp Lite USB UPS per system (and in practice, this driver will not play well
+with other USB UPSes, either).
+
+=head1 AUTHORS
+
+Charles Lepple E<lt>clepple+nut@ghz.ccE<gt>, based on the tripplite driver by
+Rickard E. (Rik) Faith E<lt>faith@alephnull.comE<gt> and Nicholas Kain
+E<lt>nicholas@kain.usE<gt>.
+
+A Tripp Lite OMNIVS1000 was graciously donated to the NUT project by:
+
+
+=over
+
+Relevant Evidence, LLC.
+
+http://www.relevantevidence.com
+
+Email: info@relevantevidence.com
+
+=back
+
+=head1 SEE ALSO
+
+=head2 The core driver:
+
+nutupsdrv(8)
+
+=head2 Internet resources:
+
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+=cut
+
+*/
 
 #include "main.h"
 #include "libhid.h"
@@ -91,7 +214,11 @@
 #include <math.h>
 #include <ctype.h>
 
-#define toprint(x) (isprint(x) ? (x) : '.')
+static enum tl_model_t { TRIPP_LITE_UNKNOWN = 0, TRIPP_LITE_OMNIVS, TRIPP_LITE_SMARTPRO }
+tl_model = TRIPP_LITE_UNKNOWN;
+
+/*!@brief If a character is not printable, return a dot. */
+#define toprint(x) (isalnum((unsigned)x) ? (x) : '.')
 
 #define ENDCHAR 13
 
@@ -102,17 +229,19 @@
 #define MAX_RECV_TRIES 3
 #define RECV_WAIT_MSEC 100
 
-#define DEFAULT_OFFDELAY   64  /* seconds (max 0xFF) */
-#define DEFAULT_STARTDELAY 60  /* seconds (max 0xFFFFFF) */
-#define DEFAULT_BOOTDELAY  64  /* seconds (max 0xFF) */
-#define MAX_VOLT 13.4          /* Max battery voltage (100%) */
-#define MIN_VOLT 11.0          /* Min battery voltage (10%) */
+#define MAX_RECONNECT_TRIES 10
+#define RECONNECT_DELAY 2	/*!< in seconds */
 
-#define USB_VID_TRIPP_LITE	0x09ae
-#define USB_PID_TRIPP_LITE_OMNI	0x0001
+#define DEFAULT_OFFDELAY   64  /*!< seconds (max 0xFF) */
+#define DEFAULT_STARTDELAY 60  /*!< seconds (max 0xFFFFFF) */
+#define DEFAULT_BOOTDELAY  64  /*!< seconds (max 0xFF) */
+#define MAX_VOLT 13.4          /*!< Max battery voltage (100%) */
+#define MIN_VOLT 11.0          /*!< Min battery voltage (10%) */
 
-static HIDDevice *hd;
+static HIDDevice *hd = NULL;
 static HIDDevice curDevice;
+static HIDDeviceMatcher_t *reopen_matcher = NULL;
+static HIDDeviceMatcher_t *regex_matcher = NULL;
 static usb_dev_handle *udev;
 
 /* We calculate battery charge (q) as a function of voltage (V).
@@ -128,14 +257,46 @@ static usb_dev_handle *udev;
 /* Interval notation for Q% = 10% <= [minV, maxV] <= 100%  */
 static float V_interval[2] = {MIN_VOLT, MAX_VOLT};
 
-/* Time in seconds to delay before shutting down. */
-static unsigned int offdelay = DEFAULT_OFFDELAY;
-// static unsigned int startdelay = DEFAULT_STARTDELAY;
-static unsigned int bootdelay = DEFAULT_BOOTDELAY;
+static int battery_voltage_nominal = 12,
+	   input_voltage_nominal = 120,
+	   input_voltage_scaled = 120,
+	/* input_voltage_maximum = -1,
+	   input_voltage_minimum = -1, */
+	   switchable_load_banks = 0;
 
-static int hex2d(char *start, unsigned int len)
+/*! Time in seconds to delay before shutting down. */
+static unsigned int offdelay = DEFAULT_OFFDELAY;
+/* static unsigned int bootdelay = DEFAULT_BOOTDELAY; */
+
+/*!@brief Convert a string to printable characters (in-place)
+ *
+ * @param[in,out] str	String to convert
+ * @param[in] len	Maximum number of characters to convert, or <= 0 to
+ * convert all.
+ *
+ * Uses toprint() macro defined above.
+ */
+void toprint_str(char *str, int len)
 {
-	char buf[32];
+	int i;
+	if(len <= 0) len = strlen(str);
+	for(i=0; i < len; i++)
+		str[i] = toprint(str[i]);
+}
+
+/*!@brief Convert N characters from hex to decimal
+ *
+ * @param start		Beginning of string to convert
+ * @param len		Maximum number of characters to consider (max 32)
+ *
+ * @a len characters of @a start are copied to a temporary buffer, then passed
+ * to strtol() to be converted to decimal.
+ *
+ * @return See strtol(3)
+ */
+static int hex2d(const unsigned char *start, unsigned int len)
+{
+	unsigned char buf[32];
 	buf[32] = '\0';
 
 	strncpy(buf, start, (len < (sizeof buf) ? len : (sizeof buf - 1)));
@@ -143,39 +304,163 @@ static int hex2d(char *start, unsigned int len)
 	return strtol(buf, NULL, 16);
 }
 
-static const char *hexascdump(char *msg, size_t len)
+/*!@brief Dump message in both hex and ASCII
+ *
+ * @param[in] msg	Buffer to dump
+ * @param[in] len	Number of bytes to dump
+ *
+ * @return		Pointer to static buffer with decoded message
+ */
+static const char *hexascdump(unsigned char *msg, size_t len)
 {
 	size_t i;
-	static char buf[256], *bufp;
+	static unsigned char buf[256], *bufp;
 
 	bufp = buf;
+	buf[0] = 0;
 	for(i=0; i<len; i++) {
 		bufp += sprintf(bufp, "%02x ", msg[i]);
 	}
-	*bufp++ = '"';
+#if 1
+	*bufp++ = '\'';
 	for(i=0; i<len; i++) {
 		*bufp++ = toprint(msg[i]);
 	}
-	*bufp++ = '"';
+	*bufp++ = '\'';
+#endif
 	*bufp++ = '\0';
 
 	return buf;
 }
 
-/* All UPS commands are challenge-response, so this function makes things
- * very clean.
- *
- * You do not need to pass in the ':' or '\r'. Be sure to use sizeof(msg) instead of strlen(msg).
- *
- * return: # of chars in buf, excluding terminating \0 */
-static int send_cmd(const char *msg, size_t msg_len, char *reply, size_t reply_len)
+enum tl_model_t decode_protocol(unsigned int proto)
 {
-	char buffer_out[8];
+	switch(proto) {
+		case 0x1001:
+			upslogx(3, "Using OMNIVS protocol (%x)", proto);
+			return TRIPP_LITE_OMNIVS;
+		case 0x3003:
+			upslogx(3, "Using SMARTPRO protocol (%x)", proto);
+			return TRIPP_LITE_SMARTPRO;
+		default:
+			printf("Unknown protocol (%x)", proto);
+			break;
+	}
+
+	return TRIPP_LITE_UNKNOWN;
+}
+
+void decode_v(const unsigned char *value)
+{
+	unsigned char ivn, lb;
+	int bv = hex2d(value+2, 2);
+
+ 	ivn = value[1];
+	lb = value[4];
+
+	switch(ivn) {
+		case '0': input_voltage_nominal = 
+			  input_voltage_scaled  = 100;
+			  break;
+
+		case '1': input_voltage_nominal = 
+			  input_voltage_scaled  = 120;
+			  break;
+
+		case '2': input_voltage_nominal = 
+			  input_voltage_scaled  = 230;
+			  break;
+
+		case '3': input_voltage_nominal = 208;
+			  input_voltage_scaled  = 230;
+			  break;
+
+		default:
+			  upslogx(2, "Unknown input voltage: 0x%02x", (unsigned int)ivn);
+			  break;
+	}
+
+	if( (bv >= 2) && (bv <= 6) ) {
+		battery_voltage_nominal = bv * 6;
+	} else {
+		upslogx(2, "Unknown battery voltage: 0x%02x%02x",
+				(unsigned int)(value[2]), (unsigned int)(value[3]));
+	}
+		
+	if( (lb >= '0') && (lb <= '9') ) {
+		switchable_load_banks = lb - '0';
+	} else {
+		if( lb != 'X' ) {
+			upslogx(2, "Unknown number of switchable load banks: 0x%02x",
+					(unsigned int)lb);
+		}
+	}
+}
+
+int find_tripplite_ups(void);
+void upsdrv_initinfo(void);
+
+/*!@brief Report a USB comm failure, and reconnect if necessary
+ * 
+ * @param[in] res	Result code from libusb/libhid call
+ * @param[in] msg	Error message to display
+ */
+void usb_comm_fail(int res, const char *msg)
+{
+	int try = 0;
+
+	switch(res) {
+		case -ENODEV:
+			upslogx(LOG_WARNING, "%s: Device detached?", msg);
+			upsdrv_cleanup();
+
+			do {
+				sleep(RECONNECT_DELAY);
+				upslogx(LOG_NOTICE, "Reconnect attempt #%d", ++try);
+				find_tripplite_ups();
+			} while (!hd && (try < MAX_RECONNECT_TRIES));
+
+			if(hd) {
+				upslogx(LOG_NOTICE, "Successfully reconnected");
+				upsdrv_initinfo();
+			} else {
+				fatalx("Too many unsuccessful reconnection attempts");
+			}
+			break;
+
+		case -EBUSY:
+			upslogx(LOG_WARNING, "%s: Device claimed by another process", msg);
+			fatalx("Terminating: EBUSY");
+			upsdrv_cleanup();
+			break;
+
+		default:
+			upslogx(LOG_NOTICE, "%s: Unknown error %d", msg, res);
+			break;
+	}
+}
+
+/*!@brief Send a command to the UPS, and wait for a reply.
+ *
+ * All of the UPS commands are challenge-response. If a command does not have
+ * anything to return, it simply returns the command character.
+ *
+ * @param[in] msg	Command string, minus the ':' or CR
+ * @param[in] msg_len	Be sure to use sizeof(msg) instead of strlen(msg),
+ * since some commands have embedded NUL characters
+ * @param[out] reply	Reply (but check return code for validity)
+ * @param[out] reply_len (currently unused)
+ *
+ * @return number of chars in reply, excluding terminating NUL
+ * @return 0 if command was not accepted
+ */
+static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *reply, size_t reply_len)
+{
+	unsigned char buffer_out[8];
 	unsigned char csum = 0;
 	int ret = 0, send_try, recv_try=0, done = 0;
 	size_t i = 0;
 
-	
 	upsdebugx(3, "send_cmd(msg_len=%d, type='%c')", msg_len, msg[0]);
 
 	if(msg_len > 5) {
@@ -202,7 +487,7 @@ static int send_cmd(const char *msg, size_t msg_len, char *reply, size_t reply_l
 
 		if(ret != sizeof(buffer_out)) {
 			upslogx(1, "libusb_set_report() returned %d instead of %d", ret, sizeof(buffer_out));
-			return -1;
+			return ret;
 		}
 
 		if(!done) { usleep(1000*100); /* TODO: nanosleep */ }
@@ -253,11 +538,11 @@ static void do_reboot(void)
 }
 #endif
 
-/* Called by 'tripplite_usb -k' */
+/*! Called by 'tripplite_usb -k' */
 static int soft_shutdown(void)
 {
 	int ret;
-	char buf[256], cmd_N[]="N\0x", cmd_G[] = "G";
+	unsigned char buf[256], cmd_N[]="N\0x", cmd_G[] = "G";
 
 	cmd_N[2] = offdelay;
 	cmd_N[1] = offdelay >> 8;
@@ -268,8 +553,10 @@ static int soft_shutdown(void)
 
 	sleep(2);
 	
-	/* The unit must be on battery for this to work. TODO: check for
-	 * on-battery condition, and print error if not. */
+	/*! The unit must be on battery for this to work. 
+	 *
+	 * @todo check for on-battery condition, and print error if not.
+	 */
 	ret = send_cmd(cmd_G, sizeof(cmd_G), buf, sizeof(buf));
 	return (ret == 8);
 }
@@ -294,23 +581,27 @@ static int hard_shutdown(void)
 }
 #endif
 
+/*!@brief Handler for "instant commands"
+ */
 static int instcmd(const char *cmdname, const char *extra)
 {
-#if 0
-	char buf[256];
+	unsigned char buf[256];
 
-	if (!strcasecmp(cmdname, "test.battery.start")) {
-		send_cmd(":A\r", buf, sizeof buf);
-		return STAT_INSTCMD_HANDLED;
+	if(tl_model == TRIPP_LITE_SMARTPRO) {
+		if (!strcasecmp(cmdname, "test.battery.start")) {
+			send_cmd("A", 2, buf, sizeof buf);
+			return STAT_INSTCMD_HANDLED;
+		}
+		if (!strcasecmp(cmdname, "load.off")) {
+			send_cmd("K0", 3, buf, sizeof buf);
+			return STAT_INSTCMD_HANDLED;
+		}
+		if (!strcasecmp(cmdname, "load.on")) {
+			send_cmd("K1", 3, buf, sizeof buf);
+			return STAT_INSTCMD_HANDLED;
+		}
 	}
-	if (!strcasecmp(cmdname, "load.off")) {
-		send_cmd(":K0\r", buf, sizeof buf);
-		return STAT_INSTCMD_HANDLED;
-	}
-	if (!strcasecmp(cmdname, "load.on")) {
-		send_cmd(":K1\r", buf, sizeof buf);
-		return STAT_INSTCMD_HANDLED;
-	}
+#if 0
 	if (!strcasecmp(cmdname, "shutdown.reboot")) {
 		do_reboot_now();
 		return STAT_INSTCMD_HANDLED;
@@ -357,16 +648,28 @@ static int setvar(const char *varname, const char *val)
 
 void upsdrv_initinfo(void)
 {
-	const char *model, f_msg[] = "F", p_msg[] = "P",
+	const unsigned char proto_msg[] = "\0", f_msg[] = "F", p_msg[] = "P",
 		s_msg[] = "S", v_msg[] = "V", w_msg[] = "W\0";
-	char f_value[9], p_value[9], s_value[9], v_value[9], w_value[9], buf[256];
+	char *model, *model_end;
+	unsigned char proto_value[9], f_value[9], p_value[9], s_value[9], v_value[9],
+		      w_value[9], buf[256];
 	int  va, ret;
 
 	/* Reset watchdog: */
 	ret = send_cmd(w_msg, sizeof(w_msg), w_value, sizeof(w_value)-1);
 	if(ret <= 0) {
-		fatalx("Could not reset watchdog... is this an OMNIVS model?");
+		upslogx(3, "Could not reset watchdog. Please send model "
+				"information to nut-upsdev mailing list");
 	}
+
+	ret = send_cmd(proto_msg, sizeof(proto_msg), proto_value, sizeof(proto_value)-1);
+	if(ret <= 0) {
+		fatalx("Error reading protocol");
+	}
+	dstate_setinfo("ups.debug.0", hexascdump(proto_value+1, 7));
+
+	tl_model = decode_protocol(((unsigned)(proto_value[1]) << 8) 
+			          | (unsigned)(proto_value[2]));
 
 	ret = send_cmd(s_msg, sizeof(s_msg), s_value, sizeof(s_value)-1);
 	if(ret <= 0) {
@@ -375,24 +678,43 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("ups.mfr", "%s", "Tripp Lite");
 
+	/* Get nominal power: */
 	ret = send_cmd(p_msg, sizeof(p_msg), p_value, sizeof(p_value)-1);
 	va = strtol(p_value+1, NULL, 10);
 
-	/* TODO: get this from USB string descriptors (for 1500XL) */
-	model = "OMNIVS%d";
+	/* trim "TRIPP LITE" from beginning of model */
+	model = strdup(hd->Product);
+	if(strstr(model, hd->Vendor) == model) {
+		model += strlen(hd->Vendor);
+	}
 
-	dstate_setinfo("ups.model", model, va);
+	/* trim leading spaces: */
+	for(; *model == ' '; model++);
+
+	/* Trim trailing spaces */
+	for(model_end = model + strlen(model) - 1;
+			model_end > model && *model_end == ' ';
+			model_end--) {
+		*model_end = '\0';
+	}
+
+	dstate_setinfo("ups.model", model);
+
+	dstate_setinfo("ups.power.nominal", "%d", va);
 
 	ret = send_cmd(f_msg, sizeof(f_msg), f_value, sizeof(f_value)-1);
 
-	dstate_setinfo("ups.firmware", "F%c%c%c%c %c",
-			toprint(f_value[1]), toprint(f_value[2]), toprint(f_value[3]),
-			toprint(f_value[4]), toprint(f_value[6]));
+	toprint_str(f_value+1, 6);
+	f_value[7] = 0;
+
+	dstate_setinfo("ups.firmware", "F%s", f_value+1);
 
 	ret = send_cmd(v_msg, sizeof(v_msg), v_value, sizeof(v_value)-1);
 
-	dstate_setinfo("ups.firmware.aux", "V%c%c%c",
-			toprint(v_value[1]), toprint(v_value[2]), toprint(v_value[3]));
+	decode_v(v_value);
+
+	dstate_setinfo("input.voltage.nominal", "%d", input_voltage_nominal);
+	dstate_setinfo("battery.voltage.nominal", "%d", battery_voltage_nominal);
 
 	snprintf(buf, sizeof buf, "%d", offdelay);
 	dstate_setinfo("ups.delay.shutdown", buf);
@@ -411,6 +733,12 @@ void upsdrv_initinfo(void)
 	dstate_setaux("ups.delay.reboot", 3);
 #endif
 
+	if(tl_model == TRIPP_LITE_SMARTPRO) {
+		dstate_addcmd("test.battery.start");
+		dstate_addcmd("load.on");
+		dstate_addcmd("load.off");
+	}
+
 	dstate_addcmd("shutdown.return");
 
 #if 0
@@ -428,9 +756,8 @@ void upsdrv_initinfo(void)
 	upsh.instcmd = instcmd;
 	upsh.setvar = setvar;
 
-	printf("Detected %s %s on %s\n",
-			dstate_getinfo("ups.mfr"), dstate_getinfo("ups.model"),
-			device_path);
+	printf("Attached to %s %s\n",
+			dstate_getinfo("ups.mfr"), dstate_getinfo("ups.model"));
 
 	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
 }
@@ -440,10 +767,32 @@ void upsdrv_shutdown(void)
 	soft_shutdown();
 }
 
+/*!@brief Send an unknown command to the UPS, and store response in a variable
+ *
+ * The variables are of the form "ups.debug.X" where "X" is the command
+ * character.
+ */
+void debug_message(const char *msg, int len)
+{
+	int ret;
+	unsigned char tmp_value[9];
+	char var_name[20], err_msg[80];
+
+	sprintf(var_name, "ups.debug.%c", *msg);
+
+	ret = send_cmd(msg, len, (char *)tmp_value, sizeof(tmp_value));
+	if(ret <= 0) {
+		sprintf(err_msg, "Error reading '%c' value", *msg);
+		usb_comm_fail(ret, err_msg);
+		return;
+	}
+	dstate_setinfo(var_name, "%s", hexascdump(tmp_value+1, 7));
+}
+
 void upsdrv_updateinfo(void)
 {
-	char b_msg[] = "B", l_msg[] = "L", s_msg[] = "S";
-	char b_value[9], l_value[9], s_value[9];
+	unsigned char b_msg[] = "B", d_msg[] = "D", l_msg[] = "L", s_msg[] = "S";
+	unsigned char b_value[9], d_value[9], l_value[9], s_value[9];
 	int bp;
 	double bv;
 
@@ -454,10 +803,13 @@ void upsdrv_updateinfo(void)
 	/* General status (e.g. "S10") */
 	ret = send_cmd(s_msg, sizeof(s_msg), s_value, sizeof(s_value));
 	if(ret <= 0) {
-		/* TODO: implement ser_comm_fail() for USB */
-		upslogx(LOG_WARNING, "Error reading S value");
 		dstate_datastale();
+		usb_comm_fail(ret, "Error reading S value");
 		return;
+	}
+
+	if(tl_model != TRIPP_LITE_OMNIVS) {
+		dstate_setinfo("ups.debug.S","%s", hexascdump(s_value+1, 7));
 	}
 
 	switch(s_value[2]) {
@@ -467,11 +819,29 @@ void upsdrv_updateinfo(void)
 		case '1':
 			status_set("OB");
 			break;
-		case '2': /* "charge-only" mode, no AC in or out... the PC
-			     shouldn't see this, because there is no power in
-			     that case */
-		case '3': /* I have seen this once when switching from off+LB to charging */
-			upslogx(LOG_WARNING, "Unknown value for s[2]: 0x%02x", s_value[2]);
+		case '2':
+			/* battery-test mode on SMARTPRO */
+			if(tl_model == TRIPP_LITE_SMARTPRO) {
+				status_set("CAL");
+				break;
+			}
+			/* "charge-only" mode, no AC in or out... the PC
+			 * shouldn't see this, because there is no power in
+			 * that case (OMNIVS), but it's here for testing.
+			 *
+			 * Entered by holding down the power button.
+			 */
+			if(tl_model == TRIPP_LITE_OMNIVS) {
+				status_set("BYPASS");
+				break;
+			}
+		case '3':
+			if( tl_model == TRIPP_LITE_SMARTPRO ) {
+				status_set("OVER");
+			} else {
+				/* I have seen this once when switching from off+LB to charging */
+				upslogx(LOG_WARNING, "Unknown value for s[2]: 0x%02x", s_value[2]);
+			}
 			break;
 		default:
 			upslogx(LOG_ERR, "Unknown value for s[2]: 0x%02x", s_value[2]);
@@ -483,8 +853,13 @@ void upsdrv_updateinfo(void)
 		case '0':
 			status_set("LB");
 			break;
-		case '1':
+		case '1': /* Depends on s_value[2] */
 			break;
+		case '2':
+			if( tl_model == TRIPP_LITE_SMARTPRO ) {
+				status_set("RB");
+				break;
+			} /* else fall through: */
 		default:
 			upslogx(LOG_ERR, "Unknown value for s[1]: 0x%02x", s_value[1]);
 			dstate_datastale();
@@ -493,39 +868,76 @@ void upsdrv_updateinfo(void)
 
 	status_commit();
 
-	ret = send_cmd(b_msg, sizeof(b_msg), b_value, sizeof(b_value));
-	if(ret <= 0) {
-		upslogx(LOG_WARNING, "Error reading B value");
-		dstate_datastale();
-		return;
+	if( tl_model == TRIPP_LITE_OMNIVS ) {
+		ret = send_cmd(b_msg, sizeof(b_msg), b_value, sizeof(b_value));
+		if(ret <= 0) {
+			dstate_datastale();
+			usb_comm_fail(ret, "Error reading B value");
+			return;
+		}
+
+		dstate_setinfo("input.voltage", "%.2f", hex2d(b_value+1, 4)/30.0);
+
+		bv = hex2d(b_value+5, 2)/16.0;
+
+		/* dq ~= sqrt(dV) is a reasonable approximation
+		 * Results fit well against the discrete function used in the Tripp Lite
+		 * source, but give a continuous result. */
+		if (bv >= V_interval[1])
+			bp = 100;
+		else if (bv <= V_interval[0])
+			bp = 10;
+		else
+			bp = (int)(100*sqrt((bv - V_interval[0])
+						/ (V_interval[1] - V_interval[0])));
+
+		dstate_setinfo("battery.voltage", "%.2f", (float)bv);
+		dstate_setinfo("battery.charge",  "%3d", bp);
 	}
 
-	dstate_setinfo("input.frequency", "%.2f", hex2d(b_value+1, 4)/55.0);
+	if( tl_model == TRIPP_LITE_SMARTPRO ) {
+		ret = send_cmd(d_msg, sizeof(d_msg), d_value, sizeof(d_value));
+		if(ret <= 0) {
+			dstate_datastale();
+			usb_comm_fail(ret, "Error reading D value");
+			return;
+		}
+
+		dstate_setinfo("input.voltage", "%d",
+				hex2d(d_value+1, 2) * input_voltage_scaled / 120);
+
+		dstate_setinfo("battery.voltage", "%.2f", 
+				(float)(hex2d(d_value+3, 2) * battery_voltage_nominal / 120.0 ) );
+
+		/* battery charge state is left as an exercise for the reader */
+	}
 
 	ret = send_cmd(l_msg, sizeof(l_msg), l_value, sizeof(l_value));
 	if(ret <= 0) {
-		upslogx(LOG_WARNING, "Error reading L value");
 		dstate_datastale();
+		usb_comm_fail(ret, "Error reading L value");
 		return;
 	}
 
-	dstate_setinfo("output.voltage", "%.1f", hex2d(l_value+1, 4)/2.0);
+	switch(tl_model) {
+		case TRIPP_LITE_OMNIVS:
+			dstate_setinfo("output.voltage", "%.1f", hex2d(l_value+1, 4)/2.0);
+			break;
+		case TRIPP_LITE_SMARTPRO:
+			dstate_setinfo("ups.load", "%d", hex2d(l_value+1, 2));
+			break;
+		default:
+			dstate_setinfo("ups.debug.L","%s", hexascdump(l_value+1, 7));
+			break;
+	}
 
-	bv = hex2d(b_value+5, 2)/16.0;
-
-	/* dq ~= sqrt(dV) is a reasonable approximation
-	 * Results fit well against the discrete function used in the Tripp Lite
-	 * source, but give a continuous result. */
-	if (bv >= V_interval[1])
-		bp = 100;
-	else if (bv <= V_interval[0])
-		bp = 10;
-	else
-		bp = (int)(100*sqrt((bv - V_interval[0])
-					/ (V_interval[1] - V_interval[0])));
-
-	dstate_setinfo("battery.voltage", "%.2f", (float)bv);
-	dstate_setinfo("battery.charge",  "%3d", bp);
+	if(tl_model != TRIPP_LITE_OMNIVS) {
+		debug_message("D", 2);
+		debug_message("M", 2);
+		debug_message("T", 2);
+		/* debug_message("U", 2); */
+		/* debug_message("Z", 2); */
+	}
 
 	dstate_dataok();
 }
@@ -541,6 +953,14 @@ void upsdrv_makevartable(void)
 	snprintf(msg, sizeof msg, "Set shutdown delay, in seconds (default=%d).",
 		DEFAULT_OFFDELAY);
 	addvar(VAR_VALUE, "offdelay", msg);
+
+        /* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
+	addvar(VAR_VALUE, "vendor", "Regular expression to match UPS Manufacturer string");
+	addvar(VAR_VALUE, "product", "Regular expression to match UPS Product string");
+	addvar(VAR_VALUE, "serial", "Regular expression to match UPS Serial number");
+	addvar(VAR_VALUE, "productid", "Regular expression to match UPS Product numerical ID (4 digits hexadecimal)");
+	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
+
 #if 0
 	snprintf(msg, sizeof msg, "Set start delay, in seconds (default=%d).",
 		DEFAULT_STARTDELAY);
@@ -553,24 +973,86 @@ void upsdrv_makevartable(void)
 
 void upsdrv_banner(void)
 {
-	printf("Network UPS Tools - Tripp Lite Omni driver %s (%s)\n",
+	printf("Network UPS Tools - Tripp Lite OMNIVS and SMARTPRO driver %s (%s)\n",
 			DRV_VERSION, UPS_VERSION);
+
+	experimental_driver = 1;
 }
 
-void upsdrv_initups(void)
+/*!@brief Find and open the UPS
+ *
+ * This function can be called either at startup, or when trying to reconnect
+ * to an UPS that was found earlier.
+ *
+ * @return 0 if a Tripp Lite UPS was detected
+ * @return -1 if HIDOpenDevice() returned NULL
+ * @return -2 if the UPS was not a Tripp Lite UPS
+ */
+int find_tripplite_ups(void)
 {
         /* Search for the first supported UPS, no matter Mfr or exact product */
         if ((hd = HIDOpenDevice(&udev, &curDevice, NULL, MODE_OPEN)) == NULL)
-                fatalx("No USB HID UPS found");
+		return -1;
         else
                 upslogx(1, "Detected an UPS: %s/%s\n", hd->Vendor, hd->Product);
 
-	HIDDumpTree(NULL);
+	/* HIDDumpTree(NULL); */
 
-        if (hd->VendorID != USB_VID_TRIPP_LITE)
-        {
-		fatalx("This driver only supports Tripp Lite Omni UPSes. Try the newhidups driver instead.");
+#if 0
+        if (hd->VendorID != USB_VID_TRIPP_LITE) {
+		upslogx(LOG_ERR, "This driver only supports Tripp Lite UPSes. Try the newhidups driver instead.");
+		return -2;
 	}
+#endif
+	return 0;
+}
+
+/*!@brief Initialize UPS and variables from ups.conf
+ *
+ * @todo Allow binding based on firmware version (which seems to vary wildly
+ * from unit to unit)
+ */
+void upsdrv_initups(void)
+{
+	char *regex_array[5];
+	int r;
+
+#if 0
+	if(find_tripplite_ups() < 0) {
+                fatalx("No Tripp Lite USB HID UPS found");
+	}
+#endif
+	
+	/* process the UPS selection options */
+	regex_array[0] = "09AE" /* getval("vendorid") */;
+	regex_array[1] = getval("productid");
+	if(!regex_array[1]) regex_array[1] = "0001";
+	regex_array[2] = getval("vendor"); /* vendor string */
+	regex_array[3] = getval("product"); /* product string */
+	regex_array[4] = getval("serial"); /* probably won't see this */
+	regex_array[5] = getval("bus");
+
+	r = new_regex_matcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
+	if (r==-1) {
+		fatalx("new_regex_matcher: %s", strerror(errno));
+	} else if (r) {
+		fatalx("invalid regular expression: %s", regex_array[r]);
+	}
+
+	/* Search for the first supported UPS matching the regular
+	 *            expression */
+	if ((hd = HIDOpenDevice(&udev, &curDevice, regex_matcher, MODE_OPEN)) == NULL)
+		fatalx("No matching USB/HID UPS found");
+	else
+		upslogx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
+
+	/* create a new matcher for later reopening */
+	reopen_matcher = new_exact_matcher(hd);
+	if (!reopen_matcher) {
+		upsdebugx(2, "new_exact_matcher: %s", strerror(errno));
+	}
+	/* link the two matchers */
+	reopen_matcher->next = regex_matcher;
 
 	if (getval("offdelay"))
 		offdelay = atoi(getval("offdelay"));
@@ -589,4 +1071,4 @@ void upsdrv_cleanup(void)
 		udev = NULL;
 	}
 }
-
+/* vim:se tw=78: */
