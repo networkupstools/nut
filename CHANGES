@@ -48,6 +48,8 @@ Sat Sep 24 00:09:13 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
    inside libusb_open() via the general "matcher" mechanism, so that
    libusb no longer contains vendor specific code.
 
+ - added docs/hid-subdrivers.txt to explain how to write a new HID subdriver. 
+
 Tue Sep 20 02:11:29 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
  - tripplite_usb: made minor adjustments reflecting recent changes in
