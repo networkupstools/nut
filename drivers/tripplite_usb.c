@@ -126,8 +126,7 @@ pod2man --name='TRIPPLITE_USB' --section=8 --release=' ' --center='Network UPS T
 
 =head1 NAME
 
-tripplite_usb - Driver for Tripp Lite OMNISV1000 and OMNISV1500XL USB-based UPS
-equipment
+tripplite_usb - Driver for Tripp Lite USB-based UPS equipment
 
 =head1 NOTE
 
@@ -136,13 +135,15 @@ tripplite driver.  For information about the core driver, see nutupsdrv(8).
 
 =head1 SUPPORTED HARDWARE
 
-This driver should work with the OMNISV series UPSes, which are detected as
-USB HID-class devices. If your Tripp Lite UPS uses a serial port, you may wish
-to investigate the tripplite(8) or tripplite_su(8) driver.
+This driver should work with the OMNISV1000, OMNISV1500XL and SMART1500RM2U
+UPSes, which are detected as USB HID-class devices (but are not true HID
+Power-Device Class devices). If your Tripp Lite UPS uses a serial port, you
+may wish to investigate the tripplite(8) or tripplite_su(8) driver.
 
 =head1 EXTRA ARGUMENTS
 
-This driver supports the following optional setting in the ups.conf(5) file:
+This driver supports the following optional setting in the ups.conf(5) file
+(or with C<-x> on the command line):
 
 =over
 
@@ -151,7 +152,31 @@ This driver supports the following optional setting in the ups.conf(5) file:
 This setting controls the delay between receiving the "kill" command (C<-k>)
 and actually cutting power to the computer.
 
+=item bus
+
+This regular expression is used to match the USB bus (as seen in
+C</proc/bus/usb/devices>).
+
+=item product
+
+A regular expression to match the product string for the UPS.  This would be
+useful if you have two different Tripp Lite UPSes connected to the system, and
+you want to be sure that you shut them down in the correct order.
+
+=item productid
+
+The productid is a regular expression which matches the UPS PID as four
+hexadecimal digits.  Only C<0001> has been observed for Tripp Lite USB UPSes.
+
+=item serial
+
+So far, it does not appear that Tripp Lite UPSes use the iSerial descriptor
+field to return a serial number.  However, in case your unit does, you may
+specify it here.
+
 =back
+
+For more information on regular expressions, see regex(7)
 
 =head1 RUNTIME VARIABLES
 
@@ -198,7 +223,7 @@ Email: info@relevantevidence.com
 
 =head2 The core driver:
 
-nutupsdrv(8)
+nutupsdrv(8), regex(7)
 
 =head2 Internet resources:
 

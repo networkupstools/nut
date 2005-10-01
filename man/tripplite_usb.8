@@ -129,26 +129,47 @@
 .\" ========================================================================
 .\"
 .IX Title "TRIPPLITE_USB 8"
-.TH TRIPPLITE_USB 8 "2005-09-09" " " "Network UPS Tools (NUT)"
+.TH TRIPPLITE_USB 8 "2005-10-01" " " "Network UPS Tools (NUT)"
 .SH "NAME"
-tripplite_usb \- Driver for Tripp Lite OMNISV1000 and OMNISV1500XL USB\-based UPS
-equipment
+tripplite_usb \- Driver for Tripp Lite USB\-based UPS equipment
 .SH "NOTE"
 .IX Header "NOTE"
 This  man  page  only  documents  the hardware-specific features of the
 tripplite driver.  For information about the core driver, see \fInutupsdrv\fR\|(8).
 .SH "SUPPORTED HARDWARE"
 .IX Header "SUPPORTED HARDWARE"
-This driver should work with the \s-1OMNISV\s0 series UPSes, which are detected as
-\&\s-1USB\s0 HID-class devices. If your Tripp Lite \s-1UPS\s0 uses a serial port, you may wish
-to investigate the \fItripplite\fR\|(8) or \fItripplite_su\fR\|(8) driver.
+This driver should work with the \s-1OMNISV1000\s0, \s-1OMNISV1500XL\s0 and \s-1SMART1500RM2U\s0
+UPSes, which are detected as \s-1USB\s0 HID-class devices (but are not true \s-1HID\s0
+Power-Device Class devices). If your Tripp Lite \s-1UPS\s0 uses a serial port, you
+may wish to investigate the \fItripplite\fR\|(8) or \fItripplite_su\fR\|(8) driver.
 .SH "EXTRA ARGUMENTS"
 .IX Header "EXTRA ARGUMENTS"
-This driver supports the following optional setting in the \fIups.conf\fR\|(5) file:
+This driver supports the following optional setting in the \fIups.conf\fR\|(5) file
+(or with \f(CW\*(C`\-x\*(C'\fR on the command line):
 .IP "offdelay" 4
 .IX Item "offdelay"
 This setting controls the delay between receiving the \*(L"kill\*(R" command (\f(CW\*(C`\-k\*(C'\fR)
 and actually cutting power to the computer.
+.IP "bus" 4
+.IX Item "bus"
+This regular expression is used to match the \s-1USB\s0 bus (as seen in
+\&\f(CW\*(C`/proc/bus/usb/devices\*(C'\fR).
+.IP "product" 4
+.IX Item "product"
+A regular expression to match the product string for the \s-1UPS\s0.  This would be
+useful if you have two different Tripp Lite UPSes connected to the system, and
+you want to be sure that you shut them down in the correct order.
+.IP "productid" 4
+.IX Item "productid"
+The productid is a regular expression which matches the \s-1UPS\s0 \s-1PID\s0 as four
+hexadecimal digits.  Only \f(CW0001\fR has been observed for Tripp Lite \s-1USB\s0 UPSes.
+.IP "serial" 4
+.IX Item "serial"
+So far, it does not appear that Tripp Lite UPSes use the iSerial descriptor
+field to return a serial number.  However, in case your unit does, you may
+specify it here.
+.PP
+For more information on regular expressions, see \fIregex\fR\|(7)
 .SH "RUNTIME VARIABLES"
 .IX Header "RUNTIME VARIABLES"
 .IP "ups.delay.shutdown" 4
@@ -160,16 +181,31 @@ runtime by \fIupsrw\fR\|(8).
 The driver was not developed with any official documentation from Tripp Lite,
 so certain events may confuse the driver. If you observe any strange behavior,
 please re-run the driver with \*(L"\-DDD\*(R" to increase the verbosity.
+.PP
+So far, the Tripp Lite UPSes do not seem to have any serial number or other
+unique identifier accessible through \s-1USB\s0. Therefore, you are limited to one
+Tripp Lite \s-1USB\s0 \s-1UPS\s0 per system (and in practice, this driver will not play well
+with other \s-1USB\s0 UPSes, either).
 .SH "AUTHORS"
 .IX Header "AUTHORS"
 Charles Lepple <clepple+nut@ghz.cc>, based on the tripplite driver by
 Rickard E. (Rik) Faith <faith@alephnull.com> and Nicholas Kain
 <nicholas@kain.us>.
+.PP
+A Tripp Lite \s-1OMNIVS1000\s0 was graciously donated to the \s-1NUT\s0 project by:
+.Sp
+.RS 4
+Relevant Evidence, \s-1LLC\s0.
+.Sp
+http://www.relevantevidence.com
+.Sp
+Email: info@relevantevidence.com
+.RE
 .SH "SEE ALSO"
 .IX Header "SEE ALSO"
 .Sh "The core driver:"
 .IX Subsection "The core driver:"
-\&\fInutupsdrv\fR\|(8)
+\&\fInutupsdrv\fR\|(8), \fIregex\fR\|(7)
 .Sh "Internet resources:"
 .IX Subsection "Internet resources:"
 The \s-1NUT\s0 (Network \s-1UPS\s0 Tools) home page: http://www.networkupstools.org/
