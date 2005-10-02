@@ -711,10 +711,12 @@ void upsdrv_initinfo(void)
 	if(ret <= 0) {
 		fatalx("Error reading protocol");
 	}
-	dstate_setinfo("ups.debug.0", hexascdump(proto_value+1, 7));
 
 	tl_model = decode_protocol(((unsigned)(proto_value[1]) << 8) 
 			          | (unsigned)(proto_value[2]));
+
+	if(tl_model == TRIPP_LITE_UNKNOWN)
+		dstate_setinfo("ups.debug.0", hexascdump(proto_value+1, 7));
 
 	ret = send_cmd(s_msg, sizeof(s_msg), s_value, sizeof(s_value)-1);
 	if(ret <= 0) {
