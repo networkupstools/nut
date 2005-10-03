@@ -34,6 +34,19 @@
 
 #define APC_VENDORID 0x051d
 
+/* APC has two non-standard status items: "TLE" (time limit expired)
+   and "BP" (battery present). The newhidups driver currently simply
+   ignores these, but we add them anyway for completeness. */
+info_lkp_t timelimitexpired_info[] = {
+  { 1, "TLE", NULL },
+  { 0, "NULL", NULL }
+};
+
+info_lkp_t batterypresent_info[] = {
+  { 1, "BP", NULL },
+  { 0, "NULL", NULL }
+};
+
 /* --------------------------------------------------------------- */
 /*      Vendor-specific usage table */
 /* --------------------------------------------------------------- */
@@ -115,11 +128,10 @@ static hid_info_t apc_hid2nut[] = {
   
   /* Battery page */
   { "battery.charge", 0, 1, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "battery.charge.low", ST_FLAG_STRING, 5, "UPS.PowerSummary.RemainingCapacityLimit", NULL,
-    "%.0f", HU_FLAG_OK, NULL }, /* Read only */
-  { "battery.charge.warning", ST_FLAG_STRING, 5, "UPS.PowerSummary.WarningCapacityLimit", NULL, "%.0f", HU_FLAG_OK, NULL }, /* Read only */
+  { "battery.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 0, "UPS.PowerSummary.RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_OK, NULL },
+  { "battery.charge.warning", 0, 0, "UPS.PowerSummary.WarningCapacityLimit", NULL, "%.0f", HU_FLAG_OK, NULL },
   { "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "battery.runtime.low", 0, 0, "UPS.Battery.RemainingTimeLimit", NULL, "%.0f", HU_FLAG_OK, NULL },
+  { "battery.runtime.low", ST_FLAG_RW | ST_FLAG_STRING, 0, "UPS.Battery.RemainingTimeLimit", NULL, "%.0f", HU_FLAG_OK, NULL },
   { "battery.voltage",  0, 0, "UPS.PowerSummary.Voltage", NULL, "%.1f", HU_FLAG_OK, NULL },
   { "battery.voltage.nominal", 0, 0, "UPS.Battery.ConfigVoltage", NULL,
     "%.1f", HU_FLAG_OK, NULL },
@@ -129,9 +141,9 @@ static hid_info_t apc_hid2nut[] = {
   /* UPS page */
   { "ups.load", 0, 1, "UPS.Output.PercentLoad", NULL, "%.1f", HU_FLAG_OK, NULL },
   { "ups.load", 0, 1, "UPS.PowerConverter.PercentLoad", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5,
+  { "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 0,
     "UPS.PowerSummary.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_OK, NULL},
-  { "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5,
+  { "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 0,
     "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, "%.0f", HU_FLAG_OK, NULL},
   { "ups.test.result", 0, 0,
     "UPS.Battery.Test", NULL, "%s", HU_FLAG_OK, &test_read_info[0] },
@@ -161,12 +173,16 @@ static hid_info_t apc_hid2nut[] = {
     "%.0f", HU_FLAG_OK, &overbatt_info[0] },
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL,
     "%.0f", HU_FLAG_OK, &replacebatt_info[0] },
+  { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.RemainingTimeLimitExpired", NULL,
+    "%.0f", HU_FLAG_OK, &timelimitexpired_info[0] },
+  { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.BatteryPresent", NULL,
+    "%.0f", HU_FLAG_OK, &batterypresent_info[0] },
 
   /* Input page */
   { "input.voltage", 0, 0, "UPS.Input.Voltage", NULL, "%.1f", HU_FLAG_OK, NULL },
   { "input.voltage.nominal", 0, 0, "UPS.Input.ConfigVoltage", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "input.transfer.low", 0, 0, "UPS.Input.LowVoltageTransfer", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "input.transfer.high", 0, 0, "UPS.Input.HighVoltageTransfer", NULL, "%.0f", HU_FLAG_OK, NULL },
+  { "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 0, "UPS.Input.LowVoltageTransfer", NULL, "%.0f", HU_FLAG_OK, NULL },
+  { "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 0, "UPS.Input.HighVoltageTransfer", NULL, "%.0f", HU_FLAG_OK, NULL },
 
   /* Output page */
   { "output.voltage", 0, 0, "UPS.Output.Voltage", NULL, "%.1f", HU_FLAG_OK, NULL },

@@ -1,3 +1,19 @@
+Mon Oct  3 21:54:19 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups/APC: made battery.charge.low, battery.runtime.low,
+   input.transfer.low, input.transfer.high writable in APC subdriver,
+   as suggested by Alfred Ganz. Also added status flags for
+   "RemainingTimeLimitExpired" (RTE) and "BatteryPresent" (BP),
+   although they will be ignored by newhidups.
+
+ - newhidups/Belkin: added flag ST_FLAG_STRING to all writable
+   variables.  It is apparently required by upsrw that all writable
+   variables are either strings or enums. ups.test.result is no longer
+   writable (because writing it failed anyway), and ups.delay.restart
+   and ups.delay.shutdown are no longer writable (because they are
+   dangerous: rather than just configuring a time limit, this actually
+   initiates a timed shutdown). 
+
 Mon Oct  3 21:51:38 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups: removed bug that made all variables writable.
