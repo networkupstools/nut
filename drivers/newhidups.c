@@ -776,9 +776,6 @@ static bool hid_ups_walk(int mode)
 				if (mode == HU_WALKMODE_INIT)
 				  {
 					dstate_setflags(item->info_type, item->info_flags);
-					/* Verify variable setability/RW */
-					if (get_current_data_attribute() != ATTR_DATA_CST)
-						dstate_setflags(item->info_type, ST_FLAG_RW);
 				  }
 			  }
 			if (mode == HU_WALKMODE_INIT)

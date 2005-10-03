@@ -1,3 +1,7 @@
+Mon Oct  3 21:51:38 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: removed bug that made all variables writable.
+
 Sat Oct 01 18:17:54 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
 
  - upssched.txt: document the required PIPEFN and LOCKFN variables
