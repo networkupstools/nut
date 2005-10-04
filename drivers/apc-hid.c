@@ -128,10 +128,10 @@ static hid_info_t apc_hid2nut[] = {
   
   /* Battery page */
   { "battery.charge", 0, 1, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "battery.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 0, "UPS.PowerSummary.RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_OK, NULL },
+  { "battery.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_OK, NULL },
   { "battery.charge.warning", 0, 0, "UPS.PowerSummary.WarningCapacityLimit", NULL, "%.0f", HU_FLAG_OK, NULL },
   { "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "battery.runtime.low", ST_FLAG_RW | ST_FLAG_STRING, 0, "UPS.Battery.RemainingTimeLimit", NULL, "%.0f", HU_FLAG_OK, NULL },
+  { "battery.runtime.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Battery.RemainingTimeLimit", NULL, "%.0f", HU_FLAG_OK, NULL },
   { "battery.voltage",  0, 0, "UPS.PowerSummary.Voltage", NULL, "%.1f", HU_FLAG_OK, NULL },
   { "battery.voltage.nominal", 0, 0, "UPS.Battery.ConfigVoltage", NULL,
     "%.1f", HU_FLAG_OK, NULL },
@@ -141,9 +141,9 @@ static hid_info_t apc_hid2nut[] = {
   /* UPS page */
   { "ups.load", 0, 1, "UPS.Output.PercentLoad", NULL, "%.1f", HU_FLAG_OK, NULL },
   { "ups.load", 0, 1, "UPS.PowerConverter.PercentLoad", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 0,
+  { "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10,
     "UPS.PowerSummary.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_OK, NULL},
-  { "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 0,
+  { "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10,
     "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, "%.0f", HU_FLAG_OK, NULL},
   { "ups.test.result", 0, 0,
     "UPS.Battery.Test", NULL, "%s", HU_FLAG_OK, &test_read_info[0] },
@@ -153,7 +153,7 @@ static hid_info_t apc_hid2nut[] = {
    *   "UPS.APCPanelTest", NULL, "%.0f", HU_FLAG_OK, NULL }, */
   { "ups.temperature", 0, 0,
     "UPS.Battery.Temperature", NULL, "%.1f", HU_FLAG_OK, NULL },
-  { "ups.beeper.status", 0, 0, "UPS.AudibleAlarmControl", NULL, "%s", HU_FLAG_OK, &beeper_info[0] },
+  { "ups.beeper.status", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.AudibleAlarmControl", NULL, "%s", HU_FLAG_OK, &beeper_info[0] },
   { "ups.mfr.date", 0, 0, "UPS.ManufacturerDate", NULL, "%s", HU_FLAG_OK, &date_conversion[0] },
   { "battery.mfr.date", 0, 0, "UPS.Battery.ManufacturerDate", NULL, "%s", HU_FLAG_OK, &date_conversion[0] },
   { "battery.date", 0, 0, "UPS.Battery.APCBattReplaceDate", NULL, "%s", HU_FLAG_OK, &date_conversion[0] },
@@ -181,8 +181,8 @@ static hid_info_t apc_hid2nut[] = {
   /* Input page */
   { "input.voltage", 0, 0, "UPS.Input.Voltage", NULL, "%.1f", HU_FLAG_OK, NULL },
   { "input.voltage.nominal", 0, 0, "UPS.Input.ConfigVoltage", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 0, "UPS.Input.LowVoltageTransfer", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 0, "UPS.Input.HighVoltageTransfer", NULL, "%.0f", HU_FLAG_OK, NULL },
+  { "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.LowVoltageTransfer", NULL, "%.0f", HU_FLAG_OK, NULL },
+  { "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.HighVoltageTransfer", NULL, "%.0f", HU_FLAG_OK, NULL },
 
   /* Output page */
   { "output.voltage", 0, 0, "UPS.Output.Voltage", NULL, "%.1f", HU_FLAG_OK, NULL },

@@ -1,3 +1,12 @@
+Tue Oct  4 03:29:19 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups/APC and Belkin: fixed declarations of string length of
+   writable variables. Also made ups.beeper.status writable in both
+   subdrivers. Note: currently the written value must be numeric
+   (1/2/3) instead of symbolic (disabled/enabled/muted). Out-of range
+   values can be given and can leave the variable in an "error" state
+   that cannot be fixed. Should implement writing of symbolic values.
+
 Mon Oct  3 21:54:19 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups/APC: made battery.charge.low, battery.runtime.low,
