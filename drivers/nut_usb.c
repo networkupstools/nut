@@ -55,9 +55,10 @@ static usb_dev_handle *open_powerware_usb()
     
 		for (dev = bus->devices; dev; dev = dev->next)
 		{
-			/* XXX Check for POWERWARE 3105 ... other models??? */
+			/* XXX Check for POWERWARE 3105 or 3110 ... other models??? */
 			if (dev->descriptor.bDeviceClass == USB_CLASS_PER_INTERFACE &&
-			    dev->descriptor.idVendor == 0x0592 &&
+			    (dev->descriptor.idVendor == 0x0592 ||
+			     dev->descriptor.idVendor == 0x06da) &&
 			    dev->descriptor.idProduct == 0x0002 &&
 			    dev->descriptor.iManufacturer == 1 &&
 			    dev->descriptor.iProduct == 2)
