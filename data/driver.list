@@ -77,6 +77,10 @@
 "Cyber Power Systems"	"1100AVR"	""	"cpsups (experimental)"
 "Cyber Power Systems"	"1500AVR-HO"	""	"cpsups (experimental)"
 
+"Deltec"	"PowerRite Pro II"	""	"genericups upstype=15"
+
+"Dynex"		"975AVR"		""	"genericups upstype=7"
+
 "Effekta"	"MI/MT/MH"	"2502 cable"	"fentonups"
 
 "Energizer"	"(various)"	"USB"		"energizerups (experimental USB driver for Linux")
@@ -90,6 +94,8 @@
 "Ever UPS"	"AP *-PRO"	""	"everups"
 
 "Ever-Power"	"625/1000"	""	"safenet"
+
+"Exide"		"NetUPS SE"	""	"genericups upstype=15"
 
 "Fenton Technologies"	"PowerPal"	"P-series"	"safenet"
 "Fenton Technologies"	"PowerPal"	"L-series"	"fentonups"
