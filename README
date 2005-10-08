@@ -155,6 +155,8 @@ that UPS.
  HARDWARE SUPPORT TABLE
  ----------------------
 
+	al175            - Eltek models with AL175 alarm module
+
 	apcsmart         - APC Smart-UPS, Back-UPS Pro, Matrix-UPS models
 
 	bcmxcp           - some Powerware models

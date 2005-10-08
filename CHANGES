@@ -1,6 +1,7 @@
 Sat Oct  8 20:57:14 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
 
   - debian/: bring the files in sync, and prepare 2.0.2-2 release.
+  - al175: new driver for Eltek AL175 alarm module (Kirill Smelkov)
 
 Tue Oct  4 03:29:19 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 

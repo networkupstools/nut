@@ -13,7 +13,7 @@ PROGS	= bestups fentonups apcsmart everups belkin masterguard powercom \
 	  cyberpower tripplite victronups genericups mge-utalk bestuferrups \
 	  isbmex etapro liebert sms esupssmart tripplitesu blazer safenet \
 	  belkinunv oneac ippon cpsups mustek metasys bestfcom powermust \
-	  bcmxcp upscode2 solis gamatronic
+	  bcmxcp upscode2 solis gamatronic al175
 LDFLAGS = @LDFLAGS@
 LIBDEP	= @LIBOBJ@
 LIBOBJ	= $(LIBDEP) @NETLIBS@ @SERLIBS@
