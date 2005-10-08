@@ -75,8 +75,6 @@ install-stamp:
 	dh_installdirs
 	$(MAKE) install \
 		DESTDIR=$(PWD)/debian/nut RUNUID=65534 RUNGID=65534
-	# workaround to remove snmp-ups.8 from nut (also installed by nut-snmp)
-	rm $(PWD)/debian/nut/usr/share/man/man8/snmp-ups.8
 	$(MAKE) install-lib \
 		DESTDIR=$(PWD)/debian/nut-dev RUNUID=65534 RUNGID=65534
 	# install dummycons test driver and its manpage
@@ -88,6 +86,12 @@ install-stamp:
 		DESTDIR=$(PWD)/debian/nut-snmp RUNUID=65534 RUNGID=65534
 	$(MAKE) install-usb \
 		DESTDIR=$(PWD)/debian/nut-usb RUNUID=65534 RUNGID=65534
+#ifeq (linux,$(DEB_HOST_GNU_SYSTEM))
+        # install hotplug scripts
+	mkdir -p $(PWD)/debian/nut-usb/etc/hotplug/usb/
+	install -m 755 $(PWD)/scripts/hotplug/libhidups $(PWD)/debian/nut-usb/etc/hotplug/usb/
+	install -m 644 $(PWD)/scripts/hotplug/libhid.usermap $(PWD)/debian/nut-usb/etc/hotplug/usb/
+#endif
 	$(MAKE) install-cgi \
 		DESTDIR=$(PWD)/debian/nut-cgi RUNUID=65534 RUNGID=65534
 	mv $(PWD)/debian/nut/lib/nut/upsdrvctl $(PWD)/debian/nut/sbin

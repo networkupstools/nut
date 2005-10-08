@@ -1,9 +1,44 @@
-nut (2.0.2-1) unstable; urgency=low
+nut (2.0.2-2) unstable; urgency=low
+
+forport changes from Sarge
+LINTIAN
+
+
 
   * debian/nut-hidups/*: remove this unneeded directory
+  * debian/control:
+    - Update build dependency from libsnmp5-dev to libsnmp9-dev (closes:
+    #326410)
+    - Changes nut-usb wrong dependency from libusb-dev to libusb (closes:
+    #320315)
 
- -- Arnaud Quette <aquette@debian.org>  Fri, 15 Apr 2005 13:52:32 +0100
-  
+ -- Arnaud Quette <aquette@debian.org>  Fri, 07 Oct 2005 23:35:55 +0200
+
+nut (2.0.2-1) unstable; urgency=low
+
+  * New upstream release:
+    - build respect LDFLAGS (closes: #265439)
+    - fix etapro brokeness (closes: #305730)
+    - fix shutdown/restart problems with mge-shut (closes: #302190)
+    - fix mge-utalk support for older units (closes: #315431)
+  * debian/po/fr.po: update the french debconf templates, thanks to Michel
+    Grentzinger (closes: #306541)
+  * debian/rules:
+    - install hotplug files for the newhidups USB driver
+    - suppress the snmp-ups.8 manpage workaround
+  * debian/nut-usb.prerm: created to remove hotplug files
+  * debian/control:
+    - add hotplug Depends for nut-usb
+    - upgrade Debian Policy to 3.6.2
+  * debian/patches/*: remove all patch and empty 00list as all has
+    been fixed upstream
+  * debian/nut-cgi.config: integrate the typo fixes that was blocking
+    upgrade from woody to sarge
+  * debian/nut-cgi.preinst: remove an unneeded blank line
+  * acknowledge NMU from Craig Small (closes: #302189)
+
+ -- Arnaud Quette <aquette@debian.org>  Mon, 27 Jun 2005 11:29:52 +0200
+
 nut (2.0.1-3) unstable; urgency=low
 
   * debian/patches/01_cleanSourceFromlibupsclient.dpatch: removed as it

@@ -25,7 +25,6 @@ case "$1" in
     # Check for existing nut system account, and create it if needed
     check_and_create_group
     check_and_create_user
-
     ;;
 
   abort-upgrade)
