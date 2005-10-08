@@ -32,6 +32,12 @@ Mon Oct  3 21:51:38 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups: removed bug that made all variables writable.
 
+Sat Oct 01 21:46:13 EDT 2005 / Charles Lepple <clepple@gmail.com>
+
+ - tripplite_usb: Finished merging v0.6 of this driver from the
+   Tripp_Lite_Omni branch. The driver now handles both OMNIVS and
+   SMARTPRO models. The man page is also now in the Development tree.
+
 Sat Oct 01 18:17:54 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
 
  - upssched.txt: document the required PIPEFN and LOCKFN variables
