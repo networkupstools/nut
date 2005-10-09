@@ -30,7 +30,7 @@
 /* previously: #define ERROR(x) if(x) __asm { int 3 }; */
 #define ERROR(x)
 
-const char ItemSize[4]={0,1,2,4};
+static const char ItemSize[4]={0,1,2,4};
 
 /*
  * ResetParser
@@ -49,6 +49,21 @@ void ResetParser(HIDParser* pParser)
 
   memset(pParser->OffsetTab,0,sizeof(pParser->OffsetTab));
   memset(&pParser->Data,0,sizeof(pParser->Data));
+}
+
+/* Note: The USB HID specification states that Local items do not
+   carry over to the next Main item (version 1.11, section
+   6.2.2.8). Therefore the local state must be reset after each main
+   item. In particular, any unused usages on the Usage tabs must be
+   discarded and must not carry over to the next Main item. Some APC
+   equipment actually sends multiple redundant "usage" commands for a
+   single control, so resetting the local state is important. */
+/* Also note: UsageTab[0] is used as the usage of the next control,
+   even if UsageSize=0. Therefore, this must be initialized */
+static void ResetLocalState(HIDParser* pParser)
+{
+  pParser->UsageSize = 0;
+  memset(pParser->UsageTab,0,sizeof(pParser->UsageTab));
 }
 
 /*
@@ -184,7 +199,7 @@ int HIDParse(HIDParser* pParser, HIDData* pData)
           pParser->Data.Path.Node[pParser->Data.Path.Size].Usage=pParser->Value & 0x7F;
           pParser->Data.Path.Size++;
         }
-
+	ResetLocalState(pParser);
         break;
       }
       case ITEM_END_COLLECTION :
@@ -193,6 +208,7 @@ int HIDParse(HIDParser* pParser, HIDData* pData)
         /* Remove Index if any */
         if(pParser->Data.Path.Node[pParser->Data.Path.Size].UPage==0xFF)
           pParser->Data.Path.Size--;
+	ResetLocalState(pParser);
         break;
       }
       case ITEM_FEATURE :
@@ -252,6 +268,9 @@ int HIDParse(HIDParser* pParser, HIDData* pData)
 
         /* Decrement count */
         pParser->Count--;
+	if (pParser->Count == 0) {
+	  ResetLocalState(pParser);
+	}
         break;
       }
       case ITEM_REP_ID :
@@ -300,6 +319,11 @@ int HIDParse(HIDParser* pParser, HIDData* pData)
       {
         pParser->Data.PhyMax=FormatValue(pParser->Value, ItemSize[pParser->Item & SIZE_MASK]);
         break;
+      }
+      case ITEM_LONG :
+      {
+	/* can't handle long items, but should at least skip them */
+	pParser->Pos+=(u_char)(pParser->Value & 0xff);
       }
     }
   } /* while(!Found && pParser->Pos<pParser->ReportDescSize) */
@@ -367,6 +391,7 @@ void GetValue(const u_char* Buf, HIDData* pData)
 /*  if(pData->Value > pData->LogMax)
     pData->Value=FormatValue(pData->Value, (u_char)((pData->Size-1)/8+1));
 */
+  /* FIXME: this won't work if LogMax isn't a power of 2 */
   if (pData->Value > pData->LogMax)
     pData->Value |= ~pData->LogMax;
 }

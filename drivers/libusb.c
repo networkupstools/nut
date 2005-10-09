@@ -5,6 +5,7 @@
  * @author Copyright (C) 2003
  *	Arnaud Quette <arnaud.quette@free.fr> && <arnaud.quette@mgeups.com>
  *	Philippe Marzouk <philm@users.sourceforge.net> (dump_hex())
+ *      2005 Peter Selinger <selinger@users.sourceforge.net>
  *
  * This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
  *
@@ -30,32 +31,22 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
+#include <regex.h>
+
 #include "libhid.h"
 
-#include "hid-usb.h"
+#include "libusb.h"
 #include "config.h" /* for LIBUSB_HAS_DETACH_KRNL_DRV flag */
 
 #include "common.h" /* for xmalloc prototype */
 
-usb_dev_handle *udev = NULL;
-struct usb_device *dev;
-struct usb_bus *bus;
-
 /* #define USB_TIMEOUT 5000 */
 #define USB_TIMEOUT 4000
 
-/* FIXME! */
-#define MGE_UPS_SYSTEMS		0x0463		/* All models */
-#define APC			0x051d		/* All models */
-#define MUSTEK                  0x0665          /* models: 0x5161... */
-#define TRIPPLITE               0x09ae          /* models IDs? */
-#define UNITEK                  0x0F03          /* models: 0x0001... */
-
 /* TODO: rework all that */
-extern void upsdebugx(int level, const char *fmt, ...);
+void upsdebugx(int level, const char *fmt, ...);
 #define TRACE upsdebugx
-
-extern void usb_fetch_and_parse_descriptors(usb_dev_handle *udev);
 
 /* HID descriptor, completed with desc{type,len} */
 struct my_usb_hid_descriptor {
@@ -85,203 +76,193 @@ static inline int typesafe_control_msg(usb_dev_handle *dev,
 
 /* return report descriptor on success, NULL otherwise */
 /* mode: MODE_OPEN for the 1rst time, MODE_REOPEN to skip getting
-    report descriptor (the longer part) */
-int libusb_open(HIDDevice *curDevice, MatchFlags *flg, unsigned char *ReportDesc, int mode)
+    report descriptor (the longer part). On success, fill in the
+    curDevice structure and return the report descriptor length. On
+    failure, return -1. Note: ReportDesc must point to a large enough
+    buffer. There's no way to know the size ahead of time. Matcher is
+    a linked list of matchers (see libhid.h), and the opened device
+    must match all of them. */
+int libusb_open(usb_dev_handle **udevp, HIDDevice *curDevice, HIDDeviceMatcher_t *matcher, unsigned char *ReportDesc, int mode)
 {
 	int found = 0;
 #if LIBUSB_HAS_DETACH_KRNL_DRV
-	int retries = 3;
+	int retries;
 #endif
 	struct my_usb_hid_descriptor *desc;
-
-	int ret = -1, res; 
+	HIDDeviceMatcher_t *m;
+	struct usb_device *dev;                                                
+	struct usb_bus *bus;                                                   
+	usb_dev_handle *udev;
+	
+	int ret, res; 
 	unsigned char buf[20];
+	char string[256];
 
 	/* libusb base init */
 	usb_init();
 	usb_find_busses();
 	usb_find_devices();
 
-
 	for (bus = usb_busses; bus && !found; bus = bus->next) {
 		for (dev = bus->devices; dev && !found; dev = dev->next) {
-			char string[256];
-      
-			TRACE(2, "Opening new device (%04X/%04X)",
-				  dev->descriptor.idVendor, dev->descriptor.idProduct);
-			udev = usb_open(dev);
-			if (udev) {
+			TRACE(2, "Checking device (%04X/%04X) (%s/%s)", dev->descriptor.idVendor, dev->descriptor.idProduct, bus->dirname, dev->filename);
+			
+			/* supported vendors are now checked by the
+			   supplied matcher */
 
-			  /* Check the VendorID for matching flag */
-			  /* FIXME: temporary method, not generic/flexible enough */
-			  if ( (dev->descriptor.idVendor == MGE_UPS_SYSTEMS)
-				  || (dev->descriptor.idVendor == APC)
-				  || (dev->descriptor.idVendor == MUSTEK)
-				  || (dev->descriptor.idVendor == TRIPPLITE)
-				  || (dev->descriptor.idVendor == UNITEK) )
-				{
-				  TRACE(2, "Found 0x%x", dev->descriptor.idVendor);
+			/* open the device */
+			*udevp = udev = usb_open(dev);
+			if (!udev) {
+				TRACE(2, "Failed to open device, skipping. (%s)", usb_strerror());
+				continue;
+			} 
 
-				  curDevice->VendorID = dev->descriptor.idVendor;
-				  curDevice->iProduct = dev->descriptor.iProduct;
+			/* collect the identifying information of this
+			   device. Note that this is safe, because
+			   there's no need to claim an interface for
+			   this (and therefore we do not yet need to
+			   detach any kernel drivers). */
+			
+			curDevice->VendorID = dev->descriptor.idVendor;
+			curDevice->ProductID = dev->descriptor.idProduct;
+			curDevice->Vendor = NULL;
+			curDevice->Product = NULL;
+			curDevice->Serial = NULL;
+			curDevice->Bus = bus->dirname;
+			
+			if (dev->descriptor.iManufacturer) {
+				ret = usb_get_string_simple(udev, dev->descriptor.iManufacturer, string, sizeof(string));
+				if (ret > 0) {
+					curDevice->Vendor = strdup(string);
 				}
-			  else
-				{
-				  usb_close(udev);
-				  udev = NULL;
-				  continue;
+			}
+
+			if (dev->descriptor.iProduct) {
+				ret = usb_get_string_simple(udev, dev->descriptor.iProduct, string, sizeof(string));
+				if (ret > 0) {
+					curDevice->Product = strdup(string);
 				}
+			}
+
+			if (dev->descriptor.iSerialNumber) {
+				ret = usb_get_string_simple(udev, dev->descriptor.iSerialNumber, string, sizeof(string));
+				if (ret > 0) {
+					curDevice->Serial = strdup(string);
+				}
+			}
+
+			TRACE(2, "- VendorID: %04x", curDevice->VendorID);
+			TRACE(2, "- ProductID: %04x", curDevice->ProductID);
+			TRACE(2, "- Manufacturer: %s", curDevice->Vendor ? curDevice->Vendor : "unknown");
+			TRACE(2, "- Product: %s", curDevice->Product ? curDevice->Product : "unknown");
+			TRACE(2, "- Serial Number: %s", curDevice->Serial ? curDevice->Serial : "unknown");
+			TRACE(2, "- Bus: %s", curDevice->Bus ? curDevice->Bus : "unknown");
+
+			TRACE(2, "Trying to match device");
+			for (m = matcher; m; m=m->next) {
+				ret = matches(m, curDevice);
+				if (ret==0) {
+					TRACE(2, "Device does not match - skipping");
+					goto next_device;
+				} else if (ret==-1) {
+					fatalx("matcher: %s", strerror(errno));
+					goto next_device;
+				} else if (ret==-2) {
+					TRACE(2, "matcher: unspecified error");
+					goto next_device;
+				}
+			}
+			TRACE(2, "Device matches");
+			
+			/* Now we have matched the device we wanted. Claim it. */
 
 #if LIBUSB_HAS_DETACH_KRNL_DRV
-			  /* this method requires at least libusb 0.1.8:
-			   * it force device claiming by unbinding
-			   * attached driver... From libhid */
-			  while ((ret = usb_claim_interface(udev, 0)) != 0 && retries-- > 0) {
-	  
+			/* this method requires at least libusb 0.1.8:
+			 * it force device claiming by unbinding
+			 * attached driver... From libhid */
+			retries = 3;
+			while (usb_claim_interface(udev, 0) != 0 && retries-- > 0) {
+				
 				TRACE(2, "failed to claim USB device, trying %d more time(s)...", retries);
-	  
+				
 				TRACE(2, "detaching kernel driver from USB device...");
 				if (usb_detach_kernel_driver_np(udev, 0) < 0) {
-				  TRACE(2, "failed to detach kernel driver from USB device...");
+					TRACE(2, "failed to detach kernel driver from USB device...");
 				}
-	  
+				
 				TRACE(2, "trying again to claim USB device...");
-			  }
+			}
 #else
-			  if (usb_claim_interface(udev, 0) < 0)
+			if (usb_claim_interface(udev, 0) < 0)
 				TRACE(2, "failed to claim USB device...");
 #endif
-	
-			  /* set default interface */
-			  usb_set_altinterface(udev, 0);
+			
+			/* set default interface */
+			usb_set_altinterface(udev, 0);
+			
+			if (mode == MODE_REOPEN) {
+				return 1; 
+			}
 
-			  /* we can safely exit here if we are reopening the device */
-			  if (mode == MODE_REOPEN)
-				return 1;
-
-			  if (dev->descriptor.iManufacturer) {
-				ret = usb_get_string_simple(udev, dev->descriptor.iManufacturer, 
-								string, sizeof(string));
-				if (ret > 0)
-				  {
-					TRACE(2, "- Manufacturer : %s", string);
-					curDevice->Vendor = strdup(string);
-					curDevice->Name = curDevice->Vendor; /* FIXME: cat Vendor+Prod?! */
-				  }
-				else
-				  {
-					TRACE(2, "- Unable to fetch manufacturer string");
-					curDevice->Vendor = xmalloc(30);
-					snprintf(curDevice->Vendor, 30, "Unknown vendor (0x%04x)",
-							 dev->descriptor.idVendor);
-				  }
-			  }
-	
-			  if (dev->descriptor.iProduct) {
-				ret = usb_get_string_simple(udev, dev->descriptor.iProduct,
-											string, sizeof(string));
-				if (ret > 0) {
-				  TRACE(2, "- Product      : %s", string);
-				  curDevice->Product = strdup(string);
-				}
-				else
-				  {
-					TRACE(2, "-	 Unable to fetch product string");
-					curDevice->Product = xmalloc(30);
-					snprintf(curDevice->Product, 30, "Unknown product (0x%04x)",
-							 dev->descriptor.idProduct);
-				  }
-			  }
-	
-			  if (dev->descriptor.iSerialNumber) {
-				ret = usb_get_string_simple(udev, dev->descriptor.iSerialNumber,
-											string, sizeof(string));
-				if (ret > 0)
-				  {
-					TRACE(2, "- Serial Number: %s", string);
-					curDevice->Serial = strdup(string);
-				  }
-				else
-				  TRACE(2, "- Unable to fetch serial number string");
-			  } else
-				TRACE(2, "- No serial number string");
-	
-			  /* Get HID descriptor */
-			  desc = (struct my_usb_hid_descriptor *)buf;
-			  /* res = usb_get_descriptor(udev, USB_DT_HID, 0, buf, 0x9); */
-			  res = usb_control_msg(udev, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
-									(USB_DT_HID << 8) + 0, 0, buf, 0x9, USB_TIMEOUT);
-	
-			  if (res < 9) {
-				if (res < 0) {
-				  TRACE(2, "Unable to get HID descriptor (%s)", usb_strerror());
-				  usb_close(udev);
-				  udev = NULL;
-				  continue;
-				}
-				else
-				  TRACE(2, "HID descriptor too short (expected %d, got %d)", 8, res);
-			  }
-			  else {
-				/* USB_LE16_TO_CPU(desc->wDescriptorLength); */
-				desc->wDescriptorLength = buf[7] | (buf[8] << 8);
-				TRACE(2, "HID descriptor retrieved (Reportlen = %5u)",
-					  desc->wDescriptorLength);
-			  }
-	
-			  if (!dev->config) {
+			/* Get HID descriptor */
+			desc = (struct my_usb_hid_descriptor *)buf;
+			/* res = usb_get_descriptor(udev, USB_DT_HID, 0, buf, 0x9); */
+			res = usb_control_msg(udev, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
+					      (USB_DT_HID << 8) + 0, 0, buf, 0x9, USB_TIMEOUT);
+			
+			if (res < 0) {
+				TRACE(2, "Unable to get HID descriptor (%s)", usb_strerror());
+				goto next_device;
+			} else if (res < 9) {
+				TRACE(2, "HID descriptor too short (expected %d, got %d)", 8, res);
+				goto next_device;
+			} 
+			
+                        /* USB_LE16_TO_CPU(desc->wDescriptorLength); */
+			desc->wDescriptorLength = buf[7] | (buf[8] << 8);
+			TRACE(2, "HID descriptor retrieved (Reportlen = %u)", desc->wDescriptorLength);
+			
+			if (!dev->config) {
 				TRACE(2, "  Couldn't retrieve descriptors");
-				usb_close(udev);
-				udev = NULL;
-				continue;
-			  }
+				goto next_device;
+			}
+			
+			/* res = usb_get_descriptor(udev, USB_DT_REPORT, 0, bigbuf, desc->wDescriptorLength); */
+			res = usb_control_msg(udev, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
+					      (USB_DT_REPORT << 8) + 0, 0, ReportDesc, 
+					      desc->wDescriptorLength, USB_TIMEOUT);
+			if (res >= desc->wDescriptorLength) 
+			{
+				TRACE(2, "Report descriptor retrieved (Reportlen = %u)", desc->wDescriptorLength);
+				TRACE(2, "Found HID device");
+				fflush(stdout);
 
-			  /* Skip getting Report descriptor upon reconnexion */
-			  if (mode == MODE_OPEN)
-				{      
-				  /* res = usb_get_descriptor(udev, USB_DT_REPORT, 0, bigbuf, desc->wDescriptorLength); */
-				  res = usb_control_msg(udev, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
-										(USB_DT_REPORT << 8) + 0, 0, ReportDesc, 
-										desc->wDescriptorLength, USB_TIMEOUT);
-				  if (res < desc->wDescriptorLength) {
-					if (res < 0)
-					  {
-						TRACE(2, "Unable to get Report descriptor (%d)", res);
-					  }
-					else
-					  {
-						TRACE(2, "Report descriptor too short (expected %d, got %d)", 
-							  desc->wDescriptorLength, res);
-					  }
-					usb_close(udev);
-					udev = NULL;
-					continue;
-				  }
-				  else
-					{
-					  TRACE(2, "Report descriptor retrieved (Reportlen = %i)", 
-							desc->wDescriptorLength);
-					  ret = desc->wDescriptorLength;
-					}
-				}
-      
-			  /* we can break there, and be sure there's a HID device */
-			  found = 1;
-			  break;
-			} /* if udev */
+				return desc->wDescriptorLength;
+			}
+			if (res < 0)
+			{
+				TRACE(2, "Unable to get Report descriptor (%d)", res);
+			}
+			else
+			{
+				TRACE(2, "Report descriptor too short (expected %d, got %d)", desc->wDescriptorLength, res);
+			}
+		next_device:
+			usb_close(udev);
+			udev = NULL;
 		}
 	}
-	TRACE(2, "found %i (%i)", found, ret);
+	TRACE(2, "No appropriate HID device found");
 	fflush(stdout);
 
-	return ret;
+	return -1;
 }
 
 /* return the report of ID=type in report 
  * return -1 on failure, report length on success
  */
 
-int libusb_get_report(int ReportId, unsigned char *raw_buf, int ReportSize )
+int libusb_get_report(usb_dev_handle *udev, int ReportId, unsigned char *raw_buf, int ReportSize )
 {
 	TRACE(4, "Entering libusb_get_report");
 
@@ -298,7 +279,7 @@ int libusb_get_report(int ReportId, unsigned char *raw_buf, int ReportSize )
 }
 
 
-int libusb_set_report(int ReportId, unsigned char *raw_buf, int ReportSize )
+int libusb_set_report(usb_dev_handle *udev, int ReportId, unsigned char *raw_buf, int ReportSize )
 {
 	if (udev != NULL)
 	{
@@ -312,7 +293,7 @@ int libusb_set_report(int ReportId, unsigned char *raw_buf, int ReportSize )
 		return 0;
 }
 
-int libusb_get_string(int StringIdx, char *string)
+int libusb_get_string(usb_dev_handle *udev, int StringIdx, char *string)
 {
   int ret = -1;	
 
@@ -330,7 +311,7 @@ int libusb_get_string(int StringIdx, char *string)
   return ret;
 }
 
-int libusb_get_interrupt(unsigned char *buf, int bufsize, int timeout)
+int libusb_get_interrupt(usb_dev_handle *udev, unsigned char *buf, int bufsize, int timeout)
 {
   int ret = -1;
 
@@ -339,20 +320,21 @@ int libusb_get_interrupt(unsigned char *buf, int bufsize, int timeout)
 	  /* FIXME: hardcoded interrupt EP => need to get EP descr for IF descr */
 	  ret = usb_interrupt_read(udev, 0x81, buf, bufsize, timeout);
 	  if (ret > 0)
-		TRACE(2, " ok\n");
+		TRACE(6, " ok");
 	  else
-		TRACE(2, " none (%i)\n", ret);
+		TRACE(6, " none (%i)", ret);
 	}
 
   return ret;
 }
 
-void libusb_close(HIDDevice *curDevice)
+void libusb_close(usb_dev_handle *udev)
 {
 	if (udev != NULL)
 	{
-		usb_release_interface(udev, 0);
+	        /* usb_release_interface() sometimes blocks and goes
+	           into uninterruptible sleep.  So don't do it. */
+	        /* usb_release_interface(udev, 0); */
 		usb_close(udev);
 	}
-	udev = NULL;
 }

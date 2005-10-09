@@ -41,7 +41,7 @@ all-drivers: $(PROGS) mge-shut
 # ==========================================================================
 # Driver build details
 #
-# The rules are regenerated during 'make clean' with gendb.
+# The rules are regenerated during 'make depend' with gendb.
 
 include Makefile.drvbuild
 
@@ -70,7 +70,7 @@ hidups: hidups.o main.o dstate.o ../common/state.o \
 		../common/state.o ../common/upsconf.o ../common/parseconf.o \
 		$(LIBOBJ) $(LDFLAGS)
 
-hidups.o: hidups.c
+hidups.o:
 	$(CC) $(CFLAGS) -c hidups.c
 
 energizerups: energizerups.o main.o dstate.o ../common/state.o \
@@ -80,27 +80,29 @@ energizerups: energizerups.o main.o dstate.o ../common/state.o \
 		../common/state.o ../common/upsconf.o ../common/parseconf.o \
 		$(LIBOBJ) $(LDFLAGS)
 
-energizerups.o: energizerups.c
+energizerups.o:
 	$(CC) $(CFLAGS) -c energizerups.c
 
 
 # ==========================================================================
-# Special case: newhidups driver - development version (early beta)
+# Special case: newhidups driver - development version
 
 newhidups: newhidups.o main.o dstate.o ../common/state.o \
 		../common/upsconf.o ../common/parseconf.o $(LIBDEP) \
-		$(STRLCPY) libhid.o libusb.o hidparser.o
+		$(STRLCPY) libhid.o libusb.o hidparser.o \
+		mge-hid.o apc-hid.o belkin-hid.o
 	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o $@ $@.o main.o dstate.o \
 		../common/state.o ../common/upsconf.o ../common/parseconf.o \
-		$(LIBOBJ) $(LIBUSB_LIBS) $(LDFLAGS) libhid.o libusb.o hidparser.o
+		$(LIBOBJ) $(LIBUSB_LIBS) $(LDFLAGS) libhid.o libusb.o hidparser.o \
+		mge-hid.o apc-hid.o belkin-hid.o
 
-newhidups.o: newhidups.c newhidups.h
+newhidups.o:
 	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -c newhidups.c
 
-libhid.o: libhid.c libhid.h
+libhid.o:
 	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o libhid.o -c libhid.c
 
-libusb.o: libusb.c hid-usb.h
+libusb.o:
 	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o libusb.o -c libusb.c
 
 # ==========================================================================
@@ -130,10 +132,10 @@ mge-shut: mge-shut.o hidparser.o main.o dstate.o serial.o \
 		dstate.o serial.o ../common/state.o ../common/upsconf.o \
 		../common/parseconf.o $(LIBOBJ) $(LDFLAGS)
 
-mge-shut.o: mge-shut.c mge-shut.h hidparser.h
+mge-shut.o:
 	$(CC) $(CFLAGS) -c mge-shut.c
 
-hidparser.o: hidparser.h hidparser.c
+hidparser.o:
 	$(CC) $(CFLAGS) -c hidparser.c
 
 # ==========================================================================
@@ -146,8 +148,7 @@ snmp-ups: snmp-ups.o main.o dstate.o ../common/state.o \
 		../common/state.o ../common/upsconf.o ../common/parseconf.o \
 		$(LIBOBJ) $(LDFLAGS) $(NETSNMP_LIBS)
 
-snmp-ups.o: snmp-ups.c snmp-ups.h \
-		ietfmib.h apccmib.h mgemib.h
+snmp-ups.o:
 	$(CC) $(CFLAGS) $(NETSNMP_CFLAGS) -c snmp-ups.c
 
 
@@ -157,10 +158,12 @@ snmp-ups.o: snmp-ups.c snmp-ups.h \
 # gendb runs here so that the source always goes out the door with a
 # current Makefile.drvbuild file
 
-clean:
-	rm -f *~ *.o $(PROGS) Makefile.drvbuild
-	rm -f dummycons snmp-ups energizerups newhidups hidups mge-shut upsdrvctl bcmxcp_usb
+depend Makefile.drvbuild:
 	./gendb $(PROGS)
+
+clean:
+	rm -f *~ *.o $(PROGS)
+	rm -f dummycons snmp-ups energizerups newhidups hidups mge-shut upsdrvctl bcmxcp_usb
 
 distclean: clean
 

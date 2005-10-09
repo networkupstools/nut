@@ -6,8 +6,8 @@
  * Header GPL 
  * -------------------------------------------------------------------------- */
 
-#ifndef TYPE_H
-#define TYPE_H
+#ifndef HIDTYPES_H
+#define HIDTYPES_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,7 +36,7 @@ extern "C" {
 #define TYPE_MAIN					0x00
 #define TYPE_GLOBAL				0x04
 #define TYPE_LOCAL				0x08
-#define TYPE_MASK					0xC0
+#define TYPE_MASK					0x0C
 
 /* Main items */
 #define ITEM_COLLECTION			0xA0
@@ -60,6 +60,9 @@ extern "C" {
 /* Local items */
 #define ITEM_USAGE				0x08
 #define ITEM_STRING				0x78
+
+/* Long item */
+#define ITEM_LONG                               0xFC
 
 #define ITEM_MASK					0xFC
 
@@ -144,4 +147,4 @@ typedef struct
 } /* extern "C" */
 #endif /* __cplusplus */
 
-#endif
+#endif /* HIDTYPES_H */

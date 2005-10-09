@@ -1,8 +1,7 @@
-/*  apc-hid.h - data to monitor APC USB/HID devices with NUT
+/*  belkin-hid.h - data to monitor Belkin UPS Systems USB/HID devices with NUT
  *
  *  Copyright (C)  
  *	2003 - 2005	Arnaud Quette <arnaud.quette@free.fr>
- *	2005		John Stamp <kinsayder@hotmail.com>
  *      2005            Peter Selinger <selinger@users.sourceforge.net>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
@@ -24,11 +23,13 @@
  *
  */
 
-#ifndef APC_HID_H
-#define APC_HID_H
+#ifndef BELKIN_HID_H
+#define BELKIN_HID_H
 
 #include "newhidups.h"
 
-extern subdriver_t apc_subdriver;
+#define BELKIN_HID_VERSION	"Belkin HID 0.1"
 
-#endif /* APC_HID_H */
+extern subdriver_t belkin_subdriver;
+
+#endif /* BELKIN_HID_H */

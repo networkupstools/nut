@@ -6,6 +6,7 @@
  *	Arnaud Quette <arnaud.quette@free.fr> && <arnaud.quette@mgeups.com>
  *	Philippe Marzouk <philm@users.sourceforge.net> (dump_hex())
  *	John Stamp <kinsayder@hotmail.com>
+ *      2005 Peter Selinger <selinger@users.sourceforge.net>
  *	
  * This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
  *
@@ -36,32 +37,45 @@
 #include "hidtypes.h"
 #include "libhid.h"
 
-#include "hid-usb.h"
+#include "libusb.h"
 
 #include <errno.h>
-extern int errno;
 
-HIDDevice curDevice;
+/* structure to describe a retrieved report */
+struct report_s {
+	int id;                  /* report ID */
+	time_t ts;               /* timestamp when the report was retrieved */
+	int len;                 /* size of report data */
+	unsigned char data[100]; /* report data */
+};
+typedef struct report_s report_t;
+
+/* global variables */
 
 static HIDData   	hData;
 static HIDParser 	hParser;
+/* the most recently retrieved report */
+static report_t cur_report_struct = {0, 0, 0, {0}};
 
-unsigned char raw_buf[100];
-unsigned char **report_buf;
-int replen; /* size of the last report retrieved */
-static int prev_report; /* previously retrieved report ID */
-static time_t prev_report_ts = 0; /* timestamp of the previously retrieved report */
-unsigned char ReportDesc[4096];
-
-#define MAX_REPORT_SIZE         0x1800
+/* FIXME: we currently "hard-wire" the report buffer size in the calls
+   to libusb_get_report() below to 8 bytes. This is not really a great
+   idea, but it is necessary because Belkin models will crash,
+   sometimes with permanent firmware damage, if called with a larger
+   buffer size (never mind the USB specification). Let's hope for now
+   that no other UPS needs a buffer greater than 8. Ideally, the
+   libhid library should calculate the *exact* size of the required
+   report buffer from the report descriptor. */
+#define REPORT_SIZE 8
 
 /* TODO: rework all that */
-extern void upsdebugx(int level, const char *fmt, ...);
+void upsdebugx(int level, const char *fmt, ...);
 #define TRACE upsdebugx
+
+#define min(x,y) ((x)>(y) ? (y) : (x))
 
 /* Units and exponents table (HID PDC, 3.2.3) */
 #define NB_HID_UNITS 10
-const long HIDUnits[NB_HID_UNITS][2]=
+static const long HIDUnits[NB_HID_UNITS][2]=
 {
 	{0x00000000,0}, /* None */
 	{0x00F0D121,7}, /* Voltage */
@@ -76,57 +90,359 @@ const long HIDUnits[NB_HID_UNITS][2]=
 };
 
 /* support functions */
-void logical_to_physical(HIDData *Data);
-void physical_to_logical(HIDData *Data);
-const char *hid_lookup_path(int usage);
-int hid_lookup_usage(char *name);
-ushort lookup_path(char *HIDpath, HIDData *data);
-void dump_hex (const char *msg, const unsigned char *buf, int len);
-long get_unit_expo(long UnitType);
-float expo(int a, int b);
+static void logical_to_physical(HIDData *Data);
+static void physical_to_logical(HIDData *Data);
+static const char *hid_lookup_path(unsigned int usage, usage_tables_t *utab);
+static int hid_lookup_usage(char *name, usage_tables_t *utab);
+static int string_to_path(char *HIDpath, HIDPath *path, usage_tables_t *utab);
+static int path_to_string(char *HIDpath, HIDPath *path, usage_tables_t *utab);
+static void dump_hex (const char *msg, const unsigned char *buf, int len);
+static long get_unit_expo(long UnitType);
+static float expo(int a, int b);
 
+/* ---------------------------------------------------------------------- */
+/* matchers */
 
-void HIDDumpTree(HIDDevice *hd)
-{
-	int i;
-	char str[128];
+/* helper function: version of strcmp that tolerates NULL
+ * pointers. NULL is considered to come before all other strings
+ * alphabetically. */
+static inline int strcmp_null(char *s1, char *s2) {
+	if (s1 == NULL && s2 == NULL) {
+		return 0;
+	}
+	if (s1 == NULL) {
+		return -1;
+	}
+	if (s2 == NULL) {
+		return 1;
+	}
+	return strcmp(s1, s2);
+}
 
-	while (HIDParse(&hParser, &hData) != FALSE)
-	{
-		str[0] = '\0';
-		for (i = 0; i < hData.Path.Size; i++)
-		{
-		  strcat(str, hid_lookup_path((hData.Path.Node[i].UPage * 0x10000) + hData.Path.Node[i].Usage));
-			if (i < (hData.Path.Size - 1))
-				strcat (str, ".");
-		}
-		TRACE(1, "Path: %s", str);
+/* private callback function for exact matches */
+static int match_function_exact(HIDDevice *d, void *privdata) {
+	HIDDevice *data = (HIDDevice *)privdata;
+	
+	if (d->VendorID != data->VendorID) {
+		return 0;
+	}
+	if (d->ProductID != data->ProductID) {
+		return 0;
+	}
+	if (strcmp_null(d->Vendor, data->Vendor) != 0) {
+		return 0;
+	}
+	if (strcmp_null(d->Product, data->Product) != 0) {
+		return 0;
+	}
+	if (strcmp_null(d->Serial, data->Serial) != 0) {
+		return 0;
+	}
+	/* note: the exact matcher ignores the "Bus" field, because
+	   it can change during a reconnect. */
+	return 1;
+}
+
+/* constructor: return a new matcher that matches the exact HIDDevice
+ * d. Return NULL with errno set on error. */
+HIDDeviceMatcher_t *new_exact_matcher(HIDDevice *d) {
+	HIDDeviceMatcher_t *m;
+	HIDDevice *data;
+
+	m = (HIDDeviceMatcher_t *)malloc(sizeof(HIDDeviceMatcher_t));
+	if (!m) {
+		return NULL;
+	}
+	data = (HIDDevice *)malloc(sizeof(HIDDevice));
+	if (!data) {
+		free(m);
+		return NULL;
+	}
+	data->VendorID = d->VendorID;
+	data->ProductID = d->ProductID;
+	data->Vendor = d->Vendor ? strdup(d->Vendor) : NULL;
+	data->Product = d->Product ? strdup(d->Product) : NULL;
+	data->Serial = d->Serial ? strdup(d->Serial) : NULL;
+
+	m->match_function = &match_function_exact;
+	m->privdata = (void *)data;
+	m->next = NULL;
+	return m;
+}
+
+/* destructor: free matcher previously created with new_exact_matcher */
+void free_exact_matcher(HIDDeviceMatcher_t *matcher) {
+	HIDDevice *data;
+
+	if (matcher) {
+		data = (HIDDevice *)matcher->privdata;
+		
+		free(data->Vendor);
+		free(data->Product);
+		free(data->Serial);
+		free(data);
+		free(matcher);
 	}
 }
-						
-HIDDevice *HIDOpenDevice(const char *port, MatchFlags *flg, int mode)
+
+/* Private function for compiling a regular expression. On success,
+   store the compiled regular expression (or NULL) in *compiled, and
+   return 0. On error with errno set, return -1. If the supplied
+   regular expression is unparseable, return -2 (an error message can
+   then be retrieved with regerror(3)). Note that *compiled will be an
+   allocated value, and must be freed with regfree(), then free(), see
+   regex(3). As a special case, if regex==NULL, then set
+   *compiled=NULL (regular expression NULL is intended to match
+   anything). */
+static inline int compile_regex(regex_t **compiled, char *regex, int cflags) {
+	int r;
+	regex_t *preg;
+
+	if (regex == NULL) {
+		*compiled = NULL;
+		return 0;
+	}
+	preg = (regex_t *)malloc(sizeof(regex_t));
+	if (!preg) {
+		return -1;
+	}
+
+	r = regcomp(preg, regex, cflags);
+	if (r) {
+		return -2;
+	}
+	*compiled = preg;
+	return 0;
+}
+
+/* Private function for regular expression matching. Check if the
+   entire string str (minus any initial and trailing whitespace)
+   matches the compiled regular expression preg. Return 1 if it
+   matches, 0 if not. Return -1 on error with errno set. Special
+   cases: if preg==NULL, it matches everything (no contraint).  If
+   str==NULL, then it is treated as "". */
+static int match_regex(regex_t *preg, char *str) {
+  int r;
+  regmatch_t pmatch[1];
+  char *p, *q;
+  int len;
+
+  if (preg == NULL) {
+    return 1;
+  }
+  if (str == NULL) {
+    str = "";
+  }
+
+  /* make a copy of str with whitespace stripped */
+  for (q=str; *q==' ' || *q=='\t' || *q=='\n'; q++) {
+    /* empty */
+  }
+  len = strlen(q);
+  p = (char *)malloc(len+1);
+  if (!p) {
+	  return -1;
+  }
+  memcpy(p, q, len+1);
+  while (len>0 && (p[len-1]==' ' || p[len-1]=='\t' || p[len-1]=='\n')) {
+    len--;
+  }
+  p[len] = 0;
+
+  /* test the regular expression */
+  r = regexec(preg, p, 1, pmatch, 0);
+  free(p);
+  if (r) {
+    return 0;
+  }
+  /* check that the match is the entire string */
+  if (pmatch[0].rm_so != 0 || pmatch[0].rm_eo != len) {
+    return 0;
+  }
+  return 1;
+}
+
+/* Private function, similar to match_regex, but the argument being
+ * matched is a (hexadecimal) number, rather than a string. It is
+ * converted to a 4-digit hexadecimal string. */
+static inline int match_regex_hex(regex_t *preg, int n) {
+	char buf[10];
+	sprintf(buf, "%04x", n);
+	return match_regex(preg, buf);
+}
+
+/* private data type: hold a set of compiled regular expressions. */
+struct regex_matcher_data_s {
+	regex_t *regex[6];
+};
+typedef struct regex_matcher_data_s regex_matcher_data_t;
+
+/* private callback function for regex matches */
+static int match_function_regex(HIDDevice *d, void *privdata) {
+	regex_matcher_data_t *data = (regex_matcher_data_t *)privdata;
+	int r;
+	
+	r = match_regex_hex(data->regex[0], d->VendorID);
+	if (r != 1) {
+		return r;
+	}
+	r = match_regex_hex(data->regex[1], d->ProductID);
+	if (r != 1) {
+		return r;
+	}
+	r = match_regex(data->regex[2], d->Vendor);
+	if (r != 1) {
+		return r;
+	}
+	r = match_regex(data->regex[3], d->Product);
+	if (r != 1) {
+		return r;
+	}
+	r = match_regex(data->regex[4], d->Serial);
+	if (r != 1) {
+		return r;
+	}
+	r = match_regex(data->regex[5], d->Bus);
+	if (r != 1) {
+		return r;
+	}
+	return 1;
+}
+
+/* constructor: create a regular expression matcher. This matcher is
+   based on six regular expression strings in regex_array[0..5],
+   corresponding to: vendorid, productid, vendor, product, serial,
+   bus. Any of these strings can be NULL, which matches
+   everything. Cflags are as in regcomp(3). Typical values for cflags
+   are REG_ICASE (case insensitive matching) and REG_EXTENDED (use
+   extended regular expressions).  On success, return 0 and store the
+   matcher in *matcher. On error, return -1 with errno set, or return
+   i=1--5 to indicate that the regular expression regex_array[i] was
+   ill-formed (an error message can then be retrieved with
+   regerror(3)). */
+int new_regex_matcher(HIDDeviceMatcher_t **matcher, char *regex_array[6], int cflags) {
+	HIDDeviceMatcher_t *m = NULL;
+	regex_matcher_data_t *data = NULL;
+	int r, i;
+
+	m = (HIDDeviceMatcher_t *)malloc(sizeof(HIDDeviceMatcher_t));
+	if (!m) {
+		return -1;
+	}
+	data = (regex_matcher_data_t *)malloc(sizeof(regex_matcher_data_t));
+	if (!data) {
+		free(m);
+		return -1;
+	}
+	for (i=0; i<6; i++) {
+		r = compile_regex(&data->regex[i], regex_array[i], cflags);
+		if (r==-2) {
+			r = i;
+		}
+		if (r) {
+			free(m);
+			free(data);
+			return r;
+		}
+	}
+
+	m->match_function = &match_function_regex;
+	m->privdata = (void *)data;
+	m->next = NULL;
+	*matcher = m;
+	return 0;
+}
+
+void free_regex_matcher(HIDDeviceMatcher_t *matcher) {
+	int i;
+	regex_matcher_data_t *data;
+	
+	if (matcher) {
+		data = (regex_matcher_data_t *)matcher->privdata;
+		for (i=0; i<6; i++) {
+			if (data->regex[i]) {
+				regfree(data->regex[i]);
+				free(data->regex[i]);
+			}
+		}
+		free(data);
+		free(matcher);
+	}
+}
+
+/* ---------------------------------------------------------------------- */
+
+
+void HIDDumpTree(usb_dev_handle *udev, usage_tables_t *utab)
+{
+	int 		i;
+	char 		path[128], type[10];
+	float		value;
+	HIDData 	tmpData;
+	HIDParser 	tmpParser;
+
+	while (HIDParse(&hParser, &tmpData) != FALSE)
+	{
+		/* Build the path */
+		path[0] = '\0';
+		for (i = 0; i < tmpData.Path.Size; i++)
+		{
+			strcat(path, hid_lookup_path((tmpData.Path.Node[i].UPage * 0x10000) + tmpData.Path.Node[i].Usage, utab));
+			if (i < (tmpData.Path.Size - 1))
+				strcat (path, ".");
+		}
+
+		/* Get data type */
+		type[0] = '\0';
+		switch (tmpData.Type)
+		{
+			case ITEM_FEATURE:
+				strcat(type, "Feature");
+				break;
+			case ITEM_INPUT:
+				strcat(type, "Input");
+				break;
+			case ITEM_OUTPUT:
+				strcat(type, "Output");
+				break;
+			default:
+				strcat(type, "Unknown");
+				break;
+		}
+
+		/* FIXME: enhance this or fix/change the HID parser (see libhid project) */
+		if ( strstr(path, "000000") == NULL) {
+			/* Backup shared data */
+			memcpy(&tmpParser, &hParser, sizeof (hParser));
+
+			/* Get data value */
+			if (HIDGetItemValue(udev, path, &value, utab) > 0)
+				TRACE(1, "Path: %s, Type: %s, Value: %f", path, type, value);
+			
+			else
+				TRACE(1, "Path: %s, Type: %s", path, type);
+
+			/* Restore shared data */
+			memcpy(&hParser, &tmpParser, sizeof (tmpParser));
+		}
+	}
+}
+
+/* Matcher is a linked list of matchers (see libhid.h), and the opened
+    device must match all of them. On success, set *udevp and *hd and
+    return hd. On failure, return NULL. */
+HIDDevice *HIDOpenDevice(usb_dev_handle **udevp, HIDDevice *hd, HIDDeviceMatcher_t *matcher, int mode)
 {
 	int ReportSize;
+	unsigned char ReportDesc[4096];
 
-	if ( mode == MODE_OPEN )
-	{
-		/* Init structure */
-		curDevice.Name = NULL;
-		curDevice.Vendor = NULL;
-		curDevice.VendorID = -1;
-		curDevice.Product = NULL;
-		curDevice.ProductID = -1;
-		curDevice.Serial = NULL;
-		curDevice.Application = -1;
-		curDevice.fd = -1;
-	}
-	else
+	if ( mode == MODE_REOPEN )
 	{
 		TRACE(2, "Reopening device");
 	}
 
 	/* get and parse descriptors (dev, cfg and report) */
-	ReportSize = libusb_open(&curDevice, flg, ReportDesc, mode);
+	ReportSize = libusb_open(udevp, hd, matcher, ReportDesc, mode);
 
 	if (ReportSize == -1)
 		return NULL;
@@ -135,7 +451,7 @@ HIDDevice *HIDOpenDevice(const char *port, MatchFlags *flg, int mode)
 		if ( mode == MODE_REOPEN )
 		{
 			TRACE(2, "Device reopened successfully");
-			return &curDevice;
+			return hd;
 		}
 	
 		TRACE(2, "Report Descriptor size = %d", ReportSize);
@@ -145,9 +461,9 @@ HIDDevice *HIDOpenDevice(const char *port, MatchFlags *flg, int mode)
 		ResetParser(&hParser);
 		hParser.ReportDescSize = ReportSize;
 		memcpy(hParser.ReportDesc, ReportDesc, ReportSize);
-		HIDParse(&hParser, &hData);
+
 	}
-	return &curDevice;
+	return hd;
 }
 
 /* int HIDGetItem(hid_info_t *ItemInfo, HIDItem *item) */
@@ -158,88 +474,84 @@ HIDItem *HIDGetItem(const char *ItemPath)
 }
 
 /* return 1 if OK, 0 on fail, <= -1 otherwise (ie disconnect) */
-float HIDGetItemValue(char *path, float *Value)
+float HIDGetItemValue(usb_dev_handle *udev, char *path, float *Value, usage_tables_t *utab)
 {
 	int i, retcode;
 	float tmpValue;
+	report_t *cur_report = &cur_report_struct;
 
 	/* Prepare path of HID object */
 	hData.Type = ITEM_FEATURE;
 	hData.ReportID = 0;
-	hData.Path.Size = 0;
 
-	if((retcode = lookup_path(path, &hData)) > 0)
-	{
-		TRACE(4, "Path depth = %i", retcode);
-
-		for (i = 0; i<retcode; i++)
-			TRACE(4, "%i: UPage(%x), Usage(%x)", i,
-				hData.Path.Node[i].UPage,
-				hData.Path.Node[i].Usage);
-
-		hData.Path.Size = retcode;
-
-		/* Get info on object (reportID, offset and size) */
-		if (FindObject(&hParser, &hData) == 1)
-		{
-			/* Get report with data */
-			/* if ((replen=libusb_get_report(hData.ReportID,
-			raw_buf, MAX_REPORT_SIZE)) > 0) { => doesn't work! */
-			/* Bufferize at least the last report */
-			if ( ( (prev_report == hData.ReportID) && (time(NULL) <= (prev_report_ts + MAX_TS)) )
-				|| ((replen=libusb_get_report(hData.ReportID, raw_buf, 10)) > 0) )
-			{
-				/* Extract the data value */
-				GetValue((const unsigned char *) raw_buf, &hData);
-
-				TRACE(4, "=>> Before exponent: %ld, %i/%i)", hData.Value,
-					(int)hData.UnitExp, (int)get_unit_expo(hData.Unit) );
-
-				/* Convert Logical Min, Max and Value in Physical */
-				/* logical_to_physical(&hData); */
-
-				tmpValue = hData.Value;
-
-				/* Process exponents */
-				/* Value*=(float) pow(10,(int)hData.UnitExp - get_unit_expo(hData.Unit)); */
-				tmpValue*=(float) expo(10,(int)hData.UnitExp - get_unit_expo(hData.Unit));
-				hData.Value = (long) tmpValue;
-
-				/* Convert Logical Min, Max and Value into Physical */
-				logical_to_physical(&hData);
-
-				TRACE(4, "=>> After conversion: %ld, %i/%i)", hData.Value,
-					(int)hData.UnitExp, (int)get_unit_expo(hData.Unit) );
-
-				dump_hex ("Report ", raw_buf, replen);
-
-				*Value = hData.Value;
-				prev_report = hData.ReportID;
-				prev_report_ts = time(NULL);
-				return 1;
-			}
-			else
-			{
-				TRACE(2, "Can't retrieve Report %i (%i/%i)", hData.ReportID, replen, errno);
-				return -errno;
-			}
-		}
-		else
-			TRACE(2, "Can't find object %s", path);
+	if((retcode = string_to_path(path, &hData.Path, utab)) <= 0) {
+		return 0; /* TODO: should be checked */
 	}
-	return 0; /* TODO: should be checked */
+
+	TRACE(4, "Path depth = %i", hData.Path.Size);
+	
+	for (i = 0; i<hData.Path.Size; i++) {
+		TRACE(4, "%i: UPage(%x), Usage(%x)", i, hData.Path.Node[i].UPage, hData.Path.Node[i].Usage);
+	} 
+
+	/* Get info on object (reportID, offset and size) */
+	if (FindObject(&hParser, &hData) != 1) {
+		TRACE(2, "Can't find object %s", path);
+		return 0; /* TODO: should be checked */
+	} 
+	/* Get report with data */
+	/* Bufferize at least the last report */
+	if (cur_report->id != hData.ReportID || time(NULL) > cur_report->ts + MAX_TS) {
+		/* report is not in buffer or too old;
+		   need to retrieve report */
+		retcode = libusb_get_report(udev, hData.ReportID, cur_report->data, REPORT_SIZE);
+		if (retcode <= 0) {
+			TRACE(2, "Can't retrieve Report %i (%i/%i): %s", hData.ReportID, retcode, errno, strerror(errno));
+			return -errno;
+		} else {
+			cur_report->len = retcode;
+			cur_report->ts = time(NULL);
+		}
+	}
+	/* have valid report now */
+	
+	/* Extract the data value */
+	GetValue((const unsigned char *) cur_report->data, &hData);
+	cur_report->id = hData.ReportID;
+	
+	TRACE(4, "=>> Before exponent: %ld, %i/%i)", hData.Value,
+	      (int)hData.UnitExp, (int)get_unit_expo(hData.Unit) );
+	
+	tmpValue = hData.Value;
+	
+	/* Process exponents */
+	/* Value*=(float) pow(10,(int)hData.UnitExp - get_unit_expo(hData.Unit)); */
+	tmpValue*=(float) expo(10,(int)hData.UnitExp - get_unit_expo(hData.Unit));
+	hData.Value = (long) tmpValue;
+	
+	/* Convert Logical Min, Max and Value into Physical */
+	logical_to_physical(&hData);
+	
+	TRACE(4, "=>> After conversion: %ld, %i/%i)", hData.Value,
+	      (int)hData.UnitExp, (int)get_unit_expo(hData.Unit) );
+	
+	dump_hex ("Report ", cur_report->data, cur_report->len);
+	
+	*Value = hData.Value;
+	return 1;
 }
 
-char *HIDGetItemString(char *path)
+/* rawbuf must point to a large enough buffer to hold the resulting
+ * string. Return pointer to rawbuf on success, NULL on failure. */
+char *HIDGetItemString(usb_dev_handle *udev, char *path, unsigned char *rawbuf, usage_tables_t *utab)
 {
   int i, retcode;
   
   /* Prepare path of HID object */
   hData.Type = ITEM_FEATURE;
   hData.ReportID = 0;
-  hData.Path.Size = 0;
   
-  if((retcode = lookup_path(path, &hData)) > 0) {
+  if((retcode = string_to_path(path, &hData.Path, utab)) > 0) {
     TRACE(4, "Path depth = %i", retcode);
     
     for (i = 0; i<retcode; i++)
@@ -251,12 +563,12 @@ char *HIDGetItemString(char *path)
     
     /* Get info on object (reportID, offset and size) */
     if (FindObject(&hParser,&hData) == 1) {
-      if (libusb_get_report(hData.ReportID, raw_buf, 8) > 0) { /* MAX_REPORT_SIZE) > 0) { */
-	GetValue((const unsigned char *) raw_buf, &hData);
+      if (libusb_get_report(udev, hData.ReportID, rawbuf, REPORT_SIZE) > 0) { 
+	GetValue((const unsigned char *) rawbuf, &hData);
 
 	/* now get string */
-	libusb_get_string(hData.Value, raw_buf);
-	return raw_buf;
+	libusb_get_string(udev, hData.Value, rawbuf);
+	return rawbuf;
       }
       else
 	TRACE(2, "Can't retrieve Report %i", hData.ReportID);
@@ -269,13 +581,14 @@ char *HIDGetItemString(char *path)
   return NULL;
 }
  
-bool HIDSetItemValue(char *path, float value)
+bool HIDSetItemValue(usb_dev_handle *udev, char *path, float value, usage_tables_t *utab)
 {
 	float Value;
 	int retcode;
-	
+	report_t *cur_report = &cur_report_struct;
+
 	/* Begin by a standard Get to fill in com structures ... */
-	retcode = HIDGetItemValue(path, &Value);
+	retcode = HIDGetItemValue(udev, path, &Value, utab);
 	
 	/* ... And play with global vars */
 	if (retcode == 1) /* Get succeed */
@@ -298,11 +611,11 @@ bool HIDSetItemValue(char *path, float value)
 			physical_to_logical(&hData);
 			TRACE(2, "=>> SET: after PL: %ld", hData.Value);
 			
-			SetValue(&hData, raw_buf);
+			SetValue(&hData, cur_report->data);
 			
-			dump_hex ("==> Report after setvalue", raw_buf, replen);
+			dump_hex ("==> Report after setvalue", cur_report->data, cur_report->len);
 			
-			if (libusb_set_report(hData.ReportID, raw_buf, replen) > 0)
+			if (libusb_set_report(udev, hData.ReportID, cur_report->data, cur_report->len) > 0)
 			{
 				TRACE(2, "Set report succeeded");
 				return TRUE;
@@ -323,16 +636,16 @@ bool HIDSetItemValue(char *path, float value)
 	return FALSE;
 }
 
-int HIDGetEvents(HIDDevice *dev, HIDItem **eventsList)
+int HIDGetEvents(usb_dev_handle *udev, HIDDevice *dev, HIDItem **eventsList, usage_tables_t *utab)
 {
 	unsigned char buf[20];
 	char itemPath[128];
 	int size, offset = 0, itemCount = 0;
 	
-	upsdebugx(1, "Waiting for notifications...");
+	upsdebugx(2, "Waiting for notifications...");
 	
 	/* needs libusb-0.1.8 to work => use ifdef and autoconf */
-	if ((size = libusb_get_interrupt(&buf[0], 20, 5000)) > -1)
+	if ((size = libusb_get_interrupt(udev, &buf[0], 20, 5000)) > -1)
 	{
 		dump_hex ("Notification", buf, size);
 		
@@ -357,7 +670,7 @@ int HIDGetEvents(HIDDevice *dev, HIDItem **eventsList)
 				/* Get HID Object value from report */
 				GetValue(buf, &hData);
 				memset(&itemPath, 0, sizeof(128));
-				lookup_path(&itemPath[0], &hData);
+				path_to_string(itemPath, &hData.Path, utab);
 	
 				upsdebugx(3, "Object: %s = %ld", itemPath, hData.Value);
 	
@@ -380,10 +693,10 @@ int HIDGetEvents(HIDDevice *dev, HIDItem **eventsList)
 	return itemCount;
 }
 
-void HIDCloseDevice(HIDDevice *dev)
+void HIDCloseDevice(usb_dev_handle *udev)
 {
 	TRACE(2, "Closing device");
-	libusb_close(&curDevice);
+	libusb_close(udev);
 }
 
 
@@ -393,7 +706,7 @@ void HIDCloseDevice(HIDDevice *dev)
 
 #define MAX_STRING      		64
 
-void logical_to_physical(HIDData *Data)
+static void logical_to_physical(HIDData *Data)
 {
 	if(Data->PhyMax - Data->PhyMin > 0)
 	{
@@ -416,7 +729,7 @@ void logical_to_physical(HIDData *Data)
 	*/
 }
 
-void physical_to_logical(HIDData *Data)
+static void physical_to_logical(HIDData *Data)
 {
 	TRACE(2, "PhyMax = %ld, PhyMin = %ld, LogMax = %ld, LogMin = %ld",
 		Data->PhyMax, Data->PhyMin, Data->LogMax, Data->LogMin);
@@ -434,7 +747,7 @@ void physical_to_logical(HIDData *Data)
 	} */
 }
 
-long get_unit_expo(long UnitType)
+static long get_unit_expo(long UnitType)
 {
 	int i = 0, exp = -1;
 	
@@ -452,7 +765,7 @@ long get_unit_expo(long UnitType)
 
 /* exponent function: return a^b */
 /* FIXME: check if needed/possible to replace libmath->pow */
-float expo(int a, int b)
+static float expo(int a, int b)
 {
 	if (b==0)
 		return (float) 1;
@@ -467,86 +780,89 @@ float expo(int a, int b)
 
 /* translate HID string path from/to numeric path and return path depth */
 /* TODO: use usbutils functions (need to be externalised!) */
-ushort lookup_path(char *HIDpath, HIDData *data)
+static int string_to_path(char *HIDpath, HIDPath *path, usage_tables_t *utab)
 {
-	ushort i = 0, cond = 1;
+	int i = 0, cond = 1;
 	int cur_usage;
 	char buf[MAX_STRING];
 	char *start, *end; 
 	
-	TRACE(3, "entering lookup_path()");
+	TRACE(3, "entering string_to_path()");
 	
-	/* Check the way we are called */
-	if (data->Path.Size != 0)
-	{
-	  /* FIXME: another bug? */
-	  strcat(HIDpath, "UPS.");
-
-	  // Numeric to String
-	  for (i = 1; i <= hData.Path.Size; i++)
-		{
-		  /* Deal with ?bogus? */
-		  if ( ((hData.Path.Node[i].UPage * 0x10000) + hData.Path.Node[i].Usage) == 0)
-			continue;
-
-		  /* manage indexed collection */
-		  if (hData.Path.Node[i].UPage == 0x00FF)
-			{
-			  TRACE(5, "Got an indexed collection");
-			  sprintf(strrchr(HIDpath, '.'), "[%i]", hData.Path.Node[i].Usage);
-			}
-		  else
-			strcat(HIDpath, hid_lookup_path((hData.Path.Node[i].UPage * 0x10000) + hData.Path.Node[i].Usage));
-			
-		  if (i < (hData.Path.Size - 1))
-			strcat (HIDpath, ".");
-		}
-	}
-  else
-	{
-	  // String to Numeric 
-	  strncpy(buf, HIDpath, strlen(HIDpath));
-	  buf[strlen(HIDpath)] = '\0';
-	  start = end = buf;
-  
-	  while (cond) {
-    
+	strncpy(buf, HIDpath, min(strlen(HIDpath)+1, MAX_STRING));
+	buf[MAX_STRING-1] = '\0';
+	start = end = buf;
+	
+	while (cond) {
+		
 		if ((end = strchr(start, '.')) == NULL) {
-		  cond = 0;			
+			cond = 0;			
 		}
 		else
-		  *end = '\0';
-    
+			*end = '\0';
+		
 		TRACE(4, "parsing %s", start);
-    
+		
 		/* lookup code */
-		if ((cur_usage = hid_lookup_usage(start)) == -1) {
-		  TRACE(4, "%s wasn't found", start);
-		  return 0;
+		if ((cur_usage = hid_lookup_usage(start, utab)) == -1) {
+			TRACE(4, "%s wasn't found", start);
+			return 0;
 		}
 		else {
-		  data->Path.Node[i].UPage = (cur_usage & 0xFFFF0000) / 0x10000;
-		  data->Path.Node[i].Usage = cur_usage & 0x0000FFFF; 
-		  i++; 
+			path->Node[i].UPage = (cur_usage & 0xFFFF0000) / 0x10000;
+			path->Node[i].Usage = cur_usage & 0x0000FFFF; 
+			i++;
 		}
-    
+		
 		if(cond)
-		  start = end +1 ;
-	  }
-	  data->Path.Size = i;
+			start = end +1 ;
+	}
+	path->Size = i;
+	
+	return i;
+}
+
+/* translate HID string path from/to numeric path and return path depth */
+/* TODO: use usbutils functions (need to be externalised!) */
+static int path_to_string(char *HIDpath, HIDPath *path, usage_tables_t *utab)
+{
+	int i = 0;
+	
+	TRACE(3, "entering path_to_string()");
+	
+	/* FIXME: another bug? */
+	strcat(HIDpath, "UPS.");
+	
+	// Numeric to String
+	for (i = 1; i < path->Size; i++)
+	{
+		/* Deal with ?bogus? */
+		if (path->Node[i].UPage == 0 && path->Node[i].Usage == 0)
+			continue;
+		
+		/* manage indexed collection */
+		if (path->Node[i].UPage == 0x00FF)
+		{
+			TRACE(5, "Got an indexed collection");
+			sprintf(strrchr(HIDpath, '.'), "[%i]", path->Node[i].Usage);
+		}
+		else
+			strcat(HIDpath, hid_lookup_path((path->Node[i].UPage * 0x10000) + path->Node[i].Usage, utab));
+		
+		if (i < (path->Size - 1))
+			strcat (HIDpath, ".");
 	}
 
-  return i;
+	return i;
 }
 
 /* Lookup this usage name to find its code (page + index) */
 /* temporary usage code lookup */
-typedef struct {
-	const char *usage_name;
-	int usage_code;
-} usage_lkp_t;
+/* FIXME: put as external data, like in usb.ids (or use
+ * this last?) */
 
-static usage_lkp_t usage_lkp[] = {
+/* Global usage table (from USB HID class definition) */
+usage_lkp_t hid_usage_lkp[] = {
 	/* Power Device Page */
 	{  "Undefined",				0x00840000 },
 	{  "PresentStatus",			0x00840002 },
@@ -606,6 +922,8 @@ static usage_lkp_t usage_lkp[] = {
 	{ "RemainingTimeLimitExpired",		0x00850043 },
 	{ "Charging",				0x00850044 },
 	{ "Discharging",			0x00850045 },
+	{ "FullyCharged",			0x00850046 },
+	{ "FullyDischarged",			0x00850047 },
 	{ "NeedReplacement",			0x0085004b },
 	{ "RemainingCapacity",			0x00850066 },
 	{ "FullChargeCapacity",			0x00850067 },
@@ -621,82 +939,27 @@ static usage_lkp_t usage_lkp[] = {
 	{ "ACPresent",				0x008500d0 },
 	{ "BatteryPresent",			0x008500d1 },
 	{ "VoltageNotRegulated",		0x008500db },
-/* TODO: per MFR specific usages */
-	/* MGE UPS SYSTEMS Page */
-	{ "iModel",				0xffff00f0 },
-	{ "RemainingCapacityLimitSetting",	0xffff004d },
-	{ "TestPeriod",				0xffff0045 },
-	{ "LowVoltageBoostTransfer",		0xffff0050 },
-	{ "HighVoltageBoostTransfer",		0xffff0051 },
-	{ "LowVoltageBuckTransfer",		0xffff0052 },
-	{ "HighVoltageBuckTransfer",		0xffff0053 },
-	/* APC Page */
-	{ "APCGeneralCollection",		0xff860005 },
-	{ "APCBattReplaceDate",			0xff860016 },
-	{ "APCBattCapBeforeStartup",		0xFF860019 }, /* FIXME: need to be exploited */
-	{ "APC_UPS_FirmwareRevision",		0xff860042 },
-	{ "APC860052",				0xff860052 },  /* Needed for APCForceShutdown path */
-	{ "APCStatusFlag",			0xff860060 },
-	{ "APCPanelTest",			0xff860072 }, /* FIXME: need to be exploited */
-	{ "APCShutdownAfterDelay",		0xff860076 }, /* FIXME: need to be exploited */
-	{ "APC_USB_FirmwareRevision",		0xff860079 }, /* FIXME: need to be exploited */
-	{ "APCForceShutdown",			0xff86007c },
-	{ "APCDelayBeforeShutdown",		0xff86007d },
-	{ "APCDelayBeforeStartup",		0xff86007e }, /* FIXME: need to be exploited */
-	/* FIXME: The below one seems to have been wrongly encoded by APC */
-	/* Pages 84 to 88 are reserved for official HID definition! */
-	{ "BUPHibernate",			0x00850058 }, /* FIXME: need to be exploited */
-	{ "BUPBattCapBeforeStartup",		0x00860012 }, /* FIXME: need to be exploited */
-	{ "BUPDelayBeforeStartup",		0x00860076 }, /* FIXME: need to be exploited */
-	{ "BUPSelfTest",			0x00860010 }, /* FIXME: need to be exploited */
-/*
- * USB USAGE NOTES for APC (from Russell Kroll in the old hidups
- *
- * FIXME: read 0xff86.... instead of 0x(00)86....?
- *
- *  0x860013 == 44200155090 - capability again                   
- *           == locale 4, 4 choices, 2 bytes, 00, 15, 50, 90     
- *           == minimum charge to return online                  
- *
- *  0x860060 == "441HMLL" - looks like a 'capability' string     
- *           == locale 4, 4 choices, 1 byte each                 
- *           == line sensitivity (high, medium, low, low)        
- *  NOTE! the above does not seem to correspond to my info 
- *
- *  0x860062 == D43133136127130                                  
- *           == locale D, 4 choices, 3 bytes, 133, 136, 127, 130 
- *           == high transfer voltage                            
- *
- *  0x860064 == D43103100097106                                  
- *           == locale D, 4 choices, 3 bytes, 103, 100, 097, 106 
- *           == low transfer voltage                             
- *
- *  0x860066 == 441HMLL (see 860060)                                   
- *
- *  0x860074 == 4410TLN                                          
- *           == locale 4, 4 choices, 1 byte, 0, T, L, N          
- *           == alarm setting (5s, 30s, low battery, none)       
- *
- *  0x860077 == 443060180300600                                  
- *           == locale 4, 4 choices, 3 bytes, 060,180,300,600    
- *           == wake-up delay (after power returns)              
- */
 
 	/* end of structure. */
 	{  "\0", 0x0 }
 };
 
-const char *hid_lookup_path(int usage)
+/* usage conversion numeric -> string */
+static const char *hid_lookup_path(unsigned int usage, usage_tables_t *utab)
 {
-	int i;
+	int i, j;
 	static char raw_usage[10];
-	
+	usage_lkp_t *table;
+
 	TRACE(3, "Looking up %08x", usage);
 
-	for (i = 0; (usage_lkp[i].usage_name[0] != '\0'); i++)
-	{
-		if (usage_lkp[i].usage_code == usage)
-			return usage_lkp[i].usage_name;
+	for (j=0; utab[j] != NULL; j++) {
+		table = utab[j];
+		for (i = 0; (table[i].usage_name[0] != '\0'); i++)
+		{
+			if (table[i].usage_code == usage)
+				return table[i].usage_name;
+		}
 	}
 
 	/* if the corresponding path isn't found,
@@ -705,33 +968,49 @@ const char *hid_lookup_path(int usage)
 	return &raw_usage[0];
 }
 
-int hid_lookup_usage(char *name)
+/* usage conversion string -> numeric */
+static int hid_lookup_usage(char *name, usage_tables_t *utab)
 {
-	int i;
-	
+	int i, j;
+	int value;
+	char buf[20];
+	usage_lkp_t *table;
+
 	TRACE(3, "Looking up %s", name);
 	
-	if (name[0] == '[') /* manage indexed collection */
+	if (name[0] == '[') { /* manage indexed collection */
 		return (0x00FF0000 + atoi(&name[1]));
-	else
-	{
-		for (i = 0; (usage_lkp[i].usage_code != 0x0); i++)
+	}
+	for (j=0; utab[j] != NULL; j++) {
+		table = utab[j];
+		for (i = 0; (table[i].usage_code != 0x0); i++)
 		{
-			if (!strcmp(usage_lkp[i].usage_name, name))
+			if (!strcmp(table[i].usage_name, name))
 			{
 				TRACE(4, "hid_lookup_usage: found %04x",
-					usage_lkp[i].usage_code);
-	
-				return usage_lkp[i].usage_code;
+				      table[i].usage_code);
+				
+				return table[i].usage_code;
 			}
 		}
 	}
-	return -1;
+	/* finally, translate unnamed path components such as
+	   "ff860024" */
+	value = strtoul(name, NULL, 16);
+	sprintf(buf, "%08x", value);
+	if (strcasecmp(buf, name) != 0) {
+		return -1;
+	}
+	return value;
 }
 
+int get_current_data_attribute()
+{
+	return hData.Attribute;
+}
 #define NIBBLE(_i)    (((_i) < 10) ? '0' + (_i) : 'A' + (_i) - 10)
 
-void dump_hex (const char *msg, const unsigned char *buf, int len)
+static void dump_hex (const char *msg, const unsigned char *buf, int len)
 {
 	int i;
 	int nlocal;
