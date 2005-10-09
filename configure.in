@@ -352,8 +352,8 @@ then
 	AC_MSG_RESULT(not found)
 else
 	AC_MSG_RESULT($LIBUSB_CFLAGS)
-	USB_DRIVER_LIST=newhidups
-	USBPAGES=newhidups.8
+	USB_DRIVER_LIST="newhidups bcmxcp_usb"
+	USBPAGES="newhidups.8 bcmxcp_usb.8"
 fi
 
 AC_MSG_CHECKING(for libusb libs)
