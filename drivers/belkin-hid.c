@@ -109,9 +109,9 @@ static info_lkp_t belkin_test_info[] = {
 
 static char *belkin_overload_conversion_fun(long value) {
 	if (value & 0x0010) {
-		return "OVER";
+		return "overload";
 	} else {
-		return "";
+		return "!overload";
 	}		
 }
 
@@ -121,9 +121,9 @@ static info_lkp_t belkin_overload_conversion[] = {
 
 static char *belkin_overheat_conversion_fun(long value) {
 	if (value & 0x0040) {
-		return "OVERHEAT";
+		return "overheat";
 	} else {
-		return "";
+		return "!overheat";
 	}
 }
 
@@ -133,9 +133,9 @@ static info_lkp_t belkin_overheat_conversion[] = {
 
 static char *belkin_commfault_conversion_fun(long value) {
 	if (value & 0x0080) {
-		return "COMMFAULT";
+		return "commfault";
 	} else {
-		return "";
+		return "!commfault";
 	}
 }
 
@@ -143,11 +143,23 @@ static info_lkp_t belkin_commfault_conversion[] = {
 	{ 0, NULL, belkin_commfault_conversion_fun }
 };
 
+static char *belkin_online_conversion_fun(long value) {
+	if (value & 0x20) {
+		return "!online";
+	} else {
+		return "online";
+	}		
+}
+
+static info_lkp_t belkin_online_conversion[] = {
+	{ 0, NULL, belkin_online_conversion_fun }
+};
+
 static char *belkin_depleted_conversion_fun(long value) {
 	if (value & 0x40) {
-		return "DEPLETED";
+		return "depleted";
 	} else {
-		return "";
+		return "!depleted";
 	}
 }
 
@@ -157,9 +169,9 @@ static info_lkp_t belkin_depleted_conversion[] = {
 
 static char *belkin_replacebatt_conversion_fun(long value) {
 	if (value & 0x80) {
-		return "RB";
+		return "replacebatt";
 	} else {
-		return "";
+		return "!replacebatt";
 	}		
 }
 
@@ -271,13 +283,14 @@ static hid_info_t belkin_hid2nut[] = {
   { "ups.status", 0, 1, "UPS.PowerSummary.Discharging",NULL, "%s", HU_FLAG_OK, discharging_info },
   { "ups.status", 0, 1, "UPS.PowerSummary.Charging", NULL, "%s", HU_FLAG_OK, charging_info },
   { "ups.status", 0, 1, "UPS.PowerSummary.ShutdownImminent", NULL, "%s", HU_FLAG_OK, shutdownimm_info },
-  { "ups.status", 0, 1, "UPS.PowerSummary.ACPresent", NULL, "%s", HU_FLAG_OK, onbatt_info },
+  /* { "ups.status", 0, 1, "UPS.PowerSummary.ACPresent", NULL, "%s", HU_FLAG_OK, online_info }, */
   { "ups.status", 0, 1, "UPS.PowerSummary.BelowRemainingCapacityLimit", NULL, "%s", HU_FLAG_OK, lowbatt_info },
   { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINPowerStatus", NULL, "%s", HU_FLAG_OK, belkin_overload_conversion },
   { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINPowerStatus", NULL, "%s", HU_FLAG_OK, belkin_overheat_conversion },
   { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINPowerStatus", NULL, "%s", HU_FLAG_OK, belkin_commfault_conversion },
   { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINBatteryStatus", NULL, "%s", HU_FLAG_OK, belkin_depleted_conversion },
   { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINBatteryStatus", NULL, "%s", HU_FLAG_OK, belkin_replacebatt_conversion },
+  { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINBatteryStatus", NULL, "%s", HU_FLAG_OK, belkin_online_conversion },
 
   /* Server side variables */
   { "driver.version.internal", ST_FLAG_STRING, sizeof(DRIVER_VERSION), NULL, NULL, DRIVER_VERSION, HU_FLAG_ABSENT | HU_FLAG_OK, NULL },

@@ -34,16 +34,18 @@
 
 #define APC_VENDORID 0x051d
 
-/* APC has two non-standard status items: "TLE" (time limit expired)
-   and "BP" (battery present). The newhidups driver currently simply
-   ignores these, but we add them anyway for completeness. */
+/* APC has two non-standard status items: "time limit expired" and
+   "battery present". The newhidups driver currently ignores
+   batterypresent, and maps timelimitexp to LB. */
 info_lkp_t timelimitexpired_info[] = {
-  { 1, "TLE", NULL },
+  { 1, "timelimitexp", NULL },
+  { 0, "!timelimitexp", NULL },
   { 0, "NULL", NULL }
 };
 
 info_lkp_t batterypresent_info[] = {
-  { 1, "BP", NULL },
+  { 1, "batterypres", NULL },
+  { 0, "!batterypres", NULL },
   { 0, "NULL", NULL }
 };
 
@@ -160,7 +162,7 @@ static hid_info_t apc_hid2nut[] = {
 
   /* Special case: ups.status */
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.ACPresent", NULL,
-    "%.0f", HU_FLAG_OK, &onbatt_info[0] },
+    "%.0f", HU_FLAG_OK, &online_info[0] },
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.Discharging",NULL, 
     "%.0f", HU_FLAG_OK, &discharging_info[0] },
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.Charging", NULL,
@@ -170,7 +172,7 @@ static hid_info_t apc_hid2nut[] = {
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL,
     "%.0f", HU_FLAG_OK, &lowbatt_info[0] },
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.OverLoad", NULL,
-    "%.0f", HU_FLAG_OK, &overbatt_info[0] },
+    "%.0f", HU_FLAG_OK, &overload_info[0] },
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL,
     "%.0f", HU_FLAG_OK, &replacebatt_info[0] },
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.RemainingTimeLimitExpired", NULL,

@@ -1,3 +1,22 @@
+Sun Oct  9 05:31:09 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+  - newhidups: repaired the way status flags are stored. Note that
+    there can be more than one device status flag (such as "lowbatt"
+    and "shutdownimm") mapped to the same NUT status (such as "LB").
+    We now store the device flags, and convert them to NUT values only
+    on request. This solves the problem where multiple variables (e.g.
+    "lowbatt" and "shutdownimm") might have erased each other's values
+    if one was set and the other was not. This also solves the issue
+    reported by Alfred Ganz of the CHRG and DISCHRG flags not being
+    cleared properly.
+
+  - newhidups: added NUT status flags OVERHEAT, COMMFAULT, DEPLETED;
+    these already exist in the belkinunv driver.
+
+  - newhidups/Belkin: changed the way the OL/OB status is determined;
+    now correctly shows OB during battery test (even when AC power is
+    present).
+
 Sun Oct  9 02:40:25 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
   - libhid.c: added some missing usages from UPS/HID definition

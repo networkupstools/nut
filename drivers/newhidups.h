@@ -7,14 +7,14 @@
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or 
+ * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
@@ -56,7 +56,7 @@ typedef struct
 #define DEFAULT_ONDELAY		30	/* Delay between return of utility power */
 					/* and powering up of load, in seconds */
 					/* CAUTION: ondelay > offdelay */
-#define DEFAULT_OFFDELAY	20	/* Delay before power off, in seconds */ 
+#define DEFAULT_OFFDELAY	20	/* Delay before power off, in seconds */
 #define DEFAULT_POLLFREQ	30	/* Polling interval, in seconds */
 					/* The driver will wait for Interrupt */
 					/* and do "light poll" in the meantime */
@@ -74,24 +74,31 @@ typedef struct
 /* Struct & data for ups.status processing                         */
 /* --------------------------------------------------------------- */
 
+/* Note: this structure holds internal status info, directly as
+   collected from the hardware; not yet converted to official NUT
+   status */
 typedef struct {
 	char	*status_str;	/* ups.status string */
-	int	status_value;	/* ups.status value */
+	int	status_mask;	/* ups_status mask */
 } status_lkp_t;
 
-#define STATUS_CAL		1       /* calibration */
-#define STATUS_TRIM		2       /* SmartTrim */
-#define STATUS_BOOST	4       /* SmartBoost */
-#define STATUS_OL		8       /* on line */
-#define STATUS_OB		16      /* on battery */
-#define STATUS_OVER		32      /* overload */
-#define STATUS_LB		64      /* low battery */
-#define STATUS_RB		128     /* replace battery */
-#define STATUS_BYPASS	256		/* on bypass */
-#define STATUS_OFF		512		/* ups is off */
-#define STATUS_CHRG		1024	/* charging */
-#define STATUS_DISCHRG	2048	/* discharging */
-#define STATUS_CLEAR_LB	4096	/* clear low battery */
+#define STATUS_ONLINE           0x00001  /* on line */
+#define STATUS_DISCHRG          0x00002  /* discharging */
+#define STATUS_CHRG             0x00004  /* charging */
+#define STATUS_LOWBATT		0x00008  /* low battery */
+#define STATUS_OVERLOAD		0x00010  /* overload */
+#define STATUS_REPLACEBATT	0x00020  /* replace battery */
+#define STATUS_SHUTDOWNIMM	0x00040  /* shutdown imminent */
+#define STATUS_TRIM		0x00080  /* SmartTrim */
+#define STATUS_BOOST		0x00100  /* SmartBoost */
+#define STATUS_BYPASS		0x00200  /* on bypass */
+#define STATUS_OFF		0x00400  /* ups is off */
+#define STATUS_CAL 		0x00800  /* calibration */
+#define STATUS_OVERHEAT         0x01000  /* overheat; Belkin */
+#define STATUS_COMMFAULT        0x02000  /* UPS fault; Belkin */
+#define STATUS_DEPLETED         0x04000  /* battery depleted; Belkin */
+#define STATUS_TIMELIMITEXP     0x08000  /* time limit expired; APC */
+#define STATUS_BATTERYPRES      0x10000  /* battery present; APC */
 
 extern status_lkp_t status_info[];
 
@@ -113,11 +120,11 @@ typedef struct {
 } info_lkp_t;
 
 /* declarations of public lookup tables */
-extern info_lkp_t onbatt_info[];
+extern info_lkp_t online_info[];
 extern info_lkp_t discharging_info[];
 extern info_lkp_t charging_info[];
 extern info_lkp_t lowbatt_info[];
-extern info_lkp_t overbatt_info[];
+extern info_lkp_t overload_info[];
 extern info_lkp_t replacebatt_info[];
 extern info_lkp_t shutdownimm_info[];
 extern info_lkp_t trim_info[];
@@ -163,7 +170,7 @@ typedef struct {
 #define HU_FLAG_SEMI_STATIC		4		/* retrieve info smartly */
 #define HU_FLAG_ABSENT			8		/* data is absent in the device, */
 							/* use default value. */
-#define HU_FLAG_QUICK_POLL		16		/* Mandatory vars	*/		
+#define HU_FLAG_QUICK_POLL		16		/* Mandatory vars	*/
 #define HU_FLAG_STALE			32		/* data stale, don't try too often. */
 
 /* hints for su_ups_set, applicable only to rw vars */
@@ -189,7 +196,7 @@ struct subdriver_s {
 				      * this subdriver */
 	usage_tables_t *utab;        /* points to array of usage tables */
 	hid_info_t *hid2nut;         /* main table of vars and instcmds */
-	int (*shutdown)(int ondelay, int offdelay); 
+	int (*shutdown)(int ondelay, int offdelay);
                                      /* driver-specific shutdown cmd.
 					Returns 1 on success, 0 on
 					failure */

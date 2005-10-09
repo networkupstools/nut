@@ -68,74 +68,106 @@ static void reconnect_ups(void);
 /* data for ups.status processing */
 
 status_lkp_t status_info[] = {
-	/* NUT official status values */
-	{ "CAL", STATUS_CAL },
-	{ "TRIM", STATUS_TRIM },
-	{ "BOOST", STATUS_BOOST },
-	{ "OL", STATUS_OL },
-	{ "OB", STATUS_OB },
-	{ "OVER", STATUS_OVER },
-	{ "LB", STATUS_LB },
-	{ "RB", STATUS_RB },
-	{ "BYPASS", STATUS_BYPASS },
-	{ "OFF", STATUS_OFF },
-	{ "CHRG", STATUS_CHRG },
-	{ "DISCHRG", STATUS_DISCHRG },
-	/* Internal status */
-	{ "!LB", STATUS_CLEAR_LB },	/* To revert LB status */
-	{ "NULL", 0 },
+	/* map internal status strings to bit masks */
+	{ "online", STATUS_ONLINE },
+	{ "dischrg", STATUS_DISCHRG },
+	{ "chrg", STATUS_CHRG },
+	{ "lowbatt", STATUS_LOWBATT },
+	{ "overload", STATUS_OVERLOAD },
+	{ "replacebatt", STATUS_REPLACEBATT },
+	{ "shutdownimm", STATUS_SHUTDOWNIMM },
+	{ "trim", STATUS_TRIM },
+	{ "boost", STATUS_BOOST },
+	{ "bypass", STATUS_BYPASS },
+	{ "off", STATUS_OFF },
+	{ "overhead", STATUS_OVERHEAT },
+	{ "commfault", STATUS_COMMFAULT },
+	{ "depleted", STATUS_DEPLETED },
+	{ "timelimitexp", STATUS_TIMELIMITEXP },
+	{ "batterypres", STATUS_BATTERYPRES },
+	{ NULL, 0 },
 };
 
 /* ---------------------------------------------------------------------- */
 /* value lookup tables and generic lookup functions */
 
 /* Actual value lookup tables => should be fine for all Mfrs (TODO: validate it!) */
-info_lkp_t onbatt_info[] = {
-  { 0, "OB", NULL },
-  { 1, "OL", NULL },
+
+/* the purpose of the following status conversions is to collect
+   information, not to interpret it. The function
+   process_status_info() remembers these values by updating the global
+   variable ups_status. Interpretation happens in ups_status_set,
+   where they are converted to standard NUT status strings. Notice
+   that the below conversions do not yield standard NUT status
+   strings; this in indicated being in lower-case characters. 
+
+   The reason to separate the collection of information from its
+   interpretation is that not each report received from the UPS may
+   contain all the status flags, so they must be stored
+   somewhere. Also, there can be more than one status flag triggering
+   a certain condition (e.g. a certain UPS might have variables
+   low_battery, shutdown_imminent, timelimit_exceeded, and each of
+   these would trigger the NUT status LB. But we have to ensure that
+   these variables don't unset each other, so they are remembered
+   separately)  */
+
+info_lkp_t online_info[] = {
+  { 1, "online", NULL },
+  { 0, "!online", NULL },
   { 0, "NULL", NULL }
 };
 info_lkp_t discharging_info[] = {
-  { 1, "DISCHRG", NULL },
+  { 1, "dischrg", NULL },
+  { 0, "!dischrg", NULL },
   { 0, "NULL", NULL }
 };
 info_lkp_t charging_info[] = {
-  { 1, "CHRG", NULL },
+  { 1, "chrg", NULL },
+  { 0, "!chrg", NULL },
   { 0, "NULL", NULL }
 };
 info_lkp_t lowbatt_info[] = {
-  { 1, "LB", NULL },
-  { 0, "!LB", NULL },
+  { 1, "lowbatt", NULL },
+  { 0, "!lowbatt", NULL },
   { 0, "NULL", NULL }
 };
-info_lkp_t overbatt_info[] = {
-  { 1, "OVER", NULL },
+info_lkp_t overload_info[] = {
+  { 1, "overload", NULL },
+  { 0, "!overload", NULL },
   { 0, "NULL", NULL }
 };
 info_lkp_t replacebatt_info[] = {
-  { 1, "RB", NULL },
+  { 1, "replacebatt", NULL },
+  { 0, "!replacebatt", NULL },
   { 0, "NULL", NULL }
 };
 info_lkp_t shutdownimm_info[] = {
-  { 1, "LB", NULL },
-  { 0, "!LB", NULL },
+  { 1, "shutdownimm", NULL },
+  { 0, "!shutdownimm", NULL },
   { 0, "NULL", NULL }
 };
 info_lkp_t trim_info[] = {
-  { 1, "TRIM", NULL },
+  { 1, "trim", NULL },
+  { 0, "!trim", NULL },
   { 0, "NULL", NULL }
 };
 info_lkp_t boost_info[] = {
-  { 1, "BOOST", NULL },
+  { 1, "boost", NULL },
+  { 0, "!boost", NULL },
   { 0, "NULL", NULL }
 };
 /* FIXME: extend ups.status for BYPASS Manual/Automatic */
 info_lkp_t bypass_info[] = {
-  { 1, "BYPASS", NULL },
+  { 1, "bypass", NULL },
+  { 0, "!bypass", NULL },
   { 0, "NULL", NULL }
 };
+/* note: this value is reverted (0=set, 1=not set). We report "being
+   off" rather than "being on", so that devices that don't implement
+   this variable are "on" by default */
 info_lkp_t off_info[] = {
-  { 0, "OFF", NULL },
+  { 0, "off", NULL },
+  { 1, "!off", NULL },
   { 0, "NULL", NULL }
 };
 /* FIXME: add CAL */
@@ -484,50 +516,30 @@ void upsdrv_updateinfo(void)
 }
 
 
-/* Process status info globally to avoid inconsistencies */
+/* Update ups_status to remember this status item. Interpretation is
+   done in ups_status_set(). */
 static void process_status_info(char *nutvalue)
 {
 	status_lkp_t *status_item;
+	int clear = 0;
 
 	upsdebugx(2, "process_status_info: %s", nutvalue);
 
-	for (status_item = status_info; status_item->status_value != 0 ; status_item++)
+	if (*nutvalue == '!') {
+		nutvalue++;
+		clear = 1;
+	}
+
+	for (status_item = status_info; status_item->status_str != NULL ; status_item++)
 	{
 		if (!strcasecmp(status_item->status_str, nutvalue))
 		{
-			switch (status_item->status_value)
-			{
-				case STATUS_OL: /* clear OB, set OL */
-					ups_status &= ~STATUS_OB;
-					ups_status |= STATUS_OL;
-				break;
-				case STATUS_OB: /* clear OL, set OB */
-					ups_status &= ~STATUS_OL;
-					ups_status |= STATUS_OB;
-				break;
-				case STATUS_CLEAR_LB: /* clear LB */
-					/* Note: the CLEAR flag is processed before the LB flag */
-					/* otherwise, we loose LB when it's really set by one var */
-					/* and cleared by another */	
-					ups_status &= ~STATUS_LB;
-				break;
-				case STATUS_LB: /* set LB */
-					ups_status |= STATUS_LB;
-				break;
-				case STATUS_CHRG: /* clear DISCHRG, set CHRG */
-					ups_status &= ~STATUS_DISCHRG;
-					ups_status |= STATUS_CHRG;
-				break;
-				case STATUS_DISCHRG: /* clear CHRG, set DISCHRG */
-					ups_status &= ~STATUS_CHRG;
-					ups_status |= STATUS_DISCHRG;
-				break;
-				/* FIXME: to be checked (+ how to clear) */
-				default: /* CAL, TRIM, BOOST, OVER, RB, BYPASS, OFF */
-					ups_status |= status_item->status_value;
-					/* FIXME: When do we reset these? */
-				break;
+			if (clear) {
+				ups_status &= ~status_item->status_mask;
+			} else {
+				ups_status |= status_item->status_mask;
 			}
+			break;
 		}
 	}
 }
@@ -848,36 +860,59 @@ static void reconnect_ups(void)
 	}
 }
 
-/* Process the whole ups.status */
+/* Convert the local status information to NUT format and set NUT
+   status. */
 static void ups_status_set(void)
 {
 	/* clear status buffer before begining */
 	status_init();
   
-	if (ups_status & STATUS_CAL)
-	  status_set("CAL");		/* calibration */
-	if (ups_status & STATUS_TRIM)
-	  status_set("TRIM");		/* SmartTrim */
-	if (ups_status & STATUS_BOOST)
-	  status_set("BOOST");	/* SmartBoost */
-	if (ups_status & STATUS_OL)
-	  status_set("OL");		/* on line */
-	if (ups_status & STATUS_OB)
-	  status_set("OB");		/* on battery */
-	if (ups_status & STATUS_OVER)
-	  status_set("OVER");		/* overload */
-	if (ups_status & STATUS_LB)
-	  status_set("LB");		/* low battery */
-	if (ups_status & STATUS_RB)
-	  status_set("RB");		/* replace batt */
-	if (ups_status & STATUS_BYPASS)
-	  status_set("BYPASS");	/* on bypass */   
-	if (ups_status & STATUS_CHRG)
-	  status_set("CHRG");		/* charging */
-	if (ups_status & STATUS_DISCHRG)
-	  status_set("DISCHRG");	/* discharging */         
-	if ( (ups_status & STATUS_OFF) || (ups_status == 0) )
-	  status_set("OFF");
+	if (ups_status & STATUS_ONLINE) {
+		status_set("OL");		/* on line */
+	} else {
+		status_set("OB");               /* on battery */
+	}
+	if (ups_status & STATUS_DISCHRG) {
+		status_set("DISCHRG");	        /* discharging */         
+	}
+	if (ups_status & STATUS_CHRG) {
+		status_set("CHRG");		/* charging */
+	}
+	if (ups_status & (STATUS_LOWBATT
+			  | STATUS_SHUTDOWNIMM
+			  | STATUS_TIMELIMITEXP)) {
+		status_set("LB");		/* low battery */
+	}
+	if (ups_status & STATUS_OVERLOAD) {
+		status_set("OVER");		/* overload */
+	}
+	if (ups_status & STATUS_REPLACEBATT) {
+		status_set("RB");		/* replace batt */
+	}
+	if (ups_status & STATUS_TRIM) {
+		status_set("TRIM");		/* SmartTrim */
+	}
+	if (ups_status & STATUS_BOOST) {
+		status_set("BOOST");	        /* SmartBoost */
+	}
+	if (ups_status & STATUS_BYPASS) {
+		status_set("BYPASS");	        /* on bypass */   
+	}
+	if (ups_status & STATUS_OFF) {
+		status_set("OFF");              /* ups is off */
+	}
+	if (ups_status & STATUS_CAL) {
+		status_set("CAL");		/* calibration */
+	}
+	if (ups_status & STATUS_OVERHEAT) {
+		status_set("OVERHEAT");		/* overheat; Belkin */
+	}
+	if (ups_status & STATUS_COMMFAULT) {
+		status_set("COMMFAULT");	/* UPS fault; Belkin */
+	}
+	if (ups_status & STATUS_DEPLETED) {
+		status_set("DEPLETED");		/* battery depleted; Belkin */
+	}
 	
 	/* Commit the status buffer */
 	status_commit();

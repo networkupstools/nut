@@ -166,7 +166,7 @@ static hid_info_t mge_hid2nut[] =
 
   /* Special case: ups.status */
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, 
-    "%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &onbatt_info[0] },
+    "%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &online_info[0] },
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.Discharging", NULL, 
     "%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &discharging_info[0] },
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.Charging", NULL, 
@@ -176,7 +176,7 @@ static hid_info_t mge_hid2nut[] =
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL,
     "%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &lowbatt_info[0] },
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.OverLoad", NULL,
-    "%.0f", HU_FLAG_OK, &overbatt_info[0] },
+    "%.0f", HU_FLAG_OK, &overload_info[0] },
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL,
     "%.0f", HU_FLAG_OK, &replacebatt_info[0] },
   { "ups.status", 0, 1, "UPS.PowerConverter.Input.[1].PresentStatus.Buck", NULL,
