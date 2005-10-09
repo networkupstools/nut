@@ -922,6 +922,8 @@ usage_lkp_t hid_usage_lkp[] = {
 	{ "RemainingTimeLimitExpired",		0x00850043 },
 	{ "Charging",				0x00850044 },
 	{ "Discharging",			0x00850045 },
+	{ "FullyCharged",			0x00850046 },
+	{ "FullyDischarged",			0x00850047 },
 	{ "NeedReplacement",			0x0085004b },
 	{ "RemainingCapacity",			0x00850066 },
 	{ "FullChargeCapacity",			0x00850067 },

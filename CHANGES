@@ -1,3 +1,7 @@
+Sun Oct  9 02:40:25 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+  - libhid.c: added some missing usages from UPS/HID definition
+
 Sat Oct  8 20:57:14 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
 
   - debian/: bring the files in sync, and prepare 2.0.2-2 release.
