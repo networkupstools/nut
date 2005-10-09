@@ -104,6 +104,23 @@ libusb.o: libusb.c hid-usb.h
 	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o libusb.o -c libusb.c
 
 # ==========================================================================
+# Special case: bcmxcp_usb.c driver - development version (early beta)
+
+bcmxcp_usb: bcmxcp.o bcmxcp_usb.o nut_usb.o main.o dstate.o ../common/state.o \
+		../common/upsconf.o ../common/parseconf.o $(LIBDEP) $(STRLCPY)
+	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o $@ bcmxcp.o bcmxcp_usb.o nut_usb.o \
+		main.o dstate.o ../common/state.o ../common/upsconf.o \
+		../common/parseconf.o \
+		$(LIBOBJ) $(LIBUSB_LIBS) $(LDFLAGS)
+
+bcmxcp_usb.o:
+	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -c bcmxcp_usb.c
+
+nut_usb.o:
+	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o nut_usb.o -c nut_usb.c
+
+
+# ==========================================================================
 # Special case: mge-shut driver - development version (early beta)
 
 mge-shut: mge-shut.o hidparser.o main.o dstate.o serial.o \
@@ -142,7 +159,7 @@ snmp-ups.o: snmp-ups.c snmp-ups.h \
 
 clean:
 	rm -f *~ *.o $(PROGS) Makefile.drvbuild
-	rm -f dummycons snmp-ups energizerups newhidups hidups mge-shut upsdrvctl
+	rm -f dummycons snmp-ups energizerups newhidups hidups mge-shut upsdrvctl bcmxcp_usb
 	./gendb $(PROGS)
 
 distclean: clean
