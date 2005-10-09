@@ -101,6 +101,7 @@ build-usb:
 	@cd drivers; $(MAKE) hidups; cd ..;
 	@cd drivers; $(MAKE) newhidups; cd ..;
 	@cd drivers; $(MAKE) energizerups; cd ..;
+	@cd drivers; $(MAKE) bcmxcp_usb; cd ..;
 
 install-usb:
 	@cd drivers; $(MAKE) install-usb; cd ..;
