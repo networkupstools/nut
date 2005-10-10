@@ -5873,8 +5873,8 @@ echo "${ECHO_T}not found" >&6
 else
 	echo "$as_me:$LINENO: result: $LIBUSB_CFLAGS" >&5
 echo "${ECHO_T}$LIBUSB_CFLAGS" >&6
-	USB_DRIVER_LIST="newhidups bcmxcp_usb"
-	USBPAGES="newhidups.8 bcmxcp_usb.8"
+        USB_DRIVER_LIST="newhidups bcmxcp_usb tripplite_usb"
+	USBPAGES="newhidups.8 bcmxcp_usb.8 tripplite_usb.8"
 fi
 
 echo "$as_me:$LINENO: checking for libusb libs" >&5

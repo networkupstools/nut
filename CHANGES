@@ -1,3 +1,13 @@
+Sun Oct  9 22:10:00 EDT 2005 / Charles Lepple <clepple@gmail.com>
+
+  - tripplite_usb: Finished merging v0.6 of this driver from the
+    Development branch. The driver now handles both OMNIVS and SMARTPRO
+    models.
+
+  - drivers/Makefile.in: Reorganized the USB build targets to be closer
+    to install-usb. This matches the Development branch, where the list
+    of USB drivers is pulled from autoconf.
+    
 Sun Oct  9 05:31:09 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
   - newhidups: repaired the way status flags are stored. Note that

@@ -38,6 +38,8 @@ all: @DRIVER_BUILD_LIST@ upsdrvctl dummycons
 
 all-drivers: $(PROGS) mge-shut
 
+build-usb: $(USB_DRIVER_LIST)
+
 # ==========================================================================
 # Driver build details
 #
@@ -104,6 +106,19 @@ libhid.o:
 
 libusb.o:
 	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o libusb.o -c libusb.c
+
+# ==========================================================================
+# Special case: tripplite_usb driver - development version (early beta)
+
+tripplite_usb: tripplite_usb.o main.o dstate.o ../common/state.o \
+		../common/upsconf.o ../common/parseconf.o $(LIBDEP) \
+		$(STRLCPY) libhid.o libusb.o hidparser.o
+	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o $@ $@.o main.o dstate.o \
+		../common/state.o ../common/upsconf.o ../common/parseconf.o \
+		$(LIBOBJ) $(LIBUSB_LIBS) $(LDFLAGS) -lm libhid.o libusb.o hidparser.o
+
+tripplite_usb.o: tripplite_usb.c libhid.h libusb.h
+	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -c tripplite_usb.c
 
 # ==========================================================================
 # Special case: bcmxcp_usb.c driver - development version (early beta)
