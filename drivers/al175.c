@@ -1087,7 +1087,6 @@ void upsdrv_updateinfo(void)
 	err = al175_read(x ## reg, 0x ## reg, sizeof(x ## reg));	\
 	if (err==-1) {							\
 		dstate_datastale();					\
-/*		goto out;						\ */
 		alarm(0);						\
 		return;							\
 	}								\
