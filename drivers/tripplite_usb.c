@@ -130,15 +130,20 @@ tripplite_usb - Driver for Tripp Lite USB-based UPS equipment
 
 =head1 NOTE
 
-This  man  page  only  documents  the hardware-specific features of the
-tripplite driver.  For information about the core driver, see nutupsdrv(8).
+This man page only documents the hardware-specific features of the
+tripplite_usb driver.  For information about the core driver, see
+nutupsdrv(8).
 
 =head1 SUPPORTED HARDWARE
 
 This driver should work with the OMNISV1000, OMNISV1500XL and SMART1500RM2U
 UPSes, which are detected as USB HID-class devices (but are not true HID
-Power-Device Class devices). If your Tripp Lite UPS uses a serial port, you
-may wish to investigate the tripplite(8) or tripplite_su(8) driver.
+Power-Device Class devices).  Other Tripp Lite USB models may work - please
+report success or failure to the nut-upsuser mailing list.  A key piece of
+information is the protocol number.  Also, be sure to turn on debugging
+(C<-DDD>) for more informative log messages.  If your Tripp Lite UPS uses a
+serial port, you may wish to investigate the tripplite(8) or tripplite_su(8)
+driver.
 
 =head1 EXTRA ARGUMENTS
 
@@ -160,8 +165,8 @@ C</proc/bus/usb/devices>).
 =item product
 
 A regular expression to match the product string for the UPS.  This would be
-useful if you have two different Tripp Lite UPSes connected to the system, and
-you want to be sure that you shut them down in the correct order.
+useful if you have two different Tripp Lite UPS models connected to the
+system, and you want to be sure that you shut them down in the correct order.
 
 =item productid
 
@@ -193,7 +198,7 @@ runtime by upsrw(8).
 
 The driver was not developed with any official documentation from Tripp Lite,
 so certain events may confuse the driver. If you observe any strange behavior,
-please re-run the driver with "-DDD" to increase the verbosity.
+please re-run the driver with C<-DDD> to increase the verbosity.
 
 So far, the Tripp Lite UPSes do not seem to have any serial number or other
 unique identifier accessible through USB. Therefore, you are limited to one
@@ -207,7 +212,6 @@ Rickard E. (Rik) Faith E<lt>faith@alephnull.comE<gt> and Nicholas Kain
 E<lt>nicholas@kain.usE<gt>.
 
 A Tripp Lite OMNIVS1000 was graciously donated to the NUT project by:
-
 
 =over
 

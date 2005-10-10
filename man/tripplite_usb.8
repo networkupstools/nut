@@ -129,19 +129,24 @@
 .\" ========================================================================
 .\"
 .IX Title "TRIPPLITE_USB 8"
-.TH TRIPPLITE_USB 8 "2005-10-01" " " "Network UPS Tools (NUT)"
+.TH TRIPPLITE_USB 8 "2005-10-09" " " "Network UPS Tools (NUT)"
 .SH "NAME"
 tripplite_usb \- Driver for Tripp Lite USB\-based UPS equipment
 .SH "NOTE"
 .IX Header "NOTE"
-This  man  page  only  documents  the hardware-specific features of the
-tripplite driver.  For information about the core driver, see \fInutupsdrv\fR\|(8).
+This man page only documents the hardware-specific features of the
+tripplite_usb driver.  For information about the core driver, see
+\&\fInutupsdrv\fR\|(8).
 .SH "SUPPORTED HARDWARE"
 .IX Header "SUPPORTED HARDWARE"
 This driver should work with the \s-1OMNISV1000\s0, \s-1OMNISV1500XL\s0 and \s-1SMART1500RM2U\s0
 UPSes, which are detected as \s-1USB\s0 HID-class devices (but are not true \s-1HID\s0
-Power-Device Class devices). If your Tripp Lite \s-1UPS\s0 uses a serial port, you
-may wish to investigate the \fItripplite\fR\|(8) or \fItripplite_su\fR\|(8) driver.
+Power-Device Class devices).  Other Tripp Lite \s-1USB\s0 models may work \- please
+report success or failure to the nut-upsuser mailing list.  A key piece of
+information is the protocol number.  Also, be sure to turn on debugging
+(\f(CW\*(C`\-DDD\*(C'\fR) for more informative log messages.  If your Tripp Lite \s-1UPS\s0 uses a
+serial port, you may wish to investigate the \fItripplite\fR\|(8) or \fItripplite_su\fR\|(8)
+driver.
 .SH "EXTRA ARGUMENTS"
 .IX Header "EXTRA ARGUMENTS"
 This driver supports the following optional setting in the \fIups.conf\fR\|(5) file
@@ -157,8 +162,8 @@ This regular expression is used to match the \s-1USB\s0 bus (as seen in
 .IP "product" 4
 .IX Item "product"
 A regular expression to match the product string for the \s-1UPS\s0.  This would be
-useful if you have two different Tripp Lite UPSes connected to the system, and
-you want to be sure that you shut them down in the correct order.
+useful if you have two different Tripp Lite \s-1UPS\s0 models connected to the
+system, and you want to be sure that you shut them down in the correct order.
 .IP "productid" 4
 .IX Item "productid"
 The productid is a regular expression which matches the \s-1UPS\s0 \s-1PID\s0 as four
@@ -180,7 +185,7 @@ runtime by \fIupsrw\fR\|(8).
 .IX Header "KNOWN ISSUES AND BUGS"
 The driver was not developed with any official documentation from Tripp Lite,
 so certain events may confuse the driver. If you observe any strange behavior,
-please re-run the driver with \*(L"\-DDD\*(R" to increase the verbosity.
+please re-run the driver with \f(CW\*(C`\-DDD\*(C'\fR to increase the verbosity.
 .PP
 So far, the Tripp Lite UPSes do not seem to have any serial number or other
 unique identifier accessible through \s-1USB\s0. Therefore, you are limited to one
