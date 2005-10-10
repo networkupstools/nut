@@ -29,8 +29,6 @@ EOF
 
 for i in $*
 do
-	EXTRA=""
-	EXTRAOBJ=""
 
 	EXTRA=""
 	EXTRAOBJ=""
