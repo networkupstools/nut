@@ -1,3 +1,19 @@
+Sun Oct 9 23:41:00 CEST 2005 / Kjell Claesson <kjell.claesson@telia.com>
+
+  - bcmxcp: Merging driver from Development to Testing. Driver is the
+    same but splitted up due to the usb support.
+    Files changed bcmxcp.c bcmxcp.h , added bcmxcp_io.h bcmxcp_ser.c
+    driver/gendb changed to support EXTRAOBJ="bcmxcp_ser.o".
+
+  - bcmxcp_usb: Added to Testing due to the backport of bcmxcp from
+    Development. Added bcmxcp_usb nut_usb.c nut_usb.h.
+    driver/Makefile.in changed to support build of bcmxcp_usb.
+    configure.in changed to add bcmxcp_usb and manpage to USB_DRIVER_LIST
+    and USBPAGES.
+
+  - Tested on both serial and usb. Serial has the same funktion as
+    the previous 0.09 driver in Testing branch. USB stable on 3105.
+
 Sun Oct  9 22:10:00 EDT 2005 / Charles Lepple <clepple@gmail.com>
 
   - tripplite_usb: Finished merging v0.6 of this driver from the
