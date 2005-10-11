@@ -47,6 +47,8 @@
 "Belkin"	"Resource"	""		"genericups upstype=4"
 "Belkin"	"Home Office"	"F6H350-SER, F6H500-SER, F6H650-SER"	"genericups upstype=7"
 "Belkin"	"Universal UPS" "F6C800-UNV, F6C120-UNV, F6C1100-UNV"	"belkinunv"
+"Belkin"	"Universal UPS" "F6C800-UNV, F6C120-UNV, F6C1100-UNV"	"newhidups (experimental USB driver for Linux)"
+"Belkin"	"Office Series"	"F6C550-AVR"	"newhidups (experimental USB driver for Linux)"
 
 "Best Power"	"Fortress (newer)"	""	"bestups"
 "Best Power"	"Fortress Telecom"	""	"bestups"
