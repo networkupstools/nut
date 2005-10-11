@@ -1,54 +1,57 @@
+Tue Oct 11 06:59:22 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
+
+  - README and driver.list: add missing bcmxcp_usb information
+
 Mon Oct 10 22:36:00 CEST 2005 / Kjell Claesson <kjell.claesson@telia.com>
 
-  - drivers/gendb: Removed doublet's of the row's
-     EXTRA=""
-     EXTRAOBJ=""
-    in gendb.
+ - drivers/gendb: Removed doublet's of the rows
+    EXTRA=""
+    EXTRAOBJ=""
 
 Sun Oct 9 23:41:00 CEST 2005 / Kjell Claesson <kjell.claesson@telia.com>
 
-  - bcmxcp: Merging driver from Development to Testing. Driver is the
-    same but splitted up due to the usb support.
-    Files changed bcmxcp.c bcmxcp.h , added bcmxcp_io.h bcmxcp_ser.c
-    driver/gendb changed to support EXTRAOBJ="bcmxcp_ser.o".
+ - bcmxcp: Merging driver from Development to Testing. Driver is the
+   same but splitted up due to the usb support.
+   Files changed bcmxcp.c bcmxcp.h , added bcmxcp_io.h bcmxcp_ser.c
+   driver/gendb changed to support EXTRAOBJ="bcmxcp_ser.o".
 
-  - bcmxcp_usb: Added to Testing due to the backport of bcmxcp from
-    Development. Added bcmxcp_usb nut_usb.c nut_usb.h.
-    driver/Makefile.in changed to support build of bcmxcp_usb.
-    configure.in changed to add bcmxcp_usb and manpage to USB_DRIVER_LIST
-    and USBPAGES.
+ - bcmxcp_usb: Added to Testing due to the backport of bcmxcp from
+   Development. Added bcmxcp_usb nut_usb.c nut_usb.h.
+   driver/Makefile.in changed to support build of bcmxcp_usb.
+   configure.in changed to add bcmxcp_usb and manpage to USB_DRIVER_LIST
+   and USBPAGES.
 
-  - Tested on both serial and usb. Serial has the same funktion as
-    the previous 0.09 driver in Testing branch. USB stable on 3105.
+ - Tested on both serial and usb. Serial has the same funktion as
+   the previous 0.09 driver in Testing branch. USB stable on 3105.
 
 Sun Oct  9 22:10:00 EDT 2005 / Charles Lepple <clepple@gmail.com>
 
-  - tripplite_usb: Finished merging v0.6 of this driver from the
-    Development branch. The driver now handles both OMNIVS and SMARTPRO
-    models.
+ - tripplite_usb: Finished merging v0.6 of this driver from the
+   Development branch. The driver now handles both OMNIVS and SMARTPRO
+   models.
 
-  - drivers/Makefile.in: Reorganized the USB build targets to be closer
-    to install-usb. This matches the Development branch, where the list
-    of USB drivers is pulled from autoconf.
-    
+ - drivers/Makefile.in: Reorganized the USB build targets to be closer
+   to install-usb. This matches the Development branch, where the list
+   of USB drivers is pulled from autoconf.
+
 Sun Oct  9 05:31:09 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
-  - newhidups: repaired the way status flags are stored. Note that
-    there can be more than one device status flag (such as "lowbatt"
-    and "shutdownimm") mapped to the same NUT status (such as "LB").
-    We now store the device flags, and convert them to NUT values only
-    on request. This solves the problem where multiple variables (e.g.
-    "lowbatt" and "shutdownimm") might have erased each other's values
-    if one was set and the other was not. This also solves the issue
-    reported by Alfred Ganz of the CHRG and DISCHRG flags not being
-    cleared properly.
+ - newhidups: repaired the way status flags are stored. Note that
+   there can be more than one device status flag (such as "lowbatt"
+   and "shutdownimm") mapped to the same NUT status (such as "LB").
+   We now store the device flags, and convert them to NUT values only
+   on request. This solves the problem where multiple variables (e.g.
+   "lowbatt" and "shutdownimm") might have erased each other's values
+   if one was set and the other was not. This also solves the issue
+   reported by Alfred Ganz of the CHRG and DISCHRG flags not being
+   cleared properly.
 
-  - newhidups: added NUT status flags OVERHEAT, COMMFAULT, DEPLETED;
-    these already exist in the belkinunv driver.
+ - newhidups: added NUT status flags OVERHEAT, COMMFAULT, DEPLETED;
+   these already exist in the belkinunv driver.
 
-  - newhidups/Belkin: changed the way the OL/OB status is determined;
-    now correctly shows OB during battery test (even when AC power is
-    present).
+ - newhidups/Belkin: changed the way the OL/OB status is determined;
+   now correctly shows OB during battery test (even when AC power is
+   present).
 
 Sun Oct  9 02:40:25 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 

@@ -158,6 +158,8 @@ that UPS.
 	apcsmart         - APC Smart-UPS, Back-UPS Pro, Matrix-UPS models
 
 	bcmxcp           - some Powerware models
+	
+	bcmxcp_usb       - some Powerware USB models
 
 	belkin           - Belkin Regulator Pro
 
@@ -172,7 +174,7 @@ that UPS.
                            - Patriot Pro (PRO)
 			   - Patriot Pro II (PR2)
 			   - Axxium Rackmount (AX1)
-                         
+
                            The SOLA 325, 520 and 620 are also recognized. 
 
 			   This driver will probably also work with other
