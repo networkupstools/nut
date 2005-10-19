@@ -1,16 +1,20 @@
 nut (2.0.2-2) unstable; urgency=low
 
-forport changes from Sarge
-LINTIAN
+Todo:
+- forport changes from Sarge
+- LINTIAN
 
 
 
+  * debian/nut-cgi.postinst: load confmodule
   * debian/nut-hidups/*: remove this unneeded directory
   * debian/control:
     - Update build dependency from libsnmp5-dev to libsnmp9-dev (closes:
     #326410)
     - Changes nut-usb wrong dependency from libusb-dev to libusb (closes:
     #320315)
+    - add debconf (>= 0.5.00) and adduser to nut/nut-cgi Depends
+  * debian/copyright: update the FSF address and the Authors
 
  -- Arnaud Quette <aquette@debian.org>  Fri, 07 Oct 2005 23:35:55 +0200
 

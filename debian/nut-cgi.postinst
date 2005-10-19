@@ -1,5 +1,8 @@
 #!/bin/sh -e
 
+# source the debconf library
+. /usr/share/debconf/confmodule
+
 case "$1" in
 
   configure)

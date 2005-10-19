@@ -1,6 +1,10 @@
+Wed Oct 19 14:10:29 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - debian/: more update (still draft) to prepare 2.0.2-2 release
+
 Mon Oct 10 20:15:24 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
 
- - driver.list: add Eltek AL175 alarm module (rKirill Smelkov)
+ - driver.list: add Eltek AL175 alarm module (Kirill Smelkov)
  
 Sun Oct  9 05:31:09 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 

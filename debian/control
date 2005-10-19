@@ -8,7 +8,7 @@ Standards-Version: 3.6.2
 
 Package: nut
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, adduser
+Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, debconf (>= 0.5.00)
 Suggests: nut-cgi, nut-snmp, nut-usb, nut-dev
 Provides: ups-monitor, nut-doc
 Conflicts: ups-monitor, nut-doc
@@ -26,7 +26,7 @@ Description: The core system of the nut - Network UPS Tools
 
 Package: nut-cgi
 Architecture: any
-Depends: ${shlibs:Depends}
+Depends: ${shlibs:Depends}, adduser, debconf (>= 0.5.00)
 Recommends: apache | httpd
 Suggests: nut
 Replaces: nut (<< 1.1.11)
