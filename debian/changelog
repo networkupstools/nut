@@ -4,7 +4,12 @@ Todo:
 - forport changes from Sarge
 - LINTIAN
 
+  * debian/control: remove libusb Depends as it's already included in
+    shlibs
 
+ -- Arnaud Quette <aquette@debian.org>  Wed, 19 Oct 2005 22:26:33 +0200
+
+nut (2.0.2-2) unstable; urgency=low
 
   * debian/nut-cgi.postinst: load confmodule
   * debian/nut-hidups/*: remove this unneeded directory
@@ -15,6 +20,8 @@ Todo:
     #320315)
     - add debconf (>= 0.5.00) and adduser to nut/nut-cgi Depends
   * debian/copyright: update the FSF address and the Authors
+  * debian/po/vi.po: add the Vietnamese translation for debconf, from Clytie
+    Siddall (closes: #316327)
 
  -- Arnaud Quette <aquette@debian.org>  Fri, 07 Oct 2005 23:35:55 +0200
 
