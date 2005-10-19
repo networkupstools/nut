@@ -2,6 +2,11 @@ Wed Oct 19 14:10:29 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
 
  - debian/: more update (still draft) to prepare 2.0.2-2 release
 
+ - nitram: new driver for Nitram Elite 2005, and probably some
+   recent Cyberpower units
+
+   (Olivier Albiez)
+
 Mon Oct 10 20:15:24 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
 
  - driver.list: add Eltek AL175 alarm module (Kirill Smelkov)

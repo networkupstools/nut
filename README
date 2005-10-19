@@ -161,6 +161,8 @@ that UPS.
 
 	bcmxcp           - some Powerware models
 
+	bcmxcp_usb       - some Powerware USB models
+
 	belkin           - Belkin Regulator Pro
 
 	belkinunv	 - Belkin Universal UPS (F6C800-UNV, others)
@@ -305,6 +307,8 @@ that UPS.
 			   NOTE: not built by default.  Read the FAQ
 			   to find out how to build/install/use this one.
  
+	nitram		 - Nitram Elite 2005 units
+
 	oneac		 - Oneac EG and ON equipment
 
 	powercom	 - Trust 425/625

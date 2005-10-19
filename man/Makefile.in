@@ -17,6 +17,7 @@ MAN8_PAGES  = upsc.8 upsrw.8 upscmd.8 upslog.8 upssched.8 \
 		upsmon.8 upsd.8 nutupsdrv.8 upsdrvctl.8
 
 DRIVERPAGES = \
+	al175.8		\
 	apcsmart.8	\
 	bcmxcp.8 	\
 	belkin.8 	\
@@ -39,6 +40,7 @@ DRIVERPAGES = \
 	mge-shut.8	\
 	mge-utalk.8	\
 	mustek.8	\
+	nitram.8	\
 	oneac.8		\
 	powercom.8 	\
 	powermust.8	\

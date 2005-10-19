@@ -72,6 +72,8 @@ gamatronic: gamatronic.o main.o serial.o dstate.o ../common/state.o ../common/up
 	$(CC) $(CFLAGS) $(LDFLAGS) -o gamatronic gamatronic.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBOBJ) 
 al175: al175.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBDEP)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o al175 al175.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBOBJ) 
+nitram: nitram.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBDEP)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o nitram nitram.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBOBJ) 
 al175.o: al175.c main.h ../include/common.h ../include/attribute.h \
   ../include/config.h ../include/proto.h ../include/attribute.h \
   ../include/version.h ../include/upsconf.h dstate.h \
@@ -265,6 +267,11 @@ newhidups.o: newhidups.c main.h ../include/common.h \
   dstate.h ../include/parseconf.h ../include/upshandler.h \
   ../include/extstate.h libhid.h ../include/timehead.h hidtypes.h \
   newhidups.h libusb.h mge-hid.h apc-hid.h belkin-hid.h
+nitram.o: nitram.c main.h ../include/common.h ../include/attribute.h \
+  ../include/config.h ../include/proto.h ../include/attribute.h \
+  ../include/version.h ../include/upsconf.h dstate.h \
+  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
+  serial.h nitram.h
 nut_usb.o: nut_usb.c ../include/common.h ../include/attribute.h \
   ../include/config.h ../include/proto.h ../include/attribute.h \
   ../include/version.h ../include/timehead.h nut_usb.h
@@ -288,11 +295,6 @@ safenet.o: safenet.c main.h ../include/common.h ../include/attribute.h \
   ../include/version.h ../include/upsconf.h dstate.h \
   ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
   serial.h safenet.h
-sec.o: sec.c main.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/attribute.h \
-  ../include/version.h ../include/upsconf.h dstate.h \
-  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
-  serial.h sec.h
 serial.o: serial.c ../include/common.h ../include/attribute.h \
   ../include/config.h ../include/proto.h ../include/attribute.h \
   ../include/version.h ../include/timehead.h serial.h
