@@ -570,6 +570,11 @@ void upsdrv_initups(void)
 	int r;
 	int i;
 
+	/* enforce use of the "vendorid" option if "generic" is given */
+	if (testvar("generic") && getval("vendorid")==NULL) {
+		fatalx("must specify \"vendorid\" when using \"generic\"");
+	}
+
         /* process the UPS selection options */
 	regex_array[0] = getval("vendorid");
 	regex_array[1] = getval("productid");

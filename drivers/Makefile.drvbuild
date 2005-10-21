@@ -75,276 +75,258 @@ al175: al175.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ..
 nitram: nitram.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBDEP)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o nitram nitram.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBOBJ) 
 al175.o: al175.c main.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/attribute.h \
-  ../include/version.h ../include/upsconf.h dstate.h \
-  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
-  serial.h al175.h
+  ../include/config.h ../include/proto.h ../include/version.h \
+  ../include/upsconf.h dstate.h ../include/parseconf.h \
+  ../include/upshandler.h ../include/extstate.h serial.h al175.h
 apc-hid.o: apc-hid.c newhidups.h ../include/config.h libusb.h libhid.h \
   ../include/timehead.h hidtypes.h apc-hid.h ../include/extstate.h \
   dstate.h ../include/attribute.h ../include/parseconf.h \
-  ../include/upshandler.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/attribute.h \
+  ../include/upshandler.h ../include/common.h ../include/proto.h \
   ../include/version.h
 apcsmart.o: apcsmart.c main.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/attribute.h \
-  ../include/version.h ../include/upsconf.h dstate.h \
-  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
-  serial.h apcsmart.h ../include/timehead.h
+  ../include/config.h ../include/proto.h ../include/version.h \
+  ../include/upsconf.h dstate.h ../include/parseconf.h \
+  ../include/upshandler.h ../include/extstate.h serial.h apcsmart.h \
+  ../include/timehead.h
 bcmxcp.o: bcmxcp.c main.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/attribute.h \
-  ../include/version.h ../include/upsconf.h dstate.h \
-  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
-  bcmxcp_io.h bcmxcp.h ../include/timehead.h
+  ../include/config.h ../include/proto.h ../include/version.h \
+  ../include/upsconf.h dstate.h ../include/parseconf.h \
+  ../include/upshandler.h ../include/extstate.h bcmxcp_io.h bcmxcp.h \
+  ../include/timehead.h
 bcmxcp_ser.o: bcmxcp_ser.c main.h ../include/common.h \
   ../include/attribute.h ../include/config.h ../include/proto.h \
-  ../include/attribute.h ../include/version.h ../include/upsconf.h \
-  dstate.h ../include/parseconf.h ../include/upshandler.h \
-  ../include/extstate.h bcmxcp.h ../include/timehead.h bcmxcp_io.h \
-  serial.h
-bcmxcp_usb.o: bcmxcp_usb.c main.h ../include/common.h \
-  ../include/attribute.h ../include/config.h ../include/proto.h \
-  ../include/attribute.h ../include/version.h ../include/upsconf.h \
-  dstate.h ../include/parseconf.h ../include/upshandler.h \
-  ../include/extstate.h bcmxcp.h ../include/timehead.h bcmxcp_io.h \
-  nut_usb.h
-belkin.o: belkin.c main.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/attribute.h \
   ../include/version.h ../include/upsconf.h dstate.h \
   ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
-  serial.h belkin.h ../include/timehead.h
+  bcmxcp.h ../include/timehead.h bcmxcp_io.h serial.h
+bcmxcp_usb.o: bcmxcp_usb.c main.h ../include/common.h \
+  ../include/attribute.h ../include/config.h ../include/proto.h \
+  ../include/version.h ../include/upsconf.h dstate.h \
+  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
+  bcmxcp.h ../include/timehead.h bcmxcp_io.h nut_usb.h
+belkin.o: belkin.c main.h ../include/common.h ../include/attribute.h \
+  ../include/config.h ../include/proto.h ../include/version.h \
+  ../include/upsconf.h dstate.h ../include/parseconf.h \
+  ../include/upshandler.h ../include/extstate.h serial.h belkin.h \
+  ../include/timehead.h
 belkin-hid.o: belkin-hid.c newhidups.h ../include/config.h libusb.h \
   libhid.h ../include/timehead.h hidtypes.h belkin-hid.h \
   ../include/extstate.h dstate.h ../include/attribute.h \
   ../include/parseconf.h ../include/upshandler.h ../include/common.h \
-  ../include/attribute.h ../include/config.h ../include/proto.h \
-  ../include/attribute.h ../include/version.h
+  ../include/proto.h ../include/version.h
 belkinunv.o: belkinunv.c main.h ../include/common.h \
   ../include/attribute.h ../include/config.h ../include/proto.h \
-  ../include/attribute.h ../include/version.h ../include/upsconf.h \
-  dstate.h ../include/parseconf.h ../include/upshandler.h \
-  ../include/extstate.h serial.h belkinunv.h
-bestfcom.o: bestfcom.c main.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/attribute.h \
   ../include/version.h ../include/upsconf.h dstate.h \
   ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
-  serial.h bestfcom.h
+  serial.h belkinunv.h
+bestfcom.o: bestfcom.c main.h ../include/common.h ../include/attribute.h \
+  ../include/config.h ../include/proto.h ../include/version.h \
+  ../include/upsconf.h dstate.h ../include/parseconf.h \
+  ../include/upshandler.h ../include/extstate.h serial.h bestfcom.h
 bestuferrups.o: bestuferrups.c main.h ../include/common.h \
   ../include/attribute.h ../include/config.h ../include/proto.h \
-  ../include/attribute.h ../include/version.h ../include/upsconf.h \
-  dstate.h ../include/parseconf.h ../include/upshandler.h \
-  ../include/extstate.h serial.h bestuferrups.h
+  ../include/version.h ../include/upsconf.h dstate.h \
+  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
+  serial.h bestuferrups.h
 bestups.o: bestups.c main.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/attribute.h \
-  ../include/version.h ../include/upsconf.h dstate.h \
-  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
-  serial.h bestups.h
+  ../include/config.h ../include/proto.h ../include/version.h \
+  ../include/upsconf.h dstate.h ../include/parseconf.h \
+  ../include/upshandler.h ../include/extstate.h serial.h bestups.h
 blazer.o: blazer.c main.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/attribute.h \
-  ../include/version.h ../include/upsconf.h dstate.h \
-  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
-  serial.h blazer.h
+  ../include/config.h ../include/proto.h ../include/version.h \
+  ../include/upsconf.h dstate.h ../include/parseconf.h \
+  ../include/upshandler.h ../include/extstate.h serial.h blazer.h
 cpsups.o: cpsups.c cpsups.h main.h ../include/common.h \
   ../include/attribute.h ../include/config.h ../include/proto.h \
-  ../include/attribute.h ../include/version.h ../include/upsconf.h \
-  dstate.h ../include/parseconf.h ../include/upshandler.h \
-  ../include/extstate.h serial.h
+  ../include/version.h ../include/upsconf.h dstate.h \
+  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
+  serial.h
 cyberpower.o: cyberpower.c main.h ../include/common.h \
   ../include/attribute.h ../include/config.h ../include/proto.h \
-  ../include/attribute.h ../include/version.h ../include/upsconf.h \
-  dstate.h ../include/parseconf.h ../include/upshandler.h \
-  ../include/extstate.h serial.h cyberpower.h ../include/timehead.h
+  ../include/version.h ../include/upsconf.h dstate.h \
+  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
+  serial.h cyberpower.h ../include/timehead.h
 dstate.o: dstate.c ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/attribute.h \
-  ../include/version.h dstate.h ../include/parseconf.h \
-  ../include/upshandler.h ../include/state.h ../include/extstate.h
+  ../include/config.h ../include/proto.h ../include/version.h dstate.h \
+  ../include/parseconf.h ../include/upshandler.h ../include/state.h \
+  ../include/extstate.h
 dummy-ups.o: dummy-ups.c main.h ../include/common.h \
   ../include/attribute.h ../include/config.h ../include/proto.h \
-  ../include/attribute.h ../include/version.h ../include/upsconf.h \
-  dstate.h ../include/parseconf.h ../include/upshandler.h \
-  ../include/extstate.h dummy-ups.h
+  ../include/version.h ../include/upsconf.h dstate.h \
+  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
+  dummy-ups.h
 energizerups.o: energizerups.c main.h ../include/common.h \
   ../include/attribute.h ../include/config.h ../include/proto.h \
-  ../include/attribute.h ../include/version.h ../include/upsconf.h \
-  dstate.h ../include/parseconf.h ../include/upshandler.h \
-  ../include/extstate.h
+  ../include/version.h ../include/upsconf.h dstate.h \
+  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h
 esupssmart.o: esupssmart.c main.h ../include/common.h \
   ../include/attribute.h ../include/config.h ../include/proto.h \
-  ../include/attribute.h ../include/version.h ../include/upsconf.h \
-  dstate.h ../include/parseconf.h ../include/upshandler.h \
-  ../include/extstate.h serial.h esupssmart.h
+  ../include/version.h ../include/upsconf.h dstate.h \
+  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
+  serial.h esupssmart.h
 etapro.o: etapro.c main.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/attribute.h \
-  ../include/version.h ../include/upsconf.h dstate.h \
-  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
-  serial.h etapro.h
+  ../include/config.h ../include/proto.h ../include/version.h \
+  ../include/upsconf.h dstate.h ../include/parseconf.h \
+  ../include/upshandler.h ../include/extstate.h serial.h etapro.h
 everups.o: everups.c main.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/attribute.h \
-  ../include/version.h ../include/upsconf.h dstate.h \
-  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
-  serial.h everups.h
+  ../include/config.h ../include/proto.h ../include/version.h \
+  ../include/upsconf.h dstate.h ../include/parseconf.h \
+  ../include/upshandler.h ../include/extstate.h serial.h everups.h
 fentonups.o: fentonups.c main.h ../include/common.h \
   ../include/attribute.h ../include/config.h ../include/proto.h \
-  ../include/attribute.h ../include/version.h ../include/upsconf.h \
-  dstate.h ../include/parseconf.h ../include/upshandler.h \
-  ../include/extstate.h serial.h fentonups.h
+  ../include/version.h ../include/upsconf.h dstate.h \
+  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
+  serial.h fentonups.h
 gamatronic.o: gamatronic.c main.h ../include/common.h \
   ../include/attribute.h ../include/config.h ../include/proto.h \
-  ../include/attribute.h ../include/version.h ../include/upsconf.h \
-  dstate.h ../include/parseconf.h ../include/upshandler.h \
-  ../include/extstate.h serial.h gamatronic.h
+  ../include/version.h ../include/upsconf.h dstate.h \
+  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
+  serial.h gamatronic.h
+generic-hid.o: generic-hid.c newhidups.h ../include/config.h libusb.h \
+  libhid.h ../include/timehead.h hidtypes.h generic-hid.h \
+  ../include/extstate.h dstate.h ../include/attribute.h \
+  ../include/parseconf.h ../include/upshandler.h ../include/common.h \
+  ../include/proto.h ../include/version.h main.h ../include/upsconf.h
 genericups.o: genericups.c main.h ../include/common.h \
   ../include/attribute.h ../include/config.h ../include/proto.h \
-  ../include/attribute.h ../include/version.h ../include/upsconf.h \
-  dstate.h ../include/parseconf.h ../include/upshandler.h \
-  ../include/extstate.h serial.h genericups.h
+  ../include/version.h ../include/upsconf.h dstate.h \
+  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
+  serial.h genericups.h
 hidparser.o: hidparser.c ../include/config.h hidparser.h hidtypes.h
 hidups.o: hidups.c hidups.h ../include/timehead.h ../include/config.h \
   /usr/include/linux/hiddev.h main.h ../include/common.h \
-  ../include/attribute.h ../include/config.h ../include/proto.h \
-  ../include/attribute.h ../include/version.h ../include/upsconf.h \
-  dstate.h ../include/parseconf.h ../include/upshandler.h \
-  ../include/extstate.h
+  ../include/attribute.h ../include/proto.h ../include/version.h \
+  ../include/upsconf.h dstate.h ../include/parseconf.h \
+  ../include/upshandler.h ../include/extstate.h
 ippon.o: ippon.c main.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/attribute.h \
-  ../include/version.h ../include/upsconf.h dstate.h \
-  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
-  serial.h ippon.h
+  ../include/config.h ../include/proto.h ../include/version.h \
+  ../include/upsconf.h dstate.h ../include/parseconf.h \
+  ../include/upshandler.h ../include/extstate.h serial.h ippon.h
 isbmex.o: isbmex.c main.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/attribute.h \
-  ../include/version.h ../include/upsconf.h dstate.h \
-  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
-  serial.h isbmex.h
+  ../include/config.h ../include/proto.h ../include/version.h \
+  ../include/upsconf.h dstate.h ../include/parseconf.h \
+  ../include/upshandler.h ../include/extstate.h serial.h isbmex.h
+kebo-hid.o: kebo-hid.c newhidups.h ../include/config.h libusb.h libhid.h \
+  ../include/timehead.h hidtypes.h kebo-hid.h ../include/extstate.h \
+  dstate.h ../include/attribute.h ../include/parseconf.h \
+  ../include/upshandler.h ../include/common.h ../include/proto.h \
+  ../include/version.h
 libhid.o: libhid.c hidparser.h hidtypes.h libhid.h ../include/timehead.h \
   libusb.h
 libusb.o: libusb.c libhid.h ../include/timehead.h hidtypes.h libusb.h \
   ../include/config.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/attribute.h \
-  ../include/version.h
+  ../include/proto.h ../include/version.h
 liebert.o: liebert.c main.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/attribute.h \
-  ../include/version.h ../include/upsconf.h dstate.h \
-  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
-  serial.h liebert.h
+  ../include/config.h ../include/proto.h ../include/version.h \
+  ../include/upsconf.h dstate.h ../include/parseconf.h \
+  ../include/upshandler.h ../include/extstate.h serial.h liebert.h
 main.o: main.c main.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/attribute.h \
-  ../include/version.h ../include/upsconf.h dstate.h \
-  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h
+  ../include/config.h ../include/proto.h ../include/version.h \
+  ../include/upsconf.h dstate.h ../include/parseconf.h \
+  ../include/upshandler.h ../include/extstate.h
 masterguard.o: masterguard.c main.h ../include/common.h \
   ../include/attribute.h ../include/config.h ../include/proto.h \
-  ../include/attribute.h ../include/version.h ../include/upsconf.h \
-  dstate.h ../include/parseconf.h ../include/upshandler.h \
-  ../include/extstate.h serial.h masterguard.h
-metasys.o: metasys.c main.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/attribute.h \
   ../include/version.h ../include/upsconf.h dstate.h \
   ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
-  serial.h metasys.h
+  serial.h masterguard.h
+metasys.o: metasys.c main.h ../include/common.h ../include/attribute.h \
+  ../include/config.h ../include/proto.h ../include/version.h \
+  ../include/upsconf.h dstate.h ../include/parseconf.h \
+  ../include/upshandler.h ../include/extstate.h serial.h metasys.h
 mge-hid.o: mge-hid.c newhidups.h ../include/config.h libusb.h libhid.h \
   ../include/timehead.h hidtypes.h mge-hid.h ../include/extstate.h \
   dstate.h ../include/attribute.h ../include/parseconf.h \
-  ../include/upshandler.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/attribute.h \
+  ../include/upshandler.h ../include/common.h ../include/proto.h \
   ../include/version.h
 mge-shut.o: mge-shut.c ../include/config.h main.h ../include/common.h \
-  ../include/attribute.h ../include/config.h ../include/proto.h \
-  ../include/attribute.h ../include/version.h ../include/upsconf.h \
-  dstate.h ../include/parseconf.h ../include/upshandler.h \
-  ../include/extstate.h serial.h ../include/timehead.h mge-shut.h \
-  hidparser.h hidtypes.h
+  ../include/attribute.h ../include/proto.h ../include/version.h \
+  ../include/upsconf.h dstate.h ../include/parseconf.h \
+  ../include/upshandler.h ../include/extstate.h serial.h \
+  ../include/timehead.h mge-shut.h hidparser.h hidtypes.h
 mge-utalk.o: mge-utalk.c ../include/timehead.h main.h ../include/common.h \
   ../include/attribute.h ../include/config.h ../include/proto.h \
-  ../include/attribute.h ../include/version.h ../include/upsconf.h \
-  dstate.h ../include/parseconf.h ../include/upshandler.h \
-  ../include/extstate.h serial.h mge-utalk.h
-mustek.o: mustek.c main.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/attribute.h \
   ../include/version.h ../include/upsconf.h dstate.h \
   ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
-  serial.h mustek.h
+  serial.h mge-utalk.h
+mustek.o: mustek.c main.h ../include/common.h ../include/attribute.h \
+  ../include/config.h ../include/proto.h ../include/version.h \
+  ../include/upsconf.h dstate.h ../include/parseconf.h \
+  ../include/upshandler.h ../include/extstate.h serial.h mustek.h
 newhidups.o: newhidups.c main.h ../include/common.h \
   ../include/attribute.h ../include/config.h ../include/proto.h \
-  ../include/attribute.h ../include/version.h ../include/upsconf.h \
-  dstate.h ../include/parseconf.h ../include/upshandler.h \
-  ../include/extstate.h libhid.h ../include/timehead.h hidtypes.h \
-  newhidups.h libusb.h mge-hid.h apc-hid.h belkin-hid.h
+  ../include/version.h ../include/upsconf.h dstate.h \
+  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
+  libhid.h ../include/timehead.h hidtypes.h newhidups.h libusb.h \
+  generic-hid.h mge-hid.h apc-hid.h belkin-hid.h
 nitram.o: nitram.c main.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/attribute.h \
-  ../include/version.h ../include/upsconf.h dstate.h \
-  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
-  serial.h nitram.h
+  ../include/config.h ../include/proto.h ../include/version.h \
+  ../include/upsconf.h dstate.h ../include/parseconf.h \
+  ../include/upshandler.h ../include/extstate.h serial.h nitram.h
 nut_usb.o: nut_usb.c ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/attribute.h \
-  ../include/version.h ../include/timehead.h nut_usb.h
+  ../include/config.h ../include/proto.h ../include/version.h \
+  ../include/timehead.h nut_usb.h
 oneac.o: oneac.c main.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/attribute.h \
-  ../include/version.h ../include/upsconf.h dstate.h \
-  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
-  serial.h oneac.h
+  ../include/config.h ../include/proto.h ../include/version.h \
+  ../include/upsconf.h dstate.h ../include/parseconf.h \
+  ../include/upshandler.h ../include/extstate.h serial.h oneac.h
 powercom.o: powercom.c main.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/attribute.h \
-  ../include/version.h ../include/upsconf.h dstate.h \
-  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
-  serial.h powercom.h ../include/timehead.h
+  ../include/config.h ../include/proto.h ../include/version.h \
+  ../include/upsconf.h dstate.h ../include/parseconf.h \
+  ../include/upshandler.h ../include/extstate.h serial.h powercom.h \
+  ../include/timehead.h
 powermust.o: powermust.c main.h ../include/common.h \
   ../include/attribute.h ../include/config.h ../include/proto.h \
-  ../include/attribute.h ../include/version.h ../include/upsconf.h \
-  dstate.h ../include/parseconf.h ../include/upshandler.h \
-  ../include/extstate.h serial.h powermust.h
+  ../include/version.h ../include/upsconf.h dstate.h \
+  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
+  serial.h powermust.h
 safenet.o: safenet.c main.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/attribute.h \
-  ../include/version.h ../include/upsconf.h dstate.h \
-  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
-  serial.h safenet.h
-serial.o: serial.c ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/attribute.h \
-  ../include/version.h ../include/timehead.h serial.h
-skel.o: skel.c main.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/attribute.h \
-  ../include/version.h ../include/upsconf.h dstate.h \
-  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h
-sms.o: sms.c main.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/attribute.h \
-  ../include/version.h ../include/upsconf.h dstate.h \
-  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
-  serial.h sms.h
-snmp-ups.o: snmp-ups.c snmp-ups.h ../include/attribute.h main.h \
-  ../include/common.h ../include/attribute.h ../include/config.h \
-  ../include/proto.h ../include/attribute.h ../include/version.h \
+  ../include/config.h ../include/proto.h ../include/version.h \
   ../include/upsconf.h dstate.h ../include/parseconf.h \
-  ../include/upshandler.h ../include/extstate.h apccmib.h ietfmib.h \
-  mgemib.h netvisionmib.h pwmib.h
-solis.o: solis.c main.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/attribute.h \
+  ../include/upshandler.h ../include/extstate.h serial.h safenet.h
+serial.o: serial.c ../include/common.h ../include/attribute.h \
+  ../include/config.h ../include/proto.h ../include/version.h \
+  ../include/timehead.h serial.h
+skel.o: skel.c main.h ../include/common.h ../include/attribute.h \
+  ../include/config.h ../include/proto.h ../include/version.h \
+  ../include/upsconf.h dstate.h ../include/parseconf.h \
+  ../include/upshandler.h ../include/extstate.h
+sms.o: sms.c main.h ../include/common.h ../include/attribute.h \
+  ../include/config.h ../include/proto.h ../include/version.h \
+  ../include/upsconf.h dstate.h ../include/parseconf.h \
+  ../include/upshandler.h ../include/extstate.h serial.h sms.h
+snmp-ups.o: snmp-ups.c snmp-ups.h ../include/attribute.h main.h \
+  ../include/common.h ../include/config.h ../include/proto.h \
   ../include/version.h ../include/upsconf.h dstate.h \
   ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
-  serial.h solis.h
+  apccmib.h ietfmib.h mgemib.h netvisionmib.h pwmib.h
+solis.o: solis.c main.h ../include/common.h ../include/attribute.h \
+  ../include/config.h ../include/proto.h ../include/version.h \
+  ../include/upsconf.h dstate.h ../include/parseconf.h \
+  ../include/upshandler.h ../include/extstate.h serial.h solis.h
 tripplite.o: tripplite.c main.h ../include/common.h \
   ../include/attribute.h ../include/config.h ../include/proto.h \
-  ../include/attribute.h ../include/version.h ../include/upsconf.h \
-  dstate.h ../include/parseconf.h ../include/upshandler.h \
-  ../include/extstate.h serial.h tripplite.h
-tripplitesu.o: tripplitesu.c main.h ../include/common.h \
-  ../include/attribute.h ../include/config.h ../include/proto.h \
-  ../include/attribute.h ../include/version.h ../include/upsconf.h \
-  dstate.h ../include/parseconf.h ../include/upshandler.h \
-  ../include/extstate.h serial.h tripplitesu.h
-tripplite_usb.o: tripplite_usb.c main.h ../include/common.h \
-  ../include/attribute.h ../include/config.h ../include/proto.h \
-  ../include/attribute.h ../include/version.h ../include/upsconf.h \
-  dstate.h ../include/parseconf.h ../include/upshandler.h \
-  ../include/extstate.h libhid.h ../include/timehead.h hidtypes.h \
-  libusb.h
-upscode2.o: upscode2.c main.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/attribute.h \
   ../include/version.h ../include/upsconf.h dstate.h \
   ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
-  serial.h upscode2.h ../include/timehead.h
+  serial.h tripplite.h
+tripplitesu.o: tripplitesu.c main.h ../include/common.h \
+  ../include/attribute.h ../include/config.h ../include/proto.h \
+  ../include/version.h ../include/upsconf.h dstate.h \
+  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
+  serial.h tripplitesu.h
+tripplite_usb.o: tripplite_usb.c main.h ../include/common.h \
+  ../include/attribute.h ../include/config.h ../include/proto.h \
+  ../include/version.h ../include/upsconf.h dstate.h \
+  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
+  libhid.h ../include/timehead.h hidtypes.h libusb.h
+upscode2.o: upscode2.c main.h ../include/common.h ../include/attribute.h \
+  ../include/config.h ../include/proto.h ../include/version.h \
+  ../include/upsconf.h dstate.h ../include/parseconf.h \
+  ../include/upshandler.h ../include/extstate.h serial.h upscode2.h \
+  ../include/timehead.h
 upsdrvctl.o: upsdrvctl.c ../include/config.h ../include/proto.h \
   ../include/attribute.h ../include/version.h ../include/common.h \
-  ../include/attribute.h ../include/config.h ../include/proto.h \
-  ../include/attribute.h ../include/version.h ../include/upsconf.h
+  ../include/upsconf.h
 victronups.o: victronups.c main.h ../include/common.h \
   ../include/attribute.h ../include/config.h ../include/proto.h \
-  ../include/attribute.h ../include/version.h ../include/upsconf.h \
-  dstate.h ../include/parseconf.h ../include/upshandler.h \
-  ../include/extstate.h serial.h victronups.h
+  ../include/version.h ../include/upsconf.h dstate.h \
+  ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
+  serial.h victronups.h

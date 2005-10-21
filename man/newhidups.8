@@ -23,7 +23,7 @@ prefer to use hidups driver.
 
 .SH EXTRA ARGUMENTS
 This driver supports the following optional settings in the 
-\fBups.conf\fR(5):
+\fBups.conf\fR(5) (or via the -x option):
 
 .IP "offdelay=\fInum\fR"
 Set the timer before the UPS is turned off after the kill power command is
@@ -47,7 +47,7 @@ Select a specific UPS, in case there is more than one connected via
 USB. Each option specifies an extended regular expression (see
 \fIregex(7)\fR) that must match the UPS's entire vendor/product/serial
 string (minus any surrounding whitespace), or the whole 4-digit
-hexadecimal code for vendorid and productid. Try \fI-D -D\fR for
+hexadecimal code for vendorid and productid. Try \fI-DD\fR for
 finding out the strings to match. Examples: \fI-x vendor="APC.*"\fR,
 \fI-x product=".*(Smart|Back)-?UPS.*"\fR.
 
@@ -56,6 +56,14 @@ finding out the strings to match. Examples: \fI-x vendor="APC.*"\fR,
 Select a UPS on a specific USB bus or group of busses. The argument is
 a regular expression that must match the bus name where the UPS is
 connected (e.g. bus="002", bus="00[2-3]"). 
+
+.IP "generic"
+
+With this option, the driver will connect to any device, including
+ones that are not yet supported. This must always be combined with the
+"vendorid" option. In this mode, the driver will not do anything
+useful except for printing debugging information (typically used with
+\fI-DD\fR).
 
 .SH EXPERIMENTAL DRIVER
 This driver has been tagged experimental, even if it has been reported
@@ -93,7 +101,8 @@ hotplug so that it applies these changes.
 
 .SH AUTHORS
 .SS Sponsored by MGE UPS SYSTEMS <http://opensource.mgeups.com/>
-Arnaud Quette
+Arnaud Quette,
+Peter Selinger
 
 .SH SEE ALSO
 

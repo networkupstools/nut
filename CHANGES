@@ -1,3 +1,8 @@
+Fri Oct 21 03:38:17 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: enforce using "-x vendorid" together with "-x generic". 
+ - newhidups: added new info to man page and docs/hid-subdrivers.txt
+
 Fri Oct 21 03:03:44 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups: added "-x generic" option to allow connecting to an
