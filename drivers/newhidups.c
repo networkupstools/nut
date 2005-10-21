@@ -26,12 +26,14 @@
 #include "newhidups.h"
 
 /* include all known subdrivers */
+#include "generic-hid.h"
 #include "mge-hid.h"
 #include "apc-hid.h"
 #include "belkin-hid.h"
 
 /* master list of avaiable subdrivers */
 static subdriver_t *subdriver_list[] = {
+	&generic_subdriver,
 	&mge_subdriver,
 	&apc_subdriver,
 	&belkin_subdriver,
@@ -424,6 +426,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "vendorid", "Regular expression to match UPS Manufacturer numerical ID (4 digits hexadecimal)");
 	addvar(VAR_VALUE, "productid", "Regular expression to match UPS Product numerical ID (4 digits hexadecimal)");
 	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
+	addvar(VAR_FLAG, "generic", "Match unsupported UPS");
 }
 
 void upsdrv_banner(void)

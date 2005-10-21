@@ -94,11 +94,11 @@ energizerups.o:
 newhidups: newhidups.o main.o dstate.o ../common/state.o \
 		../common/upsconf.o ../common/parseconf.o $(LIBDEP) \
 		$(STRLCPY) libhid.o libusb.o hidparser.o \
-		mge-hid.o apc-hid.o belkin-hid.o
+		generic-hid.o mge-hid.o apc-hid.o belkin-hid.o
 	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o $@ $@.o main.o dstate.o \
 		../common/state.o ../common/upsconf.o ../common/parseconf.o \
 		$(LIBOBJ) $(LIBUSB_LIBS) $(LDFLAGS) libhid.o libusb.o hidparser.o \
-		mge-hid.o apc-hid.o belkin-hid.o
+		generic-hid.o mge-hid.o apc-hid.o belkin-hid.o
 
 newhidups.o:
 	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -c newhidups.c

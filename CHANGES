@@ -1,3 +1,11 @@
+Fri Oct 21 03:03:44 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: added "-x generic" option to allow connecting to an
+   unsupported UPS. This should be used together with the "-x
+   vendorid" option to select the device to connect to, and allows
+   users to product a dump of the usage tree of an unknown device
+   without having to modify the sources.
+
 Wed Oct 19 14:10:29 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
 
  - debian/: more update (still draft) to prepare 2.0.2-2 release
