@@ -395,6 +395,7 @@ typedef struct {
 	int usage_code;
 } usage_lkp_t;
 
+/* FIXME: share this data structure with libhid.c */
 static usage_lkp_t usage_lkp[] = {
 	/* Power Device Page */
 	{  "PresentStatus", 0x00840002 },
@@ -424,7 +425,7 @@ static usage_lkp_t usage_lkp[] = {
 	{  "DelayBeforeShutdown", 0x00840057 },
 	{  "Test", 0x00840058 },
 	{  "Good", 0x00840061 },
-	{  "OverLoad", 0x00840065 }, /* mispelled in usb.ids */
+	{  "Overload", 0x00840065 }, /* sic */
 	{  "SwitchOn/Off", 0x0084006b },	
 	{  "Switchable", 0x0084006c },	
 	{  "Used", 0x0084006d },

@@ -171,7 +171,7 @@ static hid_info_t apc_hid2nut[] = {
     "%.0f", HU_FLAG_OK, &shutdownimm_info[0] },
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL,
     "%.0f", HU_FLAG_OK, &lowbatt_info[0] },
-  { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.OverLoad", NULL,
+  { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.Overload", NULL,
     "%.0f", HU_FLAG_OK, &overload_info[0] },
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL,
     "%.0f", HU_FLAG_OK, &replacebatt_info[0] },

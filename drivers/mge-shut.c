@@ -665,7 +665,7 @@ void  shut_ups_status(void)
 			status_set("LB");
 	}
 
-	if(hid_get_value("UPS.PowerSummary.PresentStatus.OverLoad") != 0 ) {
+	if(hid_get_value("UPS.PowerSummary.PresentStatus.Overload") != 0 ) {
 		if(hData.Value == 1)
 			status_set("OVER");
 	}
