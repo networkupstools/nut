@@ -1,4 +1,4 @@
-/*  mgehid.c - data to monitor MGE UPS SYSTEMS HID (USB and serial) devices
+/*  mge-hid.c - data to monitor MGE UPS SYSTEMS HID (USB and serial) devices
  *
  *  Copyright (C) 2003 - 2005
  *  			Arnaud Quette <arnaud.quette@mgeups.fr>
