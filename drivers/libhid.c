@@ -833,7 +833,7 @@ static int path_to_string(char *HIDpath, HIDPath *path, usage_tables_t *utab)
 	/* FIXME: another bug? */
 	strcat(HIDpath, "UPS.");
 	
-	// Numeric to String
+	/* Numeric to String */
 	for (i = 1; i < path->Size; i++)
 	{
 		/* Deal with ?bogus? */

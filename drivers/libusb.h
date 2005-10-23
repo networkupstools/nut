@@ -41,7 +41,7 @@
 int libusb_open(usb_dev_handle **udevp, HIDDevice *curDevice, HIDDeviceMatcher_t *matcher, unsigned char *ReportDesc, int mode);
 void libusb_close(usb_dev_handle *udev);
 
-//extern int usb_get_descriptor(int type, int len, char *report);
+/* extern int usb_get_descriptor(int type, int len, char *report); */
 int libusb_get_report(usb_dev_handle *udev, int ReportId, unsigned char *raw_buf, int ReportSize );
 int libusb_set_report(usb_dev_handle *udev, int ReportId, unsigned char *raw_buf, int ReportSize );
 int libusb_get_string(usb_dev_handle *udev, int StringIdx, char *string);
