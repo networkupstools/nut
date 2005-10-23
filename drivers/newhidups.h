@@ -99,6 +99,7 @@ typedef struct {
 #define STATUS_DEPLETED         0x04000  /* battery depleted; Belkin */
 #define STATUS_TIMELIMITEXP     0x08000  /* time limit expired; APC */
 #define STATUS_BATTERYPRES      0x10000  /* battery present; APC */
+#define STATUS_FULLYCHARGED     0x20000  /* battery full; CyberPower */
 
 extern status_lkp_t status_info[];
 

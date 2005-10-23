@@ -87,6 +87,7 @@ status_lkp_t status_info[] = {
 	{ "depleted", STATUS_DEPLETED },
 	{ "timelimitexp", STATUS_TIMELIMITEXP },
 	{ "batterypres", STATUS_BATTERYPRES },
+	{ "fullycharged", STATUS_FULLYCHARGED },
 	{ NULL, 0 },
 };
 
