@@ -1,30 +1,41 @@
-.TH POWERMUST 8 "Fri May 14 2004" "" "Network UPS Tools (NUT)" 
+.TH MEGATEC 8 "Fri May 14 2004" "" "Network UPS Tools (NUT)" 
 .SH NAME  
-powermust \(hy Driver for Mustek PowerMust series UPS equipment
+megatec \(hy Driver for Megatec protocol based UPS equipment
 .SH NOTE
 This man page only documents the hardware\(hyspecific features of the
-powermust driver. For information about the core driver, see  
+megatec driver. For information about the core driver, see  
 \fBnutupsdrv\fR(8).
 
 .SH SUPPORTED HARDWARE
-The powermust driver is known to work with the following UPSes:
+The megatec driver is known to work with the following UPSes:
 
-    Mustek PowerMust 400VA Plus (12V)
-    Mustek PowerMust 600VA Plus (12V)
-    Mustek PowerMust 800VA Pro (12V)
-    Mustek PowerMust 1000VA Plus (24V)
-    Mustek PowerMust 1400VA Plus (?V)
-    Mustek PowerMust 2000VA USB (?V)
-    OnLite AQUA 50 (12V)
-    Square One Power QP 1000 (?V)
+    Mustek PowerMust 400VA Plus
+    Mustek PowerMust 600VA Plus
+    Mustek PowerMust 800VA Pro
+    Mustek PowerMust 1000VA Plus
+    Mustek PowerMust 1400VA Plus
+    Mustek PowerMust 2000VA USB
+    OnLite AQUA 50
+    Square One Power QP 1000
 
-It may also work with other UPSes in the PowerMust series, but they
-haven't been tested.
+It may also work with other UPSes, but they haven't been tested.
+
+On models with both a serial port (RS-232) and an USB port, only
+the serial port is supported.
 
 .SH EXTRA ARGUMENTS
 
-This driver does not support any extra settings in the    
-\fBups.conf\fR(5).
+.IP "mfr=\fIstring\fR"
+
+Optional.  Specify the UPS manufacturer name.
+
+.IP "model=\fIstring\fR"
+
+Optional.  Specify the UPS model name.
+
+.IP "serial=\fIstring\fR"
+
+Optional.  Specify the UPS serial number.
 
 .SH UPS COMMANDS
 
@@ -64,7 +75,7 @@ Interval to wait before (re)starting the load (seconds)
 No known bugs at the moment.
 
 .SH AUTHOR
-Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+Carlos Rodrigues <carlos.efr at mail.telepac.pt>
 
 .SH SEE ALSO
 

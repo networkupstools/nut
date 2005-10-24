@@ -1,10 +1,10 @@
 /* -*- mode: c; c-basic-offset: 8; indent-tabs-mode: t; -*-
  * 
- * powermust.h: support for Mustek (and others) models
+ * megatec.h: support for Megatec protocol based UPSes
  *
- * Copyright (C) 2003, 2004 Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+ * Copyright (C) 2003-2005 Carlos Rodrigues <carlos.efr at mail.telepac.pt>
  *
- * powermust.c created on 4/10/2003
+ * megatec.c created on 4/10/2003
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,4 +21,4 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#define DRV_VERSION "1.1"
+#define DRV_VERSION "1.2"

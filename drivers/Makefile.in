@@ -12,7 +12,7 @@ CFLAGS	= -I../include @CFLAGS@
 PROGS	= bestups fentonups apcsmart everups belkin masterguard powercom \
 	  cyberpower tripplite victronups genericups mge-utalk bestuferrups \
 	  isbmex etapro liebert sms esupssmart tripplitesu blazer safenet \
-	  belkinunv oneac ippon cpsups mustek metasys bestfcom powermust \
+	  belkinunv oneac ippon cpsups mustek metasys bestfcom megatec \
 	  bcmxcp upscode2 solis gamatronic al175 nitram
 LDFLAGS = @LDFLAGS@
 LIBDEP	= @LIBOBJ@

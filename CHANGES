@@ -1,3 +1,14 @@
+Mon Oct 24 09:07:04 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - megatec: add this driver, which is the renamed powermust driver made
+   more generic. This one now replaces powermust, and will replace mustek
+   and blazer (and possibly fentonups, ippon, masterguard and sms)
+
+   (Carlos Rodrigues)
+
+ - add Maxxtro UPS 600 VA support, through the serial port, with the
+   new megatec driver (from Flavio Grossi)
+
 Sun Oct 23 05:24:25 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups: added support for CyberPower 685AVR, based on HID Usage

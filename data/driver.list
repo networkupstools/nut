@@ -139,6 +139,8 @@
 
 "Masterguard"	"(various)"	""	"masterguard"
 
+"Maxxtro"	"UPS 600 VA"	"serial port"	"megatec"
+
 "Meta System"	"HF Line"	"1..4 boards"	"metasys"
 "Meta System"	"HF Line \/2"	"5..8 boards"	"metasys"
 "Meta System"	"HF Millennium 810"	""	"metasys"
@@ -231,12 +233,12 @@
 
 "Mustek"	"Various"	""	"mustek"
 
-"Mustek"	"Powermust"	"400VA Plus"	"powermust"
-"Mustek"	"Powermust"	"600VA Plus"	"powermust"
-"Mustek"	"Powermust"	"800VA Pro"	"powermust"
-"Mustek"	"Powermust"	"1000VA Plus"	"powermust"
-"Mustek"	"Powermust"	"1400VA Plus"	"powermust"
-"Mustek"	"Powermust"	"2000VA USB"	"powermust"
+"Mustek"	"Powermust"	"400VA Plus"	"megatec"
+"Mustek"	"Powermust"	"600VA Plus"	"megatec"
+"Mustek"	"Powermust"	"800VA Pro"	"megatec"
+"Mustek"	"Powermust"	"1000VA Plus"	"megatec"
+"Mustek"	"Powermust"	"1400VA Plus"	"megatec"
+"Mustek"	"Powermust"	"2000VA USB"	"megatec"
 
 "Nitram"	"Elite 500"	""	"genericups upstype=8"
 "Nitram"	"Elite 2002"	""	"genericups upstype=16"
@@ -245,7 +247,7 @@
 
 "Online"	"P-Series"	""	"genericups upstype=14"
 
-"OnLite"	"AQUA"		"50"	"powermust"
+"OnLite"	"AQUA"		"50"	"megatec"
 
 "Orvaldi Power Protection"	"various"	"not 400 or 600"	"fentonups"
 
@@ -297,10 +299,10 @@
 
 "Soltec"	"Winmate 525/625/800/1000"	""	"safenet"
 
-"Soyntec"	"Sekury C 500"		""	"powermust"	
-"Soyntec"	"Sekury C 800"		""	"powermust"	
+"Soyntec"	"Sekury C 500"		""	"megatec"	
+"Soyntec"	"Sekury C 800"		""	"megatec"	
 
-"SquareOne Power"	"QP1000"		""	"powermust"
+"SquareOne Power"	"QP1000"		""	"megatec"
 
 "SuperPower"	"HP360, Hope-550"	""	"fentonups"
 

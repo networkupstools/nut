@@ -294,6 +294,10 @@ that UPS.
 
 	mustek		 - Mustek UPS hardware
 
+	megatec		 - Megatec protocol based UPSes (Mustek Powermust,
+			   OnLite 50, Maxxtro units, etc.)
+
+
 	newhidups	 - Experimental Meta driver for USB HID UPSes
 			   on various platforms (will replace hidups
 			   in the future)

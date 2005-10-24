@@ -43,7 +43,7 @@ DRIVERPAGES = \
 	nitram.8	\
 	oneac.8		\
 	powercom.8 	\
-	powermust.8	\
+	megatec.8	\
 	safenet.8	\
 	sms.8		\
 	solis.8		\
