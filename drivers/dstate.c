@@ -473,8 +473,13 @@ void dstate_init(const char *prog, const char *port)
 	/* do this here for now */
 	signal(SIGPIPE, SIG_IGN);
 
-	snprintf(sockname, sizeof(sockname), "%s/%s-%s", 
-		dflt_statepath(), prog, port);
+	if (port != NULL)
+		snprintf(sockname, sizeof(sockname), "%s/%s-%s",
+			dflt_statepath(), prog, port);
+	else
+		snprintf(sockname, sizeof(sockname), "%s/%s",
+			dflt_statepath(), prog);
+
 	sockfd = open_sock(sockname);
 
 	upsdebugx(2, "dstate_init: sock %s open on fd %d", sockname, sockfd);

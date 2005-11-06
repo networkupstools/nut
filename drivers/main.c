@@ -535,8 +535,12 @@ int main(int argc, char **argv)
 
 	pidfn = xmalloc(SMALLBUF);
 
-	snprintf(pidfn, SMALLBUF, "%s/%s-%s.pid", 
-		altpidpath(), progname, device_name);
+	if (upsname_found)
+		snprintf(pidfn, SMALLBUF, "%s/%s-%s.pid", 
+			altpidpath(), progname, upsname);
+	else
+		snprintf(pidfn, SMALLBUF, "%s/%s-%s.pid", 
+			 altpidpath(), progname, device_name);
 
 	upsdebugx(1, "debug level is '%d'", nut_debug_level);
 
@@ -576,7 +580,10 @@ int main(int argc, char **argv)
 	upsdrv_updateinfo();
 
 	/* now we can start servicing requests */
-	dstate_init(progname, device_name);
+	if (upsname_found)
+		dstate_init(upsname, NULL);
+	else
+		dstate_init(progname, device_name);
 
 	/* publish the top-level data: version number, driver name */
 	dstate_setinfo("driver.version", "%s", UPS_VERSION);

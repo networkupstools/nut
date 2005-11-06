@@ -1,3 +1,11 @@
+Sun Nov 06 20:14:10 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - the state socket, used for the communication between the drivers
+   and upsd, are now named using the upsname, as defined between brackets
+   in ups.conf, by default. The same applies to drivers .pid file, now
+   named using drivername-upsname. The old naming behavior is kept for
+   debug purpose, allowing to start drivers only by specifying a port name.
+
 Mon Oct 24 09:07:04 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
 
  - megatec: add this driver, which is the renamed powermust driver made

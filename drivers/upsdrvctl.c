@@ -132,7 +132,7 @@ static void send_term(char *upsname, char *driver, char *port)
 	printf("Stopping UPS: %s\n", upsname);
 
 	snprintf(pidfn, sizeof(pidfn), "%s/%s-%s.pid", altpidpath(),
-		driver, xbasename(port));
+		driver, upsname);
 	ret = stat(pidfn, &fs);
 
 	if (ret != 0) {
