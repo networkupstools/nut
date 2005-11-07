@@ -84,19 +84,6 @@ static info_lkp_t belkin_sensitivity_conversion[] = {
 	{ 0, NULL, belkin_sensitivity_conversion_fun }
 };
 
-/* returns statically allocated string - must not use it again before
-   done with result! */
-static char *belkin_10_conversion_fun(long value) {
-	static char buf[20];
-	
-	sprintf(buf, "%0.1f", value * 0.1);
-	return buf;
-}
-
-static info_lkp_t belkin_10_conversion[] = {
-	{ 0, NULL, belkin_10_conversion_fun }
-};
-
 static info_lkp_t belkin_test_info[] = {
   { 0, "No test initiated", NULL },
   { 1, "Done and passed", NULL },
@@ -186,7 +173,7 @@ static info_lkp_t belkin_replacebatt_conversion[] = {
 /* BELKIN usage table */
 /* Note: these seem to have been wrongly encoded by Belkin */
 /* Pages 84 to 88 are reserved for official HID definition! */
-usage_lkp_t belkin_usage_lkp[] = {
+static usage_lkp_t belkin_usage_lkp[] = {
 	{ "BELKINConfig",			0x00860026 },
 	{ "BELKINConfigVoltage",		0x00860040 }, /* (V) */
 	{ "BELKINConfigFrequency",		0x00860042 }, /* (Hz) */
@@ -252,9 +239,9 @@ static hid_info_t belkin_hid2nut[] = {
   { "battery.charge.warning", 0, 0, "UPS.PowerSummary.WarningCapacityLimit", NULL, "%.0f", HU_FLAG_OK, NULL }, /* Read only */
   { "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", HU_FLAG_OK, NULL },
   { "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", HU_FLAG_OK, stringid_conversion },
-  { "battery.voltage", 0, 0, "UPS.BELKINBatterySystem.BELKINVoltage", NULL, "%s", HU_FLAG_OK, belkin_10_conversion },
+  { "battery.voltage", 0, 0, "UPS.BELKINBatterySystem.BELKINVoltage", NULL, "%s", HU_FLAG_OK, divide_by_10_conversion },
   { "battery.voltage.nominal", 0, 0, "UPS.BELKINConfig.BELKINConfigBatteryVoltage", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "input.frequency", 0, 0, "UPS.BELKINPowerState.BELKINInput.BELKINFrequency", NULL, "%s", HU_FLAG_OK, belkin_10_conversion },
+  { "input.frequency", 0, 0, "UPS.BELKINPowerState.BELKINInput.BELKINFrequency", NULL, "%s", HU_FLAG_OK, divide_by_10_conversion },
   { "input.frequency.nominal", 0, 0, "UPS.BELKINConfig.BELKINConfigFrequency", NULL, "%.0f", HU_FLAG_OK, NULL },
   { "input.sensitivity", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.BELKINDevice.BELKINVoltageSensitivity", NULL, "%s", HU_FLAG_OK, belkin_sensitivity_conversion },
   { "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.BELKINConfig.BELKINHighVoltageTransfer", NULL, "%.0f", HU_FLAG_OK, NULL },
@@ -263,10 +250,10 @@ static hid_info_t belkin_hid2nut[] = {
   { "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.BELKINConfig.BELKINLowVoltageTransfer", NULL, "%.0f", HU_FLAG_OK, NULL },
   { "input.transfer.low.max", 0, 0, "UPS.BELKINConfig.BELKINLowVoltageTransferMax", NULL, "%.0f", HU_FLAG_OK, NULL },
   { "input.transfer.low.min", 0, 0, "UPS.BELKINConfig.BELKINLowVoltageTransferMin", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "input.voltage", 0, 0, "UPS.BELKINPowerState.BELKINInput.BELKINVoltage", NULL, "%s", HU_FLAG_OK, belkin_10_conversion },
+  { "input.voltage", 0, 0, "UPS.BELKINPowerState.BELKINInput.BELKINVoltage", NULL, "%s", HU_FLAG_OK, divide_by_10_conversion },
   { "input.voltage.nominal", 0, 0, "UPS.BELKINConfig.BELKINConfigVoltage", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "output.frequency", 0, 0, "UPS.BELKINPowerState.BELKINOutput.BELKINFrequency", NULL, "%s", HU_FLAG_OK, belkin_10_conversion },
-  { "output.voltage", 0, 0, "UPS.BELKINPowerState.BELKINOutput.BELKINVoltage", NULL, "%s", HU_FLAG_OK, belkin_10_conversion },
+  { "output.frequency", 0, 0, "UPS.BELKINPowerState.BELKINOutput.BELKINFrequency", NULL, "%s", HU_FLAG_OK, divide_by_10_conversion },
+  { "output.voltage", 0, 0, "UPS.BELKINPowerState.BELKINOutput.BELKINVoltage", NULL, "%s", HU_FLAG_OK, divide_by_10_conversion },
   { "ups.beeper.status", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.BELKINControls.BELKINAudibleAlarmControl", NULL, "%s", HU_FLAG_OK, beeper_info },
   { "ups.delay.restart", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeStartup", NULL, "%.0f", HU_FLAG_OK, NULL },
   { "ups.delay.shutdown", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeShutdown", NULL, "%.0f", HU_FLAG_OK, NULL },

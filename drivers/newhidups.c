@@ -247,6 +247,19 @@ info_lkp_t stringid_conversion[] = {
 	{ 0, NULL, stringid_conversion_fun }
 };
 
+/* returns statically allocated string - must not use it again before
+   done with result! */
+static char *divide_by_10_conversion_fun(long value) {
+	static char buf[20];
+	
+	sprintf(buf, "%0.1f", value * 0.1);
+	return buf;
+}
+
+info_lkp_t divide_by_10_conversion[] = {
+	{ 0, NULL, divide_by_10_conversion_fun }
+};
+
 /* ---------------------------------------------
  * subdriver matcher
  * --------------------------------------------- */

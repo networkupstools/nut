@@ -1,3 +1,9 @@
+Mon Nov  7 22:11:11 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: added rudimentary Tripp Lite support, still incomplete
+   and unstable.
+ - newhidups: changed some local declarations to "static". 
+
 Sun Nov 06 20:14:10 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
 
  - the state socket, used for the communication between the drivers

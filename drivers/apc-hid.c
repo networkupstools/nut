@@ -55,19 +55,19 @@ static info_lkp_t watts_to_av_conversion[] = {
    batterypresent, and maps timelimitexp to LB. CyberPower has the
    non-NUT-standard status item "fully charged". The newhidups driver
    currently ignores it. */
-info_lkp_t timelimitexpired_info[] = {
+static info_lkp_t timelimitexpired_info[] = {
   { 1, "timelimitexp", NULL },
   { 0, "!timelimitexp", NULL },
   { 0, "NULL", NULL }
 };
 
-info_lkp_t batterypresent_info[] = {
+static info_lkp_t batterypresent_info[] = {
   { 1, "batterypres", NULL },
   { 0, "!batterypres", NULL },
   { 0, "NULL", NULL }
 };
 
-info_lkp_t fullycharged_info[] = {
+static info_lkp_t fullycharged_info[] = {
   { 1, "fullycharged", NULL },
   { 0, "!fullycharged", NULL },
   { 0, "NULL", NULL }
@@ -78,7 +78,7 @@ info_lkp_t fullycharged_info[] = {
 /* --------------------------------------------------------------- */
 
 /* APC usage table */
-usage_lkp_t apc_usage_lkp[] = {
+static usage_lkp_t apc_usage_lkp[] = {
 	{ "APCGeneralCollection",	0xff860005 },
 	{ "APCBattReplaceDate",		0xff860016 },
 	{ "APCBattCapBeforeStartup",	0xff860019 }, /* FIXME: exploit */
@@ -193,7 +193,7 @@ static hid_info_t apc_hid2nut[] = {
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.RemainingTimeLimitExpired", NULL, "%.0f", HU_FLAG_OK, &timelimitexpired_info[0] },
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.BatteryPresent", NULL, "%.0f", HU_FLAG_OK, &batterypresent_info[0] },
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.FullyCharged", NULL, "%.0f", HU_FLAG_OK, &fullycharged_info[0] }, /* CyberPower */
-  { "ups.status", 0, 1, "UPS.Output.OverLoad", NULL, "%.0f", HU_FLAG_OK, &overload_info[0] }, /* CyberPower */
+  { "ups.status", 0, 1, "UPS.Output.Overload", NULL, "%.0f", HU_FLAG_OK, &overload_info[0] }, /* CyberPower */
   { "ups.status", 0, 1, "UPS.Output.Boost", NULL, "%.0f", HU_FLAG_OK, &boost_info[0] }, /* CyberPower */
 
   /* Input page */

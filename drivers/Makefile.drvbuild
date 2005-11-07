@@ -192,6 +192,12 @@ gamatronic.o: gamatronic.c main.h ../include/common.h \
   ../include/attribute.h ../include/version.h ../include/upsconf.h \
   dstate.h ../include/parseconf.h ../include/upshandler.h \
   ../include/extstate.h serial.h gamatronic.h
+generic-hid.o: generic-hid.c newhidups.h ../include/config.h libusb.h \
+  libhid.h ../include/timehead.h hidtypes.h generic-hid.h \
+  ../include/extstate.h dstate.h ../include/attribute.h \
+  ../include/parseconf.h ../include/upshandler.h ../include/common.h \
+  ../include/attribute.h ../include/config.h ../include/proto.h \
+  ../include/attribute.h ../include/version.h main.h ../include/upsconf.h
 genericups.o: genericups.c main.h ../include/common.h \
   ../include/attribute.h ../include/config.h ../include/proto.h \
   ../include/attribute.h ../include/version.h ../include/upsconf.h \
@@ -271,7 +277,7 @@ newhidups.o: newhidups.c main.h ../include/common.h \
   ../include/attribute.h ../include/version.h ../include/upsconf.h \
   dstate.h ../include/parseconf.h ../include/upshandler.h \
   ../include/extstate.h libhid.h ../include/timehead.h hidtypes.h \
-  newhidups.h libusb.h mge-hid.h apc-hid.h belkin-hid.h
+  newhidups.h libusb.h generic-hid.h mge-hid.h apc-hid.h belkin-hid.h
 nitram.o: nitram.c main.h ../include/common.h ../include/attribute.h \
   ../include/config.h ../include/proto.h ../include/attribute.h \
   ../include/version.h ../include/upsconf.h dstate.h \
@@ -307,7 +313,8 @@ sms.o: sms.c main.h ../include/common.h ../include/attribute.h \
   ../include/version.h ../include/upsconf.h dstate.h \
   ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
   serial.h sms.h
-snmp-ups.o: snmp-ups.c snmp-ups.h ../include/attribute.h main.h \
+snmp-ups.o: snmp-ups.c snmp-ups.h net-snmp/net-snmp-config.h \
+  net-snmp/net-snmp-includes.h ../include/attribute.h main.h \
   ../include/common.h ../include/attribute.h ../include/config.h \
   ../include/proto.h ../include/attribute.h ../include/version.h \
   ../include/upsconf.h dstate.h ../include/parseconf.h \
@@ -323,6 +330,12 @@ tripplite.o: tripplite.c main.h ../include/common.h \
   ../include/attribute.h ../include/version.h ../include/upsconf.h \
   dstate.h ../include/parseconf.h ../include/upshandler.h \
   ../include/extstate.h serial.h tripplite.h
+tripplite-hid.o: tripplite-hid.c newhidups.h ../include/config.h libusb.h \
+  libhid.h ../include/timehead.h hidtypes.h tripplite-hid.h \
+  ../include/extstate.h dstate.h ../include/attribute.h \
+  ../include/parseconf.h ../include/upshandler.h ../include/common.h \
+  ../include/attribute.h ../include/config.h ../include/proto.h \
+  ../include/attribute.h ../include/version.h
 tripplitesu.o: tripplitesu.c main.h ../include/common.h \
   ../include/attribute.h ../include/config.h ../include/proto.h \
   ../include/attribute.h ../include/version.h ../include/upsconf.h \

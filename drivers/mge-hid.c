@@ -37,7 +37,7 @@
 /* --------------------------------------------------------------- */
 
 /* MGE UPS SYSTEMS usage table */
-usage_lkp_t mge_usage_lkp[] = {
+static usage_lkp_t mge_usage_lkp[] = {
 	{ "iModel",				0xffff00f0 },
 	{ "RemainingCapacityLimitSetting",	0xffff004d },
 	{ "TestPeriod",				0xffff0045 },
