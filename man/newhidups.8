@@ -1,4 +1,4 @@
-.TH HIDUPS 8 "Wed May 25 2005" "" "Network UPS Tools (NUT)"
+.TH HIDUPS 8 "Mon Nov 7 2005" "" "Network UPS Tools (NUT)"
 .SH NAME
 hidups \- Experimental Multi\(hyHID Driver for USB/HID UPS equipment
 .SH NOTE
@@ -15,11 +15,15 @@ supporting USB through libusb. It should detect any UPS that uses
 the HID power device class, but the amount of data will vary depending
 on the manufacturer and model.
 
-At the present time, newhidups only supports MGE UPS SYSTEMS models.
+At the present time, newhidups supports certain models from MGE UPS SYSTEMS,
+APC, Belkin, and CyberPower. A more complete list of models is provided in
+data/driver.list.  You may use the "generic" driver option to gather
+information from HID UPSes which are not yet supported; see below for details.
 
-On Linux, you will need at least a 2.4.25 or 2.6.2 kernel
-to disable hiddev support and avoid conflict. Otherwise,
-prefer to use hidups driver.
+On Linux with MGE equipment, you will need at least a 2.4.25 or 2.6.2 kernel as
+well as libhid-0.1.8 or later to disable hiddev support and avoid conflict.
+Otherwise, you will only be able to use the older hidups driver, which is no
+longer maintained.
 
 .SH EXTRA ARGUMENTS
 This driver supports the following optional settings in the 
@@ -42,7 +46,6 @@ The default value is 30 (in seconds), and MUST BE GREATER than offdelay.
 .IP "serial=\fIregex\fR"
 .IP "vendorid=\fIregex\fR"
 .IP "productid=\fIregex\fR"
-
 Select a specific UPS, in case there is more than one connected via
 USB. Each option specifies an extended regular expression (see
 \fIregex(7)\fR) that must match the UPS's entire vendor/product/serial
@@ -52,13 +55,11 @@ finding out the strings to match. Examples: \fI-x vendor="APC.*"\fR,
 \fI-x product=".*(Smart|Back)-?UPS.*"\fR.
 
 .IP "bus=\fIregex\fR"
-
 Select a UPS on a specific USB bus or group of busses. The argument is
 a regular expression that must match the bus name where the UPS is
 connected (e.g. bus="002", bus="00[2-3]"). 
 
 .IP "generic"
-
 With this option, the driver will connect to any device, including
 ones that are not yet supported. This must always be combined with the
 "vendorid" option. In this mode, the driver will not do anything
@@ -83,13 +84,20 @@ permission settings problem. Lastly note that the libhidups file
 must have execution flag set (ie using chmod +x ...).
 
 .SH IMPLEMENTATION
-newhidups only support 1 UPS at this time. You can put the
-"auto" value for port in \fBups.conf\fR, i.e.:
+The driver ignores the "port" value in \fBups.conf\fR; however, upsd requires
+that each configured UPS driver use a different port value.
+
+For instance:
 
 .nf
-	[newhidups]
+	[mge]
 		driver = newhidups
-		port = auto
+		port = auto1
+		vendorid = 0463
+	[tripplite]
+		driver = newhidups
+		port = auto2
+		vendorid = 09ae
 .fi
 
 .SH KNOWN ISSUES AND BUGS
