@@ -96,20 +96,16 @@ newhidups: newhidups.o main.o dstate.o ../common/state.o \
 		$(STRLCPY) libhid.o libusb.o hidparser.o \
 		generic-hid.o mge-hid.o apc-hid.o belkin-hid.o \
 		tripplite-hid.o
-	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o $@ $@.o main.o dstate.o \
+	$(CC) $(CFLAGS) -o $@ $@.o main.o dstate.o \
 		../common/state.o ../common/upsconf.o ../common/parseconf.o \
 		$(LIBOBJ) $(LIBUSB_LIBS) $(LDFLAGS) libhid.o libusb.o hidparser.o \
 		generic-hid.o mge-hid.o apc-hid.o belkin-hid.o \
                 tripplite-hid.o
 
-newhidups.o:
-	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -c newhidups.c
-
-libhid.o:
-	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o libhid.o -c libhid.c
-
-libusb.o:
-	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o libusb.o -c libusb.c
+# all the stuff that needs to include $(LIBUSB_CFLAGS):
+newhidups.o libhid.o libusb.o apc-hid.o belkin-hid.o generic-hid.o \
+kebo-hid.o mge-hid.o tripplite-hid.o tripplite_usb.o bcmxcp_usb.o nut_usb.o:
+	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -c $<
 
 # ==========================================================================
 # Special case: tripplite_usb driver - development version (early beta)
@@ -117,28 +113,19 @@ libusb.o:
 tripplite_usb: tripplite_usb.o main.o dstate.o ../common/state.o \
 		../common/upsconf.o ../common/parseconf.o $(LIBDEP) \
 		$(STRLCPY) libhid.o libusb.o hidparser.o
-	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o $@ $@.o main.o dstate.o \
+	$(CC) $(CFLAGS) -o $@ $@.o main.o dstate.o \
 		../common/state.o ../common/upsconf.o ../common/parseconf.o \
 		$(LIBOBJ) $(LIBUSB_LIBS) $(LDFLAGS) -lm libhid.o libusb.o hidparser.o
-
-tripplite_usb.o: tripplite_usb.c newhidups.h libhid.h
-	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -c tripplite_usb.c
 
 # ==========================================================================
 # Special case: bcmxcp_usb.c driver - development version (early beta)
 
 bcmxcp_usb: bcmxcp.o bcmxcp_usb.o nut_usb.o main.o dstate.o ../common/state.o \
 		../common/upsconf.o ../common/parseconf.o $(LIBDEP) $(STRLCPY)
-	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o $@ bcmxcp.o bcmxcp_usb.o nut_usb.o \
+	$(CC) $(CFLAGS) -o $@ bcmxcp.o bcmxcp_usb.o nut_usb.o \
 		main.o dstate.o ../common/state.o ../common/upsconf.o \
 		../common/parseconf.o \
 		$(LIBOBJ) $(LIBUSB_LIBS) $(LDFLAGS)
-
-bcmxcp_usb.o:
-	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -c bcmxcp_usb.c
-
-nut_usb.o:
-	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -o nut_usb.o -c nut_usb.c
 
 
 # ==========================================================================

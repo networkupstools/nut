@@ -30,9 +30,9 @@
 
 #include <sys/types.h>
 #include <regex.h>
+#include <usb.h>
 #include "timehead.h"
 #include "hidtypes.h"
-#include "usb.h"
 
 /* use explicit booleans */
 #ifndef FALSE

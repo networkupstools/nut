@@ -23,6 +23,7 @@
 
 #include "main.h"
 #include "libhid.h"
+#include "libusb.h"
 #include "newhidups.h"
 
 /* include all known subdrivers */

@@ -29,7 +29,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "config.h"
-#include "libusb.h"
+#include "libhid.h"
 
 #define DRIVER_VERSION		"0.28"
 

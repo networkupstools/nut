@@ -1,3 +1,7 @@
+Wed Nov  9 02:14:01 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: cleaned up dependencies on $(LIBUSB_CFLAGS)
+
 Mon Nov  7 22:11:11 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups: added rudimentary Tripp Lite support, still incomplete
