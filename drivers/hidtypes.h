@@ -118,30 +118,16 @@ typedef struct
 	long    PhyMax;		/* Physical Max							*/
 } HIDData;
 
-/*
- * HIDParser struct
+/* 
+ * HIDDesc struct
+ *
+ * Holds a parsed report descriptor
  * -------------------------------------------------------------------------- */
 typedef struct
 {
-	u_char   ReportDesc[REPORT_DSC_SIZE];	/* Store Report Descriptor					*/
-	u_short  ReportDescSize;					/* Size of Report Descriptor					*/
-	u_short  Pos;							/* Store current pos in descriptor				*/
-	u_char   Item;							/* Store current Item							*/
-	long    Value;							/* Store current Value						*/
-
-	HIDData Data;							/* Store current environment					*/
-
-	u_char   OffsetTab[MAX_REPORT][4];		/* Store ID, Type, offset & timestamp of report	*/
-	u_char   ReportCount;					/* Store Report Count						*/
-	u_char   Count;							/* Store local report count					*/
-
-	u_short  UPage;							/* Global UPage								*/
-	HIDNode UsageTab[USAGE_TAB_SIZE];	/* Usage stack								*/
-	u_char   UsageSize;						/* Design number of usage used				*/
-
-	u_char   nObject;						/* Count Objects in Report Descriptor			*/
-	u_char   nReport;						/* Count Reports in Report Descriptor			*/
-} HIDParser;
+	int len;        /* number of items in descriptor */
+	HIDData *item;  /* list of items */
+} HIDDesc;
 
 #ifdef __cplusplus
 } /* extern "C" */

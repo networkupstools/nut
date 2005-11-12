@@ -33,19 +33,14 @@ extern "C" {
 #include "hidtypes.h"
 
 /*
- * HIDParse
+ * Parse_ReportDesc
  * -------------------------------------------------------------------------- */
-int HIDParse(HIDParser* pParser, HIDData* pData);
-
-/*
- * ResetParser
- * -------------------------------------------------------------------------- */
-void ResetParser(HIDParser* pParser);
+int Parse_ReportDesc(u_char *ReportDesc, int n, HIDDesc *pDesc);
 
 /*
  * FindObject
  * -------------------------------------------------------------------------- */
-int FindObject(HIDParser* pParser, HIDData* pData);
+int FindObject(HIDDesc *pDesc, HIDData* pData);
 
 /*
  * GetValue

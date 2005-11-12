@@ -73,7 +73,7 @@ static void align_request(hid_packet_t *sd)
 hid_desc_data_u    	hid_descriptor;
 device_desc_data_u 	device_descriptor;
 static HIDData   	hData;
-static HIDParser 	hParser;
+static HIDDesc  	hDesc; /* parsed Report Descriptor */
 u_char 			raw_buf[4096];
 
 /* --------------------------------------------------------------- */
@@ -1043,6 +1043,7 @@ int shut_set_report(int id, u_char *pkt, int reportlen)
 int hid_init_device()
 {
 	int retcode;
+	int r;
 	
 	/* Get HID descriptor */
 	if((retcode = shut_get_descriptor(HID_DESCRIPTOR, hid_descriptor.raw_desc, 0x09)) > 0)
@@ -1098,15 +1099,11 @@ int hid_init_device()
 
 				dump_hex("shut_get_descriptor(report)", raw_buf, retcode);
 				
-				/* HID Parser Init */
-				ResetParser(&hParser);
-				hParser.ReportDescSize = retcode;
-				memcpy(hParser.ReportDesc, raw_buf, retcode);
-				HIDParse(&hParser, &hData);
-				upsdebugx(3, "UPage = %02x, Usage = %02x, Data.ReportID = %d", 
-					hData.Path.Node[0].UPage,
-					hData.Path.Node[0].Usage,
-					hData.ReportID);
+				/* Parse Report Descriptor */
+				r = Parse_ReportDesc(raw_buf, retcode, &hDesc);
+				if (r) {
+					fatalx("Failed to parse report descriptor: %s", strerror(errno));
+				}
 			}
 			else
 				fatalx("Unable to get Report Descriptor");
@@ -1207,7 +1204,7 @@ int hid_get_value(const char *item_path)
 		hData.Path.Size = retcode;
     
 		/* Get info on object (reportID, offset and size) */
-		if (FindObject(&hParser,&hData) == 1) {
+		if (FindObject(&hDesc,&hData) == 1) {
 			if (shut_get_report(hData.ReportID, raw_buf, MAX_REPORT_SIZE) > 0) {
 				GetValue((const u_char *) raw_buf, &hData);
 				dump_hex("Object's report", raw_buf, 10);
@@ -1422,7 +1419,7 @@ int hid_set_value(const char *varname, const char *val)
 		hData.Path.Size = retcode;
     
 		/* Get info on object (reportID, offset and size) */
-		if (FindObject(&hParser,&hData) == 1) {
+		if (FindObject(&hDesc,&hData) == 1) {
 			replen = shut_get_report(hData.ReportID, raw_buf, MAX_REPORT_SIZE);
 			
 			GetValue((const u_char *) raw_buf, &hData);

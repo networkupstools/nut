@@ -53,7 +53,7 @@ typedef struct report_s report_t;
 /* global variables */
 
 static HIDData   	hData;
-static HIDParser 	hParser;
+static HIDDesc  	hDesc; /* parsed Report Descriptor */
 /* the most recently retrieved report */
 static report_t cur_report_struct = {0, 0, 0, {0}};
 
@@ -375,26 +375,26 @@ void free_regex_matcher(HIDDeviceMatcher_t *matcher) {
 
 void HIDDumpTree(usb_dev_handle *udev, usage_tables_t *utab)
 {
-	int 		i;
+	int 		i, j;
 	char 		path[128], type[10];
 	float		value;
-	HIDData 	tmpData;
-	HIDParser 	tmpParser;
+	HIDData 	*pTmpData;
 
-	while (HIDParse(&hParser, &tmpData) != FALSE)
+	for (j=0; j<hDesc.len; j++)
 	{
+		pTmpData = &hDesc.item[j];
 		/* Build the path */
 		path[0] = '\0';
-		for (i = 0; i < tmpData.Path.Size; i++)
+		for (i = 0; i < pTmpData->Path.Size; i++)
 		{
-			strcat(path, hid_lookup_path((tmpData.Path.Node[i].UPage * 0x10000) + tmpData.Path.Node[i].Usage, utab));
-			if (i < (tmpData.Path.Size - 1))
+			strcat(path, hid_lookup_path((pTmpData->Path.Node[i].UPage * 0x10000) + pTmpData->Path.Node[i].Usage, utab));
+			if (i < (pTmpData->Path.Size - 1))
 				strcat (path, ".");
 		}
 
 		/* Get data type */
 		type[0] = '\0';
-		switch (tmpData.Type)
+		switch (pTmpData->Type)
 		{
 			case ITEM_FEATURE:
 				strcat(type, "Feature");
@@ -412,8 +412,6 @@ void HIDDumpTree(usb_dev_handle *udev, usage_tables_t *utab)
 
 		/* FIXME: enhance this or fix/change the HID parser (see libhid project) */
 		if ( strstr(path, "000000") == NULL) {
-			/* Backup shared data */
-			memcpy(&tmpParser, &hParser, sizeof (hParser));
 
 			/* Get data value */
 			if (HIDGetItemValue(udev, path, &value, utab) > 0)
@@ -421,9 +419,6 @@ void HIDDumpTree(usb_dev_handle *udev, usage_tables_t *utab)
 			
 			else
 				TRACE(1, "Path: %s, Type: %s", path, type);
-
-			/* Restore shared data */
-			memcpy(&hParser, &tmpParser, sizeof (tmpParser));
 		}
 	}
 }
@@ -435,6 +430,7 @@ HIDDevice *HIDOpenDevice(usb_dev_handle **udevp, HIDDevice *hd, HIDDeviceMatcher
 {
 	int ReportSize;
 	unsigned char ReportDesc[4096];
+	int r;
 
 	if ( mode == MODE_REOPEN )
 	{
@@ -457,11 +453,12 @@ HIDDevice *HIDOpenDevice(usb_dev_handle **udevp, HIDDevice *hd, HIDDeviceMatcher
 		TRACE(2, "Report Descriptor size = %d", ReportSize);
 		dump_hex ("Report Descriptor", ReportDesc, 200);
 
-		/* HID Parser Init */
-		ResetParser(&hParser);
-		hParser.ReportDescSize = ReportSize;
-		memcpy(hParser.ReportDesc, ReportDesc, ReportSize);
-
+		/* Parse Report Descriptor */
+		r = Parse_ReportDesc(ReportDesc, ReportSize, &hDesc);
+		if (r) {
+			TRACE(0, "Failed to parse report descriptor: %s", strerror(errno));
+			return NULL;
+		}
 	}
 	return hd;
 }
@@ -495,7 +492,7 @@ float HIDGetItemValue(usb_dev_handle *udev, char *path, float *Value, usage_tabl
 	} 
 
 	/* Get info on object (reportID, offset and size) */
-	if (FindObject(&hParser, &hData) != 1) {
+	if (FindObject(&hDesc, &hData) != 1) {
 		TRACE(2, "Can't find object %s", path);
 		return 0; /* TODO: should be checked */
 	} 
@@ -562,7 +559,7 @@ char *HIDGetItemString(usb_dev_handle *udev, char *path, unsigned char *rawbuf, 
     hData.Path.Size = retcode;
     
     /* Get info on object (reportID, offset and size) */
-    if (FindObject(&hParser,&hData) == 1) {
+    if (FindObject(&hDesc,&hData) == 1) {
       if (libusb_get_report(udev, hData.ReportID, rawbuf, REPORT_SIZE) > 0) { 
 	GetValue((const unsigned char *) rawbuf, &hData);
 
@@ -665,7 +662,7 @@ int HIDGetEvents(usb_dev_handle *udev, HIDDevice *dev, HIDItem **eventsList, usa
 			memset(&hData.Path, '\0', sizeof(HIDPath));
 	
 			/* Get HID Object characteristics */
-			if(FindObject(&hParser, &hData))
+			if(FindObject(&hDesc, &hData))
 			{
 				/* Get HID Object value from report */
 				GetValue(buf, &hData);

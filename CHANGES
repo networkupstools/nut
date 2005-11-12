@@ -1,3 +1,9 @@
+Sat Nov 12 05:12:20 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups, mge-shut: rewrote HID parser interface to parse the
+   Report Descriptor into a data structure, instead of re-scanning it
+   as a byte array all the time.
+
 Wed Nov  9 02:14:01 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups: cleaned up dependencies on $(LIBUSB_CFLAGS)
