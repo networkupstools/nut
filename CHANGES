@@ -1,6 +1,20 @@
+Wed Nov 09 20:06:58 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
+
+ * driver.list:
+   - add APC Back-UPS RS USB compatibility with newhidups,
+   - add missing tripplite_usb compatibility,
+   - remove newhidups experimental flags, except for Belkin
+
+ * Linux Hotplug and udev:
+   - upgrade old style hotplug rules with the newly supported
+     models
+   - add new udev style hotplug rule
+
+ - complete UPGRADING and NEWS notes
+
 Tue Oct 11 06:59:22 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
 
-  - README and driver.list: add missing bcmxcp_usb information
+ - README and driver.list: add missing bcmxcp_usb information
 
 Mon Oct 10 22:36:00 CEST 2005 / Kjell Claesson <kjell.claesson@telia.com>
 

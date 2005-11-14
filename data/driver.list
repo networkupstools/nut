@@ -25,11 +25,12 @@
 "APC"	"Matrix-UPS"		""	"apcsmart"
 "APC"	"Smart-UPS"		""	"apcsmart"
 
-"APC"	"Back-UPS Pro USB"	""	"hidups or newhidups (experimental USB drivers for Linux)"
-"APC"	"Back-UPS USB"		""	"hidups or newhidups (experimental USB drivers for Linux)"
-"APC"	"Back-UPS LS USB"	""	"hidups or newhidups (experimental USB drivers for Linux)"
-"APC"	"Back-UPS ES/CyberFort 350"	""	"hidups or newhidups (experimental USB drivers for Linux)"
-"APC"	"Smart-UPS USB"		""	"hidups or newhidups (experimental USB drivers for Linux)"
+"APC"	"Back-UPS Pro USB"	""	"newhidups or hidups"
+"APC"   "Back-UPS RS USB"	""      "newhidups or hidups"
+"APC"	"Back-UPS USB"		""	"newhidups or hidups"
+"APC"	"Back-UPS LS USB"	""	"newhidups or hidups"
+"APC"	"Back-UPS ES/CyberFort 350"	""	"newhidups or hidups"
+"APC"	"Smart-UPS USB"		""	"newhidups or hidups"
 
 "APC"	"Back-UPS"	"940-0095A/C cables"	"genericups upstype=1"
 "APC"	"Back-UPS"	"940-0020B/C cables"	"genericups upstype=2"
@@ -47,8 +48,8 @@
 "Belkin"	"Resource"	""		"genericups upstype=4"
 "Belkin"	"Home Office"	"F6H350-SER, F6H500-SER, F6H650-SER"	"genericups upstype=7"
 "Belkin"	"Universal UPS" "F6C800-UNV, F6C120-UNV, F6C1100-UNV"	"belkinunv"
-"Belkin"	"Universal UPS" "F6C800-UNV, F6C120-UNV, F6C1100-UNV"	"newhidups (experimental USB driver for Linux)"
-"Belkin"	"Office Series"	"F6C550-AVR"	"newhidups (experimental USB driver for Linux)"
+"Belkin"	"Universal UPS" "F6C800-UNV, F6C120-UNV, F6C1100-UNV"	"newhidups"
+"Belkin"	"Office Series"	"F6C550-AVR"	"newhidups"
 
 "Best Power"	"Fortress (newer)"	""	"bestups"
 "Best Power"	"Fortress Telecom"	""	"bestups"
@@ -68,6 +69,7 @@
 "Cyber Power Systems"	"320AVR"	""	"cyberpower"
 "Cyber Power Systems"	"500AVR"	""	"cyberpower"
 "Cyber Power Systems"	"650AVR"	""	"cyberpower"
+"Cyber Power Systems"   "685AVR"        ""      "newhidups (USB driver)"
 "Cyber Power Systems"	"700AVR"	""	"cyberpower"
 "Cyber Power Systems"	"800AVR"	""	"cyberpower"
 "Cyber Power Systems"	"850AVR"	""	"cyberpower"
@@ -306,6 +308,9 @@
 
 "Sysgration"	"UPGUARDS Pro650"	""	"fentonups"
 
+"Tripp-Lite"	"OMNIVS1000"	"USB"	"tripplite_usb"
+"Tripp-Lite"	"OMNIVS1500XL"	"USB"	"tripplite_usb"
+"Tripp-Lite"	"SMART1500RM2U"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"SmartUPS"	""	"tripplite"
 "Tripp-Lite"	"SmartOnline"	""	"tripplitesu"
 "Tripp-Lite"	"(various)"	"Lan 2.2 interface - black 73-0844 cable"	"genericups upstype=5"

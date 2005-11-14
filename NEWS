@@ -3,12 +3,29 @@ If you're upgrading from an earlier version, see the UPGRADING file.
 ---------------------------------------------------------------------------
 Release notes for NUT 2.0.3 - what's new since 2.0.2:
 
- - The powermust driver now supports Soyntec Sekury C 500 and C 800 units.
-   [Hanno Borns]
+ - The recent and major newhidups changes have been backported from the
+   Development tree. It now:
+   - supports models from MGE UPS SYSTEMS, APC and Belkin. Mustek and Unitek
+     units are also recognized for development purpose,
+   - handles better device reopening, after a disconnection,
+   - handles multiple devices, with several parameters to find the right UPS.
+   [Peter Selinger and Charles Lepple]
+
+ - The bcmxcp_usb driver has been added to support Powerware USB units.
+   [Wolfgang Ocker and Kjell Claesson]
+
+ - The tripplite_usb driver has been added to support Tripp Lite USB units.
+   [Charles Lepple]
+
+ - The sec driver is back as gamatronic
+   [Gamatronic, Nadav Moskovitch]
 
  - The genericups driver has received official care from Gamatronic
    to add support for the Gamatronic UPS with alarm interface.
    [Gamatronic, Nadav Moskovitch]
+
+ - The powermust driver now supports Soyntec Sekury C 500 and C 800 units.
+   [Hanno Borns]
 
  - The mge-shut driver has received a bit of attention too, and enhance
    ups.model retrieval for some specific case (release 0.65)
@@ -17,10 +34,6 @@ Release notes for NUT 2.0.3 - what's new since 2.0.2:
    initialisation time if called using -k. This avoid unneeded
    failure to poweroff the UPS if /var is already unmounted.
    [Gaspar Bakos]
-
- - The newhidups driver handles better device reopening, after a
-   disconnection. It also now recognize units from Tripplite, Mustek
-   and Unitek for development purpose.
 
  - The belkinunv driver now supports Belkin F6C1100-UNV
    [Dave Breiland]

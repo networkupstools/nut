@@ -6,6 +6,8 @@ check this file to see if you need to make changes to your system.
 Changes from 2.0.2 to 2.0.3:
 
  - nothing that affects upgraded systems.
+ - hidups users are encouraged to switch to newhidups, as hidups will be
+   removed by nut 2.2.
 
 ---------------------------------------------------------------------------
 Changes from 2.0.1 to 2.0.2:
