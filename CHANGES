@@ -1,3 +1,8 @@
+Tue Nov 15 17:35:00 CEST 2005 / Kjell Claesson <kjell.claesson@telia.com>
+
+ * driver.list:
+   - add HP R5500 XR compatibility with bcmxcp
+
 Sat Nov 12 05:12:20 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups, mge-shut: rewrote HID parser interface to parse the
