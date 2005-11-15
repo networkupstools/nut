@@ -124,6 +124,7 @@
 "Gemini"	"UPS625/UPS1000"	""	"safenet"
 
 "HP"		"R3000 XR"      ""      "bcmxcp"
+"HP"		"R5500 XR"      ""      "bcmxcp"
 
 "INELT"		"Monolith 1000LT"	""	"fentonups"
 
