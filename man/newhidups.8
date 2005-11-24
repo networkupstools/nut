@@ -84,19 +84,20 @@ permission settings problem. Lastly note that the libhidups file
 must have execution flag set (ie using chmod +x ...).
 
 .SH IMPLEMENTATION
-The driver ignores the "port" value in \fBups.conf\fR; however, upsd requires
-that each configured UPS driver use a different port value.
-
-For instance:
+The driver ignores the "port" value in \fBups.conf\fR. Unlike previous
+versions of this driver, it is now possible to control multiple UPS
+units simultaneously with this driver. They can be distinguished by
+setting some combination of the "vendor", "product", "serial",
+"vendorid", and "productid" options. For instance:
 
 .nf
 	[mge]
 		driver = newhidups
-		port = auto1
+		port = auto
 		vendorid = 0463
 	[tripplite]
 		driver = newhidups
-		port = auto2
+		port = auto
 		vendorid = 09ae
 .fi
 
