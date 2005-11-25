@@ -66,7 +66,7 @@ struct {
 	{ "Alpha500iC", "Alpha 500 iC", 10.7, 1.4, 13.0, 0.8, 172, 196, 252, 288, 0 },
 
 	/* From Yuri V. Kurenkov (http://www.inelt.ru) */
-	{ "M1000LT", "Inelt Monolith 1000LT", 1.91, 0.42, 1.91, 0.42, 160, 160, 270, 270, 1 },
+	{ "M1000LT", "INELT Monolith 1000LT", 1.91, 0.42, 1.91, 0.5, 160, 160, 270, 270, 1 },
 	
 	{ NULL,    NULL,		  0, 0, 0, 0,   0,   0,   0,   0, 0 }
 };
