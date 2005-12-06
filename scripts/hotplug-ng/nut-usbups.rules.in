@@ -1,0 +1,19 @@
+# udev rules for the NUT USB drivers
+
+SUBSYSTEM!="usb_device", ACTION!="add", GOTO="nut-usbups_rules_end"
+
+# MGE UPS SYSTEMS - usbhid-ups
+SYSFS{idVendor}=="0463", SYSFS{idProduct}=="ffff", MODE="660", GROUP="@RUN_AS_USER@"
+SYSFS{idVendor}=="0463", SYSFS{idProduct}=="0001", MODE="660", GROUP="@RUN_AS_USER@"
+
+# APC - usbhid-ups
+SYSFS{idVendor}=="051d", SYSFS{idProduct}=="0002", MODE="660", GROUP="@RUN_AS_USER@"
+
+# Powerware - bcmxcp_usb
+SYSFS{idVendor}=="0592", SYSFS{idProduct}=="0002", MODE="660", GROUP="@RUN_AS_USER@"
+
+# Tripp Lite - tripplite_usb
+SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="0001", MODE="660", GROUP="@RUN_AS_USER@"
+
+LABEL="nut-usbups_rules_end"
+
