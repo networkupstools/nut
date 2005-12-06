@@ -1,3 +1,8 @@
+Tue Dec  6 04:03:11 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - added Belkin F6C800-UNV to scripts/hotplug/libhid.usermap (thanks drew.kay)
+ - added Belkin F6C1500-TW-RK to data/driver.list (thanks "Big Wave Dave")
+
 Fri Nov 25 10:02:15 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
 
  - fentonups: correct the INELT Monolith 1000LT definition
