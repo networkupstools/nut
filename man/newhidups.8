@@ -1,29 +1,41 @@
-.TH HIDUPS 8 "Wed May 25 2005" "" "Network UPS Tools (NUT)"
+.TH NEWHIDUPS 8 "Fri Dec 16 2005" "" "Network UPS Tools (NUT)"
 .SH NAME
-hidups \- Experimental Multi\(hyHID Driver for USB/HID UPS equipment
+newhidups \- New driver for USB/HID UPS equipment
 .SH NOTE
 This man page only documents the hardware\(hyspecific features of the
 newhidups driver.  For information about the core driver, see
 \fBnutupsdrv\fR(8).
 
-This is an experimental driver.  Not all features may work correctly.
-
 .SH SUPPORTED HARDWARE
 .B newhidups
-is an experiment to bring USB UPS monitoring to NUT on all platform
-supporting USB through libusb. It should detect any UPS that uses
-the HID power device class, but the amount of data will vary depending
-on the manufacturer and model.
+brings USB/HID UPS monitoring to NUT on all platform supporting USB
+through libusb.It should detect any UPS that uses the HID power device
+class, but the amount of data will vary depending on the manufacturer
+and model.
 
-At the present time, newhidups only supports MGE UPS SYSTEMS models.
+At the present time, newhidups supports:
 
-On Linux, you will need at least a 2.4.25 or 2.6.2 kernel
-to disable hiddev support and avoid conflict. Otherwise,
-prefer to use hidups driver.
+    all MGE UPS SYSTEMS USB models,
+    some APC models,
+    some Belkin models,
+    some Cyber Power Systems models.
+
+For a more complete list, refer to the NUT hardware compatibility list,
+available in the source distribution as data/drivers.list, or on the
+NUT website.
+
+This driver is known to work on:
+
+    most Linux systems,
+    FreeBSD (beta stage) and maybe other *BSD,
+    Solaris 10 (not yet validated).
 
 .SH EXTRA ARGUMENTS
-This driver supports the following optional settings in the 
-\fBups.conf\fR(5):
+If you only have one local USB UPS, newhidups can autodetect it by
+setting the port value to "auto" either on the command line,
+or in the \fBups.conf\fR file.
+
+This driver also supports the following optional settings:
 
 .IP "offdelay=\fInum\fR"
 Set the timer before the UPS is turned off after the kill power command is
@@ -57,14 +69,6 @@ Select a UPS on a specific USB bus or group of busses. The argument is
 a regular expression that must match the bus name where the UPS is
 connected (e.g. bus="002", bus="00[2-3]"). 
 
-.SH EXPERIMENTAL DRIVER
-This driver has been tagged experimental, even if it has been reported
-to be stable. Thus it is not suitable for production systems and it is
-not built by default. This is mainly due to the fact that it is a
-new driver, and that it will be replaced soon with a version using
-an external HID library (libhid), as opposed to the current
-internal ripped version.
-
 .SH INSTALLATION
 This driver is not built by default.  You can build it by using
 "make usb", and install it using "make install\(hyusb". Note that
@@ -74,15 +78,10 @@ libhid.usermap), generally in etc/hotplug/usb/, to address the
 permission settings problem. Lastly note that the libhidups file
 must have execution flag set (ie using chmod +x ...).
 
-.SH IMPLEMENTATION
-newhidups only support 1 UPS at this time. You can put the
-"auto" value for port in \fBups.conf\fR, i.e.:
-
-.nf
-	[newhidups]
-		driver = newhidups
-		port = auto
-.fi
+On Linux, you will need at least a 2.4.25 or 2.6.2 kernel and libusb
+0.1.8 to disable the hiddev support and avoid conflict. This hiddev
+kernel driver was needed by the legacy NUT hidups driver, which
+newhidups replaces.
 
 .SH KNOWN ISSUES AND BUGS
 .SS "Got EPERM: Operation not permitted upon driver startup"
@@ -93,7 +92,7 @@ hotplug so that it applies these changes.
 
 .SH AUTHORS
 .SS Sponsored by MGE UPS SYSTEMS <http://opensource.mgeups.com/>
-Arnaud Quette
+Arnaud Quette, Peter Selinger
 
 .SH SEE ALSO
 

@@ -1,4 +1,4 @@
-.TH mge\-utalk 8 "Mon Mar 07 2005" "" "Network UPS Tools (NUT)"
+.TH mge\-utalk 8 "Fri Dec 16 2005" "" "Network UPS Tools (NUT)"
 .SH NAME
 mge\(hyutalk \- Driver for MGE UPS SYSTEMS UTalk protocol hardware
 .SH NOTE
@@ -7,29 +7,35 @@ mge\(hyutalk driver.  For information about the core driver, see
 \fBnutupsdrv\fR(8).
 
 .SH SUPPORTED HARDWARE
-mge\(hyutalk supports the following models:
+mge\(hyutalk supports the following legacy units, using the MGE UTalk
+protocol:
 
-    Pulsar Evolution (Serial port),
     Pulsar ESV+,
     Pulsar ES+,
     Pulsar EL,
     Pulsar EX,
-    Pulsar EXtreme C,
-    Pulsar / Comet EXtreme,
-    Comet / Galaxy (Serial card)
+    Pulsar EXtreme,
+    Comet EXtreme,
+    Comet (Utalk Serial Card, ref 66060),
+    Galaxy (Utalk Serial Card, ref 66060).
+
+This driver also support some newer models with backward UTalk compatibility,
+such as Pulsar Evolution and Pulsar EXtreme C. As these models also support
+the SHUT protocol, prefer mge-shut for serial communication, or use the USB
+port, if available, with the newhidups driver.
 
 .SH EXTRA ARGUMENTS
 
 This driver supports the following optional settings in the
 \fBups.conf\fR(5):
 
-.IP "LowBatt=\fIvalue\fR"
+.IP "lowbatt=\fIvalue\fR"
 Low battery level below which LB is raised, in % (default 30%)
 
-.IP "OnDelay=\fIvalue\fR"
+.IP "ondelay=\fIvalue\fR"
 Set delay before startup, in minutes (default 1 minute)
 
-.IP "OffDelay=\fIvalue\fR"
+.IP "offdelay=\fIvalue\fR"
 Delay before shutdown, in seconds (default 120 seconds)
 
 .IP "oldmac"
@@ -39,8 +45,8 @@ OSs (like *BSD) running on PowerMac.
 
 .SH IMPLEMENTATION DETAILS
 
-Not all MGE UPS models provide all possible information. mge\(hyutalk
-checks on startup which variables and commands are available from
+Not all MGE UPS models provide all possible information, settings and commands.
+mge\(hyutalk checks on startup which variables and commands are available from
 the UPS, and re\(hyreads these regularly. Thus, startup is a bit slow,
 but this should not matter much.
 
