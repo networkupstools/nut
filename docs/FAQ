@@ -624,62 +624,16 @@ Auth: Russell Kroll <rkroll@exploits.org>
  Q: I just bought a new WhizBang UPS that has a USB connector.  How do
     I monitor it?
 
- A: If you're using a very new version of Linux that has hiddev support
-    or just happen to have the hiddev patches applied and working, you're
-    in luck.  On any other system or an older Linux kernel, there's
-    nothing for you just yet.
+ A: There are several driver to support USB models.
 
-    CONFIG_USB_HIDDEV finally appeared as a real configuration option in
-    Linux 2.4.13.  Any version after that point, including the 2.5
-    series, should also have it available.
+    - newhidups supports various manufacturers complying to the HID standard,
+    - tripplite_usb supports various Tripp-Lite units,
+    - bcmxcp_usb supports various Powerware units.
 
-    First you need to point configure at your hiddev.h file.  If it
-    happens to be /usr/include/linux/include/linux/hiddev.h, then you
-    don't need to do anything.  Otherwise, use --with-linux-hiddev
-    and provide the full path to the right file.
+    Refer to the "driver-name" (8) manpage for more information.
 
-    hidups is not built by default, so call configure with 
-    "--with-drivers=hidups" or go into your drivers directory and do
-    "make hidups" by hand.
-
-    Next, create an entry in ups.conf like this:
-
-	[myups]
-		driver = hidups
-		port = /dev/usb/hid/hiddev0
-
-    Use the right port that happens to apply to your hardware.  Yes,
-    we know that USB is hotpluggable.  Yes, we know that things move
-    around.  That's why this is still tagged experimental.
-
-    If you don't have those entries in /dev, make them with mknod -
-    they're character devices, major 180, minor 96 and up.
-
-    Once that's done, try starting it with upsdrvctl.
-
-    Remember: this is brand new *experimental* software and is probably
-    very broken.  Do us a favor and report successes or failures to
-    the mailing lists.  You might also want to subscribe to the hidups
-    list at lists.exploits.org to track development activity for this
-    hardware.
-
-    Developers on other systems (the BSDs in particular) are encouraged
-    to pitch in to make this work on their kernel's USB implementation.
-
-    Also check the newhidups note below.
-
------------------------------------------------------------------------------
-
- Q: Why isn't Linux seeing my USB UPS?
-
- A: Some USB UPS equipment needs a few non-default options in your
-    kernel.  One of them is CONFIG_USB_LONG_TIMEOUT - try using this
-    if you have a MGE Ellipse that isn't being recognized.
-
-    Note: while CONFIG_USB_LARGE_CONFIG is in 2.4.18's Configure.help
-    and looks like the answer to APC UPS troubles, it doesn't actually
-    do anything.  You still have to mangle the config request code
-    yourself.
+    Note that the previous experimental support through the hidups driver
+    will be dropped by NUT 2.2.
 
 -----------------------------------------------------------------------------
 
@@ -690,8 +644,9 @@ Auth: Russell Kroll <rkroll@exploits.org>
     (which is available for a wide range of operating systems) and
     libhid.
 
-    In the future, newhidups will completely replace the existing
-    hidups driver and provide support for various manufacturers.
+    As of NUT 2.2, newhidups will completely replace the existing
+    hidups driver and provide support for various manufacturers. At that
+    time, it will be renamed to usbhid-ups.
 
     newhidups can be built by using "make usb", and installed using
     "make install-usb". Note that it will also install other USB
