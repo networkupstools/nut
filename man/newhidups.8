@@ -58,8 +58,15 @@ USB. Each option specifies an extended regular expression (see
 \fIregex(7)\fR) that must match the UPS's entire vendor/product/serial
 string (minus any surrounding whitespace), or the whole 4-digit
 hexadecimal code for vendorid and productid. Try \fI-D -D\fR for
-finding out the strings to match. Examples: \fI-x vendor="APC.*"\fR,
-\fI-x product=".*(Smart|Back)-?UPS.*"\fR.
+finding out the strings to match.
+
+Examples: 
+
+    \fI-x vendor="Foo.Corporation.*"\fR
+
+    \fI-x vendorid=051d\fR (APC)
+
+    \fI-x product=".*(Smart|Back)-?UPS.*"\fR
 
 .IP "bus=\fIregex\fR"
 
