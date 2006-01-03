@@ -108,8 +108,11 @@ static float ivolt_min = INT_MAX;
 static float ivolt_max = -1;
 
 /* In minutes: */
-static short start_delay = 3; /* wait this amount of time to come back online */
-static short shutdown_delay = 2; /* wait until going offline */
+static short start_delay = 3;     /* wait this amount of time to come back online */
+static short shutdown_delay = 2;  /* wait until going offline */
+
+/* In percentage: */
+static float lowbatt = 0;  /* disabled */
 
 
 static float batt_charge_pct(float battvolt);
@@ -231,6 +234,10 @@ void upsdrv_initinfo(void)
        dstate_setinfo("output.voltage.target.battery", "%.1f", values.volt);
        dstate_setinfo("battery.voltage.nominal", "%.1f", values.battvolt);
 
+       if (getval("lowbatt")) {
+               lowbatt = CLAMP(atof(getval("lowbatt")), 0, 100);
+       }
+
        dstate_setinfo("ups.delay.start", "%d", start_delay);
        dstate_setflags("ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING);
        dstate_setaux("ups.delay.start", MAX_START_DELAY_LEN);
@@ -258,7 +265,8 @@ void upsdrv_initinfo(void)
 void upsdrv_updateinfo(void)
 {
        QueryValues query;
-
+       float charge;
+       
        if (run_query(&query) < 0) {
                /*
                 * Query wasn't successful (we got some weird
@@ -283,7 +291,8 @@ void upsdrv_updateinfo(void)
        /* this value seems to be bogus, it always reports 37.8 */
        /*dstate_setinfo("ups.temperature", "%.1f", query.temp);*/
 
-       dstate_setinfo("battery.charge", "%.1f", batt_charge_pct(query.battvolt));
+       charge = batt_charge_pct(query.battvolt);
+       dstate_setinfo("battery.charge", "%.1f", charge);
 
        /* For debug purposes (I know it isn't good to create new variables) */
        /*dstate_setinfo("ups.flags", query.flags);*/
@@ -307,8 +316,13 @@ void upsdrv_updateinfo(void)
                        }
                }
        }
-       
-       if (query.flags[FL_LOW_BATT] == '1') {
+
+       /*
+        * If "lowbatt > 0", it becomes a "soft" low battery level
+        * and the hardware flag "FL_LOW_BATT" is always ignored.
+        */
+       if ((lowbatt <= 0 && query.flags[FL_LOW_BATT] == '1') ||
+           (lowbatt > 0 && charge < lowbatt)) {
                status_set("LB");
        }
 
@@ -341,7 +355,7 @@ void upsdrv_shutdown(void)
        upslogx(LOG_INFO, "Shutting down UPS immediately.");
 
        ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
-       ser_send_pace(upsfd, SEND_PACE, "S00R0001%c", ENDCHAR);
+       ser_send_pace(upsfd, SEND_PACE, "S00R%04d%c", start_delay, ENDCHAR);
 }
 
 
@@ -444,7 +458,7 @@ int setvar(const char *varname, const char *val)
 
                return STAT_SET_HANDLED;
        }
-
+       
        return STAT_SET_UNKNOWN;
 }
 
@@ -459,13 +473,14 @@ void upsdrv_makevartable(void)
        addvar(VAR_VALUE, "mfr", "Manufacturer name");
        addvar(VAR_VALUE, "model", "Model name");
        addvar(VAR_VALUE, "serial", "UPS serial number");
+       addvar(VAR_VALUE, "lowbatt", "Low battery level (%)");
 }
 
 
 void upsdrv_banner(void)
 {
        printf("Network UPS Tools - Megatec protocol driver %s (%s)\n", DRV_VERSION, UPS_VERSION);
-       printf("Carlos Rodrigues (c) 2003-2005\n\n");
+       printf("Carlos Rodrigues (c) 2003-2006\n\n");
 }
 
 
