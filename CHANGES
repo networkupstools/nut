@@ -1,4 +1,9 @@
-Tue Jan 33 02:09:27 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+Sat Jan 14 16:21:11 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - megatec: minor changes to the manpage
+ - added "Trust UPS 1000 Management PW-4105" to driver.list
+
+Tue Jan  3 02:09:27 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - megatec: new "lowbatt" parameter (overrides the hardware low battery level)
 

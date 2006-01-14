@@ -321,6 +321,8 @@
 "Tripp-Lite"	"SmartOnline"	""	"tripplitesu"
 "Tripp-Lite"	"(various)"	"Lan 2.2 interface - black 73-0844 cable"	"genericups upstype=5"
 
+"Trust"		"UPS 1000 Management PW-4105"	""	"megatec"
+
 "UNITEK"	"ALPHA 500 IC"		""	"fentonups"
 "UNITEK"	"Alpha 1000is"		""	"fentonups"
 
