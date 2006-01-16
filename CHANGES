@@ -1,3 +1,17 @@
+
+Mon Jan 16 12:01:22 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
+
+ * mge-utalk 0.87:
+   - only set lowbatt, ondelay and offdelay if configured, and without first getting
+   the current value, as some models only support writing and not reading (ie ES+),
+   (thanks to Rogenry Avila Batista)
+   - change the parameters lowbatt, ondelay and offdelay to lower case for
+   consistency. This won't affect existing setup as the test are done in
+   case insensitive mode,
+   - made various improvements to fix the regression with some older models, such
+   as Pulsar EXtreme, ES+ and EX units
+   - update the TODO list in the mge-utalk manpage 
+
 2.0.3-pre2
 
 Fri Dec 16 20:21:43 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
@@ -683,11 +697,11 @@ Thu Oct 21 01:02:08 CDT 2004 / Russell Kroll <rkroll@exploits.org>
    - enhance the server side variables handling, and particularly the
      wrongly exposed PowerShare outlet description (outlet.*.desc) when
      these doesn't exists,
-    - expose the detected model at upsdrv_initinfo() time
-     (this will be standardised in 2.1 tree),
-    - add NOVA models support,
-    - update manpage and driver.list accordingly,
-    - bump driver version to 0.60
+   - expose the detected model at upsdrv_initinfo() time
+    (this will be standardised in 2.1 tree),
+   - add NOVA models support,
+   - update manpage and driver.list accordingly,
+   - bump driver version to 0.60
 
    (Arnaud Quette) [patch-2.0.1_nova-shut]
 

@@ -1,4 +1,4 @@
-.TH mge\-utalk 8 "Fri Dec 16 2005" "" "Network UPS Tools (NUT)"
+.TH mge\-utalk 8 "Mon Jan 16 2006" "" "Network UPS Tools (NUT)"
 .SH NAME
 mge\(hyutalk \- Driver for MGE UPS SYSTEMS UTalk protocol hardware
 .SH NOTE
@@ -81,10 +81,14 @@ in upsmon.conf.
 OFF is set according to Ls.2.7, but maybe this interpretation is in
 conflict with the NUT interpretation of the OFF flag?
 
-.IP "Add PowerSave support (selectable plug number for commands)"
+.IP "Add PowerShare / PowerSave support (selectable plug number for commands)"
 ON/OFF/REBOOT commands can act either on outlet 1, 2 or main (1 + 2). This
 features depends on the UPS model. This would also allow to support
 UM\(hySwitch (smart outlet).
+
+.IP "Enhance the model name exposure"
+A table, named Si1_models_names, has been created to format finelly the
+UPSs model names, but it is not yet being used.
 
 .SH AUTHORS
 Arnaud Quette, Hans Ekkehard Plesser, Martin Loyer, Patrick Agrain,
