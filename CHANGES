@@ -1,5 +1,9 @@
+Mon Jan 16 22:17:02 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
-Mon Jan 16 12:01:22 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
+ - powermust: minor changes to the manpage
+ - added "Trust UPS 1000 Management PW-4105" to driver.list
+
+Mon Jan 16 12:01:22 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
  * mge-utalk 0.87:
    - only set lowbatt, ondelay and offdelay if configured, and without first getting
