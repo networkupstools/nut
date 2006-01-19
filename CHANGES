@@ -1,3 +1,8 @@
+Sat Jan 18 23:58:43 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - added "Tecnoware Easy Power 1200" to "megatec.8" and driver.list
+ - point "Megatec Protocol" to "megatec" in driver.list
+
 Sat Jan 14 16:21:11 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - megatec: minor changes to the manpage

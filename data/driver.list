@@ -314,6 +314,8 @@
 
 "Sysgration"	"UPGUARDS Pro650"	""	"fentonups"
 
+"Tecnoware"	"Easy Power 1200"	""	"megatec"
+
 "Tripp-Lite"	"OMNIVS1000"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"OMNIVS1500XL"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"SMART1500RM2U"	"USB"	"tripplite_usb"
@@ -332,7 +334,7 @@
 "Various"	"(various)"	"SEC protocol"		"gamatronic"
 "Various"	"(various)"	"Generic RUPS model"	"genericups upstype=4"
 "Various"	"(various)"	"Generic RUPS 2000 (Megatec M2501 cable)"	"genericups upstype=21"
-"Various"	"(various)"	"Megatec protocol"	"fentonups"
+"Various"	"(various)"	"Megatec protocol"	"megatec"
 "Various"	"(various)"	"PhoenixTec protocol"	"bestups"
 "Various"	"(various)"	"SNMP - RFC 1628"	"snmp-ups (experimental)"
 "Various"	"(various)"	"Safenet software"	"safenet"
