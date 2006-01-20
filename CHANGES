@@ -1,3 +1,15 @@
+Fri Jan 20 15:25:00 UTC 2006 / Kjell Claesson <kjell.claesson@telia.com>
+
+ - Fix include of termios. Some drivers include termios instead of including
+   serial.h. Patch from Niklas Edmundsson to correct this.
+ - Patch comment from Niklas.
+   * Fixes all drivers to include serial.h instead of sys/termios.h
+   * serial.h fallbacks to include termios.h if sys/termios.h doesn't
+      exist (needed to build on AIX).
+   * Some drivers use alloca, add pragma to make it available on AIX.
+   * Make sure definition of TRUE/FALSE doesn't clash with previous
+      definition in some drivers.
+
 Sat Jan 18 23:58:43 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - added "Tecnoware Easy Power 1200" to "megatec.8" and driver.list

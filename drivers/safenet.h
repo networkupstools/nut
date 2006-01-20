@@ -21,7 +21,14 @@
 /*
  * The following looks a bit ugly, but allows for simple logical operations
  */ 
+#ifdef FALSE
+#undef FALSE
+#endif
 #define FALSE   0
+
+#ifdef TRUE
+#undef TRUE
+#endif
 #define TRUE    !0
 
 typedef struct {

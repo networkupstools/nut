@@ -94,7 +94,6 @@
 #include "serial.h"
 #include "belkinunv.h"
 #include <sys/ioctl.h>
-#include <sys/termios.h>
 	
 /* somewhat arbitrary buffer size - the longest actually occuring
    message is 18 bytes for the F6C800-UNV. But since message length is

@@ -20,19 +20,19 @@
 #include "common.h"
 #include "timehead.h"
 
+#include "serial.h"
+
 #include <grp.h>
 #include <pwd.h>
 #include <ctype.h>
 #include <sys/file.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <sys/termios.h>
 
 #ifdef HAVE_UU_LOCK
 #include <libutil.h>
 #endif
 
-#include "serial.h"
 
 	extern	int	do_lock_port, exit_flag;
 

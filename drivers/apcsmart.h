@@ -20,7 +20,7 @@
 
 #include <ctype.h>
 #include <sys/ioctl.h>
-#include <sys/termios.h>
+#include "serial.h"
 #include "timehead.h"
 
 #define APC_TABLE_VERSION	"version 2.0"

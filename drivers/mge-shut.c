@@ -24,7 +24,6 @@
  */
 
 #include <sys/ioctl.h>
-#include <sys/termios.h>
 #include <string.h>
 
 #include "config.h"

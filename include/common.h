@@ -20,6 +20,12 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+
+/* Need this on AIX when using xlc to get alloca */
+#ifdef _AIX
+#pragma alloca
+#endif /* _AIX */
+
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>

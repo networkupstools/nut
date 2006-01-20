@@ -8,7 +8,7 @@
 #if defined(HAVE_SYS_TERMIOS_H)
 #  include <sys/termios.h>      /* for speed_t */
 #else
-#  error "No <sys/termios.h> available.  Unable to continue."
+#  include <termios.h>
 #endif /* HAVE_SYS_TERMIOS_H */
 
 /* limit the amount of spew that goes in the syslog when we lose the UPS */

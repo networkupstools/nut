@@ -20,7 +20,6 @@
 #define DRV_VERSION "1.31"
 
 #include <sys/ioctl.h>
-#include <sys/termios.h>
 
 #include "main.h"
 #include "serial.h"
