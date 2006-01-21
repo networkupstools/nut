@@ -42,6 +42,7 @@ DRIVERPAGES = \
 	mustek.8	\
 	nitram.8	\
 	oneac.8		\
+	optiups.8	\
 	powercom.8 	\
 	megatec.8	\
 	safenet.8	\
