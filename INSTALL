@@ -160,6 +160,10 @@ MANPATH, or just do this:
 		port = /dev/ttyS1
 		desc = "Workstation"
 
+    NOTE: newhidups is a special case for the "port" value. If you
+    only own one local UBS UPS, you can just set the "port" to "auto".
+    Refer to newhidups(8) man page for more information.
+
     *** References: man pages: ups.conf(5), nutupsdrv(8), plus
                     whatever driver(s) you intend to use.
 
