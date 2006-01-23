@@ -9,7 +9,7 @@ Release notes for NUT 2.0.3 - what's new since 2.0.2:
      units are also recognized for development purpose,
    - handles better device reopening, after a disconnection,
    - handles multiple devices, with several parameters to find the right UPS.
-   [Peter Selinger and Charles Lepple]
+   [Peter Selinger, Charles Lepple and Arnaud Quette]
 
  - The bcmxcp_usb driver has been added to support Powerware USB units.
    [Wolfgang Ocker and Kjell Claesson]
