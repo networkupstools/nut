@@ -66,6 +66,14 @@ MANPATH, or just do this:
 
 	make
 
+    Optionaly, you can also build the USB drivers using:
+
+	make usb
+
+    The same goes for the SNMP driver (snmp-ups) using:
+
+	make snmp
+
 ---------------------------------------------------------------------------
 
  3. Gain privileges for installing software if necessary.
@@ -95,6 +103,14 @@ MANPATH, or just do this:
 	make DESTDIR=/tmp/package install
 	make DESTDIR=/tmp/package install-conf
 
+    To install USB drivers, use:
+
+	make install-usb
+
+    To install SNMP driver, use:
+
+	make install-snmp
+
 ---------------------------------------------------------------------------
 
  5. Create the state path directory for the driver(s) and server to use
@@ -118,9 +134,10 @@ MANPATH, or just do this:
 	chmod 0600 /dev/ttyS1
 	chown nut:nut /dev/ttyS1
 
-    NOTE: if you are using something like devfs, make sure these
-    permissions stay set across a reboot.  If they revert to the old
-    values, your drivers may fail to start.
+    NOTE: if you are using something like devfs, hotplug or udev, make sure
+    these permissions stay set across a reboot.  If they revert to the old
+    values, your drivers may fail to start. Sample scripts and information
+    are provided in the scripts/hotplug and scripts/hotplug-ng directories.
 
 ---------------------------------------------------------------------------
 
@@ -137,11 +154,15 @@ MANPATH, or just do this:
     what your UPS is supporting.
 
     A typical UPS without any extra settings looks like this:
-    
+
 	[myupsname]
 		driver = mydriver
 		port = /dev/ttyS1
 		desc = "Workstation"
+
+    NOTE: newhidups is a special case for the "port" value. If you
+    only own one local UBS UPS, you can just set the "port" to "auto".
+    Refer to newhidups(8) man page for more information.
 
     *** References: man pages: ups.conf(5), nutupsdrv(8), plus
                     whatever driver(s) you intend to use.
@@ -267,27 +288,35 @@ MANPATH, or just do this:
 
     What happens now depends on the kind of UPS and driver you have.
     In the list, you should see ups.status with the same value you got
-    above.  A sample run on a Belkin Regulator Pro looks like this:
+    above.  A sample run on a MGE UPS SYSTEMS Ellipse ASR 600 looks
+    like this:
 
-	battery.charge: 100
-	battery.temperature: 048
-	battery.voltage: 13.9
-	driver.name: belkin
-	driver.parameter.port: /dev/cuaa0
-	driver.version: 1.5.12
-	driver.version.internal: 0.21
-	input.frequency: 59.9
-	input.transfer.high: 127.6
-	input.transfer.low: 96.6
-	input.voltage: 119.0
-	output.frequency: 59.9
-	output.voltage: 119.0
-	ups.firmware: 001
-	ups.load: 018
-	ups.mfr: BELKIN
-	ups.model: F6C525-SER
-	ups.status: OL
-	ups.temperature: 048
+	battery.charge: 82
+	battery.charge.low: 30
+	battery.runtime: 1563
+	driver.name: newhidups
+	driver.parameter.port: auto
+	driver.version: 2.0.3
+	driver.version.data: MGE HID 0.8
+	driver.version.internal: 0.28
+	input.transfer.high: 264.0
+	input.transfer.low: 184.0
+	outlet.0.desc: Main Outlet
+	outlet.0.id: 1
+	outlet.0.switchable: 0
+	outlet.1.desc: PowerShare Outlet 1
+	outlet.1.id: 2
+	outlet.1.switch: 0
+	outlet.1.switchable: 0
+	output.voltage: 230.0
+	ups.delay.shutdown: -1
+	ups.delay.start: -10
+	ups.load: 0
+	ups.mfr: MGE UPS SYSTEMS
+	ups.model: Ellipse 600
+	ups.power.nominal: 600
+	ups.serial: AP8F15005
+	ups.status: OB DISCHRG
 
     *** Reference: man page: upsc(8)
 

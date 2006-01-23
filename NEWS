@@ -1,10 +1,80 @@
 If you're upgrading from an earlier version, see the UPGRADING file.
 
 ---------------------------------------------------------------------------
+Release notes for NUT 2.0.3 - what's new since 2.0.2:
+
+ - The recent and major newhidups changes have been backported from the
+   Development tree. It now:
+   - supports models from MGE UPS SYSTEMS, APC and Belkin. Mustek and Unitek
+     units are also recognized for development purpose,
+   - handles better device reopening, after a disconnection,
+   - handles multiple devices, with several parameters to find the right UPS.
+
+   [Peter Selinger, Charles Lepple and Arnaud Quette]
+
+ - The bcmxcp_usb driver has been added to support Powerware USB units.
+
+   [Wolfgang Ocker and Kjell Claesson]
+
+ - The tripplite_usb driver has been added to support Tripp Lite USB units.
+
+   [Charles Lepple]
+
+ - The sec driver is back as gamatronic
+
+   [Gamatronic, Nadav Moskovitch]
+
+ - The genericups driver has received official care from Gamatronic
+   to add support for the Gamatronic UPS with alarm interface.
+
+   [Gamatronic, Nadav Moskovitch]
+
+ - The powermust driver now supports Soyntec Sekury C 500 and C 800 units.
+
+   [Hanno Borns]
+
+ - The mge-shut driver has received a bit of attention too, and enhance
+   ups.model retrieval for some specific case (release 0.65)
+
+ - The drivers don't change to the "statepath" directory anymore at
+   initialisation time if called using -k. This avoid unneeded
+   failure to poweroff the UPS if /var is already unmounted.
+
+   [Gaspar Bakos]
+
+ - The belkinunv driver now supports Belkin F6C1100-UNV
+
+   [Dave Breiland]
+
+ - The isbmex driver has been upgraded to version 0.05, which fixes
+   various errors in formulas, add shutdown capability and revert
+   back baudrate to B9600 (instead of B2400), as it broke the
+   communication
+
+   [Ricardo Martinezgarza]
+
+ - The support of Sysgration UPGUARDS Pro650 in fentonups has
+   been fixed
+
+   [Simon J. Rowe]
+
+ - The packaging files for Red Hat have received various fixes
+
+   [Thomas Jarosch]
+
+ - The solis driver has been fixed to avoid a naming colision and
+   compile on Solaris
+
+   [Pawe≈Ç Kierdelewicz]
+
+ - The snmp-ups driver has corrected the problem when exposing
+   certain time data.
+
+---------------------------------------------------------------------------
 Release notes for NUT 2.0.2 - what's new since 2.0.1:
 
  - the newhidups USB driver has been improved a lot and is no more
-   experimental. It also now as a basic APC support, which will
+   experimental. It also now has a basic APC support, which will
    soon replace the legacy hidups driver.
 
  - The mge-utalk driver has improved its support for old units.
@@ -22,7 +92,7 @@ Release notes for NUT 2.0.2 - what's new since 2.0.1:
 
  - The powermust driver now supports SquareOne Power QP1000, Mustek
    PowerMust 1400VA Plus and 2000VA USB.
-   
+
    [Carlos Rodrigues]
 
  - The fentonups driver has been enhanced and now supports Sysgration
@@ -129,7 +199,7 @@ Release notes for NUT 2.0.1 - what's new since 2.0.0:
    the lack of read-write variables and loss of sync on models which
    don't support restoring settings.
 
-   [Arnaud Quette]  
+   [Arnaud Quette]
 
  - The Micro Ferrups model RE is now supported by the bestuferrups
    driver.  The driver will also now read the ambient temperature and
@@ -173,9 +243,9 @@ Release notes for NUT 2.0.1 - what's new since 2.0.0:
  - Some variables like uc_sigmask were renamed to avoid clashes with
    symbols on systems like HP/UX.
 
- - All man pages have been reworked to switch literal "-" characaters to
+ - All man pages have been reworked to switch literal "-" characters to
    hyphens or "\-" as appropriate.
-   
+
    [Shaul Karl]
 
  - upssched's CANCEL events were broken following the change to
@@ -643,7 +713,7 @@ Release notes for NUT 1.2.1 - what's new since 1.2.0:
    hardware. [Marcio Gomes]
 
  - Fideltronik Ares Series hardware is now supported as genericups type
-   19.  [Tomek Orzechowski and Arkadiusz Mi∂kiewicz]
+   19.  [Tomek Orzechowski and Arkadiusz Mikiewicz]
 
  - The drivers no longer silently drop instant commands or set commands
    from upsd that happen to get fragmented in transit.

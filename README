@@ -1,11 +1,11 @@
 * Network UPS Tools Documentation
 *
-* Russell Kroll <rkroll@exploits.org> and others, see CREDITS file.
+* Arnaud Quette <aquette.dev@gmail.com> and others, see CREDITS file.
 *
 * Released under the GNU GPL - see COPYING for details.
 *
 * Program support page: http://www.networkupstools.org/
-* Mailing list details: http://lists.exploits.org/
+* Mailing list details: http://alioth.debian.org/mail/?group_id=30602
 
 
 ==============================================================================
@@ -174,16 +174,16 @@ that UPS.
                            - Fortress (FOR)
                            - Fortress Telecom (FTC)
                            - Patriot Pro (PRO)
-			   - Patriot Pro II (PR2)
-			   - Axxium Rackmount (AX1)
-                         
+                           - Patriot Pro II (PR2)
+                           - Axxium Rackmount (AX1)
+
                            The SOLA 325, 520 and 620 are also recognized. 
 
-			   This driver will probably also work with other
-			   PhoenixTec protocol hardware.
+                           This driver will probably also work with other
+                           PhoenixTec protocol hardware.
 
-			   The SOLA 610 will work with the ID= variable
-			   in ups.conf.
+                           The SOLA 610 will work with the ID= variable
+                           in ups.conf.
 
 	blazer		 - Centralion Blazer models
 
@@ -233,17 +233,6 @@ that UPS.
 	genericups       - Many contact closure models -
                            see "Generic UPS driver" below 
 
-        hidups           - Experimental driver for USB HID UPSes on Linux
-
-                           Some units that have been used with this driver:
-
-                           - APC Back-UPS Pro 350 USB
-                           - APC Back-UPS 500 USB
-                           - All MGE UPS SYSTEMS USB models
-
-                           NOTE: not built by default.  Read the FAQ
-                           to find out how to build/install/use this one.
-
 	isbmex		 - SOLA/BASIC Mexico ISBMEX protocol hardware
 
 	ippon            - Ippon UPS devices
@@ -253,44 +242,38 @@ that UPS.
 	masterguard	 - Masterguard UPS hardware
 
 	metasys  	 - Meta System ups models:
-				 - HF Line (/2) 1-8 boards
-				 - HF Millennium (810, 820)
-				 - HF TOP Line (910, 920, 930, 940, 950,
-                                                970, 980)
-				 - ECO Network (750, 1000, 1050, 1500,
-                                                1800, 2000, 2100, 2500,
-                                                3000)
-				 - ECO (305, 308, 311, 511, 516, 519,
-                                        522, SX, SXI)
-				 - ally HF (800, 1000, 1250, 1600, 2000,
-                                            2500)
-				 - Megaline (1250, 2500, 3750, 5000,
-                                             6250, 7500, 8750, 10000)
+
+                           - HF Line (/2) 1-8 boards
+                           - HF Millennium (810, 820)
+                           - HF TOP Line (910, 920, 930, 940, 950, 970, 980)
+                           - ECO Network (750, 1000, 1050, 1500,
+                             1800, 2000, 2100, 2500, 3000)
+                           - ECO (305, 308, 311, 511, 516, 519,
+                             522, SX, SXI)
+                           - ally HF (800, 1000, 1250, 1600, 2000, 2500)
+                           - Megaline (1250, 2500, 3750, 5000,
+                             6250, 7500, 8750, 10000)
 
 	mge-shut	 - MGE UPS SYSTEMS serial SHUT units:
-	
-					- Pulsar Ellipse / Ellipse Premium S,
-					- Pulsar Ellipse / Ellipse Premium USBS,
-					- NOVA AVR Serial
-					- Pulsar Evolution,
-					- Pulsar EXtreme C,
-					- Pulsar EXtreme C / EX RT,
-					- Pulsar Esprit,
-					- Pulsar / Comet EXtreme,
-					- Comet / Galaxy
-					  using HID COM Serial Card
-					  (ref 66066)
+
+                           - Pulsar Ellipse / Ellipse Premium S,
+                           - Pulsar Ellipse / Ellipse Premium USBS,
+                           - NOVA AVR Serial
+                           - Pulsar Evolution,
+                           - Pulsar EXtreme C,
+                           - Pulsar EXtreme C / EX RT,
+                           - Pulsar Esprit,
+                           - Pulsar / Comet EXtreme,
+                           - Comet / Galaxy using HID COM Serial Card (ref 66066)
 
 	mge-utalk	 - MGE UPS SYSTEMS serial UTalk units:
-	
-					- Pulsar Evolution,
-					- Pulsar EX / EXL / PSX / SX
-					- Pulsar ES+ / SV / ESV / ESV+,
-					- Pulsar EXtreme C,
-					- Pulsar / Comet EXtreme,
-					- Comet / Galaxy
-					  using Utalk Serial Card
-					  (ref 66060)
+
+                           - Pulsar Evolution,
+                           - Pulsar EX / EXL / PSX / SX
+                           - Pulsar ES+ / SV / ESV / ESV+,
+                           - Pulsar EXtreme C,
+                           - Pulsar / Comet EXtreme,
+                           - Comet / Galaxy using Utalk Serial Card (ref 66060)
 
 	mustek		 - Mustek UPS hardware
 
@@ -298,18 +281,17 @@ that UPS.
 			   OnLite 50, Maxxtro units, etc.)
 
 
-	newhidups	 - Experimental Meta driver for USB HID UPSes
-			   on various platforms (will replace hidups
-			   in the future)
+	newhidups	 - Meta driver for USB HID UPSes on various platforms
+                           (replaces hidups)
 
-			   Some units that have been used with this driver:
+                           Some units that have been used with this driver:
 
-			   - All MGE UPS SYSTEMS USB models
-			   - APC Back-UPS ES 650
-			   - Belkin F6C800-UNV, F6C550-AVR
+                           - All MGE UPS SYSTEMS USB models,
+                           - various APC units,
+                           - Belkin F6C800-UNV, F6C550-AVR
 
-			   NOTE: not built by default.  Read the FAQ
-			   to find out how to build/install/use this one.
+                           NOTE: not built by default.  Read the FAQ
+                           to find out how to build/install/use this one.
  
 	nitram		 - Nitram Elite 2005 units
 
@@ -324,18 +306,18 @@ that UPS.
 
 	safenet		 - Units typically bundled with Safenet software:
 
-			 - Ever-Power UF 010C2EJA
-			 - Fairstone L525/-625/-750
-			 - Fenton P400/-600/-800
-			 - Gemini UPS625/-1000
-			 - Powerwell PM525A/-625A/-800A/-1000A/-1250A
-			 - Repotec RPF525/-625/-800/-1000
-			 - Soltec Winmate 525/625/800/1000
-			 - Sweex 500/1000 (if shipped with Safenet)
+                           - Ever-Power UF 010C2EJA
+                           - Fairstone L525/-625/-750
+                           - Fenton P400/-600/-800
+                           - Gemini UPS625/-1000
+                           - Powerwell PM525A/-625A/-800A/-1000A/-1250A
+                           - Repotec RPF525/-625/-800/-1000
+                           - Soltec Winmate 525/625/800/1000
+                           - Sweex 500/1000 (if shipped with Safenet)
 
-			  Note: Sweex models which shipped with UPSmart
-			  are contact-closure and need to use the
-			  genericups driver with upstype=7.
+                           Note: Sweex models which shipped with UPSmart
+                           are contact-closure and need to use the
+                           genericups driver with upstype=7.
 
 	sms		 - Microlink Manager III
 
@@ -343,12 +325,12 @@ that UPS.
                            Experimental driver - not built by default.
 
                            MIBs supported:
-			   - various RFC 1628 compliant devices,
-			   - MGE UPS SYSTEMS MIB,
-			   - APC Powernet MIB,
-			   - Powerware MIB,
-			   - Socomec Netvision MIB.
-			   
+                           - various RFC 1628 compliant devices,
+                           - MGE UPS SYSTEMS MIB,
+                           - APC Powernet MIB,
+                           - Powerware MIB,
+                           - Socomec Netvision MIB.
+
                            See docs/drivers/snmp-ups.txt for more
                            information.
 
@@ -648,26 +630,20 @@ The main URL:
 	http://www.networkupstools.org/
 
 There is also a mailing list for general queries and discussion about
-this software.  It typically moves around 50-100 messages per month at
-the time of this writing.  To join, send "subscribe ups" to  
-majordomo@lists.exploits.org.  
+this software called nut-upsuser.  It typically moves around 50-100 messages
+per month at the time of this writing.  To join, go to the below address and
+subscribe to the desired list.
 
-If you just want to receive an automatic message when a new version
-(release or testing) is posted, subscribe to upsdevannounce instead.  That
-list is moderated, and will only be used for these notifications.
-
-Finally, there are developer lists called upsdev and hidups.  upsdev is
-for any development, and hidups is just for that one driver.  These are
-not install help lists, and any such mails probably will be ignored.
-
-The submission address is just the list name @ lists.exploits.org.
+Finally, there is a developer list called nut-upsdev.  This is not
+an install help list, and any such mails probably will be ignored.
 
 The mailing lists are archived on the web:
 
-	http://lists.exploits.org/
+	http://alioth.debian.org/mail/?group_id=30602
 
 Try running some searches against the archives.  Many times, problems have
-already been answered by someone else.
+already been answered by someone else. Currently, there is no internal
+search engine, so you will have to try with a search engine like Google.
 
 There is more documentation in the docs/ directory within the source 
 tree.  Be sure to read through the files in there (especially the
@@ -682,11 +658,15 @@ already been answered in the files which are right in front of you.
 The upsclient.a library can be linked into other programs to give access
 to upsd and UPS status information.  Clients like upsc are provided as
 examples of how to retrieve data using the upsclient functions.  Other
-programs not included in this package may also use this library.  
+programs not included in this package may also use this library, as wmnut.
 
 This library file and the associated header files are not installed by
 default.  You must 'make install-lib' before building other programs
 which depend on them.
+
+To obtain the right compilation and link flags, two helpers are provided:
+one for platform providing pkg-config, and the other (libupsclient-config)
+for platform not providing pkg-config.
 
 
 ==============================================================================
@@ -781,6 +761,20 @@ tree, including some of the functions that are provided for your use.
  ACKNOWLEDGEMENTS / CONTRIBUTIONS
 ==============================================================================
 
+MGE UPS SYSTEMS provided extensive technical documents for their UPS product
+line, along with many units for development of NUT-related projects. The
+company also sponsored and later hired Arnaud Quette to further officially
+support these efforts. 
+Several drivers such as mge-utalk, mge-shut, snmp-ups, hidups, and newhidups
+are the result of this collaboration, in addition to the WMNut, HID Parser
+and libhid projects. The features page has improved artwork thanks to Luc
+and Arnaud of MGE. Other client projects such as KNutClient and ups-monitor
+have also received assistance. 
+The master NUT site and several related projects are hosted on MGE's equipment
+at no cost to the project.
+More information on their open source support can be found on their web site:
+http://opensource.mgeups.com/contrib.htm 
+
 Fenton Technologies contributed a PowerPal 660 to the project.  Their open 
 stance and quick responses to technical inquiries are appreciated for 
 making the development of the fentonups driver possible.
@@ -800,13 +794,6 @@ protocol, which is archived in the NUT protocol library online:
 
 Cyber Power Systems contributed a 700AVR model for testing and driver
 development.
-
-MGE UPS Systems provided a Pulsar Ellipse premium 500 for development
-and expansion of the new hidups driver, along with extensive information
-on their implementation of the HID power class and other documents.
-That documentation is online at this URL:
-
-	http://random.networkupstools.org/protocols/mge/
 
 Liebert Corporation supplied serial test boxes and a UPStation GXT2  
 with the Web/SNMP card for development of the liebert driver and

@@ -1,3 +1,10 @@
+Mon Jan 23 08:48:13 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - README, INSTALL, NEWS: more update on USB, remove hidups references
+   and other minor update.
+ - FAQ: update a bit more USB support and SNMP information
+ - CREDITS: add Kirill Smelkov for al175
+
 Sat Jan 21 16:22:33 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
 
  - optiups: resurected to support Opti-UPS and Viewsonic PowerES models
