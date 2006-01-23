@@ -252,6 +252,8 @@
 
 "OnLite"	"AQUA"		"50"	"megatec"
 
+"Opti-UPS"	"PowerES"	"420E"	"optiups"
+
 "Orvaldi Power Protection"	"various"	"not 400 or 600"	"fentonups"
 
 "Powercom"	"SMK-800A"			""	"fentonups"
@@ -342,3 +344,4 @@
 "Victron/IMV"	"(various)"	""		"victronups"
 "Victron/IMV"	"Lite"		"crack cable"	"genericups upstype=10"
 
+"Viewsonic"	"PowerES"	"420E"	"optiups"
