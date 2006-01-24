@@ -24,6 +24,10 @@
  *     commandline parameters
  *   - removed experimental driver flag
  *   - documentation & code cleanup
+ *  20060108/Revision 0.4 - Arjen de Korte <arjen@de-korte.org>
+ *   - minor changes to make sure state changes are not missed
+ *   - log errors when instant commands can't be handled
+ *   - crude hardware detection which looks for DSR=1
  *
  * Copyright (C) 2003  Arjen de Korte <arjen@de-korte.org>
  *
@@ -50,7 +54,7 @@
 #include "serial.h"
 #include "safenet.h"
 
-#define DRV_VERSION	"0.03"
+#define DRV_VERSION	"0.4"
 
 #define ENDCHAR		'\r'
 #define IGNCHARS	""
@@ -65,9 +69,6 @@ static int safenet_command(char *command)
 {
 	char	reply[256];
 	int	i;
-	static int	retry = 0;
-
-	upsdebugx(3, "\nC : %s", command);
 
 	/*
 	 * Send the command, give the UPS a little time to digest it and then
@@ -77,34 +78,18 @@ static int safenet_command(char *command)
 	ser_send_pace(upsfd, UPSDELAY, command);
 	ser_get_line(upsfd, reply, sizeof(reply), ENDCHAR, IGNCHARS, 1, 0);
 
-	upsdebugx(3, "S : %s", ((strlen(reply) > 0) ? reply : "[empty]"));
+	upsdebugx(3, "UPS command %s", command);
+	upsdebugx(3, "UPS answers %s", (strlen(reply)>0) ? reply : "NULL");
 
 	/*
 	 * Occasionally the UPS suffers from hickups (it sometimes spits out a
-	 * PnP (?) identification string) we allow a couple of bad replies before
-	 * declaring the data stale.
+	 * PnP (?) identification string) so we check if the reply looks like
+	 * a valid status.
 	 */
 	if ((strlen(reply) != 11) || (reply[0] != '$') || (strspn(reply+1, "AB") != 10))
 	{
-		if (retry > 2)
-		{
-			ser_comm_fail("Status read failed");
-			dstate_datastale();
-		}
-		else
-		{
-			retry++;
-		}
-
-		return(0);
+		return(-1);
 	}
-
-	if (retry > 2)
-	{
-		ser_comm_good();
-	}
-
-	retry = 0;
 
 	for (i=0; i<10; i++)
 	{
@@ -162,9 +147,7 @@ static int safenet_command(char *command)
 
 	status_commit();
 
-	dstate_dataok();
-
-	return(1);
+	return(0);
 }
 
 static void shutdown_return(int delay)
@@ -173,8 +156,7 @@ static void shutdown_return(int delay)
 
 	if ((delay < 1) || (delay > 999))
 	{
-		upslogx(LOG_ERR, "Shutdown delay %d is not within valid range [1..999]",
-			delay);
+		upslogx(LOG_ERR, "Shutdown delay %d is not within valid range [1..999]", delay);
 		return;
 	}
 
@@ -238,7 +220,10 @@ static int instcmd(const char *cmdname, const char *extra)
 	 */
 	if (!strcasecmp(cmdname, "test.battery.start"))
 	{
-		safenet_command("ZFSDERBTRFGY\r");
+		if (safenet_command("ZFSDERBTRFGY\r"))
+		{
+			upslogx(LOG_ERR, "Instant command %s not completed", cmdname);
+		}
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -247,7 +232,10 @@ static int instcmd(const char *cmdname, const char *extra)
 	 */
 	if (!strcasecmp(cmdname, "test.battery.stop"))
 	{
-		safenet_command("ZGWLEJFICOPR\r");
+		if (safenet_command("ZGWLEJFICOPR\r"))
+		{
+			upslogx(LOG_ERR, "Instant command %s not completed", cmdname);
+		}
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -256,7 +244,10 @@ static int instcmd(const char *cmdname, const char *extra)
 	 */
 	if (!strcasecmp (cmdname, "test.failure.start"))
 	{
-		safenet_command("ZAVLEJFICOPR\r");
+		if (safenet_command("ZAVLEJFICOPR\r"))
+		{
+			upslogx(LOG_ERR, "Instant command %s not completed", cmdname);
+		}
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -265,7 +256,10 @@ static int instcmd(const char *cmdname, const char *extra)
 	 */
 	if (!strcasecmp (cmdname, "test.failure.stop"))
 	{
-		safenet_command("ZGWLEJFICOPR\r");
+		if (safenet_command("ZGWLEJFICOPR\r"))
+		{
+			upslogx(LOG_ERR, "Instant command %s not completed", cmdname);
+		}
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -274,7 +268,10 @@ static int instcmd(const char *cmdname, const char *extra)
 	 */
 	if (!strcasecmp(cmdname, "beeper.on"))
 	{
-		if (ups.status.silenced) safenet_command("ZELWSABPMBEQ\r");
+		if (ups.status.silenced && safenet_command("ZELWSABPMBEQ\r"))
+		{
+			upslogx(LOG_ERR, "Instant command %s not completed", cmdname);
+		}
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -283,7 +280,10 @@ static int instcmd(const char *cmdname, const char *extra)
 	 */
 	if (!strcasecmp(cmdname, "beeper.off"))
 	{
-		if (!ups.status.silenced) safenet_command("ZELWSABPMBEQ\r");
+		if (!ups.status.silenced && safenet_command("ZELWSABPMBEQ\r"))
+		{
+			upslogx(LOG_ERR, "Instant command %s not completed", cmdname);
+		}
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -320,20 +320,34 @@ static int instcmd(const char *cmdname, const char *extra)
 
 void upsdrv_initinfo(void)
 {
-	int	retry = 5;
+	int	retry = 3;
+	int	i;
 	char	*v;
 
 	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
+	
+	usleep(100000);
+
+	/*
+	 * Very crude hardware detection. If an UPS is attached, it will set DSR
+	 * to 1. Bail out if it isn't.
+	 */
+	ioctl(upsfd, TIOCMGET, &i);
+	if ((i & TIOCM_DSR) == 0)
+	{
+		fatalx("Serial cable problem or nothing attached to %s", device_path);
+	}
 
 	/*
 	 * Initialize the serial interface of the UPS by sending the magic
 	 * string. If it does not respond with a valid status reply,
 	 * display an error message and give up.
 	 */
-	while (!safenet_command("ZCADLIOPERJD\r"))
+	while (safenet_command("ZCADLIOPERJD\r"))
 	{
-		if (!(--retry))
-			fatalx("SafeNet protocol compatible UPS not found on %s", device_path);
+		if (--retry) continue;
+
+		fatalx("SafeNet protocol compatible UPS not found on %s", device_path);
 	}
 
 	/*
@@ -388,7 +402,18 @@ void upsdrv_updateinfo(void)
 	/*
 	 * Do a status poll.
 	 */
-	safenet_command(command);
+	if (safenet_command(command))
+	{
+		upsdebugx(1, "UPS serial FAIL");
+		ser_comm_fail("Status read failed");
+		dstate_datastale();
+	}	
+	else
+	{
+		upsdebugx(1, "UPS serial OK");
+		ser_comm_good();
+		dstate_dataok();
+	}
 }
 
 void upsdrv_shutdown(void)
@@ -397,13 +422,17 @@ void upsdrv_shutdown(void)
 
 	/*
 	 * Since we may have arrived here before the hardware is initialized,
-	 * try to initialize it here. If it fails, go on anyway since we may
-	 * be running on batteries now and don't want to waste too much time
-	 * trying.
+	 * try to initialize it here.
+	 *
+	 * Initialize the serial interface of the UPS by sending the magic
+	 * string. If it does not respond with a valid status reply,
+	 * display an error message and give up.
 	 */
-	while (!safenet_command("ZCADLIOPERJD\r"))
+	while (safenet_command("ZCADLIOPERJD\r"))
 	{
-		if (!(--retry)) break;
+		if (--retry) continue;
+
+		fatalx("SafeNet protocol compatible UPS not found on %s", device_path);
 	}
 
 	/*

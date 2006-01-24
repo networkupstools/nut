@@ -1,3 +1,12 @@
+Tue Jan 24 20:40:34 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - safenet: improve robustness, add minimal hardware detection and
+   improve the error handling
+ - bestfcom, tripplite: fix the "array subscript out of range" bug
+   (https://bugzilla.novell.com/show_bug.cgi?id=133610)
+
+   (Arjen de Korte)
+
 Mon Jan 23 08:48:13 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
 
  - README, INSTALL, NEWS: more update on USB, remove hidups references
