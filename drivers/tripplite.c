@@ -144,7 +144,7 @@ static unsigned int bootdelay = DEFAULT_BOOTDELAY;
 static int hex2d(char *start, unsigned int len)
 {
 	char buf[32];
-	buf[32] = '\0';
+	buf[31] = '\0';
 
 	strncpy(buf, start, (len < (sizeof buf) ? len : (sizeof buf - 1)));
 	return strtol(buf, NULL, 16);

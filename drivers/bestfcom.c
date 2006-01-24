@@ -527,7 +527,7 @@ void upsdrv_init_nofc()
 
 	ser_get_line(upsfd, rstring, sizeof(rstring), '>', "", 3, 0);
 
-	rstring[sizeof(rstring)] = '\0';
+	rstring[sizeof(rstring) - 1] = '\0';
 	upsdebugx(2, "id response: %s", rstring);
 
 	/* Better way to identify this unit is using "d 15\r", which results in
