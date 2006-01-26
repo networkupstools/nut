@@ -1,3 +1,15 @@
+Thu Jan 26 16:22:00 UTC	2005 / Kjell Claesson <kjell.claesson@telia.com>
+
+ - Commit patch for snmp and 3phase from Niklas Edmundsson
+ - Comment from Niklas
+    Attached is a patch that does the following:
+    * Changes snmp-ups to use SNMP_MSG_GET instead of SNMP_MSG_GETNEXT.
+    * Rips out the kludges caused by using getnext instead of get.
+    * Fixes a couple of bugs and missing features in snmp-ups.
+    * Updates the APC mib to work and report 3phase values.
+    * Updates the other mibs to hopefully work, needs testing by people
+      with hardware.
+
 Tue Jan 24 20:40:34 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
 
  - safenet: improve robustness, add minimal hardware detection and

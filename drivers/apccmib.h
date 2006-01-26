@@ -25,15 +25,9 @@
 
 #define APCC_MIB_VERSION	"1.1"
 
-/* SNMP OIDs set */
-#define APCC_OID_POWERNET_MIB	".1.3.6.1.4.1.318"
 /* info elements */
-#define APCC_OID_MODEL_NAME		".1.3.6.1.4.1.318.1.1.1.1.1.1"
-#define APCC_OID_UPSIDEN		".1.3.6.1.4.1.318.1.1.1.1.1.2"
-#define APCC_OID_FIRMREV		".1.3.6.1.4.1.318.1.1.1.1.2.1"
-#define APCC_OID_MFRDATE		".1.3.6.1.4.1.318.1.1.1.1.2.2"
-#define APCC_OID_SERIAL			".1.3.6.1.4.1.318.1.1.1.1.2.3"
-#define APCC_OID_BATT_STATUS	".1.3.6.1.4.1.318.1.1.1.2.1.1"
+
+#define APCC_OID_BATT_STATUS	".1.3.6.1.4.1.318.1.1.1.2.1.1.0"
 /* Defines for APCC_OID_BATT_STATUS */
 info_lkp_t apcc_batt_info[] = {
 	{ 1, "" },	/* unknown */
@@ -42,57 +36,61 @@ info_lkp_t apcc_batt_info[] = {
 	{ 0, "NULL" }
 } ;
 
-#define APCC_OID_BATTDATE		".1.3.6.1.4.1.318.1.1.1.2.1.3"
-#define APCC_OID_BATT_CHARGE	".1.3.6.1.4.1.318.1.1.1.2.2.1"
-#define APCC_OID_UPSTEMP		".1.3.6.1.4.1.318.1.1.1.2.2.2"
-#define APCC_OID_BATT_RUNTIME	".1.3.6.1.4.1.318.1.1.1.2.2.3"
-#define APCC_OID_INVOLT			".1.3.6.1.4.1.318.1.1.1.3.2.1"
-#define APCC_OID_INFREQ			".1.3.6.1.4.1.318.1.1.1.3.2.4"
-#define APCC_OID_POWER_STATUS	".1.3.6.1.4.1.318.1.1.1.4.1.1"
-
+#define APCC_OID_POWER_STATUS	".1.3.6.1.4.1.318.1.1.1.4.1.1.0"
 /* Defines for APCC_OID_POWER_STATUS */
 info_lkp_t apcc_pwr_info[] = {
-	{ 1, "" },		/* other  */
-	{ 2, "OL" },		/* normal */
-	{ 3, "OB" },		/* battery */
-	{ 4, "BOOST" },	/* booster */
-	{ 5, "OFF" },		/* timedSleeping */
-	{ 6, "OFF" },		/* bypass  */
-	{ 7, "" },		/* none */
-	{ 8, "" },		/* rebooting */
-	{ 9, "" },		/* Pwr Hard Bypass */
-	{ 10, "" },		/* Pwr Fail Bypass */
-	{ 11, "OFF" },	/* sleepingUntilPowerReturn */
-	{ 12, "TRIM" },	/* reducer */
-	{ 0, "NULL" }
+    { 1, "" },          /* unknown  */
+    { 2, "OL" },        /* onLine */
+    { 3, "OB" },        /* onBattery */
+    { 4, "BOOST" },     /* onSmartBoost */
+    { 5, "OFF" },       /* timedSleeping */
+    { 6, "OFF" },       /* softwareBypass  */
+    { 7, "OFF" },       /* off */
+    { 8, "" },          /* rebooting */
+    { 9, "BYPASS" },    /* switchedBypass */
+    { 10, "BYPASS" },   /* hardwareFailureBypass */
+    { 11, "OFF" },      /* sleepingUntilPowerReturn */
+    { 12, "TRIM" },     /* onSmartTrim */
+    { 0, "NULL" }
 } ;
 
-#define APCC_OID_OUTVOLT		".1.3.6.1.4.1.318.1.1.1.4.2.1"
-#define APCC_OID_LOADPCT		".1.3.6.1.4.1.318.1.1.1.4.2.3"
+#define APCC_OID_CAL_RESULTS	".1.3.6.1.4.1.318.1.1.1.7.2.6.0"
+info_lkp_t apcc_cal_info[] = {
+    { 1, "" },          /* Calibration Successful */
+    { 2, "" },          /* Calibration not done, battery capacity below 100% */
+    { 3, "CAL" },       /* Calibration in progress */
+    { 0, "NULL" }
+};
 
-/* PowerNet-MIB::upsAdvConfigHighTransferVolt */
-#define APCC_OID_HIGHXFER		".1.3.6.1.4.1.318.1.1.1.5.2.2"
+#define APCC_OID_NEEDREPLBATT	".1.3.6.1.4.1.318.1.1.1.2.2.4.0"
+info_lkp_t apcc_battrepl_info[] = {
+    { 1, "" },          /* No battery needs replacing */
+    { 2, "RB" },        /* Batteries need to be replaced */
+    { 0, "NULL" }
+};
 
-/* PowerNet-MIB::upsAdvConfigLowTransferVolt */
-#define APCC_OID_LOWXFER		".1.3.6.1.4.1.318.1.1.1.5.2.3"
+#define APCC_OID_TESTDIAGRESULTS ".1.3.6.1.4.1.318.1.1.1.7.2.3.0"
+info_lkp_t apcc_testdiag_results[] = {
+    { 1, "Ok" },
+    { 2, "Failed" },
+    { 3, "InvalidTest" },
+    { 4, "TestInProgress"},
+    { 0, "NULL" }
+};
 
-/* --- future OIDs which are not mapped to anything yet */
+#define APCC_OID_SENSITIVITY ".1.3.6.1.4.1.318.1.1.1.5.2.7.0"
+info_lkp_t apcc_sensitivity_modes[] = {
+    { 1, "auto" },
+    { 2, "low" },
+    { 3, "medium" },
+    { 4, "high" },
+    { 0, "NULL" }
+};
 
-/* PowerNet-MIB::upsAdvInputMaxLineVoltage */
-#define FUTURE_OID_MAX_INVOLT		".1.3.6.1.4.1.318.1.1.1.3.2.2"
-
-/* PowerNet-MIB::upsAdvInputMinLineVoltage */
-#define FUTURE_OID_MIN_INVOLT		".1.3.6.1.4.1.318.1.1.1.3.2.3"
 
 /* --- */
 
-#define APCC_OID_SLFTSTRES		".1.3.6.1.4.1.318.1.1.1.7.2.3"
-/* XXX can't find appropriate OID for INFO_BATTVOLT. */
-/*#define APCC_OID_BATT_VOLTAGE	".1.3.6.1.4.1.318.???"*/
 /* commands */
-#define APCC_OID_OFF			".1.3.6.1.4.1.318.1.1.1.6.2.1"
-#define APCC_OFF_DO 2
-#define APCC_OFF_GRACEFUL 3
 #define APCC_OID_REBOOT			".1.3.6.1.4.1.318.1.1.1.6.2.2"
 #define APCC_REBOOT_DO			2
 #define APCC_REBOOT_GRACEFUL	3
@@ -101,125 +99,133 @@ info_lkp_t apcc_pwr_info[] = {
 	#define APCC_SLEEP_ON			"2"
 	#define APCC_SLEEP_GRACEFUL		"3"
 #endif
-#define APCC_OID_SIMPWF			".1.3.6.1.4.1.318.1.1.1.6.2.4"
-#define APCC_SIMPWF_DO			2
-#define APCC_OID_FPTEST			".1.3.6.1.4.1.318.1.1.1.6.2.5"
-#define APCC_FPTEST_DO			2
-#define APCC_OID_ON				".1.3.6.1.4.1.318.1.1.1.6.2.6"
-#define APCC_ON_DO				2
-#define APCC_OID_BYPASS			".1.3.6.1.4.1.318.1.1.1.6.2.7"
-#define APCC_BYPASS_ON			2
-#define APCC_BYPASS_OFF			3
-#define APCC_OID_SELFTEST		".1.3.6.1.4.1.318.1.1.1.7.2.2"
-#define APCC_SELFTEST_DO		2
-#define APCC_OID_CAL			".1.3.6.1.4.1.318.1.1.1.7.2.5"
-#define APCC_CAL_DO				2
-#define APCC_CAL_CANCEL			3
-#define APCC_OID_CAL_RESULTS	".1.3.6.1.4.1.318.1.1.1.7.2.6"
-#define APCC_CAL_OK				1
-#define APCC_CAL_INVALID		2
-#define APCC_CAL_INPROGRESS		3
-/*#define APCC_OID_OUTPUT_TAB	"XXX"*/
-#define APCC_OID_OUTCURRENT		".1.3.6.1.4.1.318.1.1.1.4.2.4"
-#define APCC_OID_REQOUTVOLT		".1.3.6.1.4.1.318.1.1.1.5.2.1"
-#define APCC_OID_RETCAPACITY	".1.3.6.1.4.1.318.1.1.1.5.2.6"
-#define APCC_OID_CONSERVE		".1.3.6.1.4.1.318.1.1.1.6.1.1"
-#define APCC_CONSERVE_DO		2
-#define APCC_OID_NEEDREPLBATT	".1.3.6.1.4.1.318.1.1.1.2.2.4"
-#define APCC_RB_NONEED			1
-#define APCC_RB_NEED			2
-#define APCC_OID_SENS			".1.3.6.1.4.1.318.1.1.1.5.2.7"
-#define APCC_OID_GRACEDELAY		".1.3.6.1.4.1.318.1.1.1.5.2.10"
-#define APCC_OID_RETDELAY		".1.3.6.1.4.1.318.1.1.1.5.2.9"
-#define APCC_OID_LOBATTIME		".1.3.6.1.4.1.318.1.1.1.5.2.8"
-/* Environmental sensors (AP9612TH and others) */
-#define APCC_OID_AMBTEMP		".1.3.6.1.4.1.318.1.1.2.1.1"
-#define APCC_OID_AMBHUMID		".1.3.6.1.4.1.318.1.1.2.1.2"
 
-/* IEM: integrated environment monitor probe */
 
-#define APCC_OID_IEM_TEMP       ".1.3.6.1.4.1.318.1.1.10.2.3.2.1.4"
-#define APCC_OID_IEM_TEMP_UNIT  ".1.3.6.1.4.1.318.1.1.10.2.3.2.1.5"
-#define TEMP_UNIT_FAHRENHEIT	2
-#define APCC_OID_IEM_HUMID      ".1.3.6.1.4.1.318.1.1.10.2.3.2.1.6"
 
 snmp_info_t apcc_mib[] = {
 
 	/* info elements. */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "APC",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, APCC_OID_MODEL_NAME,
-		"Generic Powernet SNMP device", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
-	{ "ups.serial", ST_FLAG_STRING, SU_INFOSIZE, APCC_OID_SERIAL, "",
-		SU_FLAG_STATIC | SU_FLAG_OK, NULL },
-	{ "ups.mfr.date", ST_FLAG_STRING, SU_INFOSIZE, APCC_OID_BATTDATE, "",
-		SU_FLAG_OK | SU_FLAG_STATIC, NULL },
-	{ "input.voltage", 0, 1, APCC_OID_INVOLT, "", SU_FLAG_OK, NULL },
-	{ "battery.charge", 0, 1, APCC_OID_BATT_CHARGE, "", SU_FLAG_OK, NULL },
+	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.318.1.1.1.1.1.1.0", "Generic Powernet SNMP device", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
+	{ "ups.serial", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.318.1.1.1.1.2.3.0", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
+	{ "ups.mfr.date", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.318.1.1.1.1.2.2.0", "", SU_FLAG_OK | SU_FLAG_STATIC, NULL },
+	{ "input.voltage", 0, 1, ".1.3.6.1.4.1.318.1.1.1.3.2.1.0", "", SU_FLAG_OK, NULL },
+	{ "input.phases", ST_FLAG_STRING, 2, ".1.3.6.1.4.1.318.1.1.1.9.2.2.1.2.1", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
+	{ "input.L1-L2.voltage", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.2.3.1.3.1.1.1", "", SU_FLAG_OK, NULL },
+	{ "input.L2-L3.voltage", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.2.3.1.3.1.1.2", "", SU_FLAG_OK, NULL },
+	{ "input.L3-L1.voltage", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.2.3.1.3.1.1.3", "", SU_FLAG_OK, NULL },
+	{ "input.L1-L2.voltage.maximum", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.2.3.1.4.1.1.1", "", SU_FLAG_OK, NULL },
+	{ "input.L2-L3.voltage.maximum", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.2.3.1.4.1.1.2", "", SU_FLAG_OK, NULL },
+	{ "input.L3-L1.voltage.maximum", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.2.3.1.4.1.1.3", "", SU_FLAG_OK, NULL },
+	{ "input.L1-L2.voltage.minimum", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.2.3.1.5.1.1.1", "", SU_FLAG_OK, NULL },
+	{ "input.L2-L3.voltage.minimum", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.2.3.1.5.1.1.2", "", SU_FLAG_OK, NULL },
+	{ "input.L3-L1.voltage.minimum", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.2.3.1.5.1.1.3", "", SU_FLAG_OK, NULL },
+	{ "input.L1.current", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.9.2.3.1.6.1.1.1", "", SU_FLAG_OK, NULL },
+	{ "input.L2.current", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.9.2.3.1.6.1.1.2", "", SU_FLAG_OK, NULL },
+	{ "input.L3.current", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.9.2.3.1.6.1.1.3", "", SU_FLAG_OK, NULL },
+	{ "input.L1.current.maximum", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.9.2.3.1.7.1.1.1", "", SU_FLAG_OK, NULL },
+	{ "input.L2.current.maximum", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.9.2.3.1.7.1.1.2", "", SU_FLAG_OK, NULL },
+	{ "input.L3.current.maximum", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.9.2.3.1.7.1.1.3", "", SU_FLAG_OK, NULL },
+	{ "input.L1.current.minimum", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.9.2.3.1.8.1.1.1", "", SU_FLAG_OK, NULL },
+	{ "input.L2.current.minimum", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.9.2.3.1.8.1.1.2", "", SU_FLAG_OK, NULL },
+	{ "input.L3.current.minimum", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.9.2.3.1.8.1.1.3", "", SU_FLAG_OK, NULL },
+	{ "battery.charge", 0, 1, ".1.3.6.1.4.1.318.1.1.1.2.2.1.0", "", SU_FLAG_OK, NULL },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, APCC_OID_POWER_STATUS, "OFF",
-		SU_FLAG_OK | SU_STATUS_PWR, &apcc_pwr_info[0] },
+		SU_FLAG_OK | SU_STATUS_PWR, apcc_pwr_info },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, APCC_OID_BATT_STATUS, "",
-		SU_FLAG_OK | SU_STATUS_BATT, &apcc_batt_info[0] },
+		SU_FLAG_OK | SU_STATUS_BATT, apcc_batt_info },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, APCC_OID_CAL_RESULTS, "",
-		SU_FLAG_OK | SU_STATUS_CAL, NULL },
+		SU_FLAG_OK | SU_STATUS_CAL, apcc_cal_info },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, APCC_OID_NEEDREPLBATT, "",
-		SU_FLAG_OK | SU_STATUS_RB, NULL },
-	{ "ups.temperature", 0, 1, APCC_OID_UPSTEMP, "", SU_FLAG_OK, NULL },
-	{ "input.frequency", 0, 1, APCC_OID_INFREQ, "", SU_FLAG_OK, NULL },
-	{ "ups.load", 0, 1, APCC_OID_LOADPCT, "", SU_FLAG_OK, NULL },
-	{ "ups.firmware", ST_FLAG_STRING, 16, APCC_OID_FIRMREV, "",
-		SU_FLAG_STATIC | SU_FLAG_OK, NULL },
-	{ "battery.runtime", 0, 1, APCC_OID_BATT_RUNTIME, "", SU_FLAG_OK, NULL },
-	/* can't find appropriate OID for "battery.voltage". */
-	/*{ "battery.voltage", 0, 1, APCC_OID_BATT_VOLTAGE, "", SU_FLAG_OK, NULL },*/
-	{ "output.voltage", 0, 1, APCC_OID_OUTVOLT, "", SU_FLAG_OK, NULL },
-	{ "ups.id", ST_FLAG_STRING | ST_FLAG_RW, 8, APCC_OID_UPSIDEN, "",
-		SU_FLAG_OK | SU_FLAG_STATIC | SU_TYPE_STRING, NULL },
-	{ "battery.date", ST_FLAG_STRING | ST_FLAG_RW, 8, APCC_OID_MFRDATE, "",
-		SU_FLAG_OK | SU_FLAG_STATIC | SU_TYPE_STRING, NULL },
-	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, APCC_OID_SLFTSTRES, "",
-		SU_FLAG_OK, NULL },
-	{ "input.transfer.low", ST_FLAG_STRING | ST_FLAG_RW, 3, APCC_OID_LOWXFER, "",
-		SU_TYPE_INT | SU_FLAG_OK, NULL },
-	{ "input.transfer.high", ST_FLAG_STRING | ST_FLAG_RW, 3, APCC_OID_HIGHXFER, "",
-		SU_TYPE_INT | SU_FLAG_OK, NULL },
-	{ "output.current", 0, 0, APCC_OID_OUTCURRENT, "", SU_FLAG_OK, NULL },
-	{ "output.voltage.target.battery", ST_FLAG_STRING | ST_FLAG_RW, 3, APCC_OID_REQOUTVOLT, "",
-		SU_TYPE_INT | SU_FLAG_OK, NULL },
-	{ "battery.charge.restart", ST_FLAG_STRING | ST_FLAG_RW, 3, APCC_OID_RETCAPACITY, "",
-		SU_TYPE_INT | SU_FLAG_OK, NULL },
-	{ "input.sensitivity", ST_FLAG_STRING | ST_FLAG_RW, 1, APCC_OID_SENS, "",
-		SU_TYPE_INT | SU_FLAG_OK, NULL },
-	{ "ups.delay.shutdown", ST_FLAG_STRING | ST_FLAG_RW, 3, APCC_OID_GRACEDELAY, "",
-		SU_FLAG_OK, NULL },
-	{ "ups.delay.start", ST_FLAG_STRING | ST_FLAG_RW, 3, APCC_OID_RETDELAY, "",
-		SU_FLAG_OK, NULL },
-	{ "battery.charge.low", ST_FLAG_STRING | ST_FLAG_RW, 3, APCC_OID_LOBATTIME, "",
-		SU_FLAG_OK, NULL },
+		SU_FLAG_OK | SU_STATUS_RB, apcc_battrepl_info },
+	{ "ups.temperature", 0, 1, ".1.3.6.1.4.1.318.1.1.1.2.2.2.0", "", SU_FLAG_OK, NULL },
+	{ "input.frequency", 0, 1, ".1.3.6.1.4.1.318.1.1.1.3.2.4.0", "", SU_FLAG_OK, NULL },
+	{ "ups.load", 0, 1, ".1.3.6.1.4.1.318.1.1.1.4.2.3.0", "", SU_FLAG_OK, NULL },
+	{ "ups.firmware", ST_FLAG_STRING, 16, ".1.3.6.1.4.1.318.1.1.1.1.2.1.0", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
+	{ "battery.runtime", 0, 1, ".1.3.6.1.4.1.318.1.1.1.2.2.3.0", "", SU_FLAG_OK, NULL },
+	{ "battery.voltage", 0, 1, ".1.3.6.1.4.1.318.1.1.1.2.2.8.0", "", SU_FLAG_OK, NULL },
+	{ "output.voltage", 0, 1, ".1.3.6.1.4.1.318.1.1.1.4.2.1.0", "", SU_FLAG_OK, NULL },
+	{ "ups.id", ST_FLAG_STRING | ST_FLAG_RW, 8, ".1.3.6.1.4.1.318.1.1.1.1.1.2.0", "", SU_FLAG_OK | SU_FLAG_STATIC | SU_TYPE_STRING, NULL },
+	{ "battery.date", ST_FLAG_STRING | ST_FLAG_RW, 8, ".1.3.6.1.4.1.318.1.1.1.2.1.3.0", "", SU_FLAG_OK | SU_FLAG_STATIC | SU_TYPE_STRING, NULL },
+	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, APCC_OID_TESTDIAGRESULTS, "", SU_FLAG_OK, apcc_testdiag_results },
+	{ "input.transfer.low", ST_FLAG_STRING | ST_FLAG_RW, 3, ".1.3.6.1.4.1.318.1.1.1.5.2.3.0", "", SU_TYPE_INT | SU_FLAG_OK, NULL },
+	{ "input.transfer.high", ST_FLAG_STRING | ST_FLAG_RW, 3, ".1.3.6.1.4.1.318.1.1.1.5.2.2.0", "", SU_TYPE_INT | SU_FLAG_OK, NULL },
+	{ "output.phases", ST_FLAG_STRING, 2, ".1.3.6.1.4.1.318.1.1.1.9.3.2.1.2.1", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
+	{ "output.frequency", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.9.3.2.1.4.1", "", SU_FLAG_OK, NULL },
+	{ "output.current", 0, 1, ".1.3.6.1.4.1.318.1.1.1.4.2.4.0", "", SU_FLAG_OK, NULL },
+	{ "output.L1-L2.voltage", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.3.1.1.1", "", SU_FLAG_OK, NULL },
+	{ "output.L2-L3.voltage", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.3.1.1.2", "", SU_FLAG_OK, NULL },
+	{ "output.L3-L1.voltage", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.3.1.1.3", "", SU_FLAG_OK, NULL },
+	{ "output.L1.current", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.4.1.1.1", "", SU_FLAG_OK, NULL },
+	{ "output.L2.current", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.4.1.1.2", "", SU_FLAG_OK, NULL },
+	{ "output.L3.current", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.4.1.1.3", "", SU_FLAG_OK, NULL },
+	{ "output.L1.current.maximum", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.5.1.1.1", "", SU_FLAG_OK, NULL },
+	{ "output.L2.current.maximum", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.5.1.1.2", "", SU_FLAG_OK, NULL },
+	{ "output.L3.current.maximum", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.5.1.1.3", "", SU_FLAG_OK, NULL },
+	{ "output.L1.current.minimum", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.6.1.1.1", "", SU_FLAG_OK, NULL },
+	{ "output.L2.current.minimum", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.6.1.1.2", "", SU_FLAG_OK, NULL },
+	{ "output.L3.current.minimum", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.6.1.1.3", "", SU_FLAG_OK, NULL },
+	{ "output.L1.power", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.7.1.1.1", "", SU_FLAG_OK, NULL },
+	{ "output.L2.power", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.7.1.1.2", "", SU_FLAG_OK, NULL },
+	{ "output.L3.power", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.7.1.1.3", "", SU_FLAG_OK, NULL },
+	{ "output.L1.power.maximum", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.8.1.1.1", "", SU_FLAG_OK, NULL },
+	{ "output.L2.power.maximum", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.8.1.1.2", "", SU_FLAG_OK, NULL },
+	{ "output.L3.power.maximum", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.8.1.1.3", "", SU_FLAG_OK, NULL },
+	{ "output.L1.power.minimum", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.9.1.1.1", "", SU_FLAG_OK, NULL },
+	{ "output.L2.power.minimum", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.9.1.1.2", "", SU_FLAG_OK, NULL },
+	{ "output.L3.power.minimum", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.9.1.1.3", "", SU_FLAG_OK, NULL },
+	{ "output.L1.power.percent", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.10.1.1.1", "", SU_FLAG_OK, NULL },
+	{ "output.L2.power.percent", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.10.1.1.2", "", SU_FLAG_OK, NULL },
+	{ "output.L3.power.percent", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.10.1.1.3", "", SU_FLAG_OK, NULL },
+	{ "output.L1.power.maximum.percent", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.11.1.1.1", "", SU_FLAG_OK, NULL },
+	{ "output.L2.power.maximum.percent", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.11.1.1.2", "", SU_FLAG_OK, NULL },
+	{ "output.L3.power.maximum.percent", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.11.1.1.3", "", SU_FLAG_OK, NULL },
+	{ "output.L1.power.minimum.percent", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.12.1.1.1", "", SU_FLAG_OK, NULL },
+	{ "output.L2.power.minimum.percent", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.12.1.1.2", "", SU_FLAG_OK, NULL },
+	{ "output.L3.power.minimum.percent", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.12.1.1.3", "", SU_FLAG_OK, NULL },
+	{ "output.voltage.target.battery", ST_FLAG_STRING | ST_FLAG_RW, 3, ".1.3.6.1.4.1.318.1.1.1.5.2.1.0", "", SU_TYPE_INT | SU_FLAG_OK, NULL },
+	{ "battery.charge.restart", ST_FLAG_STRING | ST_FLAG_RW, 3, ".1.3.6.1.4.1.318.1.1.1.5.2.6.0", "", SU_TYPE_INT | SU_FLAG_OK, NULL },
+	{ "input.sensitivity", ST_FLAG_STRING | ST_FLAG_RW, 1, APCC_OID_SENSITIVITY, "", SU_TYPE_INT | SU_FLAG_OK, apcc_sensitivity_modes },
+	{ "ups.delay.shutdown", ST_FLAG_STRING | ST_FLAG_RW, 3, ".1.3.6.1.4.1.318.1.1.1.5.2.10.0", "", SU_FLAG_OK, NULL },
+	{ "ups.delay.start", ST_FLAG_STRING | ST_FLAG_RW, 3, ".1.3.6.1.4.1.318.1.1.1.5.2.9.0", "", SU_FLAG_OK, NULL },
+	{ "battery.charge.low", ST_FLAG_STRING | ST_FLAG_RW, 3, ".1.3.6.1.4.1.318.1.1.1.5.2.8.0", "", SU_FLAG_OK, NULL },
 
 	/* Measure-UPS ambient variables */
-	{ "ambient.temperature", 0, 1, APCC_OID_AMBTEMP, "", SU_FLAG_OK, NULL },
-	{ "ambient.humidity", 0, 1, APCC_OID_AMBHUMID, "", SU_FLAG_OK, NULL },
+/* Environmental sensors (AP9612TH and others) */
+	{ "ambient.temperature", 0, 1, ".1.3.6.1.4.1.318.1.1.2.1.1.0", "", SU_FLAG_OK, NULL },
+	{ "ambient.humidity", 0, 1, ".1.3.6.1.4.1.318.1.1.2.1.2.0", "", SU_FLAG_OK, NULL },
 
 	/* IEM ambient variables */
+/* IEM: integrated environment monitor probe */
+#define APCC_OID_IEM_TEMP       ".1.3.6.1.4.1.318.1.1.10.2.3.2.1.4.0"
+#define APCC_OID_IEM_TEMP_UNIT  ".1.3.6.1.4.1.318.1.1.10.2.3.2.1.5.0"
+#define APCC_IEM_FAHRENHEIT	    2
+#define APCC_OID_IEM_HUMID      ".1.3.6.1.4.1.318.1.1.10.2.3.2.1.6.0"
 	{ "ambient.temperature", 0, 1, APCC_OID_IEM_TEMP, "", SU_FLAG_OK, NULL },
 	{ "ambient.humidity", 0, 1, APCC_OID_IEM_HUMID, "", SU_FLAG_OK, NULL },
 
 	/* instant commands. */
-	{ "load.off", 0, APCC_OFF_DO, APCC_OID_OFF, "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "load.on", 0, APCC_ON_DO, APCC_OID_ON, "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "shutdown.stayoff", 0, APCC_OFF_GRACEFUL, APCC_OID_OFF, "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "load.off", 0, 2, ".1.3.6.1.4.1.318.1.1.1.6.2.1.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "load.on", 0, 2, ".1.3.6.1.4.1.318.1.1.1.6.2.6.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "shutdown.stayoff", 0, 3, ".1.3.6.1.4.1.318.1.1.1.6.2.1.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
 
 /*	{ CMD_SDRET, 0, APCC_REBOOT_GRACEFUL, APCC_OID_REBOOT, "", SU_TYPE_CMD | SU_FLAG_OK, NULL }, */
 	
-	{ "shutdown.return", 0, APCC_CONSERVE_DO, APCC_OID_CONSERVE, "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "test.failure.start", 0, APCC_SIMPWF_DO, APCC_OID_SIMPWF, "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "test.panel.start", 0, APCC_FPTEST_DO, APCC_OID_FPTEST, "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "bypass.start", 0, APCC_BYPASS_ON, APCC_OID_BYPASS, "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "test.battery.start", 0, APCC_SELFTEST_DO, APCC_OID_SELFTEST, "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "calibrate.stop", 0, APCC_CAL_CANCEL, APCC_OID_CAL, "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "calibrate.start", 0, APCC_CAL_DO, APCC_OID_CAL, "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "shutdown.return", 0, 2, ".1.3.6.1.4.1.318.1.1.1.6.1.1.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "test.failure.start", 0, 2, ".1.3.6.1.4.1.318.1.1.1.6.2.4.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "test.panel.start", 0, 2, ".1.3.6.1.4.1.318.1.1.1.6.2.5.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "bypass.start", 0, 2, ".1.3.6.1.4.1.318.1.1.1.6.2.7.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "bypass.stop", 0, 3, ".1.3.6.1.4.1.318.1.1.1.6.2.7.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "test.battery.start", 0, 2, ".1.3.6.1.4.1.318.1.1.1.7.2.2.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "calibrate.start", 0, 2, ".1.3.6.1.4.1.318.1.1.1.7.2.5.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "calibrate.stop", 0, 3, ".1.3.6.1.4.1.318.1.1.1.7.2.5.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "reset.input.minmax", 0, 2, ".1.3.6.1.4.1.318.1.1.1.9.1.1.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
+
+/*
+vim:ts=4:sw=4:et:
+*/

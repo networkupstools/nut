@@ -23,26 +23,26 @@
 
 #define PW_MIB_VERSION                   "0.1"
 
-#define PW_OID_MANUFACTURER              ".1.3.6.1.2.1.33.1.1.1"
-#define PW_OID_MODEL                     ".1.3.6.1.2.1.33.1.1.2"
-#define PW_OID_SOFTWARE_VERSION          ".1.3.6.1.2.1.33.1.1.3"
-#define PW_OID_AGENT_SOFTWARE_VERSION    ".1.3.6.1.2.1.33.1.1.4"
+#define PW_OID_MANUFACTURER              ".1.3.6.1.2.1.33.1.1.1.0"
+#define PW_OID_MODEL                     ".1.3.6.1.2.1.33.1.1.2.0"
+#define PW_OID_SOFTWARE_VERSION          ".1.3.6.1.2.1.33.1.1.3.0"
+#define PW_OID_AGENT_SOFTWARE_VERSION    ".1.3.6.1.2.1.33.1.1.4.0"
 
-#define PW_OID_BATTERY_STATUS            ".1.3.6.1.4.1.534.1.2.5" /* Xups.mib */
-#define PW_OID_BATTERY_MINUTES_REMAINING ".1.3.6.1.2.1.33.1.2.3"
-#define PW_OID_BATTERY_CHARGE_REMAINING  ".1.3.6.1.2.1.33.1.2.4"
-#define PW_OID_BATTERY_VOLTAGE           ".1.3.6.1.2.1.33.1.2.5"
+#define PW_OID_BATTERY_STATUS            ".1.3.6.1.4.1.534.1.2.5.0" /* Xups.mib */
+#define PW_OID_BATTERY_MINUTES_REMAINING ".1.3.6.1.2.1.33.1.2.3.0"
+#define PW_OID_BATTERY_CHARGE_REMAINING  ".1.3.6.1.2.1.33.1.2.4.0"
+#define PW_OID_BATTERY_VOLTAGE           ".1.3.6.1.2.1.33.1.2.5.0"
 
-#define PW_OID_IN_FREQUENCY              ".1.3.6.1.2.1.33.1.3.3.1.2"
-#define PW_OID_IN_VOLTAGE                ".1.3.6.1.2.1.33.1.3.3.1.3"
+#define PW_OID_IN_FREQUENCY              ".1.3.6.1.2.1.33.1.3.3.1.2.0"
+#define PW_OID_IN_VOLTAGE                ".1.3.6.1.2.1.33.1.3.3.1.3.0"
 
-#define PW_OID_OUT_FREQUENCY             ".1.3.6.1.2.1.33.1.4.2"
-#define PW_OID_OUT_VOLTAGE               ".1.3.6.1.2.1.33.1.4.4.1.2"
-#define PW_OID_OUT_CURRENT               ".1.3.6.1.2.1.33.1.4.4.1.3"
-#define PW_OID_OUT_POWER                 ".1.3.6.1.2.1.33.1.4.4.1.4"
-#define PW_OID_OUT_PERCENTLOAD           ".1.3.6.1.2.1.33.1.4.4.1.5"
+#define PW_OID_OUT_FREQUENCY             ".1.3.6.1.2.1.33.1.4.2.0"
+#define PW_OID_OUT_VOLTAGE               ".1.3.6.1.2.1.33.1.4.4.1.2.0"
+#define PW_OID_OUT_CURRENT               ".1.3.6.1.2.1.33.1.4.4.1.3.0"
+#define PW_OID_OUT_POWER                 ".1.3.6.1.2.1.33.1.4.4.1.4.0"
+#define PW_OID_OUT_PERCENTLOAD           ".1.3.6.1.2.1.33.1.4.4.1.5.0"
 
-#define PW_OID_AMBIENT_TEMP              ".1.3.6.1.4.1.534.1.6.1" /* Xups.mib */
+#define PW_OID_AMBIENT_TEMP              ".1.3.6.1.4.1.534.1.6.1.0" /* Xups.mib */
 
 
 /* Defines for PW_OID_BATTERY_STATUS */

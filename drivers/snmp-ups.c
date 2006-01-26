@@ -152,7 +152,7 @@ void upsdrv_initups(void)
 	
   	/* Get UPS Model node to see if there's a MIB */
 	su_info_p = su_find_info("ups.model");
-	status = nut_snmp_get_str(su_info_p->OID, model, sizeof(model));
+	status = nut_snmp_get_str(su_info_p->OID, model, sizeof(model), NULL);
 
 	if (status == TRUE)
 		upslogx(0, "detected %s on host %s", model, device_path);
@@ -205,60 +205,6 @@ void nut_snmp_cleanup(void)
 	SOCK_CLEANUP;
 }
 
-static int oid_compare(const char *oid_req_in, long *oid_ans, size_t oid_len)
-{
-	unsigned int	ctr;
-	long	val;
-	char	*tmp, *ptr, *oid_req;
-
-	/* sanity check */
-	if (oid_req_in[0] != '.')
-		return 0;	/* failed: invalid input */
-
-	/* keep a local copy */
-	oid_req = xstrdup(oid_req_in);
-
-	ctr = 0;
-	tmp = &oid_req[1];
-	ptr = strchr(tmp, '.');
-
-	while (ptr) {
-		*ptr++ = '\0';
-
-		val = strtol(tmp, (char **) NULL, 10);
-
-		if (val != oid_ans[ctr]) {
-			free(oid_req);
-			return 0;	/* failed: mismatched octet */
-		}
-
-		tmp = ptr;
-		ptr = strchr(tmp, '.');
-
-		ctr++;
-
-		if (ctr > (oid_len - 1)) {
-			free(oid_req);
-			return 0;	/* failed: answer is too short */
-		}
-	}
-
-	/* check the final octet */
-	val = strtol(tmp, (char **) NULL, 10);
-
-	/* done with this now */
-	free(oid_req);
-
-	if (val != oid_ans[ctr])
-		return 0;	/* failed: mismatch on the last octet */
-
-	/* answer OID must be req OID plus one more element (the index) */
-	if (oid_len > (ctr + 2)) 
-		return 0;	/* failed: ans is too long */
-
-	return 1;	/* success */
-}
-
 struct snmp_pdu *nut_snmp_get(const char *OID)
 {
 	int status;
@@ -274,7 +220,7 @@ struct snmp_pdu *nut_snmp_get(const char *OID)
 		return NULL;
 	}
 
-	pdu = snmp_pdu_create(SNMP_MSG_GETNEXT);
+	pdu = snmp_pdu_create(SNMP_MSG_GET);
 	
 	if (pdu == NULL)
 		fatalx("Not enough memory");
@@ -286,12 +232,6 @@ struct snmp_pdu *nut_snmp_get(const char *OID)
 	if (!response)
 		return NULL;
 
-	/* getnext can take us too far, so make sure we got what we want */
-	if (!oid_compare(OID, response->variables->name, 
-		response->variables->name_length)) {
-		return NULL;
-	}
-	
 	if (!((status == STAT_SUCCESS) && (response->errstat == SNMP_ERR_NOERROR)))
 	{
 		numerr++;
@@ -315,7 +255,7 @@ struct snmp_pdu *nut_snmp_get(const char *OID)
 	return response;
 }
 
-bool nut_snmp_get_str(const char *OID, char *buf, size_t buf_len)
+bool nut_snmp_get_str(const char *OID, char *buf, size_t buf_len, info_lkp_t *oid2info)
 {
 	size_t len = 0;
 	struct snmp_pdu *pdu;
@@ -337,7 +277,19 @@ bool nut_snmp_get_str(const char *OID, char *buf, size_t buf_len)
 		break;
 	case ASN_INTEGER:
 	case ASN_GAUGE:
-		len = snprintf(buf, buf_len, "%ld", *pdu->variables->val.integer);
+		if(oid2info) {
+			const char *str;
+			if((str=su_find_infoval(oid2info, *pdu->variables->val.integer))) {
+				strncpy(buf, str, buf_len-1);
+			}
+			else {
+				strncpy(buf, "UNKNOWN", buf_len-1);
+			}
+			buf[buf_len-1]='\0';
+		}
+		else {
+			len = snprintf(buf, buf_len, "%ld", *pdu->variables->val.integer);
+		}
 		break;
 	case ASN_TIMETICKS:
 		/* convert timeticks to seconds */
@@ -404,19 +356,13 @@ bool nut_snmp_set(const char *OID, char type, const char *value)
 	struct snmp_pdu *pdu, *response = NULL;
 	oid name[MAX_OID_LEN];
 	size_t name_len = MAX_OID_LEN;
-	char *setOID = (char *) xmalloc (strlen(OID) + 3);
 	
-	/* append ".0" suffix to reach the right OID */
-	sprintf(setOID, "%s.0", OID);
-	
-	if (!read_objid(setOID, name, &name_len)) {
+	if (!read_objid(OID, name, &name_len)) {
 		upslogx(LOG_ERR, "[%s] nut_snmp_set: %s: %s",
-			upsname, setOID, snmp_api_errstring(snmp_errno));
-		free(setOID);
+			upsname, OID, snmp_api_errstring(snmp_errno));
 		return FALSE;
 	}
 
-	/* TODO: confirm we're setting the right OID ! */
 	pdu = snmp_pdu_create(SNMP_MSG_SET);
 	if (pdu == NULL)
 		fatalx("Not enough memory");
@@ -425,7 +371,6 @@ bool nut_snmp_set(const char *OID, char type, const char *value)
 		upslogx(LOG_ERR, "[%s] nut_snmp_set: %s: %s",
 			upsname, OID, snmp_api_errstring(snmp_errno));
 		
-		free(setOID);
 		return FALSE;
 	}
 
@@ -438,7 +383,6 @@ bool nut_snmp_set(const char *OID, char type, const char *value)
 			"nut_snmp_set: can't set %s", OID);
 
 	snmp_free_pdu(response);
-	free(setOID);
 	return ret;
 }
 
@@ -618,7 +562,7 @@ long su_find_valinfo(info_lkp_t *oid2info, char* value)
 			return info_lkp->oid_value;
 		}
 	}
-	upsdebugx(1, "su_find_infoval: no matching INFO_* value for this OID value (%s)", value);
+	upsdebugx(1, "su_find_valinfo: no matching INFO_* value for this OID value (%s)", value);
 	return -1;
 }
 
@@ -720,7 +664,7 @@ bool su_ups_get(snmp_info_t *su_info_p)
 	bool status;
 	long value;
 
-	upsdebugx(2, "su_ups_get: %s", su_info_p->OID);
+	upsdebugx(2, "su_ups_get: %s %s", su_info_p->info_type, su_info_p->OID);
 	
 	if (!strcasecmp(su_info_p->info_type, "ups.status")) {
 
@@ -736,7 +680,13 @@ bool su_ups_get(snmp_info_t *su_info_p)
 
 	/* another special case */
 	if (!strcasecmp(su_info_p->info_type, "ambient.temperature")) {
+		float temp=0;
+
 		status = nut_snmp_get_int(su_info_p->OID, &value);
+
+		if(status != TRUE) {
+			return status;
+		}
 
 		/* only do this if using the IEM sensor */
 		if (!strcmp(su_info_p->OID, APCC_OID_IEM_TEMP)) {
@@ -746,14 +696,18 @@ bool su_ups_get(snmp_info_t *su_info_p)
 			su = nut_snmp_get_int(APCC_OID_IEM_TEMP_UNIT, &units);
 
 			/* no response, or units == F */
-			if ((su == FALSE) || (units == TEMP_UNIT_FAHRENHEIT))
-				value = (value - 32) / 1.8;
+			if ((su == FALSE) || (units == APCC_IEM_FAHRENHEIT))
+				temp = (value - 32) / 1.8;
+		}
+		else {
+			temp=value;
 		}
 
-		if (status == TRUE)
-			dstate_setinfo("ambient.temperature", "%ld", value);
+		sprintf(buf, "%05.1f", temp);
+		su_setinfo(su_info_p->info_type, buf,
+			su_info_p->info_flags, su_info_p->info_len);
 
-		return status;
+		return TRUE;
 	}			
 
 	if (su_info_p->info_flags == 0) {
@@ -762,7 +716,7 @@ bool su_ups_get(snmp_info_t *su_info_p)
 			sprintf(buf, "%05.1f", value * su_info_p->info_len);
 		}
 	} else {
-		status = nut_snmp_get_str(su_info_p->OID, buf, sizeof(buf));
+		status = nut_snmp_get_str(su_info_p->OID, buf, sizeof(buf), su_info_p->oid2info);
 	}
 		
 	if (status == TRUE) {

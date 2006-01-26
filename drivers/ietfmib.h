@@ -26,20 +26,20 @@
 
 /* SNMP OIDs set */
 #define IETF_OID_UPS_MIB			".1.3.6.1.2.1.33"
-#define IETF_OID_MFR_NAME			".1.3.6.1.2.1.33.1.1.1"
-#define IETF_OID_MODEL_NAME			".1.3.6.1.2.1.33.1.1.2"
-#define IETF_OID_FIRMREV			".1.3.6.1.2.1.33.1.1.4"
-#define IETF_OID_BATT_STATUS		".1.3.6.1.2.1.33.1.2.1"     /* INFO_STATUS (2) */
-#define IETF_OID_BATT_RUNTIME		".1.3.6.1.2.1.33.1.2.3"
-#define IETF_OID_BATT_RUNTIME_LOW	".1.3.6.1.2.1.33.1.9.7"
-#define IETF_OID_BATT_CHARGE		".1.3.6.1.2.1.33.1.2.4"
-#define IETF_OID_BATT_VOLTAGE		".1.3.6.1.2.1.33.1.2.5"
-#define IETF_OID_IN_FREQ			".1.3.6.1.2.1.33.1.3.3.1.2"
-#define IETF_OID_IN_VOLTAGE			".1.3.6.1.2.1.33.1.3.3.1.3"
-#define IETF_OID_POWER_STATUS		".1.3.6.1.2.1.33.1.4.1"     /* INFO_STATUS (1) */
-#define IETF_OID_OUT_VOLTAGE		".1.3.6.1.2.1.33.1.9.3"     /* INFO_UTILITY ? */
-#define IETF_OID_UTIL_VOLTAGE		".1.3.6.1.2.1.33.1.4.4.1.2" /* INFO_UTILITY ? */
-#define IETF_OID_LOAD_LEVEL			".1.3.6.1.2.1.33.1.4.4.1.5" /* INFO_LOADPCT */
+#define IETF_OID_MFR_NAME			".1.3.6.1.2.1.33.1.1.1.0"
+#define IETF_OID_MODEL_NAME			".1.3.6.1.2.1.33.1.1.2.0"
+#define IETF_OID_FIRMREV			".1.3.6.1.2.1.33.1.1.4.0"
+#define IETF_OID_BATT_STATUS		".1.3.6.1.2.1.33.1.2.1.0"     /* INFO_STATUS (2) */
+#define IETF_OID_BATT_RUNTIME		".1.3.6.1.2.1.33.1.2.3.0"
+#define IETF_OID_BATT_RUNTIME_LOW	".1.3.6.1.2.1.33.1.9.7.0"
+#define IETF_OID_BATT_CHARGE		".1.3.6.1.2.1.33.1.2.4.0"
+#define IETF_OID_BATT_VOLTAGE		".1.3.6.1.2.1.33.1.2.5.0"
+#define IETF_OID_IN_FREQ			".1.3.6.1.2.1.33.1.3.3.1.2.0"
+#define IETF_OID_IN_VOLTAGE			".1.3.6.1.2.1.33.1.3.3.1.3.0"
+#define IETF_OID_POWER_STATUS		".1.3.6.1.2.1.33.1.4.1.0"     /* INFO_STATUS (1) */
+#define IETF_OID_OUT_VOLTAGE		".1.3.6.1.2.1.33.1.9.3.0"     /* INFO_UTILITY ? */
+#define IETF_OID_UTIL_VOLTAGE		".1.3.6.1.2.1.33.1.4.4.1.2.0" /* INFO_UTILITY ? */
+#define IETF_OID_LOAD_LEVEL			".1.3.6.1.2.1.33.1.4.4.1.5.0" /* INFO_LOADPCT */
 #define IETF_OID_OUTPUT_TAB			".1.3.6.1.2.1.33.1.4.4"
 
 /* Defines for IETF_OID_POWER_STATUS (1) */
