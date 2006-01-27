@@ -1,3 +1,16 @@
+Fri Jan 27 17:15:00 UTC 2006 / Kjell Claesson <kjell.claesson@telia.com>
+
+ - Update to snmp.
+ - Comment from Niklas
+   Updates the following in snmp-ups:
+   * Added more OID:s to apccmib (battery.current and more), tried to
+      group the values better in the table to get overview.
+   * Added support for the notion that negative values means that it's
+      not supported (used by apccmib).
+   * Added support to disable the "competition" for some variables, handy
+      when there are multiple OID:s supplying the same value depending on
+      how fancy your UPS SNMP support is (used by apccmib).
+
 Fri Jan 27 15:01:20 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups: added usage paths for APC Back-UPS 500.

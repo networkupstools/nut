@@ -106,6 +106,11 @@ typedef struct {
 #define SU_FLAG_ABSENT		(1 << 2)		/* data is absent in the device, */
 										/* use default value. */
 #define SU_FLAG_STALE		(1 << 3)		/* data stale, don't try too often. */
+#define SU_FLAG_NEGINVALID	(1 << 4)	/* Invalid if negative value */
+#define SU_FLAG_UNIQUE		(1 << 5)	/* There can be only be one
+						 * provider of this info,
+						 * disable the other providers
+						 */
 
 /* status string components */
 #define SU_STATUS_PWR		(0 << 8)		/* indicates power status element */

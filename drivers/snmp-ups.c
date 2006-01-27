@@ -585,6 +585,19 @@ const char *su_find_infoval(info_lkp_t *oid2info, long value)
 	return NULL;
 }
 
+static void disable_competition(snmp_info_t *entry)
+{
+	snmp_info_t	*p;
+
+	for(p=snmp_info; p->info_type!=NULL; p++) {
+		if(p!=entry && !strcmp(p->info_type, entry->info_type)) {
+			upsdebugx(2, "disable_competition: disabling %s %s",
+					p->info_type, p->OID);
+			p->flags &= ~SU_FLAG_OK;
+		}
+	}
+}
+
 /* walk ups variables and set elements of the info array. */
 bool snmp_ups_walk(int mode)
 {
@@ -637,6 +650,11 @@ bool snmp_ups_walk(int mode)
 					upsname, su_info_p->info_type);
 			}
 			su_info_p->flags &= ~SU_FLAG_STALE;
+			if(su_info_p->flags & SU_FLAG_UNIQUE) {
+				/* We should be the only provider of this */
+				disable_competition(su_info_p);
+				su_info_p->flags &= ~SU_FLAG_UNIQUE;
+			}
 			dstate_dataok();
 		} else {
 			if (mode == SU_WALKMODE_INIT) {
@@ -713,6 +731,13 @@ bool su_ups_get(snmp_info_t *su_info_p)
 	if (su_info_p->info_flags == 0) {
 		status = nut_snmp_get_int(su_info_p->OID, &value);
 		if (status == TRUE) {
+			if (su_info_p->flags&SU_FLAG_NEGINVALID && value<0) {
+				su_info_p->flags &= ~SU_FLAG_OK;
+				if(su_info_p->flags&SU_FLAG_UNIQUE) {
+					disable_competition(su_info_p);
+				}
+				return FALSE;
+			}
 			sprintf(buf, "%05.1f", value * su_info_p->info_len);
 		}
 	} else {
