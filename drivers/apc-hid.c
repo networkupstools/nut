@@ -158,11 +158,12 @@ static hid_info_t apc_hid2nut[] = {
   { "battery.runtime.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.RemainingTimeLimit", NULL, "%.0f", HU_FLAG_OK, NULL },
   { "battery.voltage",  0, 0, "UPS.PowerSummary.Voltage", NULL, "%.1f", HU_FLAG_OK, NULL },
   { "battery.voltage.nominal", 0, 0, "UPS.Battery.ConfigVoltage", NULL, "%.1f", HU_FLAG_OK, NULL },
-  { "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%.1f", HU_FLAG_OK, NULL }, /* CyberPower */
+  { "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%.1f", HU_FLAG_OK, NULL }, /* CyberPower, Back-UPS 500 */
   { "battery.temperature", 0, 0, "UPS.Battery.Temperature", NULL, "%.1f", HU_FLAG_OK, NULL },
   { "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", HU_FLAG_OK, stringid_conversion },
   { "battery.mfr.date", 0, 0, "UPS.Battery.ManufacturerDate", NULL, "%s", HU_FLAG_OK, &date_conversion[0] },
   { "battery.date", 0, 0, "UPS.Battery.APCBattReplaceDate", NULL, "%s", HU_FLAG_OK, &date_conversion[0] },
+  { "battery.date", 0, 0, "UPS.PowerSummary.APCBattReplaceDate", NULL, "%s", HU_FLAG_OK, &date_conversion[0] }, /* Back-UPS 500 */
 
   /* UPS page */
   { "ups.load", 0, 1, "UPS.Output.PercentLoad", NULL, "%.1f", HU_FLAG_OK, NULL },
@@ -175,6 +176,7 @@ static hid_info_t apc_hid2nut[] = {
   { "ups.temperature", 0, 0, "UPS.Battery.Temperature", NULL, "%.1f", HU_FLAG_OK, NULL },
   { "ups.beeper.status", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", HU_FLAG_OK, &beeper_info[0] },
   { "ups.mfr.date", 0, 0, "UPS.ManufacturerDate", NULL, "%s", HU_FLAG_OK, &date_conversion[0] },
+  { "ups.mfr.date", 0, 0, "UPS.PowerSummary.ManufacturerDate", NULL, "%s", HU_FLAG_OK, &date_conversion[0] }, /* Back-UPS 500 */
   { "ups.power.nominal", 0, 0, "UPS.Output.ConfigActivePower", NULL, "%s", HU_FLAG_OK, watts_to_av_conversion }, /* CyberPower */
 
 
@@ -192,6 +194,13 @@ static hid_info_t apc_hid2nut[] = {
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL, "%.0f", HU_FLAG_OK, &replacebatt_info[0] },
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.RemainingTimeLimitExpired", NULL, "%.0f", HU_FLAG_OK, &timelimitexpired_info[0] },
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.BatteryPresent", NULL, "%.0f", HU_FLAG_OK, &batterypresent_info[0] },
+
+  { "ups.status", 0, 1, "UPS.PowerSummary.Charging", NULL, "%.0f", HU_FLAG_OK, &charging_info[0] }, /* Back-UPS 500 */
+  { "ups.status", 0, 1, "UPS.PowerSummary.Discharging", NULL, "%.0f", HU_FLAG_OK, &discharging_info[0] }, /* Back-UPS 500 */
+  { "ups.status", 0, 1, "UPS.PowerSummary.ACPresent", NULL, "%.0f", HU_FLAG_OK, &online_info[0] }, /* Back-UPS 500 */
+  { "ups.status", 0, 1, "UPS.PowerSummary.BelowRemainingCapacityLimit", NULL, "%.0f", HU_FLAG_OK, &lowbatt_info[0] }, /* Back-UPS 500 */
+  { "ups.status", 0, 1, "UPS.PowerSummary.ShutdownImminent", NULL, "%.0f", HU_FLAG_OK, &shutdownimm_info[0] },
+
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.FullyCharged", NULL, "%.0f", HU_FLAG_OK, &fullycharged_info[0] }, /* CyberPower */
   { "ups.status", 0, 1, "UPS.Output.Overload", NULL, "%.0f", HU_FLAG_OK, &overload_info[0] }, /* CyberPower */
   { "ups.status", 0, 1, "UPS.Output.Boost", NULL, "%.0f", HU_FLAG_OK, &boost_info[0] }, /* CyberPower */
@@ -215,6 +224,8 @@ static hid_info_t apc_hid2nut[] = {
   { "test.battery.stop", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "3", HU_TYPE_CMD | HU_FLAG_OK, &test_write_info[0] },
   { "test.panel.start", 0, 0, "UPS.APCPanelTest", NULL, "1", HU_TYPE_CMD | HU_FLAG_OK, NULL },
   { "test.panel.stop", 0, 0, "UPS.APCPanelTest", NULL, "0", HU_TYPE_CMD | HU_FLAG_OK, NULL },
+  { "test.panel.start", 0, 0, "UPS.PowerSummary.APCPanelTest", NULL, "1", HU_TYPE_CMD | HU_FLAG_OK, NULL }, /* Back-UPS 500 */
+  { "test.panel.stop", 0, 0, "UPS.PowerSummary.APCPanelTest", NULL, "0", HU_TYPE_CMD | HU_FLAG_OK, NULL }, /* Back-UPS 500 */
 
   { "load.off", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "0", HU_TYPE_CMD | HU_FLAG_OK, NULL },
   { "load.off", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, "0", HU_TYPE_CMD | HU_FLAG_OK, NULL }, /* APC Backups ES */
