@@ -28,8 +28,11 @@
  *   - minor changes to make sure state changes are not missed
  *   - log errors when instant commands can't be handled
  *   - crude hardware detection which looks for DSR=1
+ *  20060128/Revision 0.5 - Arjen de Korte <arjen@de-korte.org>
+ *   - removed TRUE/FALSE defines, which were not really
+ *     improving the code anyway
  *
- * Copyright (C) 2003  Arjen de Korte <arjen@de-korte.org>
+ * Copyright (C) 2003-2006  Arjen de Korte <arjen@de-korte.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -93,7 +96,7 @@ static int safenet_command(char *command)
 
 	for (i=0; i<10; i++)
 	{
-		ups.reply[i] = ((reply[i+1] == 'B') ? TRUE : FALSE);
+		ups.reply[i] = ((reply[i+1] == 'B') ? 1 : 0);
 	}
 
 	status_init();

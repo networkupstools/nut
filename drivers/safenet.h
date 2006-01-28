@@ -18,19 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/*
- * The following looks a bit ugly, but allows for simple logical operations
- */ 
-#ifdef FALSE
-#undef FALSE
-#endif
-#define FALSE   0
-
-#ifdef TRUE
-#undef TRUE
-#endif
-#define TRUE    !0
-
 typedef struct {
 	char	onbattery;
 	char	dunno_02;
