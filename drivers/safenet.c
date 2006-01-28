@@ -57,7 +57,7 @@
 #include "serial.h"
 #include "safenet.h"
 
-#define DRV_VERSION	"0.4"
+#define DRV_VERSION	"0.5"
 
 #define ENDCHAR		'\r'
 #define IGNCHARS	""
