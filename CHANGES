@@ -1,3 +1,11 @@
+Sat Jan 28 14:38:58 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - Fix bug with upsd declaring driver stale when the system resumes
+   after suspend-to-disk
+ - Improve readability of the code by removing non-functional call to
+   subroutine update_time and moving decision whether or not a ping
+   must be sent to the driver to the routine calling it
+
 Fri Jan 27 17:15:00 UTC 2006 / Kjell Claesson <kjell.claesson@telia.com>
 
  - Update to snmp.
@@ -488,7 +496,7 @@ Tue Aug 16 20:51:27 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
 Tue Aug 16 11:53:44 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - gamatronic: revive the sec driver as gamatronic to support officialy
-   the Gamatronic models MP110/210, MS-T, MS and ÅµPS3/1.
+   the Gamatronic models MP110/210, MS-T, MS and ?PS3/1.
 
    (Gamatronic, Nadav Moskovitch)
 
@@ -594,7 +602,7 @@ Fri Jul  1 08:15:56 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 Thu Jun 30 13:13:02 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
  - solis: fix a naming colision on Solaris, bump the driver release to
-   0.41 (thanks to PaweúÙ†‚ Kierdelewicz)
+   0.41 (thanks to Pawe?? Kierdelewicz)
 
 Tue Jun 28 16:41:14 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
@@ -781,7 +789,7 @@ Fri Apr 22 11:42:22 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
  - driver.list: update according to the tested units
    http://web.telia.com/~u50205618/compatibility.html
 
-   (Tore úÛıΩpetveit, Kjell Claesson) [Alioth Patch #301290]
+   (Tore ?petveit, Kjell Claesson) [Alioth Patch #301290]
 
 Thu Apr 15 11:04:53 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 
