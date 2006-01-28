@@ -33,12 +33,6 @@
 #include "sstate.h"
 #include "state.h"
 
-/* set the 'last heard' time to now for later staleness checks */
-static void update_time(upstype *ups)
-{
-	time(&ups->last_heard);
-}
-
 static int parse_args(upstype *ups, int numargs, char **arg)
 {
 	if (numargs < 1)
@@ -123,14 +117,10 @@ static int parse_args(upstype *ups, int numargs, char **arg)
 }
 
 /* nothing fancy - just make the driver say something back to us */
-static void sendping(upstype *ups, time_t now, int maxage)
+static void sendping(upstype *ups)
 {
 	int	ret;
 	const	char	*cmd = "PING\n";
-
-	/* don't beat the driver to death with pings */
-	if (difftime(now, ups->last_ping) < (maxage / 2))
-		return;
 
 	upsdebugx(3, "Pinging UPS [%s]", ups->name);
 
@@ -149,7 +139,7 @@ static void sendping(upstype *ups, time_t now, int maxage)
 		return;
 	}
 
-	ups->last_ping = now;
+	time(&ups->last_ping);
 }
 
 /* interface */
@@ -265,10 +255,11 @@ void sstate_sock_read(upstype *ups)
 			continue;	/* haven't gotten a line yet */
 
 		if (ret == 1) {		/* got one - parse it */
+			/* set the 'last heard' time to now for later staleness checks */
 			if (parse_args(ups, ups->sock_ctx.numargs,
 				ups->sock_ctx.arglist))
-				update_time(ups);
-
+			        time(&ups->last_heard);
+				
 			/* only one command per pass */
 			return;
 		}
@@ -325,12 +316,14 @@ int sstate_dead(upstype *ups, int maxage)
 			return 1;	/* dead */
 
 	elapsed = difftime(now, ups->last_heard);
-	if (elapsed > maxage)
-		return 1;	/* dead */
 
 	/* somewhere beyond the halfway point - prod it to make it talk */
-	if (elapsed > (maxage / 2))
-		sendping(ups, now, maxage);
+	if ((elapsed > (maxage / 2)) &&
+		(difftime(now, ups->last_ping) > (maxage / 2)))
+		sendping(ups);
+
+	if (elapsed > maxage)
+		return 1;	/* dead */
 
 	return 0;
 }
