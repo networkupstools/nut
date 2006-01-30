@@ -1,3 +1,8 @@
+Mon Jan 30 19:52:00 UTC 2005 / Arjen de Korte <arjen@de-korte.org>
+
+ -  Fixes bug #302338 (genericups: custom configuration through ups.conf
+    not working)
+
 Sat Jan 28 14:38:58 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
 
  - Fix bug with upsd declaring driver stale when the system resumes
