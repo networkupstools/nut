@@ -1,4 +1,12 @@
-Mon Jan 30 19:52:00 UTC 2005 / Arjen de Korte <arjen@de-korte.org>
+Tue Jan 31 21:34:00 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - Safenet driver:
+   * put all UPS commands in header file (for easy retrieval)
+   * remove log errors when instant commands can't be handled
+     (doesn't work reliably on at least one flavor of this UPS
+     and wasn't very useful anyway)
+
+Mon Jan 30 19:52:00 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
 
  -  Fixes bug #302338 (genericups: custom configuration through ups.conf
     not working)

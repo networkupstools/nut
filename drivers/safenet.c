@@ -31,6 +31,10 @@
  *  20060128/Revision 0.5 - Arjen de Korte <arjen@de-korte.org>
  *   - removed TRUE/FALSE defines, which were not really
  *     improving the code anyway
+ *  20060131/Revision 1.0 - Arjen de Korte <arjen@de-korte.org>
+ *   - put all UPS commands in header file (for easy retrieval)
+ *   - remove log errors when instant commands can't be handled
+ *     (doesn't work reliably on at least one flavor)
  *
  * Copyright (C) 2003-2006  Arjen de Korte <arjen@de-korte.org>
  *
@@ -57,38 +61,32 @@
 #include "serial.h"
 #include "safenet.h"
 
-#define DRV_VERSION	"0.5"
-
-#define ENDCHAR		'\r'
-#define IGNCHARS	""
-#define	UPSDELAY	10000
+#define DRV_VERSION	"1.0"
 
 /*
  * Here we keep the last known status of the UPS
  */
 static safenet_u	ups;
 
-static int safenet_command(char *command)
+static int safenet_command(const char *command)
 {
-	char	reply[256];
+	char	reply[32];
 	int	i;
 
 	/*
-	 * Send the command, give the UPS a little time to digest it and then
-	 * read back the status line. Unless we just send a shutdown command,
-	 * it will return the actual status.
+	 * Send the command and read back the status line. When we just send
+	 * a status polling command, it will return the actual status.
 	 */
-	ser_send_pace(upsfd, UPSDELAY, command);
-	ser_get_line(upsfd, reply, sizeof(reply), ENDCHAR, IGNCHARS, 1, 0);
-
+	ser_send_pace(upsfd, 10000, command);
 	upsdebugx(3, "UPS command %s", command);
-	upsdebugx(3, "UPS answers %s", (strlen(reply)>0) ? reply : "NULL");
+
+	ser_get_line(upsfd, reply, sizeof(reply), '\r', "", 0, 100000);
+	upsdebugx(3, "UPS answers %s", (strlen(reply)>0) ? reply : "[INVALID]");
 
 	/*
-	 * Occasionally the UPS suffers from hickups (it sometimes spits out a
-	 * PnP (?) identification string) so we check if the reply looks like
-	 * a valid status.
+	 * We check if the reply looks like a valid status.
 	 */
+
 	if ((strlen(reply) != 11) || (reply[0] != '$') || (strspn(reply+1, "AB") != 10))
 	{
 		return(-1);
@@ -153,69 +151,6 @@ static int safenet_command(char *command)
 	return(0);
 }
 
-static void shutdown_return(int delay)
-{
-	char command[16];
-
-	if ((delay < 1) || (delay > 999))
-	{
-		upslogx(LOG_ERR, "Shutdown delay %d is not within valid range [1..999]", delay);
-		return;
-	}
-
-	/*
-	 * This is ugly! This UPS has a strange mapping of numerals (A=0, B=1,..,J=9)
-	 * so we do this here. Anyone for an easier way?
-	 */
-	snprintf(command, sizeof(command), "ZBAS%c%c%cWLPGE\r", ((delay / 100) + 'A'),
-		(((delay % 100) / 10) + 'A'), ((delay % 10) + 'A'));
-
-	/*
-	 * The shutdown command is a one way street. After reception of this command,
-	 * the UPS no longer accepts commands and will not reply with a status word.
-	 * It makes no sense to check for the returnvalue for the command, as it will
-	 * always indicate a failure.
-	 */
-	safenet_command(command);
-}
-
-static void shutdown_reboot(int delay, int restart)
-{
-	char command[16];
-
-	/*
-	 * Bounds checking to prevent bogus commands
-	 */
-	if ((delay < 1) || (delay > 999))
-	{
-		upslogx(LOG_ERR, "Shutdown delay %d is not within valid range [1..999]", delay);
-		return;
-	}
-
-	if ((restart < 1) || (restart > 9999))
-	{
-		upslogx(LOG_ERR, "Restart delay %d is not within valid range [1..9999]", restart);
-		return;
-	}
-
-	/*
-	 * This is ugly! This UPS has a strange mapping of numerals (A=0, B=1,..,J=9)
-	 * so we do this here. Anyone for an easier way?
-	 */ 
-	snprintf(command, sizeof(command), "ZAF%c%c%cR%c%c%c%cO\r", ((delay / 100) + 'A'),
-		(((delay % 100) / 10) + 'A'), ((delay % 10) + 'A'),
-		((restart / 1000) + 'A'), (((restart % 1000) / 100) + 'A'),
-		(((restart % 100) / 10) + 'A'), ((restart % 10) + 'A'));
-
-	/*
-	 * The shutdown command is a one way street. After reception of this command,
-	 * the UPS no longer accepts commands and will not reply with a status word.
-	 * It makes no sense to check for the returnvalue for the command, as it will
-	 * always indicate a failure.
-	 */
-	safenet_command(command);
-}
-
 static int instcmd(const char *cmdname, const char *extra)
 {
 	/*
@@ -223,10 +158,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	 */
 	if (!strcasecmp(cmdname, "test.battery.start"))
 	{
-		if (safenet_command("ZFSDERBTRFGY\r"))
-		{
-			upslogx(LOG_ERR, "Instant command %s not completed", cmdname);
-		}
+		safenet_command(COM_BATT_TEST);
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -235,10 +167,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	 */
 	if (!strcasecmp(cmdname, "test.battery.stop"))
 	{
-		if (safenet_command("ZGWLEJFICOPR\r"))
-		{
-			upslogx(LOG_ERR, "Instant command %s not completed", cmdname);
-		}
+		safenet_command(COM_ABORT_TEST);
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -247,10 +176,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	 */
 	if (!strcasecmp (cmdname, "test.failure.start"))
 	{
-		if (safenet_command("ZAVLEJFICOPR\r"))
-		{
-			upslogx(LOG_ERR, "Instant command %s not completed", cmdname);
-		}
+		safenet_command(COM_MAINS_TEST);
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -259,10 +185,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	 */
 	if (!strcasecmp (cmdname, "test.failure.stop"))
 	{
-		if (safenet_command("ZGWLEJFICOPR\r"))
-		{
-			upslogx(LOG_ERR, "Instant command %s not completed", cmdname);
-		}
+		safenet_command(COM_ABORT_TEST);
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -271,10 +194,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	 */
 	if (!strcasecmp(cmdname, "beeper.on"))
 	{
-		if (ups.status.silenced && safenet_command("ZELWSABPMBEQ\r"))
-		{
-			upslogx(LOG_ERR, "Instant command %s not completed", cmdname);
-		}
+		if (ups.status.silenced) safenet_command(COM_TOGGLE_BEEP);
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -283,10 +203,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	 */
 	if (!strcasecmp(cmdname, "beeper.off"))
 	{
-		if (!ups.status.silenced && safenet_command("ZELWSABPMBEQ\r"))
-		{
-			upslogx(LOG_ERR, "Instant command %s not completed", cmdname);
-		}
+		if (!ups.status.silenced) safenet_command(COM_TOGGLE_BEEP);
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -295,7 +212,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	 */
 	if (!strcasecmp(cmdname, "shutdown.return"))
 	{
-		shutdown_return(1);
+		safenet_command(SHUTDOWN_RETURN);
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -304,7 +221,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	 */
 	if (!strcasecmp(cmdname, "shutdown.reboot"))
 	{
-		shutdown_reboot(1, 1);
+		safenet_command(SHUTDOWN_REBOOT);
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -313,7 +230,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	 */
 	if (!strcasecmp(cmdname, "shutdown.reboot.graceful"))
 	{
-		shutdown_reboot(20, 1);
+		safenet_command(GRACEFUL_REBOOT);
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -323,8 +240,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 void upsdrv_initinfo(void)
 {
-	int	retry = 3;
-	int	i;
+	int	i, retry = 3;
 	char	*v;
 
 	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
@@ -342,11 +258,16 @@ void upsdrv_initinfo(void)
 	}
 
 	/*
+	 * Get rid of PnP garbage that may be still left in the buffer.
+	 */
+	ser_flush_in(upsfd, "", 0);
+
+	/*
 	 * Initialize the serial interface of the UPS by sending the magic
 	 * string. If it does not respond with a valid status reply,
 	 * display an error message and give up.
 	 */
-	while (safenet_command("ZCADLIOPERJD\r"))
+	while (safenet_command(COM_INITIALIZE))
 	{
 		if (--retry) continue;
 
@@ -385,10 +306,12 @@ void upsdrv_initinfo(void)
  * B=1,...,J=9). The rest is filled with random (?) data [A...J]. But why?
  * No idea. The UPS *does* check if the polling commands match this format.
  * And as the SafeNet software uses "random" polling commands, so do we.
+ *
+ * Note: if you don't use ASCII, the characters will be different!
  */
 void upsdrv_updateinfo(void)
 {
-	char	command[] = "ZHDGFGDJELBC\r";
+	char	command[] = COM_POLL_STAT;
 	int	i;
 
 	/*
@@ -424,6 +347,11 @@ void upsdrv_shutdown(void)
 	int	retry = 3;
 
 	/*
+	 * Get rid of PnP garbage that may be still left in the buffer.
+	 */
+	ser_flush_in(upsfd, "", 0);
+
+	/*
 	 * Since we may have arrived here before the hardware is initialized,
 	 * try to initialize it here.
 	 *
@@ -431,7 +359,7 @@ void upsdrv_shutdown(void)
 	 * string. If it does not respond with a valid status reply,
 	 * display an error message and give up.
 	 */
-	while (safenet_command("ZCADLIOPERJD\r"))
+	while (safenet_command(COM_INITIALIZE))
 	{
 		if (--retry) continue;
 
@@ -449,18 +377,16 @@ void upsdrv_shutdown(void)
 		 * Kill the inverter and wait for the things to
 		 * come.
 		 */
-		upslogx(LOG_NOTICE, "Shutdown and wait for the power to return");
-		shutdown_return(1);
+		safenet_command(SHUTDOWN_RETURN);
 	}
 	else
 	{
 		/*
 		 * Apparently we're not running on battery right
 		 * now. Let's cycle the UPS and try to prevent a
-		 * lockup. After 1 minute the UPS reboots.
+		 * lockup.
 		 */
-		upslogx(LOG_NOTICE, "Shutdown and reboot");
-		shutdown_reboot(1, 1);
+		safenet_command(SHUTDOWN_REBOOT);
 	}
 }
 
