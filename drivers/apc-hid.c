@@ -50,6 +50,37 @@ static info_lkp_t watts_to_av_conversion[] = {
 	{ 0, NULL, watts_to_av_conversion_fun }
 };
 
+/* returns statically allocated string - must not use it again before
+   done with result! */
+static char *apc_date_conversion_fun(long value) {
+  static char buf[20];
+  int year, month, day;
+
+  if (value == 0) {
+    return "not set";
+  }
+
+  /* APC apparently uses a hexadecimal-as-decimal format, e.g.,
+  0x102202 = October 22, 2002 */
+  year = (value & 0xf) + 10 * ((value>>4) & 0xf);
+  month = ((value>>16) & 0xf) + 10 * ((value>>20) & 0xf);
+  day = ((value>>8) & 0xf) + 10 * ((value>>12) & 0xf);
+
+  /* Y2K conversion - hope that this format will be retired before 2070 :) */
+  if (year >= 70) {
+    year += 1900;
+  } else {
+    year += 2000;
+  }
+
+  sprintf(buf, "%04d/%02d/%02d", year, month, day);
+  return buf;
+}
+
+info_lkp_t apc_date_conversion[] = {
+  { 0, NULL, apc_date_conversion_fun }
+};
+
 /* APC has two non-NUT-standard status items: "time limit expired" and
    "battery present". The newhidups driver currently ignores
    batterypresent, and maps timelimitexp to LB. CyberPower has the
@@ -162,8 +193,8 @@ static hid_info_t apc_hid2nut[] = {
   { "battery.temperature", 0, 0, "UPS.Battery.Temperature", NULL, "%.1f", HU_FLAG_OK, NULL },
   { "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", HU_FLAG_OK, stringid_conversion },
   { "battery.mfr.date", 0, 0, "UPS.Battery.ManufacturerDate", NULL, "%s", HU_FLAG_OK, &date_conversion[0] },
-  { "battery.date", 0, 0, "UPS.Battery.APCBattReplaceDate", NULL, "%s", HU_FLAG_OK, &date_conversion[0] },
-  { "battery.date", 0, 0, "UPS.PowerSummary.APCBattReplaceDate", NULL, "%s", HU_FLAG_OK, &date_conversion[0] }, /* Back-UPS 500 */
+  { "battery.mfr.date", 0, 0, "UPS.PowerSummary.APCBattReplaceDate", NULL, "%s", HU_FLAG_OK, &apc_date_conversion[0] }, /* Back-UPS 500, Back-UPS ES/CyberFort 500 */
+  { "battery.date", 0, 0, "UPS.Battery.APCBattReplaceDate", NULL, "%s", HU_FLAG_OK, &date_conversion[0] }, /* Back-UPS ES 650, actual value not observed. Perhaps use apc_date_conversion. */
 
   /* UPS page */
   { "ups.load", 0, 1, "UPS.Output.PercentLoad", NULL, "%.1f", HU_FLAG_OK, NULL },
