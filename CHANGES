@@ -1,3 +1,10 @@
+Thu Feb  2 21:23:00 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - upsdrvctl:
+   * Added 'status' command
+   * Drivers read the port from 'ups.conf' directly, so including the
+     port has been unneccessary for quite a while already (removed now)
+
 Wed Feb  1 10:32:30 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups: fixed battery manufacturing date conversion for APC

@@ -4,7 +4,7 @@ upsdrvctl \- UPS driver controller
 .SH SYNOPSIS
 .B upsdrvctl \-h
 
-.B upsdrvctl [OPTIONS] {start | stop | shutdown} [\fIups\fB]
+.B upsdrvctl [OPTIONS] {start | stop | status | shutdown} [\fIups\fB]
 
 .SH DESCRIPTION
 
@@ -58,6 +58,9 @@ Start the UPS driver(s).
 
 .IP stop
 Stop the UPS driver(s).
+
+.IP status
+Status the UPS driver(s).
 
 .IP shutdown
 Command the UPS driver(s) to run their shutdown sequence.  Drivers are
