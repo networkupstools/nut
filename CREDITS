@@ -134,3 +134,8 @@ D: Hacked up the cpsups driver for CyberPower text protocol UPSes
 N: Fabio Di Niro
 E: blaxwan@users.sourceforge.net
 D: Author of metasys driver, support for Meta System UPS
+
+N: Arjen de Korte
+E: arjen@de-korte.org
+D: Author of safenet driver
+P: 1024R/AEF3BA11 664E 032C 9DB5 CB9B 7AFE 7EC1 EE88 BC57
