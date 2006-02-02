@@ -161,6 +161,8 @@ static void send_term(const char *upsname, const char *driver)
 {
 	int	pid, ret;
 
+	printf("Stopping UPS: %s\n", upsname);
+
 	pid = get_driver_pid(upsname, driver);
 
 	if (pid < 2)
