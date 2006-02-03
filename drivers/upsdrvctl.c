@@ -33,6 +33,7 @@
 typedef struct {
 	char	*upsname;
 	char	*driver;
+	char	*port;
 	int	sdorder;
 	int	maxstartdelay;
 	void	*next;
@@ -83,6 +84,10 @@ void do_upsconf_args(char *upsname, char *var, char *val)
 		if (!strcmp(tmp->upsname, upsname)) {
 			if (!strcmp(var, "driver")) 
 				tmp->driver = xstrdup(val);
+
+			if (!strcmp(var, "port")) 
+				tmp->port = xstrdup(val);
+
 			if (!strcmp(var, "maxstartdelay"))
 				tmp->maxstartdelay = atoi(val);
 
@@ -102,6 +107,7 @@ void do_upsconf_args(char *upsname, char *var, char *val)
 	tmp = xmalloc(sizeof(ups_t));
 	tmp->upsname = xstrdup(upsname);
 	tmp->driver = NULL;
+	tmp->port = NULL;
 	tmp->next = NULL;
 	tmp->sdorder = 0;
 	tmp->maxstartdelay = -1;	/* use global value by default */
@@ -109,14 +115,16 @@ void do_upsconf_args(char *upsname, char *var, char *val)
 	if (!strcmp(var, "driver"))
 		tmp->driver = xstrdup(val);
 
+	if (!strcmp(var, "port"))
+		tmp->port = xstrdup(val);
+
 	if (last)
 		last->next = tmp;
 	else
 		upstable = tmp;
 }
 
-/* get the pid of a driver */
-static int get_driver_pid(const char *upsname, const char *driver)
+static int status_driver(const ups_t *ups)
 {
 	char	pidfn[SMALLBUF], buf[SMALLBUF];
 	int	ret, pid;
@@ -124,8 +132,14 @@ static int get_driver_pid(const char *upsname, const char *driver)
 	FILE	*pidf;
 
 	snprintf(pidfn, sizeof(pidfn), "%s/%s-%s.pid", altpidpath(),
-		driver, upsname);
+		ups->driver, xbasename(ups->port));
 	ret = stat(pidfn, &fs);
+
+	if (ret != 0) {
+		snprintf(pidfn, sizeof(pidfn), "%s/%s-%s.pid", altpidpath(),
+			ups->driver, ups->upsname);
+		ret = stat(pidfn, &fs);
+	}
 
 	if (ret != 0) {
 		upslog(LOG_ERR, "Can't open %s", pidfn);
@@ -157,13 +171,13 @@ static int get_driver_pid(const char *upsname, const char *driver)
 }
 
 /* handle sending the signal */
-static void send_term(const char *upsname, const char *driver)
+static void stop_driver(const ups_t *ups)
 {
-	int	pid, ret;
+	int	ret, pid;
 
-	printf("Stopping UPS: %s\n", upsname);
+	printf("Stopping UPS: %s\n", ups->upsname);
 
-	pid = get_driver_pid(upsname, driver);
+	pid = status_driver(ups);
 
 	if (pid < 2)
 		return;
@@ -183,82 +197,13 @@ static void send_term(const char *upsname, const char *driver)
 	}
 }
 
-static void stop_one_driver(const char *upsname)
-{
-	ups_t	*tmp = upstable;
-
-	if (!tmp)
-		fatalx("Error: no UPS definitions found in ups.conf!\n");
-
-	while (tmp) {
-		if (!strcmp(tmp->upsname, upsname)) {
-			send_term(tmp->upsname, tmp->driver);
-			return;
-		}
-
-		tmp = tmp->next;
-	}
-
-	fatalx("UPS %s not found in ups.conf", upsname);
-}
-
-/* walk ups table, but stop drivers instead */
-static void stop_all_drivers(void)
-{
-	ups_t	*tmp = upstable;
-
-	if (!tmp)
-		fatalx("Error: no UPS definitions found in ups.conf!\n");
-
-	while (tmp) {
-		send_term(tmp->upsname, tmp->driver);
-
-		tmp = tmp->next;
-	}
-}
-
-/* status of user-selected driver */
-static void stat_one_driver(const char *upsname)
-{
-	ups_t	*tmp = upstable;
-
-	if (!tmp)
-		fatalx("Error: no UPS definitions found in ups.conf!\n");
-
-	while (tmp) {
-		if (!strcmp(tmp->upsname, upsname)) {
-			get_driver_pid(tmp->upsname, tmp->driver);
-			return;
-		}
-
-		tmp = tmp->next;
-	}
-
-	fatalx("UPS %s not found in ups.conf", upsname);
-}
-
-/* walk ups table, but get status of drivers instead */
-static void stat_all_drivers(void)
-{
-	ups_t	*tmp = upstable;
-
-	if (!tmp)
-		fatalx("Error: no UPS definitions found in ups.conf!\n");
-
-	while (tmp) {
-		get_driver_pid(tmp->upsname, tmp->driver);
-
-		tmp = tmp->next;
-	}
-}
-
 static void waitpid_timeout(const int sig)
 {
 	/* do nothing */
 	return;
 }
 
-static void forkexec(const char *prog, char **argv, ups_t *ups)
+static void forkexec(const char *prog, char **argv, const ups_t *ups)
 {
 	int	ret;
 	pid_t	pid;
@@ -325,7 +270,7 @@ static void forkexec(const char *prog, char **argv, ups_t *ups)
 	fatal("execv");
 }		
 
-static void start_driver(ups_t *ups)
+static void start_driver(const ups_t *ups)
 {
 	char	dfn[SMALLBUF], *argv[8];
 	int	ret, arg = 0;
@@ -373,44 +318,10 @@ static void start_driver(ups_t *ups)
 	forkexec(dfn, argv, ups);
 }
 
-/* start user-selected driver */
-static void start_one_driver(const char *upsname)
-{
-	ups_t	*tmp = upstable;
-
-	if (!tmp)
-		fatalx("Error: no UPS definitions found in ups.conf!\n");
-
-	while (tmp) {
-		if (!strcmp(tmp->upsname, upsname)) {
-			start_driver(tmp);
-			return;
-		}
-
-		tmp = tmp->next;
-	}
-
-	fatalx("UPS %s not found in ups.conf", upsname);
-}
-
-/* walk ups table and invoke drivers */
-static void start_all_drivers(void)
-{
-	ups_t	*tmp = upstable;
-
-	if (!tmp)
-		fatalx("Error: no UPS definitions found in ups.conf!\n");
-
-	while (tmp) {
-		start_driver(tmp);
-		tmp = tmp->next;
-	}
-}
-
 static void help(const char *progname)
 {
 	printf("Starts and stops UPS drivers via ups.conf.\n\n");
-	printf("usage: %s [OPTIONS] (start | stop | status | shutdown) [<ups>]\n\n", progname);
+	printf("usage: %s [OPTIONS] (start | stop | shutdown) [<ups>]\n\n", progname);
 
 	printf("  -h			display this help\n");
 	printf("  -r <path>		drivers will chroot to <path>\n");
@@ -421,15 +332,15 @@ static void help(const char *progname)
 	printf("  start	<ups>		only start driver for UPS <ups>\n");
 	printf("  stop			stop all UPS drivers in ups.conf\n");
 	printf("  stop <ups>		only stop driver for UPS <ups>\n");
-	printf("  status		status all UPS drivers in ups.conf\n");
-	printf("  status <ups>		only status driver for UPS <ups>\n");
+	printf("  status		status of all UPS drivers in ups.conf\n");
+	printf("  status <ups>		only status of driver for UPS <ups>\n");
 	printf("  shutdown		shutdown all UPS drivers in ups.conf\n");
 	printf("  shutdown <ups>	only shutdown UPS <ups>\n");
 
 	exit(EXIT_SUCCESS);
 }
 
-static void shutdown_driver(ups_t *ups)
+static void shutdown_driver(const ups_t *ups)
 {
 	char	*argv[7], dfn[SMALLBUF];
 
@@ -449,7 +360,32 @@ static void shutdown_driver(ups_t *ups)
 	forkexec(dfn, argv, ups);
 }
 
-static void shutdown_one_driver(const char *upsname)
+static void send_driver(const char *command, const ups_t *ups)
+{
+	if (!strcmp(command, "start")) {
+		start_driver(ups);
+		return;
+	}
+
+	if (!strcmp(command, "stop")) {
+		stop_driver(ups);
+		return;
+	}
+
+	if (!strcmp(command, "shutdown")) {
+		shutdown_driver(ups);
+		return;
+	}
+
+	if (!strcmp(command, "status")) {
+		status_driver(ups);
+		return;
+	}
+
+	fatalx("Error: command %s unknown!\n", command);
+}
+
+static void send_one_driver(const char *command, const char *upsname)
 {
 	ups_t	*tmp = upstable;
 
@@ -458,7 +394,7 @@ static void shutdown_one_driver(const char *upsname)
 
 	while (tmp) {
 		if (!strcmp(tmp->upsname, upsname)) {
-			shutdown_driver(tmp);
+			send_driver(command, tmp);
 			return;
 		}
 
@@ -468,8 +404,8 @@ static void shutdown_one_driver(const char *upsname)
 	fatalx("UPS %s not found in ups.conf", upsname);
 }
 
-/* walk UPS table and shut down all UPSes according to sdorder */
-static void shutdown_all_drivers(void)
+/* walk UPS table and send command to all UPSes according to sdorder */
+static void send_all_drivers(const char *command)
 {
 	ups_t	*tmp;
 	int	i;
@@ -482,7 +418,7 @@ static void shutdown_all_drivers(void)
 
 		while (tmp) {
 			if (tmp->sdorder == i)
-				shutdown_driver(tmp);
+				send_driver(command, tmp);
 			
 			tmp = tmp->next;
 		}
@@ -500,6 +436,10 @@ static void exit_cleanup(void)
 
 		if (tmp->driver)
 			free(tmp->driver);
+
+		if (tmp->port)
+			free(tmp->port);
+
 		if (tmp->upsname)
 			free(tmp->upsname);
 		free(tmp);
@@ -566,64 +506,15 @@ int main(int argc, char **argv)
 
 	atexit(exit_cleanup);
 
-	if (!strcmp(argv[0], "start")) {
-		read_upsconf();
+	read_upsconf();
 
-		if (argc == 1)
-			start_all_drivers();
-		else
-			start_one_driver(argv[1]);
+	if (argc == 1)
+		send_all_drivers(argv[0]);
+	else
+		send_one_driver(argv[0], argv[1]);
 
-		if (exec_error)
-			exit(EXIT_FAILURE);
+	if (exec_error)
+		exit(EXIT_FAILURE);
 
-		exit(EXIT_SUCCESS);
-	}
-
-	if (!strcmp(argv[0], "stop")) {
-		read_upsconf();
-
-		if (argc == 1)
-			stop_all_drivers();
-		else
-			stop_one_driver(argv[1]);
-
-		if (exec_error)
-			exit(EXIT_FAILURE);
-
-		exit(EXIT_SUCCESS);
-	}
-
-	if (!strcmp(argv[0], "status")) {
-		read_upsconf();
-
-		if (argc == 1)
-			stat_all_drivers();
-		else
-			stat_one_driver(argv[1]);
-
-		if (exec_error)
-			exit(EXIT_FAILURE);
-
-		exit(EXIT_SUCCESS);
-	}
-
-	if (!strcmp(argv[0], "shutdown")) {
-		read_upsconf();
-
-		if (argc == 1)
-			shutdown_all_drivers();
-		else
-			shutdown_one_driver(argv[1]);
-
-		if (exec_error)
-			exit(EXIT_FAILURE);
-
-		exit(EXIT_SUCCESS);
-	}
-
-	fatalx("Error: unrecognized command [%s]\n", argv[0]);
-
-	/* NOTREACHED */
-	exit(EXIT_FAILURE);
+	exit(EXIT_SUCCESS);
 }

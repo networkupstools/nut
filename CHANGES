@@ -1,3 +1,15 @@
+Fri Feb  3 20:41:00 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - Update to upsdrvctl:
+   * Use 'old' style names first, when looking for the pid of drivers
+     and then the 'new' style names. This allows the new driver to
+     stop old drivers too and thus upgrading to a new version is
+     simplified.
+   * Consolidate the code to walk trough the UPS tree. All commands
+     use the same code until the actual command is performed on a
+     single driver (easier to add new commands, since the UPS tree
+     walking code is now shared).
+
 Thu Feb  2 21:23:00 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
 
  - upsdrvctl:
