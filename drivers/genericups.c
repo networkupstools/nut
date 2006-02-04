@@ -17,7 +17,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define DRV_VERSION "1.31"
+#define DRV_VERSION "1.32"
 
 #include <sys/ioctl.h>
 
@@ -44,6 +44,15 @@ static void parse_output_signals(const char *value, int *line)
  
 	if (strstr(value, "ST")) 
 		*line |= TIOCM_ST; 
+
+	if (strstr(value, "CTS"))
+		fatalx("Can't override output with CTS (not an output)");
+
+	if (strstr(value, "DCD"))
+		fatalx("Can't override output with DCD (not an output)");
+
+	if (strstr(value, "RNG"))
+		fatalx("Can't override output with RNG (not an output)");
 } 
  
 static void parse_input_signals(const char *value, int *line, int *val) 
@@ -70,6 +79,15 @@ static void parse_input_signals(const char *value, int *line, int *val)
 		if (!strstr(value, "-RNG")) 
 			*val |= TIOCM_RNG; 
 	}
+
+	if (strstr(value, "DTR"))
+		fatalx("Can't override input with DTR (not an input)");
+
+	if (strstr(value, "RTS"))
+		fatalx("Can't override input with RTS (not an input)");
+
+	if (strstr(value, "ST"))
+		fatalx("Can't override input with ST (not an input)");
 }
 
 void upsdrv_initinfo(void)

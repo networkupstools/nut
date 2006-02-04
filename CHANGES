@@ -1,3 +1,8 @@
+Sat Feb  4 20:22:00 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/genericups.c: check for invalid overrides for signals
+   (don't accept output signal if an input is expected or vice-versa)
+
 Fri Feb  3 20:41:00 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
 
  - Update to upsdrvctl:
