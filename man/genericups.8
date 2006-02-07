@@ -77,24 +77,6 @@ what these signals mean.
 These values may be negated for active low signals.  That is, "LB=\-DCD"
 recognizes a low battery condition when DCD is not held high.
 
-.SH CONNECTION MONITORING
-
-The connection between the UPS and the computer is usually not
-detectable by the driver due the simple mode of communication.  In some
-cases, the UPS or driver has the ability to loop back a signal from the
-PC.  If your hardware supports this feature, you can enable it in the
-driver by defining "CON" in ups.conf.  This works just like the options
-in the custom configurations section.
-
-If your UPS/cable presents a signal on DCD when everything is connected
-properly, you'd use this setting:
-
-	CON = DCD
-
-When this feature is enabled, the driver will report errors in the
-syslog if the signal is not present.  This will also be visible in upsd
-and to clients as stale data.
-
 .SH TYPE INFORMATION
 The essence of a UPS definition in this driver is how it uses the serial 
 lines that are available.  These are the abbreviations you will see below:
