@@ -1,8 +1,9 @@
 Desc: Frequently Asked Questions
 File: FAQ
-Date: 2 September 2004
+Date: 20 January 2006
 Auth: Russell Kroll <rkroll@exploits.org>
-
+      Arnaud Quette <aquette.dev@gmail.com>
+ 
 -----------------------------------------------------------------------------
 
  Q: I just upgraded, and ...
@@ -642,7 +643,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
  A: The basic USB UPS support was done until now using hidups. To allow
     a wider support accross platforms, newhidups driver uses libusb
     (which is available for a wide range of operating systems) and
-    libhid.
+    libhid (currently, an old internal version of it).
 
     As of NUT 2.2, newhidups will completely replace the existing
     hidups driver and provide support for various manufacturers. At that
@@ -741,11 +742,8 @@ Auth: Russell Kroll <rkroll@exploits.org>
  Q: Do you have to use a serial connection to monitor the UPS?
     What about direct network connections (SNMP or otherwise)?
 
- A: Right now, the only non-serial drivers are hidups, newhidups,
-    snmp-ups and powernet.  All four are experimental, which means
-    they might not work properly in all situations.  hidups in
-    particular only builds and runs on Linux as it is designed
-    around the hiddev interface.
+ A: No. NUT currently support USB communication through newhidups,
+    tripplite_usb and bcmxcp_usb, and SNMP communication through snmp-ups.
 
     Any time there is a gap in features, it's usually because the
     group of people who own that hardware and the group of people who
