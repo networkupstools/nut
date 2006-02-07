@@ -2,7 +2,7 @@
 
 Tue Feb 07 10:47:01 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
- - update configure.in, install.sh and NEWS
+ - update configure.in, install.sh, include/version* and NEWS
  - several minor fixes
 
 Tue Jan 24 20:40:34 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
