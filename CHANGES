@@ -1,3 +1,7 @@
+Tue Feb  7 23:25:35 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - minor change to man/megatec.8 (date)
+
 Sat Feb  4 21:22:00 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/upsdrvctl.c: minor changes (coding style)
