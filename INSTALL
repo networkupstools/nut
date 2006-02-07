@@ -66,11 +66,11 @@ MANPATH, or just do this:
 
 	make
 
-    Optionaly, you can also build the USB drivers using:
+    Optionaly, you can also build the USB drivers (requires libusb) using:
 
 	make usb
 
-    The same goes for the SNMP driver (snmp-ups) using:
+    The same goes for the SNMP driver (snmp-ups, requires Net SNMP) using:
 
 	make snmp
 
