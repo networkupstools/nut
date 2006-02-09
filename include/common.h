@@ -64,13 +64,13 @@ void chroot_start(const char *path);
 void writepid(const char *name);
 
 /* send a signal to another running process */
-void sendsignal(const char *progname, int sig);
+int sendsignal(const char *progname, int sig);
 
 int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 3, 4)));
 
 /* open <pidfn>, get the pid, then send it <sig> */
-void sendsignalfn(const char *pidfn, int sig);
+int sendsignalfn(const char *pidfn, int sig);
 
 const char *xbasename(const char *file);
 

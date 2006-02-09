@@ -165,7 +165,7 @@ void writepid(const char *name)
 }
 
 /* open pidfn, get the pid, then send it sig */
-void sendsignalfn(const char *pidfn, int sig)
+int sendsignalfn(const char *pidfn, int sig)
 {
 	char	buf[SMALLBUF];
 	FILE	*pidf;
@@ -174,7 +174,7 @@ void sendsignalfn(const char *pidfn, int sig)
 	pidf = fopen(pidfn, "r");
 	if (!pidf) {
 		upslog(LOG_NOTICE, "fopen %s", pidfn);
-		return;
+		return -1;
 	}
 
 	fgets(buf, sizeof(buf), pidf);
@@ -184,7 +184,7 @@ void sendsignalfn(const char *pidfn, int sig)
 
 	if (pid < 2) {
 		upslogx(LOG_NOTICE, "Ignoring invalid pid number %d", pid);
-		return;
+		return -1;
 	}
 
 	/* see if this is going to work first */
@@ -192,7 +192,7 @@ void sendsignalfn(const char *pidfn, int sig)
 
 	if (ret < 0) {
 		perror("kill");
-		return;
+		return -1;
 	}
 
 	/* now actually send it */
@@ -200,8 +200,10 @@ void sendsignalfn(const char *pidfn, int sig)
 
 	if (ret < 0) {
 		perror("kill");
-		return;
+		return -1;
 	}
+
+	return 0;
 }
 
 int snprintfcat(char *dst, size_t size, const char *fmt, ...)
@@ -222,13 +224,13 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 }
 
 /* lazy way to send a signal if the program uses the PIDPATH */
-void sendsignal(const char *progname, int sig)
+int sendsignal(const char *progname, int sig)
 {
 	char	fn[SMALLBUF];
 
 	snprintf(fn, sizeof(fn), "%s/%s.pid", PIDPATH, progname);
 
-	sendsignalfn(fn, sig);
+	return sendsignalfn(fn, sig);
 }
 
 const char *xbasename(const char *file)

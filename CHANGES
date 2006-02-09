@@ -1,3 +1,9 @@
+Thu Feb  9 20:45:00 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+  - Changes to common
+    * sendsignalfn() and sendsignal() let caller know if a signal was sent
+      successfully or not instead of just returning silently on errors
+
 Thu Feb  9 19:25:20 UTC	2006 / Kjell Claesson <kjell.claesson@telia.com>
 
  - bcmxcp_ser.c: reduced gcc4 compiler warnings
