@@ -1,6 +1,10 @@
 Thu Feb  9 14:16:20 UTC	2006 / Kjell Claesson <kjell.claesson@telia.com>
 
- - Update to previous patch. Upstats man page and html files.
+ - Update to previous patch.
+   * Document upsstats/upsimage enhancements in man pages.
+   * Fix UPSSTATSPATH/UPSIMAGEPATH in upsstats.html and
+      uppstats-single.html to be same as old default.
+   * Fix the changelog entry for the upsstats/upsimage patch.
 
 Thu Feb  9 07:15:30 UTC	2006 / Kjell Claesson <kjell.claesson@telia.com>
 
