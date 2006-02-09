@@ -1,4 +1,4 @@
-.TH upsstats.html 5 "Tue Jul 29 2003" "" "Network UPS Tools (NUT)"
+.TH upsstats.html 5 "Thu Feb  9 2006" "" "Network UPS Tools (NUT)"
 .SH NAME
 upsstats.html \- HTML template for Network UPS Tools upsstats
 
@@ -19,6 +19,8 @@ through unchanged.
 Some commands begin blocks - sections of the template that will be
 included, excluded, or repeated depending on certain parameters.
 
+.SH BLOCK CONTROL - ITERATION
+
 .IP @FOREACHUPS@
 Starts a block that will be repeated for each MONITOR directive in the
 \fBhosts.conf\fR(5).  This is how you can generate pages that monitor
@@ -27,18 +29,59 @@ all of your systems simultaneously.
 .IP @ENDFOR@
 Ends a FOREACHUPS block.
 
+.SH BLOCK CONTROL - MATCHING SPECIFIC CASES
+
 .IP "@IFSUPP var@"
 Starts a block that will only be printed if the variable var is
 supported by the current UPS.  This is generally used to suppress "not
 supported" messages by avoiding the label and variable call entirely.
 
+.IP "@IFEQ var value@"
+Starts a block if the value returned from the variable var matches
+value.
+
+.IP "@IFBETWEEN varlow varhigh varvalue@"
+Starts a block if the value returned by the variable varvalue is between
+the values returned by the variables varlow and varhigh.
+
+.IP @ELSE@
+If the previous IF-command did not match, perform this instead.
+
 .IP @ENDIF@
-Ends an IFSUPP block.
+Ends an IF/ELSE-block.
+
+.SH BLOCK CONTROL - ADVANCED EXPRESSIONS
+
+Even though the parser is pretty limited, it's still possible to create
+rather advanced expressions. The key to this is the fact that
+multiple block control commands are AND:ed. This is illustrated with an
+example (more examples are available in upsstats.html).
+
+@IFSUPP ambient.humidity@
+
+@IFSUPP ambient.temperature@
+
+This UPS knows both ambient temperature and humidity.
+
+@ELSE@
+
+@IFSUPP ambient.humidity@
+
+This UPS only knows ambient humidity.
+
+@ELSE@
+
+@IFSUPP ambient.temperature@
+
+This UPS only knows ambient temperature.
+
+@ELSE
+
+This UPS knows nothing, how annoying.
+
+@ENDIF@
 
 .P
-
-IFSUPP blocks may be contained within a FOREACHUPS block.  Nesting 
-and other combinations are not supported.
 
 .SH OTHER COMMANDS
 
@@ -71,15 +114,33 @@ status variables:
 
 	battery.voltage - The charge on the battery in volts
 
-	ups.load - UPS load - percentage
+	input.frequency - Incoming utility frequency (Hz)
 
 	input.voltage - Incoming utility voltage
 
-	output.voltage - Outgoing voltage (from the UPS)
+	input.L1-L2.voltage - Incoming voltage, L1-L2 (3phase)
 
-	input.frequency - Incoming utility frequency (Hz)
+	input.L2-L3.voltage - Incoming voltage, L2-L3 (3phase)
+
+	input.L3-L1.voltage - Incoming voltage, L3-L1 (3phase)
 
 	output.frequency - Outgoing utility frequency (Hz)
+
+	output.voltage - Outgoing voltage (from the UPS)
+
+	output.L1-L2.voltage - Outgoing voltage, L1-L2 (3phase)
+
+	output.L2-L3.voltage - Outgoing voltage, L2-L3 (3phase)
+
+	output.L3-L1.voltage - Outgoing voltage, L3-L1 (3phase)
+
+	output.L1.power.percent - UPS load, L1 (3phase)
+
+	output.L2.power.percent - UPS load, L2 (3phase)
+
+	output.L3.power.percent - UPS load, L3 (3phase)
+
+	ups.load - UPS load - percentage
 
 	ups.temperature - UPS temperature 
 
@@ -137,6 +198,9 @@ battery or having a low battery are red.
 Insert the current value of the status variable varname on the host being 
 monitored, or "Not supported".
 
+.IP @RUNTIME@
+Inserts the current runtime, in hh:mm:ss format.
+
 .IP @TEMPC@
 Use the Celsius scale for temperature data (default).
 
@@ -147,10 +211,7 @@ Use the Fahrenheit scale for temperature data.
 Insert the UPS temperature in the current scale.
 
 .IP @UTILITYCOLOR@
-Insert either #FF0000 (red) or #00FF00 (green) depending on the incoming
-utility voltage.  By default this will return green, unless the utility
-is outside the bounds defined by lowxfer and highxfer.  Those voltages
-are a function of your driver, and do not exist on all of them.
+Obsoleted. Use IFBETWEEN instead (see example in upsstats.html).
 
 .IP @VERSION@
 Insert the version number of the software.

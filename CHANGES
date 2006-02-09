@@ -1,13 +1,33 @@
+Thu Feb  9 14:16:20 UTC	2006 / Kjell Claesson <kjell.claesson@telia.com>
+
+ - Update to previous patch. Upstats man page and html files.
+
 Thu Feb  9 07:15:30 UTC	2006 / Kjell Claesson <kjell.claesson@telia.com>
 
  - Updates and fixes to cgi client by Niklas.
-   * Be smarter about guessing nominal battery voltage in order to
-      provide sane graph while discharging, also fixes the off-by-one-bug
-      that caused a ups with 12V battery voltage to get 0V nominal ;)
-   * Don't assume people are running their webbrowser in 1600x1200,
-      tidied up the tables to make it look better.
+   - upsstats:
+   * Adds IF/ELSE-awareness, and since the parser logic is rather limited
+     this means that we now have IF, ELSE IF etc since all statements are
+     and:ed. Examples in upsstats.html.
+   * Adds IFEQ (IF Equal)
+   * Adds IFBETWEEN (if a value is within bounds)
+   * Removes UTILITYCOLOR, since it's now possible to "script" that.
+   * Adds possibility to give a full path to upsstats/upsimage. This
+     comes in handy when you call the CGI stuff by SSI from a parsed HTML
+     page and want links to go to that HTML page and not the CGI:s
+     directly. And possibly other uses.
    * Fixed the broken @RUNTIME@ which was buggy and had inconsistent
       output, it now always prints hh:mm:ss.
+   - upsimage:
+   * Fixes the battery.voltage graph. It was hardcoded to 40V or
+     something, looked outright ridiculous with 420V battery voltage ;)
+   * Be smarter about guessing nominal battery voltage in order to
+      provide sane graph while discharging.
+   * Improves logic on figuring out min/max values to cope with 400V
+     nominal.
+   * Add 3phase input/output/load graphs.
+   - upsstats.html, upsstats-single.html:
+   * Use new functionality to add 3phase support.
 
 Tue Feb  7 23:25:35 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
