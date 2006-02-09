@@ -1,3 +1,7 @@
+Thu Feb  9 19:25:20 UTC	2006 / Kjell Claesson <kjell.claesson@telia.com>
+
+ - bcmxcp_ser.c: reduced gcc4 compiler warnings
+
 Thu Feb  9 15:57:41 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - belkinunv.c: reduced gcc4 compiler warnings

@@ -238,7 +238,7 @@ void upsdrv_comm_good()
 
 void pw_comm_setup(const char *port)
 {
-    char answer[256];
+    unsigned char answer[256];
     int i = 0, baud, mybaud = 0, ret = -1 ;
 
 	if (getval("baud_rate") != NULL)
