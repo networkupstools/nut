@@ -13,6 +13,8 @@
 <!-- change this to TEMPF if you don't like Celsius. -->
 
 @TEMPC@
+@UPSSTATSPATH /cgi-bin/upsstats.cgi@
+@UPSIMAGEPATH /cgi-bin/upsimage.cgi@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
 	"http://www.w3.org/TR/REC-html40/loose.dtd">
@@ -50,9 +52,9 @@ Network UPS Tools upsstats
 <th COLSPAN="1">Model</th>
 <th COLSPAN="1">Status</th>
 <th COLSPAN="1">Battery</th>
-<th COLSPAN="1">Input</th>
-<th COLSPAN="1">Output</th>
-<th COLSPAN="1">Load</th>
+<th COLSPAN="1">Input (VAC)</th>
+<th COLSPAN="1">Output (VAC)</th>
+<th COLSPAN="1">Load (%)</th>
 <th COLSPAN="1">UPS<br>Temp</th>
 <th COLSPAN="1">Battery<br>Runtime</th>
 <th COLSPAN="1">Data<br>Tree</th>
@@ -83,22 +85,46 @@ Network UPS Tools upsstats
 </td>
 
 <td BGCOLOR="
-@UTILITYCOLOR@
+@IFSUPP input.L1-L2.voltage@
+@IFBETWEEN input.transfer.low input.transfer.high input.L1-L2.voltage@
+@IFBETWEEN input.transfer.low input.transfer.high input.L2-L3.voltage@
+@IFBETWEEN input.transfer.low input.transfer.high input.L3-L1.voltage@
+#00FF00
+@ELSE@
+@IFBETWEEN input.transfer.low input.transfer.high input.voltage@
+#00FF00
+@ELSE@
+#FF0000
+@ENDIF@
 ">
+
+@IFSUPP input.L1-L2.voltage@
+@VAR input.L1-L2.voltage@
+@VAR input.L2-L3.voltage@
+@VAR input.L3-L1.voltage@
+@ELSE@
 @IFSUPP input.voltage@
 @VAR input.voltage@
-VAC
 @ENDIF@
 </td>
 
 <td BGCOLOR="#00FF00">
+@IFSUPP output.L1-L2.voltage@
+@VAR output.L1-L2.voltage@
+@VAR output.L2-L3.voltage@
+@VAR output.L3-L1.voltage@
+@ELSE@
 @IFSUPP output.voltage@
 @VAR output.voltage@
-VAC
 @ENDIF@
 </td>
 
 <td BGCOLOR="#00FF00">
+@IFSUPP output.L1.power.percent@
+@VAR output.L1.power.percent@
+@VAR output.L2.power.percent@
+@VAR output.L3.power.percent@
+@ELSE@
 @IFSUPP ups.load@
 @VAR ups.load@
 %

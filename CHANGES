@@ -1,3 +1,14 @@
+Thu Feb  9 07:15:30 UTC	2006 / Kjell Claesson <kjell.claesson@telia.com>
+
+ - Updates and fixes to cgi client by Niklas.
+   * Be smarter about guessing nominal battery voltage in order to
+      provide sane graph while discharging, also fixes the off-by-one-bug
+      that caused a ups with 12V battery voltage to get 0V nominal ;)
+   * Don't assume people are running their webbrowser in 1600x1200,
+      tidied up the tables to make it look better.
+   * Fixed the broken @RUNTIME@ which was buggy and had inconsistent
+      output, it now always prints hh:mm:ss.
+
 Tue Feb  7 23:25:35 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - minor change to man/megatec.8 (date)

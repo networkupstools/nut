@@ -27,7 +27,8 @@
 #include "upsstats.h"
 #include "upsimagearg.h"
 
-#define MAX_CGI_STRLEN 64
+#define MAX_CGI_STRLEN 128
+#define MAX_PARSE_ARGS 16
 
 static	char	*monhost = NULL;
 static	int	use_celsius = 1, refreshdelay = -1, treemode = 0;
@@ -37,6 +38,7 @@ static	char	*monhostdesc = NULL;
 
 static	int	port;
 static	char	*upsname, *hostname;
+static	char	*upsimgpath="upsimage.cgi", *upsstatpath="upsstats.cgi";
 static	UPSCONN	ups;
 
 static	FILE	*tf;
@@ -44,7 +46,8 @@ static	long	forofs = 0;
 
 static	ulist_t	*ulhead = NULL, *currups = NULL;
 
-static	int	skip_to_endif = 0;
+static	int	skip_clause = 0, skip_block = 0;
+
 
 void parsearg(char *var, char *value)
 {
@@ -63,8 +66,10 @@ void parsearg(char *var, char *value)
 	if (!strcmp(var, "refresh"))
 		refreshdelay = (int) strtol(value, (char **) NULL, 10);
 
-	if (!strcmp(var, "treemode"))
+	if (!strcmp(var, "treemode")) {
+		/* FIXME: Validate that treemode is allowed */
 		treemode = 1;
+	}
 }
 
 static void report_error(void)
@@ -168,7 +173,7 @@ static void do_status(void)
 		/* expand from table in status.h */
 		for (i = 0; stattab[i].name != NULL; i++)
 			if (!strcmp(stattab[i].name, sp))
-				printf("%s<BR>", stattab[i].desc);
+				printf("%s", stattab[i].desc);
 
 		sp = ptr;
 	}
@@ -187,14 +192,7 @@ static void do_runtime(void)
 	minutes = (total - (hours * 3600)) / 60;
 	seconds = total % 60;
 
-	if (hours > 0) {
-		if (minutes > 0)
-			printf("%i h %02i mn %02i s", hours, minutes, seconds);
-		else
-			printf("%02i sec.", seconds);
-	}
-	else
-		printf("%02i mn %02i s", minutes, seconds);
+	printf("%02d:%02d:%02d", hours, minutes, seconds);
 
 }
 
@@ -219,13 +217,13 @@ static int get_img_val(const char *var, const char *desc, const char *imgargs)
 	if (!get_var(var, answer, sizeof(answer), 1))
 		return 1;
 
-	printf("<IMG SRC=\"upsimage.cgi?host=%s&amp;display=%s",
-		currups->sys, var);
+	printf("<IMG SRC=\"%s?host=%s&amp;display=%s",
+		upsimgpath, currups->sys, var);
 
 	if ((imgargs) && (strlen(imgargs) > 0))
 		printf("&amp;%s", imgargs);
 
-	printf("\" WIDTH=\"100\" HEIGHT=\"350\" ALT=\"%s: %s\">\n",
+	printf("\" ALT=\"%s: %s\">\n",
 		desc, answer);
 
 	return 1;
@@ -299,8 +297,12 @@ static int do_img(char *buf)
 
 	/* only allow known types through */
 
-	if (!strcmp(type, "input.voltage"))
-		return get_img_val("input.voltage", "Input voltage", imgargs);
+	if (!strcmp(type, "input.voltage") 
+			|| !strcmp(type, "input.L1-L2.voltage") 
+			|| !strcmp(type, "input.L2-L3.voltage") 
+			|| !strcmp(type, "input.L3-L1.voltage")) {
+		return get_img_val(type, "Input voltage", imgargs);
+	}
 
 	if (!strcmp(type, "battery.voltage"))
 		return get_img_val("battery.voltage", "Battery voltage", imgargs);
@@ -308,11 +310,19 @@ static int do_img(char *buf)
 	if (!strcmp(type, "battery.charge"))
 		return get_img_val("battery.charge", "Battery charge", imgargs);
 
-	if (!strcmp(type, "output.voltage"))
-		return get_img_val("output.voltage", "Output voltage", imgargs);
+	if (!strcmp(type, "output.voltage")
+			|| !strcmp(type, "output.L1-L2.voltage") 
+			|| !strcmp(type, "output.L2-L3.voltage") 
+			|| !strcmp(type, "output.L3-L1.voltage")) {
+		return get_img_val(type, "Output voltage", imgargs);
+	}
 
-	if (!strcmp(type, "ups.load"))
-		return get_img_val("ups.load", "UPS load", imgargs);
+	if (!strcmp(type, "ups.load")
+			|| !strcmp(type, "output.L1.power.percent")
+			|| !strcmp(type, "output.L2.power.percent")
+			|| !strcmp(type, "output.L3.power.percent")) {
+		return get_img_val(type, "UPS load", imgargs);
+	}
 
 	if (!strcmp(type, "input.frequency"))
 		return get_img_val("input.frequency", "Input frequency", imgargs);
@@ -389,8 +399,8 @@ static void do_hostlink(void)
 	if (!currups)
 		return;
 
-	printf("<a href=\"upsstats.cgi?host=%s\">%s</a>\n",
-		currups->sys, currups->desc);
+	printf("<a href=\"%s?host=%s\">%s</a>\n",
+		upsstatpath, currups->sys, currups->desc);
 }
 
 static void do_treelink(void)
@@ -398,24 +408,142 @@ static void do_treelink(void)
 	if (!currups)
 		return;
 
-	printf("<a href=\"upsstats.cgi?host=%s&treemode\">All data</a>\n",
-		currups->sys);
+	printf("<a href=\"%s?host=%s&amp;treemode\">All data</a>\n",
+		upsstatpath, currups->sys);
 }
 
 /* see if the UPS supports this variable - skip to the next ENDIF if not */
-static void do_ifsupp(const char *var)
+/* if val is not null, value returned by var must be equal to val to match */
+static void do_ifsupp(const char *var, const char *val)
 {
 	char	dummy[SMALLBUF];
 
 	/* if not connected, act like it's not supported and skip the rest */
 	if (!check_ups_fd(0)) {
-		skip_to_endif = 1;
+		skip_clause = 1;
 		return;
 	}
 
 	if (!get_var(var, dummy, sizeof(dummy), 0)) {
-		skip_to_endif = 1;
+		skip_clause = 1;
 		return;
+	}
+
+	if(!val) {
+		return;
+	}
+
+	if(strcmp(dummy, val)) {
+		skip_clause = 1;
+		return;
+	}
+}
+
+static int breakargs(char *s, char **aargs)
+{
+	char	*p;
+	int	i=0;
+
+	aargs[i]=NULL;
+
+	for(p=s; *p && i<(MAX_PARSE_ARGS-1); p++) {
+		if(aargs[i] == NULL) {
+			aargs[i] = p;
+			aargs[i+1] = NULL;
+		}
+		if(*p==' ') {
+			*p='\0';
+			i++;
+		}
+	}
+
+	/* Check how many valid args we got */
+	for(i=0; aargs[i]; i++);
+
+	return i;
+}
+
+static void do_ifeq(const char *s)
+{
+	char	var[SMALLBUF];
+	char	*aa[MAX_PARSE_ARGS];
+	int	nargs;
+
+	strcpy(var, s);
+
+	nargs = breakargs(var, aa);
+	if(nargs != 2) {
+		printf("upsstats: IFEQ: Argument error!\n");
+		return;
+	}
+
+	do_ifsupp(aa[0], aa[1]);
+}
+
+/* IFBETWEEN var1 var2 var3. Skip if var3 not between var1
+ * and var2 */
+static void do_ifbetween(const char *s)
+{
+	char	var[SMALLBUF];
+	char	*aa[MAX_PARSE_ARGS];
+	char	tmp[SMALLBUF];
+	int	nargs;
+	long	v1, v2, v3;
+	char	*isvalid=NULL;
+
+	strcpy(var, s);
+
+	nargs = breakargs(var, aa);
+	if(nargs != 3) {
+		printf("upsstats: IFBETWEEN: Argument error!\n");
+		return;
+	}
+
+	if (!check_ups_fd(0)) {
+		return;
+	}
+
+	if (!get_var(aa[0], tmp, sizeof(tmp), 0)) {
+		return;
+	}
+	v1 = strtol(tmp, &isvalid, 10);
+	if(tmp == isvalid) {
+		return;
+	}
+
+	if (!get_var(aa[1], tmp, sizeof(tmp), 0)) {
+		return;
+	}
+	v2 = strtol(tmp, &isvalid, 10);
+	if(tmp == isvalid) {
+		return;
+	}
+
+	if (!get_var(aa[2], tmp, sizeof(tmp), 0)) {
+		return;
+	}
+	v3 = strtol(tmp, &isvalid, 10);
+	if(tmp == isvalid) {
+		return;
+	}
+
+	if(v1 > v3 || v2 < v3) {
+		skip_clause = 1;
+		return;
+	}
+}
+
+static void do_upsstatpath(const char *s) {
+
+	if(strlen(s)) {
+		upsstatpath = strdup(s);
+	}
+}
+
+static void do_upsimgpath(const char *s) {
+
+	if(strlen(s)) {
+		upsimgpath = strdup(s);
 	}
 }
 
@@ -490,50 +618,6 @@ static void do_statuscolor(void)
 	}
 }
 
-/* use red if utility is outside lowxfer+highxfer bounds, else green */
-static void do_utilitycolor(void)
-{
-	char	tmp[SMALLBUF];
-	int	lowxfer, highxfer, utility;
-
-	if (!check_ups_fd(0)) {
-
-		/* can't print the warning here - give a red error condition */
-		printf("#FF0000\n");
-		return;
-	}
-
-	if (!get_var("input.voltage", tmp, sizeof(tmp), 0)) {
-		/* nothing available - default is green */
-		printf("#00FF00\n");
-		return;
-	}
-
-	utility = strtol(tmp, (char **) NULL, 10);
-
-	if (!get_var("input.transfer.low", tmp, sizeof(tmp), 0)) {
-
-		/* not available = default to green */
-		printf("#00FF00\n");
-		return;
-	}
-
-	lowxfer = strtol(tmp, (char **) NULL, 10);
-
-	if (!get_var("input.transfer.high", tmp, sizeof(tmp), 0)) {
-
-		/* same idea */
-		printf("#00FF00\n");
-		return;
-	}
-
-	highxfer = strtol(tmp, (char **) NULL, 10);
-
-	if ((utility < lowxfer) || (utility > highxfer))
-		printf("#FF0000\n");
-	else
-		printf("#00FF00\n");
-}
 
 /* look for lines starting and ending with @ containing valid commands */
 static int parse_line(const char *buf)
@@ -543,7 +627,7 @@ static int parse_line(const char *buf)
 	/* deal with extremely short lines as a special case */
 	if (strlen(buf) < 3) {
 
-		if (skip_to_endif == 1)
+		if (skip_clause || skip_block)
 			return 1;
 
 		return 0;
@@ -552,7 +636,7 @@ static int parse_line(const char *buf)
 	if (buf[0] != '@') {
 
 		/* if skipping a section, act like we parsed the line */
-		if (skip_to_endif == 1)
+		if (skip_clause || skip_block)
 			return 1;
 		
 		/* otherwise pass it through for normal printing */
@@ -572,12 +656,29 @@ static int parse_line(const char *buf)
 
 	/* ending an if block? */
 	if (!strcmp(cmd, "ENDIF")) {
-		skip_to_endif = 0;
+		skip_clause = 0;
+		skip_block = 0;
+		return 1;
+	}
+
+	/* Skipping a block means skip until ENDIF, so... */
+	if (skip_block) {
+		return 1;
+	}
+
+	/* Toggle state when we run across ELSE */
+	if(!strcmp(cmd, "ELSE")) {
+		if(skip_clause) {
+			skip_clause = 0;
+		}
+		else {
+			skip_block = 1;
+		}
 		return 1;
 	}
 
 	/* don't do any commands if skipping a section */
-	if (skip_to_endif == 1)
+	if (skip_clause == 1)
 		return 1;
 
 	if (!strncmp(cmd, "VAR ", 4)) {
@@ -607,11 +708,6 @@ static int parse_line(const char *buf)
 
 	if (!strcmp(cmd, "STATUSCOLOR")) {
 		do_statuscolor();
-		return 1;
-	}
-
-	if (!strcmp(cmd, "UTILITYCOLOR")) {
-		do_utilitycolor();
 		return 1;
 	}
 
@@ -679,7 +775,7 @@ static int parse_line(const char *buf)
 	}
 
 	if (!strncmp(cmd, "IFSUPP ", 7)) {
-		do_ifsupp(&cmd[7]);
+		do_ifsupp(&cmd[7], NULL);
 		return 1;
 	}
 
@@ -695,6 +791,26 @@ static int parse_line(const char *buf)
 
 	if (!strcmp(cmd, "DEGREES")) {
 		do_degrees();
+		return 1;
+	}
+
+	if (!strncmp(cmd, "IFEQ ", 5)) {
+		do_ifeq(&cmd[5]);
+		return 1;
+	}
+		
+	if (!strncmp(cmd, "IFBETWEEN ", 10)) {
+		do_ifbetween(&cmd[10]);
+		return 1;
+	}
+
+	if(!strncmp(cmd, "UPSSTATSPATH ", 13)) {
+		do_upsstatpath(&cmd[13]);
+		return 1;
+	}
+		
+	if(!strncmp(cmd, "UPSIMAGEPATH ", 13)) {
+		do_upsimgpath(&cmd[13]);
 		return 1;
 	}
 		
@@ -754,6 +870,7 @@ static void display_tree(int verbose)
 		return;
 	}
 
+	/* FIXME: numa is uninitialized here. What's the intention of this? */
 	if (numa < numq) {
 		if (verbose)
 			printf("[Invalid response]\n");

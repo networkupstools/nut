@@ -16,6 +16,12 @@
 
 <HTML>
 
+<!-- change this to TEMPF if you don't like Celsius. -->
+
+@TEMPC@
+@UPSSTATSPATH /cgi-bin/upsstats.cgi@
+@UPSIMAGEPATH /cgi-bin/upsimage.cgi@
+
 <HEAD>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 @REFRESH@
@@ -33,9 +39,15 @@ on
 <TABLE BORDER="1" ALIGN="CENTER" CELLSPACING="0" CELLPADDING="10" BGCOLOR="#000000">
 
 <TR>
-<TH COLSPAN="5">
+<TH COLSPAN="20">
 Network UPS Tools upsstats
 @VERSION@
+-
+@HOSTDESC@
+-
+@VAR ups.model@
+on
+@HOST@
 </TH>
 </TR>
 
@@ -57,13 +69,6 @@ Network UPS Tools upsstats
 <TABLE BORDER="0">	<!-- table 2 -->
 
 <TR>
-<TH ALIGN="RIGHT">Monitoring:</TH>
-<TD>
-@HOST@
-</TD>
-</TR>
-
-<TR>
 <TH ALIGN="RIGHT">UPS Model:</TH>
 <TD>
 @VAR ups.model@
@@ -74,34 +79,144 @@ Network UPS Tools upsstats
 <TH ALIGN="RIGHT">Status:</TH>
 <TD>
 @STATUS@
+@ENDIF@
 </TD>
 </TR>
 
-@IFSUPP input.voltage@
+@IFSUPP battery.runtime@
 <TR>
-<TH ALIGN="RIGHT">Input: </TH>
+<TH ALIGN="RIGHT">Runtime:</TH>
 <TD>
-@VAR input.voltage@
- VAC
+@RUNTIME@
 </TD>
 </TR>
 @ENDIF@
 
-@IFSUPP output.voltage@
+@IFSUPP ups.temperature@
 <TR>
-<TH ALIGN="RIGHT">Output: </TH>
+<TH ALIGN="RIGHT">UPS temp:</TH>
 <TD>
-@VAR output.voltage@
- VAC
+@UPSTEMP@
+@DEGREES@
+</TD>
+</TR>
+@ENDIF@
+
+@IFSUPP battery.voltage@
+<TR>
+<TH ALIGN="RIGHT">Battery: </TH>
+<TD>
+@VAR battery.voltage@
+V
+@IFSUPP battery.current@
+, 
+@VAR battery.current@
+A
+@ENDIF@
+
+<TR>
+<TH VALIGN="TOP" ALIGN="RIGHT">Input: </TH>
+<TD>
+
+@IFSUPP input.L1-L2.voltage@
+@VAR input.L1-L2.voltage@
+V<BR>
+@VAR input.L2-L3.voltage@
+V<BR>
+@VAR input.L3-L1.voltage@
+V<BR>
+</TD>
+</TR>
+@ELSE@
+@IFSUPP input.voltage@
+@VAR input.voltage@
+ V
+</TD>
+</TR>
+@ENDIF@
+
+@IFSUPP input.L1.current@
+<TR>
+<TH>
+<TD>
+@VAR input.L1.current@
+A<BR>
+@VAR input.L2.current@
+A<BR>
+@VAR input.L3.current@
+A<BR>
+</TD>
+</TR>
+@ELSE@
+@IFSUPP input.current@
+<TR>
+<TH>
+<TD>
+@VAR input.current@
+A
 </TD>
 </TR>
 @ENDIF@
 
 @IFSUPP input.frequency@
 <TR>
-<TH ALIGN="RIGHT">AC freq: </TH>
+<TH>
 <TD>
 @VAR input.frequency@
+ Hz
+</TD>
+</TR>
+@ENDIF@
+
+<TR>
+<TH VALIGN="TOP" ALIGN="RIGHT">Output: </TH>
+<TD>
+
+@IFSUPP output.L1-L2.voltage@
+@VAR output.L1-L2.voltage@
+V<BR>
+@VAR output.L2-L3.voltage@
+V<BR>
+@VAR output.L3-L1.voltage@
+V<BR>
+</TD>
+</TR>
+@ELSE@
+@IFSUPP output.voltage@
+@VAR output.voltage@
+ V
+</TD>
+</TR>
+@ENDIF@
+
+@IFSUPP output.L1.current@
+<TR>
+<TH>
+<TD>
+@VAR output.L1.current@
+A<BR>
+@VAR output.L2.current@
+A<BR>
+@VAR output.L3.current@
+A<BR>
+</TD>
+</TR>
+@ELSE@
+@IFSUPP output.current@
+<TR>
+<TH>
+<TD>
+@VAR output.current@
+A
+</TD>
+</TR>
+@ENDIF@
+
+@IFSUPP output.frequency@
+<TR>
+<TH>
+<TD>
+@VAR output.frequency@
  Hz
 </TD>
 </TR>
@@ -110,19 +225,68 @@ Network UPS Tools upsstats
 </TABLE>		<!-- table 2 -->
 </TD>
 
-<TD VALIGN="TOP" BGCOLOR="#000000">
-@IMG battery.charge@
+<TD ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
+<TABLE BORDER="0">
+<TR><TD ALIGN="CENTER">
+Charge:<BR>
+@IMG battery.charge width=90@
+@IFSUPP battery.voltage@
+<TD ALIGN="CENTER">
+Voltage:<BR>
+@IMG battery.voltage width=90@
+@ENDIF@
+</TABLE>
 </TD>
-<TD VALIGN="TOP" BGCOLOR="#000000">
+
+<TD ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
+@IFSUPP input.L1-L2.voltage@
+<TABLE BORDER="0"><TR><TD ALIGN="CENTER">
+L1-L2<BR>
+@IMG input.L1-L2.voltage width=68@
+<TD ALIGN="CENTER">
+L2-L3<BR>
+@IMG input.L2-L3.voltage width=68@
+<TD ALIGN="CENTER">
+L3-L1<BR>
+@IMG input.L3-L1.voltage width=68@
+</TABLE>
+@ELSE@
 @IMG input.voltage@
+@ENDIF@
 </TD>
 
-<TD VALIGN="TOP" BGCOLOR="#000000">
+<TD ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
+@IFSUPP output.L1-L2.voltage@
+<TABLE BORDER="0"><TR><TD ALIGN="CENTER">
+L1-L2<BR>
+@IMG output.L1-L2.voltage width=68@
+<TD ALIGN="CENTER">
+L2-L3<BR>
+@IMG output.L2-L3.voltage width=68@
+<TD ALIGN="CENTER">
+L3-L1<BR>
+@IMG output.L3-L1.voltage width=68@
+</TABLE>
+@ELSE@
 @IMG output.voltage@
+@ENDIF@
 </TD>
 
-<TD VALIGN="TOP" BGCOLOR="#000000">
+<TD ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
+@IFSUPP output.L1.power.percent@
+<TABLE BORDER="0"><TR><TD ALIGN="CENTER">
+L1<BR>
+@IMG output.L1.power.percent width=68@
+<TD ALIGN="CENTER">
+L2<BR>
+@IMG output.L2.power.percent width=68@
+<TD ALIGN="CENTER">
+L3<BR>
+@IMG output.L3.power.percent width=68@
+</TABLE>
+@ELSE@
 @IMG ups.load@
+@ENDIF@
 </TD>
 </TR>
 
