@@ -1,8 +1,19 @@
+Thu Feb  9 21:00:00 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - Changes to upsdrvctl
+   * execute silently by default (wasn't used consistently anyway)
+   * use upsdebugx() to show additional information if wanted, which
+     replaces the verbose option (this is much more flexible)
+   * removed 'status' command (used to be implemented the same way as
+     until nut-2.0.0, but turns out to be too limited to be useful,
+     for exactly the same reason)
+   * use sendsignalfn() from common instead of rolling our own
+
 Thu Feb  9 20:45:00 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
 
-  - Changes to common
-    * sendsignalfn() and sendsignal() let caller know if a signal was sent
-      successfully or not instead of just returning silently on errors
+ - Changes to common
+   * sendsignalfn() and sendsignal() let caller know if a signal was sent
+     successfully or not instead of just returning silently on errors
 
 Thu Feb  9 19:25:20 UTC	2006 / Kjell Claesson <kjell.claesson@telia.com>
 

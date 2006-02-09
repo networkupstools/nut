@@ -41,7 +41,7 @@ typedef struct {
 
 static	ups_t	*upstable = NULL;
 
-static	int	verbose = 0, maxsdorder = 0, testmode = 0, exec_error = 0;
+static	int	maxsdorder = 0, testmode = 0, exec_error = 0;
 
 	/* timer - keeps us from getting stuck if a driver hangs */
 static	int	maxstartdelay = 45;
@@ -82,10 +82,10 @@ void do_upsconf_args(char *upsname, char *var, char *val)
 		last = tmp;
 
 		if (!strcmp(tmp->upsname, upsname)) {
-			if (!strcmp(var, "driver")) 
+			if (!strcmp(var, "driver"))
 				tmp->driver = xstrdup(val);
 
-			if (!strcmp(var, "port")) 
+			if (!strcmp(var, "port"))
 				tmp->port = xstrdup(val);
 
 			if (!strcmp(var, "maxstartdelay"))
@@ -124,12 +124,14 @@ void do_upsconf_args(char *upsname, char *var, char *val)
 		upstable = tmp;
 }
 
-static int get_driver_pid(const ups_t *ups)
+/* handle sending the signal */
+static void stop_driver(const ups_t *ups)
 {
-	char	pidfn[SMALLBUF], buf[SMALLBUF];
-	int	ret, pid;
+	char	pidfn[SMALLBUF];
+	int	ret;
 	struct	stat	fs;
-	FILE	*pidf;
+
+	upsdebugx(1, "Stopping UPS: %s", ups->upsname);
 
 	snprintf(pidfn, sizeof(pidfn), "%s/%s-%s.pid", altpidpath(),
 		ups->driver, xbasename(ups->port));
@@ -144,66 +146,21 @@ static int get_driver_pid(const ups_t *ups)
 	if (ret != 0) {
 		upslog(LOG_ERR, "Can't open %s", pidfn);
 		exec_error++;
-		return 0;
-	}
-
-	pidf = fopen(pidfn, "r");
-
-	if (!pidf) {
-		upslog(LOG_ERR, "Can't open %s", pidfn);
-		exec_error++;
-		return 0;
-	}
-
-	fgets(buf, sizeof(buf), pidf);
-	buf[strlen(buf)-1] = '\0';
-
-	pid = strtol(buf, (char **)NULL, 10);
-
-	if (pid < 2) {
-		upslogx(LOG_NOTICE, "Ignoring invalid pid %d in %s",
-			pid, pidfn);
-		exec_error++;
-		return 0;
-	}
-
-	return pid;
-}
-
-/* handle sending the signal */
-static void stop_driver(const ups_t *ups)
-{
-	int	ret, pid;
-
-	printf("Stopping UPS: %s\n", ups->upsname);
-
-	pid = get_driver_pid(ups);
-
-	if (pid < 2)
 		return;
+	}
 
-	if (verbose)
-		printf("Sending signal: kill -TERM %d\n", pid);
+	upsdebugx(2, "Sending signal to %s", pidfn);
 
 	if (testmode)
 		return;
 
-	ret = kill(pid, SIGTERM);
+	ret = sendsignalfn(pidfn, SIGTERM);
 
 	if (ret < 0) {
-		upslog(LOG_ERR, "kill pid %d failed", pid);
+		upslog(LOG_ERR, "Stopping %s failed", pidfn);
 		exec_error++;
 		return;
 	}
-}
-
-static void status_driver(const ups_t *ups)
-{
-	/*
-	 * Check if the pid file is present (this is not a real
-	 * status check, but probably sufficient in most cases)
-	 */
-	get_driver_pid(ups);
 }
 
 static void waitpid_timeout(const int sig)
@@ -277,7 +234,7 @@ static void forkexec(const char *prog, char **argv, const ups_t *ups)
 
 	/* shouldn't get here */
 	fatal("execv");
-}		
+}
 
 static void start_driver(const ups_t *ups)
 {
@@ -285,17 +242,17 @@ static void start_driver(const ups_t *ups)
 	int	ret, arg = 0;
 	struct	stat	fs;
 
+	upsdebugx(1, "Starting UPS: %s", ups->upsname);
+
 	snprintf(dfn, sizeof(dfn), "%s/%s", driverpath, ups->driver);
 	ret = stat(dfn, &fs);
 
 	if (ret < 0)
 		fatal("Can't start %s", dfn);
 
-	if (verbose)
-	    	printf("exec: %s -a %s", dfn, ups->upsname);
+	upsdebugx(2, "exec: %s -a %s", dfn, ups->upsname);
 
-	argv[arg++] = xstrdup(dfn);
-
+	argv[arg++] = dfn;
 	argv[arg++] = "-a";
 	argv[arg++] = ups->upsname;
 
@@ -303,23 +260,15 @@ static void start_driver(const ups_t *ups)
 	if (pt_root) {
 		argv[arg++] = "-r";
 		argv[arg++] = pt_root;
-
-		if (verbose)
-			printf(" -r %s", pt_root);
 	}
 
 	if (pt_user) {
 		argv[arg++] = "-u";
 		argv[arg++] = pt_user;
-
-		if (verbose)
-			printf(" -u %s", pt_user);
 	}
 
-	if (verbose)
-		printf("\n");
 	if (testmode)
-	    	return;
+		return;
 
 	/* tie it off */
 	argv[arg++] = NULL;
@@ -336,13 +285,11 @@ static void help(const char *progname)
 	printf("  -r <path>		drivers will chroot to <path>\n");
 	printf("  -t			testing mode - prints actions without doing them\n");
 	printf("  -u <user>		drivers started will switch from root to <user>\n");
-	printf("  -v			enable verbose messages\n");
+	printf("  -D            	raise debugging level\n");
 	printf("  start			start all UPS drivers in ups.conf\n");
 	printf("  start	<ups>		only start driver for UPS <ups>\n");
 	printf("  stop			stop all UPS drivers in ups.conf\n");
 	printf("  stop <ups>		only stop driver for UPS <ups>\n");
-	printf("  status		status of all UPS drivers in ups.conf\n");
-	printf("  status <ups>		only status of driver for UPS <ups>\n");
 	printf("  shutdown		shutdown all UPS drivers in ups.conf\n");
 	printf("  shutdown <ups>	only shutdown UPS <ups>\n");
 
@@ -352,19 +299,22 @@ static void help(const char *progname)
 static void shutdown_driver(const ups_t *ups)
 {
 	char	*argv[7], dfn[SMALLBUF];
+	int	arg = 0;
+
+	upsdebugx(1, "Shutdown UPS: %s", ups->upsname);
 
 	snprintf(dfn, sizeof(dfn), "%s/%s", driverpath, ups->driver);
 
-	if (verbose)
-		printf("exec: %s -a %s -k\n", dfn, ups->upsname);
-	if (testmode)
-	    	return;
+	upsdebugx(2, "exec: %s -a %s -k", dfn, ups->upsname);
 
-	argv[0] = dfn;
-	argv[1] = "-a";
-	argv[2] = xstrdup(ups->upsname);
-	argv[3] = "-k";
-	argv[4] = NULL;
+	if (testmode)
+		return;
+
+	argv[arg++] = dfn;
+	argv[arg++] = "-a";
+	argv[arg++] = xstrdup(ups->upsname);
+	argv[arg++] = "-k";
+	argv[arg++] = NULL;
 
 	forkexec(dfn, argv, ups);
 }
@@ -396,6 +346,18 @@ static void send_all_drivers(void (*command)(const ups_t *))
 
 	if (!upstable)
 		fatalx("Error: no UPS definitions found in ups.conf");
+
+	if (command != &shutdown_driver) {
+		ups = upstable;
+
+		while (ups) {
+			command(ups);
+
+			ups = ups->next;
+		}
+
+		return;
+	}
 
 	for (i = 0; i <= maxsdorder; i++) {
 		ups = upstable;
@@ -445,7 +407,7 @@ int main(int argc, char **argv)
 		UPS_VERSION);
 
 	prog = argv[0];
-	while ((i = getopt(argc, argv, "+htvu:r:V")) != EOF) {
+	while ((i = getopt(argc, argv, "+htu:r:DV")) != EOF) {
 		switch(i) {
 			case 'r':
 				pt_root = optarg;
@@ -453,23 +415,18 @@ int main(int argc, char **argv)
 
 			case 't':
 				testmode = 1;
-
-				/* force verbose mode while testing */
-				if (verbose == 0)
-					verbose = 1;
-
 				break;
 
 			case 'u':
 				pt_user = optarg;
 				break;
 
-			case 'v':
-				verbose++;
-				break;
-
 			case 'V':
 				exit(EXIT_SUCCESS);
+
+			case 'D':
+				nut_debug_level++;
+				break;
 
 			case 'h':
 			default:
@@ -484,25 +441,26 @@ int main(int argc, char **argv)
 	if (argc < 1)
 		help(prog);
 
-	if (testmode)
+	if (testmode) {
 		printf("*** Testing mode: not calling exec/kill\n");
 
-        if (!strcmp(argv[0], "start"))
+		if (nut_debug_level < 2)
+			nut_debug_level = 2;
+	}
+
+	if (!strcmp(argv[0], "start"))
 		command = &start_driver;
 
-        if (!strcmp(argv[0], "stop"))
+	if (!strcmp(argv[0], "stop"))
 		command = &stop_driver;
 
-        if (!strcmp(argv[0], "shutdown"))
+	if (!strcmp(argv[0], "shutdown"))
 		command = &shutdown_driver;
 
-        if (!strcmp(argv[0], "status"))
-		command = &status_driver;
-
 	if (!command)
-	        fatalx("Error: unrecognized command [%s]", argv[0]);
+		fatalx("Error: unrecognized command [%s]", argv[0]);
 
-	driverpath = xstrdup(DRVPATH);  /* set default */
+	driverpath = xstrdup(DRVPATH);	/* set default */
 
 	atexit(exit_cleanup);
 
