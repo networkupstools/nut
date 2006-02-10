@@ -1,3 +1,9 @@
+Fri Feb 10 22:23:25 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - serial.c: changed several generic serial port communication
+   functions to use buffers of type "unsigned char" instead of "char".
+ - belkinunv.c, bcmxcp_ser.c: removed superflous type casts
+
 Fri Feb	10 09:44:10 UTC 2006 / Kjell Claesson <kjell.claesson@telia.com>
 
  - Apply patch from Niels Baggesen.

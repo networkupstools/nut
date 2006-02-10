@@ -248,7 +248,7 @@ static int belkin_nut_receive(unsigned char *buf, int bufsize) {
 	if (n+1 > bufsize) {
 		return -1;
 	}
-	r = ser_get_buf_len(upsfd, (char *)&buf[0], 1, 3, 0);
+	r = ser_get_buf_len(upsfd, &buf[0], 1, 3, 0);
 	if (r==-1) {
 		upslogx(LOG_ERR, "No response from UPS");
 		return -1;
@@ -262,7 +262,7 @@ static int belkin_nut_receive(unsigned char *buf, int bufsize) {
 	if (n+3 > bufsize) {
 		return -1;
 	}
-	r = ser_get_buf_len(upsfd, (char *)&buf[1], 3, 3, 0);
+	r = ser_get_buf_len(upsfd, &buf[1], 3, 3, 0);
 	if (r!=3) {
 		upslogx(LOG_ERR, "Short read from UPS");
 		return -1;
@@ -275,7 +275,7 @@ static int belkin_nut_receive(unsigned char *buf, int bufsize) {
 	if (n+len > bufsize) {
 		return -1;
 	}
-	r = ser_get_buf_len(upsfd, (char *)&buf[4], len, 3, 0);
+	r = ser_get_buf_len(upsfd, &buf[4], len, 3, 0);
 	if (r!=len) {
 		upslogx(LOG_ERR, "Short read from UPS");
 		return -1;
@@ -305,7 +305,7 @@ static char *belkin_nut_read_str(int reg) {
 	buf[4] = 0;
 	buf[5] = belkin_checksum(buf, 5);
 
-	r = ser_send_buf(upsfd, (char *)buf, 6);
+	r = ser_send_buf(upsfd, buf, 6);
 	if (r<0) {
 		upslogx(LOG_ERR, "Failed write to UPS");
 		return NULL;
@@ -346,7 +346,7 @@ static int belkin_nut_read_int(int reg) {
 	buf[4] = 0;
 	buf[5] = belkin_checksum(buf, 5);
 
-	r = ser_send_buf(upsfd, (char *)buf, 6);
+	r = ser_send_buf(upsfd, buf, 6);
 	if (r<0) {
 		upslogx(LOG_ERR, "Failed write to UPS");
 		return -1;
@@ -392,7 +392,7 @@ static int belkin_nut_write_int(int reg, int val) {
 	buf[5] = (val>>8) & 0xff;
 	buf[6] = belkin_checksum(buf, 6);
   
-	r = ser_send_buf(upsfd, (char *)buf, 7);
+	r = ser_send_buf(upsfd, buf, 7);
 	if (r<0) {
 		upslogx(LOG_ERR, "Failed write to UPS");
 		return -1;
