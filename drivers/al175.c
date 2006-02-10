@@ -476,11 +476,12 @@ static void al_prep_activate(raw_data_t *dest, int cmd, int subcmd, int pr1, int
 static int comli_check_frame(const_raw_data_t f)
 {
 	int bcc;
+	byte_t *tail;
 
 	if (*f.begin!=STX)
 		return -1;
 
-	byte_t *tail = f.end - 2;
+	tail = f.end - 2;
 	if (tail <= f.begin)
 		return -1;
 
@@ -811,6 +812,7 @@ static int scan_for(char c)
 static int recv_command_ack()
 {
 	int err;
+	raw_data_t ack;
 
 	/* 1:  STX  */
 	err = scan_for(STX);
@@ -818,7 +820,7 @@ static int recv_command_ack()
 		return -1;
 
 
-	raw_data_t ack = raw_alloca(8);
+	ack = raw_alloca(8);
 	*(ack.end++) = STX;
 
  
@@ -857,14 +859,16 @@ static int recv_command_ack()
 static int recv_register_data(io_head_t *io, raw_data_t *io_buf)
 {
 	int err;
+	raw_data_t reply_head;
+	raw_data_t reply;
 
 	/* 1:  STX  */
 	err = scan_for(STX);
 	if (err==-1)
 		return -1;
 
-	raw_data_t reply_head = raw_alloca(11);
-	*(reply_head.end++) = STX;
+	 reply_head = raw_alloca(11);
+	 *(reply_head.end++) = STX;
 
 
 	/* 2:  ID1 ID2 STAMP MSG_TYPE ADDR1 ADDR2 ADDR3 ADDR4 LEN1 LEN2 */
@@ -894,7 +898,7 @@ static int recv_register_data(io_head_t *io, raw_data_t *io_buf)
 #endif
 
 	/* 4:  allocate space for full reply and copy header there */
-	raw_data_t reply = raw_alloca(11/*head*/ + io->len/*data*/ + 2/*ETX BCC*/);
+	reply = raw_alloca(11/*head*/ + io->len/*data*/ + 2/*ETX BCC*/);
 
 	memcpy(reply.end, reply_head.begin, (reply_head.end - reply_head.begin));
 	reply.end += (reply_head.end - reply_head.begin);
@@ -969,6 +973,8 @@ static int al175_read(byte_t *dst, unsigned addr, size_t count)
 {
 	int err;
 	raw_data_t REQ_frame = raw_alloca(512);
+	raw_data_t rx_data;
+	io_head_t io;
 
 	al_prep_read_req(&REQ_frame, addr, count);
 
@@ -979,15 +985,10 @@ static int al175_read(byte_t *dst, unsigned addr, size_t count)
 		return -1;
 
 
-	raw_data_t rx_data = {
-		.buf	   = dst,
-		.buf_size  = count,
-
-		.begin	= dst,
-		.end	= dst
-	};
-
-	io_head_t io;
+	rx_data.buf	 = dst;
+	rx_data.buf_size = count;
+	rx_data.begin	 = dst;
+	rx_data.end	 = dst;
 
 	err = recv_register_data(&io, &rx_data);
 	if (err==-1)
@@ -1195,10 +1196,10 @@ void upsdrv_updateinfo(void)
 
 
 				// 0x4100   BATTERY VOLTAGE REF
-	dstate_setinfo("battery.voltage.nominal",	"%.2lf", d16(x4100+0));
+	dstate_setinfo("battery.voltage.nominal",	"%.2f", d16(x4100+0));
 
 				// 0x4110   BOOST VOLTAGE REF
-	dstate_setinfo("input.transfer.boost.low",	"%.2lf", d16(x4100+2));	// XXX: boost.high ?
+	dstate_setinfo("input.transfer.boost.low",	"%.2f", d16(x4100+2));	// XXX: boost.high ?
 
 				// 0x4120   HIGH BATT VOLT REF		XXX
 				// 0x4130   LOW  BATT VOLT REF		XXX
@@ -1206,13 +1207,13 @@ void upsdrv_updateinfo(void)
 				// 0x4180   FLOAT VOLTAGE		XXX
 				// 0x4190   BATT CURRENT
 	batt_current *= d16(x4180+2);
-	dstate_setinfo("battery.current",		"%.2lf", batt_current);
+	dstate_setinfo("battery.current",		"%.2f", batt_current);
 
 				// 0x41b0   LOAD CURRENT (output.current in NUT)
-	dstate_setinfo("output.current",		"%.2lf", d16(x4180+6));
+	dstate_setinfo("output.current",		"%.2f", d16(x4180+6));
 
 				// 0x4300   BATTERY TEMPERATURE
-	dstate_setinfo("battery.temperature",		"%.2lf", d16(x4300+0));
+	dstate_setinfo("battery.temperature",		"%.2f", d16(x4300+0));
 				
 
         status_commit();

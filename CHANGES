@@ -1,3 +1,15 @@
+Fri Feb	10 09:44:10 UTC 2006 / Kjell Claesson <kjell.claesson@telia.com>
+
+ - Apply patch from Niels Baggesen.
+   * Re-imported nitram.c and nitram.h with unix style line ending.
+   * Patch to al175 and gendb.
+     -------
+      Also, the al175 has some c++ style declarations in the middle of the
+      code blocks and some non-conforming %lf format specifiers, and gendb has
+      a csh style redirection that a true sh does not like. I have attached
+      patches for those.
+     -------
+
 Thu Feb  9 21:00:00 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
 
  - Changes to upsdrvctl
