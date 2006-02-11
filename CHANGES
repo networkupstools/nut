@@ -1,3 +1,7 @@
+Sat Feb 11 16:10:00 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - serial.c: changed ser_send_char to use "unsigned char" instead of "char"
+
 Fri Feb 10 22:23:25 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - serial.c: changed several generic serial port communication

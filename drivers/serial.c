@@ -186,7 +186,7 @@ int ser_close(int fd, const char *port)
 	return 0;
 }
 
-int ser_send_char(int fd, char ch)
+int ser_send_char(int fd, unsigned char ch)
 {
 	return write(fd, &ch, 1);
 }

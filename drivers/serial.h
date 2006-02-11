@@ -21,7 +21,7 @@ int ser_set_speed(int fd, const char *port, speed_t speed);
 
 int ser_close(int fd, const char *port);
 
-int ser_send_char(int fd, char ch);
+int ser_send_char(int fd, unsigned char ch);
 
 /* send the results of the format string with d_usec delay after each char */
 unsigned int ser_send_pace(int fd, unsigned long d_usec, const char *fmt, ...)
