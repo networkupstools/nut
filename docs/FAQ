@@ -687,42 +687,6 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: When I tell upsd to reload the config files, it complains in the
-    syslog that it can't open the upsd.conf.  It read the files
-    when it started up, so why is it failing now?
-
- A: Look at who upsd is running as now - use 'ps'.  You'll probably see
-    "nobody" in that first column, even though you started it as root.
-    This is intentional - upsd drops root shortly after it starts up,
-    but _after_ it gets done reading your config files.
-
-    This means it can read the files once, but it can't reload them.
-    This is a compromise to provide a better default environment for
-    people who don't create a separate user for upsd.  The alternative
-    would be running upsd as root, and that's just asking for trouble.
-
-    If you want the reloading feature to work, the user that upsd
-    runs as must be able to open the various config files.  You should
-    create a user just for upsd, then make it own both of those config
-    files.  See the "security domains" question above for a good
-    way to do this.
-
-    Note: upsd.conf and upsd.users should not be writable by this user.
-
-    Recent versions of the INSTALL document assume this throughout, so
-    you may want to go back and reinstall using that as a reference.
-
-    *** NEVER make upsd.conf or upsd.users world readable or writable.
-
-    *** NEVER make upsd.conf or upsd.users accessible by "nobody".
-
-    If you do either of these things and someone breaks into your
-    system or starts messing with your UPS hardware, don't come crying
-    to me or anyone else associated with this project.  You will have
-    only yourself to blame.
-
------------------------------------------------------------------------------
-
  Q: I have <some problem> with <some old version> ...
 
  A: Get the latest stable release, and see if it still happens.  If it
