@@ -96,8 +96,8 @@ D: Support for Online P-series in genericups driver
 
 N: Peter Selinger
 E: selinger@users.sourceforge.net
-W: http://quasar.mathstat.uottawa.ca/~selinger/
-D: wrote belkinunv driver
+W: http://www.mathstat.dal.ca/~selinger/
+D: wrote belkinunv driver, contributions to newhidups
 P: 1024D/CA31696A 12A2 4B3C 3790 B688 E484  7A98 A68B CC37 CA31 696A
 
 N: Kirill Smelkov
