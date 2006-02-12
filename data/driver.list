@@ -29,6 +29,7 @@
 "APC"	"Back-UPS USB"		""	"newhidups or hidups"
 "APC"	"Back-UPS LS USB"	""	"newhidups or hidups"
 "APC"	"Back-UPS ES/CyberFort 350"	""	"newhidups or hidups"
+"APC"	"Back-UPS BF500"	""	"newhidups"
 "APC"	"Smart-UPS USB"		""	"newhidups or hidups"
 
 "APC"	"Back-UPS"	"940-0095A/C cables"	"genericups upstype=1"

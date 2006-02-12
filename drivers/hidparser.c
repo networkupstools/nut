@@ -58,6 +58,23 @@ typedef struct
 	u_char   nReport;						/* Count Reports in Report Descriptor */
 } HIDParser;
 
+/* return 1 + the position of the leftmost "1" bit of an int, or 0 if
+   none. */
+static inline unsigned int hibit(unsigned int x) {
+  unsigned int res = 0;
+
+  while (x > 0xff) {
+    x >>= 8;
+    res += 8;
+  }
+  while (x) {
+    x >>= 1;
+    res += 1;
+  }
+
+  return res;
+}
+
 /*
  * ResetParser
  * Reset HIDParser structure for new parsing
@@ -339,11 +356,13 @@ static int HIDParse(HIDParser* pParser, HIDData* pData)
       case ITEM_PHY_MIN :
       {
         pParser->Data.PhyMin=FormatValue(pParser->Value, ItemSize[pParser->Item & SIZE_MASK]);
+        pParser->Data.have_PhyMin=1;
         break;
       }
       case ITEM_PHY_MAX :
       {
         pParser->Data.PhyMax=FormatValue(pParser->Value, ItemSize[pParser->Item & SIZE_MASK]);
+        pParser->Data.have_PhyMax=1;
         break;
       }
       case ITEM_LONG :
@@ -404,24 +423,94 @@ void GetValue(const u_char* Buf, HIDData* pData)
 {
   int Bit=pData->Offset+8; /* First byte of report indicate report ID */
   int Weight=0;
-  pData->Value=0;
+  long value, rawvalue;
+  long range, mask, signbit, b, m;
+
+  value = 0;
 
   while(Weight<pData->Size)
   {
     int State=Buf[Bit>>3]&(1<<(Bit%8));
     if(State)
     {
-      pData->Value+=(1<<Weight);
+      value+=(1<<Weight);
     }
     Weight++;
     Bit++;
   }
-/*  if(pData->Value > pData->LogMax)
-    pData->Value=FormatValue(pData->Value, (u_char)((pData->Size-1)/8+1));
-*/
-  /* FIXME: this won't work if LogMax isn't a power of 2 */
-  if (pData->Value > pData->LogMax)
-    pData->Value |= ~pData->LogMax;
+  /* translate Value into a signed/unsigned value in the range
+     LogMin..LogMax, as appropriate. See HID spec, p.38: "If both the
+     Logical Minimum and Logical Maximum extents are defined as
+     positive values (0 or greater), then the report field can be
+     assumed to be an unsigned value. Otherwise, all integer values
+     are signed values represented in 2's complement format."
+
+     Also note that the variable can take values from LogMin
+     (inclusive) to LogMax (inclusive), so there are LogMax - LogMin +
+     1 possible values.
+
+     Special cases arise if the value that has been read lies outside
+     the interval LogMin..LogMax. Some devices, notably the APC
+     Back-UPS BF500, do this. In one case I observed, LogMin=0,
+     LogMax=0xffff, Size=32, and the supplied value is
+     0xffffffff80080a00. Presumably they expect us to throw away the
+     higher-order bits, and use 0x0a00, rather than choosing the
+     closest value in the interval, which would be 0xffff.  However,
+     if LogMax - LogMin + 1 isn't a power of 2, it is not clear what
+     "throwing away higher-order bits" exacly means, so we try to do
+     something sensible. -PS */
+
+  rawvalue = value; /* remember this for later */
+
+  /* figure out how many bits are significant */
+  range = pData->LogMax - pData->LogMin + 1;
+  if (range <= 0) {
+    /* makes no sense, give up */
+    pData->Value = value;
+    return;
+  }
+  b = hibit(range-1);
+
+  /* throw away insignificant bits; the result is >= 0 */
+  mask = (1<<b)-1;
+  signbit = 1<<(b-1);
+  value = value & mask;
+
+  /* sign-extend it, if appropriate */
+  if (pData->LogMin < 0 && (value & signbit) != 0) {
+    value |= ~mask;
+  }
+
+  /* if the resulting value is in the desired range, stop */
+  if (value >= pData->LogMin && value <= pData->LogMax) {
+    pData->Value = value;
+    return;
+  }
+
+  /* else, try to reach interval by adjusting high-order bits */
+  m = (value - pData->LogMin) & mask;
+  value = pData->LogMin + m;
+  if (value <= pData->LogMax) {
+    pData->Value = value;
+    return;
+  }
+
+  /* if everything else failed, sign-extend the original raw value,
+     and simply round it to the closest point in the interval. */
+  value = rawvalue;
+  mask = (1<<pData->Size)-1;
+  signbit = 1<<(pData->Size-1);
+  if (pData->LogMin < 0 && (value & signbit) != 0) {
+    value |= ~mask;
+  }
+  if (value < pData->LogMin) {
+    value = pData->LogMin;
+  } else if (value > pData->LogMax) {
+    value = pData->LogMax;
+  }
+
+  pData->Value = value;
+  return;
 }
 
 /*

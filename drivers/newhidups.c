@@ -261,6 +261,21 @@ info_lkp_t divide_by_10_conversion[] = {
 	{ 0, NULL, divide_by_10_conversion_fun }
 };
 
+/* returns statically allocated string - must not use it again before
+   done with result! */
+static char *kelvin_celsius_conversion_fun(long value) {
+	static char buf[20];
+	
+	/* we should be working with floats, not integers, but integers it
+	   is for now */
+	sprintf(buf, "%d", (int)(value - 273.15));
+	return buf;
+}
+
+info_lkp_t kelvin_celsius_conversion[] = {
+	{ 0, NULL, kelvin_celsius_conversion_fun }
+};
+
 /* ---------------------------------------------
  * subdriver matcher
  * --------------------------------------------- */

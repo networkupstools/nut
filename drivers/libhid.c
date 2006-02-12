@@ -90,8 +90,8 @@ static const long HIDUnits[NB_HID_UNITS][2]=
 };
 
 /* support functions */
-static void logical_to_physical(HIDData *Data);
-static void physical_to_logical(HIDData *Data);
+static float logical_to_physical(HIDData *Data, long logical);
+static long physical_to_logical(HIDData *Data, float physical);
 static const char *hid_lookup_path(unsigned int usage, usage_tables_t *utab);
 static int hid_lookup_usage(char *name, usage_tables_t *utab);
 static int string_to_path(char *HIDpath, HIDPath *path, usage_tables_t *utab);
@@ -471,10 +471,10 @@ HIDItem *HIDGetItem(const char *ItemPath)
 }
 
 /* return 1 if OK, 0 on fail, <= -1 otherwise (ie disconnect) */
-float HIDGetItemValue(usb_dev_handle *udev, char *path, float *Value, usage_tables_t *utab)
+int HIDGetItemValue(usb_dev_handle *udev, char *path, float *Value, usage_tables_t *utab)
 {
 	int i, retcode;
-	float tmpValue;
+	float physical;
 	report_t *cur_report = &cur_report_struct;
 
 	/* Prepare path of HID object */
@@ -519,22 +519,19 @@ float HIDGetItemValue(usb_dev_handle *udev, char *path, float *Value, usage_tabl
 	TRACE(4, "=>> Before exponent: %ld, %i/%i)", hData.Value,
 	      (int)hData.UnitExp, (int)get_unit_expo(hData.Unit) );
 	
-	tmpValue = hData.Value;
-	
-	/* Process exponents */
-	/* Value*=(float) pow(10,(int)hData.UnitExp - get_unit_expo(hData.Unit)); */
-	tmpValue*=(float) expo(10,(int)hData.UnitExp - get_unit_expo(hData.Unit));
-	hData.Value = (long) tmpValue;
-	
 	/* Convert Logical Min, Max and Value into Physical */
-	logical_to_physical(&hData);
+	physical = logical_to_physical(&hData, hData.Value);
 	
-	TRACE(4, "=>> After conversion: %ld, %i/%i)", hData.Value,
-	      (int)hData.UnitExp, (int)get_unit_expo(hData.Unit) );
+	/* Process exponents and units */
+	physical *= (float) expo(10,(int)hData.UnitExp - get_unit_expo(hData.Unit));
+	hData.Value = (long) physical;
+	
+	TRACE(4, "=>> After conversion: %f (%ld), %i/%i)", physical, 
+	      hData.Value, (int)hData.UnitExp, (int)get_unit_expo(hData.Unit));
 	
 	dump_hex ("Report ", cur_report->data, cur_report->len);
 	
-	*Value = hData.Value;
+	*Value = physical;
 	return 1;
 }
 
@@ -588,49 +585,50 @@ bool HIDSetItemValue(usb_dev_handle *udev, char *path, float value, usage_tables
 	retcode = HIDGetItemValue(udev, path, &Value, utab);
 	
 	/* ... And play with global vars */
-	if (retcode == 1) /* Get succeed */
+	if (retcode != 1) /* Get failed */
 	{
-		TRACE(2, "=>> SET: Before set: %.2f (%ld)", Value, (long)value);
-		
-		/* Test if Item is settable */
-		if (hData.Attribute != ATTR_DATA_CST)
-		{
-			/* Set new value for this item */
-			/* And Process exponents restoration */
-			Value = value * expo(10, get_unit_expo(hData.Unit) - (int)hData.UnitExp);
-			
-			hData.Value=(long) Value;
-			
-			TRACE(2, "=>> SET: after exp: %ld/%.2f (exp = %.2f)", hData.Value, Value,
-				expo(10, (int)get_unit_expo(hData.Unit) - (int)hData.UnitExp));
-
-			/* Convert Physical Min, Max and Value in Logical */
-			physical_to_logical(&hData);
-			TRACE(2, "=>> SET: after PL: %ld", hData.Value);
-			
-			SetValue(&hData, cur_report->data);
-			
-			dump_hex ("==> Report after setvalue", cur_report->data, cur_report->len);
-			
-			if (libusb_set_report(udev, hData.ReportID, cur_report->data, cur_report->len) > 0)
-			{
-				TRACE(2, "Set report succeeded");
-				return TRUE;
-			}
-			else
-			{
-				TRACE(2, "Set report failed");
-				return FALSE;
-			}
-			/* check if set succeed! => doesn't work on *Delay (decremented!) */
-			/*      Value = HIDGetItemValue(path);
-			
-			TRACE(2, "=>> SET: new value = %.2f (was set to %.2f)\n", 
-			Value, (float) value);
-			return TRUE;*/ /* (Value == value); */
-		}
+		return FALSE;
 	}
-	return FALSE;
+
+	TRACE(2, "=>> SET: Before set: %.2f (%ld)", Value, (long)value);
+	
+	/* Test if Item is settable */
+	if (hData.Attribute == ATTR_DATA_CST) 
+	{
+		return FALSE;
+	}
+
+	/* Set new value for this item */
+	
+	/* restore exponents */
+	value *= expo(10, get_unit_expo(hData.Unit) - (int)hData.UnitExp);
+	TRACE(2, "=>> SET: after exp: %.2f (exp = %.2f)", value,
+			expo(10, (int)get_unit_expo(hData.Unit) - (int)hData.UnitExp));
+	
+	/* convert physical value to logical */
+	hData.Value = physical_to_logical(&hData, value);
+	TRACE(2, "=>> SET: after PL: %ld", hData.Value);
+	
+	SetValue(&hData, cur_report->data);
+	
+	dump_hex ("==> Report after setvalue", cur_report->data, cur_report->len);
+	
+	if (libusb_set_report(udev, hData.ReportID, cur_report->data, cur_report->len) > 0)
+	{
+		TRACE(2, "Set report succeeded");
+		return TRUE;
+	}
+	else
+	{
+		TRACE(2, "Set report failed");
+		return FALSE;
+	}
+	/* check if set succeed! => doesn't work on *Delay (decremented!) */
+	/*      Value = HIDGetItemValue(path);
+			  
+	TRACE(2, "=>> SET: new value = %.2f (was set to %.2f)\n", 
+	Value, (float) value);
+	return TRUE;*/ /* (Value == value); */
 }
 
 int HIDGetEvents(usb_dev_handle *udev, HIDDevice *dev, HIDItem **eventsList, usage_tables_t *utab)
@@ -703,45 +701,67 @@ void HIDCloseDevice(usb_dev_handle *udev)
 
 #define MAX_STRING      		64
 
-static void logical_to_physical(HIDData *Data)
+static float logical_to_physical(HIDData *Data, long logical)
 {
-	if(Data->PhyMax - Data->PhyMin > 0)
+	float physical, Factor;
+
+	/* HID spec says that if one or both are undefined, or if they are
+	 * both 0, then PhyMin = LogMin, PhyMax = LogMax. */
+	if (!Data->have_PhyMax || !Data->have_PhyMin || (Data->PhyMax == 0 && Data->PhyMin == 0)) 
 	{
-		float Factor = (float)(Data->PhyMax - Data->PhyMin) / (Data->LogMax - Data->LogMin);
-		/* Convert Value */
-		Data->Value=(long)((Data->Value - Data->LogMin) * Factor) + Data->PhyMin;
-			
-		if(Data->Value > Data->PhyMax)
-			Data->Value |= ~Data->PhyMax;
+		return (float)logical;
 	}
-	else /* => nothing to do!? */
+
+   if (Data->PhyMax <= Data->PhyMin) 
 	{
-		/* Value.m_Value=(long)(pConvPrm->HValue); */
-		if(Data->Value > Data->LogMax)
-			Data->Value |= ~Data->LogMax;
-	}
+		/* this should not really happen */
+		return (float)logical;
+   }
 	
-	/* if(Data->Value > Data->Value.m_Max)
-		Value.m_Value |= ~Value.m_Max;
-	*/
+	Factor = (float)(Data->PhyMax - Data->PhyMin) / (Data->LogMax - Data->LogMin);
+	/* Convert Value */
+	physical = (long)((logical - Data->LogMin) * Factor) + Data->PhyMin;
+	
+	if (physical > Data->PhyMax){
+		physical = Data->PhyMax;
+	} else if (physical < Data->PhyMin) {
+		physical = Data->PhyMin;
+	}
+
+	return physical;
 }
 
-static void physical_to_logical(HIDData *Data)
+static long physical_to_logical(HIDData *Data, float physical)
 {
+	long logical, Factor;
+
 	TRACE(2, "PhyMax = %ld, PhyMin = %ld, LogMax = %ld, LogMin = %ld",
 		Data->PhyMax, Data->PhyMin, Data->LogMax, Data->LogMin);
 	
-	if(Data->PhyMax - Data->PhyMin > 0)
+	/* HID spec says that if one or both are undefined, or if they are
+    * both 0, then PhyMin = LogMin, PhyMax = LogMax. */
+	if (!Data->have_PhyMax || !Data->have_PhyMin || (Data->PhyMax == 0 && Data->PhyMin == 0)) 
 	{
-		float Factor=(float)(Data->LogMax - Data->LogMin) / (Data->PhyMax - Data->PhyMin);
-		
-		/* Convert Value */
-		Data->Value=(long)((Data->Value - Data->PhyMin) * Factor) + Data->LogMin;
+		return (long)physical;
 	}
-	/* else => nothing to do!?
+
+	if(Data->PhyMax <= Data->PhyMin)
 	{
-	m_ConverterTab[iTab].HValue=m_ConverterTab[iTab].DValue;
-	} */
+		/* this should not really happen */
+		return (long)physical;
+	}
+	
+	Factor = (float)(Data->LogMax - Data->LogMin) / (Data->PhyMax - Data->PhyMin);
+	/* Convert Value */
+	logical = (long)((physical - Data->PhyMin) * Factor) + Data->LogMin;
+
+	if (logical > Data->LogMax) {
+		logical = Data->LogMax;
+	} else if (logical < Data->LogMin) {
+		logical = Data->LogMin;
+	}
+	
+	return logical;
 }
 
 static long get_unit_expo(long UnitType)
