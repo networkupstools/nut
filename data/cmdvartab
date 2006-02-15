@@ -40,8 +40,7 @@ VARDESC input.transfer.trim.high "High voltage trimming transfer point"
 
 VARDESC output.voltage "Output voltage"
 VARDESC output.frequency "Output frequency (Hz)"
-VARDESC output.voltage.target.line "Target output voltage when on line"
-VARDESC output.voltage.target.battery "Target output voltage when on battery"
+VARDESC output.voltage.nominal "Nominal output voltage"
 VARDESC output.current "Output current"
 
 VARDESC battery.charge "Battery charge (% of full)"

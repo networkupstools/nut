@@ -152,7 +152,7 @@ struct apc_vartab_t {
 
 	{ "output.current", 	APC_POLL|APC_F_AMP,	'/' },
 	{ "output.voltage", 	APC_POLL|APC_F_VOLT,	'O' },
-	{ "output.voltage.target.battery",  
+	{ "output.voltage.nominal",  
 				APC_F_VOLT,		'o' },
 
 	{ "ambient.humidity",  	APC_POLL|APC_F_PERCENT,	'h' },

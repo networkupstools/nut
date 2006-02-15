@@ -222,7 +222,7 @@ static void query1( char *buf )
             case  1:
                     /* Input Voltage too. Not always same value as previous 
                        Don't know what meaning it has. */  
-                    dstate_setinfo( "output.voltage.target.line", "%s", value ); /* INFO_NOM_IN_VOLT */
+                    dstate_setinfo( "input.voltage.nominal", "%s", value ); /* INFO_NOM_IN_VOLT */
                     break;
             case  2:
                     /* Output Voltage */
@@ -295,7 +295,7 @@ static void queryF( char *buf )
         {
             case  0:
                     /* Seems to be UPS On Battery Output preset. */
-                    dstate_setinfo( "output.voltage.target.battery", "%s", value ); /* INFO_OUTVLTSEL */
+                    dstate_setinfo( "output.voltage.nominal", "%s", value ); /* INFO_OUTVLTSEL */
                     if (UPSFIRMSET == 0) 
                         ModGuess = atof(value);
                     break;
@@ -509,7 +509,7 @@ void upsdrv_initinfo(void)
 /*    dstate_setinfo( INFO_STATUS, "");    DUDA  */
   
   /* F query */
-    dstate_setinfo( "output.voltage.target.battery", "220" ); /* INFO_OUTVLTSEL */ /*  F VOLTAJE NOMINAL DE SALIDA 0 */
+    dstate_setinfo( "output.voltage.nominal", "220" ); /* INFO_OUTVLTSEL */ /*  F VOLTAJE NOMINAL DE SALIDA 0 */
     dstate_setinfo( "battery.voltage.nominal", "12"); /* INFO_NOMBATVLT */   /*  F VOLTAJE NOMINAL DE BATERIA 2 */
 
     dstate_setinfo( "ups.delay.shutdown", "%s", strdelayshut); /* INFO_DELAYSHUT */

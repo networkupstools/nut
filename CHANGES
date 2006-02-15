@@ -1,3 +1,9 @@
+Wed Feb 15 10:20:10 UTC 2006 / Kjell Claesson <kjell.claesson@telia.com>
+
+ - Apply patch from Niklas
+   * Replaces output.voltage.target.battery and
+      output.voltage.target.line with output.voltage.nominal.
+
 Sun Feb 12 11:54:57 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups: rewrote logical-to-physical value conversion. Rewrote

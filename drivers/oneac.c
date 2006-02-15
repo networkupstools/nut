@@ -146,12 +146,12 @@ void upsdrv_initinfo(void)
 
 		switch (buffer[0]) {
 			case V120AC:
-				dstate_setinfo("output.voltage.target.line", 
+				dstate_setinfo("output.voltage.nominal", 
 					"120");
 				break;
 
 			case V230AC:
-				dstate_setinfo("output.voltage.target.line", 
+				dstate_setinfo("output.voltage.nominal", 
 					"240");
 				break;
 

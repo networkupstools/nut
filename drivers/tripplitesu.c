@@ -85,8 +85,7 @@
 	output.current (1)
 	output.frequency
 	output.voltage
-	output.voltage.target.battery
-	output.voltage.target.line
+	output.voltage.nominal
 	ups.firmware
 	ups.id (RW) (1)
 	ups.load
@@ -552,9 +551,7 @@ void upsdrv_initinfo(void)
 			               atoi(ptr));
 		ptr = field(response, 2);
 		if (ptr) {
-			dstate_setinfo("output.voltage.target.line", "%d",
-			               atoi(ptr));
-			dstate_setinfo("output.voltage.target.battery", "%d",
+			dstate_setinfo("output.voltage.nominal", "%d",
 			               atoi(ptr));
 		}
 		ptr = field(response, 14);

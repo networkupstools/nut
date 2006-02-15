@@ -243,7 +243,7 @@ static hid_info_t apc_hid2nut[] = {
 
   /* Output page */
   { "output.voltage", 0, 0, "UPS.Output.Voltage", NULL, "%.1f", HU_FLAG_OK, NULL },
-  { "output.voltage.target.line", 0, 0, "UPS.Output.ConfigVoltage", NULL, "%.1f", HU_FLAG_OK, NULL },
+  { "output.voltage.nominal", 0, 0, "UPS.Output.ConfigVoltage", NULL, "%.1f", HU_FLAG_OK, NULL },
 
   /* instant commands. */
   /* test.* split into subset while waiting for extradata support

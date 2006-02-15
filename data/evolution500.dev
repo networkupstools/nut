@@ -35,8 +35,7 @@ outlet.2.switchable: 1
 output.current: 0.00
 output.frequency: 49.0
 output.voltage: 230.0
-output.voltage.target.battery: 230.0
-output.voltage.target.line: 230.0
+output.voltage.nominel: 230.0
 ups.delay.shutdown: -1
 ups.delay.start: -10
 ups.load: 0

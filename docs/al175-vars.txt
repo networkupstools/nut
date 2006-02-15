@@ -20,8 +20,7 @@ STATUS = OL OB OFF RB LB HB TEST BOOST
 ups.test.result
 
 
-output.voltage.target.line      -->
-output.voltage.target.battery   --> output.voltage.target ?
+output.voltage.nominal
 
 battery.voltage.nominal
 input.transfer.boost.low

@@ -153,8 +153,7 @@ ups.power.nominal
 	{ "output.frequency", ST_FLAG_RW, 1, NULL, DU_FLAG_NONE, NULL },
 	{ "output.current", ST_FLAG_RW, 1, NULL, DU_FLAG_NONE, NULL },
 /*
-output.voltage.target.line
-output.voltage.target.battery
+output.voltage.nominal
 */
 	{ "battery.charge", ST_FLAG_RW, 1, NULL, DU_FLAG_NONE, NULL },
 	{ "battery.charge.low", ST_FLAG_RW, 1, NULL, DU_FLAG_NONE, NULL },

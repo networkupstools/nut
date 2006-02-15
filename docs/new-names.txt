@@ -163,11 +163,7 @@ output: Outgoing power/inverter information
    |-------------------------------+--------------------------------+-------|
    | output.frequency              | Output frequency (Hz)          | 60    |
    |-------------------------------+--------------------------------+-------|
-   | output.voltage.target.line    | Target output voltage when on  | 120   |
-   |                               | line                           |       |
-   |-------------------------------+--------------------------------+-------|
-   | output.voltage.target.battery | Target output voltage when on  | 120   |
-   |                               | battery                        |       |
+   | output.voltage.nominal        | Nominal output voltage         | 120   |
    |-------------------------------+--------------------------------+-------|
    | output.current                | Output current (amps)          | 4.25  |
    +------------------------------------------------------------------------+

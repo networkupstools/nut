@@ -229,8 +229,7 @@ void upsdrv_initinfo(void)
 	if (execute_command("P1", &reply) == 1)
 	{
 		fields = extract_fields(&reply);
-		dstate_setinfo("output.voltage.target.line", "%s", fields.field[0]);
-		dstate_setinfo("output.voltage.target.battery", "%s", fields.field[0]);
+		dstate_setinfo("output.voltage.nominal", "%s", fields.field[0]);
 		dstate_setinfo("input.voltage.maximum", "%s", fields.field[1]);
 		dstate_setinfo("input.voltage.minimum", "%s", fields.field[2]);
 		dstate_setinfo("battery.charge.low", "%s", fields.field[3]);

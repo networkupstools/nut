@@ -1190,8 +1190,7 @@ void upsdrv_updateinfo(void)
 		default: v = "??V";
 	    }
 
-	    dstate_setinfo("output.voltage.target.line",    "%s", v);
-	    dstate_setinfo("output.voltage.target.battery", "%s", v);
+	    dstate_setinfo("output.voltage.nominal",    "%s", v);
 	}
 
 

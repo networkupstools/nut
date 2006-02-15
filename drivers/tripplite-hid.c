@@ -129,7 +129,7 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ "input.voltage.nominal", 0, 0, "UPS.PowerSummary.Input.ConfigVoltage", NULL, "%.0f", HU_FLAG_OK, NULL },
 	
 	/* Output page */
-	{ "output.voltage.target.line", 0, 0, "UPS.Flow.ConfigVoltage", NULL, "%.1f", HU_FLAG_OK, NULL },
+	{ "output.voltage.nominal", 0, 0, "UPS.Flow.ConfigVoltage", NULL, "%.1f", HU_FLAG_OK, NULL },
 	
 	/* instant commands. */
 	{ "test.battery.start.quick", 0, 0, "UPS.BatterySystem.Test", NULL, "1", HU_TYPE_CMD | HU_FLAG_OK, &test_write_info[0] }, /* TODO: lookup needed? */

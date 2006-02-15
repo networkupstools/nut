@@ -231,7 +231,7 @@ void upsdrv_initinfo(void)
                battvolt_max = BATT_VOLT_MAX_24;
        }
 
-       dstate_setinfo("output.voltage.target.battery", "%.1f", values.volt);
+       dstate_setinfo("output.voltage.nominal", "%.1f", values.volt);
        dstate_setinfo("battery.voltage.nominal", "%.1f", values.battvolt);
 
        if (getval("lowbatt")) {

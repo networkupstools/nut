@@ -215,10 +215,7 @@ static hid_info_t mge_hid2nut[] =
   { "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", NULL, "%.1f", HU_FLAG_OK, NULL },
   { "output.current", 0, 0, "UPS.PowerConverter.Output.Current", NULL, "%.2f", HU_FLAG_OK, NULL },
   { "output.frequency", 0, 0, "UPS.PowerConverter.Output.Frequency", NULL, "%.1f", HU_FLAG_OK, NULL },
-  { "output.voltage.target.line", 0, 0, 
-    "UPS.PowerSummary.ConfigVoltage", NULL, "%.1f", HU_FLAG_OK, NULL },
-  /* FIXME: not the good one! */
-  { "output.voltage.target.battery", 0, 0,
+  { "output.voltage.nominal", 0, 0, 
     "UPS.PowerSummary.ConfigVoltage", NULL, "%.1f", HU_FLAG_OK, NULL },
   
 	/* Outlet page (using MGE UPS SYSTEMS - PowerShare technology) */
