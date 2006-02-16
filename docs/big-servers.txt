@@ -1,0 +1,68 @@
+Desc: Typical setups for big servers
+File: big-servers.txt
+Date: 14 March 2004
+Auth: Russell Kroll <rkroll@exploits.org>
+
+By using multiple MONITOR statements in upsmon.conf, you can configure
+an environment where a large machine with redundant power monitors
+multiple separate UPSes.  For the examples in this document, I will use 
+a HP NetServer LH4 in the stock configuration with 3 of the 4 power 
+supplies installed.
+
+Compared to some systems, the LH4 is unusual because it has common power
+cords for multiple power supplies.  One cord feeds two supplies.   As a
+result, each UPS drives two of the power supplies, so losing that UPS 
+affects both at the same time.
+
+For our examples, UPS "Alpha" is connected to the cord that drives the
+two power supplies, and ups "Beta" is connected to the other with just a
+single power supply.
+
+Since the server needs two supplies to stay alive, we can lose "Beta" at
+any time, but losing "Alpha" is a showstopper.  We make a note of them
+when configuring upsmon:
+
+	MONITOR ups-alpha@myhost 2 monuser mypass master
+	MONITOR ups-beta@myhost 1 monuser mypass master
+	MINSUPPLIES 2
+
+With that configuration, upsmon will only shut down when Alpha reaches
+a critical (on battery + low battery) condition, since Beta by itself
+is not enough to keep the system running.  Beta, on the other hand,
+can go up and down as much as it wants and nothing will happen as long
+as the other one keeps working.
+
+The MINSUPPLIES line tells upsmon that we need at least 2 power supplies
+to be receiving power from a good UPS (on line or on battery, just not
+on battery and low battery).
+
+Adding redundancy
+=================
+
+The above example assumed the stock hardware configuration.  Let's say
+we have successfully cajoled the boss into providing the money for a 
+fourth power supply.  Now both power cords run two power supplies, and
+the system is maxed out in terms of redundancy.
+
+The upsmon.conf must be updated to reflect this:
+
+	MONITOR ups-alpha@myhost 2 monuser mypass master
+	MONITOR ups-beta@myhost 2 monuser mypass master
+	MINSUPPLIES 2
+
+Beta is now driving two power supplies, so we upgrade its power value.
+This means that either Alpha *or* Beta can totally shut down and the
+server will be able to keep running.  
+
+As an added bonus, this means you can move a running server from one UPS
+to another without bringing it down since the minimum power will be
+provided at all times.
+
+Other configurations
+====================
+
+There are a lot of ways to handle this and they all come down to how many
+power supplies, power cords and independent UPS connections you have.  A
+system with a 1:1 cord:supply ratio has more wires stuffed behind it, but
+it's much easier to move things around since any given UPS drives a smaller
+percentage of the overall power.

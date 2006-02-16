@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: libupsclient
+Description: UPS monitoring with Network UPS Tools
+Version: @NUT_VERSION@
+Libs: -L${libdir} @UPSCLI_LIBOBJ@ @SSL_LDFLAGS@
+Cflags: -I${includedir} @SSL_CFLAGS@

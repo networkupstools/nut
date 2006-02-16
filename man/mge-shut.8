@@ -1,0 +1,80 @@
+.TH mge\-shut 8 "Fri Dec 16 2005" "" "Network UPS Tools (NUT)" 
+.SH NAME  
+mge\(hyshut \- Driver for MGE UPS serial SHUT Protocol UPS equipment
+.SH NOTE
+This man page only documents the hardware\(hyspecific features of the
+mge\(hyshut driver.  For information about the core driver, see  
+\fBnutupsdrv\fR(8).
+
+.SH SUPPORTED HARDWARE
+mge\(hyshut support all recent MGE UPS models which use the SHUT (Serial HID
+UPS Transfer) protocol at 2400 bps. Supported models are:
+
+    Pulsar Ellipse S,
+    Pulsar Ellipse USBS
+    Pulsar Ellipse Premium S,
+    Pulsar Ellipse Premium USBS
+    Pulsar EXtreme C,
+    Pulsar Esprit,
+    Pulsar Evolution,
+    NOVA AVR (Serial),
+    Galaxy 3000 / PW (with RS232 HID COM ports card, ref 66066). 
+
+Older models, such as Pulsar ESV+, Pulsar EX and Pulsar ES+, use the U\(hyTalk
+protocol and should use the mge\(hyutalk driver.
+
+.SH EXTRA ARGUMENTS
+This driver supports the following optional settings in the 
+\fBups.conf\fR(5):
+
+.IP "lowbatt=\fInum\fR"
+Set the low battery warning threshold at which shutdown is initiated by
+\fBupsmon\fR(8).
+The factory default value is 30 (in percentage), and only be settable
+depending on the exact model.
+
+.IP "offdelay=\fInum\fR"
+Set the timer before the UPS is turned off after the kill power command is
+sent (via the \fI\-k\fR switch).
+The default value is 20 (in seconds), and MUST BE LOWER than ondelay.
+
+.IP "ondelay=\fInum\fR"
+Set the timer for the UPS to switch on in case the power returns after the
+kill power command had been sent but before the actual switch off. This
+ensures the machines connected to the UPS are, in all cases, rebooted after
+a power failure.
+The default value is 3 (in 10 seconds units, which means 30 seconds),
+and MUST BE GREATER than offdelay.
+
+.IP "notification=\fInum\fR"
+Set notification type to 1 (no), 2 (light) or 3 (yes).
+The default value is 3 (yes) because of some early Ellipse models which
+need it.
+
+.SH KNOWN ISSUES
+.SS "Pulsar Ellipse S: Repetitive stale status \(hy Loss of communication"
+
+Several users have reported "data stale" errors with Pulsar Ellipse 
+equipment.  This lasts around 10 seconds and happens once every few hours.  
+This is due to the fact that the SHUT protocol is verbose, and the driver 
+sometimes does not handle all of it during the usual polling interval in 
+upsd.  To solve this problem, change the value of MAXAGE to 25 in 
+upsd.conf.  Also add "notification=3" in ups.conf (thanks to Julien 
+Lesaint and Fabien).
+
+
+.SH AUTHOR
+Arnaud Quette <arnaud.quette@free.fr> or <arnaud.quette@mgeups.com> 
+
+Philippe Marzouk <philm@users.sourceforge.net>
+
+.SH SEE ALSO
+
+.SS The core driver:
+\fBnutupsdrv\fR(8)
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+MGE UPS SYSTEMS SHUT protocol information: 
+http://random.networkupstools.org/protocols/mge/

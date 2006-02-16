@@ -1,0 +1,28 @@
+Desc: Variables supported by al175 driver
+File: al175-vars.txt
+Date: 02 September 2005
+Auth: Kirill Smelkov <kirr@mns.spb.ru>
+
+* this is a draft *
+
+load.fuse
+battery.fuse
+symalarm.fuse
+
+battery.contactor
+load.contactor
+lvd.contactor
+
+
+
+STATUS = OL OB OFF RB LB HB TEST BOOST
+
+ups.test.result
+
+
+output.voltage.nominal
+
+battery.voltage.nominal
+input.transfer.boost.low
+
+battery.current

@@ -1,0 +1,13 @@
+Template: nut-cgi/major_template_changes
+Type: boolean
+_Description: Please manually copy the new HTML template! Continue?
+ This is a serious advisory. Please take note.
+ .
+ There have been significant changes by the upstream author to the
+ behaviour of this software. Specifically, the HTML templates in
+ /etc/nut are different, due to a naming scheme change.
+ .
+ If you continue with the installation of this package, upsstats*.cgi
+ will not work until you manually copy the new HTML template from
+ /usr/share/doc/nut-cgi/examples/. Please read the instructions in
+ /usr/share/doc/nut-cgi/README.Debian.

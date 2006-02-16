@@ -1,0 +1,40 @@
+.TH HIDUPS 8 "Wed Oct 16 2002" "" "Network UPS Tools (NUT)"
+.SH NAME
+hidups \- Experimental driver for HID UPS equipment
+.SH NOTE
+This man page only documents the hardware\(hyspecific features of the
+hidups driver.  For information about the core driver, see
+\fBnutupsdrv\fR(8).
+
+This is an experimental driver.  Not all features may work correctly.
+
+.SH SUPPORTED HARDWARE
+.B hidups
+is an experiment to bring USB UPS monitoring to NUT on Linux.  It should
+detect any UPS that uses the HID power device class, but the amount of 
+data it currently reads is limited.  This is due to the interface to the 
+kernel.  Better interfaces are planned.
+
+.SH EXTRA ARGUMENTS
+
+This driver does not support any extra settings in the    
+\fBups.conf\fR(5).
+
+.SH BUGS
+
+The status field has been known to blank out after self\(hytests on APC 
+hardware.  
+
+Most of the status registers on better\(hydocumented equipment are not yet 
+available due to interface limitations.
+
+This driver is tied to the Linux hiddev interface, and probably isn't very 
+portable as a result.
+
+.SH SEE ALSO
+
+.SS The core driver:
+\fBnutupsdrv\fR(8)
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

@@ -1,0 +1,78 @@
+.TH upsset.cgi 8 "Sat Aug 31 2002" "" "Network UPS Tools (NUT)"
+.SH NAME
+upsset.cgi \- Web\(hybased UPS administration program
+.SH SYNOPSIS
+.B upsset.cgi
+
+.SH NOTE
+As a CGI program, this should be invoked through your web server.
+If you run it from the command line, it will sit there until you
+give it input resembling a POST request.
+
+.SH DESCRIPTION
+.B upsset.cgi
+lets you access many administrative functions within the UPS software
+from your web browser.  You can change settings and invoke instant
+commands where available.
+
+.SH CHANGING SETTINGS
+Some UPS hardware allows you to change certain variables to other values.
+To see what's available, pick a UPS from the chooser and select "settings",
+then select "View" to update the page.
+
+You should see a list of items with the descriptions on the left side
+and the possible options or input spaces on the right.  After changing
+something, be sure to "Save changes" to update the values in your UPS.
+
+If your UPS doesn't support any read/write variables, there will be 
+nothing to do on this page.
+
+Setting values in read/write variables can also be done from the command 
+line with \fBupsrw\fR(8).
+
+.SH INSTANT COMMANDS
+
+Some UPS hardware also has provisions for performing certain actions at the
+user's command.  These include battery tests, battery calibration, front
+panel tests (beep!) and more.  To access this section, do as above, but
+pick "Commands" as the function.
+
+If your UPS supports any instant commands, they will be listed in a
+chooser widget.  Pick the one you like and "Issue command" to make it
+happen.
+
+Note \(hy some dangerous commands like "Turn off load" may not happen right
+away.  This is a feature, not a bug.  The apcsmart driver and some 
+others require that you send this command twice within a short window in
+order to make it happen.  This is to keep you from accidentally killing
+your systems by picking the wrong one.
+
+To actually turn off the load, you have to send the command once, then
+send it again after 3 seconds elapse but before 15 seconds pass.  If
+you do it too quickly or slowly, you have to wait at least 3 seconds
+but not 15 seconds again.
+
+You can also invoke instant commands from the command line with
+\fBupscmd\fR(8).
+
+.SH ACCESS CONTROL
+upsset will only talk to \fBupsd\fR(8) servers that have been defined
+in your \fBhosts.conf\fR(8).  If it complains about "Access to that host
+is not authorized", check your hosts.conf first.
+
+.SH SECURITY
+
+upsset will not run until you convince it that your CGI directory has
+been secured.  This is due to the possibility of someone using upsset
+to try password combinations against your \fBupsd\fR(8) server.
+
+See the example upsset.conf file for more information on how you do this.
+The short explanation is \(hy if you can't lock it down, don't try to run it.
+
+.SH FILES
+\fBhosts.conf\fR(5)
+
+.SH SEE ALSO
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

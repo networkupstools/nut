@@ -1,0 +1,59 @@
+.TH SMS 8 "Mon Jul 14 2003" "" "Network UPS Tools (NUT)"
+.SH NAME
+sms \- Driver for Brazilian SMS UPS equipment
+.SH NOTE
+This man page only documents the hardware\(hyspecific features of the
+sms driver.  For information about the core driver, see
+\fBnutupsdrv\fR(8).
+
+.SH SUPPORTED HARDWARE
+This driver has been tested with :
+  
+
+Manager III   650 VA
+
+Manager III  1300 VA\fR  
+
+Manager III   650 VA sinusoidal
+
+Manager III  1300 VA sinusoidal
+
+Sinus Single 2000 VA sinusoidal on\(hyline 
+
+Please report another SMS working models, or send\(hyme the driver 
+detection string.  
+
+.SH EXTRA ARGUMENTS
+
+This driver does not support any extra settings in the
+\fBups.conf\fR(5).
+
+.SH UPSCMD
+
+
+test.battery.stop \(hy Cancel battery test
+
+test.battery.start \(hy Run battery test until battery is low
+
+test.failure.start \(hy Simulate power failure
+
+shutdown.return \(hy Shut down in .3 minutes and restart in .3 minutes
+
+shutdown.stayoff \(hy Shut down in .3 minutes and do not return
+
+shutdown.stop \(hy Stop a shutdown command
+
+reset.watchdog \(hy Shutdown in 5 minutes and restart in 3 minutes.  Call
+this with upscmd in crontab every minute.
+
+
+.SH AUTHOR
+Marcio Gomes <tecnica@microlink.com.br>
+
+.SH SEE ALSO
+
+.SS The core driver:
+\fBnutupsdrv\fR(8)
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

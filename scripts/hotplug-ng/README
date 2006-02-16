@@ -1,0 +1,30 @@
+Desc: Hotplug script for newhidups
+File: scripts/hotplug/README
+Date: 24 October 2005
+Auth: Arnaud Quette <aquette.dev@gmail.com>
+
+This document introduces Linux Hotplug NG script for NUT USB
+driver (newhidups, bcmxcp_usb and tripplite_usb).
+
+These are needed on Linux systems 2.6.14 and higher running
+udev. This ensure that the right privileges are set on the
+usb devices files (ie allowing nut user to read AND write
+to the UPS device).
+
+Usage
+-----
+
+- copy nut-usbups.hotplug to /etc/hotplug.d/usb/
+and make it executable with:
+$ chmod a+x /etc/hotplug.d/usb/nut-usbups.hotplug
+
+- copy nut-usbups.rules to /etc/udev/
+
+You can then plug your UPS, and start NUT.
+
+Note that the old style hotplug files, available in the
+hotplug directory, are not needed anymore.
+
+TODO
+----
+- add configure and Makefile rules for easier installation

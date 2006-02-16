@@ -1,0 +1,129 @@
+.TH ENERGIZERUPS 8 "Sun Aug 24 2003" "" "Network UPS Tools (NUT)" 
+.SH NAME  
+energizerups \- Driver for Energizer (Megatec protocol over "USB To RS232 Interface (V1.0) BaudRate 2400bps") UPS equipment
+.SH NOTE
+This man page only documents the hardware\(hyspecific features of the
+energizerups driver.  For information about the core driver, see  
+\fBnutupsdrv\fR(8).
+
+.SH SUPPORTED HARDWARE
+.B energizerups 
+supports Energizer models such as the ER\(hyHMOF600 and ER\(hyOF800.
+
+At the time of this writing, the driver was tested only with these two
+models. Other Energizer models that use the same USB interface should also
+work, but they have not been tested for compatibility.
+
+.SH PREREQUISITES
+
+This driver is Linux\(hyspecific. It is not designed to work on other
+operating systems.
+
+In order for this driver to work, USB and HID support must be present on
+your system. As a minimum, this means that the following kernel drivers
+must be loaded:
+
+.RS
+hid
+.br
+usb\(hyuhci
+.br
+usbcore
+.RE
+
+
+In place of usb\(hyuhci, you may have another host controller module loaded,
+as appropriate for your hardware.
+
+In version 2.4.21 and possibly other versions of the Linux kernel, the
+hiddev driver refuses to take control of HID devices that are also
+recognized as input peripherals. Unfortunately, this also applies to these
+Energizer UPS models. One solution to this problem is to compile a kernel
+with the CONFIG_HID_USBINPUT option turned off. An alternative is to
+modify the kernel with a simple patch.  In drivers/usb/hiddev.c, in
+the function hiddev_connect(), the line
+
+.RS
+if (!IS_INPUT_APPLICATION(hid\(hy>application[i]))
+.RE
+
+
+must be removed or commented out, and the driver and/or the kernel must
+be recompiled.
+
+.B energizerups
+also requires that device nodes for the UPS HID device be created. If these
+don't exist on your system, you can create them using the following commands:
+
+.RS
+mkdir /dev/usb
+.br
+mkdir /dev/usb/hid
+.br
+mknod /dev/usb/hid/hiddev0 c 180 96
+.br
+mknod /dev/usb/hid/hiddev1 c 180 97
+.br
+mknod /dev/usb/hid/hiddev2 c 180 98
+.br
+mknod /dev/usb/hid/hiddev3 c 180 99
+.RE
+
+
+If your system uses the devfs file system, the appropriate node may be
+created automatically by the system when the UPS is connected.
+
+.SH CHECKING THE HARDWARE
+
+You can verify that the UPS is connected and recognized by your system by
+mounting the usbfs file system (if it is not mounted already) and then
+listing all USB devices:
+
+.RS
+mount none /proc/bus/usb \-t usbfs
+.br
+cat /proc/bus/usb/devices
+.RE
+
+
+In this file, the following line should be seen:
+
+.B	"S:  Product=USB To RS232 Interface (V1.0) BaudRate 2400bps"
+
+
+This line indicates the presence of the USB\(hyto\(hyserial converter that is
+used by these Energizer UPS models.
+
+.SH EXTRA ARGUMENTS
+
+This driver does not support any extra settings in the    
+\fBups.conf\fR(5).
+
+.SH BUGS
+
+The battery percentage is derived from the voltage data that the UPS
+returns, since the UPS doesn't return that value directly.  On some
+hardware, the charge will remain at 100% for a long time and then drops
+quickly shortly before the battery runs out.  You can confirm from the
+battery.voltage readings that this is a problem with the UPS and not
+this driver.
+
+Voltage/charge characteristics are derived from a manual calibration with
+an ER\(hyHMOF600. Due to hardware differences, the charge percentage reports
+may be very inaccurate.
+
+Dead/broken batteries can't be reported reliably.  If your UPS kills the 
+load instantly or within seconds of starting the inverter, your batteries
+probably need to be replaced.
+
+.SH AUTHOR
+Viktor Toth
+.B (http://www.vttoth.com/)
+
+.SH SEE ALSO
+
+.SS The core driver:
+\fBnutupsdrv\fR(8)
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

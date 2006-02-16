@@ -1,0 +1,336 @@
+diff -Naur nut-2.0.1.orig/clients/upsimage.c nut-2.0.1/clients/upsimage.c
+--- nut-2.0.1.orig/clients/upsimage.c	2003-09-30 06:47:44.000000000 +0200
++++ nut-2.0.1/clients/upsimage.c	2005-02-28 10:13:25.209983515 +0100
+@@ -16,6 +16,8 @@
+      20020928 - Simon Rozman
+        - added imgvar table to hold description, how to draw each UPS variable supported
+        - added support for ACFREQ, OUT_FREQ and UPSTEMP
++     20050124 - Michel Bouissou
++       - Batt voltage gauge 12V / 24V autoscale
+ 	       
+    Copyrights:
+      (C) 1998  Russell Kroll <rkroll@exploits.org>
+@@ -393,7 +395,11 @@
+ static void draw_battvolt(double var, int min, int nom, int max, 
+ 		int deviation, const char *format)
+ {
+-	drawbar(10, 40, 1, 5, 10, 0, 20, 28, 40, 25, 27, var, format);
++	if (var >= 18.0) {
++		drawbar(10, 40, 1, 5, 10, 0, 20, 28, 40, 25, 27, var, format);
++	} else {
++		drawbar(8, 17, 1, 5, 10, 0, 10, 15, 17, 12, 14, var, format);
++	}
+ }
+ 
+ /* draws ups.load bar style indicator */
+diff -Naur nut-2.0.1.orig/conf/upsstats-single.html nut-2.0.1/conf/upsstats-single.html
+--- nut-2.0.1.orig/conf/upsstats-single.html	2003-07-30 01:41:19.000000000 +0200
++++ nut-2.0.1/conf/upsstats-single.html	2005-02-28 10:23:50.934507279 +0100
+@@ -63,6 +63,20 @@
+ </TR>
+ 
+ <TR>
++<TH ALIGN="RIGHT">&nbsp;</TH>
++<TD>
++&nbsp;
++</TD>
++</TR>
++
++<TR>
++<TH ALIGN="RIGHT">UPS Mfr:</TH>
++<TD>
++@VAR ups.mfr@
++</TD>
++</TR>
++
++<TR>
+ <TH ALIGN="RIGHT">UPS Model:</TH>
+ <TD>
+ @VAR ups.model@
+@@ -70,12 +84,26 @@
+ </TR>
+ 
+ <TR>
++<TH ALIGN="RIGHT">&nbsp;</TH>
++<TD>
++&nbsp;
++</TD>
++</TR>
++
++<TR>
+ <TH ALIGN="RIGHT">Status:</TH>
+ <TD>
+ @STATUS@
+ </TD>
+ </TR>
+ 
++<TR>
++<TH ALIGN="RIGHT">&nbsp;</TH>
++<TD>
++&nbsp;
++</TD>
++</TR>
++
+ @IFSUPP input.voltage@
+ <TR>
+ <TH ALIGN="RIGHT">Input: </TH>
+@@ -106,12 +134,31 @@
+ </TR>
+ @ENDIF@
+ 
++<TR>
++<TH ALIGN="RIGHT">&nbsp;</TH>
++<TD>
++&nbsp;
++</TD>
++</TR>
++
++@IFSUPP ups.temperature@
++<TR>
++<TH ALIGN="RIGHT">UPS temp: </TH>
++<TD>
++@UPSTEMP@
++@DEGREES@
++</TD>
++</TR>
++@ENDIF@
++
+ </TABLE>		<!-- table 2 -->
+ </TD>
+ 
+ <TD VALIGN="TOP" BGCOLOR="#000000">
+ @IMG battery.charge@
++@IMG battery.voltage@
+ </TD>
++
+ <TD VALIGN="TOP" BGCOLOR="#000000">
+ @IMG input.voltage@
+ </TD>
+diff -Naur nut-2.0.1.orig/conf/upsstats.html nut-2.0.1/conf/upsstats.html
+--- nut-2.0.1.orig/conf/upsstats.html	2004-10-21 07:43:42.000000000 +0200
++++ nut-2.0.1/conf/upsstats.html	2005-02-28 10:14:49.332361767 +0100
+@@ -76,6 +76,11 @@
+ @VAR battery.charge@
+ %
+ @ENDIF@
++&nbsp;
++@IFSUPP battery.voltage@
++@VAR battery.voltage@
++V
++
+ </td>
+ 
+ <td BGCOLOR="
+diff -Naur nut-2.0.1.orig/drivers/fentonups.c nut-2.0.1/drivers/fentonups.c
+--- nut-2.0.1.orig/drivers/fentonups.c	2004-09-30 10:16:56.000000000 +0200
++++ nut-2.0.1/drivers/fentonups.c	2005-02-28 10:45:49.101211824 +0100
+@@ -2,6 +2,12 @@
+ 
+    Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
+ 
++   Modified by Michel Bouissou on 2005/01/23:
++   - Fixed bug in initial serial synchronization
++   - Added separate battery voltages (all UPSes) for online (charging)
++     or on battery, to allow better determination of battery charge
++     percentage.
++
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+@@ -29,7 +35,7 @@
+ #define	DRV_VERSION "1.22"
+ 
+ static	int	cap_upstemp = 0;
+-static	float	lowvolt = 0, voltrange;
++static	float	lowvolt = 0, voltrange, chrglow = 0, chrgrange;
+ static	int	lownorm, highnorm;
+ 
+ /* handle devices which don't give a properly formatted I string */
+@@ -50,6 +56,8 @@
+ 			dstate_setinfo("ups.model", "%s", mtab2[i].model);
+ 			lowvolt = mtab2[i].lowvolt;
+ 			voltrange = mtab2[i].voltrange;
++			chrglow = mtab2[i].chrglow;
++			chrgrange = mtab2[i].chrgrange;
+ 			cap_upstemp = mtab2[i].has_temp;
+ 
+ 			dstate_setinfo("input.transfer.low", "%d",
+@@ -162,7 +170,7 @@
+ 
+ 		if (temp[0] != '#') {
+ 			upslogx(LOG_ERR, "Bad UPS info start character [%c]",
+-				temp[i]);
++				temp[0]);
+ 			continue;
+ 		}
+ 
+@@ -206,6 +214,8 @@
+ 			modelnum = i;
+ 			lowvolt = modeltab[i].lowvolt;
+ 			voltrange = modeltab[i].voltrange;
++			chrglow = modeltab[i].chrglow;
++			chrgrange = modeltab[i].chrgrange;
+ 			cap_upstemp = modeltab[i].has_temp;
+ 			break;
+ 		}
+@@ -306,13 +316,6 @@
+ 	dstate_setinfo("output.voltage", "%s", outvolt);
+ 	dstate_setinfo("battery.voltage", "%s", battvolt);
+ 
+-	bvoltp = ((atof(battvolt) - lowvolt) / voltrange) * 100.0;
+-
+-	if (bvoltp > 100.0)
+-		bvoltp = 100.0;
+-
+-	dstate_setinfo("battery.charge", "%02.1f", bvoltp);
+-
+ 	status_init();
+ 
+ 	util = atoi(involt);
+@@ -328,11 +331,21 @@
+ 			if (util > highnorm)
+ 				status_set("TRIM");
+ 		}
++		if (atof(battvolt) > chrglow) {
++			bvoltp = ((atof(battvolt) - chrglow) / chrgrange) * 100.0;
++		} else {
++			bvoltp = ((atof(battvolt) - lowvolt) / voltrange) * 100.0;
++		}
+ 
+ 	} else {
+ 		status_set("OB");		/* on battery */
++		bvoltp = ((atof(battvolt) - lowvolt) / voltrange) * 100.0;
+ 	}
+ 
++	if (bvoltp > 100.0)
++	        bvoltp = 100.0;
++	dstate_setinfo("battery.charge", "%02.1f", bvoltp);
++	
+ 	if (pstat[1] == '1')
+ 		status_set("LB");		/* low battery */
+ 
+diff -Naur nut-2.0.1.orig/drivers/fentonups.h nut-2.0.1/drivers/fentonups.h
+--- nut-2.0.1.orig/drivers/fentonups.h	2004-09-02 09:31:57.000000000 +0200
++++ nut-2.0.1/drivers/fentonups.h	2005-02-28 10:44:19.759727739 +0100
+@@ -2,6 +2,12 @@
+ 
+    Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
+ 
++   Modified by Michel Bouissou on 2005/01/23:
++   - Added definition for UNITEK Alpha 500 ic
++   - Added separate battery voltages (all UPSes) for online (charging)
++     or on battery, to allow better determination of battery charge
++     percentage.
++
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+@@ -22,6 +28,8 @@
+ 	const	char	*desc;
+ 	float	lowvolt;
+ 	float	voltrange;
++	float   chrglow;
++	float   chrgrange;
+ 	int	lowxfer;
+ 	int	lownorm;
+ 	int	highnorm;
+@@ -30,37 +38,39 @@
+ }	modeltab[] =
+ {
+ 	/* USA models */
+-	{ "L280A",  "PowerPal 280",  9.6,  2.4, 84, 98, 126, 142, 0 },
+-	{ "L425A",  "PowerPal 425",  9.6,  2.4, 84, 98, 126, 142, 0 },	
+-	{ "L660A",  "PowerPal 660",  19.6, 4.4, 84, 98, 126, 142, 0 },
+-	{ "L1000A", "PowerPal 1000", 19.6, 4.4, 84, 98, 126, 142, 0 },
+-	{ "L1400A", "PowerPal 1400", 29.4, 6.6, 84, 98, 126, 142, 0 },
++	{ "L280A",  "PowerPal 280",  9.6,  2.4, 12.1, 1.7, 84, 98, 126, 142, 0 },
++	{ "L425A",  "PowerPal 425",  9.6,  2.4, 12.1, 1.7, 84, 98, 126, 142, 0 },
++	{ "L660A",  "PowerPal 660",  19.6, 4.4, 24.2, 3.3, 84, 98, 126, 142, 0 },
++	{ "L1000A", "PowerPal 1000", 19.6, 4.4, 24.2, 3.3, 84, 98, 126, 142, 0 },
++	{ "L1400A", "PowerPal 1400", 29.4, 6.6, 36.3, 4.7, 84, 98, 126, 142, 0 },
+ 
+ 	/* European models */
+-	{ "L280E",  "PowerPal 280",   9.6, 2.4, 168, 196, 252, 284, 0 },
+-	{ "L425E",  "PowerPal 425",   9.6, 2.4, 168, 196, 252, 284, 0 },	
+-	{ "L660E",  "PowerPal 660",  19.6, 4.4, 168, 196, 252, 284, 0 },
+-	{ "L1000E", "PowerPal 1000", 19.6, 4.4, 168, 196, 252, 284, 0 },
+-	{ "L1400E", "PowerPal 1400", 29.4, 6.6, 168, 196, 252, 284, 0 },
+-
+-	{ "M1000", "PowerPure 1000", 25.0,  3.4, 80, 80, 138, 138, 1 },
+-	{ "M2000", "PowerPure 2000",    0,    0, 80, 80, 138, 138, 1 },
+-	{ "M3000", "PowerPure 3000",    0,    0, 80, 80, 138, 138, 1 }, 
+-
+-	{ "H4000", "PowerOn 4000",  154.0, 14.0, 88, 88, 132, 132, 1 },
+-	{ "H6000", "PowerOn 6000",  154.0, 14.0, 88, 88, 132, 132, 1 },
+-	{ "H8000", "PowerOn 8000",  154.0, 14.0, 88, 88, 132, 132, 1 },
+-	{ "H010K", "PowerOn 10000", 154.0, 14.0, 88, 88, 132, 132, 1 },
++	{ "L280E",  "PowerPal 280",   9.6, 2.4, 12.1, 1.7, 168, 196, 252, 284, 0 },
++	{ "L425E",  "PowerPal 425",   9.6, 2.4, 12.1, 1.7, 168, 196, 252, 284, 0 },
++	{ "L660E",  "PowerPal 660",  19.6, 4.4, 24.2, 3.3, 168, 196, 252, 284, 0 },
++	{ "L1000E", "PowerPal 1000", 19.6, 4.4, 24.2, 3.3, 168, 196, 252, 284, 0 },
++	{ "L1400E", "PowerPal 1400", 29.4, 6.6, 36.3, 4.7, 168, 196, 252, 284, 0 },
++
++	{ "M1000", "PowerPure 1000", 25.0,  3.4, 25.2,  3.2, 80, 80, 138, 138, 1 },
++	{ "M2000", "PowerPure 2000",    0,    0,    0,    0, 80, 80, 138, 138, 1 },
++	{ "M3000", "PowerPure 3000",    0,    0,    0,    0, 80, 80, 138, 138, 1 },
++
++	{ "H4000", "PowerOn 4000",  154.0, 14.0, 154.0, 14.0, 88, 88, 132, 132, 1 },
++	{ "H6000", "PowerOn 6000",  154.0, 14.0, 154.0, 14.0, 88, 88, 132, 132, 1 },
++	{ "H8000", "PowerOn 8000",  154.0, 14.0, 154.0, 14.0, 88, 88, 132, 132, 1 },
++	{ "H010K", "PowerOn 10000", 154.0, 14.0, 154.0, 14.0, 88, 88, 132, 132, 1 },
+ 
+ 	/* non-Fenton, yet compatible (Megatec protocol) models */
+ 
+-	{ "UPS-PRO", "PowerGuard PG-600", 0, 0, 170, 200, 250, 270, 1 },
++	{ "UPS-PRO", "PowerGuard PG-600", 0, 0, 0, 0, 170, 200, 250, 270, 1 },
++
++	{ "SMK800A", "PowerCom SMK-800A", 1.9, 0.5, 1.9, 0.5, 165, 200, 240, 275, 1 },
+ 
+-	{ "SMK800A", "PowerCom SMK-800A", 1.9, 0.5, 165, 200, 240, 275, 1 },
++	{ "ULT-1000", "PowerCom ULT-1000", 1.91, 0.42, 1.91, 0.42, 165, 200, 240, 275, 1 },
+ 
+-	{ "ULT-1000", "PowerCom ULT-1000", 1.91, 0.42, 165, 200, 240, 275, 1 },
++	{ "Alpha500iC", "Alpha 500 iC", 10.7, 1.4, 13.0, 0.8, 172, 196, 252, 288, 0 },
+ 
+-	{ NULL,    NULL,		  0, 0,   0,   0,   0,   0, 0 }
++	{ NULL,    NULL,                  0, 0, 0, 0,   0,   0,   0,   0, 0 }
+ };
+ 
+ /* devices which don't implement the I string the same way */
+@@ -71,6 +81,8 @@
+ 	const	char	*model;
+ 	float	lowvolt;
+ 	float	voltrange;
++	float   chrglow;
++	float   chrgrange;
+ 	int	lowxfer;
+ 	int	lownorm;
+ 	int	highnorm;
+@@ -78,21 +90,21 @@
+ 	int	has_temp;
+ }	mtab2[] =
+ {
+-	{ "WELI 500 1.0", "Giant Power", "MT650", 10.6, 3.7, 170, 180, 270, 280, 0 },
++	{ "WELI 500 1.0", "Giant Power", "MT650", 10.6, 3.7, 12.1, 2.2, 170, 180, 270, 280, 0 },
+ 	{ "SMART-UPS       1800VA     T18Q16AG", "Effekta", "MT 2000 RM",
+-		50.0, 19.5, 171, 200, 260, 278, 1 },
++		50.0, 19.5, 50.0, 19.5, 171, 200, 260, 278, 1 },
+ 
+ 	/* SuperPower model data from Denis Zaika */
+ 
+ 	{ "----            ----       VS00024Q", "SuperPower", "HP360", 9.6, 
+-		3.9, 140, 190, 240, 280, 1 },
++		3.9, 9.6, 3.9, 140, 190, 240, 280, 1 },
+ 	{ " -------------   ------     VS000391", "SuperPower", "Hope-550", 
+-		9.6, 3.9, 170, 190, 240, 280, 0 },
++		9.6, 3.9, 9.6, 3.9, 170, 190, 240, 280, 0 },
+ 
+ 	/* Unitek data from Antoine Cuvellard */
+ 	        
+ 	{ "UNITEK          Alph1000iS A0", "Unitek", "Alpha 1000is",
+-		9.6, 2.4, 158, 172, 288, 290, 0 },
++		9.6, 2.4, 9.6, 2.4, 158, 172, 288, 290, 0 },
+ 
+-	{ NULL,    NULL,		NULL,  0, 0,   0,   0,   0,   0, 0 }
++	{ NULL,    NULL,                NULL,  0, 0, 0, 0,   0,   0,   0,   0, 0 }
+ };

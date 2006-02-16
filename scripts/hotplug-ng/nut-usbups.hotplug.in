@@ -1,0 +1,30 @@
+#!/bin/sh
+#
+# Hotplug rules for the NUT USB drivers
+
+if [ "$ACTION" != "add" ]; then
+    exit 0
+fi
+
+case $PRODUCT in
+	# MGE UPS SYSTEMS - usbhid-ups
+	463/ffff/*|463/1/*)
+
+	# APC - usbhid-ups
+	51d/2/*)
+
+	# Powerware - bcmxcp_usb
+	592/2/*)
+
+	# Tripp Lite - tripplite_usb
+	9ae/1/*)
+		chown root:@RUN_AS_USER@ "$DEVICE"
+		chmod 0660 "$DEVICE"
+		;;
+	*)
+		exit 0
+		;;
+esac
+
+exit 0
+

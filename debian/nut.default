@@ -1,0 +1,5 @@
+# start upsd
+START_UPSD=no
+
+# start upsmon
+START_UPSMON=no

@@ -1,0 +1,804 @@
+* Network UPS Tools Documentation
+*
+* Arnaud Quette <aquette.dev@gmail.com> and others, see CREDITS file.
+*
+* Released under the GNU GPL - see COPYING for details.
+*
+* Program support page: http://www.networkupstools.org/
+* Mailing list details: http://alioth.debian.org/mail/?group_id=30602
+
+
+==============================================================================
+ DESCRIPTION
+==============================================================================
+
+Network UPS Tools is a collection of programs which provide a common
+interface for monitoring and administering UPS hardware.  It uses a
+layered approach to connect all of the parts.
+
+Drivers are provided for a wide assortment of equipment.  They
+understand the specific language of each UPS and map it back to a
+compatibility layer.  This means both an expensive "smart" protocol UPS
+and a simple "power strip" model can be handled transparently.
+
+This information is cached by the network server upsd, which then
+answers queries from the clients.  upsd contains a number of access
+control features to limit the abilities of the clients.  Only authorized
+hosts may monitor or control your UPS hardware if you wish.  Since the
+notion of monitoring over the network is built into the software, you
+can hang many systems off one large UPS and they will all shut down
+together.
+
+Clients such as upsmon check on the status of the hardware and do things
+when necessary.  The most important task is shutting down the operating
+system cleanly before the UPS runs out of power.  Other programs are
+also provided to log UPS status regularly, monitor status through your
+web browser, and more.
+
+
+==============================================================================
+ INSTALLING
+==============================================================================
+
+If you are installing these programs for the first time, go read the
+INSTALL file to find out how to do that.  This document contains more
+information on what all of this stuff does.
+
+
+==============================================================================
+ UPGRADING
+==============================================================================
+
+When upgrading from an older version, always check the UPGRADING file to
+see what may have changed.  Compatibility issues and other changes will
+be listed there to ease the process.
+
+
+==============================================================================
+ DOCUMENTATION
+==============================================================================
+
+This file gives an overview of the software.  You should read the man
+pages, included example configuration files, and auxiliary documentation
+for the parts that you intend to use.
+
+
+=============================================================================
+ NETWORK INFORMATION
+==============================================================================
+
+These programs are designed to share information over the network.  In
+the examples below, "localhost" is used as the hostname.  This can also
+be an IP address or a fully qualified domain name.  You can specify a
+port number if your upsd process runs on another port.
+
+In the case of the program upsc, to view the variables on the ups called
+sparky on the upsd server running on the local machine, you'd do this:
+
+	/usr/local/ups/bin/upsc sparky@localhost
+
+The default port number is 3493.  You can change this with 
+"configure --with-port" at compile-time.  To make a client talk to upsd
+on a specific port, add it after the hostname with a colon, like this:
+
+	/usr/local/ups/bin/upsc sparky@localhost:1234
+
+This is handy when you have a mixed environment and some of the systems
+are on different ports.
+
+The general form for UPS identifiers is this:
+
+	<upsname>@<hostname>[:<port>]
+
+Keep this in mind when viewing the examples below.
+
+
+==============================================================================
+ MANIFEST
+==============================================================================
+
+This package is broken down into several categories:
+
+ - drivers - These programs talk directly to your UPS hardware. 
+
+ - server  - upsd serves data from the drivers to the network.
+
+ - clients - They talk to upsd and do things with the status data.
+
+ - cgi-bin - Special class of clients that you can use with your web server.
+
+
+==============================================================================
+ DRIVERS
+==============================================================================
+
+These programs provide support for specific UPS models.  They understand
+the protocols and port specifications which define status information
+and convert it to a form that upsd can understand.
+
+To configure drivers, edit ups.conf.  For this example, we'll have a UPS
+called "sparky" that uses the apcsmart driver and is connected to
+/dev/ttyS1.  That's the second serial port on most Linux-based systems.
+The entry in ups.conf looks like this:
+
+	[sparky]
+		driver = apcsmart
+		port = /dev/ttyS1
+
+To start and stop drivers, use upsdrvctl.  By default, it will start or
+stop every UPS in the config file:
+
+	/usr/local/ups/bin/upsdrvctl start
+	/usr/local/ups/bin/upsdrvctl stop
+
+However, you can also just start or stop one by adding its name:
+
+	/usr/local/ups/bin/upsdrvctl start sparky
+	/usr/local/ups/bin/upsdrvctl stop sparky
+
+ EXTRA SETTINGS
+ --------------
+
+Some drivers may require additional settings to properly communicate
+with your hardware.  If it doesn't detect your UPS by default, check the
+driver's man page or help (-h) to see which options are available.
+
+For example, the apcsmart driver allows setting "cable" to "940-0095B".
+To use this feature, just add another line to your ups.conf section for
+that UPS.
+
+	[sparky]
+		driver = apcsmart
+		port = /dev/ttyS1
+		cable = 940-0095B
+
+ HARDWARE SUPPORT TABLE
+ ----------------------
+
+	al175            - Eltek models with AL175 alarm module
+
+	apcsmart         - APC Smart-UPS, Back-UPS Pro, Matrix-UPS models
+
+	bcmxcp           - some Powerware models
+
+	bcmxcp_usb       - some Powerware USB models
+
+	belkin           - Belkin Regulator Pro
+
+	belkinunv	 - Belkin Universal UPS (F6C800-UNV, others)
+
+	bestuferrups	 - Best Power Micro-Ferrups models
+
+	bestups          - Best Power models: (newer, usually beige)
+
+                           - Fortress (FOR)
+                           - Fortress Telecom (FTC)
+                           - Patriot Pro (PRO)
+                           - Patriot Pro II (PR2)
+                           - Axxium Rackmount (AX1)
+
+                           The SOLA 325, 520 and 620 are also recognized. 
+
+                           This driver will probably also work with other
+                           PhoenixTec protocol hardware.
+
+                           The SOLA 610 will work with the ID= variable
+                           in ups.conf.
+
+	blazer		 - Centralion Blazer models
+
+	cyberpower       - Cyber Power Systems units
+			   700AVR and others (binary protocol)
+
+	cpsups           - Cyber Power Systems units (experimental)
+			   CPS825VA, 1100AVR, 1500AVR-HO, OP500TE, others
+			   (text protocol) 
+
+	energizerups	 - Energizer UPS hardware (experimental - USB/Linux)
+
+	esupssmart	 - Energy Sistem equipment
+
+			   also Infosec iPel 350/500/750/1000
+
+	etapro		 - ETA UPS hardware with the "PRO" smart mode
+
+	everups          - EVER Sp. z o.o models
+
+                           - NET *-DPC
+                           - AP *-PRO 
+
+	fentonups        - Fenton Technologies models:
+
+	                   - PowerPal L series
+	                   - PowerOn
+	                   - PowerPure
+
+                         - Effekta MI/MT/MH models (2502 cable)
+
+                         - PowerGuard PG-600
+
+			 - PowerCom SMK-800A, ULT-1000
+
+			 - Giant Power MT650
+
+			 - UNITEK ALPHA 500 IC
+
+			 - Unitek Alpha 1000is
+
+			 - SuperPower HP360, Hope-550
+
+			   This driver implements the Megatec protocol, so
+			   other Megatec hardware will probably work with it.
+
+	genericups       - Many contact closure models -
+                           see "Generic UPS driver" below 
+
+	isbmex		 - SOLA/BASIC Mexico ISBMEX protocol hardware
+
+	ippon            - Ippon UPS devices
+
+	liebert          - Liebert UPStation GXT2 with contact-closure cable
+
+	masterguard	 - Masterguard UPS hardware
+
+	metasys  	 - Meta System ups models:
+
+                           - HF Line (/2) 1-8 boards
+                           - HF Millennium (810, 820)
+                           - HF TOP Line (910, 920, 930, 940, 950, 970, 980)
+                           - ECO Network (750, 1000, 1050, 1500,
+                             1800, 2000, 2100, 2500, 3000)
+                           - ECO (305, 308, 311, 511, 516, 519,
+                             522, SX, SXI)
+                           - ally HF (800, 1000, 1250, 1600, 2000, 2500)
+                           - Megaline (1250, 2500, 3750, 5000,
+                             6250, 7500, 8750, 10000)
+
+	mge-shut	 - MGE UPS SYSTEMS serial SHUT units:
+
+                           - Pulsar Ellipse / Ellipse Premium S,
+                           - Pulsar Ellipse / Ellipse Premium USBS,
+                           - NOVA AVR Serial
+                           - Pulsar Evolution,
+                           - Pulsar EXtreme C,
+                           - Pulsar EXtreme C / EX RT,
+                           - Pulsar Esprit,
+                           - Pulsar / Comet EXtreme,
+                           - Comet / Galaxy using HID COM Serial Card (ref 66066)
+
+	mge-utalk	 - MGE UPS SYSTEMS serial UTalk units:
+
+                           - Pulsar Evolution,
+                           - Pulsar EX / EXL / PSX / SX
+                           - Pulsar ES+ / SV / ESV / ESV+,
+                           - Pulsar EXtreme C,
+                           - Pulsar / Comet EXtreme,
+                           - Comet / Galaxy using Utalk Serial Card (ref 66060)
+
+	mustek		 - Mustek UPS hardware
+
+	megatec		 - Megatec protocol based UPSes (Mustek Powermust,
+			   OnLite 50, Maxxtro units, etc.)
+
+
+	newhidups	 - Meta driver for USB HID UPSes on various platforms
+                           (replaces hidups)
+
+                           Some units that have been used with this driver:
+
+                           - All MGE UPS SYSTEMS USB models,
+                           - various APC units,
+                           - Belkin F6C800-UNV, F6C550-AVR
+
+                           NOTE: not built by default.  Read the FAQ
+                           to find out how to build/install/use this one.
+ 
+	nitram		 - Nitram Elite 2005 units
+
+	oneac		 - Oneac EG and ON equipment
+
+	powercom	 - Trust 425/625
+			 - Powercom units
+			 - Advice Partner/King PR750
+                         - Socomec Sicon Egys 420 VA 
+
+	powermust	 - Mustek Powermust (and OnLite 50) units
+
+	safenet		 - Units typically bundled with Safenet software:
+
+                           - Ever-Power UF 010C2EJA
+                           - Fairstone L525/-625/-750
+                           - Fenton P400/-600/-800
+                           - Gemini UPS625/-1000
+                           - Powerwell PM525A/-625A/-800A/-1000A/-1250A
+                           - Repotec RPF525/-625/-800/-1000
+                           - Soltec Winmate 525/625/800/1000
+                           - Sweex 500/1000 (if shipped with Safenet)
+
+                           Note: Sweex models which shipped with UPSmart
+                           are contact-closure and need to use the
+                           genericups driver with upstype=7.
+
+	sms		 - Microlink Manager III
+
+	snmp-ups         - SNMP UPS equipment
+                           Experimental driver - not built by default.
+
+                           MIBs supported:
+                           - various RFC 1628 compliant devices,
+                           - MGE UPS SYSTEMS MIB,
+                           - APC Powernet MIB,
+                           - Powerware MIB,
+                           - Socomec Netvision MIB.
+
+                           See docs/drivers/snmp-ups.txt for more
+                           information.
+
+	tripplite	 - Tripp-Lite SmartUPS units
+
+	tripplitesu	 - Tripp-Lite SmartOnline units
+
+        upscode2         - Fiskars, Compaq and Powerware units
+
+	victronups	 - IMV/Victron hardware
+
+For another take on this list, try the web page: 
+
+	http://random.networkupstools.org/compat/
+
+If your driver has vanished, see the FAQ.
+
+ GENERIC UPS DRIVER
+ ------------------
+
+The "genericups" driver will support many models that use the same basic
+principle to communicate with the computer.  This is known as "contact
+closure", and basically involves raising or lowering signals to indicate
+power status.
+
+This type of UPS tends to be cheaper, and only provides the very simplest
+data about power and battery status.  Advanced features like battery
+charge readings and such require a "smart" UPS and a driver which
+supports it.
+
+See the genericups(8) man page for more information.
+
+There is also a document called contact-closure.txt included with the
+source distribution that contains information on this kind of hardware
+and details on adding additional types to the genericups driver.
+
+ UPS SHUTDOWNS
+ -------------
+
+upsdrvctl can also shut down (power down) all of your UPS hardware.
+
+WARNING - if you play around with this command, expect your filesystems
+to die.  Don't power off your computers unless they're ready for it.
+
+	/usr/local/ups/bin/upsdrvctl shutdown
+	/usr/local/ups/bin/upsdrvctl shutdown sparky
+
+You should read the shutdown.txt file in the docs subdirectory to
+learn more about when to use this feature.  If called at the wrong time,
+you may cause data loss by turning off a system with a filesystem
+mounted read-write.
+
+
+==============================================================================
+ NETWORK SERVER
+==============================================================================
+
+upsd is responsible for passing data from the drivers to the client 
+programs via the network.  It should be run immediately after upsdrvctl
+in your system's startup scripts.
+
+upsd should be kept running whenever possible, as it is the only source
+of status information for the monitoring clients like upsmon.
+
+
+==============================================================================
+ UPSMON
+==============================================================================
+
+upsmon provides the essential feature that you expect to find in UPS
+monitoring software: safe shutdowns when the power fails.
+
+In the layered scheme of NUT software, it is a client.  It has this
+separate section in the documentation since it is so important.
+
+You configure it by telling it about UPSes that you want to monitor in
+upsmon.conf.  Each UPS can be defined as one of three possible types:
+
+ - Master
+
+	This UPS supplies power to the system running upsmon, and
+	this system is also responsible for shutting it down when
+	the battery is depleted.  This occurs after any slave systems
+	have disconnected safely.
+
+	If your UPS is plugged directly into a system's serial port,
+	the upsmon on that system should define that UPS as a master.
+
+ - Slave
+
+	This UPS supplies power to the system running upsmon, but 
+	this system can't shut it down directly.  This system will
+	shut down the operating system before the master turns off the
+	power.
+
+	Use this mode when you run multiple computers on the same UPS.
+	Obviously, only one can be connected to the serial port on the
+	UPS, and that system is the master.  Everything else is a
+	slave.
+   
+ - Monitor-only
+
+	This UPS will still generate notifications about status
+	changes (on battery, on line, etc.) but no shutdowns of the
+	local system result from critical situations on that UPS.
+
+For a typical home user, there's one computer connected to one UPS.
+That means you run a driver, upsd, and upsmon in master mode.
+
+ ADDITIONAL INFORMATION
+ ----------------------
+
+More information on configuring upsmon can be found in these places:
+
+ - The man page - upsmon(8)
+
+ - big-servers.txt in the docs subdirectory
+
+ - shutdown.txt in the docs subdirectory
+
+ - The stock upsmon.conf that comes with the package
+
+
+==============================================================================
+ CLIENTS
+==============================================================================
+
+Clients talk to upsd over the network and do useful things with the data
+from the drivers.  There are tools for command line access, and a few
+special clients which can be run through your web server as CGI
+programs.
+
+For more details on specific programs, refer to their man pages.
+
+ UPSC
+ ----
+
+upsc is a simple client that will display the values of variables known
+to upsd and your UPS drivers.  It will list every variable by default,
+or just one if you specify an additional argument.  This can be useful 
+in shell scripts for monitoring something without writing your own 
+network code.
+
+upsc is a quick way to find out if your driver(s) and upsd are working
+together properly.  Just run upsc <ups> to see what's going on, i.e.:
+
+	morbo:~$ upsc su700@localhost
+	ambient.humidity: 035.6
+	ambient.humidity.alarm.maximum: NO,NO
+	ambient.humidity.alarm.minimum: NO,NO
+	ambient.temperature: 25.14
+
+	[ and so on ]
+
+If you are interested in writing a simple client that monitors upsd,
+the source code for upsc is a good way to learn about using the 
+upsclient functions.
+
+See the upsc(8) man page for more information.
+
+ UPSLOG
+ ------
+
+upslog will write status information from upsd to a file at set
+intervals.  You can use this to generate graphs or reports with other
+programs such as gnuplot.
+
+ UPSRW
+ -----
+
+upsrw allows you to display and change the read/write variables in your
+UPS hardware.  Not all devices or drivers implement this, so this may
+not have any effect on your system.  
+
+A driver that supports read/write variables will give results like this:
+
+	$ upsrw su700@localhost
+
+	( many skipped )
+
+	[ups.test.interval]
+	Interval between self tests
+	Type: ENUM
+	Option: "1209600"
+	Option: "604800" SELECTED
+	Option: "0"
+
+	( more skipped )
+
+On the other hand, one that doesn't support them won't print anything:
+
+	$ upsrw fenton@gearbox
+
+	( nothing )
+
+upsrw requires administrator powers to change settings in the hardware.
+Refer to upsd.users(5) for information on defining users in upsd.
+
+ UPSCMD
+ ------
+
+Some UPS hardware and drivers support the notion of an instant command -
+a feature such as starting a battery test, or powering off the load.
+You can use upscmd to list or invoke instant commands if your
+hardware/drivers support them.
+
+Use the -l command to list them, like this:
+
+	$ upscmd -l su700@localhost
+	Instant commands supported on UPS [su700@localhost]:
+
+	load.on - Turn on the load immediately
+	test.panel.start - Start testing the UPS panel
+	calibrate.start - Start run time calibration
+	calibrate.stop - Stop run time calibration
+
+	[ snip ]
+
+upscmd requires administrator powers to start instant commands.
+To define users and passwords in upsd, see upsd.users(5).
+
+
+==============================================================================
+ CGI PROGRAMS
+==============================================================================
+
+The CGI programs are clients that run through your web server.  They
+allow you to see UPS status and perform certain administrative commands
+from any web browser.  Javascript and cookies are not required.
+
+These programs are not installed or compiled by default.  To compile them,
+first run 'configure --with-cgi', then do 'make cgi'.  To install,
+'make install-cgi'.  If you receive errors about "gd" during configure,
+go get it and install it before continuing.
+
+You can get the source here:
+
+	http://www.boutell.com/gd/
+
+In the event that you need libpng or zlib in order to compile gd, 
+they can be found at these URLs:
+
+	http://www.libpng.org/pub/png/pngcode.html
+
+	http://www.gzip.org/zlib/
+
+ ACCESS RESTRICTIONS
+ ===================
+
+The CGI programs use hosts.conf to see if they are allowed to talk to a
+host.  This keeps malicious visitors from creating queries from your web
+server to random hosts on the Internet.
+
+If you get error messages that say "Access to that host is not
+authorized", you're probably missing an entry in your hosts.conf.
+
+ UPSSTATS
+ ========
+
+upsstats generates web pages from HTML templates, and plugs in status
+information in the right places.  It looks like a distant relative of
+APC's old Powerchute interface.  You can use it to monitor several
+systems or just focus on one.
+
+It also can generate IMG references to upsimage.
+
+ UPSIMAGE
+ ========
+
+This is usually called by upsstats via IMG SRC tags to draw either the
+utility or outgoing voltage, battery charge percent, or load percent.
+
+ UPSSET
+ ======
+
+upsset provides several useful administration functions through a web
+interface.  You can use upsset to kick off instant commands on your UPS
+hardware like running a battery test.  You can also use it to change
+variables in your UPS that accept user-specified values.
+
+Essentially, upsset provides the functions of upsrw and upscmd, but
+with a happy pointy-clicky interface.
+
+upsset will not run until you convince it that you have secured your
+system.  You *must* secure your CGI path so that random interlopers
+can't run this program remotely.  See the upsset.conf file.  Once you
+have secured the directory, you can enable this program in that
+configuration file.  It is not active by default.
+
+
+==============================================================================
+ SUPPORT / HELP / ETC.
+==============================================================================
+
+The main URL:
+
+	http://www.networkupstools.org/
+
+There is also a mailing list for general queries and discussion about
+this software called nut-upsuser.  It typically moves around 50-100 messages
+per month at the time of this writing.  To join, go to the below address and
+subscribe to the desired list.
+
+Finally, there is a developer list called nut-upsdev.  This is not
+an install help list, and any such mails probably will be ignored.
+
+The mailing lists are archived on the web:
+
+	http://alioth.debian.org/mail/?group_id=30602
+
+Try running some searches against the archives.  Many times, problems have
+already been answered by someone else. Currently, there is no internal
+search engine, so you will have to try with a search engine like Google.
+
+There is more documentation in the docs/ directory within the source 
+tree.  Be sure to read through the files in there (especially the
+FAQ) before mailing the list for help.  Many times the questions have
+already been answered in the files which are right in front of you.
+
+
+==============================================================================
+ MAKING YOUR OWN CLIENTS (UPSCLIENT)
+==============================================================================
+
+The upsclient.a library can be linked into other programs to give access
+to upsd and UPS status information.  Clients like upsc are provided as
+examples of how to retrieve data using the upsclient functions.  Other
+programs not included in this package may also use this library, as wmnut.
+
+This library file and the associated header files are not installed by
+default.  You must 'make install-lib' before building other programs
+which depend on them.
+
+To obtain the right compilation and link flags, two helpers are provided:
+one for platform providing pkg-config, and the other (libupsclient-config)
+for platform not providing pkg-config.
+
+
+==============================================================================
+ VERSION NUMBERING
+==============================================================================
+
+The version numbers work like this: if the middle number is odd, it's a
+development tree, otherwise it is the stable tree.
+
+The past stable trees were 1.0, 1.2 and 1.4, with the latest stable tree
+designated 2.0.  The development trees were 1.1, 1.3 and 1.5.
+
+The jump to 2.0 is mostly due to the large changes to the network
+protocol.  There have also been a number of architectural changes which
+may not be noticeable to most users.
+
+
+==============================================================================
+ BACKWARDS AND FORWARDS COMPATIBILITY
+==============================================================================
+
+The old network code spans a range from about 0.41.1 when TCP support 
+was introduced up to the recent 1.4 series.  It used variable names
+like STATUS, UTILITY, and LOADPCT.  Many of these names go back to the
+earliest prototypes of this software from 1997.  At that point there
+was no way to know that so many drivers would come along and introduce 
+so many new variables and commands.  The resulting mess grew out of
+control over the years.
+
+During the 1.3 development cycle, all variables and instant commands
+were renamed to fit into a tree-like structure.  There are major groups,
+like input, output and battery.  Members of those groups have been
+arranged to make sense - input.voltage and output.voltage compliment
+each other.  The old names were UTILITY and OUTVOLT.  The benefits in
+this change are obvious.
+
+The 1.4 clients can talk to either type of server, and can handle either
+naming scheme.  1.4 servers have a compatibility mode where they can
+answer queries for both names, even though the drivers are internally
+using the new format.
+
+When 1.4 clients talk to 1.4 or 2.0 servers, they will use the new
+names.
+
+Here's a table to make it easier to visualize:
+
+   +--------------------------------+
+   |        |        Server         |
+   |--------+-----------------------|
+   | Client | 1.0 | 1.2 | 1.4 | 2.0 |
+   |--------+-----+-----+-----+-----|
+   | 1.0    | yes | yes | yes | no  |
+   |--------+-----+-----+-----+-----|
+   | 1.2    | yes | yes | yes | no  |
+   |--------+-----+-----+-----+-----|
+   | 1.4    | yes | yes | yes | yes |
+   |--------+-----+-----+-----+-----|
+   | 2.0    | no  | no  | yes | yes |
+   +--------------------------------+
+
+Version 2.0 does not contain backwards compatibility for the old 
+protocol and variable/command names.  As a result, 2.0 clients can't 
+talk to anything older than a 1.4 server.  If you ask a 2.0 client to 
+fetch "STATUS", it will fail.  You'll have to ask for "ups.status" 
+instead.
+
+Authors of separate monitoring programs should have used the 1.4 series
+to write support for the new variables and command names.  Client
+software can easily support both versions as long as they like.  If upsd
+returns 'ERR UNKNOWN-COMMAND' to a GET request, you need to use REQ.
+
+
+==============================================================================
+ HACKING / DEVELOPMENT INFO
+==============================================================================
+
+Additional documentation can be found in the docs subdirectory.
+
+Information on creating new drivers can be found in new-drivers.txt.
+Also be sure to look at skel.c and main.c.  All drivers are just
+collections of support functions built around a common core, so most of
+the dull housekeeping work has been handled for you.
+
+Information on the architecture and how it all fits together is in the
+design.txt file.  In short, there's a lot more documentation out there.
+
+Also be sure to read developers.txt, as it explains a lot about the
+tree, including some of the functions that are provided for your use.
+
+
+==============================================================================
+ ACKNOWLEDGEMENTS / CONTRIBUTIONS
+==============================================================================
+
+MGE UPS SYSTEMS provided extensive technical documents for their UPS product
+line, along with many units for development of NUT-related projects. The
+company also sponsored and later hired Arnaud Quette to further officially
+support these efforts. 
+Several drivers such as mge-utalk, mge-shut, snmp-ups, hidups, and newhidups
+are the result of this collaboration, in addition to the WMNut, HID Parser
+and libhid projects. The features page has improved artwork thanks to Luc
+and Arnaud of MGE. Other client projects such as KNutClient and ups-monitor
+have also received assistance. 
+The master NUT site and several related projects are hosted on MGE's equipment
+at no cost to the project.
+More information on their open source support can be found on their web site:
+http://opensource.mgeups.com/contrib.htm 
+
+Fenton Technologies contributed a PowerPal 660 to the project.  Their open 
+stance and quick responses to technical inquiries are appreciated for 
+making the development of the fentonups driver possible.
+
+Bo Kersey of VirCIO (http://www.vircio.com) provided a Best Power 
+Fortress 750 to facilitate the bestups driver.  
+
+Invensys Energy Systems provided the SOLA/Best "Phoenixtec" protocol
+document currently residing at the following URL:
+
+	http://random.networkupstools.org/protocols/sola.html
+
+PowerKinetics technical support provided documentation on their MiniCOL
+protocol, which is archived in the NUT protocol library online:
+
+	http://random.networkupstools.org/protocols/minicol/
+
+Cyber Power Systems contributed a 700AVR model for testing and driver
+development.
+
+Liebert Corporation supplied serial test boxes and a UPStation GXT2  
+with the Web/SNMP card for development of the liebert driver and
+expansion of the existing snmp-ups driver.
+
+All donated equipment can usually be seen on the big status page:
+
+	http://www.exploits.org/cgi-bin/ups/upsstats.cgi
