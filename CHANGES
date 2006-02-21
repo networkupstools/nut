@@ -1,3 +1,8 @@
+Thu Feb 16 13:25:00 UTC 2006 / Charles Lepple <clepple@gmail.com>
+
+ - Converted repository from CVS to Subversion
+ - Development branch is now trunk
+
 Wed Feb 15 10:20:10 UTC 2006 / Kjell Claesson <kjell.claesson@telia.com>
 
  - Apply patch from Niklas
