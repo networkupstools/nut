@@ -312,7 +312,7 @@ static void shutdown_driver(const ups_t *ups)
 
 	argv[arg++] = dfn;
 	argv[arg++] = "-a";
-	argv[arg++] = xstrdup(ups->upsname);
+	argv[arg++] = ups->upsname;
 	argv[arg++] = "-k";
 	argv[arg++] = NULL;
 
