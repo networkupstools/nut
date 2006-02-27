@@ -66,6 +66,8 @@
 "Clary"		"ST-800"		""	"gamatronic"
 
 "Compaq"	"T1500h"	""	"upscode2 use_pre_lf"
+"Compaq"	"R3000 XR"	""	"bcmxcp"
+"Compaq"	"R5500 XR"	""	"bcmxcp"
 
 "Cyber Power Systems"	"320AVR"	""	"cyberpower"
 "Cyber Power Systems"	"500AVR"	""	"cyberpower"
