@@ -323,7 +323,7 @@ static mge_info_item mge_info[] = {
 	  "%ld", NULL, SHUT_FLAG_OK, NULL }, /* RW, to be caught first if exists... */
 	{ "battery.charge.low", ST_FLAG_STRING, 5, "UPS.PowerSummary.RemainingCapacityLimit",
 	  "%ld", NULL, SHUT_FLAG_OK, NULL }, /* ... or Read only */
-	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", "%05d", NULL, SHUT_FLAG_OK, NULL },
+	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", "%.0f", NULL, SHUT_FLAG_OK, NULL },
 	/* UPS page */
 	{ "ups.mfr", ST_FLAG_STRING, 20, NULL, "%s", "MGE UPS SYSTEMS", SHUT_FLAG_ABSENT | SHUT_FLAG_OK, NULL },
 	{ "ups.load", 0, 0, "UPS.PowerSummary.PercentLoad", "%i", NULL, SHUT_FLAG_OK, NULL },

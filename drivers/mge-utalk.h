@@ -203,31 +203,31 @@ typedef struct {
 
 static mge_info_item mge_info[] = {
 	/* Battery page */
-	{ "battery.charge", 0, 0, "Bl", "%05.1f", NONE, TRUE },
-	{ "battery.runtime", 0, 0, "Bn", "%05d", NONE,	TRUE },
-	{ "battery.voltage",  0, 0, "Bv", "%05.1f", VOLT, TRUE },
-	{ "battery.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 2, "Bl ?", "%02d", NONE, TRUE },
-	{ "battery.voltage.nominal", 0, 0, "Bv ?", "%05.1f", VOLT,	 TRUE },
+	{ "battery.charge", 0, 0, "Bl", "%.0f", NONE, TRUE },
+        { "battery.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 2, "Bl ?", "%.0f", NONE, TRUE },
+        { "battery.runtime", 0, 0, "Bn", "%.0f", NONE,	TRUE },
+	{ "battery.voltage",  0, 0, "Bv", "%.1f", VOLT, TRUE },
+	{ "battery.voltage.nominal", 0, 0, "Bv ?", "%.1f", VOLT,	 TRUE },
 	/* UPS page */
-	{ "ups.temperature", 0, 0, "St", "%05.1f", DEGCELS, TRUE },
-	{ "ups.load", 0, 0, "Ll", "%05.1f", NONE, TRUE },
-	{ "ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 5, "Sm ?", "%03d", NONE, TRUE },
-	{ "ups.delay.shutdown",  ST_FLAG_RW | ST_FLAG_STRING, 5, "Sn ?", "%03d", NONE, TRUE },
-	{ "ups.test.interval", ST_FLAG_RW | ST_FLAG_STRING, 5, "Bp ?", "%03d", NONE, TRUE },
+	{ "ups.temperature", 0, 0, "St", "%.0f", DEGCELS, TRUE },
+	{ "ups.load", 0, 0, "Ll", "%.1f", NONE, TRUE },
+        { "ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 5, "Sm ?", "%.0f", NONE, TRUE },
+        { "ups.delay.shutdown",  ST_FLAG_RW | ST_FLAG_STRING, 5, "Sn ?", "%.0f", NONE, TRUE },
+        { "ups.test.interval", ST_FLAG_RW | ST_FLAG_STRING, 5, "Bp ?", "%.0f", NONE, TRUE },
 	/* Output page */
-	{ "output.voltage", 0, 0, "Lv", "%05.1f", VOLT, TRUE },
-	{ "output.current", 0, 0, "Lc", "%05.1f", AMPERE, TRUE },
+	{ "output.voltage", 0, 0, "Lv", "%.1f", VOLT, TRUE },
+	{ "output.current", 0, 0, "Lc", "%.1f", AMPERE, TRUE },
 	/* Input page */
-	{ "input.voltage", 0, 0, "Uv", "%05.1f", VOLT, TRUE },
-	{ "input.frequency", 0, 0, "Uf", "%05.2f", HERTZ, TRUE },
+	{ "input.voltage", 0, 0, "Uv", "%.1f", VOLT, TRUE },
+	{ "input.frequency", 0, 0, "Uf", "%.1f", HERTZ, TRUE },
 	/* same as LOBOOSTXFER */
-	{ "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "Ee ?", "%05.1f", VOLT, TRUE },
-	{ "input.transfer.boost.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "Ee ?", "%05.1f", VOLT, TRUE },
-	{ "input.transfer.boost.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "Eo ?", "%05.1f", VOLT, TRUE },
-	{ "input.transfer.trim.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "Ea ?", "%05.1f", VOLT, TRUE },
+	{ "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "Ee ?", "%.0f", VOLT, TRUE },
+	{ "input.transfer.boost.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "Ee ?", "%.0f", VOLT, TRUE },
+	{ "input.transfer.boost.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "Eo ?", "%.0f", VOLT, TRUE },
+	{ "input.transfer.trim.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "Ea ?", "%.0f", VOLT, TRUE },
 	/* same as HITRIMXFER */
-	{ "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "Eu ?", "%05.1f", VOLT, TRUE },
-	{ "input.transfer.trim.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "Eu ?", "%05.1f", VOLT, TRUE },
+	{ "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "Eu ?", "%.0f", VOLT, TRUE },
+	{ "input.transfer.trim.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "Eu ?", "%.0f", VOLT, TRUE },
 	/* terminating element */
 	{ NULL, 0, 0, "\0",	"\0", NONE, FALSE } 
 };

@@ -1,3 +1,8 @@
+Mon Feb 27 19:23:24 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - mge-utalk, mge-shut, snmp-ups: remove the zero prefix on exposed
+   data values
+
 Mon Feb 27 18:36:30 UTC 2006 / Arnaud Quette <aquette.dev@debian.org>
 
  - Move the debian directory to packaging/ to avoid conflict with
@@ -158,8 +163,8 @@ Tue Jan 31 21:34:00 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
 
 Mon Jan 30 19:52:00 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
 
- -  Fixes bug #302338 (genericups: custom configuration through ups.conf
-    not working)
+ - Fixes bug #302338 (genericups: custom configuration through
+   ups.conf not working)
 
 Sat Jan 28 14:38:58 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
 
