@@ -1,3 +1,8 @@
+Mon Feb 27 18:36:30 UTC 2006 / Arnaud Quette <aquette.dev@debian.org>
+
+ - Move the debian directory to packaging/ to avoid conflict with
+   the official Debian build process
+
 Mon Feb 27 16:06:20 UTC 2006 / Kjell Claesson <kjell.claesson@telia.com>
 
  - Add Compaq R3000 XR and R5500 XR to driver.list.
