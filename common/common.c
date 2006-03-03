@@ -99,7 +99,18 @@ void background(void)
 /* do this here to keep pwd/grp stuff out of the main files */
 struct passwd *get_user_pwent(const char *name)
 {
-	return getpwnam(name);
+	struct passwd *r;
+	errno = 0;
+	r = getpwnam(name);
+	if (r == NULL && errno == 0) {
+		/* POSIX does not specify that "user not found" is an error, so
+		   some implementations of getpwnam() do not set errno when this
+		   happens. So we catch this case and set errno manually. There
+		   is no official error code for "user not found", so we use
+		   ENOENT ("no such file or directory"). */
+		errno = ENOENT;
+	}
+	return r;
 }
 
 /* change to the user defined in the struct */
