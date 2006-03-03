@@ -544,8 +544,7 @@ int main(int argc, char **argv)
 
 	upsdebugx(1, "debug level is '%d'", nut_debug_level);
 
-	if ((new_uid = get_user_pwent(user)) == NULL)
-		fatal("getpwnam(%s)", user);
+	new_uid = get_user_pwent(user);
 	
 	if (chroot_path)
 		chroot_start(chroot_path);

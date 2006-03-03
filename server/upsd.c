@@ -895,8 +895,7 @@ int main(int argc, char **argv)
 		statepath = xstrdup(nut_statepath_env);
 
 	/* do this here, since getpwnam() might not work in the chroot */
-	if ((new_uid = get_user_pwent(user)) == NULL)
-		fatal("getpwnam(%s)", user);
+	new_uid = get_user_pwent(user);
 
 	if (chroot_path)
 		chroot_start(chroot_path);

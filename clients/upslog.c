@@ -466,8 +466,7 @@ int main(int argc, char **argv)
 		fatal("could not open logfile %s", logfn);
 
 	/* now drop root if we have it */
-	if ((new_uid = get_user_pwent(user)) == NULL)
-		fatal("getpwnam(%s)", user);
+	new_uid = get_user_pwent(user);
 
 	openlog("upslog", LOG_PID, LOG_FACILITY); 
 

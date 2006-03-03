@@ -1775,10 +1775,6 @@ static void start_pipe(const char *user)
 	else
 		new_uid = get_user_pwent(RUN_AS_USER);
 
-	/* check user data while we still have the console */
-	if (!new_uid) 
-		fatal("getpwnam(%s)", user);
-
 	ret = pipe(pipefd);
 
 	if (ret)

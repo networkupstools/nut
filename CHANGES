@@ -1,3 +1,8 @@
+Fri Mar  3 20:25:00 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - common/common.c: handle problems with get_user_pwent() directly,
+   instead of first returning to the caller
+
 Fri Mar  3 09:42:46 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - common/common.c: set errno=ENOENT in get_user_pwent() if user not found
