@@ -1,3 +1,7 @@
+Fri Mar  3 09:42:46 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - common/common.c: set errno=ENOENT in get_user_pwent() if user not found
+
 Mon Feb 27 19:23:24 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
  - mge-utalk, mge-shut, snmp-ups: remove the zero prefix on exposed
