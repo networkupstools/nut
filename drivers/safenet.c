@@ -80,7 +80,11 @@ static int safenet_command(const char *command)
 	ser_send_pace(upsfd, 10000, command);
 	upsdebugx(3, "UPS command %s", command);
 
-	ser_get_line(upsfd, reply, sizeof(reply), '\r', "", 0, 100000);
+	/*
+	 * Read the reply from the UPS. Allow twice the time needed to read 12
+	 * bytes (120 bits (including start & stop bits) / 1200 baud = 100ms).
+	 */
+	ser_get_line(upsfd, reply, sizeof(reply), '\r', "", 0, 200000);
 	upsdebugx(3, "UPS answers %s", (strlen(reply)>0) ? reply : "[INVALID]");
 
 	/*

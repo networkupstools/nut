@@ -1,3 +1,7 @@
+Sat Mar  4 14:32:00 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/safenet.c: increase timeout for reading replies from the UPS
+
 Fri Mar  3 20:25:00 2006 / Arjen de Korte <arjen@de-korte.org>
 
  - common/common.c: handle problems with get_user_pwent() directly,
