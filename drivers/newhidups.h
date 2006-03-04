@@ -137,6 +137,7 @@ extern info_lkp_t beeper_info[];
 extern info_lkp_t date_conversion[];
 extern info_lkp_t hex_conversion[];
 extern info_lkp_t stringid_conversion[];
+extern info_lkp_t kelvin_celsius_conversion[];
 
 /* --------------------------------------------------------------- */
 /* Structure containing information about how to get/set data      */

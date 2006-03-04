@@ -116,6 +116,8 @@ typedef struct
 	long    LogMax;		/* Logical Max							*/
 	long    PhyMin;		/* Physical Min							*/
 	long    PhyMax;		/* Physical Max							*/
+	long    have_PhyMin;	/* Physical Min defined? */
+	long    have_PhyMax;	/* Physical Max defined? */
 } HIDData;
 
 /*

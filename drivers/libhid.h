@@ -127,13 +127,6 @@ void free_regex_matcher(HIDDeviceMatcher_t *matcher);
 {
 	char*   Path;			/*!< HID Object's fully qualified HID path	*/
 	long    Value;		/*!< HID Object Value					*/
-	u_char   Attribute;	/*!< Report field attribute				*/
-	u_long   Unit; 		/*!< HID Unit							*/
-	char    UnitExp;		/*!< Unit exponent						*/
-	long    LogMin;		/*!< Logical Min							*/
-	long    LogMax;		/*!< Logical Max						*/
-	long    PhyMin;		/*!< Physical Min						*/
-	long    PhyMax;		/*!< Physical Max						*/	
 } HIDItem;
 
 /* Describe a set of values to match for finding a special HID device.
@@ -167,7 +160,7 @@ HIDItem *HIDGetItem(const char *ItemPath);
 /*
  * HIDGetItemValue
  * -------------------------------------------------------------------------- */
-float HIDGetItemValue(usb_dev_handle *udev, char *path, float *Value, usage_tables_t *utab);
+int HIDGetItemValue(usb_dev_handle *udev, char *path, float *Value, usage_tables_t *utab);
 
 /*
  * HIDGetItemString
