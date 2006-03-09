@@ -104,7 +104,7 @@ static int do_setvar(UPSCONN *ups, const char *varname, char *uin,
 	if (uin) {
 		snprintf(user, sizeof(user), "%s", uin);
 	} else {
-		memset(user, sizeof(user), '\0');
+		memset(user, '\0', sizeof(user));
 
 		pw = getpwuid(getuid());
 
