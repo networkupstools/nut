@@ -364,7 +364,7 @@ void fatal(const char *fmt, ...)
 	va_list va;
 
 	va_start(va, fmt);
-	vfatal(fmt, va, 1);
+	vfatal(fmt, va, (errno > 0) ? 1 : 0);
 	va_end(va);
 
 	exit(EXIT_FAILURE);
