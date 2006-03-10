@@ -1,3 +1,14 @@
+Fri Mar 10 14:10:00 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - docs/FAQ: removed entry that is no longer applicable, since
+   starting from version 1.4.0, upsd will no longer be able to
+   startup in this particular case (it changes UID before reading the
+   configuration files)
+ - drivers/genericups.c: fixes Alioth bug #302338 (genericups: custom
+   configuration through ups.conf not working)
+ - man/genericups.8: remove the "connection monitoring" chapter from
+   the man page (the code to perform this never made it into the driver)
+
 Fri Mar 10 08:56:00 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
 
  - client/upsrw.c: swapped parameters in memset() call

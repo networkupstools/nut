@@ -3,7 +3,7 @@ File: FAQ
 Date: 20 January 2006
 Auth: Russell Kroll <rkroll@exploits.org>
       Arnaud Quette <aquette.dev@gmail.com>
- 
+
 -----------------------------------------------------------------------------
 
  Q: I just upgraded, and ...
@@ -19,8 +19,8 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
  A: Go into your configuration path (/usr/local/ups/etc by default) and
     copy the sample template files over to their real names.  The sample
-    template files are installed with 'make install-cgi-conf' and can 
-    also be found inside the source distribution in the conf directory. 
+    template files are installed with 'make install-cgi-conf' and can
+    also be found inside the source distribution in the conf directory.
 
 -----------------------------------------------------------------------------
 
@@ -32,7 +32,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
  Q: My 1.4 CGI programs won't talk to my 2.0 upsd.  What should I do?
 
- A: Upgrade the CGI programs to 2.0.  While 1.4 was intended as a 
+ A: Upgrade the CGI programs to 2.0.  While 1.4 was intended as a
     compatibility tree that used the new protocol by default, the CGI
     programs were not upgraded at the same time.  The 1.4 versions
     still use the old REQ protocol, and your 2.0 upsd expects GET.
@@ -42,9 +42,9 @@ Auth: Russell Kroll <rkroll@exploits.org>
  Q: I just upgraded from 1.2 and upsmon now fails to start, saying
     "Fatal error: insufficient power configured!".  Why?
 
- A: You didn't read the top of the error, where upsmon says that it 
+ A: You didn't read the top of the error, where upsmon says that it
     ignored the invalid MONITOR line because UPS directives now require
-    a UPS name.  It also means you didn't see the same warning in 
+    a UPS name.  It also means you didn't see the same warning in
     UPGRADING.
 
     At least you saw this in the FAQ before asking the list.
@@ -86,7 +86,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
  A: The drivers drop root privileges long before the serial port is
     opened.  You'll need to change the permissions on that port so that
-    their new user id can access it.  Normally this is "nobody", but it 
+    their new user id can access it.  Normally this is "nobody", but it
     may be changed at compile-time by using configure --with-user.
 
     Read the error message.  If you have a permissions mismatch, then
@@ -95,12 +95,12 @@ Auth: Russell Kroll <rkroll@exploits.org>
 	Network UPS Tools - APC Smart protocol driver 0.60 (1.1.7)
 	This program is currently running as youruid (UID 1234)
 	/dev/ttyS2 is owned by user root (UID 0), mode 0600
-	Change the port name, or fix the permissions or ownership 
+	Change the port name, or fix the permissions or ownership
 	of /dev/ttyS2 and try again.
 	Unable to open /dev/ttyS2: Permission denied
 
     Now is a good time to point out that using "nobody" is a bad idea,
-    since it's a hack for NFS access.  You should create a new role 
+    since it's a hack for NFS access.  You should create a new role
     account (perhaps called "ups" or "nut"), and use that instead.
 
     Also, scroll down to the "security domains" question to see an
@@ -120,7 +120,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 -----------------------------------------------------------------------------
 
  Q: upsc, upsstats, and the other clients say "access denied".  The
-    serial port permissions are fine, so what gives? 
+    serial port permissions are fine, so what gives?
 
  A: In this case, "access denied" means the access to upsd, not the
     serial port.  You're being denied since the system has not been
@@ -157,8 +157,8 @@ Auth: Russell Kroll <rkroll@exploits.org>
 -----------------------------------------------------------------------------
 
  Q: I have an APC Smart-UPS connected with a grey APC cable and it won't
-    work.  The Back-UPS type in the genericups driver works but then I 
-    don't get to use all the nifty features in there.  Why doesn't the 
+    work.  The Back-UPS type in the genericups driver works but then I
+    don't get to use all the nifty features in there.  Why doesn't the
     right driver work?
 
  A: The problem lies in your choice of cable.  APC's grey cables
@@ -191,7 +191,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
     There is also a text version of that diagram in the docs/cables
     directory of the NUT source distribution.  Either one should allow
     you to build a good clone of APC's 940-0024C cable.
-   
+  
     There are simpler solutions involving 3 wires that work just fine
     too, but Powerchute won't find the loopback DTR-DCD and RTS-CTS and
     will be annoyed.  If you don't ever plan to use Powerchute, 3 wires
@@ -214,13 +214,13 @@ Auth: Russell Kroll <rkroll@exploits.org>
     of those installed.
 
     If you're stuck with an older version of gd, you can use it if you
-    specify the flags manually.  Look in gd's Makefile for "LIBS=", 
+    specify the flags manually.  Look in gd's Makefile for "LIBS=",
     then use that value when you call configure:
 
 	./configure --with-gd-libs="<whatever>" --with-cgi
 
     If you don't have gd's Makefile available for some reason, you're
-    in for a lot of trial and error.  
+    in for a lot of trial and error.
 
 -----------------------------------------------------------------------------
 
@@ -254,7 +254,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
     sockdebug code to write a "upsmon" type program that sits on top of
     the state sockets.  It won't work over the network, but it means
     you don't need upsd.  It also means only one host can monitor the
-    UPS. 
+    UPS.
 
     This is also a good option to consider if you can't use networked
     monitoring code for security or safety reasons.
@@ -276,7 +276,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
     power events?
 
  A: New versions of the init man page taken from the sysvinit package
-    are saying that usage of SIGPWR is discouraged, since /dev/initctl 
+    are saying that usage of SIGPWR is discouraged, since /dev/initctl
     control channel is the preferred way of communication.
 
  A: The name of the game is portability.  Not everyone's init handles
@@ -305,7 +305,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
  A: There are at least two different protocols being used for hardware
     with very similar names.  The bestups driver tends to support the
-    units built around the newer "PhoenixTec" protocol.  
+    units built around the newer "PhoenixTec" protocol.
 
     Previous releases of this software included a driver called
     bestfortress which supported the older Best hardware.  See the
@@ -335,7 +335,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
     what's going on with the UPS.
 
     Note: some drivers occasionally need more time to update than the
-    default value of MAXAGE (in upsd.conf) allows.  As a result, they 
+    default value of MAXAGE (in upsd.conf) allows.  As a result, they
     are temporarily marked stale even though everything is fine.  This
     can happen with MGE Ellipse equipment - see the mge-shut man page.
     In such cases, you can raise the value of MAXAGE to avoid these
@@ -347,7 +347,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
     to run them?
 
  A: This means that upsd can't connect to the driver for some reason.
-    Your ups.conf entry might be wrong, or the driver might not be 
+    Your ups.conf entry might be wrong, or the driver might not be
     running.  Maybe your state path is not configured properly.
 
     Check your syslog.  upsd will complain regularly if it can't
@@ -359,7 +359,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: Everything works perfectly during the shutdown, and the UPS comes 
+ Q: Everything works perfectly during the shutdown, and the UPS comes
     back on, but my system stays off.  What's happening?
 
  A: Assuming you don't have the problem in the next question, then you
@@ -405,7 +405,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
     - Set something in the BIOS that says "power up after power failure"
 
-    - Try using something (like a capacitor) across the power button 
+    - Try using something (like a capacitor) across the power button
       to "push" it for you - this might not work if it needs a delay
 
     - Hack the cable between the power supply and the motherboard to fool
@@ -446,11 +446,11 @@ Auth: Russell Kroll <rkroll@exploits.org>
     this affects one of my systems and my stop-gap solution is getting
     cranky.
 
-    Note: this question has been in the FAQ for over a year and 
+    Note: this question has been in the FAQ for over a year and
     there's still no answer.  Let me guess: everyone who runs a server
     on Mac hardware has a team of trained monkeys, and feeds them
     by growing bananas in the tropical environment formed by waste heat
-    from the equipment. 
+    from the equipment.
 
     The rest of us are still waiting for the answer.  Booting into the
     Mac OS to frob the "file server" panel is not an acceptable
@@ -531,8 +531,8 @@ Auth: Russell Kroll <rkroll@exploits.org>
     not possible, since that is owned by another user.
 
     There is also the possibility of running the drivers and upsd in a
-    chroot jail.  See the chroot.txt provided in the source 
-    distribution for an example implementation. 
+    chroot jail.  See the chroot.txt provided in the source
+    distribution for an example implementation.
 
     Why give would-be vandals any sort of help?
 
@@ -578,7 +578,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: The CGI programs report "access to that host is not authorized" - 
+ Q: The CGI programs report "access to that host is not authorized" -
     what's going on?
 
  A: Those programs need to see a host in your hosts.conf before they
@@ -586,7 +586,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
     random "host=" settings, which would annoy others with outgoing
     connection attempts from your system.
 
-    If your hosts.conf turns out to be configured correctly with 
+    If your hosts.conf turns out to be configured correctly with
     MONITOR entries and all that, check the permissions.  Your web
     server may be running the CGI programs as a user that can't read
     the file.
@@ -594,7 +594,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
     If you run your web server in a chroot jail, make sure the programs
     can still read hosts.conf.  You may have to copy it into the jail
     for this to work.  If you do that, make sure it's not writable by
-    any of the user accounts which run inside the jail.   
+    any of the user accounts which run inside the jail.
 
 -----------------------------------------------------------------------------
 
@@ -687,46 +687,10 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: When I tell upsd to reload the config files, it complains in the
-    syslog that it can't open the upsd.conf.  It read the files
-    when it started up, so why is it failing now?
-
- A: Look at who upsd is running as now - use 'ps'.  You'll probably see
-    "nobody" in that first column, even though you started it as root.
-    This is intentional - upsd drops root shortly after it starts up,
-    but _after_ it gets done reading your config files.
-
-    This means it can read the files once, but it can't reload them.
-    This is a compromise to provide a better default environment for
-    people who don't create a separate user for upsd.  The alternative
-    would be running upsd as root, and that's just asking for trouble.
-
-    If you want the reloading feature to work, the user that upsd
-    runs as must be able to open the various config files.  You should
-    create a user just for upsd, then make it own both of those config
-    files.  See the "security domains" question above for a good
-    way to do this.
-
-    Note: upsd.conf and upsd.users should not be writable by this user.
-
-    Recent versions of the INSTALL document assume this throughout, so
-    you may want to go back and reinstall using that as a reference.
-
-    *** NEVER make upsd.conf or upsd.users world readable or writable.
-
-    *** NEVER make upsd.conf or upsd.users accessible by "nobody".
-
-    If you do either of these things and someone breaks into your
-    system or starts messing with your UPS hardware, don't come crying
-    to me or anyone else associated with this project.  You will have
-    only yourself to blame.
-
------------------------------------------------------------------------------
-
  Q: I have <some problem> with <some old version> ...
 
  A: Get the latest stable release, and see if it still happens.  If it
-    goes away, it means someone else reported it and got it fixed a 
+    goes away, it means someone else reported it and got it fixed a
     long time ago.
 
     If that doesn't work, try the latest development version.
@@ -755,7 +719,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
  Q: What happened to the patch I sent?
 
  A: If a release goes by and your patch hasn't been included, it was
-    probably dropped.  There can be a lot of patches waiting for 
+    probably dropped.  There can be a lot of patches waiting for
     inclusion at some points, and occasionally some have to be
     rejected.
 
@@ -784,7 +748,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: I replaced the battery in my APC Smart-UPS and now it thinks the 
+ Q: I replaced the battery in my APC Smart-UPS and now it thinks the
     battery is low all the time.  How do you fix this?
 
  Q: My APC UPS keeps reporting "OL LB", even after it's been charging
@@ -805,7 +769,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
     down.
 
     The easiest way to do this is to first unplug your computer(s) from
-    it, and plug in a token load like a lamp.  Also, move the UPS to a 
+    it, and plug in a token load like a lamp.  Also, move the UPS to a
     power strip that doesn't switch the ground line or an outlet that
     you can switch off at your panel.
 
@@ -873,6 +837,6 @@ Auth: Russell Kroll <rkroll@exploits.org>
  A: It's both that and a frequently *anticipated* questions file, too.
 
     The idea is to write it up in here so that nobody asks the mailing
-    list when it finally does get released.  
+    list when it finally does get released. 
 
 -----------------------------------------------------------------------------
