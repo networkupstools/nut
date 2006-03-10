@@ -345,7 +345,7 @@ void toprint_str(char *str, int len)
 static int hex2d(const unsigned char *start, unsigned int len)
 {
 	unsigned char buf[32];
-	buf[32] = '\0';
+	buf[31] = '\0';
 
 	strncpy(buf, start, (len < (sizeof buf) ? len : (sizeof buf - 1)));
 	if(len < sizeof(buf)) buf[len] = '\0';
