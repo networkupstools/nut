@@ -284,7 +284,7 @@ static usb_dev_handle *udev;
  */
 
 /* Interval notation for Q% = 10% <= [minV, maxV] <= 100%  */
-static float V_interval[2] = {MIN_VOLT, MAX_VOLT};
+static double V_interval[2] = {MIN_VOLT, MAX_VOLT};
 
 static int battery_voltage_nominal = 12,
 	   input_voltage_nominal = 120,
@@ -942,7 +942,7 @@ void upsdrv_updateinfo(void)
 			bp = (int)(100*sqrt((bv - V_interval[0])
 						/ (V_interval[1] - V_interval[0])));
 
-		dstate_setinfo("battery.voltage", "%.2f", (float)bv);
+		dstate_setinfo("battery.voltage", "%.2f", bv);
 		dstate_setinfo("battery.charge",  "%3d", bp);
 	}
 
@@ -957,8 +957,9 @@ void upsdrv_updateinfo(void)
 		dstate_setinfo("input.voltage", "%d",
 				hex2d(d_value+1, 2) * input_voltage_scaled / 120);
 
-		dstate_setinfo("battery.voltage", "%.2f", 
-				(float)(hex2d(d_value+3, 2) * battery_voltage_nominal / 120.0 ) );
+		bv = hex2d(d_value+3, 2) * battery_voltage_nominal / 120.0 ;
+
+		dstate_setinfo("battery.voltage", "%.2f", bv);
 
 		/* battery charge state is left as an exercise for the reader */
 	}
