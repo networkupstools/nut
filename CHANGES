@@ -1,3 +1,8 @@
+Sat Mar 18 10:40:57 EST 2006/ Charles Lepple <clepple@gmail.com>
+
+ - drivers/tripplite_usb.c: fixed float/double mismatch in battery voltage
+   (backported from trunk)
+
 Fri Mar 10 14:10:00 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
 
  - docs/FAQ: removed entry that is no longer applicable, since
