@@ -133,6 +133,8 @@ static mge_model_info mge_model[] = {
   { 3000, 14, "Pulsar ESV17" },
   { 3000, 15, "Pulsar ESV20" },
   { 3000, 17, "Pulsar ESV8" },
+  /* Pulsar ESV+ compatibility (though these support Si1) */
+  { 3000, 51, "Pulsar ESV 11+" },
   { 0, 0, NULL }
 };
 

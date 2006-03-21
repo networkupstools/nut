@@ -1,3 +1,8 @@
+Tue Mar 21 19:15:06 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - mge-utalk: add ESV 11+ to Si data table, though it's also
+   supported by Si1
+
 Fri Mar 17 12:15:34 EST 2006 / Charles Lepple <clepple@gmail.com>
 
  - drivers/tripplite_usb.c: fixed float/double mismatch in battery voltage
