@@ -421,6 +421,15 @@ AC_ARG_WITH(linux-hiddev,
 ]
 )
 
+dnl Solaris 10 USB handling (need librt and libusb runtime path)
+case $target_os in
+	solaris2.10 )
+		echo Checking for Solaris 10 specific configuration for usb drivers
+		AC_SEARCH_LIBS(nanosleep,rt)
+		LIBUSB_LIBS="-R/usr/sfw/lib $LIBUSB_LIBS"
+		;;
+esac
+
 AC_MSG_CHECKING(state path)
 AC_ARG_WITH(statepath,
 [ --with-statepath=PATH		Path for ups state files        [/var/state/ups]],

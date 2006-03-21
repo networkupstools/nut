@@ -1,3 +1,9 @@
+Tue Mar 21 21:54:34 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - configure.in, drivers/libhid.h, drivers/Makefile.in:
+   add Solaris 10 support for newhidups (from Marty Lee and
+   George A. Dowding)
+
 Tue Mar 21 19:15:06 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
  - mge-utalk: add ESV 11+ to Si data table, though it's also
