@@ -1,3 +1,10 @@
+Wed Mar 22 20:51:32 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - mge-shut: remove the wrong ups.status setting to OB upon
+   communication failure.
+
+   [Alioth Bug #303257]
+
 Tue Mar 21 21:54:34 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
  - configure.in, drivers/libhid.h, drivers/Makefile.in:
