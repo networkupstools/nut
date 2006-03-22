@@ -646,9 +646,6 @@ void  shut_ups_status(void)
 	    try++;
 	  }
 	}
-	/* If we didn't succeed in getting status, set it to OB (FIXME: do a global parse?!) */
-	if (try == MAX_TRY && retcode == 0)
-	  status_set("OB");
 
 	if(hid_get_value("UPS.PowerSummary.PresentStatus.Discharging") != 0 ) {
 		if(hData.Value == 1)

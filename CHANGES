@@ -1,3 +1,10 @@
+Wed Mar 22 20:58:22 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - mge-shut: remove the wrong ups.status setting to OB upon
+   communication failure.
+
+   [Alioth Bug #303257]
+
 Sat Mar 18 10:40:57 EST 2006/ Charles Lepple <clepple@gmail.com>
 
  - drivers/tripplite_usb.c: fixed float/double mismatch in battery voltage
