@@ -44,8 +44,8 @@
 #define IDENT_MAXTRIES   5
 #define IDENT_MINSUCCESS 2
 
-#define SEND_PACE    100000 /* 100ms interval between chars */
-#define READ_TIMEOUT 2      /* 2 seconds timeout on read */
+#define SEND_PACE    100000  /* 100ms interval between chars */
+#define READ_TIMEOUT 2       /* 2 seconds timeout on read */
 
 #define MAX_START_DELAY    9999
 #define MAX_SHUTDOWN_DELAY 99
@@ -64,7 +64,7 @@
 #define FL_UPS_TYPE   4
 #define FL_BATT_TEST  5
 #define FL_LOAD_OFF   6
-#define FL_BEEPER_ON  7 /* seemingly not used */
+#define FL_BEEPER_ON  7  /* seemingly not used */
 
 /*
  * Battery voltage limits
@@ -73,10 +73,21 @@
  * 1000VA Plus (24V). If you have another model and these values should
  * be different, let me know.
  */
-#define BATT_VOLT_MIN_12 9.7  /* Estimate by looking at Commander Pro */
-#define BATT_VOLT_MAX_12 13.7
-#define BATT_VOLT_MIN_24 19.4 /* Estimate from LB at 22.2V (using same factor as 12V models) */
-#define BATT_VOLT_MAX_24 27.4
+#define BATT_MIN_12V 9.7   /* Estimate by looking at Commander Pro */
+#define BATT_MAX_12V 13.7
+#define BATT_MIN_24V 19.4  /* Estimate from LB at 22.2V (using same factor as 12V models) */
+#define BATT_MAX_24V 27.4
+
+/*
+ * For each UPS type, we define an upper bound (battery)
+ * voltage that we know can _never_ be seen.
+ * 
+ * Whatever the value is, it should be bigger than the
+ * above "BATT_VOLT_MAX_(n)" value, and smaller than
+ * the above "BATT_VOLT_MIN_(n+1)" value.
+ */
+#define UPPER_BOUND_12V 16
+#define UPPER_BOUND_24V 30
 
 /* Maximum lengths for the "I" command reply fields */
 #define UPS_MFR_CHARS     15
@@ -178,11 +189,13 @@ static int check_ups(void)
 
 static char *copy_field(char* dest, char *src, int field_len)
 {
-	int i;
-	int j;
+	int i, j;
 
 	/* First we skip the leading spaces... */
-	for (i = 0; src[i] == ' '; i++) {
+	for (i = 0; i < field_len; i++) {
+		if (src[i] != ' ') {
+			break;
+		}
 	}
 
 	/* ... then we copy the rest of the field... */
@@ -198,7 +211,7 @@ static char *copy_field(char* dest, char *src, int field_len)
 	/* ...and finally, remove the trailing spaces. */
 	rtrim(dest, ' ');
 
-	return &src[i];  /* return the rest of the source buffer */
+	return &src[field_len];  /* return the rest of the source buffer */
 }
 
 
@@ -269,6 +282,7 @@ void upsdrv_initinfo(void)
 	int i;
 	int success = 0;
 	FirmwareValues values;
+	QueryValues query;
 	UPSInfo info;
 
 	/* try to detect the UPS */
@@ -305,16 +319,28 @@ void upsdrv_initinfo(void)
 		fatalx("Error reading firmware values from UPS!");
 	}
 
-	if (values.battvolt == 12) {
-		battvolt_min = BATT_VOLT_MIN_12; 
-		battvolt_max = BATT_VOLT_MAX_12;
-	} else { /* 24V battery */
-		battvolt_min = BATT_VOLT_MIN_24;
-		battvolt_max = BATT_VOLT_MAX_24;
-	}
-
 	dstate_setinfo("output.voltage.nominal", "%.1f", values.volt);
 	dstate_setinfo("battery.voltage.nominal", "%.1f", values.battvolt);
+
+	if (run_query(&query) < 0) {
+		fatalx("Error reading status from UPS!");
+	}
+
+	/*
+	 * Set the proper limits, depending on the battery voltage,
+	 * so that the "charge" calculations return meaningful values.
+	 *
+	 * This has to be done by looking at the present battery voltage
+	 * because, for example, an UPS with two 12V batteries will show
+	 * battery voltages on the 24V range, and a nominal voltage of 12V.
+	 */
+	if (query.battvolt <= UPPER_BOUND_12V) {
+		battvolt_min = BATT_MIN_12V; 
+		battvolt_max = BATT_MAX_12V;
+	} else {
+		battvolt_min = BATT_MIN_24V;
+		battvolt_max = BATT_MAX_24V;
+	}
 
 	if (getval("lowbatt")) {
 		lowbatt = CLAMP(atof(getval("lowbatt")), 0, 100);

@@ -1,3 +1,8 @@
+Wed Mar 30 0:55:46 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+ - megatec.c: fixed case of blank fields on UPS identification strings.
+   Battery voltages are now set by looking at the present value instead
+   of the nominal value.
+
 Wed Mar 29 2:50:31 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
  - megatec: get manufacturer/model/version information. Ressurected
    "ups.temperature". Increased the interval between chars on send.
