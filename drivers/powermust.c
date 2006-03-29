@@ -275,7 +275,7 @@ void upsdrv_updateinfo(void)
 	dstate_setinfo("input.voltage.fault", "%.1f", query.fvolt);
 	dstate_setinfo("output.voltage", "%.1f", query.ovolt);
 	dstate_setinfo("ups.load", "%.1f", query.load);
-	dstate_setinfo("output.frequency", "%.1f", query.freq);
+	dstate_setinfo("input.frequency", "%.1f", query.freq);
 	dstate_setinfo("battery.voltage", "%.1f", query.battvolt);
 
 	/* this value seems to be bogus, it always reports 37.8 */
