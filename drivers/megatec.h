@@ -2,7 +2,7 @@
  * 
  * megatec.h: support for Megatec protocol based UPSes
  *
- * Copyright (C) 2003-2005 Carlos Rodrigues <carlos.efr at mail.telepac.pt>
+ * Copyright (C) Carlos Rodrigues <carlos.efr at mail.telepac.pt>
  *
  * megatec.c created on 4/10/2003
  *
@@ -21,4 +21,4 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#define DRV_VERSION "1.3"
+#define DRV_VERSION "1.4"

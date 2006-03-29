@@ -1,3 +1,10 @@
+Wed Mar 29 2:50:31 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+ - megatec: get manufacturer/model/version information. Ressurected
+   "ups.temperature". Increased the interval between chars on send.
+ - man/megatec.8: added missing test.battery.start description.
+ - docs/megatec.txt: documentation about the megatec driver (assimilation of
+   the other similar drivers).
+
 Wed Mar 22 20:51:32 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
  - mge-shut: remove the wrong ups.status setting to OB upon
