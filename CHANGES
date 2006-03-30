@@ -1,4 +1,7 @@
 Wed Mar 29 3:11:15 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+ - man/powermust.8: added battery test command to the man page.
+
+Wed Mar 29 3:11:15 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
  - powermust.c: changed "output.frequency" to "input.frequency"
 
 Wed Mar 22 20:58:22 2006 / Arnaud Quette <aquette.dev@gmail.com>
