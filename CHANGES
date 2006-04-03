@@ -1,3 +1,6 @@
+Mon Apr  3 2:04:51 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+ - megatec.c: proper support for 2x12V UPSes.
+
 Thu Mar 30 0:55:46 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
  - megatec.c: fixed case of blank fields on UPS identification strings.
    Battery voltages are now set by looking at the present value instead

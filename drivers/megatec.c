@@ -68,23 +68,23 @@
 
 /*
  * Battery voltage limits
- *
- * These are hardcoded values for the PowerMust 600VA Plus (12V) and the
- * 1000VA Plus (24V). If you have another model and these values should
- * be different, let me know.
  */
+ 
+/* Values obtained from a "Mustek PowerMust 600VA Plus" (12V). */
 #define BATT_MIN_12V 9.7   /* Estimate by looking at Commander Pro */
 #define BATT_MAX_12V 13.7
+
+/* Values obtained from a "Mustek PowerMust 1000VA Plus" (24V). */
 #define BATT_MIN_24V 19.4  /* Estimate from LB at 22.2V (using same factor as 12V models) */
 #define BATT_MAX_24V 27.4
+
+/* Values obtained from a "PowerWalker Line-Interactive VI1000" (24V, 2x12V battery). */
+#define BATT_MIN_2x12V 18.8  /* Estimate from LB at 22.3V (using same factor as 12V models) */
+#define BATT_MAX_2x12V 26.8
 
 /*
  * For each UPS type, we define an upper bound (battery)
  * voltage that we know can _never_ be seen.
- * 
- * Whatever the value is, it should be bigger than the
- * above "BATT_VOLT_MAX_(n)" value, and smaller than
- * the above "BATT_VOLT_MIN_(n+1)" value.
  */
 #define UPPER_BOUND_12V 16
 #define UPPER_BOUND_24V 30
@@ -285,7 +285,9 @@ void upsdrv_initinfo(void)
 	QueryValues query;
 	UPSInfo info;
 
-	/* try to detect the UPS */
+	/*
+	 * Try to detect the UPS.
+	 */
 	for (i = 0; i < IDENT_MAXTRIES; i++) {
 		if (check_ups() == 0) {
 			success++;
@@ -298,6 +300,9 @@ void upsdrv_initinfo(void)
 	
 	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
 
+	/*
+	 * Try to identify the UPS.
+	 */
 	if (get_ups_info(&info) >= 0) {
 		char model[UPS_MODEL_CHARS + UPS_VERSION_CHARS + 2];
 		sprintf(model, "%s %s", info.model, info.version);
@@ -325,27 +330,42 @@ void upsdrv_initinfo(void)
 	if (run_query(&query) < 0) {
 		fatalx("Error reading status from UPS!");
 	}
-
+	
 	/*
 	 * Set the proper limits, depending on the battery voltage,
 	 * so that the "charge" calculations return meaningful values.
 	 *
-	 * This has to be done by looking at the present battery voltage
-	 * because, for example, an UPS with two 12V batteries will show
-	 * battery voltages on the 24V range, and a nominal voltage of 12V.
+	 * This has to be done by looking at the present battery voltage and
+	 * the nominal voltage because, for example, some 24V models will
+	 * show a nominal voltage of 24, while others will show a nominal
+	 * voltage of 12. The present voltage helps telling them apart.
 	 */
 	if (query.battvolt <= UPPER_BOUND_12V) {
-		battvolt_min = BATT_MIN_12V; 
+		battvolt_min = BATT_MIN_12V;
 		battvolt_max = BATT_MAX_12V;
+	} else if (query.battvolt <= UPPER_BOUND_24V) {
+		if (values.battvolt == 12) {
+			battvolt_min = BATT_MIN_2x12V;
+			battvolt_max = BATT_MAX_2x12V;
+		} else {
+			battvolt_min = BATT_MIN_24V;
+			battvolt_max = BATT_MAX_24V;
+		}
 	} else {
-		battvolt_min = BATT_MIN_24V;
-		battvolt_max = BATT_MAX_24V;
+		battvolt_min = 0;
+		battvolt_max = INT_MAX;
+
+		upslogx(LOG_WARNING, "This UPS has an unsupported battery voltage range."
+				     " The \"battery.charge\" value will be bogus.");
 	}
 
 	if (getval("lowbatt")) {
 		lowbatt = CLAMP(atof(getval("lowbatt")), 0, 100);
 	}
 
+	/*
+	 * Register the available variables.
+	 */
 	dstate_setinfo("ups.delay.start", "%d", start_delay);
 	dstate_setflags("ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.start", MAX_START_DELAY_LEN);
@@ -354,6 +374,9 @@ void upsdrv_initinfo(void)
 	dstate_setflags("ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.shutdown", MAX_SHUTDOWN_DELAY_LEN);
 
+	/*
+	 * Register the available instant commands.
+	 */
 	dstate_addcmd("test.battery.start");
 	dstate_addcmd("shutdown.return");
 	dstate_addcmd("shutdown.stayoff");
