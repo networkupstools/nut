@@ -447,36 +447,46 @@ int shut_identify_ups ()
 				device_descriptor.dev_desc.iProduct);
 		     
 	/* Get strings iModel and iProduct */
-	while ( ((shut_get_string(device_descriptor.dev_desc.iProduct, string, 0x25)) <= 0)
-		       && ((tries--) > 0) )	{
-		
-		strcpy(model, string);
-		
-		if(hid_get_value("UPS.PowerSummary.iModel") != 0 )
-		  {
-			if((shut_get_string(hData.Value, string, 0x25)) > 0)
-			  finalname = get_model_name(model, string);
-		  }
-		else
-		  {
-			/* Try with "UPS.Flow.[4].ConfigApparentPower" */
-			if(hid_get_value("UPS.Flow.[4].ConfigApparentPower") != 0 )
-			  {
-				sprintf(&string[0], "%i", (int)hData.Value);
-				finalname = get_model_name(model, string);
-			  }
+	while (tries > 0)
+	{
+		if (shut_get_string(device_descriptor.dev_desc.iProduct, string, 0x25) > 0)
+		{
+			strcpy(model, string);
+			
+			if(hid_get_value("UPS.PowerSummary.iModel") != 0 )
+			{
+				if((shut_get_string(hData.Value, string, 0x25)) > 0)
+				{
+					finalname = get_model_name(model, string);
+					upsdebugx (2, "iModel = %s", string);
+					tries = 0;
+				}
+			}
 			else
-			  finalname = get_model_name(model, NULL);
-		  }
+			{
+				/* Try with "UPS.Flow.[4].ConfigApparentPower" */
+				if(hid_get_value("UPS.Flow.[4].ConfigApparentPower") != 0 )
+				{
+					sprintf(&string[0], "%i", (int)hData.Value);
+					finalname = get_model_name(model, string);
+				}
+				else
+					finalname = get_model_name(model, NULL);
 
-		dstate_setinfo("ups.model", "%s", finalname);
+				tries = 0;
+			}
+	
+			dstate_setinfo("ups.model", "%s", finalname);
+		}
+		else
+			tries--;
 	}
-		
-	/* Get strings iSerialNumber */
-	if (((retcode = shut_get_string(device_descriptor.dev_desc.iSerialNumber, string, 0x25)) > 0)
-		&& strcmp(string, "") && string[0] != '\t') {
 
-			dstate_setinfo("ups.serial", "%s", string);
+	/* Get strings iSerialNumber */
+	if ((shut_get_string(device_descriptor.dev_desc.iSerialNumber, string, 0x25) > 0)
+		&& strcmp(string, "") && string[0] != '\t')
+	{
+		dstate_setinfo("ups.serial", "%s", string);
 	}
 	else
 		dstate_setinfo("ups.serial", "unknown");
@@ -655,6 +665,11 @@ void  shut_ups_status(void)
 	if(hid_get_value("UPS.PowerSummary.PresentStatus.Charging") != 0 ) {
 		if(hData.Value == 1)
 			status_set("CHRG");
+	}
+
+	if(hid_get_value("UPS.PowerSummary.PresentStatus.ShutdownImminent") != 0 ) {
+		if(hData.Value == 1)
+			status_set("LB");
 	}
 
 	if(hid_get_value("UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit") != 0 ) {

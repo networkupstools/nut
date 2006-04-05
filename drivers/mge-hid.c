@@ -1,4 +1,4 @@
-/*  mgehid.c - data to monitor MGE UPS SYSTEMS HID (USB and serial) devices
+/*  mge-hid.c - data to monitor MGE UPS SYSTEMS HID (USB and serial) devices
  *
  *  Copyright (C) 2003 - 2005
  *  			Arnaud Quette <arnaud.quette@mgeups.fr>
@@ -28,7 +28,7 @@
 #include "dstate.h"   /* for STAT_INSTCMD_HANDLED */
 #include "common.h"
 
-#define MGE_HID_VERSION	"MGE HID 0.8"
+#define MGE_HID_VERSION	"MGE HID 0.9"
 
 #define MGE_VENDORID 0x0463
 
@@ -60,6 +60,7 @@ static usage_tables_t mge_utab[] = {
 
 static models_name_t mge_model_names [] =
 {
+
 	/* Ellipse models */
 	{ "ELLIPSE", "300", -1, "ellipse 300" },
 	{ "ELLIPSE", "500", -1, "ellipse 500" },
@@ -88,6 +89,29 @@ static models_name_t mge_model_names [] =
 	{ "Evolution", "2200", -1, "Pulsar Evolution 2200" },
 	{ "Evolution", "3000", -1, "Pulsar Evolution 3000" },
 	{ "Evolution", "3000XL", -1, "Pulsar Evolution 3000 XL" },
+	/* Newer Evolution models */
+	{ "Evolution", "650", -1, "Evolution 650" },
+	{ "Evolution", "850", -1, "Evolution 850" },
+	{ "Evolution", "1150", -1, "Evolution 1150" },
+	{ "Evolution", "S 1250", -1, "Evolution S 1250" },
+	{ "Evolution", "1550", -1, "Evolution 1550" },
+	{ "Evolution", "S 1750", -1, "Evolution S 1750" },
+	{ "Evolution", "2000", -1, "Evolution 2000" },
+	{ "Evolution", "S 2500", -1, "Evolution S 2500" },
+	{ "Evolution", "S 3000", -1, "Evolution S 3000" },
+	/* Pulsar M models */
+	{ "PULSAR M", "2200", -1, "Pulsar M 2200" },
+	{ "PULSAR M", "3000", -1, "Pulsar M 3000" },
+	{ "PULSAR M", "3000 XL", -1, "Pulsar M 3000 XL" },
+	/* Pulsar models */
+	{ "Pulsar", "700", -1, "Pulsar 700" },
+	{ "Pulsar", "1000", -1, "Pulsar 1000" },
+	{ "Pulsar", "1500", -1, "Pulsar 1500" },
+	{ "Pulsar", "1000 RT2U", -1, "Pulsar 1000 RT2U" },
+	{ "Pulsar", "1500 RT2U", -1, "Pulsar 1500 RT2U" },
+	/* Pulsar MX models */
+	{ "PULSAR", "MX4000", -1, "Pulsar MX 4000 RT" },
+	{ "PULSAR", "MX5000", -1, "Pulsar MX 5000 RT" },
 	/* NOVA models */	
 	{ "NOVA AVR", "600", -1, "NOVA 600 AVR" },
 	{ "NOVA AVR", "1100", -1, "NOVA 1100 AVR" },
@@ -104,11 +128,14 @@ static models_name_t mge_model_names [] =
 	{ "EX", "1500RT", -1, "Pulsar EX 1500 RT" },
 	{ "EX", "2200RT", -1, "Pulsar EX 2200 RT" },
 	{ "EX", "3200RT", -1, "Pulsar EX 3200 RT" },
-	/* Comet EX RT */
+	/* Comet EX RT three phased */
+	{ "EX", "5RT31", -1, "EX 5 RT 3:1" },
+	{ "EX", "7RT31", -1, "EX 7 RT 3:1" },
+	{ "EX", "11RT31", -1, "EX 11 RT 3:1" },
+	/* Comet EX RT mono phased */
 	{ "EX", "5RT", -1, "EX 5 RT" },
 	{ "EX", "7RT", -1, "EX 7 RT" },
 	{ "EX", "11RT", -1, "EX 11 RT" },
-
 	/* Galaxy 3000 */
 	{ "GALAXY", "3000_10", -1, "Galaxy 3000 10 kVA" },
 	{ "GALAXY", "3000_15", -1, "Galaxy 3000 15 kVA" },

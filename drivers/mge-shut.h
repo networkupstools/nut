@@ -3,8 +3,7 @@
  *  Copyright (C) 2002 - 2005
  *     Arnaud Quette <arnaud.quette@free.fr> & <arnaud.quette@mgeups.com>
  *     Philippe Marzouk <philm@users.sourceforge.net>
- *     Russell Kroll <rkroll@exploits.org>
- *  
+ *
  *  Sponsored by MGE UPS SYSTEMS <http://opensource.mgeups.com/>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -26,7 +25,7 @@
 #include "hidparser.h"
 #include "hidtypes.h"
 
-#define DRIVER_VERSION "0.65"
+#define DRIVER_VERSION "0.66"
 
 #define DEFAULT_TIMEOUT 	3000
 #define MAX_STRING      	64
@@ -182,7 +181,7 @@ models_name_t models_names [] =
 	{ "ELLIPSE", "750", "Ellipse 750" },
 	{ "ELLIPSE", "1000", "Ellipse 1000" },
 	{ "ELLIPSE", "1500", "Ellipse 1500" },
-	/* Evolution models */
+	/* Pulsar Evolution models */
 	{ "Evolution", "500", "Pulsar Evolution 500" },
 	{ "Evolution", "800", "Pulsar Evolution 800" },
 	{ "Evolution", "1100", "Pulsar Evolution 1100" },
@@ -190,6 +189,29 @@ models_name_t models_names [] =
 	{ "Evolution", "2200", "Pulsar Evolution 2200" },
 	{ "Evolution", "3000", "Pulsar Evolution 3000" },
 	{ "Evolution", "3000XL", "Pulsar Evolution 3000 XL" },
+	/* Newer Evolution models */
+	{ "Evolution", "650", "Evolution 650" },
+	{ "Evolution", "850", "Evolution 850" },
+	{ "Evolution", "1150", "Evolution 1150" },
+	{ "Evolution", "S 1250", "Evolution S 1250" },
+	{ "Evolution", "1550", "Evolution 1550" },
+	{ "Evolution", "S 1750", "Evolution S 1750" },
+	{ "Evolution", "2000", "Evolution 2000" },
+	{ "Evolution", "S 2500", "Evolution S 2500" },
+	{ "Evolution", "S 3000", "Evolution S 3000" },
+	/* Pulsar M models */
+	{ "PULSAR M", "2200", "Pulsar M 2200" },
+	{ "PULSAR M", "3000", "Pulsar M 3000" },
+	{ "PULSAR M", "3000 XL", "Pulsar M 3000 XL" },
+	/* Pulsar models */
+	{ "Pulsar", "700", "Pulsar 700" },
+	{ "Pulsar", "1000", "Pulsar 1000" },
+	{ "Pulsar", "1500", "Pulsar 1500" },
+	{ "Pulsar", "1000 RT2U", "Pulsar 1000 RT2U" },
+	{ "Pulsar", "1500 RT2U", "Pulsar 1500 RT2U" },
+	/* Pulsar MX models */
+	{ "PULSAR", "MX4000", "Pulsar MX 4000 RT" },
+	{ "PULSAR", "MX5000", "Pulsar MX 5000 RT" },
 	/* NOVA models */	
 	{ "NOVA AVR", "600", "NOVA 600 AVR" },
 	{ "NOVA AVR", "1100", "NOVA 1100 AVR" },
@@ -206,11 +228,14 @@ models_name_t models_names [] =
 	{ "EX", "1500RT", "Pulsar EX 1500 RT" },
 	{ "EX", "2200RT", "Pulsar EX 2200 RT" },
 	{ "EX", "3200RT", "Pulsar EX 3200 RT" },
-	/* Comet EX RT */
+	/* Comet EX RT three phased */
+	{ "EX", "5RT31", "EX 5 RT 3:1" },
+	{ "EX", "7RT31", "EX 7 RT 3:1" },
+	{ "EX", "11RT31", "EX 11 RT 3:1" },
+	/* Comet EX RT single phased */
 	{ "EX", "5RT", "EX 5 RT" },
 	{ "EX", "7RT", "EX 7 RT" },
 	{ "EX", "11RT", "EX 11 RT" },
-
 	/* Galaxy 3000 */
 	{ "GALAXY", "3000_10", "Galaxy 3000 10 kVA" },
 	{ "GALAXY", "3000_15", "Galaxy 3000 15 kVA" },
@@ -323,7 +348,7 @@ static mge_info_item mge_info[] = {
 	  "%ld", NULL, SHUT_FLAG_OK, NULL }, /* RW, to be caught first if exists... */
 	{ "battery.charge.low", ST_FLAG_STRING, 5, "UPS.PowerSummary.RemainingCapacityLimit",
 	  "%ld", NULL, SHUT_FLAG_OK, NULL }, /* ... or Read only */
-	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", "%05d", NULL, SHUT_FLAG_OK, NULL },
+	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", "%.0d", NULL, SHUT_FLAG_OK, NULL },
 	/* UPS page */
 	{ "ups.mfr", ST_FLAG_STRING, 20, NULL, "%s", "MGE UPS SYSTEMS", SHUT_FLAG_ABSENT | SHUT_FLAG_OK, NULL },
 	{ "ups.load", 0, 0, "UPS.PowerSummary.PercentLoad", "%i", NULL, SHUT_FLAG_OK, NULL },
