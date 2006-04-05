@@ -1,9 +1,20 @@
-Wed Apr  5 07:58:47 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
+Wed Apr 05 07:58:47 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
- - newhidups: fix the "double free or corruption" crash upon device
+ - newhidups:
+   * fix the "double free or corruption" crash upon device
    reconnexion (Debian bug #354305)
+   * mge-hid: add new models: Evolution, Pulsar, Pulsar M and Pulsar MX
 
-Mon Apr  3 02:04:51 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+ - mge-shut:
+   * harness the LB flag with ShutdownImminent
+   * fix some wrong data format, and remove the zero prefix
+   * add Comet EX RT 3:1 (without 3 phase data for the moment)
+   * add new models: Evolution, Pulsar, Pulsar M and Pulsar MX
+   * bump version to 0.66
+
+ - driver.list: completed with the new above compatibilities
+
+Mon Apr 03 02:04:51 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - megatec.c: proper support for 2x12V UPSes.
 

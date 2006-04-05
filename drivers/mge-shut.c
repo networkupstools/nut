@@ -444,31 +444,41 @@ int shut_identify_ups ()
 	upsdebugx (2, "entering shut_identify_ups(0x%04x, 0x%04x)\n", 
 				device_descriptor.dev_desc.iManufacturer,
 				device_descriptor.dev_desc.iProduct);
-		     
-	/* Get strings iModel and iProduct */
-	while ( ((shut_get_string(device_descriptor.dev_desc.iProduct, string, 0x25)) <= 0)
-		       && ((tries--) > 0) )	{
-		
-		strcpy(model, string);
-		
-		if(hid_get_value("UPS.PowerSummary.iModel") != 0 )
-		  {
-			if((shut_get_string(hData.Value, string, 0x25)) > 0)
-			  finalname = get_model_name(model, string);
-		  }
-		else
-		  {
-			/* Try with "UPS.Flow.[4].ConfigApparentPower" */
-			if(hid_get_value("UPS.Flow.[4].ConfigApparentPower") != 0 )
-			  {
-				sprintf(&string[0], "%i", (int)hData.Value);
-				finalname = get_model_name(model, string);
-			  }
-			else
-			  finalname = get_model_name(model, NULL);
-		  }
 
-		dstate_setinfo("ups.model", "%s", finalname);
+	/* Get strings iModel and iProduct */
+	while (tries > 0)
+	{
+		if (shut_get_string(device_descriptor.dev_desc.iProduct, string, 0x25) > 0)
+		{
+			strcpy(model, string);
+			
+			if(hid_get_value("UPS.PowerSummary.iModel") != 0 )
+			{
+				if((shut_get_string(hData.Value, string, 0x25)) > 0)
+				{
+					finalname = get_model_name(model, string);
+					upsdebugx (2, "iModel = %s", string);
+					tries = 0;
+				}
+			}
+			else
+			{
+				/* Try with "UPS.Flow.[4].ConfigApparentPower" */
+				if(hid_get_value("UPS.Flow.[4].ConfigApparentPower") != 0 )
+				{
+					sprintf(&string[0], "%i", (int)hData.Value);
+					finalname = get_model_name(model, string);
+				}
+				else
+					finalname = get_model_name(model, NULL);
+
+				tries = 0;
+			}
+	
+			dstate_setinfo("ups.model", "%s", finalname);
+		}
+		else
+			tries--;
 	}
 		
 	/* Get strings iSerialNumber */
@@ -656,6 +666,11 @@ void  shut_ups_status(void)
 			status_set("CHRG");
 	}
 
+	if(hid_get_value("UPS.PowerSummary.PresentStatus.ShutdownImminent") != 0 ) {
+		if(hData.Value == 1)
+			status_set("LB");
+	}
+	
 	if(hid_get_value("UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit") != 0 ) {
 		if(hData.Value == 1)
 			status_set("LB");
@@ -913,7 +928,7 @@ int shut_get_string(int strindex, char *string, int stringlen)
 	int retcode;
 	u_char buf[MAX_STRING];
 	
-	upsdebugx (3, "entering shut_get_string(%02x)", strindex);
+	upsdebugx (2, "entering shut_get_string(%02x)", strindex);
 	
 	HIDRequest.bmRequestType = REQUEST_TYPE_USB;
 	HIDRequest.bRequest = 0x06;
@@ -932,7 +947,7 @@ int shut_get_string(int strindex, char *string, int stringlen)
 		{
 			dump_hex("shut_get_string", buf, retcode);
 			make_string(buf, retcode, string);
-			upsdebugx(4, "string: %s", string);
+			upsdebugx(2, "string: %s", string);
 			return strlen(string);
 		}
 		else
