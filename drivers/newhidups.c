@@ -883,18 +883,19 @@ static bool hid_ups_walk(int mode)
 
 static void reconnect_ups(void)
 {
-  if (hd == NULL)
-	{	  
-	  upsdebugx(2, "==================================================");
-	  upsdebugx(2, "= device has been disconnected, try to reconnect =");
-	  upsdebugx(2, "==================================================");
-	  
-	  /* Not really useful as the device is no more reachable */
-	  HIDCloseDevice(udev);
-	  udev = NULL;
-	  
-	  if ((hd = HIDOpenDevice(&udev, &curDevice, reopen_matcher, MODE_REOPEN)) == NULL)
-		dstate_datastale();
+	if (hd == NULL)
+	{
+		upsdebugx(2, "==================================================");
+		upsdebugx(2, "= device has been disconnected, try to reconnect =");
+		upsdebugx(2, "==================================================");
+		
+		/* Not really useful as the device is no more reachable */
+		/* Cause a double free corruption on linux! */
+		/* HIDCloseDevice(udev); */
+		udev = NULL;
+		
+		if ((hd = HIDOpenDevice(&udev, &curDevice, reopen_matcher, MODE_REOPEN)) == NULL)
+			dstate_datastale();
 	}
 }
 
@@ -904,7 +905,7 @@ static void ups_status_set(void)
 {
 	/* clear status buffer before begining */
 	status_init();
-  
+
 	if (ups_status & STATUS_ONLINE) {
 		status_set("OL");		/* on line */
 	} else {

@@ -690,8 +690,11 @@ int HIDGetEvents(usb_dev_handle *udev, HIDDevice *dev, HIDItem **eventsList, usa
 
 void HIDCloseDevice(usb_dev_handle *udev)
 {
-	TRACE(2, "Closing device");
-	libusb_close(udev);
+	if (udev != NULL)
+	{
+		TRACE(2, "Closing device");
+		libusb_close(udev);
+	}
 }
 
 

@@ -1,12 +1,20 @@
-Mon Apr  3 2:04:51 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+Wed Apr  5 07:58:47 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - newhidups: fix the "double free or corruption" crash upon device
+   reconnexion (Debian bug #354305)
+
+Mon Apr  3 02:04:51 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
  - megatec.c: proper support for 2x12V UPSes.
 
-Thu Mar 30 0:55:46 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+Thu Mar 30 00:55:46 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
  - megatec.c: fixed case of blank fields on UPS identification strings.
    Battery voltages are now set by looking at the present value instead
    of the nominal value.
 
 Wed Mar 29 2:50:31 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
  - megatec: get manufacturer/model/version information. Ressurected
    "ups.temperature". Increased the interval between chars on send.
  - man/megatec.8: added missing test.battery.start description.

@@ -332,9 +332,9 @@ void libusb_close(usb_dev_handle *udev)
 {
 	if (udev != NULL)
 	{
-	        /* usb_release_interface() sometimes blocks and goes
-	           into uninterruptible sleep.  So don't do it. */
-	        /* usb_release_interface(udev, 0); */
+		/* usb_release_interface() sometimes blocks and goes
+		into uninterruptible sleep.  So don't do it. */
+		/* usb_release_interface(udev, 0); */
 		usb_close(udev);
 	}
 }
