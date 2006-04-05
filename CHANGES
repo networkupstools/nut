@@ -2,7 +2,7 @@ Wed Apr 05 07:58:47 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
  - newhidups:
    * fix the "double free or corruption" crash upon device
-   reconnexion (Debian bug #354305)
+     reconnexion (Debian bug #354305)
    * mge-hid: add new models: Evolution, Pulsar, Pulsar M and Pulsar MX
 
  - mge-shut:
