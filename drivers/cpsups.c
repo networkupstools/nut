@@ -148,12 +148,6 @@ static int scan_poll_values(char *buf)
 	int i = 0, battremain, length, rseconds;
 	double rminutes;
 
-/*	These are used to hold status of UPS.
- *	val1 = online/onbattery status
- */
- 	char temp1=values[6][0];
-	char *tmp1=&temp1;
-
 	while ((pollstatusmap[i].end != 0))
 	{
 		pos = &buf[pollstatusmap[i].begin];
@@ -161,6 +155,12 @@ static int scan_poll_values(char *buf)
 		strncpy(values[i],pos,length);
 		i++;
 	}
+
+/*	These are used to hold status of UPS.
+ *	val1 = online/onbattery status
+ */
+	char temp1=values[6][0];
+	char *tmp1=&temp1;
 
 	if ((*tmp1 & CPS_STAT_OL) && !(*tmp1 & CPS_STAT_OB)) 
 		status_set("OL");
