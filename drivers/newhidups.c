@@ -867,7 +867,8 @@ static void reconnect_ups(void)
 	  upsdebugx(2, "==================================================");
 	  
 	  /* Not really useful as the device is no more reachable */
-	  HIDCloseDevice(udev);
+	  /* Cause a double free corruption on linux! */
+	  /* HIDCloseDevice(udev); */
 	  udev = NULL;
 	  
 	  if ((hd = HIDOpenDevice(&udev, &curDevice, reopen_matcher, MODE_REOPEN)) == NULL)
