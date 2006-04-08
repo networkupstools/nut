@@ -42,7 +42,7 @@
 #define I_CMD_REPLY_LEN 37
 
 #define IDENT_MAXTRIES   5
-#define IDENT_MINSUCCESS 2
+#define IDENT_MINSUCCESS 3
 
 #define SEND_PACE    100000  /* 100ms interval between chars */
 #define READ_TIMEOUT 2       /* 2 seconds timeout on read */
@@ -171,17 +171,25 @@ static int check_ups(void)
 	char buffer[RECV_BUFFER_LEN];
 	int ret;
 
+	upsdebugx(2, "Sending \"F\" command...");
 	ser_send_pace(upsfd, SEND_PACE, "F%c", ENDCHAR);
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 	if (ret < F_CMD_REPLY_LEN) {
+		upsdebugx(2, "Wrong answer to \"F\" command.");
+
 		return -1;
 	}
+	upsdebugx(2, "\"F\" command successful.");
 
+	upsdebugx(2, "Sending \"Q1\" command...");
 	ser_send_pace(upsfd, SEND_PACE, "Q1%c", ENDCHAR);
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 	if (ret < Q1_CMD_REPLY_LEN) {
+		upsdebugx(2, "Wrong answer to \"Q1\" command.");
+
 		return -1;
 	}
+	upsdebugx(2, "\"Q1\" command successful.");
 
 	return 0;
 }
@@ -221,9 +229,12 @@ static int get_ups_info(UPSInfo *info)
 	char *anchor;
 	int ret;
 
+	upsdebugx(1, "Asking for UPS information (\"I\" command)...");
 	ser_send_pace(upsfd, SEND_PACE, "I%c", ENDCHAR);
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 	if (ret < I_CMD_REPLY_LEN) {
+		upsdebugx(1, "UPS doesn't return any information about itself.");
+		
 		return -1;
 	}
 
@@ -246,9 +257,12 @@ static int get_firmware_values(FirmwareValues *values)
 	char buffer[RECV_BUFFER_LEN];
 	int ret;
 
+	upsdebugx(1, "Asking for UPS power ratings (\"F\" command)...");
 	ser_send_pace(upsfd, SEND_PACE, "F%c", ENDCHAR);
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 	if (ret < F_CMD_REPLY_LEN) {
+		upsdebugx(1, "UPS doesn't return any information about its power ratings.");
+		
 		return -1;
 	}
 
@@ -264,9 +278,12 @@ static int run_query(QueryValues *values)
 	char buffer[RECV_BUFFER_LEN];
 	int ret;
 
+	upsdebugx(1, "Asking for UPS status (\"Q1\" command)...");
 	ser_send_pace(upsfd, SEND_PACE, "Q1%c", ENDCHAR);
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 	if (ret < Q1_CMD_REPLY_LEN) {
+		upsdebugx(1, "UPS doesn't return any information about its status.");
+		
 		return -1;
 	}
 
@@ -285,17 +302,23 @@ void upsdrv_initinfo(void)
 	QueryValues query;
 	UPSInfo info;
 
-	/*
-	 * Try to detect the UPS.
-	 */
+	upsdebugx(1, "Starting UPS detection process...");	
 	for (i = 0; i < IDENT_MAXTRIES; i++) {
+		upsdebugx(2, "Attempting to detect the UPS...");
 		if (check_ups() == 0) {
 			success++;
 		}
 	}
 
+	upsdebugx(1, "%d out of %d detection attempts failed (minimum failures: %d).",
+	          IDENT_MAXTRIES - success, IDENT_MAXTRIES, IDENT_MAXTRIES - IDENT_MINSUCCESS);
+
 	if (success < IDENT_MINSUCCESS) {
-		fatalx("Megatec protocol UPS not detected.");
+		if (success > 0) {
+			fatalx("The UPS is supported, but the connection is too unreliable. Try checking the cable for defects.");
+		} else {
+			fatalx("Megatec protocol UPS not detected.");
+		}
 	}
 	
 	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
@@ -341,13 +364,19 @@ void upsdrv_initinfo(void)
 	 * voltage of 12. The present voltage helps telling them apart.
 	 */
 	if (query.battvolt <= UPPER_BOUND_12V) {
+		upsdebugx(1, "This looks like a 12V UPS.");
+		
 		battvolt_min = BATT_MIN_12V;
 		battvolt_max = BATT_MAX_12V;
 	} else if (query.battvolt <= UPPER_BOUND_24V) {
 		if (values.battvolt == 12) {
+			upsdebugx(1, "This looks like a 2x12V UPS.");
+
 			battvolt_min = BATT_MIN_2x12V;
 			battvolt_max = BATT_MAX_2x12V;
 		} else {
+			upsdebugx(1, "This looks like a 24V UPS.");
+
 			battvolt_min = BATT_MIN_24V;
 			battvolt_max = BATT_MAX_24V;
 		}
@@ -356,7 +385,7 @@ void upsdrv_initinfo(void)
 		battvolt_max = INT_MAX;
 
 		upslogx(LOG_WARNING, "This UPS has an unsupported battery voltage range."
-				     " The \"battery.charge\" value will be bogus.");
+		                     " The \"battery.charge\" value will be bogus.");
 	}
 
 	if (getval("lowbatt")) {
@@ -390,6 +419,8 @@ void upsdrv_initinfo(void)
 
 	/* clean up a possible shutdown in progress */
 	ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
+
+	upsdebugx(1, "Done setting up the UPS.");
 }
 
 
@@ -418,14 +449,12 @@ void upsdrv_updateinfo(void)
 	dstate_setinfo("ups.load", "%.1f", query.load);
 	dstate_setinfo("input.frequency", "%.1f", query.freq);
 	dstate_setinfo("battery.voltage", "%.1f", query.battvolt);
-
 	dstate_setinfo("ups.temperature", "%.1f", query.temp);
 
 	charge = batt_charge_pct(query.battvolt);
 	dstate_setinfo("battery.charge", "%.1f", charge);
 
-	/* For debug purposes (I know it isn't good to create new variables) */
-	/*dstate_setinfo("ups.flags", query.flags);*/
+	upsdebugx(3, "UPS status flags: %s", query.flags);
 
 	status_init();
 
