@@ -41,8 +41,8 @@
 #define IDENT_MAXTRIES   5
 #define IDENT_MINSUCCESS 2
 
-#define SEND_PACE    50000 /* 50ms interval between chars */
-#define READ_TIMEOUT 2     /* 2 seconds timeout on read */
+#define SEND_PACE    100000 /* 50ms interval between chars */
+#define READ_TIMEOUT 2      /* 2 seconds timeout on read */
 
 #define MAX_START_DELAY    9999
 #define MAX_SHUTDOWN_DELAY 99

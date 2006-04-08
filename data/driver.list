@@ -19,6 +19,8 @@
 # Duplicate text in the last field will be cooked out during the conversion
 # to HTML with ROWSPAN magic.  They must be an exact match for this to work.
 
+"ActivePower"	"1400VA"	""	"powermust"
+
 "AEC"	"MiniGuard UPS 700"		"Megatec M2501 cable"	"genericups upstype=21"
 
 "APC"	"Back-UPS Pro"		""	"apcsmart"
@@ -50,6 +52,7 @@
 "Belkin"	"Home Office"	"F6H350-SER, F6H500-SER, F6H650-SER"	"genericups upstype=7"
 "Belkin"	"Universal UPS" "F6C800-UNV, F6C120-UNV, F6C1100-UNV"	"belkinunv"
 "Belkin"	"Universal UPS" "F6C800-UNV, F6C120-UNV, F6C1100-UNV"	"newhidups"
+"Belkin"	"Universal UPS"	"F6H500ukUNV"	"powermust"
 "Belkin"	"Office Series"	"F6C550-AVR"	"newhidups"
 
 "Best Power"	"Fortress (newer)"	""	"bestups"
@@ -282,7 +285,7 @@
 "Microsol"	"Solis 2.0"	"2000VA"	"solis"
 "Microsol"	"Solis 3.0"	"3000VA"	"solis"
 
-"Mustek"	"Various"	""	"mustek"
+"Mustek"	"Various"	""	"powermust"
 
 "Mustek"	"Powermust"	"400VA Plus"	"powermust"
 "Mustek"	"Powermust"	"600VA Plus"	"powermust"
@@ -313,6 +316,8 @@
 "PowerKinetics"	"9001"		""	"genericups upstype=17"
 
 "PowerTech"	"Comp1000"	"DTR cable power"	"genericups upstype=3"
+
+"Power Walker"	"Line-Interactive VI1000"	""	"powermust"
 
 "Powerware"	"3110"		""	"genericups upstype=7"
 "Powerware"	"3115"		""	"genericups upstype=11"
@@ -375,6 +380,7 @@
 
 "UNITEK"	"ALPHA 500 IC"		""	"fentonups"
 "UNITEK"	"Alpha 1000is"		""	"fentonups"
+"UNITEK"	"Alpha 500 ipE"		""	"powermust"
 
 "UPSonic"	"LAN Saver 600"		""	"genericups upstype=0"
 "UPSonic"	"Power Guardian"	""	"genericups upstype=7"
