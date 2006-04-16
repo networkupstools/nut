@@ -1,3 +1,7 @@
+Mon Apr 16 21:03:20 UTC 2006 / Kjell Claesson <kjell.claesson@telia.com>
+
+ - nut_usb.c: Remove iManufacturer and iProduct test in usb_dev_handle.
+
 Sun Apr 16 19:06:14 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - megatec.c: minor changes to the debugging output
