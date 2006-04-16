@@ -101,13 +101,13 @@ void net_starttls(ctype *client, int numarg, const char **arg)
 	client->ssl = SSL_new(ssl_ctx);
 
 	if (!client->ssl) {
-		upslog(LOG_ERR, "SSL_new failed\n");
+		upslog_with_errno(LOG_ERR, "SSL_new failed\n");
 		ssl_debug();
 		return;
 	}
 
 	if (SSL_set_fd(client->ssl, client->fd) != 1) {
-		upslog(LOG_ERR, "SSL_set_fd failed\n");
+		upslog_with_errno(LOG_ERR, "SSL_set_fd failed\n");
 		ssl_debug();
 	}
 }
@@ -124,7 +124,7 @@ void ssl_init(void)
 	OpenSSL_add_ssl_algorithms();
 
 	if ((ssl_ctx = SSL_CTX_new(TLSv1_server_method())) == NULL)
-		fatal("SSL_CTX_new");
+		fatal_with_errno("SSL_CTX_new");
 
 	if (SSL_CTX_use_RSAPrivateKey_file(ssl_ctx, certfile, SSL_FILETYPE_PEM) != 1) {
 		ssl_debug();
@@ -200,7 +200,7 @@ static int ssl_accept(ctype *client)
 			return ssl_error(client->ssl, ret);
 		
 		default:
-			upslog(LOG_ERR, "Unknown return value from SSL_accept");
+			upslog_with_errno(LOG_ERR, "Unknown return value from SSL_accept");
 	}
 
 	/* NOTREACHED */

@@ -439,7 +439,7 @@ static int check_file(const char *fn)
 	f = fopen(chkfn, "r");
 
 	if (!f) {
-		upslog(LOG_ERR, "Reload failed: can't open %s", chkfn);
+		upslog_with_errno(LOG_ERR, "Reload failed: can't open %s", chkfn);
 		return 0;	/* failed */
 	}
 

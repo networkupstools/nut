@@ -229,7 +229,7 @@ void upsdrv_initinfo(void)
 	/* Parse out model into longer string -- is this really USEFUL??? */
 	r = optiquery( "IO" );
 	if ( r < 1 ) 
-		fatal( "can't retrieve model" );
+		fatal_with_errno( "can't retrieve model" );
 	else
 	{
 		switch ( _buf[r-1] )

@@ -464,7 +464,7 @@ static void setup_serial(void)
 	struct termios tio;
 			 
 	if (tcgetattr(upsfd, &tio) == -1)
-		fatal("tcgetattr");
+		fatal_with_errno("tcgetattr");
 				 
 	tio.c_iflag = IXON | IXOFF;
 	tio.c_oflag = 0;
@@ -481,7 +481,7 @@ static void setup_serial(void)
 #endif
 
 	if (tcsetattr(upsfd, TCSANOW, &tio) == -1)
-		fatal("tcsetattr");
+		fatal_with_errno("tcsetattr");
 /* end code stolen from bestups.c */
 
 	sync_serial();

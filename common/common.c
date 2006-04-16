@@ -42,7 +42,8 @@ static int xbit_test(int val, int flag)
 	return ((val & flag) == flag);
 }
 
-/* enable writing upslog() type messages to the syslog */
+/* enable writing upslog_with_errno() and upslogx() type messages to 
+   the syslog */
 void syslogbit_set(void)
 {
 	xbit_set(&upslog_flags, UPSLOG_SYSLOG);
@@ -69,7 +70,7 @@ void background(void)
 	int	pid;
 
 	if ((pid = fork()) < 0)
-		fatal("Unable to enter background");
+		fatal_with_errno("Unable to enter background");
 
 	xbit_set(&upslog_flags, UPSLOG_SYSLOG);
 	xbit_clear(&upslog_flags, UPSLOG_STDERR);
@@ -85,7 +86,7 @@ void background(void)
 
 	/* make fds 0-2 point somewhere defined */
 	if (open("/dev/null", O_RDWR) != 0)
-		fatal("open /dev/null");
+		fatal_with_errno("open /dev/null");
 	dup(0);
 	dup(0);
 
@@ -110,7 +111,7 @@ struct passwd *get_user_pwent(const char *name)
 	if (errno == 0)
 		fatalx("user %s not found", name);
 	else
-		fatal("getpwnam(%s)", name);
+		fatal_with_errno("getpwnam(%s)", name);
 		
 	return NULL;  /* to make the compiler happy */
 }
@@ -124,29 +125,29 @@ void become_user(struct passwd *pw)
 
 	if (getuid() == 0)
 		if (seteuid(0))
-			fatal("getuid gave 0, but seteuid(0) failed");
+			fatal_with_errno("getuid gave 0, but seteuid(0) failed");
 
 	if (initgroups(pw->pw_name, pw->pw_gid) == -1)
-		fatal("initgroups");
+		fatal_with_errno("initgroups");
 
 	if (setgid(pw->pw_gid) == -1)
-		fatal("setgid");
+		fatal_with_errno("setgid");
 
 	if (setuid(pw->pw_uid) == -1)
-		fatal("setuid");
+		fatal_with_errno("setuid");
 }
 
 /* drop down into a directory and throw away pointers to the old path */
 void chroot_start(const char *path)
 {
 	if (chdir(path))
-		fatal("chdir(%s)", path);
+		fatal_with_errno("chdir(%s)", path);
 
 	if (chroot(path))
-		fatal("chroot(%s)", path);
+		fatal_with_errno("chroot(%s)", path);
 
 	if (chdir("/"))
-		fatal("chdir(/)");
+		fatal_with_errno("chdir(/)");
 
 	upsdebugx(1, "chrooted into %s", path);
 }
@@ -171,7 +172,7 @@ void writepid(const char *name)
 		fprintf(pidf, "%d\n", (int) getpid());
 		fclose(pidf);
 	} else {
-		upslog(LOG_NOTICE, "writepid: fopen %s", fn);
+		upslog_with_errno(LOG_NOTICE, "writepid: fopen %s", fn);
 	}
 
 	umask(mask);
@@ -186,7 +187,7 @@ int sendsignalfn(const char *pidfn, int sig)
 
 	pidf = fopen(pidfn, "r");
 	if (!pidf) {
-		upslog(LOG_NOTICE, "fopen %s", pidfn);
+		upslog_with_errno(LOG_NOTICE, "fopen %s", pidfn);
 		return -1;
 	}
 
@@ -308,7 +309,7 @@ const char * altpidpath(void)
 }
 
 /* logs the formatted string to any configured logging devices + the output of strerror(errno) */
-void upslog(int priority, const char *fmt, ...)
+void upslog_with_errno(int priority, const char *fmt, ...)
 {
 	va_list va;
 
@@ -327,7 +328,7 @@ void upslogx(int priority, const char *fmt, ...)
 	va_end(va);
 }
 
-void upsdebug(int level, const char *fmt, ...)
+void upsdebug_with_errno(int level, const char *fmt, ...)
 {
 	va_list va;
 	
@@ -361,7 +362,7 @@ static void vfatal(const char *fmt, va_list va, int use_strerror)
 	vupslog(LOG_ERR, fmt, va, use_strerror);
 }
 
-void fatal(const char *fmt, ...)
+void fatal_with_errno(const char *fmt, ...)
 {
 	va_list va;
 
@@ -390,7 +391,7 @@ void *xmalloc(size_t size)
 	void *p = malloc(size);
 
 	if (p == NULL)
-		fatal("%s", oom_msg);
+		fatal_with_errno("%s", oom_msg);
 	return p;
 }
 
@@ -399,7 +400,7 @@ void *xcalloc(size_t number, size_t size)
 	void *p = calloc(number, size);
 
 	if (p == NULL)
-		fatal("%s", oom_msg);
+		fatal_with_errno("%s", oom_msg);
 	return p;
 }
 
@@ -408,7 +409,7 @@ void *xrealloc(void *ptr, size_t size)
 	void *p = realloc(ptr, size);
 
 	if (p == NULL)
-		fatal("%s", oom_msg);
+		fatal_with_errno("%s", oom_msg);
 	return p;
 }
 
@@ -417,7 +418,7 @@ char *xstrdup(const char *string)
 	char *p = strdup(string);
 
 	if (p == NULL)
-		fatal("%s", oom_msg);
+		fatal_with_errno("%s", oom_msg);
 	return p;
 }
 

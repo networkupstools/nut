@@ -84,7 +84,7 @@ void upsdrv_updateinfo(void)
 	ret = ioctl(upsfd, TIOCMGET, &flags);
 
 	if (ret != 0) {
-		upslog(LOG_INFO, "ioctl failed");
+		upslog_with_errno(LOG_INFO, "ioctl failed");
 		dstate_datastale();
 		return;
 	}

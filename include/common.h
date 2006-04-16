@@ -74,7 +74,8 @@ int sendsignalfn(const char *pidfn, int sig);
 
 const char *xbasename(const char *file);
 
-/* enable writing upslog() type messages to the syslog */
+/* enable writing upslog_with_errno() and upslogx() type messages to
+   the syslog */
 void syslogbit_set(void);
 
 /* Return the default path for the directory containing configuration files */
@@ -86,16 +87,16 @@ const char * dflt_statepath(void);
 /* Return the alternate path for pid files */
 const char * altpidpath(void);
 
-void upslog(int priority, const char *fmt, ...)
+void upslog_with_errno(int priority, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
 void upslogx(int priority, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
-void upsdebug(int level, const char *fmt, ...)
+void upsdebug_with_errno(int level, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
 void upsdebugx(int level, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
 
-void fatal(const char *fmt, ...)
+void fatal_with_errno(const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 1, 2)));
 void fatalx(const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 1, 2)));

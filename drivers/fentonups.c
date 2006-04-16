@@ -124,7 +124,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		ret = ser_send(upsfd, "T\r");
 
 		if (ret != 2)
-			upslog(LOG_ERR, "instcmd: ser_send failed");
+			upslog_with_errno(LOG_ERR, "instcmd: ser_send failed");
 
 		return STAT_INSTCMD_HANDLED;
 	}
@@ -133,7 +133,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		ret = ser_send(upsfd, "CT\r");
 
 		if (ret != 2)
-			upslog(LOG_ERR, "instcmd: ser_send failed");
+			upslog_with_errno(LOG_ERR, "instcmd: ser_send failed");
 
 		return STAT_INSTCMD_HANDLED;
 	}
@@ -152,7 +152,7 @@ static char *get_id(void)
 		ret = ser_send(upsfd, "I\r");
 
 		if (ret != 2)
-			upslog(LOG_ERR, "get_id: ser_send failed");
+			upslog_with_errno(LOG_ERR, "get_id: ser_send failed");
 
 		sleep(1);
 		ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, "", 
@@ -243,7 +243,7 @@ void upsdrv_initinfo(void)
 	ret = ser_send(upsfd, "C\r");
 
 	if (ret != 2)
-		upslog(LOG_ERR, "upsdrv_initinfo: ser_send failed");
+		upslog_with_errno(LOG_ERR, "upsdrv_initinfo: ser_send failed");
 
 	upsh.instcmd = instcmd;
 
@@ -261,7 +261,7 @@ void upsdrv_updateinfo(void)
 	ret = ser_send(upsfd, "Q1\r");
 
 	if (ret != 3)
-		upslog(LOG_ERR, "upsdrv_updateinfo: ser_send failed");
+		upslog_with_errno(LOG_ERR, "upsdrv_updateinfo: ser_send failed");
 
 	/* give it a chance to return the full line */
 	usleep(300000);

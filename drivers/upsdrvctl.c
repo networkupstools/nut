@@ -144,7 +144,7 @@ static void stop_driver(const ups_t *ups)
 	}
 
 	if (ret != 0) {
-		upslog(LOG_ERR, "Can't open %s", pidfn);
+		upslog_with_errno(LOG_ERR, "Can't open %s", pidfn);
 		exec_error++;
 		return;
 	}
@@ -157,7 +157,7 @@ static void stop_driver(const ups_t *ups)
 	ret = sendsignalfn(pidfn, SIGTERM);
 
 	if (ret < 0) {
-		upslog(LOG_ERR, "Stopping %s failed", pidfn);
+		upslog_with_errno(LOG_ERR, "Stopping %s failed", pidfn);
 		exec_error++;
 		return;
 	}
@@ -177,7 +177,7 @@ static void forkexec(const char *prog, char **argv, const ups_t *ups)
 	pid = fork();
 
 	if (pid < 0)
-		fatal("fork");
+		fatal_with_errno("fork");
 
 	if (pid != 0) {			/* parent */
 		int	wstat;
@@ -220,7 +220,7 @@ static void forkexec(const char *prog, char **argv, const ups_t *ups)
 		/* the rest only work when WIFEXITED is nonzero */
 
 		if (WIFSIGNALED(wstat)) {
-			upslog(LOG_WARNING, "Driver died after signal %d",
+			upslog_with_errno(LOG_WARNING, "Driver died after signal %d",
 				WTERMSIG(wstat));
 			exec_error++;
 		}
@@ -233,7 +233,7 @@ static void forkexec(const char *prog, char **argv, const ups_t *ups)
 	ret = execv(prog, argv);
 
 	/* shouldn't get here */
-	fatal("execv");
+	fatal_with_errno("execv");
 }
 
 static void start_driver(const ups_t *ups)
@@ -248,7 +248,7 @@ static void start_driver(const ups_t *ups)
 	ret = stat(dfn, &fs);
 
 	if (ret < 0)
-		fatal("Can't start %s", dfn);
+		fatal_with_errno("Can't start %s", dfn);
 
 	upsdebugx(2, "exec: %s -a %s", dfn, ups->upsname);
 

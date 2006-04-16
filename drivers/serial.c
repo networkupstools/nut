@@ -90,7 +90,7 @@ static void lock_set(int fd, const char *port)
 	int	ret;
 
 	if (fd < 0)
-		fatal("lock_set: programming error: fd = %d", fd);
+		fatal_with_errno("lock_set: programming error: fd = %d", fd);
 
 	if (do_lock_port == 0)
 		return;
@@ -126,7 +126,7 @@ static void lock_set(int fd, const char *port)
 
 #endif
 
-	upslog(LOG_WARNING, "Warning: no locking method is available");
+	upslog_with_errno(LOG_WARNING, "Warning: no locking method is available");
 }
 
 int ser_open(const char *port)
@@ -148,7 +148,7 @@ int ser_set_speed(int fd, const char *port, speed_t speed)
 	struct	termios	tio;
 
 	if (tcgetattr(fd, &tio) != 0)
-		fatal("tcgetattr(%s)", port);
+		fatal_with_errno("tcgetattr(%s)", port);
 
 	tio.c_cflag = CS8 | CLOCAL | CREAD;
 	tio.c_iflag = IGNPAR;
@@ -173,7 +173,7 @@ int ser_set_speed(int fd, const char *port, speed_t speed)
 int ser_close(int fd, const char *port)
 {
 	if (fd < 0)
-		fatal("ser_close: programming error: fd=%d port=%s", fd, port);
+		fatal_with_errno("ser_close: programming error: fd=%d port=%s", fd, port);
 
 	if (close(fd) != 0)
 		return -1;
@@ -285,7 +285,7 @@ static int get_buf(int fd, unsigned char *buf, size_t buflen, long d_sec, long d
 
 	if (ret == -1) {
 		if (errno != EINTR)
-			upslog(LOG_ERR, "select fd %d", fd);
+			upslog_with_errno(LOG_ERR, "select fd %d", fd);
 
 		return -1;
 	}

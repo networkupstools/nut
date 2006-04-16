@@ -148,7 +148,7 @@ void upsdrv_updateinfo(void)
 	ret = ioctl(upsfd, TIOCMGET, &flags);
 
 	if (ret != 0) {
-		upslog(LOG_INFO, "ioctl failed");
+		upslog_with_errno(LOG_INFO, "ioctl failed");
 		dstate_datastale();
 		return;
 	}
@@ -226,14 +226,14 @@ void upsdrv_shutdown(void)
 		ret = tcsendbreak(upsfd, 4901);
 
 		if (ret != 0)
-			fatal("tcsendbreak");
+			fatal_with_errno("tcsendbreak");
 
 		return;
 	}
 
 	ret = ioctl(upsfd, TIOCMSET, &flags);
 	if (ret != 0)
-		fatal("ioctl TIOCMSET");
+		fatal_with_errno("ioctl TIOCMSET");
 
 	if (getval("sdtime")) {
 		int	sdtime;
@@ -278,7 +278,7 @@ void upsdrv_initups(void)
 	upsfd = ser_open(device_path);
 
 	if (ioctl(upsfd, TIOCMSET, &upstab[upstype].line_norm))
-		fatal("ioctl TIOCMSET");
+		fatal_with_errno("ioctl TIOCMSET");
 }
 
 void upsdrv_cleanup(void)

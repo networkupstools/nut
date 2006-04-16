@@ -1349,7 +1349,7 @@ void upsdrv_cleanup(void)
 
 void upsdrv_initinfo(void)
 {
-	/* try to detect the UPS here - call fatal() if it fails */
+	/* try to detect the UPS here - call fatal_with_errno() if it fails */
 
 	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
 	dstate_setinfo("ups.mfr", "Eltek");

@@ -1,3 +1,8 @@
+Sun Apr 16 23:24:25 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - renamed fatal(), upslog(), and upsdebug() as fatal_with_errno(), 
+   upslog_with_errno(), and upsdebug_with_errno(). 
+
 Mon Apr 16 21:03:20 UTC 2006 / Kjell Claesson <kjell.claesson@telia.com>
 
  - nut_usb.c: Remove iManufacturer and iProduct test in usb_dev_handle.

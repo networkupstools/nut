@@ -422,7 +422,7 @@ static int ups_ident( void )
     {
         if( DEBUG )
             printf( "WH says <%s> with length %i\n", buf, ret );
-        upslog( LOG_INFO, 
+        upslog_with_errno( LOG_INFO, 
                 "New WH String found. Please report to maintainer\n" );
     }
     return 1;
@@ -505,7 +505,7 @@ void upsdrv_updateinfo(void)
     {
         if( DEBUG ) 
             printf( "buf = %s len = %i\n", buf, ret );
-        upslog( LOG_ERR, "Error in UPS response " );
+        upslog_with_errno( LOG_ERR, "Error in UPS response " );
 	dstate_datastale();
         return;
     }

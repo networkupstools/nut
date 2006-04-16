@@ -729,7 +729,7 @@ void upsdrv_initinfo(void)
 	/* Get information on UPS from UPS */
 	res = command_read_sequence(PW_ID_BLOCK_REQ, answer);
 	if (res <= 0)
-		fatal("Could not communicate with the ups");
+		fatal_with_errno("Could not communicate with the ups");
 
 	/* Get number of CPU's in ID block */
 	len = answer[iIndex++];
@@ -795,7 +795,7 @@ void upsdrv_initinfo(void)
 	/* Get information on UPS configuration */
 	res = command_read_sequence(PW_CONFIG_BLOC_REQ, answer);
 	if (res <= 0)
-		fatal("Could not communicate with the ups");
+		fatal_with_errno("Could not communicate with the ups");
 
 	/* Get validation mask for status bitmap */
 	bcmxcp_status.topology_mask = answer[BCMXCP_CONFIG_BLOCK_HW_MODULES_INSTALLED_BYTE4];
@@ -824,7 +824,7 @@ void upsdrv_initinfo(void)
 	/* Get information on UPS extended limits */
 	res = command_read_sequence(PW_LIMIT_BLOCK_REQ, answer);
 	if (res <= 0)
-		fatal("Could not communicate with the ups");
+		fatal_with_errno("Could not communicate with the ups");
 
 	/* Low battery warning */
 	bcmxcp_status.lowbatt = answer[BCMXCP_EXT_LIMITS_BLOCK_LOW_BATT_WARNING] * 60;

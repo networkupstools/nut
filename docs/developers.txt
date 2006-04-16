@@ -26,21 +26,22 @@ string length checking of snprintf.
 Error reporting
 ---------------
 
-Don't call syslog() directly.  Use upslog and upslogx.  They may write
-to the syslog, stderr, or both as appropriate.  This means you don't
-have to worry about whether you're running in the background or not.
+Don't call syslog() directly.  Use upslog_with_errno() and upslogx().
+They may write to the syslog, stderr, or both as appropriate.  This
+means you don't have to worry about whether you're running in the
+background or not.
 
-upslog prints your message plus the string expansion of errno.  upslogx
-just prints the message.
+upslog_with_errno prints your message plus the string expansion of
+errno.  upslogx just prints the message.
 
-fatal and fatalx work the same way, but they exit(EXIT_FAILURE)
-afterwards.
+fatal_with_errno and fatalx work the same way, but they
+exit(EXIT_FAILURE) afterwards.
 
 Debugging information
 ---------------------
 
-upsdebug() uses the global nut_debug_level so you don't have to mess
-around with printfs yourself.  Use it.
+upsdebug_with_errno() and upsdebugx() use the global nut_debug_level
+so you don't have to mess around with printfs yourself.  Use them.
 
 Memory allocation
 -----------------
@@ -132,7 +133,7 @@ int open_subspace(char *ship, int privacy)
 		return insecure_channel(ship);
 
 	if (!init_privacy(ship))
-		fatal("Can't open secure channel");
+		fatal_with_errno("Can't open secure channel");
 
 	return secure_channel(ship);
 }

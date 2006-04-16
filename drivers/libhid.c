@@ -470,7 +470,7 @@ HIDItem *HIDGetItem(const char *ItemPath)
 	return NULL;
 }
 
-/* return 1 if OK, 0 on fail, <= -1 otherwise (ie disconnect) */
+/* return 1 if OK, 0 on fail, -errno otherwise (ie disconnect) */
 int HIDGetItemValue(usb_dev_handle *udev, char *path, float *Value, usage_tables_t *utab)
 {
 	int i, retcode;

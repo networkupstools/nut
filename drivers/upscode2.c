@@ -425,7 +425,7 @@ void upsdrv_initups(void)
 	ser_set_speed(upsfd, device_path, baud);
 
 	if (tcgetattr(upsfd, &tio) != 0)
-	    	fatal("tcgetattr(%s)", device_path);
+	    	fatal_with_errno("tcgetattr(%s)", device_path);
 	tio.c_lflag = ICANON;
 	tio.c_cc[VMIN] = 0;
 	tio.c_cc[VTIME] = 0;
@@ -901,7 +901,7 @@ static int upsc_simple(const simple_t *sp, const char *var, const char *val)
 				if (sp->aux != NULL) {
 					stat = sscanf(val, "%f", &fval);
 					if (stat != 1)
-						upslog(LOG_ERR, "Bad float in %s: %s", var, val);
+						upslog_with_errno(LOG_ERR, "Bad float in %s: %s", var, val);
 					else {
 						snprintf(buf, UPSC_BUFLEN, "%5.3f", fval**(sp->aux));
 						if (sp->desc)
