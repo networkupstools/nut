@@ -101,7 +101,7 @@ struct passwd *get_user_pwent(const char *name)
 {
 	struct passwd *r;
 	errno = 0;
-	if (r = getpwnam(name))
+	if ((r = getpwnam(name)))
 		return r;
 
 	/* POSIX does not specify that "user not found" is an error, so
@@ -111,6 +111,8 @@ struct passwd *get_user_pwent(const char *name)
 		fatalx("user %s not found", name);
 	else
 		fatal("getpwnam(%s)", name);
+		
+	return NULL;  /* to make the compiler happy */
 }
 
 /* change to the user defined in the struct */

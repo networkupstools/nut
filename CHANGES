@@ -1,4 +1,10 @@
-Sat Apr 08 21:25:32 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+Sun Apr 16 19:06:14 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - megatec.c: minor changes to the debugging output
+ - common.c: gcc doesn't issue warnings anymore
+ - driver.list: one more model (Sweex) supported by megatec
+
+Sat Apr 08 21:25:32 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - megatec.c: added some extra debugging.
  - driver.list: added a couple of models supported by megatec

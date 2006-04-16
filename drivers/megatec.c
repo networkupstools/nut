@@ -238,6 +238,8 @@ static int get_ups_info(UPSInfo *info)
 		return -1;
 	}
 
+	upsdebugx(3, "UPS information: %s", buffer);
+
 	memset(info, 0, sizeof(UPSInfo));
 
 	/*
@@ -266,6 +268,8 @@ static int get_firmware_values(FirmwareValues *values)
 		return -1;
 	}
 
+	upsdebugx(3, "UPS power ratings: %s", buffer);
+
 	sscanf(buffer, "%f %f %f %f", &values->volt, &values->current,
 	       &values->battvolt, &values->freq);
 
@@ -286,6 +290,8 @@ static int run_query(QueryValues *values)
 		
 		return -1;
 	}
+
+	upsdebugx(3, "UPS status: %s", buffer);
 
 	sscanf(buffer, "%f %f %f %f %f %f %f %s", &values->ivolt, &values->fvolt, &values->ovolt,
 	       &values->load, &values->freq, &values->battvolt, &values->temp, values->flags);
@@ -453,8 +459,6 @@ void upsdrv_updateinfo(void)
 
 	charge = batt_charge_pct(query.battvolt);
 	dstate_setinfo("battery.charge", "%.1f", charge);
-
-	upsdebugx(3, "UPS status flags: %s", query.flags);
 
 	status_init();
 
