@@ -28,9 +28,16 @@
 #ifndef _LIBHID_H
 #define _LIBHID_H
 
+#include "config.h"
+
 #include <sys/types.h>
 #include <regex.h>
 #include <usb.h>
+
+#ifdef HAVE_STDINT_H
+#include <stdint.h> /* for uint16_t */
+#endif
+
 #include "timehead.h"
 #include "hidtypes.h"
 
@@ -41,15 +48,6 @@ typedef enum ebool { FALSE, TRUE } bool;
 typedef int bool;
 #endif
 
-/* ensure these exists (required for Solaris 10) */
-#ifndef u_int16_t
-	typedef uint16_t u_int16_t;
-#endif
-
-#ifndef u_int8_t
-	typedef uint8_t u_int8_t;
-#endif
-    
 /* Device open modes */
 #define MODE_OPEN 0
 #define MODE_REOPEN 1
@@ -86,8 +84,8 @@ typedef usage_lkp_t *usage_tables_t;
  */
 typedef struct
 {
-	u_int16_t VendorID; /*!< Device's Vendor ID */
-	u_int16_t ProductID; /*!< Device's Product ID */
+	uint16_t VendorID; /*!< Device's Vendor ID */
+	uint16_t ProductID; /*!< Device's Product ID */
 	char*     Vendor; /*!< Device's Vendor Name */
 	char*     Product; /*!< Device's Product Name */
 	char*     Serial; /* Product serial number */

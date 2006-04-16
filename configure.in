@@ -161,7 +161,10 @@ AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h sys/termios.h)
 AC_HEADER_TIME
 AC_CHECK_HEADERS(sys/time.h)
 
+dnl Check for types and define possible replacements
 TYPE_SOCKLEN_T
+TYPE_UINT16_T
+TYPE_UINT8_T
 
 CFLAGS_ORIG=$CFLAGS
 LDFLAGS_ORIG=$LDFLAGS

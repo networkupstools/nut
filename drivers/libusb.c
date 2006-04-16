@@ -29,10 +29,16 @@
  *
  * -------------------------------------------------------------------------- */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
 #include <regex.h>
+
+#ifdef HAVE_STDINT_H
+#include <stdint.h> /* for uint8_t, uint16_t */
+#endif
 
 #include "libhid.h"
 
@@ -50,13 +56,13 @@ void upsdebugx(int level, const char *fmt, ...);
 
 /* HID descriptor, completed with desc{type,len} */
 struct my_usb_hid_descriptor {
-        u_int8_t  bLength;
-        u_int8_t  bDescriptorType;
-        u_int16_t bcdHID;
-        u_int8_t  bCountryCode;
-        u_int8_t  bNumDescriptors;
-        u_int8_t  bReportDescriptorType;
-        u_int16_t wDescriptorLength;
+        uint8_t  bLength;
+        uint8_t  bDescriptorType;
+        uint16_t bcdHID;
+        uint8_t  bCountryCode;
+        uint8_t  bNumDescriptors;
+        uint8_t  bReportDescriptorType;
+        uint16_t wDescriptorLength;
 };
 
 /* From usbutils: workaround libusb API goofs:  "byte" should never be sign extended;
