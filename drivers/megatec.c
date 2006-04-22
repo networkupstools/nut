@@ -347,7 +347,7 @@ static void set_battery_params(float volt_nominal, float volt_now)
 			battvolt_min = BATT_MIN_24V;
 			battvolt_max = BATT_MAX_24V;
 			
-			break;
+			return;
 	
 		case 96:
 			upsdebugx(1, "This looks like a 96V UPS.");
@@ -355,7 +355,7 @@ static void set_battery_params(float volt_nominal, float volt_now)
 			battvolt_min = BATT_MIN_96V;
 			battvolt_max = BATT_MAX_96V;
 
-			break;
+			return;
 	}
 	
 	battvolt_min = 0;

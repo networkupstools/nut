@@ -1,3 +1,7 @@
+Sat Apr 22 22:52:44 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - megatec.c: fixed stupid bug on UPS voltage detection
+
 Sat Apr 22 17:35:23 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - megatec.c: support 96V UPS
