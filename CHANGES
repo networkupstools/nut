@@ -1,3 +1,7 @@
+Sat Apr 22 17:35:23 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - megatec.c: support 96V UPS
+
 Sun Apr 16 23:24:25 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - renamed fatal(), upslog(), and upsdebug() as fatal_with_errno(), 

@@ -82,12 +82,18 @@
 #define BATT_MIN_2x12V 18.8  /* Estimate from LB at 22.3V (using same factor as 12V models) */
 #define BATT_MAX_2x12V 26.8
 
+/* Values obtained from a "Ablerex MS3000RT" (96V). */
+#define BATT_MIN_96V 1.63  /* Estimate from LB at 1.8V with 25% charge */
+#define BATT_MAX_96V 2.3
+
 /*
  * For each UPS type, we define an upper bound (battery)
- * voltage that we know can _never_ be seen.
+ * voltage that we know can _never_ be seen .
  */
-#define UPPER_BOUND_12V 16
-#define UPPER_BOUND_24V 30
+#define UPPER_BOUND_12V   16
+#define UPPER_BOUND 24V   30
+#define UPPER_BOUND_2x12V 30
+#define UPPER_BOUND_96V   3
 
 /* Maximum lengths for the "I" command reply fields */
 #define UPS_MFR_CHARS     15
@@ -147,6 +153,8 @@ static char *copy_field(char* dest, char *src, int field_len);
 static int get_ups_info(UPSInfo *info);
 static int get_firmware_values(FirmwareValues *values);
 static int run_query(QueryValues *values);
+static void set_battery_params(float volt_nominal, float volt_now);
+
 int instcmd(const char *cmdname, const char *extra);
 int setvar(const char *varname, const char *val);
 
@@ -300,6 +308,64 @@ static int run_query(QueryValues *values)
 }
 
 
+/*
+ * Set the proper limits, depending on the battery voltage,
+ * so that the "charge" calculations return meaningful values.
+ *
+ * This has to be done by looking at the present battery voltage and
+ * the nominal voltage because, for example, some 24V models will
+ * show a nominal voltage of 24, while others will show a nominal
+ * voltage of 12. The present voltage helps telling them apart.
+ */
+static void set_battery_params(float volt_nominal, float volt_now)
+{
+	switch ((int)volt_nominal) {
+		case 12:
+			if (volt_now <= UPPER_BOUND_12V) {
+				upsdebugx(1, "This looks like a 12V UPS.");
+				
+				battvolt_min = BATT_MIN_12V;
+				battvolt_max = BATT_MAX_12V;
+				
+				return;
+			}
+			
+			if (volt_now <= UPPER_BOUND_2x12V) {
+				upsdebugx(1, "This looks like a 2x12V UPS.");
+	
+				battvolt_min = BATT_MIN_2x12V;
+				battvolt_max = BATT_MAX_2x12V;
+				
+				return;
+			}
+			
+			break;
+			
+		case 24:
+			upsdebugx(1, "This looks like a 24V UPS.");
+	
+			battvolt_min = BATT_MIN_24V;
+			battvolt_max = BATT_MAX_24V;
+			
+			break;
+	
+		case 96:
+			upsdebugx(1, "This looks like a 96V UPS.");
+	
+			battvolt_min = BATT_MIN_96V;
+			battvolt_max = BATT_MAX_96V;
+
+			break;
+	}
+	
+	battvolt_min = 0;
+	battvolt_max = INT_MAX;
+
+	upslogx(LOG_WARNING, "This UPS has an unsupported combination of battery voltage/number of batteries."
+	                     " The \"battery.charge\" value will be bogus.");
+}
+
+
 void upsdrv_initinfo(void)
 {
 	int i;
@@ -360,39 +426,8 @@ void upsdrv_initinfo(void)
 		fatalx("Error reading status from UPS!");
 	}
 	
-	/*
-	 * Set the proper limits, depending on the battery voltage,
-	 * so that the "charge" calculations return meaningful values.
-	 *
-	 * This has to be done by looking at the present battery voltage and
-	 * the nominal voltage because, for example, some 24V models will
-	 * show a nominal voltage of 24, while others will show a nominal
-	 * voltage of 12. The present voltage helps telling them apart.
-	 */
-	if (query.battvolt <= UPPER_BOUND_12V) {
-		upsdebugx(1, "This looks like a 12V UPS.");
-		
-		battvolt_min = BATT_MIN_12V;
-		battvolt_max = BATT_MAX_12V;
-	} else if (query.battvolt <= UPPER_BOUND_24V) {
-		if (values.battvolt == 12) {
-			upsdebugx(1, "This looks like a 2x12V UPS.");
-
-			battvolt_min = BATT_MIN_2x12V;
-			battvolt_max = BATT_MAX_2x12V;
-		} else {
-			upsdebugx(1, "This looks like a 24V UPS.");
-
-			battvolt_min = BATT_MIN_24V;
-			battvolt_max = BATT_MAX_24V;
-		}
-	} else {
-		battvolt_min = 0;
-		battvolt_max = INT_MAX;
-
-		upslogx(LOG_WARNING, "This UPS has an unsupported battery voltage range."
-		                     " The \"battery.charge\" value will be bogus.");
-	}
+	/* make the charge calculations return meaningful values */
+	set_battery_params(values.battvolt, query.battvolt);
 
 	if (getval("lowbatt")) {
 		lowbatt = CLAMP(atof(getval("lowbatt")), 0, 100);
