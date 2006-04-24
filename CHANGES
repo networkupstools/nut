@@ -1,3 +1,7 @@
+Mon Apr 24 20:45:37 UTC 2006 / Niels Baggesen <nba@users.sourceforge.net>
+
+ - drivers/cpsups.c: Fix C++ style declarations between statements
+
 Mon Apr 24 20:44:51 UTC 2006 / Niels Baggesen <nba@users.sourceforge.net>
 
  - man/upscode2.8: Fix speling in man page
