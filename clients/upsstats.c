@@ -298,6 +298,9 @@ static int do_img(char *buf)
 	/* only allow known types through */
 
 	if (!strcmp(type, "input.voltage") 
+			|| !strcmp(type, "input.L1-N.voltage") 
+			|| !strcmp(type, "input.L2-N.voltage") 
+			|| !strcmp(type, "input.L3-N.voltage")
 			|| !strcmp(type, "input.L1-L2.voltage") 
 			|| !strcmp(type, "input.L2-L3.voltage") 
 			|| !strcmp(type, "input.L3-L1.voltage")) {
@@ -311,6 +314,9 @@ static int do_img(char *buf)
 		return get_img_val("battery.charge", "Battery charge", imgargs);
 
 	if (!strcmp(type, "output.voltage")
+			|| !strcmp(type, "output.L1-N.voltage") 
+			|| !strcmp(type, "output.L2-N.voltage") 
+			|| !strcmp(type, "output.L3-N.voltage")
 			|| !strcmp(type, "output.L1-L2.voltage") 
 			|| !strcmp(type, "output.L2-L3.voltage") 
 			|| !strcmp(type, "output.L3-L1.voltage")) {
@@ -320,7 +326,10 @@ static int do_img(char *buf)
 	if (!strcmp(type, "ups.load")
 			|| !strcmp(type, "output.L1.power.percent")
 			|| !strcmp(type, "output.L2.power.percent")
-			|| !strcmp(type, "output.L3.power.percent")) {
+			|| !strcmp(type, "output.L3.power.percent")
+			|| !strcmp(type, "output.L1.realpower.percent")
+			|| !strcmp(type, "output.L2.realpower.percent")
+			|| !strcmp(type, "output.L3.realpower.percent")) {
 		return get_img_val(type, "UPS load", imgargs);
 	}
 

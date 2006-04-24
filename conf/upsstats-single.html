@@ -128,6 +128,16 @@ V<BR>
 </TD>
 </TR>
 @ELSE@
+@IFSUPP input.L1-N.voltage@
+@VAR input.L1-N.voltage@
+V<BR>
+@VAR input.L2-N.voltage@
+V<BR>
+@VAR input.L3-N.voltage@
+V<BR>
+</TD>
+</TR>
+@ELSE@
 @IFSUPP input.voltage@
 @VAR input.voltage@
  V
@@ -178,6 +188,16 @@ V<BR>
 @VAR output.L2-L3.voltage@
 V<BR>
 @VAR output.L3-L1.voltage@
+V<BR>
+</TD>
+</TR>
+@ELSE@
+@IFSUPP output.L1-N.voltage@
+@VAR output.L1-N.voltage@
+V<BR>
+@VAR output.L2-N.voltage@
+V<BR>
+@VAR output.L3-N.voltage@
 V<BR>
 </TD>
 </TR>
@@ -251,6 +271,18 @@ L3-L1<BR>
 @IMG input.L3-L1.voltage width=68@
 </TABLE>
 @ELSE@
+@IFSUPP input.L1-N.voltage@
+<TABLE BORDER="0"><TR><TD ALIGN="CENTER">
+L1-N<BR>
+@IMG input.L1-N.voltage width=68@
+<TD ALIGN="CENTER">
+L2-N<BR>
+@IMG input.L2-N.voltage width=68@
+<TD ALIGN="CENTER">
+L3-N<BR>
+@IMG input.L3-N.voltage width=68@
+</TABLE>
+@ELSE@
 @IMG input.voltage@
 @ENDIF@
 </TD>
@@ -266,6 +298,18 @@ L2-L3<BR>
 <TD ALIGN="CENTER">
 L3-L1<BR>
 @IMG output.L3-L1.voltage width=68@
+</TABLE>
+@ELSE@
+@IFSUPP output.L1-N.voltage@
+<TABLE BORDER="0"><TR><TD ALIGN="CENTER">
+L1-N<BR>
+@IMG output.L1-N.voltage width=68@
+<TD ALIGN="CENTER">
+L2-N<BR>
+@IMG output.L2-N.voltage width=68@
+<TD ALIGN="CENTER">
+L3-N<BR>
+@IMG output.L3-N.voltage width=68@
 </TABLE>
 @ELSE@
 @IMG output.voltage@
@@ -285,12 +329,27 @@ L3<BR>
 @IMG output.L3.power.percent width=68@
 </TABLE>
 @ELSE@
+@IFSUPP output.L1.realpower.percent@
+<TABLE BORDER="0"><TR><TD ALIGN="CENTER">
+L1<BR>
+@IMG output.L1.realpower.percent width=68@
+<TD ALIGN="CENTER">
+L2<BR>
+@IMG output.L2.realpower.percent width=68@
+<TD ALIGN="CENTER">
+L3<BR>
+@IMG output.L3.realpower.percent width=68@
+</TABLE>
+@ELSE@
 @IMG ups.load@
 @ENDIF@
 </TD>
 </TR>
 
 </TABLE>
+<a href="http://validator.w3.org/check?uri=referer"><img style="float:right"
+        src="http://www.w3.org/Icons/valid-html40"
+        alt="Valid HTML 4.0 Transitional" height="31" width="88"></a>
 
 </BODY>
 </HTML>

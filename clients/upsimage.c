@@ -462,6 +462,9 @@ static void draw_battvolt(double var, int min, int nom, int max,
 		max = nom/2*2.3+1; /* Assume 2.3V float charge voltage */
 	}
 
+	if (nom < min || nom > max)
+	    	nom = -1;
+
 
 	deviation = -(nom*0.05); /* 5% deviation from nominal voltage */
 	if(deviation==0) {
@@ -610,6 +613,18 @@ struct imgvar_t imgvar[] = {
 		"input.transfer.high", 0, 
 		"%.1f VAC", draw_utility				},
 
+	{ "input.L1-N.voltage", "input.transfer.low", "input.voltage.nominal",
+		"input.transfer.high", 0, 
+		"%.1f VAC", draw_utility				},
+
+	{ "input.L2-N.voltage", "input.transfer.low", "input.voltage.nominal",
+		"input.transfer.high", 0, 
+		"%.1f VAC", draw_utility				},
+
+	{ "input.L3-N.voltage", "input.transfer.low", "input.voltage.nominal",
+		"input.transfer.high", 0, 
+		"%.1f VAC", draw_utility				},
+
 	{ "input.L1-L2.voltage", "input.transfer.low", "input.voltage.nominal",
 		"input.transfer.high", 0, 
 		"%.1f VAC", draw_utility				},
@@ -625,7 +640,8 @@ struct imgvar_t imgvar[] = {
 	{ "battery.charge", NULL, NULL, NULL, 0,
 		"%.1f %%",	draw_battpct				},
 
-	{ "battery.voltage", NULL, "battery.voltage.nominal", NULL, 0,
+	{ "battery.voltage", "battery.voltage.minimum", "battery.voltage.nominal",
+		"battery.voltage.maximum", 0,
 		"%.1f VDC",	draw_battvolt				},
 
 	{ "ups.temperature", "ups.temperature.minimum", NULL,
@@ -647,8 +663,29 @@ struct imgvar_t imgvar[] = {
 	{ "output.L3.power.percent", NULL, NULL, NULL, 0,
 		"%.1f %%",	draw_upsload				},
 
+	{ "output.L1.realpower.percent", NULL, NULL, NULL, 0,
+		"%.1f %%",	draw_upsload				},
+
+	{ "output.L2.realpower.percent", NULL, NULL, NULL, 0,
+		"%.1f %%",	draw_upsload				},
+
+	{ "output.L3.realpower.percent", NULL, NULL, NULL, 0,
+		"%.1f %%",	draw_upsload				},
+
 	{ "output.voltage", "input.transfer.low", "output.voltage.nominal",
 	       	"input.transfer.high", 0, 
+		"%.1f VAC",	draw_utility				},
+
+	{ "output.L1-N.voltage", "input.transfer.low",
+	       	"output.voltage.nominal", "input.transfer.high", 0, 
+		"%.1f VAC",	draw_utility				},
+
+	{ "output.L2-N.voltage", "input.transfer.low",
+	       	"output.voltage.nominal", "input.transfer.high", 0, 
+		"%.1f VAC",	draw_utility				},
+
+	{ "output.L3-N.voltage", "input.transfer.low",
+	       	"output.voltage.nominal", "input.transfer.high", 0, 
 		"%.1f VAC",	draw_utility				},
 
 	{ "output.L1-L2.voltage", "input.transfer.low",

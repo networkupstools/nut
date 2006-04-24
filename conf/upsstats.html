@@ -21,6 +21,7 @@
 <html>
 
 <head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>
 Network UPS Tools upsstats 
 @VERSION@
@@ -91,6 +92,12 @@ Network UPS Tools upsstats
 @IFBETWEEN input.transfer.low input.transfer.high input.L3-L1.voltage@
 #00FF00
 @ELSE@
+@IFSUPP input.L1-N.voltage@
+@IFBETWEEN input.transfer.low input.transfer.high input.L1-N.voltage@
+@IFBETWEEN input.transfer.low input.transfer.high input.L2-N.voltage@
+@IFBETWEEN input.transfer.low input.transfer.high input.L3-N.voltage@
+#00FF00
+@ELSE@
 @IFBETWEEN input.transfer.low input.transfer.high input.voltage@
 #00FF00
 @ELSE@
@@ -103,6 +110,11 @@ Network UPS Tools upsstats
 @VAR input.L2-L3.voltage@
 @VAR input.L3-L1.voltage@
 @ELSE@
+@IFSUPP input.L1-N.voltage@
+@VAR input.L1-N.voltage@
+@VAR input.L2-N.voltage@
+@VAR input.L3-N.voltage@
+@ELSE@
 @IFSUPP input.voltage@
 @VAR input.voltage@
 @ENDIF@
@@ -114,6 +126,11 @@ Network UPS Tools upsstats
 @VAR output.L2-L3.voltage@
 @VAR output.L3-L1.voltage@
 @ELSE@
+@IFSUPP output.L1-N.voltage@
+@VAR output.L1-N.voltage@
+@VAR output.L2-N.voltage@
+@VAR output.L3-N.voltage@
+@ELSE@
 @IFSUPP output.voltage@
 @VAR output.voltage@
 @ENDIF@
@@ -124,6 +141,11 @@ Network UPS Tools upsstats
 @VAR output.L1.power.percent@
 @VAR output.L2.power.percent@
 @VAR output.L3.power.percent@
+@ELSE@
+@IFSUPP output.L1.realpower.percent@
+@VAR output.L1.realpower.percent@
+@VAR output.L2.realpower.percent@
+@VAR output.L3.realpower.percent@
 @ELSE@
 @IFSUPP ups.load@
 @VAR ups.load@
@@ -158,7 +180,9 @@ Network UPS Tools upsstats
 
 <hr /><div><small>
 <a href="http://jigsaw.w3.org/css-validator/check/referer"><img style="float:right" src="http://jigsaw.w3.org/css-validator/images/vcss" alt="Valid CSS!" height="31" width="88"/></a>
-<a href="http://validator.w3.org/check/referer"><img style="float:right" src="http://www.w3.org/Icons/valid-xhtml11" alt="Valid XHTML 1.1!" height="31" width="88"/></a>
+<a href="http://validator.w3.org/check?uri=referer"><img style="float:right"
+src="http://www.w3.org/Icons/valid-html40"
+alt="Valid HTML 4.0 Transitional" height="31" width="88"></a>
 </small></div>
 
 </body></html>

@@ -213,8 +213,11 @@ Example: input.L1.current
 Valid CONTEXTs:
 ---------------
 L1-L2  \
-L2-L3  for voltage measurements
-L3-L1  /
+L2-L3   \
+L3-L1    for voltage measurements
+L1-N    /
+L2-N   /
+L3-N  /
 
 L1  \
 L2  for currrent and power measurements

@@ -1,3 +1,7 @@
+Mon Apr 24 20:54:18 UTC 2006 / Niels Baggesen <nba@users.sourceforge.net>
+
+ - docs/new-names.txt clients/upsimage.c clients/upsstats.c conf/upsstats.html conf/upsstats-single.html: Support for measuring phase-neutral voltages
+
 Mon Apr 24 20:45:37 UTC 2006 / Niels Baggesen <nba@users.sourceforge.net>
 
  - drivers/cpsups.c: Fix C++ style declarations between statements
