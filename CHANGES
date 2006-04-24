@@ -1,3 +1,7 @@
+Mon Apr 24 03:18:33 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - megatec.c: two decimals in "battery.voltage", the protocol allows for it
+
 Sat Apr 22 22:52:44 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - megatec.c: fixed stupid bug on UPS voltage detection

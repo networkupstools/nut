@@ -84,7 +84,7 @@
 
 /* Values obtained from a "Ablerex MS3000RT" (96V). */
 #define BATT_MIN_96V 1.63  /* Estimate from LB at 1.8V with 25% charge */
-#define BATT_MAX_96V 2.3
+#define BATT_MAX_96V 2.29
 
 /*
  * For each UPS type, we define an upper bound (battery)
@@ -489,7 +489,7 @@ void upsdrv_updateinfo(void)
 	dstate_setinfo("output.voltage", "%.1f", query.ovolt);
 	dstate_setinfo("ups.load", "%.1f", query.load);
 	dstate_setinfo("input.frequency", "%.1f", query.freq);
-	dstate_setinfo("battery.voltage", "%.1f", query.battvolt);
+	dstate_setinfo("battery.voltage", "%.2f", query.battvolt);
 	dstate_setinfo("ups.temperature", "%.1f", query.temp);
 
 	charge = batt_charge_pct(query.battvolt);
