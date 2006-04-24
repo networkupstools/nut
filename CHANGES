@@ -1,3 +1,7 @@
+Mon Apr 24 20:44:51 UTC 2006 / Niels Baggesen <nba@users.sourceforge.net>
+
+ - man/upscode2.8: Fix speling in man page
+
 Mon Apr 24 20:43:43 UTC 2006 / Niels Baggesen <nba@users.sourceforge.net>
 
  - include/common.h: Declare 'noreturn' to quite compiler warnings
