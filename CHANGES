@@ -1,3 +1,7 @@
+Mon Apr 24 21:24:40 UTC 2006 / Niels Baggesen <nba@users.sourceforge.net>
+
+ - drivers/pwmib.h: Fix for battery status from Olli
+
 Mon Apr 24 21:23:24 UTC 2006 / Niels Baggesen <nba@users.sourceforge.net>
 
  - CREDITS: Add some credit

@@ -1,7 +1,7 @@
 /*  pwmib.h - data to monitor Powerware UPS with NUT
  *  (using MIBs described in stdupsv1.mib and Xups.mib)
  *
- *  Copyright (C) 2005
+ *  Copyright (C) 2005-2006
  *  			Olli Savia <ops@iki.fi>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -21,20 +21,22 @@
  *
  */
 
-#define PW_MIB_VERSION                   "0.1"
+#define PW_MIB_VERSION                   "0.2"
 
 #define PW_OID_MANUFACTURER              ".1.3.6.1.2.1.33.1.1.1.0"
 #define PW_OID_MODEL                     ".1.3.6.1.2.1.33.1.1.2.0"
 #define PW_OID_SOFTWARE_VERSION          ".1.3.6.1.2.1.33.1.1.3.0"
 #define PW_OID_AGENT_SOFTWARE_VERSION    ".1.3.6.1.2.1.33.1.1.4.0"
 
-#define PW_OID_BATTERY_STATUS            ".1.3.6.1.4.1.534.1.2.5.0" /* Xups.mib */
 #define PW_OID_BATTERY_MINUTES_REMAINING ".1.3.6.1.2.1.33.1.2.3.0"
 #define PW_OID_BATTERY_CHARGE_REMAINING  ".1.3.6.1.2.1.33.1.2.4.0"
 #define PW_OID_BATTERY_VOLTAGE           ".1.3.6.1.2.1.33.1.2.5.0"
+#define PW_OID_BATTERY_STATUS            ".1.3.6.1.2.1.33.1.2.1.0" /* INFO_STATUS (2) */
 
 #define PW_OID_IN_FREQUENCY              ".1.3.6.1.2.1.33.1.3.3.1.2.0"
 #define PW_OID_IN_VOLTAGE                ".1.3.6.1.2.1.33.1.3.3.1.3.0"
+
+#define PW_OID_POWER_STATUS              ".1.3.6.1.2.1.33.1.4.1.0" /* INFO_STATUS (1) */
 
 #define PW_OID_OUT_FREQUENCY             ".1.3.6.1.2.1.33.1.4.2.0"
 #define PW_OID_OUT_VOLTAGE               ".1.3.6.1.2.1.33.1.4.4.1.2.0"
@@ -45,16 +47,26 @@
 #define PW_OID_AMBIENT_TEMP              ".1.3.6.1.4.1.534.1.6.1.0" /* Xups.mib */
 
 
-/* Defines for PW_OID_BATTERY_STATUS */
-info_lkp_t pw_batt_info[] = {
-	{ 1, "CHARGING" },
-	{ 2, "DISCHARGING" },
-	{ 3, "FLOATING" },
-	{ 4, "RESTING" },
-	{ 5, "UNKNOWN" },
+/* Defines for PW_OID_POWER_STATUS (1) */
+info_lkp_t pw_pwr_info[] = {
+        { 1, "" },
+        { 2, "OFF" },
+        { 3, "OL" },
+        { 4, "BYPASS" },
+        { 5, "OB" },
+        { 6, "BOOST" },
+        { 7, "TRIM" },
 	{ 0, "NULL" }
 } ;
 
+/* Defines for PW_OID_BATTERY_STATUS (2) */
+info_lkp_t pw_batt_info[] = {
+        { 1, "" },
+        { 2, "" },
+        { 3, "LB" },
+        { 4, "" },
+        { 0, "NULL" }
+} ;
 
 /* Snmp2NUT lookup table */
 
@@ -66,6 +78,7 @@ snmp_info_t pw_mib[] = {
 	{ "ups.mfr",             ST_FLAG_STRING, SU_INFOSIZE, PW_OID_MANUFACTURER,              "", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "ups.model",           ST_FLAG_STRING, SU_INFOSIZE, PW_OID_MODEL,                     "", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "ups.power",           0,              1.0,         PW_OID_OUT_POWER,                 "", SU_FLAG_OK,                  NULL },
+        { "ups.status",          ST_FLAG_STRING, SU_INFOSIZE, PW_OID_POWER_STATUS,           "OFF", SU_FLAG_OK | SU_STATUS_PWR,  &pw_pwr_info[0] },
 	{ "ups.status",          ST_FLAG_STRING, SU_INFOSIZE, PW_OID_BATTERY_STATUS,            "", SU_FLAG_OK | SU_STATUS_BATT, &pw_batt_info[0] },
 	/* Battery page */
 	{ "battery.charge",      0,              1.0,         PW_OID_BATTERY_CHARGE_REMAINING,  "", SU_FLAG_OK,                  NULL },
