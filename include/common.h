@@ -97,9 +97,9 @@ void upsdebugx(int level, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
 
 void fatal_with_errno(const char *fmt, ...)
-	__attribute__ ((__format__ (__printf__, 1, 2)));
+	__attribute__ ((__format__ (__printf__, 1, 2))) __attribute((noreturn));
 void fatalx(const char *fmt, ...)
-	__attribute__ ((__format__ (__printf__, 1, 2)));
+	__attribute__ ((__format__ (__printf__, 1, 2))) __attribute((noreturn));
 
 extern int nut_debug_level;
 

@@ -1,3 +1,7 @@
+Mon Apr 24 20:43:43 UTC 2006 / Niels Baggesen <nba@users.sourceforge.net>
+
+ - include/common.h: Declare 'noreturn' to quite compiler warnings
+
 Mon Apr 24 03:18:33 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - megatec.c: two decimals in "battery.voltage", the protocol allows for it
@@ -1015,7 +1019,7 @@ Tue May  3 09:09:07 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
  - upscode2: merge this driver for Fiskars, Compaq and Powerware
    devices.
 
-   (Niels Baggesen, Havard Lygre) [Alioth Patch #301144]
+   (Niels Baggesen, Håvard Lygre) [Alioth Patch #301144]
 
  - newhidups, libhid, libusb: improve UBS support. Interrupt and
    device reconnexion are now supported.
