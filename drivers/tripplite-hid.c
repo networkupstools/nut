@@ -62,6 +62,7 @@ static usage_tables_t tripplite_utab[] = {
 
 /* HID2NUT lookup table */
 static hid_info_t tripplite_hid2nut[] = {
+	/* unmapped variables */
 	{ "UPS.BatterySystem.Battery.PresentStatus.Charging", 0, 1, "UPS.BatterySystem.Battery.PresentStatus.Charging", NULL, "%.0f", HU_FLAG_OK, NULL },
 	{ "UPS.BatterySystem.Battery.PresentStatus.Discharging", 0, 1, "UPS.BatterySystem.Battery.PresentStatus.Discharging", NULL, "%.0f", HU_FLAG_OK, NULL },
 	{ "UPS.BatterySystem.Battery.PresentStatus.NeedReplacement", 0, 1, "UPS.BatterySystem.Battery.PresentStatus.NeedReplacement", NULL, "%.0f", HU_FLAG_OK, NULL },
@@ -88,9 +89,9 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ "UPS.PowerConverter.PresentStatus.VoltageOutOfRange", 0, 1, "UPS.PowerConverter.PresentStatus.VoltageOutOfRange", NULL, "%.0f", HU_FLAG_OK, NULL },
 	{ "UPS.PowerSummary.CapacityMode", 0, 1, "UPS.PowerSummary.CapacityMode", NULL, "%.0f", HU_FLAG_OK, NULL },
 	{ "UPS.PowerSummary.FullChargeCapacity", 0, 1, "UPS.PowerSummary.FullChargeCapacity", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "UPS.PowerSummary.iManufacturer", 0, 1, "UPS.PowerSummary.iManufacturer", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "UPS.PowerSummary.iProduct", 0, 1, "UPS.PowerSummary.iProduct", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "UPS.PowerSummary.iSerialNumber", 0, 1, "UPS.PowerSummary.iSerialNumber", NULL, "%.0f", HU_FLAG_OK, NULL },
+	{ "UPS.PowerSummary.iManufacturer", 0, 0, "UPS.PowerSummary.iManufacturer", NULL, "%s", HU_FLAG_OK, stringid_conversion },
+	{ "UPS.PowerSummary.iProduct", 0, 0, "UPS.PowerSummary.iProduct", NULL, "%s", HU_FLAG_OK, stringid_conversion },
+	{ "UPS.PowerSummary.iSerialNumber", 0, 1, "UPS.PowerSummary.iSerialNumber", NULL, "%s", HU_FLAG_OK, stringid_conversion },
 	{ "UPS.PowerSummary.PresentStatus.0084004b", 0, 1, "UPS.PowerSummary.PresentStatus.0084004b", NULL, "%.0f", HU_FLAG_OK, NULL },
 	{ "UPS.PowerSummary.PresentStatus.008400d0", 0, 1, "UPS.PowerSummary.PresentStatus.008400d0", NULL, "%.0f", HU_FLAG_OK, NULL },
 	{ "UPS.PowerSummary.PresentStatus.ConfigActivePower", 0, 1, "UPS.PowerSummary.PresentStatus.ConfigActivePower", NULL, "%.0f", HU_FLAG_OK, NULL },
