@@ -91,20 +91,21 @@ energizerups.o:
 # ==========================================================================
 # Special case: newhidups driver - development version
 
+NEWHIDUPS_SUBDRIVERS = generic-hid.o mge-hid.o apc-hid.o belkin-hid.o \
+  tripplite-hid.o
+
 newhidups: newhidups.o main.o dstate.o ../common/state.o \
 		../common/upsconf.o ../common/parseconf.o $(LIBDEP) \
 		$(STRLCPY) libhid.o libusb.o hidparser.o \
-		generic-hid.o mge-hid.o apc-hid.o belkin-hid.o \
-		tripplite-hid.o
+		$(NEWHIDUPS_SUBDRIVERS)
 	$(CC) $(CFLAGS) -o $@ $@.o main.o dstate.o \
 		../common/state.o ../common/upsconf.o ../common/parseconf.o \
 		$(LIBOBJ) $(LIBUSB_LIBS) $(LDFLAGS) libhid.o libusb.o hidparser.o \
-		generic-hid.o mge-hid.o apc-hid.o belkin-hid.o \
-                tripplite-hid.o
+		$(NEWHIDUPS_SUBDRIVERS)
 
 # all the stuff that needs to include $(LIBUSB_CFLAGS):
-newhidups.o libhid.o libusb.o apc-hid.o belkin-hid.o generic-hid.o \
-kebo-hid.o mge-hid.o tripplite-hid.o tripplite_usb.o bcmxcp_usb.o nut_usb.o:
+newhidups.o libhid.o libusb.o $(NEWHIDUPS_SUBDRIVERS) \
+kebo-hid.o tripplite_usb.o bcmxcp_usb.o nut_usb.o:
 	$(CC) $(CFLAGS) $(LIBUSB_CFLAGS) -c $<
 
 # ==========================================================================

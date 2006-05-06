@@ -1,3 +1,7 @@
+Sat May  6 14:28:01 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: enabled experimental Tripplite subdriver
+
 Mon Apr 24 21:25:50 UTC 2006 / Niels Baggesen <nba@users.sourceforge.net>
 
  - drivers/ietfmib.h: Fix firmware/firmware.aux and output power

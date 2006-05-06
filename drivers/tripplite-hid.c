@@ -1,8 +1,8 @@
 /*  tripplite-hid.c - data to monitor Tripp Lite USB/HID devices with NUT
  *
  *  Copyright (C)  
- *	2003 - 2005	Arnaud Quette <arnaud.quette@free.fr>
- *	2005		Peter Selinger <selinger@users.sourceforge.net>
+ *	2003 - 2005 Arnaud Quette <arnaud.quette@free.fr>
+ *	2005 - 2006 Peter Selinger <selinger@users.sourceforge.net>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
  *
@@ -29,7 +29,7 @@
 #include "dstate.h"   /* for STAT_INSTCMD_HANDLED */
 #include "common.h"
 
-#define TRIPPLITE_HID_VERSION "TrippLite HID 0.0 (incomplete)"
+#define TRIPPLITE_HID_VERSION "TrippLite HID 0.1 (experimental)"
 
 #define TRIPPLITE_VENDORID 0x09ae 
 #define TRIPPLITE_HID_PRODUCTID 0x2005 
@@ -187,9 +187,10 @@ static int tripplite_claim(HIDDevice *hd) {
 			return 1;
 		}
 
-		upsdebugx(1, "This particular Tripp Lite device (%04x/%04x) is not (or perhaps not\n"
-			  "yet) supported by newhidups. First try the tripplite_usb driver. If\n"
-			  "this fails, please write to the NUT developer's mailing list.\n", 
+		upsdebugx(1, 
+"This particular Tripp Lite device (%04x/%04x) is not (or perhaps not\n"
+"yet) supported by newhidups. First try the tripplite_usb driver. If\n"
+"this fails, please write to the NUT developer's mailing list.\n", 
 			  hd->VendorID, hd->ProductID);
 	}
 	return 0;

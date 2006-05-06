@@ -31,6 +31,7 @@
 #include "mge-hid.h"
 #include "apc-hid.h"
 #include "belkin-hid.h"
+#include "tripplite-hid.h"
 
 /* master list of avaiable subdrivers */
 static subdriver_t *subdriver_list[] = {
@@ -38,6 +39,7 @@ static subdriver_t *subdriver_list[] = {
 	&mge_subdriver,
 	&apc_subdriver,
 	&belkin_subdriver,
+	&tripplite_subdriver,
 	NULL
 };
 
