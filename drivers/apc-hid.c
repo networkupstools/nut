@@ -83,7 +83,7 @@ info_lkp_t apc_date_conversion[] = {
 
 /* APC has two non-NUT-standard status items: "time limit expired" and
    "battery present". The newhidups driver currently ignores
-   batterypresent, and maps timelimitexp to LB. CyberPower has the
+   batterypres, and maps timelimitexp to LB. CyberPower has the
    non-NUT-standard status item "fully charged". The newhidups driver
    currently ignores it. */
 static info_lkp_t timelimitexpired_info[] = {

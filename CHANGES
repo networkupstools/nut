@@ -1,3 +1,10 @@
+Mon May  8 16:00:40 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups/Tripplite subdriver: cleaned up variable mappings. Added new
+   status items: overheat, awaitingpower, commfault, vrange.
+ - newhidups/Belkin subdriver: added awaitingpower status flag
+ - docs/new-names.txt: added output.frequency.nominal
+
 Sun May  7 23:46:04 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups: added some non-standard usage codes to Tripplite subdriver

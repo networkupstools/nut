@@ -130,6 +130,18 @@ static info_lkp_t belkin_commfault_conversion[] = {
 	{ 0, NULL, belkin_commfault_conversion_fun }
 };
 
+static char *belkin_awaitingpower_conversion_fun(long value) {
+	if (value & 0x2000) {
+		return "awaitingpower";
+	} else {
+		return "!awaitingpower";
+	}
+}
+
+static info_lkp_t belkin_awaitingpower_conversion[] = {
+	{ 0, NULL, belkin_awaitingpower_conversion_fun }
+};
+
 static char *belkin_online_conversion_fun(long value) {
 	if (value & 0x20) {
 		return "!online";
@@ -275,6 +287,7 @@ static hid_info_t belkin_hid2nut[] = {
   { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINPowerStatus", NULL, "%s", HU_FLAG_OK, belkin_overload_conversion },
   { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINPowerStatus", NULL, "%s", HU_FLAG_OK, belkin_overheat_conversion },
   { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINPowerStatus", NULL, "%s", HU_FLAG_OK, belkin_commfault_conversion },
+  { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINPowerStatus", NULL, "%s", HU_FLAG_OK, belkin_awaitingpower_conversion },
   { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINBatteryStatus", NULL, "%s", HU_FLAG_OK, belkin_depleted_conversion },
   { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINBatteryStatus", NULL, "%s", HU_FLAG_OK, belkin_replacebatt_conversion },
   { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINBatteryStatus", NULL, "%s", HU_FLAG_OK, belkin_online_conversion },

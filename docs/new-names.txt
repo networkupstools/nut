@@ -159,11 +159,13 @@ input: Incoming line/power information
 output: Outgoing power/inverter information
 
    +------------------------------------------------------------------------+
-   | output.voltage                | Output voltage                 | 120.9 |
+   | output.voltage                | Output voltage (V)             | 120.9 |
    |-------------------------------+--------------------------------+-------|
-   | output.frequency              | Output frequency (Hz)          | 60    |
+   | output.voltage.nominal        | Nominal output voltage (V)     | 120   |
    |-------------------------------+--------------------------------+-------|
-   | output.voltage.nominal        | Nominal output voltage         | 120   |
+   | output.frequency              | Output frequency (Hz)          | 59.9  |
+   |-------------------------------+--------------------------------+-------|
+   | output.frequency.nominal      | Nominal output frequency (Hz)  | 60    |
    |-------------------------------+--------------------------------+-------|
    | output.current                | Output current (amps)          | 4.25  |
    +------------------------------------------------------------------------+

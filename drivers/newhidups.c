@@ -85,12 +85,14 @@ status_lkp_t status_info[] = {
 	{ "boost", STATUS_BOOST },
 	{ "bypass", STATUS_BYPASS },
 	{ "off", STATUS_OFF },
-	{ "overhead", STATUS_OVERHEAT },
+	{ "overheat", STATUS_OVERHEAT },
 	{ "commfault", STATUS_COMMFAULT },
 	{ "depleted", STATUS_DEPLETED },
 	{ "timelimitexp", STATUS_TIMELIMITEXP },
 	{ "batterypres", STATUS_BATTERYPRES },
 	{ "fullycharged", STATUS_FULLYCHARGED },
+	{ "awaitingpower", STATUS_AWAITINGPOWER },
+	{ "vrange", STATUS_VRANGE },
 	{ NULL, 0 },
 };
 
@@ -160,6 +162,26 @@ info_lkp_t trim_info[] = {
 info_lkp_t boost_info[] = {
   { 1, "boost", NULL },
   { 0, "!boost", NULL },
+  { 0, "NULL", NULL }
+};
+info_lkp_t overheat_info[] = {
+  { 1, "overheat", NULL },
+  { 0, "!overheat", NULL },
+  { 0, "NULL", NULL }
+};
+info_lkp_t awaitingpower_info[] = {
+  { 1, "awaitingpower", NULL },
+  { 0, "!awaitingpower", NULL },
+  { 0, "NULL", NULL }
+};
+info_lkp_t commfault_info[] = {
+  { 1, "commfault", NULL },
+  { 0, "!commfault", NULL },
+  { 0, "NULL", NULL }
+};
+info_lkp_t vrange_info[] = {
+  { 1, "vrange", NULL },
+  { 0, "!vrange", NULL },
   { 0, "NULL", NULL }
 };
 /* FIXME: extend ups.status for BYPASS Manual/Automatic */
@@ -946,13 +968,19 @@ static void ups_status_set(void)
 		status_set("CAL");		/* calibration */
 	}
 	if (ups_status & STATUS_OVERHEAT) {
-		status_set("OVERHEAT");		/* overheat; Belkin */
+		status_set("OVERHEAT");		/* overheat; Belkin, TrippLite */
 	}
 	if (ups_status & STATUS_COMMFAULT) {
-		status_set("COMMFAULT");	/* UPS fault; Belkin */
+		status_set("COMMFAULT");	/* UPS fault; Belkin, TrippLite */
 	}
 	if (ups_status & STATUS_DEPLETED) {
 		status_set("DEPLETED");		/* battery depleted; Belkin */
+	}
+	if (ups_status & STATUS_AWAITINGPOWER) {
+		status_set("AWAITINGPOWER");	/* awaiting power; Belkin, TrippLite */
+	}
+	if (ups_status & STATUS_VRANGE) {
+		status_set("VRANGE");		/* voltage out of range; TrippLite */
 	}
 	
 	/* Commit the status buffer */
