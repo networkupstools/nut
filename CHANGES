@@ -1,3 +1,8 @@
+Mon May  8 19:01:55 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+- cpsups.c: redo of fix of uninitialized variable (Novell bug #159479)
+  because of portability concerns of previous patch
+
 Sat Apr 08 21:28:44 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - powermust.c: increased the interval between sending chars.
