@@ -89,7 +89,7 @@ static void get_desc(ctype *client, const char *upsname, const char *var)
 	if (desc)
 		sendback(client, "DESC %s %s \"%s\"\n", upsname, var, desc);
 	else
-		sendback(client, "DESC %s %s \"Unavailable\"\n", upsname, var);
+		sendback(client, "DESC %s %s \"Description unavailable\"\n", upsname, var);
 }
 
 static void get_cmddesc(ctype *client, const char *upsname, const char *cmd)
@@ -112,7 +112,7 @@ static void get_cmddesc(ctype *client, const char *upsname, const char *cmd)
 	if (desc)
 		sendback(client, "CMDDESC %s %s \"%s\"\n", upsname, cmd, desc);
 	else
-		sendback(client, "CMDDESC %s %s \"Unavailable\"\n", 
+		sendback(client, "CMDDESC %s %s \"Description unavailable\"\n", 
 			upsname, cmd);
 }
 

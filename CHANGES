@@ -1,3 +1,9 @@
+Tue May  9 02:29:03 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - data/cmdvartab: brought help strings in sync with docs/new-names.txt
+ - server/netget.c: write "Description unavailable" not just "Unavailable"
+   if some instant command or variable has no description.
+
 Mon May  8 16:00:40 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups/Tripplite subdriver: cleaned up variable mappings. Added new
