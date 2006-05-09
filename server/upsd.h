@@ -43,7 +43,7 @@
 #include "ctype.h"
 #include "upstype.h"
 
-#define INITIAL_WAIT_MAX 5	/* max 5 seconds for DUMPDONEs to arrive */
+#define INITIAL_WAIT_MAX 15	/* max 15 seconds for DUMPDONEs to arrive */
 #define NUT_NET_ANSWER_MAX SMALLBUF
 
 /* prototypes from upsd.c */

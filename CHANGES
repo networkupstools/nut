@@ -1,3 +1,8 @@
+Tue May  9 03:02:19 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - upsd: bumped "initial wait" time to 15 seconds to suit some slower
+   devices.
+
 Tue May  9 02:29:03 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - data/cmdvartab: brought help strings in sync with docs/new-names.txt
