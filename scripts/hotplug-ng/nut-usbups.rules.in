@@ -9,11 +9,25 @@ SYSFS{idVendor}=="0463", SYSFS{idProduct}=="0001", MODE="660", GROUP="@RUN_AS_US
 # APC - usbhid-ups
 SYSFS{idVendor}=="051d", SYSFS{idProduct}=="0002", MODE="660", GROUP="@RUN_AS_USER@"
 
+# CyberPower - usbhid-ups
+SYSFS{idVendor}=="0764", SYSFS{idProduct}=="0005", MODE="660", GROUP="@RUN_AS_USER@"
+SYSFS{idVendor}=="0764", SYSFS{idProduct}=="0501", MODE="660", GROUP="@RUN_AS_USER@"
+
 # Powerware - bcmxcp_usb
 SYSFS{idVendor}=="0592", SYSFS{idProduct}=="0002", MODE="660", GROUP="@RUN_AS_USER@"
 
 # Tripp Lite - tripplite_usb
 SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="0001", MODE="660", GROUP="@RUN_AS_USER@"
+
+# Tripp Lite - usbhid-ups
+SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="2005", MODE="660", GROUP="@RUN_AS_USER@"
+SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="1003", MODE="660", GROUP="@RUN_AS_USER@"
+
+# Belkin - usbhid-ups
+SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0980", MODE="660", GROUP="@RUN_AS_USER@"
+
+# Kebo - unsupported
+SYSFS{idVendor}=="0925", SYSFS{idProduct}=="1234", MODE="660", GROUP="@RUN_AS_USER@"
 
 LABEL="nut-usbups_rules_end"
 
