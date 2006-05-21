@@ -1,3 +1,8 @@
+Sun May 21 18:31:47 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - man/cyberpower.8: updated section on supported hardware; added
+   information on hardware supported by alternate drivers. 
+
 Fri May 12 21:01:35 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - hotplug/hotplug-ng: added mappings for various USB devices
