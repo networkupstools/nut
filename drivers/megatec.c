@@ -69,7 +69,7 @@
 /*
  * Battery voltage limits
  */
- 
+
 /* Values obtained from a "Mustek PowerMust 600VA Plus" (12V). */
 #define BATT_MIN_12V 9.7   /* Estimate by looking at Commander Pro */
 #define BATT_MAX_12V 13.7
@@ -82,6 +82,10 @@
 #define BATT_MIN_2x12V 18.8  /* Estimate from LB at 22.3V (using same factor as 12V models) */
 #define BATT_MAX_2x12V 26.8
 
+/* Values obtained from a "Mustek PowerMust 1000VA On-Line (36V). */
+#define BATT_MIN_36V 1.64  /* Estimate from LB at 1.88V (using same factor as 12V models) */
+#define BATT_MAX_36V 2.31
+
 /* Values obtained from a "Ablerex MS3000RT" (96V). */
 #define BATT_MIN_96V 1.63  /* Estimate from LB at 1.8V with 25% charge */
 #define BATT_MAX_96V 2.29
@@ -93,6 +97,7 @@
 #define UPPER_BOUND_12V   16
 #define UPPER_BOUND 24V   30
 #define UPPER_BOUND_2x12V 30
+#define UPPER_BOUND_36V   3
 #define UPPER_BOUND_96V   3
 
 /* Maximum lengths for the "I" command reply fields */
@@ -319,45 +324,49 @@ static int run_query(QueryValues *values)
  */
 static void set_battery_params(float volt_nominal, float volt_now)
 {
-	switch ((int)volt_nominal) {
-		case 12:
-			if (volt_now <= UPPER_BOUND_12V) {
-				upsdebugx(1, "This looks like a 12V UPS.");
-				
-				battvolt_min = BATT_MIN_12V;
-				battvolt_max = BATT_MAX_12V;
-				
-				return;
-			}
-			
-			if (volt_now <= UPPER_BOUND_2x12V) {
-				upsdebugx(1, "This looks like a 2x12V UPS.");
-	
-				battvolt_min = BATT_MIN_2x12V;
-				battvolt_max = BATT_MAX_2x12V;
-				
-				return;
-			}
-			
-			break;
-			
-		case 24:
-			upsdebugx(1, "This looks like a 24V UPS.");
-	
-			battvolt_min = BATT_MIN_24V;
-			battvolt_max = BATT_MAX_24V;
-			
-			return;
-	
-		case 96:
-			upsdebugx(1, "This looks like a 96V UPS.");
-	
-			battvolt_min = BATT_MIN_96V;
-			battvolt_max = BATT_MAX_96V;
+	/* This has to be turned into a table someday... */
 
+	if (volt_nominal == 12.0) {
+		if (volt_now <= UPPER_BOUND_12V) {
+			upsdebugx(1, "This looks like a 12V UPS.");
+			
+			battvolt_min = BATT_MIN_12V;
+			battvolt_max = BATT_MAX_12V;
+			
 			return;
+		}
+
+		if (volt_now <= UPPER_BOUND_2x12V) {
+			upsdebugx(1, "This looks like a 2x12V UPS.");
+
+			battvolt_min = BATT_MIN_2x12V;
+			battvolt_max = BATT_MAX_2x12V;
+			
+			return;
+		}
+	} else if (volt_nominal == 24.0) {
+		upsdebugx(1, "This looks like a 24V UPS.");
+
+		battvolt_min = BATT_MIN_24V;
+		battvolt_max = BATT_MAX_24V;
+		
+		return;
+	} else if (volt_nominal == 36.0) {
+		upsdebugx(1, "This looks like a 36V UPS.");
+
+		battvolt_min = BATT_MIN_96V;
+		battvolt_max = BATT_MAX_96V;
+
+		return;
+	} else if (volt_nominal == 96.0) {
+		upsdebugx(1, "This looks like a 96V UPS.");
+
+		battvolt_min = BATT_MIN_96V;
+		battvolt_max = BATT_MAX_96V;
+
+		return;
 	}
-	
+
 	battvolt_min = 0;
 	battvolt_max = INT_MAX;
 

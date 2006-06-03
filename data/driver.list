@@ -19,6 +19,7 @@
 # Duplicate text in the last field will be cooked out during the conversion
 # to HTML with ROWSPAN magic.  They must be an exact match for this to work.
 
+"Ablerex"	"MS-RT"		""	"megatec"
 "ActivePower"	"1400VA"	""	"megatec"
 
 "AEC"	"MiniGuard UPS 700"		"Megatec M2501 cable"	"genericups upstype=21"
