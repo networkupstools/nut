@@ -1,3 +1,10 @@
+Tue Jun 6 22:07:17 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - backported "megatec" from the trunk.
+ - driver.list: models supported by "powermust" now have "megatec",
+   models supported by "esupssmart", "fentonups", "ippon", "blazer"
+   and "sms" now have "x or megatec".
+
 Wed May 17 08:46:55 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
 
  - sstate.c: fix bug with upsd declaring driver stale when the system

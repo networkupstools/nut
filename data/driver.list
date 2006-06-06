@@ -19,7 +19,8 @@
 # Duplicate text in the last field will be cooked out during the conversion
 # to HTML with ROWSPAN magic.  They must be an exact match for this to work.
 
-"ActivePower"	"1400VA"	""	"powermust"
+"Ablerex"	"MS-RT"		""	"megatec"
+"ActivePower"	"1400VA"	""	"megatec"
 
 "AEC"	"MiniGuard UPS 700"		"Megatec M2501 cable"	"genericups upstype=21"
 
@@ -52,7 +53,7 @@
 "Belkin"	"Home Office"	"F6H350-SER, F6H500-SER, F6H650-SER"	"genericups upstype=7"
 "Belkin"	"Universal UPS" "F6C800-UNV, F6C120-UNV, F6C1100-UNV"	"belkinunv"
 "Belkin"	"Universal UPS" "F6C800-UNV, F6C120-UNV, F6C1100-UNV"	"newhidups"
-"Belkin"	"Universal UPS"	"F6H500ukUNV"	"powermust"
+"Belkin"	"Universal UPS"	"F6H500ukUNV"	"megatec"
 "Belkin"	"Office Series"	"F6C550-AVR"	"newhidups"
 
 "Best Power"	"Fortress (newer)"	""	"bestups"
@@ -64,7 +65,7 @@
 "Best Power"	"Micro-Ferrups"		""	"bestuferrups"
 "Best Power"	"Fortress/Ferrups"	"f-command support"	"bestfcom"
 
-"Centralion"	"Blazer"		""	"blazer"
+"Centralion"	"Blazer"		""	"blazer or megatec"
 
 "Clary"		"ST-800"		""	"gamatronic"
 
@@ -89,11 +90,11 @@
 
 "Dynex"		"975AVR"		""	"genericups upstype=7"
 
-"Effekta"	"MI/MT/MH"	"2502 cable"	"fentonups"
+"Effekta"	"MI/MT/MH"	"2502 cable"	"fentonups or megatec"
 
 "Energizer"	"(various)"	"USB"		"energizerups (experimental USB driver for Linux")
 
-"Energy Sistem"	"(various)"	""	"esupssmart"
+"Energy Sistem"	"(various)"	""	"esupssmart or megatec"
 
 "ETA"		"mini+UPS"	"WinNT/Upsoft cable"	"genericups upstype=7"
 "ETA"		"mini+UPS PRO"	"UPS Explorer cable"	"etapro"
@@ -106,9 +107,9 @@
 "Exide"		"NetUPS SE"	""	"genericups upstype=15"
 
 "Fenton Technologies"	"PowerPal"	"P-series"	"safenet"
-"Fenton Technologies"	"PowerPal"	"L-series"	"fentonups"
-"Fenton Technologies"	"PowerOn"		""	"fentonups"
-"Fenton Technologies"	"PowerPure"		""	"fentonups"
+"Fenton Technologies"	"PowerPal"	"L-series"	"fentonups or megatec"
+"Fenton Technologies"	"PowerOn"		""	"fentonups or megatec"
+"Fenton Technologies"	"PowerPure"		""	"fentonups or megatec"
 
 "Fairstone"	"L525/L625/L750"	""	"safenet"
 
@@ -130,18 +131,20 @@
 "HP"		"R3000 XR"      ""      "bcmxcp"
 "HP"		"R5500 XR"      ""      "bcmxcp"
 
-"INELT"		"Monolith 1000LT"	""	"fentonups"
+"INELT"		"Monolith 1000LT"	""	"fentonups or megatec"
 
-"Infosec"	"iPEL 350"	""	"esupssmart"
-"Infosec"	"iPEL 500"	""	"esupssmart"
-"Infosec"	"iPEL 750"	""	"esupssmart"
-"Infosec"	"iPEL 1000"	""	"esupssmart"
+"Infosec"	"iPEL 350"	""	"esupssmart or megatec"
+"Infosec"	"iPEL 500"	""	"esupssmart or megatec"
+"Infosec"	"iPEL 750"	""	"esupssmart or megatec"
+"Infosec"	"iPEL 1000"	""	"esupssmart or megatec"
 
-"Ippon"		"(various)"		""	"ippon"
+"Ippon"		"(various)"		""	"ippon or megatec"
 
 "Liebert"	"UPStation GXT2"	"contact-closure cable"	"liebert" 
 
 "Masterguard"	"(various)"	""	"masterguard"
+
+"Maxxtro"	"UPS 600 VA"	"serial port"	"megatec"
 
 "Meta System"	"HF Line"	"1..4 boards"	"metasys"
 "Meta System"	"HF Line \/2"	"5..8 boards"	"metasys"
@@ -285,14 +288,14 @@
 "Microsol"	"Solis 2.0"	"2000VA"	"solis"
 "Microsol"	"Solis 3.0"	"3000VA"	"solis"
 
-"Mustek"	"Various"	""	"powermust"
+"Mustek"	"Various"	""	"megatec"
 
-"Mustek"	"Powermust"	"400VA Plus"	"powermust"
-"Mustek"	"Powermust"	"600VA Plus"	"powermust"
-"Mustek"	"Powermust"	"800VA Pro"	"powermust"
-"Mustek"	"Powermust"	"1000VA Plus"	"powermust"
-"Mustek"	"Powermust"	"1400VA Plus"	"powermust"
-"Mustek"	"Powermust"	"2000VA USB"	"powermust"
+"Mustek"	"Powermust"	"400VA Plus"	"megatec"
+"Mustek"	"Powermust"	"600VA Plus"	"megatec"
+"Mustek"	"Powermust"	"800VA Pro"	"megatec"
+"Mustek"	"Powermust"	"1000VA Plus"	"megatec"
+"Mustek"	"Powermust"	"1400VA Plus"	"megatec"
+"Mustek"	"Powermust"	"2000VA USB"	"megatec"
 
 "Nitram"	"Elite 500"	""	"genericups upstype=8"
 "Nitram"	"Elite 2002"	""	"genericups upstype=16"
@@ -301,23 +304,23 @@
 
 "Online"	"P-Series"	""	"genericups upstype=14"
 
-"OnLite"	"AQUA"		"50"	"powermust"
+"OnLite"	"AQUA"		"50"	"megatec"
 
-"Orvaldi Power Protection"	"various"	"not 400 or 600"	"fentonups"
+"Orvaldi Power Protection"	"various"	"not 400 or 600"	"fentonups or megatec"
 
-"Powercom"	"SMK-800A"			""	"fentonups"
-"Powercom"	"ULT-1000"			""	"fentonups"
+"Powercom"	"SMK-800A"			""	"fentonups or megatec"
+"Powercom"	"ULT-1000"			""	"fentonups or megatec"
 "Powercom"	"Trust 425/625"			""	"powercom"
 "Powercom"	"(various)"			""	"powercom"
 "Powercom"	"Advice Partner/King Pr750"	""	"powercom"
 
-"PowerGuard"	"PG-600"	""	"fentonups"
+"PowerGuard"	"PG-600"	""	"fentonups or megatec"
 
 "PowerKinetics"	"9001"		""	"genericups upstype=17"
 
 "PowerTech"	"Comp1000"	"DTR cable power"	"genericups upstype=3"
 
-"Power Walker"	"Line-Interactive VI1000"	""	"powermust"
+"Power Walker"	"Line-Interactive VI1000"	""	"megatec"
 
 "Powerware"	"3110"		""	"genericups upstype=7"
 "Powerware"	"3115"		""	"genericups upstype=11"
@@ -340,13 +343,13 @@
 "Repotec"	"RPT-800A"	""	"genericups upstype=13"
 "Repotec"	"RPT-162A"	""	"genericups upstype=13"
 
-"SMS (Brazil)"	"Manager III"	""	"sms"
+"SMS (Brazil)"	"Manager III"	""	"sms or megatec"
 
 "SOLA"	"325"	""	"bestups"
 "SOLA"	"520"	""	"bestups"
 "SOLA"	"610"	"use ID= in ups.conf"	"bestups"
 "SOLA"	"620"	""	"bestups"
-"SOLA"	"330"	""	"blazer"
+"SOLA"	"330"	""	"blazer or megatec"
 
 "SOLA/BASIC Mexico"	"various"	"ISBMEX protocol"	"isbmex"
 
@@ -355,19 +358,20 @@
 
 "Soltec"	"Winmate 525/625/800/1000"	""	"safenet"
 
-"Soyntec"	"Sekury C 500"		""	"powermust"	
-"Soyntec"	"Sekury C 800"		""	"powermust"	
+"Soyntec"	"Sekury C 500"		""	"megatec"	
+"Soyntec"	"Sekury C 800"		""	"megatec"	
 
-"SquareOne Power"	"QP1000"		""	"powermust"
+"SquareOne Power"	"QP1000"		""	"megatec"
 
-"SuperPower"	"HP360, Hope-550"	""	"fentonups"
+"SuperPower"	"HP360, Hope-550"	""	"fentonups or megatec"
 
 "Sweex"		"500/1000"	"smart - shipped with SafeNet"			"safenet"
 "Sweex"		"500/1000"	"contact closure - shipped with UPSmart"	"genericups upstype=7"
+"Sweex"		"BC100060 800VA"	""	"megatec"
 
-"Sysgration"	"UPGUARDS Pro650"	""	"fentonups"
+"Sysgration"	"UPGUARDS Pro650"	""	"fentonups or megatec"
 
-"Tecnoware"	"Easy Power 1200"	""	"powermust"
+"Tecnoware"	"Easy Power 1200"	""	"megatec"
 
 "Tripp-Lite"	"OMNIVS1000"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"OMNIVS1500XL"	"USB"	"tripplite_usb"
@@ -376,11 +380,11 @@
 "Tripp-Lite"	"SmartOnline"	""	"tripplitesu"
 "Tripp-Lite"	"(various)"	"Lan 2.2 interface - black 73-0844 cable"	"genericups upstype=5"
 
-"Trust"		"UPS 1000 Management PW-4105"	""	"powermust"
+"Trust"		"UPS 1000 Management PW-4105"	""	"megatec"
 
-"UNITEK"	"ALPHA 500 IC"		""	"fentonups"
-"UNITEK"	"Alpha 1000is"		""	"fentonups"
-"UNITEK"	"Alpha 500 ipE"		""	"powermust"
+"UNITEK"	"ALPHA 500 IC"		""	"fentonups or megatec"
+"UNITEK"	"Alpha 1000is"		""	"fentonups or megatec"
+"UNITEK"	"Alpha 500 ipE"		""	"megatec"
 
 "UPSonic"	"LAN Saver 600"		""	"genericups upstype=0"
 "UPSonic"	"Power Guardian"	""	"genericups upstype=7"
@@ -388,7 +392,7 @@
 "Various"	"(various)"	"SEC protocol"		"gamatronic"
 "Various"	"(various)"	"Generic RUPS model"	"genericups upstype=4"
 "Various"	"(various)"	"Generic RUPS 2000 (Megatec M2501 cable)"	"genericups upstype=21"
-"Various"	"(various)"	"Megatec protocol"	"fentonups"
+"Various"	"(various)"	"Megatec protocol"	"fentonups or megatec"
 "Various"	"(various)"	"PhoenixTec protocol"	"bestups"
 "Various"	"(various)"	"SNMP - RFC 1628"	"snmp-ups (experimental)"
 "Various"	"(various)"	"Safenet software"	"safenet"

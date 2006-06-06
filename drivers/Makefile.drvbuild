@@ -69,3 +69,5 @@ solis: solis.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ..
 	$(CC) $(CFLAGS) $(LDFLAGS) -o solis solis.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBOBJ) 
 gamatronic: gamatronic.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBDEP)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o gamatronic gamatronic.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBOBJ) 
+megatec: megatec.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBDEP)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o megatec megatec.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBOBJ) 

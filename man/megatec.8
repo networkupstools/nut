@@ -1,0 +1,100 @@
+.TH MEGATEC 8 "Sat Jan 14 2006" "" "Network UPS Tools (NUT)" 
+.SH NAME  
+megatec \(hy Driver for Megatec protocol based UPS equipment
+.SH NOTE
+This man page only documents the hardware\(hyspecific features of the
+megatec driver. For information about the core driver, see  
+\fBnutupsdrv\fR(8).
+
+.SH SUPPORTED HARDWARE
+The megatec driver is known to work with the following UPSes:
+
+    Maxxtro UPS 600VA
+    Mustek PowerMust 400VA Plus
+    Mustek PowerMust 600VA Plus
+    Mustek PowerMust 800VA Pro
+    Mustek PowerMust 1000VA Plus
+    Mustek PowerMust 1400VA Plus
+    Mustek PowerMust 2000VA USB
+    OnLite AQUA 50
+    Soyntec Sekury C 500
+    Soyntec Sekury C 800
+    Square One Power QP 1000
+    Tecnoware Easy Power 1200
+    Trust UPS 1000 Management PW-4105
+
+It is also known to work with various models from Blazer, Energy Sistem
+and Fenton Technologies. It may also work with similar models from other
+manufacturers, but they haven't been tested.
+
+On models with both a serial port (RS-232) and an USB port, only
+the serial port is supported.
+
+.SH EXTRA ARGUMENTS
+
+.IP "mfr=\fIstring\fR"
+
+Optional.  Specify the UPS manufacturer name.
+
+.IP "model=\fIstring\fR"
+
+Optional.  Specify the UPS model name.
+
+.IP "serial=\fIstring\fR"
+
+Optional.  Specify the UPS serial number.
+
+.IP "lowbatt=\fIfloat\fR"
+
+Optional.  Low battery level (%). Overrides the hardware default level.
+
+.SH UPS COMMANDS
+
+This driver supports some extra commands (see \fBupscmd\fR(8)):
+
+.IP test.battery.start
+Perform a (10 second) battery test
+
+.IP shutdown.return
+Turn off the load and return when power is back
+
+.IP shutdown.stayoff
+Turn off the load and remain off
+
+.IP shutdown.stop
+Stop a shutdown in progress
+
+.IP load.on
+Turn on the load immediately
+
+.IP load.off
+Turn off the load immediately
+
+.IP reset.input.minmax
+Reset minimum and maximum input voltage status
+
+.SH USER VARIABLES
+
+The behavior of the driver can be controlled by some user definable
+variables (see \fBupsrw\fR(8)):
+
+.IP ups.delay.shutdown
+Interval to wait after shutdown with delay command (seconds)
+
+.IP ups.delay.start
+Interval to wait before (re)starting the load (seconds)
+
+.SH BUGS
+
+No known bugs at the moment.
+
+.SH AUTHOR
+Carlos Rodrigues <carlos.efr at mail.telepac.pt>
+
+.SH SEE ALSO
+
+.SS The core driver:
+\fBnutupsdrv\fR(8)
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
