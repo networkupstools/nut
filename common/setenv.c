@@ -4,7 +4,7 @@
 #include <string.h>
 #include "common.h"
 
-int setenv(const char *name, const char *value, int overwrite)
+int nut_setenv(const char *name, const char *value, int overwrite)
 {
 	char	*val;
 	char	*buffer;
