@@ -1,3 +1,8 @@
+Thu Jun  8 22:32:38 EDT 2006 / Charles Lepple <clepple@gmail.com>
+
+ - packaging/RedHat/nut.spec.in: updates courtesy of William Bell; tested on
+   RHEL4.
+
 Wed Jun  7 01:06:27 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - if setenv() replacement is needed, link it statically to better

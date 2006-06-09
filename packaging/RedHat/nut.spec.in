@@ -29,11 +29,8 @@ Obsoletes: nut-client
 #
 # configure file locations
 # confdir etc are not really negotiable, so are not configurable here
-%define STATEPATH  	/var/state/ups
-%define CGIPATH   	/var/www/cgi-bin
-%define MODELPATH	   /sbin
-%define CONFPATH	   /etc/ups
-
+%define PACKAGE		ups
+%define CGIPATH        	%{_localstatedir}/www/cgi-bin
 
 %description
 These programs are part of a developing project to monitor the assortment 
@@ -89,16 +86,17 @@ autoconf
 %build
 autoconf
 CFLAGS="$RPM_OPT_FLAGS" ./configure \
-	--prefix=/usr \
-	--exec-prefix=/usr \
-	--sysconfdir=%{CONFPATH} \
-	--with-statepath=%{STATEPATH} \
-	--with-drvpath=%{MODELPATH} \
+	--prefix=%{_prefix} \
+	--exec-prefix=%{_exec_prefix} \
+	--sysconfdir=%{_sysconfdir}/%{PACKAGE} \
+	--with-statepath=%{_localstatedir}/%{PACKAGE} \
+	--with-drvpath=%{_sbindir} \
 	--with-cgipath=%{CGIPATH} \
 	--with-cgi \
 	--with-user=%{nutuser} \
 	--with-group=%{nutuser} \
 	--mandir=%{_mandir} \
+        --datadir=%{_datadir}/%{PACKAGE} \
 	--enable-shared
 make
 
@@ -108,13 +106,12 @@ rm -rf %{buildroot}
 # Build basic directories here - if they exist already then the
 # installer doesn't try to create and chown them (the chown is
 # a killer if we are building as non-root
-mkdir -p %{buildroot}%{CONFPATH}
-mkdir -p %{buildroot}%{MODELPATH}
+mkdir -p %{buildroot}%{_sysconfdir}/%{PACKAGE}
+mkdir -p %{buildroot}%{_sbindir}
 mkdir -p %{buildroot}%{CGIPATH}
-mkdir -p %{buildroot}%{STATEPATH}
+mkdir -p %{buildroot}%{_localstatedir}/%{PACKAGE}
 mkdir -p %{buildroot}%{_mandir}
-mkdir -p %{buildroot}/usr/bin
-mkdir -p %{buildroot}/usr/sbin
+mkdir -p %{buildroot}%{_bindir}
 make DESTDIR=%{buildroot} install
 make DESTDIR=%{buildroot} install-conf
 make DESTDIR=%{buildroot} install-cgi
@@ -123,9 +120,9 @@ make DESTDIR=%{buildroot} install-cgi-conf
 # move the *.sample config files to their real locations
 # we don't need to worry about overwriting anything since
 # they are marked as %config files within the package
-for file in %{buildroot}%{CONFPATH}/*.sample
+for file in %{buildroot}%{_sysconfdir}/%{PACKAGE}/*.sample
 do
-    mv $file %{buildroot}%{CONFPATH}/`basename $file .sample`
+    mv $file %{buildroot}%{_sysconfdir}/%{PACKAGE}/`basename $file .sample`
 done
 
 # install SYSV init stuff
@@ -142,24 +139,24 @@ install scripts/RedHat/ups %{buildroot}/etc/sysconfig
 ##%endif
 
 %pre
-/sbin/groupadd -r -f %{nutuser}
+%{_sbindir}/groupadd -r -f %{nutuser}
 grep \^nutmon /etc/passwd >/dev/null
 if [ $? -ne 0 ]; then
-  /sbin/useradd -d /etc/ups -g %{nutuser} -M -r %{nutuser}
+  %{_sbindir}/useradd -d /etc/nut -g %{nutuser} -M -r %{nutuser}
 fi
 
 %pre server
-/sbin/groupadd -r -f %{nutuser}
+%{_sbindir}/groupadd -r -f %{nutuser}
 grep \^nutmon /etc/passwd >/dev/null
 if [ $? -ne 0 ]; then
-  /sbin/useradd -d /etc/ups -g %{nutuser} -M -r %{nutuser}
+  %{_sbindir}/useradd -d /etc/nut -g %{nutuser} -M -r %{nutuser}
 fi
 
 %pre cgi
-/sbin/groupadd -r -f %{nutuser}
+%{_sbindir}/groupadd -r -f %{nutuser}
 grep \^nutmon /etc/passwd >/dev/null
 if [ $? -ne 0 ]; then
-  /sbin/useradd -d /etc/ups -g %{nutuser} -M -r %{nutuser}
+  %{_sbindir}/useradd -d /etc/nut -g %{nutuser} -M -r %{nutuser}
 fi
 
 %preun
@@ -208,44 +205,70 @@ rm -rf %{buildroot}
 
 %files server
 %defattr(-,root,root)
-%{MODELPATH}
-/usr/sbin/upsd
+%{_sbindir}
 ##%attr(755,root,root) %{_initrddir}/upspowerdown
 %attr(755,root,root) %{_initrddir}/upsd
 %attr(400,root,root) %{_initrddir}/halt.patch
-%dir %attr(755,root,root) %{CONFPATH}
-%config(noreplace) %attr(444,root,root) %{CONFPATH}/ups.conf
-%config(noreplace) %attr(444,root,root) %{CONFPATH}/upsd.conf
-%config(noreplace) %attr(400,root,root) %{CONFPATH}/upsd.users
+%dir %attr(755,root,root) %{_sysconfdir}/%{PACKAGE}
+%config(noreplace) %attr(444,root,root) %{_sysconfdir}/%{PACKAGE}/ups.conf
+%config(noreplace) %attr(444,root,root) %{_sysconfdir}/%{PACKAGE}/upsd.conf
+%config(noreplace) %attr(400,root,root) %{_sysconfdir}/%{PACKAGE}/upsd.users
 %{_mandir}/man8/apcsmart.8.gz
+%{_mandir}/man8/bcmxcp.8.gz
 %{_mandir}/man8/belkin.8.gz
+%{_mandir}/man8/belkinunv.8.gz
+%{_mandir}/man8/bestfcom.8.gz
+%{_mandir}/man8/bestuferrups.8.gz
 %{_mandir}/man8/bestups.8.gz
+%{_mandir}/man8/cpsups.8.gz
+%{_mandir}/man8/cyberpower.8.gz
+%{_mandir}/man8/etapro.8.gz
+%{_mandir}/man8/everups.8.gz
 %{_mandir}/man8/fentonups.8.gz
+%{_mandir}/man8/gamatronic.8.gz
+%{_mandir}/man8/genericups.8.gz
+%{_mandir}/man8/ippon.8.gz
+%{_mandir}/man8/isbmex.8.gz
+%{_mandir}/man8/liebert.8.gz
+%{_mandir}/man8/masterguard.8.gz
+%{_mandir}/man8/metasys.8.gz
+%{_mandir}/man8/mge-shut.8.gz
+%{_mandir}/man8/mge-utalk.8.gz
+%{_mandir}/man8/mustek.8.gz
 %{_mandir}/man8/nutupsdrv.8.gz
+%{_mandir}/man8/oneac.8.gz
 %{_mandir}/man8/powercom.8.gz
+%{_mandir}/man8/powermust.8.gz
+%{_mandir}/man8/safenet.8.gz
+%{_mandir}/man8/sms.8.gz
+%{_mandir}/man8/solis.8.gz
+%{_mandir}/man8/tripplite.8.gz
+%{_mandir}/man8/tripplitesu.8.gz
+%{_mandir}/man8/upscode2.8.gz
+%{_mandir}/man8/victronups.8.gz
 %{_mandir}/man8/upsd.8.gz
 %{_mandir}/man8/upsdrvctl.8.gz
 %{_mandir}/man5/ups.conf.5.gz
 %{_mandir}/man5/upsd.conf.5.gz
 %{_mandir}/man5/upsd.users.5.gz
-
+%{_datadir}/%{PACKAGE}
 
 %files
 %defattr(-,root,root)
 %doc CHANGES COPYING CREDITS INSTALL README docs/
-%dir %attr(755,root,root) %{CONFPATH}
-##%config(noreplace) %attr(644,root,root) %{CONFPATH}/hosts.conf
-%config(noreplace) %attr(400,%{nutuser},%{nutuser}) %{CONFPATH}/upsmon.conf
-%config(noreplace) %attr(400,%{nutuser},%{nutuser}) %{CONFPATH}/upssched.conf
-%config(noreplace) %attr(644,root,root) /etc/sysconfig/ups
-%dir %attr(755,%{nutuser},%{nutuser}) %{STATEPATH}
+%dir %attr(755,root,root) %{_sysconfdir}/%{PACKAGE}
+##%config(noreplace) %attr(644,root,root) %{_sysconfdir}/%{PACKAGE}/hosts.conf
+%config(noreplace) %attr(400,%{nutuser},%{nutuser}) %{_sysconfdir}/%{PACKAGE}/upsmon.conf
+%config(noreplace) %attr(400,%{nutuser},%{nutuser}) %{_sysconfdir}/%{PACKAGE}/upssched.conf
+%config(noreplace) %attr(644,root,root) %{_sysconfdir}/sysconfig/ups
+%dir %attr(755,%{nutuser},%{nutuser}) %{_localstatedir}/%{PACKAGE}
 %attr(755,root,root) %{_initrddir}/upsmon
-/usr/bin/upsc
-/usr/bin/upscmd
-/usr/bin/upsrw
-/usr/bin/upslog
-/usr/sbin/upsmon
-/usr/sbin/upssched
+%{_bindir}/upsc
+%{_bindir}/upscmd
+%{_bindir}/upsrw
+%{_bindir}/upslog
+%{_sbindir}/upsmon
+%{_sbindir}/upssched
 %{_mandir}/man5/upsmon.conf.5.gz
 %{_mandir}/man5/upssched.conf.5.gz
 %{_mandir}/man8/nutupsdrv.8.gz
@@ -258,17 +281,29 @@ rm -rf %{buildroot}
 
 %files cgi
 %defattr(-,root,root)
-%dir %attr(755,root,root) %{CONFPATH}
-%config(noreplace) %attr(600,%{nutuser},root) %{CONFPATH}/upsset.conf
-%config(noreplace) %attr(644,root,root) %{CONFPATH}/hosts.conf
-%attr(644,root,root) %{CONFPATH}/upsstats.html
-%attr(644,root,root) %{CONFPATH}/upsstats-single.html
+%dir %attr(755,root,root) %{_sysconfdir}/%{PACKAGE}
+%config(noreplace) %attr(600,%{nutuser},root) %{_sysconfdir}/%{PACKAGE}/upsset.conf
+%config(noreplace) %attr(644,root,root) %{_sysconfdir}/%{PACKAGE}/hosts.conf
+%attr(644,root,root) %{_sysconfdir}/%{PACKAGE}/upsstats.html
+%attr(644,root,root) %{_sysconfdir}/%{PACKAGE}/upsstats-single.html
+%{_mandir}/man5/hosts.conf.5.gz
+%{_mandir}/man5/upsset.conf.5.gz
+%{_mandir}/man5/upsstats.html.5.gz
+%{_mandir}/man8/upsimage.cgi.8.gz
+%{_mandir}/man8/upsset.cgi.8.gz
+%{_mandir}/man8/upsstats.cgi.8.gz
 %dir %{CGIPATH}
 %{CGIPATH}/upsimage.cgi
 %{CGIPATH}/upsset.cgi
 %{CGIPATH}/upsstats.cgi
 
 %changelog
+* Tue May 02 2006 William Bell <w.bell@physics.gla.ac.uk>
+- Corrected files list for other man pages.
+- Modified install paths to use the RH standards from /usr/lib/rpm/macros
+- Moved cmdvartab and driver.list into a sensible place.
+- Fixed a number of other broken paths.
+
 * Fri Jan 31 2003 Antonino Albanese <al.an@monkeysweb.net>
 - Updated startup files (don't know if they still works on 6x)
 - Modified model path in /sbin cause upsdrvctl have to stay on
