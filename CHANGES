@@ -1,3 +1,8 @@
+Thu Jun  8 22:32:38 EDT 2006 / Charles Lepple <clepple@gmail.com>
+
+ - packaging/RedHat/nut.spec.in: updates courtesy of William Bell; tested on 
+   RHEL4.
+
 Tue Jun 6 22:07:17 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - backported "megatec" from the trunk.
