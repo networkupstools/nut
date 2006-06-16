@@ -4,7 +4,6 @@
  *
  * @author Copyright (C) 2003
  *	Arnaud Quette <arnaud.quette@free.fr> && <arnaud.quette@mgeups.com>
- *	Philippe Marzouk <philm@users.sourceforge.net> (dump_hex())
  *      2005 Peter Selinger <selinger@users.sourceforge.net>
  *
  * This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
@@ -47,8 +46,12 @@
 
 #include "common.h" /* for xmalloc prototype */
 
-/* #define USB_TIMEOUT 5000 */
+/* USB standard state 5000, but we've decreased it to
+ * improve reactivity */
 #define USB_TIMEOUT 4000
+
+#define USB_DRIVER_NAME		"USB communication driver 0.28"
+#define USB_DRIVER_VERSION	"0.28"
 
 /* TODO: rework all that */
 void upsdebugx(int level, const char *fmt, ...);
@@ -96,8 +99,8 @@ int libusb_open(usb_dev_handle **udevp, HIDDevice *curDevice, HIDDeviceMatcher_t
 #endif
 	struct my_usb_hid_descriptor *desc;
 	HIDDeviceMatcher_t *m;
-	struct usb_device *dev;                                                
-	struct usb_bus *bus;                                                   
+	struct usb_device *dev;
+	struct usb_bus *bus;
 	usb_dev_handle *udev;
 	
 	int ret, res; 
@@ -319,19 +322,24 @@ int libusb_get_string(usb_dev_handle *udev, int StringIdx, char *string)
 
 int libusb_get_interrupt(usb_dev_handle *udev, unsigned char *buf, int bufsize, int timeout)
 {
-  int ret = -1;
+	int ret = -1;
 
-  if (udev != NULL)
+#if USB_NOTIFICATION_DISABLED
+	/* sleep during timeout to slow down a bit... */
+	sleep(timeout / 1000);
+	ret = 0;
+#else
+	if (udev != NULL)
 	{
-	  /* FIXME: hardcoded interrupt EP => need to get EP descr for IF descr */
-	  ret = usb_interrupt_read(udev, 0x81, buf, bufsize, timeout);
-	  if (ret > 0)
-		TRACE(6, " ok");
-	  else
-		TRACE(6, " none (%i)", ret);
+		/* FIXME: hardcoded interrupt EP => need to get EP descr for IF descr */
+		ret = usb_interrupt_read(udev, 0x81, buf, bufsize, timeout);
+		if (ret > 0)
+			TRACE(6, " ok");
+		else
+			TRACE(6, " none (%i)", ret);
 	}
-
-  return ret;
+#endif
+	return ret;
 }
 
 void libusb_close(usb_dev_handle *udev)
@@ -344,3 +352,14 @@ void libusb_close(usb_dev_handle *udev)
 		usb_close(udev);
 	}
 }
+
+communication_subdriver_t usb_subdriver = {
+	USB_DRIVER_VERSION,
+	USB_DRIVER_NAME,
+	libusb_open,
+	libusb_close,
+	libusb_get_report,
+	libusb_set_report,
+	libusb_get_string,
+	libusb_get_interrupt
+};

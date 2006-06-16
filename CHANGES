@@ -1,3 +1,28 @@
+Fri Jun 16 08:54:12 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - configure.in: add support for Solaris 11 (Nevada)
+
+ - newhidups:
+   * complete Battery and Power Device usages (reserved ranges)
+   * add a communication subdriver for plugging libshut and
+     merging mge-shut code (same interface as libusb).
+   * handle reconnexion upon I/O errors (ie on Solaris)
+   * lookup value if needed, in setvar()
+   * fix a Solaris segfault on instcmd() (extradata is always NULL)
+   * disable notification on Solaris, as it doesn't support
+     timeout yet and thus can block the driver indefinitly
+   * bump release to 0.30
+
+ - newmge-shut: create this new driver, which shares all the
+   logic/code with newhidups, along with mge-hid data definitions.
+   It is the first step toward mge-shut replacement (scheduled
+   for NUT 2.2 release), and it's not built by default (one must
+   call make newmge-shut from within the drivers directory).
+
+ - mge-hid: complete MGE usage codes, commands and fix outlet.*
+
+ - data/cmdvartab: complete the outlet collection descriptions
+
 Thu Jun  8 22:32:38 EDT 2006 / Charles Lepple <clepple@gmail.com>
 
  - packaging/RedHat/nut.spec.in: updates courtesy of William Bell; tested on

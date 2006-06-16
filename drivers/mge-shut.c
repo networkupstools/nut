@@ -286,7 +286,7 @@ void upsdrv_banner (void)
 void upsdrv_initups (void)
 {
 	upsdebugx(2, "entering upsdrv_initups()");
-	
+
 	/* initialize serial port */
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
@@ -1039,6 +1039,7 @@ int shut_set_report(int id, u_char *pkt, int reportlen)
 
 		retcode = shut_packet_send (&data, reportlen, SHUT_PKT_LAST);
 	}
+
 	return retcode;
 }
 

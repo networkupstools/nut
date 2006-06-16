@@ -37,7 +37,14 @@
 #include "hidtypes.h"
 #include "libhid.h"
 
-#include "libusb.h"
+/* Communication layers and drivers (USB and MGE SHUT) */
+#ifdef SHUT_MODE
+	#include "libshut.h"
+	communication_subdriver_t *comm_driver = &shut_subdriver;
+#else
+	#include "libusb.h"
+	communication_subdriver_t *comm_driver = &usb_subdriver;
+#endif
 
 #include <errno.h>
 
@@ -58,7 +65,7 @@ static HIDDesc  	hDesc; /* parsed Report Descriptor */
 static report_t cur_report_struct = {0, 0, 0, {0}};
 
 /* FIXME: we currently "hard-wire" the report buffer size in the calls
-   to libusb_get_report() below to 8 bytes. This is not really a great
+   to libxxx_get_report() below to 8 bytes. This is not really a great
    idea, but it is necessary because Belkin models will crash,
    sometimes with permanent firmware damage, if called with a larger
    buffer size (never mind the USB specification). Let's hope for now
@@ -96,7 +103,7 @@ static const char *hid_lookup_path(unsigned int usage, usage_tables_t *utab);
 static int hid_lookup_usage(char *name, usage_tables_t *utab);
 static int string_to_path(char *HIDpath, HIDPath *path, usage_tables_t *utab);
 static int path_to_string(char *HIDpath, HIDPath *path, usage_tables_t *utab);
-static void dump_hex (const char *msg, const unsigned char *buf, int len);
+void dump_hex (const char *msg, const unsigned char *buf, int len);
 static long get_unit_expo(long UnitType);
 static float expo(int a, int b);
 
@@ -372,8 +379,7 @@ void free_regex_matcher(HIDDeviceMatcher_t *matcher) {
 
 /* ---------------------------------------------------------------------- */
 
-
-void HIDDumpTree(usb_dev_handle *udev, usage_tables_t *utab)
+void HIDDumpTree(hid_dev_handle *udev, usage_tables_t *utab)
 {
 	int 		i, j;
 	char 		path[128], type[10];
@@ -426,7 +432,7 @@ void HIDDumpTree(usb_dev_handle *udev, usage_tables_t *utab)
 /* Matcher is a linked list of matchers (see libhid.h), and the opened
     device must match all of them. On success, set *udevp and *hd and
     return hd. On failure, return NULL. */
-HIDDevice *HIDOpenDevice(usb_dev_handle **udevp, HIDDevice *hd, HIDDeviceMatcher_t *matcher, int mode)
+HIDDevice *HIDOpenDevice(hid_dev_handle **udevp, HIDDevice *hd, HIDDeviceMatcher_t *matcher, int mode)
 {
 	int ReportSize;
 	unsigned char ReportDesc[4096];
@@ -438,7 +444,7 @@ HIDDevice *HIDOpenDevice(usb_dev_handle **udevp, HIDDevice *hd, HIDDeviceMatcher
 	}
 
 	/* get and parse descriptors (dev, cfg and report) */
-	ReportSize = libusb_open(udevp, hd, matcher, ReportDesc, mode);
+	ReportSize = comm_driver->open(udevp, hd, matcher, ReportDesc, mode);
 
 	if (ReportSize == -1)
 		return NULL;
@@ -471,7 +477,7 @@ HIDItem *HIDGetItem(const char *ItemPath)
 }
 
 /* return 1 if OK, 0 on fail, -errno otherwise (ie disconnect) */
-int HIDGetItemValue(usb_dev_handle *udev, char *path, float *Value, usage_tables_t *utab)
+int HIDGetItemValue(hid_dev_handle *udev, char *path, float *Value, usage_tables_t *utab)
 {
 	int i, retcode;
 	float physical;
@@ -498,10 +504,13 @@ int HIDGetItemValue(usb_dev_handle *udev, char *path, float *Value, usage_tables
 	} 
 	/* Get report with data */
 	/* Bufferize at least the last report */
-	if (cur_report->id != hData.ReportID || time(NULL) > cur_report->ts + MAX_TS) {
+	if (cur_report->id != hData.ReportID || time(NULL) > cur_report->ts + MAX_TS)
+	{
 		/* report is not in buffer or too old;
 		   need to retrieve report */
-		retcode = libusb_get_report(udev, hData.ReportID, cur_report->data, REPORT_SIZE);
+		retcode = comm_driver->get_report(udev, hData.ReportID,
+			cur_report->data, REPORT_SIZE);
+
 		if (retcode <= 0) {
 			TRACE(2, "Can't retrieve Report %i (%i/%i): %s", hData.ReportID, retcode, errno, strerror(errno));
 			return -errno;
@@ -537,45 +546,48 @@ int HIDGetItemValue(usb_dev_handle *udev, char *path, float *Value, usage_tables
 
 /* rawbuf must point to a large enough buffer to hold the resulting
  * string. Return pointer to rawbuf on success, NULL on failure. */
-char *HIDGetItemString(usb_dev_handle *udev, char *path, unsigned char *rawbuf, usage_tables_t *utab)
+char *HIDGetItemString(hid_dev_handle *udev, char *path, unsigned char *rawbuf, usage_tables_t *utab)
 {
-  int i, retcode;
-  
-  /* Prepare path of HID object */
-  hData.Type = ITEM_FEATURE;
-  hData.ReportID = 0;
-  
-  if((retcode = string_to_path(path, &hData.Path, utab)) > 0) {
-    TRACE(4, "Path depth = %i", retcode);
-    
-    for (i = 0; i<retcode; i++)
-      TRACE(4, "%i: UPage(%x), Usage(%x)", i,
+	int i, retcode;
+	
+	/* Prepare path of HID object */
+	hData.Type = ITEM_FEATURE;
+	hData.ReportID = 0;
+	
+	if((retcode = string_to_path(path, &hData.Path, utab)) > 0) {
+	TRACE(4, "Path depth = %i", retcode);
+	
+	for (i = 0; i<retcode; i++)
+	TRACE(4, "%i: UPage(%x), Usage(%x)", i,
 		hData.Path.Node[i].UPage,
 		hData.Path.Node[i].Usage);
-    
-    hData.Path.Size = retcode;
-    
-    /* Get info on object (reportID, offset and size) */
-    if (FindObject(&hDesc,&hData) == 1) {
-      if (libusb_get_report(udev, hData.ReportID, rawbuf, REPORT_SIZE) > 0) { 
-	GetValue((const unsigned char *) rawbuf, &hData);
+	
+	hData.Path.Size = retcode;
+	
+	/* Get info on object (reportID, offset and size) */
+	if (FindObject(&hDesc,&hData) == 1)
+	{
+		if (comm_driver->get_report(udev, hData.ReportID, rawbuf, REPORT_SIZE) > 0)
+		{
+			GetValue((const unsigned char *) rawbuf, &hData);
 
-	/* now get string */
-	libusb_get_string(udev, hData.Value, rawbuf);
-	return rawbuf;
-      }
-      else
-	TRACE(2, "Can't retrieve Report %i", hData.ReportID);
-    }
-    else
-      TRACE(2, "Can't find object %s", path);
+			/* now get string */
+			comm_driver->get_string(udev, hData.Value, rawbuf);
 
-    return NULL;
-  }
-  return NULL;
+			return rawbuf;
+		}
+		else
+			TRACE(2, "Can't retrieve Report %i", hData.ReportID);
+	}
+	else
+		TRACE(2, "Can't find object %s", path);
+
+	return NULL;
+	}
+	return NULL;
 }
  
-bool HIDSetItemValue(usb_dev_handle *udev, char *path, float value, usage_tables_t *utab)
+bool HIDSetItemValue(hid_dev_handle *udev, char *path, float value, usage_tables_t *utab)
 {
 	float Value;
 	int retcode;
@@ -593,6 +605,8 @@ bool HIDSetItemValue(usb_dev_handle *udev, char *path, float value, usage_tables
 	TRACE(2, "=>> SET: Before set: %.2f (%ld)", Value, (long)value);
 	
 	/* Test if Item is settable */
+	/* FIXME: not constant == volatile, but
+	 * it doesn't imply that it's RW! */
 	if (hData.Attribute == ATTR_DATA_CST) 
 	{
 		return FALSE;
@@ -612,8 +626,8 @@ bool HIDSetItemValue(usb_dev_handle *udev, char *path, float value, usage_tables
 	SetValue(&hData, cur_report->data);
 	
 	dump_hex ("==> Report after setvalue", cur_report->data, cur_report->len);
-	
-	if (libusb_set_report(udev, hData.ReportID, cur_report->data, cur_report->len) > 0)
+
+	if (comm_driver->set_report(udev, hData.ReportID, cur_report->data, cur_report->len) > 0)
 	{
 		TRACE(2, "Set report succeeded");
 		return TRUE;
@@ -631,7 +645,7 @@ bool HIDSetItemValue(usb_dev_handle *udev, char *path, float value, usage_tables
 	return TRUE;*/ /* (Value == value); */
 }
 
-int HIDGetEvents(usb_dev_handle *udev, HIDDevice *dev, HIDItem **eventsList, usage_tables_t *utab)
+int HIDGetEvents(hid_dev_handle *udev, HIDDevice *dev, HIDItem **eventsList, usage_tables_t *utab)
 {
 	unsigned char buf[20];
 	char itemPath[128];
@@ -640,7 +654,7 @@ int HIDGetEvents(usb_dev_handle *udev, HIDDevice *dev, HIDItem **eventsList, usa
 	upsdebugx(2, "Waiting for notifications...");
 	
 	/* needs libusb-0.1.8 to work => use ifdef and autoconf */
-	if ((size = libusb_get_interrupt(udev, &buf[0], 20, 5000)) > -1)
+	if ((size = comm_driver->get_interrupt(udev, &buf[0], 20, 5000)) > -1)
 	{
 		dump_hex ("Notification", buf, size);
 		
@@ -688,12 +702,12 @@ int HIDGetEvents(usb_dev_handle *udev, HIDDevice *dev, HIDItem **eventsList, usa
 	return itemCount;
 }
 
-void HIDCloseDevice(usb_dev_handle *udev)
+void HIDCloseDevice(hid_dev_handle *udev)
 {
 	if (udev != NULL)
 	{
 		TRACE(2, "Closing device");
-		libusb_close(udev);
+		comm_driver->close(udev);
 	}
 }
 
@@ -890,6 +904,7 @@ usage_lkp_t hid_usage_lkp[] = {
 	{  "ChangedStatus",			0x00840003 },
 	{  "UPS",				0x00840004 },
 	{  "PowerSupply",			0x00840005 },
+	/* 0x00840006-0x0084000f	=>	Reserved */
 	{  "BatterySystem",			0x00840010 },
 	{  "BatterySystemID",			0x00840011 },
 	{  "Battery",				0x00840012 },
@@ -912,6 +927,7 @@ usage_lkp_t hid_usage_lkp[] = {
 	{  "GangID",				0x00840023 },
 	{  "PowerSummary",			0x00840024 },
 	{  "PowerSummaryID",			0x00840025 },
+	/* 0x00840026-0x0084002f	=>	Reserved */
 	{  "Voltage",				0x00840030 },
 	{  "Current",				0x00840031 },
 	{  "Frequency",				0x00840032 },
@@ -921,6 +937,7 @@ usage_lkp_t hid_usage_lkp[] = {
 	{  "Temperature",			0x00840036 },
 	{  "Humidity",				0x00840037 },
 	{  "BadCount",				0x00840038 },
+	/* 0x00840039-0x0084003f	=>	Reserved */
 	{  "ConfigVoltage",			0x00840040 },
 	{  "ConfigCurrent",			0x00840041 },
 	{  "ConfigFrequency",			0x00840042 },
@@ -929,6 +946,7 @@ usage_lkp_t hid_usage_lkp[] = {
 	{  "ConfigPercentLoad",			0x00840045 },
 	{  "ConfigTemperature",			0x00840046 },
 	{  "ConfigHumidity",			0x00840047 },
+	/* 0x00840048-0x0084004f	=>	Reserved */
 	{  "SwitchOnControl",			0x00840050 },
 	{  "SwitchOffControl",			0x00840051 },
 	{  "ToggleControl",			0x00840052 },
@@ -940,6 +958,7 @@ usage_lkp_t hid_usage_lkp[] = {
 	{  "Test",				0x00840058 },
 	{  "ModuleReset",			0x00840059 },
 	{  "AudibleAlarmControl",		0x0084005a },
+	/* 0x0084005b-0x0084005f	=>	Reserved */
 	{  "Present",				0x00840060 },
 	{  "Good",				0x00840061 },
 	{  "InternalFailure",			0x00840062 },
@@ -963,6 +982,7 @@ usage_lkp_t hid_usage_lkp[] = {
 	{  "Tested",				0x00840071 },
 	{  "AwaitingPower",			0x00840072 },
 	{  "CommunicationLost",			0x00840073 },
+	/* 0x00840074-0x008400fc	=>	Reserved */
 	{  "iManufacturer",			0x008400fd },
 	{  "iProduct",				0x008400fe },
 	{  "iSerialNumber",			0x008400ff },
@@ -978,6 +998,7 @@ usage_lkp_t hid_usage_lkp[] = {
 	{ "SMBSelectorState",			0x00850007 },
 	{ "SMBSelectorPresets",			0x00850008 },
 	{ "SMBSelectorInfo",			0x00850009 },
+	/* 0x0085000A-0x0085000f	=>	Reserved */
 	{ "OptionalMfgFunction1",		0x00850010 },
 	{ "OptionalMfgFunction2",		0x00850011 },
 	{ "OptionalMfgFunction3",		0x00850012 },
@@ -992,6 +1013,7 @@ usage_lkp_t hid_usage_lkp[] = {
 	{ "BatterySupported",			0x0085001b },
 	{ "SelectorRevision",			0x0085001c },
 	{ "ChargingIndicator",			0x0085001d },
+	/* 0x0085001e-0x00850027	=>	Reserved */
 	{ "ManufacturerAccess",			0x00850028 },
 	{ "RemainingCapacityLimit",		0x00850029 },
 	{ "RemainingTimeLimit",			0x0085002a },
@@ -1000,6 +1022,7 @@ usage_lkp_t hid_usage_lkp[] = {
 	{ "BroadcastToCharger",			0x0085002d },
 	{ "PrimaryBattery",			0x0085002e },
 	{ "ChargeController",			0x0085002f },
+	/* 0x00850030-0x0085003f	=>	Reserved */
 	{ "TerminateCharge",			0x00850040 },
 	{ "TerminateDischarge",			0x00850041 },
 	{ "BelowRemainingCapacityLimit",	0x00850042 },
@@ -1012,6 +1035,7 @@ usage_lkp_t hid_usage_lkp[] = {
 	{ "AtRateOK",				0x00850049 },
 	{ "SMBErrorCode",			0x0085004a },
 	{ "NeedReplacement",			0x0085004b },
+	/* 0x0085004c-0x0085005f	=>	Reserved */
 	{ "AtRateTimeToFull",			0x00850060 },
 	{ "AtRateTimeToEmpty",			0x00850061 },
 	{ "AverageCurrent",			0x00850062 },
@@ -1024,6 +1048,7 @@ usage_lkp_t hid_usage_lkp[] = {
 	{ "AverageTimeToEmpty",			0x00850069 },
 	{ "AverageTimeToFull",			0x0085006a },
 	{ "CycleCount",				0x0085006b },
+	/* 0x0085006c-0x0085007f	=>	Reserved */
 	{ "BattPackModelLevel",			0x00850080 },
 	{ "InternalChargeController",		0x00850081 },
 	{ "PrimaryBatterySupport",		0x00850082 },
@@ -1040,9 +1065,11 @@ usage_lkp_t hid_usage_lkp[] = {
 	{ "CapacityGranularity1",		0x0085008d },
 	{ "CapacityGranularity2",		0x0085008e },
 	{ "iOEMInformation",			0x0085008f },
+	/* 0x00850090-0x008500bf	=>	Reserved */
 	{ "InhibitCharge",			0x008500c0 },
 	{ "EnablePolling",			0x008500c1 },
 	{ "ResetToZero",			0x008500c2 },
+	/* 0x008500c3-0x008500cf	=>	Reserved */
 	{ "ACPresent",				0x008500d0 },
 	{ "BatteryPresent",			0x008500d1 },
 	{ "PowerFail",				0x008500d2 },
@@ -1056,13 +1083,15 @@ usage_lkp_t hid_usage_lkp[] = {
 	{ "CurrentNotRegulated",		0x008500da },
 	{ "VoltageNotRegulated",		0x008500db },
 	{ "MasterMode",				0x008500dc },
+	/* 0x008500dd-0x008500ef	=>	Reserved */
 	{ "ChargerSelectorSupport",		0x008500f0 },
 	{ "ChargerSpec",			0x008500f1 },
 	{ "Level2",				0x008500f2 },
 	{ "Level3",				0x008500f3 },
+	/* 0x008500f4-0x008500ff	=>	Reserved */
 
 	/* end of structure. */
-	{  "\0", 0x0 }
+	{  "\0",				0x00000000 }
 };
 
 /* usage conversion numeric -> string */
@@ -1131,7 +1160,7 @@ int get_current_data_attribute()
 }
 #define NIBBLE(_i)    (((_i) < 10) ? '0' + (_i) : 'A' + (_i) - 10)
 
-static void dump_hex (const char *msg, const unsigned char *buf, int len)
+void dump_hex (const char *msg, const unsigned char *buf, int len)
 {
 	int i;
 	int nlocal;

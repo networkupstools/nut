@@ -31,9 +31,13 @@
 #include "config.h"
 #include "libhid.h"
 
-#define DRIVER_VERSION		"0.28"
+#define DRIVER_VERSION		"0.30"
 
-extern usb_dev_handle *udev;
+#ifdef SHUT_MODE
+	extern shut_dev_handle *udev;
+#else
+	extern usb_dev_handle *udev;
+#endif
 
 /* --------------------------------------------------------------- */
 /*      Model Name formating entries                               */
@@ -141,6 +145,8 @@ extern info_lkp_t off_info[];
 extern info_lkp_t test_write_info[];
 extern info_lkp_t test_read_info[];
 extern info_lkp_t beeper_info[];
+extern info_lkp_t yes_no_info[];
+extern info_lkp_t on_off_info[];
 extern info_lkp_t date_conversion[];
 extern info_lkp_t hex_conversion[];
 extern info_lkp_t stringid_conversion[];
