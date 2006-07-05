@@ -1,3 +1,7 @@
+Wed Jul 05 10:32:30 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - synchronise mge-utalk between the trunk and Testing branches (0.88)
+
 Fri Jun 16 08:54:12 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
  - configure.in: add support for Solaris 11 (Nevada)

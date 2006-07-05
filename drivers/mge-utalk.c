@@ -40,7 +40,7 @@
 /* --------------------------------------------------------------- */
 
 #define DRIVER_NAME    "MGE UPS SYSTEMS/U-Talk driver"
-#define DRIVER_VERSION "0.86"
+#define DRIVER_VERSION "0.88"
 
 /* delay after sending each char to UPS (in MICROSECONDS) */
 #define MGE_CHAR_DELAY 0
@@ -133,59 +133,58 @@ void upsdrv_initups(void)
 {
 	char buf[BUFFLEN];
 	int RTS = TIOCM_RTS;
-	int  bytes_rcvd;
 	
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
 
-	/* read command line/conf variables */
-	if (getval ("LowBatt"))
-		mge_ups.LowBatt = atoi (getval ("LowBatt"));
-
-	if (getval ("OnDelay"))
-		mge_ups.OnDelay = atoi (getval ("OnDelay"));
-
-	if (getval ("OffDelay"))
-		mge_ups.OffDelay = atoi (getval ("OffDelay"));
-
+	/* read command line/conf variable that affect comm. */
 	if (testvar ("oldmac"))
 		RTS = ~TIOCM_RTS;
 	
 	if (dstate_getinfo ("driver.parameter.pollinterval") != NULL)
 		pollinterval = atoi (dstate_getinfo ("driver.parameter.pollinterval"));
+	else
+		pollinterval = 2;
 
 	/* Init serial line */
 	ioctl(upsfd, TIOCMBIC, &RTS);
 	enable_ups_comm();
 
-	/* Get and set values (if exists) given on the command line */
-	bytes_rcvd = mge_command(buf, sizeof(buf), "Bl ?");
-	if(bytes_rcvd > 0 && buf[0] != '?') {
+	/* Try to set "Low Battery Level" (if supported and given) */
+	if (getval ("lowbatt"))
+	{
+		mge_ups.LowBatt = atoi (getval ("lowbatt"));
+		/* Set the value in the UPS */
 		mge_command(buf, sizeof(buf), "Bl %d",  mge_ups.LowBatt);
-		if(strcmp(buf, "OK"))
-			upsdebugx(1, "UPS response to %d%% Low Batt Level was %s",
-				mge_ups.LowBatt, buf);
-	} else
-		upsdebugx(1, "initups: LowBatt unavailable");
+		if(!strcmp(buf, "OK"))
+			upsdebugx(1, "Low Battery Level set to %d%%", mge_ups.LowBatt);
+		else
+			upsdebugx(1, "initups: Low Battery Level cannot be set");
+	}
 
-	bytes_rcvd = mge_command(buf, sizeof(buf), "Sm ?");
-	if(bytes_rcvd > 0 && buf[0] != '?') {
+        /* Try to set "ON delay" (if supported and given) */
+	if (getval ("ondelay"))
+	{
+		mge_ups.OnDelay = atoi (getval ("ondelay"));
+		/* Set the value in the UPS */
 		mge_command(buf, sizeof(buf), "Sm %d",  mge_ups.OnDelay);
-		if(strcmp(buf, "OK"))
-			upsdebugx(1, "UPS response to %d min ON delay was %s",
-				mge_ups.OnDelay, buf);
-	} else
-		upsdebugx(1, "initups: OnDelay unavailable");
+		if(!strcmp(buf, "OK"))
+			upsdebugx(1, "ON delay set to %d min", mge_ups.OnDelay);
+		else
+			upsdebugx(1, "initups: OnDelay unavailable");
+	}
 
-	bytes_rcvd = mge_command(buf, sizeof(buf), "Sn ?");
-	if(bytes_rcvd > 0 && buf[0] != '?') {
+        /* Try to set "OFF delay" (if supported and given) */
+	if (getval ("offdelay"))
+	{
+		mge_ups.OffDelay = atoi (getval ("offdelay"));
+		/* Set the value in the UPS */
 		mge_command(buf, sizeof(buf), "Sn %d",  mge_ups.OffDelay);
-		if(strcmp(buf, "OK"))
-			upsdebugx(1, "UPS response to %d min OFF delay was %s",
-				mge_ups.OffDelay, buf);
-	} else
-		upsdebugx(1, "initups: OffDelay unavailable");
-
+		if(!strcmp(buf, "OK"))
+			upsdebugx(1, "OFF delay set to %d sec", mge_ups.OffDelay);
+		else
+			upsdebugx(1, "initups: OffDelay unavailable");
+	}
 }
 
 /* --------------------------------------------------------------- */
@@ -469,9 +468,10 @@ void format_model_name(char *model)
 int instcmd(const char *cmdname, const char *extra)
 {
 	char temp[BUFFLEN];
-	
+
 	/* Start battery test */
-	if (!strcasecmp(cmdname, "test.battery.start")) {
+	if (!strcasecmp(cmdname, "test.battery.start"))
+	{
 		mge_command(temp, sizeof(temp), "Bx 1");
 		upsdebugx(2, "UPS response to %s was %s", cmdname, temp);
 		
@@ -482,7 +482,8 @@ int instcmd(const char *cmdname, const char *extra)
 	}
 
 	/* Start front panel test  */
-	if (!strcasecmp(cmdname, "test.panel.start")) {
+	if (!strcasecmp(cmdname, "test.panel.start"))
+	{
 		mge_command(temp, sizeof(temp), "Sx 129");
 		upsdebugx(2, "UPS response to %s was %s", cmdname, temp);
 		
@@ -493,25 +494,29 @@ int instcmd(const char *cmdname, const char *extra)
 	}
 
 	/* Shutdown UPS */
-	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+	if (!strcasecmp(cmdname, "shutdown.stayoff"))
+	{
 		sdtype = SD_STAYOFF;
 		upsdrv_shutdown();
 	}
 	
-	if (!strcasecmp(cmdname, "shutdown.return")) {
+	if (!strcasecmp(cmdname, "shutdown.return"))
+	{
 		sdtype = SD_RETURN;
 		upsdrv_shutdown();
 	}
 	
 	/* Power Off [all] plugs */
-	if (!strcasecmp(cmdname, "load.off")) {
-    	/* TODO: Powershare (per plug) control */
+	if (!strcasecmp(cmdname, "load.off"))
+	{
+		/* TODO: Powershare (per plug) control */
 		mge_command(temp, sizeof(temp), "Wy 65535");
 		upsdebugx(2, "UPS response to Select All Plugs was %s", temp);
 
 		if(strcmp(temp, "OK"))
 			return STAT_INSTCMD_UNKNOWN;
-		else {
+		else
+		{
 			mge_command(temp, sizeof(temp), "Wx 0");
 			upsdebugx(2, "UPS response to %s was %s", cmdname, temp);		
 			if(strcmp(temp, "OK"))
@@ -522,14 +527,16 @@ int instcmd(const char *cmdname, const char *extra)
 	}
 
 	/* Power On all plugs */
-	if (!strcasecmp(cmdname, "load.on")) {
-    	/* TODO: add per plug control */
+	if (!strcasecmp(cmdname, "load.on"))
+	{
+		/* TODO: add per plug control */
 		mge_command(temp, sizeof(temp), "Wy 65535");
 		upsdebugx(2, "UPS response to Select All Plugs was %s", temp);
 
 		if(strcmp(temp, "OK"))
 			return STAT_INSTCMD_UNKNOWN;
-		else {
+		else
+		{
 			mge_command(temp, sizeof(temp), "Wx 1");
 			upsdebugx(2, "UPS response to %s was %s", cmdname, temp);		
 			if(strcmp(temp, "OK"))
@@ -541,15 +548,19 @@ int instcmd(const char *cmdname, const char *extra)
 
 	/* Switch on/off Maintenance Bypass */
 	if ((!strcasecmp(cmdname, "bypass.start")) 
-		|| (!strcasecmp(cmdname, "bypass.stop"))) {
+		|| (!strcasecmp(cmdname, "bypass.stop")))
+	{
 		/* TODO: add control on bypass value */
-    	/* read maintenance bypass status */
-		if(mge_command(temp, sizeof(temp), "Ps") > 0) {
-			if (temp[0] == '1') {
+		/* read maintenance bypass status */
+		if(mge_command(temp, sizeof(temp), "Ps") > 0)
+		{
+			if (temp[0] == '1')
+			{
 				/* Disable Maintenance Bypass */
 				mge_command(temp, sizeof(temp), "Px 2");
 				upsdebugx(2, "UPS response to Select All Plugs was %s", temp);
-			} else {
+			} else
+			{
 				/* Enable Maintenance Bypass */
 				mge_command(temp, sizeof(temp), "Px 3");
 			}
@@ -577,11 +588,12 @@ int setvar(const char *varname, const char *val)
 	
 	/* TODO : add some controls */
 	
-	if(info_variable_ok(varname)) {
+	if(info_variable_ok(varname))
+	{
 		/* format command */
 		sprintf(cmd, "%s", info_variable_cmd(varname));
 		sprintf(strchr(cmd, '?'), "%s", val);
-    
+
 		/* Execute command */
 		mge_command(temp, sizeof(temp), cmd);
 		upslogx(LOG_INFO, "setvar: UPS response to Set %s to %s was %s", varname, val, temp);
@@ -597,25 +609,27 @@ int setvar(const char *varname, const char *val)
  * kernel serial init at boot time (ie with V24 init) */
 static void disable_ups_comm(void)
 {
-  ser_flush_in(upsfd, "?\r\n", 0);
-  usleep(MGE_CONNECT_DELAY);
-  mge_command(NULL, 0, "Ax 0");
+	upsdebugx(1, "disable_ups_comm()");
+	ser_flush_in(upsfd, "?\r\n", 0);
+	usleep(MGE_CONNECT_DELAY);
+	mge_command(NULL, 0, "Ax 0");
 }
 
 /* enable communication with UPS */
 static void enable_ups_comm(void)
 {
-  char buf[8];
-
-  /* only enable communication if needed! */
-  if ( mge_command(buf, 8, "Si") == -1)
+	char buf[8];
+	
+	/* only enable communication if needed! */
+	if ( mge_command(buf, 8, "Si") == -1)
 	{
-	  mge_command(NULL, 0, "Z");   /* send Z twice --- speeds up re-connect */
-	  mge_command(NULL, 0, "Z");
-	  mge_command(NULL, 0, "Ax 1");
-	  usleep(MGE_CONNECT_DELAY);
+		mge_command(NULL, 0, "Z");   /* send Z twice --- speeds up re-connect */
+		mge_command(NULL, 0, "Z");
+		mge_command(NULL, 0, "Ax 1");
+		usleep(MGE_CONNECT_DELAY);
 	}
-  ser_flush_in(upsfd, "?\r\n", nut_debug_level);
+	
+	ser_flush_in(upsfd, "?\r\n", nut_debug_level);
 }
 
 /* --------------------------------------------------------------- */
@@ -801,7 +815,7 @@ static const char *info_variable_cmd(const char *type)
 /* --------------------------------------------------------------- */
 
 /* send command to UPS and read reply if requested
-   
+
    reply   :  buffer for reply, NULL if no reply expected
    replylen:  length of buffer reply
    fmt     :  format string, followed by optional data for command
@@ -816,7 +830,7 @@ static int mge_command(char *reply, int replylen, const char *fmt, ...)
 	int bytes_rcvd = 0;
 	int ret;
 	va_list ap;
-	
+
 	/* build command string */
 	va_start(ap, fmt);
 
@@ -827,6 +841,9 @@ static int mge_command(char *reply, int replylen, const char *fmt, ...)
 	
 	va_end(ap);
 
+	/* Delay a bit to avoid overlap of a previous answer */
+	usleep(100000);
+	
 	/* flush received, unread data */
 	tcflush(upsfd, TCIFLUSH);
 	
