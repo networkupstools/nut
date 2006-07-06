@@ -42,6 +42,7 @@
 #include "common.h"
 
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <netinet/in.h>
@@ -84,8 +85,17 @@ static void exec_cmd(const char *cmd)
 	snprintf(buf, sizeof(buf), "%s %s", cmdscript, cmd);
 
 	err = system(buf);
-	if (err)
-		upslog_with_errno(LOG_ERR, "Execute command failure: %s", buf);
+	if (WIFEXITED(err)) {
+		if (WEXITSTATUS(err)) {
+			upslogx(LOG_INFO, "exec_cmd(%s) returned %d", buf, WEXITSTATUS(err));
+		}
+	} else {
+		if (WIFSIGNALED(err)) {
+			upslogx(LOG_WARNING, "exec_cmd(%s) terminated with signal %d", buf, WTERMSIG(err));
+		} else {
+			upslogx(LOG_ERR, "Execute command failure: %s", buf);
+		}
+	}
 
 	return;
 }
