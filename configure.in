@@ -420,6 +420,19 @@ AC_ARG_WITH(linux-hiddev,
 ]
 )
 
+dnl Solaris 10/11 USB handling (need librt and libusb runtime path)
+case $target_os in
+	solaris2.1* )
+		echo Checking for Solaris 10 / 11 specific configuration for usb drivers
+		AC_SEARCH_LIBS(nanosleep,rt)
+		LIBUSB_LIBS="-R/usr/sfw/lib $LIBUSB_LIBS"
+		dnl FIXME: notification disabled while waiting for a libusbugen fix
+		AC_DEFINE(USB_NOTIFICATION_DISABLED, 1,
+			[Define to 1 if libusb doesn't support timeout.])
+		USB_NOTIFICATION_DISABLED=1
+		;;
+esac
+
 AC_MSG_CHECKING(state path)
 AC_ARG_WITH(statepath,
 [ --with-statepath=PATH		Path for ups state files        [/var/state/ups]],
@@ -734,6 +747,7 @@ AC_SUBST(DRVPATH)
 AC_SUBST(CGIPATH)
 AC_SUBST(RUN_AS_USER)
 AC_SUBST(LINUX_HIDDEV)
+AC_SUBST(USB_NOTIFICATION_DISABLED)
 AC_SUBST(WORDS_BIGENDIAN)
 AC_SUBST(PKG_CFG_DIR)
 AC_SUBST(USE_PKG_CFG)

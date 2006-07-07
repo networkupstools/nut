@@ -40,7 +40,7 @@
 /* --------------------------------------------------------------- */
 
 #define DRIVER_NAME    "MGE UPS SYSTEMS/U-Talk driver"
-#define DRIVER_VERSION "0.87"
+#define DRIVER_VERSION "0.88"
 
 /* delay after sending each char to UPS (in MICROSECONDS) */
 #define MGE_CHAR_DELAY 0
@@ -162,7 +162,7 @@ void upsdrv_initups(void)
 			upsdebugx(1, "initups: Low Battery Level cannot be set");
 	}
 
-	/* Try to set "ON delay" (if supported) */
+        /* Try to set "ON delay" (if supported and given) */
 	if (getval ("ondelay"))
 	{
 		mge_ups.OnDelay = atoi (getval ("ondelay"));
@@ -174,7 +174,7 @@ void upsdrv_initups(void)
 			upsdebugx(1, "initups: OnDelay unavailable");
 	}
 
-	/* Try to set "OFF delay" (if supported) */
+        /* Try to set "OFF delay" (if supported and given) */
 	if (getval ("offdelay"))
 	{
 		mge_ups.OffDelay = atoi (getval ("offdelay"));

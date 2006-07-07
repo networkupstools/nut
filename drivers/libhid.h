@@ -41,6 +41,15 @@ typedef enum ebool { FALSE, TRUE } bool;
 typedef int bool;
 #endif
 
+/* ensure these exists (required for Solaris 10) */
+#ifndef u_int16_t
+	typedef uint16_t u_int16_t;
+#endif
+
+#ifndef u_int8_t
+	typedef uint8_t u_int8_t;
+#endif
+
 /* Device open modes */
 #define MODE_OPEN 0
 #define MODE_REOPEN 1

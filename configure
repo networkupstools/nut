@@ -310,7 +310,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA EGREP AR RANLIB ac_ct_RANLIB NUT_VERSION UPSCLI_OBJ UPSCLI_LIBOBJ SSL_CFLAGS SSL_LDFLAGS CGI_BUILD_TARGET GD_INCLUDES GD_LIBS NETSNMP_CFLAGS NETSNMP_LIBS LIBUSB_CFLAGS LIBUSB_LIBS DRIVER_BUILD_LIST USB_DRIVER_LIST USBPAGES DRIVER_INSTALL_TARGET STRLCPY LIBOBJ BUILDOBJ NETLIBS SERLIBS STATEPATH DRVPATH CGIPATH RUN_AS_USER LINUX_HIDDEV WORDS_BIGENDIAN PKG_CFG_DIR USE_PKG_CFG LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA EGREP AR RANLIB ac_ct_RANLIB NUT_VERSION UPSCLI_OBJ UPSCLI_LIBOBJ SSL_CFLAGS SSL_LDFLAGS CGI_BUILD_TARGET GD_INCLUDES GD_LIBS NETSNMP_CFLAGS NETSNMP_LIBS LIBUSB_CFLAGS LIBUSB_LIBS DRIVER_BUILD_LIST USB_DRIVER_LIST USBPAGES DRIVER_INSTALL_TARGET STRLCPY LIBOBJ BUILDOBJ NETLIBS SERLIBS STATEPATH DRVPATH CGIPATH RUN_AS_USER LINUX_HIDDEV USB_NOTIFICATION_DISABLED WORDS_BIGENDIAN PKG_CFG_DIR USE_PKG_CFG LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -6031,6 +6031,143 @@ echo "${ECHO_T}no" >&6
 
 fi;
 
+case $target_os in
+	solaris2.1* )
+		echo Checking for Solaris 10 / 11 specific configuration for usb drivers
+		echo "$as_me:$LINENO: checking for library containing nanosleep" >&5
+echo $ECHO_N "checking for library containing nanosleep... $ECHO_C" >&6
+if test "${ac_cv_search_nanosleep+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+ac_cv_search_nanosleep=no
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char nanosleep ();
+int
+main ()
+{
+nanosleep ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_search_nanosleep="none required"
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+if test "$ac_cv_search_nanosleep" = no; then
+  for ac_lib in rt; do
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char nanosleep ();
+int
+main ()
+{
+nanosleep ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_search_nanosleep="-l$ac_lib"
+break
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+  done
+fi
+LIBS=$ac_func_search_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_search_nanosleep" >&5
+echo "${ECHO_T}$ac_cv_search_nanosleep" >&6
+if test "$ac_cv_search_nanosleep" != no; then
+  test "$ac_cv_search_nanosleep" = "none required" || LIBS="$ac_cv_search_nanosleep $LIBS"
+
+fi
+
+		LIBUSB_LIBS="-R/usr/sfw/lib $LIBUSB_LIBS"
+
+cat >>confdefs.h <<\_ACEOF
+#define USB_NOTIFICATION_DISABLED 1
+_ACEOF
+
+		USB_NOTIFICATION_DISABLED=1
+		;;
+esac
+
 echo "$as_me:$LINENO: checking state path" >&5
 echo $ECHO_N "checking state path... $ECHO_C" >&6
 
@@ -6520,6 +6657,7 @@ eval datatemp=${datadir}
 cat >>confdefs.h <<_ACEOF
 #define DATADIR "$datatemp"
 _ACEOF
+
 
 
 
@@ -7230,6 +7368,7 @@ s,@DRVPATH@,$DRVPATH,;t t
 s,@CGIPATH@,$CGIPATH,;t t
 s,@RUN_AS_USER@,$RUN_AS_USER,;t t
 s,@LINUX_HIDDEV@,$LINUX_HIDDEV,;t t
+s,@USB_NOTIFICATION_DISABLED@,$USB_NOTIFICATION_DISABLED,;t t
 s,@WORDS_BIGENDIAN@,$WORDS_BIGENDIAN,;t t
 s,@PKG_CFG_DIR@,$PKG_CFG_DIR,;t t
 s,@USE_PKG_CFG@,$USE_PKG_CFG,;t t

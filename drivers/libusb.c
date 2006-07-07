@@ -314,7 +314,10 @@ int libusb_get_string(usb_dev_handle *udev, int StringIdx, char *string)
 int libusb_get_interrupt(usb_dev_handle *udev, unsigned char *buf, int bufsize, int timeout)
 {
   int ret = -1;
-
+#if USB_NOTIFICATION_DISABLED
+	/* sleep during timeout to slow down a bit... */
+	sleep(timeout / 1000);
+#else
   if (udev != NULL)
 	{
 	  /* FIXME: hardcoded interrupt EP => need to get EP descr for IF descr */
@@ -324,7 +327,7 @@ int libusb_get_interrupt(usb_dev_handle *udev, unsigned char *buf, int bufsize, 
 	  else
 		TRACE(6, " none (%i)", ret);
 	}
-
+#endif
   return ret;
 }
 

@@ -16,7 +16,7 @@ PROGS	= bestups fentonups apcsmart everups belkin masterguard powercom \
 	  bcmxcp upscode2 solis gamatronic megatec
 LDFLAGS = @LDFLAGS@
 LIBDEP	= @LIBOBJ@
-LIBOBJ	= $(LIBDEP) @NETLIBS@ @SERLIBS@
+LIBOBJ	= $(LIBDEP) @NETLIBS@ @SERLIBS@ @LIBS@
 
 INSTALLCMD = @INSTALL@
 INSTALLMODE = 0755
