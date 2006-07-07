@@ -274,12 +274,15 @@ static hid_info_t mge_hid2nut[] =
 	/* Battery page */
 	{ "battery.charge", 0, 1, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", HU_FLAG_OK, NULL },
 	{ "battery.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 5, 
-		"UPS.PowerSummary.RemainingCapacityLimitSetting", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL },
+	"UPS.PowerSummary.RemainingCapacityLimitSetting", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL },
 	{ "battery.charge.low", ST_FLAG_STRING, 5, "UPS.PowerSummary.RemainingCapacityLimit", NULL,
-		"%.0f", HU_FLAG_OK | HU_FLAG_STATIC , NULL }, /* Read only */
+	"%.0f", HU_FLAG_OK | HU_FLAG_STATIC , NULL }, /* Read only */
+	{ "battery.charge.restart", ST_FLAG_RW | ST_FLAG_STRING, 3,
+	"UPS.PowerSummary.RestartLevel", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL },
 	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", HU_FLAG_OK, NULL },
 	{ "battery.temperature", 0, 0, 
 		"UPS.BatterySystem.Battery.Temperature", NULL, "%.1f", HU_FLAG_OK, NULL },
+	{ "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", HU_FLAG_OK, stringid_conversion },
 	{ "battery.voltage",  0, 0, "UPS.PowerSummary.Voltage", NULL, "%.1f", HU_FLAG_OK, NULL },
 	{ "battery.voltage.nominal", 0, 0, "UPS.BatterySystem.ConfigVoltage", NULL,
 		"%.1f", HU_FLAG_OK, NULL },
@@ -296,7 +299,7 @@ static hid_info_t mge_hid2nut[] =
 		"UPS.BatterySystem.Battery.Test", NULL, "%s", HU_FLAG_OK | HU_FLAG_SEMI_STATIC, &test_read_info[0] },
 	{ "ups.test.interval", ST_FLAG_RW | ST_FLAG_STRING, 8,
 		"UPS.BatterySystem.Battery.TestPeriod", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL },
-	{ "ups.beeper.status", ST_FLAG_RW | ST_FLAG_STRING, 10, 
+	{ "ups.beeper.status", 0, 1, 
 	"UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", HU_FLAG_OK | HU_FLAG_SEMI_STATIC, &beeper_info[0] },
 	{ "ups.temperature", 0, 0, 
 		"UPS.PowerSummary.Temperature", NULL, "%.1f", HU_FLAG_OK, NULL },
@@ -328,7 +331,7 @@ static hid_info_t mge_hid2nut[] =
 	/* FIXME: extend ups.status for BYPASS: */
 	/* Manual bypass */
 	{ "ups.status", 0, 1, "UPS.PowerConverter.Input[4].PresentStatus.Used", NULL,
-		"%.0f", HU_FLAG_OK, &bypass_info[0] },  
+		"%.0f", HU_FLAG_OK, &bypass_info[0] },
 	/* Automatic bypass */
 	{ "ups.status", 0, 1, "UPS.PowerConverter.Input[2].PresentStatus.Used", NULL,
 		"%.0f", HU_FLAG_OK, &bypass_info[0] },
@@ -377,10 +380,12 @@ static hid_info_t mge_hid2nut[] =
 	NULL, "%s", HU_FLAG_OK, &on_off_info[0] },
 	{ "outlet.1.autoswitch.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 3,
 	  "UPS.OutletSystem.Outlet.[2].RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "outlet.1.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5,
-	  "UPS.OutletSystem.Outlet.[2].DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_OK, NULL },
+	/* FIXME: use UPS.OutletSystem.Outlet.[x].ShutdownTimer */
+	{ "outlet.1.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5, 
+	"UPS.OutletSystem.Outlet.[2].ShutdownTimer", NULL, "%.0f", HU_FLAG_OK, NULL },
+	/* FIXME: use UPS.OutletSystem.Outlet.[x].StartupTimer */
 	{ "outlet.1.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 5,
-	  "UPS.OutletSystem.Outlet.[2].DelayBeforeStartup", NULL, "%.0f", HU_FLAG_OK, NULL },
+	"UPS.OutletSystem.Outlet.[2].StartupTimer", NULL, "%.0f", HU_FLAG_OK, NULL },
 	{ "outlet.2.id", 0, 0, "UPS.OutletSystem.Outlet.[3].OutletID", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_STATIC, NULL },	
 	{ "outlet.2.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[3].OutletID",
 	  NULL, "PowerShare Outlet 2", HU_FLAG_ABSENT | HU_FLAG_OK | HU_FLAG_STATIC, NULL },
@@ -389,11 +394,13 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.2.status", ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet.[3].PresentStatus.SwitchOn/Off",
 	NULL, "%s", HU_FLAG_OK, &on_off_info[0] },
 	{ "outlet.2.autoswitch.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 3,
-	  "UPS.OutletSystem.Outlet.[3].RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_OK, NULL },
+	"UPS.OutletSystem.Outlet.[3].RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_OK, NULL },
+	/* FIXME: use UPS.OutletSystem.Outlet.[x].ShutdownTimer */
 	{ "outlet.2.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5,
-	  "UPS.OutletSystem.Outlet.[3].DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_OK, NULL },
+	"UPS.OutletSystem.Outlet.[3].ShutdownTimer", NULL, "%.0f", HU_FLAG_OK, NULL },
+	/* FIXME: use UPS.OutletSystem.Outlet.[x].StartupTimer */
 	{ "outlet.2.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 5,
-	  "UPS.OutletSystem.Outlet.[3].DelayBeforeStartup", NULL, "%.0f", HU_FLAG_OK, NULL },
+	"UPS.OutletSystem.Outlet.[3].StartupTimer", NULL, "%.0f", HU_FLAG_OK, NULL },
 
 	/* instant commands. */
 	/* splited into subset while waiting for extradata support
@@ -414,7 +421,16 @@ static hid_info_t mge_hid2nut[] =
 	{ "load.on", 0, 0,
 	"UPS.PowerSummary.DelayBeforeStartup", NULL, "0", /* point to good value */
 	HU_TYPE_CMD | HU_FLAG_OK, NULL },
+	{ "beeper.off", 0, 0,
+	"UPS.PowerSummary.AudibleAlarmControl", NULL, "1", /* point to good value */
+	HU_TYPE_CMD | HU_FLAG_OK, NULL },
+	{ "beeper.on", 0, 0,
+	"UPS.PowerSummary.AudibleAlarmControl", NULL, "2", /* point to good value */
+	HU_TYPE_CMD | HU_FLAG_OK, NULL },
+	/* FIXME: add beeper.mute , value "3" */
+
 	/* Command for the outlet collection */
+	/* FIXME: not existing in new-names.txt => complete it or use "load.off {all, outletX}" ? */
 	{ "outlet.1.load.off", 0, 0, "UPS.OutletSystem.Outlet.[2].DelayBeforeShutdown",
 	NULL, "0", HU_TYPE_CMD | HU_FLAG_OK, NULL },
 	{ "outlet.1.load.on", 0, 0, "UPS.OutletSystem.Outlet.[2].DelayBeforeStartup",
@@ -424,7 +440,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.2.load.on", 0, 0, "UPS.OutletSystem.Outlet.[3].DelayBeforeStartup",
 	NULL, "0", HU_TYPE_CMD | HU_FLAG_OK, NULL },
 
-  /* TODO: beeper.on/off, bypass.start/stop, shutdown.return/stayoff/stop/reboot[.graceful] */
+  /* TODO: bypass.start/stop, shutdown.return/stayoff/stop/reboot[.graceful] */
 
   /* end of structure. */
   { NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
