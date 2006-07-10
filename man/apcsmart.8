@@ -62,6 +62,13 @@ Some older APC UPS models return bogus data in the status register during
 a front panel test.  This is usually detected and discarded, but some
 other unexpected values have occasionally slipped through.
 
+APC UPS models with both USB and serial ports require a power cycle when
+switching from USB communication to serial, and perhaps vice versa.
+
+.SH AUTHOR
+Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk> (drawing
+heavily on the original apcsmart driver by Russell Kroll).  This driver
+
 .SH AUTHOR
 Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk> (drawing
 heavily on the original apcsmart driver by Russell Kroll).  This driver

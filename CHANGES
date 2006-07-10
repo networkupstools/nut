@@ -1,3 +1,35 @@
+Mon Jul 10 07:00:56 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - powercom.c: rename shutdown() to nut_shutdown() to avoid naming
+   conflict on LynxOS
+
+   (Olli Savia) [Alioth Bug #303257]
+
+ - energizerups: fix communication problems for Linux 2.6.15
+
+   (Viktor T. Toth) [Alioth Bug #303393]
+
+ - upsset: assumes stdin closed when called non-POST
+
+   (Julius Malkiewicz) [Alioth Bug #302734]
+
+ - config.sub, config.guess: update with automake-1.9 files
+
+   (Charles Lepple) [Alioth Bug #302339]
+
+ - driver.list: add Cyberpower 550SL supported by genericups upstype=7
+
+   (Thomas Suckow) [Alioth Bug #302851]
+
+ - apcsmart.8: add a comment to make a power cycle when switching
+   from USB to serial (and perhaps vice versa) communication
+   (from Ryan Underwood)
+
+ - apcsmart: add support for the Smart-UPS with 6TI firmware and
+   bump driver version to 1.99.8
+
+   (Andrew Day) [Alioth Bug #303390]
+
 Fri Jul 07 14:45:56 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
  - mge-hid:

@@ -124,7 +124,7 @@ static struct type types[] = {
  * local used functions
  */
 
-static void shutdown(void)
+static void nut_shutdown(void)
 {
 	printf ("Initiating UPS shutdown!\n");
         
@@ -354,7 +354,7 @@ void upsdrv_shutdown(void)
 {
 	/* power down the attached load immediately */
 	printf("Forced UPS shutdown triggered, do it...\n");
-	shutdown();
+	nut_shutdown();
 }
 
 /* initialize UPS */

@@ -1046,8 +1046,18 @@ int main(int argc, char **argv)
 	/* see if the magic string is present in the config file */
 	check_conf();
 
-	extractpostargs();
+	/* see if there's anything waiting .. the server my not close STDIN properly */
+	if (1) {
+	    fd_set fds;
+	    struct timeval tv;
 
+	    FD_ZERO(&fds);
+	    FD_SET(STDIN_FILENO, &fds);
+	    tv.tv_sec = 0;
+	    tv.tv_usec = 250000; /* wait for up to 250ms  for a POST response */
+	    if ((select(STDIN_FILENO+1, &fds, 0, 0, &tv)) > 0)
+		extractpostargs();
+	}
 	if ((!username) || (!password) || (!function))
 		loginscreen();
 
