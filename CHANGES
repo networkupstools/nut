@@ -1,5 +1,13 @@
 Mon Jul 10 07:00:56 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
+ - rhino: new driver for Microsol Rhino UPS hardware
+ - solis:
+   * add solaris compatibility,
+   * add internal / external shutdown programming,
+   * save external shutdown programming to ups,
+   * support new cables for solis 3
+   (from Silvino B. Magalhães)
+
  - newhidups: fix notification handling on linux 2.4.32, which
    was failing with EINVAL (from Rodrigo Martins de Matos Ventura)
 

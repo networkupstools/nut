@@ -31,8 +31,15 @@ Release notes for NUT 2.0.4 - what's new since 2.0.3:
 
    [Carlos Rodrigues]
 
- - Several fixes and improvements have been made to upsrw, cpsups,
-   tripplite_usb and the FAQ.
+ - The new rhino driver was added to support Microsol Rhino UPS hardware
+   The solis has also been improved for solaris compatibility, and
+   internal / external shutdown programming. solis can now save external
+   shutdown programming to ups, and support new cables for solis 3
+
+   [Silvino B. Magalhães]
+
+ - Several fixes and improvements have been made to upsrw, upsset,
+   cpsups, tripplite_usb and the FAQ.
 
    [Arjen de Korte and Charles Lepple]
 

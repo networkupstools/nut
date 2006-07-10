@@ -288,6 +288,10 @@
 "Microsol"	"Solis 1.5"	"1500VA"	"solis"
 "Microsol"	"Solis 2.0"	"2000VA"	"solis"
 "Microsol"	"Solis 3.0"	"3000VA"	"solis"
+"Microsol"	"Rhino 6.0"	"6000VA"	"rhino"
+"Microsol"	"Rhino 7.5"	"7500VA"	"rhino"
+"Microsol"	"Rhino 10.0"	"10000VA"	"rhino"
+"Microsol"	"Rhino 20.0"	"20000VA"	"rhino"
 
 "Mustek"	"Various"	""	"megatec"
 
