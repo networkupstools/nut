@@ -22,7 +22,8 @@ Mon Jul 10 07:00:56 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
    was failing with EINVAL (from Rodrigo Martins de Matos Ventura)
 
  - powercom.c: rename shutdown() to nut_shutdown() to avoid naming
-   conflict on LynxOS
+   conflict on LynxOS,
+ - proto.h: add some guards and missing prototypes for LynxOS.
 
    (Olli Savia) [Alioth Bug #303460]
 

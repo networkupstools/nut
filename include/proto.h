@@ -30,9 +30,15 @@
 # endif
 #endif
 
+#if !defined (HAVE_SNPRINTF) || defined (__Lynx__)
 int snprintf (char *str, size_t count, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 3, 4)));
+#endif
+
+#if !defined (HAVE_VSNPRINTF)
 int vsnprintf (char *str, size_t count, const char *fmt, va_list arg);
+#endif
+
 #endif
 
 #ifndef HAVE_SETENV
