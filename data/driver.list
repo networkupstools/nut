@@ -83,6 +83,7 @@
 "Cyber Power Systems"	"1500AVR"	""	"cyberpower"
 "Cyber Power Systems"	"Power99"	""	"genericups upstype=7"
 "Cyber Power Systems"	"550SL"	""	"genericups upstype=7"
+"Cyber Power Systems"	"725SL"	""	"genericups upstype=23"
 "Cyber Power Systems"	"CPS825VA"	""	"cpsups (experimental)"
 "Cyber Power Systems"	"1100AVR"	""	"cpsups (experimental)"
 "Cyber Power Systems"	"1500AVR-HO"	""	"cpsups (experimental)"

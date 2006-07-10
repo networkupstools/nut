@@ -27,6 +27,7 @@ struct {
 	int	line_sd;
 }	upstab[] =
 {
+	/* Type 0 */
 	{ "UPSONIC",
 	  "LAN Saver 600",
 	  "UPSONIC LAN Saver 600",
@@ -36,6 +37,7 @@ struct {
 	  TIOCM_RTS			/* shutdown: lower DTR		*/
 	},
 
+	/* Type 1 */
 	{ "APC",
 	  "Back-UPS",
 	  "APC Back-UPS (940-0095A/C cable)",
@@ -45,6 +47,7 @@ struct {
 	  TIOCM_RTS 			/* shutdown: RTS		*/
 	},
 
+	/* Type 2 */
 	{ "APC",
 	  "Back-UPS",
 	  "APC Back-UPS (940-0020B/C cable)",
@@ -53,7 +56,8 @@ struct {
 	  TIOCM_CD, TIOCM_CD,		/* low battery: CD on		*/
 	  TIOCM_DTR|TIOCM_RTS		/* shutdown: DTR + RTS		*/
 	},
-
+	
+	/* Type 3 */
 	{ "PowerTech",
 	  "Comp1000",
 	  "PowerTech Comp1000 with DTR as cable power",
@@ -63,6 +67,7 @@ struct {
 	  TIOCM_DTR | TIOCM_RTS		/* shutdown: DTR + RTS		*/
 	},
 
+	/* Type 4 */
 	{ "Generic",
 	  "Generic RUPS model",
 	  "Generic RUPS model",
@@ -72,6 +77,7 @@ struct {
 	  0				/* shutdown: drop RTS		*/
 	},
 
+	/* Type 5 */
 	{ "TrippLite",
 	  "Internet Office Series",
 	  "Tripp Lite UPS with Lan2.2 interface (black 73-0844 cable)",
@@ -81,6 +87,7 @@ struct {
 	  TIOCM_DTR | TIOCM_RTS		/* shutdown: DTR + RTS		*/
 	},
 
+	/* Type 6 */
 	{ "Best",
 	  "Patriot",
 	  "Best Patriot (INT51 cable)",
@@ -90,6 +97,7 @@ struct {
 	  TIOCM_RTS			/* shutdown: set RTS		*/
 	},
 
+	/* Type 7 */
 	{ "CyberPower",
 	  "Power99",
 	  "CyberPower Power99", 
@@ -99,7 +107,8 @@ struct {
 	  TIOCM_DTR			/* shutdown: set DTR		*/
 	},
 
-        { "Nitram",
+	/* Type 8 */
+	{ "Nitram",
           "Elite UPS",
           "Nitram Elite 500",
           TIOCM_DTR,			/* cable power: DTR		*/
@@ -108,6 +117,7 @@ struct {
           -1				/* shutdown: unknown		*/
         },
 
+	/* Type 9 */
 	{ "APC",
 	  "Back-UPS",
 	  "APC Back-UPS (940-0023A cable)",
@@ -116,7 +126,8 @@ struct {
 	  TIOCM_CTS, TIOCM_CTS,		/* low battery: CTS on		*/
 	  TIOCM_RTS			/* shutdown: RTS		*/
 	},
-   
+
+	/* Type 10 */
 	{ "Victron",
 	  "Lite",
 	  "Victron Lite (crack cable)",
@@ -124,9 +135,9 @@ struct {
 	  TIOCM_CTS, TIOCM_CTS,         /* online: CTS on               */
 	  TIOCM_CD, 0,                  /* low battery: CD off          */
 	  TIOCM_DTR                     /* shutdown: DTR                */
- 	},
+	},
 
-        
+	/* Type 11 */
 	{ "Powerware",
 	  "3115",
 	  "Powerware 3115",
@@ -136,6 +147,7 @@ struct {
 	  TIOCM_ST			/* shutdown: ST			*/
 	},
 
+	/* Type 12 */
 	{ "APC",
 	  "Back-UPS Office",
 	  "APC Back-UPS Office (940-0119A cable)",
@@ -145,7 +157,8 @@ struct {
 	  TIOCM_DTR			/* shutdown: raise DTR		*/
 	},
 	
-        { "RPT",
+	/* Type 13 */
+	{ "RPT",
           "Repoteck",
 	  "Repoteck RPT-800A, RPT-162A",
 	  TIOCM_DTR | TIOCM_RTS,	/* cable power: DTR + RTS	*/
@@ -154,6 +167,7 @@ struct {
 	  TIOCM_ST			/* shutdown: TX BREA		*/
 	},
 
+	/* Type 14 */
 	{ "Online",
 	   "P250, P500, P750, P1250",
 	   "Online P-series",
@@ -163,6 +177,7 @@ struct {
 	   TIOCM_RTS			/* shutdown: raise RTS		*/
 	},
 
+	/* Type 15 */
 	{ "Powerware",
 	  "5119",
 	  "Powerware 5119",
@@ -171,7 +186,8 @@ struct {
 	  TIOCM_CD, 0,			/* low battery: CD low		*/
 	  TIOCM_ST			/* shutdown: ST (break)		*/
 	},
-          
+
+	/* Type 16 */
 	{ "Nitram",
 	  "Elite UPS",
 	  "Nitram Elite 2002",
@@ -181,7 +197,7 @@ struct {
 	  -1				/* shutdown: unknown		*/
 	},
 
-      
+	/* Type 17 */
 	{ "PowerKinetics",
 	  "9001",
 	  "PowerKinetics 9001",
@@ -190,7 +206,8 @@ struct {
 	  TIOCM_CD, 0,			/* low battery: CD high		*/
 	  -1				/* shutdown: unknown		*/
 	},
-        
+
+	/* Type 18 */
 	{ "TrippLite",
 	  "Omni 450LAN",
 	  "TrippLite UPS with Martin's cabling",
@@ -200,6 +217,7 @@ struct {
 	  -1				/* shutdown: none		*/
 	},
 
+	/* Type 19 */
 	{ "Fideltronik",
 	  "Ares Series",
 	  "Fideltronik Ares Series",
@@ -209,8 +227,8 @@ struct {
 	  TIOCM_RTS			/* shutdown: set RTS		*/
 	},
 
+	/* Type 20 */
 	/* docs/cables/powerware.txt */
-
 	{ "Powerware",
 	  "5119 RM",
 	  "Powerware 5119 RM",
@@ -220,8 +238,8 @@ struct {
 	  TIOCM_ST			/* shutdown: ST (break)		*/
 	},
 
+	/* Type 21 */
 	/* http://lists.exploits.org/upsdev/Oct2004/00004.html */
-
 	{ "Generic",
 	  "Generic RUPS 2000",
 	  "Generic RUPS 2000 (Megatec M2501 cable)",
@@ -231,14 +249,25 @@ struct {
 	  TIOCM_RTS | TIOCM_DTR         /* shutdown: RTS+DTR            */
 	},
 	
-	
+	/* Type 22 */
 	{ "Gamatronic Electronic Industries",
 	  "Generic Alarm UPS",
-	  "Gamatronic UPSs with alarm interface", 
+	  "Gamatronic UPSs with alarm interface",
 	  TIOCM_RTS,			/* cable power: RTS		*/
 	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
 	  TIOCM_CD, 0,			/* low battery: CD off		*/
 	  TIOCM_DTR			/* shutdown: set DTR		*/
+	},
+	
+	/* Type 23 */
+	/* http://lists.alioth.debian.org/pipermail/nut-upsdev/2005-October/000172.html */
+	{ "CyberPower",
+	  "SL series",
+	  "CyberPower SL",
+	  TIOCM_RTS,			/* cable power: RTS		*/
+	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
+	  TIOCM_CD, 0,			/* low battery: CD off		*/
+	  TIOCM_DTR			/* shutdown: DTR		*/
 	},
 
 	/* add any new entries directly above this line */

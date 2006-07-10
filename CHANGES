@@ -1,3 +1,9 @@
+Mon Jul 10 20:05:02 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - genericups: add type 23 for CyberPower 725SL (and maybe others)
+
+   (David Kaufman) [Alioth Bug #302337]
+
 Mon Jul 10 07:00:56 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
  - rhino: new driver for Microsol Rhino UPS hardware
@@ -14,7 +20,7 @@ Mon Jul 10 07:00:56 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
  - powercom.c: rename shutdown() to nut_shutdown() to avoid naming
    conflict on LynxOS
 
-   (Olli Savia) [Alioth Bug #303257]
+   (Olli Savia) [Alioth Bug #303460]
 
  - energizerups: fix communication problems for Linux 2.6.15
 
