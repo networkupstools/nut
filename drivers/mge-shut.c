@@ -367,7 +367,7 @@ int instcmd(const char *cmdname, const char *extra)
 	}
 	
 	/* Stop battery test */
-	if (!strcasecmp(cmdname, "test.battery.start")) {
+	if (!strcasecmp(cmdname, "test.battery.stop")) {
 		/* set Test to 3 (Abort test) */
 		hid_set_value("ups.test.result", "3");
 		return STAT_INSTCMD_HANDLED;

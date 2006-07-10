@@ -1,3 +1,7 @@
+Mon Jul 10 20:33:13 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - mge-shut: fix the duplicate test.battery.start
+
 Mon Jul 10 20:05:02 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
  - genericups: add type 23 for CyberPower 725SL (and maybe others)
