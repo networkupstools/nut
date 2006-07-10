@@ -26,7 +26,7 @@ Mon Jul 10 07:00:56 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
    conflict on LynxOS,
  - proto.h: add some guards and missing prototypes for LynxOS.
 
-   (Olli Savia) [Alioth Bug #303257]
+   (Olli Savia) [Alioth Bug #303460]
 
  - energizerups: fix communication problems for Linux 2.6.15
 
