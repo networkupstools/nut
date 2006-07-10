@@ -253,6 +253,7 @@ struct {
 {
 	/* APC600 */
 	{ "6QD",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
+	{ "6TI",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
 	/* CS 350 */
 	{ "5.4.D",	"\1ABPQRSUYbdfgjmnx9",	0 },
 

@@ -643,7 +643,7 @@ int HIDGetEvents(usb_dev_handle *udev, HIDDevice *dev, HIDItem **eventsList, usa
 	upsdebugx(2, "Waiting for notifications...");
 	
 	/* needs libusb-0.1.8 to work => use ifdef and autoconf */
-	if ((size = libusb_get_interrupt(udev, &buf[0], 20, 5000)) > -1)
+	if ((size = libusb_get_interrupt(udev, &buf[0], REPORT_SIZE, 5000)) > -1)
 	{
 		dump_hex ("Notification", buf, size);
 		

@@ -136,7 +136,6 @@ void sendstring(int fd, char *psz)
         }
         if (*psz == 0 || ++i == 8)
         {
-            i = 0;
             while (uref.usage_index++ < 63)
             {
                 uref.report_type = HID_REPORT_TYPE_OUTPUT;
@@ -176,13 +175,35 @@ int fake_hid_ev_bits(int r, char *buf, int size)
         strncpy(buf, "#Energiz", 8);
         r += 8;
     }
-    else if ((r == 38 || r == 39) && isdigit(buf[0]))
+    else if ((r >= 38 && r <= 40) && isdigit(buf[0]))
     {
         memmove(buf + 8, buf, size - 8);
         strncpy(buf, "(117.0 1", 8);
         r += 8;
     }
     return r;
+}
+
+/*
+ * Read HID USAGE bits
+ */
+
+void get_hid_usage(int fd, unsigned char *data)
+{
+    struct hiddev_usage_ref uref;
+    int i;
+
+    memset(data, 0, 8);
+    for (i = 0; i < 64; i++)
+    {
+        uref.report_type = HID_REPORT_TYPE_INPUT;
+        uref.report_id = HID_REPORT_ID_FIRST;
+        uref.field_index = 0;
+        uref.usage_index = i;
+        if (ioctl(fd, HIDIOCGUCODE, &uref) < 0) perror("qups: GUCODE");
+        if (ioctl(fd, HIDIOCGUSAGE, &uref) < 0) perror("qups: GUSAGE");
+        if (uref.value) data[i >> 3] |= 1 << (i & 7);
+    }
 }
 
 /*
@@ -203,10 +224,10 @@ int fake_hid_ev_bits(int r, char *buf, int size)
 int hidcmd(unsigned char *pCmd, unsigned char *pRsp, int l)
 {
     unsigned int i;
-    int fd, rd, j, k, hid;
+    int fd, /*rd, j,*/ k;//, hid;
     fd_set rdfs;
     struct timeval tv;
-    struct hiddev_event ev[NUM_EVTS];
+    //struct hiddev_event ev[NUM_EVTS];
     struct hiddev_usage_ref uref;
     unsigned char data[8];
 
@@ -235,47 +256,31 @@ int hidcmd(unsigned char *pCmd, unsigned char *pRsp, int l)
 
     if (pRsp != NULL)
     {
-        hid = -1;
-        while (l > 0)
-        {
-            tv.tv_sec = 0;
-            tv.tv_usec = 500000;
-            if (select(fd+1, &rdfs, 0, 0, &tv) <= 0) break;
-            rd = read(fd, ev, sizeof(ev));
-            if (rd < (int) sizeof(ev[0]))
-                fatalx("Communication failure with UPS");
+		char data2[8];
+		int nChanged = -1;
 
-            for (i = 0; i < rd / sizeof(ev[0]); i++)
-            {
-                if (hid >= 0 && (int) ev[i].hid <= hid)
-                {
-                    for (j = 0; j < 8; j++)
-                    {
-                        if (k < l - 1)
-                        {
-                            if (k > 0 || data[j] != 0xFF) pRsp[k++] = data[j];
-                        }
-                        else break;
-                    }
-                }
-                j = (ev[i].hid - 1) & 0x3F;
-                if (ev[i].value) data[j >> 3] |= 1 << (j & 7);
-                else data[j >> 3] &= ~(1 << (j & 7));
-                hid = ev[i].hid;
-            }
-        }
-        if (hid >= 0) for (j = 0; j < ((hid - 1) & 0x3F) >> 3; j++)
-        {
-            if (k < l - 1)
-            {
-                if (k > 0 || data[j] != 0xFF) pRsp[k++] = data[j];
-            }
-            else break;
-        }
-        pRsp[k] = '\0';
-    }
-    close(fd);
-    return pRsp ? fake_hid_ev_bits(k, pRsp, l) : k;
+		get_hid_usage(fd, data);
+		memcpy(data2, data, 8);
+
+		for (i = 0; i < 100; i++)
+		{
+			tv.tv_sec = 0;
+			tv.tv_usec = 5000;
+			select(0, 0, 0, 0, &tv);
+			get_hid_usage(fd, data);
+			if (memcmp(data, data2, 8))
+			{
+				memcpy(pRsp + k, data, 8);
+				k += 8;
+				nChanged = 5;
+				memcpy(data2, data, 8);
+			}
+			else if (--nChanged == 0) break;
+		}
+		pRsp[k] = 0;
+	}
+	close(fd);
+	return k;
 }
 
 
@@ -339,10 +344,10 @@ void upsdrv_initinfo(void)
     for (i = 0; i < 10; i++)
     {
         r = hidcmd("I", buf, sizeof(buf));
-        if (r == 39 && buf[0] == '#') break;
+        if ((r == 39 || r == 40) && buf[0] == '#') break;
         sleep(3);
     }
-    if (r != 39 || buf[0] != '#') fatalx("No Energizer UPS detected");
+    if (r < 39 || r > 40 || buf[0] != '#') fatalx("No Energizer UPS detected");
     buf[16]=buf[27]=buf[38] = '\0';
     rtrim(MANUFR, ' ');
     rtrim(MDLNUM, ' ');
@@ -378,7 +383,7 @@ void upsdrv_updateinfo(void)
 
 
     r = hidcmd("Q1", buf, sizeof(buf));
-    if (r < 46 || r > 47)
+    if (r < 46 || r > 48)
     {
         if (f++ < 3)
             upslogx(LOG_ERR, "Invalid response length from UPS [%s]", buf);

@@ -19,7 +19,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define APC_DRIVER_VERSION	"1.99.7"
+#define APC_DRIVER_VERSION	"1.99.8"
 
 #include "main.h"
 #include "serial.h"
@@ -533,6 +533,10 @@ static int firmware_table_lookup(void)
 
 		/* found one, force the model information */
 		if (!strcmp(buf, "6QD")) {
+			upsdebugx(1, "Found Smart-UPS");
+			dstate_setinfo("ups.model", "Smart-UPS");
+		}
+		else if (!strcmp(buf, "6TI")) {
 			upsdebugx(1, "Found Smart-UPS");
 			dstate_setinfo("ups.model", "Smart-UPS");
 		}
