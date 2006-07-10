@@ -1,3 +1,19 @@
+Mon Jul 10 09:15:25 EDT 2006 / Charles Lepple <clepple@gmail.com>
+
+ - solis.c: add internal and external shutdown programming, save external
+   shutdown programming to ups, support new cables and Solaris compilation
+
+   (Silvino B. Magalhaes)
+
+ - rhino.c: New driver for Microsol Rhino
+
+   (Silvino B. Magalhaes)
+
+ - drivers (svn:ignore): added rhino; sorted list of driver binaries (so that
+   they are ignored during SVN checkins)
+
+   (Charles Lepple)
+
 Mon Jul 10 07:00:56 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
  - powercom.c: rename shutdown() to nut_shutdown() to avoid naming
