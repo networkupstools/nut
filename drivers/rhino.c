@@ -40,8 +40,9 @@
 #define UPSDELAY 500 /* 0.5 ms delay */
 
 /* comment on english language */
-#define PORTUGUESE
+/* #define PORTUGUESE */
 
+/* The following Portuguese strings are in UTF-8. */
 #ifdef PORTUGUESE
 #define M_UNKN     "Modêlo rhino desconhecido\n"
 #define NO_RHINO   "Rhino não detectado! abortando ...\n"
