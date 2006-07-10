@@ -1,3 +1,11 @@
+Mon Jul 10 21:26:13 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - mge-shut: fix the duplicate test.battery.start
+
+ - genericups: add type 23 for CyberPower 725SL (and maybe others)
+
+   (David Kaufman) [Alioth Bug #302337]
+
 Mon Jul 10 09:34:19 EDT 2006 / Charles Lepple <clepple@gmail.com>
 
  - solis.c, rhino.c: Set default language back to English. This is a separate
