@@ -33,9 +33,15 @@
 # endif
 #endif
 
+#if !defined (HAVE_SNPRINTF) || defined (__Lynx__)
 int snprintf (char *str, size_t count, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 3, 4)));
+#endif
+
+#if !defined (HAVE_VSNPRINTF)
 int vsnprintf (char *str, size_t count, const char *fmt, va_list arg);
+#endif
+
 #endif
 
 #ifndef HAVE_SETENV
@@ -64,6 +70,13 @@ static inline int setenv(const char *name, const char *value, int overwrite) {
 #define GETPASS getpassphrase
 #else
 #define GETPASS getpass
+#endif
+
+#ifdef __Lynx__
+/* Missing prototypes on LynxOS */
+int seteuid(uid_t);
+int vprintf(const char *, va_list);
+int putenv(char *);
 #endif
 
 #endif /* PROTO_H */
