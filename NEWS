@@ -24,6 +24,11 @@ Release notes for NUT 2.0.4 - what's new since 2.0.3:
 
    [Arjen de Korte]
 
+ - The genericups driver has a new type (23) to support CyberPower 725SL
+   (and maybe others)
+
+   [David Kaufman]
+
  - The new megatec driver, which will replace a bunch of drivers by nut 2.2
    (refer to docs/megatec.txt and UPGRADING) has been backported from the
    trunk (Development tree). The powermust driver has also received some
