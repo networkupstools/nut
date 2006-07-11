@@ -47,6 +47,9 @@ do
 		bcmxcp)
 			EXTRAOBJ="bcmxcp_ser.o"
 			;;
+		rhino)
+			EXTRA="-lm"
+			;;
 	esac	
 
 	echo "$i: $i.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o $EXTRAOBJ \$(LIBDEP)" >> $MFDB
