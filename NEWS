@@ -24,8 +24,8 @@ Release notes for NUT 2.0.4 - what's new since 2.0.3:
 
    [Arjen de Korte]
 
- - The genericups driver has a new type (23) to support CyberPower 725SL
-   (and maybe others)
+ - The genericups driver type 22 also support CyberPower 725SL
+   (and maybe others SL models)
 
    [David Kaufman]
 
