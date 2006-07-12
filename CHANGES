@@ -1,3 +1,7 @@
+Wed Jul 12 10:47:43 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - genericups: merge type 23 into type 22
+
 Mon Jul 10 21:26:13 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
  - mge-shut: fix the duplicate test.battery.start

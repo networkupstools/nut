@@ -258,17 +258,6 @@ struct {
 	  TIOCM_CD, 0,			/* low battery: CD off		*/
 	  TIOCM_DTR			/* shutdown: set DTR		*/
 	},
-	
-	/* Type 23 */
-	/* http://lists.alioth.debian.org/pipermail/nut-upsdev/2005-October/000172.html */
-	{ "CyberPower",
-	  "SL series",
-	  "CyberPower SL",
-	  TIOCM_RTS,			/* cable power: RTS		*/
-	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
-	  TIOCM_CD, 0,			/* low battery: CD off		*/
-	  TIOCM_DTR			/* shutdown: DTR		*/
-	},
 
 	/* add any new entries directly above this line */
 
