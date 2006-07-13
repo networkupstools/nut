@@ -821,7 +821,8 @@ static bool hid_ups_walk(int mode)
 		else
 		  {
 			if ( (retcode == -EPERM) || (retcode == -EPIPE)
-				 || (retcode == -ENODEV) || (retcode == -EACCES) )
+				|| (retcode == -ENODEV) || (retcode == -EACCES)
+				|| (retcode == -EIO) || (retcode == -ENOENT) )
 			  break;
 			else {
 			  /* atomic call */
@@ -845,7 +846,8 @@ static bool hid_ups_walk(int mode)
 	/* Reserved values: -1/-10 for nul delay, -2 can't get value */
 	/* device has been disconnected, try to reconnect */
 	if ( (retcode == -EPERM) || (retcode == -EPIPE)
-	     || (retcode == -ENODEV) || (retcode == -EACCES))
+		|| (retcode == -ENODEV) || (retcode == -EACCES)
+		|| (retcode == -EIO) || (retcode == -ENOENT) )
 	  {
 		hd = NULL;
 		reconnect_ups();
@@ -861,16 +863,18 @@ static bool hid_ups_walk(int mode)
 static void reconnect_ups(void)
 {
   if (hd == NULL)
-	{	  
+	{
 	  upsdebugx(2, "==================================================");
 	  upsdebugx(2, "= device has been disconnected, try to reconnect =");
 	  upsdebugx(2, "==================================================");
-	  
+
 	  /* Not really useful as the device is no more reachable */
 	  /* Cause a double free corruption on linux! */
-	  /* HIDCloseDevice(udev); */
+#ifdef SUN_LIBUSB
+	  HIDCloseDevice(udev);
+#endif
 	  udev = NULL;
-	  
+
 	  if ((hd = HIDOpenDevice(&udev, &curDevice, reopen_matcher, MODE_REOPEN)) == NULL)
 		dstate_datastale();
 	}

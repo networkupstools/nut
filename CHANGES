@@ -1,3 +1,8 @@
+Thu Jul 13 13:45:22 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - configure.in, config.h.in, newhidups, libusb: add few more
+   fixes for Solaris compatibility
+
 Wed Jul 12 10:47:43 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
  - genericups: merge type 23 in type 22
