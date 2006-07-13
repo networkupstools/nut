@@ -28,6 +28,8 @@
 #ifndef _LIBHID_H
 #define _LIBHID_H
 
+#include "config.h"
+
 #include <sys/types.h>
 #include <regex.h>
 #include "timehead.h"
@@ -41,13 +43,8 @@ typedef enum ebool { FALSE, TRUE } bool;
 typedef int bool;
 #endif
 
-/* ensure these exists (required for Solaris 10) */
-#ifndef u_int16_t
-	typedef uint16_t u_int16_t;
-#endif
-
-#ifndef u_int8_t
-	typedef uint8_t u_int8_t;
+#ifdef HAVE_STDINT_H
+#include <stdint.h> /* for uint16_t */
 #endif
 
 /* Device open modes */

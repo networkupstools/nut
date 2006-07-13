@@ -2,6 +2,7 @@ Thu Jul 13 13:45:22 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
  - configure.in, config.h.in, newhidups, libusb: add few more
    fixes for Solaris compatibility
+ - libhid.h: use stdint.h
 
 Wed Jul 12 10:47:43 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
