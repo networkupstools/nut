@@ -3,6 +3,7 @@
 Tue Jul 18 06:47:19 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
  - nutupsdrv.8: update the drivers list in the SEE ALSO section
+ - CREDITS: minor update on the maintainer
  - complete NEWS and UPGRADING for 2.0.4
  - version number bump for 2.0.4-pre2 release.
 
