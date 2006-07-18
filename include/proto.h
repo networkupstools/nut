@@ -1,3 +1,6 @@
+#ifndef PROTO_H
+#define PROTO_H
+
 #include "attribute.h"
 
 #if !defined(HAVE_SNPRINTF) || !defined(HAVE_VSNPRINTF)
