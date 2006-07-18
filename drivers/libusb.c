@@ -90,8 +90,8 @@ int libusb_open(usb_dev_handle **udevp, HIDDevice *curDevice, HIDDeviceMatcher_t
 #endif
 	struct my_usb_hid_descriptor *desc;
 	HIDDeviceMatcher_t *m;
-	struct usb_device *dev;                                                
-	struct usb_bus *bus;                                                   
+	struct usb_device *dev;
+	struct usb_bus *bus;
 	usb_dev_handle *udev;
 	
 	int ret, res; 
@@ -231,6 +231,9 @@ int libusb_open(usb_dev_handle **udevp, HIDDevice *curDevice, HIDDeviceMatcher_t
 			res = usb_control_msg(udev, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
 					      (USB_DT_REPORT << 8) + 0, 0, ReportDesc, 
 					      desc->wDescriptorLength, USB_TIMEOUT);
+			
+			TRACE(2, "Size read for the report descriptor: %u", res);
+
 			if (res >= desc->wDescriptorLength) 
 			{
 				TRACE(2, "Report descriptor retrieved (Reportlen = %u)", desc->wDescriptorLength);

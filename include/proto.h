@@ -65,3 +65,12 @@ int setenv(const char *name, const char *value, int overwrite);
 #else
 #define GETPASS getpass
 #endif
+
+#ifdef __Lynx__
+/* Missing prototypes on LynxOS */
+int seteuid(uid_t);
+int vprintf(const char *, va_list);
+int putenv(char *);
+#endif
+
+#endif /* PROTO_H */
