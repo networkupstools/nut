@@ -16,7 +16,8 @@ Release notes for NUT 2.0.4 - what's new since 2.0.3:
    [Arjen de Korte]
 
  - The mge-shut driver now better detects the Low Battery status, support
-   new models and fixes some wrong status and data.
+   new models and fixes some wrong status and data. It also fixes some
+   issue where the UPS wasn't restarting (refer to mge-shut manpage).
 
    [Arnaud Quette]
 

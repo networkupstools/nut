@@ -1,3 +1,11 @@
+2.0.4
+
+Thu Jul 27 08:35:22 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - NEWS: minor update on mge-shut
+ - mge-shut.8: update Know Issues for the ondelay / restart issue
+ - final version number bump for 2.0.4 release.
+
 2.0.4-pre2
 
 Tue Jul 18 06:47:19 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
