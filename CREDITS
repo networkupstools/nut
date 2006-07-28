@@ -50,7 +50,7 @@ D: Provided a Best Fortress for development of a Best driver (bestups)
 N: Russell Kroll
 E: rkroll@exploits.org
 W: http://www.networkupstools.org/
-D: Primary coordinator and official project scapegoat
+D: Original NUT author and coordinator
 P: 1024D/9DC0E77E 6A5C 7D2D 7945 C022 6104  D421 D61D C97F 9DC0 E77E
 
 N: Rick Lyons
@@ -76,13 +76,15 @@ E: medp@primagraphics.co.uk
 D: Ported to SunOS4
 
 N: Arnaud Quette
-E: arnaud.quette@free.fr
+E: aquette.dev@gmail.com
 E: arnaud.quette@mgeups.com
 E: aquette@debian.org
-D: Secondary coordinator ; author of snmp-ups, mge-shut, Walnut Community ;
+W: http://arnaud.quette.free.fr/
+D: Primary coordinator ; author of snmp-ups, mge-shut, newhidups ;
 D: co author of mge-utalk, hidups, SNMP UPS Agent ; contributor to blazer,
-D: bestferrups, nut core ; coordination with MGE UPS SYSTEMS, linux-usb
-D: developers (for hidups), Net SNMP and packagers (Mandrake, Debian)...
+D: bestferrups, nut core, and many others ; coordination with MGE UPS
+D: SYSTEMS, linux-usb developers (for hidups), Net SNMP and packagers
+D: (Mandriva, Debian, SuSE, ...)...
 P: 1024D/204DDF1B 1371 07DF 3CF3 9160 7905  144B DB64 14CA 204D DF1B
 
 N: Lars Balker Rasmussen

@@ -1,3 +1,8 @@
+Tue Jul 18 06:47:19 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - nutupsdrv.8: update the drivers list in the SEE ALSO section
+ - CREDITS: minor update on the maintainer
+
 Wed Jul 12 10:47:43 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
  - genericups: merge type 23 into type 22
