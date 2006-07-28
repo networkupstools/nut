@@ -40,8 +40,9 @@ exit(EXIT_FAILURE) afterwards.
 Debugging information
 ---------------------
 
-upsdebug_with_errno() and upsdebugx() use the global nut_debug_level
-so you don't have to mess around with printfs yourself.  Use them.
+upsdebug_with_errno(), upsdebugx() and upsdebug_hex() use the
+global nut_debug_level so you don't have to mess around with
+printfs yourself.  Use them.
 
 Memory allocation
 -----------------

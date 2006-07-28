@@ -352,6 +352,49 @@ void upsdebugx(int level, const char *fmt, ...)
 	va_end(va);
 }
 
+
+/* Philippe Marzouk <philm@users.sourceforge.net> (dump_hex()) */
+/* FIXME: to be reworked */
+#define NIBBLE(_i)    (((_i) < 10) ? '0' + (_i) : 'A' + (_i) - 10)
+void upsdebug_hex(int level, const char *msg, const char *buf, int len)
+{
+	int i;
+	int nlocal;
+	const char *pc;
+	char *out;
+	const char *start;
+	char c;
+	char line[100];
+ 
+	start = buf;
+	out = line;
+	
+	for (i = 0, pc = buf, nlocal = len; i < 16; i++, pc++)
+	{
+		if (nlocal > 0)
+		{
+			c = *pc;
+
+			*out++ = NIBBLE ((c >> 4) & 0xF);
+			*out++ = NIBBLE (c & 0xF);
+
+			nlocal--;
+		}
+		else
+		{
+			*out++ = ' ';
+			*out++ = ' ';
+		}
+		*out++ = ' ';
+	}
+	*out++ = 0;
+
+	upsdebugx(level, "%s: (%d bytes) => %s", msg, len, line);
+
+	buf += 16;
+	len -= 16;
+}
+
 static void vfatal(const char *fmt, va_list va, int use_strerror)
 {
 	if (xbit_test(upslog_flags, UPSLOG_STDERR_ON_FATAL))
