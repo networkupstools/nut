@@ -1,3 +1,8 @@
+Mon Jul 31 13:45:34 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - hotplug, hotplug-ng: modify the permissions from 660 to 664 so
+   that all users can see the device(s) using lsusb
+
 Fri Jul 28 12:48:21 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
  - common.ch, developers.txt, : add the upsdebug_hex() function

@@ -32,7 +32,7 @@ case $PRODUCT in
 	925/1234/*)
 
 		chown root:@RUN_AS_USER@ "$DEVICE"
-		chmod 0660 "$DEVICE"
+		chmod 0664 "$DEVICE"
 		;;
 	*)
 		exit 0
