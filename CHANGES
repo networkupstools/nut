@@ -1,3 +1,8 @@
+Tue Aug  3 21:30:45 UTC 2006 / Kjell Claesson <kjell.claesson@telia.com>
+
+ - Changed bcmxcp driver to support 3-phase. And made some adjustment
+   to bcmxcp.h for the future use.
+
 Mon Jul 31 13:45:34 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
  - hotplug, hotplug-ng: modify the permissions from 660 to 664 so
