@@ -1,3 +1,7 @@
+Fre Aug  4 18:39:45 UTC 2006 / Kjell Claesson <kjell.claesson@telia.com>
+
+ - Added PowerMan RealSmart 800 and 1000, also the PowerMan BackPro to driver.list
+
 Tue Aug  3 21:30:45 UTC 2006 / Kjell Claesson <kjell.claesson@telia.com>
 
  - Changed bcmxcp driver to support 3-phase. And made some adjustment
