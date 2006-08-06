@@ -34,6 +34,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <regex.h>
+#include <usb.h>
 
 #ifdef HAVE_STDINT_H
 #include <stdint.h> /* for uint8_t, uint16_t */
@@ -44,7 +45,7 @@
 #include "libusb.h"
 #include "config.h" /* for LIBUSB_HAS_DETACH_KRNL_DRV flag */
 
-#include "common.h" /* for xmalloc prototype */
+#include "common.h" /* for xmalloc, upsdebugx prototypes */
 
 /* USB standard state 5000, but we've decreased it to
  * improve reactivity */
@@ -54,13 +55,15 @@
 #define USB_DRIVER_VERSION	"0.28"
 
 /* TODO: rework all that */
-void upsdebugx(int level, const char *fmt, ...);
 #define TRACE upsdebugx
+
+/* a useful macro */
+#define max(a,b) ((a)>(b) ? (a) : (b))
 
 /* HID descriptor, completed with desc{type,len} */
 struct my_usb_hid_descriptor {
         uint8_t  bLength;
-        uint8_t  bDescriptorType;
+        uint8_t  bDescriptorType;  /* 0x21 */
         uint16_t bcdHID;
         uint8_t  bCountryCode;
         uint8_t  bNumDescriptors;
@@ -97,15 +100,19 @@ int libusb_open(usb_dev_handle **udevp, HIDDevice *curDevice, HIDDeviceMatcher_t
 #if LIBUSB_HAS_DETACH_KRNL_DRV
 	int retries;
 #endif
-	struct my_usb_hid_descriptor *desc;
+	int rdlen; /* report descriptor length */
+	int rdlen1, rdlen2; /* report descriptor length, method 1+2 */
 	HIDDeviceMatcher_t *m;
 	struct usb_device *dev;
 	struct usb_bus *bus;
 	usb_dev_handle *udev;
+	struct usb_interface_descriptor *iface;
 	
 	int ret, res; 
 	unsigned char buf[20];
+	unsigned char *p;
 	char string[256];
+	int i;
 
 	/* libusb base init */
 	usb_init();
@@ -213,48 +220,88 @@ int libusb_open(usb_dev_handle **udevp, HIDDevice *curDevice, HIDDeviceMatcher_t
 				return 1; 
 			}
 
+			if (!dev->config) { /* ?? this should never happen */
+				TRACE(2, "  Couldn't retrieve descriptors");
+				goto next_device;
+			}
+			
+			rdlen1 = -1;
+			rdlen2 = -1;
+
 			/* Get HID descriptor */
-			desc = (struct my_usb_hid_descriptor *)buf;
+
+			/* FIRST METHOD: ask for HID descriptor directly. */
 			/* res = usb_get_descriptor(udev, USB_DT_HID, 0, buf, 0x9); */
 			res = usb_control_msg(udev, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
 					      (USB_DT_HID << 8) + 0, 0, buf, 0x9, USB_TIMEOUT);
 			
 			if (res < 0) {
 				TRACE(2, "Unable to get HID descriptor (%s)", usb_strerror());
-				goto next_device;
 			} else if (res < 9) {
 				TRACE(2, "HID descriptor too short (expected %d, got %d)", 8, res);
-				goto next_device;
-			} 
-			
-                        /* USB_LE16_TO_CPU(desc->wDescriptorLength); */
-			desc->wDescriptorLength = buf[7] | (buf[8] << 8);
-			TRACE(2, "HID descriptor retrieved (Reportlen = %u)", desc->wDescriptorLength);
-			
-			if (!dev->config) {
-				TRACE(2, "  Couldn't retrieve descriptors");
-				goto next_device;
+			} else {
+
+				upsdebug_hex(3, "HID descriptor, method 1", (char *)buf, 9);
+
+				rdlen1 = buf[7] | (buf[8] << 8);
+			}			
+
+			if (rdlen1 < -1) {
+				TRACE(2, "Warning: HID descriptor, method 1 failed");
 			}
+
+			/* SECOND METHOD: find HID descriptor among "extra" bytes of
+			   interface descriptor */
+
+			/* Note: on some broken UPS's (e.g. Tripp Lite Smart1000LCD),
+				only this second method gives the correct result */
 			
-			/* res = usb_get_descriptor(udev, USB_DT_REPORT, 0, bigbuf, desc->wDescriptorLength); */
+			/* for now, we always assume configuration 0, interface 0,
+			   altsetting 0, as above. */
+			iface = &dev->config[0].interface[0].altsetting[0];
+			for (i=0; i<iface->extralen; i+=iface->extra[i]) {
+				TRACE(4, "i=%d, extra[i]=%02x, extra[i+1]=%02x", i, iface->extra[i], iface->extra[i+1]);
+				if (i+9 <= iface->extralen && iface->extra[i] >= 9 && iface->extra[i+1] == 0x21) {
+					p = &iface->extra[i];
+					upsdebug_hex(3, "HID descriptor, method 2", (char *)p, 9);
+					rdlen2 = p[7] | (p[8] << 8);
+					break;
+				}
+			}
+
+			if (rdlen2 < -1) {
+				TRACE(2, "Warning: HID descriptor, method 2 failed");
+			}
+
+			/* now choose the larger of the two rdlen values. Note: since
+				this can be at most 65535, there is not much harm in
+				accidentally choosing too large a value here. */
+			rdlen = max(rdlen1, rdlen2);
+			if (rdlen1 >= 0 && rdlen2 >= 0 && rdlen1 != rdlen2) {
+				TRACE(2, "Warning: two different HID descriptors retrieved (Reportlen = %u vs. %u)", rdlen1, rdlen2);
+			}
+
+			TRACE(2, "HID descriptor retrieved (Reportlen = %u)", rdlen);
+
+			/* res = usb_get_descriptor(udev, USB_DT_REPORT, 0, bigbuf, rdlen); */
 			res = usb_control_msg(udev, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
 					      (USB_DT_REPORT << 8) + 0, 0, ReportDesc, 
-					      desc->wDescriptorLength, USB_TIMEOUT);
-			if (res >= desc->wDescriptorLength) 
+					      rdlen, USB_TIMEOUT);
+			if (res >= rdlen) 
 			{
-				TRACE(2, "Report descriptor retrieved (Reportlen = %u)", desc->wDescriptorLength);
+				TRACE(2, "Report descriptor retrieved (Reportlen = %u)", rdlen);
 				TRACE(2, "Found HID device");
 				fflush(stdout);
 
-				return desc->wDescriptorLength;
+				return rdlen;
 			}
 			if (res < 0)
 			{
-				TRACE(2, "Unable to get Report descriptor (%d)", res);
+				TRACE(2, "Unable to get Report descriptor (%d): %s", res, strerror(-res));
 			}
 			else
 			{
-				TRACE(2, "Report descriptor too short (expected %d, got %d)", desc->wDescriptorLength, res);
+				TRACE(2, "Report descriptor too short (expected %d, got %d)", rdlen, res);
 			}
 		next_device:
 			usb_close(udev);
@@ -332,7 +379,7 @@ int libusb_get_interrupt(usb_dev_handle *udev, unsigned char *buf, int bufsize, 
 	if (udev != NULL)
 	{
 		/* FIXME: hardcoded interrupt EP => need to get EP descr for IF descr */
-		ret = usb_interrupt_read(udev, 0x81, buf, bufsize, timeout);
+		ret = usb_interrupt_read(udev, 0x81, (char *)buf, bufsize, timeout);
 		if (ret > 0)
 			TRACE(6, " ok");
 		else

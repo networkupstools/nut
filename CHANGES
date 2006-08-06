@@ -1,6 +1,13 @@
-Fre Aug  4 18:39:45 UTC 2006 / Kjell Claesson <kjell.claesson@telia.com>
+Sun Aug  6 03:39:19 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
- - Added PowerMan RealSmart 800 and 1000, also the PowerMan BackPro to driver.list
+ - newhidups/libusb: attempt to fix Tripp Lite problem: buggy UPS
+   reports wrong report descriptor length. We now retrieve it two
+   different ways and use the maximum value.
+
+Fri Aug  4 18:39:45 UTC 2006 / Kjell Claesson <kjell.claesson@telia.com>
+
+ - Added PowerMan RealSmart 800 and 1000, also the PowerMan BackPro to
+   driver.list
 
 Tue Aug  3 21:30:45 UTC 2006 / Kjell Claesson <kjell.claesson@telia.com>
 
@@ -202,7 +209,9 @@ Mon Apr 24 21:23:24 UTC 2006 / Niels Baggesen <nba@users.sourceforge.net>
 
 Mon Apr 24 20:54:18 UTC 2006 / Niels Baggesen <nba@users.sourceforge.net>
 
- - docs/new-names.txt clients/upsimage.c clients/upsstats.c conf/upsstats.html conf/upsstats-single.html: Support for measuring phase-neutral voltages
+ - docs/new-names.txt clients/upsimage.c clients/upsstats.c
+   conf/upsstats.html conf/upsstats-single.html: Support for measuring
+   phase-neutral voltages
 
 Mon Apr 24 20:45:37 UTC 2006 / Niels Baggesen <nba@users.sourceforge.net>
 
