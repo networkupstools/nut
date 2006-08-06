@@ -329,8 +329,8 @@
 
 "PowerKinetics"	"9001"		""	"genericups upstype=17"
 
-"PowerMan"	"RealSmart 800"	""	"fentonups"
-"PowerMan"	"RealSmart 1000"	""	"fentonups"
+"PowerMan"	"RealSmart 800"	""	"megatec"
+"PowerMan"	"RealSmart 1000"	""	"megatec"
 "PowerMan"	"BackPro"	""	"genericups upstype=4"
 
 "PowerTech"	"Comp1000"	"DTR cable power"	"genericups upstype=3"

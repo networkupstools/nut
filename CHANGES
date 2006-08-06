@@ -1,3 +1,7 @@
+Sun Aug  6 13:52:45 UTC 2006 / Kjell Claesson <kjell.claesson@telia.com>
+
+ - Changed driver to megatec for PowerMan RealSmart 800 and 1000 in driver.list
+
 Sun Aug  6 04:05:08 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups/libusb: instead of using the maximum of the two report
