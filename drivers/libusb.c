@@ -57,9 +57,6 @@
 /* TODO: rework all that */
 #define TRACE upsdebugx
 
-/* a useful macro */
-#define max(a,b) ((a)>(b) ? (a) : (b))
-
 /* HID descriptor, completed with desc{type,len} */
 struct my_usb_hid_descriptor {
         uint8_t  bLength;
@@ -251,7 +248,8 @@ int libusb_open(usb_dev_handle **udevp, HIDDevice *curDevice, HIDDeviceMatcher_t
 			}
 
 			/* SECOND METHOD: find HID descriptor among "extra" bytes of
-			   interface descriptor */
+			   interface descriptor, i.e., bytes tucked onto the end of
+			   descriptor 2. */
 
 			/* Note: on some broken UPS's (e.g. Tripp Lite Smart1000LCD),
 				only this second method gives the correct result */
@@ -273,10 +271,16 @@ int libusb_open(usb_dev_handle **udevp, HIDDevice *curDevice, HIDDeviceMatcher_t
 				TRACE(2, "Warning: HID descriptor, method 2 failed");
 			}
 
-			/* now choose the larger of the two rdlen values. Note: since
-				this can be at most 65535, there is not much harm in
-				accidentally choosing too large a value here. */
-			rdlen = max(rdlen1, rdlen2);
+			/* when available, always choose the second value, as it
+				seems to be more reliable (it is the one reported e.g. by
+				lsusb). Note: if the need arises, can change this to use
+				the maximum of the two values instead. */
+			rdlen = rdlen2 >= 0 ? rdlen2 : rdlen1;
+
+			if (rdlen < 0) {
+				TRACE(2, "Unable to retrieve any HID descriptor");
+				goto next_device;
+			}
 			if (rdlen1 >= 0 && rdlen2 >= 0 && rdlen1 != rdlen2) {
 				TRACE(2, "Warning: two different HID descriptors retrieved (Reportlen = %u vs. %u)", rdlen1, rdlen2);
 			}
@@ -287,22 +291,22 @@ int libusb_open(usb_dev_handle **udevp, HIDDevice *curDevice, HIDDeviceMatcher_t
 			res = usb_control_msg(udev, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
 					      (USB_DT_REPORT << 8) + 0, 0, ReportDesc, 
 					      rdlen, USB_TIMEOUT);
-			if (res >= rdlen) 
-			{
-				TRACE(2, "Report descriptor retrieved (Reportlen = %u)", rdlen);
-				TRACE(2, "Found HID device");
-				fflush(stdout);
-
-				return rdlen;
-			}
 			if (res < 0)
 			{
 				TRACE(2, "Unable to get Report descriptor (%d): %s", res, strerror(-res));
+				goto next_device;
 			}
-			else
+			if (res < rdlen) 
 			{
-				TRACE(2, "Report descriptor too short (expected %d, got %d)", rdlen, res);
+				TRACE(2, "Warning: report descriptor too short (expected %d, got %d)", rdlen, res);
 			}
+			rdlen = res; /* correct rdlen if necessary */
+			TRACE(2, "Report descriptor retrieved (Reportlen = %u)", rdlen);
+			TRACE(2, "Found HID device");
+			fflush(stdout);
+
+			return rdlen;
+
 		next_device:
 			usb_close(udev);
 			udev = NULL;

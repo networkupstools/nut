@@ -1,3 +1,11 @@
+Sun Aug  6 04:05:08 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups/libusb: instead of using the maximum of the two report
+   descriptor lengths, always use the second value when available (it
+   seems to be more reliable). Also, when the report descriptor is
+   finally shorter than expected, no longer abort, but live with it
+   (this might help on some APC devices).
+
 Sun Aug  6 03:39:19 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups/libusb: attempt to fix Tripp Lite problem: buggy UPS
