@@ -384,7 +384,7 @@ int instcmd(const char *cmdname, const char *extradata)
 {
 	hid_info_t *hidups_item;
 	
-	upsdebugx(2, "entering instcmd(%s, %s)\n",
+	upsdebugx(5, "entering instcmd(%s, %s)\n",
 		  cmdname, (extradata==NULL)?"":extradata);
 
 	/* Retrieve and check netvar & item_path */	
@@ -410,13 +410,13 @@ int instcmd(const char *cmdname, const char *extradata)
 	if (HIDSetItemValue(udev, hidups_item->hidpath,
 	    atol(hidups_item->dfl), subdriver->utab))
 	{
-		upsdebugx(3, "SUCCEED\n");
+		upsdebugx(5, "instcmd: SUCCEED\n");
 		/* Set the status so that SEMI_STATIC vars are polled */
 		data_has_changed = TRUE;
 		return STAT_INSTCMD_HANDLED;
 	}
 	else
-		upsdebugx(3, "FAILED\n"); /* TODO: HANDLED but FAILED, not UNKNOWN! */
+		upsdebugx(3, "instcmd: FAILED\n"); /* TODO: HANDLED but FAILED, not UNKNOWN! */
 	
 	/* TODO: to be completed */
 	return STAT_INSTCMD_UNKNOWN;
@@ -428,7 +428,7 @@ int setvar(const char *varname, const char *val)
 	hid_info_t *hidups_item;
 	long newvalue;
 
-	upsdebugx(2, "entering setvar(%s, %s)\n", varname, val);
+	upsdebugx(5, "entering setvar(%s, %s)\n", varname, val);
 	
 	/* 1) retrieve and check netvar & item_path */	
 	hidups_item = find_nut_info(varname);
@@ -474,7 +474,7 @@ int setvar(const char *varname, const char *val)
 	if (HIDSetItemValue(udev, hidups_item->hidpath, newvalue, subdriver->utab))
 	{
 		/* FIXME: GetValue(hidups_item->hidpath) to ensure success on non volatile */
-		upsdebugx(3, "SUCCEED\n");
+		upsdebugx(5, "setvar: SUCCEED\n");
 		/* Delay a bit not to flood the device */
 		sleep(1);
 		/* Set the status so that SEMI_STATIC vars are polled */
@@ -482,7 +482,7 @@ int setvar(const char *varname, const char *val)
 		return STAT_SET_HANDLED;
 	}
 	else
-		upsdebugx(3, "FAILED\n"); /* FIXME: HANDLED but FAILED, not UNKNOWN! */
+		upsdebugx(3, "setvar: FAILED\n"); /* FIXME: HANDLED but FAILED, not UNKNOWN! */
 	
 	return STAT_SET_UNKNOWN;
 }
@@ -617,7 +617,7 @@ static void process_status_info(char *nutvalue)
 	status_lkp_t *status_item;
 	int clear = 0;
 
-	upsdebugx(2, "process_status_info: %s", nutvalue);
+	upsdebugx(5, "process_status_info: %s", nutvalue);
 
 	if (*nutvalue == '!') {
 		nutvalue++;
@@ -757,7 +757,7 @@ static void identify_ups ()
 	char *mfr;
 	char *serial;
 
-	upsdebugx (2, "entering identify_ups(0x%04x, 0x%04x)\n", 
+	upsdebugx (5, "entering identify_ups(0x%04x, 0x%04x)\n", 
 			   hd->VendorID,
 			   hd->ProductID);
 
@@ -1116,7 +1116,7 @@ static long hu_find_valinfo(info_lkp_t *hid2info, const char* value)
 		(strcmp(info_lkp->nut_value, "NULL")); info_lkp++) {
 
 		if (!(strcmp(info_lkp->nut_value, value))) {
-			upsdebugx(3, "hu_find_valinfo: found %s (value: %ld)\n",
+			upsdebugx(5, "hu_find_valinfo: found %s (value: %ld)\n",
 				  info_lkp->nut_value, info_lkp->hid_value);
 	
 			return info_lkp->hid_value;
@@ -1132,11 +1132,11 @@ static char *hu_find_infoval(info_lkp_t *hid2info, long value)
 	info_lkp_t *info_lkp;
 	char *nut_value;
 
-	upsdebugx(3, "hu_find_infoval: searching for value = %ld\n", value);
+	upsdebugx(5, "hu_find_infoval: searching for value = %ld\n", value);
 
 	if (hid2info->fun != NULL) {
 		nut_value = hid2info->fun(value);
-		upsdebugx(3, "hu_find_infoval: found %s (value: %ld)\n",
+		upsdebugx(5, "hu_find_infoval: found %s (value: %ld)\n",
 			nut_value, value);
 		return nut_value;
 	}
@@ -1144,7 +1144,7 @@ static char *hu_find_infoval(info_lkp_t *hid2info, long value)
 	for (info_lkp = hid2info; (info_lkp != NULL) &&
 		(strcmp(info_lkp->nut_value, "NULL")); info_lkp++) {
 		if (info_lkp->hid_value == value) {
-			upsdebugx(3, "hu_find_infoval: found %s (value: %ld)\n",
+			upsdebugx(5, "hu_find_infoval: found %s (value: %ld)\n",
 					info_lkp->nut_value, value);
 	
 			return info_lkp->nut_value;

@@ -499,7 +499,6 @@ void   setline(int set);
 int    serial_read (int read_timeout, u_char *readbuf);
 int    serial_send(u_char *buf, int len);
 
-void   dump_hex(const char *msg, const u_char *buf, int len);
 void   make_string(u_char *buf, int datalen, char *string);
 
 

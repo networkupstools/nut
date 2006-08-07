@@ -202,6 +202,9 @@ static int tripplite_claim(HIDDevice *hd) {
 		if (hd->ProductID == TRIPPLITE_HID_PRODUCTID) {
 			return 1;
 		}
+		if (hd->ProductID == 0x1003) {
+         return 1;
+      }
 
 		upsdebugx(1, 
 "This particular Tripp Lite device (%04x/%04x) is not (or perhaps not\n"

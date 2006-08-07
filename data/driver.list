@@ -87,7 +87,9 @@
 "Cyber Power Systems"	"CPS825VA"	""	"cpsups (experimental)"
 "Cyber Power Systems"	"1100AVR"	""	"cpsups (experimental)"
 "Cyber Power Systems"	"1500AVR-HO"	""	"cpsups (experimental)"
-"Cyber Power Systems"   "685AVR"        ""      "newhidups (USB driver)"
+"Cyber Power Systems"	"685AVR"	""	"newhidups (USB driver)"
+"Cyber Power Systems"	"800AVR"	""	"newhidups (USB driver)"
+"Cyber Power Systems"	"AE550"		""	"newhidups (USB driver)"
 
 "Deltec"	"PowerRite Pro II"	""	"genericups upstype=15"
 
@@ -395,6 +397,7 @@
 "Tripp-Lite"	"SmartUPS"	""	"tripplite"
 "Tripp-Lite"	"SmartOnline"	""	"tripplitesu"
 "Tripp-Lite"	"(various)"	"Lan 2.2 interface - black 73-0844 cable"	"genericups upstype=5"
+"Tripp-Lite"    "OMNI1000LCD"   "USB"   "newhidups"
 
 "Trust"		"UPS 1000 Management PW-4105"	""	"megatec"
 

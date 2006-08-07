@@ -4,7 +4,6 @@
  *
  * @author Copyright (C) 2003 - 2005
  *	Arnaud Quette <arnaud.quette@free.fr> && <arnaud.quette@mgeups.com>
- *	Philippe Marzouk <philm@users.sourceforge.net> (dump_hex())
  *	John Stamp <kinsayder@hotmail.com>
  *      2005 Peter Selinger <selinger@users.sourceforge.net>
  *	
@@ -36,6 +35,7 @@
 #include "hidparser.h"
 #include "hidtypes.h"
 #include "libhid.h"
+#include "common.h" /* for xmalloc, upsdebugx prototypes */
 
 /* Communication layers and drivers (USB and MGE SHUT) */
 #ifdef SHUT_MODE
@@ -74,10 +74,6 @@ static report_t cur_report_struct = {0, 0, 0, {0}};
    report buffer from the report descriptor. */
 #define REPORT_SIZE 8
 
-/* TODO: rework all that */
-void upsdebugx(int level, const char *fmt, ...);
-#define TRACE upsdebugx
-
 #define min(x,y) ((x)>(y) ? (y) : (x))
 
 /* Units and exponents table (HID PDC, 3.2.3) */
@@ -103,7 +99,6 @@ static const char *hid_lookup_path(unsigned int usage, usage_tables_t *utab);
 static int hid_lookup_usage(char *name, usage_tables_t *utab);
 static int string_to_path(char *HIDpath, HIDPath *path, usage_tables_t *utab);
 static int path_to_string(char *HIDpath, HIDPath *path, usage_tables_t *utab);
-void dump_hex (const char *msg, const unsigned char *buf, int len);
 static long get_unit_expo(long UnitType);
 static float expo(int a, int b);
 
@@ -421,10 +416,10 @@ void HIDDumpTree(hid_dev_handle *udev, usage_tables_t *utab)
 
 			/* Get data value */
 			if (HIDGetItemValue(udev, path, &value, utab) > 0)
-				TRACE(1, "Path: %s, Type: %s, Value: %f", path, type, value);
+				upsdebugx(1, "Path: %s, Type: %s, Value: %f", path, type, value);
 			
 			else
-				TRACE(1, "Path: %s, Type: %s", path, type);
+				upsdebugx(1, "Path: %s, Type: %s", path, type);
 		}
 	}
 }
@@ -440,7 +435,7 @@ HIDDevice *HIDOpenDevice(hid_dev_handle **udevp, HIDDevice *hd, HIDDeviceMatcher
 
 	if ( mode == MODE_REOPEN )
 	{
-		TRACE(2, "Reopening device");
+		upsdebugx(2, "Reopening device");
 	}
 
 	/* get and parse descriptors (dev, cfg and report) */
@@ -452,17 +447,17 @@ HIDDevice *HIDOpenDevice(hid_dev_handle **udevp, HIDDevice *hd, HIDDeviceMatcher
 	{
 		if ( mode == MODE_REOPEN )
 		{
-			TRACE(2, "Device reopened successfully");
+			upsdebugx(2, "Device reopened successfully");
 			return hd;
 		}
 	
-		TRACE(2, "Report Descriptor size = %d", ReportSize);
-		dump_hex ("Report Descriptor", ReportDesc, 200);
+		upsdebugx(2, "Report Descriptor size = %d", ReportSize);
+		upsdebug_hex(3, "Report Descriptor", ReportDesc, 200);
 
 		/* Parse Report Descriptor */
 		r = Parse_ReportDesc(ReportDesc, ReportSize, &hDesc);
 		if (r) {
-			TRACE(0, "Failed to parse report descriptor: %s", strerror(errno));
+			upsdebugx(0, "Failed to parse report descriptor: %s", strerror(errno));
 			return NULL;
 		}
 	}
@@ -491,15 +486,15 @@ int HIDGetItemValue(hid_dev_handle *udev, char *path, float *Value, usage_tables
 		return 0; /* TODO: should be checked */
 	}
 
-	TRACE(4, "Path depth = %i", hData.Path.Size);
+	upsdebugx(4, "Path depth = %i", hData.Path.Size);
 	
 	for (i = 0; i<hData.Path.Size; i++) {
-		TRACE(4, "%i: UPage(%x), Usage(%x)", i, hData.Path.Node[i].UPage, hData.Path.Node[i].Usage);
+		upsdebugx(4, "%i: UPage(%x), Usage(%x)", i, hData.Path.Node[i].UPage, hData.Path.Node[i].Usage);
 	} 
 
 	/* Get info on object (reportID, offset and size) */
 	if (FindObject(&hDesc, &hData) != 1) {
-		TRACE(2, "Can't find object %s", path);
+		upsdebugx(2, "Can't find object %s", path);
 		return 0; /* TODO: should be checked */
 	} 
 	/* Get report with data */
@@ -512,7 +507,7 @@ int HIDGetItemValue(hid_dev_handle *udev, char *path, float *Value, usage_tables
 			cur_report->data, REPORT_SIZE);
 
 		if (retcode <= 0) {
-			TRACE(2, "Can't retrieve Report %i (%i/%i): %s", hData.ReportID, retcode, errno, strerror(errno));
+			upsdebugx(2, "Can't retrieve Report %i (%i/%i): %s", hData.ReportID, retcode, errno, strerror(errno));
 			return -errno;
 		} else {
 			cur_report->len = retcode;
@@ -520,12 +515,13 @@ int HIDGetItemValue(hid_dev_handle *udev, char *path, float *Value, usage_tables
 		}
 	}
 	/* have valid report now */
+	upsdebug_hex (3, "Report", cur_report->data, cur_report->len);
 	
 	/* Extract the data value */
 	GetValue((const unsigned char *) cur_report->data, &hData);
 	cur_report->id = hData.ReportID;
 	
-	TRACE(4, "=>> Before exponent: %ld, %i/%i)", hData.Value,
+	upsdebugx(4, "=>> Before exponent: %ld, %i/%i)", hData.Value,
 	      (int)hData.UnitExp, (int)get_unit_expo(hData.Unit) );
 	
 	/* Convert Logical Min, Max and Value into Physical */
@@ -535,10 +531,8 @@ int HIDGetItemValue(hid_dev_handle *udev, char *path, float *Value, usage_tables
 	physical *= (float) expo(10,(int)hData.UnitExp - get_unit_expo(hData.Unit));
 	hData.Value = (long) physical;
 	
-	TRACE(4, "=>> After conversion: %f (%ld), %i/%i)", physical, 
+	upsdebugx(4, "=>> After conversion: %f (%ld), %i/%i)", physical, 
 	      hData.Value, (int)hData.UnitExp, (int)get_unit_expo(hData.Unit));
-	
-	dump_hex ("Report ", cur_report->data, cur_report->len);
 	
 	*Value = physical;
 	return 1;
@@ -555,10 +549,10 @@ char *HIDGetItemString(hid_dev_handle *udev, char *path, unsigned char *rawbuf, 
 	hData.ReportID = 0;
 	
 	if((retcode = string_to_path(path, &hData.Path, utab)) > 0) {
-	TRACE(4, "Path depth = %i", retcode);
+	upsdebugx(4, "Path depth = %i", retcode);
 	
 	for (i = 0; i<retcode; i++)
-	TRACE(4, "%i: UPage(%x), Usage(%x)", i,
+	upsdebugx(4, "%i: UPage(%x), Usage(%x)", i,
 		hData.Path.Node[i].UPage,
 		hData.Path.Node[i].Usage);
 	
@@ -577,10 +571,10 @@ char *HIDGetItemString(hid_dev_handle *udev, char *path, unsigned char *rawbuf, 
 			return rawbuf;
 		}
 		else
-			TRACE(2, "Can't retrieve Report %i", hData.ReportID);
+			upsdebugx(2, "Can't retrieve Report %i", hData.ReportID);
 	}
 	else
-		TRACE(2, "Can't find object %s", path);
+		upsdebugx(2, "Can't find object %s", path);
 
 	return NULL;
 	}
@@ -602,7 +596,7 @@ bool HIDSetItemValue(hid_dev_handle *udev, char *path, float value, usage_tables
 		return FALSE;
 	}
 
-	TRACE(2, "=>> SET: Before set: %.2f (%ld)", Value, (long)value);
+	upsdebugx(4, "=>> SET: Before set: %.2f (%ld)", Value, (long)value);
 	
 	/* Test if Item is settable */
 	/* FIXME: not constant == volatile, but
@@ -616,31 +610,31 @@ bool HIDSetItemValue(hid_dev_handle *udev, char *path, float value, usage_tables
 	
 	/* restore exponents */
 	value *= expo(10, get_unit_expo(hData.Unit) - (int)hData.UnitExp);
-	TRACE(2, "=>> SET: after exp: %.2f (exp = %.2f)", value,
+	upsdebugx(4, "=>> SET: after exp: %.2f (exp = %.2f)", value,
 			expo(10, (int)get_unit_expo(hData.Unit) - (int)hData.UnitExp));
 	
 	/* convert physical value to logical */
 	hData.Value = physical_to_logical(&hData, value);
-	TRACE(2, "=>> SET: after PL: %ld", hData.Value);
+	upsdebugx(4, "=>> SET: after PL: %ld", hData.Value);
 	
 	SetValue(&hData, cur_report->data);
 	
-	dump_hex ("==> Report after setvalue", cur_report->data, cur_report->len);
+	upsdebug_hex (4, "==> Report after setvalue", cur_report->data, cur_report->len);
 
 	if (comm_driver->set_report(udev, hData.ReportID, cur_report->data, cur_report->len) > 0)
 	{
-		TRACE(2, "Set report succeeded");
+		upsdebugx(4, "Set report succeeded");
 		return TRUE;
 	}
 	else
 	{
-		TRACE(2, "Set report failed");
+		upsdebugx(2, "Set report failed");
 		return FALSE;
 	}
 	/* check if set succeed! => doesn't work on *Delay (decremented!) */
 	/*      Value = HIDGetItemValue(path);
 			  
-	TRACE(2, "=>> SET: new value = %.2f (was set to %.2f)\n", 
+	upsdebugx(2, "=>> SET: new value = %.2f (was set to %.2f)\n", 
 	Value, (float) value);
 	return TRUE;*/ /* (Value == value); */
 }
@@ -656,7 +650,7 @@ int HIDGetEvents(hid_dev_handle *udev, HIDDevice *dev, HIDItem **eventsList, usa
 	/* needs libusb-0.1.8 to work => use ifdef and autoconf */
 	if ((size = comm_driver->get_interrupt(udev, &buf[0], 20, 5000)) > -1)
 	{
-		dump_hex ("Notification", buf, size);
+		upsdebug_hex (3, "Notification", buf, size);
 		
 		/* Convert report size in bits */
 		size = (size - 1) * 8;
@@ -706,7 +700,7 @@ void HIDCloseDevice(hid_dev_handle *udev)
 {
 	if (udev != NULL)
 	{
-		TRACE(2, "Closing device");
+		upsdebugx(2, "Closing device");
 		comm_driver->close(udev);
 	}
 }
@@ -752,7 +746,7 @@ static long physical_to_logical(HIDData *Data, float physical)
 {
 	long logical, Factor;
 
-	TRACE(2, "PhyMax = %ld, PhyMin = %ld, LogMax = %ld, LogMin = %ld",
+	upsdebugx(4, "PhyMax = %ld, PhyMin = %ld, LogMax = %ld, LogMin = %ld",
 		Data->PhyMax, Data->PhyMin, Data->LogMax, Data->LogMin);
 	
 	/* HID spec says that if one or both are undefined, or if they are
@@ -821,7 +815,7 @@ static int string_to_path(char *HIDpath, HIDPath *path, usage_tables_t *utab)
 	char buf[MAX_STRING];
 	char *start, *end; 
 	
-	TRACE(3, "entering string_to_path()");
+	upsdebugx(5, "entering string_to_path()");
 	
 	strncpy(buf, HIDpath, min(strlen(HIDpath)+1, MAX_STRING));
 	buf[MAX_STRING-1] = '\0';
@@ -835,11 +829,11 @@ static int string_to_path(char *HIDpath, HIDPath *path, usage_tables_t *utab)
 		else
 			*end = '\0';
 		
-		TRACE(4, "parsing %s", start);
+		upsdebugx(4, "parsing %s", start);
 		
 		/* lookup code */
 		if ((cur_usage = hid_lookup_usage(start, utab)) == -1) {
-			TRACE(4, "%s wasn't found", start);
+			upsdebugx(4, "%s wasn't found", start);
 			return 0;
 		}
 		else {
@@ -862,7 +856,7 @@ static int path_to_string(char *HIDpath, HIDPath *path, usage_tables_t *utab)
 {
 	int i = 0;
 	
-	TRACE(3, "entering path_to_string()");
+	upsdebugx(5, "entering path_to_string()");
 	
 	/* FIXME: another bug? */
 	strcat(HIDpath, "UPS.");
@@ -877,7 +871,7 @@ static int path_to_string(char *HIDpath, HIDPath *path, usage_tables_t *utab)
 		/* manage indexed collection */
 		if (path->Node[i].UPage == 0x00FF)
 		{
-			TRACE(5, "Got an indexed collection");
+			upsdebugx(5, "Got an indexed collection");
 			sprintf(strrchr(HIDpath, '.'), "[%i]", path->Node[i].Usage);
 		}
 		else
@@ -1101,7 +1095,7 @@ static const char *hid_lookup_path(unsigned int usage, usage_tables_t *utab)
 	static char raw_usage[10];
 	usage_lkp_t *table;
 
-	TRACE(3, "Looking up %08x", usage);
+	upsdebugx(5, "Looking up %08x", usage);
 
 	for (j=0; utab[j] != NULL; j++) {
 		table = utab[j];
@@ -1126,7 +1120,7 @@ static int hid_lookup_usage(char *name, usage_tables_t *utab)
 	char buf[20];
 	usage_lkp_t *table;
 
-	TRACE(3, "Looking up %s", name);
+	upsdebugx(5, "Looking up %s", name);
 	
 	if (name[0] == '[') { /* manage indexed collection */
 		return (0x00FF0000 + atoi(&name[1]));
@@ -1137,7 +1131,7 @@ static int hid_lookup_usage(char *name, usage_tables_t *utab)
 		{
 			if (!strcmp(table[i].usage_name, name))
 			{
-				TRACE(4, "hid_lookup_usage: found %04x",
+				upsdebugx(4, "hid_lookup_usage: found %04x",
 				      table[i].usage_code);
 				
 				return table[i].usage_code;
@@ -1157,44 +1151,4 @@ static int hid_lookup_usage(char *name, usage_tables_t *utab)
 int get_current_data_attribute()
 {
 	return hData.Attribute;
-}
-#define NIBBLE(_i)    (((_i) < 10) ? '0' + (_i) : 'A' + (_i) - 10)
-
-void dump_hex (const char *msg, const unsigned char *buf, int len)
-{
-	int i;
-	int nlocal;
-	const unsigned char *pc;
-	char *out;
-	const unsigned char *start;
-	char c;
-	char line[100];
- 
-	start = buf;
-	out = line;
-	
-	for (i = 0, pc = buf, nlocal = len; i < 16; i++, pc++)
-	{
-		if (nlocal > 0)
-		{
-			c = *pc;
-
-			*out++ = NIBBLE ((c >> 4) & 0xF);
-			*out++ = NIBBLE (c & 0xF);
-
-			nlocal--;
-		}
-		else
-		{
-			*out++ = ' ';
-			*out++ = ' ';
-		}
-		*out++ = ' ';
-	}
-	*out++ = 0;
-
-	TRACE(3, "%s: (%d bytes) => %s", msg, len, line);
-
-	buf += 16;
-	len -= 16;
 }

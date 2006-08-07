@@ -352,47 +352,26 @@ void upsdebugx(int level, const char *fmt, ...)
 	va_end(va);
 }
 
-
-/* Philippe Marzouk <philm@users.sourceforge.net> (dump_hex()) */
-/* FIXME: to be reworked */
-#define NIBBLE(_i)    (((_i) < 10) ? '0' + (_i) : 'A' + (_i) - 10)
-void upsdebug_hex(int level, const char *msg, const char *buf, int len)
+/* dump message msg and len bytes from buf to upsdebugx(level) in
+   hexadecimal. (This function replaces Philippe Marzouk's original
+   dump_hex() function) */
+void upsdebug_hex(int level, const char *msg, const unsigned char *buf, int len)
 {
-	int i;
-	int nlocal;
-	const char *pc;
-	char *out;
-	const char *start;
-	char c;
 	char line[100];
- 
-	start = buf;
-	out = line;
-	
-	for (i = 0, pc = buf, nlocal = len; i < 16; i++, pc++)
-	{
-		if (nlocal > 0)
-		{
-			c = *pc;
+	int n = 0; /* number of characters currently in line */
+	int i = 0; /* number of bytes output from buffer */
 
-			*out++ = NIBBLE ((c >> 4) & 0xF);
-			*out++ = NIBBLE (c & 0xF);
-
-			nlocal--;
+	n += snprintf(line, 100, "%s: (%d bytes) =>", msg, len);
+	while (i < len) {
+		if (n+3 > 75) {
+			upsdebugx(level, "%s", line);
+			line[0] = 0;
+			n = 0;
 		}
-		else
-		{
-			*out++ = ' ';
-			*out++ = ' ';
-		}
-		*out++ = ' ';
+		n += sprintf(line+n, n ? " %02x" : "%02x", buf[i]);
+		i++;
 	}
-	*out++ = 0;
-
-	upsdebugx(level, "%s: (%d bytes) => %s", msg, len, line);
-
-	buf += 16;
-	len -= 16;
+	upsdebugx(level, "%s", line);
 }
 
 static void vfatal(const char *fmt, va_list va, int use_strerror)

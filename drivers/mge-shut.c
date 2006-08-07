@@ -31,6 +31,7 @@
 #include "serial.h"
 #include "timehead.h"
 #include "mge-shut.h"
+#include "common.h" /* for upsdebugx() etc */
 
 /* --------------------------------------------------------------- */
 /*                  Define "technical" constants                   */
@@ -627,7 +628,7 @@ int serial_read (int read_timeout, u_char *readbuf)
 int serial_send (u_char *buf, int len)
 {
 	tcflush (upsfd, TCIFLUSH);
-	dump_hex ("sent", (u_char *)buf, len);
+	upsdebug_hex (3, "sent", (u_char *)buf, len);
 	return write (upsfd, buf, len);
 }
 
@@ -810,14 +811,14 @@ int shut_packet_recv (u_char *Buf, int datalen)
 				if((serial_read (DEFAULT_TIMEOUT, &Start[1]) >= 0) &&
 					((Start[1]>>4)==(Start[1]&0x0F)))
 				{
-					dump_hex("Receive", Start, 2); 
+					upsdebug_hex(3, "Receive", Start, 2); 
 					Size=Start[1]&0x0F;
 					sdata.shut_pkt.bLength = Size;
 					for(recv=0;recv<Size;recv++)
 						if(serial_read (DEFAULT_TIMEOUT, &Frame[recv]) < 0)
 							break;
 						
-					dump_hex("Receive", Frame, Size); 
+					upsdebug_hex(3, "Receive", Frame, Size); 
 					
 					serial_read (DEFAULT_TIMEOUT, &Chk[0]);
 					if(Chk[0]==shut_checksum(Frame, Size))
@@ -900,7 +901,7 @@ int shut_get_descriptor(int desctype, u_char *pkt, int reportlen)
 	{
 		if((retcode = shut_packet_recv (pkt, reportlen)) > 0)
 		{
-			dump_hex("shut_get_descriptor", pkt, retcode);
+			upsdebug_hex(3, "shut_get_descriptor", pkt, retcode);
 			return retcode;
 		}
 		else
@@ -942,10 +943,10 @@ int shut_get_string(int strindex, char *string, int stringlen)
 	
 	if((retcode = shut_packet_send (&data, 8, SHUT_PKT_LAST)) >0)
 	{
-		dump_hex("shut_get_string", data.raw_pkt, 8);
+		upsdebug_hex(3, "shut_get_string", data.raw_pkt, 8);
 		if((retcode = shut_packet_recv (buf, stringlen)) > 0)
 		{
-			dump_hex("shut_get_string", buf, retcode);
+			upsdebug_hex(3, "shut_get_string", buf, retcode);
 			make_string(buf, retcode, string);
 			upsdebugx(2, "string: %s", string);
 			return strlen(string);
@@ -991,7 +992,7 @@ int shut_get_report(int id, u_char *pkt, int reportlen)
 	{
 		if((retcode = shut_packet_recv (pkt, reportlen)) > 0)
 		{
-			dump_hex("shut_get_report", pkt, retcode);
+			upsdebug_hex(3, "shut_get_report", pkt, retcode);
 			return retcode;
 		}
 		else
@@ -1035,7 +1036,7 @@ int shut_set_report(int id, u_char *pkt, int reportlen)
 	{
 		/* second packet to give the actual data */
 		memcpy(&data.raw_pkt, pkt, reportlen);
-		dump_hex("Set2", pkt, reportlen);
+		upsdebug_hex(3, "Set2", pkt, reportlen);
 
 		retcode = shut_packet_send (&data, reportlen, SHUT_PKT_LAST);
 	}
@@ -1060,7 +1061,7 @@ int hid_init_device()
 	/* Get HID descriptor */
 	if((retcode = shut_get_descriptor(HID_DESCRIPTOR, hid_descriptor.raw_desc, 0x09)) > 0)
 	{
-		dump_hex("shut_get_descriptor(hid)", hid_descriptor.raw_desc, retcode);
+		upsdebug_hex(3, "shut_get_descriptor(hid)", hid_descriptor.raw_desc, retcode);
 		
 		/* WORKAROUND: need to be fixed */
 		hid_descriptor.hid_desc.wDescriptorLength = hid_descriptor.raw_desc[7] +
@@ -1082,7 +1083,7 @@ int hid_init_device()
 		/* Get Device descriptor */
 		if((retcode = shut_get_descriptor(DEVICE_DESCRIPTOR, device_descriptor.raw_desc, 0x12)) > 0)
 		{	
-			dump_hex("shut_get_descriptor(device)", device_descriptor.raw_desc, retcode);
+			upsdebug_hex(3, "shut_get_descriptor(device)", device_descriptor.raw_desc, retcode);
 			
 			upsdebugx(2, "Device Descriptor: \nbLength: \t\t0x%02x\nbDescriptorType:\
 				\t0x%02x\nbcdUSB: \t\t0x%04x\nbDeviceClass: \t\t0x%02x\nbDeviceSubClass:\
@@ -1109,7 +1110,7 @@ int hid_init_device()
 			if((retcode = shut_get_descriptor(REPORT_DESCRIPTOR, raw_buf,
 				hid_descriptor.hid_desc.wDescriptorLength)) > 0) {
 
-				dump_hex("shut_get_descriptor(report)", raw_buf, retcode);
+				upsdebug_hex(3, "shut_get_descriptor(report)", raw_buf, retcode);
 				
 				/* Parse Report Descriptor */
 				r = Parse_ReportDesc(raw_buf, retcode, &hDesc);
@@ -1219,7 +1220,7 @@ int hid_get_value(const char *item_path)
 		if (FindObject(&hDesc,&hData) == 1) {
 			if (shut_get_report(hData.ReportID, raw_buf, MAX_REPORT_SIZE) > 0) {
 				GetValue((const u_char *) raw_buf, &hData);
-				dump_hex("Object's report", raw_buf, 10);
+				upsdebug_hex(3, "Object's report", raw_buf, 10);
 				upsdebugx(3, "Value = %ld", hData.Value);
 				return 1;
 			}
@@ -1242,56 +1243,6 @@ int hid_get_value(const char *item_path)
   /* 
    * Internal functions
  ****************************************************************************/
-
-/*****************************************************************************
- *
- * dump_hex
- *
- * Dumps a memory area as hex on the screen.upsh.
- *
- * msg  - Info message for the dump
- * buf  - the memory buffer to dump
- * len  - length of the buffer
- *
- ****************************************************************************/
-
-#define NIBBLE(_i)    (((_i) < 10) ? '0' + (_i) : 'A' + (_i) - 10)
-
-void dump_hex (const char *msg, const u_char *buf, int len)
-{
-	int i;
-	int nlocal;
-	const u_char *pc;
-	char *out;
-	const u_char *start;
-	char c;
-	char line[100];
-
-	start = buf;
-	out = line;
-
-	for (i = 0, pc = buf, nlocal = len; i < 16; i++, pc++) {
-		if (nlocal > 0) {
-			c = *pc;
-
-			*out++ = NIBBLE ((c >> 4) & 0xF);
-			*out++ = NIBBLE (c & 0xF);
-			
-			nlocal--;
-		}
-		else {
-			*out++ = ' ';
-			*out++ = ' ';
-		}				/* end else */
-		*out++ = ' ';
-	}				/* end for */
-	*out++ = 0;
-
-	upsdebugx(3, "%s: (%d bytes) => %s", msg, len, line);
-
-	buf += 16;
-	len -= 16;
-} /* end dump */
 
 /*
  * Filter and reformat HID strings (suppress space

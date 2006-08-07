@@ -42,18 +42,11 @@
 #include "libshut.h"
 #include "libhid.h"
 
-#include "common.h" /* for xmalloc prototype */
+#include "common.h" /* for xmalloc, upsdebugx prototypes */
 
 #define SHUT_DRIVER_NAME	"MGE SHUT communication driver"
 #define SHUT_DRIVER_VERSION	"0.67"
 #define MAX_TRY 4
-
-/* TODO: rework all that */
-void upsdebugx(int level, const char *fmt, ...);
-#define TRACE upsdebugx
-
-/* from libhid.c */
-extern void dump_hex (const char *msg, const unsigned char *buf, int len);
 
 /*!
  * HID descriptor, completed with desc{type,len}
@@ -325,12 +318,12 @@ int libshut_open(shut_dev_handle **sdevp, HIDDevice *curDevice,
 	(USB_DT_DEVICE << 8) + 0, 0, buf, 0x9, SHUT_TIMEOUT); */
 	if (res < 0)
 	{
-		TRACE(2, "Unable to get DEVICE descriptor (%s)", shut_strerror());
+		upsdebugx(2, "Unable to get DEVICE descriptor (%s)", shut_strerror());
 		return -1;
 	}
 	else if (res < 9)
 	{
-		TRACE(2, "DEVICE descriptor too short (expected %d, got %d)",
+		upsdebugx(2, "DEVICE descriptor too short (expected %d, got %d)",
 		      USB_DT_DEVICE_SIZE, res);
 		return -1;
 	} 
@@ -364,13 +357,13 @@ int libshut_open(shut_dev_handle **sdevp, HIDDevice *curDevice,
 			curDevice->Serial = strdup(string);
 	}
 
-	TRACE(2, "- VendorID: %04x", curDevice->VendorID);
-	TRACE(2, "- ProductID: %04x", curDevice->ProductID);
-	TRACE(2, "- Manufacturer: %s", curDevice->Vendor ? curDevice->Vendor : "unknown");
-	TRACE(2, "- Product: %s", curDevice->Product ? curDevice->Product : "unknown");
-	TRACE(2, "- Serial Number: %s", curDevice->Serial ? curDevice->Serial : "unknown");
-	TRACE(2, "- Bus: %s", curDevice->Bus ? curDevice->Bus : "unknown");
-	TRACE(2, "Device matches");
+	upsdebugx(2, "- VendorID: %04x", curDevice->VendorID);
+	upsdebugx(2, "- ProductID: %04x", curDevice->ProductID);
+	upsdebugx(2, "- Manufacturer: %s", curDevice->Vendor ? curDevice->Vendor : "unknown");
+	upsdebugx(2, "- Product: %s", curDevice->Product ? curDevice->Product : "unknown");
+	upsdebugx(2, "- Serial Number: %s", curDevice->Serial ? curDevice->Serial : "unknown");
+	upsdebugx(2, "- Bus: %s", curDevice->Bus ? curDevice->Bus : "unknown");
+	upsdebugx(2, "Device matches");
 
 	if (mode == MODE_REOPEN)
 		return 1;
@@ -383,21 +376,21 @@ int libshut_open(shut_dev_handle **sdevp, HIDDevice *curDevice,
 
 	if (res < 0)
 	{
-		TRACE(2, "Unable to get HID descriptor (%s)", shut_strerror());
+		upsdebugx(2, "Unable to get HID descriptor (%s)", shut_strerror());
 		return -1;
 	}
 	else if (res < 9)
 	{
-		TRACE(2, "HID descriptor too short (expected %d, got %d)", 8, res);
+		upsdebugx(2, "HID descriptor too short (expected %d, got %d)", 8, res);
 		return -1;
 	} 
 
 	/* USB_LE16_TO_CPU(desc->wDescriptorLength); */
 	desc->wDescriptorLength = buf[7] | (buf[8] << 8);
-	TRACE(2, "HID descriptor retrieved (Reportlen = %u)", desc->wDescriptorLength);
+	upsdebugx(2, "HID descriptor retrieved (Reportlen = %u)", desc->wDescriptorLength);
 
 /*	if (!dev->config) {
-		TRACE(2, "  Couldn't retrieve descriptors");
+		upsdebugx(2, "  Couldn't retrieve descriptors");
 		return -1;
 	}*/
 
@@ -409,24 +402,24 @@ int libshut_open(shut_dev_handle **sdevp, HIDDevice *curDevice,
 			desc->wDescriptorLength, SHUT_TIMEOUT); */
 	if (res >= desc->wDescriptorLength) 
 	{
-		TRACE(2, "Report descriptor retrieved (Reportlen = %u)",
+		upsdebugx(2, "Report descriptor retrieved (Reportlen = %u)",
 		      desc->wDescriptorLength);
-		TRACE(2, "Found HID device");
+		upsdebugx(2, "Found HID device");
 		fflush(stdout);
 
 		return desc->wDescriptorLength;
 	}
 	else if (res < 0)
 	{
-		TRACE(2, "Unable to get Report descriptor (%d)", res);
+		upsdebugx(2, "Unable to get Report descriptor (%d)", res);
 	}
 	else
 	{
-		TRACE(2, "Report descriptor too short (expected %d, got %d)",
+		upsdebugx(2, "Report descriptor too short (expected %d, got %d)",
 		      desc->wDescriptorLength, res);
 	}
 	
-	TRACE(2, "No appropriate HID device found");
+	upsdebugx(2, "No appropriate HID device found");
 	fflush(stdout);
 
 	return -1;
@@ -443,7 +436,7 @@ void libshut_close(shut_dev_handle *sdev)
 int libshut_get_report(shut_dev_handle *devp, int ReportId,
 		       unsigned char *raw_buf, int ReportSize )
 {
-	TRACE(4, "Entering libshut_get_report");
+	upsdebugx(4, "Entering libshut_get_report");
 
 	if (devp != NULL)
 	{
@@ -463,7 +456,7 @@ int libshut_set_report(shut_dev_handle *devp, int ReportId,
 {
 	int ret = 0;
 	
-	TRACE(1, "Entering libshut_set_report");
+	upsdebugx(1, "Entering libshut_set_report");
 
 	if (devp != NULL)
 	{
@@ -487,10 +480,10 @@ int libshut_get_string(shut_dev_handle *devp, int StringIdx, char *buf)
 		ret = shut_get_string_simple(devp, StringIdx, buf, 20);
 		 /* sizeof(buf)); */
 		if (ret > 0)
-			TRACE(2, "-> String: %s (len = %i/%i)",
+			upsdebugx(2, "-> String: %s (len = %i/%i)",
 			      buf, ret, sizeof(buf));
 		else
-			TRACE(2, "- Unable to fetch buf");
+			upsdebugx(2, "- Unable to fetch buf");
 	}
 	return ret;
 }
@@ -505,9 +498,9 @@ int libshut_get_interrupt(shut_dev_handle *devp, unsigned char *buf,
 	  /* FIXME: hardcoded interrupt EP => need to get EP descr for IF descr */
 	  ret = shut_interrupt_read(devp, 0x81, buf, bufsize, timeout);
 	  if (ret > 0)
-		TRACE(6, " ok");
+		upsdebugx(6, " ok");
 	  else
-		TRACE(6, " none (%i)", ret);
+		upsdebugx(6, " none (%i)", ret);
 	}
 
   return ret;
@@ -655,7 +648,7 @@ int shut_packet_recv (int fd, u_char *Buf, int datalen)
 				if( (ser_get_char(fd, &Start[1], SHUT_TIMEOUT/1000, 0) >= 0) &&
 							((Start[1]>>4)==(Start[1]&0x0F)))
 				{
-					dump_hex("Receive", Start, 2);
+					upsdebug_hex(4, "Receive", Start, 2);
 					Size=Start[1]&0x0F;
 					sdata.shut_pkt.bLength = Size;
 					for(recv=0;recv<Size;recv++)
@@ -664,7 +657,7 @@ int shut_packet_recv (int fd, u_char *Buf, int datalen)
 						if(ser_get_char(fd, &Frame[recv], SHUT_TIMEOUT/1000, 0) < 0)
 							break;
 					}
-					dump_hex("Receive", Frame, Size);
+					upsdebug_hex(4, "Receive", Frame, Size);
 
 					///serial_read (SHUT_TIMEOUT, &Chk[0]);
 					ser_get_char(fd, &Chk[0], SHUT_TIMEOUT/1000, 0);
@@ -826,7 +819,7 @@ int shut_control_msg(shut_dev_handle *sdev, int requesttype, int request,
 		if (Retry == 1)
 		{
 			ser_send_buf(sdev->upsfd, shut_pkt, data_size+3);
-			dump_hex("shut_control_msg", shut_pkt, data_size+3);
+			upsdebug_hex(3, "shut_control_msg", shut_pkt, data_size+3);
 			//serial_send (shut_pkt, data_size+3);
 		}
 
@@ -886,7 +879,7 @@ int shut_control_msg(shut_dev_handle *sdev, int requesttype, int request,
 	{
 		if((ret = shut_packet_recv (sdev, ctrl, reportlen)) > 0)
 		{
-			//dump_hex("shut_get_report", pkt, retcode)
+			//upsdebug_hex(3, "shut_get_report", pkt, retcode)
 			;
 		}
 	}
@@ -896,7 +889,7 @@ int shut_control_msg(shut_dev_handle *sdev, int requesttype, int request,
 // 	{
 // 		/* second packet to give the actual data */
 // 		memcpy(&data.raw_pkt, pkt, reportlen);
-// 		dump_hex("Set2", pkt, reportlen);
+// 		upsdebug_hex(3, "Set2", pkt, reportlen);
 // 
 // 		retcode = shut_packet_send (&data, reportlen, SHUT_PKT_LAST);
 // 	}
