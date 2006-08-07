@@ -6,6 +6,9 @@ Mon Aug  7 17:30:50 ADT 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - libusb.c: make sure report length does not exceed buffer size.
 
+ - data/driver.list: added CPS 800AVR, AE550, Tripp-Lite OMNI1000LCD,
+   AVR550U.
+
 Sun Aug  6 13:52:45 UTC 2006 / Kjell Claesson <kjell.claesson@telia.com>
 
  - Changed driver to megatec for PowerMan RealSmart 800 and 1000 in driver.list
