@@ -398,7 +398,8 @@
 "Tripp-Lite"	"SmartOnline"	""	"tripplitesu"
 "Tripp-Lite"	"(various)"	"Lan 2.2 interface - black 73-0844 cable"	"genericups upstype=5"
 "Tripp-Lite"    "OMNI1000LCD"   "USB"   "newhidups"
-"Tripp-Lite"    "AVR550U"   "USB"   "newhidups"
+"Tripp-Lite"    "1500 LCD"	"USB"   "newhidups"
+"Tripp-Lite"    "AVR550U"	"USB"   "newhidups"
 
 "Trust"		"UPS 1000 Management PW-4105"	""	"megatec"
 

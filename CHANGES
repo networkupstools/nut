@@ -1,4 +1,10 @@
-Mon Aug  7 17:30:50 ADT 2006 / Peter Selinger <selinger@users.sourceforge.net>
+Wed Aug  9 16:28:50 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - libhid debugging: print full report descriptor
+
+ - data/driver.list: added Tripp-Lite 1500 LCD.
+
+Mon Aug  7 20:30:50 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups, mge-shut: changes in debugging code. Reimplemented
    common.h:upsdebug_hex(). Removed dump_hex() in libhid.c and

@@ -452,7 +452,7 @@ HIDDevice *HIDOpenDevice(hid_dev_handle **udevp, HIDDevice *hd, HIDDeviceMatcher
 		}
 	
 		upsdebugx(2, "Report Descriptor size = %d", ReportSize);
-		upsdebug_hex(3, "Report Descriptor", ReportDesc, 200);
+		upsdebug_hex(3, "Report Descriptor", ReportDesc, ReportSize);
 
 		/* Parse Report Descriptor */
 		r = Parse_ReportDesc(ReportDesc, ReportSize, &hDesc);
