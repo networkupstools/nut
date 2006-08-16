@@ -1,3 +1,7 @@
+Wed Aug 16 01:28:01 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: restricted matching Belkin devices to ProductID 0980. 
+
 Wed Aug  9 16:28:50 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - libhid debugging: print full report descriptor

@@ -375,11 +375,16 @@ static char *belkin_format_serial(HIDDevice *hd) {
 /* this function allows the subdriver to "claim" a device: return 1 if
  * the device is supported by this subdriver, else 0. */
 static int belkin_claim(HIDDevice *hd) {
-        if (hd->VendorID == BELKIN_VENDORID) {
-                return 1;
-        } else {
-                return 0;
-        }
+	if (hd->VendorID != BELKIN_VENDORID) {
+		return 0;
+	}
+	switch (hd->ProductID) {
+	case 0x0980:  /* e.g. F6C800-UNV */
+		return 1;
+	/* add other devices here as the need arises */
+	default:
+		return 0;
+	}
 }
 
 subdriver_t belkin_subdriver = {
