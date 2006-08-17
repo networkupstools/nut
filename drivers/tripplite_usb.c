@@ -445,7 +445,6 @@ void decode_v(const unsigned char *value)
 	}
 }
 
-int find_tripplite_ups(void);
 void upsdrv_initinfo(void);
 
 /*!@brief Report a USB comm failure, and reconnect if necessary
@@ -1041,12 +1040,6 @@ void upsdrv_initups(void)
 	char *regex_array[5];
 	int r;
 
-#if 0
-	if(find_tripplite_ups() < 0) {
-                fatalx("No Tripp Lite USB HID UPS found");
-	}
-#endif
-	
 	/* process the UPS selection options */
 	regex_array[0] = "09AE" /* getval("vendorid") */;
 	regex_array[1] = getval("productid");
