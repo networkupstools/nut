@@ -140,6 +140,8 @@
 
 "INELT"		"Monolith 1000LT"	""	"fentonups"
 
+"Inform"	"GUARD"	"Line Interactive AP model"	"powercom"
+
 "Infosec"	"iPEL 350"	""	"esupssmart"
 "Infosec"	"iPEL 500"	""	"esupssmart"
 "Infosec"	"iPEL 750"	""	"esupssmart"
@@ -349,6 +351,7 @@
 "Powerware"	"PW5125"	""	"bcmxcp"
 "Powerware"	"PW9120"	""	"bcmxcp"
 "Powerware"	"PW9125"	""	"bcmxcp"
+"Powerware"	"PW9315"	"3-phase"	"bcmxcp"
 "Powerware"	"9120"	""	"upscode2"
 "Powerware"	"9150"	""	"upscode2"
 "Powerware"	"9305"	""	"upscode2"
