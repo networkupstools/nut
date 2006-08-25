@@ -1,3 +1,10 @@
+Fri Aug 25 19:16:01 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: added 050d:0912 to Belkin subdriver
+ - scripts/hotplug*: added 050d:0912
+ - newhidups: changed Belkin claim() function to accept any device
+   if -x productid option is given; otherwise only known devices
+
 Fri Aug 18 16:56:30 UTC 2006 / Kjell Claesson <kjell.claesson@telia.com>
 
  - Add Inform GUARD ups and Powerware PW9315 to driver.list.

@@ -379,11 +379,28 @@ static int belkin_claim(HIDDevice *hd) {
 		return 0;
 	}
 	switch (hd->ProductID) {
-	case 0x0980:  /* e.g. F6C800-UNV */
+
+	/* accept any known UPS - add devices here as needed */
+	case 0x0980:  /* F6C800-UNV */
+	case 0x0912:  /* F6C120-UNV */
 		return 1;
-	/* add other devices here as the need arises */
-	default:
+
+	/* reject any known non-UPS */
+	case 0x0218:  /* F5U218-MOB 4-Port USB Hub */
 		return 0;
+
+	/* by default, reject, unless the productid option is given */
+	default:
+		if (getval("productid")) {
+			return 1;
+		} else {
+			upsdebugx(1,
+"This particular Belkin device (%04x/%04x) is not (or perhaps not yet)\n"
+"supported by newhidups. Try running the driver with the '-x productid=%04x'\n"
+"option. Please report your results to the NUT developer's mailing list.\n",
+						 hd->VendorID, hd->ProductID, hd->ProductID);
+			return 0;
+		}
 	}
 }
 

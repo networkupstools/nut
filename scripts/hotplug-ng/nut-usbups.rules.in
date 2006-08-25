@@ -25,6 +25,7 @@ SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="1003", MODE="664", GROUP="@RUN_AS_US
 
 # Belkin - usbhid-ups
 SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0980", MODE="664", GROUP="@RUN_AS_USER@"
+SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0912", MODE="664", GROUP="@RUN_AS_USER@"
 
 # Kebo - unsupported
 SYSFS{idVendor}=="0925", SYSFS{idProduct}=="1234", MODE="664", GROUP="@RUN_AS_USER@"
