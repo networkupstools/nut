@@ -26,7 +26,7 @@ case $PRODUCT in
 	9ae/2005/*|9ae/1003/*)
 
 	# Belkin - usbhid-ups
-	50d/980/*)
+	50d/980/*|50d/912/*)
 
 	# Kebo - unsupported
 	925/1234/*)
