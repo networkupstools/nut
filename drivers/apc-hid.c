@@ -351,9 +351,38 @@ static char *apc_format_serial(HIDDevice *hd) {
  * the device is supported by this subdriver, else 0. */
 static int apc_claim(HIDDevice *hd) {
 	if (hd->VendorID == APC_VENDORID) {
-		return 1;
+		switch (hd->ProductID) {
+		case  0x0002:
+			return 1;  /* accept known UPSs */
+		default:
+			if (getval("productid")) {
+				return 1;
+			} else {
+			upsdebugx(1,
+"This particular APC device (%04x/%04x) is not (or perhaps not yet)\n"
+"supported by newhidups. Try running the driver with the '-x productid=%04x'\n"
+"option. Please report your results to the NUT developer's mailing list.\n",
+						 hd->VendorID, hd->ProductID, hd->ProductID);
+			return 0;
+			}
+		}
 	} else if (hd->VendorID == CPS_VENDORID) {
-		return 1;
+		switch (hd->ProductID) {
+		case 0x0005:
+		case 0x0501:
+			return 1;  /* accept known UPSs */
+		default:
+			if (getval("productid")) {
+				return 1;
+			} else {
+			upsdebugx(1,
+"This particular CyberPower device (%04x/%04x) is not (or perhaps not yet)\n"
+"supported by newhidups. Try running the driver with the '-x productid=%04x'\n"
+"option. Please report your results to the NUT developer's mailing list.\n",
+						 hd->VendorID, hd->ProductID, hd->ProductID);
+			return 0;
+			}
+		}
 	} else {
 		return 0;
 	}

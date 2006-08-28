@@ -533,11 +533,27 @@ static char *mge_format_serial(HIDDevice *hd) {
 /* this function allows the subdriver to "claim" a device: return 1 if
  * the device is supported by this subdriver, else 0. */
 static int mge_claim(HIDDevice *hd) {
-        if (hd->VendorID == MGE_VENDORID) {
-                return 1;
-        } else {
-                return 0;
-        }
+	if (hd->VendorID != MGE_VENDORID) {
+		return 0;
+	}
+	switch (hd->ProductID) {
+
+	case  0x0001:
+	case  0xffff:
+		return 1;  /* accept known UPSs */
+
+	default:
+		if (getval("productid")) {
+			return 1;
+		} else {
+			upsdebugx(1,
+"This particular MGE device (%04x/%04x) is not (or perhaps not yet)\n"
+"supported by newhidups. Try running the driver with the '-x productid=%04x'\n"
+"option. Please report your results to the NUT developer's mailing list.\n",
+						 hd->VendorID, hd->ProductID, hd->ProductID);
+			return 0;
+		}
+	}
 }
 
 subdriver_t mge_subdriver = {
