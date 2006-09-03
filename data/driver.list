@@ -365,6 +365,7 @@
 
 "SMS (Brazil)"	"Manager III"	""	"sms"
 
+"SOLA"	"305"	"cable INT-0025C"	"genericups upstype=7"
 "SOLA"	"325"	""	"bestups"
 "SOLA"	"520"	""	"bestups"
 "SOLA"	"610"	"use ID= in ups.conf"	"bestups"
