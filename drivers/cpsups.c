@@ -24,9 +24,18 @@
  * http://networkupstools.org for creating a very nice toolset.
 */
 
+/* hack version for 1200VA
+* by DJR
+* 
+* Ported to 2.0.4 and generialized
+* by RHR
+*/
+
 #include "cpsups.h"
 
-#define DRV_VERSION ".04"
+#define DRV_VERSION ".05"
+
+static int rmchar = 0;
 
 static void model_set(const char *abbr, const char *rating)
 {
@@ -44,6 +53,16 @@ static void model_set(const char *abbr, const char *rating)
 		dstate_setinfo("ups.runtime", "%s", "90");
 		dstate_setinfo("ups.power.nominal", "%s", "1500");
 	        return;
+	}
+
+	/* Added: Doug Reynolds */
+	if (!strcmp(abbr, "#BC1200    ")) {
+		dstate_setinfo("ups.mfr", "%s", "CyberPower");
+		dstate_setinfo("ups.model", "CPS1200VA %s", rating);
+		dstate_setinfo("ups.runtime", "%s", "70");
+		dstate_setinfo("ups.power.nominal", "%s", "1200");
+		rmchar = 1;
+		return;
 	}
 
 	if (!strcmp(abbr, "#1100VA    ")) {
@@ -132,6 +151,20 @@ static int get_ident(char *buf, size_t bufsize)
 		if ((ret > 0) && (buf[0] == '#') && (strlen(buf) >= 25) &&
 			(strlen(buf) <= 50))
 			return 1;
+		else {
+			/* Try without leading \r */
+			ser_send_pace(upsfd, UPSDELAY, "P4\r");
+			ret = ser_get_line(upsfd, buf, bufsize, ENDCHAR, "",
+				SER_WAIT_SEC, SER_WAIT_USEC);
+
+			if (ret > 0)
+				upsdebugx(2, "get_ident: got [%s]", buf);
+
+			/* buf must start with # and be in the range [25-27] */
+			if ((ret > 0) && (buf[0] == '#') &&
+				(strlen(buf) >= 25) && (strlen(buf) <= 50))
+				return 1;
+		}
 
 		sleep(1);
 	}
@@ -147,7 +180,11 @@ static int scan_poll_values(char *buf)
 	char values[20][200], *pos;
 	int i = 0, battremain, length, rseconds;
 	double rminutes;
-	char temp1, *tmp1;
+
+/*	These are used to hold status of UPS.
+ *	tmp1 = online/onbattery status
+ */
+	char *tmp1 = &buf[pollstatusmap[POLL_UPSSTATUS].begin];
 
 	while ((pollstatusmap[i].end != 0))
 	{
@@ -156,12 +193,6 @@ static int scan_poll_values(char *buf)
 		strncpy(values[i],pos,length);
 		i++;
 	}
-
-/*	These are used to hold status of UPS.
- *	val1 = online/onbattery status
- */
-	temp1=values[6][0];
-	tmp1=&temp1;
 
 	if ((*tmp1 & CPS_STAT_OL) && !(*tmp1 & CPS_STAT_OB)) 
 		status_set("OL");
@@ -245,8 +276,14 @@ static void ups_sync(void)
 	int	i, ret;
 
 	for (i = 0; i < MAXTRIES; i++) {
-		ser_send_pace(upsfd, UPSDELAY, "\rP4\r");
-		upsdebugx(3, "ups_sync: send [%s]", "\\rP4\\r");
+		if (rmchar) {
+			ser_send_pace(upsfd, UPSDELAY, "P4\r");
+			upsdebugx(3, "ups_sync: send [%s]", "P4\\r");
+		}
+		else {
+			ser_send_pace(upsfd, UPSDELAY, "\rP4\r");
+			upsdebugx(3, "ups_sync: send [%s]", "\\rP4\\r");
+		}
 
 		ret = ser_get_line(upsfd, buf, sizeof(buf), ENDCHAR, "",
 			SER_WAIT_SEC, SER_WAIT_USEC);
@@ -292,7 +329,12 @@ static int ups_on_line(void)
 	char	temp[256];
 
 	for (i = 0; i < MAXTRIES; i++) {
-		ser_send_pace(upsfd, UPSDELAY, "\rD\r");
+		if (rmchar) {
+			ser_send_pace(upsfd, UPSDELAY, "D\r");
+		}
+		else {
+			ser_send_pace(upsfd, UPSDELAY, "\rD\r");
+		}
 
 		ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, "",
 			SER_WAIT_SEC, SER_WAIT_USEC);
@@ -347,7 +389,12 @@ void upsdrv_updateinfo(void)
 	char	buf[256];
 	int	ret;
 
-	ret = ser_send_pace(upsfd, UPSDELAY, "\rD\r");
+	if (rmchar) {
+		ret = ser_send_pace(upsfd, UPSDELAY, "D\r");
+	}
+	else {
+		ret = ser_send_pace(upsfd, UPSDELAY, "\rD\r");
+	}
 
 	if (ret < 1) {
 		ser_comm_fail("ser_send_pace failed");
@@ -432,4 +479,5 @@ void upsdrv_cleanup(void)
 {
 	ser_close(upsfd, device_path);
 }
+
 

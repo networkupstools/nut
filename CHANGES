@@ -1,3 +1,11 @@
+Mon Sep  4 11:30:53 EDT 2006 / Charles Lepple <clepple@gmail.com>
+
+ - cpsups: Merged changes for CP1200AVR, bumped version to ".05". Some testing
+   has been done with sending the command strings without a leading '\r', and
+   this patch makes that change.
+
+   (Doug Reynolds; RHR)
+
 Sun Sep  3 17:45:30 UTC 2006 / Kjell Claesson <kjell.claesson@telia.com>
 
  - Add Sola 305 to driver.list.
