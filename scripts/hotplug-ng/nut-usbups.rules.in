@@ -13,6 +13,9 @@ SYSFS{idVendor}=="051d", SYSFS{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_US
 SYSFS{idVendor}=="0764", SYSFS{idProduct}=="0005", MODE="664", GROUP="@RUN_AS_USER@"
 SYSFS{idVendor}=="0764", SYSFS{idProduct}=="0501", MODE="664", GROUP="@RUN_AS_USER@"
 
+# Powercom - usbhid-ups
+SYSFS{idVendor}=="0d9f", SYSFS{idProduct}=="0001", MODE="664", GROUP="@RUN_AS_USER@"
+
 # Powerware - bcmxcp_usb
 SYSFS{idVendor}=="0592", SYSFS{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_USER@"
 
@@ -26,6 +29,7 @@ SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="1003", MODE="664", GROUP="@RUN_AS_US
 # Belkin - usbhid-ups
 SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0980", MODE="664", GROUP="@RUN_AS_USER@"
 SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0912", MODE="664", GROUP="@RUN_AS_USER@"
+SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0551", MODE="664", GROUP="@RUN_AS_USER@"
 
 # Kebo - unsupported
 SYSFS{idVendor}=="0925", SYSFS{idProduct}=="1234", MODE="664", GROUP="@RUN_AS_USER@"
