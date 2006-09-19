@@ -1,3 +1,11 @@
+Mon Sep 18 23:48:57 EDT 2006 / Charles Lepple <clepple@gmail.com>
+
+ - tripplite_usb: added some more variables for SMARTPRO UPSes, some more
+   debugging output, and some variable type cleanup. Driver internal version
+   is now 0.7.
+ - data/driver.list: note experimental status of non-OMNIVS models, and add
+   user report for SMART2200RMXL2U
+
 Sun Sep 17 14:48:15 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - added product id for Belkin F6C550-AVR to hotplug scripts, belkin-hid.c

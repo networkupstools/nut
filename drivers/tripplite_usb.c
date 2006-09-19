@@ -25,7 +25,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define DRV_VERSION "0.6"
+#define DRV_VERSION "0.7"
 
 /* % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
  *
@@ -428,12 +428,7 @@ void decode_v(const unsigned char *value)
 			  break;
 	}
 
-	if( (bv >= 2) && (bv <= 6) ) {
-		battery_voltage_nominal = bv * 6;
-	} else {
-		upslogx(2, "Unknown battery voltage: 0x%02x%02x",
-				(unsigned int)(value[2]), (unsigned int)(value[3]));
-	}
+	battery_voltage_nominal = bv * 6;
 		
 	if( (lb >= '0') && (lb <= '9') ) {
 		switchable_load_banks = lb - '0';
@@ -509,7 +504,7 @@ static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *rep
 	int ret = 0, send_try, recv_try=0, done = 0;
 	size_t i = 0;
 
-	upsdebugx(3, "send_cmd(msg_len=%d, type='%c')", msg_len, msg[0]);
+	upsdebugx(3, "send_cmd(msg_len=%u, type='%c')", (unsigned)msg_len, msg[0]);
 
 	if(msg_len > 5) {
 		fatalx("send_cmd(): Trying to pass too many characters to UPS (%u)", (unsigned)msg_len);
@@ -534,7 +529,8 @@ static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *rep
 		ret = libusb_set_report(udev, 0, buffer_out, sizeof(buffer_out));
 
 		if(ret != sizeof(buffer_out)) {
-			upslogx(1, "libusb_set_report() returned %d instead of %d", ret, sizeof(buffer_out));
+			upslogx(1, "libusb_set_report() returned %d instead of %u",
+				ret, (unsigned)(sizeof(buffer_out)));
 			return ret;
 		}
 
@@ -544,7 +540,8 @@ static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *rep
 			upsdebugx(7, "send_cmd recv_try %d", recv_try+1);
 			ret = libusb_get_interrupt(udev, reply, sizeof(buffer_out), RECV_WAIT_MSEC);
 			if(ret != sizeof(buffer_out)) {
-				upslogx(1, "libusb_get_interrupt() returned %d instead of %d", ret, sizeof(buffer_out));
+				upslogx(1, "libusb_get_interrupt() returned %d instead of %u",
+					ret, (unsigned)(sizeof(buffer_out)));
 			}
 			done = (ret == sizeof(buffer_out)) && (buffer_out[1] == reply[0]);
 		}
@@ -765,6 +762,7 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("input.voltage.nominal", "%d", input_voltage_nominal);
 	dstate_setinfo("battery.voltage.nominal", "%d", battery_voltage_nominal);
+	dstate_setinfo("ups.debug.load_banks", "%d", switchable_load_banks);
 
 	snprintf(buf, sizeof buf, "%d", offdelay);
 	dstate_setinfo("ups.delay.shutdown", buf);
@@ -819,6 +817,9 @@ void upsdrv_shutdown(void)
 
 /*!@brief Send an unknown command to the UPS, and store response in a variable
  *
+ * @param msg Command string (usually a character and a null)
+ * @param len Length of command plus null
+ *
  * The variables are of the form "ups.debug.X" where "X" is the command
  * character.
  */
@@ -841,9 +842,11 @@ void debug_message(const char *msg, int len)
 
 void upsdrv_updateinfo(void)
 {
-	unsigned char b_msg[] = "B", d_msg[] = "D", l_msg[] = "L", s_msg[] = "S";
-	unsigned char b_value[9], d_value[9], l_value[9], s_value[9];
-	int bp;
+	unsigned char b_msg[] = "B", d_msg[] = "D", l_msg[] = "L",
+			s_msg[] = "S", m_msg[] = "M", t_msg[] = "T";
+	unsigned char b_value[9], d_value[9], l_value[9], s_value[9],
+			m_value[9], t_value[9];
+	int bp, freq;
 	double bv;
 
 	int ret;
@@ -862,41 +865,68 @@ void upsdrv_updateinfo(void)
 		dstate_setinfo("ups.debug.S","%s", hexascdump(s_value+1, 7));
 	}
 
-	switch(s_value[2]) {
-		case '0':
-			status_set("OL");
-			break;
-		case '1':
-			status_set("OB");
-			break;
-		case '2':
-			/* battery-test mode on SMARTPRO */
-			if(tl_model == TRIPP_LITE_SMARTPRO) {
-				status_set("CAL");
+	if(tl_model == TRIPP_LITE_OMNIVS) {
+		switch(s_value[2]) {
+			case '0':
+				status_set("OL");
 				break;
-			}
-			/* "charge-only" mode, no AC in or out... the PC
-			 * shouldn't see this, because there is no power in
-			 * that case (OMNIVS), but it's here for testing.
-			 *
-			 * Entered by holding down the power button.
-			 */
-			if(tl_model == TRIPP_LITE_OMNIVS) {
+			case '1':
+				status_set("OB");
+				break;
+			case '2':
+				/* "charge-only" mode, no AC in or out... the PC
+				 * shouldn't see this, because there is no power in
+				 * that case (OMNIVS), but it's here for testing.
+				 *
+				 * Entered by holding down the power button.
+				 */
 				status_set("BYPASS");
 				break;
-			}
-		case '3':
-			if( tl_model == TRIPP_LITE_SMARTPRO ) {
-				status_set("OVER");
-			} else {
+			case '3':
 				/* I have seen this once when switching from off+LB to charging */
 				upslogx(LOG_WARNING, "Unknown value for s[2]: 0x%02x", s_value[2]);
-			}
-			break;
-		default:
-			upslogx(LOG_ERR, "Unknown value for s[2]: 0x%02x", s_value[2]);
-			dstate_datastale();
-			break;
+				break;
+			default:
+				upslogx(LOG_ERR, "Unknown value for s[2]: 0x%02x", s_value[2]);
+				dstate_datastale();
+				break;
+		}
+	}
+
+	if(tl_model == TRIPP_LITE_SMARTPRO) {
+		switch(s_value[2]) {
+			case '0':
+				dstate_setinfo("battery.test.status", "Battery OK");
+				break;
+			case '1':
+				dstate_setinfo("battery.test.status", "Battery bad - replace");
+				break;
+			case '2':
+				status_set("CAL");
+				break;
+			case '3':
+				status_set("OVER");
+				dstate_setinfo("battery.test.status", "Overcurrent?");
+				break;
+			case '4':
+				dstate_setinfo("battery.test.status", "Battery state unknown");
+				break;
+			case '5':
+				status_set("OVER");
+				dstate_setinfo("battery.test.status", "Battery fail - overcurrent?");
+				break;
+			default:
+				upslogx(LOG_ERR, "Unknown value for s[2]: 0x%02x", s_value[2]);
+				dstate_datastale();
+				break;
+		}
+
+		/* Online/on battery: */
+		if(s_value[4] & 4) {
+			status_set("OB");
+		} else {
+			status_set("OL");
+		}
 	}
 
 	switch(s_value[1]) {
@@ -961,6 +991,31 @@ void upsdrv_updateinfo(void)
 		dstate_setinfo("battery.voltage", "%.2f", bv);
 
 		/* battery charge state is left as an exercise for the reader */
+
+		ret = send_cmd(m_msg, sizeof(m_msg), m_value, sizeof(m_value));
+		dstate_setinfo("ups.debug.M", "%s", hexascdump(m_value+1, 7));
+		if(ret <= 0) {
+			dstate_datastale();
+			usb_comm_fail(ret, "Error reading M (min/max input voltage)");
+			return;
+		}
+
+		dstate_setinfo("input.voltage.minimum", "%3d", hex2d(m_value+1, 2));
+		dstate_setinfo("input.voltage.maximum", "%3d", hex2d(m_value+3, 2));
+
+		ret = send_cmd(t_msg, sizeof(t_msg), t_value, sizeof(t_value));
+		dstate_setinfo("ups.debug.T", "%s", hexascdump(t_value+1, 7));
+		if(ret <= 0) {
+			dstate_datastale();
+			usb_comm_fail(ret, "Error reading T value");
+			return;
+		}
+
+		freq = hex2d(t_value + 3, 3);
+		dstate_setinfo("input.frequency", "%.1f", freq / 10.0);
+
+		/* I'm guessing this is a calibration constant of some sort. */
+		dstate_setinfo("ups.temperature", "%.1f", hex2d(t_value+5, 2) * 0.3636 - 21);
 	}
 
 	ret = send_cmd(l_msg, sizeof(l_msg), l_value, sizeof(l_value));
@@ -984,8 +1039,13 @@ void upsdrv_updateinfo(void)
 
 	if(tl_model != TRIPP_LITE_OMNIVS) {
 		debug_message("D", 2);
-		debug_message("M", 2);
-		debug_message("T", 2);
+		debug_message("V", 2);
+
+		/* We already grabbed these above: */
+		if(tl_model != TRIPP_LITE_SMARTPRO) {
+			debug_message("M", 2);
+			debug_message("T", 2);
+		}
 		/* debug_message("U", 2); */
 		/* debug_message("Z", 2); */
 	}
