@@ -664,7 +664,7 @@ void upsdrv_initups(void)
 	 * So we don't need the regex mechanism
 	 */
 	int r;
-	char *regex_array[5];
+	char *regex_array[6];
 
 	/* enforce use of the "vendorid" option if "generic" is given */
 	if (testvar("generic") && getval("vendorid")==NULL) {

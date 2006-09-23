@@ -1,3 +1,8 @@
+Sat Sep 23 01:39:22 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups.c: fixed array size in upsdrv_initups (potential stack
+   corruption). Thanks to Herve Masson for reporting this bug.
+
 Mon Sep 18 23:48:57 EDT 2006 / Charles Lepple <clepple@gmail.com>
 
  - tripplite_usb: added some more variables for SMARTPRO UPSes, some more
