@@ -1,3 +1,9 @@
+Sat Sep 23 18:23:25 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: added a shell script scripts/subdriver/path-to-subdriver.sh
+   to automatically create a "stub" subdriver from the debugging info
+   of "drivers/newhidups -DD -u root -x generic -x vendorid=XXXX auto"
+
 Sat Sep 23 01:39:22 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups.c: fixed array size in upsdrv_initups (potential stack
