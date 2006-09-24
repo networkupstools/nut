@@ -202,12 +202,9 @@ static int HIDParse(HIDParser* pParser, HIDData* pData)
       {
         /* Copy global or local UPage if any, in Usage stack */
          if((pParser->Item & SIZE_MASK)>2)
-          pParser->UsageTab[pParser->UsageSize].UPage=(u_short)(pParser->Value>>16);
+          pParser->UsageTab[pParser->UsageSize]=pParser->Value;
         else
-          pParser->UsageTab[pParser->UsageSize].UPage=pParser->UPage;
-
-        /* Copy Usage in Usage stack */
-        pParser->UsageTab[pParser->UsageSize].Usage=(u_short)(pParser->Value & 0xFFFF);
+          pParser->UsageTab[pParser->UsageSize]=(pParser->UPage << 16) | (pParser->Value & 0xFFFF);
 
         /* Increment Usage stack size */
         pParser->UsageSize++;
@@ -217,8 +214,7 @@ static int HIDParse(HIDParser* pParser, HIDData* pData)
       case ITEM_COLLECTION :
       {
         /* Get UPage/Usage from UsageTab and store them in pParser->Data.Path */
-        pParser->Data.Path.Node[pParser->Data.Path.Size].UPage=pParser->UsageTab[0].UPage;
-        pParser->Data.Path.Node[pParser->Data.Path.Size].Usage=pParser->UsageTab[0].Usage;
+        pParser->Data.Path.Node[pParser->Data.Path.Size]=pParser->UsageTab[0];
         pParser->Data.Path.Size++;
       
         /* Unstack UPage/Usage from UsageTab (never remove the last) */
@@ -227,8 +223,8 @@ static int HIDParse(HIDParser* pParser, HIDData* pData)
           u_char ii=0;
           while(ii<pParser->UsageSize)
           {
-            pParser->UsageTab[ii].Usage=pParser->UsageTab[ii+1].Usage;
-            pParser->UsageTab[ii].UPage=pParser->UsageTab[ii+1].UPage;
+            pParser->UsageTab[ii]=pParser->UsageTab[ii+1];
+            pParser->UsageTab[ii]=pParser->UsageTab[ii+1];
             ii++;
           }
           /* Remove Usage */
@@ -238,8 +234,7 @@ static int HIDParse(HIDParser* pParser, HIDData* pData)
         /* Get Index if any */
         if(pParser->Value>=0x80)
         {
-          pParser->Data.Path.Node[pParser->Data.Path.Size].UPage=0xFF;
-          pParser->Data.Path.Node[pParser->Data.Path.Size].Usage=pParser->Value & 0x7F;
+          pParser->Data.Path.Node[pParser->Data.Path.Size] = 0x00ff0000 | (pParser->Value & 0x7F);
           pParser->Data.Path.Size++;
         }
 	ResetLocalState(pParser);
@@ -249,7 +244,7 @@ static int HIDParse(HIDParser* pParser, HIDData* pData)
       {
         pParser->Data.Path.Size--;
         /* Remove Index if any */
-        if(pParser->Data.Path.Node[pParser->Data.Path.Size].UPage==0xFF)
+        if((pParser->Data.Path.Node[pParser->Data.Path.Size] & 0xffff0000)==0x00ff0000)
           pParser->Data.Path.Size--;
 	ResetLocalState(pParser);
         break;
@@ -271,8 +266,7 @@ static int HIDParse(HIDParser* pParser, HIDData* pData)
         }
 
         /* Get UPage/Usage from UsageTab and store them in pParser->Data.Path */
-        pParser->Data.Path.Node[pParser->Data.Path.Size].UPage=pParser->UsageTab[0].UPage;
-        pParser->Data.Path.Node[pParser->Data.Path.Size].Usage=pParser->UsageTab[0].Usage;
+        pParser->Data.Path.Node[pParser->Data.Path.Size]=pParser->UsageTab[0];
         pParser->Data.Path.Size++;
     
         /* Unstack UPage/Usage from UsageTab (never remove the last) */
@@ -281,8 +275,7 @@ static int HIDParse(HIDParser* pParser, HIDData* pData)
           u_char ii=0;
           while(ii<pParser->UsageSize)
           {
-            pParser->UsageTab[ii].UPage=pParser->UsageTab[ii+1].UPage;
-            pParser->UsageTab[ii].Usage=pParser->UsageTab[ii+1].Usage;
+            pParser->UsageTab[ii]=pParser->UsageTab[ii+1];
             ii++;
           }
           /* Remove Usage */
@@ -391,7 +384,7 @@ int FindObject(HIDDesc *pDesc, HIDData* pData)
   HIDData *pFoundData;
   int i;
 
-  for (i=0; i<pDesc->len; i++)
+  for (i=0; i<pDesc->nitems; i++)
   {
     pFoundData = &pDesc->item[i];
     if(pData->Path.Size>0 && 
@@ -414,14 +407,58 @@ int FindObject(HIDDesc *pDesc, HIDData* pData)
 }
 
 /*
+ * FindObject_with_Path
+ * Get pData item with given Path and Type. Return NULL if not found. 
+ * -------------------------------------------------------------------------- */
+HIDData *FindObject_with_Path(HIDDesc *pDesc, HIDPath *Path, u_char Type)
+{
+  HIDData *pData;
+  int i;
+
+  for (i=0; i<pDesc->nitems; i++)
+  {
+    pData = &pDesc->item[i];
+    if (pData->Type == Type &&
+      memcmp(pData->Path.Node, Path->Node, (Path->Size)*sizeof(HIDNode)) == 0)
+    {
+      return pData;
+    }
+  }
+  return NULL;
+}
+
+/*
+ * FindObject_with_ID
+ * Get pData item with given ReportID, Offset, and Type. Return NULL
+ * if not found.
+ * -------------------------------------------------------------------------- */
+HIDData *FindObject_with_ID(HIDDesc *pDesc, u_char ReportID, u_char Offset, u_char Type)
+{
+  HIDData *pData;
+  int i;
+
+  for (i=0; i<pDesc->nitems; i++)
+  {
+    pData = &pDesc->item[i];
+    if (pData->ReportID == ReportID && 
+	pData->Type == Type &&
+	pData->Offset == Offset)
+    {
+      return pData;
+    }
+  }
+  return NULL;
+}
+
+/*
  * GetValue
  * Extract data from a report stored in Buf.
  * Use Value, Offset, Size and LogMax of pData.
  * Return response in Value.
  * -------------------------------------------------------------------------- */
-void GetValue(const u_char* Buf, HIDData* pData)
+void GetValue(const u_char* Buf, HIDData* pData, long *pValue)
 {
-  int Bit=pData->Offset+8; /* First byte of report indicate report ID */
+  int Bit = pData->Offset + 8; /* First byte of report is report ID */
   int Weight=0;
   long value, rawvalue;
   long range, mask, signbit, b, m;
@@ -430,7 +467,7 @@ void GetValue(const u_char* Buf, HIDData* pData)
 
   while(Weight<pData->Size)
   {
-    int State=Buf[Bit>>3]&(1<<(Bit%8));
+    int State = Buf[Bit >> 3] & (1 << (Bit & 7));
     if(State)
     {
       value+=(1<<Weight);
@@ -466,7 +503,7 @@ void GetValue(const u_char* Buf, HIDData* pData)
   range = pData->LogMax - pData->LogMin + 1;
   if (range <= 0) {
     /* makes no sense, give up */
-    pData->Value = value;
+    *pValue = value;
     return;
   }
   b = hibit(range-1);
@@ -483,7 +520,7 @@ void GetValue(const u_char* Buf, HIDData* pData)
 
   /* if the resulting value is in the desired range, stop */
   if (value >= pData->LogMin && value <= pData->LogMax) {
-    pData->Value = value;
+    *pValue = value;
     return;
   }
 
@@ -491,7 +528,7 @@ void GetValue(const u_char* Buf, HIDData* pData)
   m = (value - pData->LogMin) & mask;
   value = pData->LogMin + m;
   if (value <= pData->LogMax) {
-    pData->Value = value;
+    *pValue = value;
     return;
   }
 
@@ -509,7 +546,7 @@ void GetValue(const u_char* Buf, HIDData* pData)
     value = pData->LogMax;
   }
 
-  pData->Value = value;
+  *pValue = value;
   return;
 }
 
@@ -518,21 +555,22 @@ void GetValue(const u_char* Buf, HIDData* pData)
  * Set a data in a report stored in Buf. Use Value, Offset and Size of pData.
  * Return response in Buf.
  * -------------------------------------------------------------------------- */
-void SetValue(const HIDData* pData, u_char* Buf)
+void SetValue(const HIDData* pData, u_char* Buf, long Value)
 {
-  int Bit=pData->Offset+8; /* First byte of report indicate report ID */
+  int Bit = pData->Offset + 8; /* First byte of report is report ID */
   int Weight=0;
 
   while(Weight<pData->Size)
   {
-    int State=pData->Value & (1<<Weight);
-    
-    if(Bit%8==0)
-      Buf[Bit/8]=0;
+    int State = Value & (1 << Weight);
 
     if(State)
     {
-      Buf[Bit/8]+=(1<<(Weight%8));
+      Buf[Bit >> 3] |= (1 << (Bit & 7));
+    }
+    else
+    {
+      Buf[Bit >> 3] &= ~(1 << (Bit & 7));
     }
     Weight++;
     Bit++;
@@ -542,14 +580,21 @@ void SetValue(const HIDData* pData, u_char* Buf)
 /* ---------------------------------------------------------------------- */
 
 /* parse HID Report Descriptor. Input: byte array ReportDesc[n].
-   Output: parsed data structure. Returns 0 on success, -1 on failure
-   with errno set. */
-int Parse_ReportDesc(u_char *ReportDesc, int n, HIDDesc *pDesc) {
+   Output: parsed data structure. Returns allocated HIDDesc structure
+   on success, NULL on failure with errno set. Note: the value
+   returned by this function must be freed with Free_ReportDesc(). */
+HIDDesc *Parse_ReportDesc(u_char *ReportDesc, int n) {
 	HIDParser parser;
 	HIDData FoundData;
 	HIDData *item = NULL;
 	HIDData *r;
-	int i;
+	HIDDesc *pDesc;
+	int i, id, max;
+
+	pDesc = malloc(sizeof(HIDDesc));
+	if (!pDesc) {
+		return NULL;
+	}
 
 	ResetParser(&parser);
 	memcpy(parser.ReportDesc, ReportDesc, n);
@@ -560,14 +605,43 @@ int Parse_ReportDesc(u_char *ReportDesc, int n, HIDDesc *pDesc) {
 		i++;
 		r = realloc(item, i*sizeof(HIDData));
 		if (!r) {
+			free(pDesc);
 			free(item);
-			return -1;
+			return NULL;
 		}
 		item = r;
 		memcpy(&item[i-1], &FoundData, sizeof(HIDData));
 	}
-	pDesc->len = i;
+	pDesc->nitems = i;
 	pDesc->item = item;
-	return 0;
+
+	/* done scanning report descriptor; now calculate derived data */
+
+	/* make a list of reports and their lengths */
+	memset(pDesc->replen, 0, 256);
+	for (i=0; i<pDesc->nitems; i++) {
+		id = item[i].ReportID;
+
+		/* calculate bit range of this item within report */
+		max = item[i].Offset + item[i].Size;
+
+		/* convert to bytes */
+		max = (max + 7) >> 3;
+
+		/* update report length */
+		if (max > pDesc->replen[id]) {
+			pDesc->replen[id] = max;
+		}
+	}
+
+	return pDesc;
+}
+
+/* free a parsed report descriptor, as allocated by Parse_ReportDesc() */
+void Free_ReportDesc(HIDDesc *pDesc) {
+	if (pDesc) {
+		free(pDesc->item);
+	}
+	free(pDesc);
 }
 

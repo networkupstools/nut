@@ -48,21 +48,183 @@
 
 #include <errno.h>
 
-/* structure to describe a retrieved report */
-struct report_s {
-	int id;                  /* report ID */
-	time_t ts;               /* timestamp when the report was retrieved */
-	int len;                 /* size of report data */
-	unsigned char data[100]; /* report data */
+/* support functions */
+static float logical_to_physical(HIDData *Data, long logical);
+static long physical_to_logical(HIDData *Data, float physical);
+static const char *hid_lookup_path(unsigned int usage, usage_tables_t *utab);
+static int hid_lookup_usage(char *name, usage_tables_t *utab);
+static int string_to_path(char *HIDpath, HIDPath *path, usage_tables_t *utab);
+static int path_to_string(char *HIDpath, HIDPath *path, usage_tables_t *utab);
+static long get_unit_expo(long UnitType);
+static float expo(int a, int b);
+
+/* report buffer structure: holds data about most recent report for
+   each given report id */
+struct reportbuf_s {
+       time_t ts[256];           /* timestamp when report was retrieved */
+       int len[256];             /* size of report data */
+       unsigned char *data[256]; /* report data (allocated) */
 };
-typedef struct report_s report_t;
+typedef struct reportbuf_s reportbuf_t;
 
 /* global variables */
 
-static HIDData   	hData;
-static HIDDesc  	hDesc; /* parsed Report Descriptor */
-/* the most recently retrieved report */
-static report_t cur_report_struct = {0, 0, 0, {0}};
+static HIDDesc         *pDesc = NULL; /* parsed Report Descriptor */
+static reportbuf_t      *rbuf = NULL;  /* buffer for most recent reports */
+
+#define min(x,y) ((x)>(y) ? (y) : (x))
+
+/* ---------------------------------------------------------------------- */
+/* report buffering system */
+
+/* HID data items are retrieved via "reports". Each report is
+   identified by a report ID, which is an integer in the range
+   0-255. Each report can hold several items. To avoid retrieving a
+   given report multiple times in short succession, we use a data
+   structure called a "report buffer". The functions in this group
+   operate on entire *reports*, not individual data items. */
+
+/* allocate a new report buffer. Return pointer on success, else NULL
+   with errno set. The returned data structure must later be freed
+   with free_report_buffer(). */
+reportbuf_t *new_report_buffer(void) {
+	reportbuf_t *rbuf;
+	int i;
+
+	rbuf = malloc(sizeof(reportbuf_t));
+	if (!rbuf) {
+		return NULL;
+	}
+	for (i=0; i<256; i++) {
+		rbuf->ts[i] = 0;
+		rbuf->len[i] = 0;
+		rbuf->data[i] = NULL;
+	}
+	return rbuf;
+}
+
+void free_report_buffer(reportbuf_t *rbuf) {
+	int i;
+
+	if (rbuf) {
+		for (i=0; i<256; i++) {
+			free(rbuf->data[i]);
+		}
+	}
+	free(rbuf);
+}
+
+/* refresh the report with the given id in the report buffer rbuf.  If
+   the report is not yet in the buffer, or if it is older than "age"
+   seconds, then the report is freshly read from the USB
+   device. Otherwise, it is unchanged. Return 0 on success, -1 on
+   error with errno set. */
+int refresh_report_buffer(reportbuf_t *rbuf, int id, int age, HIDDesc *pDesc, usb_dev_handle *udev) {
+	int len = pDesc->replen[id]; /* length of report */
+	unsigned char *data;
+	int r;
+
+	if (rbuf->data[id] != NULL && rbuf->ts[id] + age > time(0)) {
+		/* buffered report is still good; nothing to do */
+		return 0;
+	}
+
+	data = malloc(len+1); /* first byte holds report id */
+	if (!data) {
+		return -1;
+	}
+	memset(data, 0, len+1);
+	r = comm_driver->get_report(udev, id, data, len+1);
+	if (r <= 0) {
+		return -1;
+	}
+	/* have valid report */
+	free(rbuf->data[id]);
+	rbuf->data[id] = data;
+	rbuf->ts[id] = time(0);
+	rbuf->len[id] = r;  /* normally equal to len+1, but could be less? */
+
+	upsdebug_hex (3, "Report[r]", rbuf->data[id], rbuf->len[id]);
+	
+	return 0;
+}
+
+/* send the report with the given id to the HID device. Return 0 on
+ * success, or -1 on failure with errno set. */
+int set_report_from_buffer(reportbuf_t *rbuf, int id, usb_dev_handle *udev) {
+	int r;
+
+	r = comm_driver->set_report(udev, id, rbuf->data[id], rbuf->len[id]);
+	if (r <= 0) {
+		return -1;
+	}
+	return 0;
+}	
+
+/* file a given report in the report buffer. This is used when the
+   report has been obtained without having been explicitly requested,
+   e.g., it arrived through an interrupt transfer. Returns 0 on
+   success, -1 on error with errno set. Note: len >= 1, and the first
+   byte holds the report id. */
+int file_report_buffer(reportbuf_t *rbuf, u_char *report, int len) {
+	unsigned char *data;
+	int id;
+
+	id = report[0];
+	data = malloc(len);
+	if (!data) {
+		return -1;
+	}
+	memcpy(data, report, len);
+
+	/* have valid report */
+	free(rbuf->data[id]);
+	rbuf->data[id] = data;
+	rbuf->ts[id] = time(0);
+	rbuf->len[id] = len;
+
+	upsdebug_hex (3, "Report[i]", rbuf->data[id], rbuf->len[id]);
+	
+	return 0;
+}
+
+/* ---------------------------------------------------------------------- */
+/* the functions in this next group operate on buffered reports, but
+   operate on individual items, not whole reports. */
+
+/* read the logical value for the given pData. No logical to physical
+   conversion is performed. If age>0, the read operation is buffered
+   if the item's age is less than "age". On success, return 0 and
+   store the answer in *value. On failure, return -1 and set errno. */
+int get_item_buffered(reportbuf_t *rbuf, HIDData *pData, int age, HIDDesc *pDesc, usb_dev_handle *udev, long *Value) {
+	int r;
+	int id;
+
+	id = pData->ReportID;
+
+	r = refresh_report_buffer(rbuf, id, age, pDesc, udev);
+	if (r<0) {
+		return -1;
+	}
+	GetValue(rbuf->data[id], pData, Value);
+	return 0;
+}
+
+/* set the logical value for the given pData. No physical to logical
+   conversion is performed. On success, return 0, and failure, return
+   -1 and set errno. The updated value is sent to the device, and also
+   stored in the local buffer. */
+int set_item_buffered(reportbuf_t *rbuf, HIDData *pData, HIDDesc *pDesc, usb_dev_handle *udev, long Value) {
+	int id, r;
+
+	id = pData->ReportID;
+
+	SetValue(pData, rbuf->data[id], Value);
+	r = set_report_from_buffer(rbuf, id, udev);
+	return r;
+}
+
+/* ---------------------------------------------------------------------- */
 
 /* FIXME: we currently "hard-wire" the report buffer size in the calls
    to libxxx_get_report() below to 8 bytes. This is not really a great
@@ -73,8 +235,6 @@ static report_t cur_report_struct = {0, 0, 0, {0}};
    libhid library should calculate the *exact* size of the required
    report buffer from the report descriptor. */
 #define REPORT_SIZE 8
-
-#define min(x,y) ((x)>(y) ? (y) : (x))
 
 /* Units and exponents table (HID PDC, 3.2.3) */
 #define NB_HID_UNITS 10
@@ -91,16 +251,6 @@ static const long HIDUnits[NB_HID_UNITS][2]=
 	{0x0000F001,0}, /* Hertz */
 	{0x00101001,0}, /* As */
 };
-
-/* support functions */
-static float logical_to_physical(HIDData *Data, long logical);
-static long physical_to_logical(HIDData *Data, float physical);
-static const char *hid_lookup_path(unsigned int usage, usage_tables_t *utab);
-static int hid_lookup_usage(char *name, usage_tables_t *utab);
-static int string_to_path(char *HIDpath, HIDPath *path, usage_tables_t *utab);
-static int path_to_string(char *HIDpath, HIDPath *path, usage_tables_t *utab);
-static long get_unit_expo(long UnitType);
-static float expo(int a, int b);
 
 /* ---------------------------------------------------------------------- */
 /* matchers */
@@ -376,26 +526,21 @@ void free_regex_matcher(HIDDeviceMatcher_t *matcher) {
 
 void HIDDumpTree(hid_dev_handle *udev, usage_tables_t *utab)
 {
-	int 		i, j;
+	int 		j;
 	char 		path[128], type[10];
 	float		value;
-	HIDData 	*pTmpData;
+	HIDData 	*pData;
 
-	for (j=0; j<hDesc.len; j++)
+	for (j=0; j<pDesc->nitems; j++)
 	{
-		pTmpData = &hDesc.item[j];
+		pData = &pDesc->item[j];
+
 		/* Build the path */
-		path[0] = '\0';
-		for (i = 0; i < pTmpData->Path.Size; i++)
-		{
-			strcat(path, hid_lookup_path((pTmpData->Path.Node[i].UPage * 0x10000) + pTmpData->Path.Node[i].Usage, utab));
-			if (i < (pTmpData->Path.Size - 1))
-				strcat (path, ".");
-		}
+		path_to_string(path, &pData->Path, utab);
 
 		/* Get data type */
 		type[0] = '\0';
-		switch (pTmpData->Type)
+		switch (pData->Type)
 		{
 			case ITEM_FEATURE:
 				strcat(type, "Feature");
@@ -431,7 +576,6 @@ HIDDevice *HIDOpenDevice(hid_dev_handle **udevp, HIDDevice *hd, HIDDeviceMatcher
 {
 	int ReportSize;
 	unsigned char ReportDesc[4096];
-	int r;
 
 	if ( mode == MODE_REOPEN )
 	{
@@ -455,84 +599,97 @@ HIDDevice *HIDOpenDevice(hid_dev_handle **udevp, HIDDevice *hd, HIDDeviceMatcher
 		upsdebug_hex(3, "Report Descriptor", ReportDesc, ReportSize);
 
 		/* Parse Report Descriptor */
-		r = Parse_ReportDesc(ReportDesc, ReportSize, &hDesc);
-		if (r) {
+		Free_ReportDesc(pDesc);
+		pDesc = Parse_ReportDesc(ReportDesc, ReportSize);
+		if (!pDesc) {
 			upsdebugx(0, "Failed to parse report descriptor: %s", strerror(errno));
+			HIDCloseDevice(*udevp);
+			*udevp = NULL;
+			return NULL;
+		}
+
+		/* prepare report buffer */
+		free_report_buffer(rbuf);
+		rbuf = new_report_buffer();
+		if (!rbuf) {
+			upsdebugx(0, "Failed to allocate report buffer: %s", strerror(errno));
+			HIDCloseDevice(*udevp);
+			*udevp = NULL;
 			return NULL;
 		}
 	}
 	return hd;
 }
 
-/* int HIDGetItem(hid_info_t *ItemInfo, HIDItem *item) */
-HIDItem *HIDGetItem(const char *ItemPath)
+/* return 1 if OK, 0 on fail, <= -1 otherwise (ie disconnect). TODO:
+   return value should be checked. Returns the logical value
+   associated with the given path in *Value (i.e., don't do any
+   logical->physical conversion. Also returns pointer to the
+   corresponding HIDData item in *ppData, if ppData!=NULL. */
+static int HIDGetItemLogical(usb_dev_handle *udev, char *path, usage_tables_t *utab, long *Value, HIDData **ppData)
 {
-	/* was for libhid, not useful in our scope! */
-	return NULL;
-}
+	int i, r;
+	long hValue;
+	HIDData *pData;
+	HIDPath Path;
 
-/* return 1 if OK, 0 on fail, -errno otherwise (ie disconnect) */
-int HIDGetItemValue(hid_dev_handle *udev, char *path, float *Value, usage_tables_t *utab)
-{
-	int i, retcode;
-	float physical;
-	report_t *cur_report = &cur_report_struct;
-
-	/* Prepare path of HID object */
-	hData.Type = ITEM_FEATURE;
-	hData.ReportID = 0;
-
-	if((retcode = string_to_path(path, &hData.Path, utab)) <= 0) {
-		return 0; /* TODO: should be checked */
+	r = string_to_path(path, &Path, utab);
+	if (r <= 0) {
+		return 0;
 	}
 
-	upsdebugx(4, "Path depth = %i", hData.Path.Size);
+	upsdebugx(4, "Path depth = %i", Path.Size);
 	
-	for (i = 0; i<hData.Path.Size; i++) {
-		upsdebugx(4, "%i: UPage(%x), Usage(%x)", i, hData.Path.Node[i].UPage, hData.Path.Node[i].Usage);
+	for (i = 0; i<Path.Size; i++) {
+		upsdebugx(4, "%i: Usage(%08x)", i, Path.Node[i]);
 	} 
 
 	/* Get info on object (reportID, offset and size) */
-	if (FindObject(&hDesc, &hData) != 1) {
+	pData = FindObject_with_Path(pDesc, &Path, ITEM_FEATURE);
+	if (!pData) {
 		upsdebugx(2, "Can't find object %s", path);
-		return 0; /* TODO: should be checked */
+		return 0;
 	} 
-	/* Get report with data */
-	/* Bufferize at least the last report */
-	if (cur_report->id != hData.ReportID || time(NULL) > cur_report->ts + MAX_TS)
-	{
-		/* report is not in buffer or too old;
-		   need to retrieve report */
-		retcode = comm_driver->get_report(udev, hData.ReportID,
-			cur_report->data, REPORT_SIZE);
-
-		if (retcode <= 0) {
-			upsdebugx(2, "Can't retrieve Report %i (%i/%i): %s", hData.ReportID, retcode, errno, strerror(errno));
-			return -errno;
-		} else {
-			cur_report->len = retcode;
-			cur_report->ts = time(NULL);
-		}
+	r = get_item_buffered(rbuf, pData, MAX_TS, pDesc, udev, &hValue);
+	if (r<0) {
+		upsdebugx(2, "Can't retrieve Report %i (%i): %s", pData->ReportID, errno, strerror(errno));
+		return -errno;
 	}
-	/* have valid report now */
-	upsdebug_hex (3, "Report", cur_report->data, cur_report->len);
+
+	*Value = hValue;
+	if (ppData != NULL) {
+		*ppData = pData;
+	}
+	return 1;
+}
+
+/* return 1 if OK, 0 on fail, -errno otherwise (ie disconnect). TODO:
+   return value should be checked. Return the physical value
+   associated with the given path. */
+int HIDGetItemValue(usb_dev_handle *udev, char *path, float *Value, usage_tables_t *utab)
+{
+	int r;
+	float physical;
+	long hValue;
+	HIDData *pData;
+
+	r = HIDGetItemLogical(udev, path, utab, &hValue, &pData);
+	if (r <= 0) {
+		return r;
+	}
 	
-	/* Extract the data value */
-	GetValue((const unsigned char *) cur_report->data, &hData);
-	cur_report->id = hData.ReportID;
-	
-	upsdebugx(4, "=>> Before exponent: %ld, %i/%i)", hData.Value,
-	      (int)hData.UnitExp, (int)get_unit_expo(hData.Unit) );
+	upsdebugx(4, "=>> Before exponent: %ld, %i/%i)", hValue,
+	      (int)pData->UnitExp, (int)get_unit_expo(pData->Unit) );
 	
 	/* Convert Logical Min, Max and Value into Physical */
-	physical = logical_to_physical(&hData, hData.Value);
+	physical = logical_to_physical(pData, hValue);
 	
 	/* Process exponents and units */
-	physical *= (float) expo(10,(int)hData.UnitExp - get_unit_expo(hData.Unit));
-	hData.Value = (long) physical;
-	
-	upsdebugx(4, "=>> After conversion: %f (%ld), %i/%i)", physical, 
-	      hData.Value, (int)hData.UnitExp, (int)get_unit_expo(hData.Unit));
+	physical *= (float) expo(10,(int)pData->UnitExp - get_unit_expo(pData->Unit));
+	hValue = (long) physical;
+
+	upsdebugx(4, "=>> After conversion: %f (%ld), %i/%i)", physical,
+	      hValue, (int)pData->UnitExp, (int)get_unit_expo(pData->Unit));
 	
 	*Value = physical;
 	return 1;
@@ -540,169 +697,145 @@ int HIDGetItemValue(hid_dev_handle *udev, char *path, float *Value, usage_tables
 
 /* rawbuf must point to a large enough buffer to hold the resulting
  * string. Return pointer to rawbuf on success, NULL on failure. */
-char *HIDGetItemString(hid_dev_handle *udev, char *path, unsigned char *rawbuf, usage_tables_t *utab)
+char *HIDGetItemString(usb_dev_handle *udev, char *path, unsigned char *rawbuf, usage_tables_t *utab)
 {
-	int i, retcode;
+	int r;
+	long hValue;  
 	
-	/* Prepare path of HID object */
-	hData.Type = ITEM_FEATURE;
-	hData.ReportID = 0;
-	
-	if((retcode = string_to_path(path, &hData.Path, utab)) > 0) {
-	upsdebugx(4, "Path depth = %i", retcode);
-	
-	for (i = 0; i<retcode; i++)
-	upsdebugx(4, "%i: UPage(%x), Usage(%x)", i,
-		hData.Path.Node[i].UPage,
-		hData.Path.Node[i].Usage);
-	
-	hData.Path.Size = retcode;
-	
-	/* Get info on object (reportID, offset and size) */
-	if (FindObject(&hDesc,&hData) == 1)
-	{
-		if (comm_driver->get_report(udev, hData.ReportID, rawbuf, REPORT_SIZE) > 0)
-		{
-			GetValue((const unsigned char *) rawbuf, &hData);
-
-			/* now get string */
-			comm_driver->get_string(udev, hData.Value, rawbuf);
-
-			return rawbuf;
-		}
-		else
-			upsdebugx(2, "Can't retrieve Report %i", hData.ReportID);
+	r = HIDGetItemLogical(udev, path, utab, &hValue, NULL);
+	if (r <= 0) {
+		return NULL;
 	}
-	else
-		upsdebugx(2, "Can't find object %s", path);
-
-	return NULL;
-	}
-	return NULL;
+	
+	/* now get string */
+	comm_driver->get_string(udev, hValue, rawbuf);
+	return rawbuf;
 }
- 
-bool HIDSetItemValue(hid_dev_handle *udev, char *path, float value, usage_tables_t *utab)
+
+/* set the given physical value for the variable associated with
+ * path. Return TRUE on success, FALSE on failure. */ 
+bool HIDSetItemValue(usb_dev_handle *udev, char *path, float value, usage_tables_t *utab)
 {
 	float Value;
-	int retcode;
-	report_t *cur_report = &cur_report_struct;
+	int r;
+	long hValue, oldValue, newValue;
+	HIDData *pData;
+	int id;
 
-	/* Begin by a standard Get to fill in com structures ... */
-	retcode = HIDGetItemValue(udev, path, &Value, utab);
-	
-	/* ... And play with global vars */
-	if (retcode != 1) /* Get failed */
-	{
+	r = HIDGetItemLogical(udev, path, utab, &oldValue, &pData);
+	if (r <= 0) {
 		return FALSE;
 	}
 
-	upsdebugx(4, "=>> SET: Before set: %.2f (%ld)", Value, (long)value);
+	upsdebugx(4, "=>> SET: Before set: %ld (%ld)", oldValue, (long)value);
 	
+	id = pData->ReportID;
+
 	/* Test if Item is settable */
-	/* FIXME: not constant == volatile, but
-	 * it doesn't imply that it's RW! */
-	if (hData.Attribute == ATTR_DATA_CST) 
-	{
+        /* FIXME: not constant == volatile, but
+         * it doesn't imply that it's RW! */
+	if (pData->Attribute == ATTR_DATA_CST) {
 		return FALSE;
 	}
 
 	/* Set new value for this item */
+	/* And Process exponents restoration */
+	Value = value * expo(10, get_unit_expo(pData->Unit) - (int)pData->UnitExp);
 	
-	/* restore exponents */
-	value *= expo(10, get_unit_expo(hData.Unit) - (int)hData.UnitExp);
-	upsdebugx(4, "=>> SET: after exp: %.2f (exp = %.2f)", value,
-			expo(10, (int)get_unit_expo(hData.Unit) - (int)hData.UnitExp));
+	upsdebugx(4, "=>> SET: after exp: %.2f (exp = %.2f)", Value,
+	      expo(10, (int)get_unit_expo(pData->Unit) - (int)pData->UnitExp));
 	
 	/* convert physical value to logical */
-	hData.Value = physical_to_logical(&hData, value);
-	upsdebugx(4, "=>> SET: after PL: %ld", hData.Value);
+	hValue = physical_to_logical(pData, Value);
+	upsdebugx(4, "=>> SET: after PL: %ld", hValue);
 	
-	SetValue(&hData, cur_report->data);
-	
-	upsdebug_hex (4, "==> Report after setvalue", cur_report->data, cur_report->len);
+	upsdebug_hex (4, "==> Report to set", rbuf->data[id], rbuf->len[id]);
 
-	if (comm_driver->set_report(udev, hData.ReportID, cur_report->data, cur_report->len) > 0)
-	{
-		upsdebugx(4, "Set report succeeded");
-		return TRUE;
-	}
-	else
-	{
-		upsdebugx(2, "Set report failed");
+	r = set_item_buffered(rbuf, pData, pDesc, udev, hValue);
+	if (r<0) {
+		upsdebugx(2, "Set report failed: (%d): %s", errno, strerror(errno));
 		return FALSE;
 	}
-	/* check if set succeed! => doesn't work on *Delay (decremented!) */
-	/*      Value = HIDGetItemValue(path);
-			  
-	upsdebugx(2, "=>> SET: new value = %.2f (was set to %.2f)\n", 
-	Value, (float) value);
-	return TRUE;*/ /* (Value == value); */
+	
+	/* re-read report without buffering */
+	r = get_item_buffered(rbuf, pData, 0, pDesc, udev, &newValue);
+	if (r<0) {
+		upsdebugx(2, "Warning: Re-read report failed: (%d): %s", errno, strerror(errno));
+		return TRUE;
+	}
+	upsdebug_hex (4, "==> Report after set", rbuf->data[id], rbuf->len[id]);
+
+	if (newValue != hValue) {
+		/* this is normal; device will usually correct "out of
+		   range" values */
+		upsdebugx(4, "Wrote %ld, got %ld\n", hValue, newValue);
+	}
+
+	upsdebugx(4, "Set report succeeded");
+	return TRUE;
 }
 
+/* FIXME: change this so that we iterate through the report descriptor
+   once, instead of once for every offset. Simply pick out the items
+   with the correct ReportID and Type! Return item count >=0 on
+   success, <0 on error. */
 int HIDGetEvents(hid_dev_handle *udev, HIDDevice *dev, HIDItem **eventsList, usage_tables_t *utab)
 {
-	unsigned char buf[20];
+	unsigned char buf[100];
 	char itemPath[128];
-	int size, offset = 0, itemCount = 0;
-	
+	int size, itemCount;
+	long hValue;	
+	HIDData *pData;
+	int id, r, i;
+
 	upsdebugx(2, "Waiting for notifications...");
 	
 	/* needs libusb-0.1.8 to work => use ifdef and autoconf */
-	if ((size = comm_driver->get_interrupt(udev, &buf[0], 20, 5000)) > -1)
+	if ((size = comm_driver->get_interrupt(udev, &buf[0], 100, 5000)) <= -1)
 	{
-		upsdebug_hex (3, "Notification", buf, size);
-		
-		/* Convert report size in bits */
-		size = (size - 1) * 8;
-		
-		/* Parse response Report and Set correspondant Django values */
-		hData.ReportID = buf[0];
-		hData.Type = ITEM_INPUT;
-		
-		while(offset < size)
-		{
-			/* Set Offset */
-			hData.Offset = offset;
-	
-			/* Reset HID Path but keep Report ID */
-			memset(&hData.Path, '\0', sizeof(HIDPath));
-	
-			/* Get HID Object characteristics */
-			if(FindObject(&hDesc, &hData))
-			{
-				/* Get HID Object value from report */
-				GetValue(buf, &hData);
-				memset(&itemPath, 0, sizeof(128));
-				path_to_string(itemPath, &hData.Path, utab);
-	
-				upsdebugx(3, "Object: %s = %ld", itemPath, hData.Value);
-	
-				/* FIXME: enhance this or fix/change the HID parser (see libhid project) */
-				/* if ( strstr(itemPath, "000000") == NULL) */
-				if (strcmp(itemPath, "UPS.PowerSummary.PresentStatus.") > 0)
-				{
-					eventsList[itemCount] = (HIDItem *)malloc(sizeof (HIDItem));
-					eventsList[itemCount]->Path = strdup(itemPath);
-					eventsList[itemCount]->Value = hData.Value;
-					itemCount++;
-				}
-			}
-			offset += hData.Size;
-		}
+		return size; /* propagate error code */
 	}
-	else
-		itemCount = size; /* propagate error code */
+	upsdebug_hex (3, "Notification", buf, size);
 
+	r = file_report_buffer(rbuf, buf, size);
+	if (r < 0) {
+		upsdebugx(2, "Failed to buffer report: %s", strerror(errno));
+		return -errno;
+	}
+
+	/* now read all items that are part of this report */
+	id = buf[0];
+
+	itemCount = 0;
+	for (i=0; i<pDesc->nitems; i++) {
+		pData = &pDesc->item[i];
+
+		if (pData->Type != ITEM_INPUT || pData->ReportID != id) {
+			continue;
+		}
+		path_to_string(itemPath, &pData->Path, utab);
+		GetValue(buf, pData, &hValue);
+		
+		upsdebugx(3, "Object: %s = %ld", itemPath, hValue);
+
+		/* FIXME: enhance this or fix/change the HID parser
+		   (see libhid project) */
+		eventsList[itemCount] = (HIDItem *)malloc(sizeof (HIDItem));
+		eventsList[itemCount]->Path = strdup(itemPath);
+		eventsList[itemCount]->Value = hValue;
+		itemCount++;
+	}
+	
 	return itemCount;
 }
 
 void HIDCloseDevice(hid_dev_handle *udev)
 {
-	if (udev != NULL)
-	{
-		upsdebugx(2, "Closing device");
-		comm_driver->close(udev);
-	}
+    if (udev != NULL)
+    {
+      upsdebugx(2, "Closing device");
+      comm_driver->close(udev);
+    }
 }
 
 
@@ -806,7 +939,7 @@ static float expo(int a, int b)
 	return -1;
 }
 
-/* translate HID string path from/to numeric path and return path depth */
+/* translate HID string path to numeric path and return path depth */
 /* TODO: use usbutils functions (need to be externalised!) */
 static int string_to_path(char *HIDpath, HIDPath *path, usage_tables_t *utab)
 {
@@ -837,8 +970,7 @@ static int string_to_path(char *HIDpath, HIDPath *path, usage_tables_t *utab)
 			return 0;
 		}
 		else {
-			path->Node[i].UPage = (cur_usage & 0xFFFF0000) / 0x10000;
-			path->Node[i].Usage = cur_usage & 0x0000FFFF; 
+			path->Node[i] = cur_usage;
 			i++;
 		}
 		
@@ -850,32 +982,32 @@ static int string_to_path(char *HIDpath, HIDPath *path, usage_tables_t *utab)
 	return i;
 }
 
-/* translate HID string path from/to numeric path and return path depth */
+/* translate HID numeric path to string path and return path depth */
 /* TODO: use usbutils functions (need to be externalised!) */
+/* FIXME: char *HIDpath must be large enough; buffer overflow otherwise. */
 static int path_to_string(char *HIDpath, HIDPath *path, usage_tables_t *utab)
 {
 	int i = 0;
 	
 	upsdebugx(5, "entering path_to_string()");
 	
-	/* FIXME: another bug? */
-	strcat(HIDpath, "UPS.");
+	HIDpath[0] = '\0';
 	
 	/* Numeric to String */
-	for (i = 1; i < path->Size; i++)
+	for (i = 0; i < path->Size; i++)
 	{
 		/* Deal with ?bogus? */
-		if (path->Node[i].UPage == 0 && path->Node[i].Usage == 0)
+		if (path->Node[i] == 0)
 			continue;
 		
 		/* manage indexed collection */
-		if (path->Node[i].UPage == 0x00FF)
+		if ((path->Node[i] & 0xffff0000) == 0x00ff0000)
 		{
 			upsdebugx(5, "Got an indexed collection");
-			sprintf(strrchr(HIDpath, '.'), "[%i]", path->Node[i].Usage);
+			sprintf(strrchr(HIDpath, '.'), "[%i]", path->Node[i] & 0x0000ffff);
 		}
 		else
-			strcat(HIDpath, hid_lookup_path((path->Node[i].UPage * 0x10000) + path->Node[i].Usage, utab));
+			strcat(HIDpath, hid_lookup_path(path->Node[i], utab));
 		
 		if (i < (path->Size - 1))
 			strcat (HIDpath, ".");
@@ -1148,7 +1280,3 @@ static int hid_lookup_usage(char *name, usage_tables_t *utab)
 	return value;
 }
 
-int get_current_data_attribute()
-{
-	return hData.Attribute;
-}

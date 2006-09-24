@@ -563,6 +563,16 @@ void upsdrv_updateinfo(void)
 				upsdebugx(3, "Object: %s = %ld", 
 						  eventsList[evtCount-1]->Path,
 						  eventsList[evtCount-1]->Value);
+				/* special case: fix a horrible Belkin
+				 bug.  My Belkin UPS actually sends an
+				 incorrect report over the interrupt
+				 pipeline - the corresponding feature
+				 report is correct. */
+				if (subdriver == &belkin_subdriver && strcmp(eventsList[evtCount-1]->Path, "UPS.PowerSummary.BelowRemainingCapacityLimit") == 0) {
+					free(eventsList[evtCount-1]);
+					evtCount--;
+					continue;
+				}
 				
 				if ((item = find_hid_info(eventsList[evtCount-1]->Path)) != NULL)
 				  {
@@ -584,9 +594,9 @@ void upsdrv_updateinfo(void)
 							else
 							  dstate_setinfo(item->info_type, item->dfl, nutvalue);
 						  }
-						/* FIXME: else => revert the status, ie -LB == reset LB... */
 					  }
 					else
+					  /* FIXME: should we do setinfo() here? */
 					  upsdebugx(2, "%s = %ld", item->info_type, eventsList[evtCount-1]->Value);
 				  }
 				free(eventsList[evtCount-1]);

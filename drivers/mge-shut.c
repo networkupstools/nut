@@ -31,6 +31,8 @@
 #include "serial.h"
 #include "timehead.h"
 #include "mge-shut.h"
+#include "hidparser.h"
+#include "hidtypes.h"
 #include "common.h" /* for upsdebugx() etc */
 
 /* --------------------------------------------------------------- */
@@ -72,8 +74,8 @@ static void align_request(hid_packet_t *sd)
 
 hid_desc_data_u    	hid_descriptor;
 device_desc_data_u 	device_descriptor;
-static HIDData   	hData;
-static HIDDesc  	hDesc; /* parsed Report Descriptor */
+static long             hValue;
+static HIDDesc  	*pDesc = NULL; /* parsed Report Descriptor */
 u_char 			raw_buf[4096];
 
 /* --------------------------------------------------------------- */
@@ -140,7 +142,7 @@ void upsdrv_initinfo (void)
 			if (hid_get_value(item->item_path) != 0 ) {
 
 				item->shut_flags &= SHUT_FLAG_OK;
-				dstate_setinfo(item->type, item->fmt, hData.Value);
+				dstate_setinfo(item->type, item->fmt, hValue);
 				dstate_setflags(item->type, item->flags);
 				/* Set max length for strings */
 				if (item->flags & ST_FLAG_STRING)
@@ -200,20 +202,21 @@ void upsdrv_updateinfo (void)
     if (item->shut_flags & SHUT_FLAG_OK) {
 
 			if(hid_get_value(item->item_path) != 0 ) {				
-				upsdebugx(3, "%s: hData.Value = %ld (%ld)",
-					item->item_path, hData.Value, hData.LogMax);
+				upsdebugx(3, "%s: hValue = %ld",	item->item_path, hValue);
+				/* upsdebugx(3, "%s: hValue = %ld (%ld)",
+					item->item_path, hValue, hData.LogMax); */
 				
 				/* need lookup'ed translation */
 				if (item->hid2info != NULL)
 				  {
-					nutvalue = hu_find_infoval(item->hid2info, (long)hData.Value);
+					nutvalue = hu_find_infoval(item->hid2info, (long)hValue);
 					if (nutvalue != NULL)
 					  dstate_setinfo(item->type, "%s", nutvalue);
 					else
-					  dstate_setinfo(item->type, item->fmt, hData.Value);
+					  dstate_setinfo(item->type, item->fmt, hValue);
 				  }
 				else
-				  dstate_setinfo(item->type, item->fmt, hData.Value);
+				  dstate_setinfo(item->type, item->fmt, hValue);
 
 				dstate_dataok();
 			} else {
@@ -455,7 +458,7 @@ int shut_identify_ups ()
 			
 			if(hid_get_value("UPS.PowerSummary.iModel") != 0 )
 			{
-				if((shut_get_string(hData.Value, string, 0x25)) > 0)
+				if((shut_get_string(hValue, string, 0x25)) > 0)
 				{
 					finalname = get_model_name(model, string);
 					upsdebugx (2, "iModel = %s", string);
@@ -467,7 +470,7 @@ int shut_identify_ups ()
 				/* Try with "UPS.Flow.[4].ConfigApparentPower" */
 				if(hid_get_value("UPS.Flow.[4].ConfigApparentPower") != 0 )
 				{
-					sprintf(&string[0], "%i", (int)hData.Value);
+					sprintf(&string[0], "%i", (int)hValue);
 					finalname = get_model_name(model, string);
 				}
 				else
@@ -647,7 +650,7 @@ void  shut_ups_status(void)
         while (try < MAX_TRY) {
 	  if((retcode = hid_get_value("UPS.PowerSummary.PresentStatus.ACPresent")) != 0 ) {
 	    try = MAX_TRY;
-	    if(hData.Value == 1){
+	    if(hValue == 1){
 	      status_set("OL");
 	    } else {
 	      status_set("OB");
@@ -658,49 +661,49 @@ void  shut_ups_status(void)
 	}
 
 	if(hid_get_value("UPS.PowerSummary.PresentStatus.Discharging") != 0 ) {
-		if(hData.Value == 1)
+		if(hValue == 1)
 			status_set("DISCHRG");
 	}
 
 	if(hid_get_value("UPS.PowerSummary.PresentStatus.Charging") != 0 ) {
-		if(hData.Value == 1)
+		if(hValue == 1)
 			status_set("CHRG");
 	}
 
 	if(hid_get_value("UPS.PowerSummary.PresentStatus.ShutdownImminent") != 0 ) {
-		if(hData.Value == 1)
+		if(hValue == 1)
 			status_set("LB");
 	}
 	
 	if(hid_get_value("UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit") != 0 ) {
-		if(hData.Value == 1)
+		if(hValue == 1)
 			status_set("LB");
 	}
 
 	if(hid_get_value("UPS.PowerSummary.PresentStatus.Overload") != 0 ) {
-		if(hData.Value == 1)
+		if(hValue == 1)
 			status_set("OVER");
 	}
 
 	if(hid_get_value("UPS.PowerSummary.PresentStatus.NeedReplacement") != 0 ) {
-		if(hData.Value == 1)
+		if(hValue == 1)
 			status_set("RB");
 	}
   
 	if(hid_get_value("UPS.PowerSummary.PresentStatus.Good") != 0 ) {
-		if(hData.Value == 0)
+		if(hValue == 0)
 			status_set("OFF");
 	}
 
 	/* FIXME: extend ups.status for BYPASS: */
 	/* Manual bypass */
 	if(hid_get_value("UPS.PowerConverter.Input.[4].PresentStatus.Used") != 0 ) {
-		if(hData.Value == 1)
+		if(hValue == 1)
 			status_set("BYPASS");
 	}
 	/* Automatic bypass */
 	if(hid_get_value("UPS.PowerConverter.Input.[2].PresentStatus.Used") != 0 ) {
-		if(hData.Value == 1)
+		if(hValue == 1)
 			status_set("BYPASS");
 	}
 
@@ -1056,7 +1059,6 @@ int shut_set_report(int id, u_char *pkt, int reportlen)
 int hid_init_device()
 {
 	int retcode;
-	int r;
 	
 	/* Get HID descriptor */
 	if((retcode = shut_get_descriptor(HID_DESCRIPTOR, hid_descriptor.raw_desc, 0x09)) > 0)
@@ -1113,8 +1115,9 @@ int hid_init_device()
 				upsdebug_hex(3, "shut_get_descriptor(report)", raw_buf, retcode);
 				
 				/* Parse Report Descriptor */
-				r = Parse_ReportDesc(raw_buf, retcode, &hDesc);
-				if (r) {
+				Free_ReportDesc(pDesc);
+				pDesc = Parse_ReportDesc(raw_buf, retcode);
+				if (!pDesc) {
 					fatalx("Failed to parse report descriptor: %s", strerror(errno));
 				}
 			}
@@ -1160,8 +1163,7 @@ ushort lookup_path(const char *HIDpath, HIDData *data)
 			return 0;
 		}
 		else {
-			data->Path.Node[i].UPage = (cur_usage & 0xFFFF0000) / 0x10000;
-			data->Path.Node[i].Usage = cur_usage & 0x0000FFFF; 
+			data->Path.Node[i] = cur_usage;
 			i++; 
 		}
 	
@@ -1199,6 +1201,8 @@ int hid_lookup_usage(char *name)
 int hid_get_value(const char *item_path)
 {
 	int i, retcode;
+   HIDData hData;
+   HIDData *pData;
 	
 	upsdebugx(3, "entering hid_get_value(%s)", item_path);
 	
@@ -1210,18 +1214,16 @@ int hid_get_value(const char *item_path)
 		upsdebugx(3, "Path depth = %i\n", retcode);
 		
 		for (i = 0; i<retcode; i++)
-			upsdebugx(4, "%i: UPage(%x), Usage(%x)\n", i,
-						hData.Path.Node[i].UPage,
-						hData.Path.Node[i].Usage);
+			upsdebugx(4, "%i: Usage(%08x)\n", i, hData.Path.Node[i]);
 			
 		hData.Path.Size = retcode;
     
 		/* Get info on object (reportID, offset and size) */
-		if (FindObject(&hDesc,&hData) == 1) {
+		if (FindObject(pDesc,&hData) == 1) {
 			if (shut_get_report(hData.ReportID, raw_buf, MAX_REPORT_SIZE) > 0) {
-				GetValue((const u_char *) raw_buf, &hData);
+				GetValue((const u_char *) raw_buf, &hData, &hValue);
 				upsdebug_hex(3, "Object's report", raw_buf, 10);
-				upsdebugx(3, "Value = %ld", hData.Value);
+				upsdebugx(3, "Value = %ld", hValue);
 				return 1;
 			}
 			else
@@ -1335,6 +1337,7 @@ int hid_set_value(const char *varname, const char *val)
 {
 	int retcode, i, replen;
 	mge_info_item *shut_info_p;
+   HIDData hData;
 		
 	upsdebugx(2, "============== entering hid_set_value(%s, %s) ==============", varname, val);
 	
@@ -1375,31 +1378,29 @@ int hid_set_value(const char *varname, const char *val)
 		upsdebugx(3, "Path depth = %i\n", retcode);
 		
 		for (i = 0; i<retcode; i++)
-			upsdebugx(4, "%i: UPage(%x), Usage(%x)\n", i,
-						hData.Path.Node[i].UPage,
-						hData.Path.Node[i].Usage);
+			upsdebugx(4, "%i: Usage(%08x)\n", i, hData.Path.Node[i]);
 			
 		hData.Path.Size = retcode;
     
 		/* Get info on object (reportID, offset and size) */
-		if (FindObject(&hDesc,&hData) == 1) {
+		if (FindObject(pDesc,&hData) == 1) {
 			replen = shut_get_report(hData.ReportID, raw_buf, MAX_REPORT_SIZE);
 			
-			GetValue((const u_char *) raw_buf, &hData);
+			GetValue((const u_char *) raw_buf, &hData, &hValue);
 			
 			/* Test if Item is settable */
 			if (hData.Attribute != ATTR_DATA_CST) {
 				/* Set new value for this item */
-				hData.Value = atol(val);
-				SetValue(&hData, raw_buf);
+				hValue = atol(val);
+				SetValue(&hData, raw_buf, hValue);
 				shut_set_report(hData.ReportID, raw_buf, replen);
 				
 				/* check if set succeed ! => disabled for now
 				if (shut_get_report(hData.ReportID, raw_buf, MAX_REPORT_SIZE) > 0) {
-					GetValue((const u_char *) raw_buf, &hData);
-					upsdebugx(3, "Value = %d", hData.Value);
+					GetValue((const u_char *) raw_buf, &hData, &hValue);
+					upsdebugx(3, "Value = %d", hValue);
 				
-					if (hData.Value != atol(val))
+					if (hValue != atol(val))
 						upsdebugx(3, "FAILED");
 					else
 						upsdebugx(3, "SUCCEED");

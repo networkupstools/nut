@@ -198,11 +198,6 @@ extern communication_subdriver_t *comm_driver;
 HIDDevice *HIDOpenDevice(hid_dev_handle **udevp, HIDDevice *hd, HIDDeviceMatcher_t *matcher, int mode);
 
 /*
- * HIDGetItem
- * -------------------------------------------------------------------------- */
-HIDItem *HIDGetItem(const char *ItemPath);
-
-/*
  * HIDGetItemValue
  * -------------------------------------------------------------------------- */
 int HIDGetItemValue(hid_dev_handle *udev, char *path, float *Value, usage_tables_t *utab);
@@ -230,7 +225,6 @@ void HIDCloseDevice(hid_dev_handle *udev);
 /*
  * Support functions
  * -------------------------------------------------------------------------- */
-int get_current_data_attribute();
 void HIDDumpTree(hid_dev_handle *udev, usage_tables_t *utab);
 
 #endif /* _LIBHID_H */

@@ -73,13 +73,9 @@ extern "C" {
 /* 
  * HIDNode struct
  *
- * Describe a HID Path point 
+ * Describe a HID Path point: Usage = bits 0..15, UPage = bits 16..31
  * -------------------------------------------------------------------------- */
-typedef struct
-{
-	u_short UPage;
-	u_short Usage;
-} HIDNode;
+typedef unsigned int HIDNode;
 
 /* 
  * HIDPath struct
@@ -99,7 +95,6 @@ typedef struct
  * -------------------------------------------------------------------------- */
 typedef struct
 {
-	long    Value;		/* HID Object Value						*/
 	HIDPath Path;		/* HID Path								*/
 
 	u_char   ReportID;	/* Report ID								*/
@@ -127,8 +122,9 @@ typedef struct
  * -------------------------------------------------------------------------- */
 typedef struct
 {
-	int len;        /* number of items in descriptor */
-	HIDData *item;  /* list of items */
+	int nitems;      /* number of items in descriptor */
+	HIDData *item;   /* list of items */
+	int replen[256]; /* list of report lengths, in byte */
 } HIDDesc;
 
 #ifdef __cplusplus
