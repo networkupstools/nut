@@ -1,3 +1,10 @@
+Sun Sep 24 01:49:40 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - path-to-subdriver.sh: added reminder to "make depend"
+ - newhidups subdrivers: added #include "main.h" to keep compiler quiet.
+ - libusb.c: made all private functions static
+ - tripplite_usb.c: use new comm_driver interface to libhid.c
+
 Sat Sep 23 18:23:25 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups: added a shell script scripts/subdriver/path-to-subdriver.sh
