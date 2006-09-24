@@ -88,7 +88,7 @@ static inline int typesafe_control_msg(usb_dev_handle *dev,
     buffer. There's no way to know the size ahead of time. Matcher is
     a linked list of matchers (see libhid.h), and the opened device
     must match all of them. */
-int libusb_open(usb_dev_handle **udevp, HIDDevice *curDevice, HIDDeviceMatcher_t *matcher, unsigned char *ReportDesc, int mode)
+static int libusb_open(usb_dev_handle **udevp, HIDDevice *curDevice, HIDDeviceMatcher_t *matcher, unsigned char *ReportDesc, int mode)
 {
 	int found = 0;
 #if LIBUSB_HAS_DETACH_KRNL_DRV
@@ -321,7 +321,7 @@ int libusb_open(usb_dev_handle **udevp, HIDDevice *curDevice, HIDDeviceMatcher_t
  * return -1 on failure, report length on success
  */
 
-int libusb_get_report(usb_dev_handle *udev, int ReportId, unsigned char *raw_buf, int ReportSize )
+static int libusb_get_report(usb_dev_handle *udev, int ReportId, unsigned char *raw_buf, int ReportSize )
 {
 	upsdebugx(4, "Entering libusb_get_report");
 
@@ -338,7 +338,7 @@ int libusb_get_report(usb_dev_handle *udev, int ReportId, unsigned char *raw_buf
 }
 
 
-int libusb_set_report(usb_dev_handle *udev, int ReportId, unsigned char *raw_buf, int ReportSize )
+static int libusb_set_report(usb_dev_handle *udev, int ReportId, unsigned char *raw_buf, int ReportSize )
 {
 	if (udev != NULL)
 	{
@@ -352,7 +352,7 @@ int libusb_set_report(usb_dev_handle *udev, int ReportId, unsigned char *raw_buf
 		return 0;
 }
 
-int libusb_get_string(usb_dev_handle *udev, int StringIdx, char *string)
+static int libusb_get_string(usb_dev_handle *udev, int StringIdx, char *string)
 {
   int ret = -1;	
 
@@ -370,7 +370,7 @@ int libusb_get_string(usb_dev_handle *udev, int StringIdx, char *string)
   return ret;
 }
 
-int libusb_get_interrupt(usb_dev_handle *udev, unsigned char *buf, int bufsize, int timeout)
+static int libusb_get_interrupt(usb_dev_handle *udev, unsigned char *buf, int bufsize, int timeout)
 {
 	int ret = -1;
 
@@ -392,7 +392,7 @@ int libusb_get_interrupt(usb_dev_handle *udev, unsigned char *buf, int bufsize, 
 	return ret;
 }
 
-void libusb_close(usb_dev_handle *udev)
+static void libusb_close(usb_dev_handle *udev)
 {
 	if (udev != NULL)
 	{

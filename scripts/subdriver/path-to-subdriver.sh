@@ -259,4 +259,5 @@ Do not forget to:
 * add &${LDRIVER}_subdriver to newhidups.c:subdriver_list,
 * add ${LDRIVER}-hid.o to NEWHIDUPS_SUBDRIVERS in drivers/Makefile
   and drivers/Makefile.in
+* "make depend" in drivers/
 EOF

@@ -26,6 +26,7 @@
 #include "mge-hid.h"
 #include "extstate.h" /* for ST_FLAG_STRING */
 #include "dstate.h"   /* for STAT_INSTCMD_HANDLED */
+#include "main.h"     /* for getval() */
 #include "common.h"
 
 #define MGE_HID_VERSION	"MGE HID 1.0"

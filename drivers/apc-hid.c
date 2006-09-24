@@ -28,6 +28,7 @@
 #include "apc-hid.h"
 #include "extstate.h" /* for ST_FLAG_STRING */
 #include "dstate.h"   /* for STAT_INSTCMD_HANDLED */
+#include "main.h"     /* for getval() */
 #include "common.h"
 
 #define APC_HID_VERSION "APC/CyberPower HID 0.9"
