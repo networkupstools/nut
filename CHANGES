@@ -1,3 +1,7 @@
+Tue Sep 26 21:22:27 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - driver.list: added Tripp-Lite OMNI650LCD and OMNI900LCD
+
 Sun Sep 24 03:38:25 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - merged report buffer branch into trunk. See log message for 
