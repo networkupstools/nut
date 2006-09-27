@@ -9,6 +9,55 @@
 # 
 # See also: docs/hid-subdrivers.txt
 
+usage() {
+    echo "Usage: $0 [options] [file]"
+    echo "Options:"
+    echo " -h, --help           -- show this message and quit"
+    echo " -n name              -- driver name (use natural capitalization)"
+    echo " -v XXXX              -- vendor id"
+    echo " -p XXXX              -- product id"
+    echo " -k                   -- keep temporary files (for debugging)"
+    echo " file                 -- read from file instead of stdin"
+}
+
+DRIVER=""
+VENDORID=""
+PRODUCTID=""
+KEEP=""
+
+while [ $# -gt 0 ]; do
+    if [ $# -gt 1 -a "$1" = "-n" ]; then
+        DRIVER="$2"
+        shift 2
+    elif [ $# -gt 1 -a "$1" = "-v" ]; then
+        VENDORID="$2"
+        shift 2
+    elif [ $# -gt 1 -a "$1" = "-p" ]; then
+        PRODUCTID="$2"
+        shift 2
+    elif [ "$1" = "-k" ]; then
+        KEEP=yes
+        shift
+    elif echo "$1" | grep -qv '^-'; then
+	FILE="$1"
+	shift
+    elif [ "$1" = "--help" -o "$1" = "-h" ]; then
+        usage
+        exit 0
+    else
+        echo "Illegal option $1. Try --help for more info." >&2
+        exit 1
+    fi
+done
+
+# delete temporary files: this is called just before exiting.
+cleanup () {
+    rm -f "$DEBUG" "$UTABLE" "$USAGES" "$SUBST" "$SEDFILE" "$NEWUTABLE"
+}
+if [ -z "$KEEP" ]; then
+    trap cleanup EXIT
+fi
+
 NAME=path-to-subdriver
 TMPDIR="${TEMPDIR:-/tmp}"
 DEBUG=`mktemp "$TMPDIR/$NAME-DEBUG.XXXXXX"`
@@ -19,7 +68,10 @@ SEDFILE=`mktemp "$TMPDIR/$NAME-SEDFILE.XXXXXX"`
 NEWUTABLE=`mktemp "$TMPDIR/$NAME-NEWUTABLE.XXXXXX"`
 
 # save standard input to a file
-cat > "$DEBUG"
+if [ -z "$FILE" ]; then
+    FILE="$DEBUG"
+    cat > "$DEBUG"
+fi
 
 # prompt use for name of driver
 while [ -z "$DRIVER" ]; do
@@ -34,8 +86,8 @@ natural (upper- and lowercase) capitalization, e.g., 'Belkin', 'APC'."
 done
 
 # try to determine product and vendor id
-VENDORID=`cat "$DEBUG" | sed -n 's/[> ]*- VendorID: \([0-9a-fA-F]*\).*/\1/p' | tail -1`
-PRODUCTID=`cat "$DEBUG" | sed -n 's/[> ]*- ProductID: \([0-9a-fA-F]*\).*/\1/p' | tail -1`
+VENDORID=`cat "$FILE" | sed -n 's/[> ]*- VendorID: \([0-9a-fA-F]*\).*/\1/p' | tail -1`
+PRODUCTID=`cat "$FILE" | sed -n 's/[> ]*- ProductID: \([0-9a-fA-F]*\).*/\1/p' | tail -1`
 
 # prompt for productid, vendorid if necessary
 if [ -z "$VENDORID" ]; then
@@ -51,7 +103,7 @@ CFILE="$LDRIVER-hid.c"
 HFILE="$LDRIVER-hid.h"
 
 # extract Usage Table
-cat "$DEBUG" | sed -n 's/[> ]*Path: \([^,][^,]*\), Type:.*/\1/p' > "$UTABLE"
+cat "$FILE" | sed -n 's/[> ]*Path: \([^,][^,]*\), Type:.*/\1/p' > "$UTABLE"
 
 # extract Usage codes
 cat "$UTABLE" | tr '.' $'\n' | sort -u > "$USAGES"
@@ -261,3 +313,5 @@ Do not forget to:
   and drivers/Makefile.in
 * "make depend" in drivers/
 EOF
+
+

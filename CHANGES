@@ -1,3 +1,7 @@
+Wed Sep 27 23:50:15 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - path-to-subdriver.sh: added command line options
+
 Wed Sep 27 00:36:09 EDT 2006 / Charles Lepple <clepple@gmail.com>
 
  - tripplite_usb: Updated SMARTPRO support based on Jeff Knerr's feedback.
