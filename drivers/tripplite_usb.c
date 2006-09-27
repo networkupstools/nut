@@ -909,7 +909,8 @@ void upsdrv_updateinfo(void)
 				dstate_setinfo("battery.test.status", "Overcurrent?");
 				break;
 			case '4':
-				dstate_setinfo("battery.test.status", "Battery state unknown");
+				/* The following message is confusing, and may not be accurate: */
+				/* dstate_setinfo("battery.test.status", "Battery state unknown"); */
 				break;
 			case '5':
 				status_set("OVER");
@@ -922,7 +923,7 @@ void upsdrv_updateinfo(void)
 		}
 
 		/* Online/on battery: */
-		if(s_value[4] & 4) {
+		if(s_value[4] & 1) {
 			status_set("OB");
 		} else {
 			status_set("OL");
@@ -1014,8 +1015,17 @@ void upsdrv_updateinfo(void)
 		freq = hex2d(t_value + 3, 3);
 		dstate_setinfo("input.frequency", "%.1f", freq / 10.0);
 
+		switch(t_value[6]) {
+			case '1':
+				dstate_setinfo("input.frequency.nominal", "%d", 60);
+				break;
+			case '0':
+				dstate_setinfo("input.frequency.nominal", "%d", 50);
+				break;
+                }
+
 		/* I'm guessing this is a calibration constant of some sort. */
-		dstate_setinfo("ups.temperature", "%.1f", hex2d(t_value+5, 2) * 0.3636 - 21);
+		dstate_setinfo("ups.temperature", "%.1f", (unsigned)(hex2d(t_value+1, 2)) * 0.3636 - 21);
 	}
 
 	ret = send_cmd(l_msg, sizeof(l_msg), l_value, sizeof(l_value));
