@@ -1,6 +1,6 @@
 Wed Sep 27 00:36:09 EDT 2006 / Charles Lepple <clepple@gmail.com>
 
- - tripplite_usb: Updated SMARTPRO support based on Jeff Kerr's feedback.
+ - tripplite_usb: Updated SMARTPRO support based on Jeff Knerr's feedback.
    This should fix the OL/OB issue, and maybe even the temperature reading.
 
 Tue Sep 26 21:22:27 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
