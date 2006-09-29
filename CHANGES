@@ -1,3 +1,13 @@
+Fri Sep 29 17:17:50 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - drivers/rhino.c: fixed array bounds error, cleanup (made global
+   variables static, removed unused variables, removed header file).
+
+Sat Sep 23 01:39:22 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups.c: fixed array size in upsdrv_initups (potential stack
+   corruption). Thanks to Herve Masson for reporting this bug.
+
 2.0.4
 
 Thu Jul 27 08:35:22 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>

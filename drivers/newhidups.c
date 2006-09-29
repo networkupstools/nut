@@ -578,7 +578,7 @@ void upsdrv_initinfo(void)
 
 void upsdrv_initups(void)
 {
-	char *regex_array[5];
+	char *regex_array[6];
 	int r;
 	int i;
 

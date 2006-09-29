@@ -35,9 +35,96 @@
 #include <sys/ioctl.h>
 #include "main.h"
 #include "serial.h"
-#include "rhino.h"
 
 #define UPSDELAY 500 /* 0.5 ms delay */
+
+typedef int bool;
+
+#define false 0
+#define true 1
+
+/* rhino commands */
+#define CMD_INON    0x0001
+#define CMD_INOFF   0x0002
+#define CMD_SHUT    0x0004
+#define CMD_OUTON   0x0003
+#define CMD_OUTOFF  0x0004
+#define CMD_PASSON  0x0005
+#define CMD_PASSOFF 0x0006
+#define CMD_UPSCONT 0x0053
+
+/* xoff - xon protocol
+#define _SOH = 0x01; // start of header
+#define _EOT = 0x04; // end of transmission
+#define _ACK = 0x06; // acknoledge (positive)
+#define _DLE = 0x10; // data link escape
+#define _XOn = 0x11; // transmit on
+#define _XOff = 0x13; // transmit off
+#define _NAK = 0x15; // negative acknoledge
+#define _SYN = 0x16; // synchronous idle
+#define _CAN = 0x18; // cancel
+*/
+
+static int const pacsize = 37; /* size of receive data package */
+
+/* autonomy calcule */
+static double  const AmpH = 40;       // Amperes-hora da bateria
+static double  const VbatMin = 126;   // Tensão mínina das baterias
+static double  const VbatNom = 144;   // Tensão nominal das baterias
+static double  const FM = 0.32;       // Fator multiplicativo de correção da autonomia
+static double  const FA = -2;         // Fator aditivo de correção da autonomia
+static double  const ConstInt = 250;  // Consumo interno sem o carregador
+static double  const Vin = 220;       // Tensão de entrada
+
+static int Day, Month, Year;
+static int dian=0, mesn=0, anon=0, weekn=0;
+static int ihour,imin, isec;
+/* unsigned char DaysOnWeek; */
+/* char seman[4]; */
+
+/* int FExpansaoBateria; */
+// internal variables
+// package handshake ariables
+/* int ContadorEstouro; */
+static bool detected;
+static bool SourceFail, Out110, RedeAnterior, OcorrenciaDeFalha;
+static bool RetornoDaRede, SuperAquecimento, SuperAquecimentoAnterior;
+static bool OverCharge, OldOverCharge, CriticBatt, OldCritBatt;
+static bool Flag_inversor, BypassOn, InputOn, OutputOn;
+static bool LowBatt, oldInversorOn;
+/* data vetor from received and configuration data package - not used yet
+unsigned char Dados[ 161 ]; */
+/* identification group */
+static int RhinoModel; /*, imodel; */
+static int PotenciaNominal, PowerFactor;
+/* input group */
+static double AppPowerIn, UtilPowerIn, InFreq, InCurrent;
+static double LimInfEntrada, LimSupEntrada, ValorNominalEntrada;
+static int FatorPotEntrada;
+/* output group */
+static double OutVoltage, InVoltage, OutCurrent, AppPowerOut;
+static double UtilPowerOut, OutFreq, LimInfSaida, LimSupSaida, ValorNominalSaida;
+static int FatorPotSaida;
+/* battery group */
+static int Autonomy, Waiting;
+static double BattVoltage, Temperature, LimInfBattSrc, LimSupBattSrc;
+static double LimInfBattInv, LimSupBattInv, BattNonValue;
+/* general group */
+static int BoostVolt, Rendimento;
+/* status group */
+static unsigned char StatusEntrada, StatusSaida, StatusBateria;
+/* events group */
+static unsigned char EventosRede, EventosSaida, EventosBateria;
+// Grupo de Programação
+
+/* Methods */
+static void ScanReceivePack();
+static int AutonomyCalc( int );
+static void CommReceive(const unsigned char*, int );
+static void getbaseinfo();
+static void getupdateinfo();
+  
+static unsigned char RecPack[37];
 
 /* remove below comment for portuguese language */
 /* #define PORTUGUESE  */
@@ -59,8 +146,6 @@
 #define NO_EVENT   "No events\n"
 #define UPS_TIME   "UPS internal Time %0d:%02d:%02d\n"
 #endif
-
-int rhino_cmd = 0;
 
 static int
 AutonomyCalc( int ia ) /* all models */
@@ -294,7 +379,7 @@ ScanReceivePack( void )
 }
 
 static void
-CommReceive(const char *bufptr,  int size)
+CommReceive(const unsigned char *bufptr,  int size)
 {
 
   int i, i_end, CheckSum, chk;
@@ -454,6 +539,8 @@ static void getbaseinfo(void)
 	int  tam, i, j=0;
 	time_t *tmt;
 	struct tm *now;
+	char *Model;
+
 	tmt  = ( time_t * ) malloc( sizeof( time_t ) );
 	time( tmt );
 	now = localtime( tmt );
@@ -494,26 +581,32 @@ static void getbaseinfo(void)
 	  {
 	  case 0xC0:
 	    {
-	      strcpy(Model, "Rhino 20.0 kVA");
+	      Model =  "Rhino 20.0 kVA";
 	      PotenciaNominal = 20000;
 	      break;
 	    }
 	  case 0xC1:
 	    {
-	      strcpy(Model, "Rhino 10.0 kVA");
+	      Model = "Rhino 10.0 kVA";
 	      PotenciaNominal = 10000;
 	      break;
 	    }
 	  case 0xC2:
 	    {
-	      strcpy(Model, "Rhino 6.0 kVA");
+	      Model = "Rhino 6.0 kVA";
 	      PotenciaNominal = 6000;
 	      break;
 	    }
 	  case 0xC3:
 	    {
-	     strcpy(Model, "Rhino 7.5 kVA");
+	      Model = "Rhino 7.5 kVA";
 	      PotenciaNominal = 7500;
+	      break;
+	    }
+	  default:
+	    {
+	      Model = "Rhino unknown model";
+	      PotenciaNominal = 0;
 	      break;
 	    }
 	  }
@@ -542,7 +635,7 @@ static void getbaseinfo(void)
 static void getupdateinfo(void)
 {
 	unsigned char  temp[256];
-	int tam, ret = 0;
+	int tam;
 
         int hours, mins;
  
