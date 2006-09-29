@@ -1,3 +1,8 @@
+Fri Sep 29 17:17:50 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - drivers/rhino.c: fixed array bounds error, cleanup (made global
+   variables static, removed unused variables, removed header file).
+
 Wed Sep 27 23:50:15 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - path-to-subdriver.sh: added command line options
