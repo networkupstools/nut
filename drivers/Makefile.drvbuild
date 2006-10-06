@@ -76,8 +76,6 @@ nitram: nitram.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o 
 	$(CC) $(CFLAGS) $(LDFLAGS) -o nitram nitram.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBOBJ) 
 optiups: optiups.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBDEP)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o optiups optiups.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBOBJ) 
-rhino: rhino.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBDEP)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o rhino rhino.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBOBJ) -lm
 al175.o: al175.c main.h ../include/common.h ../include/attribute.h \
   ../include/config.h ../include/proto.h ../include/version.h \
   ../include/upsconf.h dstate.h ../include/attribute.h \
@@ -86,8 +84,8 @@ al175.o: al175.c main.h ../include/common.h ../include/attribute.h \
 apc-hid.o: apc-hid.c newhidups.h ../include/config.h libhid.h hidtypes.h \
   ../include/timehead.h apc-hid.h ../include/extstate.h dstate.h \
   ../include/attribute.h ../include/parseconf.h ../include/upshandler.h \
-  ../include/common.h ../include/attribute.h ../include/config.h \
-  ../include/proto.h ../include/version.h
+  main.h ../include/common.h ../include/attribute.h ../include/config.h \
+  ../include/proto.h ../include/version.h ../include/upsconf.h
 apcsmart.o: apcsmart.c main.h ../include/common.h ../include/attribute.h \
   ../include/config.h ../include/proto.h ../include/version.h \
   ../include/upsconf.h dstate.h ../include/attribute.h \
@@ -118,8 +116,9 @@ belkin.o: belkin.c main.h ../include/common.h ../include/attribute.h \
 belkin-hid.o: belkin-hid.c newhidups.h ../include/config.h libhid.h \
   hidtypes.h ../include/timehead.h belkin-hid.h ../include/extstate.h \
   dstate.h ../include/attribute.h ../include/parseconf.h \
-  ../include/upshandler.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/version.h
+  ../include/upshandler.h main.h ../include/common.h \
+  ../include/attribute.h ../include/config.h ../include/proto.h \
+  ../include/version.h ../include/upsconf.h
 belkinunv.o: belkinunv.c main.h ../include/common.h \
   ../include/attribute.h ../include/config.h ../include/proto.h \
   ../include/version.h ../include/upsconf.h dstate.h \
@@ -224,7 +223,8 @@ isbmex.o: isbmex.c main.h ../include/common.h ../include/attribute.h \
   ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
   serial.h ../include/config.h isbmex.h
 libhid.o: libhid.c hidparser.h hidtypes.h libhid.h ../include/config.h \
-  ../include/timehead.h libusb.h
+  ../include/timehead.h ../include/common.h ../include/attribute.h \
+  ../include/config.h ../include/proto.h ../include/version.h libusb.h
 libshut.o: libshut.c serial.h ../include/attribute.h ../include/config.h \
   libshut.h libhid.h hidtypes.h ../include/timehead.h ../include/common.h \
   ../include/attribute.h ../include/config.h ../include/proto.h \
@@ -260,8 +260,8 @@ metasys.o: metasys.c main.h ../include/common.h ../include/attribute.h \
 mge-hid.o: mge-hid.c newhidups.h ../include/config.h libhid.h hidtypes.h \
   ../include/timehead.h mge-hid.h ../include/extstate.h dstate.h \
   ../include/attribute.h ../include/parseconf.h ../include/upshandler.h \
-  ../include/common.h ../include/attribute.h ../include/config.h \
-  ../include/proto.h ../include/version.h
+  main.h ../include/common.h ../include/attribute.h ../include/config.h \
+  ../include/proto.h ../include/version.h ../include/upsconf.h
 mge-shut.o: mge-shut.c ../include/config.h main.h ../include/common.h \
   ../include/attribute.h ../include/config.h ../include/proto.h \
   ../include/version.h ../include/upsconf.h dstate.h \
@@ -313,7 +313,7 @@ rhino.o: rhino.c main.h ../include/common.h ../include/attribute.h \
   ../include/config.h ../include/proto.h ../include/version.h \
   ../include/upsconf.h dstate.h ../include/attribute.h \
   ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
-  serial.h ../include/config.h rhino.h
+  serial.h ../include/config.h
 safenet.o: safenet.c main.h ../include/common.h ../include/attribute.h \
   ../include/config.h ../include/proto.h ../include/version.h \
   ../include/upsconf.h dstate.h ../include/attribute.h \
