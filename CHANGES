@@ -1,3 +1,9 @@
+Tue Oct 10 01:29:22 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - mge-shut: made report buffer mechanism compatible with newmge-shut,
+   cleaned up an unused variable from mge-shut.
+ - updated dependencies for rhino
+
 Fri Sep 29 17:17:50 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - drivers/rhino.c: fixed array bounds error, cleanup (made global

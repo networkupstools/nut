@@ -119,7 +119,7 @@ void free_report_buffer(reportbuf_t *rbuf) {
    seconds, then the report is freshly read from the USB
    device. Otherwise, it is unchanged. Return 0 on success, -1 on
    error with errno set. */
-int refresh_report_buffer(reportbuf_t *rbuf, int id, int age, HIDDesc *pDesc, usb_dev_handle *udev) {
+int refresh_report_buffer(reportbuf_t *rbuf, int id, int age, HIDDesc *pDesc, hid_dev_handle *udev) {
 	int len = pDesc->replen[id]; /* length of report */
 	unsigned char *data;
 	int r;
@@ -151,7 +151,7 @@ int refresh_report_buffer(reportbuf_t *rbuf, int id, int age, HIDDesc *pDesc, us
 
 /* send the report with the given id to the HID device. Return 0 on
  * success, or -1 on failure with errno set. */
-int set_report_from_buffer(reportbuf_t *rbuf, int id, usb_dev_handle *udev) {
+int set_report_from_buffer(reportbuf_t *rbuf, int id, hid_dev_handle *udev) {
 	int r;
 
 	r = comm_driver->set_report(udev, id, rbuf->data[id], rbuf->len[id]);
@@ -196,7 +196,7 @@ int file_report_buffer(reportbuf_t *rbuf, u_char *report, int len) {
    conversion is performed. If age>0, the read operation is buffered
    if the item's age is less than "age". On success, return 0 and
    store the answer in *value. On failure, return -1 and set errno. */
-int get_item_buffered(reportbuf_t *rbuf, HIDData *pData, int age, HIDDesc *pDesc, usb_dev_handle *udev, long *Value) {
+int get_item_buffered(reportbuf_t *rbuf, HIDData *pData, int age, HIDDesc *pDesc, hid_dev_handle *udev, long *Value) {
 	int r;
 	int id;
 
@@ -214,7 +214,7 @@ int get_item_buffered(reportbuf_t *rbuf, HIDData *pData, int age, HIDDesc *pDesc
    conversion is performed. On success, return 0, and failure, return
    -1 and set errno. The updated value is sent to the device, and also
    stored in the local buffer. */
-int set_item_buffered(reportbuf_t *rbuf, HIDData *pData, HIDDesc *pDesc, usb_dev_handle *udev, long Value) {
+int set_item_buffered(reportbuf_t *rbuf, HIDData *pData, HIDDesc *pDesc, hid_dev_handle *udev, long Value) {
 	int id, r;
 
 	id = pData->ReportID;
@@ -626,7 +626,7 @@ HIDDevice *HIDOpenDevice(hid_dev_handle **udevp, HIDDevice *hd, HIDDeviceMatcher
    associated with the given path in *Value (i.e., don't do any
    logical->physical conversion. Also returns pointer to the
    corresponding HIDData item in *ppData, if ppData!=NULL. */
-static int HIDGetItemLogical(usb_dev_handle *udev, char *path, usage_tables_t *utab, long *Value, HIDData **ppData)
+static int HIDGetItemLogical(hid_dev_handle *udev, char *path, usage_tables_t *utab, long *Value, HIDData **ppData)
 {
 	int i, r;
 	long hValue;
@@ -666,7 +666,7 @@ static int HIDGetItemLogical(usb_dev_handle *udev, char *path, usage_tables_t *u
 /* return 1 if OK, 0 on fail, -errno otherwise (ie disconnect). TODO:
    return value should be checked. Return the physical value
    associated with the given path. */
-int HIDGetItemValue(usb_dev_handle *udev, char *path, float *Value, usage_tables_t *utab)
+int HIDGetItemValue(hid_dev_handle *udev, char *path, float *Value, usage_tables_t *utab)
 {
 	int r;
 	float physical;
@@ -697,7 +697,7 @@ int HIDGetItemValue(usb_dev_handle *udev, char *path, float *Value, usage_tables
 
 /* rawbuf must point to a large enough buffer to hold the resulting
  * string. Return pointer to rawbuf on success, NULL on failure. */
-char *HIDGetItemString(usb_dev_handle *udev, char *path, unsigned char *rawbuf, usage_tables_t *utab)
+char *HIDGetItemString(hid_dev_handle *udev, char *path, unsigned char *rawbuf, usage_tables_t *utab)
 {
 	int r;
 	long hValue;  
@@ -714,7 +714,7 @@ char *HIDGetItemString(usb_dev_handle *udev, char *path, unsigned char *rawbuf, 
 
 /* set the given physical value for the variable associated with
  * path. Return TRUE on success, FALSE on failure. */ 
-bool HIDSetItemValue(usb_dev_handle *udev, char *path, float value, usage_tables_t *utab)
+bool HIDSetItemValue(hid_dev_handle *udev, char *path, float value, usage_tables_t *utab)
 {
 	float Value;
 	int r;

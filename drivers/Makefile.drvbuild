@@ -76,6 +76,8 @@ nitram: nitram.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o 
 	$(CC) $(CFLAGS) $(LDFLAGS) -o nitram nitram.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBOBJ) 
 optiups: optiups.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBDEP)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o optiups optiups.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBOBJ) 
+rhino: rhino.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBDEP)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o rhino rhino.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBOBJ) -lm
 al175.o: al175.c main.h ../include/common.h ../include/attribute.h \
   ../include/config.h ../include/proto.h ../include/version.h \
   ../include/upsconf.h dstate.h ../include/attribute.h \

@@ -563,6 +563,7 @@ void upsdrv_updateinfo(void)
 				upsdebugx(3, "Object: %s = %ld", 
 						  eventsList[evtCount-1]->Path,
 						  eventsList[evtCount-1]->Value);
+#ifndef SHUT_MODE
 				/* special case: fix a horrible Belkin
 				 bug.  My Belkin UPS actually sends an
 				 incorrect report over the interrupt
@@ -573,6 +574,7 @@ void upsdrv_updateinfo(void)
 					evtCount--;
 					continue;
 				}
+#endif
 				
 				if ((item = find_hid_info(eventsList[evtCount-1]->Path)) != NULL)
 				  {

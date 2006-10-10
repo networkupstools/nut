@@ -1202,7 +1202,6 @@ int hid_get_value(const char *item_path)
 {
 	int i, retcode;
    HIDData hData;
-   HIDData *pData;
 	
 	upsdebugx(3, "entering hid_get_value(%s)", item_path);
 	
