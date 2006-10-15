@@ -256,4 +256,4 @@ Changes from 1.0.0 to 1.2.0:
  - Makefile targets have been reworked to allow fine-grained control
    over what happens at install-time.  'make install' and 'make
    install-cgi' still do everything, but you can call subsets instead
-   if necessary.  See CHANGES.
+   if necessary.  See ChangeLog.

@@ -250,7 +250,7 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root)
-%doc CHANGES COPYING CREDITS INSTALL MAINTAINERS NEWS README UPGRADING docs
+%doc ChangeLog COPYING AUTHORS INSTALL MAINTAINERS NEWS README UPGRADING docs
 %dir %attr(755,root,root) %{CONFPATH}
 %config %attr(744,root,root) %{_initrddir}/upsmon
 %config(noreplace) %attr(640,root,ups) %{CONFPATH}/upssched.conf

@@ -191,7 +191,7 @@ Release notes for NUT 2.0.1 - what's new since 2.0.0:
  - The tripplite driver has recieved a major overhaul to bring it up to 
    working condition for the 2.0 tree, including code cleanups, several
    new variables, commands, and user-definable parameters.  See
-   CHANGES for more.
+   ChangeLog for more.
 
    [Nicholas J Kain]
 
@@ -230,7 +230,7 @@ Release notes for NUT 2.0.1 - what's new since 2.0.0:
  - The mge-shut and newhidups drivers, along with the supporting
    hidparser/libhid code have received many updates, including lowering
    USB bandwidth consumption, driver unbinding (only in Linux), code
-   cleanups, and more which can be seen in the CHANGES file.
+   cleanups, and more which can be seen in the ChangeLog file.
 
    [Arnaud Quette]
 
@@ -634,7 +634,7 @@ Release notes for NUT 1.2.2 - what's new since 1.2.1:
  - The hidups driver now supports physical port IDs.  This avoids most
    of the problems where the hiddev* names can jump around too easily.
    It will now stay in the same place as long as you keep it plugged
-   into the same physical port.  See the CHANGES file for more details.
+   into the same physical port.  See the ChangeLog file for more details.
    [David Brownell]
 
  - The hidups driver now also supports the MFR variable on APC
