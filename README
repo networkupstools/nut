@@ -561,10 +561,10 @@ The CGI programs are clients that run through your web server.  They
 allow you to see UPS status and perform certain administrative commands
 from any web browser.  Javascript and cookies are not required.
 
-These programs are not installed or compiled by default.  To compile them,
-first run 'configure --with-cgi', then do 'make cgi'.  To install,
-'make install-cgi'.  If you receive errors about "gd" during configure,
-go get it and install it before continuing.
+These programs are not installed or compiled by default.  To compile
+and install them, first run 'configure --with-cgi', then do 'make' and
+'make install'.  If you receive errors about "gd" during configure, go
+get it and install it before continuing.
 
 You can get the source here:
 
@@ -661,8 +661,10 @@ examples of how to retrieve data using the upsclient functions.  Other
 programs not included in this package may also use this library, as wmnut.
 
 This library file and the associated header files are not installed by
-default.  You must 'make install-lib' before building other programs
-which depend on them.
+default.  You must './configure --with-lib' to enable building and
+installing these files. The libraries can then be build and installed
+with 'make' and 'make install' as usual. This must be done before
+building other (non-NUT) programs which depend on them.
 
 To obtain the right compilation and link flags, two helpers are provided:
 one for platform providing pkg-config, and the other (libupsclient-config)

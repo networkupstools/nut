@@ -53,12 +53,6 @@ endif
 # always build upsdrvctl
 driverexec_PROGRAMS += upsdrvctl
 
-# some additional build targets
-build-usb: $(USB_DRIVERLIST)
-build-snmp: $(SNMP_DRIVERLIST)
-build-serial: $(SERIAL_DRIVERLIST)
-build-all: $(USB_DRIVERLIST) $(SNMP_DRIVERLIST) $(SERIAL_DRIVERLIST) upsdrvctl
-
 # ==========================================================================
 # Driver build details
 

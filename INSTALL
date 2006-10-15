@@ -50,10 +50,14 @@ MANPATH, or just do this:
 
 
  1. Configure the source tree for your system.  Add the --with-user
-    switch to set the user name that you created above.  If you need
-    any other switches for configure, add them here.
+    switch to set the user name that you created above.
 
 	./configure --with-user=nut
+
+    If you need any other switches for configure, add them here.
+    For example, to build USB drivers, add --with-usb. To build
+    CGI scripts, add --with-cgi. See docs/configure.txt or
+    "./configure --help" for the available options. 
 
     If you alter paths with additional switches, be sure to use those
     new paths while reading the rest of the steps.    
@@ -66,13 +70,9 @@ MANPATH, or just do this:
 
 	make
 
-    Optionaly, you can also build the USB drivers using:
-
-	make usb
-
-    The same goes for the SNMP driver (snmp-ups) using:
-
-	make snmp
+    This will build the NUT client and server programs and the
+    selected drivers. It will also build any other features that were
+    selected during configuration in step 1. above. 
 
 ---------------------------------------------------------------------------
 
@@ -87,14 +87,14 @@ MANPATH, or just do this:
 
 	make install
 
-    If you would like sample versions of the configuration files to
-    be installed, use the install-conf target:
+    This will install the compiled programs and man pages, as well as
+    some data files required by NUT. Any optional features selected
+    during configuration will also be installed.
 
-	make install-conf
-
-    Sample files are installed with names like ups.conf.sample so they
-    will not overwrite any existing real config files you may have 
-    created.
+    This will also install sample versions of the NUT configuration
+    files. Sample files are installed with names like ups.conf.sample
+    so they will not overwrite any existing real config files you may
+    have created.
 
     If you are packaging this software, then you will probably want to
     use the DESTDIR variable to redirect the build into another place,
@@ -102,14 +102,6 @@ MANPATH, or just do this:
 
 	make DESTDIR=/tmp/package install
 	make DESTDIR=/tmp/package install-conf
-
-    To install USB drivers, use:
-
-	make install-usb
-
-    To install SNMP driver, use:
-
-	make install-snmp
 
 ---------------------------------------------------------------------------
 
@@ -134,10 +126,23 @@ MANPATH, or just do this:
 	chmod 0600 /dev/ttyS1
 	chown nut:nut /dev/ttyS1
 
-    NOTE: if you are using something like devfs, hotplug or udev, make sure
-    these permissions stay set across a reboot.  If they revert to the old
-    values, your drivers may fail to start. Sample scripts and information
-    are provided in the scripts/hotplug and scripts/hotplug-ng directories.
+    The setup for USB ports is slightly more complicated. Device files
+    for USB devices, such as /proc/bus/usb/002/001, are usually
+    created "on the fly" when a device is plugged in, and disappear
+    when the device is disconnected.  Moreover, the names of these
+    device files can change randomly. To set up the correct
+    permissions for the USB device, you may need to set up (operating
+    system dependent) hotplugging scripts.  Sample scripts and
+    information are provided in the scripts/hotplug and
+    scripts/hotplug-ng directories. (If you want to try if a driver
+    works without setting up hotplugging, you can add the "-u root"
+    option to upsd, upsmon, and drivers; this should allow you to
+    follow the below instructions. However, don't forget to set up the
+    correct permissions later!).
+
+    NOTE: if you are using something like devfs or udev, make sure
+    these permissions stay set across a reboot.  If they revert to the
+    old values, your drivers may fail to start.
 
 ---------------------------------------------------------------------------
 

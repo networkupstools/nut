@@ -1,3 +1,8 @@
+Sun Oct 15 22:54:26 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - updated documentation for new build system based on Automake and Libtool.
+ - fine-tuned configure.in
+
 Sun Oct 15 21:13:49 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - converted build system to automake
