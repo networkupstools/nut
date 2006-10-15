@@ -200,7 +200,7 @@ static struct {
 #define BOOT_DELAY                   "UBD" /* poll/set */
 #define BAUD_RATE                    "UBR" /* poll/set */
 #define IDENTIFICATION               "UID" /* poll/set */
-#define VERSION                      "VER" /* poll */
+#define VERSION_CMD                  "VER" /* poll */
 #define VOLTAGE_SENSITIVITY          "VSN" /* poll/set */
 #define WATCHDOG                     "WDG" /* poll/set */
 
@@ -542,7 +542,7 @@ void upsdrv_initinfo(void)
 		dstate_setinfo("ups.mfr", "%s", response);
 	if (do_command(POLL, MODEL, "", response) > 0)
 		dstate_setinfo("ups.model", "%s", response);
-	if (do_command(POLL, VERSION, "", response) > 0)
+	if (do_command(POLL, VERSION_CMD, "", response) > 0)
 		dstate_setinfo("ups.firmware", "%s", response);
 	if (do_command(POLL, RATINGS, "", response) > 0) {
 		ptr = field(response, 0);

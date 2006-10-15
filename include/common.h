@@ -43,7 +43,6 @@
 #include "attribute.h"
 #include "config.h"
 #include "proto.h"
-#include "version.h"
 
 /* get the syslog ready for us */
 void open_syslog(const char *progname);

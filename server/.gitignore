@@ -1,0 +1,5 @@
+Makefile
+upsd
+.deps
+Makefile.in
+.libs

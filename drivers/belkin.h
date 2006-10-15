@@ -26,7 +26,7 @@
 
 #define MANUFACTURER	"MNU"
 #define MODEL		"MOD"
-#define VERSION		"VER"
+#define VERSION_CMD	"VER"
 #define RATING		"RAT"
 #define STAT_INPUT	"STI"
 #define STAT_OUTPUT	"STO"

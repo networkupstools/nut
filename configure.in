@@ -2,29 +2,20 @@ dnl +------------------------------------------------------------------+
 dnl | Network UPS Tools: configure.in                                  |
 dnl +------------------------------------------------------------------+
 
-AC_INIT(server/upsd.c)
+# NUT version number is defined here and *only* here (no more include/version)
+AC_INIT(nut, 2.1.0)
+AC_CONFIG_SRCDIR(server/upsd.c)
+AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(include/config.h)
 AC_PREFIX_DEFAULT(/usr/local/ups)
+AM_INIT_AUTOMAKE
+
+AC_DEFINE_UNQUOTED(UPS_VERSION, "${PACKAGE_VERSION}", [NUT version])
 
 dnl Fix this early so we can expand with eval later
-test "$prefix" = NONE && prefix=/usr/local/ups
+test "${prefix}" = "NONE" && prefix="${ac_default_prefix}"
 
 CFLAGS=${CFLAGS-"-O"}
-
-AC_MSG_CHECKING(NUT version)
-
-dnl Pull this in for things that need to replace it later
-if (test -f include/version)
-then
-	NUT_VERSION=`head -1 include/version`
-	AC_MSG_RESULT($NUT_VERSION)
-else
-	AC_MSG_ERROR([Can't read include/version - broken source distribution?])
-fi
-
-
-
-AC_CANONICAL_SYSTEM
 
 dnl +------------------------------------------------------------------+
 dnl | default values for things later on (can be overridden)           |
@@ -37,8 +28,9 @@ HTMLPATH='${prefix}/html'
 
 RUN_AS_USER="nobody"
 PIDPATH="/var/run"
-LIBOBJ=../common/common.o
-BUILDOBJ=common.o
+
+dnl Define directory where LIBOBJS replacement functions are
+AC_CONFIG_LIBOBJ_DIR([common])
 
 dnl These are only used if gdlib-config is unusable and the user
 dnl fails to pass better values in --with arguments
@@ -54,48 +46,25 @@ AC_PROG_INSTALL
 AC_PROG_EGREP
 AC_PATH_PROG(AR, ar)
 AC_CHECK_TOOL(RANLIB, ranlib, :)
+AC_PROG_LIBTOOL
 AC_C_INLINE
 AC_CHECK_FUNCS(flock lockf fcvt fcvtl)
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
+AC_CHECK_FUNCS(on_exit)
 
+dnl the following may add stuff to LIBOBJS
 AC_CHECK_FUNCS(vsnprintf snprintf, ,
-	LIBOBJ="$LIBOBJ ../common/snprintf.o"
-	BUILDOBJ="$BUILDOBJ snprintf.o"
+	[AC_LIBOBJ(snprintf)]
 )
-AC_CHECK_FUNCS(setenv, ,
-	LIBOBJ="$LIBOBJ ../common/setenv.o"
-	BUILDOBJ="$BUILDOBJ setenv.o"
-)
-AC_CHECK_FUNCS(inet_aton, ,
-	LIBOBJ="$LIBOBJ ../common/inet_aton.o"
-	BUILDOBJ="$BUILDOBJ inet_aton.o"
-)
-AC_CHECK_FUNCS(strerror, ,
-	LIBOBJ="$LIBOBJ ../common/strerror.o"
-	BUILDOBJ="$BUILDOBJ strerror.o"
-)
-AC_CHECK_FUNCS(atexit, , [
-	LIBOBJ="$LIBOBJ ../common/atexit.o"
-	BUILDOBJ="$BUILDOBJ atexit.o"
-	AC_CHECK_FUNCS(on_exit)
-])
-
-dnl if we don't have AR, then don't build libupsclient.a
-if test -z "$AR" ; then
-	UPSCLI_OBJ="upsclient.o ../common/parseconf.o"
-	UPSCLI_LIBOBJ="upsclient.o parseconf.o"
-else
-	UPSCLI_OBJ="libupsclient.a"
-	UPSCLI_LIBOBJ="-lupsclient"
-fi	
+AC_REPLACE_FUNCS(setenv inet_aton strerror atexit)
 
 #
 # Only use these when compiling with gcc 
 #
-if ( test "x$GCC" = "xyes" )
+if ( test "${GCC}" = "yes" )
 then
-  CFLAGS="$CFLAGS -Wall -Wsign-compare"
+  CFLAGS="${CFLAGS} -Wall -Wsign-compare"
 fi  
 
 # Endianness handling, using default behavior
@@ -111,11 +80,11 @@ AC_TRY_COMPILE(
   [int i = optind;],
   nut_getopt_decl_in_unistd=yes,
   nut_getopt_decl_in_unistd=no)
-if test $nut_getopt_decl_in_unistd = yes; then
+if test "${nut_getopt_decl_in_unistd}" = "yes"; then
   AC_MSG_RESULT(in unistd.h)
 else
   AC_CHECK_HEADER(getopt.h, [have_getopt_h=yes], [have_getopt_h=])
-  if test have_getopt_h = yes; then
+  if test "${have_getopt_h}" = "yes"; then
     AC_DEFINE(NEED_GETOPT_H, 1,
 		[Define if getopt.h is needed])
     AC_MSG_RESULT(using getopt.h)
@@ -131,7 +100,7 @@ fi
 AC_MSG_CHECKING(whether to use uu_lock)
 AC_EGREP_HEADER(uu_lock, libutil.h, [
 		AC_MSG_RESULT(yes)
-		SERLIBS=-lutil
+		SERLIBS="-lutil"
 		AC_DEFINE(HAVE_UU_LOCK, 1, 
 			[Use uu_lock for locking (FreeBSD)])  
 
@@ -146,13 +115,13 @@ AC_EGREP_HEADER(uu_lock, libutil.h, [
 
 AC_CHECK_FUNCS(connect)
 
-if ( test x"$ac_cv_func_connect" = x"no" ); then
+if ( test "${ac_cv_func_connect}" = "no" ); then
 	AC_CHECK_LIB(nsl, printf, [
 	  	NETLIBS="-lnsl"
 	], [], [])
 
 	AC_CHECK_LIB(socket, printf, [
-		NETLIBS="$NETLIBS -lsocket"
+		NETLIBS="${NETLIBS} -lsocket"
 	], [], [])
 fi
 
@@ -166,34 +135,53 @@ TYPE_SOCKLEN_T
 TYPE_UINT16_T
 TYPE_UINT8_T
 
-CFLAGS_ORIG=$CFLAGS
-LDFLAGS_ORIG=$LDFLAGS
+dnl ----------------------------------------------------------------------
+dnl check for SSL compiler flags
+
+AC_MSG_CHECKING(for SSL library availability)
+
+CFLAGS_ORIG="${CFLAGS}"
+LDFLAGS_ORIG="${LDFLAGS}"
+
+SSL_CFLAGS=""
+SSL_LDFLAGS="-lssl -lcrypto"
+
+CFLAGS="${SSL_CFLAGS}"
+LDFLAGS="${SSL_LDFLAGS}"
+AC_TRY_LINK([#include <openssl/ssl.h>], [SSL_library_init()], ssl_ok=yes, ssl_ok=no)
+
+if test "${ssl_ok}" != "yes"; then
+	SSL_CFLAGS="-I/usr/local/ssl/include"
+	SSL_LDFLAGS="-L/usr/local/ssl/lib -lssl -lcrypto"
+
+	CFLAGS="${SSL_CFLAGS}"
+	LDFLAGS="${SSL_LDFLAGS}"
+	AC_TRY_LINK([#include <openssl/ssl.h>], [SSL_library_init], ssl_ok=yes, ssl_ok=no)
+fi
+
+if test "${ssl_ok}" != "yes"; then
+	SSL_CFLAGS="-I/usr/local/ssl/include -I/usr/kerberos/include"
+	SSL_LDFLAGS="-L/usr/local/ssl/lib -lssl -lcrypto"
+
+	CFLAGS="${SSL_CFLAGS}"
+	LDFLAGS="${SSL_LDFLAGS}"
+	AC_TRY_LINK([#include <openssl/ssl.h>], [SSL_library_init], ssl_ok=yes, ssl_ok=no)
+fi
+
+CFLAGS="${CFLAGS_ORIG}"
+LDFLAGS="${LDFLAGS_ORIG}"
+
+AC_MSG_RESULT([${ssl_ok}])
 
 AC_MSG_CHECKING(whether to enable SSL development code)
 AC_ARG_WITH(ssl,
-[ --with-ssl			Enable SSL development code         [default=no]],
+AC_HELP_STRING([--with-ssl], [enable SSL development code (default: no)]),
 [	case "$withval" in
 	yes)
 		AC_MSG_RESULT(yes)
 
-		SSL_CFLAGS=""
-		SSL_LDFLAGS="-lssl -lcrypto"
-
-		CFLAGS=$SSL_CFLAGS
-		LDFLAGS=$SSL_LDFLAGS
-		AC_TRY_LINK([#include <openssl/ssl.h>], [SSL_library_init()], ssl_ok=yes, ssl_ok=no)
-
-		if test "$ssl_ok" != yes; then
-			SSL_CFLAGS="-I/usr/local/ssl/include"
-			SSL_LDFLAGS="-L/usr/local/ssl/lib -lssl -lcrypto"
-
-			CFLAGS=$SSL_CFLAGS
-			LDFLAGS=$SSL_LDFLAGS
-			AC_TRY_LINK([#include <openssl/ssl.h>], [SSL_library_init], ssl_ok=yes, ssl_ok=no)
-		fi
-
-		if test "$ssl_ok" != yes; then
-			AC_MSG_ERROR("OpenSSL not found")
+		if test "${ssl_ok}" != "yes"; then
+			AC_MSG_ERROR(["SSL support requested, but OpenSSL not found"])
 		fi
 
 		AC_DEFINE(HAVE_SSL, 1, 
@@ -207,10 +195,6 @@ AC_ARG_WITH(ssl,
 	AC_MSG_RESULT(no)
 )	
 
-dnl put back the original versions
-CFLAGS=$CFLAGS_ORIG
-LDFLAGS=$LDFLAGS_ORIG
-
 dnl See if gdlib-config is out there and usable
 
 AC_MSG_CHECKING(for gd version via gdlib-config)
@@ -221,15 +205,15 @@ then
 	GD_VERSION="unknown"
 	AC_MSG_RESULT(not found)
 else
-	AC_MSG_RESULT($GD_VERSION)
+	AC_MSG_RESULT(${GD_VERSION})
 fi
 
-case "$GD_VERSION" in
+case "${GD_VERSION}" in
 	unknown)
 		;;
 
 	2.0.5 | 2.0.6 | 2.0.7)
-		AC_MSG_WARN([[gd $GD_VERSION detected, unable to use gdlib-config script]])
+		AC_MSG_WARN([[gd ${GD_VERSION} detected, unable to use gdlib-config script]])
 		AC_MSG_WARN([[If gd detection fails, upgrade gd or use --with-gd-libs]])
 		;;
 
@@ -243,14 +227,14 @@ dnl Now allow overriding gd settings if the user knows best
 
 AC_MSG_CHECKING(for gd include flags)
 AC_ARG_WITH(gd-includes,
-[ --with-gd-includes		Include flags for the gd library],
-[	case "$withval" in
+AC_HELP_STRING([--with-gd-includes=FLAGS], [include flags for the gd library]),
+[	case "${withval}" in
 	yes|no)
-		AC_MSG_RESULT(using defaults)
+		AC_MSG_RESULT([using defaults])
 		;;
 	*)
-		AC_MSG_RESULT(using $withval)
-		GD_INCLUDES=$withval
+		AC_MSG_RESULT([using ${withval}])
+		GD_INCLUDES="${withval}"
 		;;
 	esac],
 
@@ -259,82 +243,121 @@ AC_ARG_WITH(gd-includes,
 
 AC_MSG_CHECKING(for gd library flags)
 AC_ARG_WITH(gd-libs,
-[ --with-gd-libs			Linker flags for gd],
+AC_HELP_STRING([--with-gd-libs=FLAGS], [linker flags for the gd library]),
 [	case "$withval" in
 	yes|no)
-		AC_MSG_RESULT(using defaults)
+		AC_MSG_RESULT([using defaults])
 		;;
 	*)
-		AC_MSG_RESULT(using $withval)
-		GD_LIBS=$withval
+		AC_MSG_RESULT([using ${withval}])
+		GD_LIBS="${withval}"
 		;;
 	esac],
 
 	AC_MSG_RESULT(using defaults)
 )
 
-AC_MSG_CHECKING(whether to build CGI programs)
-AC_ARG_WITH(cgi,
-[ --with-cgi			Build the CGI programs                      [no]],
-[	case "$withval" in
-	yes)
-
-		AC_MSG_RESULT(yes)
-		CGI_BUILD_TARGET="build-cgi"
-
 dnl +------------------------------------------------------------------+
 dnl | Check for libraries used by the CGI programs.                    |
 dnl +------------------------------------------------------------------+
 
-CFLAGS_ORIG=$CFLAGS
-CPPFLAGS_ORIG=$CPPFLAGS
-LDFLAGS_ORIG=$LDFLAGS
+dnl Note: we do this even if --with-cgi isn't selected; the user
+dnl can still build the CGI programs with "make cgi". 
 
-		CFLAGS=$GD_INCLUDES
-		CPPFLAGS=$GD_INCLUDES
-		LDFLAGS=$GD_LIBS
+CFLAGS_ORIG="${CFLAGS}"
+CPPFLAGS_ORIG="${CPPFLAGS}"
+LDFLAGS_ORIG="${LDFLAGS}"
+
+		CFLAGS="${GD_INCLUDES}"
+		CPPFLAGS="${GD_INCLUDES}"
+		LDFLAGS="${GD_LIBS}"
 
 		AC_CHECK_HEADERS(gd.h)
 		AC_CHECK_LIB(gd, gdImagePng, 
+		have_libgc=1
 		AC_DEFINE(HAVE_LIBGD, 1, 
 			[Define if you have Boutell's libgd installed]),
-		AC_MSG_WARN([libgd not found - CGI build will fail]),
-		$GD_LIBS)
+		,
+		${GD_LIBS})
 
 dnl put back the original versions
-CFLAGS=$CFLAGS_ORIG
-CPPFLAGS=$CPPFLAGS_ORIG
-LDFLAGS=$LDFLAGS_ORIG
+CFLAGS="${CFLAGS_ORIG}"
+CPPFLAGS="${CPPFLAGS_ORIG}"
+LDFLAGS="${LDFLAGS_ORIG}"
 
-dnl +------------------------------------------------------------------+
-dnl | End of CGI library checks.                                       |
-dnl +------------------------------------------------------------------+
+AC_MSG_CHECKING(for --with-all)
+AC_ARG_WITH(all,
+AC_HELP_STRING([--with-all], [enable cgi, lib, serial, snmp, usb (no)]),
+[	if test "${withval}" = "yes"; then
+		with_cgi=yes
+		with_lib=yes
+		with_serial=yes
+		with_snmp=yes
+		with_usb=yes
+		AC_MSG_RESULT(yes)		
+	else
+		AC_MSG_RESULT(no)
+	fi
+], [		AC_MSG_RESULT(no)
+])
 
+AC_MSG_CHECKING(whether to build CGI programs)
+AC_ARG_WITH(cgi,
+AC_HELP_STRING([--with-cgi], [build and install the CGI programs (no)]),
+[	case "${withval}" in
+	yes)
+
+		AC_MSG_RESULT(yes)
+		nut_with_cgi="yes"
+		if test "${have_libgc}" != "1"; then
+		   AC_MSG_ERROR([libgd not found, required for CGI build])
+		fi
 		;;	
-	no)
+	no|*)
 		AC_MSG_RESULT(no)
-		CGI_BUILD_TARGET="build-cgi-fake"
-		;;
-	*)
-		AC_MSG_RESULT(no)
-		CGI_BUILD_TARGET="build-cgi-fake"
+		nut_with_cgi="no"
 		;;
 	esac],
 [
 	AC_MSG_RESULT(no)
-	CGI_BUILD_TARGET="build-cgi-fake"
+        nut_with_cgi="no"
 ]
 )
+AM_CONDITIONAL(WITH_CGI, test "${nut_with_cgi}" = "yes")
+
+AC_MSG_CHECKING(whether to build upsclient library)
+AC_ARG_WITH(lib,
+AC_HELP_STRING([--with-lib], [build and install the upsclient library (no)]),
+[	case "${withval}" in
+	yes)
+
+		AC_MSG_RESULT(yes)
+		nut_with_lib=yes
+		;;	
+	no|*)
+		AC_MSG_RESULT(no)
+		nut_with_lib=no
+		;;
+	esac],
+[
+	AC_MSG_RESULT(no)
+	nut_with_lib=no
+]
+)
+AM_CONDITIONAL(WITH_LIB, test "${nut_with_lib}" = "yes")
 
 dnl Check for Net-SNMP libs and flags
+# innocent until proven guilty
+nut_have_net_snmp=yes
 AC_MSG_CHECKING(for Net-SNMP cflags)
 NETSNMP_CFLAGS=`net-snmp-config --cflags 2>/dev/null`
 
 if (test "$?" != "0")
 then
-	AC_MSG_RESULT(not found)
+	AC_MSG_RESULT([not found])
+	nut_have_net_snmp=no
 else
-	AC_MSG_RESULT($NETSNMP_CFLAGS)
+	AC_MSG_RESULT([${NETSNMP_CFLAGS}])
 fi
 
 AC_MSG_CHECKING(for Net-SNMP libs)
@@ -342,33 +365,96 @@ NETSNMP_LIBS=`net-snmp-config --libs 2>/dev/null`
 
 if (test "$?" != "0")
 then
-	AC_MSG_RESULT(not found)
+	AC_MSG_RESULT([not found])
+	nut_have_net_snmp=no
 else
-	AC_MSG_RESULT($NETSNMP_LIBS)
+	AC_MSG_RESULT([${NETSNMP_LIBS}])
 fi
+AM_CONDITIONAL(HAVE_NET_SNMP, test "${nut_have_net_snmp}" = "yes")
+
+dnl ----------------------------------------------------------------------
+dnl check for --with-serial, --with-snmp, --with-usb
+
+AC_MSG_CHECKING(whether to compile serial drivers)
+AC_ARG_WITH(serial,
+AC_HELP_STRING([--with-serial], [build and install serial drivers (yes)]),
+[	case "${withval}" in
+	no)
+		with_serial=no
+		;;
+	yes|*)
+		with_serial=yes
+		;;
+	esac],
+	with_serial=yes
+)
+AC_MSG_RESULT(${with_serial})
+AM_CONDITIONAL(WITH_SERIAL, test "${with_serial}" = "yes")
+
+AC_MSG_CHECKING(whether to compile SNMP drivers)
+AC_ARG_WITH(snmp,
+AC_HELP_STRING([--with-snmp], [build and install SNMP drivers (no)]),
+[	case "${withval}" in
+	yes)
+		with_snmp=yes
+		;;
+	no|*)
+		with_snmp=no
+		;;
+	esac],
+	with_snmp=no
+)
+AC_MSG_RESULT(${with_snmp})
+AM_CONDITIONAL(WITH_SNMP, test "${with_snmp}" = "yes")
+
+dnl give up if user requested SNMP drivers but we cannot compile them.
+if test "${with_snmp}" = "yes" -a "${nut_have_net_snmp}" != "yes"; then
+   AC_MSG_ERROR([SNMP drivers requested but Net-SNMP libraries not found])
+fi
+
+AC_MSG_CHECKING(whether to compile USB drivers)
+AC_ARG_WITH(usb,
+AC_HELP_STRING([--with-usb], [build and install USB drivers (no)]),
+[	case "${withval}" in
+	yes)
+		with_usb=yes
+		;;
+	no|*)
+		with_usb=no
+		;;
+	esac],
+	with_usb=no
+)
+AC_MSG_RESULT(${with_usb})
+AM_CONDITIONAL(WITH_USB, test "${with_usb}" = "yes")
+
+dnl ----------------------------------------------------------------------
+dnl USB-related checks
+
+# innocent until proven guilty
+nut_have_libusb=yes
 
 dnl Check for libusb libs and flags
 AC_MSG_CHECKING(for libusb cflags)
 LIBUSB_CFLAGS=`libusb-config --cflags 2>/dev/null`
-
 if (test "$?" != "0")
 then
 	AC_MSG_RESULT(not found)
+	nut_have_libusb=no
 else
-	AC_MSG_RESULT($LIBUSB_CFLAGS)
-	USB_DRIVER_LIST="newhidups bcmxcp_usb tripplite_usb"
-	USBPAGES="newhidups.8 bcmxcp_usb.8 tripplite_usb.8"
+	AC_MSG_RESULT(${LIBUSB_CFLAGS})
 fi
 
 AC_MSG_CHECKING(for libusb libs)
 LIBUSB_LIBS=`libusb-config --libs 2>/dev/null`
-
 if (test "$?" != "0")
 then
 	AC_MSG_RESULT(not found)
+	nut_have_libusb=no
 else
-	AC_MSG_RESULT($LIBUSB_LIBS)
+	AC_MSG_RESULT(${LIBUSB_LIBS})
 fi
+AM_CONDITIONAL(HAVE_LIBUSB, test "${nut_have_libusb}" = "yes")
 
 dnl Check for libusb "force driver unbind" availability
 dnl Need at least libusb 0.1.8
@@ -379,57 +465,40 @@ AC_CHECK_LIB(usb, usb_detach_kernel_driver_np, [
 
 AC_MSG_CHECKING(for Linux hiddev.h)
 AC_ARG_WITH(linux-hiddev,
-[ --with-linux-hiddev=FILE	Linux hiddev.h     [/usr/include/linux/hiddev.h]],
-[	case "$withval" in
+AC_HELP_STRING([--with-linux-hiddev=FILE], [linux hiddev.h location (/usr/include/linux/hiddev.h)]),
+[	case "${withval}" in
 	yes)
-		if (test -f /usr/include/linux/hiddev.h)
-		then
-			AC_MSG_RESULT(using default: /usr/include/linux/hiddev.h)
-			AC_DEFINE_UNQUOTED(LINUX_HIDDEV, "/usr/include/linux/hiddev.h",
-				[Complete path for Linux hiddev.h])
-			LINUX_HIDDEV=/usr/include/linux/hiddev.h
-			USB_DRIVER_LIST="$USB_DRIVER_LIST hidups energizerups"
-			USBPAGES="$USBPAGES hidups.8 energizerups.8"
-		fi
+		linux_hiddev="/usr/include/linux/hiddev.h"
 		;;
 	no)
-		AC_MSG_RESULT(no)
+		linux_hiddev=
 		;;
 	*)
-		if (test -f $withval)
-		then
-			AC_MSG_RESULT($withval)
-			AC_DEFINE_UNQUOTED(LINUX_HIDDEV, "$withval",
-				[Complete path for Linux hiddev.h])
-			LINUX_HIDDEV=$withval
-			USB_DRIVER_LIST="$USB_DRIVER_LIST hidups energizerups"
-			USBPAGES="$USBPAGES hidups.8 energizerups.8"
-		else
-			AC_MSG_RESULT($withval not found)
-		fi
+		linux_hiddev="${withval}"
 		;;
 	esac],
 [
-	if (test -f /usr/include/linux/hiddev.h)
-	then
-		AC_MSG_RESULT(using default: /usr/include/linux/hiddev.h)
-		AC_DEFINE_UNQUOTED(LINUX_HIDDEV, "/usr/include/linux/hiddev.h",
-			[Complete path for Linux hiddev.h])
-		LINUX_HIDDEV=/usr/include/linux/hiddev.h
-		USB_DRIVER_LIST="$USB_DRIVER_LIST hidups energizerups"
-		USBPAGES="$USBPAGES hidups.8 energizerups.8"
-	else
-		AC_MSG_RESULT(no)
-	fi
+	linux_hiddev="/usr/include/linux/hiddev.h"
 ]
 )
 
+if test -z "${linux_hiddev}"; then
+	AC_MSG_RESULT(no)
+elif test -f "${linux_hiddev}"; then
+	AC_MSG_RESULT(${linux_hiddev})
+	AC_DEFINE_UNQUOTED(LINUX_HIDDEV, "${linux_hiddev}", [Complete path for Linux hiddev.h])
+else
+	AC_MSG_RESULT(${linux_hiddev} not found)
+	linux_hiddev=
+fi
+AM_CONDITIONAL(HAVE_HIDDEV, test -n "${linux_hiddev}")
+
 dnl Solaris 10/11 USB handling (need librt and libusb runtime path)
-case $target_os in
+case ${target_os} in
 	solaris2.1* )
 		echo Checking for Solaris 10 / 11 specific configuration for usb drivers
 		AC_SEARCH_LIBS(nanosleep,rt)
-		LIBUSB_LIBS="-R/usr/sfw/lib $LIBUSB_LIBS"
+		LIBUSB_LIBS="-R/usr/sfw/lib ${LIBUSB_LIBS}"
 		dnl FIXME: notification disabled while waiting for a libusbugen fix
 		AC_DEFINE(USB_NOTIFICATION_DISABLED, 1,
 			[Define to 1 if libusb doesn't support timeout.])
@@ -437,24 +506,29 @@ case $target_os in
 		;;
 esac
 
+dnl give up if user requested USB drivers but we cannot compile them.
+if test "${with_usb}" = "yes" -a "${nut_have_libusb}" != "yes" -a -z "${linux_hiddev}"; then
+   AC_MSG_ERROR([USB drivers requested but neither libusb nor hiddev.h found])
+fi
+
 AC_MSG_CHECKING(state path)
 AC_ARG_WITH(statepath,
-[ --with-statepath=PATH		Path for ups state files        [/var/state/ups]],
-[	case "$withval" in
+AC_HELP_STRING([--with-statepath=PATH], [path for ups state files (/var/state/ups)]),
+[	case "${withval}" in
 	yes|no)
-		AC_MSG_RESULT(using default: $STATEPATH)
-		AC_DEFINE_UNQUOTED(STATEPATH, "$STATEPATH",
+		AC_MSG_RESULT(using default: ${STATEPATH})
+		AC_DEFINE_UNQUOTED(STATEPATH, "${STATEPATH}",
 			[Path for UPS driver state files])
 		;;
 	*)
-		AC_MSG_RESULT($withval)
-		AC_DEFINE_UNQUOTED(STATEPATH, "$withval",
+		AC_MSG_RESULT(${withval})
+		AC_DEFINE_UNQUOTED(STATEPATH, "${withval}",
 			[Path for UPS driver state files])
-		STATEPATH=$withval
+		STATEPATH="${withval}"
 		;;
 	esac],
-	AC_MSG_RESULT(using default: $STATEPATH)
-	AC_DEFINE_UNQUOTED(STATEPATH, "$STATEPATH",
+	AC_MSG_RESULT(using default: ${STATEPATH})
+	AC_DEFINE_UNQUOTED(STATEPATH, "${STATEPATH}",
 		[Path for UPS driver state files])
 )
 
@@ -467,133 +541,133 @@ dnl
 
 AC_MSG_CHECKING(alt pid path)
 AC_ARG_WITH(altpidpath,
-[ --with-altpidpath=PATH		Path for driver/upsd .pid files    [(statepath)]],
-[	case "$withval" in
+AC_HELP_STRING([--with-altpidpath=PATH], [path for driver/upsd .pid files (<statepath>)]),
+[	case "${withval}" in
 	yes|no)
-		AC_MSG_RESULT(using default: $STATEPATH)
-		AC_DEFINE_UNQUOTED(ALTPIDPATH, "$STATEPATH",
+		AC_MSG_RESULT(using default: ${STATEPATH})
+		AC_DEFINE_UNQUOTED(ALTPIDPATH, "${STATEPATH}",
 		[Path for pid files of drivers and upsd (usually STATEPATH)])
 
-		ALTPIDPATH=$STATEPATH
+		ALTPIDPATH="${STATEPATH}"
 		;;
 	*)
-		AC_MSG_RESULT($withval)
-		AC_DEFINE_UNQUOTED(ALTPIDPATH, "$withval",
+		AC_MSG_RESULT(${withval})
+		AC_DEFINE_UNQUOTED(ALTPIDPATH, "${withval}",
 		[Path for pid files of drivers and upsd (usually STATEPATH)])
-		ALTPIDPATH=$withval
+		ALTPIDPATH="${withval}"
 		;;
 	esac],
-	AC_MSG_RESULT(using default: $STATEPATH)
-	AC_DEFINE_UNQUOTED(ALTPIDPATH, "$STATEPATH",
+	AC_MSG_RESULT(using default: ${STATEPATH})
+	AC_DEFINE_UNQUOTED(ALTPIDPATH, "${STATEPATH}",
 		[Path for pid files of drivers and upsd (usually STATEPATH)])
-	ALTPIDPATH=$STATEPATH
+	ALTPIDPATH="${STATEPATH}"
 )
 
 AC_MSG_CHECKING(driver path)
 AC_ARG_WITH(drvpath,
-[ --with-drvpath=PATH		Path for ups drivers              [<prefix>/bin]],
-[	case "$withval" in
+AC_HELP_STRING([--with-drvpath=PATH], [where to install ups drivers (<prefix>/bin)]),
+[	case "${withval}" in
 	yes|no)
 		AC_MSG_RESULT(using default)
-		eval conftemp=${DRVPATH}
-		AC_DEFINE_UNQUOTED(DRVPATH, "$conftemp",
+		eval conftemp="${DRVPATH}"
+		AC_DEFINE_UNQUOTED(DRVPATH, "${conftemp}",
 			[Default path for UPS drivers])
 		;;
 	*)
-		AC_MSG_RESULT($withval)
-		eval conftemp=${withval}
-		AC_DEFINE_UNQUOTED(DRVPATH, "$conftemp",
+		AC_MSG_RESULT(${withval})
+		eval conftemp="${withval}"
+		AC_DEFINE_UNQUOTED(DRVPATH, "${conftemp}",
 			[Default path for UPS drivers])
-		DRVPATH=$withval
+		DRVPATH="${withval}"
 		;;
 	esac],
 	AC_MSG_RESULT(using default)
-	eval conftemp=${DRVPATH}
-	AC_DEFINE_UNQUOTED(DRVPATH, "$conftemp",
+	eval conftemp="${DRVPATH}"
+	AC_DEFINE_UNQUOTED(DRVPATH, "${conftemp}",
 			[Default path for UPS drivers])
 )
 
 AC_MSG_CHECKING(cgi path)
 AC_ARG_WITH(cgipath,
-[ --with-cgipath=PATH		Path for CGI programs         [<prefix>/cgi-bin]],
-[	case "$withval" in
+AC_HELP_STRING([--with-cgipath=PATH], [where to install CGI programs (<prefix>/cgi-bin)]),
+[	case "${withval}" in
 	yes|no)
 		AC_MSG_RESULT(using default)
-		eval conftemp=${CGIPATH}
-		AC_DEFINE_UNQUOTED(CGIPATH, "$conftemp",
+		eval conftemp="${CGIPATH}"
+		AC_DEFINE_UNQUOTED(CGIPATH, "${conftemp}",
 			[Default path for CGI programs])
 		;;
 	*)
-		AC_MSG_RESULT($withval)
-		eval conftemp=${withval}
-		AC_DEFINE_UNQUOTED(CGIPATH, "$conftemp",
+		AC_MSG_RESULT(${withval})
+		eval conftemp="${withval}"
+		AC_DEFINE_UNQUOTED(CGIPATH, "${conftemp}",
 			[Default path for CGI programs])
-		CGIPATH=$withval
+		CGIPATH="${withval}"
 		;;
 	esac],
 	AC_MSG_RESULT(using default)
-	eval conftemp=${CGIPATH}
-	AC_DEFINE_UNQUOTED(CGIPATH, "$conftemp",
+	eval conftemp="${CGIPATH}"
+	AC_DEFINE_UNQUOTED(CGIPATH, "${conftemp}",
 			[Default path for CGI programs])
 	)
 
 AC_MSG_CHECKING(html path)
 AC_ARG_WITH(htmlpath,
-[ --with-htmlpath=PATH		Path for HTML files           [<prefix>/html]],
-[	case "$withval" in
+AC_HELP_STRING([--with-htmlpath=PATH], [where to install HTML files (<prefix>/html)]),
+[	case "${withval}" in
 	yes|no)
 		AC_MSG_RESULT(using default)
-		eval conftemp=${HTMLPATH}
-		AC_DEFINE_UNQUOTED(HTMLPATH, "$conftemp",
+		eval conftemp="${HTMLPATH}"
+		AC_DEFINE_UNQUOTED(HTMLPATH, "${conftemp}",
 			[Default path for HTML files])
 		;;
 	*)
-		AC_MSG_RESULT($withval)
-		eval conftemp=${withval}
-		AC_DEFINE_UNQUOTED(HTMLPATH, "$conftemp",
+		AC_MSG_RESULT(${withval})
+		eval conftemp="${withval}"
+		AC_DEFINE_UNQUOTED(HTMLPATH, "${conftemp}",
 			[Default path for HTML files])
-		HTMLPATH=$withval
+		HTMLPATH="${withval}"
 		;;
 	esac],
 	AC_MSG_RESULT(using default)
-	eval conftemp=${HTMLPATH}
-	AC_DEFINE_UNQUOTED(HTMLPATH, "$conftemp",
+	eval conftemp="${HTMLPATH}"
+	AC_DEFINE_UNQUOTED(HTMLPATH, "${conftemp}",
 			[Default path for HTML files])
 	)
 
 AC_MSG_CHECKING(pidpath)
 AC_ARG_WITH(pidpath,
-[ --with-pidpath=PATH		Path for .pid files                   [/var/run]],
-[	case "$withval" in
+AC_HELP_STRING([--with-pidpath=PATH], [path for .pid files (/var/run)]),
+[	case "${withval}" in
 	yes|no)
-		AC_MSG_RESULT(using default: $PIDPATH)
-		AC_DEFINE_UNQUOTED(PIDPATH, "$PIDPATH",
+		AC_MSG_RESULT(using default: ${PIDPATH})
+		AC_DEFINE_UNQUOTED(PIDPATH, "${PIDPATH}",
 			[Path where the pid files should go])
 		;;
 	*)
-		AC_MSG_RESULT($withval)
-		AC_DEFINE_UNQUOTED(PIDPATH, "$withval",
+		AC_MSG_RESULT(${withval})
+		AC_DEFINE_UNQUOTED(PIDPATH, "${withval}",
 			[Path where the pid files should go])
-		PIDPATH=$withval
+		PIDPATH="${withval}"
 		;;
 	esac],
-	AC_MSG_RESULT(using default: $PIDPATH)
-	AC_DEFINE_UNQUOTED(PIDPATH, "$PIDPATH",
+	AC_MSG_RESULT(using default: ${PIDPATH})
+	AC_DEFINE_UNQUOTED(PIDPATH, "${PIDPATH}",
 			[Path where the pid files should go])
 )
 
 AC_MSG_CHECKING(network port number)
 AC_ARG_WITH(port,
-[ --with-port=PORT		Port for network communications           [3493]],
-[	case "$withval" in
+AC_HELP_STRING([--with-port=PORT], [port for network communications (3493)]),
+[	case "${withval}" in
 	yes|no)
 		AC_MSG_RESULT(using default value: 3493)
 		AC_DEFINE_UNQUOTED(PORT, 3493,
 			[Port for network communications])
 		;;
 	*)
-		AC_MSG_RESULT($withval)
-		AC_DEFINE_UNQUOTED(PORT, $withval,
+		AC_MSG_RESULT(${withval})
+		AC_DEFINE_UNQUOTED(PORT, ${withval},
 			[Port for network communications])
 		;;
 	esac],
@@ -604,37 +678,37 @@ AC_ARG_WITH(port,
 
 AC_MSG_CHECKING(user to run as)
 AC_ARG_WITH(user,
-[ --with-user=username		User for programs started as root       [nobody]],
-[	case "$withval" in
+AC_HELP_STRING([--with-user=username], [user for programs started as root (nobody)]),
+[	case "${withval}" in
 	yes|no)
-		AC_MSG_RESULT(using default: $RUN_AS_USER)
-		AC_DEFINE_UNQUOTED(RUN_AS_USER, "$RUN_AS_USER",
+		AC_MSG_RESULT(using default: ${RUN_AS_USER})
+		AC_DEFINE_UNQUOTED(RUN_AS_USER, "${RUN_AS_USER}",
 			[User to switch to if started as root])
 		;;
 	*)
-		AC_MSG_RESULT($withval)
-		AC_DEFINE_UNQUOTED(RUN_AS_USER, "$withval",
+		AC_MSG_RESULT(${withval})
+		AC_DEFINE_UNQUOTED(RUN_AS_USER, "${withval}",
 			[User to switch to if started as root])
-		RUN_AS_USER=$withval
+		RUN_AS_USER="${withval}"
 		;;
 	esac],
-	AC_MSG_RESULT(using default: $RUN_AS_USER)
-	AC_DEFINE_UNQUOTED(RUN_AS_USER, "$RUN_AS_USER",
+	AC_MSG_RESULT(using default: ${RUN_AS_USER})
+	AC_DEFINE_UNQUOTED(RUN_AS_USER, "${RUN_AS_USER}",
 		[User to switch to if started as root])
 )
 
 AC_MSG_CHECKING(facility for syslog)
 AC_ARG_WITH(logfacility,
-[ --with-logfacility=FACILITY	Facility for log messages           [LOG_DAEMON]],
-[	case "$withval" in
+AC_HELP_STRING([--with-logfacility=FACILITY], [facility for log messages (LOG_DAEMON)]),
+[	case "${withval}" in
 	yes|no)
 		AC_MSG_RESULT(using default value: LOG_DAEMON)
 		AC_DEFINE_UNQUOTED(LOG_FACILITY, LOG_DAEMON,
 			[Desired syslog facility - see syslog(3)])
 		;;
 	*)
-		AC_MSG_RESULT($withval)
-		AC_DEFINE_UNQUOTED(LOG_FACILITY, $withval,
+		AC_MSG_RESULT(${withval})
+		AC_DEFINE_UNQUOTED(LOG_FACILITY, ${withval},
 			[Desired syslog facility - see syslog(3)])
 		;;
 	esac],
@@ -645,40 +719,48 @@ AC_ARG_WITH(logfacility,
 
 AC_MSG_CHECKING(which drivers to build)
 AC_ARG_WITH(drivers,
-
-[ --with-drivers=<driver>[,<driver>,...]	Only use specific drivers        [(all)]],
-[	case "$withval" in
+AC_HELP_STRING([[[[--with-drivers=driver@<:@,driver...@:>@]]]], [Only use specific drivers (all)]),
+[	case "${withval}" in
 	yes | no)
 		# ignore calls without any arguments
-		DRIVER_BUILD_LIST="all-drivers"
-		DRIVER_INSTALL_TARGET="all-drivers"
-		AC_MSG_RESULT(all)
+		DRIVER_BUILD_LIST="all"
 		;;
 	*)
-		DRIVER_BUILD_LIST=`echo $withval | sed "s/,/ /g"`
-		DRIVER_INSTALL_TARGET="some-drivers"
-		AC_MSG_RESULT($DRIVER_BUILD_LIST)
+		DRIVER_BUILD_LIST=`echo ${withval} | sed "s/,/ /g"`
 		;;
 	esac
 ],
 [
-	DRIVER_BUILD_LIST="all-drivers"
-	DRIVER_INSTALL_TARGET="all-drivers"
-	AC_MSG_RESULT(all)
+	DRIVER_BUILD_LIST="all"
 ]
 )
+AC_MSG_RESULT(${DRIVER_BUILD_LIST})
+AM_CONDITIONAL(SOME_DRIVERS, test "${DRIVER_BUILD_LIST}" != "all")
+
+AC_MSG_CHECKING(which driver man pages to install)
+if test "${DRIVER_BUILD_LIST}" = "all"; then
+   DRIVER_MAN_LIST=all
+else
+   DRIVER_MAN_LIST=""
+   for i in ${DRIVER_BUILD_LIST}; do
+      if test -f ${srcdir}/man/$i.8; then
+         DRIVER_MAN_LIST="${DRIVER_MAN_LIST} $i.8"
+      fi
+   done
+fi
+AC_MSG_RESULT(${DRIVER_MAN_LIST})
 
 AC_MSG_CHECKING(whether to strip debug symbols)
 AC_ARG_ENABLE(strip,
 [  --enable-strip		Strip debugging symbols from binaries	    [no]],
 [
-	case "$withval" in
+	case "${withval}" in
 		no)
 			AC_MSG_RESULT(no)
 		;;
 		*)
 			AC_MSG_RESULT(yes)
-			CFLAGS="$CFLAGS -s"
+			CFLAGS="${CFLAGS} -s"
 		;;
 	esac
 ],
@@ -687,47 +769,40 @@ AC_ARG_ENABLE(strip,
 
 
 AC_MSG_CHECKING(whether to enable pkg-config support)
-AC_ARG_ENABLE(pkg-config,
-[  --with-pkgconfig-dir=PATH    Path to pkg-config *.pc files [/usr/lib/pkgconfig]],
+AC_ARG_WITH(pkgconfig-dir,
+AC_HELP_STRING([--with-pkgconfig-dir=PATH], [where to install pkg-config *.pc files (/usr/lib/pkgconfig)]),
 [
-	case "$withval" in
+	case "${withval}" in
 		yes)
-			if (test -d /usr/lib/pkgconfig)
+			if (test -d '/usr/lib/pkgconfig')
 			then
-				AC_MSG_RESULT(yes)
-				PKG_CFG_DIR="/usr/lib/pkgconfig"
-				USE_PKG_CFG=yes
+				PKG_CFG_DIR='/usr/lib/pkgconfig'
 			else
-				AC_MSG_RESULT(no)
 				PKG_CFG_DIR=""
-				USE_PKG_CFG=no
 			fi
 		;;
 		no)
-			AC_MSG_RESULT(no)
 			PKG_CFG_DIR=""
-			USE_PKG_CFG=no
 		;;
 		*)
-			AC_MSG_RESULT(yes)
-			PKG_CFG_DIR=$withval
-			USE_PKG_CFG=yes
+			PKG_CFG_DIR="${withval}"
 		;;
 	esac
 ],
 [       
-	if (test -d /usr/lib/pkgconfig)
+	if (test -d '/usr/lib/pkgconfig')
 	then
-		AC_MSG_RESULT(yes)
-		PKG_CFG_DIR="/usr/lib/pkgconfig"
-		USE_PKG_CFG=yes
+		PKG_CFG_DIR='/usr/lib/pkgconfig'
 	else
-		AC_MSG_RESULT(no)
 		PKG_CFG_DIR=""
-		USE_PKG_CFG=no
 	fi
 ])
-
+if test -n "${PKG_CFG_DIR}"; then
+  AC_MSG_RESULT(using ${PKG_CFG_DIR})
+else
+  AC_MSG_RESULT(no)
+fi
+AM_CONDITIONAL(WITH_PKG_CONFIG, test -n ${PKG_CFG_DIR})
 
 # 'long long' check - this gets used down in snprintf.o
 #
@@ -735,26 +810,22 @@ AC_CACHE_CHECK([for long long],nut_cv_have_longlong,[
 AC_TRY_RUN([#include <stdio.h>
 main() { long long x = 1000000; x *= x; exit(((x/1000000) == 1000000)? 0: 1); }],
 nut_cv_have_longlong=yes,nut_cv_have_longlong=no,nut_cv_have_longlong=cross)])
-if test x"$nut_cv_have_longlong" = x"yes"; then
+if test "${nut_cv_have_longlong}" = "yes"; then
     AC_DEFINE(HAVE_LONGLONG, 1, [longlong support for snprintf])
 fi
 
 # expand $sysconfdir and write it out
-eval conftemp=${sysconfdir}
-AC_DEFINE_UNQUOTED(CONFPATH, "$conftemp",
+eval conftemp="${sysconfdir}"
+AC_DEFINE_UNQUOTED(CONFPATH, "${conftemp}",
 			[Default path for configuration files])
 
 # same for datadir
-eval datatemp=${datadir}
-AC_DEFINE_UNQUOTED(DATADIR, "$datatemp",
+eval datatemp="${datadir}"
+AC_DEFINE_UNQUOTED(DATADIR, "${datatemp}",
 			[Default path for data files])
 
-AC_SUBST(NUT_VERSION)
-AC_SUBST(UPSCLI_OBJ)
-AC_SUBST(UPSCLI_LIBOBJ)
 AC_SUBST(SSL_CFLAGS)
 AC_SUBST(SSL_LDFLAGS)
-AC_SUBST(CGI_BUILD_TARGET)
 AC_SUBST(GD_INCLUDES)
 AC_SUBST(GD_LIBS)
 AC_SUBST(NETSNMP_CFLAGS)
@@ -762,12 +833,8 @@ AC_SUBST(NETSNMP_LIBS)
 AC_SUBST(LIBUSB_CFLAGS)
 AC_SUBST(LIBUSB_LIBS)
 AC_SUBST(DRIVER_BUILD_LIST)
-AC_SUBST(USB_DRIVER_LIST)
-AC_SUBST(USBPAGES)
+AC_SUBST(DRIVER_MAN_LIST)
 AC_SUBST(DRIVER_INSTALL_TARGET)
-AC_SUBST(STRLCPY)
-AC_SUBST(LIBOBJ)
-AC_SUBST(BUILDOBJ)
 AC_SUBST(NETLIBS)
 AC_SUBST(SERLIBS)
 AC_SUBST(STATEPATH)
@@ -779,6 +846,30 @@ AC_SUBST(LINUX_HIDDEV)
 AC_SUBST(USB_NOTIFICATION_DISABLED)
 AC_SUBST(WORDS_BIGENDIAN)
 AC_SUBST(PKG_CFG_DIR)
-AC_SUBST(USE_PKG_CFG)
 
-AC_OUTPUT(clients/Makefile conf/Makefile data/Makefile data/html/Makefile data/html/header.html drivers/Makefile server/Makefile Makefile common/Makefile man/Makefile lib/Makefile lib/libupsclient-config lib/libupsclient.pc scripts/hotplug/libhidups scripts/hotplug-ng/nut-usbups.hotplug scripts/hotplug-ng/nut-usbups.rules)
+AC_OUTPUT([
+ clients/Makefile
+ common/Makefile
+ conf/Makefile
+ data/html/header.html
+ data/html/Makefile
+ data/Makefile
+ docs/Makefile
+ drivers/Makefile
+ include/Makefile
+ lib/libupsclient-config
+ lib/libupsclient.pc
+ lib/Makefile
+ m4/Makefile
+ man/Makefile
+ packaging/Makefile
+ packaging/debian/Makefile
+ packaging/mandriva/Makefile
+ packaging/RedHat/Makefile
+ scripts/hotplug/libhidups
+ scripts/hotplug-ng/nut-usbups.hotplug
+ scripts/hotplug-ng/nut-usbups.rules
+ scripts/Makefile
+ server/Makefile
+ Makefile
+])

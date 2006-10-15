@@ -1,4 +1,7 @@
 Makefile
+.deps
+.libs
+Makefile.in
 al175
 apcsmart
 bcmxcp
@@ -30,12 +33,14 @@ mge-shut
 mge-utalk
 mustek
 newhidups
+newmge_shut
 nitram
 oneac
 optiups
 powercom
 rhino
 safenet
+skel
 sms
 snmp-ups
 solis

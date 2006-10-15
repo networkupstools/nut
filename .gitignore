@@ -1,5 +1,15 @@
+configure
+Makefile.in
+nut-*.tar.gz
+nut-*.*.*
 Makefile
 config.log
 config.status
 autom4te.cache
 svn-commit.tmp
+aclocal.m4
+configure
+libtool
+Makefile.in
+
+
