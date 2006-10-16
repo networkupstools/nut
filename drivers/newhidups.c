@@ -531,7 +531,8 @@ void upsdrv_updateinfo(void)
 	hid_info_t *item;
 	char *nutvalue;
 	int retcode, evtCount = 0;
-	HIDItem *eventsList[10];
+	HIDEvent *eventlist;
+	HIDEvent *p;
 
 	upsdebugx(1, "upsdrv_updateinfo...");
 
@@ -549,39 +550,37 @@ void upsdrv_updateinfo(void)
 		 && (data_has_changed != TRUE) )
 	  {
 		/* Wait for HID notifications on Interrupt pipe */
-		if ((evtCount = HIDGetEvents(udev, NULL, eventsList, subdriver->utab)) > 0)
+		if ((evtCount = HIDGetEvents(udev, NULL, &eventlist, subdriver->utab)) > 0)
 		  {
 			upsdebugx(1, "\n=>Got %i HID Objects...", evtCount);
 			
 			/* Process pending events (HID notifications on Interrupt pipe) */
-			while (evtCount > 0)
+			for (p=eventlist; p!=NULL; p=p->next) 
 			  {
 				/* Check if we are asked to stop (reactivity++) */
 				if (exit_flag != 0)
 				  return;
 
 				upsdebugx(3, "Object: %s = %ld", 
-						  eventsList[evtCount-1]->Path,
-						  eventsList[evtCount-1]->Value);
+						  p->Path,
+						  p->Value);
 #ifndef SHUT_MODE
 				/* special case: fix a horrible Belkin
 				 bug.  My Belkin UPS actually sends an
 				 incorrect report over the interrupt
 				 pipeline - the corresponding feature
 				 report is correct. */
-				if (subdriver == &belkin_subdriver && strcmp(eventsList[evtCount-1]->Path, "UPS.PowerSummary.BelowRemainingCapacityLimit") == 0) {
-					free(eventsList[evtCount-1]);
-					evtCount--;
+				if (subdriver == &belkin_subdriver && strcmp(p->Path, "UPS.PowerSummary.BelowRemainingCapacityLimit") == 0) {
 					continue;
 				}
 #endif
 				
-				if ((item = find_hid_info(eventsList[evtCount-1]->Path)) != NULL)
+				if ((item = find_hid_info(p->Path)) != NULL)
 				  {
 					/* Does it need value lookup? */
 					if (item->hid2info != NULL)
 					  {
-						nutvalue = hu_find_infoval(item->hid2info, (long)eventsList[evtCount-1]->Value);
+						nutvalue = hu_find_infoval(item->hid2info, (long)p->Value);
 						if (nutvalue != NULL)
 						  {
 							upsdebugx(2, "%s = %s", item->info_type,nutvalue);
@@ -599,16 +598,16 @@ void upsdrv_updateinfo(void)
 					  }
 					else
 					  /* FIXME: should we do setinfo() here? */
-					  upsdebugx(2, "%s = %ld", item->info_type, eventsList[evtCount-1]->Value);
+					  upsdebugx(2, "%s = %ld", item->info_type, p->Value);
 				  }
-				free(eventsList[evtCount-1]);
-				evtCount--;
 			  }
 			dstate_dataok();
 		  }
-		else
+		else {
 		  retcode = evtCount; /* propagate error code */
-
+		}
+		HIDFreeEvents(eventlist);
+		
 		/* Quick poll on main ups.status data */
 		hid_ups_walk(HU_WALKMODE_QUICK_UPDATE);
 	  }

@@ -1,3 +1,9 @@
+Mon Oct 16 19:07:46 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups/libhid: fixed array overflow bug in upsdrv_updateinfo(),
+   reported by Jacob Schmier.
+ - newhidups.h: deleted some unused #define's
+
 Tue Oct 10 01:29:22 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - mge-shut: made report buffer mechanism compatible with newmge-shut,

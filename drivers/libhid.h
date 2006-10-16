@@ -141,13 +141,16 @@ void free_exact_matcher(HIDDeviceMatcher_t *matcher);
 void free_regex_matcher(HIDDeviceMatcher_t *matcher);
 
 /*!
- * Describe a HID Item (a node in the HID tree)
+ * Describe a linked list of HID Events (nodes in the HID tree with
+ * values). 
  */
- typedef struct
+struct HIDEvent_s
 {
-	char*   Path;		/*!< HID Object's fully qualified HID path	*/
+	char*   Path;		/*!< HID Object's fully qualified HID path (allocated) */
 	long    Value;		/*!< HID Object Value				*/
-} HIDItem;
+	struct HIDEvent_s *next;  /* linked list */
+};
+typedef struct HIDEvent_s HIDEvent;
 
 /* Describe a set of values to match for finding a special HID device.
  * This is given by a set of (compiled) regular expressions. If any
@@ -212,10 +215,16 @@ char *HIDGetItemString(hid_dev_handle *udev, char *path, unsigned char *rawbuf, 
  * -------------------------------------------------------------------------- */
 bool HIDSetItemValue(hid_dev_handle *udev, char *path, float value, usage_tables_t *utab);
 
+
 /*
- * HIDGetNextEvent
+ * HIDFreeEvents
  * -------------------------------------------------------------------------- */
-int HIDGetEvents(hid_dev_handle *udev, HIDDevice *dev, HIDItem **eventsList, usage_tables_t *utab);
+void HIDFreeEvents(HIDEvent *events);
+
+/*
+ * HIDGetEvents
+ * -------------------------------------------------------------------------- */
+int HIDGetEvents(hid_dev_handle *udev, HIDDevice *dev, HIDEvent **eventsListp, usage_tables_t *utab);
 
 /*
  * HIDCloseDevice

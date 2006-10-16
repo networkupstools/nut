@@ -68,12 +68,6 @@ typedef struct
 #define MAX_STRING_SIZE    	128
 
 
-/* FIXME: remaining "unused" items => need integration */
-#define BATT_MFRDATE		0x850085	/* manufacturer date         */
-#define BATT_ICHEMISTRY		0x850089	/* battery type              */
-#define BATT_IOEMINFORMATION	0x85008f	/* battery OEM description   */
-
-
 /* --------------------------------------------------------------- */
 /* Struct & data for ups.status processing                         */
 /* --------------------------------------------------------------- */
