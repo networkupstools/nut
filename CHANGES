@@ -1,3 +1,7 @@
+Tue Oct 17 19:08:28 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: added ProductID for Belkin F6C900-UNV (050d/0900)
+
 Mon Oct 16 19:07:46 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups/libhid: fixed array overflow bug in upsdrv_updateinfo(),
