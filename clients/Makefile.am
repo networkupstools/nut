@@ -19,8 +19,6 @@ sbin_PROGRAMS = upsmon upssched
 if WITH_LIB
  lib_LTLIBRARIES = libupsclient.la
  include_HEADERS = upsclient.h ../include/parseconf.h
-else
- noinst_LTLIBRARIES = libupsclient.la
 endif
 if WITH_CGI
  cgiexec_PROGRAMS = upsstats.cgi upsimage.cgi upsset.cgi

@@ -10,6 +10,5 @@ svn-commit.tmp
 aclocal.m4
 configure
 libtool
+mkinstalldirs
 Makefile.in
-
-

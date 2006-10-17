@@ -1,3 +1,10 @@
+Tue Oct 17 21:13:46 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - refined build system to work with older automake-1.7.
+ - renamed configuration files *.sample so that they can be installed
+   without special renaming magic.
+ - documentation improvements.
+
 Sun Oct 15 22:54:26 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - updated documentation for new build system based on Automake and Libtool.
