@@ -558,9 +558,10 @@ void upsdrv_updateinfo(void)
 			for (p=eventlist; p!=NULL; p=p->next) 
 			  {
 				/* Check if we are asked to stop (reactivity++) */
-				if (exit_flag != 0)
+				if (exit_flag != 0) {
+				  HIDFreeEvents(eventlist);
 				  return;
-
+				}
 				upsdebugx(3, "Object: %s = %ld", 
 						  p->Path,
 						  p->Value);
@@ -602,11 +603,11 @@ void upsdrv_updateinfo(void)
 				  }
 			  }
 			dstate_dataok();
+			HIDFreeEvents(eventlist);
 		  }
 		else {
 		  retcode = evtCount; /* propagate error code */
 		}
-		HIDFreeEvents(eventlist);
 		
 		/* Quick poll on main ups.status data */
 		hid_ups_walk(HU_WALKMODE_QUICK_UPDATE);
