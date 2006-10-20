@@ -1,3 +1,13 @@
+Thu Oct 19 22:25:06 EDT 2006 / Charles Lepple <clepple@gmail.com>
+
+ - tripplite_usb: applied Anthony J. Ciani's patch for protocol 2001 support:
+
+   "This patch adds support for TrippLite SMART550USB and some Omni models.
+
+    Tested are On Line, On Battery, Battery Good, and Battery Bad indication.
+    Everything else seems to work, but this UPS is attached to a critical
+    system, and I can only do limited testing."
+
 Thu Oct 19 22:19:00 EDT 2006 / Charles Lepple <clepple@gmail.com>
 
  - tripplite_usb: better error handling and protocol reporting.

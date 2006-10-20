@@ -275,8 +275,12 @@ The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 #include <math.h>
 #include <ctype.h>
 
-static enum tl_model_t { TRIPP_LITE_UNKNOWN = 0, TRIPP_LITE_OMNIVS, TRIPP_LITE_SMARTPRO }
-tl_model = TRIPP_LITE_UNKNOWN;
+static enum tl_model_t {
+	TRIPP_LITE_UNKNOWN = 0,
+	TRIPP_LITE_OMNIVS,
+	TRIPP_LITE_OMNIVS_2001,
+	TRIPP_LITE_SMARTPRO
+} tl_model = TRIPP_LITE_UNKNOWN;
 
 /*!@brief If a character is not printable, return a dot. */
 #define toprint(x) (isalnum((unsigned)x) ? (x) : '.')
@@ -419,6 +423,9 @@ enum tl_model_t decode_protocol(unsigned int proto)
 		case 0x1001:
 			upslogx(3, "Using OMNIVS protocol (%x)", proto);
 			return TRIPP_LITE_OMNIVS;
+		case 0x2001:
+			upslogx(3, "Using OMNIVS 2001 protocol (%x)", proto);
+			return TRIPP_LITE_OMNIVS_2001;
 		case 0x3003:
 			upslogx(3, "Using SMARTPRO protocol (%x)", proto);
 			return TRIPP_LITE_SMARTPRO;
@@ -904,7 +911,7 @@ void upsdrv_updateinfo(void)
 		return;
 	}
 
-	if(tl_model != TRIPP_LITE_OMNIVS) {
+	if(tl_model != TRIPP_LITE_OMNIVS && tl_model != TRIPP_LITE_OMNIVS_2001) {
 		dstate_setinfo("ups.debug.S","%s", hexascdump(s_value+1, 7));
 	}
 
@@ -933,6 +940,44 @@ void upsdrv_updateinfo(void)
 				upslogx(LOG_ERR, "Unknown value for s[2]: 0x%02x", s_value[2]);
 				dstate_datastale();
 				break;
+		}
+	}
+
+
+	if(tl_model == TRIPP_LITE_OMNIVS_2001) {
+		switch(s_value[2]) {
+			case '0':
+				dstate_setinfo("battery.test.status", "Battery OK");
+				break;
+			case '1':
+				dstate_setinfo("battery.test.status", "Battery bad - replace");
+				break;
+			case '2':
+				status_set("CAL");
+				break;
+			case '3':
+				status_set("OVER");
+				dstate_setinfo("battery.test.status", "Overcurrent?");
+				break;
+			case '4':
+				/* The following message is confusing, and may not be accurate: */
+				/* dstate_setinfo("battery.test.status", "Battery state unknown"); */
+				break;
+			case '5':
+				status_set("OVER");
+				dstate_setinfo("battery.test.status", "Battery fail - overcurrent?");
+				break;
+			default:
+				upslogx(LOG_ERR, "Unknown value for s[2]: 0x%02x", s_value[2]);
+				dstate_datastale();
+				break;
+		}
+
+		/* Online/on battery: */
+		if(s_value[4] & 1) {
+			status_set("OB");
+		} else {
+			status_set("OL");
 		}
 	}
 
@@ -992,7 +1037,7 @@ void upsdrv_updateinfo(void)
 
 	status_commit();
 
-	if( tl_model == TRIPP_LITE_OMNIVS ) {
+	if( tl_model == TRIPP_LITE_OMNIVS || tl_model == TRIPP_LITE_OMNIVS_2001 ) {
 		ret = send_cmd(b_msg, sizeof(b_msg), b_value, sizeof(b_value));
 		if(ret <= 0) {
 			dstate_datastale();
@@ -1080,6 +1125,7 @@ void upsdrv_updateinfo(void)
 
 	switch(tl_model) {
 		case TRIPP_LITE_OMNIVS:
+		case TRIPP_LITE_OMNIVS_2001:
 			dstate_setinfo("output.voltage", "%.1f", hex2d(l_value+1, 4)/2.0);
 			break;
 		case TRIPP_LITE_SMARTPRO:
@@ -1090,7 +1136,7 @@ void upsdrv_updateinfo(void)
 			break;
 	}
 
-	if(tl_model != TRIPP_LITE_OMNIVS) {
+	if(tl_model != TRIPP_LITE_OMNIVS && tl_model != TRIPP_LITE_OMNIVS_2001) {
 		debug_message("D", 2);
 		debug_message("V", 2);
 
