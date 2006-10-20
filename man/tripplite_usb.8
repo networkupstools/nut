@@ -129,9 +129,9 @@
 .\" ========================================================================
 .\"
 .IX Title "TRIPPLITE_USB 8"
-.TH TRIPPLITE_USB 8 "2005-10-09" " " "Network UPS Tools (NUT)"
+.TH TRIPPLITE_USB 8 "2006-10-19" " " "Network UPS Tools (NUT)"
 .SH "NAME"
-tripplite_usb \- Driver for Tripp Lite USB\-based UPS equipment
+tripplite_usb \- Driver for older Tripp Lite USB UPSes (non\-PDC HID)
 .SH "NOTE"
 .IX Header "NOTE"
 This man page only documents the hardware-specific features of the
@@ -139,14 +139,29 @@ tripplite_usb driver.  For information about the core driver, see
 \&\fInutupsdrv\fR\|(8).
 .SH "SUPPORTED HARDWARE"
 .IX Header "SUPPORTED HARDWARE"
-This driver should work with the \s-1OMNISV1000\s0, \s-1OMNISV1500XL\s0 and \s-1SMART1500RM2U\s0
-UPSes, which are detected as \s-1USB\s0 HID-class devices (but are not true \s-1HID\s0
-Power-Device Class devices).  Other Tripp Lite \s-1USB\s0 models may work \- please
-report success or failure to the nut-upsuser mailing list.  A key piece of
-information is the protocol number.  Also, be sure to turn on debugging
-(\f(CW\*(C`\-DDD\*(C'\fR) for more informative log messages.  If your Tripp Lite \s-1UPS\s0 uses a
-serial port, you may wish to investigate the \fItripplite\fR\|(8) or \fItripplite_su\fR\|(8)
-driver.
+This driver should work with older Tripp Lite UPSes which are detected as \s-1USB\s0
+HID-class devices, but are not true \s-1HID\s0 Power-Device Class devices.  So far,
+the devices supported by tripplite_usb have product \s-1ID\s0 0001, and the newer
+units (such as those with \*(L"\s-1LCD\s0\*(R" in the model name) with product \s-1ID\s0 2001 will
+work with the newhidups driver instead.  Please report success or failure to
+the nut-upsuser mailing list.  A key piece of information is the protocol
+number, returned in ups.debug.0.  Also, be sure to turn on debugging (\f(CW\*(C`\-DDD\*(C'\fR)
+for more informative log messages.  If your Tripp Lite \s-1UPS\s0 uses a serial port,
+you may wish to investigate the \fItripplite\fR\|(8) or \fItripplite_su\fR\|(8) driver.
+.PP
+This driver has been tested with the following models:
+.IP "* \s-1OMNISV1000\s0" 4
+.IX Item "OMNISV1000"
+.PD 0
+.IP "* \s-1OMNISV1500XL\s0 (some warnings)" 4
+.IX Item "OMNISV1500XL (some warnings)"
+.IP "* \s-1SMART1500RM2U\s0" 4
+.IX Item "SMART1500RM2U"
+.IP "* \s-1SMART2200RMXL2U\s0" 4
+.IX Item "SMART2200RMXL2U"
+.IP "* \s-1SMART3000RM2U\s0" 4
+.IX Item "SMART3000RM2U"
+.PD
 .SH "EXTRA ARGUMENTS"
 .IX Header "EXTRA ARGUMENTS"
 This driver supports the following optional setting in the \fIups.conf\fR\|(5) file
@@ -158,21 +173,27 @@ and actually cutting power to the computer.
 .IP "bus" 4
 .IX Item "bus"
 This regular expression is used to match the \s-1USB\s0 bus (as seen in
-\&\f(CW\*(C`/proc/bus/usb/devices\*(C'\fR).
+\&\f(CW\*(C`/proc/bus/usb/devices\*(C'\fR or \fIlsusb\fR\|(8); including leading zeroes).
 .IP "product" 4
 .IX Item "product"
 A regular expression to match the product string for the \s-1UPS\s0.  This would be
 useful if you have two different Tripp Lite \s-1UPS\s0 models connected to the
 system, and you want to be sure that you shut them down in the correct order.
+.Sp
+Note that this regex is matched against the full \s-1USB\s0 product string as seen in
+\&\fIlsusb\fR\|(8). The \f(CW\*(C`ups.model\*(C'\fR in the \f(CW\*(C`upsc\*(C'\fR output only lists the name after
+\&\*(L"\s-1TRIPP\s0 \s-1LITE\s0\*(R", so to match a \s-1SMART2200RMXL2U\s0, you could use the regex
+\&\*(L".*SMART2200.*\*(R".
 .IP "productid" 4
 .IX Item "productid"
 The productid is a regular expression which matches the \s-1UPS\s0 \s-1PID\s0 as four
-hexadecimal digits.  Only \f(CW0001\fR has been observed for Tripp Lite \s-1USB\s0 UPSes.
+hexadecimal digits.  So far, the only devices that work with this driver have
+\&\s-1PID\s0 \f(CW0001\fR.
 .IP "serial" 4
 .IX Item "serial"
-So far, it does not appear that Tripp Lite UPSes use the iSerial descriptor
-field to return a serial number.  However, in case your unit does, you may
-specify it here.
+It does not appear that these particular Tripp Lite UPSes use the iSerial
+descriptor field to return a serial number.  However, in case your unit does,
+you may specify it here.
 .PP
 For more information on regular expressions, see \fIregex\fR\|(7)
 .SH "RUNTIME VARIABLES"
@@ -188,9 +209,18 @@ so certain events may confuse the driver. If you observe any strange behavior,
 please re-run the driver with \f(CW\*(C`\-DDD\*(C'\fR to increase the verbosity.
 .PP
 So far, the Tripp Lite UPSes do not seem to have any serial number or other
-unique identifier accessible through \s-1USB\s0. Therefore, you are limited to one
-Tripp Lite \s-1USB\s0 \s-1UPS\s0 per system (and in practice, this driver will not play well
-with other \s-1USB\s0 UPSes, either).
+unique identifier accessible through \s-1USB\s0. Thus, when monitoring several Tripp
+Lite \s-1USB\s0 UPSes, you should use either the \f(CW\*(C`bus\*(C'\fR or \f(CW\*(C`product\*(C'\fR configuration
+options to uniquely specify which \s-1UPS\s0 a given driver instance should control.
+.PP
+For instance, you can easily monitor an \s-1OMNIVS1000\s0 and a \s-1SMART1500RM2U\s0 at the
+same time, since they have different \s-1USB\s0 Product \s-1ID\s0 strings. If you have two
+\&\s-1SMART1500RM2U\s0 units, you would have to find which \s-1USB\s0 bus number each unit is
+on (via \f(CW\*(C`lsusb\*(C'\fR), which may result in ambiguities if the available \s-1USB\s0 ports
+are on the same bus.
+.PP
+Some of the SMART*2U models seem to have an \s-1ID\s0 number that could be used in a
+future version of this driver to monitor multiple similar UPSes.
 .SH "AUTHORS"
 .IX Header "AUTHORS"
 Charles Lepple <clepple+nut@ghz.cc>, based on the tripplite driver by
@@ -210,7 +240,7 @@ Email: info@relevantevidence.com
 .IX Header "SEE ALSO"
 .Sh "The core driver:"
 .IX Subsection "The core driver:"
-\&\fInutupsdrv\fR\|(8), \fIregex\fR\|(7)
+\&\fInutupsdrv\fR\|(8), \fIregex\fR\|(7), \fInewhidups\fR\|(8)
 .Sh "Internet resources:"
 .IX Subsection "Internet resources:"
 The \s-1NUT\s0 (Network \s-1UPS\s0 Tools) home page: http://www.networkupstools.org/

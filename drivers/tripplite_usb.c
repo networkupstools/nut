@@ -126,7 +126,7 @@ pod2man --name='TRIPPLITE_USB' --section=8 --release=' ' --center='Network UPS T
 
 =head1 NAME
 
-tripplite_usb - Driver for Tripp Lite USB-based UPS equipment
+tripplite_usb - Driver for older Tripp Lite USB UPSes (non-PDC HID)
 
 =head1 NOTE
 
@@ -136,14 +136,31 @@ nutupsdrv(8).
 
 =head1 SUPPORTED HARDWARE
 
-This driver should work with the OMNISV1000, OMNISV1500XL and SMART1500RM2U
-UPSes, which are detected as USB HID-class devices (but are not true HID
-Power-Device Class devices).  Other Tripp Lite USB models may work - please
-report success or failure to the nut-upsuser mailing list.  A key piece of
-information is the protocol number.  Also, be sure to turn on debugging
-(C<-DDD>) for more informative log messages.  If your Tripp Lite UPS uses a
-serial port, you may wish to investigate the tripplite(8) or tripplite_su(8)
-driver.
+This driver should work with older Tripp Lite UPSes which are detected as USB
+HID-class devices, but are not true HID Power-Device Class devices.  So far,
+the devices supported by tripplite_usb have product ID 0001, and the newer
+units (such as those with "LCD" in the model name) with product ID 2001 will
+work with the newhidups driver instead.  Please report success or failure to
+the nut-upsuser mailing list.  A key piece of information is the protocol
+number, returned in ups.debug.0.  Also, be sure to turn on debugging (C<-DDD>)
+for more informative log messages.  If your Tripp Lite UPS uses a serial port,
+you may wish to investigate the tripplite(8) or tripplite_su(8) driver.
+
+This driver has been tested with the following models:
+
+=over
+
+=item * OMNISV1000
+
+=item * OMNISV1500XL (some warnings)
+
+=item * SMART1500RM2U
+
+=item * SMART2200RMXL2U
+
+=item * SMART3000RM2U
+
+=back
 
 =head1 EXTRA ARGUMENTS
 
@@ -160,7 +177,7 @@ and actually cutting power to the computer.
 =item bus
 
 This regular expression is used to match the USB bus (as seen in
-C</proc/bus/usb/devices>).
+C</proc/bus/usb/devices> or lsusb(8); including leading zeroes).
 
 =item product
 
@@ -168,16 +185,22 @@ A regular expression to match the product string for the UPS.  This would be
 useful if you have two different Tripp Lite UPS models connected to the
 system, and you want to be sure that you shut them down in the correct order.
 
+Note that this regex is matched against the full USB product string as seen in
+lsusb(8). The C<ups.model> in the C<upsc> output only lists the name after
+"TRIPP LITE", so to match a SMART2200RMXL2U, you could use the regex
+".*SMART2200.*".
+
 =item productid
 
 The productid is a regular expression which matches the UPS PID as four
-hexadecimal digits.  Only C<0001> has been observed for Tripp Lite USB UPSes.
+hexadecimal digits.  So far, the only devices that work with this driver have
+PID C<0001>.
 
 =item serial
 
-So far, it does not appear that Tripp Lite UPSes use the iSerial descriptor
-field to return a serial number.  However, in case your unit does, you may
-specify it here.
+It does not appear that these particular Tripp Lite UPSes use the iSerial
+descriptor field to return a serial number.  However, in case your unit does,
+you may specify it here.
 
 =back
 
@@ -201,9 +224,18 @@ so certain events may confuse the driver. If you observe any strange behavior,
 please re-run the driver with C<-DDD> to increase the verbosity.
 
 So far, the Tripp Lite UPSes do not seem to have any serial number or other
-unique identifier accessible through USB. Therefore, you are limited to one
-Tripp Lite USB UPS per system (and in practice, this driver will not play well
-with other USB UPSes, either).
+unique identifier accessible through USB. Thus, when monitoring several Tripp
+Lite USB UPSes, you should use either the C<bus> or C<product> configuration
+options to uniquely specify which UPS a given driver instance should control.
+
+For instance, you can easily monitor an OMNIVS1000 and a SMART1500RM2U at the
+same time, since they have different USB Product ID strings. If you have two
+SMART1500RM2U units, you would have to find which USB bus number each unit is
+on (via C<lsusb>), which may result in ambiguities if the available USB ports
+are on the same bus.
+
+Some of the SMART*2U models seem to have an ID number that could be used in a
+future version of this driver to monitor multiple similar UPSes.
 
 =head1 AUTHORS
 
@@ -227,7 +259,7 @@ Email: info@relevantevidence.com
 
 =head2 The core driver:
 
-nutupsdrv(8), regex(7)
+nutupsdrv(8), regex(7), newhidups(8)
 
 =head2 Internet resources:
 

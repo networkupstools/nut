@@ -1,3 +1,8 @@
+Thu Oct 19 21:58:32 EDT 2006 / Charles Lepple <clepple@gmail.com>
+
+ - tripplite_usb: updated documentation to better reflect regex matching
+   operation.
+
 Thu Oct 19 00:10:15 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups: fixed premature "free" error.
