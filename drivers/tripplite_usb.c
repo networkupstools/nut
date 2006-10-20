@@ -1,5 +1,5 @@
 /*!@file tripplite_usb.c 
- * @brief Driver for Tripp Lite entry-level USB models.  (tested with: "OMNIVS1000")
+ * @brief Driver for Tripp Lite entry-level USB models.
  */
 /*
    tripplite_usb.c was derived from tripplite.c by Charles Lepple
@@ -8,7 +8,7 @@
    Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
    Copyright (C) 2001  Rickard E. (Rik) Faith <faith@alephnull.com>
    Copyright (C) 2004  Nicholas J. Kain <nicholas@kain.us>
-   Copyright (C) 2005  Charles Lepple <clepple+nut@gmail.com>
+   Copyright (C) 2005,2006  Charles Lepple <clepple+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -727,16 +727,22 @@ void upsdrv_initinfo(void)
 {
 	const unsigned char proto_msg[] = "\0", f_msg[] = "F", p_msg[] = "P",
 		s_msg[] = "S", v_msg[] = "V", w_msg[] = "W\0";
-	char *model, *model_end;
+	char *model, *model_end, proto_string[5 + sizeof("protocol ")];
 	unsigned char proto_value[9], f_value[9], p_value[9], s_value[9], v_value[9],
 		      w_value[9], buf[256];
 	int  va, ret;
+	unsigned int proto_number = 0;
 
 	/* Reset watchdog: */
 	ret = send_cmd(w_msg, sizeof(w_msg), w_value, sizeof(w_value)-1);
 	if(ret <= 0) {
-		upslogx(3, "Could not reset watchdog. Please send model "
+		if(ret == -EPIPE) {
+			fatalx("Could not reset watchdog. Please check and"
+				"see if newhidups(8) works with this UPS.");
+		} else {
+			upslogx(3, "Could not reset watchdog. Please send model "
 				"information to nut-upsdev mailing list");
+		}
 	}
 
 	ret = send_cmd(proto_msg, sizeof(proto_msg), proto_value, sizeof(proto_value)-1);
@@ -744,11 +750,16 @@ void upsdrv_initinfo(void)
 		fatalx("Error reading protocol");
 	}
 
-	tl_model = decode_protocol(((unsigned)(proto_value[1]) << 8) 
-			          | (unsigned)(proto_value[2]));
+	proto_number = ((unsigned)(proto_value[1]) << 8) 
+			          | (unsigned)(proto_value[2]);
+	tl_model = decode_protocol(proto_number);
 
 	if(tl_model == TRIPP_LITE_UNKNOWN)
 		dstate_setinfo("ups.debug.0", hexascdump(proto_value+1, 7));
+
+	sprintf(proto_string, sizeof(proto_string), "protocol %04x", proto_number);
+
+	dstate_setinfo("ups.firmware.aux", proto_string);
 
 	ret = send_cmd(s_msg, sizeof(s_msg), s_value, sizeof(s_value)-1);
 	if(ret <= 0) {

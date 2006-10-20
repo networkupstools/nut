@@ -1,3 +1,7 @@
+Thu Oct 19 22:19:00 EDT 2006 / Charles Lepple <clepple@gmail.com>
+
+ - tripplite_usb: better error handling and protocol reporting.
+
 Thu Oct 19 21:58:32 EDT 2006 / Charles Lepple <clepple@gmail.com>
 
  - tripplite_usb: updated documentation to better reflect regex matching
