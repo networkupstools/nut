@@ -70,9 +70,14 @@ MANPATH, or just do this:
 
 	make usb
 
+    Note that you need to install libusb development package or files.
+
+
     The same goes for the SNMP driver (snmp-ups) using:
 
 	make snmp
+
+    Note that you need to install libsnmp development package or files.
 
 ---------------------------------------------------------------------------
 
@@ -110,6 +115,11 @@ MANPATH, or just do this:
     To install SNMP driver, use:
 
 	make install-snmp
+
+    To install NUT development files (needed to compile WMNut and MGE PSP),
+    use:
+
+	make install-lib
 
 ---------------------------------------------------------------------------
 

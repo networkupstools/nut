@@ -1,3 +1,8 @@
+Tue Oct 31 20:47:08 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - NEWS: brought in sync with 2.0.4
+ - INSTALL: complete installation requirements and instructions
+
 Thu Oct 19 22:25:06 EDT 2006 / Charles Lepple <clepple@gmail.com>
 
  - tripplite_usb: applied Anthony J. Ciani's patch for protocol 2001 support:
