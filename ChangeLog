@@ -1,9 +1,47 @@
+Tue Oct 31 20:47:08 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - NEWS: brought in sync with 2.0.4
+ - INSTALL: complete installation requirements and instructions
+
+Thu Oct 19 22:25:06 EDT 2006 / Charles Lepple <clepple@gmail.com>
+
+ - tripplite_usb: applied Anthony J. Ciani's patch for protocol 2001 support:
+
+   "This patch adds support for TrippLite SMART550USB and some Omni models.
+
+    Tested are On Line, On Battery, Battery Good, and Battery Bad indication.
+    Everything else seems to work, but this UPS is attached to a critical
+    system, and I can only do limited testing."
+
+Thu Oct 19 22:19:00 EDT 2006 / Charles Lepple <clepple@gmail.com>
+
+ - tripplite_usb: better error handling and protocol reporting.
+
+Thu Oct 19 21:58:32 EDT 2006 / Charles Lepple <clepple@gmail.com>
+
+ - tripplite_usb: updated documentation to better reflect regex matching
+   operation.
+
+Thu Oct 19 00:10:15 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: fixed premature "free" error.
+
+Tue Oct 17 19:08:28 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: added ProductID for Belkin F6C900-UNV (050d/0900)
+
 Tue Oct 17 21:13:46 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - refined build system to work with older automake-1.7.
  - renamed configuration files *.sample so that they can be installed
    without special renaming magic.
  - documentation improvements.
+
+Mon Oct 16 19:07:46 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups/libhid: fixed array overflow bug in upsdrv_updateinfo(),
+   reported by Jacob Schmier.
+ - newhidups.h: deleted some unused #define's
 
 Sun Oct 15 22:54:26 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
@@ -20,6 +58,30 @@ Sun Oct 15 21:13:49 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
  - removed Makefile.dist, drivers/gendb, drivers/Makefile.drvbuild,
    include/version*
  - moved local autoconf macros to m4/
+
+Tue Oct 10 01:29:22 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - mge-shut: made report buffer mechanism compatible with newmge-shut,
+   cleaned up an unused variable from mge-shut.
+ - updated dependencies for rhino
+
+Fri Sep 29 17:17:50 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - drivers/rhino.c: fixed array bounds error, cleanup (made global
+   variables static, removed unused variables, removed header file).
+
+Wed Sep 27 23:50:15 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - path-to-subdriver.sh: added command line options
+
+Wed Sep 27 00:36:09 EDT 2006 / Charles Lepple <clepple@gmail.com>
+
+ - tripplite_usb: Updated SMARTPRO support based on Jeff Knerr's feedback.
+   This should fix the OL/OB issue, and maybe even the temperature reading.
+
+Tue Sep 26 21:22:27 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - driver.list: added Tripp-Lite OMNI650LCD and OMNI900LCD
 
 Sun Sep 24 03:38:25 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 

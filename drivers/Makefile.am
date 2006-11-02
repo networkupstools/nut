@@ -18,7 +18,7 @@ AM_CFLAGS = -I$(top_srcdir)/include
 SERIAL_DRIVERLIST = al175 apcsmart bcmxcp belkin belkinunv bestfcom	\
  bestuferrups bestups blazer cpsups cyberpower dummy-ups esupssmart	\
  etapro everups fentonups gamatronic genericups ippon isbmex liebert	\
- masterguard megatec metasys mge-shut mge-utalk mustek newmge_shut	\
+ masterguard megatec metasys mge-shut mge-utalk mustek newmge-shut	\
  nitram oneac optiups powercom rhino safenet skel sms solis tripplite	\
  tripplitesu upscode2 victronups
 SNMP_DRIVERLIST = snmp-ups

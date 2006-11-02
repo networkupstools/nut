@@ -1,6 +1,55 @@
 If you're upgrading from an earlier version, see the UPGRADING file.
 
 ---------------------------------------------------------------------------
+Release notes for NUT 2.0.4 - what's new since 2.0.3:
+
+ - The newhidups critical bug (segmentation fault) has been fixed. It has
+   also received some more care, like buxfixes and new models support and
+   enhancement for Solaris.
+
+   [Peter Selinger and Arnaud Quette]
+
+ - A bug has been fixed in NUT core to support resuming from suspend-to-disk.
+   This should also fix other similar issues, like time synchronisation
+   through the NTP - Network Time Protocol.
+
+   [Arjen de Korte]
+
+ - The mge-shut driver now better detects the Low Battery status, support
+   new models and fixes some wrong status and data. It also fixes some
+   issue where the UPS wasn't restarting (refer to mge-shut manpage).
+
+   [Arnaud Quette]
+
+ - The genericups custom configuration through ups.conf is working again
+
+   [Arjen de Korte]
+
+ - The genericups driver type 22 also support CyberPower 725SL
+   (and maybe others SL models)
+
+   [David Kaufman]
+
+ - The new megatec driver, which will replace a bunch of drivers by nut 2.2
+   (refer to docs/megatec.txt and UPGRADING) has been backported from the
+   trunk (Development tree). The powermust driver has also received some
+   attention.
+
+   [Carlos Rodrigues]
+
+ - The new rhino driver was added to support Microsol Rhino UPS hardware
+   The solis has also been improved for solaris compatibility, and
+   internal / external shutdown programming. solis can now save external
+   shutdown programming to ups, and support new cables for solis 3
+
+   [Silvino B. MagalhÃ£es]
+
+ - Several fixes and improvements have been made to upsrw, upsset,
+   cpsups, tripplite_usb and the FAQ.
+
+   [Arjen de Korte and Charles Lepple]
+
+---------------------------------------------------------------------------
 Release notes for NUT 2.0.3 - what's new since 2.0.2:
 
  - The recent and major newhidups changes have been backported from the

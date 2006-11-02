@@ -775,11 +775,24 @@ bool HIDSetItemValue(hid_dev_handle *udev, char *path, float value, usage_tables
 	return TRUE;
 }
 
+void HIDFreeEvents(HIDEvent *events) {
+	HIDEvent *p;
+
+	while (events) {
+		p = events->next; /* must copy this before free(events)! */
+		free(events->Path);
+		free(events);
+		events = p;
+	}
+}
+
 /* FIXME: change this so that we iterate through the report descriptor
    once, instead of once for every offset. Simply pick out the items
-   with the correct ReportID and Type! Return item count >=0 on
-   success, <0 on error. */
-int HIDGetEvents(hid_dev_handle *udev, HIDDevice *dev, HIDItem **eventsList, usage_tables_t *utab)
+   with the correct ReportID and Type! On success, return item count
+   >=0 and set *eventsListp. On error, return <0. Note: on success, an
+   allocated events list will be returned in *eventsListp that must
+   later be freed by the caller using HIDFreeEvents(). */
+int HIDGetEvents(hid_dev_handle *udev, HIDDevice *dev, HIDEvent **eventsListp, usage_tables_t *utab)
 {
 	unsigned char buf[100];
 	char itemPath[128];
@@ -787,6 +800,9 @@ int HIDGetEvents(hid_dev_handle *udev, HIDDevice *dev, HIDItem **eventsList, usa
 	long hValue;	
 	HIDData *pData;
 	int id, r, i;
+	HIDEvent *root = NULL;
+	HIDEvent **hook = &root;
+	HIDEvent *p;
 
 	upsdebugx(2, "Waiting for notifications...");
 	
@@ -820,12 +836,19 @@ int HIDGetEvents(hid_dev_handle *udev, HIDDevice *dev, HIDItem **eventsList, usa
 
 		/* FIXME: enhance this or fix/change the HID parser
 		   (see libhid project) */
-		eventsList[itemCount] = (HIDItem *)malloc(sizeof (HIDItem));
-		eventsList[itemCount]->Path = strdup(itemPath);
-		eventsList[itemCount]->Value = hValue;
+		p = (HIDEvent *)malloc(sizeof (HIDEvent));
+		if (!p) {
+			HIDFreeEvents(root);
+			return -errno;
+		}
+		p->Path = strdup(itemPath);
+		p->Value = hValue;
+		p->next = NULL;
+		*hook = p;
+		hook = &p->next;
 		itemCount++;
 	}
-	
+	*eventsListp = root;
 	return itemCount;
 }
 

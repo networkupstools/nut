@@ -28,10 +28,12 @@ Contents:
  --with-usb
 
    Build and install the USB drivers (default: no)
+   Note that you need to install libusb development package or files.
 
  --with-snmp
 
    Build and install the SNMP drivers (default: no)
+   Note that you need to install libsnmp development package or files.
 
  --with-drivers=<driver>,<driver>,...
 

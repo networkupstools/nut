@@ -1,5 +1,5 @@
 /*!@file tripplite_usb.c 
- * @brief Driver for Tripp Lite entry-level USB models.  (tested with: "OMNIVS1000")
+ * @brief Driver for Tripp Lite entry-level USB models.
  */
 /*
    tripplite_usb.c was derived from tripplite.c by Charles Lepple
@@ -8,7 +8,7 @@
    Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
    Copyright (C) 2001  Rickard E. (Rik) Faith <faith@alephnull.com>
    Copyright (C) 2004  Nicholas J. Kain <nicholas@kain.us>
-   Copyright (C) 2005  Charles Lepple <clepple+nut@gmail.com>
+   Copyright (C) 2005,2006  Charles Lepple <clepple+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -126,7 +126,7 @@ pod2man --name='TRIPPLITE_USB' --section=8 --release=' ' --center='Network UPS T
 
 =head1 NAME
 
-tripplite_usb - Driver for Tripp Lite USB-based UPS equipment
+tripplite_usb - Driver for older Tripp Lite USB UPSes (non-PDC HID)
 
 =head1 NOTE
 
@@ -136,14 +136,31 @@ nutupsdrv(8).
 
 =head1 SUPPORTED HARDWARE
 
-This driver should work with the OMNISV1000, OMNISV1500XL and SMART1500RM2U
-UPSes, which are detected as USB HID-class devices (but are not true HID
-Power-Device Class devices).  Other Tripp Lite USB models may work - please
-report success or failure to the nut-upsuser mailing list.  A key piece of
-information is the protocol number.  Also, be sure to turn on debugging
-(C<-DDD>) for more informative log messages.  If your Tripp Lite UPS uses a
-serial port, you may wish to investigate the tripplite(8) or tripplite_su(8)
-driver.
+This driver should work with older Tripp Lite UPSes which are detected as USB
+HID-class devices, but are not true HID Power-Device Class devices.  So far,
+the devices supported by tripplite_usb have product ID 0001, and the newer
+units (such as those with "LCD" in the model name) with product ID 2001 will
+work with the newhidups driver instead.  Please report success or failure to
+the nut-upsuser mailing list.  A key piece of information is the protocol
+number, returned in ups.debug.0.  Also, be sure to turn on debugging (C<-DDD>)
+for more informative log messages.  If your Tripp Lite UPS uses a serial port,
+you may wish to investigate the tripplite(8) or tripplite_su(8) driver.
+
+This driver has been tested with the following models:
+
+=over
+
+=item * OMNISV1000
+
+=item * OMNISV1500XL (some warnings)
+
+=item * SMART1500RM2U
+
+=item * SMART2200RMXL2U
+
+=item * SMART3000RM2U
+
+=back
 
 =head1 EXTRA ARGUMENTS
 
@@ -160,7 +177,7 @@ and actually cutting power to the computer.
 =item bus
 
 This regular expression is used to match the USB bus (as seen in
-C</proc/bus/usb/devices>).
+C</proc/bus/usb/devices> or lsusb(8); including leading zeroes).
 
 =item product
 
@@ -168,16 +185,22 @@ A regular expression to match the product string for the UPS.  This would be
 useful if you have two different Tripp Lite UPS models connected to the
 system, and you want to be sure that you shut them down in the correct order.
 
+Note that this regex is matched against the full USB product string as seen in
+lsusb(8). The C<ups.model> in the C<upsc> output only lists the name after
+"TRIPP LITE", so to match a SMART2200RMXL2U, you could use the regex
+".*SMART2200.*".
+
 =item productid
 
 The productid is a regular expression which matches the UPS PID as four
-hexadecimal digits.  Only C<0001> has been observed for Tripp Lite USB UPSes.
+hexadecimal digits.  So far, the only devices that work with this driver have
+PID C<0001>.
 
 =item serial
 
-So far, it does not appear that Tripp Lite UPSes use the iSerial descriptor
-field to return a serial number.  However, in case your unit does, you may
-specify it here.
+It does not appear that these particular Tripp Lite UPSes use the iSerial
+descriptor field to return a serial number.  However, in case your unit does,
+you may specify it here.
 
 =back
 
@@ -201,9 +224,18 @@ so certain events may confuse the driver. If you observe any strange behavior,
 please re-run the driver with C<-DDD> to increase the verbosity.
 
 So far, the Tripp Lite UPSes do not seem to have any serial number or other
-unique identifier accessible through USB. Therefore, you are limited to one
-Tripp Lite USB UPS per system (and in practice, this driver will not play well
-with other USB UPSes, either).
+unique identifier accessible through USB. Thus, when monitoring several Tripp
+Lite USB UPSes, you should use either the C<bus> or C<product> configuration
+options to uniquely specify which UPS a given driver instance should control.
+
+For instance, you can easily monitor an OMNIVS1000 and a SMART1500RM2U at the
+same time, since they have different USB Product ID strings. If you have two
+SMART1500RM2U units, you would have to find which USB bus number each unit is
+on (via C<lsusb>), which may result in ambiguities if the available USB ports
+are on the same bus.
+
+Some of the SMART*2U models seem to have an ID number that could be used in a
+future version of this driver to monitor multiple similar UPSes.
 
 =head1 AUTHORS
 
@@ -227,7 +259,7 @@ Email: info@relevantevidence.com
 
 =head2 The core driver:
 
-nutupsdrv(8), regex(7)
+nutupsdrv(8), regex(7), newhidups(8)
 
 =head2 Internet resources:
 
@@ -243,8 +275,12 @@ The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 #include <math.h>
 #include <ctype.h>
 
-static enum tl_model_t { TRIPP_LITE_UNKNOWN = 0, TRIPP_LITE_OMNIVS, TRIPP_LITE_SMARTPRO }
-tl_model = TRIPP_LITE_UNKNOWN;
+static enum tl_model_t {
+	TRIPP_LITE_UNKNOWN = 0,
+	TRIPP_LITE_OMNIVS,
+	TRIPP_LITE_OMNIVS_2001,
+	TRIPP_LITE_SMARTPRO
+} tl_model = TRIPP_LITE_UNKNOWN;
 
 /*!@brief If a character is not printable, return a dot. */
 #define toprint(x) (isalnum((unsigned)x) ? (x) : '.')
@@ -387,6 +423,9 @@ enum tl_model_t decode_protocol(unsigned int proto)
 		case 0x1001:
 			upslogx(3, "Using OMNIVS protocol (%x)", proto);
 			return TRIPP_LITE_OMNIVS;
+		case 0x2001:
+			upslogx(3, "Using OMNIVS 2001 protocol (%x)", proto);
+			return TRIPP_LITE_OMNIVS_2001;
 		case 0x3003:
 			upslogx(3, "Using SMARTPRO protocol (%x)", proto);
 			return TRIPP_LITE_SMARTPRO;
@@ -695,16 +734,22 @@ void upsdrv_initinfo(void)
 {
 	const unsigned char proto_msg[] = "\0", f_msg[] = "F", p_msg[] = "P",
 		s_msg[] = "S", v_msg[] = "V", w_msg[] = "W\0";
-	char *model, *model_end;
+	char *model, *model_end, proto_string[5 + sizeof("protocol ")];
 	unsigned char proto_value[9], f_value[9], p_value[9], s_value[9], v_value[9],
 		      w_value[9], buf[256];
 	int  va, ret;
+	unsigned int proto_number = 0;
 
 	/* Reset watchdog: */
 	ret = send_cmd(w_msg, sizeof(w_msg), w_value, sizeof(w_value)-1);
 	if(ret <= 0) {
-		upslogx(3, "Could not reset watchdog. Please send model "
+		if(ret == -EPIPE) {
+			fatalx("Could not reset watchdog. Please check and"
+				"see if newhidups(8) works with this UPS.");
+		} else {
+			upslogx(3, "Could not reset watchdog. Please send model "
 				"information to nut-upsdev mailing list");
+		}
 	}
 
 	ret = send_cmd(proto_msg, sizeof(proto_msg), proto_value, sizeof(proto_value)-1);
@@ -712,11 +757,16 @@ void upsdrv_initinfo(void)
 		fatalx("Error reading protocol");
 	}
 
-	tl_model = decode_protocol(((unsigned)(proto_value[1]) << 8) 
-			          | (unsigned)(proto_value[2]));
+	proto_number = ((unsigned)(proto_value[1]) << 8) 
+			          | (unsigned)(proto_value[2]);
+	tl_model = decode_protocol(proto_number);
 
 	if(tl_model == TRIPP_LITE_UNKNOWN)
 		dstate_setinfo("ups.debug.0", hexascdump(proto_value+1, 7));
+
+	sprintf(proto_string, sizeof(proto_string), "protocol %04x", proto_number);
+
+	dstate_setinfo("ups.firmware.aux", proto_string);
 
 	ret = send_cmd(s_msg, sizeof(s_msg), s_value, sizeof(s_value)-1);
 	if(ret <= 0) {
@@ -861,7 +911,7 @@ void upsdrv_updateinfo(void)
 		return;
 	}
 
-	if(tl_model != TRIPP_LITE_OMNIVS) {
+	if(tl_model != TRIPP_LITE_OMNIVS && tl_model != TRIPP_LITE_OMNIVS_2001) {
 		dstate_setinfo("ups.debug.S","%s", hexascdump(s_value+1, 7));
 	}
 
@@ -890,6 +940,44 @@ void upsdrv_updateinfo(void)
 				upslogx(LOG_ERR, "Unknown value for s[2]: 0x%02x", s_value[2]);
 				dstate_datastale();
 				break;
+		}
+	}
+
+
+	if(tl_model == TRIPP_LITE_OMNIVS_2001) {
+		switch(s_value[2]) {
+			case '0':
+				dstate_setinfo("battery.test.status", "Battery OK");
+				break;
+			case '1':
+				dstate_setinfo("battery.test.status", "Battery bad - replace");
+				break;
+			case '2':
+				status_set("CAL");
+				break;
+			case '3':
+				status_set("OVER");
+				dstate_setinfo("battery.test.status", "Overcurrent?");
+				break;
+			case '4':
+				/* The following message is confusing, and may not be accurate: */
+				/* dstate_setinfo("battery.test.status", "Battery state unknown"); */
+				break;
+			case '5':
+				status_set("OVER");
+				dstate_setinfo("battery.test.status", "Battery fail - overcurrent?");
+				break;
+			default:
+				upslogx(LOG_ERR, "Unknown value for s[2]: 0x%02x", s_value[2]);
+				dstate_datastale();
+				break;
+		}
+
+		/* Online/on battery: */
+		if(s_value[4] & 1) {
+			status_set("OB");
+		} else {
+			status_set("OL");
 		}
 	}
 
@@ -949,7 +1037,7 @@ void upsdrv_updateinfo(void)
 
 	status_commit();
 
-	if( tl_model == TRIPP_LITE_OMNIVS ) {
+	if( tl_model == TRIPP_LITE_OMNIVS || tl_model == TRIPP_LITE_OMNIVS_2001 ) {
 		ret = send_cmd(b_msg, sizeof(b_msg), b_value, sizeof(b_value));
 		if(ret <= 0) {
 			dstate_datastale();
@@ -1037,6 +1125,7 @@ void upsdrv_updateinfo(void)
 
 	switch(tl_model) {
 		case TRIPP_LITE_OMNIVS:
+		case TRIPP_LITE_OMNIVS_2001:
 			dstate_setinfo("output.voltage", "%.1f", hex2d(l_value+1, 4)/2.0);
 			break;
 		case TRIPP_LITE_SMARTPRO:
@@ -1047,7 +1136,7 @@ void upsdrv_updateinfo(void)
 			break;
 	}
 
-	if(tl_model != TRIPP_LITE_OMNIVS) {
+	if(tl_model != TRIPP_LITE_OMNIVS && tl_model != TRIPP_LITE_OMNIVS_2001) {
 		debug_message("D", 2);
 		debug_message("V", 2);
 

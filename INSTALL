@@ -54,10 +54,22 @@ MANPATH, or just do this:
 
 	./configure --with-user=nut
 
-    If you need any other switches for configure, add them here.
-    For example, to build USB drivers, add --with-usb. To build
-    CGI scripts, add --with-cgi. See docs/configure.txt or
-    "./configure --help" for the available options. 
+    If you need any other switches for configure, add them here.  For
+    example:
+
+    * to build and install USB drivers, add --with-usb (note that you
+      need to install libusb development package or files).
+
+    * to build and install SNMP drivers, add --with-snmp (note that
+      you need to install libsnmp development package or files).
+
+    * to build and install CGI scripts, add --with-cgi. 
+
+    * to build and install NUT development files (needed to compile
+      WMNut and MGE PSP), add --with-lib.
+
+    See docs/configure.txt or "./configure --help" for the available
+    options.
 
     If you alter paths with additional switches, be sure to use those
     new paths while reading the rest of the steps.    
