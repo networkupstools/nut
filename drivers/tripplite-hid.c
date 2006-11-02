@@ -103,7 +103,11 @@ static hid_info_t tripplite_hid2nut[] = {
 	/* Battery page */
 	{ "battery.charge", 0, 1, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", HU_FLAG_OK, NULL },
 	{ "battery.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "battery.voltage",  0, 0, "UPS.BatterySystem.Battery.Voltage", NULL, "%.1f", HU_FLAG_OK, divide_by_10_conversion },
+	{ "battery.voltage",  0, 0, "UPS.BatterySystem.Battery.Voltage", NULL, "%s", HU_FLAG_OK, divide_by_10_conversion },
+	/* FIXME: the divide_by_10_conversion is used because of a bug in
+		the Tripplite Report Descriptor (the unit exponent should be -1,
+		but is not set.) This should be handled more flexibly in case
+		they fix the bug in the future. */
 	{ "battery.voltage.nominal", 0, 0, "UPS.BatterySystem.Battery.ConfigVoltage", NULL, "%.1f", HU_FLAG_OK, NULL },
 	{ "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", HU_FLAG_OK, stringid_conversion },
 	
