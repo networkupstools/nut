@@ -292,7 +292,7 @@ static enum tl_model_t {
 #define SEND_WAIT_NSEC (1000*1000*100)
 
 #define MAX_RECV_TRIES 3
-#define RECV_WAIT_MSEC 100
+#define RECV_WAIT_MSEC 1000	/*! was 100 for OMNIVS; SMARTPRO units need longer */
 
 #define MAX_RECONNECT_TRIES 10
 #define RECONNECT_DELAY 2	/*!< in seconds */
@@ -764,7 +764,7 @@ void upsdrv_initinfo(void)
 	if(tl_model == TRIPP_LITE_UNKNOWN)
 		dstate_setinfo("ups.debug.0", hexascdump(proto_value+1, 7));
 
-	sprintf(proto_string, sizeof(proto_string), "protocol %04x", proto_number);
+	snprintf(proto_string, sizeof(proto_string), "protocol %04x", proto_number);
 
 	dstate_setinfo("ups.firmware.aux", proto_string);
 
