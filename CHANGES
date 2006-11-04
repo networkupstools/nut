@@ -290,6 +290,8 @@ Thu Jul  06 10:22:56 EDT 2006 / Charles Lepple <clepple@gmail.com>
 Wed Jul 05 10:32:30 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
  - synchronise mge-utalk between the trunk and Testing branches (0.88)
+ - complete NEWS and UPGRADING for 2.0.4
+ - version number bump for 2.0.4-pre1 release.
 
 Fri Jun 16 08:54:12 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
