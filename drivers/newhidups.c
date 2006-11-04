@@ -983,16 +983,16 @@ static void reconnect_ups(void)
 		upsdebugx(2, "= device has been disconnected, try to reconnect =");
 		upsdebugx(2, "==================================================");
 		
-#ifdef SHUT_MODE
+#if defined(SHUT_MODE) || defined(SUN_LIBUSB)
 		/* Cause a double free corruption in USB mode on linux! */
 		HIDCloseDevice(udev);
 #else
 		/* but keep udev in SHUT mode, for udev->device_path */
 		udev = NULL;
 #endif
-		
-		if ((hd = HIDOpenDevice(&udev, &curDevice, reopen_matcher, MODE_REOPEN)) == NULL)
-			dstate_datastale();
+
+	  if ((hd = HIDOpenDevice(&udev, &curDevice, reopen_matcher, MODE_REOPEN)) == NULL)
+		dstate_datastale();
 	}
 }
 
