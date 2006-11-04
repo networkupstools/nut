@@ -3,6 +3,11 @@ of this software.  When upgrading from an older version, be sure to
 check this file to see if you need to make changes to your system.
 
 ---------------------------------------------------------------------------
+Changes from 2.0.2 to 2.0.3:
+
+ - nothing that affects upgraded systems.
+
+---------------------------------------------------------------------------
 Changes from 2.0.1 to 2.0.2:
 
  - The newhidups driver, which is the long run USB support approach,
