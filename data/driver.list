@@ -30,6 +30,7 @@
 
 "APC"	"Back-UPS Pro USB"	""	"newhidups or hidups"
 "APC"	"Back-UPS USB"		""	"newhidups or hidups"
+"APC"   "Back-UPS RS USB"	""      "newhidups or hidups"
 "APC"	"Back-UPS LS USB"	""	"newhidups or hidups"
 "APC"	"Back-UPS ES/CyberFort 350"	""	"newhidups or hidups"
 "APC"	"Back-UPS BF500"	""	"newhidups"
@@ -76,6 +77,7 @@
 "Cyber Power Systems"	"320AVR"	""	"cyberpower"
 "Cyber Power Systems"	"500AVR"	""	"cyberpower"
 "Cyber Power Systems"	"650AVR"	""	"cyberpower"
+"Cyber Power Systems"   "685AVR"        ""      "newhidups (USB driver)"
 "Cyber Power Systems"	"700AVR"	""	"cyberpower"
 "Cyber Power Systems"	"800AVR"	""	"cyberpower"
 "Cyber Power Systems"	"850AVR"	""	"cyberpower"
@@ -397,7 +399,7 @@
 
 "Tripp-Lite"	"OMNIVS1000"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"OMNIVS1500XL"	"USB"	"tripplite_usb"
-"Tripp-Lite"	"SMART1500RM2U"	"USB"	"tripplite_usb (experimental)"
+"Tripp-Lite"	"SMART1500RM2U"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"SMART2200RMXL2U"	"USB"	"tripplite_usb (experimental)"
 "Tripp-Lite"	"SmartUPS"	""	"tripplite"
 "Tripp-Lite"	"SmartOnline"	""	"tripplitesu"

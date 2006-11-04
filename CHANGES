@@ -822,6 +822,20 @@ Sat Nov 12 05:12:20 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
    Report Descriptor into a data structure, instead of re-scanning it
    as a byte array all the time.
 
+Wed Nov 09 20:06:58 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
+
+ * driver.list:
+   - add APC Back-UPS RS USB compatibility with newhidups,
+   - add missing tripplite_usb compatibility,
+   - remove newhidups experimental flags, except for Belkin
+
+ * Linux Hotplug and udev:
+   - upgrade old style hotplug rules with the newly supported
+     models
+   - add new udev style hotplug rule
+
+ - complete UPGRADING and NEWS notes
+
 Wed Nov  9 02:14:01 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups: cleaned up dependencies on $(LIBUSB_CFLAGS)
@@ -883,6 +897,10 @@ Wed Oct 19 14:10:29 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
    recent Cyberpower units
 
    (Olivier Albiez)
+
+Tue Oct 11 06:59:22 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - README and driver.list: add missing bcmxcp_usb information
 
 Mon Oct 10 20:15:24 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
 
