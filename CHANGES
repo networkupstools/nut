@@ -1,7 +1,7 @@
 Thu Nov  2 23:36:50 EST 2006 / Charles Lepple <clepple@gmail.com>
 
  - tripplite_usb: fixed improper use of sprintf with snprintf-style arguments,
-   which was causing segfaults (Reported by several people)
+   which was causing segfaults (Reported by Joseph Fradley and others)
  - tripplite_usb: increased read timeout (useful for later model OMNISMART
    units)
 
