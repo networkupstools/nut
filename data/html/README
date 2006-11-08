@@ -25,7 +25,7 @@ with the content of upsstat.cgi or upsset.cgi.
 2) Integration
 --------------
 
-You first need to install NUT CGI (ie using make install-cgi).
+You first need to install NUT CGI (ie using ./configure --with-cgi).
 Refer to the README file for more information
 
 There are two ways to integrate NUT HTML with your

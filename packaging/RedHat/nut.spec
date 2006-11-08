@@ -232,7 +232,7 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root)
-%doc CHANGES COPYING CREDITS INSTALL README docs/
+%doc ChangeLog COPYING AUTHORS INSTALL README docs/
 %dir %attr(755,root,root) %{CONFPATH}
 ##%config(noreplace) %attr(644,root,root) %{CONFPATH}/hosts.conf
 %config(noreplace) %attr(400,%{nutuser},%{nutuser}) %{CONFPATH}/upsmon.conf

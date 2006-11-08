@@ -26,7 +26,6 @@
 
 #include "config.h"
 #include "proto.h"
-#include "version.h"
 #include "common.h"
 #include "upsconf.h"
 

@@ -99,7 +99,7 @@ install-stamp:
 	#rm $(PWD)/debian/nut/etc/nut/* $(PWD)/debian/nut-cgi/etc/nut/*
 	dh_installexamples
 	dh_installdocs
-	dh_installchangelogs CHANGES
+	dh_installchangelogs ChangeLog
 	dh_installinit
 	dh_link
 	touch $@

@@ -179,7 +179,7 @@ static int init_ups_data(void)
 
 	dstate_setinfo("ups.model", "%s", temp);
 
-	send_belkin_command(STATUS, VERSION, "");
+	send_belkin_command(STATUS, VERSION_CMD, "");
 	res = get_belkin_reply(temp);
 	if (res == -1)
 		return res;
