@@ -1,3 +1,10 @@
+Thu Nov  2 23:36:50 EST 2006 / Charles Lepple <clepple@gmail.com>
+
+ - tripplite_usb: fixed improper use of sprintf with snprintf-style arguments,
+   which was causing segfaults (Reported by Joseph Fradley and others)
+ - tripplite_usb: increased read timeout (useful for later model OMNISMART
+   units)
+
 Tue Oct 31 20:47:08 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
  - NEWS: brought in sync with 2.0.4
@@ -216,6 +223,11 @@ Tue Jul 18 06:47:19 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
  - nutupsdrv.8: update the drivers list in the SEE ALSO section
  - CREDITS: minor update on the maintainer
 
+Thu Jul 13 13:45:22 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - configure.in, config.h.in, newhidups, libusb: add few more
+   fixes for Solaris compatibility
+
 Wed Jul 12 10:47:43 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
  - genericups: merge type 23 into type 22
@@ -301,6 +313,8 @@ Thu Jul  06 10:22:56 EDT 2006 / Charles Lepple <clepple@gmail.com>
 Wed Jul 05 10:32:30 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
  - synchronise mge-utalk between the trunk and Testing branches (0.88)
+ - complete NEWS and UPGRADING for 2.0.4
+ - version number bump for 2.0.4-pre1 release.
 
 Fri Jun 16 08:54:12 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
@@ -833,6 +847,20 @@ Sat Nov 12 05:12:20 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
    Report Descriptor into a data structure, instead of re-scanning it
    as a byte array all the time.
 
+Wed Nov 09 20:06:58 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
+
+ * driver.list:
+   - add APC Back-UPS RS USB compatibility with newhidups,
+   - add missing tripplite_usb compatibility,
+   - remove newhidups experimental flags, except for Belkin
+
+ * Linux Hotplug and udev:
+   - upgrade old style hotplug rules with the newly supported
+     models
+   - add new udev style hotplug rule
+
+ - complete UPGRADING and NEWS notes
+
 Wed Nov  9 02:14:01 UTC 2005 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups: cleaned up dependencies on $(LIBUSB_CFLAGS)
@@ -894,6 +922,10 @@ Wed Oct 19 14:10:29 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
    recent Cyberpower units
 
    (Olivier Albiez)
+
+Tue Oct 11 06:59:22 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - README and driver.list: add missing bcmxcp_usb information
 
 Mon Oct 10 20:15:24 UTC 2005 / Arnaud Quette <aquette.dev@gmail.com>
 
@@ -1207,6 +1239,7 @@ Tue Aug 16 20:51:27 UTC 2005 / Arnaud Quette <arnaud.quette@free.fr>
 
  - driver.list: add Soyntec Sekury C 500 and C 800 support using
    the powermust driver (contributed by Hanno Borns)
+ - complete the NEWS files
 
 Tue Aug 16 11:53:44 UTC 2005 / Arnaud Quette <arnaud.quette@mgeups.com>
 

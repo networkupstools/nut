@@ -3,6 +3,22 @@ of this software.  When upgrading from an older version, be sure to
 check this file to see if you need to make changes to your system.
 
 ---------------------------------------------------------------------------
+Changes from 2.0.3 to 2.0.4:
+
+ - nothing that affects upgraded systems.
+ - users of the following drivers (powermust, blazer, fentonups, mustek,
+   esupssmart, ippon, sms, masterguard) are encouraged to switch to megatec,
+   which should replace all these drivers by nut 2.2. For more information,
+   please refer to doc/megatec.txt
+
+---------------------------------------------------------------------------
+Changes from 2.0.2 to 2.0.3:
+
+ - nothing that affects upgraded systems.
+ - hidups users are encouraged to switch to newhidups, as hidups will be
+   removed by nut 2.2.
+
+---------------------------------------------------------------------------
 Changes from 2.0.1 to 2.0.2:
 
  - The newhidups driver, which is the long run USB support approach,

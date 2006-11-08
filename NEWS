@@ -6,47 +6,39 @@ Release notes for NUT 2.0.4 - what's new since 2.0.3:
  - The newhidups critical bug (segmentation fault) has been fixed. It has
    also received some more care, like buxfixes and new models support and
    enhancement for Solaris.
-
    [Peter Selinger and Arnaud Quette]
 
  - A bug has been fixed in NUT core to support resuming from suspend-to-disk.
    This should also fix other similar issues, like time synchronisation
    through the NTP - Network Time Protocol.
-
    [Arjen de Korte]
 
  - The mge-shut driver now better detects the Low Battery status, support
    new models and fixes some wrong status and data. It also fixes some
    issue where the UPS wasn't restarting (refer to mge-shut manpage).
-
    [Arnaud Quette]
 
  - The genericups custom configuration through ups.conf is working again
-
    [Arjen de Korte]
 
  - The genericups driver type 22 also support CyberPower 725SL
    (and maybe others SL models)
-
    [David Kaufman]
 
  - The new megatec driver, which will replace a bunch of drivers by nut 2.2
    (refer to docs/megatec.txt and UPGRADING) has been backported from the
    trunk (Development tree). The powermust driver has also received some
    attention.
-
    [Carlos Rodrigues]
 
  - The new rhino driver was added to support Microsol Rhino UPS hardware
    The solis has also been improved for solaris compatibility, and
    internal / external shutdown programming. solis can now save external
    shutdown programming to ups, and support new cables for solis 3
-
    [Silvino B. MagalhÃ£es]
 
  - Several fixes and improvements have been made to upsrw, upsset,
    cpsups, tripplite_usb and the FAQ.
-
    [Arjen de Korte and Charles Lepple]
 
 ---------------------------------------------------------------------------
@@ -58,28 +50,22 @@ Release notes for NUT 2.0.3 - what's new since 2.0.2:
      units are also recognized for development purpose,
    - handles better device reopening, after a disconnection,
    - handles multiple devices, with several parameters to find the right UPS.
-
    [Peter Selinger, Charles Lepple and Arnaud Quette]
 
  - The bcmxcp_usb driver has been added to support Powerware USB units.
-
    [Wolfgang Ocker and Kjell Claesson]
 
  - The tripplite_usb driver has been added to support Tripp Lite USB units.
-
    [Charles Lepple]
 
  - The sec driver is back as gamatronic
-
    [Gamatronic, Nadav Moskovitch]
 
  - The genericups driver has received official care from Gamatronic
    to add support for the Gamatronic UPS with alarm interface.
-
    [Gamatronic, Nadav Moskovitch]
 
  - The powermust driver now supports Soyntec Sekury C 500 and C 800 units.
-
    [Hanno Borns]
 
  - The mge-shut driver has received a bit of attention too, and enhance
@@ -88,32 +74,26 @@ Release notes for NUT 2.0.3 - what's new since 2.0.2:
  - The drivers don't change to the "statepath" directory anymore at
    initialisation time if called using -k. This avoid unneeded
    failure to poweroff the UPS if /var is already unmounted.
-
    [Gaspar Bakos]
 
  - The belkinunv driver now supports Belkin F6C1100-UNV
-
    [Dave Breiland]
 
  - The isbmex driver has been upgraded to version 0.05, which fixes
    various errors in formulas, add shutdown capability and revert
    back baudrate to B9600 (instead of B2400), as it broke the
    communication
-
    [Ricardo Martinezgarza]
 
  - The support of Sysgration UPGUARDS Pro650 in fentonups has
    been fixed
-
    [Simon J. Rowe]
 
  - The packaging files for Red Hat have received various fixes
-
    [Thomas Jarosch]
 
  - The solis driver has been fixed to avoid a naming colision and
    compile on Solaris
-
    [Paweł Kierdelewicz]
 
  - The snmp-ups driver has corrected the problem when exposing
@@ -136,55 +116,44 @@ Release notes for NUT 2.0.2 - what's new since 2.0.1:
 
  - The genericups driver now supports Generic RUPS 2000, AEC MiniGuard
    UPS 700 (using Megatec M2501 cable), and Powerware 3110.
-
    [Nick Barnes, Paul Andreassen]
 
  - The powermust driver now supports SquareOne Power QP1000, Mustek
    PowerMust 1400VA Plus and 2000VA USB.
-
    [Carlos Rodrigues]
 
  - The fentonups driver has been enhanced and now supports Sysgration
    UPGUARDS Pro650.
-
    [Michel Bouissou, Simon J. Rowe]
 
  - The cpsups driver now supports MicroDowell B.Box BP 500/750/1000/1500.
-
    [Armin Diehl]
 
  - The snmp-ups driver now supports Socomec SNMP devices (Netvision MIB),
    and Powerware ConnectUPS SNMP cards.
-
    [Thanos Chatziathanassiou, Olli Salvia]
 
  - The bcmxcp driver is back with support for Powerware UPSs.
-
    [Tore �petveit, Kjell Claesson]
 
  - The cyberpower driver now supports CyberPower 1000AVR.
-
    [Dave Huang]
 
  - The new solis driver supports Microsol units: Solis 1.0, 1.5,
    2.0 and 3.0.
-
    [Silvino B. Magalhaes]
 
  - The apcsmart driver has fixed APC600 support.
 
  - The etapro driver fixes brokeness due to ser_get_line use 
-
    [Marek Michalkiewicz]
 
  - The new upscode2 driver supports Fiskars, Compaq and Powerware
    devices.
-
-  [Niels Baggesen, Havard Lygre]
+   [Niels Baggesen, Havard Lygre]
 
  - The tripplite driver has fixed a battery charge bug
-
-  [Cedric Tefft]
+   [Cedric Tefft]
 
 ---------------------------------------------------------------------------
 Release notes for NUT 2.0.1 - what's new since 2.0.0:
@@ -192,95 +161,78 @@ Release notes for NUT 2.0.1 - what's new since 2.0.0:
  - The bestuferrups driver has been forked into the new bestfcom driver
    which has better handling of the inverter status alarm messages and
    more.
-
    [Kent Hill]
 
  - Mustek UPS support returns with two drivers which have overlapping
    coverage: mustek and powermust.
-
    [powermust: Carlos Rodrigues, mustek: Martin Hajduch]
 
  - Additional CyberPower Systems hardware is supported with the new
    cpsups driver.  Three recognized models are the CPS1500AVR,
    CPS1100VA, and OP500TE.
-
    [Walt Holman, Brad Sawatzky]
 
  - The genericups driver can now generate staleness warnings in
    specific cases where the UPS provides a way to test for its
    presence.  See the "CON" setting in ups.conf for more details.
-
    [stan / saticed.me.uk]
 
  - Documentation for monitoring a Back-UPS RS 500 on a system without
    USB ports has been added to the cables directory.
-
    [Martin Edlman]
 
  - The everups driver now supports types 73-76 (NET 700/1000/1400/500-DPC)
-
    [hunter]
 
  - The new metasys driver supports Meta System models: Line, 
    HF Millennium, HF Top Line, ECO Network, ECO, Ally HF, Megaline
-
    [BlaXwan]
 
  - The ippon driver now allows user-defined settings for the delay
    before switching off, and the delay before powering on.
-
    [Yuri Elizarov]
 
  - The victronups driver is now at version 0.1.9, which adds many
    instant commands: calibration control, battery and front panel tests,
    and bypass control.
-
    [Gert Lynge]
 
  - The tripplite driver has recieved a major overhaul to bring it up to 
    working condition for the 2.0 tree, including code cleanups, several
    new variables, commands, and user-definable parameters.  See
    ChangeLog for more.
-
    [Nicholas J Kain]
 
  - The mge-utalk driver has been upgraded to version 0.81, which fixes
    the lack of read-write variables and loss of sync on models which
    don't support restoring settings.
-
    [Arnaud Quette]
 
  - The Micro Ferrups model RE is now supported by the bestuferrups
    driver.  The driver will also now read the ambient temperature and
    will no longer constantly report the data as stale.
-
    [Tim Thompson]
 
  - The fentonups driver's init sequence has been reworked to work better
    with some hardware, including a fix to the parser code.
-
    [MLH]
 
  - A workaround has been added to the hidups driver to avoid variables
    which are stuck by calling HIDIOCINITREPORT in every poll.
-
    [Stuart D. Gathman]
 
  - SOLA 610 UPS hardware and others which do not support the ID command
    may now be monitored by the bestups driver after forcing ID= in
    ups.conf.
-
    [Jason White]
 
  - "pollinterval" is now available via driver.parameter for consistency.
-
    [Arnaud Quette]
 
  - The mge-shut and newhidups drivers, along with the supporting
    hidparser/libhid code have received many updates, including lowering
    USB bandwidth consumption, driver unbinding (only in Linux), code
    cleanups, and more which can be seen in the ChangeLog file.
-
    [Arnaud Quette]
 
  - The fentonups driver now recognizes several more Megatec protocol
@@ -294,18 +246,15 @@ Release notes for NUT 2.0.1 - what's new since 2.0.0:
 
  - All man pages have been reworked to switch literal "-" characters to
    hyphens or "\-" as appropriate.
-
    [Shaul Karl]
 
  - upssched's CANCEL events were broken following the change to
    text-based socket messages in 1.5 and have been fixed.
-
    [Steven Schoch] 
 
  - Calls to varargs functions with raw strings from the config files
    without an intervening "%s" have been fixed in upsmon, upssched,
    snmp-ups and upsd.
-
    [Ulf Harnhammar]
 
 ---------------------------------------------------------------------------

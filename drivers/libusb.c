@@ -374,7 +374,7 @@ static int libusb_get_interrupt(usb_dev_handle *udev, unsigned char *buf, int bu
 {
 	int ret = -1;
 
-#if USB_NOTIFICATION_DISABLED
+#if SUN_LIBUSB
 	/* sleep during timeout to slow down a bit... */
 	sleep(timeout / 1000);
 	ret = 0;
