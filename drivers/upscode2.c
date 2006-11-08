@@ -2,7 +2,7 @@
 		command set.  This includes PowerWare, Fiskars, 
 		Compaq (PowerWare OEM?), some IBM (PowerWare OEM?)
 
-   Copyright (C) 2002 Håvard Lygre <hklygre@online.no>
+   Copyright (C) 2002 Hï¿½ard Lygre <hklygre@online.no>
    Copyright (C) 2004 Niels Baggesen <niels@baggesen.net>
 
    This program is free software; you can redistribute it and/or modify
@@ -31,7 +31,7 @@
  * Powerware 9305
  *
  * Also tested against
- * Compaq T1500h (Per Jönsson <per.jonsson@bth.se>)
+ * Compaq T1500h (Per Jï¿½sson <per.jonsson@bth.se>)
  * Powerware 9120 (Gorm J. Siiger <gjs@sonnit.dk>)
  * Fiskars PowerServer 10 (Per Larsson <tucker@algonet.se>)
  */
@@ -40,12 +40,11 @@
 
 #include "main.h"
 #include "serial.h"
+#include "upscode2.h"
 #include "timehead.h"
 
 #define ENDCHAR		'\n'	
 #define IGNCHARS	"\r"
-
-#define DRV_VERSION	"0.84"
 
 /* default values */
 #define OUT_PACE_USEC	200
@@ -379,7 +378,7 @@ void upsdrv_banner(void)
 {
 	printf("Network UPS Tools - UPScode II UPS driver %s (%s)\n", 
 		DRV_VERSION, UPS_VERSION);
-	printf("Copyright (C) 2001-2002 Håvard Lygre, <hklygre@online.no>\n");
+	printf("Copyright (C) 2001-2002 Hï¿½ard Lygre, <hklygre@online.no>\n");
 	printf("Copyright (C) 2004 Niels Baggesen <niels@baggesen.net>\n\n");
 
 	experimental_driver = 1;
@@ -426,7 +425,7 @@ void upsdrv_initups(void)
 	ser_set_speed(upsfd, device_path, baud);
 
 	if (tcgetattr(upsfd, &tio) != 0)
-	    	fatal("tcgetattr(%s)", device_path);
+	    	fatal_with_errno("tcgetattr(%s)", device_path);
 	tio.c_lflag = ICANON;
 	tio.c_cc[VMIN] = 0;
 	tio.c_cc[VTIME] = 0;
@@ -902,7 +901,7 @@ static int upsc_simple(const simple_t *sp, const char *var, const char *val)
 				if (sp->aux != NULL) {
 					stat = sscanf(val, "%f", &fval);
 					if (stat != 1)
-						upslog(LOG_ERR, "Bad float in %s: %s", var, val);
+						upslog_with_errno(LOG_ERR, "Bad float in %s: %s", var, val);
 					else {
 						snprintf(buf, UPSC_BUFLEN, "%5.3f", fval**(sp->aux));
 						if (sp->desc)

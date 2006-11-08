@@ -127,7 +127,7 @@ static void sendping(upstype *ups)
 	ret = write(ups->sock_fd, cmd, strlen(cmd));
 
 	if ((ret < 1) || (ret != (int) strlen(cmd))) {
-		upslog(LOG_NOTICE, "Send ping to UPS [%s] failed", ups->name);
+		upslog_with_errno(LOG_NOTICE, "Send ping to UPS [%s] failed", ups->name);
 
 		sstate_infofree(ups);
 		sstate_cmdfree(ups);
@@ -157,7 +157,7 @@ int sstate_connect(upstype *ups)
 	fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
 	if (fd < 0) {
-		upslog(LOG_ERR, "Can't create socket for UPS [%s]", ups->name);
+		upslog_with_errno(LOG_ERR, "Can't create socket for UPS [%s]", ups->name);
 		return -1;
 	}
 
@@ -174,7 +174,7 @@ int sstate_connect(upstype *ups)
 			return -1;
 
 		ups->last_connfail = now;
-		upslog(LOG_ERR, "Can't connect to UPS [%s] (%s)", 
+		upslog_with_errno(LOG_ERR, "Can't connect to UPS [%s] (%s)", 
 			ups->name, ups->fn);
 
 		return -1;
@@ -184,7 +184,7 @@ int sstate_connect(upstype *ups)
 
 	if (ret < 0) {
 		close(fd);
-		upslog(LOG_ERR, "fcntl get on UPS [%s] failed", ups->name);
+		upslog_with_errno(LOG_ERR, "fcntl get on UPS [%s] failed", ups->name);
 		return -1;
 	}
 
@@ -192,7 +192,7 @@ int sstate_connect(upstype *ups)
 
 	if (ret < 0) {
 		close(fd);
-		upslog(LOG_ERR, "fcntl set O_NDELAY on UPS [%s] failed", ups->name);
+		upslog_with_errno(LOG_ERR, "fcntl set O_NDELAY on UPS [%s] failed", ups->name);
 		return -1;
 	}
 
@@ -201,7 +201,7 @@ int sstate_connect(upstype *ups)
 
 	if ((ret < 1) || (ret != (int) strlen(dumpcmd))) {
 		close(fd);
-		upslog(LOG_ERR, "Initial write to UPS [%s] failed", ups->name);
+		upslog_with_errno(LOG_ERR, "Initial write to UPS [%s] failed", ups->name);
 		return -1;
 	}
 
@@ -235,7 +235,7 @@ void sstate_sock_read(upstype *ups)
 				upslogx(LOG_WARNING, "UPS [%s] disconnected - "
 					"check driver", ups->name);
 			else
-				upslog(LOG_WARNING, "Read from UPS [%s] failed",
+				upslog_with_errno(LOG_WARNING, "Read from UPS [%s] failed",
 					ups->name);
 
 			sstate_infofree(ups);
@@ -365,7 +365,7 @@ int sstate_sendline(upstype *ups, const char *buf)
 	ret = write(ups->sock_fd, buf, strlen(buf));
 
 	if ((ret < 1) || (ret != (int) strlen(buf))) {
-		upslog(LOG_NOTICE, "Send to UPS [%s] failed", ups->name);
+		upslog_with_errno(LOG_NOTICE, "Send to UPS [%s] failed", ups->name);
 
 		sstate_infofree(ups);
 		sstate_cmdfree(ups);

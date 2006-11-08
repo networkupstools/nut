@@ -42,7 +42,8 @@ static int xbit_test(int val, int flag)
 	return ((val & flag) == flag);
 }
 
-/* enable writing upslog() type messages to the syslog */
+/* enable writing upslog_with_errno() and upslogx() type messages to 
+   the syslog */
 void syslogbit_set(void)
 {
 	xbit_set(&upslog_flags, UPSLOG_SYSLOG);
@@ -69,7 +70,7 @@ void background(void)
 	int	pid;
 
 	if ((pid = fork()) < 0)
-		fatal("Unable to enter background");
+		fatal_with_errno("Unable to enter background");
 
 	xbit_set(&upslog_flags, UPSLOG_SYSLOG);
 	xbit_clear(&upslog_flags, UPSLOG_STDERR);
@@ -85,7 +86,7 @@ void background(void)
 
 	/* make fds 0-2 point somewhere defined */
 	if (open("/dev/null", O_RDWR) != 0)
-		fatal("open /dev/null");
+		fatal_with_errno("open /dev/null");
 	dup(0);
 	dup(0);
 
@@ -99,7 +100,20 @@ void background(void)
 /* do this here to keep pwd/grp stuff out of the main files */
 struct passwd *get_user_pwent(const char *name)
 {
-	return getpwnam(name);
+	struct passwd *r;
+	errno = 0;
+	if ((r = getpwnam(name)))
+		return r;
+
+	/* POSIX does not specify that "user not found" is an error, so
+	   some implementations of getpwnam() do not set errno when this
+	   happens. */
+	if (errno == 0)
+		fatalx("user %s not found", name);
+	else
+		fatal_with_errno("getpwnam(%s)", name);
+		
+	return NULL;  /* to make the compiler happy */
 }
 
 /* change to the user defined in the struct */
@@ -111,29 +125,29 @@ void become_user(struct passwd *pw)
 
 	if (getuid() == 0)
 		if (seteuid(0))
-			fatal("getuid gave 0, but seteuid(0) failed");
+			fatal_with_errno("getuid gave 0, but seteuid(0) failed");
 
 	if (initgroups(pw->pw_name, pw->pw_gid) == -1)
-		fatal("initgroups");
+		fatal_with_errno("initgroups");
 
 	if (setgid(pw->pw_gid) == -1)
-		fatal("setgid");
+		fatal_with_errno("setgid");
 
 	if (setuid(pw->pw_uid) == -1)
-		fatal("setuid");
+		fatal_with_errno("setuid");
 }
 
 /* drop down into a directory and throw away pointers to the old path */
 void chroot_start(const char *path)
 {
 	if (chdir(path))
-		fatal("chdir(%s)", path);
+		fatal_with_errno("chdir(%s)", path);
 
 	if (chroot(path))
-		fatal("chroot(%s)", path);
+		fatal_with_errno("chroot(%s)", path);
 
 	if (chdir("/"))
-		fatal("chdir(/)");
+		fatal_with_errno("chdir(/)");
 
 	upsdebugx(1, "chrooted into %s", path);
 }
@@ -158,14 +172,14 @@ void writepid(const char *name)
 		fprintf(pidf, "%d\n", (int) getpid());
 		fclose(pidf);
 	} else {
-		upslog(LOG_NOTICE, "writepid: fopen %s", fn);
+		upslog_with_errno(LOG_NOTICE, "writepid: fopen %s", fn);
 	}
 
 	umask(mask);
 }
 
 /* open pidfn, get the pid, then send it sig */
-void sendsignalfn(const char *pidfn, int sig)
+int sendsignalfn(const char *pidfn, int sig)
 {
 	char	buf[SMALLBUF];
 	FILE	*pidf;
@@ -173,8 +187,8 @@ void sendsignalfn(const char *pidfn, int sig)
 
 	pidf = fopen(pidfn, "r");
 	if (!pidf) {
-		upslog(LOG_NOTICE, "fopen %s", pidfn);
-		return;
+		upslog_with_errno(LOG_NOTICE, "fopen %s", pidfn);
+		return -1;
 	}
 
 	fgets(buf, sizeof(buf), pidf);
@@ -184,7 +198,7 @@ void sendsignalfn(const char *pidfn, int sig)
 
 	if (pid < 2) {
 		upslogx(LOG_NOTICE, "Ignoring invalid pid number %d", pid);
-		return;
+		return -1;
 	}
 
 	/* see if this is going to work first */
@@ -192,7 +206,7 @@ void sendsignalfn(const char *pidfn, int sig)
 
 	if (ret < 0) {
 		perror("kill");
-		return;
+		return -1;
 	}
 
 	/* now actually send it */
@@ -200,8 +214,10 @@ void sendsignalfn(const char *pidfn, int sig)
 
 	if (ret < 0) {
 		perror("kill");
-		return;
+		return -1;
 	}
+
+	return 0;
 }
 
 int snprintfcat(char *dst, size_t size, const char *fmt, ...)
@@ -222,13 +238,13 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 }
 
 /* lazy way to send a signal if the program uses the PIDPATH */
-void sendsignal(const char *progname, int sig)
+int sendsignal(const char *progname, int sig)
 {
 	char	fn[SMALLBUF];
 
 	snprintf(fn, sizeof(fn), "%s/%s.pid", PIDPATH, progname);
 
-	sendsignalfn(fn, sig);
+	return sendsignalfn(fn, sig);
 }
 
 const char *xbasename(const char *file)
@@ -293,7 +309,7 @@ const char * altpidpath(void)
 }
 
 /* logs the formatted string to any configured logging devices + the output of strerror(errno) */
-void upslog(int priority, const char *fmt, ...)
+void upslog_with_errno(int priority, const char *fmt, ...)
 {
 	va_list va;
 
@@ -312,7 +328,7 @@ void upslogx(int priority, const char *fmt, ...)
 	va_end(va);
 }
 
-void upsdebug(int level, const char *fmt, ...)
+void upsdebug_with_errno(int level, const char *fmt, ...)
 {
 	va_list va;
 	
@@ -336,6 +352,28 @@ void upsdebugx(int level, const char *fmt, ...)
 	va_end(va);
 }
 
+/* dump message msg and len bytes from buf to upsdebugx(level) in
+   hexadecimal. (This function replaces Philippe Marzouk's original
+   dump_hex() function) */
+void upsdebug_hex(int level, const char *msg, const unsigned char *buf, int len)
+{
+	char line[100];
+	int n = 0; /* number of characters currently in line */
+	int i = 0; /* number of bytes output from buffer */
+
+	n += snprintf(line, 100, "%s: (%d bytes) =>", msg, len);
+	while (i < len) {
+		if (n+3 > 75) {
+			upsdebugx(level, "%s", line);
+			line[0] = 0;
+			n = 0;
+		}
+		n += sprintf(line+n, n ? " %02x" : "%02x", buf[i]);
+		i++;
+	}
+	upsdebugx(level, "%s", line);
+}
+
 static void vfatal(const char *fmt, va_list va, int use_strerror)
 {
 	if (xbit_test(upslog_flags, UPSLOG_STDERR_ON_FATAL))
@@ -346,12 +384,12 @@ static void vfatal(const char *fmt, va_list va, int use_strerror)
 	vupslog(LOG_ERR, fmt, va, use_strerror);
 }
 
-void fatal(const char *fmt, ...)
+void fatal_with_errno(const char *fmt, ...)
 {
 	va_list va;
 
 	va_start(va, fmt);
-	vfatal(fmt, va, 1);
+	vfatal(fmt, va, (errno > 0) ? 1 : 0);
 	va_end(va);
 
 	exit(EXIT_FAILURE);
@@ -375,7 +413,7 @@ void *xmalloc(size_t size)
 	void *p = malloc(size);
 
 	if (p == NULL)
-		fatal("%s", oom_msg);
+		fatal_with_errno("%s", oom_msg);
 	return p;
 }
 
@@ -384,7 +422,7 @@ void *xcalloc(size_t number, size_t size)
 	void *p = calloc(number, size);
 
 	if (p == NULL)
-		fatal("%s", oom_msg);
+		fatal_with_errno("%s", oom_msg);
 	return p;
 }
 
@@ -393,7 +431,7 @@ void *xrealloc(void *ptr, size_t size)
 	void *p = realloc(ptr, size);
 
 	if (p == NULL)
-		fatal("%s", oom_msg);
+		fatal_with_errno("%s", oom_msg);
 	return p;
 }
 
@@ -402,7 +440,7 @@ char *xstrdup(const char *string)
 	char *p = strdup(string);
 
 	if (p == NULL)
-		fatal("%s", oom_msg);
+		fatal_with_errno("%s", oom_msg);
 	return p;
 }
 

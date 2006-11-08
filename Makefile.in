@@ -74,7 +74,7 @@ build-cgi-fake:
 build-cgi:
 	@cd clients; $(MAKE) cgi; cd ..;
 
-install-cgi: cgi install-cgi-dir install-dirs install-cgi-bin install-cgi-man
+install-cgi: cgi install-cgi-dir install-dirs install-cgi-bin install-cgi-man install-cgi-html
 
 install-cgi-dir:
 	if (test ! -d $(CGIPATH)) then \
@@ -89,6 +89,9 @@ install-cgi-man:
 
 install-cgi-conf:
 	@cd conf; $(MAKE) install-cgi-conf; cd ..;
+
+install-cgi-html:
+	@cd data/html; $(MAKE) install-cgi-html; cd ../..;
 
 install-lib:
 	@cd clients; $(MAKE) install-lib; cd ..;

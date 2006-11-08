@@ -1,14 +1,25 @@
 .TH CYBERPOWER 8 "Tue Oct 15 2002" "" "Network UPS Tools (NUT)"
 .SH NAME
-cyberpower \- Driver for Cyber Power Systems UPS equipment
+cyberpower \- Serial Driver for most Cyber Power Systems UPS equipment
 .SH NOTE
 This man page only documents the hardware\(hyspecific features of the
 cyberpower driver.  For information about the core driver, see
 \fBnutupsdrv\fR(8).
 
 .SH SUPPORTED HARDWARE
-This driver was developed on the 700AVR, but has also been reported to 
-work on the 1250AVR.  Other AVR models may work too.
+This driver supports connections over a serial port for most AVR
+models.  It was developed on the 700AVR, but has also been reported to
+work on the 320AVR, 500AVR, 650AVR, 800AVR, 850AVR, 900AVR, 1250AVR,
+and 1500AVR. 
+
+The Power99 device is not supported by this driver (use the
+\fBgenericups\fR driver instead). Also, CPS825VA, 1100AVR, and
+1500AVR-HO are not supported (try the \fBcpsups\fR driver instead).
+
+This driver does not support connections over a USB port. To connect
+to a Cyber Power UPS over a USB port, use the \fBnewhidups\fR
+driver. This has been reported to work for the 685AVR and possibly
+other models.
 
 .SH EXTRA ARGUMENTS
 

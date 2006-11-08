@@ -20,19 +20,19 @@
 #include "common.h"
 #include "timehead.h"
 
+#include "serial.h"
+
 #include <grp.h>
 #include <pwd.h>
 #include <ctype.h>
 #include <sys/file.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <sys/termios.h>
 
 #ifdef HAVE_UU_LOCK
 #include <libutil.h>
 #endif
 
-#include "serial.h"
 
 	extern	int	do_lock_port, exit_flag;
 
@@ -90,7 +90,7 @@ static void lock_set(int fd, const char *port)
 	int	ret;
 
 	if (fd < 0)
-		fatal("lock_set: programming error: fd = %d", fd);
+		fatal_with_errno("lock_set: programming error: fd = %d", fd);
 
 	if (do_lock_port == 0)
 		return;
@@ -126,7 +126,7 @@ static void lock_set(int fd, const char *port)
 
 #endif
 
-	upslog(LOG_WARNING, "Warning: no locking method is available");
+	upslog_with_errno(LOG_WARNING, "Warning: no locking method is available");
 }
 
 int ser_open(const char *port)
@@ -148,7 +148,7 @@ int ser_set_speed(int fd, const char *port, speed_t speed)
 	struct	termios	tio;
 
 	if (tcgetattr(fd, &tio) != 0)
-		fatal("tcgetattr(%s)", port);
+		fatal_with_errno("tcgetattr(%s)", port);
 
 	tio.c_cflag = CS8 | CLOCAL | CREAD;
 	tio.c_iflag = IGNPAR;
@@ -173,7 +173,7 @@ int ser_set_speed(int fd, const char *port, speed_t speed)
 int ser_close(int fd, const char *port)
 {
 	if (fd < 0)
-		fatal("ser_close: programming error: fd=%d port=%s", fd, port);
+		fatal_with_errno("ser_close: programming error: fd=%d port=%s", fd, port);
 
 	if (close(fd) != 0)
 		return -1;
@@ -186,7 +186,7 @@ int ser_close(int fd, const char *port)
 	return 0;
 }
 
-int ser_send_char(int fd, char ch)
+int ser_send_char(int fd, unsigned char ch)
 {
 	return write(fd, &ch, 1);
 }
@@ -245,13 +245,13 @@ unsigned int ser_send(int fd, const char *fmt, ...)
 }
 
 /* send buflen bytes from buf with no delay */
-int ser_send_buf(int fd, const char *buf, size_t buflen)
+int ser_send_buf(int fd, const unsigned char *buf, size_t buflen)
 {
 	return (write(fd, buf, buflen));
 }
 
 /* send buflen bytes from buf with d_usec delay after each char */
-int ser_send_buf_pace(int fd, unsigned long d_usec, const char *buf, 
+int ser_send_buf_pace(int fd, unsigned long d_usec, const unsigned char *buf, 
 	size_t buflen)
 {
 	int	ret;
@@ -269,7 +269,7 @@ int ser_send_buf_pace(int fd, unsigned long d_usec, const char *buf,
 	return buflen;
 }
 
-static int get_buf(int fd, char *buf, size_t buflen, long d_sec, long d_usec)
+static int get_buf(int fd, unsigned char *buf, size_t buflen, long d_sec, long d_usec)
 {
 	int	ret;
 	fd_set	rfds;
@@ -285,7 +285,7 @@ static int get_buf(int fd, char *buf, size_t buflen, long d_sec, long d_usec)
 
 	if (ret == -1) {
 		if (errno != EINTR)
-			upslog(LOG_ERR, "select fd %d", fd);
+			upslog_with_errno(LOG_ERR, "select fd %d", fd);
 
 		return -1;
 	}
@@ -301,17 +301,17 @@ static int get_buf(int fd, char *buf, size_t buflen, long d_sec, long d_usec)
 	return ret;
 }
 
-int ser_get_char(int fd, char *ch, long d_sec, long d_usec)
+int ser_get_char(int fd, unsigned char *ch, long d_sec, long d_usec)
 {
 	return get_buf(fd, ch, 1, d_sec, d_usec);
 }
 
 /* keep reading until buflen bytes are received or a timeout occurs */
-int ser_get_buf_len(int fd, char *buf, size_t buflen, long d_sec, long d_usec)
+int ser_get_buf_len(int fd, unsigned char *buf, size_t buflen, long d_sec, long d_usec)
 {
-	int	i, ret;
-	char	tmp[64];
-	size_t	count = 0, tmplen;
+	int	       i, ret;
+	unsigned char  tmp[64];
+	size_t	       count = 0, tmplen;
 
 	memset(buf, '\0', buflen);
 
@@ -360,7 +360,7 @@ int ser_get_line_alert(int fd, char *buf, size_t buflen, char endchar,
 	maxcount = buflen - 1;		/* for trailing \0 */
 
 	while (count < maxcount) {
-		ret = get_buf(fd, tmp, sizeof(tmp), d_sec, d_usec);
+		ret = get_buf(fd, (unsigned char*)tmp, sizeof(tmp), d_sec, d_usec);
 
 		if (ret < 1)
 			return -1;
@@ -404,7 +404,7 @@ int ser_flush_in(int fd, const char *ignset, int verbose)
 	int	ret, extra = 0;
 	char	ch;
 
-	while ((ret = ser_get_char(fd, &ch, 0, 0)) > 0) {
+	while ((ret = ser_get_char(fd, (unsigned char*)&ch, 0, 0)) > 0) {
 
 		if (strchr(ignset, ch))
 			continue;

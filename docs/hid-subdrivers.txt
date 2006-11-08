@@ -122,17 +122,56 @@ formats.
 Writing a subdriver
 ===================
 
-There are no step-by-step instructions yet. Look at the files
+In preparation for writing a subdriver for a device that is currently
+unsupported, run newhidups with the following command line:
+
+ drivers/newhidups -DD -u root -x generic -x vendorid=XXXX auto
+
+(substitute your device's 4-digit VendorID instead of "XXXX"). 
+This will produce a bunch of debugging information, including a number 
+of lines starting with "Path:" that describe the device's usage tree. 
+This information forms the initial basis for a new subdriver. 
+
+You should save this information to a file, e.g. 
+ drivers/newhidups -DD -u root -x generic -x vendorid=XXXX auto >& /tmp/info
+
+You can create an initial "stub" subdriver for your device by using
+script scripts/subdriver/path-to-subdriver.sh. Note: this only creates
+a "stub" and needs to be futher customized to be useful (see
+CUSTOMIZATION below).
+
+Use the script as follows:
+
+ scripts/subdriver/path-to-subdriver.sh < /tmp/info
+
+where /tmp/info is the file where you previously saved the debugging
+information.
+
+This script prompts you for a name for the subdriver; use only letters
+and digits, and use natural capitalization such as "Belkin" (not
+"belkin" or "BELKIN"). The script may prompt you for additional
+information.
+
+You should put the generated files into the drivers/ subdirectory, and
+update newhidups.c by adding the appropriate #include line and by
+updating the definition of subdriver_list in newhidups.c. You must
+also add the subdriver to NEWHIDUPS_SUBDRIVERS in drivers/Makefile.in
+and drivers/Makefile, and possibly redo "make depend" in the drivers/
+subdirectory, and/or "./configure" in the main NUT directory.  You can
+then recompile newhidups, and start experimenting with the new
+subdriver.
+
+CUSTOMIZATION: The initially generated subdriver code is only a stub,
+and will not implement any useful functionality (in particular, it
+will be unable to shut down the UPS). In the beginning, it simply
+attempts to monitor some UPS variables. To make this driver useful,
+you must examine the NUT variables of the form "unmapped.*" in the
+hid_info_t data structure, and map them to actual NUT variables and
+instant commands. There are currently no step-by-step instructions for
+how to do this. Please look at the files
 
 mge-hid.c/h
 apc-hid.c/h
 belkin-hid.c/h
 
-to see how the currently implemented subdrivers are written. The point
-is that each subdriver exports a subdriver_t structure (defined in
-newhidups.h), which contains various functions and data for
-interacting with the subdriver. You also need to update the definition
-of subdriver_list in newhidups.c.
-
-
-
+to see how the currently implemented subdrivers are written.

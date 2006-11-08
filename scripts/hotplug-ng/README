@@ -14,11 +14,15 @@ to the UPS device).
 Usage
 -----
 
+- copy nut-usbups.rules to /etc/udev/
+
 - copy nut-usbups.hotplug to /etc/hotplug.d/usb/
 and make it executable with:
 $ chmod a+x /etc/hotplug.d/usb/nut-usbups.hotplug
 
-- copy nut-usbups.rules to /etc/udev/
+(Note: on some newer kernels, you may not need the file
+nut-usbups.hotplug at all, in which case you can omit the second step
+above).
 
 You can then plug your UPS, and start NUT.
 

@@ -8,7 +8,7 @@
 #if defined(HAVE_SYS_TERMIOS_H)
 #  include <sys/termios.h>      /* for speed_t */
 #else
-#  error "No <sys/termios.h> available.  Unable to continue."
+#  include <termios.h>
 #endif /* HAVE_SYS_TERMIOS_H */
 
 /* limit the amount of spew that goes in the syslog when we lose the UPS */
@@ -21,7 +21,7 @@ int ser_set_speed(int fd, const char *port, speed_t speed);
 
 int ser_close(int fd, const char *port);
 
-int ser_send_char(int fd, char ch);
+int ser_send_char(int fd, unsigned char ch);
 
 /* send the results of the format string with d_usec delay after each char */
 unsigned int ser_send_pace(int fd, unsigned long d_usec, const char *fmt, ...)
@@ -32,16 +32,16 @@ unsigned int ser_send(int fd, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
 
 /* send buflen bytes from buf with no delay */
-int ser_send_buf(int fd, const char *buf, size_t buflen);
+int ser_send_buf(int fd, const unsigned char *buf, size_t buflen);
 
 /* send buflen bytes from buf with d_usec delay after each char */
-int ser_send_buf_pace(int fd, unsigned long d_usec, const char *buf, 
+int ser_send_buf_pace(int fd, unsigned long d_usec, const unsigned char *buf, 
 	size_t buflen);
 
-int ser_get_char(int fd, char *ch, long d_sec, long d_usec);
+int ser_get_char(int fd, unsigned char *ch, long d_sec, long d_usec);
 
 /* keep reading until buflen bytes are received or a timeout occurs */
-int ser_get_buf_len(int fd, char *buf, size_t buflen, long d_sec, long d_usec);
+int ser_get_buf_len(int fd, unsigned char *buf, size_t buflen, long d_sec, long d_usec);
 
 /* reads a line up to <endchar>, discarding anything else that may follow,
    with callouts to the handler if anything matches the alertset */

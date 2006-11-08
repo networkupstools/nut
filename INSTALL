@@ -66,13 +66,18 @@ MANPATH, or just do this:
 
 	make
 
-    Optionaly, you can also build the USB drivers (requires libusb) using:
+    Optionaly, you can also build the USB drivers using:
 
 	make usb
 
-    The same goes for the SNMP driver (snmp-ups, requires Net SNMP) using:
+    Note that you need to install libusb development package or files.
+
+
+    The same goes for the SNMP driver (snmp-ups) using:
 
 	make snmp
+
+    Note that you need to install libsnmp development package or files.
 
 ---------------------------------------------------------------------------
 
@@ -110,6 +115,11 @@ MANPATH, or just do this:
     To install SNMP driver, use:
 
 	make install-snmp
+
+    To install NUT development files (needed to compile WMNut and MGE PSP),
+    use:
+
+	make install-lib
 
 ---------------------------------------------------------------------------
 
@@ -160,9 +170,12 @@ MANPATH, or just do this:
 		port = /dev/ttyS1
 		desc = "Workstation"
 
-    NOTE: newhidups is a special case for the "port" value. If you
-    only own one local UBS UPS, you can just set the "port" to "auto".
-    Refer to newhidups(8) man page for more information.
+    NOTE: newhidups is a special case and ignores the "port" value.
+    You must still set this value, but it does not matter what you set
+    it to; you can set "port" to "auto" if you like. If you only own
+    one local UBS UPS, the driver will find it automatically. If you
+    own more than one UBS UPS, refer to the newhidups(8) man page for
+    more information.
 
     *** References: man pages: ups.conf(5), nutupsdrv(8), plus
                     whatever driver(s) you intend to use.

@@ -368,8 +368,7 @@ static mge_info_item mge_info[] = {
 
 	/* Output page */
 	{ "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", "%i", NULL, SHUT_FLAG_OK, NULL },
-	{ "output.voltage.target.line", 0, 0, "UPS.PowerSummary.ConfigVoltage", "%i", NULL, SHUT_FLAG_OK, NULL },
-	{ "output.voltage.target.battery", 0, 0, "UPS.PowerSummary.ConfigVoltage", "%i", NULL, SHUT_FLAG_OK, NULL },
+	{ "output.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", "%i", NULL, SHUT_FLAG_OK, NULL },
 	{ "output.current", 0, 0, "UPS.PowerSummary.Output.Current", "%i", NULL, SHUT_FLAG_OK, NULL },
     { "output.frequency", 0, 0, "UPS.PowerConverter.Output.Frequency", "%i", NULL, SHUT_FLAG_OK, NULL },
 
@@ -420,6 +419,7 @@ typedef struct {
 	int usage_code;
 } usage_lkp_t;
 
+/* FIXME: share this data structure with libhid.c */
 static usage_lkp_t usage_lkp[] = {
 	/* Power Device Page */
 	{  "PresentStatus", 0x00840002 },
@@ -449,7 +449,7 @@ static usage_lkp_t usage_lkp[] = {
 	{  "DelayBeforeShutdown", 0x00840057 },
 	{  "Test", 0x00840058 },
 	{  "Good", 0x00840061 },
-	{  "OverLoad", 0x00840065 }, /* mispelled in usb.ids */
+	{  "Overload", 0x00840065 }, /* sic */
 	{  "SwitchOn/Off", 0x0084006b },	
 	{  "Switchable", 0x0084006c },	
 	{  "Used", 0x0084006d },
@@ -499,7 +499,6 @@ void   setline(int set);
 int    serial_read (int read_timeout, u_char *readbuf);
 int    serial_send(u_char *buf, int len);
 
-void   dump_hex(const char *msg, const u_char *buf, int len);
 void   make_string(u_char *buf, int datalen, char *string);
 
 

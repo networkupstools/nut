@@ -33,29 +33,33 @@ extern "C" {
 #include "hidtypes.h"
 
 /*
- * HIDParse
+ * Parse_ReportDesc
  * -------------------------------------------------------------------------- */
-int HIDParse(HIDParser* pParser, HIDData* pData);
+HIDDesc *Parse_ReportDesc(u_char *ReportDesc, int n);
 
 /*
- * ResetParser
+ * Free_ReportDesc
  * -------------------------------------------------------------------------- */
-void ResetParser(HIDParser* pParser);
+void Free_ReportDesc(HIDDesc *pDesc);
 
 /*
  * FindObject
  * -------------------------------------------------------------------------- */
-int FindObject(HIDParser* pParser, HIDData* pData);
+int FindObject(HIDDesc *pDesc, HIDData* pData);
+
+HIDData *FindObject_with_Path(HIDDesc *pDesc, HIDPath *Path, u_char Type);
+
+HIDData *FindObject_with_ID(HIDDesc *pDesc, u_char ReportID, u_char Offset, u_char Type);
 
 /*
  * GetValue
  * -------------------------------------------------------------------------- */
-void GetValue(const u_char* Buf, HIDData* pData);
+void GetValue(const u_char* Buf, HIDData* pData, long *pValue);
 
 /*
  * SetValue
  * -------------------------------------------------------------------------- */
-void SetValue(const HIDData* pData, u_char* Buf);
+void SetValue(const HIDData* pData, u_char* Buf, long Value);
 
 
 #ifdef __cplusplus

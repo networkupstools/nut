@@ -26,20 +26,22 @@
 
 /* SNMP OIDs set */
 #define IETF_OID_UPS_MIB			".1.3.6.1.2.1.33"
-#define IETF_OID_MFR_NAME			".1.3.6.1.2.1.33.1.1.1"
-#define IETF_OID_MODEL_NAME			".1.3.6.1.2.1.33.1.1.2"
-#define IETF_OID_FIRMREV			".1.3.6.1.2.1.33.1.1.4"
-#define IETF_OID_BATT_STATUS		".1.3.6.1.2.1.33.1.2.1"     /* INFO_STATUS (2) */
-#define IETF_OID_BATT_RUNTIME		".1.3.6.1.2.1.33.1.2.3"
-#define IETF_OID_BATT_RUNTIME_LOW	".1.3.6.1.2.1.33.1.9.7"
-#define IETF_OID_BATT_CHARGE		".1.3.6.1.2.1.33.1.2.4"
-#define IETF_OID_BATT_VOLTAGE		".1.3.6.1.2.1.33.1.2.5"
-#define IETF_OID_IN_FREQ			".1.3.6.1.2.1.33.1.3.3.1.2"
-#define IETF_OID_IN_VOLTAGE			".1.3.6.1.2.1.33.1.3.3.1.3"
-#define IETF_OID_POWER_STATUS		".1.3.6.1.2.1.33.1.4.1"     /* INFO_STATUS (1) */
-#define IETF_OID_OUT_VOLTAGE		".1.3.6.1.2.1.33.1.9.3"     /* INFO_UTILITY ? */
-#define IETF_OID_UTIL_VOLTAGE		".1.3.6.1.2.1.33.1.4.4.1.2" /* INFO_UTILITY ? */
-#define IETF_OID_LOAD_LEVEL			".1.3.6.1.2.1.33.1.4.4.1.5" /* INFO_LOADPCT */
+#define IETF_OID_MFR_NAME			".1.3.6.1.2.1.33.1.1.1.0"
+#define IETF_OID_MODEL_NAME			".1.3.6.1.2.1.33.1.1.2.0"
+#define IETF_OID_AGENTREV			".1.3.6.1.2.1.33.1.1.3.0"
+#define IETF_OID_FIRMREV			".1.3.6.1.2.1.33.1.1.4.0"
+#define IETF_OID_BATT_STATUS		".1.3.6.1.2.1.33.1.2.1.0"     /* INFO_STATUS (2) */
+#define IETF_OID_BATT_RUNTIME		".1.3.6.1.2.1.33.1.2.3.0"
+#define IETF_OID_BATT_RUNTIME_LOW	".1.3.6.1.2.1.33.1.9.7.0"
+#define IETF_OID_BATT_CHARGE		".1.3.6.1.2.1.33.1.2.4.0"
+#define IETF_OID_BATT_VOLTAGE		".1.3.6.1.2.1.33.1.2.5.0"
+#define IETF_OID_IN_FREQ			".1.3.6.1.2.1.33.1.3.3.1.2.0"
+#define IETF_OID_IN_VOLTAGE			".1.3.6.1.2.1.33.1.3.3.1.3.0"
+#define IETF_OID_POWER_STATUS		".1.3.6.1.2.1.33.1.4.1.0"     /* INFO_STATUS (1) */
+#define IETF_OID_OUT_VOLTAGE		".1.3.6.1.2.1.33.1.9.3.0"     /* INFO_UTILITY ? */
+#define IETF_OID_OUT_POWER		".1.3.6.1.2.1.33.1.4.4.1.4.0"
+#define IETF_OID_UTIL_VOLTAGE		".1.3.6.1.2.1.33.1.4.4.1.2.0" /* INFO_UTILITY ? */
+#define IETF_OID_LOAD_LEVEL			".1.3.6.1.2.1.33.1.4.4.1.5.0" /* INFO_LOADPCT */
 #define IETF_OID_OUTPUT_TAB			".1.3.6.1.2.1.33.1.4.4"
 
 /* Defines for IETF_OID_POWER_STATUS (1) */
@@ -95,7 +97,9 @@ snmp_info_t ietf_mib[] = {
 		SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_MODEL_NAME,
 		"Generic SNMP UPS", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
-	{ "ups.firmware.aux", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_FIRMREV, "",
+	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_FIRMREV, "",
+		SU_FLAG_STATIC | SU_FLAG_OK, NULL },
+	{ "ups.firmware.aux", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_AGENTREV, "",
 		SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_POWER_STATUS, "OFF",
 		SU_FLAG_OK | SU_STATUS_PWR, &ietf_pwr_info[0] },
@@ -106,6 +110,7 @@ snmp_info_t ietf_mib[] = {
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_ALARM_LB, "",
 		SU_FLAG_OK | SU_STATUS_BATT, &ietf_alarm_lb[0] },
 	{ "ups.load", 0, 1, IETF_OID_LOAD_LEVEL, "", SU_FLAG_OK, NULL },
+	{ "ups.power", 0, 1.0, IETF_OID_OUT_POWER, "", SU_FLAG_OK, NULL },
 	/* Battery page */
 	{ "battery.charge", 0,1, IETF_OID_BATT_CHARGE, "", SU_FLAG_OK, NULL },
 	{ "battery.runtime", 0, 60, IETF_OID_BATT_RUNTIME, "", SU_FLAG_OK, NULL },

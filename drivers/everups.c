@@ -19,10 +19,8 @@
 
 #include "main.h"
 #include "serial.h"
+#include "everups.h"
 #include <sys/ioctl.h>
-
-#define DRV_VERSION "0.02"
-
 
 static	unsigned char	upstype = 0;
 
@@ -89,7 +87,7 @@ void upsdrv_updateinfo(void)
 	double	fVal;
 	
 	if (!Code(2)) {
-		upslog(LOG_INFO, "Code failed");
+		upslog_with_errno(LOG_INFO, "Code failed");
 		dstate_datastale();
 		return;
 	}
@@ -106,7 +104,7 @@ void upsdrv_updateinfo(void)
 		acuV=((unsigned long)recBuf[0])*150;
 		acuV/=255;
 	} else {
-		upslog(LOG_INFO, "Code failed");
+		upslog_with_errno(LOG_INFO, "Code failed");
 		dstate_datastale();
 		return;
 	}
@@ -118,7 +116,7 @@ void upsdrv_updateinfo(void)
 		else
 			lineV=(recBuf[0]*100+recBuf[1]*25600)/372;
 	} else {
-		upslog(LOG_INFO, "Code failed");
+		upslog_with_errno(LOG_INFO, "Code failed");
 		dstate_datastale();
 		return;
 	}

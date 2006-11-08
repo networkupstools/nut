@@ -349,8 +349,8 @@ static void upsconf_add(int reloading)
 			upslogx(LOG_WARNING, "Warning: ignoring incomplete configuration for UPS [%s]\n", 
 				tmp->upsname);
 		} else {
-			snprintf(statefn, sizeof(statefn), "%s-%s", 
-				tmp->driver, xbasename(tmp->port));
+			snprintf(statefn, sizeof(statefn), "%s",
+				tmp->upsname);
 
 			/* if a UPS exists, update it, else add it as new */
 			if ((reloading) && (get_ups_ptr(tmp->upsname) != NULL))
@@ -439,7 +439,7 @@ static int check_file(const char *fn)
 	f = fopen(chkfn, "r");
 
 	if (!f) {
-		upslog(LOG_ERR, "Reload failed: can't open %s", chkfn);
+		upslog_with_errno(LOG_ERR, "Reload failed: can't open %s", chkfn);
 		return 0;	/* failed */
 	}
 

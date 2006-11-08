@@ -31,7 +31,7 @@ void send_read_command(unsigned char command)
 		buf[3]=calc_checksum(buf);	/* checksum */
 		
 		if (retry == 4) ser_send_char(upsfd, 0x1d);	/* last retry is preceded by a ESC.*/
-			sent = ser_send_buf(upsfd, (char*)buf, 4);
+			sent = ser_send_buf(upsfd, buf, 4);
 		retry += 1;
 	}
 }
@@ -57,7 +57,7 @@ void send_write_command(unsigned char *command, int command_length)
 	sent = 0;
 
 	while ((sent != (command_length)) && (retry < PW_MAX_TRY)) {
-		sent = ser_send_buf(upsfd, (char*)sbuf, (command_length));
+		sent = ser_send_buf(upsfd, sbuf, (command_length));
 		if (sent != (command_length)) printf("Error sending command %x\n", (unsigned char)sbuf[2]);
 			retry += 1;
 	}
@@ -79,7 +79,7 @@ int get_answer(unsigned char *data, unsigned char command)
 
 		do {
 			/* Read PW_COMMAND_START_BYTE byte */
-			res = ser_get_char(upsfd, (char*)my_buf, 1, 0);
+			res = ser_get_char(upsfd, my_buf, 1, 0);
 			if (res != 1) {
 				upsdebugx(1,"Receive error (PW_COMMAND_START_BYTE): %d!!!\n", res);
 				return -1;
@@ -94,7 +94,7 @@ int get_answer(unsigned char *data, unsigned char command)
 		}
 
 		/* Read block number byte */
-		res = ser_get_char(upsfd, (char*)(my_buf+1), 1, 0);
+		res = ser_get_char(upsfd, my_buf+1, 1, 0);
 		if (res != 1) {
 			ser_comm_fail("Receive error (Block number): %d!!!\n", res);
 			return -1;
@@ -120,7 +120,7 @@ int get_answer(unsigned char *data, unsigned char command)
 		}
 
 		/* Read data length byte */
-		res = ser_get_char(upsfd, (char*)(my_buf+2), 1, 0);
+		res = ser_get_char(upsfd, my_buf+2, 1, 0);
 		if (res != 1) {
 			ser_comm_fail("Receive error (length): %d!!!\n", res);
 			return -1;
@@ -133,7 +133,7 @@ int get_answer(unsigned char *data, unsigned char command)
 		}
 
 		/* Read sequence byte */
-		res = ser_get_char(upsfd, (char*)(my_buf+3), 1, 0);
+		res = ser_get_char(upsfd, my_buf+3, 1, 0);
 		if (res != 1) {
 			ser_comm_fail("Receive error (sequence): %d!!!\n", res);
 			return -1;
@@ -152,14 +152,14 @@ int get_answer(unsigned char *data, unsigned char command)
 		pre_sequence = sequence;
 
 		/* Try to read all the remainig bytes */
-		res = ser_get_buf_len(upsfd, (char*)(my_buf+4), length, 1, 0);
+		res = ser_get_buf_len(upsfd, my_buf+4, length, 1, 0);
 		if (res != length) {
 			ser_comm_fail("Receive error (data): got %d bytes instead of %d!!!\n", res, length);
 			return -1;
 		}
 
 		/* Get the checksum byte */
-		res = ser_get_char(upsfd, (char*)(my_buf+(4+length)), 1, 0);
+		res = ser_get_char(upsfd, my_buf+(4+length), 1, 0);
 
 		if (res != 1) {
 			ser_comm_fail("Receive error (checksum): %x!!!\n", res);
@@ -238,7 +238,7 @@ void upsdrv_comm_good()
 
 void pw_comm_setup(const char *port)
 {
-    char answer[256];
+    unsigned char answer[256];
     int i = 0, baud, mybaud = 0, ret = -1 ;
 
 	if (getval("baud_rate") != NULL)

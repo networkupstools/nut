@@ -155,10 +155,12 @@ that UPS.
  HARDWARE SUPPORT TABLE
  ----------------------
 
+	al175            - Eltek models with AL175 alarm module
+
 	apcsmart         - APC Smart-UPS, Back-UPS Pro, Matrix-UPS models
 
 	bcmxcp           - some Powerware models
-	
+
 	bcmxcp_usb       - some Powerware USB models
 
 	belkin           - Belkin Regulator Pro
@@ -172,16 +174,16 @@ that UPS.
                            - Fortress (FOR)
                            - Fortress Telecom (FTC)
                            - Patriot Pro (PRO)
-			   - Patriot Pro II (PR2)
-			   - Axxium Rackmount (AX1)
+                           - Patriot Pro II (PR2)
+                           - Axxium Rackmount (AX1)
 
                            The SOLA 325, 520 and 620 are also recognized. 
 
-			   This driver will probably also work with other
-			   PhoenixTec protocol hardware.
+                           This driver will probably also work with other
+                           PhoenixTec protocol hardware.
 
-			   The SOLA 610 will work with the ID= variable
-			   in ups.conf.
+                           The SOLA 610 will work with the ID= variable
+                           in ups.conf.
 
 	blazer		 - Centralion Blazer models
 
@@ -231,20 +233,6 @@ that UPS.
 	genericups       - Many contact closure models -
                            see "Generic UPS driver" below 
 
-        hidups           - Experimental driver for USB HID UPSes on Linux
-
-                           Some units that have been used with this driver:
-
-                           - All MGE UPS SYSTEMS USB models
-                           - APC Back-UPS Pro 350 USB
-                           - APC Back-UPS 500 USB
-                           - APC Back-UPS ES 650
-                           - Belkin F6C800-UNV, F6C550-AVR
-
-                           NOTE: not built by default, and will be replaced by
-                           by newhidups by NUT 2.2.  Read the FAQ
-                           to find out how to build/install/use this one.
-
 	isbmex		 - SOLA/BASIC Mexico ISBMEX protocol hardware
 
 	ippon            - Ippon UPS devices
@@ -289,8 +277,12 @@ that UPS.
 
 	mustek		 - Mustek UPS hardware
 
+	megatec		 - Megatec protocol based UPSes (Mustek Powermust,
+			   OnLite 50, Maxxtro units, etc.)
+
+
 	newhidups	 - Meta driver for USB HID UPSes on various platforms
-                           (will replace hidups by NUT 2.2)
+                           (replaces hidups)
 
                            Some units that have been used with this driver:
 
@@ -300,6 +292,8 @@ that UPS.
 
                            NOTE: not built by default.  Read the FAQ
                            to find out how to build/install/use this one.
+ 
+	nitram		 - Nitram Elite 2005 units
 
 	oneac		 - Oneac EG and ON equipment
 

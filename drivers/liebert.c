@@ -23,7 +23,7 @@
 
 #include "main.h"
 #include "serial.h"
-
+#include "liebert.h"
 #include <sys/ioctl.h>
 
 #define	ML_ONBATTERY	0x55
@@ -84,7 +84,7 @@ void upsdrv_updateinfo(void)
 	ret = ioctl(upsfd, TIOCMGET, &flags);
 
 	if (ret != 0) {
-		upslog(LOG_INFO, "ioctl failed");
+		upslog_with_errno(LOG_INFO, "ioctl failed");
 		dstate_datastale();
 		return;
 	}
@@ -160,8 +160,8 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_banner(void)
 {
-	printf("Network UPS Tools - Liebert MultiLink UPS driver 1.0 (%s)\n", 
-		UPS_VERSION);
+	printf("Network UPS Tools - Liebert MultiLink UPS driver %s (%s)\n",
+		DRV_VERSION, UPS_VERSION);
 
 	experimental_driver = 1;
 }

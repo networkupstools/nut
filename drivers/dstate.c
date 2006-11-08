@@ -57,7 +57,7 @@ static void sock_fail(const char *fn)
 	user = getpwuid(getuid());
 
 	if (!user)
-		fatal("getpwuid");
+		fatal_with_errno("getpwuid");
 
 	/* deal with some common problems */
 	switch (errno) {
@@ -101,7 +101,7 @@ static int open_sock(const char *fn)
 	fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
 	if (fd < 0)
-		fatal("Can't create a unix domain socket");
+		fatal_with_errno("Can't create a unix domain socket");
 
 	/* keep this around for the unlink() when exiting */
 	sockfn = xstrdup(fn);
@@ -122,12 +122,12 @@ static int open_sock(const char *fn)
 	ret = chmod(sockfn, 0660);
 
 	if (ret < 0)
-		fatal("chmod(%s, 0660) failed", sockfn);
+		fatal_with_errno("chmod(%s, 0660) failed", sockfn);
 
 	ret = listen(fd, DS_LISTEN_BACKLOG);
 
 	if (ret < 0)
-		fatal("listen(%d, %d) failed", fd, DS_LISTEN_BACKLOG);
+		fatal_with_errno("listen(%d, %d) failed", fd, DS_LISTEN_BACKLOG);
 
 	return fd;
 }
@@ -224,7 +224,7 @@ static void conn_add(int fd)
 	acc = accept(fd, (struct sockaddr *) &sa, &salen);
 
 	if (acc < 0) {
-		upslog(LOG_ERR, "accept on unix fd failed");
+		upslog_with_errno(LOG_ERR, "accept on unix fd failed");
 		return;
 	}
 
@@ -233,7 +233,7 @@ static void conn_add(int fd)
 	ret = fcntl(acc, F_GETFL, 0);
 
 	if (ret < 0) {
-		upslog(LOG_ERR, "fcntl get on unix fd failed");
+		upslog_with_errno(LOG_ERR, "fcntl get on unix fd failed");
 		close(acc);
 		return;
 	}
@@ -241,7 +241,7 @@ static void conn_add(int fd)
 	ret = fcntl(acc, F_SETFL, ret | O_NDELAY);
 
 	if (ret < 0) {
-		upslog(LOG_ERR, "fcntl set O_NDELAY on unix fd failed");
+		upslog_with_errno(LOG_ERR, "fcntl set O_NDELAY on unix fd failed");
 		close(acc);
 		return;
 	}	
@@ -473,8 +473,13 @@ void dstate_init(const char *prog, const char *port)
 	/* do this here for now */
 	signal(SIGPIPE, SIG_IGN);
 
-	snprintf(sockname, sizeof(sockname), "%s/%s-%s", 
-		dflt_statepath(), prog, port);
+	if (port != NULL)
+		snprintf(sockname, sizeof(sockname), "%s/%s-%s",
+			dflt_statepath(), prog, port);
+	else
+		snprintf(sockname, sizeof(sockname), "%s/%s",
+			dflt_statepath(), prog);
+
 	sockfd = open_sock(sockname);
 
 	upsdebugx(2, "dstate_init: sock %s open on fd %d", sockname, sockfd);
@@ -518,7 +523,7 @@ int dstate_poll_fds(int interval, int extrafd)
 	if (ret < 0) {
 		/* ignore interruptions from signals */
 		if (errno != EINTR)
-			upslog(LOG_ERR, "select unix sockets failed");
+			upslog_with_errno(LOG_ERR, "select unix sockets failed");
 		return 0;
 	}
 

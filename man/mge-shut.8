@@ -1,4 +1,4 @@
-.TH mge\-shut 8 "Thu Jul 27 2006" "" "Network UPS Tools (NUT)" 
+.TH mge\-shut 8 "Fri Dec 16 2005" "" "Network UPS Tools (NUT)" 
 .SH NAME  
 mge\(hyshut \- Driver for MGE UPS serial SHUT Protocol UPS equipment
 .SH NOTE
@@ -18,8 +18,7 @@ UPS Transfer) protocol at 2400 bps. Supported models are:
     Pulsar Esprit,
     Pulsar Evolution,
     NOVA AVR (Serial),
-    Galaxy 3000 / PW (with RS232 HID COM ports card, ref 66066),
-    Any recent MGE serial model...
+    Galaxy 3000 / PW (with RS232 HID COM ports card, ref 66066). 
 
 Older models, such as Pulsar ESV+, Pulsar EX and Pulsar ES+, use the U\(hyTalk
 protocol and should use the mge\(hyutalk driver.
@@ -44,11 +43,8 @@ Set the timer for the UPS to switch on in case the power returns after the
 kill power command had been sent but before the actual switch off. This
 ensures the machines connected to the UPS are, in all cases, rebooted after
 a power failure.
-The default value is 3 (in 10 seconds unit, which means 30 seconds),
+The default value is 3 (in 10 seconds units, which means 30 seconds),
 and MUST BE GREATER than offdelay.
-
-IMPORTANT NOTE: some newer models express this value in seconds unit.
-If you experience trouble with the UPS not restarting, please refer to the below "KNOWN ISSUES".
 
 .IP "notification=\fInum\fR"
 Set notification type to 1 (no), 2 (light) or 3 (yes).
@@ -66,14 +62,9 @@ upsd.  To solve this problem, change the value of MAXAGE to 25 in
 upsd.conf.  Also add "notification=3" in ups.conf (thanks to Julien 
 Lesaint and Fabien).
 
-.SS "The UPS doesn't restart after a power restoration"
-
-The present mge-shut version lacks an exponent management.
-This can lead to the UPS not restarting after the power restoration.
-In such a case, try to express the ondelay in seconds (refer to the above ondelay description). A complete rewrite of this driver is underway for NUT 2.2, and will solve this issue.
 
 .SH AUTHOR
-Arnaud Quette <aquette.dev@gmail.com>
+Arnaud Quette <arnaud.quette@free.fr> or <arnaud.quette@mgeups.com> 
 
 Philippe Marzouk <philm@users.sourceforge.net>
 

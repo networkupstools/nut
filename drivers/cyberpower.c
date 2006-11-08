@@ -20,12 +20,11 @@
 
 #include "main.h"
 #include "serial.h"
+#include "cyberpower.h"
 
 #include <sys/ioctl.h>
 
 #include "timehead.h"
-
-#define DRV_VERSION "1.00"
 
 /* window for repeating dangerous command (shutdown.stayoff) */
 #define MINCMDTIME	3

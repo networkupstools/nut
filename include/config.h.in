@@ -123,6 +123,9 @@
 /* Define to 1 if you have the `vsnprintf' function. */
 #undef HAVE_VSNPRINTF
 
+/* Default path for HTML files */
+#undef HTMLPATH
+
 /* Define to 1 if libusb support `usb_detach_kernel_driver_np' function. */
 #undef LIBUSB_HAS_DETACH_KRNL_DRV
 
@@ -162,6 +165,12 @@
 /* User to switch to if started as root */
 #undef RUN_AS_USER
 
+/* The size of a `unsigned char', as computed by sizeof. */
+#undef SIZEOF_UNSIGNED_CHAR
+
+/* The size of a `unsigned short', as computed by sizeof. */
+#undef SIZEOF_UNSIGNED_SHORT
+
 /* Path for UPS driver state files */
 #undef STATEPATH
 
@@ -186,3 +195,9 @@
 
 /* type to use in place of socklen_t if not defined */
 #undef socklen_t
+
+/* type to use in place of uint16_t if not defined */
+#undef uint16_t
+
+/* type to use in place of uint8_t if not defined */
+#undef uint8_t

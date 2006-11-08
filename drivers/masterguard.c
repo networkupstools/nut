@@ -1,21 +1,22 @@
-/*
-    Copyright (C) 2001 Michael Spanier <mail@michael-spanier.de>
-    
-    masterguard.c created on 15.8.2001
-    
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-    
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+/* masterguard.c - support for Masterguard models
+
+   Copyright (C) 2001 Michael Spanier <mail@michael-spanier.de>
+
+   masterguard.c created on 15.8.2001
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
 
@@ -31,6 +32,7 @@
  ********************************************************************/
 #include "main.h"
 #include "serial.h"
+#include "masterguard.h"
 
 #define UPSDELAY 3
 #define MAXTRIES 10
@@ -40,7 +42,6 @@
 #define Q3  2
 
 #define DEBUG 1
-#define DRIVERVERSION "0.23"
 
 int     type;
 char    name[31];
@@ -421,7 +422,7 @@ static int ups_ident( void )
     {
         if( DEBUG )
             printf( "WH says <%s> with length %i\n", buf, ret );
-        upslog( LOG_INFO, 
+        upslog_with_errno( LOG_INFO, 
                 "New WH String found. Please report to maintainer\n" );
     }
     return 1;
@@ -458,7 +459,7 @@ void upsdrv_initinfo(void)
 	if( strlen( firmware ) > 0 )
         	dstate_setinfo("ups.firmware", "%s", firmware);
 
-	dstate_setinfo("driver.version.internal", "%s", DRIVERVERSION);
+	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
 }
 
 /********************************************************************
@@ -472,7 +473,7 @@ void upsdrv_updateinfo(void)
     char    buf[255];
     int     ret;
     int     lenRSP=0;
-    
+
     if( DEBUG ) 
         printf( "update info\n" );
 
@@ -495,7 +496,7 @@ void upsdrv_updateinfo(void)
     }
 
     sleep( UPSDELAY );
-    
+
     buf[0] = '\0';
     ret = ser_get_line(upsfd, buf, sizeof(buf), '\r', "", 3, 0);
     ret = strlen( buf );
@@ -504,11 +505,11 @@ void upsdrv_updateinfo(void)
     {
         if( DEBUG ) 
             printf( "buf = %s len = %i\n", buf, ret );
-        upslog( LOG_ERR, "Error in UPS response " );
+        upslog_with_errno( LOG_ERR, "Error in UPS response " );
 	dstate_datastale();
         return;
     }
-    
+
     /* Parse the response from the UPS */
     if( type & Q3 )
     {
@@ -560,8 +561,7 @@ void upsdrv_makevartable(void)
 void upsdrv_banner(void)
 {
 	printf("Network UPS Tools - MASTERGUARD UPS driver %s (%s)\n\n",
-            DRIVERVERSION, UPS_VERSION);
-    
+            DRV_VERSION, UPS_VERSION);
 }
 
 /********************************************************************

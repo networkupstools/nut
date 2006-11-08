@@ -1,8 +1,7 @@
-/*
-   ippon.c - driver for Ippon UPS devices v 0.02
+/* ippon.c - driver for Ippon UPS devices
 
    Copyright (C) 2004  Alexander Fedorov <alexf@land.ru>
-             
+
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 2 of the License, or
@@ -20,9 +19,9 @@
 
 #include "main.h"
 #include "serial.h"
+#include "ippon.h"
 
 #define ENDCHAR		13	/* end == CR */
-#define DRV_VERSION 	"0.02" 
 #define SECS            3       /* 3sec delay when get           */
 #define USEC            0 	/* 0ms delay when get            */
 #define SENDDELAY 	100000  /* 100ms between chars when send */

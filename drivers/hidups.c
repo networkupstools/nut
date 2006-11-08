@@ -239,7 +239,7 @@ static char *getstring(int type)
 		     if (ioctl(fd, HIDIOCGSTRING, &sdesc) > 0)
 			  snprintf(str, sizeof(str), "%s", sdesc.value);
 		     else
-			  upslog(LOG_ERR, "ioctl HIDIOCGSTRING");
+			  upslog_with_errno(LOG_ERR, "ioctl HIDIOCGSTRING");
 		}
 	}
 
@@ -300,9 +300,9 @@ void upsdrv_updateinfo(void)
 
 		if (rd < (int) sizeof(ev[0])) {
 			if (rd < 0)
-				fatal("read");
+				fatal_with_errno("read");
 			else {
-				upslog(LOG_INFO, "short read from device");
+				upslog_with_errno(LOG_INFO, "short read from device");
 				dstate_datastale();
 			}
 		}
@@ -502,7 +502,7 @@ static void open_usb(const char *port, int flags)
      */
     if (strncmp (port, "usb-", 4) != 0) {
          if ((fd = open (port, flags)) < 0)
-              fatal("hiddev path open %s", port);
+              fatal_with_errno("hiddev path open %s", port);
          return;
     }
 

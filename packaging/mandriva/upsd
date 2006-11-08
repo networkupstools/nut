@@ -1,0 +1,112 @@
+#!/bin/sh
+#
+# chkconfig: 2345 30 90
+#
+# 2003-12-04 Arnaud de Lorbeau <adelorbeau@mandrakesoft.com>
+#  Load the user and the "powerdown" flag from the file /etc/ups/upsmon.conf
+#  powerdown will check the powerdown flag instead of the init halt script
+# 2002-08-26 Arnaud de Lorbeau <adelorbeau@mandrakesoft.com>
+#  Error messages about "no configuration done" are moved to syslog and not to the screen.
+#  Add a reload entry and remove old style commands
+# 2002-02-07 Nigel Metheringham <Nigel.Metheringham@InTechnology.co.uk>
+#  made ups.conf pre-eminant, added new upsdrvctl functions, targeted for RH7.2, should
+#  work OK on RH 6.x, 7.x
+# 2001-10-24 Peter Bieringer <pb@bieringer.de>
+#  enhancements for new style drivers and controls, tested on a RHL 7.1.93 system
+#
+# description: NUT upsd and its drivers directly monitor a ups and \
+#	make information from it available to other programs
+# processname: upsd
+# config: @sysconfdir@/upsd.conf
+# config: @sysconfdir@/ups.conf
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+export PATH
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+UPSMONCONF=/etc/ups/upsmon.conf
+UPSDCONF=/etc/ups/upsd.conf
+UPSCONF=/etc/ups/ups.conf
+
+if [ -f $UPSMONCONF ]; then
+  POWERDOWNFLAG=`grep "POWERDOWNFLAG" $UPSMONCONF | grep -v "^#" | sed "s/POWERDOWNFLAG\([\ ,\t]\+\)//"`
+  # If the nut flag is not found or not correct, use the default one
+  if ! ( [ -n "$POWERDOWNFLAG" ] && [ -d $(dirname "$POWERDOWNFLAG") ] ); then
+     POWERDOWNFLAG="/etc/killpower"
+  fi
+  NUTUSER=`grep "RUN_AS_USER" $UPSMONCONF | grep -v "^#" | sed "s/RUN_AS_USER\([\ ,\t]\+\)//"` 
+  [ -z $NUTUSER ] && NUTUSER="ups"
+else
+  POWERDOWNFLAG=/etc/killpower
+  NUTUSER=ups
+fi
+DRIVERPATH=/sbin
+
+# See how we are called.
+case "$1" in
+    start)
+	if [ -f $UPSCONF ]; then
+	    TESTUP=`grep -v "#" $UPSCONF`
+	    if [ -z "$TESTUP" ]; then
+		logger -i -p local1.err -t upsd "NUT No UPS drivers were configured" && exit 0;
+	    fi
+	    echo -n "NUT Starting UPS model drivers: "
+	    daemon upsdrvctl start
+	    echo
+	    if [ $? -eq 0 ]; then
+	       echo -n "NUT Starting UPS daemon: "
+               daemon upsd -u $NUTUSER
+               echo
+               touch /var/lock/subsys/upsd
+            fi
+        else
+	   failure "NUT Configuration file $UPSCONF is missing"
+           echo
+	fi
+	;;
+
+    stop)
+	echo -n "NUT Stopping UPS daemon: "
+	daemon upsd -c stop
+	echo
+        action "NUT Stopping UPS model drivers"	upsdrvctl stop
+	rm -f /var/lock/subsys/upsd
+	;;
+
+    powerdown)
+        if [ -f $POWERDOWNFLAG ]; then
+	   action "NUT Powerdown of attached UPS(es):" upsdrvctl shutdown
+	   echo "Please ensure that the UPS has powered off before rebooting"
+	   echo "Otherwise, the UPS may cut the power during the reboot!!!"
+	   echo
+	fi
+	exit 0
+	;;
+
+    restart)
+	$0 stop
+	$0 start
+	;;
+
+    reload)
+        if [ -f /var/lock/subsys/upsd ]; then
+           action "NUT UPS daemon reread configurations: " upsd -c reload
+	   echo
+	else
+	   echo -n "NUT No upsd lock found"
+	   echo
+	fi
+	;;
+
+    status)
+        echo -n "NUT: UPS daemon status: "
+	status upsd
+        ;;
+
+    *)
+	echo "Usage: upsd {start|stop|powerdown|restart|reload|status}"
+	exit 1
+esac
+

@@ -73,13 +73,9 @@ extern "C" {
 /* 
  * HIDNode struct
  *
- * Describe a HID Path point 
+ * Describe a HID Path point: Usage = bits 0..15, UPage = bits 16..31
  * -------------------------------------------------------------------------- */
-typedef struct
-{
-	u_short UPage;
-	u_short Usage;
-} HIDNode;
+typedef unsigned int HIDNode;
 
 /* 
  * HIDPath struct
@@ -99,7 +95,6 @@ typedef struct
  * -------------------------------------------------------------------------- */
 typedef struct
 {
-	long    Value;		/* HID Object Value						*/
 	HIDPath Path;		/* HID Path								*/
 
 	u_char   ReportID;	/* Report ID								*/
@@ -120,30 +115,17 @@ typedef struct
 	long    have_PhyMax;	/* Physical Max defined? */
 } HIDData;
 
-/*
- * HIDParser struct
+/* 
+ * HIDDesc struct
+ *
+ * Holds a parsed report descriptor
  * -------------------------------------------------------------------------- */
 typedef struct
 {
-	u_char   ReportDesc[REPORT_DSC_SIZE];	/* Store Report Descriptor					*/
-	u_short  ReportDescSize;					/* Size of Report Descriptor					*/
-	u_short  Pos;							/* Store current pos in descriptor				*/
-	u_char   Item;							/* Store current Item							*/
-	long    Value;							/* Store current Value						*/
-
-	HIDData Data;							/* Store current environment					*/
-
-	u_char   OffsetTab[MAX_REPORT][4];		/* Store ID, Type, offset & timestamp of report	*/
-	u_char   ReportCount;					/* Store Report Count						*/
-	u_char   Count;							/* Store local report count					*/
-
-	u_short  UPage;							/* Global UPage								*/
-	HIDNode UsageTab[USAGE_TAB_SIZE];	/* Usage stack								*/
-	u_char   UsageSize;						/* Design number of usage used				*/
-
-	u_char   nObject;						/* Count Objects in Report Descriptor			*/
-	u_char   nReport;						/* Count Reports in Report Descriptor			*/
-} HIDParser;
+	int nitems;      /* number of items in descriptor */
+	HIDData *item;   /* list of items */
+	int replen[256]; /* list of report lengths, in byte */
+} HIDDesc;
 
 #ifdef __cplusplus
 } /* extern "C" */

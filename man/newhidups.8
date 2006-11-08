@@ -22,7 +22,9 @@ At the present time, newhidups supports:
 
 For a more complete list, refer to the NUT hardware compatibility list,
 available in the source distribution as data/drivers.list, or on the
-NUT website.
+NUT website. You may use the "generic" driver option to gather
+information from HID UPSes which are not yet supported; see below for
+details.
 
 This driver is known to work on:
 
@@ -31,10 +33,6 @@ This driver is known to work on:
     Solaris 10 (not yet validated).
 
 .SH EXTRA ARGUMENTS
-If you only have one local USB UPS, newhidups can autodetect it by
-setting the port value to "auto" either on the command line,
-or in the \fBups.conf\fR file.
-
 This driver also supports the following optional settings:
 
 .IP "offdelay=\fInum\fR"
@@ -76,6 +74,13 @@ Select a UPS on a specific USB bus or group of busses. The argument is
 a regular expression that must match the bus name where the UPS is
 connected (e.g. bus="002", bus="00[2-3]"). 
 
+.IP "generic"
+With this option, the driver will connect to any device, including
+ones that are not yet supported. This must always be combined with the
+"vendorid" option. In this mode, the driver will not do anything
+useful except for printing debugging information (typically used with
+\fI-DD\fR).
+
 .SH INSTALLATION
 This driver is not built by default.  You can build it by using
 "make usb", and install it using "make install\(hyusb". Note that
@@ -85,10 +90,28 @@ libhid.usermap), generally in etc/hotplug/usb/, to address the
 permission settings problem. Lastly note that the libhidups file
 must have execution flag set (ie using chmod +x ...).
 
-On Linux, you will need at least a 2.4.25 or 2.6.2 kernel and libusb
-0.1.8 to disable the hiddev support and avoid conflict. This hiddev
-kernel driver was needed by the legacy NUT hidups driver, which
-newhidups replaces.
+On Linux with MGE equipment, you will need at least a 2.4.25 or 2.6.2 kernel as
+well as libusb-0.1.8 or later to disable hiddev support and avoid conflict.
+Otherwise, you will only be able to use the older hidups driver, which is no
+longer maintained.
+
+.SH IMPLEMENTATION
+The driver ignores the "port" value in \fBups.conf\fR. Unlike previous
+versions of this driver, it is now possible to control multiple UPS
+units simultaneously with this driver. They can be distinguished by
+setting some combination of the "vendor", "product", "serial",
+"vendorid", and "productid" options. For instance:
+
+.nf
+	[mge]
+		driver = newhidups
+		port = auto
+		vendorid = 0463
+	[tripplite]
+		driver = newhidups
+		port = auto
+		vendorid = 09ae
+.fi
 
 .SH KNOWN ISSUES AND BUGS
 .SS "Got EPERM: Operation not permitted upon driver startup"

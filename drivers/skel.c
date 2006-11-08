@@ -14,7 +14,7 @@
 
 void upsdrv_initinfo(void)
 {
-	/* try to detect the UPS here - call fatal() if it fails */
+	/* try to detect the UPS here - call fatal_with_errno() if it fails */
 
 	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
 	/* dstate_setinfo("ups.mfr", "skel driver"); */
@@ -41,12 +41,11 @@ void upsdrv_updateinfo(void)
 	 *	return;
 	 * }
 	 */
-	 */
 
 	/* dstate_setinfo("var.name", ""); */
 
 	/* if (ioctl(upsfd, TIOCMGET, &flags)) {
-	 *	upslog(LOG_ERR, "TIOCMGET");
+	 *	upslog_with_errno(LOG_ERR, "TIOCMGET");
 	 *	dstate_datastale();
 	 *	return;
 	 * }
@@ -138,7 +137,7 @@ void upsdrv_initups(void)
 	 *
 	 * to show the value of cable:
 	 *
-	 *      if ((cable == getval("cable")))
+	 *      if ((cable = getval("cable")))
 	 *		printf("cable is set to %s\n", cable);
 	 *	else
 	 *		printf("cable is not set!\n");

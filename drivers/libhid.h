@@ -32,19 +32,30 @@
 
 #include <sys/types.h>
 #include <regex.h>
-#include "timehead.h"
 #include "hidtypes.h"
-#include "usb.h"
+
+#ifdef HAVE_STDINT_H
+#include <stdint.h> /* for uint16_t */
+#endif
+
+#include "timehead.h"
+#ifdef SHUT_MODE
+	struct shut_dev_handle_s {
+		int upsfd;		/* point to main.c/upsfd */
+		char *device_path;
+	};
+	typedef struct shut_dev_handle_s shut_dev_handle;
+	typedef shut_dev_handle hid_dev_handle;
+#else
+	#include <usb.h>
+	typedef usb_dev_handle hid_dev_handle;
+#endif
 
 /* use explicit booleans */
 #ifndef FALSE
 typedef enum ebool { FALSE, TRUE } bool;
 #else
 typedef int bool;
-#endif
-
-#ifdef HAVE_STDINT_H
-#include <stdint.h> /* for uint16_t */
 #endif
 
 /* Device open modes */
@@ -83,21 +94,24 @@ typedef usage_lkp_t *usage_tables_t;
  */
 typedef struct
 {
-	u_int16_t VendorID; /*!< Device's Vendor ID */
-	u_int16_t ProductID; /*!< Device's Product ID */
+	uint16_t VendorID; /*!< Device's Vendor ID */
+	uint16_t ProductID; /*!< Device's Product ID */
 	char*     Vendor; /*!< Device's Vendor Name */
 	char*     Product; /*!< Device's Product Name */
 	char*     Serial; /* Product serial number */
 	char*     Bus;    /* Bus name, e.g. "003" */
 } HIDDevice;
 
-/* A "USB matcher" is a callback function that inputs a HIDDevice
-   structure, and returns 1 for a match and 0 for a non-match.  Thus,
-   a matcher provides a criterion for selecting a USB device.  The
-   callback function further is expected to return -1 on error with
-   errno set, and -2 on other errors. Matchers can be connected in a
-   linked list via the "next" field. This is used e.g. in
-   libusb_open() and HIDOpenDevice(). */
+/*!
+ * HIDDeviceMatcher_t: A "USB matcher" is a callback function that
+ * inputs a HIDDevice structure, and returns 1 for a match and 0
+ * for a non-match.  Thus, a matcher provides a criterion for
+ * selecting a USB device.  The callback function further is
+ * expected to return -1 on error with errno set, and -2 on other
+ * errors. Matchers can be connected in a linked list via the
+ * "next" field. This is used e.g. in libusb_open() and
+ * HIDOpenDevice().
+ */
 
 struct HIDDeviceMatcher_s {
 	int (*match_function)(HIDDevice *d, void *privdata);
@@ -127,13 +141,16 @@ void free_exact_matcher(HIDDeviceMatcher_t *matcher);
 void free_regex_matcher(HIDDeviceMatcher_t *matcher);
 
 /*!
- * Describe a HID Item (a node in the HID tree)
+ * Describe a linked list of HID Events (nodes in the HID tree with
+ * values). 
  */
- typedef struct
+struct HIDEvent_s
 {
-	char*   Path;			/*!< HID Object's fully qualified HID path	*/
-	long    Value;		/*!< HID Object Value					*/
-} HIDItem;
+	char*   Path;		/*!< HID Object's fully qualified HID path (allocated) */
+	long    Value;		/*!< HID Object Value				*/
+	struct HIDEvent_s *next;  /* linked list */
+};
+typedef struct HIDEvent_s HIDEvent;
 
 /* Describe a set of values to match for finding a special HID device.
  * This is given by a set of (compiled) regular expressions. If any
@@ -151,47 +168,72 @@ struct MatchFlags_s {
 };
 typedef struct MatchFlags_s MatchFlags_t;
 
+/*!
+ * communication_subdriver_s: structure to describe the communication routines
+ * @name: can be either "shut" for Serial HID UPS Transfer (from MGE) or "usb"
+ */
+struct communication_subdriver_s {
+	char *name;				/* name of this subdriver		*/
+	char *version;				/* version of this subdriver		*/
+	int (*open)(hid_dev_handle **sdevp,	/* try to open the next available	*/
+		HIDDevice *curDevice,		/* device matching HIDDeviceMatcher_t	*/
+		HIDDeviceMatcher_t *matcher,
+		unsigned char *ReportDesc,
+		int mode);
+	void (*close)(hid_dev_handle *sdev);
+	int (*get_report)(hid_dev_handle *sdev, int ReportId,
+	unsigned char *raw_buf, int ReportSize );
+	int (*set_report)(hid_dev_handle *sdev, int ReportId,
+	unsigned char *raw_buf, int ReportSize );
+	int (*get_string)(hid_dev_handle *sdev,
+	int StringIdx, char *string);
+	int (*get_interrupt)(hid_dev_handle *sdev,
+	unsigned char *buf, int bufsize, int timeout);
+};
+typedef struct communication_subdriver_s communication_subdriver_t;
+extern communication_subdriver_t *comm_driver;
+
 /* ---------------------------------------------------------------------- */
 
 /*
  * HIDOpenDevice
  * -------------------------------------------------------------------------- */
-HIDDevice *HIDOpenDevice(usb_dev_handle **udevp, HIDDevice *hd, HIDDeviceMatcher_t *matcher, int mode);
-
-/*
- * HIDGetItem
- * -------------------------------------------------------------------------- */
-HIDItem *HIDGetItem(const char *ItemPath);
+HIDDevice *HIDOpenDevice(hid_dev_handle **udevp, HIDDevice *hd, HIDDeviceMatcher_t *matcher, int mode);
 
 /*
  * HIDGetItemValue
  * -------------------------------------------------------------------------- */
-int HIDGetItemValue(usb_dev_handle *udev, char *path, float *Value, usage_tables_t *utab);
+int HIDGetItemValue(hid_dev_handle *udev, char *path, float *Value, usage_tables_t *utab);
 
 /*
  * HIDGetItemString
  * -------------------------------------------------------------------------- */
-char *HIDGetItemString(usb_dev_handle *udev, char *path, unsigned char *rawbuf, usage_tables_t *utab);
+char *HIDGetItemString(hid_dev_handle *udev, char *path, unsigned char *rawbuf, usage_tables_t *utab);
 
 /*
  * HIDSetItemValue
  * -------------------------------------------------------------------------- */
-bool HIDSetItemValue(usb_dev_handle *udev, char *path, float value, usage_tables_t *utab);
+bool HIDSetItemValue(hid_dev_handle *udev, char *path, float value, usage_tables_t *utab);
+
 
 /*
- * HIDGetNextEvent
+ * HIDFreeEvents
  * -------------------------------------------------------------------------- */
-int HIDGetEvents(usb_dev_handle *udev, HIDDevice *dev, HIDItem **eventsList, usage_tables_t *utab);
+void HIDFreeEvents(HIDEvent *events);
+
+/*
+ * HIDGetEvents
+ * -------------------------------------------------------------------------- */
+int HIDGetEvents(hid_dev_handle *udev, HIDDevice *dev, HIDEvent **eventsListp, usage_tables_t *utab);
 
 /*
  * HIDCloseDevice
  * -------------------------------------------------------------------------- */
-void HIDCloseDevice(usb_dev_handle *udev);
+void HIDCloseDevice(hid_dev_handle *udev);
 
 /*
  * Support functions
  * -------------------------------------------------------------------------- */
-int get_current_data_attribute();
-void HIDDumpTree(usb_dev_handle *udev, usage_tables_t *utab);
+void HIDDumpTree(hid_dev_handle *udev, usage_tables_t *utab);
 
 #endif /* _LIBHID_H */

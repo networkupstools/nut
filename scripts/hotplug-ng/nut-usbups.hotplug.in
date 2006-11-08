@@ -13,13 +13,29 @@ case $PRODUCT in
 	# APC - usbhid-ups
 	51d/2/*)
 
+	# CyberPower - usbhid-ups
+	764/5/*|764/501/*)
+
+	# Powercom - usbhid-ups
+	d9f/1/*)
+
 	# Powerware - bcmxcp_usb
 	592/2/*)
 
 	# Tripp Lite - tripplite_usb
 	9ae/1/*)
+
+	# Tripp Lite - usbhid-ups
+	9ae/2005/*|9ae/1003/*)
+
+	# Belkin - usbhid-ups
+	50d/980/*|50d/912/*|50d/551/*|50d/900/*)
+
+	# Kebo - unsupported
+	925/1234/*)
+
 		chown root:@RUN_AS_USER@ "$DEVICE"
-		chmod 0660 "$DEVICE"
+		chmod 0664 "$DEVICE"
 		;;
 	*)
 		exit 0

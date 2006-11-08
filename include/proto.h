@@ -45,7 +45,10 @@ int vsnprintf (char *str, size_t count, const char *fmt, va_list arg);
 #endif
 
 #ifndef HAVE_SETENV
-int setenv(const char *name, const char *value, int overwrite);
+int nut_setenv(const char *name, const char *value, int overwrite);
+static inline int setenv(const char *name, const char *value, int overwrite) {
+	return nut_setenv(name, value, overwrite);
+}
 #endif
 
 #ifdef __hpux

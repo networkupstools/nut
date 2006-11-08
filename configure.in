@@ -33,6 +33,7 @@ STATEPATH="/var/state/ups"
 
 DRVPATH='${prefix}/bin'
 CGIPATH='${prefix}/cgi-bin'
+HTMLPATH='${prefix}/html'
 
 RUN_AS_USER="nobody"
 PIDPATH="/var/run"
@@ -160,7 +161,10 @@ AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h sys/termios.h)
 AC_HEADER_TIME
 AC_CHECK_HEADERS(sys/time.h)
 
+dnl Check for types and define possible replacements
 TYPE_SOCKLEN_T
+TYPE_UINT16_T
+TYPE_UINT8_T
 
 CFLAGS_ORIG=$CFLAGS
 LDFLAGS_ORIG=$LDFLAGS
@@ -352,7 +356,7 @@ then
 	AC_MSG_RESULT(not found)
 else
 	AC_MSG_RESULT($LIBUSB_CFLAGS)
-        USB_DRIVER_LIST="newhidups bcmxcp_usb tripplite_usb"
+	USB_DRIVER_LIST="newhidups bcmxcp_usb tripplite_usb"
 	USBPAGES="newhidups.8 bcmxcp_usb.8 tripplite_usb.8"
 fi
 
@@ -532,6 +536,30 @@ AC_ARG_WITH(cgipath,
 	eval conftemp=${CGIPATH}
 	AC_DEFINE_UNQUOTED(CGIPATH, "$conftemp",
 			[Default path for CGI programs])
+	)
+
+AC_MSG_CHECKING(html path)
+AC_ARG_WITH(htmlpath,
+[ --with-htmlpath=PATH		Path for HTML files           [<prefix>/html]],
+[	case "$withval" in
+	yes|no)
+		AC_MSG_RESULT(using default)
+		eval conftemp=${HTMLPATH}
+		AC_DEFINE_UNQUOTED(HTMLPATH, "$conftemp",
+			[Default path for HTML files])
+		;;
+	*)
+		AC_MSG_RESULT($withval)
+		eval conftemp=${withval}
+		AC_DEFINE_UNQUOTED(HTMLPATH, "$conftemp",
+			[Default path for HTML files])
+		HTMLPATH=$withval
+		;;
+	esac],
+	AC_MSG_RESULT(using default)
+	eval conftemp=${HTMLPATH}
+	AC_DEFINE_UNQUOTED(HTMLPATH, "$conftemp",
+			[Default path for HTML files])
 	)
 
 AC_MSG_CHECKING(pidpath)
@@ -746,6 +774,7 @@ AC_SUBST(SERLIBS)
 AC_SUBST(STATEPATH)
 AC_SUBST(DRVPATH)
 AC_SUBST(CGIPATH)
+AC_SUBST(HTMLPATH)
 AC_SUBST(RUN_AS_USER)
 AC_SUBST(LINUX_HIDDEV)
 AC_SUBST(SUN_LIBUSB)
@@ -753,4 +782,4 @@ AC_SUBST(WORDS_BIGENDIAN)
 AC_SUBST(PKG_CFG_DIR)
 AC_SUBST(USE_PKG_CFG)
 
-AC_OUTPUT(clients/Makefile conf/Makefile data/Makefile drivers/Makefile server/Makefile Makefile common/Makefile man/Makefile lib/Makefile lib/libupsclient-config lib/libupsclient.pc scripts/hotplug/libhidups scripts/hotplug-ng/nut-usbups.hotplug scripts/hotplug-ng/nut-usbups.rules)
+AC_OUTPUT(clients/Makefile conf/Makefile data/Makefile data/html/Makefile data/html/header.html drivers/Makefile server/Makefile Makefile common/Makefile man/Makefile lib/Makefile lib/libupsclient-config lib/libupsclient.pc scripts/hotplug/libhidups scripts/hotplug-ng/nut-usbups.hotplug scripts/hotplug-ng/nut-usbups.rules)

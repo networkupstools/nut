@@ -27,7 +27,7 @@ If starting a driver, this value will direct it to \fBchroot\fR(2) into
 This may be set in the ups.conf with "chroot" in the global section.
 
 .IP \-t
-Enable testing mode.  This also enables verbose mode.  Testing mode makes
+Enable testing mode.  This also enables debug mode.  Testing mode makes
 upsdrvctl display the actions it would execute without actually doing them.
 Use this to test out your configuration without actually doing anything
 to your UPS drivers.  This may be helpful when defining the 'sdorder'
@@ -43,8 +43,8 @@ use the username that was compiled into the binary.  This defaults to
 
 This may be set in ups.conf with "user" in the global section.
 
-.IP \-v
-Enable verbose messages.
+.IP "\-D"
+Raise the debug level.  Use this multiple times for additional details.
 
 .SH COMMANDS
 

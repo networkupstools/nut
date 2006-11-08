@@ -29,8 +29,8 @@
 "APC"	"Smart-UPS"		""	"apcsmart"
 
 "APC"	"Back-UPS Pro USB"	""	"newhidups or hidups"
-"APC"   "Back-UPS RS USB"	""      "newhidups or hidups"
 "APC"	"Back-UPS USB"		""	"newhidups or hidups"
+"APC"   "Back-UPS RS USB"	""      "newhidups or hidups"
 "APC"	"Back-UPS LS USB"	""	"newhidups or hidups"
 "APC"	"Back-UPS ES/CyberFort 350"	""	"newhidups or hidups"
 "APC"	"Back-UPS BF500"	""	"newhidups"
@@ -49,12 +49,13 @@
 "APC"	"(various)"	"SNMP monitoring card"	"snmp-ups (experimental driver)"
 
 "Belkin"	"Regulator Pro"	"serial"	"belkin"
+"Belkin"	"Small Enterprise"	"F6C1500-TW-RK"	"belkin"
 "Belkin"	"Resource"	""		"genericups upstype=4"
 "Belkin"	"Home Office"	"F6H350-SER, F6H500-SER, F6H650-SER"	"genericups upstype=7"
 "Belkin"	"Universal UPS" "F6C800-UNV, F6C120-UNV, F6C1100-UNV"	"belkinunv"
-"Belkin"	"Universal UPS" "F6C800-UNV, F6C120-UNV, F6C1100-UNV"	"newhidups"
+"Belkin"	"Universal UPS" "F6C800-UNV, F6C120-UNV, F6C1100-UNV"	"newhidups (USB driver)"
 "Belkin"	"Universal UPS"	"F6H500ukUNV"	"megatec"
-"Belkin"	"Office Series"	"F6C550-AVR"	"newhidups"
+"Belkin"	"Office Series"	"F6C550-AVR"	"newhidups (USB driver)"
 
 "Best Power"	"Fortress (newer)"	""	"bestups"
 "Best Power"	"Fortress Telecom"	""	"bestups"
@@ -65,11 +66,13 @@
 "Best Power"	"Micro-Ferrups"		""	"bestuferrups"
 "Best Power"	"Fortress/Ferrups"	"f-command support"	"bestfcom"
 
-"Centralion"	"Blazer"		""	"blazer or megatec"
+"Centralion"	"Blazer"		""	"blazer"
 
 "Clary"		"ST-800"		""	"gamatronic"
 
 "Compaq"	"T1500h"	""	"upscode2 use_pre_lf"
+"Compaq"	"R3000 XR"	""	"bcmxcp"
+"Compaq"	"R5500 XR"	""	"bcmxcp"
 
 "Cyber Power Systems"	"320AVR"	""	"cyberpower"
 "Cyber Power Systems"	"500AVR"	""	"cyberpower"
@@ -83,20 +86,24 @@
 "Cyber Power Systems"	"1500AVR"	""	"cyberpower"
 "Cyber Power Systems"	"Power99"	""	"genericups upstype=7"
 "Cyber Power Systems"	"550SL"	""	"genericups upstype=7"
-"Cyber Power Systems"	"725SL"	""	"genericups upstype=23"
 "Cyber Power Systems"	"CPS825VA"	""	"cpsups (experimental)"
 "Cyber Power Systems"	"1100AVR"	""	"cpsups (experimental)"
 "Cyber Power Systems"	"1500AVR-HO"	""	"cpsups (experimental)"
+"Cyber Power Systems"	"685AVR"	""	"newhidups (USB driver)"
+"Cyber Power Systems"	"800AVR"	""	"newhidups (USB driver)"
+"Cyber Power Systems"	"AE550"		""	"newhidups (USB driver)"
 
 "Deltec"	"PowerRite Pro II"	""	"genericups upstype=15"
 
 "Dynex"		"975AVR"		""	"genericups upstype=7"
 
-"Effekta"	"MI/MT/MH"	"2502 cable"	"fentonups or megatec"
+"Effekta"	"MI/MT/MH"	"2502 cable"	"fentonups"
+
+"Eltek"		"any with AL175 alarm module"	""	"al175"
 
 "Energizer"	"(various)"	"USB"		"energizerups (experimental USB driver for Linux")
 
-"Energy Sistem"	"(various)"	""	"esupssmart or megatec"
+"Energy Sistem"	"(various)"	""	"esupssmart"
 
 "ETA"		"mini+UPS"	"WinNT/Upsoft cable"	"genericups upstype=7"
 "ETA"		"mini+UPS PRO"	"UPS Explorer cable"	"etapro"
@@ -109,9 +116,9 @@
 "Exide"		"NetUPS SE"	""	"genericups upstype=15"
 
 "Fenton Technologies"	"PowerPal"	"P-series"	"safenet"
-"Fenton Technologies"	"PowerPal"	"L-series"	"fentonups or megatec"
-"Fenton Technologies"	"PowerOn"		""	"fentonups or megatec"
-"Fenton Technologies"	"PowerPure"		""	"fentonups or megatec"
+"Fenton Technologies"	"PowerPal"	"L-series"	"fentonups"
+"Fenton Technologies"	"PowerOn"		""	"fentonups"
+"Fenton Technologies"	"PowerPure"		""	"fentonups"
 
 "Fairstone"	"L525/L625/L750"	""	"safenet"
 
@@ -130,17 +137,19 @@
 
 "Gemini"	"UPS625/UPS1000"	""	"safenet"
 
-"HP"		"R3000 XR"      ""      "bcmxcp"
-"HP"		"R5500 XR"      ""      "bcmxcp"
+"HP"		"R3000 XR"	""	"bcmxcp"
+"HP"		"R5500 XR"	""	"bcmxcp"
 
-"INELT"		"Monolith 1000LT"	""	"fentonups or megatec"
+"INELT"		"Monolith 1000LT"	""	"fentonups"
 
-"Infosec"	"iPEL 350"	""	"esupssmart or megatec"
-"Infosec"	"iPEL 500"	""	"esupssmart or megatec"
-"Infosec"	"iPEL 750"	""	"esupssmart or megatec"
-"Infosec"	"iPEL 1000"	""	"esupssmart or megatec"
+"Inform"	"GUARD"	"Line Interactive AP model"	"powercom"
 
-"Ippon"		"(various)"		""	"ippon or megatec"
+"Infosec"	"iPEL 350"	""	"esupssmart"
+"Infosec"	"iPEL 500"	""	"esupssmart"
+"Infosec"	"iPEL 750"	""	"esupssmart"
+"Infosec"	"iPEL 1000"	""	"esupssmart"
+
+"Ippon"		"(various)"		""	"ippon"
 
 "Liebert"	"UPStation GXT2"	"contact-closure cable"	"liebert" 
 
@@ -312,17 +321,23 @@
 
 "OnLite"	"AQUA"		"50"	"megatec"
 
-"Orvaldi Power Protection"	"various"	"not 400 or 600"	"fentonups or megatec"
+"Opti-UPS"	"PowerES"	"420E"	"optiups"
 
-"Powercom"	"SMK-800A"			""	"fentonups or megatec"
-"Powercom"	"ULT-1000"			""	"fentonups or megatec"
+"Orvaldi Power Protection"	"various"	"not 400 or 600"	"fentonups"
+
+"Powercom"	"SMK-800A"			""	"fentonups"
+"Powercom"	"ULT-1000"			""	"fentonups"
 "Powercom"	"Trust 425/625"			""	"powercom"
 "Powercom"	"(various)"			""	"powercom"
 "Powercom"	"Advice Partner/King Pr750"	""	"powercom"
 
-"PowerGuard"	"PG-600"	""	"fentonups or megatec"
+"PowerGuard"	"PG-600"	""	"fentonups"
 
 "PowerKinetics"	"9001"		""	"genericups upstype=17"
+
+"PowerMan"	"RealSmart 800"	""	"megatec"
+"PowerMan"	"RealSmart 1000"	""	"megatec"
+"PowerMan"	"BackPro"	""	"genericups upstype=4"
 
 "PowerTech"	"Comp1000"	"DTR cable power"	"genericups upstype=3"
 
@@ -338,6 +353,7 @@
 "Powerware"	"PW5125"	""	"bcmxcp"
 "Powerware"	"PW9120"	""	"bcmxcp"
 "Powerware"	"PW9125"	""	"bcmxcp"
+"Powerware"	"PW9315"	"3-phase"	"bcmxcp"
 "Powerware"	"9120"	""	"upscode2"
 "Powerware"	"9150"	""	"upscode2"
 "Powerware"	"9305"	""	"upscode2"
@@ -349,13 +365,14 @@
 "Repotec"	"RPT-800A"	""	"genericups upstype=13"
 "Repotec"	"RPT-162A"	""	"genericups upstype=13"
 
-"SMS (Brazil)"	"Manager III"	""	"sms or megatec"
+"SMS (Brazil)"	"Manager III"	""	"sms"
 
+"SOLA"	"305"	"cable INT-0025C"	"genericups upstype=7"
 "SOLA"	"325"	""	"bestups"
 "SOLA"	"520"	""	"bestups"
 "SOLA"	"610"	"use ID= in ups.conf"	"bestups"
 "SOLA"	"620"	""	"bestups"
-"SOLA"	"330"	""	"blazer or megatec"
+"SOLA"	"330"	""	"blazer"
 
 "SOLA/BASIC Mexico"	"various"	"ISBMEX protocol"	"isbmex"
 
@@ -369,27 +386,34 @@
 
 "SquareOne Power"	"QP1000"		""	"megatec"
 
-"SuperPower"	"HP360, Hope-550"	""	"fentonups or megatec"
+"SuperPower"	"HP360, Hope-550"	""	"fentonups"
 
 "Sweex"		"500/1000"	"smart - shipped with SafeNet"			"safenet"
 "Sweex"		"500/1000"	"contact closure - shipped with UPSmart"	"genericups upstype=7"
+
 "Sweex"		"BC100060 800VA"	""	"megatec"
 
-"Sysgration"	"UPGUARDS Pro650"	""	"fentonups or megatec"
+"Sysgration"	"UPGUARDS Pro650"	""	"fentonups"
 
 "Tecnoware"	"Easy Power 1200"	""	"megatec"
 
 "Tripp-Lite"	"OMNIVS1000"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"OMNIVS1500XL"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"SMART1500RM2U"	"USB"	"tripplite_usb"
+"Tripp-Lite"	"SMART2200RMXL2U"	"USB"	"tripplite_usb (experimental)"
 "Tripp-Lite"	"SmartUPS"	""	"tripplite"
 "Tripp-Lite"	"SmartOnline"	""	"tripplitesu"
 "Tripp-Lite"	"(various)"	"Lan 2.2 interface - black 73-0844 cable"	"genericups upstype=5"
+"Tripp-Lite"    "OMNI1000LCD"   "USB"   "newhidups"
+"Tripp-Lite"    "OMNI900LCD"    "USB"   "newhidups"
+"Tripp-Lite"    "OMNI650LCD"    "USB"   "newhidups"
+"Tripp-Lite"    "1500 LCD"	"USB"   "newhidups"
+"Tripp-Lite"    "AVR550U"	"USB"   "newhidups"
 
 "Trust"		"UPS 1000 Management PW-4105"	""	"megatec"
 
-"UNITEK"	"ALPHA 500 IC"		""	"fentonups or megatec"
-"UNITEK"	"Alpha 1000is"		""	"fentonups or megatec"
+"UNITEK"	"ALPHA 500 IC"		""	"fentonups"
+"UNITEK"	"Alpha 1000is"		""	"fentonups"
 "UNITEK"	"Alpha 500 ipE"		""	"megatec"
 
 "UPSonic"	"LAN Saver 600"		""	"genericups upstype=0"
@@ -398,7 +422,7 @@
 "Various"	"(various)"	"SEC protocol"		"gamatronic"
 "Various"	"(various)"	"Generic RUPS model"	"genericups upstype=4"
 "Various"	"(various)"	"Generic RUPS 2000 (Megatec M2501 cable)"	"genericups upstype=21"
-"Various"	"(various)"	"Megatec protocol"	"fentonups or megatec"
+"Various"	"(various)"	"Megatec protocol"	"megatec"
 "Various"	"(various)"	"PhoenixTec protocol"	"bestups"
 "Various"	"(various)"	"SNMP - RFC 1628"	"snmp-ups (experimental)"
 "Various"	"(various)"	"Safenet software"	"safenet"
@@ -406,3 +430,4 @@
 "Victron/IMV"	"(various)"	""		"victronups"
 "Victron/IMV"	"Lite"		"crack cable"	"genericups upstype=10"
 
+"Viewsonic"	"PowerES"	"420E"	"optiups"

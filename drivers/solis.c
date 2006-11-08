@@ -51,9 +51,10 @@
 #define CMD_EVENT   0xCE
 #define CMD_DUMP    0xCD
 
-/* remove below comment for portuguese language */
-/* #define PORTUGUESE  */
+/* comment on english language */
+/* #define PORTUGUESE */
 
+/* The following Portuguese strings are in UTF-8. */
 #ifdef PORTUGUESE
 #define M_UNKN     "Modêlo solis desconhecido\n"
 #define NO_SOLIS   "Solis não detectado! abortando ...\n"

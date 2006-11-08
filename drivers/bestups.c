@@ -21,6 +21,7 @@
 
 #include "main.h"
 #include "serial.h"
+#include "bestups.h"
 
 #define ENDCHAR  13	/* replies end with CR */
 #define MAXTRIES 5
@@ -28,8 +29,6 @@
 
 #define SER_WAIT_SEC	3	/* allow 3.0 sec for ser_get calls */
 #define SER_WAIT_USEC	0
-
-#define DRV_VERSION "1.03"
 
 static	float	lowvolt = 0, highvolt = 0, voltrange = 0;
 static	int	linenorm = 0;

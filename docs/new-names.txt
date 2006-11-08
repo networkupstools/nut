@@ -1,12 +1,16 @@
 Desc: New command and variable naming scheme
 File: new-names.txt
-Date: 29 September 2004
+Date: 09 September 2005
 Auth: Russell Kroll <rkroll@exploits.org>
+      Arnaud Quette <arnaud.quette@mgeups.com>
 
-This is a dump of the planning page for variables and command names.
+*** NOTE *** : When updating this file, also update data/cmdvartab.
+
+This is a dump of the standard variables and command names used in NUT.
 Don't use a name with any of the dstate functions unless it exists here.
 
-If you need a new variable or command name, contact me first.
+If you need a new variable or command name, contact the Development Team
+first.
 
 Put another way: if you make up a name that's not in this list and it
 gets into the tree, and then we come up with a better name later, clients
@@ -51,6 +55,10 @@ ups: General unit information
    |----------------------+------------------------------+------------------|
    | ups.load             | Load on UPS (percent)        | 023.4            |
    |----------------------+------------------------------+------------------|
+   | ups.load.high        | Load when UPS                | 100              |
+   |                      | switches to overload         |                  |
+   |                      | condition ("OVER") (percent) |                  |
+   |----------------------+------------------------------+------------------|
    | ups.id               | UPS system identifier        | Sierra           |
    |                      | (opaque string)              |                  |
    |----------------------+------------------------------+------------------|
@@ -83,6 +91,11 @@ ups: General unit information
    | ups.power.nominal    | Nominal value of apparent    | 500              |
    |                      | power (Volt-Amps)            |                  |
    +------------------------------------------------------------------------+
+   | ups.beeper.status    | UPS beeper status            | enabled          |
+   |                      | (enabled, disabled or muted) |                  |
+   +------------------------------------------------------------------------+
+   | ups.type             | UPS type (*** opaque)        | offline          |
+   +------------------------------------------------------------------------+
 
 input: Incoming line/power information
 
@@ -102,10 +115,22 @@ input: Incoming line/power information
    | input.transfer.reason     | Reason for last transfer   | T             |
    |                           | to battery (*** opaque)    |               |
    |---------------------------+----------------------------+---------------|
-   | input.transfer.low        | Low voltage transfer point | 103           |
+   | input.transfer.low        | Low voltage transfer point | 91            |
    |---------------------------+----------------------------+---------------|
    | input.transfer.high       | High voltage transfer      | 132           |
    |                           | point                      |               |
+   |---------------------------+----------------------------+---------------|
+   | input.transfer.low.min    | smallest settable low      | 85            |
+   |                           | voltage transfer point     |               |
+   |---------------------------+----------------------------+---------------|
+   | input.transfer.low.max    | greatest settable low      | 95            |
+   |                           | voltage transfer point     |               |
+   |---------------------------+----------------------------+---------------|
+   | input.transfer.high.min   | smallest settable high     | 131           |
+   |                           | voltage transfer point     |               |
+   |---------------------------+----------------------------+---------------|
+   | input.transfer.high.max   | greatest settable high     | 136           |
+   |                           | voltage transfer point     |               |
    |---------------------------+----------------------------+---------------|
    | input.sensitivity         | Input power sensitivity    | H (high)      |
    |---------------------------+----------------------------+---------------|
@@ -113,6 +138,9 @@ input: Incoming line/power information
    |                           | opaque)                    |               |
    |---------------------------+----------------------------+---------------|
    | input.frequency           | Input line frequency (Hz)  | 60.00         |
+   |---------------------------+----------------------------+---------------|
+   | input.frequency.nominal   | Nominal input line         |               |
+   |			       | frequency (Hz)             | 60            |
    |---------------------------+----------------------------+---------------|
    | input.transfer.boost.low  | Low voltage boosting       | 190           |
    |                           | transfer point             |               |
@@ -130,18 +158,119 @@ input: Incoming line/power information
 output: Outgoing power/inverter information
 
    +------------------------------------------------------------------------+
-   | output.voltage                | Output voltage                 | 120.9 |
+   | output.voltage                | Output voltage (V)             | 120.9 |
    |-------------------------------+--------------------------------+-------|
-   | output.frequency              | Output frequency (Hz)          | 60    |
+   | output.voltage.nominal        | Nominal output voltage (V)     | 120   |
    |-------------------------------+--------------------------------+-------|
-   | output.voltage.target.line    | Target output voltage when on  | 120   |
-   |                               | line                           |       |
+   | output.frequency              | Output frequency (Hz)          | 59.9  |
    |-------------------------------+--------------------------------+-------|
-   | output.voltage.target.battery | Target output voltage when on  | 120   |
-   |                               | battery                        |       |
+   | output.frequency.nominal      | Nominal output frequency (Hz)  | 60    |
    |-------------------------------+--------------------------------+-------|
    | output.current                | Output current (amps)          | 4.25  |
    +------------------------------------------------------------------------+
+
+Three-phase additions:
+----------------------
+
+The additions for three-phase measurements would produce a very long table
+due to all the combinations that are possible, so these additions are
+broken down to their base components.
+
+PHASE COUNT DETERMINATION:
+--------------------------
+input.phases (3 for 3phase, absent or 1 for 1phase)
+output.phases (as for input.phases)
+
+DOMAINs:
+--------
+Any input or output is considered a valid DOMAIN.
+
+input (should really be called input.mains, but keep this for compat)
+input.bypass
+input.servicebypass
+
+output (should really be called output.load, but keep this for compat)
+output.bypass
+output.inverter
+output.servicebypass
+
+SPECIFICATION (SPEC):
+-------------------------
+Voltage, current, frequency, etc are considered to be a specification of
+the measurement.
+
+With this notation, the old 1phase naming scheme becomes DOMAIN.SPEC
+Example: input.current
+
+CONTEXT:
+--------
+When in 3phase mode we need some way to specify the target for most
+measurements in more detail, we call this the CONTEXT.
+
+With this notation, the naming scheme becomes DOMAIN.CONTEXT.SPEC when
+in 3phase mode.
+Example: input.L1.current
+
+Valid CONTEXTs:
+---------------
+L1-L2  \
+L2-L3   \
+L3-L1    for voltage measurements
+L1-N    /
+L2-N   /
+L3-N  /
+
+L1  \
+L2  for currrent and power measurements
+L3  /
+N  - for current measurement
+
+Valid SPECs:
+-----------
+Valid with/without context (ie. per phase or aggregated/averaged)
+current         Current (A RMS)
+current.maximum Maximum seen current (A RMS)
+current.minimum Minimum seen current (A RMS)
+peakcurrent     Peak current
+voltage         Voltage (V)
+voltage.nominal Nominal voltage (V)
+voltage.maximum Maximum seen voltage (V)
+voltage.minimum Minimum seen voltage (V)
+power           Apparent power (VA)
+power.maximum   Maximum seen apparent power (VA)
+power.minimum   Maximum seen apparent power (VA)
+power.percent   Percentage of apparent power related to maximum load
+power.maximum.percent   Max seen percentage of apparent power
+power.minimum.percent   Min seen percentage of apparent power
+realpower       Real power (W)
+powerfactor     Power Factor (dimensionless value between 0.00 and 1.00)
+
+Valid without context (ie. aggregation of all phases):
+frequency       Frequency (Hz)
+frequency.nominal Nominal frequency (Hz)
+
+EXAMPLES:
+---------
+Partial Three phase - Three phase example:
+input.phases: 3
+input.frequency: 50.0
+input.L1.current: 133.0
+input.bypass.L1-L2.voltage: 398.3
+output.phases: 3
+output.L1.power: 35700
+output.powerfactor: 0.82
+
+Partial Three phase - One phase example:
+input.phases: 3
+input.L2.current: 48.2
+input.N.current: 3.4
+input.L3-L1.voltage: 405.4
+input.frequency: 50.1
+output.phases: 1
+output.current: 244.2
+output.voltage: 120
+output.frequency.nominal: 60.0
+
 
 battery: Any battery details
 
@@ -154,14 +283,18 @@ battery: Any battery details
    | battery.charge.restart  | Minimum battery level for    | 20            |
    |                         | UPS restart after power-off  |               |
    |-------------------------+------------------------------+---------------|
-   | battery.voltage         | Battery charge (volts)       | 24.84         |
+   | battery.charge.warning  | Battery level when UPS       |               |
+   |                         | switches to "Warning" state  | 50            |
+   |                         | (percent)                    |               |
+   |-------------------------+------------------------------+---------------|
+   | battery.voltage         | Battery voltage (volts)      | 24.84         |
    |-------------------------+------------------------------+---------------|
    | battery.current         | Battery current (amps)       | 1.19          |
    |-------------------------+------------------------------+---------------|
    | battery.temperature     | Battery temperature (degrees | 050.7         |
    |                         | C)                           |               |
    |-------------------------+------------------------------+---------------|
-   | battery.voltage.nominal | Nominal battery voltage      | 024           |
+   | battery.voltage.nominal | Nominal battery voltage (V)  | 024           |
    |-------------------------+------------------------------+---------------|
    | battery.runtime         | Battery runtime (seconds)    | 1080          |
    |-------------------------+------------------------------+---------------|
@@ -174,9 +307,15 @@ battery: Any battery details
    | battery.date            | Battery change date (opaque  | 11/14/00      |
    |                         | string)                      |               |
    |-------------------------+------------------------------+---------------|
+   | battery.mfr.date        | Battery manufacturing date   | 2005/04/02    |
+   |                         | (opaque string)              |               |
+   |-------------------------+------------------------------+---------------|
    | battery.packs           | Number of battery packs      | 001           |
    |-------------------------+------------------------------+---------------|
    | battery.packs.bad       | Number of bad battery packs  | 000           |
+   +------------------------------------------------------------------------+
+   | battery.type            | Battery chemistry            | PbAc          |
+   |                         | (opaque string)              |               |
    +------------------------------------------------------------------------+
 
 ambient: Conditions from external probe equipment
@@ -213,7 +352,7 @@ ambient: Conditions from external probe equipment
    |                                   | humidity                   |       |
    +------------------------------------------------------------------------+
 
-output: Smart outlet management (smart on/off switch, ...)
+outlet: Smart outlet management (smart on/off switch, ...)
 
    +------------------------------------------------------------------------+
    |                                | Outlet system           |             |
@@ -304,6 +443,10 @@ server: Internal server information
    | test.failure.stop        | Stop simulating a power failure             |
    |--------------------------+---------------------------------------------|
    | test.battery.start       | Start a battery test                        |
+   |--------------------------+---------------------------------------------|
+   | test.battery.start.quick | Start a "quick" battery test                |
+   |--------------------------+---------------------------------------------|
+   | test.battery.start.deep  | Start a "deep" battery test                 |
    |--------------------------+---------------------------------------------|
    | test.battery.stop        | Stop the battery test                       |
    |--------------------------+---------------------------------------------|

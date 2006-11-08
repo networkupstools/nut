@@ -18,7 +18,7 @@
 */
 
 #include <sys/ioctl.h>
-#include <sys/termios.h>
+#include "serial.h"
 #include "timehead.h"
 
 #define STATUS		'P'

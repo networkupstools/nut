@@ -29,11 +29,15 @@
 #include <string.h>
 #include <unistd.h>
 #include "config.h"
-#include "libusb.h"
+#include "libhid.h"
 
-#define DRIVER_VERSION		"0.28"
+#define DRIVER_VERSION		"0.30"
 
-extern usb_dev_handle *udev;
+#ifdef SHUT_MODE
+	extern shut_dev_handle *udev;
+#else
+	extern usb_dev_handle *udev;
+#endif
 
 /* --------------------------------------------------------------- */
 /*      Model Name formating entries                               */
@@ -64,12 +68,6 @@ typedef struct
 #define MAX_STRING_SIZE    	128
 
 
-/* FIXME: remaining "unused" items => need integration */
-#define BATT_MFRDATE		0x850085	/* manufacturer date         */
-#define BATT_ICHEMISTRY		0x850089	/* battery type              */
-#define BATT_IOEMINFORMATION	0x85008f	/* battery OEM description   */
-
-
 /* --------------------------------------------------------------- */
 /* Struct & data for ups.status processing                         */
 /* --------------------------------------------------------------- */
@@ -94,11 +92,14 @@ typedef struct {
 #define STATUS_BYPASS		0x00200  /* on bypass */
 #define STATUS_OFF		0x00400  /* ups is off */
 #define STATUS_CAL 		0x00800  /* calibration */
-#define STATUS_OVERHEAT         0x01000  /* overheat; Belkin */
-#define STATUS_COMMFAULT        0x02000  /* UPS fault; Belkin */
-#define STATUS_DEPLETED         0x04000  /* battery depleted; Belkin */
-#define STATUS_TIMELIMITEXP     0x08000  /* time limit expired; APC */
-#define STATUS_BATTERYPRES      0x10000  /* battery present; APC */
+#define STATUS_OVERHEAT         0x01000 /* overheat; Belkin, TrippLite */
+#define STATUS_COMMFAULT        0x02000 /* UPS fault; Belkin, TrippLite */
+#define STATUS_DEPLETED         0x04000 /* battery depleted; Belkin */
+#define STATUS_TIMELIMITEXP     0x08000 /* time limit expired; APC */
+#define STATUS_BATTERYPRES      0x10000 /* battery present; APC */
+#define STATUS_FULLYCHARGED     0x20000 /* battery full; CyberPower */
+#define STATUS_AWAITINGPOWER    0x40000 /* awaiting power; Belkin, TrippLite */
+#define STATUS_VRANGE           0x80000 /* voltage out of range; TrippLite */
 
 extern status_lkp_t status_info[];
 
@@ -129,14 +130,21 @@ extern info_lkp_t replacebatt_info[];
 extern info_lkp_t shutdownimm_info[];
 extern info_lkp_t trim_info[];
 extern info_lkp_t boost_info[];
+extern info_lkp_t overheat_info[];
+extern info_lkp_t awaitingpower_info[];
+extern info_lkp_t commfault_info[];
+extern info_lkp_t vrange_info[];
 extern info_lkp_t bypass_info[];
 extern info_lkp_t off_info[];
 extern info_lkp_t test_write_info[];
 extern info_lkp_t test_read_info[];
 extern info_lkp_t beeper_info[];
+extern info_lkp_t yes_no_info[];
+extern info_lkp_t on_off_info[];
 extern info_lkp_t date_conversion[];
 extern info_lkp_t hex_conversion[];
 extern info_lkp_t stringid_conversion[];
+extern info_lkp_t divide_by_10_conversion[];
 extern info_lkp_t kelvin_celsius_conversion[];
 
 /* --------------------------------------------------------------- */

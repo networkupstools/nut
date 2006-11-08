@@ -126,9 +126,10 @@ static void getupdateinfo();
   
 static unsigned char RecPack[37];
 
-/* remove below comment for portuguese language */
-/* #define PORTUGUESE  */
+/* comment on english language */
+/* #define PORTUGUESE */
 
+/* The following Portuguese strings are in UTF-8. */
 #ifdef PORTUGUESE
 #define M_UNKN     "Modêlo rhino desconhecido\n"
 #define NO_RHINO   "Rhino não detectado! abortando ...\n"
@@ -673,7 +674,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	    // liga Saida
 	    ret = send_command( 3 );
 	    if ( ret < 1 )
-	      upslogx(LOG_NOTICE, "send_command 3 failed");
+	      upslogx(LOG_ERR, "send_command 3 failed");
 	    return STAT_INSTCMD_HANDLED;
 	  }
 
@@ -682,7 +683,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	    // desliga Saida
 	    ret = send_command( 4 );
 	    if ( ret < 1 )
-	      upslogx(LOG_NOTICE, "send_command 4 failed");
+	      upslogx(LOG_ERR, "send_command 4 failed");
 	    return STAT_INSTCMD_HANDLED;
 	  }
 
@@ -691,7 +692,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	    // liga Bypass
 	    ret = send_command( 5 );
 	    if ( ret < 1 )
-	      upslogx(LOG_NOTICE, "send_command 5 failed");
+	      upslogx(LOG_ERR, "send_command 5 failed");
 	    return STAT_INSTCMD_HANDLED;
 	  }
 
@@ -700,7 +701,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	    // desliga Bypass
 	    ret = send_command( 6 );
 	    if ( ret < 1 )
-	      upslogx(LOG_NOTICE, "send_command 6 failed");
+	      upslogx(LOG_ERR, "send_command 6 failed");
 	    return STAT_INSTCMD_HANDLED;
 	  }
 
@@ -729,14 +730,14 @@ void upsdrv_updateinfo(void)
 
 	/* output and bypass tests */
 	if( OutputOn )
-	  dstate_setinfo("outlet.0.switchable", "%s", "yes");
+	  dstate_setinfo("outlet.0.switchable", "%s", "Yes");
 	else
-	  dstate_setinfo("outlet.0.switchable", "%s", "no");
+	  dstate_setinfo("outlet.0.switchable", "%s", "No");
 
 	if( BypassOn )
-	  dstate_setinfo("outlet.1.switchable", "%s", "yes");
+	  dstate_setinfo("outlet.1.switchable", "%s", "Yes");
 	else
-	  dstate_setinfo("outlet.1.switchable", "%s", "no");
+	  dstate_setinfo("outlet.1.switchable", "%s", "No");
 
 	status_init();
 

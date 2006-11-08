@@ -42,6 +42,7 @@
 #include "common.h"
 
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <netinet/in.h>
@@ -84,8 +85,17 @@ static void exec_cmd(const char *cmd)
 	snprintf(buf, sizeof(buf), "%s %s", cmdscript, cmd);
 
 	err = system(buf);
-	if (err)
-		upslog(LOG_ERR, "Execute command failure: %s", buf);
+	if (WIFEXITED(err)) {
+		if (WEXITSTATUS(err)) {
+			upslogx(LOG_INFO, "exec_cmd(%s) returned %d", buf, WEXITSTATUS(err));
+		}
+	} else {
+		if (WIFSIGNALED(err)) {
+			upslogx(LOG_WARNING, "exec_cmd(%s) terminated with signal %d", buf, WTERMSIG(err));
+		} else {
+			upslogx(LOG_ERR, "Execute command failure: %s", buf);
+		}
+	}
 
 	return;
 }
@@ -242,7 +252,7 @@ static void us_serialize(int op)
 			ret = pipe(pipefd);
 
 			if (ret != 0)
-				fatal("serialize: pipe");
+				fatal_with_errno("serialize: pipe");
 
 			break;
 
@@ -267,7 +277,7 @@ static int open_sock(void)
 	fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
 	if (fd < 0)
-		fatal("Can't create a unix domain socket");
+		fatal_with_errno("Can't create a unix domain socket");
 
 	ssaddr.sun_family = AF_UNIX;
 	snprintf(ssaddr.sun_path, sizeof(ssaddr.sun_path), "%s", pipefn);
@@ -279,17 +289,17 @@ static int open_sock(void)
 	ret = bind(fd, (struct sockaddr *) &ssaddr, sizeof ssaddr);
 
 	if (ret < 0)
-		fatal("bind %s failed", pipefn);
+		fatal_with_errno("bind %s failed", pipefn);
 
 	ret = chmod(pipefn, 0660);
 
 	if (ret < 0)
-		fatal("chmod(%s, 0660) failed", pipefn);
+		fatal_with_errno("chmod(%s, 0660) failed", pipefn);
 
 	ret = listen(fd, US_LISTEN_BACKLOG);
 
 	if (ret < 0)
-		fatal("listen(%d, %d) failed", fd, US_LISTEN_BACKLOG);
+		fatal_with_errno("listen(%d, %d) failed", fd, US_LISTEN_BACKLOG);
 
 	return fd;
 }
@@ -356,7 +366,7 @@ static void conn_add(int sockfd)
 	acc = accept(sockfd, (struct sockaddr *) &saddr, &salen);
 
 	if (acc < 0) {
-		upslog(LOG_ERR, "accept on unix fd failed");
+		upslog_with_errno(LOG_ERR, "accept on unix fd failed");
 		return;
 	}
 
@@ -365,7 +375,7 @@ static void conn_add(int sockfd)
 	ret = fcntl(acc, F_GETFL, 0);
 
 	if (ret < 0) {
-		upslog(LOG_ERR, "fcntl get on unix fd failed");
+		upslog_with_errno(LOG_ERR, "fcntl get on unix fd failed");
 		close(acc);
 		return;
 	}
@@ -373,7 +383,7 @@ static void conn_add(int sockfd)
 	ret = fcntl(acc, F_SETFL, ret | O_NDELAY);
 
 	if (ret < 0) {
-		upslog(LOG_ERR, "fcntl set O_NDELAY on unix fd failed");
+		upslog_with_errno(LOG_ERR, "fcntl set O_NDELAY on unix fd failed");
 		close(acc);
 		return;
 	}	
@@ -496,7 +506,7 @@ static void start_daemon(int lockfd)
 	us_serialize(SERIALIZE_INIT);
 
 	if ((pid = fork()) < 0)
-		fatal("Unable to enter background");
+		fatal_with_errno("Unable to enter background");
 
 	if (pid != 0) {		/* parent */
 
@@ -588,7 +598,7 @@ static int try_connect(void)
 	pipefd = socket(AF_UNIX, SOCK_STREAM, 0);
 
 	if (pipefd == -1)
-		fatal("socket");
+		fatal_with_errno("socket");
 
 	ret = connect(pipefd, (const struct sockaddr *) &saddr, sizeof(saddr));
 
@@ -642,7 +652,7 @@ static int check_parent(const char *cmd, const char *arg2)
 		usleep(250000);
 	}
 
-	upslog(LOG_ERR, "Failed to connect to parent and failed to create parent");
+	upslog_with_errno(LOG_ERR, "Failed to connect to parent and failed to create parent");
 	exit(EXIT_FAILURE);
 }
 

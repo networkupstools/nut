@@ -121,7 +121,7 @@ static void wall(const char *text)
 	wf = popen("wall", "w");
 
 	if (!wf) {
-		upslog(LOG_NOTICE, "Can't invoke wall");
+		upslog_with_errno(LOG_NOTICE, "Can't invoke wall");
 		return;
 	}
 
@@ -145,7 +145,7 @@ static void notify(const char *notice, int flags, const char *ntype,
 	ret = fork();
 
 	if (ret < 0) {
-		upslog(LOG_ERR, "Can't fork to notify");
+		upslog_with_errno(LOG_ERR, "Can't fork to notify");
 		return;
 	}
 
@@ -1264,7 +1264,7 @@ static void loadconfig(void)
 		pconf_finish(&ctx);
 
 		if (reload_flag == 1) {
-			upslog(LOG_ERR, "Reload failed: %s", ctx.errmsg);
+			upslog_with_errno(LOG_ERR, "Reload failed: %s", ctx.errmsg);
 			return;
 		}
 
@@ -1744,7 +1744,7 @@ static void runparent(int fd)
 		if (errno == ENOENT)
 			fatalx("upsmon parent: exiting (child exited)");
 
-		fatal("upsmon parent: read");
+		fatal_with_errno("upsmon parent: read");
 	}
 
 	if (ch != 1)
@@ -1775,19 +1775,15 @@ static void start_pipe(const char *user)
 	else
 		new_uid = get_user_pwent(RUN_AS_USER);
 
-	/* check user data while we still have the console */
-	if (!new_uid) 
-		fatal("getpwnam(%s)", user);
-
 	ret = pipe(pipefd);
 
 	if (ret)
-		fatal("pipe creation failed");
+		fatal_with_errno("pipe creation failed");
 
 	ret = fork();
 
 	if (ret < 0)
-		fatal("fork failed");
+		fatal_with_errno("fork failed");
 
 	/* start the privileged parent */
 	if (ret != 0) {
@@ -1854,7 +1850,7 @@ static int check_file(const char *fn)
 	f = fopen(chkfn, "r");
 
 	if (!f) {
-		upslog(LOG_ERR, "Reload failed: can't open %s", chkfn);
+		upslog_with_errno(LOG_ERR, "Reload failed: can't open %s", chkfn);
 		return 0;	/* failed */
 	}
 

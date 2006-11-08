@@ -135,13 +135,13 @@ static void setuptcp(void)
 	int	res, one = 1;
 
 	if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-		fatal("socket");
+		fatal_with_errno("socket");
 
 	res = setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, (void *) &one, 
 		sizeof(one));
 
 	if (res != 0)
-		fatal("setsockopt(SO_REUSEADDR)");
+		fatal_with_errno("setsockopt(SO_REUSEADDR)");
 
 	memset(&server, '\0', sizeof(server));
 	server.sin_addr = listenaddr;
@@ -149,16 +149,16 @@ static void setuptcp(void)
 	server.sin_port = htons(net_port);
 
 	if (bind(listenfd, (struct sockaddr *) &server, sizeof(server)) == -1)
-		fatal("Can't bind TCP port number %d", net_port);
+		fatal_with_errno("Can't bind TCP port number %d", net_port);
 
 	if ((res = fcntl(listenfd, F_GETFL, 0)) == -1)
-		fatal("fcntl(get)");
+		fatal_with_errno("fcntl(get)");
 
 	if (fcntl(listenfd, F_SETFL, res | O_NDELAY) == -1)
-		fatal("fcntl(set)");
+		fatal_with_errno("fcntl(set)");
 
 	if (listen(listenfd, 16))
-		fatal("listen");
+		fatal_with_errno("listen");
 
 	return;
 }
@@ -262,7 +262,7 @@ int sendback(ctype *client, const char *fmt, ...)
 		res = write(client->fd, ans, len);
 
 	if (len != res) {
-		upslog(LOG_NOTICE, "write() failed for %s", client->addr);
+		upslog_with_errno(LOG_NOTICE, "write() failed for %s", client->addr);
 		client->delete = 1;
 		return 0;	/* failed */
 	}
@@ -793,7 +793,7 @@ void check_perms(const char *fn)
 	ret = stat(fn, &st);
 
 	if (ret != 0)
-		fatal("stat %s", fn);
+		fatal_with_errno("stat %s", fn);
 
 	/* include the x bit here in case we check a directory */
 	if (st.st_mode & (S_IROTH | S_IXOTH))
@@ -835,7 +835,7 @@ int main(int argc, char **argv)
 				break;
 			case 'i':
 				if (!inet_aton(optarg, &listenaddr))
-					fatal("Invalid IP address");
+					fatal_with_errno("Invalid IP address");
 				break;
 			case 'r':
 				chroot_path = optarg;
@@ -895,8 +895,7 @@ int main(int argc, char **argv)
 		statepath = xstrdup(nut_statepath_env);
 
 	/* do this here, since getpwnam() might not work in the chroot */
-	if ((new_uid = get_user_pwent(user)) == NULL)
-		fatal("getpwnam(%s)", user);
+	new_uid = get_user_pwent(user);
 
 	if (chroot_path)
 		chroot_start(chroot_path);
@@ -904,7 +903,7 @@ int main(int argc, char **argv)
 	become_user(new_uid);
 
 	if (chdir(statepath))
-		fatal("Can't chdir to %s", statepath);
+		fatal_with_errno("Can't chdir to %s", statepath);
 
 	/* check statepath perms */
 	check_perms(statepath);

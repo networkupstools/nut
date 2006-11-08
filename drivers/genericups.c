@@ -28,22 +28,22 @@
 
 	static	int	upstype = -1;
 
-static void parse_output_signals(const char *value, int *line)
-{
-	/* parse signals the serial port can output */
-
-	*line = 0;
-
-	if (strstr(value, "DTR"))
-		if (!strstr(value, "-DTR"))
-			*line |= TIOCM_DTR;
-
-	if (strstr(value, "RTS"))
-		if (!strstr(value, "-RTS"))
-			*line |= TIOCM_RTS;
-
-	if (strstr(value, "ST"))
-		*line |= TIOCM_ST;
+static void parse_output_signals(const char *value, int *line) 
+{ 
+	/* parse signals the serial port can output */ 
+ 
+	*line = 0; 
+ 
+	if (strstr(value, "DTR")) 
+		if (!strstr(value, "-DTR")) 
+			*line |= TIOCM_DTR; 
+ 
+	if (strstr(value, "RTS")) 
+		if (!strstr(value, "-RTS")) 
+			*line |= TIOCM_RTS; 
+ 
+	if (strstr(value, "ST")) 
+		*line |= TIOCM_ST; 
 
 	if (strstr(value, "CTS"))
 		fatalx("Can't override output with CTS (not an output)");
@@ -53,31 +53,31 @@ static void parse_output_signals(const char *value, int *line)
 
 	if (strstr(value, "RNG"))
 		fatalx("Can't override output with RNG (not an output)");
-}
-
-static void parse_input_signals(const char *value, int *line, int *val)
-{
-	/* parse signals the serial port can input */
-
-	*line = 0;
-	*val = 0;
-
+} 
+ 
+static void parse_input_signals(const char *value, int *line, int *val) 
+{ 
+	/* parse signals the serial port can input */ 
+ 
+	*line = 0; 
+	*val = 0; 
+ 
 	if (strstr(value, "CTS")) {
-		*line |= TIOCM_CTS;
-		if (!strstr(value, "-CTS"))
-			*val |= TIOCM_CTS;
-	}
+		*line |= TIOCM_CTS; 
+		if (!strstr(value, "-CTS")) 
+			*val |= TIOCM_CTS; 
+ 	}
 
 	if (strstr(value, "DCD")) {
-		*line |= TIOCM_CD;
-		if (!strstr(value, "-DCD"))
-			*val |= TIOCM_CD;
-	}
+		*line |= TIOCM_CD; 
+		if (!strstr(value, "-DCD")) 
+			*val |= TIOCM_CD; 
+ 	}
 
 	if (strstr(value, "RNG")) {
-		*line |= TIOCM_RNG;
-		if (!strstr(value, "-RNG"))
-			*val |= TIOCM_RNG;
+		*line |= TIOCM_RNG; 
+		if (!strstr(value, "-RNG")) 
+			*val |= TIOCM_RNG; 
 	}
 
 	if (strstr(value, "DTR"))
@@ -112,31 +112,31 @@ void upsdrv_initinfo(void)
 	/* see if the user wants to override the signal definitions */
 
 	if (getval("CP")) {
-		parse_output_signals(getval("CP"), &upstab[upstype].line_norm);
+		parse_output_signals(getval("CP"), &upstab[upstype].line_norm); 
 		upsdebugx(2, "parse_output_signals: CP overriden with %s\n",
-			getval("CP"));
+			getval("CP"));	
 	}
-
+	
 	if (getval("OL")) {
-		parse_input_signals(getval("OL"), &upstab[upstype].line_ol,
-			&upstab[upstype].val_ol);
+		parse_input_signals(getval("OL"), &upstab[upstype].line_ol, 
+			&upstab[upstype].val_ol); 
 		upsdebugx(2, "parse_input_signals: OL overriden with %s\n",
-			getval("OL"));
+			getval("OL"));	
 	}
-
+	
 	if (getval("LB")) {
-		parse_input_signals(getval("LB"), &upstab[upstype].line_bl,
-			&upstab[upstype].val_bl);
-		upsdebugx(2, "parse_input_signals: LB overriden with %s\n",
+		parse_input_signals(getval("LB"), &upstab[upstype].line_bl, 
+			&upstab[upstype].val_bl); 
+ 		upsdebugx(2, "parse_input_signals: LB overriden with %s\n",
 			getval("LB"));
 	}
-
+	
 	if (getval("SD")) {
-		parse_output_signals(getval("SD"), &upstab[upstype].line_sd);
+		parse_output_signals(getval("SD"), &upstab[upstype].line_sd); 
 		upsdebugx(2, "parse_output_signals: SD overriden with %s\n",
 			getval("SD"));
 	}
-
+	
 	dstate_dataok();
 }
 
@@ -148,7 +148,7 @@ void upsdrv_updateinfo(void)
 	ret = ioctl(upsfd, TIOCMGET, &flags);
 
 	if (ret != 0) {
-		upslog(LOG_INFO, "ioctl failed");
+		upslog_with_errno(LOG_INFO, "ioctl failed");
 		dstate_datastale();
 		return;
 	}
@@ -188,7 +188,7 @@ static void set_ups_type(void)
 
 	if (!getval("upstype"))
 		fatalx("No upstype set - see help text / man page!\n");
-
+	
 	upstype = atoi(getval("upstype"));
 
 	for (i = 0; upstab[i].mfr != NULL; i++) {
@@ -202,7 +202,7 @@ static void set_ups_type(void)
 	listtypes();
 
 	exit(EXIT_FAILURE);
-}
+}			
 
 /* power down the attached load immediately */
 void upsdrv_shutdown(void)
@@ -226,14 +226,14 @@ void upsdrv_shutdown(void)
 		ret = tcsendbreak(upsfd, 4901);
 
 		if (ret != 0)
-			fatal("tcsendbreak");
+			fatal_with_errno("tcsendbreak");
 
 		return;
 	}
 
 	ret = ioctl(upsfd, TIOCMSET, &flags);
 	if (ret != 0)
-		fatal("ioctl TIOCMSET");
+		fatal_with_errno("ioctl TIOCMSET");
 
 	if (getval("sdtime")) {
 		int	sdtime;
@@ -254,7 +254,7 @@ void upsdrv_help(void)
 
 void upsdrv_banner(void)
 {
-	printf("Network UPS Tools - Generic UPS driver %s (%s)\n",
+	printf("Network UPS Tools - Generic UPS driver %s (%s)\n", 
 		DRV_VERSION, UPS_VERSION);
 }
 
@@ -264,10 +264,10 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "mfr", "Override manufacturer name");
 	addvar(VAR_VALUE, "model", "Override model name");
 	addvar(VAR_VALUE, "serial", "Specify the serial number");
-	addvar(VAR_VALUE, "CP", "Override cable power setting");
-	addvar(VAR_VALUE, "OL", "Override on line signal");
-	addvar(VAR_VALUE, "LB", "Override low battery signal");
-	addvar(VAR_VALUE, "SD", "Override shutdown setting");
+	addvar(VAR_VALUE, "CP", "Override cable power setting"); 
+	addvar(VAR_VALUE, "OL", "Override on line signal"); 
+	addvar(VAR_VALUE, "LB", "Override low battery signal"); 
+	addvar(VAR_VALUE, "SD", "Override shutdown setting"); 
 	addvar(VAR_VALUE, "sdtime", "Hold time for shutdown value (seconds)");
 }
 
@@ -278,10 +278,11 @@ void upsdrv_initups(void)
 	upsfd = ser_open(device_path);
 
 	if (ioctl(upsfd, TIOCMSET, &upstab[upstype].line_norm))
-		fatal("ioctl TIOCMSET");
+		fatal_with_errno("ioctl TIOCMSET");
 }
 
 void upsdrv_cleanup(void)
 {
 	ser_close(upsfd, device_path);
 }
+

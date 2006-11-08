@@ -1,0 +1,62 @@
+#!/bin/sh
+#
+# chkconfig: 2345 31 89
+#
+# 2003-12-02 Arnaud de Lorbeau <adelorbeau@mandrakesoft.com>
+#  Load the configuration file /etc/ups/upsmon.conf
+# 2002-08-26 Arnaud de Lorbeau <adelorbeau@mandrakesoft.com>
+#  Error messages about "no configuration done" using syslog.
+#  Add a reload entry
+# 
+# description: upsmon talks to upsd and notifies of ups status changes \
+#	also shutting systems down if required.
+# processname: upsmon
+# config: /etc/ups/upsmon.conf
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+export PATH
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+UPSMONCONF=/etc/ups/upsmon.conf
+
+# if there is no config file, bail out
+[ -f $UPSMONCONF ] || (logger -i -p local1.err -t upmon "no UPSMON definitions in /etc/ups/" && exit 4)
+if [ $? == 4 ]; then
+   exit 0;
+fi
+
+POWERDOWNFLAG=`grep "POWERDOWNFLAG" $UPSMONCONF | grep -v "^#" | sed "s/POWERDOWNFLAG\([\ ,\t]\+\)//"`
+NUTUSER=`grep "RUN_AS_USER" $UPSMONCONF | grep -v "^#" | sed "s/RUN_AS_USER\([\ ,\t]\+\)//"`
+# Default values
+[ -z $POWERDOWNFLAG ] && POWERDOWNFLAG="/etc/killpower"
+[ -z $NUTUSER ] && NUTUSER="ups"
+
+# See how we are called.
+case "$1" in
+  start)
+	action "NUT Starting UPS monitor: " upsmon -u $NUTUSER
+	touch /var/lock/subsys/upsmon
+	;;
+  stop)
+	echo -n "NUT Stopping UPS monitor: "
+	upsmon -c stop
+	echo ""
+	rm -f /var/lock/subsys/upsmon
+	;;
+  restart)
+	$0 stop
+	$0 start
+	;;
+  reload)
+  	[ -f /var/lock/subsys/upsmon ] && action "NUT - UPS monitor Reread configurations: " upsmon -c reload
+	;;
+  status)
+	status upsmon
+	;;
+  *)
+	echo "Usage: upsmon {start|stop|restart|reload|status}"
+	exit 1
+esac
+

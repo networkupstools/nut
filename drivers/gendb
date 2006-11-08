@@ -10,7 +10,7 @@
 
 MFDB=Makefile.drvbuild
 
-which gcc >& /dev/null
+which gcc >/dev/null 2>&1
 if [ $? != 0 ]; then
     echo "$0: gcc not found. Bailing out (and keeping $MFDB intact)."
     exit 1

@@ -1,0 +1,164 @@
+# nut (debconf) translation to Catalan.
+# Copyright (C) 2004 Free Software Foundation, Inc.
+# Aleix Badia i Bosch <abadia@ica.es>, 2004
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: nut_1.4.1-release-2_templates\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2005-04-19 15:41+0200\n"
+"PO-Revision-Date: 2004-03-12 19:46GMT\n"
+"Last-Translator: Aleix Badia i Bosch <abadia@ica.es>\n"
+"Language-Team: Catalan <debian-l10n-catalan@lists.debian.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:3
+msgid "Remove obsolete /etc/nut/debian.conf file?"
+msgstr "Voleu suprimir el fitxer obsolet /etc/nut/debian.conf?"
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:3
+msgid ""
+"The upstream author has changed the behaviour of upsd and upsmon. This has "
+"necessited modifications in /etc/init.d/nut, the start up script for the "
+"daemons. The init script no longer looks for /etc/nut/debian.conf. Instead "
+"it reads /etc/nut/upsd.conf and /etc/nut/upsmon.conf directly."
+msgstr ""
+"L'autor de l'upstream ha canviat el funcionament de l'upsd i l'upsmon. "
+"Aquests canvis han comportat modificacions en la seqüència d'inici del "
+"dimoni /etc/init.d/nut. La seqüència d'inici ja no cercarà el fitxer /etc/"
+"nut/debian.conf, sinó que llegirà directament els fitxers /etc/nut/upsd.conf "
+"i /etc/nut/upsmon.conf."
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:3
+msgid ""
+"Therefore, /etc/nut/debian.conf will be removed. Note that in order to get "
+"upsmon to work, you will have to modify /etc/nut/upsmon.conf by adding a "
+"MONITOR line. Please read the instructions in /usr/share/doc/nut/README."
+"Debian."
+msgstr ""
+"Se suprimirà el fitxer /etc/nut/debian.conf. Recordeu que per fer funcionar "
+"l'upsmon haureu de modificar el fitxer /etc/nut/upsmon.conf afegint una "
+"línia MONITOR. Llegiu les instruccions a /usr/share/doc/nut/README.Debian."
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:16
+msgid ""
+"There has been a significant change by the upstream author to the syntax of "
+"the UPS lines in the /etc/nut/upsd.conf configuration file. The init script "
+"in this package takes advantage of this new syntax. You will need to "
+"manually modify your configuration file in order for the init script to work."
+msgstr ""
+"L'autor de l'upstream ha modificat la sintaxi de les línies de l'UPS del "
+"fitxer de configuració /etc/nut/upsd.cnf. La seqüència d'inici del paquet "
+"s'aprofita de la nova sintaxi.  Per fer funcionar la seqüència d'inici "
+"haureu de modificar manualment el fitxer de configuració."
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:16
+msgid ""
+"There has been a significant change to the syntax of the SHUTDOWNCMD line in "
+"the /etc/nut/upsmon.conf file. The SHUTDOWNCMD must use \"quotes\" around "
+"the command or only the first word will be invoked. The new style is:\n"
+"  SHUTDOWNCMD \"/sbin/shutdown -h\""
+msgstr ""
+"S'ha modificat la sintaxi de la línia SHUTDOWNCMD del fitxer /etc/nut/upsmon."
+"conf. Heu d'utilitzar \"cometes\" per especificar l'ordre de SHUTDOWNCMD o "
+"només s'executarà la primera paraula."
+
+#. Type: note
+#. Description
+#: ../nut.templates:32
+msgid "Remove user \"nut\" from dialout group. Continue?"
+msgstr "Se suprimirà l'usuari \"nut\" del grup dialout. Voleu continuar?"
+
+#. Type: note
+#. Description
+#: ../nut.templates:32
+msgid ""
+"The system user, \"nut\", will be removed from the dialout group.  A new "
+"system group, \"nut\", will be created.  Users must manually change the "
+"permissions on the serial port devices, /dev/ttyS*, to permit access by the "
+"nut group."
+msgstr ""
+"Se suprimirà l'usuari de sistema \"nut\" del grup dialout. Es crearà un nou "
+"grup de sistema anomenat \"nut\". Els usuaris han de canviar manualment els "
+"permisos dels dispositius del port sèrie /dev/ttyS* per permetre'n l'accés "
+"al grup nut."
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:40
+msgid ""
+"There have been significant changes by the upstream author to the behaviour "
+"of this software.  Specifically, the configuration files in /etc/nut are "
+"completely different, most of the ups drivers have been rewritten (those "
+"that weren't rewritten have been dropped), and the TCP port on which upsd "
+"listens has changed."
+msgstr ""
+"L'autor de l'upstream ha canviat el funcionament del programa. Els fitxers "
+"de configuració del directori /etc/nut són completament diferents, s'han "
+"tornat a escriure la majoria dels controladors de l'ups (els que no s'han "
+"tornat a escriure s'han suprimit) i s'ha modificat el port de TCP vinculat a "
+"l'upsd."
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:40
+msgid ""
+"If you continue with the installation of this package, upsd/upsmon will NOT "
+"restart unless you manually change your configuration files and edit /etc/"
+"default/nut.  You have been warned!"
+msgstr ""
+"Si continueu instal·lant el paquet, l'upsd/upsmon no es reiniciarà si "
+"manualment no modifiqueu els fitxers de configuració i editeu el fitxer /etc/"
+"default/nut. Esteu avisats."
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:55
+msgid "Please manually modify your configuration files! Continue?"
+msgstr "Modifiqueu els fitxers de configuració manualment. Voleu continuar?"
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:55
+msgid "This is a serious advisory. Please take note."
+msgstr "És un avís seriós, tingueu-ho en compte."
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:55
+#, fuzzy
+msgid ""
+"There have been significant changes by the upstream author to the behaviour "
+"of this software. Specifically, the configuration files in /etc/nut are "
+"different, some ups drivers have been renamed, ..."
+msgstr ""
+"L'autor de l'upstream ha canviat el funcionament del programa. Els fitxers "
+"de configuració del directori /etc/nut són completament diferents, s'han "
+"tornat a escriure la majoria dels controladors de l'ups (els que no s'han "
+"tornat a escriure s'han suprimit) i s'ha modificat el port de TCP vinculat a "
+"l'upsd."
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:55
+#, fuzzy
+msgid ""
+"If you continue with the installation of this package, upsd/upsmon will NOT "
+"restart unless you manually change your configuration files. Please read /"
+"usr/share/doc/nut/UPGRADING.gz for the upgrading procedure."
+msgstr ""
+"Si continueu instal·lant el paquet, l'upsd/upsmon no es reiniciarà si "
+"manualment no modifiqueu els fitxers de configuració i editeu el fitxer /etc/"
+"default/nut. Esteu avisats."

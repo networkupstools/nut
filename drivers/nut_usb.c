@@ -59,9 +59,7 @@ static usb_dev_handle *open_powerware_usb()
 			if (dev->descriptor.bDeviceClass == USB_CLASS_PER_INTERFACE &&
 			    (dev->descriptor.idVendor == 0x0592 ||
 			     dev->descriptor.idVendor == 0x06da) &&
-			    dev->descriptor.idProduct == 0x0002 &&
-			    dev->descriptor.iManufacturer == 1 &&
-			    dev->descriptor.iProduct == 2)
+			    dev->descriptor.idProduct == 0x0002)
 				return usb_open(dev);
 		}
 	}

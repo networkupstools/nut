@@ -193,7 +193,7 @@ Response: BEGIN LIST RW <upsname>
 	  END LIST RW <upsname>
 
 	  BEGIN LIST RW su700
-	  RW su700 output.voltage.target.battery "115"
+	  RW su700 output.voltage.nominal "115"
 	  RW su700 ups.delay.shutdown "020"
 	  ...
 	  END LIST RW su700

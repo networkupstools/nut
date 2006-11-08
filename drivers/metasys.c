@@ -1,5 +1,4 @@
-/*
-   metasys.c - driver for Meta System UPS
+/* metasys.c - driver for Meta System UPS
 
    Copyright (C) 2004  Fabio Di Niro <fabio.diniro@email.it>
 
@@ -25,10 +24,8 @@
 
 #include "main.h"
 #include "serial.h"
+#include "metasys.h"
 #include <string.h>
-
-
-#define DRV_VERSION	"0.05"
 
 /* Autorestart flag */
 int autorestart = 0;
@@ -313,7 +310,7 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
 	/* UPS INFO READ */
 	res = command_read_sequence(UPS_INFO, my_answer);
-	if (res < 0) fatal("Could not communicate with the ups");
+	if (res < 0) fatal_with_errno("Could not communicate with the ups");
 	/* the manufacturer is hard coded into the driver, the model type is in the second 
 		byte of the answer, the third byte identifies the model version */
 	dstate_setinfo("ups.mfr", "Meta System");
@@ -529,7 +526,7 @@ void upsdrv_initinfo(void)
 			break;
 
 		default:
-			fatal("Unknown UPS");
+			fatal_with_errno("Unknown UPS");
 			break;
 	} 
 		

@@ -7,9 +7,9 @@
  * All rights reserved.*
 
  Copyright (C) 2004 Kjell Claesson <kjell.claesson-at-telia.com>
- and Tore �petveit <tore-at-orpetveit.net>
+ and Tore Ørpetveit <tore-at-orpetveit.net>
 
- Thanks to Tore �petveit <tore-at-orpetveit.net> that sent me the
+ Thanks to Tore Ørpetveit <tore-at-orpetveit.net> that sent me the
  manuals for bcm/xcp.
 
  And to Fabio Di Niro <fabio.diniro@email.it> and his metasys module.
@@ -40,7 +40,7 @@
 #include "bcmxcp_io.h"
 #include "bcmxcp.h"
 
-#define DRV_VERSION "0.10"
+#define DRV_VERSION "0.11"
 
 static int get_word(const unsigned char*);
 static long int get_long(const unsigned char*);
@@ -56,6 +56,7 @@ static int instcmd(const char *cmdname, const char *extra);
 char *FreqTol[3] = {"+/-2%", "+/-5%", "+/-7"};
 char *ABMStatus[4] = {"Charging", "Discharging", "Floating", "Resting"};
 unsigned char AUTHOR[4] = {0xCF, 0x69, 0xE8, 0xD5};		/* Autorisation	command	*/
+int nphases = 0;
 
 /* get_word funktion from nut driver metasys.c */
 int get_word(const unsigned char *buffer)	/* return an integer reading a word in the supplied buffer */
@@ -177,24 +178,41 @@ void init_meter_map()
 	memset(&bcmxcp_meter_map, 0, sizeof(BCMXCP_METER_MAP_ENTRY) * BCMXCP_METER_MAP_MAX);
 
 	/* Set all corresponding mappings NUT <-> BCM/XCP */
+	bcmxcp_meter_map[0].nut_entity = "output.L1-L2.voltage";
+	bcmxcp_meter_map[1].nut_entity = "output.L2-L3.voltage";
+	bcmxcp_meter_map[2].nut_entity = "output.L3-L1.voltage";
+	bcmxcp_meter_map[3].nut_entity = "input.L1-L2.voltage";
+	bcmxcp_meter_map[4].nut_entity = "input.L2-L3.voltage";
+	bcmxcp_meter_map[5].nut_entity = "input.L3-L1.voltage";
+	bcmxcp_meter_map[19].nut_entity = "input.L2.current";
+	bcmxcp_meter_map[20].nut_entity = "input.L3.current";
+
+if (nphases == 1) {
+	bcmxcp_meter_map[18].nut_entity = "input.current";
+	bcmxcp_meter_map[56].nut_entity = "input.voltage";
+	bcmxcp_meter_map[65].nut_entity = "output.current";
+	bcmxcp_meter_map[78].nut_entity = "output.voltage";
+}else{
+	bcmxcp_meter_map[18].nut_entity = "input.L1.current";
+	bcmxcp_meter_map[56].nut_entity = "input.L1-N.voltage";
+	bcmxcp_meter_map[65].nut_entity = "output.L1.current";
+	bcmxcp_meter_map[78].nut_entity = "output.L1-N.voltage";
+}
 	bcmxcp_meter_map[27].nut_entity = "output.frequency";
 	bcmxcp_meter_map[28].nut_entity = "input.frequency";
 	bcmxcp_meter_map[32].nut_entity = "battery.current";
 	bcmxcp_meter_map[33].nut_entity = "battery.voltage";
 	bcmxcp_meter_map[34].nut_entity = "battery.charge";
 	bcmxcp_meter_map[35].nut_entity = "battery.runtime";
-	bcmxcp_meter_map[56].nut_entity = "input.voltage";
-	bcmxcp_meter_map[57].nut_entity = "input.voltage";
-	bcmxcp_meter_map[58].nut_entity = "input.voltage";
+	bcmxcp_meter_map[57].nut_entity = "input.L2-N.voltage";
+	bcmxcp_meter_map[58].nut_entity = "input.L3-N.voltage";
 	bcmxcp_meter_map[62].nut_entity = "ambient.temperature";
 	bcmxcp_meter_map[63].nut_entity = "ups.temperature";
-	bcmxcp_meter_map[65].nut_entity = "output.current";
-	bcmxcp_meter_map[66].nut_entity = "output.current";
-	bcmxcp_meter_map[67].nut_entity = "output.current";
+	bcmxcp_meter_map[66].nut_entity = "output.L2.current";
+	bcmxcp_meter_map[67].nut_entity = "output.L3.current";
 	bcmxcp_meter_map[77].nut_entity = "battery.temperature";
-	bcmxcp_meter_map[78].nut_entity = "output.voltage";
-	bcmxcp_meter_map[79].nut_entity = "output.voltage";
-	bcmxcp_meter_map[80].nut_entity = "output.voltage";
+	bcmxcp_meter_map[79].nut_entity = "output.L2-N.voltage";
+	bcmxcp_meter_map[80].nut_entity = "output.L3-N.voltage";
 }
 
 void init_alarm_map()
@@ -714,6 +732,15 @@ void upsdrv_initinfo(void)
 	/* Set driver version info */
 	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
 
+	/* Get information on Phases from UPS */
+	res = command_read_sequence(PW_UPS_TOP_DATA_REQ, answer);
+	if (res <= 0)
+		fatal_with_errno("Could not communicate with the ups");
+
+	nphases = (answer[0] & 0x0F) +1;
+	dstate_setinfo("input.phases", "%d", nphases);
+
+
 	/* Init BCM/XCP <-> NUT meter map */
 	init_meter_map();
 
@@ -729,7 +756,7 @@ void upsdrv_initinfo(void)
 	/* Get information on UPS from UPS */
 	res = command_read_sequence(PW_ID_BLOCK_REQ, answer);
 	if (res <= 0)
-		fatal("Could not communicate with the ups");
+		fatal_with_errno("Could not communicate with the ups");
 
 	/* Get number of CPU's in ID block */
 	len = answer[iIndex++];
@@ -795,7 +822,7 @@ void upsdrv_initinfo(void)
 	/* Get information on UPS configuration */
 	res = command_read_sequence(PW_CONFIG_BLOC_REQ, answer);
 	if (res <= 0)
-		fatal("Could not communicate with the ups");
+		fatal_with_errno("Could not communicate with the ups");
 
 	/* Get validation mask for status bitmap */
 	bcmxcp_status.topology_mask = answer[BCMXCP_CONFIG_BLOCK_HW_MODULES_INSTALLED_BYTE4];
@@ -824,7 +851,7 @@ void upsdrv_initinfo(void)
 	/* Get information on UPS extended limits */
 	res = command_read_sequence(PW_LIMIT_BLOCK_REQ, answer);
 	if (res <= 0)
-		fatal("Could not communicate with the ups");
+		fatal_with_errno("Could not communicate with the ups");
 
 	/* Low battery warning */
 	bcmxcp_status.lowbatt = answer[BCMXCP_EXT_LIMITS_BLOCK_LOW_BATT_WARNING] * 60;
