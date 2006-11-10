@@ -64,6 +64,11 @@ There are a few options that can be given to configure to tweak compiles:
    page for openlog to get some idea of what's available on your system.
    Default is LOG_DAEMON.
 
+ --exec_prefix=PATH
+
+   This sets the base path for architecture dependent files. By
+   default, it is the same as <prefix>.
+
  --sysconfdir=PATH
 
    Changes the configuration path for the suite.  By default this path
@@ -90,7 +95,7 @@ There are a few options that can be given to configure to tweak compiles:
  --libdir=PATH
 
    Sets the path for libraries.  This is just upsclient.o for now.
-   The default is $(prefix)/lib.
+   The default is $(exec_prefix)/lib.
 
  --with-pidpath=PATH
 
@@ -113,7 +118,7 @@ There are a few options that can be given to configure to tweak compiles:
  --with-drvpath=PATH
 
    The UPS drivers will be installed to this path.  By default they 
-   install to "bin" under the prefix, giving a default path of
+   install to "bin" under the exec_prefix, giving a default path of
    /usr/local/ups/bin.
 
    The "driverpath" global directive in the ups.conf file overrides this
@@ -143,7 +148,7 @@ There are a few options that can be given to configure to tweak compiles:
  --with-cgipath=PATH
 
    The CGI programs will be installed to this path.  By default, they
-   install to "cgi-bin" under the prefix, which is usually /usr/local/ups.
+   install to "cgi-bin" under the exec_prefix, which is usually /usr/local/ups.
 
    If you set the prefix to something like /usr, you should set the 
    cgipath to something else as /usr/cgi-bin is pretty ugly and 

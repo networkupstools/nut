@@ -310,7 +310,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA EGREP AR RANLIB ac_ct_RANLIB NUT_VERSION UPSCLI_OBJ UPSCLI_LIBOBJ SSL_CFLAGS SSL_LDFLAGS CGI_BUILD_TARGET GD_INCLUDES GD_LIBS NETSNMP_CFLAGS NETSNMP_LIBS LIBUSB_CFLAGS LIBUSB_LIBS DRIVER_BUILD_LIST USB_DRIVER_LIST USBPAGES DRIVER_INSTALL_TARGET STRLCPY LIBOBJ BUILDOBJ NETLIBS SERLIBS STATEPATH DRVPATH CGIPATH HTMLPATH RUN_AS_USER LINUX_HIDDEV USB_NOTIFICATION_DISABLED WORDS_BIGENDIAN PKG_CFG_DIR USE_PKG_CFG LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA EGREP AR RANLIB ac_ct_RANLIB NUT_VERSION UPSCLI_OBJ UPSCLI_LIBOBJ SSL_CFLAGS SSL_LDFLAGS CGI_BUILD_TARGET GD_INCLUDES GD_LIBS NETSNMP_CFLAGS NETSNMP_LIBS LIBUSB_CFLAGS LIBUSB_LIBS DRIVER_BUILD_LIST USB_DRIVER_LIST USBPAGES DRIVER_INSTALL_TARGET STRLCPY LIBOBJ BUILDOBJ NETLIBS SERLIBS STATEPATH DRVPATH CGIPATH HTMLPATH RUN_AS_USER LINUX_HIDDEV SUN_LIBUSB WORDS_BIGENDIAN PKG_CFG_DIR USE_PKG_CFG LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1319,7 +1319,8 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-test "$prefix" = NONE && prefix=/usr/local/ups
+test "${prefix}" = "NONE" && prefix=/usr/local/ups
+test "${exec_prefix}" = "NONE" && exec_prefix='${prefix}'
 
 CFLAGS=${CFLAGS-"-O"}
 
@@ -1450,8 +1451,8 @@ test -n "$target_alias" &&
 
 STATEPATH="/var/state/ups"
 
-DRVPATH='${prefix}/bin'
-CGIPATH='${prefix}/cgi-bin'
+DRVPATH='${exec_prefix}/bin'
+CGIPATH='${exec_prefix}/cgi-bin'
 HTMLPATH='${prefix}/html'
 
 RUN_AS_USER="nobody"
@@ -7629,10 +7630,10 @@ fi
 		LIBUSB_LIBS="-R/usr/sfw/lib $LIBUSB_LIBS"
 
 cat >>confdefs.h <<\_ACEOF
-#define USB_NOTIFICATION_DISABLED 1
+#define SUN_LIBUSB 1
 _ACEOF
 
-		USB_NOTIFICATION_DISABLED=1
+		SUN_LIBUSB=1
 		;;
 esac
 
@@ -7726,7 +7727,7 @@ if test "${with_drvpath+set}" = set; then
 	yes|no)
 		echo "$as_me:$LINENO: result: using default" >&5
 echo "${ECHO_T}using default" >&6
-		eval conftemp=${DRVPATH}
+		eval eval conftemp=${DRVPATH}
 
 cat >>confdefs.h <<_ACEOF
 #define DRVPATH "$conftemp"
@@ -7736,7 +7737,7 @@ _ACEOF
 	*)
 		echo "$as_me:$LINENO: result: $withval" >&5
 echo "${ECHO_T}$withval" >&6
-		eval conftemp=${withval}
+		eval eval conftemp=${withval}
 
 cat >>confdefs.h <<_ACEOF
 #define DRVPATH "$conftemp"
@@ -7748,7 +7749,7 @@ _ACEOF
 else
   echo "$as_me:$LINENO: result: using default" >&5
 echo "${ECHO_T}using default" >&6
-	eval conftemp=${DRVPATH}
+	eval eval conftemp=${DRVPATH}
 
 cat >>confdefs.h <<_ACEOF
 #define DRVPATH "$conftemp"
@@ -7767,7 +7768,7 @@ if test "${with_cgipath+set}" = set; then
 	yes|no)
 		echo "$as_me:$LINENO: result: using default" >&5
 echo "${ECHO_T}using default" >&6
-		eval conftemp=${CGIPATH}
+		eval eval conftemp=${CGIPATH}
 
 cat >>confdefs.h <<_ACEOF
 #define CGIPATH "$conftemp"
@@ -7777,7 +7778,7 @@ _ACEOF
 	*)
 		echo "$as_me:$LINENO: result: $withval" >&5
 echo "${ECHO_T}$withval" >&6
-		eval conftemp=${withval}
+		eval eval conftemp=${withval}
 
 cat >>confdefs.h <<_ACEOF
 #define CGIPATH "$conftemp"
@@ -7789,7 +7790,7 @@ _ACEOF
 else
   echo "$as_me:$LINENO: result: using default" >&5
 echo "${ECHO_T}using default" >&6
-	eval conftemp=${CGIPATH}
+	eval eval conftemp=${CGIPATH}
 
 cat >>confdefs.h <<_ACEOF
 #define CGIPATH "$conftemp"
@@ -7808,7 +7809,7 @@ if test "${with_htmlpath+set}" = set; then
 	yes|no)
 		echo "$as_me:$LINENO: result: using default" >&5
 echo "${ECHO_T}using default" >&6
-		eval conftemp=${HTMLPATH}
+		eval eval conftemp=${HTMLPATH}
 
 cat >>confdefs.h <<_ACEOF
 #define HTMLPATH "$conftemp"
@@ -7818,7 +7819,7 @@ _ACEOF
 	*)
 		echo "$as_me:$LINENO: result: $withval" >&5
 echo "${ECHO_T}$withval" >&6
-		eval conftemp=${withval}
+		eval eval conftemp=${withval}
 
 cat >>confdefs.h <<_ACEOF
 #define HTMLPATH "$conftemp"
@@ -7830,7 +7831,7 @@ _ACEOF
 else
   echo "$as_me:$LINENO: result: using default" >&5
 echo "${ECHO_T}using default" >&6
-	eval conftemp=${HTMLPATH}
+	eval eval conftemp=${HTMLPATH}
 
 cat >>confdefs.h <<_ACEOF
 #define HTMLPATH "$conftemp"
@@ -8153,7 +8154,7 @@ _ACEOF
 fi
 
 # expand $sysconfdir and write it out
-eval conftemp=${sysconfdir}
+eval eval conftemp=${sysconfdir}
 
 cat >>confdefs.h <<_ACEOF
 #define CONFPATH "$conftemp"
@@ -8161,7 +8162,7 @@ _ACEOF
 
 
 # same for datadir
-eval datatemp=${datadir}
+eval eval datatemp=${datadir}
 
 cat >>confdefs.h <<_ACEOF
 #define DATADIR "$datatemp"
@@ -8881,7 +8882,7 @@ s,@CGIPATH@,$CGIPATH,;t t
 s,@HTMLPATH@,$HTMLPATH,;t t
 s,@RUN_AS_USER@,$RUN_AS_USER,;t t
 s,@LINUX_HIDDEV@,$LINUX_HIDDEV,;t t
-s,@USB_NOTIFICATION_DISABLED@,$USB_NOTIFICATION_DISABLED,;t t
+s,@SUN_LIBUSB@,$SUN_LIBUSB,;t t
 s,@WORDS_BIGENDIAN@,$WORDS_BIGENDIAN,;t t
 s,@PKG_CFG_DIR@,$PKG_CFG_DIR,;t t
 s,@USE_PKG_CFG@,$USE_PKG_CFG,;t t

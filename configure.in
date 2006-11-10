@@ -7,7 +7,8 @@ AC_CONFIG_HEADER(include/config.h)
 AC_PREFIX_DEFAULT(/usr/local/ups)
 
 dnl Fix this early so we can expand with eval later
-test "$prefix" = NONE && prefix=/usr/local/ups
+test "${prefix}" = "NONE" && prefix=/usr/local/ups
+test "${exec_prefix}" = "NONE" && exec_prefix='${prefix}'
 
 CFLAGS=${CFLAGS-"-O"}
 
@@ -31,8 +32,8 @@ dnl | default values for things later on (can be overridden)           |
 
 STATEPATH="/var/state/ups"
 
-DRVPATH='${prefix}/bin'
-CGIPATH='${prefix}/cgi-bin'
+DRVPATH='${exec_prefix}/bin'
+CGIPATH='${exec_prefix}/cgi-bin'
 HTMLPATH='${prefix}/html'
 
 RUN_AS_USER="nobody"
@@ -496,20 +497,20 @@ AC_ARG_WITH(drvpath,
 [	case "$withval" in
 	yes|no)
 		AC_MSG_RESULT(using default)
-		eval conftemp=${DRVPATH}
+		eval eval conftemp=${DRVPATH}
 		AC_DEFINE_UNQUOTED(DRVPATH, "$conftemp",
 			[Default path for UPS drivers])
 		;;
 	*)
 		AC_MSG_RESULT($withval)
-		eval conftemp=${withval}
+		eval eval conftemp=${withval}
 		AC_DEFINE_UNQUOTED(DRVPATH, "$conftemp",
 			[Default path for UPS drivers])
 		DRVPATH=$withval
 		;;
 	esac],
 	AC_MSG_RESULT(using default)
-	eval conftemp=${DRVPATH}
+	eval eval conftemp=${DRVPATH}
 	AC_DEFINE_UNQUOTED(DRVPATH, "$conftemp",
 			[Default path for UPS drivers])
 )
@@ -520,20 +521,20 @@ AC_ARG_WITH(cgipath,
 [	case "$withval" in
 	yes|no)
 		AC_MSG_RESULT(using default)
-		eval conftemp=${CGIPATH}
+		eval eval conftemp=${CGIPATH}
 		AC_DEFINE_UNQUOTED(CGIPATH, "$conftemp",
 			[Default path for CGI programs])
 		;;
 	*)
 		AC_MSG_RESULT($withval)
-		eval conftemp=${withval}
+		eval eval conftemp=${withval}
 		AC_DEFINE_UNQUOTED(CGIPATH, "$conftemp",
 			[Default path for CGI programs])
 		CGIPATH=$withval
 		;;
 	esac],
 	AC_MSG_RESULT(using default)
-	eval conftemp=${CGIPATH}
+	eval eval conftemp=${CGIPATH}
 	AC_DEFINE_UNQUOTED(CGIPATH, "$conftemp",
 			[Default path for CGI programs])
 	)
@@ -544,20 +545,20 @@ AC_ARG_WITH(htmlpath,
 [	case "$withval" in
 	yes|no)
 		AC_MSG_RESULT(using default)
-		eval conftemp=${HTMLPATH}
+		eval eval conftemp=${HTMLPATH}
 		AC_DEFINE_UNQUOTED(HTMLPATH, "$conftemp",
 			[Default path for HTML files])
 		;;
 	*)
 		AC_MSG_RESULT($withval)
-		eval conftemp=${withval}
+		eval eval conftemp=${withval}
 		AC_DEFINE_UNQUOTED(HTMLPATH, "$conftemp",
 			[Default path for HTML files])
 		HTMLPATH=$withval
 		;;
 	esac],
 	AC_MSG_RESULT(using default)
-	eval conftemp=${HTMLPATH}
+	eval eval conftemp=${HTMLPATH}
 	AC_DEFINE_UNQUOTED(HTMLPATH, "$conftemp",
 			[Default path for HTML files])
 	)
@@ -741,12 +742,12 @@ if test x"$nut_cv_have_longlong" = x"yes"; then
 fi
 
 # expand $sysconfdir and write it out
-eval conftemp=${sysconfdir}
+eval eval conftemp=${sysconfdir}
 AC_DEFINE_UNQUOTED(CONFPATH, "$conftemp",
 			[Default path for configuration files])
 
 # same for datadir
-eval datatemp=${datadir}
+eval eval datatemp=${datadir}
 AC_DEFINE_UNQUOTED(DATADIR, "$datatemp",
 			[Default path for data files])
 
