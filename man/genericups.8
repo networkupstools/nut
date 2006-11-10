@@ -167,7 +167,7 @@ the battery is OK when that line is held high.
      [CP=DTR+RTS] [OL=CTS] [LB=\-DCD] [SD=???]
 
 17 = PowerKinetics 9001
-     [CP=DTR] [OL=CTS] [LB=DCD] [SD=???]
+     [CP=DTR] [OL=CTS] [LB=\-DCD] [SD=???]
 
 18 = TrippLite Omni 450LAN with Martin's cabling
      [CP=DTR] [OL=CTS] [LB=DCD] [SD=none]
@@ -230,6 +230,13 @@ Start the driver with the type you want to try \(hy
 Let upsd sync up (watch the syslog), and then run upsc to see what it
 found.  If the STATUS is right (should be OL for on line), go to step 3,
 otherwise go back to step 1.
+
+Alternatively, you can run genericups in debug mode \(hy
+
+        genericups -DDDDD \-x upstype=n /dev/port
+
+In this mode it will be running in the foreground and continuously
+display the line and battery status of the UPS.
 
 Step 3
 

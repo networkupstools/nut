@@ -34,7 +34,7 @@ struct {
 	  TIOCM_DTR | TIOCM_RTS,	/* cable power: DTR + RTS	*/
 	  TIOCM_CTS, 0,			/* online: CTS off		*/
 	  TIOCM_CD, TIOCM_CD,		/* low battery: CD on		*/
-	  TIOCM_RTS			/* shutdown: lower DTR		*/
+	  TIOCM_RTS			/* shutdown: RTS		*/
 	},
 
 	/* Type 1 */
@@ -74,7 +74,7 @@ struct {
 	  TIOCM_RTS,			/* cable power: RTS		*/
 	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
 	  TIOCM_CD, 0,			/* low battery: CD off		*/
-	  0				/* shutdown: drop RTS		*/
+	  0				/* shutdown: none		*/
 	},
 
 	/* Type 5 */
@@ -83,7 +83,7 @@ struct {
 	  "Tripp Lite UPS with Lan2.2 interface (black 73-0844 cable)",
 	  TIOCM_DTR,			/* cable power: DTR		*/
 	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
-	  TIOCM_CD, 0,			/* low battery: CAR off		*/
+	  TIOCM_CD, 0,			/* low battery: CD off		*/
 	  TIOCM_DTR | TIOCM_RTS		/* shutdown: DTR + RTS		*/
 	},
 
@@ -127,7 +127,7 @@ struct {
 	  TIOCM_RTS			/* shutdown: RTS		*/
 	},
 
-	/* Type 10 */
+	/* Type 10 (duplicate from 7) */
 	{ "Victron",
 	  "Lite",
 	  "Victron Lite (crack cable)",
@@ -172,8 +172,8 @@ struct {
 	   "P250, P500, P750, P1250",
 	   "Online P-series",
 	   TIOCM_DTR,			/* cable power: DTR		*/
-	   TIOCM_CD, TIOCM_CD,		/* online: CD high		*/
-	   TIOCM_CTS, 0,		/* low battery: CTS low		*/
+	   TIOCM_CD, TIOCM_CD,		/* online: CD on		*/
+	   TIOCM_CTS, 0,		/* low battery: CTS off		*/
 	   TIOCM_RTS			/* shutdown: raise RTS		*/
 	},
 
@@ -182,8 +182,8 @@ struct {
 	  "5119",
 	  "Powerware 5119",
 	  TIOCM_DTR,			/* cable power: DTR		*/
-	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS high		*/
-	  TIOCM_CD, 0,			/* low battery: CD low		*/
+	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
+	  TIOCM_CD, 0,			/* low battery: CD off		*/
 	  TIOCM_ST			/* shutdown: ST (break)		*/
 	},
 
@@ -197,13 +197,13 @@ struct {
 	  -1				/* shutdown: unknown		*/
 	},
 
-	/* Type 17 */
+	/* Type 17 (duplicate from 8) */
 	{ "PowerKinetics",
 	  "9001",
 	  "PowerKinetics 9001",
 	  TIOCM_DTR,			/* cable power: DTR		*/
-	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS high		*/
-	  TIOCM_CD, 0,			/* low battery: CD high		*/
+	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
+	  TIOCM_CD, 0,			/* low battery: CD off		*/
 	  -1				/* shutdown: unknown		*/
 	},
 
@@ -217,7 +217,7 @@ struct {
 	  -1				/* shutdown: none		*/
 	},
 
-	/* Type 19 */
+	/* Type 19 (duplicate from 6) */
 	{ "Fideltronik",
 	  "Ares Series",
 	  "Fideltronik Ares Series",
@@ -243,20 +243,20 @@ struct {
 	{ "Generic",
 	  "Generic RUPS 2000",
 	  "Generic RUPS 2000 (Megatec M2501 cable)",
-	  TIOCM_RTS,                    /* cable power: RTS             */
-	  TIOCM_CTS, TIOCM_CTS,         /* online: CTS                  */
-	  TIOCM_CD, 0,                  /* low battery: CD off          */
-	  TIOCM_RTS | TIOCM_DTR         /* shutdown: RTS+DTR            */
+	  TIOCM_RTS,                    /* cable power: RTS		*/
+	  TIOCM_CTS, TIOCM_CTS,         /* online: CTS on		*/
+	  TIOCM_CD, 0,                  /* low battery: CD off		*/
+	  TIOCM_RTS | TIOCM_DTR         /* shutdown: RTS+DTR		*/
 	},
 	
-	/* Type 22 */
+	/* Type 22 (duplicate from 7)*/
 	{ "Gamatronic Electronic Industries",
 	  "Generic Alarm UPS",
 	  "Gamatronic UPSs with alarm interface",
 	  TIOCM_RTS,			/* cable power: RTS		*/
 	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
 	  TIOCM_CD, 0,			/* low battery: CD off		*/
-	  TIOCM_DTR			/* shutdown: set DTR		*/
+	  TIOCM_DTR			/* shutdown: DTR		*/
 	},
 
 	/* add any new entries directly above this line */

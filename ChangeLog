@@ -1,3 +1,9 @@
+Fri Nov 10 21:26:33 CET 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - genericups: added debug statement to run driver in the foreground to
+   make checking compatibility easier (no upsd required).
+ - MAINTAINERS: added myself as maintainer of the genericups driver.
+
 Fri Nov 10 04:39:42 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - configure: install drivers and cgi scripts relative to $exec_prefix,
