@@ -1,3 +1,7 @@
+Fri Nov 10 20:52:39 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - configure.in: fixed quoting for double 'eval'.
+
 Fri Nov 10 04:39:42 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - configure: install drivers and cgi scripts relative to $exec_prefix, 

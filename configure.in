@@ -497,21 +497,27 @@ AC_ARG_WITH(drvpath,
 [	case "$withval" in
 	yes|no)
 		AC_MSG_RESULT(using default)
-		eval eval conftemp=${DRVPATH}
-		AC_DEFINE_UNQUOTED(DRVPATH, "$conftemp",
+		conftemp="${DRVPATH}"
+		eval conftemp=\"${conftemp}\"
+		eval conftemp=\"${conftemp}\"
+		AC_DEFINE_UNQUOTED(DRVPATH, "${conftemp}",
 			[Default path for UPS drivers])
 		;;
 	*)
-		AC_MSG_RESULT($withval)
-		eval eval conftemp=${withval}
-		AC_DEFINE_UNQUOTED(DRVPATH, "$conftemp",
+		AC_MSG_RESULT(${withval})
+		conftemp="${withval}"
+		eval conftemp=\"${conftemp}\"
+		eval conftemp=\"${conftemp}\"
+		AC_DEFINE_UNQUOTED(DRVPATH, "${conftemp}",
 			[Default path for UPS drivers])
 		DRVPATH=$withval
 		;;
 	esac],
 	AC_MSG_RESULT(using default)
-	eval eval conftemp=${DRVPATH}
-	AC_DEFINE_UNQUOTED(DRVPATH, "$conftemp",
+	conftemp="${DRVPATH}"
+	eval conftemp=\"${conftemp}\"
+	eval conftemp=\"${conftemp}\"
+	AC_DEFINE_UNQUOTED(DRVPATH, "${conftemp}",
 			[Default path for UPS drivers])
 )
 
@@ -521,21 +527,27 @@ AC_ARG_WITH(cgipath,
 [	case "$withval" in
 	yes|no)
 		AC_MSG_RESULT(using default)
-		eval eval conftemp=${CGIPATH}
-		AC_DEFINE_UNQUOTED(CGIPATH, "$conftemp",
+		conftemp="${CGIPATH}"
+		eval conftemp=\"${conftemp}\"
+		eval conftemp=\"${conftemp}\"
+		AC_DEFINE_UNQUOTED(CGIPATH, "${conftemp}",
 			[Default path for CGI programs])
 		;;
 	*)
-		AC_MSG_RESULT($withval)
-		eval eval conftemp=${withval}
-		AC_DEFINE_UNQUOTED(CGIPATH, "$conftemp",
+		AC_MSG_RESULT(${withval})
+		conftemp="${withval}"
+		eval conftemp=\"${conftemp}\"
+		eval conftemp=\"${conftemp}\"
+		AC_DEFINE_UNQUOTED(CGIPATH, "${conftemp}",
 			[Default path for CGI programs])
 		CGIPATH=$withval
 		;;
 	esac],
 	AC_MSG_RESULT(using default)
-	eval eval conftemp=${CGIPATH}
-	AC_DEFINE_UNQUOTED(CGIPATH, "$conftemp",
+	conftemp="${CGIPATH}"
+	eval conftemp=\"${conftemp}\"
+	eval conftemp=\"${conftemp}\"
+	AC_DEFINE_UNQUOTED(CGIPATH, "${conftemp}",
 			[Default path for CGI programs])
 	)
 
@@ -545,21 +557,27 @@ AC_ARG_WITH(htmlpath,
 [	case "$withval" in
 	yes|no)
 		AC_MSG_RESULT(using default)
-		eval eval conftemp=${HTMLPATH}
-		AC_DEFINE_UNQUOTED(HTMLPATH, "$conftemp",
+		conftemp="${HTMLPATH}"
+		eval conftemp=\"${conftemp}\"
+		eval conftemp=\"${conftemp}\"
+		AC_DEFINE_UNQUOTED(HTMLPATH, "${conftemp}",
 			[Default path for HTML files])
 		;;
 	*)
-		AC_MSG_RESULT($withval)
-		eval eval conftemp=${withval}
-		AC_DEFINE_UNQUOTED(HTMLPATH, "$conftemp",
+		AC_MSG_RESULT(${withval})
+		conftemp="${withval}"
+		eval conftemp=\"${conftemp}\"
+		eval conftemp=\"${conftemp}\"
+		AC_DEFINE_UNQUOTED(HTMLPATH, "${conftemp}",
 			[Default path for HTML files])
 		HTMLPATH=$withval
 		;;
 	esac],
 	AC_MSG_RESULT(using default)
-	eval eval conftemp=${HTMLPATH}
-	AC_DEFINE_UNQUOTED(HTMLPATH, "$conftemp",
+	conftemp="${HTMLPATH}"
+	eval conftemp=\"${conftemp}\"
+	eval conftemp=\"${conftemp}\"
+	AC_DEFINE_UNQUOTED(HTMLPATH, "${conftemp}",
 			[Default path for HTML files])
 	)
 
@@ -742,13 +760,17 @@ if test x"$nut_cv_have_longlong" = x"yes"; then
 fi
 
 # expand $sysconfdir and write it out
-eval eval conftemp=${sysconfdir}
-AC_DEFINE_UNQUOTED(CONFPATH, "$conftemp",
+conftemp="${sysconfdir}"
+eval conftemp=\"${conftemp}\"
+eval conftemp=\"${conftemp}\"
+AC_DEFINE_UNQUOTED(CONFPATH, "${conftemp}",
 			[Default path for configuration files])
 
 # same for datadir
-eval eval datatemp=${datadir}
-AC_DEFINE_UNQUOTED(DATADIR, "$datatemp",
+conftemp="${datadir}"
+eval conftemp=\"${conftemp}\"
+eval conftemp=\"${conftemp}\"
+AC_DEFINE_UNQUOTED(DATADIR, "${conftemp}",
 			[Default path for data files])
 
 AC_SUBST(NUT_VERSION)
