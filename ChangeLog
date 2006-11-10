@@ -1,3 +1,8 @@
+Fri Nov 10 04:39:42 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - configure: install drivers and cgi scripts relative to $exec_prefix,
+   not $prefix. Reported by Ralf Fassel.
+
 Thu Nov  9 22:33:19 EST 2006 / Charles Lepple <clepple@gmail.com>
 
  - tripplite_usb: Fix for tracker #303835: array subscript out of range.

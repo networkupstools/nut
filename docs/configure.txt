@@ -135,6 +135,11 @@ Contents:
    If you like having things to be at more of a "system" level, setting
    the prefix to /usr/local or even /usr might be better.
 
+ --exec_prefix=PATH
+
+   This sets the base path for architecture dependent files. By
+   default, it is the same as <prefix>.
+
  --sysconfdir=PATH
 
    Changes the location where NUT's configuration files are stored.
@@ -148,7 +153,7 @@ Contents:
 
    Where executable files will be installed. Files that are normally
    executed by root (upsd, upsmon, upssched) go to sbindir, all others
-   to bindir. The defaults are <prefix>/bin and <prefix>/sbin.
+   to bindir. The defaults are <exec_prefix>/bin and <exec_prefix>/sbin.
 
  --datadir=PATH
 
@@ -171,12 +176,12 @@ Contents:
  --libdir=PATH
 
    Sets the installation path for libraries.  This is just the
-   upsclient library for now.  The default is <prefix>/lib.
+   upsclient library for now.  The default is <exec_prefix>/lib.
 
  --with-drvpath=PATH
 
    The UPS drivers will be installed to this path.  By default they
-   install to "<prefix>/bin", i.e., /usr/local/ups/bin.
+   install to "<exec_prefix>/bin", i.e., /usr/local/ups/bin.
 
    The "driverpath" global directive in the ups.conf file overrides this
    at run time.
@@ -184,7 +189,7 @@ Contents:
  --with-cgipath=PATH
 
    The CGI programs will be installed to this path.  By default, they
-   install to "<prefix>/cgi-bin", which is usually /usr/local/ups/cgi-bin.
+   install to "<exec_prefix>/cgi-bin", which is usually /usr/local/ups/cgi-bin.
 
    If you set the prefix to something like /usr, you should set the 
    cgipath to something else, because /usr/cgi-bin is pretty ugly and 
