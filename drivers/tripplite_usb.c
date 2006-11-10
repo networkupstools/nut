@@ -25,7 +25,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define DRV_VERSION "0.7"
+#define DRV_VERSION "0.8"
 
 /* % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
  *
@@ -1196,7 +1196,7 @@ void upsdrv_banner(void)
  */
 void upsdrv_initups(void)
 {
-	char *regex_array[5];
+	char *regex_array[6];
 	int r;
 
 	/* process the UPS selection options */

@@ -1,3 +1,8 @@
+Thu Nov  9 22:33:19 EST 2006 / Charles Lepple <clepple@gmail.com>
+
+ - tripplite_usb: Fix for tracker #303835: array subscript out of range.
+   Reported by Ales Nosek and David Binderman.
+
 Wed Nov  8 03:04:03 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups: fix battery voltage in tripplite-hid subdriver
