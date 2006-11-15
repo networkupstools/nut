@@ -117,15 +117,15 @@ static void check_ups(upstype *ups)
 	if ((!ups) || (!ups->fn))
 		return;
 
+	/* see if we need to (re)connect to the socket */
+	if (ups->sock_fd == -1)
+		ups->sock_fd = sstate_connect(ups);
+
 	/* throw some warnings if it's not feeding us data any more */
 	if (sstate_dead(ups, maxage))
 		ups_data_stale(ups);
 	else
 		ups_data_ok(ups);
-
-	/* see if we need to (re)connect to the socket */
-	if (ups->sock_fd == -1)
-		ups->sock_fd = sstate_connect(ups);
 }
 
 /* create a listening socket for tcp connections */
