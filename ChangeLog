@@ -1,3 +1,8 @@
+Thu Nov 16 20:15:48 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - upsd: add MAXINIT parameter to upsd.conf to make the time upsd waits
+   for the DUMPDONE to complete configurable.
+
 Wed Nov 15 11:34:01 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
 
  - upsd.c: try to (re)connect to a UPS, before declaring it stale, instead

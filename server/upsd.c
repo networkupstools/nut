@@ -45,7 +45,7 @@
 	upstype	*firstups = NULL;
 
 	/* default 15 seconds before data is marked stale */
-	int	maxage = 15;
+	int	maxage = 15, maxinit = 5;
 
 	/* preloaded to STATEPATH in main, can be overridden via upsd.conf */
 	char	*statepath = NULL;
@@ -718,7 +718,7 @@ static void initial_dump_wait(void)
 	time(&start);
 	time(&now);
 
-	while (difftime(now, start) < INITIAL_WAIT_MAX) {
+	while (difftime(now, start) < maxinit) {
 
 		/* check this now in case the user is trying to ^C us */
 		if (exit_flag) {
