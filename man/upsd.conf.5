@@ -117,6 +117,16 @@ to make upsd wait longer.
 
 Most users should leave this at the default value.
 
+.IP "MAXINIT \fIseconds\fR"
+
+On startup upsd waits for up to 5 seconds for the first initial data
+dump by the drivers so the clients work on the first try.  You should
+only use this if you see that right after connecting for the first
+time, upsd complains about the UPS being unavailable, but (re)connects
+a moment later.
+
+Most users should leave this at the default value.
+
 .IP "STATEPATH \fIpath\fR"
 
 Tell upsd to look for the driver state sockets in \fIpath\fR rather
