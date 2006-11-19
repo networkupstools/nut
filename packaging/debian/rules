@@ -113,6 +113,15 @@ install-stamp:
 	### FIXME: currently fails
 	$(MAKE) install-cgi \
 		DESTDIR=$(CURDIR)/debian/nut-cgi RUNUID=65534 RUNGID=65534
+	mkdir -p $(CURDIR)/debian/nut-cgi/usr/lib/cgi-bin/nut $(CURDIR)/debian/nut-cgi/usr/share/man/man{5,8}
+	mv $(CURDIR)/debian/nut/usr/lib/cgi-bin/nut/* $(CURDIR)/debian/nut-cgi/usr/lib/cgi-bin/nut/
+	rm -rf $(CURDIR)/debian/nut/usr/lib/cgi-bin
+	
+	for manpage in man5/upsstats.html.5 man5/hosts.conf.5 man5/upsset.conf.5 \
+	    man8/upsimage.cgi.8 man8/upsset.cgi.8 man8/upsstats.cgi.8 ; do \
+	    mv $(CURDIR)/debian/nut{,-cgi}/usr/share/man/$$manpage ; \
+	done
+	
 	mv $(CURDIR)/debian/nut/lib/nut/upsdrvctl $(CURDIR)/debian/nut/sbin
 	# conf files workaround
 	#rm $(CURDIR)/debian/nut/etc/nut/* $(CURDIR)/debian/nut-cgi/etc/nut/*
