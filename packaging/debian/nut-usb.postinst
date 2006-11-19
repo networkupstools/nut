@@ -3,6 +3,11 @@
 case "$1" in
 
   configure)
+    if [ -d /etc/udev/rules.d/ ] ; then
+        cd /etc/udev/rules.d/
+        ln -sf ../nut-usbups.rules 025_nut-usbups.rules
+    fi
+
     # do nothing
     ;;
 

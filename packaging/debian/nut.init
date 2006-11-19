@@ -10,11 +10,19 @@ DEFAULT=/etc/default/nut
 [ -f $DEFAULT ] || exit 0
 . $DEFAULT
 
-upsmon_pid=/var/run/nut/upsmon.pid
-upsmon=/sbin/upsmon
-upsd_pid=/var/run/nut/upsd.pid
+pid_dir=/var/run/nut
+upsmon_pid=${pid_dir}/upsmon.pid
+upsd_pid=${pid_dir}/upsd.pid
 upsd=/sbin/upsd
+upsmon=/sbin/upsmon
 log=">/dev/null 2>/dev/null"
+
+# Check if /var/run/nut exists and has the correct perms
+check_var_directory() {
+	[ ! -d ${pid_dir} ] && mkdir -p ${pid_dir} \
+		&& chown root:nut ${pid_dir} \
+		&& chmod 770 ${pid_dir}
+}
 
 start_stop_server () {
   case "$START_UPSD" in
@@ -60,6 +68,7 @@ case "$1" in
 
   start)
     echo -n "Starting $DESC:"
+    check_var_directory
     start_stop_server start && echo -n " upsd"
     start_stop_client start && echo -n " upsmon"
     echo "."
@@ -82,6 +91,7 @@ case "$1" in
     start_stop_client stop
     start_stop_server stop
     sleep 5
+    check_var_directory
     start_stop_server start && echo -n " upsd"
     start_stop_client start && echo -n " upsmon"
     echo "."
@@ -89,12 +99,23 @@ case "$1" in
 
   poweroff)
     flag=`sed -ne 's#^ *POWERDOWNFLAG *\(.*\)$#\1#p' /etc/nut/upsmon.conf`
+    wait_delay=`sed -ne 's#^ *POWEROFF_WAIT= *\(.*\)$#\1#p' /etc/default/nut`
     if [ -f "$flag" ] ; then
       if /sbin/upsmon -K >/dev/null 2>&1 ; then
-        echo "Shutting down the UPS ..."
-        sleep 5
-        ! /sbin/upsdrvctl shutdown  &&  echo -n " FAILED"
-        echo "."
+	echo "Shutting down the UPS ..."
+	sleep 1
+	if /sbin/upsdrvctl shutdown ; then
+	  sleep 5
+	  echo -n "Waiting for UPS to cut the power"
+	else
+	  echo "Shutdown failed."
+	  echo -n "Waiting for UPS batteries to run down"
+	fi
+	if [ "$wait_delay" ] ; then
+	  echo " (will reboot after $wait_delay) ..."
+	  sleep "$wait_delay"
+	  /etc/init.d/reboot
+	fi
       else
         echo "Power down flag is not set (UPS shutdown not needed)"
       fi

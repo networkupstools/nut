@@ -61,7 +61,7 @@ Description: A meta SNMP Driver subsystem for the nut - Network UPS Tools
 
 Package: nut-usb
 Architecture: any
-Depends: ${shlibs:Depends}, nut (>= 1.4.1-pre2), hotplug
+Depends: ${shlibs:Depends}, nut (>= 1.4.1-pre2), ${udev}
 Conflicts: nut (<= 1.4.1-pre1)
 Description: USB Drivers subsystem for the nut - Network UPS Tools
  nut is a client/server uninterruptible power supply (UPS) monitoring system

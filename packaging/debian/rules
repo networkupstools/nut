@@ -43,6 +43,9 @@ clean-patched:
 	dh_testdir
 	dh_testroot
 	rm -f configure-stamp build-stamp install-stamp
+	-$(MAKE) clean
+	# temp. workaround to clean drivers/tripplite_usb
+	rm -f $(CURDIR)/drivers/tripplite_usb
 	-$(MAKE) distclean
 	dh_clean
 	-test -r /usr/share/misc/config.sub && \
@@ -74,29 +77,26 @@ install-stamp:
 	dh_clean -k
 	dh_installdirs
 	$(MAKE) install \
-		DESTDIR=$(PWD)/debian/nut RUNUID=65534 RUNGID=65534
+		DESTDIR=$(CURDIR)/debian/nut RUNUID=65534 RUNGID=65534
 	$(MAKE) install-lib \
-		DESTDIR=$(PWD)/debian/nut-dev RUNUID=65534 RUNGID=65534
+		DESTDIR=$(CURDIR)/debian/nut-dev RUNUID=65534 RUNGID=65534
 	# install dummycons test driver and its manpage
-	mkdir -p $(PWD)/debian/nut-dev/lib/nut
-	mkdir -p $(PWD)/debian/nut-dev/usr/share/man/man8/
-	cp $(PWD)/drivers/dummycons $(PWD)/debian/nut-dev/lib/nut
-	cp $(PWD)/man/dummycons.8 $(PWD)/debian/nut-dev/usr/share/man/man8/
+	# mkdir -p $(CURDIR)/debian/nut-dev/lib/nut
+	# mkdir -p $(CURDIR)/debian/nut-dev/usr/share/man/man8/
+	# cp $(CURDIR)/drivers/dummycons $(CURDIR)/debian/nut-dev/lib/nut
+	# cp $(CURDIR)/man/dummycons.8 $(CURDIR)/debian/nut-dev/usr/share/man/man8/
 	$(MAKE) install-snmp \
-		DESTDIR=$(PWD)/debian/nut-snmp RUNUID=65534 RUNGID=65534
+		DESTDIR=$(CURDIR)/debian/nut-snmp RUNUID=65534 RUNGID=65534
 	$(MAKE) install-usb \
-		DESTDIR=$(PWD)/debian/nut-usb RUNUID=65534 RUNGID=65534
-#ifeq (linux,$(DEB_HOST_GNU_SYSTEM))
-        # install hotplug scripts
-	mkdir -p $(PWD)/debian/nut-usb/etc/hotplug/usb/
-	install -m 755 $(PWD)/scripts/hotplug/libhidups $(PWD)/debian/nut-usb/etc/hotplug/usb/
-	install -m 644 $(PWD)/scripts/hotplug/libhid.usermap $(PWD)/debian/nut-usb/etc/hotplug/usb/
-#endif
-	$(MAKE) install-cgi \
-		DESTDIR=$(PWD)/debian/nut-cgi RUNUID=65534 RUNGID=65534
-	mv $(PWD)/debian/nut/lib/nut/upsdrvctl $(PWD)/debian/nut/sbin
+		DESTDIR=$(CURDIR)/debian/nut-usb RUNUID=65534 RUNGID=65534
+	mkdir -p $(CURDIR)/debian/nut-usb/etc/udev/rules.d
+	install -m 644 $(CURDIR)/scripts/hotplug-ng/nut-usbups.rules \
+		$(CURDIR)/debian/nut-usb/etc/udev/rules.d/025_nut-usbups.rules
+	$(MAKE) install-cgiexec \
+		DESTDIR=$(CURDIR)/debian/nut-cgi RUNUID=65534 RUNGID=65534
+	mv $(CURDIR)/debian/nut/lib/nut/upsdrvctl $(CURDIR)/debian/nut/sbin
 	# conf files workaround
-	#rm $(PWD)/debian/nut/etc/nut/* $(PWD)/debian/nut-cgi/etc/nut/*
+	#rm $(CURDIR)/debian/nut/etc/nut/* $(CURDIR)/debian/nut-cgi/etc/nut/*
 	dh_installexamples
 	dh_installdocs
 	dh_installchangelogs ChangeLog
@@ -117,7 +117,11 @@ binary-arch: install
 	dh_fixperms
 	dh_installdeb
 	dh_shlibdeps -Xlibupsclient.a
-	dh_gencontrol 
+ifeq (linux,$(DEB_HOST_ARCH_OS))
+	dh_gencontrol -- -Vudev="udev"
+else
+	dh_gencontrol
+endif
 	dh_md5sums
 	dh_builddeb
 
