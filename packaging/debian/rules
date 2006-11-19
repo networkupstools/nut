@@ -22,6 +22,8 @@ configure-stamp:
 	    --includedir=/usr/include \
 	    --without-ssl \
 	    --with-cgi \
+	    --with-usb \
+	    --with-snmp \
 	    --with-statepath=/var/run/nut \
 	    --with-altpidpath=/var/run/nut \
 	    --with-drvpath=/lib/nut \
@@ -85,20 +87,37 @@ install-stamp:
 	# mkdir -p $(CURDIR)/debian/nut-dev/usr/share/man/man8/
 	# cp $(CURDIR)/drivers/dummycons $(CURDIR)/debian/nut-dev/lib/nut
 	# cp $(CURDIR)/man/dummycons.8 $(CURDIR)/debian/nut-dev/usr/share/man/man8/
+	
+	### FIXME: currently fails
 	$(MAKE) install-snmp \
 		DESTDIR=$(CURDIR)/debian/nut-snmp RUNUID=65534 RUNGID=65534
+	
+	mkdir -p $(CURDIR)/debian/nut-snmp/lib/nut $(CURDIR)/debian/nut-snmp/usr/share/man/man8
+	mv $(CURDIR)/debian/nut{,-snmp}/lib/nut/snmp-ups
+	mv $(CURDIR)/debian/nut{,-snmp}/usr/share/man/man8/snmp-ups.8
+	
+	### FIXME: currently fails
 	$(MAKE) install-usb \
 		DESTDIR=$(CURDIR)/debian/nut-usb RUNUID=65534 RUNGID=65534
+	mkdir -p $(CURDIR)/debian/nut-usb/lib/nut $(CURDIR)/debian/nut-usb/usr/share/man/man8
+	
+	for driver in newhidups bcmxcp_usb tripplite_usb hidups energizerups; do \
+	    mv $(CURDIR)/debian/nut{,-usb}/lib/nut/$$driver ; \
+	    mv $(CURDIR)/debian/nut{,-usb}/usr/share/man/man8/$$driver.8 ; \
+	done
+	
 	mkdir -p $(CURDIR)/debian/nut-usb/etc/udev/rules.d
 	install -m 644 $(CURDIR)/scripts/hotplug-ng/nut-usbups.rules \
 		$(CURDIR)/debian/nut-usb/etc/udev/rules.d/025_nut-usbups.rules
-	$(MAKE) install-cgiexec \
+	
+	### FIXME: currently fails
+	$(MAKE) install-cgi \
 		DESTDIR=$(CURDIR)/debian/nut-cgi RUNUID=65534 RUNGID=65534
 	mv $(CURDIR)/debian/nut/lib/nut/upsdrvctl $(CURDIR)/debian/nut/sbin
 	# conf files workaround
 	#rm $(CURDIR)/debian/nut/etc/nut/* $(CURDIR)/debian/nut-cgi/etc/nut/*
 	dh_installexamples
-	dh_installdocs
+	dh_installdocs -X.svn
 	dh_installchangelogs ChangeLog
 	dh_installinit
 	dh_link

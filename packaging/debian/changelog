@@ -1,4 +1,10 @@
-nut (2.1.0-1) experimental; urgency=low
+nut (2.1.0-2) UNRELEASED; urgency=low
+
+  * Trying to split stuff between the constituent packages.
+
+ -- Charles Lepple <clepple@gmail.com>  Sun, 19 Nov 2006 14:11:29 -0500
+
+nut (2.1.0-1) UNRELEASED; urgency=low
 
   * new upstream
 
@@ -815,6 +821,4 @@ nut (0.43.2-1) unstable; urgency=low
 
  -- Luca Filipozzi <lfilipoz@emyr.net>  Wed,  3 May 2000 20:50:30 -0700
 
-Local variables:
-mode: debian-changelog
-End:
+
