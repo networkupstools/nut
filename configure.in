@@ -190,6 +190,8 @@ AC_HELP_STRING([--with-ssl], [enable SSL development code (default: no)]),
 		;;
 	*)
 		AC_MSG_RESULT(no)
+		SSL_CFLAGS=""
+		SSL_LDFLAGS=""
 		;;
 	esac],
 
