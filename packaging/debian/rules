@@ -25,7 +25,7 @@ configure-stamp:
 	    --with-usb \
 	    --with-snmp \
 	    --with-lib \
-	    --with-shared=no \
+	    --disable-shared \
 	    --disable-dependency-tracking \
 	    --with-statepath=/var/run/nut \
 	    --with-altpidpath=/var/run/nut \
@@ -94,8 +94,9 @@ install-stamp:
 	mv $(CURDIR)/debian/nut{,-dev/usr}/bin/libupsclient-config
 	mv $(CURDIR)/debian/nut{,-dev}/usr/lib/pkgconfig
 	mv $(CURDIR)/debian/nut{,-dev}/usr/lib/libupsclient.a
+
 	### FIXME: create a new package for shared library later:
-	rm $(CURDIR)/debian/nut/usr/lib/libupsclient.so* $(CURDIR)/debian/nut/usr/lib/libupsclient.la
+	# rm $(CURDIR)/debian/nut/usr/lib/libupsclient.so* $(CURDIR)/debian/nut/usr/lib/libupsclient.la
 	
 	### FIXME: currently fails
 	$(MAKE) install-snmp \
