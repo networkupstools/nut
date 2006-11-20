@@ -211,6 +211,9 @@ int sstate_connect(upstype *ups)
 	pconf_init(&ups->sock_ctx, NULL);
 	ups->stale = 0;
 
+	/* set ups.status to "WAIT" while waiting for the driver response to dumpcmd */
+	state_setinfo(&ups->inforoot, "ups.status", "WAIT");
+
 	upslogx(LOG_INFO, "Connected to UPS [%s]: %s", ups->name, ups->fn);
 
 	return fd;

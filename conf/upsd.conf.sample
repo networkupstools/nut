@@ -40,15 +40,3 @@ REJECT all
 # You should only use this if your driver has difficulties keeping
 # the data fresh within the normal 15 second interval.  Watch the syslog
 # for notifications from upsd about staleness.
-
-# =======================================================================
-# MAXINIT <seconds>
-# MAXINIT 5
-#
-# This defaults to 5 seconds.  Upon startup, upsd waits for this many
-# seconds for the initial data dump by the drivers so the clients work
-# on the first try.
-#
-# You should only use this if you see that right after connecting for
-# the first time, upsd complains about the UPS being unavailable, but
-# reconnects later.

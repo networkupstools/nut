@@ -25,7 +25,7 @@
 #include "user.h"
 #include "access.h"
 
-	extern	int	maxage, maxinit;
+	extern	int	maxage;
 	extern	char	*statepath, *datapath, *certfile;
 	extern	upstype	*firstups;
 	ups_t	*upstable = NULL;
@@ -153,12 +153,6 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 	/* MAXAGE <seconds> */
 	if (!strcmp(arg[0], "MAXAGE")) {
 		maxage = atoi(arg[1]);
-		return 1;
-	}
-
-	/* MAXINIT <seconds> */
-	if (!strcmp(arg[0], "MAXINIT")) {
-		maxinit = atoi(arg[1]);
 		return 1;
 	}
 

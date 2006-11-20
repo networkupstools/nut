@@ -1,3 +1,8 @@
+Mon Nov 20 18:33:56 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - upsd: don't wait for DUMPDONE before forking to the background, this
+   obsoletes the MAXINIT parameter
+
 Sat Nov 18 11:21:21 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
 
  - upsd: forgot to add MAXINIT parameter to man page
