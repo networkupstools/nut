@@ -136,66 +136,78 @@ TYPE_SOCKLEN_T
 TYPE_UINT16_T
 TYPE_UINT8_T
 
-dnl ----------------------------------------------------------------------
-dnl check for SSL compiler flags
-
-AC_MSG_CHECKING(for SSL library availability)
-
-CFLAGS_ORIG="${CFLAGS}"
-LDFLAGS_ORIG="${LDFLAGS}"
-
-SSL_CFLAGS=""
-SSL_LDFLAGS="-lssl -lcrypto"
-
-CFLAGS="${SSL_CFLAGS}"
-LDFLAGS="${SSL_LDFLAGS}"
-AC_TRY_LINK([#include <openssl/ssl.h>], [SSL_library_init()], ssl_ok=yes, ssl_ok=no)
-
-if test "${ssl_ok}" != "yes"; then
-	SSL_CFLAGS="-I/usr/local/ssl/include"
-	SSL_LDFLAGS="-L/usr/local/ssl/lib -lssl -lcrypto"
-
-	CFLAGS="${SSL_CFLAGS}"
-	LDFLAGS="${SSL_LDFLAGS}"
-	AC_TRY_LINK([#include <openssl/ssl.h>], [SSL_library_init], ssl_ok=yes, ssl_ok=no)
-fi
-
-if test "${ssl_ok}" != "yes"; then
-	SSL_CFLAGS="-I/usr/local/ssl/include -I/usr/kerberos/include"
-	SSL_LDFLAGS="-L/usr/local/ssl/lib -lssl -lcrypto"
-
-	CFLAGS="${SSL_CFLAGS}"
-	LDFLAGS="${SSL_LDFLAGS}"
-	AC_TRY_LINK([#include <openssl/ssl.h>], [SSL_library_init], ssl_ok=yes, ssl_ok=no)
-fi
-
-CFLAGS="${CFLAGS_ORIG}"
-LDFLAGS="${LDFLAGS_ORIG}"
-
-AC_MSG_RESULT([${ssl_ok}])
-
 AC_MSG_CHECKING(whether to enable SSL development code)
 AC_ARG_WITH(ssl,
 AC_HELP_STRING([--with-ssl], [enable SSL development code (default: no)]),
 [	case "$withval" in
 	yes)
 		AC_MSG_RESULT(yes)
-
-		if test "${ssl_ok}" != "yes"; then
-			AC_MSG_ERROR(["SSL support requested, but OpenSSL not found"])
-		fi
-
+		nut_with_ssl="yes"
 		AC_DEFINE(HAVE_SSL, 1, 
 			[Define to enable SSL development code])
 		;;
 	*)
 		AC_MSG_RESULT(no)
+		nut_with_ssl="no"
 		;;
 	esac],
 
 	AC_MSG_RESULT(no)
+	nut_with_ssl="no"
 )	
 
+dnl ----------------------------------------------------------------------
+dnl check for SSL compiler flags
+
+if test "${nut_with_ssl}" = "yes"; then
+
+   AC_MSG_CHECKING(for SSL library availability)
+
+   CFLAGS_ORIG="${CFLAGS}"
+   LDFLAGS_ORIG="${LDFLAGS}"
+
+   SSL_CFLAGS=""
+   SSL_LDFLAGS="-lssl -lcrypto"
+
+   CFLAGS="${SSL_CFLAGS}"
+   LDFLAGS="${SSL_LDFLAGS}"
+   AC_TRY_LINK([#include <openssl/ssl.h>], [SSL_library_init()], 
+	       ssl_ok=yes, 
+	       ssl_ok=no)
+
+   if test "${ssl_ok}" != "yes"; then
+      SSL_CFLAGS="-I/usr/local/ssl/include"
+      SSL_LDFLAGS="-L/usr/local/ssl/lib -lssl -lcrypto"
+
+      CFLAGS="${SSL_CFLAGS}"
+      LDFLAGS="${SSL_LDFLAGS}"
+      AC_TRY_LINK([#include <openssl/ssl.h>], [SSL_library_init], 
+                  ssl_ok=yes, 
+		  ssl_ok=no)
+   fi
+
+   if test "${ssl_ok}" != "yes"; then
+      SSL_CFLAGS="-I/usr/local/ssl/include -I/usr/kerberos/include"
+      SSL_LDFLAGS="-L/usr/local/ssl/lib -lssl -lcrypto"
+
+      CFLAGS="${SSL_CFLAGS}"
+      LDFLAGS="${SSL_LDFLAGS}"
+      AC_TRY_LINK([#include <openssl/ssl.h>], [SSL_library_init], 
+                   ssl_ok=yes, 
+		   ssl_ok=no)
+   fi
+
+   CFLAGS="${CFLAGS_ORIG}"
+   LDFLAGS="${LDFLAGS_ORIG}"
+
+   AC_MSG_RESULT([${ssl_ok}])
+
+   if test "${ssl_ok}" != "yes"; then
+      AC_MSG_ERROR(["SSL support requested, but OpenSSL not found"])
+   fi
+fi
+
+dnl ----------------------------------------------------------------------
 dnl See if gdlib-config is out there and usable
 
 AC_MSG_CHECKING(for gd version via gdlib-config)
