@@ -1,3 +1,7 @@
+Wed Nov 22 13:47:31 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/dummy-ups.c: fix broken setvar() function
+
 Tue Nov 21 02:30:05 UTC 2006 / Charles Lepple <clepple@gmail.com>
 
  - configure.in: Don't test for OpenSSL unless the user requests it. Patch
