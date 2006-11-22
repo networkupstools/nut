@@ -33,6 +33,7 @@ configure-stamp:
 	    --with-cgipath=/usr/lib/cgi-bin/nut \
 	    --with-pidpath=/var/run/nut \
 	    --datadir=/usr/share/nut \
+	    --with-htmlpath=/usr/share/nut/html \
 	    --with-user=nut
 	touch $@
 

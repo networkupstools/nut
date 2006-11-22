@@ -1,3 +1,9 @@
+nut (2.1.0-3) UNRELEASED; urgency=low
+
+  * Moved HTML directory to /usr/share/nut/html
+
+ -- Charles Lepple <clepple@gmail.com>  Tue, 21 Nov 2006 22:21:37 -0500
+
 nut (2.1.0-2) UNRELEASED; urgency=low
 
   * Trying to split stuff between the constituent packages.
