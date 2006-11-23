@@ -18,7 +18,7 @@ in your upsmon.conf, if you also enable the EXEC in your NOTIFYFLAGS.  In
 this case, we want upsmon to call upssched as the notifier, since it will
 be doing all the work for us.  So, in the upsmon.conf:
 
-	NOTIFYCMD /usr/local/ups/bin/notifycmd
+	NOTIFYCMD /usr/local/ups/bin/upssched
 
 Then we want upsmon to actually _use_ it for the notify events, so again
 in the upsmon.conf we set the flags:
