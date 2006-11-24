@@ -87,150 +87,48 @@ static void st_tree_node_free(struct st_tree_t *node)
 }
 
 /* add a subtree to another subtree */
-static void st_tree_node_add(struct st_tree_t **rptr, struct st_tree_t *node)
+static void st_tree_node_add(struct st_tree_t **nptr, struct st_tree_t *sptr)
 {
-	struct	st_tree_t *root = *rptr;
+	struct	st_tree_t 	*node = *nptr;
 
-	if (!root) {
-		*rptr = node;
+	if (!sptr)
+		return;
+
+	if (!node) {
+		*nptr = sptr;
 		return;
 	}
 
-	if (strcmp(node->var, root->var) < 0) {
-		st_tree_node_add(&root->left, node);
-		return;
-	}
-
-	st_tree_node_add(&root->right, node);
+	if (strcmp(sptr->var, node->var) < 0)
+		st_tree_node_add(&node->left, sptr);
+	else
+		st_tree_node_add(&node->right, sptr);
 }
 
-static int st_tree_delete(struct st_tree_t **nptr, struct st_tree_t **lptr,
-	const char *var)
+int state_delinfo(struct st_tree_t **nptr, const char *var)
 {
-	int	cmp, ret;
-	struct	st_tree_t	*node, *last;
-
-	if (!nptr)
-		return 0;
-
-	node = *nptr;
+	struct	st_tree_t	*node = *nptr;
 
 	if (!node)
-		return 0;
+		return 0;	/* variable not found! */
 
-	if (lptr)
-		last = *lptr;
-	else
-		last = NULL;
+	if (strcasecmp(var, node->var) < 0)
+		return st_tree_delete(&node->left, var);
 
-	cmp = strcasecmp(var, node->var);
+	if (strcasecmp(var, node->var) > 0)
+		return st_tree_delete(&node->right, var);
 
-	if (cmp == 0) {		/* found the right one */
+	/* apparently, we've found it! */
 
-		/* deleting the root? */
-		if (!last) {
+	/* whatever is on the left, hang it off current right */
+	st_tree_node_add(&node->right, node->left);
 
-			/* root with two children? */
-			if ((node->left) && (node->right)) {
+	/* now point the parent at the old right child */
+	*nptr = node->right;
 
-				/* hang current left off current right */
-				st_tree_node_add(&node->right, node->left);
+	st_tree_node_free(node);
 
-				/* now point the root at the old right child */
-				*nptr = node->right;
-
-				st_tree_node_free(node);
-				return 1;
-			}
-
-			/* root with one child (left) */
-			if (node->left) {
-
-				/* point root at left child */
-				*nptr = node->left;
-
-				st_tree_node_free(node);
-				return 1;
-			}
-
-			/* root with one child (right) */
-			if (node->right) {
-
-				/* point root at right child */
-				*nptr = node->right;
-
-				st_tree_node_free(node);
-				return 1;
-			}
-
-			/* root with no children */
-
-			/* point root at an empty tree */
-			*nptr = NULL;
-
-			st_tree_node_free(node);
-			return 1;
-		}
-
-		/* leaf */
-		if ((!node->left) && (!node->right)) {
-
-			if (last->right == node)
-				last->right = NULL;
-			else
-				last->left = NULL;
-
-			st_tree_node_free(node);
-			return 1;
-		}
-
-		/* node with two children */
-		if ((node->left) && (node->right)) {
-
-			/* hang the current left off the current right */
-			st_tree_node_add(&node->right, node->left);
-
-			if (last->left == node)
-				last->left = node->right;
-			else
-				last->right = node->right;
-
-
-			st_tree_node_free(node);
-			return 1;
-		}
-
-		/* node with one child (left) */
-		if (node->left) {
-
-			if (last->right == node)
-				last->right = node->left;
-			else
-				last->left = node->left;
-
-			st_tree_node_free(node);
-			return 1;
-		}
-
-		/* node with one child (right) */
-
-		if (last->right == node)
-			last->right = node->right;
-		else
-			last->left = node->right;
-
-		st_tree_node_free(node);
-		return 1;
-	}
-
-	if (cmp < 0) {
-		ret = st_tree_delete(&node->left, nptr, var);
-
-		if (ret != 0)
-			return 1;
-	}
-
-	return st_tree_delete(&node->right, nptr, var);
+	return 1;
 }	
 
 /* interface */
@@ -478,11 +376,9 @@ void state_infofree(struct st_tree_t *node)
 	if (!node)
 		return;
 
-	if (node->left)
-		state_infofree(node->left);
+	state_infofree(node->left);
 
-	if (node->right)
-		state_infofree(node->right);
+	state_infofree(node->right);
 
 	st_tree_node_free(node);
 }
@@ -512,11 +408,6 @@ int state_delcmd(struct cmdlist_t **list, const char *cmd)
 	}
 
 	return 0;	/* not found */
-}
-
-int state_delinfo(struct st_tree_t **root, const char *var)
-{
-	return st_tree_delete(root, NULL, var);
 }
 
 int state_delenum(struct st_tree_t *root, const char *var, const char *val)
@@ -557,18 +448,14 @@ int state_delenum(struct st_tree_t *root, const char *var, const char *val)
 
 struct st_tree_t *state_tree_find(struct st_tree_t *node, const char *var)
 {
-	int	cmp;
-
 	if (!node)
 		return NULL;
 
-	cmp = strcasecmp(var, node->var);
-
-	if (cmp == 0)
-		return node;
-
-	if (cmp < 0)
+	if (strcasecmp(var, node->var) < 0)
 		return state_tree_find(node->left, var);
 
-	return state_tree_find(node->right, var);
+	if (strcasecmp(var, node->var) > 0)
+		return state_tree_find(node->right, var);
+
+	return node;
 }
