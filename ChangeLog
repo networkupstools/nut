@@ -1,3 +1,9 @@
+Fri Nov 24 20:28:49 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - common/state.c: I really should make changes in the working copy
+   directly, rather than in a separate build environment (forgot to
+   include a naming change)
+
 Fri Nov 24 20:18:16 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
 
  - server/sstate.c: send PING sooner to allow a retry before declaring

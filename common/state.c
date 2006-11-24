@@ -113,10 +113,10 @@ int state_delinfo(struct st_tree_t **nptr, const char *var)
 		return 0;	/* variable not found! */
 
 	if (strcasecmp(var, node->var) < 0)
-		return st_tree_delete(&node->left, var);
+		return state_delinfo(&node->left, var);
 
 	if (strcasecmp(var, node->var) > 0)
-		return st_tree_delete(&node->right, var);
+		return state_delinfo(&node->right, var);
 
 	/* apparently, we've found it! */
 
