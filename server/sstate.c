@@ -314,15 +314,13 @@ int sstate_dead(upstype *ups, int maxage)
 	time(&now);
 
 	/* ignore DATAOK/DATASTALE unless the dump is done */
-	if (ups->dumpdone)
-		if (!ups->data_ok)
-			return 1;	/* dead */
+	if ((ups->dumpdone) && (!ups->data_ok))
+		return 1;	/* dead */
 
 	elapsed = difftime(now, ups->last_heard);
 
-	/* somewhere beyond the halfway point - prod it to make it talk */
-	if ((elapsed > (maxage / 2)) &&
-		(difftime(now, ups->last_ping) > (maxage / 2)))
+	/* somewhere beyond a third of the maximum time - prod it to make it talk */
+	if ((elapsed > (maxage / 3)) && (difftime(now, ups->last_ping) > (maxage / 3)))
 		sendping(ups);
 
 	if (elapsed > maxage)

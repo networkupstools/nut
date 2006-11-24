@@ -1,3 +1,9 @@
+Fri Nov 24 20:18:16 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - server/sstate.c: send PING sooner to allow a retry before declaring
+   a driver stale (1/3 of the way, so that we can send another one 2/3
+   of the way)
+
 Fri Nov 24 20:05:41 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
 
  - common/state.c: rewrite of overly complex state_delinfo(), minor
