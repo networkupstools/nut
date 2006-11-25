@@ -256,6 +256,10 @@ struct {
 	{ "6TI",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
 	/* CS 350 */
 	{ "5.4.D",	"\1ABPQRSUYbdfgjmnx9",	0 },
+	/* Smart-UPS 600 */
+	{ "D6",         "789ABCEFGKLMNOPQRSUVWXYZ", 0 },
+	{ "D5",         "789ABCEFGKLMNOPQRSUVWXYZ", 0 },
+	{ "D4",         "789ABCEFGKLMNOPQRSUVWXYZ", 0 },
 
 	{ NULL,		NULL,			0 },
 };
