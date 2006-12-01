@@ -287,7 +287,7 @@ LDFLAGS_ORIG="${LDFLAGS}"
 
 		AC_CHECK_HEADERS(gd.h)
 		AC_CHECK_LIB(gd, gdImagePng, 
-		have_libgc=1
+		have_libgd=1
 		AC_DEFINE(HAVE_LIBGD, 1, 
 			[Define if you have Boutell's libgd installed]),
 		,
@@ -322,7 +322,7 @@ AC_HELP_STRING([--with-cgi], [build and install the CGI programs (no)]),
 
 		AC_MSG_RESULT(yes)
 		nut_with_cgi="yes"
-		if test "${have_libgc}" != "1"; then
+		if test "${have_libgd}" != "1"; then
 		   AC_MSG_ERROR([libgd not found, required for CGI build])
 		fi
 		;;	

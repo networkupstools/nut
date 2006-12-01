@@ -1,3 +1,8 @@
+Fri Dec  1 01:04:15 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - configure.in: corrected name of have_libgd variable
+ - data/driver.list: removed "hidups" in favor of "newhidups"
+
 Sat Nov 25 07:50:16 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/apcsmart.h: add compatibility strings for Smart-UPS 600
