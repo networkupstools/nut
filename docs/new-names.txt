@@ -96,6 +96,9 @@ ups: General unit information
    +------------------------------------------------------------------------+
    | ups.type             | UPS type (*** opaque)        | offline          |
    +------------------------------------------------------------------------+
+   | ups.watchdog.status  | UPS watchdog status          | disabled         |
+   |                      | (enabled or disabled)        |                  |
+   +------------------------------------------------------------------------+
 
 input: Incoming line/power information
 
@@ -467,4 +470,6 @@ server: Internal server information
    | beeper.on                | Enable UPS beeper/buzzer                    |
    |--------------------------+---------------------------------------------|
    | beeper.off               | Disable UPS beeper/buzzer                   |
+   |--------------------------+---------------------------------------------|
+   | beeper.toggle            | Toggle UPS beeper/buzzer                    |
    +------------------------------------------------------------------------+

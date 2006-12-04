@@ -21,12 +21,12 @@ Target drivers
 
 The following drivers are targeted for "assimilation":
 
-  * blazer (2)
-  * fentonups (2)
+  * blazer (1)
+  * fentonups (1)
   * mustek (1)
   * esupssmart (1)
-  * ippon (2)
-  * sms (2)
+  * ippon (1)
+  * sms (1)
   * masterguard (3)
 
 (1) megatec already supercedes this driver in functionality.
@@ -64,8 +64,6 @@ Moreover, there are some "S.3" or "S.3R0003" commands which fly in the face
 of "S05R0003" which the driver also issues (this last one matches all the
 other drivers, the first two seem to imply that the UPS also accepts those
 format variations to the standard "SxxRxxxx" shutdown+return commands).
-
-Currently the "megatec" driver only supports 12V and 24V UPSes.
 
 -- 
 Carlos Rodrigues

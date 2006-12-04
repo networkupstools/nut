@@ -66,9 +66,11 @@
 "Best Power"	"Micro-Ferrups"		""	"bestuferrups"
 "Best Power"	"Fortress/Ferrups"	"f-command support"	"bestfcom"
 
-"Centralion"	"Blazer"		""	"blazer"
+"Centralion"	"Blazer"		""	"megatec or blazer"
 
 "Clary"		"ST-800"		""	"gamatronic"
+
+"Cito Power"	"CPG-SR1000"		""	"megatec"
 
 "Compaq"	"T1500h"	""	"upscode2 use_pre_lf"
 "Compaq"	"R3000 XR"	""	"bcmxcp"
@@ -97,13 +99,13 @@
 
 "Dynex"		"975AVR"		""	"genericups upstype=7"
 
-"Effekta"	"MI/MT/MH"	"2502 cable"	"fentonups"
+"Effekta"	"MI/MT/MH"	"2502 cable"	"megatec or fentonups"
 
 "Eltek"		"any with AL175 alarm module"	""	"al175"
 
 "Energizer"	"(various)"	"USB"		"energizerups (experimental USB driver for Linux")
 
-"Energy Sistem"	"(various)"	""	"esupssmart"
+"Energy Sistem"	"(various)"	""	"megatec or esupssmart"
 
 "ETA"		"mini+UPS"	"WinNT/Upsoft cable"	"genericups upstype=7"
 "ETA"		"mini+UPS PRO"	"UPS Explorer cable"	"etapro"
@@ -116,9 +118,9 @@
 "Exide"		"NetUPS SE"	""	"genericups upstype=15"
 
 "Fenton Technologies"	"PowerPal"	"P-series"	"safenet"
-"Fenton Technologies"	"PowerPal"	"L-series"	"fentonups"
-"Fenton Technologies"	"PowerOn"		""	"fentonups"
-"Fenton Technologies"	"PowerPure"		""	"fentonups"
+"Fenton Technologies"	"PowerPal"	"L-series"	"megatec or fentonups"
+"Fenton Technologies"	"PowerOn"		""	"megatec or fentonups"
+"Fenton Technologies"	"PowerPure"		""	"megatec or fentonups"
 
 "Fairstone"	"L525/L625/L750"	""	"safenet"
 
@@ -130,6 +132,7 @@
 "Fiskars"	"PowerServer 30"	""	"upcsode2"
 
 "Gamatronic"	"All models with alarm interface"	""	"genericups upstype=22"
+"Gamatronic"	"G-SmartCompact 2000"	""	"megatec"
 "Gamatronic"	"MP110/210"	""	"gamatronic"
 "Gamatronic"	"MS-T"		""	"gamatronic"
 "Gamatronic"	"MS"		""	"gamatronic"
@@ -140,16 +143,18 @@
 "HP"		"R3000 XR"	""	"bcmxcp"
 "HP"		"R5500 XR"	""	"bcmxcp"
 
-"INELT"		"Monolith 1000LT"	""	"fentonups"
+"INELT"		"Monolith 1000LT"	""	"megatec or fentonups"
 
 "Inform"	"GUARD"	"Line Interactive AP model"	"powercom"
 
-"Infosec"	"iPEL 350"	""	"esupssmart"
-"Infosec"	"iPEL 500"	""	"esupssmart"
-"Infosec"	"iPEL 750"	""	"esupssmart"
-"Infosec"	"iPEL 1000"	""	"esupssmart"
+"Infosec"	"iPEL 350"	""	"megatec or esupssmart"
+"Infosec"	"iPEL 500"	""	"megatec or esupssmart"
+"Infosec"	"iPEL 750"	""	"megatec or esupssmart"
+"Infosec"	"iPEL 1000"	""	"megatec or esupssmart"
 
-"Ippon"		"(various)"		""	"ippon"
+"Ippon"		"(various)"		""	"megatec or ippon"
+
+"Lestar"	"MD-800E"	""	"megatec"
 
 "Liebert"	"UPStation GXT2"	"contact-closure cable"	"liebert" 
 
@@ -323,15 +328,15 @@
 
 "Opti-UPS"	"PowerES"	"420E"	"optiups"
 
-"Orvaldi Power Protection"	"various"	"not 400 or 600"	"fentonups"
+"Orvaldi Power Protection"	"various"	"not 400 or 600"	"megatec or fentonups"
 
-"Powercom"	"SMK-800A"			""	"fentonups"
-"Powercom"	"ULT-1000"			""	"fentonups"
+"Powercom"	"SMK-800A"			""	"megatec or fentonups"
+"Powercom"	"ULT-1000"			""	"megatec or fentonups"
 "Powercom"	"Trust 425/625"			""	"powercom"
 "Powercom"	"(various)"			""	"powercom"
 "Powercom"	"Advice Partner/King Pr750"	""	"powercom"
 
-"PowerGuard"	"PG-600"	""	"fentonups"
+"PowerGuard"	"PG-600"	""	"megatec or fentonups"
 
 "PowerKinetics"	"9001"		""	"genericups upstype=17"
 
@@ -341,7 +346,8 @@
 
 "PowerTech"	"Comp1000"	"DTR cable power"	"genericups upstype=3"
 
-"Power Walker"	"Line-Interactive VI1000"	""	"megatec"
+"PowerWalker"	"Line-Interactive VI 1000"	""	"megatec"
+"PowerWalker"	"Line-Interactive VI 400/600/800"	""	"megatec"
 
 "Powerware"	"3110"		""	"genericups upstype=7"
 "Powerware"	"3115"		""	"genericups upstype=11"
@@ -365,14 +371,14 @@
 "Repotec"	"RPT-800A"	""	"genericups upstype=13"
 "Repotec"	"RPT-162A"	""	"genericups upstype=13"
 
-"SMS (Brazil)"	"Manager III"	""	"sms"
+"SMS (Brazil)"	"Manager III"	""	"megatec or sms"
 
 "SOLA"	"305"	"cable INT-0025C"	"genericups upstype=7"
 "SOLA"	"325"	""	"bestups"
 "SOLA"	"520"	""	"bestups"
 "SOLA"	"610"	"use ID= in ups.conf"	"bestups"
 "SOLA"	"620"	""	"bestups"
-"SOLA"	"330"	""	"blazer"
+"SOLA"	"330"	""	"megatec or blazer"
 
 "SOLA/BASIC Mexico"	"various"	"ISBMEX protocol"	"isbmex"
 
@@ -386,14 +392,14 @@
 
 "SquareOne Power"	"QP1000"		""	"megatec"
 
-"SuperPower"	"HP360, Hope-550"	""	"fentonups"
+"SuperPower"	"HP360, Hope-550"	""	"megatec or fentonups"
 
 "Sweex"		"500/1000"	"smart - shipped with SafeNet"			"safenet"
 "Sweex"		"500/1000"	"contact closure - shipped with UPSmart"	"genericups upstype=7"
 
 "Sweex"		"BC100060 800VA"	""	"megatec"
 
-"Sysgration"	"UPGUARDS Pro650"	""	"fentonups"
+"Sysgration"	"UPGUARDS Pro650"	""	"megatec or fentonups"
 
 "Tecnoware"	"Easy Power 1200"	""	"megatec"
 
@@ -412,8 +418,8 @@
 
 "Trust"		"UPS 1000 Management PW-4105"	""	"megatec"
 
-"UNITEK"	"ALPHA 500 IC"		""	"fentonups"
-"UNITEK"	"Alpha 1000is"		""	"fentonups"
+"UNITEK"	"ALPHA 500 IC"		""	"megatec or fentonups"
+"UNITEK"	"Alpha 1000is"		""	"megatec or fentonups"
 "UNITEK"	"Alpha 500 ipE"		""	"megatec"
 
 "UPSonic"	"LAN Saver 600"		""	"genericups upstype=0"
