@@ -459,15 +459,15 @@ int main(int argc, char **argv)
 	/* pick up a default from configure --with-user */
 	user = xstrdup(RUN_AS_USER);	/* xstrdup: this gets freed at exit */
 
+	progname = xbasename(argv[0]);
+	open_syslog(progname);
+
 	upsdrv_banner();
 
 	if (experimental_driver) {
 		printf("Warning: This is an experimental driver.\n");
 		printf("Some features may not function correctly.\n\n");
 	}
-
-	progname = xbasename(argv[0]);
-	open_syslog(progname);
 
 	/* build the driver's extra (-x) variable table */
 	upsdrv_makevartable();

@@ -1,3 +1,7 @@
+Mon Dec  4 20:04:52 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/main.c: set progname before calling upsdrv_banner()
+
 Mon Dec  4 19:55:37 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
 
  - dummy-ups: allow absolute path names for the configuration file
