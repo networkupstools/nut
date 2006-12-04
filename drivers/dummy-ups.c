@@ -214,7 +214,10 @@ static int parse_data_file(int upsfd)
 	char	*ptr;
 	PCONF_CTX	ctx;
 
-	snprintf(fn, sizeof(fn), "%s/%s", confpath(), device_path);
+	if (device_path[0] == '/')
+		snprintf(fn, sizeof(fn), "%s", device_path);
+	else
+		snprintf(fn, sizeof(fn), "%s/%s", confpath(), device_path);
 
 	pconf_init(&ctx, upsconf_err);
 
