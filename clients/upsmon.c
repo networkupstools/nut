@@ -33,7 +33,7 @@
 #endif
 
 static	char	*shutdowncmd = NULL, *notifycmd = NULL;
-static	char	*powerdownflag = NULL;
+static	char	*powerdownflag = NULL, *configfile = NULL;
 
 static	int	minsupplies = 1, sleepval = 5, deadtime = 15;
 
@@ -896,7 +896,7 @@ static void addups(int reloading, const char *sys, const char *pvs,
 	/* the username is now required - no more host-based auth */
 
 	if ((!sys) || (!pvs) || (!pw) || (!master) || (!un)) {
-		upslogx(LOG_WARNING, "Ignoring invalid MONITOR line in upsmon.conf!");
+		upslogx(LOG_WARNING, "Ignoring invalid MONITOR line in %s!", configfile);
 		upslogx(LOG_WARNING, "MONITOR configuration directives require five arguments.");
 		return;
 	}
@@ -1248,19 +1248,16 @@ static int parse_conf_arg(int numargs, char **arg)
 /* called for fatal errors in parseconf like malloc failures */
 static void upsmon_err(const char *errmsg)
 {
-	upslogx(LOG_ERR, "Fatal error in parseconf(upsmon.conf): %s", errmsg);
+	upslogx(LOG_ERR, "Fatal error in parseconf(%s): %s", configfile, errmsg);
 }
 
 static void loadconfig(void)
 {
-	char	fn[SMALLBUF];
 	PCONF_CTX	ctx;
-
-	snprintf(fn, sizeof(fn), "%s/upsmon.conf", confpath());
 
 	pconf_init(&ctx, upsmon_err);
 
-	if (!pconf_file_begin(&ctx, fn)) {
+	if (!pconf_file_begin(&ctx, configfile)) {
 		pconf_finish(&ctx);
 
 		if (reload_flag == 1) {
@@ -1274,7 +1271,7 @@ static void loadconfig(void)
 	while (pconf_file_next(&ctx)) {
 		if (pconf_parse_error(&ctx)) {
 			upslogx(LOG_ERR, "Parse error: %s:%d: %s",
-				fn, ctx.linenum, ctx.errmsg);
+				configfile, ctx.linenum, ctx.errmsg);
 			continue;
 		}
 
@@ -1286,8 +1283,8 @@ static void loadconfig(void)
 			char	errmsg[SMALLBUF];
 
 			snprintf(errmsg, sizeof(errmsg), 
-				"upsmon.conf line %d: invalid directive",
-				ctx.linenum);
+				"%s line %d: invalid directive",
+				configfile, ctx.linenum);
 
 			for (i = 0; i < ctx.numargs; i++)
 				snprintfcat(errmsg, sizeof(errmsg), " %s", 
@@ -1842,15 +1839,12 @@ static void delete_ups(utype *target)
 /* see if we can open a file */
 static int check_file(const char *fn)
 {
-	char	chkfn[SMALLBUF];
 	FILE	*f;
 
-	snprintf(chkfn, sizeof(chkfn), "%s/%s", confpath(), fn);
-
-	f = fopen(chkfn, "r");
+	f = fopen(fn, "r");
 
 	if (!f) {
-		upslog_with_errno(LOG_ERR, "Reload failed: can't open %s", chkfn);
+		upslog_with_errno(LOG_ERR, "Reload failed: can't open %s", fn);
 		return 0;	/* failed */
 	}
 
@@ -1865,7 +1859,7 @@ static void reload_conf(void)
 	upslogx(LOG_INFO, "Reloading configuration");
 
 	/* sanity check */
-	if (!check_file("upsmon.conf")) {
+	if (!check_file(configfile)) {
 		reload_flag = 0;
 		return;
 	}
@@ -1952,7 +1946,7 @@ int main(int argc, char *argv[])
 
 	printf("Network UPS Tools upsmon %s\n", UPS_VERSION);
 
-	while ((i = getopt(argc, argv, "+Dhic:pu:VK")) != EOF) {
+	while ((i = getopt(argc, argv, "+Dhic:f:pu:VK")) != EOF) {
 		switch (i) {
 			case 'c':
 				if (!strncmp(optarg, "fsd", strlen(optarg)))
@@ -1969,14 +1963,15 @@ int main(int argc, char *argv[])
 			case 'D':
 				debuglevel++;
 				break;
+			case 'f':
+				configfile = xstrdup(optarg);
+				break;
 			case 'h':
 				help(argv[0]);
 				break;
-
 			case 'K':
 				checking_flag = 1;
 				break;
-
 			case 'p':
 				use_pipe = 0;
 				break;
@@ -2003,6 +1998,14 @@ int main(int argc, char *argv[])
 	openlog("upsmon", LOG_PID, LOG_FACILITY);
 
 	initnotify();
+
+	/* if no configuration file was specified on the command line, use default */
+	if (!configfile) {
+		configfile = xmalloc(SMALLBUF);
+		snprintf(configfile, SMALLBUF, "%s/upsmon.conf", confpath());
+		configfile = xrealloc(configfile, strlen(configfile) + 1);
+	}
+
 	loadconfig();
 
 	if (checking_flag)

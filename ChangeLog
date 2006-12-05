@@ -1,3 +1,8 @@
+Tue Dec  5 21:20:15 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - clients/upsmon.c: added -f command line option to allow specifying a
+   non-default location of the upsmon.conf file
+
 Mon Dec  4 21:36:33 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - megatec: simplified UPS detection to support models that don't report
