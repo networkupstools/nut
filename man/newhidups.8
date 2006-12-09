@@ -37,7 +37,7 @@ This driver also supports the following optional settings:
 
 .IP "offdelay=\fInum\fR"
 Set the timer before the UPS is turned off after the kill power command is
-sent (via the \fI\-k\fR switch).
+sent (via the \fB\-k\fR switch).
 The default value is 20 (in seconds), and MUST BE LOWER than ondelay.
  
 .IP "ondelay=\fInum\fR"
@@ -55,18 +55,18 @@ The default value is 30 (in seconds), and MUST BE GREATER than offdelay.
 
 Select a specific UPS, in case there is more than one connected via
 USB. Each option specifies an extended regular expression (see
-\fIregex(7)\fR) that must match the UPS's entire vendor/product/serial
+\fBregex(7)\fR) that must match the UPS's entire vendor/product/serial
 string (minus any surrounding whitespace), or the whole 4-digit
-hexadecimal code for vendorid and productid. Try \fI-D -D\fR for
+hexadecimal code for vendorid and productid. Try \fB-DD\fR for
 finding out the strings to match.
 
 Examples: 
 
-    \fI-x vendor="Foo.Corporation.*"\fR
+    \fB-x vendor="Foo.Corporation.*"\fR
 
-    \fI-x vendorid=051d\fR (APC)
+    \fB-x vendorid=051d\fR (APC)
 
-    \fI-x product=".*(Smart|Back)-?UPS.*"\fR
+    \fB-x product=".*(Smart|Back)-?UPS.*"\fR
 
 .IP "bus=\fIregex\fR"
 
@@ -79,7 +79,7 @@ With this option, the driver will connect to any device, including
 ones that are not yet supported. This must always be combined with the
 "vendorid" option. In this mode, the driver will not do anything
 useful except for printing debugging information (typically used with
-\fI-DD\fR).
+\fB-DD\fR).
 
 .SH INSTALLATION
 This driver is not built by default.  You can build it by using
