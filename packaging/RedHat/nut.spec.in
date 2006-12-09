@@ -255,7 +255,7 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root)
-%doc CHANGES COPYING CREDITS INSTALL README docs/
+%doc ChangeLog COPYING CREDITS INSTALL README docs/
 %dir %attr(755,root,root) %{_sysconfdir}/%{PACKAGE}
 ##%config(noreplace) %attr(644,root,root) %{_sysconfdir}/%{PACKAGE}/hosts.conf
 %config(noreplace) %attr(400,%{nutuser},%{nutuser}) %{_sysconfdir}/%{PACKAGE}/upsmon.conf
