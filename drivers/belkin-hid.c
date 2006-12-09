@@ -387,6 +387,7 @@ static int belkin_claim(HIDDevice *hd) {
 	case 0x0900:  /* F6C900-UNV */
 	case 0x0912:  /* F6C120-UNV */
 	case 0x0551:  /* F6C550-AVR */
+	case 0x0751:  /* F6C1500-TW-RK */
 		return 1;
 
 	/* reject any known non-UPS */
