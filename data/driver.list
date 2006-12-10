@@ -49,10 +49,11 @@
 "APC"	"(various)"	"SNMP monitoring card"	"snmp-ups (experimental driver)"
 
 "Belkin"	"Regulator Pro"	"serial"	"belkin"
-"Belkin"	"Small Enterprise"	"F6C1500-TW-RK"	"belkin"
+"Belkin"	"Small Enterprise"	"F6C1500-TW-RK"	"belkin (serial driver)"
+"Belkin"	"Small Enterprise"	"F6C1500-TW-RK"	"newhidups (USB driver)"
 "Belkin"	"Resource"	""		"genericups upstype=4"
 "Belkin"	"Home Office"	"F6H350-SER, F6H500-SER, F6H650-SER"	"genericups upstype=7"
-"Belkin"	"Universal UPS" "F6C800-UNV, F6C120-UNV, F6C1100-UNV"	"belkinunv"
+"Belkin"	"Universal UPS" "F6C800-UNV, F6C120-UNV, F6C1100-UNV"	"belkinunv (serial driver)"
 "Belkin"	"Universal UPS" "F6C800-UNV, F6C120-UNV, F6C1100-UNV"	"newhidups (USB driver)"
 "Belkin"	"Universal UPS"	"F6H500ukUNV"	"megatec"
 "Belkin"	"Office Series"	"F6C550-AVR"	"newhidups (USB driver)"
