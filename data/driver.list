@@ -67,7 +67,7 @@
 "Best Power"	"Micro-Ferrups"		""	"bestuferrups"
 "Best Power"	"Fortress/Ferrups"	"f-command support"	"bestfcom"
 
-"Centralion"	"Blazer"		""	"megatec or blazer"
+"Centralion"	"Blazer"		""	"megatec"
 
 "Clary"		"ST-800"		""	"gamatronic"
 
@@ -100,13 +100,13 @@
 
 "Dynex"		"975AVR"		""	"genericups upstype=7"
 
-"Effekta"	"MI/MT/MH"	"2502 cable"	"megatec or fentonups"
+"Effekta"	"MI/MT/MH"	"2502 cable"	"megatec"
 
 "Eltek"		"any with AL175 alarm module"	""	"al175"
 
 "Energizer"	"(various)"	"USB"		"energizerups (experimental USB driver for Linux")
 
-"Energy Sistem"	"(various)"	""	"megatec or esupssmart"
+"Energy Sistem"	"(various)"	""	"megatec"
 
 "ETA"		"mini+UPS"	"WinNT/Upsoft cable"	"genericups upstype=7"
 "ETA"		"mini+UPS PRO"	"UPS Explorer cable"	"etapro"
@@ -119,9 +119,9 @@
 "Exide"		"NetUPS SE"	""	"genericups upstype=15"
 
 "Fenton Technologies"	"PowerPal"	"P-series"	"safenet"
-"Fenton Technologies"	"PowerPal"	"L-series"	"megatec or fentonups"
-"Fenton Technologies"	"PowerOn"		""	"megatec or fentonups"
-"Fenton Technologies"	"PowerPure"		""	"megatec or fentonups"
+"Fenton Technologies"	"PowerPal"	"L-series"	"megatec"
+"Fenton Technologies"	"PowerOn"		""	"megatec"
+"Fenton Technologies"	"PowerPure"		""	"megatec"
 
 "Fairstone"	"L525/L625/L750"	""	"safenet"
 
@@ -144,16 +144,16 @@
 "HP"		"R3000 XR"	""	"bcmxcp"
 "HP"		"R5500 XR"	""	"bcmxcp"
 
-"INELT"		"Monolith 1000LT"	""	"megatec or fentonups"
+"INELT"		"Monolith 1000LT"	""	"megatec"
 
 "Inform"	"GUARD"	"Line Interactive AP model"	"powercom"
 
-"Infosec"	"iPEL 350"	""	"megatec or esupssmart"
-"Infosec"	"iPEL 500"	""	"megatec or esupssmart"
-"Infosec"	"iPEL 750"	""	"megatec or esupssmart"
-"Infosec"	"iPEL 1000"	""	"megatec or esupssmart"
+"Infosec"	"iPEL 350"	""	"megatec"
+"Infosec"	"iPEL 500"	""	"megatec"
+"Infosec"	"iPEL 750"	""	"megatec"
+"Infosec"	"iPEL 1000"	""	"megatec"
 
-"Ippon"		"(various)"		""	"megatec or ippon"
+"Ippon"		"(various)"		""	"megatec"
 
 "Lestar"	"MD-800E"	""	"megatec"
 
@@ -329,15 +329,15 @@
 
 "Opti-UPS"	"PowerES"	"420E"	"optiups"
 
-"Orvaldi Power Protection"	"various"	"not 400 or 600"	"megatec or fentonups"
+"Orvaldi Power Protection"	"various"	"not 400 or 600"	"megatec"
 
-"Powercom"	"SMK-800A"			""	"megatec or fentonups"
-"Powercom"	"ULT-1000"			""	"megatec or fentonups"
+"Powercom"	"SMK-800A"			""	"megatec"
+"Powercom"	"ULT-1000"			""	"megatec"
 "Powercom"	"Trust 425/625"			""	"powercom"
 "Powercom"	"(various)"			""	"powercom"
 "Powercom"	"Advice Partner/King Pr750"	""	"powercom"
 
-"PowerGuard"	"PG-600"	""	"megatec or fentonups"
+"PowerGuard"	"PG-600"	""	"megatec"
 
 "PowerKinetics"	"9001"		""	"genericups upstype=17"
 
@@ -372,17 +372,18 @@
 "Repotec"	"RPT-800A"	""	"genericups upstype=13"
 "Repotec"	"RPT-162A"	""	"genericups upstype=13"
 
-"SMS (Brazil)"	"Manager III"	""	"megatec or sms"
+"SMS (Brazil)"	"Manager III"	""	"megatec"
 
 "SOLA"	"305"	"cable INT-0025C"	"genericups upstype=7"
 "SOLA"	"325"	""	"bestups"
 "SOLA"	"520"	""	"bestups"
 "SOLA"	"610"	"use ID= in ups.conf"	"bestups"
 "SOLA"	"620"	""	"bestups"
-"SOLA"	"330"	""	"megatec or blazer"
+"SOLA"	"330"	""	"megatec"
 
 "SOLA/BASIC Mexico"	"various"	"ISBMEX protocol"	"isbmex"
 
+"Socomec"	"NeTYS-PE 600VA"	"megatec"
 "Socomec Sicon"	"Egys"	"420 VA"	"powercom"  
 "Socomec Sicon"	"Netvision"	"UPS equipped with Netvision WEB/SNMP card/external box"	"snmp-ups (experimental)" 
 
@@ -393,14 +394,14 @@
 
 "SquareOne Power"	"QP1000"		""	"megatec"
 
-"SuperPower"	"HP360, Hope-550"	""	"megatec or fentonups"
+"SuperPower"	"HP360, Hope-550"	""	"megatec"
 
 "Sweex"		"500/1000"	"smart - shipped with SafeNet"			"safenet"
 "Sweex"		"500/1000"	"contact closure - shipped with UPSmart"	"genericups upstype=7"
 
 "Sweex"		"BC100060 800VA"	""	"megatec"
 
-"Sysgration"	"UPGUARDS Pro650"	""	"megatec or fentonups"
+"Sysgration"	"UPGUARDS Pro650"	""	"megatec"
 
 "Tecnoware"	"Easy Power 1200"	""	"megatec"
 
@@ -419,8 +420,8 @@
 
 "Trust"		"UPS 1000 Management PW-4105"	""	"megatec"
 
-"UNITEK"	"ALPHA 500 IC"		""	"megatec or fentonups"
-"UNITEK"	"Alpha 1000is"		""	"megatec or fentonups"
+"UNITEK"	"ALPHA 500 IC"		""	"megatec"
+"UNITEK"	"Alpha 1000is"		""	"megatec"
 "UNITEK"	"Alpha 500 ipE"		""	"megatec"
 
 "UPSonic"	"LAN Saver 600"		""	"genericups upstype=0"

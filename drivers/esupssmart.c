@@ -646,6 +646,9 @@ void upsdrv_banner(void)
 {
 	printf("Network UPS Tools - Energy Sistems UPS Smart/Advanced UPS driver %s (%s)\n\n",
             DRV_VERSION, UPS_VERSION);
+
+	upslogx(LOG_WARNING, "This driver is obsolete and has been replaced by the \"megatec\""
+	                     " driver. It will be removed somewhere in the near future.");
 }
 
 /********************************************************************

@@ -1,3 +1,12 @@
+Wed Dec 13 01:40:11 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - driver.list: models supported by megatec and another driver are now
+   listed as supported by megatec only
+ - mustek, blazer, fentonups, esupssmart, sms, ippon: added message about
+   the driver being obsolete and planned for removal
+ - mustek, fentonups, sms, ippon: modified manpages stating that the driver
+   is obsolete and planned for removal
+
 Sat Dec  9 01:36:14 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups/hotplug: added productid for Belkin F6C1500-TW-RK (050d/0751)
