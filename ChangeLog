@@ -1,3 +1,7 @@
+Thu Dec 14 19:00:30 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - bcmxcp.c: fixed "&&" vs. "&" issue (bug 304249, reported by Arjen de Korte).
+
 Wed Dec 13 01:40:11 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - driver.list: models supported by megatec and another driver are now
