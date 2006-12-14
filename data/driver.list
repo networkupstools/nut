@@ -48,7 +48,7 @@
 
 "APC"	"(various)"	"SNMP monitoring card"	"snmp-ups (experimental driver)"
 
-"Belkin"	"Regulator Pro"	"serial"	"belkin"
+"Belkin"	"Regulator Pro"	"F6C525-SER, F6C625-SER"	"belkin"
 "Belkin"	"Small Enterprise"	"F6C1500-TW-RK"	"belkin (serial driver)"
 "Belkin"	"Small Enterprise"	"F6C1500-TW-RK"	"newhidups (USB driver)"
 "Belkin"	"Resource"	""		"genericups upstype=4"

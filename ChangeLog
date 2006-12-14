@@ -1,3 +1,7 @@
+Thu Dec 14 19:16:25 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - data/driver.list: added two model numbers for the "belkin" driver. 
+
 Thu Dec 14 19:00:30 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - bcmxcp.c: fixed "&&" vs. "&" issue (bug 304249, reported by Arjen de Korte).
