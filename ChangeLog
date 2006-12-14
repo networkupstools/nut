@@ -1,3 +1,7 @@
+Thu Dec 14 19:00:30 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - bcmxcp.c: fixed "&&" vs. "&" issue (bug 304249, reported by Arjen de Korte).
+
 Sat Dec  9 01:36:14 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups/hotplug: added productid for Belkin F6C1500-TW-RK (050d/0751)

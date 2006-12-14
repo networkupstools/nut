@@ -1013,7 +1013,7 @@ void upsdrv_updateinfo(void)
 		}
 
 		/* We might have to modify status based on topology status */
-		if (topology & 0x20 && bcmxcp_status.alarm_low_battery == 0)
+		if ((topology & 0x20) && bcmxcp_status.alarm_low_battery == 0)
 			status_set("LB");
 
 		/* And finally, we might need to modify status based on alarms - the most correct way */
@@ -1041,7 +1041,7 @@ void upsdrv_shutdown(void)
 	sleep(1);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
 
 	cbuf[0] = PW_LOAD_OFF_RESTART;
-	cbuf[1] = (unsigned char)(bcmxcp_status.shutdowndelay && 0x00ff);	/* "delay" sec delay for shutdown, */
+	cbuf[1] = (unsigned char)(bcmxcp_status.shutdowndelay & 0x00ff);	/* "delay" sec delay for shutdown, */
 	cbuf[2] = (unsigned char)(bcmxcp_status.shutdowndelay >> 8);		/* hige byte sec. From ups.conf. */
 	
 	res = command_write_sequence(cbuf, 3, answer);
@@ -1099,7 +1099,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		sleep(1);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
 	
 		cbuf[0] = PW_LOAD_OFF_RESTART;
-		cbuf[1] = (unsigned char)(bcmxcp_status.shutdowndelay && 0x00ff);	/* "delay" sec delay for shutdown, */
+		cbuf[1] = (unsigned char)(bcmxcp_status.shutdowndelay & 0x00ff);	/* "delay" sec delay for shutdown, */
 		cbuf[2] = (unsigned char)(bcmxcp_status.shutdowndelay >> 8);		/* hige byte sec. From ups.conf. */
 	
 		res = command_write_sequence(cbuf, 3, answer);
