@@ -1,3 +1,7 @@
+Mon Dec 18 16:03:02 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - include/version*: bump to 2.0.5
+
 Thu Dec 14 19:16:25 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - data/driver.list: added two model numbers for the "belkin" driver. 
