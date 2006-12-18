@@ -1,6 +1,16 @@
 If you're upgrading from an earlier version, see the UPGRADING file.
 
 ---------------------------------------------------------------------------
+Release notes for NUT 2.0.5 - what's new since 2.0.4:
+
+This release is a backport of the development version.
+Many changes have already been backported previously.
+Thus it is more a synchronisation release, though it includes many
+bugfixes and support for new models.
+
+For a complete list of changes, please refer to the Changelog file.
+
+---------------------------------------------------------------------------
 Release notes for NUT 2.0.4 - what's new since 2.0.3:
 
  - The newhidups critical bug (segmentation fault) has been fixed. It has
