@@ -196,8 +196,8 @@ gamatronic.o: gamatronic.c main.h ../include/common.h \
   ../include/version.h ../include/upsconf.h dstate.h \
   ../include/attribute.h ../include/parseconf.h ../include/upshandler.h \
   ../include/extstate.h serial.h ../include/config.h gamatronic.h
-generic-hid.o: generic-hid.c newhidups.h ../include/config.h libhid.h \
-  hidtypes.h ../include/timehead.h generic-hid.h ../include/extstate.h \
+explore-hid.o: explore-hid.c newhidups.h ../include/config.h libhid.h \
+  hidtypes.h ../include/timehead.h explore-hid.h ../include/extstate.h \
   dstate.h ../include/attribute.h ../include/parseconf.h \
   ../include/upshandler.h ../include/common.h ../include/attribute.h \
   ../include/config.h ../include/proto.h ../include/version.h main.h \
@@ -285,7 +285,7 @@ newhidups.o: newhidups.c main.h ../include/common.h \
   ../include/version.h ../include/upsconf.h dstate.h \
   ../include/attribute.h ../include/parseconf.h ../include/upshandler.h \
   ../include/extstate.h libhid.h ../include/config.h hidtypes.h \
-  ../include/timehead.h newhidups.h libusb.h mge-hid.h generic-hid.h \
+  ../include/timehead.h newhidups.h libusb.h mge-hid.h explore-hid.h \
   apc-hid.h belkin-hid.h tripplite-hid.h
 nitram.o: nitram.c main.h ../include/common.h ../include/attribute.h \
   ../include/config.h ../include/proto.h ../include/version.h \

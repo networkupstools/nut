@@ -33,7 +33,7 @@
 /* include all known subdrivers */
 #include "mge-hid.h"
 #ifndef SHUT_MODE
-	#include "generic-hid.h"
+	#include "explore-hid.h"
 	#include "apc-hid.h"
 	#include "belkin-hid.h"
 	#include "tripplite-hid.h"
@@ -42,7 +42,7 @@
 /* master list of avaiable subdrivers */
 static subdriver_t *subdriver_list[] = {
 #ifndef SHUT_MODE
-	&generic_subdriver,
+	&explore_subdriver,
 #endif
 	&mge_subdriver,
 #ifndef SHUT_MODE
@@ -515,7 +515,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "vendorid", "Regular expression to match UPS Manufacturer numerical ID (4 digits hexadecimal)");
 	addvar(VAR_VALUE, "productid", "Regular expression to match UPS Product numerical ID (4 digits hexadecimal)");
 	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
-	addvar(VAR_FLAG, "generic", "Match unsupported UPS");
+	addvar(VAR_FLAG, "explore", "Diagnostic matching of unsupported UPS");
 #endif
 }
 
@@ -678,9 +678,9 @@ void upsdrv_initups(void)
 	int r;
 	char *regex_array[6];
 
-	/* enforce use of the "vendorid" option if "generic" is given */
-	if (testvar("generic") && getval("vendorid")==NULL) {
-		fatalx("must specify \"vendorid\" when using \"generic\"");
+	/* enforce use of the "vendorid" option if "explore" is given */
+	if (testvar("explore") && getval("vendorid")==NULL) {
+		fatalx("must specify \"vendorid\" when using \"explore\"");
 	}
 
         /* process the UPS selection options */

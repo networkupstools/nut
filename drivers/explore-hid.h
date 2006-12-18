@@ -1,4 +1,4 @@
-/*  generic-hid.h - this is a "stub" subdriver used to collect data
+/*  explore-hid.h - this is a "stub" subdriver used to collect data
  *  about HID UPS systems that are not yet supported.
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -18,11 +18,11 @@
  *
  */
 
-#ifndef GENERIC_HID_H
-#define GENERIC_HID_H
+#ifndef EXPLORE_HID_H
+#define EXPLORE_HID_H
 
 #include "newhidups.h"
 
-extern subdriver_t generic_subdriver;
+extern subdriver_t explore_subdriver;
 
-#endif /* GENERIC_HID_H */
+#endif /* EXPLORE_HID_H */

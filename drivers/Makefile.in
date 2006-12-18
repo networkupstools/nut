@@ -91,7 +91,7 @@ energizerups.o:
 # ==========================================================================
 # Special case: newhidups driver - development version
 
-NEWHIDUPS_SUBDRIVERS = generic-hid.o mge-hid.o apc-hid.o belkin-hid.o \
+NEWHIDUPS_SUBDRIVERS = explore-hid.o mge-hid.o apc-hid.o belkin-hid.o \
   tripplite-hid.o
 
 newhidups: newhidups.o main.o dstate.o ../common/state.o \

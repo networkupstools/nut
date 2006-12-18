@@ -22,7 +22,7 @@ At the present time, newhidups supports:
 
 For a more complete list, refer to the NUT hardware compatibility list,
 available in the source distribution as data/drivers.list, or on the
-NUT website. You may use the "generic" driver option to gather
+NUT website. You may use the "explore" driver option to gather
 information from HID UPSes which are not yet supported; see below for
 details.
 
@@ -74,7 +74,7 @@ Select a UPS on a specific USB bus or group of busses. The argument is
 a regular expression that must match the bus name where the UPS is
 connected (e.g. bus="002", bus="00[2-3]"). 
 
-.IP "generic"
+.IP "explore"
 With this option, the driver will connect to any device, including
 ones that are not yet supported. This must always be combined with the
 "vendorid" option. In this mode, the driver will not do anything

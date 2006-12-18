@@ -125,7 +125,7 @@ Writing a subdriver
 In preparation for writing a subdriver for a device that is currently
 unsupported, run newhidups with the following command line:
 
- drivers/newhidups -DD -u root -x generic -x vendorid=XXXX auto
+ drivers/newhidups -DD -u root -x explore -x vendorid=XXXX auto
 
 (substitute your device's 4-digit VendorID instead of "XXXX"). 
 This will produce a bunch of debugging information, including a number 
@@ -133,7 +133,7 @@ of lines starting with "Path:" that describe the device's usage tree.
 This information forms the initial basis for a new subdriver. 
 
 You should save this information to a file, e.g. 
- drivers/newhidups -DD -u root -x generic -x vendorid=XXXX auto >& /tmp/info
+ drivers/newhidups -DD -u root -x explore -x vendorid=XXXX auto >& /tmp/info
 
 You can create an initial "stub" subdriver for your device by using
 script scripts/subdriver/path-to-subdriver.sh. Note: this only creates
