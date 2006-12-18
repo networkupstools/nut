@@ -1,3 +1,7 @@
+Mon Dec 18 17:29:53 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: renamed '-x generic' option as '-x explore'
+
 Thu Dec 14 19:16:25 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - data/driver.list: added two model numbers for the "belkin" driver. 

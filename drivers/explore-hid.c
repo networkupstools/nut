@@ -1,7 +1,7 @@
-/*  generic-hid.c - this is a "stub" subdriver used to collect data
+/*  explore-hid.c - this is a "stub" subdriver used to collect data
  *  about HID UPS systems that are not yet supported.
  *
- *  This subdriver will match any UPS, but only if the "-x generic" option
+ *  This subdriver will match any UPS, but only if the "-x explore" option
  *  is given.
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -22,15 +22,15 @@
  */
 
 #include "newhidups.h"
-#include "generic-hid.h"
+#include "explore-hid.h"
 #include "extstate.h" /* for ST_FLAG_STRING */
 #include "dstate.h"   /* for STAT_INSTCMD_HANDLED */
 #include "common.h"
 #include "main.h"
 
-#define GENERIC_HID_VERSION	"GENERIC HID 0.1"
+#define EXPLORE_HID_VERSION	"EXPLORE HID 0.1"
 
-static usage_tables_t generic_utab[] = {
+static usage_tables_t explore_utab[] = {
 	hid_usage_lkp,
 	NULL,
 };
@@ -39,53 +39,53 @@ static usage_tables_t generic_utab[] = {
 /*                 Data lookup table (HID <-> NUT)                 */
 /* --------------------------------------------------------------- */
 
-static hid_info_t generic_hid2nut[] =
+static hid_info_t explore_hid2nut[] =
 {
   /* Server side variables */
   { "driver.version.internal", ST_FLAG_STRING, 5, NULL, NULL,
     DRIVER_VERSION, HU_FLAG_ABSENT | HU_FLAG_OK, NULL },
   { "driver.version.data", ST_FLAG_STRING, 11, NULL, NULL,
-    GENERIC_HID_VERSION, HU_FLAG_ABSENT | HU_FLAG_OK, NULL },
+    EXPLORE_HID_VERSION, HU_FLAG_ABSENT | HU_FLAG_OK, NULL },
 
   /* end of structure. */
   { NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
 };
 
-/* shutdown method for GENERIC - unimplemented */
-static int generic_shutdown(int ondelay, int offdelay) {
+/* shutdown method for EXPLORE - unimplemented */
+static int explore_shutdown(int ondelay, int offdelay) {
 	upsdebugx(2, "Shutoff command not supported for this subdriver");
 	return 0;
 }
 
-static char *generic_format_model(HIDDevice *hd) {
+static char *explore_format_model(HIDDevice *hd) {
 	return hd->Product;
 }
 
-static char *generic_format_mfr(HIDDevice *hd) {
+static char *explore_format_mfr(HIDDevice *hd) {
 	return hd->Vendor;
 }
 
-static char *generic_format_serial(HIDDevice *hd) {
+static char *explore_format_serial(HIDDevice *hd) {
 	return hd->Serial;
 }
 
 /* this function allows the subdriver to "claim" a device: return 1 if
  * the device is supported by this subdriver, else 0. */
-static int generic_claim(HIDDevice *hd) {
-        if (testvar("generic")) {
+static int explore_claim(HIDDevice *hd) {
+        if (testvar("explore")) {
                 return 1;
         } else {
                 return 0;
         }
 }
 
-subdriver_t generic_subdriver = {
-	GENERIC_HID_VERSION,
-	generic_claim,
-	generic_utab,
-	generic_hid2nut,
-	generic_shutdown,
-	generic_format_model,
-	generic_format_mfr,
-	generic_format_serial,
+subdriver_t explore_subdriver = {
+	EXPLORE_HID_VERSION,
+	explore_claim,
+	explore_utab,
+	explore_hid2nut,
+	explore_shutdown,
+	explore_format_model,
+	explore_format_mfr,
+	explore_format_serial,
 };
