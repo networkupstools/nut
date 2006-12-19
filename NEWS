@@ -16,6 +16,7 @@ Release notes for NUT 2.0.5 - what's new since 2.0.4:
    SMART550USB, SMART2200RMXL2U, OMNI1000LCD, OMNI900LCD, OMNI650LCD,
    1500 LCD, AVR550U; Viewsonic PowerES 420E.
  - bcmxcp: added 3-phase support
+ - megatec: better hardware support, more instant commands
  - mge-hid: support more instant commands
  - newhidups: fixed APC and Tripp Lite bugs, various memory bugs,
    improved report buffering, improved Solaris support, added

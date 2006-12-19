@@ -355,7 +355,10 @@ void upsdrv_banner(void)
 {
 	printf("Network UPS Tools - SMS UPS driver %s (%s)\n", 
 		DRV_VERSION, UPS_VERSION);
-        printf("by Marcio Gomes at Microlink - tecnica@microlink.com.br\n\n");
+	printf("by Marcio Gomes at Microlink - tecnica@microlink.com.br\n\n");
+
+	upslogx(LOG_WARNING, "This driver is obsolete and has been replaced by the \"megatec\""
+	                     " driver. It will be removed somewhere in the near future.");
 }
 
 void upsdrv_initups(void)

@@ -1,5 +1,5 @@
 /* -*- mode: c; c-basic-offset: 8; indent-tabs-mode: t; -*-
- * 
+ *
  * megatec.c: support for Megatec protocol based UPSes
  *
  * Copyright (C) Carlos Rodrigues <carlos.efr at mail.telepac.pt>
@@ -64,41 +64,7 @@
 #define FL_UPS_TYPE   4
 #define FL_BATT_TEST  5
 #define FL_LOAD_OFF   6
-#define FL_BEEPER_ON  7  /* seemingly not used */
-
-/*
- * Battery voltage limits
- */
-
-/* Values obtained from a "Mustek PowerMust 600VA Plus" (12V). */
-#define BATT_MIN_12V 9.7   /* Estimate by looking at Commander Pro */
-#define BATT_MAX_12V 13.7
-
-/* Values obtained from a "Mustek PowerMust 1000VA Plus" (24V). */
-#define BATT_MIN_24V 19.4  /* Estimate from LB at 22.2V (using same factor as 12V models) */
-#define BATT_MAX_24V 27.4
-
-/* Values obtained from a "PowerWalker Line-Interactive VI1000" (24V, 2x12V battery). */
-#define BATT_MIN_2x12V 18.8  /* Estimate from LB at 22.3V (using same factor as 12V models) */
-#define BATT_MAX_2x12V 26.8
-
-/* Values obtained from a "Mustek PowerMust 1000VA On-Line (36V). */
-#define BATT_MIN_36V 1.64  /* Estimate from LB at 1.88V (using same factor as 12V models) */
-#define BATT_MAX_36V 2.31
-
-/* Values obtained from a "Ablerex MS3000RT" (96V). */
-#define BATT_MIN_96V 1.63  /* Estimate from LB at 1.8V with 25% charge */
-#define BATT_MAX_96V 2.29
-
-/*
- * For each UPS type, we define an upper bound (battery)
- * voltage that we know can _never_ be seen .
- */
-#define UPPER_BOUND_12V   16
-#define UPPER_BOUND 24V   30
-#define UPPER_BOUND_2x12V 30
-#define UPPER_BOUND_36V   3
-#define UPPER_BOUND_96V   3
+#define FL_BEEPER_ON  7  /* bogus on some models */
 
 /* Maximum lengths for the "I" command reply fields */
 #define UPS_MFR_CHARS     15
@@ -136,29 +102,50 @@ typedef struct {
 } QueryValues;
 
 
+/* Parameters for known battery types */
+typedef struct {
+	int nominal;  /* battery voltage (nominal) */
+	float min;    /* lower bound for a single battery of "nominal" voltage (see "set_battery_params" below) */
+	float max;    /* upper bound for a single battery of "nominal" voltage (see "set_battery_params" below) */
+	float empty;  /* fully discharged battery */
+	float full;   /* fully charged battery */
+} BatteryVolts;
+
+
+/* Known battery types must be in ascending order by "nominal" first, and then by "max". */
+static BatteryVolts batteries[] = {{ 12,  9.0, 16.0,  9.7, 13.7 },   /* Mustek PowerMust 600VA Plus */
+                                   { 12, 18.0, 30.0, 18.8, 26.8 },   /* PowerWalker Line-Interactive VI 1000 (LB at 22.3V) */
+                                   { 24, 18.0, 30.0, 19.4, 27.4 },   /* Mustek PowerMust 1000VA Plus (LB at 22.2V) */
+                                   { 36,  1.5,  3.0, 1.64, 2.31 },   /* Mustek PowerMust 1000VA On-Line (LB at 1.88V) */
+                                   { 96,  1.5,  3.0, 1.63, 2.29 },   /* Ablerex MS3000RT (LB at 1.8V, 25% charge) */
+                                   {  0,  0.0,  0.0,  0.0,  0.0 }};  /* END OF DATA */
+
 /* Defined in upsdrv_initinfo */
-static float battvolt_min;
-static float battvolt_max;
+static float battvolt_empty = -1;  /* unknown */
+static float battvolt_full = -1;   /* unknown */
 
 /* Minimum and maximum voltage seen on input */
-static float ivolt_min = INT_MAX;
-static float ivolt_max = -1;
+static float ivolt_min = INT_MAX;  /* unknown */
+static float ivolt_max = -1;       /* unknown */
 
 /* In minutes: */
-static short start_delay = 3;     /* wait this amount of time to come back online */
-static short shutdown_delay = 2;  /* wait until going offline */
+static short start_delay = 2;     /* wait this amount of time to come back online */
+static short shutdown_delay = 0;  /* wait until going offline */
 
 /* In percentage: */
-static float lowbatt = 0;  /* disabled */
+static float lowbatt = -1;  /* disabled */
+
+static char watchdog_enabled = 0;  /* disabled by default, of course */
+static char watchdog_timeout = 1;  /* in minutes */
 
 
-static float batt_charge_pct(float battvolt);
-static int check_ups(void);
 static char *copy_field(char* dest, char *src, int field_len);
+static float get_battery_charge(float battvolt);
+static int set_battery_params(float volt_nominal, float volt_now);
+static int check_ups(void);
 static int get_ups_info(UPSInfo *info);
 static int get_firmware_values(FirmwareValues *values);
 static int run_query(QueryValues *values);
-static void set_battery_params(float volt_nominal, float volt_now);
 
 int instcmd(const char *cmdname, const char *extra);
 int setvar(const char *varname, const char *val);
@@ -166,46 +153,6 @@ int setvar(const char *varname, const char *val);
 
 /* I know, macros should evaluate their arguments only once */
 #define CLAMP(x, min, max) (((x) < (min)) ? (min) : (((x) > (max)) ? (max) : (x)))
-
-
-static float batt_charge_pct(float battvolt)
-{
-	float value;
-
-	battvolt = CLAMP(battvolt, battvolt_min, battvolt_max);
-	value = (battvolt - battvolt_min) / (battvolt_max - battvolt_min);
-
-	return value * 100;
-}
-
-
-static int check_ups(void)
-{
-	char buffer[RECV_BUFFER_LEN];
-	int ret;
-
-	upsdebugx(2, "Sending \"F\" command...");
-	ser_send_pace(upsfd, SEND_PACE, "F%c", ENDCHAR);
-	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
-	if (ret < F_CMD_REPLY_LEN) {
-		upsdebugx(2, "Wrong answer to \"F\" command.");
-
-		return -1;
-	}
-	upsdebugx(2, "\"F\" command successful.");
-
-	upsdebugx(2, "Sending \"Q1\" command...");
-	ser_send_pace(upsfd, SEND_PACE, "Q1%c", ENDCHAR);
-	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
-	if (ret < Q1_CMD_REPLY_LEN) {
-		upsdebugx(2, "Wrong answer to \"Q1\" command.");
-
-		return -1;
-	}
-	upsdebugx(2, "\"Q1\" command successful.");
-
-	return 0;
-}
 
 
 static char *copy_field(char* dest, char *src, int field_len)
@@ -223,16 +170,93 @@ static char *copy_field(char* dest, char *src, int field_len)
 	j = 0;
 	while (i < field_len) {
 		dest[j] = src[i];
-		
+
 		i++; j++;
 	}
-	
+
 	dest[j] = '\0';
 
 	/* ...and finally, remove the trailing spaces. */
 	rtrim(dest, ' ');
 
 	return &src[field_len];  /* return the rest of the source buffer */
+}
+
+
+static float get_battery_charge(float battvolt)
+{
+	float value;
+
+	if (battvolt_empty < 0 || battvolt_full < 0) {
+		return -1;
+	}
+
+	battvolt = CLAMP(battvolt, battvolt_empty, battvolt_full);
+	value = (battvolt - battvolt_empty) / (battvolt_full - battvolt_empty);
+
+	return value * 100;  /* percentage */
+}
+
+
+/*
+ * Set the proper limits, depending on the battery voltage,
+ * so that the "charge" calculations return meaningful values.
+ *
+ * This has to be done by looking at the present battery voltage and
+ * the nominal voltage because, for example, some 24V models will
+ * show a nominal voltage of 24, while others will show a nominal
+ * voltage of 12. The present voltage helps telling them apart.
+ */
+static int set_battery_params(float volt_nominal, float volt_now)
+{
+	int i = 0;
+
+	while (batteries[i].nominal > 0) {
+		if (volt_nominal == batteries[i].nominal) {         /* battery voltage matches... */
+			while (volt_nominal == batteries[i].nominal) {  /* ...find the most adequate parameters */
+				if (volt_now > batteries[i].min && volt_now < batteries[i].max) {
+					battvolt_empty = batteries[i].empty;
+					battvolt_full = batteries[i].full;
+
+					upsdebugx(1, "%.1fV battery, interval [%.1fV, %.1fV].", volt_nominal, battvolt_empty, battvolt_full);
+
+					return i;
+				}
+
+				i++;
+
+			}
+
+			upsdebugx(1, "%.1fV battery, present voltage (%.1fV) outside of supported intervals.", volt_nominal, volt_now);
+
+			return -1;
+		}
+
+		i++;
+	}
+
+	upsdebugx(1, "Unsupported battery voltage (%.1fV).", volt_nominal);
+
+	return -1;
+}
+
+
+static int check_ups(void)
+{
+	char buffer[RECV_BUFFER_LEN];
+	int ret;
+
+	upsdebugx(2, "Sending \"Q1\" command...");
+	ser_send_pace(upsfd, SEND_PACE, "Q1%c", ENDCHAR);
+	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
+	if (ret < Q1_CMD_REPLY_LEN) {
+		upsdebugx(2, "Wrong answer to \"Q1\" command.");
+
+		return -1;
+	}
+	upsdebugx(2, "\"Q1\" command successful.");
+
+	return 0;
 }
 
 
@@ -247,7 +271,7 @@ static int get_ups_info(UPSInfo *info)
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 	if (ret < I_CMD_REPLY_LEN) {
 		upsdebugx(1, "UPS doesn't return any information about itself.");
-		
+
 		return -1;
 	}
 
@@ -277,7 +301,7 @@ static int get_firmware_values(FirmwareValues *values)
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 	if (ret < F_CMD_REPLY_LEN) {
 		upsdebugx(1, "UPS doesn't return any information about its power ratings.");
-		
+
 		return -1;
 	}
 
@@ -300,7 +324,7 @@ static int run_query(QueryValues *values)
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 	if (ret < Q1_CMD_REPLY_LEN) {
 		upsdebugx(1, "UPS doesn't return any information about its status.");
-		
+
 		return -1;
 	}
 
@@ -313,68 +337,6 @@ static int run_query(QueryValues *values)
 }
 
 
-/*
- * Set the proper limits, depending on the battery voltage,
- * so that the "charge" calculations return meaningful values.
- *
- * This has to be done by looking at the present battery voltage and
- * the nominal voltage because, for example, some 24V models will
- * show a nominal voltage of 24, while others will show a nominal
- * voltage of 12. The present voltage helps telling them apart.
- */
-static void set_battery_params(float volt_nominal, float volt_now)
-{
-	/* This has to be turned into a table someday... */
-
-	if (volt_nominal == 12.0) {
-		if (volt_now <= UPPER_BOUND_12V) {
-			upsdebugx(1, "This looks like a 12V UPS.");
-			
-			battvolt_min = BATT_MIN_12V;
-			battvolt_max = BATT_MAX_12V;
-			
-			return;
-		}
-
-		if (volt_now <= UPPER_BOUND_2x12V) {
-			upsdebugx(1, "This looks like a 2x12V UPS.");
-
-			battvolt_min = BATT_MIN_2x12V;
-			battvolt_max = BATT_MAX_2x12V;
-			
-			return;
-		}
-	} else if (volt_nominal == 24.0) {
-		upsdebugx(1, "This looks like a 24V UPS.");
-
-		battvolt_min = BATT_MIN_24V;
-		battvolt_max = BATT_MAX_24V;
-		
-		return;
-	} else if (volt_nominal == 36.0) {
-		upsdebugx(1, "This looks like a 36V UPS.");
-
-		battvolt_min = BATT_MIN_96V;
-		battvolt_max = BATT_MAX_96V;
-
-		return;
-	} else if (volt_nominal == 96.0) {
-		upsdebugx(1, "This looks like a 96V UPS.");
-
-		battvolt_min = BATT_MIN_96V;
-		battvolt_max = BATT_MAX_96V;
-
-		return;
-	}
-
-	battvolt_min = 0;
-	battvolt_max = INT_MAX;
-
-	upslogx(LOG_WARNING, "This UPS has an unsupported combination of battery voltage/number of batteries."
-	                     " The \"battery.charge\" value will be bogus.");
-}
-
-
 void upsdrv_initinfo(void)
 {
 	int i;
@@ -383,7 +345,7 @@ void upsdrv_initinfo(void)
 	QueryValues query;
 	UPSInfo info;
 
-	upsdebugx(1, "Starting UPS detection process...");	
+	upsdebugx(1, "Starting UPS detection process...");
 	for (i = 0; i < IDENT_MAXTRIES; i++) {
 		upsdebugx(2, "Attempting to detect the UPS...");
 		if (check_ups() == 0) {
@@ -401,7 +363,7 @@ void upsdrv_initinfo(void)
 			fatalx("Megatec protocol UPS not detected.");
 		}
 	}
-	
+
 	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
 
 	/*
@@ -424,22 +386,33 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("ups.serial", "%s", getval("serial") ? getval("serial") : "unknown");
 
-	if (get_firmware_values(&values) < 0) {
-		fatalx("Error reading firmware values from UPS!");
-	}
+	if (get_firmware_values(&values) >= 0) {
+		dstate_setinfo("output.voltage.nominal", "%.1f", values.volt);
+		dstate_setinfo("battery.voltage.nominal", "%.1f", values.battvolt);
 
-	dstate_setinfo("output.voltage.nominal", "%.1f", values.volt);
-	dstate_setinfo("battery.voltage.nominal", "%.1f", values.battvolt);
+		if (run_query(&query) < 0) {
+			fatalx("Error reading status from UPS!");
+		}
 
-	if (run_query(&query) < 0) {
-		fatalx("Error reading status from UPS!");
+		if (set_battery_params(values.battvolt, query.battvolt) < 0) {
+			upslogx(LOG_NOTICE, "This UPS has an unsupported combination of battery voltage/number of batteries.");
+		}
 	}
-	
-	/* make the charge calculations return meaningful values */
-	set_battery_params(values.battvolt, query.battvolt);
 
 	if (getval("lowbatt")) {
-		lowbatt = CLAMP(atof(getval("lowbatt")), 0, 100);
+		if (battvolt_empty < 0 || battvolt_full < 0) {
+			upslogx(LOG_NOTICE, "Cannot calculate charge percentage for this UPS. Ignoring \"lowbatt\" parameter.");
+		} else {
+			lowbatt = CLAMP(atof(getval("lowbatt")), 0, 100);
+		}
+	}
+
+	if (getval("ondelay")) {
+		start_delay = CLAMP(atoi(getval("ondelay")), 0, MAX_START_DELAY);
+	}
+
+	if (getval("offdelay")) {
+		shutdown_delay = CLAMP(atoi(getval("offdelay")), 0, MAX_SHUTDOWN_DELAY);
 	}
 
 	/*
@@ -456,13 +429,17 @@ void upsdrv_initinfo(void)
 	/*
 	 * Register the available instant commands.
 	 */
+	dstate_addcmd("test.battery.start.deep");
 	dstate_addcmd("test.battery.start");
+	dstate_addcmd("test.battery.stop");
 	dstate_addcmd("shutdown.return");
 	dstate_addcmd("shutdown.stayoff");
 	dstate_addcmd("shutdown.stop");
 	dstate_addcmd("load.on");
 	dstate_addcmd("load.off");
 	dstate_addcmd("reset.input.minmax");
+	dstate_addcmd("reset.watchdog");
+	dstate_addcmd("beeper.toggle");
 
 	upsh.instcmd = instcmd;
 	upsh.setvar = setvar;
@@ -478,7 +455,7 @@ void upsdrv_updateinfo(void)
 {
 	QueryValues query;
 	float charge;
-	
+
 	if (run_query(&query) < 0) {
 		/*
 		 * Query wasn't successful (we got some weird
@@ -501,8 +478,10 @@ void upsdrv_updateinfo(void)
 	dstate_setinfo("battery.voltage", "%.2f", query.battvolt);
 	dstate_setinfo("ups.temperature", "%.1f", query.temp);
 
-	charge = batt_charge_pct(query.battvolt);
-	dstate_setinfo("battery.charge", "%.1f", charge);
+	charge = get_battery_charge(query.battvolt);
+	if (charge >= 0) {
+		dstate_setinfo("battery.charge", "%.1f", charge);
+	}
 
 	status_init();
 
@@ -539,6 +518,8 @@ void upsdrv_updateinfo(void)
 
 	status_commit();
 
+	dstate_setinfo("ups.beeper.status", query.flags[FL_BEEPER_ON] == '1' ? "enabled" : "disabled");
+
 	/* Update minimum and maximum input voltage levels only when on line */
 	if (query.flags[FL_ON_BATT] == '0') {
 		if (query.ivolt < ivolt_min) {
@@ -562,23 +543,61 @@ void upsdrv_shutdown(void)
 	upslogx(LOG_INFO, "Shutting down UPS immediately.");
 
 	ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
-	ser_send_pace(upsfd, SEND_PACE, "S00R%04d%c", start_delay, ENDCHAR);
+	ser_send_pace(upsfd, SEND_PACE, "S%02dR%04d%c", shutdown_delay, start_delay, ENDCHAR);
 }
 
 
 int instcmd(const char *cmdname, const char *extra)
 {
+	char buffer[RECV_BUFFER_LEN];
+
+	/*
+	 * Some commands are always supported by every UPS implementing
+	 * the megatec protocol, but others may or may not be supported.
+	 * For these we must check if the UPS returns something, which
+	 * would mean the command is unsupported.
+	 */
+
+	if (strcasecmp(cmdname, "test.battery.start.deep") == 0) {
+		ser_send_pace(upsfd, SEND_PACE, "TL%c", ENDCHAR);
+
+		if (ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0) > 0) {
+			upslogx(LOG_NOTICE, "test.battery.start.deep not supported by UPS.");
+		} else {
+			upslogx(LOG_INFO, "Deep battery test started.");
+		}
+
+		return STAT_INSTCMD_HANDLED;
+	}
+
 	if (strcasecmp(cmdname, "test.battery.start") == 0) {
-		ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
 		ser_send_pace(upsfd, SEND_PACE, "T%c", ENDCHAR);
 
-		upslogx(LOG_INFO, "Start battery test for 10 seconds.");
+		if (ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0) > 0) {
+			upslogx(LOG_NOTICE, "test.battery.start not supported by UPS.");
+		} else {
+			upslogx(LOG_INFO, "Battery test started.");
+		}
+
+		return STAT_INSTCMD_HANDLED;
+	}
+
+	if (strcasecmp(cmdname, "test.battery.stop") == 0) {
+		ser_send_pace(upsfd, SEND_PACE, "CT%c", ENDCHAR);
+
+		if (ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0) > 0) {
+			upslogx(LOG_NOTICE, "test.battery.stop not supported by UPS.");
+		} else {
+			upslogx(LOG_INFO, "Battery test stopped.");
+		}
 
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (strcasecmp(cmdname, "shutdown.return") == 0) {
 		ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
+		watchdog_enabled = 0;
+
 		ser_send_pace(upsfd, SEND_PACE, "S%02dR%04d%c", shutdown_delay, start_delay, ENDCHAR);
 
 		upslogx(LOG_INFO, "Shutdown (return) initiated.");
@@ -588,6 +607,8 @@ int instcmd(const char *cmdname, const char *extra)
 
 	if (strcasecmp(cmdname, "shutdown.stayoff") == 0) {
 		ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
+		watchdog_enabled = 0;
+
 		ser_send_pace(upsfd, SEND_PACE, "S%02dR0000%c", shutdown_delay, ENDCHAR);
 
 		upslogx(LOG_INFO, "Shutdown (stayoff) initiated.");
@@ -597,6 +618,7 @@ int instcmd(const char *cmdname, const char *extra)
 
 	if (strcasecmp(cmdname, "shutdown.stop") == 0) {
 		ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
+		watchdog_enabled = 0;
 
 		upslogx(LOG_INFO, "Shutdown canceled.");
 
@@ -605,6 +627,7 @@ int instcmd(const char *cmdname, const char *extra)
 
 	if (strcasecmp(cmdname, "load.on") == 0) {
 		ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
+		watchdog_enabled = 0;
 
 		upslogx(LOG_INFO, "Turning load on.");
 
@@ -613,6 +636,8 @@ int instcmd(const char *cmdname, const char *extra)
 
 	if (strcasecmp(cmdname, "load.off") == 0) {
 		ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
+		watchdog_enabled = 0;
+
 		ser_send_pace(upsfd, SEND_PACE, "S00R0000%c", ENDCHAR);
 
 		upslogx(LOG_INFO, "Turning load off.");
@@ -632,6 +657,28 @@ int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
+	if (strcasecmp(cmdname, "reset.watchdog") == 0) {
+		ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
+		ser_send_pace(upsfd, SEND_PACE, "S%02dR0001%c", watchdog_timeout, ENDCHAR);
+
+		if (watchdog_enabled) {
+			upsdebugx(2, "Resetting the UPS watchdog.");
+		} else {
+			watchdog_enabled = 1;
+			upslogx(LOG_INFO, "UPS watchdog started.");
+		}
+
+		return STAT_INSTCMD_HANDLED;
+	}
+
+	if (strcasecmp(cmdname, "beeper.toggle") == 0) {
+		ser_send_pace(upsfd, SEND_PACE, "Q%c", ENDCHAR);
+
+		upslogx(LOG_INFO, "Toggling UPS beeper.");
+
+		return STAT_INSTCMD_HANDLED;
+	}
+
 	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
 
 	return STAT_INSTCMD_UNKNOWN;
@@ -646,7 +693,7 @@ int setvar(const char *varname, const char *val)
 		return STAT_SET_UNKNOWN;
 	}
 
-	if (strcasecmp(varname, "ups.delay.start") == 0) {    
+	if (strcasecmp(varname, "ups.delay.start") == 0) {
 		delay = CLAMP(delay, 0, MAX_START_DELAY);
 		start_delay = delay;
 		dstate_setinfo("ups.delay.start", "%d", delay);
@@ -681,6 +728,8 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "model", "Model name");
 	addvar(VAR_VALUE, "serial", "UPS serial number");
 	addvar(VAR_VALUE, "lowbatt", "Low battery level (%)");
+	addvar(VAR_VALUE, "ondelay", "Delay before UPS startup (minutes)");
+	addvar(VAR_VALUE, "offdelay", "Delay before UPS shutdown (minutes)");
 }
 
 

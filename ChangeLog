@@ -1,3 +1,11 @@
+Tue Dec 19 03:13:34 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - megatec: backported version 1.5 from the trunk
+ - driver.list: esupssmart, blazer, fentonups, mustek, ippon and sms entries
+   replaced by megatec
+ - Added a notice about megatec on both the drivers obsoleted by it and their
+   respective manpages.
+
 Mon Dec 18 17:29:53 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups: renamed '-x generic' option as '-x explore'
