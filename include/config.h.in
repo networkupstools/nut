@@ -165,10 +165,10 @@
 /* User to switch to if started as root */
 #undef RUN_AS_USER
 
-/* The size of a `unsigned char', as computed by sizeof. */
+/* The size of `unsigned char', as computed by sizeof. */
 #undef SIZEOF_UNSIGNED_CHAR
 
-/* The size of a `unsigned short', as computed by sizeof. */
+/* The size of `unsigned short', as computed by sizeof. */
 #undef SIZEOF_UNSIGNED_SHORT
 
 /* Path for UPS driver state files */
