@@ -1,5 +1,5 @@
 /* -*- mode: c; c-basic-offset: 8; indent-tabs-mode: t; -*-
- * 
+ *
  * megatec.c: support for Megatec protocol based UPSes
  *
  * Copyright (C) Carlos Rodrigues <carlos.efr at mail.telepac.pt>
@@ -118,7 +118,7 @@ static BatteryVolts batteries[] = {{ 12,  9.0, 16.0,  9.7, 13.7 },   /* Mustek P
                                    { 24, 18.0, 30.0, 19.4, 27.4 },   /* Mustek PowerMust 1000VA Plus (LB at 22.2V) */
                                    { 36,  1.5,  3.0, 1.64, 2.31 },   /* Mustek PowerMust 1000VA On-Line (LB at 1.88V) */
                                    { 96,  1.5,  3.0, 1.63, 2.29 },   /* Ablerex MS3000RT (LB at 1.8V, 25% charge) */
-                                   {  0,    0,    0,    0,    0 }};  /* END OF DATA */
+                                   {  0,  0.0,  0.0,  0.0,  0.0 }};  /* END OF DATA */
 
 /* Defined in upsdrv_initinfo */
 static float battvolt_empty = -1;  /* unknown */
@@ -133,7 +133,7 @@ static short start_delay = 2;     /* wait this amount of time to come back onlin
 static short shutdown_delay = 0;  /* wait until going offline */
 
 /* In percentage: */
-static float lowbatt = 0;  /* disabled */
+static float lowbatt = -1;  /* disabled */
 
 static char watchdog_enabled = 0;  /* disabled by default, of course */
 static char watchdog_timeout = 1;  /* in minutes */
@@ -170,10 +170,10 @@ static char *copy_field(char* dest, char *src, int field_len)
 	j = 0;
 	while (i < field_len) {
 		dest[j] = src[i];
-		
+
 		i++; j++;
 	}
-	
+
 	dest[j] = '\0';
 
 	/* ...and finally, remove the trailing spaces. */
@@ -217,21 +217,21 @@ static int set_battery_params(float volt_nominal, float volt_now)
 				if (volt_now > batteries[i].min && volt_now < batteries[i].max) {
 					battvolt_empty = batteries[i].empty;
 					battvolt_full = batteries[i].full;
-					
+
 					upsdebugx(1, "%.1fV battery, interval [%.1fV, %.1fV].", volt_nominal, battvolt_empty, battvolt_full);
-					
+
 					return i;
 				}
-				
+
 				i++;
-				
+
 			}
 
 			upsdebugx(1, "%.1fV battery, present voltage (%.1fV) outside of supported intervals.", volt_nominal, volt_now);
-			
+
 			return -1;
 		}
-		
+
 		i++;
 	}
 
@@ -271,7 +271,7 @@ static int get_ups_info(UPSInfo *info)
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 	if (ret < I_CMD_REPLY_LEN) {
 		upsdebugx(1, "UPS doesn't return any information about itself.");
-		
+
 		return -1;
 	}
 
@@ -299,7 +299,7 @@ static int get_firmware_values(FirmwareValues *values)
 	upsdebugx(1, "Asking for UPS power ratings (\"F\" command)...");
 	ser_send_pace(upsfd, SEND_PACE, "F%c", ENDCHAR);
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
-	if (ret < F_CMD_REPLY_LEN) {		
+	if (ret < F_CMD_REPLY_LEN) {
 		upsdebugx(1, "UPS doesn't return any information about its power ratings.");
 
 		return -1;
@@ -324,7 +324,7 @@ static int run_query(QueryValues *values)
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 	if (ret < Q1_CMD_REPLY_LEN) {
 		upsdebugx(1, "UPS doesn't return any information about its status.");
-		
+
 		return -1;
 	}
 
@@ -345,7 +345,7 @@ void upsdrv_initinfo(void)
 	QueryValues query;
 	UPSInfo info;
 
-	upsdebugx(1, "Starting UPS detection process...");	
+	upsdebugx(1, "Starting UPS detection process...");
 	for (i = 0; i < IDENT_MAXTRIES; i++) {
 		upsdebugx(2, "Attempting to detect the UPS...");
 		if (check_ups() == 0) {
@@ -363,7 +363,7 @@ void upsdrv_initinfo(void)
 			fatalx("Megatec protocol UPS not detected.");
 		}
 	}
-	
+
 	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
 
 	/*
@@ -393,14 +393,18 @@ void upsdrv_initinfo(void)
 		if (run_query(&query) < 0) {
 			fatalx("Error reading status from UPS!");
 		}
-		
+
 		if (set_battery_params(values.battvolt, query.battvolt) < 0) {
 			upslogx(LOG_NOTICE, "This UPS has an unsupported combination of battery voltage/number of batteries.");
 		}
 	}
 
 	if (getval("lowbatt")) {
-		lowbatt = CLAMP(atof(getval("lowbatt")), 0, 100);
+		if (battvolt_empty < 0 || battvolt_full < 0) {
+			upslogx(LOG_NOTICE, "Cannot calculate charge percentage for this UPS. Ignoring \"lowbatt\" parameter.");
+		} else {
+			lowbatt = CLAMP(atof(getval("lowbatt")), 0, 100);
+		}
 	}
 
 	if (getval("ondelay")) {
@@ -546,7 +550,7 @@ void upsdrv_shutdown(void)
 int instcmd(const char *cmdname, const char *extra)
 {
 	char buffer[RECV_BUFFER_LEN];
-	
+
 	/*
 	 * Some commands are always supported by every UPS implementing
 	 * the megatec protocol, but others may or may not be supported.
@@ -689,7 +693,7 @@ int setvar(const char *varname, const char *val)
 		return STAT_SET_UNKNOWN;
 	}
 
-	if (strcasecmp(varname, "ups.delay.start") == 0) {    
+	if (strcasecmp(varname, "ups.delay.start") == 0) {
 		delay = CLAMP(delay, 0, MAX_START_DELAY);
 		start_delay = delay;
 		dstate_setinfo("ups.delay.start", "%d", delay);

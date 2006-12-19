@@ -1,3 +1,7 @@
+Tue Dec 19 02:50:51 UTC 2006 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - megatec: fixed bug with lowbatt and no charge calculation
+
 Mon Dec 18 17:29:53 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - newhidups: renamed '-x generic' option as '-x explore'
