@@ -1,3 +1,8 @@
+Tue Dec 19 12:02:14 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - include/version*: bump to 2.0.5-pre1, as it should have been.
+ - NEWS: add some blank lines
+
 Tue Dec 19 14:11:36 UTC 2006 / Charles Lepple <clepple@gmail.com>
 
  - Removed 'Doxyfile' that was specific to tripplite_usb.
