@@ -6,9 +6,12 @@ NETLIBS = @NETLIBS@
 SERLIBS = @SERLIBS@
 
 # by default, link programs in this directory with libcommon.a
+#FIXME: SERLIB is only useful for LDADD_DRIVERS_SERIAL not for LDADD_COMMON
 LDADD_COMMON = ../common/libcommon.a $(NETLIBS) $(SERLIBS)
 LDADD_DRIVERS = $(LDADD_COMMON) ../common/upsconf.o	\
  ../common/parseconf.o ../common/state.o main.o dstate.o
+LDADD_HAL_DRIVERS = $(LDADD_COMMON) ../common/upsconf.o	\
+ ../common/parseconf.o main-hal.o dstate-hal.o
 LDADD_DRIVERS_SERIAL = $(LDADD_DRIVERS) serial.o
 
 # most targets are drivers, so make this the default
@@ -25,6 +28,7 @@ SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = newhidups bcmxcp_usb tripplite_usb
 USB_HIDDEV_DRIVERLIST = hidups energizerups
 USB_DRIVERLIST = $(USB_LIBUSB_DRIVERLIST) $(USB_HIDDEV_DRIVERLIST)
+HAL_DRIVERLIST = hald-addon-usbhid-ups hald-addon-bcmxcp_usb hald-addon-tripplite_usb
 
 # distribute all drivers, even ones that are not built by default
 EXTRA_PROGRAMS = $(SERIAL_DRIVERLIST) $(SNMP_DRIVERLIST) $(USB_DRIVERLIST)
@@ -47,6 +51,9 @@ endif
 if HAVE_HIDDEV
    driverexec_PROGRAMS += $(USB_HIDDEV_DRIVERLIST)
 endif
+endif
+if WITH_HAL
+   driverexec_PROGRAMS += $(HAL_DRIVERLIST)
 endif
 endif
 
@@ -114,8 +121,10 @@ skel_SOURCES = skel.c
 skel_LDADD = $(LDADD_DRIVERS)
 
 # USB
+NEWHIDUPS_SUBDRIVERS = apc-hid.c belkin-hid.c explore-hid.c \
+ mge-hid.c tripplite-hid.c
 newhidups_SOURCES = newhidups.c libhid.c libusb.c hidparser.c	\
- explore-hid.c mge-hid.c apc-hid.c belkin-hid.c tripplite-hid.c
+ $(NEWHIDUPS_SUBDRIVERS)
 newhidups_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
 newhidups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
 
@@ -133,16 +142,29 @@ bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c nut_usb.c
 bcmxcp_usb_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
 bcmxcp_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
 
-# USB-over-serial
+# HID-over-serial
 newmge_shut_SOURCES = newhidups.c libshut.c libhid.c hidparser.c mge-hid.c
 newmge_shut_CFLAGS = $(AM_CFLAGS) -DSHUT_MODE
-#newmge_shut_LDADD = $(LDADD) $(LIBUSB_LIBS)
 newmge_shut_LDADD = $(LDADD)
 
 # SNMP
 snmp_ups_SOURCES = snmp-ups.c
 snmp_ups_CFLAGS = $(AM_CFLAGS) $(NETSNMP_CFLAGS)
 snmp_ups_LDADD = $(LDADD_DRIVERS) $(NETSNMP_LIBS)
+
+# HAL
+hald_addon_usbhid_ups_SOURCES = newhidups.c libhid.c libusb.c hidparser.c	\
+ $(NEWHIDUPS_SUBDRIVERS)
+hald_addon_usbhid_ups_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS) $(LIBHAL_CFLAGS)
+hald_addon_usbhid_ups_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS)
+
+hald_addon_tripplite_usb_SOURCES = tripplite_usb.c libhid.c libusb.c hidparser.c
+hald_addon_tripplite_usb_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS) $(LIBHAL_CFLAGS)
+hald_addon_tripplite_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS) -lm
+
+hald_addon_bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c nut_usb.c
+hald_addon_bcmxcp_usb_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS) $(LIBHAL_CFLAGS)
+hald_addon_bcmxcp_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS)
 
 # ----------------------------------------------------------------------
 # List of header files. The purpose of this list is not dependency
@@ -154,7 +176,7 @@ dist_noinst_HEADERS = al175.h apccmib.h apc-hid.h apcsmart.h bcmxcp.h	\
  bestuferrups.h bestups.h blazer.h cpsups.h cyberpower.h dstate.h	\
  dummy-ups.h esupssmart.h etapro.h everups.h fentonups.h gamatronic.h	\
  explore-hid.h genericups.h hidparser.h hidtypes.h hidups.h ietfmib.h	\
- ippon.h isbmex.h libhid.h libshut.h libusb.h liebert.h main.h		\
+ ippon.h isbmex.h libhid.h libshut.h libusb.h liebert.h main.h	main-hal.h	\
  masterguard.h megatec.h metasys.h mge-hid.h mgemib.h mge-shut.h	\
  mge-utalk.h mustek.h netvisionmib.h newhidups.h nitram.h nut_usb.h	\
  oneac.h optiups.h powercom.h pwmib.h safenet.h serial.h sms.h		\
@@ -163,8 +185,10 @@ dist_noinst_HEADERS = al175.h apccmib.h apc-hid.h apcsmart.h bcmxcp.h	\
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,
-EXTRA_LIBRARIES = libdummy.a
+EXTRA_LIBRARIES = libdummy.a libdummy-hal.a
 libdummy_a_SOURCES = main.c dstate.c serial.c
+libdummy_hal_a_SOURCES = main-hal.c dstate-hal.c
+libdummy_hal_a_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS) $(LIBHAL_CFLAGS)
 
 EXTRA_DIST = Doxyfile
 

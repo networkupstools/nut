@@ -1,0 +1,82 @@
+Desc: NUT integration with FreeDesktop HAL - Hardware Abstraction Layer
+File: nut-hal.txt
+Date: 22 December 2006
+Auth: Arnaud Quette <aquette.dev@gmail.com>
+
+This document introduces NUT integration with FreeDesktop HAL
+(Hardware Abstraction Layer).
+
+This feature is sponsored by MGE UPS SYSTEMS.
+
+Introduction
+------------
+
+This feature, also known as the Common Power Management integration,
+allows NUT drivers to feed the HAL system, which will itself feeds
+applications such as the Gnome Power Manager, in charge of the
+system protection and notification.
+
+This allows a better integration with the HAL supported systems
+(Linux, *BSD and Solaris), and to reuse applications that have
+been written to support laptop batteries. This also means that
+we avoid the code/application redundancy by not using the upsd
+and upsmon / NUT Client layer.
+
+Since the NUT driver subset is limited to USB only, at least for
+the moment, this should allow this feature to be shipped with a
+base system.
+
+From a user point of view, since all the needed components are
+present on the system, we can achieve a full plug and play system.
+That is to say when you plug your USB UPS, the needed driver is
+automatically loaded and the according application (ie GPM) is
+made available (displayed) at runtime without having to install
+anything else than the base system.
+
+Detailled usage
+---------------
+
+Since this feature is still a work in progress, the below information
+details how to get, install and test it.
+
+* svn co svn://svn.debian.org/nut/trunk
+
+* install libhal-dev and its dependancy (libdbus-dev)
+
+* "./configure --with-hal && make" from within the nut dir
+
+* copy the file drivers/hald-addon* to the HAL addons directory (ie
+/usr/lib/hal/ on Debian) or equivalent dir.
+
+* copy the scripts/hal/20-ups-nut-device.fdi file to
+/usr/share/hal/fdi/information/20thirdparty/ (still on Debian) or
+equivalent dir.
+
+******************* To be verified and improved *******************
+* modify your hotplug/udev script so that the HAL user can read and
+write to the usb device (ie /dev/bus/usb/XXX/YYY)
+******************* To be verified and improved *******************
+
+* restart HAL (ie using "/etc/init.d/dbus restart").
+I've personaly used "killall hal" and restarted it using
+"hald --daemon=no --verbose=yes" to see the verbose logs
+
+* You should now see the UPS using:
+- [kde-]hal-device-manager,
+- gnome power manager (standard applet for battery management), which
+will state that there is an UPS
+- 
+- ...
+
+Credits
+-------
+
+Thanks to the following people who made this possible:
+- David Zeuthen, HAL Project Leader,
+- and to Richard Hughes, Gnome Power Manager Developer.
+
+References
+----------
+
+* FreeDesktop HAL: http://freedesktop.org/wiki/Software_2fhal
+* Gnome Power Manager: http://www.gnome.org/projects/gnome-power-manager/

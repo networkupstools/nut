@@ -1,3 +1,10 @@
+Fri Dec 22 14:53:33 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - drivers/main-hal.ch, drivers/dstate-hal.ch, docs/nut-hal.txt,
+   scripts/hal/20-ups-nut-device.fdi: preliminary support for
+   FreeDesktop Hardware Abstraction Layer (aka Common Power Management).
+   For more information, refer to: docs/nut-hal.txt
+
 Wed Dec 20 08:31:33 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
  - driver.list: update for CyberPower 725SL and genericups
