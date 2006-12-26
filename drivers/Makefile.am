@@ -44,13 +44,11 @@ endif
 if WITH_SNMP
   driverexec_PROGRAMS += $(SNMP_DRIVERLIST)
 endif
-if WITH_USB
-if HAVE_LIBUSB
+if WITH_LIBUSB
    driverexec_PROGRAMS += $(USB_LIBUSB_DRIVERLIST)
 endif
-if HAVE_HIDDEV
+if WITH_HIDDEV
    driverexec_PROGRAMS += $(USB_HIDDEV_DRIVERLIST)
-endif
 endif
 if WITH_HAL
    driverexec_PROGRAMS += $(HAL_DRIVERLIST)

@@ -75,13 +75,11 @@ endif
 if WITH_SNMP
   man_MANS += $(SNMP_PAGES)
 endif
-if WITH_USB
-if HAVE_LIBUSB
+if WITH_LIBUSB
    man_MANS += $(USB_LIBUSB_PAGES)
 endif
-if HAVE_HIDDEV
+if WITH_HIDDEV
    man_MANS += $(USB_HIDDEV_PAGES)
-endif
 endif
 endif
 
