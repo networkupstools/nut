@@ -142,13 +142,13 @@ dnl check for --with-all flag
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
 AC_HELP_STRING([--with-all], [enable cgi, lib, serial, snmp, usb, hal (no)]),
-[	if test "${withval}" = "yes"; then
-		if test -z "${with_cgi}"; then with_cgi=yes; fi
-		if test -z "${with_lib}"; then with_lib=yes; fi
-		if test -z "${with_serial}"; then with_serial=yes; fi
-		if test -z "${with_snmp}"; then with_snmp=yes; fi
-		if test -z "${with_usb}"; then with_usb=yes; fi
-		if test -z "${with_hal}"; then with_hal=yes; fi
+[	if test "${withval}" = "yes" -o "${withval}" = "auto"; then
+		if test -z "${with_cgi}"; then with_cgi="${withval}"; fi
+		if test -z "${with_lib}"; then with_lib="${withval}"; fi
+		if test -z "${with_serial}"; then with_serial="${withval}"; fi
+		if test -z "${with_snmp}"; then with_snmp="${withval}"; fi
+		if test -z "${with_usb}"; then with_usb="${withval}"; fi
+		if test -z "${with_hal}"; then with_hal="${withval}"; fi
 		AC_MSG_RESULT(yes)		
 	else
 		AC_MSG_RESULT(no)
@@ -336,91 +336,90 @@ AM_CONDITIONAL(WITH_CGI, test "${nut_with_cgi}" = "yes")
 NUT_REPORT_FEATURE([build CGI programs], [${nut_with_cgi}])
 
 dnl ----------------------------------------------------------------------
+dnl check with --with-lib
 
 AC_ARG_WITH(lib,
-AC_HELP_STRING([--with-lib], [build and install the upsclient library (no)]),
-[	case "${withval}" in
-	yes)
-
-		nut_with_lib=yes
-		;;	
-	no|*)
-		nut_with_lib=no
-		;;
-	esac],
-[
-	nut_with_lib=no
-]
+ AC_HELP_STRING([--with-lib], [build and install the upsclient library (no)]),
+ [nut_with_lib="${withval}"],
+ [nut_with_lib="no"]
 )
+dnl ${nut_with_lib}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_lib}" != "no"; then
+  nut_with_lib="yes"
+fi
 AM_CONDITIONAL(WITH_LIB, test "${nut_with_lib}" = "yes")
 NUT_REPORT_FEATURE([build upsclient library], [${nut_with_lib}])
 
+dnl ----------------------------------------------------------------------
+dnl check for --with-serial
 
-dnl Check for Net-SNMP libs and flags
-# innocent until proven guilty
-nut_have_net_snmp=yes
-AC_MSG_CHECKING(for Net-SNMP cflags)
-NETSNMP_CFLAGS=`net-snmp-config --cflags 2>/dev/null`
-
-if (test "$?" != "0")
-then
-	AC_MSG_RESULT([not found])
-	nut_have_net_snmp=no
-else
-	AC_MSG_RESULT([${NETSNMP_CFLAGS}])
+AC_ARG_WITH(serial,
+ AC_HELP_STRING([--with-serial], [build and install serial drivers (yes)]),
+ [nut_with_serial="${withval}"],
+ [nut_with_serial="yes"]
+)
+dnl ${nut_with_serial}: any value except "yes" or "no" is treated as "auto". 
+if test "${nut_with_serial}" != "no"; then
+  nut_with_serial="yes"
 fi
-
-AC_MSG_CHECKING(for Net-SNMP libs)
-NETSNMP_LIBS=`net-snmp-config --libs 2>/dev/null`
-
-if (test "$?" != "0")
-then
-	AC_MSG_RESULT([not found])
-	nut_have_net_snmp=no
-else
-	AC_MSG_RESULT([${NETSNMP_LIBS}])
-fi
-AM_CONDITIONAL(HAVE_NET_SNMP, test "${nut_have_net_snmp}" = "yes")
+AM_CONDITIONAL(WITH_SERIAL, test "${nut_with_serial}" = "yes")
+NUT_REPORT_FEATURE([compile serial drivers], [${nut_with_serial}])
 
 dnl ----------------------------------------------------------------------
-dnl check for --with-serial, --with-snmp, --with-usb, --with-hal
+dnl check for --with-snmp
 
-AC_MSG_CHECKING(whether to compile serial drivers)
-AC_ARG_WITH(serial,
-AC_HELP_STRING([--with-serial], [build and install serial drivers (yes)]),
-[	case "${withval}" in
-	no)
-		with_serial=no
-		;;
-	yes|*)
-		with_serial=yes
-		;;
-	esac],
-	with_serial=yes
-)
-AC_MSG_RESULT(${with_serial})
-AM_CONDITIONAL(WITH_SERIAL, test "${with_serial}" = "yes")
-
-AC_MSG_CHECKING(whether to compile SNMP drivers)
 AC_ARG_WITH(snmp,
-AC_HELP_STRING([--with-snmp], [build and install SNMP drivers (no)]),
-[	case "${withval}" in
-	yes)
-		with_snmp=yes
-		;;
-	no|*)
-		with_snmp=no
-		;;
-	esac],
-	with_snmp=no
+ AC_HELP_STRING([--with-snmp], [build and install SNMP drivers (auto)]),
+ [nut_with_snmp="${withval}"],
+ [nut_with_snmp="auto"]
 )
-AC_MSG_RESULT(${with_snmp})
-AM_CONDITIONAL(WITH_SNMP, test "${with_snmp}" = "yes")
+dnl ${nut_with_snmp}: any value except "yes" or "no" is treated as "auto". 
 
-dnl give up if user requested SNMP drivers but we cannot compile them.
-if test "${with_snmp}" = "yes" -a "${nut_have_net_snmp}" != "yes"; then
-   AC_MSG_ERROR([SNMP drivers requested but Net-SNMP libraries not found])
+dnl ----------------------------------------------------------------------
+dnl check for Net-SNMP libs and flags
+
+if test "${nut_with_snmp}" != "no"; then
+
+   # innocent until proven guilty
+   nut_have_net_snmp=yes
+   AC_MSG_CHECKING(for Net-SNMP cflags)
+   NETSNMP_CFLAGS=`net-snmp-config --cflags 2>/dev/null`
+
+   if (test "$?" != "0")
+   then
+	AC_MSG_RESULT([not found])
+	nut_have_net_snmp=no
+   else
+	AC_MSG_RESULT([${NETSNMP_CFLAGS}])
+   fi
+
+   AC_MSG_CHECKING(for Net-SNMP libs)
+   NETSNMP_LIBS=`net-snmp-config --libs 2>/dev/null`
+
+   if (test "$?" != "0")
+   then
+	AC_MSG_RESULT([not found])
+	nut_have_net_snmp=no
+   else
+	AC_MSG_RESULT([${NETSNMP_LIBS}])
+   fi
 fi
+
+if test "${nut_with_snmp}" = "yes" -a "${nut_have_net_snmp}" != "yes"; then
+   AC_MSG_ERROR(["Net-SNMP libraries not found, required for SNMP drivers"])
+fi
+
+if test "${nut_with_snmp}" != "no"; then
+   nut_with_snmp="${nut_have_net_snmp}"
+fi
+
+AM_CONDITIONAL(HAVE_NET_SNMP, test "${nut_have_net_snmp}" = "yes")
+AM_CONDITIONAL(WITH_SNMP, test "${nut_with_snmp}" = "yes")
+
+NUT_REPORT_FEATURE([compile SNMP drivers], [${nut_with_snmp}])
+
+dnl ----------------------------------------------------------------------
+dnl check for --with-usb
 
 AC_MSG_CHECKING(whether to compile USB drivers)
 AC_ARG_WITH(usb,
@@ -437,6 +436,9 @@ AC_HELP_STRING([--with-usb], [build and install USB drivers (no)]),
 )
 AC_MSG_RESULT(${with_usb})
 AM_CONDITIONAL(WITH_USB, test "${with_usb}" = "yes")
+
+dnl ----------------------------------------------------------------------
+dnl check for --with-hal
 
 AC_MSG_CHECKING(whether to compile HAL support)
 AC_ARG_WITH(hal,
