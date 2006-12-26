@@ -136,30 +136,20 @@ TYPE_SOCKLEN_T
 TYPE_UINT16_T
 TYPE_UINT8_T
 
-AC_MSG_CHECKING(whether to enable SSL development code)
-AC_ARG_WITH(ssl,
-AC_HELP_STRING([--with-ssl], [enable SSL development code (default: no)]),
-[	case "$withval" in
-	yes)
-		AC_MSG_RESULT(yes)
-		nut_with_ssl="yes"
-		AC_DEFINE(HAVE_SSL, 1, 
-			[Define to enable SSL development code])
-		;;
-	*)
-		AC_MSG_RESULT(no)
-		nut_with_ssl="no"
-		;;
-	esac],
+dnl ----------------------------------------------------------------------
+dnl Check for --with-ssl
 
-	AC_MSG_RESULT(no)
-	nut_with_ssl="no"
-)	
+AC_ARG_WITH(ssl,
+ AC_HELP_STRING([--with-ssl], [enable SSL development code (default: auto)]),
+ [nut_with_ssl="$withval"],
+ [nut_with_ssl="auto"]
+)
+dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto". 
 
 dnl ----------------------------------------------------------------------
 dnl check for SSL compiler flags
 
-if test "${nut_with_ssl}" = "yes"; then
+if test "${nut_with_ssl}" != "no"; then
 
    AC_MSG_CHECKING(for SSL library availability)
 
@@ -201,11 +191,20 @@ if test "${nut_with_ssl}" = "yes"; then
    LDFLAGS="${LDFLAGS_ORIG}"
 
    AC_MSG_RESULT([${ssl_ok}])
-
-   if test "${ssl_ok}" != "yes"; then
-      AC_MSG_ERROR(["SSL support requested, but OpenSSL not found"])
-   fi
 fi
+
+if test "${nut_with_ssl}" = "yes" -a "${ssl_ok}" != "yes"; then
+   AC_MSG_ERROR(["SSL support requested, but OpenSSL not found"])
+fi
+
+if test "${nut_with_ssl}" != "no"; then
+   nut_with_ssl="${ssl_ok}"
+fi
+
+if test "${nut_with_ssl}" = "yes"; then
+   AC_DEFINE(HAVE_SSL, 1, [Define to enable SSL development code])
+fi
+NUT_REPORT_FEATURE([enable SSL development code], [${nut_with_ssl}])
 
 dnl ----------------------------------------------------------------------
 dnl See if gdlib-config is out there and usable
@@ -300,7 +299,7 @@ LDFLAGS="${LDFLAGS_ORIG}"
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-AC_HELP_STRING([--with-all], [enable cgi, lib, serial, snmp, usb (no)]),
+AC_HELP_STRING([--with-all], [enable cgi, lib, serial, snmp, usb, hal (no)]),
 [	if test "${withval}" = "yes"; then
 		if test -z "${with_cgi}"; then with_cgi=yes; fi
 		if test -z "${with_lib}"; then with_lib=yes; fi
@@ -954,3 +953,5 @@ AC_OUTPUT([
  server/Makefile
  Makefile
 ])
+
+NUT_PRINT_FEATURE_REPORT
