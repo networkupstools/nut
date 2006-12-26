@@ -137,11 +137,31 @@ TYPE_UINT16_T
 TYPE_UINT8_T
 
 dnl ----------------------------------------------------------------------
+dnl check for --with-all flag
+
+AC_MSG_CHECKING(for --with-all)
+AC_ARG_WITH(all,
+AC_HELP_STRING([--with-all], [enable cgi, lib, serial, snmp, usb, hal (no)]),
+[	if test "${withval}" = "yes"; then
+		if test -z "${with_cgi}"; then with_cgi=yes; fi
+		if test -z "${with_lib}"; then with_lib=yes; fi
+		if test -z "${with_serial}"; then with_serial=yes; fi
+		if test -z "${with_snmp}"; then with_snmp=yes; fi
+		if test -z "${with_usb}"; then with_usb=yes; fi
+		if test -z "${with_hal}"; then with_hal=yes; fi
+		AC_MSG_RESULT(yes)		
+	else
+		AC_MSG_RESULT(no)
+	fi
+], [		AC_MSG_RESULT(no)
+])
+
+dnl ----------------------------------------------------------------------
 dnl Check for --with-ssl
 
 AC_ARG_WITH(ssl,
  AC_HELP_STRING([--with-ssl], [enable SSL development code (default: auto)]),
- [nut_with_ssl="$withval"],
+ [nut_with_ssl="${withval}"],
  [nut_with_ssl="auto"]
 )
 dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto". 
@@ -194,7 +214,7 @@ if test "${nut_with_ssl}" != "no"; then
 fi
 
 if test "${nut_with_ssl}" = "yes" -a "${ssl_ok}" != "yes"; then
-   AC_MSG_ERROR(["SSL support requested, but OpenSSL not found"])
+   AC_MSG_ERROR(["OpenSSL not found, required for SSL support"])
 fi
 
 if test "${nut_with_ssl}" != "no"; then
@@ -207,20 +227,34 @@ fi
 NUT_REPORT_FEATURE([enable SSL development code], [${nut_with_ssl}])
 
 dnl ----------------------------------------------------------------------
-dnl See if gdlib-config is out there and usable
+dnl check with --with-cgi
 
-AC_MSG_CHECKING(for gd version via gdlib-config)
+AC_ARG_WITH(cgi,
+ AC_HELP_STRING([--with-cgi], [build and install the CGI programs (default: no)]),
+ [nut_with_cgi="${withval}"],
+ [nut_with_cgi="no"]
+)
+dnl ${nut_with_cgi}: any value except "yes" or "no" is treated as "auto".
 
-GD_VERSION=`gdlib-config --version 2>/dev/null`
-if (test "$?" != "0")
-then
+dnl ----------------------------------------------------------------------
+dnl check for GD compiler flags
+
+if test "${nut_with_cgi}" != "no"; then
+
+   dnl See if gdlib-config is out there and usable
+
+   AC_MSG_CHECKING(for gd version via gdlib-config)
+
+   GD_VERSION=`gdlib-config --version 2>/dev/null`
+   if (test "$?" != "0")
+   then
 	GD_VERSION="unknown"
 	AC_MSG_RESULT(not found)
-else
+   else
 	AC_MSG_RESULT(${GD_VERSION})
-fi
+   fi
 
-case "${GD_VERSION}" in
+   case "${GD_VERSION}" in
 	unknown)
 		;;
 
@@ -235,50 +269,39 @@ case "${GD_VERSION}" in
 		;;
 	esac
 
-dnl Now allow overriding gd settings if the user knows best
+   dnl Now allow overriding gd settings if the user knows best
 
-AC_MSG_CHECKING(for gd include flags)
-AC_ARG_WITH(gd-includes,
-AC_HELP_STRING([--with-gd-includes=FLAGS], [include flags for the gd library]),
-[	case "${withval}" in
+   AC_MSG_CHECKING(for gd include flags)
+   AC_ARG_WITH(gd-includes,
+   AC_HELP_STRING([--with-gd-includes=FLAGS], [include flags for the gd library]),
+   [	case "${withval}" in
 	yes|no)
-		AC_MSG_RESULT([using defaults])
 		;;
 	*)
-		AC_MSG_RESULT([using ${withval}])
 		GD_INCLUDES="${withval}"
 		;;
 	esac],
+   )
+   AC_MSG_RESULT([${GD_INCLUDES}])
 
-	AC_MSG_RESULT(using defaults)
-)
-
-AC_MSG_CHECKING(for gd library flags)
-AC_ARG_WITH(gd-libs,
-AC_HELP_STRING([--with-gd-libs=FLAGS], [linker flags for the gd library]),
-[	case "$withval" in
+   AC_MSG_CHECKING(for gd library flags)
+   AC_ARG_WITH(gd-libs,
+   AC_HELP_STRING([--with-gd-libs=FLAGS], [linker flags for the gd library]),
+   [	case "${withval}" in
 	yes|no)
-		AC_MSG_RESULT([using defaults])
 		;;
 	*)
-		AC_MSG_RESULT([using ${withval}])
 		GD_LIBS="${withval}"
 		;;
 	esac],
+   )
+   AC_MSG_RESULT([${GD_LIBS}])
 
-	AC_MSG_RESULT(using defaults)
-)
+   dnl check if gd is usable
 
-dnl +------------------------------------------------------------------+
-dnl | Check for libraries used by the CGI programs.                    |
-dnl +------------------------------------------------------------------+
-
-dnl Note: we do this even if --with-cgi isn't selected; the user
-dnl can still build the CGI programs with "make cgi". 
-
-CFLAGS_ORIG="${CFLAGS}"
-CPPFLAGS_ORIG="${CPPFLAGS}"
-LDFLAGS_ORIG="${LDFLAGS}"
+   CFLAGS_ORIG="${CFLAGS}"
+   CPPFLAGS_ORIG="${CPPFLAGS}"
+   LDFLAGS_ORIG="${LDFLAGS}"
 
 		CFLAGS="${GD_INCLUDES}"
 		CPPFLAGS="${GD_INCLUDES}"
@@ -286,78 +309,52 @@ LDFLAGS_ORIG="${LDFLAGS}"
 
 		AC_CHECK_HEADERS(gd.h)
 		AC_CHECK_LIB(gd, gdImagePng, 
-		have_libgd=1
-		AC_DEFINE(HAVE_LIBGD, 1, 
-			[Define if you have Boutell's libgd installed]),
-		,
+		[ have_libgd=yes
+		  AC_DEFINE(HAVE_LIBGD, 1, 
+			[Define if you have Boutell's libgd installed])
+		],
+                [ have_libgd=no ],
 		${GD_LIBS})
 
-dnl put back the original versions
-CFLAGS="${CFLAGS_ORIG}"
-CPPFLAGS="${CPPFLAGS_ORIG}"
-LDFLAGS="${LDFLAGS_ORIG}"
+   dnl put back the original versions
+   CFLAGS="${CFLAGS_ORIG}"
+   CPPFLAGS="${CPPFLAGS_ORIG}"
+   LDFLAGS="${LDFLAGS_ORIG}"
 
-AC_MSG_CHECKING(for --with-all)
-AC_ARG_WITH(all,
-AC_HELP_STRING([--with-all], [enable cgi, lib, serial, snmp, usb, hal (no)]),
-[	if test "${withval}" = "yes"; then
-		if test -z "${with_cgi}"; then with_cgi=yes; fi
-		if test -z "${with_lib}"; then with_lib=yes; fi
-		if test -z "${with_serial}"; then with_serial=yes; fi
-		if test -z "${with_snmp}"; then with_snmp=yes; fi
-		if test -z "${with_usb}"; then with_usb=yes; fi
-		if test -z "${with_hal}"; then with_hal=yes; fi
-		AC_MSG_RESULT(yes)		
-	else
-		AC_MSG_RESULT(no)
-	fi
-], [		AC_MSG_RESULT(no)
-])
+fi
 
-AC_MSG_CHECKING(whether to build CGI programs)
-AC_ARG_WITH(cgi,
-AC_HELP_STRING([--with-cgi], [build and install the CGI programs (no)]),
-[	case "${withval}" in
-	yes)
+if test "${nut_with_cgi}" = "yes" -a "${have_libgd}" != "yes"; then
+   AC_MSG_ERROR([libgd not found, required for CGI build])
+fi
 
-		AC_MSG_RESULT(yes)
-		nut_with_cgi="yes"
-		if test "${have_libgd}" != "1"; then
-		   AC_MSG_ERROR([libgd not found, required for CGI build])
-		fi
-		;;	
-	no|*)
-		AC_MSG_RESULT(no)
-		nut_with_cgi="no"
-		;;
-	esac],
-[
-	AC_MSG_RESULT(no)
-        nut_with_cgi="no"
-]
-)
+if test "${nut_with_cgi}" != "no"; then
+   nut_with_cgi="${have_libgd}"
+fi
+
 AM_CONDITIONAL(WITH_CGI, test "${nut_with_cgi}" = "yes")
 
-AC_MSG_CHECKING(whether to build upsclient library)
+NUT_REPORT_FEATURE([build CGI programs], [${nut_with_cgi}])
+
+dnl ----------------------------------------------------------------------
+
 AC_ARG_WITH(lib,
 AC_HELP_STRING([--with-lib], [build and install the upsclient library (no)]),
 [	case "${withval}" in
 	yes)
 
-		AC_MSG_RESULT(yes)
 		nut_with_lib=yes
 		;;	
 	no|*)
-		AC_MSG_RESULT(no)
 		nut_with_lib=no
 		;;
 	esac],
 [
-	AC_MSG_RESULT(no)
 	nut_with_lib=no
 ]
 )
 AM_CONDITIONAL(WITH_LIB, test "${nut_with_lib}" = "yes")
+NUT_REPORT_FEATURE([build upsclient library], [${nut_with_lib}])
+
 
 dnl Check for Net-SNMP libs and flags
 # innocent until proven guilty
@@ -888,7 +885,7 @@ if test "${nut_cv_have_longlong}" = "yes"; then
     AC_DEFINE(HAVE_LONGLONG, 1, [longlong support for snprintf])
 fi
 
-# expand $sysconfdir and write it out
+# expand ${sysconfdir} and write it out
 conftemp="${sysconfdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
