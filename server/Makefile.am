@@ -1,9 +1,5 @@
 # Network UPS Tools: server
 
-NETLIBS = @NETLIBS@
-SSL_CFLAGS  = @SSL_CFLAGS@
-SSL_LDFLAGS = @SSL_LDFLAGS@
-
 AM_CFLAGS = -I$(top_srcdir)/include $(SSL_CFLAGS)
 LDADD = ../common/libcommon.a ../common/state.o ../common/upsconf.o	\
  ../common/parseconf.o $(SSL_LDFLAGS) $(NETLIBS)

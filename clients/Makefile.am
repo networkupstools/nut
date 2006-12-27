@@ -1,14 +1,5 @@
 # Network UPS Tools: clients
 
-LIBGD_CFLAGS = @LIBGD_CFLAGS@
-SSL_CFLAGS  = @SSL_CFLAGS@
-LIBGD_LDFLAGS = @LIBGD_LDFLAGS@
-NETLIBS = @NETLIBS@
-SSL_LDFLAGS = @SSL_LDFLAGS@
-
-# note: bindir and sbindir are defined automatically
-cgiexecdir = @CGIPATH@
-
 # by default, link programs in this directory with libcommon.a
 LDADD = ../common/libcommon.a libupsclient.la $(NETLIBS) $(SSL_LDFLAGS)
 AM_CFLAGS = $(SSL_CFLAGS) -I$(top_srcdir)/include

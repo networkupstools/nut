@@ -67,7 +67,7 @@ if WITH_LIB
 endif
 
 if SOME_DRIVERS
- man_MANS += @DRIVER_MAN_LIST@
+ man_MANS += $(DRIVER_MAN_LIST)
 else
 if WITH_SERIAL
   man_MANS += $(SERIAL_PAGES)

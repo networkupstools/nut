@@ -1,3 +1,9 @@
+Wed Dec 27 04:17:07 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - configure.in: renamed automake installation directories to their
+   standard names: driverexecdir, cgiexecdir, htmldir, pkgcfgdir
+ - automake: removed @...@ substitutions from Makefile.am's
+
 Wed Dec 27 03:36:50 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - automake: fixes to HAL automake rules

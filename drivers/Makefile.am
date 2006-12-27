@@ -1,10 +1,5 @@
 # Network UPS Tools: drivers
 
-driverexecdir = @DRVPATH@
-
-NETLIBS = @NETLIBS@
-SERLIBS = @SERLIBS@
-
 # by default, link programs in this directory with libcommon.a
 #FIXME: SERLIBS is only useful for LDADD_DRIVERS_SERIAL not for LDADD_COMMON
 LDADD_COMMON = ../common/libcommon.a
@@ -35,7 +30,7 @@ EXTRA_PROGRAMS = $(SERIAL_DRIVERLIST) $(SNMP_DRIVERLIST) $(USB_DRIVERLIST)
 
 # construct the list of drivers to build
 if SOME_DRIVERS
- driverexec_PROGRAMS = @DRIVER_BUILD_LIST@
+ driverexec_PROGRAMS = $(DRIVER_BUILD_LIST)
 else
  driverexec_PROGRAMS =
 if WITH_SERIAL
