@@ -137,23 +137,25 @@ TYPE_UINT16_T
 TYPE_UINT8_T
 
 dnl ----------------------------------------------------------------------
-dnl check for --with-all flag
+dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
 AC_HELP_STRING([--with-all], [enable cgi, lib, serial, snmp, usb, hal (no)]),
-[	if test "${withval}" = "yes" -o "${withval}" = "auto"; then
+[	if test -n "${withval}"; then
+		dnl Note: we allow "no" as a positive value, because
+		dnl this is what the user expects from --without-all
 		if test -z "${with_cgi}"; then with_cgi="${withval}"; fi
 		if test -z "${with_lib}"; then with_lib="${withval}"; fi
 		if test -z "${with_serial}"; then with_serial="${withval}"; fi
 		if test -z "${with_snmp}"; then with_snmp="${withval}"; fi
 		if test -z "${with_usb}"; then with_usb="${withval}"; fi
 		if test -z "${with_hal}"; then with_hal="${withval}"; fi
-		AC_MSG_RESULT(yes)		
+		AC_MSG_RESULT("${withval}")		
 	else
-		AC_MSG_RESULT(no)
+		AC_MSG_RESULT(not given)
 	fi
-], [		AC_MSG_RESULT(no)
+], [		AC_MSG_RESULT(not given)
 ])
 
 dnl ----------------------------------------------------------------------
@@ -511,14 +513,14 @@ if test "${nut_with_usb}" != "no"; then
    esac
 fi
 
-dnl give up if user requested USB drivers but we cannot build them.
+dnl If user requested USB drivers, insist on building all of them
 if test "${nut_with_usb}" = "yes"; then
    if test "${nut_have_libusb}" != "yes" -a "${nut_have_hiddev}" != "yes"; then
       AC_MSG_ERROR([USB drivers requested but neither libusb nor hiddev.h found])
    elif test "${nut_have_libusb}" != "yes"; then
-      AC_MSG_WARN([libusb not found, not building some USB drivers])
+      AC_MSG_ERROR([USB drivers requested, but libusb not found. Use --with-usb=auto to build only available drivers.])
    elif test "${nut_have_hiddev}" != "yes"; then
-      AC_MSG_WARN([hiddev not found, not building some USB drivers])
+      AC_MSG_ERROR([USB drivers requested, but hiddev not found. Use --with-usb=auto to build only available drivers.])
    fi
 fi
 
@@ -544,47 +546,78 @@ NUT_REPORT_FEATURE([build USB drivers], [${nut_usb_msg}])
 dnl ----------------------------------------------------------------------
 dnl check for --with-hal
 
-AC_MSG_CHECKING(whether to compile HAL support)
 AC_ARG_WITH(hal,
-AC_HELP_STRING([--with-hal], [build and install HAL support (no)]),
-[	case "${withval}" in
-	yes)
-		with_hal=yes
-		;;
-	no|*)
-		with_hal=no
-		;;
-	esac],
-	with_hal=no
+ AC_HELP_STRING([--with-hal], [build and install HAL support (auto)]),
+ [nut_with_hal="${withval}"],
+ [nut_with_hal="auto"]
 )
-AC_MSG_RESULT(${with_hal})
-AM_CONDITIONAL(WITH_HAL, test "${with_hal}" = "yes")
+dnl ${nut_with_hal}: any value except "yes" or "no" is treated as "auto". 
 
 dnl ----------------------------------------------------------------------
-dnl HAL-related checks
-
 dnl Check for libhal libs and flags
-AC_MSG_CHECKING(for libhal cflags)
-LIBHAL_CFLAGS=`pkg-config --silence-errors --cflags hal`
-if (test "$?" != "0")
-then
+
+if test "${nut_with_hal}" != "no"; then
+
+   nut_have_libhal=yes
+   AC_MSG_CHECKING(for libhal cflags)
+	LIBHAL_CFLAGS=`pkg-config --silence-errors --cflags hal`
+   if (test "$?" != "0")
+   then
 	AC_MSG_RESULT(not found)
 	nut_have_libhal=no
-else
+   else
 	AC_MSG_RESULT(${LIBHAL_CFLAGS})
-fi
+   fi
 
-AC_MSG_CHECKING(for libhal libs)
-LIBHAL_LIBS=`pkg-config --silence-errors --libs hal`
-if (test "$?" != "0")
-then
+   AC_MSG_CHECKING(for libhal libs)
+   LIBHAL_LIBS=`pkg-config --silence-errors --libs hal`
+   if (test "$?" != "0")
+   then
 	AC_MSG_RESULT(not found)
 	nut_have_libhal=no
-else
+   else
 	AC_MSG_RESULT(${LIBHAL_LIBS})
-fi
-AM_CONDITIONAL(HAVE_LIBHAL, test "${nut_have_libhal}" = "yes")
+   fi
 
+   dnl if this didn't work, try some standard places. For example,
+   dnl HAL 0.5.8 and 0.5.8.1 contain pkg-config bugs.
+
+   if test "${nut_have_libhal}" != "yes"; then
+
+      dnl try again
+      nut_have_libhal=yes
+
+      CFLAGS_ORIG="${CFLAGS}"
+      CPPFLAGS_ORIG="${CPPFLAGS}"
+      LDFLAGS_ORIG="${LDFLAGS}"
+
+      LIBHAL_CFLAGS="-DDBUS_API_SUBJECT_TO_CHANGE -I/usr/include/hal -I/usr/include/dbus-1.0 -I/usr/lib/dbus-1.0/include"
+      LIBHAL_LIBS="-lhal -ldbus-1 -lpthread"
+      
+      CFLAGS="${LIBHAL_CFLAGS}"
+      CPPFLAGS="${LIBHAL_CFLAGS}"
+      LDFLAGS="${LIBHAL_LIBS}"
+      AC_CHECK_HEADER(libhal.h, , [nut_have_libhal=no])
+      AC_CHECK_LIB(hal, libhal_ctx_init, [:], [nut_have_libhal=no])
+
+      CFLAGS="${CFLAGS_ORIG}"
+      CPPFLAGS="${CPPFLAGS_ORIG}"
+      LDFLAGS="${LDFLAGS_ORIG}"
+   fi
+fi
+
+if test "${nut_with_hal}" = "yes" -a "${nut_have_libhal}" != "yes"; then
+   AC_MSG_ERROR(["libhal not found, required for HAL support"])
+fi
+
+if test "${nut_with_hal}" != "no"; then
+   nut_with_hal="${nut_have_libhal}"
+fi
+
+AM_CONDITIONAL(WITH_HAL, test "${nut_with_hal}" = "yes")
+NUT_REPORT_FEATURE([enable HAL support], [${nut_with_hal}])
+
+dnl ----------------------------------------------------------------------
 
 AC_MSG_CHECKING(state path)
 AC_ARG_WITH(statepath,
