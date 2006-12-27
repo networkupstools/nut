@@ -36,8 +36,8 @@ AC_CONFIG_LIBOBJ_DIR([common])
 dnl These are only used if gdlib-config is unusable and the user
 dnl fails to pass better values in --with arguments
 
-GD_INCLUDES=""
-GD_LIBS="-L/usr/X11R6/lib -lgd -lpng -lz -ljpeg -lfreetype -lm -lXpm -lX11"
+LIBGD_CFLAGS=""
+LIBGD_LDFLAGS="-L/usr/X11R6/lib -lgd -lpng -lz -ljpeg -lfreetype -lm -lXpm -lX11"
 
 dnl +-------------------------------------------------------------------
 
@@ -141,7 +141,7 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-AC_HELP_STRING([--with-all], [enable cgi, lib, serial, snmp, usb, hal (no)]),
+AC_HELP_STRING([--with-all], [enable cgi, lib, serial, snmp, usb, hal]),
 [	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
 		dnl this is what the user expects from --without-all
@@ -266,8 +266,8 @@ if test "${nut_with_cgi}" != "no"; then
 		;;
 
 	*)
-		GD_LIBS="`gdlib-config --ldflags` `gdlib-config --libs` -lgd"
-		GD_INCLUDES="`gdlib-config --includes`"
+		LIBGD_LDFLAGS="`gdlib-config --ldflags` `gdlib-config --libs` -lgd"
+		LIBGD_CFLAGS="`gdlib-config --includes`"
 		;;
 	esac
 
@@ -280,11 +280,11 @@ if test "${nut_with_cgi}" != "no"; then
 	yes|no)
 		;;
 	*)
-		GD_INCLUDES="${withval}"
+		LIBGD_CFLAGS="${withval}"
 		;;
 	esac],
    )
-   AC_MSG_RESULT([${GD_INCLUDES}])
+   AC_MSG_RESULT([${LIBGD_CFLAGS}])
 
    AC_MSG_CHECKING(for gd library flags)
    AC_ARG_WITH(gd-libs,
@@ -293,11 +293,11 @@ if test "${nut_with_cgi}" != "no"; then
 	yes|no)
 		;;
 	*)
-		GD_LIBS="${withval}"
+		LIBGD_LDFLAGS="${withval}"
 		;;
 	esac],
    )
-   AC_MSG_RESULT([${GD_LIBS}])
+   AC_MSG_RESULT([${LIBGD_LDFLAGS}])
 
    dnl check if gd is usable
 
@@ -305,9 +305,9 @@ if test "${nut_with_cgi}" != "no"; then
    CPPFLAGS_ORIG="${CPPFLAGS}"
    LDFLAGS_ORIG="${LDFLAGS}"
 
-		CFLAGS="${GD_INCLUDES}"
-		CPPFLAGS="${GD_INCLUDES}"
-		LDFLAGS="${GD_LIBS}"
+		CFLAGS="${LIBGD_CFLAGS}"
+		CPPFLAGS="${LIBGD_CFLAGS}"
+		LDFLAGS="${LIBGD_LDFLAGS}"
 
 		AC_CHECK_HEADERS(gd.h)
 		AC_CHECK_LIB(gd, gdImagePng, 
@@ -316,7 +316,7 @@ if test "${nut_with_cgi}" != "no"; then
 			[Define if you have Boutell's libgd installed])
 		],
                 [ nut_have_libgd=no ],
-		${GD_LIBS})
+		${LIBGD_LDFLAGS})
 
    dnl put back the original versions
    CFLAGS="${CFLAGS_ORIG}"
@@ -396,14 +396,14 @@ if test "${nut_with_snmp}" != "no"; then
    fi
 
    AC_MSG_CHECKING(for Net-SNMP libs)
-   NETSNMP_LIBS=`net-snmp-config --libs 2>/dev/null`
+   NETSNMP_LDFLAGS=`net-snmp-config --libs 2>/dev/null`
 
    if (test "$?" != "0")
    then
 	AC_MSG_RESULT([not found])
 	nut_have_net_snmp=no
    else
-	AC_MSG_RESULT([${NETSNMP_LIBS}])
+	AC_MSG_RESULT([${NETSNMP_LDFLAGS}])
    fi
 fi
 
@@ -449,13 +449,13 @@ if test "${nut_with_usb}" != "no"; then
    fi
 
    AC_MSG_CHECKING(for libusb libs)
-   LIBUSB_LIBS=`libusb-config --libs 2>/dev/null`
+   LIBUSB_LDFLAGS=`libusb-config --libs 2>/dev/null`
    if (test "$?" != "0")
    then
 	AC_MSG_RESULT(not found)
 	nut_have_libusb=no
    else
-	AC_MSG_RESULT(${LIBUSB_LIBS})
+	AC_MSG_RESULT(${LIBUSB_LDFLAGS})
    fi
 
    dnl Check for libusb "force driver unbind" availability
@@ -503,7 +503,7 @@ if test "${nut_with_usb}" != "no"; then
 	solaris2.1* )
 		echo Checking for Solaris 10 / 11 specific configuration for usb drivers
 		AC_SEARCH_LIBS(nanosleep,rt)
-		LIBUSB_LIBS="-R/usr/sfw/lib ${LIBUSB_LIBS}"
+		LIBUSB_LDFLAGS="-R/usr/sfw/lib ${LIBUSB_LDFLAGS}"
 		dnl FIXME: Sun's libusb doesn't support timeout (so blocks notification)
 		dnl and need to call libusb close upon reconnexion
 		AC_DEFINE(SUN_LIBUSB, 1,
@@ -570,13 +570,13 @@ if test "${nut_with_hal}" != "no"; then
    fi
 
    AC_MSG_CHECKING(for libhal libs)
-   LIBHAL_LIBS=`pkg-config --silence-errors --libs hal`
+   LIBHAL_LDFLAGS=`pkg-config --silence-errors --libs hal`
    if (test "$?" != "0")
    then
 	AC_MSG_RESULT(not found)
 	nut_have_libhal=no
    else
-	AC_MSG_RESULT(${LIBHAL_LIBS})
+	AC_MSG_RESULT(${LIBHAL_LDFLAGS})
    fi
 
    dnl if this didn't work, try some standard places. For example,
@@ -592,11 +592,11 @@ if test "${nut_with_hal}" != "no"; then
       LDFLAGS_ORIG="${LDFLAGS}"
 
       LIBHAL_CFLAGS="-DDBUS_API_SUBJECT_TO_CHANGE -I/usr/include/hal -I/usr/include/dbus-1.0 -I/usr/lib/dbus-1.0/include"
-      LIBHAL_LIBS="-lhal -ldbus-1 -lpthread"
+      LIBHAL_LDFLAGS="-lhal -ldbus-1 -lpthread"
       
       CFLAGS="${LIBHAL_CFLAGS}"
       CPPFLAGS="${LIBHAL_CFLAGS}"
-      LDFLAGS="${LIBHAL_LIBS}"
+      LDFLAGS="${LIBHAL_LDFLAGS}"
       AC_CHECK_HEADER(libhal.h, , [nut_have_libhal=no])
       AC_CHECK_LIB(hal, libhal_ctx_init, [:], [nut_have_libhal=no])
 
@@ -956,14 +956,14 @@ AC_DEFINE_UNQUOTED(DATADIR, "${conftemp}",
 
 AC_SUBST(SSL_CFLAGS)
 AC_SUBST(SSL_LDFLAGS)
-AC_SUBST(GD_INCLUDES)
-AC_SUBST(GD_LIBS)
+AC_SUBST(LIBGD_CFLAGS)
+AC_SUBST(LIBGD_LDFLAGS)
 AC_SUBST(NETSNMP_CFLAGS)
-AC_SUBST(NETSNMP_LIBS)
+AC_SUBST(NETSNMP_LDFLAGS)
 AC_SUBST(LIBUSB_CFLAGS)
-AC_SUBST(LIBUSB_LIBS)
+AC_SUBST(LIBUSB_LDFLAGS)
 AC_SUBST(LIBHAL_CFLAGS)
-AC_SUBST(LIBHAL_LIBS)
+AC_SUBST(LIBHAL_LDFLAGS)
 AC_SUBST(DRIVER_BUILD_LIST)
 AC_SUBST(DRIVER_MAN_LIST)
 AC_SUBST(DRIVER_INSTALL_TARGET)

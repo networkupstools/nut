@@ -1,8 +1,8 @@
 # Network UPS Tools: clients
 
-GD_INCLUDES = @GD_INCLUDES@
+LIBGD_CFLAGS = @LIBGD_CFLAGS@
 SSL_CFLAGS  = @SSL_CFLAGS@
-GD_LIBS = @GD_LIBS@
+LIBGD_LDFLAGS = @LIBGD_LDFLAGS@
 NETLIBS = @NETLIBS@
 SSL_LDFLAGS = @SSL_LDFLAGS@
 
@@ -35,8 +35,8 @@ upssched_CFLAGS = -I$(top_srcdir)/include
 upssched_LDADD = ../common/libcommon.a $(NETLIBS) ../common/parseconf.o 
 
 upsimage_cgi_SOURCES = upsimage.c upsclient.h upsimagearg.h cgilib.c cgilib.h
-upsimage_cgi_CFLAGS = $(AM_CFLAGS) $(GD_INCLUDES)
-upsimage_cgi_LDADD = $(LDADD) $(GD_LIBS)
+upsimage_cgi_CFLAGS = $(AM_CFLAGS) $(LIBGD_CFLAGS)
+upsimage_cgi_LDADD = $(LDADD) $(LIBGD_LDFLAGS)
 
 upsset_cgi_SOURCES = upsset.c upsclient.h cgilib.c cgilib.h
 upsstats_cgi_SOURCES = upsstats.c upsclient.h status.h upsstats.h	\

@@ -6,13 +6,13 @@ NETLIBS = @NETLIBS@
 SERLIBS = @SERLIBS@
 
 # by default, link programs in this directory with libcommon.a
-#FIXME: SERLIB is only useful for LDADD_DRIVERS_SERIAL not for LDADD_COMMON
-LDADD_COMMON = ../common/libcommon.a $(NETLIBS) $(SERLIBS)
+#FIXME: SERLIBS is only useful for LDADD_DRIVERS_SERIAL not for LDADD_COMMON
+LDADD_COMMON = ../common/libcommon.a
 LDADD_DRIVERS = $(LDADD_COMMON) ../common/upsconf.o	\
  ../common/parseconf.o ../common/state.o main.o dstate.o
 LDADD_HAL_DRIVERS = $(LDADD_COMMON) ../common/upsconf.o	\
- ../common/parseconf.o main-hal.o dstate-hal.o
-LDADD_DRIVERS_SERIAL = $(LDADD_DRIVERS) serial.o
+ ../common/parseconf.o libnuthalmain.a
+LDADD_DRIVERS_SERIAL = $(LDADD_DRIVERS) $(SERLIBS) serial.o
 
 # most targets are drivers, so make this the default
 LDADD = $(LDADD_DRIVERS_SERIAL)
@@ -124,7 +124,7 @@ NEWHIDUPS_SUBDRIVERS = apc-hid.c belkin-hid.c explore-hid.c \
 newhidups_SOURCES = newhidups.c libhid.c libusb.c hidparser.c	\
  $(NEWHIDUPS_SUBDRIVERS)
 newhidups_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
-newhidups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
+newhidups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 
 hidups_SOURCES = hidups.c
 hidups_LDADD = $(LDADD_DRIVERS)
@@ -134,11 +134,11 @@ energizerups_LDADD = $(LDADD_DRIVERS)
 
 tripplite_usb_SOURCES = tripplite_usb.c libhid.c libusb.c hidparser.c
 tripplite_usb_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
-tripplite_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
+tripplite_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS) -lm
 
 bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c nut_usb.c
 bcmxcp_usb_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
-bcmxcp_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
+bcmxcp_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 
 # HID-over-serial
 newmge_shut_SOURCES = newhidups.c libshut.c libhid.c hidparser.c mge-hid.c
@@ -148,21 +148,21 @@ newmge_shut_LDADD = $(LDADD)
 # SNMP
 snmp_ups_SOURCES = snmp-ups.c
 snmp_ups_CFLAGS = $(AM_CFLAGS) $(NETSNMP_CFLAGS)
-snmp_ups_LDADD = $(LDADD_DRIVERS) $(NETSNMP_LIBS)
+snmp_ups_LDADD = $(LDADD_DRIVERS) $(NETSNMP_LDFLAGS)
 
 # HAL
 hald_addon_usbhid_ups_SOURCES = newhidups.c libhid.c libusb.c hidparser.c	\
  $(NEWHIDUPS_SUBDRIVERS)
 hald_addon_usbhid_ups_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS) $(LIBHAL_CFLAGS)
-hald_addon_usbhid_ups_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS)
+hald_addon_usbhid_ups_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS)
 
 hald_addon_tripplite_usb_SOURCES = tripplite_usb.c libhid.c libusb.c hidparser.c
 hald_addon_tripplite_usb_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS) $(LIBHAL_CFLAGS)
-hald_addon_tripplite_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS) -lm
+hald_addon_tripplite_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS) -lm
 
 hald_addon_bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c nut_usb.c
 hald_addon_bcmxcp_usb_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS) $(LIBHAL_CFLAGS)
-hald_addon_bcmxcp_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS)
+hald_addon_bcmxcp_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS)
 
 # ----------------------------------------------------------------------
 # List of header files. The purpose of this list is not dependency
@@ -172,9 +172,11 @@ hald_addon_bcmxcp_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS)
 dist_noinst_HEADERS = al175.h apccmib.h apc-hid.h apcsmart.h bcmxcp.h	\
  bcmxcp_io.h belkin.h belkin-hid.h belkinunv.h bestfcom.h		\
  bestuferrups.h bestups.h blazer.h cpsups.h cyberpower.h dstate.h	\
+ dstate-hal.h								\
  dummy-ups.h esupssmart.h etapro.h everups.h fentonups.h gamatronic.h	\
  explore-hid.h genericups.h hidparser.h hidtypes.h hidups.h ietfmib.h	\
- ippon.h isbmex.h libhid.h libshut.h libusb.h liebert.h main.h	main-hal.h	\
+ ippon.h isbmex.h libhid.h libshut.h libusb.h liebert.h main.h		\
+ main-hal.h								\
  masterguard.h megatec.h metasys.h mge-hid.h mgemib.h mge-shut.h	\
  mge-utalk.h mustek.h netvisionmib.h newhidups.h nitram.h nut_usb.h	\
  oneac.h optiups.h powercom.h pwmib.h safenet.h serial.h sms.h		\
@@ -183,10 +185,18 @@ dist_noinst_HEADERS = al175.h apccmib.h apc-hid.h apcsmart.h bcmxcp.h	\
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,
-EXTRA_LIBRARIES = libdummy.a libdummy-hal.a
+EXTRA_LIBRARIES = libdummy.a
 libdummy_a_SOURCES = main.c dstate.c serial.c
-libdummy_hal_a_SOURCES = main-hal.c dstate-hal.c
-libdummy_hal_a_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS) $(LIBHAL_CFLAGS)
+
+# the nuthalmain library combines the code for main-hal.c and
+# dstate-hal.c. It is necessary for Automake-technical reasons,
+# because per-object CFLAGS can only be specified for libraries, not
+# for object files. This library is used during the build process, 
+# and is not meant to be installed.
+
+noinst_LIBRARIES = libnuthalmain.a
+libnuthalmain_a_SOURCES = main-hal.c dstate-hal.c
+libnuthalmain_a_CFLAGS = $(AM_CFLAGS) $(LIBHAL_CFLAGS)
 
 EXTRA_DIST = Doxyfile
 
