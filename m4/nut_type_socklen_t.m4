@@ -5,7 +5,7 @@ dnl have to test to find something that will work.
 
 dnl This code gets around.  This instance came from rsync 2.5.6.
 
-AC_DEFUN([TYPE_SOCKLEN_T],
+AC_DEFUN([NUT_TYPE_SOCKLEN_T],
 [
    AC_CHECK_TYPE([socklen_t], ,[
       AC_MSG_CHECKING([for socklen_t equivalent])

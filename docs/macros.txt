@@ -1,0 +1,44 @@
+Desc: NUT-specific autoconf macros
+File: macros.txt
+Date: 27 December 2006
+Auth: Peter Selinger <selinger@users.sourceforge.net>
+
+The following NUT-specific autoconf macros are defined in the m4/
+directory.
+
+ - Macro: NUT_TYPE_SOCKLEN_T
+ - Macro: NUT_TYPE_UINT8_T
+ - Macro: NUT_TYPE_UINT16_T
+   Check for the corresponding type in the system header files, and
+   #define a replacement if necessary.
+
+ - Macro: NUT_CHECK_LIBGD
+ - Macro: NUT_CHECK_LIBHAL
+ - Macro: NUT_CHECK_LIBNETSNMP
+ - Macro: NUT_CHECK_LIBSSL
+ - Macro: NUT_CHECK_LIBUSB
+   Determine the compiler flags for the corresponding library. On
+   success, set nut_have_libxxx="yes" and set NUT_LIBXXX_CFLAGS and
+   NUT_LIBXXX_LDFLAGS. On failure, set nut_have_libxxx="no". This macro
+   can be run multiple times, but will do the checking only once.
+   Here "xxx" should of course be replaced by the respective library name.
+
+   The checks for each library grow organically to compensate for
+   various bugs in the libraries, pkg-config, etc. This is why we have
+   a separate macro for each library.
+
+ - Macro: NUT_CHECK_HIDDEV
+   Check for the presence/location of Linux hiddev. If present, set
+   nut_linux_hiddev to the device path. If not present, set
+   nut_linux_hiddev="". This macro can be run multiple times, but will
+   do the checking only once.
+
+ - Macro: NUT_REPORT_FEATURE(ACTION, VALUE) 
+   Schedule a line for the end-of-configuration feature summary.  The
+   ACTION is a descriptive string such that the sentence "Checking
+   whether to ACTION" makes sense, and VALUE describes the decision
+   taken (typically yes or no).
+
+ - Macro: NUT_PRINT_FEATURE_REPORT
+   Print out a list of the features that have been reported by
+   previous NUT_REPORT_FEATURE macro calls.

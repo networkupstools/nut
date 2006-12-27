@@ -1,4 +1,4 @@
-hdnl +------------------------------------------------------------------+
+dnl +------------------------------------------------------------------+
 dnl | Network UPS Tools: configure.in                                  |
 dnl +------------------------------------------------------------------+
 
@@ -17,6 +17,9 @@ test "${prefix}" = "NONE" && prefix="${ac_default_prefix}"
 test "${exec_prefix}" = "NONE" && exec_prefix='${prefix}'
 
 CFLAGS=${CFLAGS-"-O"}
+
+dnl NOTE: for definition of NUT_* autoconf macros, see m4/ directory
+dnl and docs/macros.txt
 
 dnl +------------------------------------------------------------------+
 dnl | default values for things later on (can be overridden)           |
@@ -37,12 +40,6 @@ PIDPATH="/var/run"
 
 dnl Define directory where LIBOBJS replacement functions are
 AC_CONFIG_LIBOBJ_DIR([common])
-
-dnl These are only used if gdlib-config is unusable and the user
-dnl fails to pass better values in --with arguments
-
-LIBGD_CFLAGS=""
-LIBGD_LDFLAGS="-L/usr/X11R6/lib -lgd -lpng -lz -ljpeg -lfreetype -lm -lXpm -lX11"
 
 dnl +-------------------------------------------------------------------
 
@@ -137,9 +134,9 @@ AC_HEADER_TIME
 AC_CHECK_HEADERS(sys/time.h)
 
 dnl Check for types and define possible replacements
-TYPE_SOCKLEN_T
-TYPE_UINT16_T
-TYPE_UINT8_T
+NUT_TYPE_SOCKLEN_T
+NUT_TYPE_UINT16_T
+NUT_TYPE_UINT8_T
 
 dnl ----------------------------------------------------------------------
 dnl check for --with-all (or --without-all, or --with-all=auto) flag
@@ -173,59 +170,22 @@ AC_ARG_WITH(ssl,
 )
 dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto". 
 
-dnl ----------------------------------------------------------------------
-dnl check for SSL compiler flags
-
 if test "${nut_with_ssl}" != "no"; then
-
-   AC_MSG_CHECKING(for SSL library availability)
-
-   CFLAGS_ORIG="${CFLAGS}"
-   LDFLAGS_ORIG="${LDFLAGS}"
-
-   SSL_CFLAGS=""
-   SSL_LDFLAGS="-lssl -lcrypto"
-
-   CFLAGS="${SSL_CFLAGS}"
-   LDFLAGS="${SSL_LDFLAGS}"
-   AC_TRY_LINK([#include <openssl/ssl.h>], [SSL_library_init()], 
-	       nut_have_ssl=yes, 
-	       nut_have_ssl=no)
-
-   if test "${nut_have_ssl}" != "yes"; then
-      SSL_CFLAGS="-I/usr/local/ssl/include"
-      SSL_LDFLAGS="-L/usr/local/ssl/lib -lssl -lcrypto"
-
-      CFLAGS="${SSL_CFLAGS}"
-      LDFLAGS="${SSL_LDFLAGS}"
-      AC_TRY_LINK([#include <openssl/ssl.h>], [SSL_library_init], 
-                  nut_have_ssl=yes, 
-		  nut_have_ssl=no)
+   dnl check for libssl compiler flags
+   dnl the actual check is done in a macro, see m4/nut_check_libssl.m4
+   NUT_CHECK_LIBSSL
+   if test "${nut_have_libssl}" = "yes"; then
+      LIBSSL_CFLAGS="${NUT_LIBSSL_CFLAGS}"
+      LIBSSL_LDFLAGS="${NUT_LIBSSL_LDFLAGS}"
    fi
-
-   if test "${nut_have_ssl}" != "yes"; then
-      SSL_CFLAGS="-I/usr/local/ssl/include -I/usr/kerberos/include"
-      SSL_LDFLAGS="-L/usr/local/ssl/lib -lssl -lcrypto"
-
-      CFLAGS="${SSL_CFLAGS}"
-      LDFLAGS="${SSL_LDFLAGS}"
-      AC_TRY_LINK([#include <openssl/ssl.h>], [SSL_library_init], 
-                   nut_have_ssl=yes, 
-		   nut_have_ssl=no)
-   fi
-
-   CFLAGS="${CFLAGS_ORIG}"
-   LDFLAGS="${LDFLAGS_ORIG}"
-
-   AC_MSG_RESULT([${nut_have_ssl}])
 fi
 
-if test "${nut_with_ssl}" = "yes" -a "${nut_have_ssl}" != "yes"; then
+if test "${nut_with_ssl}" = "yes" -a "${nut_have_libssl}" != "yes"; then
    AC_MSG_ERROR(["OpenSSL not found, required for SSL support"])
 fi
 
 if test "${nut_with_ssl}" != "no"; then
-   nut_with_ssl="${nut_have_ssl}"
+   nut_with_ssl="${nut_have_libssl}"
 fi
 
 if test "${nut_with_ssl}" = "yes"; then
@@ -243,91 +203,14 @@ AC_ARG_WITH(cgi,
 )
 dnl ${nut_with_cgi}: any value except "yes" or "no" is treated as "auto".
 
-dnl ----------------------------------------------------------------------
-dnl check for GD compiler flags
-
 if test "${nut_with_cgi}" != "no"; then
-
-   dnl See if gdlib-config is out there and usable
-
-   AC_MSG_CHECKING(for gd version via gdlib-config)
-
-   GD_VERSION=`gdlib-config --version 2>/dev/null`
-   if (test "$?" != "0")
-   then
-	GD_VERSION="unknown"
-	AC_MSG_RESULT(not found)
-   else
-	AC_MSG_RESULT(${GD_VERSION})
+   dnl check for libgd compiler flags
+   dnl the actual check is done in a macro, see m4/nut_check_libgd.m4
+   NUT_CHECK_LIBGD
+   if test "${nut_have_libgd}" = "yes"; then
+      LIBGD_CFLAGS="${NUT_LIBGD_CFLAGS}"
+      LIBGD_LDFLAGS="${NUT_LIBGD_LDFLAGS}"
    fi
-
-   case "${GD_VERSION}" in
-	unknown)
-		;;
-
-	2.0.5 | 2.0.6 | 2.0.7)
-		AC_MSG_WARN([[gd ${GD_VERSION} detected, unable to use gdlib-config script]])
-		AC_MSG_WARN([[If gd detection fails, upgrade gd or use --with-gd-libs]])
-		;;
-
-	*)
-		LIBGD_LDFLAGS="`gdlib-config --ldflags` `gdlib-config --libs` -lgd"
-		LIBGD_CFLAGS="`gdlib-config --includes`"
-		;;
-	esac
-
-   dnl Now allow overriding gd settings if the user knows best
-
-   AC_MSG_CHECKING(for gd include flags)
-   AC_ARG_WITH(gd-includes,
-   AC_HELP_STRING([--with-gd-includes=FLAGS], [include flags for the gd library]),
-   [	case "${withval}" in
-	yes|no)
-		;;
-	*)
-		LIBGD_CFLAGS="${withval}"
-		;;
-	esac],
-   )
-   AC_MSG_RESULT([${LIBGD_CFLAGS}])
-
-   AC_MSG_CHECKING(for gd library flags)
-   AC_ARG_WITH(gd-libs,
-   AC_HELP_STRING([--with-gd-libs=FLAGS], [linker flags for the gd library]),
-   [	case "${withval}" in
-	yes|no)
-		;;
-	*)
-		LIBGD_LDFLAGS="${withval}"
-		;;
-	esac],
-   )
-   AC_MSG_RESULT([${LIBGD_LDFLAGS}])
-
-   dnl check if gd is usable
-
-   CFLAGS_ORIG="${CFLAGS}"
-   CPPFLAGS_ORIG="${CPPFLAGS}"
-   LDFLAGS_ORIG="${LDFLAGS}"
-
-		CFLAGS="${LIBGD_CFLAGS}"
-		CPPFLAGS="${LIBGD_CFLAGS}"
-		LDFLAGS="${LIBGD_LDFLAGS}"
-
-		AC_CHECK_HEADERS(gd.h)
-		AC_CHECK_LIB(gd, gdImagePng, 
-		[ nut_have_libgd=yes
-		  AC_DEFINE(HAVE_LIBGD, 1, 
-			[Define if you have Boutell's libgd installed])
-		],
-                [ nut_have_libgd=no ],
-		${LIBGD_LDFLAGS})
-
-   dnl put back the original versions
-   CFLAGS="${CFLAGS_ORIG}"
-   CPPFLAGS="${CPPFLAGS_ORIG}"
-   LDFLAGS="${LDFLAGS_ORIG}"
-
 fi
 
 if test "${nut_with_cgi}" = "yes" -a "${nut_have_libgd}" != "yes"; then
@@ -382,42 +265,22 @@ AC_ARG_WITH(snmp,
 )
 dnl ${nut_with_snmp}: any value except "yes" or "no" is treated as "auto". 
 
-dnl ----------------------------------------------------------------------
-dnl check for Net-SNMP libs and flags
-
 if test "${nut_with_snmp}" != "no"; then
-
-   dnl innocent until proven guilty
-   nut_have_net_snmp=yes
-   AC_MSG_CHECKING(for Net-SNMP cflags)
-   NETSNMP_CFLAGS=`net-snmp-config --cflags 2>/dev/null`
-
-   if (test "$?" != "0")
-   then
-	AC_MSG_RESULT([not found])
-	nut_have_net_snmp=no
-   else
-	AC_MSG_RESULT([${NETSNMP_CFLAGS}])
-   fi
-
-   AC_MSG_CHECKING(for Net-SNMP libs)
-   NETSNMP_LDFLAGS=`net-snmp-config --libs 2>/dev/null`
-
-   if (test "$?" != "0")
-   then
-	AC_MSG_RESULT([not found])
-	nut_have_net_snmp=no
-   else
-	AC_MSG_RESULT([${NETSNMP_LDFLAGS}])
+   dnl check for libnetsnmp compiler flags
+   dnl the actual check is done in a macro, see m4/nut_check_libnetsnmp.m4
+   NUT_CHECK_LIBNETSNMP
+   if test "${nut_have_libnetsnmp}" = "yes"; then
+      LIBNETSNMP_CFLAGS="${NUT_LIBNETSNMP_CFLAGS}"
+      LIBNETSNMP_LDFLAGS="${NUT_LIBNETSNMP_LDFLAGS}"
    fi
 fi
 
-if test "${nut_with_snmp}" = "yes" -a "${nut_have_net_snmp}" != "yes"; then
+if test "${nut_with_snmp}" = "yes" -a "${nut_have_libnetsnmp}" != "yes"; then
    AC_MSG_ERROR(["Net-SNMP libraries not found, required for SNMP drivers"])
 fi
 
 if test "${nut_with_snmp}" != "no"; then
-   nut_with_snmp="${nut_have_net_snmp}"
+   nut_with_snmp="${nut_have_libnetsnmp}"
 fi
 
 AM_CONDITIONAL(WITH_SNMP, test "${nut_with_snmp}" = "yes")
@@ -439,30 +302,14 @@ dnl USB-related checks
 
 if test "${nut_with_usb}" != "no"; then
 
-   dnl innocent until proven guilty
-   nut_have_libusb=yes
-
-   dnl Check for libusb libs and flags
-   AC_MSG_CHECKING(for libusb cflags)
-   LIBUSB_CFLAGS=`libusb-config --cflags 2>/dev/null`
-   if (test "$?" != "0")
-   then
-	AC_MSG_RESULT(not found)
-	nut_have_libusb=no
-   else
-	AC_MSG_RESULT(${LIBUSB_CFLAGS})
+   dnl Check for libusb compiler flags
+   dnl the actual check is done in a macro, see m4/nut_check_libusb.m4
+   NUT_CHECK_LIBUSB
+   if test "${nut_have_libusb}" = "yes"; then
+      LIBUSB_CFLAGS="${NUT_LIBUSB_CFLAGS}"
+      LIBUSB_LDFLAGS="${NUT_LIBUSB_LDFLAGS}"
    fi
-
-   AC_MSG_CHECKING(for libusb libs)
-   LIBUSB_LDFLAGS=`libusb-config --libs 2>/dev/null`
-   if (test "$?" != "0")
-   then
-	AC_MSG_RESULT(not found)
-	nut_have_libusb=no
-   else
-	AC_MSG_RESULT(${LIBUSB_LDFLAGS})
-   fi
-
+   
    dnl Check for libusb "force driver unbind" availability
    dnl Need at least libusb 0.1.8
    AC_CHECK_LIB(usb, usb_detach_kernel_driver_np, [
@@ -471,36 +318,13 @@ if test "${nut_with_usb}" != "no"; then
 	], [], [])
 
    dnl Check for Linux hiddev
-   AC_MSG_CHECKING(for Linux hiddev.h)
-   AC_ARG_WITH(linux-hiddev,
-   AC_HELP_STRING([--with-linux-hiddev=FILE], [linux hiddev.h location (/usr/include/linux/hiddev.h)]),
-   [	case "${withval}" in
-	yes)
-		linux_hiddev="/usr/include/linux/hiddev.h"
-		;;
-	no)
-		linux_hiddev=
-		;;
-	*)
-		linux_hiddev="${withval}"
-		;;
-	esac],
-   [
-	linux_hiddev="/usr/include/linux/hiddev.h"
-   ]
-   )
-
-   if test -z "${linux_hiddev}"; then
-        nut_have_hiddev=no
-	AC_MSG_RESULT(no)
-   elif test -f "${linux_hiddev}"; then
-	AC_MSG_RESULT(${linux_hiddev})
-        nut_have_hiddev=yes
-	AC_DEFINE_UNQUOTED(LINUX_HIDDEV, "${linux_hiddev}", [Complete path for Linux hiddev.h])
+   dnl the actual check is done in a macro, see m4/nut_check_hiddev.m4
+   NUT_CHECK_HIDDEV
+   if test -n "${nut_linux_hiddev}"; then
+      AC_DEFINE_UNQUOTED(LINUX_HIDDEV, "${nut_linux_hiddev}", [Complete path for Linux hiddev.h])
+      nut_have_hiddev=yes
    else
-	AC_MSG_RESULT(${linux_hiddev} not found)
-        nut_have_hiddev=no
-	linux_hiddev=
+      nut_have_hiddev=no
    fi
 
    dnl Solaris 10/11 USB handling (need librt and libusb runtime path)
@@ -558,56 +382,13 @@ AC_ARG_WITH(hal,
 )
 dnl ${nut_with_hal}: any value except "yes" or "no" is treated as "auto". 
 
-dnl ----------------------------------------------------------------------
-dnl Check for libhal libs and flags
-
 if test "${nut_with_hal}" != "no"; then
-
-   nut_have_libhal=yes
-   AC_MSG_CHECKING(for libhal cflags)
-	LIBHAL_CFLAGS=`pkg-config --silence-errors --cflags hal`
-   if (test "$?" != "0")
-   then
-	AC_MSG_RESULT(not found)
-	nut_have_libhal=no
-   else
-	AC_MSG_RESULT(${LIBHAL_CFLAGS})
-   fi
-
-   AC_MSG_CHECKING(for libhal libs)
-   LIBHAL_LDFLAGS=`pkg-config --silence-errors --libs hal`
-   if (test "$?" != "0")
-   then
-	AC_MSG_RESULT(not found)
-	nut_have_libhal=no
-   else
-	AC_MSG_RESULT(${LIBHAL_LDFLAGS})
-   fi
-
-   dnl if this didn't work, try some standard places. For example,
-   dnl HAL 0.5.8 and 0.5.8.1 contain pkg-config bugs.
-
-   if test "${nut_have_libhal}" != "yes"; then
-
-      dnl try again
-      nut_have_libhal=yes
-
-      CFLAGS_ORIG="${CFLAGS}"
-      CPPFLAGS_ORIG="${CPPFLAGS}"
-      LDFLAGS_ORIG="${LDFLAGS}"
-
-      LIBHAL_CFLAGS="-DDBUS_API_SUBJECT_TO_CHANGE -I/usr/include/hal -I/usr/include/dbus-1.0 -I/usr/lib/dbus-1.0/include"
-      LIBHAL_LDFLAGS="-lhal -ldbus-1 -lpthread"
-      
-      CFLAGS="${LIBHAL_CFLAGS}"
-      CPPFLAGS="${LIBHAL_CFLAGS}"
-      LDFLAGS="${LIBHAL_LDFLAGS}"
-      AC_CHECK_HEADER(libhal.h, , [nut_have_libhal=no])
-      AC_CHECK_LIB(hal, libhal_ctx_init, [:], [nut_have_libhal=no])
-
-      CFLAGS="${CFLAGS_ORIG}"
-      CPPFLAGS="${CPPFLAGS_ORIG}"
-      LDFLAGS="${LDFLAGS_ORIG}"
+   dnl Check for libhal compiler flags
+   dnl the actual check is done in a macro, see m4/nut_check_libhal.m4
+   NUT_CHECK_LIBHAL
+   if test "${nut_have_libhal}" = "yes"; then
+      LIBHAL_CFLAGS="${NUT_LIBHAL_CFLAGS}"
+      LIBHAL_LDFLAGS="${NUT_LIBHAL_LDFLAGS}"
    fi
 fi
 
@@ -929,7 +710,7 @@ AC_TRY_RUN([#include <stdio.h>
 main() { long long x = 1000000; x *= x; exit(((x/1000000) == 1000000)? 0: 1); }],
 nut_cv_have_longlong=yes,nut_cv_have_longlong=no,nut_cv_have_longlong=cross)])
 if test "${nut_cv_have_longlong}" = "yes"; then
-    AC_DEFINE(HAVE_LONGLONG, 1, [longlong support for snprintf])
+    AC_DEFINE(HAVE_LONG_LONG, 1, [long long support for snprintf])
 fi
 
 dnl expand ${sysconfdir} and write it out
@@ -946,12 +727,12 @@ eval conftemp=\"${conftemp}\"
 AC_DEFINE_UNQUOTED(DATADIR, "${conftemp}",
 			[Default path for data files])
 
-AC_SUBST(SSL_CFLAGS)
-AC_SUBST(SSL_LDFLAGS)
+AC_SUBST(LIBSSL_CFLAGS)
+AC_SUBST(LIBSSL_LDFLAGS)
 AC_SUBST(LIBGD_CFLAGS)
 AC_SUBST(LIBGD_LDFLAGS)
-AC_SUBST(NETSNMP_CFLAGS)
-AC_SUBST(NETSNMP_LDFLAGS)
+AC_SUBST(LIBNETSNMP_CFLAGS)
+AC_SUBST(LIBNETSNMP_LDFLAGS)
 AC_SUBST(LIBUSB_CFLAGS)
 AC_SUBST(LIBUSB_LDFLAGS)
 AC_SUBST(LIBHAL_CFLAGS)

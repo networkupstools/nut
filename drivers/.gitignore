@@ -2,6 +2,7 @@ Makefile
 .deps
 .libs
 Makefile.in
+libnuthalmain.a
 al175
 apcsmart
 bcmxcp
@@ -50,4 +51,3 @@ tripplitesu
 upscode2
 upsdrvctl
 victronups
-

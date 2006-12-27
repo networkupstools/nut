@@ -142,8 +142,8 @@ newmge_shut_LDADD = $(LDADD)
 
 # SNMP
 snmp_ups_SOURCES = snmp-ups.c
-snmp_ups_CFLAGS = $(AM_CFLAGS) $(NETSNMP_CFLAGS)
-snmp_ups_LDADD = $(LDADD_DRIVERS) $(NETSNMP_LDFLAGS)
+snmp_ups_CFLAGS = $(AM_CFLAGS) $(LIBNETSNMP_CFLAGS)
+snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LDFLAGS)
 
 # HAL
 hald_addon_usbhid_ups_SOURCES = newhidups.c libhid.c libusb.c hidparser.c	\

@@ -1,6 +1,6 @@
 dnl Check for an unsigned 8-bit integer type
 
-AC_DEFUN([TYPE_UINT8_T],
+AC_DEFUN([NUT_TYPE_UINT8_T],
 [
    nut_type_includes="";
    AC_CHECK_HEADERS(stdint.h, [nut_type_includes="#include <stdint.h>"])

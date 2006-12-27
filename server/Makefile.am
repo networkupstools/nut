@@ -1,8 +1,8 @@
 # Network UPS Tools: server
 
-AM_CFLAGS = -I$(top_srcdir)/include $(SSL_CFLAGS)
+AM_CFLAGS = -I$(top_srcdir)/include $(LIBSSL_CFLAGS)
 LDADD = ../common/libcommon.a ../common/state.o ../common/upsconf.o	\
- ../common/parseconf.o $(SSL_LDFLAGS) $(NETLIBS)
+ ../common/parseconf.o $(LIBSSL_LDFLAGS) $(NETLIBS)
 
 sbin_PROGRAMS = upsd
 EXTRA_PROGRAMS = sockdebug

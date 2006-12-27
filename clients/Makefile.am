@@ -1,8 +1,8 @@
 # Network UPS Tools: clients
 
 # by default, link programs in this directory with libcommon.a
-LDADD = ../common/libcommon.a libupsclient.la $(NETLIBS) $(SSL_LDFLAGS)
-AM_CFLAGS = $(SSL_CFLAGS) -I$(top_srcdir)/include
+LDADD = ../common/libcommon.a libupsclient.la $(NETLIBS) $(LIBSSL_LDFLAGS)
+AM_CFLAGS = $(LIBSSL_CFLAGS) -I$(top_srcdir)/include
 
 bin_PROGRAMS = upsc upslog upsrw upscmd
 dist_bin_SCRIPTS = upssched-cmd
