@@ -643,45 +643,18 @@ void dstate_setaux(const char *var, int aux)
 
 const char *dstate_getinfo(const char *var)
 {
-	struct	st_tree_t	*sttmp;
-
-	/* find the dtree node for var */
-	sttmp = state_tree_find(dtree_root, var);
-
-	if (!sttmp)
-		return NULL;
-
-	return sttmp->val;
+	return state_getinfo(dtree_root, var);
 }
 
 void dstate_addcmd(const char *cmdname)
 {
-	struct cmdlist_t *tmp, *last;
+	int	ret;
 
-	tmp = cmdhead;
-	last = NULL;
-
-	while (tmp) {
-		last = tmp;
-
-		/* no duplicates allowed */
-		if (!strcmp(tmp->name, cmdname))
-			return;
-
-		tmp = tmp->next;
-	}
-
-	tmp = xmalloc(sizeof(struct cmdlist_t));
-	tmp->name = xstrdup(cmdname);
-	tmp->next = NULL;
-
-	if (last)
-		last->next = tmp;
-	else
-		cmdhead = tmp;
+	ret = state_addcmd(&cmdhead, cmdname);
 
 	/* update listeners */
-	send_to_all("ADDCMD %s\n", cmdname);
+	if (ret == 1)
+		send_to_all("ADDCMD %s\n", cmdname);
 }
 
 int dstate_delinfo(const char *var)
@@ -699,77 +672,32 @@ int dstate_delinfo(const char *var)
 
 int dstate_delenum(const char *var, const char *val)
 {
-	struct	st_tree_t	*sttmp;
-	struct	enum_t *etmp, *elast;
+	int	ret;
 
-	/* find the dtree node for var */
-	sttmp = state_tree_find(dtree_root, var);
+	ret = state_delenum(dtree_root, var, val);
 
-	if (!sttmp)
-		return 0;
+	/* update listeners */
+	if (ret == 1)
+		send_to_all("DELENUM %s \"%s\"\n", var, val);
 
-	/* look for val in enum_list */
-	etmp = sttmp->enum_list;
-	elast = NULL;	
-
-	while (etmp) {
-		if (!strcmp(etmp->val, val)) {
-
-			if (elast)
-				elast->next = etmp->next;
-			else
-				sttmp->enum_list = etmp->next;
-
-			/* update listeners */
-			send_to_all("DELENUM %s \"%s\"\n", var, etmp->val);
-
-			free(etmp->val);
-			free(etmp);
-
-			return 1;
-		}
-
-		elast = etmp;
-		etmp = etmp->next;
-	}
-
-	return 0;	/* not found */
+	return ret;
 }
 
 int dstate_delcmd(const char *cmd)
 {
-	struct	cmdlist_t	*ctmp, *clast;
+	int	ret;
 
-	ctmp = cmdhead;
-	clast = NULL;	
+	ret = state_delcmd(&cmdhead, cmd);
 
-	while (ctmp) {
-		if (!strcmp(ctmp->name, cmd)) {
+	/* update listeners */
+	if (ret == 1)
+		send_to_all("DELCMD %s\n", cmd);
 
-			if (clast)
-				clast->next = ctmp->next;
-			else
-				cmdhead = ctmp->next;
-
-			/* update listeners */
-			send_to_all("DELCMD %s\n", cmd);
-
-			free(ctmp->name);
-			free(ctmp);
-
-			return 1;
-		}
-
-		ctmp = ctmp->next;
-	}
-
-	return 0;	/* not found */
+	return ret;
 }
 
 void dstate_free(void)
 {
-	struct	cmdlist_t	*ctmp, *cnext;
-
 	if (sockfd != -1) {
 		close(sockfd);
 		sockfd = -1;
@@ -784,18 +712,7 @@ void dstate_free(void)
 	state_infofree(dtree_root);
 	dtree_root = NULL;
 	
-	ctmp = cmdhead;
-
-	while (ctmp) {
-		cnext = ctmp->next;
-
-		if (ctmp->name)
-			free(ctmp->name);
-		free(ctmp);
-
-		ctmp = cnext;
-	}
-
+	state_cmdfree(cmdhead);
 	cmdhead = NULL;
 
 	conn_close_all();

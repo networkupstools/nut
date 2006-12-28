@@ -193,7 +193,7 @@ int state_setinfo(struct st_tree_t **nptr, const char *var, const char *val)
 
 	val_escape(node);
 
-	return 1;	/* added */
+	return 1;	/* changed */
 }
 
 static void st_tree_enum_add(struct enum_t **list, const char *enc)
@@ -227,7 +227,7 @@ int state_addenum(struct st_tree_t *root, const char *var, const char *value)
 	sttmp = state_tree_find(root, var);
 
 	if (!sttmp) {
-		upslogx(LOG_ERR, "dstate_addenum: base variable (%s) "
+		upslogx(LOG_ERR, "state_addenum: base variable (%s) "
 			"does not exist", var);
 		return 0;	/* failed */
 	}
@@ -249,7 +249,7 @@ int state_setaux(struct st_tree_t *root, const char *var, const char *auxs)
 	sttmp = state_tree_find(root, var);
 
 	if (!sttmp) {
-		upslogx(LOG_ERR, "dstate_addenum: base variable (%s) "
+		upslogx(LOG_ERR, "state_addenum: base variable (%s) "
 			"does not exist", var);
 		return -1;	/* failed */
 	}
@@ -327,7 +327,7 @@ void state_setflags(struct st_tree_t *root, const char *var, int numflags,
 	sttmp = state_tree_find(root, var);
 
 	if (!sttmp) {
-		upslogx(LOG_ERR, "dstate_setflags: base variable (%s) "
+		upslogx(LOG_ERR, "state_setflags: base variable (%s) "
 			"does not exist", var);
 		return;
 	}
@@ -350,7 +350,7 @@ void state_setflags(struct st_tree_t *root, const char *var, int numflags,
 	}
 }
 
-void state_addcmd(struct cmdlist_t **list, const char *cmdname)
+int state_addcmd(struct cmdlist_t **list, const char *cmdname)
 {
 	struct	cmdlist_t	*item = *list;
 
@@ -362,14 +362,14 @@ void state_addcmd(struct cmdlist_t **list, const char *cmdname)
 		/* now we're done creating it, add it to the list */
 		*list = item;
 
-		return;
+		return 1;
 	}
 
 	/* don't add duplicates - silently ignore them */
 	if (!strcasecmp(item->name, cmdname))
-		return;
+		return 0;
 
-	state_addcmd(&item->next, cmdname);
+	return state_addcmd(&item->next, cmdname);
 }
 
 void state_infofree(struct st_tree_t *node)
@@ -382,6 +382,17 @@ void state_infofree(struct st_tree_t *node)
 	state_infofree(node->right);
 
 	st_tree_node_free(node);
+}
+
+void state_cmdfree(struct cmdlist_t *list)
+{
+	if (!list)
+		return;
+
+	state_cmdfree(list->next);
+
+	free(list->name);
+	free(list);
 }
 
 int state_delcmd(struct cmdlist_t **list, const char *cmd)

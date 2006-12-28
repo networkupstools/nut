@@ -49,8 +49,9 @@ int state_getaux(struct st_tree_t *root, const char *var);
 const struct enum_t *state_getenumlist(struct st_tree_t *root, const char *var);
 void state_setflags(struct st_tree_t *root, const char *var, int numflags,
         char **flags);
-void state_addcmd(struct cmdlist_t **list, const char *cmdname);
+int state_addcmd(struct cmdlist_t **list, const char *cmdname);
 void state_infofree(struct st_tree_t *node);
+void state_cmdfree(struct cmdlist_t *list);
 int state_delcmd(struct cmdlist_t **list, const char *cmd);
 int state_delinfo(struct st_tree_t **root, const char *var);
 int state_delenum(struct st_tree_t *root, const char *var, const char *val);

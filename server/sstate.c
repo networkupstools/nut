@@ -339,19 +339,7 @@ void sstate_infofree(upstype *ups)
 
 void sstate_cmdfree(upstype *ups)
 {
-	struct	cmdlist_t	*tmp, *next;
-
-	tmp = ups->cmdlist;
-
-	while (tmp) {
-		next = tmp->next;
-
-		if (tmp->name)
-			free(tmp->name);
-		free(tmp);
-
-		tmp = next;
-	}
+	state_cmdfree(ups->cmdlist);
 
 	ups->cmdlist = NULL;
 }
