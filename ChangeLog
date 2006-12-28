@@ -1,3 +1,7 @@
+Thu Dec 28 19:44:29 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/hal-dstate.ch: C++ style comments are not allowed in ISO C90
+
 Thu Dec 28 14:18:50 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
 
  - common/state.c: rewrote several function to use recursion (to make

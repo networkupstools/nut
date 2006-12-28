@@ -39,12 +39,12 @@
 /* FUTURE: same */ 
 
 /* track client connections */
-// struct conn_t {
-// 	int     fd;
-// 	PCONF_CTX	ctx;
-// 	void    *next;
-// };
-
+/* struct conn_t {
+ *	int     fd;
+ *	PCONF_CTX	ctx;
+ *	void    *next;
+ *};
+ */
 	extern	struct	ups_handler	upsh;
 
 void dstate_init(const char *prog, const char *port);

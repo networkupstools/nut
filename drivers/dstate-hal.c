@@ -35,15 +35,16 @@
 
 #include <hal/libhal.h>
 
-
-// 	static	int	sockfd = -1, stale = 1, alarm_active = 0;
-// 	static	struct	st_tree_t	*dtree_root = NULL;
-// 	static	struct	conn_t	*connhead = NULL;
-// 	static	struct	cmdlist_t *cmdhead = NULL;
-// 	static	char	*sockfn = NULL;
-// 	static	char	status_buf[ST_MAX_VALUE_LEN], 
-// 			alarm_buf[ST_MAX_VALUE_LEN];
-// 
+/*
+ *	static	int	sockfd = -1, stale = 1, alarm_active = 0;
+ *	static	struct	st_tree_t	*dtree_root = NULL;
+ *	static	struct	conn_t	*connhead = NULL;
+ *	static	struct	cmdlist_t *cmdhead = NULL;
+ *	static	char	*sockfn = NULL;
+ *	static	char	status_buf[ST_MAX_VALUE_LEN], 
+ *			alarm_buf[ST_MAX_VALUE_LEN];
+ */
+ 
 struct	ups_handler	upsh;
 
 LibHalContext *ctx;
