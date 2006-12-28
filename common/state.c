@@ -57,11 +57,20 @@ static void val_escape(struct st_tree_t *node)
 	node->val = node->safe;
 }
 
+static void st_tree_enum_free(struct enum_t *list)
+{
+	if (!list)
+		return;
+
+	st_tree_enum_free(list->next);
+
+	free(list->val);
+	free(list);
+}
+
 /* free all memory associated with a node */
 static void st_tree_node_free(struct st_tree_t *node)
 {
-	struct	enum_t	*tmp, *next;
-
 	if (node->var)
 		free(node->var);
 	if (node->raw)
@@ -72,15 +81,7 @@ static void st_tree_node_free(struct st_tree_t *node)
 	/* never free node->val, since it's just a pointer to raw or safe */
 
 	/* blow away the list of enums */
-	tmp = node->enum_list;
-	while (tmp) {
-		next = tmp->next;
-
-		free(tmp->val);
-		free(tmp);
-
-		tmp = next;
-	}
+	st_tree_enum_free(node->enum_list);
 
 	/* now finally kill the node itself */
 	free(node);
@@ -105,6 +106,7 @@ static void st_tree_node_add(struct st_tree_t **nptr, struct st_tree_t *sptr)
 		st_tree_node_add(&node->right, sptr);
 }
 
+/* remove a variable from a tree */
 int state_delinfo(struct st_tree_t **nptr, const char *var)
 {
 	struct	st_tree_t	*node = *nptr;
@@ -138,9 +140,8 @@ int state_setinfo(struct st_tree_t **nptr, const char *var, const char *val)
 	struct	st_tree_t	*node = *nptr;
 
 	if (!node) {
-		*nptr = xmalloc(sizeof(struct st_tree_t));
+		node = xmalloc(sizeof(struct st_tree_t));
 
-		node = *nptr;
 		node->var = xstrdup(var);
 
 		node->rawsize = strlen(val) + 1;
@@ -162,6 +163,9 @@ int state_setinfo(struct st_tree_t **nptr, const char *var, const char *val)
 
 		node->left = NULL;
 		node->right = NULL;
+
+		/* now we're done with creating a new node, add it to the tree */
+		*nptr = node;
 
 		return 1;	/* added */
 	}
@@ -192,10 +196,31 @@ int state_setinfo(struct st_tree_t **nptr, const char *var, const char *val)
 	return 1;	/* added */
 }
 
+static void st_tree_enum_add(struct enum_t **list, const char *enc)
+{
+	struct	enum_t	*item = *list;
+
+	if (!item) {	/* end of list reached */
+		item = xmalloc(sizeof(struct enum_t));
+		item->val = xstrdup(enc);
+		item->next = NULL;
+
+		/* now we're done creating it, add it to the list */
+		*list = item;
+
+		return;
+	}
+
+	/* don't add duplicates - silently ignore them */
+	if (!strcmp(item->val, enc))
+		return;
+
+	st_tree_enum_add(&item->next, enc);
+}
+
 int state_addenum(struct st_tree_t *root, const char *var, const char *value)
 {
 	struct	st_tree_t	*sttmp;
-	struct	enum_t	*etmp, *elast;
 	char	enc[ST_MAX_VALUE_LEN];
 
 	/* find the tree node for var */
@@ -210,27 +235,7 @@ int state_addenum(struct st_tree_t *root, const char *var, const char *value)
 	/* smooth over any oddities in the enum value */
 	pconf_encode(value, enc, sizeof(enc));
 
-	etmp = sttmp->enum_list;
-	elast = NULL;
-
-	while (etmp) {
-		elast = etmp;
-
-		/* don't add duplicates - silently ignore them */
-		if (!strcmp(etmp->val, enc))
-			return 1;
-
-		etmp = etmp->next;
-	}
-
-	etmp = xmalloc(sizeof(struct enum_t));
-	etmp->val = xstrdup(enc);
-	etmp->next = NULL;
-
-	if (!elast)
-		sttmp->enum_list = etmp;
-	else
-		elast->next = etmp;
+	st_tree_enum_add(&sttmp->enum_list, enc);
 
 	return 1;
 }
@@ -344,31 +349,27 @@ void state_setflags(struct st_tree_t *root, const char *var, int numflags,
 		upsdebugx(2, "Unrecognized flag [%s]", flag[i]);
 	}
 }
-		
+
 void state_addcmd(struct cmdlist_t **list, const char *cmdname)
 {
-	struct	cmdlist_t	*tmp, *last;
+	struct	cmdlist_t	*item = *list;
 
-	tmp = last = *list;
+	if (!item) {	/* end of list reached */
+		item = xmalloc(sizeof(struct cmdlist_t));
+		item->name = xstrdup(cmdname);
+		item->next = NULL;
 
-	while (tmp) {
-		last = tmp;
+		/* now we're done creating it, add it to the list */
+		*list = item;
 
-		/* ignore duplicates */
-		if (!strcasecmp(tmp->name, cmdname))
-			return;
-
-		tmp = tmp->next;
+		return;
 	}
 
-	tmp = xmalloc(sizeof(struct cmdlist_t));
-	tmp->name = xstrdup(cmdname);
-	tmp->next = NULL;
+	/* don't add duplicates - silently ignore them */
+	if (!strcasecmp(item->name, cmdname))
+		return;
 
-	if (last)
-		last->next = tmp;
-	else
-		*list = tmp;
+	state_addcmd(&item->next, cmdname);
 }
 
 void state_infofree(struct st_tree_t *node)
@@ -385,35 +386,49 @@ void state_infofree(struct st_tree_t *node)
 
 int state_delcmd(struct cmdlist_t **list, const char *cmd)
 {
-	struct	cmdlist_t	*tmp, *last;
+	struct	cmdlist_t	*item = *list;
 
-	tmp = *list;
-	last = NULL;
+	if (!item)	/* not found */
+		return 0;
 
-	while (tmp) {
-		if (!strcmp(tmp->name, cmd)) {
+	/* if this is not the right command, go on to the next */
+	if (strcmp(item->name, cmd))
+		return state_delcmd(&item->next, cmd);
 
-			if (last)
-				last->next = tmp->next;
-			else
-				*list = tmp->next;
+	/* we found it! */
 
-			free(tmp->name);
-			free(tmp);
+	*list = item->next;
 
-			return 1;	/* deleted */
-		}
+	free(item->name);
+	free(item);
 
-		tmp = tmp->next;
-	}
+	return 1;	/* deleted */
+}
 
-	return 0;	/* not found */
+static int st_tree_del_enum(struct enum_t **list, const char *val)
+{
+	struct	enum_t	*item = *list;
+
+	if (!item)		/* not found */
+		return 0;
+
+	/* if this is not the right value, go on to the next */
+	if (strcmp(item->val, val))
+		return st_tree_del_enum(&item->next, val);
+
+	/* we found it! */
+
+	*list = item->next;
+
+	free(item->val);
+	free(item);
+
+	return 1;	/* deleted */
 }
 
 int state_delenum(struct st_tree_t *root, const char *var, const char *val)
 {
 	struct	st_tree_t	*sttmp;
-	struct	enum_t *etmp, *elast;
 
 	/* find the tree node for var */
 	sttmp = state_tree_find(root, var);
@@ -421,29 +436,7 @@ int state_delenum(struct st_tree_t *root, const char *var, const char *val)
 	if (!sttmp)
 		return 0;
 
-	/* look for val in enum_list */
-	etmp = sttmp->enum_list;
-	elast = NULL;	
-
-	while (etmp) {
-		if (!strcmp(etmp->val, val)) {
-
-			if (elast)
-				elast->next = etmp->next;
-			else
-				sttmp->enum_list = etmp->next;
-
-			free(etmp->val);
-			free(etmp);
-
-			return 1;	/* deleted */
-		}
-
-		elast = etmp;
-		etmp = etmp->next;
-	}
-
-	return 0;	/* not found */
+	return st_tree_del_enum(&sttmp->enum_list, val);
 }
 
 struct st_tree_t *state_tree_find(struct st_tree_t *node, const char *var)
