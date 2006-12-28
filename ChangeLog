@@ -1,3 +1,8 @@
+Thu Dec 28 06:10:51 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - configure.in: added LIBUSB check to HAL configuration
+ - configure.in: made checks for usb/hal/snmp prerequisites unconditional
+
 Wed Dec 27 06:36:12 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - configure.in: wrote NUT-specific autoconf macros to check for

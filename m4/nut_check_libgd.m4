@@ -1,5 +1,5 @@
 dnl Check for LIBGD compiler flags. On success, set nut_have_libgd="yes"
-dnl and set NUT_LIBGD_CFLAGS and NUT_LIBGD_LDFLAGS. On failure, set
+dnl and set LIBGD_CFLAGS and LIBGD_LDFLAGS. On failure, set
 dnl nut_have_libgd="no". This macro can be run multiple times, but will
 dnl do the checking only once. 
 
@@ -14,8 +14,8 @@ if test -z "${nut_have_libgd_seen}"; then
    dnl unusable and the user fails to pass better values in --with
    dnl arguments
 
-   NUT_LIBGD_CFLAGS=""
-   NUT_LIBGD_LDFLAGS="-L/usr/X11R6/lib -lgd -lpng -lz -ljpeg -lfreetype -lm -lXpm -lX11"
+   LIBGD_CFLAGS=""
+   LIBGD_LDFLAGS="-L/usr/X11R6/lib -lgd -lpng -lz -ljpeg -lfreetype -lm -lXpm -lX11"
 
    GD_VERSION=`gdlib-config --version 2>/dev/null`
    if (test "$?" != "0")
@@ -36,8 +36,8 @@ if test -z "${nut_have_libgd_seen}"; then
 		;;
 
 	*)
-		NUT_LIBGD_LDFLAGS="`gdlib-config --ldflags` `gdlib-config --libs` -lgd"
-		NUT_LIBGD_CFLAGS="`gdlib-config --includes`"
+		LIBGD_LDFLAGS="`gdlib-config --ldflags` `gdlib-config --libs` -lgd"
+		LIBGD_CFLAGS="`gdlib-config --includes`"
 		;;
 	esac
 
@@ -50,11 +50,11 @@ if test -z "${nut_have_libgd_seen}"; then
 	yes|no)
 		;;
 	*)
-		NUT_LIBGD_CFLAGS="${withval}"
+		LIBGD_CFLAGS="${withval}"
 		;;
 	esac],
    )
-   AC_MSG_RESULT([${NUT_LIBGD_CFLAGS}])
+   AC_MSG_RESULT([${LIBGD_CFLAGS}])
 
    AC_MSG_CHECKING(for gd library flags)
    AC_ARG_WITH(gd-libs,
@@ -63,11 +63,11 @@ if test -z "${nut_have_libgd_seen}"; then
 	yes|no)
 		;;
 	*)
-		NUT_LIBGD_LDFLAGS="${withval}"
+		LIBGD_LDFLAGS="${withval}"
 		;;
 	esac],
    )
-   AC_MSG_RESULT([${NUT_LIBGD_LDFLAGS}])
+   AC_MSG_RESULT([${LIBGD_LDFLAGS}])
 
    dnl check if gd is usable
 
@@ -75,9 +75,9 @@ if test -z "${nut_have_libgd_seen}"; then
    CPPFLAGS_ORIG="${CPPFLAGS}"
    LDFLAGS_ORIG="${LDFLAGS}"
 
-		CFLAGS="${NUT_LIBGD_CFLAGS}"
-		CPPFLAGS="${NUT_LIBGD_CFLAGS}"
-		LDFLAGS="${NUT_LIBGD_LDFLAGS}"
+		CFLAGS="${LIBGD_CFLAGS}"
+		CPPFLAGS="${LIBGD_CFLAGS}"
+		LDFLAGS="${LIBGD_LDFLAGS}"
 
 		AC_CHECK_HEADERS(gd.h)
 		AC_CHECK_LIB(gd, gdImagePng, 
@@ -86,7 +86,7 @@ if test -z "${nut_have_libgd_seen}"; then
 			[Define if you have Boutell's libgd installed])
 		],
                 [ nut_have_libgd=no ],
-		${NUT_LIBGD_LDFLAGS})
+		${LIBGD_LDFLAGS})
 
    dnl put back the original versions
    CFLAGS="${CFLAGS_ORIG}"

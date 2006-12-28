@@ -18,8 +18,8 @@ directory.
  - Macro: NUT_CHECK_LIBSSL
  - Macro: NUT_CHECK_LIBUSB
    Determine the compiler flags for the corresponding library. On
-   success, set nut_have_libxxx="yes" and set NUT_LIBXXX_CFLAGS and
-   NUT_LIBXXX_LDFLAGS. On failure, set nut_have_libxxx="no". This macro
+   success, set nut_have_libxxx="yes" and set LIBXXX_CFLAGS and
+   LIBXXX_LDFLAGS. On failure, set nut_have_libxxx="no". This macro
    can be run multiple times, but will do the checking only once.
    Here "xxx" should of course be replaced by the respective library name.
 

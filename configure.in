@@ -133,10 +133,55 @@ AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h sys/termios.h)
 AC_HEADER_TIME
 AC_CHECK_HEADERS(sys/time.h)
 
+dnl ----------------------------------------------------------------------
 dnl Check for types and define possible replacements
 NUT_TYPE_SOCKLEN_T
 NUT_TYPE_UINT16_T
 NUT_TYPE_UINT8_T
+
+dnl ----------------------------------------------------------------------
+dnl Check for presence and compiler flags of various libraries
+
+dnl These checks are performed unconditionally, even if the corresponding
+dnl --with-* options are not given. This is because we cannot predict
+dnl what will be in the --with-drivers argument.
+
+NUT_CHECK_LIBNETSNMP
+NUT_CHECK_LIBUSB
+NUT_CHECK_LIBHAL
+
+dnl ----------------------------------------------------------------------
+dnl additional USB-related checks
+
+dnl Check for libusb "force driver unbind" availability
+dnl Need at least libusb 0.1.8
+AC_CHECK_LIB(usb, usb_detach_kernel_driver_np, [
+  AC_DEFINE(LIBUSB_HAS_DETACH_KRNL_DRV, 1,
+    [Define to 1 if libusb supports `usb_detach_kernel_driver_np' function.])
+], [], [${LIBUSB_LDFLAGS}])
+
+dnl Check for Linux hiddev
+dnl the actual check is done in a macro, see m4/nut_check_hiddev.m4
+NUT_CHECK_HIDDEV
+if test -n "${nut_linux_hiddev}"; then
+   AC_DEFINE_UNQUOTED(LINUX_HIDDEV, "${nut_linux_hiddev}", [Complete path for Linux hiddev.h])
+   nut_have_hiddev=yes
+else
+   nut_have_hiddev=no
+fi
+
+dnl Solaris 10/11 USB handling (need librt and libusb runtime path)
+case ${target_os} in
+   solaris2.1* )
+      echo Checking for Solaris 10 / 11 specific configuration for usb drivers
+      AC_SEARCH_LIBS(nanosleep,rt)
+      LIBUSB_LDFLAGS="-R/usr/sfw/lib ${LIBUSB_LDFLAGS}"
+      dnl FIXME: Sun's libusb doesn't support timeout (so blocks notification)
+      dnl and need to call libusb close upon reconnexion
+      AC_DEFINE(SUN_LIBUSB, 1, [Define to 1 for Sun version of the libusb.])
+      SUN_LIBUSB=1
+      ;;
+esac
 
 dnl ----------------------------------------------------------------------
 dnl check for --with-all (or --without-all, or --with-all=auto) flag
@@ -172,12 +217,7 @@ dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto".
 
 if test "${nut_with_ssl}" != "no"; then
    dnl check for libssl compiler flags
-   dnl the actual check is done in a macro, see m4/nut_check_libssl.m4
    NUT_CHECK_LIBSSL
-   if test "${nut_have_libssl}" = "yes"; then
-      LIBSSL_CFLAGS="${NUT_LIBSSL_CFLAGS}"
-      LIBSSL_LDFLAGS="${NUT_LIBSSL_LDFLAGS}"
-   fi
 fi
 
 if test "${nut_with_ssl}" = "yes" -a "${nut_have_libssl}" != "yes"; then
@@ -205,12 +245,7 @@ dnl ${nut_with_cgi}: any value except "yes" or "no" is treated as "auto".
 
 if test "${nut_with_cgi}" != "no"; then
    dnl check for libgd compiler flags
-   dnl the actual check is done in a macro, see m4/nut_check_libgd.m4
    NUT_CHECK_LIBGD
-   if test "${nut_have_libgd}" = "yes"; then
-      LIBGD_CFLAGS="${NUT_LIBGD_CFLAGS}"
-      LIBGD_LDFLAGS="${NUT_LIBGD_LDFLAGS}"
-   fi
 fi
 
 if test "${nut_with_cgi}" = "yes" -a "${nut_have_libgd}" != "yes"; then
@@ -265,16 +300,6 @@ AC_ARG_WITH(snmp,
 )
 dnl ${nut_with_snmp}: any value except "yes" or "no" is treated as "auto". 
 
-if test "${nut_with_snmp}" != "no"; then
-   dnl check for libnetsnmp compiler flags
-   dnl the actual check is done in a macro, see m4/nut_check_libnetsnmp.m4
-   NUT_CHECK_LIBNETSNMP
-   if test "${nut_have_libnetsnmp}" = "yes"; then
-      LIBNETSNMP_CFLAGS="${NUT_LIBNETSNMP_CFLAGS}"
-      LIBNETSNMP_LDFLAGS="${NUT_LIBNETSNMP_LDFLAGS}"
-   fi
-fi
-
 if test "${nut_with_snmp}" = "yes" -a "${nut_have_libnetsnmp}" != "yes"; then
    AC_MSG_ERROR(["Net-SNMP libraries not found, required for SNMP drivers"])
 fi
@@ -297,51 +322,6 @@ AC_ARG_WITH(usb,
 )
 dnl ${nut_with_usb}: any value except "yes" or "no" is treated as "auto". 
 
-dnl ----------------------------------------------------------------------
-dnl USB-related checks
-
-if test "${nut_with_usb}" != "no"; then
-
-   dnl Check for libusb compiler flags
-   dnl the actual check is done in a macro, see m4/nut_check_libusb.m4
-   NUT_CHECK_LIBUSB
-   if test "${nut_have_libusb}" = "yes"; then
-      LIBUSB_CFLAGS="${NUT_LIBUSB_CFLAGS}"
-      LIBUSB_LDFLAGS="${NUT_LIBUSB_LDFLAGS}"
-   fi
-   
-   dnl Check for libusb "force driver unbind" availability
-   dnl Need at least libusb 0.1.8
-   AC_CHECK_LIB(usb, usb_detach_kernel_driver_np, [
-		AC_DEFINE(LIBUSB_HAS_DETACH_KRNL_DRV, 1,
-			[Define to 1 if libusb supports `usb_detach_kernel_driver_np' function.])
-	], [], [])
-
-   dnl Check for Linux hiddev
-   dnl the actual check is done in a macro, see m4/nut_check_hiddev.m4
-   NUT_CHECK_HIDDEV
-   if test -n "${nut_linux_hiddev}"; then
-      AC_DEFINE_UNQUOTED(LINUX_HIDDEV, "${nut_linux_hiddev}", [Complete path for Linux hiddev.h])
-      nut_have_hiddev=yes
-   else
-      nut_have_hiddev=no
-   fi
-
-   dnl Solaris 10/11 USB handling (need librt and libusb runtime path)
-   case ${target_os} in
-	solaris2.1* )
-		echo Checking for Solaris 10 / 11 specific configuration for usb drivers
-		AC_SEARCH_LIBS(nanosleep,rt)
-		LIBUSB_LDFLAGS="-R/usr/sfw/lib ${LIBUSB_LDFLAGS}"
-		dnl FIXME: Sun's libusb doesn't support timeout (so blocks notification)
-		dnl and need to call libusb close upon reconnexion
-		AC_DEFINE(SUN_LIBUSB, 1,
-			[Define to 1 for Sun version of the libusb.])
-		SUN_LIBUSB=1
-		;;
-   esac
-fi
-
 dnl If user requested USB drivers, insist on building all of them
 if test "${nut_with_usb}" = "yes"; then
    if test "${nut_have_libusb}" != "yes" -a "${nut_have_hiddev}" != "yes"; then
@@ -353,10 +333,8 @@ if test "${nut_with_usb}" = "yes"; then
    fi
 fi
 
-AM_CONDITIONAL(WITH_LIBUSB, test "${nut_have_libusb}" = "yes")
-AM_CONDITIONAL(WITH_HIDDEV, test "${nut_have_hiddev}" = "yes")
-
 if test "${nut_with_usb}" != "no"; then
+   nut_with_usb="yes"
    if test "${nut_have_libusb}" = "yes" -a "${nut_have_hiddev}" = "yes"; then
       nut_usb_msg="yes"
    elif test "${nut_have_libusb}" = "yes"; then
@@ -365,10 +343,15 @@ if test "${nut_with_usb}" != "no"; then
       nut_usb_msg="hiddev-based drivers only"
    else
       nut_usb_msg="no"
+      nut_with_usb="no"
    fi
 else
    nut_usb_msg="no"
 fi
+
+AM_CONDITIONAL(WITH_USB, test "${nut_with_usb}" = "yes")
+AM_CONDITIONAL(HAVE_LIBUSB, test "${nut_with_libusb}" = "yes")
+AM_CONDITIONAL(HAVE_HIDDEV, test "${nut_with_hiddev}" = "yes")
 
 NUT_REPORT_FEATURE([build USB drivers], [${nut_usb_msg}])
 
@@ -382,22 +365,20 @@ AC_ARG_WITH(hal,
 )
 dnl ${nut_with_hal}: any value except "yes" or "no" is treated as "auto". 
 
-if test "${nut_with_hal}" != "no"; then
-   dnl Check for libhal compiler flags
-   dnl the actual check is done in a macro, see m4/nut_check_libhal.m4
-   NUT_CHECK_LIBHAL
-   if test "${nut_have_libhal}" = "yes"; then
-      LIBHAL_CFLAGS="${NUT_LIBHAL_CFLAGS}"
-      LIBHAL_LDFLAGS="${NUT_LIBHAL_LDFLAGS}"
-   fi
-fi
-
 if test "${nut_with_hal}" = "yes" -a "${nut_have_libhal}" != "yes"; then
    AC_MSG_ERROR(["libhal not found, required for HAL support"])
 fi
 
+if test "${nut_with_hal}" = "yes" -a "${nut_have_libusb}" != "yes"; then
+   AC_MSG_ERROR(["libusb not found, required for HAL support"])
+fi
+
 if test "${nut_with_hal}" != "no"; then
-   nut_with_hal="${nut_have_libhal}"
+   if test "${nut_have_libhal}" = "yes" -a "${nut_have_libusb}" = "yes"; then
+      nut_with_hal="yes"
+   else
+      nut_with_hal="no"
+   fi
 fi
 
 AM_CONDITIONAL(WITH_HAL, test "${nut_with_hal}" = "yes")
