@@ -1,3 +1,8 @@
+Fri Dec 29 11:15:10 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - common/common.c, clients/upssched.c: check for errors just in case something
+   goes horribly wrong with duplicating file handles
+
 Fri Dec 29 10:52:47 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/everups.c: replace %m (glibc extension)

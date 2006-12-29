@@ -87,8 +87,12 @@ void background(void)
 	/* make fds 0-2 point somewhere defined */
 	if (open("/dev/null", O_RDWR) != 0)
 		fatal_with_errno("open /dev/null");
-	dup(0);
-	dup(0);
+
+	if (dup(0) == -1)
+		fatal_with_errno("dup");
+
+	if (dup(0) == -1)
+		fatal_with_errno("dup");
 
 #ifdef HAVE_SETSID
 	setsid();		/* make a new session to dodge signals */
@@ -191,8 +195,10 @@ int sendsignalfn(const char *pidfn, int sig)
 		return -1;
 	}
 
-	fgets(buf, sizeof(buf), pidf);
-	buf[strlen(buf)-1] = '\0';
+	if (fgets(buf, sizeof(buf), pidf) == NULL) {
+		upslogx(LOG_NOTICE, "Failed to read pid from %s", pidfn)
+		return -1;
+	}	
 
 	pid = strtol(buf, (char **)NULL, 10);
 

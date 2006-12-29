@@ -127,7 +127,7 @@ static void removetimer(ttype *tfind)
 
 	/* this one should never happen */
 
-	upslogx(LOG_ERR, "removetimer: failed to locate target at %p", tfind);
+	upslogx(LOG_ERR, "removetimer: failed to locate target at %p", (void *)tfind);
 }
 
 static void checktimers(void)
@@ -522,9 +522,15 @@ static void start_daemon(int lockfd)
 	close(1);
 	close(2);
 
-	(void) open("/dev/null", O_RDWR);
-	dup(0);
-	dup(0);
+	/* make fds 0-2 point somewhere defined */
+	if (open("/dev/null", O_RDWR) != 0)
+		fatal_with_errno("open /dev/null");
+
+	if (dup(0) == -1)
+		fatal_with_errno("dup");
+
+	if (dup(0) == -1)
+		fatal_with_errno("dup");
 
 	pipefd = open_sock();
 
