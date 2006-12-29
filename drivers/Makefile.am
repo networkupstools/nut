@@ -150,15 +150,12 @@ snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LDFLAGS)
 # HAL
 hald_addon_usbhid_ups_SOURCES = newhidups.c libhid.c libusb.c hidparser.c	\
  $(NEWHIDUPS_SUBDRIVERS)
-hald_addon_usbhid_ups_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS) $(LIBHAL_CFLAGS)
 hald_addon_usbhid_ups_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS)
 
 hald_addon_tripplite_usb_SOURCES = tripplite_usb.c libhid.c libusb.c hidparser.c
-hald_addon_tripplite_usb_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS) $(LIBHAL_CFLAGS)
 hald_addon_tripplite_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS) -lm
 
 hald_addon_bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c nut_usb.c
-hald_addon_bcmxcp_usb_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS) $(LIBHAL_CFLAGS)
 hald_addon_bcmxcp_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS)
 
 # ----------------------------------------------------------------------

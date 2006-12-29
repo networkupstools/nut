@@ -1,3 +1,8 @@
+Fri Dec 29 07:13:46 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - drivers/Makefile.am: removed unnecessary CFLAGS that caused
+   redundant object files to be created for HAL.
+
 Fri Dec 29 07:06:52 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - configure.in: fixed bug that prevented USB drivers from being built
