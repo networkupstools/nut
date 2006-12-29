@@ -327,7 +327,8 @@ static int battery_voltage_nominal = 12,
 	   input_voltage_scaled = 120,
 	/* input_voltage_maximum = -1,
 	   input_voltage_minimum = -1, */
-	   switchable_load_banks = 0;
+	   switchable_load_banks = 0,
+           unit_id = -1; /*!< range: 1-65535, most likely */
 
 /*! Time in seconds to delay before shutting down. */
 static unsigned int offdelay = DEFAULT_OFFDELAY;
@@ -733,10 +734,10 @@ static int setvar(const char *varname, const char *val)
 void upsdrv_initinfo(void)
 {
 	const unsigned char proto_msg[] = "\0", f_msg[] = "F", p_msg[] = "P",
-		s_msg[] = "S", v_msg[] = "V", w_msg[] = "W\0";
+		s_msg[] = "S", u_msg[] = "U", v_msg[] = "V", w_msg[] = "W\0";
 	char *model, *model_end, proto_string[5 + sizeof("protocol ")];
-	unsigned char proto_value[9], f_value[9], p_value[9], s_value[9], v_value[9],
-		      w_value[9], buf[256];
+	unsigned char proto_value[9], f_value[9], p_value[9], s_value[9],
+	     u_value[9], v_value[9], w_value[9], buf[256];
 	int  va, ret;
 	unsigned int proto_number = 0;
 
@@ -751,6 +752,8 @@ void upsdrv_initinfo(void)
 				"information to nut-upsdev mailing list");
 		}
 	}
+
+	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
 	ret = send_cmd(proto_msg, sizeof(proto_msg), proto_value, sizeof(proto_value)-1);
 	if(ret <= 0) {
@@ -767,6 +770,8 @@ void upsdrv_initinfo(void)
 	snprintf(proto_string, sizeof(proto_string), "protocol %04x", proto_number);
 
 	dstate_setinfo("ups.firmware.aux", proto_string);
+
+	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
 	ret = send_cmd(s_msg, sizeof(s_msg), s_value, sizeof(s_value)-1);
 	if(ret <= 0) {
@@ -799,6 +804,9 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("ups.power.nominal", "%d", va);
 
+	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
+
+        /* Fetch firmware version: */
 	ret = send_cmd(f_msg, sizeof(f_msg), f_value, sizeof(f_value)-1);
 
 	toprint_str(f_value+1, 6);
@@ -809,6 +817,23 @@ void upsdrv_initinfo(void)
 	ret = send_cmd(v_msg, sizeof(v_msg), v_value, sizeof(v_value)-1);
 
 	decode_v(v_value);
+
+	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
+
+        /* Unit ID might not be supported by all models: */
+	ret = send_cmd(u_msg, sizeof(u_msg), u_value, sizeof(u_value)-1);
+	if(ret <= 0) {
+		upslogx(LOG_NOTICE,"Error reading Unit ID");
+	} else {
+		unit_id = (int)((unsigned)(u_value[1]) << 8) 
+			| (unsigned)(u_value[2]);
+	}
+
+	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
+
+	if(unit_id >= 0) {
+		dstate_setinfo("ups.id", "%d", unit_id);
+	}
 
 	dstate_setinfo("input.voltage.nominal", "%d", input_voltage_nominal);
 	dstate_setinfo("battery.voltage.nominal", "%d", battery_voltage_nominal);
