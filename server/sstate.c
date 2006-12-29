@@ -211,6 +211,9 @@ int sstate_connect(upstype *ups)
 	pconf_init(&ups->sock_ctx, NULL);
 	ups->stale = 0;
 
+	/* set ups.status to "WAIT" while waiting for the driver response to dumpcmd */
+	state_setinfo(&ups->inforoot, "ups.status", "WAIT");
+
 	upslogx(LOG_INFO, "Connected to UPS [%s]: %s", ups->name, ups->fn);
 
 	return fd;
@@ -311,15 +314,13 @@ int sstate_dead(upstype *ups, int maxage)
 	time(&now);
 
 	/* ignore DATAOK/DATASTALE unless the dump is done */
-	if (ups->dumpdone)
-		if (!ups->data_ok)
-			return 1;	/* dead */
+	if ((ups->dumpdone) && (!ups->data_ok))
+		return 1;	/* dead */
 
 	elapsed = difftime(now, ups->last_heard);
 
-	/* somewhere beyond the halfway point - prod it to make it talk */
-	if ((elapsed > (maxage / 2)) &&
-		(difftime(now, ups->last_ping) > (maxage / 2)))
+	/* somewhere beyond a third of the maximum time - prod it to make it talk */
+	if ((elapsed > (maxage / 3)) && (difftime(now, ups->last_ping) > (maxage / 3)))
 		sendping(ups);
 
 	if (elapsed > maxage)
@@ -338,19 +339,7 @@ void sstate_infofree(upstype *ups)
 
 void sstate_cmdfree(upstype *ups)
 {
-	struct	cmdlist_t	*tmp, *next;
-
-	tmp = ups->cmdlist;
-
-	while (tmp) {
-		next = tmp->next;
-
-		if (tmp->name)
-			free(tmp->name);
-		free(tmp);
-
-		tmp = next;
-	}
+	state_cmdfree(ups->cmdlist);
 
 	ups->cmdlist = NULL;
 }

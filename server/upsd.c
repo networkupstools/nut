@@ -117,15 +117,15 @@ static void check_ups(upstype *ups)
 	if ((!ups) || (!ups->fn))
 		return;
 
+	/* see if we need to (re)connect to the socket */
+	if (ups->sock_fd == -1)
+		ups->sock_fd = sstate_connect(ups);
+
 	/* throw some warnings if it's not feeding us data any more */
 	if (sstate_dead(ups, maxage))
 		ups_data_stale(ups);
 	else
 		ups_data_ok(ups);
-
-	/* see if we need to (re)connect to the socket */
-	if (ups->sock_fd == -1)
-		ups->sock_fd = sstate_connect(ups);
 }
 
 /* create a listening socket for tcp connections */
@@ -703,88 +703,6 @@ static void setupsignals(void)
 	sigaction(SIGHUP, &sa, NULL);
 }
 
-/* try not to exit before the DUMPDONE hits, so clients work on the first try */
-static void initial_dump_wait(void)
-{
-	int	maxfd, ret, numups, numdone;
-	fd_set	rfds;
-	time_t	start, now;
-	struct	timeval	tv;
-	upstype	*utmp, *unext;
-
-	printf("Synchronizing...");
-	fflush(stdout);
-
-	time(&start);
-	time(&now);
-
-	while (difftime(now, start) < INITIAL_WAIT_MAX) {
-
-		/* check this now in case the user is trying to ^C us */
-		if (exit_flag) {
-			upsd_cleanup();
-			exit(EXIT_FAILURE);
-		}
-
-		maxfd = 0;
-		numups = 0;
-		numdone = 0;
-
-		tv.tv_sec = 1;
-		tv.tv_usec = 0;
-
-		FD_ZERO(&rfds);
-
-		for (utmp = firstups; utmp != NULL; utmp = utmp->next) {
-			if (utmp->sock_fd != -1) {
-				FD_SET(utmp->sock_fd, &rfds);
-
-				if (utmp->sock_fd > maxfd)
-					maxfd = utmp->sock_fd;
-
-				numups++;
-			}
-		}
-
-		ret = select(maxfd + 1, &rfds, NULL, NULL, &tv);
-
-		if (ret < 1) {
-			printf(".");
-			fflush(stdout);
-
-			time(&now);
-			continue;
-		}
-
-		utmp = firstups;
-		while (utmp) {
-			unext = utmp->next;
-
-			if (utmp->sock_fd != -1) {
-				if (FD_ISSET(utmp->sock_fd, &rfds))
-					sstate_sock_read(utmp);
-
-				if (utmp->dumpdone == 1)
-					numdone++;
-			}
-
-			utmp = unext;
-		}
-
-		/* if they're all done, then exit early */
-		if (numdone >= numups) {
-			printf("done\n");
-			fflush(stdout);
-			return;
-		}
-
-		time(&now);
-	}
-
-	printf(" giving up\n");
-	fflush(stdout);
-}
-
 void check_perms(const char *fn)
 {
 	int	ret;
@@ -918,12 +836,6 @@ int main(int argc, char **argv)
 
 	/* try to bring in the var/cmd descriptions */
 	desc_load();
-
-	/* try to get a full dump for each UPS before exiting */
-	initial_dump_wait();
-
-	/* this is after the uid change to detect permission problems */
-	check_every_ups();
 
 	if (do_background) {
 		background();

@@ -1,3 +1,13 @@
+Fri Dec 29 21:16:39 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - common/state.c, include/state.h: fixes list corruption in state_delcmd(),
+   use functions from common where possible
+ - drivers/dstate.c: use functions from common where possible
+ - server/sstate.c: add ups.status placeholder, allow for one failed poll
+   before declaring driver stale, use functions from common where possible
+ - server/upsd.c: remove initial_dump_wait(), reconnect to socket before
+   declaring driver stale
+
 Tue Dec 19 12:02:14 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 
  - include/version*: bump to 2.0.5-pre1, as it should have been.
