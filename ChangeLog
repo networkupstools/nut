@@ -1,3 +1,7 @@
+Fri Dec 29 07:06:52 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - configure.in: fixed bug that prevented USB drivers from being built
+
 Fri Dec 29 07:00:46 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - removed unnecessary Makefile from m4/

@@ -330,8 +330,8 @@ else
 fi
 
 AM_CONDITIONAL(WITH_USB, test "${nut_with_usb}" = "yes")
-AM_CONDITIONAL(HAVE_LIBUSB, test "${nut_with_libusb}" = "yes")
-AM_CONDITIONAL(HAVE_HIDDEV, test "${nut_with_hiddev}" = "yes")
+AM_CONDITIONAL(HAVE_LIBUSB, test "${nut_have_libusb}" = "yes")
+AM_CONDITIONAL(HAVE_HIDDEV, test "${nut_have_hiddev}" = "yes")
 
 NUT_REPORT_FEATURE([build USB drivers], [${nut_usb_msg}])
 
