@@ -140,6 +140,39 @@ NUT_TYPE_UINT16_T
 NUT_TYPE_UINT8_T
 
 dnl ----------------------------------------------------------------------
+dnl check for --with-all (or --without-all, or --with-all=auto) flag
+
+AC_MSG_CHECKING(for --with-all)
+AC_ARG_WITH(all,
+AC_HELP_STRING([--with-all], [enable serial, usb, snmp, hal, cgi, lib]),
+[	if test -n "${withval}"; then
+		dnl Note: we allow "no" as a positive value, because
+		dnl this is what the user expects from --without-all
+		if test -z "${with_cgi}"; then with_cgi="${withval}"; fi
+		if test -z "${with_lib}"; then with_lib="${withval}"; fi
+		if test -z "${with_serial}"; then with_serial="${withval}"; fi
+		if test -z "${with_snmp}"; then with_snmp="${withval}"; fi
+		if test -z "${with_usb}"; then with_usb="${withval}"; fi
+		if test -z "${with_hal}"; then with_hal="${withval}"; fi
+		AC_MSG_RESULT("${withval}")		
+	else
+		AC_MSG_RESULT(not given)
+	fi
+], [		AC_MSG_RESULT(not given)
+])
+
+dnl ----------------------------------------------------------------------
+dnl declare a number of --with-FEATURE options. Do this early, so that 
+dnl they are listed near the top by "./configure --help"
+
+NUT_ARG_WITH([serial], [build and install serial drivers], [yes])
+NUT_ARG_WITH([usb], [build and install USB drivers], [auto])
+NUT_ARG_WITH([snmp], [build and install SNMP drivers], [auto])
+NUT_ARG_WITH([hal], [build and install HAL support], [auto])
+NUT_ARG_WITH([cgi], [build and install the CGI programs], [no])
+NUT_ARG_WITH([lib], [build and install the upsclient library], [no])
+
+dnl ----------------------------------------------------------------------
 dnl Check for presence and compiler flags of various libraries
 
 dnl These checks are performed unconditionally, even if the corresponding
@@ -184,37 +217,11 @@ case ${target_os} in
 esac
 
 dnl ----------------------------------------------------------------------
-dnl check for --with-all (or --without-all, or --with-all=auto) flag
-
-AC_MSG_CHECKING(for --with-all)
-AC_ARG_WITH(all,
-AC_HELP_STRING([--with-all], [enable cgi, lib, serial, snmp, usb, hal]),
-[	if test -n "${withval}"; then
-		dnl Note: we allow "no" as a positive value, because
-		dnl this is what the user expects from --without-all
-		if test -z "${with_cgi}"; then with_cgi="${withval}"; fi
-		if test -z "${with_lib}"; then with_lib="${withval}"; fi
-		if test -z "${with_serial}"; then with_serial="${withval}"; fi
-		if test -z "${with_snmp}"; then with_snmp="${withval}"; fi
-		if test -z "${with_usb}"; then with_usb="${withval}"; fi
-		if test -z "${with_hal}"; then with_hal="${withval}"; fi
-		AC_MSG_RESULT("${withval}")		
-	else
-		AC_MSG_RESULT(not given)
-	fi
-], [		AC_MSG_RESULT(not given)
-])
-
-dnl ----------------------------------------------------------------------
 dnl Check for --with-ssl
 
-AC_ARG_WITH(ssl,
- AC_HELP_STRING([--with-ssl], [enable SSL development code (default: auto)]),
- [nut_with_ssl="${withval}"],
- [nut_with_ssl="auto"]
-)
-dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto". 
+NUT_ARG_WITH([ssl], [enable SSL development code], [auto])
 
+dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto". 
 if test "${nut_with_ssl}" != "no"; then
    dnl check for libssl compiler flags
    NUT_CHECK_LIBSSL
@@ -234,15 +241,9 @@ fi
 NUT_REPORT_FEATURE([enable SSL development code], [${nut_with_ssl}])
 
 dnl ----------------------------------------------------------------------
-dnl check with --with-cgi
+dnl checks related to --with-cgi
 
-AC_ARG_WITH(cgi,
- AC_HELP_STRING([--with-cgi], [build and install the CGI programs (default: no)]),
- [nut_with_cgi="${withval}"],
- [nut_with_cgi="no"]
-)
 dnl ${nut_with_cgi}: any value except "yes" or "no" is treated as "auto".
-
 if test "${nut_with_cgi}" != "no"; then
    dnl check for libgd compiler flags
    NUT_CHECK_LIBGD
@@ -261,13 +262,8 @@ AM_CONDITIONAL(WITH_CGI, test "${nut_with_cgi}" = "yes")
 NUT_REPORT_FEATURE([build CGI programs], [${nut_with_cgi}])
 
 dnl ----------------------------------------------------------------------
-dnl check with --with-lib
+dnl checks related to --with-lib
 
-AC_ARG_WITH(lib,
- AC_HELP_STRING([--with-lib], [build and install the upsclient library (no)]),
- [nut_with_lib="${withval}"],
- [nut_with_lib="no"]
-)
 dnl ${nut_with_lib}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_lib}" != "no"; then
   nut_with_lib="yes"
@@ -276,13 +272,8 @@ AM_CONDITIONAL(WITH_LIB, test "${nut_with_lib}" = "yes")
 NUT_REPORT_FEATURE([build upsclient library], [${nut_with_lib}])
 
 dnl ----------------------------------------------------------------------
-dnl check for --with-serial
+dnl checks related to --with-serial
 
-AC_ARG_WITH(serial,
- AC_HELP_STRING([--with-serial], [build and install serial drivers (yes)]),
- [nut_with_serial="${withval}"],
- [nut_with_serial="yes"]
-)
 dnl ${nut_with_serial}: any value except "yes" or "no" is treated as "auto". 
 if test "${nut_with_serial}" != "no"; then
   nut_with_serial="yes"
@@ -291,15 +282,9 @@ AM_CONDITIONAL(WITH_SERIAL, test "${nut_with_serial}" = "yes")
 NUT_REPORT_FEATURE([build serial drivers], [${nut_with_serial}])
 
 dnl ----------------------------------------------------------------------
-dnl check for --with-snmp
+dnl checks related to --with-snmp
 
-AC_ARG_WITH(snmp,
- AC_HELP_STRING([--with-snmp], [build and install SNMP drivers (auto)]),
- [nut_with_snmp="${withval}"],
- [nut_with_snmp="auto"]
-)
 dnl ${nut_with_snmp}: any value except "yes" or "no" is treated as "auto". 
-
 if test "${nut_with_snmp}" = "yes" -a "${nut_have_libnetsnmp}" != "yes"; then
    AC_MSG_ERROR(["Net-SNMP libraries not found, required for SNMP drivers"])
 fi
@@ -313,13 +298,8 @@ AM_CONDITIONAL(WITH_SNMP, test "${nut_with_snmp}" = "yes")
 NUT_REPORT_FEATURE([build SNMP drivers], [${nut_with_snmp}])
 
 dnl ----------------------------------------------------------------------
-dnl check for --with-usb
+dnl checks related to --with-usb
 
-AC_ARG_WITH(usb,
- AC_HELP_STRING([--with-usb], [build and install USB drivers (auto)]),
- [nut_with_usb="${withval}"],
- [nut_with_usb="auto"]
-)
 dnl ${nut_with_usb}: any value except "yes" or "no" is treated as "auto". 
 
 dnl If user requested USB drivers, insist on building all of them
@@ -356,15 +336,9 @@ AM_CONDITIONAL(HAVE_HIDDEV, test "${nut_with_hiddev}" = "yes")
 NUT_REPORT_FEATURE([build USB drivers], [${nut_usb_msg}])
 
 dnl ----------------------------------------------------------------------
-dnl check for --with-hal
+dnl checks related to --with-hal
 
-AC_ARG_WITH(hal,
- AC_HELP_STRING([--with-hal], [build and install HAL support (auto)]),
- [nut_with_hal="${withval}"],
- [nut_with_hal="auto"]
-)
 dnl ${nut_with_hal}: any value except "yes" or "no" is treated as "auto". 
-
 if test "${nut_with_hal}" = "yes" -a "${nut_have_libhal}" != "yes"; then
    AC_MSG_ERROR(["libhal not found, required for HAL support"])
 fi
@@ -391,21 +365,15 @@ AC_ARG_WITH(statepath,
 AC_HELP_STRING([--with-statepath=PATH], [path for ups state files (/var/state/ups)]),
 [	case "${withval}" in
 	yes|no)
-		AC_MSG_RESULT(using default: ${STATEPATH})
-		AC_DEFINE_UNQUOTED(STATEPATH, "${STATEPATH}",
-			[Path for UPS driver state files])
 		;;
 	*)
-		AC_MSG_RESULT(${withval})
-		AC_DEFINE_UNQUOTED(STATEPATH, "${withval}",
-			[Path for UPS driver state files])
 		STATEPATH="${withval}"
 		;;
 	esac],
-	AC_MSG_RESULT(using default: ${STATEPATH})
-	AC_DEFINE_UNQUOTED(STATEPATH, "${STATEPATH}",
-		[Path for UPS driver state files])
 )
+AC_DEFINE_UNQUOTED(STATEPATH, "${STATEPATH}",
+	[Path for UPS driver state files])
+AC_MSG_RESULT(${STATEPATH})
 
 dnl ---------------------------------------------------------------------
 dnl The 'alt pid path' is used by the drivers (via main.c) and upsd, since
@@ -419,196 +387,130 @@ AC_ARG_WITH(altpidpath,
 AC_HELP_STRING([--with-altpidpath=PATH], [path for driver/upsd .pid files (<statepath>)]),
 [	case "${withval}" in
 	yes|no)
-		AC_MSG_RESULT(using default: ${STATEPATH})
-		AC_DEFINE_UNQUOTED(ALTPIDPATH, "${STATEPATH}",
-		[Path for pid files of drivers and upsd (usually STATEPATH)])
-
 		ALTPIDPATH="${STATEPATH}"
 		;;
 	*)
-		AC_MSG_RESULT(${withval})
-		AC_DEFINE_UNQUOTED(ALTPIDPATH, "${withval}",
-		[Path for pid files of drivers and upsd (usually STATEPATH)])
 		ALTPIDPATH="${withval}"
 		;;
 	esac],
-	AC_MSG_RESULT(using default: ${STATEPATH})
-	AC_DEFINE_UNQUOTED(ALTPIDPATH, "${STATEPATH}",
-		[Path for pid files of drivers and upsd (usually STATEPATH)])
 	ALTPIDPATH="${STATEPATH}"
 )
+AC_DEFINE_UNQUOTED(ALTPIDPATH, "${ALTPIDPATH}",
+	[Path for pid files of drivers and upsd (usually STATEPATH)])
+AC_MSG_RESULT(${ALTPIDPATH})
 
 AC_MSG_CHECKING(driver path)
 AC_ARG_WITH(drvpath,
 AC_HELP_STRING([--with-drvpath=PATH], [where to install ups drivers (EPREFIX/bin)]),
 [	case "${withval}" in
 	yes|no)
-		AC_MSG_RESULT(using default)
-		conftemp="${driverexecdir}"
-		eval conftemp=\"${conftemp}\"
-		eval conftemp=\"${conftemp}\"
-		AC_DEFINE_UNQUOTED(DRVPATH, "${conftemp}",
-			[Default path for UPS drivers])
 		;;
 	*)
-		AC_MSG_RESULT(${withval})
-		conftemp="${withval}"
-		eval conftemp=\"${conftemp}\"
-		eval conftemp=\"${conftemp}\"
-		AC_DEFINE_UNQUOTED(DRVPATH, "${conftemp}",
-			[Default path for UPS drivers])
 		driverexecdir="${withval}"
 		;;
 	esac],
-	AC_MSG_RESULT(using default)
-	conftemp="${driverexecdir}"
-	eval conftemp=\"${conftemp}\"
-	eval conftemp=\"${conftemp}\"
-	AC_DEFINE_UNQUOTED(DRVPATH, "${conftemp}",
-			[Default path for UPS drivers])
 )
+conftemp="${driverexecdir}"
+eval conftemp=\"${conftemp}\"
+eval conftemp=\"${conftemp}\"
+AC_DEFINE_UNQUOTED(DRVPATH, "${conftemp}", [Default path for UPS drivers])
+AC_MSG_RESULT(${driverexecdir})
 
 AC_MSG_CHECKING(cgi path)
 AC_ARG_WITH(cgipath,
 AC_HELP_STRING([--with-cgipath=PATH], [where to install CGI programs (EPREFIX/cgi-bin)]),
 [	case "${withval}" in
 	yes|no)
-		AC_MSG_RESULT(using default)
-		conftemp="${cgiexecdir}"
-		eval conftemp=\"${conftemp}\"
-		eval conftemp=\"${conftemp}\"
-		AC_DEFINE_UNQUOTED(CGIPATH, "${conftemp}",
-			[Default path for CGI programs])
 		;;
 	*)
-		AC_MSG_RESULT(${withval})
-		conftemp="${withval}"
-		eval conftemp=\"${conftemp}\"
-		eval conftemp=\"${conftemp}\"
-		AC_DEFINE_UNQUOTED(CGIPATH, "${conftemp}",
-			[Default path for CGI programs])
 		cgiexecdir="${withval}"
 		;;
 	esac],
-	AC_MSG_RESULT(using default)
-	conftemp="${cgiexecdir}"
-	eval conftemp=\"${conftemp}\"
-	eval conftemp=\"${conftemp}\"
-	AC_DEFINE_UNQUOTED(CGIPATH, "${conftemp}",
-			[Default path for CGI programs])
-	)
+)
+conftemp="${cgiexecdir}"
+eval conftemp=\"${conftemp}\"
+eval conftemp=\"${conftemp}\"
+AC_DEFINE_UNQUOTED(CGIPATH, "${conftemp}", [Default path for CGI programs])
+AC_MSG_RESULT(${cgiexecdir})
 
 AC_MSG_CHECKING(html path)
 AC_ARG_WITH(htmlpath,
 AC_HELP_STRING([--with-htmlpath=PATH], [where to install HTML files (PREFIX/html)]),
 [	case "${withval}" in
 	yes|no)
-		AC_MSG_RESULT(using default)
-		conftemp="${htmldir}"
-		eval conftemp=\"${conftemp}\"
-		eval conftemp=\"${conftemp}\"
-		AC_DEFINE_UNQUOTED(HTMLPATH, "${conftemp}",
-			[Default path for HTML files])
 		;;
 	*)
-		AC_MSG_RESULT(${withval})
-		conftemp="${withval}"
-		eval conftemp=\"${conftemp}\"
-		eval conftemp=\"${conftemp}\"
-		AC_DEFINE_UNQUOTED(HTMLPATH, "${conftemp}",
-			[Default path for HTML files])
 		htmldir="${withval}"
 		;;
 	esac],
-	AC_MSG_RESULT(using default)
-	conftemp="${htmldir}"
-	eval conftemp=\"${conftemp}\"
-	eval conftemp=\"${conftemp}\"
-	AC_DEFINE_UNQUOTED(HTMLPATH, "${conftemp}",
-			[Default path for HTML files])
-	)
+)
+conftemp="${htmldir}"
+eval conftemp=\"${conftemp}\"
+eval conftemp=\"${conftemp}\"
+AC_DEFINE_UNQUOTED(HTMLPATH, "${conftemp}", [Default path for HTML files])
+AC_MSG_RESULT(${htmldir})
 
 AC_MSG_CHECKING(pidpath)
 AC_ARG_WITH(pidpath,
 AC_HELP_STRING([--with-pidpath=PATH], [path for .pid files (/var/run)]),
 [	case "${withval}" in
 	yes|no)
-		AC_MSG_RESULT(using default: ${PIDPATH})
-		AC_DEFINE_UNQUOTED(PIDPATH, "${PIDPATH}",
-			[Path where the pid files should go])
 		;;
 	*)
-		AC_MSG_RESULT(${withval})
-		AC_DEFINE_UNQUOTED(PIDPATH, "${withval}",
-			[Path where the pid files should go])
 		PIDPATH="${withval}"
 		;;
 	esac],
-	AC_MSG_RESULT(using default: ${PIDPATH})
-	AC_DEFINE_UNQUOTED(PIDPATH, "${PIDPATH}",
-			[Path where the pid files should go])
 )
+AC_DEFINE_UNQUOTED(PIDPATH, "${PIDPATH}", [Path where the pid files should go])
+AC_MSG_RESULT(${PIDPATH})
 
 AC_MSG_CHECKING(network port number)
 AC_ARG_WITH(port,
 AC_HELP_STRING([--with-port=PORT], [port for network communications (3493)]),
 [	case "${withval}" in
 	yes|no)
-		AC_MSG_RESULT(using default value: 3493)
-		AC_DEFINE_UNQUOTED(PORT, 3493,
-			[Port for network communications])
+		PORT="3493"
 		;;
 	*)
-		AC_MSG_RESULT(${withval})
-		AC_DEFINE_UNQUOTED(PORT, ${withval},
-			[Port for network communications])
+		PORT="${withval}"
 		;;
 	esac],
-	AC_MSG_RESULT(using default value: 3493)
-	AC_DEFINE_UNQUOTED(PORT, 3493,
-		[Port for network communications])
+	PORT="3493"
 )
+AC_DEFINE_UNQUOTED(PORT, ${PORT}, [Port for network communications])
+AC_MSG_RESULT(${PORT})
 
 AC_MSG_CHECKING(user to run as)
 AC_ARG_WITH(user,
 AC_HELP_STRING([--with-user=username], [user for programs started as root (nobody)]),
 [	case "${withval}" in
 	yes|no)
-		AC_MSG_RESULT(using default: ${RUN_AS_USER})
-		AC_DEFINE_UNQUOTED(RUN_AS_USER, "${RUN_AS_USER}",
-			[User to switch to if started as root])
 		;;
 	*)
-		AC_MSG_RESULT(${withval})
-		AC_DEFINE_UNQUOTED(RUN_AS_USER, "${withval}",
-			[User to switch to if started as root])
 		RUN_AS_USER="${withval}"
 		;;
 	esac],
-	AC_MSG_RESULT(using default: ${RUN_AS_USER})
-	AC_DEFINE_UNQUOTED(RUN_AS_USER, "${RUN_AS_USER}",
-		[User to switch to if started as root])
 )
+AC_DEFINE_UNQUOTED(RUN_AS_USER, "${RUN_AS_USER}",
+	[User to switch to if started as root])
+AC_MSG_RESULT(${RUN_AS_USER})
 
 AC_MSG_CHECKING(facility for syslog)
 AC_ARG_WITH(logfacility,
 AC_HELP_STRING([--with-logfacility=FACILITY], [facility for log messages (LOG_DAEMON)]),
 [	case "${withval}" in
 	yes|no)
-		AC_MSG_RESULT(using default value: LOG_DAEMON)
-		AC_DEFINE_UNQUOTED(LOG_FACILITY, LOG_DAEMON,
-			[Desired syslog facility - see syslog(3)])
+		LOGFACILITY="LOG_DAEMON"
 		;;
 	*)
-		AC_MSG_RESULT(${withval})
-		AC_DEFINE_UNQUOTED(LOG_FACILITY, ${withval},
-			[Desired syslog facility - see syslog(3)])
+		LOGFACILITY="${withval}"
 		;;
 	esac],
-	AC_MSG_RESULT(using default value: LOG_DAEMON)
-	AC_DEFINE_UNQUOTED(LOG_FACILITY, LOG_DAEMON,
-		[Desired syslog facility - see syslog(3)])
+	LOGFACILITY="LOG_DAEMON"
 )
+AC_DEFINE_UNQUOTED(LOG_FACILITY, ${LOGFACILITY},
+	[Desired syslog facility - see syslog(3)])
+AC_MSG_RESULT(${LOGFACILITY})
 
 AC_MSG_CHECKING(which drivers to build)
 AC_ARG_WITH(drivers,
@@ -617,22 +519,29 @@ AC_HELP_STRING([[[[--with-drivers=driver@<:@,driver...@:>@]]]], [Only use specif
 	yes | no)
 		dnl ignore calls without any arguments
 		DRIVER_BUILD_LIST="all"
+		AC_MSG_RESULT(all available)
 		;;
 	*)
 		DRIVER_BUILD_LIST=`echo ${withval} | sed "s/,/ /g"`
+		AC_MSG_RESULT(${DRIVER_BUILD_LIST})
 		;;
 	esac
 ],
 [
 	DRIVER_BUILD_LIST="all"
+	AC_MSG_RESULT(all available)
 ]
 )
-AC_MSG_RESULT(${DRIVER_BUILD_LIST})
 AM_CONDITIONAL(SOME_DRIVERS, test "${DRIVER_BUILD_LIST}" != "all")
+
+if test "${DRIVER_BUILD_LIST}" != "all"; then
+   NUT_REPORT([only build specific drivers], [${DRIVER_BUILD_LIST}])
+fi
 
 AC_MSG_CHECKING(which driver man pages to install)
 if test "${DRIVER_BUILD_LIST}" = "all"; then
    DRIVER_MAN_LIST=all
+   AC_MSG_RESULT(all available)
 else
    DRIVER_MAN_LIST=""
    for i in ${DRIVER_BUILD_LIST}; do
@@ -640,8 +549,8 @@ else
          DRIVER_MAN_LIST="${DRIVER_MAN_LIST} $i.8"
       fi
    done
+   AC_MSG_RESULT(${DRIVER_MAN_LIST})
 fi
-AC_MSG_RESULT(${DRIVER_MAN_LIST})
 
 AC_MSG_CHECKING(whether to strip debug symbols)
 AC_ARG_ENABLE(strip,

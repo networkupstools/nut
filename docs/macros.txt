@@ -33,12 +33,21 @@ directory.
    nut_linux_hiddev="". This macro can be run multiple times, but will
    do the checking only once.
 
- - Macro: NUT_REPORT_FEATURE(ACTION, VALUE) 
+ - Macro: NUT_REPORT_FEATURE(FEATURE, VALUE) 
    Schedule a line for the end-of-configuration feature summary.  The
-   ACTION is a descriptive string such that the sentence "Checking
-   whether to ACTION" makes sense, and VALUE describes the decision
-   taken (typically yes or no).
+   FEATURE is a descriptive string such that the sentence "Checking
+   whether to FEATURE" makes sense, and VALUE describes the decision
+   taken (typically yes or no). The feature is also reported to the
+   terminal.
+
+ - Macro: NUT_REPORT(FEATURE, VALUE)
+   Schedule a line for the end-of-configuration feature summary, without
+   printing anything to the terminal immediately. 
 
  - Macro: NUT_PRINT_FEATURE_REPORT
    Print out a list of the features that have been reported by
    previous NUT_REPORT_FEATURE macro calls.
+
+ - Macro: NUT_ARG_WITH(FEATURE, DESCRIPTION, DEFAULT)
+   Declare a simple --with-FEATURE option with the given DESCRIPTION
+   and DEFAULT. Sets the variable nut_with_FEATURE.
