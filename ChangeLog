@@ -1,3 +1,7 @@
+Fri Dec 29 04:06:26 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - drivers/Makefile.am: fixed HAL build logic
+
 Fri Dec 29 01:32:29 UTC 2006 / Charles Lepple <clepple@gmail.com>
 
  - man/snmp-ups.8, man/bcmxcp_usb.8, man/skel.8, man/newhidups.8,
