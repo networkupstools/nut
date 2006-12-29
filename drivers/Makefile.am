@@ -191,9 +191,11 @@ libdummy_a_SOURCES = main.c dstate.c serial.c
 # for object files. This library is used during the build process, 
 # and is not meant to be installed.
 
+if WITH_HAL
 noinst_LIBRARIES = libnuthalmain.a
 libnuthalmain_a_SOURCES = main-hal.c dstate-hal.c
 libnuthalmain_a_CFLAGS = $(AM_CFLAGS) $(LIBHAL_CFLAGS)
+endif
 
 EXTRA_DIST = Doxyfile
 
