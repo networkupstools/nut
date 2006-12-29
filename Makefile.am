@@ -14,7 +14,7 @@ EXTRA_DIST = MAINTAINERS UPGRADING
 # flags to pass to ./configure when calling "make distcheck". Try
 # to check as many features as possible! Also need to give pkgconfig-dir,
 # so that staged install does not fail.
-DISTCHECK_CONFIGURE_FLAGS = --with-all --without-hal --with-ssl \
+DISTCHECK_CONFIGURE_FLAGS = --with-all --with-ssl \
  --with-pkgconfig-dir='$${prefix}/lib/pkgconfig'
 
 # ----------------------------------------------------------------------
