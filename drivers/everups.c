@@ -154,13 +154,13 @@ void upsdrv_updateinfo(void)
 void upsdrv_shutdown(void)
 {
 	if (!Code(2)) {
-		upslogx(LOG_INFO, "Code failed: %m\n");
+		upslog_with_errno(LOG_INFO, "Code failed");
 		return;
 	}
 	ser_send_char(upsfd, 28);
 	ser_send_char(upsfd, 1);  /* 1.28 sec */
 	if (!Code(1)) {
-		upslogx(LOG_INFO, "Code failed: %m\n");
+		upslog_with_errno(LOG_INFO, "Code failed");
 		return;
 	}
 	ser_send_char(upsfd, 13);

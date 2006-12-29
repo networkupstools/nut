@@ -1,3 +1,7 @@
+Fri Dec 29 10:52:47 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/everups.c: replace %m (glibc extension)
+
 Fri Dec 29 07:13:46 UTC 2006 / Peter Selinger <selinger@users.sourceforge.net>
 
  - drivers/Makefile.am: removed unnecessary CFLAGS that caused
