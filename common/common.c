@@ -196,7 +196,7 @@ int sendsignalfn(const char *pidfn, int sig)
 	}
 
 	if (fgets(buf, sizeof(buf), pidf) == NULL) {
-		upslogx(LOG_NOTICE, "Failed to read pid from %s", pidfn)
+		upslogx(LOG_NOTICE, "Failed to read pid from %s", pidfn);
 		return -1;
 	}	
 

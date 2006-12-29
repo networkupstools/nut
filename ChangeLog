@@ -1,3 +1,7 @@
+Fri Dec 29 11:30:21 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - common/common.c: stupid typo
+
 Fri Dec 29 11:15:10 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
 
  - common/common.c, clients/upssched.c: check for errors just in case something
