@@ -173,10 +173,10 @@ hald_addon_bcmxcp_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS)
 
 dist_noinst_HEADERS = al175.h apccmib.h apc-hid.h apcsmart.h bcmxcp.h	\
  bcmxcp_io.h belkin.h belkin-hid.h belkinunv.h bestfcom.h		\
- bestuferrups.h bestups.h blazer.h cpsups.h cyberpower.h dstate.h dstate-hal.h	\
+ bestuferrups.h bestups.h blazer.h cpsups.h cyberpower.h dstate.h	\
  dummy-ups.h esupssmart.h etapro.h everups.h fentonups.h gamatronic.h	\
  explore-hid.h genericups.h hidparser.h hidtypes.h hidups.h ietfmib.h	\
- ippon.h isbmex.h libhid.h libshut.h libusb.h liebert.h main.h main-hal.h	\
+ ippon.h isbmex.h libhid.h libshut.h libusb.h liebert.h main.h	main-hal.h	\
  masterguard.h megatec.h metasys.h mge-hid.h mgemib.h mge-shut.h	\
  mge-utalk.h mustek.h netvisionmib.h newhidups.h nitram.h nut_usb.h	\
  oneac.h optiups.h powercom.h pwmib.h safenet.h serial.h sms.h		\
