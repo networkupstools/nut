@@ -1,3 +1,7 @@
+Sat Dec 30 20:39:25 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/al175.c: insert 'broken_driver = 1' (see comments in source)
+
 Fri Dec 29 11:30:21 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
 
  - common/common.c: stupid typo

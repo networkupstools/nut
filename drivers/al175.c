@@ -1297,6 +1297,24 @@ void upsdrv_banner(void)
 {
 	printf("Network UPS Tools - Eltek AL175/COMLI support module %s (%s)\n\n", 
 		DRV_VERSION, UPS_VERSION);
+	/*
+	 * This driver does not support upsdrv_shutdown(), which makes
+	 * it not very useful in a real world application. This alone
+	 * warrants 'experimental' status, but for the below mentioned
+	 * reasons (to name a few), it's flagged 'broken' instead.
+	 *
+	 * - ‘return’ with a value, in function returning void (2x)
+	 * - anonymous variadic macros were introduced in C99
+	 * - C++ style comments are not allowed in ISO C90
+	 * - ISO C forbids braced-groups within expressions (5x)
+	 * - ISO C90 forbids specifying subobject to initialize (16x)
+	 * - ISO C99 requires rest arguments to be used (18x)
+	 * - initializer element is not computable at load time (4x)
+	 *
+	 * In short, there is a lot of rewriting to be done. Not the
+	 * whole world is a Linux box with the latest gcc on it.
+	 */
+	broken_driver = 1;
 }
 
 void upsdrv_initups(void)
