@@ -24,18 +24,9 @@
  * http://networkupstools.org for creating a very nice toolset.
 */
 
-/* hack version for 1200VA
-* by DJR
-* 
-* Ported to 2.0.4 and generialized
-* by RHR
-*/
-
 #include "cpsups.h"
 
-#define DRV_VERSION ".05"
-
-static int rmchar = 0;
+#define DRV_VERSION ".06"
 
 static void model_set(const char *abbr, const char *rating)
 {
@@ -55,16 +46,15 @@ static void model_set(const char *abbr, const char *rating)
 	        return;
 	}
 
-	/* Added: Doug Reynolds */
-	if (!strcmp(abbr, "#BC1200    ")) {
+	/* Added: Doug Reynolds 29Dec06 */
+        if (!strcmp(abbr, "#BC1200    ")) {
 		dstate_setinfo("ups.mfr", "%s", "CyberPower");
 		dstate_setinfo("ups.model", "CPS1200VA %s", rating);
-		dstate_setinfo("ups.runtime", "%s", "70");
+		dstate_setinfo("ups.runtime", "%s", "60");
 		dstate_setinfo("ups.power.nominal", "%s", "1200");
-		rmchar = 1;
 		return;
 	}
-
+	
 	if (!strcmp(abbr, "#1100VA    ")) {
 	        dstate_setinfo("ups.mfr", "%s", "CyberPower");
 	        dstate_setinfo("ups.model", "CPS1100VA %s", rating);
@@ -108,11 +98,26 @@ static void model_set(const char *abbr, const char *rating)
 	}
 
 	dstate_setinfo("ups.mfr", "%s", "Unknown");
-	dstate_setinfo("ups.model", "Unknown %s (%s)", abbr, rating);
+	dstate_setinfo("ups.model", "%s (%s)", abbr, rating);
 	dstate_setinfo("ups.runtime", "%s", "1");
 	dstate_setinfo("ups.power.nominal", "%s", "1");
 
 	printf("Unknown model detected - please report this ID: '%s'\n", abbr);
+}
+
+static void clr_cps_serial(void)
+{
+	int dtr_bit = TIOCM_DTR;
+
+	ioctl(upsfd, TIOCMBIC, &dtr_bit);
+}
+
+static void set_cps_serial(void)
+{
+        int dtr_bit = TIOCM_DTR;
+
+        ioctl(upsfd, TIOCMBIS, &dtr_bit);
+        tcflush(upsfd, TCIOFLUSH);
 }
 
 static int instcmd(const char *cmdname, const char *extra)
@@ -136,43 +141,260 @@ static int instcmd(const char *cmdname, const char *extra)
 
 static int get_ident(char *buf, size_t bufsize)
 {
-	int	i, ret;
+	int	a, rdy, ret;
+	char	dr[256];
+	
+/*
+ *              The cyberpower monitoring program sends the first \r seperate
+ *              from the identity request.  It sends a \r, waits for a #2,
+ *              then sends a P4\r
+ *
+ *              Hopefully, I will be able to duplicate that function here.
+ *		This seems to be a better way for the driver to accurately
+ *		detect unknown models.  In former state, it would fail to 
+ *		detect anything.
+ *
+ */
+	
+	for (a = 0; a < MAXTRIES; a++) {
+		
+		set_cps_serial();
 
-	for (i = 0; i < MAXTRIES; i++) {
-		ser_send_pace(upsfd, UPSDELAY, "\rP4\r");
-
-		ret = ser_get_line(upsfd, buf, bufsize, ENDCHAR, "",
+		ser_send_pace(upsfd, UPSDELAY, "\r");
+ 		
+		ret = ser_get_line(upsfd, dr, sizeof(dr), ENDCHAR, "",
 			SER_WAIT_SEC, SER_WAIT_USEC);
 
-		if (ret > 0)
-			upsdebugx(2, "get_ident: got [%s]", buf);
+		clr_cps_serial();
 
-		/* buf must start with # and be in the range [25-27] */
-		if ((ret > 0) && (buf[0] == '#') && (strlen(buf) >= 25) &&
-			(strlen(buf) <= 50))
-			return 1;
+		if ((dr[0] == '#') && (dr[1] == '2')) {
+			upsdebugx(2, "get_ident: got [%s], ready to poll for ups model", dr);
+			rdy = 1;
+			break;
+			}
 		else {
-			/* Try without leading \r */
+			upsdebugx(2, "get_ident: got [%s], instead of '#2', retrying", dr);
+			rdy = 0;
+			}
+		}
+
+
+	if (rdy) {
+		for (a = 0; a < MAXTRIES; a++) {
+
+			set_cps_serial();
 			ser_send_pace(upsfd, UPSDELAY, "P4\r");
+	
 			ret = ser_get_line(upsfd, buf, bufsize, ENDCHAR, "",
 				SER_WAIT_SEC, SER_WAIT_USEC);
+				
+			clr_cps_serial();
+
+			set_cps_serial();
+			ser_send_pace(upsfd, UPSDELAY, "P4\r");
+
+			ret = ser_get_line(upsfd, buf, bufsize, ENDCHAR, "",
+				SER_WAIT_SEC, SER_WAIT_USEC);
+
+			clr_cps_serial();
 
 			if (ret > 0)
 				upsdebugx(2, "get_ident: got [%s]", buf);
 
 			/* buf must start with # and be in the range [25-27] */
-			if ((ret > 0) && (buf[0] == '#') &&
-				(strlen(buf) >= 25) && (strlen(buf) <= 50))
-				return 1;
+
+			if ((ret > 0) && (buf[0] == '#') && (strlen(buf) >= 25) && (strlen(buf) <= 50)) {
+				rdy = 1;
+				break;
+				}
+			else {
+				rdy = 0;
+				upsdebugx(2, "get_ident: got [%s], instead of '#2', retrying", buf);
+				}
+			}
+		}
+	
+	if (rdy) {
+		for (a = 0; a < MAXTRIES; a++) {
+
+			set_cps_serial();
+			ser_send_pace(upsfd, UPSDELAY, "P3\r");
+
+			ret = ser_get_line(upsfd, dr, sizeof(dr), ENDCHAR, "",
+				SER_WAIT_SEC, SER_WAIT_USEC);
+
+			clr_cps_serial();
+
+			if ((ret > 0) && (dr[0] == '#') && (strlen(dr) > 2)) {
+
+				rdy = 1;
+				upsdebugx(2, "get_ident: P3 smart mode ok");
+				break;
+				}
+			else {
+				rdy = 0;
+				upsdebugx(2, "get_ident: got [%s], not smart mode ok", dr);
+				}
+			}
 		}
 
-		sleep(1);
+	if (rdy) {
+		for (a = 0; a < MAXTRIES; a++) {
+		
+		set_cps_serial();
+		ser_send_pace(upsfd, UPSDELAY, "P2\r");
+
+		ret = ser_get_line(upsfd, dr, sizeof(dr), ENDCHAR, "",
+			SER_WAIT_SEC, SER_WAIT_USEC);
+
+		clr_cps_serial();
+
+		if ((ret > 0) && (dr[0] == '#') && (strlen(dr) > 2)) {
+
+			rdy = 1;
+			upsdebugx(2, "get_ident: P2 smart mode ok");
+			break;
+			}
+		else {
+			rdy = 0;
+			upsdebugx(2, "get_ident: got [%s], not smart mode ok", dr);
+			}
+		}	
 	}
 
-	upslogx(LOG_INFO, "Giving up on hardware detection after %d tries",
-		MAXTRIES);
+	if (rdy) {
+		for (a = 0; a < MAXTRIES; a++) {
 
-	return 0;
+
+		set_cps_serial();
+		ser_send_pace(upsfd, UPSDELAY, "P1\r");
+
+		ret = ser_get_line(upsfd, dr, sizeof(dr), ENDCHAR, "",
+			SER_WAIT_SEC, SER_WAIT_USEC);
+
+		clr_cps_serial();
+
+		if ((ret > 0) && (dr[0] == '#') && (strlen(dr) > 2)) {
+
+			rdy = 1;
+			upsdebugx(2, "get_ident: P1 smart mode ok");
+			break;
+			}
+		else {
+			rdy = 0;
+			upsdebugx(2, "get_ident: got [%s], not smart mode ok", dr);                        
+			}
+		}
+	}
+
+	if (rdy) {
+		for (a = 0; a < MAXTRIES; a++) {
+		
+		set_cps_serial();
+		ser_send_pace(upsfd, UPSDELAY, "P7\r");
+
+		ret = ser_get_line(upsfd, dr, sizeof(dr), ENDCHAR, "",
+			SER_WAIT_SEC, SER_WAIT_USEC);
+
+		clr_cps_serial();
+
+		if ((ret > 0) && (dr[0] == '#') && (strlen(dr) > 2)) {
+
+			rdy = 1;
+			upsdebugx(2, "get_ident: P7 smart mode ok");
+			break;
+			}
+		else {
+			rdy = 0;
+			upsdebugx(2, "get_ident: got [%s], not smart mode ok", dr);
+			}
+		}
+	}
+
+	if (rdy) {
+		for (a = 0; a < MAXTRIES; a++) {
+
+		set_cps_serial();
+		ser_send_pace(upsfd, UPSDELAY, "P6\r");
+
+		ret = ser_get_line(upsfd, dr, sizeof(dr), ENDCHAR, "",
+			SER_WAIT_SEC, SER_WAIT_USEC);
+
+		clr_cps_serial();
+
+		if ((ret > 0) && (dr[0] == '#') && (strlen(dr) > 2)) {
+
+			rdy = 1;
+			upsdebugx(2, "get_ident: P6 smart mode ok");
+			break;
+			}
+		else {
+			rdy = 0;
+			upsdebugx(2, "get_ident: got [%s], not smart mode ok", dr);
+			}
+		}
+	}
+
+	if (rdy) {
+		for (a = 0; a < MAXTRIES; a++) {
+		
+		set_cps_serial();
+		ser_send_pace(upsfd, UPSDELAY, "P8\r");
+
+		ret = ser_get_line(upsfd, dr, sizeof(dr), ENDCHAR, "",
+			SER_WAIT_SEC, SER_WAIT_USEC);
+
+		clr_cps_serial();
+
+		if ((ret > 0) && (dr[0] == '#') && (strlen(dr) > 2)) {
+
+			rdy = 1;
+			upsdebugx(2, "get_ident: P8 smart mode ok");
+			break;
+			}
+		else {
+			rdy = 0;
+			upsdebugx(2, "get_ident: got [%s], not smart mode ok", dr);
+			}
+		}
+	}
+
+
+	if (rdy) {
+		for (a = 0; a < MAXTRIES; a++) {
+			
+			set_cps_serial();
+			ser_send_pace(upsfd, UPSDELAY, "P9\r");
+			
+			ret = ser_get_line(upsfd, dr, sizeof(dr), ENDCHAR, "",
+				SER_WAIT_SEC, SER_WAIT_USEC);
+
+			clr_cps_serial();
+			
+			if ((ret > 0) && (dr[0] == '#') && (strlen(dr) > 2) && (strlen(dr) < 8)) {
+				
+				rdy = 1;
+				upsdebugx(2, "get_ident: P9 smart mode ok");
+				break;
+				}
+			else {
+				rdy = 0;
+				upsdebugx(2, "get_ident: got [%s], not smart mode ok", dr);
+				} 
+
+			}
+		}	
+
+	
+	
+	if (!rdy) {
+		upslogx(LOG_INFO, "Giving up on hardware detection after %d tries", MAXTRIES);
+		return 0;
+		}
+	else	{
+		upsdebugx(2, "get_ident: ups initialized and ready");
+		return 1;
+		}
 }
 
 static int scan_poll_values(char *buf)
@@ -270,51 +492,38 @@ static void ups_ident(void)
 	model_set(model, rating);
 }
 
-static void ups_sync(void)
-{
-	char	buf[256];
-	int	i, ret;
-
-	for (i = 0; i < MAXTRIES; i++) {
-		if (rmchar) {
-			ser_send_pace(upsfd, UPSDELAY, "P4\r");
-			upsdebugx(3, "ups_sync: send [%s]", "P4\\r");
-		}
-		else {
-			ser_send_pace(upsfd, UPSDELAY, "\rP4\r");
-			upsdebugx(3, "ups_sync: send [%s]", "\\rP4\\r");
-		}
-
-		ret = ser_get_line(upsfd, buf, sizeof(buf), ENDCHAR, "",
-			SER_WAIT_SEC, SER_WAIT_USEC);
-		upsdebugx(3, "ups_sync: got ret %d [%s]", ret, buf);
-
-		/* return once we get something that looks usable */
-		if ((ret > 0) && (buf[0] == '#')) {
-			upsdebugx(3, "ups_sync: got line beginning with #, looks usable, returning");
-			return;
-		}
-
-		usleep(250000);
-	}
-
-	fatalx("Unable to detect a CyberPower text protocol UPS");
-}
 
 void upsdrv_initinfo(void)
 {
 	int ret;
 	char temp[256];
 
-	ups_sync();
+/*	ups_sync(); 
+ *
+ *	DJR 12-29-2006
+ *	Looking at the ups_sync routine makes me think that ups_sync and ups_ident
+ *	does the same thing.  Currently, I am remming it out, seems to work dandy
+ *	without it.
+ */
+
 	ups_ident();
 
 	printf("Detected %s %s on %s\n", dstate_getinfo("ups.mfr"),
 		dstate_getinfo("ups.model"), device_path);
 
 	/* paranoia - cancel any shutdown that might already be running */
+	
+	set_cps_serial();
+	ser_send_pace(upsfd, UPSDELAY, "D\r"); /* Need a readback so the first poll doesn't fail */
+	ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, "", SER_WAIT_SEC, SER_WAIT_USEC);
+	
+	clr_cps_serial();
+	
+	set_cps_serial();
 	ser_send_pace(upsfd, UPSDELAY, "C\r"); /* Need a readback so the first poll doesn't fail */
 	ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, "", SER_WAIT_SEC, SER_WAIT_USEC);
+	
+	clr_cps_serial();
 
 	upsh.instcmd = instcmd;
 
@@ -329,15 +538,14 @@ static int ups_on_line(void)
 	char	temp[256];
 
 	for (i = 0; i < MAXTRIES; i++) {
-		if (rmchar) {
-			ser_send_pace(upsfd, UPSDELAY, "D\r");
-		}
-		else {
-			ser_send_pace(upsfd, UPSDELAY, "\rD\r");
-		}
+		
+		set_cps_serial();
+		ser_send_pace(upsfd, UPSDELAY, "D\r");
 
 		ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, "",
 			SER_WAIT_SEC, SER_WAIT_USEC);
+		
+		clr_cps_serial();		
 
 		/* D must return 34 bytes starting with a # */
 		if ((ret > 0) && (temp[0] == '#') && (strlen(temp) == 34)) {
@@ -363,7 +571,10 @@ void upsdrv_shutdown(void)
 	int ret;
 	char    buf[256];
 
-	ups_sync();
+/*	Don't need ups_sync() here, initialization has been done a long
+ *	time ago!
+ *	ups_sync();
+ */
 
 	printf("The UPS will shut down in approximately one minute.\n");
 
@@ -375,13 +586,25 @@ void upsdrv_shutdown(void)
 	/* Although this is straight from the bestups.c driver, the UPS
 	 * does indeed shutdown correctly. */
 
-	ser_send_pace(upsfd, UPSDELAY, "S01R0001\r");
+	/* DJR - after hexedited the powerpanel, I believe it is
+		S00R0000 instead of S01R0001	*/
+	/* DJR - after more testing, S00R0000 seems to kinda work,
+		S01R0001 does work, and Z02 is what powerpanel uses...so... */
+
+	set_cps_serial();
+	ser_send_pace(upsfd, UPSDELAY, "Z02\r");
 
 	ret = ser_get_line(upsfd, buf, sizeof(buf), ENDCHAR, "",
 					   SER_WAIT_SEC, SER_WAIT_USEC);
 
-	if ((ret < 1) || (buf[0] != '#'))
+	clr_cps_serial();
+
+	if ((ret >= 2) && (buf[0] == '#') && (buf[1] == '0'))
+		upsdebugx(2,"upsdrv_shutdown: got [%s], good to shutdown", buf);
+	else {		
+		upsdebugx(2,"upsdrv_shutdown: got [%s], shutdown failed", buf);
 		printf ("Warning: got unexpected reply to shutdown command, shutdown may fail\n");
+	}
 }
 
 void upsdrv_updateinfo(void)
@@ -389,12 +612,13 @@ void upsdrv_updateinfo(void)
 	char	buf[256];
 	int	ret;
 
-	if (rmchar) {
-		ret = ser_send_pace(upsfd, UPSDELAY, "D\r");
-	}
-	else {
-		ret = ser_send_pace(upsfd, UPSDELAY, "\rD\r");
-	}
+/*
+ *	Only sending D\r here.  The leading \r is not needed
+ *
+ */
+
+	set_cps_serial();
+	ret = ser_send_pace(upsfd, UPSDELAY, "D\r");
 
 	if (ret < 1) {
 		ser_comm_fail("ser_send_pace failed");
@@ -403,35 +627,40 @@ void upsdrv_updateinfo(void)
 	}
 
 	/* these things need a long time to respond completely */
-	usleep(200000);
+
+/*	
+ *	usleep(200000);
+ *	DJR 12-29-2006
+ *	the cps 1200 doesn't seem to, the ups_on_line works without the delay
+ */
 
 	ret = ser_get_line(upsfd, buf, sizeof(buf), ENDCHAR, "",
 		SER_WAIT_SEC, SER_WAIT_USEC);
-
+	
+	clr_cps_serial();
+	
 	if (ret < 1) {
 		ser_comm_fail(NULL);
 		dstate_datastale();
 		return;
 	}
 
-	if (ret < 34) {
-		if (ret == 2) 		/* We need to retry this read right away    */
-		{
-			ret = ser_get_line(upsfd, buf, sizeof(buf), ENDCHAR, "", SER_WAIT_SEC, SER_WAIT_USEC);
-			if (ret < 34) {
-				ser_comm_fail("Poll failed: short read (got %d bytes)", ret);
-				dstate_datastale();
-				return;
-			}
-		} else {
-			ser_comm_fail("Poll failed: short read (got %d bytes)", ret);
-			dstate_datastale();
-			return;
-		}
-	}
+	if ((ret >= 34) && (ret <= 36))	 {	/* removing the if to see if we got a #2    */
+		
+		upsdebugx(2,"upsdrv_updateinfo: got [%s]", buf);
 
-	if (ret > 34) {
+	} 
+	else {
+		upsdebugx(2,"upsdrv_updateinfo: got [%s]", buf);
+		ser_comm_fail("Poll failed: short read (got %d bytes)", ret);
+		dstate_datastale();
+		return;
+	}
+	
+
+	if (ret > 36) {
 		upslogx(LOG_INFO, "String too long...");
+		upsdebugx(2,"upsdrv_updateinfo: got [%s]", buf);
 		ser_comm_fail("Poll failed: response too long (got %d bytes)",
 			ret);
 		dstate_datastale();
@@ -439,6 +668,7 @@ void upsdrv_updateinfo(void)
 	}
 
 	if (buf[0] != '#') {
+		upsdebugx(2,"upsdrv_updateinfo: got [%s]", buf);
 		ser_comm_fail("Poll failed: invalid start character (got %02x)",
 			buf[0]);
 		dstate_datastale();
@@ -472,12 +702,9 @@ void upsdrv_initups(void)
 {
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
-
 }
 
 void upsdrv_cleanup(void)
 {
 	ser_close(upsfd, device_path);
 }
-
-
