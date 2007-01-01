@@ -1,3 +1,8 @@
+Mon Jan  1 20:54:18 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - docs/new-names.txt: added ups.realpower, ups.realpower.nominal,
+   input.frequency.low, input.frequency.high and battery.capacity
+
 Sat Dec 30 20:54:53 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/cpsups.c: updated version from Doug Reynolds
