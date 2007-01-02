@@ -1,3 +1,8 @@
+Tue Jan  2 21:03:54 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/safenet.c: flush input and output buffers before sending
+   a command (to get rid of spurious PnP replies on some devices)
+
 Tue Jan  2 20:59:17 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - powerpanel: add new driver for CyberPower text protocol UPS (should

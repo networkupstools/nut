@@ -35,6 +35,9 @@
  *   - put all UPS commands in header file (for easy retrieval)
  *   - remove log errors when instant commands can't be handled
  *     (doesn't work reliably on at least one flavor)
+ *  20061229/Revision 1.1 - Arjen de Korte <arjen@de-korte.org>
+ *   - flush the serial input buffer before sending commands
+ *     (to get rid of unsollicited serial PnP replies)
  *
  * Copyright (C) 2003-2006  Arjen de Korte <arjen@de-korte.org>
  *
@@ -61,7 +64,7 @@
 #include "serial.h"
 #include "safenet.h"
 
-#define DRV_VERSION	"1.0"
+#define DRV_VERSION	"1.1"
 
 /*
  * Here we keep the last known status of the UPS
@@ -72,6 +75,11 @@ static int safenet_command(const char *command)
 {
 	char	reply[32];
 	int	i;
+
+	/*
+	 * Get rid of whatever is in the in- and output buffers.
+	 */
+	tcflush(upsfd, TCIOFLUSH);
 
 	/*
 	 * Send the command and read back the status line. When we just send
@@ -262,11 +270,6 @@ void upsdrv_initinfo(void)
 	}
 
 	/*
-	 * Get rid of PnP garbage that may be still left in the buffer.
-	 */
-	ser_flush_in(upsfd, "", 0);
-
-	/*
 	 * Initialize the serial interface of the UPS by sending the magic
 	 * string. If it does not respond with a valid status reply,
 	 * display an error message and give up.
@@ -351,11 +354,6 @@ void upsdrv_shutdown(void)
 	int	retry = 3;
 
 	/*
-	 * Get rid of PnP garbage that may be still left in the buffer.
-	 */
-	ser_flush_in(upsfd, "", 0);
-
-	/*
 	 * Since we may have arrived here before the hardware is initialized,
 	 * try to initialize it here.
 	 *
@@ -408,7 +406,6 @@ void upsdrv_makevartable(void)
 void upsdrv_banner(void)
 {
 	printf("Network UPS Tools - Generic SafeNet UPS driver %s (%s)\n\n", DRV_VERSION, UPS_VERSION);
-	experimental_driver = 0;
 }
 
 void upsdrv_initups(void)
