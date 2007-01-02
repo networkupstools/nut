@@ -284,8 +284,6 @@ printf("Connected to UPS on %s baudrate: %d\n",port, pw_baud_rates[i].name);
 
 void upsdrv_initups(void)
 {
-	experimental_driver=1;	
-
 	upsfd = ser_open(device_path);
 	pw_comm_setup(device_path);
 }

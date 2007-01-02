@@ -1242,4 +1242,6 @@ void upsdrv_banner(void)
 {
 	printf("Network UPS Tools - BCMXCP UPS driver %s (%s)\n\n",
 		DRV_VERSION, UPS_VERSION);
+
+	experimental_driver = 1;	
 }

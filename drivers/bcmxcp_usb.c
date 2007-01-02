@@ -166,8 +166,6 @@ void upsdrv_comm_good()
 
 void upsdrv_initups(void)
 {
-	experimental_driver=1;	
-
 	upsdev = nutusb_open("USB");
 }
 

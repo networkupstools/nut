@@ -439,6 +439,8 @@ void upsdrv_banner(void)
 {
 	printf("Network UPS Tools - Best Ferrups/Fortress %s (%s)\n",
 		DRV_VERSION, UPS_VERSION);
+
+	experimental_driver = 1;
 }
 
 static void sync_serial(void) {
@@ -731,8 +733,6 @@ void upsdrv_initups ()
 	ser_set_speed(upsfd, device_path, B1200);
 	setup_serial();
 	ups_sync();
-
-	experimental_driver = 1;
 
 	inverter_status = 0;
 	fc.model = UNKNOWN;

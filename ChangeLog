@@ -1,3 +1,9 @@
+Tue Jan  2 21:12:17 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/bcmxcp.c, drivers/bestfcom.c: 'experimental_driver = 1'
+   must be in the upsdrv_banner(), otherwise an informative message
+   won't be displayed
+
 Tue Jan  2 21:03:54 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/safenet.c: flush input and output buffers before sending
