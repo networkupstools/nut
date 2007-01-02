@@ -18,7 +18,7 @@ SERIAL_DRIVERLIST = al175 apcsmart bcmxcp belkin belkinunv bestfcom	\
  etapro everups fentonups gamatronic genericups ippon isbmex liebert	\
  masterguard megatec metasys mge-shut mge-utalk mustek newmge-shut	\
  nitram oneac optiups powercom rhino safenet skel sms solis tripplite	\
- tripplitesu upscode2 victronups
+ tripplitesu upscode2 victronups powerpanel
 SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = newhidups bcmxcp_usb tripplite_usb
 USB_HIDDEV_DRIVERLIST = hidups energizerups
@@ -94,6 +94,7 @@ nitram_SOURCES = nitram.c
 oneac_SOURCES = oneac.c
 optiups_SOURCES = optiups.c
 powercom_SOURCES = powercom.c
+powerpanel_SOURCES = powerpanel.c
 rhino_SOURCES = rhino.c
 rhino_LDADD = $(LDADD) -lm
 safenet_SOURCES = safenet.c
@@ -175,7 +176,7 @@ dist_noinst_HEADERS = al175.h apccmib.h apc-hid.h apcsmart.h bcmxcp.h	\
  mge-utalk.h mustek.h netvisionmib.h newhidups.h nitram.h nut_usb.h	\
  oneac.h optiups.h powercom.h pwmib.h safenet.h serial.h sms.h		\
  snmp-ups.h solis.h tripplite.h tripplite-hid.h tripplitesu.h		\
- upscode2.h victronups.h
+ upscode2.h victronups.h powerpanel.h
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,

@@ -41,6 +41,7 @@ SERIAL_PAGES = \
 	oneac.8		\
 	optiups.8	\
 	powercom.8 	\
+	powerpanel.8	\
 	megatec.8	\
 	rhino.8		\
 	safenet.8	\
