@@ -1,3 +1,10 @@
+Tue Jan  2 01:52:40 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - megatec: changed driver banner to include the contents of "progname"
+ - cpsups.c: added missing "sys/ioctl.h" that was breaking the build
+ - megatec.8, al175.8: fixed broken name section ("\(hy" instead of "\-")
+   as detected by doclifter (http://catb.org/~esr/doclifter/)
+
 Mon Jan  1 20:54:18 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - docs/new-names.txt: added ups.realpower, ups.realpower.nominal,

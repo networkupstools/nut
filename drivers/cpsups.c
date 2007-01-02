@@ -24,6 +24,8 @@
  * http://networkupstools.org for creating a very nice toolset.
 */
 
+#include <sys/ioctl.h>
+
 #include "cpsups.h"
 
 #define DRV_VERSION ".06"

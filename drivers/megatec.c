@@ -39,7 +39,7 @@
 /* The expected reply lengths (without IGNCHARS) */
 #define F_CMD_REPLY_LEN  20
 #define Q1_CMD_REPLY_LEN 45
-#define I_CMD_REPLY_LEN 37
+#define I_CMD_REPLY_LEN  37
 
 #define IDENT_MAXTRIES   5
 #define IDENT_MINSUCCESS 3
@@ -51,7 +51,7 @@
 #define MAX_SHUTDOWN_DELAY 99
 
 /* Maximum length of a string representing these values */
-#define MAX_START_DELAY_LEN 4
+#define MAX_START_DELAY_LEN    4
 #define MAX_SHUTDOWN_DELAY_LEN 2
 
 #define N_FLAGS 8
@@ -735,8 +735,8 @@ void upsdrv_makevartable(void)
 
 void upsdrv_banner(void)
 {
-	printf("Network UPS Tools - Megatec protocol driver %s (%s)\n", DRV_VERSION, UPS_VERSION);
-	printf("Carlos Rodrigues (c) 2003-2006\n\n");
+	printf("Network UPS Tools %s - Megatec protocol driver %s [%s]\n", UPS_VERSION, DRV_VERSION, progname);
+	printf("Carlos Rodrigues (c) 2003-2007\n\n");
 }
 
 
