@@ -1,3 +1,8 @@
+Tue Jan  2 02:02:35 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - megatec.8, al175.8: fixed broken name section ("\(hy" instead of "\-")
+   as detected by doclifter (http://catb.org/~esr/doclifter/)
+
 Fri Dec 29 21:16:39 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
 
  - common/state.c, include/state.h: fixes list corruption in state_delcmd(),
