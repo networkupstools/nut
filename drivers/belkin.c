@@ -1,6 +1,6 @@
 /* belkin.c - model specific routines for Belkin Smart-UPS units.
 
-   Copyright (C) 2000 Marcus Müller <marcus@ebootis.de>
+   Copyright (C) 2000 Marcus Mller <marcus@ebootis.de>
 
    based on:
 
@@ -143,7 +143,7 @@ static int do_broken_rat(char *buf)
 
 	usleep(25000);
 
-	ret = ser_get_buf_len(upsfd, tmp, 7, 3, 0);
+	ret = ser_get_buf_len(upsfd, (unsigned char *)tmp, 7, 3, 0);
 
 	if (ret != 7)
 		return -1;
@@ -160,7 +160,7 @@ static int do_broken_rat(char *buf)
 	if (cnt == 53)
 		cnt = 50;
 
-	ret = ser_get_buf_len(upsfd, buf, 50, cnt, 0);
+	ret = ser_get_buf_len(upsfd, (unsigned char *)buf, 50, cnt, 0);
 	buf[cnt] = 0;
 
 	return ret;
@@ -284,7 +284,7 @@ static int get_belkin_reply(char *buf)
 	usleep(25000);
 
 	/* pull first 7 bytes to get data length - like ~00S004 */
-	ret = ser_get_buf_len(upsfd, tmp, 7, 3, 0);
+	ret = ser_get_buf_len(upsfd, (unsigned char *)tmp, 7, 3, 0);
 
 	if (ret != 7) {
 		ser_comm_fail("Initial read returned %d bytes", ret);
@@ -300,7 +300,7 @@ static int get_belkin_reply(char *buf)
 	/* give it time to respond to us */
 	usleep(5000 * cnt);
 
-	ret = ser_get_buf_len(upsfd, buf, cnt, 3, 0);
+	ret = ser_get_buf_len(upsfd, (unsigned char *)buf, cnt, 3, 0);
 
 	buf[cnt] = 0;
 

@@ -203,7 +203,7 @@ static int confirm_write(const unsigned char *buf, size_t buflen)
 	}
 
 	/* don't try to read back the \r */
-	ret = ser_get_buf_len(upsfd, verify, buflen - 1, 5, 0);
+	ret = ser_get_buf_len(upsfd, (unsigned char *)verify, buflen - 1, 5, 0);
 
 	if ((ret < 1) || (ret < ((int) buflen - 1))) {
 		upsdebugx(1, "confirm_write: ret=%d, needed %d",
@@ -234,7 +234,7 @@ static int ups_on_line(void)
 	/* give it a chance to reply completely */
 	usleep(100000);
 
-	ret = ser_get_buf_len(upsfd, buf, 14, 3, 0);
+	ret = ser_get_buf_len(upsfd, (unsigned char *)buf, 14, 3, 0);
 
 	if (ret < 14) {
 		upslogx(LOG_ERR, "Status read failed: assuming on battery");
@@ -260,7 +260,7 @@ void upsdrv_shutdown(void)
 		fflush(stdout);
 
 		ser_send_char(upsfd, 13);
-		ret = ser_get_buf_len(upsfd, buf, 1, 5, 0);
+		ret = ser_get_buf_len(upsfd, (unsigned char *)buf, 1, 5, 0);
 
 		if (ret > 0) {
 			printf("OK\n");
@@ -334,7 +334,7 @@ void upsdrv_updateinfo(void)
 	/* give it a chance to reply completely */
 	usleep(100000);
 
-	ret = ser_get_buf_len(upsfd, buf, 14, 3, 0);
+	ret = ser_get_buf_len(upsfd, (unsigned char *)buf, 14, 3, 0);
 
 	if (ret < 14) {
 		ser_comm_fail("Short read from UPS");

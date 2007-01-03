@@ -1,3 +1,7 @@
+Wed Jan  3 12:03:50 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/various: fix compiler warnings about signedness
+
 Wed Jan  3 12:01:35 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/liebert.ch: use serial functions

@@ -62,7 +62,7 @@ static int instcmd(const char *cmdname, const char *extra);
 	The answer from the UPS have the same packet format and the first
 	data byte is equal to the command that the ups is answering to
 */
-int get_word(char *buffer) {		/* return an integer reading a word in the supplied buffer */
+int get_word(unsigned char *buffer) {		/* return an integer reading a word in the supplied buffer */
 	unsigned char a, b;
 	int result;
 	
@@ -73,19 +73,19 @@ int get_word(char *buffer) {		/* return an integer reading a word in the supplie
 }
 
 
-long int get_long(char *buffer) {	/* return a long integer reading 4 bytes in the supplied buffer */
+long int get_long(unsigned char *buffer) {	/* return a long integer reading 4 bytes in the supplied buffer */
 	unsigned char a, b, c, d;
 	long int result;
-	a=(unsigned char)buffer[0];
-	b=(unsigned char)buffer[1];
-	c=(unsigned char)buffer[2];
-	d=(unsigned char)buffer[3];
+	a=buffer[0];
+	b=buffer[1];
+	c=buffer[2];
+	d=buffer[3];
 	result = (256*256*256*d) + (256*256*c) + (256*b) + a;
 	return result;
 }	
 	
 void send_zeros() {				/* send 100 times the value 0x00.....it seems to be used for resetting */
-	char buf[100];				/* the ups serial port */
+	unsigned char buf[100];				/* the ups serial port */
 	int i;
 	
 	memset(buf, '\0', sizeof(buf));
@@ -95,10 +95,10 @@ void send_zeros() {				/* send 100 times the value 0x00.....it seems to be used 
 
 
 /* was used just for the debug process */
-void dump_buffer(char *buffer, int buf_len) {
+void dump_buffer(unsigned char *buffer, int buf_len) {
 	int i;
 	for (i = 0; i < buf_len; i++) { 
-		printf("byte %d: %x\n", i, (unsigned char)buffer[i]);	
+		printf("byte %d: %x\n", i, buffer[i]);	
 	}	
 	return;
 }
@@ -107,7 +107,7 @@ void dump_buffer(char *buffer, int buf_len) {
    it's a 4 byte request (STX, LENGHT, COMMAND and CHECKSUM) */
 void send_read_command(char command) {
 	int retry, sent;
-	char buf[4];
+	unsigned char buf[4];
 	retry = 0;
 	sent = 0;
 	while ((sent != 4) && (retry < 5)) {
@@ -124,9 +124,9 @@ void send_read_command(char command) {
 /* send a write command to the UPS, the write command and the value to be written are passed 
    with a char* buffer 
    it retries 5 times before give up */
-void send_write_command(char *command, int command_lenght) {
+void send_write_command(unsigned char *command, int command_lenght) {
 	int i, retry, sent, checksum;
-	char raw_buf[255];
+	unsigned char raw_buf[255];
 	
 	/* prepares the raw data */
 	raw_buf[0] = 0x02;		/* STX byte */
@@ -136,7 +136,7 @@ void send_write_command(char *command, int command_lenght) {
 	
 	/* calculate checksum */
 	checksum = 0;
-	for (i = 1; i < command_lenght; i++) checksum += (unsigned char)raw_buf[i];
+	for (i = 1; i < command_lenght; i++) checksum += raw_buf[i];
 	checksum = checksum % 256;
 	raw_buf[command_lenght] = (unsigned char)checksum;
 	command_lenght +=1;
@@ -146,15 +146,15 @@ void send_write_command(char *command, int command_lenght) {
 	while ((sent != (command_lenght)) && (retry < 5)) {
 		if (retry == 4) send_zeros();	/* last retry is preceded by a serial reset... */
 		sent = ser_send_buf(upsfd, raw_buf, (command_lenght));
-		if (sent != (command_lenght)) printf("Error sending command %d\n", (unsigned char)raw_buf[2]);
+		if (sent != (command_lenght)) printf("Error sending command %d\n", raw_buf[2]);
 		retry += 1;
 	}	
 }
 
 
 /* get the answer of a command from the ups */
-int get_answer(char *data) {
-	char my_buf[255];	/* packet has a maximum lenght of 256 bytes */
+int get_answer(unsigned char *data) {
+	unsigned char my_buf[255];	/* packet has a maximum lenght of 256 bytes */
 	int packet_lenght, checksum, i, res;
 	/* Read STX byte */
 	res = ser_get_char(upsfd, my_buf, 1, 0);
@@ -162,7 +162,7 @@ int get_answer(char *data) {
 		ser_comm_fail("Receive error (STX): %d!!!\n", res);
 		return -1;	
 	}
-	if ((unsigned char)my_buf[0] != 0x02) {
+	if (my_buf[0] != 0x02) {
 		ser_comm_fail("Receive error (STX): packet not on start!!\n");
 		return -1;	
 	}
@@ -172,7 +172,7 @@ int get_answer(char *data) {
 		ser_comm_fail("Receive error (lenght): %d!!!\n", res);
 		return -1;	
 	}
-	packet_lenght = (unsigned char)my_buf[0];
+	packet_lenght = my_buf[0];
 	if (packet_lenght < 2) {
 		ser_comm_fail("Receive error (lenght): packet lenght %d!!!\n", packet_lenght);
 		return -1;	
@@ -188,10 +188,10 @@ int get_answer(char *data) {
 	   checksum byte is equal to the sum modulus 256 of all the data bytes + packet_lenght 
 	   (no STX no checksum byte itself) */
 	checksum = packet_lenght;
-	for (i = 0; i < (packet_lenght - 1); i++) checksum += (unsigned char)my_buf[i];  
+	for (i = 0; i < (packet_lenght - 1); i++) checksum += my_buf[i];  
 	checksum = checksum % 256;
-	if ((unsigned char)my_buf[packet_lenght-1] != checksum) {
-		ser_comm_fail("checksum error! got %x instad of %x, received %d bytes \n", (unsigned char)my_buf[packet_lenght - 1], checksum, packet_lenght);
+	if (my_buf[packet_lenght-1] != checksum) {
+		ser_comm_fail("checksum error! got %x instad of %x, received %d bytes \n", my_buf[packet_lenght - 1], checksum, packet_lenght);
 		dump_buffer(my_buf, packet_lenght);
 		return -1;
 	}
@@ -203,7 +203,7 @@ int get_answer(char *data) {
 /* send a read command and try get the answer, if something fails, it retries (5 times max)
    if it is on the 4th or 5th retry, it will flush the serial before sending commands
    it returns the lenght of the received answer or -1 in case of failure */
-int command_read_sequence(char command, char *data) {
+int command_read_sequence(unsigned char command, unsigned char *data) {
 	int bytes_read = 0;
 	int retry = 0;
 	
@@ -213,7 +213,7 @@ int command_read_sequence(char command, char *data) {
 		if (retry > 2) ser_flush_in(upsfd, "", 0);
 		retry += 1;
 	}
-	if (((unsigned char)data[0] != command) || (retry == 5)) {
+	if ((data[0] != command) || (retry == 5)) {
 		ser_comm_fail("Error executing command %d\n", command);
 		return -1;
 		dstate_datastale();
@@ -225,7 +225,7 @@ int command_read_sequence(char command, char *data) {
 /* send a write command and try get the answer, if something fails, it retries (5 times max)
    if it is on the 4th or 5th retry, it will flush the serial before sending commands
    it returns the lenght of the received answer or -1 in case of failure */
-int command_write_sequence(char *command, int command_lenght, char *answer) {
+int command_write_sequence(unsigned char *command, int command_lenght, unsigned char *answer) {
 	int bytes_read = 0;
 	int retry = 0;
 	
@@ -235,8 +235,8 @@ int command_write_sequence(char *command, int command_lenght, char *answer) {
 		if (retry > 2) ser_flush_in(upsfd, "", 0);
 		retry += 1;
 	}
-	if (((unsigned char)answer[0] != (unsigned char)command[0]) || (retry == 5)) {
-		ser_comm_fail("Error executing command N.%d\n", (unsigned char)command[0]);
+	if ((answer[0] != command[0]) || (retry == 5)) {
+		ser_comm_fail("Error executing command N.%d\n", command[0]);
 		dstate_datastale();
 		return -1;
 	}
@@ -246,7 +246,8 @@ int command_write_sequence(char *command, int command_lenght, char *answer) {
 
 void upsdrv_initinfo(void)
 {
-	char my_answer[255], serial[13];
+	unsigned char my_answer[255];
+	char serial[13];
 	int res, i;
 
 	/* Initial setup of variables */
@@ -314,7 +315,7 @@ void upsdrv_initinfo(void)
 	/* the manufacturer is hard coded into the driver, the model type is in the second 
 		byte of the answer, the third byte identifies the model version */
 	dstate_setinfo("ups.mfr", "Meta System");
-	i = (unsigned char)my_answer[1] * 10 + (unsigned char)my_answer[2];
+	i = my_answer[1] * 10 + my_answer[2];
 	switch (i) {	
 		case 11:
 			dstate_setinfo("ups.model", "%s", "HF Line (1 board)");
@@ -537,7 +538,7 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("ups.serial", serial);
 	
 	/* get the ups firmware. The major number is in the 5th byte, the minor is in the 6th */
-	dstate_setinfo("ups.firmware", "%u.%u", (unsigned char)my_answer[5], (unsigned char)my_answer[6]);
+	dstate_setinfo("ups.firmware", "%u.%u", my_answer[5], my_answer[6]);
 
 	printf("Detected %s [%s] v.%s on %s\n", dstate_getinfo("ups.model"), dstate_getinfo("ups.serial"), dstate_getinfo("ups.firmware"), device_path);
 	
@@ -562,7 +563,7 @@ void upsdrv_updateinfo(void)
 #endif
 	float float_num;
 	long int long_num;
-	char my_answer[255];
+	unsigned char my_answer[255];
 	
 	/* GET Output data */
 	res = command_read_sequence(UPS_OUTPUT_DATA, my_answer);
@@ -715,7 +716,7 @@ void upsdrv_updateinfo(void)
 		printf("Could not communicate with the ups");
 		dstate_datastale();
 	} else {
-		autorestart = (unsigned char)my_answer[5];
+		autorestart = my_answer[5];
 	}
 	
 	
@@ -750,14 +751,14 @@ void upsdrv_updateinfo(void)
 	} else {
 		/* ups temperature */
 		my_answer[3] -=128;
-		if ((unsigned char)my_answer[3] > 0) {
-			dstate_setinfo("ups.temperature", "%d", (unsigned char)my_answer[3]);
+		if (my_answer[3] > 0) {
+			dstate_setinfo("ups.temperature", "%d", my_answer[3]);
 		} else {
 			dstate_setinfo("ups.temperature", "%s", "not available");
 		}	
 		/* Status */
 		status_init();
-		switch ((unsigned char)my_answer[1]) {	/* byte 1 = STATUS */
+		switch (my_answer[1]) {	/* byte 1 = STATUS */
 			case 0x00:
 				status_set("OL"); /* running on mains power */
 				break;
@@ -775,7 +776,7 @@ void upsdrv_updateinfo(void)
 				printf("status unknown \n");
 				break;
 		} 
-		switch ((unsigned char)my_answer[2]) {		/* byte 2 = FAULTS */
+		switch (my_answer[2]) {		/* byte 2 = FAULTS */
 			case 0x00:				/* all right */
 				break;
 			case 0x01:				/* overload */
@@ -802,7 +803,7 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	char command[10], answer[10];
+	unsigned char command[10], answer[10];
 	
 	
 	/* Ensure that the ups is configured for automatically
@@ -846,7 +847,7 @@ void upsdrv_shutdown(void)
 
 static int instcmd(const char *cmdname, const char *extra)
 {
-	char command[10], answer[10];
+	unsigned char command[10], answer[10];
 	int res;
 	
 	if (!strcasecmp(cmdname, "shutdown.return")) {
@@ -939,7 +940,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		send_write_command(command, 2);
 		sleep(15);
 		res = get_answer(answer);
-		switch ((unsigned char)answer[1]) {		/* byte 1 = Test result */
+		switch (answer[1]) {		/* byte 1 = Test result */
 			case 0x00:				/* all right */
 				dstate_setinfo("ups.test.result", "OK");
 				break;
@@ -967,7 +968,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		}
 		dstate_dataok();
 		upslogx(LOG_NOTICE, "instcmd: test battery returned with %d bytes", res);
-		upslogx(LOG_NOTICE, "test battery byte 1 = %x", (unsigned char)answer[1]);
+		upslogx(LOG_NOTICE, "test battery byte 1 = %x", answer[1]);
 		return STAT_INSTCMD_HANDLED;
 	}
 	

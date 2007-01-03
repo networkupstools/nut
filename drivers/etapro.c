@@ -66,7 +66,7 @@ etapro_get_response(const char *resp_type)
 	   Unlike ser_get_line(), don't discard the following characters
 	   because we have to handle multi-line responses.  */
 	n = 0;
-	while (ser_get_char(upsfd, &tmp[n], 1, 0) == 1) {
+	while (ser_get_char(upsfd, (unsigned char *)&tmp[n], 1, 0) == 1) {
 		if (n >= sizeof(tmp) - 1 || tmp[n] == '\n')
 			break;
 		n++;
