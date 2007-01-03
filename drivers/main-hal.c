@@ -49,8 +49,8 @@
 	static vartab_t	*vartab_h = NULL;
 
 	/* variables possibly set by the global part of ups.conf */
-	static unsigned int	poll_interval = 2;
-	static char		*chroot_path = NULL, *user = NULL;
+	unsigned int	poll_interval = 2;
+	static char	*chroot_path = NULL, *user = NULL;
 
 	/* signal handling */
 	int	exit_flag = 0;
@@ -274,8 +274,6 @@ static void do_global_args(const char *var, const char *val)
 {
 	if (!strcmp(var, "pollinterval")) {
 		poll_interval = atoi(val);
-		/* store this too */
-		dparam_setinfo("pollinterval", val);
 		return;
 	}
 
@@ -338,8 +336,6 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 	/* allow per-driver overrides of the global setting */
 	if (!strcmp(var, "pollinterval")) {
 		poll_interval = atoi(val);
-		/* store this too (might override the global one) */
-		dparam_setinfo("pollinterval", val);
 		return;
 	}
 
@@ -626,6 +622,9 @@ int main(int argc, char **argv)
 	/* publish the top-level data: version number, driver name */
 	dstate_setinfo("driver.version", "%s", UPS_VERSION);
 	dstate_setinfo("driver.name", "%s", progname);
+
+	/* The poll_interval may have been changed from the default */
+	dstate_setinfo("driver.parameter.pollinterval", "%d", poll_interval);
 
 	if (nut_debug_level == 0) {
 		background();

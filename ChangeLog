@@ -1,3 +1,10 @@
+Wed Jan  3 11:18:38 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/main[-hal].ch, drivers/skel.c: allow drivers to set
+   the polling interval in upsdrv_updateinfo() (to allow a driver
+   to override the 2 second interval, which may be too short for
+   very verbose protocols)
+
 Wed Jan  3 11:17:10 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/powerpanel.c: don't complain to syslog when query for

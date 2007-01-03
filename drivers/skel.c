@@ -63,6 +63,10 @@ void upsdrv_updateinfo(void)
 	 *
 	 * dstate_dataok();
 	 */
+
+	/*
+	 * poll_interval = 2;
+	 */
 }
 
 void upsdrv_shutdown(void)

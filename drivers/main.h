@@ -8,6 +8,7 @@ extern const char *progname;
 extern char *device_path;
 extern const char *device_name;
 extern int	upsfd, extrafd, broken_driver, experimental_driver, exit_flag;
+extern unsigned int	poll_interval;
 
 /* functions & variables required in each driver */
 void upsdrv_initups(void);	/* open connection to UPS, fail if not found */
