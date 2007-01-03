@@ -63,7 +63,7 @@ void upsdrv_initinfo(void)
 void upsdrv_updateinfo(void)
 {
 	int	flags, ret;
-	char	c;
+	unsigned char	c;
 	unsigned int	ob, lb;
 	static	unsigned int	ob_state = 0, ob_last = 0, ob_ctr = 0;
 	static	unsigned int	lb_state = 0, lb_last = 0, lb_ctr = 0;
@@ -72,10 +72,12 @@ void upsdrv_updateinfo(void)
 
 	/* the UPS connects RX to TX when on battery, so test for loopback */
 
+	ser_flush_in(upsfd, "", 0);
+
 	c = ML_ONBATTERY;
-	write(upsfd, &c, 1);
-	if (read(upsfd, &c, 1) == 1) {
-		while (read(upsfd, &c, 1) == 1)
+	ser_send_char(upsfd, c);
+	if ((ser_get_char(upsfd, &c, 1, 0) == 1) {
+		while (ser_get_char(upsfd, &c, 1, 0) == 1)
 			continue;
 		if (c == ML_ONBATTERY)
 			ob = 1;
