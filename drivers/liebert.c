@@ -76,7 +76,7 @@ void upsdrv_updateinfo(void)
 
 	c = ML_ONBATTERY;
 	ser_send_char(upsfd, c);
-	if ((ser_get_char(upsfd, &c, 1, 0) == 1) {
+	if (ser_get_char(upsfd, &c, 1, 0) == 1) {
 		while (ser_get_char(upsfd, &c, 1, 0) == 1)
 			continue;
 		if (c == ML_ONBATTERY)

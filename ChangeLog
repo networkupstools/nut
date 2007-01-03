@@ -1,3 +1,7 @@
+Wed Jan  3 17:03:50 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+
+ - Fix typo in liebert.c
+
 Wed Jan  3 12:03:50 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  - scripts/hotplug-ng: renamed to scripts/udev, since
