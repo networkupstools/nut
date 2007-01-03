@@ -1,3 +1,7 @@
+Wed Jan  3 11:32:12 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/powerpanel.ch, man/powerpanel.8: added powerpanel driver
+
 Tue Jan  2 02:02:35 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - megatec.8, al175.8: fixed broken name section ("\(hy" instead of "\-")

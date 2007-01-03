@@ -1,0 +1,48 @@
+.TH POWERPANEL 8 "Tue Jan 2 2007" "" "Network UPS Tools (NUT)"
+.SH NAME
+powerpanel \- Driver for PowerPanel compatible UPS equipment
+.SH NOTE
+This man page only documents the hardware\(hyspecific features of the
+powerpanel driver.  For information about the core driver, see
+\fBnutupsdrv\fR(8).
+
+.SH SUPPORTED HARDWARE
+This driver supports the CyberPower BC1200 and many other similar devices.
+This hardware uses a text\(hybased protocol which bears no resemblance to
+the binary dumps used by other CyberPower equipment and the \fBcyberpower\fR
+driver.
+
+.SH EXTRA ARGUMENTS
+This driver supports the following optional settings in the
+\fBups.conf\fR(5):
+
+.IP "manufacturer=\fIvalue\fR"
+If you don't like the autodetected value, you can override this by setting
+it here.
+
+.IP "model=\fIvalue\fR"
+Like manufacturer above.
+
+.IP "serial=\fIvalue\fR"
+Like manufacturer above.
+
+.SH UPSCMD
+
+test.battery.start \(hy Start UPS self test
+
+test.battery.stop \(hy Cancel UPS self test
+
+beeper.on \(hy Enable UPS beeper
+
+beeper.off \(hy Disable UPS beeper
+
+.SH AUTHOR
+Arjen de Korte <arjen@de\(hykorte.org>, Doug Reynolds <mav@wastegate.net>
+
+.SH SEE ALSO
+
+.SS The core driver:
+\fBnutupsdrv\fR(8)
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
