@@ -9564,7 +9564,7 @@ _ACEOF
 
 
 
-ac_config_files="$ac_config_files clients/Makefile conf/Makefile data/Makefile data/html/Makefile data/html/header.html drivers/Makefile server/Makefile Makefile common/Makefile man/Makefile lib/Makefile lib/libupsclient-config lib/libupsclient.pc scripts/hotplug/libhidups scripts/hotplug-ng/nut-usbups.hotplug scripts/hotplug-ng/nut-usbups.rules"
+ac_config_files="$ac_config_files clients/Makefile conf/Makefile data/Makefile data/html/Makefile data/html/header.html drivers/Makefile server/Makefile Makefile common/Makefile man/Makefile lib/Makefile lib/libupsclient-config lib/libupsclient.pc scripts/hotplug/libhidups scripts/hotplug-ng/nut-usbups.rules"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -10121,7 +10121,6 @@ do
     "lib/libupsclient-config") CONFIG_FILES="$CONFIG_FILES lib/libupsclient-config" ;;
     "lib/libupsclient.pc") CONFIG_FILES="$CONFIG_FILES lib/libupsclient.pc" ;;
     "scripts/hotplug/libhidups") CONFIG_FILES="$CONFIG_FILES scripts/hotplug/libhidups" ;;
-    "scripts/hotplug-ng/nut-usbups.hotplug") CONFIG_FILES="$CONFIG_FILES scripts/hotplug-ng/nut-usbups.hotplug" ;;
     "scripts/hotplug-ng/nut-usbups.rules") CONFIG_FILES="$CONFIG_FILES scripts/hotplug-ng/nut-usbups.rules" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

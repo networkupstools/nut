@@ -805,4 +805,4 @@ AC_SUBST(WORDS_BIGENDIAN)
 AC_SUBST(PKG_CFG_DIR)
 AC_SUBST(USE_PKG_CFG)
 
-AC_OUTPUT(clients/Makefile conf/Makefile data/Makefile data/html/Makefile data/html/header.html drivers/Makefile server/Makefile Makefile common/Makefile man/Makefile lib/Makefile lib/libupsclient-config lib/libupsclient.pc scripts/hotplug/libhidups scripts/hotplug-ng/nut-usbups.hotplug scripts/hotplug-ng/nut-usbups.rules)
+AC_OUTPUT(clients/Makefile conf/Makefile data/Makefile data/html/Makefile data/html/header.html drivers/Makefile server/Makefile Makefile common/Makefile man/Makefile lib/Makefile lib/libupsclient-config lib/libupsclient.pc scripts/hotplug/libhidups scripts/hotplug-ng/nut-usbups.rules)
