@@ -1,3 +1,8 @@
+Wed Jan  3 08:06:45 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/cpsups.c: reverting back to revision 523 (the later
+   changes are now in the new powerpanel driver)
+
 Wed Jan  3 07:59:10 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/powerpanel.c: make "#2" reply in response to "\r" command
