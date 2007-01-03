@@ -1,3 +1,8 @@
+Wed Jan  3 07:59:10 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/powerpanel.c: make "#2" reply in response to "\r" command
+   optional (only give warning, instead of bailing out)
+
 Tue Jan  2 21:39:54 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/genericups.c: add missing newline at the end of the file
