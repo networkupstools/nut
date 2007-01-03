@@ -8,6 +8,7 @@ Wed Jan  3 12:03:50 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
  - scripts/udev/README: udpate the documentation
  - scripts/udev/nut-usbups.rules.in : fix the udev rules syntax
    (Henrique de Moraes Holschuh) [Alioth Bug #303696]
+ - configure.in, INSTALL: update for the udev changes
   
 Wed Jan  3 12:03:50 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
