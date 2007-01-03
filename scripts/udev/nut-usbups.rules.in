@@ -1,6 +1,7 @@
 # udev rules for the NUT USB drivers
 
-SUBSYSTEM!="usb_device", ACTION!="add", GOTO="nut-usbups_rules_end"
+SUBSYSTEM!="usb_device", GOTO="nut-usbups_rules_end"
+ACTION!="add", GOTO="nut-usbups_rules_end"
 
 # MGE UPS SYSTEMS - usbhid-ups
 SYSFS{idVendor}=="0463", SYSFS{idProduct}=="ffff", MODE="664", GROUP="@RUN_AS_USER@"

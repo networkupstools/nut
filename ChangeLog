@@ -1,3 +1,14 @@
+Wed Jan  3 12:03:50 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - scripts/hotplug-ng: renamed to scripts/udev, since
+   it is more suitable
+ - scripts/udev/nut-usbups.hotplug.in: removed since it is not
+   needed anymore now that udev enabled systems have removed
+   the legacy hotplug compatibility
+ - scripts/udev/README: udpate the documentation
+ - scripts/udev/nut-usbups.rules.in : fix the udev rules syntax
+   (Henrique de Moraes Holschuh) [Alioth Bug #303696]
+  
 Wed Jan  3 12:03:50 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/various: fix compiler warnings about signedness
