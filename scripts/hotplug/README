@@ -20,8 +20,13 @@ These scripts are to be used with Linux 2.4 and higher
 
 You can then plug your UPS, and start NUT.
 
+Alternative
+-----------
+
+For newer 2.6 kernels with the udev mechanism, try scripts/udev
+instead of this one.
+
 TODO
 ----
-- improve these script (add other mfrs when possible)
+- improve these scripts (add other mfrs when possible)
 - add configure rules and a Makefile for easier installation
-- check for the new udev on kernel 2.6 and hotplug-ng

@@ -1,9 +1,8 @@
 EXTRA_DIST = README \
 hotplug/libhidups.in \
 hotplug/libhid.usermap \
-hotplug-ng/nut-usbups.hotplug.in \
-hotplug-ng/nut-usbups.rules.in \
-hotplug-ng/README \
+udev/nut-usbups.rules.in \
+udev/README \
 hotplug/README \
 HP-UX/Makefile \
 HP-UX/nut-drvctl \
