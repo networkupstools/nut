@@ -1,3 +1,8 @@
+Wed Jan  3 11:17:10 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/powerpanel.c: don't complain to syslog when query for
+   protocol version (?) fails
+
 Wed Jan  3 08:06:45 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/cpsups.c: reverting back to revision 523 (the later

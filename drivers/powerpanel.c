@@ -164,7 +164,7 @@ static int get_ident(void)
 		 * READ #2\r
 		 */
 		if ((powpan_command("\r") < 0) || (powpan_reply[1] != '2'))
-			upslogx(LOG_INFO, "Sent \"\\r\", expected \"#2\\r\" but got \"%s\"", powpan_reply);
+			fprintf(stderr, "warning: sent \"\\r\", expected \"#2\\r\" but got \"%s\"", powpan_reply);
 
 		/*
 		 * WRITE P4\r
@@ -184,7 +184,7 @@ static int get_ident(void)
 			return 1;
 		}
 
-		upslogx(LOG_INFO, "Sent \"P4\\r\", expected \"#<something>\" but got \"%s\"", powpan_reply);
+		fprintf(stderr, "warning: sent \"P4\\r\", expected \"#<something>\" but got \"%s\"", powpan_reply);
  	}
 
 	return 0;
