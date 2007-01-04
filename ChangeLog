@@ -1,3 +1,10 @@
+2.0.5-pre2
+
+Thu Jan  4 14:37:20 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - include/version*: bump to 2.0.5-pre2.
+ - NEWS: some update for the powerpanel driver
+
 Wed Jan  3 12:03:50 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  - scripts/hotplug-ng/nut-usbups.hotplug.in: removed since it is
@@ -26,6 +33,8 @@ Fri Dec 29 21:16:39 UTC 2006 / Arjen de Korte <arjen@de-korte.org>
    before declaring driver stale, use functions from common where possible
  - server/upsd.c: remove initial_dump_wait(), reconnect to socket before
    declaring driver stale
+
+2.0.5-pre1
 
 Tue Dec 19 12:02:14 UTC 2006 / Arnaud Quette <aquette.dev@gmail.com>
 

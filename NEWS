@@ -10,11 +10,11 @@ Release notes for NUT 2.0.5 - what's new since 2.0.4:
 
  - support for new devices: APC Smart-UPS with 6TI firmware; Belkin
    Small Enterprise F6C1500-TW-RK; Compaq R3000 XR, R5500 XR; Cyber
-   Power 550SL, 725SL, 685AVR, 800AVR, 1200AVR, AE550; Eltek; Inform
-   GUARD; Microsol Rhino; Opti-UPS PowerES 420E; PowerMan RealSmart,
-   BackPro; Powerware PW9315 3-phase; SOLA 305; Tripp-Lite
-   SMART550USB, SMART2200RMXL2U, OMNI1000LCD, OMNI900LCD, OMNI650LCD,
-   1500 LCD, AVR550U; Viewsonic PowerES 420E.
+   Power 550SL, 725SL, 685AVR, 800AVR, 1200AVR, AE550, BC1200 and
+   many similar models; Eltek; Inform GUARD; Microsol Rhino; Opti-UPS
+   PowerES 420E; PowerMan RealSmart, BackPro; Powerware PW9315 3-phase;
+   SOLA 305; Tripp-Lite SMART550USB, SMART2200RMXL2U, OMNI1000LCD,
+   OMNI900LCD, OMNI650LCD, 1500 LCD, AVR550U; Viewsonic PowerES 420E.
 
  - bcmxcp: added 3-phase support
 
@@ -35,6 +35,8 @@ Release notes for NUT 2.0.5 - what's new since 2.0.4:
 
  - added HTML interface for access to CGI scripts
 
+ - powerpanel: new driver for CyberPower BC1200 and similar models
+ 
  For a complete list of changes, please refer to the ChangeLog file.
 
 ---------------------------------------------------------------------------
