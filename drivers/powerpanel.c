@@ -34,7 +34,7 @@
 #include "serial.h"
 #include "powerpanel.h"
 
-#define DRV_VERSION "0.11"
+#define DRV_VERSION "0.12"
 
 static char powpan_reply[SMALLBUF];
 
@@ -64,10 +64,15 @@ static int powpan_command(const char *command)
 		ret = ser_get_line(upsfd, powpan_reply, sizeof(powpan_reply), ENDCHAR, "",
 			SER_WAIT_SEC, SER_WAIT_USEC);
 
-		if (ret > 0)
-			upsdebug_hex(3, "reply  ", (unsigned char *)powpan_reply, ret);
-		else
+		if (ret < 0)
+		{
 			upsdebugx(3, "reply  : <none>");
+		}
+		else
+		{
+			upsdebugx(3, "reply  : \"%s\"", powpan_reply);
+			upsdebug_hex(4, "hexdump", (unsigned char *)powpan_reply, ret);
+		}
 	}
 
 	ioctl(upsfd, TIOCMBIC, &dtr_bit);
@@ -94,6 +99,18 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "beeper.off"))
 		ret = powpan_command("C7:0\r");
 
+	if (!strcasecmp(cmdname, "shutdown.return"))
+		ret = powpan_command("S01R0001\r");
+
+	if (!strcasecmp(cmdname, "shutdown.reboot"))
+		ret = powpan_command("S01R0001\r");
+
+	if (!strcasecmp(cmdname, "shutdown.stop"))
+		ret = powpan_command("C\r");
+/*
+	if (!strcasecmp(cmdname, "shutdown.stayoff"))
+		ret = powpan_command("S01\r");
+ */
 	if (ret > 0)
 		return STAT_INSTCMD_HANDLED;
 
@@ -164,7 +181,7 @@ static int get_ident(void)
 		 * READ #2\r
 		 */
 		if ((powpan_command("\r") < 0) || (powpan_reply[1] != '2'))
-			fprintf(stderr, "warning: sent \"\\r\", expected \"#2\\r\" but got \"%s\"\n", powpan_reply);
+			upslogx(LOG_NOTICE, "warning: sent \"\\r\", expected \"#2\\r\" but got \"%s\"", powpan_reply);
 
 		/*
 		 * WRITE P4\r
@@ -173,18 +190,18 @@ static int get_ident(void)
 		if (powpan_command("P4\r") > 0)
 		{
 			if ((s = strtok(powpan_reply+1, ",")) != NULL)
-				dstate_setinfo("ups.model", s);
+				dstate_setinfo("ups.model", "%s", rtrim(s, ' '));
 			if ((s = strtok(NULL, ",")) != NULL)
 				dstate_setinfo("ups.firmware", s);
 			if ((s = strtok(NULL, ",")) != NULL)
 				dstate_setinfo("ups.serial", s);
 			if ((s = strtok(NULL, ",")) != NULL)
-				dstate_setinfo("ups.mfr", s);
+				dstate_setinfo("ups.mfr", "%s", rtrim(s, ' '));
 
 			return 1;
 		}
 
-		fprintf(stderr, "warning: sent \"P4\\r\", expected \"#<something>\" but got \"%s\"\n", powpan_reply);
+		upslogx(LOG_NOTICE, "warning: sent \"P4\\r\", expected \"#<something>\" but got \"%s\"", powpan_reply);
  	}
 
 	return 0;
@@ -207,11 +224,11 @@ static int get_settings(void)
 	if (powpan_command("P3\r") > 0)
 	{
 		if ((s = strtok(powpan_reply+1, ",")) != NULL)
-			dstate_setinfo("battery.voltage.nominal", s);
+			dstate_setinfo("battery.voltage.nominal", "%g", strtod(s, NULL));
 		if ((s = strtok(NULL, ",")) != NULL)
-			dstate_setinfo("battery.packs", s);
+			dstate_setinfo("battery.packs", "%li", strtol(s, NULL, 10));
 		if ((s = strtok(NULL, ",")) != NULL)
-			dstate_setinfo("battery.capacity", s);
+			dstate_setinfo("battery.capacity", "%g", strtod(s, NULL));
 
 		ret++;
 	}
@@ -223,15 +240,15 @@ static int get_settings(void)
 	if (powpan_command("P2\r") > 0)
 	{
 		if ((s = strtok(powpan_reply+1, ",")) != NULL)
-			dstate_setinfo("ups.power.nominal", s);
+			dstate_setinfo("ups.power.nominal", "%li", strtol(s, NULL, 10));
 		if ((s = strtok(NULL, ",")) != NULL)
-			dstate_setinfo("ups.realpower.nominal", s);
+			dstate_setinfo("ups.realpower.nominal", "%li", strtol(s, NULL, 10));
 		if ((s = strtok(NULL, ",")) != NULL)
-			dstate_setinfo("input.voltage.nominal", s);
+			dstate_setinfo("input.voltage.nominal", "%li", strtol(s, NULL, 10));
 		if ((s = strtok(NULL, ",")) != NULL)
-			dstate_setinfo("input.frequency.low", s);
+			dstate_setinfo("input.frequency.low", "%li", strtol(s, NULL, 10));
 		if ((s = strtok(NULL, ",")) != NULL)
-			dstate_setinfo("input.frequency.high", s);
+			dstate_setinfo("input.frequency.high", "%li", strtol(s, NULL, 10));
 
 		ret++;
 	}
@@ -243,14 +260,28 @@ static int get_settings(void)
 	if (powpan_command("P1\r") > 0)
 	{
 		if ((s = strtok(powpan_reply+1, ",")) != NULL)
-			dstate_setinfo("input.voltage.nominal", s);
+			dstate_setinfo("input.voltage.nominal", "%li", strtol(s, NULL, 10));
 		if ((s = strtok(NULL, ",")) != NULL)
-			dstate_setinfo("input.transfer.high", s);
+			dstate_setinfo("input.transfer.high", "%li", strtol(s, NULL, 10));
 		if ((s = strtok(NULL, ",")) != NULL)
-			dstate_setinfo("input.transfer.low", s);
+			dstate_setinfo("input.transfer.low", "%li", strtol(s, NULL, 10));
 		if ((s = strtok(NULL, ",")) != NULL)
-			dstate_setinfo("battery.charge.low", s);
+			dstate_setinfo("battery.charge.low", "%li", strtol(s, NULL, 10));
 
+		ret++;
+	}
+
+	/*
+	 * WRITE P5\r
+	 * READ #<unknown>\r
+	 */
+	if (powpan_command("P5\r") > 0)
+	{
+		/*
+		 * Looking at the format of the commands "P<n>\r" it seems likely
+		 * that this command exists also. Let's see if someone cares to
+		 * tell us if it does (should be visible when running with -DDDDD).
+		 */
 		ret++;
 	}
 
@@ -308,6 +339,20 @@ static int get_settings(void)
 		ret++;
 	}
 
+	/*
+	 * WRITE P9\r
+	 * READ #<unknown>\r
+	 */
+	if (powpan_command("P9\r") > 0)
+	{
+		/*
+		 * Looking at the format of the commands "P<n>\r" it seems likely
+		 * that this command exists also. Let's see if someone cares to
+		 * tell us if it does (should be visible when running with -DDDDD).
+		 */
+		ret++;
+	}
+
 	return ret;
 }
 
@@ -324,7 +369,7 @@ void upsdrv_initinfo(void)
 		dstate_getinfo("ups.model"), device_path);
 
 	if (get_settings() == 0)
-		upslogx(LOG_WARNING, "Can't read settings from CyberPower text protocol UPS");
+		upslogx(LOG_WARNING, "Can't read any setting from CyberPower text protocol UPS");
 
 	/*
 	 * WRITE D\r
@@ -353,9 +398,12 @@ void upsdrv_initinfo(void)
 	dstate_addcmd("test.battery.stop");
 	dstate_addcmd("beeper.on");
 	dstate_addcmd("beeper.off");
-	/* dstate_addcmd("shutdown.return"); */
-	/* dstate_addcmd("shutdown.reboot"); */
-
+	dstate_addcmd("shutdown.return");
+	dstate_addcmd("shutdown.reboot");
+	dstate_addcmd("shutdown.stop");
+/*
+	dstate_addcmd("shutdown.stayoff");
+ */
 	upsh.instcmd = instcmd;
 	upsh.setvar = setvar;
 }
