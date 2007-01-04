@@ -78,6 +78,8 @@ optiups: optiups.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.
 	$(CC) $(CFLAGS) $(LDFLAGS) -o optiups optiups.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBOBJ) 
 rhino: rhino.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBDEP)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o rhino rhino.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBOBJ) -lm
+powerpanel: powerpanel.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBDEP)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o powerpanel powerpanel.o main.o serial.o dstate.o ../common/state.o ../common/upsconf.o ../common/parseconf.o  $(LIBOBJ) 
 al175.o: al175.c main.h ../include/common.h ../include/attribute.h \
   ../include/config.h ../include/proto.h ../include/version.h \
   ../include/upsconf.h dstate.h ../include/attribute.h \
@@ -186,6 +188,12 @@ everups.o: everups.c main.h ../include/common.h ../include/attribute.h \
   ../include/upsconf.h dstate.h ../include/attribute.h \
   ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
   serial.h ../include/config.h everups.h
+explore-hid.o: explore-hid.c newhidups.h ../include/config.h libhid.h \
+  hidtypes.h ../include/timehead.h explore-hid.h ../include/extstate.h \
+  dstate.h ../include/attribute.h ../include/parseconf.h \
+  ../include/upshandler.h ../include/common.h ../include/attribute.h \
+  ../include/config.h ../include/proto.h ../include/version.h main.h \
+  ../include/upsconf.h
 fentonups.o: fentonups.c main.h ../include/common.h \
   ../include/attribute.h ../include/config.h ../include/proto.h \
   ../include/version.h ../include/upsconf.h dstate.h \
@@ -196,12 +204,6 @@ gamatronic.o: gamatronic.c main.h ../include/common.h \
   ../include/version.h ../include/upsconf.h dstate.h \
   ../include/attribute.h ../include/parseconf.h ../include/upshandler.h \
   ../include/extstate.h serial.h ../include/config.h gamatronic.h
-explore-hid.o: explore-hid.c newhidups.h ../include/config.h libhid.h \
-  hidtypes.h ../include/timehead.h explore-hid.h ../include/extstate.h \
-  dstate.h ../include/attribute.h ../include/parseconf.h \
-  ../include/upshandler.h ../include/common.h ../include/attribute.h \
-  ../include/config.h ../include/proto.h ../include/version.h main.h \
-  ../include/upsconf.h
 genericups.o: genericups.c main.h ../include/common.h \
   ../include/attribute.h ../include/config.h ../include/proto.h \
   ../include/version.h ../include/upsconf.h dstate.h \
@@ -311,6 +313,11 @@ powercom.o: powercom.c main.h ../include/common.h ../include/attribute.h \
   ../include/upsconf.h dstate.h ../include/attribute.h \
   ../include/parseconf.h ../include/upshandler.h ../include/extstate.h \
   serial.h ../include/config.h powercom.h ../include/timehead.h
+powerpanel.o: powerpanel.c main.h ../include/common.h \
+  ../include/attribute.h ../include/config.h ../include/proto.h \
+  ../include/version.h ../include/upsconf.h dstate.h \
+  ../include/attribute.h ../include/parseconf.h ../include/upshandler.h \
+  ../include/extstate.h serial.h ../include/config.h powerpanel.h
 rhino.o: rhino.c main.h ../include/common.h ../include/attribute.h \
   ../include/config.h ../include/proto.h ../include/version.h \
   ../include/upsconf.h dstate.h ../include/attribute.h \
