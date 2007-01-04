@@ -451,16 +451,14 @@ char *xstrdup(const char *string)
 }
 
 /* modify in - strip all trailing instances of <sep> */
-void rtrim(char *in, char sep)
+char *rtrim(char *in, const char sep)
 {
-	char	*p = NULL;
+	char	*p;
 
 	p = &in[strlen(in) - 1];
 
-	while (p >= in) {
-		if (*p != sep)
-			return;
-
+	while ((p >= in) && (*p == sep))
 		*p-- = '\0';
-	}
+	
+	return in;
 }

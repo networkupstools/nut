@@ -108,7 +108,7 @@ void *xcalloc(size_t number, size_t size);
 void *xrealloc(void *ptr, size_t size);
 char *xstrdup(const char *string);
 
-void rtrim(char *in, char sep);
+char *rtrim(char *in, const char sep);
 
 /* Buffer sizes used for various functions */
 #define SMALLBUF	512

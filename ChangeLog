@@ -1,3 +1,12 @@
+Thu Jan  4 20:08:50 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/powerpanel.c: remove trailing spaces and leading zero's
+   from values read from UPS (except for enumerated ones that could
+   be used for setting variables)
+ - common/common.c, include/common.h: let 'rtrim' function return
+   pointer to the trimmed string (to make it easier to use in
+   dstate_setinfo calls, will be silently discarded if not used)
+
 Wed Jan  3 17:03:50 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
  - Fix typo in liebert.c
