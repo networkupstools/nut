@@ -56,9 +56,11 @@ Auth: Russell Kroll <rkroll@exploits.org>
  Q: My favorite UPS driver disappeared after an upgrade.  What now?
 
  A: Drivers are occasionally removed from the tree if they are no longer
-    receiving maintenance.  There have been several architectural
-    changes to the driver code in recent times, and drivers which were
-    not converted by someone are eventually dropped.
+    receiving maintenance, or sometimes renamed to better reflect their
+    hardware support scope or replaced by a more generic driver.
+    There have been several architectural changes to the driver code
+    in recent times, and drivers which were not converted by someone
+    are eventually dropped.
 
     This is called progress.  We do this in order to avoid a situation
     where someone believes that a driver is being maintained when it is
@@ -633,25 +635,22 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
     Refer to the "driver-name" (8) manpage for more information.
 
-    Note that the previous experimental support through the hidups driver
-    will be dropped by NUT 2.2.
-
 -----------------------------------------------------------------------------
 
  Q: What is this newhidups about?
 
- A: The basic USB UPS support was done until now using hidups. To allow
-    a wider support accross platforms, newhidups driver uses libusb
-    (which is available for a wide range of operating systems) and
-    libhid (currently, an old internal version of it).
+ A: The basic USB UPS support was done until NUT 2.2 using hidups. To allow
+    a wider support accross platforms for USB/HID compliant devices,
+    newhidups driver uses libusb (which is available for a wide range of
+    operating systems) and libhid (currently, a modified internal version
+    of it).
 
-    As of NUT 2.2, newhidups will completely replace the existing
-    hidups driver and provide support for various manufacturers. At that
-    time, it will be renamed to usbhid-ups.
+    As of NUT 2.2, newhidups completely replaces the legacy hidups driver
+    and provide support for various manufacturers. At that time, it will
+    be renamed to usbhid-ups.
 
-    newhidups can be built by using "make usb", and installed using
-    "make install-usb". Note that it will also install other USB
-    drivers.
+    newhidups is built automatically if possible (libusb development files
+    need to be installed) and installed by the "make install" command.
 
 -----------------------------------------------------------------------------
 

@@ -1,3 +1,15 @@
+Fri Jan  4 10:13:05 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ * final removal of the legacy hidups driver. It is now fully
+   replaced by the newhidups driver (soon to be renamed usbhid-ups).
+   Note that the hiddev code and macro is kept for energizerups
+   - drivers/hidups.*: removed
+   - drivers/Makefile.am: remove hidups references
+   - man/hidups.8: removed
+   - man/Makefile.am, man/nutupsdrv.8: remove hidups references
+   - man/newhidups.8: add a note for the replacement of hidups
+   - docs/FAQ, MAINTAINERS: few update
+
 Fri Jan  5 00:45:11 UTC 2007 / Charles Lepple <clepple@gmail.com>
 
  - drivers/optiups.c, man/optiups.8, data/driver.list: Added Matthias Goebl's

@@ -55,7 +55,7 @@ SERIAL_PAGES = \
 SNMP_PAGES = snmp-ups.8
 
 USB_LIBUSB_PAGES = newhidups.8 bcmxcp_usb.8 tripplite_usb.8 
-USB_HIDDEV_PAGES = hidups.8 energizerups.8
+USB_HIDDEV_PAGES = energizerups.8
 
 # decide which pages to install
 man_MANS = $(CONF_PAGES) $(CLIENT_PAGES)

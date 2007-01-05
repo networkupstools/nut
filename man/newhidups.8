@@ -6,6 +6,9 @@ This man page only documents the hardware\(hyspecific features of the
 newhidups driver.  For information about the core driver, see
 \fBnutupsdrv\fR(8).
 
+This driver replaces the legacy hidups driver, which only supported
+Linux systems.
+
 .SH SUPPORTED HARDWARE
 .B newhidups
 brings USB/HID UPS monitoring to NUT on all platform supporting USB
@@ -93,8 +96,7 @@ must have execution flag set (ie using chmod +x ...).
 
 On Linux with MGE equipment, you will need at least a 2.4.25 or 2.6.2 kernel as
 well as libusb-0.1.8 or later to disable hiddev support and avoid conflict.
-Otherwise, you will only be able to use the older hidups driver, which is no
-longer maintained.
+
 
 .SH IMPLEMENTATION
 The driver ignores the "port" value in \fBups.conf\fR. Unlike previous

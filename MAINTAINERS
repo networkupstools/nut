@@ -35,10 +35,9 @@ S: Maintained: apcsmart, belkin, bestups, cyberpower, dummycons,
                fentonups, driver core (main.c), upsdrvctl
 
 P: Arnaud Quette
-M: arnaud.quette@free.fr
+M: aquette.dev@gmail.com
 M: arnaud.quette@mgeups.com
-S: Maintained: hidparser, newhidups, hidups, mge-shut, mge-utalk,
-               snmp-ups
+S: Maintained: dummy-ups, newhidups, mge-shut, mge-utalk, snmp-ups
 
 P: Arjen de Korte
 M: arjen@de-korte.org

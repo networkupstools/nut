@@ -21,7 +21,7 @@ SERIAL_DRIVERLIST = al175 apcsmart bcmxcp belkin belkinunv bestfcom	\
  tripplitesu upscode2 victronups powerpanel
 SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = newhidups bcmxcp_usb tripplite_usb
-USB_HIDDEV_DRIVERLIST = hidups energizerups
+USB_HIDDEV_DRIVERLIST = energizerups
 USB_DRIVERLIST = $(USB_LIBUSB_DRIVERLIST) $(USB_HIDDEV_DRIVERLIST)
 HAL_DRIVERLIST = hald-addon-usbhid-ups hald-addon-bcmxcp_usb hald-addon-tripplite_usb
 
@@ -124,9 +124,6 @@ newhidups_SOURCES = newhidups.c libhid.c libusb.c hidparser.c	\
 newhidups_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
 newhidups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 
-hidups_SOURCES = hidups.c
-hidups_LDADD = $(LDADD_DRIVERS)
-
 energizerups_SOURCES = energizerups.c
 energizerups_LDADD = $(LDADD_DRIVERS)
 
@@ -169,7 +166,7 @@ dist_noinst_HEADERS = al175.h apccmib.h apc-hid.h apcsmart.h bcmxcp.h	\
  bestuferrups.h bestups.h blazer.h cpsups.h cyberpower.h dstate.h	\
  dstate-hal.h								\
  dummy-ups.h esupssmart.h etapro.h everups.h fentonups.h gamatronic.h	\
- explore-hid.h genericups.h hidparser.h hidtypes.h hidups.h ietfmib.h	\
+ explore-hid.h genericups.h hidparser.h hidtypes.h ietfmib.h	\
  ippon.h isbmex.h libhid.h libshut.h libusb.h liebert.h main.h		\
  main-hal.h								\
  masterguard.h megatec.h metasys.h mge-hid.h mgemib.h mge-shut.h	\
