@@ -1,3 +1,8 @@
+Fri Jan  5 19:15:13 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - data/cmdvartab: added ups.realpower, ups.realpower.nominal,
+   input.frequency.low, input.frequency.high and battery.capacity
+
 Thu Jan  4 20:08:50 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/powerpanel.c: remove trailing spaces and leading zero's
