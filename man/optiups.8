@@ -1,15 +1,19 @@
 .TH OPTIUPS 8 "Fri Jan 20 2006" "" "Network UPS Tools (NUT)" 
 .SH NAME  
-optiups \- Driver for Opti-UPS (Viewsonic) UPS equipment
+optiups \- Driver for Opti-UPS (Viewsonic) UPS and Zinto D (ONLINE-USV) equipment
 .SH NOTE
 This man page only documents the hardware\(hyspecific features of the
-bestups driver.  For information about the core driver, see  
+optiups driver.  For information about the core driver, see  
 \fBnutupsdrv\fR(8).
 
 .SH SUPPORTED HARDWARE
 optiups was originally written against a PowerES 280es in nut-0.45.  It was
 revised for nut 2.0.1 and tested against a PowerES 420E.  It is expected to
 work with at least the PowerES, PowerPS, and PowerVS models.
+
+This driver additionally supports a Zinto D from ONLINE USV-Systeme AG
+because of their very similar commands, but it's unknown if it also works
+with other ups from them.
 
 This driver will not work with the PowerES stock serial cable.  You will need
 to construct your own three conductor cable:
@@ -23,6 +27,8 @@ UPS 9 -> PC 2
 .RS
 UPS 4 -> PC 5
 .RE
+
+The cable for Online-USV uses pin UPS 7 (not UPS 4) -> PC 5.
 
 .SH EXTRA ARGUMENTS
 
@@ -52,13 +58,19 @@ voltage level before nut will respond and power down your system.  With the flag
 nut should power down the system soon after you pull the plug.  When you are done
 testing, you should remove this flag.
 
+.IP "powerup"
+
+Zinto D from ONLINE-USV cannot be identified when switched to standby.
+Set this flag to allow the driver to power-up your Zinto UPS.
+This will also power-up your equipment connected to the ups!
+
 .SH BUGS
 
 On the 420E, ups.serial and ups.temperature are unsupported features.  This
 is not a bug in nut or the nut driver, just the way things are with this UPS.
 
 .SH AUTHOR
-Russell Kroll, Scott Heavner
+Russell Kroll, Scott Heavner, Matthias Goebl
 
 .SH SEE ALSO
 

@@ -326,6 +326,7 @@
 "Oneac" "EG/ON Series"	"advanced interface"	"oneac"
 
 "Online"	"P-Series"	""	"genericups upstype=14"
+"Online"	"Zinto D"	""	"optiups"
 
 "OnLite"	"AQUA"		"50"	"megatec"
 
