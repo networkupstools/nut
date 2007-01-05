@@ -26,8 +26,8 @@
 /* ACL structure */
 struct acl_t {
 	char	*name;
-	unsigned int	addr;
-	unsigned int	mask;
+	struct sockaddr_storage	addr;
+	unsigned int	mask; /* prefix - if IPv6 */
 	void	*next;
 };
 
@@ -38,8 +38,8 @@ struct access_t {
 	void	*next;
 };
 
-int acl_check(const char *aclname, const struct sockaddr_in *addr);
-int access_check(const struct sockaddr_in *addr);
+int acl_check(const char *aclname, const struct sockaddr_storage *addr);
+int access_check(const struct sockaddr_storage *addr);
 void acl_add(const char *aclname, char *ipblock);
 void access_add(int type, int numargs, const char **arg);
 void acl_free(void);

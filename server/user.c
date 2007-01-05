@@ -290,7 +290,7 @@ void user_flush(void)
 	users = NULL;
 }	
 
-static int user_matchacl(ulist_t *user, const struct sockaddr_in *addr)
+static int user_matchacl(ulist_t *user, const struct sockaddr_storage *addr)
 {
 	acllist	*tmp;
 
@@ -328,7 +328,7 @@ static int user_matchinstcmd(ulist_t *user, const char * cmd)
 	return 0;	/* fail */
 }
 
-int user_checkinstcmd(const struct sockaddr_in *addr, 
+int user_checkinstcmd(const struct sockaddr_storage *addr, 
 	const char *un, const char *pw, const char *cmd)
 {
 	ulist_t	*tmp = users;
@@ -385,7 +385,7 @@ static int user_matchaction(ulist_t *user, const char *action)
 	return 0;	/* fail */
 }
 
-int user_checkaction(const struct sockaddr_in *addr, 
+int user_checkaction(const struct sockaddr_storage *addr, 
 	const char *un, const char *pw, const char *action)
 {
 	ulist_t	*tmp = users;

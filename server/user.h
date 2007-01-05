@@ -19,10 +19,10 @@
 
 void user_load(void);
 
-int user_checkinstcmd(const struct sockaddr_in *addr,
+int user_checkinstcmd(const struct sockaddr_storage *addr,
 	const char *un, const char *pw, const char *cmd);
 
-int user_checkaction(const struct sockaddr_in *addr,
+int user_checkaction(const struct sockaddr_storage *addr,
 	const char *un, const char *pw, const char *action);
 
 void user_flush(void);

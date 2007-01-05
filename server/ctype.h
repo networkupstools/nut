@@ -32,7 +32,7 @@ typedef struct {
 	char	*addr;
 	int	fd;
 	int	delete;			/* set after a write fails */
-	struct sockaddr_in sock;
+	struct sockaddr_storage sock;
 	char	rq[SMALLBUF];
 	size_t	rqpos;
 	char	*loginups;

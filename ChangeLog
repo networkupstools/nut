@@ -1,3 +1,8 @@
+Fri Jan  5 19:57:46 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - added IPv6 support (Alioth Patches #304310) (IPv4 still seems to
+   work after applying this patch, but can't test IPv6)
+
 Fri Jan  5 19:15:13 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - data/cmdvartab: added ups.realpower, ups.realpower.nominal,

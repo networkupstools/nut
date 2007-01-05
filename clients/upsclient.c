@@ -38,6 +38,9 @@
 #define shutdown_how 2
 #endif
 
+/* From IPv6 patch (doesn't seem to be used)
+extern int opt_af;
+ */
 struct {
 	int	flags;
 	const	char	*str;
@@ -421,8 +424,8 @@ int upscli_sslcert(UPSCONN *ups, const char *file, const char *path, int verify)
 	
 int upscli_connect(UPSCONN *ups, const char *host, int port, int flags)
 {
-	struct	sockaddr_in	local, server;
-	struct	hostent	*serv;
+	struct addrinfo hints, *r, *rtmp;
+	char *service;
 
 	/* clear out any lingering junk */
 	ups->fd = -1;
@@ -449,78 +452,86 @@ int upscli_connect(UPSCONN *ups, const char *host, int port, int flags)
 		return -1;
 	}
 
-	if ((serv = gethostbyname(host)) == (struct hostent *) NULL) {
-
-		ups->upserror = UPSCLI_ERR_NOSUCHHOST;
-		return -1;
-	}
-
-	if ((ups->fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		ups->upserror = UPSCLI_ERR_SOCKFAILURE;
-		ups->syserrno = errno;
-		return -1;
-	}
-
-	memset(&local, '\0', sizeof(struct sockaddr_in));
-	local.sin_family = AF_INET;
-	local.sin_port = htons(INADDR_ANY);
-
-	memset(&server, '\0', sizeof(struct sockaddr_in));
-	server.sin_family = AF_INET;
-	server.sin_port = htons(port);
-
-	memcpy(&server.sin_addr, serv->h_addr, serv->h_length);
-
-	if (bind(ups->fd, (struct sockaddr *) &local, 
-		sizeof(struct sockaddr_in)) == -1) {
-		ups->upserror = UPSCLI_ERR_BINDFAILURE;
-		ups->syserrno = errno;
-		close(ups->fd);
-		ups->fd = -1;
-
-		return -1;
-	}
-
-	if (connect(ups->fd, (struct sockaddr *) &server, 
-		sizeof(struct sockaddr_in)) == -1) {
-		ups->upserror = UPSCLI_ERR_CONNFAILURE;
-		ups->syserrno = errno;
-		close(ups->fd);
-		ups->fd = -1;
-
-		return -1;
-	}
-
-	/* don't use xstrdup for cleaner linking (fewer dependencies) */
-	ups->host = strdup(host);
-
-	if (!ups->host) {
-		close(ups->fd);
-		ups->fd = -1;
-
+	service = malloc (sizeof (char) * 6);
+	if (service == NULL) {
 		ups->upserror = UPSCLI_ERR_NOMEM;
 		return -1;
 	}
 
-	ups->port = port;
-
-	if (flags & UPSCLI_CONN_TRYSSL) {
-		upscli_sslinit(ups);
-
-		/* see if something made us die inside sslinit */
-		if (ups->upserror != 0)
-			return -1;
+	if (snprintf (service, 6, "%hu", (unsigned short int)port) < 1) {
+		return -1;
 	}
 
-	if (flags & UPSCLI_CONN_REQSSL) {
-		if (upscli_sslinit(ups) != 1) {
-			ups->upserror = UPSCLI_ERR_SSLFAIL;
-			upscli_closefd(ups);
+	memset (&hints, 0, sizeof (struct addrinfo));
+	hints.ai_family = flags & UPSCLI_CONN_INET ? AF_INET : (flags & UPSCLI_CONN_INET6 ? AF_INET6 : AF_UNSPEC);
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
+	hints.ai_flags = AI_ADDRCONFIG;
+
+	if (getaddrinfo (host, service, &hints, &r) != 0) {
+		ups->upserror = UPSCLI_ERR_NOSUCHHOST;
+		free (service);
+		return -1;
+	}
+	free (service);
+
+	for (rtmp = r; r != NULL; r = r->ai_next) {
+		ups->fd = socket (r->ai_family, r->ai_socktype, r->ai_protocol);
+		if (ups->fd < 0) {
+			if (r->ai_next == NULL) {
+				ups->upserror = UPSCLI_ERR_SOCKFAILURE;
+				ups->syserrno = errno;
+				break;
+			}
+			continue;
+		}
+
+		if (connect (ups->fd, r->ai_addr, r->ai_addrlen) == -1) {
+			close (ups->fd);
+			ups->fd = -1;
+			if (r->ai_next == NULL) {
+				ups->upserror = UPSCLI_ERR_CONNFAILURE;
+				ups->syserrno = errno;
+				break;
+			}
+			continue;
+		}
+		freeaddrinfo (rtmp);
+
+		/* don't use xstrdup for cleaner linking (fewer dependencies) */
+		ups->host = strdup(host);
+
+		if (!ups->host) {
+			close(ups->fd);
+			ups->fd = -1;
+
+			ups->upserror = UPSCLI_ERR_NOMEM;
 			return -1;
 		}
-	}
 
-	return 0;
+		ups->port = port;
+
+		if (flags & UPSCLI_CONN_TRYSSL) {
+			upscli_sslinit(ups);
+
+			/* see if something made us die inside sslinit */
+			if (ups->upserror != 0)
+				return -1;
+		}
+
+		if (flags & UPSCLI_CONN_REQSSL) {
+			if (upscli_sslinit(ups) != 1) {
+				ups->upserror = UPSCLI_ERR_SSLFAIL;
+				upscli_closefd(ups);
+				return -1;
+			}
+		}
+
+		return 0;
+	}
+	freeaddrinfo (rtmp);
+
+	return -1;
 }
 
 /* map upsd error strings back to upsclient internal numbers */
@@ -861,31 +872,48 @@ int upscli_splitname(const char *buf, char **upsname, char **hostname,
 
 	ptr = ap;
 
-	cp = strchr(ptr, ':');
+	if (*ptr != '[') {
+		cp = strchr(ptr, ':');
+		if (cp) {
+			*cp++ = '\0';
+			*hostname = strdup(ptr);
+			
+			if (!*hostname) {
+				fprintf(stderr, "upscli_splitname: strdup failed\n");
+				return -1;
+			}
 
-	if (cp) {
-		*cp++ = '\0';
-		*hostname = strdup(ptr);
+			ptr = cp;
+			
+			*port = strtol(ptr, (char **) NULL, 10);
 
-		if (!*hostname) {
-			fprintf(stderr, "upscli_splitname: strdup failed\n");
-			return -1;
+		} else {
+
+			*hostname = strdup(ptr);
+
+			if (!*hostname) {
+				fprintf(stderr, "upscli_splitname: strdup failed\n");
+				return -1;
+			}
+
+			*port = PORT;
 		}
-
-		ptr = cp;
-
-		*port = strtol(ptr, (char **) NULL, 10);
-
 	} else {
-
-		*hostname = strdup(ptr);
-
-		if (!*hostname) {
-			fprintf(stderr, "upscli_splitname: strdup failed\n");
+		ptr++;
+		cp = strchr(ptr, ']');
+		if (cp) {
+			*cp = '\0';
+			*hostname = strdup (ptr);
+			ptr = ++cp;
+			cp = strchr (ptr, ':');
+			if (cp != NULL)
+			 *port = strtol (++cp, (char **)NULL, 10);
+			else
+			 *port = PORT;
+		} else {
+			fprintf (stderr, "upscli_splitname: strchr(']') failed\n");
 			return -1;
 		}
-
-		*port = PORT;
 	}
 
 	return 0;

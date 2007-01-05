@@ -148,6 +148,8 @@ int upscli_ssl(UPSCONN *ups);
 
 #define UPSCLI_CONN_TRYSSL	0x0001	/* try SSL, OK if not supported       */
 #define UPSCLI_CONN_REQSSL	0x0002	/* try SSL, fail if not supported     */
+#define UPSCLI_CONN_INET    0x0004  /* IPv4 only */
+#define UPSCLI_CONN_INET6   0x0008  /* IPv6 only */
 
 #ifdef __cplusplus
 }

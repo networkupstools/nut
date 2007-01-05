@@ -25,6 +25,10 @@
 
 #include "upsclient.h"
 
+/* From IPv6 patch (doesn't seem to be used)
+static int opt_af = AF_UNSPEC;
+ */
+
 static void help(const char *prog)
 {
 	printf("Network UPS Tools upsc %s\n\n", UPS_VERSION);

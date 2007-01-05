@@ -26,6 +26,7 @@
 
 #include <sys/un.h>
 #include <sys/socket.h>
+#include <netdb.h>
 
 #ifdef HAVE_SSL
 #include <openssl/err.h>
@@ -60,7 +61,11 @@ static	ctype	*firstclient = NULL;
 static	int	listenfd, net_port = PORT;
 
 	/* default is to listen on all local interfaces */
-static	struct	in_addr	listenaddr;
+static	char *listenaddr = NULL;
+
+/* AF_ */
+
+static int opt_af = AF_UNSPEC;
 
 	/* signal handlers */
 static	struct sigaction sa;
@@ -71,6 +76,20 @@ static	char	pidfn[SMALLBUF];
 
 	/* set by signal handlers */
 static	int	reload_flag = 0, exit_flag = 0;
+
+const char *inet_ntopW (struct sockaddr_storage *s) {
+	static char str[40];
+
+	switch (s->ss_family) {
+	case AF_INET:
+		return inet_ntop (AF_INET, &(((struct sockaddr_in *)s)->sin_addr), str, 16);
+	case AF_INET6:
+		return inet_ntop (AF_INET6, &(((struct sockaddr_in6 *)s)->sin6_addr), str, 40);
+	default:
+		errno = EAFNOSUPPORT;
+		return NULL;
+	}
+}
 
 /* return a pointer to the named ups if possible */
 upstype *get_ups_ptr(const char *name)
@@ -131,35 +150,61 @@ static void check_ups(upstype *ups)
 /* create a listening socket for tcp connections */
 static void setuptcp(void)
 {
-	struct	sockaddr_in	server;
+	struct addrinfo hints, *r, *rtmp;
+	char	*service;
 	int	res, one = 1;
 
-	if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-		fatal_with_errno("socket");
+	memset (&hints, 0, sizeof (struct addrinfo));
+	hints.ai_family = opt_af;
+	hints.ai_flags = AI_PASSIVE;
+	hints.ai_protocol = IPPROTO_TCP;
+	hints.ai_socktype = SOCK_STREAM;
 
-	res = setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, (void *) &one, 
-		sizeof(one));
+	service = xmalloc (sizeof (char) * 6);
 
-	if (res != 0)
-		fatal_with_errno("setsockopt(SO_REUSEADDR)");
+	if (snprintf (service, 6, "%hu", (unsigned short int)net_port) < 1)
+		fatal_with_errno("snprintf");
 
-	memset(&server, '\0', sizeof(server));
-	server.sin_addr = listenaddr;
-	server.sin_family = AF_INET;
-	server.sin_port = htons(net_port);
+	if (getaddrinfo (listenaddr, service, &hints, &r) != 0) {
+		free (service);
+		fatal_with_errno("getaddrinfo");
+	}
+	free (service);
 
-	if (bind(listenfd, (struct sockaddr *) &server, sizeof(server)) == -1)
-		fatal_with_errno("Can't bind TCP port number %d", net_port);
+	for (rtmp = r; r != NULL; r = r->ai_next) {
+		listenfd = socket(r->ai_family, r->ai_socktype, r->ai_protocol);
+		if (listenfd < 0) {
+			if (r->ai_next == NULL)
+				fatal_with_errno("socket");
+			continue;
+		}
 
-	if ((res = fcntl(listenfd, F_GETFL, 0)) == -1)
-		fatal_with_errno("fcntl(get)");
+		res = setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, (void *) &one, sizeof(one));
+		if (res != 0)
+			fatal_with_errno("setsockopt(SO_REUSEADDR)");
 
-	if (fcntl(listenfd, F_SETFL, res | O_NDELAY) == -1)
-		fatal_with_errno("fcntl(set)");
+		if (bind (listenfd, r->ai_addr, r->ai_addrlen) == -1) {
+			if (r->ai_next == NULL)
+				fatal_with_errno("Can't bind TCP port number %u", net_port);
+			close (listenfd);
+			continue;
+		}
 
-	if (listen(listenfd, 16))
-		fatal_with_errno("listen");
+		if ((res = fcntl(listenfd, F_GETFL, 0)) == -1)
+			fatal_with_errno("fcntl(get)");
 
+		if (fcntl(listenfd, F_SETFL, res | O_NDELAY) == -1)
+			fatal_with_errno("fcntl(set)");
+
+		if (listen(listenfd, 16) == -1) {
+			if (r->ai_next == NULL)
+				fatal_with_errno("listen");
+			close (listenfd);
+			continue;
+		}
+		break;
+	}
+	freeaddrinfo (rtmp);
 	return;
 }
 
@@ -412,7 +457,7 @@ static void check_every_ups(void)
 static void answertcp(void)
 {
 	int	acc;
-	struct	sockaddr_in csock;
+	struct	sockaddr_storage csock;
 	ctype	*tmp, *last;
 	socklen_t	clen;
 
@@ -424,7 +469,7 @@ static void answertcp(void)
 
 	if (!access_check(&csock)) {
 		upslogx(LOG_NOTICE, "Rejecting TCP connection from %s", 
-			inet_ntoa(csock.sin_addr));
+			inet_ntopW(&csock));
 		shutdown(acc, shutdown_how);
 		close(acc);
 		return;
@@ -439,10 +484,10 @@ static void answertcp(void)
 
 	tmp = xmalloc(sizeof(ctype));
 
-	tmp->addr = xstrdup(inet_ntoa(csock.sin_addr));
+	tmp->addr = xstrdup(inet_ntopW(&csock));
 	tmp->fd = acc;
 	tmp->delete = 0;
-	memcpy(&tmp->sock, &csock, sizeof(struct sockaddr_in));
+	memcpy(&tmp->sock, &csock, sizeof(struct sockaddr_storage));
 
 	tmp->rqpos = 0;
 	memset(tmp->rq, '\0', sizeof(tmp->rq));
@@ -463,7 +508,7 @@ static void answertcp(void)
 	else
 		last->next = tmp;
 
-	upslogx(LOG_INFO, "Connection from %s", inet_ntoa(csock.sin_addr));
+	upslogx(LOG_INFO, "Connection from %s", tmp->addr);
 }
 
 /* read tcp messages and handle them */
@@ -668,6 +713,8 @@ static void help(const char *progname)
 	printf("  -r <dir>	chroots to <dir>\n");
 	printf("  -u <user>	switch to <user> (if started as root)\n");
 	printf("  -V		display the version of this software\n");
+	printf("  -4		IPv4 only\n");
+	printf("  -6		IPv6 only\n");
 
 	exit(EXIT_SUCCESS);
 }
@@ -737,13 +784,11 @@ int main(int argc, char **argv)
 	datapath = xstrdup(DATADIR);
 
 	/* set up some things for later */
-
-	listenaddr.s_addr = INADDR_ANY;
 	snprintf(pidfn, sizeof(pidfn), "%s/upsd.pid", altpidpath());
 
 	printf("Network UPS Tools upsd %s\n", UPS_VERSION);
 
-	while ((i = getopt(argc, argv, "+hp:r:i:fu:Vc:D")) != EOF) {
+	while ((i = getopt(argc, argv, "+h46p:r:i:fu:Vc:D")) != EOF) {
 		switch (i) {
 			case 'h':
 				help(progname);
@@ -752,8 +797,7 @@ int main(int argc, char **argv)
 				net_port = atoi(optarg);
 				break;
 			case 'i':
-				if (!inet_aton(optarg, &listenaddr))
-					fatal_with_errno("Invalid IP address");
+				listenaddr = xstrdup(optarg);
 				break;
 			case 'r':
 				chroot_path = optarg;
@@ -784,6 +828,15 @@ int main(int argc, char **argv)
 				do_background = 0;
 				nut_debug_level++;
 				break;
+
+		  case '4':
+				opt_af = AF_INET;
+				break;
+
+		  case '6':
+				opt_af = AF_INET6;
+				break;
+
 			default:
 				help(progname);
 				break;
