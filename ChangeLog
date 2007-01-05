@@ -1,3 +1,8 @@
+Fri Jan  5 19:15:13 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - data/cmdvartab: added ups.realpower, ups.realpower.nominal,
+   input.frequency.low, input.frequency.high and battery.capacity
+
 Fri Jan  4 10:13:05 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  * final removal of the legacy hidups driver. It is now fully
