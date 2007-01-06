@@ -32,7 +32,11 @@ typedef struct {
 	char	*addr;
 	int	fd;
 	int	delete;			/* set after a write fails */
+#ifndef	HAVE_IPV6
+	struct sockaddr_in sock;
+#else
 	struct sockaddr_storage sock;
+#endif
 	char	rq[SMALLBUF];
 	size_t	rqpos;
 	char	*loginups;

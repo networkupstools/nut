@@ -290,7 +290,11 @@ void user_flush(void)
 	users = NULL;
 }	
 
+#ifndef	HAVE_IPV6
+static int user_matchacl(ulist_t *user, const struct sockaddr_in *addr)
+#else
 static int user_matchacl(ulist_t *user, const struct sockaddr_storage *addr)
+#endif
 {
 	acllist	*tmp;
 
@@ -328,7 +332,11 @@ static int user_matchinstcmd(ulist_t *user, const char * cmd)
 	return 0;	/* fail */
 }
 
+#ifndef	HAVE_IPV6
+int user_checkinstcmd(const struct sockaddr_in *addr, 
+#else
 int user_checkinstcmd(const struct sockaddr_storage *addr, 
+#endif
 	const char *un, const char *pw, const char *cmd)
 {
 	ulist_t	*tmp = users;
@@ -385,7 +393,11 @@ static int user_matchaction(ulist_t *user, const char *action)
 	return 0;	/* fail */
 }
 
+#ifndef	HAVE_IPV6
+int user_checkaction(const struct sockaddr_in *addr, 
+#else
 int user_checkaction(const struct sockaddr_storage *addr, 
+#endif
 	const char *un, const char *pw, const char *action)
 {
 	ulist_t	*tmp = users;

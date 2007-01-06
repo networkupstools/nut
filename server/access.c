@@ -25,13 +25,14 @@
 #include "common.h"
 #include "access.h"
 
-struct 	acl_t	*acl_head = NULL;
-struct	access_t	*access_head = NULL;
+	struct 	acl_t	*acl_head = NULL;
+	struct	access_t	*access_head = NULL;
 
+#ifdef	HAVE_IPV6
 /*
  *  Stolen from privoxy code :]
  */
-int mask_cmp (const struct sockaddr_storage* ip_addr, unsigned int prefix, const struct sockaddr_storage* net_addr) {
+static int mask_cmp (const struct sockaddr_storage* ip_addr, unsigned int prefix, const struct sockaddr_storage* net_addr) {
 	switch (ip_addr->ss_family) {
 	case AF_INET:
 		return((((struct sockaddr_in*)ip_addr)->sin_addr.s_addr & htonl(prefix)) == ((struct sockaddr_in*)net_addr)->sin_addr.s_addr);
@@ -72,8 +73,31 @@ int mask_cmp (const struct sockaddr_storage* ip_addr, unsigned int prefix, const
 		return(0);
 	}
 }
+#endif
 
 /* see if <addr> matches the acl <aclname> */
+#ifndef	HAVE_IPV6
+int acl_check(const char *aclname, const struct sockaddr_in *addr)
+{
+	struct	acl_t	*tmp;
+	int	aclchk, addrchk;
+
+	tmp = acl_head;
+	while (tmp != NULL) {
+		if (!strcmp(tmp->name, aclname)) {
+			aclchk = tmp->addr & tmp->mask;
+			addrchk = ntohl(addr->sin_addr.s_addr) & tmp->mask;
+
+			if (aclchk == addrchk) 
+				return 1;	/* match */
+		}
+
+		tmp = tmp->next;
+	}
+
+	return 0;	/* not found */
+}
+#else
 int acl_check(const char *aclname, const struct sockaddr_storage *addr)
 {
 	struct	acl_t	*tmp;
@@ -88,9 +112,14 @@ int acl_check(const char *aclname, const struct sockaddr_storage *addr)
 	
 	return 0;	/* not found */
 }
+#endif
 
 /* return ACCEPT/REJECT based on source address */
+#ifndef	HAVE_IPV6
+int access_check(const struct sockaddr_in *addr)
+#else
 int access_check(const struct sockaddr_storage *addr)
+#endif
 {
 	struct	access_t	*tmp;
 	int	ret;
@@ -147,6 +176,23 @@ void acl_add(const char *aclname, char *ipblock)
 		tmp = tmp->next;
 	}
 
+#ifndef	HAVE_IPV6
+	tmp = xmalloc(sizeof(struct acl_t));
+	tmp->name = xstrdup(aclname);
+	tmp->addr = ntohl(inet_addr(addr));
+	tmp->next = NULL;
+
+	/* must be a /nn CIDR type block */
+	if (strstr(mask, ".") == NULL) { 
+		if (atoi(mask) != 32)
+			tmp->mask = ((unsigned int) ((1 << atoi(mask)) - 1) << 
+					(32 - atoi(mask)));
+		else
+			tmp->mask = 0xffffffff;	/* avoid overflow from 2^32 */
+	}
+	else
+		tmp->mask = ntohl(inet_addr(mask));
+#else
 	/* memset (&saddr, 0, sizeof (struct sockaddr_storage)); */
 	tmp = xmalloc(sizeof(struct acl_t));
 	memset (tmp, 0, sizeof (struct acl_t));
@@ -224,6 +270,7 @@ void acl_add(const char *aclname, char *ipblock)
 		/* tmp->addr.ss_len = sizeof (struct sockaddr_in); */
 		tmp->addr.ss_family = AF_INET;
 	}
+#endif
 
 	if (last == NULL)	/* first */
 		acl_head = tmp;

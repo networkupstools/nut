@@ -61,11 +61,15 @@ static	ctype	*firstclient = NULL;
 static	int	listenfd, net_port = PORT;
 
 	/* default is to listen on all local interfaces */
+#ifndef	HAVE_IPV6
+static	struct	in_addr	listenaddr;
+#else
 static	char *listenaddr = NULL;
 
 /* AF_ */
 
 static int opt_af = AF_UNSPEC;
+#endif
 
 	/* signal handlers */
 static	struct sigaction sa;
@@ -77,6 +81,7 @@ static	char	pidfn[SMALLBUF];
 	/* set by signal handlers */
 static	int	reload_flag = 0, exit_flag = 0;
 
+#ifdef	HAVE_IPV6
 const char *inet_ntopW (struct sockaddr_storage *s) {
 	static char str[40];
 
@@ -90,6 +95,7 @@ const char *inet_ntopW (struct sockaddr_storage *s) {
 		return NULL;
 	}
 }
+#endif
 
 /* return a pointer to the named ups if possible */
 upstype *get_ups_ptr(const char *name)
@@ -150,6 +156,38 @@ static void check_ups(upstype *ups)
 /* create a listening socket for tcp connections */
 static void setuptcp(void)
 {
+#ifndef	HAVE_IPV6
+	struct	sockaddr_in	server;
+	int	res, one = 1;
+
+	if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+		fatal_with_errno("socket");
+
+	res = setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, (void *) &one, 
+		sizeof(one));
+
+	if (res != 0)
+		fatal_with_errno("setsockopt(SO_REUSEADDR)");
+
+	memset(&server, '\0', sizeof(server));
+	server.sin_addr = listenaddr;
+	server.sin_family = AF_INET;
+	server.sin_port = htons(net_port);
+
+	if (bind(listenfd, (struct sockaddr *) &server, sizeof(server)) == -1)
+		fatal_with_errno("Can't bind TCP port number %d", net_port);
+
+	if ((res = fcntl(listenfd, F_GETFL, 0)) == -1)
+		fatal_with_errno("fcntl(get)");
+
+	if (fcntl(listenfd, F_SETFL, res | O_NDELAY) == -1)
+		fatal_with_errno("fcntl(set)");
+
+	if (listen(listenfd, 16))
+		fatal_with_errno("listen");
+
+	return;
+#else
 	struct addrinfo hints, *r, *rtmp;
 	char	*service;
 	int	res, one = 1;
@@ -206,6 +244,7 @@ static void setuptcp(void)
 	}
 	freeaddrinfo (rtmp);
 	return;
+#endif
 }
 
 /* decrement the login counter for this ups */
@@ -457,7 +496,11 @@ static void check_every_ups(void)
 static void answertcp(void)
 {
 	int	acc;
+#ifndef	HAVE_IPV6
+	struct	sockaddr_in csock;
+#else
 	struct	sockaddr_storage csock;
+#endif
 	ctype	*tmp, *last;
 	socklen_t	clen;
 
@@ -469,7 +512,11 @@ static void answertcp(void)
 
 	if (!access_check(&csock)) {
 		upslogx(LOG_NOTICE, "Rejecting TCP connection from %s", 
+#ifndef	HAVE_IPV6
+			inet_ntoa(csock.sin_addr));
+#else
 			inet_ntopW(&csock));
+#endif
 		shutdown(acc, shutdown_how);
 		close(acc);
 		return;
@@ -484,10 +531,18 @@ static void answertcp(void)
 
 	tmp = xmalloc(sizeof(ctype));
 
+#ifndef	HAVE_IPV6
+	tmp->addr = xstrdup(inet_ntoa(csock.sin_addr));
+#else
 	tmp->addr = xstrdup(inet_ntopW(&csock));
+#endif
 	tmp->fd = acc;
 	tmp->delete = 0;
+#ifndef	HAVE_IPV6
+	memcpy(&tmp->sock, &csock, sizeof(struct sockaddr_in));
+#else
 	memcpy(&tmp->sock, &csock, sizeof(struct sockaddr_storage));
+#endif
 
 	tmp->rqpos = 0;
 	memset(tmp->rq, '\0', sizeof(tmp->rq));
@@ -508,7 +563,11 @@ static void answertcp(void)
 	else
 		last->next = tmp;
 
+#ifndef	HAVE_IPV6
+	upslogx(LOG_INFO, "Connection from %s", inet_ntoa(csock.sin_addr));
+#else
 	upslogx(LOG_INFO, "Connection from %s", tmp->addr);
+#endif
 }
 
 /* read tcp messages and handle them */
@@ -713,8 +772,10 @@ static void help(const char *progname)
 	printf("  -r <dir>	chroots to <dir>\n");
 	printf("  -u <user>	switch to <user> (if started as root)\n");
 	printf("  -V		display the version of this software\n");
+#ifdef	HAVE_IPV6
 	printf("  -4		IPv4 only\n");
 	printf("  -6		IPv6 only\n");
+#endif
 
 	exit(EXIT_SUCCESS);
 }
@@ -784,11 +845,19 @@ int main(int argc, char **argv)
 	datapath = xstrdup(DATADIR);
 
 	/* set up some things for later */
+#ifndef	HAVE_IPV6
+
+	listenaddr.s_addr = INADDR_ANY;
+#endif
 	snprintf(pidfn, sizeof(pidfn), "%s/upsd.pid", altpidpath());
 
 	printf("Network UPS Tools upsd %s\n", UPS_VERSION);
 
+#ifndef	HAVE_IPV6
+	while ((i = getopt(argc, argv, "+hp:r:i:fu:Vc:D")) != EOF) {
+#else
 	while ((i = getopt(argc, argv, "+h46p:r:i:fu:Vc:D")) != EOF) {
+#endif
 		switch (i) {
 			case 'h':
 				help(progname);
@@ -797,7 +866,12 @@ int main(int argc, char **argv)
 				net_port = atoi(optarg);
 				break;
 			case 'i':
+#ifndef	HAVE_IPV6
+				if (!inet_aton(optarg, &listenaddr))
+					fatal_with_errno("Invalid IP address");
+#else
 				listenaddr = xstrdup(optarg);
+#endif
 				break;
 			case 'r':
 				chroot_path = optarg;
@@ -829,6 +903,7 @@ int main(int argc, char **argv)
 				nut_debug_level++;
 				break;
 
+#ifdef	HAVE_IPV6
 		  case '4':
 				opt_af = AF_INET;
 				break;
@@ -836,6 +911,7 @@ int main(int argc, char **argv)
 		  case '6':
 				opt_af = AF_INET6;
 				break;
+#endif
 
 			default:
 				help(progname);

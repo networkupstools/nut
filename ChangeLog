@@ -1,3 +1,9 @@
+Sat Jan  6 18:29:36 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - #ifdef'ed the new code that (presumably) adds IPv6 support (compile
+   with -DHAVE_IPV6 to enable this), default to the old IPv4 only
+   code (portability concerns of the IPv6 patch)
+
 Sat Jan  6 02:35:33 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - removed the "sms", "ippon", "mustek", "fentonups", "esupssmart" and
