@@ -18,7 +18,7 @@ The layering
 
            < Unix domain sockets with text-based messages >
 
-  DRIVERS: apcsmart, bestups, fentonups, powercom, etc.
+  DRIVERS: apcsmart, bestups, powercom, etc.
 
            < serial communications, SNMP, USB, etc. >
 

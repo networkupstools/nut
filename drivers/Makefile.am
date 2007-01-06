@@ -14,11 +14,10 @@ LDADD = $(LDADD_DRIVERS_SERIAL)
 AM_CFLAGS = -I$(top_srcdir)/include
 
 SERIAL_DRIVERLIST = al175 apcsmart bcmxcp belkin belkinunv bestfcom	\
- bestuferrups bestups blazer cpsups cyberpower dummy-ups esupssmart	\
- etapro everups fentonups gamatronic genericups ippon isbmex liebert	\
- masterguard megatec metasys mge-shut mge-utalk mustek newmge-shut	\
- nitram oneac optiups powercom rhino safenet skel sms solis tripplite	\
- tripplitesu upscode2 victronups powerpanel
+ bestuferrups bestups cpsups cyberpower dummy-ups etapro everups 	\
+ gamatronic genericups isbmex liebert masterguard megatec metasys 	\
+ mge-shut mge-utalk newmge-shut	nitram oneac optiups powercom rhino 	\
+ safenet skel solis tripplite tripplitesu upscode2 victronups powerpanel
 SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = newhidups bcmxcp_usb tripplite_usb
 USB_HIDDEV_DRIVERLIST = energizerups
@@ -71,16 +70,12 @@ belkinunv_SOURCES = belkinunv.c
 bestfcom_SOURCES = bestfcom.c
 bestuferrups_SOURCES = bestuferrups.c
 bestups_SOURCES = bestups.c
-blazer_SOURCES = blazer.c
 cpsups_SOURCES = cpsups.c
 cyberpower_SOURCES = cyberpower.c
-esupssmart_SOURCES = esupssmart.c
 etapro_SOURCES = etapro.c
 everups_SOURCES = everups.c
-fentonups_SOURCES = fentonups.c
 gamatronic_SOURCES = gamatronic.c
 genericups_SOURCES = genericups.c
-ippon_SOURCES = ippon.c
 isbmex_SOURCES = isbmex.c
 isbmex_LDADD = $(LDADD) -lm
 liebert_SOURCES = liebert.c
@@ -89,7 +84,6 @@ megatec_SOURCES = megatec.c
 metasys_SOURCES = metasys.c
 mge_shut_SOURCES = mge-shut.c hidparser.c 
 mge_utalk_SOURCES = mge-utalk.c
-mustek_SOURCES = mustek.c
 nitram_SOURCES = nitram.c
 oneac_SOURCES = oneac.c
 optiups_SOURCES = optiups.c
@@ -98,7 +92,6 @@ powerpanel_SOURCES = powerpanel.c
 rhino_SOURCES = rhino.c
 rhino_LDADD = $(LDADD) -lm
 safenet_SOURCES = safenet.c
-sms_SOURCES = sms.c
 solis_SOURCES = solis.c
 tripplite_SOURCES = tripplite.c
 tripplite_LDADD = $(LDADD) -lm
@@ -163,15 +156,15 @@ hald_addon_bcmxcp_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LD
 
 dist_noinst_HEADERS = al175.h apccmib.h apc-hid.h apcsmart.h bcmxcp.h	\
  bcmxcp_io.h belkin.h belkin-hid.h belkinunv.h bestfcom.h		\
- bestuferrups.h bestups.h blazer.h cpsups.h cyberpower.h dstate.h	\
+ bestuferrups.h bestups.h cpsups.h cyberpower.h dstate.h		\
  dstate-hal.h								\
- dummy-ups.h esupssmart.h etapro.h everups.h fentonups.h gamatronic.h	\
- explore-hid.h genericups.h hidparser.h hidtypes.h ietfmib.h	\
- ippon.h isbmex.h libhid.h libshut.h libusb.h liebert.h main.h		\
+ dummy-ups.h etapro.h everups.h gamatronic.h				\
+ explore-hid.h genericups.h hidparser.h hidtypes.h ietfmib.h		\
+ isbmex.h libhid.h libshut.h libusb.h liebert.h main.h			\
  main-hal.h								\
  masterguard.h megatec.h metasys.h mge-hid.h mgemib.h mge-shut.h	\
- mge-utalk.h mustek.h netvisionmib.h newhidups.h nitram.h nut_usb.h	\
- oneac.h optiups.h powercom.h pwmib.h safenet.h serial.h sms.h		\
+ mge-utalk.h netvisionmib.h newhidups.h nitram.h nut_usb.h		\
+ oneac.h optiups.h powercom.h pwmib.h safenet.h serial.h		\
  snmp-ups.h solis.h tripplite.h tripplite-hid.h tripplitesu.h		\
  upscode2.h victronups.h powerpanel.h
 

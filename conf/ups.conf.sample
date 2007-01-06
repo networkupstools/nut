@@ -44,7 +44,7 @@
 # These directives are common to all drivers that support ups.conf:
 #
 #  driver: REQUIRED.  Specify the program to run to talk to this UPS.  
-#          apcsmart, fentonups, bestups, and sec are some examples.
+#          apcsmart, bestups, and sec are some examples.
 #
 #    port: REQUIRED.  The serial port where your UPS is connected.  
 #          /dev/ttyS0 is usually the first port on Linux boxes, for example.
@@ -82,11 +82,11 @@
 # Examples
 # --------
 #
-# A simple example for a UPS called "powerpal" that uses the fentonups
+# A simple example for a UPS called "powerpal" that uses the megatec
 # driver on /dev/ttyS0 is:
 #
 # [powerpal]
-#	driver = fentonups
+#	driver = megatec
 #	port = /dev/ttyS0
 #	desc = "Web server"
 #

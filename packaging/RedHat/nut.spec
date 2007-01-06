@@ -219,7 +219,6 @@ rm -rf %{buildroot}
 %{_mandir}/man8/apcsmart.8.gz
 %{_mandir}/man8/belkin.8.gz
 %{_mandir}/man8/bestups.8.gz
-%{_mandir}/man8/fentonups.8.gz
 %{_mandir}/man8/newapc.8.gz
 %{_mandir}/man8/nutupsdrv.8.gz
 %{_mandir}/man8/powercom.8.gz

@@ -185,8 +185,6 @@ that UPS.
                            The SOLA 610 will work with the ID= variable
                            in ups.conf.
 
-	blazer		 - Centralion Blazer models
-
 	cyberpower       - Cyber Power Systems units
 			   700AVR and others (binary protocol)
 
@@ -196,10 +194,6 @@ that UPS.
 
 	energizerups	 - Energizer UPS hardware (experimental - USB/Linux)
 
-	esupssmart	 - Energy Sistem equipment
-
-			   also Infosec iPel 350/500/750/1000
-
 	etapro		 - ETA UPS hardware with the "PRO" smart mode
 
 	everups          - EVER Sp. z o.o models
@@ -207,35 +201,10 @@ that UPS.
                            - NET *-DPC
                            - AP *-PRO 
 
-	fentonups        - Fenton Technologies models:
-
-	                   - PowerPal L series
-	                   - PowerOn
-	                   - PowerPure
-
-                         - Effekta MI/MT/MH models (2502 cable)
-
-                         - PowerGuard PG-600
-
-			 - PowerCom SMK-800A, ULT-1000
-
-			 - Giant Power MT650
-
-			 - UNITEK ALPHA 500 IC
-
-			 - Unitek Alpha 1000is
-
-			 - SuperPower HP360, Hope-550
-
-			   This driver implements the Megatec protocol, so
-			   other Megatec hardware will probably work with it.
-
 	genericups       - Many contact closure models -
                            see "Generic UPS driver" below 
 
 	isbmex		 - SOLA/BASIC Mexico ISBMEX protocol hardware
-
-	ippon            - Ippon UPS devices
 
 	liebert          - Liebert UPStation GXT2 with contact-closure cable
 
@@ -275,8 +244,6 @@ that UPS.
                            - Pulsar / Comet EXtreme,
                            - Comet / Galaxy using Utalk Serial Card (ref 66060)
 
-	mustek		 - Mustek UPS hardware
-
 	megatec		 - Megatec protocol based UPSes (Mustek Powermust,
 			   OnLite 50, Maxxtro units, etc.)
 
@@ -302,8 +269,6 @@ that UPS.
 			 - Advice Partner/King PR750
                          - Socomec Sicon Egys 420 VA 
 
-	powermust	 - Mustek Powermust (and OnLite 50) units
-
 	safenet		 - Units typically bundled with Safenet software:
 
                            - Ever-Power UF 010C2EJA
@@ -318,8 +283,6 @@ that UPS.
                            Note: Sweex models which shipped with UPSmart
                            are contact-closure and need to use the
                            genericups driver with upstype=7.
-
-	sms		 - Microlink Manager III
 
 	snmp-ups         - SNMP UPS equipment
                            Experimental driver - not built by default.

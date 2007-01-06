@@ -130,8 +130,8 @@ the "sdorder" value in your ups.conf.
 		sdorder = 1
 
 	[misc]
-		driver = fentonups
-		port = /dev/ttyL2
+		driver = megatec
+		port = /dev/ttyS2
 		sdorder = 0
 
 The order runs from 0 to the highest number available.  So, for this

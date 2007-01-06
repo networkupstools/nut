@@ -26,17 +26,14 @@ SERIAL_PAGES = \
 	dummy-ups.8	\
 	etapro.8	\
 	everups.8	\
-	fentonups.8 	\
 	gamatronic.8	\
 	genericups.8	\
-	ippon.8		\
 	isbmex.8	\
 	liebert.8	\
 	masterguard.8	\
 	metasys.8	\
 	mge-shut.8	\
 	mge-utalk.8	\
-	mustek.8	\
 	nitram.8	\
 	oneac.8		\
 	optiups.8	\
@@ -45,7 +42,6 @@ SERIAL_PAGES = \
 	megatec.8	\
 	rhino.8		\
 	safenet.8	\
-	sms.8		\
 	solis.8		\
 	tripplite.8	\
 	tripplitesu.8	\

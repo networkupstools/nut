@@ -1,3 +1,11 @@
+Sat Jan  6 02:35:33 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - removed the "sms", "ippon", "mustek", "fentonups", "esupssmart" and
+   "blazer" drivers as they have been obsoleted by "megatec". This
+   included their manpages, all references in Makefiles and all
+   references in the documentation that only made sense if they were
+   still available on the tree.
+
 Fri Jan  5 19:57:46 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - added IPv6 support (Alioth Patches #304310) (IPv4 still seems to
