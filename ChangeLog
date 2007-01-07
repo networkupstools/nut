@@ -1,3 +1,7 @@
+Sun Jan  7 19:28:57 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - server/access.c: s6_addr32 is not portable, only s6_addr is
+
 Sun Jan  7 00:29:53 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  - autoconf: added test for IPv6 prerequisites. New configuration
