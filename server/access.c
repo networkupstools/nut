@@ -57,15 +57,8 @@ static int mask_cmp (const struct sockaddr_storage* ip_addr, unsigned int prefix
 			struct in6_addr *ip6 = &((struct sockaddr_in6 *)ip_addr)->sin6_addr;
 			struct in_addr *net = &((struct sockaddr_in *)net_addr)->sin_addr;
 			
-			return ((*(u_int32_t *)(&ip6->s6_addr[0]) == 0) &&
-				(*(u_int32_t *)(&ip6->s6_addr[4]) == 0) &&
-			/*	(*(u_int32_t *)(&ip6->s6_addr[8]) == ntohl(0x0000ffff)) &&	*/
-#if BYTE_ORDER == LITTLE_ENDIAN
-				(*(u_int32_t *)(&ip6->s6_addr[8]) == (u_int32_t)0xffff0000) &&
-#else
-				(*(u_int32_t *)(&ip6->s6_addr[8]) == (u_int32_t)0x0000ffff) &&
-#endif
-				((*(u_int32_t *)(&ip6->s6_addr[12]) & (u_int32_t)prefix) == net->s_addr));
+			return (IN6_IS_ADDR_V4MAPPED(ip6) &&
+				((((const u_int32_t *)ip6)[3] & (u_int32_t)prefix) == net->s_addr));
 		}
 	default:
 		fatal_with_errno("mask_cmp: Unknown address family");
