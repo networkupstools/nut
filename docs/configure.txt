@@ -79,6 +79,10 @@ Contents:
 
    Enable SSL development code (default: auto-detect)
 
+  --with-ipv6
+
+   Enable IPv6 support (default: auto-detect)
+
 3. Other configuration options:
 ===============================
 

@@ -1,3 +1,8 @@
+Sun Jan  7 00:29:53 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - autoconf: added test for IPv6 prerequisites. New configuration
+   options --with-ipv6, --without-ipv6.
+
 Sat Jan  6 19:30:32 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  - autoconf: don't set LIB*_CFLAGS and LIB*_LDFLAGS to garbage values

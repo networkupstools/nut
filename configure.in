@@ -241,6 +241,30 @@ fi
 NUT_REPORT_FEATURE([enable SSL development code], [${nut_with_ssl}])
 
 dnl ----------------------------------------------------------------------
+dnl check whether to compile IPv6 features 
+
+NUT_ARG_WITH([ipv6], [enable IPv6 support], [auto])
+
+dnl ${nut_with_ipv6}: any value except "yes" or "no" is treated as "auto". 
+if test "${nut_with_ipv6}" != "no"; then
+   dnl check for IPv6 prerequisites
+   NUT_CHECK_IPV6
+fi
+
+if test "${nut_with_ipv6}" = "yes" -a "${nut_have_ipv6}" != "yes"; then
+   AC_MSG_ERROR(["Some feature required for IPv6 support is missing"])
+fi
+
+if test "${nut_with_ipv6}" != "no"; then
+   nut_with_ipv6="${nut_have_ipv6}"
+fi
+
+if test "${nut_with_ipv6}" = "yes"; then
+   AC_DEFINE(HAVE_IPV6, 1, [Define to enable IPv6 support])
+fi
+NUT_REPORT_FEATURE([enable IPv6 support], [${nut_with_ipv6}])
+
+dnl ----------------------------------------------------------------------
 dnl checks related to --with-cgi
 
 dnl ${nut_with_cgi}: any value except "yes" or "no" is treated as "auto".
@@ -668,3 +692,4 @@ AC_OUTPUT([
 ])
 
 NUT_PRINT_FEATURE_REPORT
+

@@ -33,6 +33,16 @@ directory.
    nut_linux_hiddev="". This macro can be run multiple times, but will
    do the checking only once.
 
+ - Macro: NUT_CHECK_IPV6
+   Check for various features required to compile the IPv6 support.
+   dnl Check for various features required for IPv6 support. Define a
+   preprocessor symbol for each individual feature (HAVE_GETADDRINFO,
+   HAVE_FREEADDRINFO, HAVE_STRUCT_ADDRINFO, HAVE_SOCKADDR_STORAGE,
+   SOCKADDR_IN6, IN6_ADDR, HAVE_STRUCT_IN6_ADDR_S6_ADDR32,
+   HAVE_AI_ADDRCONFIG). Also set the shell variable nut_have_ipv6=yes
+   if all the required features are present. Set nut_have_ipv6=no
+   otherwise.
+
  - Macro: NUT_REPORT_FEATURE(FEATURE, VALUE) 
    Schedule a line for the end-of-configuration feature summary.  The
    FEATURE is a descriptive string such that the sentence "Checking
