@@ -8,14 +8,18 @@ AC_DEFUN([NUT_CHECK_LIBGD],
 if test -z "${nut_have_libgd_seen}"; then
    nut_have_libgd_seen=yes
 
+   CFLAGS_ORIG="${CFLAGS}"
+   CPPFLAGS_ORIG="${CPPFLAGS}"
+   LDFLAGS_ORIG="${LDFLAGS}"
+
    AC_MSG_CHECKING(for gd version via gdlib-config)
 
    dnl Initial defaults. These are only used if gdlib-config is
    dnl unusable and the user fails to pass better values in --with
    dnl arguments
 
-   LIBGD_CFLAGS=""
-   LIBGD_LDFLAGS="-L/usr/X11R6/lib -lgd -lpng -lz -ljpeg -lfreetype -lm -lXpm -lX11"
+   CFLAGS=""
+   LDFLAGS="-L/usr/X11R6/lib -lgd -lpng -lz -ljpeg -lfreetype -lm -lXpm -lX11"
 
    GD_VERSION=`gdlib-config --version 2>/dev/null`
    if (test "$?" != "0")
@@ -36,10 +40,10 @@ if test -z "${nut_have_libgd_seen}"; then
 		;;
 
 	*)
-		LIBGD_LDFLAGS="`gdlib-config --ldflags` `gdlib-config --libs` -lgd"
-		LIBGD_CFLAGS="`gdlib-config --includes`"
+		LDFLAGS="`gdlib-config --ldflags` `gdlib-config --libs` -lgd"
+		CFLAGS="`gdlib-config --includes`"
 		;;
-	esac
+   esac
 
    dnl Now allow overriding gd settings if the user knows best
 
@@ -50,11 +54,11 @@ if test -z "${nut_have_libgd_seen}"; then
 	yes|no)
 		;;
 	*)
-		LIBGD_CFLAGS="${withval}"
+		CFLAGS="${withval}"
 		;;
 	esac],
    )
-   AC_MSG_RESULT([${LIBGD_CFLAGS}])
+   AC_MSG_RESULT([${CFLAGS}])
 
    AC_MSG_CHECKING(for gd library flags)
    AC_ARG_WITH(gd-libs,
@@ -63,21 +67,15 @@ if test -z "${nut_have_libgd_seen}"; then
 	yes|no)
 		;;
 	*)
-		LIBGD_LDFLAGS="${withval}"
+		LDFLAGS="${withval}"
 		;;
 	esac],
    )
-   AC_MSG_RESULT([${LIBGD_LDFLAGS}])
+   AC_MSG_RESULT([${LDFLAGS}])
 
    dnl check if gd is usable
 
-   CFLAGS_ORIG="${CFLAGS}"
-   CPPFLAGS_ORIG="${CPPFLAGS}"
-   LDFLAGS_ORIG="${LDFLAGS}"
-
-		CFLAGS="${LIBGD_CFLAGS}"
-		CPPFLAGS="${LIBGD_CFLAGS}"
-		LDFLAGS="${LIBGD_LDFLAGS}"
+		CPPFLAGS="${CFLAGS}"
 
 		AC_CHECK_HEADERS(gd.h)
 		AC_CHECK_LIB(gd, gdImagePng, 
@@ -86,7 +84,12 @@ if test -z "${nut_have_libgd_seen}"; then
 			[Define if you have Boutell's libgd installed])
 		],
                 [ nut_have_libgd=no ],
-		${LIBGD_LDFLAGS})
+		${LDFLAGS})
+
+   if test "${nut_have_libgd}" = "yes"; then
+        LIBGD_CFLAGS="${CFLAGS}"
+        LIBGD_LDFLAGS="${LDFLAGS}"
+   fi
 
    dnl put back the original versions
    CFLAGS="${CFLAGS_ORIG}"

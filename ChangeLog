@@ -1,3 +1,8 @@
+Sat Jan  6 19:30:32 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - autoconf: don't set LIB*_CFLAGS and LIB*_LDFLAGS to garbage values
+   if the corresponding test fails.
+
 Sat Jan  6 18:29:36 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - #ifdef'ed the new code that (presumably) adds IPv6 support (compile

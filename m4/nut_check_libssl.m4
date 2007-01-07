@@ -10,40 +10,50 @@ if test -z "${nut_have_libssl_seen}"; then
 
    AC_MSG_CHECKING(for SSL library availability)
 
+   dnl save CFLAGS and LDFLAGS
    CFLAGS_ORIG="${CFLAGS}"
    LDFLAGS_ORIG="${LDFLAGS}"
 
-   LIBSSL_CFLAGS=""
-   LIBSSL_LDFLAGS="-lssl -lcrypto"
+   CFLAGS=""
+   LDFLAGS="-lssl -lcrypto"
 
-   CFLAGS="${LIBSSL_CFLAGS}"
-   LDFLAGS="${LIBSSL_LDFLAGS}"
    AC_TRY_LINK([#include <openssl/ssl.h>], [SSL_library_init()], 
 	       nut_have_libssl=yes, 
 	       nut_have_libssl=no)
 
    if test "${nut_have_libssl}" != "yes"; then
-      LIBSSL_CFLAGS="-I/usr/local/ssl/include"
-      LIBSSL_LDFLAGS="-L/usr/local/ssl/lib -lssl -lcrypto"
+      CFLAGS="-I/usr/kerberos/include"
+      LDFLAGS="-lssl -lcrypto"
 
-      CFLAGS="${LIBSSL_CFLAGS}"
-      LDFLAGS="${LIBSSL_LDFLAGS}"
+      AC_TRY_LINK([#include <openssl/ssl.h>], [SSL_library_init], 
+                   nut_have_libssl=yes, 
+		   nut_have_libssl=no)
+   fi
+
+   if test "${nut_have_libssl}" != "yes"; then
+      CFLAGS="-I/usr/local/ssl/include"
+      LDFLAGS="-L/usr/local/ssl/lib -lssl -lcrypto"
+
       AC_TRY_LINK([#include <openssl/ssl.h>], [SSL_library_init], 
                   nut_have_libssl=yes, 
 		  nut_have_libssl=no)
    fi
 
    if test "${nut_have_libssl}" != "yes"; then
-      LIBSSL_CFLAGS="-I/usr/local/ssl/include -I/usr/kerberos/include"
-      LIBSSL_LDFLAGS="-L/usr/local/ssl/lib -lssl -lcrypto"
+      CFLAGS="-I/usr/local/ssl/include -I/usr/kerberos/include"
+      LDFLAGS="-L/usr/local/ssl/lib -lssl -lcrypto"
 
-      CFLAGS="${LIBSSL_CFLAGS}"
-      LDFLAGS="${LIBSSL_LDFLAGS}"
       AC_TRY_LINK([#include <openssl/ssl.h>], [SSL_library_init], 
                    nut_have_libssl=yes, 
 		   nut_have_libssl=no)
    fi
 
+   if test "${nut_have_libssl}" = "yes"; then
+	LIBSSL_CFLAGS="${CFLAGS}"
+	LIBSSL_LDFLAGS="${LDFLAGS}"
+   fi
+
+   dnl restore original CFLAGS and LDFLAGS
    CFLAGS="${CFLAGS_ORIG}"
    LDFLAGS="${LDFLAGS_ORIG}"
 
