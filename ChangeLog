@@ -1,3 +1,7 @@
+Mon Jan  8 00:52:51 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - autoconf: removed test for s6_addr32, added test for IN6_IS_ADDR_V4MAPPED.
+
 Sun Jan  7 20:35:35 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - server/access.c: replaces previous patch (now uses IN6_IS_ADDR_V4MAPPED)

@@ -1,7 +1,7 @@
 dnl Check for various features required for IPv6 support. Define a
 dnl preprocessor symbol for each individual feature (HAVE_GETADDRINFO,
 dnl HAVE_FREEADDRINFO, HAVE_STRUCT_ADDRINFO, HAVE_SOCKADDR_STORAGE,
-dnl SOCKADDR_IN6, IN6_ADDR, HAVE_STRUCT_IN6_ADDR_S6_ADDR32, 
+dnl SOCKADDR_IN6, IN6_ADDR, HAVE_IN6_IS_ADDR_V4MAPPED, 
 dnl HAVE_AI_ADDRCONFIG). Also set the shell variable nut_have_ipv6=yes 
 dnl if all the required features are present. Set nut_have_ipv6=no otherwise.
 
@@ -24,10 +24,10 @@ if test -z "${nut_check_ipv6_seen}"; then
                   [nut_have_ipv6=no],
 		  [#include <netdb.h>])
 
-   AC_CHECK_MEMBERS([struct in6_addr.s6_addr32],
-                  [:],
-                  [nut_have_ipv6=no],
-		  [#include <netdb.h>])
+dnl AC_CHECK_MEMBERS([struct in6_addr.s6_addr32],
+dnl               [:],
+dnl               [nut_have_ipv6=no],
+dnl		  [#include <netdb.h>])
 
    AC_MSG_CHECKING([for AI_ADDRCONFIG])
    AC_COMPILE_IFELSE(
@@ -36,6 +36,21 @@ if test -z "${nut_check_ipv6_seen}"; then
 	   [[int flag = AI_ADDRCONFIG]]
         )], 
        [AC_DEFINE(HAVE_AI_ADDRCONFIG, 1, [Define if `addrinfo' structure allows AI_ADDRCONFIG flag])
+        AC_MSG_RESULT(yes)],
+       [AC_MSG_RESULT(no)
+        nut_have_ipv6=no]
+   )
+
+   AC_MSG_CHECKING([for IN6_IS_ADDR_V4MAPPED])
+   AC_LINK_IFELSE(
+       [AC_LANG_PROGRAM(
+	   [[#include <netinet/in.h>]],
+	   [[
+            struct in6_addr *i6 = (struct in6_addr *)0;
+	    return IN6_IS_ADDR_V4MAPPED(i6);
+	   ]]
+        )], 
+       [AC_DEFINE(HAVE_IN6_IS_ADDR_V4MAPPED, 1, [Define if IN6_IS_ADDR_V4MAPPED is available])
         AC_MSG_RESULT(yes)],
        [AC_MSG_RESULT(no)
         nut_have_ipv6=no]
