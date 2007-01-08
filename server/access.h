@@ -25,15 +25,13 @@
 
 /* ACL structure */
 struct acl_t {
+	char	*name;
 #ifndef HAVE_IPV6
-	char	*name;
-	unsigned int	addr;
-	unsigned int	mask;
+	struct sockaddr_in		addr;
 #else
-	char	*name;
 	struct sockaddr_storage	addr;
-	unsigned int	mask; /* prefix - if IPv6 */
 #endif
+	unsigned int	mask;
 	void	*next;
 };
 

@@ -1,3 +1,9 @@
+Mon Jan  8 19:58:46 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - server/access.ch: merged some code between IPV4 and IPV6 for similar
+   functions; use network byte order for network addresses (essentially
+   'struct sockaddr_*' types) and host byte order for all others
+
 Mon Jan  8 17:46:08 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - server/user.c: allocating memory with wrong element size

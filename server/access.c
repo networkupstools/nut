@@ -25,20 +25,32 @@
 #include "common.h"
 #include "access.h"
 
-	struct 	acl_t	*acl_head = NULL;
-	struct	access_t	*access_head = NULL;
+struct acl_t		*acl_head = NULL;
+struct access_t	*access_head = NULL;
 
-#ifdef	HAVE_IPV6
+#ifndef	HAVE_IPV6
+static int mask_cmp(const struct sockaddr_in *ip_addr,
+		const struct sockaddr_in *net_addr, unsigned int prefix)
+{
+	return ((net_addr->sin_addr.s_addr & htonl(prefix)) ==
+		(ip_addr->sin_addr.s_addr & htonl(prefix)));
+}
+#else
 /*
  *  Stolen from privoxy code :]
  */
-static int mask_cmp (const struct sockaddr_storage* ip_addr, unsigned int prefix, const struct sockaddr_storage* net_addr) {
-	switch (ip_addr->ss_family) {
+static int mask_cmp (const struct sockaddr_storage *ip_addr,
+		const struct sockaddr_storage *net_addr, unsigned int prefix)
+{
+	switch (ip_addr->ss_family)
+	{
 	case AF_INET:
-		return((((struct sockaddr_in*)ip_addr)->sin_addr.s_addr & htonl(prefix)) == ((struct sockaddr_in*)net_addr)->sin_addr.s_addr);
+		return((((struct sockaddr_in *)ip_addr)->sin_addr.s_addr & htonl(prefix)) ==
+			((struct sockaddr_in *)net_addr)->sin_addr.s_addr);
 		break;
 	case AF_INET6:
-		if (AF_INET6 == net_addr->ss_family) {
+		if (AF_INET6 == net_addr->ss_family)
+		{
 			struct in6_addr ip, net;
 			register unsigned char i;
 			
@@ -53,12 +65,13 @@ static int mask_cmp (const struct sockaddr_storage* ip_addr, unsigned int prefix
 			
 			return (memcmp (ip.s6_addr, net.s6_addr, sizeof ip.s6_addr)==0);
 		}
-		else if (AF_INET == net_addr->ss_family) { /* IPv4 mapped IPv6 */
+		else if (AF_INET == net_addr->ss_family)
+		{ /* IPv4 mapped IPv6 */
 			struct in6_addr *ip6 = &((struct sockaddr_in6 *)ip_addr)->sin6_addr;
 			struct in_addr *net = &((struct sockaddr_in *)net_addr)->sin_addr;
 			
 			return (IN6_IS_ADDR_V4MAPPED(ip6) &&
-				((((const u_int32_t *)ip6)[3] & (u_int32_t)prefix) == net->s_addr));
+				((((const u_int32_t *)ip6)[3] & htonl(prefix)) == net->s_addr));
 		}
 	default:
 		fatal_with_errno("mask_cmp: Unknown address family");
@@ -70,41 +83,23 @@ static int mask_cmp (const struct sockaddr_storage* ip_addr, unsigned int prefix
 /* see if <addr> matches the acl <aclname> */
 #ifndef	HAVE_IPV6
 int acl_check(const char *aclname, const struct sockaddr_in *addr)
-{
-	struct	acl_t	*tmp;
-	int	aclchk, addrchk;
-
-	tmp = acl_head;
-	while (tmp != NULL) {
-		if (!strcmp(tmp->name, aclname)) {
-			aclchk = tmp->addr & tmp->mask;
-			addrchk = ntohl(addr->sin_addr.s_addr) & tmp->mask;
-
-			if (aclchk == addrchk) 
-				return 1;	/* match */
-		}
-
-		tmp = tmp->next;
-	}
-
-	return 0;	/* not found */
-}
 #else
 int acl_check(const char *aclname, const struct sockaddr_storage *addr)
+#endif
 {
-	struct	acl_t	*tmp;
+	struct acl_t	*tmp;
 
-	tmp = acl_head;
-	while (tmp != NULL) {
-		if (!strcmp(tmp->name, aclname))
-			if (mask_cmp (addr, tmp->mask, &tmp->addr))
-				return 1;
-		tmp = tmp->next;
+	for (tmp = acl_head; tmp != NULL; tmp = tmp->next)
+	{
+		if (strcmp(tmp->name, aclname))
+			continue;
+
+		if (mask_cmp(addr, &tmp->addr, tmp->mask))
+			return 1;	/* match */
 	}
-	
+
 	return 0;	/* not found */
 }
-#endif
 
 /* return ACCEPT/REJECT based on source address */
 #ifndef	HAVE_IPV6
@@ -113,23 +108,20 @@ int access_check(const struct sockaddr_in *addr)
 int access_check(const struct sockaddr_storage *addr)
 #endif
 {
-	struct	access_t	*tmp;
+	struct access_t	*tmp;
 	int	ret;
 
-	tmp = access_head;
-
-	while (tmp != NULL) {
+	for (tmp = access_head; tmp != NULL; tmp = tmp->next)
+	{
 		ret = acl_check(tmp->aclname, addr);
 
 		upsdebugx(3, "acl_check: %s: match %d", tmp->aclname, ret);
 
 		if (ret == 1) {
-			upsdebugx(1, "ACL [%s] matches, action=%d", 
+			upsdebugx(1, "ACL [%s] matches, action=%d",
 				tmp->aclname, tmp->action);
 			return tmp->action;
 		}
-
-		tmp = tmp->next;
 	}
 
 	/* fail safe */
@@ -139,7 +131,7 @@ int access_check(const struct sockaddr_storage *addr)
 /* add to the master list of ACL names */
 void acl_add(const char *aclname, char *ipblock)
 {
-	struct	acl_t	*tmp, *last;
+	struct acl_t	*tmp, *last;
 	char	*addr, *mask;
 
 	/* are we sane? */
@@ -155,7 +147,7 @@ void acl_add(const char *aclname, char *ipblock)
 	/* 192.168.1.1: invalid */
 
 	/* no slash = broken acl declaration */
-	if (!mask) 	
+	if (!mask)
 		return;
 
 	*mask++ = '\0';
@@ -163,7 +155,8 @@ void acl_add(const char *aclname, char *ipblock)
 
 	tmp = last = acl_head;
 
-	while (tmp != NULL) {
+	while (tmp != NULL)
+	{
 		last = tmp;
 		tmp = tmp->next;
 	}
@@ -171,13 +164,14 @@ void acl_add(const char *aclname, char *ipblock)
 #ifndef	HAVE_IPV6
 	tmp = xmalloc(sizeof(struct acl_t));
 	tmp->name = xstrdup(aclname);
-	tmp->addr = ntohl(inet_addr(addr));
+	tmp->addr.sin_addr.s_addr = inet_addr(addr);
 	tmp->next = NULL;
 
 	/* must be a /nn CIDR type block */
-	if (strstr(mask, ".") == NULL) { 
+	if (strstr(mask, ".") == NULL)
+	{
 		if (atoi(mask) != 32)
-			tmp->mask = ((unsigned int) ((1 << atoi(mask)) - 1) << 
+			tmp->mask = ((unsigned int)((1 << atoi(mask)) - 1) <<
 					(32 - atoi(mask)));
 		else
 			tmp->mask = 0xffffffff;	/* avoid overflow from 2^32 */
@@ -187,35 +181,39 @@ void acl_add(const char *aclname, char *ipblock)
 #else
 	/* memset (&saddr, 0, sizeof (struct sockaddr_storage)); */
 	tmp = xmalloc(sizeof(struct acl_t));
-	memset (tmp, 0, sizeof (struct acl_t));
+	memset(tmp, 0, sizeof (struct acl_t));
 	tmp->name = xstrdup(aclname);
 	tmp->next = NULL;
 
-	if (*addr == '[') { 
-		struct sockaddr_in6 s6;
-		char *stmp;
+	if (*addr == '[')
+	{
+		struct sockaddr_in6	s6;
+		char	*stmp;
 
-		stmp = strchr (addr, ']');
-		if (stmp == NULL) {
-			free (tmp);
+		stmp = strchr(addr, ']');
+		if (stmp == NULL)
+		{
+			free(tmp);
 			fatal_with_errno("Expecting \']\' in \"%s\"", addr);
 		}
 
 		*stmp = '\0';
 		addr++;
 		
-		memset (&s6, 0, sizeof (struct sockaddr_in6));
+		memset(&s6, 0, sizeof(struct sockaddr_in6));
 		s6.sin6_family = AF_INET6;
 
-		if (inet_pton (AF_INET6, addr, &s6.sin6_addr) < 1) {
-			free (tmp);
+		if (inet_pton(AF_INET6, addr, &s6.sin6_addr) < 1)
+		{
+			free(tmp);
 			fatal_with_errno("Invalid IPv6 address: \"%s\"", addr);
 		}
 
 		/* prefix */
-		tmp->mask = strtol (mask, NULL, 10);
+		tmp->mask = strtol(mask, NULL, 10);
 
-		if (tmp->mask < 0 || tmp->mask > 128) {
+		if (tmp->mask < 0 || tmp->mask > 128)
+		{
 			free (tmp);
 			fatal_with_errno("Invalid IPv6 prefix");
 		}
@@ -228,37 +226,44 @@ void acl_add(const char *aclname, char *ipblock)
 				s6.sin6_addr.s6_addr[i] = 0;
 		}
 
-		memcpy (&(tmp->addr), &s6, sizeof (struct sockaddr_in6));
-		/* tmp->addr.ss_len = sizeof (struct sockaddr_in6); */
+		memcpy(&(tmp->addr), &s6, sizeof(struct sockaddr_in6));
+		/* tmp->addr.ss_len = sizeof(struct sockaddr_in6); */
 		tmp->addr.ss_family = AF_INET6;
-	} else {
-		struct sockaddr_in s4;
+	}
+	else
+	{
+		struct sockaddr_in	s4;
 
 		/* mask */
-		if (inet_pton (AF_INET, mask, &s4.sin_addr) < 1) {
+		if (inet_pton(AF_INET, mask, &s4.sin_addr) < 1)
+		{
 			/* must be a /nn CIDR type block */
-			tmp->mask = strtol (mask, NULL, 10);
+			tmp->mask = strtol(mask, NULL, 10);
 
-			if (tmp->mask < 0 || tmp->mask > 32) {
+			if (tmp->mask < 0 || tmp->mask > 32)
+			{
 				free (tmp);
 				fatal_with_errno("Invalid CIDR type block: Must be > 0 && < 32");
 			}
 			tmp->mask = 0xffffffff << (32 - tmp->mask);
-		} else {
-			tmp->mask = ntohl (s4.sin_addr.s_addr);
+		}
+		else
+		{
+			tmp->mask = ntohl(s4.sin_addr.s_addr);
 		}
 
-		memset (&s4, 0, sizeof (struct sockaddr_in));
+		memset(&s4, 0, sizeof (struct sockaddr_in));
 		s4.sin_family = AF_INET;
 
-		if (inet_pton (AF_INET, addr, &s4.sin_addr) < 1) {
-			free (tmp);
+		if (inet_pton(AF_INET, addr, &s4.sin_addr) < 1)
+		{
+			free(tmp);
 			fatal_with_errno("Invalid IPv4 address: \"%s\"", addr);
 		}
 
-		s4.sin_addr.s_addr &= htonl (tmp->mask);
+		s4.sin_addr.s_addr &= htonl(tmp->mask);
 
-		memcpy (&(tmp->addr), &s4, sizeof (struct sockaddr_in));
+		memcpy(&(tmp->addr), &s4, sizeof(struct sockaddr_in));
 		/* tmp->addr.ss_len = sizeof (struct sockaddr_in); */
 		tmp->addr.ss_family = AF_INET;
 	}
@@ -272,11 +277,12 @@ void acl_add(const char *aclname, char *ipblock)
 
 void acl_free(void)
 {
-	struct	acl_t	*ptr, *next;
+	struct acl_t	*ptr, *next;
 
 	ptr = acl_head;
 
-	while (ptr) {
+	while (ptr)
+	{
 		next = ptr->next;
 		
 		if (ptr->name)
@@ -291,11 +297,12 @@ void acl_free(void)
 
 void access_free(void)
 {
-	struct	access_t	*ptr, *next;
+	struct access_t	*ptr, *next;
 
 	ptr = access_head;
 
-	while (ptr) {
+	while (ptr)
+	{
 		next = ptr->next;
 
 		if (ptr->aclname)
@@ -310,11 +317,12 @@ void access_free(void)
 
 static void access_append(int action, const char *aclname)
 {
-	struct	access_t	*tmp, *last;
+	struct access_t	*tmp, *last;
 
 	tmp = last = access_head;
 
-	while (tmp != NULL) {
+	while (tmp != NULL)
+	{
 		last = tmp;
 		tmp = tmp->next;
 	}
