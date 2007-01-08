@@ -25,7 +25,7 @@
 #ifndef MGE_HID_H
 #define MGE_HID_H
 
-#include "newhidups.h"
+#include "usbhid-ups.h"
 
 extern subdriver_t mge_subdriver;
 

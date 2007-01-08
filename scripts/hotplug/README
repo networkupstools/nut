@@ -1,10 +1,12 @@
-Desc: Hotplug script for newhidups
+Desc: Hotplug script for NUT USB drivers
 File: scripts/hotplug/README
-Date: 1 March 2004
+Date: 8 January 2007
 Auth: Arnaud Quette <arnaud.quette@mgeups.com>
 
-This document introduces Linux Hotplug script for newhidups.
-These are needed, on Linux systems, to ensure the right
+This document introduces Linux Hotplug script for NUT USB
+drivers (usbhid-ups, bcmxcp_usb and tripplite_usb).
+
+These are needed, on older Linux systems, to ensure the right
 privileges are set on the usb files (ie allowing nut user to
 read AND write to the UPS device)
 

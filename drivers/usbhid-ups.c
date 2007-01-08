@@ -1,4 +1,4 @@
-/* newhidups.c - Driver for USB and serial (MGE SHUT) HID UPS units
+/* usbhid-ups.c - Driver for USB and serial (MGE SHUT) HID UPS units
  * 
  * Copyright (C)
  *   2003-2005 Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
@@ -23,7 +23,7 @@
 
 #include "main.h"
 #include "libhid.h"
-#include "newhidups.h"
+#include "usbhid-ups.h"
 #ifdef SHUT_MODE
 	#include "libshut.h"
 #else

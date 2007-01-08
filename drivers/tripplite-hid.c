@@ -23,7 +23,7 @@
  *
  */
 
-#include "newhidups.h"
+#include "usbhid-ups.h"
 #include "tripplite-hid.h"
 #include "extstate.h" /* for ST_FLAG_STRING */
 #include "dstate.h"   /* for STAT_INSTCMD_HANDLED */
@@ -68,7 +68,7 @@ static usage_tables_t tripplite_utab[] = {
 /* HID2NUT lookup table */
 static hid_info_t tripplite_hid2nut[] = {
 
-#ifdef NEWHIDUPS_TRIPPLITE_DEBUG
+#ifdef USBHID_UPS_TRIPPLITE_DEBUG
 
 	/* duplicated variables, also: UPS.PowerSummary.PresentStatus.* */
 	{ "UPS.BatterySystem.Battery.PresentStatus.Charging", 0, 1, "UPS.BatterySystem.Battery.PresentStatus.Charging", NULL, "%.0f", HU_FLAG_OK, NULL }, 
@@ -94,7 +94,7 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ "UPS.OutletSystem.Outlet.ffff0092", 0, 1, "UPS.OutletSystem.Outlet.ffff0092", NULL, "%.0f", HU_FLAG_OK, NULL },
 	{ "UPS.OutletSystem.Outlet.ffff00c7", 0, 1, "UPS.OutletSystem.Outlet.ffff00c7", NULL, "%.0f", HU_FLAG_OK, NULL },
 
-#endif /* NEWHIDUPS_TRIPPLITE_DEBUG */
+#endif /* USBHID_UPS_TRIPPLITE_DEBUG */
 
 	/* Server side variables */
 	{ "driver.version.internal", ST_FLAG_STRING, sizeof(DRIVER_VERSION), NULL, NULL, DRIVER_VERSION, HU_FLAG_ABSENT | HU_FLAG_OK, NULL },
@@ -212,7 +212,7 @@ static int tripplite_claim(HIDDevice *hd) {
 
 		upsdebugx(1, 
 "This particular Tripp Lite device (%04x/%04x) is not (or perhaps not\n"
-"yet) supported by newhidups. First try the tripplite_usb driver. If\n"
+"yet) supported by usbhid-ups. First try the tripplite_usb driver. If\n"
 "this fails, please write to the NUT developer's mailing list.\n", 
 			  hd->VendorID, hd->ProductID);
 	}

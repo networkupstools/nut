@@ -27,7 +27,7 @@
 #ifndef APC_HID_H
 #define APC_HID_H
 
-#include "newhidups.h"
+#include "usbhid-ups.h"
 
 extern subdriver_t apc_subdriver;
 

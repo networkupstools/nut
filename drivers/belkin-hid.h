@@ -26,7 +26,7 @@
 #ifndef BELKIN_HID_H
 #define BELKIN_HID_H
 
-#include "newhidups.h"
+#include "usbhid-ups.h"
 
 #define BELKIN_HID_VERSION	"Belkin HID 0.1"
 

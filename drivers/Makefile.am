@@ -19,7 +19,7 @@ SERIAL_DRIVERLIST = al175 apcsmart bcmxcp belkin belkinunv bestfcom	\
  mge-shut mge-utalk newmge-shut	nitram oneac optiups powercom rhino 	\
  safenet skel solis tripplite tripplitesu upscode2 victronups powerpanel
 SNMP_DRIVERLIST = snmp-ups
-USB_LIBUSB_DRIVERLIST = newhidups bcmxcp_usb tripplite_usb
+USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb
 USB_HIDDEV_DRIVERLIST = energizerups
 USB_DRIVERLIST = $(USB_LIBUSB_DRIVERLIST) $(USB_HIDDEV_DRIVERLIST)
 HAL_DRIVERLIST = hald-addon-usbhid-ups hald-addon-bcmxcp_usb hald-addon-tripplite_usb
@@ -110,12 +110,12 @@ skel_SOURCES = skel.c
 skel_LDADD = $(LDADD_DRIVERS)
 
 # USB
-NEWHIDUPS_SUBDRIVERS = apc-hid.c belkin-hid.c explore-hid.c \
+USBHID_UPS_SUBDRIVERS = apc-hid.c belkin-hid.c explore-hid.c \
  mge-hid.c tripplite-hid.c
-newhidups_SOURCES = newhidups.c libhid.c libusb.c hidparser.c	\
- $(NEWHIDUPS_SUBDRIVERS)
-newhidups_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
-newhidups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
+usbhid_ups_SOURCES = usbhid-ups.c libhid.c libusb.c hidparser.c	\
+ $(USBHID_UPS_SUBDRIVERS)
+usbhid_ups_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
+usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 
 energizerups_SOURCES = energizerups.c
 energizerups_LDADD = $(LDADD_DRIVERS)
@@ -129,7 +129,7 @@ bcmxcp_usb_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
 bcmxcp_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 
 # HID-over-serial
-newmge_shut_SOURCES = newhidups.c libshut.c libhid.c hidparser.c mge-hid.c
+newmge_shut_SOURCES = usbhid-ups.c libshut.c libhid.c hidparser.c mge-hid.c
 newmge_shut_CFLAGS = $(AM_CFLAGS) -DSHUT_MODE
 newmge_shut_LDADD = $(LDADD)
 
@@ -139,8 +139,8 @@ snmp_ups_CFLAGS = $(AM_CFLAGS) $(LIBNETSNMP_CFLAGS)
 snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LDFLAGS)
 
 # HAL
-hald_addon_usbhid_ups_SOURCES = newhidups.c libhid.c libusb.c hidparser.c	\
- $(NEWHIDUPS_SUBDRIVERS)
+hald_addon_usbhid_ups_SOURCES = usbhid-ups.c libhid.c libusb.c hidparser.c	\
+ $(USBHID_UPS_SUBDRIVERS)
 hald_addon_usbhid_ups_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS)
 
 hald_addon_tripplite_usb_SOURCES = tripplite_usb.c libhid.c libusb.c hidparser.c
@@ -163,7 +163,7 @@ dist_noinst_HEADERS = al175.h apccmib.h apc-hid.h apcsmart.h bcmxcp.h	\
  isbmex.h libhid.h libshut.h libusb.h liebert.h main.h			\
  main-hal.h								\
  masterguard.h megatec.h metasys.h mge-hid.h mgemib.h mge-shut.h	\
- mge-utalk.h netvisionmib.h newhidups.h nitram.h nut_usb.h		\
+ mge-utalk.h netvisionmib.h usbhid-ups.h nitram.h nut_usb.h		\
  oneac.h optiups.h powercom.h pwmib.h safenet.h serial.h		\
  snmp-ups.h solis.h tripplite.h tripplite-hid.h tripplitesu.h		\
  upscode2.h victronups.h powerpanel.h

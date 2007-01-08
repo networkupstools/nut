@@ -33,7 +33,7 @@
 #define DRV_VERSION	"0.03"
 
 
-/* from newhidups.h */
+/* from usbhid-ups.h */
 /* --------------------------------------------------------------- */
 /* Struct & data for ups.status processing                         */
 /* --------------------------------------------------------------- */
@@ -71,7 +71,7 @@ status_lkp_t status_info[] = {
   { "DISCHRG", STATUS_DISCHRG },
   { "NULL", 0 },
 };
-/* from newhidups.h */
+/* from usbhid-ups.h */
 
 typedef struct {
 	char	hid_value;	/* HID value */

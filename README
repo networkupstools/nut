@@ -248,8 +248,8 @@ that UPS.
 			   OnLite 50, Maxxtro units, etc.)
 
 
-	newhidups	 - Meta driver for USB HID UPSes on various platforms
-                           (replaces hidups)
+	usbhid-ups - Meta driver for USB HID UPSes on various platforms
+                           (replaces hidups, formerly named newhidups)
 
                            Some units that have been used with this driver:
 
@@ -730,9 +730,9 @@ MGE UPS SYSTEMS provided extensive technical documents for their UPS product
 line, along with many units for development of NUT-related projects. The
 company also sponsored and later hired Arnaud Quette to further officially
 support these efforts. 
-Several drivers such as mge-utalk, mge-shut, snmp-ups, hidups, and newhidups
-are the result of this collaboration, in addition to the WMNut, HID Parser
-and libhid projects. The features page has improved artwork thanks to Luc
+Several drivers such as mge-utalk, mge-shut, snmp-ups, hidups, and usbhid-ups
+are the result of this collaboration, in addition to the WMNut, MGE HID Parser
+the libhid projects, .... The features page has improved artwork thanks to Luc
 and Arnaud of MGE. Other client projects such as KNutClient and ups-monitor
 have also received assistance. 
 The master NUT site and several related projects are hosted on MGE's equipment

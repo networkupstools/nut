@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# an auxiliary script to produce a "stub" newhidups subdriver from
+# an auxiliary script to produce a "stub" usbhid-ups subdriver from
 # the output of
 #
-# drivers/newhidups -DD -u root -x generic -x vendorid=XXXX auto
+# drivers/usbhid-ups -DD -u root -x generic -x vendorid=XXXX auto
 #
 # Usage: cat debuginfo | path-to-subdriver.sh
 # 
@@ -150,7 +150,7 @@ cat > "$HFILE" <<EOF
 #ifndef ${UDRIVER}_HID_H
 #define ${UDRIVER}_HID_H
 
-#include "newhidups.h"
+#include "usbhid-ups.h"
 
 #define ${UDRIVER}_HID_VERSION	"${DRIVER} HID 0.1"
 
@@ -187,7 +187,7 @@ cat > "$CFILE" <<EOF
  *
  */
 
-#include "newhidups.h"
+#include "usbhid-ups.h"
 #include "${HFILE}"
 #include "extstate.h" /* for ST_FLAG_STRING */
 #include "dstate.h"   /* for STAT_INSTCMD_HANDLED */
@@ -283,7 +283,7 @@ static int ${LDRIVER}_claim(HIDDevice *hd) {
 		} else {
 			upsdebugx(1,
 "This particular ${LDRIVER} device (%04x/%04x) is not (or perhaps not yet)\n"
-"supported by newhidups. Try running the driver with the '-x productid=%04x'\n"
+"supported by usbhid-ups. Try running the driver with the '-x productid=%04x'\n"
 "option. Please report your results to the NUT developer's mailing list.\n",
 						 hd->VendorID, hd->ProductID, hd->ProductID);
 			return 0;
@@ -307,9 +307,9 @@ cat <<EOF
 Done. 
 
 Do not forget to:
-* add #include "${HFILE}" to newhidups.c, 
-* add &${LDRIVER}_subdriver to newhidups.c:subdriver_list,
-* add ${LDRIVER}-hid.o to NEWHIDUPS_SUBDRIVERS in drivers/Makefile
+* add #include "${HFILE}" to usbhid-ups.c, 
+* add &${LDRIVER}_subdriver to usbhid-ups.c:subdriver_list,
+* add ${LDRIVER}-hid.o to usbhid-ups_SUBDRIVERS in drivers/Makefile
   and drivers/Makefile.in
 * "make depend" in drivers/
 EOF

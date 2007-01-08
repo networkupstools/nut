@@ -140,7 +140,7 @@ This driver should work with older Tripp Lite UPSes which are detected as USB
 HID-class devices, but are not true HID Power-Device Class devices.  So far,
 the devices supported by tripplite_usb have product ID 0001, and the newer
 units (such as those with "LCD" in the model name) with product ID 2001 will
-work with the newhidups driver instead.  Please report success or failure to
+work with the usbhid-ups driver instead.  Please report success or failure to
 the nut-upsuser mailing list.  A key piece of information is the protocol
 number, returned in ups.debug.0.  Also, be sure to turn on debugging (C<-DDD>)
 for more informative log messages.  If your Tripp Lite UPS uses a serial port,
@@ -259,7 +259,7 @@ Email: info@relevantevidence.com
 
 =head2 The core driver:
 
-nutupsdrv(8), regex(7), newhidups(8)
+nutupsdrv(8), regex(7), usbhid-ups(8)
 
 =head2 Internet resources:
 
@@ -745,7 +745,7 @@ void upsdrv_initinfo(void)
 	if(ret <= 0) {
 		if(ret == -EPIPE) {
 			fatalx("Could not reset watchdog. Please check and"
-				"see if newhidups(8) works with this UPS.");
+				"see if usbhid-ups(8) works with this UPS.");
 		} else {
 			upslogx(3, "Could not reset watchdog. Please send model "
 				"information to nut-upsdev mailing list");

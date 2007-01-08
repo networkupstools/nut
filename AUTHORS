@@ -80,7 +80,7 @@ E: aquette.dev@gmail.com
 E: arnaud.quette@mgeups.com
 E: aquette@debian.org
 W: http://arnaud.quette.free.fr/
-D: Primary coordinator ; author of snmp-ups, mge-shut, newhidups ;
+D: Primary coordinator ; author of snmp-ups, mge-shut, usbhid-ups ;
 D: co author of mge-utalk, hidups, SNMP UPS Agent ; contributor to blazer,
 D: bestferrups, nut core, and many others ; coordination with MGE UPS
 D: SYSTEMS, linux-usb developers (for hidups), Net SNMP and packagers
@@ -99,7 +99,7 @@ D: Support for Online P-series in genericups driver
 N: Peter Selinger
 E: selinger@users.sourceforge.net
 W: http://www.mathstat.dal.ca/~selinger/
-D: wrote belkinunv driver, contributions to newhidups
+D: wrote belkinunv driver, contributions to usbhid-ups
 P: 1024D/CA31696A 12A2 4B3C 3790 B688 E484  7A98 A68B CC37 CA31 696A
 
 N: Kirill Smelkov

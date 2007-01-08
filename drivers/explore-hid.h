@@ -21,7 +21,7 @@
 #ifndef EXPLORE_HID_H
 #define EXPLORE_HID_H
 
-#include "newhidups.h"
+#include "usbhid-ups.h"
 
 extern subdriver_t explore_subdriver;
 

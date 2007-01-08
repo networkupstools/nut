@@ -21,7 +21,7 @@
  *
  */
 
-#include "newhidups.h"
+#include "usbhid-ups.h"
 #include "explore-hid.h"
 #include "extstate.h" /* for ST_FLAG_STRING */
 #include "dstate.h"   /* for STAT_INSTCMD_HANDLED */

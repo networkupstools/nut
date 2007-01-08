@@ -1,9 +1,9 @@
 Desc: Configure options
 File: configure.txt
-Date: 14 March 2004
+Date: 08 January 2007
 Auth: Russell Kroll <rkroll@exploits.org>
-Date: 15 October 2006
 Auth: Peter Selinger <selinger@sourceforge.net>
+Auth: Arnaud Quette <aquette.dev@gmail.com>
 
 There are a few options that can be given to configure to tweak compiles. 
 See also "./configure --help" for a current and complete listing.
@@ -47,9 +47,9 @@ Contents:
 
    To save time during the compile and disk space later on, you can
    use this option to just build and install a subset of the drivers.
-   To select apcsmart and newhidups, you'd do this:
+   To select apcsmart and usbhid-ups, you'd do this:
 
-	--with-drivers=apcsmart,newhidups
+	--with-drivers=apcsmart,usbhid-ups
 
    If you need to build more drivers later on, you will need to rerun
    configure with a different list. To make it build all of the

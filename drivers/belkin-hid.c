@@ -23,7 +23,7 @@
  *
  */
 
-#include "newhidups.h"
+#include "usbhid-ups.h"
 #include "belkin-hid.h"
 #include "extstate.h" /* for ST_FLAG_STRING */
 #include "dstate.h"   /* for STAT_INSTCMD_HANDLED */
@@ -401,7 +401,7 @@ static int belkin_claim(HIDDevice *hd) {
 		} else {
 			upsdebugx(1,
 "This particular Belkin device (%04x/%04x) is not (or perhaps not yet)\n"
-"supported by newhidups. Try running the driver with the '-x productid=%04x'\n"
+"supported by usbhid-ups. Try running the driver with the '-x productid=%04x'\n"
 "option. Please report your results to the NUT developer's mailing list.\n",
 						 hd->VendorID, hd->ProductID, hd->ProductID);
 			return 0;

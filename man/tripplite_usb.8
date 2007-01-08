@@ -143,7 +143,7 @@ This driver should work with older Tripp Lite UPSes which are detected as \s-1US
 HID-class devices, but are not true \s-1HID\s0 Power-Device Class devices.  So far,
 the devices supported by tripplite_usb have product \s-1ID\s0 0001, and the newer
 units (such as those with \*(L"\s-1LCD\s0\*(R" in the model name) with product \s-1ID\s0 2001 will
-work with the newhidups driver instead.  Please report success or failure to
+work with the usbhid-ups driver instead.  Please report success or failure to
 the nut-upsuser mailing list.  A key piece of information is the protocol
 number, returned in ups.debug.0.  Also, be sure to turn on debugging (\f(CW\*(C`\-DDD\*(C'\fR)
 for more informative log messages.  If your Tripp Lite \s-1UPS\s0 uses a serial port,
@@ -240,7 +240,7 @@ Email: info@relevantevidence.com
 .IX Header "SEE ALSO"
 .Sh "The core driver:"
 .IX Subsection "The core driver:"
-\&\fInutupsdrv\fR\|(8), \fIregex\fR\|(7), \fInewhidups\fR\|(8)
+\&\fInutupsdrv\fR\|(8), \fIregex\fR\|(7), \fIusbhid-ups\fR\|(8)
 .Sh "Internet resources:"
 .IX Subsection "Internet resources:"
 The \s-1NUT\s0 (Network \s-1UPS\s0 Tools) home page: http://www.networkupstools.org/

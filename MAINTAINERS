@@ -37,7 +37,7 @@ S: Maintained: apcsmart, belkin, bestups, cyberpower, dummycons,
 P: Arnaud Quette
 M: aquette.dev@gmail.com
 M: arnaud.quette@mgeups.com
-S: Maintained: dummy-ups, newhidups, mge-shut, mge-utalk, snmp-ups
+S: Maintained: dummy-ups, usbhid-ups, mge-shut, mge-utalk, snmp-ups
 
 P: Arjen de Korte
 M: arjen@de-korte.org
@@ -53,7 +53,7 @@ S: Maintained: al175
 
 P: Peter Selinger
 M: selinger@users.sourceforge.net
-S: Maintained: newhidups belkinunv
+S: Maintained: usbhid-ups belkinunv
 
 Packaging
 =========

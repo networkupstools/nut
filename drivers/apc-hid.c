@@ -24,7 +24,7 @@
  *
  */
 
-#include "newhidups.h"
+#include "usbhid-ups.h"
 #include "apc-hid.h"
 #include "extstate.h" /* for ST_FLAG_STRING */
 #include "dstate.h"   /* for STAT_INSTCMD_HANDLED */
@@ -83,9 +83,9 @@ info_lkp_t apc_date_conversion[] = {
 };
 
 /* APC has two non-NUT-standard status items: "time limit expired" and
-   "battery present". The newhidups driver currently ignores
+   "battery present". The usbhid-ups driver currently ignores
    batterypres, and maps timelimitexp to LB. CyberPower has the
-   non-NUT-standard status item "fully charged". The newhidups driver
+   non-NUT-standard status item "fully charged". The usbhid-ups driver
    currently ignores it. */
 static info_lkp_t timelimitexpired_info[] = {
   { 1, "timelimitexp", NULL },
@@ -361,7 +361,7 @@ static int apc_claim(HIDDevice *hd) {
 			} else {
 			upsdebugx(1,
 "This particular APC device (%04x/%04x) is not (or perhaps not yet)\n"
-"supported by newhidups. Try running the driver with the '-x productid=%04x'\n"
+"supported by usbhid-ups. Try running the driver with the '-x productid=%04x'\n"
 "option. Please report your results to the NUT developer's mailing list.\n",
 						 hd->VendorID, hd->ProductID, hd->ProductID);
 			return 0;
@@ -378,7 +378,7 @@ static int apc_claim(HIDDevice *hd) {
 			} else {
 			upsdebugx(1,
 "This particular CyberPower device (%04x/%04x) is not (or perhaps not yet)\n"
-"supported by newhidups. Try running the driver with the '-x productid=%04x'\n"
+"supported by usbhid-ups. Try running the driver with the '-x productid=%04x'\n"
 "option. Please report your results to the NUT developer's mailing list.\n",
 						 hd->VendorID, hd->ProductID, hd->ProductID);
 			return 0;

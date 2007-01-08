@@ -1,12 +1,12 @@
-# dummy-ups example definition file
+# dummy-ups example definition file ; generated with "upsc ups@host"
 
 battery.charge: 90
 battery.charge.low: 30
 battery.runtime: 3690
 battery.voltage: 230.0
-driver.name: newhidups
+driver.name: usbhid-ups
 driver.parameter.port: auto
-driver.version: 2.0.2
+driver.version: 2.2.0
 driver.version.data: MGE HID 0.7
 driver.version.internal: 0.23
 input.frequency: 49.0

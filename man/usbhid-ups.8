@@ -1,22 +1,22 @@
-.TH NEWHIDUPS 8 "Fri Dec 16 2005" "" "Network UPS Tools (NUT)"
+.TH USBHID-UPS 8 "Mon Jan 08 2007" "" "Network UPS Tools (NUT)"
 .SH NAME
-newhidups \- New driver for USB/HID UPS equipment
+usbhid-ups \- Driver for USB/HID UPS equipment
 .SH NOTE
 This man page only documents the hardware\(hyspecific features of the
-newhidups driver.  For information about the core driver, see
+usbhid-ups driver.  For information about the core driver, see
 \fBnutupsdrv\fR(8).
 
 This driver replaces the legacy hidups driver, which only supported
-Linux systems.
+Linux systems, and was formerly called newhidups.
 
 .SH SUPPORTED HARDWARE
-.B newhidups
+.B usbhid-ups
 brings USB/HID UPS monitoring to NUT on all platform supporting USB
 through libusb.It should detect any UPS that uses the HID power device
 class, but the amount of data will vary depending on the manufacturer
 and model.
 
-At the present time, newhidups supports:
+At the present time, usbhid-ups supports:
 
     all MGE UPS SYSTEMS USB models,
     some APC models,
@@ -89,10 +89,11 @@ This driver is not built by default.  You can build it by using
 "configure \-\-with\-usb=yes". Note that it will also install other USB
 drivers.
 
-You also need to install manually the hotplug files (libhidups and
-libhid.usermap), generally in etc/hotplug/usb/, to address the
-permission settings problem. Lastly note that the libhidups file
-must have execution flag set (ie using chmod +x ...).
+You also need to install manually the legacy hotplug files (libhidups
+and libhid.usermap, generally in /etc/hotplug/usb/), or the udev file
+(nut-usbups.rules, generally in /etc/udev/rules.d/)to address the
+permission settings problem. For more information, refer to the README
+file in nut/scripts/hotplug or nut/scripts/udev.
 
 On Linux with MGE equipment, you will need at least a 2.4.25 or 2.6.2 kernel as
 well as libusb-0.1.8 or later to disable hiddev support and avoid conflict.
@@ -107,11 +108,11 @@ setting some combination of the "vendor", "product", "serial",
 
 .nf
 	[mge]
-		driver = newhidups
+		driver = usbhid-ups
 		port = auto
 		vendorid = 0463
 	[tripplite]
-		driver = newhidups
+		driver = usbhid-ups
 		port = auto
 		vendorid = 09ae
 .fi

@@ -240,7 +240,7 @@ rm -rf %{buildroot}
 %{_mandir}/man8/energizerups.8.bz2
 %{_mandir}/man8/safenet.8.bz2
 %{_mandir}/man8/hidups.8.bz2
-%{_mandir}/man8/newhidups.8.bz2
+%{_mandir}/man8/usbhid-ups.8.bz2
 %{_mandir}/man8/bestfcom.8.bz2
 %{_mandir}/man8/metasys.8.bz2
 

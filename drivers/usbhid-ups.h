@@ -1,4 +1,4 @@
-/* newhidups.c - Driver for serial/USB HID UPS units
+/* usbhid-ups.h - Driver for serial/USB HID UPS units
  *
  * Copyright (C)
  *  2003 / 2005 - Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef NEWHIDUPS_H
-#define NEWHIDUPS_H
+#ifndef USBHID_UPS_H
+#define USBHID_UPS_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -220,4 +220,4 @@ typedef struct subdriver_s subdriver_t;
 int instcmd(const char *cmdname, const char *extradata);
 int setvar(const char *varname, const char *val);
 
-#endif /* NEWHIDUPS_H */
+#endif /* USBHID_UPS_H */

@@ -226,7 +226,7 @@ void status_set(const char *buf)
 {
 	upsdebugx(2, "status_set: %s\n", buf);
 
-	/* Note: only newhidups supported devices expose [DIS]CHRG status */
+	/* Note: only usbhid-ups supported devices expose [DIS]CHRG status */
 	/* along with the standard OL (online) / OB (on battery) status! */
 	if ( (strcmp(buf, "DISCHRG") == 0) || (strcmp(buf, "OB") == 0) )
 	{

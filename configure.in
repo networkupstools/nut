@@ -5,6 +5,7 @@ dnl +------------------------------------------------------------------+
 dnl NUT version number is defined here and *only* here (no more include/version)
 AC_INIT(nut, 2.1.0)
 AC_CONFIG_SRCDIR(server/upsd.c)
+echo "Network UPS Tools version ${PACKAGE_VERSION}"
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(include/config.h)
 AC_PREFIX_DEFAULT(/usr/local/ups)

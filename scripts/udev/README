@@ -1,10 +1,10 @@
-Desc: Hotplug script for newhidups
-File: scripts/hotplug/README
-Date: 03 January 2007
+Desc: Udev script for NUT USB drivers
+File: scripts/udev/README
+Date: 8 January 2007
 Auth: Arnaud Quette <aquette.dev@gmail.com>
 
 This document introduces the Linux udev script for NUT USB
-drivers (newhidups, bcmxcp_usb and tripplite_usb).
+drivers (usbhid-ups, bcmxcp_usb and tripplite_usb).
 
 These are needed on Linux systems running udev (recommended
 as of kernel 2.6.3, and mandatory as of 2.6.14 and higher).

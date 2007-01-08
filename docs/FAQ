@@ -629,7 +629,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
  A: There are several driver to support USB models.
 
-    - newhidups supports various manufacturers complying to the HID standard,
+    - usbhid-ups supports various manufacturers complying to the HID standard,
     - tripplite_usb supports various Tripp-Lite units,
     - bcmxcp_usb supports various Powerware units.
 
@@ -637,19 +637,19 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: What is this newhidups about?
+ Q: What is this usbhid-ups (formerly newhidups) about?
 
  A: The basic USB UPS support was done until NUT 2.2 using hidups. To allow
     a wider support accross platforms for USB/HID compliant devices,
-    newhidups driver uses libusb (which is available for a wide range of
+    usbhid-ups driver uses libusb (which is available for a wide range of
     operating systems) and libhid (currently, a modified internal version
     of it).
 
-    As of NUT 2.2, newhidups completely replaces the legacy hidups driver
+    As of NUT 2.2, usbhid-ups completely replaces the legacy hidups driver
     and provide support for various manufacturers. At that time, it will
     be renamed to usbhid-ups.
 
-    newhidups is built automatically if possible (libusb development files
+    usbhid-ups is built automatically if possible (libusb development files
     need to be installed) and installed by the "make install" command.
 
 -----------------------------------------------------------------------------
@@ -705,7 +705,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
  Q: Do you have to use a serial connection to monitor the UPS?
     What about direct network connections (SNMP or otherwise)?
 
- A: No. NUT currently support USB communication through newhidups,
+ A: No. NUT currently support USB communication through usbhid-ups,
     tripplite_usb and bcmxcp_usb, and SNMP communication through snmp-ups.
 
     Any time there is a gap in features, it's usually because the

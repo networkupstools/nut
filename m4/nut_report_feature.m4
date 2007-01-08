@@ -18,6 +18,6 @@ AC_DEFUN([NUT_REPORT_FEATURE],
 
 AC_DEFUN([NUT_PRINT_FEATURE_REPORT],
 [  echo 
-   echo Feature summary:
+   echo Configuration summary:
    cat conf_nut_report_feature
 ])
