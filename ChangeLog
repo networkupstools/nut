@@ -1,3 +1,7 @@
+Mon Jan  8 17:46:08 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - server/user.c: allocating memory with wrong element size
+
 Mon Jan  8 10:05:01 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  * newhidups: renamed to usbhid-ups, since it is more suitable.

@@ -85,7 +85,7 @@ static acllist *addallow(acllist *base, const char *acl)
 		tmp = tmp->next;
 	}
 
-	tmp = xmalloc(sizeof(struct acl_t));
+	tmp = xmalloc(sizeof(acllist));
 	tmp->aclname = xstrdup(acl);
 	tmp->next = NULL;
 
