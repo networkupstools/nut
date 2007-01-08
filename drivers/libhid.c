@@ -561,8 +561,9 @@ void HIDDumpTree(hid_dev_handle *udev, usage_tables_t *utab)
 
 			/* Get data value */
 			if (HIDGetItemValue(udev, path, &value, utab) > 0)
-				upsdebugx(1, "Path: %s, Type: %s, Value: %f", path, type, value);
-			
+				upsdebugx(1, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %f",
+				  path, type, pData->ReportID, pData->Offset, pData->Size, value);
+
 			else
 				upsdebugx(1, "Path: %s, Type: %s", path, type);
 		}
