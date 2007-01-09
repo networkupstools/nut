@@ -524,6 +524,10 @@ void free_regex_matcher(HIDDeviceMatcher_t *matcher) {
 
 /* ---------------------------------------------------------------------- */
 
+/* CAUTION: be careful when modifying the output format of this function,
+ * since it's used to produce sub-drivers "stub" using
+ * scripts/subdriver/path-to-subdriver.sh
+ */
 void HIDDumpTree(hid_dev_handle *udev, usage_tables_t *utab)
 {
 	int 		j;
@@ -565,7 +569,8 @@ void HIDDumpTree(hid_dev_handle *udev, usage_tables_t *utab)
 				  path, type, pData->ReportID, pData->Offset, pData->Size, value);
 
 			else
-				upsdebugx(1, "Path: %s, Type: %s", path, type);
+				upsdebugx(1, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i",
+				  path, type, pData->ReportID, pData->Offset, pData->Size);
 		}
 	}
 }

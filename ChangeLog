@@ -1,3 +1,11 @@
+Tue Jan  9 08:11:13 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - libhid.c: HIDDumpTree() also prints the data ReportID, Offset and Size
+   in the else case. Add a caution message when modifying the output
+   since it can break path-to-subdriver.sh
+ - scripts/subdriver/path-to-subdriver.sh: minor update to the "Do not
+   forget to:" section
+
 Tue Jan  9 01:22:23 UTC 2007 / Charles Lepple <clepple@gmail.com>
 
  - drivers/tripplite_usb.c: starting to merge in changes for outlet control
@@ -17,13 +25,13 @@ Mon Jan  8 10:05:01 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  * newhidups: renamed to usbhid-ups, since it is more suitable.
    - AUTHORS, data/driver.list, data/evolution500.dev, docs/FAQ,
-   docs/configure.txt, docs/hid-subdrivers.txt, docs/new-drivers.txt,
-   drivers/Makefile.am, drivers/dummy-ups.h, drivers/*-hid.ch,
-   drivers/tripplite_usb.c, INSTALL, MAINTAINERS, man/cyberpower.8,
-   man/Makefile.am, man/tripplite_usb.8, man/mge-utalk.8,
-   man/nutupsdrv.8, README, scripts/hotplug/README, scripts/udev/README,
-   scripts/subdriver/path-to-subdriver.sh, packaging/mandriva/nut.spec.in:
-   replace all references to newhidups
+     docs/configure.txt, docs/hid-subdrivers.txt, docs/new-drivers.txt,
+     drivers/Makefile.am, drivers/dummy-ups.h, drivers/*-hid.ch,
+     drivers/tripplite_usb.c, INSTALL, MAINTAINERS, man/cyberpower.8,
+     man/Makefile.am, man/tripplite_usb.8, man/mge-utalk.8,
+     man/nutupsdrv.8, README, scripts/hotplug/README, scripts/udev/README,
+     scripts/subdriver/path-to-subdriver.sh, packaging/mandriva/nut.spec.in:
+     replace all references to newhidups
    - drivers/newhidups.ch: renamed to usbhid-ups.ch, and updated
    - man/newhidups.8: renamed to usbhid-ups.8, and updated
 
