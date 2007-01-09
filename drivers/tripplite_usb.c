@@ -25,7 +25,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define DRV_VERSION "0.8"
+#define DRV_VERSION "0.10"
 
 /* % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
  *
@@ -66,7 +66,8 @@
  * :A     -> ?          (start self-test)
  * :D     -> D7187      (? - doesn't match tripplite.c)
  * :F     -> F1019 A
- * :K0/1  ->            (untested, but a switchable bank exists)
+ * :K#0   ->            (turn outlet off: # in 0..2; 0 is main relay)
+ * :K#1   ->            (turn outlet on: # in 0..2)
  * :L     -> L290D_X
  * :M     -> M007F      (127 - max voltage?)
  * :P     -> P01500X    (max power)
@@ -75,8 +76,9 @@
  * :S     -> S100_Z0    (status?)
  * :T     -> T7D2581    (temperature?)
  * :U     -> U<FF><FF>
- * :V     -> V1062XX
- * :Z     -> Z
+ * :V     -> V1062XX	(outlets in groups of 2-2-4, with the groups of 2
+ * 			 individually switchable.)
+ * :Z     -> Z		(reset for max/min?)
  * 
  * % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
  *
@@ -598,6 +600,31 @@ static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *rep
 	return done ? sizeof(buffer_out) : 0;
 }
 
+/*!@brief Send an unknown command to the UPS, and store response in a variable
+ *
+ * @param msg Command string (usually a character and a null)
+ * @param len Length of command plus null
+ *
+ * The variables are of the form "ups.debug.X" where "X" is the command
+ * character.
+ */
+void debug_message(const char *msg, int len)
+{
+	int ret;
+	unsigned char tmp_value[9];
+	char var_name[20], err_msg[80];
+
+	sprintf(var_name, "ups.debug.%c", *msg);
+
+	ret = send_cmd(msg, len, (char *)tmp_value, sizeof(tmp_value));
+	if(ret <= 0) {
+		sprintf(err_msg, "Error reading '%c' value", *msg);
+		usb_comm_fail(ret, err_msg);
+		return;
+	}
+	dstate_setinfo(var_name, "%s", hexascdump(tmp_value+1, 7));
+}
+
 #if 0
 /* using the watchdog to reboot won't work while polling */
 static void do_reboot_wait(unsigned dly)
@@ -641,6 +668,7 @@ static int soft_shutdown(void)
 	/*! The unit must be on battery for this to work. 
 	 *
 	 * @todo check for on-battery condition, and print error if not.
+	 * @todo Find an equivalend command for non-OMNIVS models.
 	 */
 	ret = send_cmd(cmd_G, sizeof(cmd_G), buf, sizeof(buf));
 	return (ret == 8);
@@ -666,11 +694,37 @@ static int hard_shutdown(void)
 }
 #endif
 
+/*!@brief Turn an outlet on or off.
+ *
+ * @return 1 if the command worked, 0 if not.
+ */
+static int control_outlet(int outlet_id, int state)
+{
+	char k_cmd[10], buf[10];
+	int ret;
+
+	switch(tl_model) {
+		case TRIPP_LITE_SMARTPRO:
+			snprintf(k_cmd, sizeof(k_cmd)-1, "K%d%d", outlet_id, '0' + (state & 1));
+			ret = send_cmd(k_cmd, strlen(k_cmd) + 1, buf, sizeof buf);
+
+			if(ret != (strlen(k_cmd) + 1)) {
+				upslogx(LOG_ERR, "Could not set outlet %d to state %d", outlet_id, state);
+				return 0;
+			} else {
+				return 1;
+			}
+		default:
+			upslogx(LOG_ERR, "control_outlet unimplemented for this UPS model");
+	}
+	return 0;
+}
+
 /*!@brief Handler for "instant commands"
  */
 static int instcmd(const char *cmdname, const char *extra)
 {
-	unsigned char buf[256];
+	unsigned char buf[10];
 	int ret;
 
 	if(tl_model == TRIPP_LITE_SMARTPRO) {
@@ -678,22 +732,15 @@ static int instcmd(const char *cmdname, const char *extra)
 			send_cmd("A", 2, buf, sizeof buf);
 			return STAT_INSTCMD_HANDLED;
 		}
-		if (!strcasecmp(cmdname, "load.off")) {
-			/* ~ 3 sec delay
-			 * K0_ -> main relay
-			 * K1_ -> load 1
-			 * K2_ -> load 2
-			 * K3_ -> nothing
-			 * where low-order bit of _ is off/on
-			 */
-			ret = send_cmd("K20", 4, buf, sizeof buf);
-			return (ret == 4) ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_UNKNOWN;
-		}
-		if (!strcasecmp(cmdname, "load.on")) {
-			ret = send_cmd("K21", 4, buf, sizeof buf);
-			return (ret == 4) ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_UNKNOWN;
-		}
 	}
+
+	if (!strcasecmp(cmdname, "load.off")) {
+		return control_outlet(0, 0) ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_UNKNOWN;
+	}
+	if (!strcasecmp(cmdname, "load.on")) {
+		return control_outlet(0, 0) ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_UNKNOWN;
+	}
+	/* TODO: add code for individual outlets */
 #if 0
 	if (!strcasecmp(cmdname, "shutdown.reboot")) {
 		do_reboot_now();
@@ -824,9 +871,39 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("ups.firmware", "F%s", f_value+1);
 
+	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
+
+	/* Get configuration: */
+
 	ret = send_cmd(v_msg, sizeof(v_msg), v_value, sizeof(v_value)-1);
 
 	decode_v(v_value);
+
+	/* FIXME: redundant, but since it's static, we don't need to poll
+	 * every time.
+	 */
+	debug_message("V", 2);
+
+	if(switchable_load_banks > 0) {
+		int i;
+		char outlet_name[80];
+
+		outlet_name[79] = 0;
+		for(i = 1; i <= switchable_load_banks; i++) {
+			snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.id", i);
+			dstate_setinfo(outlet_name, "%d", i);
+			snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.desc", i);
+			dstate_setinfo(outlet_name, "Load %d", i);
+			snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.switchable", i);
+			dstate_setinfo(outlet_name, "1");
+		}
+
+		/* For the main relay: */
+		dstate_addcmd("load.on");
+		dstate_addcmd("load.off");
+	}
+
+	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
@@ -869,11 +946,6 @@ void upsdrv_initinfo(void)
 
 	if(tl_model == TRIPP_LITE_SMARTPRO) {
 		dstate_addcmd("test.battery.start");
-		/* FIXME: load.on/off still broken */
-#if 0
-		dstate_addcmd("load.on");
-		dstate_addcmd("load.off");
-#endif
 	}
 
 	dstate_addcmd("shutdown.return");
@@ -902,31 +974,6 @@ void upsdrv_initinfo(void)
 void upsdrv_shutdown(void)
 {
 	soft_shutdown();
-}
-
-/*!@brief Send an unknown command to the UPS, and store response in a variable
- *
- * @param msg Command string (usually a character and a null)
- * @param len Length of command plus null
- *
- * The variables are of the form "ups.debug.X" where "X" is the command
- * character.
- */
-void debug_message(const char *msg, int len)
-{
-	int ret;
-	unsigned char tmp_value[9];
-	char var_name[20], err_msg[80];
-
-	sprintf(var_name, "ups.debug.%c", *msg);
-
-	ret = send_cmd(msg, len, (char *)tmp_value, sizeof(tmp_value));
-	if(ret <= 0) {
-		sprintf(err_msg, "Error reading '%c' value", *msg);
-		usb_comm_fail(ret, err_msg);
-		return;
-	}
-	dstate_setinfo(var_name, "%s", hexascdump(tmp_value+1, 7));
 }
 
 void upsdrv_updateinfo(void)
@@ -1181,10 +1228,10 @@ void upsdrv_updateinfo(void)
 
 	if(tl_model != TRIPP_LITE_OMNIVS && tl_model != TRIPP_LITE_OMNIVS_2001) {
 		debug_message("D", 2);
-		debug_message("V", 2); /* Probably not necessary - seems to be static */
 
 		/* We already grabbed these above: */
 		if(tl_model != TRIPP_LITE_SMARTPRO) {
+			debug_message("V", 2); /* Probably not necessary - seems to be static */
 			debug_message("M", 2);
 			debug_message("T", 2);
 		}
