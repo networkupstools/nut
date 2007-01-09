@@ -23,7 +23,9 @@ everups
 fentonups
 gamatronic
 genericups
-hidups
+hald-addon-bcmxcp_usb
+hald-addon-usbhid-ups
+hald-addon-tripplite_usb
 ippon
 isbmex
 liebert
@@ -33,12 +35,12 @@ metasys
 mge-shut
 mge-utalk
 mustek
-newhidups
 newmge-shut
 nitram
 oneac
 optiups
 powercom
+powerpanel
 rhino
 safenet
 skel
@@ -51,3 +53,4 @@ tripplitesu
 upscode2
 upsdrvctl
 victronups
+usbhid-ups
