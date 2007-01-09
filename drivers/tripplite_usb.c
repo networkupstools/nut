@@ -732,6 +732,10 @@ static int instcmd(const char *cmdname, const char *extra)
 			send_cmd("A", 2, buf, sizeof buf);
 			return STAT_INSTCMD_HANDLED;
 		}
+
+		if(!strcasecmp(cmdname, "ups.debug.reset_min_max")) {
+			return (send_cmd("Z", 2, buf, sizeof buf) == 2) ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_UNKNOWN;
+		}
 	}
 
 	if (!strcasecmp(cmdname, "load.off")) {
