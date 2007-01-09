@@ -771,6 +771,35 @@ static int setvar(const char *varname, const char *val)
 		dstate_setinfo("ups.delay.shutdown", val);
 		return STAT_SET_HANDLED;
 	}
+
+	if(!strncmp(varname, "outlet.", strlen("outlet."))) {
+		char index_str[10], *first_dot, *next_dot;
+		int index_chars, index, state;
+
+		first_dot = strstr(varname, ".");
+		next_dot = strstr(first_dot, ".");
+		index_chars = next_dot - (first_dot + 1);
+
+		if(index_chars > 9) return STAT_SET_UNKNOWN;
+		if(strcmp(next_dot, ".switch")) return STAT_SET_UNKNOWN;
+
+		strncpy(index_str, first_dot + 1, index_chars);
+		index_str[index_chars] = 0;
+
+		index = atoi(index_str);
+		upslogx(LOG_DEBUG, "outlet.%d.switch = %s", index, val);
+
+		if(!strcasecmp(val, "on") || !strcmp(val, "1")) {
+			state = 1;
+		} else {
+			state = 0;
+		}
+
+		upslogx(LOG_DEBUG, "outlet.%d.switch = %s -> %d", index, val, state);
+
+		return control_outlet(index, state) ? STAT_SET_HANDLED : STAT_SET_UNKNOWN;
+	}
+
 #if 0
 	if (!strcasecmp(varname, "ups.delay.start")) {
 		startdelay = atoi(val);
@@ -889,21 +918,31 @@ void upsdrv_initinfo(void)
 		char outlet_name[80];
 
 		outlet_name[79] = 0;
-		for(i = 1; i <= switchable_load_banks; i++) {
+		for(i = 1; i <= switchable_load_banks + 1; i++) {
 			snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.id", i);
 			dstate_setinfo(outlet_name, "%d", i);
+
 			snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.desc", i);
 			dstate_setinfo(outlet_name, "Load %d", i);
+
 			snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.switchable", i);
-			dstate_setinfo(outlet_name, "1");
+			if( i <= switchable_load_banks ) {
+				dstate_setinfo(outlet_name, "1");
+				snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.switch", i);
+				dstate_setinfo(outlet_name, "1");
+				dstate_setflags(outlet_name, ST_FLAG_RW | ST_FLAG_STRING);
+				dstate_setaux(outlet_name, 3);
+			} else {
+				/* Last bank is not switchable: */
+				dstate_setinfo(outlet_name, "0");
+			}
+
 		}
 
 		/* For the main relay: */
 		dstate_addcmd("load.on");
 		dstate_addcmd("load.off");
 	}
-
-	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
