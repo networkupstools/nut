@@ -327,7 +327,8 @@ static int battery_voltage_nominal = 12,
 	   input_voltage_scaled = 120,
 	/* input_voltage_maximum = -1,
 	   input_voltage_minimum = -1, */
-	   switchable_load_banks = 0;
+	   switchable_load_banks = 0,
+           unit_id = -1; /*!< range: 1-65535, most likely */
 
 /*! Time in seconds to delay before shutting down. */
 static unsigned int offdelay = DEFAULT_OFFDELAY;
@@ -670,6 +671,7 @@ static int hard_shutdown(void)
 static int instcmd(const char *cmdname, const char *extra)
 {
 	unsigned char buf[256];
+	int ret;
 
 	if(tl_model == TRIPP_LITE_SMARTPRO) {
 		if (!strcasecmp(cmdname, "test.battery.start")) {
@@ -677,12 +679,19 @@ static int instcmd(const char *cmdname, const char *extra)
 			return STAT_INSTCMD_HANDLED;
 		}
 		if (!strcasecmp(cmdname, "load.off")) {
-			send_cmd("K0", 3, buf, sizeof buf);
-			return STAT_INSTCMD_HANDLED;
+			/* ~ 3 sec delay
+			 * K0_ -> main relay
+			 * K1_ -> load 1
+			 * K2_ -> load 2
+			 * K3_ -> nothing
+			 * where low-order bit of _ is off/on
+			 */
+			ret = send_cmd("K20", 4, buf, sizeof buf);
+			return (ret == 4) ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_UNKNOWN;
 		}
 		if (!strcasecmp(cmdname, "load.on")) {
-			send_cmd("K1", 3, buf, sizeof buf);
-			return STAT_INSTCMD_HANDLED;
+			ret = send_cmd("K21", 4, buf, sizeof buf);
+			return (ret == 4) ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_UNKNOWN;
 		}
 	}
 #if 0
@@ -733,10 +742,10 @@ static int setvar(const char *varname, const char *val)
 void upsdrv_initinfo(void)
 {
 	const unsigned char proto_msg[] = "\0", f_msg[] = "F", p_msg[] = "P",
-		s_msg[] = "S", v_msg[] = "V", w_msg[] = "W\0";
+		s_msg[] = "S", u_msg[] = "U", v_msg[] = "V", w_msg[] = "W\0";
 	char *model, *model_end, proto_string[5 + sizeof("protocol ")];
-	unsigned char proto_value[9], f_value[9], p_value[9], s_value[9], v_value[9],
-		      w_value[9], buf[256];
+	unsigned char proto_value[9], f_value[9], p_value[9], s_value[9],
+	     u_value[9], v_value[9], w_value[9], buf[256];
 	int  va, ret;
 	unsigned int proto_number = 0;
 
@@ -751,6 +760,8 @@ void upsdrv_initinfo(void)
 				"information to nut-upsdev mailing list");
 		}
 	}
+
+	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
 	ret = send_cmd(proto_msg, sizeof(proto_msg), proto_value, sizeof(proto_value)-1);
 	if(ret <= 0) {
@@ -768,10 +779,14 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("ups.firmware.aux", proto_string);
 
+	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
+
 	ret = send_cmd(s_msg, sizeof(s_msg), s_value, sizeof(s_value)-1);
 	if(ret <= 0) {
 		fatalx("Could not retrieve status ... is this an OMNIVS model?");
 	}
+
+	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
 	dstate_setinfo("ups.mfr", "%s", "Tripp Lite");
 
@@ -799,6 +814,9 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("ups.power.nominal", "%d", va);
 
+	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
+
+        /* Fetch firmware version: */
 	ret = send_cmd(f_msg, sizeof(f_msg), f_value, sizeof(f_value)-1);
 
 	toprint_str(f_value+1, 6);
@@ -809,6 +827,24 @@ void upsdrv_initinfo(void)
 	ret = send_cmd(v_msg, sizeof(v_msg), v_value, sizeof(v_value)-1);
 
 	decode_v(v_value);
+
+	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
+
+        /* Unit ID might not be supported by all models: */
+	ret = send_cmd(u_msg, sizeof(u_msg), u_value, sizeof(u_value)-1);
+	if(ret <= 0) {
+		upslogx(LOG_NOTICE,"Error reading Unit ID");
+	} else {
+		unit_id = (int)((unsigned)(u_value[1]) << 8) 
+			| (unsigned)(u_value[2]);
+	}
+
+	if(unit_id >= 0) {
+		dstate_setinfo("ups.id", "%d", unit_id);
+		upslogx(LOG_DEBUG,"Unit ID: %d", unit_id);
+	}
+
+	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
 	dstate_setinfo("input.voltage.nominal", "%d", input_voltage_nominal);
 	dstate_setinfo("battery.voltage.nominal", "%d", battery_voltage_nominal);
@@ -833,8 +869,11 @@ void upsdrv_initinfo(void)
 
 	if(tl_model == TRIPP_LITE_SMARTPRO) {
 		dstate_addcmd("test.battery.start");
+		/* FIXME: load.on/off still broken */
+#if 0
 		dstate_addcmd("load.on");
 		dstate_addcmd("load.off");
+#endif
 	}
 
 	dstate_addcmd("shutdown.return");
@@ -900,6 +939,7 @@ void upsdrv_updateinfo(void)
 	double bv;
 
 	int ret;
+	unsigned battery_charge;
 
 	status_init();
 
@@ -1016,6 +1056,9 @@ void upsdrv_updateinfo(void)
 		} else {
 			status_set("OL");
 		}
+
+		battery_charge = (unsigned)(s_value[5]);
+		dstate_setinfo("battery.charge",  "%u", battery_charge);
 	}
 
 	switch(s_value[1]) {
@@ -1138,7 +1181,7 @@ void upsdrv_updateinfo(void)
 
 	if(tl_model != TRIPP_LITE_OMNIVS && tl_model != TRIPP_LITE_OMNIVS_2001) {
 		debug_message("D", 2);
-		debug_message("V", 2);
+		debug_message("V", 2); /* Probably not necessary - seems to be static */
 
 		/* We already grabbed these above: */
 		if(tl_model != TRIPP_LITE_SMARTPRO) {

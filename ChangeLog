@@ -1,3 +1,8 @@
+Tue Jan  9 01:22:23 UTC 2007 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/tripplite_usb.c: starting to merge in changes for outlet control
+   and Unit ID.
+
 Mon Jan  8 19:58:46 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - server/access.ch: merged some code between IPV4 and IPV6 for similar
