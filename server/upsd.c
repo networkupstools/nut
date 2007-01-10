@@ -64,7 +64,7 @@ static	int	listenfd, net_port = PORT;
 #ifndef	HAVE_IPV6
 static	struct	in_addr	listenaddr;
 #else
-static	char *listenaddr = NULL;
+static	char *listenaddr = "0.0.0.0";
 
 /* AF_ */
 

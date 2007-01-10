@@ -1,3 +1,9 @@
+Wed Jan 10 15:42:20 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - server/upsd.c: set a default for the listenaddress if we're using
+   new IPv6 code so that an IPv4 listening socket bound to 0.0.0.0 is
+   created (which used to be the case previously, if nothing was specified)
+
 Tue Jan  9 08:11:13 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  - libhid.c: HIDDumpTree() also prints the data ReportID, Offset and Size
