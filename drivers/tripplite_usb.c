@@ -61,23 +61,28 @@
  *
  * % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
  *
- * SMARTPRO commands:
+ * SMARTPRO commands (3003):
  *
  * :A     -> ?          (start self-test)
  * :D     -> D7187      (? - doesn't match tripplite.c)
- * :F     -> F1019 A
+ * :F     -> F1019 A    firmware rev
+ * :H__   -> H          (?)
+ * :I_    -> I          (reset conditions?)
+ * :J__   -> J          (set 16-bit unit ID)
  * :K#0   ->            (turn outlet off: # in 0..2; 0 is main relay)
  * :K#1   ->            (turn outlet on: # in 0..2)
  * :L     -> L290D_X
  * :M     -> M007F      (127 - max voltage?)
+ * :N__   -> N
  * :P     -> P01500X    (max power)
  * :Q     ->            (while online: reboot)
- * :R     -> R<01><FF>
+ * :R     -> R<01><FF>  (reset conditions?)
  * :S     -> S100_Z0    (status?)
  * :T     -> T7D2581    (temperature?)
- * :U     -> U<FF><FF>
+ * :U     -> U<FF><FF>  (unit ID, 1-65535)
  * :V     -> V1062XX	(outlets in groups of 2-2-4, with the groups of 2
  * 			 individually switchable.)
+ * :W_    -> W_		(watchdog)
  * :Z     -> Z		(reset for max/min?)
  * 
  * % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
@@ -705,11 +710,13 @@ static int control_outlet(int outlet_id, int state)
 
 	switch(tl_model) {
 		case TRIPP_LITE_SMARTPRO:
-			snprintf(k_cmd, sizeof(k_cmd)-1, "K%d%d", outlet_id, '0' + (state & 1));
+			snprintf(k_cmd, sizeof(k_cmd)-1, "N%02X", 5);
+			ret = send_cmd(k_cmd, strlen(k_cmd) + 1, buf, sizeof buf);
+			snprintf(k_cmd, sizeof(k_cmd)-1, "K%d%d", outlet_id, state & 1);
 			ret = send_cmd(k_cmd, strlen(k_cmd) + 1, buf, sizeof buf);
 
-			if(ret != (strlen(k_cmd) + 1)) {
-				upslogx(LOG_ERR, "Could not set outlet %d to state %d", outlet_id, state);
+			if(ret != 8) {
+				upslogx(LOG_ERR, "Could not set outlet %d to state %d, ret = %d", outlet_id, state, ret);
 				return 0;
 			} else {
 				return 1;
@@ -733,7 +740,7 @@ static int instcmd(const char *cmdname, const char *extra)
 			return STAT_INSTCMD_HANDLED;
 		}
 
-		if(!strcasecmp(cmdname, "ups.debug.reset_min_max")) {
+		if(!strcasecmp(cmdname, "ups.debug.send_Z")) {
 			return (send_cmd("Z", 2, buf, sizeof buf) == 2) ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_UNKNOWN;
 		}
 	}
@@ -777,11 +784,12 @@ static int setvar(const char *varname, const char *val)
 	}
 
 	if(!strncmp(varname, "outlet.", strlen("outlet."))) {
+		char outlet_name[80];
 		char index_str[10], *first_dot, *next_dot;
 		int index_chars, index, state;
 
 		first_dot = strstr(varname, ".");
-		next_dot = strstr(first_dot, ".");
+		next_dot = strstr(first_dot + 1, ".");
 		index_chars = next_dot - (first_dot + 1);
 
 		if(index_chars > 9) return STAT_SET_UNKNOWN;
@@ -800,6 +808,9 @@ static int setvar(const char *varname, const char *val)
 		}
 
 		upslogx(LOG_DEBUG, "outlet.%d.switch = %s -> %d", index, val, state);
+
+		snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.switch", index);
+		dstate_setinfo(outlet_name, "%d", state);
 
 		return control_outlet(index, state) ? STAT_SET_HANDLED : STAT_SET_UNKNOWN;
 	}
@@ -989,6 +1000,7 @@ void upsdrv_initinfo(void)
 
 	if(tl_model == TRIPP_LITE_SMARTPRO) {
 		dstate_addcmd("test.battery.start");
+		dstate_addcmd("ups.debug.send_Z");
 	}
 
 	dstate_addcmd("shutdown.return");
