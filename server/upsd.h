@@ -50,6 +50,8 @@
 upstype *get_ups_ptr(const char *upsname);
 int ups_available(const upstype *ups, ctype *client);
 
+void listen_add(const char *addr, const char *port);
+
 void kick_login_clients(const char *upsname);
 int sendback(ctype *client, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));

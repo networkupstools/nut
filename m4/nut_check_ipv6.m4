@@ -29,17 +29,17 @@ dnl               [:],
 dnl               [nut_have_ipv6=no],
 dnl		  [#include <netdb.h>])
 
-   AC_MSG_CHECKING([for AI_ADDRCONFIG])
-   AC_COMPILE_IFELSE(
-       [AC_LANG_PROGRAM(
-	   [[#include <netdb.h>]],
-	   [[int flag = AI_ADDRCONFIG]]
-        )], 
-       [AC_DEFINE(HAVE_AI_ADDRCONFIG, 1, [Define if `addrinfo' structure allows AI_ADDRCONFIG flag])
-        AC_MSG_RESULT(yes)],
-       [AC_MSG_RESULT(no)
-        nut_have_ipv6=no]
-   )
+dnl AC_MSG_CHECKING([for AI_ADDRCONFIG])
+dnl AC_COMPILE_IFELSE(
+dnl    [AC_LANG_PROGRAM(
+dnl	   [[#include <netdb.h>]],
+dnl	   [[int flag = AI_ADDRCONFIG]]
+dnl     )], 
+dnl    [AC_DEFINE(HAVE_AI_ADDRCONFIG, 1, [Define if `addrinfo' structure allows AI_ADDRCONFIG flag])
+dnl     AC_MSG_RESULT(yes)],
+dnl    [AC_MSG_RESULT(no)
+dnl     nut_have_ipv6=no]
+dnl)
 
    AC_MSG_CHECKING([for IN6_IS_ADDR_V4MAPPED])
    AC_LINK_IFELSE(

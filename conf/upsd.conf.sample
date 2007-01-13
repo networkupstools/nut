@@ -40,3 +40,15 @@ REJECT all
 # You should only use this if your driver has difficulties keeping
 # the data fresh within the normal 15 second interval.  Watch the syslog
 # for notifications from upsd about staleness.
+
+# =======================================================================
+# LISTEN <address> [<port>]
+# LISTEN 0.0.0.0 3493
+#
+# This defaults to the global IPv4 listening address and port 3493. You
+# may specify each interface you want upsd to listen on for connections,
+# optionally with a port number.
+#
+# You may need this if you have multiple interfaces on your machine and
+# you don't want upsd to listen to all interfaces (for instance on a
+# firewall, you may not want to listen to the external interface).

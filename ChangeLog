@@ -1,3 +1,21 @@
+Sat Jan 13 20:12:16 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * clients/upsclient.ch: 
+   - hostname can now be specified as a fully.qualified.domain.name or an
+     [address literal]
+   - cleaned up IPv6 code
+ * m4/nut_check_ipv6.m4:
+   - removed check for AI_ADDRCONFIG, since it is no longer used (for
+     portability reasons, wasn't really needed anyway)
+ * server/upsd.ch, server/conf.c, server/stype.h:
+   - listen on multiple TCP sockets (to be configured in upsd.conf)
+   - removed -i and -p options which are obsoleted by the above
+   - listening address can be specified as a fully.qualified.domain.name
+     or an [address literal]
+   - cleaned up IPv6 code
+ * conf/upsd.conf.sample:
+   - added new LISTEN parameter
+
 Wed Jan 10 15:42:20 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - server/upsd.c: set a default for the listenaddress if we're using

@@ -25,6 +25,8 @@
 #include "user.h"
 #include "access.h"
 
+#define	QUOTED(x)	#x
+
 	extern	int	maxage;
 	extern	char	*statepath, *datapath, *certfile;
 	extern	upstype	*firstups;
@@ -194,6 +196,15 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 	if (!strcmp(arg[0], "REJECT")) {
 		access_add(ACCESS_REJECT, numargs - 1, 
 			(const char **) &arg[1]);
+		return 1;
+	}
+
+	/* LISTEN <address> [<port>] */
+	if (!strcmp(arg[0], "LISTEN")) {
+		if (numargs < 3)
+			listen_add(arg[1], "3493");
+		else
+			listen_add(arg[1], arg[2]);
 		return 1;
 	}
 

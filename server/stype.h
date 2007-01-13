@@ -1,6 +1,6 @@
-/* upstype.h - internal UPS tracking structure details
+/* stype.h - server data definitions for upsd
 
-   Copyright (C) 2003  Russell Kroll <rkroll@exploits.org>
+   Copyright (C) 2007  Arjen de Korte <arjen@de-korte.org>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -17,35 +17,24 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#ifndef UPSTYPE_H_SEEN
-#define UPSTYPE_H_SEEN 1
+#ifndef STYPE_H_SEEN
+#define STYPE_H_SEEN 1
 
-#include "parseconf.h"
+#include <netdb.h>
 
-/* structure for the linked list of each UPS that we track */
+#ifndef NI_MAXHOST
+#define NI_MAXHOST      1025
+#endif
+
+#ifndef NI_MAXSERV
+#define NI_MAXSERV      32
+#endif
+
 typedef struct {
-	char			*name;
-	char			*fn;
-	char			*desc;
-
-	int			sock_fd;
-	int			stale;
-	int			dumpdone;
-	int			data_ok;
-	time_t			last_heard;
-	time_t			last_ping;
-	time_t			last_connfail;
-	PCONF_CTX		sock_ctx;
-	struct	st_tree_t	*inforoot;
-	struct	cmdlist_t	*cmdlist;
-
-	int	numlogins;
-	int	fsd;		/* forced shutdown in effect? */
-
-	int	retain;
+	char	*addr;
+	char	*port;
+	int	sock_fd;
 	void	*next;
-}	upstype;
+}	stype;
 
-extern upstype	*firstups;
-
-#endif	/* UPSTYPE_H_SEEN */
+#endif	/* STYPE_H_SEEN */
