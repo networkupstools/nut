@@ -64,6 +64,11 @@ void check_perms(const char *fn);
 #define SIGCMD_STOP	SIGTERM
 #define SIGCMD_RELOAD	SIGHUP
 
+/* awkward way to make a string out of a numeric constant */
+
+#define string_const_aux(x)	#x
+#define string_const(x)		string_const_aux(x)
+
 #ifdef SHUT_RDWR
 #define shutdown_how SHUT_RDWR
 #else

@@ -42,8 +42,6 @@
 #include "desc.h"
 #include "neterr.h"
 
-#define	QUOTED(x)	#x
-
 	/* externally-visible settings and pointers */
 
 	upstype	*firstups = NULL;
@@ -64,11 +62,11 @@ static ctype	*firstclient = NULL;
 	/* default is to listen on all local interfaces */
 static stype	*firstaddr = NULL;
 
-static int opt_af = AF_UNSPEC;
+static int 	opt_af = AF_UNSPEC;
 
 	/* signal handlers */
-static	struct sigaction sa;
-static	sigset_t nut_upsd_sigmask;
+static struct sigaction	sa;
+static sigset_t	nut_upsd_sigmask;
 
 	/* pid file */
 static	char	pidfn[SMALLBUF];
@@ -1018,13 +1016,8 @@ int main(int argc, char **argv)
 	setupsignals();
 
 	/* default behaviour if no LISTEN addres has been specified */
-	if (firstaddr == NULL) {
-		firstaddr = (stype *)xmalloc(sizeof(stype));
-		firstaddr->addr = xstrdup("0.0.0.0");
-		firstaddr->port = xstrdup("3493");
-		firstaddr->sock_fd = -1;
-		firstaddr->next = NULL;
-	}
+	if (firstaddr == NULL)
+		listen_add("0.0.0.0", string_const(PORT));
 
 	for (serv = firstaddr; serv != NULL; serv = serv->next)
 		setuptcp(serv);

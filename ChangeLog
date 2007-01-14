@@ -1,3 +1,8 @@
+Sun Jan 14 17:07:33 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - server/conf.c, server/upsd.ch: "unhardcode" default PORT, simplify
+   setting the default listening address
+
 Sat Jan 13 20:12:16 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * clients/upsclient.ch: 
