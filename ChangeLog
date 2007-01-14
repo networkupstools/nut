@@ -1,3 +1,7 @@
+Sun Jan 14 17:20:46 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - server/upsd.c: remove code that's not really needed
+
 Sun Jan 14 17:07:33 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - server/conf.c, server/upsd.ch: "unhardcode" default PORT, simplify

@@ -222,11 +222,7 @@ static void setuptcp(stype *serv)
 #else
 {
 	struct addrinfo		hints, *res, *ai;
-	struct sockaddr_storage	sas;
-	socklen_t			sas_len = sizeof(sas);
 	int	v = 0, one = 1;
-	char	saddr[NI_MAXHOST];
-	char	sport[NI_MAXSERV];
 
 	upsdebugx(3, "setuptcp: try to bind to %s port %s", serv->addr, serv->port);
 
@@ -257,7 +253,6 @@ static void setuptcp(stype *serv)
 			upsdebug_with_errno(3, "setuptcp: socket");
 			continue;
 		}
-
 		
 		if (setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, (void *)&one, sizeof(one)) != 0)
 			fatal_with_errno("setuptcp: setsockopt");
@@ -280,24 +275,6 @@ static void setuptcp(stype *serv)
 			continue;
 		}
 
-		if (getsockname(sock_fd, (struct sockaddr *)&sas, &sas_len) < 0) {
-			upsdebug_with_errno(3, "setuptcp: getsockname");
-			close(sock_fd);
-			continue;
-		}
-
-		if ((v = getnameinfo((struct sockaddr *)&sas, sas_len,
-				saddr, NI_MAXHOST, sport, NI_MAXSERV, 0))) {
-
-			upslogx(LOG_ERR, "setuptcp: getaddrinfo: %s\n", gai_strerror(v));
-
-			if (v == EAI_SYSTEM)
-				upsdebug_with_errno(3, "setuptcp: getaddrinfo");
-
-			close(sock_fd);
-			continue;
-		}
-
 		serv->sock_fd = sock_fd;
 		break;
 	}
@@ -307,7 +284,7 @@ static void setuptcp(stype *serv)
 	if (serv->sock_fd < 0)
 		upslogx(LOG_WARNING, "upsd: not listening on %s:%s", serv->addr, serv->port);
 	else
-		upslogx(LOG_INFO, "upsd: listening on %s:%s", saddr, sport);
+		upslogx(LOG_INFO, "upsd: listening on %s:%s", serv->addr, serv->port);
 
 	return;
 }
