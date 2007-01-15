@@ -1,3 +1,11 @@
+Mon Jan 15 20:02:21 UTC 2007 / Niels Baggesen <nba@users.sourceforge.net>
+
+ * packaging/RedHat/nut-spec:
+   - update to current fileset
+   - add nut-snmp sub-package
+ * packaging/RedHat/nut.spec.in
+   removed as it is generated from nut.spec.in
+
 Mon Jan 15 19:54:30 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * clients/upsclient.ch, clients/upsmon.c, server/upsd.c:
