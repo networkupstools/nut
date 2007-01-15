@@ -1,3 +1,13 @@
+Mon Jan 15 19:27:27 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * server/access.c:
+   - add range checks for CIDR notation
+   - when an ACL can't be parsed, abort rather than ignoring it silently
+   - store addresses and masks in network byte order, so these don't have to
+     be reordered each time when checking access
+   - don't require IPv6 addresses to be enclosed in [square brackets] (which
+     is confusing, since we don't require this for IPv4 addresses either)
+
 Mon Jan 15 03:59:07 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  - packaging/mandriva: renamed newhidups to usbhid-ups
