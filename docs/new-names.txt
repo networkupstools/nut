@@ -485,7 +485,7 @@ server: Internal server information
    |--------------------------+---------------------------------------------|
    | beeper.on                | Enable UPS beeper/buzzer                    |
    |--------------------------+---------------------------------------------|
-   | beeper.off               | Disable UPS beeper/buzzer                   |
+   | beeper.off               | Temporarily mute UPS beeper/buzzer          |
    |--------------------------+---------------------------------------------|
    | beeper.toggle            | Toggle UPS beeper/buzzer                    |
    +------------------------------------------------------------------------+
