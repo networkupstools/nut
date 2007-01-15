@@ -1,3 +1,8 @@
+Mon Jan 15 20:20:36 UTC 2007 / Niels Baggesen <nba@users.sourceforge.net>
+ * drivers/upscode2.[ch]:
+   - major rework to support the new 3-phase variable set
+     In cooperation with Niklas Edmundsson <nikke@acc.umu.se>
+
 Mon Jan 15 20:02:21 UTC 2007 / Niels Baggesen <nba@users.sourceforge.net>
 
  * packaging/RedHat/nut-spec:

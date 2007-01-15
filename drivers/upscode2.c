@@ -2,8 +2,9 @@
 		command set.  This includes PowerWare, Fiskars, 
 		Compaq (PowerWare OEM?), some IBM (PowerWare OEM?)
 
-   Copyright (C) 2002 Hï¿½ard Lygre <hklygre@online.no>
-   Copyright (C) 2004 Niels Baggesen <niels@baggesen.net>
+   Copyright (C) 2002 Håvard Lygre <hklygre@online.no>
+   Copyright (C) 2004-2006 Niels Baggesen <niels@baggesen.net>
+   Copyright (C) 2006 Niklas Edmundsson <nikke@acc.umu.se>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -31,7 +32,7 @@
  * Powerware 9305
  *
  * Also tested against
- * Compaq T1500h (Per Jï¿½sson <per.jonsson@bth.se>)
+ * Compaq T1500h (Per Jönsson <per.jonsson@bth.se>)
  * Powerware 9120 (Gorm J. Siiger <gjs@sonnit.dk>)
  * Fiskars PowerServer 10 (Per Larsson <tucker@algonet.se>)
  */
@@ -54,22 +55,25 @@
 #define UPSC_BUFLEN	256  /* Size of response buffers from UPS */
 
 /* Status messages from UPS */
-#define UPSC_STAT_ONLINE       0x0001
-#define UPSC_STAT_ONBATT       0x0002
-#define UPSC_STAT_LOBATT       0x0004
-#define UPSC_STAT_REPLACEBATT  0x0008
-#define UPSC_STAT_BOOST        0x0010
-#define UPSC_STAT_TRIM         0x0020
-#define UPSC_STAT_OVERLOAD     0x0040
-#define UPSC_STAT_CALIBRATION  0x0080
-#define UPSC_STAT_OFF          0x0100
-#define UPSC_STAT_BYPASS       0x0200
+#define UPSC_STAT_ONLINE       (1<<0)
+#define UPSC_STAT_ONBATT       (1<<1)
+#define UPSC_STAT_LOBATT       (1<<2)
+#define UPSC_STAT_REPLACEBATT  (1<<3)
+#define UPSC_STAT_BOOST        (1<<4)
+#define UPSC_STAT_TRIM         (1<<5)
+#define UPSC_STAT_OVERLOAD     (1<<6)
+#define UPSC_STAT_CALIBRATION  (1<<7)
+#define UPSC_STAT_OFF          (1<<8)
+#define UPSC_STAT_BYPASS       (1<<9)
+#define UPSC_STAT_NOTINIT      (1<<31)
 
 
 typedef enum {
 	t_ignore,	/* Ignore this response  */
 	t_value,	/* Sets a NUT variable */
-	t_final,
+	t_final,        /* Marks the end of UPS data for this command */
+	t_string,	/* Set a NUT string variable */
+	t_finstr,	/* Set a NUT string variable, and marks end of data */
 	t_setval,	/* Sets a variable in the driver and possibly in NUT */
 	t_setrecip,	/* Sets a driver variable to 1/value and possibly NUT */
 	t_setpct,
@@ -101,7 +105,11 @@ static int
 	can_upda = 0,
 	can_upbs = 0,
 	can_upid = 0,
-	can_uppm = 0;
+	can_uppm = 0,
+	can_updt = 0,
+	can_uptm = 0,
+	can_upsd = 0,
+	can_uppc = 0;
 
 static char has_uppm_p[100];
 
@@ -112,18 +120,36 @@ static int
 	use_crlf = 0,
 	use_pre_lf = 0,
 	buffer_empty = 0,
-	status = 0;
+	status = UPSC_STAT_NOTINIT;
 
 static time_t
 	last_full = 0;
 
 static float
 	batt_volt_low = 0,
+	batt_volt_nom = 0,
 	batt_volt_high = 0,
 	batt_volt = 0,
-	nom_out_kw = 0,
-	min_to_sec = 60.0,
-	kilo_to_unity = 1000.0;
+	batt_cap_nom = -1,
+	batt_charge = -1,
+	batt_current = -1,
+	batt_disch_curr_max = 0,
+	batt_runtime = -1,
+	batt_runtime_max = -1,
+	kilo_to_unity = 1000.0,
+	outpwr_factor = 1000.0,
+	nom_out_current = -1,
+	max_out_current = -1;
+
+/* To get average battery current */
+#define NUM_BATTHIST 60
+	static float batthist[NUM_BATTHIST];
+	static int numbatthist=0, lastbatthist=0;
+
+static int 
+	inited_phaseinfo = 0,
+	num_inphases = 1,
+	num_outphases = 1;
 
 
 /* Status codes for the STAT and STMF status responses */
@@ -200,7 +226,7 @@ static simple_t stlr[] = {
 /* Status code for the STEA and STEM responses */
 static simple_t env[] = {
 	{ "HH", t_ignore, "Humidity high", 0 },
-	{ "HL", t_ignore, "Humudity low", 0 },
+	{ "HL", t_ignore, "Humidity low", 0 },
 	{ "TH", t_ignore, "Temperature high", 0 },
 	{ "TL", t_ignore, "Temperature low", 0 },
 	{ "01", t_ignore, "Environment alarm 1", 0 },
@@ -230,30 +256,30 @@ static simple_t simple[] = {
 	{ "STOK", t_ignore },
 	{ "STUF", t_status, NULL, UPSC_STAT_ONBATT },
 
-	{ "BTIME", t_value, "battery.runtime", 0, &min_to_sec },
+	{ "BTIME", t_setval, NULL, 0, &batt_runtime },
 
 	{ "METE1", t_value, "ambient.temperature" },
 	{ "MERH1", t_value, "ambient.humidity" },
 
 	{ "MIFFF", t_value, "input.frequency" },
-	{ "MIIL1", t_value,  /* "input.current" */ },
-	{ "MIIL2", t_value,  /* "input.2.current" */ },
-	{ "MIIL3", t_value,  /* "input.3.current" */ },
-	{ "MIPL1", t_ignore, /* "input.kw" */ },
-	{ "MIPL2", t_ignore, /* "input.kw" */ },
-	{ "MIPL3", t_ignore, /* "input.kw" */ },
-	{ "MISL1", t_ignore, /* "input.kva" */ },
-	{ "MISL2", t_ignore, /* "input.kva" */ },
-	{ "MISL3", t_ignore, /* "input.kva" */ },
+	{ "MIIL1", t_value, "input.current" },
+	{ "MIIL2", t_value, "input.L2.current" },
+	{ "MIIL3", t_value, "input.L3.current" },
+	{ "MIPL1", t_value, "input.realpower" },
+	{ "MIPL2", t_value, "input.L2.realpower" },
+	{ "MIPL3", t_value, "input.L3.realpower" },
+	{ "MISL1", t_value, "input.power" },
+	{ "MISL2", t_value, "input.L2.power" },
+	{ "MISL3", t_value, "input.L3.power" },
 	{ "MIUL1", t_value, "input.voltage" },
-	{ "MIUL2", t_value, "input.2.voltage" },
-	{ "MIUL3", t_value, "input.3.voltage" },
+	{ "MIUL2", t_value, "input.L2-N.voltage" },
+	{ "MIUL3", t_value, "input.L3-N.voltage" },
 	{ "MIU12", t_value, "input.L1-L2.voltage" },
 	{ "MIU23", t_value, "input.L2-L3.voltage" },
 	{ "MIU31", t_value, "input.L3-L1.voltage" },
 
-	{ "MBCH1", t_value, "battery.charge" },
-	{ "MBIII", t_value, "battery.current" },
+	{ "MBCH1", t_setval, NULL, 0, &batt_charge }, /* battery.charge */
+	{ "MBIII", t_setval, "battery.current", 0, &batt_current },
 	{ "MBINE", t_ignore, /* "battery.current.negative" */ },
 	{ "MBIPO", t_ignore, /* "battery.current.positive" */ },
 	{ "MBUNE", t_ignore, /* "battery.voltage.negative" */ },
@@ -266,20 +292,27 @@ static simple_t simple[] = {
 
 	{ "MOFFF", t_final, "output.frequency" },
 	{ "MOIL1", t_value, "output.current" },
-	{ "MOIL2", t_value, "output.2.current" },
-	{ "MOIL3", t_value, "output.3.current" },
-	{ "MOIP1", t_ignore, /* "output.current.peak" */ },
-	{ "MOPL1", t_value, "ups.load", 0, &nom_out_kw },
-	{ "MOPL2", t_value, "ups.2.load", 0, &nom_out_kw },
-	{ "MOPL3", t_value, "ups.3.load", 0, &nom_out_kw },
-	{ "MOSL1", t_ignore, /* "output.kva" */ },
+	{ "MOIL2", t_value, "output.L2.current" },
+	{ "MOIL3", t_value, "output.L3.current" },
+	{ "MOIP1", t_value, "output.peakcurrent" },
+	{ "MOIP2", t_value, "output.L2.peakcurrent" },
+	{ "MOIP3", t_value, "output.L3.peakcurrent" },
+	{ "MOPL1", t_value, "output.realpower", 0, &kilo_to_unity },
+	{ "MOPL2", t_value, "output.L2.realpower", 0, &kilo_to_unity },
+	{ "MOPL3", t_value, "output.L3.realpower", 0, &kilo_to_unity },
+	{ "MOSL1", t_value, "output.power" },
+	{ "MOSL2", t_value, "output.L2.power" },
+	{ "MOSL3", t_value, "output.L3.power" },
 	{ "MOUL1", t_value, "output.voltage" },
-	{ "MOUL2", t_value, "output.2.voltage" },
-	{ "MOUL3", t_value, "output.3.voltage" },
+	{ "MOUL2", t_value, "output.L2-N.voltage" },
+	{ "MOUL3", t_value, "output.L3-N.voltage" },
+	{ "MOU12", t_value, "output.L1-L2.voltage" },
+	{ "MOU23", t_value, "output.L2-L3.voltage" },
+	{ "MOU31", t_value, "output.L3-L1.voltage" },
 
-	{ "MPUL1", t_value, "bypass.voltage" },
-	{ "MPUL2", t_value, "bypass.2.voltage" },
-	{ "MPUL3", t_value, "bypass.3.voltage" },
+	{ "MPUL1", t_value, "input.bypass.L1-N.voltage" },
+	{ "MPUL2", t_value, "input.bypass.L2-N.voltage" },
+	{ "MPUL3", t_value, "input.bypass.L3-N.voltage" },
 
 	{ "MUTE1", t_value, "ups.temperature" },
 	{ NULL }
@@ -289,38 +322,69 @@ static simple_t simple[] = {
 /* Responses for UPDV */
 static simple_t nominal[] = {
 	{ "NIUHH", t_value, "input.voltage.maximum" },
-	{ "NIULL", t_value, "input.voltage.minimim" },
-    	{ "NIUNN", t_value, "input.voltage.nominal" },
+	{ "NIULL", t_value, "input.voltage.minimum" },
+	{ "NIUNN", t_value, "input.voltage.nominal" },
 
-	{ "NBAHN", t_ignore, /* "battery.capacity.nominal" */ },
-	{ "NBIHH", t_ignore, /* "battery.current.maximum" */ },
-	{ "NBILL", t_ignore, /* "battery.current.minimum" */ },
-	{ "NBINN", t_ignore },
-	{ "NBTHH", t_ignore, /* "battery.time.maximum" */ },
-	{ "NBUHH", t_setval, NULL, 0, &batt_volt_high },
-	{ "NBULL", t_setval, NULL, 0, &batt_volt_low },
-	{ "NBUNN", t_value, "battery.voltage.nominal" },
+	{ "NIIHH", t_value, "input.current.maximum" },
+	{ "NIILL", t_value, "input.current.minimum" },
+	{ "NIINN", t_value, "input.current.nominal" },
 
-	{ "NOFHH", t_ignore, /* "output.frequency.maximum" */ },
-	{ "NOFLL", t_final,  /* "output.frequency.minimum" */ },
-	{ "NOIHH", t_ignore, /* "output.current.maximum" */ },
-	{ "NOINN", t_ignore, /* "output.current.target" */ },
-	{ "NOPNN", t_setrecpct, NULL, 0, &nom_out_kw },
-	{ "NOSNN", t_value,  "ups.power.nominal", 0, &kilo_to_unity },
-	{ "NOUHH", t_ignore, /* "output.voltage.maximum" */ },
-	{ "NOULL", t_ignore, /* "output.voltage.minimum" */ },
-	{ "NOUNN", t_ignore, /* "output.voltage.target" */ },
+	{ "NIPHH", t_value, "input.realpower.maximum" },
+	{ "NIPNN", t_value, "input.realpower.nominal" },
 
-	{ "NUTEH", t_value,  /* "ups.temperature.maximum" */ },
-    	{ NULL }
+	{ "NISHH", t_value, "input.power.maximum" },
+	{ "NISNN", t_value, "input.power.nominal" },
+
+	{ "NBAHN", t_setval, "battery.capacity.nominal", 0, &batt_cap_nom },
+	{ "NBIHH", t_ignore, "battery charge current maximum" },
+	{ "NBILL", t_setval, NULL, 0, &batt_disch_curr_max},
+	{ "NBINN", t_value, "battery.current.nominal" },
+	{ "NBTHH", t_setval, NULL, 0, &batt_runtime_max},
+	{ "NBUHH", t_setval, "battery.voltage.maximum", 0, &batt_volt_high },
+	{ "NBULL", t_setval, "battery.voltage.minimum", 0, &batt_volt_low },
+	{ "NBUNN", t_setval,  "battery.voltage.nominal", 0, &batt_volt_nom },
+
+	{ "NOFHH", t_value,  "output.frequency.maximum" },
+	{ "NOFLL", t_final,  "output.frequency.minimum" },
+	{ "NOIHH", t_setval,  "output.current.maximum", 0, &max_out_current },
+	{ "NOINN", t_setval, "output.current.nominal", 0, &nom_out_current },
+	{ "NOPNN", t_value, "output.realpower.nominal", 0, &outpwr_factor },
+	{ "NOSNN", t_value,  "ups.power.nominal", 0, &outpwr_factor },
+	{ "NOUHH", t_value,  "output.voltage.maximum" },
+	{ "NOULL", t_value,  "output.voltage.minimum" },
+	{ "NOUNN", t_value,  "output.voltage.nominal" },
+
+	{ "NUTEH", t_value,  "ups.temperature.maximum" },
+	{ NULL }
 };
 
 
 /* Status responses for UPBS command */
 static simple_t battery[] = {
-    	{ "MBTE1", t_value, "battery.temperature" },
-	{ "MBIN1", t_ignore, NULL },
-	{ "BDAT1", t_value, "battery.date" },
+	{ "MBTE1", t_value, "battery.1.temperature" },
+	{ "MBIN1", t_ignore, NULL /* aging index */ },
+	{ "BDAT1", t_string, "battery.1.date" },
+	{ "MBTE2", t_value, "battery.2.temperature.2" },
+	{ "MBIN2", t_ignore, NULL },
+	{ "BDAT2", t_string, "battery.2.date" },
+	{ "MBTE3", t_value, "battery.3.temperature" },
+	{ "MBIN3", t_ignore, NULL },
+	{ "BDAT3", t_string, "battery.3.date" },
+	{ "MBTE4", t_value, "battery.4.temperature" },
+	{ "MBIN4", t_ignore, NULL },
+	{ "BDAT4", t_string, "battery.4.date" },
+	{ "MBTE5", t_value, "battery.5.temperature" },
+	{ "MBIN5", t_ignore, NULL },
+	{ "BDAT5", t_string, "battery.5.date" },
+	{ "MBTE6", t_value, "battery.6.temperature" },
+	{ "MBIN6", t_ignore, NULL },
+	{ "BDAT6", t_string, "battery.6.date" },
+	{ "MBTE7", t_value, "battery.7.temperature" },
+	{ "MBIN7", t_ignore, NULL },
+	{ "BDAT7", t_string, "battery.7.date" },
+	{ "MBTE8", t_value, "battery.8.temperature" },
+	{ "MBIN8", t_ignore, NULL },
+	{ "BDAT8", t_finstr, "battery.8.date" },
 	{ NULL }
 };
 
@@ -354,7 +418,7 @@ static cmd_t commands[] = {
 static cmd_t variables[] = {
 	{ "ups.delay.reboot",		"UPCD", "ACCD" },
 	{ "ups.delay.shutdown",		"UPSD", "ACSD" },
-    	{ NULL }
+	{ NULL }
 };
 
 
@@ -363,10 +427,10 @@ static int setvar (const char *var, const char *data);
 static void upsc_setstatus(unsigned int status);
 static void upsc_flush_input(void);
 static void upsc_getbaseinfo(void);
-static void upsc_commandlist(void);
+static int upsc_commandlist(void);
 static int upsc_getparams(const char *cmd, const simple_t *table);
 static int upsc_getvalue(const char *cmd, const char *param,
-	const char *resp, const char *var);
+	const char *resp, const char *var, char *ret);
 static void upscsend(const char *);
 static char *upscrecv(char *);
 static int upsc_simple(const simple_t *sp, const char *var, const char *val);
@@ -378,8 +442,9 @@ void upsdrv_banner(void)
 {
 	printf("Network UPS Tools - UPScode II UPS driver %s (%s)\n", 
 		DRV_VERSION, UPS_VERSION);
-	printf("Copyright (C) 2001-2002 Hï¿½ard Lygre, <hklygre@online.no>\n");
-	printf("Copyright (C) 2004 Niels Baggesen <niels@baggesen.net>\n\n");
+	printf("Copyright (C) 2001-2002 H K Lygre, <hklygre@online.no>\n");
+	printf("Copyright (C) 2004-2006 Niels Baggesen <niels@baggesen.net>\n");
+	printf("Copyright (C) 2006 Niklas Edmundsson <nikke@acc.umu.se>\n\n");
 
 	experimental_driver = 1;
 }
@@ -392,16 +457,16 @@ void upsdrv_help(void)
 
 void upsdrv_initups(void)
 {
-    	struct termios tio;
+	struct termios tio;
 	int baud = B1200;
 	char *str;
 
 	upsdebugx(1, "upscode2 version %s", DRV_VERSION);
 	if ((str = getval("baudrate")) != NULL) {
-	    	int temp = atoi(str);
+		int temp = atoi(str);
 		switch (temp) {
 		case   300:
-		    	baud =   B300; break;
+			baud =   B300; break;
 		case   600:
 			baud =   B600; break;
 		case  1200:
@@ -417,7 +482,7 @@ void upsdrv_initups(void)
 		case 38400:
 			baud = B38400; break;
 		default:
-		    	fatalx("Unrecognized baudrate: %s", str);
+			fatalx("Unrecognized baudrate: %s", str);
 		}
 		upsdebugx(1, "baud_rate = %d", temp);
 	}
@@ -425,32 +490,32 @@ void upsdrv_initups(void)
 	ser_set_speed(upsfd, device_path, baud);
 
 	if (tcgetattr(upsfd, &tio) != 0)
-	    	fatal_with_errno("tcgetattr(%s)", device_path);
+		fatal_with_errno("tcgetattr(%s)", device_path);
 	tio.c_lflag = ICANON;
 	tio.c_cc[VMIN] = 0;
 	tio.c_cc[VTIME] = 0;
 	tcsetattr(upsfd, TCSANOW, &tio);
 
 	if ((str = getval("input_timeout")) != NULL) {
-	    	int temp = atoi(str);
+		int temp = atoi(str);
 		if (temp <= 0)
-		    	fatalx("Bad input_timeout parameter: %s", str);
+			fatalx("Bad input_timeout parameter: %s", str);
 		input_timeout_sec = temp;
 	}
 	upsdebugx(1, "input_timeout = %d Sec", input_timeout_sec);
 
 	if ((str = getval("output_pace")) != NULL) {
-	    	int temp = atoi(str);
+		int temp = atoi(str);
 		if (temp <= 0)
-		    	fatalx("Bad output_pace parameter: %s", str);
+			fatalx("Bad output_pace parameter: %s", str);
 		output_pace_usec = temp;
 	}
 	upsdebugx(1, "output_pace = %d uSec", output_pace_usec);
 
 	if ((str = getval("full_update_timer")) != NULL) {
-	    	int temp = atoi(str);
+		int temp = atoi(str);
 		if (temp <= 0)
-		    	fatalx("Bad full_update_timer parameter: %s", str);
+			fatalx("Bad full_update_timer parameter: %s", str);
 		full_update_timer = temp;
 	}
 	upsdebugx(1, "full_update_timer = %d Sec", full_update_timer);
@@ -466,14 +531,22 @@ void upsdrv_initinfo(void)
 {
 	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
 
+	if (!upsc_commandlist()) {
+		upslogx(LOG_ERR, "No contact with UPS, delaying init.");
+		status = UPSC_STAT_NOTINIT;
+		return;
+	}
+	else {
+		status = 0;
+	}
+
 	upsc_getbaseinfo();
-	upsc_commandlist();
 	if (can_upda) {
-	    	upsc_flush_input();
+		upsc_flush_input();
 		upscsend("UPDA");
 	}
 	if (can_upid)
-		upsc_getvalue("UPID", NULL, "ACID", "ups.id");
+		upsc_getvalue("UPID", NULL, "ACID", "ups.id", NULL);
 	if (can_uppm)
 		check_uppm();
 
@@ -482,11 +555,160 @@ void upsdrv_initinfo(void)
 }
 
 
+/* Change a variable name in a table */
+static void change_name(simple_t *sp, 
+		const char *oldname, const char *newname)
+{
+	while(sp->code) {
+		if (sp->desc && !strcmp(sp->desc, oldname)) {
+			sp->desc = strdup(newname);
+			if (dstate_getinfo(oldname)) {
+				dstate_setinfo(newname, "%s",
+						dstate_getinfo(oldname));
+			}
+			dstate_delinfo(oldname);
+			upsdebugx(1, "Changing name: %s => %s", oldname, newname);
+			break;
+		}
+		sp++;
+	}
+}
+
+static float calc_upsload(void) {
+
+	float 	load=-1, nom_out_power=-1, nom_out_realpower=-1, maxcurr, tmp;
+	const char	*s;
+
+	/* Some UPSen (Fiskars 9000 for example) only reports current, and
+	 * only the max current */
+	if (nom_out_current > 0) {
+		maxcurr = nom_out_current;
+	}
+	else {
+		maxcurr = max_out_current;
+	}
+
+	if (maxcurr > 0) {
+		if ((s=dstate_getinfo("output.L1.current")) ||
+				(s=dstate_getinfo("output.current"))) {
+			if (sscanf(s, "%f", &tmp) == 1) {
+				load = tmp/maxcurr;
+			}
+		}
+		if ((s=dstate_getinfo("output.L2.current"))) {
+			if (sscanf(s, "%f", &tmp) == 1) {
+				tmp=tmp/maxcurr;
+				if (tmp>load) {
+					load = tmp;
+				}
+			}
+		}
+		if ((s=dstate_getinfo("output.L3.current"))) {
+			if (sscanf(s, "%f", &tmp) == 1) {
+				tmp=tmp/maxcurr;
+				if (tmp>load) {
+					load = tmp;
+				}
+			}
+		}
+	}
+
+	/* This is aggregated (all phases) */
+	if ((s=dstate_getinfo("ups.power.nominal"))) {
+		if (sscanf(s, "%f", &nom_out_power) != 1) {
+			nom_out_power = -1;
+		}
+	}
+
+	if (nom_out_power > 0) {
+		if ((s=dstate_getinfo("output.L1.power"))) {
+			if (sscanf(s, "%f", &tmp) == 1) {
+				tmp /= (nom_out_power/num_outphases);
+				if (tmp>load) {
+					load = tmp;
+				}
+				dstate_setinfo("output.L1.power.percent",
+						"%.1f", tmp*100);
+			}
+		}
+		if ((s=dstate_getinfo("output.L2.power"))) {
+			if (sscanf(s, "%f", &tmp) == 1) {
+				tmp /= (nom_out_power/num_outphases);
+				if (tmp>load) {
+					load = tmp;
+				}
+				dstate_setinfo("output.L2.power.percent",
+						"%.1f", tmp*100);
+			}
+		}
+		if ((s=dstate_getinfo("output.L3.power"))) {
+			if (sscanf(s, "%f", &tmp) == 1) {
+				tmp /= (nom_out_power/num_outphases);
+				if (tmp>load) {
+					load = tmp;
+				}
+				dstate_setinfo("output.L3.power.percent",
+						"%.1f", tmp*100);
+			}
+		}
+	}
+
+	/* This is aggregated (all phases) */
+	if ((s=dstate_getinfo("output.realpower.nominal"))) {
+		if (sscanf(s, "%f", &nom_out_realpower) != 1) {
+			nom_out_realpower = -1;
+		}
+	}
+	if (nom_out_realpower >= 0) {
+		if ((s=dstate_getinfo("output.L1.realpower"))) {
+			if (sscanf(s, "%f", &tmp) == 1) {
+				tmp /= (nom_out_realpower/num_outphases);
+				if (tmp>load) {
+					load = tmp;
+				}
+				dstate_setinfo("output.L1.realpower.percent",
+						"%.1f", tmp*100);
+			}
+		}
+		if ((s=dstate_getinfo("output.L2.realpower"))) {
+			if (sscanf(s, "%f", &tmp) == 1) {
+				tmp /= (nom_out_realpower/num_outphases);
+				if (tmp>load) {
+					load = tmp;
+				}
+				dstate_setinfo("output.L2.realpower.percent",
+						"%.1f", tmp*100);
+			}
+		}
+		if ((s=dstate_getinfo("output.L3.realpower"))) {
+			if (sscanf(s, "%f", &tmp) == 1) {
+				tmp /= (nom_out_realpower/num_outphases);
+				if (tmp>load) {
+					load = tmp;
+				}
+				dstate_setinfo("output.L3.realpower.percent",
+						"%.1f", tmp*100);
+			}
+		}
+	}
+
+	return load;
+}
+
+
 void upsdrv_updateinfo(void)
 {
 	time_t now;
-	float batt_charge;
 	int ok;
+	float load;
+
+	if (status & UPSC_STAT_NOTINIT) {
+		upsdrv_initinfo();
+	}
+
+	if (status & UPSC_STAT_NOTINIT) {
+		return;
+	}
 
 	alarm_init();
 	status = 0;
@@ -507,9 +729,131 @@ void upsdrv_updateinfo(void)
 		return;
 	}
 
-	batt_charge = batt_charge_pct();
-	if (batt_charge >= 0)
-	    	dstate_setinfo("battery.charge", "%6.2f", batt_charge);
+	if (!inited_phaseinfo) {
+		if (dstate_getinfo("input.L3-L1.voltage") ||
+				dstate_getinfo("input.L3-N.voltage")) {
+			num_inphases = 3;
+
+			change_name(simple,
+				"input.current", "input.L1.current");
+			change_name(simple,
+				"input.realpower", "input.L1.realpower");
+			change_name(simple,
+				"input.power", "input.L1.power");
+			change_name(simple,
+				"input.voltage", "input.L1-N.voltage");
+		}
+		if (dstate_getinfo("output.L3-L1.voltage") ||
+				dstate_getinfo("output.L3-N.voltage")) {
+			const char *s;
+
+			num_outphases = 3;
+
+			if ((s=dstate_getinfo("ups.model")) &&
+					(!strncmp(s, "UPS9075", 7) ||
+					!strncmp(s, "UPS9100", 7) ||
+					!strncmp(s, "UPS9150", 7) ||
+					!strncmp(s, "UPS9200", 7) ||
+					!strncmp(s, "UPS9250", 7) ||
+					!strncmp(s, "UPS9300", 7) ||
+					!strncmp(s, "UPS9400", 7) ||
+					!strncmp(s, "UPS9500", 7) ||
+					!strncmp(s, "UPS9600", 7)) ) {
+				/* Insert kludges for Fiskars UPS9000 here */
+				upslogx(LOG_INFO, "Fiskars UPS9000 detected, protocol kludges activated");
+				batt_volt_nom = 384;
+				dstate_setinfo("battery.voltage.nominal", "%.0f", batt_volt_nom);
+
+			}
+			else {
+				outpwr_factor *= 3;
+			}
+
+			change_name(simple,
+				"output.current", "output.L1.current");
+			change_name(simple,
+				"output.peakcurrent", "output.L1.peakcurrent");
+			change_name(simple,
+				"output.realpower", "output.L1.realpower");
+			change_name(simple,
+				"output.power", "output.L1.power");
+			change_name(simple,
+				"output.voltage", "output.L1-N.voltage");
+		}
+
+		dstate_setinfo("input.phases", "%d", num_inphases);
+		dstate_setinfo("output.phases", "%d", num_outphases);
+
+		inited_phaseinfo=1;
+	}
+
+	load = calc_upsload();
+
+	if (load >= 0) {
+		upsdebugx(2, "ups.load: %.1f", load*100);
+		dstate_setinfo("ups.load", "%.1f", load*100);
+	}
+	else {
+		upsdebugx(2, "ups.load: No value");
+	}
+
+	/* TODO/FIXME: Set UPS date/time on startup and daily if needed */
+	if (can_updt) {
+		char dtbuf[UPSC_BUFLEN];
+		if (upsc_getvalue("UPDT", "0", "ACDT", NULL, dtbuf)) {
+			dstate_setinfo("ups.date", "%s", dtbuf);
+		}
+	}
+	if (can_uptm) {
+		char tmbuf[UPSC_BUFLEN];
+		if (upsc_getvalue("UPTM", "0", "ACTM", NULL, tmbuf)) {
+			dstate_setinfo("ups.time", "%s", tmbuf);
+		}
+	}
+
+
+	if (batt_charge < 0) {
+		if (batt_current < 0) {
+			/* Reset battery current history if discharging */
+			numbatthist = lastbatthist = 0;
+		}
+		batt_charge = batt_charge_pct();
+	}
+	if (batt_charge >= 0) {
+		dstate_setinfo("battery.charge", "%.1f", batt_charge);
+	}
+	else {
+		dstate_delinfo("battery.charge");
+	}
+
+	/* 9999 == unknown value */
+	if (batt_runtime >= 0 && batt_runtime < 9999) {
+		dstate_setinfo("battery.runtime", "%.0f", batt_runtime*60);
+	}
+	else if (load > 0 && batt_disch_curr_max != 0) {
+		float est_battcurr = load * abs(batt_disch_curr_max);
+		/* Peukert equation */
+		float runtime = (batt_cap_nom*3600)/pow(est_battcurr, 1.35);
+
+		upsdebugx(2, "Calculated runtime: %.0f seconds", runtime);
+		if (batt_runtime_max > 0 && runtime > batt_runtime_max*60) {
+			runtime = batt_runtime_max*60;
+		}
+		dstate_setinfo("battery.runtime", "%.0f", runtime);
+
+	}
+	else if (batt_runtime_max > 0) {
+		/* Show max possible runtime as reported by UPS */
+		dstate_setinfo("battery.runtime", "%.0f", batt_runtime_max*60);
+	}
+	else {
+		dstate_delinfo("battery.runtime");
+	}
+	/* Some UPSen only provides this when on battery, so reset between
+	 * each iteration to make sure we use the right value */
+	batt_charge = -1;
+	batt_runtime = -1;
+
 
 	if (!(status & UPSC_STAT_ONBATT))
 		status |= UPSC_STAT_ONLINE;
@@ -524,13 +868,18 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	upslogx(LOG_EMERG, "Emergency shutdown");
-	upscsend("UPSD");	/* Set shutdown delay */
-	upscsend("1");		/* 1 second (lowest possible. 0 returns current.*/
+	if (can_upsd && can_uppc) {
+		upslogx(LOG_EMERG, "Emergency shutdown");
+		upscsend("UPSD");	/* Set shutdown delay */
+		upscsend("1");		/* 1 second (lowest possible. 0 returns current.*/
 
-	upslogx(LOG_EMERG, "Shutting down...");
-	upscsend("UPPC");	/* Powercycle UPS */
-	upscsend("IJHLDMGCIU"); /* security code */
+		upslogx(LOG_EMERG, "Shutting down...");
+		upscsend("UPPC");	/* Powercycle UPS */
+		upscsend("IJHLDMGCIU"); /* security code */
+	}
+	else {
+		upslogx(LOG_EMERG, "Shutdown called, but UPS does not support it");
+	}
 }
 
 
@@ -545,7 +894,7 @@ static int instcmd (const char *auxcmd, const char *data)
 			if (cp->upsp)
 				upscsend(cp->upsp);
 			else if (data)
-			    	upscsend(data);
+				upscsend(data);
 			return STAT_INSTCMD_HANDLED;
 		}
 		cp++;
@@ -562,7 +911,7 @@ static int setvar (const char *var, const char *data)
 	upsdebugx(1, "Setvar: %s %s", var, data);
 	while (cp->cmd) {
 		if (strcmp(cp->cmd, var) == 0) {
-		    	upsc_getvalue(cp->upsc, data, cp->upsp, cp->cmd);
+			upsc_getvalue(cp->upsc, data, cp->upsp, cp->cmd, NULL);
 			return STAT_SET_HANDLED;
 		}
 		cp++;
@@ -592,37 +941,37 @@ void upsdrv_cleanup(void)
 
    
 /*
-  Generate status string from bitfield
-*/
+ * Generate status string from bitfield
+ */
 static void upsc_setstatus(unsigned int status)
 {
 
-   /*
-	* I'll look for all available statuses, even though they might not be
-	*  supported in the UPScode II protocol.
-	*/
+	/*
+	 * I'll look for all available statuses, even though they might not be
+	 *  supported in the UPScode II protocol.
+	 */
 
 	status_init();
 
-	if(status & UPSC_STAT_ONLINE)
+	if (status & UPSC_STAT_ONLINE)
 		status_set("OL");
-	if(status & UPSC_STAT_ONBATT)
+	if (status & UPSC_STAT_ONBATT)
 		status_set("OB");
-	if(status & UPSC_STAT_LOBATT)
+	if (status & UPSC_STAT_LOBATT)
 		status_set("LB");
-	if(status & UPSC_STAT_REPLACEBATT)
+	if (status & UPSC_STAT_REPLACEBATT)
 		status_set("RB");
-	if(status & UPSC_STAT_BOOST)
+	if (status & UPSC_STAT_BOOST)
 		status_set("BOOST");
-	if(status & UPSC_STAT_TRIM)
+	if (status & UPSC_STAT_TRIM)
 		status_set("TRIM");
-	if(status & UPSC_STAT_OVERLOAD)
+	if (status & UPSC_STAT_OVERLOAD)
 		status_set("OVER");
-	if(status & UPSC_STAT_CALIBRATION)
+	if (status & UPSC_STAT_CALIBRATION)
 		status_set("CAL");
-	if(status & UPSC_STAT_OFF)
+	if (status & UPSC_STAT_OFF)
 		status_set("OFF");
-	if(status & UPSC_STAT_BYPASS)
+	if (status & UPSC_STAT_BYPASS)
 		status_set("BYPASS");
  
 	status_commit();
@@ -644,17 +993,17 @@ static void upscsend(const char *cmd)
 /* Return a string read from UPS */
 static char *upscrecv(char *buf)
 {
-    	int res = 0;
+	int res = 0;
 
 	while (res == 0) {
 		res = ser_get_line(upsfd, buf, UPSC_BUFLEN, ENDCHAR, IGNCHARS,
-			       input_timeout_sec, 0);
-	    	if (strlen(buf) == 0)
-		    	upsdebugx(3, "upscrecv: Empty line");
+				   input_timeout_sec, 0);
+		if (strlen(buf) == 0)
+			upsdebugx(3, "upscrecv: Empty line");
 	}
 
 	if (res == -1)
-	    	upsdebugx(3, "upscrecv: Timeout");
+		upsdebugx(3, "upscrecv: Timeout");
 	else
 		upsdebugx(3, "upscrecv: %u bytes:\t'%s'",
 			(unsigned int)strlen(buf), buf);
@@ -664,7 +1013,7 @@ static char *upscrecv(char *buf)
 
 static void upsc_flush_input(void)
 {
-    	char buf[UPSC_BUFLEN];
+	char buf[UPSC_BUFLEN];
 
 	do {
 		upscrecv(buf);
@@ -674,19 +1023,20 @@ static void upsc_flush_input(void)
 }
 
 
-/* check which commands this ups supports */
-static void upsc_commandlist(void)
+/* check which commands this ups supports.
+ * Returns TRUE if command list was recieved, FALSE otherwise */
+static int upsc_commandlist(void)
 {
-    	char buf[UPSC_BUFLEN];
+	char buf[UPSC_BUFLEN];
 	cmd_t *cp;
 
 	upsc_flush_input();
 	upscsend("UPCL");
 	while (1) {
-	    	upscrecv(buf);
+		upscrecv(buf);
 		if (strlen(buf) == 0) {
-		    	upslogx(LOG_ERR, "Missing UPCL after UPCL");
-		    	break;
+			upslogx(LOG_ERR, "Missing UPCL after UPCL");
+			return 0;
 		}
 		upsdebugx(2, "Supports command: %s", buf);
 
@@ -698,11 +1048,19 @@ static void upsc_commandlist(void)
 			can_upid = 1;
 		else if (strcmp(buf, "UPDA") == 0)
 			can_upda = 1;
+		else if (strcmp(buf, "UPDT") == 0)
+			can_updt = 1;
+		else if (strcmp(buf, "UPTM") == 0)
+			can_uptm = 1;
+		else if (strcmp(buf, "UPSD") == 0)
+			can_upsd = 1;
+		else if (strcmp(buf, "UPPC") == 0)
+			can_uppc = 1;
 		cp = commands;
 		while (cp->cmd) {
-		    	if (cp->upsc && strcmp(cp->upsc, buf) == 0) {
-			    	upsdebugx(1, "instcmd: %s %s", cp->cmd, cp->upsc);
-			    	dstate_addcmd(cp->cmd);
+			if (cp->upsc && strcmp(cp->upsc, buf) == 0) {
+				upsdebugx(1, "instcmd: %s %s", cp->cmd, cp->upsc);
+				dstate_addcmd(cp->cmd);
 				cp->enabled = 1;
 				break;
 			}
@@ -710,8 +1068,8 @@ static void upsc_commandlist(void)
 		}
 		cp = variables;
 		while (cp->cmd) {
-		    	if (cp->upsc && strcmp(cp->upsc, buf) == 0) {
-			    	upsdebugx(1, "setvar: %s %s", cp->cmd, cp->upsc);
+			if (cp->upsc && strcmp(cp->upsc, buf) == 0) {
+				upsdebugx(1, "setvar: %s %s", cp->cmd, cp->upsc);
 				cp->enabled = 1;
 				break;
 			}
@@ -719,26 +1077,28 @@ static void upsc_commandlist(void)
 		}
 
 		if (strcmp(buf, "UPCL") == 0)
-		    	break;
+			break;
 	}
 
 	cp = variables;
 	while (cp->cmd) {
 		if (cp->enabled) {
-		    	upsc_getvalue(cp->upsc, "0", cp->upsp, cp->cmd);
+			upsc_getvalue(cp->upsc, "0", cp->upsp, cp->cmd, NULL);
 			dstate_setflags(cp->cmd, ST_FLAG_RW | ST_FLAG_STRING);
 			dstate_setaux(cp->cmd, 7);
 		}
 		cp++;
 	}
+
+	return 1;
 }
 
 
 /* get limits and parameters */
 static int upsc_getparams(const char *cmd, const simple_t *table)
 {
-    	char var[UPSC_BUFLEN];
-    	char val[UPSC_BUFLEN];
+	char var[UPSC_BUFLEN];
+	char val[UPSC_BUFLEN];
 	int first = 1;
 
 	upsc_flush_input();
@@ -746,10 +1106,10 @@ static int upsc_getparams(const char *cmd, const simple_t *table)
 	upscsend(cmd);
 	buffer_empty = 0;
 	while (!buffer_empty) {
-	    	upscrecv(var);
+		upscrecv(var);
 		if (strlen(var) == 0) {
-		    	if (first)
-			    	upscrecv(var);
+			if (first)
+				upscrecv(var);
 			if (strlen(var) == 0) {
 				ser_comm_fail("Empty string from UPS for %s!",
 					cmd);
@@ -757,14 +1117,14 @@ static int upsc_getparams(const char *cmd, const simple_t *table)
 			}
 		}
 		first = 0;
-	    	upscrecv(val);
+		upscrecv(val);
 		if (strlen(val) == 0) {
 			ser_comm_fail("Empty value from UPS for %s %s!", cmd, var);
-		    	break;
+			break;
 		}
 		upsdebugx(2, "Parameter %s %s", var, val);
 		if (!upsc_simple(table, var, val))
-		    	upslogx(LOG_ERR, "Unknown response to %s: %s %s",
+			upslogx(LOG_ERR, "Unknown response to %s: %s %s",
 				cmd, var, val);
 	}
 	return buffer_empty;
@@ -791,7 +1151,7 @@ static void check_uppm(void)
 		upsdebugx(2, "UPPM available: %s", var);
 		stat = sscanf(var, "P%2d", &val);
 		if (stat != 1) {
-		    	upslogx(LOG_ERR, "Bad response to UPPM: %s", var);
+			upslogx(LOG_ERR, "Bad response to UPPM: %s", var);
 			return;
 		}
 		has_uppm_p[val] = 1;
@@ -807,7 +1167,7 @@ static void check_uppm(void)
 		upscsend(var);
 		upscrecv(val);
 		if (strcmp(val, "ACPM")) {
-		    	upslogx(LOG_ERR, "Bad response to UPPM %s: %s", var, val);
+			upslogx(LOG_ERR, "Bad response to UPPM %s: %s", var, val);
 			continue;
 		}
 		upscrecv(var);
@@ -817,15 +1177,15 @@ static void check_uppm(void)
 
 
 static int upsc_getvalue(const char *cmd, const char *param,
-			const char *resp, const char *nutvar)
+			const char *resp, const char *nutvar, char *ret)
 {
-    	char var[UPSC_BUFLEN];
-    	char val[UPSC_BUFLEN];
+	char var[UPSC_BUFLEN];
+	char val[UPSC_BUFLEN];
 
 	upsdebugx(2, "Request value: %s %s", cmd, param ? param : "\"\"");
 	upscsend(cmd);
 	if (param)
-	    	upscsend(param);
+		upscsend(param);
 	upscrecv(var);
 	upscrecv(val);
 	upsdebugx(2, "Got value: %s %s", var, val);
@@ -835,7 +1195,10 @@ static int upsc_getvalue(const char *cmd, const char *param,
 		return 0;
 	}
 	else {
-		dstate_setinfo(nutvar, "%s", val);
+		if (nutvar)
+			dstate_setinfo(nutvar, "%s", val);
+		if (ret)
+			strcpy(ret, val);
 	}
 	return 1;
 }
@@ -848,15 +1211,14 @@ static void upsc_getbaseinfo(void)
 	dstate_setinfo("ups.mfr", "%s",
 		((buf = getval("manufacturer")) != NULL) ? buf : "unknown");
 
-	if (!upsc_getvalue("UPTP", NULL, "NNAME", "ups.model"))
-		upsc_getvalue("UPTP", NULL, "NNAME", "ups.model");
-	upsc_getvalue("UPSN", "0", "ACSN", "ups.serial");
+	if (!upsc_getvalue("UPTP", NULL, "NNAME", "ups.model", NULL))
+		upsc_getvalue("UPTP", NULL, "NNAME", "ups.model", NULL);
+	upsc_getvalue("UPSN", "0", "ACSN", "ups.serial", NULL);
 }
 
 
 static int upsc_simple(const simple_t *sp, const char *var, const char *val)
 {
-	char buf[UPSC_BUFLEN];
 	int stat;
 	float fval;
 
@@ -868,7 +1230,7 @@ static int upsc_simple(const simple_t *sp, const char *var, const char *val)
 				if (stat != 1)
 					upslogx(LOG_ERR, "Bad float: %s %s", var, val);
 				if (sp->desc)
-					dstate_setinfo(sp->desc, val);
+					dstate_setinfo(sp->desc, "%.2f", fval);
 				*sp->aux = fval;
 				break;
 			case t_setrecip:
@@ -898,18 +1260,27 @@ static int upsc_simple(const simple_t *sp, const char *var, const char *val)
 			case t_final:
 				buffer_empty = 1;
 			case t_value:
-				if (sp->aux != NULL) {
-					stat = sscanf(val, "%f", &fval);
-					if (stat != 1)
-						upslog_with_errno(LOG_ERR, "Bad float in %s: %s", var, val);
-					else {
-						snprintf(buf, UPSC_BUFLEN, "%5.3f", fval**(sp->aux));
-						if (sp->desc)
-							dstate_setinfo(sp->desc, buf);
-					}
+				if (!sp->desc) {
+					break;
 				}
-				else if (sp->desc)
+				if (sscanf(val, "%f", &fval) == 1) {
+					if (sp->aux != NULL) {
+						fval *= *(sp->aux);
+					}
+					dstate_setinfo(sp->desc, "%.2f", fval);
+				}
+				else {
+					upslogx(LOG_ERR, "Bad float in %s: %s", var, val);
 					dstate_setinfo(sp->desc, val);
+				}
+				break;
+			case t_finstr:
+				buffer_empty = 1;
+			case t_string:
+				if (!sp->desc) {
+					break;
+				}
+				dstate_setinfo(sp->desc, "%s", val);
 				break;
 			case t_status:
 				if (strcmp(val, "00") == 0)
@@ -928,6 +1299,7 @@ static int upsc_simple(const simple_t *sp, const char *var, const char *val)
 					upslogx(LOG_ERR, "Unknown alarm value: '%s' '%s'", var, val);
 				break;
 			case t_ignore:
+				upsdebugx(3, "Ignored value: %s %s", var, val);
 				break;
 			case t_list:
 				if (!upsc_simple(sp->stats, val, "11"))
@@ -948,20 +1320,61 @@ static int upsc_simple(const simple_t *sp, const char *var, const char *val)
 
 static float batt_charge_pct(void)
 {
-    	float dqdv;
+	float chg=-1;
 
-    	upsdebugx(2, "battery.charge: %f %f %f",
-		batt_volt_low, batt_volt, batt_volt_high);
+	/* This is only a rough estimate of charge status while charging.
+	 * When on battery something like Peukert's equation should be used */
+	if (batt_current >= 0) {
+		float maxcurr = 10;	/* Assume 10A max as default */
+		float avgcurr = 0;
+		int i;
 
-    	if (batt_volt_low == 0 || batt_volt_high == 0 || batt_volt == 0)
-	    	return -1;
+		batthist[lastbatthist] = batt_current;
+		lastbatthist = (lastbatthist+1) % NUM_BATTHIST;
+		if (numbatthist < NUM_BATTHIST) {
+			numbatthist++;
+		}
+		for(i=0; i<numbatthist; i++) {
+			avgcurr += batthist[i];
+		}
+		avgcurr /= numbatthist;
 
-	if (batt_volt > batt_volt_high)
-	    	return 100;
-	if (batt_volt < batt_volt_low)
-	    	return 0;
-	dqdv = (batt_volt - batt_volt_low) / (batt_volt_high - batt_volt_low);
+		if (batt_cap_nom > 0) {
+			/* Estimate max charge current based on battery size */
+			maxcurr = batt_cap_nom * 0.3;
+		}
+		chg = maxcurr - avgcurr;
+		chg *= (100/maxcurr);
+	}
+	/* Old method, assumes battery high/low-voltages provided by UPS are
+	 * applicable to battery charge, but they usually aren't */
+	else if (batt_volt_low > 0 && batt_volt_high > 0 && batt_volt > 0) {
+		if (batt_volt > batt_volt_high) {
+			chg=100;
+		}
+		else if (batt_volt < batt_volt_low) {
+			chg=0;
+		}
+		else {
+			chg = (batt_volt - batt_volt_low) / 
+				(batt_volt_high - batt_volt_low);
+			chg*=100;
+		}
+	}
+	else {
+		return -1;
+	}
 
-	upsdebugx(2, "dqdv: %.2f %.2f", dqdv, sqrt(dqdv));
-	return sqrt(dqdv)*100;
+	if (chg < 0) {
+		chg = 0;
+	}
+	else if (chg > 100) {
+		chg = 100;
+	}
+
+	return chg;
 }
+
+/*
+vim:noet:ts=8:sw=8:cindent
+*/

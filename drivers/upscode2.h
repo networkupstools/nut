@@ -2,7 +2,7 @@
 		command set.  This includes PowerWare, Fiskars, 
 		Compaq (PowerWare OEM?), some IBM (PowerWare OEM?)
 
-   Copyright (C) 2002 H�ard Lygre <hklygre@online.no>
+   Copyright (C) 2002 Håd Lygre <hklygre@online.no>
    Copyright (C) 2004 Niels Baggesen <niels@baggesen.net>
 
    This program is free software; you can redistribute it and/or modify
@@ -21,4 +21,4 @@
 
 */
 
-#define DRV_VERSION	"0.84"
+#define DRV_VERSION	"0.85"
