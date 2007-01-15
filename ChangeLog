@@ -1,4 +1,11 @@
+2.0.5
+
+Mon Jan 15 15:01:12 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - include/version*: Final version number bump for release.
+
 Sat Jan 13 13:50:15 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
  - data/driver.list: added "Trust PW-4120M" as supported by megatec
 
 Fri Jan  5 19:15:13 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
