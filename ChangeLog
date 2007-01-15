@@ -1,3 +1,9 @@
+Mon Jan 15 20:32:46 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * clients/upsclient.c: disable previous patch for upsclient (something is
+   broken somehow, but I don't have the time now to check it out)
+
+
 Mon Jan 15 20:20:36 UTC 2007 / Niels Baggesen <nba@users.sourceforge.net>
  * drivers/upscode2.[ch]:
    - major rework to support the new 3-phase variable set
