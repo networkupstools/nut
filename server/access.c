@@ -32,53 +32,50 @@ struct access_t	*access_head = NULL;
 static int mask_cmp(const struct sockaddr_in *ip_addr,
 		const struct sockaddr_in *net_addr, unsigned int prefix)
 {
-	return ((net_addr->sin_addr.s_addr & htonl(prefix)) ==
-		(ip_addr->sin_addr.s_addr & htonl(prefix)));
-}
 #else
-/*
- *  Stolen from privoxy code :]
- */
 static int mask_cmp (const struct sockaddr_storage *ip_addr,
 		const struct sockaddr_storage *net_addr, unsigned int prefix)
 {
-	switch (ip_addr->ss_family)
+	if (ip_addr->ss_family == AF_INET)
 	{
-	case AF_INET:
-		return((((struct sockaddr_in *)ip_addr)->sin_addr.s_addr & htonl(prefix)) ==
-			((struct sockaddr_in *)net_addr)->sin_addr.s_addr);
-		break;
-	case AF_INET6:
-		if (AF_INET6 == net_addr->ss_family)
-		{
-			struct in6_addr ip, net;
-			register unsigned char i;
-			
-			memcpy (&ip, &((struct sockaddr_in6 *)ip_addr)->sin6_addr, sizeof (struct in6_addr));
-			memcpy (&net, &((struct sockaddr_in6 *)net_addr)->sin6_addr, sizeof (struct in6_addr));
-			
-			i = prefix/8;
-			if (prefix%8)
-				ip.s6_addr[i++] &= 0xff<<(8-(prefix%8));
-			for (; i < sizeof ip.s6_addr; i++)
-				ip.s6_addr[i] = 0;
-			
-			return (memcmp (ip.s6_addr, net.s6_addr, sizeof ip.s6_addr)==0);
-		}
-		else if (AF_INET == net_addr->ss_family)
-		{ /* IPv4 mapped IPv6 */
-			struct in6_addr *ip6 = &((struct sockaddr_in6 *)ip_addr)->sin6_addr;
-			struct in_addr *net = &((struct sockaddr_in *)net_addr)->sin_addr;
-			
-			return (IN6_IS_ADDR_V4MAPPED(ip6) &&
-				((((const u_int32_t *)ip6)[3] & htonl(prefix)) == net->s_addr));
-		}
-	default:
-		fatal_with_errno("mask_cmp: Unknown address family");
-		return(0);
-	}
-}
 #endif
+		struct in_addr	*ip  = &((struct sockaddr_in *)ip_addr)->sin_addr;
+		struct in_addr	*net = &((struct sockaddr_in *)net_addr)->sin_addr;
+
+		return ((ip->s_addr & prefix) == net->s_addr);
+#ifdef	HAVE_IPV6
+	}
+
+	if ((ip_addr->ss_family == AF_INET6) && (net_addr->ss_family == AF_INET6))
+	{
+		struct in6_addr	ip6;
+		struct in6_addr	*net = &((struct sockaddr_in6 *)net_addr)->sin6_addr;
+		unsigned char		i = (prefix >> 3);
+		
+		memcpy (&ip6, &((struct sockaddr_in6 *)ip_addr)->sin6_addr, sizeof (struct in6_addr));
+			
+		if (prefix % 8)
+			ip6.s6_addr[i++] &= 0xff << (8 - (prefix % 8));
+
+		while (i < sizeof(ip6.s6_addr))
+			ip6.s6_addr[i++] = 0;
+
+	
+		return (memcmp(ip6.s6_addr, net->s6_addr, sizeof(ip6.s6_addr)) == 0);
+	}
+
+	if ((ip_addr->ss_family == AF_INET6) && (net_addr->ss_family == AF_INET))
+	{
+		struct in6_addr	*ip6 = &((struct sockaddr_in6 *)ip_addr)->sin6_addr;
+		struct in_addr		*net = &((struct sockaddr_in *)net_addr)->sin_addr;
+			
+		return (IN6_IS_ADDR_V4MAPPED(ip6) &&
+			((((const u_int32_t *)ip6)[3] & prefix) == net->s_addr));
+	}
+
+	fatal_with_errno("mask_cmp: Unknown address family");
+#endif
+}
 
 /* see if <addr> matches the acl <aclname> */
 #ifndef	HAVE_IPV6
@@ -132,26 +129,23 @@ int access_check(const struct sockaddr_storage *addr)
 void acl_add(const char *aclname, char *ipblock)
 {
 	struct acl_t	*tmp, *last;
-	char	*addr, *mask;
+	char		*addr, *mask;
 
 	/* are we sane? */
 	if ((!aclname) || (!ipblock))
 		return;
 
-	/* ipblock must be in the form <addr>/<mask>	*/
-
-	mask = strchr(ipblock, '/');
-
-	/* 192.168.1.1/32: valid */
-	/* 192.168.1.1/255.255.255.255: valid */
-	/* 192.168.1.1: invalid */
-
-	/* no slash = broken acl declaration */
-	if (!mask)
-		return;
-
-	*mask++ = '\0';
-	addr = ipblock;
+	/*
+	 * 192.168.1.1/32			valid
+	 * 192.168.1.1/255.255.255.255	valid
+	 * 192.168.1.1			invalid
+	 * ::FFFF:192.168.1.0/120		valid
+	 * ::FFFF:192.168.1.1		invalid
+	 * ::1/128				valid
+	 * ::1					invalid
+	 */
+	if (((addr = strtok(ipblock, "/")) == NULL) || ((mask = strtok(NULL, "\0")) == NULL))
+		fatalx("Can't parse ACL %s");
 
 	tmp = last = acl_head;
 
@@ -161,78 +155,37 @@ void acl_add(const char *aclname, char *ipblock)
 		tmp = tmp->next;
 	}
 
-#ifndef	HAVE_IPV6
-	tmp = xmalloc(sizeof(struct acl_t));
-	tmp->name = xstrdup(aclname);
-	tmp->addr.sin_addr.s_addr = inet_addr(addr);
-	tmp->next = NULL;
-
-	/* must be a /nn CIDR type block */
-	if (strstr(mask, ".") == NULL)
-	{
-		if (atoi(mask) != 32)
-			tmp->mask = ((unsigned int)((1 << atoi(mask)) - 1) <<
-					(32 - atoi(mask)));
-		else
-			tmp->mask = 0xffffffff;	/* avoid overflow from 2^32 */
-	}
-	else
-		tmp->mask = ntohl(inet_addr(mask));
-#else
 	/* memset (&saddr, 0, sizeof (struct sockaddr_storage)); */
 	tmp = xmalloc(sizeof(struct acl_t));
 	memset(tmp, 0, sizeof (struct acl_t));
 	tmp->name = xstrdup(aclname);
 	tmp->next = NULL;
 
-	if (*addr == '[')
+#ifndef	HAVE_IPV6
+	if (strstr(mask, ".") == NULL)
 	{
-		struct sockaddr_in6	s6;
-		char	*stmp;
-
-		stmp = strchr(addr, ']');
-		if (stmp == NULL)
-		{
-			free(tmp);
-			fatal_with_errno("Expecting \']\' in \"%s\"", addr);
-		}
-
-		*stmp = '\0';
-		addr++;
-		
-		memset(&s6, 0, sizeof(struct sockaddr_in6));
-		s6.sin6_family = AF_INET6;
-
-		if (inet_pton(AF_INET6, addr, &s6.sin6_addr) < 1)
-		{
-			free(tmp);
-			fatal_with_errno("Invalid IPv6 address: \"%s\"", addr);
-		}
-
-		/* prefix */
+		/* must be a /nn CIDR type block */
 		tmp->mask = strtol(mask, NULL, 10);
 
-		if (tmp->mask < 0 || tmp->mask > 128)
+		if (tmp->mask < 0 || tmp->mask > 32)
 		{
 			free (tmp);
-			fatal_with_errno("Invalid IPv6 prefix");
+			fatal_with_errno("Invalid CIDR type block: Must be > 0 && < 32");
 		}
 
-		{ register unsigned char i;
-			i = (tmp->mask)/8;
-			if ((tmp->mask)%8)
-				s6.sin6_addr.s6_addr[i++] &= 0xff<<(8-((tmp->mask)%8));
-			for (; i < sizeof s6.sin6_addr.s6_addr; i++)
-				s6.sin6_addr.s6_addr[i] = 0;
-		}
-
-		memcpy(&(tmp->addr), &s6, sizeof(struct sockaddr_in6));
-		/* tmp->addr.ss_len = sizeof(struct sockaddr_in6); */
-		tmp->addr.ss_family = AF_INET6;
+		tmp->mask = htonl(0xffffffff << (32 - tmp->mask));
 	}
 	else
 	{
-		struct sockaddr_in	s4;
+		/* must be a n.n.n.n dotted quad block */
+		tmp->mask = inet_addr(mask));
+	}
+
+	tmp->addr.sin_addr.s_addr = inet_addr(addr) & tmp->mask;
+#else
+	if (strstr(addr, ":") == NULL)
+	{
+		struct sockaddr_in	s4;	/* IPv4 address */
 
 		/* mask */
 		if (inet_pton(AF_INET, mask, &s4.sin_addr) < 1)
@@ -245,27 +198,71 @@ void acl_add(const char *aclname, char *ipblock)
 				free (tmp);
 				fatal_with_errno("Invalid CIDR type block: Must be > 0 && < 32");
 			}
-			tmp->mask = 0xffffffff << (32 - tmp->mask);
+
+			tmp->mask = htonl(0xffffffff << (32 - tmp->mask));
 		}
 		else
 		{
-			tmp->mask = ntohl(s4.sin_addr.s_addr);
+			/* must be a n.n.n.n dotted quad block */
+			tmp->mask = s4.sin_addr.s_addr;
 		}
 
+		/* address */
 		memset(&s4, 0, sizeof (struct sockaddr_in));
 		s4.sin_family = AF_INET;
 
+		/* apply mask to address */
 		if (inet_pton(AF_INET, addr, &s4.sin_addr) < 1)
 		{
 			free(tmp);
 			fatal_with_errno("Invalid IPv4 address: \"%s\"", addr);
 		}
-
-		s4.sin_addr.s_addr &= htonl(tmp->mask);
+		else
+		{
+			s4.sin_addr.s_addr &= tmp->mask;
+		}
 
 		memcpy(&(tmp->addr), &s4, sizeof(struct sockaddr_in));
-		/* tmp->addr.ss_len = sizeof (struct sockaddr_in); */
+
 		tmp->addr.ss_family = AF_INET;
+	}
+	else
+	{
+		struct sockaddr_in6	s6;	/* IPv6 address */
+
+		/* prefix */
+		tmp->mask = strtol(mask, NULL, 10);
+
+		/* address */
+		memset(&s6, 0, sizeof(struct sockaddr_in6));
+		s6.sin6_family = AF_INET6;
+
+		if (inet_pton(AF_INET6, addr, &s6.sin6_addr) < 1)
+		{
+			free(tmp);
+			fatal_with_errno("Invalid IPv6 address: \"%s\"", addr);
+		}
+
+		/* apply prefix to address */
+		if (tmp->mask < 0 || tmp->mask > 128)
+		{
+			free (tmp);
+			fatal_with_errno("Invalid IPv6 prefix");
+		}
+		else
+		{
+			unsigned char	i = (tmp->mask >> 3);
+
+			if ((tmp->mask) % 8)
+				s6.sin6_addr.s6_addr[i++] &= 0xff << (8 - ((tmp->mask) % 8));
+
+			while (i < sizeof(s6.sin6_addr.s6_addr))
+				s6.sin6_addr.s6_addr[i++] = 0;
+		}
+
+		memcpy(&(tmp->addr), &s6, sizeof(struct sockaddr_in6));
+
+		tmp->addr.ss_family = AF_INET6;
 	}
 #endif
 
