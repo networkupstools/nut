@@ -62,7 +62,9 @@ static ctype	*firstclient = NULL;
 	/* default is to listen on all local interfaces */
 static stype	*firstaddr = NULL;
 
+#ifdef	HAVE_IPV6
 static int 	opt_af = AF_UNSPEC;
+#endif
 
 	/* signal handlers */
 static struct sigaction	sa;
@@ -226,15 +228,11 @@ static void setuptcp(stype *serv)
 
 	upsdebugx(3, "setuptcp: try to bind to %s port %s", serv->addr, serv->port);
 
-	/* memset(&hints, 0, sizeof(hints)); */
+	memset(&hints, 0, sizeof(hints));
 	hints.ai_flags		= AI_PASSIVE;
-	hints.ai_family		= PF_UNSPEC;
+	hints.ai_family		= opt_af;
 	hints.ai_socktype	= SOCK_STREAM;
 	hints.ai_protocol	= IPPROTO_TCP;
-	hints.ai_addrlen	= 0;
-	hints.ai_addr		= NULL;
-	hints.ai_canonname	= NULL;
-	hints.ai_next		= NULL;
 
         if ((v = getaddrinfo(serv->addr, serv->port, &hints, &res))) {
 		if (v == EAI_SYSTEM)

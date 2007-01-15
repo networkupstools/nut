@@ -1,3 +1,13 @@
+Mon Jan 15 19:54:30 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * clients/upsclient.ch, clients/upsmon.c, server/upsd.c:
+   - allow forcing IPv4 or IPv6 mode from the command line (may be useful when
+     hosts are specified through a fully.qualified.domain.name which resolves
+     into both IPv4 and IPv6 addresses)
+ * server/access.c:
+   - fix typo in IPv4 acl_add()
+   - return ACL that can't be parsed
+
 Mon Jan 15 19:54:12 UTC 2007 / Niels Baggesen <nba@users.sourceforge.net>
 
  * clients/upsstats.c:

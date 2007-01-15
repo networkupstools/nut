@@ -506,7 +506,7 @@ int upscli_connect(UPSCONN *ups, const char *host, int port, int flags)
 	snprintf(sport, NI_MAXSERV, "%hu", (unsigned short int)port);
 
 	memset (&hints, 0, sizeof (struct addrinfo));
-	hints.ai_family = AF_UNSPEC;
+	hints.ai_family = flags & UPSCLI_CONN_INET ? AF_INET : (flags & UPSCLI_CONN_INET6 ? AF_INET6 : AF_UNSPEC);
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
 

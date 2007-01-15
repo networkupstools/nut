@@ -73,6 +73,10 @@ static	int	debuglevel = 0, userfsd = 0, use_pipe = 1, pipefd[2];
 
 static	utype	*firstups = NULL;
 
+#ifdef	HAVE_IPV6
+static int 	opt_af = AF_UNSPEC;
+#endif
+
 	/* signal handling things */
 static	struct sigaction sa;
 static	sigset_t nut_upsmon_sigmask;
@@ -1463,7 +1467,7 @@ static int try_ssl(utype *ups)
 /* handle connecting to upsd, plus get SSL going too if possible */
 static int try_connect(utype *ups)
 {
-	int	flags, ret;
+	int	flags = 0, ret;
 
 	debug("Trying to connect to UPS [%s]\n", ups->sys);
 
@@ -1471,9 +1475,17 @@ static int try_connect(utype *ups)
 
 	/* force it if configured that way, just try it otherwise */
 	if (forcessl == 1) 
-		flags = UPSCLI_CONN_REQSSL;
+		flags |= UPSCLI_CONN_REQSSL;
 	else
-		flags = UPSCLI_CONN_TRYSSL;
+		flags |= UPSCLI_CONN_TRYSSL;
+
+#ifdef	HAVE_IPV6
+	if (opt_af = AF_INET)
+		flags |= UPSCLI_CONN_INET;
+
+	if (opt_af == AF_INET6)
+		flags |= UPSCLI_CONN_INET6;
+#endif
 
 	ret = upscli_connect(&ups->conn, ups->hostname, ups->port, flags);
 
@@ -1710,6 +1722,10 @@ static void help(const char *progname)
 	printf("  -K		checks POWERDOWNFLAG, sets exit code to 0 if set\n");
 	printf("  -p		always run privileged (disable privileged parent)\n");
 	printf("  -u <user>	run child as user <user> (ignored when using -p)\n");
+#ifdef	HAVE_IPV6
+	printf("  -4		IPv4 only\n");
+	printf("  -6		IPv6 only\n");
+#endif
 
 	exit(EXIT_SUCCESS);
 }
@@ -1946,7 +1962,7 @@ int main(int argc, char *argv[])
 
 	printf("Network UPS Tools upsmon %s\n", UPS_VERSION);
 
-	while ((i = getopt(argc, argv, "+Dhic:f:pu:VK")) != EOF) {
+	while ((i = getopt(argc, argv, "+Dhic:f:pu:VK46")) != EOF) {
 		switch (i) {
 			case 'c':
 				if (!strncmp(optarg, "fsd", strlen(optarg)))
@@ -1981,6 +1997,14 @@ int main(int argc, char *argv[])
 			case 'V':
 				/* just show the banner */
 				exit(EXIT_SUCCESS);
+#ifdef	HAVE_IPV6
+			case '4':
+				opt_af = AF_INET;
+				break;
+			case '6':
+				opt_af = AF_INET6;
+				break;
+#endif
 			default:
 				help(argv[0]);
 				break;

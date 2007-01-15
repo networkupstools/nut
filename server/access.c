@@ -145,7 +145,7 @@ void acl_add(const char *aclname, char *ipblock)
 	 * ::1					invalid
 	 */
 	if (((addr = strtok(ipblock, "/")) == NULL) || ((mask = strtok(NULL, "\0")) == NULL))
-		fatalx("Can't parse ACL %s");
+		fatalx("Can't parse ACL %s %s", aclname, ipblock);
 
 	tmp = last = acl_head;
 
@@ -178,7 +178,7 @@ void acl_add(const char *aclname, char *ipblock)
 	else
 	{
 		/* must be a n.n.n.n dotted quad block */
-		tmp->mask = inet_addr(mask));
+		tmp->mask = inet_addr(mask);
 	}
 
 	tmp->addr.sin_addr.s_addr = inet_addr(addr) & tmp->mask;
