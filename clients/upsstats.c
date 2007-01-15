@@ -879,14 +879,6 @@ static void display_tree(int verbose)
 		return;
 	}
 
-	/* FIXME: numa is uninitialized here. What's the intention of this? */
-	if (numa < numq) {
-		if (verbose)
-			printf("[Invalid response]\n");
-		
-		return;
-	}
-
 	ret = upscli_list_next(&ups, numq, query, &numa, &answer);
 
 	printf("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\"\n");
