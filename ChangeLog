@@ -1,3 +1,7 @@
+Wed Jan 17 01:48:03 UTC 2007 / Charles Lepple <clepple@gmail.com>
+
+ * configure.in: generate packaging/RedHat/nut.spec from nut.spec.in
+
 Mon Jan 15 20:32:46 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * clients/upsclient.c: disable previous patch for upsclient (something is

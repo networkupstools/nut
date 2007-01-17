@@ -685,6 +685,7 @@ AC_OUTPUT([
  packaging/debian/Makefile
  packaging/mandriva/Makefile
  packaging/RedHat/Makefile
+ packaging/RedHat/nut.spec
  scripts/hotplug/libhidups
  scripts/udev/nut-usbups.rules
  scripts/Makefile
