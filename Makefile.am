@@ -11,11 +11,18 @@ SUBDIRS = common clients conf data docs drivers include lib man	\
 EXTRA_DIST = MAINTAINERS UPGRADING
 
 # ----------------------------------------------------------------------
-# flags to pass to ./configure when calling "make distcheck". Try
-# to check as many features as possible! Also need to give pkgconfig-dir,
-# so that staged install does not fail.
-DISTCHECK_CONFIGURE_FLAGS = --with-all --with-ssl \
+# flags to pass to ./configure when calling "make distcheck" and "make
+# distcheck-light". Try to check as many features as possible! Also
+# need to give pkgconfig-dir, so that staged install does not fail.
+
+DISTCHECK_FLAGS = --with-all --with-ssl --with-ipv6
+DISTCHECK_LIGHT_FLAGS = --with-all=auto --with-ssl=auto --with-ipv6=auto
+
+DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS} \
  --with-pkgconfig-dir='$${prefix}/lib/pkgconfig'
+
+distcheck-light:
+	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_FLAGS)" distcheck
 
 # ----------------------------------------------------------------------
 # targets from old build system (pre-automake).
