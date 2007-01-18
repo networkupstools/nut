@@ -133,12 +133,12 @@ static void stop_driver(const ups_t *ups)
 	upsdebugx(1, "Stopping UPS: %s", ups->upsname);
 
 	snprintf(pidfn, sizeof(pidfn), "%s/%s-%s.pid", altpidpath(),
-		ups->driver, xbasename(ups->port));
+		ups->driver, ups->upsname);
 	ret = stat(pidfn, &fs);
 
 	if (ret != 0) {
 		snprintf(pidfn, sizeof(pidfn), "%s/%s-%s.pid", altpidpath(),
-			ups->driver, ups->upsname);
+			ups->driver, xbasename(ups->port));
 		ret = stat(pidfn, &fs);
 	}
 
