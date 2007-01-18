@@ -1,3 +1,7 @@
+Thu Jan 18 08:54:55 UTC 2007 / Niels Baggesen <nba@users.sourceforge.net>
+
+ * clients/upsmon.c: fix bad comparison (assignment)
+
 Wed Jan 17 03:45:53 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  * Makefile.am: added "make distcheck-light" target

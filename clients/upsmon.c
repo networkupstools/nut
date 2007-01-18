@@ -1480,7 +1480,7 @@ static int try_connect(utype *ups)
 		flags |= UPSCLI_CONN_TRYSSL;
 
 #ifdef	HAVE_IPV6
-	if (opt_af = AF_INET)
+	if (opt_af == AF_INET)
 		flags |= UPSCLI_CONN_INET;
 
 	if (opt_af == AF_INET6)
