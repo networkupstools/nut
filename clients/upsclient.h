@@ -78,6 +78,8 @@ int upscli_readline(UPSCONN *ups, char *buf, size_t buflen);
 int upscli_splitname(const char *buf, char **upsname, char **hostname,
 			int *port);
 
+int upscli_splitaddr(const char *buf, char **hostname, int *port);
+
 int upscli_sslcert(UPSCONN *ups, const char *file, const char *path, int verify);
 
 int upscli_disconnect(UPSCONN *ups);

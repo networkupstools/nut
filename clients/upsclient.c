@@ -912,60 +912,99 @@ int upscli_readline(UPSCONN *ups, char *buf, size_t buflen)
 	return 0;
 }
 
-/* split upsname@hostname[:port] into separate components */
+/* split upsname[@hostname[:port]] into separate components */
 int upscli_splitname(const char *buf, char **upsname, char **hostname, int *port)
 {
-	char	tmp[SMALLBUF], *s;
+	char	*s, tmp[SMALLBUF];
 
 	/* paranoia */
 	if ((!buf) || (!upsname) || (!hostname) || (!port))
 		return -1;
 
-	snprintf(tmp, sizeof(tmp), "%s", buf);
-
-	/* split at the '@' character */
-	if ((s = strtok(tmp, "@")) == NULL)
+	if (snprintf(tmp, SMALLBUF, "%s", buf) < 1)
 	{
-		fprintf(stderr, "upscli_splitname: no UPS name specified (upsname@hostname)\n");
+		fprintf(stderr, "upscli_splitname: can't parse empty string\n");
 		return -1;
 	}
 
-	if ((*upsname = strdup(s)) == NULL)
-	{
-		fprintf(stderr, "upscli_splitname: strdup failed\n");
-		return -1;
-	}
+	s = strchr(tmp, '@');
 
-	if ((s = strtok(NULL, "\0")) == NULL)
-	{
-		fprintf(stderr, "upscli_splitname: no hostname specified (upsname@hostname)\n");
-		return -1;
-	}
-
-	if (*s == '[')
-		s = strtok(s+1, "]");	/* address literal */
-	else
-		s = strtok(s, ":\0");	/* hostname */
-	
-	if (s == NULL)
-	{
-		fprintf(stderr, "upscli_splitname: no hostname specified (upsname@hostname)\n");
-		return -1;
-	}
-
-	if ((*hostname = strdup(s)) == NULL)
+	if ((*upsname = strdup(strtok(tmp, "@"))) == NULL)
 	{
 		fprintf(stderr, "upscli_splitname: strdup failed\n");
 		return -1;
 	}
 
-	/* skip the separator between hostname and port (if any) */
-	if (((s = strtok(NULL, "\0")) != NULL) && (*s == ':')) s++;
-
+	/* only a upsname is specified, fill in defaults */
 	if (s == NULL)
-		*port = PORT;
+	{
+		*hostname = "localhost";
+		*port     = PORT;
+		return 0;
+	}
+
+	return upscli_splitaddr(s+1, hostname, port);
+}
+
+/* split hostname[:port] into separate components */
+int upscli_splitaddr(const char *buf, char **hostname, int *port)
+{
+	char	*s, tmp[SMALLBUF];
+
+	/* paranoia */
+	if ((!buf) || (!hostname) || (!port))
+		return -1;
+
+	if (snprintf(tmp, SMALLBUF, "%s", buf) < 1)
+	{
+		fprintf(stderr, "upscli_splitaddr: can't parse empty string\n");
+		return -1;
+	}
+
+	if (*tmp == '[')
+	{
+		if (strchr(tmp, ']') == NULL)
+		{
+			fprintf(stderr, "upscli_splitaddr: missing closing bracket in [domain literal]\n");
+			return -1;
+		}
+
+		if ((*hostname = strdup(strtok(tmp+1, "]"))) == NULL)
+		{
+			fprintf(stderr, "upscli_splitaddr: strdup failed\n");
+			return -1;
+		}
+
+		/* no port specified, use default */
+		if (((s = strtok(NULL, "\0")) == NULL) || (*s != ':'))
+		{
+			*port = PORT;
+			return 0;
+		}
+	}
 	else
-		*port = strtol(s, NULL, 10);
+	{
+		s = strchr(tmp, ':');
+
+		if ((*hostname = strdup(strtok(tmp, ":"))) == NULL)
+		{
+			fprintf(stderr, "upscli_splitaddr: strdup failed\n");
+			return -1;
+		}
+
+		/* no port specified, use default */
+		if (s == NULL)
+		{
+			*port = PORT;
+			return 0;
+		}
+	}
+
+	if ((*(++s) == '\0') || ((*port = strtol(s, NULL, 10)) < 1 ))
+	{
+		fprintf(stderr, "upscli_splitaddr: no port specified after ':' separator\n");
+		return -1;
+	}
 
 	return 0;
 }

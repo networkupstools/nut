@@ -1,3 +1,11 @@
+Thu Jan 18 21:02:29 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * clients/upsclient.c:
+   - hostname is now optional in upscli_splitname(), defaults to "localhost"
+   - added upscli_splitaddr() to split a hostname[:port] into separate
+     components
+   - [domain literals] are now allowed as valid hostnames
+
 Thu Jan 18 18:29:43 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  * docs/developers.txt: added section on repository etiquette.
@@ -26,7 +34,6 @@ Mon Jan 15 20:32:46 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * clients/upsclient.c: disable previous patch for upsclient (something is
    broken somehow, but I don't have the time now to check it out)
-
 
 Mon Jan 15 20:20:36 UTC 2007 / Niels Baggesen <nba@users.sourceforge.net>
  * drivers/upscode2.[ch]:
