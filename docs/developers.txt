@@ -281,3 +281,26 @@ If you write a new driver, send in the man page when you send me the
 source code for your driver.  Otherwise, I will be forced to write a
 skeletal man page that will probably miss many of the finer points of
 the driver and hardware.
+
+Repository etiquette and quality assurance
+==========================================
+
+Please keep the SVN trunk in working condition at all times. The trunk
+may be used to generate daily tarballs, and should not contain broken
+code if possible. If you need to commit incremental changes that leave
+the system in a broken state, please do so in a separate branch and
+merge the changes back to the trunk once they are complete.
+
+Before committing, please remember to:
+
+* update the ChangeLog, if appropriate. Dates are listed in UTC 
+  ("date --utc").
+
+* run "make distcheck-light". This checks that the Makefiles are not
+  broken, that all the relevant files are distributed, and that there
+  are no compilation or installation errors.
+
+There is also "make distcheck", which runs an even stricter set of
+tests, but will not work unless you have all the optional libraries
+and features installed.
+

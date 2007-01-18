@@ -1,3 +1,7 @@
+Thu Jan 18 18:29:43 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ * docs/developers.txt: added section on repository etiquette.
+
 Thu Jan 18 09:17:43 UTC 2007 / Niels Baggesen <nba@users.sourceforge.net>
 
  * packaging/RedHat/nut.spec.in: further clean up and separation of subpackages
