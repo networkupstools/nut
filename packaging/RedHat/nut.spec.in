@@ -1,6 +1,6 @@
 # don't know how different I can do this
 %define majorver 2.0
-%define version @NUT-VERSION@
+%define version @PACKAGE_VERSION@
 %define relver 1
 %define nutuser nutmon
 
@@ -132,11 +132,7 @@ mkdir -p %{buildroot}%{_localstatedir}/%{PACKAGE}
 mkdir -p %{buildroot}%{_mandir}
 mkdir -p %{buildroot}%{_bindir}
 make DESTDIR=%{buildroot} install
-make DESTDIR=%{buildroot} install-conf
-make DESTDIR=%{buildroot} install-cgi
-make DESTDIR=%{buildroot} install-cgi-conf
-make DESTDIR=%{buildroot} install-snmp
-make DESTDIR=%{buildroot} install-snmp-man
+(cd conf; make DESTDIR=%{buildroot} install)
 
 # move the *.sample config files to their real locations
 # we don't need to worry about overwriting anything since
@@ -161,21 +157,21 @@ install scripts/RedHat/ups %{buildroot}/etc/sysconfig
 
 %pre
 %{_sbindir}/groupadd -r -f %{nutuser}
-grep \^${nutuser}: /etc/passwd >/dev/null
+grep \^%{nutuser}: /etc/passwd >/dev/null
 if [ $? -ne 0 ]; then
   %{_sbindir}/useradd -d /etc/${PACKAGE} -g %{nutuser} -M -r %{nutuser}
 fi
 
 %pre server
 %{_sbindir}/groupadd -r -f %{nutuser}
-grep \^${nutuser}: /etc/passwd >/dev/null
+grep \^%{nutuser}: /etc/passwd >/dev/null
 if [ $? -ne 0 ]; then
   %{_sbindir}/useradd -d /etc/${PACKAGE} -g %{nutuser} -M -r %{nutuser}
 fi
 
 %pre cgi
 %{_sbindir}/groupadd -r -f %{nutuser}
-grep \^${nutuser}: /etc/passwd >/dev/null
+grep \^%{nutuser}: /etc/passwd >/dev/null
 if [ $? -ne 0 ]; then
   %{_sbindir}/useradd -d /etc/${PACKAGE} -g %{nutuser} -M -r %{nutuser}
 fi
@@ -226,7 +222,51 @@ rm -rf %{buildroot}
 
 %files server
 %defattr(-,root,root)
-%{_sbindir}
+%{_sbindir}/upsd
+%{_sbindir}/upsdrvctl
+# serial
+%{_sbindir}/al175
+%{_sbindir}/apcsmart
+%{_sbindir}/bcmxcp
+%{_sbindir}/belkin
+%{_sbindir}/belkinunv
+%{_sbindir}/bestfcom
+%{_sbindir}/bestuferrups
+%{_sbindir}/bestups
+%{_sbindir}/cpsups
+%{_sbindir}/cyberpower
+%{_sbindir}/dummy-ups
+%{_sbindir}/etapro
+%{_sbindir}/everups
+%{_sbindir}/gamatronic
+%{_sbindir}/genericups
+%{_sbindir}/isbmex
+%{_sbindir}/liebert
+%{_sbindir}/masterguard
+%{_sbindir}/megatec
+%{_sbindir}/metasys
+%{_sbindir}/mge-shut
+%{_sbindir}/mge-utalk
+%{_sbindir}/newmge-shut
+%{_sbindir}/nitram
+%{_sbindir}/oneac
+%{_sbindir}/optiups
+%{_sbindir}/powercom
+%{_sbindir}/rhino
+%{_sbindir}/safenet
+%{_sbindir}/skel
+%{_sbindir}/solis
+%{_sbindir}/tripplite
+%{_sbindir}/tripplitesu
+%{_sbindir}/upscode2
+%{_sbindir}/victronups
+%{_sbindir}/powerpanel
+# libusb
+%{_sbindir}/usbhid-ups
+%{_sbindir}/bcmxcp_usb
+%{_sbindir}/tripplite_usb
+# hiddev
+%{_sbindir}/energizerups
 ##%attr(755,root,root) %{_initrddir}/upspowerdown
 %attr(755,root,root) %{_initrddir}/upsd
 %attr(400,root,root) %{_initrddir}/halt.patch
@@ -269,8 +309,10 @@ rm -rf %{buildroot}
 %{_mandir}/man8/tripplite.8.gz
 %{_mandir}/man8/tripplitesu.8.gz
 %{_mandir}/man8/upscode2.8.gz
-%{_mandir}/man8/usbhid-ups.8.gz
 %{_mandir}/man8/victronups.8.gz
+%{_mandir}/man8/bcmxcp_usb.8.gz
+%{_mandir}/man8/tripplite_usb.8.gz
+%{_mandir}/man8/usbhid-ups.8.gz
 %{_mandir}/man8/upsd.8.gz
 %{_mandir}/man8/upsdrvctl.8.gz
 %{_mandir}/man5/ups.conf.5.gz
