@@ -296,7 +296,7 @@ void upsdrv_updateinfo(void)
 		        types[type].battpct[1] * tmp + types[type].battpct[2] :
 			types[type].battpct[3] * raw_data[BATTERY_CHARGE] +
 			                                   types[type].battpct[4]);
-	upsdebugx(2, "battery.charge: %s", dstate_getinfo("battery_charge"));
+	upsdebugx(2, "battery.charge: %s", dstate_getinfo("battery.charge"));
 
 	/* input.voltage */	
 	upsdebugx(3, "input.voltage (raw data): [raw: %u]",
@@ -310,7 +310,7 @@ void upsdrv_updateinfo(void)
 	upsdebugx(2, "input.voltage: %s", dstate_getinfo("input.voltage"));
 	
 	/* output.voltage */	
-	upsdebugx(3, "input.voltage (raw data): [raw: %u]",
+	upsdebugx(3, "output.voltage (raw data): [raw: %u]",
 	                            raw_data[OUTPUT_VOLTAGE]);
 	dstate_setinfo("output.voltage", "%03.1f",
 	    linevoltage >= 220 ?

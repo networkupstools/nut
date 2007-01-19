@@ -1,3 +1,8 @@
+Fri Jan 19 09:27:44 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - drivers/powercom.c: fix a typo which produce a segfault on Solaris 10,
+   and another typo on a debug message (from Jürgen Lesny)
+ 
 Wed Jan 16 09:14:14 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  - mge-shut.h, mge-hid.c, drivers.list: add more MGE models (Ellipse
