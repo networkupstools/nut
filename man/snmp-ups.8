@@ -1,4 +1,4 @@
-.TH snmp\-ups 8 "Sun Mar 14 2004" "" "Network UPS Tools (NUT)"
+.TH snmp\-ups 8 "Fri Jan 19 2007" "" "Network UPS Tools (NUT)"
 .SH NAME
 snmp\(hyups \- Multi\(hyMIB Driver for SNMP UPS equipment
 .SH NOTE
@@ -25,7 +25,9 @@ This driver supports the following optional settings in the
 \fBups.conf\fR(5):
 
 .IP "mibs=\fIname\fR"
-Set MIB compliance (default=ietf, allowed mge,apcc,netvision,pw)
+Set MIB compliance (default=auto, allowed ietf,mge,apcc,netvision,pw).
+With auto the driver will try a select set of objets untill it finds one
+that the device responds to.
 
 .IP "community=\fIname\fR"
 Set community name (default = public).

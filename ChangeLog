@@ -1,3 +1,10 @@
+Fri Jan 19 07:37:55 UTC 2007 / Niels Baggesen <nba@users.sourceforge.net>
+
+ * drivers/snmp-upc.[ch], drivers/ietfmib.h, drivers/psmib.h, man/snmp-ups.8:
+   - major rework to improve 3-phase support, to make sure that 3-phase
+     versions of variables are only issued for 3-phase upses
+   - support auto-detection of the mib to use.
+
 Thu Jan 18 21:02:29 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * clients/upsclient.c:

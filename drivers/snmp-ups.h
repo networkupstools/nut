@@ -2,7 +2,7 @@
  *
  *  Based on NET-SNMP API (Simple Network Management Protocol V1-2)
  *
- *  Copyright (C) 2002-2004 
+ *  Copyright (C) 2002-2006 
  *  			Arnaud Quette <arnaud.quette@free.fr>
  *  			Dmitry Frolov <frolov@riss-telecom.ru>
  *  			J.W. Hoogervorst <jeroen@hoogervorst.net>
@@ -55,7 +55,7 @@ for each OID request we made), instead of sending many small packets
 
 #include "attribute.h"
 
-#define DRIVER_VERSION		"0.41"
+#define DRIVER_VERSION		"0.42"
 
 #define DEFAULT_POLLFREQ	30		/* in seconds */
 
@@ -88,46 +88,52 @@ typedef struct {
    are converted according to the multiplier table  
 */
 typedef struct {
-	const char	*info_type;		/* INFO_ or CMD_ element */
-	int		info_flags;		/* flags to set in addinfo */
-	float	info_len;		/* length of strings if STR, */
-							/* cmd value if CMD, multiplier otherwise. */
-	const char	*OID;			/* SNMP OID or NULL */
-	const char	*dfl;			/* default value */
-	unsigned long flags;	/* my flags */
-	info_lkp_t *oid2info;	/* lookup table between OID and NUT values */
-/*	char *info_OID_format;		*//* FFE: OID format for complex values */
-/*	interpreter interpret;		*//* FFE: interpreter fct, NULL if not needed  */
-	void *next;			/* next snmp_info_t */
+	const char   *info_type;	/* INFO_ or CMD_ element */
+	int           info_flags;	/* flags to set in addinfo */
+	float         info_len;		/* length of strings if STR, */
+					/* cmd value if CMD, multiplier otherwise. */
+	const char   *OID;		/* SNMP OID or NULL */
+	const char   *dfl;		/* default value */
+	unsigned long flags;		/* my flags */
+	info_lkp_t   *oid2info;		/* lookup table between OID and NUT values */
+	int          *setvar;           /* variable to set for SU_FLAG_SETINT */
 } snmp_info_t;
 
-#define SU_FLAG_OK			(1 << 0)		/* show element to upsd. */
-#define SU_FLAG_STATIC		(1 << 1)		/* retrieve info only once. */
-#define SU_FLAG_ABSENT		(1 << 2)		/* data is absent in the device, */
-										/* use default value. */
-#define SU_FLAG_STALE		(1 << 3)		/* data stale, don't try too often. */
+#define SU_FLAG_OK		(1 << 0)	/* show element to upsd. */
+#define SU_FLAG_STATIC		(1 << 1)	/* retrieve info only once. */
+#define SU_FLAG_ABSENT		(1 << 2)	/* data is absent in the device, */
+						/* use default value. */
+#define SU_FLAG_STALE		(1 << 3)	/* data stale, don't try too often. */
 #define SU_FLAG_NEGINVALID	(1 << 4)	/* Invalid if negative value */
 #define SU_FLAG_UNIQUE		(1 << 5)	/* There can be only be one
 						 * provider of this info,
 						 * disable the other providers
 						 */
+#define SU_FLAG_SETINT		(1 << 6)	/* save value */
 
 /* status string components */
-#define SU_STATUS_PWR		(0 << 8)		/* indicates power status element */
-#define SU_STATUS_BATT		(1 << 8)		/* indicates battery status element */
-#define SU_STATUS_CAL		(2 << 8)		/* indicates calibration status element */
-#define SU_STATUS_RB		(3 << 8)		/* indicates replace battery status element */
+#define SU_STATUS_PWR		(0 << 8)	/* indicates power status element */
+#define SU_STATUS_BATT		(1 << 8)	/* indicates battery status element */
+#define SU_STATUS_CAL		(2 << 8)	/* indicates calibration status element */
+#define SU_STATUS_RB		(3 << 8)	/* indicates replace battery status element */
 #define SU_STATUS_NUM_ELEM	4
 #define SU_STATUS_INDEX(t)	(((t) >> 8) & 7)
 
+/* Phase specific data */
+#define SU_PHASES		(0xF << 12)
+#define SU_INPHASES		(0x3 << 12)
+#define SU_INPUT_1		(1 << 12)	/* only if 1 input phase */
+#define SU_INPUT_3		(1 << 13)	/* only if 3 input phases */
+#define SU_OUTPHASES		(0x3 << 14)
+#define SU_OUTPUT_1		(1 << 14)	/* only if 1 output phase */
+#define SU_OUTPUT_3		(1 << 15)	/* only if 3 output phases */
+
 /* hints for su_ups_set, applicable only to rw vars */
-#define SU_TYPE_INT			(0 << 16)	/* cast to int when setting value */
+#define SU_TYPE_INT		(0 << 16)	/* cast to int when setting value */
 #define SU_TYPE_STRING		(1 << 16)	/* cast to string */
 #define SU_TYPE_TIME		(2 << 16)	/* cast to int */
-#define SU_TYPE_CMD			(3 << 16)	/* instant command */
-#define SU_TYPE(t)			((t)->flags & 7 << 16)
-
-#define SU_CMD_MASK			0x2000
+#define SU_TYPE_CMD		(3 << 16)	/* instant command */
+#define SU_TYPE(t)		((t)->flags & (7 << 16))
 
 #define SU_VAR_COMMUNITY	"community"
 #define SU_VAR_VERSION		"snmp_version"
@@ -139,8 +145,8 @@ typedef struct {
 #define SU_BUFSIZE		32
 #define SU_LARGEBUF		256
 
-#define SU_STALE_RETRY	10		/* retry to retrieve stale element */
-								/* after this number of iterations. */
+#define SU_STALE_RETRY	10	/* retry to retrieve stale element */
+				/* after this number of iterations. */
 /* modes to snmp_ups_walk. */
 #define SU_WALKMODE_INIT	0
 #define SU_WALKMODE_UPDATE	1
@@ -150,6 +156,10 @@ typedef struct {
 #define SU_ERR_RATE 100	/* only print every nth error once limiting starts */
 
 typedef struct {
+	const char *mib_name;
+	const char *mib_version;
+	const char *oid_pwr_status;
+	const char *oid_auto_check;
 	snmp_info_t *snmp_info; /* pointer to the good Snmp2Nut lookup data */
 	
 } mib2nut_info;
@@ -194,3 +204,4 @@ struct snmp_session g_snmp_sess, *g_snmp_sess_p;
 const char *OID_pwr_status;
 int g_pwr_battery;
 int pollfreq; /* polling frequency */
+int input_phases, output_phases;
