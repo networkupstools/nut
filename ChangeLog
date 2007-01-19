@@ -1,3 +1,8 @@
+Fri Jan 19 09:27:44 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - drivers/powercom.c: fix a typo which produce a segfault on Solaris 10,
+   and another typo on a debug message (from Jürgen Lesny)
+
 2.0.5
 
 Mon Jan 15 15:01:12 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
