@@ -150,20 +150,6 @@ static int list_vars(UPSCONN *ups, const char *upsname)
 	return EXIT_SUCCESS;
 }
 
-static void check_upsdef(const char *ups)
-{
-	char	*ptr;
-
-	ptr = strchr(ups, '@');
-
-	if (ptr)
-		return;
-
-	fprintf(stderr, "Error: invalid UPS definition.  Required format: upsname@hostname[:port]\n");
-
-	exit(EXIT_FAILURE);
-}
-
 int main(int argc, char **argv)
 {
 	int	port, ret;
@@ -182,12 +168,13 @@ int main(int argc, char **argv)
 	if (!strcmp(argv[1], "-h"))
 		help(argv[0]);
 
-	check_upsdef(argv[1]);
-
 	upsname = hostname = NULL;
 
-	if (upscli_splitname(argv[1], &upsname, &hostname, &port) != 0)
+	if (upscli_splitname(argv[1], &upsname, &hostname, &port) != 0) {
+		fprintf(stderr, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
+
 		clean_exit(&ups, upsname, hostname, EXIT_FAILURE);
+	}
 
 	if (upscli_connect(&ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
 		fprintf(stderr, "Error: %s\n", upscli_strerror(&ups));

@@ -905,15 +905,6 @@ static void addups(int reloading, const char *sys, const char *pvs,
 		return;
 	}
 
-	/* deal with sys without a upsname - refuse it */
-	if (!strchr(sys, '@')) {
-		upslogx(LOG_WARNING, "Ignoring invalid MONITOR line in ups.conf (%s)",
-			sys);
-		upslogx(LOG_WARNING, "UPS directives now require a UPS name "
-			"(MONITOR upsname@hostname ...)");
-		return;
-	}
-
 	pv = strtol(pvs, (char **) NULL, 10);
 
 	if (pv < 0) {

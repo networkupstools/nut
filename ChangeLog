@@ -1,3 +1,15 @@
+Sat Jan 20 19:36:42 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * clients/upsmon.c, clients/upsc.c: removed check for validity of UPS
+   definition (this is handled by the API, which may fill in defaults)
+ * clients/upsclient.c:
+   - honor the UPSCLI_CONN_INET and UPSCLI_CONN_INET6 flags to request a
+     IPv4 only or IPv6 only connection (may be useful in mixed environments
+     where a hostname resolves in both A and AAAA addresses)
+   - if no hostname is specified, dynamically allocate memory for the
+     default hostname instead of pointing to a string constant (clients
+     assume the memory needs to be free'd if it is not a NULL pointer)
+
 Fri Jan 19 09:27:44 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  - drivers/powercom.c: fix a typo which produce a segfault on Solaris 10,

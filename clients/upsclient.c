@@ -506,7 +506,14 @@ int upscli_connect(UPSCONN *ups, const char *host, int port, int flags)
 	snprintf(sport, NI_MAXSERV, "%hu", (unsigned short int)port);
 
 	memset (&hints, 0, sizeof (struct addrinfo));
-	hints.ai_family = AF_UNSPEC;
+
+	if (flags & UPSCLI_CONN_INET6)
+		hints.ai_family = AF_INET6;
+	else if (flags & UPSCLI_CONN_INET)
+		hints.ai_family = AF_INET;
+	else
+		hints.ai_family = AF_UNSPEC;
+
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
 
@@ -938,7 +945,11 @@ int upscli_splitname(const char *buf, char **upsname, char **hostname, int *port
 	/* only a upsname is specified, fill in defaults */
 	if (s == NULL)
 	{
-		*hostname = "localhost";
+		if ((*hostname = strdup("localhost")) == NULL)
+		{
+			fprintf(stderr, "upscli_splitname: strdup failed\n");
+			return -1;
+		}
 		*port     = PORT;
 		return 0;
 	}
