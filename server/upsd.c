@@ -77,7 +77,7 @@ static	char	pidfn[SMALLBUF];
 static	int	reload_flag = 0, exit_flag = 0;
 
 #ifdef	HAVE_IPV6
-const char *inet_ntopW (struct sockaddr_storage *s) {
+static const char *inet_ntopW (struct sockaddr_storage *s) {
 	static char str[40];
 
 	switch (s->ss_family) {
@@ -603,7 +603,7 @@ static void answertcp(stype *serv)
 	else
 		last->next = tmp;
 
-	upslogx(LOG_INFO, "Connection from %s", tmp->addr);
+	upslogx(LOG_DEBUG, "Connection from %s", tmp->addr);
 }
 
 /* read tcp messages and handle them */

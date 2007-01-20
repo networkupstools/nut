@@ -76,10 +76,10 @@ void net_logout(ctype *client, int numarg, const char **arg)
 	}
 
 	if (client->username)
-		upslogx(LOG_INFO, "Client %s@%s logged out",
+		upslogx(LOG_DEBUG, "Client %s@%s logged out",
 			client->username, client->addr);
 	else
-		upslogx(LOG_INFO, "Client on %s logged out", client->addr);
+		upslogx(LOG_DEBUG, "Client on %s logged out", client->addr);
 
 	sendback(client, "OK Goodbye\n");
 	client->delete = 1;

@@ -1,3 +1,8 @@
+Sat Jan 20 20:18:28 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - server/netuser.c, server/upsd.c: lowered loglevel for opening and
+   closing connections from LOG_INFO to LOG_DEBUG [Alioth Bug #304113]
+
 Sat Jan 20 19:36:42 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * clients/upsmon.c, clients/upsc.c: removed check for validity of UPS
