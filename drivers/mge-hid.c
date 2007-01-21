@@ -548,9 +548,11 @@ static int mge_claim(HIDDevice *hd) {
 			return 1;
 		} else {
 			upsdebugx(1,
-"This particular MGE device (%04x/%04x) is not (or perhaps not yet)\n"
-"supported by usbhid-ups. Try running the driver with the '-x productid=%04x'\n"
-"option. Please report your results to the NUT developer's mailing list.\n",
+"This MGE device (%04x/%04x) is not (or perhaps not yet) supported\n"
+"by usbhid-ups. Please make sure you have an up-to-date version of NUT. If\n"
+"this does not fix the problem, try running the driver with the\n"
+"'-x productid=%04x' option. Please report your results to the NUT user's\n"
+"mailing list <nut-upsuser@lists.alioth.debian.org>.\n",
 						 hd->VendorID, hd->ProductID, hd->ProductID);
 			return 0;
 		}

@@ -32,8 +32,6 @@
 #define TRIPPLITE_HID_VERSION "TrippLite HID 0.1 (experimental)"
 
 #define TRIPPLITE_VENDORID 0x09ae 
-#define TRIPPLITE_HID_PRODUCTID 0x2005 
-/* not all Tripp Lite products are HID, some are "serial over USB". */
 
 /* --------------------------------------------------------------- */
 /*	Vendor-specific usage table */
@@ -202,21 +200,40 @@ static char *tripplite_format_serial(HIDDevice *hd) {
 /* this function allows the subdriver to "claim" a device: return 1 if
  * the device is supported by this subdriver, else 0. */
 static int tripplite_claim(HIDDevice *hd) {
-	if (hd->VendorID == TRIPPLITE_VENDORID) {
-		if (hd->ProductID == TRIPPLITE_HID_PRODUCTID) {
-			return 1;
-		}
-		if (hd->ProductID == 0x1003) {
-         return 1;
-      }
-
-		upsdebugx(1, 
-"This particular Tripp Lite device (%04x/%04x) is not (or perhaps not\n"
-"yet) supported by usbhid-ups. First try the tripplite_usb driver. If\n"
-"this fails, please write to the NUT developer's mailing list.\n", 
-			  hd->VendorID, hd->ProductID);
+	if (hd->VendorID != TRIPPLITE_VENDORID) {
+		return 0;
 	}
-	return 0;
+	switch (hd->ProductID) {
+
+	/* accept any known UPS - add devices here as needed */
+	case 0x2005:  /* e.g. OMNI1000LCD */
+	case 0x1003:  /* e.g. AVR550U */
+		return 1;
+
+	/* reject known non-HID devices */
+   /* not all Tripp Lite products are HID, some are "serial over USB". */
+	case 0x0001:  /* e.g. SMART550USB, SMART3000RM2U */
+		upsdebugx(1,
+"This Tripp Lite device (%04x/%04x) is not supported by usbhid-ups.\n"
+"Please use the tripplite_usb driver instead.\n",
+					 hd->VendorID, hd->ProductID);
+		return 0;
+
+	/* by default, reject, unless the productid option is given */
+	default:
+		if (getval("productid")) {
+         return 1;
+      } else {
+         upsdebugx(1,
+"This Tripp Lite device (%04x/%04x) is not (yet) supported by usbhid-ups.\n"
+"Please make sure you have an up-to-date version of NUT. If this does not\n"
+"fix the problem, try to run the driver with the '-x productid=%04x' option.\n"
+"If this fails, try the tripplite_usb driver. Please report your results to\n"
+"the NUT user's mailing list <nut-upsuser@lists.alioth.debian.org>.\n",
+						 hd->VendorID, hd->ProductID, hd->ProductID);
+			return 0;
+		}
+	}
 }
 
 subdriver_t tripplite_subdriver = {

@@ -1,3 +1,7 @@
+Sun Jan 21 22:21:41 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - newhidups: better messages for unrecognized productids.
+
 Sun Jan 21 19:25:10 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
  - megatec: added a new parameter to override the battery empty and battery
    full voltages, used in the charge calculations
@@ -5,7 +9,7 @@ Sun Jan 21 19:25:10 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
  - docs/FAQ: removed fentonups reference
  - added myself to the AUTHORS and MAINTAINERS files
 
-Sun Jan 21 10:42:29 UTC 2007 / 
+Sun Jan 21 10:42:29 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - clients/upslog.c, clients/upsimage.c, clients/upsc.c, clients/upsrw.c,
    clients/upscmd.c: allow specifying a UPS as upsname[@hostname[:port]]
