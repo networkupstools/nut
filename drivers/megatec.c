@@ -109,16 +109,17 @@ typedef struct {
 	float max;    /* upper bound for a single battery of "nominal" voltage (see "set_battery_params" below) */
 	float empty;  /* fully discharged battery */
 	float full;   /* fully charged battery */
+	float low;    /* low battery (unused) */
 } BatteryVolts;
 
 
 /* Known battery types must be in ascending order by "nominal" first, and then by "max". */
-static BatteryVolts batteries[] = {{ 12,  9.0, 16.0,  9.7, 13.7 },   /* Mustek PowerMust 600VA Plus */
-                                   { 12, 18.0, 30.0, 18.8, 26.8 },   /* PowerWalker Line-Interactive VI 1000 (LB at 22.3V) */
-                                   { 24, 18.0, 30.0, 19.4, 27.4 },   /* Mustek PowerMust 1000VA Plus (LB at 22.2V) */
-                                   { 36,  1.5,  3.0, 1.64, 2.31 },   /* Mustek PowerMust 1000VA On-Line (LB at 1.88V) */
-                                   { 96,  1.5,  3.0, 1.63, 2.29 },   /* Ablerex MS3000RT (LB at 1.8V, 25% charge) */
-                                   {  0,  0.0,  0.0,  0.0,  0.0 }};  /* END OF DATA */
+static BatteryVolts batteries[] = {{ 12,  9.0, 16.0,  9.7, 13.7,  0.0 },   /* Mustek PowerMust 600VA Plus (LB unknown) */
+                                   { 12, 18.0, 30.0, 18.8, 26.8, 22.3 },   /* PowerWalker Line-Interactive VI 1000 */
+                                   { 24, 18.0, 30.0, 19.4, 27.4, 22.2 },   /* Mustek PowerMust 1000VA Plus */
+                                   { 36,  1.5,  3.0, 1.64, 2.31, 1.88 },   /* Mustek PowerMust 1000VA On-Line */
+                                   { 96,  1.5,  3.0, 1.63, 2.29,  1.8 },   /* Ablerex MS3000RT (LB at 25% charge) */
+                                   {  0,  0.0,  0.0,  0.0,  0.0,  0.0 }};  /* END OF DATA */
 
 /* Defined in upsdrv_initinfo */
 static float battvolt_empty = -1;  /* unknown */
@@ -345,6 +346,11 @@ void upsdrv_initinfo(void)
 	QueryValues query;
 	UPSInfo info;
 
+	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
+
+	/*
+	 * UPS detection sequence.
+	 */
 	upsdebugx(1, "Starting UPS detection process...");
 	for (i = 0; i < IDENT_MAXTRIES; i++) {
 		upsdebugx(2, "Attempting to detect the UPS...");
@@ -363,8 +369,6 @@ void upsdrv_initinfo(void)
 			fatalx("Megatec protocol UPS not detected.");
 		}
 	}
-
-	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
 
 	/*
 	 * Try to identify the UPS.
@@ -386,6 +390,9 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("ups.serial", "%s", getval("serial") ? getval("serial") : "unknown");
 
+	/*
+	 * Set battery-related values.
+	 */
 	if (get_firmware_values(&values) >= 0) {
 		dstate_setinfo("output.voltage.nominal", "%.1f", values.volt);
 		dstate_setinfo("battery.voltage.nominal", "%.1f", values.battvolt);
@@ -399,14 +406,31 @@ void upsdrv_initinfo(void)
 		}
 	}
 
+	if (getval("battvolts")) {
+		upsdebugx(3, getval("battvolts"));
+	
+		if (sscanf(getval("battvolts"), "%f:%f", &battvolt_empty, &battvolt_full) != 2) {
+			fatalx("Error in \"battvolts\" parameter.");
+		}
+		
+	    upslogx(LOG_NOTICE, "Overriding battery voltage interval [%.1fV, %.1fV].", battvolt_empty, battvolt_full);		
+	}
+
+	if (battvolt_empty < 0 || battvolt_full < 0) {
+		upslogx(LOG_NOTICE, "Cannot calculate charge percentage for this UPS.");
+	}
+
 	if (getval("lowbatt")) {
 		if (battvolt_empty < 0 || battvolt_full < 0) {
-			upslogx(LOG_NOTICE, "Cannot calculate charge percentage for this UPS. Ignoring \"lowbatt\" parameter.");
+			upslogx(LOG_NOTICE, "Ignoring \"lowbatt\" parameter.");
 		} else {
 			lowbatt = CLAMP(atof(getval("lowbatt")), 0, 100);
 		}
 	}
 
+	/*
+	 * Set the restart and shutdown delays.
+	 */
 	if (getval("ondelay")) {
 		start_delay = CLAMP(atoi(getval("ondelay")), 0, MAX_START_DELAY);
 	}
@@ -481,6 +505,8 @@ void upsdrv_updateinfo(void)
 	charge = get_battery_charge(query.battvolt);
 	if (charge >= 0) {
 		dstate_setinfo("battery.charge", "%.1f", charge);
+		
+		upsdebugx(3, "Charge: %.1f%%", charge);
 	}
 
 	status_init();
@@ -730,6 +756,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "lowbatt", "Low battery level (%)");
 	addvar(VAR_VALUE, "ondelay", "Delay before UPS startup (minutes)");
 	addvar(VAR_VALUE, "offdelay", "Delay before UPS shutdown (minutes)");
+	addvar(VAR_VALUE, "battvolts", "Battery voltages (empty:full)");
 }
 
 

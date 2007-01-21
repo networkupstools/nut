@@ -497,7 +497,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
     4 drwxrwx---   2 nutdev   nut          4096 Aug 20 18:37 .
     4 drwxr-xr-x   4 root     root         4096 May 14 21:20 ..
     4 srw-rw----   1 nutdev   nut             0 Sep  3 17:10 apcsmart-ttyS0
-    4 srw-rw----   1 nutdev   nut             0 Sep  3 17:10 fentonups-ttyS1
+    4 srw-rw----   1 nutdev   nut             0 Sep  3 17:10 megatec-ttyS1
 
     You may have to remove old socket or state files first if you are
     changing to this security scheme from an older version.  The drivers
