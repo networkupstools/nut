@@ -1,3 +1,9 @@
+Sun Jan 21 10:42:29 UTC 2007 / 
+
+ - clients/upslog.c, clients/upsimage.c, clients/upsc.c, clients/upsrw.c,
+   clients/upscmd.c: allow specifying a UPS as upsname[@hostname[:port]]
+   (default to 'localhost' if no hostname is specified)
+
 Sat Jan 20 20:18:28 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - server/netuser.c, server/upsd.c: lowered loglevel for opening and

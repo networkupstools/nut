@@ -33,7 +33,7 @@ static void help(const char *prog)
 
 	printf("\nDemo program to display UPS variables.\n\n");
 
-	printf("  <ups>      - upsd server, <upsname>@<hostname>[:<port>] form\n");
+	printf("  <ups>      - upsd server, <upsname>[@<hostname>[:<port>]] form\n");
 	printf("  <variable> - optional, display this variable only.\n");
 	printf("               Default: list all variables for <host>\n");
 
@@ -109,7 +109,7 @@ static int list_vars(UPSCONN *ups, const char *upsname)
 	char	**answer;
 
 	if (!upsname) {
-		fprintf(stderr, "Error: a UPS name must be specified (upsname@hostname)\n");
+		fprintf(stderr, "Error: a UPS name must be specified (upsname[@hostname[:port]])\n");
 		return EXIT_FAILURE;
 	}
 

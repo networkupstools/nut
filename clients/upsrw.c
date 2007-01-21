@@ -44,7 +44,7 @@ static void usage(const char *prog)
 	printf("  -u <username> set username for command authentication\n");
 	printf("  -p <password> set password for command authentication\n");
 	printf("\n");
-	printf("  <ups>         UPS identifier - <upsname>@<hostname>[:<port>]\n");
+	printf("  <ups>         UPS identifier - <upsname>[@<hostname>[:<port>]]\n");
 	printf("\n");
 	printf("Call without -s to show all possible read/write variables.\n");
 
@@ -193,7 +193,7 @@ static int do_setvar(UPSCONN *ups, const char *varname, char *uin,
 
 	/* no upsname means die */
 	if (!upsname) {
-		fprintf(stderr, "Error: a UPS name must be specified (upsname@hostname)\n");
+		fprintf(stderr, "Error: a UPS name must be specified (upsname[@hostname[:port]])\n");
 		return EXIT_FAILURE;
 	}
 
@@ -373,7 +373,7 @@ static int print_rwlist(UPSCONN *ups, const char *upsname)
 
 	/* the upsname is now required */
 	if (!upsname) {
-		fprintf(stderr, "Error: a UPS name must be specified (upsname@hostname)\n");
+		fprintf(stderr, "Error: a UPS name must be specified (upsname[@hostname[:port]])\n");
 		return EXIT_FAILURE;
 	}
 
@@ -441,20 +441,6 @@ static int print_rwlist(UPSCONN *ups, const char *upsname)
 	return EXIT_SUCCESS;
 }
 
-static void check_upsdef(const char *ups)
-{
-	char	*ptr;
-
-	ptr = strchr(ups, '@');
-
-	if (ptr)
-		return;
-
-	fprintf(stderr, "Error: invalid UPS definition.  Required format: upsname@hostname[:port]\n");
-
-	exit(EXIT_FAILURE);
-}
-
 int main(int argc, char **argv)
 {
 	int	i, port, ret;
@@ -491,12 +477,12 @@ int main(int argc, char **argv)
 	if (argc < 1)
 		usage(prog);
 
-	check_upsdef(argv[0]);
-
 	upsname = hostname = NULL;
 
-	if (upscli_splitname(argv[0], &upsname, &hostname, &port) != 0)
+	if (upscli_splitname(argv[0], &upsname, &hostname, &port) != 0) {
+		fprintf(stderr, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
 		clean_exit(&ups, upsname, hostname, EXIT_FAILURE);
+	}
 
 	if (upscli_connect(&ups, hostname, port, 0) < 0) {
 		fprintf(stderr, "Can't connect: %s\n", upscli_strerror(&ups));

@@ -524,7 +524,7 @@ int main(int argc, char **argv)
 	upsname = hostname = NULL;
 
 	if (upscli_splitname(monhost, &upsname, &hostname, &port) != 0) {
-		noimage("Invalid UPS definition (upsname@hostname)\n");
+		noimage("Invalid UPS definition (upsname[@hostname[:port]])\n");
 		exit(EXIT_FAILURE);
 	}
 

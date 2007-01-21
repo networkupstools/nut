@@ -45,7 +45,7 @@ static void usage(char *prog)
 	printf("  -u <username>	set username for command authentication\n");
 	printf("  -p <password>	set password for command authentication\n");
 	printf("\n");
-	printf("  <ups>		UPS identifier - <upsname>@<hostname>[:<port>]\n");
+	printf("  <ups>		UPS identifier - <upsname>[@<hostname>[:<port>]]\n");
 	printf("  <command>	Valid instant command - test.panel.start, etc.\n");
 
 	exit(EXIT_SUCCESS);
@@ -98,8 +98,10 @@ static void listcmds(char *rawname)
 
 	upsname = hostname = NULL;
 
-	if (upscli_splitname(rawname, &upsname, &hostname, &port) != 0)
+	if (upscli_splitname(rawname, &upsname, &hostname, &port) != 0) {
+		fprintf(stderr, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
 		clean_exit(&ups, upsname, hostname, EXIT_FAILURE);
+	}
 
 	if (upscli_connect(&ups, hostname, port, 0) < 0) {
 		fprintf(stderr, "Error: %s\n", upscli_strerror(&ups));
@@ -107,7 +109,7 @@ static void listcmds(char *rawname)
 	}
 
 	if (!upsname) {
-		fprintf(stderr, "Error: a UPS name must be specified (upsname@hostname)\n");
+		fprintf(stderr, "Error: a UPS name must be specified (upsname[@hostname[:port]])\n");
 		clean_exit(&ups, upsname, hostname, EXIT_FAILURE);
 	}
 
@@ -201,20 +203,6 @@ static int do_cmd(UPSCONN *ups, const char *upsname, const char *cmd)
 	return EXIT_SUCCESS;
 }
 
-static void check_upsdef(const char *ups)
-{
-	char	*ptr;
-
-	ptr = strchr(ups, '@');
-
-	if (ptr)
-		return;
-
-	fprintf(stderr, "Error: invalid UPS definition.  Required format: upsname@hostname[:port]\n");
-
-	exit(EXIT_FAILURE);
-}
-
 int main(int argc, char **argv)
 {
 	int	i, ret, have_un, have_pw;
@@ -265,12 +253,12 @@ int main(int argc, char **argv)
 	if (argc < 2)
 		usage(prog);
 
-	check_upsdef(argv[0]);
-
 	upsname = hostname = NULL;
 
-	if (upscli_splitname(argv[0], &upsname, &hostname, &port) != 0)
+	if (upscli_splitname(argv[0], &upsname, &hostname, &port) != 0) {
+		fprintf(stderr, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
 		clean_exit(&ups, upsname, hostname, EXIT_FAILURE);
+	}
 
 	if (upscli_connect(&ups, hostname, port, 0) < 0) {
 		fprintf(stderr, "Error: %s\n", upscli_strerror(&ups));
@@ -356,7 +344,7 @@ int main(int argc, char **argv)
 
 	/* no upsname means die here */
 	if (!upsname) {
-		fprintf(stderr, "Error: a UPS name must be specified (upsname@hostname)\n");
+		fprintf(stderr, "Error: a UPS name must be specified (upsname[@hostname[:port]])\n");
 		clean_exit(&ups, upsname, hostname, EXIT_FAILURE);
 	}
 

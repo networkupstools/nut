@@ -450,8 +450,9 @@ int main(int argc, char **argv)
 	printf("logging status of %s to %s (%is intervals)\n", 
 		monhost, logfn, interval);
 
-	if (upscli_splitname(monhost, &upsname, &hostname, &port) != 0)
-		fatalx("Fatal error: unusable UPS definition");
+	if (upscli_splitname(monhost, &upsname, &hostname, &port) != 0) {
+		fatalx("Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
+	}
 
 	if (upscli_connect(&ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0)
 		fprintf(stderr, "Warning: initial connect failed: %s\n", 
