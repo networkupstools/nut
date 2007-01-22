@@ -99,7 +99,7 @@ install-stamp:
 	mv $(CURDIR)/debian/nut/usr/lib/libupsclient.a         $(CURDIR)/debian/nut-dev/usr/lib
 	mv $(CURDIR)/debian/nut/usr/lib/libupsclient.la        $(CURDIR)/debian/nut-dev/usr/lib
 
-	rm $(CURDIR)/debian/nut/lib/skel
+	rm $(CURDIR)/debian/nut/lib/nut/skel
 	
 	### FIXME: create a new package for shared library later, and remove --disable-shared above
 	# rm $(CURDIR)/debian/nut/usr/lib/libupsclient.so* $(CURDIR)/debian/nut/usr/lib/libupsclient.la 
@@ -131,10 +131,10 @@ install-stamp:
 	mv $(CURDIR)/debian/nut/lib/nut/upsdrvctl $(CURDIR)/debian/nut/sbin
 
 	dh_installexamples
-	rm $(CURDIR)/debian/nut/etc/nut/* $(CURDIR)/debian/nut-cgi/etc/nut/*
+	rm $(CURDIR)/debian/nut/etc/nut/*
 
 	dh_installdocs -X.svn
-	rm $(CURDIR)/debian/nut/usr/share/docs/Makefile*
+	rm $(CURDIR)/debian/nut/usr/share/doc/nut/docs/Makefile*
 
 	dh_installchangelogs ChangeLog
 	dh_installinit
