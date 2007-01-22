@@ -1,13 +1,143 @@
-nut (2.0.2-2) unstable; urgency=low
+nut (2.0.5-1) unstable; urgency=low
 
-Todo:
-- forport changes from Sarge
-- LINTIAN
+  * New upstream release (Closes: #406045, #380304, #399741)
+  * debian/rules:
+    - replaces CHANGES by ChangeLog
+    - replace the dummycons installation by dummy-ups
+    - integrate the --with-htmlpath option
+  * debian/nut-cgi.docs: created to install data/html/README
+  * debian/nut.init: LSB compliance update
+  * debian/control: add lsb-base (>= 3.0-6) to Depends for LSB compliance
 
-  * debian/control: remove libusb Depends as it's already included in
-    shlibs
+ -- Arnaud Quette <aquette@debian.org>  Tue, 16 Jan 2007 10:42:36 +0100
 
- -- Arnaud Quette <aquette@debian.org>  Wed, 19 Oct 2005 22:26:33 +0200
+nut (2.0.4-3) unstable; urgency=high
+
+  * acknowledges NMUs (Closes: #396704, #389350)
+  * debian/nut-usb.postinst: remove the symlinking of the udev file since it's
+    not useful anymore (Closes: #400215)
+  * native udev rules are now used (Closes: #359802, #380304)
+  * debian/po/de.po: add German po-debconf template translation (Closes:
+    #400285)
+  * debian/nut.config: change the medium priorities to high (Closes: #388945)
+  * debian/nut.init: improve drivers startup report
+
+ -- Arnaud Quette <aquette@debian.org>  Wed, 20 Dec 2006 11:07:30 +0100
+
+nut (2.0.4-2.3) unstable; urgency=high
+
+  * Non-maintainer upload.
+  * Some polish on top of the previous NMU.
+    * Remove the hotplug alternative; we no longer support it, so it's no
+      longer acceptable in place of udev. Correspondingly, rename the
+      substvar to ${udev}. (Closes: #396704)
+    * Drop debian/nut-usbups.rules and use upstream's rules instead. Modify
+      debian/rules correspondigly, patch from Arnaud Quette.
+
+ -- Steinar H. Gunderson <sesse@debian.org>  Fri, 17 Nov 2006 01:12:54 +0100
+
+nut (2.0.4-2.2) unstable; urgency=high
+
+  * Non-maintainer upload.
+  * In the udev script, replace the RUN actions by MODE and GROUP actions, as
+    per suggestion from the maintainer; should fix permission issues.
+    (Closes: #396704)
+
+ -- Steinar H. Gunderson <sesse@debian.org>  Thu, 16 Nov 2006 15:38:43 +0100
+
+nut (2.0.4-2.1) unstable; urgency=low
+
+  * NMU
+  * not removing nut user on purge (Closes: #389350)
+
+ -- Florian M. Weps <fmw@debian.org>  Thu, 12 Oct 2006 11:19:37 +0200
+ 
+nut (2.0.4-2) unstable; urgency=low
+
+  * debian/rules: replace $PWD by CURDIR to satisfy buildd
+  * debian/nut.default, debian/nut.init: make the bug 358696 workaround 
+    optional as it might be dangerous under some circumstances (closes:
+    #358696)
+
+ -- Arnaud Quette <aquette@debian.org>  Tue, 01 Aug 2006 08:50:26 +0200
+
+nut (2.0.4-1) unstable; urgency=low
+
+  * New upstream release
+    - driver do not use /var anymore when called for shutdown/poweroff
+    (closes: #332846)
+    - fixes the newhidups crash upon device reconnexion (closes: #354305,
+    #359769)
+  * debian/nut.preinst: syntax enhancement to avoid issue when the nut user
+    already exists (closes: #378970)
+  * debian/nut-cgi.postinst: fix wrong permissions (closes: #378818)
+  * debian/po/cs.po: update Czech translation of nut debconf messages (closes:
+    #366738)
+  * debian/nut.default, debian/nut.init: "poweroff" workaround to deal with
+    BIOS default of "On/Off state: Last state" and system halting itself
+    before the UPS cuts power (closes: #358696)
+  * debian/nut-usbups.rules: fix the broken udev rules (closes: #359801)
+
+ -- Arnaud Quette <aquette@debian.org>  Thu, 27 Jul 2006 15:20:46 +0200
+
+nut (2.0.3-4) unstable; urgency=low
+
+  * debian/nut-usb.postinst: generate the /etc/udev/rules/ file
+  * debian/rules:
+    - install the right udev rule file (not the upstream one)
+    - install the debian/hotplug file as libhidups, as it's compatible
+    with hotplug and udev styles
+
+ -- Arnaud Quette <aquette@debian.org>  Mon, 13 Mar 2006 08:52:25 +0100
+ 
+nut (2.0.3-3) unstable; urgency=low
+
+  * debian/rules:
+    - fix a wrong symlink for the udev rule files (closes: #354262)
+    - add a temporary workaround to clean drivers/tripplite_usb
+
+ -- Arnaud Quette <aquette@debian.org>  Mon, 27 Feb 2006 15:35:32 +0100
+ 
+nut (2.0.3-2) unstable; urgency=low
+
+  * debian/nut.init: fix the creation of the PID directory, as /var is now volative.
+    This bug has been identified in Ubuntu (Launchpad #6679)
+  * debian/nut-cgi.postrm: suppress the deletion of the nut user as it's not
+    needed (closes: #319395)
+  * debian/nut-cgi.preinst: suppress that file as we do not need to check and create
+    the nut user and group for nut-cgi
+  * debian/nut-cgi.postinst: enhanced to ensure the /etc/nut directory and nut-cgi
+    configuration files are readable by others
+  * debian/nut-cgi.README.Debian: improve the documentation about configuration
+    files permissions
+
+ -- Arnaud Quette <aquette@debian.org>  Fri, 24 Feb 2006 10:05:25 +0100
+
+nut (2.0.3-1) unstable; urgency=low
+
+  * New upstream release
+    - include the improved USB driver (closes: #300115)
+    - fix mge-utalk regression (closes: #315431)
+    - fix USB device claiming and logging (closes: #322901)
+  * debian/nut-cgi.config: complete the typo fixes from 2.0.2-1 and remove exit
+    calls (closes: #308215)
+  * debian/nut.config: remove exit calls
+  * debian/hotplug: add this file to manage hotplug and udev style permissions settings
+  * debian/nut-usbups.rules: embed a modified version of the upstream file
+  * debian/control:
+    - make hotplug | udev Depends conditionnal, from rules
+    - remove libusb-0.1-4 Depends as it is already listed with shlibs:Depends
+  * debian/rules:
+    - generate debian/control Depends for hotplug | udev
+    - also install udev files (closes: #338738, #332939)
+    - call the clean rule before distclean
+  * debian/nut.README.Debian:
+    - update the Installation §2 to reflect udev changes on serial port permissions.
+    Users need to manually add the nut group to the dialout group (closes: #325878,
+    #334105)
+    - some other minor update
+
+ -- Arnaud Quette <aquette@debian.org>  Tue, 21 Feb 2006 13:57:35 +0100
 
 nut (2.0.2-2) unstable; urgency=low
 
@@ -16,12 +146,12 @@ nut (2.0.2-2) unstable; urgency=low
   * debian/control:
     - Update build dependency from libsnmp5-dev to libsnmp9-dev (closes:
     #326410)
-    - Changes nut-usb wrong dependency from libusb-dev to libusb (closes:
+    - Changes nut-usb wrong dependency from libusb-dev to libusb-0.1-4 (closes:
     #320315)
     - add debconf (>= 0.5.00) and adduser to nut/nut-cgi Depends
   * debian/copyright: update the FSF address and the Authors
   * debian/po/vi.po: add the Vietnamese translation for debconf, from Clytie
-    Siddall (closes: #316327)
+    Siddall ((closes: #316327)
 
  -- Arnaud Quette <aquette@debian.org>  Fri, 07 Oct 2005 23:35:55 +0200
 

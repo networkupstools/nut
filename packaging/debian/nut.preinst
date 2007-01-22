@@ -4,7 +4,7 @@
 . /usr/share/debconf/confmodule
 
 check_and_create_group() {
-	if [ -z `getent group nut` ]; then
+	if [ ! "`getent group nut`" ]; then
 		addgroup --quiet --system nut
 #	else
 #		printf "error: user \"nut\" already exists... see /usr/share/doc/nut/README.Debian\n"  &&  exit 1
@@ -12,7 +12,7 @@ check_and_create_group() {
 }
 
 check_and_create_user() {
-	if [ -z `getent passwd nut` ]; then
+	if [ ! "`getent passwd nut`" ]; then
 		adduser --quiet --system --ingroup nut --home /var/lib/nut --no-create-home nut
 #	else
 #		printf "error: user \"nut\" already exists... see /usr/share/doc/nut/README.Debian\n"  &&  exit 1

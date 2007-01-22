@@ -18,7 +18,7 @@ case "$1" in
     ;;
 
   purge)
-    check_and_delete_user
+    # check_and_delete_user
     # handle a dpkg bug
     [ -d /etc/nut ] && rmdir --ignore-fail-on-non-empty /etc/nut >/dev/null 2>&1
     ;;
