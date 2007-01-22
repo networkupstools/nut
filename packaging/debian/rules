@@ -128,6 +128,10 @@ install-stamp:
 	    mv $(CURDIR)/debian/nut{,-cgi}/usr/share/man/$$manpage ; \
 	done 
  
+	mkdir -p $(CURDIR)/debian/nut-snmp/lib/nut $(CURDIR)/debian/nut-snmp/usr/share/man/man8
+	mv $(CURDIR)/debian/nut/usr/share/man/man8/snmp-ups.8 $(CURDIR)/debian/nut-snmp/usr/share/man/man8
+	mv $(CURDIR)/debian/nut/lib/nut/snmp-ups $(CURDIR)/debian/nut-snmp/lib/nut
+
 	mv $(CURDIR)/debian/nut/lib/nut/upsdrvctl $(CURDIR)/debian/nut/sbin
 
 	dh_installexamples
