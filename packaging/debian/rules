@@ -21,8 +21,10 @@ configure-stamp:
 	    --libdir=/usr/lib \
 	    --includedir=/usr/include \
 	    --without-ssl \
+	    --without-hal \
 	    --with-cgi \
 	    --with-lib \
+	    --disable-shared \
 	    --with-statepath=/var/run/nut \
 	    --with-altpidpath=/var/run/nut \
 	    --with-drvpath=/lib/nut \
@@ -95,20 +97,45 @@ install-stamp:
 	mv $(CURDIR)/debian/nut/bin/libupsclient-config        $(CURDIR)/debian/nut-dev/usr/bin
 	mv $(CURDIR)/debian/nut/usr/lib/pkgconfig              $(CURDIR)/debian/nut-dev/usr/lib
 	mv $(CURDIR)/debian/nut/usr/lib/libupsclient.a         $(CURDIR)/debian/nut-dev/usr/lib
+	mv $(CURDIR)/debian/nut/usr/lib/libupsclient.la        $(CURDIR)/debian/nut-dev/usr/lib
+
+	rm $(CURDIR)/debian/nut/lib/skel
 	
-	### FIXME: create a new package for shared library later: 
+	### FIXME: create a new package for shared library later, and remove --disable-shared above
 	# rm $(CURDIR)/debian/nut/usr/lib/libupsclient.so* $(CURDIR)/debian/nut/usr/lib/libupsclient.la 
 
+	# USB drivers:
 	mkdir -p $(CURDIR)/debian/nut-usb/etc/udev/rules.d
 	install -m 644 $(CURDIR)/scripts/udev/nut-usbups.rules \
 		$(CURDIR)/debian/nut-usb/etc/udev/rules.d/025_nut-usbups.rules
-#	$(MAKE) install-cgi \
-#		DESTDIR=$(CURDIR)/debian/nut-cgi RUNUID=65534 RUNGID=65534
+
+	mkdir -p $(CURDIR)/debian/nut-usb/lib/nut $(CURDIR)/debian/nut-usb/usr/share/man/man8
+	for driver in usbhid-ups bcmxcp_usb tripplite_usb energizerups; do \
+	    mv $(CURDIR)/debian/nut/lib/nut/$$driver $(CURDIR)/debian/nut-usb/lib/nut ; \
+	    mv $(CURDIR)/debian/nut/usr/share/man/man8/$$driver.8 $(CURDIR)/debian/nut-usb/usr/share/man/man8 ; \
+	done 
+
+	# CGI:
+	mkdir -p $(CURDIR)/debian/nut-cgi/usr/lib/cgi-bin/nut $(CURDIR)/debian/nut-cgi/usr/share/man/man{5,8} 
+	mv $(CURDIR)/debian/nut/usr/lib/cgi-bin/nut/* $(CURDIR)/debian/nut-cgi/usr/lib/cgi-bin/nut/ 
+	rm -rf $(CURDIR)/debian/nut/usr/lib/cgi-bin 
+
+	mkdir -p $(CURDIR)/debian/nut-cgi/var/www/nut
+	mv $(CURDIR)/debian/nut/var/www/nut $(CURDIR)/debian/nut-cgi/var/www
+ 
+	for manpage in man5/upsstats.html.5 man5/hosts.conf.5 man5/upsset.conf.5 \
+	    man8/upsimage.cgi.8 man8/upsset.cgi.8 man8/upsstats.cgi.8 ; do \
+	    mv $(CURDIR)/debian/nut{,-cgi}/usr/share/man/$$manpage ; \
+	done 
+ 
 	mv $(CURDIR)/debian/nut/lib/nut/upsdrvctl $(CURDIR)/debian/nut/sbin
-	# conf files workaround
-	#rm $(CURDIR)/debian/nut/etc/nut/* $(CURDIR)/debian/nut-cgi/etc/nut/*
+
 	dh_installexamples
-	dh_installdocs
+	rm $(CURDIR)/debian/nut/etc/nut/* $(CURDIR)/debian/nut-cgi/etc/nut/*
+
+	dh_installdocs -X.svn
+	rm $(CURDIR)/debian/nut/usr/share/docs/Makefile*
+
 	dh_installchangelogs ChangeLog
 	dh_installinit
 	dh_link
