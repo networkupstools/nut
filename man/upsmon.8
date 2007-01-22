@@ -1,4 +1,4 @@
-.TH UPSMON 8 "Wed Nov 26 2003" "" "Network UPS Tools (NUT)" 
+.TH UPSMON 8 "Mon Jan 22 2007" "" "Network UPS Tools (NUT)" 
 .SH NAME
 upsmon \- UPS monitor and shutdown controller
 .SH SYNOPSIS
@@ -79,7 +79,8 @@ be monitored.  Use the MONITOR directive.
 \fIpassword\fR \fItype\fR
 
 The \fIsystem\fR refers to a \fBupsd\fR(8) server, in the form
-upsname@hostname[:port].  Some examples follow:
+upsname[@hostname[:port]].  The default hostname is "localhost".  Some
+examples follow:
 
  \(hy "su700@mybox" means a UPS called "su700" on a system called "mybox".
 This is the normal form.

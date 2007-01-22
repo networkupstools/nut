@@ -1,4 +1,4 @@
-.TH UPSCLI_CONNECT 3 "Wed Oct 16 2002" "" "Network UPS Tools (NUT)"
+.TH UPSCLI_CONNECT 3 "Mon Jan 22 2007" "" "Network UPS Tools (NUT)"
 .SH NAME
 upscli_connect \- Open a connection to a NUT upsd
 .SH SYNOPSIS
@@ -10,7 +10,7 @@ upscli_connect \- Open a connection to a NUT upsd
 .SH DESCRIPTION
 The \fBupscli_connect()\fP function takes the pointer \fIups\fP to a
 UPSCONN state structure and opens a TCP connection to the \fIhost\fP on
-the given \fIport\fP.  
+the given \fIport\fP.
 .PP
 \fIflags\fP may be either \fBUPSCLI_CONN_TRYSSL\fP to try a SSL
 connection, or \fBUPSCLI_CONN_REQSSL\fP to require a SSL connection. 
@@ -27,6 +27,7 @@ descriptors.
 The \fBupscli_connect()\fP function modifies the UPSCONN structure and
 returns 0 on success, or \-1 if an error occurs.
 .SH "SEE ALSO"
-.BR upscli_disconnect "(3), " upscli_fd "(3), "
-.BR upscli_splitname "(3), "upscli_ssl "(3), " upscli_strerror "(3), "
+.BR upscli_disconnect "(3), "upscli_fd "(3), "
+.BR upscli_splitaddr "(3), "upscli_splitname "(3), "
+.BR upscli_ssl "(3), "upscli_strerror "(3), "
 .BR upscli_upserror "(3) "

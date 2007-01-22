@@ -1,3 +1,15 @@
+Mon Jan 22 21:34:06 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - man/upsd.8, man/upsd.conf.5: remove -i and -p commandline options,
+   add LISTEN parameter to upsd.conf, add IPv6 examples
+ - man/upsclient.3, man/upscli_*.3: ups format upsname[@hostname[:port]],
+   add default hostname "localhost", remove upscli_splitname where not
+   applicable
+ - man/upsc.8, man/upscmd.8, man/upslog.8, man/upsrw.8: ups format
+   upsname[@hostname[:port]], add default hostname "localhost"
+ - man/upsmon.8, man/upsmon.conf.5: ups format upsname[@hostname[:port]],
+   add default hostname "localhost"
+
 Mon Jan 22 06:02:55 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  - usbhid-ups: added support for Tripplite SmartOnline SU1500RTXL2ua

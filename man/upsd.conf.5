@@ -1,4 +1,4 @@
-.TH UPSD.CONF 5 "Fri Apr 23 2004" "" "Network UPS Tools (NUT)"
+.TH UPSD.CONF 5 "Mon Jan 22 2007" "" "Network UPS Tools (NUT)"
 .SH NAME
 upsd.conf \- Configuration for Network UPS Tools upsd
 
@@ -17,17 +17,22 @@ Define an Access Control List (ACL) called \fIname\fR that contains the
 network \fInetblock\fR.  The netblock can be either the old style, such
 as this for a traditional "class C":
 
-	ACL mynet 192.168.50.0/255.255.255.0
+	ACL mynet 192.168.50.0/255.255.255.0 (IPv4)
 
-Or, you can use new\(hystyle "CIDR format":
+Or, you can use new\(hystyle "CIDR format" (which is mandatory when IPv6
+addresses are used):
 
-	ACL mynet 192.168.50.0/24
+	ACL mynet 192.168.50.0/24 (IPv4)
+
+	ACL mynet 2001:0db8:1234::/48 (IPv6)
 
 To just list one host, it would look like one of these:
 
-	ACL mybox 192.168.50.1/255.255.255.255
+	ACL mybox 192.168.50.1/255.255.255.255 (IPv4)
 
-	ACL mybox 192.168.50.1/32
+	ACL mybox 192.168.50.1/32 (IPv4)
+
+	ACL mybox 2001:0db8:1234:08d3::0370:7344/128 (IPv6)
 
 ACLs are used whenever you need to refer to a network or host, such as
 in ACCEPT/REJECT definitions (below) and with "allowfrom" in
@@ -121,6 +126,30 @@ Most users should leave this at the default value.
 
 Tell upsd to look for the driver state sockets in \fIpath\fR rather
 than the default that was compiled into the program.
+
+.IP "LISTEN \fIinterface\fR \fIport\fR"
+
+Bind a listening port to the interface specified by its Internet
+address.  This may be useful on hosts with multiple interfaces.
+You should not rely exclusively on this for security, as it can be
+subverted on many systems.
+
+Listen on TCP port \fIport\fR instead of the default value which was
+compiled into the code.  This overrides any value you may have set
+with 'configure \-\-with\-port'.  If you don't change it with configure
+or this value, upsd will listen on port 3493 for this interface.
+
+Multiple LISTEN addresses may be specified.  The default is to bind to
+0.0.0.0 if no LISTEN addresses are specified.
+
+.IP
+.nf
+	LISTEN 127.0.0.1
+	LISTEN 192.168.50.1
+	LISTEN ::1
+	LISTEN 2001:0db8:1234:08d3:1319:8a2e:0370:7344
+.fi
+.LP
 
 .SH SEE ALSO
 \fBupsd\fR(8), \fBnutupsdrv\fR(8), \fBupsd.users\fR(5)

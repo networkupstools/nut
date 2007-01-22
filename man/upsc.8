@@ -1,4 +1,4 @@
-.TH UPSC 8 "Fri May  9 2003" "" "Network UPS Tools (NUT)" 
+.TH UPSC 8 "Mon Jan 22 2007" "" "Network UPS Tools (NUT)" 
 .SH NAME
 upsc \- example lightweight UPS client
 .SH SYNOPSIS
@@ -15,7 +15,7 @@ want to include the full interface.
 
 .IP \fIups\fR
 Display the status of that UPS.  The format for this option is
-upsname@hostname[:port].  
+upsname[@hostname[:port]].  The default hostname is "localhost".
 
 For example, "myups@mybox:1234" would poll a UPS called "myups" on a host
 called "mybox", with \fBupsd\fR(8) running on port 1234.

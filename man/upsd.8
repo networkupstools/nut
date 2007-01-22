@@ -1,4 +1,4 @@
-.TH UPSD 8 "Wed Nov 26 2003" "" "Network UPS Tools (NUT)" 
+.TH UPSD 8 "Mon Jan 22 2007" "" "Network UPS Tools (NUT)" 
 .SH NAME
 upsd \- UPS information server
 .SH SYNOPSIS
@@ -45,18 +45,6 @@ Stay in the foreground for testing.
 
 .IP "\-h"
 Display the help text.
-
-.IP "\-i \fIinterface\fR"
-Bind the listening port to the interface specified by its Internet
-address.  This may be useful on hosts with multiple interfaces.
-You should not rely exclusively on this for security, as it can be
-subverted on many systems.
-
-.IP "\-p \fIport\fR"
-Listen on TCP port \fIport\fR instead of the default value which was
-compiled into the code.  This overrides any value you may have set
-with 'configure \-\-with\-port'.  If you don't change it with configure
-or this switch, upsd will listen on port 3493.
 
 .IP "\-r \fIdirectory\fR"
 upsd will \fBchroot\fR(2) to \fIdirectory\fR shortly after startup

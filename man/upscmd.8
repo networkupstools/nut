@@ -1,4 +1,4 @@
-.TH UPSCMD 8 "Sat May 10 2003" "" "Network UPS Tools (NUT)" 
+.TH UPSCMD 8 "Mon Jan 22 2007" "" "Network UPS Tools (NUT)" 
 .SH NAME
 upscmd \- UPS administration program for instant commands
 .SH SYNOPSIS
@@ -37,7 +37,8 @@ Set the password to authenticate to the server.  This is also optional
 like \-u, and you will be prompted for it if necessary.
 
 .IP \fIups\fR
-Connect to this UPS.  The format is upsname@hostname[:port].  
+Connect to this UPS.  The format is upsname[@hostname[:port]].  The default
+hostname is "localhost".
 
 .SH UNATTENDED MODE
 
