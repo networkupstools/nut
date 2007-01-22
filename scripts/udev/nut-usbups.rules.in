@@ -26,6 +26,7 @@ SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="0001", MODE="664", GROUP="@RUN_AS_US
 # Tripp Lite - usbhid-ups
 SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="2005", MODE="664", GROUP="@RUN_AS_USER@"
 SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="1003", MODE="664", GROUP="@RUN_AS_USER@"
+SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="4003", MODE="664", GROUP="@RUN_AS_USER@"
 
 # Belkin - usbhid-ups
 SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0980", MODE="664", GROUP="@RUN_AS_USER@"

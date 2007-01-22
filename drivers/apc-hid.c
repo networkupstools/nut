@@ -99,12 +99,6 @@ static info_lkp_t batterypresent_info[] = {
   { 0, "NULL", NULL }
 };
 
-static info_lkp_t fullycharged_info[] = {
-  { 1, "fullycharged", NULL },
-  { 0, "!fullycharged", NULL },
-  { 0, "NULL", NULL }
-};
-
 /* --------------------------------------------------------------- */
 /*      Vendor-specific usage table */
 /* --------------------------------------------------------------- */

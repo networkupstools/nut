@@ -247,6 +247,12 @@ info_lkp_t on_off_info[] = {
 	{ 0, "NULL", NULL }
 };
 
+info_lkp_t fullycharged_info[] = { /* used by CyberPower and TrippLite */
+  { 1, "fullycharged", NULL },
+  { 0, "!fullycharged", NULL },
+  { 0, "NULL", NULL }
+};
+
 /* returns statically allocated string - must not use it again before
    done with result! */
 static char *date_conversion_fun(long value) {

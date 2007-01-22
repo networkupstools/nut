@@ -245,11 +245,11 @@ static int ${LDRIVER}_shutdown(int ondelay, int offdelay) {
 	
 	/* Default method */
 	upsdebugx(2, "Trying load.off.");
-        if (instcmd("load.off", NULL) == STAT_INSTCMD_HANDLED) {
-                return 1;
-        }
+	if (instcmd("load.off", NULL) == STAT_INSTCMD_HANDLED) {
+		return 1;
+	}
 	upsdebugx(2, "Shutdown failed.");
-        return 0;
+	return 0;
 }
 
 static char *${LDRIVER}_format_model(HIDDevice *hd) {
@@ -282,9 +282,11 @@ static int ${LDRIVER}_claim(HIDDevice *hd) {
 			return 1;
 		} else {
 			upsdebugx(1,
-"This particular ${LDRIVER} device (%04x/%04x) is not (or perhaps not yet)\n"
-"supported by usbhid-ups. Try running the driver with the '-x productid=%04x'\n"
-"option. Please report your results to the NUT developer's mailing list.\n",
+"This ${DRIVER} device (%04x/%04x) is not (or perhaps not yet) supported\n"
+"by usbhid-ups. Please make sure you have an up-to-date version of NUT. If\n"
+"this does not fix the problem, try running the driver with the\n"
+"'-x productid=%04x' option. Please report your results to the NUT user's\n"
+"mailing list <nut-upsuser@lists.alioth.debian.org>.\n",
 						 hd->VendorID, hd->ProductID, hd->ProductID);
 			return 0;
 		}

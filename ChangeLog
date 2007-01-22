@@ -1,10 +1,15 @@
+Mon Jan 22 06:02:55 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - usbhid-ups: added support for Tripplite SmartOnline SU1500RTXL2ua
+ - scripts/path-to-subdriver.sh: updated for new user messages
+
 Sun Jan 21 23:56:03 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  - ChangeLog: converted all dates to UTC
 
 Sun Jan 21 22:21:41 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
- - newhidups: better messages for unrecognized productids.
+ - usbhid-ups: better messages for unrecognized productids.
 
 Sun Jan 21 19:25:10 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
  - megatec: added a new parameter to override the battery empty and battery

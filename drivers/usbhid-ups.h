@@ -141,6 +141,7 @@ extern info_lkp_t test_read_info[];
 extern info_lkp_t beeper_info[];
 extern info_lkp_t yes_no_info[];
 extern info_lkp_t on_off_info[];
+extern info_lkp_t fullycharged_info[];
 extern info_lkp_t date_conversion[];
 extern info_lkp_t hex_conversion[];
 extern info_lkp_t stringid_conversion[];
