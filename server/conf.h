@@ -17,8 +17,11 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-/* startup: read all config files (upsd.conf, ups.conf, upsd.users) */
-void conf_load(void);
+/* read upsd.conf */
+void load_upsdconf(int reloading);
+
+/* add valid UPSes from ups.conf to the internal structures */
+void upsconf_add(int reloading);
 
 /* flush existing config, then reread everything */
 void conf_reload(void);
@@ -30,9 +33,6 @@ typedef struct {
 	char	*desc;
 	void	*next;
 }	ups_t;
-
-/* link to user.c for flushing during reloads */
-void user_flush(void);
 
 /* used for really clean shutdowns */
 void delete_acls(void);

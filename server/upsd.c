@@ -657,10 +657,20 @@ static void readtcp(ctype *client)
 	return;
 }
 
-static void upsd_cleanup(void)
+void server_load(void)
 {
-	ctype	*tmpcli, *tmpnext;
-	upstype	*ups, *unext;
+	stype	*serv;
+
+	/* default behaviour if no LISTEN addres has been specified */
+	if (firstaddr == NULL)
+		listen_add("0.0.0.0", string_const(PORT));
+
+	for (serv = firstaddr; serv != NULL; serv = serv->next)
+		setuptcp(serv);
+}
+
+void server_free(void)
+{
 	stype	*stmp, *snext;
 
 	/* cleanup server fds */
@@ -671,14 +681,22 @@ static void upsd_cleanup(void)
 
 		if (stmp->sock_fd != -1)
 			close(stmp->sock_fd);
-		if (stmp->addr != NULL)
+		if (stmp->addr)
 			free(stmp->addr);
-		if (stmp->port != NULL)
+		if (stmp->port)
 			free(stmp->port);
 		free(stmp);
 
 		stmp = snext;
 	}
+
+	firstaddr = NULL;
+}
+
+static void upsd_cleanup(void)
+{
+	ctype	*tmpcli, *tmpnext;
+	upstype	*ups, *unext;
 
 	/* cleanup client fds */
 	tmpcli = firstclient;
@@ -721,6 +739,7 @@ static void upsd_cleanup(void)
 	access_free();
 	user_flush();
 	desc_free();
+	server_free();
 
 	if (statepath)
 		free(statepath);
@@ -897,12 +916,10 @@ void check_perms(const char *fn)
 int main(int argc, char **argv)
 {
 	int	i, cmd = 0;
-	const char *nut_statepath_env = getenv("NUT_STATEPATH");
 	int	do_background = 1;
 	const	char *user = NULL;
 	char	*progname, *chroot_path = NULL;
-	struct	passwd	*new_uid = NULL;
-	stype	*serv;
+	struct passwd	*new_uid = NULL;
 
 	progname = argv[0];
 
@@ -910,7 +927,7 @@ int main(int argc, char **argv)
 	user = RUN_AS_USER;
 
 	/* yes, xstrdup - the conf handlers call free on this later */
-	statepath = xstrdup(STATEPATH);
+	statepath = xstrdup(dflt_statepath());
 	datapath = xstrdup(DATADIR);
 
 	/* set up some things for later */
@@ -985,31 +1002,24 @@ int main(int argc, char **argv)
 	if (argc != 0)
 		help(progname);
 
-	/* read data from config files - upsd.conf, ups.conf, upsd.users */
-	conf_load();
-
 	setupsignals();
-
-	/* default behaviour if no LISTEN addres has been specified */
-	if (firstaddr == NULL)
-		listen_add("0.0.0.0", string_const(PORT));
-
-	for (serv = firstaddr; serv != NULL; serv = serv->next)
-		setuptcp(serv);
 
 	open_syslog("upsd");
 
 	/* send logging to the syslog pre-background for later use */
 	syslogbit_set();
 
-	if (nut_statepath_env)
-		statepath = xstrdup(nut_statepath_env);
-
 	/* do this here, since getpwnam() might not work in the chroot */
 	new_uid = get_user_pwent(user);
 
 	if (chroot_path)
 		chroot_start(chroot_path);
+
+	/* handle upsd.conf */
+	load_upsdconf(0);	/* 0 = initial */
+
+	/* start server */
+	server_load();
 
 	become_user(new_uid);
 
@@ -1019,6 +1029,10 @@ int main(int argc, char **argv)
 	/* check statepath perms */
 	check_perms(statepath);
 
+	/* handle ups.conf */
+	read_upsconf();
+	upsconf_add(0);		/* 0 = initial */
+
 	if (num_ups == 0)
 		fatalx("Fatal error: at least one UPS must be defined in ups.conf");
 
@@ -1026,6 +1040,9 @@ int main(int argc, char **argv)
 
 	/* try to bring in the var/cmd descriptions */
 	desc_load();
+
+	/* handle upsd.users */
+	user_load();
 
 	if (do_background) {
 		background();

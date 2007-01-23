@@ -234,7 +234,7 @@ static void upsd_conf_err(const char *errmsg)
 	upslogx(LOG_ERR, "Fatal error in parseconf (upsd.conf): %s", errmsg);
 }
 
-static void load_upsdconf(int reloading)
+void load_upsdconf(int reloading)
 {
 	char	fn[SMALLBUF];
 	PCONF_CTX	ctx;
@@ -332,7 +332,7 @@ void do_upsconf_args(char *upsname, char *var, char *val)
 }
 
 /* add valid UPSes from ups.conf to the internal structures */
-static void upsconf_add(int reloading)
+void upsconf_add(int reloading)
 {
 	ups_t	*tmp = upstable, *next;
 	char	statefn[SMALLBUF];
@@ -482,8 +482,14 @@ void conf_reload(void)
 	acl_free();
 	access_free();
 
+	/* stop server */
+	server_free();
+
 	/* now reread upsd.conf */
 	load_upsdconf(1);		/* 1 = reloading */
+
+	/* start server */
+	server_load();
 
 	/* now delete all UPS entries that didn't get reloaded */
 
@@ -511,19 +517,5 @@ void conf_reload(void)
 	user_flush();
 
 	/* and finally reread from upsd.users */
-	user_load();
-}
-
-/* startup: load config files */
-void conf_load(void)
-{
-	/* upsd.conf */
-	load_upsdconf(0);	/* 0 = initial */
-
-	/* handle ups.conf */
-	read_upsconf();
-	upsconf_add(0);
-
-	/* upsd.users */
 	user_load();
 }

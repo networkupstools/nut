@@ -57,6 +57,9 @@ int sendback(ctype *client, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
 int send_err(ctype *client, const char *errtype);
 
+void server_load(void);
+void server_free(void);
+
 void check_perms(const char *fn);
 
 /* map commands onto signals */

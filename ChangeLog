@@ -1,3 +1,12 @@
+Tue Jan 23 20:19:31 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * server/conf.[ch], server/upsd.[ch]:
+   - don't load upsd.conf, ups.conf and upsd.users all at the same time
+     (removed load_conf() function)
+   - load the configuration files after chroot'ing
+   - if the environment variable NUT_STATEPATH was present, there was a small
+     memory leak (statepath would be dynamically allocated twice with xstrdup)
+
 Mon Jan 22 21:34:06 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - man/upsd.8, man/upsd.conf.5: remove -i and -p commandline options,
