@@ -1,3 +1,9 @@
+Tue Jan 23 21:12:15 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+
+ - Add firmware revision to all included cpu's in bcmxcp.c.
+ - Remove reading of topology block for num phases. Use standard
+   config block. ( Make it work on compaq ups again.) bcmxcp.c.
+
 Tue Jan 23 20:19:31 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * server/conf.[ch], server/upsd.[ch]:

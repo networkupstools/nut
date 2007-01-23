@@ -57,6 +57,7 @@ char *FreqTol[3] = {"+/-2%", "+/-5%", "+/-7"};
 char *ABMStatus[4] = {"Charging", "Discharging", "Floating", "Resting"};
 unsigned char AUTHOR[4] = {0xCF, 0x69, 0xE8, 0xD5};		/* Autorisation	command	*/
 int nphases = 0;
+char *cpu_name[] = {"Cont:", "Inve:", "Rect:", "Netw:", "Disp:"};
 
 /* get_word funktion from nut driver metasys.c */
 int get_word(const unsigned char *buffer)	/* return an integer reading a word in the supplied buffer */
@@ -727,22 +728,10 @@ void upsdrv_initinfo(void)
 	unsigned char answer[256];
 	char *pTmp, sValue[17];
 	int iRating = 0, iIndex = 0, res, len;
-	int voltage = 0;
+	int voltage = 0, ncpu = 0, buf;
 
 	/* Set driver version info */
 	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
-
-	/* Get information on Phases from UPS */
-	res = command_read_sequence(PW_UPS_TOP_DATA_REQ, answer);
-	if (res <= 0)
-		fatal_with_errno("Could not communicate with the ups");
-
-	nphases = (answer[0] & 0x0F) +1;
-	dstate_setinfo("input.phases", "%d", nphases);
-
-
-	/* Init BCM/XCP <-> NUT meter map */
-	init_meter_map();
 
 	/* Init BCM/XCP alarm descriptions */
 	init_alarm_map();
@@ -761,15 +750,26 @@ void upsdrv_initinfo(void)
 	/* Get number of CPU's in ID block */
 	len = answer[iIndex++];
 
+	buf = len * 11;
+	pTmp = xmalloc(buf+1);
+
+	pTmp[0] = 0;
 	/* If there is one or more CPU number, get it */
 	if (len > 0) {
 		do {
-			/* Get the ups firmware. The major number is in the last byte, the minor is in the first */
-			dstate_setinfo("ups.firmware", "%02x.%02x", (unsigned char)answer[iIndex+1],
-				(unsigned char)answer[iIndex]);
+			if ((answer[iIndex] != 0x00) || (answer[iIndex+1] != 0x00)) {
+				/* Get the ups firmware. The major number is in the last byte, the minor is in the first */
+				snprintfcat(pTmp, buf+1, "%s%02x.%02x ", cpu_name[ncpu], answer[iIndex+1], answer[iIndex]);
+			}
 			iIndex += 2;
 			len--;
-		} while ((strcmp("00.00", dstate_getinfo("ups.firmware")) == 0) && len > 0);
+			ncpu++;
+
+		} while ((len > 0) && (ncpu <= 5));
+
+		dstate_setinfo("ups.firmware", "%s", pTmp);
+
+		free(pTmp);
 
 		/* Increment index to point at end of CPU bytes. */
 		iIndex += len * 2;
@@ -786,8 +786,15 @@ void upsdrv_initinfo(void)
 	}
 	dstate_setinfo("ups.power.nominal", "%d", iRating);
 
-	/* Skip	UPS' number of phases and phase angle, as NUT do not care */
-	iIndex += 2;
+	/* Get information on Phases from UPS */
+	nphases = (answer[iIndex++]);
+	dstate_setinfo("output.phases", "%d", nphases);
+
+	/* Init BCM/XCP <-> NUT meter map */
+	init_meter_map();
+
+	/* Skip	UPS' phase angle, as NUT do not care */
+	iIndex += 1;
 	
 	/* Get length of UPS description */
 	len = answer[iIndex++];
