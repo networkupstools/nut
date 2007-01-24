@@ -21,7 +21,7 @@ configure-stamp:
 	    --libdir=/usr/lib \
 	    --includedir=/usr/include \
 	    --without-ssl \
-	    --without-hal \
+	    --with-hal \
 	    --with-cgi \
 	    --with-lib \
 	    --disable-shared \
@@ -120,25 +120,35 @@ install-stamp:
 	mv $(CURDIR)/debian/nut/usr/lib/cgi-bin/nut/* $(CURDIR)/debian/nut-cgi/usr/lib/cgi-bin/nut/ 
 	rm -rf $(CURDIR)/debian/nut/usr/lib/cgi-bin 
 
-	mkdir -p $(CURDIR)/debian/nut-cgi/var/www/nut
-	mv $(CURDIR)/debian/nut/var/www/nut $(CURDIR)/debian/nut-cgi/var/www
+	mkdir -p $(CURDIR)/debian/nut-cgi/var
+	mv $(CURDIR)/debian/nut/var/www $(CURDIR)/debian/nut-cgi/var
  
 	for manpage in man5/upsstats.html.5 man5/hosts.conf.5 man5/upsset.conf.5 \
 	    man8/upsimage.cgi.8 man8/upsset.cgi.8 man8/upsstats.cgi.8 ; do \
 	    mv $(CURDIR)/debian/nut{,-cgi}/usr/share/man/$$manpage ; \
 	done 
  
+	# SNMP:
 	mkdir -p $(CURDIR)/debian/nut-snmp/lib/nut $(CURDIR)/debian/nut-snmp/usr/share/man/man8
 	mv $(CURDIR)/debian/nut/usr/share/man/man8/snmp-ups.8 $(CURDIR)/debian/nut-snmp/usr/share/man/man8
 	mv $(CURDIR)/debian/nut/lib/nut/snmp-ups $(CURDIR)/debian/nut-snmp/lib/nut
 
 	mv $(CURDIR)/debian/nut/lib/nut/upsdrvctl $(CURDIR)/debian/nut/sbin
 
+	# HAL:
+	mkdir -p $(CURDIR)/debian/nut-hal-drivers/usr/lib/hal \
+		$(CURDIR)/debian/nut-hal-drivers/usr/share/hal/fdi/information/20thirdparty
+	mv $(CURDIR)/debian/nut/lib/nut/hald-addon-* $(CURDIR)/debian/nut-hal-drivers/usr/lib/hal
+	# FIXME: this should have a 'make install' rule:
+	cp $(CURDIR)/scripts/hal/* $(CURDIR)/debian/nut-hal-drivers/usr/share/hal/fdi/information/20thirdparty
+
 	dh_installexamples
 	rm $(CURDIR)/debian/nut/etc/nut/*
 
 	dh_installdocs -X.svn
 	rm $(CURDIR)/debian/nut/usr/share/doc/nut/docs/Makefile*
+
+	mv $(CURDIR)/debian/nut/bin/upssched-cmd $(CURDIR)/debian/nut/usr/share/doc/nut/examples
 
 	dh_installchangelogs ChangeLog
 	dh_installinit

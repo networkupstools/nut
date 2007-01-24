@@ -3,7 +3,7 @@ Section: admin
 Priority: optional
 Maintainer: Arnaud Quette <aquette@debian.org>
 Uploaders: Luca Filipozzi <lfilipoz@debian.org>, Shaul Karl <shaul@debian.org>
-Build-Depends: debhelper (>= 4.1.16), dpatch (>= 2.0.10), libgd2-xpm-dev | libgd2-noxpm-dev | libgd2-dev, libsnmp9-dev, libusb-dev (>= 0.1.8)
+Build-Depends: debhelper (>= 4.1.16), dpatch (>= 2.0.10), libgd2-xpm-dev | libgd2-noxpm-dev | libgd2-dev, libsnmp9-dev, libusb-dev (>= 0.1.8), libhal-dev
 Standards-Version: 3.6.2
 
 Package: nut
@@ -11,7 +11,7 @@ Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, debconf (>= 0.5.00), lsb-base (>= 3.0-6)
 Suggests: nut-cgi, nut-snmp, nut-usb, nut-dev
 Provides: ups-monitor, nut-doc
-Conflicts: ups-monitor, nut-doc
+Conflicts: ups-monitor, nut-doc, nut-hal-drivers
 Replaces: nut-doc
 Description: The core system of the nut - Network UPS Tools
  nut is a client/server uninterruptible power supply (UPS) monitoring system
@@ -61,9 +61,9 @@ Description: A meta SNMP Driver subsystem for the nut - Network UPS Tools
 
 Package: nut-usb
 Architecture: any
-Depends: ${shlibs:Depends}, nut (>= 1.4.1-pre2), ${udev}
-Conflicts: nut (<= 1.4.1-pre1)
-Description: USB Drivers subsystem for the nut - Network UPS Tools
+Depends: ${shlibs:Depends}, nut (>= 2.0.5-1), ${udev}
+Conflicts: nut (<< 2.0.5-1)
+Description: USB Drivers subsystem for NUT - Network UPS Tools
  nut is a client/server uninterruptible power supply (UPS) monitoring system
  that permits the sharing of one (or more) UPS between several machines. The
  'server' monitors the UPS and notifies the 'clients' when the UPS is on
@@ -80,7 +80,7 @@ Package: nut-dev
 Architecture: any
 Depends: ${shlibs:Depends}, nut (>= 1.4.3-2)
 Conflicts: nut (<= 1.4.3-1)
-Description: Development files for the nut - Network UPS Tools
+Description: Development files for NUT - Network UPS Tools
  nut is a client/server uninterruptible power supply (UPS) monitoring system
  that permits the sharing of one (or more) UPS between several machines. The
  'server' monitors the UPS and notifies the 'clients' when the UPS is on
@@ -93,3 +93,18 @@ Description: Development files for the nut - Network UPS Tools
  what this is all about.
  .
  Homepage: http://www.networkupstools.org
+
+Package: nut-hal-drivers
+Architecture: any
+Depends: ${shlibs:Depends}
+Conflicts: nut
+Provides: hal-ups-support
+Description: HAL interface for NUT - Network UPS Tools
+ nut is a client/server uninterruptible power supply (UPS) monitoring system
+ that permits the sharing of one (or more) UPS between several machines. The
+ 'server' monitors the UPS and notifies the 'clients' when the UPS is on
+ or has a low battery.
+ .
+ This package contains addons for the hardware abstraction layer (HAL) that
+ allow desktop environments to monitor locally-connected UPS equipment. The
+ HAL drivers cannot be used at the same time as the normal NUT upsd.
