@@ -6,5 +6,6 @@ files
 nut
 nut-cgi
 nut-dev
+nut-hal-drivers
 nut-snmp
 nut-usb
