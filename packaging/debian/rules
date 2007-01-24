@@ -21,11 +21,15 @@ configure-stamp:
 	    --libdir=/usr/lib \
 	    --includedir=/usr/include \
 	    --without-ssl \
+	    --with-hal \
 	    --with-cgi \
+	    --with-lib \
+	    --disable-shared \
 	    --with-statepath=/var/run/nut \
 	    --with-altpidpath=/var/run/nut \
 	    --with-drvpath=/lib/nut \
 	    --with-cgipath=/usr/lib/cgi-bin/nut \
+	    --with-htmlpath=/var/www/nut \
 	    --with-pidpath=/var/run/nut \
 	    --datadir=/usr/share/nut \
 	    --with-user=nut
@@ -43,6 +47,9 @@ clean-patched:
 	dh_testdir
 	dh_testroot
 	rm -f configure-stamp build-stamp install-stamp
+#	-$(MAKE) clean
+	# temp. workaround to clean drivers/tripplite_usb
+#	rm -f $(CURDIR)/drivers/tripplite_usb
 	-$(MAKE) distclean
 	dh_clean
 	-test -r /usr/share/misc/config.sub && \
@@ -74,31 +81,75 @@ install-stamp:
 	dh_clean -k
 	dh_installdirs
 	$(MAKE) install \
-		DESTDIR=$(PWD)/debian/nut RUNUID=65534 RUNGID=65534
-	$(MAKE) install-lib \
-		DESTDIR=$(PWD)/debian/nut-dev RUNUID=65534 RUNGID=65534
-	# install dummycons test driver and its manpage
-	mkdir -p $(PWD)/debian/nut-dev/lib/nut
-	mkdir -p $(PWD)/debian/nut-dev/usr/share/man/man8/
-	cp $(PWD)/drivers/dummycons $(PWD)/debian/nut-dev/lib/nut
-	cp $(PWD)/man/dummycons.8 $(PWD)/debian/nut-dev/usr/share/man/man8/
-	$(MAKE) install-snmp \
-		DESTDIR=$(PWD)/debian/nut-snmp RUNUID=65534 RUNGID=65534
-	$(MAKE) install-usb \
-		DESTDIR=$(PWD)/debian/nut-usb RUNUID=65534 RUNGID=65534
-#ifeq (linux,$(DEB_HOST_GNU_SYSTEM))
-        # install hotplug scripts
-	mkdir -p $(PWD)/debian/nut-usb/etc/hotplug/usb/
-	install -m 755 $(PWD)/scripts/hotplug/libhidups $(PWD)/debian/nut-usb/etc/hotplug/usb/
-	install -m 644 $(PWD)/scripts/hotplug/libhid.usermap $(PWD)/debian/nut-usb/etc/hotplug/usb/
-#endif
-	$(MAKE) install-cgi \
-		DESTDIR=$(PWD)/debian/nut-cgi RUNUID=65534 RUNGID=65534
-	mv $(PWD)/debian/nut/lib/nut/upsdrvctl $(PWD)/debian/nut/sbin
-	# conf files workaround
-	#rm $(PWD)/debian/nut/etc/nut/* $(PWD)/debian/nut-cgi/etc/nut/*
+		DESTDIR=$(CURDIR)/debian/nut RUNUID=65534 RUNGID=65534
+	# install dummy-ups test driver (manpage already installed)
+#	mkdir -p $(CURDIR)/debian/nut-dev/lib/nut
+#	mkdir -p $(CURDIR)/debian/nut-dev/usr/share/man/man8/
+#	cp $(CURDIR)/drivers/dummy-ups $(CURDIR)/debian/nut-dev/lib/nut
+    
+	mkdir -p $(CURDIR)/debian/nut-dev/usr/bin $(CURDIR)/debian/nut-dev/usr/include
+	mkdir -p $(CURDIR)/debian/nut-dev/usr/share/man/man8 $(CURDIR)/debian/nut-dev/usr/lib 
+	mkdir -p $(CURDIR)/debian/nut-dev/lib/nut 
+	mv $(CURDIR)/debian/nut/usr/include/*                  $(CURDIR)/debian/nut-dev/usr/include/ 
+	mv $(CURDIR)/debian/nut/usr/share/man/man3             $(CURDIR)/debian/nut-dev/usr/share/man 
+	mv $(CURDIR)/debian/nut/lib/nut/dummy-ups              $(CURDIR)/debian/nut-dev/lib/nut
+	mv $(CURDIR)/debian/nut/usr/share/man/man8/dummy-ups.8 $(CURDIR)/debian/nut-dev/usr/share/man/man8
+	mv $(CURDIR)/debian/nut/bin/libupsclient-config        $(CURDIR)/debian/nut-dev/usr/bin
+	mv $(CURDIR)/debian/nut/usr/lib/pkgconfig              $(CURDIR)/debian/nut-dev/usr/lib
+	mv $(CURDIR)/debian/nut/usr/lib/libupsclient.a         $(CURDIR)/debian/nut-dev/usr/lib
+	mv $(CURDIR)/debian/nut/usr/lib/libupsclient.la        $(CURDIR)/debian/nut-dev/usr/lib
+
+	rm $(CURDIR)/debian/nut/lib/nut/skel
+	
+	### FIXME: create a new package for shared library later, and remove --disable-shared above
+	# rm $(CURDIR)/debian/nut/usr/lib/libupsclient.so* $(CURDIR)/debian/nut/usr/lib/libupsclient.la 
+
+	# USB drivers:
+	mkdir -p $(CURDIR)/debian/nut-usb/etc/udev/rules.d
+	install -m 644 $(CURDIR)/scripts/udev/nut-usbups.rules \
+		$(CURDIR)/debian/nut-usb/etc/udev/rules.d/025_nut-usbups.rules
+
+	mkdir -p $(CURDIR)/debian/nut-usb/lib/nut $(CURDIR)/debian/nut-usb/usr/share/man/man8
+	for driver in usbhid-ups bcmxcp_usb tripplite_usb energizerups; do \
+	    mv $(CURDIR)/debian/nut/lib/nut/$$driver $(CURDIR)/debian/nut-usb/lib/nut ; \
+	    mv $(CURDIR)/debian/nut/usr/share/man/man8/$$driver.8 $(CURDIR)/debian/nut-usb/usr/share/man/man8 ; \
+	done 
+
+	# CGI:
+	mkdir -p $(CURDIR)/debian/nut-cgi/usr/lib/cgi-bin/nut $(CURDIR)/debian/nut-cgi/usr/share/man/man{5,8} 
+	mv $(CURDIR)/debian/nut/usr/lib/cgi-bin/nut/* $(CURDIR)/debian/nut-cgi/usr/lib/cgi-bin/nut/ 
+	rm -rf $(CURDIR)/debian/nut/usr/lib/cgi-bin 
+
+	mkdir -p $(CURDIR)/debian/nut-cgi/var
+	mv $(CURDIR)/debian/nut/var/www $(CURDIR)/debian/nut-cgi/var
+ 
+	for manpage in man5/upsstats.html.5 man5/hosts.conf.5 man5/upsset.conf.5 \
+	    man8/upsimage.cgi.8 man8/upsset.cgi.8 man8/upsstats.cgi.8 ; do \
+	    mv $(CURDIR)/debian/nut{,-cgi}/usr/share/man/$$manpage ; \
+	done 
+ 
+	# SNMP:
+	mkdir -p $(CURDIR)/debian/nut-snmp/lib/nut $(CURDIR)/debian/nut-snmp/usr/share/man/man8
+	mv $(CURDIR)/debian/nut/usr/share/man/man8/snmp-ups.8 $(CURDIR)/debian/nut-snmp/usr/share/man/man8
+	mv $(CURDIR)/debian/nut/lib/nut/snmp-ups $(CURDIR)/debian/nut-snmp/lib/nut
+
+	mv $(CURDIR)/debian/nut/lib/nut/upsdrvctl $(CURDIR)/debian/nut/sbin
+
+	# HAL:
+	mkdir -p $(CURDIR)/debian/nut-hal-drivers/usr/lib/hal \
+		$(CURDIR)/debian/nut-hal-drivers/usr/share/hal/fdi/information/20thirdparty
+	mv $(CURDIR)/debian/nut/lib/nut/hald-addon-* $(CURDIR)/debian/nut-hal-drivers/usr/lib/hal
+	# FIXME: this should have a 'make install' rule:
+	cp $(CURDIR)/scripts/hal/* $(CURDIR)/debian/nut-hal-drivers/usr/share/hal/fdi/information/20thirdparty
+
 	dh_installexamples
-	dh_installdocs
+	rm $(CURDIR)/debian/nut/etc/nut/*
+
+	dh_installdocs -X.svn
+	rm $(CURDIR)/debian/nut/usr/share/doc/nut/docs/Makefile*
+
+	mv $(CURDIR)/debian/nut/bin/upssched-cmd $(CURDIR)/debian/nut/usr/share/doc/nut/examples
+
 	dh_installchangelogs ChangeLog
 	dh_installinit
 	dh_link
@@ -117,7 +168,11 @@ binary-arch: install
 	dh_fixperms
 	dh_installdeb
 	dh_shlibdeps -Xlibupsclient.a
-	dh_gencontrol 
+ifeq (linux,$(DEB_HOST_ARCH_OS))
+	dh_gencontrol -- -Vudev="udev"
+else
+	dh_gencontrol
+endif
 	dh_md5sums
 	dh_builddeb
 

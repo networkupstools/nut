@@ -1,11 +1,5 @@
 #!/bin/sh -e
 
-check_and_delete_user() {
-	if [ `getent passwd nut` ]; then
-		deluser --quiet nut
-	fi
-}
-								
 case "$1" in
 
   remove)
@@ -18,8 +12,7 @@ case "$1" in
     ;;
 
   purge)
-    # need to be enhanced with nut
-    check_and_delete_user
+    # do nothing
     ;;
 
   upgrade)

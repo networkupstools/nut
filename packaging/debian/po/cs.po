@@ -16,18 +16,18 @@ msgstr ""
 "Project-Id-Version: nut\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2005-04-19 15:41+0200\n"
-"PO-Revision-Date: 2004-11-27 12:03+0100\n"
+"PO-Revision-Date: 2006-05-10 21:05+0200\n"
 "Last-Translator: Miroslav Kure <kurem@debian.cz>\n"
-"Language-Team: Czech <provoz@debian.cz>\n"
+"Language-Team: Czech <debian-l10n-czech@lists.debian.org>\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=ISO-8859-2\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
 #. Type: boolean
 #. Description
 #: ../nut.templates:3
 msgid "Remove obsolete /etc/nut/debian.conf file?"
-msgstr "Odstranit zastaralı soubor /etc/nut/debian.conf?"
+msgstr "Odstranit zastaralÃ½ soubor /etc/nut/debian.conf?"
 
 #. Type: boolean
 #. Description
@@ -38,9 +38,9 @@ msgid ""
 "daemons. The init script no longer looks for /etc/nut/debian.conf. Instead "
 "it reads /etc/nut/upsd.conf and /etc/nut/upsmon.conf directly."
 msgstr ""
-"Autor nutu zmìnil chování upsd a upsmon, co¾ nutnì vyvolalo zmìny ve "
-"startovacím skriptu /etc/init.d/nut. Tento skript ji¾ nehledá soubor /etc/"
-"nut/debian.conf, ale ète pøímo /etc/nut/upsd.conf a /etc/nut/upsmon.conf."
+"Autor nutu zmÄ›nil chovÃ¡nÃ­ upsd a upsmon, coÅ¾ nutnÄ› vyvolalo zmÄ›ny ve "
+"startovacÃ­m skriptu /etc/init.d/nut. Tento skript jiÅ¾ nehledÃ¡ soubor /etc/"
+"nut/debian.conf, ale Äte pÅ™Ã­mo /etc/nut/upsd.conf a /etc/nut/upsmon.conf."
 
 #. Type: boolean
 #. Description
@@ -51,9 +51,9 @@ msgid ""
 "MONITOR line. Please read the instructions in /usr/share/doc/nut/README."
 "Debian."
 msgstr ""
-"Nepotøebnı soubor /etc/nut/debian.conf bude odstranìn. Pamatujte, ¾e aby "
-"upsmon fungoval, musíte do souboru /etc/nut/upsmon.conf pøidat øádek "
-"MONITOR. Návod si pøeètìte v /usr/share/doc/nut/README.Debian."
+"NepotÅ™ebnÃ½ soubor /etc/nut/debian.conf bude odstranÄ›n. Pamatujte, Å¾e aby "
+"upsmon fungoval, musÃ­te do souboru /etc/nut/upsmon.conf pÅ™idat Å™Ã¡dek "
+"MONITOR. NÃ¡vod si pÅ™eÄtÄ›te v /usr/share/doc/nut/README.Debian."
 
 #. Type: boolean
 #. Description
@@ -64,9 +64,9 @@ msgid ""
 "in this package takes advantage of this new syntax. You will need to "
 "manually modify your configuration file in order for the init script to work."
 msgstr ""
-"Autor nutu zmìnil v konfiguraèním souboru /etc/nut/upsd.conf syntaxi UPS "
-"øádek. Spou¹tìcí skript vyu¾ívá této nové syntaxe. Aby spou¹tìcí skript "
-"fungoval, budete muset ruènì upravit konfiguraèní soubor."
+"Autor nutu zmÄ›nil v konfiguraÄnÃ­m souboru /etc/nut/upsd.conf syntaxi UPS "
+"Å™Ã¡dek. SpouÅ¡tÄ›cÃ­ skript vyuÅ¾Ã­vÃ¡ tÃ©to novÃ© syntaxe. Aby spouÅ¡tÄ›cÃ­ skript "
+"fungoval, budete muset ruÄnÄ› upravit konfiguraÄnÃ­ soubor."
 
 #. Type: boolean
 #. Description
@@ -77,17 +77,17 @@ msgid ""
 "the command or only the first word will be invoked. The new style is:\n"
 "  SHUTDOWNCMD \"/sbin/shutdown -h\""
 msgstr ""
-"V konfiguraèním souboru /etc/nut/upsmon.conf se vıznamnì zmìnila syntaxe "
-"øádku SHUTDOWNCMD. SHUTDOWNCMD nyní musí mít kolem pøíkazu \"uvozovky\". "
-"Zapomenete-li na nì, spustí se pouze první slovo pøíkazu. Novì tedy øádek "
-"vypadá takto:\n"
+"V konfiguraÄnÃ­m souboru /etc/nut/upsmon.conf se vÃ½znamnÄ› zmÄ›nila syntaxe "
+"Å™Ã¡dku SHUTDOWNCMD. SHUTDOWNCMD nynÃ­ musÃ­ mÃ­t kolem pÅ™Ã­kazu \"uvozovky\". "
+"Zapomenete-li na nÄ›, spustÃ­ se pouze prvnÃ­ slovo pÅ™Ã­kazu. NovÄ› tedy Å™Ã¡dek "
+"vypadÃ¡ takto:\n"
 "  SHUTDOWNCMD \"/sbin/shutdown -h\""
 
 #. Type: note
 #. Description
 #: ../nut.templates:32
 msgid "Remove user \"nut\" from dialout group. Continue?"
-msgstr "Odstraním u¾ivatele \"nut\" ze skupiny \"dialout\". Pokraèovat?"
+msgstr "OdstranÃ­m uÅ¾ivatele \"nut\" ze skupiny \"dialout\". PokraÄovat?"
 
 #. Type: note
 #. Description
@@ -98,9 +98,9 @@ msgid ""
 "permissions on the serial port devices, /dev/ttyS*, to permit access by the "
 "nut group."
 msgstr ""
-"Systémovı u¾ivatel \"nut\" bude odstranìn ze skupiny \"dialout\" a bude "
-"vytvoøena nová systémová skupina \"nut\". U¾ivatelé musí ruènì zmìnit práva "
-"na zaøízeních pro sériové porty (/dev/ttyS*), aby povolili pøístup skupinì "
+"SystÃ©movÃ½ uÅ¾ivatel \"nut\" bude odstranÄ›n ze skupiny \"dialout\" a bude "
+"vytvoÅ™ena novÃ¡ systÃ©movÃ¡ skupina \"nut\". UÅ¾ivatelÃ© musÃ­ ruÄnÄ› zmÄ›nit prÃ¡va "
+"na zaÅ™Ã­zenÃ­ch pro sÃ©riovÃ© porty (/dev/ttyS*), aby povolili pÅ™Ã­stup skupinÄ› "
 "nut."
 
 #. Type: boolean
@@ -113,10 +113,10 @@ msgid ""
 "that weren't rewritten have been dropped), and the TCP port on which upsd "
 "listens has changed."
 msgstr ""
-"Autor nutu provedl v programu velké zmìny, které ovlivnily chování tohoto "
-"programu. Konktrétnì se úplnì zmìnily konfiguraèní soubory v /etc/nut, "
-"vìt¹ina ovladaèù byla pøepsána (ty zbıvající byly zahozeny) a také se zmìnil "
-"TCP port, na kterém naslouchá upsd."
+"Autor nutu provedl v programu velkÃ© zmÄ›ny, kterÃ© ovlivnily chovÃ¡nÃ­ tohoto "
+"programu. KonkrÃ©tnÄ› se ÃºplnÄ› zmÄ›nily konfiguraÄnÃ­ soubory v /etc/nut, "
+"vÄ›tÅ¡ina ovladaÄÅ¯ byla pÅ™epsÃ¡na (ty zbÃ½vajÃ­cÃ­ byly zahozeny) a takÃ© se zmÄ›nil "
+"TCP port, na kterÃ©m naslouchÃ¡ upsd."
 
 #. Type: boolean
 #. Description
@@ -126,45 +126,42 @@ msgid ""
 "restart unless you manually change your configuration files and edit /etc/"
 "default/nut.  You have been warned!"
 msgstr ""
-"Pokud budete pokraèovat v instalaci tohoto balíku, upsd/upsmod NEBUDOU "
-"restartovány, dokud ruènì neupravíte konfiguraèní soubory a nezmìníte /etc/"
-"default/nut. Byli jste varováni."
+"Pokud budete pokraÄovat v instalaci tohoto balÃ­ku, upsd/upsmod NEBUDOU "
+"restartovÃ¡ny, dokud ruÄnÄ› neupravÃ­te konfiguraÄnÃ­ soubory a nezmÄ›nÃ­te /etc/"
+"default/nut. Byli jste varovÃ¡ni."
 
 #. Type: boolean
 #. Description
 #: ../nut.templates:55
 msgid "Please manually modify your configuration files! Continue?"
-msgstr "Ruènì si upravte konfiguraèní soubory! Pokraèovat?"
+msgstr "RuÄnÄ› si upravte konfiguraÄnÃ­ soubory! PokraÄovat?"
 
 #. Type: boolean
 #. Description
 #: ../nut.templates:55
 msgid "This is a serious advisory. Please take note."
-msgstr "Toto je velmi dùle¾ité."
+msgstr "Toto je velmi dÅ¯leÅ¾itÃ©."
 
 #. Type: boolean
 #. Description
 #: ../nut.templates:55
-#, fuzzy
 msgid ""
 "There have been significant changes by the upstream author to the behaviour "
 "of this software. Specifically, the configuration files in /etc/nut are "
 "different, some ups drivers have been renamed, ..."
 msgstr ""
-"Autor nutu provedl v programu velké zmìny, které ovlivnily chování tohoto "
-"programu. Konktrétnì se úplnì zmìnily konfiguraèní soubory v /etc/nut, "
-"vìt¹ina ovladaèù byla pøepsána (ty zbıvající byly zahozeny) a také se zmìnil "
-"TCP port, na kterém naslouchá upsd."
+"Autor nutu provedl v programu vÃ½znamnÃ© zmÄ›ny, kterÃ© ovlivnily chovÃ¡nÃ­ tohoto "
+"programu. KonkrÃ©tnÄ› se zmÄ›nily konfiguraÄnÃ­ soubory v /etc/nut, nÄ›kterÃ© "
+"ovladaÄe byly pÅ™ejmenovÃ¡ny, atd."
 
 #. Type: boolean
 #. Description
 #: ../nut.templates:55
-#, fuzzy
 msgid ""
 "If you continue with the installation of this package, upsd/upsmon will NOT "
 "restart unless you manually change your configuration files. Please read /"
 "usr/share/doc/nut/UPGRADING.gz for the upgrading procedure."
 msgstr ""
-"Pokud budete pokraèovat v instalaci tohoto balíku, upsd/upsmod NEBUDOU "
-"restartovány, dokud ruènì neupravíte konfiguraèní soubory a nezmìníte /etc/"
-"default/nut. Byli jste varováni."
+"Budete-li pokraÄovat v instalaci tohoto balÃ­ku, upsd/upsmod NEBUDOU "
+"restartovÃ¡ny, dokud ruÄnÄ› neupravÃ­te konfiguraÄnÃ­ soubory. NÃ¡vod pro "
+"aktualizaci naleznete v souboru /usr/share/doc/nut/UPGRADING.gz."
