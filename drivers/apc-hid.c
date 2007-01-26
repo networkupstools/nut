@@ -197,6 +197,7 @@ static hid_info_t apc_hid2nut[] = {
   { "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_OK, NULL},
   { "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, "%.0f", HU_FLAG_OK, NULL}, /* APC */
   { "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Output.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_OK, NULL}, /* CyberPower */
+  { "ups.delay.restart", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Output.DelayBeforeStartup", NULL, "%.0f", HU_FLAG_OK, NULL}, /* CyberPower */
   { "ups.test.result", 0, 0, "UPS.Battery.Test", NULL, "%s", HU_FLAG_OK, &test_read_info[0] },
   { "ups.test.result", 0, 0, "UPS.Output.Test", NULL, "%s", HU_FLAG_OK, &test_read_info[0] }, /* CyberPower */
   { "ups.beeper.status", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", HU_FLAG_OK, &beeper_info[0] },
@@ -366,7 +367,7 @@ static int apc_claim(HIDDevice *hd) {
 	} else if (hd->VendorID == CPS_VENDORID) {
 		switch (hd->ProductID) {
 		case 0x0005:
-		case 0x0501:
+		case 0x0501:  /* Cyber Power AE550, Geek Squad GS1285U */
 			return 1;  /* accept known UPSs */
 		default:
 			if (getval("productid")) {

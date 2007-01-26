@@ -102,6 +102,7 @@
 "Cyber Power Systems"	"685AVR"	"USB port"	"usbhid-ups"
 "Cyber Power Systems"	"800AVR"	"USB port"	"usbhid-ups"
 "Cyber Power Systems"	"AE550"		"USB port"	"usbhid-ups"
+"Cyber Power Systems"	"Geek Squad GS1285U"	"USB port"	"usbhid-ups"
 
 "Deltec"	"PowerRite Pro II"	""	"genericups upstype=15"
 
@@ -145,6 +146,8 @@
 "Gamatronic"	"MS-T"		""	"gamatronic"
 "Gamatronic"	"MS"		""	"gamatronic"
 "Gamatronic"	"µPS3/1"	""	"gamatronic"
+
+"Geek Squad"	"GS1285U"	"USB port"	"usbhid-ups"
 
 "Gemini"	"UPS625/UPS1000"	""	"safenet"
 

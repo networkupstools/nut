@@ -1,3 +1,8 @@
+Fri Jan 26 22:47:55 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - usbhid-ups: added driver list entry and usages for Geek Squad GS1285U, 
+   which is apparently identical to Cyber Power AE550 (0764/0501).
+
 Tue Jan 23 21:12:15 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
  - Add firmware revision to all included cpu's in bcmxcp.c.
