@@ -1011,6 +1011,7 @@ static int string_to_path(char *HIDpath, HIDPath *path, usage_tables_t *utab)
 static int path_to_string(char *HIDpath, HIDPath *path, usage_tables_t *utab)
 {
 	int i = 0;
+	char buf[20];
 	
 	upsdebugx(5, "entering path_to_string()");
 	
@@ -1019,19 +1020,22 @@ static int path_to_string(char *HIDpath, HIDPath *path, usage_tables_t *utab)
 	/* Numeric to String */
 	for (i = 0; i < path->Size; i++)
 	{
-		/* Deal with ?bogus? */
+		/* Deal with ?bogus? 
 		if (path->Node[i] == 0)
 			continue;
+		*/
 		
 		/* manage indexed collection */
 		if ((path->Node[i] & 0xffff0000) == 0x00ff0000)
 		{
 			upsdebugx(5, "Got an indexed collection");
-			sprintf(strrchr(HIDpath, '.'), "[%i]", path->Node[i] & 0x0000ffff);
+			sprintf(buf, "[%i]", path->Node[i] & 0x0000ffff);
+			strcat (HIDpath, buf);
 		}
 		else
+		{
 			strcat(HIDpath, hid_lookup_path(path->Node[i], utab));
-		
+		}
 		if (i < (path->Size - 1))
 			strcat (HIDpath, ".");
 	}
