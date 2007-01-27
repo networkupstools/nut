@@ -482,14 +482,8 @@ void conf_reload(void)
 	acl_free();
 	access_free();
 
-	/* stop server */
-	server_free();
-
 	/* now reread upsd.conf */
 	load_upsdconf(1);		/* 1 = reloading */
-
-	/* start server */
-	server_load();
 
 	/* now delete all UPS entries that didn't get reloaded */
 

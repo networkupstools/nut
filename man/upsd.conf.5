@@ -151,6 +151,9 @@ Multiple LISTEN addresses may be specified.  The default is to bind to
 .fi
 .LP
 
+This parameter will only be read at startup.  You'll need to restart
+(rather than reload) upsd to apply any changes made here.
+
 .SH SEE ALSO
 \fBupsd\fR(8), \fBnutupsdrv\fR(8), \fBupsd.users\fR(5)
 

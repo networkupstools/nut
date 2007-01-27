@@ -153,6 +153,10 @@ void listen_add(const char *addr, const char *port)
 {
 	stype	*stmp, *last;
 
+	/* don't change listening addresses on reload */
+	if (reload_flag)
+		return;
+
 	stmp = last = firstaddr;
 
 	/* find end of linked list */
@@ -178,8 +182,8 @@ void listen_add(const char *addr, const char *port)
 
 /* create a listening socket for tcp connections */
 static void setuptcp(stype *serv)
-#ifndef	HAVE_IPV6
 {
+#ifndef	HAVE_IPV6
 	struct hostent		*host;
 	struct sockaddr_in	server;
 	int	res, one = 1;
@@ -218,11 +222,7 @@ static void setuptcp(stype *serv)
 
 	if (listen(serv->sock_fd, 16))
 		fatal_with_errno("listen");
-
-	return;
-}
 #else
-{
 	struct addrinfo		hints, *res, *ai;
 	int	v = 0, one = 1;
 
@@ -278,15 +278,16 @@ static void setuptcp(stype *serv)
 	}
 
 	freeaddrinfo(res);
+#endif
 
+	/* don't fail silently */
 	if (serv->sock_fd < 0)
-		upslogx(LOG_WARNING, "upsd: not listening on %s:%s", serv->addr, serv->port);
+		fatalx("not listening on %s port %s", serv->addr, serv->port);
 	else
-		upslogx(LOG_INFO, "upsd: listening on %s:%s", serv->addr, serv->port);
+		upslogx(LOG_INFO, "listening on %s port %s", serv->addr, serv->port);
 
 	return;
 }
-#endif
 
 /* decrement the login counter for this ups */
 static void declogins(const char *upsname)
@@ -917,8 +918,8 @@ int main(int argc, char **argv)
 {
 	int	i, cmd = 0;
 	int	do_background = 1;
-	const	char *user = NULL;
 	char	*progname, *chroot_path = NULL;
+	const char	*user = NULL;
 	struct passwd	*new_uid = NULL;
 
 	progname = argv[0];

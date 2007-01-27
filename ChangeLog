@@ -1,3 +1,12 @@
+Sat Jan 27 19:19:04 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - server/upsd.c, server/conf.c, man/upsd.conf.5, conf/upsd.conf.sample: The
+   interfaces specified in upsd.conf should only be configured at startup
+   (someone might have used privileged ports, which need root privileges to
+   create listening sockets). This is also consistent with previous behaviour,
+   where the '-i <interface>' and '-p <port>' options would only be applied at
+   startup and not on reload.
+
 Fri Jan 26 22:47:55 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  - usbhid-ups: added driver list entry and usages for Geek Squad GS1285U, 

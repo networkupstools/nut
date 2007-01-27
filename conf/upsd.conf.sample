@@ -52,3 +52,6 @@ REJECT all
 # You may need this if you have multiple interfaces on your machine and
 # you don't want upsd to listen to all interfaces (for instance on a
 # firewall, you may not want to listen to the external interface).
+#
+# This will only be read at startup of upsd.  If you make changes here,
+# you'll need to restart upsd, reload will have no effect.
