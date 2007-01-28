@@ -308,14 +308,18 @@ int sstate_dead(upstype *ups, int maxage)
 	double	elapsed;
 
 	/* an unconnected ups is always dead */
-	if (ups->sock_fd == -1)
+	if (ups->sock_fd == -1) {
+		upsdebugx(3, "sstate_dead: connection to driver socket for UPS [%s] lost", ups->name);
 		return 1;	/* dead */
+	}
 
 	time(&now);
 
 	/* ignore DATAOK/DATASTALE unless the dump is done */
-	if ((ups->dumpdone) && (!ups->data_ok))
+	if ((ups->dumpdone) && (!ups->data_ok)) {
+		upsdebugx(3, "sstate_dead: driver for UPS [%s] says data is stale", ups->name);
 		return 1;	/* dead */
+	}
 
 	elapsed = difftime(now, ups->last_heard);
 
@@ -323,8 +327,10 @@ int sstate_dead(upstype *ups, int maxage)
 	if ((elapsed > (maxage / 3)) && (difftime(now, ups->last_ping) > (maxage / 3)))
 		sendping(ups);
 
-	if (elapsed > maxage)
+	if (elapsed > maxage) {
+		upsdebugx(3, "sstate_dead: didn't hear from driver for UPS [%s] for %d seconds", ups->name, elapsed);
 		return 1;	/* dead */
+	}
 
 	return 0;
 }

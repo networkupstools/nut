@@ -380,7 +380,7 @@ int sendback(ctype *client, const char *fmt, ...)
 	len = strlen(ans);
 
 	upsdebugx(2, "write: [destfd=%d] [len=%d] [%s]", 
-		client->fd, len, ans);
+		client->fd, len, rtrim(ans, '\n'));
 
 	if (client->ssl)
 		res = ssl_write(client, ans, len);

@@ -1,3 +1,9 @@
+Sun Jan 28 15:34:02 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - server/sstate.c: added some debug statements for sstate_dead() so that
+   we can figure out why a UPS is declared stale
+ - server/upsd.c: trim trailing '\n' parameter in debug code
+
 Sat Jan 27 19:19:04 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - server/upsd.c, server/conf.c, man/upsd.conf.5, conf/upsd.conf.sample: The
