@@ -1,3 +1,9 @@
+Sun Jan 28 20:08:14 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - data/driver.list: recent Sweex UPS'es are compatible with the 'megatec'
+   driver (unfortunately, there is no way to tell if you have a recent
+   model)
+
 Sun Jan 28 15:34:02 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - server/sstate.c: added some debug statements for sstate_dead() so that

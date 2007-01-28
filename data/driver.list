@@ -416,10 +416,9 @@
 
 "SuperPower"	"HP360, Hope-550"	""	"megatec"
 
-"Sweex"		"500/1000"	"smart - shipped with SafeNet"			"safenet"
-"Sweex"		"500/1000"	"contact closure - shipped with UPSmart"	"genericups upstype=7"
-
-"Sweex"		"BC100060 800VA"	""	"megatec"
+"Sweex"		"500/1000"	"smart - shipped with SafeNet"	"safenet"
+"Sweex"		"500/1000"	""	"genericups upstype=7"
+"Sweex"		"(various)"	""	"megatec"
 
 "Sysgration"	"UPGUARDS Pro650"	""	"megatec"
 
