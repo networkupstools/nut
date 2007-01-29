@@ -1,3 +1,10 @@
+Mon Jan 29 06:15:45 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - data/driver.list: removed "experimental" from Tripplite SmartOnline
+   SU1500RTXL2ua, as it has been tested (thanks to Patrick Krepps).
+ - usbhid-ups.c: added missing "else" case, to fix spurious "base
+   variable does not exist" error.
+
 Sun Jan 28 20:08:14 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - data/driver.list: recent Sweex UPS'es are compatible with the 'megatec'

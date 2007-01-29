@@ -437,7 +437,7 @@
 "Tripp-Lite"    "OMNI650LCD"    "USB"   "usbhid-ups"
 "Tripp-Lite"    "1500 LCD"	"USB"   "usbhid-ups"
 "Tripp-Lite"    "AVR550U"	"USB"   "usbhid-ups"
-"Tripp-Lite"	"SmartOnline SU1500RTXL2ua"	"USB"	"usbhid-ups (experimental)"
+"Tripp-Lite"	"SmartOnline SU1500RTXL2ua"	"USB"	"usbhid-ups"
 
 "Trust"		"UPS 1000 Management PW-4105"	""	"megatec"
 "Trust"		"UPS 1200VA Management PW-4120M"	""	"megatec"
