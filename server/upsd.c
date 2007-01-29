@@ -379,13 +379,13 @@ int sendback(ctype *client, const char *fmt, ...)
 
 	len = strlen(ans);
 
-	upsdebugx(2, "write: [destfd=%d] [len=%d] [%s]", 
-		client->fd, len, rtrim(ans, '\n'));
-
 	if (client->ssl)
 		res = ssl_write(client, ans, len);
 	else
 		res = write(client->fd, ans, len);
+
+	upsdebugx(2, "write: [destfd=%d] [len=%d] [%s]", 
+		client->fd, len, rtrim(ans, '\n'));
 
 	if (len != res) {
 		upslog_with_errno(LOG_NOTICE, "write() failed for %s", client->addr);
