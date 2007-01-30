@@ -1,3 +1,7 @@
+Tue Jan 30 15:55:44 UTC 2007 / Niels Baggesen <nba@users.sourceforge.net>
+
+- snmp-ups.[ch]: implement already documented snmp_version parameter
+
 Mon Jan 29 17:28:46 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - server/upsd.c: trimming trailing '\n' from 'ans' in debug code had a bad

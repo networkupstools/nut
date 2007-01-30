@@ -165,10 +165,12 @@ typedef struct {
 } mib2nut_info;
 
 /* Common SNMP functions */
-void nut_snmp_init(const char *type, const char *host, const char *community);
+void nut_snmp_init(const char *type, const char *host, const char *version,
+		const char *community);
 void nut_snmp_cleanup(void);
 struct snmp_pdu *nut_snmp_get(const char *OID);
-bool nut_snmp_get_str(const char *OID, char *buf, size_t buf_len, info_lkp_t *oid2info);
+bool nut_snmp_get_str(const char *OID, char *buf, size_t buf_len,
+	info_lkp_t *oid2info);
 bool nut_snmp_get_int(const char *OID, long *pval);
 bool nut_snmp_set(const char *OID, char type, const char *value);
 bool nut_snmp_set_str(const char *OID, const char *value);

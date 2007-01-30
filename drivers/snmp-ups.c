@@ -158,16 +158,20 @@ void upsdrv_initups(void)
 	snmp_info_t *su_info_p;
 	char model[SU_INFOSIZE];
 	bool status;
+	const char *community, *version, *mibs;
 
 	upsdebugx(1, "SNMP UPS driver : entering upsdrv_initups()");
 	
+	community = testvar(SU_VAR_COMMUNITY) ? getval(SU_VAR_COMMUNITY) : "public";
+	version = testvar(SU_VAR_VERSION) ? getval(SU_VAR_VERSION) : "v1";
+	mibs = testvar(SU_VAR_MIBS) ? getval(SU_VAR_MIBS) : "auto";
+
 	/* init SNMP library, etc... */
-	nut_snmp_init(progname, device_path,
-		(testvar(SU_VAR_COMMUNITY) ? getval(SU_VAR_COMMUNITY) : "public"));
+	nut_snmp_init(progname, device_path, version, community);
 
 	/* Load the SNMP to NUT translation data */
 	/* read_mibconf(SU_VAR_MIBS) ? getval(SU_VAR_MIBS) : "ietf"); */
-	load_mib2nut(testvar(SU_VAR_MIBS) ? getval(SU_VAR_MIBS) : "auto");
+	load_mib2nut(mibs);
 
 	/* init polling frequency */
 	if (getval(SU_VAR_POLLFREQ))
@@ -183,8 +187,7 @@ void upsdrv_initups(void)
 		upslogx(0, "Detected %s on host %s (mib: %s %s)",
 			 model, device_path, mibname, mibvers);
 	else
-		fatalx("%s MIB wasn't found on %s", testvar(SU_VAR_MIBS) ? getval(SU_VAR_MIBS) : "auto",
-			g_snmp_sess.peername);   
+		fatalx("%s MIB wasn't found on %s", mibs, g_snmp_sess.peername);   
 }
 
 void upsdrv_cleanup(void)
@@ -196,10 +199,11 @@ void upsdrv_cleanup(void)
  * SNMP functions.
  * ----------------------------------------------------------- */
 
-void nut_snmp_init(const char *type, const char *hostname, const char *community)
+void nut_snmp_init(const char *type, const char *hostname, const char *version,
+		const char *community)
 {  
-	upsdebugx(2, "SNMP UPS driver : entering nut_snmp_init(%s, %s, %s)",
-		type, hostname, community);
+	upsdebugx(2, "SNMP UPS driver : entering nut_snmp_init(%s, %s, %s, %s)",
+		type, hostname, version, community);
 
 	/* Initialize the SNMP library */
 	init_snmp(type);
@@ -210,7 +214,12 @@ void nut_snmp_init(const char *type, const char *hostname, const char *community
 	g_snmp_sess.peername = xstrdup(hostname);
 	g_snmp_sess.community = xstrdup(community);
 	g_snmp_sess.community_len = strlen(community);
-	g_snmp_sess.version = SNMP_VERSION_1;
+	if (strcmp(version, "v1") == 0)
+		g_snmp_sess.version = SNMP_VERSION_1;
+	else if (strcmp(version, "v2c") == 0)
+		g_snmp_sess.version = SNMP_VERSION_2c;
+	else
+		fatalx("Bad SNMP version: %s", version);
 
 	/* Open the session */
 	SOCK_STARTUP;
