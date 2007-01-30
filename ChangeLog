@@ -1,6 +1,10 @@
+Tue Jan 30 16:00:54 UTC 2007 / Niels Baggesen <nba@users.sourceforge.net>
+
+ - drivers/tripplite-hid.c: #include main.h to get prototype for getval
+
 Tue Jan 30 15:55:44 UTC 2007 / Niels Baggesen <nba@users.sourceforge.net>
 
-- snmp-ups.[ch]: implement already documented snmp_version parameter
+ - snmp-ups.[ch]: implement already documented snmp_version parameter
 
 Mon Jan 29 17:28:46 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 

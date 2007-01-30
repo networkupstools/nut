@@ -25,6 +25,7 @@
 
 #include "usbhid-ups.h"
 #include "tripplite-hid.h"
+#include "main.h"
 #include "extstate.h" /* for ST_FLAG_STRING */
 #include "dstate.h"   /* for STAT_INSTCMD_HANDLED */
 #include "common.h"
