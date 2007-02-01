@@ -23,6 +23,7 @@
 
 
 #include "main.h"
+#include "serial.h"
 #include "megatec.h"
 
 #include <stdio.h>
@@ -42,6 +43,9 @@
 
 #define IDENT_MAXTRIES   5
 #define IDENT_MINSUCCESS 3
+
+#define SEND_PACE    100000  /* 100ms interval between chars */
+#define READ_TIMEOUT 2       /* 2 seconds timeout on read */
 
 #define MAX_START_DELAY    9999
 #define MAX_SHUTDOWN_DELAY 99
@@ -244,8 +248,8 @@ static int check_ups(void)
 	int ret;
 
 	upsdebugx(2, "Sending \"Q1\" command...");
-	comm->send("Q1%c", ENDCHAR);
-	ret = comm->recv(buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS);
+	ser_send_pace(upsfd, SEND_PACE, "Q1%c", ENDCHAR);
+	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 	if (ret < Q1_CMD_REPLY_LEN) {
 		upsdebugx(2, "Wrong answer to \"Q1\" command.");
 
@@ -264,8 +268,8 @@ static int get_ups_info(UPSInfo *info)
 	int ret;
 
 	upsdebugx(1, "Asking for UPS information (\"I\" command)...");
-	comm->send("I%c", ENDCHAR);
-	ret = comm->recv(buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS);
+	ser_send_pace(upsfd, SEND_PACE, "I%c", ENDCHAR);
+	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 	if (ret < I_CMD_REPLY_LEN) {
 		upsdebugx(1, "UPS doesn't return any information about itself.");
 
@@ -294,8 +298,8 @@ static int get_firmware_values(FirmwareValues *values)
 	int ret;
 
 	upsdebugx(1, "Asking for UPS power ratings (\"F\" command)...");
-	comm->send("F%c", ENDCHAR);
-	ret = comm->recv(buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS);
+	ser_send_pace(upsfd, SEND_PACE, "F%c", ENDCHAR);
+	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 	if (ret < F_CMD_REPLY_LEN) {
 		upsdebugx(1, "UPS doesn't return any information about its power ratings.");
 
@@ -317,8 +321,8 @@ static int run_query(QueryValues *values)
 	int ret;
 
 	upsdebugx(1, "Asking for UPS status (\"Q1\" command)...");
-	comm->send("Q1%c", ENDCHAR);
-	ret = comm->recv(buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS);
+	ser_send_pace(upsfd, SEND_PACE, "Q1%c", ENDCHAR);
+	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 	if (ret < Q1_CMD_REPLY_LEN) {
 		upsdebugx(1, "UPS doesn't return any information about its status.");
 
@@ -465,7 +469,7 @@ void upsdrv_initinfo(void)
 	upsh.setvar = setvar;
 
 	/* clean up a possible shutdown in progress */
-	comm->send("C%c", ENDCHAR);
+	ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
 
 	upsdebugx(1, "Done setting up the UPS.");
 }
@@ -564,8 +568,8 @@ void upsdrv_shutdown(void)
 {
 	upslogx(LOG_INFO, "Shutting down UPS immediately.");
 
-	comm->send("C%c", ENDCHAR);
-	comm->send("S%02dR%04d%c", shutdown_delay, start_delay, ENDCHAR);
+	ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
+	ser_send_pace(upsfd, SEND_PACE, "S%02dR%04d%c", shutdown_delay, start_delay, ENDCHAR);
 }
 
 
@@ -581,9 +585,9 @@ int instcmd(const char *cmdname, const char *extra)
 	 */
 
 	if (strcasecmp(cmdname, "test.battery.start.deep") == 0) {
-		comm->send("TL%c", ENDCHAR);
+		ser_send_pace(upsfd, SEND_PACE, "TL%c", ENDCHAR);
 
-		if (comm->recv(buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS) > 0) {
+		if (ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0) > 0) {
 			upslogx(LOG_NOTICE, "test.battery.start.deep not supported by UPS.");
 		} else {
 			upslogx(LOG_INFO, "Deep battery test started.");
@@ -593,9 +597,9 @@ int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (strcasecmp(cmdname, "test.battery.start") == 0) {
-		comm->send("T%c", ENDCHAR);
+		ser_send_pace(upsfd, SEND_PACE, "T%c", ENDCHAR);
 
-		if (comm->recv(buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS) > 0) {
+		if (ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0) > 0) {
 			upslogx(LOG_NOTICE, "test.battery.start not supported by UPS.");
 		} else {
 			upslogx(LOG_INFO, "Battery test started.");
@@ -605,9 +609,9 @@ int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (strcasecmp(cmdname, "test.battery.stop") == 0) {
-		comm->send("CT%c", ENDCHAR);
+		ser_send_pace(upsfd, SEND_PACE, "CT%c", ENDCHAR);
 
-		if (comm->recv(buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS) > 0) {
+		if (ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0) > 0) {
 			upslogx(LOG_NOTICE, "test.battery.stop not supported by UPS.");
 		} else {
 			upslogx(LOG_INFO, "Battery test stopped.");
@@ -617,10 +621,10 @@ int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (strcasecmp(cmdname, "shutdown.return") == 0) {
-		comm->send("C%c", ENDCHAR);
+		ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
 		watchdog_enabled = 0;
 
-		comm->send("S%02dR%04d%c", shutdown_delay, start_delay, ENDCHAR);
+		ser_send_pace(upsfd, SEND_PACE, "S%02dR%04d%c", shutdown_delay, start_delay, ENDCHAR);
 
 		upslogx(LOG_INFO, "Shutdown (return) initiated.");
 
@@ -628,10 +632,10 @@ int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (strcasecmp(cmdname, "shutdown.stayoff") == 0) {
-		comm->send("C%c", ENDCHAR);
+		ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
 		watchdog_enabled = 0;
 
-		comm->send("S%02dR0000%c", shutdown_delay, ENDCHAR);
+		ser_send_pace(upsfd, SEND_PACE, "S%02dR0000%c", shutdown_delay, ENDCHAR);
 
 		upslogx(LOG_INFO, "Shutdown (stayoff) initiated.");
 
@@ -639,7 +643,7 @@ int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (strcasecmp(cmdname, "shutdown.stop") == 0) {
-		comm->send("C%c", ENDCHAR);
+		ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
 		watchdog_enabled = 0;
 
 		upslogx(LOG_INFO, "Shutdown canceled.");
@@ -648,7 +652,7 @@ int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (strcasecmp(cmdname, "load.on") == 0) {
-		comm->send("C%c", ENDCHAR);
+		ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
 		watchdog_enabled = 0;
 
 		upslogx(LOG_INFO, "Turning load on.");
@@ -657,10 +661,10 @@ int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (strcasecmp(cmdname, "load.off") == 0) {
-		comm->send("C%c", ENDCHAR);
+		ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
 		watchdog_enabled = 0;
 
-		comm->send("S00R0000%c", ENDCHAR);
+		ser_send_pace(upsfd, SEND_PACE, "S00R0000%c", ENDCHAR);
 
 		upslogx(LOG_INFO, "Turning load off.");
 
@@ -680,8 +684,8 @@ int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (strcasecmp(cmdname, "reset.watchdog") == 0) {
-		comm->send("C%c", ENDCHAR);
-		comm->send("S%02dR0001%c", watchdog_timeout, ENDCHAR);
+		ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
+		ser_send_pace(upsfd, SEND_PACE, "S%02dR0001%c", watchdog_timeout, ENDCHAR);
 
 		if (watchdog_enabled) {
 			upsdebugx(2, "Resetting the UPS watchdog.");
@@ -694,7 +698,7 @@ int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (strcasecmp(cmdname, "beeper.toggle") == 0) {
-		comm->send("Q%c", ENDCHAR);
+		ser_send_pace(upsfd, SEND_PACE, "Q%c", ENDCHAR);
 
 		upslogx(LOG_INFO, "Toggling UPS beeper.");
 
@@ -758,20 +762,21 @@ void upsdrv_makevartable(void)
 
 void upsdrv_banner(void)
 {
-	printf("Network UPS Tools %s - Megatec protocol driver %s [%s] [%s]\n", UPS_VERSION, DRV_VERSION, progname, comm->name);
+	printf("Network UPS Tools %s - Megatec protocol driver %s [%s]\n", UPS_VERSION, DRV_VERSION, progname);
 	printf("Carlos Rodrigues (c) 2003-2007\n\n");
 }
 
 
 void upsdrv_initups(void)
 {
-	comm->open(device_path);
+	upsfd = ser_open(device_path);
+	ser_set_speed(upsfd, device_path, B2400);
 }
 
 
 void upsdrv_cleanup(void)
 {
-	comm->close(device_path);
+	ser_close(upsfd, device_path);
 }
 
 

@@ -1,10 +1,7 @@
-/* -*- mode: c; c-basic-offset: 8; indent-tabs-mode: t; -*-
+/* megatec_usb.c - usb communication layer for Megatec protocol based UPSes
  * 
- * megatec_usb.c: usb communication layer for Megatec protocol based UPSes
- *
- * Copyright (C) Andrey Lelikov <nut-driver@lelik.org>
- *
- * megatec_usb.c created on 3-Oct-2006
+ * Copyright (C) 2007 Alexander Gordeev <lasaine@lvk.cs.msu.su>
+ * Copyright (C) 2006 Andrey Lelikov <nut-driver@lelik.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,10 +21,13 @@
 #include "main.h"
 #include "megatec.h"
 #include "libusb.h"
+#include "serial.h"
 
 #include <stdio.h>
 #include <limits.h>
 #include <string.h>
+#include <stdlib.h>
+#include <usb.h>
 
 /*
     This is a communication driver for "USB HID" UPS-es which use proprietary
@@ -47,8 +47,6 @@ static communication_subdriver_t    *usb = &usb_subdriver;
 static usb_dev_handle               *udev=NULL;
 static HIDDevice                    hiddevice;
 
-static int comm_usb_recv(char *buffer,size_t buffer_len,char endchar,const char *ignchars);
-
 typedef struct 
 {
     uint16_t        vid;
@@ -67,11 +65,16 @@ usb_ups_t   *usb_ups_device = NULL;
 static int get_data_agiler(char *buffer,int buffer_size);
 static int set_data_agiler(const char *str);
 
+static	int get_data_krauler(char *buffer,int buffer_size);
+static	int set_data_krauler(const char *str);
+
 static usb_ups_t KnownDevices[]={
     { 0x05b8, 0x0000, get_data_agiler, set_data_agiler },
+    { 0x0001, 0x0000, get_data_krauler, set_data_krauler },
     { .vid=0 }     /* end of list */
 };
 
+// TODO: Fix matching non-auto selected devices
 static int comm_usb_match(HIDDevice *d, void *privdata)
 {
     usb_ups_t   *p;
@@ -99,7 +102,12 @@ static int comm_usb_match(HIDDevice *d, void *privdata)
     return 0;
 }
 
-static int comm_usb_open(const char *param)
+static	void usb_open_error(const char *port)
+{
+    exit(EXIT_FAILURE);
+}
+
+int ser_open(const char *port)
 {
     HIDDeviceMatcher_t  match;
     static usb_ups_t    param_arg;
@@ -113,10 +121,10 @@ static int comm_usb_open(const char *param)
     memset(&match,0,sizeof(match));
     match.match_function = &comm_usb_match;
 
-    if (0!=strcmp(param,"auto"))
+    if (0 != strcasecmp(port,"auto"))
     {
-        param_arg.vid = (uint16_t) strtoul(param,NULL,16);
-        p = strchr(param,':');
+        param_arg.vid = (uint16_t) strtoul(port,NULL,16);
+        p = strchr(port,':');
         if (NULL!=p)
         {
             param_arg.pid = (uint16_t) strtoul(p+1,NULL,16);
@@ -124,7 +132,7 @@ static int comm_usb_open(const char *param)
             param_arg.vid = 0;
         }
 
-        // pure heuristics - assume this unknown device speaks agiler protocol
+        /* pure heuristics - assume this unknown device speaks agiler protocol */
         param_arg.get_data = get_data_agiler;
         param_arg.set_data = set_data_agiler;
 
@@ -133,30 +141,39 @@ static int comm_usb_open(const char *param)
             match.privdata = &param_arg;
         } else {
             upslogx(LOG_ERR, 
-                "comm_usb_open: invalid usb device specified, must be \"auto\" or \"vid:pid\"");
+                "ser_open: invalid usb device specified, must "
+                    "be \"auto\" or \"vid:pid\"");
             return -1;
         }
     }
 
     ret = usb->open(&udev,&hiddevice,&match,u.report_desc,MODE_OPEN);
     if (ret<0) 
-        return ret;
+        usb_open_error(port);
 
-    // flush input buffers
+    /* flush input buffers */
     for (i=0;i<10;i++)
     {
-        if (comm_usb_recv(u.flush_buf,sizeof(u.flush_buf),0,NULL)<1) break;
+        if (ser_get_line(upsfd, u.flush_buf, sizeof(u.flush_buf), 0,
+            NULL, 0, 0)<1)
+            break;
     }
 
     return 0;
 }
 
-static void comm_usb_close(const char *param)
+int ser_set_speed(int fd, const char *port, speed_t speed)
 {
-    usb->close(udev);
+    return 0;
 }
 
-static int comm_usb_send(const char *fmt,...)
+int ser_close(int fd, const char *port)
+{
+    usb->close(udev);
+    return 0;
+}
+
+unsigned int ser_send_pace(int fd, unsigned long d_usec, const char *fmt, ...)
 {
     char    buf[128];
     size_t  len;
@@ -173,7 +190,7 @@ static int comm_usb_send(const char *fmt,...)
 
     if ((len < 1) || (len >= (int) sizeof(buf)))
     {
-        upslogx(LOG_WARNING, "comm_usb_send: vsnprintf needed more "
+        upslogx(LOG_WARNING, "ser_send_pace: vsnprintf needed more "
             "than %d bytes", (int)sizeof(buf));
         buf[sizeof(buf)-1]=0;
     }
@@ -181,7 +198,8 @@ static int comm_usb_send(const char *fmt,...)
     return usb_ups_device->set_data(buf);
 }
 
-static int comm_usb_recv(char *buffer,size_t buffer_len,char endchar,const char *ignchars)
+int ser_get_line(int fd, char *buf, size_t buflen, char endchar,
+    const char *ignset, long d_sec, long d_usec)
 {
     int len;
     char *src,*dst,c;
@@ -189,51 +207,37 @@ static int comm_usb_recv(char *buffer,size_t buffer_len,char endchar,const char 
     if (NULL==udev) 
         return -1;
 
-    len = usb_ups_device->get_data(buffer,buffer_len);
+    len = usb_ups_device->get_data(buf,buflen);
     if (len<0)
         return len;
 
-    dst = buffer;
+    dst = buf;
 
-    for (src=buffer;src!=(buffer+len);src++)
+    for (src=buf;src!=(buf+len);src++)
     {
         c = *src;
 
-        if ( (c==endchar) || (c==0) ) {
+        if ( c==endchar )
             break;
-        }
 
-        if (NULL!=strchr(ignchars,c)) continue;
+        if ( (c==0) || ( strchr(ignset,c)!=NULL ) )
+            continue;
 
         *(dst++) = c;
     }
 
-    // terminate string if we have space
-    if (dst!=(buffer+len))
-    {
+    /* terminate string if we have space */
+    if (dst!=(buf+len))
         *dst = 0;
-    }
 
-    return (dst-buffer);
+    return (dst-buf);
 }
-
-static megatec_comm_t comm_usb = 
-{
-    .name = "usb",
-    .open = &comm_usb_open,
-    .close = &comm_usb_close,
-    .send = &comm_usb_send,
-    .recv = &comm_usb_recv
-};
-
-megatec_comm_t *comm = & comm_usb;
-
 
 /************** minidrivers go after this point **************************/
 
 
 /*
-    Agiler seraial-to-usb device.
+    Agiler serial-to-usb device.
 
     Protocol was reverse-engineered from Windows driver
     HID tables are complitely bogus
@@ -272,9 +276,12 @@ static int get_data_agiler(char *buffer,int buffer_size)
 
     for (i=0;i<AGILER_REPORT_COUNT;i++)
     {
-        len = usb->get_interrupt(udev,buf+i*AGILER_REPORT_SIZE,AGILER_REPORT_SIZE,AGILER_TIMEOUT);
-        if (len!=AGILER_REPORT_SIZE) {
-            if (len<0) len=0;
+        len = usb->get_interrupt(udev,buf+i*AGILER_REPORT_SIZE,
+            AGILER_REPORT_SIZE,AGILER_TIMEOUT);
+        if (len!=AGILER_REPORT_SIZE)
+        {
+            if (len<0)
+                len=0;
             buf[i*AGILER_REPORT_SIZE+len]=0;
             break;
         }
@@ -293,4 +300,65 @@ static int get_data_agiler(char *buffer,int buffer_size)
     return len;
 }
 
-/* EOF - megatec_usb.c */
+
+/*
+    Krauler serial-to-usb device.
+
+    Protocol was reverse-engineered using Windows driver
+*/
+
+#define KRAULER_COMMAND_BUFFER_SIZE    9
+#define KRAULER_TIMEOUT            5000
+
+static    char    krauler_command_buffer[KRAULER_COMMAND_BUFFER_SIZE];
+
+static    int set_data_krauler(const char *str)
+{
+    int    len;
+
+    len = strlen(str);
+    if (len >= KRAULER_COMMAND_BUFFER_SIZE)
+    {
+        upslogx(LOG_ERR,
+            "set_data_krauler: output string too large");
+        return -1;
+    }
+
+    krauler_command_buffer[len] = 0;
+    memcpy(krauler_command_buffer,str,len);
+
+    return len;
+}
+
+static    int get_data_krauler(char *buffer,int buffer_size)
+{
+    int res = 0;
+    int i;
+
+    if (strcmp(krauler_command_buffer, "Q1\r") == 0)
+    {
+        res = usb_get_descriptor(udev, USB_DT_STRING, 0x03, buffer, buffer_size);
+        /*res = usb_control_msg(udev, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
+                      (USB_DT_STRING << 8) + 3, 0, buffer, 0x9, USB_TIMEOUT);*/
+    }
+
+    if (strcmp(krauler_command_buffer, "I\r") == 0)
+    {
+        res = usb_get_descriptor(udev, USB_DT_STRING, 0x0c, buffer, buffer_size);
+        /*res = usb_control_msg(udev, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
+                      (USB_DT_STRING << 8) + 3, 0, buffer, 0x9, USB_TIMEOUT);*/
+    }
+
+    if (strcmp(krauler_command_buffer, "F\r") == 0)
+    {
+        res = usb_get_descriptor(udev, USB_DT_STRING, 0x0d, buffer, buffer_size);
+        /*res = usb_control_msg(udev, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
+                      (USB_DT_STRING << 8) + 3, 0, buffer, 0x9, USB_TIMEOUT);*/
+    }
+    
+    if(res >= 4)
+        memset(buffer,0,4);
+
+    krauler_command_buffer[0] = 0;
+    return res;
+}

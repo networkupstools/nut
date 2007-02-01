@@ -1,5 +1,12 @@
 Thu Feb  1 18:27:03 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
+ - megatec_usb: merged Alexander I. Gordeev's changes (nut-upsdev,
+   Jan 23, 2007), and resolved conflicts. Decide whether to use
+   serial or USB backend at link-time, not run-time. (No changes to
+   original megatec.c needed). Support for Krauler device.
+	
+Thu Feb  1 18:27:03 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
  - megatec_usb: applied Andrey Lelikov's original patch (nut-upsdev,
    Dec 5, 2006), and resolved conflicts.
 	
