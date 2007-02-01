@@ -22,3 +22,14 @@
  */
 
 #define DRV_VERSION "1.5"
+
+/* comm driver */
+typedef struct {
+    const char  *name;
+    int         (*open)(const char*param);
+    void        (*close)();
+    int         (*send)(const char *fmt,...);
+    int         (*recv)(char *buffer,size_t buffer_len,char endchar,const char *ignchars);
+}	megatec_comm_t;
+
+extern megatec_comm_t* comm;

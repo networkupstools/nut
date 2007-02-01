@@ -1,3 +1,8 @@
+Thu Feb  1 18:27:03 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - megatec_usb: applied Andrey Lelikov's original patch (nut-upsdev,
+   Dec 5, 2006), and resolved conflicts.
+	
 Tue Jan 30 16:00:54 UTC 2007 / Niels Baggesen <nba@users.sourceforge.net>
 
  - drivers/tripplite-hid.c: #include main.h to get prototype for getval
