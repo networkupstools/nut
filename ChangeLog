@@ -1,3 +1,7 @@
+Thu Feb  1 20:41:20 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+
+ - Changed email address in bcmxcp.c.
+
 Tue Jan 30 16:00:54 UTC 2007 / Niels Baggesen <nba@users.sourceforge.net>
 
  - drivers/tripplite-hid.c: #include main.h to get prototype for getval

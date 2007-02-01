@@ -6,7 +6,7 @@
  * emes -at- geomer.de *
  * All rights reserved.*
 
- Copyright (C) 2004 Kjell Claesson <kjell.claesson-at-telia.com>
+ Copyright (C) 2004 Kjell Claesson <kjell.claesson-at-epost.tidanet.se>
  and Tore Ørpetveit <tore-at-orpetveit.net>
 
  Thanks to Tore Ørpetveit <tore-at-orpetveit.net> that sent me the
