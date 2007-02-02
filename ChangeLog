@@ -1,3 +1,9 @@
+Fri Feb  2 00:41:29 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - megatec_usb: merged some of Jon Gough's changes: added Ablerex
+   communication subdriver routines. These still need to be fine-tuned
+   and perhaps combined with the Krauler ones.
+
 Thu Feb  1 18:27:03 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  - megatec_usb: merged Alexander I. Gordeev's changes (nut-upsdev,
