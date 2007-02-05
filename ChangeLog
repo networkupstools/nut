@@ -1,3 +1,7 @@
+Mon Feb  5 01:45:35 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - hotplug/udev: added hotplugging rules for various USB devices
+
 Thu Feb  1 20:41:20 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
  - Changed email address in bcmxcp.c.

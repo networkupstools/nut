@@ -14,8 +14,18 @@ SYSFS{idVendor}=="051d", SYSFS{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_US
 SYSFS{idVendor}=="0764", SYSFS{idProduct}=="0005", MODE="664", GROUP="@RUN_AS_USER@"
 SYSFS{idVendor}=="0764", SYSFS{idProduct}=="0501", MODE="664", GROUP="@RUN_AS_USER@"
 
-# Powercom - usbhid-ups
+# Powercom - unknown driver
 SYSFS{idVendor}=="0d9f", SYSFS{idProduct}=="0001", MODE="664", GROUP="@RUN_AS_USER@"
+SYSFS{idVendor}=="0d9f", SYSFS{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_USER@"
+
+# Agiler - megatec_usb
+SYSFS{idVendor}=="05b8", SYSFS{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_USER@"
+
+# Krauler - megatec_usb
+SYSFS{idVendor}=="0001", SYSFS{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_USER@"
+
+# Ablerex - megatec_usb
+SYSFS{idVendor}=="ffff", SYSFS{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_USER@"
 
 # Powerware - bcmxcp_usb
 SYSFS{idVendor}=="0592", SYSFS{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_USER@"
