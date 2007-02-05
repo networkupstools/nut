@@ -11,7 +11,10 @@ LDADD_DRIVERS_SERIAL = $(LDADD_DRIVERS) $(SERLIBS) serial.o
 
 # most targets are drivers, so make this the default
 LDADD = $(LDADD_DRIVERS_SERIAL)
-AM_CFLAGS = -I$(top_srcdir)/include
+# Avoid per-target CFLAGS, because this will prevent re-use of object
+# files. In any case, CFLAGS are only -I options, so there is no harm. 
+AM_CFLAGS = -I$(top_srcdir)/include $(LIBHAL_CFLAGS) $(LIBUSB_CFLAGS) \
+ $(LIBNETSNMP_CFLAGS)
 
 SERIAL_DRIVERLIST = al175 apcsmart bcmxcp belkin belkinunv bestfcom	\
  bestuferrups bestups cpsups cyberpower dummy-ups etapro everups 	\
@@ -114,28 +117,25 @@ USBHID_UPS_SUBDRIVERS = apc-hid.c belkin-hid.c explore-hid.c \
  mge-hid.c tripplite-hid.c
 usbhid_ups_SOURCES = usbhid-ups.c libhid.c libusb.c hidparser.c	\
  $(USBHID_UPS_SUBDRIVERS)
-usbhid_ups_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
 usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 
 energizerups_SOURCES = energizerups.c
 energizerups_LDADD = $(LDADD_DRIVERS)
 
 tripplite_usb_SOURCES = tripplite_usb.c libhid.c libusb.c hidparser.c
-tripplite_usb_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
 tripplite_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS) -lm
 
 bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c nut_usb.c
-bcmxcp_usb_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
 bcmxcp_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 
 # HID-over-serial
 newmge_shut_SOURCES = usbhid-ups.c libshut.c libhid.c hidparser.c mge-hid.c
+# per-target CFLAGS are necessary here
 newmge_shut_CFLAGS = $(AM_CFLAGS) -DSHUT_MODE
 newmge_shut_LDADD = $(LDADD)
 
 # SNMP
 snmp_ups_SOURCES = snmp-ups.c
-snmp_ups_CFLAGS = $(AM_CFLAGS) $(LIBNETSNMP_CFLAGS)
 snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LDFLAGS)
 
 # HAL
@@ -181,7 +181,6 @@ libdummy_a_SOURCES = main.c dstate.c serial.c
 
 EXTRA_LIBRARIES += libnuthalmain.a
 libnuthalmain_a_SOURCES = main-hal.c dstate-hal.c
-libnuthalmain_a_CFLAGS = $(AM_CFLAGS) $(LIBHAL_CFLAGS)
 
 EXTRA_DIST = Doxyfile
 MOSTLYCLEANFILES = libnuthalmain.a

@@ -784,7 +784,7 @@ int shut_control_msg(shut_dev_handle *sdev, int requesttype, int request,
 	short data_size, remaining_size = size; //Size;
 	int i;
 	struct shut_ctrltransfer ctrl;
-	int ret;
+	int ret = 0;
 	
 	upsdebugx (3, "entering shut_control_msg");
 		

@@ -2,7 +2,9 @@
 
 # by default, link programs in this directory with libcommon.a
 LDADD = ../common/libcommon.a libupsclient.la $(NETLIBS) $(LIBSSL_LDFLAGS)
-AM_CFLAGS = $(LIBSSL_CFLAGS) -I$(top_srcdir)/include
+# Avoid per-target CFLAGS, because this will prevent re-use of object
+# files. In any case, CFLAGS are only -I options, so there is no harm. 
+AM_CFLAGS = -I$(top_srcdir)/include $(LIBSSL_CFLAGS) $(LIBGD_CFLAGS)
 
 bin_PROGRAMS = upsc upslog upsrw upscmd
 dist_bin_SCRIPTS = upssched-cmd
@@ -22,11 +24,9 @@ upslog_SOURCES = upslog.c upsclient.h upslog.h
 upsmon_SOURCES = upsmon.c upsmon.h upsclient.h
 
 upssched_SOURCES = upssched.c upssched.h
-upssched_CFLAGS = -I$(top_srcdir)/include
 upssched_LDADD = ../common/libcommon.a $(NETLIBS) ../common/parseconf.o 
 
 upsimage_cgi_SOURCES = upsimage.c upsclient.h upsimagearg.h cgilib.c cgilib.h
-upsimage_cgi_CFLAGS = $(AM_CFLAGS) $(LIBGD_CFLAGS)
 upsimage_cgi_LDADD = $(LDADD) $(LIBGD_LDFLAGS)
 
 upsset_cgi_SOURCES = upsset.c upsclient.h cgilib.c cgilib.h

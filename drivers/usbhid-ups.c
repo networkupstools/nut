@@ -917,7 +917,7 @@ static bool hid_ups_walk(int mode)
 					if (nutvalue != NULL)
 					  dstate_setinfo(item->info_type, item->dfl, nutvalue);
 					else
-					  dstate_setinfo(item->info_type, item->dfl, value);
+					  dstate_setinfo(item->info_type, "%ld", (long)value);
 				  }
 				else
 				  dstate_setinfo(item->info_type, item->dfl, value);
