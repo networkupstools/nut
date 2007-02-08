@@ -1,3 +1,9 @@
+Thu Feb  8 15:43:00 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ - drivers/megatec_usb.c: fixed the problem with report descriptor
+   retrieval at driver startups which caused failures. Since none of the
+   subdrivers needs this descriptor it isn't retrieved at all.
+
 Thu Feb  8 15:26:37 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
 
  - drivers/megatec_usb.c: fixed "UPS No Ack" issue and optimized

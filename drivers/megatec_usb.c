@@ -152,7 +152,7 @@ int ser_open(const char *port)
         }
     }
 
-    ret = usb->open(&udev,&hiddevice,&match,u.report_desc,MODE_OPEN);
+    ret = usb->open(&udev,&hiddevice,&match,u.report_desc,MODE_REOPEN);
     if (ret<0)
         usb_open_error(port);
 
