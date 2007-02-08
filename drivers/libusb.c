@@ -81,13 +81,13 @@ static inline int typesafe_control_msg(usb_dev_handle *dev,
 #define usb_control_msg         typesafe_control_msg
 
 /* return report descriptor on success, NULL otherwise */
-/* mode: MODE_OPEN for the 1rst time, MODE_REOPEN to skip getting
-    report descriptor (the longer part). On success, fill in the
-    curDevice structure and return the report descriptor length. On
-    failure, return -1. Note: ReportDesc must point to a large enough
-    buffer. There's no way to know the size ahead of time. Matcher is
-    a linked list of matchers (see libhid.h), and the opened device
-    must match all of them. */
+/* mode: MODE_OPEN for the 1rst time, MODE_REOPEN or MODE_NOHID to
+    skip getting report descriptor (the longer part). On success, fill
+    in the curDevice structure and return the report descriptor
+    length. On failure, return -1. Note: ReportDesc must point to a
+    large enough buffer. There's no way to know the size ahead of
+    time. Matcher is a linked list of matchers (see libhid.h), and the
+    opened device must match all of them. */
 static int libusb_open(usb_dev_handle **udevp, HIDDevice *curDevice, HIDDeviceMatcher_t *matcher, unsigned char *ReportDesc, int mode)
 {
 	int found = 0;
@@ -210,7 +210,7 @@ static int libusb_open(usb_dev_handle **udevp, HIDDevice *curDevice, HIDDeviceMa
 			/* set default interface */
 			usb_set_altinterface(udev, 0);
 			
-			if (mode == MODE_REOPEN) {
+			if (mode == MODE_REOPEN || mode == MODE_NOHID) {
 				return 1; 
 			}
 

@@ -1,3 +1,9 @@
+Thu Feb  8 16:21:24 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - libusb.c: added MODE_NOHID to libusb_open(). This currently does
+   the same thing as MODE_REOPEN, but has a slightly different purpose.
+   It is used in megatec_usb.c. 
+
 Thu Feb  8 16:07:49 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  - drivers/megatec_usb.c: more reformatting for NUT coding style
