@@ -298,7 +298,31 @@ static char krauler_command_buffer[KRAULER_COMMAND_BUFFER_SIZE];
 
 static int set_data_krauler(const char *str)
 {
+	unsigned char index = 0;
 	int len;
+
+	/*
+	Still not implemented:
+		0x6	T<n>	(don't know how to pass the parameter)
+		0x68 and 0x69 both cause shutdown after an undefined interval
+		C	(know nothing about this command)
+	*/
+
+	if (strcmp(str, "T\r") == 0)
+		index = 0x04;
+	else if (strcmp(str, "TL\r") == 0)
+		index = 0x05;
+	else if (strcmp(str, "Q\r") == 0)
+		index = 0x07;
+	else if (strcmp(str, "CT\r") == 0)
+		index = 0x0b;
+
+	if (index > 0)
+	{
+		/* usb_get_descriptor(udev, USB_DT_STRING, index, buffer, buffer_size); */
+		usb_control_msg(udev, USB_ENDPOINT_IN + 1, USB_REQ_GET_DESCRIPTOR, (USB_DT_STRING << 8) + index, 0, NULL, 0, KRAULER_TIMEOUT);
+		return 0;
+	}
 
 	len = strlen(str);
 	if (len >= KRAULER_COMMAND_BUFFER_SIZE) {
@@ -332,9 +356,6 @@ static int get_data_krauler(char *buffer, int buffer_size)
 			res = usb_control_msg(udev, USB_ENDPOINT_IN + 1, USB_REQ_GET_DESCRIPTOR, (USB_DT_STRING << 8) + index, 0, buffer, buffer_size, KRAULER_TIMEOUT);
 
 			if (res > 0) {
-				/* hexdump(stdout,buffer,res);
-				   asciidump(stdout,buffer,res); */
-
 				for (i = 4, j = 0; i < res; i++)
 					if (buffer[i] != 0) {
 						buffer[j] = buffer[i];
