@@ -1,3 +1,7 @@
+Fri Feb  9 18:11:52 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - drivers/megatec_usb.c: changed end-of-list marker
+
 Fri Feb  9 12:32:10 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
 
  - drivers/megatec_usb.c: adjusted the number of attempts for different

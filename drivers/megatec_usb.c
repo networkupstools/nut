@@ -49,8 +49,8 @@ static usb_dev_handle *udev = NULL;
 static HIDDevice hiddevice;
 
 typedef struct {
-	uint16_t vid;
-	uint16_t pid;
+	int vid;
+	int pid;
 	int (*get_data) (char *buffer, int buffer_size);
 	int (*set_data) (const char *str);
 } usb_ups_t;
@@ -75,15 +75,15 @@ static usb_ups_t KnownDevices[] = {
 	{0x05b8, 0x0000, get_data_agiler, set_data_agiler},
 	{0x0001, 0x0000, get_data_krauler, set_data_krauler},
 	{0xffff, 0x0000, get_data_ablerex, set_data_ablerex},
-	{.vid = 0}		/* end of list */
+	{-1, -1, NULL, NULL}		/* end of list */
 };
 
 /* TODO: Fix matching non-auto selected devices */
-static int comm_usb_match(HIDDevice * d, void *privdata)
+static int comm_usb_match(HIDDevice *d, void *privdata)
 {
 	usb_ups_t *p;
 
-	for (p = KnownDevices; p->vid != 0; p++) {
+	for (p = KnownDevices; p->vid != -1; p++) {
 		if ((p->vid == d->VendorID) && (p->pid == d->ProductID)) {
 			usb_ups_device = p;
 			return 1;
