@@ -292,7 +292,9 @@ static int get_data_agiler(char *buffer, int buffer_size)
 #define KRAULER_COMMAND_BUFFER_SIZE	9
 #define KRAULER_TIMEOUT		5000
 #define KRAULER_WRONG_ANSWER		"PS No Ack"
-#define KRAULER_MAX_ATTEMPTS		4
+#define KRAULER_MAX_ATTEMPTS_Q1		4
+#define KRAULER_MAX_ATTEMPTS_F		31
+#define KRAULER_MAX_ATTEMPTS_I		15
 
 static char krauler_command_buffer[KRAULER_COMMAND_BUFFER_SIZE];
 
@@ -341,17 +343,26 @@ static int get_data_krauler(char *buffer, int buffer_size)
 	int res = 0;
 	unsigned char index = 0;
 	int i, j;
-	int retries = KRAULER_MAX_ATTEMPTS;
+	int attempts = 1;
 
 	if (strcmp(krauler_command_buffer, "Q1\r") == 0)
+	{
 		index = 0x03;
+		attempts = KRAULER_MAX_ATTEMPTS_Q1;
+	}
 	else if (strcmp(krauler_command_buffer, "I\r") == 0)
+	{
 		index = 0x0c;
+		attempts = KRAULER_MAX_ATTEMPTS_I;
+	}
 	else if (strcmp(krauler_command_buffer, "F\r") == 0)
+	{
 		index = 0x0d;
+		attempts = KRAULER_MAX_ATTEMPTS_F;
+	}
 
 	if (index > 0)
-		while (retries) {
+		while (attempts) {
 			/* res = usb_get_descriptor(udev, USB_DT_STRING, index, buffer, buffer_size); */
 			res = usb_control_msg(udev, USB_ENDPOINT_IN + 1, USB_REQ_GET_DESCRIPTOR, (USB_DT_STRING << 8) + index, 0, buffer, buffer_size, KRAULER_TIMEOUT);
 
@@ -373,7 +384,7 @@ static int get_data_krauler(char *buffer, int buffer_size)
 			} else
 				break;
 
-			retries--;
+			attempts--;
 		}
 
 
