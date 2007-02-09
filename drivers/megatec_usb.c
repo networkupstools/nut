@@ -72,9 +72,9 @@ static int get_data_ablerex(char *buffer, int buffer_size);
 static int set_data_ablerex(const char *str);
 
 static usb_ups_t KnownDevices[] = {
-	{0x05b8, 0x0000, get_data_agiler, set_data_agiler},
-	{0x0001, 0x0000, get_data_krauler, set_data_krauler},
-	{0xffff, 0x0000, get_data_ablerex, set_data_ablerex},
+	{0x05b8, 0x0000, get_data_agiler, set_data_agiler},   /* Agiler UPS */
+	{0x0001, 0x0000, get_data_krauler, set_data_krauler}, /* Krauler UP-M500VA */
+	{0xffff, 0x0000, get_data_krauler, set_data_krauler}, /* Ablerex 625L USB */
 	{-1, -1, NULL, NULL}		/* end of list */
 };
 
@@ -390,113 +390,4 @@ static int get_data_krauler(char *buffer, int buffer_size)
 
 	krauler_command_buffer[0] = 0;
 	return res;
-}
-
-/*
-    Ablerex serial-to-usb device.
-
-    Protocol was reverse-engineered from Windows driver
-    HID tables are completely bogus
-    Data is transferred out as one 8-byte packet with report ID 0
-    Data comes in as 1 47-byte report per line , padded with zeroes
-    All constants are hardcoded in windows driver
-*/
-
-#define ABLEREX_REPORT_SIZE      47
-#define ABLEREX_REPORT_COUNT     1
-#define ABLEREX_TIMEOUT          5000
-#define ABLEREX_RESPONSE_SIZE     11
-
-static char ablerex_response[ABLEREX_REPORT_SIZE];
-static bool get_done;
-
-static int set_data_ablerex(const char *str)
-{
-	char report_buf[ABLEREX_REPORT_SIZE];
-	int rc;
-
-	upsdebugx(4, "set_data_ablerex: Starting");
-	if (strlen(str) > ABLEREX_REPORT_SIZE) {
-		upslogx(LOG_ERR, "set_data_ablerex: output string too large");
-		return -1;
-	}
-
-	memset(report_buf, 0, sizeof(report_buf));
-	memcpy(report_buf, str, strlen(str));
-
-	if (strcmp(str, "Q1\r") == 0) {
-		upsdebugx(4, "set_data_ablerex: Doing Q1 stuff");
-		rc = usb_get_string_simple(udev, 3, report_buf, sizeof(report_buf));
-		get_done = TRUE;
-	} else if (strcmp(str, "Q\r") == 0) {
-		upsdebugx(4, "set_data_ablerex: Doing Q stuff");
-		rc = usb_get_string_simple(udev, 7, report_buf, sizeof(report_buf));
-		get_done = TRUE;
-	} else if (strcmp(str, "C\r") == 0) {
-		upsdebugx(4, "set_data_ablerex: Doing C stuff");
-		rc = usb_get_string_simple(udev, 11, report_buf, sizeof(report_buf));
-		get_done = TRUE;
-	} else if (strcmp(str, "T\r") == 0) {
-		upsdebugx(4, "set_data_ablerex: Doing T stuff");
-		rc = usb_get_string_simple(udev, 4, report_buf, sizeof(report_buf));
-		get_done = TRUE;
-	} else if (strcmp(str, "I\r") == 0) {
-		char rep1[sizeof(report_buf)], rep2[sizeof(report_buf)];
-		int rc1, rc2;
-		upsdebugx(4, "set_data_ablerex: Doing I stuff");
-		rc1 = usb_get_string_simple(udev, 1, rep1, sizeof(report_buf));
-		rc2 = usb_get_string_simple(udev, 2, rep2, sizeof(report_buf));
-		rc = rc1 + rc2;
-		strcpy(report_buf, rep1);
-		strcat(report_buf, rep2);
-		get_done = TRUE;
-	} else if (strcmp(str, "F\r") == 0) {
-		upsdebugx(4, "set_data_ablerex: Doing F stuff");
-		rc = usb_get_string_simple(udev, 13, report_buf, sizeof(report_buf));
-		get_done = TRUE;
-	}
-
-	else {
-		upsdebugx(4, "set_data_ablerex: doing set-report stuff");
-		rc = usb->set_report(udev, 0, (unsigned char *) report_buf, strlen(report_buf));
-		get_done = FALSE;
-	}
-	strcpy(ablerex_response, report_buf);
-	upsdebugx(4, "set_data_ablerex: rc: %i, report_buf: %s", rc, report_buf);
-	return rc;
-}
-
-static int get_data_ablerex(char *buffer, int buffer_size)
-{
-	int i, len, rc;
-	char buf[ABLEREX_REPORT_SIZE * ABLEREX_REPORT_COUNT + 1];
-
-	upsdebugx(4, "get_data_ablerex: Starting");
-	/* code to handle having issued and received response in set_data_ablerex */
-	memset(buffer, 0, buffer_size);
-	if (get_done == TRUE) {
-		memcpy(buffer, ablerex_response, strlen(ablerex_response));
-		return strlen(ablerex_response);
-	}
-
-	for (i = 0; i < ABLEREX_REPORT_COUNT; i++) {
-		len = usb->get_interrupt(udev, (unsigned char *) buf + i * ABLEREX_REPORT_SIZE, ABLEREX_REPORT_SIZE, ABLEREX_TIMEOUT);
-		upsdebugx(4, "get_data_ablerex: len: %i, error: %i, %s: buf: %s", len, errno, strerror(errno), buf);
-		if (len != ABLEREX_REPORT_SIZE) {
-			if (len < 0)
-				len = 0;
-			buf[i * ABLEREX_REPORT_SIZE + len] = 0;
-			break;
-		}
-	}
-	len = strlen(buf);
-
-	if (len > buffer_size) {
-		upslogx(LOG_ERR, "get_data_ablerex: input buffer too small");
-		len = buffer_size;
-	}
-
-	upsdebugx(4, "get_data_ablerex: Leaving get_data_ablerex: len: %i", len);
-	memcpy(buffer, buf, len);
-	return len;
 }
