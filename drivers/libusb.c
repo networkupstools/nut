@@ -87,8 +87,10 @@ static inline int typesafe_control_msg(usb_dev_handle *dev,
     failure, return -1. Note: ReportDesc must point to a large enough
     buffer. There's no way to know the size ahead of time. Matcher is
     a linked list of matchers (see libhid.h), and the opened device
-    must match all of them. */
-static int libusb_open(usb_dev_handle **udevp, HIDDevice *curDevice, HIDDeviceMatcher_t *matcher, unsigned char *ReportDesc, int mode)
+    must match all of them. Also note: the string components of
+    curDevice are filled with allocated strings that must later be
+    freed. */
+static int libusb_open(usb_dev_handle **udevp, HIDDevice_t *curDevice, HIDDeviceMatcher_t *matcher, unsigned char *ReportDesc, int mode)
 {
 	int found = 0;
 #if LIBUSB_HAS_DETACH_KRNL_DRV
@@ -138,7 +140,7 @@ static int libusb_open(usb_dev_handle **udevp, HIDDevice *curDevice, HIDDeviceMa
 			curDevice->Vendor = NULL;
 			curDevice->Product = NULL;
 			curDevice->Serial = NULL;
-			curDevice->Bus = bus->dirname;
+			curDevice->Bus = strdup(bus->dirname);
 			
 			if (dev->descriptor.iManufacturer) {
 				ret = usb_get_string_simple(udev, dev->descriptor.iManufacturer, string, sizeof(string));
@@ -307,6 +309,10 @@ static int libusb_open(usb_dev_handle **udevp, HIDDevice *curDevice, HIDDeviceMa
 			return rdlen;
 
 		next_device:
+			free(curDevice->Vendor);
+			free(curDevice->Product);
+			free(curDevice->Serial);
+			free(curDevice->Bus);
 			usb_close(udev);
 			udev = NULL;
 		}

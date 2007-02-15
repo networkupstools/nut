@@ -1,3 +1,7 @@
+Thu Feb 15 21:30:13 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - libusb.c: fixed small memory leak, reported by Jacob Schmier.
+
 Mon Feb  5 05:30:24 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  - libshut.c: fixed uninitialized variable
