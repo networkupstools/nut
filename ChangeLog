@@ -1,3 +1,7 @@
+Thu Feb 15 21:46:04 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - developers.txt: some additional info on coding style.
+	
 Thu Feb 15 21:30:13 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  - libusb.c: fixed small memory leak, reported by Jacob Schmier.

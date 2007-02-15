@@ -154,6 +154,10 @@ touch.  If your function or variable names start pushing important code
 off the right margin of the screen, expect them to meet the byte
 chainsaw sooner or later.
 
+All types defined with typedef should end in "_t", because this is
+easier to read, and it enables tools (such as indent and emacs) to
+display the source code correctly.
+
 Indenting with tabs vs. spaces
 ------------------------------
 
@@ -174,6 +178,64 @@ need, it will be grudgingly reformatted before being included.
 When in doubt, have a look at Linus's take on this topic in the Linux
 kernel - Documentation/CodingStyle.  He's done a far better job of
 explaining this.
+
+Line breaks
+-----------
+
+It is better to have lines that are longer than 80 characters than to
+wrap lines in random places. This makes it easier to work with tools
+such as "grep", and it also lets each developer choose their own
+window size and tab setting without being stuck to one particular
+choice.
+
+Of course, this does not mean that lines should be made unnecessarily
+long when there is a better alternative (see the note on
+pretentiousVariableNamingSchemes above).  Certainly there should not
+be more than one statement per line. Please do not use
+
+	if (condition) break;
+
+but use the following:
+
+	if (condition) {
+		break;
+	}
+
+Miscellaneous coding style tools
+--------------------------------
+
+You can go a long way towards converting your source code to the NUT
+coding style by piping it through the following command:
+
+ indent -kr -i8 -T FILE -l1000 -nhnl
+
+This next command does a reasonable job of converting most C++ style
+comments (but not URLs and DOCTYPE strings):
+
+ sed 's#\(^\|[ \t]\)//[ \t]*\(.*\)[ \t]*#/* \2 */#'
+
+Emacs users can adjust how tabs are displayed. For example, it is
+possible to set a tab stop to be 3 spaces, rather than the usual 8.
+(Note that in the saved file, one indentation level will still
+correspond to one tab stop; the difference is only how the file is
+rendered on screen). It is even possible to set this on a
+per-directory basis, by putting something like this into your .emacs
+file:
+
+ ;; NUT style
+
+ (defun nut-c-mode ()
+  "C mode with adjusted defaults for use with the NUT sources."
+  (interactive)
+  (c-mode)
+  (c-set-style "K&R")
+  (setq c-basic-offset 3)  ;; 3 spaces C-indentation
+  (setq tab-width 3))      ;; 3 spaces per tab
+
+ ;; apply NUT style to all C source files in all subdirectories of nut/
+
+ (setq auto-mode-alist (cons '(".*/nut/.*\\.[ch]$". nut-c-mode)
+                        auto-mode-alist))
 
 Finishing touches
 -----------------
