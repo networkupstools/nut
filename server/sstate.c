@@ -328,7 +328,8 @@ int sstate_dead(upstype *ups, int maxage)
 		sendping(ups);
 
 	if (elapsed > maxage) {
-		upsdebugx(3, "sstate_dead: didn't hear from driver for UPS [%s] for %d seconds", ups->name, elapsed);
+		upsdebugx(3, "sstate_dead: didn't hear from driver for UPS [%s] for %g seconds (max %d)",
+					ups->name, elapsed, maxage);
 		return 1;	/* dead */
 	}
 
