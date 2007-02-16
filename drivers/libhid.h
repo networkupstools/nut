@@ -59,8 +59,9 @@ typedef int bool_t;
 #endif
 
 /* Device open modes */
-#define MODE_OPEN 0
-#define MODE_REOPEN 1
+#define MODE_OPEN 0   /* open a HID device for the first time */
+#define MODE_REOPEN 1 /* reopen a HID device that was opened before */
+#define MODE_NOHID 2  /* open a non-HID device; only used by libusb_open() */
 
 #define MAX_TS			2		/* validity period of a gotten report (2 sec) */
 

@@ -1,3 +1,8 @@
+Fri Feb 16 22:10:13 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - merged experimental megatec_usb driver to trunk. Note: still need
+   to fix matching code, add man page, and update data/driver.list.
+
 Fri Feb 16 22:01:31 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  - various: added "_t" to type names
@@ -43,6 +48,45 @@ Thu Feb 15 21:30:13 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  - libusb.c: fixed small memory leak, reported by Jacob Schmier.
 
+Fri Feb  9 18:22:52 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - drivers/megatec_usb.c: removed duplicate Ablerex code
+
+Fri Feb  9 18:11:52 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - drivers/megatec_usb.c: changed end-of-list marker
+
+Fri Feb  9 12:32:10 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ - drivers/megatec_usb.c: adjusted the number of attempts for different
+   requests.
+
+Fri Feb  9 12:25:13 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ - drivers/megatec_usb.c: most instant commands implemented.
+
+Thu Feb  8 16:21:24 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - libusb.c: added MODE_NOHID to libusb_open(). This currently does
+   the same thing as MODE_REOPEN, but has a slightly different purpose.
+   It is used in megatec_usb.c. 
+
+Thu Feb  8 16:07:49 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - drivers/megatec_usb.c: more reformatting for NUT coding style
+   (indent -kr -i8 -T FILE -l1000 -nhnl), removed C++-style comments.
+
+Thu Feb  8 15:43:00 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ - drivers/megatec_usb.c: fixed the problem with report descriptor
+   retrieval at driver startups which caused failures. Since none of the
+   subdrivers needs this descriptor it isn't retrieved at all.
+
+Thu Feb  8 15:26:37 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ - drivers/megatec_usb.c: fixed "UPS No Ack" issue and optimized
+   get_data_krauler. Also did some code reformatting.
+
 Mon Feb  5 05:30:24 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  - libshut.c: fixed uninitialized variable
@@ -54,10 +98,28 @@ Mon Feb  5 01:45:35 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  - hotplug/udev: added hotplugging rules for various USB devices
 
+Fri Feb  2 00:41:29 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - megatec_usb: merged some of Jon Gough's changes: added Ablerex
+   communication subdriver routines. These still need to be fine-tuned
+   and perhaps combined with the Krauler ones.
+
 Thu Feb  1 20:41:20 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
  - Changed email address in bcmxcp.c.
 
+Thu Feb  1 18:27:03 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - megatec_usb: merged Alexander I. Gordeev's changes (nut-upsdev,
+   Jan 23, 2007), and resolved conflicts. Decide whether to use
+   serial or USB backend at link-time, not run-time. (No changes to
+   original megatec.c needed). Support for Krauler device.
+	
+Thu Feb  1 18:27:03 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - megatec_usb: applied Andrey Lelikov's original patch (nut-upsdev,
+   Dec 5, 2006), and resolved conflicts.
+	
 Tue Jan 30 16:00:54 UTC 2007 / Niels Baggesen <nba@users.sourceforge.net>
 
  - drivers/tripplite-hid.c: #include main.h to get prototype for getval

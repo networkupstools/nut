@@ -577,7 +577,7 @@ void HIDDumpTree(hid_dev_handle_t *udev, usage_tables_t *utab)
 
 /* Matcher is a linked list of matchers (see libhid.h), and the opened
     device must match all of them. On success, set *udevp and *hd and
-    return hd. On failure, return NULL. */
+    return hd. On failure, return NULL. Mode is MODE_OPEN or MODE_REOPEN. */
 HIDDevice_t *HIDOpenDevice(hid_dev_handle_t **udevp, HIDDevice_t *hd, HIDDeviceMatcher_t *matcher, int mode)
 {
 	int ReportSize;
