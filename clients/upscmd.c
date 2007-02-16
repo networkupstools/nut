@@ -51,7 +51,7 @@ static void usage(char *prog)
 	exit(EXIT_SUCCESS);
 }
 
-static void clean_exit(UPSCONN *ups, char *upsname, char *hostname, int code)
+static void clean_exit(UPSCONN_t *ups, char *upsname, char *hostname, int code)
 {
 	free(upsname);
 	free(hostname);
@@ -61,7 +61,7 @@ static void clean_exit(UPSCONN *ups, char *upsname, char *hostname, int code)
 	exit(code);
 }
 
-static void print_cmd(UPSCONN *ups, const char *upsname, char *cmdname)
+static void print_cmd(UPSCONN_t *ups, const char *upsname, char *cmdname)
 {
 	int	ret;
 	unsigned int	numq, numa;
@@ -90,7 +90,7 @@ static void listcmds(char *rawname)
 	unsigned int	numq, numa;
 	char	*upsname, *hostname, **answer;
 	const	char	*query[4];
-	UPSCONN	ups;
+	UPSCONN_t	ups;
 	struct	list_t	*lhead, *llast, *ltmp, *lnext;
 
 	upsname = hostname = NULL;
@@ -177,7 +177,7 @@ static void listcmds(char *rawname)
 	clean_exit(&ups, upsname, hostname, EXIT_SUCCESS);
 }
 
-static int do_cmd(UPSCONN *ups, const char *upsname, const char *cmd)
+static int do_cmd(UPSCONN_t *ups, const char *upsname, const char *cmd)
 {
 	char 	buf[SMALLBUF];
 
@@ -208,7 +208,7 @@ int main(int argc, char **argv)
 
 	int	port;
 	char	*upsname, *hostname;
-	UPSCONN	ups;
+	UPSCONN_t	ups;
 
 	prog = argv[0];
 

@@ -27,7 +27,7 @@
 
 #include "netmisc.h"
 
-void net_ver(ctype *client, int numarg, const char **arg)
+void net_ver(ctype_t *client, int numarg, const char **arg)
 {
 	if (numarg != 0) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
@@ -38,7 +38,7 @@ void net_ver(ctype *client, int numarg, const char **arg)
 		UPS_VERSION);
 }
 
-void net_help(ctype *client, int numarg, const char **arg)
+void net_help(ctype_t *client, int numarg, const char **arg)
 {
 	if (numarg != 0) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
@@ -49,9 +49,9 @@ void net_help(ctype *client, int numarg, const char **arg)
 		" USERNAME PASSWORD STARTTLS\n");
 }
 
-void net_fsd(ctype *client, int numarg, const char **arg)
+void net_fsd(ctype_t *client, int numarg, const char **arg)
 {
-	upstype	*ups;
+	upstype_t	*ups;
 
 	if (numarg != 1) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);

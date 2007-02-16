@@ -90,7 +90,7 @@ static inline int typesafe_control_msg(usb_dev_handle *dev,
     must match all of them. Also note: the string components of
     curDevice are filled with allocated strings that must later be
     freed. */
-static int libusb_open(usb_dev_handle **udevp, HIDDevice *curDevice, HIDDeviceMatcher_t *matcher, unsigned char *ReportDesc, int mode)
+static int libusb_open(usb_dev_handle **udevp, HIDDevice_t *curDevice, HIDDeviceMatcher_t *matcher, unsigned char *ReportDesc, int mode)
 {
 	int found = 0;
 #if LIBUSB_HAS_DETACH_KRNL_DRV

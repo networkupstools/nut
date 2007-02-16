@@ -40,7 +40,7 @@ static void help(const char *prog)
 	exit(EXIT_SUCCESS);
 }
 
-static void clean_exit(UPSCONN *ups, char *upsname, char *hostname, int code)
+static void clean_exit(UPSCONN_t *ups, char *upsname, char *hostname, int code)
 {
 	free(upsname);
 	free(hostname);
@@ -50,7 +50,7 @@ static void clean_exit(UPSCONN *ups, char *upsname, char *hostname, int code)
 	exit(code);
 }
 
-static int printvar(UPSCONN *ups, const char *upsname, const char *var)
+static int printvar(UPSCONN_t *ups, const char *upsname, const char *var)
 {
 	int	ret;
 	unsigned int	numq, numa;
@@ -98,7 +98,7 @@ static int printvar(UPSCONN *ups, const char *upsname, const char *var)
 	return EXIT_SUCCESS;
 }
 
-static int list_vars(UPSCONN *ups, const char *upsname)
+static int list_vars(UPSCONN_t *ups, const char *upsname)
 {
 	int	ret;
 	unsigned int	numq, numa;
@@ -151,7 +151,7 @@ int main(int argc, char **argv)
 {
 	int	port, ret;
 	char	*upsname, *hostname;
-	UPSCONN	ups;
+	UPSCONN_t	ups;
 
 	if (argc < 2)
 		help(argv[0]);

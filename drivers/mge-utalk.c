@@ -85,10 +85,10 @@ static int instcmd(const char *cmdname, const char *extra);
 static int setvar(const char *varname, const char *val);
 static void enable_ups_comm(void);
 static void disable_ups_comm(void);
-static void extract_info(const char *buf, const mge_info_item *mge, 
+static void extract_info(const char *buf, const mge_info_item_t *mge, 
 			 char *infostr, int infolen);
 static const char *info_variable_cmd(const char *type);
-static bool info_variable_ok(const char *type);
+static bool_t info_variable_ok(const char *type);
 static int  get_ups_status(void);
 static int mge_command(char *reply, int replylen, const char *fmt, ...);
 static void format_model_name(char *model);
@@ -202,8 +202,8 @@ void upsdrv_initinfo(void)
 	int  bytes_rcvd;
 	int  si_data1 = 0;
 	int  si_data2 = 0;
-	mge_info_item *item;
-	mge_model_info *legacy_model;
+	mge_info_item_t *item;
+	mge_model_info_t *legacy_model;
 	char infostr[32];
 	int  chars_rcvd;
 
@@ -365,7 +365,7 @@ void upsdrv_updateinfo(void)
 	char infostr[32];
 	int status_ok;
 	int bytes_rcvd;
-	mge_info_item *item;
+	mge_info_item_t *item;
 
 	/* make sure that communication is enabled */
 	enable_ups_comm();
@@ -641,7 +641,7 @@ static void enable_ups_comm(void)
    NOTE: buf="?" must be handled before calling extract_info
          buf is changed inspite of const !!!!!
 */
-static void extract_info(const char *buf, const mge_info_item *item, 
+static void extract_info(const char *buf, const mge_info_item_t *item, 
 			 char *infostr, int infolen)
 {
 	/* initialize info string */
@@ -788,9 +788,9 @@ static int get_ups_status(void)
 
 /* return proper variable "ok" given INFO_ type */
    
-static bool info_variable_ok(const char *type) 
+static bool_t info_variable_ok(const char *type) 
 {
-	mge_info_item *item = mge_info ;
+	mge_info_item_t *item = mge_info ;
 	
 	while ( strcasecmp(item->type, type ))
 		item++;
@@ -804,7 +804,7 @@ static bool info_variable_ok(const char *type)
    
 static const char *info_variable_cmd(const char *type) 
 {
-	mge_info_item *item = mge_info ;
+	mge_info_item_t *item = mge_info ;
 	
 	while ( strcasecmp(item->type, type ))
 		item++;

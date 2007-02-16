@@ -87,22 +87,22 @@ typedef struct hid_packet {
 /*   unsigned char  padding[8]; for use with shut_set_report */
 } hid_packet_t;
 
-typedef union hid_data {
+typedef union hid_data_u {
   hid_packet_t  hid_pkt;
   unsigned char raw_pkt[8]; /* max report lengh, was 8 */
-} hid_data_u;
+} hid_data_t;
 
 typedef struct shut_packet {
   unsigned char bType;
   unsigned char bLength;
-  hid_data_u    data;
+  hid_data_t    data;
   unsigned char bChecksum;
 } shut_packet_t;
 
-typedef union shut_data {
+typedef union shut_data_u {
   shut_packet_t shut_pkt;
   unsigned char raw_pkt[11];
-} shut_data_u;
+} shut_data_t;
 
 /* From USB/HID specifications */
 
@@ -116,10 +116,10 @@ typedef struct hid_descriptor {
   unsigned short wDescriptorLength;
 } hid_descriptor_t;
 
-typedef union hid_desc_data {
+typedef union hid_desc_data_u {
   hid_descriptor_t hid_desc;
   unsigned char    raw_desc[9]; /* max report lengh, aws 9 */
-} hid_desc_data_u;
+} hid_desc_data_t;
 
 typedef struct device_descriptor {
   unsigned char  bLength;
@@ -138,10 +138,10 @@ typedef struct device_descriptor {
   unsigned char  bNumConfigurations;
 } device_descriptor_t;
 
-typedef union device_desc_data {
+typedef union device_desc_data_u {
   device_descriptor_t dev_desc;
   unsigned char       raw_desc[18];
-} device_desc_data_u;
+} device_desc_data_t;
 
 /* --------------------------------------------------------------- */
 /*                       Explicit Booleans                         */
@@ -329,7 +329,7 @@ typedef struct {
   const char	*dfl;		/* default value */
   unsigned long	shut_flags;	/* specific SHUT flags */
   info_lkp_t	*hid2info;	/* lookup table between HID and NUT values */
-} mge_info_item;
+} mge_info_item_t;
 
 /* Array containing information to translate between UTalk and NUT info
  * NOTE: 
@@ -340,7 +340,7 @@ typedef struct {
  */
 
 /* FIXME: should be shared with mgehid.h */
-static mge_info_item mge_info[] = {
+static mge_info_item_t mge_info[] = {
 	{ "driver.version.internal", ST_FLAG_STRING, 5, NULL, "%s", DRIVER_VERSION, SHUT_FLAG_ABSENT | SHUT_FLAG_OK, NULL },
 	/* Battery page */
 	{ "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", "%i", NULL, SHUT_FLAG_OK, NULL },
@@ -476,7 +476,7 @@ static usage_lkp_t usage_lkp[] = {
 int   shut_ups_start(void);
 u_char shut_checksum(const u_char *buf, int bufsize);
 int   shut_token_send(u_char token);
-int   shut_packet_send (hid_data_u *hdata, int datalen, u_char token);
+int   shut_packet_send (hid_data_t *hdata, int datalen, u_char token);
 int   shut_packet_recv (u_char *Buf, int datalen);
 
 int   shut_get_descriptor(int desctype, u_char *pkt, int reportlen);
@@ -492,7 +492,7 @@ char  *get_model_name(char *iProduct, char *iModel);
 int    hid_lookup_usage(char *name);
 int    hid_get_value(const char *item_path);
 int    hid_set_value(const char *varname, const char *val);
-u_short lookup_path(const char *HIDpath, HIDData *data);
+u_short lookup_path(const char *HIDpath, HIDData_t *data);
 
 int    instcmd(const char *cmdname, const char *extra);
 void   setline(int set);
@@ -502,4 +502,4 @@ int    serial_send(u_char *buf, int len);
 void   make_string(u_char *buf, int datalen, char *string);
 
 
-mge_info_item *shut_find_info(const char *varname);
+mge_info_item_t *shut_find_info(const char *varname);

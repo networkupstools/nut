@@ -22,19 +22,19 @@
 #define SS_CONNFAIL_INT 300	/* complain about a dead driver every 5 mins */
 #define SS_MAX_READ 256		/* don't let drivers tie us up in read()     */
 
-int sstate_connect(upstype *ups);
-void sstate_sock_read(upstype *ups);
-const char *sstate_getinfo(const upstype *ups, const char *var);
-int sstate_getflags(const upstype *ups, const char *var);
-int sstate_getaux(const upstype *ups, const char *var);
-const struct enum_t *sstate_getenumlist(const upstype *ups, const char *var);
-const struct cmdlist_t *sstate_getcmdlist(const upstype *ups);
-void sstate_makeinfolist(const upstype *ups, char *buf, size_t bufsize);
-void sstate_makerwlist(const upstype *ups, char *buf, size_t bufsize);
-void sstate_makeinstcmdlist(const upstype *ups, char *buf, size_t bufsize);
-int sstate_dead(upstype *ups, int maxage);
-void sstate_infofree(upstype *ups);
-void sstate_cmdfree(upstype *ups);
-int sstate_sendline(upstype *ups, const char *buf);
-const struct st_tree_t *sstate_getnode(const upstype *ups, const char *varname);
+int sstate_connect(upstype_t *ups);
+void sstate_sock_read(upstype_t *ups);
+const char *sstate_getinfo(const upstype_t *ups, const char *var);
+int sstate_getflags(const upstype_t *ups, const char *var);
+int sstate_getaux(const upstype_t *ups, const char *var);
+const struct enum_t *sstate_getenumlist(const upstype_t *ups, const char *var);
+const struct cmdlist_t *sstate_getcmdlist(const upstype_t *ups);
+void sstate_makeinfolist(const upstype_t *ups, char *buf, size_t bufsize);
+void sstate_makerwlist(const upstype_t *ups, char *buf, size_t bufsize);
+void sstate_makeinstcmdlist_t(const upstype_t *ups, char *buf, size_t bufsize);
+int sstate_dead(upstype_t *ups, int maxage);
+void sstate_infofree(upstype_t *ups);
+void sstate_cmdfree(upstype_t *ups);
+int sstate_sendline(upstype_t *ups, const char *buf);
+const struct st_tree_t *sstate_getnode(const upstype_t *ups, const char *varname);
 

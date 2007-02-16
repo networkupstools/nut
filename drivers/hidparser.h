@@ -35,31 +35,31 @@ extern "C" {
 /*
  * Parse_ReportDesc
  * -------------------------------------------------------------------------- */
-HIDDesc *Parse_ReportDesc(u_char *ReportDesc, int n);
+HIDDesc_t *Parse_ReportDesc(u_char *ReportDesc, int n);
 
 /*
  * Free_ReportDesc
  * -------------------------------------------------------------------------- */
-void Free_ReportDesc(HIDDesc *pDesc);
+void Free_ReportDesc(HIDDesc_t *pDesc);
 
 /*
  * FindObject
  * -------------------------------------------------------------------------- */
-int FindObject(HIDDesc *pDesc, HIDData* pData);
+int FindObject(HIDDesc_t *pDesc, HIDData_t* pData);
 
-HIDData *FindObject_with_Path(HIDDesc *pDesc, HIDPath *Path, u_char Type);
+HIDData_t *FindObject_with_Path(HIDDesc_t *pDesc, HIDPath_t *Path, u_char Type);
 
-HIDData *FindObject_with_ID(HIDDesc *pDesc, u_char ReportID, u_char Offset, u_char Type);
+HIDData_t *FindObject_with_ID(HIDDesc_t *pDesc, u_char ReportID, u_char Offset, u_char Type);
 
 /*
  * GetValue
  * -------------------------------------------------------------------------- */
-void GetValue(const u_char* Buf, HIDData* pData, long *pValue);
+void GetValue(const u_char* Buf, HIDData_t* pData, long *pValue);
 
 /*
  * SetValue
  * -------------------------------------------------------------------------- */
-void SetValue(const HIDData* pData, u_char* Buf, long Value);
+void SetValue(const HIDData_t* pData, u_char* Buf, long Value);
 
 
 #ifdef __cplusplus

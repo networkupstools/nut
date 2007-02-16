@@ -336,7 +336,7 @@ static int belkin_shutdown(int ondelay, int offdelay) {
         return 0;
 }
 
-static char *belkin_format_model(HIDDevice *hd) {
+static char *belkin_format_model(HIDDevice_t *hd) {
 	char *model;
 	model = hd->Product ? hd->Product : "unknown";
 	if (strlen(model) == 0) {
@@ -345,7 +345,7 @@ static char *belkin_format_model(HIDDevice *hd) {
 	return model;
 }
 
-static char *belkin_format_mfr(HIDDevice *hd) {
+static char *belkin_format_mfr(HIDDevice_t *hd) {
 	char *mfr;
 	mfr = hd->Vendor ? hd->Vendor : "Belkin";
 	/* trim leading whitespace */
@@ -358,7 +358,7 @@ static char *belkin_format_mfr(HIDDevice *hd) {
 	return mfr;
 }
 
-static char *belkin_format_serial(HIDDevice *hd) {
+static char *belkin_format_serial(HIDDevice_t *hd) {
 	char *serial;
 	char *string;
 	unsigned char rawbuf[100];
@@ -376,7 +376,7 @@ static char *belkin_format_serial(HIDDevice *hd) {
 
 /* this function allows the subdriver to "claim" a device: return 1 if
  * the device is supported by this subdriver, else 0. */
-static int belkin_claim(HIDDevice *hd) {
+static int belkin_claim(HIDDevice_t *hd) {
 	if (hd->VendorID != BELKIN_VENDORID) {
 		return 0;
 	}

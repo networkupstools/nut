@@ -46,20 +46,20 @@ struct list_t {
 
 static	int	port;
 static	char	*upsname, *hostname;
-static	UPSCONN	ups;
+static	UPSCONN_t	ups;
 
 typedef struct {
 	char	*var;
 	char	*value;
 	void	*next;
-}	uvtype;
+}	uvtype_t;
 
-	uvtype	*firstuv = NULL;
+	uvtype_t	*firstuv = NULL;
 
 void parsearg(char *var, char *value)
 {
 	char	*ptr;
-	uvtype	*last, *tmp = NULL;
+	uvtype_t	*last, *tmp = NULL;
 	static	int upsvc = 0;
 
 	/* store variables from a SET command for the later commit */
@@ -86,7 +86,7 @@ void parsearg(char *var, char *value)
 			tmp = tmp->next;
 		}
 
-		tmp = xmalloc(sizeof(uvtype));
+		tmp = xmalloc(sizeof(uvtype_t));
 		tmp->var = xstrdup(ptr);
 		tmp->value = xstrdup(value);
 		tmp->next = NULL;
@@ -190,7 +190,7 @@ static void upsset_hosts_err(const char *errmsg)
 static void do_pickups(const char *currfunc)
 {
 	char	hostfn[SMALLBUF];
-	PCONF_CTX	ctx;
+	PCONF_CTX_t	ctx;
 
 	snprintf(hostfn, sizeof(hostfn), "%s/hosts.conf", confpath());
 
@@ -909,7 +909,7 @@ static void savesettings(void)
 {
 	int	changed = 0;
 	char	*desc;
-	uvtype	*upsvar;
+	uvtype_t	*upsvar;
 
 	if (!checkhost(monups, &desc)) 
 		error_page("showsettings", "Access denied",
@@ -977,7 +977,7 @@ static void upsset_conf_err(const char *errmsg)
 static void check_conf(void)
 {
 	char	fn[SMALLBUF];
-	PCONF_CTX	ctx;
+	PCONF_CTX_t	ctx;
 
 	snprintf(fn, sizeof(fn), "%s/upsset.conf", confpath());
 

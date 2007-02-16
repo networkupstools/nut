@@ -304,17 +304,17 @@ typedef struct { /* Entry in BCM/XCP - UPS - NUT mapping table */
 	char *nut_entity;				/* The NUT variable name */
 	unsigned char format;				/* The format of the data - float, long etc */
 	unsigned int meter_block_index;			/* The position of this meter in the UPS meter block */
-}	BCMXCP_METER_MAP_ENTRY;
+}	BCMXCP_METER_MAP_ENTRY_t;
 
-BCMXCP_METER_MAP_ENTRY
+BCMXCP_METER_MAP_ENTRY_t
 	bcmxcp_meter_map[BCMXCP_METER_MAP_MAX];
 
 typedef	struct { /* Entry in BCM/XCP - UPS mapping table */
 	unsigned int alarm_block_index;		/* Index of this alarm in alarm block. -1 = not existing */
 	char *alarm_desc;			/* Description of this alarm */
-}	BCMXCP_ALARM_MAP_ENTRY;
+}	BCMXCP_ALARM_MAP_ENTRY_t;
 
-BCMXCP_ALARM_MAP_ENTRY
+BCMXCP_ALARM_MAP_ENTRY_t
 	bcmxcp_alarm_map[BCMXCP_ALARM_MAP_MAX];
 
 typedef	struct {				/* A place to store status info and other data not for NUT */
@@ -323,9 +323,9 @@ typedef	struct {				/* A place to store status info and other data not for NUT *
 	unsigned int shutdowndelay;	 	/* Shutdown delay in seconds, from ups.conf */
 	int alarm_on_battery;			/* On Battery alarm active? */
 	int alarm_low_battery;			/* Battery Low alarm active? */
-}	BCMXCP_STATUS;
+}	BCMXCP_STATUS_t;
 
-BCMXCP_STATUS
+BCMXCP_STATUS_t
 	bcmxcp_status;
 
 int checksum_test(const unsigned char*);

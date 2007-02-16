@@ -212,7 +212,7 @@ static int parse_data_file(int upsfd)
 {
 	char	fn[SMALLBUF];
 	char	*ptr;
-	PCONF_CTX	ctx;
+	PCONF_CTX_t	ctx;
 
 	if (device_path[0] == '/')
 		snprintf(fn, sizeof(fn), "%s", device_path);

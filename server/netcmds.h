@@ -31,7 +31,7 @@
 
 struct netcmds_t {
 	const	char	*name;
-	void	(*func)(ctype *client, int numargs, const char **arg);
+	void	(*func)(ctype_t *client, int numargs, const char **arg);
 	int	flags;
 };
 

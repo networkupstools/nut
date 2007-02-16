@@ -72,10 +72,10 @@ static void align_request(hid_packet_t *sd)
 /*                      Global structures                          */
 /* --------------------------------------------------------------- */
 
-hid_desc_data_u    	hid_descriptor;
-device_desc_data_u 	device_descriptor;
+hid_desc_data_t    	hid_descriptor;
+device_desc_data_t 	device_descriptor;
 static long             hValue;
-static HIDDesc  	*pDesc = NULL; /* parsed Report Descriptor */
+static HIDDesc_t  	*pDesc = NULL; /* parsed Report Descriptor */
 u_char 			raw_buf[4096];
 
 /* --------------------------------------------------------------- */
@@ -92,7 +92,7 @@ static char *hu_find_infoval(info_lkp_t *hid2info, long value);
 
 void upsdrv_initinfo (void)
 {
-	mge_info_item *item;
+	mge_info_item_t *item;
 	
 	upsdebugx(2, "entering initinfo()\n");
 	
@@ -172,7 +172,7 @@ void upsdrv_initinfo (void)
 
 void upsdrv_updateinfo (void)
 {
-	mge_info_item *item;
+	mge_info_item_t *item;
 	char *nutvalue;
 	
 	upsdebugx(2, "entering upsdrv_updateinfo()");
@@ -729,10 +729,10 @@ int shut_token_send(u_char token)
 	return serial_send (Buf, 1);
 }
 
-int shut_packet_send (hid_data_u *hdata, int datalen, u_char token)
+int shut_packet_send (hid_data_t *hdata, int datalen, u_char token)
 {
 	shut_packet_t SHUTRequest;
-	shut_data_u   sdata;
+	shut_data_t   sdata;
 	short Retry=1;
 	short Size;
 	int i;
@@ -793,7 +793,7 @@ int shut_packet_recv (u_char *Buf, int datalen)
 	u_short  Pos=0;
 	u_char   Retry=0;
 	int recv;
-	shut_data_u   sdata;
+	shut_data_t   sdata;
 
 	upsdebugx (4, "entering shut_packet_recv (%i)", datalen);
 	
@@ -883,7 +883,7 @@ int shut_packet_recv (u_char *Buf, int datalen)
 int shut_get_descriptor(int desctype, u_char *pkt, int reportlen)
 {
 	hid_packet_t HIDRequest;
-	hid_data_u   data;
+	hid_data_t   data;
 	int retcode;
 	
 	upsdebugx (2, "entering shut_get_descriptor(n %02x, %i)",
@@ -928,7 +928,7 @@ int shut_get_descriptor(int desctype, u_char *pkt, int reportlen)
 int shut_get_string(int strindex, char *string, int stringlen)
 {
 	hid_packet_t HIDRequest;
-	hid_data_u   data;
+	hid_data_t   data;
 	int retcode;
 	u_char buf[MAX_STRING];
 	
@@ -975,7 +975,7 @@ int shut_get_string(int strindex, char *string, int stringlen)
 int shut_get_report(int id, u_char *pkt, int reportlen)
 {
 	hid_packet_t HIDRequest;
-	hid_data_u   data;
+	hid_data_t   data;
 	int retcode;
 	
 	upsdebugx (2, "entering shut_get_report(id: %02x, len: %02x)", id, reportlen);
@@ -1019,7 +1019,7 @@ int shut_get_report(int id, u_char *pkt, int reportlen)
 int shut_set_report(int id, u_char *pkt, int reportlen)
 {
 	hid_packet_t HIDRequest;
-	hid_data_u   data;
+	hid_data_t   data;
 	int retcode;
 	
 	upsdebugx (2, "entering shut_set_report(id: %02x, len: %02x)", id, reportlen);
@@ -1134,7 +1134,7 @@ int hid_init_device()
 }
 
 /* translate HID string path to numeric path and return path depth */
-ushort lookup_path(const char *HIDpath, HIDData *data)
+ushort lookup_path(const char *HIDpath, HIDData_t *data)
 {
 	ushort i = 0, cond = 1;
 	int cur_usage;
@@ -1201,7 +1201,7 @@ int hid_lookup_usage(char *name)
 int hid_get_value(const char *item_path)
 {
 	int i, retcode;
-   HIDData hData;
+   HIDData_t hData;
 	
 	upsdebugx(3, "entering hid_get_value(%s)", item_path);
 	
@@ -1335,8 +1335,8 @@ char *get_model_name(char *iProduct, char *iModel)
 int hid_set_value(const char *varname, const char *val)
 {
 	int retcode, i, replen;
-	mge_info_item *shut_info_p;
-   HIDData hData;
+	mge_info_item_t *shut_info_p;
+   HIDData_t hData;
 		
 	upsdebugx(2, "============== entering hid_set_value(%s, %s) ==============", varname, val);
 	
@@ -1421,9 +1421,9 @@ int hid_set_value(const char *varname, const char *val)
 }
 
 /* find info element definition in my info array. */
-mge_info_item *shut_find_info(const char *varname)
+mge_info_item_t *shut_find_info(const char *varname)
 {
-	mge_info_item *shut_info_p;
+	mge_info_item_t *shut_info_p;
 
 	for (shut_info_p = &mge_info[0]; shut_info_p->type != NULL; shut_info_p++)
 		if (!strcasecmp(shut_info_p->type, varname))

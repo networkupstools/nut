@@ -97,7 +97,7 @@
 #define STATE_ENDOFLINE		7
 #define STATE_PARSEERR		8
 
-static void pconf_fatal(PCONF_CTX *ctx, const char *errtxt)
+static void pconf_fatal(PCONF_CTX_t *ctx, const char *errtxt)
 {
 	if (ctx->errhandler)
 		ctx->errhandler(errtxt);
@@ -107,7 +107,7 @@ static void pconf_fatal(PCONF_CTX *ctx, const char *errtxt)
 	exit(EXIT_FAILURE);
 }
 
-static void add_arg_word(PCONF_CTX *ctx)
+static void add_arg_word(PCONF_CTX_t *ctx)
 {
 	int	argpos;
 	size_t	wbuflen;
@@ -165,7 +165,7 @@ static void add_arg_word(PCONF_CTX *ctx)
 	strncpy(ctx->arglist[argpos], ctx->wordbuf, wbuflen);
 }
 
-static void addchar(PCONF_CTX *ctx)
+static void addchar(PCONF_CTX_t *ctx)
 {
 	size_t	wbuflen;
 
@@ -196,7 +196,7 @@ static void addchar(PCONF_CTX *ctx)
 	*ctx->wordptr = '\0';
 }
 
-static void endofword(PCONF_CTX *ctx)
+static void endofword(PCONF_CTX_t *ctx)
 {
 	if (ctx->arg_limit != 0) {
 		if (ctx->numargs >= ctx->arg_limit) {
@@ -216,7 +216,7 @@ static void endofword(PCONF_CTX *ctx)
 }
 
 /* look for the beginning of a word */
-static int findwordstart(PCONF_CTX *ctx)
+static int findwordstart(PCONF_CTX_t *ctx)
 {
 	/* newline = the physical line is over, so the logical one is too */
 	if (ctx->ch == 10)
@@ -244,7 +244,7 @@ static int findwordstart(PCONF_CTX *ctx)
 }	
 
 /* eat characters until the end of the line is found */
-static int findeol(PCONF_CTX *ctx)
+static int findeol(PCONF_CTX_t *ctx)
 {
 	/* newline = found it, so start a new line */
 	if (ctx->ch == 10)
@@ -255,7 +255,7 @@ static int findeol(PCONF_CTX *ctx)
 }
 
 /* set up the error reporting details */
-static void pconf_seterr(PCONF_CTX *ctx, const char *errmsg)
+static void pconf_seterr(PCONF_CTX_t *ctx, const char *errmsg)
 {
 	snprintf(ctx->errmsg, PCONF_ERR_LEN, "%s", errmsg);
 
@@ -263,7 +263,7 @@ static void pconf_seterr(PCONF_CTX *ctx, const char *errmsg)
 }	
 
 /* quote characters inside a word bounded by "quotes" */
-static int quotecollect(PCONF_CTX *ctx)
+static int quotecollect(PCONF_CTX_t *ctx)
 {
 	/* user is trying to break us */
 	if (ctx->ch == '#') {
@@ -292,7 +292,7 @@ static int quotecollect(PCONF_CTX *ctx)
 }
 
 /* take almost anything literally, but return to quotecollect */
-static int qc_literal(PCONF_CTX *ctx)
+static int qc_literal(PCONF_CTX_t *ctx)
 {
 	/* continue onto the next line of the file */
 	if (ctx->ch == 10)
@@ -303,7 +303,7 @@ static int qc_literal(PCONF_CTX *ctx)
 }
 
 /* collect characters inside a word */
-static int collect(PCONF_CTX *ctx)
+static int collect(PCONF_CTX_t *ctx)
 {
 	/* comment means the word is done, and skip to the end of the line */
 	if (ctx->ch == '#') {
@@ -336,7 +336,7 @@ static int collect(PCONF_CTX *ctx)
 }
 
 /* take almost anything literally */
-static int collectliteral(PCONF_CTX *ctx)
+static int collectliteral(PCONF_CTX_t *ctx)
 {
 	/* continue to the next line */
 	if (ctx->ch == 10)
@@ -347,7 +347,7 @@ static int collectliteral(PCONF_CTX *ctx)
 }
 
 /* clean up memory before going back to the user */
-static void free_storage(PCONF_CTX *ctx)
+static void free_storage(PCONF_CTX_t *ctx)
 {
 	unsigned int	i;
 
@@ -367,7 +367,7 @@ static void free_storage(PCONF_CTX *ctx)
 	ctx->maxargs = 0;
 }
 
-int pconf_init(PCONF_CTX *ctx, void errhandler(const char *))
+int pconf_init(PCONF_CTX_t *ctx, void errhandler(const char *))
 {
 	/* set up the ctx elements */
 
@@ -392,17 +392,17 @@ int pconf_init(PCONF_CTX *ctx, void errhandler(const char *))
 	ctx->wordptr = ctx->wordbuf;		
 
 	ctx->errhandler = errhandler;
-	ctx->magic = PCONF_CTX_MAGIC;
+	ctx->magic = PCONF_CTX_t_MAGIC;
 
 	return 1;
 }
 
-static int check_magic(PCONF_CTX *ctx)
+static int check_magic(PCONF_CTX_t *ctx)
 {
 	if (!ctx)
 		return 0;
 
-	if (ctx->magic != PCONF_CTX_MAGIC) {
+	if (ctx->magic != PCONF_CTX_t_MAGIC) {
 		snprintf(ctx->errmsg, PCONF_ERR_LEN, "Invalid ctx buffer");
 		return 0;
 	}
@@ -410,7 +410,7 @@ static int check_magic(PCONF_CTX *ctx)
 	return 1;
 }
 
-int pconf_file_begin(PCONF_CTX *ctx, const char *fn)
+int pconf_file_begin(PCONF_CTX_t *ctx, const char *fn)
 {
 	if (!check_magic(ctx))
 		return 0;
@@ -426,7 +426,7 @@ int pconf_file_begin(PCONF_CTX *ctx, const char *fn)
 	return 1;	/* OK */
 }
 
-static void parse_char(PCONF_CTX *ctx)
+static void parse_char(PCONF_CTX_t *ctx)
 {
 	switch(ctx->state) {
 		case STATE_FINDWORDSTART:
@@ -456,7 +456,7 @@ static void parse_char(PCONF_CTX *ctx)
 }
 
 /* return 1 if an error occurred, but only do it once */
-int pconf_parse_error(PCONF_CTX *ctx)
+int pconf_parse_error(PCONF_CTX_t *ctx)
 {
 	if (!check_magic(ctx))
 		return 0;
@@ -470,7 +470,7 @@ int pconf_parse_error(PCONF_CTX *ctx)
 }
 
 /* clean up the ctx space */
-void pconf_finish(PCONF_CTX *ctx)
+void pconf_finish(PCONF_CTX_t *ctx)
 {
 	if (!check_magic(ctx))
 		return;
@@ -484,7 +484,7 @@ void pconf_finish(PCONF_CTX *ctx)
 }
 
 /* read from a file until a whole line is ready for use */
-int pconf_file_next(PCONF_CTX *ctx)
+int pconf_file_next(PCONF_CTX_t *ctx)
 {
 	if (!check_magic(ctx))
 		return 0;
@@ -521,7 +521,7 @@ int pconf_file_next(PCONF_CTX *ctx)
 }
 
 /* parse a provided line */
-int pconf_line(PCONF_CTX *ctx, const char *line)
+int pconf_line(PCONF_CTX_t *ctx, const char *line)
 {
 	size_t	i, linelen;
 
@@ -594,7 +594,7 @@ char *pconf_encode(const char *src, char *dest, size_t destsize)
 }
 
 /* parse input a character at a time */
-int pconf_char(PCONF_CTX *ctx, char ch)
+int pconf_char(PCONF_CTX_t *ctx, char ch)
 {
 	if (!check_magic(ctx))
 		return -1;

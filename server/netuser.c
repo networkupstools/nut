@@ -28,9 +28,9 @@
 #include "netuser.h"
 
 /* LOGIN <ups> */
-void net_login(ctype *client, int numarg, const char **arg)
+void net_login(ctype_t *client, int numarg, const char **arg)
 {
-	upstype	*ups;
+	upstype_t	*ups;
 
 	if (numarg != 1) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
@@ -68,7 +68,7 @@ void net_login(ctype *client, int numarg, const char **arg)
 	sendback(client, "OK\n");
 }
 
-void net_logout(ctype *client, int numarg, const char **arg)
+void net_logout(ctype_t *client, int numarg, const char **arg)
 {
 	if (numarg != 0) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
@@ -86,9 +86,9 @@ void net_logout(ctype *client, int numarg, const char **arg)
 }
 
 /* MASTER <upsname> */
-void net_master(ctype *client, int numarg, const char **arg)
+void net_master(ctype_t *client, int numarg, const char **arg)
 {
-	upstype	*ups;
+	upstype_t	*ups;
 
 	if (numarg != 1) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
@@ -115,7 +115,7 @@ void net_master(ctype *client, int numarg, const char **arg)
 }
 
 /* USERNAME <username> */
-void net_username(ctype *client, int numarg, const char **arg)
+void net_username(ctype_t *client, int numarg, const char **arg)
 {
 	if (numarg != 1) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
@@ -135,7 +135,7 @@ void net_username(ctype *client, int numarg, const char **arg)
 }
 
 /* PASSWORD <password> */
-void net_password(ctype *client, int numarg, const char **arg)
+void net_password(ctype_t *client, int numarg, const char **arg)
 {
 	if (numarg != 1) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);

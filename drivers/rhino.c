@@ -38,7 +38,7 @@
 
 #define UPSDELAY 500 /* 0.5 ms delay */
 
-typedef int bool;
+typedef int bool_t;
 
 #define false 0
 #define true 1
@@ -86,12 +86,12 @@ static int ihour,imin, isec;
 // internal variables
 // package handshake ariables
 /* int ContadorEstouro; */
-static bool detected;
-static bool SourceFail, Out110, RedeAnterior, OcorrenciaDeFalha;
-static bool RetornoDaRede, SuperAquecimento, SuperAquecimentoAnterior;
-static bool OverCharge, OldOverCharge, CriticBatt, OldCritBatt;
-static bool Flag_inversor, BypassOn, InputOn, OutputOn;
-static bool LowBatt, oldInversorOn;
+static bool_t detected;
+static bool_t SourceFail, Out110, RedeAnterior, OcorrenciaDeFalha;
+static bool_t RetornoDaRede, SuperAquecimento, SuperAquecimentoAnterior;
+static bool_t OverCharge, OldOverCharge, CriticBatt, OldCritBatt;
+static bool_t Flag_inversor, BypassOn, InputOn, OutputOn;
+static bool_t LowBatt, oldInversorOn;
 /* data vetor from received and configuration data package - not used yet
 unsigned char Dados[ 161 ]; */
 /* identification group */

@@ -34,7 +34,7 @@
 #define DRIVER_VERSION		"0.30"
 
 #ifdef SHUT_MODE
-	extern shut_dev_handle *udev;
+	extern shut_dev_handle_t *udev;
 #else
 	extern usb_dev_handle *udev;
 #endif
@@ -202,7 +202,7 @@ typedef struct {
 
 struct subdriver_s {
 	char *name;                  /* name of this subdriver */
-	int (*claim)(HIDDevice *hd); /* return 1 if device covered by
+	int (*claim)(HIDDevice_t *hd); /* return 1 if device covered by
 				      * this subdriver */
 	usage_tables_t *utab;        /* points to array of usage tables */
 	hid_info_t *hid2nut;         /* main table of vars and instcmds */
@@ -210,9 +210,9 @@ struct subdriver_s {
                                      /* driver-specific shutdown cmd.
 					Returns 1 on success, 0 on
 					failure */
-	char *(*format_model)(HIDDevice *hd);  /* driver-specific methods */
-	char *(*format_mfr)(HIDDevice *hd);    /* for preparing human-    */
-	char *(*format_serial)(HIDDevice *hd); /* readable information    */
+	char *(*format_model)(HIDDevice_t *hd);  /* driver-specific methods */
+	char *(*format_mfr)(HIDDevice_t *hd);    /* for preparing human-    */
+	char *(*format_serial)(HIDDevice_t *hd); /* readable information    */
 };
 typedef struct subdriver_s subdriver_t;
 

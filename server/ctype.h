@@ -50,9 +50,9 @@ typedef struct {
 #endif
 	int	ssl_connected;
 
-	PCONF_CTX	ctx;
+	PCONF_CTX_t	ctx;
 
 	void	*next;
-}	ctype;
+}	ctype_t;
 
 #endif	/* CTYPE_H_SEEN */

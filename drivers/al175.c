@@ -1020,8 +1020,8 @@ static int al175_read(byte_t *dst, unsigned addr, size_t count)
  */
 
 // XXX: ?
-typedef int mm;	/* minutes */
-typedef int VV;	/* voltage */
+typedef int mm_t;	/* minutes */
+typedef int VV_t;	/* voltage */
 
 #define	Z1  , 0
 #define Z2  , 0, 0
@@ -1032,26 +1032,26 @@ typedef int VV;	/* voltage */
 ACT	TOGGLE_PRS_ONOFF	()		{ return al175_do(0x81, 0x80			Z3);	}
 ACT	CANCEL_BOOST		()		{ return al175_do(0x82, 0x80			Z3);	}
 ACT	STOP_BATTERY_TEST	()		{ return al175_do(0x83, 0x80			Z3);	}
-ACT	START_BATTERY_TEST	(VV EndVolt, unsigned Minutes)
+ACT	START_BATTERY_TEST	(VV_t EndVolt, unsigned Minutes)
 						{ return al175_do(0x83, 0x81, EndVolt, Minutes	Z1);	}
 
-ACT	SET_FLOAT_VOLTAGE	(VV v)		{ return al175_do(0x87, 0x80, v			Z2);	}
-ACT	SET_BOOST_VOLTAGE	(VV v)		{ return al175_do(0x87, 0x81, v			Z2);	}
-ACT	SET_HIGH_BATTERY_LIMIT	(VV Vhigh)	{ return al175_do(0x87, 0x82, Vhigh		Z2);	}
-ACT	SET_LOW_BATTERY_LIMIT	(VV Vlow)	{ return al175_do(0x87, 0x83, Vlow		Z2);	}
+ACT	SET_FLOAT_VOLTAGE	(VV_t v)		{ return al175_do(0x87, 0x80, v			Z2);	}
+ACT	SET_BOOST_VOLTAGE	(VV_t v)		{ return al175_do(0x87, 0x81, v			Z2);	}
+ACT	SET_HIGH_BATTERY_LIMIT	(VV_t Vhigh)	{ return al175_do(0x87, 0x82, Vhigh		Z2);	}
+ACT	SET_LOW_BATTERY_LIMIT	(VV_t Vlow)	{ return al175_do(0x87, 0x83, Vlow		Z2);	}
 
 ACT	SET_DISCONNECT_LEVEL_AND_DELAY
-				(VV level, mm delay)
+				(VV_t level, mm_t delay)
 						{ return al175_do(0x87, 0x84, level, delay	Z1);	}
 
 ACT	RESET_ALARMS		()		{ return al175_do(0x88, 0x80			Z3);	}
 ACT	CHANGE_COMM_PROTOCOL	()		{ return al175_do(0x89, 0x80			Z3);	}
-ACT	SET_VOLTAGE_AT_ZERO_T	(VV v)		{ return al175_do(0x8a, 0x80, v			Z2);	}
-ACT	SET_SLOPE_AT_ZERO_T	(VV mv_per_degree)
+ACT	SET_VOLTAGE_AT_ZERO_T	(VV_t v)		{ return al175_do(0x8a, 0x80, v			Z2);	}
+ACT	SET_SLOPE_AT_ZERO_T	(VV_t mv_per_degree)
 						{ return al175_do(0x8a, 0x81, mv_per_degree	Z2);	}
 
-ACT	SET_MAX_TCOMP_VOLTAGE	(VV v)		{ return al175_do(0x8a, 0x82, v			Z2);	}
-ACT	SET_MIN_TCOMP_VOLTAGE	(VV v)		{ return al175_do(0x8a, 0x83, v			Z2);	}
+ACT	SET_MAX_TCOMP_VOLTAGE	(VV_t v)		{ return al175_do(0x8a, 0x82, v			Z2);	}
+ACT	SET_MIN_TCOMP_VOLTAGE	(VV_t v)		{ return al175_do(0x8a, 0x83, v			Z2);	}
 ACT	SWITCH_TEMP_COMP	(int on)	{ return al175_do(0x8b, 0x80, on		Z2);	}
 
 // XXX: ?

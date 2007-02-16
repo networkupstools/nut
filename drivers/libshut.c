@@ -173,16 +173,16 @@ struct my_hid_descriptor {
 /*!
  * SHUT functions for HID marshalling
  */
-int shut_get_descriptor(shut_dev_handle *sdev, unsigned char type,
+int shut_get_descriptor(shut_dev_handle_t *sdev, unsigned char type,
 			unsigned char index, void *buf, int size);
-int shut_get_string_simple(shut_dev_handle *dev, int index,
+int shut_get_string_simple(shut_dev_handle_t *dev, int index,
 			   unsigned char *buf, size_t buflen);
-int libshut_get_report(shut_dev_handle *devp, int ReportId,
+int libshut_get_report(shut_dev_handle_t *devp, int ReportId,
 		       unsigned char *raw_buf, int ReportSize );
-int shut_set_report(shut_dev_handle *sdev, int id, unsigned char *pkt, int reportlen);
-int libshut_get_interrupt(shut_dev_handle *devp, unsigned char *buf,
+int shut_set_report(shut_dev_handle_t *sdev, int id, unsigned char *pkt, int reportlen);
+int libshut_get_interrupt(shut_dev_handle_t *devp, unsigned char *buf,
 			  int bufsize, int timeout);
-int shut_control_msg(shut_dev_handle *dev, int requesttype, int request,
+int shut_control_msg(shut_dev_handle_t *dev, int requesttype, int request,
 		     int value, int index, unsigned char *bytes, int size, int timeout);
 
 /* FIXME */
@@ -193,7 +193,7 @@ char * shut_strerror() { return ""; }
  * sync'ed with libusb
  */
 
-typedef struct shut_ctrltransfer {
+typedef struct shut_ctrltransfer_s {
 	uint8_t  bRequestType;
 	uint8_t  bRequest;
 	uint16_t wValue;
@@ -208,30 +208,30 @@ typedef struct shut_ctrltransfer {
 } shut_ctrltransfer_t;
 
 
-typedef union hid_data {
+typedef union hid_data_t {
 	shut_ctrltransfer_t  hid_pkt;
 	uint8_t raw_pkt[8]; /* max report lengh, was 8 */
-} hid_data_u;
+} hid_data_t;
 
-typedef struct shut_packet {
+typedef struct shut_packet_s {
 	uint8_t bType;
 	uint8_t bLength;
-	hid_data_u    data;
+	hid_data_t    data;
 	uint8_t bChecksum;
 } shut_packet_t;
 
-typedef union shut_data {
+typedef union shut_data_t {
 	shut_packet_t shut_pkt;
 	uint8_t raw_pkt[11];
-} shut_data_u;
+} shut_data_t;
 
-typedef union hid_desc_data {
+typedef union hid_desc_data_t {
 	struct my_hid_descriptor hid_desc;
 	uint8_t    raw_desc[9]; /* max report lengh, aws 9 */
-} hid_desc_data_u;
+} hid_desc_data_t;
 
 /* Device descriptor */
-typedef struct device_descriptor {
+typedef struct device_descriptor_s {
 	uint8_t  bLength;
 	uint8_t  bDescriptorType;
 	uint16_t bcdUSB;
@@ -248,25 +248,25 @@ typedef struct device_descriptor {
 	uint8_t  bNumConfigurations;
 } device_descriptor_t;
 #if 0
-typedef union device_desc_data {
+typedef union device_desc_data_t {
 	device_descriptor_t dev_desc;
 	uint8_t       raw_desc[18];
-} device_desc_data_u;
+} device_desc_data_t;
 #endif
 /* Low level SHUT (Serial HID UPS Transfer) routines  */
 void setline (int fd, int set);
-bool shut_synchronise (int fd);
+bool_t shut_synchronise (int fd);
 int shut_wait_ack (int fd);
-int shut_interrupt_read(shut_dev_handle *dev, int ep, unsigned char *bytes,
+int shut_interrupt_read(shut_dev_handle_t *dev, int ep, unsigned char *bytes,
 			int size, int timeout);
-int shut_control_msg(shut_dev_handle *dev, int requesttype, int request, int value,
+int shut_control_msg(shut_dev_handle_t *dev, int requesttype, int request, int value,
 		     int index, unsigned char *bytes, int size, int timeout);
 
 
 /* Data portability */
 /* realign packet data according to Endianess */
 #define BYTESWAP(in) (((in & 0xFF) << 8) + ((in & 0xFF00) >> 8))
-static void align_request(struct shut_ctrltransfer *ctrl )
+static void align_request(struct shut_ctrltransfer_s *ctrl )
 {
 #if WORDS_BIGENDIAN
         /* Sparc/Mips/... are big endian, USB/SHUT little endian */
@@ -284,15 +284,15 @@ static void align_request(struct shut_ctrltransfer *ctrl )
     buffer. There's no way to know the size ahead of time. Matcher is
     a linked list of matchers (see libhid.h), and the opened device
     must match all of them. */
-int libshut_open(shut_dev_handle **sdevp, HIDDevice *curDevice,
+int libshut_open(shut_dev_handle_t **sdevp, HIDDevice_t *curDevice,
 		 HIDDeviceMatcher_t *matcher, unsigned char *ReportDesc, int mode)
 {
 	int ret, res; 
 	unsigned char buf[20];
 	char string[256];
 	struct my_hid_descriptor *desc;
-	struct device_descriptor *dev_descriptor;
-	shut_dev_handle *devp = *sdevp;
+	struct device_descriptor_s *dev_descriptor;
+	shut_dev_handle_t *devp = *sdevp;
 	
 	upsdebugx(2, "libshut_open: using port %s", devp->device_path);
 	
@@ -312,7 +312,7 @@ int libshut_open(shut_dev_handle **sdevp, HIDDevice *curDevice,
 		upsdebugx(2, "Communication with UPS established");
 
 	/* Get DEVICE descriptor */
-	dev_descriptor = (struct device_descriptor *)buf;
+	dev_descriptor = (struct device_descriptor_s *)buf;
 	res = shut_get_descriptor(devp, USB_DT_DEVICE, 0, buf, USB_DT_DEVICE_SIZE);
 	/* res = shut_control_msg(devp, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
 	(USB_DT_DEVICE << 8) + 0, 0, buf, 0x9, SHUT_TIMEOUT); */
@@ -425,7 +425,7 @@ int libshut_open(shut_dev_handle **sdevp, HIDDevice *curDevice,
 	return -1;
 }
 
-void libshut_close(shut_dev_handle *sdev)
+void libshut_close(shut_dev_handle_t *sdev)
 {
 	ser_close(sdev->upsfd, sdev->device_path);
 }
@@ -433,7 +433,7 @@ void libshut_close(shut_dev_handle *sdev)
 /* return the report of ID=type in report 
  * return -1 on failure, report length on success
  */
-int libshut_get_report(shut_dev_handle *devp, int ReportId,
+int libshut_get_report(shut_dev_handle_t *devp, int ReportId,
 		       unsigned char *raw_buf, int ReportSize )
 {
 	upsdebugx(4, "Entering libshut_get_report");
@@ -451,7 +451,7 @@ int libshut_get_report(shut_dev_handle *devp, int ReportId,
 		return 0;
 }
 
-int libshut_set_report(shut_dev_handle *devp, int ReportId,
+int libshut_set_report(shut_dev_handle_t *devp, int ReportId,
 		       unsigned char *raw_buf, int ReportSize )
 {
 	int ret = 0;
@@ -471,7 +471,7 @@ exit(0);
 	return ret;
 }
 
-int libshut_get_string(shut_dev_handle *devp, int StringIdx, char *buf)
+int libshut_get_string(shut_dev_handle_t *devp, int StringIdx, char *buf)
 {
 	int ret = -1;
 	
@@ -488,7 +488,7 @@ int libshut_get_string(shut_dev_handle *devp, int StringIdx, char *buf)
 	return ret;
 }
 
-int libshut_get_interrupt(shut_dev_handle *devp, unsigned char *buf,
+int libshut_get_interrupt(shut_dev_handle_t *devp, unsigned char *buf,
 			   int bufsize, int timeout)
 {
   int ret = -1;
@@ -553,9 +553,9 @@ void setline (int fd, int set)
  * return TRUE on success, FALSE on failure
  *
  *****************************************************************************/
-bool shut_synchronise (int fd)
+bool_t shut_synchronise (int fd)
 {
-	bool retCode = FALSE;
+	bool_t retCode = FALSE;
 	u_char c = SHUT_SYNC, reply;
 	int try;
 		
@@ -626,7 +626,7 @@ int shut_packet_recv (int fd, u_char *Buf, int datalen)
 	u_short  Pos=0;
 	u_char   Retry=0;
 	int recv;
-	shut_data_u   sdata;
+	shut_data_t   sdata;
 	
 	upsdebugx (4, "entering shut_packet_recv (%i)", datalen);
 	
@@ -708,7 +708,7 @@ int shut_packet_recv (int fd, u_char *Buf, int datalen)
 }
 
 /**********************************************************************/
-int shut_interrupt_read(shut_dev_handle *dev, int ep, unsigned char *bytes, int size,
+int shut_interrupt_read(shut_dev_handle_t *dev, int ep, unsigned char *bytes, int size,
 		       int timeout)
 {
 	/* FIXME: to be written */
@@ -716,7 +716,7 @@ int shut_interrupt_read(shut_dev_handle *dev, int ep, unsigned char *bytes, int 
 }
 
 /**********************************************************************/
-int shut_get_string_simple(shut_dev_handle *dev, int index,
+int shut_get_string_simple(shut_dev_handle_t *dev, int index,
 			   unsigned char *buf, size_t buflen)
 {
 	char tbuf[255];       /* Some devices choke on size > 255 */
@@ -764,7 +764,7 @@ int shut_get_string_simple(shut_dev_handle *dev, int index,
  * return 0 on success, -1 on failure, -2 on NACK
  *
  *********************************************************************/
-int shut_get_descriptor(shut_dev_handle *sdev, unsigned char type,
+int shut_get_descriptor(shut_dev_handle_t *sdev, unsigned char type,
 			unsigned char index, void *buf, int size)
 {
 	memset(buf, 0, size);
@@ -776,14 +776,14 @@ int shut_get_descriptor(shut_dev_handle *sdev, unsigned char type,
 }
 
 /* Take care of a SHUT transfer (sending and receiving data) */
-int shut_control_msg(shut_dev_handle *sdev, int requesttype, int request,
+int shut_control_msg(shut_dev_handle_t *sdev, int requesttype, int request,
 		    int value, int index, unsigned char *bytes, int size, int timeout)
 {
 	unsigned char shut_pkt[11];
 	short Retry=1;
 	short data_size, remaining_size = size; //Size;
 	int i;
-	struct shut_ctrltransfer ctrl;
+	struct shut_ctrltransfer_s ctrl;
 	int ret = 0;
 	
 	upsdebugx (3, "entering shut_control_msg");

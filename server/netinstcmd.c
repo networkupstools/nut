@@ -28,11 +28,11 @@
 
 #include "netinstcmd.h"
 
-static void send_instcmd(ctype *client, const char *upsname, 
+static void send_instcmd(ctype_t *client, const char *upsname, 
 	const char *cmdname)
 {
 	int	found;
-	upstype	*ups;
+	upstype_t	*ups;
 	const	struct  cmdlist_t  *ctmp;
 	char	sockcmd[SMALLBUF];
 
@@ -87,7 +87,7 @@ static void send_instcmd(ctype *client, const char *upsname,
 	sendback(client, "OK\n");
 }
 
-void net_instcmd(ctype *client, int numarg, const char **arg)
+void net_instcmd(ctype_t *client, int numarg, const char **arg)
 {
 	if (numarg < 2) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);

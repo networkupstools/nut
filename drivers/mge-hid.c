@@ -496,7 +496,7 @@ static char *get_model_name(const char *iProduct, char *iModel)
   return model->finalname;
 }
 
-static char *mge_format_model(HIDDevice *hd) {
+static char *mge_format_model(HIDDevice_t *hd) {
 	char *product;
 	char *model;
         char *string;
@@ -523,17 +523,17 @@ static char *mge_format_model(HIDDevice *hd) {
 	return model;
 }
 
-static char *mge_format_mfr(HIDDevice *hd) {
+static char *mge_format_mfr(HIDDevice_t *hd) {
 	return hd->Vendor ? hd->Vendor : "MGE UPS SYSTEMS";
 }
 
-static char *mge_format_serial(HIDDevice *hd) {
+static char *mge_format_serial(HIDDevice_t *hd) {
 	return hd->Serial;
 }
 
 /* this function allows the subdriver to "claim" a device: return 1 if
  * the device is supported by this subdriver, else 0. */
-static int mge_claim(HIDDevice *hd) {
+static int mge_claim(HIDDevice_t *hd) {
 	if (hd->VendorID != MGE_VENDORID) {
 		return 0;
 	}

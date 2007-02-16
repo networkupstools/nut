@@ -23,9 +23,9 @@
 	extern	char	*certfile;
 
 void ssl_init(void);
-int ssl_read(ctype *client, char *buf, size_t buflen);
-int ssl_write(ctype *client, const char *buf, size_t buflen);
+int ssl_read(ctype_t *client, char *buf, size_t buflen);
+int ssl_write(ctype_t *client, const char *buf, size_t buflen);
 
-void net_starttls(ctype *client, int numarg, const char **arg);
+void net_starttls(ctype_t *client, int numarg, const char **arg);
 
 #endif	/* SSL_H_SEEN */

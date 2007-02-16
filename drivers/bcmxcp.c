@@ -176,7 +176,7 @@ unsigned char calc_checksum(const unsigned char *buf)
 void init_meter_map()
 {
 	/* Clean entire map */
-	memset(&bcmxcp_meter_map, 0, sizeof(BCMXCP_METER_MAP_ENTRY) * BCMXCP_METER_MAP_MAX);
+	memset(&bcmxcp_meter_map, 0, sizeof(BCMXCP_METER_MAP_ENTRY_t) * BCMXCP_METER_MAP_MAX);
 
 	/* Set all corresponding mappings NUT <-> BCM/XCP */
 	bcmxcp_meter_map[0].nut_entity = "output.L1-L2.voltage";
@@ -219,7 +219,7 @@ if (nphases == 1) {
 void init_alarm_map()
 {
 	/* Clean entire map */
-	memset(&bcmxcp_alarm_map, 0, sizeof(BCMXCP_ALARM_MAP_ENTRY) * BCMXCP_ALARM_MAP_MAX);
+	memset(&bcmxcp_alarm_map, 0, sizeof(BCMXCP_ALARM_MAP_ENTRY_t) * BCMXCP_ALARM_MAP_MAX);
 	
 	/* Set all alarm descriptions	*/
 	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_AC_OVER_VOLTAGE].alarm_desc = "INVERTER_AC_OVER_VOLTAGE"; 

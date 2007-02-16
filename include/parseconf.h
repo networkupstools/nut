@@ -24,7 +24,7 @@
 extern "C" {
 #endif
 
-#define PCONF_CTX_MAGIC 0x00726630
+#define PCONF_CTX_t_MAGIC 0x00726630
 #define PCONF_ERR_LEN 256
 
 /* conservative defaults: use at most 16 KB for parsing any given line */
@@ -57,16 +57,16 @@ typedef struct {
 	size_t	arg_limit;		/* halts growth of arglist	*/
 	size_t	wordlen_limit;		/* halts growth of any wordbuf	*/
 
-}	PCONF_CTX;
+}	PCONF_CTX_t;
 
-int pconf_init(PCONF_CTX *ctx, void errhandler(const char *));
-int pconf_file_begin(PCONF_CTX *ctx, const char *fn);
-int pconf_file_next(PCONF_CTX *ctx);
-int pconf_parse_error(PCONF_CTX *ctx);
-int pconf_line(PCONF_CTX *ctx, const char *line);
-void pconf_finish(PCONF_CTX *ctx);
+int pconf_init(PCONF_CTX_t *ctx, void errhandler(const char *));
+int pconf_file_begin(PCONF_CTX_t *ctx, const char *fn);
+int pconf_file_next(PCONF_CTX_t *ctx);
+int pconf_parse_error(PCONF_CTX_t *ctx);
+int pconf_line(PCONF_CTX_t *ctx, const char *line);
+void pconf_finish(PCONF_CTX_t *ctx);
 char *pconf_encode(const char *src, char *dest, size_t destsize);
-int pconf_char(PCONF_CTX *ctx, char ch);
+int pconf_char(PCONF_CTX_t *ctx, char ch);
 
 #ifdef __cplusplus
 }

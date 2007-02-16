@@ -54,9 +54,9 @@ typedef struct {
 	char	*name;
 	time_t	etime;
 	void	*next;
-}	ttype;
+}	ttype_t;
 
-	ttype	*thead = NULL;
+	ttype_t	*thead = NULL;
 	static	struct	conn_t	*connhead = NULL;
 	char	*cmdscript = NULL, *pipefn = NULL, *lockfn = NULL;
 	int	verbose = 0;		/* use for debugging */
@@ -100,9 +100,9 @@ static void exec_cmd(const char *cmd)
 	return;
 }
 
-static void removetimer(ttype *tfind)
+static void removetimer(ttype_t *tfind)
 {
-	ttype	*tmp, *last;
+	ttype_t	*tmp, *last;
 
 	last = NULL;
 	tmp = thead;
@@ -130,7 +130,7 @@ static void removetimer(ttype *tfind)
 
 static void checktimers(void)
 {
-	ttype	*tmp, *tmpnext;
+	ttype_t	*tmp, *tmpnext;
 	time_t	now;
 	static	int	emptyctr = 0;
 
@@ -182,7 +182,7 @@ static void start_timer(const char *name, const char *ofsstr)
 {
 	time_t	now;
 	int	ofs;
-	ttype	*tmp, *last;
+	ttype_t	*tmp, *last;
 
 	/* get the time */
 	time(&now);
@@ -206,7 +206,7 @@ static void start_timer(const char *name, const char *ofsstr)
 		tmp = tmp->next;
 	}
 
-	tmp = xmalloc(sizeof(ttype));
+	tmp = xmalloc(sizeof(ttype_t));
 	tmp->name = xstrdup(name);
 	tmp->etime = now + ofs;
 	tmp->next = NULL;
@@ -219,7 +219,7 @@ static void start_timer(const char *name, const char *ofsstr)
 
 static void cancel_timer(const char *name, const char *cname)
 {
-	ttype	*tmp;
+	ttype_t	*tmp;
 
 	for (tmp = thead; tmp != NULL; tmp = tmp->next) {
 		if (!strcmp(tmp->name, name)) {		/* match */
@@ -857,7 +857,7 @@ static void upssched_err(const char *errmsg)
 static void checkconf(void)
 {
 	char	fn[SMALLBUF];
-	PCONF_CTX	ctx;
+	PCONF_CTX_t	ctx;
 
 	snprintf(fn, sizeof(fn), "%s/upssched.conf", confpath());
 

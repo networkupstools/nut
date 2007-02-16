@@ -27,10 +27,10 @@
 
 #include "netset.h"
 
-static void set_var(ctype *client, const char *upsname, const char *var,
+static void set_var(ctype_t *client, const char *upsname, const char *var,
 	const char *newval)
 {
-	upstype	*ups;
+	upstype_t	*ups;
 	const	char	*val;
 	const	struct  enum_t  *etmp;
 	char	cmd[SMALLBUF], esc[SMALLBUF];
@@ -127,7 +127,7 @@ static void set_var(ctype *client, const char *upsname, const char *var,
 	sendback(client, "OK\n");
 }
 
-void net_set(ctype *client, int numarg, const char **arg)
+void net_set(ctype_t *client, int numarg, const char **arg)
 {
 	if (numarg < 4) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);

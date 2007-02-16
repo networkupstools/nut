@@ -39,7 +39,7 @@
 #include "netvisionmib.h"
 #include "pwmib.h"
 
-mib2nut_info mib2nut[] = {
+mib2nut_info_t mib2nut[] = {
 	{ "apcc", APCC_MIB_VERSION, APCC_OID_POWER_STATUS,
 		".1.3.6.1.4.1.318.1.1.1.1.1.1.0", apcc_mib },
 	{ "mge", MGE_MIB_VERSION, "",
@@ -157,7 +157,7 @@ void upsdrv_initups(void)
 {
 	snmp_info_t *su_info_p;
 	char model[SU_INFOSIZE];
-	bool status;
+	bool_t status;
 	const char *community, *version, *mibs;
 
 	upsdebugx(1, "SNMP UPS driver : entering upsdrv_initups()");
@@ -295,7 +295,7 @@ struct snmp_pdu *nut_snmp_get(const char *OID)
 	return response;
 }
 
-bool nut_snmp_get_str(const char *OID, char *buf, size_t buf_len, info_lkp_t *oid2info)
+bool_t nut_snmp_get_str(const char *OID, char *buf, size_t buf_len, info_lkp_t *oid2info)
 {
 	size_t len = 0;
 	struct snmp_pdu *pdu;
@@ -347,7 +347,7 @@ bool nut_snmp_get_str(const char *OID, char *buf, size_t buf_len, info_lkp_t *oi
 	return TRUE;
 }
 
-bool nut_snmp_get_int(const char *OID, long *pval)
+bool_t nut_snmp_get_int(const char *OID, long *pval)
 {
 	struct snmp_pdu *pdu;
 	long value;
@@ -389,10 +389,10 @@ bool nut_snmp_get_int(const char *OID, long *pval)
 	return TRUE;
 }
 
-bool nut_snmp_set(const char *OID, char type, const char *value)
+bool_t nut_snmp_set(const char *OID, char type, const char *value)
 {
 	int status;
-	bool ret = FALSE;
+	bool_t ret = FALSE;
 	struct snmp_pdu *pdu, *response = NULL;
 	oid name[MAX_OID_LEN];
 	size_t name_len = MAX_OID_LEN;
@@ -426,12 +426,12 @@ bool nut_snmp_set(const char *OID, char type, const char *value)
 	return ret;
 }
 
-bool nut_snmp_set_str(const char *OID, const char *value)
+bool_t nut_snmp_set_str(const char *OID, const char *value)
 {
 	return nut_snmp_set(OID, 's', value);
 }
 
-bool nut_snmp_set_int(const char *OID, long value)
+bool_t nut_snmp_set_int(const char *OID, long value)
 {
 	char buf[SU_BUFSIZE];
 
@@ -439,7 +439,7 @@ bool nut_snmp_set_int(const char *OID, long value)
 	return nut_snmp_set(OID, 'i', buf);
 }
 
-bool nut_snmp_set_time(const char *OID, long value)
+bool_t nut_snmp_set_time(const char *OID, long value)
 {
 	char buf[SU_BUFSIZE];
 
@@ -556,7 +556,7 @@ snmp_info_t *su_find_info(const char *type)
 /* Load the right snmp_info_t structure matching mib parameter */
 void load_mib2nut(const char *mib)
 {
-	mib2nut_info *mp = mib2nut;
+	mib2nut_info_t *mp = mib2nut;
 	upsdebugx(2, "SNMP UPS driver : entering load_mib2nut(%s)", mib);
 	
 /*	read_mibconf(mib); */
@@ -638,11 +638,11 @@ static void disable_competition(snmp_info_t *entry)
 }
 
 /* walk ups variables and set elements of the info array. */
-bool snmp_ups_walk(int mode)
+bool_t snmp_ups_walk(int mode)
 {
 	static unsigned long iterations = 0;
 	snmp_info_t *su_info_p;
-	bool status = FALSE;
+	bool_t status = FALSE;
 	
 	for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++) {
 
@@ -759,10 +759,10 @@ bool snmp_ups_walk(int mode)
 	return status;	
 }
 
-bool su_ups_get(snmp_info_t *su_info_p)
+bool_t su_ups_get(snmp_info_t *su_info_p)
 {
 	static char buf[SU_INFOSIZE];
-	bool status;
+	bool_t status;
 	long value;
 
 	upsdebugx(2, "su_ups_get: %s %s", su_info_p->info_type, su_info_p->OID);
@@ -847,7 +847,7 @@ bool su_ups_get(snmp_info_t *su_info_p)
 int su_setvar(const char *varname, const char *val)
 {
 	snmp_info_t *su_info_p;
-	bool ret;
+	bool_t ret;
 
 	upsdebugx(2, "entering su_setvar()");
 
@@ -968,7 +968,7 @@ void su_shutdown_ups(void)
 /* return 1 if usable, 0 if not */
 static int parse_mibconf_args(int numargs, char **arg)
 {
-	bool ret;
+	bool_t ret;
 	
 	/* everything below here uses up through arg[1] */
 	if (numargs < 6)
@@ -1007,7 +1007,7 @@ static void mibconf_err(const char *errmsg)
 void read_mibconf(char *mib)
 {
 	char	fn[SMALLBUF];
-	PCONF_CTX	ctx;
+	PCONF_CTX_t	ctx;
 
 	upsdebugx(2, "SNMP UPS driver : entering read_mibconf(%s)", mib);
 	

@@ -33,7 +33,7 @@
 #include "sstate.h"
 #include "state.h"
 
-static int parse_args(upstype *ups, int numargs, char **arg)
+static int parse_args(upstype_t *ups, int numargs, char **arg)
 {
 	if (numargs < 1)
 		return 0;
@@ -117,7 +117,7 @@ static int parse_args(upstype *ups, int numargs, char **arg)
 }
 
 /* nothing fancy - just make the driver say something back to us */
-static void sendping(upstype *ups)
+static void sendping(upstype_t *ups)
 {
 	int	ret;
 	const	char	*cmd = "PING\n";
@@ -144,7 +144,7 @@ static void sendping(upstype *ups)
 
 /* interface */
 
-int sstate_connect(upstype *ups)
+int sstate_connect(upstype_t *ups)
 {
 	int	ret, fd;
 	const	char	*dumpcmd = "DUMPALL\n";
@@ -219,7 +219,7 @@ int sstate_connect(upstype *ups)
 	return fd;
 }
 
-void sstate_sock_read(upstype *ups)
+void sstate_sock_read(upstype_t *ups)
 {
 	int	i, ret;
 	char	ch;
@@ -273,7 +273,7 @@ void sstate_sock_read(upstype *ups)
 	}
 }
 
-const char *sstate_getinfo(const upstype *ups, const char *var)
+const char *sstate_getinfo(const upstype_t *ups, const char *var)
 {
 	/* requesting an old variable name? */
 	if (!strchr(var, '.'))
@@ -282,27 +282,27 @@ const char *sstate_getinfo(const upstype *ups, const char *var)
 	return state_getinfo(ups->inforoot, var);
 }
 
-int sstate_getflags(const upstype *ups, const char *var)
+int sstate_getflags(const upstype_t *ups, const char *var)
 {
 	return state_getflags(ups->inforoot, var);
 }	
 
-int sstate_getaux(const upstype *ups, const char *var)
+int sstate_getaux(const upstype_t *ups, const char *var)
 {
 	return state_getaux(ups->inforoot, var);
 }	
 
-const struct enum_t *sstate_getenumlist(const upstype *ups, const char *var)
+const struct enum_t *sstate_getenumlist(const upstype_t *ups, const char *var)
 {
 	return state_getenumlist(ups->inforoot, var);
 }
 
-const struct cmdlist_t *sstate_getcmdlist(const upstype *ups)
+const struct cmdlist_t *sstate_getcmdlist(const upstype_t *ups)
 {
 	return ups->cmdlist;
 }
 
-int sstate_dead(upstype *ups, int maxage)
+int sstate_dead(upstype_t *ups, int maxage)
 {
 	time_t	now;
 	double	elapsed;
@@ -337,21 +337,21 @@ int sstate_dead(upstype *ups, int maxage)
 }
 
 /* release all info(tree) data used by <ups> */
-void sstate_infofree(upstype *ups)
+void sstate_infofree(upstype_t *ups)
 {
 	state_infofree(ups->inforoot);
 
 	ups->inforoot = NULL;
 }
 
-void sstate_cmdfree(upstype *ups)
+void sstate_cmdfree(upstype_t *ups)
 {
 	state_cmdfree(ups->cmdlist);
 
 	ups->cmdlist = NULL;
 }
 
-int sstate_sendline(upstype *ups, const char *buf)
+int sstate_sendline(upstype_t *ups, const char *buf)
 {
 	int	ret;
 
@@ -376,7 +376,7 @@ int sstate_sendline(upstype *ups, const char *buf)
 	return 1;	
 }
 
-const struct st_tree_t *sstate_getnode(const upstype *ups, const char *varname)
+const struct st_tree_t *sstate_getnode(const upstype_t *ups, const char *varname)
 {
 	return state_tree_find(ups->inforoot, varname);
 }

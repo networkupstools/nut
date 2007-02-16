@@ -35,7 +35,7 @@ typedef struct {
 	time_t			last_heard;
 	time_t			last_ping;
 	time_t			last_connfail;
-	PCONF_CTX		sock_ctx;
+	PCONF_CTX_t		sock_ctx;
 	struct	st_tree_t	*inforoot;
 	struct	cmdlist_t	*cmdlist;
 
@@ -44,8 +44,8 @@ typedef struct {
 
 	int	retain;
 	void	*next;
-}	upstype;
+}	upstype_t;
 
-extern upstype	*firstups;
+extern upstype_t	*firstups;
 
 #endif	/* UPSTYPE_H_SEEN */

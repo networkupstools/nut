@@ -83,22 +83,22 @@ enum {
 };
 
 /* Helper struct for the optifill() function */
-typedef struct ezfill {
+typedef struct ezfill_s {
 	const char *cmd;
 	const char *var;
 	const float scale;
-} ezfill;
+} ezfill_t;
 
 /* These can be polled right into a string usable by NUT.
  * Others such as "AG" and "BV" require some transformation of the return value */
-static ezfill _pollv[] = {
+static ezfill_t _pollv[] = {
 	{ "NV", "input.voltage" },
 	{ "OL", "ups.load", 1.0 },
 	{ "OV", "output.voltage" },
 	{ "FF", "input.frequency", 0.1 },
 	{ "BT", "ups.temperature" },
 };
-static ezfill _pollv_zinto[] = {
+static ezfill_t _pollv_zinto[] = {
 	{ "NV", "input.voltage", 2.0 },
 	{ "OL", "ups.load", 1.0 },
 	{ "OV", "output.voltage", 2.0 },
@@ -108,7 +108,7 @@ static ezfill _pollv_zinto[] = {
 };
 
 /* model "IO" is parsed differently in upsdrv_initinfo() */
-static ezfill _initv[] = {
+static ezfill_t _initv[] = {
 	{ "IM", "ups.mfr" },
 	{ "IZ", "ups.serial" },
 	{ "IS", "ups.firmware" },
@@ -161,8 +161,8 @@ static inline int optiquery( const char *cmd )
 	return optireadline();
 }
 
-/* Uses the ezfill structure to map UPS commands to the NUT variable destinations */
-static void optifill( ezfill *a, int len )
+/* Uses the ezfill_t structure to map UPS commands to the NUT variable destinations */
+static void optifill( ezfill_t *a, int len )
 {
 	int i, r;
 

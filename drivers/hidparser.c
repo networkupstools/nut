@@ -44,19 +44,19 @@ typedef struct
 	u_char   Item;							/* Store current Item */
 	long    Value;							/* Store current Value */
 
-	HIDData Data;							/* Store current environment */
+	HIDData_t Data;							/* Store current environment */
 
 	u_char   OffsetTab[MAX_REPORT][4];	/* Store ID, Type, offset & timestamp of report	*/
 	u_char   ReportCount;					/* Store Report Count */
 	u_char   Count;							/* Store local report count */
 
 	u_short  UPage;							/* Global UPage */
-	HIDNode UsageTab[USAGE_TAB_SIZE];	/* Usage stack */
+	HIDNode_t UsageTab[USAGE_TAB_SIZE];	/* Usage stack */
 	u_char   UsageSize;						/* Design number of usage used */
 
 	u_char   nObject;						/* Count Objects in Report Descriptor */
 	u_char   nReport;						/* Count Reports in Report Descriptor */
-} HIDParser;
+} HIDParser_t;
 
 /* return 1 + the position of the leftmost "1" bit of an int, or 0 if
    none. */
@@ -80,7 +80,7 @@ static inline unsigned int hibit(unsigned int x) {
  * Reset HIDParser structure for new parsing
  * Keep Report descriptor data
  * -------------------------------------------------------------------------- */
-static void ResetParser(HIDParser* pParser)
+static void ResetParser(HIDParser_t* pParser)
 {
   pParser->Pos=0;
   pParser->Count=0;
@@ -103,7 +103,7 @@ static void ResetParser(HIDParser* pParser)
    single control, so resetting the local state is important. */
 /* Also note: UsageTab[0] is used as the usage of the next control,
    even if UsageSize=0. Therefore, this must be initialized */
-static void ResetLocalState(HIDParser* pParser)
+static void ResetLocalState(HIDParser_t* pParser)
 {
   pParser->UsageSize = 0;
   memset(pParser->UsageTab,0,sizeof(pParser->UsageTab));
@@ -115,7 +115,7 @@ static void ResetLocalState(HIDParser* pParser)
  * Return pointer on current offset value for Report designed by 
  * ReportID/ReportType
  * -------------------------------------------------------------------------- */
-static u_char* GetReportOffset(HIDParser* pParser, 
+static u_char* GetReportOffset(HIDParser_t* pParser, 
                        const u_char ReportID, 
                        const u_char ReportType)
 {
@@ -153,7 +153,7 @@ static long FormatValue(long Value, u_char Size)
 }
 
 /*
- * HIDParse(HIDParser* pParser, HIDData* pData)
+ * HIDParse(HIDParser_t* pParser, HIDData_t* pData)
  *
  * Analyse Report descriptor stored in HIDParser struct and store local and
  * global context. 
@@ -161,7 +161,7 @@ static long FormatValue(long Value, u_char Size)
  * Return in pData the last object found.
  * Return TRUE when there is other Item to parse.
  * -------------------------------------------------------------------------- */
-static int HIDParse(HIDParser* pParser, HIDData* pData)
+static int HIDParse(HIDParser_t* pParser, HIDData_t* pData)
 {
   int Found=0;
 
@@ -293,7 +293,7 @@ static int HIDParse(HIDParser* pParser, HIDData* pData)
     
         /* Get Object in pData */
         /* -------------------------------------------------------------------------- */
-        memcpy(pData, &pParser->Data, sizeof(HIDData));
+        memcpy(pData, &pParser->Data, sizeof(HIDData_t));
         /* -------------------------------------------------------------------------- */
 
         /* Increment Report Offset */
@@ -379,9 +379,9 @@ static int HIDParse(HIDParser* pParser, HIDData* pData)
  * Get pData characteristics from pData->Path or from pData->ReportID/Offset
  * Return TRUE if object was found
  * -------------------------------------------------------------------------- */
-int FindObject(HIDDesc *pDesc, HIDData* pData)
+int FindObject(HIDDesc_t *pDesc, HIDData_t* pData)
 {
-  HIDData *pFoundData;
+  HIDData_t *pFoundData;
   int i;
 
   for (i=0; i<pDesc->nitems; i++)
@@ -389,9 +389,9 @@ int FindObject(HIDDesc *pDesc, HIDData* pData)
     pFoundData = &pDesc->item[i];
     if(pData->Path.Size>0 && 
       pFoundData->Type==pData->Type &&
-      memcmp(pFoundData->Path.Node, pData->Path.Node, (pData->Path.Size)*sizeof(HIDNode))==0)
+      memcmp(pFoundData->Path.Node, pData->Path.Node, (pData->Path.Size)*sizeof(HIDNode_t))==0)
     {
-      memcpy(pData, pFoundData, sizeof(HIDData));
+      memcpy(pData, pFoundData, sizeof(HIDData_t));
       return 1;
     }
     /* Found by ReportID/Offset */
@@ -399,7 +399,7 @@ int FindObject(HIDDesc *pDesc, HIDData* pData)
       pFoundData->Type==pData->Type &&
       pFoundData->Offset==pData->Offset)
     {
-      memcpy(pData, pFoundData, sizeof(HIDData));
+      memcpy(pData, pFoundData, sizeof(HIDData_t));
       return 1;
     }
   }
@@ -410,16 +410,16 @@ int FindObject(HIDDesc *pDesc, HIDData* pData)
  * FindObject_with_Path
  * Get pData item with given Path and Type. Return NULL if not found. 
  * -------------------------------------------------------------------------- */
-HIDData *FindObject_with_Path(HIDDesc *pDesc, HIDPath *Path, u_char Type)
+HIDData_t *FindObject_with_Path(HIDDesc_t *pDesc, HIDPath_t *Path, u_char Type)
 {
-  HIDData *pData;
+  HIDData_t *pData;
   int i;
 
   for (i=0; i<pDesc->nitems; i++)
   {
     pData = &pDesc->item[i];
     if (pData->Type == Type &&
-      memcmp(pData->Path.Node, Path->Node, (Path->Size)*sizeof(HIDNode)) == 0)
+      memcmp(pData->Path.Node, Path->Node, (Path->Size)*sizeof(HIDNode_t)) == 0)
     {
       return pData;
     }
@@ -432,9 +432,9 @@ HIDData *FindObject_with_Path(HIDDesc *pDesc, HIDPath *Path, u_char Type)
  * Get pData item with given ReportID, Offset, and Type. Return NULL
  * if not found.
  * -------------------------------------------------------------------------- */
-HIDData *FindObject_with_ID(HIDDesc *pDesc, u_char ReportID, u_char Offset, u_char Type)
+HIDData_t *FindObject_with_ID(HIDDesc_t *pDesc, u_char ReportID, u_char Offset, u_char Type)
 {
-  HIDData *pData;
+  HIDData_t *pData;
   int i;
 
   for (i=0; i<pDesc->nitems; i++)
@@ -456,7 +456,7 @@ HIDData *FindObject_with_ID(HIDDesc *pDesc, u_char ReportID, u_char Offset, u_ch
  * Use Value, Offset, Size and LogMax of pData.
  * Return response in Value.
  * -------------------------------------------------------------------------- */
-void GetValue(const u_char* Buf, HIDData* pData, long *pValue)
+void GetValue(const u_char* Buf, HIDData_t* pData, long *pValue)
 {
   int Bit = pData->Offset + 8; /* First byte of report is report ID */
   int Weight=0;
@@ -555,7 +555,7 @@ void GetValue(const u_char* Buf, HIDData* pData, long *pValue)
  * Set a data in a report stored in Buf. Use Value, Offset and Size of pData.
  * Return response in Buf.
  * -------------------------------------------------------------------------- */
-void SetValue(const HIDData* pData, u_char* Buf, long Value)
+void SetValue(const HIDData_t* pData, u_char* Buf, long Value)
 {
   int Bit = pData->Offset + 8; /* First byte of report is report ID */
   int Weight=0;
@@ -583,15 +583,15 @@ void SetValue(const HIDData* pData, u_char* Buf, long Value)
    Output: parsed data structure. Returns allocated HIDDesc structure
    on success, NULL on failure with errno set. Note: the value
    returned by this function must be freed with Free_ReportDesc(). */
-HIDDesc *Parse_ReportDesc(u_char *ReportDesc, int n) {
-	HIDParser parser;
-	HIDData FoundData;
-	HIDData *item = NULL;
-	HIDData *r;
-	HIDDesc *pDesc;
+HIDDesc_t *Parse_ReportDesc(u_char *ReportDesc, int n) {
+	HIDParser_t parser;
+	HIDData_t FoundData;
+	HIDData_t *item = NULL;
+	HIDData_t *r;
+	HIDDesc_t *pDesc;
 	int i, id, max;
 
-	pDesc = malloc(sizeof(HIDDesc));
+	pDesc = malloc(sizeof(HIDDesc_t));
 	if (!pDesc) {
 		return NULL;
 	}
@@ -603,14 +603,14 @@ HIDDesc *Parse_ReportDesc(u_char *ReportDesc, int n) {
 	i=0;
 	while (HIDParse(&parser, &FoundData)) {
 		i++;
-		r = realloc(item, i*sizeof(HIDData));
+		r = realloc(item, i*sizeof(HIDData_t));
 		if (!r) {
 			free(pDesc);
 			free(item);
 			return NULL;
 		}
 		item = r;
-		memcpy(&item[i-1], &FoundData, sizeof(HIDData));
+		memcpy(&item[i-1], &FoundData, sizeof(HIDData_t));
 	}
 	pDesc->nitems = i;
 	pDesc->item = item;
@@ -638,7 +638,7 @@ HIDDesc *Parse_ReportDesc(u_char *ReportDesc, int n) {
 }
 
 /* free a parsed report descriptor, as allocated by Parse_ReportDesc() */
-void Free_ReportDesc(HIDDesc *pDesc) {
+void Free_ReportDesc(HIDDesc_t *pDesc) {
 	if (pDesc) {
 		free(pDesc->item);
 	}

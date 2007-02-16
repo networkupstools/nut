@@ -39,7 +39,7 @@ static	char	*monhostdesc = NULL;
 static	int	port;
 static	char	*upsname, *hostname;
 static	char	*upsimgpath="upsimage.cgi", *upsstatpath="upsstats.cgi";
-static	UPSCONN	ups;
+static	UPSCONN_t	ups;
 
 static	FILE	*tf;
 static	long	forofs = 0;
@@ -954,7 +954,7 @@ static void upsstats_hosts_err(const char *errmsg)
 static void load_hosts_conf(void)
 {
 	char	fn[SMALLBUF];
-	PCONF_CTX	ctx;
+	PCONF_CTX_t	ctx;
 
 	snprintf(fn, sizeof(fn), "%s/hosts.conf", CONFPATH);
 

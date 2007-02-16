@@ -106,7 +106,7 @@ static void desc_file_err(const char *errmsg)
 void desc_load(void)
 {
 	char	fn[SMALLBUF];
-	PCONF_CTX	ctx;
+	PCONF_CTX_t	ctx;
 
 	snprintf(fn, sizeof(fn), "%s/cmdvartab", datapath);
 

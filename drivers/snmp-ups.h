@@ -61,9 +61,9 @@ for each OID request we made), instead of sending many small packets
 
 /* use explicit booleans */
 #ifndef FALSE
-typedef enum ebool { FALSE, TRUE } bool;
+typedef enum ebool { FALSE, TRUE } bool_t;
 #else
-typedef int bool;
+typedef int bool_t;
 #endif
 
 /* Common SNMP data and lookup definitions */
@@ -162,19 +162,19 @@ typedef struct {
 	const char *oid_auto_check;
 	snmp_info_t *snmp_info; /* pointer to the good Snmp2Nut lookup data */
 	
-} mib2nut_info;
+} mib2nut_info_t;
 
 /* Common SNMP functions */
 void nut_snmp_init(const char *type, const char *host, const char *version,
 		const char *community);
 void nut_snmp_cleanup(void);
 struct snmp_pdu *nut_snmp_get(const char *OID);
-bool nut_snmp_get_str(const char *OID, char *buf, size_t buf_len,
+bool_t nut_snmp_get_str(const char *OID, char *buf, size_t buf_len,
 	info_lkp_t *oid2info);
-bool nut_snmp_get_int(const char *OID, long *pval);
-bool nut_snmp_set(const char *OID, char type, const char *value);
-bool nut_snmp_set_str(const char *OID, const char *value);
-bool nut_snmp_set_int(const char *OID, long value);
+bool_t nut_snmp_get_int(const char *OID, long *pval);
+bool_t nut_snmp_set(const char *OID, char type, const char *value);
+bool_t nut_snmp_set_str(const char *OID, const char *value);
+bool_t nut_snmp_set_int(const char *OID, long value);
 void nut_snmp_perror(struct snmp_session *sess,  int status,
 	struct snmp_pdu *response, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 4, 5)));
@@ -187,8 +187,8 @@ static void disable_transfer_oids(void);
 void su_setinfo(const char *type, const char *value, int flags, int auxdata);
 void su_status_set(snmp_info_t *, long value);
 snmp_info_t *su_find_info(const char *type);
-bool snmp_ups_walk(int mode);
-bool su_ups_get(snmp_info_t *su_info_p);
+bool_t snmp_ups_walk(int mode);
+bool_t su_ups_get(snmp_info_t *su_info_p);
 
 void load_mib2nut(const char *mib);
 	

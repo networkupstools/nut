@@ -47,7 +47,7 @@
 #define	SHUTDOWN_REBOOT	"ZAFAABRAAABO\r"	/* shutdown in 1 second, return after 1 minute */
 #define	GRACEFUL_REBOOT	"ZAFACARAAABO\r"	/* shutdown in 20 seconds, return after 1 minute */
 
-typedef struct {
+struct safenet_s {
 	char	onbattery;
 	char	dunno_02;
 	char	batterylow;
@@ -58,9 +58,9 @@ typedef struct {
 	char	systemfail;
 	char	systemtest;
 	char	dunno_10;
-} safenet_s;
+};
 
 typedef union {
-	safenet_s	status;
+	struct safenet_s	status;
 	char		reply[10];
-} safenet_u;
+} safenet_t;

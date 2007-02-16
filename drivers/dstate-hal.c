@@ -59,7 +59,7 @@ typedef struct {
 	char    *(*fun)(char *value);	/* conversion function. */
 } info_lkp_t;
 
-enum hal_type
+enum hal_type_t
 {
 	NONE = 0,
 	HAL_TYPE_INT,

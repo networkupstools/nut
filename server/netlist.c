@@ -26,9 +26,9 @@
 
 #include "netlist.h"
 
-	extern	upstype	*firstups;	/* for list_ups */
+	extern	upstype_t	*firstups;	/* for list_ups */
 
-static int tree_dump(struct st_tree_t *node, ctype *client, const char *ups, 
+static int tree_dump(struct st_tree_t *node, ctype_t *client, const char *ups, 
 	int rw, int fsd)
 {
 	int	ret;
@@ -78,9 +78,9 @@ static int tree_dump(struct st_tree_t *node, ctype *client, const char *ups,
 	return 1;
 }
 
-static void list_rw(ctype *client, const char *upsname)
+static void list_rw(ctype_t *client, const char *upsname)
 {
-	const   upstype *ups;
+	const   upstype_t *ups;
 
 	ups = get_ups_ptr(upsname);
 
@@ -101,9 +101,9 @@ static void list_rw(ctype *client, const char *upsname)
 	sendback(client, "END LIST RW %s\n", upsname);
 }
 
-static void list_var(ctype *client, const char *upsname)
+static void list_var(ctype_t *client, const char *upsname)
 {
-	const   upstype *ups;
+	const   upstype_t *ups;
 
 	ups = get_ups_ptr(upsname);
 
@@ -124,9 +124,9 @@ static void list_var(ctype *client, const char *upsname)
 	sendback(client, "END LIST VAR %s\n", upsname);
 }
 
-static void list_cmd(ctype *client, const char *upsname)
+static void list_cmd(ctype_t *client, const char *upsname)
 {
-	const   upstype *ups;
+	const   upstype_t *ups;
 	struct	cmdlist_t	*ctmp;
 
 	ups = get_ups_ptr(upsname);
@@ -150,9 +150,9 @@ static void list_cmd(ctype *client, const char *upsname)
 	sendback(client, "END LIST CMD %s\n", upsname);
 }
 
-static void list_enum(ctype *client, const char *upsname, const char *var)
+static void list_enum(ctype_t *client, const char *upsname, const char *var)
 {
-	const   upstype *ups;
+	const   upstype_t *ups;
 	const	struct	st_tree_t	*node;
 	const	struct	enum_t	*etmp;
 
@@ -185,9 +185,9 @@ static void list_enum(ctype *client, const char *upsname, const char *var)
 	sendback(client, "END LIST ENUM %s %s\n", upsname, var);
 }
 
-static void list_ups(ctype *client)
+static void list_ups(ctype_t *client)
 {
-	upstype	*utmp;
+	upstype_t	*utmp;
 	char	esc[SMALLBUF];
 
 	if (!sendback(client, "BEGIN LIST UPS\n"))
@@ -217,7 +217,7 @@ static void list_ups(ctype *client)
 	sendback(client, "END LIST UPS\n");
 }	
 
-void net_list(ctype *client, int numarg, const char **arg)
+void net_list(ctype_t *client, int numarg, const char **arg)
 {
 	if (numarg < 1) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);

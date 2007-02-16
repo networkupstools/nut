@@ -35,7 +35,7 @@
 /* UPS tracking structure */
 
 typedef struct {
-	UPSCONN	conn;			/* upsclient state descriptor	*/
+	UPSCONN_t	conn;			/* upsclient state descriptor	*/
 
 	char	*sys;			/* raw system name from .conf	*/
 	char	*upsname;		/* just upsname			*/
@@ -57,7 +57,7 @@ typedef struct {
 	time_t	lastrbwarn;		/* time of last REPLBATT warning*/
 	time_t	lastncwarn;		/* time of last NOCOMM warning	*/
 	void	*next;
-}	utype;
+}	utype_t;
 
 /* notify identifiers */
 

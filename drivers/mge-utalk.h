@@ -112,14 +112,14 @@ typedef struct {
   int   Data2;               /* Data2, Type                  */
   /* Data3, SoftLevel is not implemented here, while it's always null or zero.*/
   const char *name;         /* ASCII model name (like 'Si 1' output */
-} mge_model_info;
+} mge_model_info_t;
 
 /* Array containing Model information for legacy models
  * NOTE:
  *      - Array is terminated by element with type NULL.
  */
 
-static mge_model_info mge_model[] = {
+static mge_model_info_t mge_model[] = {
   /* Pulsar SV page */
   { 3000, 5, "Pulsar SV3" },
   { 3000, 6, "Pulsar SV5/8/11" },
@@ -154,7 +154,7 @@ static mge_model_info mge_model[] = {
 
 /* units in multiplier table */
 typedef enum eunits 
-{ VOLT = 0, AMPERE, HERTZ, VOLTAMP, WATT, DEGCELS, MIN2SEC, NONE } units;
+{ VOLT = 0, AMPERE, HERTZ, VOLTAMP, WATT, DEGCELS, MIN2SEC, NONE } units_t;
 
 static const double multiplier[4][8] = {
 /*   V     A     Hz   VA     W   C  MIN2SEC NONE */ 
@@ -175,7 +175,7 @@ static const double multiplier[4][8] = {
 #ifdef TRUE
 	#undef TRUE
 #endif /* TRUE */
-typedef enum ebool { FALSE=0, TRUE } bool;
+typedef enum ebool { FALSE=0, TRUE } bool_t;
 
 
 /* --------------------------------------------------------------- */
@@ -191,9 +191,9 @@ typedef struct {
 	int   length;              /* INFO-element length of strings        */  
 	const char  cmd[32];       /* UPS command string to requets element */
 	const char  fmt[32];       /* printf format string for INFO entry   */
-	units unit;                /* unit of measurement, or NONE          */
-	bool  ok;                  /* flag indicating if item is available  */
-} mge_info_item;
+	units_t unit;              /* unit of measurement, or NONE          */
+	bool_t  ok;                /* flag indicating if item is available  */
+} mge_info_item_t;
 
 /* Array containing information to translate between UTalk and NUT info
  * NOTE: 
@@ -203,7 +203,7 @@ typedef struct {
  *	- Array is NOT const, since "ok" can be changed.
  */
 
-static mge_info_item mge_info[] = {
+static mge_info_item_t mge_info[] = {
 	/* Battery page */
 	{ "battery.charge", 0, 0, "Bl", "%05.1f", NONE, TRUE },
 	{ "battery.runtime", 0, 0, "Bn", "%05d", NONE,	TRUE },

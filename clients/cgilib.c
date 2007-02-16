@@ -157,7 +157,7 @@ static void cgilib_err(const char *errmsg)
 int checkhost(const char *host, char **desc)
 {
 	char	fn[SMALLBUF];
-	PCONF_CTX	ctx;
+	PCONF_CTX_t	ctx;
 
 	if (!host)
 		return 0;		/* deny null hostnames */

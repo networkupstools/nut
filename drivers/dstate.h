@@ -41,7 +41,7 @@
 /* track client connections */
 struct conn_t {
 	int     fd;
-	PCONF_CTX	ctx;
+	PCONF_CTX_t	ctx;
 	void    *next;
 };
 

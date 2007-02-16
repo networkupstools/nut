@@ -304,7 +304,7 @@ static int apc_shutdown(int ondelay, int offdelay) {
 	return 0;
 }
 
-static char *apc_format_model(HIDDevice *hd) {
+static char *apc_format_model(HIDDevice_t *hd) {
 	char *model;
         char *ptr1, *ptr2;
 
@@ -327,7 +327,7 @@ static char *apc_format_model(HIDDevice *hd) {
 	return model;
 }
 
-static char *apc_format_mfr(HIDDevice *hd) {
+static char *apc_format_mfr(HIDDevice_t *hd) {
 	if (hd->Vendor) {
 		return hd->Vendor;
 	} else if (hd->VendorID == APC_VENDORID) {
@@ -339,13 +339,13 @@ static char *apc_format_mfr(HIDDevice *hd) {
 	}
 }
 
-static char *apc_format_serial(HIDDevice *hd) {
+static char *apc_format_serial(HIDDevice_t *hd) {
 	return hd->Serial;
 }
 
 /* this function allows the subdriver to "claim" a device: return 1 if
  * the device is supported by this subdriver, else 0. */
-static int apc_claim(HIDDevice *hd) {
+static int apc_claim(HIDDevice_t *hd) {
 	if (hd->VendorID == APC_VENDORID) {
 		switch (hd->ProductID) {
 		case  0x0002:

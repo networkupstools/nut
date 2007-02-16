@@ -77,7 +77,7 @@ typedef struct {
 	char mfr[UPS_MFR_CHARS + 1];
 	char model[UPS_MODEL_CHARS + 1];
 	char version[UPS_VERSION_CHARS + 1];
-} UPSInfo;
+} UPSInfo_t;
 
 
 /* The values returned by the UPS for an "F" query */
@@ -86,7 +86,7 @@ typedef struct {
 	float current;
 	float battvolt;
 	float freq;
-} FirmwareValues;
+} FirmwareValues_t;
 
 
 /* The values returned by the UPS for an "Q1" query */
@@ -99,7 +99,7 @@ typedef struct {
 	float battvolt;
 	float temp;
 	char flags[N_FLAGS + 1];
-} QueryValues;
+} QueryValues_t;
 
 
 /* Parameters for known battery types */
@@ -110,11 +110,11 @@ typedef struct {
 	float empty;  /* fully discharged battery */
 	float full;   /* fully charged battery */
 	float low;    /* low battery (unused) */
-} BatteryVolts;
+} BatteryVolts_t;
 
 
 /* Known battery types must be in ascending order by "nominal" first, and then by "max". */
-static BatteryVolts batteries[] = {{ 12,  9.0, 16.0,  9.7, 13.7,  0.0 },   /* Mustek PowerMust 600VA Plus (LB unknown) */
+static BatteryVolts_t batteries[] = {{ 12,  9.0, 16.0,  9.7, 13.7,  0.0 },   /* Mustek PowerMust 600VA Plus (LB unknown) */
                                    { 12, 18.0, 30.0, 18.8, 26.8, 22.3 },   /* PowerWalker Line-Interactive VI 1000 */
                                    { 24, 18.0, 30.0, 19.4, 27.4, 22.2 },   /* Mustek PowerMust 1000VA Plus */
                                    { 36,  1.5,  3.0, 1.64, 2.31, 1.88 },   /* Mustek PowerMust 1000VA On-Line */
@@ -144,9 +144,9 @@ static char *copy_field(char* dest, char *src, int field_len);
 static float get_battery_charge(float battvolt);
 static int set_battery_params(float volt_nominal, float volt_now);
 static int check_ups(void);
-static int get_ups_info(UPSInfo *info);
-static int get_firmware_values(FirmwareValues *values);
-static int run_query(QueryValues *values);
+static int get_ups_info(UPSInfo_t *info);
+static int get_firmware_values(FirmwareValues_t *values);
+static int run_query(QueryValues_t *values);
 
 int instcmd(const char *cmdname, const char *extra);
 int setvar(const char *varname, const char *val);
@@ -261,7 +261,7 @@ static int check_ups(void)
 }
 
 
-static int get_ups_info(UPSInfo *info)
+static int get_ups_info(UPSInfo_t *info)
 {
 	char buffer[RECV_BUFFER_LEN];
 	char *anchor;
@@ -278,7 +278,7 @@ static int get_ups_info(UPSInfo *info)
 
 	upsdebugx(3, "UPS information: %s", buffer);
 
-	memset(info, 0, sizeof(UPSInfo));
+	memset(info, 0, sizeof(UPSInfo_t));
 
 	/*
 	 * Get the manufacturer, model and version fields, skipping
@@ -292,7 +292,7 @@ static int get_ups_info(UPSInfo *info)
 }
 
 
-static int get_firmware_values(FirmwareValues *values)
+static int get_firmware_values(FirmwareValues_t *values)
 {
 	char buffer[RECV_BUFFER_LEN];
 	int ret;
@@ -315,7 +315,7 @@ static int get_firmware_values(FirmwareValues *values)
 }
 
 
-static int run_query(QueryValues *values)
+static int run_query(QueryValues_t *values)
 {
 	char buffer[RECV_BUFFER_LEN];
 	int ret;
@@ -342,9 +342,9 @@ void upsdrv_initinfo(void)
 {
 	int i;
 	int success = 0;
-	FirmwareValues values;
-	QueryValues query;
-	UPSInfo info;
+	FirmwareValues_t values;
+	QueryValues_t query;
+	UPSInfo_t info;
 
 	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
 
@@ -477,7 +477,7 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
-	QueryValues query;
+	QueryValues_t query;
 	float charge;
 
 	if (run_query(&query) < 0) {

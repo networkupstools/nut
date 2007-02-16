@@ -71,9 +71,9 @@ static void user_add(const char *un)
 	curr_user = tmp;
 }
 
-static acllist *addallow(acllist *base, const char *acl)
+static acllist_t *addallow(acllist_t *base, const char *acl)
 {
-	acllist	*tmp, *last;
+	acllist_t	*tmp, *last;
 
 	if (!acl)
 		return base;
@@ -85,7 +85,7 @@ static acllist *addallow(acllist *base, const char *acl)
 		tmp = tmp->next;
 	}
 
-	tmp = xmalloc(sizeof(acllist));
+	tmp = xmalloc(sizeof(acllist_t));
 	tmp->aclname = xstrdup(acl);
 	tmp->next = NULL;
 
@@ -133,7 +133,7 @@ static void user_password(const char *pw)
 /* attach allowed instcmds to user */
 static void user_add_instcmd(const char *cmd)
 {
-	instcmdlist	*tmp, *last;
+	instcmdlist_t	*tmp, *last;
 
 	if (!curr_user) {
 		upslogx(LOG_WARNING, "Ignoring instcmd definition outside "
@@ -157,7 +157,7 @@ static void user_add_instcmd(const char *cmd)
 		tmp = tmp->next;
 	}
 
-	tmp = xmalloc(sizeof(instcmdlist));
+	tmp = xmalloc(sizeof(instcmdlist_t));
 
 	tmp->cmd = xstrdup(cmd);
 	tmp->next = NULL;
@@ -168,9 +168,9 @@ static void user_add_instcmd(const char *cmd)
 		curr_user->firstcmd = tmp;
 }
 
-static actionlist *addaction(actionlist *base, const char *action)
+static actionlist_t *addaction(actionlist_t *base, const char *action)
 {
-	actionlist	*tmp, *last;
+	actionlist_t	*tmp, *last;
 
 	if (!action)
 		return base;
@@ -182,7 +182,7 @@ static actionlist *addaction(actionlist *base, const char *action)
 		tmp = tmp->next;
 	}
 
-	tmp = xmalloc(sizeof(actionlist));
+	tmp = xmalloc(sizeof(actionlist_t));
 	tmp->action = xstrdup(action);
 	tmp->next = NULL;
 
@@ -206,9 +206,9 @@ static void user_add_action(const char *act)
 	curr_user->firstaction = addaction(curr_user->firstaction, act);
 }
 
-static void flushacl(acllist *first)
+static void flushacl(acllist_t *first)
 {
-	acllist	*ptr, *next;
+	acllist_t	*ptr, *next;
 
 	ptr = first;
 
@@ -222,9 +222,9 @@ static void flushacl(acllist *first)
 	}
 }
 
-static void flushcmd(instcmdlist *first)
+static void flushcmd(instcmdlist_t *first)
 {
-	instcmdlist	*ptr, *next;
+	instcmdlist_t	*ptr, *next;
 
 	ptr = first;
 
@@ -238,9 +238,9 @@ static void flushcmd(instcmdlist *first)
 	}
 }
 
-static void flushaction(actionlist *first)
+static void flushaction(actionlist_t *first)
 {
-	actionlist	*ptr, *next;
+	actionlist_t	*ptr, *next;
 
 	ptr = first;
 
@@ -289,7 +289,7 @@ static int user_matchacl(ulist_t *user, const struct sockaddr_in *addr)
 static int user_matchacl(ulist_t *user, const struct sockaddr_storage *addr)
 #endif
 {
-	acllist	*tmp;
+	acllist_t	*tmp;
 
 	tmp = user->firstacl;
 
@@ -309,7 +309,7 @@ static int user_matchacl(ulist_t *user, const struct sockaddr_storage *addr)
 
 static int user_matchinstcmd(ulist_t *user, const char * cmd)
 {
-	instcmdlist	*tmp = user->firstcmd;
+	instcmdlist_t	*tmp = user->firstcmd;
 
 	/* no commands means no access (fail-safe) */
 	if (!tmp)
@@ -371,7 +371,7 @@ int user_checkinstcmd(const struct sockaddr_storage *addr,
 
 static int user_matchaction(ulist_t *user, const char *action)
 {
-	actionlist	*tmp = user->firstaction;
+	actionlist_t	*tmp = user->firstaction;
 
 	/* no actions means no access (fail-safe) */
 	if (!tmp)
@@ -574,7 +574,7 @@ static void upsd_user_err(const char *errmsg)
 void user_load(void)
 {
 	char	fn[SMALLBUF];
-	PCONF_CTX	ctx;
+	PCONF_CTX_t	ctx;
 
 	curr_user = NULL;
 

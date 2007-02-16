@@ -303,8 +303,8 @@ static enum tl_model_t {
 #define MAX_VOLT 13.4          /*!< Max battery voltage (100%) */
 #define MIN_VOLT 11.0          /*!< Min battery voltage (10%) */
 
-static HIDDevice *hd = NULL;
-static HIDDevice curDevice;
+static HIDDevice_t *hd = NULL;
+static HIDDevice_t curDevice;
 static HIDDeviceMatcher_t *reopen_matcher = NULL;
 static HIDDeviceMatcher_t *regex_matcher = NULL;
 static usb_dev_handle *udev;

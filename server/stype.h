@@ -35,6 +35,6 @@ typedef struct {
 	char	*port;
 	int	sock_fd;
 	void	*next;
-}	stype;
+}	stype_t;
 
 #endif	/* STYPE_H_SEEN */

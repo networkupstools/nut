@@ -56,7 +56,7 @@ static	char	*monhost = NULL, *cmd = NULL;
 
 static	int	port;
 static	char	*upsname, *hostname;
-static	UPSCONN	ups;
+static	UPSCONN_t	ups;
 
 #define RED(x)		((x >> 16) & 0xff)
 #define GREEN(x)	((x >> 8)  & 0xff)

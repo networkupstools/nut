@@ -90,7 +90,7 @@ struct {
 };
 
 /* make sure we're using a struct that's been through upscli_connect */
-static int upscli_checkmagic(UPSCONN *ups)
+static int upscli_checkmagic(UPSCONN_t *ups)
 {
 	if (!ups)
 		return 0;
@@ -101,7 +101,7 @@ static int upscli_checkmagic(UPSCONN *ups)
 	return 1;
 }
 
-const char *upscli_strerror(UPSCONN *ups)
+const char *upscli_strerror(UPSCONN_t *ups)
 {
 #ifdef HAVE_SSL
 	unsigned long	err;
@@ -162,7 +162,7 @@ const char *upscli_strerror(UPSCONN *ups)
 	return ups->errbuf;
 }
 
-static void upscli_closefd(UPSCONN *ups)
+static void upscli_closefd(UPSCONN_t *ups)
 {
 #ifdef HAVE_SSL
 	if (ups->ssl) {
@@ -183,7 +183,7 @@ static void upscli_closefd(UPSCONN *ups)
 }
 
 /* internal: abstract the SSL calls for the other functions */
-static int net_read(UPSCONN *ups, char *buf, size_t buflen)
+static int net_read(UPSCONN_t *ups, char *buf, size_t buflen)
 {
 	int	ret;
 
@@ -220,7 +220,7 @@ static int net_read(UPSCONN *ups, char *buf, size_t buflen)
 	return ret;
 }
 
-static int net_write(UPSCONN *ups, const char *buf, size_t count)
+static int net_write(UPSCONN_t *ups, const char *buf, size_t count)
 {
 	int	ret;
 
@@ -250,7 +250,7 @@ static int net_write(UPSCONN *ups, const char *buf, size_t count)
 }
 
 /* internal: bring back a line (up to LF or buflen bytes) */
-static int upscli_read(UPSCONN *ups, char *buf, size_t buflen)
+static int upscli_read(UPSCONN_t *ups, char *buf, size_t buflen)
 {
 	int	ret;
 	size_t	numrec = 0;
@@ -290,12 +290,12 @@ static int upscli_read(UPSCONN *ups, char *buf, size_t buflen)
 	
 /* stub first */
 #ifndef HAVE_SSL
-static int upscli_sslinit(UPSCONN *ups)
+static int upscli_sslinit(UPSCONN_t *ups)
 {
 	return 0;		/* not supported */
 }
 
-int upscli_sslcert(UPSCONN *ups, const char *dir, const char *file, int verify)
+int upscli_sslcert(UPSCONN_t *ups, const char *dir, const char *file, int verify)
 {
 	if (!ups)
 		return -1;
@@ -311,7 +311,7 @@ int upscli_sslcert(UPSCONN *ups, const char *dir, const char *file, int verify)
 
 #else
 
-static int upscli_sslinit(UPSCONN *ups)
+static int upscli_sslinit(UPSCONN_t *ups)
 {
 	int	ret;
 	char	buf[UPSCLI_NETBUF_LEN];
@@ -385,7 +385,7 @@ static int upscli_sslinit(UPSCONN *ups)
 }
 
 /* set the paths for the certs to verify the server */
-int upscli_sslcert(UPSCONN *ups, const char *file, const char *path, int verify)
+int upscli_sslcert(UPSCONN_t *ups, const char *file, const char *path, int verify)
 {
 	int	ret, ssl_mode = SSL_VERIFY_NONE;
 
@@ -420,7 +420,7 @@ int upscli_sslcert(UPSCONN *ups, const char *file, const char *path, int verify)
 
 #endif	/* HAVE_SSL */
 
-int upscli_connect(UPSCONN *ups, const char *host, int port, int flags)
+int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 {
 #ifndef	HAVE_IPV6
 	struct sockaddr_in	local, server;
@@ -438,7 +438,7 @@ int upscli_connect(UPSCONN *ups, const char *host, int port, int flags)
 	ups->syserrno = 0;
 	ups->upsclient_magic = UPSCLIENT_MAGIC;
 
-	if ((ups->pc_ctx = malloc(sizeof(PCONF_CTX))) == NULL)
+	if ((ups->pc_ctx = malloc(sizeof(PCONF_CTX_t))) == NULL)
 	{
 		ups->upserror = UPSCLI_ERR_NOMEM;
 		return -1;
@@ -644,7 +644,7 @@ static struct {
 	{ 0,			NULL,		}
 };
 
-static int upscli_errcheck(UPSCONN *ups, char *buf)
+static int upscli_errcheck(UPSCONN_t *ups, char *buf)
 {
 	int	i;
 
@@ -720,7 +720,7 @@ static int verify_resp(int num, const char **q, char **a)
 	return 1;	/* OK */
 }
 
-int upscli_get(UPSCONN *ups, unsigned int numq, const char **query, 
+int upscli_get(UPSCONN_t *ups, unsigned int numq, const char **query, 
 		unsigned int *numa, char ***answer)
 {
 	int	ret;
@@ -769,7 +769,7 @@ int upscli_get(UPSCONN *ups, unsigned int numq, const char **query,
 	return 0;
 }
 
-int upscli_list_start(UPSCONN *ups, unsigned int numq, const char **query)
+int upscli_list_start(UPSCONN_t *ups, unsigned int numq, const char **query)
 {
 	int	ret;
 	char	cmd[UPSCLI_NETBUF_LEN], tmp[UPSCLI_NETBUF_LEN];
@@ -823,7 +823,7 @@ int upscli_list_start(UPSCONN *ups, unsigned int numq, const char **query)
 	return 0;
 }
 
-int upscli_list_next(UPSCONN *ups, unsigned int numq, const char **query, 
+int upscli_list_next(UPSCONN_t *ups, unsigned int numq, const char **query, 
 		unsigned int *numa, char ***answer)
 {
 	char	tmp[UPSCLI_NETBUF_LEN];
@@ -866,7 +866,7 @@ int upscli_list_next(UPSCONN *ups, unsigned int numq, const char **query,
 	return 1;
 }
 
-int upscli_sendline(UPSCONN *ups, const char *buf, size_t buflen)
+int upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen)
 {
 	int	ret;
 
@@ -891,7 +891,7 @@ int upscli_sendline(UPSCONN *ups, const char *buf, size_t buflen)
 	return 0;
 }
 
-int upscli_readline(UPSCONN *ups, char *buf, size_t buflen)
+int upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen)
 {
 	char	tmp[LARGEBUF];
 
@@ -1020,7 +1020,7 @@ int upscli_splitaddr(const char *buf, char **hostname, int *port)
 	return 0;
 }
 
-int upscli_disconnect(UPSCONN *ups)
+int upscli_disconnect(UPSCONN_t *ups)
 {
 	if (!ups)
 		return -1;
@@ -1050,7 +1050,7 @@ int upscli_disconnect(UPSCONN *ups)
 	return 0;
 }
 
-int upscli_fd(UPSCONN *ups)
+int upscli_fd(UPSCONN_t *ups)
 {
 	if (!ups)
 		return -1;
@@ -1061,7 +1061,7 @@ int upscli_fd(UPSCONN *ups)
 	return ups->fd;
 }
 
-int upscli_upserror(UPSCONN *ups)
+int upscli_upserror(UPSCONN_t *ups)
 {
 	if (!ups)
 		return -1;
@@ -1072,7 +1072,7 @@ int upscli_upserror(UPSCONN *ups)
 	return ups->upserror;
 }
 
-int upscli_ssl(UPSCONN *ups)
+int upscli_ssl(UPSCONN_t *ups)
 {
 	if (!ups)
 		return -1;

@@ -27,14 +27,14 @@
 
 	extern	int	maxage;
 	extern	char	*statepath, *datapath, *certfile;
-	extern	upstype	*firstups;
+	extern	upstype_t	*firstups;
 	ups_t	*upstable = NULL;
 	int	num_ups = 0;
 
 /* add another UPS for monitoring from ups.conf */
 static void ups_create(const char *fn, const char *name, const char *desc)
 {
-	upstype	*temp, *last;
+	upstype_t	*temp, *last;
 
 	temp = last = firstups;
 
@@ -52,7 +52,7 @@ static void ups_create(const char *fn, const char *name, const char *desc)
 	}
 
 	/* grab some memory and add the info */
-	temp = xmalloc(sizeof(upstype));
+	temp = xmalloc(sizeof(upstype_t));
 
 	temp->name = xstrdup(name);
 	temp->fn = xstrdup(fn);
@@ -93,7 +93,7 @@ static void ups_create(const char *fn, const char *name, const char *desc)
 /* change the configuration of an existing UPS (used during reloads) */
 static void ups_update(const char *fn, const char *name, const char *desc)
 {
-	upstype	*temp;
+	upstype_t	*temp;
 
 	temp = get_ups_ptr(name);
 
@@ -230,7 +230,7 @@ static void upsd_conf_err(const char *errmsg)
 void load_upsdconf(int reloading)
 {
 	char	fn[SMALLBUF];
-	PCONF_CTX	ctx;
+	PCONF_CTX_t	ctx;
 
 	snprintf(fn, sizeof(fn), "%s/upsd.conf", confpath());
 
@@ -377,9 +377,9 @@ void upsconf_add(int reloading)
 }
 
 /* remove a UPS from the linked list */
-static void delete_ups(upstype *target)
+static void delete_ups(upstype_t *target)
 {
-	upstype	*ptr, *last;
+	upstype_t	*ptr, *last;
 
 	if (!target)
 		return;
@@ -445,7 +445,7 @@ static int check_file(const char *fn)
 /* called after SIGHUP */
 void conf_reload(void)
 {
-	upstype	*upstmp, *upsnext;
+	upstype_t	*upstmp, *upsnext;
 
 	upslogx(LOG_INFO, "SIGHUP: reloading configuration");
 

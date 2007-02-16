@@ -204,21 +204,21 @@ static int tripplite_shutdown(int ondelay, int offdelay) {
 	return 0;
 }
 
-static char *tripplite_format_model(HIDDevice *hd) {
+static char *tripplite_format_model(HIDDevice_t *hd) {
 	return hd->Product;
 }
 
-static char *tripplite_format_mfr(HIDDevice *hd) {
+static char *tripplite_format_mfr(HIDDevice_t *hd) {
 	return hd->Vendor;
 }
 
-static char *tripplite_format_serial(HIDDevice *hd) {
+static char *tripplite_format_serial(HIDDevice_t *hd) {
 	return hd->Serial;
 }
 
 /* this function allows the subdriver to "claim" a device: return 1 if
  * the device is supported by this subdriver, else 0. */
-static int tripplite_claim(HIDDevice *hd) {
+static int tripplite_claim(HIDDevice_t *hd) {
 	if (hd->VendorID != TRIPPLITE_VENDORID) {
 		return 0;
 	}

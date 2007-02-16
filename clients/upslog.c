@@ -40,7 +40,7 @@
 
 	static	int	port, reopen_flag = 0, exit_flag = 0;
 	static	char	*upsname, *hostname;
-	static	UPSCONN	ups;
+	static	UPSCONN_t	ups;
 
 	static	FILE	*logfile;
 	static	const	char *logfn, *monhost;

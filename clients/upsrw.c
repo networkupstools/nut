@@ -51,7 +51,7 @@ static void usage(const char *prog)
 	exit(EXIT_SUCCESS);
 }
 
-static void clean_exit(UPSCONN *ups, char *upsname, char *hostname, int code)
+static void clean_exit(UPSCONN_t *ups, char *upsname, char *hostname, int code)
 {
 	free(upsname);
 	free(hostname);
@@ -61,7 +61,7 @@ static void clean_exit(UPSCONN *ups, char *upsname, char *hostname, int code)
 	exit(code);
 }
 
-static int do_set(UPSCONN *ups, const char *upsname, const char *varname, 
+static int do_set(UPSCONN_t *ups, const char *upsname, const char *varname, 
 	const char *newval)
 {
 	char	buf[SMALLBUF], enc[SMALLBUF];
@@ -92,7 +92,7 @@ static int do_set(UPSCONN *ups, const char *upsname, const char *varname,
 	return EXIT_SUCCESS;
 }
 
-static int do_setvar(UPSCONN *ups, const char *varname, char *uin,
+static int do_setvar(UPSCONN_t *ups, const char *varname, char *uin,
 		const char *pass, char *upsname, char *hostname)
 {
 	char	newval[SMALLBUF], temp[SMALLBUF], user[SMALLBUF], *ptr;
@@ -203,7 +203,7 @@ static int do_setvar(UPSCONN *ups, const char *varname, char *uin,
 	return do_set(ups, upsname, varname, newval);
 }	
 
-static const char *get_data(const char *type, UPSCONN *ups, 
+static const char *get_data(const char *type, UPSCONN_t *ups, 
 	const char *upsname, const char *varname)
 {
 	int	ret;
@@ -225,7 +225,7 @@ static const char *get_data(const char *type, UPSCONN *ups,
 	return answer[3];
 }
 
-static void do_string(UPSCONN *ups, const char *upsname, const char *varname)
+static void do_string(UPSCONN_t *ups, const char *upsname, const char *varname)
 {
 	const	char	*val;
 
@@ -241,7 +241,7 @@ static void do_string(UPSCONN *ups, const char *upsname, const char *varname)
 	printf("Value: %s\n", val);
 }
 
-static void do_enum(UPSCONN *ups, const char *upsname, const char *varname)
+static void do_enum(UPSCONN_t *ups, const char *upsname, const char *varname)
 {
 	int	ret;
 	unsigned int	numq, numa;
@@ -301,7 +301,7 @@ static void do_enum(UPSCONN *ups, const char *upsname, const char *varname)
 	free(val);
 }
 
-static void do_type(UPSCONN *ups, const char *upsname, const char *varname)
+static void do_type(UPSCONN_t *ups, const char *upsname, const char *varname)
 {
 	int	ret;
 	unsigned int	i, numq, numa;
@@ -342,7 +342,7 @@ static void do_type(UPSCONN *ups, const char *upsname, const char *varname)
 
 }
 
-static void print_rw(UPSCONN *ups, const char *upsname, const char *varname)
+static void print_rw(UPSCONN_t *ups, const char *upsname, const char *varname)
 {
 	const	char	*tmp;
 
@@ -360,7 +360,7 @@ static void print_rw(UPSCONN *ups, const char *upsname, const char *varname)
 	printf("\n");
 }	
 
-static int print_rwlist(UPSCONN *ups, const char *upsname)
+static int print_rwlist(UPSCONN_t *ups, const char *upsname)
 {
 	int	ret;
 	unsigned int	numq, numa;
@@ -443,7 +443,7 @@ int main(int argc, char **argv)
 	int	i, port, ret;
 	char	*upsname, *hostname, *setvar, *prog;
 	char	*password = NULL, *username = NULL;
-	UPSCONN	ups;
+	UPSCONN_t	ups;
 
 	setvar = username = NULL;
 	prog = argv[0];

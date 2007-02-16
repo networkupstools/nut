@@ -47,15 +47,15 @@
 
 /* prototypes from upsd.c */
 
-upstype *get_ups_ptr(const char *upsname);
-int ups_available(const upstype *ups, ctype *client);
+upstype_t *get_ups_ptr(const char *upsname);
+int ups_available(const upstype_t *ups, ctype_t *client);
 
 void listen_add(const char *addr, const char *port);
 
 void kick_login_clients(const char *upsname);
-int sendback(ctype *client, const char *fmt, ...)
+int sendback(ctype_t *client, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
-int send_err(ctype *client, const char *errtype);
+int send_err(ctype_t *client, const char *errtype);
 
 void server_load(void);
 void server_free(void);

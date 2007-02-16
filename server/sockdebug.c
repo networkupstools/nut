@@ -29,7 +29,7 @@
 #include "common.h"
 #include "parseconf.h"
 
-	PCONF_CTX	sock_ctx;
+	PCONF_CTX_t	sock_ctx;
 
 static void sock_arg(int numarg, char **arg)
 {

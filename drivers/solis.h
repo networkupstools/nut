@@ -29,7 +29,7 @@
 #ifndef INCLUDED_SOLIS_H
 #define INCLUDED_SOLIS_H
 
-typedef int bool;
+typedef int bool_t;
 
 /* autonomy constants */
 
@@ -323,10 +323,10 @@ unsigned char InputStatus,OutputStatus, BattStatus, StatusGeral;
 unsigned char SourceEvents, OutputEvents, BattEvents, GeneralEvents;
 
 /* logical */
-bool detected = 0;
-bool SourceFail, SourceLast, FailureFlag, SourceReturn, SuperHeat;
-bool SuperHeatLast, OverCharge, OverChargeLast, LowBatt;
-bool CriticBatt, CriticBattLast, Flag_inversor, InversorOn, InversorOnLast;
+bool_t detected = 0;
+bool_t SourceFail, SourceLast, FailureFlag, SourceReturn, SuperHeat;
+bool_t SuperHeatLast, OverCharge, OverChargeLast, LowBatt;
+bool_t CriticBatt, CriticBattLast, Flag_inversor, InversorOn, InversorOnLast;
 
 /* Input group */
 double InVoltage, InCurrent, InFreq;

@@ -71,11 +71,11 @@ extern "C" {
 #define ATTR_NVOL_VOL			0x80
 
 /* 
- * HIDNode struct
+ * HIDNode_t struct
  *
  * Describe a HID Path point: Usage = bits 0..15, UPage = bits 16..31
  * -------------------------------------------------------------------------- */
-typedef unsigned int HIDNode;
+typedef unsigned int HIDNode_t;
 
 /* 
  * HIDPath struct
@@ -85,8 +85,8 @@ typedef unsigned int HIDNode;
 typedef struct
 {
 	u_char   Size;					/* HID Path size	*/
-	HIDNode Node[PATH_SIZE];		/* HID Path		*/
-} HIDPath;
+	HIDNode_t Node[PATH_SIZE];		/* HID Path		*/
+} HIDPath_t;
 
 /* 
  * HIDData struct
@@ -95,7 +95,7 @@ typedef struct
  * -------------------------------------------------------------------------- */
 typedef struct
 {
-	HIDPath Path;		/* HID Path								*/
+	HIDPath_t Path;		/* HID Path								*/
 
 	u_char   ReportID;	/* Report ID								*/
 	u_char   Offset;		/* Offset of data in report					*/
@@ -113,7 +113,7 @@ typedef struct
 	long    PhyMax;		/* Physical Max							*/
 	long    have_PhyMin;	/* Physical Min defined? */
 	long    have_PhyMax;	/* Physical Max defined? */
-} HIDData;
+} HIDData_t;
 
 /* 
  * HIDDesc struct
@@ -123,9 +123,9 @@ typedef struct
 typedef struct
 {
 	int nitems;      /* number of items in descriptor */
-	HIDData *item;   /* list of items */
+	HIDData_t *item;   /* list of items */
 	int replen[256]; /* list of report lengths, in byte */
-} HIDDesc;
+} HIDDesc_t;
 
 #ifdef __cplusplus
 } /* extern "C" */

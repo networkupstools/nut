@@ -44,7 +44,7 @@
 
 	/* externally-visible settings and pointers */
 
-	upstype	*firstups = NULL;
+	upstype_t	*firstups = NULL;
 
 	/* default 15 seconds before data is marked stale */
 	int	maxage = 15;
@@ -57,10 +57,10 @@
 
 	/* everything else */
 
-static ctype	*firstclient = NULL;
+static ctype_t	*firstclient = NULL;
 
 	/* default is to listen on all local interfaces */
-static stype	*firstaddr = NULL;
+static stype_t	*firstaddr = NULL;
 
 #ifdef	HAVE_IPV6
 static int 	opt_af = AF_UNSPEC;
@@ -93,9 +93,9 @@ static const char *inet_ntopW (struct sockaddr_storage *s) {
 #endif
 
 /* return a pointer to the named ups if possible */
-upstype *get_ups_ptr(const char *name)
+upstype_t *get_ups_ptr(const char *name)
 {
-	upstype	*tmp;
+	upstype_t	*tmp;
 
 	if (!name)
 		return NULL;
@@ -108,7 +108,7 @@ upstype *get_ups_ptr(const char *name)
 }
 
 /* mark the data stale if this is new, otherwise cleanup any remaining junk */
-static void ups_data_stale(upstype *ups)
+static void ups_data_stale(upstype_t *ups)
 {
 	/* don't complain again if it's already known to be stale */
 	if (ups->stale == 1)
@@ -121,7 +121,7 @@ static void ups_data_stale(upstype *ups)
 }
 
 /* mark the data ok if this is new, otherwise do nothing */
-static void ups_data_ok(upstype *ups)
+static void ups_data_ok(upstype_t *ups)
 {
 	if (ups->stale == 0)
 		return;
@@ -131,7 +131,7 @@ static void ups_data_ok(upstype *ups)
 }
 
 /* make sure this UPS is connected and has fresh data */
-static void check_ups(upstype *ups)
+static void check_ups(upstype_t *ups)
 {
 	/* sanity checks */
 	if ((!ups) || (!ups->fn))
@@ -151,7 +151,7 @@ static void check_ups(upstype *ups)
 /* add another listening address */
 void listen_add(const char *addr, const char *port)
 {
-	stype	*stmp, *last;
+	stype_t	*stmp, *last;
 
 	/* don't change listening addresses on reload */
 	if (reload_flag)
@@ -166,7 +166,7 @@ void listen_add(const char *addr, const char *port)
 	}
 
 	/* grab some memory and add the info */
-	stmp = xmalloc(sizeof(stype));
+	stmp = xmalloc(sizeof(stype_t));
 	stmp->addr = xstrdup(addr);
 	stmp->port = xstrdup(port);
 	stmp->sock_fd = -1;
@@ -181,7 +181,7 @@ void listen_add(const char *addr, const char *port)
 }
 
 /* create a listening socket for tcp connections */
-static void setuptcp(stype *serv)
+static void setuptcp(stype_t *serv)
 {
 #ifndef	HAVE_IPV6
 	struct hostent		*host;
@@ -292,7 +292,7 @@ static void setuptcp(stype *serv)
 /* decrement the login counter for this ups */
 static void declogins(const char *upsname)
 {
-	upstype	*ups;
+	upstype_t	*ups;
 
 	ups = get_ups_ptr(upsname);
 
@@ -309,9 +309,9 @@ static void declogins(const char *upsname)
 }
 
 /* disconnect a client connection and free all related memory */
-static void delclient(ctype *dclient)
+static void delclient(ctype_t *dclient)
 {
-	ctype	*tmp, *last;
+	ctype_t	*tmp, *last;
 
 	if (dclient == NULL)
 		return;
@@ -360,7 +360,7 @@ static void delclient(ctype *dclient)
 }
 
 /* send the buffer <sendbuf> of length <sendlen> to host <dest> */
-int sendback(ctype *client, const char *fmt, ...)
+int sendback(ctype_t *client, const char *fmt, ...)
 {
 	int	res, len;
 	char ans[NUT_NET_ANSWER_MAX+1];
@@ -396,7 +396,7 @@ int sendback(ctype *client, const char *fmt, ...)
 }
 
 /* just a simple wrapper for now */
-int send_err(ctype *client, const char *errtype)
+int send_err(ctype_t *client, const char *errtype)
 {
 	if (!client)
 		return -1;
@@ -410,7 +410,7 @@ int send_err(ctype *client, const char *errtype)
 /* disconnect anyone logged into this UPS */
 void kick_login_clients(const char *upsname)
 {
-	ctype   *tmp, *next;
+	ctype_t   *tmp, *next;
 
 	tmp = firstclient;
 
@@ -434,7 +434,7 @@ void kick_login_clients(const char *upsname)
 }
 
 /* make sure a UPS is sane - connected, with fresh data */
-int ups_available(const upstype *ups, ctype *client)
+int ups_available(const upstype_t *ups, ctype_t *client)
 {
 	if (ups->sock_fd == -1) {
 		send_err(client, NUT_ERR_DRIVER_NOT_CONNECTED);
@@ -451,7 +451,7 @@ int ups_available(const upstype *ups, ctype *client)
 }
 
 /* check flags and access for an incoming command from the network */
-static void check_command(int cmdnum, ctype *client, int numarg, 
+static void check_command(int cmdnum, ctype_t *client, int numarg, 
 	const char **arg)
 {
 	if (netcmds[cmdnum].flags & FLAG_USER) {
@@ -471,7 +471,7 @@ static void check_command(int cmdnum, ctype *client, int numarg,
 }
 
 /* parse requests from the network */
-static void parse_net(ctype *client)
+static void parse_net(ctype_t *client)
 {
 	int	i;
 
@@ -523,7 +523,7 @@ static void parse_net(ctype *client)
 /* scan the list of UPSes for sanity */
 static void check_every_ups(void)
 {
-	upstype *ups;
+	upstype_t *ups;
 
 	ups = firstups;
 
@@ -534,7 +534,7 @@ static void check_every_ups(void)
 }
 
 /* answer incoming tcp connections */
-static void answertcp(stype *serv)
+static void answertcp(stype_t *serv)
 #ifndef	HAVE_IPV6
 {
 	struct	sockaddr_in csock;
@@ -543,7 +543,7 @@ static void answertcp(stype *serv)
 	struct	sockaddr_storage csock;
 #endif
 	int	acc;
-	ctype	*tmp, *last;
+	ctype_t	*tmp, *last;
 	socklen_t	clen;
 
 	clen = sizeof(csock);
@@ -571,7 +571,7 @@ static void answertcp(stype *serv)
 		tmp = tmp->next;
 	}
 
-	tmp = xmalloc(sizeof(ctype));
+	tmp = xmalloc(sizeof(ctype_t));
 
 	tmp->fd = acc;
 	tmp->delete = 0;
@@ -607,7 +607,7 @@ static void answertcp(stype *serv)
 }
 
 /* read tcp messages and handle them */
-static void readtcp(ctype *client)
+static void readtcp(ctype_t *client)
 {
 	char	buf[SMALLBUF];
 	int	i, ret;
@@ -659,7 +659,7 @@ static void readtcp(ctype *client)
 
 void server_load(void)
 {
-	stype	*serv;
+	stype_t	*serv;
 
 	/* default behaviour if no LISTEN addres has been specified */
 	if (firstaddr == NULL)
@@ -671,7 +671,7 @@ void server_load(void)
 
 void server_free(void)
 {
-	stype	*stmp, *snext;
+	stype_t	*stmp, *snext;
 
 	/* cleanup server fds */
 	stmp = firstaddr;
@@ -694,8 +694,8 @@ void server_free(void)
 
 static void upsd_cleanup(void)
 {
-	ctype	*tmpcli, *tmpnext;
-	upstype	*ups, *unext;
+	ctype_t	*tmpcli, *tmpnext;
+	upstype_t	*ups, *unext;
 
 	/* cleanup client fds */
 	tmpcli = firstclient;
@@ -748,9 +748,9 @@ static void mainloop(void)
 	fd_set	rfds;
 	struct	timeval	tv;
 	int	res, maxfd = -1;
-	ctype	*tmpcli, *tmpnext;
-	upstype	*utmp, *unext;
-	stype	*stmp, *snext;
+	ctype_t	*tmpcli, *tmpnext;
+	upstype_t	*utmp, *unext;
+	stype_t	*stmp, *snext;
 
 	if (reload_flag) {
 		conf_reload();

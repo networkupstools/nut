@@ -1,3 +1,7 @@
+Fri Feb 16 22:01:31 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - various: added "_t" to type names
+
 Fri Feb 16 21:55:31 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  - hotplug/udev: added hotplugging rules for various USB devices

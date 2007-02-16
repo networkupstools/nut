@@ -1,1 +1,1 @@
-void net_get(ctype *client, int numarg, const char **arg);
+void net_get(ctype_t *client, int numarg, const char **arg);

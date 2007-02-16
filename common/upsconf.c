@@ -81,7 +81,7 @@ static void upsconf_err(const char *errmsg)
 void read_upsconf(void)
 {
 	char	fn[SMALLBUF];
-	PCONF_CTX	ctx;
+	PCONF_CTX_t	ctx;
 
 	ups_section = NULL;
 	snprintf(fn, sizeof(fn), "%s/ups.conf", confpath());

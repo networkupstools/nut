@@ -71,7 +71,7 @@ static	int	forcessl = 0;		/* don't require ssl by default */
 
 static	int	debuglevel = 0, userfsd = 0, use_pipe = 1, pipefd[2];
 
-static	utype	*firstups = NULL;
+static	utype_t	*firstups = NULL;
 
 #ifdef	HAVE_IPV6
 static int 	opt_af = AF_UNSPEC;
@@ -178,7 +178,7 @@ static void notify(const char *notice, int flags, const char *ntype,
 	exit(EXIT_SUCCESS);
 }
 
-static void do_notify(const utype *ups, int ntype)
+static void do_notify(const utype_t *ups, int ntype)
 {
 	int	i;
 	char	msg[SMALLBUF], *upsname = NULL;
@@ -203,7 +203,7 @@ static void do_notify(const utype *ups, int ntype)
 }
 
 /* check for master permissions on the server for this ups */
-static int checkmaster(utype *ups)
+static int checkmaster(utype_t *ups)
 {
 	char	buf[SMALLBUF];
 
@@ -246,7 +246,7 @@ static int checkmaster(utype *ups)
 }
 
 /* authenticate to upsd, plus do LOGIN and MASTER if applicable */
-static int do_upsd_auth(utype *ups)
+static int do_upsd_auth(utype_t *ups)
 {
 	char	buf[SMALLBUF];
 
@@ -331,7 +331,7 @@ static int do_upsd_auth(utype *ups)
 }
 
 /* set flags and make announcements when a UPS has been checked successfully */
-static void ups_is_alive(utype *ups)
+static void ups_is_alive(utype_t *ups)
 {
 	time_t	now;
 
@@ -349,7 +349,7 @@ static void ups_is_alive(utype *ups)
 }
 
 /* handle all the notifications for a missing UPS in one place */
-static void ups_is_gone(utype *ups)
+static void ups_is_gone(utype_t *ups)
 {
 	time_t	now;
 
@@ -377,7 +377,7 @@ static void ups_is_gone(utype *ups)
 	}
 }
 
-static void ups_on_batt(utype *ups)
+static void ups_on_batt(utype_t *ups)
 {
 	sleepval = pollfreqalert;	/* bump up polling frequency */
 
@@ -397,7 +397,7 @@ static void ups_on_batt(utype *ups)
 	clearflag(&ups->status, ST_ONLINE);
 }
 
-static void ups_on_line(utype *ups)
+static void ups_on_line(utype_t *ups)
 {
 	if (flag_isset(ups->status, ST_ONLINE)) { 	/* no change */
 		debug("ups_on_line(%s) (no change)\n", ups->sys);
@@ -472,7 +472,7 @@ static void doshutdown(void)
 }
 
 /* set forced shutdown flag so other upsmons know what's going on here */
-static void setfsd(utype *ups)
+static void setfsd(utype_t *ups)
 {
 	char	buf[SMALLBUF];
 	int	ret;
@@ -522,7 +522,7 @@ static void clear_alarm(void)
 	alarm(0);
 }
 
-static int get_var(utype *ups, const char *var, char *buf, size_t bufsize)
+static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize)
 {
 	int	ret;
 	unsigned int	numq, numa;
@@ -587,7 +587,7 @@ static int get_var(utype *ups, const char *var, char *buf, size_t bufsize)
 
 static void slavesync(void)
 {
-	utype	*ups;
+	utype_t	*ups;
 	char	temp[SMALLBUF];
 	time_t	start, now;
 	int	maxlogins, logins;
@@ -633,7 +633,7 @@ static void slavesync(void)
 
 static void forceshutdown(void)
 {
-	utype	*ups;
+	utype_t	*ups;
 	int	isamaster = 0;
 
 	debug("Shutting down any UPSes in MASTER mode...\n");
@@ -659,7 +659,7 @@ static void forceshutdown(void)
 	doshutdown();
 }
 
-static int is_ups_critical(utype *ups)
+static int is_ups_critical(utype_t *ups)
 {
 	time_t	now;
 
@@ -698,7 +698,7 @@ static int is_ups_critical(utype *ups)
 /* recalculate the online power value and see if things are still OK */
 static void recalc(void)
 {
-	utype	*ups;
+	utype_t	*ups;
 	int	val_ol = 0;
 	time_t	now;
 
@@ -733,7 +733,7 @@ static void recalc(void)
 		forceshutdown();
 }		
 
-static void ups_low_batt(utype *ups)
+static void ups_low_batt(utype_t *ups)
 {
 	if (flag_isset(ups->status, ST_LOWBATT)) { 	/* no change */
 		debug("ups_low_batt(%s) (no change)\n", ups->sys);
@@ -748,7 +748,7 @@ static void ups_low_batt(utype *ups)
 	setflag(&ups->status, ST_LOWBATT);
 }
 
-static void upsreplbatt(utype *ups)
+static void upsreplbatt(utype_t *ups)
 {
 	time_t	now;
 
@@ -760,7 +760,7 @@ static void upsreplbatt(utype *ups)
 	}
 }
 
-static void ups_fsd(utype *ups)
+static void ups_fsd(utype_t *ups)
 {
 	if (flag_isset(ups->status, ST_FSD)) {		/* no change */
 		debug("ups_fsd(%s) (no change)\n", ups->sys);
@@ -776,7 +776,7 @@ static void ups_fsd(utype *ups)
 }
 
 /* cleanly close the connection to a given UPS */
-static void drop_connection(utype *ups)
+static void drop_connection(utype_t *ups)
 {
 	debug("Dropping connection to UPS [%s]\n", ups->sys);
 
@@ -789,7 +789,7 @@ static void drop_connection(utype *ups)
 }
 
 /* change some UPS parameters during reloading */
-static void redefine_ups(utype *ups, int pv, const char *un, 
+static void redefine_ups(utype_t *ups, int pv, const char *un, 
 		const char *pw, const char *master)
 {
 	ups->retain = 1;
@@ -893,7 +893,7 @@ static void addups(int reloading, const char *sys, const char *pvs,
 		const char *un, const char *pw, const char *master)
 {
 	int	pv;
-	utype	*tmp, *last;
+	utype_t	*tmp, *last;
 
 	/* the username is now required - no more host-based auth */
 
@@ -929,7 +929,7 @@ static void addups(int reloading, const char *sys, const char *pvs,
 		tmp = tmp->next;
 	}
 
-	tmp = xmalloc(sizeof(utype));
+	tmp = xmalloc(sizeof(utype_t));
 	tmp->sys = xstrdup(sys);
 	tmp->pv = pv;
 
@@ -1237,7 +1237,7 @@ static void upsmon_err(const char *errmsg)
 
 static void loadconfig(void)
 {
-	PCONF_CTX	ctx;
+	PCONF_CTX_t	ctx;
 
 	pconf_init(&ctx, upsmon_err);
 
@@ -1293,7 +1293,7 @@ static void set_exit_flag(int sig)
 	exit_flag = sig;
 }
 
-static void ups_free(utype *ups)
+static void ups_free(utype_t *ups)
 {
 	free(ups->sys);
 	free(ups->upsname);
@@ -1306,7 +1306,7 @@ static void ups_free(utype *ups)
 static void upsmon_cleanup(void)
 {
 	int	i;
-	utype	*utmp, *unext;
+	utype_t	*utmp, *unext;
 
 	/* close all fds */
 	utmp = firstups;
@@ -1377,7 +1377,7 @@ static void setup_signals(void)
 }
 
 /* remember the last time the ups was not critical (OB + LB) */
-static void update_crittimer(utype *ups)
+static void update_crittimer(utype_t *ups)
 {
 	/* if !OB or !LB, then it's not critical, so log the time */
 	if ((!flag_isset(ups->status, ST_ONBATT)) || 
@@ -1390,7 +1390,7 @@ static void update_crittimer(utype *ups)
 	/* fallthrough: let the timer age */
 }
 
-static int try_ssl(utype *ups)
+static int try_ssl(utype_t *ups)
 {
 	int	ret;
 
@@ -1436,7 +1436,7 @@ static int try_ssl(utype *ups)
 }
 
 /* handle connecting to upsd, plus get SSL going too if possible */
-static int try_connect(utype *ups)
+static int try_connect(utype_t *ups)
 {
 	int	flags = 0, ret;
 
@@ -1491,7 +1491,7 @@ static int try_connect(utype *ups)
 }
 
 /* deal with the contents of STATUS or ups.status for this ups */
-static void parse_status(utype *ups, char *status)
+static void parse_status(utype_t *ups, char *status)
 {
 	char	*statword, *ptr;
 
@@ -1545,7 +1545,7 @@ static void parse_status(utype *ups, char *status)
 }
 
 /* see what the status of the UPS is and handle any changes */
-static void pollups(utype *ups)
+static void pollups(utype_t *ups)
 {
 	char	status[SMALLBUF];
 
@@ -1785,9 +1785,9 @@ static void start_pipe(const char *user)
 	become_user(new_uid);
 }
 
-static void delete_ups(utype *target)
+static void delete_ups(utype_t *target)
 {
-	utype	*ptr, *last;
+	utype_t	*ptr, *last;
 
 	if (!target)
 		return;
@@ -1841,7 +1841,7 @@ static int check_file(const char *fn)
 
 static void reload_conf(void)
 {
-	utype	*tmp, *next;
+	utype_t	*tmp, *next;
 
 	upslogx(LOG_INFO, "Reloading configuration");
 
@@ -1865,7 +1865,7 @@ static void reload_conf(void)
 	/* reread upsmon.conf */
 	loadconfig();
 
-	/* go through the utype struct again */
+	/* go through the utype_t struct again */
 	tmp = firstups;
 
 	while (tmp) {
@@ -2044,7 +2044,7 @@ int main(int argc, char *argv[])
 	openlog("upsmon", LOG_PID, LOG_FACILITY);
 
 	while (exit_flag == 0) {
-		utype	*ups;
+		utype_t	*ups;
 
 		/* check flags from signal handlers */
 		if (userfsd)

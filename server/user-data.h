@@ -20,23 +20,23 @@
 typedef struct {
 	char	*aclname;
 	void	*next;
-} acllist;
+} acllist_t;
 
 typedef struct {
 	char	*cmd;
 	void	*next;
-} instcmdlist;
+} instcmdlist_t;
 
 typedef struct {
 	char	*action;
 	void	*next;
-} actionlist;
+} actionlist_t;
 
 typedef struct {
 	char	*username;
-	acllist *firstacl;
+	acllist_t *firstacl;
 	char	*password;
-	instcmdlist *firstcmd;
-	actionlist  *firstaction;
+	instcmdlist_t *firstcmd;
+	actionlist_t  *firstaction;
 	void	*next;
 } ulist_t;

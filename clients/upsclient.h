@@ -43,7 +43,7 @@ typedef struct {
 	int	syserrno;
 	int	upsclient_magic;
 
-	PCONF_CTX	*pc_ctx;
+	PCONF_CTX_t	*pc_ctx;
 
 	char	errbuf[UPSCLI_ERRBUF_LEN];
 
@@ -55,42 +55,42 @@ typedef struct {
 	void	*ssl;
 #endif
 
-}	UPSCONN;
+}	UPSCONN_t;
 
-const char *upscli_strerror(UPSCONN *ups);
+const char *upscli_strerror(UPSCONN_t *ups);
 
-int upscli_connect(UPSCONN *ups, const char *host, int port, int flags);
+int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags);
 
 /* --- functions that only use the new names --- */
 
-int upscli_get(UPSCONN *ups, unsigned int numq, const char **query, 
+int upscli_get(UPSCONN_t *ups, unsigned int numq, const char **query, 
 		unsigned int *numa, char ***answer);
 
-int upscli_list_start(UPSCONN *ups, unsigned int numq, const char **query);
+int upscli_list_start(UPSCONN_t *ups, unsigned int numq, const char **query);
 
-int upscli_list_next(UPSCONN *ups, unsigned int numq, const char **query,
+int upscli_list_next(UPSCONN_t *ups, unsigned int numq, const char **query,
 		unsigned int *numa, char ***answer);
 
-int upscli_sendline(UPSCONN *ups, const char *buf, size_t buflen);
+int upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen);
 
-int upscli_readline(UPSCONN *ups, char *buf, size_t buflen);
+int upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen);
 
 int upscli_splitname(const char *buf, char **upsname, char **hostname,
 			int *port);
 
 int upscli_splitaddr(const char *buf, char **hostname, int *port);
 
-int upscli_sslcert(UPSCONN *ups, const char *file, const char *path, int verify);
+int upscli_sslcert(UPSCONN_t *ups, const char *file, const char *path, int verify);
 
-int upscli_disconnect(UPSCONN *ups);
+int upscli_disconnect(UPSCONN_t *ups);
 
-/* these functions return elements from UPSCONN to avoid direct references */
+/* these functions return elements from UPSCONN_t to avoid direct references */
 
-int upscli_fd(UPSCONN *ups);
-int upscli_upserror(UPSCONN *ups);
+int upscli_fd(UPSCONN_t *ups);
+int upscli_upserror(UPSCONN_t *ups);
 
 /* returns 1 if SSL mode is active for this connection */
-int upscli_ssl(UPSCONN *ups);	
+int upscli_ssl(UPSCONN_t *ups);	
 
 /* upsclient error list */
 
