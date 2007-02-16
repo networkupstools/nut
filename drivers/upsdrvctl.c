@@ -398,7 +398,7 @@ int main(int argc, char **argv)
 		UPS_VERSION);
 
 	prog = argv[0];
-	while ((i = getopt(argc, argv, "+htu:r:DV")) != EOF) {
+	while ((i = getopt(argc, argv, "+htu:r:DV")) != -1) {
 		switch(i) {
 			case 'r':
 				pt_root = optarg;

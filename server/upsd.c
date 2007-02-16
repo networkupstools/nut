@@ -928,7 +928,7 @@ int main(int argc, char **argv)
 
 	printf("Network UPS Tools upsd %s\n", UPS_VERSION);
 
-	while ((i = getopt(argc, argv, "+h46p:r:i:fu:Vc:D")) != EOF) {
+	while ((i = getopt(argc, argv, "+h46p:r:i:fu:Vc:D")) != -1) {
 		switch (i) {
 			case 'h':
 				help(progname);

@@ -1933,7 +1933,7 @@ int main(int argc, char *argv[])
 
 	printf("Network UPS Tools upsmon %s\n", UPS_VERSION);
 
-	while ((i = getopt(argc, argv, "+Dhic:f:pu:VK46")) != EOF) {
+	while ((i = getopt(argc, argv, "+Dhic:f:pu:VK46")) != -1) {
 		switch (i) {
 			case 'c':
 				if (!strncmp(optarg, "fsd", strlen(optarg)))

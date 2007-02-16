@@ -379,7 +379,7 @@ int main(int argc, char **argv)
 
 	prog = argv[0];
 
-	while ((i = getopt(argc, argv, "+hs:l:i:f:u:V")) != EOF) {
+	while ((i = getopt(argc, argv, "+hs:l:i:f:u:V")) != -1) {
 		switch(i) {
 			case 'h':
 				help(prog);

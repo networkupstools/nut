@@ -1,3 +1,9 @@
+Fri Feb 16 22:51:41 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - various: EOF is not an exit code for getopt(3). 
+ - drivers/main.c, drivers/main-hal.c: do not ignore extra parameters on
+   the command line; print an error instead. 
+	
 Fri Feb 16 22:10:13 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  - merged experimental megatec_usb driver to trunk. Note: still need

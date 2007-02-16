@@ -214,7 +214,7 @@ int main(int argc, char **argv)
 
 	have_un = have_pw = 0;
 
-	while ((i = getopt(argc, argv, "+l:hu:p:V")) != EOF) {
+	while ((i = getopt(argc, argv, "+l:hu:p:V")) != -1) {
 		switch (i) {
 			case 'l':
 				listcmds(optarg);

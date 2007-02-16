@@ -448,7 +448,7 @@ int main(int argc, char **argv)
 	setvar = username = NULL;
 	prog = argv[0];
 
-	while ((i = getopt(argc, argv, "+s:p:u:V")) != EOF) {
+	while ((i = getopt(argc, argv, "+s:p:u:V")) != -1) {
 		switch (i) {
 		case 's':
 			setvar = optarg;

@@ -63,7 +63,8 @@ static void forceshutdown(void)
 	exit(EXIT_SUCCESS);
 }
 
-static void help(void)
+/* this function only prints the usage message; it does not call exit() */
+static void help_msg(void)
 {
 	vartab_t	*tmp;
 
@@ -101,8 +102,6 @@ static void help(void)
 	}
 
 	upsdrv_help();
-
-	exit(EXIT_SUCCESS);
 }
 
 /* store these in dstate as driver.(parameter|flag) */
@@ -458,7 +457,7 @@ int main(int argc, char **argv)
 	/* build the driver's extra (-x) variable table */
 	upsdrv_makevartable();
 
-	while ((i = getopt(argc, argv, "+a:kDhx:Lr:u:Vi:")) != EOF) {
+	while ((i = getopt(argc, argv, "+a:kDhx:Lr:u:Vi:")) != -1) {
 		switch (i) {
 			case 'a':
 				upsname = optarg;
@@ -495,21 +494,29 @@ int main(int argc, char **argv)
 				splitxarg(optarg);
 				break;
 			case 'h':
+				help_msg();
+				exit(EXIT_SUCCESS);
 			default:
-				help();
+				fprintf(stderr, "Error: unknown option -%c. Try -h for help.\n", i);
+				exit(EXIT_FAILURE);
 				break;
 		}
 	}
 
 	argc -= optind;
 	argv += optind;
-	optind = 1;
+
+	if (argc > 1) {
+		fprintf(stderr, "Error: too many non-option arguments. Try -h for help.\n");
+		exit(EXIT_FAILURE);
+	}
 
 	/* we need to get the port from somewhere */
 	if (argc < 1) {
 		if (!device_path) {
 			fprintf(stderr, "Error: You must specify a port name in ups.conf or on the command line.\n");
-			help();
+			fprintf(stderr, "Try -h for help.\n");
+			exit(EXIT_FAILURE);
 		}
 	}
 
