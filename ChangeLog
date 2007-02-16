@@ -1,3 +1,8 @@
+Fri Feb 16 21:55:31 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - hotplug/udev: added hotplugging rules for various USB devices
+ - usbhid-ups: added product id for Belkin F6C100-UNV
+	
 Fri Feb 16 20:29:10 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - various: remove superfluous checks for NULL pointers before calling free()

@@ -62,6 +62,7 @@
 "Belkin"	"Universal UPS F6C120-UNV" "serial port"	"belkinunv"
 "Belkin"	"Universal UPS F6C1100-UNV" "serial port"	"belkinunv"
 "Belkin"	"Universal UPS F6C800-UNV" "USB port"	"usbhid-ups"
+"Belkin"	"Universal UPS F6C100-UNV" "USB port"	"usbhid-ups"
 "Belkin"	"Universal UPS F6C120-UNV" "USB port"	"usbhid-ups"
 "Belkin"	"Universal UPS F6C1100-UNV" "USB port"	"usbhid-ups"
 "Belkin"	"Universal UPS F6H500ukUNV"	""	"megatec"
