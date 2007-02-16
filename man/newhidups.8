@@ -1,4 +1,4 @@
-.TH NEWHIDUPS 8 "Fri Dec 16 2005" "" "Network UPS Tools (NUT)"
+.TH NEWHIDUPS 8 "Fri Feb 16 2007" "" "Network UPS Tools (NUT)"
 .SH NAME
 newhidups \- New driver for USB/HID UPS equipment
 .SH NOTE
@@ -46,6 +46,14 @@ kill power command had been sent but before the actual switch off. This
 ensures the machines connected to the UPS are, in all cases, rebooted after
 a power failure.
 The default value is 30 (in seconds), and MUST BE GREATER than offdelay.
+
+.IP "pollfreq=\fInum\fR"
+Set polling frequency, in seconds, to reduce the USB data flow.
+Between two polling requests, the driver will wait for interrupts (aka UPS
+notifications), which are data changes returned by the UPS by itself.
+This mechanism allow to avoid or reduce staleness message, due to the UPS
+being temporarily overloaded with too much polling requests.
+The default value is 30 (in seconds).
 
 .IP "vendor=\fIregex\fR"
 .IP "product=\fIregex\fR"

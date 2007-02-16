@@ -1,3 +1,7 @@
+Fri Feb 16 12:47:28 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - man/usbhid-ups.8: finally add the pollfreq documentation.
+
 Fri Jan 26 22:35:00 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  - libhid.c: improved formatting of usage paths (ported from trunk)
