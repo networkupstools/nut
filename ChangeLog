@@ -1,3 +1,8 @@
+Fri Feb 16 13:50:43 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - data/drivers.list: add ActivePower 400 and 2000 VA
+ (from Tomasz Lewicki)
+ 
 Fri Feb 16 13:06:56 UTC 2007 / Charles Lepple <clepple@gmail.com>
 
  - libusb.c: fix type name bug introduced in memory leak fix.

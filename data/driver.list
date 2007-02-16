@@ -20,7 +20,10 @@
 # to HTML with ROWSPAN magic.  They must be an exact match for this to work.
 
 "Ablerex"	"MS-RT"		""	"megatec"
+
+"ActivePower" "400VA"	""	"megatec"
 "ActivePower"	"1400VA"	""	"megatec"
+"ActivePower"	"2000VA"	""	"megatec"
 
 "AEC"	"MiniGuard UPS 700"		"Megatec M2501 cable"	"genericups upstype=21"
 
@@ -432,11 +435,11 @@
 "Tripp-Lite"	"SmartUPS"	""	"tripplite"
 "Tripp-Lite"	"SmartOnline"	""	"tripplitesu"
 "Tripp-Lite"	"(various)"	"Lan 2.2 interface - black 73-0844 cable"	"genericups upstype=5"
-"Tripp-Lite"    "OMNI1000LCD"   "USB"   "usbhid-ups"
-"Tripp-Lite"    "OMNI900LCD"    "USB"   "usbhid-ups"
-"Tripp-Lite"    "OMNI650LCD"    "USB"   "usbhid-ups"
-"Tripp-Lite"    "1500 LCD"	"USB"   "usbhid-ups"
-"Tripp-Lite"    "AVR550U"	"USB"   "usbhid-ups"
+"Tripp-Lite"	"OMNI1000LCD"   "USB"   "usbhid-ups"
+"Tripp-Lite"	"OMNI900LCD"    "USB"   "usbhid-ups"
+"Tripp-Lite"	"OMNI650LCD"    "USB"   "usbhid-ups"
+"Tripp-Lite"	"1500 LCD"	"USB"   "usbhid-ups"
+"Tripp-Lite"	"AVR550U"	"USB"   "usbhid-ups"
 "Tripp-Lite"	"SmartOnline SU1500RTXL2ua"	"USB"	"usbhid-ups"
 
 "Trust"		"UPS 1000 Management PW-4105"	""	"megatec"
