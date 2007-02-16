@@ -858,9 +858,7 @@ static void redefine_ups(utype *ups, int pv, const char *un,
 	if (strcmp(ups->pw, pw) != 0) {
 		upslogx(LOG_INFO, "UPS [%s]: redefined password", ups->sys);
 
-		if (ups->pw)
-			free(ups->pw);
-
+		free(ups->pw);
 		ups->pw = xstrdup(pw);
 
 		/* possibly force reconnection - see above */
@@ -1092,8 +1090,7 @@ static int parse_conf_arg(int numargs, char **arg)
 	if (!strcmp(arg[0], "SHUTDOWNCMD")) {
 		checkmode(arg[0], shutdowncmd, arg[1], reload_flag);
 
-		if (shutdowncmd)
-			free(shutdowncmd);
+		free(shutdowncmd);
 		shutdowncmd = xstrdup(arg[1]);
 		return 1;
 	}
@@ -1102,9 +1099,7 @@ static int parse_conf_arg(int numargs, char **arg)
 	if (!strcmp(arg[0], "POWERDOWNFLAG")) {
 		checkmode(arg[0], powerdownflag, arg[1], reload_flag);
 
-		if (powerdownflag)
-			free(powerdownflag);
-
+		free(powerdownflag);
 		powerdownflag = xstrdup(arg[1]);
 
 		if (!reload_flag)
@@ -1116,9 +1111,7 @@ static int parse_conf_arg(int numargs, char **arg)
 
 	/* NOTIFYCMD <cmd> */
 	if (!strcmp(arg[0], "NOTIFYCMD")) {
-		if (notifycmd)
-			free(notifycmd);
-
+		free(notifycmd);
 		notifycmd = xstrdup(arg[1]);
 		return 1;
 	}
@@ -1173,18 +1166,14 @@ static int parse_conf_arg(int numargs, char **arg)
 
 	/* RUN_AS_USER <userid> */
  	if (!strcmp(arg[0], "RUN_AS_USER")) {
-		if (run_as_user)
-			free(run_as_user);
-
+		free(run_as_user);
 		run_as_user = xstrdup(arg[1]);
 		return 1;
 	}
 
 	/* CERTPATH <path> */
 	if (!strcmp(arg[0], "CERTPATH")) {
-		if (certpath)
-			free(certpath);
-
+		free(certpath);
 		certpath = xstrdup(arg[1]);
 		return 1;
 	}
@@ -1306,16 +1295,11 @@ static void set_exit_flag(int sig)
 
 static void ups_free(utype *ups)
 {
-	if (ups->sys)
-		free(ups->sys);
-	if (ups->upsname)
-		free(ups->upsname);
-	if (ups->hostname)
-		free(ups->hostname);
-	if (ups->un)
-		free(ups->un);
-	if (ups->pw)
-		free(ups->pw);
+	free(ups->sys);
+	free(ups->upsname);
+	free(ups->hostname);
+	free(ups->un);
+	free(ups->pw);
 	free(ups);
 }
 
@@ -1336,14 +1320,10 @@ static void upsmon_cleanup(void)
 		utmp = unext;
 	}
 
-	if (run_as_user)
-		free(run_as_user);
-	if (shutdowncmd)
-		free(shutdowncmd);
-	if (notifycmd)
-		free(notifycmd);
-	if (powerdownflag)
-		free(powerdownflag);
+	free(run_as_user);
+	free(shutdowncmd);
+	free(notifycmd);
+	free(powerdownflag);
 
 	for (i = 0; notifylist[i].name != NULL; i++)
 		if (notifylist[i].msg != notifylist[i].stockmsg)

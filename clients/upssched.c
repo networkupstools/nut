@@ -109,14 +109,12 @@ static void removetimer(ttype *tfind)
 
 	while (tmp) {
 		if (tmp == tfind) {	/* found it */
-			if (tmp->name)
-				free(tmp->name);
-
 			if (last == NULL)	/* deleting first */
 				thead = tmp->next;
 			else
 				last->next = tmp->next;
 
+			free(tmp->name);
 			free(tmp);
 			return;
 		}

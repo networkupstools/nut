@@ -72,17 +72,13 @@ void parsearg(char *var, char *value)
 		return;
 
 	if (!strcmp(var, "host")) {
-		if (monhost)
-			free(monhost);
-
+		free(monhost);
 		monhost = xstrdup(value);
 		return;
 	}
 
 	if (!strcmp(var, "display")) {
-		if (cmd)
-			free(cmd);
-
+		free(cmd);
 		cmd = xstrdup(value);
 		return;
 	}

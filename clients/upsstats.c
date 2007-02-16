@@ -56,9 +56,7 @@ void parsearg(char *var, char *value)
 		return;
 
 	if (!strcmp(var, "host")) {
-		if (monhost)
-			free(monhost);
-
+		free(monhost);
 		monhost = xstrdup(value);
 		return;
 	}
@@ -384,10 +382,8 @@ static void ups_connect(void)
 
 	upscli_disconnect(&ups);
 
-	if (upsname)
-		free(upsname);
-	if (hostname)
-		free(hostname);
+	free(upsname);
+	free(hostname);
 
 	if (upscli_splitname(currups->sys, &upsname, &hostname, &port) != 0) {
 		printf("Unusable UPS definition [%s]\n", currups->sys);
@@ -655,9 +651,7 @@ static int parse_line(const char *buf)
 	if (buf[strlen(buf) - 1] != '@')
 		return 0;
 
-	if (cmd)
-		free(cmd);
-
+	free(cmd);
 	cmd = xstrdup(&buf[1]);
 
 	/* strip off final @ */

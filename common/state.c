@@ -71,12 +71,9 @@ static void st_tree_enum_free(struct enum_t *list)
 /* free all memory associated with a node */
 static void st_tree_node_free(struct st_tree_t *node)
 {
-	if (node->var)
-		free(node->var);
-	if (node->raw)
-		free(node->raw);
-	if (node->safe)
-		free(node->safe);
+	free(node->var);
+	free(node->raw);
+	free(node->safe);
 
 	/* never free node->val, since it's just a pointer to raw or safe */
 

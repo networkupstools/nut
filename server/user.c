@@ -215,10 +215,9 @@ static void flushacl(acllist *first)
 	while (ptr) {
 		next = ptr->next;
 
-		if (ptr->aclname)
-			free(ptr->aclname);
-
+		free(ptr->aclname);
 		free(ptr);
+
 		ptr = next;
 	}
 }
@@ -232,8 +231,7 @@ static void flushcmd(instcmdlist *first)
 	while (ptr) {
 		next = ptr->next;
 
-		if (ptr->cmd)
-			free(ptr->cmd);
+		free(ptr->cmd);
 		free(ptr);
 
 		ptr = next;
@@ -249,8 +247,7 @@ static void flushaction(actionlist *first)
 	while (ptr) {
 		next = ptr->next;
 
-		if (ptr->action)
-			free(ptr->action);
+		free(ptr->action);
 		free(ptr);
 
 		ptr = next;
@@ -267,14 +264,8 @@ void user_flush(void)
 	while (ptr) {
 		next = ptr->next;
 
-		if (ptr->username)
-			free(ptr->username);
-
 		if (ptr->firstacl)
 			flushacl(ptr->firstacl);
-
-		if (ptr->password)
-			free(ptr->password);
 
 		if (ptr->firstcmd)
 			flushcmd(ptr->firstcmd);
@@ -282,6 +273,8 @@ void user_flush(void)
 		if (ptr->firstaction)
 			flushaction(ptr->firstaction);
 
+		free(ptr->username);
+		free(ptr->password);
 		free(ptr);
 
 		ptr = next;

@@ -53,11 +53,8 @@ static void usage(const char *prog)
 
 static void clean_exit(UPSCONN *ups, char *upsname, char *hostname, int code)
 {
-	if (upsname)
-		free(upsname);
-
-	if (hostname)
-		free(hostname);
+	free(upsname);
+	free(hostname);
 
 	upscli_disconnect(ups);
 

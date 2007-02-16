@@ -64,9 +64,7 @@ void do_upsconf_args(char *upsname, char *var, char *val)
 			maxstartdelay = atoi(val);
 
 		if (!strcmp(var, "driverpath")) {
-			if (driverpath)
-				free(driverpath);
-
+			free(driverpath);
 			driverpath = xstrdup(val);
 		}
 
@@ -379,21 +377,15 @@ static void exit_cleanup(void)
 	while (tmp) {
 		next = tmp->next;
 
-		if (tmp->driver)
-			free(tmp->driver);
-
-		if (tmp->port)
-			free(tmp->port);
-
-		if (tmp->upsname)
-			free(tmp->upsname);
+		free(tmp->driver);
+		free(tmp->port);
+		free(tmp->upsname);
 		free(tmp);
 
 		tmp = next;
 	}
 
-	if (driverpath)
-		free(driverpath);
+	free(driverpath);
 }
 
 int main(int argc, char **argv)

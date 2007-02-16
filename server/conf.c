@@ -131,8 +131,7 @@ static void ups_update(const char *fn, const char *name, const char *desc)
 
 	/* update the description */
 
-	if (temp->desc)
-		free(temp->desc);
+	free(temp->desc);
 
 	if (desc)
 		temp->desc = xstrdup(desc);
@@ -158,27 +157,21 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 
 	/* STATEPATH <dir> */
 	if (!strcmp(arg[0], "STATEPATH")) {
-		if (statepath)
-			free(statepath);
-
+		free(statepath);
 		statepath = xstrdup(arg[1]);
 		return 1;
 	}
 
 	/* DATAPATH <dir> */
 	if (!strcmp(arg[0], "DATAPATH")) {
-		if (datapath)
-			free(datapath);
-
+		free(datapath);
 		datapath = xstrdup(arg[1]);
 		return 1;
 	}
 
 	/* CERTFILE <dir> */
 	if (!strcmp(arg[0], "CERTFILE")) {
-		if (certfile)
-			free(certfile);
-
+		free(certfile);
 		certfile = xstrdup(arg[1]);
 		return 1;
 	}
@@ -370,14 +363,10 @@ void upsconf_add(int reloading)
 
 		/* free tmp's resources */
 
-		if (tmp->driver)
-			free(tmp->driver);
-		if (tmp->port)
-			free(tmp->port);
-		if (tmp->desc)
-			free(tmp->desc);
-		if (tmp->upsname)
-			free(tmp->upsname);
+		free(tmp->driver);
+		free(tmp->port);
+		free(tmp->desc);
+		free(tmp->upsname);
 		free(tmp);
 
 		tmp = next;
@@ -418,12 +407,9 @@ static void delete_ups(upstype *target)
 			sstate_cmdfree(ptr);
 			pconf_finish(&ptr->sock_ctx);
 
-			if (ptr->fn)
-				free(ptr->fn);
-			if (ptr->name)
-				free(ptr->name);
-			if (ptr->desc)
-				free(ptr->desc);
+			free(ptr->fn);
+			free(ptr->name);
+			free(ptr->desc);
 			free(ptr);
 
 			return;

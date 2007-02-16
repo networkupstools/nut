@@ -1,3 +1,7 @@
+Fri Feb 16 20:29:10 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - various: remove superfluous checks for NULL pointers before calling free()
+
 Fri Feb 16 20:24:57 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/safenet.c: declare data stale after three consecutive failures

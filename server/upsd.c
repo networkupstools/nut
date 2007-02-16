@@ -331,8 +331,7 @@ static void delclient(ctype *dclient)
 				free(tmp->loginups);
 			}
 
-			if (tmp->password != NULL)
-				free(tmp->password);
+			free(tmp->password);
 
 #ifdef HAVE_SSL
 			if (tmp->ssl)
@@ -682,10 +681,9 @@ void server_free(void)
 
 		if (stmp->sock_fd != -1)
 			close(stmp->sock_fd);
-		if (stmp->addr)
-			free(stmp->addr);
-		if (stmp->port)
-			free(stmp->port);
+
+		free(stmp->addr);
+		free(stmp->port);
 		free(stmp);
 
 		stmp = snext;
@@ -723,12 +721,9 @@ static void upsd_cleanup(void)
 		sstate_cmdfree(ups);
 		pconf_finish(&ups->sock_ctx);
 
-		if (ups->fn)
-			free(ups->fn);
-		if (ups->name)
-			free(ups->name);
-		if (ups->desc)
-			free(ups->desc);
+		free(ups->fn);
+		free(ups->name);
+		free(ups->desc);
 		free(ups);
 
 		ups = unext;
@@ -742,12 +737,9 @@ static void upsd_cleanup(void)
 	desc_free();
 	server_free();
 
-	if (statepath)
-		free(statepath);
-	if (datapath)
-		free(datapath);
-	if (certfile)
-		free(certfile);
+	free(statepath);
+	free(datapath);
+	free(certfile);
 }
 
 /* service requests and check on new data */

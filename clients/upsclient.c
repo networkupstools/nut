@@ -1042,8 +1042,7 @@ int upscli_disconnect(UPSCONN *ups)
 		ups->pc_ctx = NULL;
 	}
 
-	if (ups->host)
-		free(ups->host);
+	free(ups->host);
 
 	ups->host = NULL;
 	ups->upsclient_magic = 0;

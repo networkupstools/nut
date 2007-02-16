@@ -148,9 +148,7 @@ static void storeval(const char *var, char *val)
 
 		/* later definitions overwrite earlier ones */
 		if (!strcasecmp(tmp->var, var)) {
-			if (tmp->val)
-				free(tmp->val);
-
+			free(tmp->val);
 			if (val)
 				tmp->val = xstrdup(val);
 
@@ -278,16 +276,12 @@ static void do_global_args(const char *var, const char *val)
 	}
 
 	if (!strcmp(var, "chroot")) {
-		if (chroot_path)
-			free(chroot_path);
-
+		free(chroot_path);
 		chroot_path = xstrdup(val);
 	}
 
 	if (!strcmp(var, "user")) {
-		if (user)
-			free(user);
-
+		free(user);
 		user = xstrdup(val);
 	}
 
@@ -402,12 +396,9 @@ static void vartab_free(void)
 	while (tmp) {
 		next = tmp->next;
 
-		if (tmp->var)
-			free(tmp->var);
-		if (tmp->val)
-			free(tmp->val);
-		if (tmp->desc)
-			free(tmp->desc);
+		free(tmp->var);
+		free(tmp->val);
+		free(tmp->desc);
 		free(tmp);
 
 		tmp = next;
@@ -418,12 +409,10 @@ static void exit_cleanup(void)
 {
 	upsdrv_cleanup();
 
-	if (chroot_path)
-		free(chroot_path);
-	if (device_path)
-		free(device_path);
-	if (user)
-		free(user);
+	free(chroot_path);
+	free(device_path);
+	free(user);
+
 	if (pidfn) {
 		unlink(pidfn);
 		free(pidfn);

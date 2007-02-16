@@ -102,37 +102,27 @@ void parsearg(char *var, char *value)
 	}
 
 	if (!strcmp(var, "username")) {
-		if (username)
-			free(username);
-
+		free(username);
 		username = xstrdup(value);
 	}
 
 	if (!strcmp(var, "password")) {
-		if (password)
-			free(password);
-
+		free(password);
 		password = xstrdup(value);
 	}
 
 	if (!strcmp(var, "function")) {
-		if (function)
-			free(function);
-
+		free(function);
 		function = xstrdup(value);
 	}
 
 	if (!strcmp(var, "monups")) {
-		if (monups)
-			free(monups);
-
+		free(monups);
 		monups = xstrdup(value);
 	}
 
 	if (!strcmp(var, "upscommand")) {
-		if (upscommand)
-			free(upscommand);
-
+		free(upscommand);
 		upscommand = xstrdup(value);
 	}
 }

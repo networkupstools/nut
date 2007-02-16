@@ -282,8 +282,7 @@ void acl_free(void)
 	{
 		next = ptr->next;
 		
-		if (ptr->name)
-			free(ptr->name);
+		free(ptr->name);
 		free(ptr);
 
 		ptr = next;
@@ -302,8 +301,7 @@ void access_free(void)
 	{
 		next = ptr->next;
 
-		if (ptr->aclname)
-			free(ptr->aclname);
+		free(ptr->aclname);
 		free(ptr);
 
 		ptr = next;

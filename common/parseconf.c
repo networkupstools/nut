@@ -351,18 +351,14 @@ static void free_storage(PCONF_CTX *ctx)
 {
 	unsigned int	i;
 
-	if (ctx->wordbuf)
-		free(ctx->wordbuf);
+	free(ctx->wordbuf);
 
 	/* clear out the individual words first */
 	for (i = 0; i < ctx->maxargs; i++)
 		free(ctx->arglist[i]);
 
-	if (ctx->arglist)
-		free(ctx->arglist);
-
-	if (ctx->argsize)
-		free(ctx->argsize);
+	free(ctx->arglist);
+	free(ctx->argsize);
 
 	/* put things back to the initial state */
 	ctx->arglist = NULL;
