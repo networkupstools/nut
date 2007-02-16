@@ -38,6 +38,10 @@
  *  20061229/Revision 1.1 - Arjen de Korte <arjen@de-korte.org>
  *   - flush the serial input buffer before sending commands
  *     (to get rid of unsollicited serial PnP replies)
+ *  20070211/Revision 1.2 - Arjen de Korte <arjen@de-korte.org>
+ *   - wait for three consecutive failed polls before declaring
+ *     data stale in order not to bother clients with temporary
+ *     problems
  *
  * Copyright (C) 2003-2006  Arjen de Korte <arjen@de-korte.org>
  *
@@ -64,7 +68,7 @@
 #include "serial.h"
 #include "safenet.h"
 
-#define DRV_VERSION	"1.1"
+#define DRV_VERSION	"1.2"
 
 /*
  * Here we keep the last known status of the UPS
@@ -99,39 +103,31 @@ static int safenet_command(const char *command)
 	 * We check if the reply looks like a valid status.
 	 */
 
-	if ((strlen(reply) != 11) || (reply[0] != '$') || (strspn(reply+1, "AB") != 10))
-	{
+	if ((strlen(reply) != 11) || (reply[0] != '$') || (strspn(reply+1, "AB") != 10)) {
 		return(-1);
 	}
 
-	for (i=0; i<10; i++)
-	{
+	for (i=0; i<10; i++) {
 		ups.reply[i] = ((reply[i+1] == 'B') ? 1 : 0);
 	}
 
 	status_init();
 
-	if (ups.status.onbattery)
-	{
+	if (ups.status.onbattery) {
 		status_set("OB");
-	}
-	else
-	{
+	} else {
 		status_set("OL");
 	}
 
-	if (ups.status.batterylow)
-	{
+	if (ups.status.batterylow) {
 		status_set("LB");
 	}
 
-	if (ups.status.overload)
-	{
+	if (ups.status.overload) {
 		status_set("OVER");
 	}
 
-	if (ups.status.batteryfail)
-	{
+	if (ups.status.batteryfail) {
 		status_set("RB");
 	}
 
@@ -142,8 +138,7 @@ static int safenet_command(const char *command)
 	 * backup in case of mains failure) we give it this status. Introduce a new
 	 * status here?
 	 */
-	if (ups.status.systemfail)
-	{
+	if (ups.status.systemfail) {
 		status_set("BYPASS");
 	}
 
@@ -153,12 +148,13 @@ static int safenet_command(const char *command)
 	 * test may indicate a battery failure, so this is the closest we can get.
 	 * Introduce a new status here?
 	 */
-	if (ups.status.systemtest)
-	{
+	if (ups.status.systemtest) {
 		status_set("CAL");
 	}
 
 	status_commit();
+
+	dstate_dataok();
 
 	return(0);
 }
@@ -168,8 +164,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	/*
 	 * Start the UPS selftest
 	 */
-	if (!strcasecmp(cmdname, "test.battery.start"))
-	{
+	if (!strcasecmp(cmdname, "test.battery.start")) {
 		safenet_command(COM_BATT_TEST);
 		return STAT_INSTCMD_HANDLED;
 	}
@@ -177,8 +172,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	/*
 	 * Stop the UPS selftest
 	 */
-	if (!strcasecmp(cmdname, "test.battery.stop"))
-	{
+	if (!strcasecmp(cmdname, "test.battery.stop")) {
 		safenet_command(COM_ABORT_TEST);
 		return STAT_INSTCMD_HANDLED;
 	}
@@ -186,8 +180,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	/*
 	 * Start simulated mains failure
 	 */
-	if (!strcasecmp (cmdname, "test.failure.start"))
-	{
+	if (!strcasecmp (cmdname, "test.failure.start")) {
 		safenet_command(COM_MAINS_TEST);
 		return STAT_INSTCMD_HANDLED;
 	}
@@ -195,8 +188,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	/*
 	 * Stop simulated mains failure
 	 */
-	if (!strcasecmp (cmdname, "test.failure.stop"))
-	{
+	if (!strcasecmp (cmdname, "test.failure.stop")) {
 		safenet_command(COM_ABORT_TEST);
 		return STAT_INSTCMD_HANDLED;
 	}
@@ -204,26 +196,29 @@ static int instcmd(const char *cmdname, const char *extra)
 	/*
 	 * If beeper is off, toggle beeper state (so it should be ON after this)
 	 */
-	if (!strcasecmp(cmdname, "beeper.on"))
-	{
-		if (ups.status.silenced) safenet_command(COM_TOGGLE_BEEP);
+	if (!strcasecmp(cmdname, "beeper.on")) {
+		if (ups.status.silenced) {
+			safenet_command(COM_TOGGLE_BEEP);
+		}
+
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	/*
 	 * If beeper is not off, toggle beeper state (so it should be OFF after this)
 	 */
-	if (!strcasecmp(cmdname, "beeper.off"))
-	{
-		if (!ups.status.silenced) safenet_command(COM_TOGGLE_BEEP);
+	if (!strcasecmp(cmdname, "beeper.off")) {
+		if (!ups.status.silenced) {
+			safenet_command(COM_TOGGLE_BEEP);
+		}
+
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	/*
 	 * Shutdown immediately and wait for the power to return
 	 */
-	if (!strcasecmp(cmdname, "shutdown.return"))
-	{
+	if (!strcasecmp(cmdname, "shutdown.return")) {
 		safenet_command(SHUTDOWN_RETURN);
 		return STAT_INSTCMD_HANDLED;
 	}
@@ -231,8 +226,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	/*
 	 * Shutdown immediately and reboot after 1 minute
 	 */
-	if (!strcasecmp(cmdname, "shutdown.reboot"))
-	{
+	if (!strcasecmp(cmdname, "shutdown.reboot")) {
 		safenet_command(SHUTDOWN_REBOOT);
 		return STAT_INSTCMD_HANDLED;
 	}
@@ -240,8 +234,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	/*
 	 * Shutdown in 20 seconds and reboot after 1 minute
 	 */
-	if (!strcasecmp(cmdname, "shutdown.reboot.graceful"))
-	{
+	if (!strcasecmp(cmdname, "shutdown.reboot.graceful")) {
 		safenet_command(GRACEFUL_REBOOT);
 		return STAT_INSTCMD_HANDLED;
 	}
@@ -264,8 +257,7 @@ void upsdrv_initinfo(void)
 	 * to 1. Bail out if it isn't.
 	 */
 	ioctl(upsfd, TIOCMGET, &i);
-	if ((i & TIOCM_DSR) == 0)
-	{
+	if ((i & TIOCM_DSR) == 0) {
 		fatalx("Serial cable problem or nothing attached to %s", device_path);
 	}
 
@@ -274,9 +266,10 @@ void upsdrv_initinfo(void)
 	 * string. If it does not respond with a valid status reply,
 	 * display an error message and give up.
 	 */
-	while (safenet_command(COM_INITIALIZE))
-	{
-		if (--retry) continue;
+	while (safenet_command(COM_INITIALIZE)) {
+		if (--retry) {
+			continue;
+		}
 
 		fatalx("SafeNet protocol compatible UPS not found on %s", device_path);
 	}
@@ -320,12 +313,15 @@ void upsdrv_updateinfo(void)
 {
 	char	command[] = COM_POLL_STAT;
 	int	i;
+	static int	retry = 0;
 
 	/*
 	 * Fill the command portion with random characters from the range
 	 * [A...J].
 	 */
-	for (i = 1; i < 12; i++) command[i] = (random() % 10) + 'A';
+	for (i = 1; i < 12; i++) {
+		command[i] = (random() % 10) + 'A';
+	}
 
 	/*
 	 * Find which character must be an 'L' and put it there.
@@ -335,17 +331,18 @@ void upsdrv_updateinfo(void)
 	/*
 	 * Do a status poll.
 	 */
-	if (safenet_command(command))
-	{
-		upsdebugx(1, "UPS serial FAIL");
+	if (safenet_command(command)) {
 		ser_comm_fail("Status read failed");
-		dstate_datastale();
-	}	
-	else
-	{
-		upsdebugx(1, "UPS serial OK");
+
+		if (retry < 2) {
+			retry++;
+		} else {
+			dstate_datastale();
+		}
+	} else {
 		ser_comm_good();
-		dstate_dataok();
+
+		retry = 0;
 	}
 }
 
@@ -361,9 +358,10 @@ void upsdrv_shutdown(void)
 	 * string. If it does not respond with a valid status reply,
 	 * display an error message and give up.
 	 */
-	while (safenet_command(COM_INITIALIZE))
-	{
-		if (--retry) continue;
+	while (safenet_command(COM_INITIALIZE)) {
+		if (--retry) {
+			continue;
+		}
 
 		fatalx("SafeNet protocol compatible UPS not found on %s", device_path);
 	}
@@ -373,21 +371,9 @@ void upsdrv_shutdown(void)
 	 * different shutdown command depending on the line status, so
 	 * we need to check the status of the UPS here.
 	 */
-	if (ups.status.onbattery)
-	{
-		/*
-		 * Kill the inverter and wait for the things to
-		 * come.
-		 */
+	if (ups.status.onbattery) {
 		safenet_command(SHUTDOWN_RETURN);
-	}
-	else
-	{
-		/*
-		 * Apparently we're not running on battery right
-		 * now. Let's cycle the UPS and try to prevent a
-		 * lockup.
-		 */
+	} else {
 		safenet_command(SHUTDOWN_REBOOT);
 	}
 }

@@ -1,3 +1,9 @@
+Fri Feb 16 20:24:57 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/safenet.c: declare data stale after three consecutive failures
+   to poll the UPS (instead of immediately) so that we don't bother clients
+   if we miss a poll
+
 Fri Feb 16 20:22:18 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - server/sstate.c: fixed incorrect format in debug statement for 'elapsed'
