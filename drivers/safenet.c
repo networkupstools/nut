@@ -73,7 +73,10 @@
 /*
  * Here we keep the last known status of the UPS
  */
-static safenet_t	ups;
+static union	{
+	char			reply[10];
+	struct safenet		status;
+} ups;
 
 static int safenet_command(const char *command)
 {

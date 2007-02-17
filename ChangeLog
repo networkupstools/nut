@@ -1,3 +1,8 @@
+Sat Feb 17 16:14:42 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/safenet.ch: the addition of "_t" to type names hides the fact that
+   safenet_t is a union (removed typedef, since it is not useful anyway)
+
 Fri Feb 16 22:51:41 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  - various: EOF is not an exit code for getopt(3). 
