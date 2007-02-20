@@ -1,3 +1,13 @@
+Tue Feb 20 15:53:00 UTC 2007 / Jon Gough <jon.gough@eclipsesystems.com.au>
+
+ - drivers/megatec.c: Removed changed debugging statement left in by
+   mistake.
+
+Mon Feb 19 16:54:41 UTC 2007 / Jon Gough <jon.gough@eclipsesystems.com.au>
+
+ - drivers/megatec_usb.c: the addition of endpoint to usb_ups_t definition.
+   This allows different endpoint values for each of the supported UPSs.
+
 Sat Feb 17 16:14:42 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/safenet.ch: the addition of "_t" to type names hides the fact that

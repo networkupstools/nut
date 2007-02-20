@@ -251,7 +251,7 @@ static int check_ups(void)
 	ser_send_pace(upsfd, SEND_PACE, "Q1%c", ENDCHAR);
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 	if (ret < Q1_CMD_REPLY_LEN) {
-		upsdebugx(2, "Wrong answer to \"Q1\" command. ret: %i, Q1_CMD_REPLY_LEN: %i", ret, Q1_CMD_REPLY_LEN);
+		upsdebugx(2, "Wrong answer to \"Q1\" command.");
 
 		return -1;
 	}
