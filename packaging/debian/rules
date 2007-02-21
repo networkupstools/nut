@@ -59,11 +59,11 @@ clean-patched:
 
 patch: patch-stamp
 patch-stamp:
-	dpatch apply-all
+	# dpatch apply-all
 	touch $@
 
 unpatch:
-	dpatch deapply-all
+	# dpatch deapply-all
 	rm -rf patch-stamp debian/patched
 
 uninstall:
@@ -115,8 +115,11 @@ install-stamp:
 	    mv $(CURDIR)/debian/nut/usr/share/man/man8/$$driver.8 $(CURDIR)/debian/nut-usb/usr/share/man/man8 ; \
 	done 
 
+	### FIXME: need man page for megatec_usb
+	mv $(CURDIR)/debian/nut/lib/nut/megatec_usb $(CURDIR)/debian/nut-usb/lib/nut
+
 	# CGI:
-	mkdir -p $(CURDIR)/debian/nut-cgi/usr/lib/cgi-bin/nut $(CURDIR)/debian/nut-cgi/usr/share/man/man{5,8} 
+	mkdir -p $(CURDIR)/debian/nut-cgi/usr/lib/cgi-bin/nut $(CURDIR)/debian/nut-cgi/usr/share/man/man5 $(CURDIR)/debian/nut-cgi/usr/share/man/man8 
 	mv $(CURDIR)/debian/nut/usr/lib/cgi-bin/nut/* $(CURDIR)/debian/nut-cgi/usr/lib/cgi-bin/nut/ 
 	rm -rf $(CURDIR)/debian/nut/usr/lib/cgi-bin 
 
@@ -125,7 +128,8 @@ install-stamp:
  
 	for manpage in man5/upsstats.html.5 man5/hosts.conf.5 man5/upsset.conf.5 \
 	    man8/upsimage.cgi.8 man8/upsset.cgi.8 man8/upsstats.cgi.8 ; do \
-	    mv $(CURDIR)/debian/nut{,-cgi}/usr/share/man/$$manpage ; \
+	    mv $(CURDIR)/debian/nut/usr/share/man/$$manpage \
+	     $(CURDIR)/debian/nut-cgi/usr/share/man/$$manpage ; \
 	done 
  
 	# SNMP:

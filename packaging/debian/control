@@ -3,7 +3,7 @@ Section: admin
 Priority: optional
 Maintainer: Arnaud Quette <aquette@debian.org>
 Uploaders: Luca Filipozzi <lfilipoz@debian.org>, Shaul Karl <shaul@debian.org>
-Build-Depends: debhelper (>= 4.1.16), dpatch (>= 2.0.10), libgd2-xpm-dev | libgd2-noxpm-dev | libgd2-dev, libsnmp9-dev, libusb-dev (>= 0.1.8), libhal-dev
+Build-Depends: debhelper (>= 4.1.16), libgd2-xpm-dev | libgd2-noxpm-dev | libgd2-dev, libsnmp9-dev, libusb-dev (>= 0.1.8), libhal-dev
 Standards-Version: 3.6.2
 
 Package: nut
@@ -69,10 +69,12 @@ Description: USB Drivers subsystem for NUT - Network UPS Tools
  'server' monitors the UPS and notifies the 'clients' when the UPS is on
  or has a low battery.
  .
- This package contains hidups, newhidups and energizerups, the USB UPS Drivers,
- which support different Manufacturers (MGE, APC, ...) for Network UPS Tools.
- These add an USB interface to the core system. You probably don't need it
- if you don't understand what this is all about.
+ This package contains energizerups, megatec_usb, tripplite_usb and usbhid-ups,
+ the USB UPS Drivers which support different Manufacturers (MGE, APC, ...) for
+ Network UPS Tools.  These add a USB interface to the core system. You only
+ need to install this package if you are connecting your UPS directly to
+ this machine via a USB cable.  Other systems monitoring this UPS only need the
+ core nut package to connect to this host via the network.
  .
  Homepage: http://www.networkupstools.org
 
