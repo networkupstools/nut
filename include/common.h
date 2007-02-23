@@ -31,7 +31,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <sys/types.h>
-#include <sys/time.h>
 #include <sys/stat.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -40,6 +39,7 @@
 #include <unistd.h>
 #include <assert.h>
 
+#include "timehead.h"
 #include "attribute.h"
 #include "config.h"
 #include "proto.h"

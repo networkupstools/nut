@@ -30,11 +30,11 @@
 #define DRV_VERSION "0.50"
 
 #include <stdio.h>
-#include <time.h>
 #include <math.h>
 #include <sys/ioctl.h>
 #include "main.h"
 #include "serial.h"
+#include "timehead.h"
 
 #define UPSDELAY 500 /* 0.5 ms delay */
 

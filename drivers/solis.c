@@ -35,11 +35,11 @@
 
 #include <ctype.h>
 #include <stdio.h>
-#include <time.h>
 #include <sys/ioctl.h>
 #include "main.h"
 #include "serial.h"
 #include "solis.h"
+#include "timehead.h"
 
 #define false 0
 #define true 1
