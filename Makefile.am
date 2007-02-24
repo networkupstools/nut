@@ -18,8 +18,10 @@ EXTRA_DIST = MAINTAINERS UPGRADING
 DISTCHECK_FLAGS = --with-all --with-ssl --with-ipv6
 DISTCHECK_LIGHT_FLAGS = --with-all=auto --with-ssl=auto --with-ipv6=auto
 
-DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS} \
- --with-pkgconfig-dir='$${prefix}/lib/pkgconfig'
+DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
+ --with-pkgconfig-dir='$${prefix}/lib/pkgconfig'	\
+ --with-hotplug-dir='$${prefix}/etc/hotplug'		\
+ --with-udev-dir='$${prefix}/etc/udev'
 
 distcheck-light:
 	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_FLAGS)" distcheck

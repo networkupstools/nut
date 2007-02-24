@@ -18,7 +18,7 @@ Usage
 
 Copy nut-usbups.rules to /etc/udev/rules using the command
 
-$ cp -f nut-usbups.rules /etc/udev/rules.d/025_nut-usbups.rules
+$ cp -f nut-usbups.rules /etc/udev/rules.d/52_nut-usbups.rules
 
 You can then plug your UPS USB cord, or unplug / replug it to
 refresh the device permission, and start NUT.

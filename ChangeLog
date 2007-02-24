@@ -1,3 +1,8 @@
+Sat Feb 24 17:53:31 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - autoconf: try to install hotplug and/or udev files by default. New
+   configuration options --with-hotplug-dir=PATH and --with-udev-dir=PATH.
+
 Fri Feb 23 20:02:46 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - various: use "timehead.h"

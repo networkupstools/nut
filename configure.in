@@ -30,10 +30,17 @@ STATEPATH="/var/state/ups"
 cgiexecdir='${exec_prefix}/cgi-bin'
 driverexecdir='${exec_prefix}/bin'
 htmldir='${prefix}/html'
-if test -d /usr/lib/pkgconfig; then
-   pkgcfgdir='/usr/lib/pkgconfig'
-else
+pkgcfgdir='/usr/lib/pkgconfig'
+if test ! -d "${pkgcfgdir}"; then
    pkgcfgdir=''
+fi
+hotplugdir='/etc/hotplug'
+if test ! -d "${hotplugdir}"; then
+   hotplugdir=''
+fi
+udevdir='/etc/udev'
+if test ! -d "${udevdir}"; then
+   udevdir=''
 fi
 
 RUN_AS_USER="nobody"
@@ -599,16 +606,22 @@ AC_MSG_CHECKING(whether to enable pkg-config support)
 AC_ARG_WITH(pkgconfig-dir,
  AC_HELP_STRING([--with-pkgconfig-dir=PATH], [where to install pkg-config *.pc files (/usr/lib/pkgconfig)]),
  [
-	case "${withval}" in
-		yes)
-		;;
-		no)
-			pkgcfgdir=""
-		;;
-		*)
-			pkgcfgdir="${withval}"
-		;;
-	esac
+    case "${withval}" in
+        yes)
+            if test -z "${pkgcfgdir}"; then
+	       AC_MSG_RESULT(no)
+               AC_MSG_ERROR(["pkg-config directory requested but not found])
+            fi
+        ;;
+        auto)
+        ;;
+        no)
+            pkgcfgdir=""
+        ;;
+        *)
+            pkgcfgdir="${withval}"
+        ;;
+    esac
  ],
  )
 if test -n "${pkgcfgdir}"; then
@@ -616,7 +629,65 @@ if test -n "${pkgcfgdir}"; then
 else
   AC_MSG_RESULT(no)
 fi
-AM_CONDITIONAL(WITH_PKG_CONFIG, test -n ${pkgcfgdir})
+AM_CONDITIONAL(WITH_PKG_CONFIG, test -n "${pkgcfgdir}")
+
+AC_MSG_CHECKING(whether to install hotplug rules)
+AC_ARG_WITH(hotplug-dir,
+ AC_HELP_STRING([--with-hotplug-dir=PATH], [where to install hotplug rules (/etc/hotplug)]),
+ [
+    case "${withval}" in
+        yes)
+            if test -z "${hotplugdir}"; then
+	       AC_MSG_RESULT(no)
+               AC_MSG_ERROR(["hotplug directory requested but not found])
+            fi
+        ;;
+        auto)
+        ;;
+        no)
+            hotplugdir=""
+        ;;
+        *)
+            hotplugdir="${withval}"
+        ;;
+    esac
+ ],
+ )
+if test -n "${hotplugdir}"; then
+  AC_MSG_RESULT(using ${hotplugdir})
+else
+  AC_MSG_RESULT(no)
+fi
+AM_CONDITIONAL(WITH_HOTPLUG, test -n "${hotplugdir}")
+
+AC_MSG_CHECKING(whether to install udev rules)
+AC_ARG_WITH(udev-dir,
+ AC_HELP_STRING([--with-udev-dir=PATH], [where to install udev rules (/etc/udev)]),
+ [
+    case "${withval}" in
+        yes)
+            if test -z "${udevdir}"; then
+	       AC_MSG_RESULT(no)
+               AC_MSG_ERROR(["udev directory requested but not found])
+            fi
+        ;;
+        auto)
+        ;;
+        no)
+            udevdir=""
+        ;;
+        *)
+            udevdir="${withval}"
+        ;;
+    esac
+ ],
+ )
+if test -n "${udevdir}"; then
+  AC_MSG_RESULT(using ${udevdir})
+else
+  AC_MSG_RESULT(no)
+fi
+AM_CONDITIONAL(WITH_UDEV, test -n "${udevdir}")
 
 dnl 'long long' check - this gets used down in snprintf.o
 dnl
@@ -666,6 +737,8 @@ AC_SUBST(cgiexecdir)
 AC_SUBST(driverexecdir)
 AC_SUBST(htmldir)
 AC_SUBST(pkgcfgdir)
+AC_SUBST(hotplugdir)
+AC_SUBST(udevdir)
 
 AC_OUTPUT([
  clients/Makefile
@@ -686,7 +759,9 @@ AC_OUTPUT([
  packaging/mandriva/Makefile
  packaging/RedHat/Makefile
  packaging/RedHat/nut.spec
+ scripts/hotplug/Makefile
  scripts/hotplug/libhidups
+ scripts/udev/Makefile
  scripts/udev/nut-usbups.rules
  scripts/Makefile
  server/Makefile

@@ -214,14 +214,35 @@ Contents:
    Where to install pkg-config *.pc files. This option only has an
    effect if --with-lib is selected, and causes a pkg-config file to
    be installed in the named location. The default is
-   /usr/lib/pkgconfig.  Note that this is the only installation
-   directory that is not a subdirectory of <prefix> by default; this
-   is so that other programs can use pkg-config to locate the NUT
-   library without first having to guess the location of the NUT
-   library (which would be a catch-22). When installing NUT as a
-   non-root user, you may have to override this option. 
+   /usr/lib/pkgconfig. Note that this installation directory is not a
+   subdirectory of <prefix> by default; this is so that other programs
+   can use pkg-config to locate the NUT library without first having
+   to guess the location of the NUT library (which would be a
+   catch-22). When installing NUT as a non-root user, you may have to
+   override this option.
 
    Use --without-pkgconfig-dir to disable this feature altogether. 
+
+ --with-hotplug-dir=PATH
+
+   Where to install Linux 2.4 hotplugging rules. The default is
+   /etc/hotplug, if that directory exists, and not to install it
+   otherwise. Note that this installation directory is not a
+   subdirectory of <prefix> by default. When installing NUT as a
+   non-root user, you may have to override this option.
+
+   Use --without-hotplug-dir to disable this feature altogether. 
+
+ --with-udev-dir=PATH
+
+   Where to install Linux 2.6 hotplugging rules, for kernels that have
+   the "udev" mechanism. The default is /etc/udev, if that directory
+   exists, and not to install it otherwise. Note that this
+   installation directory is not a subdirectory of <prefix> by
+   default. When installing NUT as a non-root user, you may have to
+   override this option.
+
+   Use --without-udev-dir to disable this feature altogether. 
 
 5. Directories used by NUT at run-time:
 =======================================
