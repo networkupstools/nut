@@ -48,6 +48,10 @@ ups: General unit information
    | ups.serial            | UPS serial number (opaque    | WS9643050926     |
    |                       | string)                      |                  |
    |-----------------------+------------------------------+------------------|
+   | ups.vendorid          | Vendor ID for USB devices    | 0463             |
+   |-----------------------+------------------------------+------------------|
+   | ups.productid         | Product ID for USB devices   | 0001             |
+   |-----------------------+------------------------------+------------------|
    | ups.firmware          | UPS firmware (opaque string) | 50.9.D           |
    |-----------------------+------------------------------+------------------|
    | ups.firmware.aux      | Auxiliary device firmware    | 4Kx              |

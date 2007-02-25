@@ -1,3 +1,8 @@
+Sun Feb 25 02:51:21 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - data/driver.list: added Dynex DX-800U.
+ - usbhid-ups: added new variables ups.vendorid and ups.productid
+	
 Sat Feb 24 17:53:31 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  - autoconf: try to install hotplug and/or udev files by default. New

@@ -796,6 +796,8 @@ static void identify_ups ()
 	if (serial != NULL) {
 		dstate_setinfo("ups.serial", "%s", serial);
 	}
+	dstate_setinfo("ups.vendorid", "%04x", hd->VendorID);
+	dstate_setinfo("ups.productid", "%04x", hd->ProductID);
 }
 
 /* walk ups variables and set elements of the info array. */
