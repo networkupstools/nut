@@ -1,3 +1,7 @@
+Tue Feb 27 14:12:02 UTC 2007 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/tripplite_usb.c: adjusted Unit ID message (not all units support
+   this command)
 Sun Feb 25 02:51:21 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  - data/driver.list: added Dynex DX-800U.

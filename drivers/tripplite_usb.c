@@ -8,7 +8,7 @@
    Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
    Copyright (C) 2001  Rickard E. (Rik) Faith <faith@alephnull.com>
    Copyright (C) 2004  Nicholas J. Kain <nicholas@kain.us>
-   Copyright (C) 2005,2006  Charles Lepple <clepple+nut@gmail.com>
+   Copyright (C) 2005-2007  Charles Lepple <clepple+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -28,6 +28,8 @@
 #define DRV_VERSION "0.8"
 
 /* % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+ *
+ * Protocol 1001
  *
  * OMNIVS Commands: (capital letters are literals, lower-case are variables)
  * :B     -> Bxxxxyy (xxxx/55.0: Hz in, yy/16: battery voltage)
@@ -833,7 +835,7 @@ void upsdrv_initinfo(void)
         /* Unit ID might not be supported by all models: */
 	ret = send_cmd(u_msg, sizeof(u_msg), u_value, sizeof(u_value)-1);
 	if(ret <= 0) {
-		upslogx(LOG_NOTICE,"Error reading Unit ID");
+		upslogx(LOG_DEBUG,"Unit ID not retrieved (not available on all models)");
 	} else {
 		unit_id = (int)((unsigned)(u_value[1]) << 8) 
 			| (unsigned)(u_value[2]);
@@ -1290,4 +1292,3 @@ void upsdrv_cleanup(void)
 		udev = NULL;
 	}
 }
-/* vim:se tw=78: */
