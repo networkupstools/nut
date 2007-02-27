@@ -51,7 +51,6 @@ static HIDDevice_t hiddevice;
 typedef struct {
 	int vid;
 	int pid;
-	int endpoint;    // set the endpoint value to be used
 	int (*get_data) (char *buffer, int buffer_size);
 	int (*set_data) (const char *str);
 } usb_ups_t;
@@ -73,9 +72,9 @@ static int get_data_ablerex(char *buffer, int buffer_size);
 static int set_data_ablerex(const char *str);
 
 static usb_ups_t KnownDevices[] = {
-	{0x05b8, 0x0000, USB_ENDPOINT_IN + 1, get_data_agiler, set_data_agiler},   /* Agiler UPS */
-	{0x0001, 0x0000, USB_ENDPOINT_IN + 1, get_data_krauler, set_data_krauler}, /* Krauler UP-M500VA */
-	{0xffff, 0x0000, USB_ENDPOINT_IN, get_data_krauler, set_data_krauler}, /* Ablerex 625L USB */
+	{0x05b8, 0x0000, get_data_agiler, set_data_agiler},   /* Agiler UPS */
+	{0x0001, 0x0000, get_data_krauler, set_data_krauler}, /* Krauler UP-M500VA */
+	{0xffff, 0x0000, get_data_krauler, set_data_krauler}, /* Ablerex 625L USB */
 	{-1, -1, NULL, NULL}		/* end of list */
 };
 
@@ -322,8 +321,8 @@ static int set_data_krauler(const char *str)
 
 	if (index > 0)
 	{
-		/* usb_get_descriptor(udev, USB_DT_STRING, index, buffer, buffer_size); */
-		usb_control_msg(udev, usb_ups_device->endpoint, USB_REQ_GET_DESCRIPTOR, (USB_DT_STRING << 8) + index, 0, NULL, 0, KRAULER_TIMEOUT);
+		usb_get_descriptor(udev, USB_DT_STRING, index, NULL, 0);
+		/* usb_control_msg(udev, usb_ups_device->endpoint, USB_REQ_GET_DESCRIPTOR, (USB_DT_STRING << 8) + index, 0, NULL, 0, KRAULER_TIMEOUT); */
 		return 0;
 	}
 
@@ -364,8 +363,8 @@ static int get_data_krauler(char *buffer, int buffer_size)
 
 	if (index > 0)
 		while (attempts) {
-			/* res = usb_get_descriptor(udev, USB_DT_STRING, index, buffer, buffer_size); */
-			res = usb_control_msg(udev, usb_ups_device->endpoint, USB_REQ_GET_DESCRIPTOR, (USB_DT_STRING << 8) + index, 0, buffer, buffer_size, KRAULER_TIMEOUT);
+			res = usb_get_descriptor(udev, USB_DT_STRING, index, buffer, buffer_size);
+			/* res = usb_control_msg(udev, usb_ups_device->endpoint, USB_REQ_GET_DESCRIPTOR, (USB_DT_STRING << 8) + index, 0, buffer, buffer_size, KRAULER_TIMEOUT); */
 
 			if (res > 0) {
 				for (i = 4, j = 0; i < res; i++)

@@ -1,3 +1,9 @@
+Tue Feb 27 22:09:39 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ - drivers/megatec_usb.c: switched to usb_get_descriptor in
+   get/set_data_krauler and removed no more needed "endpoint"
+   usb_ups_t struct member.
+
 Tue Feb 27 14:12:02 UTC 2007 / Charles Lepple <clepple@gmail.com>
 
  - drivers/tripplite_usb.c: adjusted Unit ID message (not all units support
