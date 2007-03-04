@@ -1,3 +1,7 @@
+Sun Mar 4 20:30:00 UTC 2007 / Jon Gough <jon.gough@eclipsesystems.com.au>
+
+ - man/megatec_usb.8: Added the first pass at a man page.
+
 Sun Mar  4 19:44:39 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - INSTALL: add --with-group option for configure and advice people to set
@@ -24,7 +28,7 @@ Sun Feb 25 02:51:21 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  - data/driver.list: added Dynex DX-800U.
  - usbhid-ups: added new variables ups.vendorid and ups.productid
-	
+
 Sat Feb 24 17:53:31 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  - autoconf: try to install hotplug and/or udev files by default. New
@@ -51,9 +55,9 @@ Sat Feb 17 16:14:42 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
 Fri Feb 16 22:51:41 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
- - various: EOF is not an exit code for getopt(3). 
+ - various: EOF is not an exit code for getopt(3).
  - drivers/main.c, drivers/main-hal.c: do not ignore extra parameters on
-   the command line; print an error instead. 
+   the command line; print an error instead.
 	
 Fri Feb 16 22:10:13 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
