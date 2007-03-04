@@ -28,15 +28,15 @@ MANPATH, or just do this:
   Prepare your system
   ===================
 
- 1. Create at least one user and a group for running this software.
-    You might call it "nut" or "ups".  The exact name isn't important as
+ 1. Create at least one user and a group for running this software. You
+    might call them "ups" and "nut".  The exact names aren't important as
     long as you are consistent.
 
     The process for doing this varies from one system to the next, and
     explaining how to add users is beyond the scope of this document.
 
     For the purposes of this document, the user name and group name 
-    will both be "nut".
+    will be "ups" and "nut" respectively.
 
     Be sure the new user is a member of the new group!  If you forget to
     do this, you will have problems later on when you try to start upsd.
@@ -49,10 +49,11 @@ MANPATH, or just do this:
   =================
 
 
- 1. Configure the source tree for your system.  Add the --with-user
-    switch to set the user name that you created above.
+ 1. Configure the source tree for your system.  Add the --with-user and
+    --with-group switch to set the user name and group that you created
+    above.
 
-	./configure --with-user=nut
+	./configure --with-user=ups --with-group=nut
 
     If you need any other switches for configure, add them here.  For
     example:
@@ -122,8 +123,8 @@ MANPATH, or just do this:
     owned by the user you created.
 
 	mkdir -p /var/state/ups
-	chmod 0700 /var/state/ups
-	chown nut:nut /var/state/ups
+	chmod 0770 /var/state/ups
+	chown root:nut /var/state/ups
 
 ---------------------------------------------------------------------------
 
@@ -135,8 +136,8 @@ MANPATH, or just do this:
     Slackware system.  On FreeBSD, that would be cuaa1.  Serial ports
     vary greatly, so yours may be called something else.
 
-	chmod 0600 /dev/ttyS1
-	chown nut:nut /dev/ttyS1
+	chmod 0660 /dev/ttyS1
+	chown root:nut /dev/ttyS1
 
     The setup for USB ports is slightly more complicated. Device files
     for USB devices, such as /proc/bus/usb/002/001, are usually

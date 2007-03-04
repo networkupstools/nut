@@ -1,3 +1,8 @@
+Sun Mar  4 19:44:39 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - INSTALL: add --with-group option for configure and advice people to set
+   owner:group on statepath and serial devices to root:<group>
+
 Sun Mar  4 19:27:39 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - configure.in: add --with-group option (defaults to "nogroup"), adds
