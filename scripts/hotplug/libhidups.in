@@ -14,6 +14,6 @@
 # TYPE=usb
 
 if [ "$ACTION" = "add" -a "$TYPE" = "usb" ]; then
-  chown root:@RUN_AS_USER@ "$DEVICE"
+  chown root:@RUN_AS_GROUP@ "$DEVICE"
   chmod 0664 "$DEVICE"
 fi

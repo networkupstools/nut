@@ -44,6 +44,7 @@ if test ! -d "${udevdir}"; then
 fi
 
 RUN_AS_USER="nobody"
+RUN_AS_GROUP="nogroup"
 PIDPATH="/var/run"
 
 dnl Define directory where LIBOBJS replacement functions are
@@ -527,6 +528,21 @@ AC_DEFINE_UNQUOTED(RUN_AS_USER, "${RUN_AS_USER}",
 	[User to switch to if started as root])
 AC_MSG_RESULT(${RUN_AS_USER})
 
+AC_MSG_CHECKING(group membership of user to run as)
+AC_ARG_WITH(group,
+AC_HELP_STRING([--with-group=groupname], [group membership of user for programs started as root (nogroup)]),
+[	case "${withval}" in
+	yes|no)
+		;;
+	*)
+		RUN_AS_GROUP="${withval}"
+		;;
+	esac],
+)
+AC_DEFINE_UNQUOTED(RUN_AS_GROUP, "${RUN_AS_GROUP}",
+	[Group membership of user to switch to if started as root])
+AC_MSG_RESULT(${RUN_AS_GROUP})
+
 AC_MSG_CHECKING(facility for syslog)
 AC_ARG_WITH(logfacility,
 AC_HELP_STRING([--with-logfacility=FACILITY], [facility for log messages (LOG_DAEMON)]),
@@ -730,6 +746,7 @@ AC_SUBST(NETLIBS)
 AC_SUBST(SERLIBS)
 AC_SUBST(STATEPATH)
 AC_SUBST(RUN_AS_USER)
+AC_SUBST(RUN_AS_GROUP)
 AC_SUBST(LINUX_HIDDEV)
 AC_SUBST(SUN_LIBUSB)
 AC_SUBST(WORDS_BIGENDIAN)

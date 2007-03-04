@@ -4,56 +4,56 @@ SUBSYSTEM!="usb_device", GOTO="nut-usbups_rules_end"
 ACTION!="add", GOTO="nut-usbups_rules_end"
 
 # MGE UPS SYSTEMS - usbhid-ups
-SYSFS{idVendor}=="0463", SYSFS{idProduct}=="ffff", MODE="664", GROUP="@RUN_AS_USER@"
-SYSFS{idVendor}=="0463", SYSFS{idProduct}=="0001", MODE="664", GROUP="@RUN_AS_USER@"
+SYSFS{idVendor}=="0463", SYSFS{idProduct}=="ffff", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="0463", SYSFS{idProduct}=="0001", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 # APC - usbhid-ups
-SYSFS{idVendor}=="051d", SYSFS{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_USER@"
+SYSFS{idVendor}=="051d", SYSFS{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 # CyberPower - usbhid-ups
-SYSFS{idVendor}=="0764", SYSFS{idProduct}=="0005", MODE="664", GROUP="@RUN_AS_USER@"
-SYSFS{idVendor}=="0764", SYSFS{idProduct}=="0501", MODE="664", GROUP="@RUN_AS_USER@"
+SYSFS{idVendor}=="0764", SYSFS{idProduct}=="0005", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="0764", SYSFS{idProduct}=="0501", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 # Mustek Powermust 600USB (OMRON/87XXUPS)
-SYSFS{idVendor}=="06da", SYSFS{idProduct}=="0003", MODE="664", GROUP="@RUN_AS_USER@"
+SYSFS{idVendor}=="06da", SYSFS{idProduct}=="0003", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 # Cypress Semiconductor USB to Serial
-SYSFS{idVendor}=="0665", SYSFS{idProduct}=="5161", MODE="664", GROUP="@RUN_AS_USER@"
+SYSFS{idVendor}=="0665", SYSFS{idProduct}=="5161", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 # Powercom - unknown driver
-SYSFS{idVendor}=="0d9f", SYSFS{idProduct}=="0001", MODE="664", GROUP="@RUN_AS_USER@"
-SYSFS{idVendor}=="0d9f", SYSFS{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_USER@"
+SYSFS{idVendor}=="0d9f", SYSFS{idProduct}=="0001", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="0d9f", SYSFS{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 # Agiler - megatec_usb
-SYSFS{idVendor}=="05b8", SYSFS{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_USER@"
+SYSFS{idVendor}=="05b8", SYSFS{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 # Krauler - megatec_usb
-SYSFS{idVendor}=="0001", SYSFS{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_USER@"
+SYSFS{idVendor}=="0001", SYSFS{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 # Ablerex - megatec_usb
-SYSFS{idVendor}=="ffff", SYSFS{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_USER@"
+SYSFS{idVendor}=="ffff", SYSFS{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 # Powerware - bcmxcp_usb
-SYSFS{idVendor}=="0592", SYSFS{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_USER@"
+SYSFS{idVendor}=="0592", SYSFS{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 # Tripp Lite - tripplite_usb
-SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="0001", MODE="664", GROUP="@RUN_AS_USER@"
+SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="0001", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 # Tripp Lite - usbhid-ups
-SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="2005", MODE="664", GROUP="@RUN_AS_USER@"
-SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="1003", MODE="664", GROUP="@RUN_AS_USER@"
-SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="4003", MODE="664", GROUP="@RUN_AS_USER@"
+SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="2005", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="1003", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="4003", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 # Belkin - usbhid-ups
-SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0980", MODE="664", GROUP="@RUN_AS_USER@"
-SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0900", MODE="664", GROUP="@RUN_AS_USER@"
-SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0910", MODE="664", GROUP="@RUN_AS_USER@"
-SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0912", MODE="664", GROUP="@RUN_AS_USER@"
-SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0551", MODE="664", GROUP="@RUN_AS_USER@"
-SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0751", MODE="664", GROUP="@RUN_AS_USER@"
+SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0980", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0900", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0910", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0912", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0551", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0751", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 # Kebo - unsupported
-SYSFS{idVendor}=="0925", SYSFS{idProduct}=="1234", MODE="664", GROUP="@RUN_AS_USER@"
+SYSFS{idVendor}=="0925", SYSFS{idProduct}=="1234", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 LABEL="nut-usbups_rules_end"
 
