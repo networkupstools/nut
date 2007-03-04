@@ -1,0 +1,152 @@
+.TH MEGATEC_USB 8 "Sun Mar 4 2007" "" "Network UPS Tools (NUT)"
+.SH NAME
+megatec_usb \- Driver for Megatec protocol based USB UPS equipment
+.SH NOTE
+This man page only documents the hardware\(hyspecific features of the
+megatec_usb driver. For information about the core driver, see
+\fBnutupsdrv\fR(8).
+
+\fBNote\fR This driver is experimental at the moment. It is currently being 
+worked on and may change over time. However, it is stable in execution and 
+does what is needed.
+
+.SH SUPPORTED HARDWARE
+
+The megatec driver is known to work with various UPSes from Krauler, Agiler,
+Upsonic (Ablerex interface), others that use the Megatec protocol may work Keep in mind, however, that
+other models not listed there may also be supported but haven't been tested.
+
+This driver supports the USB versions of UPSs, if you have a serial cable then use the
+straight megatec driver.
+
+If you find that this driver does not work and you are sure that you have a megatec interface
+then you can easily extend this driver. However, you will need to do some analysis of the 
+commands that are sent to the UPS. Please see the forums for discussions on this and how
+to extend this driver.
+
+.SH EXTENSIONS TO MEGATEC
+
+This driver extends the standard \fBmegatec\fR driver to work with UPSes that have 
+a USB interface. This interface does not obey the normal rules and therefore the 
+standard NUT drivers for USB UPSes will not work. 
+
+This driver takes the standard serial interface and passes this over USB to the UPS.
+This is means that most, but not all, commands available for the serial driver will 
+work. Your success may vary. For Krauler, Agiler, Upsonic (with Ablerex interface) UPSes 
+it appears to give very similar results to the serial interface. It certainly works well
+enough to be used and to enable monitoring of the UPS from the machine to which it is attached
+and from other machines on the network. It will also allow the shutting down of any machines
+when the battery condition gets low and you are running from battery.
+
+.SH EXTRA ARGUMENTS
+
+.IP "mfr=\fIstring\fR"
+
+Optional.  Specify the UPS manufacturer name.
+
+.IP "model=\fIstring\fR"
+
+Optional.  Specify the UPS model name.
+
+.IP "serial=\fIstring\fR"
+
+Optional.  Specify the UPS serial number.
+
+.IP "lowbatt=\fIfloat\fR"
+
+Optional.  Low battery level (%). Overrides the hardware default level.
+
+.IP "ondelay=\fIint\fR"
+
+Optional.  Delay before the UPS is turned back on (minutes).
+
+.IP "offdelay=\fIint\fR"
+
+Optional.  Delay before the UPS is turned off (minutes).
+
+.IP "battvolts=\fIfloat\fR:\fIfloat\fR"
+
+Optional.  The battery voltage interval (volts).
+
+.SH UPS COMMANDS
+
+This driver supports some extra commands (see \fBupscmd\fR(8)):
+
+.IP beeper.toggle
+Toggle the UPS beeper. (Not available on some hardware.)
+
+.IP load.on
+Turn on the load immediately.
+
+.IP load.off
+Turn off the load immediately.
+
+.IP reset.input.minmax
+Reset minimum and maximum input voltage status.
+
+.IP reset.watchdog
+Restarts the UPS watchdog timeout. The watchdog is started if it isn't running,
+which means the UPS shuts down one minute after this command is executed for
+the last time, restarting one minute afterwards. To cancel the watchdog, run
+the "shutdown.stop" command.
+
+.IP shutdown.return
+Turn off the load and return when power is back.
+
+.IP shutdown.stayoff
+Turn off the load and remain off.
+
+.IP shutdown.stop
+Stop a shutdown in progress.
+
+.IP test.battery.start.deep
+Perform a long battery test (Not available on some hardware.)
+
+.IP test.battery.start
+Perform a (10 second) battery test.
+
+.IP test.battery.stop
+Stop a running battery test. (Not available on some hardware.)
+
+.SH USER VARIABLES
+
+The behavior of the driver can be controlled by some user definable
+variables (see \fBupsrw\fR(8)):
+
+.IP ups.delay.shutdown
+Interval to wait after shutdown with delay command (seconds)
+
+.IP ups.delay.start
+Interval to wait before (re)starting the load (seconds)
+
+.SH KNOWN PROBLEMS
+
+The battery charge (%) value is only a best-effort calculation and may be
+incorrect, or non-existant, for some UPS models. In any case, you can always
+resort to finding the voltages at which the battery becomes fully discharged
+and fully charged, and specify them manually using the "battvolts" option.
+If you do this, please notify the author of this driver.
+
+Some UPS commands aren't supported by all models. In most cases, the driver
+will send a message to the system log when the user tries to execute an
+unsupported command. Unfortunately, some models don't even provide a way for
+the driver to check for this, so the unsupported commands will silently
+fail.
+
+Some models report a bogus value for the beeper status (will always be
+"enabled" or "disabled"). So, the "beeper.toggle" command may appear to have
+no effect in the status reported by the driver when, in fact, it is working
+fine.
+
+The temperature value is also known to be bogus in some models.
+
+
+.SH AUTHOR
+Carlos Rodrigues <carlos.efr at mail.telepac.pt>
+
+.SH SEE ALSO
+
+\fBmegatec\fR(8), \fBnutupsdrv\fR(8), \fBupsc\fR(8), \fBupscmd\fR(8), \fBupsrw\fR(8)
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
