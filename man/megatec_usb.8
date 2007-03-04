@@ -6,37 +6,36 @@ This man page only documents the hardware\(hyspecific features of the
 megatec_usb driver. For information about the core driver, see
 \fBnutupsdrv\fR(8).
 
-\fBNote\fR This driver is experimental at the moment. It is currently being 
+\fBNote.\fR This driver is experimental at the moment. It is currently being 
 worked on and may change over time. However, it is stable in execution and 
 does what is needed.
 
 .SH SUPPORTED HARDWARE
 
 The megatec driver is known to work with various UPSes from Krauler, Agiler,
-Upsonic (Ablerex interface), others that use the Megatec protocol may work Keep in mind, however, that
-other models not listed there may also be supported but haven't been tested.
+and Upsonic (Ablerex interface). Others that use the Megatec protocol
+may work, but haven't been tested.
 
 This driver supports the USB versions of UPSs, if you have a serial cable then use the
 straight megatec driver.
 
-If you find that this driver does not work and you are sure that you have a megatec interface
+If you find that this driver does not work, and you are sure that you have a megatec interface,
 then you can easily extend this driver. However, you will need to do some analysis of the 
 commands that are sent to the UPS. Please see the forums for discussions on this and how
 to extend this driver.
 
 .SH EXTENSIONS TO MEGATEC
 
-This driver extends the standard \fBmegatec\fR driver to work with UPSes that have 
-a USB interface. This interface does not obey the normal rules and therefore the 
-standard NUT drivers for USB UPSes will not work. 
+This driver extends the standard \fBmegatec\fR(8) driver to work with certain UPSes that have 
+a USB interface. These devices do not obey the normal rules for HID USB devices and therefore the 
+\fBnewhidups\fR(8) driver will not work for them.
 
 This driver takes the standard serial interface and passes this over USB to the UPS.
 This is means that most, but not all, commands available for the serial driver will 
-work. Your success may vary. For Krauler, Agiler, Upsonic (with Ablerex interface) UPSes 
-it appears to give very similar results to the serial interface. It certainly works well
-enough to be used and to enable monitoring of the UPS from the machine to which it is attached
-and from other machines on the network. It will also allow the shutting down of any machines
-when the battery condition gets low and you are running from battery.
+work. For Krauler, Agiler, and Upsonic (with Ablerex interface) UPSes 
+it appears to give very similar results to the serial interface. The
+driver supports monitoring most of the usual UPS variables, and also
+supports automatic shutdown. 
 
 .SH EXTRA ARGUMENTS
 
@@ -141,8 +140,14 @@ fine.
 The temperature value is also known to be bogus in some models.
 
 
-.SH AUTHOR
+.SH AUTHORS
 Carlos Rodrigues <carlos.efr at mail.telepac.pt>
+.br
+Andrey Lelikov <nut-driver at lelik.org>
+.br
+Alexander Gordeev <lasaine at lvk.cs.msu.su>
+.br
+Jon Gough <jon.gough at eclipsesystems.com.au>
 
 .SH SEE ALSO
 

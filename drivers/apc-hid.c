@@ -366,7 +366,9 @@ static int apc_claim(HIDDevice_t *hd) {
 		}
 	} else if (hd->VendorID == CPS_VENDORID) {
 		switch (hd->ProductID) {
-		case 0x0005:
+		case 0x0005:  /* Cyber Power 900AVR/BC900D, CP1200AVR/BC1200D */
+			           /* fixme: are the above really HID devices? */
+			           /* Dynex DX-800U */
 		case 0x0501:  /* Cyber Power AE550, Geek Squad GS1285U */
 			return 1;  /* accept known UPSs */
 		default:

@@ -1,10 +1,15 @@
+Sun Mar  4 21:45:57 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - man/megatec_usb.8: language and style.
+ - drivers/apc-hid.c: added comment about model names.
+	
 Sun Mar 4 20:30:00 UTC 2007 / Jon Gough <jon.gough@eclipsesystems.com.au>
 
  - man/megatec_usb.8: Added the first pass at a man page.
 
 Sun Mar  4 19:44:39 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
- - INSTALL: add --with-group option for configure and advice people to set
+ - INSTALL: add --with-group option for configure and advise people to set
    owner:group on statepath and serial devices to root:<group>
 
 Sun Mar  4 19:27:39 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
