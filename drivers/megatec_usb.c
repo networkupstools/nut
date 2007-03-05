@@ -316,6 +316,8 @@ static int set_data_krauler(const char *str)
 		index = 0x05;
 	else if (strcmp(str, "Q\r") == 0)
 		index = 0x07;
+	else if (strcmp(str, "C\r") == 0)
+		index = 0x0b;
 	else if (strcmp(str, "CT\r") == 0)
 		index = 0x0b;
 
