@@ -1,8 +1,13 @@
+Mon Mar 5 08:15:00 UTC 2007 / Jon Gough <jon.gough@eclipsesystems.com.au>
+
+ - man/megatec_usb.8: Updated man page to show which commands have been implemented.
+ - drivers/megatec_usb.c: Added shutdown.stop command.
+
 Sun Mar  4 21:45:57 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  - man/megatec_usb.8: language and style.
  - drivers/apc-hid.c: added comment about model names.
-	
+
 Sun Mar 4 20:30:00 UTC 2007 / Jon Gough <jon.gough@eclipsesystems.com.au>
 
  - man/megatec_usb.8: Added the first pass at a man page.
