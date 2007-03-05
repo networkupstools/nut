@@ -1,3 +1,8 @@
+Mon Mar  5 10:03:57 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - configure.in: change the default group to "nobody" (more in line with
+   previous behaviour)
+
 Mon Mar 5 08:15:00 UTC 2007 / Jon Gough <jon.gough@eclipsesystems.com.au>
 
  - man/megatec_usb.8: Updated man page to show which commands have been implemented.

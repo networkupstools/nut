@@ -44,7 +44,7 @@ if test ! -d "${udevdir}"; then
 fi
 
 RUN_AS_USER="nobody"
-RUN_AS_GROUP="nogroup"
+RUN_AS_GROUP="nobody"
 PIDPATH="/var/run"
 
 dnl Define directory where LIBOBJS replacement functions are
