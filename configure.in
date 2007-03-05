@@ -513,6 +513,7 @@ AC_HELP_STRING([--with-port=PORT], [port for network communications (3493)]),
 AC_DEFINE_UNQUOTED(PORT, ${PORT}, [Port for network communications])
 AC_MSG_RESULT(${PORT})
 
+nut_user_given=
 AC_MSG_CHECKING(user to run as)
 AC_ARG_WITH(user,
 AC_HELP_STRING([--with-user=username], [user for programs started as root (nobody)]),
@@ -521,6 +522,7 @@ AC_HELP_STRING([--with-user=username], [user for programs started as root (nobod
 		;;
 	*)
 		RUN_AS_USER="${withval}"
+		nut_user_given=yes
 		;;
 	esac],
 )
@@ -528,6 +530,7 @@ AC_DEFINE_UNQUOTED(RUN_AS_USER, "${RUN_AS_USER}",
 	[User to switch to if started as root])
 AC_MSG_RESULT(${RUN_AS_USER})
 
+nut_group_given=
 AC_MSG_CHECKING(group membership of user to run as)
 AC_ARG_WITH(group,
 AC_HELP_STRING([--with-group=groupname], [group membership of user for programs started as root (nogroup)]),
@@ -536,12 +539,20 @@ AC_HELP_STRING([--with-group=groupname], [group membership of user for programs 
 		;;
 	*)
 		RUN_AS_GROUP="${withval}"
+		nut_group_given=yes
 		;;
 	esac],
 )
 AC_DEFINE_UNQUOTED(RUN_AS_GROUP, "${RUN_AS_GROUP}",
 	[Group membership of user to switch to if started as root])
 AC_MSG_RESULT(${RUN_AS_GROUP})
+
+dnl check that --with-user is given iff --with-group is given.
+if test -n "$nut_user_given" -a -z "$nut_group_given"; then
+   AC_MSG_ERROR(["If you specify --with-user, you also must specify --with-group"])
+elif test -z "$nut_user_given" -a -n "$nut_group_given"; then
+   AC_MSG_ERROR(["If you specify --with-group, you also must specify --with-user"])
+fi
 
 AC_MSG_CHECKING(facility for syslog)
 AC_ARG_WITH(logfacility,

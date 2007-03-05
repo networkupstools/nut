@@ -99,26 +99,34 @@ Contents:
    "GET" versions of the protocol.
 
  --with-user=<username>
+ --with-group=<groupname>
 
-   Programs started as root will setuid() to this user for somewhat 
+   Programs started as root will setuid() to <username> for somewhat
    safer operation.  You can override this with -u <user> in several
    programs, including upsdrvctl (and all drivers by extension), upsd,
-   and upsmon.  
-
-   The "user" directive in ups.conf overrides this at run time for
-   the drivers.
-
-   The default value is "nobody".  This was done since it's slightly
-   better than staying around as root.  Running things as nobody is not
-   a good idea, since it's a hack for NFS access.  You should create at 
-   least one separate user for this software.
-
-   See the INSTALL document and the FAQ for more on this topic.
+   and upsmon.  The "user" directive in ups.conf overrides this at run
+   time for the drivers.
 
    Note: upsmon does not totally drop root because it may need to
    initiate a shutdown.  There is always at least a stub process
    remaining with root powers.  The network code runs in another
    (separate) process as the new user.
+
+   The <groupname> is used for the permissions of some files,
+   particularly the hotplugging rules for USB. The idea is that the
+   device files for any UPS devices should be readable and writable by
+   members of that group.
+
+   The default value for both the username and groupname is "nobody".
+   This was done since it's slightly better than staying around as
+   root.  Running things as nobody is not a good idea, since it's a
+   hack for NFS access.  You should create at least one separate user
+   for this software.
+
+   If you use one of the --with-user and --with-group options, then
+   you have to use the other one too. 
+
+   See the INSTALL document and the FAQ for more on this topic.
 
  --with-logfacility=FACILITY
 
