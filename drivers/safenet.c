@@ -42,6 +42,9 @@
  *   - wait for three consecutive failed polls before declaring
  *     data stale in order not to bother clients with temporary
  *     problems
+ *  20070304/Revision 1.3 - Arjen de Korte <arjen@de-korte.org>
+ *   - in battery test mode (CAL state) stop the test when the
+ *     the low battery state is reached
  *
  * Copyright (C) 2003-2006  Arjen de Korte <arjen@de-korte.org>
  *
@@ -114,6 +117,11 @@ static int safenet_command(const char *command)
 		ups.reply[i] = ((reply[i+1] == 'B') ? 1 : 0);
 	}
 
+	return(0);
+}
+
+static void safenet_update()
+{
 	status_init();
 
 	if (ups.status.onbattery) {
@@ -124,6 +132,10 @@ static int safenet_command(const char *command)
 
 	if (ups.status.batterylow) {
 		status_set("LB");
+
+		if (ups.status.systemtest) {
+			safenet_command(COM_STOP_TEST);
+		}
 	}
 
 	if (ups.status.overload) {
@@ -158,8 +170,6 @@ static int safenet_command(const char *command)
 	status_commit();
 
 	dstate_dataok();
-
-	return(0);
 }
 
 static int instcmd(const char *cmdname, const char *extra)
@@ -176,7 +186,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	 * Stop the UPS selftest
 	 */
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
-		safenet_command(COM_ABORT_TEST);
+		safenet_command(COM_STOP_TEST);
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -192,7 +202,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	 * Stop simulated mains failure
 	 */
 	if (!strcasecmp (cmdname, "test.failure.stop")) {
-		safenet_command(COM_ABORT_TEST);
+		safenet_command(COM_STOP_TEST);
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -342,11 +352,14 @@ void upsdrv_updateinfo(void)
 		} else {
 			dstate_datastale();
 		}
-	} else {
-		ser_comm_good();
 
-		retry = 0;
+		return;
 	}
+
+	ser_comm_good();
+	retry = 0;
+
+	safenet_update();
 }
 
 void upsdrv_shutdown(void)

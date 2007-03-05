@@ -1,3 +1,8 @@
+Mon Mar  5 10:05:28 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/safenet.ch: stop battery test if LB is reached (will not be done
+   automatically by some devices), fix mixed up system/battery test commands
+
 Mon Mar  5 10:03:57 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - configure.in: change the default group to "nobody" (more in line with
