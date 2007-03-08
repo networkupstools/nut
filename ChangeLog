@@ -1,3 +1,7 @@
+Thu Mar  8 18:54:38 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - configure.in: fix tests for solaris libraries
+
 Mon Mar  5 14:49:25 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  - configure.in: if one of --with-user or --with-group is given, then

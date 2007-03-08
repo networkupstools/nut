@@ -128,13 +128,8 @@ dnl Solaris compatibility - check for -lnsl and -lsocket if connect() is gone
 AC_CHECK_FUNCS(connect)
 
 if ( test "${ac_cv_func_connect}" = "no" ); then
-	AC_CHECK_LIB(nsl, printf, [
-	  	NETLIBS="-lnsl"
-	], [], [])
-
-	AC_CHECK_LIB(socket, printf, [
-		NETLIBS="${NETLIBS} -lsocket"
-	], [], [])
+	AC_CHECK_LIB(nsl, gethostbyname)
+	AC_CHECK_LIB(socket, connect)
 fi
 
 AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h sys/termios.h)
