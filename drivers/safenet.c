@@ -71,7 +71,7 @@
 #include "serial.h"
 #include "safenet.h"
 
-#define DRV_VERSION	"1.2"
+#define DRV_VERSION	"1.3"
 
 /*
  * Here we keep the last known status of the UPS
@@ -132,10 +132,6 @@ static void safenet_update()
 
 	if (ups.status.batterylow) {
 		status_set("LB");
-
-		if (ups.status.systemtest) {
-			safenet_command(COM_STOP_TEST);
-		}
 	}
 
 	if (ups.status.overload) {
@@ -358,6 +354,10 @@ void upsdrv_updateinfo(void)
 
 	ser_comm_good();
 	retry = 0;
+
+	if (ups.status.systemtest && ups.status.batterylow) {
+		safenet_command(COM_STOP_TEST);
+	}
 
 	safenet_update();
 }

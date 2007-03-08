@@ -1,3 +1,8 @@
+Thu Mar  8 18:58:23 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/safenet.c: forgot to increase version number and try to cancel
+   battery test before reporting the low battery status
+
 Thu Mar  8 18:54:38 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - configure.in: fix tests for solaris libraries
