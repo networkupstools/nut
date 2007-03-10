@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <limits.h>
 #include <string.h>
+#include <stdlib.h>
 
 
 #define ENDCHAR  '\r'
@@ -44,8 +45,8 @@
 #define IDENT_MAXTRIES   5
 #define IDENT_MINSUCCESS 3
 
-#define SEND_PACE    100000  /* 100ms interval between chars */
-#define READ_TIMEOUT 2       /* 2 seconds timeout on read */
+#define SEND_PACE    100000  /* interval between chars on send (usec)*/
+#define READ_TIMEOUT 2       /* timeout on read (seconds) */
 
 #define MAX_START_DELAY    9999
 #define MAX_SHUTDOWN_DELAY 99
@@ -115,11 +116,11 @@ typedef struct {
 
 /* Known battery types must be in ascending order by "nominal" first, and then by "max". */
 static BatteryVolts_t batteries[] = {{ 12,  9.0, 16.0,  9.7, 13.7,  0.0 },   /* Mustek PowerMust 600VA Plus (LB unknown) */
-                                   { 12, 18.0, 30.0, 18.8, 26.8, 22.3 },   /* PowerWalker Line-Interactive VI 1000 */
-                                   { 24, 18.0, 30.0, 19.4, 27.4, 22.2 },   /* Mustek PowerMust 1000VA Plus */
-                                   { 36,  1.5,  3.0, 1.64, 2.31, 1.88 },   /* Mustek PowerMust 1000VA On-Line */
-                                   { 96,  1.5,  3.0, 1.63, 2.29,  1.8 },   /* Ablerex MS3000RT (LB at 25% charge) */
-                                   {  0,  0.0,  0.0,  0.0,  0.0,  0.0 }};  /* END OF DATA */
+                                     { 12, 18.0, 30.0, 18.8, 26.8, 22.3 },   /* PowerWalker Line-Interactive VI 1000 */
+                                     { 24, 18.0, 30.0, 19.4, 27.4, 22.2 },   /* Mustek PowerMust 1000VA Plus */
+                                     { 36,  1.5,  3.0, 1.64, 2.31, 1.88 },   /* Mustek PowerMust 1000VA On-Line */
+                                     { 96,  1.5,  3.0, 1.63, 2.29,  1.8 },   /* Ablerex MS3000RT (LB at 25% charge) */
+                                     {  0,  0.0,  0.0,  0.0,  0.0,  0.0 }};  /* END OF DATA */
 
 /* Defined in upsdrv_initinfo */
 static float battvolt_empty = -1;  /* unknown */
@@ -318,6 +319,7 @@ static int get_firmware_values(FirmwareValues_t *values)
 static int run_query(QueryValues_t *values)
 {
 	char buffer[RECV_BUFFER_LEN];
+	char temperature[8];
 	int ret;
 
 	upsdebugx(1, "Asking for UPS status (\"Q1\" command)...");
@@ -331,8 +333,15 @@ static int run_query(QueryValues_t *values)
 
 	upsdebugx(3, "UPS status: %s", buffer);
 
-	sscanf(buffer, "%f %f %f %f %f %f %f %s", &values->ivolt, &values->fvolt, &values->ovolt,
-	       &values->load, &values->freq, &values->battvolt, &values->temp, values->flags);
+	sscanf(buffer, "%f %f %f %f %f %f %s %s", &values->ivolt, &values->fvolt, &values->ovolt,
+	       &values->load, &values->freq, &values->battvolt, temperature, values->flags);
+
+	/*
+	 * UPS temperature must be parsed on its own. Some models put
+	 * something other than a float in this field, meaning there is no
+	 * temperature reading available.
+	 */
+	values->temp = atof(temperature);
 
 	return 0;
 }

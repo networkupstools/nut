@@ -1,3 +1,8 @@
+Sat Mar 10 18:54:33 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - drivers/megatec.c: fix for models that return a string meaning there
+   is no temperature value available.
+
 Sat Mar 10 16:50:01 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/tripplite-hid.c: add productid 4002 for SmartOnline SU6000RT4U
