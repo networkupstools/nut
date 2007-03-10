@@ -1,3 +1,8 @@
+Sat Mar 10 16:50:01 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/tripplite-hid.c: add productid 4002 for SmartOnline SU6000RT4U
+   (experimental)
+
 Thu Mar  8 18:58:23 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/safenet.c: forgot to increase version number and try to cancel
