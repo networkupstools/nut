@@ -32,7 +32,7 @@ configure-stamp:
 	    --with-htmlpath=/var/www/nut \
 	    --with-pidpath=/var/run/nut \
 	    --datadir=/usr/share/nut \
-	    --with-user=nut
+	    --with-user=nut --with-group=nut
 	touch $@
 
 build: configure
