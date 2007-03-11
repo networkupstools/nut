@@ -99,6 +99,15 @@ static info_lkp_t batterypresent_info[] = {
   { 0, "NULL", NULL }
 };
 
+/* This was determined empirically from observing a BackUPS LS 500.
+ */
+static info_lkp_t apcstatusflag_info[] = {
+  { 8, "!off", NULL },  /* Normal operation */
+  { 16, "!off", NULL }, /* This occurs briefly during power-on, and corresponds to status 'DISCHRG'. */
+  { 0, "off", NULL },
+  { 0, "NULL", NULL }
+};
+
 /* --------------------------------------------------------------- */
 /*      Vendor-specific usage table */
 /* --------------------------------------------------------------- */
@@ -226,6 +235,7 @@ static hid_info_t apc_hid2nut[] = {
   { "ups.status", 0, 1, "UPS.PowerSummary.ACPresent", NULL, "%.0f", HU_FLAG_OK, &online_info[0] }, /* Back-UPS 500 */
   { "ups.status", 0, 1, "UPS.PowerSummary.BelowRemainingCapacityLimit", NULL, "%.0f", HU_FLAG_OK, &lowbatt_info[0] }, /* Back-UPS 500 */
   { "ups.status", 0, 1, "UPS.PowerSummary.ShutdownImminent", NULL, "%.0f", HU_FLAG_OK, &shutdownimm_info[0] },
+  { "ups.status", 0, 1, "UPS.PowerSummary.APCStatusFlag", NULL, "%.0f", HU_FLAG_OK, &apcstatusflag_info[0] }, /* APC Back-UPS LS 500 */
 
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.FullyCharged", NULL, "%.0f", HU_FLAG_OK, &fullycharged_info[0] }, /* CyberPower */
   { "ups.status", 0, 1, "UPS.Output.Overload", NULL, "%.0f", HU_FLAG_OK, &overload_info[0] }, /* CyberPower */

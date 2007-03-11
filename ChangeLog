@@ -1,3 +1,7 @@
+Sun Mar 11 04:10:17 UTC 2007 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/apc-hid.c: added UPS on/off status (from Back-UPS LS 500).
+
 Sat Mar 10 18:54:33 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - drivers/megatec.c: fix for models that return a string meaning there
