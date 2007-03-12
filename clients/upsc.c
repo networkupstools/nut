@@ -230,9 +230,7 @@ int main(int argc, char **argv)
 		help(argv[0]);
 
 	if (!strcmp(argv[1], "-l") || !strcmp(argv[1], "-L")) {
-		if(!argv[2])
-			help(argv[0]);
-		ret = list_upses(argv[2], argv[1][1] == 'L');
+		ret = list_upses(argv[2] ? argv[2] : "localhost", argv[1][1] == 'L');
 		exit(ret);
 	}
 
