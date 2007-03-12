@@ -30,13 +30,18 @@ static void help(const char *prog)
 	printf("Network UPS Tools upsc %s\n\n", UPS_VERSION);
 
 	printf("usage: %s <ups> [<variable>]\n", prog);
-	printf("       %s -l <hostname>[:port]\n", prog);
+	printf("       %s -l | -L <hostname>[:port]\n", prog);
 
 	printf("\nDemo program to display UPS variables.\n\n");
 
+	printf("First form (lists variables and values):\n");
 	printf("  <ups>      - upsd server, <upsname>[@<hostname>[:<port>]] form\n");
 	printf("  <variable> - optional, display this variable only.\n");
 	printf("               Default: list all variables for <host>\n");
+
+	printf("\nSecond form (lists UPSes):\n");
+	printf("  -l         - lists each UPS on <hostname>, one per line.\n");
+	printf("  -L         - lists each UPS followed by its description (from ups.conf).\n");
 
 	exit(EXIT_SUCCESS);
 }
@@ -148,7 +153,7 @@ static int list_vars(UPSCONN_t *ups, const char *upsname)
 	return EXIT_SUCCESS;
 }
 
-static int list_upses(const char *name)
+static int list_upses(const char *name, int verbose)
 {
 	int	ret, port;
 	char	*upsname = NULL, *hostname = NULL;
@@ -193,7 +198,11 @@ static int list_upses(const char *name)
 			return EXIT_FAILURE;
 		}
 
-		printf("%s: %s\n", answer[1], answer[2]);
+		if(verbose) {
+			printf("%s: %s\n", answer[1], answer[2]);
+		} else {
+			printf("%s\n", answer[1]);
+		}
 
 		ret = upscli_list_next(&ups, numq, query, &numa, &answer);
 	}
@@ -220,10 +229,10 @@ int main(int argc, char **argv)
 	if (!strcmp(argv[1], "-h"))
 		help(argv[0]);
 
-	if (!strcmp(argv[1], "-l")) {
+	if (!strcmp(argv[1], "-l") || !strcmp(argv[1], "-L")) {
 		if(!argv[2])
 			help(argv[0]);
-		ret = list_upses(argv[2]);
+		ret = list_upses(argv[2], argv[1][1] == 'L');
 		exit(ret);
 	}
 
