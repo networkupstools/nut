@@ -536,12 +536,12 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 			{
 			case EAFNOSUPPORT:
 			case EINVAL:
-                                continue;
+                                break;
 			default:
 				ups->upserror = UPSCLI_ERR_SOCKFAILURE;
 				ups->syserrno = errno;
-				continue;
 			}
+			continue;
 		}
 
 		while ((v = connect(sock_fd, ai->ai_addr, ai->ai_addrlen)) < 0)
@@ -556,8 +556,8 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 			default:
 				ups->upserror = UPSCLI_ERR_CONNFAILURE;
 				ups->syserrno = errno;
-				break;
 			}
+			break;
 		}
 
 		if (v < 0)

@@ -1,3 +1,9 @@
+Mon Mar 12 20:29:47 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - clients/upsclient.c: fix endless loop (missing break statement
+   causing connect() to retry always instead of skipping to the next
+   addrinfo element)
+
 Sun Mar 11 04:10:17 UTC 2007 / Charles Lepple <clepple@gmail.com>
 
  - drivers/apc-hid.c: added UPS on/off status (from Back-UPS LS 500).
