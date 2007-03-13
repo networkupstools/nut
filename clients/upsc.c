@@ -167,7 +167,7 @@ static int list_upses(const char *name, int verbose)
 		clean_exit(&ups, upsname, hostname, EXIT_FAILURE);
 
 	if (upscli_connect(&ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
-		fprintf(stderr, __FILE__ "%d: Error: %s\n", __LINE__, upscli_strerror(&ups));
+		fprintf(stderr, __FILE__ ":%d: Error: %s\n", __LINE__, upscli_strerror(&ups));
 
 		clean_exit(&ups, NULL, NULL, EXIT_FAILURE);
 	}
