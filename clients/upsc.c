@@ -29,19 +29,20 @@ static void help(const char *prog)
 {
 	printf("Network UPS Tools upsc %s\n\n", UPS_VERSION);
 
-	printf("usage: %s <ups> [<variable>]\n", prog);
-	printf("       %s -l | -L <hostname>[:port]\n", prog);
+	printf("usage: %s -l | -L [<hostname>[:port]]\n", prog);
+	printf("       %s <ups> [<variable>]\n", prog);
 
 	printf("\nDemo program to display UPS variables.\n\n");
 
-	printf("First form (lists variables and values):\n");
+	printf("First form (lists UPSes):\n");
+	printf("  -l         - lists each UPS on <hostname>, one per line.\n");
+	printf("  -L         - lists each UPS followed by its description (from ups.conf).\n");
+	printf("               Default hostname: localhost\n");
+
+	printf("\nSecond form (lists variables and values):\n");
 	printf("  <ups>      - upsd server, <upsname>[@<hostname>[:<port>]] form\n");
 	printf("  <variable> - optional, display this variable only.\n");
 	printf("               Default: list all variables for <host>\n");
-
-	printf("\nSecond form (lists UPSes):\n");
-	printf("  -l         - lists each UPS on <hostname>, one per line.\n");
-	printf("  -L         - lists each UPS followed by its description (from ups.conf).\n");
 
 	exit(EXIT_SUCCESS);
 }
