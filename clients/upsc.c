@@ -29,10 +29,17 @@ static void help(const char *prog)
 {
 	printf("Network UPS Tools upsc %s\n\n", UPS_VERSION);
 
-	printf("usage: %s <ups> [<variable>]\n", prog);
+	printf("usage: %s -l | -L [<hostname>[:port]]\n", prog);
+	printf("       %s <ups> [<variable>]\n", prog);
 
 	printf("\nDemo program to display UPS variables.\n\n");
 
+	printf("First form (lists UPSes):\n");
+	printf("  -l         - lists each UPS on <hostname>, one per line.\n");
+	printf("  -L         - lists each UPS followed by its description (from ups.conf).\n");
+	printf("               Default hostname: localhost\n");
+
+	printf("\nSecond form (lists variables and values):\n");
 	printf("  <ups>      - upsd server, <upsname>[@<hostname>[:<port>]] form\n");
 	printf("  <variable> - optional, display this variable only.\n");
 	printf("               Default: list all variables for <host>\n");
@@ -147,6 +154,64 @@ static int list_vars(UPSCONN_t *ups, const char *upsname)
 	return EXIT_SUCCESS;
 }
 
+static int list_upses(const char *name, int verbose)
+{
+	int	ret, port;
+	char	*upsname = NULL, *hostname = NULL;
+	UPSCONN_t	ups;
+	unsigned int	numq, numa;
+	const	char	*query[4];
+	char	**answer;
+
+	if(upscli_splitaddr(name, &hostname, &port) != 0)
+		clean_exit(&ups, upsname, hostname, EXIT_FAILURE);
+
+	if (upscli_connect(&ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
+		fprintf(stderr, __FILE__ "%d: Error: %s\n", __LINE__, upscli_strerror(&ups));
+
+		clean_exit(&ups, NULL, NULL, EXIT_FAILURE);
+	}
+
+	query[0] = "UPS";
+	numq = 1;
+
+	ret = upscli_list_start(&ups, numq, query);
+	
+	if (ret < 0) {
+		/* check for an old upsd */
+		if (upscli_upserror(&ups) == UPSCLI_ERR_UNKCOMMAND) {
+			fprintf(stderr, "Error: upsd is too old to support this query\n");
+			return EXIT_FAILURE;
+		}
+
+		fprintf(stderr, "Error: %s\n", upscli_strerror(&ups));
+		return EXIT_FAILURE;
+	}
+
+	ret = upscli_list_next(&ups, numq, query, &numa, &answer);
+
+	while (ret == 1) {
+
+		/* UPS <upsname> <description> */
+		if (numa < 3) {
+			fprintf(stderr, "Error: insufficient data "
+				"(got %d args, need at least 3)\n", numa);
+			return EXIT_FAILURE;
+		}
+
+		if(verbose) {
+			printf("%s: %s\n", answer[1], answer[2]);
+		} else {
+			printf("%s\n", answer[1]);
+		}
+
+		ret = upscli_list_next(&ups, numq, query, &numa, &answer);
+	}
+
+	upscli_disconnect(&ups);
+	return EXIT_SUCCESS;
+}
+
 int main(int argc, char **argv)
 {
 	int	port, ret;
@@ -164,6 +229,11 @@ int main(int argc, char **argv)
 
 	if (!strcmp(argv[1], "-h"))
 		help(argv[0]);
+
+	if (!strcmp(argv[1], "-l") || !strcmp(argv[1], "-L")) {
+		ret = list_upses(argv[2] ? argv[2] : "localhost", argv[1][1] == 'L');
+		exit(ret);
+	}
 
 	upsname = hostname = NULL;
 

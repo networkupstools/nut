@@ -1,3 +1,8 @@
+Tue Mar 13 03:46:38 UTC 2007 / Charles Lepple <clepple@gmail.com>
+
+ - clients/upsc.c, man/upsc.8: added "list UPS names" functionality to upsc,
+   and updated the man page.
+
 Mon Mar 12 20:29:47 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - clients/upsclient.c: fix endless loop (missing break statement
