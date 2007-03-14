@@ -1,3 +1,7 @@
+Wed Mar 14 20:04:20 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - server/access.c: change u_int32_t to uint32_t
+
 Wed Mar 14 16:33:36 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - server/access.h: fix broken IN6_IS_ADDR_V4MAPPED macro for glibc 2.1

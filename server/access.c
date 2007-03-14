@@ -17,6 +17,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include <stdint.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -70,7 +71,7 @@ static int mask_cmp (const struct sockaddr_storage *ip_addr,
 		struct in_addr		*net = &((struct sockaddr_in *)net_addr)->sin_addr;
 			
 		return (IN6_IS_ADDR_V4MAPPED(ip6) &&
-			((((const u_int32_t *)ip6)[3] & prefix) == net->s_addr));
+			((((const uint32_t *)ip6)[3] & prefix) == net->s_addr));
 	}
 
 	fatal_with_errno("mask_cmp: Unknown address family");
