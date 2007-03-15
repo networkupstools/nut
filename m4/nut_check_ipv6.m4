@@ -41,20 +41,20 @@ dnl    [AC_MSG_RESULT(no)
 dnl     nut_have_ipv6=no]
 dnl)
 
-   AC_MSG_CHECKING([for IN6_IS_ADDR_V4MAPPED])
-   AC_LINK_IFELSE(
-       [AC_LANG_PROGRAM(
-	   [[#include <netinet/in.h>]],
-	   [[
-            struct in6_addr *i6 = (struct in6_addr *)0;
-	    return IN6_IS_ADDR_V4MAPPED(i6);
-	   ]]
-        )], 
-       [AC_DEFINE(HAVE_IN6_IS_ADDR_V4MAPPED, 1, [Define if IN6_IS_ADDR_V4MAPPED is available])
-        AC_MSG_RESULT(yes)],
-       [AC_MSG_RESULT(no)
-        nut_have_ipv6=no]
-   )
+dnl AC_MSG_CHECKING([for IN6_IS_ADDR_V4MAPPED])
+dnl AC_LINK_IFELSE(
+dnl    [AC_LANG_PROGRAM(
+dnl	   [[#include <netinet/in.h>]],
+dnl	   [[
+dnl	    struct in6_addr *i6 = (struct in6_addr *)0;
+dnl	    return IN6_IS_ADDR_V4MAPPED(i6);
+dnl	   ]]
+dnl     )], 
+dnl    [AC_DEFINE(HAVE_IN6_IS_ADDR_V4MAPPED, 1, [Define if IN6_IS_ADDR_V4MAPPED is available])
+dnl     AC_MSG_RESULT(yes)],
+dnl    [AC_MSG_RESULT(no)
+dnl     nut_have_ipv6=no]
+dnl)
 
 fi
 ])

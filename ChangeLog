@@ -1,3 +1,8 @@
+Thu Mar 15 20:16:01 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - m4/nut_check_ipv6.m4: no more need to check for IN6_IS_ADDR_V4MAPPED
+   (will be defined if it doesn't exist)
+
 Wed Mar 14 20:04:20 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - server/access.c: change u_int32_t to uint32_t
