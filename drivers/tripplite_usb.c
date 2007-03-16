@@ -293,7 +293,7 @@ static enum tl_model_t {
 #define SEND_WAIT_SEC 0
 #define SEND_WAIT_NSEC (1000*1000*100)
 
-#define MAX_RECV_TRIES 3
+#define MAX_RECV_TRIES 10
 #define RECV_WAIT_MSEC 1000	/*! was 100 for OMNIVS; SMARTPRO units need longer */
 
 #define MAX_RECONNECT_TRIES 10
@@ -576,7 +576,9 @@ static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *rep
 			return ret;
 		}
 
+#if ! defined(__FreeBSD__)
 		if(!done) { usleep(1000*100); /* TODO: nanosleep */ }
+#endif
 
 		for(recv_try=0; !done && recv_try < MAX_RECV_TRIES; recv_try++) {
 			upsdebugx(7, "send_cmd recv_try %d", recv_try+1);
