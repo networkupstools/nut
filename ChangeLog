@@ -1,3 +1,7 @@
+Fri Mar 16 21:02:10 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+ - drivers/megatec.c: added hook functions for subdrivers to show their own
+   banner and add options to the vartable.
+
 Fri Mar 16 04:05:31 UTC 2007 / Charles Lepple <clepple@gmail.com>
  - drivers/tripplite_usb.c: some adjustments for FreeBSD. This driver appears
    to work best on FreeBSD when passed "-i 0".

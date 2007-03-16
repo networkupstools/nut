@@ -107,6 +107,16 @@ static void usb_open_error(const char *port)
 	exit(EXIT_FAILURE);
 }
 
+void megatec_subdrv_banner()
+{
+	printf("void megatec_subdrv_banner()\n");
+}
+
+void megatec_subdrv_makevartable()
+{
+	printf("void megatec_subdrv_makevartable()\n");
+}
+
 int ser_open(const char *port)
 {
 	HIDDeviceMatcher_t match;

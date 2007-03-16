@@ -766,6 +766,8 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "ondelay", "Delay before UPS startup (minutes)");
 	addvar(VAR_VALUE, "offdelay", "Delay before UPS shutdown (minutes)");
 	addvar(VAR_VALUE, "battvolts", "Battery voltages (empty:full)");
+	
+	megatec_subdrv_makevartable();
 }
 
 
@@ -773,6 +775,8 @@ void upsdrv_banner(void)
 {
 	printf("Network UPS Tools %s - Megatec protocol driver %s [%s]\n", UPS_VERSION, DRV_VERSION, progname);
 	printf("Carlos Rodrigues (c) 2003-2007\n\n");
+
+	megatec_subdrv_banner();
 }
 
 

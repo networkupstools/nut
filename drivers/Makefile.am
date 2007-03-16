@@ -129,7 +129,7 @@ bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c nut_usb.c
 bcmxcp_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 
 megatec_usb_SOURCES = megatec.c megatec_usb.c libusb.c
-megatec_usb_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
+megatec_usb_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS) -DMEGATEC_SUBDRV
 megatec_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 
 # HID-over-serial

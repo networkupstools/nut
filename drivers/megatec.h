@@ -21,4 +21,21 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#define DRV_VERSION "1.5.1"
+
+#ifndef MEGATEC_H
+#define MEGATEC_H
+
+
+#define DRV_VERSION "1.5.2"
+
+
+#ifdef MEGATEC_SUBDRV
+	void megatec_subdrv_makevartable(void);
+	void megatec_subdrv_banner(void);
+#else
+#	define megatec_subdrv_makevartable(...)
+#	define megatec_subdrv_banner(...)
+#endif
+
+
+#endif /* MEGATEC_H */
