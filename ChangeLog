@@ -1,3 +1,6 @@
+Sat Mar 17 20:40:51 UTC 2007 / Charles Lepple <clepple@gmail.com>
+ - drivers/tripplite_usb.c: trying to clean up the soft_shutdown function.
+
 Sat Mar 17 20:04:55 UTC 2007 / Charles Lepple <clepple@gmail.com>
  - drivers/tripplite_usb.c: merged in some outlet control code from
    branches/tripplite_usb_outlets (723:728)

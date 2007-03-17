@@ -112,8 +112,8 @@
  * :X     -- returns 'X' data (firmware revision)
  * :D     -- returns general status data
  * :B     -- returns battery voltage (hexadecimal decivolts)
- * :I     -- returns minimum input voltage (hexadecimal hertz)
- * :M     -- returns maximum input voltage (hexadecimal hertz)
+ * :I     -- returns minimum input voltage (hexadecimal hertz) [sic]
+ * :M     -- returns maximum input voltage (hexadecimal hertz) [sic]
  * :P     -- returns power rating
  * :Z     -- unknown
  * :U     -- unknown
@@ -670,17 +670,27 @@ static int soft_shutdown(void)
 	upsdebugx(3, "soft_shutdown(offdelay=%d): N", offdelay);
 
 	ret = send_cmd(cmd_N, sizeof(cmd_N), buf, sizeof(buf));
-	if(ret != 8) return ret;
+
+	if(ret != 8) {
+		upslogx(LOG_ERR, "Could not set offdelay to %d", offdelay);
+		return ret;
+	}
 
 	sleep(2);
 	
 	/*! The unit must be on battery for this to work. 
 	 *
 	 * @todo check for on-battery condition, and print error if not.
-	 * @todo Find an equivalend command for non-OMNIVS models.
+	 * @todo Find an equivalent command for non-OMNIVS models.
 	 */
 	ret = send_cmd(cmd_G, sizeof(cmd_G), buf, sizeof(buf));
-	return (ret == 8);
+
+	if(ret != 8) {
+		upslogx(LOG_ERR, "Could not turn off UPS (is it still on battery?)");
+		return 0;
+	}
+
+	return 1;
 }
 
 #if 0
@@ -965,13 +975,15 @@ void upsdrv_initinfo(void)
 
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
-        /* Unit ID might not be supported by all models: */
-	ret = send_cmd(u_msg, sizeof(u_msg), u_value, sizeof(u_value)-1);
-	if(ret <= 0) {
-		upslogx(LOG_DEBUG,"Unit ID not retrieved (not available on all models)");
-	} else {
-		unit_id = (int)((unsigned)(u_value[1]) << 8) 
-			| (unsigned)(u_value[2]);
+	if(tl_model != TRIPP_LITE_OMNIVS) {
+		/* Unit ID might not be supported by all models: */
+		ret = send_cmd(u_msg, sizeof(u_msg), u_value, sizeof(u_value)-1);
+		if(ret <= 0) {
+			upslogx(LOG_INFO, "Unit ID not retrieved (not available on all models)");
+		} else {
+			unit_id = (int)((unsigned)(u_value[1]) << 8) 
+				| (unsigned)(u_value[2]);
+		}
 	}
 
 	if(unit_id >= 0) {
