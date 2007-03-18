@@ -1,3 +1,10 @@
+Sun Mar 18 19:40:01 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ - drivers/megatec_usb.c: code conversion and adjustments. Added USB-related
+   variables, regex matching support and an initial attempt for subdriver
+   matching. Added megatec_usb banner.
+ - drivers/Makefile.am: added some needed files to megatec_usb sources.
+
 Sat Mar 17 20:40:51 UTC 2007 / Charles Lepple <clepple@gmail.com>
  - drivers/tripplite_usb.c: trying to clean up the soft_shutdown function.
 

@@ -21,6 +21,7 @@
 
 #include "main.h"
 #include "megatec.h"
+#include "libhid.h"
 #include "libusb.h"
 #include "serial.h"
 
@@ -34,7 +35,7 @@
     This is a communication driver for "USB HID" UPS-es which use proprietary
 usb-to-serial converter and speak megatec protocol. Usually these are cheap
 models and usb-to-serial converter is a huge oem hack - HID tables are bogus,
-device has no UPS reports, etc. 
+device has no UPS reports, etc.
     This driver has a table of all known devices which has pointers to device-
 specific communication functions (namely send a string to UPS and read a string
 from it). Driver takes care of detection, opening a usb device, string
@@ -49,52 +50,65 @@ static usb_dev_handle *udev = NULL;
 static HIDDevice_t hiddevice;
 
 typedef struct {
-	int vid;
-	int pid;
-	int (*get_data) (char *buffer, int buffer_size);
-	int (*set_data) (const char *str);
-} usb_ups_t;
+	char	*name;
+	int	(*get_data) (char *buffer, int buffer_size);
+	int	(*set_data) (const char *str);
+} subdriver_t;
 
-usb_ups_t *usb_ups_device = NULL;
-
-/*
-    All devices known to this driver go here
-    along with their set/get routines
-*/
-
+/* agiler subdriver definition */
 static int get_data_agiler(char *buffer, int buffer_size);
 static int set_data_agiler(const char *str);
 
+static subdriver_t agiler_subdriver = {
+	"agiler",
+	get_data_agiler,
+	set_data_agiler
+};
+
+/* krauler (ablerex) subdriver definition */
 static int get_data_krauler(char *buffer, int buffer_size);
 static int set_data_krauler(const char *str);
 
-static int get_data_ablerex(char *buffer, int buffer_size);
-static int set_data_ablerex(const char *str);
-
-static usb_ups_t KnownDevices[] = {
-	{0x05b8, 0x0000, get_data_agiler, set_data_agiler},   /* Agiler UPS */
-	{0x0001, 0x0000, get_data_krauler, set_data_krauler}, /* Krauler UP-M500VA */
-	{0xffff, 0x0000, get_data_krauler, set_data_krauler}, /* Ablerex 625L USB */
-	{-1, -1, NULL, NULL}		/* end of list */
+static subdriver_t krauler_subdriver = {
+	"krauler",
+	get_data_krauler,
+	set_data_krauler
 };
 
-/* TODO: Fix matching non-auto selected devices */
+/* list of subdrivers */
+static subdriver_t *subdriver_list[] = {
+	&agiler_subdriver,
+	&krauler_subdriver,
+	NULL	/* end of list */
+};
+
+/* selected subdriver */
+subdriver_t *subdriver = NULL;
+
+typedef struct {
+	int vid;
+	int pid;
+	subdriver_t *subdriver;
+} usb_ups_t;
+
+/* list of all known devices */
+static usb_ups_t KnownDevices[] = {
+	{0x05b8, 0x0000, &agiler_subdriver},	/* Agiler UPS */
+	{0x0001, 0x0000, &krauler_subdriver},	/* Krauler UP-M500VA */
+	{0xffff, 0x0000, &krauler_subdriver},	/* Ablerex 625L USB */
+	{-1, -1, NULL}		/* end of list */
+};
+
 static int comm_usb_match(HIDDevice_t *d, void *privdata)
 {
 	usb_ups_t *p;
 
+	if(getval("subdriver"))
+		return 1;
+
 	for (p = KnownDevices; p->vid != -1; p++) {
 		if ((p->vid == d->VendorID) && (p->pid == d->ProductID)) {
-			usb_ups_device = p;
-			return 1;
-		}
-	}
-
-	p = (usb_ups_t *) privdata;
-
-	if (NULL != p) {
-		if ((p->vid == d->VendorID) && (p->pid == d->ProductID)) {
-			usb_ups_device = p;
+			subdriver = p->subdriver;
 			return 1;
 		}
 	}
@@ -109,56 +123,93 @@ static void usb_open_error(const char *port)
 
 void megatec_subdrv_banner()
 {
-	printf("void megatec_subdrv_banner()\n");
+	printf("Serial-over-USB transport layer for Megatec protocol driver [%s]\n\n", progname);
+	/* printf("Andrey Lelikov (c) 2006, Alexander Gordeev (c) 2006-2007, Jon Gough (c) 2007\n\n"); */
 }
 
+/* FIXME: Fix "serial" variable (which conflicts with "serial" variable in megatec.c) */
 void megatec_subdrv_makevartable()
 {
-	printf("void megatec_subdrv_makevartable()\n");
+	addvar(VAR_VALUE, "vendor", "Regular expression to match UPS Manufacturer string");
+	addvar(VAR_VALUE, "product", "Regular expression to match UPS Product string");
+	/* addvar(VAR_VALUE, "serial", "Regular expression to match UPS Serial number"); */
+	addvar(VAR_VALUE, "vendorid", "Regular expression to match UPS Manufacturer numerical ID (4 digits hexadecimal)");
+	addvar(VAR_VALUE, "productid", "Regular expression to match UPS Product numerical ID (4 digits hexadecimal)");
+	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
+	addvar(VAR_VALUE, "subdriver", "Serial-over-USB subdriver selection");
 }
 
 int ser_open(const char *port)
 {
-	HIDDeviceMatcher_t match;
-	static usb_ups_t param_arg;
-	const char *p;
+	HIDDeviceMatcher_t subdriver_matcher;
 	int ret, i;
-	union _u {
-		unsigned char report_desc[4096];
-		char flush_buf[256];
-	} u;
+	char flush_buf[256];
 
-	memset(&match, 0, sizeof(match));
-	match.match_function = &comm_usb_match;
+	HIDDeviceMatcher_t *regex_matcher = NULL;
+	int r;
+	char *regex_array[6];
 
-	if (0 != strcasecmp(port, "auto")) {
-		param_arg.vid = (uint16_t) strtoul(port, NULL, 16);
-		p = strchr(port, ':');
-		if (NULL != p) {
-			param_arg.pid = (uint16_t) strtoul(p + 1, NULL, 16);
-		} else {
-			param_arg.vid = 0;
+	char *subdrv = getval("subdriver");
+	char *vid = getval("vendorid");
+	char *pid = getval("productid");
+	char *vend = getval("vendor");
+	char *prod = getval("product");
+
+	if(subdrv)
+	{
+		subdriver_t **p;
+
+		if(!vid && !pid && !vend && !prod)
+		{
+			upslogx(LOG_WARNING, "It's unsafe to select a subdriver but not specify device!\n"
+				"Please set some of \"vendor\", \"product\", \"vendorid\", \"productid\""
+				" variables.\n");
 		}
 
-		/* pure heuristics - assume this unknown device speaks agiler protocol */
-		param_arg.get_data = get_data_agiler;
-		param_arg.set_data = set_data_agiler;
-
-		if (0 != param_arg.vid) {
-			match.privdata = &param_arg;
-		} else {
-			upslogx(LOG_ERR, "ser_open: invalid usb device specified, must be \"auto\" or \"vid:pid\"");
-			return -1;
+		for (p = subdriver_list; *p; p++)
+		{
+			if (!strcasecmp(subdrv, (*p)->name))
+			{
+				subdriver = *p;
+				break;
+			}
 		}
+
+		if(!subdriver)
+			fatalx("No subdrivers called \"%s\" found!", subdrv);
 	}
 
-	ret = usb->open(&udev, &hiddevice, &match, u.report_desc, MODE_NOHID);
+	memset(&subdriver_matcher, 0, sizeof(subdriver_matcher));
+	subdriver_matcher.match_function = &comm_usb_match;
+
+	/* FIXME: fix "serial" variable */
+        /* process the UPS selection options */
+	regex_array[0] = vid;
+	regex_array[1] = pid;
+	regex_array[2] = vend;
+	regex_array[3] = prod;
+	regex_array[4] = NULL; /* getval("serial"); */
+	regex_array[5] = getval("bus");
+
+	r = new_regex_matcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
+	if (r==-1) {
+		fatalx("new_regex_matcher: %s", strerror(errno));
+	} else if (r) {
+		fatalx("invalid regular expression: %s", regex_array[r]);
+	}
+	/* link the matchers */
+	regex_matcher->next = &subdriver_matcher;
+
+	ret = usb->open(&udev, &hiddevice, regex_matcher, NULL, MODE_NOHID);
 	if (ret < 0)
 		usb_open_error(port);
 
+	/* TODO: Add make exact matcher for reconnecting feature support */
+	free_regex_matcher(regex_matcher);
+
 	/* flush input buffers */
 	for (i = 0; i < 10; i++) {
-		if (ser_get_line(upsfd, u.flush_buf, sizeof(u.flush_buf), 0, NULL, 0, 0) < 1)
+		if (ser_get_line(upsfd, flush_buf, sizeof(flush_buf), 0, NULL, 0, 0) < 1)
 			break;
 	}
 
@@ -196,7 +247,7 @@ unsigned int ser_send_pace(int fd, unsigned long d_usec, const char *fmt, ...)
 		buf[sizeof(buf) - 1] = 0;
 	}
 
-	return usb_ups_device->set_data(buf);
+	return subdriver->set_data(buf);
 }
 
 int ser_get_line(int fd, char *buf, size_t buflen, char endchar, const char *ignset, long d_sec, long d_usec)
@@ -207,7 +258,7 @@ int ser_get_line(int fd, char *buf, size_t buflen, char endchar, const char *ign
 	if (NULL == udev)
 		return -1;
 
-	len = usb_ups_device->get_data(buf, buflen);
+	len = subdriver->get_data(buf, buflen);
 	if (len < 0)
 		return len;
 
@@ -317,7 +368,6 @@ static int set_data_krauler(const char *str)
 	Still not implemented:
 		0x6	T<n>	(don't know how to pass the parameter)
 		0x68 and 0x69 both cause shutdown after an undefined interval
-		C	(know nothing about this command)
 	*/
 
 	if (strcmp(str, "T\r") == 0)
@@ -334,7 +384,7 @@ static int set_data_krauler(const char *str)
 	if (index > 0)
 	{
 		usb_get_descriptor(udev, USB_DT_STRING, index, NULL, 0);
-		/* usb_control_msg(udev, usb_ups_device->endpoint, USB_REQ_GET_DESCRIPTOR, (USB_DT_STRING << 8) + index, 0, NULL, 0, KRAULER_TIMEOUT); */
+		/* usb_control_msg(udev, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR, (USB_DT_STRING << 8) + index, 0, NULL, 0, KRAULER_TIMEOUT); */
 		return 0;
 	}
 
@@ -376,7 +426,7 @@ static int get_data_krauler(char *buffer, int buffer_size)
 	if (index > 0)
 		while (attempts) {
 			res = usb_get_descriptor(udev, USB_DT_STRING, index, buffer, buffer_size);
-			/* res = usb_control_msg(udev, usb_ups_device->endpoint, USB_REQ_GET_DESCRIPTOR, (USB_DT_STRING << 8) + index, 0, buffer, buffer_size, KRAULER_TIMEOUT); */
+			/* res = usb_control_msg(udev, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR, (USB_DT_STRING << 8) + index, 0, buffer, buffer_size, KRAULER_TIMEOUT); */
 
 			if (res > 0) {
 				for (i = 4, j = 0; i < res; i++)
