@@ -4,7 +4,8 @@
 EXTRA_DIST = acpi.txt al175-vars.txt big-servers.txt chroot.txt		\
  commands.txt config-files.txt configure.txt contact-closure.txt	\
  data-room.txt design.txt developers.txt FAQ hid-subdrivers.txt		\
- ideas.txt megatec.txt new-drivers.txt new-names.txt osd-notify.txt	\
+ ideas.txt macros.txt megatec.txt new-drivers.txt new-names.txt \
+ nut-hal.txt osd-notify.txt	\
  pager.txt powersaving.txt protocol.txt README shutdown.txt snmp.txt	\
  sock-protocol.txt ssl.txt upssched.txt cables/apc-rs500-serial.txt	\
  cables/apc.txt cables/ge-imv-victron.txt cables/imv.txt		\

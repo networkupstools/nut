@@ -1,3 +1,8 @@
+Tue Mar 20 00:10:28 UTC 2007 / Charles Lepple <clepple@gmail.com>
+
+ - */Makefile.am: added various files so that 'make dist' will pick them up.
+ - ChangeLog: added some newlines after the date/author line
+
 Sun Mar 18 19:40:01 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
 
  - drivers/megatec_usb.c: code conversion and adjustments. Added USB-related
@@ -6,17 +11,21 @@ Sun Mar 18 19:40:01 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
  - drivers/Makefile.am: added some needed files to megatec_usb sources.
 
 Sat Mar 17 20:40:51 UTC 2007 / Charles Lepple <clepple@gmail.com>
+
  - drivers/tripplite_usb.c: trying to clean up the soft_shutdown function.
 
 Sat Mar 17 20:04:55 UTC 2007 / Charles Lepple <clepple@gmail.com>
+
  - drivers/tripplite_usb.c: merged in some outlet control code from
    branches/tripplite_usb_outlets (723:728)
 
 Fri Mar 16 21:02:10 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
  - drivers/megatec.c: added hook functions for subdrivers to show their own
    banner and add options to the vartable.
 
 Fri Mar 16 04:05:31 UTC 2007 / Charles Lepple <clepple@gmail.com>
+
  - drivers/tripplite_usb.c: some adjustments for FreeBSD. This driver appears
    to work best on FreeBSD when passed "-i 0".
 

@@ -1,5 +1,5 @@
 EXTRA_DIST = changelog control copyright description.subst hotplug	\
- nut-cgi.config nut-cgi.examples nut-cgi.postinst nut-cgi.postrm	\
+ nut-cgi.config nut-cgi.docs nut-cgi.examples nut-cgi.postinst nut-cgi.postrm	\
  nut-cgi.preinst nut-cgi.README.Debian nut-cgi.templates nut.config	\
  nut.default nut.dirs nut.docs nut.examples nut-hal-drivers.docs	\
  nut.init nut.links nut.postinst nut.postrm nut.preinst nut.prerm	\
