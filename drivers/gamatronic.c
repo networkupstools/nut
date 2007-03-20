@@ -125,7 +125,7 @@ void addquery(char *cmd, int field, int varnum, int pollflag)
 void sec_setinfo(int varnum, char *value)
 {	
 
-	if (sec_varlist[varnum].setcmd != ""){
+	if (*sec_varlist[varnum].setcmd){/*Not empty*/
 		
 		if (sec_varlist[varnum].flags == FLAG_STRING) {
 			dstate_setinfo(sec_varlist[varnum].setcmd,"%s", value);
