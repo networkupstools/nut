@@ -53,6 +53,8 @@ AC_CONFIG_LIBOBJ_DIR([common])
 dnl +-------------------------------------------------------------------
 
 AC_PROG_CC
+dnl Needed for per-target flags
+AM_PROG_CC_C_O
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_EGREP
