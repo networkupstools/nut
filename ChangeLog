@@ -1,3 +1,7 @@
+Tue Mar 27 14:01:50 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - add HAL support for megatec_usb supported devices
+
 Tue Mar 20 03:11:58 UTC 2007 / Charles Lepple <clepple@gmail.com>
 
  - drivers/gamatronic.c: applied patch from Michal Vaner to correct comparison
