@@ -25,7 +25,7 @@ SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb megatec_usb
 USB_HIDDEV_DRIVERLIST = energizerups
 USB_DRIVERLIST = $(USB_LIBUSB_DRIVERLIST) $(USB_HIDDEV_DRIVERLIST)
-HAL_DRIVERLIST = hald-addon-usbhid-ups hald-addon-bcmxcp_usb hald-addon-tripplite_usb
+HAL_DRIVERLIST = hald-addon-usbhid-ups hald-addon-bcmxcp_usb hald-addon-tripplite_usb hald-addon-megatec_usb
 
 # distribute all drivers, even ones that are not built by default
 EXTRA_PROGRAMS = $(SERIAL_DRIVERLIST) $(SNMP_DRIVERLIST) $(USB_DRIVERLIST)
@@ -152,6 +152,11 @@ hald_addon_tripplite_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL
 
 hald_addon_bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c nut_usb.c
 hald_addon_bcmxcp_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS)
+
+hald_addon_megatec_usb_SOURCES = megatec.c megatec_usb.c libusb.c libhid.c hidparser.c
+hald_addon_megatec_usb_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS) -DMEGATEC_SUBDRV
+hald_addon_megatec_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS)
+
 
 # ----------------------------------------------------------------------
 # List of header files. The purpose of this list is not dependency

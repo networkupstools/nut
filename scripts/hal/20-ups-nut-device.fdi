@@ -97,6 +97,36 @@
         </match>
       </match>
 
+      <!-- Agiler -->
+      <match key="usb_device.vendor_id" int="0x05b8">
+        <match key="usb_device.product_id" int="0x0000">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-megatec_usb</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+      </match>
+
+      <!-- Krauler (non compliant IDs)-->
+      <match key="usb_device.vendor_id" int="0x0001">
+        <match key="usb_device.product_id" int="0x0000">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-megatec_usb</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+      </match>
+
+      <!-- Ablerex (non compliant IDs)-->
+      <match key="usb_device.vendor_id" int="0xffff">
+        <match key="usb_device.product_id" int="0x0000">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-megatec_usb</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+      </match>
+
       <!-- Kebo - unsupported! -->
       <match key="usb_device.vendor_id" int="0x0925">
         <match key="usb_device.product_id" int="0x1234">
