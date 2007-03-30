@@ -1,3 +1,14 @@
+Fri Mar 30 12:45:07 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ * update HAL support code:
+   - retrieve and use the HAL user,
+   - use LibHalChangeSet calls,
+   - call libhal_device_addon_is_ready(),
+   - do not expose runtime when not on battery (it otherwise cause
+     this value to be displayed as the remaining time to full charge!),
+   - complete exposed data (battery.{charge_level,reporting}.low,
+     battery.reporting.technology)
+
 Tue Mar 27 14:01:50 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  - add HAL support for megatec_usb supported devices

@@ -450,9 +450,8 @@ int main(int argc, char **argv)
 	int	i, do_forceshutdown = 0;
 
         /* pick up a default from configure --with-user */
-        /* FIXME: get the HAL username somewhere (pkg-config or) */
 	/* FIXME: really needed, or use inherited privs from hald? */
-	/*user = xstrdup("haldaemon");*/	/* xstrdup: this gets freed at exit */
+	user = xstrdup(HAL_USER);	/* xstrdup: this gets freed at exit */
 
 	upsdrv_banner();
 
@@ -481,13 +480,12 @@ int main(int argc, char **argv)
 	/* FIXME: rework HAL param interface! or get path/regex from UDI? */
         device_path = xstrdup("auto"); /*getenv ("HAL_PROP_HIDDEV_DEVICE"); */
         nut_debug_level = 5;
-	
-	/* needed to avoid udev/hal race condition */
-	/* otherwise, hal start this addon while the rights */
-	/* are not yet set. */
-	/* FIXME: check if it's due to the current udev through */
-	/* hotplug shell script perms settings (maybe too slow?) */
-	sleep (2);
+
+	dbus_error_init (&error);
+	if (!libhal_device_addon_is_ready (ctx, udi, &error)) {
+		fprintf(stderr, "Error (libhal): device addon is not ready\n");
+		exit(EXIT_FAILURE);
+	}
 
 	/* end of HAL init */
 	

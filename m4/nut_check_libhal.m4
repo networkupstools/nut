@@ -33,6 +33,22 @@ if test -z "${nut_have_libhal_seen}"; then
 	AC_MSG_RESULT(${LDFLAGS})
    fi
 
+   dnl this will only work as of HAL 0.5.9
+   AC_MSG_CHECKING(for libhal user via pkg-config)
+   HAL_USER=`pkg-config --silence-errors  --variable=haluser hal`
+   if (test -z "$HAL_USER")
+   then
+	HAL_USER="haldaemon"
+	AC_MSG_RESULT(using default (${HAL_USER}))
+   else
+	AC_MSG_RESULT(${HAL_USER})
+   fi
+   AC_DEFINE_UNQUOTED(HAL_USER, "${HAL_USER}", [HAL user])
+
+   dnl A request has been made to get variables for:
+   dnl - addon install path
+   dnl - fdi install path
+
    dnl if this didn't work, try some standard places. For example,
    dnl HAL 0.5.8 and 0.5.8.1 contain pkg-config bugs.
 
