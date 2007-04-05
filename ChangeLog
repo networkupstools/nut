@@ -1,3 +1,7 @@
+Thu Apr  5 00:38:54 UTC 2007 / Charles Lepple <clepple@gmail.com>
+
+ - configure.in: added "--enable-maintainer-mode"
+
 Fri Mar 30 12:45:07 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  * update HAL support code:

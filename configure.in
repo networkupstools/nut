@@ -11,6 +11,10 @@ AC_CONFIG_HEADER(include/config.h)
 AC_PREFIX_DEFAULT(/usr/local/ups)
 AM_INIT_AUTOMAKE
 
+dnl Use "./configure --enable-maintainer-mode" to keep Makefile.in and Makefile
+dnl in sync after SVN updates.
+AM_MAINTAINER_MODE
+
 AC_DEFINE_UNQUOTED(UPS_VERSION, "${PACKAGE_VERSION}", [NUT version])
 
 dnl Fix this early so we can expand with eval later
