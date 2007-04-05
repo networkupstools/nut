@@ -1,3 +1,7 @@
+Thu Apr  5 00:40:20 UTC 2007 / Charles Lepple <clepple@gmail.com>
+
+ - data/drivers.list: Added entry for Compaq R3000h
+
 Thu Apr  5 00:38:54 UTC 2007 / Charles Lepple <clepple@gmail.com>
 
  - configure.in: added "--enable-maintainer-mode"

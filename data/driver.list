@@ -84,6 +84,7 @@
 "Cito Power"	"CPG-SR1000"		""	"megatec"
 
 "Compaq"	"T1500h"	""	"upscode2 use_pre_lf"
+"Compaq"	"R3000h"	""	"upscode2"
 "Compaq"	"R3000 XR"	""	"bcmxcp"
 "Compaq"	"R5500 XR"	""	"bcmxcp"
 
