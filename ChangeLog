@@ -1,3 +1,7 @@
+Fri Apr  6 11:24:45 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ - man/megatec_usb.8: reflected latest changes in megatec_usb driver.
+
 Thu Apr  5 00:40:20 UTC 2007 / Charles Lepple <clepple@gmail.com>
 
  - data/drivers.list: Added entry for Compaq R3000h

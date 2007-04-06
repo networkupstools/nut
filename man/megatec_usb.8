@@ -12,14 +12,14 @@ does what is needed.
 
 .SH SUPPORTED HARDWARE
 
-The megatec driver is known to work with various UPSes from Krauler, Agiler,
+The megatec_usb driver is known to work with various UPSes from Krauler, Agiler,
 and Upsonic (Ablerex interface). Others that use the Megatec protocol
 may work, but haven't been tested.
 
-This driver supports the USB versions of UPSs, if you have a serial cable then use the
-straight megatec driver.
+This driver supports the USB versions of UPSs, if you have only serial interface then use the
+straight \fBmegatec\fR(8) driver.
 
-If you find that this driver does not work, and you are sure that you have a megatec interface,
+If you find that this driver does not work, and you are sure that your hardware speaks megatec protocol,
 then you can easily extend this driver. However, you will need to do some analysis of the 
 commands that are sent to the UPS. Please see the forums for discussions on this and how
 to extend this driver.
@@ -31,7 +31,7 @@ a USB interface. These devices do not obey the normal rules for HID USB devices 
 \fBnewhidups\fR(8) driver will not work for them.
 
 This driver takes the standard serial interface and passes this over USB to the UPS.
-This is means that most, but not all, commands available for the serial driver will 
+This means that most, but not all, commands available for the serial driver will 
 work. For Krauler, Agiler, and Upsonic (with Ablerex interface) UPSes 
 it appears to give very similar results to the serial interface. The
 driver supports monitoring most of the usual UPS variables, and also
@@ -66,6 +66,36 @@ Optional.  Delay before the UPS is turned off (minutes).
 .IP "battvolts=\fIfloat\fR:\fIfloat\fR"
 
 Optional.  The battery voltage interval (volts).
+
+.IP "vendor=\fIregex\fR"
+.IP "product=\fIregex\fR"
+.IP "vendorid=\fIregex\fR"
+.IP "productid=\fIregex\fR"
+
+Select a specific UPS, in case there is more than one connected via
+USB. Each option specifies an extended regular expression (see
+\fBregex(7)\fR) that must match the UPS's entire vendor/product/serial
+string (minus any surrounding whitespace), or the whole 4-digit
+hexadecimal code for vendorid and productid. Try \fB-DD\fR for
+finding out the strings to match.
+
+Examples: 
+
+    \fB-x vendor="Foo.Corporation.*"\fR
+
+    \fB-x vendorid=05b8\fR (Agiler)
+
+    \fB-x product=".*(Smart|Back)-?UPS.*"\fR
+
+.IP "bus=\fIregex\fR"
+
+Select a UPS on a specific USB bus or group of busses. The argument is
+a regular expression that must match the bus name where the UPS is
+connected (e.g. bus="002", bus="00[2-3]"). 
+
+.IP "subdriver=\fIstring\fR"
+
+Select a serial-over-USB subdriver to use. You have a choice between "agiler" and "krauler" subdrivers currently.
 
 .SH UPS COMMANDS
 
