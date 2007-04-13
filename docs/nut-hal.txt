@@ -1,12 +1,10 @@
 Desc: NUT integration with FreeDesktop HAL - Hardware Abstraction Layer
 File: nut-hal.txt
-Date: 22 December 2006
+Date: 12 April 2007
 Auth: Arnaud Quette <aquette.dev@gmail.com>
 
 This document introduces NUT integration with FreeDesktop HAL
 (Hardware Abstraction Layer).
-
-This feature is sponsored by MGE UPS SYSTEMS.
 
 Introduction
 ------------
@@ -19,7 +17,7 @@ system protection and notification.
 This allows a better integration with the HAL supported systems
 (Linux, *BSD and Solaris), and to reuse applications that have
 been written to support laptop batteries. This also means that
-we avoid the code/application redundancy by not using the upsd
+we avoid the code / application redundancy by not using the upsd
 and upsmon / NUT Client layer.
 
 Since the NUT driver subset is limited to USB only, at least for
@@ -31,7 +29,8 @@ present on the system, we can achieve a full plug and play system.
 That is to say when you plug your USB UPS, the needed driver is
 automatically loaded and the according application (ie GPM) is
 made available (displayed) at runtime without having to install
-anything else than the base system.
+anything else than the base system. Nothing more to install,
+nothing more to configure...
 
 Detailled usage
 ---------------
@@ -39,9 +38,12 @@ Detailled usage
 Since this feature is still a work in progress, the below information
 details how to get, install and test it.
 
+Note that the minimum HAL version required is 0.5.8
+
 * svn co svn://svn.debian.org/nut/trunk
 
 * install libhal-dev and its dependancy (libdbus-dev)
+or equivalent packages for your system.
 
 * "./configure --with-hal && make" from within the nut dir
 
@@ -49,12 +51,16 @@ details how to get, install and test it.
 /usr/lib/hal/ on Debian) or equivalent dir.
 
 * copy the scripts/hal/20-ups-nut-device.fdi file to
-/usr/share/hal/fdi/information/20thirdparty/ (still on Debian) or
-equivalent dir.
+$datadir/hal/fdi/information/20thirdparty
+for example on Debian: /usr/share/hal/fdi/information/20thirdparty/
 
 ******************* To be verified and improved *******************
 * modify your hotplug/udev script so that the HAL user can read and
 write to the usb device (ie /dev/bus/usb/XXX/YYY)
+
+or (better for the moment)
+* add the hal user (ex: haldaemon) to the nut group using
+
 ******************* To be verified and improved *******************
 
 * restart HAL (ie using "/etc/init.d/dbus restart").
@@ -68,12 +74,28 @@ will state that there is an UPS
 - 
 - ...
 
+Packaging information
+---------------------
+
+The HAL support in NUT must currently be packaged separatly (ie in a
+nut-hal package) and must conflict with the classic nut packages.
+This is in order to:
+- allow shipping of the HAL support only in the base system,
+without including all the NUT drivers and software,
+- prevent the NUT HAL addons to get an exclusive
+and automatic access on a device, when a user only want to use the
+USB support with a classic NUT installation.
+
+This will be addressed when the new NUT configuration framework
+will be merged in the main code branch.
+
+
 Credits
 -------
 
 Thanks to the following people who made this possible:
 - David Zeuthen, HAL Project Leader,
-- and to Richard Hughes, Gnome Power Manager Developer.
+- Richard Hughes, Gnome Power Manager Developer.
 
 References
 ----------

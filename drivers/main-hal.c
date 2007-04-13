@@ -449,7 +449,7 @@ int main(int argc, char **argv)
 	struct	passwd	*new_uid = NULL;
 	int	i, do_forceshutdown = 0;
 
-        /* pick up a default from configure --with-user */
+	/* pick up a default from configure --with-user */
 	/* FIXME: really needed, or use inherited privs from hald? */
 	user = xstrdup(HAL_USER);	/* xstrdup: this gets freed at exit */
 
@@ -478,8 +478,8 @@ int main(int argc, char **argv)
 	}
 
 	/* FIXME: rework HAL param interface! or get path/regex from UDI? */
-        device_path = xstrdup("auto"); /*getenv ("HAL_PROP_HIDDEV_DEVICE"); */
-        nut_debug_level = 5;
+	device_path = xstrdup("auto"); /*getenv ("HAL_PROP_HIDDEV_DEVICE"); */
+	nut_debug_level = 5;
 
 	dbus_error_init (&error);
 	if (!libhal_device_addon_is_ready (ctx, udi, &error)) {

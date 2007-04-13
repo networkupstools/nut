@@ -1,3 +1,8 @@
+Fri Apr 13 14:00:45 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ * HAL update:
+   - docs/
+
 Fri Apr  6 11:24:45 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
 
  - man/megatec_usb.8: reflected latest changes in megatec_usb driver.
