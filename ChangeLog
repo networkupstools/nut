@@ -1,3 +1,10 @@
+Tue Apr 24 16:15:20 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+
+   - drivers/bcmxcp_ser.c: Update done by Arjen de Korte. Changed some 
+     printf lines to upslogx and upsdebugx. Made a cleaner send function.
+     Baudhunting give more informative info.
+     Also removed a bug in the receive function that i missed.
+
 Fri Apr 13 14:00:45 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  * HAL update:
