@@ -5,8 +5,7 @@
 LDADD_COMMON = ../common/libcommon.a
 LDADD_DRIVERS = $(LDADD_COMMON) ../common/upsconf.o	\
  ../common/parseconf.o ../common/state.o main.o dstate.o
-LDADD_HAL_DRIVERS = $(LDADD_COMMON) ../common/upsconf.o	\
- ../common/parseconf.o libnuthalmain.a
+LDADD_HAL_DRIVERS = $(LDADD_COMMON) libnuthalmain.a
 LDADD_DRIVERS_SERIAL = $(LDADD_DRIVERS) $(SERLIBS) serial.o
 
 # most targets are drivers, so make this the default

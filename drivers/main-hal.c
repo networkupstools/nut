@@ -19,13 +19,17 @@
 */
 
 
-#include "main.h"
+#include "main-hal.h"
 #include "dstate-hal.h"
 #include <hal/libhal.h>
 
+#ifdef HAVE_POLKIT
+#include <libpolkit.h>
+#endif
+
 	/* HAL specific */
-	extern LibHalContext *ctx;
-	extern const char *udi;
+	extern LibHalContext *halctx;
+	extern char *udi;
 
 	/* data which may be useful to the drivers */	
 	int	upsfd = -1;
@@ -60,6 +64,7 @@
 	/* everything else */
 	static	char	*pidfn = NULL;
 
+#if 0 /* HAL stripping */
 /* power down the attached load immediately */
 static void forceshutdown(void)
 {
@@ -163,7 +168,7 @@ static void storeval(const char *var, char *val)
 	}
 
 	/* try to help them out */
-	printf("\nFatal error: '%s' is not a valid %s for this driver.\n", var,
+	printf("\nFatal dbus_error: '%s' is not a valid %s for this driver.\n", var,
 		val ? "variable name" : "flag");
 	printf("\n");
 	printf("Look in the man page or call this driver with -h for a list of\n");
@@ -171,6 +176,7 @@ static void storeval(const char *var, char *val)
 
 	exit(EXIT_SUCCESS);
 }
+#endif
 
 /* retrieve the value of variable <var> if possible */
 char *getval(const char *var)
@@ -225,8 +231,9 @@ void addvar(int vartype, const char *name, const char *desc)
 		last->next = tmp;
 	else
 		vartab_h = tmp;
-}	
+}
 
+#if 0 /* HAL stripping */
 /* handle -x / ups.conf config details that are for this part of the code */
 static int main_arg(char *var, char *val)
 {
@@ -385,6 +392,7 @@ static void listxarg(void)
 		tmp = tmp->next;
 	}
 }
+#endif
 
 static void vartab_free(void)
 {
@@ -403,6 +411,13 @@ static void vartab_free(void)
 		tmp = next;
 	}
 }
+
+#if 0 /* HAL stripping */
+/* FIXME: really needed by drivers? */
+char *getval(const char *var) { return ""; }
+int testvar(const char *var) { return 0; /* not found */}
+void addvar(int vartype, const char *name, const char *desc) {}
+#endif
 
 static void exit_cleanup(void)
 {
@@ -444,8 +459,8 @@ static void setup_signals(void)
 
 int main(int argc, char **argv)
 {
-	DBusError error;
-
+	DBusError dbus_error;
+	DBusConnection	*dbus_connection;
 	struct	passwd	*new_uid = NULL;
 	int	i, do_forceshutdown = 0;
 
@@ -463,35 +478,82 @@ int main(int argc, char **argv)
 	progname = xbasename(argv[0]);
 	open_syslog(progname);
 
-	/* initialise HAL */
-	ctx = NULL;
+	/* initialise HAL and DBus interface*/
+	halctx = NULL;
 	udi = getenv ("UDI");
 	if (udi == NULL) {
 		fprintf(stderr, "Error: UDI is null.\n");
 		exit(EXIT_FAILURE);
 	}
 
-	dbus_error_init (&error);
-	if ((ctx = libhal_ctx_init_direct (&error)) == NULL) {
+	dbus_error_init (&dbus_error);
+	if ((halctx = libhal_ctx_init_direct (&dbus_error)) == NULL) {
 		fprintf(stderr, "Error: can't initialise libhal.\n");
 		exit(EXIT_FAILURE);
 	}
-
+	if (dbus_error_is_set (&dbus_error))
+	{
+		fatalx("Error in context creation: %s\n", dbus_error.message);
+		dbus_error_free (&dbus_error);
+	}
+	
+/*	if ((dbus_connection = libhal_ctx_get_dbus_connection(halctx)) == NULL) {
+		fprintf(stderr, "Error: can't get DBus connection.\n");
+		exit(EXIT_FAILURE);
+	}
+*/
 	/* FIXME: rework HAL param interface! or get path/regex from UDI? */
+	/* from UDI, appending usbraw, you can access to usbraw.device. Ex
+	/* /org/freedesktop/Hal/devices/usb_device_463_ffff_1H2E300AH_usbraw
+	 * => usbraw.device = /dev/bus/usb/002/065 */	
 	device_path = xstrdup("auto"); /*getenv ("HAL_PROP_HIDDEV_DEVICE"); */
-	nut_debug_level = 5;
+	nut_debug_level = 3;
 
-	dbus_error_init (&error);
-	if (!libhal_device_addon_is_ready (ctx, udi, &error)) {
+	/* Sleep 2 seconds to be able to view the device through usbfs! */
+	sleep(2);
+
+/*	dbus_error_init (&dbus_error);
+	if (!libhal_device_addon_is_ready (halctx, udi, &dbus_error)) {
 		fprintf(stderr, "Error (libhal): device addon is not ready\n");
 		exit(EXIT_FAILURE);
 	}
+*/
+	/* Claim interface with void methods, while waiting to register
+	 * actual methods, through driver core calling dstate_addcmd()
+	 */
+/*	if (!libhal_device_claim_interface(halctx, udi, DBUS_INTERFACE,
+		"    <method name=\"SetBeeper\">\n"
+		"      <arg name=\"beeper_mode\" direction=\"in\" type=\"b\"/>\n"
+		"      <arg name=\"return_code\" direction=\"out\" type=\"i\"/>\n"
+		"    </method>\n",
+		&dbus_error)) {
+			fprintf(stderr, "Error: can't claim DBus interface: %s", dbus_error.message);
+			exit(EXIT_FAILURE);
+	}
+*/
+/*	if (!libhal_device_claim_interface(halctx, udi, DBUS_INTERFACE,
+		"<method></method>", &dbus_error)) {
+		fprintf(stderr, "Error: can't claim DBus interface: %s", dbus_error.message);
+		exit(EXIT_FAILURE);
+	}
+	libhal_device_add_capability(halctx,
+				     "/org/freedesktop/Hal/devices/computer",
+				     "UPS",
+				     &dbus_error);
+*/    
+/* FIXME: got an undef ref! */
+/*	dbus_connection_setup_with_g_main(dbus_connection, NULL);
+	dbus_connection_add_filter(dbus_connection, dbus_filter_function, NULL, NULL);
+	dbus_connection_set_exit_on_disconnect(dbus_connection, 0);
 
+	dbus_init_local(); */
 	/* end of HAL init */
 	
 	/* build the driver's extra (-x) variable table */
 	upsdrv_makevartable();
 
+/* HAL stripping */
+#if 0
 	while ((i = getopt(argc, argv, "+a:kDhx:Lr:u:Vi:")) != -1) {
 		switch (i) {
 			case 'a':
@@ -560,6 +622,9 @@ int main(int argc, char **argv)
 		device_path = xstrdup(argv[0]);
 		device_name = xbasename(device_path);
 	}
+#endif
+	device_path = xstrdup(argv[0]);
+	device_name = xbasename(device_path);
 
 	pidfn = xmalloc(SMALLBUF);
 
@@ -595,16 +660,17 @@ int main(int argc, char **argv)
 
 	/* now see if things are very wrong out there */
 	if (broken_driver) {
-		printf("Fatal error: broken driver. It probably needs to be converted.\n");
+		printf("Fatal dbus_error: broken driver. It probably needs to be converted.\n");
 		printf("Search for 'broken_driver = 1' in the source for more details.\n");
 		exit(EXIT_FAILURE);
 	}
 
+#if 0
 	if (do_forceshutdown)
 		forceshutdown();
-
+#endif
 	/* get the base data established before allowing connections */
-	upsdrv_initinfo();
+ 	upsdrv_initinfo();
 	upsdrv_updateinfo();
 
 	/* now we can start servicing requests */
@@ -627,6 +693,13 @@ int main(int argc, char **argv)
 
 	/* safe to do this now that the parent has exited */
 	atexit(exit_cleanup);
+
+	/* End HAL init */
+	dbus_error_init (&dbus_error);
+	if (!libhal_device_addon_is_ready (halctx, udi, &dbus_error)) {
+		fprintf(stderr, "Error (libhal): device addon is not ready\n");
+		exit(EXIT_FAILURE);
+	}
 
 	while (exit_flag == 0) {
 		upsdrv_updateinfo();

@@ -1,3 +1,12 @@
+nut (2.1.0-3) UNRELEASED; urgency=low
+
+  * debian/control: requires at least libhal-dev  0.5.8
+  * debian/rules: nut-hal-drivers also needs the udev rules
+  * debian/nut-hal-drivers.preinst: created to add the HAL user to
+    the nut group
+  
+ -- Arnaud Quette <aquette@debian.org>  Fri, 04 May 2007 13:19:51 +0200
+
 nut (2.1.0-2) UNRELEASED; urgency=low
 
   * SVN snapshot

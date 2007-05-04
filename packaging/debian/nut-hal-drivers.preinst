@@ -1,0 +1,53 @@
+#!/bin/sh -e
+
+# source the debconf library
+. /usr/share/debconf/confmodule
+
+check_hal_in_nut_group() {
+	if [ -z "`getent group nut | grep haldaemon`" ]; then
+		adduser --quiet haldaemon nut
+	fi
+}
+
+check_and_create_group() {
+	if [ ! "`getent group nut`" ]; then
+		addgroup --quiet --system nut
+	fi
+}
+
+check_and_create_user() {
+	if [ ! "`getent passwd nut`" ]; then
+		adduser --quiet --system --ingroup nut --home /var/lib/nut --no-create-home nut
+	fi
+}
+
+case "$1" in
+
+  install)
+    # Check for existing nut system account, and create it if needed
+    check_and_create_group
+    check_and_create_user
+    # Add the haldaemon user to the nut group
+    check_hal_in_nut_group
+    ;;
+
+  upgrade)
+    # Check for existing nut system account, and create it if needed
+    check_and_create_group
+    check_and_create_user
+    # Add the haldaemon user to the nut group
+    check_hal_in_nut_group
+    ;;
+
+  abort-upgrade)
+    # do nothing
+    ;;
+
+  *)
+    echo "$0: incorrect arguments: $*" >&2
+    exit 1
+    ;;
+esac
+
+#DEBHELPER#
+db_stop

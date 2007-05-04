@@ -54,14 +54,11 @@ or equivalent packages for your system.
 $datadir/hal/fdi/information/20thirdparty
 for example on Debian: /usr/share/hal/fdi/information/20thirdparty/
 
-******************* To be verified and improved *******************
-* modify your hotplug/udev script so that the HAL user can read and
-write to the usb device (ie /dev/bus/usb/XXX/YYY)
+* create the (nut user and) group for the udev rule:
+addgroup --quiet --system nut
 
-or (better for the moment)
-* add the hal user (ex: haldaemon) to the nut group using
-
-******************* To be verified and improved *******************
+* add the hal user (ex: haldaemon) to the nut group using:
+adduser --quiet haldaemon nut
 
 * restart HAL (ie using "/etc/init.d/dbus restart").
 I've personaly used "killall hal" and restarted it using
@@ -102,3 +99,4 @@ References
 
 * FreeDesktop HAL: http://freedesktop.org/wiki/Software_2fhal
 * Gnome Power Manager: http://www.gnome.org/projects/gnome-power-manager/
+

@@ -1,3 +1,12 @@
+Fri May  4 11:07:15 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ * HAL update:
+   - fixed the dstate-hal integration, which caused a huge memory leak
+   - prepare for DBus Method calls (wired on NUT instant commands)
+   - improve the debian nut-hal-drivers package (see the debian changelog in
+     packaging/debian/changelog for more details)
+   - m4/nut_check_libhal.m4: improved for future dbus use
+   
 Tue Apr 24 16:15:20 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
    - drivers/bcmxcp_ser.c: Update done by Arjen de Korte. Changed some 

@@ -25,6 +25,11 @@
 #include "parseconf.h"
 #include "upshandler.h"
 
+#include <glib.h>
+#include <dbus/dbus-glib.h>
+#include <dbus/dbus-glib-lowlevel.h>
+#include <hal/libhal.h>
+
 #define DS_LISTEN_BACKLOG 16
 #define DS_MAX_READ 256		/* don't read forever from upsd */
 
@@ -37,6 +42,15 @@
 #define STAT_SET_HANDLED        0x0010
 #define STAT_SET_UNKNOWN        0x0011
 /* FUTURE: same */ 
+
+/* HAL specific */
+#define DBUS_INTERFACE "org.freedesktop.Hal.Device.UPS"
+
+DBusHandlerResult dbus_filter_function(DBusConnection *connection,
+					      DBusMessage *message,
+					      void *user_data);
+
+gboolean	dbus_init_local		(void);
 
 /* track client connections */
 /* struct conn_t {

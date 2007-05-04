@@ -25,8 +25,9 @@ if test -z "${nut_have_libhal_seen}"; then
 	   AC_MSG_RESULT(${HAL_VERSION} found)
    fi
    
+   dnl also get cflags from glib-2.0 to workaround a bug in dbus-glib
    AC_MSG_CHECKING(for libhal cflags via pkg-config)
-	CFLAGS=`pkg-config --silence-errors --cflags hal`
+	CFLAGS=`pkg-config --silence-errors --cflags hal dbus-glib-1`
    if (test "$?" != "0")
    then
 	AC_MSG_RESULT(not found)
@@ -35,8 +36,9 @@ if test -z "${nut_have_libhal_seen}"; then
 	AC_MSG_RESULT(${CFLAGS})
    fi
 
+   dnl also get libs from glib-2.0 to workaround a bug in dbus-glib
    AC_MSG_CHECKING(for libhal ldflags via pkg-config)
-   LDFLAGS=`pkg-config --silence-errors --libs hal`
+   LDFLAGS=`pkg-config --silence-errors --libs hal dbus-glib-1`
    if (test "$?" != "0")
    then
 	   AC_MSG_RESULT(not found)

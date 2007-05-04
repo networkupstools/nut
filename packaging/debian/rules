@@ -141,10 +141,15 @@ install-stamp:
 
 	# HAL:
 	mkdir -p $(CURDIR)/debian/nut-hal-drivers/usr/lib/hal \
-		$(CURDIR)/debian/nut-hal-drivers/usr/share/hal/fdi/information/20thirdparty
+		$(CURDIR)/debian/nut-hal-drivers/usr/share/hal/fdi/information/20thirdparty \
+		$(CURDIR)/debian/nut-hal-drivers/etc/udev/rules.d
 	mv $(CURDIR)/debian/nut/lib/nut/hald-addon-* $(CURDIR)/debian/nut-hal-drivers/usr/lib/hal
 	# FIXME: this should have a 'make install' rule:
 	cp $(CURDIR)/scripts/hal/* $(CURDIR)/debian/nut-hal-drivers/usr/share/hal/fdi/information/20thirdparty
+	# HAL support also requires the udev rules
+	install -m 644 $(CURDIR)/scripts/udev/nut-usbups.rules \
+		$(CURDIR)/debian/nut-hal-drivers/etc/udev/rules.d/025_nut-usbups.rules
+
 
 	dh_installexamples
 	rm $(CURDIR)/debian/nut/etc/nut/*
