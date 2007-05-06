@@ -22,6 +22,12 @@
  */
 
 
+/*
+ * A document describing the protocol implemented by this driver can be
+ * found online at "http://www.networkupstools.org/protocols/megatec.html".
+ */
+
+
 #include "main.h"
 #include "serial.h"
 #include "megatec.h"
@@ -33,19 +39,19 @@
 
 
 #define ENDCHAR  '\r'
-#define IGNCHARS "(#"
+#define IGNCHARS ""
 
 #define RECV_BUFFER_LEN 128
 
-/* The expected reply lengths (without IGNCHARS) */
-#define F_CMD_REPLY_LEN  20
-#define Q1_CMD_REPLY_LEN 45
-#define I_CMD_REPLY_LEN  37
+/* The expected reply lengths */
+#define F_CMD_REPLY_LEN  21
+#define Q1_CMD_REPLY_LEN 46
+#define I_CMD_REPLY_LEN  38
 
 #define IDENT_MAXTRIES   5
 #define IDENT_MINSUCCESS 3
 
-#define SEND_PACE    100000  /* interval between chars on send (usec)*/
+#define SEND_PACE    100000  /* interval between chars on send (usec) */
 #define READ_TIMEOUT 2       /* timeout on read (seconds) */
 
 #define MAX_START_DELAY    9999
@@ -119,6 +125,7 @@ static BatteryVolts_t batteries[] = {{ 12,  9.0, 16.0,  9.7, 13.7,  0.0 },   /* 
                                      { 12, 18.0, 30.0, 18.8, 26.8, 22.3 },   /* PowerWalker Line-Interactive VI 1000 */
                                      { 24, 18.0, 30.0, 19.4, 27.4, 22.2 },   /* Mustek PowerMust 1000VA Plus */
                                      { 36,  1.5,  3.0, 1.64, 2.31, 1.88 },   /* Mustek PowerMust 1000VA On-Line */
+                                     { 36, 30.0, 42.0, 32.5, 41.0,  0.0 },   /* Mecer ME-2000 (LB unknown) */
                                      { 96,  1.5,  3.0, 1.63, 2.29,  1.8 },   /* Ablerex MS3000RT (LB at 25% charge) */
                                      {  0,  0.0,  0.0,  0.0,  0.0,  0.0 }};  /* END OF DATA */
 
@@ -251,7 +258,7 @@ static int check_ups(void)
 	upsdebugx(2, "Sending \"Q1\" command...");
 	ser_send_pace(upsfd, SEND_PACE, "Q1%c", ENDCHAR);
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
-	if (ret < Q1_CMD_REPLY_LEN) {
+	if (ret < Q1_CMD_REPLY_LEN || buffer[0] != '(') {
 		upsdebugx(2, "Wrong answer to \"Q1\" command.");
 
 		return -1;
@@ -271,7 +278,7 @@ static int get_ups_info(UPSInfo_t *info)
 	upsdebugx(1, "Asking for UPS information (\"I\" command)...");
 	ser_send_pace(upsfd, SEND_PACE, "I%c", ENDCHAR);
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
-	if (ret < I_CMD_REPLY_LEN) {
+	if (ret < I_CMD_REPLY_LEN || buffer[0] != '#') {
 		upsdebugx(1, "UPS doesn't return any information about itself.");
 
 		return -1;
@@ -283,9 +290,10 @@ static int get_ups_info(UPSInfo_t *info)
 
 	/*
 	 * Get the manufacturer, model and version fields, skipping
-	 * the separator character that sits between them.
+	 * the separator character that sits between them, as well as
+	 * the first character (the control character, always a '#').
 	 */
-	anchor = copy_field(info->mfr, buffer, UPS_MFR_CHARS);
+	anchor = copy_field(info->mfr, &buffer[1], UPS_MFR_CHARS);
 	anchor = copy_field(info->model, anchor + 1, UPS_MODEL_CHARS);
 	copy_field(info->version, anchor + 1, UPS_VERSION_CHARS);
 
@@ -301,7 +309,7 @@ static int get_firmware_values(FirmwareValues_t *values)
 	upsdebugx(1, "Asking for UPS power ratings (\"F\" command)...");
 	ser_send_pace(upsfd, SEND_PACE, "F%c", ENDCHAR);
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
-	if (ret < F_CMD_REPLY_LEN) {
+	if (ret < F_CMD_REPLY_LEN || buffer[0] != '#') {
 		upsdebugx(1, "UPS doesn't return any information about its power ratings.");
 
 		return -1;
@@ -309,7 +317,7 @@ static int get_firmware_values(FirmwareValues_t *values)
 
 	upsdebugx(3, "UPS power ratings: %s", buffer);
 
-	sscanf(buffer, "%f %f %f %f", &values->volt, &values->current,
+	sscanf(buffer, "#%f %f %f %f", &values->volt, &values->current,
 	       &values->battvolt, &values->freq);
 
 	return 0;
@@ -325,7 +333,7 @@ static int run_query(QueryValues_t *values)
 	upsdebugx(1, "Asking for UPS status (\"Q1\" command)...");
 	ser_send_pace(upsfd, SEND_PACE, "Q1%c", ENDCHAR);
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
-	if (ret < Q1_CMD_REPLY_LEN) {
+	if (ret < Q1_CMD_REPLY_LEN || buffer[0] != '(') {
 		upsdebugx(1, "UPS doesn't return any information about its status.");
 
 		return -1;
@@ -333,7 +341,7 @@ static int run_query(QueryValues_t *values)
 
 	upsdebugx(3, "UPS status: %s", buffer);
 
-	sscanf(buffer, "%f %f %f %f %f %f %s %s", &values->ivolt, &values->fvolt, &values->ovolt,
+	sscanf(buffer, "(%f %f %f %f %f %f %s %s", &values->ivolt, &values->fvolt, &values->ovolt,
 	       &values->load, &values->freq, &values->battvolt, temperature, values->flags);
 
 	/*

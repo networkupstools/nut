@@ -65,7 +65,9 @@
 "Belkin"	"Universal UPS F6C100-UNV" "USB"	"usbhid-ups"
 "Belkin"	"Universal UPS F6C120-UNV" "USB"	"usbhid-ups"
 "Belkin"	"Universal UPS F6C1100-UNV" "USB"	"usbhid-ups"
-"Belkin"	"Universal UPS F6H500ukUNV"	""	"megatec"
+"Belkin"	"Universal UPS F6H350xxUNV"	"F6H350deUNV, F6H350ukUNV"	"megatec"
+"Belkin"	"Universal UPS F6H500xxUNV"	"F6H500ukUNV"	"megatec"
+"Belkin"	"Universal UPS F6H650xxUNV"	"F6H650ukUNV"	"megatec"
 "Belkin"	"Office Series F6C550-AVR"	"USB"	"usbhid-ups"
 
 "Best Power"	"Fortress (newer)"	""	"bestups"
@@ -178,6 +180,8 @@
 "Masterguard"	"(various)"	""	"masterguard"
 
 "Maxxtro"	"UPS 600 VA"	"serial port"	"megatec"
+
+"Mecer"		"ME-2000"		""	"megatec"
 
 "Meta System"	"HF Line"	"1..4 boards"	"metasys"
 "Meta System"	"HF Line \/2"	"5..8 boards"	"metasys"
