@@ -1,2 +1,2 @@
-SUBDIRS = debian mandriva RedHat
+SUBDIRS = debian mandriva RedHat redhat
 EXTRA_DIST = README

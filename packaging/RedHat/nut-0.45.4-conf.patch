@@ -1,0 +1,11 @@
+--- nut-0.45.4/conf/upssched.conf.orig	Wed Jul 31 16:52:59 2002
++++ nut-0.45.4/conf/upssched.conf	Wed Jul 31 16:55:11 2002
+@@ -14,7 +14,7 @@
+ # A shell script with a big case..esac construct should work nicely for this.
+ # An example has been provided to help you get started.
+ 
+-CMDSCRIPT /usr/local/ups/bin/upssched-cmd
++CMDSCRIPT /usr/sbin/upssched-cmd
+ 
+ # ============================================================================
+ #
