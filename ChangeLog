@@ -1,3 +1,8 @@
+Mon May  7 22:36:34 UTC 2007 / Charles Lepple <clepple@gmail.com>
+
+ - packaging/generic-rpm: moved from packaging/RedHat to deconflict with
+   RawHide spec files on case-insensitive filesystems.
+
 Mon May  7 22:30:41 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
 
  - drivers/megatec_usb.c: fixed UPS replies to pass recently added
