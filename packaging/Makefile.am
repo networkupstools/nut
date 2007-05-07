@@ -1,2 +1,2 @@
-SUBDIRS = debian mandriva RedHat generic-rpm
+SUBDIRS = debian mandriva redhat generic-rpm
 EXTRA_DIST = README
