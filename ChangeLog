@@ -1,3 +1,8 @@
+Mon May  7 22:30:41 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ - drivers/megatec_usb.c: fixed UPS replies to pass recently added
+   additional checks in megatec.c.
+
 Mon May  7 08:50:21 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  - packaging/redhat: import the latest RedHat RawHide .spec file, along

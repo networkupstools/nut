@@ -176,7 +176,7 @@ int ser_open(const char *port)
 		}
 
 		if(!subdriver)
-			fatalx("No subdrivers called \"%s\" found!", subdrv);
+			fatalx("No subdrivers named \"%s\" found!", subdrv);
 	}
 
 	memset(&subdriver_matcher, 0, sizeof(subdriver_matcher));
@@ -404,42 +404,49 @@ static int get_data_krauler(char *buffer, int buffer_size)
 {
 	int res = 0;
 	unsigned char index = 0;
+	char prefix = 0;
 	int i, j;
 	int attempts = 1;
+
+	if (krauler_command_buffer[0] == 0) return 0;
 
 	if (strcmp(krauler_command_buffer, "Q1\r") == 0)
 	{
 		index = 0x03;
+		prefix = '(';
 		attempts = KRAULER_MAX_ATTEMPTS_Q1;
 	}
 	else if (strcmp(krauler_command_buffer, "I\r") == 0)
 	{
 		index = 0x0c;
+		prefix = '#';
 		attempts = KRAULER_MAX_ATTEMPTS_I;
 	}
 	else if (strcmp(krauler_command_buffer, "F\r") == 0)
 	{
 		index = 0x0d;
+		prefix = '#';
 		attempts = KRAULER_MAX_ATTEMPTS_F;
 	}
 
 	if (index > 0)
-		while (attempts) {
+		while (attempts)
+		{
 			res = usb_get_descriptor(udev, USB_DT_STRING, index, buffer, buffer_size);
 			/* res = usb_control_msg(udev, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR, (USB_DT_STRING << 8) + index, 0, buffer, buffer_size, KRAULER_TIMEOUT); */
 
 			if (res > 0) {
-				for (i = 4, j = 0; i < res; i++)
+				for (i = 4, j = 1; i < res; i++)
 					if (buffer[i] != 0) {
 						buffer[j] = buffer[i];
 						j++;
 					}
+				buffer[0] = prefix;
 				buffer[j] = 0;
 				res = j;
 
-				upsdebugx(5, "get_data_krauler: got data");
-				/* upsdebugx(5, "get_data_krauler: %s", buffer); */
-				if (strcmp(buffer, KRAULER_WRONG_ANSWER) != 0)
+				upsdebugx(5, "get_data_krauler: got data: %s", buffer);
+				if (strcmp(buffer + 1, KRAULER_WRONG_ANSWER) != 0)
 					break;
 				else
 					upsdebugx(5, "get_data_krauler: ups no ack");
