@@ -787,8 +787,10 @@ AC_OUTPUT([
  packaging/Makefile
  packaging/debian/Makefile
  packaging/mandriva/Makefile
- packaging/RedHat/Makefile
- packaging/RedHat/nut.spec
+ packaging/generic-rpm/Makefile
+ packaging/generic-rpm/nut.spec
+ packaging/redhat/Makefile
+ packaging/redhat/nut.spec
  scripts/hotplug/Makefile
  scripts/hotplug/libhidups
  scripts/udev/Makefile

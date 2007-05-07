@@ -1,7 +1,7 @@
-Mon May  7 22:41:21 UTC 2007 / Charles Lepple <clepple@gmail.com>
+Mon May  7 22:47:32 UTC 2007 / Charles Lepple <clepple@gmail.com>
 
- - packaging/generic-rpm: moved from packaging/redhat to deconflict with
-   RawHide spec files on case-insensitive filesystems.
+ - configure.in, packaging/generic-rpm: moved from packaging/redhat to
+   deconflict with RawHide spec files on case-insensitive filesystems.
 
 Mon May  7 22:30:41 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
 
