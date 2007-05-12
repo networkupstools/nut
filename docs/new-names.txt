@@ -109,6 +109,9 @@ ups: General unit information
    |-----------------------+------------------------------+------------------|
    | ups.watchdog.status   | UPS watchdog status          | disabled         |
    |                       | (enabled or disabled)        |                  |
+   |-----------------------+------------------------------+------------------|
+   | ups.coldstart         | UPS coldstarts from battery  | disabled         |
+   |                       | (enabled or disabled)        |                  |
    +-------------------------------------------------------------------------+
 
 input: Incoming line/power information

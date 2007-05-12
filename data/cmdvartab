@@ -34,6 +34,7 @@ VARDESC ups.realpower "Current value of real power (W)"
 VARDESC ups.realpower.nominal "UPS real power rating (W)"
 VARDESC ups.beeper.status "UPS beeper status"
 VARDESC ups.type "UPS type"
+VARDESC ups.coldstart "UPS coldstart (startup from battery) status"
 
 VARDESC input.voltage "Input voltage"
 VARDESC input.voltage.maximum "Maximum incoming voltage seen"
