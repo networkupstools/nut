@@ -1,3 +1,8 @@
+Sat May 12 19:56:02 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - data/driver.list: added CyberPower PR2200 that is supported through
+   the powerpanel driver (added some others for this driver too)
+
 Sat May 12 19:52:36 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - data/cmdvartab, docs/new-names.txt: add 'ups.coldstart' variable
