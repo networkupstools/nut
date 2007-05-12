@@ -1,3 +1,11 @@
+Sat May 12 19:03:33 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/powerpanel.[ch], man/powerpanel.8: Russ Romano provided
+   enough serial traces for the CyberPower PR2200 so that we could
+   add support for this (binary protocol) to the existing 'powerpanel'
+   driver (text protocol). Which protocol is used, will be detected
+   by the driver automatically.
+
 Mon May  7 22:47:32 UTC 2007 / Charles Lepple <clepple@gmail.com>
 
  - configure.in, packaging/generic-rpm: moved from packaging/redhat to

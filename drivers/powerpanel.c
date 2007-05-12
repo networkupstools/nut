@@ -1,4 +1,5 @@
-/* powerpanel.c - Model specific routines for CyberPower text protocol UPSes 
+/* powerpanel.c	Model specific routines for CyberPower text/binary
+			protocol UPSes 
 
    Copyright (C) 2007  Arjen de Korte <arjen@de-korte.org>
                        Doug Reynolds <mav@wastegate.net>
@@ -34,326 +35,379 @@
 #include "serial.h"
 #include "powerpanel.h"
 
-#define DRV_VERSION "0.12"
+static unsigned char	powpan_answer[SMALLBUF];
+static int		mode = 0;
 
-static char powpan_reply[SMALLBUF];
-
-/*
- * This function will send a command and readback the reply. It will
- * return the length of the reply (including the start character '#'
- * on success). A negative return value indicates a problem.
- */
-static int powpan_command(const char *command)
+static int powpan_command_bin(const char *buf, size_t bufsize)
 {
-	int 	dtr_bit = TIOCM_DTR;
-	int 	ret = -1;
+	int	ret;
 
-	upsdebugx(3, "command: %s", command);
+	upsdebug_hex(3, "send", (unsigned char *)buf, bufsize);
 
-	ioctl(upsfd, TIOCMBIS, &dtr_bit);
 	tcflush(upsfd, TCIOFLUSH);
+	ret = ser_send_buf_pace(upsfd, UPSDELAY, (unsigned char *)buf, bufsize);
 
-	if (ser_send_pace(upsfd, UPSDELAY, command) == strlen(command))
-	{
-		/*
-		 * We expect up to 35 characters, which should take
-		 * about 150ms to receive (at 2400 Baud).
-		 */
-		usleep(200000);
-
-		ret = ser_get_line(upsfd, powpan_reply, sizeof(powpan_reply), ENDCHAR, "",
-			SER_WAIT_SEC, SER_WAIT_USEC);
-
-		if (ret < 0)
-		{
-			upsdebugx(3, "reply  : <none>");
-		}
-		else
-		{
-			upsdebugx(3, "reply  : \"%s\"", powpan_reply);
-			upsdebug_hex(4, "hexdump", (unsigned char *)powpan_reply, ret);
-		}
+	if (ret < (int)bufsize) {
+		return -1;
 	}
 
-	ioctl(upsfd, TIOCMBIC, &dtr_bit);
+	usleep(100000);
 
-	if (powpan_reply[0] != '#')
-		return -2;
+	ret = ser_get_buf_len(upsfd, powpan_answer, bufsize - 1, SER_WAIT_SEC, SER_WAIT_USEC);
+
+	if (ret > 0) {
+		upsdebug_hex(3, "read", powpan_answer, ret);
+	} else {
+		upsdebugx(3, "read: timed out");
+	}
 
 	return ret;
 }
 
-static int instcmd(const char *cmdname, const char *extra)
+static int powpan_command_txt(const char *command)
 {
-	int 	ret = -1;
+	int	ret;
 
-	if (!strcasecmp(cmdname, "test.battery.start"))
-		ret = powpan_command("T\r");
+	upsdebug_hex(3, "send", (unsigned char *)command, strlen(command));
 
-	if (!strcasecmp(cmdname, "test.battery.stop"))
-		ret = powpan_command("CT\r");
+	tcflush(upsfd, TCIOFLUSH);
+	ret = ser_send_pace(upsfd, UPSDELAY, command);
 
-	if (!strcasecmp(cmdname, "beeper.on"))
-		ret = powpan_command("C7:1\r");
+	if (ret < (int)strlen(command)) {
+		return -1;
+	}
 
-	if (!strcasecmp(cmdname, "beeper.off"))
-		ret = powpan_command("C7:0\r");
+	usleep(100000);
 
-	if (!strcasecmp(cmdname, "shutdown.return"))
-		ret = powpan_command("S01R0001\r");
+	ret = ser_get_line(upsfd, (char *)powpan_answer, sizeof(powpan_answer),
+		ENDCHAR, IGNCHAR, SER_WAIT_SEC, SER_WAIT_USEC);
 
-	if (!strcasecmp(cmdname, "shutdown.reboot"))
-		ret = powpan_command("S01R0001\r");
+	if (ret > 0) {
+		upsdebug_hex(3, "read", powpan_answer, ret);
+	} else {
+		upsdebugx(3, "read: timed out");
+	}
 
-	if (!strcasecmp(cmdname, "shutdown.stop"))
-		ret = powpan_command("C\r");
-/*
-	if (!strcasecmp(cmdname, "shutdown.stayoff"))
-		ret = powpan_command("S01\r");
- */
-	if (ret > 0)
-		return STAT_INSTCMD_HANDLED;
+	return ret;
+}
 
-	upslogx(LOG_NOTICE, "instcmd: command [%s] failed", cmdname);
+static int instcmd_bin(const char *cmdname, const char *extra)
+{
+	int	i;
+
+	for (i = 0; powpan_cmdtab_bin[i].cmd != NULL; i++) {
+
+		if (strcasecmp(cmdname, powpan_cmdtab_bin[i].cmd)) {
+			continue;
+		}
+
+		if ((powpan_command_bin(powpan_cmdtab_bin[i].command, powpan_cmdtab_bin[i].len) ==
+				powpan_cmdtab_bin[i].len - 1) &&
+				(!memcmp(powpan_answer, powpan_cmdtab_bin[i].command, powpan_cmdtab_bin[i].len - 1))) {
+			return STAT_INSTCMD_HANDLED;
+		}
+
+		upslogx(LOG_ERR, "instcmd: command [%s] failed", cmdname);
+		return STAT_INSTCMD_UNKNOWN;
+	}
+
+	upslogx(LOG_NOTICE, "instcmd: command [%s] unknown", cmdname);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
-static int setvar(const char *varname, const char *val)
+static int instcmd_txt(const char *cmdname, const char *extra)
+{
+	int	i;
+
+	for (i = 0; powpan_cmdtab_txt[i].cmd != NULL; i++) {
+
+		if (strcasecmp(cmdname, powpan_cmdtab_txt[i].cmd)) {
+			continue;
+		}
+	
+		if (powpan_command_txt(powpan_cmdtab_txt[i].command) > 0) {
+			return STAT_INSTCMD_HANDLED;
+		}
+
+		upslogx(LOG_ERR, "instcmd: command [%s] failed", cmdname);
+		return STAT_INSTCMD_UNKNOWN;
+	}
+
+	upslogx(LOG_NOTICE, "instcmd: command [%s] unknown", cmdname);
+	return STAT_INSTCMD_UNKNOWN;
+}
+
+static int setvar_bin(const char *varname, const char *val)
 {
 	char	command[SMALLBUF];
+	int 	i, j;
 
-	/*
-	 * After setting a variable, the UPS replies with "#0" on
-	 * success and "#9" on failure. We only check for success.
-	 */
+	for (i = 0;  powpan_vartab_bin[i].var != NULL; i++) {
 
-	if (!strcasecmp(varname, "input.transfer.high"))
-	{
-		snprintf(command, sizeof(command), "C2:%s\r", val);
+		if (strcasecmp(varname, powpan_vartab_bin[i].var)) {
+			continue;
+		}
 
-		if ((powpan_command(command) > 0) && !strcasecmp(powpan_reply, "#0"))
-		{
-			dstate_setinfo("input.transfer.high", val);
+		if (!strcasecmp(val, dstate_getinfo(varname))) {
+			upslogx(LOG_INFO, "setvar: [%s] no change for variable [%s]", val, varname);
 			return STAT_SET_HANDLED;
 		}
-	}
 
-	if (!strcasecmp(varname, "input.transfer.low"))
-	{
-		snprintf(command, sizeof(command), "C3:%s\r", val);
+		for (j = 0; powpan_vartab_bin[i].map[j].val != NULL; j++) {
 
-		if ((powpan_command(command) > 0) && !strcasecmp(powpan_reply, "#0"))
-		{
-			dstate_setinfo("input.transfer.low", val);
-			return STAT_SET_HANDLED;
+			if (strcasecmp(val, powpan_vartab_bin[i].map[j].val)) {
+				continue;
+			}
+
+			snprintf(command, sizeof(command), powpan_vartab_bin[i].set,
+				powpan_vartab_bin[i].map[j].command);
+
+			if ((powpan_command_bin(command, 4) == 3) && (!memcmp(powpan_answer, command, 3))) {
+				dstate_setinfo(varname, val);
+				return STAT_SET_HANDLED;
+			}
+
+			upslogx(LOG_ERR, "setvar: setting variable [%s] to [%s] failed", varname, val);
+			return STAT_SET_UNKNOWN;
 		}
+
+		upslogx(LOG_ERR, "setvar: [%s] is not valid for variable [%s]", val, varname);
+		return STAT_SET_UNKNOWN;
 	}
 
-	if (!strcasecmp(varname, "battery.charge.low"))
-	{
-		snprintf(command, sizeof(command), "C4:%s\r", val);
-
-		if ((powpan_command(command) > 0) && !strcasecmp(powpan_reply, "#0"))
-		{
-			dstate_setinfo("battery.charge.low", val);
-			return STAT_SET_HANDLED;
-		}
-	}
-
-	upslogx(LOG_NOTICE, "setvar: setting variable [%s] to [%s] failed", varname, val);
+	upslogx(LOG_ERR, "setvar: variable [%s] not found", varname);
 	return STAT_SET_UNKNOWN;
 }
 
-/*
- * Try up to MAXTRIES times to get a useful identity from the UPS.
- * It should reply with "#2" after a "\r" command (probably protocol
- * version) and with an identification string after "P4\r".
- */
-static int get_ident(void)
+static int setvar_txt(const char *varname, const char *val)
 {
-	char	*s;
-	int	retry = MAXTRIES;
+	char	command[SMALLBUF];
+	int 	i;
 
-	while (retry--)
-	{
-		/*
-		 * WRITE \r
-		 * READ #2\r
-		 */
-		if ((powpan_command("\r") < 0) || (powpan_reply[1] != '2'))
-			upslogx(LOG_NOTICE, "warning: sent \"\\r\", expected \"#2\\r\" but got \"%s\"", powpan_reply);
+	for (i = 0;  powpan_vartab_txt[i].var != NULL; i++) {
 
-		/*
-		 * WRITE P4\r
-		 * READ #BC1200     ,1.600,000000000000,CYBER POWER    \r
-		 */
-		if (powpan_command("P4\r") > 0)
-		{
-			if ((s = strtok(powpan_reply+1, ",")) != NULL)
-				dstate_setinfo("ups.model", "%s", rtrim(s, ' '));
-			if ((s = strtok(NULL, ",")) != NULL)
-				dstate_setinfo("ups.firmware", s);
-			if ((s = strtok(NULL, ",")) != NULL)
-				dstate_setinfo("ups.serial", s);
-			if ((s = strtok(NULL, ",")) != NULL)
-				dstate_setinfo("ups.mfr", "%s", rtrim(s, ' '));
-
-			return 1;
+		if (strcasecmp(varname, powpan_vartab_txt[i].var)) {
+			continue;
 		}
 
-		upslogx(LOG_NOTICE, "warning: sent \"P4\\r\", expected \"#<something>\" but got \"%s\"", powpan_reply);
- 	}
+		if (!strcasecmp(val, dstate_getinfo(varname))) {
+			upslogx(LOG_INFO, "setvar: [%s] no change for variable [%s]", val, varname);
+			return STAT_SET_HANDLED;
+		}
 
-	return 0;
+		snprintf(command, sizeof(command), powpan_vartab_txt[i].set, atoi(val));
+
+		if ((powpan_command_txt(command) == 2) && (!strcasecmp((char *)powpan_answer, "#0"))) {
+			dstate_setinfo(varname, val);
+			return STAT_SET_HANDLED;
+		}
+
+		upslogx(LOG_ERR, "setvar: setting variable [%s] to [%s] failed", varname, val);
+		return STAT_SET_UNKNOWN;
+	}
+
+	upslogx(LOG_ERR, "setvar: variable [%s] not found", varname);
+	return STAT_SET_UNKNOWN;
 }
 
-/*
- * Try if we can autodetect some parameters from the UPS. This may not
- * work on every supported model, so don't complain to heavily if this
- * doesn't succeed for all commands.
- */
-static int get_settings(void)
+static void initinfo_bin()
 {
+	int	i, j;
 	char	*s;
-	int	ret = 0;
+
+	/*
+	 * NOTE: The reply is already in the buffer, since the F\r command
+	 * was used for autodetection of the UPS. No need to do it again.
+	 */
+	if ((s = strtok((char *)&powpan_answer[1], ".")) != NULL) {
+		dstate_setinfo("ups.model", "%s", rtrim(s, ' '));
+	}
+	if ((s = strtok(NULL, ".")) != NULL) {
+		dstate_setinfo("input.voltage.nominal", "%d", (unsigned char)s[0]);
+	}
+	if ((s = strtok(NULL, ".")) != NULL) {
+		dstate_setinfo("input.frequency.nominal", "%d", (unsigned char)s[0]);
+	}
+	if ((s = strtok(NULL, ".")) != NULL) {
+		dstate_setinfo("ups.firmware", "%c.%c%c%c", s[0], s[1], s[2], s[3]);
+	}
+
+	for (i = 0; powpan_cmdtab_bin[i].cmd != NULL; i++) {
+		dstate_addcmd(powpan_cmdtab_bin[i].cmd);
+	}
+
+	for (i = 0; powpan_vartab_bin[i].var != NULL; i++) {
+		
+		if (powpan_command_bin(powpan_vartab_bin[i].get, 3) < 2) {
+			continue;
+		}
+
+		for (j = 0; powpan_vartab_bin[i].map[j].val != NULL; j++) {
+
+			if (powpan_vartab_bin[i].map[j].command != powpan_answer[1]) {
+				continue;
+			}
+
+			dstate_setinfo(powpan_vartab_bin[i].var, powpan_vartab_bin[i].map[j].val);
+			break;
+		}
+	
+		if (dstate_getinfo(powpan_vartab_bin[i].var) == NULL) {
+			upslogx(LOG_WARNING, "warning: [%d] unknown value for [%s]!",
+				powpan_answer[1], powpan_vartab_bin[i].var);
+			continue;
+		}
+
+		dstate_setflags(powpan_vartab_bin[i].var, ST_FLAG_RW);
+
+		for (j = 0; powpan_vartab_bin[i].map[j].val != 0; j++) {
+			dstate_addenum(powpan_vartab_bin[i].var, powpan_vartab_bin[i].map[j].val);
+		}
+	}
+
+	upsh.instcmd = instcmd_bin;
+	upsh.setvar = setvar_bin;
+}
+
+static void initinfo_txt()
+{
+	int	i;
+	char	*s;
+
+	/*
+	 * NOTE: The reply is already in the buffer, since the P4\r command
+	 * was used for autodetection of the UPS. No need to do it again.
+	 */
+	if ((s = strtok((char *)&powpan_answer[1], ",")) != NULL) {
+		dstate_setinfo("ups.model", "%s", rtrim(s, ' '));
+	}
+	if ((s = strtok(NULL, ",")) != NULL) {
+		dstate_setinfo("ups.firmware", s);
+	}
+	if ((s = strtok(NULL, ",")) != NULL) {
+		dstate_setinfo("ups.serial", s);
+	}
+	if ((s = strtok(NULL, ",")) != NULL) {
+		dstate_setinfo("ups.mfr", "%s", rtrim(s, ' '));
+	}
 
 	/*
 	 * WRITE P3\r
 	 * READ #12.0,002,008.0,00\r
 	 */
-	if (powpan_command("P3\r") > 0)
-	{
-		if ((s = strtok(powpan_reply+1, ",")) != NULL)
-			dstate_setinfo("battery.voltage.nominal", "%g", strtod(s, NULL));
-		if ((s = strtok(NULL, ",")) != NULL)
-			dstate_setinfo("battery.packs", "%li", strtol(s, NULL, 10));
-		if ((s = strtok(NULL, ",")) != NULL)
-			dstate_setinfo("battery.capacity", "%g", strtod(s, NULL));
+	if (powpan_command_txt("P3\r") > 0) {
 
-		ret++;
+		if ((s = strtok((char *)&powpan_answer[1], ",")) != NULL) {
+			dstate_setinfo("battery.voltage.nominal", "%g", strtod(s, NULL));
+		}
+		if ((s = strtok(NULL, ",")) != NULL) {
+			dstate_setinfo("battery.packs", "%li", strtol(s, NULL, 10));
+		}
+		if ((s = strtok(NULL, ",")) != NULL) {
+			dstate_setinfo("battery.capacity", "%g", strtod(s, NULL));
+		}
 	}
 
 	/*
 	 * WRITE P2\r
 	 * READ #1200,0720,120,47,63\r
 	 */
-	if (powpan_command("P2\r") > 0)
-	{
-		if ((s = strtok(powpan_reply+1, ",")) != NULL)
-			dstate_setinfo("ups.power.nominal", "%li", strtol(s, NULL, 10));
-		if ((s = strtok(NULL, ",")) != NULL)
-			dstate_setinfo("ups.realpower.nominal", "%li", strtol(s, NULL, 10));
-		if ((s = strtok(NULL, ",")) != NULL)
-			dstate_setinfo("input.voltage.nominal", "%li", strtol(s, NULL, 10));
-		if ((s = strtok(NULL, ",")) != NULL)
-			dstate_setinfo("input.frequency.low", "%li", strtol(s, NULL, 10));
-		if ((s = strtok(NULL, ",")) != NULL)
-			dstate_setinfo("input.frequency.high", "%li", strtol(s, NULL, 10));
+	if (powpan_command_txt("P2\r") > 0) {
 
-		ret++;
+		if ((s = strtok((char *)&powpan_answer[1], ",")) != NULL) {
+			dstate_setinfo("ups.power.nominal", "%li", strtol(s, NULL, 10));
+		}
+		if ((s = strtok(NULL, ",")) != NULL) {
+			dstate_setinfo("ups.realpower.nominal", "%li", strtol(s, NULL, 10));
+		}
+		if ((s = strtok(NULL, ",")) != NULL) {
+			dstate_setinfo("input.voltage.nominal", "%li", strtol(s, NULL, 10));
+		}
+		if ((s = strtok(NULL, ",")) != NULL) {
+			dstate_setinfo("input.frequency.low", "%li", strtol(s, NULL, 10));
+		}
+		if ((s = strtok(NULL, ",")) != NULL) {
+			dstate_setinfo("input.frequency.high", "%li", strtol(s, NULL, 10));
+		}
 	}
 
 	/*
 	 * WRITE P1\r
 	 * READ #120,138,088,20\r
 	 */
-	if (powpan_command("P1\r") > 0)
-	{
-		if ((s = strtok(powpan_reply+1, ",")) != NULL)
-			dstate_setinfo("input.voltage.nominal", "%li", strtol(s, NULL, 10));
-		if ((s = strtok(NULL, ",")) != NULL)
-			dstate_setinfo("input.transfer.high", "%li", strtol(s, NULL, 10));
-		if ((s = strtok(NULL, ",")) != NULL)
-			dstate_setinfo("input.transfer.low", "%li", strtol(s, NULL, 10));
-		if ((s = strtok(NULL, ",")) != NULL)
-			dstate_setinfo("battery.charge.low", "%li", strtol(s, NULL, 10));
+	if (powpan_command_txt("P1\r") > 0) {
 
-		ret++;
+		if ((s = strtok((char *)&powpan_answer[1], ",")) != NULL) {
+			dstate_setinfo("input.voltage.nominal", "%li", strtol(s, NULL, 10));
+		}
+		if ((s = strtok(NULL, ",")) != NULL) {
+			dstate_setinfo("input.transfer.high", "%li", strtol(s, NULL, 10));
+		}
+		if ((s = strtok(NULL, ",")) != NULL) {
+			dstate_setinfo("input.transfer.low", "%li", strtol(s, NULL, 10));
+		}
+		if ((s = strtok(NULL, ",")) != NULL) {
+			dstate_setinfo("battery.charge.low", "%li", strtol(s, NULL, 10));
+		}
+	}
+
+	for (i = 0; powpan_cmdtab_txt[i].cmd != NULL; i++) {
+		dstate_addcmd(powpan_cmdtab_txt[i].cmd);
+	}
+
+	for (i = 0; powpan_vartab_txt[i].var != NULL; i++) {
+
+		if (!dstate_getinfo(powpan_vartab_txt[i].var)) {
+			continue;
+		}
+
+		if (powpan_command_txt(powpan_vartab_txt[i].get) < 1) {
+			continue;
+		}
+
+		if ((s = strtok((char *)&powpan_answer[1], ",")) != NULL) {
+			dstate_setflags(powpan_vartab_txt[i].var, ST_FLAG_RW);
+			dstate_addenum(powpan_vartab_txt[i].var, "%li", strtol(s, NULL, 10));
+		}
+
+		while ((s = strtok(NULL, ",")) != NULL) {
+			dstate_addenum(powpan_vartab_txt[i].var, "%li", strtol(s, NULL, 10));
+		}
 	}
 
 	/*
 	 * WRITE P5\r
 	 * READ #<unknown>\r
 	 */
-	if (powpan_command("P5\r") > 0)
-	{
+	if (powpan_command_txt("P5\r") > 0) {
 		/*
 		 * Looking at the format of the commands "P<n>\r" it seems likely
 		 * that this command exists also. Let's see if someone cares to
 		 * tell us if it does (should be visible when running with -DDDDD).
 		 */
-		ret++;
-	}
-
-	/*
-	 * WRITE P6\r
-	 * READ #130,131,132,133,134,135,136,137,138,139,140\r
-	 */
-	if (dstate_getinfo("input.transfer.high") && (powpan_command("P6\r") > 0))
-	{
-		if ((s = strtok(powpan_reply+1, ",")) != NULL)
-		{
-			dstate_addenum("input.transfer.high", s);
-			dstate_setflags("input.transfer.high", ST_FLAG_STRING | ST_FLAG_RW);
-			dstate_setaux("input.transfer.high", 3);
-		}
-		while ((s = strtok(NULL, ",")) != NULL)
-			dstate_addenum("input.transfer.high", s);
-
-		ret++;
-	}
-
-	/*
-	 * WRITE P7\r
-	 * READ #080,081,082,083,084,085,086,087,088,089,090\r
-	 */
-	if (dstate_getinfo("input.transfer.low") && (powpan_command("P7\r") > 0))
-	{
-		if ((s = strtok(powpan_reply+1, ",")) != NULL)
-		{
-			dstate_addenum("input.transfer.low", s);
-			dstate_setflags("input.transfer.low", ST_FLAG_STRING | ST_FLAG_RW);
-			dstate_setaux("input.transfer.low", 3);
-		}
-		while ((s = strtok(NULL, ",")) != NULL)
-			dstate_addenum("input.transfer.low", s);
-
-		ret++;
-	}
-
-	/*
-	 * WRITE P8\r\
-	 * READ #20,25,30,35,40,45,50,55,60,65\r
-	 */
-	if (dstate_getinfo("battery.charge.low") && (powpan_command("P8\r") > 0))
-	{
-		if ((s = strtok(powpan_reply+1, ",")) != NULL)
-		{
-			dstate_addenum("battery.charge.low", s);
-			dstate_setflags("battery.charge.low", ST_FLAG_STRING | ST_FLAG_RW);
-			dstate_setaux("battery.charge.low", 2);
-		}
-		while ((s = strtok(NULL, ",")) != NULL)
-			dstate_addenum("battery.charge.low", s);
-
-		ret++;
 	}
 
 	/*
 	 * WRITE P9\r
 	 * READ #<unknown>\r
 	 */
-	if (powpan_command("P9\r") > 0)
-	{
+	if (powpan_command_txt("P9\r") > 0) {
 		/*
 		 * Looking at the format of the commands "P<n>\r" it seems likely
 		 * that this command exists also. Let's see if someone cares to
 		 * tell us if it does (should be visible when running with -DDDDD).
 		 */
-		ret++;
 	}
 
-	return ret;
+	/*
+	 * Cancel pending shutdown.
+	 * WRITE C\r
+	 * READ #0\r
+	*/
+	powpan_command_txt("C\r");
+
+	upsh.instcmd = instcmd_txt;
+	upsh.setvar = setvar_txt;
 }
 
 void upsdrv_initinfo(void)
@@ -362,116 +416,367 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
 
-	if (get_ident() == 0)
-		fatalx("Unable to detect a CyberPower text protocol UPS");
+	dstate_setinfo("ups.mfr", "CyberPower");
+	dstate_setinfo("ups.model", "[unknown]");
+	dstate_setinfo("ups.serial", "[unknown]");
 
-	printf("Detected %s %s on %s\n", dstate_getinfo("ups.mfr"),
-		dstate_getinfo("ups.model"), device_path);
-
-	if (get_settings() == 0)
-		upslogx(LOG_WARNING, "Can't read any setting from CyberPower text protocol UPS");
-
-	/*
-	 * WRITE D\r
-	 * READ #I119.0O119.0L000B100T027F060.0S..\r
-	 */
-	powpan_command("D\r");
-
-	/*
-	 * Cancel pending shutdown.
-	 * WRITE C\r
-	 * READ #0\r
-	*/
-	powpan_command("C\r");
+	powpan_protocol[mode].initinfo();
 
 	/*
 	 * Allow to override the following parameters
 	 */
-	if ((s = getval("manufacturer")) != NULL)
+	if ((s = getval("manufacturer")) != NULL) {
 		dstate_setinfo("ups.mfr", s);
-	if ((s = getval("model")) != NULL)
+	}
+	if ((s = getval("model")) != NULL) {
 		dstate_setinfo("ups.model", s);
-	if ((s = getval("serial")) != NULL)
+	}
+	if ((s = getval("serial")) != NULL) {
 		dstate_setinfo("ups.serial", s);
-
-	dstate_addcmd("test.battery.start");
-	dstate_addcmd("test.battery.stop");
-	dstate_addcmd("beeper.on");
-	dstate_addcmd("beeper.off");
-	dstate_addcmd("shutdown.return");
-	dstate_addcmd("shutdown.reboot");
-	dstate_addcmd("shutdown.stop");
-/*
-	dstate_addcmd("shutdown.stayoff");
- */
-	upsh.instcmd = instcmd;
-	upsh.setvar = setvar;
+	}
 }
 
-void upsdrv_shutdown(void)
+static int powpan_status(int expected)
 {
-	int	retry = MAXTRIES;
+	int	ret;
 
-	if (get_ident() == 0)
-		fatalx("Unable to detect a CyberPower text protocol UPS");
+	upsdebug_hex(3, "send", (unsigned char *)"D\r", 2);
 
-	/*
-	 * Don't abort on the first try
-	 */
-	while (retry--)
-	{
-		if (powpan_command("Z02\r") > 0)
-		{
-			upslogx(LOG_INFO, "Shutdown in progress");
-			return;
-		}
+	tcflush(upsfd, TCIOFLUSH);
+	ret = ser_send_pace(upsfd, UPSDELAY, "D\r");
+
+	if (ret < 2) {
+		return -1;
 	}
 
-	upslogx(LOG_ERR, "Shutdown command returned with an error!");
+	usleep(200000);
+
+	ret = ser_get_buf_len(upsfd, powpan_answer, expected, SER_WAIT_SEC, SER_WAIT_USEC);
+
+	if (ret > 0) {
+		upsdebug_hex(3, "read", powpan_answer, ret);
+	} else {
+		upsdebugx(3, "read: timed out");
+	}
+
+	return ret;
 }
 
-void upsdrv_updateinfo(void)
+static void updateinfo_bin()
 {
+	unsigned char	*status = &powpan_answer[9];
+
 	/*
 	 * WRITE D\r
-	 * READ #I119.0O119.0L000B100T027F060.0S..\r
+	 * READ #VVL.CTF.....\r
+        *      01234567890123
 	 */
-	if (powpan_command("D\r") != 34)
-	{
+	if (powpan_status(14) < 14) {
 		ser_comm_fail("Status read failed!");
 		dstate_datastale();
+		return;
+	}
+
+	if ((status[0] + status[1]) != 255) {
+		ser_comm_fail("Status checksum (1) failed!");
+		dstate_datastale();
+		return;
+	}
+
+	if ((status[2] + status[3]) != 255) {
+		ser_comm_fail("Status checksum (2) failed!");
+		dstate_datastale();
+		return;
+	}
+
+        dstate_setinfo("input.voltage", "%d", powpan_answer[1]);
+        dstate_setinfo("output.voltage", "%d", powpan_answer[2]);
+        dstate_setinfo("ups.load", "%d", powpan_answer[3]);
+	dstate_setinfo("battery.charge", "%d", powpan_answer[5]);
+        dstate_setinfo("ups.temperature", "%d", powpan_answer[6]);
+	/*
+	 * The following is just a wild guess. With a nominal input
+	 * frequency of 60 Hz, the PR2200 shows a value of 150 (decimal).
+	 * No idea what it means though, since we got only one reading.
+	 */
+        dstate_setinfo("input.frequency", "%.1f", powpan_answer[7] / 2.5);
+
+	if (status[0] & 0x01) {
+		dstate_setinfo("ups.beeper.status", "disabled");
+	} else {
+		dstate_setinfo("ups.beeper.status", "enabled");
 	}
 
 	status_init();
 
-	if ((powpan_reply[POLL_STATUS] & CPS_STAT_OL) && !(powpan_reply[POLL_STATUS] & CPS_STAT_OB))
+	if (status[0] & 0x80) {
+		status_set("OB");
+	} else {
 		status_set("OL");
 
-	if (powpan_reply[POLL_STATUS] & CPS_STAT_OB) 
-		status_set("OB");
+		if (powpan_answer[1] < powpan_answer[2] - 2) {
+			status_set("BOOST");
+		}
 
-	if (powpan_reply[POLL_STATUS] & CPS_STAT_LB) 
+		if (powpan_answer[1] > powpan_answer[2] + 2) {
+			status_set("TRIM");
+		}
+	}
+
+	if (status[0] & 0x40) {
 		status_set("LB");
+	}
 
-	if (powpan_reply[POLL_STATUS] & CPS_STAT_CAL)
-		status_set("CAL");
+	if (status[0] & 0x04) {
+		status_set("TEST");
+	}
 
-	if (powpan_reply[POLL_STATUS]  == 0)
+	if (status[0] == 0) {
 		status_set("OFF");
+	}
 
 	status_commit();
-
-        dstate_setinfo("input.voltage", "%g", strtod(&powpan_reply[POLL_INPUTVOLT], NULL));
-        dstate_setinfo("output.voltage", "%g", strtod(&powpan_reply[POLL_OUTPUTVOLT], NULL));
-        dstate_setinfo("ups.load", "%li", strtol(&powpan_reply[POLL_LOAD], NULL, 10));
-        dstate_setinfo("input.frequency", "%g", strtod(&powpan_reply[POLL_FREQUENCY], NULL));
-        dstate_setinfo("ups.temperature", "%li", strtol(&powpan_reply[POLL_TEMP], NULL,10));
-	dstate_setinfo("battery.charge", "%02.1f", strtod(&powpan_reply[POLL_BATTCHARGE], NULL));
 
 	ser_comm_good();
 	dstate_dataok();
 
 	return;
+}
+
+static void updateinfo_txt()
+{
+	unsigned char	*status = &powpan_answer[32];
+
+	/*
+	 * WRITE D\r
+	 * READ #I119.0O119.0L000B100T027F060.0S..\r
+	 *      01234567890123456789012345678901234
+	 */
+	if (powpan_status(35) < 35) {
+		ser_comm_fail("Status read failed!");
+		dstate_datastale();
+		return;
+	}
+
+	if ((status[0] + status[1]) != 255) {
+		ser_comm_fail("Status checksum failed!");
+		dstate_datastale();
+		return;
+	}
+
+        dstate_setinfo("input.voltage", "%g", strtod((char *)&powpan_answer[2], NULL));
+        dstate_setinfo("output.voltage", "%g", strtod((char *)&powpan_answer[8], NULL));
+        dstate_setinfo("ups.load", "%li", strtol((char *)&powpan_answer[14], NULL, 10));
+        dstate_setinfo("input.frequency", "%g", strtod((char *)&powpan_answer[26], NULL));
+        dstate_setinfo("ups.temperature", "%li", strtol((char *)&powpan_answer[22], NULL,10));
+	dstate_setinfo("battery.charge", "%02.1f", strtod((char *)&powpan_answer[18], NULL));
+
+	status_init();
+
+	if (status[0] & 0x40) {
+		status_set("OB");
+	} else {
+		status_set("OL");
+
+		if (strtod((char *)&powpan_answer[2], NULL) < (strtod((char *)&powpan_answer[8], NULL) - 2)) {
+			status_set("BOOST");
+		}
+
+		if (strtod((char *)&powpan_answer[2], NULL) > (strtod((char *)&powpan_answer[8], NULL) + 2)) {
+			status_set("TRIM");
+		}
+	}
+
+	if (status[0] & 0x20) {
+		status_set("LB");
+	}
+
+	if (status[0] & 0x08) {
+		status_set("TEST");
+	}
+
+	if (status[0] == 0) {
+		status_set("OFF");
+	}
+
+	status_commit();
+
+	ser_comm_good();
+	dstate_dataok();
+
+	return;
+}
+
+void upsdrv_updateinfo(void)
+{
+	powpan_protocol[mode].updateinfo();
+}
+
+void shutdown_bin()
+{
+	unsigned char	*status = (unsigned char *)&powpan_answer[9];
+	int		i;
+
+	for (i = 0; i < MAXTRIES; i++) {
+
+		if (powpan_status(14) < 14) {
+			continue;
+		}
+
+		if ((status[0] + status[1]) != 255) {
+			continue;
+		}
+
+		/*
+		 * We're still on battery...
+		 */
+		if (status[0] & 0x80) {
+			break;
+		}
+ 
+		/*
+		 * Apparently, the power came back already, so just reboot.
+		 */
+		if (instcmd_bin("shutdown.reboot", NULL) == STAT_INSTCMD_HANDLED) {
+			upslogx(LOG_INFO, "Rebooting now...");
+			return;
+		}
+	}
+
+	for (i = 0; i < MAXTRIES; i++) {
+
+		/*
+		 * ...send wait for return.
+		 */
+		if (instcmd_bin("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
+			upslogx(LOG_INFO, "Waiting for power to return...");
+			return;
+		}
+	}
+
+	upslogx(LOG_ERR, "Shutdown command failed!");
+}
+
+void shutdown_txt()
+{
+	int	i;
+
+	for (i = 0; i < MAXTRIES; i++) {
+
+		if (instcmd_txt("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
+			upslogx(LOG_INFO, "Waiting for power to return...");
+			return;
+		}
+	}
+
+	upslogx(LOG_ERR, "Shutdown command failed!");
+}
+
+void upsdrv_shutdown(void)
+{
+	powpan_protocol[mode].shutdown();
+}
+
+static int initups_bin()
+{
+	int	ret, i;
+
+	upsdebugx(1, "Trying binary protocol...");
+
+	ser_set_speed(upsfd, device_path, B1200);
+
+	powpan_command_txt("\r\r");
+
+	for (i = 0; i < MAXTRIES; i++) {
+
+		/*
+		 * WRITE F\r
+		 * READ .PR2200    .x.<.1100
+		 *      01234567890123456789
+		 */
+		ret = powpan_command_txt("F\r");
+
+		if (ret < 20) {
+			continue;
+		}
+
+		if (powpan_answer[0] != '.') {
+			continue;
+		}
+
+		upslogx(LOG_INFO, "CyberPower binary protocol UPS on %s detected", device_path);
+		return ret;
+	}
+
+	return -1;
+}
+
+static int initups_txt()
+{
+	int	ret, i;
+
+	upsdebugx(1, "Trying text protocol...");
+
+	ser_set_speed(upsfd, device_path, B2400);
+
+	powpan_command_txt("\r\r");
+
+	for (i = 0; i < MAXTRIES; i++) {
+
+		/*
+		 * WRITE P4\r
+		 * READ #BC1200     ,1.600,000000000000,CYBER POWER    
+		 *      01234567890123456789012345678901234567890123456
+		 */
+		ret = powpan_command_txt("P4\r");
+
+		if (ret < 47) {
+			continue;
+		}
+
+		if (powpan_answer[0] != '#') {
+			continue;
+		}
+
+		upslogx(LOG_INFO, "CyberPower text protocol UPS on %s detected", device_path);
+		return ret;
+	}
+
+	return -1;
+}
+
+void upsdrv_initups(void)
+{
+	char	*version;
+	int	rts_bit = TIOCM_RTS;
+	int	dtr_bit = TIOCM_DTR;
+
+	version = getval("protocol");
+	upsfd = ser_open(device_path);
+
+	ioctl(upsfd, TIOCMBIC, &rts_bit);
+
+	/*
+	 * Try to autodetect which UPS is connected.
+	 */
+	for (mode = 0; powpan_protocol[mode].initups != NULL; mode++) {
+
+		if ((version != NULL) && strcasecmp(version, powpan_protocol[mode].version)) {
+			continue;
+		}
+
+		ioctl(upsfd, TIOCMBIS, &dtr_bit);
+		usleep(10000);
+
+		if (powpan_protocol[mode].initups() > 0) {
+			return;
+		}
+
+		ioctl(upsfd, TIOCMBIC, &dtr_bit);
+		usleep(10000);
+	}
+
+	fatalx("CyberPower UPS not found on %s", device_path);
 }
 
 void upsdrv_help(void)
@@ -480,22 +785,23 @@ void upsdrv_help(void)
 
 void upsdrv_makevartable(void)
 {
+	addvar(VAR_VALUE, "manufacturer", "manufacturer");
+	addvar(VAR_VALUE, "model", "modelname");
+	addvar(VAR_VALUE, "serial", "serialnumber");
+	addvar(VAR_VALUE, "protocol", "protocol to use [text|binary] (default: autodetion)");
 }
 
 void upsdrv_banner(void)
 {
-	printf("Network UPS Tools -  CyberPower text protocol UPS driver %s (%s)\n",
+	printf("Network UPS Tools -  CyberPower text/binary protocol UPS driver %s (%s)\n",
 		DRV_VERSION, UPS_VERSION);
 	experimental_driver = 1;
 }
 
-void upsdrv_initups(void)
-{
-	upsfd = ser_open(device_path);
-	ser_set_speed(upsfd, device_path, B2400);
-}
-
 void upsdrv_cleanup(void)
 {
+	int	dtr_bit = TIOCM_DTR;
+
+	ioctl(upsfd, TIOCMBIC, &dtr_bit);
 	ser_close(upsfd, device_path);
 }

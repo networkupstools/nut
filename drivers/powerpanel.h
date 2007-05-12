@@ -1,4 +1,5 @@
-/* powerpanel.h - Definitions for CyberPower text protocol UPSes
+/* powerpanel.h	Model specific data/definitions for CyberPower text/binary
+			protocol UPSes 
 
    Copyright (C) 2007  Arjen de Korte <arjen@de-korte.org>
                        Doug Reynolds <mav@wastegate.net>
@@ -18,25 +19,137 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#define ENDCHAR		'\r'
+#define IGNCHAR		""
+#define MAXTRIES	3
+#define UPSDELAY	50000
+
+#define SER_WAIT_SEC	0
+#define SER_WAIT_USEC	250000
+
+#define DRV_VERSION "0.20.6"
+
 /*
- * Offsets within the buffer that is returned after a "D\r" command
+ * Handlers for the CyberPower binary protocol
  */
-#define POLL_INPUTVOLT	2	/* input voltage */
-#define POLL_OUTPUTVOLT	8	/* output voltage */
-#define	POLL_LOAD	14	/* load percentage */
-#define	POLL_BATTCHARGE	18	/* battery charge */
-#define POLL_TEMP	22	/* temperature */
-#define	POLL_FREQUENCY	26	/* frequency */
-#define	POLL_STATUS	32	/* status byte */
+static int	initups_bin();
+static void	initinfo_bin();
+static void	updateinfo_bin();
+static void	shutdown_bin();
 
-#define ENDCHAR		'\r'	/* replies end with CR */
-#define MAXTRIES	5
-#define UPSDELAY	50000	/* 50 ms delay required for reliable operation */
+/*
+ * Handlers for the CyberPower text protocol
+ */
+static int	initups_txt();
+static void	initinfo_txt();
+static void	updateinfo_txt();
+static void	shutdown_txt();
 
-#define SER_WAIT_SEC	3	/* allow 3 sec for ser_get calls */
-#define SER_WAIT_USEC	0
+static const struct {
+	char	*version;
+	int	(*initups)(void);
+	void	(*initinfo)(void);
+	void	(*updateinfo)(void);
+	void	(*shutdown)(void);
+} powpan_protocol[] = {
+	{ "binary", initups_bin, initinfo_bin, updateinfo_bin, shutdown_bin },
+	{ "text", initups_txt, initinfo_txt, updateinfo_txt, shutdown_txt },
+	{ NULL, NULL, NULL, NULL }
+};
 
-#define CPS_STAT_CAL	0x08
-#define CPS_STAT_LB	0x20
-#define CPS_STAT_OB	0x40
-#define CPS_STAT_OL	0x90
+static const struct {
+	char	*cmd;
+	char	*command;
+	int	len;
+} powpan_cmdtab_bin[] = {
+	{ "test.failure.start", "T\230\r", 3 },		/* 20 seconds test */
+	{ "test.failure.stop", "CT\r", 3 },
+	{ "beeper.toggle", "B\r", 2 },
+	{ "shutdown.reboot", "S\0\0R\0\1W\r", 8},
+	{ "shutdown.return", "S\0\0W\r", 5 },
+	{ "shutdown.stop", "C\r", 2 },
+/*
+	{ "shutdown.stayoff", "S\0\0\W\r", 5 },
+ */
+	{ NULL, NULL, 0 }
+};
+
+static const struct {
+	char	*cmd;
+	char	*command;
+} powpan_cmdtab_txt[] = {
+	{ "test.failure.start", "T\r" },
+	{ "test.failure.stop", "CT\r" },
+	{ "beeper.on", "C7:1\r" },
+	{ "beeper.off", "C7:0\r" },
+	{ "shutdown.reboot", "S01R0001\r" },
+	{ "shutdown.return", "Z02\r" },
+	{ "shutdown.stop", "C\r" },
+	{ "shutdown.stayoff", "S01\r" },
+	{ NULL, NULL }
+};
+
+typedef struct {
+	char	*val;
+	char	command;
+} powpan_valtab_t;
+
+static const powpan_valtab_t	tran_high[] = {
+	{ "138", -9 }, { "139", -8 }, { "140", -7 }, { "141", -6 }, { "142", -5 },
+	{ "143", -4 }, { "144", -3 }, { "145", -2 }, { "146", -1 }, { "147", 0 },
+	{ NULL, 0 }
+};
+
+static const powpan_valtab_t	tran_low[] = {
+	{ "88", 0 }, { "89", 1 }, { "90", 2 }, { "91", 3 }, { "92", 4 },
+	{ "93", 5 }, { "94", 6 }, { "95", 7 }, { "96", 8 }, { "97", 9 },
+	{ NULL, 0 }
+};
+
+static const powpan_valtab_t	batt_low[] = {
+	{ "25", -6 }, { "30", -5 }, { "35", -3 }, { "40", -1 },
+	{ "45", 0 }, { "50", 2 }, { "55", 4 }, { "60", 6 },
+	{ NULL, 0 }
+};
+
+static const powpan_valtab_t	out_volt[] = {
+	{ "110", -10 }, { "120", 0 }, { "130", 10 },
+	{ NULL, 0 }
+};
+
+static const powpan_valtab_t 	on_or_off[] = {
+	{ "enabled", 2 }, { "disabled", 0 },
+	{ NULL, 0 }
+};
+
+static const powpan_valtab_t	null_val[] = {
+	{ NULL, 0 }
+};
+
+static const struct {
+	char	*var;
+	char	*get;
+	char	*set;
+	const powpan_valtab_t	*map;
+} powpan_vartab_bin[] = {
+	{ "input.transfer.high", "R\002\r", "Q\002%c\r", tran_high },
+	{ "input.transfer.low", "R\004\r", "Q\004%c\r", tran_low },
+	{ "battery.charge.low", "R\010\r", "Q\010%c\r", batt_low },
+	{ "output.voltage.nominal", "R\030\r", "Q\030%c\r", out_volt },
+	{ "ups.coldstart", "R\017\r", "Q\017%c\r", on_or_off },
+	{ "unknown.variable.0x3d", "R\075\r", "Q\075%c\r", null_val },
+	{ "unknown.variable.0x29", "R\051\r", "Q\051%c\r", null_val },
+	{ "unknown.variable.0x2b", "R\053\r", "Q\053%c\r", null_val },
+	{ NULL, NULL, NULL, NULL }
+};
+
+static const struct {
+	char	*var;
+	char	*get;
+	char	*set;
+} powpan_vartab_txt[] = {
+	{ "input.transfer.high", "P6\r", "C2:%03d\r" },
+ 	{ "input.transfer.low", "P7\r", "C3:%03d\r" },
+	{ "battery.charge.low", "P8\r", "C4:%03d\r" },
+	{ NULL, NULL, NULL }
+};
