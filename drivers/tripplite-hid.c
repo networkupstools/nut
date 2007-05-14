@@ -224,9 +224,11 @@ static int tripplite_claim(HIDDevice_t *hd) {
 	}
 	switch (hd->ProductID) {
 
-	/* accept any known UPS - add devices here as needed */
+	/* accept any known UPS - add devices here as needed. Remember:
+	   also update scripts/udev/* and scripts/hotplug/*.  */
 	case 0x1003:  /* e.g. AVR550U */
 	case 0x2005:  /* e.g. OMNI1000LCD */
+   case 0x3012:  /* e.g. smart2200RMXL2U */
 	case 0x4002:  /* e.g. SmartOnline SU6000RT4U? */
 	case 0x4003:  /* e.g. SmartOnline SU1500RTXL2ua */
 		return 1;

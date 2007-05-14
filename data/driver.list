@@ -439,7 +439,7 @@
 "Tripp-Lite"	"OMNIVS1500XL"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"SMART1500RM2U"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"SMART550USB"	"USB"	"tripplite_usb"
-"Tripp-Lite"	"SMART2200RMXL2U"	"USB"	"tripplite_usb (experimental)"
+"Tripp-Lite"	"SMART2200RMXL2U"	"USB, older models"	"tripplite_usb (experimental)"
 "Tripp-Lite"	"SmartUPS"	""	"tripplite"
 "Tripp-Lite"	"SmartOnline"	""	"tripplitesu"
 "Tripp-Lite"	"(various)"	"Lan 2.2 interface - black 73-0844 cable"	"genericups upstype=5"
@@ -449,6 +449,7 @@
 "Tripp-Lite"	"1500 LCD"	"USB"   "usbhid-ups"
 "Tripp-Lite"	"AVR550U"	"USB"   "usbhid-ups"
 "Tripp-Lite"	"SmartOnline SU1500RTXL2ua"	"USB"	"usbhid-ups"
+"Tripp-Lite"	"smart2200RMXL2U"	"USB, newer models"	"usbhid-ups"
 
 "Trust"		"UPS 1000 Management PW-4105"	""	"megatec"
 "Trust"		"UPS 1200VA Management PW-4120M"	""	"megatec"

@@ -40,8 +40,10 @@ SYSFS{idVendor}=="0592", SYSFS{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_GR
 SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="0001", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 # Tripp Lite - usbhid-ups
-SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="2005", MODE="664", GROUP="@RUN_AS_GROUP@"
 SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="1003", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="2005", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="3012", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="4002", MODE="664", GROUP="@RUN_AS_GROUP@"
 SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="4003", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 # Belkin - usbhid-ups
