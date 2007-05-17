@@ -1,3 +1,8 @@
+Thu May 17 23:36:38 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ - drivers/megatec_usb.c: added Belkin F6C1200-UNV to the list of known
+   devices.
+
 Thu May 17 09:44:33 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * server/upsd.c:
