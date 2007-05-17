@@ -97,12 +97,15 @@ upstype_t *get_ups_ptr(const char *name)
 {
 	upstype_t	*tmp;
 
-	if (!name)
+	if (!name) {
 		return NULL;
+	}
 
-	for (tmp = firstups; tmp != NULL; tmp = tmp->next)
-		if (!strcasecmp(tmp->name, name))
+	for (tmp = firstups; tmp != NULL; tmp = tmp->next) {
+		if (!strcasecmp(tmp->name, name)) {
 			return tmp;
+		}
+	}
 
 	return NULL;
 }
@@ -111,20 +114,21 @@ upstype_t *get_ups_ptr(const char *name)
 static void ups_data_stale(upstype_t *ups)
 {
 	/* don't complain again if it's already known to be stale */
-	if (ups->stale == 1)
+	if (ups->stale == 1) {
 		return;
+	}
 
 	ups->stale = 1;
 
-	upslogx(LOG_NOTICE, "Data for UPS [%s] is stale - check driver",
-		ups->name);
+	upslogx(LOG_NOTICE, "Data for UPS [%s] is stale - check driver", ups->name);
 }
 
 /* mark the data ok if this is new, otherwise do nothing */
 static void ups_data_ok(upstype_t *ups)
 {
-	if (ups->stale == 0)
+	if (ups->stale == 0) {
 		return;
+	}
 
 	upslogx(LOG_NOTICE, "UPS [%s] data is no longer stale", ups->name);
 	ups->stale = 0;
@@ -134,18 +138,21 @@ static void ups_data_ok(upstype_t *ups)
 static void check_ups(upstype_t *ups)
 {
 	/* sanity checks */
-	if ((!ups) || (!ups->fn))
+	if ((!ups) || (!ups->fn)) {
 		return;
+	}
 
 	/* see if we need to (re)connect to the socket */
-	if (ups->sock_fd == -1)
+	if (ups->sock_fd == -1) {
 		ups->sock_fd = sstate_connect(ups);
+	}
 
 	/* throw some warnings if it's not feeding us data any more */
-	if (sstate_dead(ups, maxage))
+	if (sstate_dead(ups, maxage)) {
 		ups_data_stale(ups);
-	else
+	} else {
 		ups_data_ok(ups);
+	}
 }
 
 /* add another listening address */
@@ -154,8 +161,9 @@ void listen_add(const char *addr, const char *port)
 	stype_t	*stmp, *last;
 
 	/* don't change listening addresses on reload */
-	if (reload_flag)
+	if (reload_flag) {
 		return;
+	}
 
 	stmp = last = firstaddr;
 
@@ -172,10 +180,11 @@ void listen_add(const char *addr, const char *port)
 	stmp->sock_fd = -1;
 	stmp->next = NULL;
 
-	if (last == NULL)
+	if (last == NULL) {
 		firstaddr = stmp;
-	else
+	} else {
 		last->next = stmp;
+	}
 
 	upsdebugx(3, "listen_add: added %s:%s", stmp->addr, stmp->port);
 }
@@ -188,22 +197,31 @@ static void setuptcp(stype_t *serv)
 	struct sockaddr_in	server;
 	int	res, one = 1;
 
-	if ((host = gethostbyname(serv->addr)) == (struct hostent *)NULL) {
+	host = gethostbyname(serv->addr);
+
+	if (host == NULL) {
 		struct  in_addr	listenaddr;
 
-		if (!inet_aton(serv->addr, &listenaddr) || ((host = gethostbyaddr(&listenaddr,
-				sizeof(listenaddr), AF_INET)) == (struct hostent *)NULL))
-			fatal_with_errno("gethost");
+		if (!inet_aton(serv->addr, &listenaddr)) {
+			fatal_with_errno("inet_aton");
+		}
+
+		host = gethostbyaddr(&listenaddr, sizeof(listenaddr), AF_INET);
+
+		if (host == NULL) {
+			fatal_with_errno("gethostbyaddr");
+		}
 	}
 
-	if ((serv->sock_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+	if ((serv->sock_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		fatal_with_errno("socket");
+	}
 
-	res = setsockopt(serv->sock_fd, SOL_SOCKET, SO_REUSEADDR, (void *) &one, 
-		sizeof(one));
+	res = setsockopt(serv->sock_fd, SOL_SOCKET, SO_REUSEADDR, (void *) &one, sizeof(one));
 
-	if (res != 0)
+	if (res != 0) {
 		fatal_with_errno("setsockopt(SO_REUSEADDR)");
+	}
 
 	memset(&server, '\0', sizeof(server));
 	server.sin_family = AF_INET;
@@ -211,17 +229,21 @@ static void setuptcp(stype_t *serv)
 
 	memcpy(&server.sin_addr, host->h_addr, host->h_length);
 
-	if (bind(serv->sock_fd, (struct sockaddr *) &server, sizeof(server)) == -1)
+	if (bind(serv->sock_fd, (struct sockaddr *) &server, sizeof(server)) == -1) {
 		fatal_with_errno("Can't bind TCP port %s", serv->port);
+	}
 
-	if ((res = fcntl(serv->sock_fd, F_GETFL, 0)) == -1)
+	if ((res = fcntl(serv->sock_fd, F_GETFL, 0)) == -1) {
 		fatal_with_errno("fcntl(get)");
+	}
 
-	if (fcntl(serv->sock_fd, F_SETFL, res | O_NDELAY) == -1)
+	if (fcntl(serv->sock_fd, F_SETFL, res | O_NDELAY) == -1) {
 		fatal_with_errno("fcntl(set)");
+	}
 
-	if (listen(serv->sock_fd, 16))
+	if (listen(serv->sock_fd, 16)) {
 		fatal_with_errno("listen");
+	}
 #else
 	struct addrinfo		hints, *res, *ai;
 	int	v = 0, one = 1;
@@ -235,25 +257,39 @@ static void setuptcp(stype_t *serv)
 	hints.ai_protocol	= IPPROTO_TCP;
 
         if ((v = getaddrinfo(serv->addr, serv->port, &hints, &res))) {
-		if (v == EAI_SYSTEM)
+		if (v == EAI_SYSTEM) {
                         fatal_with_errno("getaddrinfo");
+		}
 
-                fatalx("getaddrinfo: %s\n", gai_strerror(v));
+                fatalx("getaddrinfo: %s", gai_strerror(v));
         }
+
+	/* this can't happen */
+	if (res == NULL) {
+		fatalx("getaddrinfo: addrinfo list empty");
+	}
 
         for (ai = res; ai != NULL; ai = ai->ai_next) {
 		int sock_fd;
 
-		if ((ai->ai_socktype != hints.ai_socktype) || (ai->ai_protocol != hints.ai_protocol))
+		if (ai->ai_socktype != hints.ai_socktype) {
+			upsdebugx(3, "setuptcp: socket type mismatch [%X]", ai->ai_socktype);
 			continue;
+		}
+
+		if (ai->ai_protocol != hints.ai_protocol) {
+			upsdebugx(3, "setuptcp: protocol mismatch [%X]", ai->ai_protocol);
+			continue;
+		}
 
 		if ((sock_fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol)) < 0) {
 			upsdebug_with_errno(3, "setuptcp: socket");
 			continue;
 		}
 		
-		if (setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, (void *)&one, sizeof(one)) != 0)
+		if (setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, (void *)&one, sizeof(one)) != 0) {
 			fatal_with_errno("setuptcp: setsockopt");
+		}
 
 		if (bind(sock_fd, ai->ai_addr, ai->ai_addrlen) < 0) {
 			upsdebug_with_errno(3, "setuptcp: bind");
@@ -261,13 +297,15 @@ static void setuptcp(stype_t *serv)
 			continue;
 		}
 
-		if ((v = fcntl(sock_fd, F_GETFL, 0)) == -1)
+		if ((v = fcntl(sock_fd, F_GETFL, 0)) == -1) {
 			fatal_with_errno("setuptcp: fcntl(get)");
+		}
 
-		if (fcntl(sock_fd, F_SETFL, v | O_NDELAY) == -1)
+		if (fcntl(sock_fd, F_SETFL, v | O_NDELAY) == -1) {
 			fatal_with_errno("setuptcp: fcntl(set)");
+		}
 
-		if (listen(sock_fd, 1) < 0) {
+		if (listen(sock_fd, 16) < 0) {
 			upsdebug_with_errno(3, "setuptcp: listen");
 			close(sock_fd);
 			continue;
@@ -281,10 +319,11 @@ static void setuptcp(stype_t *serv)
 #endif
 
 	/* don't fail silently */
-	if (serv->sock_fd < 0)
+	if (serv->sock_fd < 0) {
 		fatalx("not listening on %s port %s", serv->addr, serv->port);
-	else
+	} else {
 		upslogx(LOG_INFO, "listening on %s port %s", serv->addr, serv->port);
+	}
 
 	return;
 }
@@ -303,9 +342,9 @@ static void declogins(const char *upsname)
 
 	ups->numlogins--;
 
-	if (ups->numlogins < 0)
-		upslogx(LOG_ERR, "Programming error: UPS [%s] has numlogins=%d",
-			ups->name, ups->numlogins);
+	if (ups->numlogins < 0) {
+		upslogx(LOG_ERR, "Programming error: UPS [%s] has numlogins=%d", ups->name, ups->numlogins);
+	}
 }
 
 /* disconnect a client connection and free all related memory */
@@ -313,8 +352,9 @@ static void delclient(ctype_t *dclient)
 {
 	ctype_t	*tmp, *last;
 
-	if (dclient == NULL)
+	if (dclient == NULL) {
 		return;
+	}
 
 	last = NULL;
 	tmp = firstclient;
@@ -334,16 +374,18 @@ static void delclient(ctype_t *dclient)
 			free(tmp->password);
 
 #ifdef HAVE_SSL
-			if (tmp->ssl)
+			if (tmp->ssl) {
 				SSL_free(tmp->ssl);
+			}
 #endif
 
 			pconf_finish(&tmp->ctx);
 
-			if (last == NULL)	/* deleting first entry */
+			if (last == NULL) {	/* deleting first entry */
 				firstclient = tmp->next;
-			else
+			} else {
 				last->next = tmp->next;
+			}
 
 			free(tmp);
 			return;
@@ -366,11 +408,13 @@ int sendback(ctype_t *client, const char *fmt, ...)
 	char ans[NUT_NET_ANSWER_MAX+1];
 	va_list ap;
 
-	if (!client)
+	if (!client) {
 		return 0;
+	}
 
-	if (client->delete)
+	if (client->delete) {
 		return 0;
+	}
 
 	va_start(ap, fmt);
 	vsnprintf(ans, sizeof(ans), fmt, ap);
@@ -378,13 +422,13 @@ int sendback(ctype_t *client, const char *fmt, ...)
 
 	len = strlen(ans);
 
-	if (client->ssl)
+	if (client->ssl) {
 		res = ssl_write(client, ans, len);
-	else
+	} else {
 		res = write(client->fd, ans, len);
+	}
 
-	upsdebugx(2, "write: [destfd=%d] [len=%d] [%s]", 
-		client->fd, len, rtrim(ans, '\n'));
+	upsdebugx(2, "write: [destfd=%d] [len=%d] [%s]", client->fd, len, rtrim(ans, '\n'));
 
 	if (len != res) {
 		upslog_with_errno(LOG_NOTICE, "write() failed for %s", client->addr);
@@ -398,11 +442,11 @@ int sendback(ctype_t *client, const char *fmt, ...)
 /* just a simple wrapper for now */
 int send_err(ctype_t *client, const char *errtype)
 {
-	if (!client)
+	if (!client) {
 		return -1;
+	}
 
-	upsdebugx(4, "Sending error [%s] to client %s", 
-		errtype, client->addr);
+	upsdebugx(4, "Sending error [%s] to client %s", errtype, client->addr);
 
 	return sendback(client, "ERR %s\n", errtype);
 }
@@ -424,8 +468,7 @@ void kick_login_clients(const char *upsname)
 		}
 
 		if (!strcmp(tmp->loginups, upsname)) {
-			upslogx(LOG_INFO, "Kicking client %s (was on UPS [%s])\n", 
-				tmp->addr, upsname);
+			upslogx(LOG_INFO, "Kicking client %s (was on UPS [%s])\n", tmp->addr, upsname);
 			delclient(tmp);
 		}
 
@@ -549,13 +592,14 @@ static void answertcp(stype_t *serv)
 	clen = sizeof(csock);
 	acc = accept(serv->sock_fd, (struct sockaddr *) &csock, &clen);
 
-	if (acc < 0)
+	if (acc < 0) {
 		return;
+	}
 
 	if (!access_check(&csock)) {
 		upslogx(LOG_NOTICE, "Rejecting TCP connection from %s", 
 #ifndef	HAVE_IPV6
-			inet_ntoa(csock.sin_addr));
+	 		inet_ntoa(csock.sin_addr));
 #else
 			inet_ntopW(&csock));
 #endif
@@ -598,10 +642,11 @@ static void answertcp(stype_t *serv)
 
 	tmp->next = NULL;
 
-	if (last == NULL)
+	if (last == NULL) {
  		firstclient = tmp;
-	else
+	} else {
 		last->next = tmp;
+	}
 
 	upslogx(LOG_DEBUG, "Connection from %s", tmp->addr);
 }
@@ -614,14 +659,14 @@ static void readtcp(ctype_t *client)
 
 	memset(buf, '\0', sizeof(buf));
 
-	if (client->ssl)
+	if (client->ssl) {
 		ret = ssl_read(client, buf, sizeof(buf));
-	else
+	} else {
 		ret = read(client->fd, buf, sizeof(buf));
+	}
 
 	if (ret < 1) {
-		upslogx(LOG_INFO, "Host %s disconnected (read failure)",
-			client->addr);
+		upslogx(LOG_INFO, "Host %s disconnected (read failure)", client->addr);
 		delclient(client);
 		return;
 	}
@@ -662,11 +707,13 @@ void server_load(void)
 	stype_t	*serv;
 
 	/* default behaviour if no LISTEN addres has been specified */
-	if (firstaddr == NULL)
+	if (firstaddr == NULL) {
 		listen_add("0.0.0.0", string_const(PORT));
+	}
 
-	for (serv = firstaddr; serv != NULL; serv = serv->next)
+	for (serv = firstaddr; serv != NULL; serv = serv->next) {
 		setuptcp(serv);
+	}
 }
 
 void server_free(void)
@@ -706,16 +753,18 @@ static void upsd_cleanup(void)
 		tmpcli = tmpnext;
 	}
 
-	if (strcmp(pidfn, "") != 0)
+	if (strcmp(pidfn, "") != 0) {
 		unlink(pidfn);
+	}
 
 	ups = firstups;
 
 	while (ups) {
 		unext = ups->next;
 
-		if (ups->sock_fd != -1)
+		if (ups->sock_fd != -1) {
 			close(ups->sock_fd);
+		}
 
 		sstate_infofree(ups);
 		sstate_cmdfree(ups);
@@ -767,16 +816,18 @@ static void mainloop(void)
 		if (stmp->sock_fd != -1) {
 			FD_SET(stmp->sock_fd, &rfds);
 
-			if (stmp->sock_fd > maxfd)
+			if (stmp->sock_fd > maxfd) {
 				maxfd = stmp->sock_fd;
+			}
 		}
 	}
 
 	/* scan through clients and add to FD_SET */
 	for (tmpcli = firstclient; tmpcli != NULL; tmpcli = tmpcli->next) {
 		FD_SET(tmpcli->fd, &rfds);
-		if (tmpcli->fd > maxfd)
+		if (tmpcli->fd > maxfd) {
 			maxfd = tmpcli->fd;
+		}
 	}
 
 	/* also add new driver sockets */
@@ -784,8 +835,9 @@ static void mainloop(void)
 		if (utmp->sock_fd != -1) {
 			FD_SET(utmp->sock_fd, &rfds);
 
-			if (utmp->sock_fd > maxfd)
+			if (utmp->sock_fd > maxfd) {
 				maxfd = utmp->sock_fd;
+			}
 		}
 	}
 	
@@ -798,9 +850,11 @@ static void mainloop(void)
 		while (stmp) {
 			snext = stmp->next;
 
-			if (stmp->sock_fd != -1)
-				if (FD_ISSET(stmp->sock_fd, &rfds))
+			if (stmp->sock_fd != -1) {
+				if (FD_ISSET(stmp->sock_fd, &rfds)) {
 					answertcp(stmp);
+				}
+			}
 
 			stmp = snext;
 		}
@@ -813,8 +867,9 @@ static void mainloop(void)
 			/* preserve for later since delclient may run */
 			tmpnext = tmpcli->next;
 
-			if (FD_ISSET(tmpcli->fd, &rfds))
+			if (FD_ISSET(tmpcli->fd, &rfds)) {
 				readtcp(tmpcli);
+			}
 
 			tmpcli = tmpnext;
 		}
@@ -825,9 +880,12 @@ static void mainloop(void)
 		while (utmp) {
 			unext = utmp->next;
 
-			if (utmp->sock_fd != -1)
-				if (FD_ISSET(utmp->sock_fd, &rfds))
+			if (utmp->sock_fd != -1) {
+				if (FD_ISSET(utmp->sock_fd, &rfds)) {
 					sstate_sock_read(utmp);
+				}
+
+			}
 
 			utmp = unext;
 		}
@@ -898,12 +956,14 @@ void check_perms(const char *fn)
 
 	ret = stat(fn, &st);
 
-	if (ret != 0)
+	if (ret != 0) {
 		fatal_with_errno("stat %s", fn);
+	}
 
 	/* include the x bit here in case we check a directory */
-	if (st.st_mode & (S_IROTH | S_IXOTH))
+	if (st.st_mode & (S_IROTH | S_IXOTH)) {
 		upslogx(LOG_WARNING, "%s is world readable", fn);
+	}
 }	
 
 int main(int argc, char **argv)
@@ -992,8 +1052,9 @@ int main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
-	if (argc != 0)
+	if (argc != 0) {
 		help(progname);
+	}
 
 	setupsignals();
 
@@ -1005,8 +1066,9 @@ int main(int argc, char **argv)
 	/* do this here, since getpwnam() might not work in the chroot */
 	new_uid = get_user_pwent(user);
 
-	if (chroot_path)
+	if (chroot_path) {
 		chroot_start(chroot_path);
+	}
 
 	/* handle upsd.conf */
 	load_upsdconf(0);	/* 0 = initial */
@@ -1016,8 +1078,9 @@ int main(int argc, char **argv)
 
 	become_user(new_uid);
 
-	if (chdir(statepath))
+	if (chdir(statepath)) {
 		fatal_with_errno("Can't chdir to %s", statepath);
+	}
 
 	/* check statepath perms */
 	check_perms(statepath);
@@ -1026,8 +1089,9 @@ int main(int argc, char **argv)
 	read_upsconf();
 	upsconf_add(0);		/* 0 = initial */
 
-	if (num_ups == 0)
+	if (num_ups == 0) {
 		fatalx("Fatal error: at least one UPS must be defined in ups.conf");
+	}
 
 	ssl_init();
 
@@ -1045,8 +1109,9 @@ int main(int argc, char **argv)
 		memset(&pidfn, '\0', sizeof(pidfn));
 	}
 
-	while (exit_flag == 0)
+	while (exit_flag == 0) {
 		mainloop();
+	}
 
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
 	upsd_cleanup();

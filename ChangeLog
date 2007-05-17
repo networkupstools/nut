@@ -1,3 +1,11 @@
+Thu May 17 09:44:33 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * server/upsd.c:
+   - provide additional debug information for setuptcp() if IPv6 is used
+     so that it will never break from looping through the list of addrinfo
+     elements without showing why (in debug mode >= 3)
+   - minor changes (coding style)
+
 Sat May 12 19:56:02 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - data/driver.list: added CyberPower PR2200 that is supported through
