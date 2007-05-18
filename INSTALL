@@ -147,11 +147,14 @@ MANPATH, or just do this:
     permissions for the USB device, you may need to set up (operating
     system dependent) hotplugging scripts.  Sample scripts and
     information are provided in the scripts/hotplug and
-    scripts/udev directories. (If you want to try if a driver
-    works without setting up hotplugging, you can add the "-u root"
-    option to upsd, upsmon, and drivers; this should allow you to
-    follow the below instructions. However, don't forget to set up the
-    correct permissions later!).
+    scripts/udev directories. For most users, the hotplugging scripts
+    will be installed automatically by "make install". 
+
+    (If you want to try if a driver works without setting up
+    hotplugging, you can add the "-u root" option to upsd, upsmon, and
+    drivers; this should allow you to follow the below
+    instructions. However, don't forget to set up the correct
+    permissions later!).
 
     NOTE: if you are using something like devfs or udev, make sure
     these permissions stay set across a reboot.  If they revert to the

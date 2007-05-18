@@ -13,19 +13,24 @@ This script ensure that the right privileges are set on the
 usb devices files to allow the NUT driver to operate (ie
 allowing the nut user to read AND write to the UPS device).
 
-Usage
------
+Note that the old style hotplug files, available in the
+scripts/hotplug directory, are not needed if your kernel supports
+udev.
 
-Copy nut-usbups.rules to /etc/udev/rules using the command
+Installation
+------------
+
+For most users, these files will be automatically installed in
+/etc/udev upon "make install", if that directory exists. You can
+specify an alternate directory with ./configure --with-udev-dir=DIR.
+
+Manual installation
+-------------------
+
+To install them manually, copy nut-usbups.rules to /etc/udev/rules.d
+using the command
 
 $ cp -f nut-usbups.rules /etc/udev/rules.d/52_nut-usbups.rules
 
 You can then plug your UPS USB cord, or unplug / replug it to
 refresh the device permission, and start NUT.
-
-Note that the old style hotplug files, available in the
-scripts/hotplug directory, are not needed anymore.
-
-TODO
-----
-- add configure and Makefile rules for easier installation
