@@ -310,7 +310,7 @@ BCMXCP_METER_MAP_ENTRY_t
 	bcmxcp_meter_map[BCMXCP_METER_MAP_MAX];
 
 typedef	struct { /* Entry in BCM/XCP - UPS mapping table */
-	unsigned int alarm_block_index;		/* Index of this alarm in alarm block. -1 = not existing */
+	int alarm_block_index;			/* Index of this alarm in alarm block. -1 = not existing */
 	char *alarm_desc;			/* Description of this alarm */
 }	BCMXCP_ALARM_MAP_ENTRY_t;
 

@@ -1,3 +1,9 @@
+Sun May 20 08:22:20 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+
+ - Changed 'unsigned int' to 'int' in alarm struct bcmxcp.h. And also the alarm
+   counter in bcmxcp.c even if usigned int to int works. Fix bug for missing
+   alarms.
+
 Fri May 18 19:28:24 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  - updated documentation to reflect the automatic installation of

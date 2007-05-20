@@ -552,7 +552,8 @@ void decode_meter_map_entry(const unsigned char *entry, const unsigned char form
 
 void init_ups_alarm_map(const unsigned char *map, unsigned char len)
 {
-	unsigned int iIndex = 0, iOffset = 0, alarm = 0;
+	unsigned int iIndex = 0, iOffset = 0;
+	int alarm = 0;
 	
 	/* In case of debug - make explanation of values */
 	upsdebugx(2, "Index\tAlarm\tSupported\n");
