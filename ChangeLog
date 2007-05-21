@@ -1,3 +1,11 @@
+Mon May 21 18:42:07 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - server/upsd.c: don't check for sockettype and protocol (shouldn't be
+   necessary, since getaddrinfo() will return only combinations that match
+   what we asked for)
+   Apparently, some Solaris systems will return IPPROTO_IP when we ask for
+   IPPROTO_TCP, which seems to be fine.
+
 Sun May 20 08:22:20 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
  - Changed 'unsigned int' to 'int' in alarm struct bcmxcp.h. And also the alarm

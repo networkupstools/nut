@@ -272,16 +272,6 @@ static void setuptcp(stype_t *serv)
         for (ai = res; ai != NULL; ai = ai->ai_next) {
 		int sock_fd;
 
-		if (ai->ai_socktype != hints.ai_socktype) {
-			upsdebugx(3, "setuptcp: socket type mismatch [%X]", ai->ai_socktype);
-			continue;
-		}
-
-		if (ai->ai_protocol != hints.ai_protocol) {
-			upsdebugx(3, "setuptcp: protocol mismatch [%X]", ai->ai_protocol);
-			continue;
-		}
-
 		if ((sock_fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol)) < 0) {
 			upsdebug_with_errno(3, "setuptcp: socket");
 			continue;
