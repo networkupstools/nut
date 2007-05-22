@@ -256,7 +256,7 @@ static void setuptcp(stype_t *serv)
 	hints.ai_socktype	= SOCK_STREAM;
 	hints.ai_protocol	= IPPROTO_TCP;
 
-        if ((v = getaddrinfo(serv->addr, serv->port, &hints, &res))) {
+        if ((v = getaddrinfo(serv->addr, serv->port, &hints, &res)) != 0) {
 		if (v == EAI_SYSTEM) {
                         fatal_with_errno("getaddrinfo");
 		}
@@ -264,12 +264,7 @@ static void setuptcp(stype_t *serv)
                 fatalx("getaddrinfo: %s", gai_strerror(v));
         }
 
-	/* this can't happen */
-	if (res == NULL) {
-		fatalx("getaddrinfo: addrinfo list empty");
-	}
-
-        for (ai = res; ai != NULL; ai = ai->ai_next) {
+       for (ai = res; ai != NULL; ai = ai->ai_next) {
 		int sock_fd;
 
 		if ((sock_fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol)) < 0) {

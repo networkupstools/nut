@@ -1,3 +1,16 @@
+Tue May 22 11:04:36 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * clients/upsclient.c:
+   - Don't check for sockettype and protocol (shouldn't be necessary, since
+     getaddrinfo() will return only combinations that match what we asked for)
+     Apparently, some Solaris systems will return IPPROTO_IP when we ask for
+     IPPROTO_TCP, which seems to be fine.
+   - Additional error reporting for getaddrinfo()
+   - Minor changes (coding style)
+ * server/upsd.c:
+   - Remove redundant check after getaddrinfo() call (which is guaranteed to
+     have at least one addrinfo element if successful)
+
 Mon May 21 18:42:07 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - server/upsd.c: don't check for sockettype and protocol (shouldn't be
