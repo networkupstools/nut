@@ -1,3 +1,8 @@
+Tue May 22 23:47:58 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ - drivers/megatec_usb.c: added debug output before exit when no supported
+   UPSes were found.
+
 Tue May 22 13:55:26 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  - data/driver.list: sorted Belkin models by model name.
