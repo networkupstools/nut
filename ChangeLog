@@ -1,3 +1,7 @@
+Tue May 22 13:55:26 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - data/driver.list: sorted Belkin models by model name.
+
 Tue May 22 12:23:28 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
 
  - data/driver.list: added all UPSes that are reported supported to the list.
