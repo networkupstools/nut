@@ -81,7 +81,7 @@ void  upsdrv_initinfo (void)
             dstate_setinfo("ups.model", "Micro Ferrups (RE) %d", fc.va);
             break;
           default:
-	    exit(EXIT_FAILURE); /* Will never get here, upsdrv_initups() will catch */
+	    fatalx("UPS model not matched!"); /* Will never get here, upsdrv_initups() will catch */
         } 
 	fprintf(stderr, "Best Power %s detected\n", 
 		dstate_getinfo("ups.model"));
@@ -224,8 +224,7 @@ void upsdrv_updateinfo(void)
         }
 	break;
       default: /* Will never happen, caught in upsdrv_initups() */
-        fprintf(stderr, "Unknown model in upsdrv_updateinfo()\n");
-        exit(EXIT_FAILURE);
+        fatalx("Unknown model in upsdrv_updateinfo()");
     }
     /* Compute battery percent left based on battery voltages. */
     battpercent = ((vbatt - fc.emptyvolts) 
@@ -320,8 +319,7 @@ static void ups_sync(void)
   if (execute("time\r", buf, sizeof(buf)) > 0) {
     fprintf(stderr, "UPS Time: %s\n", buf);
   } else {
-    fprintf(stderr, "Error connecting to UPS.\n");
-    exit(EXIT_FAILURE);
+    fatalx("Error connecting to UPS");
   }
 }
 
@@ -403,15 +401,15 @@ void upsdrv_initups ()
   fc.model = UNKNOWN;
   /* Obtain Model */
   if (execute("id\r", fcstring, sizeof(fcstring)) < 0) {
-    fprintf(stderr, "Failed execute in ups_ident()\n");
-    exit(EXIT_FAILURE);
+    fatalx("Failed execute in ups_ident()");
   }
   
   /* response is a one-line packed string starting with $ */
   if (memcmp(fcstring, "Unit", 4)) {
-    fprintf(stderr, "Bad response from formatconfig command in ups_ident()\n");
-    fprintf(stderr, "id: %s\n", fcstring);
-    exit(EXIT_FAILURE);
+    fatalx(
+	"Bad response from formatconfig command in ups_ident()\n"
+	"id: %s\n", fcstring
+    );
   }
 
   if (debugging)
@@ -478,9 +476,7 @@ void upsdrv_initups ()
       fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
       break;
     default:
-      fprintf(stderr, "Uknown model %s in ups_ident()\n", temp);
-      exit(EXIT_FAILURE);
-      break;
+      fatalx("Uknown model %s in ups_ident()", temp);
   }
 
   fc.valid = 1;

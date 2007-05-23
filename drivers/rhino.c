@@ -573,9 +573,7 @@ static void getbaseinfo(void)
 
 	if( (!detected) )
 	  {
-	    printf( NO_RHINO );
-	    upsdrv_cleanup();
-	    exit(0);
+	    fatalx( NO_RHINO );
 	  }
 
 	switch( RhinoModel )

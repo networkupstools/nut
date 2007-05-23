@@ -338,9 +338,11 @@ static void do_capabilities(void)
 			if (quirk_capability_overflow)
 				return;
 
-			printf("Capability string has overflowed\n");
-			printf("Please report this error\n");
-			fatalx("ERROR: capability overflow!");
+			fatalx(
+				"Capability string has overflowed\n"
+				"Please report this error\n"
+				"ERROR: capability overflow!"
+				);
 		}
 
 		cmd = ptr[0];
@@ -610,17 +612,13 @@ static void getbaseinfo(void)
 	*/
  	alrts = strchr(temp, '.');
 	if (alrts == NULL) {
-		printf("Unable to split APC version string\n");
-		printf("Bailing out\n");
-		exit(EXIT_FAILURE);
+		fatalx("Unable to split APC version string");
 	}
 	*alrts++ = 0;
 
 	cmds = strchr(alrts, '.');
 	if (cmds == NULL) {
-		printf("Unable to find APC command string\n");
-		printf("Bailing out\n");
-		exit(EXIT_FAILURE);
+		fatalx("Unable to find APC command string");
 	}
 	*cmds++ = 0;
 
@@ -1245,10 +1243,10 @@ void upsdrv_help(void)
 void upsdrv_initinfo(void)
 {
 	if (!smartmode()) {
-		printf("Unable to detect an APC Smart protocol UPS on port %s\n", 
-			device_path);
-		printf("Check the cabling, port name or model name and try again\n");
-		exit(EXIT_FAILURE);
+		fatalx(
+			"Unable to detect an APC Smart protocol UPS on port %s\n"
+			"Check the cabling, port name or model name and try again", device_path
+			);
 	}
 
 	/* manufacturer ID - hardcoded in this particular module */

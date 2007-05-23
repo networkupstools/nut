@@ -422,10 +422,10 @@ void upsdrv_initinfo(void)
 
 	res = init_communication();
 	if (res == -1) {
-		printf("Unable to detect an Belkin Smart protocol UPS on port %s\n", 
-			device_path);
-		printf("Check the cabling, port name or model name and try again\n");
-		exit(EXIT_FAILURE);
+		fatalx(
+			"Unable to detect an Belkin Smart protocol UPS on port %s\n"
+			"Check the cabling, port name or model name and try again", device_path
+			);
 	}
 
 	dstate_setinfo("ups.mfr", "BELKIN");

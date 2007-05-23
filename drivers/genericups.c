@@ -187,23 +187,21 @@ static void set_ups_type(void)
 	int	i;
 
 	if (!getval("upstype"))
-		fatalx("No upstype set - see help text / man page!\n");
+		fatalx("No upstype set - see help text / man page!");
 	
 	upstype = atoi(getval("upstype"));
 
 	for (i = 0; upstab[i].mfr != NULL; i++)
 	{
 		if (upstype == i) {
-			printf("UPS type: %s\n", upstab[i].desc);
+			upslogx(LOG_INFO, "UPS type: %s\n", upstab[i].desc);
 			return;
 		}
 	}
 
-	printf("\nFatal error: unknown UPS type number\n");
-
 	listtypes();
 
-	exit(EXIT_FAILURE);
+	fatalx("\nFatal error: unknown UPS type number");
 }
 
 /* power down the attached load immediately */

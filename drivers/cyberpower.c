@@ -547,10 +547,10 @@ void upsdrv_initups(void)
 void upsdrv_initinfo(void)
 {
 	if (detect_hardware() == -1) {
-		printf("Unable to detect a CyberPower UPS on port %s\n", 
-			device_path);
-		printf("Check the cabling, port name or model name and try again\n");
-		exit(EXIT_FAILURE);
+		fatalx(
+			"Unable to detect a CyberPower UPS on port %s\n"
+			"Check the cabling, port name or model name and try again", device_path
+		);
 	}
 
 	dstate_setinfo("ups.mfr", "CyberPower");

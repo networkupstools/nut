@@ -885,9 +885,7 @@ static void getbaseinfo(void)
 	} /* while end */
 
 	if( (!detected) ) {
-		printf( NO_SOLIS );
-		upsdrv_cleanup();
-		exit(0);
+		fatalx( NO_SOLIS );
 	}
 
 	switch( SolisModel )

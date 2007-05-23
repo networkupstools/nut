@@ -226,7 +226,7 @@ void nut_snmp_init(const char *type, const char *hostname, const char *version,
 	g_snmp_sess_p = snmp_open(&g_snmp_sess);	/* establish the session */
 	if (g_snmp_sess_p == NULL) {
 		nut_snmp_perror(&g_snmp_sess, 0, NULL, "nut_snmp_init: snmp_open");
-		exit(EXIT_FAILURE);
+		fatalx("Unable to establish communication");
 	}
 }
 

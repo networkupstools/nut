@@ -35,7 +35,7 @@ upslog_with_errno prints your message plus the string expansion of
 errno.  upslogx just prints the message.
 
 fatal_with_errno and fatalx work the same way, but they
-exit(EXIT_FAILURE) afterwards.
+exit(EXIT_FAILURE) afterwards. Don't call exit() directly.
 
 Debugging information
 ---------------------

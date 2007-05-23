@@ -1,3 +1,9 @@
+Wed May 23 18:27:03 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/various: use fatalx() to exit abnormally and make sure an
+   informative message is displayed
+ - docs/developers.txt: don't use exit() in drivers
+
 Wed May 23 17:15:34 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/powerpanel.[ch]: fixed polarity of ups.beeper.status

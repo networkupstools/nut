@@ -599,18 +599,17 @@ void upsdrv_initups(void)
     } while( (count<MAXTRIES) | (good) );
 
     if( ! good )
-    {        
-        printf( "No MASTERGUARD UPS found\n" );
-        exit(EXIT_FAILURE);
+    {
+        fatalx( "No MASTERGUARD UPS found" );
     }
        
-    printf( "MASTERGUARD UPS found\n" );
+    upslogx(LOG_INFO, "MASTERGUARD UPS found\n" );
     
     /* Cancel Shutdown */
     if( testvar("CS") )
     {
        ser_send_pace(upsfd, UPS_PACE, "%s", "C\x0D" );
-       exit(EXIT_FAILURE);
+       fatalx("Shutdown cancelled");
     }
 }
 
