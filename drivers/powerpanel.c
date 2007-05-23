@@ -502,9 +502,9 @@ static void updateinfo_bin()
         dstate_setinfo("input.frequency", "%.1f", powpan_answer[7] / 2.5);
 
 	if (status[0] & 0x01) {
-		dstate_setinfo("ups.beeper.status", "disabled");
-	} else {
 		dstate_setinfo("ups.beeper.status", "enabled");
+	} else {
+		dstate_setinfo("ups.beeper.status", "disabled");
 	}
 
 	status_init();

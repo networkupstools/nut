@@ -1,3 +1,7 @@
+Wed May 23 17:15:34 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/powerpanel.[ch]: fixed polarity of ups.beeper.status
+
 Tue May 22 23:47:58 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
 
  - drivers/megatec_usb.c: added debug output before exit when no supported
