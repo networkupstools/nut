@@ -384,7 +384,7 @@ static void comli_prepare(raw_data_t *dest, const comli_head_t *h, const void *b
 	/* it's caller responsibility to allocate enough space.
 	   else it is a bug in the program */
         if ( (out+11+count+2) > (dest->buf + dest->buf_size) )
-            fatalx("too small dest in comli_prepare\n");
+            fatalx(EXIT_FAILURE, "too small dest in comli_prepare\n");
 
 	out[0] = STX;
 	snprintf(out+1, 10+1, "%02X%1i%1i%04X%02X", h->msg.id, h->msg.stamp, h->msg.type, h->io.addr, h->io.len);
@@ -1235,7 +1235,7 @@ void upsdrv_shutdown(void)
 	   it doesn't respond at first if possible */
 
 	/* replace with a proper shutdown function */
-	fatalx("shutdown not supported");	/* TODO: implement... */
+	fatalx(EXIT_FAILURE, "shutdown not supported");	/* TODO: implement... */
 
 	/* you may have to check the line status since the commands
 	   for toggling power are frequently different for OL vs. OB */
@@ -1367,7 +1367,7 @@ void upsdrv_cleanup(void)
 
 void upsdrv_initinfo(void)
 {
-	/* try to detect the UPS here - call fatal_with_errno() if it fails */
+	/* try to detect the UPS here - call fatal_with_errno(EXIT_FAILURE, ) if it fails */
 
 	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
 	dstate_setinfo("ups.mfr", "Eltek");

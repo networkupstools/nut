@@ -174,7 +174,7 @@ void dstate_init(const char *prog, const char *port)
 
 	cs = libhal_device_new_changeset (udi);
 	if (cs == NULL) {
-		fatalx ("Cannot initialize changeset");
+		fatalx (EXIT_FAILURE, "Cannot initialize changeset");
 	}
 
 	/* UPS always report charge as percent */
@@ -252,7 +252,7 @@ int dstate_setinfo(const char *var, const char *fmt, ...)
 
 	cs = libhal_device_new_changeset (udi);
 	if (cs == NULL) {
-		fatalx ("Cannot initialize changeset");
+		fatalx (EXIT_FAILURE, "Cannot initialize changeset");
 	}
 
 	/* Loop on getting HAL variable(s) matching this NUT variable */
@@ -363,7 +363,7 @@ void status_commit(void)
 
 	cs = libhal_device_new_changeset (udi);
 	if (cs == NULL) {
-		fatalx ("Cannot initialize changeset");
+		fatalx (EXIT_FAILURE, "Cannot initialize changeset");
 	}
 
 	/* Set AC present status */

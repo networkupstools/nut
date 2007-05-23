@@ -516,13 +516,13 @@ void usb_comm_fail(int res, const char *msg)
 				upslogx(LOG_NOTICE, "Successfully reconnected");
 				upsdrv_initinfo();
 			} else {
-				fatalx("Too many unsuccessful reconnection attempts");
+				fatalx(EXIT_FAILURE, "Too many unsuccessful reconnection attempts");
 			}
 			break;
 
 		case -EBUSY:
 			upslogx(LOG_WARNING, "%s: Device claimed by another process", msg);
-			fatalx("Terminating: EBUSY");
+			fatalx(EXIT_FAILURE, "Terminating: EBUSY");
 			upsdrv_cleanup();
 			break;
 
@@ -556,7 +556,7 @@ static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *rep
 	upsdebugx(3, "send_cmd(msg_len=%u, type='%c')", (unsigned)msg_len, msg[0]);
 
 	if(msg_len > 5) {
-		fatalx("send_cmd(): Trying to pass too many characters to UPS (%u)", (unsigned)msg_len);
+		fatalx(EXIT_FAILURE, "send_cmd(): Trying to pass too many characters to UPS (%u)", (unsigned)msg_len);
 	}
 
 	buffer_out[0] = ':';
@@ -858,7 +858,7 @@ void upsdrv_initinfo(void)
 	ret = send_cmd(w_msg, sizeof(w_msg), w_value, sizeof(w_value)-1);
 	if(ret <= 0) {
 		if(ret == -EPIPE) {
-			fatalx("Could not reset watchdog. Please check and"
+			fatalx(EXIT_FAILURE, "Could not reset watchdog. Please check and"
 				"see if usbhid-ups(8) works with this UPS.");
 		} else {
 			upslogx(3, "Could not reset watchdog. Please send model "
@@ -870,7 +870,7 @@ void upsdrv_initinfo(void)
 
 	ret = send_cmd(proto_msg, sizeof(proto_msg), proto_value, sizeof(proto_value)-1);
 	if(ret <= 0) {
-		fatalx("Error reading protocol");
+		fatalx(EXIT_FAILURE, "Error reading protocol");
 	}
 
 	proto_number = ((unsigned)(proto_value[1]) << 8) 
@@ -888,7 +888,7 @@ void upsdrv_initinfo(void)
 
 	ret = send_cmd(s_msg, sizeof(s_msg), s_value, sizeof(s_value)-1);
 	if(ret <= 0) {
-		fatalx("Could not retrieve status ... is this an OMNIVS model?");
+		fatalx(EXIT_FAILURE, "Could not retrieve status ... is this an OMNIVS model?");
 	}
 
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
@@ -1371,15 +1371,15 @@ void upsdrv_initups(void)
 
 	r = new_regex_matcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
 	if (r==-1) {
-		fatalx("new_regex_matcher: %s", strerror(errno));
+		fatalx(EXIT_FAILURE, "new_regex_matcher: %s", strerror(errno));
 	} else if (r) {
-		fatalx("invalid regular expression: %s", regex_array[r]);
+		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[r]);
 	}
 
 	/* Search for the first supported UPS matching the regular
 	 *            expression */
 	if ((hd = HIDOpenDevice(&udev, &curDevice, regex_matcher, MODE_OPEN)) == NULL)
-		fatalx("No matching USB/HID UPS found");
+		fatalx(EXIT_FAILURE, "No matching USB/HID UPS found");
 	else
 		upslogx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
 

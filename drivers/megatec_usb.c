@@ -119,7 +119,7 @@ static int comm_usb_match(HIDDevice_t *d, void *privdata)
 
 static void usb_open_error(const char *port)
 {
-	fatalx(
+	fatalx(EXIT_FAILURE, 
 "No supported devices found. Please check your device availability with 'lsusb'\n"
 "and make sure you have an up-to-date version of NUT. If this does not help,\n"
 "try running the driver with at least 'vendorid' and 'subdriver' options\n"
@@ -185,7 +185,7 @@ int ser_open(const char *port)
 		}
 
 		if(!subdriver)
-			fatalx("No subdrivers named \"%s\" found!", subdrv);
+			fatalx(EXIT_FAILURE, "No subdrivers named \"%s\" found!", subdrv);
 	}
 
 	memset(&subdriver_matcher, 0, sizeof(subdriver_matcher));
@@ -202,9 +202,9 @@ int ser_open(const char *port)
 
 	r = new_regex_matcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
 	if (r==-1) {
-		fatalx("new_regex_matcher: %s", strerror(errno));
+		fatalx(EXIT_FAILURE, "new_regex_matcher: %s", strerror(errno));
 	} else if (r) {
-		fatalx("invalid regular expression: %s", regex_array[r]);
+		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[r]);
 	}
 	/* link the matchers */
 	regex_matcher->next = &subdriver_matcher;

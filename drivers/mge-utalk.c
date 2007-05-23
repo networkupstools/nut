@@ -305,7 +305,7 @@ void upsdrv_initinfo(void)
 	} while ( (!status_ok) && (tries++ < MAXTRIES) && (exit_flag != 0) );
   
 	if ( tries == MAXTRIES && !status_ok )
-		fatalx("Could not get status from UPS.");
+		fatalx(EXIT_FAILURE, "Could not get status from UPS.");
 
 	if ( mge_ups.MultTab == 0 )
 		upslogx(LOG_WARNING, "Could not get multiplier table: using raw readings.");

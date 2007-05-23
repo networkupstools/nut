@@ -199,7 +199,7 @@ static void ups_sync(void)
 		if ((ret > 0) && isdigit((unsigned char)buf[0]))
 			return;
 	}
-	fatalx("\nFailed to find UPS - giving up...");
+	fatalx(EXIT_FAILURE, "\nFailed to find UPS - giving up...");
 }
 
 static int do_reboot_now(void)

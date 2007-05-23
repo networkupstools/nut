@@ -221,7 +221,7 @@ void upsdrv_initinfo(void)
 	}
 	else
 	{
-		fatalx("Unable to get initial hardware info string");
+		fatalx(EXIT_FAILURE, "Unable to get initial hardware info string");
 	}
 
 	dstate_setinfo("battery.charge.low", "20");
@@ -311,7 +311,7 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	fatalx("shutdown not supported");
+	fatalx(EXIT_FAILURE, "shutdown not supported");
 }
 
 

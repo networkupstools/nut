@@ -482,7 +482,7 @@ void upsdrv_initups(void)
 		case 38400:
 			baud = B38400; break;
 		default:
-			fatalx("Unrecognized baudrate: %s", str);
+			fatalx(EXIT_FAILURE, "Unrecognized baudrate: %s", str);
 		}
 		upsdebugx(1, "baud_rate = %d", temp);
 	}
@@ -490,7 +490,7 @@ void upsdrv_initups(void)
 	ser_set_speed(upsfd, device_path, baud);
 
 	if (tcgetattr(upsfd, &tio) != 0)
-		fatal_with_errno("tcgetattr(%s)", device_path);
+		fatal_with_errno(EXIT_FAILURE, "tcgetattr(%s)", device_path);
 	tio.c_lflag = ICANON;
 	tio.c_cc[VMIN] = 0;
 	tio.c_cc[VTIME] = 0;
@@ -499,7 +499,7 @@ void upsdrv_initups(void)
 	if ((str = getval("input_timeout")) != NULL) {
 		int temp = atoi(str);
 		if (temp <= 0)
-			fatalx("Bad input_timeout parameter: %s", str);
+			fatalx(EXIT_FAILURE, "Bad input_timeout parameter: %s", str);
 		input_timeout_sec = temp;
 	}
 	upsdebugx(1, "input_timeout = %d Sec", input_timeout_sec);
@@ -507,7 +507,7 @@ void upsdrv_initups(void)
 	if ((str = getval("output_pace")) != NULL) {
 		int temp = atoi(str);
 		if (temp <= 0)
-			fatalx("Bad output_pace parameter: %s", str);
+			fatalx(EXIT_FAILURE, "Bad output_pace parameter: %s", str);
 		output_pace_usec = temp;
 	}
 	upsdebugx(1, "output_pace = %d uSec", output_pace_usec);
@@ -515,7 +515,7 @@ void upsdrv_initups(void)
 	if ((str = getval("full_update_timer")) != NULL) {
 		int temp = atoi(str);
 		if (temp <= 0)
-			fatalx("Bad full_update_timer parameter: %s", str);
+			fatalx(EXIT_FAILURE, "Bad full_update_timer parameter: %s", str);
 		full_update_timer = temp;
 	}
 	upsdebugx(1, "full_update_timer = %d Sec", full_update_timer);

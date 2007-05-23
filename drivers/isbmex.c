@@ -310,8 +310,8 @@ void upsdrv_shutdown(void)
 	/* 
 	 * here try to do the pin 9 trick, if it does not
 	 * work, else:*/
-/*	fatalx("Shutdown only supported with the Generic Driver, type 6 and special cable");  */
-	/*fatalx("shutdown not supported");*/
+/*	fatalx(EXIT_FAILURE, "Shutdown only supported with the Generic Driver, type 6 and special cable");  */
+	/*fatalx(EXIT_FAILURE, "shutdown not supported");*/
 	int i, ret;
 	for(i=0;i<=5;i++)
 	{

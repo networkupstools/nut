@@ -1,3 +1,14 @@
+Wed May 23 18:49:21 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * common/common.c, include/common.h:
+   - fatalx() and fatal_with_errno() now take a (mandatory) parameter that
+     sets the exit status (in the same way we set the debuglevel for upsdebugx
+     and upsdebug_with_errno and the loglevel for upslogx and upslog_with_errno)
+ * [various]:
+   - change fatalx("message...") to fatalx(EXIT_FAILURE, "message...")
+   - change fatal_with_errno("message...") to fatal_with_errno(EXIT_FAILURE,
+     "message...")
+
 Wed May 23 18:27:03 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/various: use fatalx() to exit abnormally and make sure an

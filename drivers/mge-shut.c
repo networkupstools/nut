@@ -314,13 +314,13 @@ void upsdrv_initups (void)
 
 	/* initialise communication */
 	if (shut_ups_start () != 0)
-		fatalx("No communication with UPS");
+		fatalx(EXIT_FAILURE, "No communication with UPS");
 	else
 		upsdebugx(2, "Communication with UPS established");
 
 	/* initialise HID communication */
 	if(hid_init_device() != 0)
-		fatalx("Can't initialise HID device");
+		fatalx(EXIT_FAILURE, "Can't initialise HID device");
 }
 
 /* --------------------------------------------------------------- */
@@ -1118,17 +1118,17 @@ int hid_init_device()
 				Free_ReportDesc(pDesc);
 				pDesc = Parse_ReportDesc(raw_buf, retcode);
 				if (!pDesc) {
-					fatalx("Failed to parse report descriptor: %s", strerror(errno));
+					fatalx(EXIT_FAILURE, "Failed to parse report descriptor: %s", strerror(errno));
 				}
 			}
 			else
-				fatalx("Unable to get Report Descriptor");
+				fatalx(EXIT_FAILURE, "Unable to get Report Descriptor");
 		}
 		else
-			fatalx("Unable to get Device Descriptor");
+			fatalx(EXIT_FAILURE, "Unable to get Device Descriptor");
 	}
 	else
-		fatalx("Unable to get HID Descriptor");
+		fatalx(EXIT_FAILURE, "Unable to get HID Descriptor");
 
 	return 0;
 }
@@ -1429,7 +1429,7 @@ mge_info_item_t *shut_find_info(const char *varname)
 		if (!strcasecmp(shut_info_p->type, varname))
 			return shut_info_p;
 		
-	fatalx("shut_find_info: unknown info type: %s", varname);
+	fatalx(EXIT_FAILURE, "shut_find_info: unknown info type: %s", varname);
 	return NULL;
 }
 

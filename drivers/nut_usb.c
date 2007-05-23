@@ -41,7 +41,7 @@ static void nutusb_open_error(const char *port)
 	printf(" - Run this driver as another user (upsdrvctl -u or 'user=...' in ups.conf).\n");
 	printf("   See upsdrvctl(8) and ups.conf(5).\n\n");
 
-	fatalx("Fatal error: unusable configuration");
+	fatalx(EXIT_FAILURE, "Fatal error: unusable configuration");
 }
 
 static usb_dev_handle *open_powerware_usb()

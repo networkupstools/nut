@@ -41,13 +41,13 @@ static char *unescape(char *buf)
 
 		if (ch == '%') {
 			if (i + 2 > buflen)
-				fatalx("string too short for escaped char");
+				fatalx(EXIT_FAILURE, "string too short for escaped char");
 			hex[0] = buf[++i];
 			hex[1] = buf[++i];
 			hex[2] = '\0';
 			if (!isxdigit((unsigned char) hex[0])
 				|| !isxdigit((unsigned char) hex[0]))
-				fatalx("bad escape char");
+				fatalx(EXIT_FAILURE, "bad escape char");
 			ch = strtol(hex, NULL, 16);
 
 			if ((ch == 10) || (ch == 13))

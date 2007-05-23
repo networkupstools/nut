@@ -328,7 +328,7 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 	/* don't let the user shoot themselves in the foot */
 	if (!strcmp(var, "driver")) {
 		if (strcmp(val, progname) != 0)
-			fatalx("Error: UPS [%s] is for driver %s, but I'm %s!\n",
+			fatalx(EXIT_FAILURE, "Error: UPS [%s] is for driver %s, but I'm %s!\n",
 				confupsname, val, progname);
 		return;
 	}
@@ -493,7 +493,7 @@ int main(int argc, char **argv)
 	}
 	if (dbus_error_is_set (&dbus_error))
 	{
-		fatalx("Error in context creation: %s\n", dbus_error.message);
+		fatalx(EXIT_FAILURE, "Error in context creation: %s\n", dbus_error.message);
 		dbus_error_free (&dbus_error);
 	}
 	
@@ -649,7 +649,7 @@ int main(int argc, char **argv)
 /*	! Not needed for HAL !
 	if (!do_forceshutdown)
 		if (chdir(dflt_statepath()))
-			fatal_with_errno("Can't chdir to %s", dflt_statepath());
+			fatal_with_errno(EXIT_FAILURE, "Can't chdir to %s", dflt_statepath());
 */
 	setup_signals();
 

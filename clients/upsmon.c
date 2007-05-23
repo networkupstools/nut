@@ -1217,7 +1217,7 @@ static int parse_conf_arg(int numargs, char **arg)
 			upslogx(LOG_ERR, "Unable to use old-style MONITOR line without a username");
 			upslogx(LOG_ERR, "Convert it and add a username to upsd.users - see the documentation");
 
-			fatalx("Fatal error: unusable configuration");
+			fatalx(EXIT_FAILURE, "Fatal error: unusable configuration");
 		}
 
 		/* <sys> <pwrval> <user> <pw> ("master" | "slave") */
@@ -1249,7 +1249,7 @@ static void loadconfig(void)
 			return;
 		}
 
-		fatalx("%s", ctx.errmsg);
+		fatalx(EXIT_FAILURE, "%s", ctx.errmsg);
 	}
 
 	while (pconf_file_next(&ctx)) {
@@ -1726,13 +1726,13 @@ static void runparent(int fd)
 
 	if (ret < 1) {
 		if (errno == ENOENT)
-			fatalx("upsmon parent: exiting (child exited)");
+			fatalx(EXIT_FAILURE, "upsmon parent: exiting (child exited)");
 
-		fatal_with_errno("upsmon parent: read");
+		fatal_with_errno(EXIT_FAILURE, "upsmon parent: read");
 	}
 
 	if (ch != 1)
-		fatalx("upsmon parent: got bogus pipe command %c", ch);
+		fatalx(EXIT_FAILURE, "upsmon parent: got bogus pipe command %c", ch);
 
 	/* have to do this here - child is unprivileged */
 	set_pdflag();
@@ -1762,12 +1762,12 @@ static void start_pipe(const char *user)
 	ret = pipe(pipefd);
 
 	if (ret)
-		fatal_with_errno("pipe creation failed");
+		fatal_with_errno(EXIT_FAILURE, "pipe creation failed");
 
 	ret = fork();
 
 	if (ret < 0)
-		fatal_with_errno("fork failed");
+		fatal_with_errno(EXIT_FAILURE, "fork failed");
 
 	/* start the privileged parent */
 	if (ret != 0) {
@@ -1883,7 +1883,7 @@ static void reload_conf(void)
 		upslogx(LOG_CRIT, "Fatal error: total power value (%d) less "
 			"than MINSUPPLIES (%d)", totalpv, minsupplies);
 
-		fatalx("Impossible power configuation, unable to continue");
+		fatalx(EXIT_FAILURE, "Impossible power configuation, unable to continue");
 	}
 
 	/* finally clear the flag */

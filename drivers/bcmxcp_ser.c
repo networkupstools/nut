@@ -253,7 +253,7 @@ void pw_comm_setup(const char *port)
 		}
 
 		if (mybaud == 0) {
-			fatalx("Specified baudrate \"%s\" is invalid!", getval("baud_rate"));
+			fatalx(EXIT_FAILURE, "Specified baudrate \"%s\" is invalid!", getval("baud_rate"));
 		}
 
 		ser_set_speed(upsfd, device_path, mybaud);
@@ -290,7 +290,7 @@ void pw_comm_setup(const char *port)
 		upsdebugx(2, "No response from UPS on %s with baudrate %d", port, pw_baud_rates[i].name);
 	}
 
-	fatalx("Can't connect to the UPS on port %s!\n", port);
+	fatalx(EXIT_FAILURE, "Can't connect to the UPS on port %s!\n", port);
 }
 
 void upsdrv_initups(void)

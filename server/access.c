@@ -74,7 +74,7 @@ static int mask_cmp (const struct sockaddr_storage *ip_addr,
 			((((const uint32_t *)ip6)[3] & prefix) == net->s_addr));
 	}
 
-	fatal_with_errno("mask_cmp: Unknown address family");
+	fatal_with_errno(EXIT_FAILURE, "mask_cmp: Unknown address family");
 #endif
 }
 
@@ -146,7 +146,7 @@ void acl_add(const char *aclname, char *ipblock)
 	 * ::1					invalid
 	 */
 	if (((addr = strtok(ipblock, "/")) == NULL) || ((mask = strtok(NULL, "\0")) == NULL))
-		fatalx("Can't parse ACL %s %s", aclname, ipblock);
+		fatalx(EXIT_FAILURE, "Can't parse ACL %s %s", aclname, ipblock);
 
 	tmp = last = acl_head;
 
@@ -171,7 +171,7 @@ void acl_add(const char *aclname, char *ipblock)
 		if (tmp->mask < 0 || tmp->mask > 32)
 		{
 			free (tmp);
-			fatal_with_errno("Invalid CIDR type block: Must be > 0 && < 32");
+			fatal_with_errno(EXIT_FAILURE, "Invalid CIDR type block: Must be > 0 && < 32");
 		}
 
 		tmp->mask = htonl(0xffffffff << (32 - tmp->mask));
@@ -197,7 +197,7 @@ void acl_add(const char *aclname, char *ipblock)
 			if (tmp->mask < 0 || tmp->mask > 32)
 			{
 				free (tmp);
-				fatal_with_errno("Invalid CIDR type block: Must be > 0 && < 32");
+				fatal_with_errno(EXIT_FAILURE, "Invalid CIDR type block: Must be > 0 && < 32");
 			}
 
 			tmp->mask = htonl(0xffffffff << (32 - tmp->mask));
@@ -216,7 +216,7 @@ void acl_add(const char *aclname, char *ipblock)
 		if (inet_pton(AF_INET, addr, &s4.sin_addr) < 1)
 		{
 			free(tmp);
-			fatal_with_errno("Invalid IPv4 address: \"%s\"", addr);
+			fatal_with_errno(EXIT_FAILURE, "Invalid IPv4 address: \"%s\"", addr);
 		}
 		else
 		{
@@ -241,14 +241,14 @@ void acl_add(const char *aclname, char *ipblock)
 		if (inet_pton(AF_INET6, addr, &s6.sin6_addr) < 1)
 		{
 			free(tmp);
-			fatal_with_errno("Invalid IPv6 address: \"%s\"", addr);
+			fatal_with_errno(EXIT_FAILURE, "Invalid IPv6 address: \"%s\"", addr);
 		}
 
 		/* apply prefix to address */
 		if (tmp->mask < 0 || tmp->mask > 128)
 		{
 			free (tmp);
-			fatal_with_errno("Invalid IPv6 prefix");
+			fatal_with_errno(EXIT_FAILURE, "Invalid IPv6 prefix");
 		}
 		else
 		{

@@ -415,7 +415,7 @@ static int detect_hardware(void)
 	char	buf[SMALLBUF];
 
 	if (!get_ident(buf, sizeof(buf)))
-		fatalx("Unable to get initial hardware info string");
+		fatalx(EXIT_FAILURE, "Unable to get initial hardware info string");
 
 	if (buf[0] != '.') {
 		upslogx(LOG_ERR, "Invalid start model string 0x%02x", 
@@ -547,7 +547,7 @@ void upsdrv_initups(void)
 void upsdrv_initinfo(void)
 {
 	if (detect_hardware() == -1) {
-		fatalx(
+		fatalx(EXIT_FAILURE, 
 			"Unable to detect a CyberPower UPS on port %s\n"
 			"Check the cabling, port name or model name and try again", device_path
 		);

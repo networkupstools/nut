@@ -98,7 +98,7 @@ void upsdrv_initinfo(void)
 	ser_send(upsfd,"%c%s",GET_MFR,COMMAND_END);
 	ser_get_line(upsfd, buffer, sizeof(buffer),ENDCHAR,IGNCHARS,SECS,USEC);
 	if(strncmp(buffer,MFGR, sizeof(MFGR)))
-		fatalx("Unable to connect to ONEAC UPS on %s\n",device_path);	
+		fatalx(EXIT_FAILURE, "Unable to connect to ONEAC UPS on %s\n",device_path);	
  
 	dstate_setinfo("ups.mfr", "ONEAC");
 	dstate_addcmd("test.battery.start");

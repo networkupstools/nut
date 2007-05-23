@@ -120,7 +120,7 @@ void upsdrv_shutdown(void)
 	/* TODO: su_shutdown_ups(); */
 	
 	/* replace with a proper shutdown function */
-	fatalx("shutdown not supported");
+	fatalx(EXIT_FAILURE, "shutdown not supported");
 }
 
 void upsdrv_help(void)
@@ -187,7 +187,7 @@ void upsdrv_initups(void)
 		upslogx(0, "Detected %s on host %s (mib: %s %s)",
 			 model, device_path, mibname, mibvers);
 	else
-		fatalx("%s MIB wasn't found on %s", mibs, g_snmp_sess.peername);   
+		fatalx(EXIT_FAILURE, "%s MIB wasn't found on %s", mibs, g_snmp_sess.peername);   
 }
 
 void upsdrv_cleanup(void)
@@ -219,14 +219,14 @@ void nut_snmp_init(const char *type, const char *hostname, const char *version,
 	else if (strcmp(version, "v2c") == 0)
 		g_snmp_sess.version = SNMP_VERSION_2c;
 	else
-		fatalx("Bad SNMP version: %s", version);
+		fatalx(EXIT_FAILURE, "Bad SNMP version: %s", version);
 
 	/* Open the session */
 	SOCK_STARTUP;
 	g_snmp_sess_p = snmp_open(&g_snmp_sess);	/* establish the session */
 	if (g_snmp_sess_p == NULL) {
 		nut_snmp_perror(&g_snmp_sess, 0, NULL, "nut_snmp_init: snmp_open");
-		fatalx("Unable to establish communication");
+		fatalx(EXIT_FAILURE, "Unable to establish communication");
 	}
 }
 
@@ -258,7 +258,7 @@ struct snmp_pdu *nut_snmp_get(const char *OID)
 	pdu = snmp_pdu_create(SNMP_MSG_GET);
 	
 	if (pdu == NULL)
-		fatalx("Not enough memory");
+		fatalx(EXIT_FAILURE, "Not enough memory");
 	
 	snmp_add_null_var(pdu, name, name_len);
 
@@ -405,7 +405,7 @@ bool_t nut_snmp_set(const char *OID, char type, const char *value)
 
 	pdu = snmp_pdu_create(SNMP_MSG_SET);
 	if (pdu == NULL)
-		fatalx("Not enough memory");
+		fatalx(EXIT_FAILURE, "Not enough memory");
 
 	if (snmp_add_var(pdu, name, name_len, type, value)) {
 		upslogx(LOG_ERR, "[%s] nut_snmp_set: %s: %s",
@@ -549,7 +549,7 @@ snmp_info_t *su_find_info(const char *type)
 		if (!strcasecmp(su_info_p->info_type, type))
 			return su_info_p;
 		
-	fatalx("nut_snmp_find_info: unknown info type: %s", type);
+	fatalx(EXIT_FAILURE, "nut_snmp_find_info: unknown info type: %s", type);
 	return NULL;
 }
 
@@ -583,7 +583,7 @@ void load_mib2nut(const char *mib)
 		upsdebugx(1, "load_mib2nut: using %s mib", mibname);
 	}
 	else
-		fatalx("Unknown mibs value: %s", mib);
+		fatalx(EXIT_FAILURE, "Unknown mibs value: %s", mib);
 }
 
 /* find the OID value matching that INFO_* value */
@@ -924,7 +924,7 @@ void su_shutdown_ups(void)
 	long pwr_status;
 
 	if (nut_snmp_get_int(OID_pwr_status, &pwr_status) == FALSE)
-		fatalx("cannot determine UPS status");
+		fatalx(EXIT_FAILURE, "cannot determine UPS status");
 
 	if (testvar(SU_VAR_SDTYPE))
 		sdtype = atoi(getval(SU_VAR_SDTYPE));
@@ -1016,7 +1016,7 @@ void read_mibconf(char *mib)
 	pconf_init(&ctx, mibconf_err);
 
 	if (!pconf_file_begin(&ctx, fn))
-		fatalx("%s", ctx.errmsg);
+		fatalx(EXIT_FAILURE, "%s", ctx.errmsg);
 
 	while (pconf_file_next(&ctx)) {
 		if (pconf_parse_error(&ctx)) {

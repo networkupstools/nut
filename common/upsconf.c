@@ -89,7 +89,7 @@ void read_upsconf(void)
 	pconf_init(&ctx, upsconf_err);
 
 	if (!pconf_file_begin(&ctx, fn))
-		fatalx("Can't open %s: %s", fn, ctx.errmsg);
+		fatalx(EXIT_FAILURE, "Can't open %s: %s", fn, ctx.errmsg);
 
 	while (pconf_file_next(&ctx)) {
 		if (pconf_parse_error(&ctx)) {

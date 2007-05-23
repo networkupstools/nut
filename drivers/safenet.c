@@ -267,7 +267,7 @@ void upsdrv_initinfo(void)
 	 */
 	ioctl(upsfd, TIOCMGET, &i);
 	if ((i & TIOCM_DSR) == 0) {
-		fatalx("Serial cable problem or nothing attached to %s", device_path);
+		fatalx(EXIT_FAILURE, "Serial cable problem or nothing attached to %s", device_path);
 	}
 
 	/*
@@ -280,7 +280,7 @@ void upsdrv_initinfo(void)
 			continue;
 		}
 
-		fatalx("SafeNet protocol compatible UPS not found on %s", device_path);
+		fatalx(EXIT_FAILURE, "SafeNet protocol compatible UPS not found on %s", device_path);
 	}
 
 	/*
@@ -379,7 +379,7 @@ void upsdrv_shutdown(void)
 			continue;
 		}
 
-		fatalx("SafeNet protocol compatible UPS not found on %s", device_path);
+		fatalx(EXIT_FAILURE, "SafeNet protocol compatible UPS not found on %s", device_path);
 	}
 
 	/*

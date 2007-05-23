@@ -116,7 +116,7 @@ void  upsdrv_initinfo (void)
 		dstate_setinfo("ups.model", "%s LI%d", fc.name, fc.va);
 		break;
 	  default:
-		fatalx("Unknown model - oops!"); /* Will never get here, upsdrv_initups() will catch */
+		fatalx(EXIT_FAILURE, "Unknown model - oops!"); /* Will never get here, upsdrv_initups() will catch */
 	} 
 
 	dstate_setinfo("battery.voltage.nominal", "%05.2f", (double)fc.idealbvolts);
@@ -309,7 +309,7 @@ void upsdrv_updateinfo(void)
 			}
 			break;
 		  default: /* Will never happen, caught in upsdrv_initups() */
-			fatalx("Unknown model in upsdrv_updateinfo()");
+			fatalx(EXIT_FAILURE, "Unknown model in upsdrv_updateinfo()");
 		}
 
 		/* Compute battery percent left based on battery voltages. */
@@ -412,7 +412,7 @@ static void ups_sync(void)
 	if (execute("time\r", buf, sizeof(buf)) > 0) {
 		upsdebugx(1, "UPS Time: %s", buf);
 	} else {
-		fatalx("Error connecting to UPS.");
+		fatalx(EXIT_FAILURE, "Error connecting to UPS.");
 	}
 }
 
@@ -464,7 +464,7 @@ static void setup_serial(void)
 	struct termios tio;
 			 
 	if (tcgetattr(upsfd, &tio) == -1)
-		fatal_with_errno("tcgetattr");
+		fatal_with_errno(EXIT_FAILURE, "tcgetattr");
 				 
 	tio.c_iflag = IXON | IXOFF;
 	tio.c_oflag = 0;
@@ -481,7 +481,7 @@ static void setup_serial(void)
 #endif
 
 	if (tcsetattr(upsfd, TCSANOW, &tio) == -1)
-		fatal_with_errno("tcsetattr");
+		fatal_with_errno(EXIT_FAILURE, "tcsetattr");
 /* end code stolen from bestups.c */
 
 	sync_serial();
@@ -573,7 +573,7 @@ void upsdrv_init_nofc()
 	} 
 
 	if (fc.model == UNKNOWN) {
-		fatalx("Unknown model %s in upsdrv_init_nofc()", rstring);
+		fatalx(EXIT_FAILURE, "Unknown model %s in upsdrv_init_nofc()", rstring);
 	}
 
 	switch(fc.model) {
@@ -614,11 +614,11 @@ void upsdrv_init_nofc()
 		}
 		fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
 		if (fc.va < 1.0) {
-			fatalx("Error determining Ferrups UPS rating.");
+			fatalx(EXIT_FAILURE, "Error determining Ferrups UPS rating.");
 		}
 		break;
 	  default:
-		fatalx("Unknown model %s in upsdrv_init_nofc()", rstring);
+		fatalx(EXIT_FAILURE, "Unknown model %s in upsdrv_init_nofc()", rstring);
 		break;
 	}
 	fc.valid = 1;
@@ -649,14 +649,14 @@ void upsdrv_init_fc(const char *fcstring)
 
 	/* Obtain Model */
 	if (memcmp(fcstring, "$", 1)) {
-		fatalx("Bad response from formatconfig command in upsdrv_init_fc()");
+		fatalx(EXIT_FAILURE, "Bad response from formatconfig command in upsdrv_init_fc()");
 	}
 	if (memcmp(fcstring+3, "00", 2) == 0) {
-		fatalx("UPS type unknown in upsdrv_init_fc()");
+		fatalx(EXIT_FAILURE, "UPS type unknown in upsdrv_init_fc()");
 	}
 
 	if (memcmp(fcstring+3, "01", 2) == 0) {
-		fatalx("Best Patriot UPS not supported");
+		fatalx(EXIT_FAILURE, "Best Patriot UPS not supported");
 	}
 	else if (memcmp(fcstring+3, "02", 2) == 0) {
 		snprintf(fc.name, sizeof(fc.name), "%s", "FortressII");
@@ -710,7 +710,7 @@ void upsdrv_init_fc(const char *fcstring)
 		fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
 		break;
 	  default:
-		fatalx("Unknown model %s in upsdrv_init_fc()", tmp);
+		fatalx(EXIT_FAILURE, "Unknown model %s in upsdrv_init_fc()", tmp);
 	}
 	fc.valid = 1;
 }
@@ -727,7 +727,7 @@ void upsdrv_initups ()
 	inverter_status = 0;
 	fc.model = UNKNOWN;
 	if (execute("f\r", rstring, sizeof(rstring)) < 0 ) {
-		fatalx("Failed format request in upsdrc_initups()");
+		fatalx(EXIT_FAILURE, "Failed format request in upsdrc_initups()");
 	}
 
 	execute("fc\r", rstring, sizeof(rstring));

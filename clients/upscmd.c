@@ -280,7 +280,7 @@ int main(int argc, char **argv)
 			username[strlen(username) - 1] = '\0';
 		else {
 			if (!pw)
-				fatalx("No username available - even tried getpwuid");
+				fatalx(EXIT_FAILURE, "No username available - even tried getpwuid");
 
 			snprintf(username, sizeof(username), "%s", pw->pw_name);
 		}

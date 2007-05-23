@@ -96,10 +96,10 @@ void upsdebugx(int level, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
 void upsdebug_hex(int level, const char *msg, const unsigned char *buf, int len);
 		
-void fatal_with_errno(const char *fmt, ...)
-	__attribute__ ((__format__ (__printf__, 1, 2))) __attribute((noreturn));
-void fatalx(const char *fmt, ...)
-	__attribute__ ((__format__ (__printf__, 1, 2))) __attribute((noreturn));
+void fatal_with_errno(int status, const char *fmt, ...)
+	__attribute__ ((__format__ (__printf__, 2, 3))) __attribute((noreturn));
+void fatalx(int status, const char *fmt, ...)
+	__attribute__ ((__format__ (__printf__, 2, 3))) __attribute((noreturn));
 
 extern int nut_debug_level;
 

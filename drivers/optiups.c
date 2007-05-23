@@ -336,7 +336,7 @@ void upsdrv_initinfo(void)
 	/* Parse out model into longer string -- is this really USEFUL??? */
 	r = optiquery( "IO" );
 	if ( r < 1 ) 
-		fatal_with_errno( "can't retrieve model" );
+		fatal_with_errno(EXIT_FAILURE, "can't retrieve model" );
 	else
 	{
 		switch ( _buf[r-1] )
@@ -359,7 +359,7 @@ void upsdrv_initinfo(void)
 		dstate_setinfo("ups.mfr", "ONLINE USV-Systeme AG");
 		r = optiquery( "IO" );
 		if ( r < 1 ) 
-			fatal_with_errno( "can't retrieve model" );
+			fatal_with_errno(EXIT_FAILURE, "can't retrieve model" );
 		switch ( _buf[0] )
 		{
 			case 'D':

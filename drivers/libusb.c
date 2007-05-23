@@ -177,7 +177,7 @@ static int libusb_open(usb_dev_handle **udevp, HIDDevice_t *curDevice, HIDDevice
 					upsdebugx(2, "Device does not match - skipping");
 					goto next_device;
 				} else if (ret==-1) {
-					fatalx("matcher: %s", strerror(errno));
+					fatalx(EXIT_FAILURE, "matcher: %s", strerror(errno));
 					goto next_device;
 				} else if (ret==-2) {
 					upsdebugx(2, "matcher: unspecified error");

@@ -203,24 +203,24 @@ static void setuptcp(stype_t *serv)
 		struct  in_addr	listenaddr;
 
 		if (!inet_aton(serv->addr, &listenaddr)) {
-			fatal_with_errno("inet_aton");
+			fatal_with_errno(EXIT_FAILURE, "inet_aton");
 		}
 
 		host = gethostbyaddr(&listenaddr, sizeof(listenaddr), AF_INET);
 
 		if (host == NULL) {
-			fatal_with_errno("gethostbyaddr");
+			fatal_with_errno(EXIT_FAILURE, "gethostbyaddr");
 		}
 	}
 
 	if ((serv->sock_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		fatal_with_errno("socket");
+		fatal_with_errno(EXIT_FAILURE, "socket");
 	}
 
 	res = setsockopt(serv->sock_fd, SOL_SOCKET, SO_REUSEADDR, (void *) &one, sizeof(one));
 
 	if (res != 0) {
-		fatal_with_errno("setsockopt(SO_REUSEADDR)");
+		fatal_with_errno(EXIT_FAILURE, "setsockopt(SO_REUSEADDR)");
 	}
 
 	memset(&server, '\0', sizeof(server));
@@ -230,19 +230,19 @@ static void setuptcp(stype_t *serv)
 	memcpy(&server.sin_addr, host->h_addr, host->h_length);
 
 	if (bind(serv->sock_fd, (struct sockaddr *) &server, sizeof(server)) == -1) {
-		fatal_with_errno("Can't bind TCP port %s", serv->port);
+		fatal_with_errno(EXIT_FAILURE, "Can't bind TCP port %s", serv->port);
 	}
 
 	if ((res = fcntl(serv->sock_fd, F_GETFL, 0)) == -1) {
-		fatal_with_errno("fcntl(get)");
+		fatal_with_errno(EXIT_FAILURE, "fcntl(get)");
 	}
 
 	if (fcntl(serv->sock_fd, F_SETFL, res | O_NDELAY) == -1) {
-		fatal_with_errno("fcntl(set)");
+		fatal_with_errno(EXIT_FAILURE, "fcntl(set)");
 	}
 
 	if (listen(serv->sock_fd, 16)) {
-		fatal_with_errno("listen");
+		fatal_with_errno(EXIT_FAILURE, "listen");
 	}
 #else
 	struct addrinfo		hints, *res, *ai;
@@ -258,10 +258,10 @@ static void setuptcp(stype_t *serv)
 
         if ((v = getaddrinfo(serv->addr, serv->port, &hints, &res)) != 0) {
 		if (v == EAI_SYSTEM) {
-                        fatal_with_errno("getaddrinfo");
+                        fatal_with_errno(EXIT_FAILURE, "getaddrinfo");
 		}
 
-                fatalx("getaddrinfo: %s", gai_strerror(v));
+                fatalx(EXIT_FAILURE, "getaddrinfo: %s", gai_strerror(v));
         }
 
        for (ai = res; ai != NULL; ai = ai->ai_next) {
@@ -273,7 +273,7 @@ static void setuptcp(stype_t *serv)
 		}
 		
 		if (setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, (void *)&one, sizeof(one)) != 0) {
-			fatal_with_errno("setuptcp: setsockopt");
+			fatal_with_errno(EXIT_FAILURE, "setuptcp: setsockopt");
 		}
 
 		if (bind(sock_fd, ai->ai_addr, ai->ai_addrlen) < 0) {
@@ -283,11 +283,11 @@ static void setuptcp(stype_t *serv)
 		}
 
 		if ((v = fcntl(sock_fd, F_GETFL, 0)) == -1) {
-			fatal_with_errno("setuptcp: fcntl(get)");
+			fatal_with_errno(EXIT_FAILURE, "setuptcp: fcntl(get)");
 		}
 
 		if (fcntl(sock_fd, F_SETFL, v | O_NDELAY) == -1) {
-			fatal_with_errno("setuptcp: fcntl(set)");
+			fatal_with_errno(EXIT_FAILURE, "setuptcp: fcntl(set)");
 		}
 
 		if (listen(sock_fd, 16) < 0) {
@@ -305,7 +305,7 @@ static void setuptcp(stype_t *serv)
 
 	/* don't fail silently */
 	if (serv->sock_fd < 0) {
-		fatalx("not listening on %s port %s", serv->addr, serv->port);
+		fatalx(EXIT_FAILURE, "not listening on %s port %s", serv->addr, serv->port);
 	} else {
 		upslogx(LOG_INFO, "listening on %s port %s", serv->addr, serv->port);
 	}
@@ -942,7 +942,7 @@ void check_perms(const char *fn)
 	ret = stat(fn, &st);
 
 	if (ret != 0) {
-		fatal_with_errno("stat %s", fn);
+		fatal_with_errno(EXIT_FAILURE, "stat %s", fn);
 	}
 
 	/* include the x bit here in case we check a directory */
@@ -980,7 +980,7 @@ int main(int argc, char **argv)
 				break;
 			case 'p':
 			case 'i':
-				fatalx("Specifying a listening addresses with '-i <address>' and '-p <port>'\n"
+				fatalx(EXIT_FAILURE, "Specifying a listening addresses with '-i <address>' and '-p <port>'\n"
 					"is deprecated. Use 'LISTEN <address> [<port>]' in 'upsd.conf' instead.\n"
 					"See 'man 8 upsd.conf' for more information.");
 			case 'r':
@@ -1064,7 +1064,7 @@ int main(int argc, char **argv)
 	become_user(new_uid);
 
 	if (chdir(statepath)) {
-		fatal_with_errno("Can't chdir to %s", statepath);
+		fatal_with_errno(EXIT_FAILURE, "Can't chdir to %s", statepath);
 	}
 
 	/* check statepath perms */
@@ -1075,7 +1075,7 @@ int main(int argc, char **argv)
 	upsconf_add(0);		/* 0 = initial */
 
 	if (num_ups == 0) {
-		fatalx("Fatal error: at least one UPS must be defined in ups.conf");
+		fatalx(EXIT_FAILURE, "Fatal error: at least one UPS must be defined in ups.conf");
 	}
 
 	ssl_init();

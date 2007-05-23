@@ -381,9 +381,9 @@ void upsdrv_initinfo(void)
 
 	if (success < IDENT_MINSUCCESS) {
 		if (success > 0) {
-			fatalx("The UPS is supported, but the connection is too unreliable. Try checking the cable for defects.");
+			fatalx(EXIT_FAILURE, "The UPS is supported, but the connection is too unreliable. Try checking the cable for defects.");
 		} else {
-			fatalx("Megatec protocol UPS not detected.");
+			fatalx(EXIT_FAILURE, "Megatec protocol UPS not detected.");
 		}
 	}
 
@@ -415,7 +415,7 @@ void upsdrv_initinfo(void)
 		dstate_setinfo("battery.voltage.nominal", "%.1f", values.battvolt);
 
 		if (run_query(&query) < 0) {
-			fatalx("Error reading status from UPS!");
+			fatalx(EXIT_FAILURE, "Error reading status from UPS!");
 		}
 
 		if (set_battery_params(values.battvolt, query.battvolt) < 0) {
@@ -427,7 +427,7 @@ void upsdrv_initinfo(void)
 		upsdebugx(3, getval("battvolts"));
 	
 		if (sscanf(getval("battvolts"), "%f:%f", &battvolt_empty, &battvolt_full) != 2) {
-			fatalx("Error in \"battvolts\" parameter.");
+			fatalx(EXIT_FAILURE, "Error in \"battvolts\" parameter.");
 		}
 		
 	    upslogx(LOG_NOTICE, "Overriding battery voltage interval [%.1fV, %.1fV].", battvolt_empty, battvolt_full);		
@@ -500,7 +500,7 @@ void upsdrv_updateinfo(void)
 	if (run_query(&query) < 0) {
 		/*
 		 * Query wasn't successful (we got some weird
-		 * response), however we won't fatalx() as this
+		 * response), however we won't fatalx(EXIT_FAILURE, ) as this
 		 * happens sometimes when the ups is offline.
 		 *
 		 * Some fault tolerance is good, we just assume

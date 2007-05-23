@@ -338,7 +338,7 @@ static void do_capabilities(void)
 			if (quirk_capability_overflow)
 				return;
 
-			fatalx(
+			fatalx(EXIT_FAILURE, 
 				"Capability string has overflowed\n"
 				"Please report this error\n"
 				"ERROR: capability overflow!"
@@ -612,13 +612,13 @@ static void getbaseinfo(void)
 	*/
  	alrts = strchr(temp, '.');
 	if (alrts == NULL) {
-		fatalx("Unable to split APC version string");
+		fatalx(EXIT_FAILURE, "Unable to split APC version string");
 	}
 	*alrts++ = 0;
 
 	cmds = strchr(alrts, '.');
 	if (cmds == NULL) {
-		fatalx("Unable to find APC command string");
+		fatalx(EXIT_FAILURE, "Unable to find APC command string");
 	}
 	*cmds++ = 0;
 
@@ -1243,7 +1243,7 @@ void upsdrv_help(void)
 void upsdrv_initinfo(void)
 {
 	if (!smartmode()) {
-		fatalx(
+		fatalx(EXIT_FAILURE, 
 			"Unable to detect an APC Smart protocol UPS on port %s\n"
 			"Check the cabling, port name or model name and try again", device_path
 			);

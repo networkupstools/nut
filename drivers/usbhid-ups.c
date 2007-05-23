@@ -380,7 +380,7 @@ void upsdrv_shutdown(void)
 	r = subdriver->shutdown(ondelay, offdelay);
 
 	if (r == 0) {
-		fatalx("Shutdown failed.");
+		fatalx(EXIT_FAILURE, "Shutdown failed.");
 	}
 	upsdebugx(2, "Shutdown command succeeded.");
 }
@@ -686,7 +686,7 @@ void upsdrv_initups(void)
 
 	/* enforce use of the "vendorid" option if "explore" is given */
 	if (testvar("explore") && getval("vendorid")==NULL) {
-		fatalx("must specify \"vendorid\" when using \"explore\"");
+		fatalx(EXIT_FAILURE, "must specify \"vendorid\" when using \"explore\"");
 	}
 
         /* process the UPS selection options */
@@ -699,9 +699,9 @@ void upsdrv_initups(void)
 
 	r = new_regex_matcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
 	if (r==-1) {
-		fatalx("new_regex_matcher: %s", strerror(errno));
+		fatalx(EXIT_FAILURE, "new_regex_matcher: %s", strerror(errno));
 	} else if (r) {
-		fatalx("invalid regular expression: %s", regex_array[r]);
+		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[r]);
 	}
 	/* link the matchers */
 	regex_matcher->next = subdriver_matcher;
@@ -719,7 +719,7 @@ void upsdrv_initups(void)
 	/* Search for the first supported UPS matching the regular
 	   expression (not for SHUT_MODE) */
 	if ((hd = HIDOpenDevice(&udev, &curDevice, regex_matcher, MODE_OPEN)) == NULL)
-		fatalx("No matching HID UPS found");
+		fatalx(EXIT_FAILURE, "No matching HID UPS found");
 	else
 		upslogx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
 
@@ -745,7 +745,7 @@ void upsdrv_initups(void)
 		upslogx(1, "Manufacturer not supported!");
 		upslogx(1, "Contact the NUT Developers with the below information");
 		HIDDumpTree(udev, subdriver->utab);
-		fatalx("Aborting");
+		fatalx(EXIT_FAILURE, "Aborting");
 	}
 
 	upslogx(2, "Using subdriver: %s", subdriver->name);

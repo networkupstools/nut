@@ -130,7 +130,7 @@ void sendstring(int fd, char *psz)
             uref.usage_code = 0x90001 + uref.usage_index;
             uref.value = (c & 1);
             if (ioctl(fd, HIDIOCSUSAGE, &uref) < 0)
-                fatalx("Error (SUSAGE) while talking to the UPS");
+                fatalx(EXIT_FAILURE, "Error (SUSAGE) while talking to the UPS");
             uref.usage_index++;
             c >>= 1;
         }
@@ -144,7 +144,7 @@ void sendstring(int fd, char *psz)
                 uref.usage_code = 0x90001 + uref.usage_index;
                 uref.value = 0;
                 if (ioctl(fd, HIDIOCSUSAGE, &uref) < 0)
-                    fatalx("Error (SUSAGE) while talking to the UPS");
+                    fatalx(EXIT_FAILURE, "Error (SUSAGE) while talking to the UPS");
             }
             uref.usage_index = 0;
 
@@ -152,7 +152,7 @@ void sendstring(int fd, char *psz)
             rinfo.report_id = 0;
             rinfo.num_fields = 1;
             if (ioctl(fd, HIDIOCSREPORT, &rinfo) < 0)
-                fatalx("Error (SREPORT) while talking to the UPS");
+                fatalx(EXIT_FAILURE, "Error (SREPORT) while talking to the UPS");
         }
     } while (*psz++);
 }
@@ -232,7 +232,7 @@ int hidcmd(unsigned char *pCmd, unsigned char *pRsp, int l)
     unsigned char data[8];
 
     if ((fd = open(device_path, O_RDWR)) < 0)
-        fatalx("Cannot communicate with UPS at %s", device_path);
+        fatalx(EXIT_FAILURE, "Cannot communicate with UPS at %s", device_path);
 
     FD_ZERO(&rdfs);
     FD_SET(fd, &rdfs);
@@ -347,7 +347,7 @@ void upsdrv_initinfo(void)
         if ((r == 39 || r == 40) && buf[0] == '#') break;
         sleep(3);
     }
-    if (r < 39 || r > 40 || buf[0] != '#') fatalx("No Energizer UPS detected");
+    if (r < 39 || r > 40 || buf[0] != '#') fatalx(EXIT_FAILURE, "No Energizer UPS detected");
     buf[16]=buf[27]=buf[38] = '\0';
     rtrim(MANUFR, ' ');
     rtrim(MDLNUM, ' ');

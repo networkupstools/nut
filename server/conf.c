@@ -242,7 +242,7 @@ void load_upsdconf(int reloading)
 		pconf_finish(&ctx);
 
 		if (!reloading)
-			fatalx("%s", ctx.errmsg);
+			fatalx(EXIT_FAILURE, "%s", ctx.errmsg);
 
 		upslogx(LOG_ERR, "Reload failed: %s", ctx.errmsg);
 		return;

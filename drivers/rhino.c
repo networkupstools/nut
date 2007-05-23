@@ -573,7 +573,7 @@ static void getbaseinfo(void)
 
 	if( (!detected) )
 	  {
-	    fatalx( NO_RHINO );
+	    fatalx(EXIT_FAILURE,  NO_RHINO );
 	  }
 
 	switch( RhinoModel )

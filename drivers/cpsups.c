@@ -238,7 +238,7 @@ static void ups_ident(void)
 	int	i;
 
 	if (!get_ident(buf, sizeof(buf)))
-		fatalx("Unable to detect a CyberPower text protocol UPS");
+		fatalx(EXIT_FAILURE, "Unable to detect a CyberPower text protocol UPS");
 
 	model = rating = NULL;
 
@@ -265,7 +265,7 @@ static void ups_ident(void)
 	}
 
 	if (!model)
-		fatalx("Didn't get a valid ident string");
+		fatalx(EXIT_FAILURE, "Didn't get a valid ident string");
 
 	model_set(model, rating);
 }
@@ -298,7 +298,7 @@ static void ups_sync(void)
 		usleep(250000);
 	}
 
-	fatalx("Unable to detect a CyberPower text protocol UPS");
+	fatalx(EXIT_FAILURE, "Unable to detect a CyberPower text protocol UPS");
 }
 
 void upsdrv_initinfo(void)

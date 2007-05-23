@@ -124,7 +124,7 @@ void ssl_init(void)
 	OpenSSL_add_ssl_algorithms();
 
 	if ((ssl_ctx = SSL_CTX_new(TLSv1_server_method())) == NULL)
-		fatal_with_errno("SSL_CTX_new");
+		fatal_with_errno(EXIT_FAILURE, "SSL_CTX_new");
 
 	if (SSL_CTX_use_RSAPrivateKey_file(ssl_ctx, certfile, SSL_FILETYPE_PEM) != 1) {
 		ssl_debug();
@@ -145,7 +145,7 @@ void ssl_init(void)
 	SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_NONE, NULL);
 
 	if (SSL_CTX_set_cipher_list(ssl_ctx, "HIGH:@STRENGTH") != 1)
-		fatalx("SSL_CTX_set_cipher_list");
+		fatalx(EXIT_FAILURE, "SSL_CTX_set_cipher_list");
 
 	ssl_initialized = 1;
 }

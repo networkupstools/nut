@@ -34,7 +34,7 @@ void upsdrv_shutdown(void)
 
 	/* worse yet: stock cables don't support shutdown at all */
 
-	fatalx("shutdown not supported");
+	fatalx(EXIT_FAILURE, "shutdown not supported");
 }
 
 void upsdrv_initinfo(void)

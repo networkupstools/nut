@@ -69,7 +69,7 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	fatalx("shutdown not supported");
+	fatalx(EXIT_FAILURE, "shutdown not supported");
 }
 
 /*
@@ -222,7 +222,7 @@ static int parse_data_file(int upsfd)
 	pconf_init(&ctx, upsconf_err);
 
 	if (!pconf_file_begin(&ctx, fn))
-		fatalx("Can't open dummy-ups definition file %s: %s",
+		fatalx(EXIT_FAILURE, "Can't open dummy-ups definition file %s: %s",
 			fn, ctx.errmsg);
 
 	while (pconf_file_next(&ctx)) {

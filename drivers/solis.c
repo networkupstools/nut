@@ -885,7 +885,7 @@ static void getbaseinfo(void)
 	} /* while end */
 
 	if( (!detected) ) {
-		fatalx( NO_SOLIS );
+		fatalx(EXIT_FAILURE,  NO_SOLIS );
 	}
 
 	switch( SolisModel )

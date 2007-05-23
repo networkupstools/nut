@@ -776,7 +776,7 @@ void upsdrv_initups(void)
 		usleep(10000);
 	}
 
-	fatalx("CyberPower UPS not found on %s", device_path);
+	fatalx(EXIT_FAILURE, "CyberPower UPS not found on %s", device_path);
 }
 
 void upsdrv_help(void)

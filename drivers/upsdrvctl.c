@@ -174,7 +174,7 @@ static void forkexec(const char *prog, char **argv, const ups_t *ups)
 	pid = fork();
 
 	if (pid < 0)
-		fatal_with_errno("fork");
+		fatal_with_errno(EXIT_FAILURE, "fork");
 
 	if (pid != 0) {			/* parent */
 		int	wstat;
@@ -230,7 +230,7 @@ static void forkexec(const char *prog, char **argv, const ups_t *ups)
 	ret = execv(prog, argv);
 
 	/* shouldn't get here */
-	fatal_with_errno("execv");
+	fatal_with_errno(EXIT_FAILURE, "execv");
 }
 
 static void start_driver(const ups_t *ups)
@@ -245,7 +245,7 @@ static void start_driver(const ups_t *ups)
 	ret = stat(dfn, &fs);
 
 	if (ret < 0)
-		fatal_with_errno("Can't start %s", dfn);
+		fatal_with_errno(EXIT_FAILURE, "Can't start %s", dfn);
 
 	upsdebugx(2, "exec: %s -a %s", dfn, ups->upsname);
 
@@ -321,7 +321,7 @@ static void send_one_driver(void (*command)(const ups_t *), const char *upsname)
 	ups_t	*ups = upstable;
 
 	if (!ups)
-		fatalx("Error: no UPS definitions found in ups.conf!\n");
+		fatalx(EXIT_FAILURE, "Error: no UPS definitions found in ups.conf!\n");
 
 	while (ups) {
 		if (!strcmp(ups->upsname, upsname)) {
@@ -332,7 +332,7 @@ static void send_one_driver(void (*command)(const ups_t *), const char *upsname)
 		ups = ups->next;
 	}
 
-	fatalx("UPS %s not found in ups.conf", upsname);
+	fatalx(EXIT_FAILURE, "UPS %s not found in ups.conf", upsname);
 }
 
 /* walk UPS table and send command to all UPSes according to sdorder */
@@ -342,7 +342,7 @@ static void send_all_drivers(void (*command)(const ups_t *))
 	int	i;
 
 	if (!upstable)
-		fatalx("Error: no UPS definitions found in ups.conf");
+		fatalx(EXIT_FAILURE, "Error: no UPS definitions found in ups.conf");
 
 	if (command != &shutdown_driver) {
 		ups = upstable;
@@ -449,7 +449,7 @@ int main(int argc, char **argv)
 		command = &shutdown_driver;
 
 	if (!command)
-		fatalx("Error: unrecognized command [%s]", argv[0]);
+		fatalx(EXIT_FAILURE, "Error: unrecognized command [%s]", argv[0]);
 
 	driverpath = xstrdup(DRVPATH);	/* set default */
 

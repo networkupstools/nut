@@ -117,7 +117,7 @@ static int do_setvar(UPSCONN_t *ups, const char *varname, char *uin,
 			user[strlen(user) - 1] = '\0';
 		else {
 			if (!pw)
-				fatalx("No username available - even tried getpwuid");
+				fatalx(EXIT_FAILURE, "No username available - even tried getpwuid");
 	
 			snprintf(user, sizeof(user), "%s", pw->pw_name);
 		}

@@ -81,7 +81,7 @@ void  upsdrv_initinfo (void)
             dstate_setinfo("ups.model", "Micro Ferrups (RE) %d", fc.va);
             break;
           default:
-	    fatalx("UPS model not matched!"); /* Will never get here, upsdrv_initups() will catch */
+	    fatalx(EXIT_FAILURE, "UPS model not matched!"); /* Will never get here, upsdrv_initups() will catch */
         } 
 	fprintf(stderr, "Best Power %s detected\n", 
 		dstate_getinfo("ups.model"));
@@ -224,7 +224,7 @@ void upsdrv_updateinfo(void)
         }
 	break;
       default: /* Will never happen, caught in upsdrv_initups() */
-        fatalx("Unknown model in upsdrv_updateinfo()");
+        fatalx(EXIT_FAILURE, "Unknown model in upsdrv_updateinfo()");
     }
     /* Compute battery percent left based on battery voltages. */
     battpercent = ((vbatt - fc.emptyvolts) 
@@ -319,7 +319,7 @@ static void ups_sync(void)
   if (execute("time\r", buf, sizeof(buf)) > 0) {
     fprintf(stderr, "UPS Time: %s\n", buf);
   } else {
-    fatalx("Error connecting to UPS");
+    fatalx(EXIT_FAILURE, "Error connecting to UPS");
   }
 }
 
@@ -365,7 +365,7 @@ static void setup_serial(void)
 	struct   termios  tio;
 			     
 	if (tcgetattr(upsfd, &tio) == -1)
-		fatal_with_errno("tcgetattr");
+		fatal_with_errno(EXIT_FAILURE, "tcgetattr");
 				     
 	tio.c_iflag = IXON | IXOFF;
 	tio.c_oflag = 0;
@@ -382,7 +382,7 @@ static void setup_serial(void)
 #endif
 
 	if (tcsetattr(upsfd, TCSANOW, &tio) == -1)
-		fatal_with_errno("tcsetattr");
+		fatal_with_errno(EXIT_FAILURE, "tcsetattr");
 /* end code stolen from bestups.c */
 
 	sync_serial();
@@ -401,12 +401,12 @@ void upsdrv_initups ()
   fc.model = UNKNOWN;
   /* Obtain Model */
   if (execute("id\r", fcstring, sizeof(fcstring)) < 0) {
-    fatalx("Failed execute in ups_ident()");
+    fatalx(EXIT_FAILURE, "Failed execute in ups_ident()");
   }
   
   /* response is a one-line packed string starting with $ */
   if (memcmp(fcstring, "Unit", 4)) {
-    fatalx(
+    fatalx(EXIT_FAILURE, 
 	"Bad response from formatconfig command in ups_ident()\n"
 	"id: %s\n", fcstring
     );
@@ -476,7 +476,7 @@ void upsdrv_initups ()
       fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
       break;
     default:
-      fatalx("Uknown model %s in ups_ident()", temp);
+      fatalx(EXIT_FAILURE, "Uknown model %s in ups_ident()", temp);
   }
 
   fc.valid = 1;

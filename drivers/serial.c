@@ -53,7 +53,7 @@ static void ser_open_error(const char *port)
 		printf("Things to try:\n\n");
 		printf(" - Check 'port=' in ups.conf\n\n");
 		printf(" - Check owner/permissions of all parts of path\n\n");
-		fatalx("Fatal error: unusable configuration");
+		fatalx(EXIT_FAILURE, "Fatal error: unusable configuration");
 	}
 
 	user = getpwuid(getuid());
@@ -82,7 +82,7 @@ static void ser_open_error(const char *port)
 	printf(" - Run this driver as another user (upsdrvctl -u or 'user=...' in ups.conf).\n");
 	printf("   See upsdrvctl(8) and ups.conf(5).\n\n");
 
-	fatalx("Fatal error: unusable configuration");
+	fatalx(EXIT_FAILURE, "Fatal error: unusable configuration");
 }
 
 static void lock_set(int fd, const char *port)
@@ -90,7 +90,7 @@ static void lock_set(int fd, const char *port)
 	int	ret;
 
 	if (fd < 0)
-		fatal_with_errno("lock_set: programming error: fd = %d", fd);
+		fatal_with_errno(EXIT_FAILURE, "lock_set: programming error: fd = %d", fd);
 
 	if (do_lock_port == 0)
 		return;
@@ -99,7 +99,7 @@ static void lock_set(int fd, const char *port)
 	ret = uu_lock(xbasename(port));
 
 	if (ret != 0)
-		fatalx("Can't uu_lock %s: %s", xbasename(port), 
+		fatalx(EXIT_FAILURE, "Can't uu_lock %s: %s", xbasename(port), 
 			uu_lockerr(ret));
 
 	return;
@@ -109,7 +109,7 @@ static void lock_set(int fd, const char *port)
 	ret = flock(fd, LOCK_EX | LOCK_NB);
 
 	if (ret != 0)
-		fatalx("%s is locked by another process", port);
+		fatalx(EXIT_FAILURE, "%s is locked by another process", port);
 
 	return;
 
@@ -120,7 +120,7 @@ static void lock_set(int fd, const char *port)
 	ret = lockf(fd, F_TLOCK, 0L);
 
 	if (ret != 0)
-		fatalx("%s is locked by another process", port);
+		fatalx(EXIT_FAILURE, "%s is locked by another process", port);
 
 	return;
 
@@ -148,7 +148,7 @@ int ser_set_speed(int fd, const char *port, speed_t speed)
 	struct	termios	tio;
 
 	if (tcgetattr(fd, &tio) != 0)
-		fatal_with_errno("tcgetattr(%s)", port);
+		fatal_with_errno(EXIT_FAILURE, "tcgetattr(%s)", port);
 
 	tio.c_cflag = CS8 | CLOCAL | CREAD;
 	tio.c_iflag = IGNPAR;
@@ -173,7 +173,7 @@ int ser_set_speed(int fd, const char *port, speed_t speed)
 int ser_close(int fd, const char *port)
 {
 	if (fd < 0)
-		fatal_with_errno("ser_close: programming error: fd=%d port=%s", fd, port);
+		fatal_with_errno(EXIT_FAILURE, "ser_close: programming error: fd=%d port=%s", fd, port);
 
 	if (close(fd) != 0)
 		return -1;

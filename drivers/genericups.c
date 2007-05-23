@@ -44,13 +44,13 @@ static void parse_output_signals(const char *value, int *line)
 		*line |= TIOCM_ST;
 
 	if (strstr(value, "CTS"))
-		fatalx("Can't override output with CTS (not an output)");
+		fatalx(EXIT_FAILURE, "Can't override output with CTS (not an output)");
 
 	if (strstr(value, "DCD"))
-		fatalx("Can't override output with DCD (not an output)");
+		fatalx(EXIT_FAILURE, "Can't override output with DCD (not an output)");
 
 	if (strstr(value, "RNG"))
-		fatalx("Can't override output with RNG (not an output)");
+		fatalx(EXIT_FAILURE, "Can't override output with RNG (not an output)");
 } 
  
 static void parse_input_signals(const char *value, int *line, int *val)
@@ -85,13 +85,13 @@ static void parse_input_signals(const char *value, int *line, int *val)
 	}
 
 	if (strstr(value, "DTR"))
-		fatalx("Can't override input with DTR (not an input)");
+		fatalx(EXIT_FAILURE, "Can't override input with DTR (not an input)");
 
 	if (strstr(value, "RTS"))
-		fatalx("Can't override input with RTS (not an input)");
+		fatalx(EXIT_FAILURE, "Can't override input with RTS (not an input)");
 
 	if (strstr(value, "ST"))
-		fatalx("Can't override input with ST (not an input)");
+		fatalx(EXIT_FAILURE, "Can't override input with ST (not an input)");
 }
 
 void upsdrv_initinfo(void)
@@ -187,7 +187,7 @@ static void set_ups_type(void)
 	int	i;
 
 	if (!getval("upstype"))
-		fatalx("No upstype set - see help text / man page!");
+		fatalx(EXIT_FAILURE, "No upstype set - see help text / man page!");
 	
 	upstype = atoi(getval("upstype"));
 
@@ -201,7 +201,7 @@ static void set_ups_type(void)
 
 	listtypes();
 
-	fatalx("\nFatal error: unknown UPS type number");
+	fatalx(EXIT_FAILURE, "\nFatal error: unknown UPS type number");
 }
 
 /* power down the attached load immediately */
@@ -210,23 +210,23 @@ void upsdrv_shutdown(void)
 	int	flags, ret;
 
 	if (upstype == -1)
-		fatalx("No upstype set - see help text / man page!");
+		fatalx(EXIT_FAILURE, "No upstype set - see help text / man page!");
 
 	flags = upstab[upstype].line_sd;
 
 	if (flags == -1)
-		fatalx("No shutdown command defined for this model!");
+		fatalx(EXIT_FAILURE, "No shutdown command defined for this model!");
 
 	if (flags == TIOCM_ST) {
 
 #ifndef HAVE_TCSENDBREAK
-		fatalx("Need to send a BREAK, but don't have tcsendbreak!");
+		fatalx(EXIT_FAILURE, "Need to send a BREAK, but don't have tcsendbreak!");
 #endif
 
 		ret = tcsendbreak(upsfd, 4901);
 
 		if (ret != 0)
-			fatal_with_errno("tcsendbreak");
+			fatal_with_errno(EXIT_FAILURE, "tcsendbreak");
 
 		return;
 	}
@@ -234,7 +234,7 @@ void upsdrv_shutdown(void)
 	ret = ioctl(upsfd, TIOCMSET, &flags);
 
 	if (ret != 0)
-		fatal_with_errno("ioctl TIOCMSET");
+		fatal_with_errno(EXIT_FAILURE, "ioctl TIOCMSET");
 
 	if (getval("sdtime")) {
 		int	sdtime;
@@ -279,7 +279,7 @@ void upsdrv_initups(void)
 	upsfd = ser_open(device_path);
 
 	if (ioctl(upsfd, TIOCMSET, &upstab[upstype].line_norm))
-		fatal_with_errno("ioctl TIOCMSET");
+		fatal_with_errno(EXIT_FAILURE, "ioctl TIOCMSET");
 }
 
 void upsdrv_cleanup(void)

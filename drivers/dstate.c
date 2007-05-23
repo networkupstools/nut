@@ -57,7 +57,7 @@ static void sock_fail(const char *fn)
 	user = getpwuid(getuid());
 
 	if (!user)
-		fatal_with_errno("getpwuid");
+		fatal_with_errno(EXIT_FAILURE, "getpwuid");
 
 	/* deal with some common problems */
 	switch (errno) {
@@ -90,7 +90,7 @@ static void sock_fail(const char *fn)
 	 */
 
 	printf("\n");
-	fatalx("Exiting.");
+	fatalx(EXIT_FAILURE, "Exiting.");
 }
 
 static int open_sock(const char *fn)
@@ -101,7 +101,7 @@ static int open_sock(const char *fn)
 	fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
 	if (fd < 0)
-		fatal_with_errno("Can't create a unix domain socket");
+		fatal_with_errno(EXIT_FAILURE, "Can't create a unix domain socket");
 
 	/* keep this around for the unlink() when exiting */
 	sockfn = xstrdup(fn);
@@ -122,12 +122,12 @@ static int open_sock(const char *fn)
 	ret = chmod(sockfn, 0660);
 
 	if (ret < 0)
-		fatal_with_errno("chmod(%s, 0660) failed", sockfn);
+		fatal_with_errno(EXIT_FAILURE, "chmod(%s, 0660) failed", sockfn);
 
 	ret = listen(fd, DS_LISTEN_BACKLOG);
 
 	if (ret < 0)
-		fatal_with_errno("listen(%d, %d) failed", fd, DS_LISTEN_BACKLOG);
+		fatal_with_errno(EXIT_FAILURE, "listen(%d, %d) failed", fd, DS_LISTEN_BACKLOG);
 
 	return fd;
 }

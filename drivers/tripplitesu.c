@@ -531,7 +531,7 @@ void upsdrv_initinfo(void)
 	char *ptr;
 
 	if (!init_comm())
-		fatalx("Unable to detect Tripp Lite SmartOnline UPS on port %s\n",
+		fatalx(EXIT_FAILURE, "Unable to detect Tripp Lite SmartOnline UPS on port %s\n",
 		        device_path);
 	min_low_transfer = max_low_transfer = 0;
 	min_high_transfer = max_high_transfer = 0;

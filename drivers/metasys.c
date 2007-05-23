@@ -311,7 +311,7 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
 	/* UPS INFO READ */
 	res = command_read_sequence(UPS_INFO, my_answer);
-	if (res < 0) fatal_with_errno("Could not communicate with the ups");
+	if (res < 0) fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
 	/* the manufacturer is hard coded into the driver, the model type is in the second 
 		byte of the answer, the third byte identifies the model version */
 	dstate_setinfo("ups.mfr", "Meta System");
@@ -527,7 +527,7 @@ void upsdrv_initinfo(void)
 			break;
 
 		default:
-			fatal_with_errno("Unknown UPS");
+			fatal_with_errno(EXIT_FAILURE, "Unknown UPS");
 			break;
 	} 
 		
