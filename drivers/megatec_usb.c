@@ -119,7 +119,7 @@ static int comm_usb_match(HIDDevice_t *d, void *privdata)
 
 static void usb_open_error(const char *port)
 {
-	upsdebugx(0,
+	fatalx(
 "No supported devices found. Please check your device availability with 'lsusb'\n"
 "and make sure you have an up-to-date version of NUT. If this does not help,\n"
 "try running the driver with at least 'vendorid' and 'subdriver' options\n"
@@ -127,9 +127,7 @@ static void usb_open_error(const char *port)
 "(man 8 megatec_usb).\n"
 "Please report your results to the NUT user's mailing list\n"
 "<nut-upsuser@lists.alioth.debian.org>.\n"
-										);
-
-	exit(EXIT_FAILURE);
+		);
 }
 
 void megatec_subdrv_banner()
