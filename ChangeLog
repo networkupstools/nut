@@ -1,3 +1,7 @@
+Wed May 23 21:13:10 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+
+ - Enabled requested Alarm function in bcmxcp.c
+
 Wed May 23 18:49:21 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * common/common.c, include/common.h:

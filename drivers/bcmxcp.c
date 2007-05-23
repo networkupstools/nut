@@ -948,25 +948,25 @@ void upsdrv_updateinfo(void)
 		bcmxcp_status.alarm_low_battery = 0;
 
 		/* Set alarms	*/
-		/* alarm_init(); Alarms are not	supported by NUT */
+		alarm_init();
 
-		/* Check "On Battery"	alarm	*/
-		if (bcmxcp_alarm_map[BCMXCP_ALARM_UPS_ON_BATTERY].alarm_block_index	>= 0 &&
-				answer[bcmxcp_alarm_map[BCMXCP_ALARM_UPS_ON_BATTERY].alarm_block_index]	>	0)
-		{ 
-			bcmxcp_status.alarm_on_battery = 1;
-			/* alarm_set(ONBATTERY); */
+		/* Loop thru alarm map, get all alarms UPS is willing to offer */
+		for (iIndex = 0; iIndex < BCMXCP_ALARM_MAP_MAX; iIndex++){
+			if (bcmxcp_alarm_map[iIndex].alarm_block_index >= 0 && bcmxcp_alarm_map[iIndex].alarm_desc != NULL) {
+				if (answer[bcmxcp_alarm_map[iIndex].alarm_block_index]	> 0) {
+					alarm_set(bcmxcp_alarm_map[iIndex].alarm_desc);
+
+					if (iIndex == BCMXCP_ALARM_UPS_ON_BATTERY) {
+						bcmxcp_status.alarm_on_battery = 1;
+					}
+
+					if (iIndex == BCMXCP_ALARM_BATTERY_LOW) {
+						bcmxcp_status.alarm_low_battery = 1;
+					}
+				}
+			}
 		}
 		
-		if (bcmxcp_alarm_map[BCMXCP_ALARM_BATTERY_LOW].alarm_block_index >= 0 &&
-			answer[bcmxcp_alarm_map[BCMXCP_ALARM_BATTERY_LOW].alarm_block_index] > 0)
-		{ 
-			bcmxcp_status.alarm_low_battery = 1;
-			/* alarm_set(LOWBATTERY);	*/ 
-		}
-		
-		/* Confirm alarms	*/
-		/* alarm_commit(); */
 	}
 
 	/* Get status info from UPS */
@@ -1032,6 +1032,9 @@ void upsdrv_updateinfo(void)
 
 		status_commit();
 	} 
+	/* Confirm alarms	*/
+	alarm_commit();
+
 	dstate_dataok();
 }
 
