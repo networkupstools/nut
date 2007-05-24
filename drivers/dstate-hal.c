@@ -387,6 +387,22 @@ void status_commit(void)
 	return;
 }
 
+/* similar functions for ups.alarm */
+void alarm_init(void)
+{
+	return;
+}
+
+void alarm_set(const char *buf)
+{
+	return;
+}
+
+void alarm_commit(void)
+{
+	return;
+}
+
 /* Register DBus methods */
 void dstate_addcmd(const char *cmdname)
 {
