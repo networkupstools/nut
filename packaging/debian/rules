@@ -105,9 +105,8 @@ install-stamp:
 	# rm $(CURDIR)/debian/nut/usr/lib/libupsclient.so* $(CURDIR)/debian/nut/usr/lib/libupsclient.la 
 
 	# USB drivers:
-	mkdir -p $(CURDIR)/debian/nut-usb/etc/udev/rules.d
-	install -m 644 $(CURDIR)/scripts/udev/nut-usbups.rules \
-		$(CURDIR)/debian/nut-usb/etc/udev/rules.d/025_nut-usbups.rules
+	mkdir -p $(CURDIR)/debian/nut-usb/etc
+	mv $(CURDIR)/debian/nut/etc/udev $(CURDIR)/debian/nut-usb/etc/
 
 	mkdir -p $(CURDIR)/debian/nut-usb/lib/nut $(CURDIR)/debian/nut-usb/usr/share/man/man8
 	for driver in usbhid-ups bcmxcp_usb tripplite_usb energizerups; do \
