@@ -680,7 +680,7 @@ int main(int argc, char **argv)
 		dstate_init(progname, device_name);
 
 	/* publish the top-level data: version number, driver name */
-	dstate_setinfo("driver.version", "%s", UPS_VERSION);
+	dstate_setinfo("driver.version", "%s", upsversion());
 	dstate_setinfo("driver.name", "%s", progname);
 
 	/* The poll_interval may have been changed from the default */

@@ -256,7 +256,7 @@ void upsdrv_help(void)
 void upsdrv_banner(void)
 {
 	printf("Network UPS Tools - Generic UPS driver %s (%s)\n",
-		DRV_VERSION, UPS_VERSION);
+		DRV_VERSION, upsversion());
 }
 
 void upsdrv_makevartable(void)

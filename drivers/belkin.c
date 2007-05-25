@@ -393,7 +393,7 @@ static void set_serialDTR0RTS1(void)
 void upsdrv_banner(void)
 {
 	printf("Network UPS Tools - Belkin Smart protocol driver %s (%s)\n",
-		DRV_VERSION, UPS_VERSION);
+		DRV_VERSION, upsversion());
 }
 
 void upsdrv_help(void)

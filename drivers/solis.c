@@ -1124,7 +1124,7 @@ void upsdrv_makevartable(void)
 void upsdrv_banner(void)
 {
 	printf("Network UPS Tools - Microsol Solis UPS driver %s (%s)\n", 
-		DRV_VERSION, UPS_VERSION);
+		DRV_VERSION, upsversion());
         printf("by Silvino B. Magalhaes for Microsol - sbm2yk@gmail.com\n\n");
 }
 

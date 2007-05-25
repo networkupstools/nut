@@ -282,7 +282,7 @@ void upsdrv_makevartable (void)
 void upsdrv_banner (void)
 {
 	printf("Network UPS Tools - %s %s (%s)\n", 
-			DRIVER_NAME, DRIVER_VERSION, UPS_VERSION);
+			DRIVER_NAME, DRIVER_VERSION, upsversion());
 }
 
 /* --------------------------------------------------------------- */

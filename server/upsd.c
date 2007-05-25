@@ -971,7 +971,7 @@ int main(int argc, char **argv)
 	/* set up some things for later */
 	snprintf(pidfn, sizeof(pidfn), "%s/upsd.pid", altpidpath());
 
-	printf("Network UPS Tools upsd %s\n", UPS_VERSION);
+	printf("Network UPS Tools upsd %s\n", upsversion());
 
 	while ((i = getopt(argc, argv, "+h46p:r:i:fu:Vc:D")) != -1) {
 		switch (i) {

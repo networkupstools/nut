@@ -165,13 +165,13 @@ static void get_var_server(ctype_t *client, const char *upsname, const char *var
 		sendback(client, "VAR %s server.info "
 			"\"Network UPS Tools upsd %s - "
 			"http://www.networkupstools.org/\"\n", 
-			upsname, UPS_VERSION);
+			upsname, upsversion());
 		return;
 	}
 
 	if (!strcasecmp(var, "server.version")) {
 		sendback(client, "VAR %s server.version \"%s\"\n", 
-			upsname, UPS_VERSION);
+			upsname, upsversion());
 		return;
 	}
 

@@ -1,3 +1,7 @@
+Fri May 25 18:39:47 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - [various]: patch to add SVN revision in NUT version (by Eric S. Raymond)
+
 Fri May 25 14:19:11 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  - packaging/debian: major updates (refer to debian/changelog)

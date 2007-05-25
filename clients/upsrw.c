@@ -33,7 +33,7 @@ struct list_t {
 
 static void usage(const char *prog)
 {
-	printf("Network UPS Tools upsrw %s\n\n", UPS_VERSION);
+	printf("Network UPS Tools upsrw %s\n\n", upsversion());
 	printf("usage: %s [-h]\n", prog);
 	printf("       %s [-s <variable>] [-u <username>] [-p <password>] <ups>\n\n", prog);
 	printf("Demo program to set variables within UPS hardware.\n");
@@ -460,7 +460,7 @@ int main(int argc, char **argv)
 			username = optarg;
 			break;
 		case 'V':
-			printf("Network UPS Tools upsrw %s\n", UPS_VERSION);
+			printf("Network UPS Tools upsrw %s\n", upsversion());
 			exit(EXIT_SUCCESS);
 		default:
 			usage(prog);

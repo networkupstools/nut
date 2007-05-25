@@ -395,7 +395,7 @@ void upsdrv_makevartable(void)
 void upsdrv_banner(void)
 {
 	printf("Network UPS Tools - Best UPS driver %s (%s)\n", 
-		DRV_VERSION, UPS_VERSION);
+		DRV_VERSION, upsversion());
 }
 
 void upsdrv_initups(void)

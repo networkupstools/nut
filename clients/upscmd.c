@@ -34,7 +34,7 @@ struct list_t {
 
 static void usage(char *prog)
 {
-	printf("Network UPS Tools upscmd %s\n\n", UPS_VERSION);
+	printf("Network UPS Tools upscmd %s\n\n", upsversion());
 	printf("usage: %s [-h]\n", prog);
 	printf("       %s [-l <ups>]\n", prog);
 	printf("       %s [-u <username>] [-p <password>] <ups> <command>\n\n", prog);
@@ -234,7 +234,7 @@ int main(int argc, char **argv)
 
 			case 'V':
 				printf("Network UPS Tools upscmd %s\n",
-					UPS_VERSION);
+					upsversion());
 				exit(EXIT_SUCCESS);
 
 			case 'h':

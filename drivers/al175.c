@@ -1296,7 +1296,7 @@ void upsdrv_makevartable(void)
 void upsdrv_banner(void)
 {
 	printf("Network UPS Tools - Eltek AL175/COMLI support module %s (%s)\n\n", 
-		DRV_VERSION, UPS_VERSION);
+		DRV_VERSION, upsversion());
 	/*
 	 * This driver does not support upsdrv_shutdown(), which makes
 	 * it not very useful in a real world application. This alone
