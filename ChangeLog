@@ -1,3 +1,9 @@
+Fri May 25 18:54:54 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - packaging/debian/Makefile.am: Assuming removing the removal of
+   nut-usb.postinst and nut-usb.prerm was intentional, the dependency
+   should be removed as well.
+
 Fri May 25 18:39:47 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - [various]: patch to add SVN revision in NUT version (by Eric S. Raymond)
