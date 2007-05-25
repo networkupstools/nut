@@ -3,7 +3,7 @@ Section: admin
 Priority: optional
 Maintainer: Arnaud Quette <aquette@debian.org>
 Uploaders: Luca Filipozzi <lfilipoz@debian.org>, Shaul Karl <shaul@debian.org>
-Build-Depends: debhelper (>= 4.1.16), libgd2-xpm-dev | libgd2-noxpm-dev | libgd2-dev, libsnmp9-dev, libusb-dev (>= 0.1.8), libhal-dev (>= 0.5.8)
+Build-Depends: debhelper (>= 4.1.16), libgd2-xpm-dev | libgd2-noxpm-dev | libgd2-dev, libsnmp9-dev, libusb-dev (>= 0.1.8), libhal-dev (>= 0.5.8), libdbus-1-dev, libdbus-glib-1-dev, libglib2.0-dev
 Standards-Version: 3.6.2
 
 Package: nut

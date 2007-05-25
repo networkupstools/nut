@@ -1,3 +1,7 @@
+Fri May 25 00:59:44 UTC 2007 / Charles Lepple <clepple@gmail.com>
+
+ - Added dependencies on dbus, dbus-glib and glib development headers to the
+   Debian control file.
 Wed May 23 23:59:59 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/dstate-hal.c: added empty alarm_init, alarm_set and alarm_commit
