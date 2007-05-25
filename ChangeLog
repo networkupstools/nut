@@ -1,3 +1,7 @@
+Fri May 25 14:19:11 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - packaging/debian: major updates (refer to debian/changelog)
+
 Fri May 25 02:01:40 UTC 2007 / Charles Lepple <clepple@gmail.com>
 
  - Removed redundant udev installation rule from debian/rules.

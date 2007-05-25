@@ -8,10 +8,10 @@ Standards-Version: 3.6.2
 
 Package: nut
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, debconf (>= 0.5.00), lsb-base (>= 3.0-6)
-Suggests: nut-cgi, nut-snmp, nut-usb, nut-dev
-Provides: ups-monitor, nut-doc
-Conflicts: ups-monitor, nut-doc, nut-hal-drivers
+Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, debconf (>= 0.5.00), lsb-base (>= 3.0-6), ${udev}
+Suggests: nut-cgi, nut-snmp, nut-dev
+Provides: ups-monitor, nut-doc, nut-usb
+Conflicts: ups-monitor, nut-doc, nut-hal-drivers, nut-usb (<< 2.1.0-3)
 Replaces: nut-doc
 Description: The core system of the nut - Network UPS Tools
  nut is a client/server uninterruptible power supply (UPS) monitoring system
@@ -19,8 +19,8 @@ Description: The core system of the nut - Network UPS Tools
  'server' monitors the UPS and notifies the 'clients' when the UPS is on
  or has a low battery.
  .
- This package contains the core system. In many cases it is sufficient for
- a basic UPS monitoring system.
+ This package contains the core system, and the serial and USB UPS drivers.
+ In most cases it is sufficient for a basic UPS monitoring system.
  .
  Homepage: http://www.networkupstools.org
 
@@ -59,25 +59,6 @@ Description: A meta SNMP Driver subsystem for the nut - Network UPS Tools
  .
  Homepage: http://www.networkupstools.org
 
-Package: nut-usb
-Architecture: any
-Depends: ${shlibs:Depends}, nut (>= 2.0.5-1), ${udev}
-Conflicts: nut (<< 2.0.5-1)
-Description: USB Drivers subsystem for NUT - Network UPS Tools
- nut is a client/server uninterruptible power supply (UPS) monitoring system
- that permits the sharing of one (or more) UPS between several machines. The
- 'server' monitors the UPS and notifies the 'clients' when the UPS is on
- or has a low battery.
- .
- This package contains energizerups, megatec_usb, tripplite_usb and usbhid-ups,
- the USB UPS Drivers which support different Manufacturers (MGE, APC, ...) for
- Network UPS Tools.  These add a USB interface to the core system. You only
- need to install this package if you are connecting your UPS directly to
- this machine via a USB cable.  Other systems monitoring this UPS only need the
- core nut package to connect to this host via the network.
- .
- Homepage: http://www.networkupstools.org
-
 Package: nut-dev
 Architecture: any
 Depends: ${shlibs:Depends}, nut (>= 1.4.3-2)
@@ -110,3 +91,5 @@ Description: HAL interface for NUT - Network UPS Tools
  This package contains addons for the hardware abstraction layer (HAL) that
  allow desktop environments to monitor locally-connected UPS equipment. The
  HAL drivers cannot be used at the same time as the normal NUT upsd.
+ .
+ Homepage: http://www.networkupstools.org

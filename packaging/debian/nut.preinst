@@ -60,6 +60,9 @@ case "$1" in
     if dpkg --compare-versions "$2" lt-nl "1.1.11" ; then
       [ -x /etc/init.d/nut ] && /etc/init.d/nut stop
     fi
+
+    # remove the obsolete udev file
+    [ -f /etc/udev/rules.d/025_nut-usbups.rules ] && rm -f /etc/udev/rules.d/025_nut-usbups.rules
     ;;
 
   abort-upgrade)

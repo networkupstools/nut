@@ -1,3 +1,24 @@
+nut (2.1.0-4) UNRELEASED; urgency=low
+
+  * debian/control:
+    - merge the nut-usb package into nut, and update the various needed
+      fields (Depends, Provides, Conflicts, Suggests and Description)
+    - complete the nut-hal-drivers Description (Homepage)
+  * debian/rules:
+    - force the evaluation of DEB_HOST_ARCH_OS for dh_gencontrol
+    - force udev to empty on non Linux system, for dh_gencontrol
+    - remove the DH_COMPAT export
+    - update the nut-usb specifics, not needed anymore
+  * debian/compat: creation
+  * debian/nut-usb.*: remove these files, and put the content in the
+    matching nut.* files
+  * debian/nut.preinst: remove the old udev rule file (025_nut...) which
+    was manually installed, and now addressed upstream and called 52_nut.
+  * debian/nut.postinst: restart udev to apply the USB rules to the
+    already plugged devices
+
+ -- Arnaud Quette <aquette@debian.org>  Fri, 25 May 2007 15:13:02 +0200
+
 nut (2.1.0-3) UNRELEASED; urgency=low
 
   * debian/control: requires at least libhal-dev  0.5.8

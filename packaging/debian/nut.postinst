@@ -17,6 +17,9 @@ case "$1" in
     done
     chown root:nut /var/run/nut /var/lib/nut
     chmod 770 /var/run/nut /var/lib/nut
+
+    # restart udev to apply the USB rules to the already plugged devices
+    [ -x /etc/init.d/udev ] && /etc/init.d/udev restart
     ;;
 
   abort-upgrade)

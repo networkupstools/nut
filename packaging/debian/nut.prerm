@@ -7,6 +7,10 @@
 case "$1" in
 
   remove)
+    # nut-usb specifics
+    [ -f /etc/hotplug/usb/libhid.usermap ] && rm -f /etc/hotplug/usb/libhid.usermap
+    [ -f /etc/hotplug/usb/libhidups ] && rm -f /etc/hotplug/usb/libhidups
+
     [ -L /usr/doc/nut ] && rm -f /usr/doc/nut
     # do stop the daemon on remove
     /etc/init.d/nut stop && sleep 1

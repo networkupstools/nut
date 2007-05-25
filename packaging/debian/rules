@@ -1,7 +1,6 @@
 #!/usr/bin/make -f
 
 #export DH_VERBOSE=1
-export DH_COMPAT=4
 export DH_OPTIONS=
 
 CFLAGS+=$(if $(findstring debug,$(DEB_BUILD_OPTIONS)),-g)
@@ -10,6 +9,7 @@ CONFIGUREFLAGS+=$(if $(findstring nostrip,$(DEB_BUILD_OPTIONS)),,--enable-strip)
 CONFIGUREFLAGS+=--build=$(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 CONFIGUREFLAGS+=--host=$(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
 CONFIGUREFLAGS+=$(if $(wildcard /usr/include/linux/hiddev.h),--with-linux-hiddev=/usr/include/linux/hiddev.h,--without-linux-hiddev)
+DEB_HOST_ARCH_OS := $(shell dpkg-architecture -qDEB_HOST_ARCH_OS 2>/dev/null)
 
 configure: patch configure-stamp
 configure-stamp:
@@ -104,19 +104,6 @@ install-stamp:
 	### FIXME: create a new package for shared library later, and remove --disable-shared above
 	# rm $(CURDIR)/debian/nut/usr/lib/libupsclient.so* $(CURDIR)/debian/nut/usr/lib/libupsclient.la 
 
-	# USB drivers:
-	mkdir -p $(CURDIR)/debian/nut-usb/etc
-	mv $(CURDIR)/debian/nut/etc/udev $(CURDIR)/debian/nut-usb/etc/
-
-	mkdir -p $(CURDIR)/debian/nut-usb/lib/nut $(CURDIR)/debian/nut-usb/usr/share/man/man8
-	for driver in usbhid-ups bcmxcp_usb tripplite_usb energizerups; do \
-	    mv $(CURDIR)/debian/nut/lib/nut/$$driver $(CURDIR)/debian/nut-usb/lib/nut ; \
-	    mv $(CURDIR)/debian/nut/usr/share/man/man8/$$driver.8 $(CURDIR)/debian/nut-usb/usr/share/man/man8 ; \
-	done 
-
-	### FIXME: need man page for megatec_usb
-	mv $(CURDIR)/debian/nut/lib/nut/megatec_usb $(CURDIR)/debian/nut-usb/lib/nut
-
 	# CGI:
 	mkdir -p $(CURDIR)/debian/nut-cgi/usr/lib/cgi-bin/nut $(CURDIR)/debian/nut-cgi/usr/share/man/man5 $(CURDIR)/debian/nut-cgi/usr/share/man/man8 
 	mv $(CURDIR)/debian/nut/usr/lib/cgi-bin/nut/* $(CURDIR)/debian/nut-cgi/usr/lib/cgi-bin/nut/ 
@@ -179,7 +166,7 @@ binary-arch: install
 ifeq (linux,$(DEB_HOST_ARCH_OS))
 	dh_gencontrol -- -Vudev="udev"
 else
-	dh_gencontrol
+	dh_gencontrol -- -Vudev=""
 endif
 	dh_md5sums
 	dh_builddeb
