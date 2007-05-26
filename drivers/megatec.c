@@ -126,6 +126,7 @@ static BatteryVolts_t batteries[] = {{ 12,  9.0, 16.0,  9.7, 13.7,  0.0 },   /* 
                                      { 24, 18.0, 30.0, 19.4, 27.4, 22.2 },   /* Mustek PowerMust 1000VA Plus */
                                      { 36,  1.5,  3.0, 1.64, 2.31, 1.88 },   /* Mustek PowerMust 1000VA On-Line */
                                      { 36, 30.0, 42.0, 32.5, 41.0,  0.0 },   /* Mecer ME-2000 (LB unknown) */
+                                     { 48, 38.0, 58.0, 40.0, 54.6, 44.0 },   /* Sven Smart RM2000 */
                                      { 96,  1.5,  3.0, 1.63, 2.29,  1.8 },   /* Ablerex MS3000RT (LB at 25% charge) */
                                      {  0,  0.0,  0.0,  0.0,  0.0,  0.0 }};  /* END OF DATA */
 

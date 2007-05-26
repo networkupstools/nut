@@ -1,3 +1,7 @@
+Sat May 26 11:49:12 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - drivers/megatec.c: added support for 48V batteries.
+
 Fri May 25 18:54:54 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - packaging/debian/Makefile.am: Assuming removing the removal of
