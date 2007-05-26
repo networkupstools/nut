@@ -1,3 +1,7 @@
+Sat May 26 14:21:32 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - [various]: revert changes to add SVN revision in NUT version
+
 Sat May 26 12:03:10 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
 
  - data/driver.list: added SVEN Power Smart RM 2000 to the list.

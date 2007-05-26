@@ -782,7 +782,7 @@ void upsdrv_makevartable(void)
 
 void upsdrv_banner(void)
 {
-	printf("Network UPS Tools %s - Megatec protocol driver %s [%s]\n", upsversion(), DRV_VERSION, progname);
+	printf("Network UPS Tools %s - Megatec protocol driver %s [%s]\n", UPS_VERSION, DRV_VERSION, progname);
 	printf("Carlos Rodrigues (c) 2003-2007\n\n");
 
 	megatec_subdrv_banner();

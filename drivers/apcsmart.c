@@ -1199,7 +1199,7 @@ static void setuphandlers(void)
 void upsdrv_banner(void)
 {
 	printf("Network UPS Tools (version %s) - APC Smart protocol driver\n",
-		upsversion());
+		UPS_VERSION);
 	printf("\tDriver version %s, command table %s\n",
 		APC_DRIVER_VERSION,
 		APC_TABLE_VERSION);

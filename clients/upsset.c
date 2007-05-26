@@ -145,7 +145,7 @@ static void start_table(void)
 	printf("<TABLE CELLPADDING=\"5\" CELLSPACING=\"0\" ALIGN=\"CENTER\" WIDTH=\"100%%\">\n");
 	printf("<TR><TH COLSPAN=2 BGCOLOR=\"#60B0B0\">\n");
 	printf("<FONT SIZE=\"+2\">Network UPS Tools upsset %s</FONT>\n", 
-		upsversion());
+		UPS_VERSION);
 	printf("</TH></TR>\n");
 }
 

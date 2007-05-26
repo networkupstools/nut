@@ -328,7 +328,7 @@ void upsdrv_makevartable(void)
 void upsdrv_banner(void)
 {
 	printf("Network UPS Tools - Gamatronic UPS driver %s (%s)\n\n", 
-		DRV_VERSION, upsversion());
+		DRV_VERSION, UPS_VERSION);
 }
 
 void setup_serial(const char *port)

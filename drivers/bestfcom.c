@@ -436,7 +436,7 @@ void upsdrv_help(void)
 void upsdrv_banner(void)
 {
 	printf("Network UPS Tools - Best Ferrups/Fortress %s (%s)\n",
-		DRV_VERSION, upsversion());
+		DRV_VERSION, UPS_VERSION);
 
 	experimental_driver = 1;
 }

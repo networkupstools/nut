@@ -1345,7 +1345,7 @@ void upsdrv_makevartable(void)
 void upsdrv_banner(void)
 {
 	printf("Network UPS Tools - Tripp Lite OMNIVS and SMARTPRO driver %s (%s)\n",
-			DRV_VERSION, upsversion());
+			DRV_VERSION, UPS_VERSION);
 
 	experimental_driver = 1;
 }

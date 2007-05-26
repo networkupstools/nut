@@ -27,7 +27,7 @@
 
 static void help(const char *prog)
 {
-	printf("Network UPS Tools upsc %s\n\n", upsversion());
+	printf("Network UPS Tools upsc %s\n\n", UPS_VERSION);
 
 	printf("usage: %s -l | -L [<hostname>[:port]]\n", prog);
 	printf("       %s <ups> [<variable>]\n", prog);
@@ -223,7 +223,7 @@ int main(int argc, char **argv)
 
 	/* special cases since we're not using getopt */
 	if (!strcmp(argv[1], "-V")) {
-		printf("Network UPS Tools upsc %s\n", upsversion());
+		printf("Network UPS Tools upsc %s\n", UPS_VERSION);
 		exit(EXIT_SUCCESS);
 	}
 

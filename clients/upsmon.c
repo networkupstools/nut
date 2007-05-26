@@ -1931,7 +1931,7 @@ int main(int argc, char *argv[])
 
 	cmd = 0;
 
-	printf("Network UPS Tools upsmon %s\n", upsversion());
+	printf("Network UPS Tools upsmon %s\n", UPS_VERSION);
 
 	while ((i = getopt(argc, argv, "+Dhic:f:pu:VK46")) != -1) {
 		switch (i) {

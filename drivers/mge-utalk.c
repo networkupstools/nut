@@ -100,7 +100,7 @@ static void format_model_name(char *model);
 void upsdrv_banner(void)
 {
 	printf("Network UPS Tools - %s %s (%s)\n", 
-		DRIVER_NAME, DRIVER_VERSION, upsversion());
+		DRIVER_NAME, DRIVER_VERSION, UPS_VERSION);
 }
 
 /* --------------------------------------------------------------- */

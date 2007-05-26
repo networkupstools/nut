@@ -344,7 +344,7 @@ void upsdrv_help(void)
 void upsdrv_banner(void)
 {
         printf("Network UPS Tools - Best Ferrups Series ME/RE/MD %s (%s)\n\n", 
-		DRV_VERSION, upsversion());
+		DRV_VERSION, UPS_VERSION);
 }
 
 static void sync_serial(void) {

@@ -375,7 +375,7 @@ int main(int argc, char **argv)
 	logformat = DEFAULT_LOGFORMAT;
 	user = RUN_AS_USER;
 
-	printf("Network UPS Tools upslog %s\n", upsversion());
+	printf("Network UPS Tools upslog %s\n", UPS_VERSION);
 
 	prog = argv[0];
 

@@ -464,7 +464,7 @@ void upsdrv_makevartable(void)
 void upsdrv_banner(void)
 {
 	printf("Network UPS Tools -  CyberPower text protocol UPS driver %s (%s)\n",
-		DRV_VERSION, upsversion());
+		DRV_VERSION, UPS_VERSION);
 	experimental_driver = 1;	/* Causes a warning message to be printed */
 }
 

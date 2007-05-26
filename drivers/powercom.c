@@ -546,7 +546,7 @@ void upsdrv_help(void)
 void upsdrv_banner(void)
 {
 	printf("Network UPS Tools - PowerCom and similars protocol UPS driver %s (%s)\n\n", 
-		POWERCOM_DRIVER_VERSION, upsversion());
+		POWERCOM_DRIVER_VERSION, UPS_VERSION);
 }
 
 /* initialize information */

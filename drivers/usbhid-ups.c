@@ -529,7 +529,7 @@ void upsdrv_banner(void)
 {
 	printf("Network UPS Tools: %s %s - core %s (%s)\n\n",
 	       comm_driver->name, comm_driver->version,
-	       DRIVER_VERSION, upsversion());
+	       DRIVER_VERSION, UPS_VERSION);
 }
 
 void upsdrv_updateinfo(void) 

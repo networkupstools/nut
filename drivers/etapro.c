@@ -346,7 +346,7 @@ void
 upsdrv_banner(void)
 {
 	printf("Network UPS Tools - ETA PRO driver %s (%s)\n\n", 
-		DRV_VERSION, upsversion());
+		DRV_VERSION, UPS_VERSION);
 }
 
 void

@@ -731,7 +731,7 @@ static int parse_line(const char *buf)
 		return do_img(&cmd[4]);
 
 	if (!strcmp(cmd, "VERSION")) {
-		printf("%s\n", upsversion());
+		printf("%s\n", UPS_VERSION);
 		return 1;
 	}
 

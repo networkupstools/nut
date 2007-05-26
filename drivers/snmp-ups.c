@@ -148,7 +148,7 @@ void upsdrv_makevartable(void)
 void upsdrv_banner(void)
 {
 	upslogx(1,"Network UPS Tools - Multi-MIBS SNMP UPS driver %s (%s)", 
-		DRIVER_VERSION, upsversion());
+		DRIVER_VERSION, UPS_VERSION);
 	
 	experimental_driver = 1;
 }

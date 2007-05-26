@@ -519,7 +519,7 @@ static void setuphandlers(void)
 void upsdrv_banner(void)
 {
 	printf("Network UPS Tools - CyberPower driver %s (%s)\n", 
-		DRV_VERSION, upsversion());
+		DRV_VERSION, UPS_VERSION);
 }
 
 void upsdrv_help(void)

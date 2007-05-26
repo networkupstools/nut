@@ -278,7 +278,7 @@ void upsdrv_makevartable(void)
 void upsdrv_banner(void)
 {
 	printf("Network UPS Tools - Oneac EG/ON UPS driver %s (%s)\n\n", 
-		DRV_VERSION, upsversion());
+		DRV_VERSION, UPS_VERSION);
 	experimental_driver = 1;	/*causes a warning to be printed*/
 }
 

@@ -441,7 +441,7 @@ static float batt_charge_pct(void);
 void upsdrv_banner(void)
 {
 	printf("Network UPS Tools - UPScode II UPS driver %s (%s)\n", 
-		DRV_VERSION, upsversion());
+		DRV_VERSION, UPS_VERSION);
 	printf("Copyright (C) 2001-2002 H K Lygre, <hklygre@online.no>\n");
 	printf("Copyright (C) 2004-2006 Niels Baggesen <niels@baggesen.net>\n");
 	printf("Copyright (C) 2006 Niklas Edmundsson <nikke@acc.umu.se>\n\n");

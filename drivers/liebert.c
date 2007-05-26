@@ -163,7 +163,7 @@ void upsdrv_updateinfo(void)
 void upsdrv_banner(void)
 {
 	printf("Network UPS Tools - Liebert MultiLink UPS driver %s (%s)\n",
-		DRV_VERSION, upsversion());
+		DRV_VERSION, UPS_VERSION);
 
 	experimental_driver = 1;
 }

@@ -333,7 +333,7 @@ void upsdrv_makevartable(void)
 void upsdrv_banner(void)
 {
 	printf("Network UPS Tools - ISBMEX UPS driver %s (%s)\n\n",
-		DRV_VERSION, upsversion());
+		DRV_VERSION, UPS_VERSION);
 }
 
 void upsdrv_initups(void)

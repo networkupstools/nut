@@ -395,7 +395,7 @@ int main(int argc, char **argv)
 	void	(*command)(const ups_t *) = NULL;
 
 	printf("Network UPS Tools - UPS driver controller %s\n",
-		upsversion());
+		UPS_VERSION);
 
 	prog = argv[0];
 	while ((i = getopt(argc, argv, "+htu:r:DV")) != -1) {

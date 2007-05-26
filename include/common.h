@@ -86,7 +86,6 @@ const char * dflt_statepath(void);
 /* Return the alternate path for pid files */
 const char * altpidpath(void);
 
-const char *upsversion(void);
 void upslog_with_errno(int priority, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
 void upslogx(int priority, const char *fmt, ...)

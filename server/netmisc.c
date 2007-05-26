@@ -35,7 +35,7 @@ void net_ver(ctype_t *client, int numarg, const char **arg)
 	}
 
 	sendback(client, "Network UPS Tools upsd %s - http://www.networkupstools.org/\n",
-		upsversion());
+		UPS_VERSION);
 }
 
 void net_help(ctype_t *client, int numarg, const char **arg)
