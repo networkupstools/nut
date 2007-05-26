@@ -1,3 +1,7 @@
+Sat May 26 12:03:10 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ - data/driver.list: added SVEN Power Smart RM 2000 to the list.
+
 Sat May 26 11:49:12 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - drivers/megatec.c: added support for 48V batteries.
