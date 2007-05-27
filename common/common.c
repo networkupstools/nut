@@ -24,6 +24,14 @@
 #include <pwd.h>
 #include <grp.h>
 
+/* the reason we define UPS_VERSION as a static string, rather than a
+	macro, is to make dependency tracking easier (only common.o depends
+	on nut_version_macro.h), and also to prevent all sources from
+	having to be recompiled each time the version changes (they only
+	need to be re-linked). */
+#include "nut_version.h"
+const char *UPS_VERSION = NUT_VERSION_MACRO;
+
 	int	nut_debug_level = 0;
 	static	int	upslog_flags = UPSLOG_STDERR;
 

@@ -16,7 +16,7 @@ upsd_SOURCES = upsd.c user.c conf.c ssl.c sstate.c access.c desc.c	\
 sockdebug_SOURCES = sockdebug.c 
 
 # rules for cross-directory targets
-../common/libcommon.a:
+../common/libcommon.a: FORCE
 	(cd ../common/ && $(MAKE) $(AM_MAKEFLAGS) libcommon.a)
 
 ../common/upsconf.o:
@@ -28,3 +28,4 @@ sockdebug_SOURCES = sockdebug.c
 ../common/state.o:
 	(cd ../common/ && $(MAKE) $(AM_MAKEFLAGS) state.o)
 
+FORCE:

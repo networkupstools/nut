@@ -39,7 +39,7 @@ libupsclient_la_LIBADD = ../common/parseconf.lo
 libupsclient_la_LDFLAGS = -version-info 0:0:0
 
 # rules for cross-directory targets
-../common/libcommon.a:
+../common/libcommon.a: FORCE
 	(cd ../common/ && $(MAKE) $(AM_MAKEFLAGS) libcommon.a)
 
 ../common/parseconf.o:
@@ -47,3 +47,5 @@ libupsclient_la_LDFLAGS = -version-info 0:0:0
 
 ../common/parseconf.lo:
 	(cd ../common/ && $(MAKE) $(AM_MAKEFLAGS) parseconf.lo)
+
+FORCE:

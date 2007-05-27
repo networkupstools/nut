@@ -44,6 +44,8 @@
 #include "config.h"
 #include "proto.h"
 
+extern const char *UPS_VERSION;
+
 /* get the syslog ready for us */
 void open_syslog(const char *progname);
 

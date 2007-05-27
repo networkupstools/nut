@@ -194,7 +194,7 @@ EXTRA_DIST = Doxyfile
 MOSTLYCLEANFILES = libnuthalmain.a
 
 # rules for cross-directory targets
-../common/libcommon.a:
+../common/libcommon.a: FORCE
 	(cd ../common/ && $(MAKE) $(AM_MAKEFLAGS) libcommon.a)
 
 ../common/upsconf.o:
@@ -206,3 +206,4 @@ MOSTLYCLEANFILES = libnuthalmain.a
 ../common/state.o:
 	(cd ../common/ && $(MAKE) $(AM_MAKEFLAGS) state.o)
 
+FORCE:

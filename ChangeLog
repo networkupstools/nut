@@ -1,3 +1,8 @@
+Sun May 27 14:06:33 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - second attempt to add SVN revision in NUT version (as suggested by 
+   Eric S. Raymond).
+	
 Sat May 26 16:47:23 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  - data/driver.list: disambiguated Belkin F6C1100-UNV models
