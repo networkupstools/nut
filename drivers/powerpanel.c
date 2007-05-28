@@ -697,10 +697,12 @@ static int initups_bin()
 		ret = powpan_command_txt("F\r");
 
 		if (ret < 20) {
+			upsdebugx(2, "Expected 20 bytes but only got %d", ret);
 			continue;
 		}
 
 		if (powpan_answer[0] != '.') {
+			upsdebugx(2, "Expected start character '.' but got '%c'", (char)powpan_answer[0]);
 			continue;
 		}
 
@@ -730,11 +732,13 @@ static int initups_txt()
 		 */
 		ret = powpan_command_txt("P4\r");
 
-		if (ret < 47) {
+		if (ret < 46) {
+			upsdebugx(2, "Expected 46 bytes, but only got %d", ret);
 			continue;
 		}
 
 		if (powpan_answer[0] != '#') {
+			upsdebugx(2, "Expected start character '#', but got '%c'", (char)powpan_answer[0]);
 			continue;
 		}
 

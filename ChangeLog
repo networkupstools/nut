@@ -1,3 +1,8 @@
+Mon May 28 14:12:14 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/powerpanel.c: expected number of characters for P4 command is off
+   by one (adding debug lines to show what is going on)
+
 Sun May 27 14:06:33 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  - second attempt to add SVN revision in NUT version (as suggested by 
