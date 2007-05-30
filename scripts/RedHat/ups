@@ -1,3 +1,0 @@
-# POWERDOWNFLAG *must* match that in upsmon.conf
-POWERDOWNFLAG=/etc/killpower
-NUTUSER=nutmon
