@@ -1,0 +1,41 @@
+#!/bin/sh -e
+
+# source the debconf library
+. /usr/share/debconf/confmodule
+
+check_and_create_group() {
+        if [ -z `getent group nut` ]; then
+                addgroup --quiet --system nut
+#       else
+#               printf "error: user \"nut\" already exists... see /usr/share/doc/nut/README.Debian\n"  &&  exit 1
+        fi
+}
+
+check_and_create_user() {
+        if [ -z `getent passwd nut` ]; then
+                adduser --quiet --system --ingroup nut --home /var/lib/nut --no-create-home nut
+#       else
+#               printf "error: user \"nut\" already exists... see /usr/share/doc/nut/README.Debian\n"  &&  exit 1
+        fi
+}
+
+case "$1" in
+
+  install|upgrade)
+    # Check for existing nut system account, and create it if needed
+    check_and_create_group
+    check_and_create_user
+    ;;
+
+  abort-upgrade)
+    # do nothing
+    ;;
+
+  *)
+    echo "$0: incorrect arguments: $*" >&2
+    exit 1
+    ;;
+esac
+
+#DEBHELPER#
+db_stop

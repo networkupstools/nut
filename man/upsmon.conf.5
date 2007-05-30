@@ -1,0 +1,329 @@
+.TH UPSMON.CONF 5 "Mon Jan 22 2007" "" "Network UPS Tools (NUT)"
+.SH NAME
+upsmon.conf \- Configuration for Network UPS Tools upsmon
+
+.SH DESCRIPTION
+
+This file's primary job is to define the systems that \fBupsmon\fR(8)
+will monitor and to tell it how to shut down the system when necessary.
+It will contain passwords, so keep it secure.  Ideally,only the upsmon
+process should be able to read it.
+
+Additionally, other optional configuration values can be set in this
+file.
+
+.SH CONFIGURATION DIRECTIVES
+
+.IP "DEADTIME \fIseconds\fR"
+
+upsmon allows a UPS to go missing for this many seconds before declaring
+it "dead".  The default is 15 seconds.
+
+upsmon requires a UPS to provide status information every few seconds 
+(see POLLFREQ and POLLFREQALERT) to keep things updated.  If the status
+fetch fails, the UPS is marked stale.  If it stays stale for more than 
+DEADTIME seconds, the UPS is marked dead.
+
+A dead UPS that was last known to be on battery is assumed to have
+changed to a low battery condition.  This may force a shutdown if it is 
+providing a critical amount of power to your system.  This seems
+disruptive, but the alternative is barreling ahead into oblivion and
+crashing when you run out of power.
+
+Note: DEADTIME should be a multiple of POLLFREQ and POLLFREQALERT. 
+Otherwise,  you'll have "dead" UPSes simply because upsmon isn't polling
+them quickly enough.  Rule of thumb: take the larger of the two POLLFREQ
+values, and multiply by 3.
+
+.IP "FINALDELAY \fIseconds\fR"
+
+When running in master mode, upsmon waits this long after sending the
+NOTIFY_SHUTDOWN to warn the users.  After the timer elapses, it then
+runs your SHUTDOWNCMD.  By default this is set to 5 seconds.
+
+If you need to let your users do something in between those events,
+increase this number.  Remember, at this point your UPS battery is
+almost depleted, so don't make this too big.
+
+Alternatively, you can set this very low so you don't wait around when 
+it's time to shut down.  Some UPSes don't give much warning for low 
+battery and will require a value of 0 here for a safe shutdown.
+
+Note: If FINALDELAY on the slave is greater than HOSTSYNC on the master,
+the master will give up waiting for the slave to disconnect.
+
+.IP "HOSTSYNC \fIseconds\fR"
+
+upsmon will wait up to this many seconds in master mode for the slaves
+to disconnect during a shutdown situation.  By default, this is 15
+seconds.
+
+When a UPS goes critical (on battery + low battery, or "FSD" \(hy forced
+shutdown), the slaves are supposed to disconnect and shut down right
+away.  The HOSTSYNC timer keeps the master upsmon from sitting there
+forever if one of the slaves gets stuck.
+
+This value is also used to keep slave systems from getting stuck if
+the master fails to respond in time.  After a UPS becomes critical,
+the slave will wait up to HOSTSYNC seconds for the master to set the
+FSD flag.  If that timer expires, the slave will assume that the master
+is broken and will shut down anyway.
+
+This keeps the slaves from shutting down during a short\(hylived status
+change to "OB LB" that the slaves see but the master misses.
+
+.IP "MINSUPPLIES \fInum\fR"
+
+Set the number of power supplies that must be receiving power to keep
+this system running.  Normal computers have just one power supply, so
+the default value of 1 is acceptable.
+
+Large/expensive server type systems usually have more, and can run
+with a few missing.  The HP NetServer LH4 can run with 2 out of 4, for
+example, so you'd set it to 2.  The idea is to keep the box running
+as long as possible, right?
+
+Obviously you have to put the redundant supplies on different UPS
+circuits for this to make sense!  See big\(hyservers.txt in the docs
+subdirectory for more information and ideas on how to use this
+feature.
+
+Also see the section on "power values" in \fBupsmon\fR(8).
+
+.IP "MONITOR \fIsystem\fR \fIpowervalue\fR \fIusername\fR \fIpassword\fR \fItype\fR"
+
+Each UPS that you need to be monitor should have a MONITOR line.  Not
+all of these need supply power to the system that is running upsmon.
+You may monitor other systems if you want to be able to send
+notifications about status changes on them.
+
+You must have at least one MONITOR directive in this file.
+
+\fIsystem\fR is a UPS identifier.  It is in this form:
+
+	<upsname>[@<hostname>[:<port>]]
+
+The default hostname is "localhost".  Some examples:
+
+ \(hy "su700@mybox" means a UPS called "su700" on a system called "mybox".
+This is the normal form.
+
+ \(hy "fenton@bigbox:5678" is a UPS called "fenton" on a system called
+"bigbox" which runs \fBupsd\fR(8) on port "5678".
+
+\fIpowervalue\fR is an integer representing the number of power supplies
+that the UPS feeds on this system.  Most normal computers have one power
+supply, and the UPS feeds it, so this value will be 1.  You need a very
+large or special system to have anything higher here.
+
+You can set the \fIpowervalue\fR to 0 if you want to monitor a UPS that
+doesn't actually supply power to this system.  This is useful when you
+want to have upsmon do notifications about status changes on a UPS
+without shutting down when it goes critical.
+
+The \fIusername\fR and \fIpassword\fR on this line must match an entry 
+in that system's \fBupsd.users\fR(5).  If your username is "monmaster"
+and your password is "blah", the MONITOR line might look like this:
+
+MONITOR myups@bigserver 1 monmaster blah master
+
+Meanwhile, the upsd.users on 'bigserver' would look like this:
+
+	[monmaster]
+
+		password  = blah
+
+		allowfrom = (ACLs from \fBupsd.conf\fR(5))
+
+		upsmon master   (or slave)
+
+The \fItype\fR refers to the relationship with \fBupsd\fR(8).  It can
+be either "master" or "slave".  See \fBupsmon\fR(8) for more information
+on the meaning of these modes.  The mode you pick here also goes in
+the upsd.users file, as seen in the example above.
+
+.IP "NOCOMMWARNTIME \fIseconds\fR"
+
+upsmon will trigger a NOTIFY_NOCOMM after this many seconds if it can't
+reach any of the UPS entries in this configuration file.  It keeps
+warning you until the situation is fixed.  By default this is 300
+seconds.
+
+.IP "NOTIFYCMD \fIcommand\fR"
+
+upsmon calls this to send messages when things happen.
+
+This command is called with the full text of the message as one 
+argument.  The environment string NOTIFYTYPE will contain the type
+string of whatever caused this event to happen.
+
+If you need to use \fBupssched\fR(8), then you must make it your
+NOTIFYCMD by listing it here.
+
+Note that this is only called for NOTIFY events that have EXEC set with
+NOTIFYFLAG.  See NOTIFYFLAG below for more details.
+
+Making this some sort of shell script might not be a bad idea.  For
+more information and ideas, see pager.txt in the docs directory.
+
+Remember, this also needs to be one element in the configuration file,
+so if your command has spaces, then wrap it in quotes.
+
+	NOTIFYCMD "/path/to/script \-\-foo \-\-bar"
+
+This script is run in the background \(hy that is, upsmon forks before it
+calls out to start it.  This means that your NOTIFYCMD may have multiple
+instances running simultaneously if a lot of stuff happens all at once.
+Keep this in mind when designing complicated notifiers.
+
+.IP "NOTIFYMSG \fItype\fR \fImessage\fR\"
+
+upsmon comes with a set of stock messages for various events.  You can
+change them if you like.
+
+	NOTIFYMSG ONLINE "UPS %s is getting line power"
+
+	NOTIFYMSG ONBATT "Someone pulled the plug on %s"
+
+Note that %s is replaced with the identifier of the UPS in question.
+
+Possible values for \fItype\fR:
+
+	ONLINE \(hy UPS is back online
+
+	ONBATT \(hy UPS is on battery
+
+	LOWBATT \(hy UPS is on battery and has a low battery (is critical)
+
+	FSD \(hy UPS is being shutdown by the master (FSD = "Forced Shutdown")
+
+	COMMOK \(hy Communications established with the UPS
+
+	COMMBAD \(hy Communications lost to the UPS
+
+	SHUTDOWN \(hy The system is being shutdown
+
+	REPLBATT \(hy The UPS battery is bad and needs to be replaced
+
+	NOCOMM \(hy A UPS is unavailable (can't be contacted for monitoring) 
+
+The message must be one element in the configuration file, so if it
+contains spaces, you must wrap it in quotes.
+
+	NOTIFYMSG NOCOMM "Someone stole UPS %s"
+
+.IP "NOTIFYFLAG \fItype\fR \fIflag\fR[+\fIflag\fR][+\fIflag\fR]..."
+
+By default, upsmon sends walls global messages to all logged in users)
+via /bin/wall and writes to the syslog when things happen.  You can
+change this. 
+
+Examples:
+
+	NOTIFYFLAG ONLINE SYSLOG
+
+	NOTIFYFLAG ONBATT SYSLOG+WALL+EXEC
+
+Possible values for the flags:
+
+	SYSLOG \(hy Write the message to the syslog
+
+	WALL \(hy Write the message to all users with /bin/wall
+
+	EXEC \(hy Execute NOTIFYCMD (see above) with the message
+
+	IGNORE \(hy Don't do anything
+
+If you use IGNORE, don't use any other flags on the same line.
+
+.IP "POLLFREQ \fIseconds\fR"
+
+Normally upsmon polls the \fBupsd\fR(8) server every 5 seconds.  If this
+is flooding your network with activity, you can make it higher.  You can
+also make it lower to get faster updates in some cases.
+
+There are some catches.  First, if you set the POLLFREQ too high, you
+may miss short\(hylived power events entirely.  You also risk triggering
+the DEADTIME (see above) if you use a very large number.
+
+Second, there is a point of diminishing returns if you set it too low.
+While upsd normally has all of the data available to it instantly, most
+drivers only refresh the UPS status once every 2 seconds.  Polling any
+more than that usually doesn't get you the information any faster.
+
+.IP "POLLFREQALERT \fIseconds\fR"
+
+This is the interval that upsmon waits between polls if any of its UPSes
+are on battery.  You can use this along with POLLFREQ above to slow down
+polls during normal behavior, but get quicker updates when something bad
+happens.
+
+This should always be equal to or lower than the POLLFREQ value.  By
+default it is also set 5 seconds.
+
+The warnings from the POLLFREQ entry about too\(hyhigh and too\(hylow values
+also apply here.
+
+.IP "POWERDOWNFLAG \fIfilename\fR"
+
+upsmon creates this file when running in master mode when the UPS needs
+to be powered off.  You should check for this file in your shutdown
+scripts and call \fBupsdrvctl shutdown\fR if it exists.
+
+This is done to forcibly reset the slaves, so they don't get stuck at
+the "halted" stage even if the power returns during the shutdown
+process.  This usually does not work well on contact\(hyclosure UPSes that
+use the genericups driver.
+
+See the shutdown.txt file in the docs subdirectory for more information.
+
+.IP "RBWARNTIME \fIseconds\fR"
+
+When a UPS says that it needs to have its battery replaced, upsmon will
+generate a NOTIFY_REPLBATT event.  By default this happens every 43200
+seconds \(hy 12 hours.
+
+If you need another value, set it here.
+
+.IP "RUN_AS_USER \fIusername\fR"
+
+upsmon normally runs the bulk of the monitoring duties under another user
+ID after dropping root privileges.  On most systems this means it runs
+as "nobody", since that's the default from compile\(hytime.
+
+The catch is that "nobody" can't read your upsmon.conf, since by default
+it is installed so that only root can open it.  This means you won't be
+able to reload the configuration file, since it will be unavailable.
+
+The solution is to create a new user just for upsmon, then make it run
+as that user.  I suggest "nutmon", but you can use anything that isn't
+already taken on your system.  Just create a regular user with no special
+privileges and an impossible password.
+
+Then, tell upsmon to run as that user, and make upsmon.conf readable by it.
+Your reloads will work, and your config file will stay secure.
+
+This file should not be writable by the upsmon user, as it would be 
+possible to exploit a hole, change the SHUTDOWNCMD to something
+malicious, then wait for upsmon to be restarted.
+
+.IP "SHUTDOWNCMD \fIcommand\fR"
+
+upsmon runs this command when the system needs to be brought down.  If
+it is a slave, it will do that immediately whenever the current overall
+power value drops below the MINSUPPLIES value above.
+
+When upsmon is a master, it will allow any slaves to log out before
+starting the local shutdown procedure.
+
+Note that the command needs to be one element in the config file.  If
+your shutdown command includes spaces, then put it in quotes to keep it
+together, i.e.:
+
+	SHUTDOWNCMD "/sbin/shutdown \-h +0"
+
+.SH SEE ALSO
+\fBupsmon\fR(8), \fBupsd\fR(8), \fBnutupsdrv\fR(8).
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

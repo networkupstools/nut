@@ -1,0 +1,103 @@
+.TH mge\-utalk 8 "Mon Jan 16 2006" "" "Network UPS Tools (NUT)"
+.SH NAME
+mge\(hyutalk \- Driver for MGE UPS SYSTEMS UTalk protocol hardware
+.SH NOTE
+This man page only documents the hardware\(hyspecific features of the
+mge\(hyutalk driver.  For information about the core driver, see
+\fBnutupsdrv\fR(8).
+
+.SH SUPPORTED HARDWARE
+mge\(hyutalk supports the following legacy units, using the MGE UTalk
+protocol:
+
+    Pulsar ESV+,
+    Pulsar ES+,
+    Pulsar EL,
+    Pulsar EX,
+    Pulsar EXtreme,
+    Comet EXtreme,
+    Comet (Utalk Serial Card, ref 66060),
+    Galaxy (Utalk Serial Card, ref 66060).
+
+This driver also support some newer models with backward UTalk compatibility,
+such as Pulsar Evolution and Pulsar EXtreme C. As these models also support
+the SHUT protocol, prefer mge-shut for serial communication, or use the USB
+port, if available, with the usbhid-ups driver.
+
+.SH EXTRA ARGUMENTS
+
+This driver supports the following optional settings in the
+\fBups.conf\fR(5):
+
+.IP "lowbatt=\fIvalue\fR"
+Low battery level below which LB is raised, in % (default 30%)
+
+.IP "ondelay=\fIvalue\fR"
+Set delay before startup, in minutes (default 1 minute)
+
+.IP "offdelay=\fIvalue\fR"
+Delay before shutdown, in seconds (default 120 seconds)
+
+.IP "oldmac"
+Set this flag if you are running Linux on an Oldworld Macintosh box
+(all beige Apple Macintosh). This might also be needed for other
+OSs (like *BSD) running on PowerMac.
+
+.SH IMPLEMENTATION DETAILS
+
+Not all MGE UPS models provide all possible information, settings and commands.
+mge\(hyutalk checks on startup which variables and commands are available from
+the UPS, and re\(hyreads these regularly. Thus, startup is a bit slow,
+but this should not matter much.
+
+mge\(hyutalk.h defines a struct array that tells the driver how to read
+variables from the UPS and publish them as NUT data.
+
+"ups.status" variable is not included in this array, since it
+contains information that requires several calls to the UPS and more
+advanced analysis of the reponses. The function get_ups_status does
+this job.
+
+Note that MGE enumerates the status "bits" from right to left,
+i.e., if buf[] contains the reponse to command "Ss" (read system
+status), then buf[0] contains "bit" Ss.1.7 (General alarm), while
+buf[7] contains "bit" Ss.1.0 (Load unprotected). 
+
+enable_ups_comm() is called before each attempt to read/write data
+from/to the UPS to re synchronise the communication.
+
+.SH KNOWN ISSUES
+.SS "Repetitive stale status \(hy Loss of communication"
+
+Older models, such as ES/ESV ones, might report repetitive "data stale"
+errors. This is due to the fact that these models doesn't support too
+much polling. To solve this problem, add "pollinterval=20" in ups.conf,
+and change the value of MAXAGE to 25 in upsd.conf, and DEADTIME to 25
+in upsmon.conf.
+
+.SH TODO LIST
+
+.IP "Sort out OFF/OL issues"
+OFF is set according to Ls.2.7, but maybe this interpretation is in
+conflict with the NUT interpretation of the OFF flag?
+
+.IP "Add PowerShare / PowerSave support (selectable plug number for commands)"
+ON/OFF/REBOOT commands can act either on outlet 1, 2 or main (1 + 2). This
+features depends on the UPS model. This would also allow to support
+UM\(hySwitch (smart outlet).
+
+.IP "Enhance the model name exposure"
+A table, named Si1_models_names, has been created to format finelly the
+UPSs model names, but it is not yet being used.
+
+.SH AUTHORS
+Arnaud Quette, Hans Ekkehard Plesser, Martin Loyer, Patrick Agrain,
+Nicholas Reilly, Dave Abbott, Marek Kralewski
+
+.SH SEE ALSO
+
+.SS The core driver:
+\fBnutupsdrv\fR(8)
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

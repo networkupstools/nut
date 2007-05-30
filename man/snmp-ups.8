@@ -1,0 +1,89 @@
+.TH snmp\-ups 8 "Fri Jan 19 2007" "" "Network UPS Tools (NUT)"
+.SH NAME
+snmp\(hyups \- Multi\(hyMIB Driver for SNMP UPS equipment
+.SH NOTE
+This man page only documents the hardware\(hyspecific features of the
+snmp\(hyups driver.  For information about the core driver, see
+\fBnutupsdrv\fR(8).
+
+.SH SUPPORTED HARDWARE
+The new snmp\(hyups driver supports a wide range of devices by loading various MIBS:
+.IP "ietf:"
+UPS that is RFC 1628 (UPS MIB) compliant, ie MGE UPS SYSTEMS, Liebert, perhaps others (default)
+.IP "mge:"
+MGE UPS SYSTEMS devices with SNMP cards (ref 66062, 66045, 66074 and 66244)
+.IP "apcc:"
+APC AP9606 APC Web/SNMP management card, perhaps others
+.IP "netvision:"
+Socomec Sicon UPS with Netvision Web/SNMP management card/external box
+.IP "pw:"
+Powerware devices with ConnectUPS SNMP cards
+
+.SH EXTRA ARGUMENTS
+
+This driver supports the following optional settings in the
+\fBups.conf\fR(5):
+
+.IP "mibs=\fIname\fR"
+Set MIB compliance (default=auto, allowed ietf,mge,apcc,netvision,pw).
+With auto the driver will try a select set of objets untill it finds one
+that the device responds to.
+
+.IP "community=\fIname\fR"
+Set community name (default = public).
+Note that you require a RW community name to perform UPS settings (as for a powerdown).
+
+.IP "snmp_version=\fIversion\fR"
+Set SNMP version (default = v1, the other allowed value is v2c)
+
+.IP "pollfreq=\fIvalue\fR"
+Set polling frequency in seconds, to reduce network flow (default=30)
+
+.IP "notransferoids"
+Disable the monitoring of the low and high voltage transfer OIDs in
+the hardware.  This will remove input.transfer.low and input.transfer.high
+from the list of variables.  This should only be used on APCC Symmetra
+equipment which has strangeness in the three\(hyphase power reporting.
+
+.SH REQUIREMENTS
+You will need to install the Net\(hySNMP package from 
+http://www.net\(hysnmp.org/ before building this driver.
+
+.SH EXPERIMENTAL DRIVER
+This driver has been tagged experimental, even if it has been reported
+to be stable. Thus it is not suitable for production systems and it is
+not built by default. This is mainly due to the fact that there is still
+no proper upsdrv_shutdown() function implemented !
+
+.SH INSTALLATION
+This driver is not built by default.  You can build it by using
+"configure \-\-with\-snmp=yes" before calling make.
+
+.SH IMPLEMENTATION
+The hostname of the UPS is specified with the "port" value in
+\fBups.conf\fR, i.e.:
+
+.nf
+	[snmp]
+		driver = snmp\-ups
+		port = snmp\-ups.example.com
+		community = public
+		snmp_version = v1
+		mibs = ietf
+		pollfreq = 15
+.fi
+
+.SH AUTHORS
+.SS Sponsored by MGE UPS SYSTEMS <http://opensource.mgeups.com/>
+Arnaud Quette, Dmitry Frolov
+
+.SH SEE ALSO
+
+.SS The core driver:
+\fBnutupsdrv\fR(8)
+
+.SS NUT SNMP Protocols Library
+Available at: http://random.networkupstools.org/protocols/snmp/
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

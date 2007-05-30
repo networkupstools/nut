@@ -1,0 +1,134 @@
+.TH UPS.CONF 5 "Sun Aug 24 2003" "" "Network UPS Tools (NUT)" 
+.SH NAME
+ups.conf \- UPS definitions for Network UPS Tools
+
+.SH DESCRIPTION
+
+This file is read by the driver controller upsdrvctl, the UPS drivers
+that use the common core (see \fBnutupsdrv\fR(8)) and \fBupsd\fR(8).
+The file begins with global directives, and then each UPS has a
+section which contains a number of directives that set parameters for
+that UPS.
+
+A UPS section begins with the name of the ups in brackets, and continues
+until the next UPS name in brackets or until EOF.  The name "default" is
+used internally in upsd, so you can't use it in this file.
+
+You must define the "driver" and "port" elements for each entry.  Anything
+after that in a section is optional.  A simple example might look like
+this:
+
+.IP
+.nf
+	[myups]
+		driver = megatec
+		port = /dev/ttyS0
+		desc = "Web server UPS"
+.fi
+.LP
+
+A slightly more complicated version includes some extras for the
+hardware\(hyspecific part of the driver:
+
+.IP
+.nf
+	[bigups]
+		driver = apcsmart
+		port = /dev/cua00
+		cable = 940\-0095B
+		sdtype = 2
+		desc = "Database server UPS"
+.fi
+.LP
+
+In this case, the \fBapcsmart\fR(8) driver will receive variables called
+"cable" and "sdtype" which have special meanings.  See the man pages of
+your driver(s) to learn which variables are supported and what they do.
+
+.SH GLOBAL DIRECTIVES
+
+.IP chroot
+Optional.  The driver will \fBchroot\fR(2) to this directory during
+initialization.  This can be useful when securing systems.
+
+.IP driverpath
+Optional.  Path name of the directory in which the UPS driver executables
+reside.  If you don't specify this, the programs look in a built\(hyin default
+directory, which is often /usr/local/ups/bin.
+
+.IP maxstartdelay
+Optional.  Same as the UPS field of the same name, but this is the
+default for UPSes that don't have the field.
+
+.IP pollinterval
+Optional.  The status of the UPS will be refreshed after a maximum
+delay which is controlled by this setting.  This is normally 2 seconds.
+This may be useful if the driver is creating too much of a load on your
+system or network.
+
+.IP user
+Optional.  If started as root, the driver will \fBsetuid\fR(2) to the 
+user id associated with \fIusername\fR.
+
+.SH UPS FIELDS
+.IP driver
+Required.  This specifies which program will be monitoring this UPS.  You
+need to specify the one that is compatible with your hardware.  See
+\fBnutupsdrv\fR(8) for more information on drivers in general and pointers
+to the man pages of specific drivers.
+
+.IP port
+Required.  This is the serial port where the UPS is connected.  On a Linux
+system, the first serial port usually is /dev/ttyS0.  On FreeBSD and
+similar systems, it probably will be /dev/cuaa0.
+
+.IP sdorder
+Optional.  When you have multiple UPSes on your system, you usually need
+to turn them off in a certain order.  upsdrvctl shuts down all the 0s,
+then the 1s, 2s, and so on.  To exclude a UPS from the shutdown sequence,
+set this to \-1.
+
+The default value for this parameter is 0.
+
+.IP desc
+Optional.  This allows you to set a brief description that upsd will
+provide to clients that ask for a list of connected equipment.
+
+.IP nolock
+Optional.  When you specify this, the driver skips the port locking
+routines every time it starts.  This may allow other processes to seize
+the port if you start more than one accidentally.
+.IP
+You should only use this if your system won't work without it.
+.IP
+This may be needed on Mac OS X systems.
+
+.IP maxstartdelay
+Optional.  This can be set as a global variable above your first UPS
+definition and it can also be set in a UPS section.  This value controls
+how long upsdrvctl will wait for the driver to finish starting.  This
+keeps your system from getting stuck due to a broken driver or UPS.
+.IP
+The default is 45 seconds.
+.LP
+
+All other fields are passed through to the hardware\(hyspecific part of the
+driver.  See those manuals for the list of what is allowed.
+
+.SH INTEGRATION
+
+\fBupsdrvctl\fR(8) uses this file to start and stop the drivers.
+
+The drivers themselves also obtain configuration data from this file.
+Each driver looks up its section and uses that to configure itself.
+
+\fBupsd\fR(8) learns about which UPSes are installed on this system by
+reading this file.  If this system is called "doghouse" and you have
+defined a UPS in your ups.conf called "snoopy", then you can monitor it
+from \fBupsc\fR(8) or similar as "snoopy@doghouse".
+
+.SH SEE ALSO
+\fBupsd\fR(8), \fBnutupsdrv\fR(8), \fBupsdrvctl\fR(8)
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

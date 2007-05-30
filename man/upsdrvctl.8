@@ -1,0 +1,86 @@
+.TH UPSDRVCTL 8 "Sat Jan 31 2004" "" "Network UPS Tools (NUT)"
+.SH NAME
+upsdrvctl \- UPS driver controller
+.SH SYNOPSIS
+.B upsdrvctl \-h
+
+.B upsdrvctl [OPTIONS] {start | stop | shutdown} [\fIups\fB]
+
+.SH DESCRIPTION
+
+upsdrvctl provides a uniform interface for controlling your UPS drivers.
+You should use upsdrvctl instead of direct calls to the drivers
+whenever possible.
+
+When used properly, upsdrvctl lets you maintain identical startup
+scripts across multiple systems with different UPS configurations.
+
+.SH OPTIONS
+
+.IP \-h
+Display the help message.
+
+.IP "\-r \fIdirectory\fR"
+If starting a driver, this value will direct it to \fBchroot\fR(2) into
+\fIdirectory\fR.  This can be useful when securing systems.
+
+This may be set in the ups.conf with "chroot" in the global section.
+
+.IP \-t
+Enable testing mode.  This also enables debug mode.  Testing mode makes
+upsdrvctl display the actions it would execute without actually doing them.
+Use this to test out your configuration without actually doing anything
+to your UPS drivers.  This may be helpful when defining the 'sdorder'
+directive in your \fBups.conf\fR(5).
+
+.IP "\-u \fIusername\fR"
+If starting a driver, this value will direct it to \fBsetuid\fR(2) to
+the user id associated with \fIusername\fR.
+
+If the driver is started as root without specifying this value, it will
+use the username that was compiled into the binary.  This defaults to
+"nobody", and is far from ideal.
+
+This may be set in ups.conf with "user" in the global section.
+
+.IP "\-D"
+Raise the debug level.  Use this multiple times for additional details.
+
+.SH COMMANDS
+
+upsdrvctl supports three commands \(hy start, stop and shutdown.  They take
+an optional argument which is a UPS name from \fBups.conf\fR(5).
+Without that argument, they operate on every UPS that is currently
+configured.
+
+.IP start
+Start the UPS driver(s).
+
+.IP stop
+Stop the UPS driver(s).
+
+.IP shutdown
+Command the UPS driver(s) to run their shutdown sequence.  Drivers are
+stopped according to their sdorder value \(hy see \fBups.conf\fR(5).
+
+WARNING: this will probably power off your computers, so don't
+play around with this option.  Only use it when your systems are prepared
+to lose power.
+
+.SH ENVIRONMENT VARIABLES
+\fBNUT_CONFPATH\fR is the path name of the directory that contains 
+\fBups.conf\fR.  If this variable is not set, \fBupsdrvctl\fR and the 
+driver use a built\(hyin default, which is often \fB/usr/local/ups/etc\fR.
+
+.SH DIAGNOSTICS
+
+upsdrvctl will return a nonzero exit code if it encounters an error
+while performing the desired operation.  This will also happen if a
+driver takes longer than the \fImaxstartdelay\fR period to enter the
+background.
+
+.SH SEE ALSO
+\fBnutupsdrv\fR(8), \fBupsd\fR(8) \fBups.conf\fR(5)
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

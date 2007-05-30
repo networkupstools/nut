@@ -1,0 +1,176 @@
+Desc: How to make a new subdriver to support another USB/HID UPS
+File: hid-subdrivers.txt
+Date: 08 January 2007
+Auth: Peter Selinger <selinger@users.sourceforge.net>
+
+Overall concept
+===============
+
+USB (Universal Serial Port) devices can be divided into several
+different classes (audio, imaging, mass storage etc). Almost all UPS
+devices belong to the "HID" class, which means "Human Interface
+Device", and also includes things like keyboards and mice. What HID
+devices have in common is a particular (and very flexible) interface
+for reading and writing information (such as x/y coordinates and
+button states, in case of a mouse, or voltages and status information,
+in case of a UPS).
+
+The Nut "usbhid-ups" driver is a meta-driver that handles all HID UPS
+devices. It consists of a core driver that handles most of the work of
+talking to the USB hardware, and several sub-drivers to handle
+specific UPS manufacturers (MGE, APC, and Belkin are currently
+supported).  Adding support for a new HID UPS device is easy, because
+it requires only the creation of a new sub-driver.
+
+There are a few USB UPS devices that are not HID devices. These
+devices typically implement some version of the manufacturer's serial
+protocol over USB (which is a really dumb idea, by the way). An
+example is the Tripplite USB. Such devices are *not* supported by the
+usbhid-ups driver, and are not covered in this document. If you need to
+add support for such a device, read new-drivers.txt and see the
+tripplite_usb driver for inspiration.
+
+HID Usage Tree
+==============
+
+From the point of view of writing a HID subdriver, a HID device
+consists of a bunch of variables.  Some variables (such as the current
+input voltage) are read-only, whereas other variables (such as the
+beeper on/off status) can be read and written. These variables are
+usually grouped together and arranged in a hierarchical tree shape,
+similar to directories in a file system. This tree is called the
+"usage" tree. For example, here is part of the usage tree for a
+typical APC device. Variable components are separated by ".". Typical
+values for each variable are also shown for illustrative purposes.
+
+UPS.Battery.Voltage            11.4 V
+UPS.Battery.ConfigVoltage      12 V
+UPS.Input.Voltage              117 V
+UPS.Input.ConfigVoltage        120 V
+UPS.AudibleAlarmControl        2 (=on)
+UPS.PresentStatus.Charging     1 (=yes)
+UPS.PresentStatus.Discharging  0 (=no)
+UPS.PresentStatus.ACPresent    1 (=yes)
+
+As you can see, variables that describe the battery status might be
+grouped together under "Battery", variables that describe the input
+power might be grouped together under "Input", and variables that
+describe the current UPS status might be grouped together under
+"PresentStatus". All of these variables are grouped together under
+"UPS".
+
+This hierarchical organization of data has the advantage of being very
+flexible; for example, if some device has more than one battery, then
+similar information about each battery could be grouped under
+"Battery1", "Battery2" and so forth. If your UPS can also be used as a
+toaster, then information about the toaster function might be grouped
+under "Toaster", rather than "UPS".
+
+However, the disadvantage is that each manufacturer will have their
+own idea about how the usage tree should be organized, and usbhid-ups
+needs to know about all of them. This is why manufacturer specific
+subdrivers are needed.
+
+To make matters more complicated, usage tree components (such as
+"UPS", "Battery", or "Voltage") are internally represented not as
+strings, but as numbers (called "usages" in HID terminology). These
+numbers are defined in the "HID Usage Tables", available from
+http://www.usb.org/developers/hidpage/.  The standard usages for UPS
+devices are defined in a document called "Usage Tables for HID Power
+Devices".
+
+For example,
+
+ 0x00840010 = UPS
+ 0x00840012 = Battery
+ 0x00840030 = Voltage
+ 0x00840040 = ConfigVoltage
+ 0x0084001a = Input
+ 0x0084005a = AudibleAlarmControl
+ 0x00840002 = PresentStatus
+ 0x00850044 = Charging 
+ 0x00850045 = Discharging
+ 0x008500d0 = ACPresent
+
+Thus, the above usage tree is internally represented as
+
+00840010.00840012.00840030
+00840010.00840012.00840040
+00840010.0084001a.00840030
+00840010.0084001a.00840040
+00840010.0084005a
+00840010.00840002.00850044
+00840010.00840002.00850045
+00840010.00840002.008500d0
+
+To make matters worse, most manufacturers define their own additional
+usages, even in cases where standard usages could have been used. for
+example Belkin defines 00860040 = ConfigVoltage (which is incidentally
+a violation of the USB specification, as 00860040 is reserved for
+future use).
+
+Thus, subdrivers generally need to provide: 
+
+- manufacturer-specific usage definitions,
+- a mapping of HID variables to NUT variables.
+
+Moreover, subdrivers might have to provide additional functionality,
+such as custom implementations of specific instant commands (load.off,
+shutdown.restart), and conversions of manufacturer specific data
+formats.
+
+Writing a subdriver
+===================
+
+In preparation for writing a subdriver for a device that is currently
+unsupported, run usbhid-ups with the following command line:
+
+ drivers/usbhid-ups -DD -u root -x explore -x vendorid=XXXX auto
+
+(substitute your device's 4-digit VendorID instead of "XXXX"). 
+This will produce a bunch of debugging information, including a number 
+of lines starting with "Path:" that describe the device's usage tree. 
+This information forms the initial basis for a new subdriver. 
+
+You should save this information to a file, e.g. 
+ drivers/usbhid-ups -DD -u root -x explore -x vendorid=XXXX auto >& /tmp/info
+
+You can create an initial "stub" subdriver for your device by using
+script scripts/subdriver/path-to-subdriver.sh. Note: this only creates
+a "stub" and needs to be futher customized to be useful (see
+CUSTOMIZATION below).
+
+Use the script as follows:
+
+ scripts/subdriver/path-to-subdriver.sh < /tmp/info
+
+where /tmp/info is the file where you previously saved the debugging
+information.
+
+This script prompts you for a name for the subdriver; use only letters
+and digits, and use natural capitalization such as "Belkin" (not
+"belkin" or "BELKIN"). The script may prompt you for additional
+information.
+
+You should put the generated files into the drivers/ subdirectory, and
+update usbhid-ups.c by adding the appropriate #include line and by
+updating the definition of subdriver_list in usbhid-ups.c. You must
+also add the subdriver to USBHID_UPS_SUBDRIVERS in drivers/Makefile.am
+and call "autoreconf" and/or "./configure" from the top level NUT directory.
+You can then recompile usbhid-ups, and start experimenting with the new
+subdriver.
+
+CUSTOMIZATION: The initially generated subdriver code is only a stub,
+and will not implement any useful functionality (in particular, it
+will be unable to shut down the UPS). In the beginning, it simply
+attempts to monitor some UPS variables. To make this driver useful,
+you must examine the NUT variables of the form "unmapped.*" in the
+hid_info_t data structure, and map them to actual NUT variables and
+instant commands. There are currently no step-by-step instructions for
+how to do this. Please look at the files
+
+mge-hid.c/h
+apc-hid.c/h
+belkin-hid.c/h
+
+to see how the currently implemented subdrivers are written.

@@ -1,0 +1,21 @@
+--- nut-2.0.5/lib/libupsclient-config.in.orig	2007-03-26 14:47:39.000000000 +0200
++++ nut-2.0.5/lib/libupsclient-config.in	2007-03-26 14:47:29.000000000 +0200
+@@ -10,9 +10,17 @@
+ Version="@NUT_VERSION@"
+ prefix=@prefix@
+ exec_prefix=@exec_prefix@
+-Libs="-L@libdir@ @UPSCLI_LIBOBJ@ @SSL_LDFLAGS@"
+ Cflags="-I@includedir@ @SSL_CFLAGS@"
+ 
++arch=$(/bin/arch)
++if [ "$arch" = "x86_64" -o "$arch" = "s390x" -o "$arch" = "ppc64" -o "$arch" = "ia64" ] ; then
++    libdir="/usr/lib64"
++else
++    libdir="/usr/lib"
++fi
++
++Libs="-L$libdir @UPSCLI_LIBOBJ@ @SSL_LDFLAGS@"
++
+ case "$1" in
+ 
+   --cflags)

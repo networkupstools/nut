@@ -1,0 +1,56 @@
+.TH AL175 8 "Wed Sep 21 2005" "" "Network UPS Tools (NUT)" 
+.SH NAME  
+al175 \- Driver for Eltek UPS models with AL175 alarm module
+.SH NOTE
+This man page only documents the hardware\(hyspecific features of the
+al175 driver. For information about the core driver, see  
+\fBnutupsdrv\fR(8).
+
+.SH SUPPORTED HARDWARE
+The al175 driver is known to work with the following UPSes:
+
+    Eltek MPSU4000 with AL175 alarm module
+
+It may also work with other UPSes equiped with AL175 alarm module,
+but they haven't been tested.
+
+
+AL175 have to be configured to operate in COMLI mode.
+See documentation supplied with your hardware on how to do it.
+
+.SH EXTRA ARGUMENTS
+
+This driver does not support any extra settings in the    
+\fBups.conf\fR(5).
+
+.SH UPS COMMANDS
+
+This driver supports some extra commands (see \fBupscmd\fR(8)):
+
+.IP "test.battery.start"
+Start a battery test.
+
+.IP "test.battery.stop"
+Stop a battery test.
+
+.SH USER VARIABLES
+'''
+'''The behavior of the driver can be controlled by some user definable
+'''variables (see \fBupsrw\fR(8)):
+
+None
+
+.SH BUGS
+
+No known bugs at the moment.
+
+.SH AUTHOR
+Kirill Smelkov <kirr@mns.spb.ru>
+
+.SH SEE ALSO
+
+.SS The core driver:
+\fBnutupsdrv\fR(8)
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

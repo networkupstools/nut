@@ -1,0 +1,54 @@
+Desc: Typical setups for data rooms
+File: data-room.txt
+Date: 27 May 2002
+Auth: Russell Kroll <rkroll@exploits.org>
+
+The split nature of this UPS monitoring software allows a wide variety of
+power connections.  This document will help you identify how things should
+be configured using some general descriptions.
+
+There are two main elements:
+
+1. There's a UPS attached to a serial port on this system.
+2. This system depends on a UPS for power.
+
+You can play "mix and match" with those two to arrive at these descriptions
+for individual hosts:
+
+A: 1 but not 2
+B: 2 but not 1
+C: 1 and 2
+
+A small to medium sized data room usually has one C and a bunch of Bs.
+This means that there's a system (type C) hooked to the UPS which depends
+on it for power.  There are also some other systems in there (type B) 
+which depend on that same UPS for power, but aren't directly connected to
+it.
+
+Larger data rooms or those with multiple UPSes may have several "clusters"
+of the "single C, many Bs" depending on how it's all wired.
+
+Finally, there's a special case.  Type A systems are connected to a UPS's
+serial port, but don't depend on it for power.  This usually happens when
+a UPS is physically close to a box and can reach the serial port, but 
+the wiring is such that it doesn't actually feed it.
+
+Once you identify a system's type, use this list to decide which of the
+programs need to be run for monitoring:
+
+A: driver and upsd
+B: upsmon (as slave)
+C: driver, upsd, and upsmon (as master)
+
+To further complicate things, you can have a system that is hooked to
+multiple UPSes, but only depends on one for power.  This particular
+situation makes it an "A" relative to one UPS, and a "C" relative to the
+other.  The software can handle this - you just have to tell it what to
+do.
+
+Multi-power supply boxes
+========================
+
+If you are running large server-class systems that have more than one
+power feed, see big-servers.txt for information on how to handle it
+properly.

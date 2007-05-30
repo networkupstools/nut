@@ -1,0 +1,38 @@
+Network UPS Tools - CGI Interface - Quick Start for Debian
+----------------------------------------------------------
+
+(I) Upgrading
+=============
+
+When upgrading from 1.4 or older release to 2.0 or newer
+release, you will need to apply the Installation procedure
+below.
+
+(II) Installation
+=================
+
+1) Copy example files from /usr/share/doc/nut-cgi/examples
+to /etc/nut, and edit hosts.conf, and optionaly upsset.conf,
+files to match your configuration.
+
+2) Ensure these configuration files are readable by others
+
+      chmod 766 /etc/nut
+      chmod 644 /etc/nut/upsset.conf
+      chmod 644 /etc/nut/hosts.conf
+      chmod 644 /etc/nut/upsstats.html
+      chmod 644 /etc/nut/upsstats-single.html
+
+3) You will then be able to access NUT CGI through a Web
+browser. The URL, which depends on your httpd
+configuration, is:
+
+      http://localhost/cgi-bin/nut/upsstats.cgi
+
+
+For more information on nut-cgi configuration,
+have a look at the following manual pages:
+- upsstats.html (5)
+- hosts.conf (5)
+- upsset.conf (5)
+

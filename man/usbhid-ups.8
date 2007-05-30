@@ -1,0 +1,145 @@
+.TH USBHID-UPS 8 "Fri Feb 16 2007" "" "Network UPS Tools (NUT)"
+.SH NAME
+usbhid-ups \- Driver for USB/HID UPS equipment
+.SH NOTE
+This man page only documents the hardware\(hyspecific features of the
+usbhid-ups driver.  For information about the core driver, see
+\fBnutupsdrv\fR(8).
+
+This driver replaces the legacy hidups driver, which only supported
+Linux systems, and was formerly called newhidups.
+
+.SH SUPPORTED HARDWARE
+.B usbhid-ups
+brings USB/HID UPS monitoring to NUT on all platform supporting USB
+through libusb.It should detect any UPS that uses the HID power device
+class, but the amount of data will vary depending on the manufacturer
+and model.
+
+At the present time, usbhid-ups supports:
+
+    all MGE UPS SYSTEMS USB models,
+    some APC models,
+    some Belkin models,
+    some Cyber Power Systems models.
+
+For a more complete list, refer to the NUT hardware compatibility list,
+available in the source distribution as data/drivers.list, or on the
+NUT website. You may use the "explore" driver option to gather
+information from HID UPSes which are not yet supported; see below for
+details.
+
+This driver is known to work on:
+
+    most Linux systems,
+    FreeBSD (beta stage) and maybe other *BSD,
+    Solaris 10 (not yet validated).
+
+.SH EXTRA ARGUMENTS
+This driver also supports the following optional settings:
+
+.IP "offdelay=\fInum\fR"
+Set the timer before the UPS is turned off after the kill power command is
+sent (via the \fB\-k\fR switch).
+The default value is 20 (in seconds), and MUST BE LOWER than ondelay.
+ 
+.IP "ondelay=\fInum\fR"
+Set the timer for the UPS to switch on in case the power returns after the
+kill power command had been sent but before the actual switch off. This
+ensures the machines connected to the UPS are, in all cases, rebooted after
+a power failure.
+The default value is 30 (in seconds), and MUST BE GREATER than offdelay.
+
+.IP "pollfreq=\fInum\fR"
+Set polling frequency, in seconds, to reduce the USB data flow.
+Between two polling requests, the driver will wait for interrupts (aka UPS
+notifications), which are data changes returned by the UPS by itself.
+This mechanism allow to avoid or reduce staleness message, due to the UPS
+being temporarily overloaded with too much polling requests.
+The default value is 30 (in seconds).
+
+.IP "vendor=\fIregex\fR"
+.IP "product=\fIregex\fR"
+.IP "serial=\fIregex\fR"
+.IP "vendorid=\fIregex\fR"
+.IP "productid=\fIregex\fR"
+
+Select a specific UPS, in case there is more than one connected via
+USB. Each option specifies an extended regular expression (see
+\fBregex(7)\fR) that must match the UPS's entire vendor/product/serial
+string (minus any surrounding whitespace), or the whole 4-digit
+hexadecimal code for vendorid and productid. Try \fB-DD\fR for
+finding out the strings to match.
+
+Examples: 
+
+    \fB-x vendor="Foo.Corporation.*"\fR
+
+    \fB-x vendorid=051d\fR (APC)
+
+    \fB-x product=".*(Smart|Back)-?UPS.*"\fR
+
+.IP "bus=\fIregex\fR"
+
+Select a UPS on a specific USB bus or group of busses. The argument is
+a regular expression that must match the bus name where the UPS is
+connected (e.g. bus="002", bus="00[2-3]"). 
+
+.IP "explore"
+With this option, the driver will connect to any device, including
+ones that are not yet supported. This must always be combined with the
+"vendorid" option. In this mode, the driver will not do anything
+useful except for printing debugging information (typically used with
+\fB-DD\fR).
+
+.SH INSTALLATION
+This driver is not built by default.  You can build it by using
+"configure \-\-with\-usb=yes". Note that it will also install other USB
+drivers.
+
+You also need to install manually the legacy hotplug files (libhidups
+and libhid.usermap, generally in /etc/hotplug/usb/), or the udev file
+(nut-usbups.rules, generally in /etc/udev/rules.d/)to address the
+permission settings problem. For more information, refer to the README
+file in nut/scripts/hotplug or nut/scripts/udev.
+
+On Linux with MGE equipment, you will need at least a 2.4.25 or 2.6.2 kernel as
+well as libusb-0.1.8 or later to disable hiddev support and avoid conflict.
+
+
+.SH IMPLEMENTATION
+The driver ignores the "port" value in \fBups.conf\fR. Unlike previous
+versions of this driver, it is now possible to control multiple UPS
+units simultaneously with this driver. They can be distinguished by
+setting some combination of the "vendor", "product", "serial",
+"vendorid", and "productid" options. For instance:
+
+.nf
+	[mge]
+		driver = usbhid-ups
+		port = auto
+		vendorid = 0463
+	[tripplite]
+		driver = usbhid-ups
+		port = auto
+		vendorid = 09ae
+.fi
+
+.SH KNOWN ISSUES AND BUGS
+.SS "Got EPERM: Operation not permitted upon driver startup"
+
+You have forgotten to install the hotplug files, as explained
+in the INSTALLATION section above. Don't forget to restart
+hotplug so that it applies these changes.
+
+.SH AUTHORS
+.SS Sponsored by MGE UPS SYSTEMS <http://opensource.mgeups.com/>
+Arnaud Quette, Peter Selinger
+
+.SH SEE ALSO
+
+.SS The core driver:
+\fBnutupsdrv\fR(8)
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

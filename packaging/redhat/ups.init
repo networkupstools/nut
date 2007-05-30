@@ -1,0 +1,120 @@
+#! /bin/bash
+#
+# chkconfig: - 26 74
+# description: Network UPS Tools is a collection of programs which provide a common \
+# interface for monitoring and administering UPS hardware.
+
+# processname: upsd
+# config: /etc/ups/
+
+# Source function library.
+if [ -f /etc/init.d/functions ]; then
+	. /etc/init.d/functions
+elif [ -f /etc/rc.d/init.d/functions ]; then
+	. /etc/rc.d/init.d/functions
+else
+	exit 0
+fi
+
+# Get config.
+if [ -f /etc/sysconfig/ups ]; then
+	. /etc/sysconfig/ups
+else
+	SERVER="no"
+fi
+
+start() {
+	if [ "$SERVER" = "yes" ]; then
+		# Exit if server = yes and model = NONE (not configured)
+
+		if [ "$MODEL" = "NONE" ]; then 
+			exit 0
+		fi
+
+		echo -n $"Starting $MODEL: "
+		if [ "$MODEL" = "upsdrvctl" ]; then
+			daemon /sbin/upsdrvctl start
+		else
+			daemon /sbin/$MODEL $OPTIONS $DEVICE 
+		fi
+		echo
+
+		prog="upsd"
+		echo -n $"Starting $prog: "
+		daemon /usr/sbin/upsd $UPSD_OPTIONS
+		RETVAL=$?
+		echo
+
+		echo -n $"Starting UPS monitor (master): "
+		daemon /usr/sbin/upsmon
+		echo
+	else
+		echo -n $"Starting UPS monitor (slave): "
+		daemon /usr/sbin/upsmon
+		echo
+	fi
+
+	[ "$RETVAL" = 0 ] && touch /var/lock/subsys/ups
+}
+
+stop() {
+	echo -n $"Stopping UPS monitor: "
+	killproc upsmon
+	echo
+
+	if [ "$SERVER" = "yes" ]; then
+		prog="upsd"
+		echo -n $"Stopping $prog: "
+		killproc upsd
+		RETVAL=$?
+		echo
+
+		echo -n $"Shutting down $MODEL: "
+		if [ "$MODEL" = "upsdrvctl" ]; then
+			/sbin/upsdrvctl stop
+		else
+			killproc $MODEL
+		fi
+		echo
+	fi
+	[ "$RETVAL" = 0 ] && rm -f /var/lock/subsys/ups
+}
+
+restart() {
+	stop
+	start
+}
+
+# See how we are called.
+case "$1" in
+	start)
+		start ;;
+
+	stop)
+		stop ;;
+
+	restart)
+		restart ;;
+
+	condrestart)
+		[ -f /var/lock/subsys/ups ] && restart || :
+		;;
+
+	status)
+		if [ "$SERVER" = "yes" ]; then
+			if [ "$MODEL" = "upsdrvctl" ]; then
+				/sbin/upsdrvctl -v status
+			else
+				status $MODEL
+			fi
+			status upsd
+		fi
+		status upsmon
+		;;
+
+	*)
+		echo $"Usage: $0 {start|stop|restart|condrestart|status}"
+		exit 1
+esac
+
+exit $RETVAL

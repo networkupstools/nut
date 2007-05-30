@@ -1,0 +1,374 @@
+Desc: Information for developers
+File: developers.txt
+Date: 18 February 2004
+Auth: Russell Kroll <rkroll@exploits.org>
+
+This document is intended to explain some of the more useful things
+within the tree and provide a standard for working on the code.
+
+General stuff - common subdirectory
+===================================
+
+String handling
+---------------
+
+Use snprintf.  It's even provided with a compatibility module if the
+target host doesn't have it natively.  
+
+If you use snprintf to load some value into a buffer, make sure you
+provide the format string.  Don't use user-provided format strings,
+since that's an easy way to open yourself up to an exploit.
+
+Don't use strcat.  We have a neat wrapper for snprintf called snprintfcat
+that allows you to append to char * with a format string and all the usual
+string length checking of snprintf.
+
+Error reporting
+---------------
+
+Don't call syslog() directly.  Use upslog_with_errno() and upslogx().
+They may write to the syslog, stderr, or both as appropriate.  This
+means you don't have to worry about whether you're running in the
+background or not.
+
+upslog_with_errno prints your message plus the string expansion of
+errno.  upslogx just prints the message.
+
+fatal_with_errno and fatalx work the same way, but they
+exit(EXIT_FAILURE) afterwards. Don't call exit() directly.
+
+Debugging information
+---------------------
+
+upsdebug_with_errno(), upsdebugx() and upsdebug_hex() use the
+global nut_debug_level so you don't have to mess around with
+printfs yourself.  Use them.
+
+Memory allocation
+-----------------
+
+xmalloc, xcalloc, xrealloc and xstrdup all check the results of the base
+calls before continuing, so you don't have to.  Don't use the raw calls
+directly.
+
+Config file parsing
+-------------------
+
+The configuration parser, called parseconf, is now up to its fourth
+major version.  It has multiple entry points, and can handle many
+different jobs.  It's usually used for parsing files, but it can also
+take input a line at a time or even a character at a time.
+
+You must initialize a context buffer with pconf_init before using any
+other parseconf function.  pconf_encode is the only exception, since it
+operates on a buffer you supply and is an auxiliary function.
+
+Escaping special characters and quoting multiple-word elements is all
+handled by the state machine.  Using the same code for all config files
+avoids code duplication.
+
+Note: this does not apply to drivers.  Driver authors should use the
+upsdrv_makevartable() scheme to pick up values from ups.conf.  Drivers
+should not have their own config files.
+
+Drivers may have their own data files, such as lists of hardware,
+mapping tables, or similar.  The difference between a data file and a
+config file is that users should never be expected to edit a data file
+under normal circumstances.  This technique might be used to add more
+hardware support to a driver without recompiling.
+
+<time.h> vs. <sys/time.h>
+-------------------------
+
+This is already handled by autoconf, so just include "timehead.h" and you
+will get the right headers on every system.
+
+UPS drivers - main.c
+====================
+
+The UPS drivers use main.c as their core.  The only exception is
+dummycons, which only looks like a driver by using the same dstate
+function calls.
+
+To write a new driver, you create a file with a series of support
+functions that will be called by main.  These all have names that start
+with "upsdrv_", and they will be called at different times by main
+depending on what needs to happen.
+
+See new-drivers.txt for information on writing drivers, and also refer
+to the skeletal driver in skel.c.
+
+Portability
+===========
+
+Avoid things that will break on other systems.  All the world is not an
+x86 Linux box.
+
+There are still older systems out there that don't do C++ style comments.
+That means you have to comment /* like this */, and // this is right out.
+
+Newer versions of gcc allow you to declare a variable inside a function
+somewhat like the way C++ operates, like this:
+
+	function do_stuff(void)
+	{
+		check_something();
+
+		int a;
+
+		a = do_something_else();
+	}
+
+While this will compile and run on these newer versions, it will fail
+miserably for anyone on an older system.  That means you must not use
+it.  gcc only warns about this with -pedantic.
+
+Coding style
+============
+
+This is how I do things.
+
+int open_subspace(char *ship, int privacy)
+{
+	if (!privacy)
+		return insecure_channel(ship);
+
+	if (!init_privacy(ship))
+		fatal_with_errno("Can't open secure channel");
+
+	return secure_channel(ship);
+}
+
+(The example that used to be in this file wasn't particularly clear)
+
+The basic idea is that I try to group things into functions, and then
+find ways to drop out of them when we can't go any further.  There's
+another way to program this involving a big else chunk and a bunch of
+braces, and it can be hard to follow.  You can read this from top to
+bottom and have a pretty good idea of what's going on without having to
+track too much { } nesting and indenting.
+
+I don't really care for pretentiousVariableNamingSchemes, but you can
+probably get away with it in your own driver that I will never have to
+touch.  If your function or variable names start pushing important code
+off the right margin of the screen, expect them to meet the byte
+chainsaw sooner or later.
+
+All types defined with typedef should end in "_t", because this is
+easier to read, and it enables tools (such as indent and emacs) to
+display the source code correctly.
+
+Indenting with tabs vs. spaces
+------------------------------
+
+Another thing to notice is that the indenting happens with tabs instead
+of spaces.  This lets everyone have their personal tab-width setting
+without inflicting much pain on other developers.  If you use a space,
+then you've fixed the spacing in stone and have really annoyed half of
+the people out there.
+
+If you write something that uses spaces, you may get away with it in a
+driver that's relatively secluded.  However, if I have to work on that
+code, expect it to get reformatted according to the above.
+
+Patches to existing code that don't conform to the coding style being
+used in that file will probably be dropped.  If it's something we really
+need, it will be grudgingly reformatted before being included.
+
+When in doubt, have a look at Linus's take on this topic in the Linux
+kernel - Documentation/CodingStyle.  He's done a far better job of
+explaining this.
+
+Line breaks
+-----------
+
+It is better to have lines that are longer than 80 characters than to
+wrap lines in random places. This makes it easier to work with tools
+such as "grep", and it also lets each developer choose their own
+window size and tab setting without being stuck to one particular
+choice.
+
+Of course, this does not mean that lines should be made unnecessarily
+long when there is a better alternative (see the note on
+pretentiousVariableNamingSchemes above).  Certainly there should not
+be more than one statement per line. Please do not use
+
+	if (condition) break;
+
+but use the following:
+
+	if (condition) {
+		break;
+	}
+
+Miscellaneous coding style tools
+--------------------------------
+
+You can go a long way towards converting your source code to the NUT
+coding style by piping it through the following command:
+
+ indent -kr -i8 -T FILE -l1000 -nhnl
+
+This next command does a reasonable job of converting most C++ style
+comments (but not URLs and DOCTYPE strings):
+
+ sed 's#\(^\|[ \t]\)//[ \t]*\(.*\)[ \t]*#/* \2 */#'
+
+Emacs users can adjust how tabs are displayed. For example, it is
+possible to set a tab stop to be 3 spaces, rather than the usual 8.
+(Note that in the saved file, one indentation level will still
+correspond to one tab stop; the difference is only how the file is
+rendered on screen). It is even possible to set this on a
+per-directory basis, by putting something like this into your .emacs
+file:
+
+ ;; NUT style
+
+ (defun nut-c-mode ()
+  "C mode with adjusted defaults for use with the NUT sources."
+  (interactive)
+  (c-mode)
+  (c-set-style "K&R")
+  (setq c-basic-offset 3)  ;; 3 spaces C-indentation
+  (setq tab-width 3))      ;; 3 spaces per tab
+
+ ;; apply NUT style to all C source files in all subdirectories of nut/
+
+ (setq auto-mode-alist (cons '(".*/nut/.*\\.[ch]$". nut-c-mode)
+                        auto-mode-alist))
+
+Finishing touches
+-----------------
+
+I like code that uses const and static liberally.  If you don't need to
+expose a function or global variable to the outside world, static is
+your friend.  If nobody should edit the contents of some buffer that's
+behind a pointer, const keeps them honest.
+
+We always compile with -Wall, so things like const and static help you
+find implementation flaws.  Functions that attempt to modify a constant
+or access something outside their scope will throw a warning or even
+fail to compile in some cases.  This is what we want.
+
+Spaghetti
+---------
+
+If you use a goto, expect me to drop it when my head stops spinning.
+It gives me flashbacks to the BASIC code I wrote on the 8 bit systems of
+the 80s.  I've tried to clean up my act, and you should make the effort
+as well.  
+
+I'm not making a blanket statement about gotos, since everything
+probably has at least one good use.  There are a few cases where a goto
+is more efficient than any other approach, but you probably won't
+encounter them in this software.
+
+Hint: there *was* a good use of a goto in upsd until the 1.3 series.  At
+this point we are back to zero gotos since that code was replaced by
+another technique that doesn't need it.
+
+Legacy code
+-----------
+
+There are parts of the source tree that do not yet conform to these
+specs.  Part of this is due to the fact that the coding style has been
+evolving slightly over the course of the project.  Some of the code you
+see in these directories is 5 years old, and things have gotten cleaner
+since then.  Don't worry - it'll get cleaned up the next time something
+in the vicinity gets a visit.
+
+Memory leak checking
+--------------------
+
+I can't say enough good things about valgrind.  If you do anything with
+dynamic memory in your code, you need to use this.  Just compile with -g
+and start the program inside valgrind.  Run it through the suspected
+area and then exit cleanly.  valgrind will tell you if you've done
+anything dodgy like freeing regions twice, reading uninitialized memory,
+or if you've leaked memory anywhere.
+
+	http://valgrind.kde.org/
+
+Conclusion
+----------
+
+The summary: please be kind to my eyes.  There's a lot of stuff in here.
+
+Submitting patches
+==================
+
+Patches that arrive in unified format (diff -u) as plain text with no
+HTML, no attachments and a brief summary at the top are the easiest to
+handle. They show the context, explain what's going on, and get saved as
+one message.  Everything stays together until it's time to merge.
+
+Patches that arrive as attachments have to be moved around as separate
+files - the body of the message is one, and the patch is in another.
+This is not my preferred mode of operation.
+
+When sending patches to the lists, be sure to add me as an explicit
+recipient to make sure it is considered for merging.  A patch which only
+goes to a list is generally treated as a RFC and is relatively low
+priority.
+
+If your mailer is brain dead and rewrites tabs into spaces, wraps your
+patch body, or anything else like that, just attach the patch.  I'd
+rather deal with an attachment instead of a patch that has tab damage,
+rewrapped lines, or worse.
+
+Patch cohesion
+==============
+
+Patches should have some kind of unifying element.  One patch set is one
+message, and it should all touch similar things.  If you have to edit 6
+files to add support for neutrino detection in UPS hardware, that's
+fine.
+
+However, sending one huge patch that does massive separate changes
+all over the tree is not recommended.  That kind of patch has to be
+split up and evaluated separately, assuming I care enough to do that
+instead of just dropping it.
+
+If you have to make big changes in lots of places, send multiple
+patches - one per item.
+
+Man pages
+=========
+
+If you change something that involves an argument to a program or
+configuration file parsing, the man page is probably now out of date.
+If you don't update it, I have to, and I have enough to do as it is.
+
+If you write a new driver, send in the man page when you send me the
+source code for your driver.  Otherwise, I will be forced to write a
+skeletal man page that will probably miss many of the finer points of
+the driver and hardware.
+
+Repository etiquette and quality assurance
+==========================================
+
+Please keep the SVN trunk in working condition at all times. The trunk
+may be used to generate daily tarballs, and should not contain broken
+code if possible. If you need to commit incremental changes that leave
+the system in a broken state, please do so in a separate branch and
+merge the changes back to the trunk once they are complete.
+
+Before committing, please remember to:
+
+* update the ChangeLog, if appropriate. Dates are listed in UTC 
+  ("date --utc").
+
+* run "make distcheck-light". This checks that the Makefiles are not
+  broken, that all the relevant files are distributed, and that there
+  are no compilation or installation errors.
+
+Running "make distcheck-light" is especially important if you have
+added or removed files, or updated configure.in or some Makefile.am.
+Remember: simply adding a file to SVN does not mean it will be
+distributed. To distribute a file, you must update the corresponding
+Makefile.am.
+
+There is also "make distcheck", which runs an even stricter set of
+tests, but will not work unless you have all the optional libraries
+and features installed.
+

@@ -1,0 +1,97 @@
+.TH UPSLOG 8 "Mon Jan 22 2007" "" "Network UPS Tools (NUT)" 
+.SH NAME
+upslog \- UPS status logger
+.SH SYNOPSIS
+.B upslog \-h
+
+.B upslog [OPTIONS]
+
+.SH DESCRIPTION
+
+.B upslog
+is a daemon that will poll a UPS at periodic intervals, fetch the
+variables that interest you, format them, and write them to a file.
+
+The default format string includes variables that are supported by many
+common UPS models.  See the description below to make your own.
+
+.SH OPTIONS
+
+.IP \-h
+Display the help message.
+
+.IP "\-f \fIformat\fR"
+Monitor the UPS using this format string.  Be sure to enclose
+\fIformat\fR in quotes so your shell doesn't split it up. Valid escapes
+within this string are:
+
+%% \(hy insert a single %
+
+%TIME format% \(hy insert the time with strftime formatting
+
+%ETIME% \(hy insert the number of seconds, ala time_t.  This is now a 
+10 digit number.
+
+%HOST% \(hy insert the local hostname
+
+%UPSHOST% \(hy insert the host of the UPS being monitored
+
+%PID% \(hy insert the pid of upslog
+
+%VAR varname% \(hy insert the value of variable varname
+
+The default format string is:
+
+%TIME @Y@m@d @H@M@S% %VAR battery.charge% %VAR input.voltage% 
+%VAR ups.load% [%VAR ups.status%] %VAR ups.temperature% 
+%VAR input.frequency%
+
+.IP "\-i \fIinterval\fR"
+
+Wait this many seconds between polls.  This defaults to 30 seconds.
+
+Polls are not instantaneous, so they will slip back as the program runs.
+If you require tighter timing, you should write your own logger using
+the upsclient library.
+
+.IP "\-l \fIlogfile\fR"
+
+Store the results in this file.
+
+You can use \(hy for stdout, but upslog will remain in the foreground.
+
+.IP "\-s \fIups\fR"
+Monitor this UPS.  The format for this option is  
+upsname[@hostname[:port]].  The default hostname is "localhost".
+
+.IP "\-u \fIusername\fR"
+
+If started as root, upsmon will \fBsetuid\fR(2) to the user id
+associated with \fIusername\fR for security.  
+
+If it is not defined, it will use the value that was compiled into the
+program.  This defaults to 'nobody', which is less than ideal.
+
+.SH SERVICE DELAYS
+
+The interval value is merely the number given to sleep() after running
+through the format string.  Therefore, a query will actually take slightly
+longer than the interval depending on the speed of your system.
+
+.SH LOG ROTATION
+
+upslog writes its pid to upslog.pid, and will reopen the log file if you
+send it a SIGHUP.  This allows it to keep running when the log is rotated
+by an external program.
+
+.SH SEE ALSO
+
+.SS Server:
+\fBupsd\fR(8)
+
+.SS Clients:
+\fBupsc\fR(8), \fBupscmd\fR(8),
+\fBupsrw\fR(8), \fBupsmon\fR(8)
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

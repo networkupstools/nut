@@ -1,0 +1,69 @@
+Desc: Issues and direction for the megatec driver
+File: megatec.txt
+Date: 29 March 2006
+Auth: Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+Overall concept
+===============
+
+The "powermust" driver was originally developed to support the Mustek Powermust
+series of UPSes, but since there are some other drivers implementing (mostly)
+the same protocol, an idea came up to unify all these other drivers under a
+renamed version of "powermust": "megatec".
+
+The idea is to support all the hardware previously supported by the other
+drivers with a minimum number of special cases. Most of the time this isn't
+difficult, as the protocol states that all unknown/unimplemented commands
+should be ignored (the commands are simply echoed back).
+
+Target drivers
+==============
+
+The following drivers are targeted for "assimilation":
+
+  * blazer (1)
+  * fentonups (1)
+  * mustek (1)
+  * esupssmart (1)
+  * ippon (1)
+  * sms (1)
+  * masterguard (3)
+
+(1) megatec already supercedes this driver in functionality.
+(2) megatec partially supercedes this driver in functionality, but some
+    small features are missing (non-critical for normal operation).
+(3) megatec partially supercedes this driver in functionality, but some
+    important features are missing, which means some hardware may not be
+    supported.
+
+The above status is infered from some testing and from looking at the code
+of the drivers. Although I have a high degree of certainty about it, more
+testing is needed/welcome.
+
+Notes
+=====
+
+The "masterguard" driver seems to be the most problematic: it implements a
+"Q3" command (similar to "Q1" but with extra information), and the command
+to get information from the UPS is "WH" instead of "I" (with a different
+response also).
+
+All drivers cancel the battery tests with "CT". The protocol seems to imply
+that the 10 second battery test can't be cancelled (which makes sense).
+
+The beeper can be toggled with "Q", but there doesn't seem to exist a way to
+check if it is on or off, which may confuse users when a "beeper.on" command
+actually turns it off and vice-versa (maybe some models default to "on", and
+others to "off", this may make this command fit better as a blind
+"beeper.toggle").
+
+The "sms" driver implements a simple watchdog (send and "SxxRxxx" command to
+power cycle the UPS every time the "reset.watchdog" command is called).
+There are two battery tests: failure ("T" - 10sec?) and until LOWBATT ("TL").
+Moreover, there are some "S.3" or "S.3R0003" commands which fly in the face
+of "S05R0003" which the driver also issues (this last one matches all the
+other drivers, the first two seem to imply that the UPS also accepts those
+format variations to the standard "SxxRxxxx" shutdown+return commands).
+
+-- 
+Carlos Rodrigues

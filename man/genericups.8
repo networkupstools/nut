@@ -1,0 +1,341 @@
+.TH GENERICUPS 8 "Thu Aug 11 2005" "" "Network UPS Tools (NUT)"
+.SH NAME
+genericups \- Driver for contact\(hyclosure UPS equipment
+
+.SH NOTE
+This man page only documents the specific features of the genericups 
+driver.  For information about the core driver, see \fBnutupsdrv\fR(8).
+
+.SH SUPPORTED HARDWARE
+This driver supports hardware from many different manufacturers as it only 
+uses the very simplest of signaling schemes.  Contact closure refers to a 
+kind of interface where basic high/low signals are provided to indicate 
+status.  This kind of UPS can only report line power and battery status.
+
+This means that you will only get the essentials in ups.status: OL, OB,
+and LB.  Anything else requires a smarter UPS.
+
+.SH CABLING
+Cabling is different for every kind of UPS.  See the table below for 
+information on what is known to work with a given UPS type.
+
+.SH EXTRA ARGUMENTS
+This driver supports the following settings in the \fBups.conf\fR(5):
+
+.IP "upstype=\fItype\fR"
+
+Required.  Configures the driver for a specific kind of UPS.  See the UPS 
+Types section below for more information on which entries are available.
+
+.IP "mfr=\fIstring\fR"
+
+Optional.  The very nature of a generic UPS driver sometimes means that 
+the stock manufacturer data has no relation to the actual hardware that is 
+attached.  With the mfr setting, you can change the value that is seen by 
+clients that monitor this UPS.
+
+.IP "model=\fIstring\fR"
+
+Optional.  This is like mfr above, but it overrides the model string 
+instead.
+
+.IP "serial=\fIstring\fR"
+
+Optional.  This is like mfr above and intended to record the identification
+string of the UPS. It is titled serial because usually this string is 
+referred to as the serial number.
+
+.IP "sdtime=\fIvalue\fR"
+
+Optional.  The driver will sleep for this many seconds after setting the 
+shutdown signal.  This is necessary for some hardware which requires a
+sustained level to activate the shutdown sequence.
+
+The default behavior of the driver is to exit immediately.  If this
+doesn't reliably trigger a shutdown in your UPS hardware, use this
+setting to give it more time to react.
+
+Note: very large values for sdtime may create warnings from upsdrvctl if
+it gets tired of waiting for the driver to return.
+
+.SH CUSTOM CONFIGURATIONS
+
+You may override the values for CP, OL, LB, and SD by defining them in
+the \fBups.conf\fR after the upstype setting.
+
+For example, to set the cable power to DTR and the low battery value to
+DCD, it would look like this:
+
+	CP = DTR
+
+	LB = DCD
+
+Recognized values for input lines are CTS, DCD, and RNG.  Recognized
+values for output lines are DTR, RTS, and ST.  See below for more about
+what these signals mean.
+
+These values may be negated for active low signals.  That is, "LB=\-DCD"
+recognizes a low battery condition when DCD is not held high.
+
+.SH TYPE INFORMATION
+The essence of a UPS definition in this driver is how it uses the serial 
+lines that are available.  These are the abbreviations you will see below:
+
+	OL \(hy On line (no power failure) (opposite of OB \(hy on battery)
+
+ 	LB \(hy Low battery
+
+	SD \(hy Shutdown load
+
+	CP \(hy Cable power (must be present for cable to have valid reading)
+
+	CTS \(hy Clear to Send.  Received from the UPS.
+
+	RTS \(hy Ready to Send.  Sent by the PC.
+
+	DCD \(hy Data Carrier Detect.  Received from the UPS.
+
+	RNG \(hy Ring indicate.  Received from the UPS.
+
+	DTR \(hy Data Terminal Ready.  Sent by the PC.
+
+	ST \(hy Send a BREAK on the transmit data line
+
+A \- in front of a signal name (like \-RNG) means that the indicated 
+condition is signaled with an active low signal.  For example, [LB=\-RNG] 
+means the battery is low when the ring indicate line goes low, and that 
+the battery is OK when that line is held high.
+
+.SH UPS TYPES
+
+0 = UPSonic LAN Saver 600 
+    [CP=DTR+RTS] [OL=\-CTS] [LB=DCD] [SD=DTR]
+
+1 = APC Back\(hyUPS/Back\(hyUPS Pro/Smart\(hyUPS with 940\-0095A/C cable 
+    [CP=DTR] [OL=\-RNG] [LB=DCD] [SD=RTS]
+
+2 = APC Back\(hyUPS/Back\(hyUPS Pro/Smart\(hyUPS with 940\-0020B cable 
+    [CP=RTS] [OL=\-CTS] [LB=DCD] [SD=DTR+RTS]
+
+    Type 2 has also been reported to work with the 940\-0020C cable.
+
+3 = PowerTech Comp1000 with DTR cable power 
+    [CP=DTR] [OL=CTS] [LB=DCD] [SD=DTR+RTS]
+
+4 = Generic RUPS Model 
+    [CP=RTS] [OL=CTS] [LB=\-DCD] [SD=\-RTS]
+
+5 = Tripp Lite UPS with Lan2.2 interface (black 73\-0844 cable) 
+    [CP=DTR] [OL=CTS] [LB=\-DCD] [SD=DTR+RTS]
+
+6 = Best Patriot with INT51 cable 
+    [CP=DTR] [OL=CTS] [LB=\-DCD] [SD=RTS]
+
+7 = CyberPower Power99 
+    also Upsonic Power Guardian PG\-500
+
+    Also Belkin Belkin Home Office
+    F6H350\-SER, F6H500\-SER, F6H650\-SER
+
+    [CP=RTS] [OL=CTS] [LB=\-DCD] [SD=DTR]
+
+8 = Nitram Elite 500 
+    [CP=DTR] [OL=CTS] [LB=\-DCD] [SD=???]
+
+9 = APC Back\(hyUPS/Back\(hyUPS Pro/Smart\(hyUPS with 940\-0023A cable 
+    [CP=none] [OL=\-DCD] [LB=CTS] [SD=RTS]
+
+10 = Victron Lite with crack cable 
+     [CP=RTS] [OL=CTS] [LB=\-DCD] [SD=DTR]
+
+11 = Powerware 3115 
+     [CP=DTR] [OL=\-CTS] [LB=\-DCD] [SD=ST]
+
+12 = APC Back\-UPS Office with 940\-0119A cable 
+     [CP=RTS] [OL=\-CTS] [LB=DCD] [SD=DTR]
+
+13 = RPT Repoteck RPT\-800A/RPT\-162A 
+     [CP=DTR+RTS] [OL=DCD] [LB=\-CTS] [SD=ST]
+
+14 = Online P\-series 
+     [CP=DTR] [OL=DCD] [LB=\-CTS] [SD=RTS]
+
+15 = Powerware 5119, 5125
+     [CP=DTR] [OL=CTS] [LB=\-DCD] [SD=ST]
+
+16 = Nitram Elite 2002
+     [CP=DTR+RTS] [OL=CTS] [LB=\-DCD] [SD=???]
+
+17 = PowerKinetics 9001
+     [CP=DTR] [OL=CTS] [LB=\-DCD] [SD=???]
+
+18 = TrippLite Omni 450LAN with Martin's cabling
+     [CP=DTR] [OL=CTS] [LB=DCD] [SD=none]
+
+     http://lists.exploits.org/upsdev/Jul2002/00012.html
+
+19 = Fideltronic Ares Series
+     [CP=DTR] [OL=CTS] [LB=\-DCD] [SD=RTS]
+
+20 = Powerware 5119 RM
+     [CP=DTR] [OL=\-CTS] [LB=DCD] [SD=ST]
+
+     Check docs/cables/powerware.txt
+
+21 = Generic RUPS 2000 (Megatec M2501 cable)
+     [CP=RTS] [OL=CTS] [LB=\-DCD] [SD=RTS+DTR]
+
+     http://lists.exploits.org/upsdev/Oct2004/00004.html
+
+22 = Gamatronic All models with alarm interface
+     also CyberPower SL series
+
+     [CP=RTS] [OL=CTS] [LB=\-DCD] [SD=DTR]
+
+.SH SIMILAR MODELS
+
+Many different UPS companies make models with similar interfaces.  The 
+RUPS cable seems to be especially popular in the "power strip" variety of 
+UPS found in office supply stores.  If your UPS works with an entry in the
+table above, but the model or manufacturer information don't match,
+don't despair.  You can fix that easily by using the mfr and model 
+variables documented above in your \fBups.conf\fR(5).
+
+.SH TESTING COMPATIBILITY
+
+If your UPS isn't listed above, you can try going through the list until 
+you find one that works.  There is a lot of cable and interface reuse in 
+the UPS world, and you may find a match.
+
+To do this, first make sure nothing important is plugged into the
+outlets on the UPS, as you may inadvertently switch it off.  Definitely
+make sure that the computer you're using is not plugged into that UPS.
+Plug in something small like a lamp so you know when power is being
+supplied to the outlets.
+
+Now, you can either attempt to make an educated guess based on the
+documentation your manufacturer has provided (if any), or just start
+going down the list.  
+
+Step 1
+
+Pick a driver to try from the list (genericups \-h) and go to step 2.
+
+Step 2
+
+Start the driver with the type you want to try \(hy
+
+        genericups \-x upstype=n /dev/port
+
+Let upsd sync up (watch the syslog), and then run upsc to see what it
+found.  If the STATUS is right (should be OL for on line), go to step 3,
+otherwise go back to step 1.
+
+Alternatively, you can run genericups in debug mode \(hy
+
+        genericups -DDDDD \-x upstype=n /dev/port
+
+In this mode it will be running in the foreground and continuously
+display the line and battery status of the UPS.
+
+Step 3
+
+Disconnect the UPS from the wall/mains power.  This is easiest if you
+have a switched outlet in between it and the wall, but you can also just
+pull the plug to test.  The lamp should stay lit, and the status should
+switch to "OB".  If the lamp went out or the status didn't go to "OB"
+within about 15 seconds, go to step 1.  Otherwise, continue to step 4.
+
+Step 4
+
+At this point, we know that OL and OB work.  If nothing else beyond
+this point works, you at least know what your OL/OB value should be.
+
+Wait for the UPS to start complaining about a low battery.  Depending on
+the size of your UPS battery and the lamp's bulb, this could take
+awhile.  It should start complaining audibly at some point.  When this
+happens, STATUS should show "OB LB" within 15 seconds.  If not, go to
+step 1, otherwise continue to step 5.
+
+Step 5
+
+So far: OL works, OB works, and LB works.
+
+With the UPS running on battery, run the genericups driver with the \-k
+switch to shut it down.
+
+        genericups \-x upstype=n \-k /dev/port
+
+If the UPS turns off the lamp, you're done.  At this point, you have
+verified that the shutdown sequence actually does what you want.  You
+can start using the genericups driver with this type number for normal
+operations.
+
+You should use your findings to add a section to your ups.conf.
+Here is a quick example:
+
+        [myups]
+                driver = genericups
+                port = /dev/ttyS0
+                upstype = 1
+
+Change the port and upstype values to match your system.
+
+.SH NEW SUPPORT
+
+If the above testing sequence fails, you will probably need to create a 
+new entry to support your hardware.  All UPS types are determined from the 
+table in the genericups.h file in the source tree.
+
+On a standard 9 pin serial port, there are 6 lines that are used as the 
+standard "high/low" signal levels.  4 of them are incoming (to the PC, 
+from the UPS), and the other 2 are outgoing (to the UPS, from the PC).  
+The other 3 are the receive/transmit lines and the ground.
+
+Be aware that many manufacturers remap pins within the cable.  If you have 
+any doubts, a quick check with a multimeter should confirm whether the 
+cable is straight\(hythrough or not.  Another thing to keep in mind is that 
+some cables have electronics in them to do special things.  Some have 
+resistors and transistors on board to change behavior depending on what's 
+being supplied by the PC.
+
+.SH SPECIFIC MODEL NOTES
+
+These have been contributed by users of this driver.
+
+The Centralion CL series may power down the load if the driver starts up 
+with the UPS running on battery as the default line settings contain the 
+shutdown sequence.  \(hy Neil Muller
+
+The Tripp\(hyLite Internet Office 700 must be used with the black 73\(hy0844 
+cable instead of the gray 73\(hy0743 cable.  This entry should work with any 
+of their models with the Lan 2.2 interface \(hy see the sticker by the DB9 
+connector on the UPS.  \(hy Stephen Brown
+
+Type 5 should work with the Tripp\(hyLite Lan 2.1 interface and the 73\(hy0724 
+cable.  This was tested with the OmniSmart 675 PNP on Red Hat 7.2.  \(hy Q 
+Giese
+
+Types 7 and 10 should both work with the PhoenixTec A1000.
+
+.SH BUGS
+
+There is no way to reliably detect a contact\(hyclosure UPS.  This means the 
+driver will start up happily even if no UPS is detected.  It also means 
+that if the connection between the UPS and computer is interrupted, you 
+may not be able to sense this in software.
+
+Most contact\(hyclosure UPSes will not power down the load if the line power 
+is present.  This can create a race when using slave \fBupsmon\fR(8) 
+systems.  See the \fBupsmon\fR(8) man page for more information.
+
+The solution to both of these problems is to upgrade to a smart protocol 
+UPS of some kind that allows detection and proper load cycling on command.
+
+.SH SEE ALSO
+
+.SS The core driver:
+\fBnutupsdrv\fR(8)
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

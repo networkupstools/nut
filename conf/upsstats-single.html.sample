@@ -1,0 +1,355 @@
+<!-- upsstats template file -->
+
+<!--
+	This is upsstats-single.html, a template for monitoring a single
+	host.  This mode is selected by adding "host=<host>" to the
+	upsstats.cgi URL.
+
+	Such URLs are generated automatically when using the HOSTLINK
+	command.
+
+	See upsstats.html(5) for more information on template files.
+-->
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+	"http://www.w3.org/TR/REC-html40/loose.dtd">
+
+<HTML>
+
+<!-- change this to TEMPF if you don't like Celsius. -->
+
+@TEMPC@
+@UPSSTATSPATH upsstats.cgi@
+@UPSIMAGEPATH upsimage.cgi@
+
+<HEAD>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+@REFRESH@
+<TITLE>
+@HOSTDESC@
+: 
+@VAR ups.model@
+on
+@HOST@
+</TITLE>
+<!-- LINK REL="stylesheet" TYPE="text/css" HREF="http://localhost/nut/nut.css" / -->
+</HEAD>
+<BODY BGCOLOR="#808080" TEXT="#00FC00" LINK="#0000EE" VLINK="#551A8B">
+
+<TABLE BORDER="1" ALIGN="CENTER" CELLSPACING="0" CELLPADDING="10" BGCOLOR="#000000">
+
+<TR>
+<TH COLSPAN="20">
+Network UPS Tools upsstats
+@VERSION@
+-
+@HOSTDESC@
+-
+@VAR ups.model@
+on
+@HOST@
+</TH>
+</TR>
+
+<TR>
+<TH>
+@DATE %a %b %d %X %Z %Y@
+</TH>
+
+<TH>Battery</TH>
+<TH>Input</TH>
+<TH>Output</TH>
+<TH>Load</TH>
+</TR>
+
+<TR>
+
+<TD BGCOLOR="#000000" VALIGN="TOP">
+
+<TABLE BORDER="0">	<!-- table 2 -->
+
+<TR>
+<TH ALIGN="RIGHT">UPS Model:</TH>
+<TD>
+@VAR ups.model@
+</TD>
+</TR>
+
+<TR>
+<TH ALIGN="RIGHT">Status:</TH>
+<TD>
+@STATUS@
+@ENDIF@
+</TD>
+</TR>
+
+@IFSUPP battery.runtime@
+<TR>
+<TH ALIGN="RIGHT">Runtime:</TH>
+<TD>
+@RUNTIME@
+</TD>
+</TR>
+@ENDIF@
+
+@IFSUPP ups.temperature@
+<TR>
+<TH ALIGN="RIGHT">UPS temp:</TH>
+<TD>
+@UPSTEMP@
+@DEGREES@
+</TD>
+</TR>
+@ENDIF@
+
+@IFSUPP battery.voltage@
+<TR>
+<TH ALIGN="RIGHT">Battery: </TH>
+<TD>
+@VAR battery.voltage@
+V
+@IFSUPP battery.current@
+, 
+@VAR battery.current@
+A
+@ENDIF@
+
+<TR>
+<TH VALIGN="TOP" ALIGN="RIGHT">Input: </TH>
+<TD>
+
+@IFSUPP input.L1-L2.voltage@
+@VAR input.L1-L2.voltage@
+V<BR>
+@VAR input.L2-L3.voltage@
+V<BR>
+@VAR input.L3-L1.voltage@
+V<BR>
+</TD>
+</TR>
+@ELSE@
+@IFSUPP input.L1-N.voltage@
+@VAR input.L1-N.voltage@
+V<BR>
+@VAR input.L2-N.voltage@
+V<BR>
+@VAR input.L3-N.voltage@
+V<BR>
+</TD>
+</TR>
+@ELSE@
+@IFSUPP input.voltage@
+@VAR input.voltage@
+ V
+</TD>
+</TR>
+@ENDIF@
+
+@IFSUPP input.L1.current@
+<TR>
+<TH>
+<TD>
+@VAR input.L1.current@
+A<BR>
+@VAR input.L2.current@
+A<BR>
+@VAR input.L3.current@
+A<BR>
+</TD>
+</TR>
+@ELSE@
+@IFSUPP input.current@
+<TR>
+<TH>
+<TD>
+@VAR input.current@
+A
+</TD>
+</TR>
+@ENDIF@
+
+@IFSUPP input.frequency@
+<TR>
+<TH>
+<TD>
+@VAR input.frequency@
+ Hz
+</TD>
+</TR>
+@ENDIF@
+
+<TR>
+<TH VALIGN="TOP" ALIGN="RIGHT">Output: </TH>
+<TD>
+
+@IFSUPP output.L1-L2.voltage@
+@VAR output.L1-L2.voltage@
+V<BR>
+@VAR output.L2-L3.voltage@
+V<BR>
+@VAR output.L3-L1.voltage@
+V<BR>
+</TD>
+</TR>
+@ELSE@
+@IFSUPP output.L1-N.voltage@
+@VAR output.L1-N.voltage@
+V<BR>
+@VAR output.L2-N.voltage@
+V<BR>
+@VAR output.L3-N.voltage@
+V<BR>
+</TD>
+</TR>
+@ELSE@
+@IFSUPP output.voltage@
+@VAR output.voltage@
+ V
+</TD>
+</TR>
+@ENDIF@
+
+@IFSUPP output.L1.current@
+<TR>
+<TH>
+<TD>
+@VAR output.L1.current@
+A<BR>
+@VAR output.L2.current@
+A<BR>
+@VAR output.L3.current@
+A<BR>
+</TD>
+</TR>
+@ELSE@
+@IFSUPP output.current@
+<TR>
+<TH>
+<TD>
+@VAR output.current@
+A
+</TD>
+</TR>
+@ENDIF@
+
+@IFSUPP output.frequency@
+<TR>
+<TH>
+<TD>
+@VAR output.frequency@
+ Hz
+</TD>
+</TR>
+@ENDIF@
+
+</TABLE>		<!-- table 2 -->
+</TD>
+
+<TD ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
+<TABLE BORDER="0">
+<TR><TD ALIGN="CENTER">
+Charge:<BR>
+@IMG battery.charge width=90@
+@IFSUPP battery.voltage@
+<TD ALIGN="CENTER">
+Voltage:<BR>
+@IMG battery.voltage width=90@
+@ENDIF@
+</TABLE>
+</TD>
+
+<TD ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
+@IFSUPP input.L1-L2.voltage@
+<TABLE BORDER="0"><TR><TD ALIGN="CENTER">
+L1-L2<BR>
+@IMG input.L1-L2.voltage width=68@
+<TD ALIGN="CENTER">
+L2-L3<BR>
+@IMG input.L2-L3.voltage width=68@
+<TD ALIGN="CENTER">
+L3-L1<BR>
+@IMG input.L3-L1.voltage width=68@
+</TABLE>
+@ELSE@
+@IFSUPP input.L1-N.voltage@
+<TABLE BORDER="0"><TR><TD ALIGN="CENTER">
+L1-N<BR>
+@IMG input.L1-N.voltage width=68@
+<TD ALIGN="CENTER">
+L2-N<BR>
+@IMG input.L2-N.voltage width=68@
+<TD ALIGN="CENTER">
+L3-N<BR>
+@IMG input.L3-N.voltage width=68@
+</TABLE>
+@ELSE@
+@IMG input.voltage@
+@ENDIF@
+</TD>
+
+<TD ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
+@IFSUPP output.L1-L2.voltage@
+<TABLE BORDER="0"><TR><TD ALIGN="CENTER">
+L1-L2<BR>
+@IMG output.L1-L2.voltage width=68@
+<TD ALIGN="CENTER">
+L2-L3<BR>
+@IMG output.L2-L3.voltage width=68@
+<TD ALIGN="CENTER">
+L3-L1<BR>
+@IMG output.L3-L1.voltage width=68@
+</TABLE>
+@ELSE@
+@IFSUPP output.L1-N.voltage@
+<TABLE BORDER="0"><TR><TD ALIGN="CENTER">
+L1-N<BR>
+@IMG output.L1-N.voltage width=68@
+<TD ALIGN="CENTER">
+L2-N<BR>
+@IMG output.L2-N.voltage width=68@
+<TD ALIGN="CENTER">
+L3-N<BR>
+@IMG output.L3-N.voltage width=68@
+</TABLE>
+@ELSE@
+@IMG output.voltage@
+@ENDIF@
+</TD>
+
+<TD ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
+@IFSUPP output.L1.power.percent@
+<TABLE BORDER="0"><TR><TD ALIGN="CENTER">
+L1<BR>
+@IMG output.L1.power.percent width=68@
+<TD ALIGN="CENTER">
+L2<BR>
+@IMG output.L2.power.percent width=68@
+<TD ALIGN="CENTER">
+L3<BR>
+@IMG output.L3.power.percent width=68@
+</TABLE>
+@ELSE@
+@IFSUPP output.L1.realpower.percent@
+<TABLE BORDER="0"><TR><TD ALIGN="CENTER">
+L1<BR>
+@IMG output.L1.realpower.percent width=68@
+<TD ALIGN="CENTER">
+L2<BR>
+@IMG output.L2.realpower.percent width=68@
+<TD ALIGN="CENTER">
+L3<BR>
+@IMG output.L3.realpower.percent width=68@
+</TABLE>
+@ELSE@
+@IMG ups.load@
+@ENDIF@
+</TD>
+</TR>
+
+</TABLE>
+<a href="http://validator.w3.org/check?uri=referer"><img style="float:right"
+        src="http://www.w3.org/Icons/valid-html40"
+        alt="Valid HTML 4.0 Transitional" height="31" width="88"></a>
+
+</BODY>
+</HTML>

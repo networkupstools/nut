@@ -1,0 +1,23 @@
+.TH UPSCLI_DISCONNECT 3 "Mon Jan 22 2007" "" "Network UPS Tools (NUT)"
+.SH NAME
+upscli_disconnect \- disconnect from a UPS server
+.SH SYNOPSIS
+.nf
+.B #include <upsclient.h>
+.sp
+.BI "int upscli_disconnect(UPSCONN *ups);"
+.fi
+.SH DESCRIPTION
+The \fBupscli_disconnect()\fP function takes the pointer \fIups\fP to a
+UPSCONN state structure, shuts down the connection to the server, and 
+frees dynamic memory used by the state structure.  The UPSCONN structure
+is no longer valid after this function is called.
+.PP
+This function must be called, or your program will leak memory and
+file descriptors.
+.SH "RETURN VALUE"
+The \fBupscli_disconnect()\fP function returns 0 on success, or \-1 if an
+error occurs.
+.SH "SEE ALSO"
+.BR upscli_connect "(3), "upscli_fd "(3), "
+.BR upscli_strerror "(3), "upscli_upserror "(3) "

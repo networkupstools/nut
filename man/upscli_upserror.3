@@ -1,0 +1,27 @@
+.TH UPSCLI_UPSERROR 3 "Mon Jan 22 2007" "" "Network UPS Tools (NUT)"
+.SH NAME
+upscli_upserror \- Get current error number for connection
+.SH SYNOPSIS
+.nf
+.B #include <upsclient.h>
+.sp
+.BI "int upscli_upserror(UPSCONN *ups);"
+.fi
+.SH DESCRIPTION
+The \fBupscli_upserror()\fP function takes the pointer \fIups\fP to a
+UPSCONN state structure and returns the value of the internal error
+number, if any. 
+.PP
+This is typically used to check for certain error values like
+UPSCLI_ERR_UNKCOMMAND.  That specific error can be used for detecting
+older versions of \fBupsd\fR(8) which might not support a given command.
+.PP
+Some error messages have additional meanings, so you should use
+\fBupscli_strerror\fR(3) to obtain readable error messages.
+.PP
+.SH "RETURN VALUE"
+The \fBupscli_upserror()\fP function returns one of the UPSCLI_ERR_*
+values from \fBupsclient.h\fR, or 0 if no error has occurred.
+.SH "SEE ALSO"
+.BR upscli_readline "(3), "upscli_sendline "(3), "
+.BR upscli_strerror (3)

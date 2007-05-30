@@ -1,0 +1,23 @@
+.TH UPSCLI_SSL 3 "Mon Jan 22 2007" "" "Network UPS Tools (NUT)"
+.SH NAME
+upscli_ssl \- Check SSL mode for current connection
+.SH SYNOPSIS
+.nf
+.B #include <upsclient.h>
+.sp
+.BI "int upscli_ssl(UPSCONN *ups);"
+.fi
+.SH DESCRIPTION
+The \fBupscli_ssl()\fP function takes the pointer \fIups\fP to a
+UPSCONN state structure.  It only returns 1 if SSL support has been
+compiled into the \fBupsclient\fR library, and if it was successfully
+enabled for this connection.
+.PP
+.SH "RETURN VALUE"
+The \fBupscli_ssl()\fP function returns 1 if SSL is running, and 0 if
+not.  It returns \-1 in the event of an error.
+.SH "SEE ALSO"
+.BR upscli_fd "(3), "upscli_get "(3), "
+.BR upscli_readline "(3), "upscli_sendline "(3), "
+.BR upscli_ssl "(3), "
+.BR upscli_strerror "(3), "upscli_upserror "(3) "

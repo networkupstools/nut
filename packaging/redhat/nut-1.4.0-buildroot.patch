@@ -1,0 +1,22 @@
+--- nut-1.4.0/clients/Makefile.in.orig	2003-09-09 15:02:46.000000000 +0200
++++ nut-1.4.0/clients/Makefile.in	2003-09-09 15:03:57.000000000 +0200
+@@ -16,7 +16,7 @@
+ CC	 = @CC@
+ CFLAGS	 = -I../include @CFLAGS@
+ PROGS	 = upsc upslog upsrw upscmd
+-SPROGS	 = upsmon upssched
++SPROGS	 = upsmon upssched upssched-cmd
+ CGIPROGS = upsstats.cgi upsimage.cgi upsset.cgi
+ LIBDEP   = @LIBOBJ@
+ LIBOBJ	 = $(LIBDEP) @NETLIBS@
+--- nut-1.4.0/Makefile.in.orig	2003-09-09 15:04:06.000000000 +0200
++++ nut-1.4.0/Makefile.in	2003-09-09 15:05:39.000000000 +0200
+@@ -6,7 +6,7 @@
+ 
+ BINDIR		= $(DESTDIR)@bindir@
+ SBINDIR		= $(DESTDIR)@sbindir@
+-CONFPATH	= $(DESTDIR)@sysconfdir@
++CONFPATH	= $(DESTDIR)@sysconfdir@/ups
+ CGIPATH		= $(DESTDIR)@CGIPATH@
+ DRVPATH		= $(DESTDIR)@DRVPATH@
+ 

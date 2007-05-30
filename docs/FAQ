@@ -1,0 +1,841 @@
+Desc: Frequently Asked Questions
+File: FAQ
+Date: 20 January 2006
+Auth: Russell Kroll <rkroll@exploits.org>
+      Arnaud Quette <aquette.dev@gmail.com>
+ 
+-----------------------------------------------------------------------------
+
+ Q: I just upgraded, and ...
+
+ A: You have read UPGRADING in the base directory of the distribution,
+    right?  If not, go read it now, then come back to this file if your
+    question wasn't answered in there.
+
+-----------------------------------------------------------------------------
+
+ Q: upsstats says "Error: can't open template file (upsstats.html)".
+    How do I fix this?
+
+ A: Go into your configuration path (/usr/local/ups/etc by default) and
+    copy the sample template files over to their real names.  The sample
+    template files are installed with 'make install-cgi-conf' and can 
+    also be found inside the source distribution in the conf directory. 
+
+-----------------------------------------------------------------------------
+
+ Q: upsmon fails the login and says "username required" now.
+
+ A: Go read the UPGRADING file again.
+
+-----------------------------------------------------------------------------
+
+ Q: My 1.4 CGI programs won't talk to my 2.0 upsd.  What should I do?
+
+ A: Upgrade the CGI programs to 2.0.  While 1.4 was intended as a 
+    compatibility tree that used the new protocol by default, the CGI
+    programs were not upgraded at the same time.  The 1.4 versions
+    still use the old REQ protocol, and your 2.0 upsd expects GET.
+
+-----------------------------------------------------------------------------
+
+ Q: I just upgraded from 1.2 and upsmon now fails to start, saying
+    "Fatal error: insufficient power configured!".  Why?
+
+ A: You didn't read the top of the error, where upsmon says that it 
+    ignored the invalid MONITOR line because UPS directives now require
+    a UPS name.  It also means you didn't see the same warning in 
+    UPGRADING.
+
+    At least you saw this in the FAQ before asking the list.
+
+-----------------------------------------------------------------------------
+
+ Q: My UPS driver now says it's "broken", and won't start.  What now?
+
+ Q: My favorite UPS driver disappeared after an upgrade.  What now?
+
+ A: Drivers are occasionally removed from the tree if they are no longer
+    receiving maintenance, or sometimes renamed to better reflect their
+    hardware support scope or replaced by a more generic driver.
+    There have been several architectural changes to the driver code
+    in recent times, and drivers which were not converted by someone
+    are eventually dropped.
+
+    This is called progress.  We do this in order to avoid a situation
+    where someone believes that a driver is being maintained when it is
+    actually rotting slowly in the tree.  It also keeps the tree free of
+    old compatibility hacks for code that nobody actually uses anyway.
+
+    To get a driver back into current releases, you need to convert it
+    yourself or get someone to do it for you.  This is not difficult.
+    The hardest part of any driver is decoding the protocol, and that's
+    already been done in the old version.
+
+-----------------------------------------------------------------------------
+
+ Q: I just upgraded and now I can't talk to older versions.
+
+ A: Version 2.0 can't communicate with anything before 1.4 due to the
+    protocol changes.  Version 1.4 can communicate with both 2.0 and
+    most older versions since it was a transitional release and has
+    compatibility code for both protocols.
+
+-----------------------------------------------------------------------------
+
+ Q: My UPS driver program won't work.  I'm starting it as root, and root
+    owns the device, so what's the problem?
+
+ A: The drivers drop root privileges long before the serial port is
+    opened.  You'll need to change the permissions on that port so that
+    their new user id can access it.  Normally this is "nobody", but it 
+    may be changed at compile-time by using configure --with-user.
+
+    Read the error message.  If you have a permissions mismatch, then
+    you'll see something like this:
+
+	Network UPS Tools - APC Smart protocol driver 0.60 (1.1.7)
+	This program is currently running as youruid (UID 1234)
+	/dev/ttyS2 is owned by user root (UID 0), mode 0600
+	Change the port name, or fix the permissions or ownership 
+	of /dev/ttyS2 and try again.
+	Unable to open /dev/ttyS2: Permission denied
+
+    Now is a good time to point out that using "nobody" is a bad idea,
+    since it's a hack for NFS access.  You should create a new role 
+    account (perhaps called "ups" or "nut"), and use that instead.
+
+    Also, scroll down to the "security domains" question to see an
+    even better way of restricting privileged operations.  Neither the
+    drivers nor upsd ever need root powers, and that answer tells you
+    how to make it work.
+
+ A: You can also specify a user with "user=" in the global part of
+    ups.conf.  Just define it before any of your [sections]:
+
+		user = nut
+
+	[myups]
+		driver = mge-shut
+		port = /dev/ttyS0
+
+-----------------------------------------------------------------------------
+
+ Q: upsc, upsstats, and the other clients say "access denied".  The
+    serial port permissions are fine, so what gives? 
+
+ A: In this case, "access denied" means the access to upsd, not the
+    serial port.  You're being denied since the system has not been
+    permission to speak to upsd according to the access controls.
+
+    The fix is to edit the upsd.conf to allow those hosts to do what
+    they need.  Create ACL lines to match the hosts or networks, then
+    use those ACL names on ACCEPT lines.
+
+	ACL mybox 10.2.1.3/32
+	ACCEPT mybox
+
+    If upsmon is complaining, make sure you have defined a user for it
+    in upsd.users.  This needs to be the same user name and password
+    which is on the MONITOR line in upsmon.conf.
+
+	[username]
+		allowfrom = mybox
+		password = mypass
+		upsmon master		# or upsmon slave
+
+    If the program asks for a username and password (upsrw, upscmd,
+    upsset.cgi) and gives this error, then make sure your account is
+    properly defined in upsd.users.
+
+	[username]
+		allowfrom = mybox
+		password = mypass
+
+    After editing the upsd config files, you can do 'upsd -c reload'
+    or kill -HUP <pid of upsd> to make it reload the configuration
+    without restarting the process.
+
+-----------------------------------------------------------------------------
+
+ Q: I have an APC Smart-UPS connected with a grey APC cable and it won't
+    work.  The Back-UPS type in the genericups driver works but then I 
+    don't get to use all the nifty features in there.  Why doesn't the 
+    right driver work?
+
+ A: The problem lies in your choice of cable.  APC's grey cables
+    generally only do "dumb" signalling - very basic yes/no info about
+    the battery and line status.  While that is sufficient to detect a
+    low battery condition while on battery, you miss out on all the
+    goodies that you paid for.
+
+    Note that the 940-0095B happens to be a grey cable, but it is actually
+    a dual mode cable and can be used in smart mode.  If you have
+    this cable, you need to edit your ups.conf to look like this:
+
+	[myups]
+		driver = apcsmart
+		port = /dev/whatever
+		cable = 940-0095B
+
+    All other grey cables from APC are assumed to be "dumb".
+
+    If your grey cable isn't the 940-0095B, the solution is to dump that
+    cable and find one that supports APC's "smart" signalling.  Typically
+    these come with the UPS and are black.  If your smart cable has
+    wandered off, one can be built rather easily with some connectors and
+    cable - there's no fancy wiring or resistors.
+
+    See this URL for a handy diagram:
+
+    http://random.networkupstools.org/cables/940-0024C.jpg
+
+    There is also a text version of that diagram in the docs/cables
+    directory of the NUT source distribution.  Either one should allow
+    you to build a good clone of APC's 940-0024C cable.
+   
+    There are simpler solutions involving 3 wires that work just fine
+    too, but Powerchute won't find the loopback DTR-DCD and RTS-CTS and
+    will be annoyed.  If you don't ever plan to use Powerchute, 3 wires
+    (RxD, TxD, GND) are sufficient.
+
+    It should also be noted that the genericups driver has no way to
+    detect the UPS, so it will fire up quite happily if it can open the
+    serial port.  Merely having it start up is not necessarily an
+    indication of success.  You should start it and then check the
+    status with upsc or similar to be sure that it's reading the
+    hardware properly.
+
+-----------------------------------------------------------------------------
+
+ Q: Why does configure fail to find gd?
+
+ A: Recent versions of gd should be detected automatically through the
+    gdlib-config script.  Note that gd 2.0.5 through 2.0.7 have an
+    unusable script, so upgrade to the newest version if you have one
+    of those installed.
+
+    If you're stuck with an older version of gd, you can use it if you
+    specify the flags manually.  Look in gd's Makefile for "LIBS=", 
+    then use that value when you call configure:
+
+	./configure --with-gd-libs="<whatever>" --with-cgi
+
+    If you don't have gd's Makefile available for some reason, you're
+    in for a lot of trial and error.  
+
+-----------------------------------------------------------------------------
+
+ Q: Why PNG?  You used to generate GIF bars with upsimage back in 1998
+    or 1999...
+
+ A: http://www.burnallgifs.org/
+
+-----------------------------------------------------------------------------
+
+ Q: Why doesn't upsd implement the functionality of upsmon?  I have to
+    run THREE programs to monitor my UPS!
+
+ A: I try to follow the "tool for the job" philosophy.  It may mean
+    more programs running, but the flexibility you get is usually
+    worth it.
+
+    Yes, the machine with the UPS attached will generally have 3
+    processes (driver, upsd, upsmon) running, but this design allows a
+    much bigger setup.  Imagine a data room with a bunch of machines
+    all drawing power from the same UPS.  The rest of them just run
+    upsmon.
+
+    Besides, if upsmon were rolled into upsd, upsd would get even
+    bigger than it is now.  You'd have one less process, but the
+    RAM consumption would be pretty close to now.
+
+    See data-room.txt for more configuration ideas and explanations.
+
+ A: If this really bothers you, roll up your sleeves and use the
+    sockdebug code to write a "upsmon" type program that sits on top of
+    the state sockets.  It won't work over the network, but it means
+    you don't need upsd.  It also means only one host can monitor the
+    UPS. 
+
+    This is also a good option to consider if you can't use networked
+    monitoring code for security or safety reasons.
+
+    See ideas.txt for more on this and other related topics.
+
+-----------------------------------------------------------------------------
+
+ Q: Why isn't upssched part of upsmon?
+
+ A: Most users will never have any reason to use upssched.  It's
+    complicated, and getting it right for your situation can be tricky.
+    Having it live in a separate program saves resources and lets most
+    people avoid it completely.
+
+-----------------------------------------------------------------------------
+
+ Q: Why doesn't upsmon send a SIGPWR signal to init so it can deal with
+    power events?
+
+ A: New versions of the init man page taken from the sysvinit package
+    are saying that usage of SIGPWR is discouraged, since /dev/initctl 
+    control channel is the preferred way of communication.
+
+ A: The name of the game is portability.  Not everyone's init handles
+    that kind of signalling gracefully.  What's more, some admins
+    might want to do things differently even if they have that kind of
+    init running.
+
+    So, to be compatible, upsmon just invokes a shell command.  If you
+    want to use init's SIGPWR stuff, just put the right "kill" line in
+    a shell script and make upsmon call it.  Everyone wins.
+
+-----------------------------------------------------------------------------
+
+ Q: Why can't upsset read my upsset.passwd file?
+
+ A: You have an old version of upsset installed, since the current
+    version doesn't use that file.  Install a new version and then try
+    it again.
+
+    Be sure to secure your CGI directory as instructed in the
+    upsset.conf.
+
+-----------------------------------------------------------------------------
+
+ Q: Why won't bestups talk to my Best Fortress UPS?
+
+ A: There are at least two different protocols being used for hardware
+    with very similar names.  The bestups driver tends to support the
+    units built around the newer "PhoenixTec" protocol.  
+
+    Previous releases of this software included a driver called
+    bestfortress which supported the older Best hardware.  See the
+    earlier entries about updating old drivers which have been removed
+    from the tree.
+
+-----------------------------------------------------------------------------
+
+ Q: What's this about "data stale"?
+
+ A: It means your UPS driver hasn't updated things in a little while.
+    upsd refuses to serve up data that isn't fresh, so you get the
+    errors about staleness.
+
+    If this happens to you, make sure your driver is still running.
+    Also look at the syslog.  Sometimes the driver loses the connection
+    to the UPS, and that will also make the data go stale.
+
+    Note: some very slow machines have trouble keeping up with the
+    serial ports during periods of extreme load.  My old 486 used to
+    flip between "stale" and "OK" while running backups.
+
+    If this happens a lot, you might consider cranking up DEADTIME
+    in the upsmon.conf to suppress some of the warnings for shorter
+    intervals.  Use caution when adjusting this number, since it
+    directly affects how long you run on battery without knowing
+    what's going on with the UPS.
+
+    Note: some drivers occasionally need more time to update than the
+    default value of MAXAGE (in upsd.conf) allows.  As a result, they 
+    are temporarily marked stale even though everything is fine.  This
+    can happen with MGE Ellipse equipment - see the mge-shut man page.
+    In such cases, you can raise the value of MAXAGE to avoid these
+    warnings; try a value like 25 or 30.
+
+-----------------------------------------------------------------------------
+
+ Q: Why do the client programs say "Driver not connected" when I try
+    to run them?
+
+ A: This means that upsd can't connect to the driver for some reason.
+    Your ups.conf entry might be wrong, or the driver might not be 
+    running.  Maybe your state path is not configured properly.
+
+    Check your syslog.  upsd will complain regularly if it can't
+    connect to a driver, and it should say why it can't connect.
+
+    Note: if you jumped in with both feet and didn't follow the INSTALL
+    document, you probably started upsd by itself.  You have to run
+    'upsdrvctl start' to start the drivers after configuring ups.conf.
+
+-----------------------------------------------------------------------------
+
+ Q: Everything works perfectly during the shutdown, and the UPS comes 
+    back on, but my system stays off.  What's happening?
+
+ A: Assuming you don't have the problem in the next question, then you
+    probably have an ATX motherboard, have APM or ACPI enabled in your
+    kernel (assuming Linux here), and are reaching the 'halt' at the
+    bottom of your shutdown scripts.
+
+    Your machine obeys and shuts down, and stays down, since it
+    remembers the 'last state' when the UPS restarts.
+
+    One solution is to change your shutdown scripts so you never reach
+    that point.  You *want* the system to die without reaching the
+    part where the kernel tells it to shut down.  A possible script
+    might look like this:
+
+	# other shutdown stuff here (mount -o remount,ro ...)
+
+	if (test -f /etc/killpower)
+	then
+		/usr/local/ups/bin/upsdrvctl shutdown
+
+		sleep 600	# this should never return
+
+		# uh oh, we never got shut down! (power race?)
+		reboot
+	fi
+
+	halt -p
+
+    The other solution is to change your BIOS setting to "always power
+    on" instead of "last state", assuming that's possible.
+
+-----------------------------------------------------------------------------
+
+ Q: My system has an ATX power supply.  It will power off just fine, but
+    it doesn't turn back on.  What can I do to fix this?
+
+ A: This depends on how clueful your motherboard manufacturer is, and
+    isn't a matter of the OS.  You have to do one of the following
+    things depending on what's supported:
+
+    - Set a jumper on the motherboard that means "return after outage"
+
+    - Set something in the BIOS that says "power up after power failure"
+
+    - Try using something (like a capacitor) across the power button 
+      to "push" it for you - this might not work if it needs a delay
+
+    - Hack the cable between the power supply and the motherboard to fool
+      it into powering up whenever line power is present
+
+    - Teach a monkey to watch the machine and press the power button
+      when the outage is over.
+
+      This might work, but it creates high produce bills.
+
+    If you can't use one of the first two options, give the board to
+    an enemy.  Let them worry about it.
+
+-----------------------------------------------------------------------------
+
+ Q: My PowerMac G4 won't power back up by itself (into Linux) after the
+    UPS shuts down.  What can I do about this?
+
+ A: This is about the same situation as the ATX question above, only
+    worse.  Earlier Macs apparently supported a hack where you could
+    cat some magic characters at /dev/adb to enable "server mode".
+    This would instruct the system to reboot while unattended.
+
+    From Usenet post <6boftzxz51.fsf@ecc-office.sp.cs.cmu.edu>:
+
+	# Send packet over the ADB bus to the PowerMac CUDA chip
+	# telling it to reboot automatically when power is restored
+	# after a power failure.
+
+	cat /etc/local/autoboot.adb > /dev/adb
+
+    autoboot.adb contains these three bytes (in hex):  01 13 01
+
+    Unfortunately, the hardware has evolved and there is no good
+    equivalent for this hack on today's systems.
+
+    If you find out how to do this, please send me some mail, since
+    this affects one of my systems and my stop-gap solution is getting
+    cranky.
+
+    Note: this question has been in the FAQ for over a year and 
+    there's still no answer.  Let me guess: everyone who runs a server
+    on Mac hardware has a team of trained monkeys, and feeds them
+    by growing bananas in the tropical environment formed by waste heat
+    from the equipment. 
+
+    The rest of us are still waiting for the answer.  Booting into the
+    Mac OS to frob the "file server" panel is not an acceptable
+    solution.
+
+ A: If you're on OS X, this is relatively simple to fix.  Go to system
+    preferences, click on energy saver, click on the options tab, check
+    "Restart automatically after a power failure".
+
+    If you're on some other OS, hope they've figured out how to duplicate
+    the above in a non-simian manner.
+
+-----------------------------------------------------------------------------
+
+ Q: I want to keep the drivers and upsd in their own security domains.
+    How can this be accomplished?
+
+ A: Using a few role accounts and a common group, you can limit access
+    to resources such as the serial port(s) leading to the UPS
+    hardware.
+
+    This is just an example.  Change the values to suit your systems.
+
+    Create a user called 'nutdev' and another called 'nutsrv'.  Put
+    them both in a group called 'nut'.
+
+    Change the owner of any serial ports that will be used to nutdev,
+    and set the mode to 0600.  Then change the ownership of your state
+    directory (usually /var/state/ups) to nutdev.nut.
+
+    For my development system this yields the following /dev entries:
+
+    0 crw-------   1 nutdev   tty        4,  64 Sep  3 17:11 /dev/ttyS0
+    0 crw-------   1 nutdev   tty        4,  65 Sep  3 17:11 /dev/ttyS1
+
+    Switch to root, then start the drivers:
+
+    # /usr/local/ups/bin/upsdrvctl -u nutdev start
+
+    The listing for /var/state/ups then looks like this:
+
+    4 drwxrwx---   2 nutdev   nut          4096 Aug 20 18:37 .
+    4 drwxr-xr-x   4 root     root         4096 May 14 21:20 ..
+    4 srw-rw----   1 nutdev   nut             0 Sep  3 17:10 apcsmart-ttyS0
+    4 srw-rw----   1 nutdev   nut             0 Sep  3 17:10 megatec-ttyS1
+
+    You may have to remove old socket or state files first if you are
+    changing to this security scheme from an older version.  The drivers
+    will create new files with the right owners and modes.
+
+    Note that /var/state/ups is group writable since upsd will
+    place the upsd.pid file here.
+
+    You may have to change the groups of upsd.conf and upsd.users to
+    make them readable.  These files should not be owned by nutsrv,
+    since someone could compromise the daemon and change the config
+    files.  Instead, put nutsrv in a group ("nut" in this example), then
+    make the files owned by root.nut, with mode 0640.
+
+    Once the config files are ready, start upsd:
+
+    # /usr/local/ups/sbin/upsd -u nutsrv
+
+    Check your syslog to be sure everything's happy, then be sure to
+    update your startup scripts so it uses this procedure on your next
+    boot.
+
+    If you like this, you'll probably also find the chroot process to
+    be useful and interesting.  See chroot.txt for more details.
+
+-----------------------------------------------------------------------------
+
+ Q: What's the point of that 'security domains' concept above?
+
+ A: The point is limiting your losses.  If someone should happen to
+    break into upsd in that environment, they should only gain access
+    to that one user account.  Direct access to the serial device is
+    not possible, since that is owned by another user.
+
+    There is also the possibility of running the drivers and upsd in a
+    chroot jail.  See the chroot.txt provided in the source 
+    distribution for an example implementation. 
+
+    Why give would-be vandals any sort of help?
+
+    Put it this way - I *wrote* good chunks of this stuff, and I still
+    run the programs this way locally.  You should definitely consider
+    using this technique.
+
+-----------------------------------------------------------------------------
+
+ Q: How can I make upsmon shut down my system after some fixed interval?
+
+ A: You probably don't want to do this, since it doesn't maximize your
+    runtime on battery.  Assuming you have a good reason for it (see
+    the next entry), then look at upssched.txt or the upssched man
+    page for some ideas.
+
+-----------------------------------------------------------------------------
+
+ Q: Why doesn't upsmon shut down my system?  I pulled the plug and nothing
+    happened.
+
+ A: Wait.  upsmon doesn't consider a UPS to be critical until it's both
+    'on battery' and 'low battery' at the same time.  This is by design.
+    Nearly every UPS supports the notion of detecting the low battery
+    all by itself.  When the voltage drops below a certain point, it
+    _will_ let you know about it.
+
+    If your system has a really complicated shutdown procedure, you
+    might need to shut down before the UPS raises the low battery flag.
+    For most users, however, the default behavior is adequate.
+
+    Ask yourself this: why buy a nice big UPS with the matching battery
+    and corresponding runtime and then shutdown early?  If anything, I'd
+    rather have a few more minutes running on battery during which the
+    power might return.  Once the power's back, it's business as usual
+    with no visible interruption in service.
+
+    If you purposely shut down early, you guarantee an interruption in
+    service by bringing down the box.
+
+    See upssched.txt for information on how you can shutdown early if
+    this is what you really want to do.
+
+-----------------------------------------------------------------------------
+
+ Q: The CGI programs report "access to that host is not authorized" - 
+    what's going on?
+
+ A: Those programs need to see a host in your hosts.conf before they
+    will attempt communications.  This keeps people from feeding it
+    random "host=" settings, which would annoy others with outgoing
+    connection attempts from your system.
+
+    If your hosts.conf turns out to be configured correctly with 
+    MONITOR entries and all that, check the permissions.  Your web
+    server may be running the CGI programs as a user that can't read
+    the file.
+
+    If you run your web server in a chroot jail, make sure the programs
+    can still read hosts.conf.  You may have to copy it into the jail
+    for this to work.  If you do that, make sure it's not writable by
+    any of the user accounts which run inside the jail.   
+
+-----------------------------------------------------------------------------
+
+ Q: upsd is running, so why can't I connect to it?
+
+ A: Assuming you haven't changed the TCP port number on the command line
+    or at compile-time, then you probably have some sort of firewall
+    blocking the connection.
+
+    upsd listens on TCP port 3493 by default.
+
+-----------------------------------------------------------------------------
+
+ Q: How do you make upsmon reload the config file?
+
+ Q: How do you make upsd reload the config file?
+
+ A: Either find the pid of the background process and send it a SIGHUP,
+    or just start it again with '-c reload'.
+
+    If you send the signals yourself instead of using -c, be sure you
+    hit the right process.  There are usually two upsmons, and you
+    should only send signals to one of them.  To be safe, read the pid
+    file.
+
+-----------------------------------------------------------------------------
+
+ Q: I just bought a new WhizBang UPS that has a USB connector.  How do
+    I monitor it?
+
+ A: There are several driver to support USB models.
+
+    - usbhid-ups supports various manufacturers complying to the HID standard,
+    - tripplite_usb supports various Tripp-Lite units,
+    - bcmxcp_usb supports various Powerware units.
+
+    Refer to the "driver-name" (8) manpage for more information.
+
+-----------------------------------------------------------------------------
+
+ Q: What is this usbhid-ups (formerly newhidups) about?
+
+ A: The basic USB UPS support was done until NUT 2.2 using hidups. To allow
+    a wider support accross platforms for USB/HID compliant devices,
+    usbhid-ups driver uses libusb (which is available for a wide range of
+    operating systems) and libhid (currently, a modified internal version
+    of it).
+
+    As of NUT 2.2, usbhid-ups completely replaces the legacy hidups driver
+    and provide support for various manufacturers. At that time, it will
+    be renamed to usbhid-ups.
+
+    usbhid-ups is built automatically if possible (libusb development files
+    need to be installed) and installed by the "make install" command.
+
+-----------------------------------------------------------------------------
+
+ Q: Why doesn't my package work?
+
+ Q: I can't run this because there's no package for it.  Why isn't this
+    in a package yet?
+
+ A: Sorry, can't help you there.  All official releases are source code
+    and are posted on http://www.networkupstools.org/ along with PGP
+    signatures for verification.
+
+    This means all packages have been built by a third party.  If you
+    have an issue that's related to packaging, you will need to seek
+    help with whoever built it for you.
+
+-----------------------------------------------------------------------------
+
+ Q: Why are there two copies of upsmon running?
+
+ A: It's not really two complete copies if your OS forks efficiently.
+
+    By default, upsmon runs most of the grunt work as an unprivileged
+    user and keeps a stub process around with root powers that can
+    only shut down the system when necessary.  This should make it much
+    harder to gain root in the event a hole is ever discovered in
+    upsmon.
+
+    If this really bothers you and you like running lots of code as
+    root, start upsmon with -p and it will go back to being one big
+    process.  This is not recommended, so don't blame me if something
+    bad happens in this mode.
+
+-----------------------------------------------------------------------------
+
+ Q: I have <some problem> with <some old version> ...
+
+ A: Get the latest stable release, and see if it still happens.  If it
+    goes away, it means someone else reported it and got it fixed a 
+    long time ago.
+
+    If that doesn't work, try the latest development version.
+
+    If your problem is STILL there, then contact the mailing lists.
+
+    Hint: check the release date on the version you have.  If it's more
+    than about 6 months old, there's probably a newer stable tree
+    version out there.
+
+-----------------------------------------------------------------------------
+
+ Q: Do you have to use a serial connection to monitor the UPS?
+    What about direct network connections (SNMP or otherwise)?
+
+ A: No. NUT currently support USB communication through usbhid-ups,
+    tripplite_usb and bcmxcp_usb, and SNMP communication through snmp-ups.
+
+    Any time there is a gap in features, it's usually because the
+    group of people who own that hardware and the group of people who
+    write code don't overlap.  The fix is to make them overlap -
+    turn an owner into a developer or vice-versa.
+
+-----------------------------------------------------------------------------
+
+ Q: What happened to the patch I sent?
+
+ A: If a release goes by and your patch hasn't been included, it was
+    probably dropped.  There can be a lot of patches waiting for 
+    inclusion at some points, and occasionally some have to be
+    rejected.
+
+    Design issues or severe coding style problems can be the reason
+    for this.  I try to point out what the problems are, but there are
+    limits.  See developers.txt for some pointers on submitting
+    patches.
+
+    Sometimes patches are put on hold due to a feature freeze.  If it
+    doesn't show up once the new version opens up, send it again.
+
+-----------------------------------------------------------------------------
+
+ Q: I'm not much of a programmer.  How can I help?
+
+ A: There's always work to be done outside of the realm of code bashing.
+    Documentation might not always be so clear.  A user's perspective
+    is sometimes needed to appreciate this.  Bug reports on a project's
+    documentation are just as valuable as those for the actual source.
+
+    Fielding questions on the mailing lists is also helpful.  This
+    lets other people to focus on coding issues while allowing the
+    original poster to get some information at the same time.  It's
+    quite a relief to open that mailbox and find that someone else
+    has already handled it successfully.
+
+-----------------------------------------------------------------------------
+
+ Q: I replaced the battery in my APC Smart-UPS and now it thinks the 
+    battery is low all the time.  How do you fix this?
+
+ Q: My APC UPS keeps reporting "OL LB", even after it's been charging
+    for many hours.  What can I do about this?
+
+ A: This happened to me, and some other people too.  The combination of
+    our experiences should prove useful to you.
+
+    First, you need to realize that the UPS apparently stores data about
+    the battery, load, and runtime.  After replacing the battery, it
+    needs to be clued in to the new situation.  If the traditional
+    runtime calibration doesn't work, you have to try something a
+    little more drastic.
+
+    You need to *completely* drain the UPS while it has a good ground.
+    This means you can't just pull the plug.  You also have to
+    disconnect it from the computer so this software won't shut it
+    down.
+
+    The easiest way to do this is to first unplug your computer(s) from
+    it, and plug in a token load like a lamp.  Also, move the UPS to a 
+    power strip that doesn't switch the ground line or an outlet that
+    you can switch off at your panel.
+
+    Once the UPS is up at 100% charge (this is important), disconnect
+    the power.  It _must_ remain connected to the ground, or the
+    results may not be accurate.  Ignore the sounds it makes, and go
+    away until it's done.  Don't do anything to the front panel while
+    this is happening.
+
+    After all of this, put things back the way they should be and let
+    it charge up.  You should find that it again gives reasonable
+    values and behavior, as it was when it was new.
+
+    Thanks to Matthew Dharm for helping me nail down this procedure.
+
+-----------------------------------------------------------------------------
+
+ Q: multimon.cgi seems to be stuck at an old version, even though I
+    just installed a new one.
+
+ A: multimon was removed during the 1.1 development cycle.  upsstats
+    now does everything it used to do, and then some.  You should just
+    delete those files and start using upsstats directly.
+
+-----------------------------------------------------------------------------
+
+ Q: OK, I switched to upsstats.  Now it's giving me Celsius.  I like
+    Fahrenheit.  Where's the config file to switch it back?
+
+ A: Temperature scales are handled by the template files, so edit your
+    upsstats.html and change it from TEMPC to TEMPF.
+
+-----------------------------------------------------------------------------
+
+ Q: Why is the mailing list ignoring me?
+
+ A: You probably asked a question that's answered in this FAQ or
+    somewhere else in the documentation and nobody wants to quote it
+    for you.
+
+    Convincing the other subscribers that you've actually read down this
+    far might be useful.  You might mention "queequeg" for better results.
+
+    This URL may also be helpful:
+
+	http://www.catb.org/~esr/faqs/smart-questions.html
+
+-----------------------------------------------------------------------------
+
+ Q: I found some information about another kind of UPS protocol you
+    don't support yet, but I don't know what to do with it.  Can you
+    help?
+
+ A: If you're not a programmer, you can still help others by making
+    that protocol available.  You might host the document somewhere and
+    send the URL to one of the mailing lists.
+
+-----------------------------------------------------------------------------
+
+ Q: How can you answer questions to situations that nobody's encountered
+    yet?  Isn't this a frequently asked questions file?
+
+ A: Magic.
+
+ A: It's both that and a frequently *anticipated* questions file, too.
+
+    The idea is to write it up in here so that nobody asks the mailing
+    list when it finally does get released.  
+
+-----------------------------------------------------------------------------

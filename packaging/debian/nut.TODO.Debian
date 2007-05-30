@@ -1,0 +1,9 @@
+- audit and solve the lintian reports:
+W: nut-dev: binary-without-manpage libupsclient-config
+W: nut binary: script-in-etc-init.d-not-registered-via-update-rc.d /etc/init.d/ups-monitor
+- KARL (1.5.5-1) debian/{control,substvars}..=> desc.
+- factorise install rules
+- SSL: mail to Luca about the ref in debian/nut.README.Debian to ask
+  for his thought (create separate set of packages ie nut-ssl, ...)
+- consider joining the powermgt effort:
+  http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=55123

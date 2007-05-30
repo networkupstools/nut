@@ -1,0 +1,26 @@
+Desc: Powerware 3115 factory cable
+File: powerware.txt
+Date: 22 July 2005                                                              
+Auth: various
+                                                                                
+1) Powerware 3115 factory cable
+From Peter Åstrand <altic@lysator.liu.se>
+
+UPS         PC  9 pin connector
+5 --------- 1
+2 --------- 2
+1 --------- 3
+4 --------- 5
+6 --------- 8
+
+2) Powerware 5119 RM Cable Layout
+From Daniel Thompson <danht@callthenet.com>
+
+UPS <-----------> PC
+DB9-M <--------> DB9-F
+Pin 1 <-----------> Pin 3
+Pin 2 <-----------> Pin 8
+Pin 4 <-----------> Pin 4
+Pin 5 <-----------> Pin 1
+Shells Grounded Both Ends
+

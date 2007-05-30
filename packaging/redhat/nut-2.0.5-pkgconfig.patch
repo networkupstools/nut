@@ -1,0 +1,30 @@
+--- nut-2.0.5/configure.orig	2007-03-26 15:22:20.000000000 +0200
++++ nut-2.0.5/configure	2007-03-26 15:25:02.000000000 +0200
+@@ -9402,11 +9402,11 @@
+   enableval=$enable_pkg_config;
+ 	case "$withval" in
+ 		yes)
+-			if (test -d /usr/lib/pkgconfig)
++			if (test -x /usr/bin/pkg-config)
+ 			then
+ 				{ echo "$as_me:$LINENO: result: yes" >&5
+ echo "${ECHO_T}yes" >&6; }
+-				PKG_CFG_DIR="/usr/lib/pkgconfig"
++				PKG_CFG_DIR="$libdir/pkgconfig"
+ 				USE_PKG_CFG=yes
+ 			else
+ 				{ echo "$as_me:$LINENO: result: no" >&5
+@@ -9431,11 +9431,11 @@
+ 
+ else
+ 
+-	if (test -d /usr/lib/pkgconfig)
++	if (test -x /usr/bin/pkg-config)
+ 	then
+ 		{ echo "$as_me:$LINENO: result: yes" >&5
+ echo "${ECHO_T}yes" >&6; }
+-		PKG_CFG_DIR="/usr/lib/pkgconfig"
++		PKG_CFG_DIR="$libdir/pkgconfig"
+ 		USE_PKG_CFG=yes
+ 	else
+ 		{ echo "$as_me:$LINENO: result: no" >&5

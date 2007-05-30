@@ -1,0 +1,14 @@
+--- nut-0.45.0/conf/Makefile.in.or	Fri Jun  1 05:23:15 2001
++++ nut-0.45.0/conf/Makefile.in	Tue Jun 12 20:29:35 2001
+@@ -12,9 +12,9 @@
+ 
+ install:
+ 	@for f in $(SECFILES) ; do \
+-		$(INSTALLCMD) -m 0600 $$f $(CONFPATH)/$$f.sample; \
++		$(INSTALLCMD) -m 0600 $$f $(CONFPATH)/$$f; \
+ 	done
+ 
+ 	@for f in $(PUBFILES) ; do \
+-		$(INSTALLCMD) -m 0644 $$f $(CONFPATH)/$$f.sample; \
++		$(INSTALLCMD) -m 0644 $$f $(CONFPATH)/$$f; \
+ 	done

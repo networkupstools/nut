@@ -1,0 +1,76 @@
+In the tradition of stealing ideas for top-level files from the Linux
+kernel tree, here is the NUT MAINTAINERS file.  This file is intended to
+help patch contributors route their changes to the right people.
+
+Note: just because something isn't listed in here doesn't mean it's not
+being maintained.  It just means that the maintainer hasn't sent me a
+patch to update this file yet.
+
+Note 2: there are always other people who work on a project beyond those
+who are listed here.  Omission from this list should not be taken as a
+slight.  Those who are listed below are merely volunteering to be the
+"lightning rods" for patches to certain parts of the tree.
+
+Fields
+======
+
+P: Person
+M: Mail patches to this address
+S: Status:
+
+   Supported  = someone is paid to do this
+   Maintained = someone keeps it running
+
+   (add others as necessary)
+
+In the case of drivers, "maintained" should only be used if you have
+access to the hardware in question for testing.   
+
+Drivers
+=======
+
+P: Russell Kroll
+M: rkroll@exploits.org
+S: Maintained: apcsmart, belkin, bestups, cyberpower, dummycons,
+               fentonups, driver core (main.c), upsdrvctl
+
+P: Arnaud Quette
+M: aquette.dev@gmail.com
+M: arnaud.quette@mgeups.com
+S: Maintained: dummy-ups, usbhid-ups, mge-shut, mge-utalk, snmp-ups
+
+P: Arjen de Korte
+M: arjen@de-korte.org
+S: Maintained: safenet, genericups
+
+P: Fabio Di Niro
+M: blaxwan@users.sourceforge.net
+S: Maintained: metasys
+
+P: Kirill Smelkov
+M: kirr@mns.spb.ru
+S: Maintained: al175
+
+P: Peter Selinger
+M: selinger@users.sourceforge.net
+S: Maintained: usbhid-ups belkinunv
+
+P: Carlos Rodrigues
+M: carlos.efr@mail.telepac.pt
+S: Maintained: megatec
+
+Packaging
+=========
+
+P: Nigel Metheringham
+M: Nigel.Metheringham@dev.InTechnology.co.uk
+S: Maintained: nut.spec.in (for Red Hat RPM builds)
+
+P: Arnaud Quette
+M: aquette@debian.org
+S: Maintained: Official Debian packages
+
+Everything else
+===============
+
+No other categories have been created yet.

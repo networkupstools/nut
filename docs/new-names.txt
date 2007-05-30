@@ -1,0 +1,498 @@
+Desc: New command and variable naming scheme
+File: new-names.txt
+Date: 09 September 2005
+Auth: Russell Kroll <rkroll@exploits.org>
+      Arnaud Quette <arnaud.quette@mgeups.com>
+
+*** NOTE *** : When updating this file, also update data/cmdvartab.
+
+This is a dump of the standard variables and command names used in NUT.
+Don't use a name with any of the dstate functions unless it exists here.
+
+If you need a new variable or command name, contact the Development Team
+first.
+
+Put another way: if you make up a name that's not in this list and it
+gets into the tree, and then we come up with a better name later, clients
+that use the undocumented variable will break when it is changed.
+
+   Note: "opaque" means programs should not attempt to parse the value for
+   that variable as it may vary greatly from one UPS to the next. These
+   strings are best handled directly by the user.
+
+                                   Variables
+
+ups: General unit information
+
+   +-------------------------------------------------------------------------+
+   |         Name          |         Description          |  Typical value   |
+   |-----------------------+------------------------------+------------------|
+   | ups.status            | UPS status                   | OL (see          |
+   |                       |                              | new-drivers.txt) |
+   |-----------------------+------------------------------+------------------|
+   | ups.alarm             | UPS alarms                   | OVERHEAT         |
+   |-----------------------+------------------------------+------------------|
+   | ups.time              | Internal UPS clock time      | 12:34            |
+   |                       | (opaque string)              |                  |
+   |-----------------------+------------------------------+------------------|
+   | ups.date              | Internal UPS clock date      | 01-02-03         |
+   |                       | (opaque string)              |                  |
+   |-----------------------+------------------------------+------------------|
+   | ups.model             | UPS model                    | SMART-UPS 700    |
+   |-----------------------+------------------------------+------------------|
+   | ups.mfr               | UPS manufacturer             | APC              |
+   |-----------------------+------------------------------+------------------|
+   | ups.mfr.date          | UPS manufacturing date       | 10/17/96         |
+   |                       | (opaque string)              |                  |
+   |-----------------------+------------------------------+------------------|
+   | ups.serial            | UPS serial number (opaque    | WS9643050926     |
+   |                       | string)                      |                  |
+   |-----------------------+------------------------------+------------------|
+   | ups.vendorid          | Vendor ID for USB devices    | 0463             |
+   |-----------------------+------------------------------+------------------|
+   | ups.productid         | Product ID for USB devices   | 0001             |
+   |-----------------------+------------------------------+------------------|
+   | ups.firmware          | UPS firmware (opaque string) | 50.9.D           |
+   |-----------------------+------------------------------+------------------|
+   | ups.firmware.aux      | Auxiliary device firmware    | 4Kx              |
+   |-----------------------+------------------------------+------------------|
+   | ups.temperature       | UPS temperature (degrees C)  | 042.7            |
+   |-----------------------+------------------------------+------------------|
+   | ups.load              | Load on UPS (percent)        | 023.4            |
+   |-----------------------+------------------------------+------------------|
+   | ups.load.high         | Load when UPS                | 100              |
+   |                       | switches to overload         |                  |
+   |                       | condition ("OVER") (percent) |                  |
+   |-----------------------+------------------------------+------------------|
+   | ups.id                | UPS system identifier        | Sierra           |
+   |                       | (opaque string)              |                  |
+   |-----------------------+------------------------------+------------------|
+   |                       | Interval to wait before      |                  |
+   | ups.delay.start       | restarting the load          | 0                |
+   |                       | (seconds)                    |                  |
+   |-----------------------+------------------------------+------------------|
+   | ups.delay.reboot      | Interval to wait before      | 60               |
+   |                       | rebooting the UPS (seconds)  |                  |
+   |-----------------------+------------------------------+------------------|
+   |                       | Interval to wait after       |                  |
+   | ups.delay.shutdown    | shutdown with delay command  | 20               |
+   |                       | (seconds)                    |                  |
+   |-----------------------+------------------------------+------------------|
+   | ups.test.interval     | Interval between self tests  | 1209600 (two     |
+   |                       | (seconds)                    | weeks)           |
+   |-----------------------+------------------------------+------------------|
+   | ups.test.result       | Results of last self test    | Bad battery pack |
+   |                       | (opaque string)              |                  |
+   |-----------------------+------------------------------+------------------|
+   | ups.display.language  | Language to use on front     | E                |
+   |                       | panel (*** opaque)           |                  |
+   |-----------------------+------------------------------+------------------|
+   | ups.contacts          | UPS external contact sensors | F0               |
+   |                       | (*** opaque)                 |                  |
+   |-----------------------+------------------------------+------------------|
+   | ups.power             | Current value of apparent    | 500              |
+   |                       | power (Volt-Amps)            |                  |
+   |-----------------------+------------------------------+------------------|
+   | ups.power.nominal     | Nominal value of apparent    | 500              |
+   |                       | power (Volt-Amps)            |                  |
+   |-----------------------+------------------------------+------------------|
+   | ups.realpower         | Current value of real        | 300              |
+   |                       | power (Watts)                |                  |
+   |-----------------------+------------------------------+------------------|
+   | ups.realpower.nominal | Nominal value of real        | 300              |
+   |                       | power (Watts)                |                  |
+   |-----------------------+------------------------------+------------------|
+   | ups.beeper.status     | UPS beeper status            | enabled          |
+   |                       | (enabled, disabled or muted) |                  |
+   |-----------------------+------------------------------+------------------|
+   | ups.type              | UPS type (*** opaque)        | offline          |
+   |-----------------------+------------------------------+------------------|
+   | ups.watchdog.status   | UPS watchdog status          | disabled         |
+   |                       | (enabled or disabled)        |                  |
+   |-----------------------+------------------------------+------------------|
+   | ups.coldstart         | UPS coldstarts from battery  | disabled         |
+   |                       | (enabled or disabled)        |                  |
+   +-------------------------------------------------------------------------+
+
+input: Incoming line/power information
+
+   +------------------------------------------------------------------------+
+   |           Name            |        Description         | Typical value |
+   |---------------------------+----------------------------+---------------|
+   | input.voltage             | Input voltage              | 121.5         |
+   |---------------------------+----------------------------+---------------|
+   | input.voltage.maximum     | Maximum incoming voltage   | 130           |
+   |                           | seen                       |               |
+   |---------------------------+----------------------------+---------------|
+   | input.voltage.minimum     | Minimum incoming voltage   | 100           |
+   |                           | seen                       |               |
+   |---------------------------+----------------------------+---------------|
+   | input.voltage.nominal     | Nominal input voltage      | 120           |
+   |---------------------------+----------------------------+---------------|
+   | input.transfer.reason     | Reason for last transfer   | T             |
+   |                           | to battery (*** opaque)    |               |
+   |---------------------------+----------------------------+---------------|
+   | input.transfer.low        | Low voltage transfer point | 91            |
+   |---------------------------+----------------------------+---------------|
+   | input.transfer.high       | High voltage transfer      | 132           |
+   |                           | point                      |               |
+   |---------------------------+----------------------------+---------------|
+   | input.transfer.low.min    | smallest settable low      | 85            |
+   |                           | voltage transfer point     |               |
+   |---------------------------+----------------------------+---------------|
+   | input.transfer.low.max    | greatest settable low      | 95            |
+   |                           | voltage transfer point     |               |
+   |---------------------------+----------------------------+---------------|
+   | input.transfer.high.min   | smallest settable high     | 131           |
+   |                           | voltage transfer point     |               |
+   |---------------------------+----------------------------+---------------|
+   | input.transfer.high.max   | greatest settable high     | 136           |
+   |                           | voltage transfer point     |               |
+   |---------------------------+----------------------------+---------------|
+   | input.sensitivity         | Input power sensitivity    | H (high)      |
+   |---------------------------+----------------------------+---------------|
+   | input.quality             | Input power quality (***   | FF            |
+   |                           | opaque)                    |               |
+   |---------------------------+----------------------------+---------------|
+   | input.frequency           | Input line frequency (Hz)  | 60.00         |
+   |---------------------------+----------------------------+---------------|
+   | input.frequency.nominal   | Nominal input line         | 60            |
+   |                           | frequency (Hz)             |               |
+   |---------------------------+----------------------------+---------------|
+   | input.frequency.low       | Input line frequency low   | 47            |
+   |                           | (Hz)                       |               |
+   |---------------------------+----------------------------+---------------|
+   | input.frequency.high      | Input line frequency high  | 63            |
+   |                           | (Hz)                       |               |
+   |---------------------------+----------------------------+---------------|
+   | input.transfer.boost.low  | Low voltage boosting       | 190           |
+   |                           | transfer point             |               |
+   |---------------------------+----------------------------+---------------|
+   | input.transfer.boost.high | High voltage boosting      | 210           |
+   |                           | transfer point             |               |
+   |---------------------------+----------------------------+---------------|
+   | input.transfer.trim.low   | Low voltage trimming       | 230           |
+   |                           | transfer point             |               |
+   |---------------------------+----------------------------+---------------|
+   | input.transfer.trim.high  | High voltage trimming      | 240           |
+   |                           | transfer point             |               |
+   +------------------------------------------------------------------------+
+
+output: Outgoing power/inverter information
+
+   +------------------------------------------------------------------------+
+   | output.voltage                | Output voltage (V)             | 120.9 |
+   |-------------------------------+--------------------------------+-------|
+   | output.voltage.nominal        | Nominal output voltage (V)     | 120   |
+   |-------------------------------+--------------------------------+-------|
+   | output.frequency              | Output frequency (Hz)          | 59.9  |
+   |-------------------------------+--------------------------------+-------|
+   | output.frequency.nominal      | Nominal output frequency (Hz)  | 60    |
+   |-------------------------------+--------------------------------+-------|
+   | output.current                | Output current (amps)          | 4.25  |
+   +------------------------------------------------------------------------+
+
+Three-phase additions:
+----------------------
+
+The additions for three-phase measurements would produce a very long table
+due to all the combinations that are possible, so these additions are
+broken down to their base components.
+
+PHASE COUNT DETERMINATION:
+--------------------------
+input.phases (3 for 3phase, absent or 1 for 1phase)
+output.phases (as for input.phases)
+
+DOMAINs:
+--------
+Any input or output is considered a valid DOMAIN.
+
+input (should really be called input.mains, but keep this for compat)
+input.bypass
+input.servicebypass
+
+output (should really be called output.load, but keep this for compat)
+output.bypass
+output.inverter
+output.servicebypass
+
+SPECIFICATION (SPEC):
+-------------------------
+Voltage, current, frequency, etc are considered to be a specification of
+the measurement.
+
+With this notation, the old 1phase naming scheme becomes DOMAIN.SPEC
+Example: input.current
+
+CONTEXT:
+--------
+When in 3phase mode we need some way to specify the target for most
+measurements in more detail, we call this the CONTEXT.
+
+With this notation, the naming scheme becomes DOMAIN.CONTEXT.SPEC when
+in 3phase mode.
+Example: input.L1.current
+
+Valid CONTEXTs:
+---------------
+L1-L2  \
+L2-L3   \
+L3-L1    for voltage measurements
+L1-N    /
+L2-N   /
+L3-N  /
+
+L1  \
+L2  for currrent and power measurements
+L3  /
+N  - for current measurement
+
+Valid SPECs:
+-----------
+Valid with/without context (ie. per phase or aggregated/averaged)
+current         Current (A RMS)
+current.maximum Maximum seen current (A RMS)
+current.minimum Minimum seen current (A RMS)
+peakcurrent     Peak current
+voltage         Voltage (V)
+voltage.nominal Nominal voltage (V)
+voltage.maximum Maximum seen voltage (V)
+voltage.minimum Minimum seen voltage (V)
+power           Apparent power (VA)
+power.maximum   Maximum seen apparent power (VA)
+power.minimum   Maximum seen apparent power (VA)
+power.percent   Percentage of apparent power related to maximum load
+power.maximum.percent   Max seen percentage of apparent power
+power.minimum.percent   Min seen percentage of apparent power
+realpower       Real power (W)
+powerfactor     Power Factor (dimensionless value between 0.00 and 1.00)
+
+Valid without context (ie. aggregation of all phases):
+frequency       Frequency (Hz)
+frequency.nominal Nominal frequency (Hz)
+
+EXAMPLES:
+---------
+Partial Three phase - Three phase example:
+input.phases: 3
+input.frequency: 50.0
+input.L1.current: 133.0
+input.bypass.L1-L2.voltage: 398.3
+output.phases: 3
+output.L1.power: 35700
+output.powerfactor: 0.82
+
+Partial Three phase - One phase example:
+input.phases: 3
+input.L2.current: 48.2
+input.N.current: 3.4
+input.L3-L1.voltage: 405.4
+input.frequency: 50.1
+output.phases: 1
+output.current: 244.2
+output.voltage: 120
+output.frequency.nominal: 60.0
+
+
+battery: Any battery details
+
+   +------------------------------------------------------------------------+
+   | battery.charge          | Battery charge (percent)     | 100.0         |
+   |-------------------------+------------------------------+---------------|
+   | battery.charge.low      | Remaining battery level when | 20            |
+   |                         | UPS switches to LB (percent) |               |
+   |-------------------------+------------------------------+---------------|
+   | battery.charge.restart  | Minimum battery level for    | 20            |
+   |                         | UPS restart after power-off  |               |
+   |-------------------------+------------------------------+---------------|
+   | battery.charge.warning  | Battery level when UPS       |               |
+   |                         | switches to "Warning" state  | 50            |
+   |                         | (percent)                    |               |
+   |-------------------------+------------------------------+---------------|
+   | battery.voltage         | Battery voltage (volts)      | 24.84         |
+   |-------------------------+------------------------------+---------------|
+   | battery.capacity        | Battery capacity             | 7.2           |
+   |                         | (Amp - hours)                |               |
+   |-------------------------+------------------------------+---------------|
+   | battery.current         | Battery current (amps)       | 1.19          |
+   |-------------------------+------------------------------+---------------|
+   | battery.temperature     | Battery temperature (degrees | 050.7         |
+   |                         | C)                           |               |
+   |-------------------------+------------------------------+---------------|
+   | battery.voltage.nominal | Nominal battery voltage (V)  | 024           |
+   |-------------------------+------------------------------+---------------|
+   | battery.runtime         | Battery runtime (seconds)    | 1080          |
+   |-------------------------+------------------------------+---------------|
+   |                         | Remaining battery runtime    |               |
+   | battery.runtime.low     | when UPS switches to LB      | 180           |
+   |                         | (seconds)                    |               |
+   |-------------------------+------------------------------+---------------|
+   | battery.alarm.threshold | Battery alarm threshold      | 0 (immediate) |
+   |-------------------------+------------------------------+---------------|
+   | battery.date            | Battery change date (opaque  | 11/14/00      |
+   |                         | string)                      |               |
+   |-------------------------+------------------------------+---------------|
+   | battery.mfr.date        | Battery manufacturing date   | 2005/04/02    |
+   |                         | (opaque string)              |               |
+   |-------------------------+------------------------------+---------------|
+   | battery.packs           | Number of battery packs      | 001           |
+   |-------------------------+------------------------------+---------------|
+   | battery.packs.bad       | Number of bad battery packs  | 000           |
+   +-------------------------+------------------------------+---------------+
+   | battery.type            | Battery chemistry            | PbAc          |
+   |                         | (opaque string)              |               |
+   +------------------------------------------------------------------------+
+
+ambient: Conditions from external probe equipment
+
+   +------------------------------------------------------------------------+
+   | ambient.temperature               | Ambient temperature        | 25.40 |
+   |                                   | (degrees C)                |       |
+   |-----------------------------------+----------------------------+-------|
+   | ambient.temperature.alarm         | Set if ambient temperature | 0     |
+   |                                   | alarm is active            |       |
+   |-----------------------------------+----------------------------+-------|
+   | ambient.temperature.alarm.maximum | Maximum allowed            | NO,NO |
+   |                                   | temperature (*** opaque)   |       |
+   |-----------------------------------+----------------------------+-------|
+   | ambient.temperature.alarm.minimum | Minimum allowed            | NO,NO |
+   |                                   | temperature (*** opaque)   |       |
+   |-----------------------------------+----------------------------+-------|
+   | ambient.temperature.alarm.enable  | Enable alarm for ambient   | 1     |
+   |                                   | temperature                |       |
+   |-----------------------------------+----------------------------+-------|
+   | ambient.humidity                  | Ambient relative humidity  | 038.8 |
+   |                                   | (percent)                  |       |
+   |-----------------------------------+----------------------------+-------|
+   | ambient.humidity.alarm            | Set if ambient humidity    | 0     |
+   |                                   | alarm is active            |       |
+   |-----------------------------------+----------------------------+-------|
+   | ambient.humidity.alarm.maximum    | Maximum allowed humidity   | NO,NO |
+   |                                   | (*** opaque)               |       |
+   |-----------------------------------+----------------------------+-------|
+   | ambient.humidity.alarm.minimum    | Minimum allowed humidity   | NO,NO |
+   |                                   | (*** opaque)               |       |
+   |-----------------------------------+----------------------------+-------|
+   | ambient.humidity.alarm.enable     | Enable alarm for ambient   | 1     |
+   |                                   | humidity                   |       |
+   +------------------------------------------------------------------------+
+
+outlet: Smart outlet management (smart on/off switch, ...)
+
+   +------------------------------------------------------------------------+
+   |                                | Outlet system           |             |
+   | outlet.n.id                    | identifier (opaque      | 1           |
+   |                                | string)                 |             |
+   |--------------------------------+-------------------------+-------------|
+   | outlet.n.desc                  | Outlet description      | Main outlet |
+   |                                | (opaque string)         |             |
+   |--------------------------------+-------------------------+-------------|
+   | outlet.n.switch                | Outlet switch control   | on          |
+   |                                | (on/off)                |             |
+   |--------------------------------+-------------------------+-------------|
+   | outlet.n.status                | Outlet switch status    | on          |
+   |                                | (on/off)                |             |
+   |--------------------------------+-------------------------+-------------|
+   | outlet.n.switchable            | Outlet switch ability   | yes         |
+   |                                | (yes/no)                |             |
+   |--------------------------------+-------------------------+-------------|
+   |                                | Remaining battery level |             |
+   | outlet.n.autoswitch.charge.low | to power off this       | 90          |
+   |                                | outlet (percent)        |             |
+   |--------------------------------+-------------------------+-------------|
+   |                                | Interval to wait before |             |
+   | outlet.n.delay.shutdown        | shutting down this      | 180         |
+   |                                | outlet (seconds)        |             |
+   |--------------------------------+-------------------------+-------------|
+   |                                | Interval to wait before |             |
+   | outlet.n.delay.start           | restarting this outlet  | 120         |
+   |                                | (seconds)               |             |
+   +------------------------------------------------------------------------+
+
+driver: Internal driver information
+
+   +------------------------------------------------------------------------+
+   | driver.name             | Driver name                | apcsmart        |
+   |-------------------------+----------------------------+-----------------|
+   | driver.version          | Driver version (NUT        | X.Y.Z           |
+   |                         | release)                   |                 |
+   |-------------------------+----------------------------+-----------------|
+   | driver.version.internal | Internal driver version    | 1.23.45         |
+   |                         | (if tracked separately)    |                 |
+   |-------------------------+----------------------------+-----------------|
+   | driver.parameter.xxx    | Parameter xxx (ups.conf or | (varies)        |
+   |                         | cmdline -x) setting        |                 |
+   |-------------------------+----------------------------+-----------------|
+   | driver.flag.xxx         | Flag xxx (ups.conf or      | enabled (or not |
+   |                         | cmdline -x) status         | present)        |
+   +------------------------------------------------------------------------+
+
+server: Internal server information
+
+   +------------------------------------------------------------------------+
+   | server.info    | Server         | Network UPS Tools upsd vX.Y.Z -      |
+   |                | information    | http://www.networkupstools.org/      |
+   |----------------+----------------+--------------------------------------|
+   | server.version | Server version | X.Y.Z                                |
+   +------------------------------------------------------------------------+
+
+                                Instant commands
+
+   +------------------------------------------------------------------------+
+   |           Name           |                 Description                 |
+   |--------------------------+---------------------------------------------|
+   | load.off                 | Turn off the load immediately               |
+   |--------------------------+---------------------------------------------|
+   | load.on                  | Turn on the load immediately                |
+   |--------------------------+---------------------------------------------|
+   | shutdown.return          | Turn off the load possibly after a delay    |
+   |                          | and return when power is back               |
+   |--------------------------+---------------------------------------------|
+   | shutdown.stayoff         | Turn off the load possibly after a delay    |
+   |                          | and remain off even if power returns        |
+   |--------------------------+---------------------------------------------|
+   | shutdown.stop            | Stop a shutdown in progress                 |
+   |--------------------------+---------------------------------------------|
+   | shutdown.reboot          | Shut down the load briefly while rebooting  |
+   |                          | the UPS                                     |
+   |--------------------------+---------------------------------------------|
+   | shutdown.reboot.graceful | After a delay, shut down the load briefly   |
+   |                          | while rebooting the UPS                     |
+   |--------------------------+---------------------------------------------|
+   | test.panel.start         | Start testing the UPS panel                 |
+   |--------------------------+---------------------------------------------|
+   | test.panel.stop          | Stop a UPS panel test                       |
+   |--------------------------+---------------------------------------------|
+   | test.failure.start       | Start a simulated power failure             |
+   |--------------------------+---------------------------------------------|
+   | test.failure.stop        | Stop simulating a power failure             |
+   |--------------------------+---------------------------------------------|
+   | test.battery.start       | Start a battery test                        |
+   |--------------------------+---------------------------------------------|
+   | test.battery.start.quick | Start a "quick" battery test                |
+   |--------------------------+---------------------------------------------|
+   | test.battery.start.deep  | Start a "deep" battery test                 |
+   |--------------------------+---------------------------------------------|
+   | test.battery.stop        | Stop the battery test                       |
+   |--------------------------+---------------------------------------------|
+   | calibrate.start          | Start runtime calibration                   |
+   |--------------------------+---------------------------------------------|
+   | calibrate.stop           | Stop runtime calibration                    |
+   |--------------------------+---------------------------------------------|
+   | bypass.start             | Put the UPS in bypass mode                  |
+   |--------------------------+---------------------------------------------|
+   | bypass.stop              | Take the UPS out of bypass mode             |
+   |--------------------------+---------------------------------------------|
+   | reset.input.minmax       | Reset minimum and maximum input voltage     |
+   |                          | status                                      |
+   |--------------------------+---------------------------------------------|
+   | reset.watchdog           | Reset watchdog timer (forced reboot of      |
+   |                          | load)                                       |
+   |--------------------------+---------------------------------------------|
+   | beeper.on                | Enable UPS beeper/buzzer                    |
+   |--------------------------+---------------------------------------------|
+   | beeper.off               | Temporarily mute UPS beeper/buzzer          |
+   |--------------------------+---------------------------------------------|
+   | beeper.toggle            | Toggle UPS beeper/buzzer                    |
+   +------------------------------------------------------------------------+

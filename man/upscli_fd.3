@@ -1,0 +1,22 @@
+.TH UPSCLI_FD 3 "Mon Jan 22 2007" "" "Network UPS Tools (NUT)"
+.SH NAME
+upscli_fd \- Get file descriptor for connection
+.SH SYNOPSIS
+.nf
+.B #include <upsclient.h>
+.sp
+.BI "int upscli_fd(UPSCONN *ups);"
+.fi
+.SH DESCRIPTION
+The \fBupscli_fd()\fP function takes the pointer \fIups\fP to a
+UPSCONN state structure and returns the value of the file descriptor
+for that connection, if any.
+.PP
+This may be useful for determining if the connection to \fBupsd\fR(8)
+has been lost.
+.PP
+.SH "RETURN VALUE"
+The \fBupscli_fd()\fP function returns the file descriptor, which
+may be any non\(hynegative number.  It returns \-1 if an error occurs.
+.SH "SEE ALSO"
+.BR upscli_connect "(3), "upscli_strerror "(3), "upscli_upserror "(3) "

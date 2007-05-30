@@ -1,0 +1,54 @@
+#!/bin/sh -e
+
+check_and_delete_user() {
+	if [ `getent passwd nut` ]; then
+		deluser --quiet nut
+	fi
+}
+
+case "$1" in
+
+  remove)
+    # remove sample file if those were previously (wrongly) installed
+    for file in ups.conf upsd.conf upsmon.conf upsd.users upssched.conf ; do
+      if [ -f /etc/nut/${file}.sample ] ; then
+        rm -f /etc/nut/${file}.sample
+      fi
+    done
+    ;;
+
+  purge)
+    # check_and_delete_user
+    # handle a dpkg bug
+    [ -d /etc/nut ] && rmdir --ignore-fail-on-non-empty /etc/nut >/dev/null 2>&1
+    ;;
+
+  upgrade)
+    # do nothing
+    ;;
+
+  failed-upgrade)
+    # do nothing
+    ;;
+
+  abort-install)
+    # do nothing
+    ;;
+
+  abort-upgrade)
+    # do nothing
+    ;;
+
+  disappear)
+    # do nothing
+    ;;
+
+  *)
+    echo "$0: incorrect arguments: $*" >&2
+    exit 1
+    ;;
+
+esac
+
+#DEBHELPER#
+

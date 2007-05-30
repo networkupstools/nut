@@ -1,0 +1,95 @@
+Source: nut
+Section: admin
+Priority: optional
+Maintainer: Arnaud Quette <aquette@debian.org>
+Uploaders: Luca Filipozzi <lfilipoz@debian.org>, Shaul Karl <shaul@debian.org>
+Build-Depends: debhelper (>= 4.1.16), libgd2-xpm-dev | libgd2-noxpm-dev | libgd2-dev, libsnmp9-dev, libusb-dev (>= 0.1.8), libhal-dev (>= 0.5.8), libdbus-1-dev, libdbus-glib-1-dev, libglib2.0-dev
+Standards-Version: 3.6.2
+
+Package: nut
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, debconf (>= 0.5.00), lsb-base (>= 3.0-6), ${udev}
+Suggests: nut-cgi, nut-snmp, nut-dev
+Provides: ups-monitor, nut-doc, nut-usb
+Conflicts: ups-monitor, nut-doc, nut-hal-drivers, nut-usb (<< 2.1.0-3)
+Replaces: nut-doc
+Description: The core system of the nut - Network UPS Tools
+ nut is a client/server uninterruptible power supply (UPS) monitoring system
+ that permits the sharing of one (or more) UPS between several machines. The
+ 'server' monitors the UPS and notifies the 'clients' when the UPS is on
+ or has a low battery.
+ .
+ This package contains the core system, and the serial and USB UPS drivers.
+ In most cases it is sufficient for a basic UPS monitoring system.
+ .
+ Homepage: http://www.networkupstools.org
+
+Package: nut-cgi
+Architecture: any
+Depends: ${shlibs:Depends}, adduser, debconf (>= 0.5.00)
+Recommends: apache | httpd
+Suggests: nut
+Replaces: nut (<< 1.1.11)
+Description: A web interface sub system for the nut - Network UPS Tools
+ nut is a client/server uninterruptible power supply (UPS) monitoring system
+ that permits the sharing of one (or more) UPS between several machines. The
+ 'server' monitors the UPS and notifies the 'clients' when the UPS is on
+ or has a low battery.
+ .
+ This package contains the web interface for Network UPS Tools. It adds
+ http interface to the core nut system so that one is able to monitor 
+ the core system with a web browser.
+ .
+ Homepage: http://www.networkupstools.org
+
+Package: nut-snmp
+Architecture: any
+Depends: ${shlibs:Depends}, nut (>= 1.4.1-pre1)
+Conflicts: nut (<= 1.4.0)
+Description: A meta SNMP Driver subsystem for the nut - Network UPS Tools
+ nut is a client/server uninterruptible power supply (UPS) monitoring system
+ that permits the sharing of one (or more) UPS between several machines. The
+ 'server' monitors the UPS and notifies the 'clients' when the UPS is on
+ or has a low battery.
+ .
+ This package contains snmp-ups, the Meta SNMP UPS Driver, which support
+ different MIBS (IETF, MGE, APC) for Network UPS Tools. It adds an SNMP 
+ Manager interface to the core system. You probably don't need it if
+ you don't understand what this is all about.
+ .
+ Homepage: http://www.networkupstools.org
+
+Package: nut-dev
+Architecture: any
+Depends: ${shlibs:Depends}, nut (>= 1.4.3-2)
+Conflicts: nut (<= 1.4.3-1)
+Description: Development files for NUT - Network UPS Tools
+ nut is a client/server uninterruptible power supply (UPS) monitoring system
+ that permits the sharing of one (or more) UPS between several machines. The
+ 'server' monitors the UPS and notifies the 'clients' when the UPS is on
+ or has a low battery.
+ .
+ This package contains the development headers (upsclient.h and parseconf.h),
+ library (static only, libupsclient.a) and testing driver (dummycons) for
+ Network UPS Tools. These allows to compile client applications such as wmnut,
+ and test their behavior. You probably don't need it if you don't understand
+ what this is all about.
+ .
+ Homepage: http://www.networkupstools.org
+
+Package: nut-hal-drivers
+Architecture: any
+Depends: ${shlibs:Depends}
+Conflicts: nut
+Provides: hal-ups-support
+Description: HAL interface for NUT - Network UPS Tools
+ nut is a client/server uninterruptible power supply (UPS) monitoring system
+ that permits the sharing of one (or more) UPS between several machines. The
+ 'server' monitors the UPS and notifies the 'clients' when the UPS is on
+ or has a low battery.
+ .
+ This package contains addons for the hardware abstraction layer (HAL) that
+ allow desktop environments to monitor locally-connected UPS equipment. The
+ HAL drivers cannot be used at the same time as the normal NUT upsd.
+ .
+ Homepage: http://www.networkupstools.org

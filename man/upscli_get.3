@@ -1,0 +1,91 @@
+.TH UPSCLI_GET 3 "Mon Jan 22 2007" "" "Network UPS Tools (NUT)"
+.SH NAME
+upscli_get \- retrieve data from a UPS
+.SH SYNOPSIS
+.nf
+.B #include <upsclient.h>
+.sp
+.BI "int upscli_get(UPSCONN *ups, int numq, const char **query,"
+.BI "			int *numa, char ***answer)"
+.fi
+.SH DESCRIPTION
+The \fBupscli_get()\fP function takes the pointer \fIups\fP to a
+UPSCONN state structure, and the pointer \fIquery\fP to an array of
+\fInumq\fP query elements.  It builds a properly\(hyformatted request from
+those elements and transmits it to \fBupsd\fP(8).
+.PP
+Upon success, the response will be split into separate components.  A
+pointer to those components will be returned in \fIanswer\fP.  The
+number of usable answer components will be returned in \fInuma\fP.
+.PP
+.SH "USES"
+This function implements the "GET" command in the protocol.  As a
+result, you can use it to request many different things from the server.
+Some examples are:
+.PP
+ \(hy GET NUMLOGINS <ups>
+ \(hy GET UPSDESC <ups>
+ \(hy GET VAR <ups> <var>
+ \(hy GET TYPE <ups> <var>
+ \(hy GET DESC <ups> <var>
+ \(hy GET CMDDESC <ups> <cmd>
+
+.SH QUERY FORMATTING
+To generate a request for "GET NUMLOGINS su700", you would populate
+query and numq as follows:
+.PP
+.nf
+	int numq;
+	const char *query[2];
+
+	query[0] = "NUMLOGINS";
+	query[1] = "su700";
+	numq = 2;
+.fi
+.PP
+All escaping of special characters and quoting of elements with spaces
+is handled for you inside this function.
+.PP
+.SH ANSWER FORMATTING
+The raw response from upsd to the above query would be "NUMLOGINS su700
+1". Since this is split up for you, the values work out like this:
+.PP
+.nf
+	numa = 3;
+	answer[0] = "NUMLOGINS"
+	answer[1] = "su700"
+	answer[2] = "1"
+.fi
+.PP
+Notice that the value which you seek typically starts at answer[numq].
+.PP
+.SH "ERROR CHECKING"
+This function will check your query against the response from
+\fBupsd\fP.  For example, if you send "VAR" "su700" "ups.status", it
+will expect to see those at the beginning of the response. 
+.PP
+If the results from \fBupsd\fP do not pass this case\(hyinsensitive test
+against your request, this function will return an error.   When this
+happens, \fBupscli_upserror\fP(3) will return \fIUPSCLI_ERR_PROTOCOL\fP.
+.PP
+.SH ANSWER ARRAY LIFETIME
+The pointers contained within the \fIanswer\fP array are only valid
+until the next call to a \fBupsclient\fP function which references them.
+If you need to use data from multiple calls, you must copy it somewhere
+else first.
+.PP
+The \fIanswer\fP array and its elements may change locations, so you
+must not rely on previous addresses.  You must only use the addresses
+which were returned by the most recent call.  You also must not attempt
+to use more than \fInuma\fP elements in \fIanswer\fP.  Such behavior is
+undefined, and may yield bogus data or a crash.
+.PP
+The array will be deleted after calling \fBupscli_disconnect\fP(3).  Any 
+access after that point is also undefined.
+.PP
+.SH "RETURN VALUE"
+The \fBupscli_get()\fP function returns 0 on success, or \-1 if an
+error occurs.
+.SH "SEE ALSO"
+.BR upscli_list_start "(3), "upscli_list_next "(3), "
+.BR upscli_strerror "(3), "upscli_upserror "(3) "

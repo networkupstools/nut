@@ -1,0 +1,5 @@
+conf/ups.conf.sample
+conf/upsd.conf.sample
+conf/upsd.users.sample
+conf/upsmon.conf.sample
+conf/upssched.conf.sample

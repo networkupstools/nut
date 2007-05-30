@@ -1,0 +1,63 @@
+Desc: NUT-specific autoconf macros
+File: macros.txt
+Date: 27 December 2006
+Auth: Peter Selinger <selinger@users.sourceforge.net>
+
+The following NUT-specific autoconf macros are defined in the m4/
+directory.
+
+ - Macro: NUT_TYPE_SOCKLEN_T
+ - Macro: NUT_TYPE_UINT8_T
+ - Macro: NUT_TYPE_UINT16_T
+   Check for the corresponding type in the system header files, and
+   #define a replacement if necessary.
+
+ - Macro: NUT_CHECK_LIBGD
+ - Macro: NUT_CHECK_LIBHAL
+ - Macro: NUT_CHECK_LIBNETSNMP
+ - Macro: NUT_CHECK_LIBSSL
+ - Macro: NUT_CHECK_LIBUSB
+   Determine the compiler flags for the corresponding library. On
+   success, set nut_have_libxxx="yes" and set LIBXXX_CFLAGS and
+   LIBXXX_LDFLAGS. On failure, set nut_have_libxxx="no". This macro
+   can be run multiple times, but will do the checking only once.
+   Here "xxx" should of course be replaced by the respective library name.
+
+   The checks for each library grow organically to compensate for
+   various bugs in the libraries, pkg-config, etc. This is why we have
+   a separate macro for each library.
+
+ - Macro: NUT_CHECK_HIDDEV
+   Check for the presence/location of Linux hiddev. If present, set
+   nut_linux_hiddev to the device path. If not present, set
+   nut_linux_hiddev="". This macro can be run multiple times, but will
+   do the checking only once.
+
+ - Macro: NUT_CHECK_IPV6
+   Check for various features required to compile the IPv6 support.
+   dnl Check for various features required for IPv6 support. Define a
+   preprocessor symbol for each individual feature (HAVE_GETADDRINFO,
+   HAVE_FREEADDRINFO, HAVE_STRUCT_ADDRINFO, HAVE_SOCKADDR_STORAGE,
+   SOCKADDR_IN6, IN6_ADDR, HAVE_IN6_IS_ADDR_V4MAPPED,
+   HAVE_AI_ADDRCONFIG). Also set the shell variable nut_have_ipv6=yes
+   if all the required features are present. Set nut_have_ipv6=no
+   otherwise.
+
+ - Macro: NUT_REPORT_FEATURE(FEATURE, VALUE) 
+   Schedule a line for the end-of-configuration feature summary.  The
+   FEATURE is a descriptive string such that the sentence "Checking
+   whether to FEATURE" makes sense, and VALUE describes the decision
+   taken (typically yes or no). The feature is also reported to the
+   terminal.
+
+ - Macro: NUT_REPORT(FEATURE, VALUE)
+   Schedule a line for the end-of-configuration feature summary, without
+   printing anything to the terminal immediately. 
+
+ - Macro: NUT_PRINT_FEATURE_REPORT
+   Print out a list of the features that have been reported by
+   previous NUT_REPORT_FEATURE macro calls.
+
+ - Macro: NUT_ARG_WITH(FEATURE, DESCRIPTION, DEFAULT)
+   Declare a simple --with-FEATURE option with the given DESCRIPTION
+   and DEFAULT. Sets the variable nut_with_FEATURE.

@@ -1,0 +1,24 @@
+.TH UPSCLI_SENDLINE 3 "Mon Jan 22 2007" "" "Network UPS Tools (NUT)"
+.SH NAME
+upscli_sendline \- send a single command to a UPS
+.SH SYNOPSIS
+.nf
+.B #include <upsclient.h>
+.sp
+.BI "int upscli_sendline(UPSCONN *ups, const char *buf, size_t buflen);"
+.fi
+.SH DESCRIPTION
+The \fBupscli_sendline()\fP function takes the pointer \fIups\fP to a
+UPSCONN state structure and transmits a buffer \fIbuf\fP of size
+\fIbuflen\fP to the server. 
+.PP
+The data in \fIbuf\fP must be a fully formatted protocol command as no
+parsing of the buffer occurs within this function.
+.SH "RETURN VALUE"
+The \fBupscli_sendline()\fP function returns 0 on success, or \-1 if an
+error occurs.
+.SH "SEE ALSO"
+.BR upscli_fd "(3), "upscli_get "(3), "
+.BR upscli_readline "(3), "upscli_sendline "(3), "
+.BR upscli_ssl "(3), "
+.BR upscli_strerror "(3), "upscli_upserror "(3) "

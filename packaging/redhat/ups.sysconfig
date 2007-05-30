@@ -1,0 +1,24 @@
+# If the UPS is locally attached set it to "yes"
+SERVER=yes
+# Model of the UPS (filename to call for it, without path)
+# Example - one of
+#	apcsmart	- APC SMartUPS and similar
+#	fentonups	- Fenton UPS
+#	optiups
+#	bestups
+#	genericups
+#	ups-trust425+625
+#  upsdrvctl
+# You MUST change this, or set SERVER to "no"
+# To support multiple drivers, set MODEL=upsdrvctl
+MODEL=NONE
+# UPS device - needed if UPS is locally attached
+DEVICE=/dev/ttyS0
+# Any options to pass to $MODEL
+# ex. for my TrippLite UPS, use 
+#	OPTIONS="-t 5"
+OPTIONS=
+# Any options to pass to upsd
+UPSD_OPTIONS=
+#
+# [End]

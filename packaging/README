@@ -1,0 +1,48 @@
+These directories hold the official packaging files for various
+operating systems and distributions.
+
+They have all been imported from the official source indicated
+below, and will be synchronised with these.
+
+
++ FIXME: these packages conforms to the NUT Packaging Standard
++ FIXME: described in nut/doc/packaging.txt and the NUT Developer Manual.
+
++ FIXME: put temporarily here package generation instruction
+
+
+Linux distributions
+===================
+
+* Debian
+
+  Directory: http://packages.qa.debian.org/n/nut.html
+  URL:
+
+* Mandriva
+
+  Directory: http://cvs.mandriva.com/cgi-bin/cvsweb.cgi/SPECS/nut/
+  URL:
+
+* Red Hat / Fedora Core
+
+  Directory: 
+  URL:
+
+  The official files are located in redhat (lower case)
+
+BSD systems
+===========
+
+
+Special directories
+===================
+
+* Generic RPM
+
+  Directory: generic-rpm
+  URL: none
+
+* Linux From Scratch
+...
+

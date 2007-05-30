@@ -1,0 +1,33 @@
+.TH UPSCLI_SPLITADDR 3 "Mon Jan 22 2007" "" "Network UPS Tools (NUT)"
+.SH NAME
+upscli_splitaddr \- split a listening address into its components
+.SH SYNOPSIS
+.nf
+.B #include <upsclient.h>
+.sp
+.BI "int upscli_splitaddr(const char *buf, char **hostname, "
+.BI "				int *port)"
+.fi
+.SH DESCRIPTION
+The \fBupscli_splitaddr()\fP function takes a pointer to the raw UPS 
+definition \fIbuf\fP and returns pointers to dynamically allocated
+memory in \fIupsname\fP and \fIhostname\fP.  It also copies the port
+number into \fIport\fP.
+.SH FORMATTING
+A listening address definition is specified according to this format:
+.PP
+	<hostname>[:<port>]
+.PP
+Definitions without an explicit port value receive the default value of
+3493.
+.SH "MEMORY USAGE"
+You must \fBfree\fP(3) the pointer \fIhostname\fP when you are done
+with it to avoid memory leaks.
+.SH "RETURN VALUE"
+The \fBupscli_splitaddr()\fP function returns 0 on success, or \-1 if an
+error occurs.
+.SH "SEE ALSO"
+.BR upscli_fd "(3), "upscli_get "(3), "
+.BR upscli_readline "(3), "upscli_sendline "(3), "
+.BR upscli_splitname "(3), "upscli_ssl "(3), "
+.BR upscli_strerror "(3), "upscli_upserror "(3) "

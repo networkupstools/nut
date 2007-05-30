@@ -1,0 +1,19 @@
+#!/bin/sh
+
+# This file was installed by the libhid Debian package.
+#
+# This script changes the permissions and ownership of a USB device under
+# /proc/bus/usb to grant access to this device to users in the nut group.
+#
+# Ownership is set to root.nut, permissions are set to 0660.
+#
+# Arguments :
+# -----------
+# ACTION=[add|remove]
+# DEVICE=/proc/bus/usb/BBB/DDD
+# TYPE=usb
+
+if [ "$ACTION" = "add" -a "$TYPE" = "usb" ]; then
+  chown root:@RUN_AS_GROUP@ "$DEVICE"
+  chmod 0664 "$DEVICE"
+fi

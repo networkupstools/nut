@@ -1,0 +1,732 @@
+--- nut-2.0.5/server/access.c.IPv6	2005-01-27 09:33:14.000000000 -0500
++++ nut-2.0.5/server/access.c	2007-01-23 10:11:31.000000000 -0500
+@@ -25,33 +25,72 @@
+ #include "common.h"
+ #include "access.h"
+ 
+-	struct 	acl_t	*acl_head = NULL;
+-	struct	access_t	*access_head = NULL;
++struct 	acl_t	*acl_head = NULL;
++struct	access_t	*access_head = NULL;
++
++/*
++ *  Stolen from privoxy code :]
++ */
++int mask_cmp (const struct sockaddr_storage* ip_addr, unsigned int prefix, const struct sockaddr_storage* net_addr) {
++	switch (ip_addr->ss_family) {
++	case AF_INET:
++		return((((struct sockaddr_in*)ip_addr)->sin_addr.s_addr & htonl(prefix)) == ((struct sockaddr_in*)net_addr)->sin_addr.s_addr);
++		break;
++	case AF_INET6:
++		if (AF_INET6 == net_addr->ss_family) {
++			struct in6_addr ip, net;
++			register unsigned char i;
++			
++			memcpy (&ip, &((struct sockaddr_in6 *)ip_addr)->sin6_addr, sizeof (struct in6_addr));
++			memcpy (&net, &((struct sockaddr_in6 *)net_addr)->sin6_addr, sizeof (struct in6_addr));
++			
++			i = prefix/8;
++			if (prefix%8)
++				ip.s6_addr[i++] &= 0xff<<(8-(prefix%8));
++			for (; i < sizeof ip.s6_addr; i++)
++				ip.s6_addr[i] = 0;
++			
++			return (memcmp (ip.s6_addr, net.s6_addr, sizeof ip.s6_addr)==0);
++		}
++		else if (AF_INET == net_addr->ss_family) { /* IPv4 mapped IPv6 */
++			struct in6_addr *ip6 = &((struct sockaddr_in6 *)ip_addr)->sin6_addr;
++			struct in_addr *net = &((struct sockaddr_in *)net_addr)->sin_addr;
++			
++			if ((ip6->s6_addr32[3] & (u_int32_t)prefix) == net->s_addr &&
++#if BYTE_ORDER == LITTLE_ENDIAN
++					(ip6->s6_addr32[2] == (u_int32_t)0xffff0000) &&
++#else
++					(ip6->s6_addr32[2] == (u_int32_t)0x0000ffff) &&
++#endif
++					(ip6->s6_addr32[1] == 0) && (ip6->s6_addr32[0] == 0))
++				return(1);
++			else
++				return(0); 
++		}
++	default:
++		fatal_with_errno ("mask_cmp: Unknown address family");
++		return(0);
++	}
++}
+ 
+ /* see if <addr> matches the acl <aclname> */
+-int acl_check(const char *aclname, const struct sockaddr_in *addr)
++int acl_check(const char *aclname, const struct sockaddr_storage *addr)
+ {
+ 	struct	acl_t	*tmp;
+-	int	aclchk, addrchk;
+ 
+ 	tmp = acl_head;
+ 	while (tmp != NULL) {
+-		if (!strcmp(tmp->name, aclname)) {
+-			aclchk = tmp->addr & tmp->mask;
+-			addrchk = ntohl(addr->sin_addr.s_addr) & tmp->mask;
+-
+-			if (aclchk == addrchk) 
+-				return 1;	/* match */
+-		}
+-
++		if (!strcmp(tmp->name, aclname))
++			if (mask_cmp (addr, tmp->mask, &tmp->addr))
++				return 1;
+ 		tmp = tmp->next;
+ 	}
+-
++	
+ 	return 0;	/* not found */
+ }
+ 
+ /* return ACCEPT/REJECT based on source address */
+-int access_check(const struct sockaddr_in *addr)
++int access_check(const struct sockaddr_storage *addr)
+ {
+ 	struct	access_t	*tmp;
+ 	int	ret;
+@@ -108,21 +147,83 @@
+ 		tmp = tmp->next;
+ 	}
+ 
++	//memset (&saddr, 0, sizeof (struct sockaddr_storage));
+ 	tmp = xmalloc(sizeof(struct acl_t));
++	memset (tmp, 0, sizeof (struct acl_t));
+ 	tmp->name = xstrdup(aclname);
+-	tmp->addr = ntohl(inet_addr(addr));
+ 	tmp->next = NULL;
+ 
+-	/* must be a /nn CIDR type block */
+-	if (strstr(mask, ".") == NULL) { 
+-		if (atoi(mask) != 32)
+-			tmp->mask = ((unsigned int) ((1 << atoi(mask)) - 1) << 
+-					(32 - atoi(mask)));
+-		else
+-			tmp->mask = 0xffffffff;	/* avoid overflow from 2^32 */
++	if (*addr == '[') { 
++		struct sockaddr_in6 s6;
++		char *stmp;
++
++		stmp = strchr (addr, ']');
++		if (stmp == NULL) {
++			free (tmp);
++			fatal_with_errno("Expecting \']\' in \"%s\"", addr);
++		}
++
++		*stmp = '\0';
++		addr++;
++		
++		memset (&s6, 0, sizeof (struct sockaddr_in6));
++		s6.sin6_family = AF_INET6;
++
++		if (inet_pton (AF_INET6, addr, &s6.sin6_addr) < 1) {
++			free (tmp);
++			fatal_with_errno ("Invalid IPv6 address: \"%s\"", addr);
++		}
++
++		/* prefix */
++		tmp->mask = strtol (mask, NULL, 10);
++
++		if (tmp->mask < 0 || tmp->mask > 128) {
++			free (tmp);
++			fatal_with_errno ("Invalid IPv6 prefix");
++		}
++
++		{ register unsigned char i;
++			i = (tmp->mask)/8;
++			if ((tmp->mask)%8)
++				s6.sin6_addr.s6_addr[i++] &= 0xff<<(8-((tmp->mask)%8));
++			for (; i < sizeof s6.sin6_addr.s6_addr; i++)
++				s6.sin6_addr.s6_addr[i] = 0;
++		}
++
++		memcpy (&(tmp->addr), &s6, sizeof (struct sockaddr_in6));
++		//tmp->addr.ss_len = sizeof (struct sockaddr_in6);
++		tmp->addr.ss_family = AF_INET6;
++	} else {
++		struct sockaddr_in s4;
++
++		/* mask */
++		if (inet_pton (AF_INET, mask, &s4.sin_addr) < 1) {
++			/* must be a /nn CIDR type block */
++			tmp->mask = strtol (mask, NULL, 10);
++
++			if (tmp->mask < 0 || tmp->mask > 32) {
++				free (tmp);
++				fatal_with_errno ("Invalid CIDR type block: Must be > 0 && < 32");
++			}
++			tmp->mask = 0xffffffff << (32 - tmp->mask);
++		} else {
++			tmp->mask = ntohl (s4.sin_addr.s_addr);
++		}
++
++		memset (&s4, 0, sizeof (struct sockaddr_in));
++		s4.sin_family = AF_INET;
++
++		if (inet_pton (AF_INET, addr, &s4.sin_addr) < 1) {
++			free (tmp);
++			fatal_with_errno ("Invalid IPv4 address: \"%s\"", addr);
++		}
++
++		s4.sin_addr.s_addr &= htonl (tmp->mask);
++
++		memcpy (&(tmp->addr), &s4, sizeof (struct sockaddr_in));
++		//tmp->addr.ss_len = sizeof (struct sockaddr_in);
++		tmp->addr.ss_family = AF_INET;
+ 	}
+-	else
+-		tmp->mask = ntohl(inet_addr(mask));
+ 
+ 	if (last == NULL)	/* first */
+ 		acl_head = tmp;
+--- nut-2.0.5/server/user.c.IPv6	2005-01-27 09:33:14.000000000 -0500
++++ nut-2.0.5/server/user.c	2007-01-23 10:11:31.000000000 -0500
+@@ -290,7 +290,7 @@
+ 	users = NULL;
+ }	
+ 
+-static int user_matchacl(ulist_t *user, const struct sockaddr_in *addr)
++static int user_matchacl(ulist_t *user, const struct sockaddr_storage *addr)
+ {
+ 	acllist	*tmp;
+ 
+@@ -328,7 +328,7 @@
+ 	return 0;	/* fail */
+ }
+ 
+-int user_checkinstcmd(const struct sockaddr_in *addr, 
++int user_checkinstcmd(const struct sockaddr_storage *addr, 
+ 	const char *un, const char *pw, const char *cmd)
+ {
+ 	ulist_t	*tmp = users;
+@@ -385,7 +385,7 @@
+ 	return 0;	/* fail */
+ }
+ 
+-int user_checkaction(const struct sockaddr_in *addr, 
++int user_checkaction(const struct sockaddr_storage *addr, 
+ 	const char *un, const char *pw, const char *action)
+ {
+ 	ulist_t	*tmp = users;
+--- nut-2.0.5/server/user.h.IPv6	2005-01-27 09:33:14.000000000 -0500
++++ nut-2.0.5/server/user.h	2007-01-23 10:11:31.000000000 -0500
+@@ -19,10 +19,10 @@
+ 
+ void user_load(void);
+ 
+-int user_checkinstcmd(const struct sockaddr_in *addr,
++int user_checkinstcmd(const struct sockaddr_storage *addr,
+ 	const char *un, const char *pw, const char *cmd);
+ 
+-int user_checkaction(const struct sockaddr_in *addr,
++int user_checkaction(const struct sockaddr_storage *addr,
+ 	const char *un, const char *pw, const char *action);
+ 
+ void user_flush(void);
+--- nut-2.0.5/server/ctype.h.IPv6	2005-01-27 09:33:14.000000000 -0500
++++ nut-2.0.5/server/ctype.h	2007-01-23 10:11:31.000000000 -0500
+@@ -32,7 +32,7 @@
+ 	char	*addr;
+ 	int	fd;
+ 	int	delete;			/* set after a write fails */
+-	struct sockaddr_in sock;
++	struct sockaddr_storage sock;
+ 	char	rq[SMALLBUF];
+ 	size_t	rqpos;
+ 	char	*loginups;
+--- nut-2.0.5/server/upsd.c.IPv6	2006-12-29 16:29:35.000000000 -0500
++++ nut-2.0.5/server/upsd.c	2007-01-23 10:11:31.000000000 -0500
+@@ -26,6 +26,7 @@
+ 
+ #include <sys/un.h>
+ #include <sys/socket.h>
++#include <netdb.h>
+ 
+ #ifdef HAVE_SSL
+ #include <openssl/err.h>
+@@ -60,7 +61,11 @@
+ static	int	listenfd, net_port = PORT;
+ 
+ 	/* default is to listen on all local interfaces */
+-static	struct	in_addr	listenaddr;
++static	char *listenaddr = NULL;
++
++/* AF_ */
++
++static int opt_af = AF_UNSPEC;
+ 
+ 	/* signal handlers */
+ static	struct sigaction sa;
+@@ -72,6 +77,20 @@
+ 	/* set by signal handlers */
+ static	int	reload_flag = 0, exit_flag = 0;
+ 
++const char *inet_ntopW (struct sockaddr_storage *s) {
++	static char str[40];
++
++	switch (s->ss_family) {
++	case AF_INET:
++		return inet_ntop (AF_INET, &(((struct sockaddr_in *)s)->sin_addr), str, 16);
++	case AF_INET6:
++		return inet_ntop (AF_INET6, &(((struct sockaddr_in6 *)s)->sin6_addr), str, 40);
++	default:
++		errno = EAFNOSUPPORT;
++		return NULL;
++	}
++}
++
+ /* return a pointer to the named ups if possible */
+ upstype *get_ups_ptr(const char *name)
+ {
+@@ -131,35 +150,62 @@
+ /* create a listening socket for tcp connections */
+ static void setuptcp(void)
+ {
+-	struct	sockaddr_in	server;
++	struct addrinfo hints, *r, *rtmp;
++	char *service;
+ 	int	res, one = 1;
+ 
+-	if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+-		fatal_with_errno("socket");
+-
+-	res = setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, (void *) &one, 
+-		sizeof(one));
+-
+-	if (res != 0)
+-		fatal_with_errno("setsockopt(SO_REUSEADDR)");
+-
+-	memset(&server, '\0', sizeof(server));
+-	server.sin_addr = listenaddr;
+-	server.sin_family = AF_INET;
+-	server.sin_port = htons(net_port);
+-
+-	if (bind(listenfd, (struct sockaddr *) &server, sizeof(server)) == -1)
+-		fatal_with_errno("Can't bind TCP port number %d", net_port);
+-
+-	if ((res = fcntl(listenfd, F_GETFL, 0)) == -1)
+-		fatal_with_errno("fcntl(get)");
++	memset (&hints, 0, sizeof (struct addrinfo));
++	hints.ai_family = opt_af;
++	hints.ai_flags = AI_PASSIVE;
++	hints.ai_protocol = IPPROTO_TCP;
++	hints.ai_socktype = SOCK_STREAM;
++
++	service = malloc (sizeof (char) * 6);
++	if (service == NULL)
++		fatal_with_errno("malloc");
++
++	if (snprintf (service, 6, "%hu", (unsigned short int)net_port) < 1)
++		fatal_with_errno("snprintf");
++
++	if (getaddrinfo (listenaddr, service, &hints, &r) != 0) {
++		free (service);
++		fatal_with_errno("getaddrinfo");
++	}
++	free (service);
++
++	for (rtmp = r; r != NULL; r = r->ai_next) {
++		listenfd = socket(r->ai_family, r->ai_socktype, r->ai_protocol);
++		if (listenfd < 0) {
++			if (r->ai_next == NULL)
++				fatal_with_errno("socket");
++			continue;
++		}
++		res = setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, (void *) &one, sizeof(one));
++		if (res != 0)
++			fatal_with_errno("setsockopt(SO_REUSEADDR)");
++
++		if (bind (listenfd, r->ai_addr, r->ai_addrlen) == -1) {
++			if (r->ai_next == NULL)
++				fatal_with_errno("Can't bind TCP port number %u", net_port);
++			close (listenfd);
++			continue;
++		}
+ 
+-	if (fcntl(listenfd, F_SETFL, res | O_NDELAY) == -1)
+-		fatal_with_errno("fcntl(set)");
++		if ((res = fcntl(listenfd, F_GETFL, 0)) == -1)
++			fatal_with_errno("fcntl(get)");
+ 
+-	if (listen(listenfd, 16))
+-		fatal_with_errno("listen");
++		if (fcntl(listenfd, F_SETFL, res | O_NDELAY) == -1)
++			fatal_with_errno("fcntl(set)");
+ 
++		if (listen(listenfd, 16) == -1) {
++			if (r->ai_next == NULL)
++				fatal_with_errno("listen");
++			close (listenfd);
++			continue;
++		}
++		break;
++	}
++	freeaddrinfo (rtmp);
+ 	return;
+ }
+ 
+@@ -412,7 +458,7 @@
+ static void answertcp(void)
+ {
+ 	int	acc;
+-	struct	sockaddr_in csock;
++	struct	sockaddr_storage csock;
+ 	ctype	*tmp, *last;
+ 	socklen_t	clen;
+ 
+@@ -424,7 +470,7 @@
+ 
+ 	if (!access_check(&csock)) {
+ 		upslogx(LOG_NOTICE, "Rejecting TCP connection from %s", 
+-			inet_ntoa(csock.sin_addr));
++			inet_ntopW(&csock));
+ 		shutdown(acc, shutdown_how);
+ 		close(acc);
+ 		return;
+@@ -439,10 +485,10 @@
+ 
+ 	tmp = xmalloc(sizeof(ctype));
+ 
+-	tmp->addr = xstrdup(inet_ntoa(csock.sin_addr));
++	tmp->addr = xstrdup(inet_ntopW(&csock));
+ 	tmp->fd = acc;
+ 	tmp->delete = 0;
+-	memcpy(&tmp->sock, &csock, sizeof(struct sockaddr_in));
++	memcpy(&tmp->sock, &csock, sizeof(struct sockaddr_storage));
+ 
+ 	tmp->rqpos = 0;
+ 	memset(tmp->rq, '\0', sizeof(tmp->rq));
+@@ -463,7 +509,7 @@
+ 	else
+ 		last->next = tmp;
+ 
+-	upslogx(LOG_INFO, "Connection from %s", inet_ntoa(csock.sin_addr));
++	upslogx(LOG_INFO, "Connection from %s", tmp->addr);
+ }
+ 
+ /* read tcp messages and handle them */
+@@ -668,6 +714,8 @@
+ 	printf("  -r <dir>	chroots to <dir>\n");
+ 	printf("  -u <user>	switch to <user> (if started as root)\n");
+ 	printf("  -V		display the version of this software\n");
++	printf("  -4		IPv4 only\n");
++	printf("  -6		IPv6 only\n");
+ 
+ 	exit(EXIT_SUCCESS);
+ }
+@@ -737,13 +785,11 @@
+ 	datapath = xstrdup(DATADIR);
+ 
+ 	/* set up some things for later */
+-
+-	listenaddr.s_addr = INADDR_ANY;
+ 	snprintf(pidfn, sizeof(pidfn), "%s/upsd.pid", altpidpath());
+ 
+ 	printf("Network UPS Tools upsd %s\n", UPS_VERSION);
+ 
+-	while ((i = getopt(argc, argv, "+hp:r:i:fu:Vc:D")) != EOF) {
++	while ((i = getopt(argc, argv, "+h46p:r:i:fu:Vc:D")) != EOF) {
+ 		switch (i) {
+ 			case 'h':
+ 				help(progname);
+@@ -752,8 +798,7 @@
+ 				net_port = atoi(optarg);
+ 				break;
+ 			case 'i':
+-				if (!inet_aton(optarg, &listenaddr))
+-					fatal_with_errno("Invalid IP address");
++				listenaddr = xstrdup (optarg);
+ 				break;
+ 			case 'r':
+ 				chroot_path = optarg;
+@@ -784,6 +829,15 @@
+ 				do_background = 0;
+ 				nut_debug_level++;
+ 				break;
++
++		  case '4':
++				opt_af = AF_INET;
++				break;
++
++		  case '6':
++				opt_af = AF_INET6;
++				break;
++
+ 			default:
+ 				help(progname);
+ 				break;
+--- nut-2.0.5/server/access.h.IPv6	2005-01-27 09:33:14.000000000 -0500
++++ nut-2.0.5/server/access.h	2007-01-23 10:11:31.000000000 -0500
+@@ -26,8 +26,8 @@
+ /* ACL structure */
+ struct acl_t {
+ 	char	*name;
+-	unsigned int	addr;
+-	unsigned int	mask;
++	struct sockaddr_storage	addr;
++	unsigned int	mask; /* prefix - if IPv6 */
+ 	void	*next;
+ };
+ 
+@@ -38,8 +38,8 @@
+ 	void	*next;
+ };
+ 
+-int acl_check(const char *aclname, const struct sockaddr_in *addr);
+-int access_check(const struct sockaddr_in *addr);
++int acl_check(const char *aclname, const struct sockaddr_storage *addr);
++int access_check(const struct sockaddr_storage *addr);
+ void acl_add(const char *aclname, char *ipblock);
+ void access_add(int type, int numargs, const char **arg);
+ void acl_free(void);
+--- nut-2.0.5/clients/upsclient.h.IPv6	2005-02-28 04:14:07.000000000 -0500
++++ nut-2.0.5/clients/upsclient.h	2007-01-23 10:11:31.000000000 -0500
+@@ -148,6 +148,8 @@
+ 
+ #define UPSCLI_CONN_TRYSSL	0x0001	/* try SSL, OK if not supported       */
+ #define UPSCLI_CONN_REQSSL	0x0002	/* try SSL, fail if not supported     */
++#define UPSCLI_CONN_INET    0x0004  /* IPv4 only */
++#define UPSCLI_CONN_INET6   0x0008  /* IPv6 only */
+ 
+ #ifdef __cplusplus
+ }
+--- nut-2.0.5/clients/upsc.c.IPv6	2005-01-27 09:33:14.000000000 -0500
++++ nut-2.0.5/clients/upsc.c	2007-01-23 10:11:31.000000000 -0500
+@@ -25,6 +25,9 @@
+ 
+ #include "upsclient.h"
+ 
++
++static int opt_af = AF_UNSPEC;
++
+ static void help(const char *prog)
+ {
+ 	printf("Network UPS Tools upsc %s\n\n", UPS_VERSION);
+--- nut-2.0.5/clients/upsclient.c.IPv6	2005-01-27 09:33:14.000000000 -0500
++++ nut-2.0.5/clients/upsclient.c	2007-01-23 10:11:31.000000000 -0500
+@@ -38,6 +38,8 @@
+ #define shutdown_how 2
+ #endif
+ 
++extern int opt_af;
++
+ struct {
+ 	int	flags;
+ 	const	char	*str;
+@@ -421,8 +423,8 @@
+ 	
+ int upscli_connect(UPSCONN *ups, const char *host, int port, int flags)
+ {
+-	struct	sockaddr_in	local, server;
+-	struct	hostent	*serv;
++	struct addrinfo hints, *r, *rtmp;
++	char *service;
+ 
+ 	/* clear out any lingering junk */
+ 	ups->fd = -1;
+@@ -449,78 +451,86 @@
+ 		return -1;
+ 	}
+ 
+-	if ((serv = gethostbyname(host)) == (struct hostent *) NULL) {
+-
+-		ups->upserror = UPSCLI_ERR_NOSUCHHOST;
++	service = malloc (sizeof (char) * 6);
++	if (service == NULL) {
++		ups->upserror = UPSCLI_ERR_NOMEM;
+ 		return -1;
+ 	}
+ 
+-	if ((ups->fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+-		ups->upserror = UPSCLI_ERR_SOCKFAILURE;
+-		ups->syserrno = errno;
++	if (snprintf (service, 6, "%hu", (unsigned short int)port) < 1) {
+ 		return -1;
+ 	}
+ 
+-	memset(&local, '\0', sizeof(struct sockaddr_in));
+-	local.sin_family = AF_INET;
+-	local.sin_port = htons(INADDR_ANY);
+-
+-	memset(&server, '\0', sizeof(struct sockaddr_in));
+-	server.sin_family = AF_INET;
+-	server.sin_port = htons(port);
+-
+-	memcpy(&server.sin_addr, serv->h_addr, serv->h_length);
+-
+-	if (bind(ups->fd, (struct sockaddr *) &local, 
+-		sizeof(struct sockaddr_in)) == -1) {
+-		ups->upserror = UPSCLI_ERR_BINDFAILURE;
+-		ups->syserrno = errno;
+-		close(ups->fd);
+-		ups->fd = -1;
++	memset (&hints, 0, sizeof (struct addrinfo));
++	hints.ai_family = flags & UPSCLI_CONN_INET ? AF_INET : (flags & UPSCLI_CONN_INET6 ? AF_INET6 : AF_UNSPEC);
++	hints.ai_socktype = SOCK_STREAM;
++	hints.ai_protocol = IPPROTO_TCP;
++	hints.ai_flags = AI_ADDRCONFIG;
+ 
++	if (getaddrinfo (host, service, &hints, &r) != 0) {
++		ups->upserror = UPSCLI_ERR_NOSUCHHOST;
++		free (service);
+ 		return -1;
+ 	}
++	free (service);
+ 
+-	if (connect(ups->fd, (struct sockaddr *) &server, 
+-		sizeof(struct sockaddr_in)) == -1) {
+-		ups->upserror = UPSCLI_ERR_CONNFAILURE;
+-		ups->syserrno = errno;
+-		close(ups->fd);
+-		ups->fd = -1;
++	for (rtmp = r; r != NULL; r = r->ai_next) {
++		ups->fd = socket (r->ai_family, r->ai_socktype, r->ai_protocol);
++		if (ups->fd < 0) {
++			if (r->ai_next == NULL) {
++				ups->upserror = UPSCLI_ERR_SOCKFAILURE;
++				ups->syserrno = errno;
++				break;
++			}
++			continue;
++		}
+ 
+-		return -1;
+-	}
++		if (connect (ups->fd, r->ai_addr, r->ai_addrlen) == -1) {
++			close (ups->fd);
++			ups->fd = -1;
++			if (r->ai_next == NULL) {
++				ups->upserror = UPSCLI_ERR_CONNFAILURE;
++				ups->syserrno = errno;
++				break;
++			}
++			continue;
++		}
++		freeaddrinfo (rtmp);
+ 
+-	/* don't use xstrdup for cleaner linking (fewer dependencies) */
+-	ups->host = strdup(host);
++		/* don't use xstrdup for cleaner linking (fewer dependencies) */
++		ups->host = strdup(host);
+ 
+-	if (!ups->host) {
+-		close(ups->fd);
+-		ups->fd = -1;
++		if (!ups->host) {
++			close(ups->fd);
++			ups->fd = -1;
+ 
+-		ups->upserror = UPSCLI_ERR_NOMEM;
+-		return -1;
+-	}
++			ups->upserror = UPSCLI_ERR_NOMEM;
++			return -1;
++		}
+ 
+-	ups->port = port;
++		ups->port = port;
+ 
+-	if (flags & UPSCLI_CONN_TRYSSL) {
+-		upscli_sslinit(ups);
++		if (flags & UPSCLI_CONN_TRYSSL) {
++			upscli_sslinit(ups);
+ 
+-		/* see if something made us die inside sslinit */
+-		if (ups->upserror != 0)
+-			return -1;
+-	}
++			/* see if something made us die inside sslinit */
++			if (ups->upserror != 0)
++				return -1;
++		}
+ 
+-	if (flags & UPSCLI_CONN_REQSSL) {
+-		if (upscli_sslinit(ups) != 1) {
+-			ups->upserror = UPSCLI_ERR_SSLFAIL;
+-			upscli_closefd(ups);
+-			return -1;
++		if (flags & UPSCLI_CONN_REQSSL) {
++			if (upscli_sslinit(ups) != 1) {
++				ups->upserror = UPSCLI_ERR_SSLFAIL;
++				upscli_closefd(ups);
++				return -1;
++			}
+ 		}
++
++		return 0;
+ 	}
++	freeaddrinfo (rtmp);
+ 
+-	return 0;
++	return -1;
+ }
+ 
+ /* map upsd error strings back to upsclient internal numbers */
+@@ -861,31 +871,48 @@
+ 
+ 	ptr = ap;
+ 
+-	cp = strchr(ptr, ':');
++	if (*ptr != '[') {
++		cp = strchr(ptr, ':');
++		if (cp) {
++			*cp++ = '\0';
++			*hostname = strdup(ptr);
++			
++			if (!*hostname) {
++				fprintf(stderr, "upscli_splitname: strdup failed\n");
++				return -1;
++			}
+ 
+-	if (cp) {
+-		*cp++ = '\0';
+-		*hostname = strdup(ptr);
++			ptr = cp;
++			
++			*port = strtol(ptr, (char **) NULL, 10);
+ 
+-		if (!*hostname) {
+-			fprintf(stderr, "upscli_splitname: strdup failed\n");
+-			return -1;
+-		}
++		} else {
+ 
+-		ptr = cp;
++			*hostname = strdup(ptr);
+ 
+-		*port = strtol(ptr, (char **) NULL, 10);
++			if (!*hostname) {
++				fprintf(stderr, "upscli_splitname: strdup failed\n");
++				return -1;
++			}
+ 
++			*port = PORT;
++		}
+ 	} else {
+-
+-		*hostname = strdup(ptr);
+-
+-		if (!*hostname) {
+-			fprintf(stderr, "upscli_splitname: strdup failed\n");
++		ptr++;
++		cp = strchr(ptr, ']');
++		if (cp) {
++			*cp = '\0';
++			*hostname = strdup (ptr);
++			ptr = ++cp;
++			cp = strchr (ptr, ':');
++			if (cp != NULL)
++			 *port = strtol (++cp, (char **)NULL, 10);
++			else
++			 *port = PORT;
++		} else {
++			fprintf (stderr, "upscli_splitname: strchr(']') failed\n");
+ 			return -1;
+ 		}
+-
+-		*port = PORT;
+ 	}
+ 
+ 	return 0;

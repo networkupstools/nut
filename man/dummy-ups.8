@@ -1,0 +1,65 @@
+.TH DUMMY-UPS 8 "Sat Jul 02 2005" "" "Network UPS Tools (NUT)"
+.SH NAME
+dummy-ups \- Driver for testing UPS software
+
+.SH SYNOPSIS
+.B dummy-ups [\fIport\fB]
+
+.SH DESCRIPTION
+This program looks like a standard UPS driver to \fBupsd\fR(8) and 
+allows you to set any value for testing purposes.  It is interactive,
+through upsrw command or equivalent graphical tool. It can be
+configured, launch and used as any other real driver.
+
+.SH ARGUMENTS
+The port specify a definition file name for dummy-ups. This can either
+be an absolute or a relative path name. In the latter case the NUT
+"etc" directory (ie /etc/nut, /usr/local/ups/etc, ...) is prepended.
+This file, generally named something.dev, contains a list of all
+valid data and associated values, and has the same format as an upsc
+dump (<varname>: <value>), so you can easilly create definition
+files from existing UPS.
+
+With no arguments, dummy-ups will assume a port name of "null", and
+will preload the following data:
+
+.nf
+	driver.name			= dummy-ups
+	driver.version			= (varies)
+	driver.version.internal	= (varies)
+	ups.mfr				= Dummy Manufacturer
+	ups.model 			= Dummy UPS
+	ups.status			= OL
+.fi
+
+You can also add an entry in \fBups.conf\fR(5), and run multiple
+instances if needed.
+
+.SH INTERACTION
+
+Once the driver is loaded, you can set any variables, except those
+of the driver.* and server.* collections.
+
+.SH BACKGROUND
+
+This driver was written in an evening to replace the previous 
+dummycons which required to work from a terminal to interact.
+
+It is useful for NUT client development, and other testing purpose.
+
+.SH BUGS
+
+Instant commands are not yet supported, and data need value checking
+enforcement, as well as boundaries or enumeration definition.
+
+
+.SH AUTHOR
+Arnaud Quette
+
+.SH SEE ALSO
+
+\fBups.conf\fR(5)
+\fBnutupsdrv\fR(8)
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

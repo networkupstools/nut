@@ -1,0 +1,301 @@
+Desc: Configure options
+File: configure.txt
+Date: 08 January 2007
+Auth: Russell Kroll <rkroll@exploits.org>
+Auth: Peter Selinger <selinger@sourceforge.net>
+Auth: Arnaud Quette <aquette.dev@gmail.com>
+
+There are a few options that can be given to configure to tweak compiles. 
+See also "./configure --help" for a current and complete listing.
+
+Contents:
+=========
+
+1. Driver selection
+2. Optional features
+3. Other configuration options
+4. Installation directories
+5. Directories used by NUT at run-time
+6. Things the compiler might need to find
+
+1. Driver selection:
+====================
+
+ --with-serial
+
+   Build and install the serial drivers (default: yes)
+
+ --with-usb
+
+   Build and install the USB drivers (default: auto-detect)
+   Note that you need to install the libusb development package or files.
+
+ --with-snmp
+
+   Build and install the SNMP drivers (default: auto-detect)
+   Note that you need to install libsnmp development package or files.
+
+ --with-drivers=<driver>,<driver>,...
+
+   Specify exactly which driver or drivers to build and install (this
+   works for serial, usb, and snmp drivers, and overrides the
+   preceding three options).
+
+   As of the time of this writing (2006), there are 47 UPS drivers
+   available.  Most users will only need one, a few will need two or
+   three, and very few people will need all of them.
+
+   To save time during the compile and disk space later on, you can
+   use this option to just build and install a subset of the drivers.
+   To select apcsmart and usbhid-ups, you'd do this:
+
+	--with-drivers=apcsmart,usbhid-ups
+
+   If you need to build more drivers later on, you will need to rerun
+   configure with a different list. To make it build all of the
+   drivers from scratch again, run 'make clean' before starting.
+
+2. Optional features:
+=====================
+
+ --with-cgi (default: no)
+
+   Build and install the optional CGI programs, HTML files, and sample
+   CGI configuration files. This is not enabled by default, as they
+   are only useful on web servers. See data/html/README for additional
+   information on how to set up CGI programs. 
+
+ --with-lib (default: no)
+
+   Build and install the upsclient library and header files. 
+
+ --with-all (no default)
+
+   Build and install all of the above (the serial, USB, and SNMP
+   drivers, the CGI programs and HTML files, and the upsclient
+   library).
+
+  --with-ssl
+
+   Enable SSL development code (default: auto-detect)
+
+  --with-ipv6
+
+   Enable IPv6 support (default: auto-detect)
+
+3. Other configuration options:
+===============================
+
+ --with-port=PORT
+
+   Change the TCP port used by the network code.  Default is 3493.
+
+   Ancient versions of upsd used port 3305.  NUT 2.0 and up use a
+   substantially different network protocol and are not able to  
+   communicate with anything older than the 1.4 series.
+
+   If you have to monitor a mixed environment, use the last 1.4 version,
+   as it contains compatibility code for both the old "REQ" and the new
+   "GET" versions of the protocol.
+
+ --with-user=<username>
+ --with-group=<groupname>
+
+   Programs started as root will setuid() to <username> for somewhat
+   safer operation.  You can override this with -u <user> in several
+   programs, including upsdrvctl (and all drivers by extension), upsd,
+   and upsmon.  The "user" directive in ups.conf overrides this at run
+   time for the drivers.
+
+   Note: upsmon does not totally drop root because it may need to
+   initiate a shutdown.  There is always at least a stub process
+   remaining with root powers.  The network code runs in another
+   (separate) process as the new user.
+
+   The <groupname> is used for the permissions of some files,
+   particularly the hotplugging rules for USB. The idea is that the
+   device files for any UPS devices should be readable and writable by
+   members of that group.
+
+   The default value for both the username and groupname is "nobody".
+   This was done since it's slightly better than staying around as
+   root.  Running things as nobody is not a good idea, since it's a
+   hack for NFS access.  You should create at least one separate user
+   for this software.
+
+   If you use one of the --with-user and --with-group options, then
+   you have to use the other one too. 
+
+   See the INSTALL document and the FAQ for more on this topic.
+
+ --with-logfacility=FACILITY
+
+   Change the facility used when writing to the log file.  Read the man
+   page for openlog to get some idea of what's available on your system.
+   Default is LOG_DAEMON.
+
+4. Installation directories:
+============================
+
+ --prefix=PATH
+
+   This is a fairly standard option with GNU autoconf, and it sets the
+   base path for most of the other install directories.  The default
+   is /usr/local/ups, which puts everything but the state sockets in one
+   easy place.
+
+   If you like having things to be at more of a "system" level, setting
+   the prefix to /usr/local or even /usr might be better.
+
+ --exec_prefix=PATH
+
+   This sets the base path for architecture dependent files. By
+   default, it is the same as <prefix>.
+
+ --sysconfdir=PATH
+
+   Changes the location where NUT's configuration files are stored.
+   By default this path is <prefix>/etc.  Setting this to /etc or
+   /etc/ups might be useful.
+
+   The NUT_CONFPATH environment variable overrides this at run time.
+
+ --bindir=PATH
+ --sbindir=PATH
+
+   Where executable files will be installed. Files that are normally
+   executed by root (upsd, upsmon, upssched) go to sbindir, all others
+   to bindir. The defaults are <exec_prefix>/bin and <exec_prefix>/sbin.
+
+ --datadir=PATH
+
+   Change the data directory, i.e., where architecture independent
+   read-only data is installed.  By default this is <prefix>/share,
+   i.e., /usr/local/ups/share.  At the moment, this directory only
+   holds two files - the optional cmdvartab and driver.list.
+
+ --mandir=PATH
+
+   Sets the base directories for the man pages.  The default is
+   <prefix>/man, i.e., /usr/local/ups/man.
+
+ --includedir=PATH
+
+   Sets the path for include files to be installed when --with-lib is
+   selected. For example, upsclient.h is installed here. The default
+   is <prefix>/include.
+
+ --libdir=PATH
+
+   Sets the installation path for libraries.  This is just the
+   upsclient library for now.  The default is <exec_prefix>/lib.
+
+ --with-drvpath=PATH
+
+   The UPS drivers will be installed to this path.  By default they
+   install to "<exec_prefix>/bin", i.e., /usr/local/ups/bin.
+
+   The "driverpath" global directive in the ups.conf file overrides this
+   at run time.
+
+ --with-cgipath=PATH
+
+   The CGI programs will be installed to this path.  By default, they
+   install to "<exec_prefix>/cgi-bin", which is usually /usr/local/ups/cgi-bin.
+
+   If you set the prefix to something like /usr, you should set the 
+   cgipath to something else, because /usr/cgi-bin is pretty ugly and 
+   non-standard.
+
+   The CGI programs are not built or installed by default.  Use
+   "./configure --with-cgi" to request that they are built and
+   installed.
+
+ --with-htmlpath=PATH
+
+   HTML files will be installed to this path. By default, this is
+   "<prefix>/html". Note that HTML files are only installed if
+   --with-cgi is selected.
+
+ --with-pkgconfig-dir=PATH
+
+   Where to install pkg-config *.pc files. This option only has an
+   effect if --with-lib is selected, and causes a pkg-config file to
+   be installed in the named location. The default is
+   /usr/lib/pkgconfig. Note that this installation directory is not a
+   subdirectory of <prefix> by default; this is so that other programs
+   can use pkg-config to locate the NUT library without first having
+   to guess the location of the NUT library (which would be a
+   catch-22). When installing NUT as a non-root user, you may have to
+   override this option.
+
+   Use --without-pkgconfig-dir to disable this feature altogether. 
+
+ --with-hotplug-dir=PATH
+
+   Where to install Linux 2.4 hotplugging rules. The default is
+   /etc/hotplug, if that directory exists, and not to install it
+   otherwise. Note that this installation directory is not a
+   subdirectory of <prefix> by default. When installing NUT as a
+   non-root user, you may have to override this option.
+
+   Use --without-hotplug-dir to disable this feature altogether. 
+
+ --with-udev-dir=PATH
+
+   Where to install Linux 2.6 hotplugging rules, for kernels that have
+   the "udev" mechanism. The default is /etc/udev, if that directory
+   exists, and not to install it otherwise. Note that this
+   installation directory is not a subdirectory of <prefix> by
+   default. When installing NUT as a non-root user, you may have to
+   override this option.
+
+   Use --without-udev-dir to disable this feature altogether. 
+
+5. Directories used by NUT at run-time:
+=======================================
+
+ --with-pidpath=PATH
+
+   Changes the directory where pid files are stored.  By default this is
+   /var/run.  Certain programs like upsmon will leave files here.
+
+ --with-altpidpath=PATH
+
+   Programs that normally don't have root powers, like the drivers and
+   upsd, write their pid files here.  By default this is whatever the
+   statepath is, as those programs should be able to write there.
+
+ --with-statepath=PATH
+
+   Change the default location of the state sockets created by the
+   drivers.
+
+   The NUT_STATEPATH environment variable overrides this at run time.
+
+   Default is /var/state/ups.
+
+6. Things the compiler might need to find:
+==========================================
+
+ --with-linux-hiddev=FILE
+
+   Sets the location of the hiddev.h for USB UPS support on Linux. 
+   This defaults to /usr/include/linux/hiddev.h, and is only used when
+   building the experimental "energizerups" driver.  If your kernel
+   header files live somewhere else, you will need to use this.
+
+ --with-gd-includes="-I/foo/bar"
+
+   If you installed gd in some place where your C preprocessor can't
+   find the header files, use this switch to add additional -I flags.
+
+ --with-gd-libs="-L/foo/bar -labcd -lxyz"
+
+   If your copy of gd isn't linking properly, use this to give the
+   proper -L and -l flags to make it work.  See LIBS= in gd's Makefile.
+
+   Note: the --with-gd switches are not necessary if you have gd 2.0.8
+   or higher installed properly.  The gdlib-config script will be 
+   detected and used by default in that situation.
+

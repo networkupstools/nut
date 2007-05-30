@@ -1,0 +1,64 @@
+Desc: Details about the configuration files
+File: config-files.txt
+Date: 30 April 2003
+Auth: Russell Kroll <rkroll@exploits.org>
+
+All configuration files within this package are parsed with a common
+state machine, which means they all can use a number of extras described
+in this file.
+
+First, most of the programs use an uppercase word to declare a
+configuration directive.  This may be something like MONITOR, NOTIFYCMD,
+or ACCESS.  The case does matter here.  "monitor" won't be recognized.
+
+Next, the parser does not care about whitespace between words.  If you
+like to indent things with tabs or spaces, feel free to do it here.  
+
+If you need to set a value to something containing spaces, it has to be
+contained within "quotes" to keep the parser from splitting up the line.
+That is, you want to use something like this:
+
+	SHUTDOWNCMD "/sbin/shutdown -h +0"
+
+Without the quotes, it would only see the first word on the line.
+
+OK, so let's say you really need to embed that kind of quote within your
+configuration directive for some reason.  You can do that too.
+
+	NOTIFYCMD "/bin/notifyme -foo -bar \"hi there\" -baz"
+
+In other words, \ can be used to escape the ".
+
+Finally, for the situation where you need to put the \ character into your
+string, you just escape it.
+
+	NOTIFYCMD "/bin/notifyme c:\\dos\\style\\path"
+
+The \ can actually be used to escape any character, but you only really
+need it for \, ", and # as they have special meanings to the parser.
+
+# is the comment character.  Anything after an unescaped # is ignored.
+
+Something like this...
+
+	identity = my#1ups
+
+... will actually turn into "identity = my", since the # stops the 
+parsing. If you really need to have a # in your configuration, then
+escape it.
+
+	identity = my\#1ups
+
+Much better.
+
+Line spanning
+=============
+
+You can put a backslash at the end of the line to join it to the next
+one.  This creates one virtual line that is composed of more than one
+physical line.
+
+Also, if you leave the "" quote container open before a newline, it will
+keep scanning until it reaches another one.  If you see bizarre behavior
+in your configuration files, check for an unintentional instance of
+quotes spanning multiple lines.

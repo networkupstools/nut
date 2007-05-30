@@ -1,0 +1,116 @@
+Desc: NUT libraries complementary information
+File: README
+Date: 23 Aug 2003
+Auth: Arnaud Quette <arnaud.quette@free.fr>
+
+This file provides some complementary information
+about the creation process of NUT libraries, and
+the use of it.
+
+1) Introduction
+---------------
+
+This represents an evolution toward a fully standard NUT
+library usage for external programs, such as clients.
+
+The aim is to provide facilities to incorporate NUT functions
+into external programs such as asapm-ups, wmnut, and others.
+But it is also used internally (upsc, ...)
+
+NUT (install-lib or legacy install-misc) currently provides:
+- a library (static and/or dynamic, depending on what your platform supports), 
+  called libupsclient.a, libupsclient.so, etc. 
+- and header files (upsclient.h).
+- an helper script called libupsclient-config,
+- and a pkgconfig file, called libupsclient.pc, if it is supported
+
+2) pkgconfig support
+--------------------
+
+pkgconfig enables a high level of integration with minimal effort.
+No more needs to manage hosts of possible NUT installation path in
+your configure script !
+
+It is as simple to use as calling:
+
+$> `pkg-config  --exists libupsclient --silence-errors` to see if NUT is usable
+$> `pkg-config --cflags libupsclient` to get CFLAGS
+$> `pkg-config --libs libupsclient` to get LD_FLAGS
+
+A file called "libupsclient.pc" is provided in the present directory,
+and installed in the according directory to enable the above
+feature. The default installation directory ("/usr/lib/pkgconfig/")
+may be changed with "./configure --with-pkgconfig-dir=PATH".
+
+
+3) libupsclient-config:
+-----------------------
+
+Even if pkgconfig is supported/installed, an alternate
+helper script will be installed in the same directory
+as NUT client programs (BINDIR).
+
+The usage is about the same as pkg-config:
+
+$> `libupsclient-config --cflags` to get CFLAGS
+$> `libupsclient-config --libs` to get LD_FLAGS
+
+
+4) Example of configure.in:
+---------------------------
+
+For using libupsclient in your program, simply copy/paste
+the below into your configure.in file. It will test for
+pkgconfig support for NUT, and fall back to
+libupsclient-config if not available. It will issue an
+error if none is found!
+
+...
+AC_MSG_CHECKING(for NUT client library (libupsclient))
+pkg-config --exists libupsclient --silence-errors
+if test $? -eq 0
+then
+	AC_MSG_RESULT(found (using pkg-config))
+	LDFLAGS="$LDFLAGS `pkg-config --libs libupsclient`"
+	NUT_HEADER="`pkg-config --cflags libupsclient`"
+else
+	libupsclient-config --version
+	if test $? -eq 0
+	then
+		AC_MSG_RESULT(found (using libupsclient-config))
+		LDFLAGS="$LDFLAGS `libupsclient-config --libs`"
+		NUT_HEADER="`libupsclient-config --cflags`"
+	else
+		AC_MSG_ERROR("libupsclient not found")
+	fi
+fi
+...
+
+
+You can also use this if you are sure that pkg-config
+is installed:
+...
+PKG_CHECK_MODULES(LIBUPSCLI, libupsclient >= 1.5.2)
+...
+
+5) Future things:
+-----------------
+
+- next libs to come may be libupsconfig, libupscmd, libupsrw, ...
+
+
+6) Libtool information:
+-----------------------
+
+NUT libraries are currently built using Libtool. This tool is
+integrated with automake, and can create static and dynamic libraries
+for a variety of platforms in a transparent way.
+
+7) References:
+--------------
+
+- libtool: http://www.gnu.org/software/libtool/
+- David MacKenzie's Autobook (RedHat):
+http://sources.redhat.com/autobook/autobook/autobook.html
+- DebianLinux.Net: The GNU Build System
+http://debianlinux.net/~jama/howto/gnu_build_steps.html

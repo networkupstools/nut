@@ -1,0 +1,53 @@
+.TH UPSCLIENT 3 "Mon Jan 22 2007" "" "Network UPS Tools (NUT)"
+.SH NAME
+upsclient \- Network UPS Tools client access library
+.SH SYNOPSIS
+.SH DESCRIPTION
+The Network UPS Tools (NUT) \fBupsclient\fP library provides a number of
+useful functions for programs to use when communicating with
+\fBupsd\fP(8).  Many of the low\(hylevel socket and protocol details are
+handled automatically when using this interface.
+.PP
+State is maintained across calls in an opaque structure called UPSCONN.
+Callers are expected to create one per connection.  These will be
+provided to most of the \fBupsclient\fP functions.  The format of this
+structure is subject to change, and client programs must not reference
+elements within it directly.
+.PP
+.SH NETWORK FUNCTIONS
+To create a new connection, use \fBupscli_connect\fP(3).  This will also
+initialize the UPSCONN structure.  To verify that a connection has been
+established later, \fBupscli_fd\fP(3) can be used to return the
+file descriptor.  Clients wishing to check for the presence and
+operation of SSL on a connection may call \fBupscli_ssl\fR(3).
+.PP
+The majority of clients will use \fBupscli_get\fP(3) to retrieve single
+items from the server.  To retrieve a list, use
+\fBupscli_list_start\fP(3) to get it started, then call
+\fBupscli_list_next\fP(3) for each element.
+.PP
+Raw lines of text may be sent to \fBupsd\fP with
+\fBupscli_sendline\fP(3).  Reading raw lines is possible with
+\fBupscli_readline\fP(3).  Client programs are expected to format these
+lines according to the protocol, as no checking will be performed before
+transmission.
+.PP
+At the end of a connection, you must call \fBupsclient_disconnect\fR(3)
+to disconnect from \fBupsd\fP and release any dynamic memory associated
+with the UPSCONN structure.  Failure to call this function will result
+in memory and file descriptor leaks in your program.
+.PP
+.SH ERROR HANDLING
+In the event of an error, \fBupscli_strerror\fR(3) will provide
+human\(hyreadable details on what happened.  \fBupscli_upserror\fR(3) may
+also be used to retrieve the error number.  These numbers are defined in
+\fBupsclient.h\fP as \fIUPSCLI_ERR_*\fP.
+.PP
+.SH "SEE ALSO"
+.BR upscli_connect "(3), "upscli_disconnect "(3), "upscli_fd "(3), "
+.BR upscli_getvar "(3), "upscli_list_next "(3), "
+.BR upscli_list_start "(3), "upscli_readline "(3), "
+.BR upscli_sendline "(3), "
+.BR upscli_splitaddr "(3), "upscli_splitname "(3), "
+.BR upscli_ssl "(3), "upscli_strerror "(3), "
+.BR upscli_upserror "(3) "

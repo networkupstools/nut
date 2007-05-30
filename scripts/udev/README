@@ -1,0 +1,36 @@
+Desc: Udev script for NUT USB drivers
+File: scripts/udev/README
+Date: 8 January 2007
+Auth: Arnaud Quette <aquette.dev@gmail.com>
+
+This document introduces the Linux udev script for NUT USB
+drivers (usbhid-ups, bcmxcp_usb and tripplite_usb).
+
+These are needed on Linux systems running udev (recommended
+as of kernel 2.6.3, and mandatory as of 2.6.14 and higher).
+
+This script ensure that the right privileges are set on the
+usb devices files to allow the NUT driver to operate (ie
+allowing the nut user to read AND write to the UPS device).
+
+Note that the old style hotplug files, available in the
+scripts/hotplug directory, are not needed if your kernel supports
+udev.
+
+Installation
+------------
+
+For most users, these files will be automatically installed in
+/etc/udev upon "make install", if that directory exists. You can
+specify an alternate directory with ./configure --with-udev-dir=DIR.
+
+Manual installation
+-------------------
+
+To install them manually, copy nut-usbups.rules to /etc/udev/rules.d
+using the command
+
+$ cp -f nut-usbups.rules /etc/udev/rules.d/52_nut-usbups.rules
+
+You can then plug your UPS USB cord, or unplug / replug it to
+refresh the device permission, and start NUT.

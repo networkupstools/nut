@@ -1,0 +1,7 @@
+# NUT_START:		Set to 1 to start NUT
+# NUT_ARGS:		Command line arguments to pass to NUT
+#
+# To configure the NUT environment:
+
+NUT_START=1
+UPSMON_ARGS=

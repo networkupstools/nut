@@ -1,0 +1,161 @@
+.TH UPSD.CONF 5 "Mon Jan 22 2007" "" "Network UPS Tools (NUT)"
+.SH NAME
+upsd.conf \- Configuration for Network UPS Tools upsd
+
+.SH DESCRIPTION
+
+upsd uses this file to control access to the server and set some other
+miscellaneous configuration values.  This file contains details on
+access controls, so keep it secure.  Ideally, only the upsd process
+should be able to read it.
+
+.SH ACCESS CONTROL CONFIGURATION
+
+.IP "ACL \fIname\fR \fInetblock\fR"
+
+Define an Access Control List (ACL) called \fIname\fR that contains the
+network \fInetblock\fR.  The netblock can be either the old style, such
+as this for a traditional "class C":
+
+	ACL mynet 192.168.50.0/255.255.255.0 (IPv4)
+
+Or, you can use new\(hystyle "CIDR format" (which is mandatory when IPv6
+addresses are used):
+
+	ACL mynet 192.168.50.0/24 (IPv4)
+
+	ACL mynet 2001:0db8:1234::/48 (IPv6)
+
+To just list one host, it would look like one of these:
+
+	ACL mybox 192.168.50.1/255.255.255.255 (IPv4)
+
+	ACL mybox 192.168.50.1/32 (IPv4)
+
+	ACL mybox 2001:0db8:1234:08d3::0370:7344/128 (IPv6)
+
+ACLs are used whenever you need to refer to a network or host, such as
+in ACCEPT/REJECT definitions (below) and with "allowfrom" in
+\fBupsd.users\fR(5).
+
+.IP "ACCEPT \fIaclname\fR [\fIaclname\fR...]
+
+ACCEPT let clients on the hosts or networks defined by \fIaclname\fR
+connect to upsd.  You may specify multiple ACL names on the ACCEPT line,
+and you may have multiple ACCEPT lines.
+
+	ACCEPT localhost mybox
+
+	ACCEPT otherbox
+
+.IP "REJECT \fIaclname\fR [\fIaclname\fR...]
+
+Like ACCEPT, but it denies access instead.  upsd will close the
+connection without reading any data from the network.
+
+Note: you should still use firewall rules if your system provides them.
+That provides another level of coverage.
+
+	REJECT badbox
+
+	REJECT all
+
+.SH ACCESS CONTROL EXAMPLES
+
+Here is an example configuration to show some of what is possible.
+
+"bigserver" has a UPS attached to a serial port.  It runs the driver,
+upsd, and upsmon in master mode.  This definition is also referenced
+with an "allowfrom" in \fBupsd.users\fR(8).
+
+"workstation" draws from the same UPS as "bigserver", but has to monitor
+it over the network.  It runs upsmon in slave mode.   It is also
+referenced with an "allowfrom" in \fBupsd.users\fR(8).
+
+"webserver" doesn't get power from this UPS at all, but it runs the CGI
+programs so it can make nice status displays.
+
+An abuser's host is explicitly denied.
+
+Everything else is rejected.
+
+.IP
+.nf
+	ACL bigserver 10.20.30.1/32
+	ACL workstation 10.20.30.2/32
+	ACL webserver 10.20.30.3/32
+	ACL abuser 192.168.255.128/32
+	ACL all 0.0.0.0/0
+
+	ACCEPT bigserver workstation webserver
+	REJECT abuser
+	REJECT all
+.fi
+.LP
+
+.SH ACCESS CONTROL MATCHING
+
+ACCEPT and REJECT directives are checked in the order they occur in this
+file.  The first ACL which matches a client causes the action to be
+taken.  If you need to ACCEPT one host and REJECT the rest of a network,
+first list the host, then list the network on a line below it.
+
+	ACCEPT goodhost
+
+	REJECT badnet
+
+Any IP address which does not match one of your directives will default
+to REJECT.  This is intended to keep your system safe if you forget to
+put "REJECT all" at the bottom. 
+
+If you really want the whole world to have access to upsd, you can do
+"ACCEPT all", but that is not recommended.
+
+.SH OTHER CONFIGURATION DIRECTIVES
+
+.IP "MAXAGE \fIseconds\fR"
+
+upsd usually allows a driver to stop responding for up to 15 seconds
+before declaring the data "stale".  If your driver takes a very long
+time to process updates but is otherwise operational, you can use MAXAGE
+to make upsd wait longer.
+
+Most users should leave this at the default value.
+
+.IP "STATEPATH \fIpath\fR"
+
+Tell upsd to look for the driver state sockets in \fIpath\fR rather
+than the default that was compiled into the program.
+
+.IP "LISTEN \fIinterface\fR \fIport\fR"
+
+Bind a listening port to the interface specified by its Internet
+address.  This may be useful on hosts with multiple interfaces.
+You should not rely exclusively on this for security, as it can be
+subverted on many systems.
+
+Listen on TCP port \fIport\fR instead of the default value which was
+compiled into the code.  This overrides any value you may have set
+with 'configure \-\-with\-port'.  If you don't change it with configure
+or this value, upsd will listen on port 3493 for this interface.
+
+Multiple LISTEN addresses may be specified.  The default is to bind to
+0.0.0.0 if no LISTEN addresses are specified.
+
+.IP
+.nf
+	LISTEN 127.0.0.1
+	LISTEN 192.168.50.1
+	LISTEN ::1
+	LISTEN 2001:0db8:1234:08d3:1319:8a2e:0370:7344
+.fi
+.LP
+
+This parameter will only be read at startup.  You'll need to restart
+(rather than reload) upsd to apply any changes made here.
+
+.SH SEE ALSO
+\fBupsd\fR(8), \fBnutupsdrv\fR(8), \fBupsd.users\fR(5)
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
