@@ -3,7 +3,7 @@
  * @brief HID Library - Generic serial SHUT backend for Generic HID Access (using MGE HIDParser)
  *        SHUT stands for Serial HID UPS Transfer, and was created by MGE UPS SYSTEMS
  *
- * @author Copyright (C) 2006
+ * @author Copyright (C) 2006 - 2007
  *	Arnaud Quette <aquette.dev@gmail.com>
  *
  * This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com

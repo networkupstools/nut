@@ -1,10 +1,10 @@
 /*!
  * @file libusb.c
- * @brief HID Library - Generic USB backend for Generic HID Access (using MGE HIDParser)
+ * @brief HID Library - Generic USB communication sub driver (using libusb)
  *
- * @author Copyright (C) 2003
- *	Arnaud Quette <arnaud.quette@free.fr> && <arnaud.quette@mgeups.com>
- *      2005 Peter Selinger <selinger@users.sourceforge.net>
+ * @author Copyright (C)
+ *  2003 - 2007 Arnaud Quette <aquette.dev@gmail.com>
+ *  2005 - 2007 Peter Selinger <selinger@users.sourceforge.net>
  *
  * This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
  *
