@@ -27,7 +27,7 @@
 #define SER_WAIT_SEC	0
 #define SER_WAIT_USEC	250000
 
-#define DRV_VERSION "0.20.7"
+#define DRV_VERSION "0.21"
 
 /*
  * Handlers for the CyberPower binary protocol
