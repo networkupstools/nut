@@ -25,18 +25,8 @@ fi
 
 start() {
 	if [ "$SERVER" = "yes" ]; then
-		# Exit if server = yes and model = NONE (not configured)
-
-		if [ "$MODEL" = "NONE" ]; then 
-			exit 0
-		fi
-
-		echo -n $"Starting $MODEL: "
-		if [ "$MODEL" = "upsdrvctl" ]; then
-			daemon /sbin/upsdrvctl start
-		else
-			daemon /sbin/$MODEL $OPTIONS $DEVICE 
-		fi
+		echo -n $"Starting upsdrvctl: "
+		daemon /sbin/upsdrvctl start
 		echo
 
 		prog="upsd"
@@ -69,12 +59,8 @@ stop() {
 		RETVAL=$?
 		echo
 
-		echo -n $"Shutting down $MODEL: "
-		if [ "$MODEL" = "upsdrvctl" ]; then
-			/sbin/upsdrvctl stop
-		else
-			killproc $MODEL
-		fi
+		echo -n $"Shutting down upsdrvctl: "
+		/sbin/upsdrvctl stop
 		echo
 	fi
 	[ "$RETVAL" = 0 ] && rm -f /var/lock/subsys/ups
@@ -102,11 +88,7 @@ case "$1" in
 
 	status)
 		if [ "$SERVER" = "yes" ]; then
-			if [ "$MODEL" = "upsdrvctl" ]; then
-				/sbin/upsdrvctl -v status
-			else
-				status $MODEL
-			fi
+			/sbin/upsdrvctl -v status
 			status upsd
 		fi
 		status upsmon
