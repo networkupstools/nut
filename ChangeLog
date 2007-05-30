@@ -1,3 +1,8 @@
+Wed May 30 19:35:56 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/powerpanel.[ch]: the text mode protocol doesn't have a checksum
+   for the status bytes
+
 Wed May 30 10:51:54 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
   * newmge-shut driver:

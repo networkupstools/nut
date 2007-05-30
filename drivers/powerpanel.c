@@ -558,12 +558,6 @@ static void updateinfo_txt()
 		return;
 	}
 
-	if ((status[0] + status[1]) != 255) {
-		ser_comm_fail("Status checksum failed!");
-		dstate_datastale();
-		return;
-	}
-
         dstate_setinfo("input.voltage", "%g", strtod((char *)&powpan_answer[2], NULL));
         dstate_setinfo("output.voltage", "%g", strtod((char *)&powpan_answer[8], NULL));
         dstate_setinfo("ups.load", "%li", strtol((char *)&powpan_answer[14], NULL, 10));
