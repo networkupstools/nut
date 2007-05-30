@@ -1,9 +1,9 @@
 /*!
  * @file libshut.c
- * @brief HID Library - Serial SHUT backend for Generic HID Access (using MGE HIDParser)
+ * @brief HID Library - Serial SHUT communication sub driver
  *
- * @author Copyright (C) 2006
- *	Arnaud Quette <aquette.dev@gmail.com>
+ * @author Copyright (C)
+ *  2006 - 2007 Arnaud Quette <aquette.dev@gmail.com>
  *
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License as published by
@@ -21,11 +21,11 @@
  *
  * -------------------------------------------------------------------------- */
 
-/* FIXME: remainder
- * - complete shut_set_report
- * - complete libshut_get_interrupt
+/* TODO list
+ * - cleanup, cleanup, cleanup
+ * - manage interrupt and complete libshut_get_interrupt / shut_control_msg routing
  * - complete shut_strerror
- * - complete commands and data table in mge-hid from mge-shut
+ * - validate / complete commands and data table in mge-hid from mge-shut
  */
 
 #include <stdio.h>
@@ -45,7 +45,7 @@
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
 
 #define SHUT_DRIVER_NAME	"MGE SHUT communication driver"
-#define SHUT_DRIVER_VERSION	"0.67"
+#define SHUT_DRIVER_VERSION	"0.80"
 #define MAX_TRY 4
 
 /*!
@@ -176,7 +176,7 @@ struct my_hid_descriptor {
 int shut_get_descriptor(shut_dev_handle_t *sdev, unsigned char type,
 			unsigned char index, void *buf, int size);
 int shut_get_string_simple(shut_dev_handle_t *dev, int index,
-			   unsigned char *buf, size_t buflen);
+			   char *buf, size_t buflen);
 int libshut_get_report(shut_dev_handle_t *devp, int ReportId,
 		       unsigned char *raw_buf, int ReportSize );
 int shut_set_report(shut_dev_handle_t *sdev, int id, unsigned char *pkt, int reportlen);
@@ -311,6 +311,10 @@ int libshut_open(shut_dev_handle_t **sdevp, HIDDevice_t *curDevice,
 	else
 		upsdebugx(2, "Communication with UPS established");
 
+	/* we can skip the rest due to serial bus specifics! */
+	if (mode == MODE_REOPEN)
+		return 1;
+
 	/* Get DEVICE descriptor */
 	dev_descriptor = (struct device_descriptor_s *)buf;
 	res = shut_get_descriptor(devp, USB_DT_DEVICE, 0, buf, USB_DT_DEVICE_SIZE);
@@ -339,7 +343,7 @@ int libshut_open(shut_dev_handle_t **sdevp, HIDDevice_t *curDevice,
 	curDevice->Vendor = strdup("MGE UPS SYSTEMS");
 	curDevice->Product = strdup("unknown");
 	curDevice->Serial = strdup("unknown");
-	curDevice->Bus = strdup("shut");
+	curDevice->Bus = strdup("serial");
 
 	if (dev_descriptor->iProduct)
 	{
@@ -442,7 +446,7 @@ int libshut_get_report(shut_dev_handle_t *devp, int ReportId,
 	{
 		return shut_control_msg(devp,
 			REQUEST_TYPE_GET_REPORT,
-			// == USB_ENDPOINT_IN + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+			/* == USB_ENDPOINT_IN + USB_TYPE_CLASS + USB_RECIP_INTERFACE, */
 			 0x01,
 			 ReportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
 			 0, raw_buf, ReportSize, SHUT_TIMEOUT);
@@ -451,24 +455,27 @@ int libshut_get_report(shut_dev_handle_t *devp, int ReportId,
 		return 0;
 }
 
+/* return ReportSize upon success ; -1 otherwise */
 int libshut_set_report(shut_dev_handle_t *devp, int ReportId,
 		       unsigned char *raw_buf, int ReportSize )
 {
 	int ret = 0;
 	
-	upsdebugx(1, "Entering libshut_set_report");
+	upsdebugx(1, "Entering libshut_set_report (report %x, len %i)",
+		ReportId, ReportSize);
+
+	upsdebug_hex (4, "==> Report after set", raw_buf, ReportSize);
 
 	if (devp != NULL)
 	{
 		ret = shut_control_msg(devp, 
 			REQUEST_TYPE_SET_REPORT,
-			// == USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+			/* == USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE, */
 			0x09,
 			ReportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
 			0, raw_buf, ReportSize, SHUT_TIMEOUT);
 	}
-exit(0);
-	return ret;
+	return ((ret==0)?ReportSize:ret);
 }
 
 int libshut_get_string(shut_dev_handle_t *devp, int StringIdx, char *buf)
@@ -493,17 +500,17 @@ int libshut_get_interrupt(shut_dev_handle_t *devp, unsigned char *buf,
 {
   int ret = -1;
 
-  if (devp != NULL)
+	if (devp != NULL)
 	{
 	  /* FIXME: hardcoded interrupt EP => need to get EP descr for IF descr */
 	  ret = shut_interrupt_read(devp, 0x81, buf, bufsize, timeout);
 	  if (ret > 0)
-		upsdebugx(6, " ok");
+			upsdebugx(6, " ok");
 	  else
-		upsdebugx(6, " none (%i)", ret);
+			upsdebugx(6, " none (%i)", ret);
 	}
 
-  return ret;
+	return ret;
 }
 
 communication_subdriver_t shut_subdriver = {
@@ -632,7 +639,7 @@ int shut_packet_recv (int fd, u_char *Buf, int datalen)
 	
 	while(datalen>0 && Retry<3)
 	{
-		/// if(serial_read (SHUT_TIMEOUT, &Start[0]) >= 0)
+		/* if(serial_read (SHUT_TIMEOUT, &Start[0]) >= 0) */
 		if(ser_get_char(fd, &Start[0], SHUT_TIMEOUT/1000, 0) >= 0)
 		{
 			sdata.shut_pkt.bType = Start[0];
@@ -644,7 +651,7 @@ int shut_packet_recv (int fd, u_char *Buf, int datalen)
 			}
 			else 
 			{
-				/// if((serial_read (SHUT_TIMEOUT, &Start[1]) >= 0) &&
+				/* if((serial_read (SHUT_TIMEOUT, &Start[1]) >= 0) && */
 				if( (ser_get_char(fd, &Start[1], SHUT_TIMEOUT/1000, 0) >= 0) &&
 							((Start[1]>>4)==(Start[1]&0x0F)))
 				{
@@ -653,13 +660,13 @@ int shut_packet_recv (int fd, u_char *Buf, int datalen)
 					sdata.shut_pkt.bLength = Size;
 					for(recv=0;recv<Size;recv++)
 					{
-						///if(serial_read (SHUT_TIMEOUT, &Frame[recv]) < 0)
+						/* if(serial_read (SHUT_TIMEOUT, &Frame[recv]) < 0) */
 						if(ser_get_char(fd, &Frame[recv], SHUT_TIMEOUT/1000, 0) < 0)
 							break;
 					}
 					upsdebug_hex(4, "Receive", Frame, Size);
 
-					///serial_read (SHUT_TIMEOUT, &Chk[0]);
+					/* serial_read (SHUT_TIMEOUT, &Chk[0]); */
 					ser_get_char(fd, &Chk[0], SHUT_TIMEOUT/1000, 0);
 					if(Chk[0]==shut_checksum(Frame, Size))
 					{
@@ -671,7 +678,7 @@ int shut_packet_recv (int fd, u_char *Buf, int datalen)
 						Retry=0;
 					
 						ser_send_char(fd, SHUT_OK);
-						//shut_token_send(SHUT_OK);
+						/* shut_token_send(SHUT_OK); */
 
 						if(Start[0]&SHUT_PKT_LAST)
 						{
@@ -692,7 +699,7 @@ int shut_packet_recv (int fd, u_char *Buf, int datalen)
 					{
 						upsdebugx (4, "shut_checksum: %02x => NOK", Chk[0]);
 						ser_send_char(fd, SHUT_NOK);
-						//shut_token_send(SHUT_NOK);
+						/* shut_token_send(SHUT_NOK); */
 						Retry++;
 					}
 				}
@@ -711,15 +718,18 @@ int shut_packet_recv (int fd, u_char *Buf, int datalen)
 int shut_interrupt_read(shut_dev_handle_t *dev, int ep, unsigned char *bytes, int size,
 		       int timeout)
 {
+	/* sleep during timeout to slow down a bit... */
+	sleep(timeout / 1000);
+
 	/* FIXME: to be written */
 	return 0;
 }
 
 /**********************************************************************/
 int shut_get_string_simple(shut_dev_handle_t *dev, int index,
-			   unsigned char *buf, size_t buflen)
+			   char *buf, size_t buflen)
 {
-	char tbuf[255];       /* Some devices choke on size > 255 */
+	unsigned char tbuf[255];       /* Some devices choke on size > 255 */
 	int ret, si, di;
 	
 	ret = shut_control_msg(dev, USB_ENDPOINT_IN, USB_REQ_GET_DESCRIPTOR,
@@ -736,7 +746,7 @@ int shut_get_string_simple(shut_dev_handle_t *dev, int index,
 	/* skip the zero'ed high bytes */
 	for (di = 0, si = 2; si < tbuf[0]; si += 2)
 	{
-		if (di >= (buflen - 1))
+		if (di >= (int)(buflen - 1))
 			break;
 
 		if (tbuf[si + 1])   /* high byte */
@@ -780,14 +790,22 @@ int shut_control_msg(shut_dev_handle_t *sdev, int requesttype, int request,
 		    int value, int index, unsigned char *bytes, int size, int timeout)
 {
 	unsigned char shut_pkt[11];
-	short Retry=1;
-	short data_size, remaining_size = size; //Size;
+	short Retry=1, set_pass = -1;
+	short data_size, remaining_size = size;
 	int i;
 	struct shut_ctrltransfer_s ctrl;
 	int ret = 0;
 	
 	upsdebugx (3, "entering shut_control_msg");
-		
+
+	/* deal for set requests */
+	if (requesttype == REQUEST_TYPE_SET_REPORT)
+	{
+		set_pass = 1;
+		/* add 8 for the first frame that declares a coming set */
+		remaining_size+= 8;
+	}
+
 	/* build the control request */
 	ctrl.bRequestType = requesttype;
 	ctrl.bRequest = request;
@@ -800,16 +818,26 @@ int shut_control_msg(shut_dev_handle_t *sdev, int requesttype, int request,
 	align_request(&ctrl);
 
 	/* Send all data */
-	while(remaining_size > 0 && Retry > 0)
-        {
-		data_size = (size >= 8) ? 8 : remaining_size;
+	while(remaining_size > 0 && Retry > 0) {
+
+		if (requesttype == REQUEST_TYPE_SET_REPORT) {
+			if (set_pass == 1) {
+				data_size = 8;
+				set_pass++; /* prepare for the next step */
+			}
+			else {
+				data_size = size;
+				upsdebug_hex(4, "data", bytes, data_size);
+			}
+		}
+		else
+			data_size = (size >= 8) ? 8 : remaining_size;
 		
 		/* Forge the SHUT Frame */
-		/* shut_pkt[0] = SHUT_TYPE_REQUEST + SHUT_PKT_LAST; */ //( (remaining_size>8)? 0 :
 		shut_pkt[0] = SHUT_TYPE_REQUEST + ( ((requesttype == REQUEST_TYPE_SET_REPORT) && (remaining_size>8))? 0 : SHUT_PKT_LAST);
 		shut_pkt[1] = (data_size<<4) + data_size;
 		if ( (requesttype == REQUEST_TYPE_SET_REPORT) && (remaining_size < 8) )
-			memcpy(&shut_pkt[2], &bytes, remaining_size); // we need to send ctrl.data 
+			memcpy(&shut_pkt[2], bytes, data_size); /* we need to send ctrl.data  */
 		else
 			memcpy(&shut_pkt[2], &ctrl, 8);
 		shut_pkt[(data_size+3) - 1] = shut_checksum(&shut_pkt[2], data_size);
@@ -820,14 +848,18 @@ int shut_control_msg(shut_dev_handle_t *sdev, int requesttype, int request,
 		{
 			ser_send_buf(sdev->upsfd, shut_pkt, data_size+3);
 			upsdebug_hex(3, "shut_control_msg", shut_pkt, data_size+3);
-			//serial_send (shut_pkt, data_size+3);
+			/* serial_send (shut_pkt, data_size+3); */
 		}
 
 		i = shut_wait_ack (sdev->upsfd);
 		switch (i)
 		{
 			case 0:
-				remaining_size = 0; //remaining_size-=data_size;
+				if (requesttype == REQUEST_TYPE_SET_REPORT)
+					remaining_size-=data_size;
+				else
+					remaining_size = 0;
+
 				Retry=1;
 				break;
 			case -1:
@@ -857,47 +889,9 @@ int shut_control_msg(shut_dev_handle_t *sdev, int requesttype, int request,
 	if (remaining_size != 0)
 		return -1;
 	
-	
-	
 	/* now receive data, except for SET_REPORT */
 	if (requesttype != REQUEST_TYPE_SET_REPORT)
 		ret = shut_packet_recv (sdev->upsfd, bytes, size);
-	
-	
-	
-	
-	
-	
-	
-//	ret = shut_transfer(sdev->upsfd, &ctrl);
-	//if (ret < 0)
-	//	USB_ERROR_STR(-errno, "error sending control message: %s",
-	//		       strerror(errno));
-#if 0
-	// just shut_set_report : SHUT_PKT_LAST => 0 + 8 => sizeof(data)
-	if((ret = shut_packet_send (sdev, &ctrl, 8, SHUT_PKT_LAST)) > 0)
-	{
-		if((ret = shut_packet_recv (sdev, ctrl, reportlen)) > 0)
-		{
-			//upsdebug_hex(3, "shut_get_report", pkt, retcode)
-			;
-		}
-	}
-#endif
-	/* first packet to instruct a set command */
-// 	if((retcode = shut_packet_send (&data, sizeof(data), 0x0)) > 0)
-// 	{
-// 		/* second packet to give the actual data */
-// 		memcpy(&data.raw_pkt, pkt, reportlen);
-// 		upsdebug_hex(3, "Set2", pkt, reportlen);
-// 
-// 		retcode = shut_packet_send (&data, reportlen, SHUT_PKT_LAST);
-// 	}
-
-	// ret = ioctl(dev->fd, IOCTL_USB_CONTROL, &ctrl);
-	//if (ret < 0)
-	//	USB_ERROR_STR(-errno, "error sending control message: %s",
-	//		       strerror(errno));
 
 	return ret;
 }
