@@ -1,3 +1,8 @@
+Wed May 30 01:24:53 UTC 2007 / Charles Lepple <clepple@gmail.com>
+
+ - configure.in: bumped version number
+ - UPGRADING: mentioned removed and renamed drivers
+
 Mon May 28 14:12:14 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/powerpanel.c: expected number of characters for P4 command is off
