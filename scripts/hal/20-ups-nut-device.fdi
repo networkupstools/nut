@@ -127,6 +127,16 @@
         </match>
       </match>
 
+      <!-- Belkin -->
+      <match key="usb_device.vendor_id" int="0x0665">
+        <match key="usb_device.product_id" int="0x5161">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-megatec_usb</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+      </match>
+
       <!-- Kebo - unsupported! -->
       <match key="usb_device.vendor_id" int="0x0925">
         <match key="usb_device.product_id" int="0x1234">
