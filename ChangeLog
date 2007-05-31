@@ -1,3 +1,8 @@
+Thu May 31 08:33:54 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - mge-shut.h, mge-hid.c: missing models completion (Ellipse MAX and
+   Protection Center)
+  
 Thu May 31 10:20:55 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
 
  - scripts/hal/*: added Belkin UPSes to the list.

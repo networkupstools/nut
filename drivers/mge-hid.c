@@ -189,6 +189,11 @@ static models_name_t mge_model_names [] =
 	{ "ELLIPSE", "750", -1, "Ellipse 750" },
 	{ "ELLIPSE", "1000", -1, "Ellipse 1000" },
 	{ "ELLIPSE", "1500", -1, "Ellipse 1500" },
+	/* Ellipse "MAX" */
+	{ "Ellipse MAX", "600", -1, "Ellipse MAX 600" },
+	{ "Ellipse MAX", "850", -1, "Ellipse MAX 850" },
+	{ "Ellipse MAX", "1100", -1, "Ellipse MAX 1100" },
+	{ "Ellipse MAX", "1500", -1, "Ellipse MAX 1500" },
 	/* Protection Center */
 	{ "PROTECTIONCENTER", "420", -1, "Protection Center 420" },
 	{ "PROTECTIONCENTER", "500", -1, "Protection Center 500" },
