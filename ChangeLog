@@ -1,3 +1,8 @@
+Thu May 31 08:33:54 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - mge-shut.h, mge-hid.c: missing models completion (Ellipse MAX and
+   Protection Center)
+  
 Wed May 30 19:35:56 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/powerpanel.[ch]: the text mode protocol doesn't have a checksum
@@ -5,14 +10,14 @@ Wed May 30 19:35:56 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
 Wed May 30 10:51:54 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
-  * newmge-shut driver:
-    - drivers/libshut.c:
-      - complete shut_set_report(), needed for instant commands (and
-        obviously UPS poweroff) and settings,
-      - a bit of cleanup,
-      - greatly improve driver reactivity, compared to mge-shut,
-      - bump version to 0.80
-    - data/drivers.list: propose as an alternate to mge-shut
+ * newmge-shut driver:
+   - drivers/libshut.c:
+     - complete shut_set_report(), needed for instant commands (and
+       obviously UPS poweroff) and settings,
+     - a bit of cleanup,
+     - greatly improve driver reactivity, compared to mge-shut,
+     - bump version to 0.80
+   - data/drivers.list: propose as an alternate to mge-shut
 
 Wed May 30 01:24:53 UTC 2007 / Charles Lepple <clepple@gmail.com>
 

@@ -181,6 +181,15 @@ models_name_t models_names [] =
 	{ "ELLIPSE", "750", "Ellipse 750" },
 	{ "ELLIPSE", "1000", "Ellipse 1000" },
 	{ "ELLIPSE", "1500", "Ellipse 1500" },
+	/* Ellipse "MAX" */
+	{ "Ellipse MAX", "600", "Ellipse MAX 600" },
+	{ "Ellipse MAX", "850", "Ellipse MAX 850" },
+	{ "Ellipse MAX", "1100", "Ellipse MAX 1100" },
+	{ "Ellipse MAX", "1500", "Ellipse MAX 1500" },
+	/* Protection Center */
+	{ "PROTECTIONCENTER", "420", "Protection Center 420" },
+	{ "PROTECTIONCENTER", "500", "Protection Center 500" },
+	{ "PROTECTIONCENTER", "675", "Protection Center 675" },
 	/* Pulsar Evolution models */
 	{ "Evolution", "500", "Pulsar Evolution 500" },
 	{ "Evolution", "800", "Pulsar Evolution 800" },
