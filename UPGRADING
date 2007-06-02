@@ -9,7 +9,7 @@ Changes from 2.0.5 to 2.2.0:
    to usbhid-ups.
  - users of the hidups driver must switch to usbhid-ups.
  - users of the following drivers (powermust, blazer, fentonups, mustek,
-   esupssmart, ippon, sms, masterguard) must switch to megatec, which replaces
+   esupssmart, ippon, sms) must switch to megatec, which replaces
    all these drivers.  Please refer to doc/megatec.txt for details.
  - users of the mge-shut driver are encouraged to switch to newmge-shut, which
    is an alternate driver scheduled to replace mge-shut. 
