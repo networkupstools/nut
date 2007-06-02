@@ -1,3 +1,8 @@
+Sat Jun  2 19:37:08 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/powerpanel.h: setting the battery.low value requires only
+   two (and exactly two) digits (copy-and-paste error)
+
 Sat Jun  2 13:51:33 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - UPGRADING: removed reference to masterguard being replaced by megatec
