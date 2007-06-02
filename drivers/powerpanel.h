@@ -27,7 +27,7 @@
 #define SER_WAIT_SEC	0
 #define SER_WAIT_USEC	250000
 
-#define DRV_VERSION "0.21"
+#define DRV_VERSION "0.22"
 
 /*
  * Handlers for the CyberPower binary protocol
@@ -149,7 +149,7 @@ static const struct {
 	char	*set;
 } powpan_vartab_txt[] = {
 	{ "input.transfer.high", "P6\r", "C2:%03d\r" },
- 	{ "input.transfer.low", "P7\r", "C3:%03d\r" },
-	{ "battery.charge.low", "P8\r", "C4:%03d\r" },
+	{ "input.transfer.low", "P7\r", "C3:%03d\r" },
+	{ "battery.charge.low", "P8\r", "C4:%02d\r" },
 	{ NULL, NULL, NULL }
 };
