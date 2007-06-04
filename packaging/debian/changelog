@@ -1,3 +1,9 @@
+nut (2.2.0-1) UNRELEASED; urgency=low
+
+  * New upstream release
+
+ -- Arnaud Quette <aquette@debian.org>  Wed, 30 May 2007 15:50:54 +0200
+
 nut (2.1.0-4) UNRELEASED; urgency=low
 
   * debian/control:
@@ -46,7 +52,7 @@ nut (2.0.5-1) unstable; urgency=low
   * debian/control: add lsb-base (>= 3.0-6) to Depends for LSB compliance
 
  -- Arnaud Quette <aquette@debian.org>  Tue, 16 Jan 2007 10:42:36 +0100
-
+ 
 nut (2.0.4-3) unstable; urgency=high
 
   * acknowledges NMUs (Closes: #396704, #389350)
@@ -88,7 +94,7 @@ nut (2.0.4-2.1) unstable; urgency=low
 
  -- Florian M. Weps <fmw@debian.org>  Thu, 12 Oct 2006 11:19:37 +0200
  
-nut (2.0.4-2) unstable; urgency=low
+ nut (2.0.4-2) unstable; urgency=low
 
   * debian/rules: replace $PWD by CURDIR to satisfy buildd
   * debian/nut.default, debian/nut.init: make the bug 358696 workaround 

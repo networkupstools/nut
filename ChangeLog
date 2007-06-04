@@ -1,3 +1,11 @@
+2.2.0-pre1
+
+Mon Jun  4 08:50:03 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - debian/changelog, debian/nut.README.Debian: minor update
+ - update config.guess, config.sub and install.sh
+ - configure.in: bump release to 2.2.0-pre1
+
 Sat Jun  2 19:37:08 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/powerpanel.h: setting the battery.low value requires only

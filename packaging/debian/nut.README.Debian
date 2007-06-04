@@ -118,7 +118,7 @@ Finally, please be aware of the following SECURITY CONSIDERATIONS:  the TCP
 communications between the client daemon, upsmon, and the server daemon, upsd,
 send the username and passwords defined in upsd.users and used in upsmon.conf
 over the wire UNENCRYPTED.  This means that somebody could sniff the username
-and password.  Soon, a version that encrypts the connection using SSL will
-be available.
+and password.  A version that encrypts the connection using SSL should be
+available someday.
 
 Please see the documentation in /usr/share/doc/nut/docs for more information.
