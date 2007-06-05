@@ -114,7 +114,6 @@
 "Cyber Power Systems"	"685AVR"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"800AVR"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"AE550"		"USB"	"usbhid-ups"
-"Cyber Power Systems"	"Geek Squad GS1285U"	"USB"	"usbhid-ups"
 
 "Deltec"	"PowerRite Pro II"	""	"genericups upstype=15"
 

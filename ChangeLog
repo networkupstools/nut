@@ -1,3 +1,9 @@
+Tue Jun  5 13:25:56 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+ 
+ - data/drivers.list: removed Geek Squad GS1285U from Cyber Power Systems,
+   according to Peter Selinger comment from Jan. 26 2007. The Cyber Power
+   model is AE550.
+
 2.2.0-pre1
 
 Mon Jun  4 08:50:03 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
@@ -512,7 +518,7 @@ Thu Feb  8 16:21:24 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  - libusb.c: added MODE_NOHID to libusb_open(). This currently does
    the same thing as MODE_REOPEN, but has a slightly different purpose.
-   It is used in megatec_usb.c. 
+   It is used in megatec_usb.c.
 
 Thu Feb  8 16:07:49 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
@@ -650,6 +656,7 @@ Sun Jan 21 22:21:41 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
  - usbhid-ups: better messages for unrecognized productids.
 
 Sun Jan 21 19:25:10 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
  - megatec: added a new parameter to override the battery empty and battery
    full voltages, used in the charge calculations
  - data/driver.list: a couple new models supported by megatec
