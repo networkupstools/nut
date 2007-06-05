@@ -1,6 +1,52 @@
 If you're upgrading from an earlier version, see the UPGRADING file.
 
 ---------------------------------------------------------------------------
+Release notes for NUT 2.2.0 - what's new since 2.0.5:
+
+ - The new build infrastructure, using automake, is now used.
+   This has major impact on the compilation and installation procedures,
+   and thus on the NUT packaging.
+   For more information, refer to UPGRADING and docs/packaging.txt.
+
+ - NUT now provides support for FreeDesktop Hardware Abstraction Layer
+   (HAL) which brings full Plug And Play experience to USB UPS owners.
+   For more information, refer to docs/nut-hal.txt.
+
+ - support for new devices: Ablerex 625L, ActivePower 400VA, 2000VA;
+   Belkin Home Office F6H350-SER, F6H500-SER, F6H650-SER; Belkin Office
+   Series F6C550-AVR; Belkin Universal UPS F6C100-UNV (USB), F6C1100-UNV
+   (USB), F6C1200-UNV (USB), F6H350deUNV (serial), F6H350ukUNV (serial),
+   F6H650ukUNV (serial); Compaq R3000h; Cyber Power Systems PR2200;
+   Dynex DX-800U; Geek Squad GS1285U; Krauler UP-M500VA; Mecer ME-2000;
+   MGE UPS SYSTEMS Ellipse MAX; Online Zinto D; PowerTech SMK-800; SVEN
+   Power Pro+ series, Power Smart RM 2000; Tripp-Lite SmartOnline
+   SU1500RTXL2ua, smart2200RMXL2U.
+
+ - added IPv6 support,
+
+ - the newmge-shut driver has appeared. This one uses the same HID core
+   as usbhid-ups, but communicate over a serial link. It will eventually
+   replace the current mge-shut driver.
+
+ - client commands (upsc, upsrw and upscmd): hostname is now optional,
+   and defaults to "localhost"
+
+ - many drivers have been improved and have received bug fixes:
+   powerpanel, megatec, megatec_usb, safenet, tripplite_usb, gamatronic,
+   
+
+ - the hotplug and udev scripts, in charge of setting the right
+   permissions on the USB devices, are now installed automatically
+   when appropriate.
+
+ - more generally, the NUT core and documentation, including the manpages,
+   have been improved and updated.
+
+ FIXME
+
+ For a complete list of changes, please refer to the ChangeLog file.
+
+---------------------------------------------------------------------------
 Release notes for NUT 2.0.5 - what's new since 2.0.4:
 
  This release is a backport of the development version.  Many changes

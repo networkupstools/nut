@@ -3,6 +3,7 @@ Tue Jun  5 13:25:56 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
  - data/drivers.list: removed Geek Squad GS1285U from Cyber Power Systems,
    according to Peter Selinger comment from Jan. 26 2007. The Cyber Power
    model is AE550.
+ - NEWS, UPGRADING: first update round
 
 2.2.0-pre1
 
