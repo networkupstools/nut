@@ -3,6 +3,23 @@ of this software.  When upgrading from an older version, be sure to
 check this file to see if you need to make changes to your system.
 
 ---------------------------------------------------------------------------
+Changes from 2.0.5 to 2.2.0:
+
+ - users of the newhidups driver are advised that the driver name has changed
+   to usbhid-ups.
+ - users of the hidups driver must switch to usbhid-ups.
+ - users of the following drivers (powermust, blazer, fentonups, mustek,
+   esupssmart, ippon, sms) must switch to megatec, which replaces
+   all these drivers.  Please refer to doc/megatec.txt for details.
+ - users of the mge-shut driver are encouraged to switch to newmge-shut, which
+   is an alternate driver scheduled to replace mge-shut,
+ - users of the cpsups driver are encouraged to switch to powerpanel which
+   is  scheduled to replace cpsups,
+ - packagers will have to rework the whole nut packaging due to the
+   major changes in the build system (completely modified, and now using
+   automake). Refer to packaging/debian/ for an example of migration.
+
+---------------------------------------------------------------------------
 Changes from 2.0.4 to 2.0.5:
 
  - users of the newhidups driver: the driver is now more strict about
