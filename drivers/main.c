@@ -573,7 +573,7 @@ int main(int argc, char **argv)
 
 	/* now we can start servicing requests */
 	if (upsname_found)
-		dstate_init(upsname, NULL);
+		dstate_init(progname, upsname);
 	else
 		dstate_init(progname, device_name);
 
