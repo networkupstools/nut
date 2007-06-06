@@ -1,3 +1,9 @@
+Wed Jun  6 09:34:22 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ * data/drivers.list (sync with the Testing branch r957): 
+   - fixe a typo on upscode2 driver name
+   - add "Fiskars 9200 with UPS Information Unit" compatibility
+
 Tue Jun  5 19:05:48 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - server/conf.c, drivers/main.c: Prepend driver name to socket again.

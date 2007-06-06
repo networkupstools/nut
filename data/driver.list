@@ -148,9 +148,10 @@
 "Fideltronik"	"Ares 700 and larger"	""	"genericups upstype=6"
 "Fideltronik"	"Other Ares models"	""	"genericups upstype=19"
 
-"Fiskars"	"PowerRite MAX"	""	"upcsode2"
-"Fiskars"	"PowerServer 10"	""	"upcsode2"
-"Fiskars"	"PowerServer 30"	""	"upcsode2"
+"Fiskars"	"PowerRite MAX"	""	"upscode2"
+"Fiskars"	"PowerServer 10"	""	"upscode2"
+"Fiskars"	"PowerServer 30"	""	"upscode2"
+"Fiskars"	"9200"	"UPS Information Unit"	"upscode2"
 
 "Gamatronic"	"All models with alarm interface"	""	"genericups upstype=22"
 "Gamatronic"	"G-SmartCompact 2000"	""	"megatec"
