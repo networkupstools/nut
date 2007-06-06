@@ -1,3 +1,12 @@
+Wed Jun  6 19:52:01 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/main.c, man/nutupsdrv.8:
+   - specifying '-a <id>' is now mandatory when starting a driver, in
+     order to prevent problems later on in the configuration process
+     (otherwise the upsd server won't see it)
+   - removed the possibility to specify a port on the command line (not
+     really useful anymore)
+
 Wed Jun  6 09:34:22 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  * data/drivers.list: 

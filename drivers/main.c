@@ -68,12 +68,13 @@ static void help_msg(void)
 {
 	vartab_t	*tmp;
 
-	printf("\nusage: %s [OPTIONS] [<device>]\n\n", progname);
+	printf("\nusage: %s -a <id> [OPTIONS]\n", progname);
+
+	printf("  -a <id>        - autoconfig using ups.conf section <id>\n");
+	printf("                 - note: -x after -a overrides ups.conf settings\n\n");
 
 	printf("  -V             - print version, then exit\n");
 	printf("  -L             - print parseable list of driver variables\n");
-	printf("  -a <id>        - autoconfig using ups.conf section <id>\n");
-	printf("                 - note: -x after -a overrides ups.conf settings\n");
 	printf("  -D             - raise debugging level\n");
 	printf("  -h             - display this help\n");
 	printf("  -k             - force shutdown\n");
@@ -82,9 +83,6 @@ static void help_msg(void)
 	printf("  -u <user>      - switch to <user> (if started as root)\n");
 	printf("  -x <var>=<val> - set driver variable <var> to <val>\n");
 	printf("                 - example: -x cable=940-0095B\n\n");
-
-	printf("  <device>       - /dev entry corresponding to UPS port\n");
-	printf("                 - Only optional when using -a!\n\n");
 
 	if (vartab_h) {
 		tmp = vartab_h;
@@ -465,7 +463,7 @@ int main(int argc, char **argv)
 				read_upsconf();
 
 				if (!upsname_found)
-					upslogx(LOG_WARNING, "Warning: Section %s not found in ups.conf",
+					fatalx(EXIT_FAILURE, "Error: Section %s not found in ups.conf",
 						optarg);
 				break;
 			case 'D':
@@ -497,43 +495,33 @@ int main(int argc, char **argv)
 				help_msg();
 				exit(EXIT_SUCCESS);
 			default:
-				fprintf(stderr, "Error: unknown option -%c. Try -h for help.\n", i);
-				exit(EXIT_FAILURE);
-				break;
+				fatalx(EXIT_FAILURE,
+					"Error: unknown option -%c. Try -h for help.", i);
 		}
 	}
 
 	argc -= optind;
 	argv += optind;
 
-	if (argc > 1) {
-		fprintf(stderr, "Error: too many non-option arguments. Try -h for help.\n");
-		exit(EXIT_FAILURE);
+	if (argc > 0) {
+		fatalx(EXIT_FAILURE,
+			"Error: too many non-option arguments. Try -h for help.");
+	}
+
+	if (!upsname_found) {
+		fatalx(EXIT_FAILURE,
+			"Error: specifying '-a id' is now mandatory. Try -h for help.");
 	}
 
 	/* we need to get the port from somewhere */
-	if (argc < 1) {
-		if (!device_path) {
-			fprintf(stderr, "Error: You must specify a port name in ups.conf or on the command line.\n");
-			fprintf(stderr, "Try -h for help.\n");
-			exit(EXIT_FAILURE);
-		}
-	}
-
-	/* allow argv to override the ups.conf entry if specified */
-	else {
-		device_path = xstrdup(argv[0]);
-		device_name = xbasename(device_path);
+	if (!device_path) {
+		fatalx(EXIT_FAILURE,
+			"Error: you must specify a port name in ups.conf. Try -h for help.");
 	}
 
 	pidfn = xmalloc(SMALLBUF);
 
-	if (upsname_found)
-		snprintf(pidfn, SMALLBUF, "%s/%s-%s.pid", 
-			altpidpath(), progname, upsname);
-	else
-		snprintf(pidfn, SMALLBUF, "%s/%s-%s.pid", 
-			 altpidpath(), progname, device_name);
+	snprintf(pidfn, SMALLBUF, "%s/%s-%s.pid", altpidpath(), progname, upsname);
 
 	upsdebugx(1, "debug level is '%d'", nut_debug_level);
 
@@ -546,9 +534,8 @@ int main(int argc, char **argv)
 
 	/* Only switch to statepath if we're not powering off */
 	/* This avoid case where ie /var is umounted */
-	if (!do_forceshutdown)
-		if (chdir(dflt_statepath()))
-			fatal_with_errno(EXIT_FAILURE, "Can't chdir to %s", dflt_statepath());
+	if ((!do_forceshutdown) && (chdir(dflt_statepath())))
+		fatal_with_errno(EXIT_FAILURE, "Can't chdir to %s", dflt_statepath());
 
 	setup_signals();
 
@@ -559,9 +546,9 @@ int main(int argc, char **argv)
 
 	/* now see if things are very wrong out there */
 	if (broken_driver) {
-		printf("Fatal error: broken driver. It probably needs to be converted.\n");
-		printf("Search for 'broken_driver = 1' in the source for more details.\n");
-		exit(EXIT_FAILURE);
+		fatalx(EXIT_FAILURE,
+			"Fatal error: broken driver. It probably needs to be converted.\n"
+			"Search for 'broken_driver = 1' in the source for more details.");
 	}
 
 	if (do_forceshutdown)
@@ -572,10 +559,7 @@ int main(int argc, char **argv)
 	upsdrv_updateinfo();
 
 	/* now we can start servicing requests */
-	if (upsname_found)
-		dstate_init(progname, upsname);
-	else
-		dstate_init(progname, device_name);
+	dstate_init(progname, upsname);
 
 	/* publish the top-level data: version number, driver name */
 	dstate_setinfo("driver.version", "%s", UPS_VERSION);
