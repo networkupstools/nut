@@ -1,3 +1,7 @@
+Wed Jun 13 00:29:29 UTC 2007 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/belkin-hid.c, data/driver.list: Add product ID for F6H375-USB.
+
 Wed Jun  6 19:52:01 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/main.c, man/nutupsdrv.8:

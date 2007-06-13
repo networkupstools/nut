@@ -55,6 +55,7 @@
 "Belkin"	"Home Office F6H350-SER"	""	"genericups upstype=7"
 "Belkin"	"Home Office F6H500-SER"	""	"genericups upstype=7"
 "Belkin"	"Home Office F6H650-SER"	""	"genericups upstype=7"
+"Belkin"	"F6H375-USB"	"USB"	"usbhid-ups"
 "Belkin"	"Office Series F6C550-AVR"	"USB"	"usbhid-ups"
 "Belkin"	"Regulator Pro"	"F6C525-SER, F6C625-SER"	"belkin"
 "Belkin"	"Resource"	""		"genericups upstype=4"
