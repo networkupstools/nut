@@ -1,3 +1,8 @@
+Wed Jun 13 00:55:41 UTC 2007 / Charles Lepple <clepple@gmail.com>
+
+ - scripts/hotplug/libhid.usermap, scripts/udev/nut-usbups.rules.in:
+   Add product ID for Belkin F6H375-USB
+
 Wed Jun 13 00:29:29 UTC 2007 / Charles Lepple <clepple@gmail.com>
 
  - drivers/belkin-hid.c, data/driver.list: Add product ID for F6H375-USB.

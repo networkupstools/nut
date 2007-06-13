@@ -53,6 +53,7 @@ SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0910", MODE="664", GROUP="@RUN_AS_GR
 SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0912", MODE="664", GROUP="@RUN_AS_GROUP@"
 SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0551", MODE="664", GROUP="@RUN_AS_GROUP@"
 SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0751", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0375", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 # Kebo - unsupported
 SYSFS{idVendor}=="0925", SYSFS{idProduct}=="1234", MODE="664", GROUP="@RUN_AS_GROUP@"
