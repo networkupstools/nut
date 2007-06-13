@@ -3,7 +3,7 @@
 INSTALL_0600 = $(INSTALL) -m 0600
 
 SECFILES = upsmon.conf.sample upsd.conf.sample upsd.users.sample
-PUBFILES = upssched.conf.sample ups.conf.sample
+PUBFILES = ups.conf.sample
 CGIPUB = hosts.conf.sample upsset.conf.sample upsstats.html.sample	\
  upsstats-single.html.sample
 
@@ -14,3 +14,4 @@ else
 endif
 
 dist_sysconf_DATA = $(SECFILES) $(PUBFILES) $(CGI_INSTALL)
+nodist_sysconf_DATA = upssched.conf.sample

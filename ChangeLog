@@ -1,3 +1,8 @@
+Wed Jun 13 01:04:38 UTC 2007 / Charles Lepple <clepple@gmail.com>
+
+ - conf/upssched.conf.sample: insert STATEPATH into default PIPEFN and LOCKFN
+   lines. (As suggested by Arjen.)
+
 Wed Jun 13 00:55:41 UTC 2007 / Charles Lepple <clepple@gmail.com>
 
  - scripts/hotplug/libhid.usermap, scripts/udev/nut-usbups.rules.in:
