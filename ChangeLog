@@ -1,3 +1,7 @@
+Mon Jun 18 21:19:10 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - drivers/megatec.c: normalized debugging output
+
 Mon Jun 18 09:24:04 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/megatec.c: buildbot caught a typo (*sigh*)
