@@ -343,7 +343,7 @@ static int get_firmware_values(FirmwareValues_t *values)
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 
 	if (ret < 0) {
-		upsdebugx(1, "Timeout after \"F\" command"");
+		upsdebugx(1, "Timeout after \"F\" command");
 
 		return -1;
 	}
