@@ -259,11 +259,27 @@ static int check_ups(void)
 	upsdebugx(2, "Sending \"Q1\" command...");
 	ser_send_pace(upsfd, SEND_PACE, "Q1%c", ENDCHAR);
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
-	if (ret < Q1_CMD_REPLY_LEN || buffer[0] != '(') {
-		upsdebugx(2, "Wrong answer to \"Q1\" command.");
+
+	if (ret < 0) {
+		upsdebugx(2, "Timeout after \"Q1\" command");
 
 		return -1;
 	}
+
+	if (ret < Q1_CMD_REPLY_LEN) {
+		upsdebugx(2, "Short answer to \"Q1\" command");
+		upsdebug_hex(5, "answer", (unsigned char *)buffer, ret);
+
+		return -1;
+	}
+
+	if (buffer[0] != '(') {
+		upsdebugx(2, "Wrong answer to \"Q1\" command (invalid start character)");
+		upsdebug_hex(5, "answer", (unsigned char *)buffer, ret);
+
+		return -1;
+	}
+
 	upsdebugx(2, "\"Q1\" command successful.");
 
 	return 0;
@@ -279,8 +295,23 @@ static int get_ups_info(UPSInfo_t *info)
 	upsdebugx(1, "Asking for UPS information (\"I\" command)...");
 	ser_send_pace(upsfd, SEND_PACE, "I%c", ENDCHAR);
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
-	if (ret < I_CMD_REPLY_LEN || buffer[0] != '#') {
-		upsdebugx(1, "UPS doesn't return any information about itself.");
+
+	if (ret < 0) {
+		upsdebugx(1, "Timeout after \"I\" command");
+
+		return -1;
+	}
+		
+	if (ret < I_CMD_REPLY_LEN) {
+		upsdebugx(1, "Short answer to \"I\" command");
+		upsdebug_hex(5, "answer", (unsigned char *)buffer, ret);
+
+		return -1;
+	}
+
+	if (buffer[0] != '#') {
+		upsdebugx(1, "Wrong answer to \"I\" command (invalid start character)");
+		upsdebug_hex(5, "answer", (unsigned char *)buffer, ret);
 
 		return -1;
 	}
@@ -310,8 +341,24 @@ static int get_firmware_values(FirmwareValues_t *values)
 	upsdebugx(1, "Asking for UPS power ratings (\"F\" command)...");
 	ser_send_pace(upsfd, SEND_PACE, "F%c", ENDCHAR);
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
-	if (ret < F_CMD_REPLY_LEN || buffer[0] != '#') {
-		upsdebugx(1, "UPS doesn't return any information about its power ratings.");
+
+	if (ret < 0) {
+		upsdebugx(1, "Timeout after \"F\" command"");
+
+		return -1;
+	}
+
+	if (ret < F_CMD_REPLY_LEN) {
+		upsdebugx(1, "Short answer to \"F\" command");
+		upsdebug_hex(5, "answer", (unsigned char *)buffer, ret);
+
+		return -1;
+	}
+
+
+	if (buffer[0] != '#') {
+		upsdebugx(1, "Wrong answer to \"F\" command (invalid start character)");
+		upsdebug_hex(5, "answer", (unsigned char *)buffer, ret);
 
 		return -1;
 	}
@@ -334,8 +381,23 @@ static int run_query(QueryValues_t *values)
 	upsdebugx(1, "Asking for UPS status (\"Q1\" command)...");
 	ser_send_pace(upsfd, SEND_PACE, "Q1%c", ENDCHAR);
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
-	if (ret < Q1_CMD_REPLY_LEN || buffer[0] != '(') {
-		upsdebugx(1, "UPS doesn't return any information about its status.");
+
+	if (ret < 0) {
+		upsdebugx(1, "Timeout after \"Q1\" command");
+
+		return -1;
+	}
+
+	if (ret < Q1_CMD_REPLY_LEN) {
+		upsdebugx(1, "Short answer to \"Q1\" command");
+		upsdebug_hex(5, "answer", (unsigned char *)buffer, ret);
+
+		return -1;
+	}
+
+	if (buffer[0] != '(') {
+		upsdebugx(1, "Wrong answer to \"Q1\" command (invalid start character)");
+		upsdebug_hex(5, "answer", (unsigned char *)buffer, ret);
 
 		return -1;
 	}

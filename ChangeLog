@@ -1,3 +1,7 @@
+Mon Jun 18 09:01:59 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/megatec.c: additional debug info in case commands fail
+
 Wed Jun 13 01:04:38 UTC 2007 / Charles Lepple <clepple@gmail.com>
 
  - conf/upssched.conf.sample: insert STATEPATH into default PIPEFN and LOCKFN
