@@ -37,5 +37,6 @@
 #	define megatec_subdrv_banner(...)
 #endif
 
+extern int	megatec_modem_control;
 
 #endif /* MEGATEC_H */

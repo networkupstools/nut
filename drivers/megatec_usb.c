@@ -164,6 +164,12 @@ int ser_open(const char *port)
 	char *vend = getval("vendor");
 	char *prod = getval("product");
 
+	/*
+	 * Don't use the modem control lines (this is not a physical
+	 * serial interface, so setting these lines is not relevant)
+	 */
+	megatec_modem_control = 0;
+
 	if(subdrv)
 	{
 		subdriver_t **p;

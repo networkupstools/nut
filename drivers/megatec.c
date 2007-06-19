@@ -36,6 +36,7 @@
 #include <limits.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/ioctl.h>
 
 
 #define ENDCHAR  '\r'
@@ -160,6 +161,13 @@ static int run_query(QueryValues_t *values);
 int instcmd(const char *cmdname, const char *extra);
 int setvar(const char *varname, const char *val);
 
+/*
+ * Used to indicate that modem control lines need to
+ * be set. If serial-over-USB is used, this must be
+ * set to 0. In the future, this may be expanded to
+ * allow different settings.
+ */
+int megatec_modem_control = 1;
 
 /* I know, macros should evaluate their arguments only once */
 #define CLAMP(x, min, max) (((x) < (min)) ? (min) : (((x) > (max)) ? (max) : (x)))
@@ -854,11 +862,25 @@ void upsdrv_initups(void)
 {
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
+
+	if (megatec_modem_control) {
+		int	dtr_bit = TIOCM_DTR;
+		int	rts_bit = TIOCM_RTS;
+
+		ioctl(upsfd, TIOCMBIS, &dtr_bit);
+		ioctl(upsfd, TIOCMBIC, &rts_bit);
+	}
 }
 
 
 void upsdrv_cleanup(void)
 {
+	if (megatec_modem_control) {
+		int	dtr_bit = TIOCM_DTR;
+
+		ioctl(upsfd, TIOCMBIC, &dtr_bit);
+	}
+
 	ser_close(upsfd, device_path);
 }
 
