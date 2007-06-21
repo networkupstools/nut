@@ -1,3 +1,7 @@
+Thu Jun 21 07:41:09 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - drivers/main-hal.c: fixe a double setting of device_path
+
 Thu Jun 21 07:07:25 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  - usbhid-ups: improve the handling and reporting of the communication
