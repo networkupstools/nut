@@ -1,3 +1,8 @@
+Thu Jun 21 07:07:25 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - usbhid-ups: improve the handling and reporting of the communication
+   lost status. Previously, these were not reported anymore.
+
 Wed Jun  6 19:52:01 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/main.c, man/nutupsdrv.8:
