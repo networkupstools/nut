@@ -37,11 +37,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#ifndef MEGATEC_SUBDRV
-#include <sys/ioctl.h>
-#endif
-
-
 #define ENDCHAR  '\r'
 #define IGNCHARS ""
 
@@ -856,29 +851,18 @@ void upsdrv_banner(void)
 
 void upsdrv_initups(void)
 {
-#ifndef MEGATEC_SUBDRV
-	int dtr_bit = TIOCM_DTR;
-	int rts_bit = TIOCM_RTS;
-#endif
-
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
 
-#ifndef MEGATEC_SUBDRV
 	/* Some UPS models need this. */
-	ioctl(upsfd, TIOCMBIS, &dtr_bit);
-	ioctl(upsfd, TIOCMBIC, &rts_bit);
-#endif
+	ser_set_dtr(upsfd, 1);
+	ser_set_rts(upsfd, 0);
 }
 
 
 void upsdrv_cleanup(void)
 {
-#ifndef MEGATEC_SUBDRV
-	int dtr_bit = TIOCM_DTR;
-	ioctl(upsfd, TIOCMBIC, &dtr_bit);
-#endif
-
+	ser_set_dtr(upsfd, 0);
 	ser_close(upsfd, device_path);
 }
 

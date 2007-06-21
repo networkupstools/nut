@@ -29,7 +29,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <sys/ioctl.h>
 
 #include "main.h"
 #include "serial.h"
@@ -44,7 +43,8 @@ static int powpan_command_bin(const char *buf, size_t bufsize)
 
 	upsdebug_hex(3, "send", (unsigned char *)buf, bufsize);
 
-	tcflush(upsfd, TCIOFLUSH);
+	ser_flush_io(upsfd);
+
 	ret = ser_send_buf_pace(upsfd, UPSDELAY, (unsigned char *)buf, bufsize);
 
 	if (ret < (int)bufsize) {
@@ -70,7 +70,8 @@ static int powpan_command_txt(const char *command)
 
 	upsdebug_hex(3, "send", (unsigned char *)command, strlen(command));
 
-	tcflush(upsfd, TCIOFLUSH);
+	ser_flush_io(upsfd);
+
 	ret = ser_send_pace(upsfd, UPSDELAY, command);
 
 	if (ret < (int)strlen(command)) {
@@ -746,13 +747,11 @@ static int initups_txt()
 void upsdrv_initups(void)
 {
 	char	*version;
-	int	rts_bit = TIOCM_RTS;
-	int	dtr_bit = TIOCM_DTR;
 
 	version = getval("protocol");
 	upsfd = ser_open(device_path);
 
-	ioctl(upsfd, TIOCMBIC, &rts_bit);
+	ser_set_rts(upsfd, 0);
 
 	/*
 	 * Try to autodetect which UPS is connected.
@@ -763,14 +762,14 @@ void upsdrv_initups(void)
 			continue;
 		}
 
-		ioctl(upsfd, TIOCMBIS, &dtr_bit);
+		ser_set_dtr(upsfd, 1);
 		usleep(10000);
 
 		if (powpan_protocol[mode].initups() > 0) {
 			return;
 		}
 
-		ioctl(upsfd, TIOCMBIC, &dtr_bit);
+		ser_set_dtr(upsfd, 0);
 		usleep(10000);
 	}
 
@@ -798,8 +797,6 @@ void upsdrv_banner(void)
 
 void upsdrv_cleanup(void)
 {
-	int	dtr_bit = TIOCM_DTR;
-
-	ioctl(upsfd, TIOCMBIC, &dtr_bit);
+	ser_set_dtr(upsfd, 0);
 	ser_close(upsfd, device_path);
 }

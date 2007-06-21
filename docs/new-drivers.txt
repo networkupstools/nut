@@ -244,6 +244,23 @@ message if someone passes a non-serial port /dev entry to your driver,
 so it needs the extra detail.
 
 
+ - int ser_set_dtr(int fd, int state)
+ - int ser_set_rts(int fd, int state)
+
+These functions can be used to set the modem control lines to provide
+cable power on the RS232 interface. Use state = 0 to set the line to 0
+and any other value to set it to 1.
+
+
+ - int set_get_dsr(int fd)
+ - int ser_get_cts(int fd)
+ - int set_get_dcd(int fd)
+
+These functions read the state of the modem control lines. They will
+return 0 if the line is logic 0 and a non-zero value if the line is
+logic 1.
+
+
  - int ser_close(int fd, const char *port)
 
 This function unlocks the port if possible and closes the fd.  You
@@ -365,6 +382,12 @@ enabled, since it could be very noisy.
 This function returns the number of characters which were read, so you
 can check for extra bytes by looking for a nonzero return value.  Zero
 will also be returned if the read fails for some reason.
+
+
+ - int set_flush_io(int fd)
+
+This function drains both the in- and output buffers. Return zero on
+success.
 
 
  - void ser_comm_fail(const char *fmt, ...)

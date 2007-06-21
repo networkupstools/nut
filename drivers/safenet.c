@@ -65,13 +65,12 @@
 
 #include <stdlib.h>
 #include <ctype.h>
-#include <sys/ioctl.h>
 
 #include "main.h"
 #include "serial.h"
 #include "safenet.h"
 
-#define DRV_VERSION	"1.3"
+#define DRV_VERSION	"1.4"
 
 /*
  * Here we keep the last known status of the UPS
@@ -89,7 +88,7 @@ static int safenet_command(const char *command)
 	/*
 	 * Get rid of whatever is in the in- and output buffers.
 	 */
-	tcflush(upsfd, TCIOFLUSH);
+	ser_flush_io(upsfd);
 
 	/*
 	 * Send the command and read back the status line. When we just send
@@ -265,8 +264,7 @@ void upsdrv_initinfo(void)
 	 * Very crude hardware detection. If an UPS is attached, it will set DSR
 	 * to 1. Bail out if it isn't.
 	 */
-	ioctl(upsfd, TIOCMGET, &i);
-	if ((i & TIOCM_DSR) == 0) {
+	if (!ser_get_dsr(upsfd)) {
 		fatalx(EXIT_FAILURE, "Serial cable problem or nothing attached to %s", device_path);
 	}
 
@@ -412,9 +410,6 @@ void upsdrv_banner(void)
 
 void upsdrv_initups(void)
 {
-	int dtr_bit = TIOCM_DTR;
-	int rts_bit = TIOCM_RTS;
-
 	/*
 	 * Open and lock the serial port and set the speed to 1200 baud.
 	 */
@@ -424,11 +419,12 @@ void upsdrv_initups(void)
 	/*
 	 * Set DTR and clear RTS to provide power for the serial interface.
 	 */
-	ioctl(upsfd, TIOCMBIS, &dtr_bit);
-	ioctl(upsfd, TIOCMBIC, &rts_bit);
+	ser_set_dtr(upsfd, 1);
+	ser_set_rts(upsfd, 0);
 }
 
 void upsdrv_cleanup(void)
 {
+	ser_set_dtr(upsfd, 0);
 	ser_close(upsfd, device_path);
 }

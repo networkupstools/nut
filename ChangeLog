@@ -1,3 +1,15 @@
+Thu Jun 21 18:54:57 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * docs/new-drivers.txt, drivers/serial.[ch]:
+   - Created functions to manipulate the modem control lines, so that
+     we don't have to mess with ioctl() calls to do that.
+   - Add a function to flush both the in- and output buffers.
+ * drivers/powerpanel.[ch], drivers/safenet.c:
+   - Put the above mentioned new functions to use.
+ * drivers/megatec.[ch], drivers/megatec_usb.c:
+   - Use the new modem control line functions in megatec.c and provide
+     stubs in megatec_usb.c.
+
 Thu Jun 21 07:41:09 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  - drivers/main-hal.c: fixe a double setting of device_path

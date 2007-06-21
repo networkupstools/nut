@@ -19,6 +19,17 @@ int ser_open(const char *port);
 
 int ser_set_speed(int fd, const char *port, speed_t speed);
 
+/* set the state of modem control lines */
+int ser_set_dtr(int fd, int state);
+int ser_set_rts(int fd, int state);
+
+/* get the status of modem control lines */
+int ser_get_dsr(int fd);
+int ser_get_cts(int fd);
+int ser_get_dcd(int fd);
+
+int ser_flush_io(int fd);
+
 int ser_close(int fd, const char *port);
 
 int ser_send_char(int fd, unsigned char ch);

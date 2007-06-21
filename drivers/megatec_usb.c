@@ -230,6 +230,16 @@ int ser_set_speed(int fd, const char *port, speed_t speed)
 	return 0;
 }
 
+int ser_set_dtr(int fd, int state)
+{
+	return 0;
+}
+
+int ser_set_rts(int fd, int state)
+{
+	return 0;
+}
+
 int ser_close(int fd, const char *port)
 {
 	usb->close(udev);
