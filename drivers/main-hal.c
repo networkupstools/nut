@@ -623,7 +623,6 @@ int main(int argc, char **argv)
 		device_name = xbasename(device_path);
 	}
 #endif
-	device_path = xstrdup(argv[0]);
 	device_name = xbasename(device_path);
 
 	pidfn = xmalloc(SMALLBUF);
