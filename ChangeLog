@@ -4,8 +4,9 @@ Thu Jun 21 07:41:09 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
 Thu Jun 21 07:07:25 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
- - usbhid-ups: improve the handling and reporting of the communication
-   lost status. Previously, these were not reported anymore.
+ - drivers/usbhid-ups.c: improve the handling and reporting of the
+   communication lost status. Previously, these were not reported
+   anymore.
 
 Web Jun 20 22:14:43 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
