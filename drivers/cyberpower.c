@@ -22,8 +22,6 @@
 #include "serial.h"
 #include "cyberpower.h"
 
-#include <sys/ioctl.h>
-
 #include "timehead.h"
 
 /* window for repeating dangerous command (shutdown.stayoff) */
@@ -533,15 +531,12 @@ void upsdrv_makevartable(void)
 /* prep the serial port */
 void upsdrv_initups(void)
 {
-	int dtr_bit = TIOCM_DTR;
-	int rts_bit = TIOCM_RTS;
-
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B1200);
 
 	/* dtr high, rts high */
-	ioctl(upsfd, TIOCMBIS, &rts_bit);
-	ioctl(upsfd, TIOCMBIS, &dtr_bit);
+	ser_set_dtr(upsfd, 1);
+	ser_set_rts(upsfd, 1);
 }
 
 void upsdrv_initinfo(void)

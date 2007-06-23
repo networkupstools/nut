@@ -30,7 +30,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/ioctl.h>
 #include <sys/types.h>
 #include <string.h>
 
@@ -536,19 +535,16 @@ communication_subdriver_t shut_subdriver = {
  */
 void setline (int fd, int set)
 {
-	int dtr = TIOCM_DTR;
-	int rts = TIOCM_RTS;
-	
 	upsdebugx(3, "entering setline(%i)", set);
 
 	if (set == 1) {
-		ioctl (fd, TIOCMBIC, &dtr);
-		ioctl (fd, TIOCMBIS, &rts);
+		ser_set_dtr(fd, 0);
+		ser_set_rts(fd, 1);
 	}
 	else
 	{
-		ioctl (fd, TIOCMBIS, &dtr);
-		ioctl (fd, TIOCMBIC, &rts);
+		ser_set_dtr(fd, 1);
+		ser_set_rts(fd, 0);
 	}
 }
 

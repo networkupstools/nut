@@ -20,14 +20,13 @@
 #include "main.h"
 #include "serial.h"
 #include "everups.h"
-#include <sys/ioctl.h>
 
 static	unsigned char	upstype = 0;
 
 static void init_serial(void)
 {
-        int     clr_bit = TIOCM_DTR | TIOCM_RTS;
-        ioctl(upsfd, TIOCMBIC, &clr_bit);
+	ser_set_dtr(upsfd, 0);
+	ser_set_rts(upsfd, 0);
 }
 
 static int Code(int tries)

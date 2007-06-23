@@ -153,14 +153,11 @@ static int instcmd (const char *cmdname, const char *extra)
  */
 static void dtr0rts1 (void)
 {
-	int dtr_bit = TIOCM_DTR;
-	int rts_bit = TIOCM_RTS;
-
 	upsdebugx(2, "DTR => 0, RTS => 1");
 
 	/* set DTR to low and RTS to high */
-	ioctl(upsfd, TIOCMBIC, &dtr_bit);
-	ioctl(upsfd, TIOCMBIS, &rts_bit);
+	ser_set_dtr(upsfd, 0);
+	ser_set_rts(upsfd, 1);
 }
 
 /* set DTR line on a serial port for KIN525AP
@@ -168,12 +165,10 @@ static void dtr0rts1 (void)
  */
 static void dtr1 (void)
 {
-	int dtr_bit = TIOCM_DTR;
-
 	upsdebugx(2, "DTR => 1");
 
 	/* set DTR to high */
-	ioctl(upsfd, TIOCMBIS, &dtr_bit);
+	ser_set_dtr(upsfd, 1);
 }
 
 /* clear any flow control */

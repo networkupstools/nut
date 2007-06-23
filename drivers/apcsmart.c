@@ -849,11 +849,8 @@ void upsdrv_shutdown(void)
 /* 940-0095B support: set DTR, lower RTS */
 static void init_serial_0095B(void)
 {
-	int	dtr_bit = TIOCM_DTR;
-	int	rts_bit = TIOCM_RTS;
-
-	ioctl(upsfd, TIOCMBIS, &dtr_bit);
-	ioctl(upsfd, TIOCMBIC, &rts_bit);
+	ser_set_dtr(upsfd, 1);
+	ser_set_rts(upsfd, 0);
 }
 
 static void update_info_normal(void)

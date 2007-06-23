@@ -23,7 +23,6 @@
  *
  */
 
-#include <sys/ioctl.h>
 #include <string.h>
 
 #include "config.h"
@@ -1278,18 +1277,15 @@ void make_string(u_char *buf, int datalen, char *string)
  */
 void setline (int set)
 {
-	int dtr = TIOCM_DTR;
-	int rts = TIOCM_RTS;
-	
 	upsdebugx(3, "entering setline(%i)\n", set);
 
 	if (set == 1) {
-		ioctl (upsfd, TIOCMBIC, &dtr);
-		ioctl (upsfd, TIOCMBIS, &rts);
+		ser_set_dtr(upsfd, 0);
+		ser_set_rts(upsfd, 1);
 	}
 	else {
-		ioctl (upsfd, TIOCMBIS, &dtr);
-		ioctl (upsfd, TIOCMBIC, &rts);
+		ser_set_dtr(upsfd, 1);
+		ser_set_rts(upsfd, 0);
 	}
 }
 

@@ -443,7 +443,8 @@ static int powpan_status(int expected)
 
 	upsdebug_hex(3, "send", (unsigned char *)"D\r", 2);
 
-	tcflush(upsfd, TCIOFLUSH);
+	ser_flush_io(upsfd);
+
 	ret = ser_send_pace(upsfd, UPSDELAY, "D\r");
 
 	if (ret < 2) {

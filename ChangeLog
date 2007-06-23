@@ -1,3 +1,12 @@
+Sat Jun 23 07:54:30 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/various:
+   - Use the ser_set_* and ser_get_* functions to handle the modem
+     control lines, so that we don't have to mess with ioctl() calls
+     to do that.
+ * drivers/megatec.h, drivers/powerpanel.c, drivers/safenet.c:
+   - Additions to patch 975 that did the above already.
+
 Sat Jun 23 03:29:29 UTC 2007 / Charles Lepple <clepple@gmail.com>
 
  - drivers/tripplite_usb.c: unplugging the UPS generates more error

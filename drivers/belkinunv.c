@@ -93,8 +93,7 @@
 #include "main.h"
 #include "serial.h"
 #include "belkinunv.h"
-#include <sys/ioctl.h>
-	
+
 /* somewhat arbitrary buffer size - the longest actually occuring
    message is 18 bytes for the F6C800-UNV. But since message length is
    arbitrary in principle, we allow for some extra bytes. */
@@ -221,19 +220,16 @@ static unsigned char belkin_checksum(unsigned char *buf, int n) {
 /* open serial port and switch to "smart" mode */
 static void belkin_nut_open_tty(void)
 {
-	int dtr_bit = TIOCM_DTR;
-	int rts_bit = TIOCM_RTS;
-
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
 
 	/* must clear DTR and set RTS for 1 second for UPS to go to
 	   "smart" mode */
-	ioctl(upsfd, TIOCMBIC, &dtr_bit);
-	ioctl(upsfd, TIOCMBIS, &rts_bit);
+	ser_set_dtr(upsfd, 0);
+	ser_set_rts(upsfd, 1);
 	sleep(1);
 
-	tcflush(upsfd, TCIOFLUSH);
+	ser_flush_io(upsfd);
 }
 
 /* receive Belkin message from UPS, check for well-formedness (leading
@@ -435,8 +431,6 @@ static int belkin_std_open_tty(const char *device) {
 	struct termios tios;
 	struct flock flock;
 	char buf[128];
-	const int tiocm_dtr = TIOCM_DTR;
-	const int tiocm_rts = TIOCM_RTS;
 	int r;
 	
 	/* open the device */
@@ -464,12 +458,12 @@ static int belkin_std_open_tty(const char *device) {
 	   be done for at least 0.25 seconds for the UPS to react. Ignore
 	   any errors, as this probably means we are not on a "real" serial
 	   port. */
-	ioctl(fd, TIOCMBIC, &tiocm_dtr);
-	ioctl(fd, TIOCMBIS, &tiocm_rts);
-	
+	ser_set_dtr(upsfd, 0);
+	ser_set_rts(upsfd, 1);
+
 	/* flush both directions of serial port: throw away all data in
 	   transit */
-	r = tcflush(fd, TCIOFLUSH);
+	r = ser_flush_io(fd);
 	if (r == -1) {
 		close(fd);
 		return -1;

@@ -253,7 +253,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 void upsdrv_initinfo(void)
 {
-	int	i, retry = 3;
+	int	retry = 3;
 	char	*v;
 
 	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
