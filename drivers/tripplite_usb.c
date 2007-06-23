@@ -25,7 +25,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define DRV_VERSION "0.10"
+#define DRV_VERSION "0.11"
 
 /* % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
  *
@@ -506,8 +506,14 @@ void usb_comm_fail(int res, const char *msg)
 	static int try = 0;
 
 	switch(res) {
-		case -ENODEV:
-			upslogx(LOG_WARNING, "%s: Device detached?", msg);
+		case -EBUSY:
+			upslogx(LOG_WARNING, "%s: Device claimed by another process", msg);
+			fatalx(EXIT_FAILURE, "Terminating: EBUSY");
+			upsdrv_cleanup();
+			break;
+
+		default:
+			upslogx(LOG_WARNING, "%s: Device detached? (error %d: %s)", msg, res, usb_strerror());
 			upsdrv_cleanup();
 
 			upslogx(LOG_NOTICE, "Reconnect attempt #%d", ++try);
@@ -523,16 +529,6 @@ void usb_comm_fail(int res, const char *msg)
 					fatalx(EXIT_FAILURE, "Too many unsuccessful reconnection attempts");
 				}
 			}
-			break;
-
-		case -EBUSY:
-			upslogx(LOG_WARNING, "%s: Device claimed by another process", msg);
-			fatalx(EXIT_FAILURE, "Terminating: EBUSY");
-			upsdrv_cleanup();
-			break;
-
-		default:
-			upslogx(LOG_NOTICE, "%s: Unknown error %d", msg, res);
 			break;
 	}
 }

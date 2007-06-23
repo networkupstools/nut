@@ -1,3 +1,8 @@
+Sat Jun 23 03:29:29 UTC 2007 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/tripplite_usb.c: unplugging the UPS generates more error
+   codes than I was handling before. Tested with OMNIVS1000 on Ubuntu.
+
 Sat Jun 23 03:02:27 UTC 2007 / Charles Lepple <clepple@gmail.com>
 
  - drivers/tripplite_usb.c: don't loop when reconnecting to the UPS.
