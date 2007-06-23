@@ -1,3 +1,8 @@
+Sat Jun 23 03:02:27 UTC 2007 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/tripplite_usb.c: don't loop when reconnecting to the UPS.
+   (similar to changes made to usbhid-ups.c)
+
 Fri Jun 22 07:07:25 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  - drivers/usbhid-ups.c: fix the previous improvement in the handling

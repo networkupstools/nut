@@ -304,7 +304,6 @@ static enum tl_model_t {
 #define RECV_WAIT_MSEC 1000	/*! was 100 for OMNIVS; SMARTPRO units need longer */
 
 #define MAX_RECONNECT_TRIES 10
-#define RECONNECT_DELAY 2	/*!< in seconds */
 
 #define DEFAULT_OFFDELAY   64  /*!< seconds (max 0xFF) */
 #define DEFAULT_STARTDELAY 60  /*!< seconds (max 0xFFFFFF) */
@@ -343,8 +342,13 @@ static int battery_voltage_nominal = 12,
 static unsigned int offdelay = DEFAULT_OFFDELAY;
 /* static unsigned int bootdelay = DEFAULT_BOOTDELAY; */
 
-static void reconnect_ups(void)
+/*!@brief Try to reconnect once.
+ * @return 1 if reconnection was successful.
+ */
+static int reconnect_ups(void)
 {
+	int ret = 1;
+
 	if (hd == NULL)
 	{
 		upsdebugx(2, "==================================================");
@@ -353,12 +357,13 @@ static void reconnect_ups(void)
 
 		upsdrv_cleanup();
 
-		while ((hd = HIDOpenDevice(&udev, &curDevice, reopen_matcher, MODE_REOPEN)) == NULL) {
-			upslogx(LOG_INFO, "Reconnecting to UPS...");
+		if ((hd = HIDOpenDevice(&udev, &curDevice, reopen_matcher, MODE_REOPEN)) == NULL) {
+			upslogx(LOG_INFO, "Reconnecting to UPS failed; will retry later...");
 			dstate_datastale();
-			sleep(60);
+			ret = 0;
 		}
 	}
+	return ret;
 }
 
 
@@ -498,25 +503,25 @@ void upsdrv_initinfo(void);
  */
 void usb_comm_fail(int res, const char *msg)
 {
-	int try = 0;
+	static int try = 0;
 
 	switch(res) {
 		case -ENODEV:
 			upslogx(LOG_WARNING, "%s: Device detached?", msg);
 			upsdrv_cleanup();
 
-			do {
-				sleep(RECONNECT_DELAY);
-				upslogx(LOG_NOTICE, "Reconnect attempt #%d", ++try);
-				hd = NULL;
-				reconnect_ups();
-			} while (!hd && (try < MAX_RECONNECT_TRIES));
+			upslogx(LOG_NOTICE, "Reconnect attempt #%d", ++try);
+			hd = NULL;
+			reconnect_ups();
 
 			if(hd) {
 				upslogx(LOG_NOTICE, "Successfully reconnected");
+				try = 0;
 				upsdrv_initinfo();
 			} else {
-				fatalx(EXIT_FAILURE, "Too many unsuccessful reconnection attempts");
+				if(try > MAX_RECONNECT_TRIES) {
+					fatalx(EXIT_FAILURE, "Too many unsuccessful reconnection attempts");
+				}
 			}
 			break;
 
