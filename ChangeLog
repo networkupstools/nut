@@ -1,3 +1,14 @@
+Sun Jun 24 18:49:16 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * data/driver.list:
+   - Add 'Nitram Elite 2005'
+   - Make 'powerpanel' driver first choice for Cyber Power text and
+     binary protocol UPS systems
+   - Remove 'cpsups' driver
+ * drivers/cpsups.c:
+   - The 'cpsups' driver seems to have portability problems (several
+     reports for segfaults when using this driver)
+
 Sat Jun 23 07:54:30 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/various:

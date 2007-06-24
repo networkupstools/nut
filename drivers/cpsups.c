@@ -465,7 +465,12 @@ void upsdrv_banner(void)
 {
 	printf("Network UPS Tools -  CyberPower text protocol UPS driver %s (%s)\n",
 		DRV_VERSION, UPS_VERSION);
-	experimental_driver = 1;	/* Causes a warning message to be printed */
+/*
+ * This driver segfaults on some systems for some unknown reason.
+ * Since it has been superseded by the powerpanel driver, unless
+ * this is fixed, we set the broken flag.
+ */
+	broken_driver = 1;
 }
 
 void upsdrv_initups(void)
