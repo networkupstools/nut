@@ -72,9 +72,10 @@ Do at most one pass of the variables.  You MUST return from this
 function or upsd will be unable to read data from your driver.  main
 will call this function at regular intervals.
 
-If your UPS hardware is slow or brain-damaged, you might use an 
-odd/even approach to this function.  Half the time, set a flag and
-return.  The other half, clear the flag and actually do the poll.
+Don't spent more than a couple of seconds in this function.  If your
+UPS hardware requires a timeout period of several seconds before it
+answers, consider returning from this function after sending a
+command immediately and read the answer the next time it is called.
 
 upsdrv_shutdown
 ---------------
@@ -200,22 +201,29 @@ use these functions until you check with the upsdev list.
 Staleness control
 =================
 
+If you're not talking to a polled UPS, then you must ensure that it
+is still out there and is alive before calling dstate_dataok().  Even
+if nothing is changing, you should still "ping" it or do something
+else to ensure that it is really available.  If the attempts to
+contact the UPS fail, you must call dstate_datastale() to inform the
+server and clients.
+
  - dstate_dataok() 
 
-   You must call this regularly if polls are succeeding.  A good place
-   to call this is the bottom of upsdrv_updateinfo().
-
-   If you're not talking to a polled UPS, then you must ensure that it
-   is still out there and is alive before calling dstate_dataok().  Even
-   if nothing is changing, you should still "ping" it or do something
-   else to ensure that it is really available.  If the attempts to
-   contact the UPS fail, you must call dstate_datastale() to inform the
-   server and clients.
+   You must call this if polls are succeeding.  A good place to call this
+   is the bottom of upsdrv_updateinfo().
 
  - dstate_datastale()
 
    You must call this if your status is unusable.  A good technique is
    to call this before exiting prematurely from upsdrv_updateinfo().
+
+Don't hide calls to these functions deep inside helper functions.  It is
+very hard to find the origin of staleness warnings, if you call these from
+various places in your code.  Basically, don't call them from any other
+function than from within upsdrv_updateinfo().  There is no need to call
+either of these regularly as was stated in previous versions of this
+document (that requirement has long gone).
 
 Serial port handling
 ====================
