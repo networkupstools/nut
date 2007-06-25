@@ -1,3 +1,9 @@
+Mon Jun 25 18:57:35 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/mge-shut.c: Rather than sleeping for 10 seconds (without
+   solving the problem), return instead and try again the next time
+   upsdrv_updateinfo() is invoked.
+
 Sun Jun 24 18:49:16 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * data/driver.list:

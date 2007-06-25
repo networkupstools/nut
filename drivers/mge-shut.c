@@ -180,7 +180,7 @@ void upsdrv_updateinfo (void)
 		if (shut_ups_start () != 0) {
 			upsdebugx(2, "No communication with UPS, retrying");
 			dstate_datastale();
-			sleep (10);
+			return;
 		} else {
 			upsdebugx(2, "Communication with UPS established");
 		}
