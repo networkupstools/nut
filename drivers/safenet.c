@@ -163,8 +163,6 @@ static void safenet_update()
 	}
 
 	status_commit();
-
-	dstate_dataok();
 }
 
 static int instcmd(const char *cmdname, const char *extra)
@@ -358,6 +356,8 @@ void upsdrv_updateinfo(void)
 	}
 
 	safenet_update();
+
+	dstate_dataok();
 }
 
 void upsdrv_shutdown(void)

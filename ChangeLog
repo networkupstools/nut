@@ -1,3 +1,8 @@
+Mon Jun 25 19:16:16 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/safenet.c: Call dstate_dataok() in upsdrv_updateinfo(),
+   don't hide it in a helper function.
+
 Mon Jun 25 18:57:35 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/mge-shut.c: Rather than sleeping for 10 seconds (without
