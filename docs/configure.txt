@@ -63,7 +63,7 @@ Contents:
    Build and install the optional CGI programs, HTML files, and sample
    CGI configuration files. This is not enabled by default, as they
    are only useful on web servers. See data/html/README for additional
-   information on how to set up CGI programs. 
+   information on how to set up CGI programs.
 
  --with-lib (default: no)
 
@@ -83,6 +83,14 @@ Contents:
 
    Enable IPv6 support (default: auto-detect)
 
+  --with-hal (default: no)
+
+    Build and install Hardware Abstraction Layer support.
+    If you own a USB unit, only protect your local system and run the
+    Gnome or KDE desktop, this will enable a full Plug & Play usage.
+    See docs/nut-hal.txt for additional information on how to set up
+    and use HAL support.
+ 
 3. Other configuration options:
 ===============================
 

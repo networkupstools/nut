@@ -13,8 +13,14 @@
 ==============================================================================
 
 Network UPS Tools is a collection of programs which provide a common
-interface for monitoring and administering UPS hardware.  It uses a
-layered approach to connect all of the parts.
+interface for monitoring and administering UPS hardware.  NUT comes in
+two flavors: the "classic" and the "HAL enabled" one.
+
+ The "classic" flavor
+ --------------------
+
+It is the standard installation that uses a layered approach to connect
+all of the NUT parts.
 
 Drivers are provided for a wide assortment of equipment.  They
 understand the specific language of each UPS and map it back to a
@@ -35,6 +41,24 @@ system cleanly before the UPS runs out of power.  Other programs are
 also provided to log UPS status regularly, monitor status through your
 web browser, and more.
 
+ The "HAL enabled" flavor
+ ------------------------
+
+This one is intended for use:
+- with supported USB devices,
+- on HAL enabled systems (Linux, FreeBSD, Sun Solaris),
+- on HAL enabled desktops (Gnome and KDE) 
+
+Using this approach, you don't have to configure NUT files, nor to
+manually start components, nor to install a specific NUT client.
+
+Upon plugging your USB UPS, the right driver will be automatically
+launched, and the according Power Manager GUI will pop up.
+
+Note that this feature is still beta and incomplete. But it
+represents a major evolution, and a huge user experience improvement!
+
+For more information, refer to INSTALL and docs/nut-hal.txt.
 
 ==============================================================================
  INSTALLING
@@ -136,6 +160,9 @@ However, you can also just start or stop one by adding its name:
 	/usr/local/ups/bin/upsdrvctl start sparky
 	/usr/local/ups/bin/upsdrvctl stop sparky
 
+To get the driver name for your device, refer to the below section
+called "HARDWARE SUPPORT TABLE".
+
  EXTRA SETTINGS
  --------------
 
@@ -155,161 +182,20 @@ that UPS.
  HARDWARE SUPPORT TABLE
  ----------------------
 
-	al175            - Eltek models with AL175 alarm module
+The NUT Hardware support table is available in the source directory:
 
-	apcsmart         - APC Smart-UPS, Back-UPS Pro, Matrix-UPS models
+	nut-X.Y.Z/data/driver.list
 
-	bcmxcp           - some Powerware models
+This one should also be distributed with your favorite packages.
+For example, it is available on Debian systems as:
 
-	bcmxcp_usb       - some Powerware USB models
-
-	belkin           - Belkin Regulator Pro
-
-	belkinunv	 - Belkin Universal UPS (F6C800-UNV, others)
-
-	bestuferrups	 - Best Power Micro-Ferrups models
-
-	bestups          - Best Power models: (newer, usually beige)
-
-                           - Fortress (FOR)
-                           - Fortress Telecom (FTC)
-                           - Patriot Pro (PRO)
-                           - Patriot Pro II (PR2)
-                           - Axxium Rackmount (AX1)
-
-                           The SOLA 325, 520 and 620 are also recognized. 
-
-                           This driver will probably also work with other
-                           PhoenixTec protocol hardware.
-
-                           The SOLA 610 will work with the ID= variable
-                           in ups.conf.
-
-	cyberpower       - Cyber Power Systems units
-			   700AVR and others (binary protocol)
-
-	cpsups           - Cyber Power Systems units (experimental)
-			   CPS825VA, 1100AVR, 1500AVR-HO, OP500TE, others
-			   (text protocol) 
-
-	energizerups	 - Energizer UPS hardware (experimental - USB/Linux)
-
-	etapro		 - ETA UPS hardware with the "PRO" smart mode
-
-	everups          - EVER Sp. z o.o models
-
-                           - NET *-DPC
-                           - AP *-PRO 
-
-	genericups       - Many contact closure models -
-                           see "Generic UPS driver" below 
-
-	isbmex		 - SOLA/BASIC Mexico ISBMEX protocol hardware
-
-	liebert          - Liebert UPStation GXT2 with contact-closure cable
-
-	masterguard	 - Masterguard UPS hardware
-
-	metasys  	 - Meta System ups models:
-
-                           - HF Line (/2) 1-8 boards
-                           - HF Millennium (810, 820)
-                           - HF TOP Line (910, 920, 930, 940, 950, 970, 980)
-                           - ECO Network (750, 1000, 1050, 1500,
-                             1800, 2000, 2100, 2500, 3000)
-                           - ECO (305, 308, 311, 511, 516, 519,
-                             522, SX, SXI)
-                           - ally HF (800, 1000, 1250, 1600, 2000, 2500)
-                           - Megaline (1250, 2500, 3750, 5000,
-                             6250, 7500, 8750, 10000)
-
-	mge-shut	 - MGE UPS SYSTEMS serial SHUT units:
-
-                           - Pulsar Ellipse / Ellipse Premium S,
-                           - Pulsar Ellipse / Ellipse Premium USBS,
-                           - NOVA AVR Serial
-                           - Pulsar Evolution,
-                           - Pulsar EXtreme C,
-                           - Pulsar EXtreme C / EX RT,
-                           - Pulsar Esprit,
-                           - Pulsar / Comet EXtreme,
-                           - Comet / Galaxy using HID COM Serial Card (ref 66066)
-
-	mge-utalk	 - MGE UPS SYSTEMS serial UTalk units:
-
-                           - Pulsar Evolution,
-                           - Pulsar EX / EXL / PSX / SX
-                           - Pulsar ES+ / SV / ESV / ESV+,
-                           - Pulsar EXtreme C,
-                           - Pulsar / Comet EXtreme,
-                           - Comet / Galaxy using Utalk Serial Card (ref 66060)
-
-	megatec		 - Megatec protocol based UPSes (Mustek Powermust,
-			   OnLite 50, Maxxtro units, etc.)
-
-
-	usbhid-ups - Meta driver for USB HID UPSes on various platforms
-                           (replaces hidups, formerly named newhidups)
-
-                           Some units that have been used with this driver:
-
-                           - All MGE UPS SYSTEMS USB models,
-                           - various APC units,
-                           - Belkin F6C800-UNV, F6C550-AVR
-
-                           NOTE: not built by default.  Read the FAQ
-                           to find out how to build/install/use this one.
- 
-	nitram		 - Nitram Elite 2005 units
-
-	oneac		 - Oneac EG and ON equipment
-
-	powercom	 - Trust 425/625
-			 - Powercom units
-			 - Advice Partner/King PR750
-                         - Socomec Sicon Egys 420 VA 
-
-	safenet		 - Units typically bundled with Safenet software:
-
-                           - Ever-Power UF 010C2EJA
-                           - Fairstone L525/-625/-750
-                           - Fenton P400/-600/-800
-                           - Gemini UPS625/-1000
-                           - Powerwell PM525A/-625A/-800A/-1000A/-1250A
-                           - Repotec RPF525/-625/-800/-1000
-                           - Soltec Winmate 525/625/800/1000
-                           - Sweex 500/1000 (if shipped with Safenet)
-
-                           Note: Sweex models which shipped with UPSmart
-                           are contact-closure and need to use the
-                           genericups driver with upstype=7.
-
-	snmp-ups         - SNMP UPS equipment
-                           Experimental driver - not built by default.
-
-                           MIBs supported:
-                           - various RFC 1628 compliant devices,
-                           - MGE UPS SYSTEMS MIB,
-                           - APC Powernet MIB,
-                           - Powerware MIB,
-                           - Socomec Netvision MIB.
-
-                           See docs/drivers/snmp-ups.txt for more
-                           information.
-
-	tripplite	 - Tripp-Lite SmartUPS units
-
-	tripplitesu	 - Tripp-Lite SmartOnline units
-
-        upscode2         - Fiskars, Compaq and Powerware units
-
-	victronups	 - IMV/Victron hardware
+	/usr/share/nut/driver.list
 
 For another take on this list, try the web page: 
 
 	http://random.networkupstools.org/compat/
 
-If your driver has vanished, see the FAQ.
+If your driver has vanished, see the FAQ and UPGRADING files.
 
  GENERIC UPS DRIVER
  ------------------
@@ -641,12 +527,12 @@ for platform not providing pkg-config.
 The version numbers work like this: if the middle number is odd, it's a
 development tree, otherwise it is the stable tree.
 
-The past stable trees were 1.0, 1.2 and 1.4, with the latest stable tree
-designated 2.0.  The development trees were 1.1, 1.3 and 1.5.
+The past stable trees were 1.0, 1.2, 1.4 and 2.0, with the latest stable tree
+designated 2.2.  The development trees were 1.1, 1.3, 1.5 and 2.1.
 
-The jump to 2.0 is mostly due to the large changes to the network
-protocol.  There have also been a number of architectural changes which
-may not be noticeable to most users.
+The jump to 2.2 is mostly due to the large changes to the features list.
+There have also been a number of architectural changes which may not be
+noticeable to most users.
 
 
 ==============================================================================
@@ -673,8 +559,8 @@ naming scheme.  1.4 servers have a compatibility mode where they can
 answer queries for both names, even though the drivers are internally
 using the new format.
 
-When 1.4 clients talk to 1.4 or 2.0 servers, they will use the new
-names.
+When 1.4 clients talk to 1.4 or 2.0 (or more recent) servers, they will
+use the new names.
 
 Here's a table to make it easier to visualize:
 
@@ -692,8 +578,8 @@ Here's a table to make it easier to visualize:
    | 2.0    | no  | no  | yes | yes |
    +--------------------------------+
 
-Version 2.0 does not contain backwards compatibility for the old 
-protocol and variable/command names.  As a result, 2.0 clients can't 
+Version 2.0 (and more recent) does not contain backwards compatibility for
+the old protocol and variable/command names.  As a result, 2.0 clients can't 
 talk to anything older than a 1.4 server.  If you ask a 2.0 client to 
 fetch "STATUS", it will fail.  You'll have to ask for "ups.status" 
 instead.
@@ -715,6 +601,7 @@ Also be sure to look at skel.c and main.c.  All drivers are just
 collections of support functions built around a common core, so most of
 the dull housekeeping work has been handled for you.
 
+Information on the NUT variables naming can be found in new-names.txt.
 Information on the architecture and how it all fits together is in the
 design.txt file.  In short, there's a lot more documentation out there.
 
@@ -764,6 +651,3 @@ Liebert Corporation supplied serial test boxes and a UPStation GXT2
 with the Web/SNMP card for development of the liebert driver and
 expansion of the existing snmp-ups driver.
 
-All donated equipment can usually be seen on the big status page:
-
-	http://www.exploits.org/cgi-bin/ups/upsstats.cgi

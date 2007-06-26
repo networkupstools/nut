@@ -69,6 +69,8 @@ MANPATH, or just do this:
     * to build and install NUT development files (needed to compile
       WMNut and MGE PSP), add --with-lib.
 
+    * to build and install HAL support, add --with-hal.
+
     See docs/configure.txt or "./configure --help" for the available
     options.
 
