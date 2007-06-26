@@ -1,3 +1,9 @@
+Mon Jun 25 14:46:45 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - INSTALL, README, UPGRADING, docs/configure.txt, docs/nut-hal.txt:
+   upgrade various documentation to reflect the changes, most of all
+   on the HAL side.
+
 Sat Jun 23 03:29:29 UTC 2007 / Charles Lepple <clepple@gmail.com>
 
  - drivers/tripplite_usb.c: unplugging the UPS generates more error
