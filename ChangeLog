@@ -1,3 +1,13 @@
+Tue Jun 26 19:39:55 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - docs/new-drivers.txt: Update to reflect changes in the way we
+   deal with dstate_dataok() and dstate_datastale(). Historically
+   it was needed to call these regularly, to prevent staleness
+   warnings. This is no longer needed, now the server will PING
+   drivers it has not heard of recently. If they answer with PONG,
+   they won't be flagged stale anymore, no matter how long ago
+   dstate_dataok() was called.
+
 Tue Jun 26 19:14:17 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/safenet.c: Don't hide call to dstate_dataok() in helper
