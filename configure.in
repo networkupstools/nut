@@ -183,7 +183,7 @@ dnl they are listed near the top by "./configure --help"
 NUT_ARG_WITH([serial], [build and install serial drivers], [yes])
 NUT_ARG_WITH([usb], [build and install USB drivers], [auto])
 NUT_ARG_WITH([snmp], [build and install SNMP drivers], [auto])
-NUT_ARG_WITH([hal], [build and install HAL support], [auto])
+NUT_ARG_WITH([hal], [build and install HAL support], [no])
 NUT_ARG_WITH([cgi], [build and install the CGI programs], [no])
 NUT_ARG_WITH([lib], [build and install the upsclient library], [no])
 

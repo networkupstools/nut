@@ -1,3 +1,8 @@
+Tue Jun 26  9:16:12 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - configure.in: set HAL support default value to "no". Enabling
+   HAL support must now be explicitly asked.
+
 Mon Jun 25 14:46:45 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  - INSTALL, README, UPGRADING, docs/configure.txt, docs/nut-hal.txt:
