@@ -1,3 +1,8 @@
+Tue Jun 26 19:14:17 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/safenet.c: Don't hide call to dstate_dataok() in helper
+   function.
+
 2.2.0-pre2
 
 Tue Jun 26 09:16:12 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
