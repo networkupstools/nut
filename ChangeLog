@@ -1,3 +1,9 @@
+Fri Jun 29 07:19:42 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - libhid.c: fix Notification handling. It previously caused
+   false online / on battery fluctuation with newhidups / usbhid-ups
+   when no notification was received.
+
 Tue Jun 26 19:39:55 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - docs/new-drivers.txt: Update to reflect changes in the way we
