@@ -736,6 +736,7 @@ dnl expand ${sysconfdir} and write it out
 conftemp="${sysconfdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
+CONFPATH=${conftemp}
 AC_DEFINE_UNQUOTED(CONFPATH, "${conftemp}",
 			[Default path for configuration files])
 
@@ -763,6 +764,7 @@ AC_SUBST(DRIVER_INSTALL_TARGET)
 AC_SUBST(NETLIBS)
 AC_SUBST(SERLIBS)
 AC_SUBST(STATEPATH)
+AC_SUBST(CONFPATH)
 AC_SUBST(RUN_AS_USER)
 AC_SUBST(RUN_AS_GROUP)
 AC_SUBST(LINUX_HIDDEV)

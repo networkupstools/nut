@@ -1,6 +1,8 @@
 Mon Jul  2 14:47:14 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  - mge-hid.c: fix battery.type (static data)
+ - configure.in, libupsclient.pc: add some missing variables useful
+   for external NUT applications (sysconfdir, statepath, nutuser)
 
 Fri Jun 29 07:19:42 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
