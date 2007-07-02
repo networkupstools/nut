@@ -1,3 +1,7 @@
+Mon Jul  2 14:47:14 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - mge-hid.c: fix battery.type (static data)
+
 Fri Jun 29 07:19:42 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  - libhid.c: fix Notification handling. It previously caused
