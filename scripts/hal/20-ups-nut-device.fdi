@@ -55,7 +55,7 @@
         </match>
       </match>
 
-      <!-- ?Powerware? -->
+      <!-- Phoenixtec Power Co., Ltd -->
       <match key="usb_device.vendor_id" int="0x06da">
         <match key="usb_device.product_id" int="0x0002">
           <append key="info.category" type="string">battery</append>
