@@ -1,3 +1,7 @@
+Tue Jul  3 23:26:55 UTC 2007 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/liebert-hid.*: first cut at Liebert HID subdriver
+
 Tue Jul  3 23:15:54 UTC 2007 / Charles Lepple <clepple@gmail.com>
 
  - scripts/subdriver/path-to-subdriver.sh: remove old instructions to

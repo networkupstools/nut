@@ -113,7 +113,7 @@ skel_LDADD = $(LDADD_DRIVERS)
 
 # USB
 USBHID_UPS_SUBDRIVERS = apc-hid.c belkin-hid.c explore-hid.c \
- mge-hid.c tripplite-hid.c
+ liebert-hid.c mge-hid.c tripplite-hid.c
 usbhid_ups_SOURCES = usbhid-ups.c libhid.c libusb.c hidparser.c	\
  $(USBHID_UPS_SUBDRIVERS)
 usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)

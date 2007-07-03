@@ -36,6 +36,7 @@
 	#include "explore-hid.h"
 	#include "apc-hid.h"
 	#include "belkin-hid.h"
+	#include "liebert-hid.h"
 	#include "tripplite-hid.h"
 #endif
 
@@ -48,6 +49,7 @@ static subdriver_t *subdriver_list[] = {
 #ifndef SHUT_MODE
 	&apc_subdriver,
 	&belkin_subdriver,
+	&liebert_subdriver,
 	&tripplite_subdriver,
 	NULL
 #endif
