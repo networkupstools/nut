@@ -252,21 +252,21 @@ static int ${LDRIVER}_shutdown(int ondelay, int offdelay) {
 	return 0;
 }
 
-static char *${LDRIVER}_format_model(HIDDevice *hd) {
+static char *${LDRIVER}_format_model(HIDDevice_t *hd) {
 	return hd->Product;
 }
 
-static char *${LDRIVER}_format_mfr(HIDDevice *hd) {
+static char *${LDRIVER}_format_mfr(HIDDevice_t *hd) {
 	return hd->Vendor ? hd->Vendor : "${DRIVER}";
 }
 
-static char *${LDRIVER}_format_serial(HIDDevice *hd) {
+static char *${LDRIVER}_format_serial(HIDDevice_t *hd) {
 	return hd->Serial;
 }
 
 /* this function allows the subdriver to "claim" a device: return 1 if
  * the device is supported by this subdriver, else 0. */
-static int ${LDRIVER}_claim(HIDDevice *hd) {
+static int ${LDRIVER}_claim(HIDDevice_t *hd) {
 	if (hd->VendorID != ${UDRIVER}_VENDORID) {
 		return 0;
 	}
