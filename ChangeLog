@@ -1,3 +1,8 @@
+Tue Jul  3 23:15:54 UTC 2007 / Charles Lepple <clepple@gmail.com>
+
+ - scripts/subdriver/path-to-subdriver.sh: remove old instructions to
+   run 'make depend'.
+
 Mon Jul  2 14:47:14 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  - mge-hid.c: fix battery.type (static data)

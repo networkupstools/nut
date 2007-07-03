@@ -313,7 +313,6 @@ Do not forget to:
 * add &${LDRIVER}_subdriver to usbhid-ups.c:subdriver_list,
 * add ${LDRIVER}-hid.o to USBHID_UPS_SUBDRIVERS in drivers/Makefile.am
 * "autoreconf" from the top level directory
-* "make depend" in drivers/
 EOF
 
 
