@@ -1,3 +1,10 @@
+Wed Jul  4 04:25:14 UTC 2007 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/Makefile.am: Added liebert-hid.h to headers variable; should fix
+   build failures of previous commit.
+ - scripts/subdriver/path-to-subdriver.sh: Added instructions to
+   update above variable.
+
 Tue Jul  3 23:26:55 UTC 2007 / Charles Lepple <clepple@gmail.com>
 
  - drivers/liebert-hid.*: first cut at Liebert HID subdriver

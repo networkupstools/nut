@@ -168,7 +168,7 @@ dist_noinst_HEADERS = al175.h apccmib.h apc-hid.h apcsmart.h bcmxcp.h	\
  dstate-hal.h								\
  dummy-ups.h etapro.h everups.h gamatronic.h				\
  explore-hid.h genericups.h hidparser.h hidtypes.h ietfmib.h		\
- isbmex.h libhid.h libshut.h libusb.h liebert.h main.h			\
+ isbmex.h libhid.h libshut.h libusb.h liebert.h liebert-hid.h main.h	\
  main-hal.h								\
  masterguard.h megatec.h metasys.h mge-hid.h mgemib.h mge-shut.h	\
  mge-utalk.h netvisionmib.h usbhid-ups.h nitram.h nut_usb.h		\
