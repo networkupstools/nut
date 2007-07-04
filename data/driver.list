@@ -184,6 +184,7 @@
 "Lestar"	"MD-800E"	""	"megatec"
 
 "Liebert"	"UPStation GXT2"	"contact-closure cable"	"liebert" 
+"Liebert"	"PowerSure Personal XT"		"USB"	"usbhid-ups"
 
 "Masterguard"	"(various)"	""	"masterguard"
 

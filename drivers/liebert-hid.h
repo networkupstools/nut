@@ -25,8 +25,6 @@
 
 #include "usbhid-ups.h"
 
-#define LIEBERT_HID_VERSION	"Liebert HID 0.1"
-
 extern subdriver_t liebert_subdriver;
 
 #endif /* LIEBERT_HID_H */

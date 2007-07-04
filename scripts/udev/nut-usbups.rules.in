@@ -17,6 +17,9 @@ SYSFS{idVendor}=="0764", SYSFS{idProduct}=="0501", MODE="664", GROUP="@RUN_AS_GR
 # Mustek Powermust 600USB (OMRON/87XXUPS)
 SYSFS{idVendor}=="06da", SYSFS{idProduct}=="0003", MODE="664", GROUP="@RUN_AS_GROUP@"
 
+# LIEBERT/PowerSure Personal XT
+SYSFS{idVendor}=="06da", SYSFS{idProduct}=="ffff", MODE="664", GROUP="@RUN_AS_GROUP@"
+
 # Cypress Semiconductor USB to Serial
 SYSFS{idVendor}=="0665", SYSFS{idProduct}=="5161", MODE="664", GROUP="@RUN_AS_GROUP@"
 

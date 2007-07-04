@@ -1,3 +1,8 @@
+Wed Jul  4 13:32:39 UTC 2007 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/liebert-hid.c/h: Mapped some of the values to NUT variables.
+ - scripts/{udev,hotplug}:  Added Liebert USB VID/PIDs
+
 Wed Jul  4 04:25:14 UTC 2007 / Charles Lepple <clepple@gmail.com>
 
  - drivers/Makefile.am: Added liebert-hid.h to headers variable; should fix
