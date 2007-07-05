@@ -1,3 +1,13 @@
+2.2.0
+
+Thu Jul  5 12:48:39 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ Final polishing:
+ - NEWS: remove the reference to docs/packaging.txt
+ - INSTALL: add a note about binary packages installation preference
+   over source installation 
+ - configure.in: bumped version number to 2.2.0
+
 Mon Jul  2 14:47:14 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  - mge-hid.c: fix battery.type (static data)
