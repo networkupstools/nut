@@ -1,3 +1,7 @@
+Fri Jul  6 14:28:01 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - data/drivers.list: fix some separators
+
 Thu Jul  5 12:48:39 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  Final 2.2.0 polishing (synchronisation with the Testing branch):

@@ -22,7 +22,7 @@
 "Ablerex"	"MS-RT"		""	"megatec"
 "Ablerex"	"625L"		"USB"	"megatec_usb"
 
-"ActivePower" "400VA"	""	"megatec"
+"ActivePower"	"400VA"	""	"megatec"
 "ActivePower"	"1400VA"	""	"megatec"
 "ActivePower"	"2000VA"	""	"megatec"
 
@@ -34,7 +34,7 @@
 
 "APC"	"Back-UPS Pro USB"	"USB"	"usbhid-ups"
 "APC"	"Back-UPS USB"		"USB"	"usbhid-ups"
-"APC"   "Back-UPS RS USB"	"USB"	"usbhid-ups"
+"APC"	"Back-UPS RS USB"	"USB"	"usbhid-ups"
 "APC"	"Back-UPS LS USB"	"USB"	"usbhid-ups"
 "APC"	"Back-UPS ES/CyberFort 350"	"USB"	"usbhid-ups"
 "APC"	"Back-UPS BF500"	"USB"	"usbhid-ups"
@@ -359,7 +359,7 @@
 "Nitram"	"Elite 2002"	""	"genericups upstype=16"
 "Nitram"	"Elite 2005"	""	"powerpanel or nitram"
 
-"Oneac" "EG/ON Series"	"advanced interface"	"oneac"
+"Oneac"	"EG/ON Series"	"advanced interface"	"oneac"
 
 "Online"	"P-Series"	""	"genericups upstype=14"
 "Online"	"Zinto D"	""	"optiups"
