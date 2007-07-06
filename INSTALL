@@ -21,6 +21,11 @@ MANPATH, or just do this:
 
 	man -M /usr/local/ups/man upsd.conf
 
+Also, if your favorite system offers up to date binary packages,
+always prefer these over a source installation. Along with the known
+advantages of such systems for installation, upgrade and removal, there
+are many integration issues that have been addressed.
+
 ============================================================================
 ============================================================================
 ============================================================================

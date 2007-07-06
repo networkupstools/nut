@@ -1,3 +1,10 @@
+Thu Jul  5 12:48:39 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ Final 2.2.0 polishing (synchronisation with the Testing branch):
+ - NEWS: remove the reference to docs/packaging.txt
+ - INSTALL: add a note about binary packages installation preference
+   over source installation
+
 Wed Jul  4 13:32:39 UTC 2007 / Charles Lepple <clepple@gmail.com>
 
  - drivers/liebert-hid.c/h: Mapped some of the values to NUT variables.

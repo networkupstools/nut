@@ -6,7 +6,8 @@ Release notes for NUT 2.2.0 - what's new since 2.0.5:
  - The new build infrastructure, using automake, is now used.
    This has major impact on the compilation and installation procedures,
    and thus on the NUT packaging.
-   For more information, refer to UPGRADING and docs/packaging.txt.
+   For more information, refer to UPGRADING and packaging/debian/ for
+   an example of migration.
 
  - NUT now provides support for FreeDesktop Hardware Abstraction Layer
    (HAL) which brings full Plug And Play experience to USB UPS owners.
