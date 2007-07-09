@@ -17,7 +17,9 @@
 
  Modified for USB by Wolfgang Ocker <weo@weo1.de>
  
- This program is free software; you can redistribute it and/or modify
+ ojw0000 2007Apr5 Oliver Wilcock - modified to control individual load segments (outlet.2.shutdown.return) on Powerware PW5125.
+ 
+This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation; either version 2 of the License, or
  (at your option) any later version.
@@ -871,6 +873,8 @@ void upsdrv_initinfo(void)
 	/* Add instant commands */
 	dstate_addcmd("shutdown.return");
 	dstate_addcmd("shutdown.stayoff");
+	dstate_addcmd("outlet.1.shutdown.return"); /* ojw0000 */
+	dstate_addcmd("outlet.2.shutdown.return"); /* ojw0000 */
 	dstate_addcmd("test.battery.start");
 	upsh.instcmd = instcmd;
 	return;
@@ -1099,11 +1103,60 @@ void upsdrv_shutdown(void)
 
 static int instcmd(const char *cmdname, const char *extra)
 {
-	unsigned char answer[5], cbuf[3];
+	unsigned char answer[5], cbuf[6];
 
 	int res, sec;
 	
 	
+	/* ojw0000 outlet power cycle for PW5125 and perhaps others */
+	if (!strcasecmp(cmdname, "outlet.1.shutdown.return")
+		|| !strcasecmp(cmdname, "outlet.2.shutdown.return")
+	) {
+		send_write_command(AUTHOR, 4);
+
+		sleep(1);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
+
+		cbuf[0] = PW_LOAD_OFF_RESTART;
+		cbuf[1] = 0x03; /* outlet off in 3 seconds */
+		cbuf[2] = 0x00; /* high byte of the 2 byte time argument */
+		cbuf[3] = ( '1' == cmdname[7] ? 0x01 : 0x02); /* which outlet load segment?  Assumes '1' or '2' at position 8 of the command string. */
+
+		/* ojw00000 the following copied from command "shutdown.return" below 2007Apr5 */
+		res = command_write_sequence(cbuf, 4, answer);
+		if (res <= 0) {
+			upslogx(LOG_ERR, "Short read from UPS");
+			dstate_datastale();
+			return -1;
+		}
+	
+		sec = (256 * (unsigned char)answer[3]) + (unsigned char)answer[2];
+	
+		switch ((unsigned char) answer[0]) {
+	
+			case 0x31: {
+				upslogx(LOG_NOTICE,"Going down in %d sec", sec);
+				return STAT_INSTCMD_HANDLED;
+				break;
+				}
+			case 0x33: {
+				upslogx(LOG_NOTICE, "[%s] disbled by front panel", cmdname);
+				return STAT_INSTCMD_UNKNOWN;
+				break;
+				}
+			case 0x36: {
+			upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
+				return STAT_INSTCMD_UNKNOWN;
+				break;
+				}
+			default: {
+				upslogx(LOG_NOTICE, "[%s] not supported", cmdname);
+				return STAT_INSTCMD_UNKNOWN;
+				break;
+				}
+		}
+
+	} /* ojw0000 end outlet power cycle */
+
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		send_write_command(AUTHOR, 4);
 	

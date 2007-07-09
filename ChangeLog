@@ -1,3 +1,8 @@
+Mon Jul  9 19:45:20 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+
+ - Patch from Oliver Wilcock.
+   bcmxcp.c modified to control individual load segments (outlet.2.shutdown.return) on Powerware PW5125.
+
 Fri Jul  6 14:28:01 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  - data/drivers.list: fix some separators
