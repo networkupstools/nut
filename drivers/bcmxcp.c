@@ -32,6 +32,90 @@ This program is free software; you can redistribute it and/or modify
  You should have received a copy of the GNU General Public License
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+
+TODO List:
+
+	Extend the parsing of the Standard ID Block, to read:
+
+		Size of outlet monitoring block: (High priority)
+		To check if a outlet block is present.
+		Parse the outlet block to get the info about the
+		number of outlets and load segment state
+		(On, Off, On pending Off, Off pending On, Failed and closed, Failed and Open)
+		And the timers (Auto off delay, Auto on delay)
+		If this exist it is possible to use the
+		'Set outlet parameter command (0x97)' to alter the delay
+		settings or turn the outlet on or off with a delay (0 - 32767 seconds)
+		Also enable the outlet on off or shutdown-return commands in the driver.
+		(Check 'Communication Port List Block' down the list for more info)
+
+		Config Block Length: (High priority)
+		Give information if config block is
+		present, and how long it is, if it exist.
+		If config block exist, read the config block and setup
+		the possible config commands, and parse the 
+		'Length of the Extended Limits Configuration Block' for
+		extended configuration commands 
+
+		Statistic map Size: (Low priority)
+		May be used to se if there is a Statistic Map.
+		It holds data on the utility power quality for
+		the past month and since last reset. Number of
+		times on battery and how long. Up time and utility
+		frequency deviation. (Only larger ups'es)
+
+		Size of Alarm History Log: (Low priority)
+		See if it have any alarm history block and enable
+		command to dump it.
+
+		Size of Topology Block: (Medium priority)
+		Check if the topology block exist. Parse it for
+		some additional info. Type of ups input phases etc.
+
+		Maximum Supported Command Length: ( Med. to High priority)
+		Give info about the ups receive buffer size.
+
+		Size of Command List Block: ( Med. to High priority)
+		Tell me if the command block exist. Can use this to ask
+		for command list and set up the commands accepted by the ups.
+
+		Size of Alarm Block: ( Med. to High priority)
+		Make a smarter handling of the Active alarm's if we know the length
+		of the Active Alarm Block. Don't need the long loop to parse the
+		alarm's. Maybe use another way to set up the alarm struct in the
+		'init_alarm_map'.
+
+	Parse 'Communication Capabilities Block' ( Low priority)
+		Get info of the connected ports ID, number of baud rates,
+		command and respnse length.
+
+	Parse 'Communication Port List Block': ( Low priority)
+		This block gives info about the communication ports. Some ups'es
+		have multiple comport's, and use one port for eatch load segment.
+		In this block it is possible to get:
+		Number of ports. (In this List)
+		This Comport id (Which Comm Port is reporting this block.)
+		Comport id (Id for eatch port listed. The first comport ID=1)
+		Baudrate of the listed port.
+		Serial config.
+		Port usage:
+			What this Comm Port is being used for:
+			0 = Unknown usage, No communication occurring.
+			1 = Undefined / Unknown communication occurring
+			2 = Waiting to communicate with a UPS
+			3 = Communication established with a UPS
+			4 = Waiting to communicate with software or adapter
+			5 = Communication established software (e.g., LanSafe) 
+				or adapter (e.g., ConnectUPS)
+			6 = Communicating with a Display Device
+			7 = Multi-drop Serial channel
+			8 = Communicating with an Outlet Controller
+		Number of outlets. (Number of Outlets "assigned to" (controlled by) this Comm Port)
+		Outlet number. (Each assigned Outlet is listed (1-64))
+
+
+	Rewrite some parts of the driver, to minimise code duplication. (Like the inst commands) 
+
 */
 
 
@@ -42,7 +126,7 @@ This program is free software; you can redistribute it and/or modify
 #include "bcmxcp_io.h"
 #include "bcmxcp.h"
 
-#define DRV_VERSION "0.11"
+#define DRV_VERSION "0.12"
 
 static int get_word(const unsigned char*);
 static long int get_long(const unsigned char*);
