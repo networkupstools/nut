@@ -1,3 +1,7 @@
+Tue Jul 10 23:57:50 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - data/driver.list: UPSonic CXR1000 supported by megatec
+
 Tue Jul 10 21:10:20 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
  - Changed Driver version to 0.12 and included a small TODO list in the bcmxcp.c
@@ -146,7 +150,7 @@ Thu Jun 21 07:07:25 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
    communication lost status. Previously, these were not reported
    anymore.
 
-Web Jun 20 22:14:43 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+Wed Jun 20 22:14:43 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - drivers/megatec.c, drivers/megatec_usb.c: reverted changes to
    megatec_usb from previous revision. Modified megatec to exclude
