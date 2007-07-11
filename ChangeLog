@@ -1,3 +1,7 @@
+Wed Jul 11 03:18:44 UTC 2007 / Charles Lepple <clepple@gmail.com>
+
+ - scripts/misc: Added bash completion script for 'upsc'.
+
 Tue Jul 10 23:57:50 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - data/driver.list: UPSonic CXR1000 supported by megatec

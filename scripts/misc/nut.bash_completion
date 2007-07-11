@@ -1,0 +1,36 @@
+# Bash completion function for Network UPS Tools 'upsc' command.
+#
+# Install in /etc/bash_completion.d (and run '. /etc/bash_completion if this
+# has not been done in your startup files already).
+#
+# Charles Lepple <clepple@gmail>
+
+_nut_upsc_completion()
+{
+    local upses
+
+    COMPREPLY=()
+    cur=${COMP_WORDS[COMP_CWORD]}
+    prev=${COMP_WORDS[COMP_CWORD-1]}
+
+    # The 'list' options can take a hostname and a port, but we don't complete
+    # the port number:
+    case "$prev" in
+        -l|-L)
+            COMPREPLY=( $(compgen -A hostname ${cur}) ) ; return 0 ;;
+    esac
+
+    if [[ "$cur" == -* ]]; then
+            COMPREPLY=( $(compgen -W "-l -L" -- ${cur}) ) ; return 0
+    fi
+
+    # List known UPSes on this host:
+    host=""
+    [[ "${prev}" != upsc ]] && host="${prev}"
+
+    upses=$(upsc -l ${host})
+    COMPREPLY=( $(compgen -W "-l -L $upses" -- ${cur}) )
+    return 0
+}
+
+complete -F _nut_upsc_completion upsc

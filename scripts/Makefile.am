@@ -7,6 +7,7 @@ HP-UX/nut-upsd \
 HP-UX/nut-upsd.sh \
 HP-UX/nut-upsmon \
 HP-UX/nut-upsmon.sh \
+misc/nut.bash_completion \
 misc/osd-notify \
 RedHat/halt.patch \
 RedHat/README \
