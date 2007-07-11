@@ -1,5 +1,5 @@
 # don't know how different I can do this
-%define majorver 2.0
+%define majorver 2.2
 %define version @PACKAGE_VERSION@
 %define relver 1
 %define nutuser nutmon
