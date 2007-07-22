@@ -1,3 +1,8 @@
+Sun Jul 22 19:11:05 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - server/upsd.c: don't call FD_SET in the mainloop for clients we
+   already know are no longer connected.
+
 Wed Jul 11 03:18:44 UTC 2007 / Charles Lepple <clepple@gmail.com>
 
  - scripts/misc: Added bash completion script for 'upsc'.
