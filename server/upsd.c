@@ -855,8 +855,10 @@ static void mainloop(void)
 			/* preserve for later since delclient may run */
 			tmpnext = tmpcli->next;
 
-			if (FD_ISSET(tmpcli->fd, &rfds)) {
-				readtcp(tmpcli);
+			if (tmpcli->fd != -1) {
+				if (FD_ISSET(tmpcli->fd, &rfds)) {
+					readtcp(tmpcli);
+				}
 			}
 
 			tmpcli = tmpnext;

@@ -1,3 +1,8 @@
+Sun Jul 22 19:18:08 UTC 2007
+
+ - server/upsd.c: likewise we probably shouldn't check for FD_ISSET
+   either if we already know the client was disconnected.
+
 Sun Jul 22 19:11:05 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - server/upsd.c: don't call FD_SET in the mainloop for clients we
