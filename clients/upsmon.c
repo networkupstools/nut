@@ -379,12 +379,12 @@ static void ups_is_gone(utype_t *ups)
 
 static void ups_on_batt(utype_t *ups)
 {
-	sleepval = pollfreqalert;	/* bump up polling frequency */
-
 	if (flag_isset(ups->status, ST_ONBATT)) { 	/* no change */
 		debug("ups_on_batt(%s) (no change)\n", ups->sys);
 		return;
 	}
+
+	sleepval = pollfreqalert;	/* bump up polling frequency */
 
 	ups->linestate = 0;	
 
@@ -403,6 +403,8 @@ static void ups_on_line(utype_t *ups)
 		debug("ups_on_line(%s) (no change)\n", ups->sys);
 		return;
 	}
+
+	sleepval = pollfreq;
 
 	debug("ups_on_line(%s) (first time)\n", ups->sys);
 
@@ -2053,7 +2055,6 @@ int main(int argc, char *argv[])
 		if (reload_flag)
 			reload_conf();
 
-		sleepval = pollfreq;
 		for (ups = firstups; ups != NULL; ups = ups->next)
 			pollups(ups);
 

@@ -1,4 +1,9 @@
-Sun Jul 22 19:18:08 UTC 2007
+Thu Jul 26 19:45:12 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - clients/upsmon.c: only change the polling frequency if the OL/OB state
+   changes (code cleanup, not a functional change)
+
+Sun Jul 22 19:18:08 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - server/upsd.c: likewise we probably shouldn't check for FD_ISSET
    either if we already know the client was disconnected.
