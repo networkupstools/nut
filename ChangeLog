@@ -1,3 +1,9 @@
+Sat Jul 28 16:38:43 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - data/driver.list, drivers/belkin-hid.c, scripts/hotplug/libhid.usermap,
+   scripts/udev/nut-usbups.rules.in: Add Belkin F6C1200-UNV (older model)
+   to supported devices.
+
 Thu Jul 26 19:45:12 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - clients/upsmon.c: only change the polling frequency if the OL/OB state
