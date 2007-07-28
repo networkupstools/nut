@@ -123,6 +123,7 @@
 "Dynex"		"DX-800U"		"USB"	"usbhid-ups"
 
 "Effekta"	"MI/MT/MH"	"2502 cable"	"megatec"
+"Effekta"	"RM2000MH"	""	"megatec"
 
 "Eltek"		"any with AL175 alarm module"	""	"al175"
 

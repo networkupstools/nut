@@ -1,3 +1,6 @@
+Sat Jul 28 19:58:11 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+ - drivers/megatec.c: battery values for 72V UPS.
+
 Sat Jul 28 16:38:43 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - data/driver.list, drivers/belkin-hid.c, scripts/hotplug/libhid.usermap,
