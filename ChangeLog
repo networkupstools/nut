@@ -1,3 +1,10 @@
+Tue Jul 31 19:41:24 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/apcsmart.[ch]: add support for old APC SmartUPS 1250 (the
+   changes are small, so I don't see a reason why not to include it)
+
+http://lists.alioth.debian.org/pipermail/nut-upsdev/2007-July/002345.html
+
 Tue Jul 31 18:46:33 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/mge-hid.c: reformatted 'mge_hid2nut[]' table to always break
