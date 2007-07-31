@@ -1,3 +1,14 @@
+Tue Jul 31 18:21:56 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/mge-hid.c:
+   - fixed broken 'output.voltage.nominal' which was actually indicating the
+     nominal 'battery.voltage.nominal' (at least on the Evolution 650 and
+     Pulsar M 2200 and most likely others too)
+   - the above parameter is broken on the Evolution 650 (shows twice the
+     nominal value, firmware bug?)
+   - add several parameters which were previously not supported
+   - appended HU_FLAG_STATIC where appropriate
+
 Sat Jul 28 19:58:11 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
  - drivers/megatec.c: battery values for 72V UPS.
 

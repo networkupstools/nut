@@ -290,11 +290,15 @@ static hid_info_t mge_hid2nut[] =
 		"UPS.BatterySystem.Battery.Temperature", NULL, "%.1f", HU_FLAG_OK, NULL },
 	{ "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", HU_FLAG_OK | HU_FLAG_STATIC, stringid_conversion },
 	{ "battery.voltage",  0, 0, "UPS.PowerSummary.Voltage", NULL, "%.1f", HU_FLAG_OK, NULL },
+	{ "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL,
+		"%.1f", HU_FLAG_OK | HU_FLAG_STATIC, NULL }, /* broken on Evolution 650! */
 	{ "battery.voltage.nominal", 0, 0, "UPS.BatterySystem.ConfigVoltage", NULL,
-		"%.1f", HU_FLAG_OK, NULL },
+		"%.1f", HU_FLAG_OK | HU_FLAG_STATIC, NULL },
 
 	/* UPS page */
 	{ "ups.load", 0, 1, "UPS.PowerSummary.PercentLoad", NULL, "%.0f", HU_FLAG_OK, NULL },
+	{ "ups.load.high", ST_FLAG_STRING, 5, "UPS.Flow.[4].ConfigPercentLoad",
+		NULL, "%.0f", HU_FLAG_OK | HU_FLAG_STATIC, NULL },
 	{ "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5,
 		"UPS.PowerSummary.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL},
 	{ "ups.delay.reboot", ST_FLAG_RW | ST_FLAG_STRING, 5,
@@ -309,9 +313,14 @@ static hid_info_t mge_hid2nut[] =
 	"UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", HU_FLAG_OK | HU_FLAG_SEMI_STATIC, &beeper_info[0] },
 	{ "ups.temperature", 0, 0, 
 		"UPS.PowerSummary.Temperature", NULL, "%.1f", HU_FLAG_OK, NULL },
-	/* FIXME: miss ups.power */
+	{ "ups.power", ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.ApparentPower",
+		NULL, "%.0f", HU_FLAG_OK, NULL },
 	{ "ups.power.nominal", ST_FLAG_STRING, 5, "UPS.Flow.[4].ConfigApparentPower",
-		NULL, "%.0f",HU_FLAG_OK, NULL },
+		NULL, "%.0f", HU_FLAG_OK | HU_FLAG_STATIC, NULL },
+	{ "ups.realpower", ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.ActivePower",
+		NULL, "%.0f", HU_FLAG_OK, NULL },
+	{ "ups.realpower.nominal", ST_FLAG_STRING, 5, "UPS.Flow.[4].ConfigActivePower",
+		NULL, "%.0f", HU_FLAG_OK | HU_FLAG_STATIC, NULL },
 
 	/* Special case: ups.status */
 	{ "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, 
@@ -344,7 +353,9 @@ static hid_info_t mge_hid2nut[] =
 
 	/* Input page */
 	{ "input.voltage", 0, 0, "UPS.PowerConverter.Input.[1].Voltage", NULL, "%.1f", HU_FLAG_OK, NULL },
+	{ "input.voltage.nominal", 0, 0, "UPS.Flow.[1].ConfigVoltage", NULL, "%.1f", HU_FLAG_OK | HU_FLAG_STATIC, NULL },
 	{ "input.frequency", 0, 0, "UPS.PowerConverter.Input.[1].Frequency", NULL, "%.1f", HU_FLAG_OK, NULL },
+	{ "input.frequency.nominal", 0, 0, "UPS.Flow.[1].ConfigFrequency", NULL, "%.1f", HU_FLAG_OK | HU_FLAG_STATIC, NULL },
 	/* same as "input.transfer.boost.low" */
 	{ "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 5,
 		"UPS.PowerConverter.Output.LowVoltageTransfer", NULL, "%.1f", HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL },
@@ -361,9 +372,10 @@ static hid_info_t mge_hid2nut[] =
 
 	/* Output page */
 	{ "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", NULL, "%.1f", HU_FLAG_OK, NULL },
+	{ "output.voltage.nominal", 0, 0, "UPS.Flow.[4].ConfigVoltage", NULL, "%.1f", HU_FLAG_OK | HU_FLAG_STATIC, NULL },
 	{ "output.current", 0, 0, "UPS.PowerConverter.Output.Current", NULL, "%.2f", HU_FLAG_OK, NULL },
 	{ "output.frequency", 0, 0, "UPS.PowerConverter.Output.Frequency", NULL, "%.1f", HU_FLAG_OK, NULL },
-	{ "output.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%.1f", HU_FLAG_OK, NULL },
+	{ "output.frequency.nominal", 0, 0, "UPS.Flow.[4].ConfigFrequency", NULL, "%.1f", HU_FLAG_OK | HU_FLAG_STATIC, NULL },
 
 	/* Outlet page (using MGE UPS SYSTEMS - PowerShare technology) */
 	/* TODO: add an iterative semantic [%x] to factorise outlets */
