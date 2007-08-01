@@ -1,3 +1,9 @@
+Wed Aug  1 19:20:33 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/belkin-hid.c, drivers/usbhid-ups.c: workaround for
+   incorrect report over the interrupt pipeline that caused spurious
+   low battery warnings
+
 Tue Jul 31 19:41:24 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/apcsmart.[ch]: add support for old APC SmartUPS 1250 (the

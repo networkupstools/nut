@@ -574,16 +574,6 @@ void upsdrv_updateinfo(void)
 				upsdebugx(3, "Object: %s = %ld", 
 						  p->Path,
 						  p->Value);
-#ifndef SHUT_MODE
-				/* special case: fix a horrible Belkin
-				 bug.  My Belkin UPS actually sends an
-				 incorrect report over the interrupt
-				 pipeline - the corresponding feature
-				 report is correct. */
-				if (subdriver == &belkin_subdriver && strcmp(p->Path, "UPS.PowerSummary.BelowRemainingCapacityLimit") == 0) {
-					continue;
-				}
-#endif
 				
 				if ((item = find_hid_info(p->Path)) != NULL)
 				  {

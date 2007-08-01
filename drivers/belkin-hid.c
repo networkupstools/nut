@@ -144,7 +144,7 @@ static info_lkp_t belkin_awaitingpower_conversion[] = {
 };
 
 static char *belkin_online_conversion_fun(long value) {
-	if (value & 0x20) {
+	if (value & 0x0001) {
 		return "!online";
 	} else {
 		return "online";
@@ -153,6 +153,18 @@ static char *belkin_online_conversion_fun(long value) {
 
 static info_lkp_t belkin_online_conversion[] = {
 	{ 0, NULL, belkin_online_conversion_fun }
+};
+
+static char *belkin_lowbatt_conversion_fun(long value) {
+	if (value & 0x04) {
+		return "lowbatt";
+	} else {
+		return "!lowbatt";
+	}
+}
+
+static info_lkp_t belkin_lowbatt_conversion[] = {
+	{ 0, NULL, belkin_lowbatt_conversion_fun }
 };
 
 static char *belkin_depleted_conversion_fun(long value) {
@@ -285,14 +297,15 @@ static hid_info_t belkin_hid2nut[] = {
   { "ups.status", 0, 1, "UPS.PowerSummary.Charging", NULL, "%s", HU_FLAG_OK, charging_info },
   { "ups.status", 0, 1, "UPS.PowerSummary.ShutdownImminent", NULL, "%s", HU_FLAG_OK, shutdownimm_info },
   { "ups.status", 0, 1, "UPS.PowerSummary.ACPresent", NULL, "%s", HU_FLAG_OK, online_info },
-  { "ups.status", 0, 1, "UPS.PowerSummary.BelowRemainingCapacityLimit", NULL, "%s", HU_FLAG_OK, lowbatt_info },
+  /* { "ups.status", 0, 1, "UPS.PowerSummary.BelowRemainingCapacityLimit", NULL, "%s", HU_FLAG_OK, lowbatt_info }, broken! */
   { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINPowerStatus", NULL, "%s", HU_FLAG_OK, belkin_overload_conversion },
   { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINPowerStatus", NULL, "%s", HU_FLAG_OK, belkin_overheat_conversion },
   { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINPowerStatus", NULL, "%s", HU_FLAG_OK, belkin_commfault_conversion },
   { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINPowerStatus", NULL, "%s", HU_FLAG_OK, belkin_awaitingpower_conversion },
+  { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINPowerStatus", NULL, "%s", HU_FLAG_OK, belkin_online_conversion },
   { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINBatteryStatus", NULL, "%s", HU_FLAG_OK, belkin_depleted_conversion },
   { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINBatteryStatus", NULL, "%s", HU_FLAG_OK, belkin_replacebatt_conversion },
-  { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINBatteryStatus", NULL, "%s", HU_FLAG_OK, belkin_online_conversion },
+  { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINBatteryStatus", NULL, "%s", HU_FLAG_OK, belkin_lowbatt_conversion },
 
   /* Server side variables */
   { "driver.version.internal", ST_FLAG_STRING, sizeof(DRIVER_VERSION), NULL, NULL, DRIVER_VERSION, HU_FLAG_ABSENT | HU_FLAG_OK, NULL },
