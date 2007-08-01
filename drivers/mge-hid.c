@@ -33,6 +33,28 @@
 
 #define MGE_VENDORID 0x0463
 
+
+/* returns statically allocated string - must not use it again before
+   done with result! */
+static char *mge_battery_voltage_nominal_fun(long value) {
+	static char buf[20];
+	char *model;
+
+	model = dstate_getinfo("ups.model");
+
+	/* Work around for Evolution 650 bug(?) */
+	if (!strcmp(model, "Evolution 650"))
+		value = 12;
+
+	snprintf(buf, 20, "%ld", value);
+	return buf;
+}
+
+static info_lkp_t mge_battery_voltage_nominal[] = {
+	{ 0, NULL, mge_battery_voltage_nominal_fun }
+};
+
+
 /* --------------------------------------------------------------- */
 /*      Vendor-specific usage table */
 /* --------------------------------------------------------------- */
@@ -167,6 +189,7 @@ static usage_tables_t mge_utab[] = {
 	NULL,
 };
 
+
 /* --------------------------------------------------------------- */
 /*      Model Name formating entries                               */
 /* --------------------------------------------------------------- */
@@ -265,6 +288,7 @@ static models_name_t mge_model_names [] =
 	{ NULL, NULL, -1, "Generic MGE HID model" }
 };
 
+
 /* --------------------------------------------------------------- */
 /*                 Data lookup table (HID <-> NUT)                 */
 /* --------------------------------------------------------------- */
@@ -305,11 +329,11 @@ static hid_info_t mge_hid2nut[] =
 		"UPS.PowerSummary.Voltage", NULL, "%.1f",
 		HU_FLAG_OK, NULL },
 	{ "battery.voltage.nominal", 0, 0,
-		"UPS.PowerSummary.ConfigVoltage", NULL, "%.1f",
-		HU_FLAG_OK | HU_FLAG_STATIC, NULL }, /* broken on Evolution 650! */
-	{ "battery.voltage.nominal", 0, 0,
-		"UPS.BatterySystem.ConfigVoltage", NULL, "%.1f",
+		"UPS.BatterySystem.ConfigVoltage", NULL, "%.0f",
 		HU_FLAG_OK | HU_FLAG_STATIC, NULL },
+	{ "battery.voltage.nominal", 0, 0,
+		"UPS.PowerSummary.ConfigVoltage", NULL, "%s",
+		HU_FLAG_OK | HU_FLAG_STATIC, mge_battery_voltage_nominal },
 
 	/* UPS page */
 	{ "ups.load", 0, 1,
@@ -398,13 +422,13 @@ static hid_info_t mge_hid2nut[] =
 		"UPS.PowerConverter.Input.[1].Voltage", NULL, "%.1f",
 		HU_FLAG_OK, NULL },
 	{ "input.voltage.nominal", 0, 0,
-		"UPS.Flow.[1].ConfigVoltage", NULL, "%.1f",
+		"UPS.Flow.[1].ConfigVoltage", NULL, "%.0f",
 		HU_FLAG_OK | HU_FLAG_STATIC, NULL },
 	{ "input.frequency", 0, 0,
 		"UPS.PowerConverter.Input.[1].Frequency", NULL, "%.1f",
 		HU_FLAG_OK, NULL },
 	{ "input.frequency.nominal", 0, 0,
-		"UPS.Flow.[1].ConfigFrequency", NULL, "%.1f",
+		"UPS.Flow.[1].ConfigFrequency", NULL, "%.0f",
 		HU_FLAG_OK | HU_FLAG_STATIC, NULL },
 	/* same as "input.transfer.boost.low" */
 	{ "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 5,
@@ -432,7 +456,7 @@ static hid_info_t mge_hid2nut[] =
 		"UPS.PowerConverter.Output.Voltage", NULL, "%.1f",
 		HU_FLAG_OK, NULL },
 	{ "output.voltage.nominal", 0, 0,
-		"UPS.Flow.[4].ConfigVoltage", NULL, "%.1f",
+		"UPS.Flow.[4].ConfigVoltage", NULL, "%.0f",
 		HU_FLAG_OK | HU_FLAG_STATIC, NULL },
 	{ "output.current", 0, 0,
 		"UPS.PowerConverter.Output.Current", NULL, "%.2f",
@@ -441,11 +465,10 @@ static hid_info_t mge_hid2nut[] =
 		"UPS.PowerConverter.Output.Frequency", NULL, "%.1f",
 		HU_FLAG_OK, NULL },
 	{ "output.frequency.nominal", 0, 0,
-		"UPS.Flow.[4].ConfigFrequency", NULL, "%.1f",
+		"UPS.Flow.[4].ConfigFrequency", NULL, "%.0f",
 		HU_FLAG_OK | HU_FLAG_STATIC, NULL },
 
 	/* Outlet page (using MGE UPS SYSTEMS - PowerShare technology) */
-	/* TODO: add an iterative semantic [%x] to factorise outlets */
 	{ "outlet.0.id", 0, 0,
 		"UPS.OutletSystem.Outlet.[1].OutletID", NULL, "%.0f",
 		HU_FLAG_OK | HU_FLAG_STATIC, NULL },
@@ -530,7 +553,6 @@ static hid_info_t mge_hid2nut[] =
 	/* FIXME: add beeper.mute , value "3" */
 
 	/* Command for the outlet collection */
-	/* FIXME: not existing in new-names.txt => complete it or use "load.off {all, outletX}" ? */
 	{ "outlet.1.load.off", 0, 0,
 		"UPS.OutletSystem.Outlet.[2].DelayBeforeShutdown", NULL, "0",
 		HU_TYPE_CMD | HU_FLAG_OK, NULL },

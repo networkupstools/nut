@@ -1,3 +1,8 @@
+Wed Aug  1 19:24:25 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/mge-hid.c: fix 'battery.voltage.nominal' for Evolution 650
+   and remove decimals from '*.nominal' values
+
 Wed Aug  1 19:20:33 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/belkin-hid.c, drivers/usbhid-ups.c: workaround for
