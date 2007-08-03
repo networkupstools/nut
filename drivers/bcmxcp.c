@@ -126,7 +126,7 @@ TODO List:
 #include "bcmxcp_io.h"
 #include "bcmxcp.h"
 
-#define DRV_VERSION "0.12"
+#define DRV_VERSION "0.13"
 
 static int get_word(const unsigned char*);
 static long int get_long(const unsigned char*);
@@ -1132,6 +1132,12 @@ void upsdrv_shutdown(void)
 	unsigned char answer[5], cbuf[3];
 	
 	int res, sec;
+
+	/* Get vars from ups.conf */
+	if (getval("shutdown_delay") != NULL)
+		bcmxcp_status.shutdowndelay = atoi(getval("shutdown_delay"));
+	else
+		bcmxcp_status.shutdowndelay = 120;
 
 	/* maybe try to detect the UPS here, but try a shutdown	even if
 		 it doesn't respond at first if possible */

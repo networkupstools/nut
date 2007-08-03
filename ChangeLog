@@ -1,3 +1,8 @@
+Fri Aug  3 12:31:20 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+
+ - Changed Driver version to 0.13 and fixed bug in upsdrv_shutdown. Did not read
+   the shutdown delay from the config file. So the delay become zero.
+
 Wed Aug  1 19:24:25 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/mge-hid.c: fix 'battery.voltage.nominal' for Evolution 650
