@@ -38,7 +38,7 @@
    done with result! */
 static char *mge_battery_voltage_nominal_fun(long value) {
 	static char buf[20];
-	char *model;
+	const char *model;
 
 	model = dstate_getinfo("ups.model");
 
@@ -52,6 +52,26 @@ static char *mge_battery_voltage_nominal_fun(long value) {
 
 static info_lkp_t mge_battery_voltage_nominal[] = {
 	{ 0, NULL, mge_battery_voltage_nominal_fun }
+};
+
+/* returns statically allocated string - must not use it again before
+   done with result! */
+static char *mge_powerfactor_conversion_fun(long value) {
+	static char buf[20];
+
+	snprintf(buf, 20, "%.2f", (double)value / 100);
+	return buf;
+}
+
+static info_lkp_t mge_powerfactor_conversion[] = {
+	{ 0, NULL, mge_powerfactor_conversion_fun }
+};
+
+static info_lkp_t mge_sensitivity_info[] = {
+  { 0, "normal", NULL },
+  { 1, "high", NULL },
+  { 2, "low", NULL },
+  { 0, "NULL", NULL }
 };
 
 
@@ -339,9 +359,9 @@ static hid_info_t mge_hid2nut[] =
 	{ "ups.load", 0, 1,
 		"UPS.PowerSummary.PercentLoad", NULL, "%.0f",
 		HU_FLAG_OK, NULL },
-	{ "ups.load.high", ST_FLAG_STRING, 5,
+	{ "ups.load.high", ST_FLAG_RW | ST_FLAG_STRING, 5,
 		"UPS.Flow.[4].ConfigPercentLoad", NULL, "%.0f",
-		HU_FLAG_OK | HU_FLAG_STATIC, NULL },
+		HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL },
 	{ "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5,
 		"UPS.PowerSummary.DelayBeforeShutdown", NULL, "%.0f",
 		HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL},
@@ -375,6 +395,9 @@ static hid_info_t mge_hid2nut[] =
 	{ "ups.realpower.nominal", ST_FLAG_STRING, 5,
 		"UPS.Flow.[4].ConfigActivePower", NULL, "%.0f",
 		HU_FLAG_OK | HU_FLAG_STATIC, NULL },
+	{ "ups.coldstart", ST_FLAG_RW | ST_FLAG_STRING, 5,
+		"UPS.PowerConverter.Input.[3].StartOnBattery", NULL, "%s",
+		HU_FLAG_OK | HU_FLAG_SEMI_STATIC, &yes_no_info[0] },
 
 	/* Special case: ups.status */
 	{ "ups.status", 0, 1,
@@ -406,8 +429,16 @@ static hid_info_t mge_hid2nut[] =
 		HU_FLAG_OK, &boost_info[0] },
 	{ "ups.status", 0, 1,
 		"UPS.PowerSummary.PresentStatus.Good", NULL, "%.0f",
-		HU_FLAG_OK, &off_info[0] },  
-	/* FIXME: extend ups.status for BYPASS: */
+		HU_FLAG_OK, &off_info[0] },
+	{ "ups.status", 0, 1,
+		"UPS.PowerConverter.Input.[1].PresentStatus.VoltageOutOfRange", NULL, "%.0f",
+		HU_FLAG_OK, &vrange_info[0] },
+	/* { "ups.status", 0, 1,
+		"UPS.PowerConverter.Input.[1].PresentStatus.FrequencyOutOfRange", NULL, "%.0f",
+		HU_FLAG_OK, &frange_info[0] }, */
+	/* { "ups.status", 0, 1,
+		"UPS.PowerSummary.PresentStatus.FanFailure", NULL, "%0.f",
+		HU_FLAG_OK, &fan_info[0], */
 	/* Manual bypass */
 	{ "ups.status", 0, 1,
 		"UPS.PowerConverter.Input[4].PresentStatus.Used", NULL, "%.0f",
@@ -432,35 +463,41 @@ static hid_info_t mge_hid2nut[] =
 		HU_FLAG_OK | HU_FLAG_STATIC, NULL },
 	/* same as "input.transfer.boost.low" */
 	{ "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 5,
-		"UPS.PowerConverter.Output.LowVoltageTransfer", NULL, "%.1f",
+		"UPS.PowerConverter.Output.LowVoltageTransfer", NULL, "%.0f",
 		HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.transfer.boost.low", ST_FLAG_RW | ST_FLAG_STRING, 5,
-		"UPS.PowerConverter.Output.LowVoltageBoostTransfer", NULL, "%.1f",
+		"UPS.PowerConverter.Output.LowVoltageBoostTransfer", NULL, "%.0f",
 		HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.transfer.boost.high", ST_FLAG_RW | ST_FLAG_STRING, 5,
-		"UPS.PowerConverter.Output.HighVoltageBoostTransfer", NULL, "%.1f",
+		"UPS.PowerConverter.Output.HighVoltageBoostTransfer", NULL, "%.0f",
 		HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.transfer.trim.low", ST_FLAG_RW | ST_FLAG_STRING, 5,
-		"UPS.PowerConverter.Output.LowVoltageBuckTransfer", NULL, "%.1f",
+		"UPS.PowerConverter.Output.LowVoltageBuckTransfer", NULL, "%.0f",
 		HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL },
 	/* same as "input.transfer.trim.high" */
 	{ "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 5,
-		"UPS.PowerConverter.Output.HighVoltageTransfer", NULL, "%.1f",
+		"UPS.PowerConverter.Output.HighVoltageTransfer", NULL, "%.0f",
 		HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.transfer.trim.high", ST_FLAG_RW | ST_FLAG_STRING, 5,
-		"UPS.PowerConverter.Output.HighVoltageBuckTransfer", NULL, "%.1f",
+		"UPS.PowerConverter.Output.HighVoltageBuckTransfer", NULL, "%.0f",
 		HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL },
+	{ "input.sensitivity", ST_FLAG_RW | ST_FLAG_STRING, 10,
+		"UPS.PowerConverter.Output.SensitivityMode", NULL, "%s",
+		HU_FLAG_OK | HU_FLAG_SEMI_STATIC, mge_sensitivity_info },
 
 	/* Output page */
 	{ "output.voltage", 0, 0,
 		"UPS.PowerConverter.Output.Voltage", NULL, "%.1f",
 		HU_FLAG_OK, NULL },
-	{ "output.voltage.nominal", 0, 0,
+	{ "output.voltage.nominal", ST_FLAG_RW | ST_FLAG_STRING, 5,
 		"UPS.Flow.[4].ConfigVoltage", NULL, "%.0f",
-		HU_FLAG_OK | HU_FLAG_STATIC, NULL },
+		HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL },
 	{ "output.current", 0, 0,
 		"UPS.PowerConverter.Output.Current", NULL, "%.2f",
 		HU_FLAG_OK, NULL },
+	{ "output.powerfactor", 0, 0,
+		"UPS.PowerConverter.Output.PowerFactor", NULL, "%s",
+		HU_FLAG_OK, mge_powerfactor_conversion },
 	{ "output.frequency", 0, 0,
 		"UPS.PowerConverter.Output.Frequency", NULL, "%.1f",
 		HU_FLAG_OK, NULL },
@@ -525,6 +562,28 @@ static hid_info_t mge_hid2nut[] =
 		"UPS.OutletSystem.Outlet.[3].StartupTimer", NULL, "%.0f",
 		HU_FLAG_OK, NULL },
 
+	/*
+	Some other flags that may be of interest, but are not defined in NUT (yet?):
+
+	- UPS.BatterySystem.Battery.DeepDischargeProtection
+		(protect battery against deep discharge, factory default = yes)
+
+	- UPS.PowerConverter.Input.[1].AutomaticRestart
+		(switch on outlets again when the power returns, factory default = yes)
+
+	- UPS.PowerConverter.Input.[3].EnergySaving
+		(shutoff output when running on battery and load < 5W, factory
+		default = no)
+
+	- UPS.PowerConverter.Output.ForcedReboot
+		(toggle output when power returns before shutdown delay, factory
+		default = yes)
+
+	These were all found on the Evolution 650, possibly others will have similar
+	functions. For servers, the defaults are probably all you want to have, so it
+	is questionable if we should add these.
+	 */
+
 	/* instant commands. */
 	/* splited into subset while waiting for extradata support
 	* ie: test.battery.start quick
@@ -579,75 +638,66 @@ static int mge_shutdown(int ondelay, int offdelay) {
 	char delay[7];
 
 	/* 1) set DelayBeforeStartup */
-	sprintf(delay, "%i", ondelay);
+	snprintf(delay, 7, "%i", ondelay);
 	if (setvar("ups.delay.start", delay) != STAT_SET_HANDLED) {
 		upsdebugx(2, "Shutoff command failed (setting ondelay)");
 		return 0;
 	}	
 
 	/* 2) set DelayBeforeShutdown */
-	sprintf(delay, "%i", offdelay);
-	if (setvar("ups.delay.shutdown", delay) == STAT_SET_HANDLED) {
-		return 1;
+	snprintf(delay, 7, "%i", offdelay);
+	if (setvar("ups.delay.shutdown", delay) != STAT_SET_HANDLED) {
+		upsdebugx(2, "Shutoff command failed (setting offdelay)");
+		return 0;
 	}
-	upsdebugx(2, "Shutoff command failed (setting offdelay)");
-	return 0;
+
+	return 1;
 }
 
 /* All the logic for finely formatting the MGE model name */
 static char *get_model_name(const char *iProduct, char *iModel)
 {
-  models_name_t *model = NULL;
+	models_name_t *model = NULL;
 
-  upsdebugx(2, "get_model_name(%s, %s)\n", iProduct, iModel);
+	upsdebugx(2, "get_model_name(%s, %s)\n", iProduct, iModel);
 
-  /* Search for formatting rules */
-  for ( model = mge_model_names ; model->iProduct != NULL ; model++ )
+	/* Search for formatting rules */
+	for ( model = mge_model_names ; model->iProduct != NULL ; model++ )
 	{
-	  upsdebugx(2, "comparing with: %s", model->finalname);
-	  /* FIXME: use comp_size if not -1 */
-	  if ( (!strncmp(iProduct, model->iProduct, strlen(model->iProduct)))
-		   && (!strncmp(iModel, model->iModel, strlen(model->iModel))) )
-		{
-		  upsdebugx(2, "Found %s\n", model->finalname);
-		  break;
-		}
+		upsdebugx(2, "comparing with: %s", model->finalname);
+
+		if (strncmp(iProduct, model->iProduct, strlen(model->iProduct)))
+			continue;
+
+		if (strncmp(iModel, model->iModel, strlen(model->iModel)))
+			continue;
+
+		upsdebugx(2, "Found %s\n", model->finalname);
+		break;
 	}
-  /* FIXME: if we end up with model->iProduct == NULL
-   * then process name in a generic way (not yet supported models!)
-   * Will the following do?
-   */
-  if (model->iProduct == NULL) {
-	  return iModel;
-  }
-  return model->finalname;
+
+	return model->finalname;
 }
 
 static char *mge_format_model(HIDDevice_t *hd) {
 	char *product;
-	char *model;
         char *string;
 	float appPower;
 	unsigned char rawbuf[100];
+	char buf[16];
 
 	/* Get iModel and iProduct strings */
 	product = hd->Product ? hd->Product : "unknown";
 	if ((string = HIDGetItemString(udev, "UPS.PowerSummary.iModel", rawbuf, mge_utab)) != NULL)
-		model = get_model_name(product, string);
-	else
-	{
-		/* Try with ConfigApparentPower */
-		if (HIDGetItemValue(udev, "UPS.Flow.[4].ConfigApparentPower", &appPower, mge_utab) != 0 )
-		{
-			string = xmalloc(16);
-			sprintf(string, "%i", (int)appPower);
-			model = get_model_name(product, string);
-			free (string);
-		}
-		else
-			model = product;
+		return get_model_name(product, string);
+
+	/* Try with ConfigApparentPower */
+	if (HIDGetItemValue(udev, "UPS.Flow.[4].ConfigApparentPower", &appPower, mge_utab) != 0 ) {
+		snprintf(buf, 16, "%i", (int)appPower);
+		return get_model_name(product, buf);
 	}
-	return model;
+
+	return product;
 }
 
 static char *mge_format_mfr(HIDDevice_t *hd) {

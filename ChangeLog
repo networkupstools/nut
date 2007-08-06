@@ -1,3 +1,14 @@
+Mon Aug  6 14:15:53 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/mge-hid.c:
+   - add 'input.sensitivity' and 'ups.coldstart' (R/W)
+   - allow to change 'output.voltage.nominal' and 'ups.load.high'
+   - add 'output.powerfactor'
+   - removed decimals from transfer voltages (makes no sense to specify
+     these with that kind of precision)
+   - cleaned up some functions (indentation, use of sprintf iso snprintf,
+     flow, etc)
+
 Fri Aug  3 12:31:20 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
  - Changed Driver version to 0.13 and fixed bug in upsdrv_shutdown. Did not read
