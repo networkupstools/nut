@@ -798,39 +798,8 @@ void alarm_set(const char *buf)
 /* write the status_buf into the info array */
 void alarm_commit(void)
 {
-	const	char	*statval, *alptr;
-
-	dstate_setinfo("ups.alarm", "%s", alarm_buf);
-
-	statval = dstate_getinfo("ups.status");
-
-	if (!statval) {
-		upslogx(LOG_ERR, "alarm_commit: ups.status isn't defined");
-		return;
-	}
-
-	alptr = strstr(statval, "ALARM");
-
-	if (!alarm_active) {		/* no alarm is active */
-
-		if (!alptr)		/* and it's not in ups.status */
-			return;		/* so we're done */
-
-		/* the alarm cleared - remove it from ups.status */
-
-		if (strlen(statval) <= 7)
-			dstate_setinfo("ups.status", "%s", "");
-		else
-			dstate_setinfo("ups.status", "%s", &statval[6]);
-
-		return;
-	}
-
-	/* at this point, an alarm is active */
-
-	if (alptr)
-		return;		/* already in ups.status */
-
-	/* add to ups.status */
-	dstate_setinfo("ups.status", "ALARM %s", statval);
+	if (strlen(alarm_buf) != 0)
+		dstate_setinfo("ups.alarm", "%s", alarm_buf);
+	else
+		dstate_delinfo("ups.alarm");
 }

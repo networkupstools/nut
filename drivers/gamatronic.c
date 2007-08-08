@@ -74,11 +74,11 @@ int sec_cmd(const char mode, const char *command, char *msgbuf, int *buflen)
 
     /* create the message string */
     if (*buflen > 0) {
-	sprintf(msg, "%c%c%03d%s%s", SEC_MSG_STARTCHAR,
+	snprintf(msg, sizeof(msg), "%c%c%03d%s%s", SEC_MSG_STARTCHAR,
 		mode, (*buflen)+3, command, msgbuf);
     }
     else {
-	sprintf(msg, "%c%c003%s", SEC_MSG_STARTCHAR,
+	snprintf(msg, sizeof(msg), "%c%c003%s", SEC_MSG_STARTCHAR,
 		mode, command);
     }	
     upsdebugx(1, "PC-->UPS: \"%s\"",msg);
@@ -277,8 +277,8 @@ void upsdrv_updateinfo(void)
 	alarm_init();
 	/* poll status values values */
 	sec_poll(FLAG_POLL);
-	update_pseudovars();
 	alarm_commit();
+	update_pseudovars();
 	dstate_dataok();
 	
 }

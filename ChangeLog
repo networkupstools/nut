@@ -1,3 +1,15 @@
+Wed Aug  8 21:35:59 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/dstate.c:
+   - Removed stuff to prepend ALARM to 'ups.status', which wasn't
+     really useful (see below). Now it no longer complains that
+     'ups.status' parameter is not set when calling alarm_commit().
+ * drivers/bcmxcp.c, drivers/gamatronic.c:
+   - Call alarm_commit() when we're done with setting alarms. There
+     is no need to wait for status_commit(). The status_init()
+     function will take care of prepending ALARM, as long as we
+     call it after alarm_commit().
+
 Wed Aug  8 20:15:45 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/upscode2.c: Removed alarm_init() and alarm_commit(). You can

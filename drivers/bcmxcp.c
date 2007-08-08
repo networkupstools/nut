@@ -1054,7 +1054,9 @@ void upsdrv_updateinfo(void)
 				}
 			}
 		}
-		
+
+		/* Confirm alarms	*/
+		alarm_commit();
 	}
 
 	/* Get status info from UPS */
@@ -1120,8 +1122,6 @@ void upsdrv_updateinfo(void)
 
 		status_commit();
 	} 
-	/* Confirm alarms	*/
-	alarm_commit();
 
 	dstate_dataok();
 }
