@@ -1,3 +1,9 @@
+Wed Aug  8 20:15:45 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/upscode2.c: Removed alarm_init() and alarm_commit(). You can
+   only put something useful in the alarm buffer through alarm_set(), so
+   if you don't call that, these are not needed either.
+
 Mon Aug  6 14:15:53 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/mge-hid.c:

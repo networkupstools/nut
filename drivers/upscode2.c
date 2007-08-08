@@ -2,7 +2,7 @@
 		command set.  This includes PowerWare, Fiskars, 
 		Compaq (PowerWare OEM?), some IBM (PowerWare OEM?)
 
-   Copyright (C) 2002 Håvard Lygre <hklygre@online.no>
+   Copyright (C) 2002 Hï¿½vard Lygre <hklygre@online.no>
    Copyright (C) 2004-2006 Niels Baggesen <niels@baggesen.net>
    Copyright (C) 2006 Niklas Edmundsson <nikke@acc.umu.se>
 
@@ -32,7 +32,7 @@
  * Powerware 9305
  *
  * Also tested against
- * Compaq T1500h (Per Jönsson <per.jonsson@bth.se>)
+ * Compaq T1500h (Per Jï¿½nsson <per.jonsson@bth.se>)
  * Powerware 9120 (Gorm J. Siiger <gjs@sonnit.dk>)
  * Fiskars PowerServer 10 (Per Larsson <tucker@algonet.se>)
  */
@@ -710,7 +710,6 @@ void upsdrv_updateinfo(void)
 		return;
 	}
 
-	alarm_init();
 	status = 0;
 
 	ok = upsc_getparams("UPDS", simple);
@@ -859,7 +858,6 @@ void upsdrv_updateinfo(void)
 		status |= UPSC_STAT_ONLINE;
 	
 	upsc_setstatus(status);
-	alarm_commit();
 	
 	dstate_dataok();
 	ser_comm_good();
