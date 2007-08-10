@@ -69,41 +69,6 @@ typedef struct
 
 
 /* --------------------------------------------------------------- */
-/* Struct & data for ups.status processing                         */
-/* --------------------------------------------------------------- */
-
-/* Note: this structure holds internal status info, directly as
-   collected from the hardware; not yet converted to official NUT
-   status */
-typedef struct {
-	char	*status_str;	/* ups.status string */
-	int	status_mask;	/* ups_status mask */
-} status_lkp_t;
-
-#define STATUS_ONLINE           0x00001  /* on line */
-#define STATUS_DISCHRG          0x00002  /* discharging */
-#define STATUS_CHRG             0x00004  /* charging */
-#define STATUS_LOWBATT		0x00008  /* low battery */
-#define STATUS_OVERLOAD		0x00010  /* overload */
-#define STATUS_REPLACEBATT	0x00020  /* replace battery */
-#define STATUS_SHUTDOWNIMM	0x00040  /* shutdown imminent */
-#define STATUS_TRIM		0x00080  /* SmartTrim */
-#define STATUS_BOOST		0x00100  /* SmartBoost */
-#define STATUS_BYPASS		0x00200  /* on bypass */
-#define STATUS_OFF		0x00400  /* ups is off */
-#define STATUS_CAL 		0x00800  /* calibration */
-#define STATUS_OVERHEAT         0x01000 /* overheat; Belkin, TrippLite */
-#define STATUS_COMMFAULT        0x02000 /* UPS fault; Belkin, TrippLite */
-#define STATUS_DEPLETED         0x04000 /* battery depleted; Belkin */
-#define STATUS_TIMELIMITEXP     0x08000 /* time limit expired; APC */
-#define STATUS_BATTERYPRES      0x10000 /* battery present; APC */
-#define STATUS_FULLYCHARGED     0x20000 /* battery full; CyberPower */
-#define STATUS_AWAITINGPOWER    0x40000 /* awaiting power; Belkin, TrippLite */
-#define STATUS_VRANGE           0x80000 /* voltage out of range; TrippLite */
-
-extern status_lkp_t status_info[];
-
-/* --------------------------------------------------------------- */
 /* Struct & data for lookup between HID and NUT values             */
 /* (From USB/HID, Power Devices Class standard)                    */
 /* --------------------------------------------------------------- */

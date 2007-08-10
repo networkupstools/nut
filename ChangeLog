@@ -1,3 +1,22 @@
+Fri Aug 10 20:05:11 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/usbhid.[ch]:
+   - Moved the struct & data for ups.status processing to usbhid.c, since
+     this is only used in there. Subdrivers report the status through
+     text messages, they don't set the status bits directly.
+   - Rewrote (flattened) the upsdrv_updateinfo() and hid_ups_walk() functions,
+     so that it is easier to follow/understand what is happening. Also limit
+     the amount of status update to once every upsdrv_updateinfo and not for
+     each status report we get. This is enough, since we don't handle requests
+     from clients when we're talking/listening to the UPS.
+   - If the UPS sends reports on the interrupt pipeline, we consider that
+     enough proof that it is still there. At the same time, we assume that it
+     keeps us informed of *all* important status changes, so that doing a
+     HU_WALKMODE_QUICK_UPDATE is redundant then.
+   - Added a ups_infoval_set() function that is doing the actual setting of
+     values we got from the UPS. This is convenient, so that if we change
+     something in the way we deal with those, it is all in one location.
+
 Fri Aug 10 19:02:37 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * data/cmdvartab, drivers/mge-hid.c, drivers/powerpanel.h, man/powerpanel.8:

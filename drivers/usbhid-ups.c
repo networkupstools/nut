@@ -81,31 +81,69 @@ static void ups_status_set(void);
 static void identify_ups ();
 static bool_t hid_ups_walk(int mode);
 static int reconnect_ups(void);
+static int ups_infoval_set(hid_info_t *item, float value);
 
 /* ---------------------------------------------------------------------- */
 /* data for ups.status processing */
 
-status_lkp_t status_info[] = {
+#define	STATUS(x)	((unsigned)1<<x)
+
+typedef enum {
+	ONLINE = 0,	/* on line */
+	DISCHRG,	/* discharging */
+	CHRG,		/* charging */
+	LOWBATT,	/* low battery */
+	OVERLOAD,	/* overload */
+	REPLACEBATT,	/* replace battery */
+	SHUTDOWNIMM,	/* shutdown imminent */
+	TRIM,		/* SmartTrim */
+	BOOST,		/* SmartBoost */
+	BYPASS,		/* on bypass */
+	OFF,		/* ups is off */
+	CAL,		/* calibration */
+	OVERHEAT,	/* overheat; Belkin, TrippLite */
+	COMMFAULT,	/* UPS fault; Belkin, TrippLite */
+	DEPLETED,	/* battery depleted; Belkin */
+	TIMELIMITEXP,	/* time limit expired; APC */
+	BATTERYPRES,	/* battery present; APC */
+	FULLYCHARGED,	/* battery full; CyberPower */
+	AWAITINGPOWER,	/* awaiting power; Belkin, TrippLite */
+	VRANGE		/* voltage out of range; TrippLite */
+} status_bit_t;
+
+/* --------------------------------------------------------------- */
+/* Struct & data for ups.status processing                         */
+/* --------------------------------------------------------------- */
+
+/* Note: this structure holds internal status info, directly as
+   collected from the hardware; not yet converted to official NUT
+   status */
+typedef struct {
+	char	*status_str;	/* ups.status string */
+	int	status_mask;	/* ups_status mask */
+} status_lkp_t;
+
+static status_lkp_t status_info[] = {
 	/* map internal status strings to bit masks */
-	{ "online", STATUS_ONLINE },
-	{ "dischrg", STATUS_DISCHRG },
-	{ "chrg", STATUS_CHRG },
-	{ "lowbatt", STATUS_LOWBATT },
-	{ "overload", STATUS_OVERLOAD },
-	{ "replacebatt", STATUS_REPLACEBATT },
-	{ "shutdownimm", STATUS_SHUTDOWNIMM },
-	{ "trim", STATUS_TRIM },
-	{ "boost", STATUS_BOOST },
-	{ "bypass", STATUS_BYPASS },
-	{ "off", STATUS_OFF },
-	{ "overheat", STATUS_OVERHEAT },
-	{ "commfault", STATUS_COMMFAULT },
-	{ "depleted", STATUS_DEPLETED },
-	{ "timelimitexp", STATUS_TIMELIMITEXP },
-	{ "batterypres", STATUS_BATTERYPRES },
-	{ "fullycharged", STATUS_FULLYCHARGED },
-	{ "awaitingpower", STATUS_AWAITINGPOWER },
-	{ "vrange", STATUS_VRANGE },
+	{ "online", STATUS(ONLINE) },
+	{ "dischrg", STATUS(DISCHRG) },
+	{ "chrg", STATUS(CHRG) },
+	{ "lowbatt", STATUS(LOWBATT) },
+	{ "overload", STATUS(OVERLOAD) },
+	{ "replacebatt", STATUS(REPLACEBATT) },
+	{ "shutdownimm", STATUS(SHUTDOWNIMM) },
+	{ "trim", STATUS(TRIM) },
+	{ "boost", STATUS(BOOST) },
+	{ "bypass", STATUS(BYPASS) },
+	{ "off", STATUS(OFF) },
+	{ "overheat", STATUS(OVERHEAT) },
+	{ "commfault", STATUS(COMMFAULT) },
+	{ "depleted", STATUS(DEPLETED) },
+	{ "timelimitexp", STATUS(TIMELIMITEXP) },
+	{ "batterypres", STATUS(BATTERYPRES) },
+	{ "fullycharged", STATUS(FULLYCHARGED) },
+	{ "awaitingpower", STATUS(AWAITINGPOWER) },
+	{ "vrange", STATUS(VRANGE) },
 	{ NULL, 0 },
 };
 
@@ -536,88 +574,67 @@ void upsdrv_banner(void)
 
 void upsdrv_updateinfo(void) 
 {
-	hid_info_t *item;
-	char *nutvalue;
-	int retcode, evtCount = 0;
-	HIDEvent_t *eventlist;
-	HIDEvent_t *p;
+	hid_info_t	*item;
+	int		evtCount;
+	HIDEvent_t	*eventlist;
+	HIDEvent_t	*p;
 
 	upsdebugx(1, "upsdrv_updateinfo...");
 
-
 	/* check for device availability to set datastale! */
-	if (hd == NULL)
-	  {
+	if (hd == NULL) {
 		upsdebugx(1, "\n=>Got to reconnect!\n");
-		if (!reconnect_ups())
+
+		if (!reconnect_ups()) {
+
+			dstate_datastale();
 			return;
-	  }
-
-	/* Only do a full update (polling) every pollfreq 
-	 * or upon data change (ie setvar/instcmd) */
-	if ( (time(NULL) <= (lastpoll + pollfreq))
-		 && (data_has_changed != TRUE) )
-	  {
-		/* Wait for HID notifications on Interrupt pipe */
-		if ((evtCount = HIDGetEvents(udev, NULL, &eventlist, subdriver->utab)) > 0)
-		  {
-			upsdebugx(1, "\n=>Got %i HID Objects...", evtCount);
-			
-			/* Process pending events (HID notifications on Interrupt pipe) */
-			for (p=eventlist; p!=NULL; p=p->next) 
-			  {
-				/* Check if we are asked to stop (reactivity++) */
-				if (exit_flag != 0) {
-				  HIDFreeEvents(eventlist);
-				  return;
-				}
-				upsdebugx(3, "Object: %s = %ld", 
-						  p->Path,
-						  p->Value);
-				
-				if ((item = find_hid_info(p->Path)) != NULL)
-				  {
-					/* Does it need value lookup? */
-					if (item->hid2info != NULL)
-					  {
-						nutvalue = hu_find_infoval(item->hid2info, (long)p->Value);
-						if (nutvalue != NULL)
-						  {
-							upsdebugx(2, "%s = %s", item->info_type,nutvalue);
-							
-							/* Is it ups.status? */
-							if (!strncmp(item->info_type, "ups.status", 10))
-							  {
-								/* bitwise status to process it globally */
-								process_status_info(nutvalue);
-								ups_status_set();
-							  }
-							else
-							  dstate_setinfo(item->info_type, item->dfl, nutvalue);
-						  }
-					  }
-					else
-					  /* FIXME: should we do setinfo() here? */
-					  upsdebugx(2, "%s = %ld", item->info_type, p->Value);
-				  }
-			  }
-			dstate_dataok();
-			HIDFreeEvents(eventlist);
-		  }
-		else {
-		  retcode = evtCount; /* propagate error code */
 		}
-		
-		/* Quick poll on main ups.status data */
-		hid_ups_walk(HU_WALKMODE_QUICK_UPDATE);
-	  }
-	else /* Polling update */
-	  {
-		hid_ups_walk(HU_WALKMODE_FULL_UPDATE);
-	  }
+	}
 
-	/* Reset SEMI_STATIC flag */
-	data_has_changed = FALSE;
+	/* Get HID notifications on Interrupt pipe first */
+	if ((evtCount = HIDGetEvents(udev, NULL, &eventlist, subdriver->utab)) > 0) {
+
+		upsdebugx(1, "\n=>Got %i HID Objects...", evtCount);
+			
+		/* Process pending events (HID notifications on Interrupt pipe) */
+		for (p=eventlist; p!=NULL; p=p->next) {
+
+			/* Check if we are asked to stop (reactivity++) */
+			if (exit_flag != 0) {
+				HIDFreeEvents(eventlist);
+				return;
+			}
+
+			upsdebugx(3, "Object: %s = %ld", p->Path, p->Value);
+
+			/* Skip objects we don't handle */
+			if ((item = find_hid_info(p->Path)) == NULL)
+				continue;
+
+			ups_infoval_set(item, p->Value);
+		}
+
+		HIDFreeEvents(eventlist);
+	} else {
+		/* Quick poll data only to see if the UPS is still connected */
+		if (hid_ups_walk(HU_WALKMODE_QUICK_UPDATE) == FALSE)
+			return;
+	}
+
+	/* Do a full update (polling) every pollfreq or upon data change (ie setvar/instcmd) */
+	if ( (time(NULL) > (lastpoll + pollfreq)) || (data_has_changed == TRUE) ) {
+
+		if (hid_ups_walk(HU_WALKMODE_FULL_UPDATE) == FALSE)
+			return;
+
+		time(&lastpoll);
+		data_has_changed = FALSE;
+	}
+
+	ups_status_set();
+
+	dstate_dataok();
 }
 
 
@@ -637,15 +654,16 @@ static void process_status_info(char *nutvalue)
 
 	for (status_item = status_info; status_item->status_str != NULL ; status_item++)
 	{
-		if (!strcasecmp(status_item->status_str, nutvalue))
-		{
-			if (clear) {
-				ups_status &= ~status_item->status_mask;
-			} else {
-				ups_status |= status_item->status_mask;
-			}
-			break;
+		if (strcasecmp(status_item->status_str, nutvalue))
+			continue;
+
+		if (clear) {
+			ups_status &= ~status_item->status_mask;
+		} else {
+			ups_status |= status_item->status_mask;
 		}
+
+		break;
 	}
 }
 
@@ -659,11 +677,16 @@ void upsdrv_initinfo(void)
 	*/
 
 	/* Device capabilities enumeration */
-	hid_ups_walk(HU_WALKMODE_INIT);
+	if (hid_ups_walk(HU_WALKMODE_INIT) == TRUE)
+		dstate_dataok();
+	else
+		dstate_datastale();
 
 	/* install handlers */
 	upsh.setvar = setvar;
 	upsh.instcmd = instcmd;
+
+	time(&lastpoll);
 }
 
 void upsdrv_initups(void)
@@ -796,212 +819,147 @@ static void identify_ups ()
 /* walk ups variables and set elements of the info array. */
 static bool_t hid_ups_walk(int mode)
 {
-	hid_info_t *item;
-	float value;
-	char *nutvalue;
-	int retcode = 0;
+	hid_info_t	*item;
+	float		value;
+	int		retcode;
 
 	/* 3 modes: HU_WALKMODE_INIT, HU_WALKMODE_QUICK_UPDATE and HU_WALKMODE_FULL_UPDATE */
 	
 	/* Device data walk ----------------------------- */
-	for ( item = subdriver->hid2nut ; item->info_type != NULL ; item++ )
-	  {
+	for (item = subdriver->hid2nut; item->info_type != NULL; item++) {
+
 		/* Check if we are asked to stop (reactivity++) */
 		if (exit_flag != 0)
-		  return TRUE;
+			return TRUE;
 
 		/* filter data according to mode */
 		switch (mode)
-		  {
-			/* Device capabilities enumeration */
-		  case HU_WALKMODE_INIT:
-			{		
-			  /* Avoid redundancy when multiple defines (RO/RW)
-			   * Not applicable to "ups.status" items! */
-			  if ((dstate_getinfo(item->info_type) != NULL)
-				  && (strncmp(item->info_type, "ups.status", 10)))
-				{
-				  item->hidflags &= ~HU_FLAG_OK;
-				  continue;
-				}
-
-			  /* Check instant commands availability */
-			  if (item->hidflags & HU_TYPE_CMD)
-				{
-				  if (HIDGetItemValue(udev, item->hidpath, &value, subdriver->utab) == 1 )
-					dstate_addcmd(item->info_type);
-
-				  continue;
-				}
-			  /* Special case for handling server side variables */
-			  if (item->hidflags & HU_FLAG_ABSENT)
-				{
-				  /* Check if exists (if necessary) before creation */
-				  if (item->hidpath != NULL)
-					{
-					  if ((retcode = HIDGetItemValue(udev, item->hidpath, &value, subdriver->utab)) != 1 )
-						continue;
-					}
-				  else
-					{
-					  /* Simply set the default value */
-					  dstate_setinfo(item->info_type, "%s", item->dfl);
-					  dstate_setflags(item->info_type, item->info_flags);
-					  continue;
-					}
-			
-				  dstate_setinfo(item->info_type, "%s", item->dfl);
-				  dstate_setflags(item->info_type, item->info_flags);
-
-				  /* Set max length for strings, if needed */
-				  if (item->info_flags & ST_FLAG_STRING)
-					dstate_setaux(item->info_type, item->info_len);
-			
-				  /* disable reading now 
-					 item->shut_flags &= ~SHUT_FLAG_OK;*/
-				}
-			}
-			break; 
-		  case HU_WALKMODE_QUICK_UPDATE:
-			{
-			  /* Quick update only deals with status! */
-			  if ( !(item->hidflags & HU_FLAG_QUICK_POLL))
-				continue;
-			}
-			break; 
-		  default:
-		  case HU_WALKMODE_FULL_UPDATE:
-			{
-			  /* These doesn't need polling after initinfo() */
-			  if ((item->hidflags & HU_FLAG_ABSENT)
-				  || (item->hidflags & HU_TYPE_CMD)
-				  || (item->hidflags & HU_FLAG_STATIC)
-				  /* These need to be polled after user changes (setvar / instcmd) */
-				  || ( (item->hidflags & HU_FLAG_SEMI_STATIC) && (data_has_changed == FALSE) ) ) 
-				/* FIXME: external condition might change these, ie pushing the HW On/Off button! */
-				continue;
-			}
-			break; 
-		  }
-
-		/* Standard variables */
-		/* skip elements we shouldn't process / show. */
-		if ( ( (mode == HU_WALKMODE_QUICK_UPDATE) || (mode == HU_WALKMODE_FULL_UPDATE) )
-			 && !(item->hidflags & HU_FLAG_OK) )
-		  continue;
-
-		if ((retcode = HIDGetItemValue(udev, item->hidpath, &value, subdriver->utab)) == 1 )
-		  {
-			/* deal with status items */
-			if (!strncmp(item->info_type, "ups.status", 10))
-			  {
-				nutvalue = hu_find_infoval(item->hid2info, (long)value);
-				if (nutvalue != NULL)
-				  {
-					/* bitwise status to process it globally */
-					process_status_info(nutvalue);
-					ups_status_set();
-				  }
-			  }
-			else /* standard items */
-			  {
-				/* need lookup'ed translation? */
-				if (item->hid2info != NULL)
-				  {
-					nutvalue = hu_find_infoval(item->hid2info, (long)value);
-					if (nutvalue != NULL)
-					  dstate_setinfo(item->info_type, item->dfl, nutvalue);
-					else
-					  dstate_setinfo(item->info_type, "%ld", (long)value);
-				  }
-				else
-				  dstate_setinfo(item->info_type, item->dfl, value);
-				
-				if (mode == HU_WALKMODE_INIT)
-				  {
-					dstate_setflags(item->info_type, item->info_flags);
-				  }
-			  }
-			if (mode == HU_WALKMODE_INIT)
-			  {
-				/* Set max length for strings */
-				if (item->info_flags & ST_FLAG_STRING)
-				  dstate_setaux(item->info_type, item->info_len);
-			  }
-
-			/* atomic call */
-/* 			dstate_dataok(); */
-
-			/* store timestamp */
-/* 			lastpoll = time(NULL); */
-		}
-		else
 		{
-			if ( (retcode == -EPERM) || (retcode == -EPIPE)
-				|| (retcode == -ENODEV) || (retcode == -EACCES)
-				|| (retcode == -EIO) || (retcode == -ENOENT) )
-				break;
-			else
-			{
-				/* atomic call */
-				dstate_dataok();
+		/* Device capabilities enumeration */
+		case HU_WALKMODE_INIT:
+			/* Special case for handling server side variables */
+			if (item->hidflags & HU_FLAG_ABSENT) {
+
+				dstate_setinfo(item->info_type, item->dfl);
+				dstate_setflags(item->info_type, item->info_flags);
+
+				/* Set max length for strings, if needed */
+				if (item->info_flags & ST_FLAG_STRING)
+					dstate_setaux(item->info_type, item->info_len);
+
+				continue;
 			}
 
-			if (mode == HU_WALKMODE_INIT)
-			{
-				/* invalidate item */
+			/* Avoid redundancy when multiple defines (RO/RW)
+			 * ups.status is not set during HU_WALKMODE_INIT,
+			 * so this doesn't need to be caught here. */
+			if (dstate_getinfo(item->info_type) != NULL) {
+
+				item->hidflags &= ~HU_FLAG_OK;
+				continue;
+			}
+
+			break;
+
+		case HU_WALKMODE_QUICK_UPDATE:
+			/* Quick update only deals with status and alarms! */
+			if (!(item->hidflags & HU_FLAG_QUICK_POLL))
+				continue;
+			
+			break; 
+
+		case HU_WALKMODE_FULL_UPDATE:
+			/* These don't need polling after initinfo() */
+			if (item->hidflags & (HU_FLAG_ABSENT | HU_TYPE_CMD | HU_FLAG_STATIC))
+				continue;
+
+			/* These need to be polled after user changes (setvar / instcmd) */
+			if ( (item->hidflags & HU_FLAG_SEMI_STATIC) && (data_has_changed == FALSE) )
+				continue;
+
+			break; 
+		
+		default:
+			fatalx(EXIT_FAILURE, "hid_ups_walk: unknown update mode!");
+		}
+
+		/* skip elements we shouldn't process / show. */
+		if ( !(item->hidflags & HU_FLAG_OK) )
+			continue;
+
+		retcode = HIDGetItemValue(udev, item->hidpath, &value, subdriver->utab);
+
+		switch (retcode)
+		{
+		case -EPERM:
+		case -EPIPE:
+		case -ENODEV:
+		case -EACCES:
+		case -EIO:
+		case -ENOENT:
+			/* Uh oh, got to reconnect! */
+			hd = NULL;
+			return FALSE;
+
+		case 1:
+			break;	/* Found! */
+
+		case 0:
+			if (mode == HU_WALKMODE_INIT) {
+				/* Not found and don't try again */
 				item->hidflags &= ~HU_FLAG_OK;
 			}
+			continue;
+
+		default:
+			/* Don't know what happened, but we didn't get a
+			 * value, so go on to the next from the list. */
+			continue;
 		}
-	} /* end for */
 
-	if (mode == HU_WALKMODE_FULL_UPDATE)
-	{
-		/* store timestamp */
-		lastpoll = time(NULL);
+		if (item->hidflags & HU_TYPE_CMD) {
+			dstate_addcmd(item->info_type);
+			continue;
+		}
+
+		/* Process the value we got back (set status bits and
+		 * set the value of other parameters) */
+		if (ups_infoval_set(item, value) != 1)
+			continue;
+
+		if (mode == HU_WALKMODE_INIT) {
+
+			dstate_setflags(item->info_type, item->info_flags);
+
+			/* Set max length for strings */
+			if (item->info_flags & ST_FLAG_STRING) {
+				dstate_setaux(item->info_type, item->info_len);
+			}
+		}
 	}
 
-	/* Reserved values: -1/-10 for nul delay, -2 can't get value */
-	/* device has been disconnected, try to reconnect */
-	if ( (retcode == -EPERM) || (retcode == -EPIPE)
-		|| (retcode == -ENODEV) || (retcode == -EACCES)
-		|| (retcode == -EIO) || (retcode == -ENOENT) )
-	{
-		hd = NULL;
-		reconnect_ups();
-	}
-	else {
-	  /* atomic call */
-	  dstate_dataok();
-	}
-
-  return TRUE;
+	/* All is well if we made it to here */
+	return TRUE;
 }
 
 static int reconnect_ups(void)
 {
-	int ret = 1;
-
-	if (hd == NULL)
-	{
-		upsdebugx(2, "==================================================");
-		upsdebugx(2, "= device has been disconnected, try to reconnect =");
-		upsdebugx(2, "==================================================");
+	upsdebugx(2, "==================================================");
+	upsdebugx(2, "= device has been disconnected, try to reconnect =");
+	upsdebugx(2, "==================================================");
 		
 #if defined(SHUT_MODE) || defined(SUN_LIBUSB)
-		/* Cause a double free corruption in USB mode on linux! */
-		HIDCloseDevice(udev);
+	/* Cause a double free corruption in USB mode on linux! */
+	HIDCloseDevice(udev);
 #else
-		/* but keep udev in SHUT mode, for udev->device_path */
-		udev = NULL;
+	/* but keep udev in SHUT mode, for udev->device_path */
+	udev = NULL;
 #endif
 
-		if ((hd = HIDOpenDevice(&udev, &curDevice, reopen_matcher, MODE_REOPEN)) == NULL) {
-			dstate_datastale();
-			ret = 0;
-		}
-	}
-	return ret;
+	if ((hd = HIDOpenDevice(&udev, &curDevice, reopen_matcher, MODE_REOPEN)) == NULL)
+		return 0;
+
+	return 1;
 }
 
 /* Convert the local status information to NUT format and set NUT
@@ -1011,56 +969,56 @@ static void ups_status_set(void)
 	/* clear status buffer before begining */
 	status_init();
 
-	if (ups_status & STATUS_ONLINE) {
+	if (ups_status & STATUS(ONLINE)) {
 		status_set("OL");		/* on line */
 	} else {
 		status_set("OB");               /* on battery */
 	}
-	if (ups_status & STATUS_DISCHRG) {
+	if (ups_status & STATUS(DISCHRG)) {
 		status_set("DISCHRG");	        /* discharging */         
 	}
-	if (ups_status & STATUS_CHRG) {
+	if (ups_status & STATUS(CHRG)) {
 		status_set("CHRG");		/* charging */
 	}
-	if (ups_status & (STATUS_LOWBATT
-			  | STATUS_SHUTDOWNIMM
-			  | STATUS_TIMELIMITEXP)) {
+	if (ups_status & (STATUS(LOWBATT)
+			  | STATUS(SHUTDOWNIMM)
+			  | STATUS(TIMELIMITEXP))) {
 		status_set("LB");		/* low battery */
 	}
-	if (ups_status & STATUS_OVERLOAD) {
+	if (ups_status & STATUS(OVERLOAD)) {
 		status_set("OVER");		/* overload */
 	}
-	if (ups_status & STATUS_REPLACEBATT) {
+	if (ups_status & STATUS(REPLACEBATT)) {
 		status_set("RB");		/* replace batt */
 	}
-	if (ups_status & STATUS_TRIM) {
+	if (ups_status & STATUS(TRIM)) {
 		status_set("TRIM");		/* SmartTrim */
 	}
-	if (ups_status & STATUS_BOOST) {
+	if (ups_status & STATUS(BOOST)) {
 		status_set("BOOST");	        /* SmartBoost */
 	}
-	if (ups_status & STATUS_BYPASS) {
+	if (ups_status & STATUS(BYPASS)) {
 		status_set("BYPASS");	        /* on bypass */   
 	}
-	if (ups_status & STATUS_OFF) {
+	if (ups_status & STATUS(OFF)) {
 		status_set("OFF");              /* ups is off */
 	}
-	if (ups_status & STATUS_CAL) {
+	if (ups_status & STATUS(CAL)) {
 		status_set("CAL");		/* calibration */
 	}
-	if (ups_status & STATUS_OVERHEAT) {
+	if (ups_status & STATUS(OVERHEAT)) {
 		status_set("OVERHEAT");		/* overheat; Belkin, TrippLite */
 	}
-	if (ups_status & STATUS_COMMFAULT) {
+	if (ups_status & STATUS(COMMFAULT)) {
 		status_set("COMMFAULT");	/* UPS fault; Belkin, TrippLite */
 	}
-	if (ups_status & STATUS_DEPLETED) {
+	if (ups_status & STATUS(DEPLETED)) {
 		status_set("DEPLETED");		/* battery depleted; Belkin */
 	}
-	if (ups_status & STATUS_AWAITINGPOWER) {
+	if (ups_status & STATUS(AWAITINGPOWER)) {
 		status_set("AWAITINGPOWER");	/* awaiting power; Belkin, TrippLite */
 	}
-	if (ups_status & STATUS_VRANGE) {
+	if (ups_status & STATUS(VRANGE)) {
 		status_set("VRANGE");		/* voltage out of range; TrippLite */
 	}
 	
@@ -1170,4 +1128,31 @@ static char *hu_find_infoval(info_lkp_t *hid2info, long value)
 	}
 	upsdebugx(3, "hu_find_infoval: no matching INFO_* value for this HID value (%ld)\n", value);
 	return NULL;
+}
+
+/* return -1 on failure, 0 for a status update and 1 in all other cases */
+static int ups_infoval_set(hid_info_t *item, float value)
+{
+	char *nutvalue;
+
+	/* need lookup'ed translation? */
+	if (item->hid2info != NULL){
+
+		if ((nutvalue = hu_find_infoval(item->hid2info, (long)value)) == NULL) {
+			upsdebugx(5, "Lookup [%ld] failed for [%s]", (long)value, item->info_type);
+			return -1;
+		}
+
+		/* deal with status items */
+		if (!strncmp(item->info_type, "ups.status", 10)) {
+			process_status_info(nutvalue);
+			return 1;
+		}
+
+		dstate_setinfo(item->info_type, item->dfl, nutvalue);
+	} else {
+		dstate_setinfo(item->info_type, item->dfl, value);
+	}
+
+	return 0;
 }
