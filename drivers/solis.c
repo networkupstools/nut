@@ -864,7 +864,7 @@ static void getbaseinfo(void)
 	} // end prgups 1 - 2
 
 	/* dummy read attempt to sync - throw it out */
-	sprintf(mycmd,"%c%c",CMD_UPSCONT, ENDCHAR);
+	snprintf(mycmd, sizeof(mycmd), "%c%c",CMD_UPSCONT, ENDCHAR);
 	ser_send(upsfd, mycmd);
 
 	/* trying detect solis model */

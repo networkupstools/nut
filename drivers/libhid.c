@@ -419,7 +419,7 @@ static int match_regex(regex_t *preg, char *str) {
  * converted to a 4-digit hexadecimal string. */
 static inline int match_regex_hex(regex_t *preg, int n) {
 	char buf[10];
-	sprintf(buf, "%04x", n);
+	snprintf(buf, sizeof(buf), "%04x", n);
 	return match_regex(preg, buf);
 }
 
@@ -1035,7 +1035,7 @@ static int path_to_string(char *HIDpath, HIDPath_t *path, usage_tables_t *utab)
 		if ((path->Node[i] & 0xffff0000) == 0x00ff0000)
 		{
 			upsdebugx(5, "Got an indexed collection");
-			sprintf(buf, "[%i]", path->Node[i] & 0x0000ffff);
+			snprintf(buf, sizeof(buf), "[%i]", path->Node[i] & 0x0000ffff);
 			strcat (HIDpath, buf);
 		}
 		else
@@ -1273,7 +1273,7 @@ static const char *hid_lookup_path(unsigned int usage, usage_tables_t *utab)
 
 	/* if the corresponding path isn't found,
 		return the numeric usage in string form */
-	sprintf (&raw_usage[0], "%08x", usage); 
+	snprintf(raw_usage, sizeof(raw_usage), "%08x", usage); 
 	return &raw_usage[0];
 }
 
@@ -1306,7 +1306,7 @@ static int hid_lookup_usage(char *name, usage_tables_t *utab)
 	/* finally, translate unnamed path components such as
 	   "ff860024" */
 	value = strtoul(name, NULL, 16);
-	sprintf(buf, "%08x", value);
+	snprintf(buf, sizeof(buf), "%08x", value);
 	if (strcasecmp(buf, name) != 0) {
 		return -1;
 	}

@@ -624,7 +624,7 @@ void debug_message(const char *msg, int len)
 	unsigned char tmp_value[9];
 	char var_name[20], err_msg[80];
 
-	sprintf(var_name, "ups.debug.%c", *msg);
+	snprintf(var_name, sizeof(var_name), "ups.debug.%c", *msg);
 
 	ret = send_cmd(msg, len, (char *)tmp_value, sizeof(tmp_value));
 	if(ret <= 0) {

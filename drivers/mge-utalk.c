@@ -591,7 +591,7 @@ int setvar(const char *varname, const char *val)
 	if(info_variable_ok(varname))
 	{
 		/* format command */
-		sprintf(cmd, "%s", info_variable_cmd(varname));
+		snprintf(cmd, sizeof(cmd), "%s", info_variable_cmd(varname));
 		sprintf(strchr(cmd, '?'), "%s", val);
 
 		/* Execute command */

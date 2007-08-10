@@ -43,7 +43,7 @@
 static char *watts_to_av_conversion_fun(long value) {
 	static char buf[20];
 	
-	sprintf(buf, "%.0f", value * 1.4142136);
+	snprintf(buf, sizeof(buf), "%.0f", value * 1.4142136);
 	return buf;
 }
 
@@ -74,7 +74,7 @@ static char *apc_date_conversion_fun(long value) {
     year += 2000;
   }
 
-  sprintf(buf, "%04d/%02d/%02d", year, month, day);
+  snprintf(buf, sizeof(buf), "%04d/%02d/%02d", year, month, day);
   return buf;
 }
 
@@ -90,13 +90,13 @@ info_lkp_t apc_date_conversion[] = {
 static info_lkp_t timelimitexpired_info[] = {
   { 1, "timelimitexp", NULL },
   { 0, "!timelimitexp", NULL },
-  { 0, "NULL", NULL }
+  { 0, NULL, NULL }
 };
 
 static info_lkp_t batterypresent_info[] = {
   { 1, "batterypres", NULL },
   { 0, "!batterypres", NULL },
-  { 0, "NULL", NULL }
+  { 0, NULL, NULL }
 };
 
 /* This was determined empirically from observing a BackUPS LS 500.
@@ -105,7 +105,7 @@ static info_lkp_t apcstatusflag_info[] = {
   { 8, "!off", NULL },  /* Normal operation */
   { 16, "!off", NULL }, /* This occurs briefly during power-on, and corresponds to status 'DISCHRG'. */
   { 0, "off", NULL },
-  { 0, "NULL", NULL }
+  { 0, NULL, NULL }
 };
 
 /* --------------------------------------------------------------- */

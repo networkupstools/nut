@@ -135,73 +135,73 @@ status_lkp_t status_info[] = {
 info_lkp_t online_info[] = {
   { 1, "online", NULL },
   { 0, "!online", NULL },
-  { 0, "NULL", NULL }
+  { 0, NULL, NULL }
 };
 info_lkp_t discharging_info[] = {
   { 1, "dischrg", NULL },
   { 0, "!dischrg", NULL },
-  { 0, "NULL", NULL }
+  { 0, NULL, NULL }
 };
 info_lkp_t charging_info[] = {
   { 1, "chrg", NULL },
   { 0, "!chrg", NULL },
-  { 0, "NULL", NULL }
+  { 0, NULL, NULL }
 };
 info_lkp_t lowbatt_info[] = {
   { 1, "lowbatt", NULL },
   { 0, "!lowbatt", NULL },
-  { 0, "NULL", NULL }
+  { 0, NULL, NULL }
 };
 info_lkp_t overload_info[] = {
   { 1, "overload", NULL },
   { 0, "!overload", NULL },
-  { 0, "NULL", NULL }
+  { 0, NULL, NULL }
 };
 info_lkp_t replacebatt_info[] = {
   { 1, "replacebatt", NULL },
   { 0, "!replacebatt", NULL },
-  { 0, "NULL", NULL }
+  { 0, NULL, NULL }
 };
 info_lkp_t shutdownimm_info[] = {
   { 1, "shutdownimm", NULL },
   { 0, "!shutdownimm", NULL },
-  { 0, "NULL", NULL }
+  { 0, NULL, NULL }
 };
 info_lkp_t trim_info[] = {
   { 1, "trim", NULL },
   { 0, "!trim", NULL },
-  { 0, "NULL", NULL }
+  { 0, NULL, NULL }
 };
 info_lkp_t boost_info[] = {
   { 1, "boost", NULL },
   { 0, "!boost", NULL },
-  { 0, "NULL", NULL }
+  { 0, NULL, NULL }
 };
 info_lkp_t overheat_info[] = {
   { 1, "overheat", NULL },
   { 0, "!overheat", NULL },
-  { 0, "NULL", NULL }
+  { 0, NULL, NULL }
 };
 info_lkp_t awaitingpower_info[] = {
   { 1, "awaitingpower", NULL },
   { 0, "!awaitingpower", NULL },
-  { 0, "NULL", NULL }
+  { 0, NULL, NULL }
 };
 info_lkp_t commfault_info[] = {
   { 1, "commfault", NULL },
   { 0, "!commfault", NULL },
-  { 0, "NULL", NULL }
+  { 0, NULL, NULL }
 };
 info_lkp_t vrange_info[] = {
   { 1, "vrange", NULL },
   { 0, "!vrange", NULL },
-  { 0, "NULL", NULL }
+  { 0, NULL, NULL }
 };
 /* FIXME: extend ups.status for BYPASS Manual/Automatic */
 info_lkp_t bypass_info[] = {
   { 1, "bypass", NULL },
   { 0, "!bypass", NULL },
-  { 0, "NULL", NULL }
+  { 0, NULL, NULL }
 };
 /* note: this value is reverted (0=set, 1=not set). We report "being
    off" rather than "being on", so that devices that don't implement
@@ -209,7 +209,7 @@ info_lkp_t bypass_info[] = {
 info_lkp_t off_info[] = {
   { 0, "off", NULL },
   { 1, "!off", NULL },
-  { 0, "NULL", NULL }
+  { 0, NULL, NULL }
 };
 /* FIXME: add CAL */
 
@@ -218,7 +218,7 @@ info_lkp_t test_write_info[] = {
   { 1, "Quick test", NULL },
   { 2, "Deep test", NULL },
   { 3, "Abort test", NULL },
-  { 0, "NULL", NULL }
+  { 0, NULL, NULL }
 };
 info_lkp_t test_read_info[] = {
   { 1, "Done and passed", NULL },
@@ -227,32 +227,32 @@ info_lkp_t test_read_info[] = {
   { 4, "Aborted", NULL },
   { 5, "In progress", NULL },
   { 6, "No test initiated", NULL },
-  { 0, "NULL", NULL }
+  { 0, NULL, NULL }
 };
 
 info_lkp_t beeper_info[] = {
   { 1, "disabled", NULL },
   { 2, "enabled", NULL },
   { 3, "muted", NULL },
-  { 0, "NULL", NULL }
+  { 0, NULL, NULL }
 };
 
 info_lkp_t yes_no_info[] = {
 	{ 0, "no", NULL },
 	{ 1, "yes", NULL },
-	{ 0, "NULL", NULL }
+	{ 0, NULL, NULL }
 };
 
 info_lkp_t on_off_info[] = {
 	{ 0, "off", NULL },
 	{ 1, "on", NULL },
-	{ 0, "NULL", NULL }
+	{ 0, NULL, NULL }
 };
 
 info_lkp_t fullycharged_info[] = { /* used by CyberPower and TrippLite */
   { 1, "fullycharged", NULL },
   { 0, "!fullycharged", NULL },
-  { 0, "NULL", NULL }
+  { 0, NULL, NULL }
 };
 
 /* returns statically allocated string - must not use it again before
@@ -1132,8 +1132,7 @@ static long hu_find_valinfo(info_lkp_t *hid2info, const char* value)
 {
 	info_lkp_t *info_lkp;
 	
-	for (info_lkp = hid2info; (info_lkp != NULL) &&
-		(strcmp(info_lkp->nut_value, "NULL")); info_lkp++) {
+	for (info_lkp = hid2info; info_lkp->nut_value != NULL; info_lkp++) {
 
 		if (!(strcmp(info_lkp->nut_value, value))) {
 			upsdebugx(5, "hu_find_valinfo: found %s (value: %ld)\n",
@@ -1161,8 +1160,7 @@ static char *hu_find_infoval(info_lkp_t *hid2info, long value)
 		return nut_value;
 	}
 
-	for (info_lkp = hid2info; (info_lkp != NULL) &&
-		(strcmp(info_lkp->nut_value, "NULL")); info_lkp++) {
+	for (info_lkp = hid2info; info_lkp->nut_value != NULL; info_lkp++) {
 		if (info_lkp->hid_value == value) {
 			upsdebugx(5, "hu_find_infoval: found %s (value: %ld)\n",
 					info_lkp->nut_value, value);
@@ -1173,4 +1171,3 @@ static char *hu_find_infoval(info_lkp_t *hid2info, long value)
 	upsdebugx(3, "hu_find_infoval: no matching INFO_* value for this HID value (%ld)\n", value);
 	return NULL;
 }
-

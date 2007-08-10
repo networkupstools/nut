@@ -234,12 +234,12 @@ void upsdrv_shutdown (void)
 
 	if (sdtype == SD_RETURN) {
 		/* set DelayBeforeStartup */
-		sprintf(val, "%d", ondelay);
+		snprintf(val, sizeof(val), "%d", ondelay);
 		hid_set_value("ups.delay.start", val);
 	}
 
 	/* set DelayBeforeShutdown */
-	sprintf(val, "%d", offdelay);
+	snprintf(val, sizeof(val), "%d", offdelay);
 	hid_set_value("ups.delay.shutdown", val);
 }
 
@@ -259,19 +259,19 @@ void upsdrv_makevartable (void)
 	
 	upsdebugx (2, "entering upsdrv_makevartable()");
   
-	sprintf(msg, "Set low battery level, in %% (default=%d).",
+	snprintf(msg, sizeof(msg), "Set low battery level, in %% (default=%d).",
 		DEFAULT_LOWBATT);
 	addvar (VAR_VALUE, "lowbatt", msg);
 	
-	sprintf(msg, "Set shutdown delay, in seconds (default=%d).",
+	snprintf(msg, sizeof(msg), "Set shutdown delay, in seconds (default=%d).",
 		DEFAULT_OFFDELAY);
 	addvar (VAR_VALUE, "offdelay", msg);
 
-	sprintf(msg, "Set startup delay, in ten seconds units (default=%d).",
+	snprintf(msg, sizeof(msg), "Set startup delay, in ten seconds units (default=%d).",
 		DEFAULT_ONDELAY);
 	addvar (VAR_VALUE, "ondelay", msg);
 	
-	sprintf(msg, "Set notification type, 1 = no, 2 = light, 3 = yes (default=%d).",
+	snprintf(msg, sizeof(msg), "Set notification type, 1 = no, 2 = light, 3 = yes (default=%d).",
 		DEFAULT_NOTIFICATION);
 	addvar (VAR_VALUE, "notification", msg);
 }
@@ -469,7 +469,7 @@ int shut_identify_ups ()
 				/* Try with "UPS.Flow.[4].ConfigApparentPower" */
 				if(hid_get_value("UPS.Flow.[4].ConfigApparentPower") != 0 )
 				{
-					sprintf(&string[0], "%i", (int)hValue);
+					snprintf(string, sizeof(string), "%i", (int)hValue);
 					finalname = get_model_name(model, string);
 				}
 				else

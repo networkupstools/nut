@@ -35,7 +35,7 @@
 	static	struct	conn_t	*connhead = NULL;
 	static	struct	cmdlist_t *cmdhead = NULL;
 	static	char	*sockfn = NULL;
-	static	char	status_buf[ST_MAX_VALUE_LEN], 
+	static	char	status_buf[ST_MAX_VALUE_LEN],
 			alarm_buf[ST_MAX_VALUE_LEN];
 
 	struct	ups_handler	upsh;
@@ -782,7 +782,6 @@ void status_commit(void)
 void alarm_init(void)
 {
 	memset(&alarm_buf, '\0', sizeof(alarm_buf));
-	alarm_active = 0;
 }
 
 void alarm_set(const char *buf)
@@ -791,15 +790,16 @@ void alarm_set(const char *buf)
 		snprintfcat(alarm_buf, sizeof(alarm_buf), " %s", buf);
 	else
 		snprintfcat(alarm_buf, sizeof(alarm_buf), "%s", buf);
-
-	alarm_active = 1;
 }
 
 /* write the status_buf into the info array */
 void alarm_commit(void)
 {
-	if (strlen(alarm_buf) != 0)
+	if (strlen(alarm_buf) != 0) {
 		dstate_setinfo("ups.alarm", "%s", alarm_buf);
-	else
+		alarm_active = 1;
+	} else {
 		dstate_delinfo("ups.alarm");
+		alarm_active = 0;
+	}
 }

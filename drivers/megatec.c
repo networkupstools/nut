@@ -455,7 +455,7 @@ void upsdrv_initinfo(void)
 	 */
 	if (get_ups_info(&info) >= 0) {
 		char model[UPS_MODEL_CHARS + UPS_VERSION_CHARS + 2];
-		sprintf(model, "%s %s", info.model, info.version);
+		snprintf(model, sizeof(model), "%s %s", info.model, info.version);
 
 		dstate_setinfo("ups.mfr", "%s", getval("mfr") ? getval("mfr") : info.mfr);
 		dstate_setinfo("ups.model", "%s", getval("model") ? getval("model") : model);

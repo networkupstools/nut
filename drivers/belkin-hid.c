@@ -40,7 +40,7 @@
    done with result! */
 static char *belkin_firmware_conversion_fun(long value) {
 	static char buf[20];
-	sprintf(buf, "%ld", value >> 4);
+	snprintf(buf, sizeof(buf), "%ld", value >> 4);
 	
 	return buf;
 }
@@ -92,7 +92,7 @@ static info_lkp_t belkin_test_info[] = {
   { 3, "Done and error", NULL },
   { 4, "Aborted", NULL },
   { 5, "In progress", NULL },
-  { 0, "NULL", NULL }
+  { 0, NULL, NULL }
 };
 
 static char *belkin_overload_conversion_fun(long value) {

@@ -46,7 +46,7 @@ static char *mge_battery_voltage_nominal_fun(long value) {
 	if (!strcmp(model, "Evolution 650"))
 		value = 12;
 
-	snprintf(buf, 20, "%ld", value);
+	snprintf(buf, sizeof(buf), "%ld", value);
 	return buf;
 }
 
@@ -59,7 +59,7 @@ static info_lkp_t mge_battery_voltage_nominal[] = {
 static char *mge_powerfactor_conversion_fun(long value) {
 	static char buf[20];
 
-	snprintf(buf, 20, "%.2f", (double)value / 100);
+	snprintf(buf, sizeof(buf), "%.2f", (double)value / 100);
 	return buf;
 }
 
@@ -71,7 +71,7 @@ static info_lkp_t mge_sensitivity_info[] = {
   { 0, "normal", NULL },
   { 1, "high", NULL },
   { 2, "low", NULL },
-  { 0, "NULL", NULL }
+  { 0, NULL, NULL }
 };
 
 
@@ -354,6 +354,12 @@ static hid_info_t mge_hid2nut[] =
 	{ "battery.voltage.nominal", 0, 0,
 		"UPS.PowerSummary.ConfigVoltage", NULL, "%s",
 		HU_FLAG_OK | HU_FLAG_STATIC, mge_battery_voltage_nominal },
+	{ "battery.protection", ST_FLAG_RW | ST_FLAG_STRING, 5,
+		"UPS.BatterySystem.Battery.DeepDischargeProtection", NULL, "%s",
+		HU_FLAG_OK | HU_FLAG_SEMI_STATIC, &yes_no_info[0] },
+	{ "battery.energysave", ST_FLAG_RW | ST_FLAG_STRING, 5,
+		"UPS.PowerConverter.Input.[3].EnergySaving", NULL, "%s",
+		HU_FLAG_OK | HU_FLAG_SEMI_STATIC, &yes_no_info[0] },
 
 	/* UPS page */
 	{ "ups.load", 0, 1,
@@ -395,57 +401,60 @@ static hid_info_t mge_hid2nut[] =
 	{ "ups.realpower.nominal", ST_FLAG_STRING, 5,
 		"UPS.Flow.[4].ConfigActivePower", NULL, "%.0f",
 		HU_FLAG_OK | HU_FLAG_STATIC, NULL },
-	{ "ups.coldstart", ST_FLAG_RW | ST_FLAG_STRING, 5,
+	{ "ups.start.auto", ST_FLAG_RW | ST_FLAG_STRING, 5,
+		"UPS.PowerConverter.Input.[1].AutomaticRestart", NULL, "%s",
+		HU_FLAG_OK | HU_FLAG_SEMI_STATIC, &yes_no_info[0] },
+	{ "ups.start.battery", ST_FLAG_RW | ST_FLAG_STRING, 5,
 		"UPS.PowerConverter.Input.[3].StartOnBattery", NULL, "%s",
+		HU_FLAG_OK | HU_FLAG_SEMI_STATIC, &yes_no_info[0] },
+	{ "ups.start.reboot", ST_FLAG_RW | ST_FLAG_STRING, 5,
+		"UPS.PowerConverter.Output.ForcedReboot", NULL, "%s",
 		HU_FLAG_OK | HU_FLAG_SEMI_STATIC, &yes_no_info[0] },
 
 	/* Special case: ups.status */
-	{ "ups.status", 0, 1,
-		"UPS.PowerSummary.PresentStatus.ACPresent", NULL, "%.0f",
+	{ "ups.status", 0, 0,
+		"UPS.PowerSummary.PresentStatus.ACPresent", NULL, NULL,
 		HU_FLAG_OK | HU_FLAG_QUICK_POLL, &online_info[0] },
-	{ "ups.status", 0, 1,
-		"UPS.PowerSummary.PresentStatus.Discharging", NULL, "%.0f",
+	{ "ups.status", 0, 0,
+		"UPS.PowerSummary.PresentStatus.Discharging", NULL, NULL,
 		HU_FLAG_OK | HU_FLAG_QUICK_POLL, &discharging_info[0] },
-	{ "ups.status", 0, 1,
-		"UPS.PowerSummary.PresentStatus.Charging", NULL, "%.0f",
+	{ "ups.status", 0, 0,
+		"UPS.PowerSummary.PresentStatus.Charging", NULL, NULL,
 		HU_FLAG_OK | HU_FLAG_QUICK_POLL, &charging_info[0] },
-	{ "ups.status", 0, 1,
-		"UPS.PowerSummary.PresentStatus.ShutdownImminent", NULL, "%.0f",
-		HU_FLAG_OK | HU_FLAG_QUICK_POLL, &shutdownimm_info[0] },
-	{ "ups.status", 0, 1,
-		"UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL, "%.0f",
+	{ "ups.status", 0, 0,
+		"UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL, NULL,
 		HU_FLAG_OK | HU_FLAG_QUICK_POLL, &lowbatt_info[0] },
-	{ "ups.status", 0, 1,
-		"UPS.PowerSummary.PresentStatus.Overload", NULL, "%.0f",
+	{ "ups.status", 0, 0,
+		"UPS.PowerSummary.PresentStatus.Overload", NULL, NULL,
 		HU_FLAG_OK, &overload_info[0] },
-	{ "ups.status", 0, 1,
-		"UPS.PowerSummary.PresentStatus.NeedReplacement", NULL, "%.0f",
+	{ "ups.status", 0, 0,
+		"UPS.PowerSummary.PresentStatus.NeedReplacement", NULL, NULL,
 		HU_FLAG_OK, &replacebatt_info[0] },
-	{ "ups.status", 0, 1,
-		"UPS.PowerConverter.Input.[1].PresentStatus.Buck", NULL, "%.0f",
+	{ "ups.status", 0, 0,
+		"UPS.PowerConverter.Input.[1].PresentStatus.Buck", NULL, NULL,
 		HU_FLAG_OK, &trim_info[0] },
-	{ "ups.status", 0, 1,
-		"UPS.PowerConverter.Input.[1].PresentStatus.Boost", NULL, "%.0f",
+	{ "ups.status", 0, 0,
+		"UPS.PowerConverter.Input.[1].PresentStatus.Boost", NULL, NULL,
 		HU_FLAG_OK, &boost_info[0] },
-	{ "ups.status", 0, 1,
-		"UPS.PowerSummary.PresentStatus.Good", NULL, "%.0f",
+	{ "ups.status", 0, 0,
+		"UPS.PowerSummary.PresentStatus.Good", NULL, NULL,
 		HU_FLAG_OK, &off_info[0] },
-	{ "ups.status", 0, 1,
-		"UPS.PowerConverter.Input.[1].PresentStatus.VoltageOutOfRange", NULL, "%.0f",
+	{ "ups.status", 0, 0,
+		"UPS.PowerConverter.Input.[1].PresentStatus.VoltageOutOfRange", NULL, NULL,
 		HU_FLAG_OK, &vrange_info[0] },
-	/* { "ups.status", 0, 1,
-		"UPS.PowerConverter.Input.[1].PresentStatus.FrequencyOutOfRange", NULL, "%.0f",
+	/* { "ups.status", 0, 0,
+		"UPS.PowerConverter.Input.[1].PresentStatus.FrequencyOutOfRange", NULL, NULL,
 		HU_FLAG_OK, &frange_info[0] }, */
-	/* { "ups.status", 0, 1,
-		"UPS.PowerSummary.PresentStatus.FanFailure", NULL, "%0.f",
+	/* { "ups.status", 0, 0,
+		"UPS.PowerSummary.PresentStatus.FanFailure", NULL, NULL,
 		HU_FLAG_OK, &fan_info[0], */
 	/* Manual bypass */
-	{ "ups.status", 0, 1,
-		"UPS.PowerConverter.Input[4].PresentStatus.Used", NULL, "%.0f",
+	{ "ups.status", 0, 0,
+		"UPS.PowerConverter.Input[4].PresentStatus.Used", NULL, NULL,
 		HU_FLAG_OK, &bypass_info[0] },
 	/* Automatic bypass */
-	{ "ups.status", 0, 1,
-		"UPS.PowerConverter.Input[2].PresentStatus.Used", NULL, "%.0f",
+	{ "ups.status", 0, 0,
+		"UPS.PowerConverter.Input[2].PresentStatus.Used", NULL, NULL,
 		HU_FLAG_OK, &bypass_info[0] },
 
 	/* Input page */
@@ -562,28 +571,6 @@ static hid_info_t mge_hid2nut[] =
 		"UPS.OutletSystem.Outlet.[3].StartupTimer", NULL, "%.0f",
 		HU_FLAG_OK, NULL },
 
-	/*
-	Some other flags that may be of interest, but are not defined in NUT (yet?):
-
-	- UPS.BatterySystem.Battery.DeepDischargeProtection
-		(protect battery against deep discharge, factory default = yes)
-
-	- UPS.PowerConverter.Input.[1].AutomaticRestart
-		(switch on outlets again when the power returns, factory default = yes)
-
-	- UPS.PowerConverter.Input.[3].EnergySaving
-		(shutoff output when running on battery and load < 5W, factory
-		default = no)
-
-	- UPS.PowerConverter.Output.ForcedReboot
-		(toggle output when power returns before shutdown delay, factory
-		default = yes)
-
-	These were all found on the Evolution 650, possibly others will have similar
-	functions. For servers, the defaults are probably all you want to have, so it
-	is questionable if we should add these.
-	 */
-
 	/* instant commands. */
 	/* splited into subset while waiting for extradata support
 	* ie: test.battery.start quick
@@ -609,7 +596,9 @@ static hid_info_t mge_hid2nut[] =
 	{ "beeper.on", 0, 0,
 		"UPS.PowerSummary.AudibleAlarmControl", NULL, "2", /* point to good value */
 		HU_TYPE_CMD | HU_FLAG_OK, NULL },
-	/* FIXME: add beeper.mute , value "3" */
+	{ "beeper.mute", 0, 0,
+		"UPS.PowerSummary.AudibleAlarmControl", NULL, "3", /* point to good value */
+		HU_TYPE_CMD | HU_FLAG_OK, NULL },
 
 	/* Command for the outlet collection */
 	{ "outlet.1.load.off", 0, 0,
@@ -638,14 +627,14 @@ static int mge_shutdown(int ondelay, int offdelay) {
 	char delay[7];
 
 	/* 1) set DelayBeforeStartup */
-	snprintf(delay, 7, "%i", ondelay);
+	snprintf(delay, sizeof(delay), "%i", ondelay);
 	if (setvar("ups.delay.start", delay) != STAT_SET_HANDLED) {
 		upsdebugx(2, "Shutoff command failed (setting ondelay)");
 		return 0;
 	}	
 
 	/* 2) set DelayBeforeShutdown */
-	snprintf(delay, 7, "%i", offdelay);
+	snprintf(delay, sizeof(delay), "%i", offdelay);
 	if (setvar("ups.delay.shutdown", delay) != STAT_SET_HANDLED) {
 		upsdebugx(2, "Shutoff command failed (setting offdelay)");
 		return 0;
@@ -693,7 +682,7 @@ static char *mge_format_model(HIDDevice_t *hd) {
 
 	/* Try with ConfigApparentPower */
 	if (HIDGetItemValue(udev, "UPS.Flow.[4].ConfigApparentPower", &appPower, mge_utab) != 0 ) {
-		snprintf(buf, 16, "%i", (int)appPower);
+		snprintf(buf, sizeof(buf), "%i", (int)appPower);
 		return get_model_name(product, buf);
 	}
 

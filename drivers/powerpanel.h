@@ -117,8 +117,8 @@ static const powpan_valtab_t	out_volt[] = {
 	{ NULL, 0 }
 };
 
-static const powpan_valtab_t 	on_or_off[] = {
-	{ "enabled", 2 }, { "disabled", 0 },
+static const powpan_valtab_t 	yes_no_info[] = {
+	{ "yes", 2 }, { "no", 0 },
 	{ NULL, 0 }
 };
 
@@ -136,7 +136,7 @@ static const struct {
 	{ "input.transfer.low", "R\004\r", "Q\004%c\r", tran_low },
 	{ "battery.charge.low", "R\010\r", "Q\010%c\r", batt_low },
 	{ "output.voltage.nominal", "R\030\r", "Q\030%c\r", out_volt },
-	{ "ups.coldstart", "R\017\r", "Q\017%c\r", on_or_off },
+	{ "ups.start.battery", "R\017\r", "Q\017%c\r", yes_no_info },
 	{ "unknown.variable.0x3d", "R\075\r", "Q\075%c\r", null_val },
 	{ "unknown.variable.0x29", "R\051\r", "Q\051%c\r", null_val },
 	{ "unknown.variable.0x2b", "R\053\r", "Q\053%c\r", null_val },
