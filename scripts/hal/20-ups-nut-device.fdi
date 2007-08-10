@@ -73,13 +73,31 @@
           <merge key="info.addons" type="strlist">hald-addon-tripplite_usb</merge>
           <merge key="battery.type" type="string">ups</merge>
         </match>
+        <match key="usb_device.product_id" int="0x1003">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
         <match key="usb_device.product_id" int="0x2005">
           <append key="info.category" type="string">battery</append>
           <merge key="info.capabilities" type="strlist">battery</merge>
           <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
           <merge key="battery.type" type="string">ups</merge>
         </match>
-        <match key="usb_device.product_id" int="0x1003">
+        <match key="usb_device.product_id" int="0x3012">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+        <match key="usb_device.product_id" int="0x4002">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+        <match key="usb_device.product_id" int="0x4003">
           <append key="info.category" type="string">battery</append>
           <merge key="info.capabilities" type="strlist">battery</merge>
           <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
@@ -89,7 +107,49 @@
 
       <!-- Belkin -->
       <match key="usb_device.vendor_id" int="0x050d">
+        <match key="usb_device.product_id" int="0x0375">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+        <match key="usb_device.product_id" int="0x0551">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+        <match key="usb_device.product_id" int="0x0751">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+        <match key="usb_device.product_id" int="0x0900">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+        <match key="usb_device.product_id" int="0x0910">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+        <match key="usb_device.product_id" int="0x0912">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
         <match key="usb_device.product_id" int="0x0980">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+        <match key="usb_device.product_id" int="0x1100">
           <append key="info.category" type="string">battery</append>
           <merge key="info.capabilities" type="strlist">battery</merge>
           <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
