@@ -86,27 +86,44 @@ typedef struct {
 } info_lkp_t;
 
 /* declarations of public lookup tables */
+
+/* ups.status */
 extern info_lkp_t online_info[];
 extern info_lkp_t discharging_info[];
 extern info_lkp_t charging_info[];
 extern info_lkp_t lowbatt_info[];
 extern info_lkp_t overload_info[];
 extern info_lkp_t replacebatt_info[];
-extern info_lkp_t shutdownimm_info[];
 extern info_lkp_t trim_info[];
 extern info_lkp_t boost_info[];
+extern info_lkp_t bypass_info[];
+extern info_lkp_t off_info[];
+extern info_lkp_t calibration_info[];
+
+
+/* ups.alarm */
+extern info_lkp_t nobattery_info[];
+extern info_lkp_t fanfail_info[];
+extern info_lkp_t shutdownimm_info[];
 extern info_lkp_t overheat_info[];
 extern info_lkp_t awaitingpower_info[];
 extern info_lkp_t commfault_info[];
+extern info_lkp_t timelimitexpired_info[];
+extern info_lkp_t battvoltlo_info[];
+extern info_lkp_t battvolthi_info[];
+extern info_lkp_t chargerfail_info[];
+extern info_lkp_t emergency_stop_info[];
+
+/* input.transfer.reason */
 extern info_lkp_t vrange_info[];
-extern info_lkp_t bypass_info[];
-extern info_lkp_t off_info[];
+extern info_lkp_t frange_info[];
+
+/* non specific */
 extern info_lkp_t test_write_info[];
 extern info_lkp_t test_read_info[];
 extern info_lkp_t beeper_info[];
 extern info_lkp_t yes_no_info[];
 extern info_lkp_t on_off_info[];
-extern info_lkp_t fullycharged_info[];
 extern info_lkp_t date_conversion[];
 extern info_lkp_t hex_conversion[];
 extern info_lkp_t stringid_conversion[];

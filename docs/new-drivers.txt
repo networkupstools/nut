@@ -158,16 +158,18 @@ will do this for you.
 
 Possible values for status_set:
 
- OL     - On line
- OB     - On battery (inverter is providing load power)
- LB     - Low battery
- RB     - The battery needs to be replaced
- BYPASS - UPS bypass circuit is active - no battery protection is available
- CAL    - UPS is currently performing runtime calibration (on battery)
- OFF    - UPS is offline and is not supplying power to the load
- OVER   - UPS is overloaded
- TRIM   - UPS is trimming incoming voltage (called "buck" in some hardware)
- BOOST  - UPS is boosting incoming voltage
+ OL      - On line (mains is present)
+ OB      - On battery (mains is not present)
+ LB      - Low battery
+ RB      - The battery needs to be replaced
+ CHRG    - The battery is charging
+ DISCHRG - The battery is discharging (inverter is providing load power)
+ BYPASS  - UPS bypass circuit is active - no battery protection is available
+ CAL     - UPS is currently performing runtime calibration (on battery)
+ OFF     - UPS is offline and is not supplying power to the load
+ OVER    - UPS is overloaded
+ TRIM    - UPS is trimming incoming voltage (called "buck" in some hardware)
+ BOOST   - UPS is boosting incoming voltage
 
 Anything else will not be recognized by the usual clients.  Coordinate
 with me before creating something new, since there will be duplication
@@ -175,6 +177,8 @@ and ugliness otherwise.
 
 Note: upsd injects "FSD" by itself following that command by a master
 upsmon process.  Drivers must not set that value.
+
+Note: the OL and OB flags are an indication of the input line status only.
 
 UPS alarms
 ==========

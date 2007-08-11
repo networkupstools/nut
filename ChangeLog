@@ -1,3 +1,37 @@
+Sat Aug 11 19:03:15 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * docs/new-drivers.txt:
+   - Added the CHRG and DISCHRG status to the list of recognized status
+     words.
+   - Made a note that OL and OB specifically deal with input status.
+ * drivers/usbhid-ups.[ch]:
+   - Changed the 'ups.status' signals not defined in the above document
+     into 'ups.alarm' (where appropriate).
+   - Added 'input.transfer.reason' logic to merge 'voltage out of range'
+     and 'frequency out of range' into one message (through 'vrange_info'
+     and 'frange_info'. It also takes care of removing this when no
+     longer applicable.
+   - 'shutdownimm' and 'timelimitexp' no longer map to the LB status
+     (this was never a good idea, you need OB LB to have an effect).
+   - Added a whole bunch of other status bits, see the ChangeLog.
+ * drivers/apc-hid.c:
+   - Status 'timelimitexp' is now standard (mapped to an alarm).
+   - The 'batterypres' status is now reversed as 'nobattery' (so that
+     systems not supporting this, won't show alarms).
+   - Commented out the 'fullycharged' status. If anyone can explain the
+     use of this, please step forward.
+ * drivers/liebert-hid.c:
+   - The HID Path 'unmapped.ups.powersummary.idevicechemistry' probably
+     needs a stringid_conversion and then maps to the 'battery.type'
+     (added as a comment, volunteers needed).
+ * drivers/mge-hid.c:
+   - 'battery.capacity' and 'input.transfer.reason' added.
+   - Added plenty of status bits, see the ChangeLog.
+ * drivers/tripplite-hid.c:
+   - Commented out the 'fullycharged' status. If anyone can explain the
+     use of this, please step forward.
+   - Voltage out of range is now mapped to the 'input.transfer.reason'.
+
 Fri Aug 10 22:10:01 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  * scripts/hal/20-ups-nut-device.fdi: add missing entries

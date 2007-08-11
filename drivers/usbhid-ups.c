@@ -66,6 +66,7 @@ static HIDDeviceMatcher_t *reopen_matcher = NULL;
 static HIDDeviceMatcher_t *regex_matcher = NULL;
 static int pollfreq = DEFAULT_POLLFREQ;
 static int ups_status = 0;
+static int input_transfer_reason = 0;
 static bool_t data_has_changed = FALSE; /* for SEMI_STATIC data polling */
 static time_t lastpoll; /* Timestamp the last polling */
 hid_dev_handle_t *udev;
@@ -105,10 +106,14 @@ typedef enum {
 	COMMFAULT,	/* UPS fault; Belkin, TrippLite */
 	DEPLETED,	/* battery depleted; Belkin */
 	TIMELIMITEXP,	/* time limit expired; APC */
-	BATTERYPRES,	/* battery present; APC */
 	FULLYCHARGED,	/* battery full; CyberPower */
 	AWAITINGPOWER,	/* awaiting power; Belkin, TrippLite */
-	VRANGE		/* voltage out of range; TrippLite */
+	FANFAIL,	/* fan failure; MGE */
+	NOBATTERY,	/* battery missing; MGE */
+	BATTVOLTLO,	/* battery voltage too low; MGE */
+	BATTVOLTHI,	/* battery voltage too high; MGE */
+	CHARGERFAIL,	/* battery charger failure; MGE */
+	EMERGENCYSTOP	/* emergency stop; MGE */
 } status_bit_t;
 
 /* --------------------------------------------------------------- */
@@ -136,14 +141,19 @@ static status_lkp_t status_info[] = {
 	{ "boost", STATUS(BOOST) },
 	{ "bypass", STATUS(BYPASS) },
 	{ "off", STATUS(OFF) },
+	{ "cal", STATUS(CAL) },
 	{ "overheat", STATUS(OVERHEAT) },
 	{ "commfault", STATUS(COMMFAULT) },
 	{ "depleted", STATUS(DEPLETED) },
 	{ "timelimitexp", STATUS(TIMELIMITEXP) },
-	{ "batterypres", STATUS(BATTERYPRES) },
 	{ "fullycharged", STATUS(FULLYCHARGED) },
 	{ "awaitingpower", STATUS(AWAITINGPOWER) },
-	{ "vrange", STATUS(VRANGE) },
+	{ "fanfail", STATUS(FANFAIL) },
+	{ "nobattery", STATUS(NOBATTERY) },
+	{ "battvoltlo", STATUS(BATTVOLTLO) },
+	{ "battvolthi", STATUS(BATTVOLTHI) },
+	{ "chargerfail", STATUS(CHARGERFAIL) },
+	{ "emergencystop", STATUS(EMERGENCYSTOP) },
 	{ NULL, 0 },
 };
 
@@ -200,11 +210,6 @@ info_lkp_t replacebatt_info[] = {
   { 0, "!replacebatt", NULL },
   { 0, NULL, NULL }
 };
-info_lkp_t shutdownimm_info[] = {
-  { 1, "shutdownimm", NULL },
-  { 0, "!shutdownimm", NULL },
-  { 0, NULL, NULL }
-};
 info_lkp_t trim_info[] = {
   { 1, "trim", NULL },
   { 0, "!trim", NULL },
@@ -213,6 +218,43 @@ info_lkp_t trim_info[] = {
 info_lkp_t boost_info[] = {
   { 1, "boost", NULL },
   { 0, "!boost", NULL },
+  { 0, NULL, NULL }
+};
+/* FIXME: extend ups.status for BYPASS Manual/Automatic */
+info_lkp_t bypass_info[] = {
+  { 1, "bypass", NULL },
+  { 0, "!bypass", NULL },
+  { 0, NULL, NULL }
+};
+/* note: this value is reverted (0=set, 1=not set). We report "being
+   off" rather than "being on", so that devices that don't implement
+   this variable are "on" by default */
+info_lkp_t off_info[] = {
+  { 0, "off", NULL },
+  { 1, "!off", NULL },
+  { 0, NULL, NULL }
+};
+info_lkp_t calibration_info[] = {
+  { 1, "cal", NULL },
+  { 0, "!cal", NULL },
+  { 0, NULL, NULL }
+};
+/* note: this value is reverted (0=set, 1=not set). We report "battery
+   not installed" rather than "battery installed", so that devices
+   that don't implement this variable have a battery by default */
+info_lkp_t nobattery_info[] = {
+  { 1, "!nobattery", NULL },
+  { 0, "nobattery", NULL },
+  { 0, NULL, NULL }
+};
+info_lkp_t fanfail_info[] = {
+  { 1, "fanfail", NULL },
+  { 0, "!fanfail", NULL },
+  { 0, NULL, NULL }
+};
+info_lkp_t shutdownimm_info[] = {
+  { 1, "shutdownimm", NULL },
+  { 0, "!shutdownimm", NULL },
   { 0, NULL, NULL }
 };
 info_lkp_t overheat_info[] = {
@@ -230,26 +272,31 @@ info_lkp_t commfault_info[] = {
   { 0, "!commfault", NULL },
   { 0, NULL, NULL }
 };
-info_lkp_t vrange_info[] = {
-  { 1, "vrange", NULL },
-  { 0, "!vrange", NULL },
+info_lkp_t timelimitexpired_info[] = {
+  { 1, "timelimitexp", NULL },
+  { 0, "!timelimitexp", NULL },
   { 0, NULL, NULL }
 };
-/* FIXME: extend ups.status for BYPASS Manual/Automatic */
-info_lkp_t bypass_info[] = {
-  { 1, "bypass", NULL },
-  { 0, "!bypass", NULL },
+info_lkp_t battvoltlo_info[] = {
+  { 1, "battvoltlo", NULL },
+  { 0, "!battvoltlo", NULL },
   { 0, NULL, NULL }
 };
-/* note: this value is reverted (0=set, 1=not set). We report "being
-   off" rather than "being on", so that devices that don't implement
-   this variable are "on" by default */
-info_lkp_t off_info[] = {
-  { 0, "off", NULL },
-  { 1, "!off", NULL },
+info_lkp_t battvolthi_info[] = {
+  { 1, "battvolthi", NULL },
+  { 0, "!battvolthi", NULL },
   { 0, NULL, NULL }
 };
-/* FIXME: add CAL */
+info_lkp_t chargerfail_info[] = {
+  { 1, "chargerfail", NULL },
+  { 0, "!chargerfail", NULL },
+  { 0, NULL, NULL }
+};
+info_lkp_t emergency_stop_info[] = {
+  { 1, "emergencystop", NULL },
+  { 0, "!emergencystop", NULL },
+  { 0, NULL, NULL }
+};
 
 info_lkp_t test_write_info[] = {
   { 0, "No test", NULL },
@@ -291,6 +338,59 @@ info_lkp_t fullycharged_info[] = { /* used by CyberPower and TrippLite */
   { 1, "fullycharged", NULL },
   { 0, "!fullycharged", NULL },
   { 0, NULL, NULL }
+};
+
+/* The input.transfer.reason may be caused by several problems
+ * at the same time. When these reasons clear, we also want to
+ * clear the reason, hence the fairly complex way of dealing
+ * with this.
+ */
+static char *transfer_reason(void)
+{
+	switch (input_transfer_reason)
+	{
+	case 3:
+		return "input voltage and frequency out of range";
+	case 2:
+		return "input voltage out of range";
+	case 1:
+		return "input frequency out of range";
+	default:
+		dstate_delinfo("input.transfer.reason");
+		/* returning NULL causes the lookup to fail
+		 * and no data is set (which makes sure the
+		 * input transfer reason is not set) */
+		return NULL;
+	}
+}
+
+static char *vrange_info_fun(long value)
+{
+	if (value)
+		input_transfer_reason |= 0x0002;
+	else
+		input_transfer_reason &= ~0x0002;
+
+	return transfer_reason();
+}	
+
+info_lkp_t vrange_info[] = {
+  { 0, NULL, vrange_info_fun }
+};
+
+
+static char *frange_info_fun(long value)
+{
+	if (value)
+		input_transfer_reason |= 0x0001;
+	else
+		input_transfer_reason &= ~0x0001;
+
+	return transfer_reason();
+}
+
+info_lkp_t frange_info[] = {
+  { 0, NULL, frange_info_fun }
 };
 
 /* returns statically allocated string - must not use it again before
@@ -966,6 +1066,50 @@ static int reconnect_ups(void)
    status. */
 static void ups_status_set(void)
 {
+	alarm_init();
+
+	if (ups_status & STATUS(REPLACEBATT)) {
+		status_set("Replace battery!");
+	}
+	if (ups_status & STATUS(SHUTDOWNIMM)) {
+		alarm_set("Shutdown imminent!");
+	}
+	if (ups_status & STATUS(TIMELIMITEXP)) {
+		alarm_set("Timelimit expired!");
+	}
+	if (ups_status & STATUS(FANFAIL)) {
+		alarm_set("Fan failure!");
+	}
+	if (ups_status & STATUS(NOBATTERY)) {
+		alarm_set("No battery installed!");
+	}
+	if (ups_status & STATUS(BATTVOLTLO)) {
+		alarm_set("Battery voltage too low!");
+	}
+	if (ups_status & STATUS(BATTVOLTHI)) {
+		alarm_set("Battery voltage too high!");
+	}
+	if (ups_status & STATUS(CHARGERFAIL)) {
+		alarm_set("Battery charger fail!");
+	}
+	if (ups_status & STATUS(OVERHEAT)) {
+		alarm_set("Temperature too high!");	/* overheat; Belkin, TrippLite */
+	}
+	if (ups_status & STATUS(COMMFAULT)) {
+		alarm_set("Internal UPS fault!");	/* UPS fault; Belkin, TrippLite */
+	}
+	if (ups_status & STATUS(DEPLETED)) {
+		alarm_set("Battery depleted!");		/* battery depleted; Belkin */
+	}
+	if (ups_status & STATUS(AWAITINGPOWER)) {
+		status_set("Awaiting power!");		/* awaiting power; Belkin, TrippLite */
+	}
+	if (ups_status & STATUS(EMERGENCYSTOP)) {
+		status_set("Emergency stop!");		/* emergency stop; MGE */
+	}
+
+	alarm_commit();
+
 	/* clear status buffer before begining */
 	status_init();
 
@@ -980,9 +1124,7 @@ static void ups_status_set(void)
 	if (ups_status & STATUS(CHRG)) {
 		status_set("CHRG");		/* charging */
 	}
-	if (ups_status & (STATUS(LOWBATT)
-			  | STATUS(SHUTDOWNIMM)
-			  | STATUS(TIMELIMITEXP))) {
+	if (ups_status & STATUS(LOWBATT)) {
 		status_set("LB");		/* low battery */
 	}
 	if (ups_status & STATUS(OVERLOAD)) {
@@ -1006,22 +1148,7 @@ static void ups_status_set(void)
 	if (ups_status & STATUS(CAL)) {
 		status_set("CAL");		/* calibration */
 	}
-	if (ups_status & STATUS(OVERHEAT)) {
-		status_set("OVERHEAT");		/* overheat; Belkin, TrippLite */
-	}
-	if (ups_status & STATUS(COMMFAULT)) {
-		status_set("COMMFAULT");	/* UPS fault; Belkin, TrippLite */
-	}
-	if (ups_status & STATUS(DEPLETED)) {
-		status_set("DEPLETED");		/* battery depleted; Belkin */
-	}
-	if (ups_status & STATUS(AWAITINGPOWER)) {
-		status_set("AWAITINGPOWER");	/* awaiting power; Belkin, TrippLite */
-	}
-	if (ups_status & STATUS(VRANGE)) {
-		status_set("VRANGE");		/* voltage out of range; TrippLite */
-	}
-	
+
 	/* Commit the status buffer */
 	status_commit();
 }

@@ -82,22 +82,8 @@ info_lkp_t apc_date_conversion[] = {
   { 0, NULL, apc_date_conversion_fun }
 };
 
-/* APC has two non-NUT-standard status items: "time limit expired" and
-   "battery present". The usbhid-ups driver currently ignores
-   batterypres, and maps timelimitexp to LB. CyberPower has the
-   non-NUT-standard status item "fully charged". The usbhid-ups driver
-   currently ignores it. */
-static info_lkp_t timelimitexpired_info[] = {
-  { 1, "timelimitexp", NULL },
-  { 0, "!timelimitexp", NULL },
-  { 0, NULL, NULL }
-};
-
-static info_lkp_t batterypresent_info[] = {
-  { 1, "batterypres", NULL },
-  { 0, "!batterypres", NULL },
-  { 0, NULL, NULL }
-};
+/* CyberPower has the non-NUT-standard status item "fully charged".
+   The usbhid-ups driver currently ignores it. */
 
 /* This was determined empirically from observing a BackUPS LS 500.
  */
@@ -228,7 +214,7 @@ static hid_info_t apc_hid2nut[] = {
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.Overload", NULL, "%.0f", HU_FLAG_OK, &overload_info[0] },
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL, "%.0f", HU_FLAG_OK, &replacebatt_info[0] },
   { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.RemainingTimeLimitExpired", NULL, "%.0f", HU_FLAG_OK, &timelimitexpired_info[0] },
-  { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.BatteryPresent", NULL, "%.0f", HU_FLAG_OK, &batterypresent_info[0] },
+  { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.BatteryPresent", NULL, "%.0f", HU_FLAG_OK, &nobattery_info[0] },
 
   { "ups.status", 0, 1, "UPS.PowerSummary.Charging", NULL, "%.0f", HU_FLAG_OK, &charging_info[0] }, /* Back-UPS 500 */
   { "ups.status", 0, 1, "UPS.PowerSummary.Discharging", NULL, "%.0f", HU_FLAG_OK, &discharging_info[0] }, /* Back-UPS 500 */
@@ -237,7 +223,7 @@ static hid_info_t apc_hid2nut[] = {
   { "ups.status", 0, 1, "UPS.PowerSummary.ShutdownImminent", NULL, "%.0f", HU_FLAG_OK, &shutdownimm_info[0] },
   { "ups.status", 0, 1, "UPS.PowerSummary.APCStatusFlag", NULL, "%.0f", HU_FLAG_OK, &apcstatusflag_info[0] }, /* APC Back-UPS LS 500 */
 
-  { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.FullyCharged", NULL, "%.0f", HU_FLAG_OK, &fullycharged_info[0] }, /* CyberPower */
+  /* { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.FullyCharged", NULL, "%.0f", HU_FLAG_OK, &fullycharged_info[0] }, /* CyberPower */
   { "ups.status", 0, 1, "UPS.Output.Overload", NULL, "%.0f", HU_FLAG_OK, &overload_info[0] }, /* CyberPower */
   { "ups.status", 0, 1, "UPS.Output.Boost", NULL, "%.0f", HU_FLAG_OK, &boost_info[0] }, /* CyberPower */
 
