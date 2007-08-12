@@ -747,7 +747,6 @@ static int control_outlet(int outlet_id, int state)
 static int instcmd(const char *cmdname, const char *extra)
 {
 	unsigned char buf[10];
-	int ret;
 
 	if(tl_model == TRIPP_LITE_SMARTPRO) {
 		if (!strcasecmp(cmdname, "test.battery.start")) {

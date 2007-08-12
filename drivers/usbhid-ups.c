@@ -815,7 +815,7 @@ void upsdrv_initups(void)
 
 	r = new_regex_matcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
 	if (r==-1) {
-		fatalx(EXIT_FAILURE, "new_regex_matcher: %s", strerror(errno));
+		fatal_with_errno(EXIT_FAILURE, "new_regex_matcher()");
 	} else if (r) {
 		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[r]);
 	}
@@ -824,7 +824,7 @@ void upsdrv_initups(void)
 
 #else
 	/*!
-	 * But SHUT is a serial protocol, so it need
+	 * But SHUT is a serial protocol, so it needs
 	 * the device path
 	 */
 	udev = (hid_dev_handle_t *)xmalloc(sizeof(hid_dev_handle_t));
@@ -843,7 +843,7 @@ void upsdrv_initups(void)
 	/* create a new matcher for later reopening */
 	reopen_matcher = new_exact_matcher(hd);
 	if (!reopen_matcher) {
-		upsdebugx(2, "new_exact_matcher: %s", strerror(errno));
+		fatal_with_errno(EXIT_FAILURE, "new_exact_matcher()");
 	}
 	/* link the two matchers */
 	reopen_matcher->next = regex_matcher;

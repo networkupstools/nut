@@ -1,3 +1,8 @@
+Sun Aug 12 02:34:19 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ * drivers/tripplite_usb.c: removed an unused variable
+ * drivers/usbhid-ups.c: fixed a potential segfault
+	
 Sat Aug 11 19:03:15 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * docs/new-drivers.txt:
