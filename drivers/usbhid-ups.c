@@ -1278,13 +1278,13 @@ static int ups_infoval_set(hid_info_t *item, float value)
 		/* deal with boolean items */
 		if (!strncmp(item->info_type, "BOOL", 4)) {
 			process_boolean_info(nutvalue);
-			return 1;
+			return 0;
 		}
 
 		/* deal with alarm items */
 		if (!strncmp(item->info_type, "ups.alarm", 9)) {
 			alarm_set(nutvalue);
-			return 1;
+			return 0;
 		}
 
 		dstate_setinfo(item->info_type, item->dfl, nutvalue);
@@ -1292,5 +1292,5 @@ static int ups_infoval_set(hid_info_t *item, float value)
 		dstate_setinfo(item->info_type, item->dfl, value);
 	}
 
-	return 0;
+	return 1;
 }

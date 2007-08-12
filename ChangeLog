@@ -1,3 +1,9 @@
+Sun Aug 12 18:54:22 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/usbhid-ups.c:
+   - Modifying the comment in the header of a function doesn't change the
+     returncodes of it. Too bad I assumed that the comment was correct.
+
 Sun Aug 12 18:37:00 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/*-hid.c, drivers/usbhid-ups.[ch]:
