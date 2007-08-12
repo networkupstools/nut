@@ -755,10 +755,6 @@ int dstate_is_stale(void)
 void status_init(void)
 {
 	memset(&status_buf, '\0', sizeof(status_buf));
-
-	/* this is always first */
-	if (alarm_active)
-		snprintf(status_buf, sizeof(status_buf), "ALARM");
 }
 
 /* add a status element */
@@ -774,7 +770,10 @@ void status_set(const char *buf)
 /* write the status_buf into the externally visible dstate storage */
 void status_commit(void)
 {
-	dstate_setinfo("ups.status", "%s", status_buf);
+	if (alarm_active)
+		dstate_setinfo("ups.status", "ALARM %s", status_buf);
+	else
+		dstate_setinfo("ups.status", "%s", status_buf);
 }
 
 /* similar handlers for ups.alarm */

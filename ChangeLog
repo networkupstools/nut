@@ -1,3 +1,33 @@
+Sun Aug 12 18:37:00 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/*-hid.c, drivers/usbhid-ups.[ch]:
+   - Added HU_FLAG_QUICK_POLL flag on all hid_info_t that deal with the
+     'online', 'chrg', 'dischrg' and 'lowbatt' internal flags so that the
+     HU_WALKMODE_QUICK_UPDATE is actually doing something useful.
+   - Unconditionally do a HU_WALKMODE_QUICK_UPDATE if we're not running a
+     HU_WALKMODE_FULL_UPDATE. With the above, this means that all but the
+     MGE subdriver will do more polls to the UPS, so this needs to be
+     verified.
+   - Changed NUT variable name from "ups.status" to "BOOL" for hid_info_t
+     elements that would only set/clear an internal status flag. This in
+     order to prevent confusion by developers, since these elements can
+     deal with both "ups.alarm" and "ups.status".
+   - Separated setting "ups.status" and "ups.alarm". The first will be
+     done each time upsdrv_updateinfo() runs, while the latter will only
+     be processed when doing a full update. This makes it possible that
+     subdrivers set vendor specific alarms, without having to change
+     usbhid-ups at all.
+   - Don't set CHRG when the internal flag 'fullycharged' is set and don't
+     set DISCHARGE when the internal flag 'depleted' is set.
+ * drivers/apc-hid.c:
+   - Changed "ups.power.nominal" to "ups.realpower.nominal", which is the
+     correct NUT parameter for CyberPower.
+ * drivers/mge-hid.c:
+   - Added an example for a vendor specific alarm (emergency stop).
+ * drivers/dstate.c:
+   - Prepend the ALARM status (if applicable) in status_commit() instead
+     of in status_init().
+
 Sun Aug 12 02:34:19 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  * drivers/tripplite_usb.c: removed an unused variable

@@ -86,8 +86,7 @@ typedef struct {
 } info_lkp_t;
 
 /* declarations of public lookup tables */
-
-/* ups.status */
+/* boolean status values from UPS */
 extern info_lkp_t online_info[];
 extern info_lkp_t discharging_info[];
 extern info_lkp_t charging_info[];
@@ -99,9 +98,6 @@ extern info_lkp_t boost_info[];
 extern info_lkp_t bypass_info[];
 extern info_lkp_t off_info[];
 extern info_lkp_t calibration_info[];
-
-
-/* ups.alarm */
 extern info_lkp_t nobattery_info[];
 extern info_lkp_t fanfail_info[];
 extern info_lkp_t shutdownimm_info[];
@@ -113,6 +109,8 @@ extern info_lkp_t battvoltlo_info[];
 extern info_lkp_t battvolthi_info[];
 extern info_lkp_t chargerfail_info[];
 extern info_lkp_t emergency_stop_info[];
+extern info_lkp_t fullycharged_info[];
+extern info_lkp_t depleted_info[];
 
 /* input.transfer.reason */
 extern info_lkp_t vrange_info[];

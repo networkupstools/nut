@@ -40,19 +40,6 @@
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *watts_to_av_conversion_fun(long value) {
-	static char buf[20];
-	
-	snprintf(buf, sizeof(buf), "%.0f", value * 1.4142136);
-	return buf;
-}
-
-static info_lkp_t watts_to_av_conversion[] = {
-	{ 0, NULL, watts_to_av_conversion_fun }
-};
-
-/* returns statically allocated string - must not use it again before
-   done with result! */
 static char *apc_date_conversion_fun(long value) {
   static char buf[20];
   int year, month, day;
@@ -198,34 +185,34 @@ static hid_info_t apc_hid2nut[] = {
   { "ups.beeper.status", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", HU_FLAG_OK, &beeper_info[0] },
   { "ups.mfr.date", 0, 0, "UPS.ManufacturerDate", NULL, "%s", HU_FLAG_OK, &date_conversion[0] },
   { "ups.mfr.date", 0, 0, "UPS.PowerSummary.ManufacturerDate", NULL, "%s", HU_FLAG_OK, &date_conversion[0] }, /* Back-UPS 500 */
-  { "ups.power.nominal", 0, 0, "UPS.Output.ConfigActivePower", NULL, "%s", HU_FLAG_OK, watts_to_av_conversion }, /* CyberPower */
+  { "ups.realpower.nominal", 0, 0, "UPS.Output.ConfigActivePower", NULL, "%s", HU_FLAG_OK, NULL }, /* CyberPower */
 
 
   /* the below one need to be discussed as we might need to complete
    * the ups.test sub collection
    * { "ups.test.panel", 0, 0, "UPS.APCPanelTest", NULL, "%.0f", HU_FLAG_OK, NULL }, */
 
-  /* Special case: ups.status */
-  { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, "%.0f", HU_FLAG_OK, &online_info[0] },
-  { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.Discharging", NULL, "%.0f", HU_FLAG_OK, &discharging_info[0] },
-  { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.Charging", NULL, "%.0f", HU_FLAG_OK, &charging_info[0] },
-  { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.ShutdownImminent", NULL, "%.0f", HU_FLAG_OK, &shutdownimm_info[0] },
-  { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL, "%.0f", HU_FLAG_OK, &lowbatt_info[0] },
-  { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.Overload", NULL, "%.0f", HU_FLAG_OK, &overload_info[0] },
-  { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL, "%.0f", HU_FLAG_OK, &replacebatt_info[0] },
-  { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.RemainingTimeLimitExpired", NULL, "%.0f", HU_FLAG_OK, &timelimitexpired_info[0] },
-  { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.BatteryPresent", NULL, "%.0f", HU_FLAG_OK, &nobattery_info[0] },
+  /* Special case: ups.status & ups.alarm */
+  { "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &online_info[0] },
+  { "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.Discharging", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &discharging_info[0] },
+  { "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.Charging", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &charging_info[0] },
+  { "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.ShutdownImminent", NULL, "%.0f", HU_FLAG_OK, &shutdownimm_info[0] },
+  { "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &lowbatt_info[0] },
+  { "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.Overload", NULL, "%.0f", HU_FLAG_OK, &overload_info[0] },
+  { "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL, "%.0f", HU_FLAG_OK, &replacebatt_info[0] },
+  { "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.RemainingTimeLimitExpired", NULL, "%.0f", HU_FLAG_OK, &timelimitexpired_info[0] },
+  { "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.BatteryPresent", NULL, "%.0f", HU_FLAG_OK, &nobattery_info[0] },
 
-  { "ups.status", 0, 1, "UPS.PowerSummary.Charging", NULL, "%.0f", HU_FLAG_OK, &charging_info[0] }, /* Back-UPS 500 */
-  { "ups.status", 0, 1, "UPS.PowerSummary.Discharging", NULL, "%.0f", HU_FLAG_OK, &discharging_info[0] }, /* Back-UPS 500 */
-  { "ups.status", 0, 1, "UPS.PowerSummary.ACPresent", NULL, "%.0f", HU_FLAG_OK, &online_info[0] }, /* Back-UPS 500 */
-  { "ups.status", 0, 1, "UPS.PowerSummary.BelowRemainingCapacityLimit", NULL, "%.0f", HU_FLAG_OK, &lowbatt_info[0] }, /* Back-UPS 500 */
-  { "ups.status", 0, 1, "UPS.PowerSummary.ShutdownImminent", NULL, "%.0f", HU_FLAG_OK, &shutdownimm_info[0] },
-  { "ups.status", 0, 1, "UPS.PowerSummary.APCStatusFlag", NULL, "%.0f", HU_FLAG_OK, &apcstatusflag_info[0] }, /* APC Back-UPS LS 500 */
+  { "BOOL", 0, 1, "UPS.PowerSummary.Charging", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &charging_info[0] }, /* Back-UPS 500 */
+  { "BOOL", 0, 1, "UPS.PowerSummary.Discharging", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &discharging_info[0] }, /* Back-UPS 500 */
+  { "BOOL", 0, 1, "UPS.PowerSummary.ACPresent", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &online_info[0] }, /* Back-UPS 500 */
+  { "BOOL", 0, 1, "UPS.PowerSummary.BelowRemainingCapacityLimit", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &lowbatt_info[0] }, /* Back-UPS 500 */
+  { "BOOL", 0, 1, "UPS.PowerSummary.ShutdownImminent", NULL, "%.0f", HU_FLAG_OK, &shutdownimm_info[0] },
+  { "BOOL", 0, 1, "UPS.PowerSummary.APCStatusFlag", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &apcstatusflag_info[0] }, /* APC Back-UPS LS 500 */
 
-  /* { "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.FullyCharged", NULL, "%.0f", HU_FLAG_OK, &fullycharged_info[0] }, /* CyberPower */
-  { "ups.status", 0, 1, "UPS.Output.Overload", NULL, "%.0f", HU_FLAG_OK, &overload_info[0] }, /* CyberPower */
-  { "ups.status", 0, 1, "UPS.Output.Boost", NULL, "%.0f", HU_FLAG_OK, &boost_info[0] }, /* CyberPower */
+  { "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.FullyCharged", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &fullycharged_info[0] }, /* CyberPower */
+  { "BOOL", 0, 1, "UPS.Output.Overload", NULL, "%.0f", HU_FLAG_OK, &overload_info[0] }, /* CyberPower */
+  { "BOOL", 0, 1, "UPS.Output.Boost", NULL, "%.0f", HU_FLAG_OK, &boost_info[0] }, /* CyberPower */
 
   /* Input page */
   { "input.voltage", 0, 0, "UPS.Input.Voltage", NULL, "%.1f", HU_FLAG_OK, NULL },

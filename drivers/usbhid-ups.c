@@ -77,7 +77,8 @@ static hid_info_t *find_nut_info_valid(const char *varname);
 static hid_info_t *find_hid_info(const char *hidname);
 static char *hu_find_infoval(info_lkp_t *hid2info, long value);
 static long hu_find_valinfo(info_lkp_t *hid2info, const char* value);
-static void process_status_info(char *nutvalue);
+static void process_boolean_info(char *nutvalue);
+static void ups_alarm_set(void);
 static void ups_status_set(void);
 static void identify_ups ();
 static bool_t hid_ups_walk(int mode);
@@ -85,7 +86,7 @@ static int reconnect_ups(void);
 static int ups_infoval_set(hid_info_t *item, float value);
 
 /* ---------------------------------------------------------------------- */
-/* data for ups.status processing */
+/* data for processing boolean values from UPS */
 
 #define	STATUS(x)	((unsigned)1<<x)
 
@@ -112,20 +113,19 @@ typedef enum {
 	NOBATTERY,	/* battery missing; MGE */
 	BATTVOLTLO,	/* battery voltage too low; MGE */
 	BATTVOLTHI,	/* battery voltage too high; MGE */
-	CHARGERFAIL,	/* battery charger failure; MGE */
-	EMERGENCYSTOP	/* emergency stop; MGE */
+	CHARGERFAIL	/* battery charger failure; MGE */
 } status_bit_t;
 
 /* --------------------------------------------------------------- */
-/* Struct & data for ups.status processing                         */
+/* Struct & data for boolean processing                            */
 /* --------------------------------------------------------------- */
 
 /* Note: this structure holds internal status info, directly as
    collected from the hardware; not yet converted to official NUT
-   status */
+   status or alarms */
 typedef struct {
-	char	*status_str;	/* ups.status string */
-	int	status_mask;	/* ups_status mask */
+	char	*status_str;	/* ups status string */
+	int	status_mask;	/* ups status mask */
 } status_lkp_t;
 
 static status_lkp_t status_info[] = {
@@ -153,7 +153,6 @@ static status_lkp_t status_info[] = {
 	{ "battvoltlo", STATUS(BATTVOLTLO) },
 	{ "battvolthi", STATUS(BATTVOLTHI) },
 	{ "chargerfail", STATUS(CHARGERFAIL) },
-	{ "emergencystop", STATUS(EMERGENCYSTOP) },
 	{ NULL, 0 },
 };
 
@@ -164,7 +163,7 @@ static status_lkp_t status_info[] = {
 
 /* the purpose of the following status conversions is to collect
    information, not to interpret it. The function
-   process_status_info() remembers these values by updating the global
+   process_boolean_info() remembers these values by updating the global
    variable ups_status. Interpretation happens in ups_status_set,
    where they are converted to standard NUT status strings. Notice
    that the below conversions do not yield standard NUT status
@@ -292,9 +291,14 @@ info_lkp_t chargerfail_info[] = {
   { 0, "!chargerfail", NULL },
   { 0, NULL, NULL }
 };
-info_lkp_t emergency_stop_info[] = {
-  { 1, "emergencystop", NULL },
-  { 0, "!emergencystop", NULL },
+info_lkp_t fullycharged_info[] = { /* used by CyberPower and TrippLite */
+  { 1, "fullycharged", NULL },
+  { 0, "!fullycharged", NULL },
+  { 0, NULL, NULL }
+};
+info_lkp_t depleted_info[] = {
+  { 1, "depleted", NULL },
+  { 0, "!depleted", NULL },
   { 0, NULL, NULL }
 };
 
@@ -334,11 +338,6 @@ info_lkp_t on_off_info[] = {
 	{ 0, NULL, NULL }
 };
 
-info_lkp_t fullycharged_info[] = { /* used by CyberPower and TrippLite */
-  { 1, "fullycharged", NULL },
-  { 0, "!fullycharged", NULL },
-  { 0, NULL, NULL }
-};
 
 /* The input.transfer.reason may be caused by several problems
  * at the same time. When these reasons clear, we also want to
@@ -716,23 +715,32 @@ void upsdrv_updateinfo(void)
 		}
 
 		HIDFreeEvents(eventlist);
-	} else {
-		/* Quick poll data only to see if the UPS is still connected */
-		if (hid_ups_walk(HU_WALKMODE_QUICK_UPDATE) == FALSE)
-			return;
 	}
+
+	/* clear status buffer before begining */
+	status_init();
 
 	/* Do a full update (polling) every pollfreq or upon data change (ie setvar/instcmd) */
 	if ( (time(NULL) > (lastpoll + pollfreq)) || (data_has_changed == TRUE) ) {
+
+		alarm_init();
 
 		if (hid_ups_walk(HU_WALKMODE_FULL_UPDATE) == FALSE)
 			return;
 
 		time(&lastpoll);
 		data_has_changed = FALSE;
+
+		ups_alarm_set();
+		alarm_commit();
+	} else {
+		/* Quick poll data only to see if the UPS is still connected */
+		if (hid_ups_walk(HU_WALKMODE_QUICK_UPDATE) == FALSE)
+			return;
 	}
 
 	ups_status_set();
+	status_commit();
 
 	dstate_dataok();
 }
@@ -740,12 +748,12 @@ void upsdrv_updateinfo(void)
 
 /* Update ups_status to remember this status item. Interpretation is
    done in ups_status_set(). */
-static void process_status_info(char *nutvalue)
+static void process_boolean_info(char *nutvalue)
 {
 	status_lkp_t *status_item;
 	int clear = 0;
 
-	upsdebugx(5, "process_status_info: %s", nutvalue);
+	upsdebugx(5, "process_boolean_info: %s", nutvalue);
 
 	if (*nutvalue == '!') {
 		nutvalue++;
@@ -763,8 +771,10 @@ static void process_status_info(char *nutvalue)
 			ups_status |= status_item->status_mask;
 		}
 
-		break;
+		return;
 	}
+
+	upsdebugx(5, "Warning: %s not in list of known values", nutvalue);
 }
 
 void upsdrv_initinfo(void)
@@ -951,8 +961,9 @@ static bool_t hid_ups_walk(int mode)
 			}
 
 			/* Avoid redundancy when multiple defines (RO/RW)
-			 * ups.status is not set during HU_WALKMODE_INIT,
-			 * so this doesn't need to be caught here. */
+			 * ups.status and ups.alarm is not set during
+			   HU_WALKMODE_INIT, so these don't need to be
+			   caught here. */
 			if (dstate_getinfo(item->info_type) != NULL) {
 
 				item->hidflags &= ~HU_FLAG_OK;
@@ -1063,13 +1074,11 @@ static int reconnect_ups(void)
 }
 
 /* Convert the local status information to NUT format and set NUT
-   status. */
-static void ups_status_set(void)
+   alarms. */
+static void ups_alarm_set(void)
 {
-	alarm_init();
-
 	if (ups_status & STATUS(REPLACEBATT)) {
-		status_set("Replace battery!");
+		alarm_set("Replace battery!");
 	}
 	if (ups_status & STATUS(SHUTDOWNIMM)) {
 		alarm_set("Shutdown imminent!");
@@ -1098,30 +1107,26 @@ static void ups_status_set(void)
 	if (ups_status & STATUS(COMMFAULT)) {
 		alarm_set("Internal UPS fault!");	/* UPS fault; Belkin, TrippLite */
 	}
-	if (ups_status & STATUS(DEPLETED)) {
-		alarm_set("Battery depleted!");		/* battery depleted; Belkin */
-	}
 	if (ups_status & STATUS(AWAITINGPOWER)) {
-		status_set("Awaiting power!");		/* awaiting power; Belkin, TrippLite */
+		alarm_set("Awaiting power!");		/* awaiting power; Belkin, TrippLite */
 	}
-	if (ups_status & STATUS(EMERGENCYSTOP)) {
-		status_set("Emergency stop!");		/* emergency stop; MGE */
-	}
+}
 
-	alarm_commit();
-
-	/* clear status buffer before begining */
-	status_init();
-
+/* Convert the local status information to NUT format and set NUT
+   status. */
+static void ups_status_set(void)
+{
 	if (ups_status & STATUS(ONLINE)) {
 		status_set("OL");		/* on line */
 	} else {
 		status_set("OB");               /* on battery */
 	}
-	if (ups_status & STATUS(DISCHRG)) {
-		status_set("DISCHRG");	        /* discharging */         
+	if ((ups_status & STATUS(DISCHRG)) &&
+		!(ups_status & STATUS(DEPLETED))) {
+		status_set("DISCHRG");	        /* discharging */
 	}
-	if (ups_status & STATUS(CHRG)) {
+	if ((ups_status & STATUS(CHRG)) &&
+		!(ups_status & STATUS(FULLYCHARGED))) {
 		status_set("CHRG");		/* charging */
 	}
 	if (ups_status & STATUS(LOWBATT)) {
@@ -1270,9 +1275,15 @@ static int ups_infoval_set(hid_info_t *item, float value)
 			return -1;
 		}
 
-		/* deal with status items */
-		if (!strncmp(item->info_type, "ups.status", 10)) {
-			process_status_info(nutvalue);
+		/* deal with boolean items */
+		if (!strncmp(item->info_type, "BOOL", 4)) {
+			process_boolean_info(nutvalue);
+			return 1;
+		}
+
+		/* deal with alarm items */
+		if (!strncmp(item->info_type, "ups.alarm", 9)) {
+			alarm_set(nutvalue);
 			return 1;
 		}
 

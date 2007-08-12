@@ -87,6 +87,11 @@ static info_lkp_t mge_sensitivity_info[] = {
   { 0, NULL, NULL }
 };
 
+static info_lkp_t mge_emergency_stop[] = {
+  { 1, "Emergency stop!", NULL },
+  { 0, NULL, NULL }
+};
+
 
 /* --------------------------------------------------------------- */
 /*      Vendor-specific usage table */
@@ -378,6 +383,9 @@ static hid_info_t mge_hid2nut[] =
 		HU_FLAG_OK | HU_FLAG_SEMI_STATIC, yes_no_info },
 
 	/* UPS page */
+	{ "ups.firmware", 0, 0,
+		"UPS.PowerSummary.iVersion", NULL, "%s",
+		HU_FLAG_OK | HU_FLAG_STATIC, stringid_conversion },
 	{ "ups.load", 0, 0,
 		"UPS.PowerSummary.PercentLoad", NULL, "%.0f",
 		HU_FLAG_OK, NULL },
@@ -427,71 +435,71 @@ static hid_info_t mge_hid2nut[] =
 		"UPS.PowerConverter.Output.ForcedReboot", NULL, "%s",
 		HU_FLAG_OK | HU_FLAG_SEMI_STATIC, yes_no_info },
 
-	/* Special case: ups.status */
-	{ "ups.status", 0, 0,
+	/* Special case: boolean values that are mapped to ups.status and ups.alarm */
+	{ "BOOL", 0, 0,
 		"UPS.PowerSummary.PresentStatus.ACPresent", NULL, NULL,
 		HU_FLAG_OK | HU_FLAG_QUICK_POLL, online_info },
-	{ "ups.status", 0, 0,
+	{ "BOOL", 0, 0,
 		"UPS.PowerSummary.PresentStatus.Discharging", NULL, NULL,
 		HU_FLAG_OK | HU_FLAG_QUICK_POLL, discharging_info },
-	{ "ups.status", 0, 0,
+	{ "BOOL", 0, 0,
 		"UPS.PowerSummary.PresentStatus.Charging", NULL, NULL,
 		HU_FLAG_OK | HU_FLAG_QUICK_POLL, charging_info },
-	{ "ups.status", 0, 0,
+	{ "BOOL", 0, 0,
 		"UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL, NULL,
 		HU_FLAG_OK | HU_FLAG_QUICK_POLL, lowbatt_info },
-	{ "ups.status", 0, 0,
+	{ "BOOL", 0, 0,
 		"UPS.PowerSummary.PresentStatus.Overload", NULL, NULL,
 		HU_FLAG_OK, overload_info },
-	{ "ups.status", 0, 0,
+	{ "BOOL", 0, 0,
 		"UPS.PowerSummary.PresentStatus.NeedReplacement", NULL, NULL,
 		HU_FLAG_OK, replacebatt_info },
-	{ "ups.status", 0, 0,
+	{ "BOOL", 0, 0,
 		"UPS.PowerConverter.Input.[1].PresentStatus.Buck", NULL, NULL,
 		HU_FLAG_OK, trim_info },
-	{ "ups.status", 0, 0,
+	{ "BOOL", 0, 0,
 		"UPS.PowerConverter.Input.[1].PresentStatus.Boost", NULL, NULL,
 		HU_FLAG_OK, boost_info },
-	{ "ups.status", 0, 0,
+	{ "BOOL", 0, 0,
 		"UPS.PowerSummary.PresentStatus.Good", NULL, NULL,
 		HU_FLAG_OK, off_info },
 	/* Manual bypass */
-	{ "ups.status", 0, 0,
+	{ "BOOL", 0, 0,
 		"UPS.PowerConverter.Input[4].PresentStatus.Used", NULL, NULL,
 		HU_FLAG_OK, bypass_info },
 	/* Automatic bypass */
-	{ "ups.status", 0, 0,
+	{ "BOOL", 0, 0,
 		"UPS.PowerConverter.Input[2].PresentStatus.Used", NULL, NULL,
 		HU_FLAG_OK, bypass_info },
-
-	/* The next "ups.status" items, are actually mapped to alarms */
-	{ "ups.status", 0, 0,
+	{ "BOOL", 0, 0,
 		"UPS.PowerSummary.PresentStatus.FanFailure", NULL, NULL,
 		HU_FLAG_OK, fanfail_info },
-	{ "ups.status", 0, 0,
+	{ "BOOL", 0, 0,
 		"UPS.BatterySystem.Battery.PresentStatus.Present", NULL, NULL,
 		HU_FLAG_OK, nobattery_info },
-	{ "ups.status", 0, 0,
+	{ "BOOL", 0, 0,
 		"UPS.BatterySystem.Charger.PresentStatus.InternalFailure", NULL, NULL,
 		HU_FLAG_OK, chargerfail_info },
-	{ "ups.status", 0, 0,
+	{ "BOOL", 0, 0,
 		"UPS.BatterySystem.Charger.PresentStatus.VoltageTooHigh", NULL, NULL,
 		HU_FLAG_OK, battvolthi_info },
-	{ "ups.status", 0, 0,
+	{ "BOOL", 0, 0,
 		"UPS.BatterySystem.Charger.PresentStatus.VoltageTooLow", NULL, NULL,
 		HU_FLAG_OK, battvoltlo_info },
-	{ "ups.status", 0, 0,
+	{ "BOOL", 0, 0,
 		"UPS.PowerSummary.PresentStatus.InternalFailure", NULL, NULL,
 		HU_FLAG_OK, commfault_info },
-	{ "ups.status", 0, 0,
-		"UPS.PowerSummary.PresentStatus.EmergencyStop", NULL, NULL,
-		HU_FLAG_OK, emergency_stop_info },
-	{ "ups.status", 0, 0,
+	{ "BOOL", 0, 0,
 		"UPS.PowerSummary.PresentStatus.OverTemperature", NULL, NULL,
 		HU_FLAG_OK, overheat_info },
-	{ "ups.status", 0, 0,
+	{ "BOOL", 0, 0,
 		"UPS.PowerSummary.PresentStatus.ShutdownImminent", NULL, NULL,
 		HU_FLAG_OK, shutdownimm_info },
+
+	/* Vendor specific ups.alarm */
+	{ "ups.alarm", 0, 0,
+		"UPS.PowerSummary.PresentStatus.EmergencyStop", NULL, NULL,
+		HU_FLAG_OK, mge_emergency_stop },
 
 	/* Input page */
 	{ "input.voltage", 0, 0,
