@@ -291,6 +291,10 @@ int dstate_setinfo(const char *var, const char *fmt, ...)
 	return ret;
 }
 
+int dstate_delinfo(const char *var)
+{
+	return 0;
+}
 
 void dstate_setflags(const char *var, int flags)
 {
