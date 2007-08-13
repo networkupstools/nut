@@ -132,8 +132,8 @@ static void usb_open_error(const char *port)
 
 void megatec_subdrv_banner()
 {
-	printf("Serial-over-USB transport layer for Megatec protocol driver [%s]\n\n", progname);
-	/* printf("Andrey Lelikov (c) 2006, Alexander Gordeev (c) 2006-2007, Jon Gough (c) 2007\n\n"); */
+	printf("Serial-over-USB transport layer for Megatec protocol driver [%s]\n", progname);
+	printf("Andrey Lelikov (c) 2006, Alexander Gordeev (c) 2006-2007, Jon Gough (c) 2007\n\n");
 }
 
 /* FIXME: Fix "serial" variable (which conflicts with "serial" variable in megatec.c) */
