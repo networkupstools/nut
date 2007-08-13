@@ -110,7 +110,13 @@ ups: General unit information
    | ups.watchdog.status   | UPS watchdog status          | disabled         |
    |                       | (enabled or disabled)        |                  |
    |-----------------------+------------------------------+------------------|
-   | ups.coldstart         | UPS coldstarts from battery  | disabled         |
+   | ups.start.auto        | UPS starts when mains is     | yes              |
+   |                       | (re)applied                  |                  |
+   +-----------------------+------------------------------+------------------+
+   | ups.start.battery     | Allow to start UPS from      | yes              |
+   |                       | battery                      |                  |
+   +-----------------------+------------------------------+------------------+
+   | ups.start.reboot      | UPS coldstarts from battery  | yes              |
    |                       | (enabled or disabled)        |                  |
    +-------------------------------------------------------------------------+
 
@@ -128,6 +134,9 @@ input: Incoming line/power information
    |                           | seen                       |               |
    |---------------------------+----------------------------+---------------|
    | input.voltage.nominal     | Nominal input voltage      | 120           |
+   |---------------------------+----------------------------+---------------|
+   | input.voltage.extended    | Extended input voltage     | no            |
+   |                           | range                      |               |
    |---------------------------+----------------------------+---------------|
    | input.transfer.reason     | Reason for last transfer   | T             |
    |                           | to battery (*** opaque)    |               |
@@ -164,6 +173,9 @@ input: Incoming line/power information
    |---------------------------+----------------------------+---------------|
    | input.frequency.high      | Input line frequency high  | 63            |
    |                           | (Hz)                       |               |
+   |---------------------------+----------------------------+---------------|
+   | input.frequency.extended  | Extended input frequency   | no            |
+   |                           | range                      |               |
    |---------------------------+----------------------------+---------------|
    | input.transfer.boost.low  | Low voltage boosting       | 190           |
    |                           | transfer point             |               |
@@ -342,6 +354,12 @@ battery: Any battery details
    +-------------------------+------------------------------+---------------+
    | battery.type            | Battery chemistry            | PbAc          |
    |                         | (opaque string)              |               |
+   +-------------------------+------------------------------+---------------+
+   | battery.protection      | Prevent deep discharge of    | yes           |
+   |                         | battery                      |               |
+   +-------------------------+------------------------------+---------------+
+   | battery.energysave      | Switch off when running on   | no            |
+   |                         | battery and no/low load      |               |
    +------------------------------------------------------------------------+
 
 ambient: Conditions from external probe equipment

@@ -1,3 +1,12 @@
+Mon Aug 13 09:28:42 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * data/cmdvartab, docs/new-names.txt:
+   - Added a couple of variables that are used in MGE devices.
+ * drivers/mge-hid.c:
+   - Added 'input.voltage.extended' and 'input.frequency.extended'
+     variables, that can be used to extend the input voltage and
+     -frequency ranges that can be set.
+
 Sun Aug 12 19:03:55 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/dstate-hal.c:
