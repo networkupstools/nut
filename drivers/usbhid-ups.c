@@ -529,6 +529,20 @@ int instcmd(const char *cmdname, const char *extradata)
 {
 	hid_info_t *hidups_item;
 	
+	if (!strcasecmp(cmdname, "beeper.off")) {
+		/* compatibility mode for old command */
+		upslogx(LOG_WARNING,
+			"The 'beeper.off' command has been renamed to 'beeper.disable'");
+		return instcmd("beeper.disable", NULL);
+	}
+
+	if (!strcasecmp(cmdname, "beeper.on")) {
+		/* compatibility mode for old command */
+		upslogx(LOG_WARNING,
+			"The 'beeper.on' command has been renamed to 'beeper.enable'");
+		return instcmd("beeper.enable", NULL);
+	}
+
 	upsdebugx(5, "entering instcmd(%s, %s)\n",
 		  cmdname, (extradata==NULL)?"":extradata);
 

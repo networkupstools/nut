@@ -549,6 +549,8 @@ void upsdrv_initinfo(void)
 	dstate_addcmd("test.failure.start");
 	dstate_addcmd("test.failure.stop");
 	dstate_addcmd("test.battery.start");
+	dstate_addcmd("beeper.enable");
+	dstate_addcmd("beeper.mute");
 	dstate_addcmd("beeper.on");
 	dstate_addcmd("beeper.off");
 	upsh.instcmd = instcmd;
@@ -850,6 +852,20 @@ static int instcmd(const char *cmdname, const char *extra)
 	unsigned char command[10], answer[10];
 	int res;
 	
+	if (!strcasecmp(cmdname, "beeper.off")) {
+		/* compatibility mode for old command */
+		upslogx(LOG_WARNING,
+			"The 'beeper.off' command has been renamed to 'beeper.mute' for this driver");
+		return instcmd("beeper.mute", NULL);
+	}
+
+	if (!strcasecmp(cmdname, "beeper.on")) {
+		/* compatibility mode for old command */
+		upslogx(LOG_WARNING,
+			"The 'beeper.on' command has been renamed to 'beeper.enable'");
+		return instcmd("beeper.enable", NULL);
+	}
+
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		/* Same stuff as upsdrv_shutdown() */
 		if (! autorestart) {
@@ -972,7 +988,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 	
-	if (!strcasecmp(cmdname, "beeper.on")) {
+	if (!strcasecmp(cmdname, "beeper.enable")) {
 		/* set buzzer to not muted */
 		command[0]=UPS_SET_BUZZER_MUTE;		
 		command[1]=0x00;					
@@ -983,7 +999,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 	
-	if (!strcasecmp(cmdname, "beeper.off")) {
+	if (!strcasecmp(cmdname, "beeper.mute")) {
 		/* set buzzer to muted */
 		command[0]=UPS_SET_BUZZER_MUTE;		
 		command[1]=0x01;					
@@ -992,9 +1008,8 @@ static int instcmd(const char *cmdname, const char *extra)
 		   2 = read current status */
 		command_write_sequence(command, 2, answer);
 		return STAT_INSTCMD_HANDLED;
-		return STAT_INSTCMD_HANDLED;
-	}	
-	
+	}
+
 	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
 	return STAT_INSTCMD_UNKNOWN;
 }

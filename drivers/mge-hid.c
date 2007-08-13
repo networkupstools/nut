@@ -407,7 +407,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "ups.test.interval", ST_FLAG_RW | ST_FLAG_STRING, 8,
 		"UPS.BatterySystem.Battery.TestPeriod", NULL, "%.0f",
 		HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL },
-	{ "ups.beeper.status", 0, 0,
+	{ "ups.beeper.status", ST_FLAG_RW | ST_FLAG_STRING, 10,
 		"UPS.PowerSummary.AudibleAlarmControl", NULL, "%s",
 		HU_FLAG_OK | HU_FLAG_SEMI_STATIC, beeper_info },
 	{ "ups.temperature", 0, 0,
@@ -654,6 +654,12 @@ static hid_info_t mge_hid2nut[] =
 		HU_TYPE_CMD | HU_FLAG_OK, NULL },
 	{ "beeper.mute", 0, 0,
 		"UPS.PowerSummary.AudibleAlarmControl", NULL, "3", /* point to good value */
+		HU_TYPE_CMD | HU_FLAG_OK, NULL },
+	{ "beeper.disable", 0, 0,
+		"UPS.PowerSummary.AudibleAlarmControl", NULL, "1", /* point to good value */
+		HU_TYPE_CMD | HU_FLAG_OK, NULL },
+	{ "beeper.enable", 0, 0,
+		"UPS.PowerSummary.AudibleAlarmControl", NULL, "2", /* point to good value */
 		HU_TYPE_CMD | HU_FLAG_OK, NULL },
 
 	/* Command for the outlet collection */

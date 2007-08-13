@@ -62,8 +62,9 @@
 				   
    COMMANDS:
 				   
-   beeper.off
-   beeper.on
+   beeper.disable
+   beeper.enable
+   beeper.mute
    reset.input.minmax
    shutdown.reboot              shut down load immediately for 1-2 minutes
    shutdown.reboot.graceful     shut down load after 40 seconds for 1-2 minutes
@@ -955,6 +956,9 @@ void upsdrv_initinfo(void)
 	dstate_addcmd("test.failure.stop");
 	dstate_addcmd("test.battery.start");
 	dstate_addcmd("test.battery.stop");
+	dstate_addcmd("beeper.disable");
+	dstate_addcmd("beeper.enable");
+	dstate_addcmd("beeper.mute");
 	dstate_addcmd("beeper.on");
 	dstate_addcmd("beeper.off");
 	dstate_addcmd("shutdown.stayoff");
@@ -1146,6 +1150,20 @@ int instcmd(const char *cmdname, const char *extra)
 
 	   We use test.battery.start to initiate a "10-second battery test".  */
 
+	if (!strcasecmp(cmdname, "beeper.off")) {
+		/* compatibility mode for old command */
+		upslogx(LOG_WARNING,
+			"The 'beeper.off' command has been renamed to 'beeper.disable'");
+		return instcmd("beeper.disable", NULL);
+	}
+
+	if (!strcasecmp(cmdname, "beeper.on")) {
+		/* compatibility mode for old command */
+		upslogx(LOG_WARNING,
+			"The 'beeper.on' command has been renamed to 'beeper.enable'");
+		return instcmd("beeper.enable", NULL);
+	}
+
 	if (!strcasecmp(cmdname, "test.failure.start")) {
 		r = belkin_nut_write_int(REG_TESTSTATUS, 2);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
@@ -1162,11 +1180,15 @@ int instcmd(const char *cmdname, const char *extra)
 		r = belkin_nut_write_int(REG_TESTSTATUS, 3);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
-	if (!strcasecmp(cmdname, "beeper.on")) {
+	if (!strcasecmp(cmdname, "beeper.disable")) {
+		r = belkin_nut_write_int(REG_ALARMSTATUS, 1);
+		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
+	}
+	if (!strcasecmp(cmdname, "beeper.enable")) {
 		r = belkin_nut_write_int(REG_ALARMSTATUS, 2);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
-	if (!strcasecmp(cmdname, "beeper.off")) {
+	if (!strcasecmp(cmdname, "beeper.mute")) {
 		r = belkin_nut_write_int(REG_ALARMSTATUS, 3);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}

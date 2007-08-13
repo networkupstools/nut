@@ -508,9 +508,11 @@ server: Internal server information
    | reset.watchdog           | Reset watchdog timer (forced reboot of      |
    |                          | load)                                       |
    |--------------------------+---------------------------------------------|
-   | beeper.on                | Enable UPS beeper/buzzer                    |
+   | beeper.enable            | Enable UPS beeper/buzzer                    |
    |--------------------------+---------------------------------------------|
-   | beeper.off               | Temporarily mute UPS beeper/buzzer          |
+   | beeper.disable           | Disable UPS beeper/buzzer                   |
+   |--------------------------+---------------------------------------------|
+   | beeper.mute              | Temporarily mute UPS beeper/buzzer          |
    |--------------------------+---------------------------------------------|
    | beeper.toggle            | Toggle UPS beeper/buzzer                    |
    +------------------------------------------------------------------------+

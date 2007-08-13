@@ -36,7 +36,7 @@
 #include <hal/libhal.h>
 
 /* FIXME: export command and RW variables (using the HAL example: addon-cpufreq and macbook addon) */ 
-/* beeper.on, beeper.off => SetBeeper(bool)
+/* beeper.enable, beeper.disable => SetBeeper(bool)
    beeper.toggle => ToggleBeeper(void)
 
 org.freedesktop.Hal.Device.UPS.SetSounder (bool)

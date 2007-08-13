@@ -1,3 +1,22 @@
+Mon Aug 13 19:53:12 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * data/cmdvartab, docs/new-names.txt, docs/hid-subdrivers.txt:
+   - Rename 'beeper.on' -> 'beeper.enable'
+   - Rename 'beeper.off' -> 'beeper.disable'
+   - Added 'beeper.mute'
+ * drivers/*-hid.c:
+   - Added the 'beeper.disable' command to all subdrivers, this may not
+     work on al UPSes (it is described in the HID Power Devices document).
+ * drivers/<various>:
+   - Updated drivers with new names for 'beeper.{enable,disable,mute}'
+     commands.
+   - Applied a mapping from old to new commands, in order not to break
+     existing installations. Mapped 'beeper.on' to 'beeper.enable' and
+     'beeper.off' to 'beeper.disable' or 'beeper.mute', depending on
+     the comments in the driver.
+ * man/<various>:
+   - Updated the man pages for drivers that described these commands.
+
 Mon Aug 13 13:08:13 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
 
  * drivers/megatec_usb.c: added credits to the banner message.

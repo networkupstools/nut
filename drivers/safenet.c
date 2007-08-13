@@ -167,6 +167,20 @@ static void safenet_update()
 
 static int instcmd(const char *cmdname, const char *extra)
 {
+	if (!strcasecmp(cmdname, "beeper.off")) {
+		/* compatibility mode for old command */
+		upslogx(LOG_WARNING,
+			"The 'beeper.off' command has been renamed to 'beeper.mute' for this driver");
+		return instcmd("beeper.mute", NULL);
+	}
+
+	if (!strcasecmp(cmdname, "beeper.on")) {
+		/* compatibility mode for old command */
+		upslogx(LOG_WARNING,
+			"The 'beeper.on' command has been renamed to 'beeper.enable'");
+		return instcmd("beeper.enable", NULL);
+	}
+
 	/*
 	 * Start the UPS selftest
 	 */
@@ -202,7 +216,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	/*
 	 * If beeper is off, toggle beeper state (so it should be ON after this)
 	 */
-	if (!strcasecmp(cmdname, "beeper.on")) {
+	if (!strcasecmp(cmdname, "beeper.enable")) {
 		if (ups.status.silenced) {
 			safenet_command(COM_TOGGLE_BEEP);
 		}
@@ -212,11 +226,22 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	/*
 	 * If beeper is not off, toggle beeper state (so it should be OFF after this)
+	 * Unfortunately, this only mutes the beeper, it turns back on for the next
+	 * event automatically (no way to stop this, besides side cutters)
 	 */
-	if (!strcasecmp(cmdname, "beeper.off")) {
+	if (!strcasecmp(cmdname, "beeper.mute")) {
 		if (!ups.status.silenced) {
 			safenet_command(COM_TOGGLE_BEEP);
 		}
+
+		return STAT_INSTCMD_HANDLED;
+	}
+
+	/*
+	 * Toggle beeper state unconditionally
+	 */
+	if (!strcasecmp(cmdname, "beeper.toggle")) {
+		safenet_command(COM_TOGGLE_BEEP);
 
 		return STAT_INSTCMD_HANDLED;
 	}
@@ -296,6 +321,9 @@ void upsdrv_initinfo(void)
 	dstate_addcmd ("test.failure.stop");
 	dstate_addcmd ("beeper.on");
 	dstate_addcmd ("beeper.off");
+	dstate_addcmd ("beeper.enable");
+	dstate_addcmd ("beeper.mute");
+	dstate_addcmd ("beeper.toggle");
 	dstate_addcmd ("shutdown.return");
 	dstate_addcmd ("shutdown.reboot");
 	dstate_addcmd ("shutdown.reboot.graceful");

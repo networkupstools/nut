@@ -221,8 +221,8 @@ bypass.start
 bypass.stop
 reset.input.minmax
 reset.watchdog
-beeper.on
-beeper.off
+beeper.enable
+beeper.disable
 */
 
 	/* end of structure. */

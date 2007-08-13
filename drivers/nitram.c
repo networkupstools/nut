@@ -167,6 +167,20 @@ static int get_identification(struct buffer_t* reply)
 
 static int instcmd(const char *command, const char *extra)
 {
+	if (!strcasecmp(command, "beeper.off")) {
+		/* compatibility mode for old command */
+		upslogx(LOG_WARNING,
+			"The 'beeper.off' command has been renamed to 'beeper.disable'");
+		return instcmd("beeper.disable", NULL);
+	}
+
+	if (!strcasecmp(command, "beeper.on")) {
+		/* compatibility mode for old command */
+		upslogx(LOG_WARNING,
+			"The 'beeper.on' command has been renamed to 'beeper.enable'");
+		return instcmd("beeper.enable", NULL);
+	}
+
 	#define DEFINE_COMMAND(name, nitram_command) \
 		if (strcasecmp(command, (name)) == 0) \
 		{ \
@@ -175,8 +189,8 @@ static int instcmd(const char *command, const char *extra)
 		}
 	DEFINE_COMMAND("test.battery.start", "T.1");
 	DEFINE_COMMAND("test.battery.stop", "CT");
-	DEFINE_COMMAND("beeper.on", "C7:1");
-	DEFINE_COMMAND("beeper.off", "C7:0");
+	DEFINE_COMMAND("beeper.enable", "C7:1");
+	DEFINE_COMMAND("beeper.disable", "C7:0");
 	#undef DEFINE_COMMAND
 
 	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", command);
@@ -246,6 +260,8 @@ void upsdrv_initinfo(void)
 	dstate_setaux("battery.charge.low", 20);
 	dstate_addcmd("test.battery.start");
 	dstate_addcmd("test.battery.stop");
+	dstate_addcmd("beeper.enable");
+	dstate_addcmd("beeper.disable");
 	dstate_addcmd("beeper.on");
 	dstate_addcmd("beeper.off");
 	upsh.instcmd = instcmd;

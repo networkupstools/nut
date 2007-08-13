@@ -80,8 +80,10 @@ static const struct {
 } powpan_cmdtab_txt[] = {
 	{ "test.failure.start", "T\r" },
 	{ "test.failure.stop", "CT\r" },
-	{ "beeper.on", "C7:1\r" },
-	{ "beeper.off", "C7:0\r" },
+	{ "beeper.enable", "C7:1\r" },
+	{ "beeper.disable", "C7:0\r" },
+	{ "beeper.on", NULL },
+	{ "beeper.off", NULL },
 	{ "shutdown.reboot", "S01R0001\r" },
 	{ "shutdown.return", "Z02\r" },
 	{ "shutdown.stop", "C\r" },

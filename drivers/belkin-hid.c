@@ -320,6 +320,9 @@ static hid_info_t belkin_hid2nut[] = {
   { "test.battery.stop", 0, 0, "UPS.BELKINControls.BELKINTest", NULL, "3", HU_TYPE_CMD | HU_FLAG_OK, NULL },
   { "beeper.on", 0, 0, "UPS.BELKINControls.BELKINAudibleAlarmControl", NULL, "2", HU_TYPE_CMD | HU_FLAG_OK, NULL },
   { "beeper.off", 0, 0, "UPS.BELKINControls.BELKINAudibleAlarmControl", NULL, "3", HU_TYPE_CMD | HU_FLAG_OK, NULL },
+  { "beeper.disable", 0, 0, "UPS.BELKINControls.BELKINAudibleAlarmControl", NULL, "1", HU_TYPE_CMD | HU_FLAG_OK, NULL },
+  { "beeper.enable", 0, 0, "UPS.BELKINControls.BELKINAudibleAlarmControl", NULL, "2", HU_TYPE_CMD | HU_FLAG_OK, NULL },
+  { "beeper.mute", 0, 0, "UPS.BELKINControls.BELKINAudibleAlarmControl", NULL, "3", HU_TYPE_CMD | HU_FLAG_OK, NULL },
   { "load.off", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeShutdown", NULL, "1", HU_TYPE_CMD | HU_FLAG_OK, NULL },
 
   /* Note: on my Belkin UPS, there is no way to implement

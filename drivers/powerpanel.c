@@ -120,6 +120,20 @@ static int instcmd_txt(const char *cmdname, const char *extra)
 {
 	int	i;
 
+	if (!strcasecmp(cmdname, "beeper.off")) {
+		/* compatibility mode for old command */
+		upslogx(LOG_WARNING,
+			"The 'beeper.off' command has been renamed to 'beeper.disable'");
+		return instcmd_txt("beeper.disable", NULL);
+	}
+
+	if (!strcasecmp(cmdname, "beeper.on")) {
+		/* compatibility mode for old command */
+		upslogx(LOG_WARNING,
+			"The 'beeper.on' command has been renamed to 'beeper.enable'");
+		return instcmd_txt("beeper.enable", NULL);
+	}
+
 	for (i = 0; powpan_cmdtab_txt[i].cmd != NULL; i++) {
 
 		if (strcasecmp(cmdname, powpan_cmdtab_txt[i].cmd)) {

@@ -286,6 +286,20 @@ int hidcmd(unsigned char *pCmd, unsigned char *pRsp, int l)
 
 int instcmd(const char *cmdname, const char *extra)
 {
+    if (!strcasecmp(cmdname, "beeper.off")) {
+	/* compatibility mode for old command */
+	upslogx(LOG_WARNING,
+		"The 'beeper.off' command has been renamed to 'beeper.mute' for this driver!");
+	return instcmd("beeper.mute", NULL);
+    }
+
+    if (!strcasecmp(cmdname, "beeper.on")) {
+	/* compatibility mode for old command */
+	upslogx(LOG_WARNING,
+		"The 'beeper.on' command has been renamed to 'beeper.enable'");
+	return instcmd("beeper.enable", NULL);
+    }
+
     if (!strcasecmp(cmdname, "test.battery.start"))
     {
         hidsend("TL");
@@ -300,8 +314,8 @@ int instcmd(const char *cmdname, const char *extra)
         return STAT_INSTCMD_HANDLED;
     }
 
-    if (!strcasecmp(cmdname, "beeper.on") ||
-        !strcasecmp(cmdname, "beeper.off"))
+    if (!strcasecmp(cmdname, "beeper.enable") ||
+        !strcasecmp(cmdname, "beeper.mute"))
     {
         char buf[128];
         int r;
@@ -316,13 +330,19 @@ int instcmd(const char *cmdname, const char *extra)
         {
             if (OBFLAG && !LBFLAG)  /* Otherwise there's not much we can do */
             {
-                if ((BEEPER && !strcasecmp(cmdname, "beeper.off")) ||
-                    (!BEEPER && !strcasecmp(cmdname, "beeper.on")))
+                if ((BEEPER && !strcasecmp(cmdname, "beeper.mute")) ||
+                    (!BEEPER && !strcasecmp(cmdname, "beeper.enable")))
                         hidsend("Q");
                 return STAT_INSTCMD_HANDLED;
             }
         }
         return STAT_INSTCMD_HANDLED;    /* FUTURE: failure */
+    }
+
+    if (!strcasecmp(cmdname, "beeper.toggle"))
+    {
+        hidsend("Q");
+        return STAT_INSTCMD_HANDLED;
     }
 
     upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
@@ -365,8 +385,12 @@ void upsdrv_initinfo(void)
     /* now add instant command support info */
     dstate_addcmd("test.battery.start");
     dstate_addcmd("test.battery.stop");
+    dstate_addcmd("beeper.enabled");
+    dstate_addcmd("beeper.mute");
+    dstate_addcmd("beeper.toggle");
     dstate_addcmd("beeper.on");
     dstate_addcmd("beeper.off");
+
     upsh.instcmd = instcmd;
 }
 

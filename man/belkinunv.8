@@ -196,11 +196,11 @@ connection from AC input to the battery.
 
 .SH COMMANDS:
 .TP 12
-.B beeper.on, beeper.off
-turn the panel beeper on (enabled state) or off (muted state). Note
-that if the beeper is muted, it is automatically turned back on at the
-next event (AC failure, battery test, etc). Also, the beeper can't be
-turned off during a critical event (low battery).
+.B beeper.enable, beeper.disable, beeper.mute
+enable, disable or mute the panel beeper. Note that if the beeper is
+muted, it is automatically turned back on at the next event (AC failure,
+battery test, etc). Also, the beeper can't be turned muted during a
+critical event (low battery).
 .TP
 .B reset.input.minmax
 reset the variables \fBinput.voltage.minimum\fP and
