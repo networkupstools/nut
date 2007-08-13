@@ -1,3 +1,8 @@
+Mon Aug 13 21:35:13 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/mge-hid.c:
+   - Variables that can be changed need to have 'HU_FLAG_SEMI_STATIC'.
+
 Mon Aug 13 19:53:12 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * data/cmdvartab, docs/new-names.txt, docs/hid-subdrivers.txt:

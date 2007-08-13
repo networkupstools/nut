@@ -510,7 +510,7 @@ static hid_info_t mge_hid2nut[] =
 		HU_FLAG_OK | HU_FLAG_STATIC, NULL },
 	{ "input.voltage.extended", ST_FLAG_RW | ST_FLAG_STRING, 5,
 		"UPS.PowerConverter.Output.ExtendedVoltageMode", NULL, "%s",
-		HU_FLAG_OK | HU_FLAG_STATIC, yes_no_info },
+		HU_FLAG_OK | HU_FLAG_SEMI_STATIC, yes_no_info },
 	{ "input.frequency", 0, 0,
 		"UPS.PowerConverter.Input.[1].Frequency", NULL, "%.1f",
 		HU_FLAG_OK, NULL },
@@ -519,7 +519,7 @@ static hid_info_t mge_hid2nut[] =
 		HU_FLAG_OK | HU_FLAG_STATIC, NULL },
 	{ "input.frequency.extended", ST_FLAG_RW | ST_FLAG_STRING, 5,
 		"UPS.PowerConverter.Output.ExtendedFrequencyMode", NULL, "%s",
-		HU_FLAG_OK | HU_FLAG_STATIC, yes_no_info },
+		HU_FLAG_OK | HU_FLAG_SEMI_STATIC, yes_no_info },
 	/* same as "input.transfer.boost.low" */
 	{ "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 5,
 		"UPS.PowerConverter.Output.LowVoltageTransfer", NULL, "%.0f",
