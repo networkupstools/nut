@@ -76,9 +76,11 @@ void upsdrv_initinfo(void)
 	
 	/* add instant commands to the info database. */
 	for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++)			
+	{
 		su_info_p->flags |= SU_FLAG_OK;
 		if (SU_TYPE(su_info_p) == SU_TYPE_CMD)
 			dstate_addcmd(su_info_p->info_type);
+	}
 
 	/* setup handlers for instcmd and setvar functions */
 	upsh.setvar = su_setvar;
