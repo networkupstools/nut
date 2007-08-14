@@ -1,3 +1,11 @@
+Tue Aug 14 18:31:12 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/usbhid-ups.c:
+   - Helper function 'find_nut_info_valid' removed. We check for the
+     validity of commands and variables during the initialisation, so
+     this doesn't need to be repeated when we run instcmd() or
+     setvar(), so they can both use 'find_nut_info'.
+
 Mon Aug 13 21:35:13 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/mge-hid.c:

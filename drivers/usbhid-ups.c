@@ -73,7 +73,6 @@ hid_dev_handle_t *udev;
 
 /* support functions */
 static hid_info_t *find_nut_info(const char *varname);
-static hid_info_t *find_nut_info_valid(const char *varname);
 static hid_info_t *find_hid_info(const char *hidname);
 static char *hu_find_infoval(info_lkp_t *hid2info, long value);
 static long hu_find_valinfo(info_lkp_t *hid2info, const char* value);
@@ -547,11 +546,10 @@ int instcmd(const char *cmdname, const char *extradata)
 		  cmdname, (extradata==NULL)?"":extradata);
 
 	/* Retrieve and check netvar & item_path */	
-	hidups_item = find_nut_info_valid(cmdname);
+	hidups_item = find_nut_info(cmdname);
 	
 	/* Check validity of the found the item */
-	if (hidups_item == NULL || hidups_item->info_type == NULL ||
-		!(hidups_item->hidflags & HU_FLAG_OK))
+	if (hidups_item == NULL)
 	{
 		upsdebugx(2, "instcmd: info element unavailable %s\n", cmdname);
 		/* TODO: manage items handled "manually" */
@@ -592,8 +590,7 @@ int setvar(const char *varname, const char *val)
 	/* 1) retrieve and check netvar & item_path */	
 	hidups_item = find_nut_info(varname);
 	
-	if (hidups_item == NULL || hidups_item->info_type == NULL ||
-		!(hidups_item->hidflags & HU_FLAG_OK))
+	if (hidups_item == NULL)
 	{
 		upsdebugx(2, "setvar: info element unavailable %s\n", varname);
 		return STAT_SET_UNKNOWN;
@@ -613,14 +610,12 @@ int setvar(const char *varname, const char *val)
 		dstate_setinfo(hidups_item->info_type, "%s", val);
 		return STAT_SET_HANDLED;
 	}
-	else
+
+	/* SHUT_FLAG_ABSENT is the only case of HID Path == NULL */
+	if (hidups_item->hidpath == NULL)
 	{
-		/* SHUT_FLAG_ABSENT is the only case of HID Path == NULL */
-		if (hidups_item->hidpath == NULL)
-		{
-			upsdebugx(2, "setvar: ID Path is NULL for %s\n", varname);
-			return STAT_SET_UNKNOWN;
-		}
+		upsdebugx(2, "setvar: ID Path is NULL for %s\n", varname);
+		return STAT_SET_UNKNOWN;
 	}
 
 	/* Lookup the new value if needed */
@@ -1177,35 +1172,19 @@ static void ups_status_set(void)
  */
 static hid_info_t *find_nut_info(const char *varname)
 {
-  hid_info_t *hidups_item;
+	hid_info_t *hidups_item;
 
-  for (hidups_item = subdriver->hid2nut; hidups_item->info_type != NULL ; hidups_item++) {
-    if (!strcasecmp(hidups_item->info_type, varname))
-      return hidups_item;
-  }
+	for (hidups_item = subdriver->hid2nut; hidups_item->info_type != NULL ; hidups_item++) {
 
-  upsdebugx(2, "find_nut_info: unknown info type: %s\n", varname);
-  return NULL;
-}
+		if (strcasecmp(hidups_item->info_type, varname))
+			continue;
 
-/* find info element definition in info array by NUT varname. Only
- * return items whose HID path actually exists.  By this, we enable
- * multiple alternative definitions of an instant command; the first
- * one that works for *this* UPS will be used. 
- */
-static hid_info_t *find_nut_info_valid(const char *varname)
-{
-  hid_info_t *hidups_item;
-  float value;
+		if (hidups_item->hidflags & HU_FLAG_OK)
+			return hidups_item;
+	}
 
-  for (hidups_item = subdriver->hid2nut; hidups_item->info_type != NULL ; hidups_item++) {
-    if (!strcasecmp(hidups_item->info_type, varname))
-      if (HIDGetItemValue(udev, hidups_item->hidpath, &value, subdriver->utab) == 1)
-	return hidups_item;
-  }
-
-  upsdebugx(2, "find_nut_info: unknown info type: %s\n", varname);
-  return NULL;
+	upsdebugx(2, "find_nut_info: unknown info type: %s\n", varname);
+	return NULL;
 }
 
 /* find info element definition in info array
@@ -1222,7 +1201,10 @@ static hid_info_t *find_hid_info(const char *hidname)
 		if (hidups_item->hidpath == NULL)
 			continue;
 	
-		if (!strcasecmp(hidups_item->hidpath, hidname))
+		if (strcasecmp(hidups_item->hidpath, hidname))
+			continue;
+
+		if (hidups_item->hidflags & HU_FLAG_OK)
 			return hidups_item;
 	}
 
