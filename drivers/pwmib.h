@@ -165,7 +165,7 @@ snmp_info_t pw_mib[] = {
 	/* Battery page */
 	{ "battery.charge", 0, 1.0, PW_OID_BATT_CHARGE, "",
 		0, NULL },
-	{ "battery.runtime", 0, 0.016666, PW_OID_BATT_RUNTIME, "",
+	{ "battery.runtime", 0, 1.0, PW_OID_BATT_RUNTIME, "",
 		0, NULL },
 	{ "battery.voltage", 0, 1.0, PW_OID_BATT_VOLTAGE, "",
 		0, NULL },
