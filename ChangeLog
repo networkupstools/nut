@@ -1,3 +1,9 @@
+Wed Aug 15 20:21:49 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/snmp-ups.c, drivers/ietfmib.h, drivers/pwmib.h:
+   - Use all "ups.status" lines, not just the first.
+   - Add a lot or parameters for PowerWare and some for IETF.
+
 Wed Aug 15 19:37:41 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/libhid.[ch]:

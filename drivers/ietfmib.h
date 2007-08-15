@@ -55,7 +55,13 @@
 #define IETF_OID_OUT_POWER        "1.3.6.1.2.1.33.1.4.4.1.4"	/* UPS-MIB::upsOutputPower */
 #define IETF_OID_LOAD_LEVEL       "1.3.6.1.2.1.33.1.4.4.1.5"	/* UPS-MIB::upsOutputPercentLoad */
 
-#define IETF_OID_CONF_VOLTAGE     "1.3.6.1.2.1.33.1.9.3.0"	/* UPS-MIB::upsConfigOutputVoltage.0 */
+#define IETF_OID_UPS_TEST_ID      "1.3.6.1.2.1.33.1.7.1.0"      /* UPS-MIB::upsTestID.0 */
+#define IETF_OID_UPS_TEST_RES     "1.3.6.1.2.1.33.1.7.3.0"      /* UPS-MIB::upsTestResultsSummary.0 */
+#define IETF_OID_UPS_TEST_RESDET  "1.3.6.1.2.1.33.1.7.4.0"      /* UPS-MIB::upsTestResultsDetail.0 */
+#define IETF_OID_UPS_TEST_QBATT   "1.3.6.1.2.1.33.1.7.7.4"      /* UPS-MIB::upsTestQuickBatteryTest.0 */
+
+#define IETF_OID_CONF_VOLTAGE     "1.3.6.1.2.1.33.1.9.3.0"      /* UPS-MIB::upsConfigOutputVoltage.0 */
+#define IETF_OID_CONF_OUT_VA      "1.3.6.1.2.1.33.1.9.5.0"      /* UPS-MIB::upsConfigOutputVA.0 */
 #define IETF_OID_CONF_RUNTIME_LOW "1.3.6.1.2.1.33.1.9.7.0"	/* UPS-MIB::upsConfigLowBattTime.0 */
 
 /* Defines for IETF_OID_POWER_STATUS (1) */
@@ -126,6 +132,8 @@ snmp_info_t ietf_mib[] = {
 		SU_STATUS_PWR, &ietf_pwr_info[0] },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_BATT_STATUS, "",
 		SU_STATUS_BATT, &ietf_batt_info[0] },
+	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_TEST_RESDET, "",
+		0, NULL },
 
 	/* Battery page */
 	{ "battery.charge", 0, 1.0, IETF_OID_BATT_CHARGE, "",

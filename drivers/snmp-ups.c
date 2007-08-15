@@ -106,12 +106,16 @@ void upsdrv_updateinfo(void)
 	/* only update every pollfreq */
 	if (time(NULL) > (lastpoll + pollfreq)) {
 
+		status_init();
+
 		/* update all dynamic info fields */
 		if (snmp_ups_walk(SU_WALKMODE_UPDATE))
 			dstate_dataok();
 		else		
 			dstate_datastale();	
-	
+
+		status_commit();
+
 		/* store timestamp */
 		lastpoll = time(NULL);
 	}
@@ -318,6 +322,7 @@ bool_t nut_snmp_get_str(const char *OID, char *buf, size_t buf_len, info_lkp_t *
 		buf[len] = '\0';
 		break;
 	case ASN_INTEGER:
+	case ASN_COUNTER:
 	case ASN_GAUGE:
 		if(oid2info) {
 			const char *str;
@@ -369,6 +374,7 @@ bool_t nut_snmp_get_int(const char *OID, long *pval)
 		free(buf);
 		break;
 	case ASN_INTEGER:
+	case ASN_COUNTER:
 	case ASN_GAUGE:
 		value = *pdu->variables->val.integer;
 		break;
@@ -534,9 +540,7 @@ void su_status_set(snmp_info_t *su_info_p, long value)
 	if ((info_value = su_find_infoval(su_info_p->oid2info, value)) != NULL)
 	{
 		if (strcmp(info_value, "")) {
-			status_init();
 			status_set(info_value);
-			status_commit();
 		}
 	}
 	/* TODO: else */
