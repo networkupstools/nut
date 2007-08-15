@@ -1,3 +1,14 @@
+Wed Aug 15 19:11:40 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/upshid-ups.[ch]:
+   - Move the point where we cast the (float) output from what we
+     have received through HIDGetItemValue() to a (long) index
+     value for the lookup tables to the hu_find_infoval() helper
+     function. By doing so, it should be relatively easy to allow
+     conversion functions to use the float value, rather than the
+     long they have now (might be useful for converting small
+     values).
+
 Tue Aug 14 18:47:10 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/snmp-ups.c:

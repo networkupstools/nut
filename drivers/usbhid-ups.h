@@ -136,8 +136,8 @@ extern info_lkp_t kelvin_celsius_conversion[];
 typedef struct {
 	char	*info_type;		/* NUT variable name */
 	int	info_flags;		/* NUT flags (to set in addinfo) */
-	float	info_len;		/* if ST_FLAG_STRING: length of the string */
-					/* if HU_TYPE_CMD: command value ; multiplier otherwise */
+	int	info_len;		/* if ST_FLAG_STRING: length of the string */
+					/* if HU_TYPE_CMD: command value */
 	char	*hidpath;		/* Full HID Object path (or NULL for server side vars) */
 	int	**numericpath;		/* Full HID Object numeric path (for caching purpose, filled at runtime) */
 	char	*dfl;			/* if HU_FLAG_ABSENT: default value ; format otherwise */

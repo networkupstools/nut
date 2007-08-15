@@ -74,7 +74,7 @@ hid_dev_handle_t *udev;
 /* support functions */
 static hid_info_t *find_nut_info(const char *varname);
 static hid_info_t *find_hid_info(const char *hidname);
-static char *hu_find_infoval(info_lkp_t *hid2info, long value);
+static char *hu_find_infoval(info_lkp_t *hid2info, const float value);
 static long hu_find_valinfo(info_lkp_t *hid2info, const char* value);
 static void process_boolean_info(char *nutvalue);
 static void ups_alarm_set(void);
@@ -627,10 +627,7 @@ int setvar(const char *varname, const char *val)
 	/* Actual variable setting */
 	if (HIDSetItemValue(udev, hidups_item->hidpath, newvalue, subdriver->utab))
 	{
-		/* FIXME: GetValue(hidups_item->hidpath) to ensure success on non volatile */
 		upsdebugx(5, "setvar: SUCCEED\n");
-		/* Delay a bit not to flood the device */
-		sleep(1);
 		/* Set the status so that SEMI_STATIC vars are polled */
 		data_has_changed = TRUE;
 		return STAT_SET_HANDLED;
@@ -1232,29 +1229,32 @@ static long hu_find_valinfo(info_lkp_t *hid2info, const char* value)
 }
 
 /* find the NUT value matching that HID Item value */
-static char *hu_find_infoval(info_lkp_t *hid2info, long value)
+static char *hu_find_infoval(info_lkp_t *hid2info, const float value)
 {
 	info_lkp_t *info_lkp;
 	char *nut_value;
 
-	upsdebugx(5, "hu_find_infoval: searching for value = %ld\n", value);
+	upsdebugx(5, "hu_find_infoval: searching for value = %g\n", value);
 
+	/* if a conversion function is defined,
+	 * use 'value' as argument for it */
 	if (hid2info->fun != NULL) {
-		nut_value = hid2info->fun(value);
+		nut_value = hid2info->fun((long)value);
 		upsdebugx(5, "hu_find_infoval: found %s (value: %ld)\n",
-			nut_value, value);
+			nut_value, (long)value);
 		return nut_value;
 	}
 
+	/* use 'value' as an index for a lookup in an array */
 	for (info_lkp = hid2info; info_lkp->nut_value != NULL; info_lkp++) {
-		if (info_lkp->hid_value == value) {
+		if (info_lkp->hid_value == (long)value) {
 			upsdebugx(5, "hu_find_infoval: found %s (value: %ld)\n",
-					info_lkp->nut_value, value);
-	
+					info_lkp->nut_value, (long)value);
+
 			return info_lkp->nut_value;
 		}
 	}
-	upsdebugx(3, "hu_find_infoval: no matching INFO_* value for this HID value (%ld)\n", value);
+	upsdebugx(3, "hu_find_infoval: no matching INFO_* value for this HID value (%g)\n", value);
 	return NULL;
 }
 
@@ -1266,8 +1266,8 @@ static int ups_infoval_set(hid_info_t *item, float value)
 	/* need lookup'ed translation? */
 	if (item->hid2info != NULL){
 
-		if ((nutvalue = hu_find_infoval(item->hid2info, (long)value)) == NULL) {
-			upsdebugx(5, "Lookup [%ld] failed for [%s]", (long)value, item->info_type);
+		if ((nutvalue = hu_find_infoval(item->hid2info, value)) == NULL) {
+			upsdebugx(5, "Lookup [%g] failed for [%s]", value, item->info_type);
 			return -1;
 		}
 
