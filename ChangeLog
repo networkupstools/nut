@@ -1,3 +1,16 @@
+Wed Aug 15 19:37:41 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/libhid.[ch]:
+   - Flush report buffer after writing new values to the UPS. The
+     data in the UPS may change because of this, so we want to be
+     sure that all subsequent reads, return fresh data.
+   - Use calloc() instead of malloc() where useful.
+   - HIDGetItemString returns (char *) but receives a (unsigned
+     char *) as parameter.
+   - physical_to_logical() would always return an integer, since it
+     casts the result of the value conversion to a long, before
+     returning the result as float.
+
 Wed Aug 15 19:11:40 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/upshid-ups.[ch]:

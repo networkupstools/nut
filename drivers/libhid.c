@@ -88,28 +88,17 @@ static reportbuf_t      *rbuf = NULL;  /* buffer for most recent reports */
    with errno set. The returned data structure must later be freed
    with free_report_buffer(). */
 reportbuf_t *new_report_buffer(void) {
-	reportbuf_t *rbuf;
-	int i;
-
-	rbuf = malloc(sizeof(reportbuf_t));
-	if (!rbuf) {
-		return NULL;
-	}
-	for (i=0; i<256; i++) {
-		rbuf->ts[i] = 0;
-		rbuf->len[i] = 0;
-		rbuf->data[i] = NULL;
-	}
-	return rbuf;
+	return calloc(1, sizeof(reportbuf_t));
 }
 
 void free_report_buffer(reportbuf_t *rbuf) {
 	int i;
 
-	if (rbuf) {
-		for (i=0; i<256; i++) {
-			free(rbuf->data[i]);
-		}
+	if (!rbuf)
+		return;
+
+	for (i=0; i<256; i++) {
+		free(rbuf->data[i]);
 	}
 	free(rbuf);
 }
@@ -129,11 +118,10 @@ int refresh_report_buffer(reportbuf_t *rbuf, int id, int age, HIDDesc_t *pDesc, 
 		return 0;
 	}
 
-	data = malloc(len+1); /* first byte holds report id */
+	data = calloc(1, len+1); /* first byte holds report id */
 	if (!data) {
 		return -1;
 	}
-	memset(data, 0, len+1);
 	r = comm_driver->get_report(udev, id, data, len+1);
 	if (r <= 0) {
 		return -1;
@@ -703,7 +691,7 @@ int HIDGetItemValue(hid_dev_handle_t *udev, char *path, float *Value, usage_tabl
 
 /* rawbuf must point to a large enough buffer to hold the resulting
  * string. Return pointer to rawbuf on success, NULL on failure. */
-char *HIDGetItemString(hid_dev_handle_t *udev, char *path, unsigned char *rawbuf, usage_tables_t *utab)
+char *HIDGetItemString(hid_dev_handle_t *udev, char *path, char *rawbuf, usage_tables_t *utab)
 {
 	int r;
 	long hValue;  
@@ -723,7 +711,7 @@ char *HIDGetItemString(hid_dev_handle_t *udev, char *path, unsigned char *rawbuf
 bool_t HIDSetItemValue(hid_dev_handle_t *udev, char *path, float value, usage_tables_t *utab)
 {
 	float Value;
-	int r;
+	int i, r;
 	long hValue, oldValue, newValue;
 	HIDData_t *pData;
 	int id;
@@ -761,6 +749,14 @@ bool_t HIDSetItemValue(hid_dev_handle_t *udev, char *path, float value, usage_ta
 	if (r<0) {
 		upsdebugx(2, "Set report failed: (%d): %s", errno, strerror(errno));
 		return FALSE;
+	}
+
+	/* flush the report buffer (data may have changed) */
+	for (i=0; i<256; i++) {
+		free(rbuf->data[i]);
+		rbuf->data[i] = NULL;
+		rbuf->ts[i] = 0;
+		rbuf->len[i] = 0;
 	}
 	
 	/* re-read report without buffering */
@@ -863,6 +859,7 @@ void HIDCloseDevice(hid_dev_handle_t *udev)
     if (udev != NULL)
     {
       upsdebugx(2, "Closing device");
+      free_report_buffer(rbuf);
       comm_driver->close(udev);
     }
 }
@@ -876,29 +873,37 @@ void HIDCloseDevice(hid_dev_handle_t *udev)
 
 static float logical_to_physical(HIDData_t *Data, long logical)
 {
-	float physical, Factor;
+	float physical;
+	float Factor;
+
+	upsdebugx(4, "PhyMax = %ld, PhyMin = %ld, LogMax = %ld, LogMin = %ld",
+		Data->PhyMax, Data->PhyMin, Data->LogMax, Data->LogMin);
 
 	/* HID spec says that if one or both are undefined, or if they are
 	 * both 0, then PhyMin = LogMin, PhyMax = LogMax. */
-	if (!Data->have_PhyMax || !Data->have_PhyMin || (Data->PhyMax == 0 && Data->PhyMin == 0)) 
+	if (!Data->have_PhyMax || !Data->have_PhyMin ||
+		(Data->PhyMax == 0 && Data->PhyMin == 0))
 	{
 		return (float)logical;
 	}
 
-   if (Data->PhyMax <= Data->PhyMin) 
+	/* Paranoia */
+	if ((Data->PhyMax <= Data->PhyMin) || (Data->LogMax <= Data->LogMin))
 	{
 		/* this should not really happen */
 		return (float)logical;
-   }
+	}
 	
 	Factor = (float)(Data->PhyMax - Data->PhyMin) / (Data->LogMax - Data->LogMin);
 	/* Convert Value */
-	physical = (long)((logical - Data->LogMin) * Factor) + Data->PhyMin;
-	
-	if (physical > Data->PhyMax){
-		physical = Data->PhyMax;
-	} else if (physical < Data->PhyMin) {
-		physical = Data->PhyMin;
+	physical = (float)((logical - Data->LogMin) * Factor) + Data->PhyMin;
+
+	if (physical > Data->PhyMax) {
+		return Data->PhyMax;
+	}
+
+	if (physical < Data->PhyMin) {
+		return Data->PhyMin;
 	}
 
 	return physical;
@@ -906,19 +911,22 @@ static float logical_to_physical(HIDData_t *Data, long logical)
 
 static long physical_to_logical(HIDData_t *Data, float physical)
 {
-	long logical, Factor;
+	long logical;
+	float Factor;
 
 	upsdebugx(4, "PhyMax = %ld, PhyMin = %ld, LogMax = %ld, LogMin = %ld",
 		Data->PhyMax, Data->PhyMin, Data->LogMax, Data->LogMin);
-	
+
 	/* HID spec says that if one or both are undefined, or if they are
-    * both 0, then PhyMin = LogMin, PhyMax = LogMax. */
-	if (!Data->have_PhyMax || !Data->have_PhyMin || (Data->PhyMax == 0 && Data->PhyMin == 0)) 
+	 * both 0, then PhyMin = LogMin, PhyMax = LogMax. */
+	if (!Data->have_PhyMax || !Data->have_PhyMin ||
+		(Data->PhyMax == 0 && Data->PhyMin == 0))
 	{
 		return (long)physical;
 	}
 
-	if(Data->PhyMax <= Data->PhyMin)
+	/* Paranoia */
+	if ((Data->PhyMax <= Data->PhyMin) || (Data->LogMax <= Data->LogMin))
 	{
 		/* this should not really happen */
 		return (long)physical;
@@ -928,12 +936,12 @@ static long physical_to_logical(HIDData_t *Data, float physical)
 	/* Convert Value */
 	logical = (long)((physical - Data->PhyMin) * Factor) + Data->LogMin;
 
-	if (logical > Data->LogMax) {
-		logical = Data->LogMax;
-	} else if (logical < Data->LogMin) {
-		logical = Data->LogMin;
-	}
-	
+	if (logical > Data->LogMax)
+		return Data->LogMax;
+
+	if (logical < Data->LogMin)
+		return Data->LogMin;
+
 	return logical;
 }
 

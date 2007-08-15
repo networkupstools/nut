@@ -209,7 +209,7 @@ int HIDGetItemValue(hid_dev_handle_t *udev, char *path, float *Value, usage_tabl
 /*
  * HIDGetItemString
  * -------------------------------------------------------------------------- */
-char *HIDGetItemString(hid_dev_handle_t *udev, char *path, unsigned char *rawbuf, usage_tables_t *utab);
+char *HIDGetItemString(hid_dev_handle_t *udev, char *path, char *rawbuf, usage_tables_t *utab);
 
 /*
  * HIDSetItemValue
