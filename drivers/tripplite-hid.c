@@ -49,9 +49,9 @@ static usage_lkp_t tripplite_usage_lkp[] = {
 	   following 4 items, on some OMNI1000LCD devices. */
 	{ "TLCharging",				0x00840044 },  /* conflicts with HID spec! */
 	{ "TLDischarging",			0x00840045 },  /* conflicts with HID spec! */
-	{ "TLNeedReplacement",		0x0084004b },
-	{ "TLACPresent",				0x008400d0 },
-	{  "\0", 0x0 }
+	{ "TLNeedReplacement",			0x0084004b },
+	{ "TLACPresent",			0x008400d0 },
+	{ NULL, 0 }
 };
 
 static usage_tables_t tripplite_utab[] = {

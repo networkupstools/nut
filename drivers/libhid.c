@@ -49,14 +49,14 @@
 #include <errno.h>
 
 /* support functions */
-static float logical_to_physical(HIDData_t *Data, long logical);
-static long physical_to_logical(HIDData_t *Data, float physical);
-static const char *hid_lookup_path(unsigned int usage, usage_tables_t *utab);
-static int hid_lookup_usage(char *name, usage_tables_t *utab);
-static int string_to_path(char *HIDpath, HIDPath_t *path, usage_tables_t *utab);
-static int path_to_string(char *HIDpath, HIDPath_t *path, usage_tables_t *utab);
-static long get_unit_expo(long UnitType);
-static float expo(int a, int b);
+static double logical_to_physical(HIDData_t *Data, long logical);
+static long physical_to_logical(HIDData_t *Data, double physical);
+static const char *hid_lookup_path(const long usage, usage_tables_t *utab);
+static long hid_lookup_usage(const char *name, usage_tables_t *utab);
+static int string_to_path(const char *string, HIDPath_t *path, usage_tables_t *utab);
+static int path_to_string(char *string, size_t size, HIDPath_t *path, usage_tables_t *utab);
+static long get_unit_expo(const long UnitType);
+static double expo(double a, int b);
 
 /* report buffer structure: holds data about most recent report for
    each given report id */
@@ -69,10 +69,8 @@ typedef struct reportbuf_s reportbuf_t;
 
 /* global variables */
 
-static HIDDesc_t         *pDesc = NULL; /* parsed Report Descriptor */
-static reportbuf_t      *rbuf = NULL;  /* buffer for most recent reports */
-
-#define min(x,y) ((x)>(y) ? (y) : (x))
+static HIDDesc_t	*pDesc = NULL;	/* parsed Report Descriptor */
+static reportbuf_t	*rbuf = NULL;	/* buffer for most recent reports */
 
 /* ---------------------------------------------------------------------- */
 /* report buffering system */
@@ -228,16 +226,16 @@ int set_item_buffered(reportbuf_t *rbuf, HIDData_t *pData, HIDDesc_t *pDesc, hid
 #define NB_HID_UNITS 10
 static const long HIDUnits[NB_HID_UNITS][2]=
 {
-	{0x00000000,0}, /* None */
-	{0x00F0D121,7}, /* Voltage */
-	{0x00100001,0}, /* Ampere */
-	{0x0000D121,7}, /* VA */
-	{0x0000D121,7}, /* Watts */
-	{0x00001001,0}, /* second */
-	{0x00010001,0}, /* K */
-	{0x00000000,0}, /* percent */
-	{0x0000F001,0}, /* Hertz */
-	{0x00101001,0}, /* As */
+	{ 0x00000000, 0 },	/* None */
+	{ 0x00F0D121, 7 },	/* Voltage */
+	{ 0x00100001, 0 },	/* Ampere */
+	{ 0x0000D121, 7 },	/* VA */
+	{ 0x0000D121, 7 },	/* Watts */
+	{ 0x00001001, 0 },	/* second */
+	{ 0x00010001, 0 },	/* K */
+	{ 0x00000000, 0 },	/* percent */
+	{ 0x0000F001, 0 },	/* Hertz */
+	{ 0x00101001, 0 },	/* As */
 };
 
 /* ---------------------------------------------------------------------- */
@@ -516,11 +514,12 @@ void free_regex_matcher(HIDDeviceMatcher_t *matcher) {
  * since it's used to produce sub-drivers "stub" using
  * scripts/subdriver/path-to-subdriver.sh
  */
+
 void HIDDumpTree(hid_dev_handle_t *udev, usage_tables_t *utab)
 {
 	int 		j;
 	char 		path[128], type[10];
-	float		value;
+	double		value;
 	HIDData_t 	*pData;
 
 	for (j=0; j<pDesc->nitems; j++)
@@ -528,7 +527,7 @@ void HIDDumpTree(hid_dev_handle_t *udev, usage_tables_t *utab)
 		pData = &pDesc->item[j];
 
 		/* Build the path */
-		path_to_string(path, &pData->Path, utab);
+		path_to_string(path, sizeof(path), &pData->Path, utab);
 
 		/* Get data type */
 		type[0] = '\0';
@@ -660,10 +659,10 @@ static int HIDGetItemLogical(hid_dev_handle_t *udev, char *path, usage_tables_t 
 /* return 1 if OK, 0 on fail, -errno otherwise (ie disconnect). TODO:
    return value should be checked. Return the physical value
    associated with the given path. */
-int HIDGetItemValue(hid_dev_handle_t *udev, char *path, float *Value, usage_tables_t *utab)
+int HIDGetItemValue(hid_dev_handle_t *udev, char *path, double *Value, usage_tables_t *utab)
 {
 	int r;
-	float physical;
+	double physical;
 	long hValue;
 	HIDData_t *pData;
 
@@ -679,7 +678,7 @@ int HIDGetItemValue(hid_dev_handle_t *udev, char *path, float *Value, usage_tabl
 	physical = logical_to_physical(pData, hValue);
 	
 	/* Process exponents and units */
-	physical *= (float) expo(10,(int)pData->UnitExp - get_unit_expo(pData->Unit));
+	physical *= (double) expo(10,(int)pData->UnitExp - get_unit_expo(pData->Unit));
 	hValue = (long) physical;
 
 	upsdebugx(4, "=>> After conversion: %f (%ld), %i/%i)", physical,
@@ -708,9 +707,9 @@ char *HIDGetItemString(hid_dev_handle_t *udev, char *path, char *rawbuf, usage_t
 
 /* set the given physical value for the variable associated with
  * path. Return TRUE on success, FALSE on failure. */ 
-bool_t HIDSetItemValue(hid_dev_handle_t *udev, char *path, float value, usage_tables_t *utab)
+bool_t HIDSetItemValue(hid_dev_handle_t *udev, char *path, double value, usage_tables_t *utab)
 {
-	float Value;
+	double Value;
 	int i, r;
 	long hValue, oldValue, newValue;
 	HIDData_t *pData;
@@ -831,7 +830,7 @@ int HIDGetEvents(hid_dev_handle_t *udev, HIDDevice_t *dev, HIDEvent_t **eventsLi
 		if (pData->Type != ITEM_INPUT || pData->ReportID != id) {
 			continue;
 		}
-		path_to_string(itemPath, &pData->Path, utab);
+		path_to_string(itemPath, sizeof(itemPath), &pData->Path, utab);
 		GetValue(buf, pData, &hValue);
 		
 		upsdebugx(3, "Object: %s = %ld", itemPath, hValue);
@@ -869,12 +868,10 @@ void HIDCloseDevice(hid_dev_handle_t *udev)
  * Support functions
  *******************************************************/
 
-#define MAX_STRING      		64
-
-static float logical_to_physical(HIDData_t *Data, long logical)
+static double logical_to_physical(HIDData_t *Data, long logical)
 {
-	float physical;
-	float Factor;
+	double physical;
+	double Factor;
 
 	upsdebugx(4, "PhyMax = %ld, PhyMin = %ld, LogMax = %ld, LogMin = %ld",
 		Data->PhyMax, Data->PhyMin, Data->LogMax, Data->LogMin);
@@ -884,19 +881,19 @@ static float logical_to_physical(HIDData_t *Data, long logical)
 	if (!Data->have_PhyMax || !Data->have_PhyMin ||
 		(Data->PhyMax == 0 && Data->PhyMin == 0))
 	{
-		return (float)logical;
+		return (double)logical;
 	}
 
 	/* Paranoia */
 	if ((Data->PhyMax <= Data->PhyMin) || (Data->LogMax <= Data->LogMin))
 	{
 		/* this should not really happen */
-		return (float)logical;
+		return (double)logical;
 	}
 	
-	Factor = (float)(Data->PhyMax - Data->PhyMin) / (Data->LogMax - Data->LogMin);
+	Factor = (double)(Data->PhyMax - Data->PhyMin) / (Data->LogMax - Data->LogMin);
 	/* Convert Value */
-	physical = (float)((logical - Data->LogMin) * Factor) + Data->PhyMin;
+	physical = (double)((logical - Data->LogMin) * Factor) + Data->PhyMin;
 
 	if (physical > Data->PhyMax) {
 		return Data->PhyMax;
@@ -909,10 +906,10 @@ static float logical_to_physical(HIDData_t *Data, long logical)
 	return physical;
 }
 
-static long physical_to_logical(HIDData_t *Data, float physical)
+static long physical_to_logical(HIDData_t *Data, double physical)
 {
 	long logical;
-	float Factor;
+	double Factor;
 
 	upsdebugx(4, "PhyMax = %ld, PhyMin = %ld, LogMax = %ld, LogMin = %ld",
 		Data->PhyMax, Data->PhyMin, Data->LogMax, Data->LogMin);
@@ -932,7 +929,7 @@ static long physical_to_logical(HIDData_t *Data, float physical)
 		return (long)physical;
 	}
 	
-	Factor = (float)(Data->LogMax - Data->LogMin) / (Data->PhyMax - Data->PhyMin);
+	Factor = (double)(Data->LogMax - Data->LogMin) / (Data->PhyMax - Data->PhyMin);
 	/* Convert Value */
 	logical = (long)((physical - Data->PhyMin) * Factor) + Data->LogMin;
 
@@ -945,116 +942,154 @@ static long physical_to_logical(HIDData_t *Data, float physical)
 	return logical;
 }
 
-static long get_unit_expo(long UnitType)
+static long get_unit_expo(const long UnitType)
 {
-	int i = 0, exp = -1;
+	int i;
 	
-	while (i < NB_HID_UNITS)
+	for (i=0; i < NB_HID_UNITS; i++)
 	{
 		if (HIDUnits[i][0] == UnitType)
 		{
-			exp = HIDUnits[i][1];
-			break;
+			upsdebugx(5, "get_unit_expo: %08x found %ld", (unsigned int)UnitType, HIDUnits[i][1]);
+			return HIDUnits[i][1];
 		}
-		i++;
 	}
-	return exp;
-}
 
-/* exponent function: return a^b */
-/* FIXME: check if needed/possible to replace libmath->pow */
-static float expo(int a, int b)
-{
-	if (b==0)
-		return (float) 1;
-	if (b>0)
-		return (float) a * expo(a,b-1);
-	if (b<0)
-		return (float)((float)(1/(float)a) * (float) expo(a,b+1));
-	
-	/* not reached */
+	upsdebugx(5, "get_unit_expo: %08x not found!", (unsigned int)UnitType);
 	return -1;
 }
 
-/* translate HID string path to numeric path and return path depth */
-/* TODO: use usbutils functions (need to be externalised!) */
-static int string_to_path(char *HIDpath, HIDPath_t *path, usage_tables_t *utab)
+/* exponent function: return a^b */
+static double expo(double a, int b)
 {
-	int i = 0, cond = 1;
-	int cur_usage;
-	char buf[MAX_STRING];
-	char *start, *end; 
+	if (b>0)
+		return (a * expo(a, --b));	/* a * a ... */
+
+	if (b<0)
+		return ((1/a) * expo(a, ++b));	/* (1/a) * (1/a) ... */
+
+	return 1;
+}
+
+/* translate HID string path to numeric path and return path depth */
+static int string_to_path(const char *string, HIDPath_t *path, usage_tables_t *utab)
+{
+	int	i = 0;
+	long	usage;
+	char	buf[SMALLBUF];
+	char	*token; 
 	
-	upsdebugx(5, "entering string_to_path()");
-	
-	strncpy(buf, HIDpath, min(strlen(HIDpath)+1, MAX_STRING));
-	buf[MAX_STRING-1] = '\0';
-	start = end = buf;
-	
-	while (cond) {
-		
-		if ((end = strchr(start, '.')) == NULL) {
-			cond = 0;			
+	snprintf(buf, sizeof(buf), string);
+
+	/* TODO: should we use thread-safe strtok_r instead? */
+	for (token = strtok(buf, "."); token != NULL; token = strtok(NULL, "."))
+	{
+		/* lookup tables first (to override defaults) */
+		if ((usage = hid_lookup_usage(token, utab)) != -1)
+		{
+			path->Node[i++] = usage;
+			continue;
 		}
-		else
-			*end = '\0';
-		
-		upsdebugx(4, "parsing %s", start);
-		
-		/* lookup code */
-		if ((cur_usage = hid_lookup_usage(start, utab)) == -1) {
-			upsdebugx(4, "%s wasn't found", start);
-			return 0;
+
+		/* indexed collection */
+		if (strlen(token) == strspn(token, "[1234567890]"))
+		{
+			path->Node[i++] = 0x00ff0000 + atoi(token+1);
+			continue;
 		}
-		else {
-			path->Node[i] = cur_usage;
-			i++;
+
+		/* translate unnamed path components such as "ff860024" */
+		if (strlen(token) == strspn(token, "1234567890abcdefABCDEF"))
+		{
+			path->Node[i++] = strtol(token, NULL, 16);
+			continue;
 		}
-		
-		if(cond)
-			start = end +1 ;
+
+		/* Uh oh, typo in usage table? */
+		upsdebugx(1, "string_to_path: couldn't parse %s from %s", token, string);
 	}
+
 	path->Size = i;
-	
+
+	upsdebugx(4, "string_to_path: depth = %d", path->Size);
 	return i;
 }
 
 /* translate HID numeric path to string path and return path depth */
-/* TODO: use usbutils functions (need to be externalised!) */
-/* FIXME: char *HIDpath must be large enough; buffer overflow otherwise. */
-static int path_to_string(char *HIDpath, HIDPath_t *path, usage_tables_t *utab)
+static int path_to_string(char *string, size_t size, HIDPath_t *path, usage_tables_t *utab)
 {
-	int i = 0;
-	char buf[20];
+	int	i;
+	const char	*p;
+
+	snprintf(string, size, "%s", "");
 	
-	upsdebugx(5, "entering path_to_string()");
-	
-	HIDpath[0] = '\0';
-	
-	/* Numeric to String */
 	for (i = 0; i < path->Size; i++)
 	{
-		/* Deal with ?bogus? 
-		if (path->Node[i] == 0)
+		if (i > 0)
+			snprintfcat(string, size, ".");
+
+		/* lookup tables first (to override defaults) */
+		if ((p = hid_lookup_path(path->Node[i], utab)) != NULL)
+		{
+			snprintfcat(string, size, "%s", p);
 			continue;
-		*/
-		
-		/* manage indexed collection */
-		if ((path->Node[i] & 0xffff0000) == 0x00ff0000)
-		{
-			upsdebugx(5, "Got an indexed collection");
-			snprintf(buf, sizeof(buf), "[%i]", path->Node[i] & 0x0000ffff);
-			strcat (HIDpath, buf);
 		}
-		else
+
+		/* indexed collection */
+		if ((path->Node[i] & 0xffff0000) == 0x00ff0000)	
 		{
-			strcat(HIDpath, hid_lookup_path(path->Node[i], utab));
+			snprintfcat(string, size, "[%i]", path->Node[i] & 0x0000ffff);
+			continue;
 		}
-		if (i < (path->Size - 1))
-			strcat (HIDpath, ".");
+
+		/* unnamed path components such as "ff860024" */
+		snprintfcat(string, size, "%08x", path->Node[i]); 
 	}
 
+	upsdebugx(4, "path_to_string: %s", string);
 	return i;
+}
+
+/* usage conversion string -> numeric */
+static long hid_lookup_usage(const char *name, usage_tables_t *utab)
+{
+	int i, j;
+
+	for (i = 0; utab[i] != NULL; i++)
+	{
+		for (j = 0; utab[i][j].usage_name != NULL; j++)
+		{
+			if (strcasecmp(utab[i][j].usage_name, name))
+				continue;
+
+			upsdebugx(5, "hid_lookup_usage: %s -> %08x", name, (unsigned int)utab[i][j].usage_code);
+			return utab[i][j].usage_code;
+		}
+	}
+
+	upsdebugx(5, "hid_lookup_usage: %s -> not found in lookup table", name);
+	return -1;
+}
+
+/* usage conversion numeric -> string */
+static const char *hid_lookup_path(const long usage, usage_tables_t *utab)
+{
+	int i, j;
+
+	for (i = 0; utab[i] != NULL; i++)
+	{
+		for (j = 0; utab[i][j].usage_name != NULL; j++)
+		{
+			if (utab[i][j].usage_code != usage)
+				continue;
+
+			upsdebugx(5, "hid_lookup_path: %08x -> %s", (unsigned int)usage, utab[i][j].usage_name);
+			return utab[i][j].usage_name;
+		}
+	}
+
+	upsdebugx(5, "hid_lookup_path: %08x -> not found in lookup table", (unsigned int)usage);
+	return NULL;
 }
 
 /* Lookup this usage name to find its code (page + index) */
@@ -1258,66 +1293,5 @@ usage_lkp_t hid_usage_lkp[] = {
 	/* 0x008500f4-0x008500ff	=>	Reserved */
 
 	/* end of structure. */
-	{  "\0",				0x00000000 }
+	{ NULL, 0 }
 };
-
-/* usage conversion numeric -> string */
-static const char *hid_lookup_path(unsigned int usage, usage_tables_t *utab)
-{
-	int i, j;
-	static char raw_usage[10];
-	usage_lkp_t *table;
-
-	upsdebugx(5, "Looking up %08x", usage);
-
-	for (j=0; utab[j] != NULL; j++) {
-		table = utab[j];
-		for (i = 0; (table[i].usage_name[0] != '\0'); i++)
-		{
-			if (table[i].usage_code == usage)
-				return table[i].usage_name;
-		}
-	}
-
-	/* if the corresponding path isn't found,
-		return the numeric usage in string form */
-	snprintf(raw_usage, sizeof(raw_usage), "%08x", usage); 
-	return &raw_usage[0];
-}
-
-/* usage conversion string -> numeric */
-static int hid_lookup_usage(char *name, usage_tables_t *utab)
-{
-	int i, j;
-	int value;
-	char buf[20];
-	usage_lkp_t *table;
-
-	upsdebugx(5, "Looking up %s", name);
-	
-	if (name[0] == '[') { /* manage indexed collection */
-		return (0x00FF0000 + atoi(&name[1]));
-	}
-	for (j=0; utab[j] != NULL; j++) {
-		table = utab[j];
-		for (i = 0; (table[i].usage_code != 0x0); i++)
-		{
-			if (!strcmp(table[i].usage_name, name))
-			{
-				upsdebugx(4, "hid_lookup_usage: found %04x",
-				      table[i].usage_code);
-				
-				return table[i].usage_code;
-			}
-		}
-	}
-	/* finally, translate unnamed path components such as
-	   "ff860024" */
-	value = strtoul(name, NULL, 16);
-	snprintf(buf, sizeof(buf), "%08x", value);
-	if (strcasecmp(buf, name) != 0) {
-		return -1;
-	}
-	return value;
-}
-

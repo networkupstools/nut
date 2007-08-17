@@ -74,7 +74,7 @@ hid_dev_handle_t *udev;
 /* support functions */
 static hid_info_t *find_nut_info(const char *varname);
 static hid_info_t *find_hid_info(const char *hidname);
-static char *hu_find_infoval(info_lkp_t *hid2info, const float value);
+static char *hu_find_infoval(info_lkp_t *hid2info, const double value);
 static long hu_find_valinfo(info_lkp_t *hid2info, const char* value);
 static void process_boolean_info(char *nutvalue);
 static void ups_alarm_set(void);
@@ -82,7 +82,7 @@ static void ups_status_set(void);
 static void identify_ups ();
 static bool_t hid_ups_walk(int mode);
 static int reconnect_ups(void);
-static int ups_infoval_set(hid_info_t *item, float value);
+static int ups_infoval_set(hid_info_t *item, double value);
 
 /* ---------------------------------------------------------------------- */
 /* data for processing boolean values from UPS */
@@ -457,7 +457,7 @@ info_lkp_t divide_by_10_conversion[] = {
 static char *kelvin_celsius_conversion_fun(long value) {
 	static char buf[20];
 	
-	/* we should be working with floats, not integers, but integers it
+	/* we should be working with doubles, not integers, but integers it
 	   is for now */
 	sprintf(buf, "%d", (int)(value - 273.15));
 	return buf;
@@ -936,7 +936,7 @@ static void identify_ups ()
 static bool_t hid_ups_walk(int mode)
 {
 	hid_info_t	*item;
-	float		value;
+	double		value;
 	int		retcode;
 
 	/* 3 modes: HU_WALKMODE_INIT, HU_WALKMODE_QUICK_UPDATE and HU_WALKMODE_FULL_UPDATE */
@@ -1055,7 +1055,6 @@ static bool_t hid_ups_walk(int mode)
 		}
 	}
 
-	/* All is well if we made it to here */
 	return TRUE;
 }
 
@@ -1229,7 +1228,7 @@ static long hu_find_valinfo(info_lkp_t *hid2info, const char* value)
 }
 
 /* find the NUT value matching that HID Item value */
-static char *hu_find_infoval(info_lkp_t *hid2info, const float value)
+static char *hu_find_infoval(info_lkp_t *hid2info, const double value)
 {
 	info_lkp_t *info_lkp;
 	char *nut_value;
@@ -1259,7 +1258,7 @@ static char *hu_find_infoval(info_lkp_t *hid2info, const float value)
 }
 
 /* return -1 on failure, 0 for a status update and 1 in all other cases */
-static int ups_infoval_set(hid_info_t *item, float value)
+static int ups_infoval_set(hid_info_t *item, double value)
 {
 	char *nutvalue;
 

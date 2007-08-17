@@ -212,13 +212,9 @@ static usage_lkp_t mge_usage_lkp[] = {
 	{ "iModel",				0xffff00f0 },
 	{ "iVersion",				0xffff00f1 },
 	/* 0xffff00f2-0xffff00ff	=>	Reserved */
-	/* MGE indexed collections */
-	{ "[1]", 				0x00ff0001 },
-	{ "[2]",				0x00ff0002 },
-	{ "[3]",				0x00ff0003 },
-	{ "[4]",				0x00ff0004 },
+
 	/* end of table */
-	{  "\0",				0x00000000 }
+	{ NULL, 0 }
 };
 
 static usage_tables_t mge_utab[] = {
@@ -465,11 +461,11 @@ static hid_info_t mge_hid2nut[] =
 		HU_FLAG_OK, off_info },
 	/* Manual bypass */
 	{ "BOOL", 0, 0,
-		"UPS.PowerConverter.Input[4].PresentStatus.Used", NULL, NULL,
+		"UPS.PowerConverter.Input.[4].PresentStatus.Used", NULL, NULL,
 		HU_FLAG_OK, bypass_info },
 	/* Automatic bypass */
 	{ "BOOL", 0, 0,
-		"UPS.PowerConverter.Input[2].PresentStatus.Used", NULL, NULL,
+		"UPS.PowerConverter.Input.[2].PresentStatus.Used", NULL, NULL,
 		HU_FLAG_OK, bypass_info },
 	{ "BOOL", 0, 0,
 		"UPS.PowerSummary.PresentStatus.FanFailure", NULL, NULL,
@@ -733,13 +729,12 @@ static char *get_model_name(const char *iProduct, char *iModel)
 static char *mge_format_model(HIDDevice_t *hd) {
 	char *product;
         char *string;
-	float appPower;
-	unsigned char rawbuf[100];
-	char buf[16];
+	double appPower;
+	char buf[100];
 
 	/* Get iModel and iProduct strings */
 	product = hd->Product ? hd->Product : "unknown";
-	if ((string = HIDGetItemString(udev, "UPS.PowerSummary.iModel", rawbuf, mge_utab)) != NULL)
+	if ((string = HIDGetItemString(udev, "UPS.PowerSummary.iModel", buf, mge_utab)) != NULL)
 		return get_model_name(product, string);
 
 	/* Try with ConfigApparentPower */

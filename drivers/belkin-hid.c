@@ -243,7 +243,7 @@ static usage_lkp_t belkin_usage_lkp[] = {
 	{ "BELKINStatus",			0x00860028 },
 	{ "BELKINBatteryStatus",		0x00860022 }, /* 1 byte: bit2=low battery, bit4=charging, bit5=discharging, bit6=battery empty, bit7=replace battery */
 	{ "BELKINPowerStatus",			0x00860021 }, /* 2 bytes: bit0=ac failure, bit4=overload, bit5=load is off, bit6=overheat, bit7=UPS fault, bit13=awaiting power, bit15=alarm status */
-	{  "\0", 0x0 }
+	{ NULL, 0 }
 };
 
 static usage_tables_t belkin_utab[] = {
@@ -377,7 +377,7 @@ static char *belkin_format_mfr(HIDDevice_t *hd) {
 static char *belkin_format_serial(HIDDevice_t *hd) {
 	char *serial;
 	char *string;
-	unsigned char rawbuf[100];
+	char rawbuf[100];
 
 	serial = hd->Serial;
 	if (serial == NULL) {

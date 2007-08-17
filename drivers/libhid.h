@@ -70,7 +70,7 @@ typedef int bool_t;
 /* structure to describe an item in a usage table */
 typedef struct {
 	const char *usage_name;
-	unsigned int usage_code;
+	const long usage_code;
 } usage_lkp_t;
 
 extern usage_lkp_t hid_usage_lkp[];
@@ -204,18 +204,17 @@ HIDDevice_t *HIDOpenDevice(hid_dev_handle_t **udevp, HIDDevice_t *hd, HIDDeviceM
 /*
  * HIDGetItemValue
  * -------------------------------------------------------------------------- */
-int HIDGetItemValue(hid_dev_handle_t *udev, char *path, float *Value, usage_tables_t *utab);
+int HIDGetItemValue(hid_dev_handle_t *udev, const char *path, double *Value, usage_tables_t *utab);
 
 /*
  * HIDGetItemString
  * -------------------------------------------------------------------------- */
-char *HIDGetItemString(hid_dev_handle_t *udev, char *path, char *rawbuf, usage_tables_t *utab);
+char *HIDGetItemString(hid_dev_handle_t *udev, const char *path, char *rawbuf, usage_tables_t *utab);
 
 /*
  * HIDSetItemValue
  * -------------------------------------------------------------------------- */
-bool_t HIDSetItemValue(hid_dev_handle_t *udev, char *path, float value, usage_tables_t *utab);
-
+bool_t HIDSetItemValue(hid_dev_handle_t *udev, const char *path, double value, usage_tables_t *utab);
 
 /*
  * HIDFreeEvents

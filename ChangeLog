@@ -1,3 +1,22 @@
+Thu Aug 16 19:03:49 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/libhid.[ch]:
+   - Changed 'float' to 'double', to prevent loss of precision when
+     long values are casted to floats and back to long again.
+   - Rewrote some helper functions (string_to_path, path_to_string,
+     hid_lookup_usage, hid_lookup_path).
+   - The path_to_string function can no longer overflow the buffer
+     (we were dangerously close to the 64 character limit already).
+ * drivers/usbhid-ups.c:
+   - Changed 'float' to 'double' (see above).
+ * drivers/belkin-hid.c, drivers/mge-hid.c:
+   - Changed 'float' to 'double' (see above).
+   - HIDGetItemString is passed a (char *) buffer since r1055, not
+     a (unsigned char *).
+ * drivers/*-hid.c:
+   - Usage lookup tables is now terminated with { NULL, 0 } instead
+     of { "\0", 0x0 }.
+
 Wed Aug 15 21:47:12 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/pwmib.h:

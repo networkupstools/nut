@@ -106,7 +106,7 @@ static usage_lkp_t apc_usage_lkp[] = {
 	{ "BUPDelayBeforeStartup",	0x00860076 }, /* FIXME: exploit */
 	{ "BUPSelfTest",		0x00860010 }, /* FIXME: exploit */
 
-	{  "\0", 0x0 }
+	{ NULL, 0 }
 };
 
 /*
