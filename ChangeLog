@@ -1,3 +1,8 @@
+Sat Aug 18 18:47:02 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/libhid.c:
+   - Fix compilation problem. 
+
 Thu Aug 16 19:03:49 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/libhid.[ch]:

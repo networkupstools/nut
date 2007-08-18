@@ -619,7 +619,8 @@ HIDDevice_t *HIDOpenDevice(hid_dev_handle_t **udevp, HIDDevice_t *hd, HIDDeviceM
    associated with the given path in *Value (i.e., don't do any
    logical->physical conversion. Also returns pointer to the
    corresponding HIDData_t item in *ppData, if ppData!=NULL. */
-static int HIDGetItemLogical(hid_dev_handle_t *udev, char *path, usage_tables_t *utab, long *Value, HIDData_t **ppData)
+static int HIDGetItemLogical(hid_dev_handle_t *udev, const char *path, usage_tables_t *utab,
+	long *Value, HIDData_t **ppData)
 {
 	int i, r;
 	long hValue;
@@ -659,7 +660,7 @@ static int HIDGetItemLogical(hid_dev_handle_t *udev, char *path, usage_tables_t 
 /* return 1 if OK, 0 on fail, -errno otherwise (ie disconnect). TODO:
    return value should be checked. Return the physical value
    associated with the given path. */
-int HIDGetItemValue(hid_dev_handle_t *udev, char *path, double *Value, usage_tables_t *utab)
+int HIDGetItemValue(hid_dev_handle_t *udev, const char *path, double *Value, usage_tables_t *utab)
 {
 	int r;
 	double physical;
@@ -690,7 +691,7 @@ int HIDGetItemValue(hid_dev_handle_t *udev, char *path, double *Value, usage_tab
 
 /* rawbuf must point to a large enough buffer to hold the resulting
  * string. Return pointer to rawbuf on success, NULL on failure. */
-char *HIDGetItemString(hid_dev_handle_t *udev, char *path, char *rawbuf, usage_tables_t *utab)
+char *HIDGetItemString(hid_dev_handle_t *udev, const char *path, char *rawbuf, usage_tables_t *utab)
 {
 	int r;
 	long hValue;  
@@ -707,7 +708,7 @@ char *HIDGetItemString(hid_dev_handle_t *udev, char *path, char *rawbuf, usage_t
 
 /* set the given physical value for the variable associated with
  * path. Return TRUE on success, FALSE on failure. */ 
-bool_t HIDSetItemValue(hid_dev_handle_t *udev, char *path, double value, usage_tables_t *utab)
+bool_t HIDSetItemValue(hid_dev_handle_t *udev, const char *path, double value, usage_tables_t *utab)
 {
 	double Value;
 	int i, r;
