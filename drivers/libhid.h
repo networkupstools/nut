@@ -147,8 +147,8 @@ void free_regex_matcher(HIDDeviceMatcher_t *matcher);
  */
 struct HIDEvent_s
 {
-	char*   Path;		/*!< HID Object's fully qualified HID path (allocated) */
-	long    Value;		/*!< HID Object Value				*/
+	HIDData_t	*pData;	/*!< HID Object Data	*/
+	double		Value;	/*!< HID Object Value	*/
 	struct HIDEvent_s *next;  /* linked list */
 };
 typedef struct HIDEvent_s HIDEvent_t;
@@ -220,6 +220,11 @@ bool_t HIDSetItemValue(hid_dev_handle_t *udev, const char *path, double value, u
  * GetItemData
  * -------------------------------------------------------------------------- */
 HIDData_t *HIDGetItemData(hid_dev_handle_t *udev, const char *hidpath, usage_tables_t *utab);
+
+/*
+ * GetDataItem
+ * -------------------------------------------------------------------------- */
+char *HIDGetDataItem(hid_dev_handle_t *udev, const HIDData_t *hiddata, usage_tables_t *utab);
 
 /*
  * HIDGetDataValue

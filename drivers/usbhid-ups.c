@@ -73,7 +73,7 @@ hid_dev_handle_t *udev;
 
 /* support functions */
 static hid_info_t *find_nut_info(const char *varname);
-static hid_info_t *find_hid_info(const char *hidname);
+static hid_info_t *find_hid_info(const HIDData_t *hiddata);
 static char *hu_find_infoval(info_lkp_t *hid2info, const double value);
 static long hu_find_valinfo(info_lkp_t *hid2info, const char* value);
 static void process_boolean_info(char *nutvalue);
@@ -679,7 +679,7 @@ void upsdrv_updateinfo(void)
 	hid_info_t	*item;
 	int		evtCount;
 	HIDEvent_t	*eventlist;
-	HIDEvent_t	*p;
+	HIDEvent_t	*event;
 
 	upsdebugx(1, "upsdrv_updateinfo...");
 
@@ -700,7 +700,7 @@ void upsdrv_updateinfo(void)
 		upsdebugx(1, "\n=>Got %i HID Objects...", evtCount);
 			
 		/* Process pending events (HID notifications on Interrupt pipe) */
-		for (p=eventlist; p!=NULL; p=p->next) {
+		for (event = eventlist; event != NULL; event = event->next) {
 
 			/* Check if we are asked to stop (reactivity++) */
 			if (exit_flag != 0) {
@@ -709,10 +709,14 @@ void upsdrv_updateinfo(void)
 			}
 
 			/* Skip objects we don't handle */
-			if ((item = find_hid_info(p->Path)) == NULL)
+			if ((item = find_hid_info(event->pData)) == NULL) {
+				upsdebugx(2, "Event: unknown hidpath %s -> %f",
+					HIDGetDataItem(udev, event->pData, subdriver->utab), event->Value);
 				continue;
+			}
 
-			ups_infoval_set(item, p->Value);
+			upsdebugx(3, "Event: %s -> %f", item->hidpath, event->Value);
+			ups_infoval_set(item, event->Value);
 		}
 
 		HIDFreeEvents(eventlist);
@@ -1026,7 +1030,7 @@ static bool_t hid_ups_walk(int mode)
 		case 0:
 			if (mode == HU_WALKMODE_INIT) {
 				/* Not found and don't try again */
-				item->hiddata == NULL;
+				item->hiddata = NULL;
 			}
 			continue;
 
@@ -1191,9 +1195,9 @@ static hid_info_t *find_nut_info(const char *varname)
 }
 
 /* find info element definition in info array
- * by HID varname.
+ * by HID data pointer.
  */
-static hid_info_t *find_hid_info(const char *hidname)
+static hid_info_t *find_hid_info(const HIDData_t *hiddata)
 {
 	hid_info_t *hidups_item;
 	
@@ -1204,14 +1208,10 @@ static hid_info_t *find_hid_info(const char *hidname)
 		if (hidups_item->hidpath == NULL)
 			continue;
 	
-		if (strcasecmp(hidups_item->hidpath, hidname))
-			continue;
-
-		if (hidups_item->hiddata != NULL)
+		if (hidups_item->hiddata == hiddata)
 			return hidups_item;
 	}
 
-	upsdebugx(2, "find_hid_info: unknown variable: %s\n", hidname);
 	return NULL;
 }
 

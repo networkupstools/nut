@@ -52,7 +52,7 @@ static long physical_to_logical(HIDData_t *Data, double physical);
 static const char *hid_lookup_path(const long usage, usage_tables_t *utab);
 static long hid_lookup_usage(const char *name, usage_tables_t *utab);
 static int string_to_path(const char *string, HIDPath_t *path, usage_tables_t *utab);
-static int path_to_string(char *string, size_t size, HIDPath_t *path, usage_tables_t *utab);
+static int path_to_string(char *string, size_t size, const HIDPath_t *path, usage_tables_t *utab);
 static long get_unit_expo(const long UnitType);
 static double exponent(double a, int b);
 
@@ -657,6 +657,16 @@ HIDData_t *HIDGetItemData(hid_dev_handle_t *udev, const char *hidpath, usage_tab
 	return FindObject_with_Path(pDesc, &Path, ITEM_FEATURE);
 }
 
+char *HIDGetDataItem(hid_dev_handle_t *udev, const HIDData_t *hiddata, usage_tables_t *utab)
+{
+	/* TODO: not thread safe! */
+	static char itemPath[128];
+
+	path_to_string(itemPath, sizeof(itemPath), &hiddata->Path, utab);
+
+	return itemPath;
+}
+
 /* Return the physical value associated with the given HIDData path.
    return 1 if OK, 0 on fail, -errno otherwise (ie disconnect). */
 int HIDGetDataValue(hid_dev_handle_t *udev, HIDData_t *hiddata, double *Value)
@@ -768,7 +778,6 @@ void HIDFreeEvents(HIDEvent_t *events)
 		return;
 
 	HIDFreeEvents(events->next);
-	free(events->Path);
 	free(events);
 }
 
@@ -781,9 +790,8 @@ void HIDFreeEvents(HIDEvent_t *events)
 int HIDGetEvents(hid_dev_handle_t *udev, HIDDevice_t *dev, HIDEvent_t **eventsListp, usage_tables_t *utab)
 {
 	unsigned char buf[100];
-	char itemPath[128];
 	int size, itemCount;
-	long hValue;	
+	double Value;
 	HIDData_t *pData;
 	int id, r, i;
 	HIDEvent_t *root = NULL;
@@ -801,7 +809,7 @@ int HIDGetEvents(hid_dev_handle_t *udev, HIDDevice_t *dev, HIDEvent_t **eventsLi
 
 	r = file_report_buffer(rbuf, buf, size);
 	if (r < 0) {
-		upsdebug_with_errno(2, "Failed to buffer report: %s");
+		upsdebug_with_errno(2, "Failed to buffer report");
 		return -errno;
 	}
 
@@ -815,10 +823,10 @@ int HIDGetEvents(hid_dev_handle_t *udev, HIDDevice_t *dev, HIDEvent_t **eventsLi
 		if (pData->Type != ITEM_INPUT || pData->ReportID != id) {
 			continue;
 		}
-		path_to_string(itemPath, sizeof(itemPath), &pData->Path, utab);
-		GetValue(buf, pData, &hValue);
-		
-		upsdebugx(3, "Object: %s = %ld", itemPath, hValue);
+
+		if (HIDGetDataValue(udev, pData, &Value) != 1) {
+			continue;
+		}
 
 		/* FIXME: enhance this or fix/change the HID parser
 		   (see libhid project) */
@@ -827,8 +835,8 @@ int HIDGetEvents(hid_dev_handle_t *udev, HIDDevice_t *dev, HIDEvent_t **eventsLi
 			HIDFreeEvents(root);
 			return -errno;
 		}
-		p->Path = strdup(itemPath);
-		p->Value = hValue;
+		p->pData = pData;
+		p->Value = Value;
 		p->next = NULL;
 		*hook = p;
 		hook = &p->next;
@@ -1001,7 +1009,7 @@ static int string_to_path(const char *string, HIDPath_t *path, usage_tables_t *u
 }
 
 /* translate HID numeric path to string path and return path depth */
-static int path_to_string(char *string, size_t size, HIDPath_t *path, usage_tables_t *utab)
+static int path_to_string(char *string, size_t size, const HIDPath_t *path, usage_tables_t *utab)
 {
 	int	i;
 	const char	*p;

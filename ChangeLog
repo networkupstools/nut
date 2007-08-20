@@ -1,3 +1,16 @@
+Mon Aug 20 11:32:42 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/libhid.[ch], drivers/usbhid-ups.c:
+   - Pass events as pointers to HIDData_t elements, instead of strings.
+     All HID paths that we handle will be cached by these, so we only
+     have to deal with events that we don't know of yet (which won't
+     happen that often) and which we can't use anyway (needs an entry
+     in hid_info_t table).
+   - Values which are received through the interrupt pipeline were
+     passed as logical instead of physical data. Corrected by getting
+     the values from HIDGetDataValue().
+   - Fixed some typo's from earlier patches.
+
 Mon Aug 20 08:14:38 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/usbhid-ups.[ch]:
