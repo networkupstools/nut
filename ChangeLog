@@ -1,3 +1,9 @@
+Mon Aug 20 19:58:42 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/mge-hid.c:
+   - Added HU_FLAG_SEMI_STATIC for several user changeable variables
+     where applicable.
+
 Mon Aug 20 19:44:04 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/libhid.[ch]:
