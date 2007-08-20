@@ -23,7 +23,7 @@
  *
  */
 
-#define IETF_MIB_VERSION	"1.2"
+#define IETF_MIB_VERSION	"1.2.1"
 
 /* SNMP OIDs set */
 #define IETF_OID_UPS_MIB          "1.3.6.1.2.1.33"
@@ -55,10 +55,14 @@
 #define IETF_OID_OUT_POWER        "1.3.6.1.2.1.33.1.4.4.1.4"	/* UPS-MIB::upsOutputPower */
 #define IETF_OID_LOAD_LEVEL       "1.3.6.1.2.1.33.1.4.4.1.5"	/* UPS-MIB::upsOutputPercentLoad */
 
-#define IETF_OID_UPS_TEST_ID      "1.3.6.1.2.1.33.1.7.1.0"      /* UPS-MIB::upsTestID.0 */
-#define IETF_OID_UPS_TEST_RES     "1.3.6.1.2.1.33.1.7.3.0"      /* UPS-MIB::upsTestResultsSummary.0 */
-#define IETF_OID_UPS_TEST_RESDET  "1.3.6.1.2.1.33.1.7.4.0"      /* UPS-MIB::upsTestResultsDetail.0 */
-#define IETF_OID_UPS_TEST_QBATT   "1.3.6.1.2.1.33.1.7.7.4"      /* UPS-MIB::upsTestQuickBatteryTest.0 */
+#define IETF_OID_UPS_TEST_ID      "1.3.6.1.2.1.33.1.7.1"        /* UPS-MIB::upsTestID */
+#define IETF_OID_UPS_TEST_RES     "1.3.6.1.2.1.33.1.7.3"        /* UPS-MIB::upsTestResultsSummary */
+#define IETF_OID_UPS_TEST_RESDET  "1.3.6.1.2.1.33.1.7.4"        /* UPS-MIB::upsTestResultsDetail */
+#define IETF_OID_UPS_TEST_NOTEST  "1.3.6.1.2.1.33.1.7.7.1"      /* UPS-MIB::upsTestNoTestInitiated */
+#define IETF_OID_UPS_TEST_ABORT   "1.3.6.1.2.1.33.1.7.7.2"      /* UPS-MIB::upsTestAbortTestInProgress */
+#define IETF_OID_UPS_TEST_GSTEST  "1.3.6.1.2.1.33.1.7.7.3"      /* UPS-MIB::upsTestGeneralSystemsTest */
+#define IETF_OID_UPS_TEST_QBATT   "1.3.6.1.2.1.33.1.7.7.4"      /* UPS-MIB::upsTestQuickBatteryTest */
+#define IETF_OID_UPS_TEST_DBATT   "1.3.6.1.2.1.33.1.7.7.5"      /* UPS-MIB::upsTestDeepBatteryCalibration */
 
 #define IETF_OID_CONF_VOLTAGE     "1.3.6.1.2.1.33.1.9.3.0"      /* UPS-MIB::upsConfigOutputVoltage.0 */
 #define IETF_OID_CONF_OUT_VA      "1.3.6.1.2.1.33.1.9.5.0"      /* UPS-MIB::upsConfigOutputVA.0 */
@@ -82,6 +86,17 @@ info_lkp_t ietf_batt_info[] = {
 	{ 2, ""   /* batteryNormal */},
 	{ 3, "LB" /* batteryLow */ },
 	{ 4, "LB" /* batteryDepleted */ },
+	{ 0, "NULL" }
+} ;
+
+/* Defines for IETF_OID_TEST_RES */
+info_lkp_t ietf_test_res_info[] = {
+	{ 1, "Done and passed" },
+	{ 2, "Done and warning" },
+	{ 3, "Done and error" },
+	{ 4, "Aborted" },
+	{ 5, "In progress" },
+	{ 6, "No test initiated" },
 	{ 0, "NULL" }
 } ;
 
@@ -214,8 +229,14 @@ snmp_info_t ietf_mib[] = {
 	/* instant commands. */
 	{ "load.off", 0, IETF_OFF_DO, IETF_OID_SD_AFTER_DELAY, "",
 		SU_TYPE_CMD, NULL },
+	/* write the OID of the battery test into the test initiator OID */
+	{ "test.battery.start.quick", 0, SU_INFOSIZE, IETF_OID_UPS_TEST_ID, IETF_OID_UPS_TEST_QBATT,
+		SU_TYPE_CMD, NULL },
+	 /* write the OID of the battery test into the test initiator OID */
+	{ "test.battery.start.deep", 0, SU_INFOSIZE, IETF_OID_UPS_TEST_ID, IETF_OID_UPS_TEST_DBATT,
+		SU_TYPE_CMD, NULL },
 /*	{ CMD_SHUTDOWN, 0, IETF_OFF_GRACEFUL, IETF_OID_OFF, "", 0, NULL }, */
-	
+
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };

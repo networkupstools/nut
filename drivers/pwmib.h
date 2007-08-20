@@ -22,7 +22,7 @@
  *
  */
 
-#define PW_MIB_VERSION "0.6"
+#define PW_MIB_VERSION "0.6.1"
 
 /* SNMP OIDs set */
 #define PW_OID_MFR_NAME		"1.3.6.1.4.1.534.1.1.1.0"	/* XUPS-MIB::xupsIdentManufacturer.0 */
@@ -58,8 +58,13 @@
 #define PW_OID_AMBIENT_LOW	"1.3.6.1.4.1.534.1.6.2.0"	/* XUPS-MIB::xupsEnvAmbientLowerLimit.0 */
 #define PW_OID_AMBIENT_HIGH	"1.3.6.1.4.1.534.1.6.3.0"	/* XUPS-MIB::xupsEnvAmbientUpperLimit.0 */
 
-#define PW_OID_BATTEST_START	"1.3.6.1.4.1.534.1.8.1"		/* XUPS-MIB::xupsTestBattery.0   set to startTest to initiate test*/
-#define PW_OID_BATTEST_RES	"1.3.6.1.4.1.534.1.8.2"		/* XUPS-MIB::xupsTestBatteryStatus.0 */
+#define PW_OID_BATTEST_START	"1.3.6.1.4.1.534.1.8.1"		/* XUPS-MIB::xupsTestBattery   set to startTest(1) to initiate test*/
+#define PW_OID_BATTEST_RES	"1.3.6.1.4.1.534.1.8.2"		/* XUPS-MIB::xupsTestBatteryStatus */
+
+#define PW_OID_CONT_OFFDELAY	"1.3.6.1.4.1.534.1.9.1"		/* XUPS-MIB::xupsControlOutputOffDelay */
+#define PW_OID_CONT_ONDELAY	"1.3.6.1.4.1.534.1.9.2"		/* XUPS-MIB::xupsControlOutputOnDelay */
+#define PW_OID_CONT_OFFT_DEL	"1.3.6.1.4.1.534.1.9.3"		/* XUPS-MIB::xupsControlOutputOffTrapDelay */
+#define PW_OID_CONT_ONT_DEL	"1.3.6.1.4.1.534.1.9.4"		/* XUPS-MIB::xupsControlOutputOnTrapDelay */
 
 #define PW_OID_CONF_OVOLTAGE	"1.3.6.1.4.1.534.1.10.1.0"	/* XUPS-MIB::xupsConfigOutputVoltage.0 */
 #define PW_OID_CONF_IVOLTAGE	"1.3.6.1.4.1.534.1.10.2.0"	/* XUPS-MIB::xupsConfigInputVoltage.0 */
@@ -151,8 +156,12 @@ snmp_info_t pw_mib[] = {
 		0, NULL },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_POWER_STATUS, "OFF",
 		SU_STATUS_PWR, &pw_pwr_info[0] },
-	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_BATT_STATUS, "",
-		SU_STATUS_BATT, &ietf_batt_info[0] },
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_BATT_STATUS, "",
+		SU_STATUS_BATT, &pw_batt_info[0] },
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_ALARM_OB, "",
+		SU_STATUS_PWR, &pw_alarm_ob[0] },
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_ALARM_LB, "",
+		SU_STATUS_PWR, &pw_alarm_lb[0] },
 	{ "ups.type", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_POWER_STATUS, "",
 		SU_FLAG_STATIC | SU_FLAG_OK, &pw_mode_info[0] },
 	{ "ups.realpower.nominal", 0, 1.0, PW_OID_CONF_POWER, "",
@@ -267,7 +276,17 @@ snmp_info_t pw_mib[] = {
 		0, NULL },
 
 	/* instant commands */
-	{ "test.battery.start.quick", 0, 1, PW_OID_BATTEST_START, "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "test.battery.start.quick", 0, 1, PW_OID_BATTEST_START, "",
+		SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	 /* Cancel output off, by writing 0 to xupsControlOutputOffDelay */
+	{ "shutdown.stop", 0, 0, PW_OID_CONT_OFFDELAY, "",
+		SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	/* load off after 1 sec, shortest possible delay */
+	{ "load.off", 0, 1, PW_OID_CONT_OFFDELAY, "",
+		SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	/* load on after 1 sec, shortest possible delay */
+	{ "load.on", 0, 1, PW_OID_CONT_ONDELAY, "",
+		SU_TYPE_CMD | SU_FLAG_OK, NULL },
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }

@@ -1,3 +1,15 @@
+Mon Aug 20 12:35:24 UTC 2007
+
+ This update is based on input from Bernd Markgraf.
+
+ * drivers/ietfmib.h:
+   - Added 'test.battery.start.quick' and 'test.battery.start.deep'
+     instcmd.
+ * drivers/pwmib.h:
+   - Added 'shutdown.stop', 'load.on' and 'load.off' instcmd.
+   - Use PW_OID_BATT_STATUS, PW_OID_ALARM_OB and PW_OID_ALARM_LB
+     instead of IETF_OID_BATT_STATUS.
+
 Mon Aug 20 11:32:42 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/libhid.[ch], drivers/usbhid-ups.c:
