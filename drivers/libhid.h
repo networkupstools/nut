@@ -217,6 +217,26 @@ char *HIDGetItemString(hid_dev_handle_t *udev, const char *path, char *rawbuf, u
 bool_t HIDSetItemValue(hid_dev_handle_t *udev, const char *path, double value, usage_tables_t *utab);
 
 /*
+ * GetItemData
+ * -------------------------------------------------------------------------- */
+HIDData_t *HIDGetItemData(hid_dev_handle_t *udev, const char *hidpath, usage_tables_t *utab);
+
+/*
+ * HIDGetDataValue
+ * -------------------------------------------------------------------------- */
+int HIDGetDataValue(hid_dev_handle_t *udev, HIDData_t *hiddata, double *Value);
+
+/*
+ * HIDSetDataValue
+ * -------------------------------------------------------------------------- */
+int HIDSetDataValue(hid_dev_handle_t *udev, HIDData_t *hiddata, double Value);
+
+/*
+ * HIDGetIndexString
+ * -------------------------------------------------------------------------- */
+char *HIDGetIndexString(hid_dev_handle_t *udev, int Index, char *buf);
+
+/*
  * HIDFreeEvents
  * -------------------------------------------------------------------------- */
 void HIDFreeEvents(HIDEvent_t *events);

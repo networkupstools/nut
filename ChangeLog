@@ -1,3 +1,19 @@
+Mon Aug 20 07:48:46 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/libhid.[ch]:
+   - New functions HIDGetDataValue() and HIDSetDataValue() that are
+     similar to the existing HIDGetItemValue() and HIDSetItemValue(),
+     but take a pointer to a HIDData_t, instead of a HID pathname
+     (text string).
+   - Don't read back the value after changing it. We can't do anything
+     with that value, even if it is different from what we set (the
+     device may have corrected an out-of-range value). If you need this,
+     call HIDGet(Item|Data)Value function instead afterwards.
+   - Add HIDGetIndexString() function to read string by index.
+   - Use upsdebug_with_errno() instead of upsdebugx() where appropriate.
+   - Show when we get something from the report buffer 'Report[b]' or
+     set a value 'Report[s]' in debug mode.
+
 Mon Aug 20 07:20:02 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/mge-hid.c:
