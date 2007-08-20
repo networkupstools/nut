@@ -1,4 +1,14 @@
-Mon Aug 20 12:35:24 UTC 2007
+Mon Aug 20 14:12:47 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/libhid.c:
+   - Return from the HIDDumpTree() immediately, if nut_debug_level
+     is too low. Otherwise, even if nothing will be printed, it
+     will proceed to query everything from the report descriptor.
+     This will take a long time on my Evolution 650, since the
+     queries for 'UPS.COPIBridge' timeout, without ever yielding
+     something useful.
+
+Mon Aug 20 12:35:24 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  This update is based on input from Bernd Markgraf.
 

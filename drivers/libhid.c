@@ -542,6 +542,10 @@ void HIDDumpTree(hid_dev_handle_t *udev, usage_tables_t *utab)
 	double		value;
 	HIDData_t 	*pData;
 
+	if (nut_debug_level < 1) {
+		return;
+	}
+
 	for (j=0; j<pDesc->nitems; j++)
 	{
 		pData = &pDesc->item[j];
@@ -569,17 +573,19 @@ void HIDDumpTree(hid_dev_handle_t *udev, usage_tables_t *utab)
 		}
 
 		/* FIXME: enhance this or fix/change the HID parser (see libhid project) */
-		if ( strstr(path, "000000") == NULL) {
-
-			/* Get data value */
-			if (HIDGetDataValue(udev, pData, &value) > 0)
-				upsdebugx(1, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %f",
-				  path, type, pData->ReportID, pData->Offset, pData->Size, value);
-
-			else
-				upsdebugx(1, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i",
-				  path, type, pData->ReportID, pData->Offset, pData->Size);
+		if (strstr(path, "000000") != NULL) {
+			continue;
 		}
+
+		/* Get data value */
+		if (HIDGetDataValue(udev, pData, &value) == 1) {
+			upsdebugx(1, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %f",
+				path, type, pData->ReportID, pData->Offset, pData->Size, value);
+			continue;
+		}
+
+		upsdebugx(1, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i",
+			path, type, pData->ReportID, pData->Offset, pData->Size);
 	}
 }
 
