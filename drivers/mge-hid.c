@@ -738,7 +738,7 @@ static char *mge_format_model(HIDDevice_t *hd) {
 		return get_model_name(product, string);
 
 	/* Try with ConfigApparentPower */
-	if (HIDGetItemValue(udev, "UPS.Flow.[4].ConfigApparentPower", &appPower, mge_utab) != 0 ) {
+	if (HIDGetItemValue(udev, "UPS.Flow.[4].ConfigApparentPower", &appPower, mge_utab) == 1) {
 		snprintf(buf, sizeof(buf), "%i", (int)appPower);
 		return get_model_name(product, buf);
 	}
