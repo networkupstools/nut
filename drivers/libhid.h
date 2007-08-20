@@ -260,5 +260,6 @@ void HIDCloseDevice(hid_dev_handle_t *udev);
  * Support functions
  * -------------------------------------------------------------------------- */
 void HIDDumpTree(hid_dev_handle_t *udev, usage_tables_t *utab);
+char *HIDDataType(const HIDData_t *hiddata);
 
 #endif /* _LIBHID_H */

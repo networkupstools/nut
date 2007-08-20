@@ -534,14 +534,17 @@ void free_regex_matcher(HIDDeviceMatcher_t *matcher)
  * since it's used to produce sub-drivers "stub" using
  * scripts/subdriver/path-to-subdriver.sh
  */
-
 void HIDDumpTree(hid_dev_handle_t *udev, usage_tables_t *utab)
 {
-	int 		j;
-	char 		path[128], type[10];
+	int		j;
+	char		path[128];
 	double		value;
-	HIDData_t 	*pData;
+	HIDData_t	*pData;
 
+	/* Do not go further if we already know nothing will be displayed.
+	 * Some reports take a while before they timeout, so if these are
+	 * not used in the driver, they should only be fetched when we're
+	 * in debug mode */
 	if (nut_debug_level < 1) {
 		return;
 	}
@@ -553,25 +556,6 @@ void HIDDumpTree(hid_dev_handle_t *udev, usage_tables_t *utab)
 		/* Build the path */
 		path_to_string(path, sizeof(path), &pData->Path, utab);
 
-		/* Get data type */
-		snprintf(type, sizeof(type), "%s", "");
-
-		switch (pData->Type)
-		{
-			case ITEM_FEATURE:
-				snprintfcat(type, sizeof(type), "Feature");
-				break;
-			case ITEM_INPUT:
-				snprintfcat(type, sizeof(type), "Input");
-				break;
-			case ITEM_OUTPUT:
-				snprintfcat(type, sizeof(type), "Output");
-				break;
-			default:
-				snprintfcat(type, sizeof(type), "Unknown");
-				break;
-		}
-
 		/* FIXME: enhance this or fix/change the HID parser (see libhid project) */
 		if (strstr(path, "000000") != NULL) {
 			continue;
@@ -580,13 +564,41 @@ void HIDDumpTree(hid_dev_handle_t *udev, usage_tables_t *utab)
 		/* Get data value */
 		if (HIDGetDataValue(udev, pData, &value) == 1) {
 			upsdebugx(1, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %f",
-				path, type, pData->ReportID, pData->Offset, pData->Size, value);
-			continue;
+				path, HIDDataType(pData), pData->ReportID, pData->Offset, pData->Size, value);
+			return;
 		}
 
 		upsdebugx(1, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i",
-			path, type, pData->ReportID, pData->Offset, pData->Size);
+			path, HIDDataType(pData), pData->ReportID, pData->Offset, pData->Size);
 	}
+}
+
+/* Returns text string which can be used to display type of data
+ * TODO: not thread safe */
+char *HIDDataType(const HIDData_t *hiddata)
+{
+	static char	type[10];
+
+	/* Get data type */
+	snprintf(type, sizeof(type), "%s", "");
+
+	switch (hiddata->Type)
+	{
+	case ITEM_FEATURE:
+		snprintfcat(type, sizeof(type), "Feature");
+		break;
+	case ITEM_INPUT:
+		snprintfcat(type, sizeof(type), "Input");
+		break;
+	case ITEM_OUTPUT:
+		snprintfcat(type, sizeof(type), "Output");
+		break;
+	default:
+		snprintfcat(type, sizeof(type), "Unknown");
+		break;
+	}
+
+	return type;
 }
 
 /* Matcher is a linked list of matchers (see libhid.h), and the opened
@@ -811,7 +823,6 @@ int HIDGetEvents(hid_dev_handle_t *udev, HIDDevice_t *dev, HIDEvent_t **eventsLi
 	{
 		return size; /* propagate "error" or "no event" code */
 	}
-	upsdebug_hex (3, "Notification", buf, size);
 
 	r = file_report_buffer(rbuf, buf, size);
 	if (r < 0) {
@@ -841,7 +852,9 @@ int HIDGetEvents(hid_dev_handle_t *udev, HIDDevice_t *dev, HIDEvent_t **eventsLi
 			HIDFreeEvents(root);
 			return -errno;
 		}
-		p->pData = pData;
+
+		/* FIXME: ugly way to find corresponding Feature report */
+		p->pData = HIDGetItemData(udev, HIDGetDataItem(udev, pData, utab), utab);
 		p->Value = Value;
 		p->next = NULL;
 		*hook = p;

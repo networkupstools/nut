@@ -1,3 +1,15 @@
+Mon Aug 20 19:44:04 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/libhid.[ch]:
+   - We cache the pointer to the Feature report that corresponds with
+     a NUT variable, but what we receive on the interrupt pipeline is
+     an Input report (apple != pear). So find_hid_info() would never
+     find a match, since it only looks to the Feature reports. Need
+     to find a better way to do this, but it works for now.
+   - Added HIDDataType() helper function, to display the report type.
+ * drivers/usbhid-ups.c:
+   - Added some debugging lines, so that we know where we are.
+
 Mon Aug 20 14:12:47 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/libhid.c:

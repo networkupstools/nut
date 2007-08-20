@@ -500,6 +500,8 @@ void upsdrv_shutdown(void)
 	int ondelay = DEFAULT_ONDELAY;
 	int r;
 
+	upsdebugx(1, "upsdrv_shutdown...");
+	
 	/* Retrieve user defined delay settings */
 	if ( getval(HU_VAR_ONDELAY) )
 		ondelay = atoi( getval(HU_VAR_ONDELAY) );
@@ -541,8 +543,8 @@ int instcmd(const char *cmdname, const char *extradata)
 		return instcmd("beeper.enable", NULL);
 	}
 
-	upsdebugx(5, "entering instcmd(%s, %s)\n",
-		  cmdname, (extradata==NULL)?"":extradata);
+	upsdebugx(1, "instcmd(%s, %s)",
+		  cmdname, (extradata == NULL) ? "" : extradata);
 
 	/* Retrieve and check netvar & item_path */	
 	hidups_item = find_nut_info(cmdname);
@@ -583,7 +585,7 @@ int setvar(const char *varname, const char *val)
 	hid_info_t *hidups_item;
 	long newvalue;
 
-	upsdebugx(5, "entering setvar(%s, %s)\n", varname, val);
+	upsdebugx(1, "setvar(%s, %s)", varname, val);
 	
 	/* 1) retrieve and check netvar & item_path */	
 	hidups_item = find_nut_info(varname);
@@ -644,6 +646,8 @@ void upsdrv_makevartable(void)
 {
 	char temp [MAX_STRING_SIZE];
 	
+	upsdebugx(1, "upsdrv_makevartable...");
+
 	sprintf(temp, "Set shutdown delay, in seconds (default=%d).",
 		DEFAULT_OFFDELAY);
 	addvar (VAR_VALUE, HU_VAR_OFFDELAY, temp);
@@ -697,7 +701,7 @@ void upsdrv_updateinfo(void)
 	/* Get HID notifications on Interrupt pipe first */
 	if ((evtCount = HIDGetEvents(udev, NULL, &eventlist, subdriver->utab)) > 0) {
 
-		upsdebugx(1, "\n=>Got %i HID Objects...", evtCount);
+		upsdebugx(1, "Got %i HID Objects...", evtCount);
 			
 		/* Process pending events (HID notifications on Interrupt pipe) */
 		for (event = eventlist; event != NULL; event = event->next) {
@@ -708,14 +712,19 @@ void upsdrv_updateinfo(void)
 				return;
 			}
 
+			if (nut_debug_level >= 1) {
+				upsdebugx(1, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %f",
+					HIDGetDataItem(udev, event->pData, subdriver->utab),
+					HIDDataType(event->pData), event->pData->ReportID,
+					event->pData->Offset, event->pData->Size, event->Value);
+			}
+
 			/* Skip objects we don't handle */
 			if ((item = find_hid_info(event->pData)) == NULL) {
-				upsdebugx(2, "Event: unknown hidpath %s -> %f",
-					HIDGetDataItem(udev, event->pData, subdriver->utab), event->Value);
+				upsdebugx(2, "Event: unknown hidpath");
 				continue;
 			}
 
-			upsdebugx(3, "Event: %s -> %f", item->hidpath, event->Value);
 			ups_infoval_set(item, event->Value);
 		}
 
@@ -727,6 +736,7 @@ void upsdrv_updateinfo(void)
 
 	/* Do a full update (polling) every pollfreq or upon data change (ie setvar/instcmd) */
 	if ( (time(NULL) > (lastpoll + pollfreq)) || (data_has_changed == TRUE) ) {
+		upsdebugx(1, "Full update...");
 
 		alarm_init();
 
@@ -739,6 +749,8 @@ void upsdrv_updateinfo(void)
 		ups_alarm_set();
 		alarm_commit();
 	} else {
+		upsdebugx(1, "Quick update...");
+
 		/* Quick poll data only to see if the UPS is still connected */
 		if (hid_ups_walk(HU_WALKMODE_QUICK_UPDATE) == FALSE)
 			return;
@@ -750,40 +762,10 @@ void upsdrv_updateinfo(void)
 	dstate_dataok();
 }
 
-
-/* Update ups_status to remember this status item. Interpretation is
-   done in ups_status_set(). */
-static void process_boolean_info(char *nutvalue)
-{
-	status_lkp_t *status_item;
-	int clear = 0;
-
-	upsdebugx(5, "process_boolean_info: %s", nutvalue);
-
-	if (*nutvalue == '!') {
-		nutvalue++;
-		clear = 1;
-	}
-
-	for (status_item = status_info; status_item->status_str != NULL ; status_item++)
-	{
-		if (strcasecmp(status_item->status_str, nutvalue))
-			continue;
-
-		if (clear) {
-			ups_status &= ~status_item->status_mask;
-		} else {
-			ups_status |= status_item->status_mask;
-		}
-
-		return;
-	}
-
-	upsdebugx(5, "Warning: %s not in list of known values", nutvalue);
-}
-
 void upsdrv_initinfo(void)
 {
+	upsdebugx(1, "upsdrv_initinfo...");
+
 	/* identify unit: fill ups.{mfr, model, serial} */
 	identify_ups ();
 
@@ -815,6 +797,8 @@ void upsdrv_initups(void)
 	int r;
 	char *regex_array[6];
 
+	upsdebugx(1, "upsdrv_initups...");
+
 	/* enforce use of the "vendorid" option if "explore" is given */
 	if (testvar("explore") && getval("vendorid")==NULL) {
 		fatalx(EXIT_FAILURE, "must specify \"vendorid\" when using \"explore\"");
@@ -838,6 +822,8 @@ void upsdrv_initups(void)
 	regex_matcher->next = subdriver_matcher;
 
 #else
+	upsdebugx(1, "upsdrv_initups...");
+
 	/*!
 	 * But SHUT is a serial protocol, so it needs
 	 * the device path
@@ -890,6 +876,8 @@ void upsdrv_initups(void)
 
 void upsdrv_cleanup(void)
 {
+	upsdebugx(1, "upsdrv_cleanup...");
+
 	if (hd != NULL) {
 		HIDCloseDevice(udev);
 		udev = NULL;
@@ -899,6 +887,37 @@ void upsdrv_cleanup(void)
 /**********************************************************************
  * Support functions
  *********************************************************************/
+
+/* Update ups_status to remember this status item. Interpretation is
+   done in ups_status_set(). */
+static void process_boolean_info(char *nutvalue)
+{
+	status_lkp_t *status_item;
+	int clear = 0;
+
+	upsdebugx(5, "process_boolean_info: %s", nutvalue);
+
+	if (*nutvalue == '!') {
+		nutvalue++;
+		clear = 1;
+	}
+
+	for (status_item = status_info; status_item->status_str != NULL ; status_item++)
+	{
+		if (strcasecmp(status_item->status_str, nutvalue))
+			continue;
+
+		if (clear) {
+			ups_status &= ~status_item->status_mask;
+		} else {
+			ups_status |= status_item->status_mask;
+		}
+
+		return;
+	}
+
+	upsdebugx(5, "Warning: %s not in list of known values", nutvalue);
+}
 
 static void identify_ups ()
 {
@@ -1028,10 +1047,6 @@ static bool_t hid_ups_walk(int mode)
 			break;	/* Found! */
 
 		case 0:
-			if (mode == HU_WALKMODE_INIT) {
-				/* Not found and don't try again */
-				item->hiddata = NULL;
-			}
 			continue;
 
 		default:
@@ -1039,6 +1054,10 @@ static bool_t hid_ups_walk(int mode)
 			 * value, so go on to the next from the list. */
 			continue;
 		}
+
+		upsdebugx(1, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %f",
+			item->hidpath, HIDDataType(item->hiddata), item->hiddata->ReportID,
+			item->hiddata->Offset, item->hiddata->Size, value);
 
 		if (item->hidflags & HU_TYPE_CMD) {
 			dstate_addcmd(item->info_type);
@@ -1201,8 +1220,7 @@ static hid_info_t *find_hid_info(const HIDData_t *hiddata)
 {
 	hid_info_t *hidups_item;
 	
-	for (hidups_item = subdriver->hid2nut; 
-		hidups_item->info_type != NULL ; hidups_item++) {
+	for (hidups_item = subdriver->hid2nut; hidups_item->info_type != NULL ; hidups_item++) {
 
 		/* Skip NULL HID path (server side vars) */
 		if (hidups_item->hidpath == NULL)
@@ -1260,7 +1278,7 @@ static char *hu_find_infoval(info_lkp_t *hid2info, const double value)
 			return info_lkp->nut_value;
 		}
 	}
-	upsdebugx(3, "hu_find_infoval: no matching INFO_* value for this HID value (%g)\n", value);
+	upsdebugx(3, "hu_find_infoval: no matching INFO_* value for this HID value (%g)", value);
 	return NULL;
 }
 
