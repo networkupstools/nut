@@ -1,3 +1,10 @@
+Mon Aug 20 08:14:38 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/usbhid-ups.[ch]:
+   - Only parse the HID pathname to a HIDData_t pointer once, during
+     HU_WALKMODE_INIT, instead of each time we read/write a value
+     from/to the report buffer.
+
 Mon Aug 20 07:48:46 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/libhid.[ch]:

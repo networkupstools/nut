@@ -430,9 +430,8 @@ info_lkp_t hex_conversion[] = {
    done with result! */
 static char *stringid_conversion_fun(long value) {
 	static char buf[20];
-	comm_driver->get_string(udev, value, buf);	
 
-	return buf;
+	return HIDGetIndexString(udev, value, buf);
 }
 
 info_lkp_t stringid_conversion[] = {
@@ -564,16 +563,15 @@ int instcmd(const char *cmdname, const char *extradata)
 	}
 	
 	/* Actual variable setting */
-	if (HIDSetItemValue(udev, hidups_item->hidpath,
-	    atol(hidups_item->dfl), subdriver->utab))
+	if (HIDSetDataValue(udev, hidups_item->hiddata, atol(hidups_item->dfl)) == 1)
 	{
 		upsdebugx(5, "instcmd: SUCCEED\n");
 		/* Set the status so that SEMI_STATIC vars are polled */
 		data_has_changed = TRUE;
 		return STAT_INSTCMD_HANDLED;
 	}
-	else
-		upsdebugx(3, "instcmd: FAILED\n"); /* TODO: HANDLED but FAILED, not UNKNOWN! */
+	
+	upsdebugx(3, "instcmd: FAILED\n"); /* TODO: HANDLED but FAILED, not UNKNOWN! */
 	
 	/* TODO: to be completed */
 	return STAT_INSTCMD_UNKNOWN;
@@ -625,16 +623,15 @@ int setvar(const char *varname, const char *val)
 		newvalue = atol(val);
 
 	/* Actual variable setting */
-	if (HIDSetItemValue(udev, hidups_item->hidpath, newvalue, subdriver->utab))
+	if (HIDSetDataValue(udev, hidups_item->hiddata, newvalue) == 1)
 	{
 		upsdebugx(5, "setvar: SUCCEED\n");
 		/* Set the status so that SEMI_STATIC vars are polled */
 		data_has_changed = TRUE;
 		return STAT_SET_HANDLED;
 	}
-	else
-		upsdebugx(3, "setvar: FAILED\n"); /* FIXME: HANDLED but FAILED, not UNKNOWN! */
-	
+
+	upsdebugx(3, "setvar: FAILED\n"); /* FIXME: HANDLED but FAILED, not UNKNOWN! */
 	return STAT_SET_UNKNOWN;
 }
 
@@ -710,8 +707,6 @@ void upsdrv_updateinfo(void)
 				HIDFreeEvents(eventlist);
 				return;
 			}
-
-			upsdebugx(3, "Object: %s = %ld", p->Path, p->Value);
 
 			/* Skip objects we don't handle */
 			if ((item = find_hid_info(p->Path)) == NULL)
@@ -938,6 +933,11 @@ static bool_t hid_ups_walk(int mode)
 	hid_info_t	*item;
 	double		value;
 	int		retcode;
+#ifdef DEBUG
+	struct timeval	start, stop;
+
+	gettimeofday(&start, NULL);
+#endif
 
 	/* 3 modes: HU_WALKMODE_INIT, HU_WALKMODE_QUICK_UPDATE and HU_WALKMODE_FULL_UPDATE */
 	
@@ -966,13 +966,19 @@ static bool_t hid_ups_walk(int mode)
 				continue;
 			}
 
+			/* Get pointer to the corresponding HIDData_t item */
+			item->hiddata = HIDGetItemData(udev, item->hidpath, subdriver->utab);
+
+			if (item->hiddata == NULL)
+				continue;
+
 			/* Avoid redundancy when multiple defines (RO/RW)
 			 * ups.status and ups.alarm is not set during
 			   HU_WALKMODE_INIT, so these don't need to be
 			   caught here. */
 			if (dstate_getinfo(item->info_type) != NULL) {
 
-				item->hidflags &= ~HU_FLAG_OK;
+				item->hiddata = NULL;
 				continue;
 			}
 
@@ -1000,11 +1006,7 @@ static bool_t hid_ups_walk(int mode)
 			fatalx(EXIT_FAILURE, "hid_ups_walk: unknown update mode!");
 		}
 
-		/* skip elements we shouldn't process / show. */
-		if ( !(item->hidflags & HU_FLAG_OK) )
-			continue;
-
-		retcode = HIDGetItemValue(udev, item->hidpath, &value, subdriver->utab);
+		retcode = HIDGetDataValue(udev, item->hiddata, &value);
 
 		switch (retcode)
 		{
@@ -1024,7 +1026,7 @@ static bool_t hid_ups_walk(int mode)
 		case 0:
 			if (mode == HU_WALKMODE_INIT) {
 				/* Not found and don't try again */
-				item->hidflags &= ~HU_FLAG_OK;
+				item->hiddata == NULL;
 			}
 			continue;
 
@@ -1054,7 +1056,12 @@ static bool_t hid_ups_walk(int mode)
 			}
 		}
 	}
+#ifdef DEBUG
+	gettimeofday(&stop, NULL);
 
+	upsdebugx(1, "hid_ups_walk: mode %d took %.3f seconds", mode,
+		(double)(stop.tv_sec - start.tv_sec) + ((double)(stop.tv_usec - start.tv_usec)) / 1000000);
+#endif
 	return TRUE;
 }
 
@@ -1175,7 +1182,7 @@ static hid_info_t *find_nut_info(const char *varname)
 		if (strcasecmp(hidups_item->info_type, varname))
 			continue;
 
-		if (hidups_item->hidflags & HU_FLAG_OK)
+		if (hidups_item->hiddata != NULL)
 			return hidups_item;
 	}
 
@@ -1200,7 +1207,7 @@ static hid_info_t *find_hid_info(const char *hidname)
 		if (strcasecmp(hidups_item->hidpath, hidname))
 			continue;
 
-		if (hidups_item->hidflags & HU_FLAG_OK)
+		if (hidups_item->hiddata != NULL)
 			return hidups_item;
 	}
 

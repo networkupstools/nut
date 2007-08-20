@@ -139,7 +139,7 @@ typedef struct {
 	int	info_len;		/* if ST_FLAG_STRING: length of the string */
 					/* if HU_TYPE_CMD: command value */
 	char	*hidpath;		/* Full HID Object path (or NULL for server side vars) */
-	int	**numericpath;		/* Full HID Object numeric path (for caching purpose, filled at runtime) */
+	HIDData_t *hiddata;		/* Full HID Object data (for caching purpose, filled at runtime) */
 	char	*dfl;			/* if HU_FLAG_ABSENT: default value ; format otherwise */
 	unsigned long hidflags;		/* driver's own flags */
 	info_lkp_t *hid2info;		/* lookup table between HID and NUT values */
