@@ -853,8 +853,7 @@ int HIDGetEvents(hid_dev_handle_t *udev, HIDDevice_t *dev, HIDEvent_t **eventsLi
 			return -errno;
 		}
 
-		/* FIXME: ugly way to find corresponding Feature report */
-		p->pData = HIDGetItemData(udev, HIDGetDataItem(udev, pData, utab), utab);
+		p->pData = pData;
 		p->Value = Value;
 		p->next = NULL;
 		*hook = p;

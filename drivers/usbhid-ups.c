@@ -719,8 +719,11 @@ void upsdrv_updateinfo(void)
 					event->pData->Offset, event->pData->Size, event->Value);
 			}
 
-			/* Skip objects we don't handle */
-			if ((item = find_hid_info(event->pData)) == NULL) {
+			/* FIXME: ugly way to find corresponding Feature from an Input report
+			 * Skip Input reports, if we don't use the Feature report */
+			if ((item = find_hid_info(HIDGetItemData(udev,
+					HIDGetDataItem(udev, event->pData, subdriver->utab),
+					subdriver->utab))) == NULL) {
 				upsdebugx(2, "Event: unknown hidpath");
 				continue;
 			}

@@ -1,3 +1,9 @@
+Tue Aug 21 06:35:45 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/libhid.c, drivers/usbhid-ups.c:
+   - Moved the 'cast' from an Input report to a Feature report to
+     usbhid-ups.c.
+
 Mon Aug 20 19:58:42 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/mge-hid.c:
