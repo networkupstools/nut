@@ -83,6 +83,9 @@ static void identify_ups ();
 static bool_t hid_ups_walk(int mode);
 static int reconnect_ups(void);
 static int ups_infoval_set(hid_info_t *item, double value);
+#ifdef DEBUG
+static double interval(void);
+#endif
 
 /* ---------------------------------------------------------------------- */
 /* data for processing boolean values from UPS */
@@ -650,11 +653,11 @@ void upsdrv_makevartable(void)
 
 	snprintf(temp, sizeof(temp), "Set shutdown delay, in seconds (default=%d).",
 		DEFAULT_OFFDELAY);
-	addvar (VAR_VALUE, HU_VAR_OFFDELAY, temp);
+	addvar(VAR_VALUE, HU_VAR_OFFDELAY, temp);
 	
 	snprintf(temp, sizeof(temp), "Set startup delay, in ten seconds units for MGE (default=%d).",
 		DEFAULT_ONDELAY);
-	addvar (VAR_VALUE, HU_VAR_ONDELAY, temp);
+	addvar(VAR_VALUE, HU_VAR_ONDELAY, temp);
 	
 	snprintf(temp, sizeof(temp), "Set polling frequency, in seconds, to reduce data flow (default=%i).",
 		DEFAULT_POLLFREQ);
@@ -697,7 +700,9 @@ void upsdrv_updateinfo(void)
 			return;
 		}
 	}
-
+#ifdef DEBUG
+	interval();
+#endif
 	/* Get HID notifications on Interrupt pipe first */
 	if ((evtCount = HIDGetEvents(udev, NULL, &eventlist, subdriver->utab)) > 0) {
 
@@ -705,12 +710,6 @@ void upsdrv_updateinfo(void)
 			
 		/* Process pending events (HID notifications on Interrupt pipe) */
 		for (event = eventlist; event != NULL; event = event->next) {
-
-			/* Check if we are asked to stop (reactivity++) */
-			if (exit_flag != 0) {
-				HIDFreeEvents(eventlist);
-				return;
-			}
 
 			if (nut_debug_level >= 1) {
 				upsdebugx(1, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %f",
@@ -733,7 +732,9 @@ void upsdrv_updateinfo(void)
 
 		HIDFreeEvents(eventlist);
 	}
-
+#ifdef DEBUG
+	upsdebugx(1, "took %.3f seconds handling interrupt reports...", interval());
+#endif
 	/* clear status buffer before begining */
 	status_init();
 
@@ -763,18 +764,27 @@ void upsdrv_updateinfo(void)
 	status_commit();
 
 	dstate_dataok();
+#ifdef DEBUG
+	upsdebugx(1, "took %.3f seconds handling feature reports...", interval());
+#endif
 }
 
 void upsdrv_initinfo(void)
 {
+	char *val;
+
 	upsdebugx(1, "upsdrv_initinfo...");
 
 	/* identify unit: fill ups.{mfr, model, serial} */
 	identify_ups ();
 
-	/* TODO: load lookup file (WARNING: should be in initups()
-	because of -k segfault (=> not calling upsdrv_initinfo())
-	*/
+	HIDDumpTree(udev, subdriver->utab);
+
+	/* init polling frequency */
+	if ((val = getval(HU_VAR_POLLFREQ)) != NULL)
+		pollfreq = atoi(val);
+
+	dstate_setinfo("driver.parameter.pollfreq", "%d", pollfreq);
 
 	/* Device capabilities enumeration */
 	if (hid_ups_walk(HU_WALKMODE_INIT) == TRUE)
@@ -840,9 +850,8 @@ void upsdrv_initups(void)
 	   expression (not for SHUT_MODE) */
 	if ((hd = HIDOpenDevice(&udev, &curDevice, regex_matcher, MODE_OPEN)) == NULL)
 		fatalx(EXIT_FAILURE, "No matching HID UPS found");
-	else
-		upslogx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
 
+	upslogx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
 #ifndef SHUT_MODE
 	/* create a new matcher for later reopening */
 	reopen_matcher = new_exact_matcher(hd);
@@ -869,12 +878,6 @@ void upsdrv_initups(void)
 	}
 
 	upslogx(2, "Using subdriver: %s", subdriver->name);
-
-	HIDDumpTree(udev, subdriver->utab);
-
-	/* init polling frequency */
-	if ( getval(HU_VAR_POLLFREQ) )
-		pollfreq = atoi ( getval(HU_VAR_POLLFREQ) );
 }
 
 void upsdrv_cleanup(void)
@@ -953,27 +956,40 @@ static void identify_ups ()
 	dstate_setinfo("ups.productid", "%04x", hd->ProductID);
 }
 
+#ifdef DEBUG
+static double interval(void)
+{
+	struct timeval		now;
+	static struct timeval	last;
+	double	ret;
+
+	gettimeofday(&now, NULL);
+	ret = now.tv_sec - last.tv_sec	+ ((double)(now.tv_usec - last.tv_usec)) / 1000000;
+	memcpy(&last, &now, sizeof(struct timeval));
+
+	return ret;
+}
+#endif
+
 /* walk ups variables and set elements of the info array. */
 static bool_t hid_ups_walk(int mode)
 {
 	hid_info_t	*item;
 	double		value;
 	int		retcode;
-#ifdef DEBUG
-	struct timeval	start, stop;
-
-	gettimeofday(&start, NULL);
-#endif
 
 	/* 3 modes: HU_WALKMODE_INIT, HU_WALKMODE_QUICK_UPDATE and HU_WALKMODE_FULL_UPDATE */
 	
 	/* Device data walk ----------------------------- */
 	for (item = subdriver->hid2nut; item->info_type != NULL; item++) {
 
-		/* Check if we are asked to stop (reactivity++) */
+#ifdef SHUT_MODE
+		/* Check if we are asked to stop (reactivity++) in SHUT mode.
+		 * In USB mode, looping through this takes well under a second,
+		 * so any effort to improve reactivity here is wasted. */
 		if (exit_flag != 0)
 			return TRUE;
-
+#endif
 		/* filter data according to mode */
 		switch (mode)
 		{
@@ -1043,7 +1059,7 @@ static bool_t hid_ups_walk(int mode)
 		case -EIO:
 		case -ENOENT:
 			/* Uh oh, got to reconnect! */
-			hd = NULL;
+			reconnect_ups();
 			return FALSE;
 
 		case 1:
@@ -1082,12 +1098,7 @@ static bool_t hid_ups_walk(int mode)
 			}
 		}
 	}
-#ifdef DEBUG
-	gettimeofday(&stop, NULL);
 
-	upsdebugx(1, "hid_ups_walk: mode %d took %.3f seconds", mode,
-		(double)(stop.tv_sec - start.tv_sec) + ((double)(stop.tv_usec - start.tv_usec)) / 1000000);
-#endif
 	return TRUE;
 }
 

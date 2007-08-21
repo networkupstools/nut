@@ -31,13 +31,9 @@
 #include "config.h"
 #include "libhid.h"
 
-#define DRIVER_VERSION		"0.30"
+#define DRIVER_VERSION		"0.31"
 
-#ifdef SHUT_MODE
-	extern shut_dev_handle_t *udev;
-#else
-	extern usb_dev_handle *udev;
-#endif
+extern hid_dev_handle_t	*udev;
 
 /* --------------------------------------------------------------- */
 /*      Model Name formating entries                               */

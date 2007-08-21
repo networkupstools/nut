@@ -1,3 +1,26 @@
+Tue Aug 21 18:59:03 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/libhid.c:
+   - The HIDGetEvents() function used a timeout value of 5000ms.
+     Since the underlying libusb function uses synchronous I/O (at
+     least for version 0.1), this means that it blocks on this when
+     no interrupt report is available. Lowered timeout to 250ms, as
+     it is better to retry on the next call, than to hang around
+     waiting for an interrupt report. Improves responsiveness.
+ * drivers/usbhid-ups.[ch]:
+   - Moved 'pollfreq' and HIDDumpTree() from upsdrv_initups() to
+     upsdrv_initinfo(). These are not needed when we run the shutdown
+     command, so they should not be in upsdrv_initups().
+   - Removed checking of the exit_flag. We don't spend a lot of time
+     in these loops, so it's not worth checking it.
+   - Added 'interval' helper function, that returns the time since
+     the last time it was called. Will only be compiled in if DEBUG
+     is defined.
+   - The 'udev' global variable (needed by mge-hid) is a pointer to
+     hid_dev_handle_t.
+ * drivers/tripplite-hid.c:
+   - Updated comment about changing 'udev' and 'hotplug' rules.
+
 Tue Aug 21 18:42:11 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/*-hid.c,libhid.[ch],libshut.c,libusb.c,usbhid-ups.c:

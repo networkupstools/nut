@@ -820,7 +820,7 @@ int HIDGetEvents(hid_dev_handle_t *udev, HIDDevice_t *dev, HIDEvent_t **eventsLi
 	upsdebugx(2, "Waiting for notifications...");
 	
 	/* needs libusb-0.1.8 to work => use ifdef and autoconf */
-	if ((size = comm_driver->get_interrupt(udev, &buf[0], 100, 5000)) <= 0)
+	if ((size = comm_driver->get_interrupt(udev, buf, sizeof(buf), 250)) <= 0)
 	{
 		return size; /* propagate "error" or "no event" code */
 	}
