@@ -477,17 +477,16 @@ int libshut_set_report(shut_dev_handle_t *devp, int ReportId,
 	return ((ret==0)?ReportSize:ret);
 }
 
-int libshut_get_string(shut_dev_handle_t *devp, int StringIdx, char *buf)
+int libshut_get_string(shut_dev_handle_t *devp, int StringIdx, char *buf, size_t buflen)
 {
 	int ret = -1;
 	
 	if (devp != NULL)
 	{
-		ret = shut_get_string_simple(devp, StringIdx, buf, 20);
-		 /* sizeof(buf)); */
+		ret = shut_get_string_simple(devp, StringIdx, buf, buflen);
 		if (ret > 0)
 			upsdebugx(2, "-> String: %s (len = %i/%i)",
-			      buf, ret, sizeof(buf));
+			      buf, ret, buflen);
 		else
 			upsdebugx(2, "- Unable to fetch buf");
 	}

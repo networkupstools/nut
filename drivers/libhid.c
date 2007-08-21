@@ -720,24 +720,25 @@ int HIDGetItemValue(hid_dev_handle_t *udev, const char *path, double *Value, usa
 	return HIDGetDataValue(udev, HIDGetItemData(udev, path, utab), Value);
 }
 
-/* rawbuf must point to a large enough buffer to hold the resulting
- * string. */
-char *HIDGetIndexString(hid_dev_handle_t *udev, const int Index, char *buf)
+char *HIDGetIndexString(hid_dev_handle_t *udev, const int Index, char *buf, size_t buflen)
 {
-	comm_driver->get_string(udev, Index, buf);
+	if (comm_driver->get_string(udev, Index, buf, buflen) < 1)
+		buf[0] = '\0';
+
 	return buf;
 }
 
-/* rawbuf must point to a large enough buffer to hold the resulting
- * string. Return pointer to buf on success, NULL on failure. */
-char *HIDGetItemString(hid_dev_handle_t *udev, const char *path, char *buf, usage_tables_t *utab)
+/* Return pointer to buf (empty if not found) */
+char *HIDGetItemString(hid_dev_handle_t *udev, const char *path, char *buf, size_t buflen, usage_tables_t *utab)
 {
 	double	Index;
 
-	if (HIDGetDataValue(udev, HIDGetItemData(udev, path, utab), &Index) != 1)
-		return NULL;
+	if (HIDGetDataValue(udev, HIDGetItemData(udev, path, utab), &Index) != 1) {
+		buf[0] = '\0';
+		return buf;
+	}
 
-	return HIDGetIndexString(udev, Index, buf);
+	return HIDGetIndexString(udev, Index, buf, buflen);
 }
 
 /* set the given physical value for the variable associated with

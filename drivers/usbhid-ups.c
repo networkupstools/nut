@@ -405,7 +405,7 @@ static char *date_conversion_fun(long value) {
   month = (value >> 5) & 0x0f;
   day = value & 0x1f;
   
-  sprintf(buf, "%04d/%02d/%02d", year, month, day);
+  snprintf(buf, sizeof(buf), "%04d/%02d/%02d", year, month, day);
   return buf;
 }
 
@@ -418,7 +418,7 @@ info_lkp_t date_conversion[] = {
 static char *hex_conversion_fun(long value) {
 	static char buf[20];
 	
-	sprintf(buf, "%08lx", value);
+	snprintf(buf, sizeof(buf), "%08lx", value);
 	return buf;
 }
 
@@ -431,7 +431,7 @@ info_lkp_t hex_conversion[] = {
 static char *stringid_conversion_fun(long value) {
 	static char buf[20];
 
-	return HIDGetIndexString(udev, value, buf);
+	return HIDGetIndexString(udev, value, buf, sizeof(buf));
 }
 
 info_lkp_t stringid_conversion[] = {
@@ -443,7 +443,7 @@ info_lkp_t stringid_conversion[] = {
 static char *divide_by_10_conversion_fun(long value) {
 	static char buf[20];
 	
-	sprintf(buf, "%0.1f", value * 0.1);
+	snprintf(buf, sizeof(buf), "%0.1f", value * 0.1);
 	return buf;
 }
 
@@ -458,7 +458,7 @@ static char *kelvin_celsius_conversion_fun(long value) {
 	
 	/* we should be working with doubles, not integers, but integers it
 	   is for now */
-	sprintf(buf, "%d", (int)(value - 273.15));
+	snprintf(buf, sizeof(buf), "%d", (int)(value - 273.15));
 	return buf;
 }
 
@@ -648,15 +648,15 @@ void upsdrv_makevartable(void)
 	
 	upsdebugx(1, "upsdrv_makevartable...");
 
-	sprintf(temp, "Set shutdown delay, in seconds (default=%d).",
+	snprintf(temp, sizeof(temp), "Set shutdown delay, in seconds (default=%d).",
 		DEFAULT_OFFDELAY);
 	addvar (VAR_VALUE, HU_VAR_OFFDELAY, temp);
 	
-	sprintf(temp, "Set startup delay, in ten seconds units for MGE (default=%d).",
+	snprintf(temp, sizeof(temp), "Set startup delay, in ten seconds units for MGE (default=%d).",
 		DEFAULT_ONDELAY);
 	addvar (VAR_VALUE, HU_VAR_ONDELAY, temp);
 	
-	sprintf(temp, "Set polling frequency, in seconds, to reduce data flow (default=%i).",
+	snprintf(temp, sizeof(temp), "Set polling frequency, in seconds, to reduce data flow (default=%i).",
 		DEFAULT_POLLFREQ);
 	addvar(VAR_VALUE, HU_VAR_POLLFREQ, temp);
 #ifndef SHUT_MODE

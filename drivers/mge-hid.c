@@ -37,7 +37,7 @@
 /* returns statically allocated string - must not use it again before
    done with result! */
 static char *mge_battery_voltage_nominal_fun(long value) {
-	static char buf[20];
+	static char buf[10];
 	const char *model;
 
 	model = dstate_getinfo("ups.model");
@@ -70,7 +70,7 @@ static info_lkp_t mge_powerfactor_conversion[] = {
 /* returns statically allocated string - must not use it again before
    done with result! */
 static char *mge_battery_capacity_fun(long value) {
-	static char buf[20];
+	static char buf[10];
 
 	snprintf(buf, sizeof(buf), "%.2f", (double)value / 3600);
 	return buf;
@@ -740,7 +740,7 @@ static char *mge_format_model(HIDDevice_t *hd) {
 
 	/* Get iModel and iProduct strings */
 	product = hd->Product ? hd->Product : "unknown";
-	if ((string = HIDGetItemString(udev, "UPS.PowerSummary.iModel", buf, mge_utab)) != NULL)
+	if ((string = HIDGetItemString(udev, "UPS.PowerSummary.iModel", buf, sizeof(buf), mge_utab)) != NULL)
 		return get_model_name(product, string);
 
 	/* Try with ConfigApparentPower */

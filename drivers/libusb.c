@@ -358,16 +358,16 @@ static int libusb_set_report(usb_dev_handle *udev, int ReportId, unsigned char *
 		return 0;
 }
 
-static int libusb_get_string(usb_dev_handle *udev, int StringIdx, char *string)
+static int libusb_get_string(usb_dev_handle *udev, int StringIdx, char *buf, size_t buflen)
 {
   int ret = -1;	
 
   if (udev != NULL)
 	{
-	  ret = usb_get_string_simple(udev, StringIdx, string, 20); /* sizeof(string)); */
+	  ret = usb_get_string_simple(udev, StringIdx, buf, buflen);
 	  if (ret > 0)
 		{
-		  upsdebugx(5, "-> String: %s (len = %i/%i)", string, ret, sizeof(string));
+		  upsdebugx(5, "-> String: %s (len = %i/%i)", buf, ret, buflen);
 		}
 	  else
 		  upsdebugx(2, "- Unable to fetch string %d", StringIdx);

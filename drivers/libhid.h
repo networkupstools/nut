@@ -187,7 +187,7 @@ struct communication_subdriver_s {
 	int (*set_report)(hid_dev_handle_t *sdev, int ReportId,
 	unsigned char *raw_buf, int ReportSize );
 	int (*get_string)(hid_dev_handle_t *sdev,
-	int StringIdx, char *string);
+	int StringIdx, char *buf, size_t buflen);
 	int (*get_interrupt)(hid_dev_handle_t *sdev,
 	unsigned char *buf, int bufsize, int timeout);
 };
@@ -209,7 +209,7 @@ int HIDGetItemValue(hid_dev_handle_t *udev, const char *path, double *Value, usa
 /*
  * HIDGetItemString
  * -------------------------------------------------------------------------- */
-char *HIDGetItemString(hid_dev_handle_t *udev, const char *path, char *rawbuf, usage_tables_t *utab);
+char *HIDGetItemString(hid_dev_handle_t *udev, const char *path, char *buf, size_t buflen, usage_tables_t *utab);
 
 /*
  * HIDSetItemValue
@@ -239,7 +239,7 @@ int HIDSetDataValue(hid_dev_handle_t *udev, HIDData_t *hiddata, double Value);
 /*
  * HIDGetIndexString
  * -------------------------------------------------------------------------- */
-char *HIDGetIndexString(hid_dev_handle_t *udev, int Index, char *buf);
+char *HIDGetIndexString(hid_dev_handle_t *udev, int Index, char *buf, size_t buflen);
 
 /*
  * HIDFreeEvents

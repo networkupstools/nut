@@ -1,3 +1,15 @@
+Tue Aug 21 18:42:11 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/*-hid.c,libhid.[ch],libshut.c,libusb.c,usbhid-ups.c:
+   - HIDGetItemString() would return a NULL pointer if index value
+     was not found, which was not how it was used. Now clears the
+     buffer and always returns pointer to buffer.
+   - Pass length of buffer in calls to HIDGetItemString() and
+     HIDGetIndexString() to prevent risking buffer overflow. The
+     underlying calls would limit the length to 20 bytes, but this
+     would not prevent overflow if a smaller buffer was allocated.
+   - Use snprintf() instead of sprintf().
+
 Tue Aug 21 06:35:45 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/libhid.c, drivers/usbhid-ups.c:
