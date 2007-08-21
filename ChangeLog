@@ -1,3 +1,11 @@
+Tue Aug 21 20:29:25 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/pwmib.h:
+   - Use IETF_OID_BATT_STATUS for battery status (previous change
+     from r1064) didn't work correctly.
+   - Added 'vendor.specific.abmstatus', which violates the NUT
+     standards, but for now this is all I could come up with.
+
 Tue Aug 21 18:59:03 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/libhid.c:

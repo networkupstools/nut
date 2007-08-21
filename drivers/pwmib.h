@@ -115,11 +115,12 @@ info_lkp_t pw_mode_info[] = {
 };
 
 info_lkp_t pw_batt_info[] = {
-	{ 1, "CHRG" }, 
-	{ 2, "DISCHRG" },
-	{ 3, "" },	/* battery floating */
-	{ 4, "" },	/* battery resting */
-	{ 5, "" },	/* unknown */
+	{ 1, "Battery Charging" }, 
+	{ 2, "Battery Discharging" },
+	{ 3, "Battery Floating" },	/* battery floating  - can we put that stuff somewhere so one actually access that information? */
+	{ 4, "Battery Resting" },	/* battery resting   - could come handy if support asks what 
+			   state the batteries are in... pw_batt_info doesn't get used */
+	{ 5, "unknown" },	/* unknown */
 	{ 0, "NULL" }
 };
 
@@ -156,12 +157,8 @@ snmp_info_t pw_mib[] = {
 		0, NULL },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_POWER_STATUS, "OFF",
 		SU_STATUS_PWR, &pw_pwr_info[0] },
-	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_BATT_STATUS, "",
-		SU_STATUS_BATT, &pw_batt_info[0] },
-	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_ALARM_OB, "",
-		SU_STATUS_PWR, &pw_alarm_ob[0] },
-	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_ALARM_LB, "",
-		SU_STATUS_PWR, &pw_alarm_lb[0] },
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_BATT_STATUS, "",
+		SU_STATUS_BATT, &ietf_batt_info[0] },
 	{ "ups.type", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_POWER_STATUS, "",
 		SU_FLAG_STATIC | SU_FLAG_OK, &pw_mode_info[0] },
 	{ "ups.realpower.nominal", 0, 1.0, PW_OID_CONF_POWER, "",
@@ -170,6 +167,8 @@ snmp_info_t pw_mib[] = {
 		0, NULL },
 	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_BATTEST_RES, "",
 		0, &pw_batt_test_info[0] },
+	{ "vendor.specific.abmstatus", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_BATT_STATUS, "",
+	  SU_STATUS_BATT, &pw_batt_info[0] },
 
 	/* Battery page */
 	{ "battery.charge", 0, 1.0, PW_OID_BATT_CHARGE, "",
