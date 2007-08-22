@@ -1,7 +1,9 @@
 /* usbhid-ups.h - Driver for serial/USB HID UPS units
  *
  * Copyright (C)
- *  2003 / 2005 - Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
+ *  2003-2005 Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
+ *  2005-2006 Peter Selinger <selinger@users.sourceforge.net>
+ *  2007      Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
  * This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
  *

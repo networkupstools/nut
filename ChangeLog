@@ -1,3 +1,23 @@
+Wed Aug 22 18:12:50 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/libhid.[ch]:
+   - Allocate storage for report buffer when creating it. Only free
+     it when we're done with it. This makes sure we don't run into
+     memory allocation errors after startup.
+   - Allow passing a timeout value on HIDGetDataValue().
+   - HIDOpenDevice() will now handle closing the device on reload if
+     needed, so that HIDCloseDevice() can now really close it and
+     free the allocated memory for report buffer and parsed report
+     descriptor.
+   - Removed dynamic allocation of HID events, instead we now pass a
+     pointer to an array of HIDData_t pointers.
+ * drivers/usbhid.c:
+   - We now try to get all events in one pass of upsdrv_updateinfo(),
+     instead of just one report.
+ * drivers/libshut.c,libusb.c:
+   - There is no need to sleep for a while, if the communication
+     subdriver doesn't support interrupt transfers.
+
 Tue Aug 21 20:29:25 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/pwmib.h:

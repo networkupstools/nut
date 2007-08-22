@@ -713,9 +713,9 @@ int shut_packet_recv (int fd, u_char *Buf, int datalen)
 int shut_interrupt_read(shut_dev_handle_t *dev, int ep, unsigned char *bytes, int size,
 		       int timeout)
 {
-	/* sleep during timeout to slow down a bit... */
-	sleep(timeout / 1000);
-
+/*
+	usleep(timeout * 1000);
+ */
 	/* FIXME: to be written */
 	return 0;
 }

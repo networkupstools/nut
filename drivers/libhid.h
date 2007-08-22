@@ -2,10 +2,11 @@
  * @file libhid.h
  * @brief HID Library - User API
  *
- * @author Copyright (C) 2003
+ * @author Copyright (C) 2003 - 2007
  *      Arnaud Quette <arnaud.quette@free.fr> && <arnaud.quette@mgeups.com>
  *      Charles Lepple <clepple@ghz.cc>
- *      2005 Peter Selinger <selinger@users.sourceforge.net>
+ *      Peter Selinger <selinger@users.sourceforge.net>
+ *      Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
  * This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
  *
@@ -141,18 +142,6 @@ int new_regex_matcher(HIDDeviceMatcher_t **matcher, char *regex_array[6], int cf
 void free_exact_matcher(HIDDeviceMatcher_t *matcher);
 void free_regex_matcher(HIDDeviceMatcher_t *matcher);
 
-/*!
- * Describe a linked list of HID Events (nodes in the HID tree with
- * values). 
- */
-struct HIDEvent_s
-{
-	HIDData_t	*pData;	/*!< HID Object Data	*/
-	double		Value;	/*!< HID Object Value	*/
-	struct HIDEvent_s *next;  /* linked list */
-};
-typedef struct HIDEvent_s HIDEvent_t;
-
 /* Describe a set of values to match for finding a special HID device.
  * This is given by a set of (compiled) regular expressions. If any
  * expression is NULL, it matches anything. The second set of values
@@ -204,17 +193,17 @@ HIDDevice_t *HIDOpenDevice(hid_dev_handle_t **udevp, HIDDevice_t *hd, HIDDeviceM
 /*
  * HIDGetItemValue
  * -------------------------------------------------------------------------- */
-int HIDGetItemValue(hid_dev_handle_t *udev, const char *path, double *Value, usage_tables_t *utab);
+int HIDGetItemValue(hid_dev_handle_t *udev, const char *hidpath, double *Value, usage_tables_t *utab);
 
 /*
  * HIDGetItemString
  * -------------------------------------------------------------------------- */
-char *HIDGetItemString(hid_dev_handle_t *udev, const char *path, char *buf, size_t buflen, usage_tables_t *utab);
+char *HIDGetItemString(hid_dev_handle_t *udev, const char *hidpath, char *buf, size_t buflen, usage_tables_t *utab);
 
 /*
  * HIDSetItemValue
  * -------------------------------------------------------------------------- */
-bool_t HIDSetItemValue(hid_dev_handle_t *udev, const char *path, double value, usage_tables_t *utab);
+bool_t HIDSetItemValue(hid_dev_handle_t *udev, const char *hidpath, double value, usage_tables_t *utab);
 
 /*
  * GetItemData
@@ -229,7 +218,7 @@ char *HIDGetDataItem(hid_dev_handle_t *udev, const HIDData_t *hiddata, usage_tab
 /*
  * HIDGetDataValue
  * -------------------------------------------------------------------------- */
-int HIDGetDataValue(hid_dev_handle_t *udev, HIDData_t *hiddata, double *Value);
+int HIDGetDataValue(hid_dev_handle_t *udev, HIDData_t *hiddata, double *Value, int age);
 
 /*
  * HIDSetDataValue
@@ -242,14 +231,9 @@ int HIDSetDataValue(hid_dev_handle_t *udev, HIDData_t *hiddata, double Value);
 char *HIDGetIndexString(hid_dev_handle_t *udev, int Index, char *buf, size_t buflen);
 
 /*
- * HIDFreeEvents
- * -------------------------------------------------------------------------- */
-void HIDFreeEvents(HIDEvent_t *events);
-
-/*
  * HIDGetEvents
  * -------------------------------------------------------------------------- */
-int HIDGetEvents(hid_dev_handle_t *udev, HIDDevice_t *dev, HIDEvent_t **eventsListp, usage_tables_t *utab);
+int HIDGetEvents(hid_dev_handle_t *udev, HIDData_t **event, int eventlen);
 
 /*
  * HIDCloseDevice
@@ -260,6 +244,6 @@ void HIDCloseDevice(hid_dev_handle_t *udev);
  * Support functions
  * -------------------------------------------------------------------------- */
 void HIDDumpTree(hid_dev_handle_t *udev, usage_tables_t *utab);
-char *HIDDataType(const HIDData_t *hiddata);
+const char *HIDDataType(const HIDData_t *hiddata);
 
 #endif /* _LIBHID_H */

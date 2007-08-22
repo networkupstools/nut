@@ -2,7 +2,9 @@
  * 
  * Copyright (C)
  *   2003-2005 Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
- *   2005 John Stamp <kinsayder@hotmail.com>
+ *   2005      John Stamp <kinsayder@hotmail.com>
+ *   2005-2006 Peter Selinger <selinger@users.sourceforge.net>
+ *   2007      Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
  * This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
  *
@@ -590,7 +592,7 @@ int setvar(const char *varname, const char *val)
 
 	upsdebugx(1, "setvar(%s, %s)", varname, val);
 	
-	/* 1) retrieve and check netvar & item_path */	
+	/* retrieve and check netvar & item_path */	
 	hidups_item = find_nut_info(varname);
 	
 	if (hidups_item == NULL)
@@ -677,22 +679,24 @@ void upsdrv_makevartable(void)
 void upsdrv_banner(void)
 {
 	printf("Network UPS Tools: %s %s - core %s (%s)\n\n",
-	       comm_driver->name, comm_driver->version,
-	       DRIVER_VERSION, UPS_VERSION);
+		comm_driver->name, comm_driver->version,
+		DRIVER_VERSION, UPS_VERSION);
 }
+
+#define	MAX_EVENT_NUM	16
 
 void upsdrv_updateinfo(void) 
 {
 	hid_info_t	*item;
-	int		evtCount;
-	HIDEvent_t	*eventlist;
-	HIDEvent_t	*event;
+	HIDData_t	*event[MAX_EVENT_NUM];
+	int		i, evtCount;
+	double		value;
 
 	upsdebugx(1, "upsdrv_updateinfo...");
 
 	/* check for device availability to set datastale! */
 	if (hd == NULL) {
-		upsdebugx(1, "\n=>Got to reconnect!\n");
+		upsdebugx(1, "Got to reconnect!\n");
 
 		if (!reconnect_ups()) {
 
@@ -704,36 +708,38 @@ void upsdrv_updateinfo(void)
 	interval();
 #endif
 	/* Get HID notifications on Interrupt pipe first */
-	if ((evtCount = HIDGetEvents(udev, NULL, &eventlist, subdriver->utab)) > 0) {
+	/* TODO: cap number of times we check for events? */
+	while ((evtCount = HIDGetEvents(udev, event, MAX_EVENT_NUM)) > 0) {
 
-		upsdebugx(1, "Got %i HID Objects...", evtCount);
+		upsdebugx(1, "Got %i HID objects...", evtCount);
 			
 		/* Process pending events (HID notifications on Interrupt pipe) */
-		for (event = eventlist; event != NULL; event = event->next) {
+		for (i = 0; i < evtCount; i++) {
+
+			if (HIDGetDataValue(udev, event[i], &value, 2) != 1)
+				continue;
 
 			if (nut_debug_level >= 1) {
 				upsdebugx(1, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %f",
-					HIDGetDataItem(udev, event->pData, subdriver->utab),
-					HIDDataType(event->pData), event->pData->ReportID,
-					event->pData->Offset, event->pData->Size, event->Value);
+					HIDGetDataItem(udev, event[i], subdriver->utab),
+					HIDDataType(event[i]), event[i]->ReportID,
+					event[i]->Offset, event[i]->Size, value);
 			}
 
 			/* FIXME: ugly way to find corresponding Feature from an Input report
 			 * Skip Input reports, if we don't use the Feature report */
 			if ((item = find_hid_info(HIDGetItemData(udev,
-					HIDGetDataItem(udev, event->pData, subdriver->utab),
+					HIDGetDataItem(udev, event[i], subdriver->utab),
 					subdriver->utab))) == NULL) {
-				upsdebugx(2, "Event: unknown hidpath");
+				upsdebugx(1, "NUT doesn't use this HID object");
 				continue;
 			}
 
-			ups_infoval_set(item, event->Value);
+			ups_infoval_set(item, value);
 		}
-
-		HIDFreeEvents(eventlist);
 	}
 #ifdef DEBUG
-	upsdebugx(1, "took %.3f seconds handling interrupt reports...", interval());
+	upsdebugx(1, "took %.3f seconds handling interrupt reports...\n", interval());
 #endif
 	/* clear status buffer before begining */
 	status_init();
@@ -765,7 +771,7 @@ void upsdrv_updateinfo(void)
 
 	dstate_dataok();
 #ifdef DEBUG
-	upsdebugx(1, "took %.3f seconds handling feature reports...", interval());
+	upsdebugx(1, "took %.3f seconds handling feature reports...\n", interval());
 #endif
 }
 
@@ -826,11 +832,16 @@ void upsdrv_initups(void)
 	regex_array[5] = getval("bus");
 
 	r = new_regex_matcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
-	if (r==-1) {
+	switch(r)
+	{
+	case -1:
 		fatal_with_errno(EXIT_FAILURE, "new_regex_matcher()");
-	} else if (r) {
+	case 0:
+		break;
+	default:
 		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[r]);
 	}
+
 	/* link the matchers */
 	regex_matcher->next = subdriver_matcher;
 
@@ -860,7 +871,6 @@ void upsdrv_initups(void)
 	}
 	/* link the two matchers */
 	reopen_matcher->next = regex_matcher;
-
 #endif /* SHUT_MODE */
 	
 	/* select the subdriver for this device */
@@ -884,10 +894,7 @@ void upsdrv_cleanup(void)
 {
 	upsdebugx(1, "upsdrv_cleanup...");
 
-	if (hd != NULL) {
-		HIDCloseDevice(udev);
-		udev = NULL;
-	}
+	HIDCloseDevice(udev);
 }
 
 /**********************************************************************
@@ -932,8 +939,7 @@ static void identify_ups ()
 	char *serial;
 
 	upsdebugx (5, "entering identify_ups(0x%04x, 0x%04x)\n", 
-			   hd->VendorID,
-			   hd->ProductID);
+		hd->VendorID, hd->ProductID);
 
 	/* use vendor-specific method for calculating human-readable
 	   manufacturer, model, and serial strings */
@@ -946,12 +952,15 @@ static void identify_ups ()
 	if (mfr != NULL) {
 		dstate_setinfo("ups.mfr", "%s", mfr);
 	}
+
 	if (model != NULL) {
 		dstate_setinfo("ups.model", "%s", model);
 	}
+
 	if (serial != NULL) {
 		dstate_setinfo("ups.serial", "%s", serial);
 	}
+
 	dstate_setinfo("ups.vendorid", "%04x", hd->VendorID);
 	dstate_setinfo("ups.productid", "%04x", hd->ProductID);
 }
@@ -964,8 +973,9 @@ static double interval(void)
 	double	ret;
 
 	gettimeofday(&now, NULL);
+
 	ret = now.tv_sec - last.tv_sec	+ ((double)(now.tv_usec - last.tv_usec)) / 1000000;
-	memcpy(&last, &now, sizeof(struct timeval));
+	last = now;
 
 	return ret;
 }
@@ -1048,7 +1058,7 @@ static bool_t hid_ups_walk(int mode)
 			fatalx(EXIT_FAILURE, "hid_ups_walk: unknown update mode!");
 		}
 
-		retcode = HIDGetDataValue(udev, item->hiddata, &value);
+		retcode = HIDGetDataValue(udev, item->hiddata, &value, 2);
 
 		switch (retcode)
 		{
@@ -1104,20 +1114,13 @@ static bool_t hid_ups_walk(int mode)
 
 static int reconnect_ups(void)
 {
-	upsdebugx(2, "==================================================");
-	upsdebugx(2, "= device has been disconnected, try to reconnect =");
-	upsdebugx(2, "==================================================");
-		
-#if defined(SHUT_MODE) || defined(SUN_LIBUSB)
-	/* Cause a double free corruption in USB mode on linux! */
-	HIDCloseDevice(udev);
-#else
-	/* but keep udev in SHUT mode, for udev->device_path */
-	udev = NULL;
-#endif
+	upsdebugx(4, "==================================================");
+	upsdebugx(4, "= device has been disconnected, try to reconnect =");
+	upsdebugx(4, "==================================================");
 
-	if ((hd = HIDOpenDevice(&udev, &curDevice, reopen_matcher, MODE_REOPEN)) == NULL)
+	if ((hd = HIDOpenDevice(&udev, &curDevice, reopen_matcher, MODE_REOPEN)) == NULL) {
 		return 0;
+	}
 
 	return 1;
 }
