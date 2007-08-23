@@ -703,6 +703,11 @@ void upsdrv_updateinfo(void)
 			dstate_datastale();
 			return;
 		}
+
+		if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
+			hd = NULL;
+			return;
+		}
 	}
 #ifdef DEBUG
 	interval();
@@ -716,7 +721,7 @@ void upsdrv_updateinfo(void)
 		/* Process pending events (HID notifications on Interrupt pipe) */
 		for (i = 0; i < evtCount; i++) {
 
-			if (HIDGetDataValue(udev, event[i], &value, 2) != 1)
+			if (HIDGetDataValue(udev, event[i], &value, poll_interval) != 1)
 				continue;
 
 			if (nut_debug_level >= 1) {
@@ -807,7 +812,7 @@ void upsdrv_initinfo(void)
 
 void upsdrv_initups(void)
 {
-	int i;
+	int i, mode = MODE_OPEN;
 #ifndef SHUT_MODE
 	/*!
 	 * SHUT is only supported by MGE UPS SYSTEMS units
@@ -831,13 +836,13 @@ void upsdrv_initups(void)
 	regex_array[4] = getval("serial");
 	regex_array[5] = getval("bus");
 
-	r = new_regex_matcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
+	r = HIDNewRegexMatcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
 	switch(r)
 	{
-	case -1:
-		fatal_with_errno(EXIT_FAILURE, "new_regex_matcher()");
 	case 0:
 		break;
+	case -1:
+		fatal_with_errno(EXIT_FAILURE, "HIDNewRegexMatcher()");
 	default:
 		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[r]);
 	}
@@ -859,15 +864,15 @@ void upsdrv_initups(void)
 
 	/* Search for the first supported UPS matching the regular
 	   expression (not for SHUT_MODE) */
-	if ((hd = HIDOpenDevice(&udev, &curDevice, regex_matcher, MODE_OPEN)) == NULL)
+	if ((hd = HIDOpenDevice(&udev, &curDevice, regex_matcher, &mode)) == NULL)
 		fatalx(EXIT_FAILURE, "No matching HID UPS found");
 
 	upslogx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
 #ifndef SHUT_MODE
 	/* create a new matcher for later reopening */
-	reopen_matcher = new_exact_matcher(hd);
-	if (!reopen_matcher) {
-		fatal_with_errno(EXIT_FAILURE, "new_exact_matcher()");
+	r = HIDNewExactMatcher(&reopen_matcher, hd);
+	if (r) {
+		fatal_with_errno(EXIT_FAILURE, "HIDNewExactMatcher()");
 	}
 	/* link the two matchers */
 	reopen_matcher->next = regex_matcher;
@@ -895,6 +900,8 @@ void upsdrv_cleanup(void)
 	upsdebugx(1, "upsdrv_cleanup...");
 
 	HIDCloseDevice(udev);
+	HIDFreeExactMatcher(reopen_matcher);
+	HIDFreeRegexMatcher(regex_matcher);
 }
 
 /**********************************************************************
@@ -1004,6 +1011,23 @@ static bool_t hid_ups_walk(int mode)
 		switch (mode)
 		{
 		/* Device capabilities enumeration */
+		case HU_WALKMODE_RESET:
+			if (item->hiddata == NULL)
+				continue;
+
+			/* Reset the NUT-to-HID translation */
+			item->hiddata = NULL;
+
+			/* If this was a command, remove it... */
+			if (item->hidflags & HU_TYPE_CMD) {
+				dstate_delcmd(item->info_type);
+				continue;
+			}
+
+			/* ...otherwise, remove variable */
+			dstate_delinfo(item->info_type);
+			continue;
+			
 		case HU_WALKMODE_INIT:
 			/* Special case for handling server side variables */
 			if (item->hidflags & HU_FLAG_ABSENT) {
@@ -1018,23 +1042,30 @@ static bool_t hid_ups_walk(int mode)
 				continue;
 			}
 
+			/* Apparently, we are reconnecting, so
+			 * NUT-to-HID translation is still good */
+			if (item->hiddata != NULL)
+				break;
+
 			/* Get pointer to the corresponding HIDData_t item */
 			item->hiddata = HIDGetItemData(udev, item->hidpath, subdriver->utab);
-
 			if (item->hiddata == NULL)
 				continue;
 
-			/* Avoid redundancy when multiple defines (RO/RW)
-			 * ups.status and ups.alarm is not set during
-			   HU_WALKMODE_INIT, so these don't need to be
-			   caught here. */
-			if (dstate_getinfo(item->info_type) != NULL) {
-
-				item->hiddata = NULL;
-				continue;
+			/* Allow duplicates for these NUT variables... */
+			if (!strncmp(item->info_type, "input.transfer.reason", 21) ||
+					!strncmp(item->info_type, "ups.alarm", 9)) {
+				break;
 			}
 
-			break;
+			/* ...this one doesn't exist yet... */
+			if (dstate_getinfo(item->info_type) == NULL) {
+				break;
+			}
+
+			/* ...but this one does, so don't use it! */
+			item->hiddata = NULL;
+			continue;
 
 		case HU_WALKMODE_QUICK_UPDATE:
 			/* Quick update only deals with status and alarms! */
@@ -1058,7 +1089,7 @@ static bool_t hid_ups_walk(int mode)
 			fatalx(EXIT_FAILURE, "hid_ups_walk: unknown update mode!");
 		}
 
-		retcode = HIDGetDataValue(udev, item->hiddata, &value, 2);
+		retcode = HIDGetDataValue(udev, item->hiddata, &value, poll_interval);
 
 		switch (retcode)
 		{
@@ -1069,7 +1100,7 @@ static bool_t hid_ups_walk(int mode)
 		case -EIO:
 		case -ENOENT:
 			/* Uh oh, got to reconnect! */
-			reconnect_ups();
+			hd = NULL;
 			return FALSE;
 
 		case 1:
@@ -1114,12 +1145,21 @@ static bool_t hid_ups_walk(int mode)
 
 static int reconnect_ups(void)
 {
+	int	mode = MODE_REOPEN;
+
 	upsdebugx(4, "==================================================");
 	upsdebugx(4, "= device has been disconnected, try to reconnect =");
 	upsdebugx(4, "==================================================");
 
-	if ((hd = HIDOpenDevice(&udev, &curDevice, reopen_matcher, MODE_REOPEN)) == NULL) {
+	if ((hd = HIDOpenDevice(&udev, &curDevice, reopen_matcher, &mode)) == NULL) {
 		return 0;
+	}
+
+	/* Apparently, HIDOpenDevice() couldn't get an exact
+	 * match, so we must treat this as a new connection */
+	if (mode != MODE_REOPEN) {
+		upsdebugx(4, "reconnect_ups: couldn't get an exact match, resetting");
+		hid_ups_walk(HU_WALKMODE_RESET);
 	}
 
 	return 1;

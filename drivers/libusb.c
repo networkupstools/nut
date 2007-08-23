@@ -90,7 +90,8 @@ static inline int typesafe_control_msg(usb_dev_handle *dev,
     opened device must match all of them. Also note: the string
     components of curDevice are filled with allocated strings that
     must later be freed. */
-static int libusb_open(usb_dev_handle **udevp, HIDDevice_t *curDevice, HIDDeviceMatcher_t *matcher, unsigned char *ReportDesc, int mode)
+static int libusb_open(usb_dev_handle **udevp, HIDDevice_t *curDevice, HIDDeviceMatcher_t *matcher,
+	unsigned char *ReportDesc, int *mode)
 {
 	int found = 0;
 #if LIBUSB_HAS_DETACH_KRNL_DRV
@@ -117,7 +118,8 @@ static int libusb_open(usb_dev_handle **udevp, HIDDevice_t *curDevice, HIDDevice
 
 	for (bus = usb_busses; bus && !found; bus = bus->next) {
 		for (dev = bus->devices; dev && !found; dev = dev->next) {
-			upsdebugx(2, "Checking device (%04X/%04X) (%s/%s)", dev->descriptor.idVendor, dev->descriptor.idProduct, bus->dirname, dev->filename);
+			upsdebugx(2, "Checking device (%04X/%04X) (%s/%s)", dev->descriptor.idVendor,
+				dev->descriptor.idProduct, bus->dirname, dev->filename);
 			
 			/* supported vendors are now checked by the
 			   supplied matcher */
@@ -140,26 +142,29 @@ static int libusb_open(usb_dev_handle **udevp, HIDDevice_t *curDevice, HIDDevice
 			curDevice->Vendor = NULL;
 			curDevice->Product = NULL;
 			curDevice->Serial = NULL;
-			curDevice->Bus = strdup(bus->dirname);
+			curDevice->Bus = xstrdup(bus->dirname);
 			
 			if (dev->descriptor.iManufacturer) {
-				ret = usb_get_string_simple(udev, dev->descriptor.iManufacturer, string, sizeof(string));
+				ret = usb_get_string_simple(udev, dev->descriptor.iManufacturer,
+					string, sizeof(string));
 				if (ret > 0) {
-					curDevice->Vendor = strdup(string);
+					curDevice->Vendor = xstrdup(string);
 				}
 			}
 
 			if (dev->descriptor.iProduct) {
-				ret = usb_get_string_simple(udev, dev->descriptor.iProduct, string, sizeof(string));
+				ret = usb_get_string_simple(udev, dev->descriptor.iProduct,
+					string, sizeof(string));
 				if (ret > 0) {
-					curDevice->Product = strdup(string);
+					curDevice->Product = xstrdup(string);
 				}
 			}
 
 			if (dev->descriptor.iSerialNumber) {
-				ret = usb_get_string_simple(udev, dev->descriptor.iSerialNumber, string, sizeof(string));
+				ret = usb_get_string_simple(udev, dev->descriptor.iSerialNumber,
+					string, sizeof(string));
 				if (ret > 0) {
-					curDevice->Serial = strdup(string);
+					curDevice->Serial = xstrdup(string);
 				}
 			}
 
@@ -171,20 +176,33 @@ static int libusb_open(usb_dev_handle **udevp, HIDDevice_t *curDevice, HIDDevice
 			upsdebugx(2, "- Bus: %s", curDevice->Bus ? curDevice->Bus : "unknown");
 
 			upsdebugx(2, "Trying to match device");
-			for (m = matcher; m; m=m->next) {
+			for (m = matcher; m != NULL; m = m->next) {
+
 				ret = matches(m, curDevice);
-				if (ret==0) {
+				switch(ret)
+				{
+				case 2:
+					upsdebugx(2, "Device exact match");
+					break;
+				case 1:
+					upsdebugx(2, "Device regex match");
+					if (*mode == MODE_REOPEN) {
+						/* Asked for reopening the device, but we couldn't
+						 * get an exact match, so opening instead. */
+						*mode = MODE_OPEN;
+					}
+					break;
+				case 0:
 					upsdebugx(2, "Device does not match - skipping");
 					goto next_device;
-				} else if (ret==-1) {
-					fatalx(EXIT_FAILURE, "matcher: %s", strerror(errno));
-					goto next_device;
-				} else if (ret==-2) {
+				case -1:
+					fatal_with_errno(EXIT_FAILURE, "matcher");
+				default:
 					upsdebugx(2, "matcher: unspecified error");
 					goto next_device;
 				}
+				break;
 			}
-			upsdebugx(2, "Device matches");
 			
 			/* Now we have matched the device we wanted. Claim it. */
 
@@ -212,7 +230,7 @@ static int libusb_open(usb_dev_handle **udevp, HIDDevice_t *curDevice, HIDDevice
 			/* set default interface */
 			usb_set_altinterface(udev, 0);
 			
-			if (mode == MODE_REOPEN || mode == MODE_NOHID) {
+			if (*mode == MODE_REOPEN || *mode == MODE_NOHID) {
 				return 1; 
 			}
 
@@ -257,7 +275,8 @@ static int libusb_open(usb_dev_handle **udevp, HIDDevice_t *curDevice, HIDDevice
 			   altsetting 0, as above. */
 			iface = &dev->config[0].interface[0].altsetting[0];
 			for (i=0; i<iface->extralen; i+=iface->extra[i]) {
-				upsdebugx(4, "i=%d, extra[i]=%02x, extra[i+1]=%02x", i, iface->extra[i], iface->extra[i+1]);
+				upsdebugx(4, "i=%d, extra[i]=%02x, extra[i+1]=%02x", i,
+					iface->extra[i], iface->extra[i+1]);
 				if (i+9 <= iface->extralen && iface->extra[i] >= 9 && iface->extra[i+1] == 0x21) {
 					p = &iface->extra[i];
 					upsdebug_hex(3, "HID descriptor, method 2", p, 9);

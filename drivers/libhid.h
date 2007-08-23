@@ -133,14 +133,14 @@ static inline int matches(HIDDeviceMatcher_t *matcher, HIDDevice_t *device) {
 /* constructors and destructors for specific types of matchers. An
    exact matcher matches a specific HIDDevice_t structure (except for
    the Bus component, which is ignored). A regex matcher matches
-   devices based on a set of regular expressions. The new_* functions
-   return a matcher on success, or NULL on error with errno set. Note
-   that the "free_*" functions only free the current matcher, not any
-   others that are linked via "next" fields. */
-HIDDeviceMatcher_t *new_exact_matcher(HIDDevice_t *d);
-int new_regex_matcher(HIDDeviceMatcher_t **matcher, char *regex_array[6], int cflags);
-void free_exact_matcher(HIDDeviceMatcher_t *matcher);
-void free_regex_matcher(HIDDeviceMatcher_t *matcher);
+   devices based on a set of regular expressions. The HIDNew* functions
+   return a matcher on success, or -1 on error with errno set. Note
+   that the "HIDFree*" functions only free the current matcher, not
+   any others that are linked via "next" fields. */
+int HIDNewExactMatcher(HIDDeviceMatcher_t **matcher, HIDDevice_t *hd);
+int HIDNewRegexMatcher(HIDDeviceMatcher_t **matcher, char **regex, int cflags);
+void HIDFreeExactMatcher(HIDDeviceMatcher_t *matcher);
+void HIDFreeRegexMatcher(HIDDeviceMatcher_t *matcher);
 
 /* Describe a set of values to match for finding a special HID device.
  * This is given by a set of (compiled) regular expressions. If any
@@ -169,7 +169,7 @@ struct communication_subdriver_s {
 		HIDDevice_t *curDevice,		/* device matching HIDDeviceMatcher_t	*/
 		HIDDeviceMatcher_t *matcher,
 		unsigned char *ReportDesc,
-		int mode);
+		int *mode);
 	void (*close)(hid_dev_handle_t *sdev);
 	int (*get_report)(hid_dev_handle_t *sdev, int ReportId,
 	unsigned char *raw_buf, int ReportSize );
@@ -188,7 +188,7 @@ extern communication_subdriver_t *comm_driver;
 /*
  * HIDOpenDevice
  * -------------------------------------------------------------------------- */
-HIDDevice_t *HIDOpenDevice(hid_dev_handle_t **udevp, HIDDevice_t *hd, HIDDeviceMatcher_t *matcher, int mode);
+HIDDevice_t *HIDOpenDevice(hid_dev_handle_t **udevp, HIDDevice_t *hd, HIDDeviceMatcher_t *matcher, int *mode);
 
 /*
  * HIDGetItemValue

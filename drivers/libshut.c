@@ -284,7 +284,7 @@ static void align_request(struct shut_ctrltransfer_s *ctrl )
     a linked list of matchers (see libhid.h), and the opened device
     must match all of them. */
 int libshut_open(shut_dev_handle_t **sdevp, HIDDevice_t *curDevice,
-		 HIDDeviceMatcher_t *matcher, unsigned char *ReportDesc, int mode)
+		 HIDDeviceMatcher_t *matcher, unsigned char *ReportDesc, int *mode)
 {
 	int ret, res; 
 	unsigned char buf[20];
@@ -311,7 +311,7 @@ int libshut_open(shut_dev_handle_t **sdevp, HIDDevice_t *curDevice,
 		upsdebugx(2, "Communication with UPS established");
 
 	/* we can skip the rest due to serial bus specifics! */
-	if (mode == MODE_REOPEN)
+	if (*mode == MODE_REOPEN)
 		return 1;
 
 	/* Get DEVICE descriptor */
@@ -367,9 +367,6 @@ int libshut_open(shut_dev_handle_t **sdevp, HIDDevice_t *curDevice,
 	upsdebugx(2, "- Serial Number: %s", curDevice->Serial ? curDevice->Serial : "unknown");
 	upsdebugx(2, "- Bus: %s", curDevice->Bus ? curDevice->Bus : "unknown");
 	upsdebugx(2, "Device matches");
-
-	if (mode == MODE_REOPEN)
-		return 1;
 
 	/* Get HID descriptor */
 	desc = (struct my_hid_descriptor *)buf;

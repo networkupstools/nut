@@ -153,6 +153,7 @@ int ser_open(const char *port)
 	HIDDeviceMatcher_t subdriver_matcher;
 	int ret, i;
 	char flush_buf[256];
+	int mode = MODE_NOHID;
 
 	HIDDeviceMatcher_t *regex_matcher = NULL;
 	int r;
@@ -200,21 +201,21 @@ int ser_open(const char *port)
 	regex_array[4] = NULL; /* getval("serial"); */
 	regex_array[5] = getval("bus");
 
-	r = new_regex_matcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
+	r = HIDNewRegexMatcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
 	if (r==-1) {
-		fatalx(EXIT_FAILURE, "new_regex_matcher: %s", strerror(errno));
+		fatal_with_errno(EXIT_FAILURE, "HIDNewRegexMatcher");
 	} else if (r) {
 		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[r]);
 	}
 	/* link the matchers */
 	regex_matcher->next = &subdriver_matcher;
 
-	ret = usb->open(&udev, &hiddevice, regex_matcher, NULL, MODE_NOHID);
+	ret = usb->open(&udev, &hiddevice, regex_matcher, NULL, &mode);
 	if (ret < 0)
 		usb_open_error(port);
 
 	/* TODO: Add make exact matcher for reconnecting feature support */
-	free_regex_matcher(regex_matcher);
+	HIDFreeRegexMatcher(regex_matcher);
 
 	/* flush input buffers */
 	for (i = 0; i < 10; i++) {

@@ -348,6 +348,7 @@ static unsigned int offdelay = DEFAULT_OFFDELAY;
 static int reconnect_ups(void)
 {
 	int ret = 1;
+	int mode = MODE_REOPEN;
 
 	if (hd == NULL)
 	{
@@ -357,7 +358,7 @@ static int reconnect_ups(void)
 
 		upsdrv_cleanup();
 
-		if ((hd = HIDOpenDevice(&udev, &curDevice, reopen_matcher, MODE_REOPEN)) == NULL) {
+		if ((hd = HIDOpenDevice(&udev, &curDevice, reopen_matcher, &mode)) == NULL) {
 			upslogx(LOG_INFO, "Reconnecting to UPS failed; will retry later...");
 			dstate_datastale();
 			ret = 0;
@@ -1369,9 +1370,9 @@ void upsdrv_initups(void)
 	regex_array[4] = getval("serial"); /* probably won't see this */
 	regex_array[5] = getval("bus");
 
-	r = new_regex_matcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
+	r = HIDNewRegexMatcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
 	if (r==-1) {
-		fatalx(EXIT_FAILURE, "new_regex_matcher: %s", strerror(errno));
+		fatal_with_errno(EXIT_FAILURE, "HIDNewRegexMatcher");
 	} else if (r) {
 		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[r]);
 	}
@@ -1384,9 +1385,9 @@ void upsdrv_initups(void)
 		upslogx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
 
 	/* create a new matcher for later reopening */
-	reopen_matcher = new_exact_matcher(hd);
-	if (!reopen_matcher) {
-		upsdebugx(2, "new_exact_matcher: %s", strerror(errno));
+	r = HIDNewExactMatcher(&reopen_matcher, hd);
+	if (r) {
+		upsdebug_with_errno(2, "HIDNewExactMatcher");
 	}
 	/* link the two matchers */
 	reopen_matcher->next = regex_matcher;
@@ -1403,8 +1404,7 @@ void upsdrv_initups(void)
 
 void upsdrv_cleanup(void)
 {
-        if (hd != NULL) {
-                HIDCloseDevice(udev);
-		udev = NULL;
-	}
+	HIDCloseDevice(udev);
+	HIDFreeExactMatcher(reopen_matcher);
+	HIDFreeRegexMatcher(regex_matcher);
 }

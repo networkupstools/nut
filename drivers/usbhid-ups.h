@@ -151,6 +151,7 @@ typedef struct {
 #define HU_WALKMODE_INIT		1
 #define HU_WALKMODE_QUICK_UPDATE	2
 #define HU_WALKMODE_FULL_UPDATE		3
+#define HU_WALKMODE_RESET		4
 
 /* TODO: rework flags */
 #define HU_FLAG_OK			1		/* show element to upsd. */

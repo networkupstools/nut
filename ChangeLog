@@ -1,3 +1,19 @@
+Thu Aug 23 19:30:28 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/libhid.[ch],libshut.c,libusb.c:
+   - The 'mode' variable for HIDOpenDevice is now passed as pointer.
+     If a device can't be re-opened (because we can't get an exact
+     match), this will be modified to MODE_OPEN and treated as such.
+   - Cleaned up matcher functions.
+ * drivers/usbhid-ups.[ch]:
+   - When re-connecting to a device, re-read all variables and
+     commands from it. If it turns out that we couldn't re-open it
+     (for the reasons mentioned above) we will treat it as a new
+     device and will flush everything (except "ups.status") and
+     start all over again.
+ * drivers/dstate-hal.c,megatec_usb.c,tripplite_usb.c:
+   - Align with the above.
+
 Wed Aug 22 18:12:50 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/libhid.[ch]:
