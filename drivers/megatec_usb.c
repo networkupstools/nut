@@ -153,7 +153,6 @@ int ser_open(const char *port)
 	HIDDeviceMatcher_t subdriver_matcher;
 	int ret, i;
 	char flush_buf[256];
-	int mode = MODE_NOHID;
 
 	HIDDeviceMatcher_t *regex_matcher = NULL;
 	int r;
@@ -210,7 +209,7 @@ int ser_open(const char *port)
 	/* link the matchers */
 	regex_matcher->next = &subdriver_matcher;
 
-	ret = usb->open(&udev, &hiddevice, regex_matcher, NULL, &mode);
+	ret = usb->open(&udev, &hiddevice, regex_matcher, NULL, MODE_NOHID);
 	if (ret < 0)
 		usb_open_error(port);
 

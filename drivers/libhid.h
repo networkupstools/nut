@@ -169,7 +169,7 @@ struct communication_subdriver_s {
 		HIDDevice_t *curDevice,		/* device matching HIDDeviceMatcher_t	*/
 		HIDDeviceMatcher_t *matcher,
 		unsigned char *ReportDesc,
-		int *mode);
+		int mode);
 	void (*close)(hid_dev_handle_t *sdev);
 	int (*get_report)(hid_dev_handle_t *sdev, int ReportId,
 	unsigned char *raw_buf, int ReportSize );
@@ -188,7 +188,7 @@ extern communication_subdriver_t *comm_driver;
 /*
  * HIDOpenDevice
  * -------------------------------------------------------------------------- */
-HIDDevice_t *HIDOpenDevice(hid_dev_handle_t **udevp, HIDDevice_t *hd, HIDDeviceMatcher_t *matcher, int *mode);
+HIDDevice_t *HIDOpenDevice(hid_dev_handle_t **udevp, HIDDevice_t *hd, HIDDeviceMatcher_t *matcher, int mode);
 
 /*
  * HIDGetItemValue

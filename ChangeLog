@@ -1,3 +1,24 @@
+Fri Aug 24 20:02:35 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/usbhid-ups.c:
+   - The behaviour of reconnect is now depending on the
+     'reloadmatcher' variable. By default, it uses 'exact' matches,
+     but this can be changed to 'regex', which means that it will
+     use MODE_OPEN instead of MODE_REOPEN. Essentially, it will
+     behave exactly like starting again.
+ * drivers/libusb.c,libshut.c:
+   - The decision whether or not it is safe to close the connection
+     to the device before opening a new one is now made in the
+     libusb_open() and libshut_open() functions.
+   - Fixed small memory leak in libusb_open().
+ * drivers/libhid.c:
+   - The 'exact' matcher now also matches the Bus too (this won't
+     change as long as the USB plug is not removed). If you don't
+     like this, use the 'regex' matcher instead.
+ * drivers/megatec_usb.c,tripplite_usb.c:
+   - The 'mode' parameter is now passed by value again, instead of
+     by reference from r1073 (this wasn't a good idea after all).
+
 Thu Aug 23 19:30:28 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/libhid.[ch],libshut.c,libusb.c:

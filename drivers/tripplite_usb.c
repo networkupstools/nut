@@ -348,7 +348,6 @@ static unsigned int offdelay = DEFAULT_OFFDELAY;
 static int reconnect_ups(void)
 {
 	int ret = 1;
-	int mode = MODE_REOPEN;
 
 	if (hd == NULL)
 	{
@@ -358,7 +357,7 @@ static int reconnect_ups(void)
 
 		upsdrv_cleanup();
 
-		if ((hd = HIDOpenDevice(&udev, &curDevice, reopen_matcher, &mode)) == NULL) {
+		if ((hd = HIDOpenDevice(&udev, &curDevice, reopen_matcher, MODE_REOPEN)) == NULL) {
 			upslogx(LOG_INFO, "Reconnecting to UPS failed; will retry later...");
 			dstate_datastale();
 			ret = 0;

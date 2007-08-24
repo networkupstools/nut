@@ -91,7 +91,7 @@ static inline int typesafe_control_msg(usb_dev_handle *dev,
     components of curDevice are filled with allocated strings that
     must later be freed. */
 static int libusb_open(usb_dev_handle **udevp, HIDDevice_t *curDevice, HIDDeviceMatcher_t *matcher,
-	unsigned char *ReportDesc, int *mode)
+	unsigned char *ReportDesc, int mode)
 {
 	int found = 0;
 #if LIBUSB_HAS_DETACH_KRNL_DRV
@@ -116,6 +116,11 @@ static int libusb_open(usb_dev_handle **udevp, HIDDevice_t *curDevice, HIDDevice
 	usb_find_busses();
 	usb_find_devices();
 
+#ifdef SUN_LIBUSB
+	/* Causes a double free corruption in linux if device is detached! */
+	libusb_close(*udevp);
+#endif
+
 	for (bus = usb_busses; bus && !found; bus = bus->next) {
 		for (dev = bus->devices; dev && !found; dev = dev->next) {
 			upsdebugx(2, "Checking device (%04X/%04X) (%s/%s)", dev->descriptor.idVendor,
@@ -129,26 +134,29 @@ static int libusb_open(usb_dev_handle **udevp, HIDDevice_t *curDevice, HIDDevice
 			if (!udev) {
 				upsdebugx(2, "Failed to open device, skipping. (%s)", usb_strerror());
 				continue;
-			} 
+			}
 
 			/* collect the identifying information of this
 			   device. Note that this is safe, because
 			   there's no need to claim an interface for
 			   this (and therefore we do not yet need to
 			   detach any kernel drivers). */
-			
+
+			free(curDevice->Vendor);
+			free(curDevice->Product);
+			free(curDevice->Serial);
+			free(curDevice->Bus);
+			memset(curDevice, '\0', sizeof(*curDevice));
+
 			curDevice->VendorID = dev->descriptor.idVendor;
 			curDevice->ProductID = dev->descriptor.idProduct;
-			curDevice->Vendor = NULL;
-			curDevice->Product = NULL;
-			curDevice->Serial = NULL;
-			curDevice->Bus = xstrdup(bus->dirname);
+			curDevice->Bus = strdup(bus->dirname);
 			
 			if (dev->descriptor.iManufacturer) {
 				ret = usb_get_string_simple(udev, dev->descriptor.iManufacturer,
 					string, sizeof(string));
 				if (ret > 0) {
-					curDevice->Vendor = xstrdup(string);
+					curDevice->Vendor = strdup(string);
 				}
 			}
 
@@ -156,7 +164,7 @@ static int libusb_open(usb_dev_handle **udevp, HIDDevice_t *curDevice, HIDDevice
 				ret = usb_get_string_simple(udev, dev->descriptor.iProduct,
 					string, sizeof(string));
 				if (ret > 0) {
-					curDevice->Product = xstrdup(string);
+					curDevice->Product = strdup(string);
 				}
 			}
 
@@ -164,7 +172,7 @@ static int libusb_open(usb_dev_handle **udevp, HIDDevice_t *curDevice, HIDDevice
 				ret = usb_get_string_simple(udev, dev->descriptor.iSerialNumber,
 					string, sizeof(string));
 				if (ret > 0) {
-					curDevice->Serial = xstrdup(string);
+					curDevice->Serial = strdup(string);
 				}
 			}
 
@@ -176,33 +184,20 @@ static int libusb_open(usb_dev_handle **udevp, HIDDevice_t *curDevice, HIDDevice
 			upsdebugx(2, "- Bus: %s", curDevice->Bus ? curDevice->Bus : "unknown");
 
 			upsdebugx(2, "Trying to match device");
-			for (m = matcher; m != NULL; m = m->next) {
-
+			for (m = matcher; m; m=m->next) {
 				ret = matches(m, curDevice);
-				switch(ret)
-				{
-				case 2:
-					upsdebugx(2, "Device exact match");
-					break;
-				case 1:
-					upsdebugx(2, "Device regex match");
-					if (*mode == MODE_REOPEN) {
-						/* Asked for reopening the device, but we couldn't
-						 * get an exact match, so opening instead. */
-						*mode = MODE_OPEN;
-					}
-					break;
-				case 0:
+				if (ret==0) {
 					upsdebugx(2, "Device does not match - skipping");
 					goto next_device;
-				case -1:
-					fatal_with_errno(EXIT_FAILURE, "matcher");
-				default:
+				} else if (ret==-1) {
+					fatalx(EXIT_FAILURE, "matcher: %s", strerror(errno));
+					goto next_device;
+				} else if (ret==-2) {
 					upsdebugx(2, "matcher: unspecified error");
 					goto next_device;
 				}
-				break;
 			}
+			upsdebugx(2, "Device matches");
 			
 			/* Now we have matched the device we wanted. Claim it. */
 
@@ -230,8 +225,8 @@ static int libusb_open(usb_dev_handle **udevp, HIDDevice_t *curDevice, HIDDevice
 			/* set default interface */
 			usb_set_altinterface(udev, 0);
 			
-			if (*mode == MODE_REOPEN || *mode == MODE_NOHID) {
-				return 1; 
+			if (mode == MODE_REOPEN || mode == MODE_NOHID) {
+				return 1;
 			}
 
 			if (!dev->config) { /* ?? this should never happen */
@@ -328,16 +323,13 @@ static int libusb_open(usb_dev_handle **udevp, HIDDevice_t *curDevice, HIDDevice
 			return rdlen;
 
 		next_device:
-			free(curDevice->Vendor);
-			free(curDevice->Product);
-			free(curDevice->Serial);
-			free(curDevice->Bus);
 			usb_close(udev);
-			udev = NULL;
 		}
 	}
+
+	*udevp = NULL;
+
 	upsdebugx(2, "No appropriate HID device found");
-	fflush(stdout);
 
 	return -1;
 }
@@ -350,69 +342,68 @@ static int libusb_get_report(usb_dev_handle *udev, int ReportId, unsigned char *
 {
 	upsdebugx(4, "Entering libusb_get_report");
 
-	if (udev != NULL)
-	{
-		return usb_control_msg(udev, 
-			 USB_ENDPOINT_IN + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
-			 0x01, /* HID_REPORT_GET */
-			 ReportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
-			 0, raw_buf, ReportSize, USB_TIMEOUT);
-	}
-	else
+	if (!udev) {
 		return 0;
+	}
+
+	return usb_control_msg(udev,
+		 USB_ENDPOINT_IN + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+		 0x01, /* HID_REPORT_GET */
+		 ReportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
+		 0, raw_buf, ReportSize, USB_TIMEOUT);
 }
 
 
 static int libusb_set_report(usb_dev_handle *udev, int ReportId, unsigned char *raw_buf, int ReportSize )
 {
-	if (udev != NULL)
-	{
-		return usb_control_msg(udev, 
-			 USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
-			 0x09, /* HID_REPORT_SET = 0x09*/
-			 ReportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
-			 0, raw_buf, ReportSize, USB_TIMEOUT);
-	}
-	else
+	if (!udev) {
 		return 0;
+	}
+
+	return usb_control_msg(udev,
+		 USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+		 0x09, /* HID_REPORT_SET = 0x09*/
+		 ReportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
+		 0, raw_buf, ReportSize, USB_TIMEOUT);
 }
 
 static int libusb_get_string(usb_dev_handle *udev, int StringIdx, char *buf, size_t buflen)
 {
-  int ret = -1;	
+	int ret;
 
-  if (udev != NULL)
-	{
-	  ret = usb_get_string_simple(udev, StringIdx, buf, buflen);
-	  if (ret > 0)
-		{
-		  upsdebugx(5, "-> String: %s (len = %i/%i)", buf, ret, buflen);
-		}
-	  else
-		  upsdebugx(2, "- Unable to fetch string %d", StringIdx);
+	if (!udev) {
+		return -1;
 	}
 
-  return ret;
+	ret = usb_get_string_simple(udev, StringIdx, buf, buflen);
+	if (ret > 0) {
+		upsdebugx(5, "-> String: %s (len = %i/%i)", buf, ret, buflen);
+	} else {
+		upsdebugx(2, "- Unable to fetch string %d", StringIdx);
+	}
+
+	return ret;
 }
 
 static int libusb_get_interrupt(usb_dev_handle *udev, unsigned char *buf, int bufsize, int timeout)
 {
-	int ret = -1;
+	int ret;
 
-#if SUN_LIBUSB
+	if (!udev) {
+		return -1;
+	}
+#ifdef SUN_LIBUSB
 /*
 	usleep(timeout * 1000);
  */
-	ret = 0;
+	return 0;
 #else
-	if (udev != NULL)
-	{
-		/* FIXME: hardcoded interrupt EP => need to get EP descr for IF descr */
-		ret = usb_interrupt_read(udev, 0x81, (char *)buf, bufsize, timeout);
-		if (ret > 0)
-			upsdebugx(6, " ok");
-		else
-			upsdebugx(6, " none (%i)", ret);
+	/* FIXME: hardcoded interrupt EP => need to get EP descr for IF descr */
+	ret = usb_interrupt_read(udev, 0x81, (char *)buf, bufsize, timeout);
+	if (ret > 0) {
+		upsdebugx(6, " ok");
+	} else {
+		upsdebugx(6, " none (%i)", ret);
 	}
 #endif
 	return ret;
@@ -420,13 +411,14 @@ static int libusb_get_interrupt(usb_dev_handle *udev, unsigned char *buf, int bu
 
 static void libusb_close(usb_dev_handle *udev)
 {
-	if (udev != NULL)
-	{
-		/* usb_release_interface() sometimes blocks and goes
-		into uninterruptible sleep.  So don't do it. */
-		/* usb_release_interface(udev, 0); */
-		usb_close(udev);
+	if (!udev) {
+		return;
 	}
+
+	/* usb_release_interface() sometimes blocks and goes
+	into uninterruptible sleep.  So don't do it. */
+	/* usb_release_interface(udev, 0); */
+	usb_close(udev);
 }
 
 communication_subdriver_t usb_subdriver = {

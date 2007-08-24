@@ -183,6 +183,7 @@ int libshut_get_interrupt(shut_dev_handle_t *devp, unsigned char *buf,
 			  int bufsize, int timeout);
 int shut_control_msg(shut_dev_handle_t *dev, int requesttype, int request,
 		     int value, int index, unsigned char *bytes, int size, int timeout);
+void libshut_close(shut_dev_handle_t *sdev);
 
 /* FIXME */
 char * shut_strerror() { return ""; }
@@ -284,7 +285,7 @@ static void align_request(struct shut_ctrltransfer_s *ctrl )
     a linked list of matchers (see libhid.h), and the opened device
     must match all of them. */
 int libshut_open(shut_dev_handle_t **sdevp, HIDDevice_t *curDevice,
-		 HIDDeviceMatcher_t *matcher, unsigned char *ReportDesc, int *mode)
+		 HIDDeviceMatcher_t *matcher, unsigned char *ReportDesc, int mode)
 {
 	int ret, res; 
 	unsigned char buf[20];
@@ -294,7 +295,9 @@ int libshut_open(shut_dev_handle_t **sdevp, HIDDevice_t *curDevice,
 	shut_dev_handle_t *devp = *sdevp;
 	
 	upsdebugx(2, "libshut_open: using port %s", devp->device_path);
-	
+
+	libshut_close(*sdevp);
+
 	/* initialize serial port */
 	/* FIXME: add variable baudrate detection */
 	devp->upsfd = ser_open(devp->device_path);
@@ -307,11 +310,11 @@ int libshut_open(shut_dev_handle_t **sdevp, HIDDevice_t *curDevice,
 		upsdebugx(2, "No communication with UPS");
 		return -1;
 	}
-	else
-		upsdebugx(2, "Communication with UPS established");
+
+	upsdebugx(2, "Communication with UPS established");
 
 	/* we can skip the rest due to serial bus specifics! */
-	if (*mode == MODE_REOPEN)
+	if (mode == MODE_REOPEN)
 		return 1;
 
 	/* Get DEVICE descriptor */
@@ -324,12 +327,13 @@ int libshut_open(shut_dev_handle_t **sdevp, HIDDevice_t *curDevice,
 		upsdebugx(2, "Unable to get DEVICE descriptor (%s)", shut_strerror());
 		return -1;
 	}
-	else if (res < 9)
+
+	if (res < 9)
 	{
 		upsdebugx(2, "DEVICE descriptor too short (expected %d, got %d)",
 		      USB_DT_DEVICE_SIZE, res);
 		return -1;
-	} 
+	}
 
 	/* collect the identifying information of this
 		device. Note that this is safe, because
@@ -337,35 +341,47 @@ int libshut_open(shut_dev_handle_t **sdevp, HIDDevice_t *curDevice,
 		this (and therefore we do not yet need to
 		detach any kernel drivers). */
 
+	free(curDevice->Vendor);
+	free(curDevice->Product);
+	free(curDevice->Serial);
+	free(curDevice->Bus);
+	memset(curDevice, '\0', sizeof(*curDevice));
+
 	curDevice->VendorID = dev_descriptor->idVendor;
 	curDevice->ProductID = dev_descriptor->idProduct;
 	curDevice->Vendor = strdup("MGE UPS SYSTEMS");
-	curDevice->Product = strdup("unknown");
-	curDevice->Serial = strdup("unknown");
 	curDevice->Bus = strdup("serial");
 
-	if (dev_descriptor->iProduct)
-	{
-		ret = shut_get_string_simple(devp, dev_descriptor->iProduct,
-					     string, 0x25);
-		if (ret > 0)
-			curDevice->Product = strdup(string);
+	if (dev_descriptor->iProduct) {
+		ret = shut_get_string_simple(devp, dev_descriptor->iProduct, string, 0x25);
+	} else {
+		ret = 0;
 	}
 
-	if (dev_descriptor->iSerialNumber)
-	{
-		ret = shut_get_string_simple(devp, dev_descriptor->iSerialNumber,
-					     string, 0x25);
-		if (ret > 0)
-			curDevice->Serial = strdup(string);
+	if (ret > 0) {
+		curDevice->Product = strdup(string);
+	} else {
+		curDevice->Product = strdup("unknown");
+	}
+
+	if (dev_descriptor->iSerialNumber) {
+		ret = shut_get_string_simple(devp, dev_descriptor->iSerialNumber, string, 0x25);
+	} else {
+		ret = 0;
+	}
+
+	if (ret > 0) {
+		curDevice->Serial = strdup(string);
+	} else {
+		curDevice->Serial = strdup("unknown");
 	}
 
 	upsdebugx(2, "- VendorID: %04x", curDevice->VendorID);
 	upsdebugx(2, "- ProductID: %04x", curDevice->ProductID);
-	upsdebugx(2, "- Manufacturer: %s", curDevice->Vendor ? curDevice->Vendor : "unknown");
-	upsdebugx(2, "- Product: %s", curDevice->Product ? curDevice->Product : "unknown");
-	upsdebugx(2, "- Serial Number: %s", curDevice->Serial ? curDevice->Serial : "unknown");
-	upsdebugx(2, "- Bus: %s", curDevice->Bus ? curDevice->Bus : "unknown");
+	upsdebugx(2, "- Manufacturer: %s", curDevice->Vendor);
+	upsdebugx(2, "- Product: %s", curDevice->Product);
+	upsdebugx(2, "- Serial Number: %s", curDevice->Serial);
+	upsdebugx(2, "- Bus: %s", curDevice->Bus);
 	upsdebugx(2, "Device matches");
 
 	/* Get HID descriptor */
@@ -379,7 +395,8 @@ int libshut_open(shut_dev_handle_t **sdevp, HIDDevice_t *curDevice,
 		upsdebugx(2, "Unable to get HID descriptor (%s)", shut_strerror());
 		return -1;
 	}
-	else if (res < 9)
+
+	if (res < 9)
 	{
 		upsdebugx(2, "HID descriptor too short (expected %d, got %d)", 8, res);
 		return -1;
@@ -409,7 +426,8 @@ int libshut_open(shut_dev_handle_t **sdevp, HIDDevice_t *curDevice,
 
 		return desc->wDescriptorLength;
 	}
-	else if (res < 0)
+
+	if (res < 0)
 	{
 		upsdebugx(2, "Unable to get Report descriptor (%d)", res);
 	}
@@ -427,7 +445,16 @@ int libshut_open(shut_dev_handle_t **sdevp, HIDDevice_t *curDevice,
 
 void libshut_close(shut_dev_handle_t *sdev)
 {
+	if (!sdev) {
+		return;
+	}
+
+	if (sdev->upsfd < 1) {
+		return;
+	}
+
 	ser_close(sdev->upsfd, sdev->device_path);
+	sdev->upsfd = -1;
 }
 
 /* return the report of ID=type in report 
@@ -438,73 +465,76 @@ int libshut_get_report(shut_dev_handle_t *devp, int ReportId,
 {
 	upsdebugx(4, "Entering libshut_get_report");
 
-	if (devp != NULL)
-	{
-		return shut_control_msg(devp,
-			REQUEST_TYPE_GET_REPORT,
-			/* == USB_ENDPOINT_IN + USB_TYPE_CLASS + USB_RECIP_INTERFACE, */
-			 0x01,
-			 ReportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
-			 0, raw_buf, ReportSize, SHUT_TIMEOUT);
-	}
-	else
+	if (!devp) {
 		return 0;
+	}
+
+	return shut_control_msg(devp,
+		REQUEST_TYPE_GET_REPORT,
+		/* == USB_ENDPOINT_IN + USB_TYPE_CLASS + USB_RECIP_INTERFACE, */
+		 0x01,
+		 ReportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
+		 0, raw_buf, ReportSize, SHUT_TIMEOUT);
 }
 
 /* return ReportSize upon success ; -1 otherwise */
 int libshut_set_report(shut_dev_handle_t *devp, int ReportId,
 		       unsigned char *raw_buf, int ReportSize )
 {
-	int ret = 0;
+	int ret;
 	
 	upsdebugx(1, "Entering libshut_set_report (report %x, len %i)",
 		ReportId, ReportSize);
 
 	upsdebug_hex (4, "==> Report after set", raw_buf, ReportSize);
 
-	if (devp != NULL)
-	{
-		ret = shut_control_msg(devp, 
-			REQUEST_TYPE_SET_REPORT,
-			/* == USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE, */
-			0x09,
-			ReportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
-			0, raw_buf, ReportSize, SHUT_TIMEOUT);
+	if (!devp) {
+		return 0;
 	}
-	return ((ret==0)?ReportSize:ret);
+		
+	ret = shut_control_msg(devp, 
+		REQUEST_TYPE_SET_REPORT,
+		/* == USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE, */
+		0x09,
+		ReportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
+		0, raw_buf, ReportSize, SHUT_TIMEOUT);
+	
+	return ((ret == 0) ? ReportSize : ret);
 }
 
 int libshut_get_string(shut_dev_handle_t *devp, int StringIdx, char *buf, size_t buflen)
 {
-	int ret = -1;
+	int ret;
 	
-	if (devp != NULL)
-	{
-		ret = shut_get_string_simple(devp, StringIdx, buf, buflen);
-		if (ret > 0)
-			upsdebugx(2, "-> String: %s (len = %i/%i)",
-			      buf, ret, buflen);
-		else
-			upsdebugx(2, "- Unable to fetch buf");
+	if (!devp) {
+		return -1;
 	}
+
+	ret = shut_get_string_simple(devp, StringIdx, buf, buflen);
+	if (ret > 0)
+		upsdebugx(2, "-> String: %s (len = %i/%i)", buf, ret, buflen);
+	else
+		upsdebugx(2, "- Unable to fetch buf");
+
 	return ret;
 }
 
 int libshut_get_interrupt(shut_dev_handle_t *devp, unsigned char *buf,
 			   int bufsize, int timeout)
 {
-  int ret = -1;
+	int ret;
 
-	if (devp != NULL)
-	{
-	  /* FIXME: hardcoded interrupt EP => need to get EP descr for IF descr */
-	  ret = shut_interrupt_read(devp, 0x81, buf, bufsize, timeout);
-	  if (ret > 0)
-			upsdebugx(6, " ok");
-	  else
-			upsdebugx(6, " none (%i)", ret);
+	if (!devp) {
+		return -1;
 	}
 
+	/* FIXME: hardcoded interrupt EP => need to get EP descr for IF descr */
+	ret = shut_interrupt_read(devp, 0x81, buf, bufsize, timeout);
+	if (ret > 0)
+		upsdebugx(6, " ok");
+	else
+		upsdebugx(6, " none (%i)", ret);
+	
 	return ret;
 }
 
@@ -536,9 +566,7 @@ void setline (int fd, int set)
 	if (set == 1) {
 		ser_set_dtr(fd, 0);
 		ser_set_rts(fd, 1);
-	}
-	else
-	{
+	} else {
 		ser_set_dtr(fd, 1);
 		ser_set_rts(fd, 0);
 	}

@@ -280,8 +280,6 @@ static int strcmp_null(char *s1, char *s2)
 }
 
 /* private callback function for exact matches
- * note: the exact matcher ignores the "Bus" field,
- * because it can change during a reconnect.
  */
 static int match_function_exact(HIDDevice_t *hd, void *privdata)
 {
@@ -307,7 +305,11 @@ static int match_function_exact(HIDDevice_t *hd, void *privdata)
 		return 0;
 	}
 
-	return 2;
+	if (strcmp_null(hd->Bus, data->Bus) != 0) {
+		return 0;
+	}
+
+	return 1;
 }
 
 /* constructor: create an exact matcher that matches the device.
@@ -335,6 +337,7 @@ int HIDNewExactMatcher(HIDDeviceMatcher_t **matcher, HIDDevice_t *hd)
 	data->Vendor = hd->Vendor ? strdup(hd->Vendor) : NULL;
 	data->Product = hd->Product ? strdup(hd->Product) : NULL;
 	data->Serial = hd->Serial ? strdup(hd->Serial) : NULL;
+	data->Bus = hd->Bus ? strdup(hd->Bus) : NULL;
 
 	m->match_function = &match_function_exact;
 	m->privdata = (void *)data;
@@ -651,12 +654,12 @@ const char *HIDDataType(const HIDData_t *hiddata)
 /* Matcher is a linked list of matchers (see libhid.h), and the opened
     device must match all of them. On success, set *udevp and *hd and
     return hd. On failure, return NULL. Mode is MODE_OPEN or MODE_REOPEN. */
-HIDDevice_t *HIDOpenDevice(hid_dev_handle_t **udevp, HIDDevice_t *hd, HIDDeviceMatcher_t *matcher, int *mode)
+HIDDevice_t *HIDOpenDevice(hid_dev_handle_t **udevp, HIDDevice_t *hd, HIDDeviceMatcher_t *matcher, int mode)
 {
 	int		ReportSize;
 	unsigned char	ReportDesc[4096];
 
-	if (*mode == MODE_REOPEN) {
+	if (mode == MODE_REOPEN) {
 #if defined(SHUT_MODE) || defined(SUN_LIBUSB)
 		/* Cause a double free corruption in USB mode on linux! */
 		if (*udevp != NULL) {
@@ -674,7 +677,7 @@ HIDDevice_t *HIDOpenDevice(hid_dev_handle_t **udevp, HIDDevice_t *hd, HIDDeviceM
 	if (ReportSize < 0)
 		return NULL;
 
-	if (*mode == MODE_REOPEN) {
+	if (mode == MODE_REOPEN) {
 		upsdebugx(4, "Device reopened successfully");
 		return hd;
 	}
@@ -885,13 +888,12 @@ int HIDGetEvents(hid_dev_handle_t *udev, HIDData_t **event, int eventsize)
 
 void HIDCloseDevice(hid_dev_handle_t *udev)
 {
-	if (udev == NULL) {
-		return;
-	}
-
 	upsdebugx(1, "Closing device");
 
+#if defined(SHUT_MODE) || defined(SUN_LIBUSB)
+	/* Could cause a double free corruption in linux if device is detached! */
 	comm_driver->close(udev);
+#endif
 	Free_ReportDesc(pDesc);
 	free_report_buffer(rbuf);
 }

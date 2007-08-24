@@ -63,9 +63,10 @@ static subdriver_t *subdriver;
 
 /* Global vars */
 static HIDDevice_t *hd;
-static HIDDevice_t curDevice;
+static HIDDevice_t curDevice = { 0x0000, 0x0000, NULL, NULL, NULL, NULL };
 static HIDDeviceMatcher_t *reopen_matcher = NULL;
 static HIDDeviceMatcher_t *regex_matcher = NULL;
+static HIDDeviceMatcher_t *matcher = NULL;
 static int pollfreq = DEFAULT_POLLFREQ;
 static int ups_status = 0;
 static int input_transfer_reason = 0;
@@ -653,15 +654,15 @@ void upsdrv_makevartable(void)
 	
 	upsdebugx(1, "upsdrv_makevartable...");
 
-	snprintf(temp, sizeof(temp), "Set shutdown delay, in seconds (default=%d).",
+	snprintf(temp, sizeof(temp), "Set shutdown delay, in seconds (default=%d)",
 		DEFAULT_OFFDELAY);
 	addvar(VAR_VALUE, HU_VAR_OFFDELAY, temp);
 	
-	snprintf(temp, sizeof(temp), "Set startup delay, in ten seconds units for MGE (default=%d).",
+	snprintf(temp, sizeof(temp), "Set startup delay, in ten seconds units for MGE (default=%d)",
 		DEFAULT_ONDELAY);
 	addvar(VAR_VALUE, HU_VAR_ONDELAY, temp);
 	
-	snprintf(temp, sizeof(temp), "Set polling frequency, in seconds, to reduce data flow (default=%i).",
+	snprintf(temp, sizeof(temp), "Set polling frequency, in seconds, to reduce data flow (default=%d).",
 		DEFAULT_POLLFREQ);
 	addvar(VAR_VALUE, HU_VAR_POLLFREQ, temp);
 #ifndef SHUT_MODE
@@ -672,6 +673,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "vendorid", "Regular expression to match UPS Manufacturer numerical ID (4 digits hexadecimal)");
 	addvar(VAR_VALUE, "productid", "Regular expression to match UPS Product numerical ID (4 digits hexadecimal)");
 	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
+	addvar(VAR_VALUE, "reopenmatcher", "Set matcher on reopen (default=exact)");
 	addvar(VAR_FLAG, "explore", "Diagnostic matching of unsupported UPS");
 #endif
 }
@@ -691,16 +693,24 @@ void upsdrv_updateinfo(void)
 	HIDData_t	*event[MAX_EVENT_NUM];
 	int		i, evtCount;
 	double		value;
+	time_t		now;
 
 	upsdebugx(1, "upsdrv_updateinfo...");
 
+	time(&now);
+
 	/* check for device availability to set datastale! */
 	if (hd == NULL) {
+		/* don't flood reconnection attempts */
+		if (now < (int)(lastpoll + poll_interval)) {
+			return;
+		}
+
 		upsdebugx(1, "Got to reconnect!\n");
 
 		if (!reconnect_ups()) {
-
 			dstate_datastale();
+			lastpoll = now;
 			return;
 		}
 
@@ -750,7 +760,7 @@ void upsdrv_updateinfo(void)
 	status_init();
 
 	/* Do a full update (polling) every pollfreq or upon data change (ie setvar/instcmd) */
-	if ( (time(NULL) > (lastpoll + pollfreq)) || (data_has_changed == TRUE) ) {
+	if ((now > (lastpoll + pollfreq)) || (data_has_changed == TRUE)) {
 		upsdebugx(1, "Full update...");
 
 		alarm_init();
@@ -758,7 +768,7 @@ void upsdrv_updateinfo(void)
 		if (hid_ups_walk(HU_WALKMODE_FULL_UPDATE) == FALSE)
 			return;
 
-		time(&lastpoll);
+		lastpoll = now;
 		data_has_changed = FALSE;
 
 		ups_alarm_set();
@@ -792,17 +802,28 @@ void upsdrv_initinfo(void)
 	HIDDumpTree(udev, subdriver->utab);
 
 	/* init polling frequency */
-	if ((val = getval(HU_VAR_POLLFREQ)) != NULL)
+	val = getval(HU_VAR_POLLFREQ);
+	if (val)
 		pollfreq = atoi(val);
 
 	dstate_setinfo("driver.parameter.pollfreq", "%d", pollfreq);
 
+#ifndef SHUT_MODE
+	val = getval("reopenmatcher");
+	if (val && !strcasecmp(val, "regex")) {
+		matcher = regex_matcher;
+		dstate_setinfo("driver.parameter.reopenmatcher", "regex");
+	} else {
+		matcher = reopen_matcher;	/* default */
+		dstate_setinfo("driver.parameter.reopenmatcher", "exact");
+	}
+#endif
 	/* Device capabilities enumeration */
 	if (hid_ups_walk(HU_WALKMODE_INIT) == TRUE)
 		dstate_dataok();
 	else
 		dstate_datastale();
-
+	
 	/* install handlers */
 	upsh.setvar = setvar;
 	upsh.instcmd = instcmd;
@@ -812,7 +833,7 @@ void upsdrv_initinfo(void)
 
 void upsdrv_initups(void)
 {
-	int i, mode = MODE_OPEN;
+	int i;
 #ifndef SHUT_MODE
 	/*!
 	 * SHUT is only supported by MGE UPS SYSTEMS units
@@ -864,7 +885,7 @@ void upsdrv_initups(void)
 
 	/* Search for the first supported UPS matching the regular
 	   expression (not for SHUT_MODE) */
-	if ((hd = HIDOpenDevice(&udev, &curDevice, regex_matcher, &mode)) == NULL)
+	if ((hd = HIDOpenDevice(&udev, &curDevice, regex_matcher, MODE_OPEN)) == NULL)
 		fatalx(EXIT_FAILURE, "No matching HID UPS found");
 
 	upslogx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
@@ -1145,24 +1166,30 @@ static bool_t hid_ups_walk(int mode)
 
 static int reconnect_ups(void)
 {
-	int	mode = MODE_REOPEN;
-
 	upsdebugx(4, "==================================================");
 	upsdebugx(4, "= device has been disconnected, try to reconnect =");
 	upsdebugx(4, "==================================================");
 
-	if ((hd = HIDOpenDevice(&udev, &curDevice, reopen_matcher, &mode)) == NULL) {
+	if (matcher == regex_matcher) {
+		/* Open the device through the regex_matcher */
+		hd = HIDOpenDevice(&udev, &curDevice, regex_matcher, MODE_OPEN);
+		if (hd != NULL) {
+			upsdebugx(4, "reconnect_ups: using regex_matcher, resetting");
+			hid_ups_walk(HU_WALKMODE_RESET); /* flush NUT-to-HID mapping */
+			return 1;
+		}
+
 		return 0;
 	}
 
-	/* Apparently, HIDOpenDevice() couldn't get an exact
-	 * match, so we must treat this as a new connection */
-	if (mode != MODE_REOPEN) {
-		upsdebugx(4, "reconnect_ups: couldn't get an exact match, resetting");
-		hid_ups_walk(HU_WALKMODE_RESET);
+	/* Reopen the same device, continue as usual */
+	hd = HIDOpenDevice(&udev, &curDevice, reopen_matcher, MODE_REOPEN);
+	if (hd != NULL) {
+		upsdebugx(4, "reconnect_ups: using reopen_matcher, reloading");
+		return 1;
 	}
 
-	return 1;
+	return 0;
 }
 
 /* Convert the local status information to NUT format and set NUT
