@@ -284,8 +284,8 @@ static void align_request(struct shut_ctrltransfer_s *ctrl )
     buffer. There's no way to know the size ahead of time. Matcher is
     a linked list of matchers (see libhid.h), and the opened device
     must match all of them. */
-int libshut_open(shut_dev_handle_t **sdevp, HIDDevice_t *curDevice,
-		 HIDDeviceMatcher_t *matcher, unsigned char *ReportDesc, int mode)
+int libshut_open(shut_dev_handle_t **sdevp, HIDDevice_t *curDevice, HIDDeviceMatcher_t *matcher,
+	int (*callback)(unsigned char *rdbuf, int rdlen))
 {
 	int ret, res; 
 	unsigned char buf[20];
@@ -294,9 +294,16 @@ int libshut_open(shut_dev_handle_t **sdevp, HIDDevice_t *curDevice,
 	struct device_descriptor_s *dev_descriptor;
 	shut_dev_handle_t *devp = *sdevp;
 	
+	/* report descriptor */
+	unsigned char	*rdbuf = NULL;
+	int		rdlen;
+
 	upsdebugx(2, "libshut_open: using port %s", devp->device_path);
 
-	libshut_close(*sdevp);
+	/* If device is still open, close it */
+	if ((devp) && (devp->upsfd > 0)) {
+		ser_close(devp->upsfd, devp->device_path);
+	}
 
 	/* initialize serial port */
 	/* FIXME: add variable baudrate detection */
@@ -314,8 +321,9 @@ int libshut_open(shut_dev_handle_t **sdevp, HIDDevice_t *curDevice,
 	upsdebugx(2, "Communication with UPS established");
 
 	/* we can skip the rest due to serial bus specifics! */
-	if (mode == MODE_REOPEN)
+	if (!callback) {
 		return 1;
+	}
 
 	/* Get DEVICE descriptor */
 	dev_descriptor = (struct device_descriptor_s *)buf;
@@ -411,21 +419,37 @@ int libshut_open(shut_dev_handle_t **sdevp, HIDDevice_t *curDevice,
 		return -1;
 	}*/
 
+	rdlen = desc->wDescriptorLength;
+
+	free(rdbuf);
+	rdbuf = calloc(rdlen, sizeof(*rdbuf));
+	if (!rdbuf) {
+		upsdebug_with_errno(2, "Report descriptor (%d bytes) can't be allocated", rdlen);
+		return -1;
+	}
+
 	/* Get REPORT descriptor */
-	res = shut_get_descriptor(devp, USB_DT_REPORT, 0, ReportDesc,
-				   desc->wDescriptorLength);
+	res = shut_get_descriptor(devp, USB_DT_REPORT, 0, rdbuf, rdlen);
 	/* res = shut_control_msg(devp, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
 				(USB_DT_REPORT << 8) + 0, 0, ReportDesc, 
 			desc->wDescriptorLength, SHUT_TIMEOUT); */
-	if (res >= desc->wDescriptorLength) 
+	if (res == rdlen)
 	{
-		upsdebugx(2, "Report descriptor retrieved (Reportlen = %u)",
-		      desc->wDescriptorLength);
+		res = callback(rdbuf, rdlen);
+		free(rdbuf);
+		if (res == 0) {
+			upsdebugx(2, "Caller doesn't like this device");
+			return -1;
+		}
+
+		upsdebugx(2, "Report descriptor retrieved (Reportlen = %d)", rdlen);
 		upsdebugx(2, "Found HID device");
 		fflush(stdout);
 
-		return desc->wDescriptorLength;
+		return rdlen;
 	}
+
+	free(rdbuf);
 
 	if (res < 0)
 	{
@@ -433,8 +457,7 @@ int libshut_open(shut_dev_handle_t **sdevp, HIDDevice_t *curDevice,
 	}
 	else
 	{
-		upsdebugx(2, "Report descriptor too short (expected %d, got %d)",
-		      desc->wDescriptorLength, res);
+		upsdebugx(2, "Report descriptor too short (expected %d, got %d)", rdlen, res);
 	}
 	
 	upsdebugx(2, "No appropriate HID device found");
@@ -454,7 +477,9 @@ void libshut_close(shut_dev_handle_t *sdev)
 	}
 
 	ser_close(sdev->upsfd, sdev->device_path);
+	free(sdev->device_path);
 	sdev->upsfd = -1;
+	sdev->device_path = NULL;
 }
 
 /* return the report of ID=type in report 

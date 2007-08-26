@@ -209,7 +209,7 @@ int ser_open(const char *port)
 	/* link the matchers */
 	regex_matcher->next = &subdriver_matcher;
 
-	ret = usb->open(&udev, &hiddevice, regex_matcher, NULL, MODE_NOHID);
+	ret = usb->open(&udev, &hiddevice, regex_matcher, NULL);
 	if (ret < 0)
 		usb_open_error(port);
 

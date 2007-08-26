@@ -56,6 +56,7 @@ static int string_to_path(const char *string, HIDPath_t *path, usage_tables_t *u
 static int path_to_string(char *string, size_t size, const HIDPath_t *path, usage_tables_t *utab);
 static long get_unit_expo(const long UnitType);
 static double exponent(double a, int b);
+static int callback(unsigned char *rdbuf, int rdlen);
 
 /* report buffer structure: holds data about most recent report for
    each given report id */
@@ -304,11 +305,11 @@ static int match_function_exact(HIDDevice_t *hd, void *privdata)
 	if (strcmp_null(hd->Serial, data->Serial) != 0) {
 		return 0;
 	}
-
+#ifdef DEBUG
 	if (strcmp_null(hd->Bus, data->Bus) != 0) {
 		return 0;
 	}
-
+#endif
 	return 1;
 }
 
@@ -656,53 +657,48 @@ const char *HIDDataType(const HIDData_t *hiddata)
     return hd. On failure, return NULL. Mode is MODE_OPEN or MODE_REOPEN. */
 HIDDevice_t *HIDOpenDevice(hid_dev_handle_t **udevp, HIDDevice_t *hd, HIDDeviceMatcher_t *matcher, int mode)
 {
-	int		ReportSize;
-	unsigned char	ReportDesc[4096];
+	int	ret;
 
-	if (mode == MODE_REOPEN) {
-#if defined(SHUT_MODE) || defined(SUN_LIBUSB)
-		/* Cause a double free corruption in USB mode on linux! */
-		if (*udevp != NULL) {
-			comm_driver->close(*udevp);
-		}
-#else
-		/* keep udev in SHUT mode, for udev->device_path */
-		*udevp = NULL;
-#endif
-		upsdebugx(4, "Reopening device...");
+	if (mode == MODE_OPEN) {
+		/* open device and get report descriptor */
+		ret = comm_driver->open(udevp, hd, matcher, &callback);
+	} else {
+		/* just open it */
+		ret = comm_driver->open(udevp, hd, matcher, NULL);
 	}
 
-	/* get and parse descriptors (dev, cfg and report) */
-	ReportSize = comm_driver->open(udevp, hd, matcher, ReportDesc, mode);
-	if (ReportSize < 0)
-		return NULL;
-
-	if (mode == MODE_REOPEN) {
-		upsdebugx(4, "Device reopened successfully");
+	if (ret > 0) {
 		return hd;
 	}
-	
-	upsdebugx(2, "Report Descriptor size = %d", ReportSize);
-	upsdebug_hex(3, "Report Descriptor", ReportDesc, ReportSize);
+
+	return NULL;
+}
+
+/* Callback function for the report descriptor. Returns
+ * 1 if the report descriptor is accepted, 0 if not */
+static int callback(unsigned char *rdbuf, int rdlen)
+{
+	upsdebugx(2, "Report Descriptor size = %d", rdlen);
+	upsdebug_hex(3, "Report Descriptor", rdbuf, rdlen);
 
 	/* Parse Report Descriptor */
 	Free_ReportDesc(pDesc);
-	pDesc = Parse_ReportDesc(ReportDesc, ReportSize);
+	pDesc = Parse_ReportDesc(rdbuf, rdlen);
 	if (!pDesc) {
-		HIDCloseDevice(*udevp);
-		fatal_with_errno(1, "Failed to parse report descriptor");
+		upsdebug_with_errno(1, "Failed to parse report descriptor");
+		return 0;
 	}
 
 	/* prepare report buffer */
 	free_report_buffer(rbuf);
 	rbuf = new_report_buffer(pDesc);
 	if (!rbuf) {
+		upsdebug_with_errno(1, "Failed to allocate report buffer");
 		Free_ReportDesc(pDesc);
-		HIDCloseDevice(*udevp);
-		fatal_with_errno(1, "Failed to allocate report buffer");
+		return 0;
 	}
 
-	return hd;
+	return 1;
 }
 
 /* Returns pointer to the corresponding HIDData_t item

@@ -168,8 +168,7 @@ struct communication_subdriver_s {
 	int (*open)(hid_dev_handle_t **sdevp,	/* try to open the next available	*/
 		HIDDevice_t *curDevice,		/* device matching HIDDeviceMatcher_t	*/
 		HIDDeviceMatcher_t *matcher,
-		unsigned char *ReportDesc,
-		int mode);
+		int (*callback)(unsigned char *rdbuf, int rdlen));
 	void (*close)(hid_dev_handle_t *sdev);
 	int (*get_report)(hid_dev_handle_t *sdev, int ReportId,
 	unsigned char *raw_buf, int ReportSize );

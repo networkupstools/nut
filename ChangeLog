@@ -1,3 +1,12 @@
+Sun Aug 26 09:20:45 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/libhid.[ch],libshut.c,libusb.c:
+   - Added a callback function in the libshut_open and libusb_open
+     that is called after the report descriptor is read, but before
+     the device is accepted.
+ * drivers/megatec.c:
+   - Applied change above.
+
 Fri Aug 24 20:02:35 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/usbhid-ups.c:

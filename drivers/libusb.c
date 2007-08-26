@@ -91,13 +91,12 @@ static inline int typesafe_control_msg(usb_dev_handle *dev,
     components of curDevice are filled with allocated strings that
     must later be freed. */
 static int libusb_open(usb_dev_handle **udevp, HIDDevice_t *curDevice, HIDDeviceMatcher_t *matcher,
-	unsigned char *ReportDesc, int mode)
+	int (*callback)(unsigned char *rdbuf, int rdlen))
 {
 	int found = 0;
 #if LIBUSB_HAS_DETACH_KRNL_DRV
 	int retries;
 #endif
-	int rdlen; /* report descriptor length */
 	int rdlen1, rdlen2; /* report descriptor length, method 1+2 */
 	HIDDeviceMatcher_t *m;
 	struct usb_device *dev;
@@ -110,6 +109,10 @@ static int libusb_open(usb_dev_handle **udevp, HIDDevice_t *curDevice, HIDDevice
 	unsigned char *p;
 	char string[256];
 	int i;
+
+	/* report descriptor */
+	unsigned char	*rdbuf = NULL;
+	int		rdlen;
 
 	/* libusb base init */
 	usb_init();
@@ -225,7 +228,7 @@ static int libusb_open(usb_dev_handle **udevp, HIDDevice_t *curDevice, HIDDevice
 			/* set default interface */
 			usb_set_altinterface(udev, 0);
 			
-			if (mode == MODE_REOPEN || mode == MODE_NOHID) {
+			if (!callback) {
 				return 1;
 			}
 
@@ -298,27 +301,39 @@ static int libusb_open(usb_dev_handle **udevp, HIDDevice_t *curDevice, HIDDevice
 				upsdebugx(2, "Warning: two different HID descriptors retrieved (Reportlen = %u vs. %u)", rdlen1, rdlen2);
 			}
 
-			upsdebugx(2, "HID descriptor retrieved (Reportlen = %u)", rdlen);
+			upsdebugx(2, "HID descriptor length %d", rdlen);
+
+			free(rdbuf);
+			rdbuf = calloc(rdlen, sizeof(*rdbuf));
+			if (!rdbuf) {
+				upsdebug_with_errno(2, "Report descriptor (%d bytes) can't be allocated", rdlen);
+				goto next_device;
+			}
 
 			/* res = usb_get_descriptor(udev, USB_DT_REPORT, 0, bigbuf, rdlen); */
 			res = usb_control_msg(udev, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
-					      (USB_DT_REPORT << 8) + 0, 0, ReportDesc, 
-					      rdlen, USB_TIMEOUT);
+				(USB_DT_REPORT << 8) + 0, 0, rdbuf, rdlen, USB_TIMEOUT);
+
 			if (res < 0)
 			{
-				upsdebugx(2, "Unable to get Report descriptor (%d): %s", res, strerror(-res));
+				upsdebug_with_errno(2, "Unable to get Report descriptor");
 				goto next_device;
 			}
-			if (res < rdlen) 
+			if (res < rdlen)
 			{
 				upsdebugx(2, "Warning: report descriptor too short (expected %d, got %d)", rdlen, res);
-			}
-			if (res < rdlen) {
 				rdlen = res; /* correct rdlen if necessary */
 			}
+
+			res = callback(rdbuf, rdlen);
+			if (res == 0) {
+				upsdebugx(2, "Caller doesn't like this device");
+				goto next_device;
+			}
+
 			upsdebugx(2, "Report descriptor retrieved (Reportlen = %u)", rdlen);
 			upsdebugx(2, "Found HID device");
-			fflush(stdout);
+			free(rdbuf);
 
 			return rdlen;
 
@@ -328,8 +343,8 @@ static int libusb_open(usb_dev_handle **udevp, HIDDevice_t *curDevice, HIDDevice
 	}
 
 	*udevp = NULL;
-
 	upsdebugx(2, "No appropriate HID device found");
+	free(rdbuf);
 
 	return -1;
 }
