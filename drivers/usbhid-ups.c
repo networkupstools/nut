@@ -1200,7 +1200,7 @@ static int reconnect_ups(void)
 	 * since this is different from what we used to have.
 	 */
 	ret = comm_driver->open(&udev, &curDevice, regex_matcher, &callback);
-	if (ret > 0)
+	if (ret > 0) {
 		upsdebugx(1, "reconnect_ups: reopened device with 'regex' matcher");
 		hd = &curDevice;
 		return 1;
