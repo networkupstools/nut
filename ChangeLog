@@ -1,3 +1,22 @@
+Mon Aug 27 18:23:06 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/libhid.[ch],libshut.[ch],libusb.[ch]:
+   - Cut the libshut and libusb objects loose from libhid. If no HID
+     functions are used (megatec_usb, tripplite_usb), you no longer
+     need to include libhid anymore. The USB matcher functions (which
+     were not really HID specific functions) are now within libusb.
+ * drivers/megatec_usb.c,tripplite_usb.c,Makefile.am:
+   - Applied the change above.
+ * drivers/usbhid.[ch]:
+   - The HIDOpenDevice() and HIDCloseDevice() functions no longer
+     exist. These are replaced by direct calls to the communication
+     subdrivers.
+   - The driver now gets a callback from libshut_open() and
+     libusb_open() when a report descriptor has been retrieved from
+     the USB/SHUT device and parses it and then makes a descision
+     on whether this device is acceptable or not. If not, the next
+     device that matches will be tried.
+
 Sun Aug 26 09:20:45 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/libhid.[ch],libshut.c,libusb.c:

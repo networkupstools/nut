@@ -35,7 +35,7 @@
 
 #define DRIVER_VERSION		"0.31"
 
-extern hid_dev_handle_t	*udev;
+extern hid_dev_handle_t	udev;
 
 /* --------------------------------------------------------------- */
 /*      Model Name formating entries                               */

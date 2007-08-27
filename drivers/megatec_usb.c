@@ -21,7 +21,6 @@
 
 #include "main.h"
 #include "megatec.h"
-#include "libhid.h"
 #include "libusb.h"
 #include "serial.h"
 
@@ -29,7 +28,6 @@
 #include <limits.h>
 #include <string.h>
 #include <stdlib.h>
-#include <usb.h>
 
 /*
     This is a communication driver for "USB HID" UPS-es which use proprietary
@@ -45,9 +43,9 @@ KnownDevices table.
 
 */
 
-static communication_subdriver_t *usb = &usb_subdriver;
+static usb_communication_subdriver_t *usb = &usb_subdriver;
 static usb_dev_handle *udev = NULL;
-static HIDDevice_t hiddevice;
+static USBDevice_t usbdevice;
 
 typedef struct {
 	char	*name;
@@ -100,7 +98,7 @@ static usb_ups_t KnownDevices[] = {
 	{-1, -1, NULL}		/* end of list */
 };
 
-static int comm_usb_match(HIDDevice_t *d, void *privdata)
+static int comm_usb_match(USBDevice_t *d, void *privdata)
 {
 	usb_ups_t *p;
 
@@ -150,11 +148,11 @@ void megatec_subdrv_makevartable()
 
 int ser_open(const char *port)
 {
-	HIDDeviceMatcher_t subdriver_matcher;
+	USBDeviceMatcher_t subdriver_matcher;
 	int ret, i;
 	char flush_buf[256];
 
-	HIDDeviceMatcher_t *regex_matcher = NULL;
+	USBDeviceMatcher_t *regex_matcher = NULL;
 	int r;
 	char *regex_array[6];
 
@@ -200,21 +198,21 @@ int ser_open(const char *port)
 	regex_array[4] = NULL; /* getval("serial"); */
 	regex_array[5] = getval("bus");
 
-	r = HIDNewRegexMatcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
+	r = USBNewRegexMatcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
 	if (r==-1) {
-		fatal_with_errno(EXIT_FAILURE, "HIDNewRegexMatcher");
+		fatal_with_errno(EXIT_FAILURE, "USBNewRegexMatcher");
 	} else if (r) {
 		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[r]);
 	}
 	/* link the matchers */
 	regex_matcher->next = &subdriver_matcher;
 
-	ret = usb->open(&udev, &hiddevice, regex_matcher, NULL);
+	ret = usb->open(&udev, &usbdevice, regex_matcher, NULL);
 	if (ret < 0)
 		usb_open_error(port);
 
 	/* TODO: Add make exact matcher for reconnecting feature support */
-	HIDFreeRegexMatcher(regex_matcher);
+	USBFreeRegexMatcher(regex_matcher);
 
 	/* flush input buffers */
 	for (i = 0; i < 10; i++) {

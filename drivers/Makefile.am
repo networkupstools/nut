@@ -121,13 +121,13 @@ usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 energizerups_SOURCES = energizerups.c
 energizerups_LDADD = $(LDADD_DRIVERS)
 
-tripplite_usb_SOURCES = tripplite_usb.c libhid.c libusb.c hidparser.c
+tripplite_usb_SOURCES = tripplite_usb.c libusb.c
 tripplite_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS) -lm
 
 bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c nut_usb.c
 bcmxcp_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 
-megatec_usb_SOURCES = megatec.c megatec_usb.c libusb.c libhid.c hidparser.c
+megatec_usb_SOURCES = megatec.c megatec_usb.c libusb.c
 megatec_usb_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS) -DMEGATEC_SUBDRV
 megatec_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 
@@ -146,13 +146,13 @@ hald_addon_usbhid_ups_SOURCES = usbhid-ups.c libhid.c libusb.c hidparser.c	\
  $(USBHID_UPS_SUBDRIVERS)
 hald_addon_usbhid_ups_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS)
 
-hald_addon_tripplite_usb_SOURCES = tripplite_usb.c libhid.c libusb.c hidparser.c
+hald_addon_tripplite_usb_SOURCES = tripplite_usb.c libusb.c
 hald_addon_tripplite_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS) -lm
 
 hald_addon_bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c nut_usb.c
 hald_addon_bcmxcp_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS)
 
-hald_addon_megatec_usb_SOURCES = megatec.c megatec_usb.c libusb.c libhid.c hidparser.c
+hald_addon_megatec_usb_SOURCES = megatec.c megatec_usb.c libusb.c
 hald_addon_megatec_usb_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS) -DMEGATEC_SUBDRV
 hald_addon_megatec_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS)
 

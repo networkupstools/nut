@@ -40,8 +40,6 @@
 #include <stdint.h> /* for uint8_t, uint16_t */
 #endif
 
-#include "libhid.h"
-
 #include "libusb.h"
 #include "config.h" /* for LIBUSB_HAS_DETACH_KRNL_DRV flag */
 
@@ -51,8 +49,10 @@
  * improve reactivity */
 #define USB_TIMEOUT 4000
 
-#define USB_DRIVER_NAME		"USB communication driver 0.28"
-#define USB_DRIVER_VERSION	"0.28"
+#define USB_DRIVER_NAME		"USB communication driver"
+#define USB_DRIVER_VERSION	"0.29"
+
+#define MAX_REPORT_DESCRIPTOR	0x2000
 
 /* HID descriptor, completed with desc{type,len} */
 struct my_usb_hid_descriptor {
@@ -80,25 +80,23 @@ static inline int typesafe_control_msg(usb_dev_handle *dev,
 
 #define usb_control_msg         typesafe_control_msg
 
-/* return report descriptor on success, NULL otherwise */
-/* mode: MODE_OPEN for the 1rst time, MODE_REOPEN or MODE_NOHID to
-    skip getting report descriptor (the longer part). On success, fill
-    in the curDevice structure and return the report descriptor
-    length. On failure, return -1. Note: ReportDesc must point to a
-    large enough buffer. There's no way to know the size ahead of
-    time. Matcher is a linked list of matchers (see libhid.h), and the
-    opened device must match all of them. Also note: the string
-    components of curDevice are filled with allocated strings that
-    must later be freed. */
-static int libusb_open(usb_dev_handle **udevp, HIDDevice_t *curDevice, HIDDeviceMatcher_t *matcher,
-	int (*callback)(unsigned char *rdbuf, int rdlen))
+/* On success, fill in the curDevice structure and return the report
+ * descriptor length. On failure, return -1.
+ * Note: When callback is not NULL, the report descriptor will be
+ * passed to this function together with the udev and USBDevice_t
+ * information. This callback should return a value > 0 if the device
+ * is accepted, or < 1 if not. If it isn't accepted, the next device
+ * (if any) will be tried, until there are no more devices left.
+ */
+static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDeviceMatcher_t *matcher,
+	int (*callback)(usb_dev_handle *udev, USBDevice_t *hd, unsigned char *rdbuf, int rdlen))
 {
 	int found = 0;
 #if LIBUSB_HAS_DETACH_KRNL_DRV
 	int retries;
 #endif
 	int rdlen1, rdlen2; /* report descriptor length, method 1+2 */
-	HIDDeviceMatcher_t *m;
+	USBDeviceMatcher_t *m;
 	struct usb_device *dev;
 	struct usb_bus *bus;
 	usb_dev_handle *udev;
@@ -303,10 +301,15 @@ static int libusb_open(usb_dev_handle **udevp, HIDDevice_t *curDevice, HIDDevice
 
 			upsdebugx(2, "HID descriptor length %d", rdlen);
 
+			if (rdlen > MAX_REPORT_DESCRIPTOR) {
+				upsdebugx(2, "HID descriptor too long %d (max %d)", rdlen, MAX_REPORT_DESCRIPTOR);
+				goto next_device;
+			}
+
 			free(rdbuf);
 			rdbuf = calloc(rdlen, sizeof(*rdbuf));
 			if (!rdbuf) {
-				upsdebug_with_errno(2, "Report descriptor (%d bytes) can't be allocated", rdlen);
+				upsdebug_with_errno(2, "HID descriptor (%d bytes) can't be allocated", rdlen);
 				goto next_device;
 			}
 
@@ -319,14 +322,15 @@ static int libusb_open(usb_dev_handle **udevp, HIDDevice_t *curDevice, HIDDevice
 				upsdebug_with_errno(2, "Unable to get Report descriptor");
 				goto next_device;
 			}
+
 			if (res < rdlen)
 			{
 				upsdebugx(2, "Warning: report descriptor too short (expected %d, got %d)", rdlen, res);
 				rdlen = res; /* correct rdlen if necessary */
 			}
 
-			res = callback(rdbuf, rdlen);
-			if (res == 0) {
+			res = callback(udev, curDevice, rdbuf, rdlen);
+			if (res < 1) {
 				upsdebugx(2, "Caller doesn't like this device");
 				goto next_device;
 			}
@@ -436,7 +440,7 @@ static void libusb_close(usb_dev_handle *udev)
 	usb_close(udev);
 }
 
-communication_subdriver_t usb_subdriver = {
+usb_communication_subdriver_t usb_subdriver = {
 	USB_DRIVER_VERSION,
 	USB_DRIVER_NAME,
 	libusb_open,
@@ -446,3 +450,327 @@ communication_subdriver_t usb_subdriver = {
 	libusb_get_string,
 	libusb_get_interrupt
 };
+
+/* ---------------------------------------------------------------------- */
+/* matchers */
+
+/* helper function: version of strcmp that tolerates NULL
+ * pointers. NULL is considered to come before all other strings
+ * alphabetically.
+ */
+static int strcmp_null(char *s1, char *s2)
+{
+	if (s1 == NULL && s2 == NULL) {
+		return 0;
+	}
+
+	if (s1 == NULL) {
+		return -1;
+	}
+
+	if (s2 == NULL) {
+		return 1;
+	}
+
+	return strcmp(s1, s2);
+}
+
+/* private callback function for exact matches
+ */
+static int match_function_exact(USBDevice_t *hd, void *privdata)
+{
+	USBDevice_t	*data = (USBDevice_t *)privdata;
+	
+	if (hd->VendorID != data->VendorID) {
+		return 0;
+	}
+
+	if (hd->ProductID != data->ProductID) {
+		return 0;
+	}
+
+	if (strcmp_null(hd->Vendor, data->Vendor) != 0) {
+		return 0;
+	}
+
+	if (strcmp_null(hd->Product, data->Product) != 0) {
+		return 0;
+	}
+
+	if (strcmp_null(hd->Serial, data->Serial) != 0) {
+		return 0;
+	}
+
+	return 1;
+}
+
+/* constructor: create an exact matcher that matches the device.
+ * On success, return 0 and store the matcher in *matcher. On
+ * error, return -1 with errno set
+ */
+int USBNewExactMatcher(USBDeviceMatcher_t **matcher, USBDevice_t *hd)
+{
+	USBDeviceMatcher_t	*m;
+	USBDevice_t		*data;
+
+	m = malloc(sizeof(*m));
+	if (!matcher) {
+		return -1;
+	}
+
+	data = calloc(1, sizeof(*data));
+	if (!data) {
+		free(m);
+		return -1;
+	}
+
+	data->VendorID = hd->VendorID;
+	data->ProductID = hd->ProductID;
+
+	data->Vendor = hd->Vendor ? strdup(hd->Vendor) : NULL;
+	data->Product = hd->Product ? strdup(hd->Product) : NULL;
+	data->Serial = hd->Serial ? strdup(hd->Serial) : NULL;
+
+	m->match_function = &match_function_exact;
+	m->privdata = (void *)data;
+	m->next = NULL;
+
+	*matcher = m;
+
+	return 0;
+}
+
+/* destructor: free matcher previously created with USBNewExactMatcher */
+void USBFreeExactMatcher(USBDeviceMatcher_t *matcher)
+{
+	USBDevice_t	*data;
+
+	if (!matcher) {
+		return;
+	}
+
+	data = (USBDevice_t *)matcher->privdata;
+
+	free(data->Vendor);
+	free(data->Product);
+	free(data->Serial);
+	free(data);
+	free(matcher);
+}
+
+/* Private function for compiling a regular expression. On success,
+ * store the compiled regular expression (or NULL) in *compiled, and
+ * return 0. On error with errno set, return -1. If the supplied
+ * regular expression is unparseable, return -2 (an error message can
+ * then be retrieved with regerror(3)). Note that *compiled will be an
+ * allocated value, and must be freed with regfree(), then free(), see
+ * regex(3). As a special case, if regex==NULL, then set
+ * *compiled=NULL (regular expression NULL is intended to match
+ * anything).
+ */
+static int compile_regex(regex_t **compiled, char *regex, int cflags)
+{
+	int	r;
+	regex_t	*preg;
+
+	if (regex == NULL) {
+		*compiled = NULL;
+		return 0;
+	}
+
+	preg = malloc(sizeof(*preg));
+	if (!preg) {
+		return -1;
+	}
+
+	r = regcomp(preg, regex, cflags);
+	if (r) {
+		return -2;
+	}
+
+	*compiled = preg;
+
+	return 0;
+}
+
+/* Private function for regular expression matching. Check if the
+ * entire string str (minus any initial and trailing whitespace)
+ * matches the compiled regular expression preg. Return 1 if it
+ * matches, 0 if not. Return -1 on error with errno set. Special
+ * cases: if preg==NULL, it matches everything (no contraint).  If
+ * str==NULL, then it is treated as "".
+ */
+static int match_regex(regex_t *preg, char *str)
+{
+	int	r, len;
+	char	*string;
+	regmatch_t	pmatch[1];
+
+	if (preg == NULL) {
+		return 1;
+	}
+
+	if (str == NULL) {
+		str = "";
+	} else {
+		str += strcspn(str, " \t\n");	/* remove leading whitespace */
+	}
+
+	string = strdup(str);
+	if (!string) {
+		return -1;
+	}
+
+	/* remove trailing whitespace */
+	for (len = strlen(string); len > 0; len--) {
+
+		if (strchr(" \t\n", string[len-1])) {
+
+			string[len-1] = '\0';
+			continue;
+		}
+	}
+
+	/* test the regular expression */
+	r = regexec(preg, string, 1, pmatch, 0);
+	free(string);
+	if (r) {
+		return 0;
+	}
+
+	/* check that the match is the entire string */
+	if ((pmatch[0].rm_so != 0) || (pmatch[0].rm_eo != len)) {
+		return 0;
+	}
+
+	return 1;
+}
+
+/* Private function, similar to match_regex, but the argument being
+ * matched is a (hexadecimal) number, rather than a string. It is
+ * converted to a 4-digit hexadecimal string. */
+static int match_regex_hex(regex_t *preg, int n)
+{
+	char	buf[10];
+
+	snprintf(buf, sizeof(buf), "%04x", n);
+
+	return match_regex(preg, buf);
+}
+
+/* private data type: hold a set of compiled regular expressions. */
+typedef struct regex_matcher_data_s {
+	regex_t	*regex[6];
+} regex_matcher_data_t;
+
+/* private callback function for regex matches */
+static int match_function_regex(USBDevice_t *hd, void *privdata)
+{
+	regex_matcher_data_t	*data = (regex_matcher_data_t *)privdata;
+	int r;
+	
+	r = match_regex_hex(data->regex[0], hd->VendorID);
+	if (r != 1) {
+		return r;
+	}
+
+	r = match_regex_hex(data->regex[1], hd->ProductID);
+	if (r != 1) {
+		return r;
+	}
+
+	r = match_regex(data->regex[2], hd->Vendor);
+	if (r != 1) {
+		return r;
+	}
+
+	r = match_regex(data->regex[3], hd->Product);
+	if (r != 1) {
+		return r;
+	}
+
+	r = match_regex(data->regex[4], hd->Serial);
+	if (r != 1) {
+		return r;
+	}
+
+	r = match_regex(data->regex[5], hd->Bus);
+	if (r != 1) {
+		return r;
+	}
+	return 1;
+}
+
+/* constructor: create a regular expression matcher. This matcher is
+ * based on six regular expression strings in regex_array[0..5],
+ * corresponding to: vendorid, productid, vendor, product, serial,
+ * bus. Any of these strings can be NULL, which matches
+ * everything. Cflags are as in regcomp(3). Typical values for cflags
+ * are REG_ICASE (case insensitive matching) and REG_EXTENDED (use
+ * extended regular expressions).  On success, return 0 and store the
+ * matcher in *matcher. On error, return -1 with errno set, or return
+ * i=1--6 to indicate that the regular expression regex_array[i-1] was
+ * ill-formed (an error message can then be retrieved with
+ * regerror(3)).
+ */
+int USBNewRegexMatcher(USBDeviceMatcher_t **matcher, char **regex, int cflags)
+{
+	int	r, i;
+	USBDeviceMatcher_t	*m;
+	regex_matcher_data_t	*data;
+
+	m = malloc(sizeof(*m));
+	if (!m) {
+		return -1;
+	}
+
+	data = calloc(1, sizeof(*data));
+	if (!data) {
+		free(m);
+		return -1;
+	}
+
+	for (i=0; i<6; i++) {
+		r = compile_regex(&data->regex[i], regex[i], cflags);
+		if (r == -2) {
+			r = i+1;
+		}
+		if (r) {
+			free(m);
+			free(data);
+			return r;
+		}
+	}
+
+	m->match_function = &match_function_regex;
+	m->privdata = (void *)data;
+	m->next = NULL;
+
+	*matcher = m;
+
+	return 0;
+}
+
+void USBFreeRegexMatcher(USBDeviceMatcher_t *matcher)
+{
+	int	i;
+	regex_matcher_data_t	*data;
+	
+	if (!matcher) {
+		return;
+	}
+
+	data = (regex_matcher_data_t *)matcher->privdata;
+
+	for (i = 0; i < 6; i++) {
+		if (!data->regex[i]) {
+			continue;
+		}
+
+		regfree(data->regex[i]);
+		free(data->regex[i]);
+	}
+
+	free(data);
+	free(matcher);
+}
