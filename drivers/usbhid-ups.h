@@ -33,7 +33,7 @@
 #include "config.h"
 #include "libhid.h"
 
-#define DRIVER_VERSION		"0.31"
+#define DRIVER_VERSION		"0.32"
 
 extern hid_dev_handle_t	udev;
 

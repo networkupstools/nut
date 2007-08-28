@@ -615,7 +615,6 @@ static int string_to_path(const char *string, HIDPath_t *path, usage_tables_t *u
 	
 	snprintf(buf, sizeof(buf), string);
 
-	/* TODO: should we use thread-safe strtok_r instead? */
 	for (token = strtok_r(buf, ".", &last); token != NULL; token = strtok_r(NULL, ".", &last))
 	{
 		/* lookup tables first (to override defaults) */

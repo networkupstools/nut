@@ -1,3 +1,18 @@
+Tue Aug 28 20:46:34 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/belkin-hid.c:
+   - Fix memory leak in belkin_format_serial()
+ * drivers/apc-hid.c:
+   - A call to apc_format_model() could change the contents of the
+     hd->Product string. This is undesireable.
+ * drivers/mge-hid.c:
+   - Cleaned up mge_format_model().
+ * drivers/usbhid-ups.c:
+   - The vendor-specific method for calculating human-readable
+     strings for manufacturer, model, and serial are back in
+     upsdrv_initinfo to make sure the above problems don't lead
+     to problems in the future.
+
 Mon Aug 27 18:33:37 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/usbhid.c:

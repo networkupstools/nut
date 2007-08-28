@@ -31,7 +31,7 @@
 #include "main.h"     /* for getval() */
 #include "common.h"
 
-#define APC_HID_VERSION "APC/CyberPower HID 0.9"
+#define APC_HID_VERSION "APC/CyberPower HID 0.91"
 
 #define APC_VENDORID 0x051d /* APC */
 #define CPS_VENDORID 0x0764 /* CyberPower */
@@ -291,36 +291,45 @@ static int apc_shutdown(int ondelay, int offdelay) {
 }
 
 static char *apc_format_model(HIDDevice_t *hd) {
-	char *model;
+	char model[64];
         char *ptr1, *ptr2;
+	static char *string = NULL;
 
 	/* FIXME?: what is the path "UPS.APC_UPS_FirmwareRevision"? */
-	model = hd->Product ? hd->Product : "unknown";
+	snprintf(model, sizeof(model), "%s", hd->Product ? hd->Product : "unknown");
+
 	ptr1 = strstr(model, "FW:");
-	if (ptr1)
-	{
+	if (ptr1) {
 		*(ptr1 - 1) = '\0';
 		ptr1 += strlen("FW:");
 		ptr2 = strstr(ptr1, "USB FW:");
-		if (ptr2)
-		{
+
+		if (ptr2) {
 			*(ptr2 - 1) = '\0';
 			ptr2 += strlen("USB FW:");
 			dstate_setinfo("ups.firmware.aux", "%s", ptr2);
 		}
+
 		dstate_setinfo("ups.firmware", "%s", ptr1);
 	}
-	return model;
+
+	free(string);
+	string = strdup(model);
+	return string;
 }
 
 static char *apc_format_mfr(HIDDevice_t *hd) {
 	if (hd->Vendor) {
 		return hd->Vendor;
-	} else if (hd->VendorID == APC_VENDORID) {
+	}
+
+	switch(hd->VendorID)
+	{
+	case APC_VENDORID:
 		return "APC";
-	} else if (hd->VendorID == CPS_VENDORID) {
+	case CPS_VENDORID:
 		return "CPS";
-	} else {
+	default:
 		return NULL;
 	}
 }

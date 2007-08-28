@@ -337,6 +337,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 
 			upsdebugx(2, "Report descriptor retrieved (Reportlen = %u)", rdlen);
 			upsdebugx(2, "Found HID device");
+			fflush(stdout);
 			free(rdbuf);
 
 			return rdlen;
@@ -348,6 +349,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 
 	*udevp = NULL;
 	upsdebugx(2, "No appropriate HID device found");
+	fflush(stdout);
 	free(rdbuf);
 
 	return -1;
@@ -500,7 +502,11 @@ static int match_function_exact(USBDevice_t *hd, void *privdata)
 	if (strcmp_null(hd->Serial, data->Serial) != 0) {
 		return 0;
 	}
-
+#ifdef DEBUG
+	if (strcmp_null(hd->Bus, data->Bus) != 0) {
+		return 0;
+	}
+#endif
 	return 1;
 }
 
@@ -530,6 +536,7 @@ int USBNewExactMatcher(USBDeviceMatcher_t **matcher, USBDevice_t *hd)
 	data->Vendor = hd->Vendor ? strdup(hd->Vendor) : NULL;
 	data->Product = hd->Product ? strdup(hd->Product) : NULL;
 	data->Serial = hd->Serial ? strdup(hd->Serial) : NULL;
+	data->Bus = hd->Bus ? strdup(hd->Bus) : NULL;
 
 	m->match_function = &match_function_exact;
 	m->privdata = (void *)data;
@@ -554,6 +561,7 @@ void USBFreeExactMatcher(USBDeviceMatcher_t *matcher)
 	free(data->Vendor);
 	free(data->Product);
 	free(data->Serial);
+	free(data->Bus);
 	free(data);
 	free(matcher);
 }

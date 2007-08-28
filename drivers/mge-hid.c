@@ -29,7 +29,7 @@
 #include "main.h"     /* for getval() */
 #include "common.h"
 
-#define MGE_HID_VERSION	"MGE HID 1.0"
+#define MGE_HID_VERSION	"MGE HID 1.01"
 
 #define MGE_VENDORID 0x0463
 
@@ -715,7 +715,7 @@ static char *get_model_name(const char *iProduct, char *iModel)
 	upsdebugx(2, "get_model_name(%s, %s)\n", iProduct, iModel);
 
 	/* Search for formatting rules */
-	for ( model = mge_model_names ; model->iProduct != NULL ; model++ )
+	for (model = mge_model_names; model->iProduct; model++)
 	{
 		upsdebugx(2, "comparing with: %s", model->finalname);
 
@@ -734,19 +734,21 @@ static char *get_model_name(const char *iProduct, char *iModel)
 
 static char *mge_format_model(HIDDevice_t *hd) {
 	char *product;
-        char *string;
-	double appPower;
-	char buf[100];
+	char model[64];
+	double value;
 
-	/* Get iModel and iProduct strings */
+	/* Get iProduct and iModel strings */
 	product = hd->Product ? hd->Product : "unknown";
-	if ((string = HIDGetItemString(udev, "UPS.PowerSummary.iModel", buf, sizeof(buf), mge_utab)) != NULL)
-		return get_model_name(product, string);
 
-	/* Try with ConfigApparentPower */
-	if (HIDGetItemValue(udev, "UPS.Flow.[4].ConfigApparentPower", &appPower, mge_utab) == 1) {
-		snprintf(buf, sizeof(buf), "%i", (int)appPower);
-		return get_model_name(product, buf);
+	HIDGetItemString(udev, "UPS.PowerSummary.iModel", model, sizeof(model), mge_utab);
+
+	/* Fallback to ConfigApparentPower */
+	if ((strlen(model) < 1) && (HIDGetItemValue(udev, "UPS.Flow.[4].ConfigApparentPower", &value, mge_utab) == 1 )) {
+		snprintf(model, sizeof(model), "%i", (int)value);
+	}
+
+	if (strlen(model) > 0) {
+		return get_model_name(product, model);
 	}
 
 	return product;

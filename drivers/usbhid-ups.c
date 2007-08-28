@@ -59,7 +59,7 @@ static subdriver_t *subdriver;
 /* Global vars */
 static HIDDevice_t *hd;
 static HIDDevice_t curDevice = { 0x0000, 0x0000, NULL, NULL, NULL, NULL };
-static HIDDeviceMatcher_t *reopen_matcher = NULL;
+static HIDDeviceMatcher_t *exact_matcher = NULL;
 static HIDDeviceMatcher_t *regex_matcher = NULL;
 static int pollfreq = DEFAULT_POLLFREQ;
 static int ups_status = 0;
@@ -706,9 +706,9 @@ void upsdrv_updateinfo(void)
 		}
 
 		upsdebugx(1, "Got to reconnect!\n");
-		lastpoll = now;
 
 		if (!reconnect_ups()) {
+			lastpoll = now;
 			dstate_datastale();
 			return;
 		}
@@ -740,11 +740,9 @@ void upsdrv_updateinfo(void)
 					event[i]->Offset, event[i]->Size, value);
 			}
 
-			/* FIXME: ugly way to find corresponding Feature from an Input report
-			 * Skip Input reports, if we don't use the Feature report */
-			if ((item = find_hid_info(HIDGetItemData(udev,
-					HIDGetDataItem(udev, event[i], subdriver->utab),
-					subdriver->utab))) == NULL) {
+			/* Skip Input reports, if we don't use the Feature report */
+			item = find_hid_info(FindObject_with_Path(pDesc, &(event[i]->Path), ITEM_FEATURE));
+			if (!item) {
 				upsdebugx(1, "NUT doesn't use this HID object");
 				continue;
 			}
@@ -792,24 +790,46 @@ void upsdrv_updateinfo(void)
 void upsdrv_initinfo(void)
 {
 	char *val;
-#ifdef SHUT_MODE
-
-	upsdebugx(1, "upsdrv_initinfo...");
-
-	reopen_matcher = device_path;
-#else
+	char *mfr, *model, *serial;
+#ifndef SHUT_MODE
 	int ret;
-
+#endif
 	upsdebugx(1, "upsdrv_initinfo...");
-
-	/* create a new matcher for later reopening */
-	ret = USBNewExactMatcher(&reopen_matcher, hd);
+#ifdef SHUT_MODE
+	exact_matcher = regex_matcher;
+#else
+	/* create a new matcher for exact matching */
+	ret = USBNewExactMatcher(&exact_matcher, hd);
 	if (ret) {
 		fatal_with_errno(EXIT_FAILURE, "USBNewExactMatcher()");
 	}
-	/* link the two matchers */
-	reopen_matcher->next = regex_matcher;
+
+	exact_matcher->next = regex_matcher;
 #endif
+	/* use vendor-specific method for calculating human-readable
+	 * manufacturer, model, and serial strings */
+	model = subdriver->format_model(hd);
+	mfr = subdriver->format_mfr(hd);
+	serial = subdriver->format_serial(hd);
+
+	/* set corresponding variables */
+	if (mfr != NULL) {
+		dstate_setinfo("ups.mfr", "%s", mfr);
+	}
+
+	if (model != NULL) {
+		dstate_setinfo("ups.model", "%s", model);
+	}
+
+	if (serial != NULL) {
+		dstate_setinfo("ups.serial", "%s", serial);
+	}
+
+	dstate_setinfo("ups.vendorid", "%04x", hd->VendorID);
+	dstate_setinfo("ups.productid", "%04x", hd->ProductID);
+
+	HIDDumpTree(udev, subdriver->utab);
+
 	/* init polling frequency */
 	val = getval(HU_VAR_POLLFREQ);
 	if (val)
@@ -818,11 +838,12 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("driver.parameter.pollfreq", "%d", pollfreq);
 
 	/* Device capabilities enumeration */
-	if (hid_ups_walk(HU_WALKMODE_INIT) == TRUE)
+	if (hid_ups_walk(HU_WALKMODE_INIT) == TRUE) {
 		dstate_dataok();
-	else
+	} else {
 		dstate_datastale();
-	
+	}
+
 	/* install handlers */
 	upsh.setvar = setvar;
 	upsh.instcmd = instcmd;
@@ -891,13 +912,15 @@ void upsdrv_cleanup(void)
 {
 	upsdebugx(1, "upsdrv_cleanup...");
 
-#if defined(SHUT_MODE) || defined(SUN_LIBUSB)
-	/* Could cause a double free corruption in linux if device is detached! */
 	comm_driver->close(udev);
-#endif
 #ifndef SHUT_MODE
-	USBFreeExactMatcher(reopen_matcher);
+	USBFreeExactMatcher(exact_matcher);
 	USBFreeRegexMatcher(regex_matcher);
+
+	free(curDevice.Vendor);
+	free(curDevice.Product);
+	free(curDevice.Serial);
+	free(curDevice.Bus);
 #endif
 }
 
@@ -939,9 +962,6 @@ static void process_boolean_info(char *nutvalue)
 static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf, int rdlen)
 {
 	int i;
-	char *model;
-	char *mfr;
-	char *serial;
 
 	upsdebugx(2, "Report Descriptor size = %d", rdlen);
 	upsdebug_hex(3, "Report Descriptor", rdbuf, rdlen);
@@ -975,35 +995,11 @@ static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf
 		upsdebugx(1, "Manufacturer not supported!");
 		return 0;
 	}
-	
+
 	upslogx(2, "Using subdriver: %s", subdriver->name);
 
-	/* use vendor-specific method for calculating human-readable
-	   manufacturer, model, and serial strings */
-
-	model = subdriver->format_model(hd);
-	mfr = subdriver->format_mfr(hd);
-	serial = subdriver->format_serial(hd);
-
-	/* set corresponding variables */
-	if (mfr != NULL) {
-		dstate_setinfo("ups.mfr", "%s", mfr);
-	}
-
-	if (model != NULL) {
-		dstate_setinfo("ups.model", "%s", model);
-	}
-
-	if (serial != NULL) {
-		dstate_setinfo("ups.serial", "%s", serial);
-	}
-
-	dstate_setinfo("ups.vendorid", "%04x", hd->VendorID);
-	dstate_setinfo("ups.productid", "%04x", hd->ProductID);
-
-	HIDDumpTree(udev, subdriver->utab);
-
-	hid_ups_walk(HU_WALKMODE_RESET); /* flush NUT-to-HID mapping */
+	/* reload all HIDData_t pointers */
+	hid_ups_walk(HU_WALKMODE_RESET);
 
 	return 1;
 }
@@ -1048,19 +1044,21 @@ static bool_t hid_ups_walk(int mode)
 		{
 		/* Device capabilities enumeration */
 		case HU_WALKMODE_RESET:
+			/* We never mapped this HID item, so skip it */
 			if (item->hiddata == NULL)
 				continue;
 
-			/* Reset the NUT-to-HID translation */
-			item->hiddata = NULL;
+			/* Get pointer to the new HIDData_t item */
+			item->hiddata = HIDGetItemData(udev, item->hidpath, subdriver->utab);
+			if (item->hiddata != NULL)
+				continue;
 
-			/* If this was a command, remove it... */
+			/* Uh oh, it was lost after reconnect, remove it */
 			if (item->hidflags & HU_TYPE_CMD) {
 				dstate_delcmd(item->info_type);
 				continue;
 			}
 
-			/* ...otherwise, remove variable */
 			dstate_delinfo(item->info_type);
 			continue;
 			
@@ -1079,7 +1077,7 @@ static bool_t hid_ups_walk(int mode)
 			}
 
 			/* Apparently, we are reconnecting, so
-			 * NUT-to-HID translation is still good */
+			 * NUT-to-HID translation is already good */
 			if (item->hiddata != NULL)
 				break;
 
@@ -1187,7 +1185,7 @@ static int reconnect_ups(void)
 	upsdebugx(4, "= device has been disconnected, try to reconnect =");
 	upsdebugx(4, "==================================================");
 
-	ret = comm_driver->open(&udev, &curDevice, reopen_matcher, NULL);
+	ret = comm_driver->open(&udev, &curDevice, exact_matcher, NULL);
 	if (ret > 0) {
 		upsdebugx(1, "reconnect_ups: reopened device with 'exact' matcher");
 		hd = &curDevice;

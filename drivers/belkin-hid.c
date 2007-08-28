@@ -30,7 +30,7 @@
 #include "main.h"     /* for getval() */
 #include "common.h"
 
-#define BELKIN_HID_VERSION      "Belkin HID 0.1"
+#define BELKIN_HID_VERSION      "Belkin HID 0.11"
 
 #define BELKIN_VENDORID 0x050d
 
@@ -353,12 +353,11 @@ static int belkin_shutdown(int ondelay, int offdelay) {
 }
 
 static char *belkin_format_model(HIDDevice_t *hd) {
-	char *model;
-	model = hd->Product ? hd->Product : "unknown";
-	if (strlen(model) == 0) {
-		model = "unknown";
+	if ((hd->Product) && (strlen(hd->Product) > 0)) {
+		return hd->Product;
 	}
-	return model;
+
+	return "unknown";
 }
 
 static char *belkin_format_mfr(HIDDevice_t *hd) {
@@ -375,19 +374,24 @@ static char *belkin_format_mfr(HIDDevice_t *hd) {
 }
 
 static char *belkin_format_serial(HIDDevice_t *hd) {
-	char *serial;
-	char *string;
-	char buf[100];
+	char serial[64];
+	static char *string = NULL;
 
-	serial = hd->Serial;
-	if (serial == NULL) {
-		/* try UPS.PowerSummary.iSerialNumber */
-		string = HIDGetItemString(udev, "UPS.PowerSummary.iSerialNumber", buf, sizeof(buf), belkin_utab);
-		if (string != NULL) {
-			serial = xstrdup(string);
-		}
+	if (hd->Serial) {
+		return hd->Serial;
 	}
-	return serial;
+
+	/* try UPS.PowerSummary.iSerialNumber */
+	HIDGetItemString(udev, "UPS.PowerSummary.iSerialNumber",
+		serial, sizeof(serial), belkin_utab);
+
+	if (strlen(serial) < 1) {
+		return NULL;
+	}
+
+	free(string);
+	string = strdup(serial);
+	return string;
 }
 
 /* this function allows the subdriver to "claim" a device: return 1 if
