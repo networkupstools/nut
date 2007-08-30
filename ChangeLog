@@ -1,3 +1,11 @@
+Thu Aug 30 19:31:41 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/usbhid-ups.[ch]:
+   - Added new setting 'reconnect' that determines behaviour how
+     the driver will try to reconnect to the UPS. Documentation
+     will be updated as soon as enough developers have given their
+     opinion on this.
+
 Thu Aug 30 18:59:15 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/hidparser.c:

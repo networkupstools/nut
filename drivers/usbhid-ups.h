@@ -147,12 +147,6 @@ typedef struct {
 /*	void *next;			*//* next hid_info_t */
 } hid_info_t;
 
-/* Data walk modes */
-#define HU_WALKMODE_INIT		1
-#define HU_WALKMODE_QUICK_UPDATE	2
-#define HU_WALKMODE_FULL_UPDATE		3
-#define HU_WALKMODE_RESET		4
-
 /* TODO: rework flags */
 #define HU_FLAG_OK			1		/* show element to upsd. */
 #define HU_FLAG_STATIC			2		/* retrieve info only once. */
@@ -195,9 +189,20 @@ struct subdriver_s {
 };
 typedef struct subdriver_s subdriver_t;
 
-
 /* the following functions are exported for the benefit of subdrivers */
 int instcmd(const char *cmdname, const char *extradata);
 int setvar(const char *varname, const char *val);
+
+/* --------------------------------------------------------------- */
+/*      Lookup table to translate keywords to enumerated values    */
+/* --------------------------------------------------------------- */
+
+typedef enum {
+	RETRY = 0,
+	RELOAD,
+	RESTART
+} reconnect_t;
+
+extern reconnect_t	reconnect;	/* maybe useful for subdrivers? */
 
 #endif /* USBHID_UPS_H */

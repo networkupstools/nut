@@ -52,6 +52,15 @@ static subdriver_t *subdriver_list[] = {
 	NULL
 };
 
+/* Data walk modes */
+typedef enum {
+	HU_WALKMODE_INIT = 0,
+	HU_WALKMODE_QUICK_UPDATE,
+	HU_WALKMODE_FULL_UPDATE,
+	HU_WALKMODE_RELOAD,
+	HU_WALKMODE_RESTART
+} walkmode_t;
+
 /* pointer to the active subdriver object (set in upsdrv_initups, then
    constant) */
 static subdriver_t *subdriver;
@@ -76,7 +85,7 @@ static long hu_find_valinfo(info_lkp_t *hid2info, const char* value);
 static void process_boolean_info(char *nutvalue);
 static void ups_alarm_set(void);
 static void ups_status_set(void);
-static bool_t hid_ups_walk(int mode);
+static bool_t hid_ups_walk(walkmode_t mode);
 static int reconnect_ups(void);
 static int ups_infoval_set(hid_info_t *item, double value);
 static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf, int rdlen);
@@ -85,9 +94,9 @@ static double interval(void);
 #endif
 
 /* global variables */
-HIDDesc_t	*pDesc = NULL;	/* parsed Report Descriptor */
+HIDDesc_t	*pDesc = NULL;		/* parsed Report Descriptor */
 reportbuf_t	*reportbuf = NULL;	/* buffer for most recent reports */
-
+reconnect_t	reconnect = RETRY;	/* reconnection mode */
 
 /* ---------------------------------------------------------------------- */
 /* data for processing boolean values from UPS */
@@ -119,6 +128,7 @@ typedef enum {
 	BATTVOLTHI,	/* battery voltage too high; MGE */
 	CHARGERFAIL	/* battery charger failure; MGE */
 } status_bit_t;
+
 
 /* --------------------------------------------------------------- */
 /* Struct & data for boolean processing                            */
@@ -158,6 +168,18 @@ static status_lkp_t status_info[] = {
 	{ "battvolthi", STATUS(BATTVOLTHI) },
 	{ "chargerfail", STATUS(CHARGERFAIL) },
 	{ NULL, 0 },
+};
+
+typedef struct {
+	char		*val;
+	reconnect_t	mode;
+} reconnect_lkp_t;
+
+static reconnect_lkp_t reconnect_info[] = {
+	{ "retry", RETRY },
+	{ "reload", RELOAD },
+	{ "restart", RESTART },
+	{ NULL, RETRY },
 };
 
 /* ---------------------------------------------------------------------- */
@@ -673,6 +695,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "vendorid", "Regular expression to match UPS Manufacturer numerical ID (4 digits hexadecimal)");
 	addvar(VAR_VALUE, "productid", "Regular expression to match UPS Product numerical ID (4 digits hexadecimal)");
 	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
+	addvar(VAR_VALUE, "reconnect", "How to reconnect to the device");
 	addvar(VAR_FLAG, "explore", "Diagnostic matching of unsupported UPS");
 #endif
 }
@@ -712,6 +735,8 @@ void upsdrv_updateinfo(void)
 			dstate_datastale();
 			return;
 		}
+
+		hd = &curDevice;
 
 		if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
 			hd = NULL;
@@ -790,45 +815,8 @@ void upsdrv_updateinfo(void)
 void upsdrv_initinfo(void)
 {
 	char *val;
-	char *mfr, *model, *serial;
-#ifndef SHUT_MODE
-	int ret;
-#endif
+
 	upsdebugx(1, "upsdrv_initinfo...");
-#ifdef SHUT_MODE
-	exact_matcher = regex_matcher;
-#else
-	/* create a new matcher for exact matching */
-	ret = USBNewExactMatcher(&exact_matcher, hd);
-	if (ret) {
-		fatal_with_errno(EXIT_FAILURE, "USBNewExactMatcher()");
-	}
-
-	exact_matcher->next = regex_matcher;
-#endif
-	/* use vendor-specific method for calculating human-readable
-	 * manufacturer, model, and serial strings */
-	model = subdriver->format_model(hd);
-	mfr = subdriver->format_mfr(hd);
-	serial = subdriver->format_serial(hd);
-
-	/* set corresponding variables */
-	if (mfr != NULL) {
-		dstate_setinfo("ups.mfr", "%s", mfr);
-	}
-
-	if (model != NULL) {
-		dstate_setinfo("ups.model", "%s", model);
-	}
-
-	if (serial != NULL) {
-		dstate_setinfo("ups.serial", "%s", serial);
-	}
-
-	dstate_setinfo("ups.vendorid", "%04x", hd->VendorID);
-	dstate_setinfo("ups.productid", "%04x", hd->ProductID);
-
-	HIDDumpTree(udev, subdriver->utab);
 
 	/* init polling frequency */
 	val = getval(HU_VAR_POLLFREQ);
@@ -837,11 +825,8 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("driver.parameter.pollfreq", "%d", pollfreq);
 
-	/* Device capabilities enumeration */
-	if (hid_ups_walk(HU_WALKMODE_INIT) == TRUE) {
-		dstate_dataok();
-	} else {
-		dstate_datastale();
+	if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
+		hd = NULL;
 	}
 
 	/* install handlers */
@@ -854,6 +839,8 @@ void upsdrv_initinfo(void)
 void upsdrv_initups(void)
 {
 	int ret;
+	char *val;
+	reconnect_lkp_t	*key;
 #ifdef SHUT_MODE
 	/*!
 	 * SHUT is a serial protocol, so it needs
@@ -895,6 +882,21 @@ void upsdrv_initups(void)
 	/* link the matchers */
 	regex_matcher->next = subdriver_matcher;
 #endif /* SHUT_MODE */
+
+	/* What to do when we need to reconnect */
+	val = getval("reconnect");
+
+	for (key = reconnect_info; val && key->val; key++) {
+		if (!strcasecmp(val, key->val)) {
+			reconnect = key->mode;
+			dstate_setinfo("driver.parameter.reconnect", "%s", key->val);
+			break;
+		}
+	}
+
+	if (val && !key->val) {
+		fatalx(EXIT_FAILURE, "Error: '%s' not a valid value for 'reconnect'", val);
+	}
 
 	/* Search for the first supported UPS matching the
 	   regular expression (USB) or device_path (SHUT) */
@@ -962,7 +964,10 @@ static void process_boolean_info(char *nutvalue)
 static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf, int rdlen)
 {
 	int i;
-
+	char *mfr = NULL, *model = NULL, *serial = NULL;
+#ifndef	SHUT_MODE
+	int ret;
+#endif
 	upsdebugx(2, "Report Descriptor size = %d", rdlen);
 	upsdebug_hex(3, "Report Descriptor", rdbuf, rdlen);
 
@@ -998,8 +1003,87 @@ static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf
 
 	upslogx(2, "Using subdriver: %s", subdriver->name);
 
-	/* reload all HIDData_t pointers */
-	hid_ups_walk(HU_WALKMODE_RESET);
+	HIDDumpTree(udev, subdriver->utab);
+
+	if (reconnect == RELOAD) {
+		/* subdriver specific formatting applied *before*
+		 * the exact matcher is created/used. This allows
+		 * subdriver specific locations of variables to be
+		 * used in the RELOAD matching.
+		 */
+
+		mfr = subdriver->format_mfr(hd);
+		model = subdriver->format_model(hd);
+		serial = subdriver->format_serial(hd);
+
+		upsdebugx(2, "- VendorID: %04x", hd->VendorID);
+		upsdebugx(2, "- ProductID: %04x", hd->ProductID);
+		upsdebugx(2, "- Manufacturer: %s", hd->Vendor ? hd->Vendor : "unknown");
+		upsdebugx(2, "- Product: %s", hd->Product ? hd->Product : "unknown");
+		upsdebugx(2, "- Serial Number: %s", hd->Serial ? hd->Serial : "unknown");
+		upsdebugx(2, "- Bus: %s", hd->Bus ? hd->Bus : "unknown");
+
+		if (exact_matcher) {
+#ifndef	SHUT_MODE
+			ret = matches(exact_matcher, hd);
+			if (ret != 1) {
+				return 0;
+			}
+#endif	/* SHUT_MODE */
+			/* reload all NUT variables & commands */
+			hid_ups_walk(HU_WALKMODE_RELOAD);
+
+			return 1;
+		}
+	}
+
+	/* create a new matcher for later reconnecting */
+#ifdef SHUT_MODE
+	exact_matcher = regex_matcher;
+#else	/* SHUT_MODE */
+	USBFreeExactMatcher(exact_matcher);
+	ret = USBNewExactMatcher(&exact_matcher, hd);
+	if (ret) {
+	        upsdebug_with_errno(1, "USBNewExactMatcher()");
+	        return 0;
+	}
+	exact_matcher->next = regex_matcher;
+#endif	/* SHUT_MODE */
+
+	if (reconnect != RELOAD) {
+		/* subdriver specific formatting applied
+		 * *after* the exact matcher is created/used
+		 */
+		mfr = subdriver->format_mfr(hd);
+		model = subdriver->format_model(hd);
+		serial = subdriver->format_serial(hd);
+	}
+
+	if (mfr != NULL) {
+		dstate_setinfo("ups.mfr", "%s", mfr);
+	} else {
+		dstate_delinfo("ups.mfr");
+	}
+
+	if (model != NULL) {
+		dstate_setinfo("ups.model", "%s", model);
+	} else {
+		dstate_delinfo("ups.model");
+	}
+
+	if (serial != NULL) {
+		dstate_setinfo("ups.serial", "%s", serial);
+	} else {
+		dstate_delinfo("ups.serial");
+	}
+
+	dstate_setinfo("ups.vendorid", "%04x", hd->VendorID);
+	dstate_setinfo("ups.productid", "%04x", hd->ProductID);
+
+	if (reconnect == RESTART) {
+		/* reinitialize all NUT variables & commands */
+		hid_ups_walk(HU_WALKMODE_RESTART);
+	}
 
 	return 1;
 }
@@ -1021,7 +1105,7 @@ static double interval(void)
 #endif
 
 /* walk ups variables and set elements of the info array. */
-static bool_t hid_ups_walk(int mode)
+static bool_t hid_ups_walk(walkmode_t mode)
 {
 	hid_info_t	*item;
 	double		value;
@@ -1043,15 +1127,22 @@ static bool_t hid_ups_walk(int mode)
 		switch (mode)
 		{
 		/* Device capabilities enumeration */
-		case HU_WALKMODE_RESET:
+		case HU_WALKMODE_RELOAD:
+			/* Special case for handling server side variables */
+			if (item->hidflags & HU_FLAG_ABSENT) {
+				continue;
+			}
+
 			/* We never mapped this HID item, so skip it */
 			if (item->hiddata == NULL)
 				continue;
 
-			/* Get pointer to the new HIDData_t item */
+			/* Refresh the NUT-to-HID mapping and fetch new data */
 			item->hiddata = HIDGetItemData(udev, item->hidpath, subdriver->utab);
 			if (item->hiddata != NULL)
 				continue;
+
+			upsdebugx(1, "hid_ups_walk: RELOAD of %s failed!", item->info_type);
 
 			/* Uh oh, it was lost after reconnect, remove it */
 			if (item->hidflags & HU_TYPE_CMD) {
@@ -1059,10 +1150,49 @@ static bool_t hid_ups_walk(int mode)
 				continue;
 			}
 
-			dstate_delinfo(item->info_type);
+			/* If NUT tupe is not "BOOL", remove this variable */
+			if (strncmp(item->info_type, "BOOL", 4)) {
+				dstate_delinfo(item->info_type);
+				continue;
+			}
+
+			/* We only flag here, no communication should take place */
 			continue;
 			
+		case HU_WALKMODE_RESTART:
+			/* Special case for handling server side variables */
+			if (item->hidflags & HU_FLAG_ABSENT) {
+				continue;
+			}
+
+			/* We never mapped this HID item, so skip it */
+			if (item->hiddata == NULL)
+				continue;
+
+			/* Delete the NUT-to-HID mapping */
+			item->hiddata = NULL;
+
+			/* Remove command... */
+			if (item->hidflags & HU_TYPE_CMD) {
+				dstate_delcmd(item->info_type);
+				continue;
+			}
+
+			/* If NUT tupe is not "BOOL", remove this variable */
+			if (strncmp(item->info_type, "BOOL", 4)) {
+				dstate_delinfo(item->info_type);
+				continue;
+			}
+
+			/* We only flag here, no communication should take place */
+			continue;
+
 		case HU_WALKMODE_INIT:
+			/* Apparently, we are reconnecting, so
+			 * NUT-to-HID translation is already good */
+			if (item->hiddata != NULL)
+				break;
+
 			/* Special case for handling server side variables */
 			if (item->hidflags & HU_FLAG_ABSENT) {
 
@@ -1076,12 +1206,7 @@ static bool_t hid_ups_walk(int mode)
 				continue;
 			}
 
-			/* Apparently, we are reconnecting, so
-			 * NUT-to-HID translation is already good */
-			if (item->hiddata != NULL)
-				break;
-
-			/* Get pointer to the corresponding HIDData_t item */
+			/* Create the NUT-to-HID mapping */
 			item->hiddata = HIDGetItemData(udev, item->hidpath, subdriver->utab);
 			if (item->hiddata == NULL)
 				continue;
@@ -1185,25 +1310,20 @@ static int reconnect_ups(void)
 	upsdebugx(4, "= device has been disconnected, try to reconnect =");
 	upsdebugx(4, "==================================================");
 
-	ret = comm_driver->open(&udev, &curDevice, exact_matcher, NULL);
-	if (ret > 0) {
-		upsdebugx(1, "reconnect_ups: reopened device with 'exact' matcher");
-		hd = &curDevice;
-		return 1;
+	if ((reconnect == RETRY) || (reconnect == RESTART)) {
+		ret = comm_driver->open(&udev, &curDevice, exact_matcher, NULL);
+		if (ret > 0) {
+			return 1;
+		}
 	}
-#if DEBUG
-	/*
-	 * TODO: Fall-back to 'regex' matching if we couldn't open
-	 * device with 'exact' matcher. This probably needs a flag,
-	 * since this is different from what we used to have.
-	 */
-	ret = comm_driver->open(&udev, &curDevice, regex_matcher, &callback);
-	if (ret > 0) {
-		upsdebugx(1, "reconnect_ups: reopened device with 'regex' matcher");
-		hd = &curDevice;
-		return 1;
+
+	if ((reconnect == RELOAD) || (reconnect == RESTART)) {
+		ret = comm_driver->open(&udev, &curDevice, regex_matcher, &callback);
+		if (ret > 0) {
+			return 1;
+		}
 	}
-#endif
+
 	return 0;
 }
 
