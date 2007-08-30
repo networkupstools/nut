@@ -38,24 +38,24 @@ static const char ItemSize[4]={0,1,2,4};
  * -------------------------------------------------------------------------- */
 typedef struct
 {
-	u_char   ReportDesc[REPORT_DSC_SIZE];	/* Store Report Descriptor */
-	u_short  ReportDescSize;					/* Size of Report Descriptor */
-	u_short  Pos;							/* Store current pos in descriptor */
-	u_char   Item;							/* Store current Item */
-	long    Value;							/* Store current Value */
+	u_char   *ReportDesc;			/* Report Descriptor */
+	u_short  ReportDescSize;		/* Size of Report Descriptor */
+	u_short  Pos;				/* Store current pos in descriptor */
+	u_char   Item;				/* Store current Item */
+	long    Value;				/* Store current Value */
 
-	HIDData_t Data;							/* Store current environment */
+	HIDData_t Data;				/* Store current environment */
 
 	u_char   OffsetTab[MAX_REPORT][4];	/* Store ID, Type, offset & timestamp of report	*/
-	u_char   ReportCount;					/* Store Report Count */
-	u_char   Count;							/* Store local report count */
+	u_char   ReportCount;			/* Store Report Count */
+	u_char   Count;				/* Store local report count */
 
-	u_short  UPage;							/* Global UPage */
+	u_short  UPage;				/* Global UPage */
 	HIDNode_t UsageTab[USAGE_TAB_SIZE];	/* Usage stack */
-	u_char   UsageSize;						/* Design number of usage used */
+	u_char   UsageSize;			/* Design number of usage used */
 
-	u_char   nObject;						/* Count Objects in Report Descriptor */
-	u_char   nReport;						/* Count Reports in Report Descriptor */
+	u_char   nObject;			/* Count Objects in Report Descriptor */
+	u_char   nReport;			/* Count Reports in Report Descriptor */
 } HIDParser_t;
 
 /* return 1 + the position of the leftmost "1" bit of an int, or 0 if
@@ -73,25 +73,6 @@ static inline unsigned int hibit(unsigned int x) {
   }
 
   return res;
-}
-
-/*
- * ResetParser
- * Reset HIDParser structure for new parsing
- * Keep Report descriptor data
- * -------------------------------------------------------------------------- */
-static void ResetParser(HIDParser_t* pParser)
-{
-  pParser->Pos=0;
-  pParser->Count=0;
-  pParser->nObject=0;
-  pParser->nReport=0;
-
-  pParser->UsageSize=0;
-  memset(pParser->UsageTab,0,sizeof(pParser->UsageTab));
-
-  memset(pParser->OffsetTab,0,sizeof(pParser->OffsetTab));
-  memset(&pParser->Data,0,sizeof(pParser->Data));
 }
 
 /* Note: The USB HID specification states that Local items do not
@@ -157,7 +138,6 @@ static long FormatValue(long Value, u_char Size)
  *
  * Analyse Report descriptor stored in HIDParser struct and store local and
  * global context. 
- * Use ResetParser() to init HIDParser structure before beginning.
  * Return in pData the last object found.
  * Return TRUE when there is other Item to parse.
  * -------------------------------------------------------------------------- */
@@ -584,44 +564,51 @@ void SetValue(const HIDData_t* pData, u_char* Buf, long Value)
    on success, NULL on failure with errno set. Note: the value
    returned by this function must be freed with Free_ReportDesc(). */
 HIDDesc_t *Parse_ReportDesc(u_char *ReportDesc, int n) {
-	HIDParser_t parser;
-	HIDData_t FoundData;
-	HIDData_t *item = NULL;
-	HIDData_t *r;
+	HIDParser_t *parser;
+	HIDData_t *item;
 	HIDDesc_t *pDesc;
 	int i, id, max;
 
-	pDesc = malloc(sizeof(HIDDesc_t));
+	pDesc = calloc(1, sizeof(*pDesc));
 	if (!pDesc) {
 		return NULL;
 	}
 
-	ResetParser(&parser);
-	memcpy(parser.ReportDesc, ReportDesc, n);
-	parser.ReportDescSize = n;
-
-	i=0;
-	while (HIDParse(&parser, &FoundData)) {
-		i++;
-		r = realloc(item, i*sizeof(HIDData_t));
-		if (!r) {
-			free(pDesc);
-			free(item);
-			return NULL;
-		}
-		item = r;
-		memcpy(&item[i-1], &FoundData, sizeof(HIDData_t));
+	pDesc->item = calloc(MAX_REPORT, sizeof(*pDesc->item));
+	if (!pDesc->item) {
+		Free_ReportDesc(pDesc);
+		return NULL;
 	}
+
+	parser = calloc(1, sizeof(*parser));
+	if (!parser) {
+		Free_ReportDesc(pDesc);
+		return NULL;
+	}
+
+	parser->ReportDesc = ReportDesc;
+	parser->ReportDescSize = n;
+
+	for (i = 0; i < MAX_REPORT; i++) {
+		if (!HIDParse(parser, &pDesc->item[i])) {
+			break;
+		}
+	}
+
+	free(parser);
+
+	item = realloc(pDesc->item, MAX_REPORT * sizeof(*pDesc->item));
+	if (!item) {
+		Free_ReportDesc(pDesc);
+		return NULL;
+	}
+
 	pDesc->nitems = i;
 	pDesc->item = item;
 
 	/* done scanning report descriptor; now calculate derived data */
 
 	/* make a list of reports and their lengths */
-	for (i=0; i<256; i++) {
-		pDesc->replen[i] = 0;
-	}
-
 	for (i=0; i<pDesc->nitems; i++) {
 		id = item[i].ReportID;
 
@@ -642,9 +629,9 @@ HIDDesc_t *Parse_ReportDesc(u_char *ReportDesc, int n) {
 
 /* free a parsed report descriptor, as allocated by Parse_ReportDesc() */
 void Free_ReportDesc(HIDDesc_t *pDesc) {
-	if (pDesc) {
-		free(pDesc->item);
+	if (!pDesc) {
+		return;
 	}
+	free(pDesc->item);
 	free(pDesc);
 }
-

@@ -1,3 +1,16 @@
+Thu Aug 30 18:59:15 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/hidparser.c:
+   - Instead of using malloc() / automatic variables and clearing
+     the contents before use with memset, use calloc right away.
+   - Allocate pDesc->item in one chunk and realloc it when we know
+     how many reports we have once, instead of realloc'ing it one
+     item at a time.
+   - Removed redundant copy of ReportDesc (is not modified, so we
+     can use that).
+ * drivers/belkin-hid.[ch]:
+   - BELKIN_HID_VERSION was defined twice.
+
 Thu Aug 30 06:59:50 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/hidparser.c:

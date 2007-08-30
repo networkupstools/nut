@@ -28,7 +28,7 @@
 
 #include "usbhid-ups.h"
 
-#define BELKIN_HID_VERSION	"Belkin HID 0.1"
+#define BELKIN_HID_VERSION      "Belkin HID 0.11"
 
 extern subdriver_t belkin_subdriver;
 
