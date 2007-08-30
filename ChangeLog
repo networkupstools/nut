@@ -1,3 +1,9 @@
+Thu Aug 30 06:59:50 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/hidparser.c:
+   - Dirty way of clearing replen (which happens to be an int, not
+     a char) leaves uninitialised values.
+
 Tue Aug 28 20:46:34 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/belkin-hid.c:

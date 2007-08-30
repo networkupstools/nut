@@ -618,7 +618,10 @@ HIDDesc_t *Parse_ReportDesc(u_char *ReportDesc, int n) {
 	/* done scanning report descriptor; now calculate derived data */
 
 	/* make a list of reports and their lengths */
-	memset(pDesc->replen, 0, 256);
+	for (i=0; i<256; i++) {
+		pDesc->replen[i] = 0;
+	}
+
 	for (i=0; i<pDesc->nitems; i++) {
 		id = item[i].ReportID;
 
