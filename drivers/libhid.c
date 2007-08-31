@@ -275,6 +275,8 @@ void HIDDumpTree(hid_dev_handle_t udev, usage_tables_t *utab)
 		return;
 	}
 
+	fflush(stdout);
+
 	for (j=0; j<pDesc->nitems; j++)
 	{
 		pData = &pDesc->item[j];

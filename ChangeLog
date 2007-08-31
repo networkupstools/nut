@@ -1,3 +1,13 @@
+Fri Aug 31 15:48:56 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/hidparser.c:
+   - Fix realloc'ing memory. Resize array to the number of reports
+     we have parsed, rather than the size it already had (duh!)
+ * drivers/libusb.c:
+   - Fix regex_matcher which was broken by r1073.
+   - Fix (harmless) memory leaks if a regular expression can't be
+     compiled (the driver terminates anyway).
+
 Thu Aug 30 19:31:41 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/usbhid-ups.[ch]:

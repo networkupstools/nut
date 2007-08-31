@@ -502,7 +502,7 @@ static int match_function_exact(USBDevice_t *hd, void *privdata)
 	if (strcmp_null(hd->Serial, data->Serial) != 0) {
 		return 0;
 	}
-#ifdef DEBUG
+#ifdef DEBUG_EXACT_MATCH_BUS
 	if (strcmp_null(hd->Bus, data->Bus) != 0) {
 		return 0;
 	}
@@ -530,18 +530,18 @@ int USBNewExactMatcher(USBDeviceMatcher_t **matcher, USBDevice_t *hd)
 		return -1;
 	}
 
-	data->VendorID = hd->VendorID;
-	data->ProductID = hd->ProductID;
-
-	data->Vendor = hd->Vendor ? strdup(hd->Vendor) : NULL;
-	data->Product = hd->Product ? strdup(hd->Product) : NULL;
-	data->Serial = hd->Serial ? strdup(hd->Serial) : NULL;
-	data->Bus = hd->Bus ? strdup(hd->Bus) : NULL;
-
 	m->match_function = &match_function_exact;
 	m->privdata = (void *)data;
 	m->next = NULL;
 
+	data->VendorID = hd->VendorID;
+	data->ProductID = hd->ProductID;
+	data->Vendor = hd->Vendor ? strdup(hd->Vendor) : NULL;
+	data->Product = hd->Product ? strdup(hd->Product) : NULL;
+	data->Serial = hd->Serial ? strdup(hd->Serial) : NULL;
+#ifdef DEBUG_EXACT_MATCH_BUS
+	data->Bus = hd->Bus ? strdup(hd->Bus) : NULL;
+#endif
 	*matcher = m;
 
 	return 0;
@@ -561,7 +561,9 @@ void USBFreeExactMatcher(USBDeviceMatcher_t *matcher)
 	free(data->Vendor);
 	free(data->Product);
 	free(data->Serial);
+#ifdef DEBUG_EXACT_MATCH_BUS
 	free(data->Bus);
+#endif
 	free(data);
 	free(matcher);
 }
@@ -593,6 +595,7 @@ static int compile_regex(regex_t **compiled, char *regex, int cflags)
 
 	r = regcomp(preg, regex, cflags);
 	if (r) {
+		free(preg);
 		return -2;
 	}
 
@@ -610,44 +613,51 @@ static int compile_regex(regex_t **compiled, char *regex, int cflags)
  */
 static int match_regex(regex_t *preg, char *str)
 {
-	int	r, len;
+	int	r;
+	size_t	len;
 	char	*string;
-	regmatch_t	pmatch[1];
+	regmatch_t	match;
 
-	if (preg == NULL) {
+	if (!preg) {
 		return 1;
 	}
 
-	if (str == NULL) {
+	if (!str) {
 		str = "";
-	} else {
-		str += strcspn(str, " \t\n");	/* remove leading whitespace */
 	}
 
-	string = strdup(str);
+	/* skip leading whitespace */
+	for (len = 0; len < strlen(str); len++) {
+
+		if (!strchr(" \t\n", str[len])) {
+			break;
+		}
+	}
+
+	string = strdup(str+len);
 	if (!string) {
 		return -1;
 	}
 
-	/* remove trailing whitespace */
+	/* skip trailing whitespace */
 	for (len = strlen(string); len > 0; len--) {
 
-		if (strchr(" \t\n", string[len-1])) {
-
-			string[len-1] = '\0';
-			continue;
+		if (!strchr(" \t\n", string[len-1])) {
+			break;
 		}
 	}
 
+	string[len] = '\0';
+
 	/* test the regular expression */
-	r = regexec(preg, string, 1, pmatch, 0);
+	r = regexec(preg, string, 1, &match, 0);
 	free(string);
 	if (r) {
 		return 0;
 	}
 
 	/* check that the match is the entire string */
-	if ((pmatch[0].rm_so != 0) || (pmatch[0].rm_eo != len)) {
+	if ((match.rm_so != 0) || (match.rm_eo != (int)len)) {
 		return 0;
 	}
 
@@ -738,21 +748,20 @@ int USBNewRegexMatcher(USBDeviceMatcher_t **matcher, char **regex, int cflags)
 		return -1;
 	}
 
+	m->match_function = &match_function_regex;
+	m->privdata = (void *)data;
+	m->next = NULL;
+
 	for (i=0; i<6; i++) {
 		r = compile_regex(&data->regex[i], regex[i], cflags);
 		if (r == -2) {
 			r = i+1;
 		}
 		if (r) {
-			free(m);
-			free(data);
+			USBFreeRegexMatcher(m);
 			return r;
 		}
 	}
-
-	m->match_function = &match_function_regex;
-	m->privdata = (void *)data;
-	m->next = NULL;
 
 	*matcher = m;
 

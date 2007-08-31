@@ -565,7 +565,7 @@ void SetValue(const HIDData_t* pData, u_char* Buf, long Value)
    returned by this function must be freed with Free_ReportDesc(). */
 HIDDesc_t *Parse_ReportDesc(u_char *ReportDesc, int n) {
 	HIDParser_t *parser;
-	HIDData_t *item;
+	HIDData_t *item = NULL;
 	HIDDesc_t *pDesc;
 	int i, id, max;
 
@@ -597,7 +597,9 @@ HIDDesc_t *Parse_ReportDesc(u_char *ReportDesc, int n) {
 
 	free(parser);
 
-	item = realloc(pDesc->item, MAX_REPORT * sizeof(*pDesc->item));
+	if (i > 0) {
+		item = realloc(pDesc->item, i * sizeof(*pDesc->item));
+	}
 	if (!item) {
 		Free_ReportDesc(pDesc);
 		return NULL;
