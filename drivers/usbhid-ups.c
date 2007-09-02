@@ -930,6 +930,17 @@ void upsdrv_cleanup(void)
  * Support functions
  *********************************************************************/
 
+void possibly_supported(const char *mfr, HIDDevice_t *hd)
+{
+	upsdebugx(0,
+"This %s device (%04x:%04x) is not (or perhaps not yet) supported\n"
+"by usbhid-ups. Please make sure you have an up-to-date version of NUT. If\n"
+"this does not fix the problem, try running the driver with the\n"
+"'-x productid=%04x' option. Please report your results to the NUT user's\n"
+"mailing list <nut-upsuser@lists.alioth.debian.org>.\n",
+	mfr, hd->VendorID, hd->ProductID, hd->ProductID);
+}
+
 /* Update ups_status to remember this status item. Interpretation is
    done in ups_status_set(). */
 static void process_boolean_info(char *nutvalue)

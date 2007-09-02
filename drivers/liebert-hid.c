@@ -114,8 +114,8 @@ static int liebert_claim(HIDDevice_t *hd) {
 	if (hd->VendorID != LIEBERT_VENDORID) {
 		return 0;
 	}
-	switch (hd->ProductID) {
-
+	switch (hd->ProductID)
+	{
 	/* accept any known UPS - add devices here as needed */
 	case 0xffff:
 		return 1;
@@ -124,16 +124,9 @@ static int liebert_claim(HIDDevice_t *hd) {
 	default:
 		if (getval("productid")) {
 			return 1;
-		} else {
-			upsdebugx(1,
-"This Liebert device (%04x/%04x) is not (or perhaps not yet) supported\n"
-"by usbhid-ups. Please make sure you have an up-to-date version of NUT. If\n"
-"this does not fix the problem, try running the driver with the\n"
-"'-x productid=%04x' option. Please report your results to the NUT user's\n"
-"mailing list <nut-upsuser@lists.alioth.debian.org>.\n",
-						 hd->VendorID, hd->ProductID, hd->ProductID);
-			return 0;
 		}
+		possibly_supported("Liebert", hd);
+		return 0;
 	}
 }
 

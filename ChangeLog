@@ -1,3 +1,16 @@
+Sun Sep  2 18:39:39 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/usbhid-ups.[ch]:
+   - Add 'possibly_supported' helper function that can be called
+     from subdrivers with the vendor name and HIDDevice_t data and
+     displays an informative message that a device might be
+     supported.
+     Doing this in one location guarantees consistent behaviour.
+ * drivers/<hidsubdrivers>:
+   - Implemented above change.
+
+ Added Tripplite 09ae:2007 (OMNI900LCD) to supported devices.
+
 Fri Aug 31 15:48:56 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/hidparser.c:

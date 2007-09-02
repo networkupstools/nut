@@ -341,46 +341,37 @@ static char *apc_format_serial(HIDDevice_t *hd) {
 /* this function allows the subdriver to "claim" a device: return 1 if
  * the device is supported by this subdriver, else 0. */
 static int apc_claim(HIDDevice_t *hd) {
-	if (hd->VendorID == APC_VENDORID) {
-		switch (hd->ProductID) {
+	switch(hd->VendorID)
+	{
+	case APC_VENDORID:
+		switch (hd->ProductID)
+		{
 		case  0x0002:
-			return 1;  /* accept known UPSs */
+			return 1;
 		default:
 			if (getval("productid")) {
 				return 1;
-			} else {
-			upsdebugx(1,
-"This APC device (%04x/%04x) is not (or perhaps not yet) supported\n"
-"by usbhid-ups. Please make sure you have an up-to-date version of NUT. If\n"
-"this does not fix the problem, try running the driver with the\n"
-"'-x productid=%04x' option. Please report your results to the NUT user's\n"
-"mailing list <nut-upsuser@lists.alioth.debian.org>.\n",
-						 hd->VendorID, hd->ProductID, hd->ProductID);
-			return 0;
 			}
+			possibly_supported("APC", hd);
+			return 0;
 		}
-	} else if (hd->VendorID == CPS_VENDORID) {
-		switch (hd->ProductID) {
-		case 0x0005:  /* Cyber Power 900AVR/BC900D, CP1200AVR/BC1200D */
-			           /* fixme: are the above really HID devices? */
-			           /* Dynex DX-800U */
-		case 0x0501:  /* Cyber Power AE550, Geek Squad GS1285U */
-			return 1;  /* accept known UPSs */
+
+	case CPS_VENDORID:
+		switch (hd->ProductID)
+		{
+		case 0x0005:	/* Cyber Power 900AVR/BC900D, CP1200AVR/BC1200D
+				/* fixme: are the above really HID devices? */
+				/* Dynex DX-800U */
+		case 0x0501:	/* Cyber Power AE550, Geek Squad GS1285U */
+			return 1;
 		default:
 			if (getval("productid")) {
 				return 1;
-			} else {
-			upsdebugx(1,
-"This CyberPower device (%04x/%04x) is not (or perhaps not yet) supported\n"
-"by usbhid-ups. Please make sure you have an up-to-date version of NUT. If\n"
-"this does not fix the problem, try running the driver with the\n"
-"'-x productid=%04x' option. Please report your results to the NUT user's\n"
-"mailing list <nut-upsuser@lists.alioth.debian.org>.\n",
-						 hd->VendorID, hd->ProductID, hd->ProductID);
-			return 0;
 			}
+			possibly_supported("CyberPower", hd);
+			return 0;
 		}
-	} else {
+	default:
 		return 0;
 	}
 }

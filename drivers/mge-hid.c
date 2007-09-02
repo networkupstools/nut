@@ -747,11 +747,15 @@ static char *mge_format_model(HIDDevice_t *hd) {
 		snprintf(model, sizeof(model), "%i", (int)value);
 	}
 
-	if (strlen(model) > 0) {
-		return get_model_name(product, model);
+	if (strlen(model) < 1) {
+		return product;
 	}
 
-	return product;
+	snprintf(model, sizeof(model), "%s", get_model_name(product, model));
+
+	free(hd->Product);
+	hd->Product = strdup(model);
+	return hd->Product;
 }
 
 static char *mge_format_mfr(HIDDevice_t *hd) {
@@ -768,8 +772,8 @@ static int mge_claim(HIDDevice_t *hd) {
 	if (hd->VendorID != MGE_VENDORID) {
 		return 0;
 	}
-	switch (hd->ProductID) {
-
+	switch (hd->ProductID)
+	{
 	case  0x0001:
 	case  0xffff:
 		return 1;  /* accept known UPSs */
@@ -777,16 +781,10 @@ static int mge_claim(HIDDevice_t *hd) {
 	default:
 		if (getval("productid")) {
 			return 1;
-		} else {
-			upsdebugx(1,
-"This MGE device (%04x/%04x) is not (or perhaps not yet) supported\n"
-"by usbhid-ups. Please make sure you have an up-to-date version of NUT. If\n"
-"this does not fix the problem, try running the driver with the\n"
-"'-x productid=%04x' option. Please report your results to the NUT user's\n"
-"mailing list <nut-upsuser@lists.alioth.debian.org>.\n",
-						 hd->VendorID, hd->ProductID, hd->ProductID);
-			return 0;
 		}
+		possibly_supported("MGE", hd);
+		return 0;
+		
 	}
 }
 

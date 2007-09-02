@@ -225,22 +225,23 @@ static int tripplite_claim(HIDDevice_t *hd) {
 	if (hd->VendorID != TRIPPLITE_VENDORID) {
 		return 0;
 	}
-	switch (hd->ProductID) {
-
+	switch (hd->ProductID)
+	{
 	/* accept any known UPS - add devices here as needed.
 	   Remember: also update scripts/udev/nutusb-ups.rules.in
 	   and scripts/hotplug/libhid.usermap */
 	case 0x1003:  /* e.g. AVR550U */
 	case 0x2005:  /* e.g. OMNI1000LCD */
+	case 0x2007:  /* e.g. OMNI900LCD */
 	case 0x3012:  /* e.g. smart2200RMXL2U */
 	case 0x4002:  /* e.g. SmartOnline SU6000RT4U? */
 	case 0x4003:  /* e.g. SmartOnline SU1500RTXL2ua */
 		return 1;
 
 	/* reject known non-HID devices */
-   /* not all Tripp Lite products are HID, some are "serial over USB". */
+	/* not all Tripp Lite products are HID, some are "serial over USB". */
 	case 0x0001:  /* e.g. SMART550USB, SMART3000RM2U */
-		upsdebugx(1,
+		upsdebugx(0,
 "This Tripp Lite device (%04x/%04x) is not supported by usbhid-ups.\n"
 "Please use the tripplite_usb driver instead.\n",
 					 hd->VendorID, hd->ProductID);
@@ -249,17 +250,10 @@ static int tripplite_claim(HIDDevice_t *hd) {
 	/* by default, reject, unless the productid option is given */
 	default:
 		if (getval("productid")) {
-         return 1;
-      } else {
-         upsdebugx(1,
-"This Tripp Lite device (%04x/%04x) is not (yet) supported by usbhid-ups.\n"
-"Please make sure you have an up-to-date version of NUT. If this does not\n"
-"fix the problem, try to run the driver with the '-x productid=%04x' option.\n"
-"If this fails, try the tripplite_usb driver. Please report your results to\n"
-"the NUT user's mailing list <nut-upsuser@lists.alioth.debian.org>.\n",
-						 hd->VendorID, hd->ProductID, hd->ProductID);
-			return 0;
+			return 1;
 		}
+		possibly_supported("Tripp Lite", hd);
+		return 0;
 	}
 }
 

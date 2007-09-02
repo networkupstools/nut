@@ -193,6 +193,8 @@ typedef struct subdriver_s subdriver_t;
 int instcmd(const char *cmdname, const char *extradata);
 int setvar(const char *varname, const char *val);
 
+void possibly_supported(const char *mfr, HIDDevice_t *hd);
+
 /* --------------------------------------------------------------- */
 /*      Lookup table to translate keywords to enumerated values    */
 /* --------------------------------------------------------------- */
