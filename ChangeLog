@@ -1,3 +1,8 @@
+Mon Sep  3 18:46:04 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - data/driver.list: Added Jasuny USPS from Jageson Technology to
+   the list of supported UPS'es (genericups upstype=4).
+
 Mon Sep  3 07:05:33 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/usbhid-ups.[ch]: Changed the 'reconnect' option to

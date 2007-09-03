@@ -181,6 +181,8 @@
 
 "Ippon"		"(various)"		""	"megatec"
 
+"Jageson Technology"	"Jasuny USPS"	""	"genericups upstype=4"
+
 "Krauler"	"UP-M500VA"	"USB"	"megatec_usb"
 
 "Lestar"	"MD-800E"	""	"megatec"
