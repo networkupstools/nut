@@ -54,17 +54,6 @@
 
 #define MAX_REPORT_DESCRIPTOR	0x2000
 
-/* HID descriptor, completed with desc{type,len} */
-struct my_usb_hid_descriptor {
-        uint8_t  bLength;
-        uint8_t  bDescriptorType;  /* 0x21 */
-        uint16_t bcdHID;
-        uint8_t  bCountryCode;
-        uint8_t  bNumDescriptors;
-        uint8_t  bReportDescriptorType;
-        uint16_t wDescriptorLength;
-};
-
 /* From usbutils: workaround libusb API goofs:  "byte" should never be sign extended;
  * using "char" is trouble.  Likewise, sizes should never be negative.
  */
@@ -91,7 +80,6 @@ static inline int typesafe_control_msg(usb_dev_handle *dev,
 static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDeviceMatcher_t *matcher,
 	int (*callback)(usb_dev_handle *udev, USBDevice_t *hd, unsigned char *rdbuf, int rdlen))
 {
-	int found = 0;
 #if LIBUSB_HAS_DETACH_KRNL_DRV
 	int retries;
 #endif
@@ -122,8 +110,8 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 	libusb_close(*udevp);
 #endif
 
-	for (bus = usb_busses; bus && !found; bus = bus->next) {
-		for (dev = bus->devices; dev && !found; dev = dev->next) {
+	for (bus = usb_busses; bus; bus = bus->next) {
+		for (dev = bus->devices; dev; dev = dev->next) {
 			upsdebugx(2, "Checking device (%04X/%04X) (%s/%s)", dev->descriptor.idVendor,
 				dev->descriptor.idProduct, bus->dirname, dev->filename);
 			
