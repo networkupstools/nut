@@ -1,3 +1,8 @@
+Mon Sep  3 07:05:33 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/usbhid-ups.[ch]: Changed the 'reconnect' option to
+   'matching'. Behaviour is slightly different.
+
 Mon Sep  3 06:45:59 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/libusb.c: Remove unused variable and structure.

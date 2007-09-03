@@ -200,11 +200,10 @@ void possibly_supported(const char *mfr, HIDDevice_t *hd);
 /* --------------------------------------------------------------- */
 
 typedef enum {
-	RETRY = 0,
-	RELOAD,
-	RESTART
-} reconnect_t;
+	NORMAL = 0,
+	DELAYED
+} matching_t;
 
-extern reconnect_t	reconnect;	/* maybe useful for subdrivers? */
+extern matching_t	matching;	/* maybe useful for subdrivers? */
 
 #endif /* USBHID_UPS_H */
