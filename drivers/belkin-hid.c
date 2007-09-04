@@ -373,7 +373,6 @@ static char *belkin_format_mfr(HIDDevice_t *hd) {
 
 static char *belkin_format_serial(HIDDevice_t *hd) {
 	char serial[64];
-	static char *string = NULL;
 
 	if (hd->Serial) {
 		return hd->Serial;
@@ -387,9 +386,9 @@ static char *belkin_format_serial(HIDDevice_t *hd) {
 		return NULL;
 	}
 
-	free(string);
-	string = strdup(serial);
-	return string;
+	free(hd->Serial);
+	string = strdup(hd->Serial);
+	return hd->Serial;
 }
 
 /* this function allows the subdriver to "claim" a device: return 1 if

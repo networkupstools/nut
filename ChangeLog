@@ -1,3 +1,10 @@
+Tue Sep  4 18:11:26 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/belkin-hid.c: Fallback to UPS.PowerSummary.iSerialNumber
+   if (usb_device *)descriptor.iSerialNumber is empty. Together
+   with 'matching = delayed' this allows to match on serial number
+   for these devices as well.
+
 Mon Sep  3 18:46:04 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - data/driver.list: Added Jasuny USPS from Jageson Technology to
