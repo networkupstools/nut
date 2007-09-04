@@ -1,3 +1,7 @@
+Tue Sep  4 19:10:19 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/belkin-hid.c: That was sloppy... :-(
+
 Tue Sep  4 18:11:26 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/belkin-hid.c: Fallback to UPS.PowerSummary.iSerialNumber

@@ -386,8 +386,8 @@ static char *belkin_format_serial(HIDDevice_t *hd) {
 		return NULL;
 	}
 
-	free(hd->Serial);
-	string = strdup(hd->Serial);
+	/* free(hd->Serial); not needed, we already know it is NULL */
+	hd->Serial = strdup(serial);
 	return hd->Serial;
 }
 
