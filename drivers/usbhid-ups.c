@@ -1314,9 +1314,6 @@ static void ups_alarm_set(void)
 	if (ups_status & STATUS(SHUTDOWNIMM)) {
 		alarm_set("Shutdown imminent!");
 	}
-	if (ups_status & STATUS(TIMELIMITEXP)) {
-		alarm_set("Timelimit expired!");
-	}
 	if (ups_status & STATUS(FANFAIL)) {
 		alarm_set("Fan failure!");
 	}
@@ -1360,7 +1357,7 @@ static void ups_status_set(void)
 		!(ups_status & STATUS(FULLYCHARGED))) {
 		status_set("CHRG");		/* charging */
 	}
-	if (ups_status & STATUS(LOWBATT)) {
+	if (ups_status & (STATUS(LOWBATT) | STATUS(TIMELIMITEXP))) {
 		status_set("LB");		/* low battery */
 	}
 	if (ups_status & STATUS(OVERLOAD)) {
