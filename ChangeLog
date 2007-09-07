@@ -1,3 +1,9 @@
+Fri Sep  7 11:51:22 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - fixes the NUT versioning on exported SVN trees, due to i18n
+   translation of the "exported" keyword. This resulted in
+   <nut version>- instead of <nut version> only, without the "-"
+
 Tue Jul 10 13:47:01 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  - lib/libupsclient.pc.in, lib/libupsclient-config.in: fix a typo
