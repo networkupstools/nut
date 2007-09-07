@@ -1,3 +1,9 @@
+Fri Sep  7 11:51:22 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - fixes the NUT versioning on exported SVN trees, due to i18n
+   translation of the "exported" keyword. This resulted in
+   <nut version>- instead of <nut version> only, without the "-"
+
 Wed Sep  5 19:02:51 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/usbhid-ups.c: Timelimitexpired should be mapped to LB

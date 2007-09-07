@@ -6,7 +6,7 @@ EXTRA_DIST = attribute.h common.h extstate.h parseconf.h proto.h	\
 BUILT_SOURCES = nut_version.h
 CLEANFILES = nut_version.h
 
-SVNREV = $(shell svnversion -n $(top_srcdir) 2>/dev/null)
+SVNREV = $(shell unset LANG && svnversion -n $(top_srcdir) 2>/dev/null)
 NUT_VERSION = $(shell if test "$(SVNREV)" = "exported"; then echo "$(PACKAGE_VERSION)"; else echo "$(PACKAGE_VERSION)-$(SVNREV)"; fi)
 
 nut_version.h: FORCE
