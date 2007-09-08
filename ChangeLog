@@ -1,3 +1,10 @@
+Sat Sep  8 16:16:15 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+
+ * drivers/bcmxcp.c: Fix bug in shutdown function. Did not read shutdown time from
+   ups.conf. Changes to the alarm_init and alarm_commit (see previus commit by Arjen).
+   Add ToDo list in driver, And patch for loadsegment shutdown.
+ * driver/bcmxcp_usb.c: Fixed cast in call to usb_interrupt_read.
+
 Sat Sep  8 15:32:35 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - dstate.c: Previous update was wrong version. Fixed. Sorry about

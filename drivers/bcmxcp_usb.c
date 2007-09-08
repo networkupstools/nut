@@ -44,7 +44,7 @@ int get_answer(unsigned char *data, unsigned char command)
 	pre_sequence = 0;
 	start = 0;
 
-	res = usb_interrupt_read(upsdev, 1, buf, sizeof(buf), 1000);
+	res = usb_interrupt_read(upsdev, 1, (char *)buf, sizeof(buf), 1000);
 	if (res < 0) {
 		nutusb_comm_fail("Receive error (Request command): COMMAND: %x\n", command);
 		upsdrv_reconnect();

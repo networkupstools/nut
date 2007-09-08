@@ -17,7 +17,9 @@
 
  Modified for USB by Wolfgang Ocker <weo@weo1.de>
  
- This program is free software; you can redistribute it and/or modify
+ ojw0000 2007Apr5 Oliver Wilcock - modified to control individual load segments (outlet.2.shutdown.return) on Powerware PW5125.
+ 
+This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation; either version 2 of the License, or
  (at your option) any later version.
@@ -30,6 +32,90 @@
  You should have received a copy of the GNU General Public License
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+
+TODO List:
+
+	Extend the parsing of the Standard ID Block, to read:
+
+		Size of outlet monitoring block: (High priority)
+		To check if a outlet block is present.
+		Parse the outlet block to get the info about the
+		number of outlets and load segment state
+		(On, Off, On pending Off, Off pending On, Failed and closed, Failed and Open)
+		And the timers (Auto off delay, Auto on delay)
+		If this exist it is possible to use the
+		'Set outlet parameter command (0x97)' to alter the delay
+		settings or turn the outlet on or off with a delay (0 - 32767 seconds)
+		Also enable the outlet on off or shutdown-return commands in the driver.
+		(Check 'Communication Port List Block' down the list for more info)
+
+		Config Block Length: (High priority)
+		Give information if config block is
+		present, and how long it is, if it exist.
+		If config block exist, read the config block and setup
+		the possible config commands, and parse the 
+		'Length of the Extended Limits Configuration Block' for
+		extended configuration commands 
+
+		Statistic map Size: (Low priority)
+		May be used to se if there is a Statistic Map.
+		It holds data on the utility power quality for
+		the past month and since last reset. Number of
+		times on battery and how long. Up time and utility
+		frequency deviation. (Only larger ups'es)
+
+		Size of Alarm History Log: (Low priority)
+		See if it have any alarm history block and enable
+		command to dump it.
+
+		Size of Topology Block: (Medium priority)
+		Check if the topology block exist. Parse it for
+		some additional info. Type of ups input phases etc.
+
+		Maximum Supported Command Length: ( Med. to High priority)
+		Give info about the ups receive buffer size.
+
+		Size of Command List Block: ( Med. to High priority)
+		Tell me if the command block exist. Can use this to ask
+		for command list and set up the commands accepted by the ups.
+
+		Size of Alarm Block: ( Med. to High priority)
+		Make a smarter handling of the Active alarm's if we know the length
+		of the Active Alarm Block. Don't need the long loop to parse the
+		alarm's. Maybe use another way to set up the alarm struct in the
+		'init_alarm_map'.
+
+	Parse 'Communication Capabilities Block' ( Low priority)
+		Get info of the connected ports ID, number of baud rates,
+		command and respnse length.
+
+	Parse 'Communication Port List Block': ( Low priority)
+		This block gives info about the communication ports. Some ups'es
+		have multiple comport's, and use one port for eatch load segment.
+		In this block it is possible to get:
+		Number of ports. (In this List)
+		This Comport id (Which Comm Port is reporting this block.)
+		Comport id (Id for eatch port listed. The first comport ID=1)
+		Baudrate of the listed port.
+		Serial config.
+		Port usage:
+			What this Comm Port is being used for:
+			0 = Unknown usage, No communication occurring.
+			1 = Undefined / Unknown communication occurring
+			2 = Waiting to communicate with a UPS
+			3 = Communication established with a UPS
+			4 = Waiting to communicate with software or adapter
+			5 = Communication established software (e.g., LanSafe) 
+				or adapter (e.g., ConnectUPS)
+			6 = Communicating with a Display Device
+			7 = Multi-drop Serial channel
+			8 = Communicating with an Outlet Controller
+		Number of outlets. (Number of Outlets "assigned to" (controlled by) this Comm Port)
+		Outlet number. (Each assigned Outlet is listed (1-64))
+
+
+	Rewrite some parts of the driver, to minimise code duplication. (Like the inst commands) 
+
 */
 
 
@@ -40,7 +126,7 @@
 #include "bcmxcp_io.h"
 #include "bcmxcp.h"
 
-#define DRV_VERSION "0.11"
+#define DRV_VERSION "0.13"
 
 static int get_word(const unsigned char*);
 static long int get_long(const unsigned char*);
@@ -871,6 +957,8 @@ void upsdrv_initinfo(void)
 	/* Add instant commands */
 	dstate_addcmd("shutdown.return");
 	dstate_addcmd("shutdown.stayoff");
+	dstate_addcmd("outlet.1.shutdown.return"); /* ojw0000 */
+	dstate_addcmd("outlet.2.shutdown.return"); /* ojw0000 */
 	dstate_addcmd("test.battery.start");
 	upsh.instcmd = instcmd;
 	return;
@@ -966,7 +1054,9 @@ void upsdrv_updateinfo(void)
 				}
 			}
 		}
-		
+
+		/* Confirm alarms	*/
+		alarm_commit();
 	}
 
 	/* Get status info from UPS */
@@ -1032,8 +1122,6 @@ void upsdrv_updateinfo(void)
 
 		status_commit();
 	} 
-	/* Confirm alarms	*/
-	alarm_commit();
 
 	dstate_dataok();
 }
@@ -1044,6 +1132,12 @@ void upsdrv_shutdown(void)
 	unsigned char answer[5], cbuf[3];
 	
 	int res, sec;
+
+	/* Get vars from ups.conf */
+	if (getval("shutdown_delay") != NULL)
+		bcmxcp_status.shutdowndelay = atoi(getval("shutdown_delay"));
+	else
+		bcmxcp_status.shutdowndelay = 120;
 
 	/* maybe try to detect the UPS here, but try a shutdown	even if
 		 it doesn't respond at first if possible */
@@ -1099,11 +1193,60 @@ void upsdrv_shutdown(void)
 
 static int instcmd(const char *cmdname, const char *extra)
 {
-	unsigned char answer[5], cbuf[3];
+	unsigned char answer[5], cbuf[6];
 
 	int res, sec;
 	
 	
+	/* ojw0000 outlet power cycle for PW5125 and perhaps others */
+	if (!strcasecmp(cmdname, "outlet.1.shutdown.return")
+		|| !strcasecmp(cmdname, "outlet.2.shutdown.return")
+	) {
+		send_write_command(AUTHOR, 4);
+
+		sleep(1);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
+
+		cbuf[0] = PW_LOAD_OFF_RESTART;
+		cbuf[1] = 0x03; /* outlet off in 3 seconds */
+		cbuf[2] = 0x00; /* high byte of the 2 byte time argument */
+		cbuf[3] = ( '1' == cmdname[7] ? 0x01 : 0x02); /* which outlet load segment?  Assumes '1' or '2' at position 8 of the command string. */
+
+		/* ojw00000 the following copied from command "shutdown.return" below 2007Apr5 */
+		res = command_write_sequence(cbuf, 4, answer);
+		if (res <= 0) {
+			upslogx(LOG_ERR, "Short read from UPS");
+			dstate_datastale();
+			return -1;
+		}
+	
+		sec = (256 * (unsigned char)answer[3]) + (unsigned char)answer[2];
+	
+		switch ((unsigned char) answer[0]) {
+	
+			case 0x31: {
+				upslogx(LOG_NOTICE,"Going down in %d sec", sec);
+				return STAT_INSTCMD_HANDLED;
+				break;
+				}
+			case 0x33: {
+				upslogx(LOG_NOTICE, "[%s] disbled by front panel", cmdname);
+				return STAT_INSTCMD_UNKNOWN;
+				break;
+				}
+			case 0x36: {
+			upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
+				return STAT_INSTCMD_UNKNOWN;
+				break;
+				}
+			default: {
+				upslogx(LOG_NOTICE, "[%s] not supported", cmdname);
+				return STAT_INSTCMD_UNKNOWN;
+				break;
+				}
+		}
+
+	} /* ojw0000 end outlet power cycle */
+
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		send_write_command(AUTHOR, 4);
 	
