@@ -1,3 +1,11 @@
+Sat Sep  8 20:46:25 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - changed the default installation directory for pkg-config files,
+   following a suggestion of Stanislav Brabec. The new default
+   location is ${libdir}/pkgconfig. This is still configurable via
+   the --with-pkgconfig-dir=PATH option and can be turned off with
+   --without-pkgconfig-dir.
+
 Sat Sep  8 10:53:02 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/libhid.c: Remove the remains of what once was an attempt

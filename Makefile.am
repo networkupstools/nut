@@ -13,13 +13,13 @@ EXTRA_DIST = MAINTAINERS UPGRADING
 # ----------------------------------------------------------------------
 # flags to pass to ./configure when calling "make distcheck" and "make
 # distcheck-light". Try to check as many features as possible! Also
-# need to give pkgconfig-dir, so that staged install does not fail.
+# need to give hotplug-dir and udev-dir, so that staged install does
+# not fail.
 
 DISTCHECK_FLAGS = --with-all --with-ssl --with-ipv6
 DISTCHECK_LIGHT_FLAGS = --with-all=auto --with-ssl=auto --with-ipv6=auto
 
 DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
- --with-pkgconfig-dir='$${prefix}/lib/pkgconfig'	\
  --with-hotplug-dir='$${prefix}/etc/hotplug'		\
  --with-udev-dir='$${prefix}/etc/udev'
 
