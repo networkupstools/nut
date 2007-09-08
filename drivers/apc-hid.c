@@ -36,21 +36,6 @@
 #define APC_VENDORID 0x051d /* APC */
 #define CPS_VENDORID 0x0764 /* CyberPower */
 
-/* some conversion functions specific to CyberPower */
-
-/* returns statically allocated string - must not use it again before
-   done with result! */
-static char *watts_to_av_conversion_fun(long value) {
-	static char buf[20];
-	
-	sprintf(buf, "%.0f", value * 1.4142136);
-	return buf;
-}
-
-static info_lkp_t watts_to_av_conversion[] = {
-	{ 0, NULL, watts_to_av_conversion_fun }
-};
-
 /* returns statically allocated string - must not use it again before
    done with result! */
 static char *apc_date_conversion_fun(long value) {
@@ -212,7 +197,7 @@ static hid_info_t apc_hid2nut[] = {
   { "ups.beeper.status", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", HU_FLAG_OK, &beeper_info[0] },
   { "ups.mfr.date", 0, 0, "UPS.ManufacturerDate", NULL, "%s", HU_FLAG_OK, &date_conversion[0] },
   { "ups.mfr.date", 0, 0, "UPS.PowerSummary.ManufacturerDate", NULL, "%s", HU_FLAG_OK, &date_conversion[0] }, /* Back-UPS 500 */
-  { "ups.power.nominal", 0, 0, "UPS.Output.ConfigActivePower", NULL, "%s", HU_FLAG_OK, watts_to_av_conversion }, /* CyberPower */
+  { "ups.realpower.nominal", 0, 0, "UPS.Output.ConfigActivePower", NULL, "%s", HU_FLAG_OK, NULL }, /* CyberPower */
 
 
   /* the below one need to be discussed as we might need to complete
@@ -315,11 +300,11 @@ static int apc_shutdown(int ondelay, int offdelay) {
 }
 
 static char *apc_format_model(HIDDevice_t *hd) {
-	char *model;
+	static char model[64];
         char *ptr1, *ptr2;
 
 	/* FIXME?: what is the path "UPS.APC_UPS_FirmwareRevision"? */
-	model = hd->Product ? hd->Product : "unknown";
+	snprintf(model, sizeof(model), "%s", hd->Product ? hd->Product : "unknown");
 	ptr1 = strstr(model, "FW:");
 	if (ptr1)
 	{

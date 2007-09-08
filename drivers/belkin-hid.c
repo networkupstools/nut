@@ -30,8 +30,6 @@
 #include "main.h"     /* for getval() */
 #include "common.h"
 
-#define BELKIN_HID_VERSION      "Belkin HID 0.1"
-
 #define BELKIN_VENDORID 0x050d
 
 /* some conversion functions specific to Belkin */
@@ -144,7 +142,7 @@ static info_lkp_t belkin_awaitingpower_conversion[] = {
 };
 
 static char *belkin_online_conversion_fun(long value) {
-	if (value & 0x20) {
+	if (value & 0x0001) {
 		return "!online";
 	} else {
 		return "online";
@@ -153,6 +151,18 @@ static char *belkin_online_conversion_fun(long value) {
 
 static info_lkp_t belkin_online_conversion[] = {
 	{ 0, NULL, belkin_online_conversion_fun }
+};
+
+static char *belkin_lowbatt_conversion_fun(long value) {
+	if (value & 0x04) {
+		return "lowbatt";
+	} else {
+		return "!lowbatt";
+	}
+}
+
+static info_lkp_t belkin_lowbatt_conversion[] = {
+	{ 0, NULL, belkin_lowbatt_conversion_fun }
 };
 
 static char *belkin_depleted_conversion_fun(long value) {
@@ -281,18 +291,19 @@ static hid_info_t belkin_hid2nut[] = {
   { "ups.type", 0, 0, "UPS.BELKINDevice.BELKINUPSType", NULL, "%s", HU_FLAG_OK, belkin_upstype_conversion },
 
   /* status */
-  { "ups.status", 0, 1, "UPS.PowerSummary.Discharging",NULL, "%s", HU_FLAG_OK, discharging_info },
-  { "ups.status", 0, 1, "UPS.PowerSummary.Charging", NULL, "%s", HU_FLAG_OK, charging_info },
+  { "ups.status", 0, 1, "UPS.PowerSummary.Discharging",NULL, "%s", HU_FLAG_OK | HU_FLAG_QUICK_POLL, discharging_info },
+  { "ups.status", 0, 1, "UPS.PowerSummary.Charging", NULL, "%s", HU_FLAG_OK | HU_FLAG_QUICK_POLL, charging_info },
   { "ups.status", 0, 1, "UPS.PowerSummary.ShutdownImminent", NULL, "%s", HU_FLAG_OK, shutdownimm_info },
-  { "ups.status", 0, 1, "UPS.PowerSummary.ACPresent", NULL, "%s", HU_FLAG_OK, online_info },
-  { "ups.status", 0, 1, "UPS.PowerSummary.BelowRemainingCapacityLimit", NULL, "%s", HU_FLAG_OK, lowbatt_info },
+  { "ups.status", 0, 1, "UPS.PowerSummary.ACPresent", NULL, "%s", HU_FLAG_OK | HU_FLAG_QUICK_POLL, online_info },
+  /* { "ups.status", 0, 1, "UPS.PowerSummary.BelowRemainingCapacityLimit", NULL, "%s", HU_FLAG_OK, lowbatt_info }, broken! */
   { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINPowerStatus", NULL, "%s", HU_FLAG_OK, belkin_overload_conversion },
   { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINPowerStatus", NULL, "%s", HU_FLAG_OK, belkin_overheat_conversion },
   { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINPowerStatus", NULL, "%s", HU_FLAG_OK, belkin_commfault_conversion },
   { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINPowerStatus", NULL, "%s", HU_FLAG_OK, belkin_awaitingpower_conversion },
-  { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINBatteryStatus", NULL, "%s", HU_FLAG_OK, belkin_depleted_conversion },
+  { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINPowerStatus", NULL, "%s", HU_FLAG_OK | HU_FLAG_QUICK_POLL, belkin_online_conversion },
+  { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINBatteryStatus", NULL, "%s", HU_FLAG_OK | HU_FLAG_QUICK_POLL, belkin_depleted_conversion },
   { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINBatteryStatus", NULL, "%s", HU_FLAG_OK, belkin_replacebatt_conversion },
-  { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINBatteryStatus", NULL, "%s", HU_FLAG_OK, belkin_online_conversion },
+  { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINBatteryStatus", NULL, "%s", HU_FLAG_OK | HU_FLAG_QUICK_POLL, belkin_lowbatt_conversion },
 
   /* Server side variables */
   { "driver.version.internal", ST_FLAG_STRING, sizeof(DRIVER_VERSION), NULL, NULL, DRIVER_VERSION, HU_FLAG_ABSENT | HU_FLAG_OK, NULL },
@@ -359,19 +370,23 @@ static char *belkin_format_mfr(HIDDevice_t *hd) {
 }
 
 static char *belkin_format_serial(HIDDevice_t *hd) {
-	char *serial;
-	char *string;
-	unsigned char rawbuf[100];
+	char serial[64];
 
-	serial = hd->Serial;
-	if (serial == NULL) {
-		/* try UPS.PowerSummary.iSerialNumber */
-		string = HIDGetItemString(udev, "UPS.PowerSummary.iSerialNumber", rawbuf, belkin_utab);
-		if (string != NULL) {
-			serial = xstrdup(string);
-		}
+	if (hd->Serial) {
+		return hd->Serial;
 	}
-	return serial;
+
+	/* try UPS.PowerSummary.iSerialNumber */
+	HIDGetItemString(udev, "UPS.PowerSummary.iSerialNumber",
+		serial, belkin_utab);
+
+	if (strlen(serial) < 1) {
+		return NULL;
+	}
+
+	/* free(hd->Serial); not needed, we already know it is NULL */
+	hd->Serial = strdup(serial);
+	return hd->Serial;
 }
 
 /* this function allows the subdriver to "claim" a device: return 1 if
@@ -389,6 +404,8 @@ static int belkin_claim(HIDDevice_t *hd) {
 	case 0x0912:  /* F6C120-UNV */
 	case 0x0551:  /* F6C550-AVR */
 	case 0x0751:  /* F6C1500-TW-RK */
+	case 0x0375:  /* F6H375-USB */
+	case 0x1100:  /* F6C1100-UNV, F6C1200-UNV */
 		return 1;
 
 	/* reject any known non-UPS */

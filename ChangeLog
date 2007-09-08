@@ -1,3 +1,41 @@
+Sat Sep  8 18:58:17 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - clients/upsmon.c: Only change the polling frequency if the OL/OB
+   state changes.
+ - data/driver.list: Added a couple of Belkin models as supported,
+   as well as Jasuny USPS.
+ - drivers/apc-hid.c: The vendor specific formatting modified the
+   hd->Product that was passed to it (which should not happen here).
+   Also changed 'ups.power.nominal' to 'ups.realpower.nominal' for
+   some CyberPower UPS'es that support this.
+ - drivers/apcsmart.c: Added support for some vintage UPS'es.
+ - drivers/belkin-hid.c: Added two productid's for supported models,
+   fixed memory leak in vendor specific formatting and fixed faulty
+   input report for low battery that resurfaced now that we have a
+   report buffer.
+ - drivers/hidparser.c: Fix uninitialized data causing usbhid-ups to
+   attempt to allocate vast amounts of memory and crashing the driver.
+ - drivers/libhid.c: Fix some harmless memory leaks, lower time to
+   wait for input reports and fixed physical<->logical conversion
+   functions. Return from HIDDumpTree when nut_debug_level is too
+   low to output the results to prevent delays while reading reports
+   that are listed in the report descriptor, but are in fact not
+   used/available.
+ - drivers/libusb.c: Fix libusb_open function that leaks memory on
+   every attempt to reconnect. Removed some unused variables.
+ - drivers/mge-hid.c: Corrected wrong HID-to-NUT variable mapping and
+   corrected logical error ('not zero' is not equivalent to 'equal to
+   one').
+ - drivers/upscode2.c: Removed alarm_init() and alarm_commit(), which
+   are a no-op if alarm_set() is not in between.
+ - drivers/usbhid-ups.c: Fix for Belkin low battery bug is now in the
+   subdriver, fixed potential segfaults and minor memory leaks.
+ - server/upsd.c: Don't check client filedescriptors we already know
+   are no longer connected.
+ - scripts/hal/20-ups-nut-device.fdi: Added missing entries.
+ - scripts/hotplug/libhid.usermap: Added Belkin devices.
+ - scripts/udev/nut-usbups.rules.in: Added Belkin devices.
+
 Sat Sep  8 16:16:15 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
  * drivers/bcmxcp.c: Fix bug in shutdown function. Did not read shutdown time from

@@ -809,9 +809,12 @@ static void mainloop(void)
 
 	/* scan through clients and add to FD_SET */
 	for (tmpcli = firstclient; tmpcli != NULL; tmpcli = tmpcli->next) {
-		FD_SET(tmpcli->fd, &rfds);
-		if (tmpcli->fd > maxfd) {
-			maxfd = tmpcli->fd;
+		if (tmpcli->fd != -1) {
+			FD_SET(tmpcli->fd, &rfds);
+
+			if (tmpcli->fd > maxfd) {
+				maxfd = tmpcli->fd;
+			}
 		}
 	}
 
@@ -852,8 +855,10 @@ static void mainloop(void)
 			/* preserve for later since delclient may run */
 			tmpnext = tmpcli->next;
 
-			if (FD_ISSET(tmpcli->fd, &rfds)) {
-				readtcp(tmpcli);
+			if (tmpcli->fd != -1) {
+				if (FD_ISSET(tmpcli->fd, &rfds)) {
+					readtcp(tmpcli);
+				}
 			}
 
 			tmpcli = tmpnext;

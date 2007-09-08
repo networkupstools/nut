@@ -88,28 +88,18 @@ static reportbuf_t      *rbuf = NULL;  /* buffer for most recent reports */
    with errno set. The returned data structure must later be freed
    with free_report_buffer(). */
 reportbuf_t *new_report_buffer(void) {
-	reportbuf_t *rbuf;
-	int i;
-
-	rbuf = malloc(sizeof(reportbuf_t));
-	if (!rbuf) {
-		return NULL;
-	}
-	for (i=0; i<256; i++) {
-		rbuf->ts[i] = 0;
-		rbuf->len[i] = 0;
-		rbuf->data[i] = NULL;
-	}
-	return rbuf;
+	return calloc(1, sizeof(reportbuf_t));
 }
 
 void free_report_buffer(reportbuf_t *rbuf) {
 	int i;
 
-	if (rbuf) {
-		for (i=0; i<256; i++) {
-			free(rbuf->data[i]);
-		}
+	if (!rbuf) {
+		return;
+	}
+
+	for (i=0; i<256; i++) {
+		free(rbuf->data[i]);
 	}
 	free(rbuf);
 }
@@ -301,24 +291,25 @@ HIDDeviceMatcher_t *new_exact_matcher(HIDDevice_t *d) {
 	HIDDeviceMatcher_t *m;
 	HIDDevice_t *data;
 
-	m = (HIDDeviceMatcher_t *)malloc(sizeof(HIDDeviceMatcher_t));
+	m = calloc(1, sizeof(*m));
 	if (!m) {
 		return NULL;
 	}
-	data = (HIDDevice_t *)malloc(sizeof(HIDDevice_t));
+	data = calloc(1, sizeof(*data));
 	if (!data) {
 		free(m);
 		return NULL;
 	}
+	m->match_function = &match_function_exact;
+	m->privdata = (void *)data;
+	m->next = NULL;
+
 	data->VendorID = d->VendorID;
 	data->ProductID = d->ProductID;
 	data->Vendor = d->Vendor ? strdup(d->Vendor) : NULL;
 	data->Product = d->Product ? strdup(d->Product) : NULL;
 	data->Serial = d->Serial ? strdup(d->Serial) : NULL;
 
-	m->match_function = &match_function_exact;
-	m->privdata = (void *)data;
-	m->next = NULL;
 	return m;
 }
 
@@ -326,15 +317,17 @@ HIDDeviceMatcher_t *new_exact_matcher(HIDDevice_t *d) {
 void free_exact_matcher(HIDDeviceMatcher_t *matcher) {
 	HIDDevice_t *data;
 
-	if (matcher) {
-		data = (HIDDevice_t *)matcher->privdata;
-		
-		free(data->Vendor);
-		free(data->Product);
-		free(data->Serial);
-		free(data);
-		free(matcher);
+	if (!matcher) {
+		return;
 	}
+
+	data = (HIDDevice_t *)matcher->privdata;
+		
+	free(data->Vendor);
+	free(data->Product);
+	free(data->Serial);
+	free(data);
+	free(matcher);
 }
 
 /* Private function for compiling a regular expression. On success,
@@ -361,6 +354,7 @@ static inline int compile_regex(regex_t **compiled, char *regex, int cflags) {
 
 	r = regcomp(preg, regex, cflags);
 	if (r) {
+		free(preg);
 		return -2;
 	}
 	*compiled = preg;
@@ -477,30 +471,31 @@ int new_regex_matcher(HIDDeviceMatcher_t **matcher, char *regex_array[6], int cf
 	regex_matcher_data_t *data = NULL;
 	int r, i;
 
-	m = (HIDDeviceMatcher_t *)malloc(sizeof(HIDDeviceMatcher_t));
+	m = calloc(1, sizeof(*m));
 	if (!m) {
 		return -1;
 	}
-	data = (regex_matcher_data_t *)malloc(sizeof(regex_matcher_data_t));
+	data = calloc(1, sizeof(*data));
 	if (!data) {
 		free(m);
 		return -1;
 	}
+
+	m->match_function = &match_function_regex;
+	m->privdata = (void *)data;
+	m->next = NULL;
+
 	for (i=0; i<6; i++) {
 		r = compile_regex(&data->regex[i], regex_array[i], cflags);
 		if (r==-2) {
 			r = i;
 		}
 		if (r) {
-			free(m);
-			free(data);
+			free_regex_matcher(m);
 			return r;
 		}
 	}
 
-	m->match_function = &match_function_regex;
-	m->privdata = (void *)data;
-	m->next = NULL;
 	*matcher = m;
 	return 0;
 }
@@ -509,17 +504,19 @@ void free_regex_matcher(HIDDeviceMatcher_t *matcher) {
 	int i;
 	regex_matcher_data_t *data;
 	
-	if (matcher) {
-		data = (regex_matcher_data_t *)matcher->privdata;
-		for (i=0; i<6; i++) {
-			if (data->regex[i]) {
-				regfree(data->regex[i]);
-				free(data->regex[i]);
-			}
-		}
-		free(data);
-		free(matcher);
+	if (!matcher) {
+		return;
 	}
+
+	data = (regex_matcher_data_t *)matcher->privdata;
+	for (i=0; i<6; i++) {
+		if (data->regex[i]) {
+			regfree(data->regex[i]);
+			free(data->regex[i]);
+		}
+	}
+	free(data);
+	free(matcher);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -534,6 +531,10 @@ void HIDDumpTree(hid_dev_handle_t *udev, usage_tables_t *utab)
 	char 		path[128], type[10];
 	float		value;
 	HIDData_t 	*pData;
+
+	if (nut_debug_level < 1) {
+		return;
+	}
 
 	for (j=0; j<pDesc->nitems; j++)
 	{
@@ -813,7 +814,7 @@ int HIDGetEvents(hid_dev_handle_t *udev, HIDDevice_t *dev, HIDEvent_t **eventsLi
 	upsdebugx(2, "Waiting for notifications...");
 	
 	/* needs libusb-0.1.8 to work => use ifdef and autoconf */
-	if ((size = comm_driver->get_interrupt(udev, &buf[0], 100, 5000)) <= 0)
+	if ((size = comm_driver->get_interrupt(udev, &buf[0], 100, 250)) <= 0)
 	{
 		return size; /* propagate "error" or "no event" code */
 	}
@@ -865,6 +866,8 @@ void HIDCloseDevice(hid_dev_handle_t *udev)
       upsdebugx(2, "Closing device");
       comm_driver->close(udev);
     }
+    Free_ReportDesc(pDesc);
+    free_report_buffer(rbuf);
 }
 
 
@@ -893,7 +896,7 @@ static float logical_to_physical(HIDData_t *Data, long logical)
 	
 	Factor = (float)(Data->PhyMax - Data->PhyMin) / (Data->LogMax - Data->LogMin);
 	/* Convert Value */
-	physical = (long)((logical - Data->LogMin) * Factor) + Data->PhyMin;
+	physical = (float)((logical - Data->LogMin) * Factor) + Data->PhyMin;
 	
 	if (physical > Data->PhyMax){
 		physical = Data->PhyMax;
@@ -906,7 +909,8 @@ static float logical_to_physical(HIDData_t *Data, long logical)
 
 static long physical_to_logical(HIDData_t *Data, float physical)
 {
-	long logical, Factor;
+	long logical;
+	float Factor;
 
 	upsdebugx(4, "PhyMax = %ld, PhyMin = %ld, LogMax = %ld, LogMin = %ld",
 		Data->PhyMax, Data->PhyMin, Data->LogMax, Data->LogMin);

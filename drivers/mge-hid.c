@@ -33,6 +33,26 @@
 
 #define MGE_VENDORID 0x0463
 
+/* returns statically allocated string - must not use it again before
+   done with result! */
+static char *mge_battery_voltage_nominal_fun(long value) {
+	static char buf[10];
+	const char *model;
+
+	model = dstate_getinfo("ups.model");
+
+	/* Work around for Evolution 650 bug(?) */
+	if (!strcmp(model, "Evolution 650"))
+		value = 12;
+
+	snprintf(buf, sizeof(buf), "%ld", value);
+	return buf;
+}
+
+static info_lkp_t mge_battery_voltage_nominal[] = {
+	{ 0, NULL, mge_battery_voltage_nominal_fun }
+};
+
 /* --------------------------------------------------------------- */
 /*      Vendor-specific usage table */
 /* --------------------------------------------------------------- */
@@ -292,6 +312,8 @@ static hid_info_t mge_hid2nut[] =
 	{ "battery.voltage",  0, 0, "UPS.PowerSummary.Voltage", NULL, "%.1f", HU_FLAG_OK, NULL },
 	{ "battery.voltage.nominal", 0, 0, "UPS.BatterySystem.ConfigVoltage", NULL,
 		"%.1f", HU_FLAG_OK, NULL },
+	{ "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL,
+		"%s", HU_FLAG_OK | HU_FLAG_STATIC, mge_battery_voltage_nominal },
 
 	/* UPS page */
 	{ "ups.load", 0, 1, "UPS.PowerSummary.PercentLoad", NULL, "%.0f", HU_FLAG_OK, NULL },
@@ -363,7 +385,6 @@ static hid_info_t mge_hid2nut[] =
 	{ "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", NULL, "%.1f", HU_FLAG_OK, NULL },
 	{ "output.current", 0, 0, "UPS.PowerConverter.Output.Current", NULL, "%.2f", HU_FLAG_OK, NULL },
 	{ "output.frequency", 0, 0, "UPS.PowerConverter.Output.Frequency", NULL, "%.1f", HU_FLAG_OK, NULL },
-	{ "output.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%.1f", HU_FLAG_OK, NULL },
 
 	/* Outlet page (using MGE UPS SYSTEMS - PowerShare technology) */
 	/* TODO: add an iterative semantic [%x] to factorise outlets */
@@ -515,7 +536,7 @@ static char *mge_format_model(HIDDevice_t *hd) {
 	else
 	{
 		/* Try with ConfigApparentPower */
-		if (HIDGetItemValue(udev, "UPS.Flow.[4].ConfigApparentPower", &appPower, mge_utab) != 0 )
+		if (HIDGetItemValue(udev, "UPS.Flow.[4].ConfigApparentPower", &appPower, mge_utab) == 1 )
 		{
 			string = xmalloc(16);
 			sprintf(string, "%i", (int)appPower);

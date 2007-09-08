@@ -49,8 +49,8 @@ static subdriver_t *subdriver_list[] = {
 	&apc_subdriver,
 	&belkin_subdriver,
 	&tripplite_subdriver,
-	NULL
 #endif
+	NULL
 };
 
 /* pointer to the active subdriver object (set in upsdrv_initups, then
@@ -59,7 +59,7 @@ static subdriver_t *subdriver;
 
 /* Global vars */
 static HIDDevice_t *hd;
-static HIDDevice_t curDevice;
+static HIDDevice_t curDevice = { 0x0000, 0x0000, NULL, NULL, NULL, NULL };
 static HIDDeviceMatcher_t *reopen_matcher = NULL;
 static HIDDeviceMatcher_t *regex_matcher = NULL;
 static int pollfreq = DEFAULT_POLLFREQ;
@@ -572,16 +572,6 @@ void upsdrv_updateinfo(void)
 				upsdebugx(3, "Object: %s = %ld", 
 						  p->Path,
 						  p->Value);
-#ifndef SHUT_MODE
-				/* special case: fix a horrible Belkin
-				 bug.  My Belkin UPS actually sends an
-				 incorrect report over the interrupt
-				 pipeline - the corresponding feature
-				 report is correct. */
-				if (subdriver == &belkin_subdriver && strcmp(p->Path, "UPS.PowerSummary.BelowRemainingCapacityLimit") == 0) {
-					continue;
-				}
-#endif
 				
 				if ((item = find_hid_info(p->Path)) != NULL)
 				  {
@@ -700,7 +690,7 @@ void upsdrv_initups(void)
 
 	r = new_regex_matcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
 	if (r==-1) {
-		fatalx(EXIT_FAILURE, "new_regex_matcher: %s", strerror(errno));
+		fatal_with_errno(EXIT_FAILURE, "new_regex_matcher");
 	} else if (r) {
 		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[r]);
 	}
@@ -709,7 +699,7 @@ void upsdrv_initups(void)
 
 #else
 	/*!
-	 * But SHUT is a serial protocol, so it need
+	 * But SHUT is a serial protocol, so it needs
 	 * the device path
 	 */
 	udev = (hid_dev_handle_t *)xmalloc(sizeof(hid_dev_handle_t));
@@ -728,7 +718,7 @@ void upsdrv_initups(void)
 	/* create a new matcher for later reopening */
 	reopen_matcher = new_exact_matcher(hd);
 	if (!reopen_matcher) {
-		upsdebugx(2, "new_exact_matcher: %s", strerror(errno));
+		fatal_with_errno(EXIT_FAILURE, "new_exact_matcher");
 	}
 	/* link the two matchers */
 	reopen_matcher->next = regex_matcher;
@@ -744,8 +734,6 @@ void upsdrv_initups(void)
 	subdriver = subdriver_list[i];
 	if (!subdriver) {
 		upslogx(1, "Manufacturer not supported!");
-		upslogx(1, "Contact the NUT Developers with the below information");
-		HIDDumpTree(udev, subdriver->utab);
 		fatalx(EXIT_FAILURE, "Aborting");
 	}
 
@@ -764,6 +752,10 @@ void upsdrv_cleanup(void)
 		HIDCloseDevice(udev);
 		udev = NULL;
 	}
+#ifndef SHUT_MODE
+	free_regex_matcher(regex_matcher);	
+	free_exact_matcher(reopen_matcher);
+#endif /* SHUT_MODE */
 }
 
 /**********************************************************************
