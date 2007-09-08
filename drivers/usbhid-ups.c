@@ -39,6 +39,10 @@
 	#include "tripplite-hid.h"
 #endif
 
+#ifdef HAVE_SSL
+#include <openssl/sha.h>
+#endif
+
 /* master list of avaiable subdrivers */
 static subdriver_t *subdriver_list[] = {
 	&mge_subdriver,
@@ -71,6 +75,7 @@ static HIDDeviceMatcher_t *subdriver_matcher = NULL;
 #ifndef	SHUT_MODE
 static HIDDeviceMatcher_t *exact_matcher = NULL;
 static HIDDeviceMatcher_t *regex_matcher = NULL;
+static unsigned char *checksum = NULL;
 #endif
 static int pollfreq = DEFAULT_POLLFREQ;
 static int ups_status = 0;
@@ -182,6 +187,7 @@ typedef struct {
 
 static matching_lkp_t matching_info[] = {
 	{ "normal", NORMAL },
+	{ "checksum", CHECKSUM },
 	{ "delayed", DELAYED },
 	{ NULL, NORMAL },
 };
@@ -986,6 +992,38 @@ static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf
 	int ret;
 #endif
 	upsdebugx(2, "Report Descriptor size = %d", rdlen);
+	
+#ifndef SHUT_MODE
+	if (matching == CHECKSUM) {
+#ifdef HAVE_SSL
+		unsigned char buf[SHA_DIGEST_LENGTH];
+
+		SHA1(rdbuf, rdlen, buf);
+
+		upsdebug_hex(3, "SHA-1 checksum of report descriptor\n", buf, sizeof(buf));
+
+		if (checksum) {
+			if (!memcmp(checksum, buf, sizeof(buf))) {
+				upsdebugx(2, "SHA-1 checksum matches!");
+				return 1;
+			}
+
+			upsdebugx(2, "SHA-1 checksum doesn't match!");
+			return 0;
+		}
+
+		checksum = calloc(1, sizeof(buf));
+		if (!checksum) {
+			fatal_with_errno(EXIT_FAILURE, "Can't store SHA-1 checksum of report descriptor");
+		}
+
+		memcpy(checksum, buf, sizeof(buf));
+#else
+		fatalx(EXIT_FAILURE, "Checksum matching requires SSL support!");
+#endif /* HAVE_SSL */
+	}
+#endif /* SHUT_MODE */
+
 	upsdebug_hex(3, "Report Descriptor", rdbuf, rdlen);
 
 	/* Parse Report Descriptor */
@@ -1022,7 +1060,7 @@ static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf
 
 	HIDDumpTree(udev, subdriver->utab);
 
-#ifndef	SHUT_MODE
+#ifndef SHUT_MODE
 	if (matching == DELAYED) {
 		USBDeviceMatcher_t *m;
 
@@ -1064,13 +1102,13 @@ static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf
 	regex_matcher->next = exact_matcher;
 
 	if (matching != DELAYED) {
-#endif
+#endif /* SHUT_MODE */
 		/* apply subdriver specific formatting
 		 */
 		mfr = subdriver->format_mfr(hd);
 		model = subdriver->format_model(hd);
 		serial = subdriver->format_serial(hd);
-#ifndef	SHUT_MODE
+#ifndef SHUT_MODE
 	}
 #endif
 	if (mfr != NULL) {
@@ -1094,6 +1132,13 @@ static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf
 	dstate_setinfo("ups.vendorid", "%04x", hd->VendorID);
 	dstate_setinfo("ups.productid", "%04x", hd->ProductID);
 
+#ifndef SHUT_MODE
+	if (exact_matcher) {
+		/* reload all NUT variables & commands */
+		hid_ups_walk(HU_WALKMODE_RELOAD);
+		return 1;
+	}
+#endif
 	return 1;
 }
 

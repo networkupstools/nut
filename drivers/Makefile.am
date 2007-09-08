@@ -13,7 +13,7 @@ LDADD = $(LDADD_DRIVERS_SERIAL)
 # Avoid per-target CFLAGS, because this will prevent re-use of object
 # files. In any case, CFLAGS are only -I options, so there is no harm. 
 AM_CFLAGS = -I$(top_srcdir)/include $(LIBHAL_CFLAGS) $(LIBUSB_CFLAGS) \
- $(LIBNETSNMP_CFLAGS)
+ $(LIBNETSNMP_CFLAGS) $(LIBSSL_CFLAGS)
 
 SERIAL_DRIVERLIST = al175 apcsmart bcmxcp belkin belkinunv bestfcom	\
  bestuferrups bestups cpsups cyberpower dummy-ups etapro everups 	\
@@ -116,7 +116,7 @@ USBHID_UPS_SUBDRIVERS = apc-hid.c belkin-hid.c explore-hid.c \
  liebert-hid.c mge-hid.c tripplite-hid.c
 usbhid_ups_SOURCES = usbhid-ups.c libhid.c libusb.c hidparser.c	\
  $(USBHID_UPS_SUBDRIVERS)
-usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
+usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBSSL_LDFLAGS)
 
 energizerups_SOURCES = energizerups.c
 energizerups_LDADD = $(LDADD_DRIVERS)
@@ -128,7 +128,7 @@ bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c nut_usb.c
 bcmxcp_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 
 megatec_usb_SOURCES = megatec.c megatec_usb.c libusb.c
-megatec_usb_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS) -DMEGATEC_SUBDRV
+megatec_usb_CFLAGS = $(AM_CFLAGS) -DMEGATEC_SUBDRV
 megatec_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 
 # HID-over-serial
@@ -144,7 +144,7 @@ snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LDFLAGS)
 # HAL
 hald_addon_usbhid_ups_SOURCES = usbhid-ups.c libhid.c libusb.c hidparser.c	\
  $(USBHID_UPS_SUBDRIVERS)
-hald_addon_usbhid_ups_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS)
+hald_addon_usbhid_ups_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS) $(LIBSSL_LDFLAGS)
 
 hald_addon_tripplite_usb_SOURCES = tripplite_usb.c libusb.c
 hald_addon_tripplite_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS) -lm
@@ -153,7 +153,7 @@ hald_addon_bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c nut_usb.c
 hald_addon_bcmxcp_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS)
 
 hald_addon_megatec_usb_SOURCES = megatec.c megatec_usb.c libusb.c
-hald_addon_megatec_usb_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS) -DMEGATEC_SUBDRV
+hald_addon_megatec_usb_CFLAGS = $(AM_CFLAGS) -DMEGATEC_SUBDRV
 hald_addon_megatec_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS)
 
 
