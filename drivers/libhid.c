@@ -275,8 +275,6 @@ void HIDDumpTree(hid_dev_handle_t udev, usage_tables_t *utab)
 		return;
 	}
 
-	fflush(stdout);
-
 	for (j=0; j<pDesc->nitems; j++)
 	{
 		pData = &pDesc->item[j];
@@ -293,12 +291,14 @@ void HIDDumpTree(hid_dev_handle_t udev, usage_tables_t *utab)
 		if (HIDGetDataValue(udev, pData, &value, MAX_TS) == 1) {
 			upsdebugx(1, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %f",
 				path, HIDDataType(pData), pData->ReportID, pData->Offset, pData->Size, value);
-			return;
+			continue;
 		}
 
 		upsdebugx(1, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i",
 			path, HIDDataType(pData), pData->ReportID, pData->Offset, pData->Size);
 	}
+
+	fflush(stdout);
 }
 
 /* Returns text string which can be used to display type of data

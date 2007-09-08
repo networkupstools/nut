@@ -1,3 +1,9 @@
+Sat Sep  8 10:53:02 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/libhid.c: Remove the remains of what once was an attempt
+   to split the HIDDumpTree (I can't rembember why I wanted this in
+   the first place).
+
 Sat Sep  8 10:46:32 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/usbhid-ups.[ch],Makefile.am:
