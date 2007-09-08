@@ -1,3 +1,10 @@
+Sat Sep  8 15:23:34 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - dstate.c, dstate-hal.c: simplified the way how alarms are handled.
+   The status_commit() function should not be called *before*
+   alarm_commit() to make this work.
+ - gamatronic.c: implement the above.
+
 Fri Sep  7 11:51:22 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  - fixes the NUT versioning on exported SVN trees, due to i18n
