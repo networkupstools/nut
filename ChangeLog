@@ -1,3 +1,8 @@
+Sat Sep  8 15:32:35 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - dstate.c: Previous update was wrong version. Fixed. Sorry about
+   that.
+
 Sat Sep  8 15:23:34 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - dstate.c, dstate-hal.c: simplified the way how alarms are handled.

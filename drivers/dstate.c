@@ -30,7 +30,7 @@
 #include "state.h"
 #include "parseconf.h"
 
-	static	int	sockfd = -1, stale = 1;
+	static	int	sockfd = -1, stale = 1, alarm_active = 0;
 	static	struct	st_tree_t	*dtree_root = NULL;
 	static	struct	conn_t	*connhead = NULL;
 	static	struct	cmdlist_t *cmdhead = NULL;
@@ -770,7 +770,7 @@ void status_set(const char *buf)
 /* write the status_buf into the externally visible dstate storage */
 void status_commit(void)
 {
-	if (strlen(alarm_buf) != 0)
+	if (alarm_active)
 		dstate_setinfo("ups.status", "ALARM %s", status_buf);
 	else
 		dstate_setinfo("ups.status", "%s", status_buf);
@@ -796,7 +796,9 @@ void alarm_commit(void)
 {
 	if (strlen(alarm_buf) != 0) {
 		dstate_setinfo("ups.alarm", "%s", alarm_buf);
+		alarm_active = 1;
 	} else {
 		dstate_delinfo("ups.alarm");
+		alarm_active = 0;
 	}
 }
