@@ -27,6 +27,7 @@
 #include <ctype.h>
 #include <sys/file.h>
 #include <sys/types.h>
+#include <sys/ioctl.h>
 #include <unistd.h>
 
 #ifdef HAVE_UU_LOCK
@@ -168,6 +169,54 @@ int ser_set_speed(int fd, const char *port, speed_t speed)
 	tcsetattr(fd, TCSANOW, &tio);
 
 	return 0;
+}
+
+static int ser_set_control(int fd, int line, int state)
+{
+	if (state) {
+		return ioctl(fd, TIOCMBIS, &line);
+	} else {
+		return ioctl(fd, TIOCMBIC, &line);
+	}
+}
+
+int ser_set_dtr(int fd, int state)
+{
+	return ser_set_control(fd, TIOCM_DTR, state);
+}
+
+int ser_set_rts(int fd, int state)
+{
+	return ser_set_control(fd, TIOCM_RTS, state);
+}
+
+static int ser_get_control(int fd, int line)
+{
+	int	flags;
+
+	ioctl(fd, TIOCMGET, &flags);
+
+	return (flags & line);
+}
+
+int ser_get_dsr(int fd)
+{
+	return ser_get_control(fd, TIOCM_DSR);
+}
+
+int ser_get_cts(int fd)
+{
+	return ser_get_control(fd, TIOCM_CTS);
+}
+
+int ser_get_dcd(int fd)
+{
+	return ser_get_control(fd, TIOCM_CD);
+}
+
+int ser_flush_io(int fd)
+{
+	return tcflush(fd, TCIOFLUSH);
 }
 
 int ser_close(int fd, const char *port)

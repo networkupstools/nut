@@ -158,16 +158,18 @@ will do this for you.
 
 Possible values for status_set:
 
- OL     - On line
- OB     - On battery (inverter is providing load power)
- LB     - Low battery
- RB     - The battery needs to be replaced
- BYPASS - UPS bypass circuit is active - no battery protection is available
- CAL    - UPS is currently performing runtime calibration (on battery)
- OFF    - UPS is offline and is not supplying power to the load
- OVER   - UPS is overloaded
- TRIM   - UPS is trimming incoming voltage (called "buck" in some hardware)
- BOOST  - UPS is boosting incoming voltage
+ OL      - On line (mains is present)
+ OB      - On battery (mains is not present)
+ LB      - Low battery
+ RB      - The battery needs to be replaced
+ CHRG    - The battery is charging
+ DISCHRG - The battery is discharging (inverter is providing load power)
+ BYPASS  - UPS bypass circuit is active - no battery protection is available
+ CAL     - UPS is currently performing runtime calibration (on battery)
+ OFF     - UPS is offline and is not supplying power to the load
+ OVER    - UPS is overloaded
+ TRIM    - UPS is trimming incoming voltage (called "buck" in some hardware)
+ BOOST   - UPS is boosting incoming voltage
 
 Anything else will not be recognized by the usual clients.  Coordinate
 with me before creating something new, since there will be duplication
@@ -175,6 +177,8 @@ and ugliness otherwise.
 
 Note: upsd injects "FSD" by itself following that command by a master
 upsmon process.  Drivers must not set that value.
+
+Note: the OL and OB flags are an indication of the input line status only.
 
 UPS alarms
 ==========
@@ -250,6 +254,23 @@ The port name is provided again here so failures in tcgetattr() provide
 a useful error message.  This is the only place that will generate a
 message if someone passes a non-serial port /dev entry to your driver,
 so it needs the extra detail.
+
+
+ - int ser_set_dtr(int fd, int state)
+ - int ser_set_rts(int fd, int state)
+
+These functions can be used to set the modem control lines to provide
+cable power on the RS232 interface. Use state = 0 to set the line to 0
+and any other value to set it to 1.
+
+
+ - int set_get_dsr(int fd)
+ - int ser_get_cts(int fd)
+ - int set_get_dcd(int fd)
+
+These functions read the state of the modem control lines. They will
+return 0 if the line is logic 0 and a non-zero value if the line is
+logic 1.
 
 
  - int ser_close(int fd, const char *port)
@@ -373,6 +394,12 @@ enabled, since it could be very noisy.
 This function returns the number of characters which were read, so you
 can check for extra bytes by looking for a nonzero return value.  Zero
 will also be returned if the read fails for some reason.
+
+
+ - int set_flush_io(int fd)
+
+This function drains both the in- and output buffers. Return zero on
+success.
 
 
  - void ser_comm_fail(const char *fmt, ...)

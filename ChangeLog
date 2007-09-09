@@ -1,3 +1,11 @@
+Sun Sep  9 19:17:34 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/apcsmart.h: Missed this one in r1097.
+ - drivers/serial.[ch]: Added handling modem control lines, to make
+   backporting drivers from the trunk easier.
+ - data/new-drivers.txt: Document new status flags and modem control
+   line functions.
+
 Sun Sep  9 18:43:51 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/tripplite_usb.c: Fix potential segfault.
