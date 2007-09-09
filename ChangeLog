@@ -1,3 +1,7 @@
+Sun Sep  9 18:43:51 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/tripplite_usb.c: Fix potential segfault.
+
 Sat Sep  8 18:58:17 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - clients/upsmon.c: Only change the polling frequency if the OL/OB
