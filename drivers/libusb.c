@@ -52,7 +52,7 @@
 #define USB_DRIVER_NAME		"USB communication driver"
 #define USB_DRIVER_VERSION	"0.29"
 
-#define MAX_REPORT_DESCRIPTOR	0x2000
+#define MAX_REPORT_SIZE         0x1800
 
 /* From usbutils: workaround libusb API goofs:  "byte" should never be sign extended;
  * using "char" is trouble.  Likewise, sizes should never be negative.
@@ -97,7 +97,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 	int i;
 
 	/* report descriptor */
-	unsigned char	*rdbuf = NULL;
+	unsigned char	rdbuf[MAX_REPORT_SIZE];
 	int		rdlen;
 
 	/* libusb base init */
@@ -289,15 +289,8 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 
 			upsdebugx(2, "HID descriptor length %d", rdlen);
 
-			if (rdlen > MAX_REPORT_DESCRIPTOR) {
-				upsdebugx(2, "HID descriptor too long %d (max %d)", rdlen, MAX_REPORT_DESCRIPTOR);
-				goto next_device;
-			}
-
-			free(rdbuf);
-			rdbuf = calloc(rdlen, sizeof(*rdbuf));
-			if (!rdbuf) {
-				upsdebug_with_errno(2, "HID descriptor (%d bytes) can't be allocated", rdlen);
+			if (rdlen > sizeof(rdbuf)) {
+				upsdebugx(2, "HID descriptor too long %d (max %d)", rdlen, sizeof(rdbuf));
 				goto next_device;
 			}
 
@@ -326,7 +319,6 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 			upsdebugx(2, "Report descriptor retrieved (Reportlen = %u)", rdlen);
 			upsdebugx(2, "Found HID device");
 			fflush(stdout);
-			free(rdbuf);
 
 			return rdlen;
 
@@ -338,7 +330,6 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 	*udevp = NULL;
 	upsdebugx(2, "No appropriate HID device found");
 	fflush(stdout);
-	free(rdbuf);
 
 	return -1;
 }

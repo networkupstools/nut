@@ -30,6 +30,8 @@
 #include "main.h"     /* for getval() */
 #include "common.h"
 
+#define BELKIN_HID_VERSION      "Belkin HID 0.11"
+
 #define BELKIN_VENDORID 0x050d
 
 /* some conversion functions specific to Belkin */

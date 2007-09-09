@@ -34,6 +34,7 @@
 #include <string.h>
 /* #include <math.h> */
 #include "libhid.h"
+#include "hidparser.h"
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
 
 /* Communication layers and drivers (USB and MGE SHUT) */

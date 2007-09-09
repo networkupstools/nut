@@ -32,7 +32,6 @@
 #include "config.h"
 
 #include <sys/types.h>
-#include "hidparser.h"
 #include "hidtypes.h"
 
 #ifdef HAVE_STDINT_H

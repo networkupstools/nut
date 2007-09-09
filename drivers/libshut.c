@@ -291,7 +291,7 @@ int libshut_open(int *upsfd, SHUTDevice_t *curDevice, char *device_path,
 	struct device_descriptor_s *dev_descriptor;
 	
 	/* report descriptor */
-	unsigned char	*rdbuf = NULL;
+	unsigned char	rdbuf[MAX_REPORT_SIZE];
 	int		rdlen;
 
 	upsdebugx(2, "libshut_open: using port %s", device_path);
@@ -417,10 +417,8 @@ int libshut_open(int *upsfd, SHUTDevice_t *curDevice, char *device_path,
 
 	rdlen = desc->wDescriptorLength;
 
-	free(rdbuf);
-	rdbuf = calloc(rdlen, sizeof(*rdbuf));
-	if (!rdbuf) {
-		upsdebug_with_errno(2, "Report descriptor (%d bytes) can't be allocated", rdlen);
+	if (rdlen > sizeof(rdbuf)) {
+		upsdebugx(2, "HID descriptor too long %d (max %d)", rdlen, sizeof(rdbuf));
 		return -1;
 	}
 
@@ -432,7 +430,6 @@ int libshut_open(int *upsfd, SHUTDevice_t *curDevice, char *device_path,
 	if (res == rdlen)
 	{
 		res = callback(*upsfd, curDevice, rdbuf, rdlen);
-		free(rdbuf);
 		if (res < 1) {
 			upsdebugx(2, "Caller doesn't like this device");
 			return -1;
@@ -444,8 +441,6 @@ int libshut_open(int *upsfd, SHUTDevice_t *curDevice, char *device_path,
 
 		return rdlen;
 	}
-
-	free(rdbuf);
 
 	if (res < 0)
 	{

@@ -1396,7 +1396,7 @@ void upsdrv_initups(void)
 	/* create a new matcher for later reopening */
 	r = USBNewExactMatcher(&reopen_matcher, hd);
 	if (r) {
-		upsdebug_with_errno(2, "USBNewExactMatcher");
+		fatal_with_errno(EXIT_FAILURE, "USBNewExactMatcher");
 	}
 	/* link the two matchers */
 	reopen_matcher->next = regex_matcher;

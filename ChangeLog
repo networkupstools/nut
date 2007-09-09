@@ -1,3 +1,18 @@
+Sun Sep  9 19:14:46 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/belkin-hid.[ch]: Version should not be defined in .h
+   file to prevent needless rebuilds of the usbhid-ups.o (it was
+   duplicated in both and I removed the wrong instance).
+ - drivers/libhid.[ch]: The hidparser.h file should not be included
+   in the header file.
+ - drivers/libshut.c: Don't allocate space for the report descriptor
+   dynamically. We already know the maximum size and don't need it
+   anymore after leaving the open function.
+ - drivers/libusb.c: Same as above.
+ - drivers/tripplite_usb.c: Fix potential segfault.
+ - drivers/usbhid-ups.c: The 'explore' subdriver should be the first
+   in the list of subdrivers.
+
 Sat Sep  8 20:46:25 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  - changed the default installation directory for pkg-config files,

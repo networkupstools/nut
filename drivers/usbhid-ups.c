@@ -45,9 +45,11 @@
 
 /* master list of avaiable subdrivers */
 static subdriver_t *subdriver_list[] = {
-	&mge_subdriver,
 #ifndef SHUT_MODE
 	&explore_subdriver,
+#endif
+	&mge_subdriver,
+#ifndef SHUT_MODE
 	&apc_subdriver,
 	&belkin_subdriver,
 	&liebert_subdriver,
