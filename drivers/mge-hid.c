@@ -81,15 +81,15 @@ static info_lkp_t mge_battery_capacity[] = {
 };
 
 static info_lkp_t mge_sensitivity_info[] = {
-  { 0, "normal", NULL },
-  { 1, "high", NULL },
-  { 2, "low", NULL },
-  { 0, NULL, NULL }
+	{ 0, "normal", NULL },
+	{ 1, "high", NULL },
+	{ 2, "low", NULL },
+	{ 0, NULL, NULL }
 };
 
 static info_lkp_t mge_emergency_stop[] = {
-  { 1, "Emergency stop!", NULL },
-  { 0, NULL, NULL }
+	{ 1, "Emergency stop!", NULL },
+	{ 0, NULL, NULL }
 };
 
 
@@ -457,6 +457,12 @@ static hid_info_t mge_hid2nut[] =
 		"UPS.PowerConverter.Input.[1].PresentStatus.Boost", NULL, NULL,
 		HU_FLAG_OK, boost_info },
 	{ "BOOL", 0, 0,
+		"UPS.PowerConverter.Input.[1].PresentStatus.VoltageOutOfRange", NULL, NULL,
+		HU_FLAG_OK, vrange_info },
+	{ "BOOL", 0, 0,
+		"UPS.PowerConverter.Input.[1].PresentStatus.FrequencyOutOfRange", NULL, NULL,
+		HU_FLAG_OK, frange_info },
+	{ "BOOL", 0, 0,
 		"UPS.PowerSummary.PresentStatus.Good", NULL, NULL,
 		HU_FLAG_OK, off_info },
 	/* Manual bypass */
@@ -542,12 +548,6 @@ static hid_info_t mge_hid2nut[] =
 	{ "input.transfer.trim.high", ST_FLAG_RW | ST_FLAG_STRING, 5,
 		"UPS.PowerConverter.Output.HighVoltageBuckTransfer", NULL, "%.0f",
 		HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL },
-	{ "input.transfer.reason", 0, 0,
-		"UPS.PowerConverter.Input.[1].PresentStatus.VoltageOutOfRange", NULL, "%s",
-		HU_FLAG_OK, vrange_info },
-	{ "input.transfer.reason", 0, 0,
-		"UPS.PowerConverter.Input.[1].PresentStatus.FrequencyOutOfRange", NULL, "%s",
-		HU_FLAG_OK, frange_info },
 	{ "input.sensitivity", ST_FLAG_RW | ST_FLAG_STRING, 10,
 		"UPS.PowerConverter.Output.SensitivityMode", NULL, "%s",
 		HU_FLAG_OK | HU_FLAG_SEMI_STATIC, mge_sensitivity_info },

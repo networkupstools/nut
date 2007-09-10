@@ -1,3 +1,13 @@
+Mon Sep 10 11:36:16 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/usbhid-ups.c:
+   - The driver will now reconnect when it finds that another program
+     has claimed the USB device it uses.
+   - Cleaned up indentation.
+   - Changed the way how 'input.transfer.reason' is treated.
+ * drivers/mge-hid.c,tripplite-hid.c:
+   - Changed 'input.transfer.reason'.
+
 Sun Sep  9 19:14:46 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/belkin-hid.[ch]: Version should not be defined in .h

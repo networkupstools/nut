@@ -129,27 +129,28 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ "ups.load", 0, 1, "UPS.OutletSystem.Outlet.PercentLoad", NULL, "%.0f", HU_FLAG_OK, NULL },
 	
 	/* Special case: ups.status */
-	{ "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &online_info[0] },
-	{ "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &lowbatt_info[0] },
-	{ "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.Discharging", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &discharging_info[0] },
-	{ "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.Charging", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &charging_info[0] },
-	{ "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.FullyCharged", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &fullycharged_info[0] },
-	{ "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.ShutdownImminent", NULL, "%.0f", HU_FLAG_OK, &shutdownimm_info[0] },
-	{ "BOOL", 0, 1, "UPS.PowerConverter.PresentStatus.Overload", NULL, "%.0f", HU_FLAG_OK, &overload_info[0] },
-	{ "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL, "%.0f", HU_FLAG_OK, &replacebatt_info[0] },
-	{ "BOOL", 0, 1, "UPS.PowerConverter.PresentStatus.Boost", NULL, "%.0f", HU_FLAG_OK, &boost_info[0] },
-	{ "BOOL", 0, 1, "UPS.PowerConverter.PresentStatus.Buck", NULL, "%.0f", HU_FLAG_OK, &trim_info[0] },
+	{ "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, NULL, HU_FLAG_OK | HU_FLAG_QUICK_POLL, &online_info[0] },
+	{ "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL, NULL, HU_FLAG_OK | HU_FLAG_QUICK_POLL, &lowbatt_info[0] },
+	{ "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.Discharging", NULL, NULL, HU_FLAG_OK | HU_FLAG_QUICK_POLL, &discharging_info[0] },
+	{ "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.Charging", NULL, NULL, HU_FLAG_OK | HU_FLAG_QUICK_POLL, &charging_info[0] },
+	{ "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.FullyCharged", NULL, NULL, HU_FLAG_OK | HU_FLAG_QUICK_POLL, &fullycharged_info[0] },
+	{ "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.ShutdownImminent", NULL, NULL, HU_FLAG_OK, &shutdownimm_info[0] },
+	{ "BOOL", 0, 1, "UPS.PowerConverter.PresentStatus.Overload", NULL, NULL, HU_FLAG_OK, &overload_info[0] },
+	{ "BOOL", 0, 1, "UPS.PowerConverter.PresentStatus.VoltageOutOfRange", NULL, NULL, HU_FLAG_OK, &vrange_info[0] },
+	{ "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL, NULL, HU_FLAG_OK, &replacebatt_info[0] },
+	{ "BOOL", 0, 1, "UPS.PowerConverter.PresentStatus.Boost", NULL, NULL, HU_FLAG_OK, &boost_info[0] },
+	{ "BOOL", 0, 1, "UPS.PowerConverter.PresentStatus.Buck", NULL, NULL, HU_FLAG_OK, &trim_info[0] },
 
 	/* repeat some of the above for faulty usage codes (seen on OMNI1000LCD, untested) */
-	{ "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.TLACPresent", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &online_info[0] },
-	{ "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.TLDischarging", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &discharging_info[0] },
-	{ "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.TLCharging", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &charging_info[0] },
-	{ "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.TLNeedReplacement", NULL, "%.0f", HU_FLAG_OK, &replacebatt_info[0] },
+	{ "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.TLACPresent", NULL, NULL, HU_FLAG_OK | HU_FLAG_QUICK_POLL, &online_info[0] },
+	{ "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.TLDischarging", NULL, NULL, HU_FLAG_OK | HU_FLAG_QUICK_POLL, &discharging_info[0] },
+	{ "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.TLCharging", NULL, NULL, HU_FLAG_OK | HU_FLAG_QUICK_POLL, &charging_info[0] },
+	{ "BOOL", 0, 1, "UPS.PowerSummary.PresentStatus.TLNeedReplacement", NULL, NULL, HU_FLAG_OK, &replacebatt_info[0] },
 
 	/* Tripp Lite specific status flags (seen on OMNI1000LCD, untested) */
-	{ "BOOL", 0, 1, "UPS.PowerConverter.PresentStatus.OverTemperature", NULL, "%.0f", HU_FLAG_OK, &overheat_info[0] },
-	{ "BOOL", 0, 1, "UPS.PowerConverter.PresentStatus.AwaitingPower", NULL, "%.0f", HU_FLAG_OK, &awaitingpower_info[0] },
-	{ "BOOL", 0, 1, "UPS.PowerConverter.PresentStatus.InternalFailure", NULL, "%.0f", HU_FLAG_OK, &commfault_info[0] },
+	{ "BOOL", 0, 1, "UPS.PowerConverter.PresentStatus.OverTemperature", NULL, NULL, HU_FLAG_OK, &overheat_info[0] },
+	{ "BOOL", 0, 1, "UPS.PowerConverter.PresentStatus.AwaitingPower", NULL, NULL, HU_FLAG_OK, &awaitingpower_info[0] },
+	{ "BOOL", 0, 1, "UPS.PowerConverter.PresentStatus.InternalFailure", NULL, NULL, HU_FLAG_OK, &commfault_info[0] },
 	
 	/* Input page */
 	{ "input.voltage", 0, 0, "UPS.PowerConverter.Input.Voltage", NULL, "%.1f", HU_FLAG_OK, NULL },
@@ -157,7 +158,6 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ "input.frequency", 0, 1, "UPS.PowerConverter.Input.Frequency", NULL, "%.1f", HU_FLAG_OK, NULL },
 	{ "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 5,	"UPS.PowerConverter.Output.HighVoltageTransfer", NULL, "%.1f", HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 5,	"UPS.PowerConverter.Output.LowVoltageTransfer", NULL, "%.1f", HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL },
-	{ "input.transfer.reason", 0, 1, "UPS.PowerConverter.PresentStatus.VoltageOutOfRange", NULL, "%s", HU_FLAG_OK, &vrange_info[0] },
 
 	/* Output page */
 	{ "output.voltage", 0, 1, "UPS.PowerSummary.Voltage", NULL, "%.1f", HU_FLAG_OK, NULL },

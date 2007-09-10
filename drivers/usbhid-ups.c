@@ -63,8 +63,7 @@ typedef enum {
 	HU_WALKMODE_INIT = 0,
 	HU_WALKMODE_QUICK_UPDATE,
 	HU_WALKMODE_FULL_UPDATE,
-	HU_WALKMODE_RELOAD,
-	HU_WALKMODE_RESTART
+	HU_WALKMODE_RELOAD
 } walkmode_t;
 
 /* pointer to the active subdriver object (changed in callback() function) */
@@ -81,7 +80,6 @@ static unsigned char *checksum = NULL;
 #endif
 static int pollfreq = DEFAULT_POLLFREQ;
 static int ups_status = 0;
-static int input_transfer_reason = 0;
 static bool_t data_has_changed = FALSE; /* for SEMI_STATIC data polling */
 static time_t lastpoll; /* Timestamp the last polling */
 hid_dev_handle_t udev;
@@ -137,7 +135,9 @@ typedef enum {
 	NOBATTERY,	/* battery missing; MGE */
 	BATTVOLTLO,	/* battery voltage too low; MGE */
 	BATTVOLTHI,	/* battery voltage too high; MGE */
-	CHARGERFAIL	/* battery charger failure; MGE */
+	CHARGERFAIL,	/* battery charger failure; MGE */
+	VRANGE,		/* voltage out of range */
+	FRANGE		/* frequency out of range */
 } status_bit_t;
 
 
@@ -178,6 +178,8 @@ static status_lkp_t status_info[] = {
 	{ "battvoltlo", STATUS(BATTVOLTLO) },
 	{ "battvolthi", STATUS(BATTVOLTHI) },
 	{ "chargerfail", STATUS(CHARGERFAIL) },
+	{ "vrange", STATUS(VRANGE) },
+	{ "frange", STATUS(FRANGE) },
 	{ NULL, 0 },
 };
 
@@ -219,150 +221,160 @@ static matching_lkp_t matching_info[] = {
    separately)  */
 
 info_lkp_t online_info[] = {
-  { 1, "online", NULL },
-  { 0, "!online", NULL },
-  { 0, NULL, NULL }
+	{ 1, "online", NULL },
+	{ 0, "!online", NULL },
+	{ 0, NULL, NULL }
 };
 info_lkp_t discharging_info[] = {
-  { 1, "dischrg", NULL },
-  { 0, "!dischrg", NULL },
-  { 0, NULL, NULL }
+	{ 1, "dischrg", NULL },
+	{ 0, "!dischrg", NULL },
+	{ 0, NULL, NULL }
 };
 info_lkp_t charging_info[] = {
-  { 1, "chrg", NULL },
-  { 0, "!chrg", NULL },
-  { 0, NULL, NULL }
+	{ 1, "chrg", NULL },
+	{ 0, "!chrg", NULL },
+	{ 0, NULL, NULL }
 };
 info_lkp_t lowbatt_info[] = {
-  { 1, "lowbatt", NULL },
-  { 0, "!lowbatt", NULL },
-  { 0, NULL, NULL }
+	{ 1, "lowbatt", NULL },
+	{ 0, "!lowbatt", NULL },
+	{ 0, NULL, NULL }
 };
 info_lkp_t overload_info[] = {
-  { 1, "overload", NULL },
-  { 0, "!overload", NULL },
-  { 0, NULL, NULL }
+	{ 1, "overload", NULL },
+	{ 0, "!overload", NULL },
+	{ 0, NULL, NULL }
 };
 info_lkp_t replacebatt_info[] = {
-  { 1, "replacebatt", NULL },
-  { 0, "!replacebatt", NULL },
-  { 0, NULL, NULL }
+	{ 1, "replacebatt", NULL },
+	{ 0, "!replacebatt", NULL },
+	{ 0, NULL, NULL }
 };
 info_lkp_t trim_info[] = {
-  { 1, "trim", NULL },
-  { 0, "!trim", NULL },
-  { 0, NULL, NULL }
+	{ 1, "trim", NULL },
+	{ 0, "!trim", NULL },
+	{ 0, NULL, NULL }
 };
 info_lkp_t boost_info[] = {
-  { 1, "boost", NULL },
-  { 0, "!boost", NULL },
-  { 0, NULL, NULL }
+	{ 1, "boost", NULL },
+	{ 0, "!boost", NULL },
+	{ 0, NULL, NULL }
 };
-/* FIXME: extend ups.status for BYPASS Manual/Automatic */
 info_lkp_t bypass_info[] = {
-  { 1, "bypass", NULL },
-  { 0, "!bypass", NULL },
-  { 0, NULL, NULL }
+	{ 1, "bypass", NULL },
+	{ 0, "!bypass", NULL },
+	{ 0, NULL, NULL }
 };
 /* note: this value is reverted (0=set, 1=not set). We report "being
    off" rather than "being on", so that devices that don't implement
    this variable are "on" by default */
 info_lkp_t off_info[] = {
-  { 0, "off", NULL },
-  { 1, "!off", NULL },
-  { 0, NULL, NULL }
+	{ 0, "off", NULL },
+	{ 1, "!off", NULL },
+	{ 0, NULL, NULL }
 };
 info_lkp_t calibration_info[] = {
-  { 1, "cal", NULL },
-  { 0, "!cal", NULL },
-  { 0, NULL, NULL }
+	{ 1, "cal", NULL },
+	{ 0, "!cal", NULL },
+	{ 0, NULL, NULL }
 };
 /* note: this value is reverted (0=set, 1=not set). We report "battery
    not installed" rather than "battery installed", so that devices
    that don't implement this variable have a battery by default */
 info_lkp_t nobattery_info[] = {
-  { 1, "!nobattery", NULL },
-  { 0, "nobattery", NULL },
-  { 0, NULL, NULL }
+	{ 1, "!nobattery", NULL },
+	{ 0, "nobattery", NULL },
+	{ 0, NULL, NULL }
 };
 info_lkp_t fanfail_info[] = {
-  { 1, "fanfail", NULL },
-  { 0, "!fanfail", NULL },
-  { 0, NULL, NULL }
+	{ 1, "fanfail", NULL },
+	{ 0, "!fanfail", NULL },
+	{ 0, NULL, NULL }
 };
 info_lkp_t shutdownimm_info[] = {
-  { 1, "shutdownimm", NULL },
-  { 0, "!shutdownimm", NULL },
-  { 0, NULL, NULL }
+	{ 1, "shutdownimm", NULL },
+	{ 0, "!shutdownimm", NULL },
+	{ 0, NULL, NULL }
 };
 info_lkp_t overheat_info[] = {
-  { 1, "overheat", NULL },
-  { 0, "!overheat", NULL },
-  { 0, NULL, NULL }
+	{ 1, "overheat", NULL },
+	{ 0, "!overheat", NULL },
+	{ 0, NULL, NULL }
 };
 info_lkp_t awaitingpower_info[] = {
-  { 1, "awaitingpower", NULL },
-  { 0, "!awaitingpower", NULL },
-  { 0, NULL, NULL }
+	{ 1, "awaitingpower", NULL },
+	{ 0, "!awaitingpower", NULL },
+	{ 0, NULL, NULL }
 };
 info_lkp_t commfault_info[] = {
-  { 1, "commfault", NULL },
-  { 0, "!commfault", NULL },
-  { 0, NULL, NULL }
+	{ 1, "commfault", NULL },
+	{ 0, "!commfault", NULL },
+	{ 0, NULL, NULL }
 };
 info_lkp_t timelimitexpired_info[] = {
-  { 1, "timelimitexp", NULL },
-  { 0, "!timelimitexp", NULL },
-  { 0, NULL, NULL }
+	{ 1, "timelimitexp", NULL },
+	{ 0, "!timelimitexp", NULL },
+	{ 0, NULL, NULL }
 };
 info_lkp_t battvoltlo_info[] = {
-  { 1, "battvoltlo", NULL },
-  { 0, "!battvoltlo", NULL },
-  { 0, NULL, NULL }
+	{ 1, "battvoltlo", NULL },
+	{ 0, "!battvoltlo", NULL },
+	{ 0, NULL, NULL }
 };
 info_lkp_t battvolthi_info[] = {
-  { 1, "battvolthi", NULL },
-  { 0, "!battvolthi", NULL },
-  { 0, NULL, NULL }
+	{ 1, "battvolthi", NULL },
+	{ 0, "!battvolthi", NULL },
+	{ 0, NULL, NULL }
 };
 info_lkp_t chargerfail_info[] = {
-  { 1, "chargerfail", NULL },
-  { 0, "!chargerfail", NULL },
-  { 0, NULL, NULL }
+	{ 1, "chargerfail", NULL },
+	{ 0, "!chargerfail", NULL },
+	{ 0, NULL, NULL }
 };
 info_lkp_t fullycharged_info[] = { /* used by CyberPower and TrippLite */
-  { 1, "fullycharged", NULL },
-  { 0, "!fullycharged", NULL },
-  { 0, NULL, NULL }
+	{ 1, "fullycharged", NULL },
+	{ 0, "!fullycharged", NULL },
+	{ 0, NULL, NULL }
 };
 info_lkp_t depleted_info[] = {
-  { 1, "depleted", NULL },
-  { 0, "!depleted", NULL },
-  { 0, NULL, NULL }
+	{ 1, "depleted", NULL },
+	{ 0, "!depleted", NULL },
+	{ 0, NULL, NULL }
+};
+info_lkp_t vrange_info[] = {
+	{ 0, "!vrange", NULL },
+	{ 1, "vrange", NULL },
+	{ 0, NULL, NULL }
+};
+info_lkp_t frange_info[] = {
+	{ 0, "!frange", NULL },
+	{ 1, "frange", NULL },
+	{ 0, NULL, NULL }
 };
 
 info_lkp_t test_write_info[] = {
-  { 0, "No test", NULL },
-  { 1, "Quick test", NULL },
-  { 2, "Deep test", NULL },
-  { 3, "Abort test", NULL },
-  { 0, NULL, NULL }
+	{ 0, "No test", NULL },
+	{ 1, "Quick test", NULL },
+	{ 2, "Deep test", NULL },
+	{ 3, "Abort test", NULL },
+	{ 0, NULL, NULL }
 };
+
 info_lkp_t test_read_info[] = {
-  { 1, "Done and passed", NULL },
-  { 2, "Done and warning", NULL },
-  { 3, "Done and error", NULL },
-  { 4, "Aborted", NULL },
-  { 5, "In progress", NULL },
-  { 6, "No test initiated", NULL },
-  { 0, NULL, NULL }
+	{ 1, "Done and passed", NULL },
+	{ 2, "Done and warning", NULL },
+	{ 3, "Done and error", NULL },
+	{ 4, "Aborted", NULL },
+	{ 5, "In progress", NULL },
+	{ 6, "No test initiated", NULL },
+	{ 0, NULL, NULL }
 };
 
 info_lkp_t beeper_info[] = {
-  { 1, "disabled", NULL },
-  { 2, "enabled", NULL },
-  { 3, "muted", NULL },
-  { 0, NULL, NULL }
+	{ 1, "disabled", NULL },
+	{ 2, "enabled", NULL },
+	{ 3, "muted", NULL },
+	{ 0, NULL, NULL }
 };
 
 info_lkp_t yes_no_info[] = {
@@ -377,80 +389,26 @@ info_lkp_t on_off_info[] = {
 	{ 0, NULL, NULL }
 };
 
-
-/* The input.transfer.reason may be caused by several problems
- * at the same time. When these reasons clear, we also want to
- * clear the reason, hence the fairly complex way of dealing
- * with this.
- */
-static char *transfer_reason(void)
-{
-	switch (input_transfer_reason)
-	{
-	case 3:
-		return "input voltage and frequency out of range";
-	case 2:
-		return "input voltage out of range";
-	case 1:
-		return "input frequency out of range";
-	default:
-		dstate_delinfo("input.transfer.reason");
-		/* returning NULL causes the lookup to fail
-		 * and no data is set (which makes sure the
-		 * input transfer reason is not set) */
-		return NULL;
-	}
-}
-
-static char *vrange_info_fun(long value)
-{
-	if (value)
-		input_transfer_reason |= 0x0002;
-	else
-		input_transfer_reason &= ~0x0002;
-
-	return transfer_reason();
-}	
-
-info_lkp_t vrange_info[] = {
-  { 0, NULL, vrange_info_fun }
-};
-
-
-static char *frange_info_fun(long value)
-{
-	if (value)
-		input_transfer_reason |= 0x0001;
-	else
-		input_transfer_reason &= ~0x0001;
-
-	return transfer_reason();
-}
-
-info_lkp_t frange_info[] = {
-  { 0, NULL, frange_info_fun }
-};
-
 /* returns statically allocated string - must not use it again before
    done with result! */
 static char *date_conversion_fun(long value) {
-  static char buf[20];
-  int year, month, day;
+	static char buf[20];
+	int year, month, day;
 
-  if (value == 0) {
-    return "not set";
-  }
+	if (value == 0) {
+		return "not set";
+	}
 
-  year = 1980 + (value >> 9); /* negative value represents pre-1980 date */ 
-  month = (value >> 5) & 0x0f;
-  day = value & 0x1f;
-  
-  snprintf(buf, sizeof(buf), "%04d/%02d/%02d", year, month, day);
-  return buf;
+	year = 1980 + (value >> 9); /* negative value represents pre-1980 date */ 
+	month = (value >> 5) & 0x0f;
+	day = value & 0x1f;
+
+	snprintf(buf, sizeof(buf), "%04d/%02d/%02d", year, month, day);
+	return buf;
 }
 
 info_lkp_t date_conversion[] = {
-  { 0, NULL, date_conversion_fun }
+	{ 0, NULL, date_conversion_fun }
 };
 
 /* returns statically allocated string - must not use it again before
@@ -1240,8 +1198,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 				continue;
 
 			/* Allow duplicates for these NUT variables... */
-			if (!strncmp(item->info_type, "input.transfer.reason", 21) ||
-					!strncmp(item->info_type, "ups.alarm", 9)) {
+			if (!strncmp(item->info_type, "ups.alarm", 9)) {
 				break;
 			}
 
@@ -1280,6 +1237,8 @@ static bool_t hid_ups_walk(walkmode_t mode)
 
 		switch (retcode)
 		{
+		case -EBUSY:
+			upslog_with_errno(LOG_DEBUG, "Got disconnected by another driver");
 		case -EPERM:
 		case -EPIPE:
 		case -ENODEV:
@@ -1297,9 +1256,9 @@ static bool_t hid_ups_walk(walkmode_t mode)
 			continue;
 
 		default:
-			/* Don't know what happened, but we didn't get a
-			 * value, so go on to the next from the list. */
-			continue;
+			/* Don't know what happened, try again later... */
+			upslog_with_errno(LOG_DEBUG, "HIDGetDataValue");
+			return FALSE;
 		}
 
 		upsdebugx(2, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %f",
@@ -1391,6 +1350,14 @@ static void ups_alarm_set(void)
    status. */
 static void ups_status_set(void)
 {
+	if (ups_status & STATUS(VRANGE)) {
+		dstate_setinfo("input.transfer.reason", "input voltage out of range");
+	} else if (ups_status & STATUS(FRANGE)) {
+		dstate_setinfo("input.transfer.reason", "input frequency out of range");
+	} else {
+		dstate_delinfo("input.transfer.reason");
+	}
+
 	if (ups_status & STATUS(ONLINE)) {
 		status_set("OL");		/* on line */
 	} else {
@@ -1428,9 +1395,6 @@ static void ups_status_set(void)
 	if (ups_status & STATUS(CAL)) {
 		status_set("CAL");		/* calibration */
 	}
-
-	/* Commit the status buffer */
-	status_commit();
 }
 
 /* find info element definition in info array
