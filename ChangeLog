@@ -1,3 +1,13 @@
+Tue Sep 11 14:21:17 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - clients/upsclient.h: add a typedef UPSCONN on UPSCONN_t since
+   the renaming of the former broke the external client application
+   compatibility. This is only temporary, and client applications
+   will have to adapt their code, using pkg-config / libupclient-config
+   and some #defines.
+ - UPGRADING: add a (doubled for both 2.2.0 and 2.2.1) message to warn
+   client applications developers of the above change.
+
 Tue Sep 11 12:47:10 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  - data/driver.list: Added MGE Office Protection Systems compatibility
