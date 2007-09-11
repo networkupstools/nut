@@ -1,3 +1,8 @@
+Tue Sep 11 12:47:10 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - data/driver.list: Added MGE Office Protection Systems compatibility
+   information.
+
 Mon Sep 10 11:36:16 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/usbhid-ups.c:
