@@ -3,6 +3,15 @@ of this software.  When upgrading from an older version, be sure to
 check this file to see if you need to make changes to your system.
 
 ---------------------------------------------------------------------------
+Changes from 2.2.0 to 2.2.1:
+
+ - nothing that affects upgraded systems.
+ (The below message is repetead due to previous omission)
+ - Developers of external client application using libupsclient are
+   encouraged to rename their "UPSCONN" client structure to "UPSCONN_t"
+   since the former will disappear by the release of NUT 2.4.
+
+---------------------------------------------------------------------------
 Changes from 2.0.5 to 2.2.0:
 
  - users of the newhidups driver are advised that the driver name has changed
@@ -20,6 +29,9 @@ Changes from 2.0.5 to 2.2.0:
    automake). Refer to packaging/debian/ for an example of migration.
  - specifying '-a <id>' is now mandatory when starting a driver manually,
    ie not using upsdrvctl.
+ - Developers of external client application using libupsclient are
+   encouraged to rename the "UPSCONN" client structure to "UPSCONN_t"
+   since the former will disapear by the release of NUT 2.4.
 
 ---------------------------------------------------------------------------
 Changes from 2.0.4 to 2.0.5:
