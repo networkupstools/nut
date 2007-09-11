@@ -1,3 +1,7 @@
+Tue Sep 11 12:47:10 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - data/driver.list: Added MGE Office Protection Systems information.
+
 Sun Sep  9 19:17:34 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/apcsmart.h: Missed this one in r1097.
