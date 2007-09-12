@@ -345,6 +345,7 @@ static int get_data_agiler(char *buffer, int buffer_size)
 			if (len < 0)
 				len = 0;
 			buf[i * AGILER_REPORT_SIZE + len] = 0;
+			upsdebug_hex(5, "get_data_agiler: raw dump", buf, i * AGILER_REPORT_SIZE + len);
 			break;
 		}
 	}
@@ -453,6 +454,7 @@ static int get_data_krauler(char *buffer, int buffer_size)
 			/* res = usb_control_msg(udev, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR, (USB_DT_STRING << 8) + index, 0, buffer, buffer_size, KRAULER_TIMEOUT); */
 
 			if (res > 0) {
+				upsdebug_hex(5, "get_data_krauler: raw dump", buffer, res);
 				for (i = 4, j = 1; i < res; i++)
 					if (buffer[i] != 0) {
 						buffer[j] = buffer[i];
@@ -462,11 +464,11 @@ static int get_data_krauler(char *buffer, int buffer_size)
 				buffer[j] = 0;
 				res = j;
 
-				upsdebugx(5, "get_data_krauler: got data: %s", buffer);
+				upsdebugx(4, "get_data_krauler: got data: %s", buffer);
 				if (strcmp(buffer + 1, KRAULER_WRONG_ANSWER) != 0)
 					break;
 				else
-					upsdebugx(5, "get_data_krauler: ups no ack");
+					upsdebugx(4, "get_data_krauler: ups no ack");
 			} else
 				  break;
 

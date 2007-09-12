@@ -1,3 +1,7 @@
+Wed Sep 12 22:17:01 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ - drivers/megatec_usb.c: added debug dumping in both subdrivers.
+
 Wed Sep 12 22:12:53 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  * drivers/megatec.c:
