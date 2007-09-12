@@ -111,25 +111,26 @@ typedef struct {
 
 /* Parameters for known battery types */
 typedef struct {
-	int nominal;  /* battery voltage (nominal) */
-	float min;    /* lower bound for a single battery of "nominal" voltage (see "set_battery_params" below) */
-	float max;    /* upper bound for a single battery of "nominal" voltage (see "set_battery_params" below) */
-	float empty;  /* fully discharged battery */
-	float full;   /* fully charged battery */
-	float low;    /* low battery (unused) */
+	float nominal;  /* battery voltage (nominal) */
+	float min;      /* lower bound for a single battery of "nominal" voltage (see "set_battery_params" below) */
+	float max;      /* upper bound for a single battery of "nominal" voltage (see "set_battery_params" below) */
+	float empty;    /* fully discharged battery */
+	float full;     /* fully charged battery */
+	float low;      /* low battery (unused) */
 } BatteryVolts_t;
 
 
 /* Known battery types must be in ascending order by "nominal" first, and then by "max". */
-static BatteryVolts_t batteries[] = {{ 12,  9.0, 16.0,  9.7, 13.7,  0.0 },   /* Mustek PowerMust 600VA Plus (LB unknown) */
-                                     { 12, 18.0, 30.0, 18.8, 26.8, 22.3 },   /* PowerWalker Line-Interactive VI 1000 */
-                                     { 24, 18.0, 30.0, 19.4, 27.4, 22.2 },   /* Mustek PowerMust 1000VA Plus */
-                                     { 36,  1.5,  3.0, 1.64, 2.31, 1.88 },   /* Mustek PowerMust 1000VA On-Line */
-                                     { 36, 30.0, 42.0, 32.5, 41.0,  0.0 },   /* Mecer ME-2000 (LB unknown) */
-                                     { 48, 38.0, 58.0, 40.0, 54.6, 44.0 },   /* Sven Smart RM2000 */
-                                     { 72,  1.5,  3.0, 1.74, 2.37, 1.82 },   /* Effekta RM2000MH */
-                                     { 96,  1.5,  3.0, 1.63, 2.29,  1.8 },   /* Ablerex MS3000RT (LB at 25% charge) */
-                                     {  0,  0.0,  0.0,  0.0,  0.0,  0.0 }};  /* END OF DATA */
+static BatteryVolts_t batteries[] = {{ 12.0,  9.0, 16.0,  9.7, 13.7,  0.0 },   /* Mustek PowerMust 600VA Plus (LB unknown) */
+                                     { 12.0, 18.0, 30.0, 18.8, 26.8, 22.3 },   /* PowerWalker Line-Interactive VI 1000 */
+                                     { 23.5, 18.0, 30.0, 21.3, 27.1, 22.2 },   /* UNITEK ALPHA2600 */
+                                     { 24.0, 18.0, 30.0, 19.4, 27.4, 22.2 },   /* Mustek PowerMust 1000VA Plus */
+                                     { 36.0,  1.5,  3.0, 1.64, 2.31, 1.88 },   /* Mustek PowerMust 1000VA On-Line */
+                                     { 36.0, 30.0, 42.0, 32.5, 41.0,  0.0 },   /* Mecer ME-2000 (LB unknown) */
+                                     { 48.0, 38.0, 58.0, 40.0, 54.6, 44.0 },   /* Sven Smart RM2000 */
+                                     { 72.0,  1.5,  3.0, 1.74, 2.37, 1.82 },   /* Effekta RM2000MH */
+                                     { 96.0,  1.5,  3.0, 1.63, 2.29,  1.8 },   /* Ablerex MS3000RT (LB at 25% charge) */
+                                     {  0.0,  0.0,  0.0,  0.0,  0.0,  0.0 }};  /* END OF DATA */
 
 /* Defined in upsdrv_initinfo */
 static float battvolt_empty = -1;  /* unknown */

@@ -1,3 +1,11 @@
+Wed Sep 12 22:12:53 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ * drivers/megatec.c:
+   - One more entry in the "batteries" array.
+   - Nominal battery value is now a float (some models need this).
+ * data/driver.list:
+   - Two more models supported by megatec.
+
 Tue Sep 11 14:21:17 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  - clients/upsclient.h: add a typedef UPSCONN on UPSCONN_t since

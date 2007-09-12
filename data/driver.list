@@ -26,6 +26,8 @@
 "ActivePower"	"1400VA"	""	"megatec"
 "ActivePower"	"2000VA"	""	"megatec"
 
+"Advice"	"TopGuard 2000"	""	"megatec"
+
 "AEC"	"MiniGuard UPS 700"		"Megatec M2501 cable"	"genericups upstype=21"
 
 "APC"	"Back-UPS Pro"		""	"apcsmart"
@@ -493,6 +495,7 @@
 "UNITEK"	"ALPHA 500 IC"		""	"megatec"
 "UNITEK"	"Alpha 1000is"		""	"megatec"
 "UNITEK"	"Alpha 500 ipE"		""	"megatec"
+"UNITEK"	"Alpha 2600"		""	"megatec"
 
 "UPSonic"	"CXR1000"		""	"megatec"
 "UPSonic"	"LAN Saver 600"		""	"genericups upstype=0"
