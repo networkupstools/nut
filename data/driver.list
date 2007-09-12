@@ -26,6 +26,8 @@
 "ActivePower"	"1400VA"	""	"megatec"
 "ActivePower"	"2000VA"	""	"megatec"
 
+"Advice"	"TopGuard 2000"	""	"megatec"
+
 "AEC"	"MiniGuard UPS 700"		"Megatec M2501 cable"	"genericups upstype=21"
 
 "APC"	"Back-UPS Pro"		""	"apcsmart"
@@ -123,6 +125,7 @@
 "Dynex"		"DX-800U"		"USB"	"usbhid-ups"
 
 "Effekta"	"MI/MT/MH"	"2502 cable"	"megatec"
+"Effekta"	"RM2000MH"	""	"megatec"
 
 "Eltek"		"any with AL175 alarm module"	""	"al175"
 
@@ -390,6 +393,8 @@
 "Orvaldi Power Protection"	"various"	"not 400 or 600"	"megatec"
 
 "Powercom"	"SMK-800A"			""	"megatec"
+"Powercom"	"SMK-1500A"			""	"megatec"
+"Powercom"	"SXL-1500A"			""	"megatec"
 "Powercom"	"ULT-1000"			""	"megatec"
 "Powercom"	"Trust 425/625"			""	"powercom"
 "Powercom"	"(various)"			""	"powercom"
@@ -488,7 +493,9 @@
 "UNITEK"	"ALPHA 500 IC"		""	"megatec"
 "UNITEK"	"Alpha 1000is"		""	"megatec"
 "UNITEK"	"Alpha 500 ipE"		""	"megatec"
+"UNITEK"	"Alpha 2600"		""	"megatec"
 
+"UPSonic"	"CXR1000"		""	"megatec"
 "UPSonic"	"LAN Saver 600"		""	"genericups upstype=0"
 "UPSonic"	"Power Guardian"	""	"genericups upstype=7"
 

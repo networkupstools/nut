@@ -111,24 +111,26 @@ typedef struct {
 
 /* Parameters for known battery types */
 typedef struct {
-	int nominal;  /* battery voltage (nominal) */
-	float min;    /* lower bound for a single battery of "nominal" voltage (see "set_battery_params" below) */
-	float max;    /* upper bound for a single battery of "nominal" voltage (see "set_battery_params" below) */
-	float empty;  /* fully discharged battery */
-	float full;   /* fully charged battery */
-	float low;    /* low battery (unused) */
+	float nominal;  /* battery voltage (nominal) */
+	float min;      /* lower bound for a single battery of "nominal" voltage (see "set_battery_params" below) */
+	float max;      /* upper bound for a single battery of "nominal" voltage (see "set_battery_params" below) */
+	float empty;    /* fully discharged battery */
+	float full;     /* fully charged battery */
+	float low;      /* low battery (unused) */
 } BatteryVolts_t;
 
 
 /* Known battery types must be in ascending order by "nominal" first, and then by "max". */
-static BatteryVolts_t batteries[] = {{ 12,  9.0, 16.0,  9.7, 13.7,  0.0 },   /* Mustek PowerMust 600VA Plus (LB unknown) */
-                                     { 12, 18.0, 30.0, 18.8, 26.8, 22.3 },   /* PowerWalker Line-Interactive VI 1000 */
-                                     { 24, 18.0, 30.0, 19.4, 27.4, 22.2 },   /* Mustek PowerMust 1000VA Plus */
-                                     { 36,  1.5,  3.0, 1.64, 2.31, 1.88 },   /* Mustek PowerMust 1000VA On-Line */
-                                     { 36, 30.0, 42.0, 32.5, 41.0,  0.0 },   /* Mecer ME-2000 (LB unknown) */
-                                     { 48, 38.0, 58.0, 40.0, 54.6, 44.0 },   /* Sven Smart RM2000 */
-                                     { 96,  1.5,  3.0, 1.63, 2.29,  1.8 },   /* Ablerex MS3000RT (LB at 25% charge) */
-                                     {  0,  0.0,  0.0,  0.0,  0.0,  0.0 }};  /* END OF DATA */
+static BatteryVolts_t batteries[] = {{ 12.0,  9.0, 16.0,  9.7, 13.7,  0.0 },   /* Mustek PowerMust 600VA Plus (LB unknown) */
+                                     { 12.0, 18.0, 30.0, 18.8, 26.8, 22.3 },   /* PowerWalker Line-Interactive VI 1000 */
+                                     { 23.5, 18.0, 30.0, 21.3, 27.1, 22.2 },   /* UNITEK ALPHA2600 */
+                                     { 24.0, 18.0, 30.0, 19.4, 27.4, 22.2 },   /* Mustek PowerMust 1000VA Plus */
+                                     { 36.0,  1.5,  3.0, 1.64, 2.31, 1.88 },   /* Mustek PowerMust 1000VA On-Line */
+                                     { 36.0, 30.0, 42.0, 32.5, 41.0,  0.0 },   /* Mecer ME-2000 (LB unknown) */
+                                     { 48.0, 38.0, 58.0, 40.0, 54.6, 44.0 },   /* Sven Smart RM2000 */
+                                     { 72.0,  1.5,  3.0, 1.74, 2.37, 1.82 },   /* Effekta RM2000MH */
+                                     { 96.0,  1.5,  3.0, 1.63, 2.29,  1.8 },   /* Ablerex MS3000RT (LB at 25% charge) */
+                                     {  0.0,  0.0,  0.0,  0.0,  0.0,  0.0 }};  /* END OF DATA */
 
 /* Defined in upsdrv_initinfo */
 static float battvolt_empty = -1;  /* unknown */
@@ -256,15 +258,31 @@ static int check_ups(void)
 	char buffer[RECV_BUFFER_LEN];
 	int ret;
 
-	upsdebugx(2, "Sending \"Q1\" command...");
+	upsdebugx(2, "Checking for UPS presence [Q1]...");
 	ser_send_pace(upsfd, SEND_PACE, "Q1%c", ENDCHAR);
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
-	if (ret < Q1_CMD_REPLY_LEN || buffer[0] != '(') {
-		upsdebugx(2, "Wrong answer to \"Q1\" command.");
+
+	if (ret < 0) {
+		upsdebugx(2, "Q1 => FAILED [timeout]");
 
 		return -1;
 	}
-	upsdebugx(2, "\"Q1\" command successful.");
+
+	if (ret < Q1_CMD_REPLY_LEN) {
+		upsdebugx(2, "Q1 => FAILED [short read]");
+		upsdebug_hex(3, "Q1 detail", (unsigned char *)buffer, ret);
+
+		return -1;
+	}
+
+	if (buffer[0] != '(') {
+		upsdebugx(2, "Q1 => FAILED [invalid start character]");
+		upsdebug_hex(3, "Q1 detail", (unsigned char *)buffer, ret);
+
+		return -1;
+	}
+
+	upsdebugx(2, "Q1 => OK");
 
 	return 0;
 }
@@ -276,16 +294,31 @@ static int get_ups_info(UPSInfo_t *info)
 	char *anchor;
 	int ret;
 
-	upsdebugx(1, "Asking for UPS information (\"I\" command)...");
+	upsdebugx(2, "Asking for UPS information [I]...");
 	ser_send_pace(upsfd, SEND_PACE, "I%c", ENDCHAR);
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
-	if (ret < I_CMD_REPLY_LEN || buffer[0] != '#') {
-		upsdebugx(1, "UPS doesn't return any information about itself.");
+
+	if (ret < 0) {
+		upsdebugx(2, "I => FAILED [timeout]");
+
+		return -1;
+	}
+		
+	if (ret < I_CMD_REPLY_LEN) {
+		upsdebugx(2, "I => FAILED [short read]");
+		upsdebug_hex(3, "I detail", (unsigned char *)buffer, ret);
 
 		return -1;
 	}
 
-	upsdebugx(3, "UPS information: %s", buffer);
+	if (buffer[0] != '#') {
+		upsdebugx(2, "I => FAILED [invalid start character]");
+		upsdebug_hex(3, "I detail", (unsigned char *)buffer, ret);
+
+		return -1;
+	}
+
+	upsdebugx(2, "I => OK [%s]", buffer);
 
 	memset(info, 0, sizeof(UPSInfo_t));
 
@@ -307,16 +340,32 @@ static int get_firmware_values(FirmwareValues_t *values)
 	char buffer[RECV_BUFFER_LEN];
 	int ret;
 
-	upsdebugx(1, "Asking for UPS power ratings (\"F\" command)...");
+	upsdebugx(2, "Asking for UPS power ratings [F]...");
 	ser_send_pace(upsfd, SEND_PACE, "F%c", ENDCHAR);
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
-	if (ret < F_CMD_REPLY_LEN || buffer[0] != '#') {
-		upsdebugx(1, "UPS doesn't return any information about its power ratings.");
+
+	if (ret < 0) {
+		upsdebugx(2, "F => FAILED [timeout]");
 
 		return -1;
 	}
 
-	upsdebugx(3, "UPS power ratings: %s", buffer);
+	if (ret < F_CMD_REPLY_LEN) {
+		upsdebugx(2, "F => FAILED [short read]");
+		upsdebug_hex(3, "F detail", (unsigned char *)buffer, ret);
+
+		return -1;
+	}
+
+
+	if (buffer[0] != '#') {
+		upsdebugx(2, "F => FAILED [invalid start character]");
+		upsdebug_hex(3, "F detail", (unsigned char *)buffer, ret);
+
+		return -1;
+	}
+
+	upsdebugx(2, "F => OK [%s]", buffer);
 
 	sscanf(buffer, "#%f %f %f %f", &values->volt, &values->current,
 	       &values->battvolt, &values->freq);
@@ -331,16 +380,31 @@ static int run_query(QueryValues_t *values)
 	char temperature[8];
 	int ret;
 
-	upsdebugx(1, "Asking for UPS status (\"Q1\" command)...");
+	upsdebugx(2, "Asking for UPS status [Q1]...");
 	ser_send_pace(upsfd, SEND_PACE, "Q1%c", ENDCHAR);
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
-	if (ret < Q1_CMD_REPLY_LEN || buffer[0] != '(') {
-		upsdebugx(1, "UPS doesn't return any information about its status.");
+
+	if (ret < 0) {
+		upsdebugx(2, "Q1 => FAILED [timeout]");
 
 		return -1;
 	}
 
-	upsdebugx(3, "UPS status: %s", buffer);
+	if (ret < Q1_CMD_REPLY_LEN) {
+		upsdebugx(2, "Q1 => FAILED [short read]");
+		upsdebug_hex(3, "Q1 detail", (unsigned char *)buffer, ret);
+
+		return -1;
+	}
+
+	if (buffer[0] != '(') {
+		upsdebugx(2, "Q1 => FAILED [invalid start character]");
+		upsdebug_hex(3, "Q1 detail", (unsigned char *)buffer, ret);
+
+		return -1;
+	}
+
+	upsdebugx(2, "Q1 => OK [%s]", buffer);
 
 	sscanf(buffer, "(%f %f %f %f %f %f %s %s", &values->ivolt, &values->fvolt, &values->ovolt,
 	       &values->load, &values->freq, &values->battvolt, temperature, values->flags);
@@ -371,7 +435,6 @@ void upsdrv_initinfo(void)
 	 */
 	upsdebugx(1, "Starting UPS detection process...");
 	for (i = 0; i < IDENT_MAXTRIES; i++) {
-		upsdebugx(2, "Attempting to detect the UPS...");
 		if (check_ups() == 0) {
 			success++;
 		}
@@ -393,7 +456,7 @@ void upsdrv_initinfo(void)
 	 */
 	if (get_ups_info(&info) >= 0) {
 		char model[UPS_MODEL_CHARS + UPS_VERSION_CHARS + 2];
-		sprintf(model, "%s %s", info.model, info.version);
+		snprintf(model, sizeof(model), "%s %s", info.model, info.version);
 
 		dstate_setinfo("ups.mfr", "%s", getval("mfr") ? getval("mfr") : info.mfr);
 		dstate_setinfo("ups.model", "%s", getval("model") ? getval("model") : model);
@@ -425,7 +488,7 @@ void upsdrv_initinfo(void)
 	}
 
 	if (getval("battvolts")) {
-		upsdebugx(3, getval("battvolts"));
+		upsdebugx(2, "Parameter [battvolts]: [%s]", getval("battvolts"));
 	
 		if (sscanf(getval("battvolts"), "%f:%f", &battvolt_empty, &battvolt_full) != 2) {
 			fatalx(EXIT_FAILURE, "Error in \"battvolts\" parameter.");
@@ -524,7 +587,7 @@ void upsdrv_updateinfo(void)
 	if (charge >= 0) {
 		dstate_setinfo("battery.charge", "%.1f", charge);
 		
-		upsdebugx(3, "Charge: %.1f%%", charge);
+		upsdebugx(2, "Calculated battery charge: %.1f%%", charge);
 	}
 
 	status_init();
@@ -793,11 +856,16 @@ void upsdrv_initups(void)
 {
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
+
+	/* Some UPS models need this. */
+	ser_set_dtr(upsfd, 1);
+	ser_set_rts(upsfd, 0);
 }
 
 
 void upsdrv_cleanup(void)
 {
+	ser_set_dtr(upsfd, 0);
 	ser_close(upsfd, device_path);
 }
 
