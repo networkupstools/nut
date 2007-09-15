@@ -1,3 +1,10 @@
+Sat Sep 15 19:58:40 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/snmp.c, man/snmp-ups.8: The lack of a shutdown function is
+   not an issue. This won't work, since at the time when we would run
+   'upsdrvctl shutdown' (near the end of the system halt script), in
+   all likelyhood we won't have network capabilities anymore.
+
 Sat Sep 15 18:54:40 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/usbhid-ups.c: Initialize data from UPS in upsdrv_initups().

@@ -58,7 +58,7 @@ snmp_info_t *snmp_info;
 const char *mibname;
 const char *mibvers;
 
-time_t lastpoll;
+time_t lastpoll = 0;
 
 /* ---------------------------------------------
  * driver functions implementations
@@ -94,9 +94,6 @@ void upsdrv_initinfo(void)
 		dstate_dataok();
 	else		
 		dstate_datastale();
-
-	/* store timestamp */
-	lastpoll = time(NULL);
 }
 
 void upsdrv_updateinfo(void)
@@ -123,10 +120,15 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	/* TODO: su_shutdown_ups(); */
-	
-	/* replace with a proper shutdown function */
-	fatalx(EXIT_FAILURE, "shutdown not supported");
+	/*
+	This driver will probably never support this. In order to
+	be any use, the driver should be called near the end of
+	the system halt script. By that time we in all likelyhood
+	we won't have network capabilities anymore, so we could
+	never send this command to the UPS. This is not an error,
+	but a limitation of the interface used.
+	*/
+	fatalx(EXIT_SUCCESS, "SNMP doesn't support shutdown in system halt script");
 }
 
 void upsdrv_help(void)
@@ -710,11 +712,14 @@ bool_t snmp_ups_walk(int mode)
 		}
 
 		if (su_info_p->flags & SU_OUTPHASES) {
+			upsdebugx(1, "Check outphases");
 		    	if (output_phases == 0) continue;
+			upsdebugx(1, "outphases is set");
 			if (su_info_p->flags & SU_OUTPUT_1) {
 			    	if (output_phases == 1)
 					su_info_p->flags &= ~SU_OUTPHASES;
 				else {
+					upsdebugx(1, "outphases is not 1");
 					su_info_p->flags &= ~SU_FLAG_OK;
 					continue;
 				}
@@ -723,6 +728,7 @@ bool_t snmp_ups_walk(int mode)
 			    	if (output_phases == 3)
 					su_info_p->flags &= ~SU_OUTPHASES;
 				else {
+					upsdebugx(1, "outphases is not 3");
 				    	su_info_p->flags &= ~SU_FLAG_OK;
 					continue;
 				}

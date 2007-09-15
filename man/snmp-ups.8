@@ -53,7 +53,12 @@ http://www.net\(hysnmp.org/ before building this driver.
 This driver has been tagged experimental, even if it has been reported
 to be stable. Thus it is not suitable for production systems and it is
 not built by default. This is mainly due to the fact that there is still
-no proper upsdrv_shutdown() function implemented !
+no proper upsdrv_shutdown() function implemented. There probably never
+will be one, since at the time this script should run (near the end of
+the system halt script), there will be no network capabilities anymore.
+Probably the only way to shutdown an SNMP UPS is by sending it a shutdown
+with delay command through \fBupscmd\fR(8) and hope for the best that the
+system will have finished shutting down before the power is cut.
 
 .SH INSTALLATION
 This driver is not built by default.  You can build it by using
