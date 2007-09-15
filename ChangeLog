@@ -1,3 +1,9 @@
+Sat Sep 15 18:54:40 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/usbhid-ups.c: Initialize data from UPS in upsdrv_initups().
+   We may be shutting down, so the HID-to-NUT variable mapping needs to
+   be in place.
+
 Wed Sep 12 22:17:01 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
 
  - drivers/megatec_usb.c: added debug dumping in both subdrivers.

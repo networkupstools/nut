@@ -795,10 +795,6 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("driver.parameter.pollfreq", "%d", pollfreq);
 
-	if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
-		hd = NULL;
-	}
-
 	/* install handlers */
 	upsh.setvar = setvar;
 	upsh.instcmd = instcmd;
@@ -880,6 +876,10 @@ void upsdrv_initups(void)
 
 	upsdebugx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown",
 		 hd->Product ? hd->Product : "unknown");
+
+	if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
+		fatalx(EXIT_FAILURE, "Can't initialize data from HID UPS");
+	}
 }
 
 void upsdrv_cleanup(void)
