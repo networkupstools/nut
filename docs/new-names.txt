@@ -467,9 +467,6 @@ server: Internal server information
    | shutdown.return          | Turn off the load possibly after a delay    |
    |                          | and return when power is back               |
    |--------------------------+---------------------------------------------|
-   | shutdown.restart         | Turn on the load possibly after a delay     |
-   |                          | when power is back                          |
-   |--------------------------+---------------------------------------------|
    | shutdown.stayoff         | Turn off the load possibly after a delay    |
    |                          | and remain off even if power returns        |
    |--------------------------+---------------------------------------------|

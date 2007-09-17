@@ -621,7 +621,7 @@ void upsdrv_shutdown(void)
 	snprintf(offdelay, sizeof(offdelay), "%i", val ? atoi(val) : DEFAULT_OFFDELAY);
 
 	/* Try to shutdown with delay */
-	if (instcmd("shutdown.restart", ondelay) != STAT_INSTCMD_HANDLED) {
+	if (instcmd("shutdown.return", ondelay) != STAT_INSTCMD_HANDLED) {
 		upsdebugx(2, "Shutdown failed (setting ondelay)");
 	} else if (instcmd("shutdown.stayoff", offdelay) != STAT_INSTCMD_HANDLED) {
 		upsdebugx(2, "Shutdown failed (setting offdelay)");
@@ -630,8 +630,8 @@ void upsdrv_shutdown(void)
 		return;
 	}
 
-	/* If the above doesn't work, try shutdown.return */
-	if (instcmd("shutdown.return", ondelay) == STAT_INSTCMD_HANDLED) {
+	/* If the above doesn't work, try shutdown.reboot */
+	if (instcmd("shutdown.reboot", ondelay) == STAT_INSTCMD_HANDLED) {
 		/* Shutdown successful */
 		return;
 	}

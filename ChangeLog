@@ -1,7 +1,18 @@
+Mon Sep 17 19:09:47 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - data/cmdvartab, docs/new-names.txt: Removed "shutdown.restart".
+ * drivers/usbhid-ups.c:
+   - Corrected shutdown function (should fallback to 'shutdown.reboot',
+     not 'shutdown.return').
+   - Renamed 'shutdown.restart' to 'shutdown.return', which almost has
+     the same meaning, with the exception that it doesn't shutdown the
+     UPS.
+ * drivers/<usbhid-ups subdrivers>:
+   - Implemented the above.
+
 Mon Sep 17 11:33:17 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - clients/upscmd.c: Allow passing an additional parameter in a command.
- - data/cmdvartab, docs/new-names.txt: Added "shutdown.restart".
  - drivers/dstate.c: It is now possible to pass a parameter to instcmd(),
    for instance a delay value.
  - scripts/subdriver/path-to-subdriver.sh: Implemented the above.
