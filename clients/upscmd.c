@@ -37,7 +37,7 @@ static void usage(char *prog)
 	printf("Network UPS Tools upscmd %s\n\n", UPS_VERSION);
 	printf("usage: %s [-h]\n", prog);
 	printf("       %s [-l <ups>]\n", prog);
-	printf("       %s [-u <username>] [-p <password>] <ups> <command>\n\n", prog);
+	printf("       %s [-u <username>] [-p <password>] <ups> <command> [<value>]\n\n", prog);
 	printf("Administration program to initiate instant commands on UPS hardware.\n");
 	printf("\n");
 	printf("  -h		display this help text\n");
@@ -47,6 +47,7 @@ static void usage(char *prog)
 	printf("\n");
 	printf("  <ups>		UPS identifier - <upsname>[@<hostname>[:<port>]]\n");
 	printf("  <command>	Valid instant command - test.panel.start, etc.\n");
+	printf("  [<value>]	Additional data for command - number of seconds, etc.\n");
 
 	exit(EXIT_SUCCESS);
 }
@@ -177,11 +178,15 @@ static void listcmds(char *rawname)
 	clean_exit(&ups, upsname, hostname, EXIT_SUCCESS);
 }
 
-static int do_cmd(UPSCONN_t *ups, const char *upsname, const char *cmd)
+static int do_cmd(UPSCONN_t *ups, const char *upsname, const char **argv, const int argc)
 {
 	char 	buf[SMALLBUF];
 
-	snprintf(buf, sizeof(buf), "INSTCMD %s %s\n", upsname, cmd);
+	if (argc > 1) {
+		snprintf(buf, sizeof(buf), "INSTCMD %s %s %s\n", upsname, argv[0], argv[1]);
+	} else {
+		snprintf(buf, sizeof(buf), "INSTCMD %s %s\n", upsname, argv[0]);
+	}
 
 	if (upscli_sendline(ups, buf, strlen(buf)) < 0) {
 		fprintf(stderr, "Can't send instant command: %s\n",
@@ -351,7 +356,7 @@ int main(int argc, char **argv)
 		clean_exit(&ups, upsname, hostname, EXIT_FAILURE);
 	}
 
-	ret = do_cmd(&ups, upsname, argv[1]);
+	ret = do_cmd(&ups, upsname, &argv[1], argc - 1);
 	clean_exit(&ups, upsname, hostname, ret);
 
 	/* NOTREACHED */

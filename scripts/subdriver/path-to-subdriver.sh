@@ -190,7 +190,6 @@ cat > "$CFILE" <<EOF
 #include "usbhid-ups.h"
 #include "${HFILE}"
 #include "extstate.h" /* for ST_FLAG_STRING */
-#include "dstate.h"   /* for STAT_INSTCMD_HANDLED */
 #include "main.h"     /* for getval() */
 #include "common.h"
 
@@ -229,7 +228,7 @@ EOF
 cat "$NEWUTABLE" | while read U; do
     UL=`echo $U | tr A-Z a-z`
     cat >> "$CFILE" <<EOF
-  { "unmapped.${UL}", 0, 0, "${U}", NULL, "%.0f", HU_FLAG_OK, NULL },
+  { "unmapped.${UL}", 0, 0, "${U}", NULL, "%.0f", 0, NULL },
 EOF
 done
 
@@ -238,19 +237,6 @@ cat >> "$CFILE" <<EOF
   /* end of structure. */
   { NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
 };
-
-/* shutdown method for ${DRIVER} */
-static int ${LDRIVER}_shutdown(int ondelay, int offdelay) {
-	/* FIXME: ondelay, offdelay currently not used */
-	
-	/* Default method */
-	upsdebugx(2, "Trying load.off.");
-	if (instcmd("load.off", NULL) == STAT_INSTCMD_HANDLED) {
-		return 1;
-	}
-	upsdebugx(2, "Shutdown failed.");
-	return 0;
-}
 
 static char *${LDRIVER}_format_model(HIDDevice_t *hd) {
 	return hd->Product;
@@ -280,16 +266,9 @@ static int ${LDRIVER}_claim(HIDDevice_t *hd) {
 	default:
 		if (getval("productid")) {
 			return 1;
-		} else {
-			upsdebugx(1,
-"This ${DRIVER} device (%04x/%04x) is not (or perhaps not yet) supported\n"
-"by usbhid-ups. Please make sure you have an up-to-date version of NUT. If\n"
-"this does not fix the problem, try running the driver with the\n"
-"'-x productid=%04x' option. Please report your results to the NUT user's\n"
-"mailing list <nut-upsuser@lists.alioth.debian.org>.\n",
-						 hd->VendorID, hd->ProductID, hd->ProductID);
-			return 0;
 		}
+		possibly_supported("${DRIVER}", hd);
+		return 0;
 	}
 }
 
@@ -298,7 +277,6 @@ subdriver_t ${LDRIVER}_subdriver = {
 	${LDRIVER}_claim,
 	${LDRIVER}_utab,
 	${LDRIVER}_hid2nut,
-	${LDRIVER}_shutdown,
 	${LDRIVER}_format_model,
 	${LDRIVER}_format_mfr,
 	${LDRIVER}_format_serial,

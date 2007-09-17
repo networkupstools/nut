@@ -1,3 +1,31 @@
+Mon Sep 17 11:33:17 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - clients/upscmd.c: Allow passing an additional parameter in a command.
+ - data/cmdvartab, docs/new-names.txt: Added "shutdown.restart".
+ - drivers/dstate.c: It is now possible to pass a parameter to instcmd(),
+   for instance a delay value.
+ - scripts/subdriver/path-to-subdriver.sh: Implemented the above.
+ * drivers/usbhid-ups.[ch]:
+   - Implemented the above. If no parameter is passed, the default from
+     the HID-to-NUT mapping is used (as was the case previously).
+   - The main driver now takes care of shutting down the UPS through
+     instcmd's that are configurable in the subdrivers. This makes sure
+     that the behaviour is consistent among subdrivers and meets the
+     expectations of the NUT shutdown/restart mechanism.
+   - DEFAULT_ONDELAY and DEFAULT_OFFDELAY are now much shorter. If an
+     application needs a grace period before shutting down the UPS, it
+     this should be put 'ups.conf', rather than to make this the
+     default (even for configurations where this is not needed at all).
+ * drivers/<usbhid-ups subdrivers>:
+   - Implemented the above. Added "shutdown.restart", "shutdown.stayoff"
+     and "shutdown.return" instcmd, which feed the shutdown function in
+     the main driver.
+   - Removed HU_FLAG_OK and cleaned up mapping tables.
+   - Some subdrivers would make 'ups.delay.start/reboot/shutdown'
+     writeable. This is an error, since by doing so, it becomes an
+     instcmd (and should be listed as such). The same goes for
+     'ups.beeper.status'.
+
 Sat Sep 15 19:58:40 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/snmp.c, man/snmp-ups.8: The lack of a shutdown function is

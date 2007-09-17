@@ -491,41 +491,12 @@ static HIDDeviceMatcher_t subdriver_matcher_struct = {
 /* ---------------------------------------------
  * driver functions implementations
  * --------------------------------------------- */
-void upsdrv_shutdown(void)
-{
-	int offdelay = DEFAULT_OFFDELAY;
-	int ondelay = DEFAULT_ONDELAY;
-	int r;
-
-	upsdebugx(1, "upsdrv_shutdown...");
-	
-	/* Retrieve user defined delay settings */
-	if ( getval(HU_VAR_ONDELAY) )
-		ondelay = atoi( getval(HU_VAR_ONDELAY) );
-
-	if ( getval(HU_VAR_OFFDELAY) )
-		offdelay = atoi( getval(HU_VAR_OFFDELAY) );
-
-	/* enforce ondelay > offdelay */
-	if (ondelay <= offdelay) {
-		ondelay = offdelay + 1;
-		upsdebugx(2, "ondelay must be greater than offdelay; setting ondelay = %d (offdelay = %d)",
-			ondelay, offdelay);
-	}
-
-	/* Apply specific method */
-	r = subdriver->shutdown(ondelay, offdelay);
-
-	if (r == 0) {
-		fatalx(EXIT_FAILURE, "Shutdown failed.");
-	}
-	upsdebugx(2, "Shutdown command succeeded.");
-}
-
 /* process instant command and take action. */
 int instcmd(const char *cmdname, const char *extradata)
 {
-	hid_info_t *hidups_item;
+	hid_info_t	*hidups_item;
+	const char	*val;
+	double		value;
 	
 	if (!strcasecmp(cmdname, "beeper.off")) {
 		/* compatibility mode for old command */
@@ -541,30 +512,36 @@ int instcmd(const char *cmdname, const char *extradata)
 		return instcmd("beeper.enable", NULL);
 	}
 
-	upsdebugx(1, "instcmd(%s, %s)",
-		  cmdname, (extradata == NULL) ? "" : extradata);
+	upsdebugx(1, "instcmd(%s, %s)", cmdname, extradata ? extradata : "[NULL]");
 
 	/* Retrieve and check netvar & item_path */	
 	hidups_item = find_nut_info(cmdname);
-	
+
 	/* Check validity of the found the item */
-	if (hidups_item == NULL)
-	{
+	if (hidups_item == NULL) {
 		upsdebugx(2, "instcmd: info element unavailable %s\n", cmdname);
 		/* TODO: manage items handled "manually" */
 		return STAT_INSTCMD_UNKNOWN;
 	}
 
 	/* Check if the item is an instant command */
-	if (!hidups_item->hidflags & HU_TYPE_CMD)
-	{
+	if (!hidups_item->hidflags & HU_TYPE_CMD) {
 		upsdebugx(2, "instcmd: %s is not an instant command\n", cmdname);
 		return STAT_INSTCMD_UNKNOWN;
 	}
 	
+	/* If extradata is empty, use the default value from the HID-to-NUT table */
+	val = extradata ? extradata : hidups_item->dfl;
+
+	/* Lookup the new value if needed */
+	if (hidups_item->hid2info != NULL) {
+		value = hu_find_valinfo(hidups_item->hid2info, val);
+	} else {
+		value = atol(val);
+	}
+
 	/* Actual variable setting */
-	if (HIDSetDataValue(udev, hidups_item->hiddata, atol(hidups_item->dfl)) == 1)
-	{
+	if (HIDSetDataValue(udev, hidups_item->hiddata, value) == 1) {
 		upsdebugx(5, "instcmd: SUCCEED\n");
 		/* Set the status so that SEMI_STATIC vars are polled */
 		data_has_changed = TRUE;
@@ -572,59 +549,53 @@ int instcmd(const char *cmdname, const char *extradata)
 	}
 	
 	upsdebugx(3, "instcmd: FAILED\n"); /* TODO: HANDLED but FAILED, not UNKNOWN! */
-	
-	/* TODO: to be completed */
 	return STAT_INSTCMD_UNKNOWN;
 }
 
 /* set r/w variable to a value. */
 int setvar(const char *varname, const char *val)
 {
-	hid_info_t *hidups_item;
-	long newvalue;
+	hid_info_t	*hidups_item;
+	double		value;
 
 	upsdebugx(1, "setvar(%s, %s)", varname, val);
 	
 	/* retrieve and check netvar & item_path */	
 	hidups_item = find_nut_info(varname);
 	
-	if (hidups_item == NULL)
-	{
+	if (hidups_item == NULL) {
 		upsdebugx(2, "setvar: info element unavailable %s\n", varname);
 		return STAT_SET_UNKNOWN;
 	}
 
 	/* Checking item writability and HID Path */
-	if (!hidups_item->info_flags & ST_FLAG_RW)
-	{
+	if (!hidups_item->info_flags & ST_FLAG_RW) {
 		upsdebugx(2, "setvar: not writable %s\n", varname);
 		return STAT_SET_UNKNOWN;
 	}
 
 	/* handle server side variable */
-	if (hidups_item->hidflags & HU_FLAG_ABSENT)
-	{
+	if (hidups_item->hidflags & HU_FLAG_ABSENT) {
 		upsdebugx(2, "setvar: setting server side variable %s\n", varname);
 		dstate_setinfo(hidups_item->info_type, "%s", val);
 		return STAT_SET_HANDLED;
 	}
 
 	/* SHUT_FLAG_ABSENT is the only case of HID Path == NULL */
-	if (hidups_item->hidpath == NULL)
-	{
+	if (hidups_item->hidpath == NULL) {
 		upsdebugx(2, "setvar: ID Path is NULL for %s\n", varname);
 		return STAT_SET_UNKNOWN;
 	}
 
 	/* Lookup the new value if needed */
-	if (hidups_item->hid2info != NULL)
-		newvalue = hu_find_valinfo(hidups_item->hid2info, val);
-	else
-		newvalue = atol(val);
+	if (hidups_item->hid2info != NULL) {
+		value = hu_find_valinfo(hidups_item->hid2info, val);
+	} else {
+		value = atol(val);
+	}
 
 	/* Actual variable setting */
-	if (HIDSetDataValue(udev, hidups_item->hiddata, newvalue) == 1)
-	{
+	if (HIDSetDataValue(udev, hidups_item->hiddata, value) == 1) {
 		upsdebugx(5, "setvar: SUCCEED\n");
 		/* Set the status so that SEMI_STATIC vars are polled */
 		data_has_changed = TRUE;
@@ -633,6 +604,39 @@ int setvar(const char *varname, const char *val)
 
 	upsdebugx(3, "setvar: FAILED\n"); /* FIXME: HANDLED but FAILED, not UNKNOWN! */
 	return STAT_SET_UNKNOWN;
+}
+
+void upsdrv_shutdown(void)
+{
+	char	ondelay[8], offdelay[8];
+	char	*val;
+
+	upsdebugx(1, "upsdrv_shutdown...");
+	
+	/* Retrieve user defined delay settings */
+	val = getval(HU_VAR_ONDELAY);
+	snprintf(ondelay, sizeof(ondelay), "%i", val ? atoi(val) : DEFAULT_ONDELAY);
+
+	val = getval(HU_VAR_OFFDELAY);
+	snprintf(offdelay, sizeof(offdelay), "%i", val ? atoi(val) : DEFAULT_OFFDELAY);
+
+	/* Try to shutdown with delay */
+	if (instcmd("shutdown.restart", ondelay) != STAT_INSTCMD_HANDLED) {
+		upsdebugx(2, "Shutdown failed (setting ondelay)");
+	} else if (instcmd("shutdown.stayoff", offdelay) != STAT_INSTCMD_HANDLED) {
+		upsdebugx(2, "Shutdown failed (setting offdelay)");
+	} else {
+		/* Shutdown successful */
+		return;
+	}
+
+	/* If the above doesn't work, try shutdown.return */
+	if (instcmd("shutdown.return", ondelay) == STAT_INSTCMD_HANDLED) {
+		/* Shutdown successful */
+		return;
+	}
+
+	fatalx(EXIT_FAILURE, "Shutdown failed!");
 }
 
 void upsdrv_help(void)
@@ -784,9 +788,23 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_initinfo(void)
 {
-	char *val;
+	char	ondelay[8], offdelay[8];
+	char	*val;
 
 	upsdebugx(1, "upsdrv_initinfo...");
+
+	/* Retrieve user defined delay settings */
+	val = getval(HU_VAR_ONDELAY);
+	snprintf(ondelay, sizeof(ondelay), "%i", val ? atoi(val) : DEFAULT_ONDELAY);
+
+	val = getval(HU_VAR_OFFDELAY);
+	snprintf(offdelay, sizeof(offdelay), "%i", val ? atoi(val) : DEFAULT_OFFDELAY);
+
+	/* Abort if ondelay is too small */
+	if (atoi(ondelay) <= atoi(offdelay)) {
+		fatalx(EXIT_FAILURE, "%s (%s) must be greater than %s (%s)",
+			HU_VAR_ONDELAY, ondelay, HU_VAR_OFFDELAY, offdelay);
+	}
 
 	/* init polling frequency */
 	val = getval(HU_VAR_POLLFREQ);

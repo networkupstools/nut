@@ -364,11 +364,15 @@ static int sock_arg(struct conn_t *conn, int numarg, char **arg)
 	if (numarg < 2)
 		return 0;
 
-	/* INSTCMD <cmdname> */			/* future: extra args */
+	/* INSTCMD <cmdname> [<value>]*/
 	if (!strcasecmp(arg[0], "INSTCMD")) {
 
 		/* try the new handler first if present */
 		if (upsh.instcmd) {
+			if (numarg > 2) {
+				upsh.instcmd(arg[1], arg[2]);
+				return 1;
+			}
 			upsh.instcmd(arg[1], NULL);
 			return 1;
 		}
