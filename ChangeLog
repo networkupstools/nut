@@ -1,3 +1,9 @@
+Tue Sep 18 18:13:36 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/usbhid-ups.c: Always check the validity of a HID-to-NUT
+   mapping (instcmd and setvar). It's pointless to try to change a
+   variable or execute a command that isn't valid for *this* UPS.
+
 Wed Sep 12 22:09:11 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - drivers/megatec.c: backported from the trunk.

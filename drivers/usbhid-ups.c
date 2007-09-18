@@ -70,7 +70,6 @@ hid_dev_handle_t *udev;
 
 /* support functions */
 static hid_info_t *find_nut_info(const char *varname);
-static hid_info_t *find_nut_info_valid(const char *varname);
 static hid_info_t *find_hid_info(const char *hidname);
 static char *hu_find_infoval(info_lkp_t *hid2info, long value);
 static long hu_find_valinfo(info_lkp_t *hid2info, const char* value);
@@ -394,7 +393,7 @@ int instcmd(const char *cmdname, const char *extradata)
 		  cmdname, (extradata==NULL)?"":extradata);
 
 	/* Retrieve and check netvar & item_path */	
-	hidups_item = find_nut_info_valid(cmdname);
+	hidups_item = find_nut_info(cmdname);
 	
 	/* Check validity of the found the item */
 	if (hidups_item == NULL || hidups_item->info_type == NULL ||
@@ -1068,28 +1067,12 @@ static void ups_status_set(void)
 	status_commit();
 }
 
-/* find info element definition in info array
- * by NUT varname.
- */
-static hid_info_t *find_nut_info(const char *varname)
-{
-  hid_info_t *hidups_item;
-
-  for (hidups_item = subdriver->hid2nut; hidups_item->info_type != NULL ; hidups_item++) {
-    if (!strcasecmp(hidups_item->info_type, varname))
-      return hidups_item;
-  }
-
-  upsdebugx(2, "find_nut_info: unknown info type: %s\n", varname);
-  return NULL;
-}
-
 /* find info element definition in info array by NUT varname. Only
  * return items whose HID path actually exists.  By this, we enable
- * multiple alternative definitions of an instant command; the first
- * one that works for *this* UPS will be used. 
+ * multiple alternative definitions of an instant command or variable
+ * setting; the first one that works for *this* UPS will be used.
  */
-static hid_info_t *find_nut_info_valid(const char *varname)
+static hid_info_t *find_nut_info(const char *varname)
 {
   hid_info_t *hidups_item;
   float value;
