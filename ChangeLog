@@ -1,3 +1,11 @@
+Sat Sep 22 07:14:39 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ * drivers/megatec_usb.c: merged Arjen de Corte's changes in krauler
+   subdriver with slight modifications:
+   - commands are now stored in a table, making it simplier to process
+     them
+   - switched to libusb.c API completely
+
 Mon Sep 17 19:09:47 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - data/cmdvartab, docs/new-names.txt: Removed "shutdown.restart".
