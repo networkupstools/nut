@@ -1,6 +1,11 @@
+Sat Sep 22 17:59:56 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/megatec_usb.c: Packetizing is already done by the libusb
+   library, so we don't need to duplicate that.
+
 Sat Sep 22 07:14:39 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
 
- * drivers/megatec_usb.c: merged Arjen de Corte's changes in krauler
+ * drivers/megatec_usb.c: merged Arjen de Korte's changes in krauler
    subdriver with slight modifications:
    - commands are now stored in a table, making it simplier to process
      them

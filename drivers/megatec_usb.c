@@ -313,52 +313,14 @@ int ser_get_line(int fd, char *buf, size_t buflen, char endchar, const char *ign
     All constants are hardcoded in windows driver
 */
 
-#define AGILER_REPORT_SIZE      8
-#define AGILER_REPORT_COUNT     6
-#define AGILER_TIMEOUT          5000
-
 static int set_data_agiler(const char *str)
 {
-	unsigned char report_buf[AGILER_REPORT_SIZE];
-
-	if (strlen(str) > AGILER_REPORT_SIZE) {
-		upslogx(LOG_ERR, "set_data_agiler: output string too large");
-		return -1;
-	}
-
-	memset(report_buf, 0, sizeof(report_buf));
-	memcpy(report_buf, str, strlen(str));
-
-	return usb->set_report(udev, 0, report_buf, sizeof(report_buf));
+	return usb->set_report(udev, 0, (unsigned char *)str, strlen(str));
 }
 
 static int get_data_agiler(char *buffer, int buffer_size)
 {
-	int i, len;
-	char buf[AGILER_REPORT_SIZE * AGILER_REPORT_COUNT + 1];
-
-	memset(buf, 0, sizeof(buf));
-
-	for (i = 0; i < AGILER_REPORT_COUNT; i++) {
-		len = usb->get_interrupt(udev, (unsigned char *) buf + i * AGILER_REPORT_SIZE, AGILER_REPORT_SIZE, AGILER_TIMEOUT);
-		if (len != AGILER_REPORT_SIZE) {
-			if (len < 0)
-				len = 0;
-			buf[i * AGILER_REPORT_SIZE + len] = 0;
-			upsdebug_hex(5, "get_data_agiler: raw dump", buf, i * AGILER_REPORT_SIZE + len);
-			break;
-		}
-	}
-
-	len = strlen(buf);
-
-	if (len > buffer_size) {
-		upslogx(LOG_ERR, "get_data_agiler: input buffer too small");
-		len = buffer_size;
-	}
-
-	memcpy(buffer, buf, len);
-	return len;
+	return usb->get_interrupt(udev, (unsigned char *)buffer, buffer_size, 1000);
 }
 
 
