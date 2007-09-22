@@ -112,7 +112,7 @@ skel_SOURCES = skel.c
 skel_LDADD = $(LDADD_DRIVERS)
 
 # USB
-USBHID_UPS_SUBDRIVERS = apc-hid.c belkin-hid.c explore-hid.c \
+USBHID_UPS_SUBDRIVERS = apc-hid.c belkin-hid.c cps-hid.c explore-hid.c \
  liebert-hid.c mge-hid.c tripplite-hid.c
 usbhid_ups_SOURCES = usbhid-ups.c libhid.c libusb.c hidparser.c	\
  $(USBHID_UPS_SUBDRIVERS)
@@ -164,7 +164,7 @@ hald_addon_megatec_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_L
 
 dist_noinst_HEADERS = al175.h apccmib.h apc-hid.h apcsmart.h bcmxcp.h	\
  bcmxcp_io.h belkin.h belkin-hid.h belkinunv.h bestfcom.h		\
- bestuferrups.h bestups.h cpsups.h cyberpower.h dstate.h		\
+ bestuferrups.h bestups.h cps-hid.h cpsups.h cyberpower.h dstate.h	\
  dstate-hal.h								\
  dummy-ups.h etapro.h everups.h gamatronic.h				\
  explore-hid.h genericups.h hidparser.h hidtypes.h ietfmib.h		\

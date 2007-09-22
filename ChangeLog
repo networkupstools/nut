@@ -1,3 +1,12 @@
+Sat Sep 22 19:22:56 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/cps-hid.[ch]: Created a new subdriver for CyberPower HID
+   UPS systems.
+ - drivers/Makefile.am,usbhid-ups.c: Added new CyberPower subdriver.
+ - drivers/apc-hid.c: Removed CyberPower from this subdriver.
+ - scripts/subdriver/path-to-subdriver.sh: Some minor corrections to
+   make the output compliant to what we expect.
+
 Sat Sep 22 17:59:56 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/megatec_usb.c: Packetizing is already done by the libusb

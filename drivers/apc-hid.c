@@ -1,4 +1,4 @@
-/*  apc-hid.c - data to monitor APC and CyberPower USB/HID devices with NUT
+/*  apc-hid.c - data to monitor APC USB/HID devices with NUT
  *
  *  Copyright (C)  
  *	2003 - 2005	Arnaud Quette <arnaud.quette@free.fr>
@@ -30,12 +30,9 @@
 #include "main.h"     /* for getval() */
 #include "common.h"
 
-#define APC_HID_VERSION "APC/CyberPower HID 0.91"
+#define APC_HID_VERSION "APC HID 0.92"
 
 #define APC_VENDORID 0x051d /* APC */
-#define CPS_VENDORID 0x0764 /* CyberPower */
-
-/* some conversion functions specific to CyberPower */
 
 /* returns statically allocated string - must not use it again before
    done with result! */
@@ -67,9 +64,6 @@ static char *apc_date_conversion_fun(long value) {
 info_lkp_t apc_date_conversion[] = {
   { 0, NULL, apc_date_conversion_fun }
 };
-
-/* CyberPower has the non-NUT-standard status item "fully charged".
-   The usbhid-ups driver currently ignores it. */
 
 /* This was determined empirically from observing a BackUPS LS 500.
  */
@@ -165,7 +159,7 @@ static hid_info_t apc_hid2nut[] = {
   { "battery.runtime.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.RemainingTimeLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
   { "battery.voltage",  0, 0, "UPS.PowerSummary.Voltage", NULL, "%.1f", 0, NULL },
   { "battery.voltage.nominal", 0, 0, "UPS.Battery.ConfigVoltage", NULL, "%.1f", 0, NULL },
-  { "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%.1f", 0, NULL }, /* CyberPower, Back-UPS 500 */
+  { "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%.1f", 0, NULL }, /* Back-UPS 500 */
   { "battery.temperature", 0, 0, "UPS.Battery.Temperature", NULL, "%s", 0, kelvin_celsius_conversion },
   { "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", 0, stringid_conversion },
   { "battery.mfr.date", 0, 0, "UPS.Battery.ManufacturerDate", NULL, "%s", 0, date_conversion },
@@ -177,16 +171,12 @@ static hid_info_t apc_hid2nut[] = {
   { "ups.load", 0, 0, "UPS.PowerConverter.PercentLoad", NULL, "%.0f", 0, NULL },
   { "ups.delay.shutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "%.0f", 0, NULL},
   { "ups.delay.shutdown", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, "%.0f", 0, NULL}, /* APC */
-  { "ups.delay.shutdown", 0, 0, "UPS.Output.DelayBeforeShutdown", NULL, "%.0f", 0, NULL}, /* CyberPower */
   { "ups.delay.start", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, "%.0f", 0, NULL},
   { "ups.delay.start", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeStartup", NULL, "%.0f", 0, NULL}, /* APC */
-  { "ups.delay.start", 0, 0, "UPS.Output.DelayBeforeStartup", NULL, "%.0f", 0, NULL}, /* CyberPower */
   { "ups.test.result", 0, 0, "UPS.Battery.Test", NULL, "%s", 0, test_read_info },
-  { "ups.test.result", 0, 0, "UPS.Output.Test", NULL, "%s", 0, test_read_info }, /* CyberPower */
   { "ups.beeper.status", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", 0, beeper_info },
   { "ups.mfr.date", 0, 0, "UPS.ManufacturerDate", NULL, "%s", 0, date_conversion },
   { "ups.mfr.date", 0, 0, "UPS.PowerSummary.ManufacturerDate", NULL, "%s", 0, date_conversion }, /* Back-UPS 500 */
-  { "ups.realpower.nominal", 0, 0, "UPS.Output.ConfigActivePower", NULL, "%s", 0, NULL }, /* CyberPower */
 
 
   /* the below one need to be discussed as we might need to complete
@@ -210,10 +200,6 @@ static hid_info_t apc_hid2nut[] = {
   { "BOOL", 0, 0, "UPS.PowerSummary.BelowRemainingCapacityLimit", NULL, NULL, HU_FLAG_QUICK_POLL, lowbatt_info }, /* Back-UPS 500 */
   { "BOOL", 0, 0, "UPS.PowerSummary.ShutdownImminent", NULL, NULL, 0, shutdownimm_info },
   { "BOOL", 0, 0, "UPS.PowerSummary.APCStatusFlag", NULL, NULL, HU_FLAG_QUICK_POLL, apcstatusflag_info }, /* APC Back-UPS LS 500 */
-
-  { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.FullyCharged", NULL, NULL, HU_FLAG_QUICK_POLL, fullycharged_info }, /* CyberPower */
-  { "BOOL", 0, 0, "UPS.Output.Overload", NULL, NULL, 0, overload_info }, /* CyberPower */
-  { "BOOL", 0, 0, "UPS.Output.Boost", NULL, NULL, 0, boost_info }, /* CyberPower */
 
   /* Input page */
   { "input.voltage", 0, 0, "UPS.Input.Voltage", NULL, "%.1f", 0, NULL },
@@ -250,13 +236,6 @@ static hid_info_t apc_hid2nut[] = {
   { "shutdown.return", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeStartup", NULL, "30", HU_TYPE_CMD, NULL },
   { "shutdown.reboot", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL },
   { "shutdown.stop", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, "-1", HU_TYPE_CMD, NULL },
-  /* CyberPower */
-  { "load.off", 0, 0, "UPS.Output.DelayBeforeShutdown", NULL, "0", HU_TYPE_CMD, NULL },
-  { "load.on", 0, 0, "UPS.Output.DelayBeforeStartup", NULL, "0", HU_TYPE_CMD, NULL },
-  { "shutdown.stayoff", 0, 0, "UPS.Output.DelayBeforeShutdown", NULL, "20", HU_TYPE_CMD, NULL },
-  { "shutdown.return", 0, 0, "UPS.Output.DelayBeforeStartup", NULL, "30", HU_TYPE_CMD, NULL },
-  { "shutdown.reboot", 0, 0, "UPS.Output.DelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL },
-  { "shutdown.stop", 0, 0, "UPS.Output.DelayBeforeShutdown", NULL, "-1", HU_TYPE_CMD, NULL },
 
   { "beeper.on", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },
   { "beeper.off", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "3", HU_TYPE_CMD, NULL },
@@ -292,19 +271,7 @@ static char *apc_format_model(HIDDevice_t *hd) {
 }
 
 static char *apc_format_mfr(HIDDevice_t *hd) {
-	if (hd->Vendor) {
-		return hd->Vendor;
-	}
-
-	switch(hd->VendorID)
-	{
-	case APC_VENDORID:
-		return "APC";
-	case CPS_VENDORID:
-		return "CPS";
-	default:
-		return NULL;
-	}
+	return hd->Vendor ? hd->Vendor : "APC";
 }
 
 static char *apc_format_serial(HIDDevice_t *hd) {
@@ -314,37 +281,20 @@ static char *apc_format_serial(HIDDevice_t *hd) {
 /* this function allows the subdriver to "claim" a device: return 1 if
  * the device is supported by this subdriver, else 0. */
 static int apc_claim(HIDDevice_t *hd) {
-	switch(hd->VendorID)
-	{
-	case APC_VENDORID:
-		switch (hd->ProductID)
-		{
-		case  0x0002:
-			return 1;
-		default:
-			if (getval("productid")) {
-				return 1;
-			}
-			possibly_supported("APC", hd);
-			return 0;
-		}
+	if (hd->VendorID != APC_VENDORID) {
+		return 0;
+	}
+	switch (hd->ProductID) {
 
-	case CPS_VENDORID:
-		switch (hd->ProductID)
-		{
-		case 0x0005:	/* Cyber Power 900AVR/BC900D, CP1200AVR/BC1200D */
-				/* fixme: are the above really HID devices? */
-				/* Dynex DX-800U */
-		case 0x0501:	/* Cyber Power AE550, Geek Squad GS1285U */
-			return 1;
-		default:
-			if (getval("productid")) {
-				return 1;
-			}
-			possibly_supported("CyberPower", hd);
-			return 0;
-		}
+	case  0x0002:
+		return 1;
+
+	/* by default, reject, unless the productid option is given */
 	default:
+		if (getval("productid")) {
+			return 1;
+		}
+		possibly_supported("APC", hd);
 		return 0;
 	}
 }

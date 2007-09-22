@@ -129,7 +129,7 @@ cat > "$HFILE" <<EOF
  *
  *  Copyright (C)
  *  2003 - 2005 Arnaud Quette <arnaud.quette@free.fr>
- *  2005 - 2006 Peter Selinger <selinger@users.sourceforge.net>         
+ *  2005 - 2006 Peter Selinger <selinger@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -151,8 +151,6 @@ cat > "$HFILE" <<EOF
 #define ${UDRIVER}_HID_H
 
 #include "usbhid-ups.h"
-
-#define ${UDRIVER}_HID_VERSION	"${DRIVER} HID 0.1"
 
 extern subdriver_t ${LDRIVER}_subdriver;
 
@@ -208,7 +206,7 @@ EOF
 cat "$SUBST" | sed 's/\(.*\) \(.*\)/\t{ "\2",\t0x\1 },/' >> "$CFILE"
 
 cat >> "$CFILE" <<EOF
-	{  "\0", 0x0 }
+	{  NULL, 0x0 }
 };
 
 static usage_tables_t ${LDRIVER}_utab[] = {
@@ -259,7 +257,7 @@ static int ${LDRIVER}_claim(HIDDevice_t *hd) {
 	switch (hd->ProductID) {
 
 	/* accept any known UPS - add devices here as needed */
-	case ${PRODUCTID}:
+	case 0x${PRODUCTID}:
 		return 1;
 
 	/* by default, reject, unless the productid option is given */
@@ -289,7 +287,7 @@ Done.
 Do not forget to:
 * add #include "${HFILE}" to usbhid-ups.c, 
 * add &${LDRIVER}_subdriver to usbhid-ups.c:subdriver_list,
-* add ${LDRIVER}-hid.o to USBHID_UPS_SUBDRIVERS in drivers/Makefile.am
+* add ${LDRIVER}-hid.c to USBHID_UPS_SUBDRIVERS in drivers/Makefile.am
 * add ${LDRIVER}-hid.h to dist_noinst_HEADERS in drivers/Makefile.am
 * "autoreconf" from the top level directory
 EOF
