@@ -220,10 +220,13 @@ static usage_tables_t ${LDRIVER}_utab[] = {
 /* --------------------------------------------------------------- */
 
 static hid_info_t ${LDRIVER}_hid2nut[] = {
+  /* Server side variables */
+  { "driver.version.internal", ST_FLAG_STRING, sizeof(DRIVER_VERSION), NULL, NULL, DRIVER_VERSION, HU_FLAG_ABSENT, NULL },
+  { "driver.version.data", ST_FLAG_STRING, sizeof(${UDRIVER}_HID_VERSION), NULL, NULL, ${UDRIVER}_HID_VERSION, HU_FLAG_ABSENT, NULL },
 
 EOF
 
-cat "$NEWUTABLE" | while read U; do
+cat "$NEWUTABLE" | sort -u | while read U; do
     UL=`echo $U | tr A-Z a-z`
     cat >> "$CFILE" <<EOF
   { "unmapped.${UL}", 0, 0, "${U}", NULL, "%.0f", 0, NULL },

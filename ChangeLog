@@ -1,3 +1,9 @@
+Sun Sep 23 18:34:20 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/cps-hid.c: Add server side variables.
+ - scripts/subdriver/path-to-subdriver.sh: Add server side variables,
+   sort the HID paths alphabetically and remove duplicates.
+
 Sat Sep 22 19:22:56 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/cps-hid.[ch]: Created a new subdriver for CyberPower HID
