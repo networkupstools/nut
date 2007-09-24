@@ -1,3 +1,8 @@
+Mon Sep 24 18:01:56 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - conf/upsmon.conf.sample: List the default values for NOTIFYMSG
+   and NOTIFYFLAG. [Alioth Feature Requests #302016]
+
 Sun Sep 23 18:34:20 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/cps-hid.c: Add server side variables.
