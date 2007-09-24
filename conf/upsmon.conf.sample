@@ -201,12 +201,20 @@ POWERDOWNFLAG /etc/killpower
 # --------------------------------------------------------------------------
 # NOTIFYMSG - change messages sent by upsmon when certain events occur
 #
-# You can change the stock messages to something else if you like.
+# You can change the default messages to something else if you like.
 #
 # NOTIFYMSG <notify type> "message"
 #
-# NOTIFYMSG ONLINE "UPS %s is getting line power"
-# NOTIFYMSG ONBATT "Someone pulled the plug on %s"
+# NOTIFYMSG ONLINE	"UPS %s on line power"
+# NOTIFYMSG ONBATT	"UPS %s on battery"
+# NOTIFYMSG LOWBATT	"UPS %s battery is low"
+# NOTIFYMSG FSD		"UPS %s: forced shutdown in progress"
+# NOTIFYMSG COMMOK	"Communications with UPS %s established"
+# NOTIFYMSG COMMBAD	"Communications with UPS %s lost"
+# NOTIFYMSG SHUTDOWN	"Auto logout and shutdown proceeding"
+# NOTIFYMSG REPLBATT	"UPS %s battery needs to be replaced"
+# NOTIFYMSG NOCOMM	"UPS %s is unavailable"
+# NOTIFYMSG NOPARENT	"upsmon parent process died - shutdown impossible"
 #
 # Note that %s is replaced with the identifier of the UPS in question.
 #
@@ -221,6 +229,7 @@ POWERDOWNFLAG /etc/killpower
 # SHUTDOWN : The system is being shutdown
 # REPLBATT : The UPS battery is bad and needs to be replaced
 # NOCOMM   : A UPS is unavailable (can't be contacted for monitoring)
+# NOPARENT : The process that shuts down the system has died (shutdown impossible)
 
 # --------------------------------------------------------------------------
 # NOTIFYFLAG - change behavior of upsmon when NOTIFY events occur
@@ -230,8 +239,16 @@ POWERDOWNFLAG /etc/killpower
 #
 # NOTIFYFLAG <notify type> <flag>[+<flag>][+<flag>] ...
 #
-# NOTIFYFLAG ONLINE SYSLOG
-# NOTIFYFLAG ONBATT SYSLOG+WALL+EXEC
+# NOTIFYFLAG ONLINE	SYSLOG+WALL
+# NOTIFYFLAG ONBATT	SYSLOG+WALL
+# NOTIFYFLAG LOWBATT	SYSLOG+WALL
+# NOTIFYFLAG FSD	SYSLOG+WALL
+# NOTIFYFLAG COMMOK	SYSLOG+WALL
+# NOTIFYFLAG COMMBAD	SYSLOG+WALL
+# NOTIFYFLAG SHUTDOWN	SYSLOG+WALL
+# NOTIFYFLAG REPLBATT	SYSLOG+WALL
+# NOTIFYFLAG NOCOMM	SYSLOG+WALL
+# NOTIFYFLAG NOPARENT	SYSLOG+WALL
 #
 # Possible values for the flags:
 #

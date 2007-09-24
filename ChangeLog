@@ -1,3 +1,8 @@
+Mon Sep 24 18:01:56 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - conf/upsmon.conf.sample: List the default values for NOTIFYMSG
+   and NOTIFYFLAG. [Alioth Feature Requests #302016]
+
 Tue Sep 18 18:13:36 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/usbhid-ups.c: Always check the validity of a HID-to-NUT
