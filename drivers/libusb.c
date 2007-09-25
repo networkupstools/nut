@@ -289,7 +289,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 
 			upsdebugx(2, "HID descriptor length %d", rdlen);
 
-			if (rdlen > sizeof(rdbuf)) {
+			if (rdlen > (int)sizeof(rdbuf)) {
 				upsdebugx(2, "HID descriptor too long %d (max %d)", rdlen, sizeof(rdbuf));
 				goto next_device;
 			}
@@ -405,8 +405,8 @@ static int libusb_get_interrupt(usb_dev_handle *udev, unsigned char *buf, int bu
 	} else {
 		upsdebugx(6, " none (%i)", ret);
 	}
-#endif
 	return ret;
+#endif
 }
 
 static void libusb_close(usb_dev_handle *udev)

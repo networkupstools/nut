@@ -29,7 +29,7 @@
 #include "main.h"     /* for getval() */
 #include "common.h"
 
-#define CPS_HID_VERSION      "CPS HID 0.1"
+#define CPS_HID_VERSION      "CyberPower HID 0.1"
 
 #define CPS_VENDORID 0x0764
 
@@ -153,7 +153,7 @@ static int cps_claim(HIDDevice_t *hd) {
 		if (getval("productid")) {
 			return 1;
 		}
-		possibly_supported("CPS", hd);
+		possibly_supported("CyberPower", hd);
 		return 0;
 	}
 }

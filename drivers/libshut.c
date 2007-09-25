@@ -417,7 +417,7 @@ int libshut_open(int *upsfd, SHUTDevice_t *curDevice, char *device_path,
 
 	rdlen = desc->wDescriptorLength;
 
-	if (rdlen > sizeof(rdbuf)) {
+	if (rdlen > (int)sizeof(rdbuf)) {
 		upsdebugx(2, "HID descriptor too long %d (max %d)", rdlen, sizeof(rdbuf));
 		return -1;
 	}

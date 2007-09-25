@@ -1,3 +1,9 @@
+Tue Sep 25 20:51:47 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/cps-hid.c: Change 'CPS' to 'CyberPower' in some locations.
+ - drivers/libshut.c,libusb.c: Fix compiler warnings.
+ - drivers/usbhid-ups.c: Map ShutdownImminent back to LB.
+
 Tue Sep 25 18:45:10 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/usbhid-ups.c: Clean up after ourselves.

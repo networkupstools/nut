@@ -1393,7 +1393,7 @@ static void ups_status_set(void)
 		!(ups_status & STATUS(FULLYCHARGED))) {
 		status_set("CHRG");		/* charging */
 	}
-	if (ups_status & (STATUS(LOWBATT) | STATUS(TIMELIMITEXP))) {
+	if (ups_status & (STATUS(LOWBATT) | STATUS(TIMELIMITEXP) | STATUS(SHUTDOWNIMM))) {
 		status_set("LB");		/* low battery */
 	}
 	if (ups_status & STATUS(OVERLOAD)) {
