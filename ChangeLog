@@ -1,3 +1,14 @@
+Tue Sep 25 18:33:49 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/ietfmib.h: (Bernd Markgraf)
+   - addition of battery temperature
+   - addition of input.quality via UPS-MIB::upsInputLineBads values
+     >0 showing line failures
+   - correct OID to query number of input phases (now ietf reports
+     3 phases on my bunch correctly)
+   - corrected OID to query output current
+   - corrected multiplier for output.realpower (reported in Watts, so 1)
+
 Mon Sep 24 18:01:56 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - conf/upsmon.conf.sample: List the default values for NOTIFYMSG

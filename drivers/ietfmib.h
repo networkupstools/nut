@@ -23,7 +23,7 @@
  *
  */
 
-#define IETF_MIB_VERSION	"1.2.1"
+#define IETF_MIB_VERSION	"1.3"
 
 /* SNMP OIDs set */
 #define IETF_OID_UPS_MIB          "1.3.6.1.2.1.33"
@@ -38,8 +38,10 @@
 #define IETF_OID_BATT_CHARGE      "1.3.6.1.2.1.33.1.2.4.0"	/* UPS-MIB::upsEstimatedChargeRemaining.0 */
 #define IETF_OID_BATT_VOLTAGE     "1.3.6.1.2.1.33.1.2.5.0"	/* UPS-MIB::upsBatteryVoltage.0 */
 #define IETF_OID_BATT_CURRENT     "1.3.6.1.2.1.33.1.2.6.0"	/* UPS-MIB::upsBatteryCurrent.0 */
+#define IETF_OID_BATT_TEMP        "1.3.6.1.2.1.33.1.2.7.0"	/* UPS-MIB::upsBatteryTemperature.0 */
 
-#define IETF_OID_IN_LINES         "1.3.6.1.2.1.33.1.4.3.0"	/* UPS-MIB::upsInputNumLines.0 */
+#define IETF_OID_IN_LINEBADS      "1.3.6.1.2.1.33.1.3.1.0"	/* UPS-MIB::upsInputLineBads.0 */
+#define IETF_OID_IN_LINES         "1.3.6.1.2.1.33.1.3.2.0"	/* UPS-MIB::upsInputNumLines.0 */
 
 #define IETF_OID_IN_FREQ          "1.3.6.1.2.1.33.1.3.3.1.2"	/* UPS-MIB::upsInputFrequency */
 #define IETF_OID_IN_VOLTAGE       "1.3.6.1.2.1.33.1.3.3.1.3"	/* UPS-MIB::upsInputVoltage */
@@ -161,6 +163,8 @@ snmp_info_t ietf_mib[] = {
 		0, NULL },
 	{ "battery.current", 0, 0.1, IETF_OID_BATT_CURRENT, "",
 		0, NULL },
+	{ "battery.temperature", 0, 1.0, IETF_OID_BATT_TEMP, "",
+		0, NULL },
 
 	/* Output page */
 	{ "output.phases", 0, 1.0, IETF_OID_OUT_LINES, "",
@@ -169,9 +173,9 @@ snmp_info_t ietf_mib[] = {
 		0, NULL },
 	{ "output.voltage", 0, 1.0, IETF_OID_OUT_VOLTAGE ".0", "",
 		SU_OUTPUT_1, NULL },
-	{ "output.current", 0, 0.1, IETF_OID_OUT_CURRENT, "",
+	{ "output.current", 0, 0.1, IETF_OID_OUT_CURRENT ".0", "",
 		SU_OUTPUT_1, NULL },
-	{ "output.realpower", 0, 0.1, IETF_OID_OUT_POWER ".1", "",
+	{ "output.realpower", 0, 1.0, IETF_OID_OUT_POWER ".0", "",
 		SU_OUTPUT_1, NULL },
 	{ "output.L1-N.voltage", 0, 1.0, IETF_OID_OUT_VOLTAGE ".1", "",
 		SU_OUTPUT_3, NULL },
@@ -201,7 +205,7 @@ snmp_info_t ietf_mib[] = {
 	/* Input page */
 	{ "input.phases", 0, 1.0, IETF_OID_IN_LINES, "",
 		SU_FLAG_SETINT, NULL, &input_phases },
-	{ "input.frequency", 0, 0.1, IETF_OID_IN_FREQ ".1", "",
+	{ "input.frequency", 0, 0.1, IETF_OID_IN_FREQ ".0", "",
 		SU_INPUT_1, NULL },
 	{ "input.voltage", 0, 1.0, IETF_OID_IN_VOLTAGE ".0", "",
 		SU_INPUT_1, NULL },
@@ -225,6 +229,8 @@ snmp_info_t ietf_mib[] = {
 		SU_INPUT_3, NULL },
 	{ "input.L3.realpower", 0, 0.1, IETF_OID_IN_POWER ".3", "",
 		SU_INPUT_3, NULL },
+        { "input.quality", 0, 1.0, IETF_OID_IN_LINEBADS, "",
+               0, NULL },
 
 	/* instant commands. */
 	{ "load.off", 0, IETF_OFF_DO, IETF_OID_SD_AFTER_DELAY, "",
