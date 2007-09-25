@@ -1,3 +1,7 @@
+Tue Sep 25 18:45:10 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/usbhid-ups.c: Clean up after ourselves.
+
 Tue Sep 25 18:33:49 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/ietfmib.h: (Bernd Markgraf)

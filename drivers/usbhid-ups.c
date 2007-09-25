@@ -907,6 +907,8 @@ void upsdrv_cleanup(void)
 	upsdebugx(1, "upsdrv_cleanup...");
 
 	comm_driver->close(udev);
+	Free_ReportDesc(pDesc);
+	free_report_buffer(reportbuf);
 #ifndef SHUT_MODE
 	USBFreeExactMatcher(exact_matcher);
 	USBFreeRegexMatcher(regex_matcher);
