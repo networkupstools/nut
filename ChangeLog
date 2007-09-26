@@ -1,3 +1,7 @@
+Wed Sep 26 20:50:15 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+
+ - Changed the 'ups.voltage.nominal' to 'output.voltage.nominal' in bcmxcp driver.
+
 Mon Sep 24 18:01:56 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - conf/upsmon.conf.sample: List the default values for NOTIFYMSG

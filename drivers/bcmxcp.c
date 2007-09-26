@@ -921,11 +921,11 @@ void upsdrv_initinfo(void)
 	/* Get validation mask for status bitmap */
 	bcmxcp_status.topology_mask = answer[BCMXCP_CONFIG_BLOCK_HW_MODULES_INSTALLED_BYTE4];
 
-	/* Nominal input voltage of ups */
+	/* Nominal output voltage of ups */
 	voltage = get_word((answer + BCMXCP_CONFIG_BLOCK_NOMINAL_OUTPUT_VOLTAGE));
 	
 	if (voltage != 0)
-		dstate_setinfo("ups.voltage.nominal", "%d", voltage);
+		dstate_setinfo("output.voltage.nominal", "%d", voltage);
 
 	/* UPS serial number */
 	sValue[16] = 0;
