@@ -1,3 +1,9 @@
+Fri Sep 28 17:18:57 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - Added entry for Liebert PowerSure Personal XT in HAL script.
+ - Moved 'include/upshandler.h' to 'drivers/upshandler.h' since this is
+   only used in the drivers.
+
 Wed Sep 26 20:51:20 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
  - Changed the 'ups.voltage.nominal' to 'output.voltage.nominal' in bcmxcp driver.
