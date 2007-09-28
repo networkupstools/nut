@@ -27,9 +27,50 @@
 #ifndef LIBSHUT_H
 #define LIBSHUT_H
 
-#include "libhid.h"
+#ifdef HAVE_STDINT_H
+#include <stdint.h> /* for uint16_t */
+#endif
 
-extern communication_subdriver_t shut_subdriver;
+/*!
+ * SHUTDevice_t: Describe a SHUT device. This structure contains exactly
+ * the 5 pieces of information by which a SHUT device identifies
+ * itself, so it serves as a kind of "fingerprint" of the device. This
+ * information must be matched exactly when reopening a device, and
+ * therefore must not be "improved" or updated by a client
+ * program. Vendor, Product, and Serial can be NULL if the
+ * corresponding string did not exist or could not be retrieved.
+ */
+typedef struct SHUTDevice_s {
+	uint16_t	VendorID; /*!< Device's Vendor ID */
+	uint16_t	ProductID; /*!< Device's Product ID */
+	char*		Vendor; /*!< Device's Vendor Name */
+	char*		Product; /*!< Device's Product Name */
+	char*		Serial; /* Product serial number */
+	char*		Bus;    /* Bus name, e.g. "003" */
+} SHUTDevice_t;
+
+/*!
+ * shut_communication_subdriver_s: structure to describe the communication routines
+ */
+typedef struct shut_communication_subdriver_s {
+	char *name;				/* name of this subdriver		*/
+	char *version;				/* version of this subdriver		*/
+	int (*open)(int *upsfd,			/* try to open the next available	*/
+		SHUTDevice_t *curDevice,	/* device matching USBDeviceMatcher_t	*/
+		char *device_path,
+		int (*callback)(int upsfd, SHUTDevice_t *hd, unsigned char *rdbuf, int rdlen));
+	void (*close)(int upsfd);
+	int (*get_report)(int upsfd, int ReportId,
+	unsigned char *raw_buf, int ReportSize );
+	int (*set_report)(int upsfd, int ReportId,
+	unsigned char *raw_buf, int ReportSize );
+	int (*get_string)(int upsfd,
+	int StringIdx, char *buf, size_t buflen);
+	int (*get_interrupt)(int upsfd,
+	unsigned char *buf, int bufsize, int timeout);
+} shut_communication_subdriver_t;
+
+extern shut_communication_subdriver_t	shut_subdriver;
 
 /*!
  * Notification levels
@@ -43,4 +84,3 @@ extern communication_subdriver_t shut_subdriver;
 #define DEFAULT_NOTIFICATION COMPLETE_NOTIFICATION
 
 #endif /* LIBSHUT_H */
-

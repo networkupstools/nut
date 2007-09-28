@@ -1,3 +1,11 @@
+Fri Sep 28 15:56:17 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ Backported from the trunk:
+ - improved usbhid-ups driver
+ - support for the Liebert PowerSure Personal XT
+ - naming change of the 'beeper.(on|off)' to 'beeper.(enable|disable|mute)'
+ - coding changes without impact on the functional behaviour
+
 Wed Sep 26 20:50:15 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
  - Changed the 'ups.voltage.nominal' to 'output.voltage.nominal' in bcmxcp driver.

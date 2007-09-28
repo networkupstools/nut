@@ -279,10 +279,10 @@ The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 */
 
 #include "main.h"
-#include "libhid.h"
 #include "libusb.h"
 #include <math.h>
 #include <ctype.h>
+#include <usb.h>
 
 static enum tl_model_t {
 	TRIPP_LITE_UNKNOWN = 0,
@@ -311,11 +311,12 @@ static enum tl_model_t {
 #define MAX_VOLT 13.4          /*!< Max battery voltage (100%) */
 #define MIN_VOLT 11.0          /*!< Min battery voltage (10%) */
 
-static HIDDevice_t *hd = NULL;
-static HIDDevice_t curDevice;
-static HIDDeviceMatcher_t *reopen_matcher = NULL;
-static HIDDeviceMatcher_t *regex_matcher = NULL;
+static USBDevice_t *hd = NULL;
+static USBDevice_t curDevice;
+static USBDeviceMatcher_t *reopen_matcher = NULL;
+static USBDeviceMatcher_t *regex_matcher = NULL;
 static usb_dev_handle *udev;
+static usb_communication_subdriver_t	*comm_driver = &usb_subdriver;
 
 /* We calculate battery charge (q) as a function of voltage (V).
  * It seems that this function probably varies by firmware revision or
@@ -347,22 +348,27 @@ static unsigned int offdelay = DEFAULT_OFFDELAY;
  */
 static int reconnect_ups(void)
 {
-	int ret = 1;
+	int ret;
 
-	if (hd == NULL)
-	{
-		upsdebugx(2, "==================================================");
-		upsdebugx(2, "= device has been disconnected, try to reconnect =");
-		upsdebugx(2, "==================================================");
-
-		upsdrv_cleanup();
-
-		if ((hd = HIDOpenDevice(&udev, &curDevice, reopen_matcher, MODE_REOPEN)) == NULL) {
-			upslogx(LOG_INFO, "Reconnecting to UPS failed; will retry later...");
-			dstate_datastale();
-			ret = 0;
-		}
+	if (hd != NULL) {
+		return 1;
 	}
+
+	upsdebugx(2, "==================================================");
+	upsdebugx(2, "= device has been disconnected, try to reconnect =");
+	upsdebugx(2, "==================================================");
+
+	upsdrv_cleanup();
+
+	ret = comm_driver->open(&udev, &curDevice, reopen_matcher, NULL);
+	if (ret < 1) {
+		upslogx(LOG_INFO, "Reconnecting to UPS failed; will retry later...");
+		dstate_datastale();
+		return 0;
+	}
+
+	hd = &curDevice;
+
 	return ret;
 }
 
@@ -624,7 +630,7 @@ void debug_message(const char *msg, int len)
 	unsigned char tmp_value[9];
 	char var_name[20], err_msg[80];
 
-	sprintf(var_name, "ups.debug.%c", *msg);
+	snprintf(var_name, sizeof(var_name), "ups.debug.%c", *msg);
 
 	ret = send_cmd(msg, len, (char *)tmp_value, sizeof(tmp_value));
 	if(ret <= 0) {
@@ -747,7 +753,6 @@ static int control_outlet(int outlet_id, int state)
 static int instcmd(const char *cmdname, const char *extra)
 {
 	unsigned char buf[10];
-	int ret;
 
 	if(tl_model == TRIPP_LITE_SMARTPRO) {
 		if (!strcasecmp(cmdname, "test.battery.start")) {
@@ -1370,24 +1375,28 @@ void upsdrv_initups(void)
 	regex_array[4] = getval("serial"); /* probably won't see this */
 	regex_array[5] = getval("bus");
 
-	r = new_regex_matcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
+	r = USBNewRegexMatcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
 	if (r==-1) {
-		fatal_with_errno(EXIT_FAILURE, "new_regex_matcher");
+		fatal_with_errno(EXIT_FAILURE, "USBNewRegexMatcher");
 	} else if (r) {
 		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[r]);
 	}
 
 	/* Search for the first supported UPS matching the regular
 	 *            expression */
-	if ((hd = HIDOpenDevice(&udev, &curDevice, regex_matcher, MODE_OPEN)) == NULL)
+	r = comm_driver->open(&udev, &curDevice, regex_matcher, NULL);
+	if (r < 1) {
 		fatalx(EXIT_FAILURE, "No matching USB/HID UPS found");
-	else
-		upslogx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
+	}
+
+	hd = &curDevice;
+	
+	upslogx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
 
 	/* create a new matcher for later reopening */
-	reopen_matcher = new_exact_matcher(hd);
-	if (!reopen_matcher) {
-		fatal_with_errno(EXIT_FAILURE, "new_exact_matcher");
+	r = USBNewExactMatcher(&reopen_matcher, hd);
+	if (r) {
+		fatal_with_errno(EXIT_FAILURE, "USBNewExactMatcher");
 	}
 	/* link the two matchers */
 	reopen_matcher->next = regex_matcher;
@@ -1404,8 +1413,7 @@ void upsdrv_initups(void)
 
 void upsdrv_cleanup(void)
 {
-        if (hd != NULL) {
-                HIDCloseDevice(udev);
-		udev = NULL;
-	}
+	comm_driver->close(udev);
+	USBFreeExactMatcher(reopen_matcher);
+	USBFreeRegexMatcher(regex_matcher);
 }

@@ -409,6 +409,8 @@ static cmd_t commands[] = {
 	{ "bypass.stop",		NULL, NULL },
 	{ "reset.input.minmax",		NULL, NULL },
 	{ "reset.watchdog",		NULL, NULL },
+	{ "beeper.enable",		NULL, NULL },
+	{ "beeper.disable",		NULL, NULL },
 	{ "beeper.on",			NULL, NULL },
 	{ "beeper.off",			NULL, NULL },
 	{ NULL }
@@ -884,6 +886,20 @@ void upsdrv_shutdown(void)
 static int instcmd (const char *auxcmd, const char *data)
 {
 	cmd_t *cp = commands;
+
+	if (!strcasecmp(auxcmd, "beeper.off")) {
+		/* compatibility mode for old command */
+		upslogx(LOG_WARNING,
+			"The 'beeper.off' command has been renamed to 'beeper.disable'");
+		return instcmd("beeper.disable", NULL);
+	}
+
+	if (!strcasecmp(auxcmd, "beeper.on")) {
+		/* compatibility mode for old command */
+		upslogx(LOG_WARNING,
+			"The 'beeper.on' command has been renamed to 'beeper.enable'");
+		return instcmd("beeper.enable", NULL);
+	}
 
 	upsdebugx(1, "Instcmd: %s %s", auxcmd, data ? data : "\"\"");
 	while (cp->cmd) {

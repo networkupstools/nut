@@ -43,19 +43,13 @@ static hid_info_t explore_hid2nut[] =
 {
   /* Server side variables */
   { "driver.version.internal", ST_FLAG_STRING, 5, NULL, NULL,
-    DRIVER_VERSION, HU_FLAG_ABSENT | HU_FLAG_OK, NULL },
+    DRIVER_VERSION, HU_FLAG_ABSENT, NULL },
   { "driver.version.data", ST_FLAG_STRING, 11, NULL, NULL,
-    EXPLORE_HID_VERSION, HU_FLAG_ABSENT | HU_FLAG_OK, NULL },
+    EXPLORE_HID_VERSION, HU_FLAG_ABSENT, NULL },
 
   /* end of structure. */
   { NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
 };
-
-/* shutdown method for EXPLORE - unimplemented */
-static int explore_shutdown(int ondelay, int offdelay) {
-	upsdebugx(2, "Shutoff command not supported for this subdriver");
-	return 0;
-}
 
 static char *explore_format_model(HIDDevice_t *hd) {
 	return hd->Product;
@@ -84,7 +78,6 @@ subdriver_t explore_subdriver = {
 	explore_claim,
 	explore_utab,
 	explore_hid2nut,
-	explore_shutdown,
 	explore_format_model,
 	explore_format_mfr,
 	explore_format_serial,

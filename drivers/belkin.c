@@ -206,7 +206,7 @@ static int init_ups_data(void)
 		dstate_setinfo("input.transfer.high", "%03.1f", high);
 	}
 
-	tcflush(upsfd,TCIOFLUSH);
+	ser_flush_io(upsfd);
 
 	dstate_addcmd("load.off");
 	dstate_addcmd("load.on");
@@ -382,12 +382,9 @@ static int instcmd(const char *cmdname, const char *extra)
 
 static void set_serialDTR0RTS1(void)
 {
-	int dtr_bit = TIOCM_DTR;
-	int rts_bit = TIOCM_RTS;
-
 	/* set DTR to low and RTS to high */
-	ioctl(upsfd, TIOCMBIC, &dtr_bit);
-	ioctl(upsfd, TIOCMBIS, &rts_bit);
+	ser_set_dtr(upsfd, 0);
+	ser_set_rts(upsfd, 1);
 }
 
 void upsdrv_banner(void)
@@ -413,7 +410,8 @@ void upsdrv_initups(void)
 	set_serialDTR0RTS1();
 
 	sleep(1);
-  	tcflush(upsfd,TCIOFLUSH);
+
+	ser_flush_io(upsfd);
 }
 
 void upsdrv_initinfo(void)

@@ -50,7 +50,6 @@
       correctly connected to the serial port).
  */
 
-#include <sys/ioctl.h>
 #include "main.h"
 #include "serial.h"
 #include "etapro.h"
@@ -352,14 +351,11 @@ upsdrv_banner(void)
 void
 upsdrv_initups(void)
 {
-	int dtr_bit = TIOCM_DTR;
-	int rts_bit = TIOCM_RTS;
-
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B1200);
 
-	ioctl(upsfd, TIOCMBIC, &dtr_bit);
-	ioctl(upsfd, TIOCMBIS, &rts_bit);
+	ser_set_dtr(upsfd, 0);
+	ser_set_rts(upsfd, 1);
 }
 
 void upsdrv_cleanup(void)

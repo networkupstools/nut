@@ -35,7 +35,7 @@
 
 #include <ctype.h>
 #include <stdio.h>
-#include <sys/ioctl.h>
+
 #include "main.h"
 #include "serial.h"
 #include "solis.h"
@@ -864,7 +864,7 @@ static void getbaseinfo(void)
 	} // end prgups 1 - 2
 
 	/* dummy read attempt to sync - throw it out */
-	sprintf(mycmd,"%c%c",CMD_UPSCONT, ENDCHAR);
+	snprintf(mycmd, sizeof(mycmd), "%c%c",CMD_UPSCONT, ENDCHAR);
 	ser_send(upsfd, mycmd);
 
 	/* trying detect solis model */
@@ -1130,16 +1130,11 @@ void upsdrv_banner(void)
 
 void upsdrv_initups(void)
 {
-
-	int dtr_bit = TIOCM_DTR;
-	int rts_bit = TIOCM_RTS;
-
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B9600);
 
-	ioctl(upsfd, TIOCMBIS, &dtr_bit);
-	ioctl(upsfd, TIOCMBIC, &rts_bit);
- 
+	ser_set_dtr(upsfd, 1);
+	ser_set_rts(upsfd, 0);
 }
 
 void upsdrv_cleanup(void)

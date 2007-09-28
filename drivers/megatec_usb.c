@@ -21,7 +21,6 @@
 
 #include "main.h"
 #include "megatec.h"
-#include "libhid.h"
 #include "libusb.h"
 #include "serial.h"
 
@@ -29,7 +28,6 @@
 #include <limits.h>
 #include <string.h>
 #include <stdlib.h>
-#include <usb.h>
 
 /*
     This is a communication driver for "USB HID" UPS-es which use proprietary
@@ -45,9 +43,9 @@ KnownDevices table.
 
 */
 
-static communication_subdriver_t *usb = &usb_subdriver;
+static usb_communication_subdriver_t *usb = &usb_subdriver;
 static usb_dev_handle *udev = NULL;
-static HIDDevice_t hiddevice;
+static USBDevice_t usbdevice;
 
 typedef struct {
 	char	*name;
@@ -100,7 +98,7 @@ static usb_ups_t KnownDevices[] = {
 	{-1, -1, NULL}		/* end of list */
 };
 
-static int comm_usb_match(HIDDevice_t *d, void *privdata)
+static int comm_usb_match(USBDevice_t *d, void *privdata)
 {
 	usb_ups_t *p;
 
@@ -132,8 +130,8 @@ static void usb_open_error(const char *port)
 
 void megatec_subdrv_banner()
 {
-	printf("Serial-over-USB transport layer for Megatec protocol driver [%s]\n\n", progname);
-	/* printf("Andrey Lelikov (c) 2006, Alexander Gordeev (c) 2006-2007, Jon Gough (c) 2007\n\n"); */
+	printf("Serial-over-USB transport layer for Megatec protocol driver [%s]\n", progname);
+	printf("Andrey Lelikov (c) 2006, Alexander Gordeev (c) 2006-2007, Jon Gough (c) 2007\n\n");
 }
 
 /* FIXME: Fix "serial" variable (which conflicts with "serial" variable in megatec.c) */
@@ -150,11 +148,11 @@ void megatec_subdrv_makevartable()
 
 int ser_open(const char *port)
 {
-	HIDDeviceMatcher_t subdriver_matcher;
+	USBDeviceMatcher_t subdriver_matcher;
 	int ret, i;
 	char flush_buf[256];
 
-	HIDDeviceMatcher_t *regex_matcher = NULL;
+	USBDeviceMatcher_t *regex_matcher = NULL;
 	int r;
 	char *regex_array[6];
 
@@ -200,21 +198,21 @@ int ser_open(const char *port)
 	regex_array[4] = NULL; /* getval("serial"); */
 	regex_array[5] = getval("bus");
 
-	r = new_regex_matcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
+	r = USBNewRegexMatcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
 	if (r==-1) {
-		fatalx(EXIT_FAILURE, "new_regex_matcher: %s", strerror(errno));
+		fatal_with_errno(EXIT_FAILURE, "USBNewRegexMatcher");
 	} else if (r) {
 		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[r]);
 	}
 	/* link the matchers */
 	regex_matcher->next = &subdriver_matcher;
 
-	ret = usb->open(&udev, &hiddevice, regex_matcher, NULL, MODE_NOHID);
+	ret = usb->open(&udev, &usbdevice, regex_matcher, NULL);
 	if (ret < 0)
 		usb_open_error(port);
 
 	/* TODO: Add make exact matcher for reconnecting feature support */
-	free_regex_matcher(regex_matcher);
+	USBFreeRegexMatcher(regex_matcher);
 
 	/* flush input buffers */
 	for (i = 0; i < 10; i++) {
@@ -315,167 +313,111 @@ int ser_get_line(int fd, char *buf, size_t buflen, char endchar, const char *ign
     All constants are hardcoded in windows driver
 */
 
-#define AGILER_REPORT_SIZE      8
-#define AGILER_REPORT_COUNT     6
-#define AGILER_TIMEOUT          5000
-
 static int set_data_agiler(const char *str)
 {
-	unsigned char report_buf[AGILER_REPORT_SIZE];
-
-	if (strlen(str) > AGILER_REPORT_SIZE) {
-		upslogx(LOG_ERR, "set_data_agiler: output string too large");
-		return -1;
-	}
-
-	memset(report_buf, 0, sizeof(report_buf));
-	memcpy(report_buf, str, strlen(str));
-
-	return usb->set_report(udev, 0, report_buf, sizeof(report_buf));
+	return usb->set_report(udev, 0, (unsigned char *)str, strlen(str));
 }
 
 static int get_data_agiler(char *buffer, int buffer_size)
 {
-	int i, len;
-	char buf[AGILER_REPORT_SIZE * AGILER_REPORT_COUNT + 1];
-
-	memset(buf, 0, sizeof(buf));
-
-	for (i = 0; i < AGILER_REPORT_COUNT; i++) {
-		len = usb->get_interrupt(udev, (unsigned char *) buf + i * AGILER_REPORT_SIZE, AGILER_REPORT_SIZE, AGILER_TIMEOUT);
-		if (len != AGILER_REPORT_SIZE) {
-			if (len < 0)
-				len = 0;
-			buf[i * AGILER_REPORT_SIZE + len] = 0;
-			break;
-		}
-	}
-
-	len = strlen(buf);
-
-	if (len > buffer_size) {
-		upslogx(LOG_ERR, "get_data_agiler: input buffer too small");
-		len = buffer_size;
-	}
-
-	memcpy(buffer, buf, len);
-	return len;
+	return usb->get_interrupt(udev, (unsigned char *)buffer, buffer_size, 1000);
 }
 
 
 /*
-    Krauler serial-to-usb device.
+    Krauler serial-over-usb device.
 
     Protocol was reverse-engineered using Windows driver.
 */
 
-#define KRAULER_COMMAND_BUFFER_SIZE	9
-#define KRAULER_TIMEOUT		5000
-#define KRAULER_WRONG_ANSWER		"PS No Ack"
 #define KRAULER_MAX_ATTEMPTS_Q1		4
 #define KRAULER_MAX_ATTEMPTS_F		31
 #define KRAULER_MAX_ATTEMPTS_I		15
 
-static char krauler_command_buffer[KRAULER_COMMAND_BUFFER_SIZE];
+typedef struct {
+	char	*str;	/* Megatec command */
+	int	index;	/* Krauler string index for this command */
+	char	prefix;	/* character to prepend after stripping first four bytes in reply */
+	int	retry;	/* 0 for immediate action, >0 if used in get_data_krauler */
+} krauler_command_t;
+
+static krauler_command_t krauler_command_lst[] = {
+	{ "T\r",  0x04, '\0', 0 },
+	{ "TL\r", 0x05, '\0', 0 },
+	{ "Q\r",  0x07, '\0', 0 },
+	{ "C\r",  0x0b, '\0', 0 },
+	{ "CT\r", 0x0b, '\0', 0 },
+	{ "Q1\r", 0x03, '(', KRAULER_MAX_ATTEMPTS_Q1 },
+	{ "I\r",  0x0c, '#', KRAULER_MAX_ATTEMPTS_I },
+	{ "F\r",  0x0d, '#', KRAULER_MAX_ATTEMPTS_F },
+	{ NULL, 0, '\0', 0 }
+};
+
+static krauler_command_t *command = NULL;
 
 static int set_data_krauler(const char *str)
 {
-	unsigned char index = 0;
-	int len;
-
 	/*
 	Still not implemented:
 		0x6	T<n>	(don't know how to pass the parameter)
 		0x68 and 0x69 both cause shutdown after an undefined interval
 	*/
+	for (command = krauler_command_lst; command->str != NULL; command++) {
 
-	if (strcmp(str, "T\r") == 0)
-		index = 0x04;
-	else if (strcmp(str, "TL\r") == 0)
-		index = 0x05;
-	else if (strcmp(str, "Q\r") == 0)
-		index = 0x07;
-	else if (strcmp(str, "C\r") == 0)
-		index = 0x0b;
-	else if (strcmp(str, "CT\r") == 0)
-		index = 0x0b;
+		if (strcmp(str, command->str)) {
+			continue;
+		}
 
-	if (index > 0)
-	{
-		usb_get_descriptor(udev, USB_DT_STRING, index, NULL, 0);
-		/* usb_control_msg(udev, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR, (USB_DT_STRING << 8) + index, 0, NULL, 0, KRAULER_TIMEOUT); */
-		return 0;
+		/* Immediate action */
+		if (command->retry == 0) {
+			int	res;
+			char	buf[SMALLBUF];
+
+			res = usb->get_string(udev, command->index, buf, sizeof(buf));
+			if (res > 0) {
+				upsdebugx(5, "set_data_krauler: dump [%s]", buf);
+			}
+		}
+
+		return strlen(str);
 	}
 
-	len = strlen(str);
-	if (len >= KRAULER_COMMAND_BUFFER_SIZE) {
-		upslogx(LOG_ERR, "set_data_krauler: output string too large");
-		return -1;
-	}
-
-	krauler_command_buffer[len] = 0;
-	memcpy(krauler_command_buffer, str, len);
-
-	return len;
+	upsdebugx(4, "set_data_krauler: unknown command [%s]", str);
+	return 0;
 }
 
 static int get_data_krauler(char *buffer, int buffer_size)
 {
-	int res = 0;
-	unsigned char index = 0;
-	char prefix = 0;
-	int i, j;
-	int attempts = 1;
+	int	retry;
 
-	if (krauler_command_buffer[0] == 0) return 0;
-
-	if (strcmp(krauler_command_buffer, "Q1\r") == 0)
-	{
-		index = 0x03;
-		prefix = '(';
-		attempts = KRAULER_MAX_ATTEMPTS_Q1;
-	}
-	else if (strcmp(krauler_command_buffer, "I\r") == 0)
-	{
-		index = 0x0c;
-		prefix = '#';
-		attempts = KRAULER_MAX_ATTEMPTS_I;
-	}
-	else if (strcmp(krauler_command_buffer, "F\r") == 0)
-	{
-		index = 0x0d;
-		prefix = '#';
-		attempts = KRAULER_MAX_ATTEMPTS_F;
+	if (!command || !command->str) {
+		upsdebugx(3, "get_data_krauler: no command set");
+		return 0;
 	}
 
-	if (index > 0)
-		while (attempts)
-		{
-			res = usb_get_descriptor(udev, USB_DT_STRING, index, buffer, buffer_size);
-			/* res = usb_control_msg(udev, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR, (USB_DT_STRING << 8) + index, 0, buffer, buffer_size, KRAULER_TIMEOUT); */
+	upsdebugx(3, "get_data_krauler: index [%02x], prefix [%c]", command->index, command->prefix);
 
-			if (res > 0) {
-				for (i = 4, j = 1; i < res; i++)
-					if (buffer[i] != 0) {
-						buffer[j] = buffer[i];
-						j++;
-					}
-				buffer[0] = prefix;
-				buffer[j] = 0;
-				res = j;
+	for (retry = 0; retry < command->retry; retry++) {
 
-				upsdebugx(5, "get_data_krauler: got data: %s", buffer);
-				if (strcmp(buffer + 1, KRAULER_WRONG_ANSWER) != 0)
-					break;
-				else
-					upsdebugx(5, "get_data_krauler: ups no ack");
-			} else
-				  break;
+		int	res;
 
-			attempts--;
+		res = usb->get_string(udev, command->index, buffer, buffer_size);
+		if (res < 1) {
+			upsdebugx(2, "get_data_krauler: connection failure");
+			return res;
 		}
 
+		if (!strcmp(buffer, "UPS No Ack")) {
+			upsdebugx(4, "get_data_krauler: retry [%s]", buffer);
+			continue;
+		}
 
-	krauler_command_buffer[0] = 0;
-	return res;
+		/* Replace the first byte of what we received with the correct one */
+		buffer[0] = command->prefix;
+
+		return res;
+	}
+
+	upsdebugx(4, "get_data_krauler: too many attempts");
+	return 0;
 }

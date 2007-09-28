@@ -31,7 +31,7 @@
 
 #include <stdio.h>
 #include <math.h>
-#include <sys/ioctl.h>
+
 #include "main.h"
 #include "serial.h"
 #include "timehead.h"
@@ -795,15 +795,12 @@ void upsdrv_banner(void)
 
 void upsdrv_initups(void)
 {
-	int     dtr_bit = TIOCM_DTR;
-        int     rts_bit = TIOCM_RTS;
-
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B19200);
 
 	/* dtr and rts setting */
-	ioctl(upsfd, TIOCMBIS, &dtr_bit);
-	ioctl(upsfd, TIOCMBIC, &rts_bit);
+	ser_set_dtr(upsfd, 1);
+	ser_set_rts(upsfd, 0);
 	
 }
 

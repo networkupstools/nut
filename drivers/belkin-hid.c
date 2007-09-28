@@ -26,9 +26,10 @@
 #include "usbhid-ups.h"
 #include "belkin-hid.h"
 #include "extstate.h" /* for ST_FLAG_STRING */
-#include "dstate.h"   /* for STAT_INSTCMD_HANDLED */
 #include "main.h"     /* for getval() */
 #include "common.h"
+
+#define BELKIN_HID_VERSION      "Belkin HID 0.11"
 
 #define BELKIN_VENDORID 0x050d
 
@@ -38,7 +39,7 @@
    done with result! */
 static char *belkin_firmware_conversion_fun(long value) {
 	static char buf[20];
-	sprintf(buf, "%ld", value >> 4);
+	snprintf(buf, sizeof(buf), "%ld", value >> 4);
 	
 	return buf;
 }
@@ -90,7 +91,7 @@ static info_lkp_t belkin_test_info[] = {
   { 3, "Done and error", NULL },
   { 4, "Aborted", NULL },
   { 5, "In progress", NULL },
-  { 0, "NULL", NULL }
+  { 0, NULL, NULL }
 };
 
 static char *belkin_overload_conversion_fun(long value) {
@@ -214,7 +215,7 @@ static usage_lkp_t belkin_usage_lkp[] = {
 	{ "BELKINLoadOn",			0x00860050 }, /* R/W: write: 1=do action. Read: 0=none, 1=started, 2=in progress, 3=complete */
 	{ "BELKINLoadOff",			0x00860051 }, /* R/W: ditto */
 	{ "BELKINLoadToggle",			0x00860052 }, /* R/W: ditto */
-	{ "BELKINDefaultShutdown",		0x00860055 }, /* R/W: write: 0=start shutdown using default delay. */
+	{ "BELKINDelayBeforeReboot",		0x00860055 }, /* R/W: write: 0=start shutdown using default delay. */
 	{ "BELKINDelayBeforeStartup",		0x00860056 }, /* R/W (minutes) */
 	{ "BELKINDelayBeforeShutdown",		0x00860057 }, /* R/W (seconds) */
 	{ "BELKINTest",				0x00860058 }, /* R/W: write: 0=no test, 1=quick test, 2=deep test, 3=abort test. Read: 0=no test, 1=passed, 2=warning, 3=error, 4=abort, 5=in progress */
@@ -241,7 +242,7 @@ static usage_lkp_t belkin_usage_lkp[] = {
 	{ "BELKINStatus",			0x00860028 },
 	{ "BELKINBatteryStatus",		0x00860022 }, /* 1 byte: bit2=low battery, bit4=charging, bit5=discharging, bit6=battery empty, bit7=replace battery */
 	{ "BELKINPowerStatus",			0x00860021 }, /* 2 bytes: bit0=ac failure, bit4=overload, bit5=load is off, bit6=overheat, bit7=UPS fault, bit13=awaiting power, bit15=alarm status */
-	{  "\0", 0x0 }
+	{ NULL, 0 }
 };
 
 static usage_tables_t belkin_utab[] = {
@@ -257,68 +258,77 @@ static usage_tables_t belkin_utab[] = {
 static hid_info_t belkin_hid2nut[] = {
 
   /* interpreted Belkin variables */
-  { "battery.charge", 0, 0, "UPS.BELKINBatterySystem.BELKINCharge", NULL, "%.0f", HU_FLAG_OK, NULL },
-  /* { "battery.charge.broken", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", HU_FLAG_OK, NULL }, */
-  { "battery.charge.low", 0, 0, "UPS.PowerSummary.RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "battery.charge.warning", 0, 0, "UPS.PowerSummary.WarningCapacityLimit", NULL, "%.0f", HU_FLAG_OK, NULL }, /* Read only */
-  { "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", HU_FLAG_OK, stringid_conversion },
-  { "battery.voltage", 0, 0, "UPS.BELKINBatterySystem.BELKINVoltage", NULL, "%s", HU_FLAG_OK, divide_by_10_conversion },
-  { "battery.voltage.nominal", 0, 0, "UPS.BELKINConfig.BELKINConfigBatteryVoltage", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "input.frequency", 0, 0, "UPS.BELKINPowerState.BELKINInput.BELKINFrequency", NULL, "%s", HU_FLAG_OK, divide_by_10_conversion },
-  { "input.frequency.nominal", 0, 0, "UPS.BELKINConfig.BELKINConfigFrequency", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "input.sensitivity", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.BELKINDevice.BELKINVoltageSensitivity", NULL, "%s", HU_FLAG_OK, belkin_sensitivity_conversion },
-  { "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.BELKINConfig.BELKINHighVoltageTransfer", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "input.transfer.high.max", 0, 0, "UPS.BELKINConfig.BELKINHighVoltageTransferMax", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "input.transfer.high.min", 0, 0, "UPS.BELKINConfig.BELKINHighVoltageTransferMin", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.BELKINConfig.BELKINLowVoltageTransfer", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "input.transfer.low.max", 0, 0, "UPS.BELKINConfig.BELKINLowVoltageTransferMax", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "input.transfer.low.min", 0, 0, "UPS.BELKINConfig.BELKINLowVoltageTransferMin", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "input.voltage", 0, 0, "UPS.BELKINPowerState.BELKINInput.BELKINVoltage", NULL, "%s", HU_FLAG_OK, divide_by_10_conversion },
-  { "input.voltage.nominal", 0, 0, "UPS.BELKINConfig.BELKINConfigVoltage", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "output.frequency", 0, 0, "UPS.BELKINPowerState.BELKINOutput.BELKINFrequency", NULL, "%s", HU_FLAG_OK, divide_by_10_conversion },
-  { "output.voltage", 0, 0, "UPS.BELKINPowerState.BELKINOutput.BELKINVoltage", NULL, "%s", HU_FLAG_OK, divide_by_10_conversion },
-  { "ups.beeper.status", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.BELKINControls.BELKINAudibleAlarmControl", NULL, "%s", HU_FLAG_OK, beeper_info },
-  { "ups.delay.restart", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeStartup", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "ups.delay.shutdown", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeShutdown", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "ups.firmware", 0, 0, "UPS.BELKINDevice.BELKINUPSType", NULL, "%s", HU_FLAG_OK, belkin_firmware_conversion },
-  { "ups.load", 0, 0, "UPS.BELKINPowerState.BELKINOutput.BELKINPercentLoad", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "ups.load.high", 0, 0, "UPS.BELKINConfig.BELKINConfigOverloadTransfer", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "ups.mfr.date", 0, 0, "UPS.PowerSummary.ManufacturerDate", NULL, "%s", HU_FLAG_OK, date_conversion },
-  { "ups.power.nominal", 0, 0, "UPS.BELKINConfig.BELKINConfigApparentPower", NULL, "%.0f", HU_FLAG_OK, NULL },
-  { "ups.serial", 0, 0, "UPS.PowerSummary.iSerialNumber", NULL, "%s", HU_FLAG_OK, stringid_conversion },
-  { "ups.test.result", 0, 0, "UPS.BELKINControls.BELKINTest", NULL, "%s", HU_FLAG_OK, belkin_test_info },
-  { "ups.type", 0, 0, "UPS.BELKINDevice.BELKINUPSType", NULL, "%s", HU_FLAG_OK, belkin_upstype_conversion },
+  { "battery.charge", 0, 0, "UPS.BELKINBatterySystem.BELKINCharge", NULL, "%.0f", 0, NULL },
+  /* { "battery.charge.broken", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", 0, NULL }, */
+  { "battery.charge.low", 0, 0, "UPS.PowerSummary.RemainingCapacityLimit", NULL, "%.0f", 0, NULL },
+  { "battery.charge.warning", 0, 0, "UPS.PowerSummary.WarningCapacityLimit", NULL, "%.0f", 0, NULL }, /* Read only */
+  { "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", 0, NULL },
+  { "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", 0, stringid_conversion },
+  { "battery.voltage", 0, 0, "UPS.BELKINBatterySystem.BELKINVoltage", NULL, "%s", 0, divide_by_10_conversion },
+  { "battery.voltage.nominal", 0, 0, "UPS.BELKINConfig.BELKINConfigBatteryVoltage", NULL, "%.0f", 0, NULL },
+  { "input.frequency", 0, 0, "UPS.BELKINPowerState.BELKINInput.BELKINFrequency", NULL, "%s", 0, divide_by_10_conversion },
+  { "input.frequency.nominal", 0, 0, "UPS.BELKINConfig.BELKINConfigFrequency", NULL, "%.0f", 0, NULL },
+  { "input.sensitivity", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.BELKINDevice.BELKINVoltageSensitivity", NULL, "%s", 0, belkin_sensitivity_conversion },
+  { "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.BELKINConfig.BELKINHighVoltageTransfer", NULL, "%.0f", 0, NULL },
+  { "input.transfer.high.max", 0, 0, "UPS.BELKINConfig.BELKINHighVoltageTransferMax", NULL, "%.0f", 0, NULL },
+  { "input.transfer.high.min", 0, 0, "UPS.BELKINConfig.BELKINHighVoltageTransferMin", NULL, "%.0f", 0, NULL },
+  { "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.BELKINConfig.BELKINLowVoltageTransfer", NULL, "%.0f", 0, NULL },
+  { "input.transfer.low.max", 0, 0, "UPS.BELKINConfig.BELKINLowVoltageTransferMax", NULL, "%.0f", 0, NULL },
+  { "input.transfer.low.min", 0, 0, "UPS.BELKINConfig.BELKINLowVoltageTransferMin", NULL, "%.0f", 0, NULL },
+  { "input.voltage", 0, 0, "UPS.BELKINPowerState.BELKINInput.BELKINVoltage", NULL, "%s", 0, divide_by_10_conversion },
+  { "input.voltage.nominal", 0, 0, "UPS.BELKINConfig.BELKINConfigVoltage", NULL, "%.0f", 0, NULL },
+  { "output.frequency", 0, 0, "UPS.BELKINPowerState.BELKINOutput.BELKINFrequency", NULL, "%s", 0, divide_by_10_conversion },
+  { "output.voltage", 0, 0, "UPS.BELKINPowerState.BELKINOutput.BELKINVoltage", NULL, "%s", 0, divide_by_10_conversion },
+  { "ups.beeper.status", 0, 0, "UPS.BELKINControls.BELKINAudibleAlarmControl", NULL, "%s", 0, beeper_info },
+  { "ups.delay.start", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeStartup", NULL, "%.0f", 0, NULL },
+  { "ups.delay.reboot", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeReboot", NULL, "%.0f", 0, NULL },
+  { "ups.delay.shutdown", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeShutdown", NULL, "%.0f", 0, NULL },
+  { "ups.firmware", 0, 0, "UPS.BELKINDevice.BELKINUPSType", NULL, "%s", 0, belkin_firmware_conversion },
+  { "ups.load", 0, 0, "UPS.BELKINPowerState.BELKINOutput.BELKINPercentLoad", NULL, "%.0f", 0, NULL },
+  { "ups.load.high", 0, 0, "UPS.BELKINConfig.BELKINConfigOverloadTransfer", NULL, "%.0f", 0, NULL },
+  { "ups.mfr.date", 0, 0, "UPS.PowerSummary.ManufacturerDate", NULL, "%s", 0, date_conversion },
+  { "ups.power.nominal", 0, 0, "UPS.BELKINConfig.BELKINConfigApparentPower", NULL, "%.0f", 0, NULL },
+  { "ups.serial", 0, 0, "UPS.PowerSummary.iSerialNumber", NULL, "%s", 0, stringid_conversion },
+  { "ups.test.result", 0, 0, "UPS.BELKINControls.BELKINTest", NULL, "%s", 0, belkin_test_info },
+  { "ups.type", 0, 0, "UPS.BELKINDevice.BELKINUPSType", NULL, "%s", 0, belkin_upstype_conversion },
 
   /* status */
-  { "ups.status", 0, 1, "UPS.PowerSummary.Discharging",NULL, "%s", HU_FLAG_OK | HU_FLAG_QUICK_POLL, discharging_info },
-  { "ups.status", 0, 1, "UPS.PowerSummary.Charging", NULL, "%s", HU_FLAG_OK | HU_FLAG_QUICK_POLL, charging_info },
-  { "ups.status", 0, 1, "UPS.PowerSummary.ShutdownImminent", NULL, "%s", HU_FLAG_OK, shutdownimm_info },
-  { "ups.status", 0, 1, "UPS.PowerSummary.ACPresent", NULL, "%s", HU_FLAG_OK | HU_FLAG_QUICK_POLL, online_info },
-  /* { "ups.status", 0, 1, "UPS.PowerSummary.BelowRemainingCapacityLimit", NULL, "%s", HU_FLAG_OK, lowbatt_info }, broken! */
-  { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINPowerStatus", NULL, "%s", HU_FLAG_OK, belkin_overload_conversion },
-  { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINPowerStatus", NULL, "%s", HU_FLAG_OK, belkin_overheat_conversion },
-  { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINPowerStatus", NULL, "%s", HU_FLAG_OK, belkin_commfault_conversion },
-  { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINPowerStatus", NULL, "%s", HU_FLAG_OK, belkin_awaitingpower_conversion },
-  { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINPowerStatus", NULL, "%s", HU_FLAG_OK | HU_FLAG_QUICK_POLL, belkin_online_conversion },
-  { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINBatteryStatus", NULL, "%s", HU_FLAG_OK | HU_FLAG_QUICK_POLL, belkin_depleted_conversion },
-  { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINBatteryStatus", NULL, "%s", HU_FLAG_OK, belkin_replacebatt_conversion },
-  { "ups.status", 0, 1, "UPS.BELKINStatus.BELKINBatteryStatus", NULL, "%s", HU_FLAG_OK | HU_FLAG_QUICK_POLL, belkin_lowbatt_conversion },
+  { "BOOL", 0, 0, "UPS.PowerSummary.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, discharging_info },
+  { "BOOL", 0, 0, "UPS.PowerSummary.Charging", NULL, NULL, HU_FLAG_QUICK_POLL, charging_info },
+  { "BOOL", 0, 0, "UPS.PowerSummary.ShutdownImminent", NULL, NULL, 0, shutdownimm_info },
+  { "BOOL", 0, 0, "UPS.PowerSummary.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, online_info },
+  /* { "BOOL", 0, 0, "UPS.PowerSummary.BelowRemainingCapacityLimit", NULL, "%s", 0, lowbatt_info }, broken! */
+  { "BOOL", 0, 0, "UPS.BELKINStatus.BELKINPowerStatus", NULL, NULL, 0, belkin_overload_conversion },
+  { "BOOL", 0, 0, "UPS.BELKINStatus.BELKINPowerStatus", NULL, NULL, 0, belkin_overheat_conversion },
+  { "BOOL", 0, 0, "UPS.BELKINStatus.BELKINPowerStatus", NULL, NULL, 0, belkin_commfault_conversion },
+  { "BOOL", 0, 0, "UPS.BELKINStatus.BELKINPowerStatus", NULL, NULL, 0, belkin_awaitingpower_conversion },
+  { "BOOL", 0, 0, "UPS.BELKINStatus.BELKINPowerStatus", NULL, NULL, HU_FLAG_QUICK_POLL, belkin_online_conversion },
+  { "BOOL", 0, 0, "UPS.BELKINStatus.BELKINBatteryStatus", NULL, NULL, HU_FLAG_QUICK_POLL, belkin_depleted_conversion },
+  { "BOOL", 0, 0, "UPS.BELKINStatus.BELKINBatteryStatus", NULL, NULL, 0, belkin_replacebatt_conversion },
+  { "BOOL", 0, 0, "UPS.BELKINStatus.BELKINBatteryStatus", NULL, NULL, HU_FLAG_QUICK_POLL, belkin_lowbatt_conversion },
 
   /* Server side variables */
-  { "driver.version.internal", ST_FLAG_STRING, sizeof(DRIVER_VERSION), NULL, NULL, DRIVER_VERSION, HU_FLAG_ABSENT | HU_FLAG_OK, NULL },
-  { "driver.version.data", ST_FLAG_STRING, sizeof(BELKIN_HID_VERSION), NULL, NULL, BELKIN_HID_VERSION, HU_FLAG_ABSENT | HU_FLAG_OK, NULL },
+  { "driver.version.internal", ST_FLAG_STRING, sizeof(DRIVER_VERSION), NULL, NULL, DRIVER_VERSION, HU_FLAG_ABSENT, NULL },
+  { "driver.version.data", ST_FLAG_STRING, sizeof(BELKIN_HID_VERSION), NULL, NULL, BELKIN_HID_VERSION, HU_FLAG_ABSENT, NULL },
   
   /* instant commands. */
   /* split into subsets while waiting for extradata support
    * ie: test.battery.start quick
    */
-  { "test.battery.start.quick", 0, 0, "UPS.BELKINControls.BELKINTest", NULL, "1", HU_TYPE_CMD | HU_FLAG_OK, NULL },
-  { "test.battery.start.deep", 0, 0, "UPS.BELKINControls.BELKINTest", NULL, "2", HU_TYPE_CMD | HU_FLAG_OK, NULL },
-  { "test.battery.stop", 0, 0, "UPS.BELKINControls.BELKINTest", NULL, "3", HU_TYPE_CMD | HU_FLAG_OK, NULL },
-  { "beeper.on", 0, 0, "UPS.BELKINControls.BELKINAudibleAlarmControl", NULL, "2", HU_TYPE_CMD | HU_FLAG_OK, NULL },
-  { "beeper.off", 0, 0, "UPS.BELKINControls.BELKINAudibleAlarmControl", NULL, "3", HU_TYPE_CMD | HU_FLAG_OK, NULL },
-  { "load.off", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeShutdown", NULL, "1", HU_TYPE_CMD | HU_FLAG_OK, NULL },
+  { "test.battery.start.quick", 0, 0, "UPS.BELKINControls.BELKINTest", NULL, "1", HU_TYPE_CMD, NULL },
+  { "test.battery.start.deep", 0, 0, "UPS.BELKINControls.BELKINTest", NULL, "2", HU_TYPE_CMD, NULL },
+  { "test.battery.stop", 0, 0, "UPS.BELKINControls.BELKINTest", NULL, "3", HU_TYPE_CMD, NULL },
+  { "beeper.on", 0, 0, "UPS.BELKINControls.BELKINAudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },
+  { "beeper.off", 0, 0, "UPS.BELKINControls.BELKINAudibleAlarmControl", NULL, "3", HU_TYPE_CMD, NULL },
+  { "beeper.disable", 0, 0, "UPS.BELKINControls.BELKINAudibleAlarmControl", NULL, "1", HU_TYPE_CMD, NULL },
+  { "beeper.enable", 0, 0, "UPS.BELKINControls.BELKINAudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },
+  { "beeper.mute", 0, 0, "UPS.BELKINControls.BELKINAudibleAlarmControl", NULL, "3", HU_TYPE_CMD, NULL },
+  { "load.off", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeShutdown", NULL, "1", HU_TYPE_CMD, NULL },
+  { "load.on", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeStartup", NULL, "1", HU_TYPE_CMD, NULL },
+  { "shutdown.stayoff", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeShutdown", NULL, "20", HU_TYPE_CMD, NULL },
+  { "shutdown.return", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeStartup", NULL, "30", HU_TYPE_CMD, NULL },
+  { "shutdown.reboot", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL },
+  { "shutdown.stop", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeShutdown", NULL, "-1", HU_TYPE_CMD, NULL },
 
   /* Note: on my Belkin UPS, there is no way to implement
      shutdown.return or load.on, even though they should exist in
@@ -332,28 +342,12 @@ static hid_info_t belkin_hid2nut[] = {
   { NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
 };
 
-/* shutdown method for Belkin */
-static int belkin_shutdown(int ondelay, int offdelay) {
-	/* FIXME: ondelay, offdelay currently not used */
-	
-	/* Note: my Belkin does not have shutdown.return, and load.off
-	   does not come back after power returns. This is the best we
-	   can do. */
-	upsdebugx(2, "Trying load.off.");
-        if (instcmd("load.off", NULL) == STAT_INSTCMD_HANDLED) {
-                return 1;
-        }
-	upsdebugx(2, "Shutdown failed.");
-        return 0;
-}
-
 static char *belkin_format_model(HIDDevice_t *hd) {
-	char *model;
-	model = hd->Product ? hd->Product : "unknown";
-	if (strlen(model) == 0) {
-		model = "unknown";
+	if ((hd->Product) && (strlen(hd->Product) > 0)) {
+		return hd->Product;
 	}
-	return model;
+
+	return "unknown";
 }
 
 static char *belkin_format_mfr(HIDDevice_t *hd) {
@@ -378,7 +372,7 @@ static char *belkin_format_serial(HIDDevice_t *hd) {
 
 	/* try UPS.PowerSummary.iSerialNumber */
 	HIDGetItemString(udev, "UPS.PowerSummary.iSerialNumber",
-		serial, belkin_utab);
+		serial, sizeof(serial), belkin_utab);
 
 	if (strlen(serial) < 1) {
 		return NULL;
@@ -395,8 +389,8 @@ static int belkin_claim(HIDDevice_t *hd) {
 	if (hd->VendorID != BELKIN_VENDORID) {
 		return 0;
 	}
-	switch (hd->ProductID) {
-
+	switch (hd->ProductID)
+	{
 	/* accept any known UPS - add devices here as needed */
 	case 0x0980:  /* F6C800-UNV */
 	case 0x0900:  /* F6C900-UNV */
@@ -416,16 +410,9 @@ static int belkin_claim(HIDDevice_t *hd) {
 	default:
 		if (getval("productid")) {
 			return 1;
-		} else {
-			upsdebugx(1,
-"This Belkin device (%04x/%04x) is not (or perhaps not yet) supported\n"
-"by usbhid-ups. Please make sure you have an up-to-date version of NUT. If\n"
-"this does not fix the problem, try running the driver with the\n"
-"'-x productid=%04x' option. Please report your results to the NUT user's\n"
-"mailing list <nut-upsuser@lists.alioth.debian.org>.\n",
-						 hd->VendorID, hd->ProductID, hd->ProductID);
-			return 0;
 		}
+		possibly_supported("Belkin", hd);
+		return 0;
 	}
 }
 
@@ -433,8 +420,7 @@ subdriver_t belkin_subdriver = {
 	BELKIN_HID_VERSION,
 	belkin_claim,
 	belkin_utab,
-        belkin_hid2nut,
-	belkin_shutdown,
+	belkin_hid2nut,
 	belkin_format_model,
 	belkin_format_mfr,
 	belkin_format_serial,

@@ -328,7 +328,7 @@ static void set_transfer_voltage_low(int val) {
 	if (!ptr)
 		return;
 	high = atoi(ptr);
-	sprintf(response, "%d;%d", val, high);
+	snprintf(response, sizeof(response), "%d;%d", val, high);
 	do_command(SET, TRANSFER_VOLTAGE, response, NULL);
 }
 
@@ -360,7 +360,7 @@ static void set_transfer_voltage_high(int val) {
 	ptr = field(response, 1);
 	if (!ptr || val == atoi(ptr))
 		return;
-	sprintf(response, "%d;%d", low, val);
+	snprintf(response, sizeof(response), "%d;%d", low, val);
 	do_command(SET, TRANSFER_VOLTAGE, response, NULL);
 }
 
@@ -387,7 +387,7 @@ static void set_sensitivity(const char *val) {
 
 	for (i = 0; i < sizeof(sensitivity) / sizeof(sensitivity[0]); i++) {
 		if (!strcasecmp(val, sensitivity[i].name)) {
-			sprintf(parm, "%d", i);
+			snprintf(parm, sizeof(parm), "%d", i);
 			do_command(SET, VOLTAGE_SENSITIVITY, parm, NULL);
 			break;
 		}
@@ -408,7 +408,7 @@ static void auto_reboot(int enable) {
 		return;
 	ptr = field(response, 0);
 	if (!ptr || atoi(ptr) != mode) {
-		sprintf(parm, "%d", mode);
+		snprintf(parm, sizeof(parm), "%d", mode);
 		do_command(SET, AUTO_REBOOT, parm, NULL);
 	}
 }
@@ -420,14 +420,14 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "load.off")) {
 		for (i = 0; i < ups.outlet_banks; i++) {
-			sprintf(parm, "%d;1", i + 1);
+			snprintf(parm, sizeof(parm), "%d;1", i + 1);
 			do_command(SET, RELAY_OFF, parm, NULL);
 		}
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "load.on")) {
 		for (i = 0; i < ups.outlet_banks; i++) {
-			sprintf(parm, "%d;1", i + 1);
+			snprintf(parm, sizeof(parm), "%d;1", i + 1);
 			do_command(SET, RELAY_ON, parm, NULL);
 		}
 		return STAT_INSTCMD_HANDLED;
@@ -785,9 +785,9 @@ void upsdrv_shutdown(void)
 	auto_reboot(1);
 	/* in case the power is on, tell it to automatically reboot.  if
 	   it is off, this has no effect. */
-	sprintf(parm, "%d", 1); /* delay before reboot, in minutes */
+	snprintf(parm, sizeof(parm), "%d", 1); /* delay before reboot, in minutes */
 	do_command(SET, SHUTDOWN_RESTART, parm, NULL);
-	sprintf(parm, "%d", 5); /* delay before shutdown, in seconds */
+	snprintf(parm, sizeof(parm), "%d", 5); /* delay before shutdown, in seconds */
 	do_command(SET, SHUTDOWN_ACTION, parm, NULL);
 }
 

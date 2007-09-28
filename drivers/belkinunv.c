@@ -62,8 +62,9 @@
 				   
    COMMANDS:
 				   
-   beeper.off
-   beeper.on
+   beeper.disable
+   beeper.enable
+   beeper.mute
    reset.input.minmax
    shutdown.reboot              shut down load immediately for 1-2 minutes
    shutdown.reboot.graceful     shut down load after 40 seconds for 1-2 minutes
@@ -93,8 +94,7 @@
 #include "main.h"
 #include "serial.h"
 #include "belkinunv.h"
-#include <sys/ioctl.h>
-	
+
 /* somewhat arbitrary buffer size - the longest actually occuring
    message is 18 bytes for the F6C800-UNV. But since message length is
    arbitrary in principle, we allow for some extra bytes. */
@@ -221,19 +221,16 @@ static unsigned char belkin_checksum(unsigned char *buf, int n) {
 /* open serial port and switch to "smart" mode */
 static void belkin_nut_open_tty(void)
 {
-	int dtr_bit = TIOCM_DTR;
-	int rts_bit = TIOCM_RTS;
-
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
 
 	/* must clear DTR and set RTS for 1 second for UPS to go to
 	   "smart" mode */
-	ioctl(upsfd, TIOCMBIC, &dtr_bit);
-	ioctl(upsfd, TIOCMBIS, &rts_bit);
+	ser_set_dtr(upsfd, 0);
+	ser_set_rts(upsfd, 1);
 	sleep(1);
 
-	tcflush(upsfd, TCIOFLUSH);
+	ser_flush_io(upsfd);
 }
 
 /* receive Belkin message from UPS, check for well-formedness (leading
@@ -435,8 +432,6 @@ static int belkin_std_open_tty(const char *device) {
 	struct termios tios;
 	struct flock flock;
 	char buf[128];
-	const int tiocm_dtr = TIOCM_DTR;
-	const int tiocm_rts = TIOCM_RTS;
 	int r;
 	
 	/* open the device */
@@ -464,12 +459,12 @@ static int belkin_std_open_tty(const char *device) {
 	   be done for at least 0.25 seconds for the UPS to react. Ignore
 	   any errors, as this probably means we are not on a "real" serial
 	   port. */
-	ioctl(fd, TIOCMBIC, &tiocm_dtr);
-	ioctl(fd, TIOCMBIS, &tiocm_rts);
-	
+	ser_set_dtr(upsfd, 0);
+	ser_set_rts(upsfd, 1);
+
 	/* flush both directions of serial port: throw away all data in
 	   transit */
-	r = tcflush(fd, TCIOFLUSH);
+	r = ser_flush_io(fd);
 	if (r == -1) {
 		close(fd);
 		return -1;
@@ -961,6 +956,9 @@ void upsdrv_initinfo(void)
 	dstate_addcmd("test.failure.stop");
 	dstate_addcmd("test.battery.start");
 	dstate_addcmd("test.battery.stop");
+	dstate_addcmd("beeper.disable");
+	dstate_addcmd("beeper.enable");
+	dstate_addcmd("beeper.mute");
 	dstate_addcmd("beeper.on");
 	dstate_addcmd("beeper.off");
 	dstate_addcmd("shutdown.stayoff");
@@ -1152,6 +1150,20 @@ int instcmd(const char *cmdname, const char *extra)
 
 	   We use test.battery.start to initiate a "10-second battery test".  */
 
+	if (!strcasecmp(cmdname, "beeper.off")) {
+		/* compatibility mode for old command */
+		upslogx(LOG_WARNING,
+			"The 'beeper.off' command has been renamed to 'beeper.disable'");
+		return instcmd("beeper.disable", NULL);
+	}
+
+	if (!strcasecmp(cmdname, "beeper.on")) {
+		/* compatibility mode for old command */
+		upslogx(LOG_WARNING,
+			"The 'beeper.on' command has been renamed to 'beeper.enable'");
+		return instcmd("beeper.enable", NULL);
+	}
+
 	if (!strcasecmp(cmdname, "test.failure.start")) {
 		r = belkin_nut_write_int(REG_TESTSTATUS, 2);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
@@ -1168,11 +1180,15 @@ int instcmd(const char *cmdname, const char *extra)
 		r = belkin_nut_write_int(REG_TESTSTATUS, 3);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
-	if (!strcasecmp(cmdname, "beeper.on")) {
+	if (!strcasecmp(cmdname, "beeper.disable")) {
+		r = belkin_nut_write_int(REG_ALARMSTATUS, 1);
+		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
+	}
+	if (!strcasecmp(cmdname, "beeper.enable")) {
 		r = belkin_nut_write_int(REG_ALARMSTATUS, 2);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}
-	if (!strcasecmp(cmdname, "beeper.off")) {
+	if (!strcasecmp(cmdname, "beeper.mute")) {
 		r = belkin_nut_write_int(REG_ALARMSTATUS, 3);
 		return STAT_INSTCMD_HANDLED;  /* Future: failure if r==-1 */
 	}

@@ -25,13 +25,13 @@
 #include "usbhid-ups.h"
 #include "mge-hid.h"
 #include "extstate.h" /* for ST_FLAG_STRING */
-#include "dstate.h"   /* for STAT_INSTCMD_HANDLED */
 #include "main.h"     /* for getval() */
 #include "common.h"
 
-#define MGE_HID_VERSION	"MGE HID 1.0"
+#define MGE_HID_VERSION	"MGE HID 1.01"
 
 #define MGE_VENDORID 0x0463
+
 
 /* returns statically allocated string - must not use it again before
    done with result! */
@@ -52,6 +52,45 @@ static char *mge_battery_voltage_nominal_fun(long value) {
 static info_lkp_t mge_battery_voltage_nominal[] = {
 	{ 0, NULL, mge_battery_voltage_nominal_fun }
 };
+
+/* returns statically allocated string - must not use it again before
+   done with result! */
+static char *mge_powerfactor_conversion_fun(long value) {
+	static char buf[20];
+
+	snprintf(buf, sizeof(buf), "%.2f", (double)value / 100);
+	return buf;
+}
+
+static info_lkp_t mge_powerfactor_conversion[] = {
+	{ 0, NULL, mge_powerfactor_conversion_fun }
+};
+
+/* returns statically allocated string - must not use it again before
+   done with result! */
+static char *mge_battery_capacity_fun(long value) {
+	static char buf[10];
+
+	snprintf(buf, sizeof(buf), "%.2f", (double)value / 3600);
+	return buf;
+}
+
+static info_lkp_t mge_battery_capacity[] = {
+	{ 0, NULL, mge_battery_capacity_fun }
+};
+
+static info_lkp_t mge_sensitivity_info[] = {
+	{ 0, "normal", NULL },
+	{ 1, "high", NULL },
+	{ 2, "low", NULL },
+	{ 0, NULL, NULL }
+};
+
+static info_lkp_t mge_emergency_stop[] = {
+	{ 1, "Emergency stop!", NULL },
+	{ 0, NULL, NULL }
+};
+
 
 /* --------------------------------------------------------------- */
 /*      Vendor-specific usage table */
@@ -172,13 +211,9 @@ static usage_lkp_t mge_usage_lkp[] = {
 	{ "iModel",				0xffff00f0 },
 	{ "iVersion",				0xffff00f1 },
 	/* 0xffff00f2-0xffff00ff	=>	Reserved */
-	/* MGE indexed collections */
-	{ "[1]", 				0x00ff0001 },
-	{ "[2]",				0x00ff0002 },
-	{ "[3]",				0x00ff0003 },
-	{ "[4]",				0x00ff0004 },
+
 	/* end of table */
-	{  "\0",				0x00000000 }
+	{ NULL, 0 }
 };
 
 static usage_tables_t mge_utab[] = {
@@ -186,6 +221,7 @@ static usage_tables_t mge_utab[] = {
 	hid_usage_lkp,
 	NULL,
 };
+
 
 /* --------------------------------------------------------------- */
 /*      Model Name formating entries                               */
@@ -285,6 +321,7 @@ static models_name_t mge_model_names [] =
 	{ NULL, NULL, -1, "Generic MGE HID model" }
 };
 
+
 /* --------------------------------------------------------------- */
 /*                 Data lookup table (HID <-> NUT)                 */
 /* --------------------------------------------------------------- */
@@ -292,261 +329,198 @@ static models_name_t mge_model_names [] =
 static hid_info_t mge_hid2nut[] =
 {
 	/* Server side variables */
-	{ "driver.version.internal", ST_FLAG_STRING, 5, NULL, NULL,
-		DRIVER_VERSION, HU_FLAG_ABSENT | HU_FLAG_OK, NULL },
-	{ "driver.version.data", ST_FLAG_STRING, 11, NULL, NULL,
-		MGE_HID_VERSION, HU_FLAG_ABSENT | HU_FLAG_OK, NULL },
+	{ "driver.version.internal", 0, 0, NULL, NULL, DRIVER_VERSION, HU_FLAG_ABSENT, NULL },
+	{ "driver.version.data", 0, 0, NULL, NULL, MGE_HID_VERSION, HU_FLAG_ABSENT, NULL },
 
 	/* Battery page */
-	{ "battery.charge", 0, 1, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "battery.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 5, 
-	"UPS.PowerSummary.RemainingCapacityLimitSetting", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL },
-	{ "battery.charge.low", ST_FLAG_STRING, 5, "UPS.PowerSummary.RemainingCapacityLimit", NULL,
-	"%.0f", HU_FLAG_OK | HU_FLAG_STATIC , NULL }, /* Read only */
-	{ "battery.charge.restart", ST_FLAG_RW | ST_FLAG_STRING, 3,
-	"UPS.PowerSummary.RestartLevel", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL },
-	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "battery.temperature", 0, 0, 
-		"UPS.BatterySystem.Battery.Temperature", NULL, "%.1f", HU_FLAG_OK, NULL },
-	{ "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", HU_FLAG_OK | HU_FLAG_STATIC, stringid_conversion },
-	{ "battery.voltage",  0, 0, "UPS.PowerSummary.Voltage", NULL, "%.1f", HU_FLAG_OK, NULL },
-	{ "battery.voltage.nominal", 0, 0, "UPS.BatterySystem.ConfigVoltage", NULL,
-		"%.1f", HU_FLAG_OK, NULL },
-	{ "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL,
-		"%s", HU_FLAG_OK | HU_FLAG_STATIC, mge_battery_voltage_nominal },
+	{ "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", 0, NULL },
+	{ "battery.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerSummary.RemainingCapacityLimitSetting", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "battery.charge.low", 0, 0, "UPS.PowerSummary.RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_STATIC , NULL }, /* Read only */
+	{ "battery.charge.restart", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.PowerSummary.RestartLevel", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "battery.capacity", 0, 0, "UPS.BatterySystem.Battery.DesignCapacity", NULL, "%s", HU_FLAG_STATIC, mge_battery_capacity },	/* conversion needed from As to Ah */
+	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", 0, NULL },
+	{ "battery.temperature", 0, 0, "UPS.BatterySystem.Battery.Temperature", NULL, "%.1f", 0, NULL },
+	{ "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
+	{ "battery.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, "%.1f", 0, NULL },
+	{ "battery.voltage.nominal", 0, 0, "UPS.BatterySystem.ConfigVoltage", NULL, "%.0f", HU_FLAG_STATIC, NULL },
+	{ "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%s", HU_FLAG_STATIC, mge_battery_voltage_nominal },
+	{ "battery.protection", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.BatterySystem.Battery.DeepDischargeProtection", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
+	{ "battery.energysave", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Input.[3].EnergySaving", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
 
 	/* UPS page */
-	{ "ups.load", 0, 1, "UPS.PowerSummary.PercentLoad", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5,
-		"UPS.PowerSummary.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL},
-	{ "ups.delay.reboot", ST_FLAG_RW | ST_FLAG_STRING, 5,
-		"UPS.PowerSummary.DelayBeforeReboot", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL},
-	{ "ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 5,
-		"UPS.PowerSummary.DelayBeforeStartup", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL},
-	{ "ups.test.result", 0, 0,
-		"UPS.BatterySystem.Battery.Test", NULL, "%s", HU_FLAG_OK | HU_FLAG_SEMI_STATIC, &test_read_info[0] },
-	{ "ups.test.interval", ST_FLAG_RW | ST_FLAG_STRING, 8,
-		"UPS.BatterySystem.Battery.TestPeriod", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL },
-	{ "ups.beeper.status", 0, 1, 
-	"UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", HU_FLAG_OK | HU_FLAG_SEMI_STATIC, &beeper_info[0] },
-	{ "ups.temperature", 0, 0, 
-		"UPS.PowerSummary.Temperature", NULL, "%.1f", HU_FLAG_OK, NULL },
-	/* FIXME: miss ups.power */
-	{ "ups.power.nominal", ST_FLAG_STRING, 5, "UPS.Flow.[4].ConfigApparentPower",
-		NULL, "%.0f",HU_FLAG_OK, NULL },
+	{ "ups.firmware", 0, 0, "UPS.PowerSummary.iVersion", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
+	{ "ups.load", 0, 0, "UPS.PowerSummary.PercentLoad", NULL, "%.0f", 0, NULL },
+	{ "ups.load.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.Flow.[4].ConfigPercentLoad", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "ups.delay.shutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "%.0f", 0, NULL},
+	{ "ups.delay.reboot", 0, 0, "UPS.PowerSummary.DelayBeforeReboot", NULL, "%.0f", 0, NULL},
+	{ "ups.delay.start", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, "%.0f", 0, NULL},
+	{ "ups.test.result", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "%s", HU_FLAG_SEMI_STATIC, test_read_info },
+	{ "ups.test.interval", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.BatterySystem.Battery.TestPeriod", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "ups.beeper.status", 0 ,0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", HU_FLAG_SEMI_STATIC, beeper_info },
+	{ "ups.temperature", 0, 0, "UPS.PowerSummary.Temperature", NULL, "%.1f", 0, NULL },
+	{ "ups.power", 0, 0, "UPS.PowerConverter.Output.ApparentPower", NULL, "%.0f", 0, NULL },
+	{ "ups.power.nominal", 0, 0, "UPS.Flow.[4].ConfigApparentPower", NULL, "%.0f", HU_FLAG_STATIC, NULL },
+	{ "ups.realpower", 0, 0, "UPS.PowerConverter.Output.ActivePower", NULL, "%.0f", 0, NULL },
+	{ "ups.realpower.nominal", 0, 0, "UPS.Flow.[4].ConfigActivePower", NULL, "%.0f", HU_FLAG_STATIC, NULL },
+	{ "ups.start.auto", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Input.[1].AutomaticRestart", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
+	{ "ups.start.battery", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Input.[3].StartOnBattery", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
+	{ "ups.start.reboot", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.ForcedReboot", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
 
-	/* Special case: ups.status */
-	{ "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, 
-		"%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &online_info[0] },
-	{ "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.Discharging", NULL, 
-		"%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &discharging_info[0] },
-	{ "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.Charging", NULL, 
-		"%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &charging_info[0] },
-	{ "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.ShutdownImminent", NULL,
-		"%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &shutdownimm_info[0] },
-	{ "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL,
-		"%.0f", HU_FLAG_OK | HU_FLAG_QUICK_POLL, &lowbatt_info[0] },
-	{ "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.Overload", NULL,
-		"%.0f", HU_FLAG_OK, &overload_info[0] },
-	{ "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL,
-		"%.0f", HU_FLAG_OK, &replacebatt_info[0] },
-	{ "ups.status", 0, 1, "UPS.PowerConverter.Input.[1].PresentStatus.Buck", NULL,
-		"%.0f", HU_FLAG_OK, &trim_info[0] },
-	{ "ups.status", 0, 1, "UPS.PowerConverter.Input.[1].PresentStatus.Boost", NULL,
-		"%.0f", HU_FLAG_OK, &boost_info[0] },
-	{ "ups.status", 0, 1, "UPS.PowerSummary.PresentStatus.Good", NULL,
-		"%.0f", HU_FLAG_OK, &off_info[0] },  
-	/* FIXME: extend ups.status for BYPASS: */
+	/* Special case: boolean values that are mapped to ups.status and ups.alarm */
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, online_info },
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, discharging_info },
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Charging", NULL, NULL, HU_FLAG_QUICK_POLL, charging_info },
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL, NULL, HU_FLAG_QUICK_POLL, lowbatt_info },
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Overload", NULL, NULL, 0, overload_info },
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL, NULL, 0, replacebatt_info },
+	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.Buck", NULL, NULL, 0, trim_info },
+	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.Boost", NULL, NULL, 0, boost_info },
+	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.VoltageOutOfRange", NULL, NULL, 0, vrange_info },
+	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.FrequencyOutOfRange", NULL, NULL, 0, frange_info },
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Good", NULL, NULL, 0, off_info },
 	/* Manual bypass */
-	{ "ups.status", 0, 1, "UPS.PowerConverter.Input[4].PresentStatus.Used", NULL,
-		"%.0f", HU_FLAG_OK, &bypass_info[0] },
+	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[4].PresentStatus.Used", NULL, NULL, 0, bypass_info },
+	/* { "BOOL", 0, 0, "UPS.PowerConverter.Input.[3].PresentStatus.Used", NULL, NULL, 0, onbatt_info }, */
 	/* Automatic bypass */
-	{ "ups.status", 0, 1, "UPS.PowerConverter.Input[2].PresentStatus.Used", NULL,
-		"%.0f", HU_FLAG_OK, &bypass_info[0] },
+	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[2].PresentStatus.Used", NULL, NULL, 0, bypass_info },
+	/* { "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.Used", NULL, NULL, 0, online_info }, */
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.FanFailure", NULL, NULL, 0, fanfail_info },
+	{ "BOOL", 0, 0, "UPS.BatterySystem.Battery.PresentStatus.Present", NULL, NULL, 0, nobattery_info },
+	{ "BOOL", 0, 0, "UPS.BatterySystem.Charger.PresentStatus.InternalFailure", NULL, NULL, 0, chargerfail_info },
+	{ "BOOL", 0, 0, "UPS.BatterySystem.Charger.PresentStatus.VoltageTooHigh", NULL, NULL, 0, battvolthi_info },
+	{ "BOOL", 0, 0, "UPS.BatterySystem.Charger.PresentStatus.VoltageTooLow", NULL, NULL, 0, battvoltlo_info },
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.InternalFailure", NULL, NULL, 0, commfault_info },
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.OverTemperature", NULL, NULL, 0, overheat_info },
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ShutdownImminent", NULL, NULL, 0, shutdownimm_info },
+
+	/* Vendor specific ups.alarm */
+	{ "ups.alarm", 0, 0, "UPS.PowerSummary.PresentStatus.EmergencyStop", NULL, NULL, 0, mge_emergency_stop },
 
 	/* Input page */
-	{ "input.voltage", 0, 0, "UPS.PowerConverter.Input.[1].Voltage", NULL, "%.1f", HU_FLAG_OK, NULL },
-	{ "input.frequency", 0, 0, "UPS.PowerConverter.Input.[1].Frequency", NULL, "%.1f", HU_FLAG_OK, NULL },
+	{ "input.voltage", 0, 0, "UPS.PowerConverter.Input.[1].Voltage", NULL, "%.1f", 0, NULL },
+	{ "input.voltage.nominal", 0, 0, "UPS.Flow.[1].ConfigVoltage", NULL, "%.0f", HU_FLAG_STATIC, NULL },
+	{ "input.voltage.extended", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.ExtendedVoltageMode", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
+	{ "input.frequency", 0, 0, "UPS.PowerConverter.Input.[1].Frequency", NULL, "%.1f", 0, NULL },
+	{ "input.frequency.nominal", 0, 0, "UPS.Flow.[1].ConfigFrequency", NULL, "%.0f", HU_FLAG_STATIC, NULL },
+	{ "input.frequency.extended", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.ExtendedFrequencyMode", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
 	/* same as "input.transfer.boost.low" */
-	{ "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 5,
-		"UPS.PowerConverter.Output.LowVoltageTransfer", NULL, "%.1f", HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL },
-	{ "input.transfer.boost.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.LowVoltageBoostTransfer",NULL, "%.1f", HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL },
-	{ "input.transfer.boost.high", ST_FLAG_RW | ST_FLAG_STRING, 5,
-		"UPS.PowerConverter.Output.HighVoltageBoostTransfer", NULL, "%.1f", HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL },
-	{ "input.transfer.trim.low", ST_FLAG_RW | ST_FLAG_STRING, 5,
-		"UPS.PowerConverter.Output.LowVoltageBuckTransfer", NULL, "%.1f", HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL },
+	{ "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.LowVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "input.transfer.boost.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.LowVoltageBoostTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "input.transfer.boost.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.HighVoltageBoostTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "input.transfer.trim.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.LowVoltageBuckTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	/* same as "input.transfer.trim.high" */
-	{ "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 5,
-		"UPS.PowerConverter.Output.HighVoltageTransfer", NULL, "%.1f", HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL },
-	{ "input.transfer.trim.high", ST_FLAG_RW | ST_FLAG_STRING, 5,
-		"UPS.PowerConverter.Output.HighVoltageBuckTransfer", NULL, "%.1f", HU_FLAG_OK | HU_FLAG_SEMI_STATIC, NULL },
+	{ "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.HighVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "input.transfer.trim.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.HighVoltageBuckTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "input.sensitivity", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerConverter.Output.SensitivityMode", NULL, "%s", HU_FLAG_SEMI_STATIC, mge_sensitivity_info },
 
 	/* Output page */
-	{ "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", NULL, "%.1f", HU_FLAG_OK, NULL },
-	{ "output.current", 0, 0, "UPS.PowerConverter.Output.Current", NULL, "%.2f", HU_FLAG_OK, NULL },
-	{ "output.frequency", 0, 0, "UPS.PowerConverter.Output.Frequency", NULL, "%.1f", HU_FLAG_OK, NULL },
+	{ "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", NULL, "%.1f", 0, NULL },
+	{ "output.voltage.nominal", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.Flow.[4].ConfigVoltage", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "output.current", 0, 0, "UPS.PowerConverter.Output.Current", NULL, "%.2f", 0, NULL },
+	{ "output.powerfactor", 0, 0, "UPS.PowerConverter.Output.PowerFactor", NULL, "%s", 0, mge_powerfactor_conversion },
+	{ "output.frequency", 0, 0, "UPS.PowerConverter.Output.Frequency", NULL, "%.1f", 0, NULL },
+	{ "output.frequency.nominal", 0, 0, "UPS.Flow.[4].ConfigFrequency", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 
 	/* Outlet page (using MGE UPS SYSTEMS - PowerShare technology) */
-	/* TODO: add an iterative semantic [%x] to factorise outlets */
-	{ "outlet.0.id", 0, 0, "UPS.OutletSystem.Outlet.[1].OutletID",
-		NULL, "%.0f", HU_FLAG_OK | HU_FLAG_STATIC, NULL },
-	{ "outlet.0.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[1].OutletID",
-		NULL, "Main Outlet", HU_FLAG_ABSENT | HU_FLAG_OK | HU_FLAG_STATIC, NULL },
-	{ "outlet.0.switchable", 0, 0, "UPS.OutletSystem.Outlet.[1].PresentStatus.Switchable",
-		NULL, "%s", HU_FLAG_OK | HU_FLAG_STATIC, &yes_no_info[0] },
-	{ "outlet.1.id", 0, 0, "UPS.OutletSystem.Outlet.[2].OutletID",
-		NULL, "%.0f", HU_FLAG_OK | HU_FLAG_STATIC, NULL },	
-	{ "outlet.1.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[2].OutletID",
-		NULL, "PowerShare Outlet 1", HU_FLAG_ABSENT | HU_FLAG_OK | HU_FLAG_STATIC, NULL },
-	{ "outlet.1.switchable", 0, 0, "UPS.OutletSystem.Outlet.[2].PresentStatus.Switchable",
-	NULL, "%s", HU_FLAG_OK | HU_FLAG_STATIC, &yes_no_info[0] },
-	{ "outlet.1.status", ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet.[2].PresentStatus.SwitchOn/Off",
-	NULL, "%s", HU_FLAG_OK, &on_off_info[0] },
+	{ "outlet.0.id", 0, 0, "UPS.OutletSystem.Outlet.[1].OutletID", NULL, "%.0f", HU_FLAG_STATIC, NULL },
+	{ "outlet.0.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[1].OutletID", NULL, "Main Outlet",
+		HU_FLAG_ABSENT | HU_FLAG_STATIC, NULL },
+	{ "outlet.0.switchable", 0, 0, "UPS.OutletSystem.Outlet.[1].PresentStatus.Switchable", NULL, "%s", HU_FLAG_STATIC, yes_no_info },
+	{ "outlet.1.id", 0, 0, "UPS.OutletSystem.Outlet.[2].OutletID", NULL, "%.0f", HU_FLAG_STATIC, NULL },
+	{ "outlet.1.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[2].OutletID", NULL, "PowerShare Outlet 1", HU_FLAG_ABSENT | HU_FLAG_STATIC, NULL },
+	{ "outlet.1.switchable", 0, 0, "UPS.OutletSystem.Outlet.[2].PresentStatus.Switchable", NULL, "%s", HU_FLAG_STATIC, yes_no_info },
+	{ "outlet.1.status", 0, 0, "UPS.OutletSystem.Outlet.[2].PresentStatus.SwitchOn/Off", NULL, "%s", 0, on_off_info },
 	/* For low end models, with 1 non backup'ed outlet */
-	{ "outlet.1.status", ST_FLAG_STRING, 3, "UPS.PowerSummary.PresentStatus.ACPresent",
-	NULL, "%s", HU_FLAG_OK, &on_off_info[0] },
-	{ "outlet.1.autoswitch.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 3,
-	  "UPS.OutletSystem.Outlet.[2].RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_OK, NULL },
-	/* FIXME: use UPS.OutletSystem.Outlet.[x].ShutdownTimer */
-	{ "outlet.1.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5, 
-	"UPS.OutletSystem.Outlet.[2].ShutdownTimer", NULL, "%.0f", HU_FLAG_OK, NULL },
-	/* FIXME: use UPS.OutletSystem.Outlet.[x].StartupTimer */
-	{ "outlet.1.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 5,
-	"UPS.OutletSystem.Outlet.[2].StartupTimer", NULL, "%.0f", HU_FLAG_OK, NULL },
-	{ "outlet.2.id", 0, 0, "UPS.OutletSystem.Outlet.[3].OutletID", NULL, "%.0f", HU_FLAG_OK | HU_FLAG_STATIC, NULL },	
-	{ "outlet.2.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[3].OutletID",
-	  NULL, "PowerShare Outlet 2", HU_FLAG_ABSENT | HU_FLAG_OK | HU_FLAG_STATIC, NULL },
-	{ "outlet.2.switchable", 0, 0, "UPS.OutletSystem.Outlet.[3].PresentStatus.Switchable",
-	NULL, "%s", HU_FLAG_OK | HU_FLAG_STATIC, &yes_no_info[0] },
-	{ "outlet.2.status", ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet.[3].PresentStatus.SwitchOn/Off",
-	NULL, "%s", HU_FLAG_OK, &on_off_info[0] },
-	{ "outlet.2.autoswitch.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 3,
-	"UPS.OutletSystem.Outlet.[3].RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_OK, NULL },
-	/* FIXME: use UPS.OutletSystem.Outlet.[x].ShutdownTimer */
-	{ "outlet.2.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5,
-	"UPS.OutletSystem.Outlet.[3].ShutdownTimer", NULL, "%.0f", HU_FLAG_OK, NULL },
-	/* FIXME: use UPS.OutletSystem.Outlet.[x].StartupTimer */
-	{ "outlet.2.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 5,
-	"UPS.OutletSystem.Outlet.[3].StartupTimer", NULL, "%.0f", HU_FLAG_OK, NULL },
+	{ "outlet.1.status", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, "%s", 0, on_off_info },
+	{ "outlet.1.autoswitch.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet.[2].RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "outlet.1.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[2].ShutdownTimer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "outlet.1.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[2].StartupTimer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "outlet.2.id", 0, 0, "UPS.OutletSystem.Outlet.[3].OutletID", NULL, "%.0f", HU_FLAG_STATIC, NULL },
+	{ "outlet.2.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[3].OutletID", NULL, "PowerShare Outlet 2", HU_FLAG_ABSENT | HU_FLAG_STATIC, NULL },
+	{ "outlet.2.switchable", 0, 0, "UPS.OutletSystem.Outlet.[3].PresentStatus.Switchable", NULL, "%s", HU_FLAG_STATIC, yes_no_info },
+	{ "outlet.2.status", 0, 0, "UPS.OutletSystem.Outlet.[3].PresentStatus.SwitchOn/Off", NULL, "%s", 0, on_off_info },
+	{ "outlet.2.autoswitch.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet.[3].RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "outlet.2.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[3].ShutdownTimer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "outlet.2.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[3].StartupTimer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 
 	/* instant commands. */
 	/* splited into subset while waiting for extradata support
 	* ie: test.battery.start quick
 	*/
-	{ "test.battery.start.quick", 0, 0,
-	"UPS.BatterySystem.Battery.Test", NULL, "1", /* point to good value */
-	HU_TYPE_CMD | HU_FLAG_OK, &test_write_info[0] }, /* TODO: lookup needed? */
-	{ "test.battery.start.deep", 0, 0,
-	"UPS.BatterySystem.Battery.Test", NULL, "2", /* point to good value */
-	HU_TYPE_CMD | HU_FLAG_OK, &test_write_info[0] },
-	{ "test.battery.stop", 0, 0,
-	"UPS.BatterySystem.Battery.Test", NULL, "3", /* point to good value */
-	HU_TYPE_CMD | HU_FLAG_OK, &test_write_info[0] },
-	{ "load.off", 0, 0,
-	"UPS.PowerSummary.DelayBeforeShutdown", NULL, "0", /* point to good value */
-	HU_TYPE_CMD | HU_FLAG_OK, NULL },
-	{ "load.on", 0, 0,
-	"UPS.PowerSummary.DelayBeforeStartup", NULL, "0", /* point to good value */
-	HU_TYPE_CMD | HU_FLAG_OK, NULL },
-	{ "beeper.off", 0, 0,
-	"UPS.PowerSummary.AudibleAlarmControl", NULL, "1", /* point to good value */
-	HU_TYPE_CMD | HU_FLAG_OK, NULL },
-	{ "beeper.on", 0, 0,
-	"UPS.PowerSummary.AudibleAlarmControl", NULL, "2", /* point to good value */
-	HU_TYPE_CMD | HU_FLAG_OK, NULL },
-	/* FIXME: add beeper.mute , value "3" */
+	{ "test.battery.start.quick", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "1", HU_TYPE_CMD, NULL },
+	{ "test.battery.start.deep", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "2", HU_TYPE_CMD, NULL },
+	{ "test.battery.stop", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "3", HU_TYPE_CMD, NULL },
+	{ "load.off", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "0", HU_TYPE_CMD, NULL },
+	{ "load.on", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, "0", HU_TYPE_CMD, NULL },
+	{ "shutdown.stayoff", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "20", HU_TYPE_CMD, NULL },
+	{ "shutdown.return", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, "30", HU_TYPE_CMD, NULL },
+	{ "shutdown.reboot", 0, 0, "UPS.PowerSummary.DelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL},
+	{ "shutdown.stop", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "-1", HU_TYPE_CMD, NULL },
+	{ "beeper.off", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "1", HU_TYPE_CMD, NULL },
+	{ "beeper.on", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },
+	{ "beeper.mute", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "3", HU_TYPE_CMD, NULL },
+	{ "beeper.disable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "1", HU_TYPE_CMD, NULL },
+	{ "beeper.enable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },
 
 	/* Command for the outlet collection */
-	/* FIXME: not existing in new-names.txt => complete it or use "load.off {all, outletX}" ? */
-	{ "outlet.1.load.off", 0, 0, "UPS.OutletSystem.Outlet.[2].DelayBeforeShutdown",
-	NULL, "0", HU_TYPE_CMD | HU_FLAG_OK, NULL },
-	{ "outlet.1.load.on", 0, 0, "UPS.OutletSystem.Outlet.[2].DelayBeforeStartup",
-	NULL, "0", HU_TYPE_CMD | HU_FLAG_OK, NULL },
-	{ "outlet.2.load.off", 0, 0, "UPS.OutletSystem.Outlet.[3].DelayBeforeShutdown",
-	NULL, "0", HU_TYPE_CMD | HU_FLAG_OK, NULL },
-	{ "outlet.2.load.on", 0, 0, "UPS.OutletSystem.Outlet.[3].DelayBeforeStartup",
-	NULL, "0", HU_TYPE_CMD | HU_FLAG_OK, NULL },
+	{ "outlet.1.load.off", 0, 0, "UPS.OutletSystem.Outlet.[2].DelayBeforeShutdown", NULL, "0", HU_TYPE_CMD, NULL },
+	{ "outlet.1.load.on", 0, 0, "UPS.OutletSystem.Outlet.[2].DelayBeforeStartup", NULL, "0", HU_TYPE_CMD, NULL },
+	{ "outlet.2.load.off", 0, 0, "UPS.OutletSystem.Outlet.[3].DelayBeforeShutdown", NULL, "0", HU_TYPE_CMD, NULL },
+	{ "outlet.2.load.on", 0, 0, "UPS.OutletSystem.Outlet.[3].DelayBeforeStartup", NULL, "0", HU_TYPE_CMD, NULL },
 
-  /* TODO: bypass.start/stop, shutdown.return/stayoff/stop/reboot[.graceful] */
-
-  /* end of structure. */
-  { NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
+	/* end of structure. */
+	{ NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
 };
-
-/* shutdown method for MGE */
-static int mge_shutdown(int ondelay, int offdelay) {
-	char delay[7];
-
-	/* 1) set DelayBeforeStartup */
-	sprintf(delay, "%i", ondelay);
-	if (setvar("ups.delay.start", delay) != STAT_SET_HANDLED) {
-		upsdebugx(2, "Shutoff command failed (setting ondelay)");
-		return 0;
-	}	
-
-	/* 2) set DelayBeforeShutdown */
-	sprintf(delay, "%i", offdelay);
-	if (setvar("ups.delay.shutdown", delay) == STAT_SET_HANDLED) {
-		return 1;
-	}
-	upsdebugx(2, "Shutoff command failed (setting offdelay)");
-	return 0;
-}
 
 /* All the logic for finely formatting the MGE model name */
 static char *get_model_name(const char *iProduct, char *iModel)
 {
-  models_name_t *model = NULL;
+	models_name_t *model = NULL;
 
-  upsdebugx(2, "get_model_name(%s, %s)\n", iProduct, iModel);
+	upsdebugx(2, "get_model_name(%s, %s)\n", iProduct, iModel);
 
-  /* Search for formatting rules */
-  for ( model = mge_model_names ; model->iProduct != NULL ; model++ )
+	/* Search for formatting rules */
+	for (model = mge_model_names; model->iProduct; model++)
 	{
-	  upsdebugx(2, "comparing with: %s", model->finalname);
-	  /* FIXME: use comp_size if not -1 */
-	  if ( (!strncmp(iProduct, model->iProduct, strlen(model->iProduct)))
-		   && (!strncmp(iModel, model->iModel, strlen(model->iModel))) )
-		{
-		  upsdebugx(2, "Found %s\n", model->finalname);
-		  break;
-		}
+		upsdebugx(2, "comparing with: %s", model->finalname);
+
+		if (strncmp(iProduct, model->iProduct, strlen(model->iProduct)))
+			continue;
+
+		if (strncmp(iModel, model->iModel, strlen(model->iModel)))
+			continue;
+
+		upsdebugx(2, "Found %s\n", model->finalname);
+		break;
 	}
-  /* FIXME: if we end up with model->iProduct == NULL
-   * then process name in a generic way (not yet supported models!)
-   * Will the following do?
-   */
-  if (model->iProduct == NULL) {
-	  return iModel;
-  }
-  return model->finalname;
+
+	return model->finalname;
 }
 
 static char *mge_format_model(HIDDevice_t *hd) {
 	char *product;
-	char *model;
-        char *string;
-	float appPower;
-	unsigned char rawbuf[100];
+	char model[64];
+	double value;
 
-	/* Get iModel and iProduct strings */
+	/* Get iProduct and iModel strings */
 	product = hd->Product ? hd->Product : "unknown";
-	if ((string = HIDGetItemString(udev, "UPS.PowerSummary.iModel", rawbuf, mge_utab)) != NULL)
-		model = get_model_name(product, string);
-	else
-	{
-		/* Try with ConfigApparentPower */
-		if (HIDGetItemValue(udev, "UPS.Flow.[4].ConfigApparentPower", &appPower, mge_utab) == 1 )
-		{
-			string = xmalloc(16);
-			sprintf(string, "%i", (int)appPower);
-			model = get_model_name(product, string);
-			free (string);
-		}
-		else
-			model = product;
+
+	HIDGetItemString(udev, "UPS.PowerSummary.iModel", model, sizeof(model), mge_utab);
+
+	/* Fallback to ConfigApparentPower */
+	if ((strlen(model) < 1) && (HIDGetItemValue(udev, "UPS.Flow.[4].ConfigApparentPower", &value, mge_utab) == 1 )) {
+		snprintf(model, sizeof(model), "%i", (int)value);
 	}
-	return model;
+
+	if (strlen(model) < 1) {
+		return product;
+	}
+
+	snprintf(model, sizeof(model), "%s", get_model_name(product, model));
+
+	free(hd->Product);
+	hd->Product = strdup(model);
+	return hd->Product;
 }
 
 static char *mge_format_mfr(HIDDevice_t *hd) {
@@ -563,8 +537,8 @@ static int mge_claim(HIDDevice_t *hd) {
 	if (hd->VendorID != MGE_VENDORID) {
 		return 0;
 	}
-	switch (hd->ProductID) {
-
+	switch (hd->ProductID)
+	{
 	case  0x0001:
 	case  0xffff:
 		return 1;  /* accept known UPSs */
@@ -572,16 +546,10 @@ static int mge_claim(HIDDevice_t *hd) {
 	default:
 		if (getval("productid")) {
 			return 1;
-		} else {
-			upsdebugx(1,
-"This MGE device (%04x/%04x) is not (or perhaps not yet) supported\n"
-"by usbhid-ups. Please make sure you have an up-to-date version of NUT. If\n"
-"this does not fix the problem, try running the driver with the\n"
-"'-x productid=%04x' option. Please report your results to the NUT user's\n"
-"mailing list <nut-upsuser@lists.alioth.debian.org>.\n",
-						 hd->VendorID, hd->ProductID, hd->ProductID);
-			return 0;
 		}
+		possibly_supported("MGE", hd);
+		return 0;
+		
 	}
 }
 
@@ -590,7 +558,6 @@ subdriver_t mge_subdriver = {
 	mge_claim,
 	mge_utab,
 	mge_hid2nut,
-	mge_shutdown,
 	mge_format_model,
 	mge_format_mfr,
 	mge_format_serial,

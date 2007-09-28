@@ -30,7 +30,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/ioctl.h>
 #include <sys/types.h>
 #include <string.h>
 
@@ -40,8 +39,6 @@
 
 #include "serial.h"
 #include "libshut.h"
-#include "libhid.h"
-
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
 
 #define SHUT_DRIVER_NAME	"MGE SHUT communication driver"
@@ -173,17 +170,18 @@ struct my_hid_descriptor {
 /*!
  * SHUT functions for HID marshalling
  */
-int shut_get_descriptor(shut_dev_handle_t *sdev, unsigned char type,
+int shut_get_descriptor(int upsfd, unsigned char type,
 			unsigned char index, void *buf, int size);
-int shut_get_string_simple(shut_dev_handle_t *dev, int index,
+int shut_get_string_simple(int upsfd, int index,
 			   char *buf, size_t buflen);
-int libshut_get_report(shut_dev_handle_t *devp, int ReportId,
+int libshut_get_report(int upsfd, int ReportId,
 		       unsigned char *raw_buf, int ReportSize );
-int shut_set_report(shut_dev_handle_t *sdev, int id, unsigned char *pkt, int reportlen);
-int libshut_get_interrupt(shut_dev_handle_t *devp, unsigned char *buf,
+int shut_set_report(int upsfd, int id, unsigned char *pkt, int reportlen);
+int libshut_get_interrupt(int upsfd, unsigned char *buf,
 			  int bufsize, int timeout);
-int shut_control_msg(shut_dev_handle_t *dev, int requesttype, int request,
+int shut_control_msg(int upsfd, int requesttype, int request,
 		     int value, int index, unsigned char *bytes, int size, int timeout);
+void libshut_close(int upsfd);
 
 /* FIXME */
 char * shut_strerror() { return ""; }
@@ -254,12 +252,12 @@ typedef union device_desc_data_t {
 } device_desc_data_t;
 #endif
 /* Low level SHUT (Serial HID UPS Transfer) routines  */
-void setline (int fd, int set);
-bool_t shut_synchronise (int fd);
-int shut_wait_ack (int fd);
-int shut_interrupt_read(shut_dev_handle_t *dev, int ep, unsigned char *bytes,
+void setline(int upsfd, int set);
+int shut_synchronise(int upsfd);
+int shut_wait_ack(int upsfd);
+int shut_interrupt_read(int upsfd, int ep, unsigned char *bytes,
 			int size, int timeout);
-int shut_control_msg(shut_dev_handle_t *dev, int requesttype, int request, int value,
+int shut_control_msg(int upsfd, int requesttype, int request, int value,
 		     int index, unsigned char *bytes, int size, int timeout);
 
 
@@ -276,48 +274,56 @@ static void align_request(struct shut_ctrltransfer_s *ctrl )
 #endif
 }
 
-/* return report descriptor on success, NULL otherwise */
-/* mode: MODE_OPEN for the 1rst time, MODE_REOPEN to skip getting
-    report descriptor (the longer part). On success, fill in the
-    curDevice structure and return the report descriptor length. On
-    failure, return -1. Note: ReportDesc must point to a large enough
-    buffer. There's no way to know the size ahead of time. Matcher is
-    a linked list of matchers (see libhid.h), and the opened device
-    must match all of them. */
-int libshut_open(shut_dev_handle_t **sdevp, HIDDevice_t *curDevice,
-		 HIDDeviceMatcher_t *matcher, unsigned char *ReportDesc, int mode)
+/* On success, fill in the curDevice structure and return the report
+ * descriptor length. On failure, return -1.
+ * Note: When callback is not NULL, the report descriptor will be
+ * passed to this function together with the upsfd and SHUTDevice_t
+ * information. This callback should return a value > 0 if the device
+ * is accepted, or < 1 if not.
+ */
+int libshut_open(int *upsfd, SHUTDevice_t *curDevice, char *device_path,
+	int (*callback)(int upsfd, SHUTDevice_t *hd, unsigned char *rdbuf, int rdlen))
 {
 	int ret, res; 
 	unsigned char buf[20];
 	char string[256];
 	struct my_hid_descriptor *desc;
 	struct device_descriptor_s *dev_descriptor;
-	shut_dev_handle_t *devp = *sdevp;
 	
-	upsdebugx(2, "libshut_open: using port %s", devp->device_path);
-	
+	/* report descriptor */
+	unsigned char	rdbuf[MAX_REPORT_SIZE];
+	int		rdlen;
+
+	upsdebugx(2, "libshut_open: using port %s", device_path);
+
+	/* If device is still open, close it */
+	if (*upsfd > 0) {
+		ser_close(*upsfd, device_path);
+	}
+
 	/* initialize serial port */
 	/* FIXME: add variable baudrate detection */
-	devp->upsfd = ser_open(devp->device_path);
-	ser_set_speed(devp->upsfd, devp->device_path, B2400);
-	setline (devp->upsfd, 1);
+	*upsfd = ser_open(device_path);
+	ser_set_speed(*upsfd, device_path, B2400);
+	setline(*upsfd, 1);
 
 	/* initialise communication */
-	if (!shut_synchronise (devp->upsfd))
+	if (!shut_synchronise(*upsfd))
 	{
 		upsdebugx(2, "No communication with UPS");
 		return -1;
 	}
-	else
-		upsdebugx(2, "Communication with UPS established");
+
+	upsdebugx(2, "Communication with UPS established");
 
 	/* we can skip the rest due to serial bus specifics! */
-	if (mode == MODE_REOPEN)
+	if (!callback) {
 		return 1;
+	}
 
 	/* Get DEVICE descriptor */
 	dev_descriptor = (struct device_descriptor_s *)buf;
-	res = shut_get_descriptor(devp, USB_DT_DEVICE, 0, buf, USB_DT_DEVICE_SIZE);
+	res = shut_get_descriptor(*upsfd, USB_DT_DEVICE, 0, buf, USB_DT_DEVICE_SIZE);
 	/* res = shut_control_msg(devp, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
 	(USB_DT_DEVICE << 8) + 0, 0, buf, 0x9, SHUT_TIMEOUT); */
 	if (res < 0)
@@ -325,12 +331,13 @@ int libshut_open(shut_dev_handle_t **sdevp, HIDDevice_t *curDevice,
 		upsdebugx(2, "Unable to get DEVICE descriptor (%s)", shut_strerror());
 		return -1;
 	}
-	else if (res < 9)
+
+	if (res < 9)
 	{
 		upsdebugx(2, "DEVICE descriptor too short (expected %d, got %d)",
 		      USB_DT_DEVICE_SIZE, res);
 		return -1;
-	} 
+	}
 
 	/* collect the identifying information of this
 		device. Note that this is safe, because
@@ -338,43 +345,52 @@ int libshut_open(shut_dev_handle_t **sdevp, HIDDevice_t *curDevice,
 		this (and therefore we do not yet need to
 		detach any kernel drivers). */
 
+	free(curDevice->Vendor);
+	free(curDevice->Product);
+	free(curDevice->Serial);
+	free(curDevice->Bus);
+	memset(curDevice, '\0', sizeof(*curDevice));
+
 	curDevice->VendorID = dev_descriptor->idVendor;
 	curDevice->ProductID = dev_descriptor->idProduct;
 	curDevice->Vendor = strdup("MGE UPS SYSTEMS");
-	curDevice->Product = strdup("unknown");
-	curDevice->Serial = strdup("unknown");
 	curDevice->Bus = strdup("serial");
 
-	if (dev_descriptor->iProduct)
-	{
-		ret = shut_get_string_simple(devp, dev_descriptor->iProduct,
-					     string, 0x25);
-		if (ret > 0)
-			curDevice->Product = strdup(string);
+	if (dev_descriptor->iProduct) {
+		ret = shut_get_string_simple(*upsfd, dev_descriptor->iProduct, string, 0x25);
+	} else {
+		ret = 0;
 	}
 
-	if (dev_descriptor->iSerialNumber)
-	{
-		ret = shut_get_string_simple(devp, dev_descriptor->iSerialNumber,
-					     string, 0x25);
-		if (ret > 0)
-			curDevice->Serial = strdup(string);
+	if (ret > 0) {
+		curDevice->Product = strdup(string);
+	} else {
+		curDevice->Product = strdup("unknown");
+	}
+
+	if (dev_descriptor->iSerialNumber) {
+		ret = shut_get_string_simple(*upsfd, dev_descriptor->iSerialNumber, string, 0x25);
+	} else {
+		ret = 0;
+	}
+
+	if (ret > 0) {
+		curDevice->Serial = strdup(string);
+	} else {
+		curDevice->Serial = strdup("unknown");
 	}
 
 	upsdebugx(2, "- VendorID: %04x", curDevice->VendorID);
 	upsdebugx(2, "- ProductID: %04x", curDevice->ProductID);
-	upsdebugx(2, "- Manufacturer: %s", curDevice->Vendor ? curDevice->Vendor : "unknown");
-	upsdebugx(2, "- Product: %s", curDevice->Product ? curDevice->Product : "unknown");
-	upsdebugx(2, "- Serial Number: %s", curDevice->Serial ? curDevice->Serial : "unknown");
-	upsdebugx(2, "- Bus: %s", curDevice->Bus ? curDevice->Bus : "unknown");
+	upsdebugx(2, "- Manufacturer: %s", curDevice->Vendor);
+	upsdebugx(2, "- Product: %s", curDevice->Product);
+	upsdebugx(2, "- Serial Number: %s", curDevice->Serial);
+	upsdebugx(2, "- Bus: %s", curDevice->Bus);
 	upsdebugx(2, "Device matches");
-
-	if (mode == MODE_REOPEN)
-		return 1;
 
 	/* Get HID descriptor */
 	desc = (struct my_hid_descriptor *)buf;
-	res = shut_get_descriptor(devp, USB_DT_HID, 0, buf, 0x9);
+	res = shut_get_descriptor(*upsfd, USB_DT_HID, 0, buf, 0x9);
 	/* res = shut_control_msg(devp, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
 			(USB_DT_HID << 8) + 0, 0, buf, 0x9, SHUT_TIMEOUT); */
 
@@ -383,7 +399,8 @@ int libshut_open(shut_dev_handle_t **sdevp, HIDDevice_t *curDevice,
 		upsdebugx(2, "Unable to get HID descriptor (%s)", shut_strerror());
 		return -1;
 	}
-	else if (res < 9)
+
+	if (res < 9)
 	{
 		upsdebugx(2, "HID descriptor too short (expected %d, got %d)", 8, res);
 		return -1;
@@ -398,29 +415,40 @@ int libshut_open(shut_dev_handle_t **sdevp, HIDDevice_t *curDevice,
 		return -1;
 	}*/
 
+	rdlen = desc->wDescriptorLength;
+
+	if (rdlen > (int)sizeof(rdbuf)) {
+		upsdebugx(2, "HID descriptor too long %d (max %d)", rdlen, sizeof(rdbuf));
+		return -1;
+	}
+
 	/* Get REPORT descriptor */
-	res = shut_get_descriptor(devp, USB_DT_REPORT, 0, ReportDesc,
-				   desc->wDescriptorLength);
+	res = shut_get_descriptor(*upsfd, USB_DT_REPORT, 0, rdbuf, rdlen);
 	/* res = shut_control_msg(devp, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
 				(USB_DT_REPORT << 8) + 0, 0, ReportDesc, 
 			desc->wDescriptorLength, SHUT_TIMEOUT); */
-	if (res >= desc->wDescriptorLength) 
+	if (res == rdlen)
 	{
-		upsdebugx(2, "Report descriptor retrieved (Reportlen = %u)",
-		      desc->wDescriptorLength);
+		res = callback(*upsfd, curDevice, rdbuf, rdlen);
+		if (res < 1) {
+			upsdebugx(2, "Caller doesn't like this device");
+			return -1;
+		}
+
+		upsdebugx(2, "Report descriptor retrieved (Reportlen = %d)", rdlen);
 		upsdebugx(2, "Found HID device");
 		fflush(stdout);
 
-		return desc->wDescriptorLength;
+		return rdlen;
 	}
-	else if (res < 0)
+
+	if (res < 0)
 	{
 		upsdebugx(2, "Unable to get Report descriptor (%d)", res);
 	}
 	else
 	{
-		upsdebugx(2, "Report descriptor too short (expected %d, got %d)",
-		      desc->wDescriptorLength, res);
+		upsdebugx(2, "Report descriptor too short (expected %d, got %d)", rdlen, res);
 	}
 	
 	upsdebugx(2, "No appropriate HID device found");
@@ -429,91 +457,97 @@ int libshut_open(shut_dev_handle_t **sdevp, HIDDevice_t *curDevice,
 	return -1;
 }
 
-void libshut_close(shut_dev_handle_t *sdev)
+void libshut_close(int upsfd)
 {
-	ser_close(sdev->upsfd, sdev->device_path);
+	if (upsfd < 1) {
+		return;
+	}
+
+	ser_close(upsfd, NULL);
 }
 
 /* return the report of ID=type in report 
  * return -1 on failure, report length on success
  */
-int libshut_get_report(shut_dev_handle_t *devp, int ReportId,
+int libshut_get_report(int upsfd, int ReportId,
 		       unsigned char *raw_buf, int ReportSize )
 {
+	if (upsfd < 1) {
+		return 0;
+	}
+
 	upsdebugx(4, "Entering libshut_get_report");
 
-	if (devp != NULL)
-	{
-		return shut_control_msg(devp,
-			REQUEST_TYPE_GET_REPORT,
-			/* == USB_ENDPOINT_IN + USB_TYPE_CLASS + USB_RECIP_INTERFACE, */
-			 0x01,
-			 ReportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
-			 0, raw_buf, ReportSize, SHUT_TIMEOUT);
-	}
-	else
-		return 0;
+	return shut_control_msg(upsfd,
+		REQUEST_TYPE_GET_REPORT,
+		/* == USB_ENDPOINT_IN + USB_TYPE_CLASS + USB_RECIP_INTERFACE, */
+		 0x01,
+		 ReportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
+		 0, raw_buf, ReportSize, SHUT_TIMEOUT);
 }
 
 /* return ReportSize upon success ; -1 otherwise */
-int libshut_set_report(shut_dev_handle_t *devp, int ReportId,
+int libshut_set_report(int upsfd, int ReportId,
 		       unsigned char *raw_buf, int ReportSize )
 {
-	int ret = 0;
+	int ret;
 	
+	if (upsfd < 1) {
+		return 0;
+	}
+		
 	upsdebugx(1, "Entering libshut_set_report (report %x, len %i)",
 		ReportId, ReportSize);
 
 	upsdebug_hex (4, "==> Report after set", raw_buf, ReportSize);
 
-	if (devp != NULL)
-	{
-		ret = shut_control_msg(devp, 
-			REQUEST_TYPE_SET_REPORT,
-			/* == USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE, */
-			0x09,
-			ReportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
-			0, raw_buf, ReportSize, SHUT_TIMEOUT);
-	}
-	return ((ret==0)?ReportSize:ret);
+	ret = shut_control_msg(upsfd, 
+		REQUEST_TYPE_SET_REPORT,
+		/* == USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE, */
+		0x09,
+		ReportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
+		0, raw_buf, ReportSize, SHUT_TIMEOUT);
+	
+	return ((ret == 0) ? ReportSize : ret);
 }
 
-int libshut_get_string(shut_dev_handle_t *devp, int StringIdx, char *buf)
+int libshut_get_string(int upsfd, int StringIdx, char *buf, size_t buflen)
 {
-	int ret = -1;
+	int ret;
 	
-	if (devp != NULL)
-	{
-		ret = shut_get_string_simple(devp, StringIdx, buf, 20);
-		 /* sizeof(buf)); */
-		if (ret > 0)
-			upsdebugx(2, "-> String: %s (len = %i/%i)",
-			      buf, ret, sizeof(buf));
-		else
-			upsdebugx(2, "- Unable to fetch buf");
+	if (upsfd < 1) {
+		return -1;
 	}
+
+	ret = shut_get_string_simple(upsfd, StringIdx, buf, buflen);
+	if (ret > 0)
+		upsdebugx(2, "-> String: %s (len = %i/%i)", buf, ret, buflen);
+	else
+		upsdebugx(2, "- Unable to fetch buf");
+
 	return ret;
 }
 
-int libshut_get_interrupt(shut_dev_handle_t *devp, unsigned char *buf,
+int libshut_get_interrupt(int upsfd, unsigned char *buf,
 			   int bufsize, int timeout)
 {
-  int ret = -1;
+	int ret;
 
-	if (devp != NULL)
-	{
-	  /* FIXME: hardcoded interrupt EP => need to get EP descr for IF descr */
-	  ret = shut_interrupt_read(devp, 0x81, buf, bufsize, timeout);
-	  if (ret > 0)
-			upsdebugx(6, " ok");
-	  else
-			upsdebugx(6, " none (%i)", ret);
+	if (upsfd < 1) {
+		return -1;
 	}
 
+	/* FIXME: hardcoded interrupt EP => need to get EP descr for IF descr */
+	ret = shut_interrupt_read(upsfd, 0x81, buf, bufsize, timeout);
+	if (ret > 0)
+		upsdebugx(6, " ok");
+	else
+		upsdebugx(6, " none (%i)", ret);
+	
 	return ret;
 }
 
-communication_subdriver_t shut_subdriver = {
+shut_communication_subdriver_t shut_subdriver = {
 	SHUT_DRIVER_NAME,
 	SHUT_DRIVER_VERSION,
 	libshut_open,
@@ -534,21 +568,20 @@ communication_subdriver_t shut_subdriver = {
  * set : 1 to set comm
  * set : 0 to stop commupsh.
  */
-void setline (int fd, int set)
+void setline(int upsfd, int set)
 {
-	int dtr = TIOCM_DTR;
-	int rts = TIOCM_RTS;
-	
+	if (upsfd < 1) {
+		return;
+	}
+
 	upsdebugx(3, "entering setline(%i)", set);
 
 	if (set == 1) {
-		ioctl (fd, TIOCMBIC, &dtr);
-		ioctl (fd, TIOCMBIS, &rts);
-	}
-	else
-	{
-		ioctl (fd, TIOCMBIS, &dtr);
-		ioctl (fd, TIOCMBIC, &rts);
+		ser_set_dtr(upsfd, 0);
+		ser_set_rts(upsfd, 1);
+	} else {
+		ser_set_dtr(upsfd, 1);
+		ser_set_rts(upsfd, 0);
 	}
 }
 
@@ -560,9 +593,9 @@ void setline (int fd, int set)
  * return TRUE on success, FALSE on failure
  *
  *****************************************************************************/
-bool_t shut_synchronise (int fd)
+int shut_synchronise(int upsfd)
 {
-	bool_t retCode = FALSE;
+	int retCode = 0;
 	u_char c = SHUT_SYNC, reply;
 	int try;
 		
@@ -590,19 +623,17 @@ bool_t shut_synchronise (int fd)
 	{
 		upsdebugx (3, "Syncing communication (try %i)", try);
 
-		if ((ser_send_char(fd, c)) == -1)
+		if ((ser_send_char(upsfd, c)) == -1)
 		{
 			upsdebugx (3, "Communication error while writing to port");
-			retCode = FALSE;
+			continue;
 		}
-		else
+
+		ser_get_char(upsfd, &reply, 1, 0);
+		if (reply == c)
 		{
-			ser_get_char(fd, &reply, 1, 0);
-			if (reply == c)
-			{
-				upsdebugx (3, "Syncing and notification setting done");
-				retCode = TRUE;
-			}
+			upsdebugx (3, "Syncing and notification setting done");
+			return 1;
 		}
 	}
 	return retCode;
@@ -624,7 +655,7 @@ u_char shut_checksum(const u_char *buf, int bufsize)
 }
 
 
-int shut_packet_recv (int fd, u_char *Buf, int datalen)
+int shut_packet_recv(int upsfd, u_char *Buf, int datalen)
 {
 	u_char   Start[2];
 	u_char   Frame[8];
@@ -640,7 +671,7 @@ int shut_packet_recv (int fd, u_char *Buf, int datalen)
 	while(datalen>0 && Retry<3)
 	{
 		/* if(serial_read (SHUT_TIMEOUT, &Start[0]) >= 0) */
-		if(ser_get_char(fd, &Start[0], SHUT_TIMEOUT/1000, 0) >= 0)
+		if(ser_get_char(upsfd, &Start[0], SHUT_TIMEOUT/1000, 0) >= 0)
 		{
 			sdata.shut_pkt.bType = Start[0];
 			if(Start[0]==SHUT_SYNC)
@@ -652,7 +683,7 @@ int shut_packet_recv (int fd, u_char *Buf, int datalen)
 			else 
 			{
 				/* if((serial_read (SHUT_TIMEOUT, &Start[1]) >= 0) && */
-				if( (ser_get_char(fd, &Start[1], SHUT_TIMEOUT/1000, 0) >= 0) &&
+				if( (ser_get_char(upsfd, &Start[1], SHUT_TIMEOUT/1000, 0) >= 0) &&
 							((Start[1]>>4)==(Start[1]&0x0F)))
 				{
 					upsdebug_hex(4, "Receive", Start, 2);
@@ -661,13 +692,13 @@ int shut_packet_recv (int fd, u_char *Buf, int datalen)
 					for(recv=0;recv<Size;recv++)
 					{
 						/* if(serial_read (SHUT_TIMEOUT, &Frame[recv]) < 0) */
-						if(ser_get_char(fd, &Frame[recv], SHUT_TIMEOUT/1000, 0) < 0)
+						if(ser_get_char(upsfd, &Frame[recv], SHUT_TIMEOUT/1000, 0) < 0)
 							break;
 					}
 					upsdebug_hex(4, "Receive", Frame, Size);
 
 					/* serial_read (SHUT_TIMEOUT, &Chk[0]); */
-					ser_get_char(fd, &Chk[0], SHUT_TIMEOUT/1000, 0);
+					ser_get_char(upsfd, &Chk[0], SHUT_TIMEOUT/1000, 0);
 					if(Chk[0]==shut_checksum(Frame, Size))
 					{
 						upsdebugx (4, "shut_checksum: %02x => OK", Chk[0]);
@@ -677,7 +708,7 @@ int shut_packet_recv (int fd, u_char *Buf, int datalen)
 						Pos+=Size;
 						Retry=0;
 					
-						ser_send_char(fd, SHUT_OK);
+						ser_send_char(upsfd, SHUT_OK);
 						/* shut_token_send(SHUT_OK); */
 
 						if(Start[0]&SHUT_PKT_LAST)
@@ -698,7 +729,7 @@ int shut_packet_recv (int fd, u_char *Buf, int datalen)
 					else
 					{
 						upsdebugx (4, "shut_checksum: %02x => NOK", Chk[0]);
-						ser_send_char(fd, SHUT_NOK);
+						ser_send_char(upsfd, SHUT_NOK);
 						/* shut_token_send(SHUT_NOK); */
 						Retry++;
 					}
@@ -715,24 +746,24 @@ int shut_packet_recv (int fd, u_char *Buf, int datalen)
 }
 
 /**********************************************************************/
-int shut_interrupt_read(shut_dev_handle_t *dev, int ep, unsigned char *bytes, int size,
+int shut_interrupt_read(int upsfd, int ep, unsigned char *bytes, int size,
 		       int timeout)
 {
-	/* sleep during timeout to slow down a bit... */
-	sleep(timeout / 1000);
-
+/*
+	usleep(timeout * 1000);
+ */
 	/* FIXME: to be written */
 	return 0;
 }
 
 /**********************************************************************/
-int shut_get_string_simple(shut_dev_handle_t *dev, int index,
+int shut_get_string_simple(int upsfd, int index,
 			   char *buf, size_t buflen)
 {
 	unsigned char tbuf[255];       /* Some devices choke on size > 255 */
 	int ret, si, di;
 	
-	ret = shut_control_msg(dev, USB_ENDPOINT_IN, USB_REQ_GET_DESCRIPTOR,
+	ret = shut_control_msg(upsfd, USB_ENDPOINT_IN, USB_REQ_GET_DESCRIPTOR,
 			(USB_DT_STRING << 8) + index, 0x0, tbuf, buflen, 1000);
 	if (ret < 0)
 		return ret;
@@ -774,19 +805,19 @@ int shut_get_string_simple(shut_dev_handle_t *dev, int index,
  * return 0 on success, -1 on failure, -2 on NACK
  *
  *********************************************************************/
-int shut_get_descriptor(shut_dev_handle_t *sdev, unsigned char type,
+int shut_get_descriptor(int upsfd, unsigned char type,
 			unsigned char index, void *buf, int size)
 {
 	memset(buf, 0, size);
 
 	upsdebugx (2, "entering shut_get_descriptor(n %02x, %i)", type, size);
 
-	return shut_control_msg(sdev, USB_ENDPOINT_IN+(type>=USB_DT_HID?1:0),
+	return shut_control_msg(upsfd, USB_ENDPOINT_IN+(type>=USB_DT_HID?1:0),
 				 USB_REQ_GET_DESCRIPTOR, (type << 8) + index, 0, buf, size, 1000);
 }
 
 /* Take care of a SHUT transfer (sending and receiving data) */
-int shut_control_msg(shut_dev_handle_t *sdev, int requesttype, int request,
+int shut_control_msg(int upsfd, int requesttype, int request,
 		    int value, int index, unsigned char *bytes, int size, int timeout)
 {
 	unsigned char shut_pkt[11];
@@ -846,12 +877,12 @@ int shut_control_msg(shut_dev_handle_t *sdev, int requesttype, int request,
 		* NACK handling should take care of the rest */
 		if (Retry == 1)
 		{
-			ser_send_buf(sdev->upsfd, shut_pkt, data_size+3);
+			ser_send_buf(upsfd, shut_pkt, data_size+3);
 			upsdebug_hex(3, "shut_control_msg", shut_pkt, data_size+3);
 			/* serial_send (shut_pkt, data_size+3); */
 		}
 
-		i = shut_wait_ack (sdev->upsfd);
+		i = shut_wait_ack (upsfd);
 		switch (i)
 		{
 			case 0:
@@ -869,14 +900,14 @@ int shut_control_msg(shut_dev_handle_t *sdev, int requesttype, int request,
 					
 					/* try to resync, and give one more try */
 					Retry--;
-					shut_synchronise(sdev->upsfd);
+					shut_synchronise(upsfd);
 					return i;
 				}
 				else
 				{
 					upsdebugx(4, "Retry = %i", Retry);
 					/* Send a NACK to get a resend from the UPS */
-					ser_send_char(sdev->upsfd, SHUT_NOK);
+					ser_send_char(upsfd, SHUT_NOK);
 					Retry++;
 				}
 				break;
@@ -891,7 +922,7 @@ int shut_control_msg(shut_dev_handle_t *sdev, int requesttype, int request,
 	
 	/* now receive data, except for SET_REPORT */
 	if (requesttype != REQUEST_TYPE_SET_REPORT)
-		ret = shut_packet_recv (sdev->upsfd, bytes, size);
+		ret = shut_packet_recv (upsfd, bytes, size);
 
 	return ret;
 }
@@ -904,12 +935,12 @@ int shut_control_msg(shut_dev_handle_t *sdev, int requesttype, int request,
  * returns 0 on success, -1 on error, -2 on NACK, -3 on NOTIFICATION
  * 
  *********************************************************************/
-int shut_wait_ack (int fd)
+int shut_wait_ack(int upsfd)
 {
 	int retCode = -1;
 	u_char c = '\0';
 
-	ser_get_char(fd, &c, SHUT_TIMEOUT/1000, 0);
+	ser_get_char(upsfd, &c, SHUT_TIMEOUT/1000, 0);
 	if (c == SHUT_OK)
 	{
 		upsdebugx (2, "shut_wait_ack(): ACK received");

@@ -13,7 +13,7 @@ LDADD = $(LDADD_DRIVERS_SERIAL)
 # Avoid per-target CFLAGS, because this will prevent re-use of object
 # files. In any case, CFLAGS are only -I options, so there is no harm. 
 AM_CFLAGS = -I$(top_srcdir)/include $(LIBHAL_CFLAGS) $(LIBUSB_CFLAGS) \
- $(LIBNETSNMP_CFLAGS)
+ $(LIBNETSNMP_CFLAGS) $(LIBSSL_CFLAGS)
 
 SERIAL_DRIVERLIST = al175 apcsmart bcmxcp belkin belkinunv bestfcom	\
  bestuferrups bestups cpsups cyberpower dummy-ups etapro everups 	\
@@ -112,23 +112,23 @@ skel_SOURCES = skel.c
 skel_LDADD = $(LDADD_DRIVERS)
 
 # USB
-USBHID_UPS_SUBDRIVERS = apc-hid.c belkin-hid.c explore-hid.c \
- mge-hid.c tripplite-hid.c
+USBHID_UPS_SUBDRIVERS = apc-hid.c belkin-hid.c cps-hid.c explore-hid.c \
+ liebert-hid.c mge-hid.c tripplite-hid.c
 usbhid_ups_SOURCES = usbhid-ups.c libhid.c libusb.c hidparser.c	\
  $(USBHID_UPS_SUBDRIVERS)
-usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
+usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBSSL_LDFLAGS)
 
 energizerups_SOURCES = energizerups.c
 energizerups_LDADD = $(LDADD_DRIVERS)
 
-tripplite_usb_SOURCES = tripplite_usb.c libhid.c libusb.c hidparser.c
+tripplite_usb_SOURCES = tripplite_usb.c libusb.c
 tripplite_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS) -lm
 
 bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c nut_usb.c
 bcmxcp_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 
-megatec_usb_SOURCES = megatec.c megatec_usb.c libusb.c libhid.c hidparser.c
-megatec_usb_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS) -DMEGATEC_SUBDRV
+megatec_usb_SOURCES = megatec.c megatec_usb.c libusb.c
+megatec_usb_CFLAGS = $(AM_CFLAGS) -DMEGATEC_SUBDRV
 megatec_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 
 # HID-over-serial
@@ -144,16 +144,16 @@ snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LDFLAGS)
 # HAL
 hald_addon_usbhid_ups_SOURCES = usbhid-ups.c libhid.c libusb.c hidparser.c	\
  $(USBHID_UPS_SUBDRIVERS)
-hald_addon_usbhid_ups_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS)
+hald_addon_usbhid_ups_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS) $(LIBSSL_LDFLAGS)
 
-hald_addon_tripplite_usb_SOURCES = tripplite_usb.c libhid.c libusb.c hidparser.c
+hald_addon_tripplite_usb_SOURCES = tripplite_usb.c libusb.c
 hald_addon_tripplite_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS) -lm
 
 hald_addon_bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c nut_usb.c
 hald_addon_bcmxcp_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS)
 
-hald_addon_megatec_usb_SOURCES = megatec.c megatec_usb.c libusb.c libhid.c hidparser.c
-hald_addon_megatec_usb_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS) -DMEGATEC_SUBDRV
+hald_addon_megatec_usb_SOURCES = megatec.c megatec_usb.c libusb.c
+hald_addon_megatec_usb_CFLAGS = $(AM_CFLAGS) -DMEGATEC_SUBDRV
 hald_addon_megatec_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS)
 
 
@@ -164,17 +164,17 @@ hald_addon_megatec_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_L
 
 dist_noinst_HEADERS = al175.h apccmib.h apc-hid.h apcsmart.h bcmxcp.h	\
  bcmxcp_io.h belkin.h belkin-hid.h belkinunv.h bestfcom.h		\
- bestuferrups.h bestups.h cpsups.h cyberpower.h dstate.h		\
+ bestuferrups.h bestups.h cps-hid.h cpsups.h cyberpower.h dstate.h	\
  dstate-hal.h								\
  dummy-ups.h etapro.h everups.h gamatronic.h				\
  explore-hid.h genericups.h hidparser.h hidtypes.h ietfmib.h		\
- isbmex.h libhid.h libshut.h libusb.h liebert.h main.h			\
+ isbmex.h libhid.h libshut.h libusb.h liebert.h liebert-hid.h main.h	\
  main-hal.h								\
  masterguard.h megatec.h metasys.h mge-hid.h mgemib.h mge-shut.h	\
  mge-utalk.h netvisionmib.h usbhid-ups.h nitram.h nut_usb.h		\
  oneac.h optiups.h powercom.h pwmib.h safenet.h serial.h		\
  snmp-ups.h solis.h tripplite.h tripplite-hid.h tripplitesu.h		\
- upscode2.h victronups.h powerpanel.h
+ upscode2.h victronups.h powerpanel.h upshandler.h
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,

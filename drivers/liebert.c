@@ -24,7 +24,6 @@
 #include "main.h"
 #include "serial.h"
 #include "liebert.h"
-#include <sys/ioctl.h>
 
 #define	ML_ONBATTERY	0x55
 
@@ -62,7 +61,6 @@ void upsdrv_initinfo(void)
 /* normal idle loop - keep up with the current state of the UPS */
 void upsdrv_updateinfo(void)
 {
-	int	flags, ret;
 	unsigned char	c;
 	unsigned int	ob, lb;
 	static	unsigned int	ob_state = 0, ob_last = 0, ob_ctr = 0;
@@ -83,15 +81,7 @@ void upsdrv_updateinfo(void)
 			ob = 1;
 	}
 	
-	ret = ioctl(upsfd, TIOCMGET, &flags);
-
-	if (ret != 0) {
-		upslog_with_errno(LOG_INFO, "ioctl failed");
-		dstate_datastale();
-		return;
-	}
-
-	if (flags & TIOCM_CD)
+	if (ser_get_dcd(upsfd))
 		lb = 1;
 
 	/* state machine below to ensure status changes are debounced */
@@ -180,12 +170,10 @@ void upsdrv_help(void)
 
 void upsdrv_initups(void)
 {
-	int rts_bit = TIOCM_RTS;
-
 	upsfd = ser_open(device_path);
 
 	/* raise RTS */
-	ioctl(upsfd, TIOCMBIS, &rts_bit);
+	ser_set_rts(upsfd, 1);
 }
 
 void upsdrv_cleanup(void)

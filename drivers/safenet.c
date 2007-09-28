@@ -65,13 +65,12 @@
 
 #include <stdlib.h>
 #include <ctype.h>
-#include <sys/ioctl.h>
 
 #include "main.h"
 #include "serial.h"
 #include "safenet.h"
 
-#define DRV_VERSION	"1.3"
+#define DRV_VERSION	"1.4"
 
 /*
  * Here we keep the last known status of the UPS
@@ -89,7 +88,7 @@ static int safenet_command(const char *command)
 	/*
 	 * Get rid of whatever is in the in- and output buffers.
 	 */
-	tcflush(upsfd, TCIOFLUSH);
+	ser_flush_io(upsfd);
 
 	/*
 	 * Send the command and read back the status line. When we just send
@@ -168,6 +167,20 @@ static void safenet_update()
 
 static int instcmd(const char *cmdname, const char *extra)
 {
+	if (!strcasecmp(cmdname, "beeper.off")) {
+		/* compatibility mode for old command */
+		upslogx(LOG_WARNING,
+			"The 'beeper.off' command has been renamed to 'beeper.mute' for this driver");
+		return instcmd("beeper.mute", NULL);
+	}
+
+	if (!strcasecmp(cmdname, "beeper.on")) {
+		/* compatibility mode for old command */
+		upslogx(LOG_WARNING,
+			"The 'beeper.on' command has been renamed to 'beeper.enable'");
+		return instcmd("beeper.enable", NULL);
+	}
+
 	/*
 	 * Start the UPS selftest
 	 */
@@ -203,7 +216,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	/*
 	 * If beeper is off, toggle beeper state (so it should be ON after this)
 	 */
-	if (!strcasecmp(cmdname, "beeper.on")) {
+	if (!strcasecmp(cmdname, "beeper.enable")) {
 		if (ups.status.silenced) {
 			safenet_command(COM_TOGGLE_BEEP);
 		}
@@ -213,11 +226,22 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	/*
 	 * If beeper is not off, toggle beeper state (so it should be OFF after this)
+	 * Unfortunately, this only mutes the beeper, it turns back on for the next
+	 * event automatically (no way to stop this, besides side cutters)
 	 */
-	if (!strcasecmp(cmdname, "beeper.off")) {
+	if (!strcasecmp(cmdname, "beeper.mute")) {
 		if (!ups.status.silenced) {
 			safenet_command(COM_TOGGLE_BEEP);
 		}
+
+		return STAT_INSTCMD_HANDLED;
+	}
+
+	/*
+	 * Toggle beeper state unconditionally
+	 */
+	if (!strcasecmp(cmdname, "beeper.toggle")) {
+		safenet_command(COM_TOGGLE_BEEP);
 
 		return STAT_INSTCMD_HANDLED;
 	}
@@ -252,7 +276,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 void upsdrv_initinfo(void)
 {
-	int	i, retry = 3;
+	int	retry = 3;
 	char	*v;
 
 	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
@@ -263,8 +287,7 @@ void upsdrv_initinfo(void)
 	 * Very crude hardware detection. If an UPS is attached, it will set DSR
 	 * to 1. Bail out if it isn't.
 	 */
-	ioctl(upsfd, TIOCMGET, &i);
-	if ((i & TIOCM_DSR) == 0) {
+	if (!ser_get_dsr(upsfd)) {
 		fatalx(EXIT_FAILURE, "Serial cable problem or nothing attached to %s", device_path);
 	}
 
@@ -298,6 +321,9 @@ void upsdrv_initinfo(void)
 	dstate_addcmd ("test.failure.stop");
 	dstate_addcmd ("beeper.on");
 	dstate_addcmd ("beeper.off");
+	dstate_addcmd ("beeper.enable");
+	dstate_addcmd ("beeper.mute");
+	dstate_addcmd ("beeper.toggle");
 	dstate_addcmd ("shutdown.return");
 	dstate_addcmd ("shutdown.reboot");
 	dstate_addcmd ("shutdown.reboot.graceful");
@@ -412,9 +438,6 @@ void upsdrv_banner(void)
 
 void upsdrv_initups(void)
 {
-	int dtr_bit = TIOCM_DTR;
-	int rts_bit = TIOCM_RTS;
-
 	/*
 	 * Open and lock the serial port and set the speed to 1200 baud.
 	 */
@@ -424,11 +447,12 @@ void upsdrv_initups(void)
 	/*
 	 * Set DTR and clear RTS to provide power for the serial interface.
 	 */
-	ioctl(upsfd, TIOCMBIS, &dtr_bit);
-	ioctl(upsfd, TIOCMBIC, &rts_bit);
+	ser_set_dtr(upsfd, 1);
+	ser_set_rts(upsfd, 0);
 }
 
 void upsdrv_cleanup(void)
 {
+	ser_set_dtr(upsfd, 0);
 	ser_close(upsfd, device_path);
 }
