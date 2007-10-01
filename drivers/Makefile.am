@@ -190,7 +190,6 @@ libdummy_a_SOURCES = main.c dstate.c serial.c
 EXTRA_LIBRARIES += libnuthalmain.a
 libnuthalmain_a_SOURCES = main-hal.c dstate-hal.c
 
-EXTRA_DIST = Doxyfile
 MOSTLYCLEANFILES = libnuthalmain.a
 
 # rules for cross-directory targets
