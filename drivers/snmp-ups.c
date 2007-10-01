@@ -258,7 +258,7 @@ struct snmp_pdu *nut_snmp_get(const char *OID)
 
 	/* create and send request. */
 	if (!snmp_parse_oid(OID, name, &name_len)) {
-		upslogx(LOG_ERR, "[%s] nut_snmp_get: %s: %s",
+		upsdebugx(2, "[%s] nut_snmp_get: %s: %s",
 			upsname?upsname:device_name, OID, snmp_api_errstring(snmp_errno));
 		return NULL;
 	}
@@ -865,16 +865,14 @@ int su_setvar(const char *varname, const char *val)
 
 	su_info_p = su_find_info(varname);
 
-	if (su_info_p == NULL || su_info_p->info_type == NULL ||
-		!(su_info_p->flags & SU_FLAG_OK))
-	{
-		upslogx(LOG_ERR, "su_setvar: info element unavailable %s", varname);
+	if (!su_info_p || !su_info_p->info_type || !(su_info_p->flags & SU_FLAG_OK)) {
+		upsdebugx(2, "su_setvar: info element unavailable %s", varname);
 		return STAT_SET_UNKNOWN;
 	}
 
 	if (!(su_info_p->info_flags & ST_FLAG_RW) || su_info_p->OID == NULL) {
-		upslogx(LOG_ERR, "su_setvar: not writable %s", varname);
-		return STAT_SET_UNKNOWN; /* STAT_SET_UNHANDLED would be better */
+		upsdebugx(2, "su_setvar: not writable %s", varname);
+		return STAT_SET_INVALID;
 	}
 
 	/* set value. */
@@ -884,10 +882,12 @@ int su_setvar(const char *varname, const char *val)
 		ret = nut_snmp_set_int(su_info_p->OID, strtol(val, NULL, 0));
 	}
 
-	if (ret == FALSE)
-		upslogx(LOG_ERR, "su_setvar: cannot set value %s for %s", val, su_info_p->OID);
-	else
-		upsdebugx(1, "su_setvar: sucessfully set %s to \"%s\"", su_info_p->info_type, val);
+	if (ret == FALSE) {
+		upsdebugx(1, "su_setvar: cannot set value %s for %s", val, su_info_p->OID);
+		return STAT_SET_FAILED;
+	}
+
+	upsdebugx(1, "su_setvar: sucessfully set %s to \"%s\"", su_info_p->info_type, val);
 
 	/* update info array. */
 	su_setinfo(varname, val, su_info_p->info_flags, su_info_p->info_len);
@@ -906,27 +906,43 @@ int su_instcmd(const char *cmdname, const char *extradata)
 
 	su_info_p = su_find_info(cmdname);
 
-	if ((su_info_p->info_type == NULL) || !(su_info_p->flags & SU_FLAG_OK) ||
-		(su_info_p->OID == NULL))
-	{
-		upslogx(LOG_ERR, "su_instcmd: %s unavailable", cmdname);
+	if (!su_info_p || !su_info_p->info_type || !(su_info_p->flags & SU_FLAG_OK)) {
+		upsdebugx(2, "su_instcmd: %s unavailable", cmdname);
 		return STAT_INSTCMD_UNKNOWN;
+	}
+
+	if (extradata) {
+		int	ret = STAT_SET_INVALID;
+
+		if (strcasecmp(cmdname, "shutdown.return")) {
+			ret = su_setvar("ups.delay.start", extradata);
+		}
+		if (strcasecmp(cmdname, "shutdown.stayoff")) {
+			ret = su_setvar("ups.delay.shutdown", extradata);
+		}
+		if (strcasecmp(cmdname, "shutdown.reboot")) {
+			ret = su_setvar("ups.delay.reboot", extradata);
+		}
+
+		if (ret == STAT_SET_HANDLED) {
+			extradata = NULL;
+		}
 	}
 
 	/* set value. */
 	if (su_info_p->info_flags & ST_FLAG_STRING) {
-		status = nut_snmp_set_str(su_info_p->OID, su_info_p->dfl);
+		status = nut_snmp_set_str(su_info_p->OID, extradata ? extradata : su_info_p->dfl);
 	} else {
-		status = nut_snmp_set_int(su_info_p->OID, su_info_p->info_len);
+		status = nut_snmp_set_int(su_info_p->OID, extradata ? atoi(extradata) : su_info_p->info_len);
 	}
 
 	if (status == FALSE) {
-		upslogx(LOG_ERR, "su_instcmd: cannot set value for %s", cmdname);
-		return STAT_INSTCMD_UNKNOWN;
-	} else {
-		upsdebugx(1, "su_instcmd: successfully sent command %s", cmdname);
-		return STAT_INSTCMD_HANDLED;
-	}	
+		upsdebugx(1, "su_instcmd: cannot set value for %s", cmdname);
+		return STAT_INSTCMD_FAILED;
+	}
+
+	upsdebugx(1, "su_instcmd: successfully sent command %s", cmdname);
+	return STAT_INSTCMD_HANDLED;
 }
 
 /* TODO: complete rewrite */
