@@ -6,7 +6,7 @@ check this file to see if you need to make changes to your system.
 Changes from 2.2.0 to 2.2.1:
 
  - nothing that affects upgraded systems.
- (The below message is repetead due to previous omission)
+   (The below message is repetead due to previous omission)
  - Developers of external client application using libupsclient are
    encouraged to rename their "UPSCONN" client structure to "UPSCONN_t"
    since the former will disappear by the release of NUT 2.4.

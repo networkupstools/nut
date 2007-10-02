@@ -1,6 +1,26 @@
 If you're upgrading from an earlier version, see the UPGRADING file.
 
 ---------------------------------------------------------------------------
+Release notes for NUT 2.2.1 - what's new since 2.2.0:
+
+ - support for new devices: all MGE Office Protection Systems units,
+   Advice TopGuard 2000, Effekta RM2000MH, Jageson Technology Jasuny USPS,
+   Powercom SMK-1500A and SXL-1500A, UNITEK Alpha 2600, UPSonic CXR1000,
+   some vintage serial APC UPSs 
+
+ - the usbhid-ups driver has been improved, and fixed in many areas, through
+   a backport of the development (trunk) version.
+   
+ - the megatec and megatec_usb drivers have also been backported from the
+   development (trunk) version.
+   
+ - the client development files have also received some care:
+   the upsclient pkg-config file has been fixed, and the upsclient.h
+   file allows older NUT clients to continue using the UPSCONN structure.
+   
+ For a complete list of changes, please refer to the ChangeLog file.
+
+---------------------------------------------------------------------------
 Release notes for NUT 2.2.0 - what's new since 2.0.5:
 
  - The new build infrastructure, using automake, is now used.
