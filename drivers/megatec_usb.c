@@ -49,26 +49,31 @@ static USBDevice_t usbdevice;
 
 typedef struct {
 	char	*name;
+	void	(*init) ();
 	int	(*get_data) (char *buffer, int buffer_size);
 	int	(*set_data) (const char *str);
 } subdriver_t;
 
 /* agiler subdriver definition */
+static void init_agiler();
 static int get_data_agiler(char *buffer, int buffer_size);
 static int set_data_agiler(const char *str);
 
 static subdriver_t agiler_subdriver = {
 	"agiler",
+	init_agiler,
 	get_data_agiler,
 	set_data_agiler
 };
 
 /* krauler (ablerex) subdriver definition */
+static void init_krauler();
 static int get_data_krauler(char *buffer, int buffer_size);
 static int set_data_krauler(const char *str);
 
 static subdriver_t krauler_subdriver = {
 	"krauler",
+	init_krauler,
 	get_data_krauler,
 	set_data_krauler
 };
@@ -149,8 +154,7 @@ void megatec_subdrv_makevartable()
 int ser_open(const char *port)
 {
 	USBDeviceMatcher_t subdriver_matcher;
-	int ret, i;
-	char flush_buf[256];
+	int ret;
 
 	USBDeviceMatcher_t *regex_matcher = NULL;
 	int r;
@@ -214,11 +218,7 @@ int ser_open(const char *port)
 	/* TODO: Add make exact matcher for reconnecting feature support */
 	USBFreeRegexMatcher(regex_matcher);
 
-	/* flush input buffers */
-	for (i = 0; i < 10; i++) {
-		if (ser_get_line(upsfd, flush_buf, sizeof(flush_buf), 0, NULL, 0, 0) < 1)
-			break;
-	}
+	if(subdriver) subdriver->init();
 
 	return 0;
 }
@@ -313,6 +313,18 @@ int ser_get_line(int fd, char *buf, size_t buflen, char endchar, const char *ign
     All constants are hardcoded in windows driver
 */
 
+static void init_agiler()
+{
+	char flush_buf[256];
+	int i;
+
+	/* flush input buffers */
+	for (i = 0; i < 10; i++) {
+		if (ser_get_line(upsfd, flush_buf, sizeof(flush_buf), 0, NULL, 0, 0) < 1)
+			break;
+	}
+}
+
 static int set_data_agiler(const char *str)
 {
 	return usb->set_report(udev, 0, (unsigned char *)str, strlen(str));
@@ -354,6 +366,10 @@ static krauler_command_t krauler_command_lst[] = {
 };
 
 static krauler_command_t *command = NULL;
+
+static void init_krauler()
+{
+}
 
 static int set_data_krauler(const char *str)
 {
