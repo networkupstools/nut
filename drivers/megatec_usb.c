@@ -320,7 +320,7 @@ static void init_agiler()
 
 	/* flush input buffers */
 	for (i = 0; i < 10; i++) {
-		if (ser_get_line(upsfd, flush_buf, sizeof(flush_buf), 0, NULL, 0, 0) < 1)
+		if (get_data_agiler(flush_buf, sizeof(flush_buf)) < 1)
 			break;
 	}
 }
