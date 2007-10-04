@@ -29,7 +29,7 @@ understand the specific language of each UPS and map it back to a
 compatibility layer.  This means both an expensive "smart" protocol UPS
 and a simple "power strip" model can be handled transparently.
 
-This information is cached by the network server upsd, which then
+This information is cached by the network server ``upsd``, which then
 answers queries from the clients.  upsd contains a number of access
 control features to limit the abilities of the clients.  Only authorized
 hosts may monitor or control your UPS hardware if you wish.  Since the
@@ -47,9 +47,10 @@ The "HAL enabled" flavor
 ------------------------
 
 This one is intended for use:
- - with supported USB devices,
- - on HAL enabled systems (Linux, FreeBSD, Sun Solaris),
- - on HAL enabled desktops (Gnome and KDE) 
+
+- with supported USB devices,
+- on HAL enabled systems (Linux, FreeBSD, Sun Solaris),
+- on HAL enabled desktops (Gnome and KDE) 
 
 Using this approach, you don't have to configure NUT files, nor to
 manually start components, nor to install a specific NUT client.
@@ -94,12 +95,12 @@ Network Information
 ===================
 
 These programs are designed to share information over the network.  In
-the examples below, "localhost" is used as the hostname.  This can also
+the examples below, ``localhost`` is used as the hostname.  This can also
 be an IP address or a fully qualified domain name.  You can specify a
 port number if your upsd process runs on another port.
 
-In the case of the program upsc, to view the variables on the ups called
-sparky on the upsd server running on the local machine, you'd do this::
+In the case of the program ``upsc``, to view the variables on the UPS called
+sparky on the ``upsd`` server running on the local machine, you'd do this::
 
 	/usr/local/ups/bin/upsc sparky@localhost
 
@@ -114,7 +115,7 @@ are on different ports.
 
 The general form for UPS identifiers is this::
 
-	<upsname>@<hostname>[:<port>]
+	<upsname>[@<hostname>[:<port>]]
 
 Keep this in mind when viewing the examples below.
 
@@ -125,13 +126,13 @@ Manifest
 
 This package is broken down into several categories:
 
- - drivers - These programs talk directly to your UPS hardware. 
+- *drivers* - These programs talk directly to your UPS hardware. 
 
- - server  - upsd serves data from the drivers to the network.
+- *server* - upsd serves data from the drivers to the network.
 
- - clients - They talk to upsd and do things with the status data.
+- *clients* - They talk to upsd and do things with the status data.
 
- - cgi-bin - Special class of clients that you can use with your web server.
+- *cgi-bin* - Special class of clients that you can use with your web server.
 
 
 =======
@@ -144,8 +145,8 @@ and convert it to a form that upsd can understand.
 
 To configure drivers, edit ups.conf.  For this example, we'll have a UPS
 called "sparky" that uses the apcsmart driver and is connected to
-/dev/ttyS1.  That's the second serial port on most Linux-based systems.
-The entry in ups.conf looks like this::
+``/dev/ttyS1``.  That's the second serial port on most Linux-based systems.
+The entry in ``ups.conf`` looks like this::
 
 	[sparky]
 		driver = apcsmart
@@ -202,7 +203,7 @@ If your driver has vanished, see the FAQ and UPGRADING files.
 Generic UPS Driver
 ------------------
 
-The "genericups" driver will support many models that use the same basic
+The ``genericups`` driver will support many models that use the same basic
 principle to communicate with the computer.  This is known as "contact
 closure", and basically involves raising or lowering signals to indicate
 power status.
@@ -223,8 +224,8 @@ UPS Shutdowns
 
 upsdrvctl can also shut down (power down) all of your UPS hardware.
 
-WARNING - if you play around with this command, expect your filesystems
-to die.  Don't power off your computers unless they're ready for it.
+**WARNING:** if you play around with this command, expect your filesystems
+to die.  Don't power off your computers unless they're ready for it::
 
 	/usr/local/ups/bin/upsdrvctl shutdown
 	/usr/local/ups/bin/upsdrvctl shutdown sparky
@@ -239,19 +240,19 @@ mounted read-write.
 Network Server
 ==============
 
-upsd is responsible for passing data from the drivers to the client 
-programs via the network.  It should be run immediately after upsdrvctl
+``upsd`` is responsible for passing data from the drivers to the client 
+programs via the network.  It should be run immediately after ``upsdrvctl``
 in your system's startup scripts.
 
-upsd should be kept running whenever possible, as it is the only source
-of status information for the monitoring clients like upsmon.
+``upsd`` should be kept running whenever possible, as it is the only source
+of status information for the monitoring clients like ``upsmon``.
 
 
 ======
 upsmon
 ======
 
-upsmon provides the essential feature that you expect to find in UPS
+``upsmon`` provides the essential feature that you expect to find in UPS
 monitoring software: safe shutdowns when the power fails.
 
 In the layered scheme of NUT software, it is a client.  It has this
@@ -260,7 +261,7 @@ separate section in the documentation since it is so important.
 You configure it by telling it about UPSes that you want to monitor in
 upsmon.conf.  Each UPS can be defined as one of three possible types:
 
- - Master
+- Master
 
 	This UPS supplies power to the system running upsmon, and
 	this system is also responsible for shutting it down when
@@ -270,7 +271,7 @@ upsmon.conf.  Each UPS can be defined as one of three possible types:
 	If your UPS is plugged directly into a system's serial port,
 	the upsmon on that system should define that UPS as a master.
 
- - Slave
+- Slave
 
 	This UPS supplies power to the system running upsmon, but 
 	this system can't shut it down directly.  This system will
@@ -282,7 +283,7 @@ upsmon.conf.  Each UPS can be defined as one of three possible types:
 	UPS, and that system is the master.  Everything else is a
 	slave.
    
- - Monitor-only
+- Monitor-only
 
 	This UPS will still generate notifications about status
 	changes (on battery, on line, etc.) but no shutdowns of the
