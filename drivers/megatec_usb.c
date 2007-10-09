@@ -47,33 +47,36 @@ static usb_communication_subdriver_t *usb = &usb_subdriver;
 static usb_dev_handle *udev = NULL;
 static USBDevice_t usbdevice;
 
+enum subdriver_flags_t {
+	SF_NONE = 0,			/* no flags set */
+	SF_FLUSH_NOT_SUPPORTED = 1	/* subdriver doesn't support flushing IO buffers */
+};
+
 typedef struct {
 	char	*name;
-	void	(*init) ();
+	char	flags;
 	int	(*get_data) (char *buffer, int buffer_size);
 	int	(*set_data) (const char *str);
 } subdriver_t;
 
 /* agiler subdriver definition */
-static void init_agiler();
 static int get_data_agiler(char *buffer, int buffer_size);
 static int set_data_agiler(const char *str);
 
 static subdriver_t agiler_subdriver = {
 	"agiler",
-	init_agiler,
+	SF_NONE,
 	get_data_agiler,
 	set_data_agiler
 };
 
 /* krauler (ablerex) subdriver definition */
-static void init_krauler();
 static int get_data_krauler(char *buffer, int buffer_size);
 static int set_data_krauler(const char *str);
 
 static subdriver_t krauler_subdriver = {
 	"krauler",
-	init_krauler,
+	SF_FLUSH_NOT_SUPPORTED,
 	get_data_krauler,
 	set_data_krauler
 };
@@ -218,7 +221,8 @@ int ser_open(const char *port)
 	/* TODO: Add make exact matcher for reconnecting feature support */
 	USBFreeRegexMatcher(regex_matcher);
 
-	if(subdriver) subdriver->init();
+	/* This is here until ser_flush_io() is used in megatec.c */
+	ser_flush_io(0);
 
 	return 0;
 }
@@ -235,6 +239,21 @@ int ser_set_dtr(int fd, int state)
 
 int ser_set_rts(int fd, int state)
 {
+	return 0;
+}
+
+int ser_flush_io(int fd)
+{
+	char flush_buf[256];
+	int i;
+
+	if(!(subdriver->flags & SF_FLUSH_NOT_SUPPORTED))
+		/* flush input buffers */
+		for (i = 0; i < 10; i++) {
+			if (subdriver->get_data(flush_buf, sizeof(flush_buf)) < 1)
+				break;
+		}
+
 	return 0;
 }
 
@@ -313,18 +332,6 @@ int ser_get_line(int fd, char *buf, size_t buflen, char endchar, const char *ign
     All constants are hardcoded in windows driver
 */
 
-static void init_agiler()
-{
-	char flush_buf[256];
-	int i;
-
-	/* flush input buffers */
-	for (i = 0; i < 10; i++) {
-		if (get_data_agiler(flush_buf, sizeof(flush_buf)) < 1)
-			break;
-	}
-}
-
 static int set_data_agiler(const char *str)
 {
 	return usb->set_report(udev, 0, (unsigned char *)str, strlen(str));
@@ -366,10 +373,6 @@ static krauler_command_t krauler_command_lst[] = {
 };
 
 static krauler_command_t *command = NULL;
-
-static void init_krauler()
-{
-}
 
 static int set_data_krauler(const char *str)
 {

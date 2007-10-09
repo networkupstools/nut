@@ -1,3 +1,10 @@
+Tue Oct  9 22:54:08 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ * drivers/megatec_usb.c:
+   - moved the code from subdriver init function which actually does
+     flushing buffers to ser_flush_io().
+   - added subdriver 'flags' to export information about subdriver.
+
 Wed Oct  3 00:01:09 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
 
  - drivers/megatec_usb.c: added ability to do subdriver-specific
