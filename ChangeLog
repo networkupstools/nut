@@ -1,3 +1,8 @@
+Mon Oct 15 08:12:28 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - scripts/udev/nut-usbups.rules.in: Make udev rules compatible with
+   newer kernels compiled without CONFIG_USB_DEVICE_CLASS.
+
 Tue Oct  9 22:54:08 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
 
  * drivers/megatec_usb.c:
