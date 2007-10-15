@@ -1,3 +1,7 @@
+Mon Oct 15 11:14:06 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - data/drivers.list: add Powerware 9110 compatibility through upscode2
+
 Mon Oct 15 08:12:28 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - scripts/udev/nut-usbups.rules.in: Make udev rules compatible with
