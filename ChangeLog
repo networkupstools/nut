@@ -1,3 +1,8 @@
+Thu Oct 18 17:51:07 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - data/drivers.list: add Belkin F6H375-USB compatibility through
+   megatec_usb (depending on vendorid)
+
 Mon Oct 15 11:14:06 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  - data/drivers.list: add Powerware 9110 compatibility through upscode2
