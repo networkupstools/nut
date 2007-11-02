@@ -47,14 +47,8 @@ static usb_communication_subdriver_t *usb = &usb_subdriver;
 static usb_dev_handle *udev = NULL;
 static USBDevice_t usbdevice;
 
-enum subdriver_flags_t {
-	SF_NONE = 0,			/* no flags set */
-	SF_FLUSH_NOT_SUPPORTED = 1	/* subdriver doesn't support flushing IO buffers */
-};
-
 typedef struct {
 	char	*name;
-	char	flags;
 	int	(*get_data) (char *buffer, int buffer_size);
 	int	(*set_data) (const char *str);
 } subdriver_t;
@@ -65,7 +59,6 @@ static int set_data_agiler(const char *str);
 
 static subdriver_t agiler_subdriver = {
 	"agiler",
-	SF_NONE,
 	get_data_agiler,
 	set_data_agiler
 };
@@ -76,7 +69,6 @@ static int set_data_krauler(const char *str);
 
 static subdriver_t krauler_subdriver = {
 	"krauler",
-	SF_FLUSH_NOT_SUPPORTED,
 	get_data_krauler,
 	set_data_krauler
 };
@@ -247,12 +239,11 @@ int ser_flush_io(int fd)
 	char flush_buf[256];
 	int i;
 
-	if(!(subdriver->flags & SF_FLUSH_NOT_SUPPORTED))
-		/* flush input buffers */
-		for (i = 0; i < 10; i++) {
-			if (subdriver->get_data(flush_buf, sizeof(flush_buf)) < 1)
-				break;
-		}
+	/* flush input buffers */
+	for (i = 0; i < 10; i++) {
+		if (subdriver->get_data(flush_buf, sizeof(flush_buf)) < 1)
+			break;
+	}
 
 	return 0;
 }
@@ -356,87 +347,93 @@ static int get_data_agiler(char *buffer, int buffer_size)
 typedef struct {
 	char	*str;	/* Megatec command */
 	int	index;	/* Krauler string index for this command */
-	char	prefix;	/* character to prepend after stripping first four bytes in reply */
-	int	retry;	/* 0 for immediate action, >0 if used in get_data_krauler */
+	char	prefix;	/* character to replace the first byte in reply */
+	int	retry;	/* number of retries (1 is typically for instant commands) */
 } krauler_command_t;
 
 static krauler_command_t krauler_command_lst[] = {
-	{ "T\r",  0x04, '\0', 0 },
-	{ "TL\r", 0x05, '\0', 0 },
-	{ "Q\r",  0x07, '\0', 0 },
-	{ "C\r",  0x0b, '\0', 0 },
-	{ "CT\r", 0x0b, '\0', 0 },
-	{ "Q1\r", 0x03, '(', KRAULER_MAX_ATTEMPTS_Q1 },
-	{ "I\r",  0x0c, '#', KRAULER_MAX_ATTEMPTS_I },
-	{ "F\r",  0x0d, '#', KRAULER_MAX_ATTEMPTS_F },
+	{ "T\r",  0x04, '\0', 1 },
+	{ "TL\r", 0x05, '\0', 1 },
+	{ "Q\r",  0x07, '\0', 1 },
+	{ "C\r",  0x0b, '\0', 1 },
+	{ "CT\r", 0x0b, '\0', 1 },
+	{ "Q1\r", 0x03, '(',  KRAULER_MAX_ATTEMPTS_Q1 },
+	{ "I\r",  0x0c, '#',  KRAULER_MAX_ATTEMPTS_I },
+	{ "F\r",  0x0d, '#',  KRAULER_MAX_ATTEMPTS_F },
 	{ NULL, 0, '\0', 0 }
 };
 
-static krauler_command_t *command = NULL;
+/*
+Still not implemented:
+	0x6	T<n>	(don't know how to pass the parameter)
+	0x68 and 0x69 both cause shutdown after an undefined interval
+*/
+
+
+/* an intermediate buffer for 1 command's output */
+static char krauler_line_buf[255];
+static char krauler_line_buf_len = 0;
 
 static int set_data_krauler(const char *str)
 {
-	/*
-	Still not implemented:
-		0x6	T<n>	(don't know how to pass the parameter)
-		0x68 and 0x69 both cause shutdown after an undefined interval
-	*/
+	krauler_command_t *command;
+	int retval = strlen(str);
+
 	for (command = krauler_command_lst; command->str != NULL; command++) {
+		int	retry;
 
 		if (strcmp(str, command->str)) {
 			continue;
 		}
 
-		/* Immediate action */
-		if (command->retry == 0) {
-			int	res;
-			char	buf[SMALLBUF];
+		upsdebugx(3, "set_data_krauler: index [%02x]", command->index);
 
-			res = usb->get_string(udev, command->index, buf, sizeof(buf));
-			if (res > 0) {
-				upsdebugx(5, "set_data_krauler: dump [%s]", buf);
+		krauler_line_buf_len = 0;
+		for (retry = 0; retry < command->retry; retry++) {
+			int	res;
+
+			res = usb->get_string(udev, command->index, krauler_line_buf, sizeof(krauler_line_buf));
+			if (res < 1) {
+				/* TODO: handle_error(res) */
+				upsdebugx(2, "set_data_krauler: connection failure");
+				return 0;
 			}
+
+			/* "UPS No Ack" has a special meaning */
+			if (!strcmp(krauler_line_buf, "UPS No Ack")) {
+				upsdebugx(4, "set_data_krauler: retry [%s]", krauler_line_buf);
+				continue;
+			}
+
+			/* Replace the first byte of what we received with the correct one */
+			if(command->prefix) krauler_line_buf[0] = command->prefix;
+
+			krauler_line_buf_len = res;
+			return retval;
 		}
 
-		return strlen(str);
+		if(command->retry > 1 && retry == command->retry) upsdebugx(2, "set_data_krauler: too many attempts, the UPS is probably switched off!");
+
+		return retval;
 	}
 
 	upsdebugx(4, "set_data_krauler: unknown command [%s]", str);
-	return 0;
+
+	/* echo the unknown command back */
+	strcpy(krauler_line_buf, str);
+	krauler_line_buf_len = retval;
+
+	return retval;
 }
 
 static int get_data_krauler(char *buffer, int buffer_size)
 {
-	int	retry;
+	int retrieved = (buffer_size < krauler_line_buf_len) ? buffer_size : krauler_line_buf_len;
+	int left = krauler_line_buf_len - retrieved;
 
-	if (!command || !command->str) {
-		upsdebugx(3, "get_data_krauler: no command set");
-		return 0;
-	}
+	memcpy(buffer, krauler_line_buf, retrieved);
+	memmove(krauler_line_buf, krauler_line_buf + retrieved, left);
+	krauler_line_buf_len = left;
 
-	upsdebugx(3, "get_data_krauler: index [%02x], prefix [%c]", command->index, command->prefix);
-
-	for (retry = 0; retry < command->retry; retry++) {
-
-		int	res;
-
-		res = usb->get_string(udev, command->index, buffer, buffer_size);
-		if (res < 1) {
-			upsdebugx(2, "get_data_krauler: connection failure");
-			return res;
-		}
-
-		if (!strcmp(buffer, "UPS No Ack")) {
-			upsdebugx(4, "get_data_krauler: retry [%s]", buffer);
-			continue;
-		}
-
-		/* Replace the first byte of what we received with the correct one */
-		buffer[0] = command->prefix;
-
-		return res;
-	}
-
-	upsdebugx(4, "get_data_krauler: too many attempts");
-	return 0;
+	return retrieved;
 }

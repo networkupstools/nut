@@ -1,3 +1,9 @@
+Fri Nov  2 06:48:57 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ - drivers/megatec_usb.c: merged all functionality of get_data_krauler
+   to set_data_krauler thus removing most sources of code duplication
+   in krauler subdriver.
+
 Thu Oct 18 17:51:07 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - data/drivers.list: add Belkin F6H375-USB compatibility through
