@@ -1,3 +1,7 @@
+Sun Nov  4 20:08:53 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/hidparser.c: Fix non-portable type conversions.
+
 Fri Nov  2 06:48:57 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
 
  - drivers/megatec_usb.c: merged all functionality of get_data_krauler
