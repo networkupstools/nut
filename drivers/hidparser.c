@@ -126,11 +126,17 @@ static u_char* GetReportOffset(HIDParser_t* pParser,
  * -------------------------------------------------------------------------- */
 static long FormatValue(long Value, u_char Size)
 {
-  if(Size==1) 
-    Value=(long)(char)Value;
-  else if(Size==2) 
-    Value=(long)(short)Value;
-  return Value;
+	switch(Size)
+	{
+	case 1:
+		return (long)(int8_t)Value;
+	case 2:
+		return (long)(int16_t)Value;
+	case 4:
+		return (long)(int32_t)Value;
+	default:
+		return Value;
+	}
 }
 
 /*
