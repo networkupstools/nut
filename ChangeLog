@@ -1,3 +1,8 @@
+Mon Nov  5 20:21:45 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/nitram.c: Added experimental flag to this driver because it
+   lacks support to shutdown the UPS.
+
 Sun Nov  4 20:08:53 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/hidparser.c: Fix non-portable type conversions.

@@ -344,6 +344,8 @@ void upsdrv_banner(void)
 {
 	printf("Network UPS Tools - Nitram UPS driver %s (%s)\n\n",
 		DRV_VERSION, UPS_VERSION);
+	
+	experimental_driver = 1;
 }
 
 
