@@ -1,3 +1,8 @@
+Sun Nov 25 19:48:22 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/tripplitesu.c: Add debugging code to help diagnose driver
+   problems.
+
 Sun Nov 25 18:59:33 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/megatec.c: Fix counting detection attempts. Don't flush

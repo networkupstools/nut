@@ -205,60 +205,85 @@ static struct {
 #define WATCHDOG                     "WDG" /* poll/set */
 
 
-static int do_command(char type, const char *command,
-                      const char *parameters, char *response)
+static int do_command(char type, const char *command, const char *parameters, char *response)
 {
-	char buffer[5];
-	int count;
-	char *ptr;
+	char	buffer[SMALLBUF];
+	int	count;
 
-	count = 0;
-	ser_flush_in(upsfd, "", nut_debug_level);
+	ser_flush_io(upsfd);
 
-	if (ser_send(upsfd, "~00%c%03d%s%s", type,
-	            strlen(command) + strlen(parameters), command,
-	            parameters) <= 0)
+	snprintf(buffer, sizeof(buffer), "~00%c%03d%s%s", type, strlen(command) + strlen(parameters), command, parameters);
+
+	if (ser_send_pace(upsfd, 10000, buffer) <= 0) {
+		upsdebug_with_errno(3, "do_command: send [%s]", buffer);
 		return -1;
+	}
 
-	if (ser_get_buf_len(upsfd, buffer, 4, 3, 0) <= 0)
+	upsdebugx(3, "do_command: send [%s] -> OK", buffer);
+
+	count = ser_get_buf_len(upsfd, (unsigned char *)buffer, 4, 3, 0);
+	if (count <= 0) {
+		upsdebugx(3, "do_command: read -> TIMEOUT");
 		return -1;
-	buffer[4] = '\0';
+	}
+
+	buffer[count] = '\0';
+	upsdebugx(3, "do_command: read [%s]", buffer);
 
 	if (!strcmp(buffer, "~00D")) {
-		if (ser_get_buf_len(upsfd, buffer, 4, 3, 0) <= 0)
+
+		count = ser_get_buf_len(upsfd, (unsigned char *)buffer, 4, 3, 0);
+		if (count <= 0) {
+			upsdebugx(3, "do_command: read -> TIMEOUT");
 			return -1;
-		buffer[3] = '\0';
+		}
+
+		buffer[count] = '\0';
+		upsdebugx(3, "do_command: read [%s]", buffer);
+
 		count = atoi(buffer);
-		if (count >= MAX_RESPONSE_LENGTH || (count && !response))
+		if (count >= MAX_RESPONSE_LENGTH) {
+			upsdebugx(3, "do_command: response exceeds expected size!");
 			return -1;
+		}
+
+		if (count && !response) {
+			upsdebugx(3, "do_command: response not expected!");
+			return -1;
+		}
+
 		if (count == 0) {
-			if (response)
+			if (response) {
 				*response = '\0';
+			}
 			return 0;
 		}
 
-		if (ser_get_buf_len(upsfd, response, count, 3, 0) <= 0)
+		count = ser_get_buf_len(upsfd, (unsigned char *)response, count, 3, 0);
+		if (count <= 0) {
+			upsdebugx(3, "do_command: response -> TIMEOUT");
 			return -1;
+		}
+
 		response[count] = '\0';
+		upsdebugx(3, "do_command: response [%s]", buffer);
+
 		/* Tripp Lite pads their string responses with spaces.
 		   I don't like that, so I remove them.  This is safe to
 		   do with all responses for this protocol, so I just
 		   do that here. */
-		ptr = response + strlen(response) - 1;
-		while (ptr > response && *ptr == ' ')
-			ptr--;
-		*(ptr + 1) = '\0';
-		ser_comm_good();
-		return count;
+		rtrim(response, ' ');
+
+		return strlen(response);
 	}
+
 	if (!strcmp(buffer, "~00A")) {
-		if (response)
+		if (response) {
 			*response = '\0';
-		ser_comm_good();
-		return count;
+		}
+
+		return 0;
 	}
-	if (!strcmp(buffer, "~00R"))
-		ser_comm_good();
 
 	return -1;
 }
