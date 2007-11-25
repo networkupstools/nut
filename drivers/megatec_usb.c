@@ -95,6 +95,7 @@ static usb_ups_t KnownDevices[] = {
 	{0x0001, 0x0000, &krauler_subdriver},	/* Krauler UP-M500VA */
 	{0xffff, 0x0000, &krauler_subdriver},	/* Ablerex 625L USB */
 	{0x0665, 0x5161, &agiler_subdriver},	/* Belkin F6C1200-UNV */
+	{0x06da, 0x0003, &agiler_subdriver},	/* Mustek Powermust */
 	{-1, -1, NULL}		/* end of list */
 };
 

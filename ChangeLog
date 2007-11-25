@@ -1,3 +1,8 @@
+Sun Nov 25 10:53:38 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/megatec_usb.c, scripts/hal/20-ups-nut-device.fdi: Added
+   Mustek Powermust as supported through 'megatec_usb' driver.
+
 Mon Nov  5 20:21:45 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/nitram.c: Added experimental flag to this driver because it
