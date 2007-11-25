@@ -154,7 +154,6 @@ static char watchdog_timeout = 1;  /* in minutes */
 static char *copy_field(char* dest, char *src, int field_len);
 static float get_battery_charge(float battvolt);
 static int set_battery_params(float volt_nominal, float volt_now);
-static int check_ups(void);
 static int get_ups_info(UPSInfo_t *info);
 static int get_firmware_values(FirmwareValues_t *values);
 static int run_query(QueryValues_t *values);
@@ -253,41 +252,6 @@ static int set_battery_params(float volt_nominal, float volt_now)
 }
 
 
-static int check_ups(void)
-{
-	char buffer[RECV_BUFFER_LEN];
-	int ret;
-
-	upsdebugx(2, "Checking for UPS presence [Q1]...");
-	ser_send_pace(upsfd, SEND_PACE, "Q1%c", ENDCHAR);
-	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
-
-	if (ret < 0) {
-		upsdebugx(2, "Q1 => FAILED [timeout]");
-
-		return -1;
-	}
-
-	if (ret < Q1_CMD_REPLY_LEN) {
-		upsdebugx(2, "Q1 => FAILED [short read]");
-		upsdebug_hex(3, "Q1 detail", (unsigned char *)buffer, ret);
-
-		return -1;
-	}
-
-	if (buffer[0] != '(') {
-		upsdebugx(2, "Q1 => FAILED [invalid start character]");
-		upsdebug_hex(3, "Q1 detail", (unsigned char *)buffer, ret);
-
-		return -1;
-	}
-
-	upsdebugx(2, "Q1 => OK");
-
-	return 0;
-}
-
-
 static int get_ups_info(UPSInfo_t *info)
 {
 	char buffer[RECV_BUFFER_LEN];
@@ -295,6 +259,8 @@ static int get_ups_info(UPSInfo_t *info)
 	int ret;
 
 	upsdebugx(2, "Asking for UPS information [I]...");
+
+	ser_flush_io(upsfd);
 	ser_send_pace(upsfd, SEND_PACE, "I%c", ENDCHAR);
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 
@@ -341,6 +307,7 @@ static int get_firmware_values(FirmwareValues_t *values)
 	int ret;
 
 	upsdebugx(2, "Asking for UPS power ratings [F]...");
+	ser_flush_io(upsfd);
 	ser_send_pace(upsfd, SEND_PACE, "F%c", ENDCHAR);
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 
@@ -381,6 +348,7 @@ static int run_query(QueryValues_t *values)
 	int ret;
 
 	upsdebugx(2, "Asking for UPS status [Q1]...");
+	ser_flush_io(upsfd);
 	ser_send_pace(upsfd, SEND_PACE, "Q1%c", ENDCHAR);
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 
@@ -434,21 +402,24 @@ void upsdrv_initinfo(void)
 	 * UPS detection sequence.
 	 */
 	upsdebugx(1, "Starting UPS detection process...");
-	for (i = 0; i < IDENT_MAXTRIES; i++) {
-		if (check_ups() == 0) {
-			success++;
+	for (i = 1; i <= IDENT_MAXTRIES; i++) {
+		if (run_query(&query) < 0) {
+			continue;
+		}
+		if (++success == IDENT_MINSUCCESS) {
+			break;
 		}
 	}
 
-	upsdebugx(1, "%d out of %d detection attempts failed (minimum failures: %d).",
-	          IDENT_MAXTRIES - success, IDENT_MAXTRIES, IDENT_MAXTRIES - IDENT_MINSUCCESS);
+	upsdebugx(1, "%d out of %d detection attempts succeeded (minimum required %d)",
+	          success, i, IDENT_MINSUCCESS);
+
+	if (success == 0) {
+		fatalx(EXIT_FAILURE, "Megatec protocol UPS not detected.");
+	}
 
 	if (success < IDENT_MINSUCCESS) {
-		if (success > 0) {
-			fatalx(EXIT_FAILURE, "The UPS is supported, but the connection is too unreliable. Try checking the cable for defects.");
-		} else {
-			fatalx(EXIT_FAILURE, "Megatec protocol UPS not detected.");
-		}
+		fatalx(EXIT_FAILURE, "The UPS is supported, but the connection is too unreliable. Try checking the cable for defects.");
 	}
 
 	/*
@@ -478,9 +449,14 @@ void upsdrv_initinfo(void)
 		dstate_setinfo("output.voltage.nominal", "%.1f", values.volt);
 		dstate_setinfo("battery.voltage.nominal", "%.1f", values.battvolt);
 
+		/*
+		This is redundant now. The last run_query() in the detection sequence has
+		read the query (and we know it is successful since we made it to here...)
+
 		if (run_query(&query) < 0) {
 			fatalx(EXIT_FAILURE, "Error reading status from UPS!");
 		}
+		*/
 
 		if (set_battery_params(values.battvolt, query.battvolt) < 0) {
 			upslogx(LOG_NOTICE, "This UPS has an unsupported combination of battery voltage/number of batteries.");
@@ -494,7 +470,7 @@ void upsdrv_initinfo(void)
 			fatalx(EXIT_FAILURE, "Error in \"battvolts\" parameter.");
 		}
 		
-	    upslogx(LOG_NOTICE, "Overriding battery voltage interval [%.1fV, %.1fV].", battvolt_empty, battvolt_full);		
+		upslogx(LOG_NOTICE, "Overriding battery voltage interval [%.1fV, %.1fV].", battvolt_empty, battvolt_full);		
 	}
 
 	if (battvolt_empty < 0 || battvolt_full < 0) {
