@@ -259,8 +259,6 @@ static int get_ups_info(UPSInfo_t *info)
 	int ret;
 
 	upsdebugx(2, "Asking for UPS information [I]...");
-
-	ser_flush_io(upsfd);
 	ser_send_pace(upsfd, SEND_PACE, "I%c", ENDCHAR);
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 
@@ -307,7 +305,6 @@ static int get_firmware_values(FirmwareValues_t *values)
 	int ret;
 
 	upsdebugx(2, "Asking for UPS power ratings [F]...");
-	ser_flush_io(upsfd);
 	ser_send_pace(upsfd, SEND_PACE, "F%c", ENDCHAR);
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 
@@ -348,7 +345,6 @@ static int run_query(QueryValues_t *values)
 	int ret;
 
 	upsdebugx(2, "Asking for UPS status [Q1]...");
-	ser_flush_io(upsfd);
 	ser_send_pace(upsfd, SEND_PACE, "Q1%c", ENDCHAR);
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 
@@ -402,11 +398,12 @@ void upsdrv_initinfo(void)
 	 * UPS detection sequence.
 	 */
 	upsdebugx(1, "Starting UPS detection process...");
-	for (i = 1; i <= IDENT_MAXTRIES; i++) {
+	for (i = 0; i < IDENT_MAXTRIES; i++) {
 		if (run_query(&query) < 0) {
 			continue;
 		}
 		if (++success == IDENT_MINSUCCESS) {
+			i++;
 			break;
 		}
 	}

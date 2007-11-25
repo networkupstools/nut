@@ -1,3 +1,11 @@
+Sun Nov 25 18:59:33 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/megatec.c: Fix counting detection attempts. Don't flush
+   input- and output buffers before sending any command (too verbose
+   for the USB subdrivers).
+ - drivers/megatec_usb.c: Padding to 8 characters for commands send
+   through set_data_agiler(). Apparently, some devices need that.
+
 Sun Nov 25 11:44:58 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/megatec.c: Limit detection of UPS to minimum required number

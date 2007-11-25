@@ -326,7 +326,11 @@ int ser_get_line(int fd, char *buf, size_t buflen, char endchar, const char *ign
 
 static int set_data_agiler(const char *str)
 {
-	return usb->set_report(udev, 0, (unsigned char *)str, strlen(str));
+	char	buffer[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+
+	snprintf(buffer, sizeof(buffer), "%s", str);
+
+	return usb->set_report(udev, 0, (unsigned char *)buffer, sizeof(buffer));
 }
 
 static int get_data_agiler(char *buffer, int buffer_size)
