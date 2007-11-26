@@ -30,21 +30,28 @@ Optional.  Specify the UPS model name.
 
 Optional.  Specify the UPS serial number.
 
+.IP "offdelay=\fIint\fR"
+
+Optional.  After receiving a shutdown command, the UPS will wait this many
+minutes before turning off the load. Specify this if the UPS must remain online
+for a short period of time after the computer has powered down. The default is 0
+(turn off immediately).
+
+.IP "ondelay=\fIint\fR"
+
+Optional.  After turning off the load (see \fBoffdelay\fR), the UPS will wait at
+least this many minutes before coming back online. If line power gets restored
+before this delay expires, the UPS will wait until it does. If line power gets
+restored after this delay expires, the UPS will power on the load immediately.
+The default is 2 minutes.
+
 .IP "lowbatt=\fIfloat\fR"
 
 Optional.  Low battery level (%). Overrides the hardware default level.
 
-.IP "ondelay=\fIint\fR"
-
-Optional.  Delay before the UPS is turned back on (minutes).
-
-.IP "offdelay=\fIint\fR"
-
-Optional.  Delay before the UPS is turned off (minutes).
-
 .IP "battvolts=\fIfloat\fR:\fIfloat\fR"
 
-Optional.  The battery voltage interval (volts).
+Optional.  The battery voltage interval (see \fBKNOWN PROBLEMS\fR).
 
 .SH UPS COMMANDS
 
@@ -85,17 +92,6 @@ Perform a (10 second) battery test.
 
 .IP test.battery.stop
 Stop a running battery test. (Not available on some hardware.)
-
-.SH USER VARIABLES
-
-The behavior of the driver can be controlled by some user definable
-variables (see \fBupsrw\fR(8)):
-
-.IP ups.delay.shutdown
-Interval to wait after shutdown with delay command (seconds)
-
-.IP ups.delay.start
-Interval to wait before (re)starting the load (seconds)
 
 .SH KNOWN PROBLEMS
 

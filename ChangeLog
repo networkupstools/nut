@@ -1,3 +1,21 @@
+Mon Nov 26 19:46:21 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ * drivers/megatec.c:
+   - get the values for the "ondelay" and "offdelay" parameters in
+     upsdrv_shutdown(), otherwise the defaults are used leaving
+     users confused.
+   - rewrite documentation for "ondelay" since this timer starts
+     counting the moment the UPS is turned off, and not the
+     moment line power is restored.
+   - Remove "ups.delay.start" and "ups.delay.shutdown" variables
+     since they would only affect instant commands and are thus more
+     cunfusing than useful in the real world.
+   - Changed the check_ups() function to reuse the run_query() function
+     instead of duplicating code.
+   - Changed the detection process to keep the UPS status for later
+     use instead of having to query the UPS again (if this were to fail,
+     the driver would fatalx() leaving users confused).
+
 Mon Nov 26 18:27:52 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/megatec_usb.c: Allow longer commands in the 'phoenix'

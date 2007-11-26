@@ -141,7 +141,7 @@ static float ivolt_min = INT_MAX;  /* unknown */
 static float ivolt_max = -1;       /* unknown */
 
 /* In minutes: */
-static short start_delay = 2;     /* wait this amount of time to come back online */
+static short start_delay = 2;     /* wait at least this amount of time before coming back online */
 static short shutdown_delay = 0;  /* wait until going offline */
 
 /* In percentage: */
@@ -154,6 +154,7 @@ static char watchdog_timeout = 1;  /* in minutes */
 static char *copy_field(char* dest, char *src, int field_len);
 static float get_battery_charge(float battvolt);
 static int set_battery_params(float volt_nominal, float volt_now);
+static int check_ups(QueryValues_t *status);
 static int get_ups_info(UPSInfo_t *info);
 static int get_firmware_values(FirmwareValues_t *values);
 static int run_query(QueryValues_t *values);
@@ -249,6 +250,23 @@ static int set_battery_params(float volt_nominal, float volt_now)
 	upsdebugx(1, "Unsupported battery voltage (%.1fV).", volt_nominal);
 
 	return -1;
+}
+
+
+/*
+ * The "status" parameter is left unchanged on failure.
+ */
+static int check_ups(QueryValues_t *status)
+{
+	QueryValues_t values;
+	
+	if (run_query(&values) < 0) {
+		return -1;
+	}
+
+	memcpy(status, &values, sizeof(values));
+
+	return 0;
 }
 
 
@@ -389,7 +407,7 @@ void upsdrv_initinfo(void)
 	int i;
 	int success = 0;
 	FirmwareValues_t values;
-	QueryValues_t query;
+	QueryValues_t status;
 	UPSInfo_t info;
 
 	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
@@ -399,24 +417,20 @@ void upsdrv_initinfo(void)
 	 */
 	upsdebugx(1, "Starting UPS detection process...");
 	for (i = 0; i < IDENT_MAXTRIES; i++) {
-		if (run_query(&query) < 0) {
-			continue;
-		}
-		if (++success == IDENT_MINSUCCESS) {
-			i++;
-			break;
+		if (check_ups(&status) == 0) {
+			success++;
 		}
 	}
 
-	upsdebugx(1, "%d out of %d detection attempts succeeded (minimum required %d)",
-	          success, i, IDENT_MINSUCCESS);
-
-	if (success == 0) {
-		fatalx(EXIT_FAILURE, "Megatec protocol UPS not detected.");
-	}
+	upsdebugx(1, "%d out of %d detection attempts failed (minimum failures: %d).",
+	          IDENT_MAXTRIES - success, IDENT_MAXTRIES, IDENT_MAXTRIES - IDENT_MINSUCCESS);
 
 	if (success < IDENT_MINSUCCESS) {
-		fatalx(EXIT_FAILURE, "The UPS is supported, but the connection is too unreliable. Try checking the cable for defects.");
+		if (success > 0) {
+			fatalx(EXIT_FAILURE, "The UPS is supported, but the connection is too unreliable. Try checking the cable for defects.");
+		} else {
+			fatalx(EXIT_FAILURE, "Megatec protocol UPS not detected.");
+		}
 	}
 
 	/*
@@ -446,16 +460,7 @@ void upsdrv_initinfo(void)
 		dstate_setinfo("output.voltage.nominal", "%.1f", values.volt);
 		dstate_setinfo("battery.voltage.nominal", "%.1f", values.battvolt);
 
-		/*
-		This is redundant now. The last run_query() in the detection sequence has
-		read the query (and we know it is successful since we made it to here...)
-
-		if (run_query(&query) < 0) {
-			fatalx(EXIT_FAILURE, "Error reading status from UPS!");
-		}
-		*/
-
-		if (set_battery_params(values.battvolt, query.battvolt) < 0) {
+		if (set_battery_params(values.battvolt, status.battvolt) < 0) {
 			upslogx(LOG_NOTICE, "This UPS has an unsupported combination of battery voltage/number of batteries.");
 		}
 	}
@@ -467,7 +472,7 @@ void upsdrv_initinfo(void)
 			fatalx(EXIT_FAILURE, "Error in \"battvolts\" parameter.");
 		}
 		
-		upslogx(LOG_NOTICE, "Overriding battery voltage interval [%.1fV, %.1fV].", battvolt_empty, battvolt_full);		
+	    upslogx(LOG_NOTICE, "Overriding battery voltage interval [%.1fV, %.1fV].", battvolt_empty, battvolt_full);		
 	}
 
 	if (battvolt_empty < 0 || battvolt_full < 0) {
@@ -493,16 +498,8 @@ void upsdrv_initinfo(void)
 		shutdown_delay = CLAMP(atoi(getval("offdelay")), 0, MAX_SHUTDOWN_DELAY);
 	}
 
-	/*
-	 * Register the available variables.
-	 */
 	dstate_setinfo("ups.delay.start", "%d", start_delay);
-	dstate_setflags("ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING);
-	dstate_setaux("ups.delay.start", MAX_START_DELAY_LEN);
-
 	dstate_setinfo("ups.delay.shutdown", "%d", shutdown_delay);
-	dstate_setflags("ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING);
-	dstate_setaux("ups.delay.shutdown", MAX_SHUTDOWN_DELAY_LEN);
 
 	/*
 	 * Register the available instant commands.
@@ -620,10 +617,13 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	upslogx(LOG_INFO, "Shutting down UPS immediately.");
+	int s_wait = getval("offdelay") ? CLAMP(atoi(getval("offdelay")), 0, MAX_SHUTDOWN_DELAY) : shutdown_delay;
+	int r_wait = getval("ondelay") ? CLAMP(atoi(getval("ondelay")), 0, MAX_START_DELAY) : start_delay;
+
+	upslogx(LOG_INFO, "Shutting down UPS.");
 
 	ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
-	ser_send_pace(upsfd, SEND_PACE, "S%02dR%04d%c", shutdown_delay, start_delay, ENDCHAR);
+	ser_send_pace(upsfd, SEND_PACE, "S%02dR%04d%c", s_wait, r_wait, ENDCHAR);	
 }
 
 
@@ -767,32 +767,6 @@ int instcmd(const char *cmdname, const char *extra)
 
 int setvar(const char *varname, const char *val)
 {
-	int delay;
-
-	if (sscanf(val, "%d", &delay) != 1) {
-		return STAT_SET_UNKNOWN;
-	}
-
-	if (strcasecmp(varname, "ups.delay.start") == 0) {
-		delay = CLAMP(delay, 0, MAX_START_DELAY);
-		start_delay = delay;
-		dstate_setinfo("ups.delay.start", "%d", delay);
-
-		dstate_dataok();
-
-		return STAT_SET_HANDLED;
-	}
-
-	if (strcasecmp(varname, "ups.delay.shutdown") == 0) {
-		delay = CLAMP(delay, 0, MAX_SHUTDOWN_DELAY);
-		shutdown_delay = delay;
-		dstate_setinfo("ups.delay.shutdown", "%d", delay);
-
-		dstate_dataok();
-
-		return STAT_SET_HANDLED;
-	}
-
 	return STAT_SET_UNKNOWN;
 }
 
@@ -808,7 +782,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "model", "Model name");
 	addvar(VAR_VALUE, "serial", "UPS serial number");
 	addvar(VAR_VALUE, "lowbatt", "Low battery level (%)");
-	addvar(VAR_VALUE, "ondelay", "Delay before UPS startup (minutes)");
+	addvar(VAR_VALUE, "ondelay", "Minimum delay before UPS startup (minutes)");
 	addvar(VAR_VALUE, "offdelay", "Delay before UPS shutdown (minutes)");
 	addvar(VAR_VALUE, "battvolts", "Battery voltages (empty:full)");
 	
