@@ -208,38 +208,43 @@ static struct {
 static int do_command(char type, const char *command, const char *parameters, char *response)
 {
 	char	buffer[SMALLBUF];
-	int	count, i;
+	int	count, ret;
 
 	ser_flush_io(upsfd);
 
+	if (response) {
+		*response = '\0';
+	}
+
 	snprintf(buffer, sizeof(buffer), "~00%c%03d%s%s", type, strlen(command) + strlen(parameters), command, parameters);
 
-	if (ser_send_pace(upsfd, 10000, buffer) <= 0) {
+	ret = ser_send_pace(upsfd, 10000, buffer);
+	if (ret <= 0) {
 		upsdebug_with_errno(3, "do_command: send [%s]", buffer);
 		return -1;
 	}
 
-	upsdebugx(3, "do_command: send [%s] -> OK", buffer);
+	upsdebugx(3, "do_command: %d bytes sent [%s] -> OK", ret, buffer);
 
-	count = ser_get_buf_len(upsfd, (unsigned char *)buffer, 4, 3, 0);
-	if (count <= 0) {
+	ret = ser_get_buf_len(upsfd, (unsigned char *)buffer, 4, 3, 0);
+	if (ret <= 0) {
 		upsdebugx(3, "do_command: read -> TIMEOUT");
 		return -1;
 	}
 
-	buffer[count] = '\0';
-	upsdebugx(3, "do_command: read [%s]", buffer);
+	buffer[ret] = '\0';
+	upsdebugx(3, "do_command: %d byted read [%s]", ret, buffer);
 
 	if (!strcmp(buffer, "~00D")) {
 
-		count = ser_get_buf_len(upsfd, (unsigned char *)buffer, 4, 3, 0);
-		if (count <= 0) {
+		ret = ser_get_buf_len(upsfd, (unsigned char *)buffer, 3, 3, 0);
+		if (ret <= 0) {
 			upsdebugx(3, "do_command: read -> TIMEOUT");
 			return -1;
 		}
 
-		buffer[count] = '\0';
-		upsdebugx(3, "do_command: read [%s]", buffer);
+		buffer[ret] = '\0';
+		upsdebugx(3, "do_command: %d bytes read [%s]", ret, buffer);
 
 		count = atoi(buffer);
 		if (count >= MAX_RESPONSE_LENGTH) {
@@ -253,28 +258,17 @@ static int do_command(char type, const char *command, const char *parameters, ch
 		}
 
 		if (count == 0) {
-			if (response) {
-				*response = '\0';
-			}
 			return 0;
 		}
 
-		/* Read one byte at a time, so that we can see if there are short
-		   reads from the UPS, rather than just a timeout */
-		for (i = 0; i < count; i++) {
-			if (ser_get_char(upsfd, (unsigned char *)&response[i], 3, 0) < 1) {
-				upsdebugx(3, "do_command: received [%d] characters", i);
-				break;
-			}
-		}
-
-		if (i == 0) {
-			upsdebugx(3, "do_command: response -> TIMEOUT");
+		ret = ser_get_buf_len(upsfd, (unsigned char *)response, count, 3, 0);
+		if (ret <= 0) {
+			upsdebugx(3, "do_command: read -> TIMEOUT");
 			return -1;
 		}
 
-		response[i] = '\0';
-		upsdebugx(3, "do_command: response [%s]", buffer);
+		response[ret] = '\0';
+		upsdebugx(3, "do_command: %d bytes read [%s]", ret, response);
 
 		/* Tripp Lite pads their string responses with spaces.
 		   I don't like that, so I remove them.  This is safe to
@@ -282,14 +276,10 @@ static int do_command(char type, const char *command, const char *parameters, ch
 		   do that here. */
 		rtrim(response, ' ');
 
-		return strlen(response);
+		return ret;
 	}
 
 	if (!strcmp(buffer, "~00A")) {
-		if (response) {
-			*response = '\0';
-		}
-
 		return 0;
 	}
 

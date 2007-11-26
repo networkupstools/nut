@@ -1,7 +1,13 @@
+Mon Nov 26 13:45:06 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/tripplitesu.c: Fixed copy-paste error in this driver that
+   dates back from the conversion to the new serial I/O functions a
+   couple of years back.
+
 Mon Nov 26 10:02:26 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
- -  drivers/tripplitesu.c: Read the response per byte, so that where
-    a timeout occurs.
+ - drivers/tripplitesu.c: Read the response per byte, so that where
+   a timeout occurs.
 
 Mon Nov 26 08:58:25 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
