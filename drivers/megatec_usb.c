@@ -63,6 +63,16 @@ static subdriver_t agiler_subdriver = {
 	set_data_agiler
 };
 
+/* Phoenixtec Power Co subdriver definition */
+static int get_data_phoenix(char *buffer, int buffer_size);
+static int set_data_phoenix(const char *str);
+
+static subdriver_t phoenix_subdriver = {
+	"phoenix",
+	get_data_phoenix,
+	set_data_phoenix
+};
+
 /* krauler (ablerex) subdriver definition */
 static int get_data_krauler(char *buffer, int buffer_size);
 static int set_data_krauler(const char *str);
@@ -95,7 +105,7 @@ static usb_ups_t KnownDevices[] = {
 	{0x0001, 0x0000, &krauler_subdriver},	/* Krauler UP-M500VA */
 	{0xffff, 0x0000, &krauler_subdriver},	/* Ablerex 625L USB */
 	{0x0665, 0x5161, &agiler_subdriver},	/* Belkin F6C1200-UNV */
-	{0x06da, 0x0003, &agiler_subdriver},	/* Mustek Powermust */
+	{0x06da, 0x0003, &phoenix_subdriver},	/* Mustek Powermust */
 	{-1, -1, NULL}		/* end of list */
 };
 
@@ -316,15 +326,24 @@ int ser_get_line(int fd, char *buf, size_t buflen, char endchar, const char *ign
 
 /*
     Agiler serial-to-usb device.
-
-    Protocol was reverse-engineered from Windows driver
-    HID tables are completely bogus
-    Data is transferred out as one 8-byte packet with report ID 0
-    Data comes in as 6 8-byte reports per line , padded with zeroes
-    All constants are hardcoded in windows driver
 */
 
 static int set_data_agiler(const char *str)
+{
+	return usb->set_report(udev, 0, (unsigned char *)str, strlen(str));
+}
+
+static int get_data_agiler(char *buffer, int buffer_size)
+{
+	return usb->get_interrupt(udev, (unsigned char *)buffer, buffer_size, 1000);
+}
+
+
+/*
+    Phoenixtec Power Co serial-to-usb device.
+*/
+
+static int set_data_phoenix(const char *str)
 {
 	char	buffer[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
@@ -333,9 +352,25 @@ static int set_data_agiler(const char *str)
 	return usb->set_report(udev, 0, (unsigned char *)buffer, sizeof(buffer));
 }
 
-static int get_data_agiler(char *buffer, int buffer_size)
+static int get_data_phoenix(char *buffer, int buffer_size)
 {
-	return usb->get_interrupt(udev, (unsigned char *)buffer, buffer_size, 1000);
+	int	count;
+
+	memset(buffer, 0, buffer_size);
+
+	for (count = 8; count <= buffer_size; count += 8) {
+
+		/* Read data in 8-byte chunks, break on a timeout */
+		if (usb->get_interrupt(udev, (unsigned char *)&buffer[count-8], 8, 1000) < 0) {
+			return count-8;
+		}
+
+		upsdebugx(3, "get_data_phoenix: got so far [%s]", buffer);
+		upsdebug_hex(4, "get_data_phoenix", (unsigned char *)buffer, count);
+	}
+
+	upsdebugx(3, "get_data_phoenix: buffer too small");
+	return -1;
 }
 
 

@@ -1,3 +1,8 @@
+Mon Nov 26 08:58:25 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/megatec_usb.c: Add new 'phoenix' subdriver, since it seems
+   to drift away from what is needed by the 'agiler' subdriver.
+
 Sun Nov 25 19:48:22 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/tripplitesu.c: Add debugging code to help diagnose driver
