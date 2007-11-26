@@ -342,21 +342,33 @@ static int get_data_agiler(char *buffer, int buffer_size)
 /*
     Phoenixtec Power Co serial-to-usb device.
 */
+static char	phoenix_buffer[8];
 
 static int set_data_phoenix(const char *str)
 {
-	char	buffer[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+	memset(phoenix_buffer, '\0', sizeof(phoenix_buffer));
 
-	snprintf(buffer, sizeof(buffer), "%s", str);
+	snprintf(phoenix_buffer, sizeof(phoenix_buffer), "%s", str);
 
-	return usb->set_report(udev, 0, (unsigned char *)buffer, sizeof(buffer));
+	if (!strcmp(phoenix_buffer, "I\r") || !strcmp(phoenix_buffer, "C\r")) {
+		/* Ignore these, since they seem to lock up the connection */
+		return strlen(str);
+	}
+
+	return usb->set_report(udev, 0, (unsigned char *)phoenix_buffer, sizeof(phoenix_buffer));
 }
 
 static int get_data_phoenix(char *buffer, int buffer_size)
 {
 	int	count;
 
-	memset(buffer, 0, buffer_size);
+	memset(buffer, '\0', buffer_size);
+
+	if (!strcmp(phoenix_buffer, "I\r") || !strcmp(phoenix_buffer, "C\r")) {
+		/* Echo back unsupported commands */
+		snprintf(buffer, buffer_size, "%s", phoenix_buffer);
+		return strlen(buffer);
+	}
 
 	for (count = 8; count <= buffer_size; count += 8) {
 

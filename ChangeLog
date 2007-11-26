@@ -1,3 +1,8 @@
+Mon Nov 26 14:01:56 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/megatec_usb.c: Echo back the unsupported 'I\r' and 'C\r'
+   commands in the 'phoenix' subdriver.
+
 Mon Nov 26 13:45:06 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/tripplitesu.c: Fixed copy-paste error in this driver that
