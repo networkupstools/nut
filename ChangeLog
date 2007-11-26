@@ -1,3 +1,8 @@
+Mon Nov 26 10:02:26 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ -  drivers/tripplitesu.c: Read the response per byte, so that where
+    a timeout occurs.
+
 Mon Nov 26 08:58:25 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/megatec_usb.c: Add new 'phoenix' subdriver, since it seems

@@ -208,7 +208,7 @@ static struct {
 static int do_command(char type, const char *command, const char *parameters, char *response)
 {
 	char	buffer[SMALLBUF];
-	int	count;
+	int	count, i;
 
 	ser_flush_io(upsfd);
 
@@ -259,13 +259,21 @@ static int do_command(char type, const char *command, const char *parameters, ch
 			return 0;
 		}
 
-		count = ser_get_buf_len(upsfd, (unsigned char *)response, count, 3, 0);
-		if (count <= 0) {
+		/* Read one byte at a time, so that we can see if there are short
+		   reads from the UPS, rather than just a timeout */
+		for (i = 0; i < count; i++) {
+			if (ser_get_char(upsfd, (unsigned char *)&response[i], 3, 0) < 1) {
+				upsdebugx(3, "do_command: received [%d] characters", i);
+				break;
+			}
+		}
+
+		if (i == 0) {
 			upsdebugx(3, "do_command: response -> TIMEOUT");
 			return -1;
 		}
 
-		response[count] = '\0';
+		response[i] = '\0';
 		upsdebugx(3, "do_command: response [%s]", buffer);
 
 		/* Tripp Lite pads their string responses with spaces.
