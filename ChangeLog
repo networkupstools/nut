@@ -1,3 +1,9 @@
+Mon Nov 26 13:45:06 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/tripplitesu.c: Fixed copy-paste error in this driver that
+   dates back from the conversion to the new serial I/O functions a
+   couple of years back.
+
 Sun Nov  4 20:08:53 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/hidparser.c: Fix non-portable type conversions.

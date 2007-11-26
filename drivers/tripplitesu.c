@@ -225,7 +225,7 @@ static int do_command(char type, const char *command,
 	buffer[4] = '\0';
 
 	if (!strcmp(buffer, "~00D")) {
-		if (ser_get_buf_len(upsfd, buffer, 4, 3, 0) <= 0)
+		if (ser_get_buf_len(upsfd, buffer, 3, 3, 0) <= 0)
 			return -1;
 		buffer[3] = '\0';
 		count = atoi(buffer);
