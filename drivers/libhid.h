@@ -34,9 +34,7 @@
 #include <sys/types.h>
 #include "hidtypes.h"
 
-#ifdef HAVE_STDINT_H
-#include <stdint.h> /* for uint16_t */
-#endif
+#include "nut_stdint.h"
 
 #include "timehead.h"
 #ifdef SHUT_MODE

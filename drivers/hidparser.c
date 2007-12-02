@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include "config.h"
 #include "hidparser.h"
+#include "nut_stdint.h"
 
 /* to be implemented for DEBUG purpose */
 /* previously: #define ERROR(x) if(x) __asm { int 3 }; */

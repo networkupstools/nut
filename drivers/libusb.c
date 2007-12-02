@@ -36,9 +36,7 @@
 #include <regex.h>
 #include <usb.h>
 
-#ifdef HAVE_STDINT_H
-#include <stdint.h> /* for uint8_t, uint16_t */
-#endif
+#include "nut_stdint.h" /* for uint8_t, uint16_t */
 
 #include "libusb.h"
 #include "config.h" /* for LIBUSB_HAS_DETACH_KRNL_DRV flag */

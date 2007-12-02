@@ -1,3 +1,9 @@
+Sun Dec  2 20:19:34 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - configure.in, m4/ax_create_stdint_h.m4: Added the AX_CREATE_STDINT_H
+   macro to create our own header file with fixed width types.
+ - <various>: Use above mentioned header file, instead of <stdint.h>.
+
 Mon Nov 26 19:46:21 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  * drivers/megatec.c:

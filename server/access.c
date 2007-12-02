@@ -17,7 +17,6 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#include <stdint.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -25,6 +24,8 @@
 
 #include "common.h"
 #include "access.h"
+
+#include "nut_stdint.h"
 
 struct acl_t		*acl_head = NULL;
 struct access_t	*access_head = NULL;

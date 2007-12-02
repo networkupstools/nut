@@ -34,9 +34,7 @@
 #include <usb.h> /* libusb header file */
 #include <regex.h>
 
-#ifdef HAVE_STDINT_H
-#include <stdint.h> /* for uint16_t */
-#endif
+#include "nut_stdint.h" /* for uint16_t */
 
 /*!
  * USBDevice_t: Describe a USB device. This structure contains exactly

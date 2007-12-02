@@ -27,9 +27,7 @@
 #ifndef LIBSHUT_H
 #define LIBSHUT_H
 
-#ifdef HAVE_STDINT_H
-#include <stdint.h> /* for uint16_t */
-#endif
+#include "nut_stdint.h" /* for uint16_t */
 
 /*!
  * SHUTDevice_t: Describe a SHUT device. This structure contains exactly
