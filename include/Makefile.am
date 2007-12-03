@@ -3,8 +3,8 @@ EXTRA_DIST = attribute.h common.h extstate.h parseconf.h proto.h	\
 
 # magic to include SVN revision number in NUT version string
 
-BUILT_SOURCES = nut_version.h
-CLEANFILES = nut_version.h
+BUILT_SOURCES = nut_version.h nut_stdint.h
+CLEANFILES = nut_version.h nut_stdint.h
 
 SVNREV = $(shell unset LANG && svnversion -n $(top_srcdir) 2>/dev/null)
 NUT_VERSION = $(shell if test "$(SVNREV)" = "exported"; then echo "$(PACKAGE_VERSION)"; else echo "$(PACKAGE_VERSION)-$(SVNREV)"; fi)
