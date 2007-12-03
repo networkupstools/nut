@@ -46,6 +46,8 @@ KnownDevices table.
 static usb_communication_subdriver_t *usb = &usb_subdriver;
 static usb_dev_handle *udev = NULL;
 static USBDevice_t usbdevice;
+static USBDeviceMatcher_t *reopen_matcher = NULL;
+static USBDeviceMatcher_t *regex_matcher = NULL;
 
 typedef struct {
 	char	*name;
@@ -109,7 +111,7 @@ static usb_ups_t KnownDevices[] = {
 	{-1, -1, NULL}		/* end of list */
 };
 
-static int comm_usb_match(USBDevice_t *d, void *privdata)
+static int subdriver_match_func(USBDevice_t *d, void *privdata)
 {
 	usb_ups_t *p;
 
@@ -125,6 +127,12 @@ static int comm_usb_match(USBDevice_t *d, void *privdata)
 
 	return 0;
 }
+
+static USBDeviceMatcher_t subdriver_matcher = {
+	subdriver_match_func,
+	NULL,
+	NULL
+};
 
 static void usb_open_error(const char *port)
 {
@@ -159,12 +167,8 @@ void megatec_subdrv_makevartable()
 
 int ser_open(const char *port)
 {
-	USBDeviceMatcher_t subdriver_matcher;
-	int ret;
-
-	USBDeviceMatcher_t *regex_matcher = NULL;
-	int r;
 	char *regex_array[6];
+	int ret;
 
 	char *subdrv = getval("subdriver");
 	char *vid = getval("vendorid");
@@ -172,6 +176,7 @@ int ser_open(const char *port)
 	char *vend = getval("vendor");
 	char *prod = getval("product");
 
+	/* pick up the subdriver name if set explicitly */
 	if(subdrv)
 	{
 		subdriver_t **p;
@@ -196,9 +201,6 @@ int ser_open(const char *port)
 			fatalx(EXIT_FAILURE, "No subdrivers named \"%s\" found!", subdrv);
 	}
 
-	memset(&subdriver_matcher, 0, sizeof(subdriver_matcher));
-	subdriver_matcher.match_function = &comm_usb_match;
-
 	/* FIXME: fix "serial" variable */
         /* process the UPS selection options */
 	regex_array[0] = vid;
@@ -208,11 +210,11 @@ int ser_open(const char *port)
 	regex_array[4] = NULL; /* getval("serial"); */
 	regex_array[5] = getval("bus");
 
-	r = USBNewRegexMatcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
-	if (r==-1) {
+	ret = USBNewRegexMatcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
+	if (ret == -1) {
 		fatal_with_errno(EXIT_FAILURE, "USBNewRegexMatcher");
-	} else if (r) {
-		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[r]);
+	} else if (ret) {
+		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[ret]);
 	}
 	/* link the matchers */
 	regex_matcher->next = &subdriver_matcher;
@@ -221,10 +223,15 @@ int ser_open(const char *port)
 	if (ret < 0)
 		usb_open_error(port);
 
-	/* TODO: Add make exact matcher for reconnecting feature support */
-	USBFreeRegexMatcher(regex_matcher);
+	/* create a new matcher for later reopening */
+	ret = USBNewExactMatcher(&reopen_matcher, &usbdevice);
+	if (ret) {
+		fatal_with_errno(EXIT_FAILURE, "USBNewExactMatcher");
+	}
+	/* link the matchers */
+	reopen_matcher->next = regex_matcher;
 
-	/* This is here until ser_flush_io() is used in megatec.c */
+	/* NOTE: This is here until ser_flush_io() is used in megatec.c */
 	ser_flush_io(0);
 
 	return 0;
@@ -262,6 +269,8 @@ int ser_flush_io(int fd)
 int ser_close(int fd, const char *port)
 {
 	usb->close(udev);
+	USBFreeExactMatcher(reopen_matcher);
+	USBFreeRegexMatcher(regex_matcher);
 	return 0;
 }
 
@@ -467,13 +476,15 @@ static int set_data_krauler(const char *str)
 			}
 
 			/* Replace the first byte of what we received with the correct one */
-			if(command->prefix) krauler_line_buf[0] = command->prefix;
+			if(command->prefix)
+				krauler_line_buf[0] = command->prefix;
 
 			krauler_line_buf_len = res;
 			return retval;
 		}
 
-		if(command->retry > 1 && retry == command->retry) upsdebugx(2, "set_data_krauler: too many attempts, the UPS is probably switched off!");
+		if(command->retry > 1 && retry == command->retry)
+			upsdebugx(2, "set_data_krauler: too many attempts, the UPS is probably switched off!");
 
 		return retval;
 	}
