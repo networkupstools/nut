@@ -1,3 +1,9 @@
+Thu Dec  6 19:46:54 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/tripplite-hid.c: Workaround for firmware bug in the AVR 550U
+   where reading 'UPS.PowerSummary.iDeviceChemistry' string would crash
+   the UPS.
+
 Mon Dec  3 19:33:52 UTC 2007 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
 
  - drivers/megatec_usb.c: added reopen matcher for future reconnect

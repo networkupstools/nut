@@ -29,9 +29,30 @@
 #include "extstate.h" /* for ST_FLAG_STRING */
 #include "common.h"
 
-#define TRIPPLITE_HID_VERSION "TrippLite HID 0.1 (experimental)"
+#define TRIPPLITE_HID_VERSION "TrippLite HID 0.2 (experimental)"
 
 #define TRIPPLITE_VENDORID 0x09ae 
+
+/* returns statically allocated string - must not use it again before
+   done with result! */
+static char *tripplite_chemistry_fun(long value)
+{
+	static char	buf[20];
+	const char	*model;
+
+	model = dstate_getinfo("ups.productid");
+
+	/* Workaround for AVR 550U firmware bug */
+	if (!strcmp(model, "1003")) {
+		return "unknown";
+	}
+
+        return HIDGetIndexString(udev, value, buf, sizeof(buf));
+}
+
+static info_lkp_t tripplite_chemistry[] = {
+	{ 0, NULL, tripplite_chemistry_fun }
+};
 
 /* --------------------------------------------------------------- */
 /*	Vendor-specific usage table */
@@ -113,7 +134,7 @@ static hid_info_t tripplite_hid2nut[] = {
 		but is not set.) This should be handled more flexibly, because
       some devices have the bug and others don't */
 	{ "battery.voltage.nominal", 0, 0, "UPS.BatterySystem.Battery.ConfigVoltage", NULL, "%.1f", 0, NULL },
-	{ "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", 0, stringid_conversion },
+	{ "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", 0, tripplite_chemistry },
 	{ "battery.temperature", 0, 0, "UPS.BatterySystem.Temperature", NULL, "%s", 0, kelvin_celsius_conversion },
 	
 	/* UPS page */
