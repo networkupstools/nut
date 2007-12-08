@@ -119,7 +119,8 @@ void  upsdrv_initinfo (void)
 		fatalx(EXIT_FAILURE, "Unknown model - oops!"); /* Will never get here, upsdrv_initups() will catch */
 	} 
 
-	dstate_setinfo("battery.voltage.nominal", "%05.2f", (double)fc.idealbvolts);
+	dstate_setinfo("ups.power.nominal", "%d", fc.va);
+	dstate_setinfo("ups.realpower.nominal", "%d", fc.watts);
 
 	/* Do we really need to waste time on this? */
 	/*
@@ -134,6 +135,8 @@ void  upsdrv_initinfo (void)
 		dstate_setinfo("ups.date", "%s", date);
 		}
 	*/
+
+	dstate_setinfo("battery.voltage.nominal", "%05.2f", (double)fc.idealbvolts);
 
 	upsdebugx(1, "Best Power %s detected", dstate_getinfo("ups.model"));
 	upsdebugx(1, "Battery voltages: %5.2f nominal, %5.2f full, %5.2f low, %5.2f empty",
@@ -170,7 +173,7 @@ static void alert_handler(char ch)
 	 * "\r\n{Inverter:     On}\r\n=>"
 	 * Try to flush the message
 	 */
-	ser_get_line(upsfd, buf, sizeof(buf), '\012', "", 0, 20);
+	ser_get_line(upsfd, buf, sizeof(buf), '\012', "", 0, 20000);
 }
 
 /* Debugging display from kermit:
@@ -181,18 +184,22 @@ time^M^M^JFeb 20, 22:13:32^M^J^M^J=>id^M^JUnit ID "ME3.1K12345"^M^J^M^J=>
 static int execute(const char *cmd, char *result, int resultsize)
 {
 	int ret;
-	char ch, buf[256];
+	char buf[256];
+	unsigned char ch;
 
 	/* Check for the Inverter status alarm if pending :
 	 * "\r\n{Inverter:     On}\r\n=>"
 	 */
 	ser_get_line_alert(upsfd, buf, sizeof(buf), '\012', "",
-		POLL_ALERT, alert_handler, 0, 20);
+		POLL_ALERT, alert_handler, 0, 20000);
 
 	ser_send(upsfd, cmd);
 
+	/* Give the UPS some time to chew on what we just sent */
+	usleep(50000);
+
 	/* delete command echo up to \012 but no further */
-	for (ch = '\0'; ch != '\012'; ser_get_char(upsfd, &ch, 0, 10));
+	for (ch = '\0'; ch != '\012'; ser_get_char(upsfd, &ch, 0, 10000));
 
 	/* get command response	*/
 	ret = ser_get_line(upsfd, result, resultsize, '\015', "\012", 3, 0);
@@ -278,7 +285,7 @@ void upsdrv_updateinfo(void)
 			ampsout = ((double)bcd2i(&fstring[36], 4) / 10.0);
 
 			/* Volt-amps out.  int	*/
-			vaout = ((double)bcd2i(&fstring[40], 6) / 10);
+			vaout = bcd2i(&fstring[40], 6);
 
 			/* Line status.	 Bitmask */
 			linestat = bcd2i(&fstring[72], 2);
@@ -386,6 +393,8 @@ void upsdrv_updateinfo(void)
 		dstate_setinfo("battery.voltage", "%02.1f", vbatt);
 		dstate_setinfo("battery.runtime", "%d", btimeleft);
 		dstate_setinfo("ups.load", "%02.1f", loadpercent);
+		if (vaout)
+			dstate_setinfo("ups.power", "%d", vaout);
 		if (upstemp)
 			dstate_setinfo("ups.temperature", "%05.1f", (double)upstemp);
 
