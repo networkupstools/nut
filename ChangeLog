@@ -1,3 +1,8 @@
+Tue Dec 11 20:41:13 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/tripplite-hid.c: Add support for watchdog (undocumented
+   feature for now).
+
 Tue Dec 11 20:11:02 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - <various>: Include "nut_stdint.h" where needed (and don't include it

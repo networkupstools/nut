@@ -62,8 +62,7 @@ static info_lkp_t tripplite_chemistry[] = {
 static usage_lkp_t tripplite_usage_lkp[] = {
 	/* currently unknown: 
 	   ffff0010, 00ff0001, ffff007d, ffff00c0, ffff00c1, ffff00c2,
-	   ffff00c3, ffff00c4, ffff00c5, ffff00d2, ffff0091, ffff0092,
-	   ffff00c7 */
+	   ffff00c3, ffff00c4, ffff00c5, ffff00d2, ffff0091, ffff00c7 */
 
 	/* it looks like Tripp Lite confused pages 0x84 and 0x85 for the
 	   following 4 items, on some OMNI1000LCD devices. */
@@ -71,6 +70,7 @@ static usage_lkp_t tripplite_usage_lkp[] = {
 	{ "TLDischarging",			0x00840045 },  /* conflicts with HID spec! */
 	{ "TLNeedReplacement",			0x0084004b },
 	{ "TLACPresent",			0x008400d0 },
+	{ "TLWatchdog",				0xffff0092 },
 	{ NULL, 0 }
 };
 
@@ -113,7 +113,6 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ "UPS.ffff0015.00ff0001.ffff00c5", 0, 0, "UPS.ffff0015.00ff0001.ffff00c5", NULL, "%.0f", 0, NULL },
 	{ "UPS.ffff0015.00ff0001.ffff00d2", 0, 0, "UPS.ffff0015.00ff0001.ffff00d2", NULL, "%.0f", 0, NULL },
 	{ "UPS.OutletSystem.Outlet.ffff0091", 0, 0, "UPS.OutletSystem.Outlet.ffff0091", NULL, "%.0f", 0, NULL },
-	{ "UPS.OutletSystem.Outlet.ffff0092", 0, 0, "UPS.OutletSystem.Outlet.ffff0092", NULL, "%.0f", 0, NULL },
 	{ "UPS.OutletSystem.Outlet.ffff00c7", 0, 0, "UPS.OutletSystem.Outlet.ffff00c7", NULL, "%.0f", 0, NULL },
 
 #endif /* USBHID_UPS_TRIPPLITE_DEBUG */
@@ -147,6 +146,9 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ "ups.power", 0, 0, "UPS.OutletSystem.Outlet.ActivePower", NULL, "%.1f", 0, NULL },
 	{ "ups.power", 0, 0, "UPS.PowerConverter.Output.ActivePower", NULL, "%.1f", 0, NULL },
 	{ "ups.load", 0, 0, "UPS.OutletSystem.Outlet.PercentLoad", NULL, "%.0f", 0, NULL },
+
+	/* Number of seconds left before the watchdog reboots the UPS (0 = disabled) */
+	{ "ups.watchdog.status", 0, 0, "UPS.OutletSystem.Outlet.TLWatchdog", NULL, "%.0f", 0, NULL },
 	
 	/* Special case: ups.status */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, online_info },
@@ -199,7 +201,10 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ "shutdown.return", 0, 0, "UPS.OutletSystem.Outlet.DelayBeforeStartup", NULL, "30", HU_TYPE_CMD, NULL },
 	{ "shutdown.reboot", 0, 0, "UPS.OutletSystem.Outlet.DelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL },
 	{ "shutdown.stop", 0, 0, "UPS.OutletSystem.Outlet.DelayBeforeShutdown", NULL, "-1", HU_TYPE_CMD, NULL },
-	
+
+	/* WARNING: if this timer expires, the UPS will reboot! Defaults to 60 seconds */
+	{ "reset.watchdog", 0, 0, "UPS.OutletSystem.Outlet.TLWatchdog", NULL, "60", HU_TYPE_CMD, NULL },
+
 	{ "beeper.on", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },
 	{ "beeper.off", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "3", HU_TYPE_CMD, NULL },
 	{ "beeper.disable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "1", HU_TYPE_CMD, NULL },
