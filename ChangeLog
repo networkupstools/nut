@@ -1,3 +1,8 @@
+Tue Dec 11 20:11:02 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - <various>: Include "nut_stdint.h" where needed (and don't include it
+   when not needed).
+
 Sat Dec  8 19:28:03 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/bestfcom.c: Delay values in ser_get_* functions probably used

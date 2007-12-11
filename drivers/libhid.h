@@ -34,8 +34,6 @@
 #include <sys/types.h>
 #include "hidtypes.h"
 
-#include "nut_stdint.h"
-
 #include "timehead.h"
 #ifdef SHUT_MODE
 	#include "libshut.h"
