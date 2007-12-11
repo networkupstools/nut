@@ -33,12 +33,8 @@
 
 #include <sys/types.h>
 #include "hidtypes.h"
-
-#ifdef HAVE_STDINT_H
-#include <stdint.h> /* for uint16_t */
-#endif
-
 #include "timehead.h"
+
 #ifdef SHUT_MODE
 	#include "libshut.h"
 	typedef SHUTDevice_t			HIDDevice_t;

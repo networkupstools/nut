@@ -34,7 +34,7 @@
 #include <string.h>
 
 #ifdef HAVE_STDINT_H
-#include <stdint.h> /* for uint8_t, uint16_t */
+#include <stdint.h> /* for uint8_t, uint16_t, uint32_t */
 #endif
 
 #include "serial.h"

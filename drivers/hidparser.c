@@ -24,6 +24,11 @@
 
 #include <string.h>
 #include <stdlib.h>
+
+#ifdef HAVE_STDINT_H
+#include <stdint.h>	/* for int8_t, int16_t, int32_t */
+#endif
+
 #include "config.h"
 #include "hidparser.h"
 

@@ -17,11 +17,14 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#include <stdint.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+
+#ifdef HAVE_STDINT_H
+#include <stdint.h>	/* for uint32_t */
+#endif
 
 #include "common.h"
 #include "access.h"

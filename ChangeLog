@@ -1,3 +1,8 @@
+Tue Dec 11 20:11:02 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - <various>: Include <stdint.h> where needed (and don't include it
+   when not needed). Also make sure to only include it, if it exists.
+
 Tue Dec 11 19:38:18 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/bestfcom.c: Delay values in ser_get_ functions used
