@@ -1,3 +1,9 @@
+Tue Dec 11 19:35:45 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/tripplite-hid.c: Workaround for firmware bug in the AVR 550U
+   where reading 'UPS.PowerSummary.iDeviceChemistry' string would crash
+   the UPS (backported from trunk).
+
 Mon Nov 26 13:45:06 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/tripplitesu.c: Fixed copy-paste error in this driver that
