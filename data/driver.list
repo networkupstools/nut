@@ -22,7 +22,7 @@
 "Ablerex"	"MS-RT"		""	"megatec"
 "Ablerex"	"625L"		"USB"	"megatec_usb"
 
-"ActivePower" "400VA"	""	"megatec"
+"ActivePower"	"400VA"	""	"megatec"
 "ActivePower"	"1400VA"	""	"megatec"
 "ActivePower"	"2000VA"	""	"megatec"
 
@@ -121,6 +121,8 @@
 "Cyber Power Systems"	"AE550"		"USB"	"usbhid-ups"
 
 "Deltec"	"PowerRite Pro II"	""	"genericups upstype=15"
+
+"Dynamix"	"UPS1700D"		""	"megatec"
 
 "Dynex"		"975AVR"		""	"genericups upstype=7"
 "Dynex"		"DX-800U"		"USB"	"usbhid-ups"
@@ -420,7 +422,8 @@
 "PowerTech"	"SMK-800"	""	"megatec"
 
 "PowerWalker"	"Line-Interactive VI 1000"	""	"megatec"
-"PowerWalker"	"Line-Interactive VI 400/600/800"	""	"megatec"
+"PowerWalker"	"Line-Interactive VI 400/800"	""	"megatec"
+"PowerWalker"	"Line-Interactive VI 600"	""	"megatec battvolts=9:13"
 
 "Powerware"	"3110"		""	"genericups upstype=7"
 "Powerware"	"3115"		""	"genericups upstype=11"

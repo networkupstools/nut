@@ -1,4 +1,16 @@
-Wed Dec 12 20:29:51 UTC 2007 / / Arjen de Korte <arjen@de-korte.org>
+Wed Dec 12 21:03:23 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ * drivers/megatec.c: backported from the trunk.
+   - the "ondelay" and "offdelay" parameters are now being honored
+     when the UPS shuts down, like they should be.
+   - rewrite documentation for "ondelay" since this timer starts
+     counting the moment the UPS is turned off, and not the
+     moment line power is restored.
+   - Remove "ups.delay.start" and "ups.delay.shutdown" variables
+     since they would only affect instant commands. Use only the
+     driver parameters "ondelay" and "offdelay".
+
+Wed Dec 12 20:29:51 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/apcsmart.[ch]: Add support for older Smart-UPS devices.
 
