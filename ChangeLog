@@ -1,3 +1,7 @@
+Wed Dec 12 20:29:51 UTC 2007 / / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/apcsmart.[ch]: Add support for older Smart-UPS devices.
+
 Wed Dec 12 20:22:39 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/usbhid-ups.c: Don't attempt to reconnect after receiving
