@@ -1,3 +1,9 @@
+Wed Dec 12 20:22:39 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/usbhid-ups.c: Don't attempt to reconnect after receiving
+   an unexpected error message, but instead just log a message and
+   continue (this is in line with earlier behaviour).
+
 Wed Dec 12 20:18:35 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  = drivers/tripplite-hid.c: Apparently, the OMNI1000LCD has the same

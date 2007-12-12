@@ -1280,7 +1280,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		default:
 			/* Don't know what happened, try again later... */
 			upslog_with_errno(LOG_DEBUG, "HIDGetDataValue");
-			return FALSE;
+			continue;
 		}
 
 		upsdebugx(2, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %f",
