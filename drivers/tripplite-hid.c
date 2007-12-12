@@ -47,7 +47,12 @@ static char *tripplite_chemistry_fun(long value)
 		return "unknown";
 	}
 
-        return HIDGetIndexString(udev, value, buf, sizeof(buf));
+	/* Workaround for OMNI1000LCD firmware bug */
+	if (!strcmp(model, "2005")) {
+		return "unknown";
+	}
+
+	return HIDGetIndexString(udev, value, buf, sizeof(buf));
 }
 
 static info_lkp_t tripplite_chemistry[] = {
@@ -182,8 +187,8 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 5,	"UPS.PowerConverter.Output.LowVoltageTransfer", NULL, "%.1f", HU_FLAG_SEMI_STATIC, NULL },
 
 	/* Output page */
-	{ "output.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, "%.1f", 0, NULL },
 	{ "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", NULL, "%.1f", 0, NULL },
+	{ "output.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, "%.1f", 0, NULL },
 	{ "output.voltage.nominal", 0, 0, "UPS.Flow.ConfigVoltage", NULL, "%.0f", 0, NULL },
 	{ "output.current", 0, 0, "UPS.PowerConverter.Output.Current", NULL, "%.2f", 0, NULL },
 	{ "output.frequency", 0, 0, "UPS.PowerConverter.Output.Frequency", NULL, "%.1f", 0, NULL },
