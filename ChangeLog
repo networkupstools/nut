@@ -1,3 +1,10 @@
+Sun Dec 16 19:53:51 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - conf/upsstats-single.html.sample, conf/upsstats.html.sample:
+   The snmp driver reports 3-phase variables which APC's claims to
+   support but returns junk for. Doing IFSUPP against the L2
+   variables rather than the L1 ones. [George Ross]
+
 Sun Dec 16 19:43:41 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - configure.in, m4/ax_create_stdint_h.m4: Added the AX_CREATE_STDINT_H

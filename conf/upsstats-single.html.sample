@@ -118,7 +118,7 @@ A
 <TH VALIGN="TOP" ALIGN="RIGHT">Input: </TH>
 <TD>
 
-@IFSUPP input.L1-L2.voltage@
+@IFSUPP input.L2-L3.voltage@
 @VAR input.L1-L2.voltage@
 V<BR>
 @VAR input.L2-L3.voltage@
@@ -128,7 +128,7 @@ V<BR>
 </TD>
 </TR>
 @ELSE@
-@IFSUPP input.L1-N.voltage@
+@IFSUPP input.L2-N.voltage@
 @VAR input.L1-N.voltage@
 V<BR>
 @VAR input.L2-N.voltage@
@@ -145,7 +145,7 @@ V<BR>
 </TR>
 @ENDIF@
 
-@IFSUPP input.L1.current@
+@IFSUPP input.L2.current@
 <TR>
 <TH>
 <TD>
@@ -182,7 +182,7 @@ A
 <TH VALIGN="TOP" ALIGN="RIGHT">Output: </TH>
 <TD>
 
-@IFSUPP output.L1-L2.voltage@
+@IFSUPP output.L2-L3.voltage@
 @VAR output.L1-L2.voltage@
 V<BR>
 @VAR output.L2-L3.voltage@
@@ -192,7 +192,7 @@ V<BR>
 </TD>
 </TR>
 @ELSE@
-@IFSUPP output.L1-N.voltage@
+@IFSUPP output.L2-N.voltage@
 @VAR output.L1-N.voltage@
 V<BR>
 @VAR output.L2-N.voltage@
@@ -209,7 +209,7 @@ V<BR>
 </TR>
 @ENDIF@
 
-@IFSUPP output.L1.current@
+@IFSUPP output.L2.current@
 <TR>
 <TH>
 <TD>
@@ -259,7 +259,7 @@ Voltage:<BR>
 </TD>
 
 <TD ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
-@IFSUPP input.L1-L2.voltage@
+@IFSUPP input.L2-L3.voltage@
 <TABLE BORDER="0"><TR><TD ALIGN="CENTER">
 L1-L2<BR>
 @IMG input.L1-L2.voltage width=68@
@@ -271,7 +271,7 @@ L3-L1<BR>
 @IMG input.L3-L1.voltage width=68@
 </TABLE>
 @ELSE@
-@IFSUPP input.L1-N.voltage@
+@IFSUPP input.L2-N.voltage@
 <TABLE BORDER="0"><TR><TD ALIGN="CENTER">
 L1-N<BR>
 @IMG input.L1-N.voltage width=68@
@@ -288,7 +288,7 @@ L3-N<BR>
 </TD>
 
 <TD ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
-@IFSUPP output.L1-L2.voltage@
+@IFSUPP output.L2-L3.voltage@
 <TABLE BORDER="0"><TR><TD ALIGN="CENTER">
 L1-L2<BR>
 @IMG output.L1-L2.voltage width=68@
@@ -300,7 +300,7 @@ L3-L1<BR>
 @IMG output.L3-L1.voltage width=68@
 </TABLE>
 @ELSE@
-@IFSUPP output.L1-N.voltage@
+@IFSUPP output.L2-N.voltage@
 <TABLE BORDER="0"><TR><TD ALIGN="CENTER">
 L1-N<BR>
 @IMG output.L1-N.voltage width=68@
@@ -317,7 +317,7 @@ L3-N<BR>
 </TD>
 
 <TD ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
-@IFSUPP output.L1.power.percent@
+@IFSUPP output.L2.power.percent@
 <TABLE BORDER="0"><TR><TD ALIGN="CENTER">
 L1<BR>
 @IMG output.L1.power.percent width=68@
@@ -329,7 +329,7 @@ L3<BR>
 @IMG output.L3.power.percent width=68@
 </TABLE>
 @ELSE@
-@IFSUPP output.L1.realpower.percent@
+@IFSUPP output.L2.realpower.percent@
 <TABLE BORDER="0"><TR><TD ALIGN="CENTER">
 L1<BR>
 @IMG output.L1.realpower.percent width=68@

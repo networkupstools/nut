@@ -86,13 +86,13 @@ Network UPS Tools upsstats
 </td>
 
 <td BGCOLOR="
-@IFSUPP input.L1-L2.voltage@
+@IFSUPP input.L2-L3.voltage@
 @IFBETWEEN input.transfer.low input.transfer.high input.L1-L2.voltage@
 @IFBETWEEN input.transfer.low input.transfer.high input.L2-L3.voltage@
 @IFBETWEEN input.transfer.low input.transfer.high input.L3-L1.voltage@
 #00FF00
 @ELSE@
-@IFSUPP input.L1-N.voltage@
+@IFSUPP input.L2-N.voltage@
 @IFBETWEEN input.transfer.low input.transfer.high input.L1-N.voltage@
 @IFBETWEEN input.transfer.low input.transfer.high input.L2-N.voltage@
 @IFBETWEEN input.transfer.low input.transfer.high input.L3-N.voltage@
@@ -105,12 +105,12 @@ Network UPS Tools upsstats
 @ENDIF@
 ">
 
-@IFSUPP input.L1-L2.voltage@
+@IFSUPP input.L2-L3.voltage@
 @VAR input.L1-L2.voltage@
 @VAR input.L2-L3.voltage@
 @VAR input.L3-L1.voltage@
 @ELSE@
-@IFSUPP input.L1-N.voltage@
+@IFSUPP input.L2-N.voltage@
 @VAR input.L1-N.voltage@
 @VAR input.L2-N.voltage@
 @VAR input.L3-N.voltage@
@@ -121,12 +121,12 @@ Network UPS Tools upsstats
 </td>
 
 <td BGCOLOR="#00FF00">
-@IFSUPP output.L1-L2.voltage@
+@IFSUPP output.L2-L3.voltage@
 @VAR output.L1-L2.voltage@
 @VAR output.L2-L3.voltage@
 @VAR output.L3-L1.voltage@
 @ELSE@
-@IFSUPP output.L1-N.voltage@
+@IFSUPP output.L2-N.voltage@
 @VAR output.L1-N.voltage@
 @VAR output.L2-N.voltage@
 @VAR output.L3-N.voltage@
@@ -137,12 +137,12 @@ Network UPS Tools upsstats
 </td>
 
 <td BGCOLOR="#00FF00">
-@IFSUPP output.L1.power.percent@
+@IFSUPP output.L2.power.percent@
 @VAR output.L1.power.percent@
 @VAR output.L2.power.percent@
 @VAR output.L3.power.percent@
 @ELSE@
-@IFSUPP output.L1.realpower.percent@
+@IFSUPP output.L2.realpower.percent@
 @VAR output.L1.realpower.percent@
 @VAR output.L2.realpower.percent@
 @VAR output.L3.realpower.percent@
