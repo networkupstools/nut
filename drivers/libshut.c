@@ -33,9 +33,7 @@
 #include <sys/types.h>
 #include <string.h>
 
-#ifdef HAVE_STDINT_H
-#include <stdint.h> /* for uint8_t, uint16_t, uint32_t */
-#endif
+#include "nut_stdint.h" /* for uint8_t, uint16_t, uint32_t */
 
 #include "serial.h"
 #include "libshut.h"

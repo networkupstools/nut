@@ -150,9 +150,8 @@ AC_CHECK_HEADERS(sys/time.h)
 
 dnl ----------------------------------------------------------------------
 dnl Check for types and define possible replacements
+AX_CREATE_STDINT_H(include/nut_stdint.h)
 NUT_TYPE_SOCKLEN_T
-NUT_TYPE_UINT16_T
-NUT_TYPE_UINT8_T
 
 dnl ----------------------------------------------------------------------
 dnl check for --with-all (or --without-all, or --with-all=auto) flag

@@ -22,12 +22,10 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#ifdef HAVE_STDINT_H
-#include <stdint.h>	/* for uint32_t */
-#endif
-
 #include "common.h"
 #include "access.h"
+
+#include "nut_stdint.h" /* for uint32_t */
 
 struct acl_t		*acl_head = NULL;
 struct access_t	*access_head = NULL;

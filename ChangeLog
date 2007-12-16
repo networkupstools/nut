@@ -1,3 +1,9 @@
+Sun Dec 16 19:43:41 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - configure.in, m4/ax_create_stdint_h.m4: Added the AX_CREATE_STDINT_H
+   macro to create our own header file with fixed width types.
+ - <various>: Use above mentioned header file, instead of <stdint.h>.
+
 Sun Dec 16 16:15:56 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/upshandler.h,dstate.h,dstate-hal.h: The return values for

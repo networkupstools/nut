@@ -24,13 +24,10 @@
 
 #include <string.h>
 #include <stdlib.h>
-
-#ifdef HAVE_STDINT_H
-#include <stdint.h>	/* for int8_t, int16_t, int32_t */
-#endif
-
 #include "config.h"
 #include "hidparser.h"
+
+#include "nut_stdint.h" /* for int8_t, int16_t, int32_t */
 
 /* to be implemented for DEBUG purpose */
 /* previously: #define ERROR(x) if(x) __asm { int 3 }; */
