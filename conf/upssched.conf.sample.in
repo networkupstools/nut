@@ -41,7 +41,7 @@ CMDSCRIPT /usr/local/ups/bin/upssched-cmd
 # This is commented out by default to make you visit this file and think
 # about how your system works before potentially opening a hole.
 #
-# PIPEFN /var/run/upssched/upssched.pipe
+# PIPEFN @STATEPATH@/upssched/upssched.pipe
 
 # ============================================================================
 #
@@ -56,7 +56,7 @@ CMDSCRIPT /usr/local/ups/bin/upssched-cmd
 #
 # You should put this in the same directory as PIPEFN.
 #
-# LOCKFN /var/run/upssched/upssched.lock
+# LOCKFN @STATEPATH@/upssched/upssched.lock
 
 # ============================================================================
 #
