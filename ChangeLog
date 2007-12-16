@@ -1,4 +1,11 @@
-Wed Dec 12 20:29:51 UTC 2007 / / Arjen de Korte <arjen@de-korte.org>
+Sun Dec 16 19:53:51 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - conf/upsstats-single.html.sample, conf/upsstats.html.sample:
+   The snmp driver reports 3-phase variables which APC's claims to
+   support but returns junk for. Doing IFSUPP against the L2
+   variables rather than the L1 ones. [George Ross]
+
+Wed Dec 12 20:29:51 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/apcsmart.[ch]: Add support for older Smart-UPS devices.
 
