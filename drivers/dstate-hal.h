@@ -33,16 +33,6 @@
 #define DS_LISTEN_BACKLOG 16
 #define DS_MAX_READ 256		/* don't read forever from upsd */
 
-/* return values for instcmd and set calls */
-
-#define STAT_INSTCMD_HANDLED    0x0001		/* all we do for now */
-#define STAT_INSTCMD_UNKNOWN    0x0002
-/* FUTURE: add details: pass/fail, etc */
-
-#define STAT_SET_HANDLED        0x0010
-#define STAT_SET_UNKNOWN        0x0011
-/* FUTURE: same */ 
-
 /* HAL specific */
 #define DBUS_INTERFACE "org.freedesktop.Hal.Device.UPS"
 

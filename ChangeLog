@@ -1,3 +1,9 @@
+Sun Dec 16 16:15:56 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/upshandler.h,dstate.h,dstate-hal.h: The return values for
+   the setvar() and instcmd() handlers are now an enum value, to add
+   return values easily.
+
 Wed Dec 12 21:03:23 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  * drivers/megatec.c: backported from the trunk.
