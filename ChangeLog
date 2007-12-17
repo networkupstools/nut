@@ -1,3 +1,7 @@
+Mon Dec 17 15:15:17 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - NEWS: more completion for the upcoming 2.2.1 release.
+
 Sun Dec 16 20:19:36 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - Changed the default installation directory for pkg-config files,

@@ -4,13 +4,17 @@ If you're upgrading from an earlier version, see the UPGRADING file.
 Release notes for NUT 2.2.1 - what's new since 2.2.0:
 
  - support for new devices: all MGE Office Protection Systems units,
-   Advice TopGuard 2000, Effekta RM2000MH, Jageson Technology Jasuny USPS,
-   Powercom SMK-1500A and SXL-1500A, UNITEK Alpha 2600, UPSonic CXR1000,
-   some vintage serial APC UPSs 
+   Advice TopGuard 2000, Belkin F6H375-USB, Dynamix UPS1700D, Effekta RM2000MH,
+   Jageson Technology Jasuny USPS, Powercom SMK-1500A and SXL-1500A,
+   PowerWalker Line-Interactive VI 400/800 and 600, Powerware 9110,
+   UNITEK Alpha 2600, UPSonic CXR1000, some vintage serial APC UPSs.
 
  - the usbhid-ups driver has been improved, and fixed in many areas, through
    a backport of the development (trunk) version.
-   
+
+ - the udev rules, for Linux hotplug support of the USB UPSs, has been
+   updated to support kernel newer than 2.6.22.
+
  - the megatec and megatec_usb drivers have also been backported from the
    development (trunk) version.
    
