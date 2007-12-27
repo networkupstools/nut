@@ -162,3 +162,7 @@ D: 3-phase work, updates for upscode2
 N: Olli Savia
 E: ops@iki.fi
 D: pwmib support for snmp-ups
+
+N: Kjell Claesson
+E: Kjell.claesson@epost.tidanet.se
+D: Author of bcmxcp driver, 3-phase work.
