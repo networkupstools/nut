@@ -1,0 +1,8 @@
+config.h
+config.h.in
+Makefile
+Makefile.in
+nut_version.h
+nut_stdint.h
+stamp-h1
+stamp-h.in
