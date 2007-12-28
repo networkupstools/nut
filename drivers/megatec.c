@@ -133,8 +133,8 @@ static BatteryVolts_t batteries[] = {{ 12.0,  9.0, 16.0,  9.7, 13.7,  0.0 },   /
                                      {  0.0,  0.0,  0.0,  0.0,  0.0,  0.0 }};  /* END OF DATA */
 
 
-/* Workarounds for buggy models */
-static char wa_ignore_off = 0;  /* ignore FL_LOAD_OFF if it behaves strangely */
+/* Workaround for buggy models */
+static char ignore_off = 0;  /* ignore FL_LOAD_OFF if it behaves strangely */
 
 /* Defined in upsdrv_initinfo */
 static float battvolt_empty = -1;  /* unknown */
@@ -402,10 +402,6 @@ static int run_query(QueryValues_t *values)
 	 */
 	values->temp = atof(temperature);
 
-	if (wa_ignore_off) {
-		values->flags[FL_LOAD_OFF] = '0';
-	}
-
 	return 0;
 }
 
@@ -462,10 +458,15 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("ups.serial", "%s", getval("serial") ? getval("serial") : "unknown");
 
 	/*
-	 * Workarounds for buggy models.
+	 * Workaround for buggy models.
 	 */
-	wa_ignore_off = testvar("ignoreoff");
-	upsdebugx(2, "Parameter [ignoreoff]: [%s]", (wa_ignore_off ? "true" : "false"));
+	ignore_off = testvar("ignoreoff");
+
+	if (status.flags[FL_LOAD_OFF] == '1' && status.load > 0.01 && !ignore_off) {
+		ignore_off = 1;
+		upslogx(LOG_INFO, "The UPS reports OFF status but appears to be ON. Parameter \"ignoreoff\" set automatically.");
+	}
+	upsdebugx(2, "Parameter [ignoreoff]: [%s]", (ignore_off ? "true" : "false"));
 
 	/*
 	 * Set battery-related values.
@@ -576,9 +577,7 @@ void upsdrv_updateinfo(void)
 
 	status_init();
 
-	if (query.flags[FL_LOAD_OFF] == '1') {
-		status_set("OFF");
-	} else if (query.flags[FL_ON_BATT] == '1' || query.flags[FL_BATT_TEST] == '1') {
+	if (query.flags[FL_ON_BATT] == '1' || query.flags[FL_BATT_TEST] == '1') {
 		status_set("OB");
 	} else {
 		status_set("OL");
@@ -603,11 +602,19 @@ void upsdrv_updateinfo(void)
 		status_set("LB");
 	}
 
-	if (query.flags[FL_FAILED] == '1') {
-		status_set("FAILED");
+	if (query.flags[FL_LOAD_OFF] == '1' && !ignore_off) {
+		status_set("OFF");
 	}
 
 	status_commit();
+
+	alarm_init();
+
+	if (query.flags[FL_FAILED] == '1') {
+		alarm_set("Internal UPS fault!");
+	}
+
+	alarm_commit();
 
 	dstate_setinfo("ups.beeper.status", query.flags[FL_BEEPER_ON] == '1' ? "enabled" : "disabled");
 
@@ -703,7 +710,7 @@ int instcmd(const char *cmdname, const char *extra)
 		ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
 		watchdog_enabled = 0;
 
-		ser_send_pace(upsfd, SEND_PACE, "S%02dR0000%c", shutdown_delay, ENDCHAR);
+		ser_send_pace(upsfd, SEND_PACE, "S%02dR9999%c", shutdown_delay, ENDCHAR);
 
 		upslogx(LOG_INFO, "Shutdown (stayoff) initiated.");
 
@@ -732,7 +739,7 @@ int instcmd(const char *cmdname, const char *extra)
 		ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
 		watchdog_enabled = 0;
 
-		ser_send_pace(upsfd, SEND_PACE, "S00R0000%c", ENDCHAR);
+		ser_send_pace(upsfd, SEND_PACE, "S00R9999%c", ENDCHAR);
 
 		upslogx(LOG_INFO, "Turning load off.");
 
@@ -796,10 +803,10 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "model", "Model name");
 	addvar(VAR_VALUE, "serial", "UPS serial number");
 	addvar(VAR_VALUE, "lowbatt", "Low battery level (%)");
-	addvar(VAR_VALUE, "ondelay", "Minimum delay before UPS startup (minutes)");
+	addvar(VAR_VALUE, "ondelay", "Mininum delay before UPS startup (minutes)");
 	addvar(VAR_VALUE, "offdelay", "Delay before UPS shutdown (minutes)");
 	addvar(VAR_VALUE, "battvolts", "Battery voltages (empty:full)");
-	addvar(VAR_FLAG, "ignoreoff", "Ignore the OFF status reported by the UPS.");
+	addvar(VAR_FLAG,  "ignoreoff", "Ignore the OFF status reported by the UPS.");
 	
 	megatec_subdrv_makevartable();
 }

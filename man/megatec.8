@@ -56,8 +56,8 @@ Optional.  The battery voltage interval (see \fBKNOWN PROBLEMS\fR).
 .IP "ignoreoff"
 
 Optional.  This option should be used if \fBupsc\fR(8) shows the UPS status
-as OFF when it's clearly on, otherwise the driver won't work properly. This
-will make the driver ignore the OFF status altogether.
+as OFF when it's clearly on. This will force the driver to ignore the OFF
+status altogether.
 
 .SH UPS COMMANDS
 
@@ -70,7 +70,8 @@ Toggle the UPS beeper. (Not available on some hardware.)
 Turn on the load immediately.
 
 .IP load.off
-Turn off the load immediately.
+Turn off the load immediately. Due to limitations of the hardware, the load
+will not stay off indefinitely, but only for 9999 minutes (about 7 days).
 
 .IP reset.input.minmax
 Reset minimum and maximum input voltage status.
@@ -82,10 +83,13 @@ the last time, restarting one minute afterwards. To cancel the watchdog, run
 the "shutdown.stop" command.
 
 .IP shutdown.return
-Turn off the load and return when power is back.
+Turn off the load and return when power is back. Uses the timers defined by
+\fBondelay\fR and \fBoffdelay\fR.
 
 .IP shutdown.stayoff
-Turn off the load and remain off.
+Turn off the load and remain off. Uses the timer defined by \fBoffdelay\fR.
+Due to limitations of the hardware, the load will not stay off indefinitely,
+but only for 9999 minutes (about 7 days).
 
 .IP shutdown.stop
 Stop a shutdown in progress.

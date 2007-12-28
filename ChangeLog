@@ -1,3 +1,13 @@
+Fri Dec 28 21:58:32 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ * drivers/megatec.c:
+   - Detect LOAD_OFF weirdness on startup.
+   - Limit "load.off" and "shutdown.stayoff" to 9999 minutes because 0000
+     makes the load power-on immediately if line power is available and the
+     command form without a restore timer isn't supported by all models.
+   - Set an alarm instead of changing status on FAILED.
+   - Make OFF status independent of OB/OL.
+
 Fri Dec 28 14:58:12 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - drivers/megatec.c: Added option to ignore the LOAD_OFF flag.
