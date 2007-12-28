@@ -26,7 +26,7 @@
 #define MEGATEC_H
 
 
-#define DRV_VERSION "1.5.9"
+#define DRV_VERSION "1.5.10"
 
 
 #ifdef MEGATEC_SUBDRV

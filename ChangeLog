@@ -1,3 +1,7 @@
+Fri Dec 28 14:58:12 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - drivers/megatec.c: Added option to ignore the LOAD_OFF flag.
+
 Thu Dec 27 06:37:50 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
  - Added myself into tha AUTHORS file.

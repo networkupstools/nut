@@ -132,6 +132,10 @@ static BatteryVolts_t batteries[] = {{ 12.0,  9.0, 16.0,  9.7, 13.7,  0.0 },   /
                                      { 96.0,  1.5,  3.0, 1.63, 2.29,  1.8 },   /* Ablerex MS3000RT (LB at 25% charge) */
                                      {  0.0,  0.0,  0.0,  0.0,  0.0,  0.0 }};  /* END OF DATA */
 
+
+/* Workarounds for buggy models */
+static char wa_ignore_off = 0;  /* ignore FL_LOAD_OFF if it behaves strangely */
+
 /* Defined in upsdrv_initinfo */
 static float battvolt_empty = -1;  /* unknown */
 static float battvolt_full = -1;   /* unknown */
@@ -398,6 +402,10 @@ static int run_query(QueryValues_t *values)
 	 */
 	values->temp = atof(temperature);
 
+	if (wa_ignore_off) {
+		values->flags[FL_LOAD_OFF] = '0';
+	}
+
 	return 0;
 }
 
@@ -454,6 +462,12 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("ups.serial", "%s", getval("serial") ? getval("serial") : "unknown");
 
 	/*
+	 * Workarounds for buggy models.
+	 */
+	wa_ignore_off = testvar("ignoreoff");
+	upsdebugx(2, "Parameter [ignoreoff]: [%s]", (wa_ignore_off ? "true" : "false"));
+
+	/*
 	 * Set battery-related values.
 	 */
 	if (get_firmware_values(&values) >= 0) {
@@ -472,7 +486,7 @@ void upsdrv_initinfo(void)
 			fatalx(EXIT_FAILURE, "Error in \"battvolts\" parameter.");
 		}
 		
-	    upslogx(LOG_NOTICE, "Overriding battery voltage interval [%.1fV, %.1fV].", battvolt_empty, battvolt_full);		
+		upslogx(LOG_NOTICE, "Overriding battery voltage interval [%.1fV, %.1fV].", battvolt_empty, battvolt_full);		
 	}
 
 	if (battvolt_empty < 0 || battvolt_full < 0) {
@@ -785,6 +799,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "ondelay", "Minimum delay before UPS startup (minutes)");
 	addvar(VAR_VALUE, "offdelay", "Delay before UPS shutdown (minutes)");
 	addvar(VAR_VALUE, "battvolts", "Battery voltages (empty:full)");
+	addvar(VAR_FLAG, "ignoreoff", "Ignore the OFF status reported by the UPS.");
 	
 	megatec_subdrv_makevartable();
 }

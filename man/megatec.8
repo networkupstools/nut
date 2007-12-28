@@ -53,6 +53,12 @@ Optional.  Low battery level (%). Overrides the hardware default level.
 
 Optional.  The battery voltage interval (see \fBKNOWN PROBLEMS\fR).
 
+.IP "ignoreoff"
+
+Optional.  This option should be used if \fBupsc\fR(8) shows the UPS status
+as OFF when it's clearly on, otherwise the driver won't work properly. This
+will make the driver ignore the OFF status altogether.
+
 .SH UPS COMMANDS
 
 This driver supports some extra commands (see \fBupscmd\fR(8)):

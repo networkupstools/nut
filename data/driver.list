@@ -122,6 +122,8 @@
 
 "Deltec"	"PowerRite Pro II"	""	"genericups upstype=15"
 
+"Dynamix"	"UPS1700D"		""	"megatec"
+
 "Dynex"		"975AVR"		""	"genericups upstype=7"
 "Dynex"		"DX-800U"		"USB"	"usbhid-ups"
 
@@ -186,6 +188,7 @@
 
 "Jageson Technology"	"Jasuny USPS"	""	"genericups upstype=4"
 
+"Krauler"	"UP-D1200VA"	"USB"	"megatec_usb ignoreoff"
 "Krauler"	"UP-M500VA"	"USB"	"megatec_usb"
 
 "Lestar"	"MD-800E"	""	"megatec"
@@ -415,7 +418,8 @@
 "PowerTech"	"SMK-800"	""	"megatec"
 
 "PowerWalker"	"Line-Interactive VI 1000"	""	"megatec"
-"PowerWalker"	"Line-Interactive VI 400/600/800"	""	"megatec"
+"PowerWalker"	"Line-Interactive VI 400/800"	""	"megatec"
+"PowerWalker"	"Line-Interactive VI 600"	""	"megatec battvolts=9:13"
 
 "Powerware"	"3110"		""	"genericups upstype=7"
 "Powerware"	"3115"		""	"genericups upstype=11"
@@ -502,6 +506,7 @@
 "UPSonic"	"CXR1000"		""	"megatec"
 "UPSonic"	"LAN Saver 600"		""	"genericups upstype=0"
 "UPSonic"	"Power Guardian"	""	"genericups upstype=7"
+"UPSonic"	"PrOffice 650"		"USB"	"megatec_usb"
 
 "Various"	"(various)"	"SEC protocol"		"gamatronic"
 "Various"	"(various)"	"Generic RUPS model"	"genericups upstype=4"
