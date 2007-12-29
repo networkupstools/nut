@@ -1,3 +1,11 @@
+Sat Dec 29 16:40:45 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ * drivers/megatec.c:
+   - Better handling of unsupported commands (load.off and shutdown.stayoff
+     now do the right thing -- indefinite power off -- when possible.
+   - Battery test sets CAL instead of OB.
+   - Report ups.type as "online" or "standby".
+
 Sat Dec 29 10:39:51 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  - docs/new-drivers.txt: If UPS alarms are used, the call to alarm_commit()
