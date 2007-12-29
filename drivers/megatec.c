@@ -78,6 +78,9 @@
 #define UPS_MODEL_CHARS   10
 #define UPS_VERSION_CHARS 10
 
+/* Below this value we can safely consider a voltage to be zero */
+#define RESIDUAL_VOLTAGE 10.0
+
 
 /* The values returned by the UPS for an "I" query */
 typedef struct {
@@ -458,6 +461,7 @@ void upsdrv_initinfo(void)
 	}
 
 	dstate_setinfo("ups.serial", "%s", getval("serial") ? getval("serial") : "unknown");
+
 	/*
 	 * Workaround for buggy models.
 	 */
@@ -473,8 +477,14 @@ void upsdrv_initinfo(void)
 	 * Set battery-related values.
 	 */
 	if (get_firmware_values(&values) >= 0) {
-		dstate_setinfo("output.voltage.nominal", "%.1f", values.volt);
 		dstate_setinfo("battery.voltage.nominal", "%.1f", values.battvolt);
+
+		/*
+		 * The specification does not qualify these values as either
+		 * input or output, so we set them without a specific context.
+		 */
+		dstate_setinfo("voltage.nominal", "%.1f", values.volt);
+		dstate_setinfo("frequency.nominal", "%.1f", values.freq);
 
 		if (set_battery_params(values.battvolt, status.battvolt) < 0) {
 			upslogx(LOG_NOTICE, "This UPS has an unsupported combination of battery voltage/number of batteries.");
@@ -565,9 +575,15 @@ void upsdrv_updateinfo(void)
 	dstate_setinfo("input.voltage.fault", "%.1f", query.fvolt);
 	dstate_setinfo("output.voltage", "%.1f", query.ovolt);
 	dstate_setinfo("ups.load", "%.1f", query.load);
-	dstate_setinfo("input.frequency", "%.1f", query.freq);
 	dstate_setinfo("battery.voltage", "%.2f", query.battvolt);
 	dstate_setinfo("ups.temperature", "%.1f", query.temp);
+
+	/*
+	 * The specification states this must be the input frequency, but
+	 * some vendors use it as the output frequency. The safest bet is
+	 * to just show the value without context and let the user decide.
+	 */
+	dstate_setinfo("frequency", "%.1f", query.freq);
 
 	charge = get_battery_charge(query.battvolt);
 	if (charge >= 0) {
@@ -576,9 +592,16 @@ void upsdrv_updateinfo(void)
 		upsdebugx(2, "Calculated battery charge: %.1f%%", charge);
 	}
 
+	dstate_setinfo("ups.beeper.status", query.flags[FL_BEEPER_ON] == '1' ? "enabled" : "disabled");
+
 	status_init();
 
-	if (query.flags[FL_ON_BATT] == '1') {
+	/*
+	 * Some models, when OFF, never change to on-battery status when
+	 * line power is unavailable. To get around this, we also look at
+	 * the input voltage level here.
+	 */
+	if (query.flags[FL_ON_BATT] == '1' || query.ivolt < RESIDUAL_VOLTAGE) {
 		status_set("OB");
 	} else {
 		status_set("OL");
@@ -592,6 +615,18 @@ void upsdrv_updateinfo(void)
 				status_set("BYPASS");
 			}
 		}
+		
+		/* Update minimum and maximum input voltage levels too */
+		if (query.ivolt < ivolt_min) {
+			ivolt_min = query.ivolt;
+		}
+
+		if (query.ivolt > ivolt_max) {
+			ivolt_max = query.ivolt;
+		}
+
+		dstate_setinfo("input.voltage.minimum", "%.1f", ivolt_min);
+		dstate_setinfo("input.voltage.maximum", "%.1f", ivolt_max);
 	}
 
 	/*
@@ -620,22 +655,6 @@ void upsdrv_updateinfo(void)
 	alarm_commit();
 
 	status_commit();
-
-	dstate_setinfo("ups.beeper.status", query.flags[FL_BEEPER_ON] == '1' ? "enabled" : "disabled");
-
-	/* Update minimum and maximum input voltage levels only when on line */
-	if (query.flags[FL_ON_BATT] == '0') {
-		if (query.ivolt < ivolt_min) {
-			ivolt_min = query.ivolt;
-		}
-
-		if (query.ivolt > ivolt_max) {
-			ivolt_max = query.ivolt;
-		}
-
-		dstate_setinfo("input.voltage.minimum", "%.1f", ivolt_min);
-		dstate_setinfo("input.voltage.maximum", "%.1f", ivolt_max);
-	}
 
 	dstate_dataok();
 }
