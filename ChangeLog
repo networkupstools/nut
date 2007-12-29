@@ -1,3 +1,10 @@
+Sat Dec 29 10:39:51 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+
+ - docs/new-drivers.txt: If UPS alarms are used, the call to alarm_commit()
+   should precede the call to status_commit(), otherwise the ALARM flag
+   will be delayed.
+ - drivers/megatec.c: Applied the above.
+
 Fri Dec 28 21:58:32 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  * drivers/megatec.c:
@@ -16,7 +23,7 @@ Thu Dec 27 06:37:50 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
  - Added myself into tha AUTHORS file.
 
-Sun Dec 16 19:53:51 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
+Sun Dec 16 19:53:51 UTC 2007 / 
 
  - conf/upsstats-single.html.sample, conf/upsstats.html.sample:
    The snmp driver reports 3-phase variables which APC's claims to

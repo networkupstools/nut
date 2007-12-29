@@ -191,13 +191,16 @@ must use to manage them.
 	alarm_set() - add an alarm word
 
 	alarm_commit() - push the value into ups.alarm
-                         also updates ups.status
 
 Note: the ALARM flag in ups.status is automatically set whenever you use
 alarm_set.  To remove that flag from ups.status, call alarm_init and
 alarm_commit without calling alarm_set in the middle.
 
 You should never try to set or unset the ALARM flag manually.
+
+If you use UPS alarms, the call to status_commit() should be after
+alarm_commit(), otherwise there will be a delay in setting the ALARM
+flag in ups.status.
 
 There is no official list of alarm words as of this writing, so don't
 use these functions until you check with the upsdev list.

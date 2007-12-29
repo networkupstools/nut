@@ -606,8 +606,6 @@ void upsdrv_updateinfo(void)
 		status_set("OFF");
 	}
 
-	status_commit();
-
 	alarm_init();
 
 	if (query.flags[FL_FAILED] == '1') {
@@ -615,6 +613,8 @@ void upsdrv_updateinfo(void)
 	}
 
 	alarm_commit();
+
+	status_commit();
 
 	dstate_setinfo("ups.beeper.status", query.flags[FL_BEEPER_ON] == '1' ? "enabled" : "disabled");
 
