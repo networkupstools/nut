@@ -478,13 +478,8 @@ void upsdrv_initinfo(void)
 	 */
 	if (get_firmware_values(&values) >= 0) {
 		dstate_setinfo("battery.voltage.nominal", "%.1f", values.battvolt);
-
-		/*
-		 * The specification does not qualify these values as either
-		 * input or output, so we set them without a specific context.
-		 */
-		dstate_setinfo("voltage.nominal", "%.1f", values.volt);
-		dstate_setinfo("frequency.nominal", "%.1f", values.freq);
+		dstate_setinfo("input.voltage.nominal", "%.1f", values.volt);
+		dstate_setinfo("input.frequency.nominal", "%.1f", values.freq);
 
 		if (set_battery_params(values.battvolt, status.battvolt) < 0) {
 			upslogx(LOG_NOTICE, "This UPS has an unsupported combination of battery voltage/number of batteries.");
@@ -575,15 +570,9 @@ void upsdrv_updateinfo(void)
 	dstate_setinfo("input.voltage.fault", "%.1f", query.fvolt);
 	dstate_setinfo("output.voltage", "%.1f", query.ovolt);
 	dstate_setinfo("ups.load", "%.1f", query.load);
+	dstate_setinfo("input.frequency", "%.1f", query.freq);
 	dstate_setinfo("battery.voltage", "%.2f", query.battvolt);
 	dstate_setinfo("ups.temperature", "%.1f", query.temp);
-
-	/*
-	 * The specification states this must be the input frequency, but
-	 * some vendors use it as the output frequency. The safest bet is
-	 * to just show the value without context and let the user decide.
-	 */
-	dstate_setinfo("frequency", "%.1f", query.freq);
 
 	charge = get_battery_charge(query.battvolt);
 	if (charge >= 0) {
@@ -615,7 +604,7 @@ void upsdrv_updateinfo(void)
 				status_set("BYPASS");
 			}
 		}
-		
+
 		/* Update minimum and maximum input voltage levels too */
 		if (query.ivolt < ivolt_min) {
 			ivolt_min = query.ivolt;
