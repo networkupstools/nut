@@ -1,3 +1,8 @@
+Mon Dec 31 15:54:23 UTC 2007 / Charles Lepple <clepple@gmail.com>
+
+ - include/Makefile.am: fix failure to build after "make clean", since
+   nut_stdint.h is built by configure, not make.
+
 Sat Dec 30 12:16:12 UTC 2007 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - drivers/megatec.c: qualify nominal values and frequency as "input" again.

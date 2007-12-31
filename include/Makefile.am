@@ -1,11 +1,12 @@
 EXTRA_DIST = attribute.h common.h extstate.h parseconf.h proto.h	\
  state.h timehead.h upsconf.h
 
-# magic to include SVN revision number in NUT version string
-
+# http://www.gnu.org/software/automake/manual/automake.html#Clean
 BUILT_SOURCES = nut_version.h nut_stdint.h
-CLEANFILES = nut_version.h nut_stdint.h
+DISTCLEANFILES = nut_stdint.h
+CLEANFILES = nut_version.h 
 
+# magic to include SVN revision number in NUT version string
 SVNREV = $(shell unset LANG && svnversion -n $(top_srcdir) 2>/dev/null)
 NUT_VERSION = $(shell if test "$(SVNREV)" = "exported"; then echo "$(PACKAGE_VERSION)"; else echo "$(PACKAGE_VERSION)-$(SVNREV)"; fi)
 
