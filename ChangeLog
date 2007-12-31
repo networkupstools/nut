@@ -1,3 +1,8 @@
+Mon Dec 31 16:30:50 GMT 2007 / Charles Lepple <clepple@gmail.com>
+
+ - include/Makefile.am: remove GNU Make extensions from rule to create
+   nut_version.h, and handle case where svnversion does not exist.
+
 Mon Dec 31 15:54:23 UTC 2007 / Charles Lepple <clepple@gmail.com>
 
  - include/Makefile.am: fix failure to build after "make clean", since
