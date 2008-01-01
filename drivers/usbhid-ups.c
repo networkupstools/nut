@@ -683,7 +683,7 @@ void upsdrv_banner(void)
 		DRIVER_VERSION, UPS_VERSION);
 }
 
-#define	MAX_EVENT_NUM	16
+#define	MAX_EVENT_NUM	32
 
 void upsdrv_updateinfo(void) 
 {
@@ -731,7 +731,12 @@ void upsdrv_updateinfo(void)
 		/* Process pending events (HID notifications on Interrupt pipe) */
 		for (i = 0; i < evtCount; i++) {
 
-			if (HIDGetDataValue(udev, event[i], &value, poll_interval) != 1)
+			/* Many UPSes have broken input reports, so we only use the
+			   corresponding feature reports. By setting the age to zero
+			   for the first value we retrieve, we make sure that the
+			   contents of the report buffer are considered stale and we
+			   poll for fresh data. */
+			if (HIDGetDataValue(udev, event[i], &value, (i > 0) ? poll_interval : 0) != 1)
 				continue;
 
 			if (nut_debug_level >= 2) {
@@ -744,7 +749,7 @@ void upsdrv_updateinfo(void)
 			/* Skip Input reports, if we don't use the Feature report */
 			item = find_hid_info(FindObject_with_Path(pDesc, &(event[i]->Path), ITEM_FEATURE));
 			if (!item) {
-				upsdebugx(1, "NUT doesn't use this HID object");
+				upsdebugx(3, "NUT doesn't use this HID object");
 				continue;
 			}
 
