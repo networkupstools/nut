@@ -741,7 +741,7 @@ void upsdrv_updateinfo(void)
 
 			if (nut_debug_level >= 2) {
 				upsdebugx(2, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %f",
-					HIDGetDataItem(udev, event[i], subdriver->utab),
+					HIDGetDataItem(event[i], subdriver->utab),
 					HIDDataType(event[i]), event[i]->ReportID,
 					event[i]->Offset, event[i]->Size, value);
 			}
@@ -1179,7 +1179,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 				continue;
 
 			/* Refresh the NUT-to-HID mapping and fetch new data */
-			item->hiddata = HIDGetItemData(udev, item->hidpath, subdriver->utab);
+			item->hiddata = HIDGetItemData(item->hidpath, subdriver->utab);
 			if (item->hiddata != NULL)
 				continue;
 
@@ -1220,7 +1220,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 			}
 
 			/* Create the NUT-to-HID mapping */
-			item->hiddata = HIDGetItemData(udev, item->hidpath, subdriver->utab);
+			item->hiddata = HIDGetItemData(item->hidpath, subdriver->utab);
 			if (item->hiddata == NULL)
 				continue;
 
