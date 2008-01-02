@@ -241,8 +241,11 @@ static int HIDParse(HIDParser_t* pParser, HIDData_t* pData)
       case ITEM_INPUT :
       case ITEM_OUTPUT :
       {
-        /* An object was found */
-        Found=1;
+        /* An object was found if the path does not end with 0x00000000 */
+	if (pParser->UsageTab[0] != 0x00000000)
+	{
+	  Found=1;
+	}
 
         /* Increment object count */
         pParser->nObject++;
