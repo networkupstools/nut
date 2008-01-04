@@ -292,7 +292,8 @@ static int reconnect_ups(void)
 		upslogx(LOG_INFO, "Reconnecting to UPS failed; will retry later...");
 		udev = NULL;
 		return 0;
-	}
+	} else
+		upslogx(LOG_NOTICE, "Successfully reconnected");
 
 	return ret;
 }
@@ -315,7 +316,6 @@ void usb_comm_fail(int res, const char *msg)
 			upslogx(LOG_WARNING, "%s: Device detached? (error %d: %s)", msg, res, usb_strerror());
 
 			if(reconnect_ups()) {
-				upslogx(LOG_NOTICE, "Successfully reconnected");
 				//upsdrv_initinfo();
 			}
 			break;
@@ -329,10 +329,8 @@ unsigned int ser_send_pace(int fd, unsigned long d_usec, const char *fmt, ...)
 	va_list ap;
 	int ret;
 
-	if (NULL == udev){
-		usb_comm_fail(ret, "ser_send_pace");
+	if ((udev == NULL) && (! reconnect_ups()))
 		return -1;
-	}
 
 	va_start(ap, fmt);
 
@@ -358,10 +356,8 @@ int ser_get_line(int fd, char *buf, size_t buflen, char endchar, const char *ign
 	int len;
 	char *src, *dst, c;
 
-	if (NULL == udev) {
-		usb_comm_fail(len, "ser_get_line");
+	if ((udev == NULL) && (! reconnect_ups()))
 		return -1;
-	}
 
 	len = subdriver->get_data(buf, buflen);
 	if (len < 0) {
