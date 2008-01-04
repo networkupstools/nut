@@ -274,14 +274,65 @@ int ser_close(int fd, const char *port)
 	return 0;
 }
 
+/*!@brief Try to reconnect once.
+ * @return 1 if reconnection was successful.
+ */
+static int reconnect_ups(void)
+{
+	int ret;
+
+	upsdebugx(2, "==================================================");
+	upsdebugx(2, "= device has been disconnected, try to reconnect =");
+	upsdebugx(2, "==================================================");
+
+	usb->close(udev);
+
+	ret = usb->open(&udev, &usbdevice, reopen_matcher, NULL);
+	if (ret < 1) {
+		upslogx(LOG_INFO, "Reconnecting to UPS failed; will retry later...");
+		udev = NULL;
+		return 0;
+	}
+
+	return ret;
+}
+
+/*!@brief Report a USB comm failure, and reconnect if necessary
+ * 
+ * @param[in] res	Result code from libusb/libhid call
+ * @param[in] msg	Error message to display
+ */
+void usb_comm_fail(int res, const char *msg)
+{
+	switch(res) {
+		case -EBUSY:
+			upslogx(LOG_WARNING, "%s: Device claimed by another process", msg);
+			fatalx(EXIT_FAILURE, "Terminating: EBUSY");
+			//upsdrv_cleanup();
+			break;
+
+		default:
+			upslogx(LOG_WARNING, "%s: Device detached? (error %d: %s)", msg, res, usb_strerror());
+
+			if(reconnect_ups()) {
+				upslogx(LOG_NOTICE, "Successfully reconnected");
+				//upsdrv_initinfo();
+			}
+			break;
+	}
+}
+
 unsigned int ser_send_pace(int fd, unsigned long d_usec, const char *fmt, ...)
 {
 	char buf[128];
 	size_t len;
 	va_list ap;
+	int ret;
 
-	if (NULL == udev)
+	if (NULL == udev){
+		usb_comm_fail(ret, "ser_send_pace");
 		return -1;
+	}
 
 	va_start(ap, fmt);
 
@@ -294,7 +345,12 @@ unsigned int ser_send_pace(int fd, unsigned long d_usec, const char *fmt, ...)
 		buf[sizeof(buf) - 1] = 0;
 	}
 
-	return subdriver->set_data(buf);
+	ret = subdriver->set_data(buf);
+	if(ret < 0) {
+		usb_comm_fail(ret, "ser_send_pace");
+	}
+
+	return ret;
 }
 
 int ser_get_line(int fd, char *buf, size_t buflen, char endchar, const char *ignset, long d_sec, long d_usec)
@@ -302,12 +358,16 @@ int ser_get_line(int fd, char *buf, size_t buflen, char endchar, const char *ign
 	int len;
 	char *src, *dst, c;
 
-	if (NULL == udev)
+	if (NULL == udev) {
+		usb_comm_fail(len, "ser_get_line");
 		return -1;
+	}
 
 	len = subdriver->get_data(buf, buflen);
-	if (len < 0)
+	if (len < 0) {
+		usb_comm_fail(len, "ser_get_line");
 		return len;
+	}
 
 	dst = buf;
 
@@ -466,7 +526,7 @@ static int set_data_krauler(const char *str)
 			if (res < 1) {
 				/* TODO: handle_error(res) */
 				upsdebugx(2, "set_data_krauler: connection failure");
-				return 0;
+				return res;
 			}
 
 			/* "UPS No Ack" has a special meaning */

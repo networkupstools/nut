@@ -1,3 +1,8 @@
+Fri Jan  4 06:56:22 UTC 2008 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ - drivers/megatec_usb.c: added reconnect support based on the code
+   from tripplite_usb driver.
+
 Wed Jan  2 20:17:48 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/hidparser.c: Parsing continues if the HID path for a report
