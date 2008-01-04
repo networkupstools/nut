@@ -25,7 +25,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define DRV_VERSION "0.11"
+#define DRV_VERSION "0.12"
 
 /* % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
  *
@@ -760,7 +760,7 @@ static int instcmd(const char *cmdname, const char *extra)
 			return STAT_INSTCMD_HANDLED;
 		}
 
-		if(!strcasecmp(cmdname, "ups.debug.send_Z")) {
+		if(!strcasecmp(cmdname, "reset.input.minmax")) {
 			return (send_cmd("Z", 2, buf, sizeof buf) == 2) ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_UNKNOWN;
 		}
 	}
@@ -1022,7 +1022,7 @@ void upsdrv_initinfo(void)
 
 	if(tl_model == TRIPP_LITE_SMARTPRO) {
 		dstate_addcmd("test.battery.start");
-		dstate_addcmd("ups.debug.send_Z");
+		dstate_addcmd("reset.input.minmax");
 	}
 
 	dstate_addcmd("shutdown.return");

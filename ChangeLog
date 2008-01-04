@@ -1,3 +1,7 @@
+Fri Jan  4 17:46:40 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/tripplite_usb.c: Rename the "send_Z" command to "reset.input.minmax"
+
 Fri Jan  4 06:56:22 UTC 2008 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
 
  - drivers/megatec_usb.c: added reconnect support based on the code
