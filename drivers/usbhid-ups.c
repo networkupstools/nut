@@ -393,19 +393,21 @@ info_lkp_t on_off_info[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *date_conversion_fun(long value) {
+static char *date_conversion_fun(double value)
+{
 	static char buf[20];
 	int year, month, day;
 
-	if (value == 0) {
+	if ((long)value == 0) {
 		return "not set";
 	}
 
-	year = 1980 + (value >> 9); /* negative value represents pre-1980 date */ 
-	month = (value >> 5) & 0x0f;
-	day = value & 0x1f;
+	year = 1980 + ((long)value >> 9); /* negative value represents pre-1980 date */ 
+	month = ((long)value >> 5) & 0x0f;
+	day = (long)value & 0x1f;
 
 	snprintf(buf, sizeof(buf), "%04d/%02d/%02d", year, month, day);
+
 	return buf;
 }
 
@@ -415,10 +417,12 @@ info_lkp_t date_conversion[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *hex_conversion_fun(long value) {
+static char *hex_conversion_fun(double value)
+{
 	static char buf[20];
 	
-	snprintf(buf, sizeof(buf), "%08lx", value);
+	snprintf(buf, sizeof(buf), "%08lx", (long)value);
+
 	return buf;
 }
 
@@ -428,10 +432,11 @@ info_lkp_t hex_conversion[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *stringid_conversion_fun(long value) {
+static char *stringid_conversion_fun(double value)
+{
 	static char buf[20];
 
-	return HIDGetIndexString(udev, value, buf, sizeof(buf));
+	return HIDGetIndexString(udev, (int)value, buf, sizeof(buf));
 }
 
 info_lkp_t stringid_conversion[] = {
@@ -440,10 +445,12 @@ info_lkp_t stringid_conversion[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *divide_by_10_conversion_fun(long value) {
+static char *divide_by_10_conversion_fun(double value)
+{
 	static char buf[20];
 	
 	snprintf(buf, sizeof(buf), "%0.1f", value * 0.1);
+
 	return buf;
 }
 
@@ -453,12 +460,12 @@ info_lkp_t divide_by_10_conversion[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *kelvin_celsius_conversion_fun(long value) {
+static char *kelvin_celsius_conversion_fun(double value)
+{
 	static char buf[20];
 	
-	/* we should be working with doubles, not integers, but integers it
-	   is for now */
-	snprintf(buf, sizeof(buf), "%d", (int)(value - 273.15));
+	snprintf(buf, sizeof(buf), "%.1f", value - 273.15);
+
 	return buf;
 }
 
@@ -1494,9 +1501,8 @@ static char *hu_find_infoval(info_lkp_t *hid2info, const double value)
 	/* if a conversion function is defined,
 	 * use 'value' as argument for it */
 	if (hid2info->fun != NULL) {
-		nut_value = hid2info->fun((long)value);
-		upsdebugx(5, "hu_find_infoval: found %s (value: %ld)\n",
-			nut_value, (long)value);
+		nut_value = hid2info->fun(value);
+		upsdebugx(5, "hu_find_infoval: found %s (value: %g)\n", nut_value, value);
 		return nut_value;
 	}
 

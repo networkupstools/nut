@@ -35,7 +35,7 @@
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *tripplite_chemistry_fun(long value)
+static char *tripplite_chemistry_fun(double value)
 {
 	static char	buf[20];
 	const char	*model;
@@ -52,7 +52,7 @@ static char *tripplite_chemistry_fun(long value)
 		return "unknown";
 	}
 
-	return HIDGetIndexString(udev, value, buf, sizeof(buf));
+	return HIDGetIndexString(udev, (int)value, buf, sizeof(buf));
 }
 
 static info_lkp_t tripplite_chemistry[] = {

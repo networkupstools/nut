@@ -35,7 +35,8 @@
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *mge_battery_voltage_nominal_fun(long value) {
+static char *mge_battery_voltage_nominal_fun(double value)
+{
 	static char buf[10];
 	const char *model;
 
@@ -43,9 +44,10 @@ static char *mge_battery_voltage_nominal_fun(long value) {
 
 	/* Work around for Evolution 650 bug(?) */
 	if (!strcmp(model, "Evolution 650"))
-		value = 12;
+		value = 12.0;
 
-	snprintf(buf, sizeof(buf), "%ld", value);
+	snprintf(buf, sizeof(buf), "%.0f", value);
+
 	return buf;
 }
 
@@ -55,10 +57,12 @@ static info_lkp_t mge_battery_voltage_nominal[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *mge_powerfactor_conversion_fun(long value) {
+static char *mge_powerfactor_conversion_fun(double value)
+{
 	static char buf[20];
 
-	snprintf(buf, sizeof(buf), "%.2f", (double)value / 100);
+	snprintf(buf, sizeof(buf), "%.2f", value / 100);
+
 	return buf;
 }
 
@@ -68,10 +72,12 @@ static info_lkp_t mge_powerfactor_conversion[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *mge_battery_capacity_fun(long value) {
+static char *mge_battery_capacity_fun(double value)
+{
 	static char buf[10];
 
-	snprintf(buf, sizeof(buf), "%.2f", (double)value / 3600);
+	snprintf(buf, sizeof(buf), "%.2f", value / 3600);
+
 	return buf;
 }
 

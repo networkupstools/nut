@@ -74,7 +74,7 @@ typedef struct
 typedef struct {
 	long	hid_value;	/* HID value */
 	char	*nut_value;	/* NUT value */
-        char    *(*fun)(long value); /* special case: if fun!=NULL, then
+        char    *(*fun)(double value); /* special case: if fun!=NULL, then
 				     ignore hid_value and nut_value,
 				     and use the conversion function
 				     instead. This is used for more

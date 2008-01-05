@@ -36,42 +36,44 @@
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *apc_date_conversion_fun(long value) {
-  static char buf[20];
-  int year, month, day;
+static char *apc_date_conversion_fun(double value)
+{
+	static char buf[20];
+	int year, month, day;
 
-  if (value == 0) {
-    return "not set";
-  }
+	if ((long)value == 0) {
+		return "not set";
+	}
 
-  /* APC apparently uses a hexadecimal-as-decimal format, e.g.,
-  0x102202 = October 22, 2002 */
-  year = (value & 0xf) + 10 * ((value>>4) & 0xf);
-  month = ((value>>16) & 0xf) + 10 * ((value>>20) & 0xf);
-  day = ((value>>8) & 0xf) + 10 * ((value>>12) & 0xf);
+	/* APC apparently uses a hexadecimal-as-decimal format, e.g.,
+	0x102202 = October 22, 2002 */
+	year = ((long)value & 0xf) + 10 * (((long)value>>4) & 0xf);
+	month = (((long)value>>16) & 0xf) + 10 * (((long)value>>20) & 0xf);
+	day = (((long)value>>8) & 0xf) + 10 * (((long)value>>12) & 0xf);
 
-  /* Y2K conversion - hope that this format will be retired before 2070 :) */
-  if (year >= 70) {
-    year += 1900;
-  } else {
-    year += 2000;
-  }
+	/* Y2K conversion - hope that this format will be retired before 2070 :) */
+	if (year >= 70) {
+		year += 1900;
+	} else {
+		year += 2000;
+	}
 
-  snprintf(buf, sizeof(buf), "%04d/%02d/%02d", year, month, day);
-  return buf;
+	snprintf(buf, sizeof(buf), "%04d/%02d/%02d", year, month, day);
+
+	return buf;
 }
 
 info_lkp_t apc_date_conversion[] = {
-  { 0, NULL, apc_date_conversion_fun }
+	{ 0, NULL, apc_date_conversion_fun }
 };
 
 /* This was determined empirically from observing a BackUPS LS 500.
  */
 static info_lkp_t apcstatusflag_info[] = {
-  { 8, "!off", NULL },  /* Normal operation */
-  { 16, "!off", NULL }, /* This occurs briefly during power-on, and corresponds to status 'DISCHRG'. */
-  { 0, "off", NULL },
-  { 0, NULL, NULL }
+	{ 8, "!off", NULL },  /* Normal operation */
+	{ 16, "!off", NULL }, /* This occurs briefly during power-on, and corresponds to status 'DISCHRG'. */
+	{ 0, "off", NULL },
+	{ 0, NULL, NULL }
 };
 
 /* --------------------------------------------------------------- */

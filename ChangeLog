@@ -1,3 +1,9 @@
+Sat Jan  5 11:20:06 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/*-hid.[ch]: Change the parameter passed to the conversion
+   functions from (long) to (double) so that we are able to convert
+   floating point values without losing precision.
+
 Sat Jan  5 06:37:12 UTC 2008 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
 
  - drivers/megatec_usb.c: add phoenix subdriver to the list. Thanks
