@@ -89,6 +89,7 @@ static subdriver_t krauler_subdriver = {
 static subdriver_t *subdriver_list[] = {
 	&agiler_subdriver,
 	&krauler_subdriver,
+	&phoenix_subdriver,
 	NULL	/* end of list */
 };
 

@@ -1,3 +1,8 @@
+Sat Jan  5 06:37:12 UTC 2008 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ - drivers/megatec_usb.c: add phoenix subdriver to the list. Thanks
+   Boris Kleint for pointing this out.
+
 Fri Jan  4 17:46:40 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - drivers/tripplite_usb.c: Rename the "send_Z" command to "reset.input.minmax"
