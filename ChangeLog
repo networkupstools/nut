@@ -1,3 +1,9 @@
+Sat Jan  5 18:45:26 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/tripplite-hid.c: Don't apply battery voltage scaling if this
+   isn't needed. Also, add some more variables and flags (so that we
+   don't keep on asking for (semi)static data.
+
 Sat Jan  5 11:20:06 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/*-hid.[ch]: Change the parameter passed to the conversion
