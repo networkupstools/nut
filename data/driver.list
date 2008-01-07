@@ -387,7 +387,10 @@
 "Nitram"	"Elite 2002"	""	"genericups upstype=16"
 "Nitram"	"Elite 2005"	""	"powerpanel or nitram"
 
-"Oneac"	"EG/ON Series"	"advanced interface"	"oneac"
+"Oneac"	"ON700XAU"	""	"oneac"
+"Oneac"	"ON1000XAU"	""	"oneac"
+"Oneac"	"ON1500XAU"	""	"oneac"
+"Oneac"	"EG Series"	"advanced interface"	"oneac"
 
 "Online"	"P-Series"	""	"genericups upstype=14"
 "Online"	"Zinto D"	""	"optiups"

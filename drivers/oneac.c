@@ -30,7 +30,7 @@
  * into submission
 */
 
-#define DRV_VERSION "0.4"
+#define DRV_VERSION "0.5"
 #define SECS 2		/*wait time*/
 #define USEC 0		/*rest of wait time*/
 
@@ -93,14 +93,15 @@ int instcmd(const char *cmdname, const char *extra)
 
 void upsdrv_initinfo(void)
 {
-	char buffer[256];
+	int i;
+	char buffer[256], buffer2[32];
 	ser_flush_in(upsfd,"",0);
 	ser_send(upsfd,"%c%s",GET_MFR,COMMAND_END);
 	ser_get_line(upsfd, buffer, sizeof(buffer),ENDCHAR,IGNCHARS,SECS,USEC);
 	if(strncmp(buffer,MFGR, sizeof(MFGR)))
 		fatalx(EXIT_FAILURE, "Unable to connect to ONEAC UPS on %s\n",device_path);	
  
-	dstate_setinfo("ups.mfr", "ONEAC");
+	dstate_setinfo("ups.mfr", buffer);
 	dstate_addcmd("test.battery.start");
 	dstate_addcmd("test.battery.stop");
 	dstate_addcmd("test.failure.start");
@@ -130,13 +131,33 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("ups.model", "%.2s",buffer);
 	printf("Found %.2s family of Oneac UPS\n", buffer);
 
-	if (strncmp(buffer,FAMILY_ON,2) || strncmp(buffer,FAMILY_EG,2) == 0)
+	if ((strncmp(buffer,FAMILY_ON,2) != 0 && 
+		 strncmp(buffer,FAMILY_ON_EXT,2) != 0) || 
+		strncmp(buffer,FAMILY_EG,2) == 0) 
 		printf("Unknown family of UPS. Assuming EG capabilities.\n");
 
-	/*The ON series of UPS supports more stuff than does the EG.
- 	*Take care of the ON only stuff here
+	/*Get the actual model string for ON UPS reported as OZ family*/
+	if (strncmp (dstate_getinfo("ups.model"), FAMILY_ON_EXT, 2) == 0) {
+		ser_flush_in(upsfd,"",0);
+		ser_send(upsfd,"%c%s",GET_ALL_EXT_2,COMMAND_END);
+		ser_get_line(upsfd, buffer, sizeof(buffer),ENDCHAR,IGNCHARS,SECS,USEC);
+
+		/*UPS Model (full string)*/
+		memset(buffer2, '\0', 32);
+		strncpy(buffer2,&buffer[5], 10);
+		for (i = 9; i >= 0 && buffer2[i] == ' '; --i) {
+			buffer2[i] = '\0';
+		}
+
+		dstate_setinfo("ups.model", buffer2);
+		printf("Found %.10s UPS\n", buffer2);
+	}
+
+	/*The ON (OZ) series of UPS supports more stuff than does the EG.
+ 	*Take care of the ON (OZ) only stuff here
 	*/
-	if(strncmp (dstate_getinfo("ups.model"), FAMILY_ON, 2) == 0) {
+	if(strncmp (dstate_getinfo("ups.model"), FAMILY_ON, 2) == 0 ||
+	   strncmp (dstate_getinfo("ups.model"), FAMILY_ON_EXT, 2) == 0) {
 		/*now set the ON specific "static" parameters*/
 
 			/*nominal input voltage*/
@@ -236,15 +257,10 @@ void upsdrv_updateinfo(void)
 		if (strncmp(dstate_getinfo("ups.model"), FAMILY_ON, 2) == 0) {
 			dstate_setinfo("ups.load", "0%.2s",buffer+31);
 
-			/*run time left. */
-
-/* I've commented this out until I either figure out how to convert
- * to an actual time, or I decide I can't do that and remove this code
-
+			/*battery charge*/
 			if(buffer[10] == YES)
-				dstate_setinfo("batt.runtime", "0%.2s",buffer+33);
-			else dstate_setinfo("batt.runtime", "100");
-*/
+				dstate_setinfo("battery.charge", "0%.2s",buffer+33);
+			else dstate_setinfo("battery.charge", "100");
 
 			dstate_setinfo("input.voltage", "%.3s",buffer+35);
 			dstate_setinfo("input.voltage.minimum", "%.3s",buffer+38);

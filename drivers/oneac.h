@@ -25,6 +25,8 @@ Copyright (C) 2002 Eric Lawson <elawson@inficad.com>
 /*Information requests*/
 
 #define GET_ALL '%'
+#define GET_ALL_EXT_2 '^'
+#define GET_ALL_EXT_1 '&'
 #define GET_MFR	'M'
 #define GET_FAMILY	'F'
 #define GET_VERSION	'N'
@@ -61,6 +63,7 @@ Copyright (C) 2002 Eric Lawson <elawson@inficad.com>
 /*responses*/
 #define MFGR "ONEAC"
 #define FAMILY_ON	"ON"
+#define FAMILY_ON_EXT	"OZ"
 #define FAMILY_EG	"EG"
 #define YES	'Y'
 #define NO 'N'

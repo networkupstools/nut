@@ -1,3 +1,8 @@
+Mon Jan  7 03:28:32 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - Patch from Jacob Schmier: drivers/oneac.[ch]: Updated for models ON700XAU,
+   ON1000XAU, ON1500XAU.
+
 Sat Jan  5 18:45:26 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/tripplite-hid.c: Don't apply battery voltage scaling if this
