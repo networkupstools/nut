@@ -1,3 +1,8 @@
+Tue Jan  8 01:53:09 UTC 2008 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ - Added info about all recently reported models, supported by
+   megatec_usb driver.
+
 Mon Jan  7 03:28:32 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - Patch from Jacob Schmier: drivers/oneac.[ch]: Updated for models ON700XAU,
