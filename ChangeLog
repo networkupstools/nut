@@ -1,3 +1,7 @@
+Wed Jan 10 09:32:06 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - packaging/debian/changelog: update the release version to 2.3.0-1
+
 Tue Jan  8 01:53:09 UTC 2008 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
 
  - Added info about all recently reported models, supported by

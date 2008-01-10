@@ -1,3 +1,9 @@
+nut (2.3.0-1) UNRELEASED; urgency=low
+
+  * New upstream svn release
+
+ -- Arnaud Quette <aquette@debian.org>  Fri, 13 Jul 2007 11:29:22 +0200
+
 nut (2.1.0-4) UNRELEASED; urgency=low
 
   * debian/control:
@@ -19,7 +25,7 @@ nut (2.1.0-4) UNRELEASED; urgency=low
 
  -- Arnaud Quette <aquette@debian.org>  Fri, 25 May 2007 15:13:02 +0200
 
-nut (2.1.0-3) UNRELEASED; urgency=low
+nut (2.1.0-3) UNRELEASED; urgency=low 
 
   * debian/control: requires at least libhal-dev  0.5.8
   * debian/rules: nut-hal-drivers also needs the udev rules
@@ -33,7 +39,7 @@ nut (2.1.0-2) UNRELEASED; urgency=low
   * SVN snapshot
 
  -- Charles Lepple <clepple@gmail.com>  Mon, 22 Jan 2007 04:02:50 +0000
-
+ 
 nut (2.0.5-1) unstable; urgency=low
 
   * New upstream release (Closes: #406045, #380304, #399741)
