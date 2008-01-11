@@ -10,6 +10,10 @@
 #define USB_ERR_LIMIT 10	/* start limiting after 10 in a row  */
 #define USB_ERR_RATE 10		/* then only print every 10th error */
 
+/* Make vendorcode more readable */
+#define POWERWARE 0x0592
+#define PHOENIXTEC 0x06da
+ 
 usb_dev_handle *nutusb_open(const char *port);
 
 int nutusb_close(usb_dev_handle *dev_h, const char *port);

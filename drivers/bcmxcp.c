@@ -126,7 +126,7 @@ TODO List:
 #include "bcmxcp_io.h"
 #include "bcmxcp.h"
 
-#define DRV_VERSION "0.13"
+#define DRV_VERSION "0.14"
 
 static int get_word(const unsigned char*);
 static long int get_long(const unsigned char*);
