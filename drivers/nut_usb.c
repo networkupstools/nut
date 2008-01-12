@@ -25,9 +25,9 @@
 #include <sys/file.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <stdint.h>
 #include <usb.h>
 
+#include "nut_stdint.h" /* for uint16_t */
 #include "nut_usb.h"
 
 extern	int		exit_flag;

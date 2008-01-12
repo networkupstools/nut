@@ -1,3 +1,7 @@
+Thu Jan 12 16:15:00 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+
+ - Changed <stdint.h> to "nut_stdint.h" in nut_usb.c. Pointed out by Arjen. 
+
 Sat Jan 12 15:44:43 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/hidparser.c: The changes in r1210 broke the calculation of the size
