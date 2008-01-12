@@ -472,11 +472,18 @@ int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventsize)
 
 		pData = &pDesc->item[i];
 
+		/* Variable not part of this report */
+		if (pData->ReportID != buf[0])
+			continue;
+
+		/* Not an input report */
 		if (pData->Type != ITEM_INPUT)
 			continue;
 
-		if (pData->ReportID != buf[0])
+		/* HID Path ends in 0x00000000, so this value should not be used */
+		if (pData->Path.Node[pData->Path.Size-1] == 0x00000000) {
 			continue;
+		}
 
 		/* maximum number of events reached? */
 		if (itemCount >= eventsize) {

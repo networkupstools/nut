@@ -1,3 +1,12 @@
+Sat Jan 12 15:44:43 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/hidparser.c: The changes in r1210 broke the calculation of the size
+   of reports, so this change is reverted.
+ - drivers/libhid.c: Check if the HID Path ends in 0x00000000 and if so, assume
+   this variable isn't used and don't update it when we receive an update over
+   the interrupt pipeline. Optimized the order in which we determine if a
+   variable needs updating so that the most restrictive tests are done first.
+
 Thu Jan 11 16:57:50 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
  - Added possible fix for Powerware 3110 5115 and 9120 on usb to nut_usb.c
