@@ -194,7 +194,7 @@ void possibly_supported(const char *mfr, HIDDevice_t *hd);
 /*      Lookup table to translate keywords to enumerated values    */
 /* --------------------------------------------------------------- */
 
-#ifndef SHUT_MODE
+#ifndef MGE_MODE
 typedef enum {
 	NORMAL = 0,
 	CHECKSUM,
@@ -202,6 +202,6 @@ typedef enum {
 } matching_t;
 
 extern matching_t	matching;	/* maybe useful for subdrivers? */
-#endif /* SHUT_MODE */
+#endif /* MGE_MODE */
 
 #endif /* USBHID_UPS_H */

@@ -1,3 +1,12 @@
+Wed Jan 10 14:37:34 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+
+ * mge-xml: new experimental driver for MGE (Office Protection Systems
+   and UPS Systems) Network Management Cards and Proxy.
+   This driver use the same HID core as usbhid-ups and newmge-shut
+   and its development is sponsored by MGE Office Protection Systems.
+   The ezXML parser has been embedded in the source to allow the
+   driver development (dual licensed under MIT + GPL).
+
 Thu Jan 12 16:15:00 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
  - Changed <stdint.h> to "nut_stdint.h" in nut_usb.c. Pointed out by Arjen. 

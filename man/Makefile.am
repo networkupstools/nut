@@ -53,6 +53,7 @@ SNMP_PAGES = snmp-ups.8
 
 USB_LIBUSB_PAGES = usbhid-ups.8 bcmxcp_usb.8 tripplite_usb.8 megatec_usb.8
 USB_HIDDEV_PAGES = energizerups.8
+MGEXML_PAGES = mge-xml.8
 
 # decide which pages to install
 man_MANS = $(CONF_PAGES) $(CLIENT_PAGES)
@@ -80,10 +81,13 @@ endif
 if HAVE_HIDDEV
    man_MANS += $(USB_HIDDEV_PAGES)
 endif
+if WITH_MGEXML
+   man_MANS += $(MGEXML_PAGES)
+endif
 endif
 endif
 
 # distribute everything, even that which is not installed by default
 EXTRA_DIST = $(LIB_PAGES) $(CONF_PAGES) $(CLIENT_PAGES)		\
  $(CGI_PAGES) $(SERIAL_PAGES) $(SNMP_PAGES) $(USB_LIBUSB_PAGES)	\
- $(USB_HIDDEV_PAGES) skel.8
+ $(USB_HIDDEV_PAGES) $(MGEXML_PAGES) skel.8

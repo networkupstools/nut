@@ -16,6 +16,7 @@ Fields
 
 P: Person
 M: Mail patches to this address
+W: Web address
 S: Status:
 
    Supported  = someone is paid to do this
@@ -37,7 +38,8 @@ S: Maintained: apcsmart, belkin, bestups, cyberpower, dummycons,
 P: Arnaud Quette
 M: aquette.dev@gmail.com
 M: arnaud.quette@mgeups.com
-S: Maintained: dummy-ups, usbhid-ups, mge-shut, mge-utalk, snmp-ups
+S: Maintained or Supported: dummy-ups, usbhid-ups, mge-shut, newmge-shut
+                            mge-utalk, snmp-ups, mge-xml, HAL support
 
 P: Arjen de Korte
 M: arjen@de-korte.org
@@ -69,6 +71,14 @@ S: Maintained: nut.spec.in (for Red Hat RPM builds)
 P: Arnaud Quette
 M: aquette@debian.org
 S: Maintained: Official Debian packages
+
+Third party code
+================
+
+P: Aaron Voisine
+M: aaron@voisine.org
+W: http://ezxml.sourceforge.net/
+S: Maintained: ezXML (XML Parser for the mge-xml driver)
 
 Everything else
 ===============

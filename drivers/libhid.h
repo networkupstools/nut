@@ -41,6 +41,12 @@
 	typedef char				HIDDeviceMatcher_t;
 	typedef int				hid_dev_handle_t;
 	typedef shut_communication_subdriver_t	communication_subdriver_t;
+#elif defined (MGEXML_MODE)
+	#include "libmge-xml.h"
+	typedef MGEXMLDevice_t			HIDDevice_t;
+	typedef char				HIDDeviceMatcher_t;
+	typedef int				hid_dev_handle_t;
+	typedef mgexml_communication_subdriver_t	communication_subdriver_t;
 #else
 	#include "libusb.h"
 	typedef USBDevice_t			HIDDevice_t;
@@ -119,7 +125,11 @@ char *HIDGetDataItem(const HIDData_t *hiddata, usage_tables_t *utab);
 /*
  * HIDGetDataValue
  * -------------------------------------------------------------------------- */
+#ifndef MGEXML_MODE
 int HIDGetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double *Value, int age);
+#else
+int HIDGetDataValue(hid_dev_handle_t udev, const char *hidpath, double *Value, int age);
+#endif
 
 /*
  * HIDSetDataValue
@@ -144,6 +154,5 @@ const char *HIDDataType(const HIDData_t *hiddata);
 
 void free_report_buffer(reportbuf_t *rbuf);
 reportbuf_t *new_report_buffer(HIDDesc_t *pDesc);
-
 
 #endif /* _LIBHID_H */
