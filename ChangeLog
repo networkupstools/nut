@@ -1,3 +1,8 @@
+Mon Jan 14 20:49:48 UTC 2008 / Peter Selinger <selinger@users.sourceforge.net>
+
+ - upsdrvctl: pass "-u" flag to the driver also in shutdown mode. Print
+   actual command line when debugging.
+	
 Wed Jan 10 14:37:34 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
 
  * mge-xml: new experimental driver for MGE (Office Protection Systems
