@@ -109,7 +109,7 @@ static usb_ups_t KnownDevices[] = {
 	{0xffff, 0x0000, &krauler_subdriver},	/* Ablerex 625L USB */
 	{0x0665, 0x5161, &phoenix_subdriver},	/* Belkin F6C1200-UNV */
 	{0x06da, 0x0003, &phoenix_subdriver},	/* Mustek Powermust */
-	{0x0f03, 0x0001, &agiler_subdriver},	/* Unitek Alpha 1200Sx */
+	{0x0f03, 0x0001, &phoenix_subdriver},	/* Unitek Alpha 1200Sx */
 	{-1, -1, NULL}		/* end of list */
 };
 

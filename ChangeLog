@@ -1,3 +1,8 @@
+Mon Jan 14 22:20:44 UTC 2008 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ - drivers/megatec_usb.c: changed default subdriver for Unitek Alpha
+   1200Sx to phoenix.
+
 Mon Jan 14 20:49:48 UTC 2008 / Peter Selinger <selinger@users.sourceforge.net>
 
  - upsdrvctl: pass "-u" flag to the driver also in shutdown mode. Print
