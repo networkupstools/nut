@@ -1,4 +1,9 @@
-Tue Jan 15 06:59:00 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+Tue Jan 15 15:25:10 UTC 2008 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+
+ - Fixed year lag on me and Arnaud in ChangeLog. We where stuck in 2007.
+    And some dates. Thanks to Janos Farkas
+
+Tue Jan 15 06:59:00 UTC 2008 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
  - Added line in nut-usbups.rules.in for Powerware 3110 5115 and 9120 using
    the old interface.(Also fixed a day problem in ChangeLog)
@@ -13,7 +18,7 @@ Mon Jan 14 20:49:48 UTC 2008 / Peter Selinger <selinger@users.sourceforge.net>
  - upsdrvctl: pass "-u" flag to the driver also in shutdown mode. Print
    actual command line when debugging.
 	
-Wed Jan 10 14:37:34 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+Wed Jan 10 14:37:34 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  * mge-xml: new experimental driver for MGE (Office Protection Systems
    and UPS Systems) Network Management Cards and Proxy.
@@ -22,7 +27,7 @@ Wed Jan 10 14:37:34 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
    The ezXML parser has been embedded in the source to allow the
    driver development (dual licensed under MIT + GPL).
 
-Sat Jan 12 16:15:00 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+Sat Jan 12 16:15:00 UTC 2008 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
  - Changed <stdint.h> to "nut_stdint.h" in nut_usb.c. Pointed out by Arjen. 
 
@@ -35,12 +40,12 @@ Sat Jan 12 15:44:43 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
    the interrupt pipeline. Optimized the order in which we determine if a
    variable needs updating so that the most restrictive tests are done first.
 
-Thu Jan 11 16:57:50 UTC 2007 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+Thu Jan 10 16:57:50 UTC 2008 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
  - Added possible fix for Powerware 3110 5115 and 9120 on usb to nut_usb.c
    Changed driver to version to 0.14.
 
-Wed Jan 10 09:32:06 UTC 2007 / Arnaud Quette <aquette.dev@gmail.com>
+Wed Jan  9 09:32:06 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  - packaging/debian/changelog: update the release version to 2.3.0-1
 
