@@ -45,6 +45,7 @@ SYSFS{idVendor}=="0f03", SYSFS{idProduct}=="0001", MODE="664", GROUP="@RUN_AS_GR
 
 # Powerware - bcmxcp_usb
 SYSFS{idVendor}=="0592", SYSFS{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="06da", SYSFS{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 # Tripp Lite - tripplite_usb
 SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="0001", MODE="664", GROUP="@RUN_AS_GROUP@"
