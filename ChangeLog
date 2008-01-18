@@ -4,7 +4,7 @@ Fri Jan 18 14:03:01 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
    - mgemib.h: add support for MGE* Environment Sensor (ref 66 846).
      This adds the data ambient.temperature and ambient.humidity.
    - snmp-ups.c: fix the handling of multiplier on ambient.temperature
-     for units other than APC.
+     for units other than APC. Bump driver release to 0.43
 
 Tue Jan 15 15:25:10 UTC 2008 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
