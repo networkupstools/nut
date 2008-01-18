@@ -817,7 +817,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 			temp=value;
 		}
 
-		snprintf(buf, sizeof(buf), "%.1f", temp);
+		snprintf(buf, sizeof(buf), "%.1f", temp * su_info_p->info_len);
 		su_setinfo(su_info_p->info_type, buf,
 			su_info_p->info_flags, su_info_p->info_len);
 
