@@ -814,10 +814,10 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 				temp = (value - 32) / 1.8;
 		}
 		else {
-			temp=value;
+			temp = value * su_info_p->info_len;
 		}
 
-		snprintf(buf, sizeof(buf), "%.1f", temp * su_info_p->info_len);
+		snprintf(buf, sizeof(buf), "%.1f", temp);
 		su_setinfo(su_info_p->info_type, buf,
 			su_info_p->info_flags, su_info_p->info_len);
 
