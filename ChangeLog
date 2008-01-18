@@ -1,3 +1,11 @@
+Fri Jan 18 15:26:45 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - mge-xml: add support for MGE* Environment Sensor (ref 66 846).
+   This adds the data ambient.temperature and ambient.humidity, and
+   is equivalent to the below snmp-ups feature.
+   This change affects mge-hid.c but only applies to mge-xml since
+   this sensor is a pure Network Management Card addon.
+
 Fri Jan 18 14:03:01 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  * snmp-ups:

@@ -28,10 +28,8 @@
 #include "main.h"     /* for getval() */
 #include "common.h"
 
-#define MGE_HID_VERSION	"MGE HID 1.01"
-
-#define MGE_VENDORID 0x0463
-
+#define MGE_HID_VERSION	"MGE HID 1.02"
+#define MGE_VENDORID		0x0463
 
 /* returns statically allocated string - must not use it again before
    done with result! */
@@ -426,6 +424,11 @@ static hid_info_t mge_hid2nut[] =
 	{ "output.powerfactor", 0, 0, "UPS.PowerConverter.Output.PowerFactor", NULL, "%s", 0, mge_powerfactor_conversion },
 	{ "output.frequency", 0, 0, "UPS.PowerConverter.Output.Frequency", NULL, "%.1f", 0, NULL },
 	{ "output.frequency.nominal", 0, 0, "UPS.Flow.[4].ConfigFrequency", NULL, "%.0f", HU_FLAG_STATIC, NULL },
+
+	/* Ambient page: Environment Sensor (ref 66 846)
+	 * This will only work with mge-xml since it's an NMC addon! */
+	{ "ambient.temperature", 0, 0, "Environment.Temperature", NULL, "%.1f", 0, NULL },
+	{ "ambient.humidity", 0, 0, "Environment.Humidity", NULL, "%.1f", 0, NULL },
 
 	/* Outlet page (using MGE UPS SYSTEMS - PowerShare technology) */
 	{ "outlet.0.id", 0, 0, "UPS.OutletSystem.Outlet.[1].OutletID", NULL, "%.0f", HU_FLAG_STATIC, NULL },
