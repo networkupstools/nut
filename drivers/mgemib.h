@@ -1,10 +1,11 @@
 /*  mgemib.h - data to monitor MGE UPS SYSTEMS SNMP devices with NUT
  *
  *  Copyright (C) 2002-2003 
- *  			Arnaud Quette <arnaud.quette@free.fr>
+ *  			Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
  *  			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
+ *   and MGE Office Protection Systems <http://www.mgeops.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,7 +24,7 @@
  *
  */
 
-#define MGE_MIB_VERSION	"0.3"
+#define MGE_MIB_VERSION	"0.4"
 
 /* SNMP OIDs set */
 #define MGE_OID_UPS_MIB			".1.3.6.1.4.1.705"
@@ -74,6 +75,9 @@ info_lkp_t mge_overbatt_info[] = {
 	{ 0, "NULL" }
 };
 
+#define MGE_OID_AMBIENT_TEMP ".1.3.6.1.4.1.705.1.8.1.0"
+#define MGE_OID_AMBIENT_HUMIDITY ".1.3.6.1.4.1.705.1.8.2.0"
+
 #define MGE_OID_FIRMREV			".1.3.6.1.4.1.705.1.12.12.0"
 
 #define MGE_OID_BATT_TEST		".1.3.6.1.4.1.705.1.10.4.0"
@@ -121,6 +125,10 @@ snmp_info_t mge_mib[] = {
  	{ "battery.charge.low", ST_FLAG_STRING | ST_FLAG_RW, 2, MGE_OID_LOBATTPCT, "",
  		SU_TYPE_INT | SU_FLAG_OK, NULL },	
  	{ "battery.voltage", 0, 0.1, MGE_OID_BATTVOLT, "", SU_FLAG_OK, NULL },
+
+	/* Ambient page: Environment Sensor (ref 66 846) */
+ 	{ "ambient.temperature", 0, 0.1, MGE_OID_AMBIENT_TEMP, "", SU_TYPE_INT | SU_FLAG_OK, NULL },
+ 	{ "ambient.humidity", 0, 0.1, MGE_OID_AMBIENT_HUMIDITY, "", SU_TYPE_INT | SU_FLAG_OK, NULL },
 
 /*	{ "ups.delay.shutdown", ST_FLAG_STRING | ST_FLAG_RW, 3, MGE_OID_GRACEDELAY, "",
 		SU_FLAG_OK, NULL },

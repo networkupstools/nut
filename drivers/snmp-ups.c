@@ -802,10 +802,10 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 				temp = (value - 32) / 1.8;
 		}
 		else {
-			temp=value;
+			temp = value * su_info_p->info_len;
 		}
 
-		sprintf(buf, "%.1f", temp);
+		snprintf(buf, sizeof(buf), "%.1f", temp);
 		su_setinfo(su_info_p->info_type, buf,
 			su_info_p->info_flags, su_info_p->info_len);
 
@@ -827,7 +827,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 			    	upsdebugx(1, "setvar %s", su_info_p->OID);
 			    	*su_info_p->setvar = value;
 			}
-			sprintf(buf, "%.1f", value * su_info_p->info_len);
+			snprintf(buf, sizeof(buf), "%.1f", value * su_info_p->info_len);
 		}
 	} else {
 		status = nut_snmp_get_str(su_info_p->OID, buf, sizeof(buf), su_info_p->oid2info);

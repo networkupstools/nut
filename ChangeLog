@@ -1,3 +1,12 @@
+Fri Jan 18 14:03:01 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+
+ * snmp-ups: backported from the trunk.
+   - mgemib.h: add support for MGE* Environment Sensor (ref 66 846).
+     This adds the data ambient.temperature and ambient.humidity.
+   - snmp-ups.c: fix the handling of multiplier on ambient.temperature
+     for units other than APC. Bump driver release to 0.421 since
+     there are still differences with the trunk version.
+
 2.2.1
 
 Fri Dec 21 10:59:01 UTC 2007 / Arnaud Quette <arnaudquette@eaton.com>
