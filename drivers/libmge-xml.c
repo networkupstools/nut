@@ -803,8 +803,8 @@ char *getHTTP(const char* url, const char* login, const char* password)
 	int rqlen, err;
 	int totalLength, xmllen = -1;
 	char *auth_string = "";
-	char *request = xmalloc(BUFF_SIZE);
-	char *answer = NULL, *tmpbuf = xmalloc(BUFF_SIZE);
+	char request[BUFF_SIZE];
+	char *answer = NULL, tmpbuf[BUFF_SIZE];
 
 	/* Handle authentication information */
 /*	if(login != NULL && password != NULL)
@@ -835,11 +835,13 @@ char *getHTTP(const char* url, const char* login, const char* password)
 	
 	if( (err = send(tcp_port, request, rqlen, MSG_NOSIGNAL)) > 0)
 	{
+		int count = tcp_receive(tmpbuf);
+
 		upsdebugx(3, "=> request sent:\n%s", request);
 		
-		int count = tcp_receive(tmpbuf);
 		if (count > 0) {
 			int http_code = atoi(strchr(tmpbuf, ' '));
+
 			upsdebugx(4, "==> answer received (size: %i, code: %i):\n%s ", count, http_code, tmpbuf);
 			
 			/* Check for server answer */
@@ -872,10 +874,6 @@ char *getHTTP(const char* url, const char* login, const char* password)
 				}
 				else
 					upsdebugx(3, "can't find XML or HTTP content in answer (%s)!", tmpbuf);
-					
-				
-				free (tmpbuf);
-				free (request);
 			}
 			else
 				upsdebugx(3, "HTTP answer with error (err: %i)!", http_code);
@@ -890,4 +888,3 @@ char *getHTTP(const char* url, const char* login, const char* password)
 
 	return answer;
 }
-

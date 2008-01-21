@@ -1,3 +1,10 @@
+Mon Jan 21 11:59:42 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/libmge-xml:
+   - Fix memory leak (dynamically allocated memory would not be free'd
+     after an error condition, change to automatic buffers).
+   - C90 doesn't allow mixing code and data.
+
 Mon Jan 21 11:42:23 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - server/<various>: Remove the ACL mechanism from the server and by
