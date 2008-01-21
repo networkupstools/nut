@@ -65,9 +65,7 @@ static void send_instcmd(ctype_t *client, const char *upsname,
 	}
 
 	/* see if this user is allowed to do this command */
-	if (!user_checkinstcmd(&client->sock, client->username, 
-		client->password, cmdname)) {
-
+	if (!user_checkinstcmd(client->username, client->password, cmdname)) {
 		send_err(client, NUT_ERR_ACCESS_DENIED);
 		return;
 	}

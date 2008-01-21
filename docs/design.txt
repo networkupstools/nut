@@ -148,7 +148,6 @@ This scenario requires some configuration, obviously:
 
 	[monuser]
 		password = somepass
-		allowfrom = somewhere
 		upsmon master
 
 4. upsmon is set to monitor this UPS in upsmon.conf.

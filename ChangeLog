@@ -1,3 +1,8 @@
+Mon Jan 21 11:42:23 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - server/<various>: Remove the ACL mechanism from the server and by
+   default only listen to the localhost (127.0.0.1 and/or [::1] address).
+
 Fri Jan 18 15:26:45 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  - mge-xml: add support for MGE* Environment Sensor (ref 66 846).

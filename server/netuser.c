@@ -103,9 +103,7 @@ void net_master(ctype_t *client, int numarg, const char **arg)
 	}
 
 	/* make sure this user is allowed to do MASTER */
-	if (!user_checkaction(&client->sock, client->username,
-		client->password, "MASTER")) {
-
+	if (!user_checkaction(client->username, client->password, "MASTER")) {
 		send_err(client, NUT_ERR_ACCESS_DENIED);
 		return;
 	}		

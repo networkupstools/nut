@@ -5,30 +5,6 @@
 # It should only be readable by the user that upsd becomes.  See the FAQ.
 
 # =======================================================================
-# Access Control Lists (ACLs)
-#
-# ACL <name> <ipblock>
-# ACL myhost 10.0.0.1/32
-#
-# ACCEPT <aclname> [<aclname>...]
-# REJECT <aclname> [<aclname>...]
-#
-# Define lists of hosts or networks with ACL definitions. 
-#
-# ACCEPT and REJECT use ACL definitions to control whether a host is 
-# allowed to connect to upsd.
-#
-# This default configuration only gives access to localhost.  To allow
-# other hosts or networks to connect, see the documentation and change
-# these lines.
-
-ACL all 0.0.0.0/0
-ACL localhost 127.0.0.1/32
-
-ACCEPT localhost
-REJECT all
-
-# =======================================================================
 # MAXAGE <seconds>
 # MAXAGE 15
 #
@@ -43,7 +19,7 @@ REJECT all
 
 # =======================================================================
 # LISTEN <address> [<port>]
-# LISTEN 0.0.0.0 3493
+# LISTEN 127.0.0.1 3493
 #
 # This defaults to the global IPv4 listening address and port 3493. You
 # may specify each interface you want upsd to listen on for connections,

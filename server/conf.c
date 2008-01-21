@@ -21,9 +21,7 @@
 #include "conf.h"
 #include "upsconf.h"
 #include "sstate.h"
-#include "access.h"
 #include "user.h"
-#include "access.h"
 
 	extern	int	maxage;
 	extern	char	*statepath, *datapath, *certfile;
@@ -178,15 +176,13 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 
 	/* ACCEPT <aclname> [<aclname>...] */
 	if (!strcmp(arg[0], "ACCEPT")) {
-		access_add(ACCESS_ACCEPT, numargs - 1, 
-			(const char **) &arg[1]);
+		upslogx(LOG_WARNING, "ACCEPT in upsd.conf is no longer supported - switch to LISTEN");
 		return 1;
 	}
 
 	/* REJECT <aclname> [<aclname>...] */
 	if (!strcmp(arg[0], "REJECT")) {
-		access_add(ACCESS_REJECT, numargs - 1, 
-			(const char **) &arg[1]);
+		upslogx(LOG_WARNING, "REJECT in upsd.conf is no longer supported - switch to LISTEN");
 		return 1;
 	}
 
@@ -205,15 +201,7 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 
 	/* ACL <aclname> <ip block> */
 	if (!strcmp(arg[0], "ACL")) {
-		acl_add(arg[1], arg[2]);
-		return 1;
-	}
-
-	if (numargs < 4)
-		return 0;
-
-	if (!strcmp(arg[0], "ACCESS")) {
-		upslogx(LOG_WARNING, "ACCESS in upsd.conf is no longer supported - switch to ACCEPT/REJECT");
+		upslogx(LOG_WARNING, "ACL in upsd.conf is no longer supported - switch to LISTEN");
 		return 1;
 	}
 
@@ -463,10 +451,6 @@ void conf_reload(void)
 	/* reload from ups.conf */
 	read_upsconf();
 	upsconf_add(1);			/* 1 = reloading */
-
-	/* flush ACL/ACCESS definitions */
-	acl_free();
-	access_free();
 
 	/* now reread upsd.conf */
 	load_upsdconf(1);		/* 1 = reloading */

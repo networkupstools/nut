@@ -19,23 +19,19 @@ Here are some examples to get you started:
 .nf
 	[admin]
 		password = mypass
-		allowfrom = workstation admhome
 		actions = set
 		instcmds = all
 
 	[pfy]
 		password = duh
-		allowfrom = gameosbox
 		instcmds = test.panel.start
 
 	[monmaster]
 		password = blah
-		allowfrom = bigserver
 		upsmon master
 
 	[monslave]
 		password = abcd
-		allowfrom = workstation
 		upsmon slave
 .fi
 .LP
@@ -45,11 +41,6 @@ Here are some examples to get you started:
 .IP password
 
 Set the password for this user.
-
-.IP allowfrom
-
-Grant access to the user based on the source IP address.  The values for
-this field are the names of your ACLs in the \fBupsd.conf\fR(5).
 
 .IP actions
 

@@ -46,9 +46,7 @@ static void set_var(ctype_t *client, const char *upsname, const char *var,
 		return;
 
 	/* make sure this user is allowed to do SET */
-	if (!user_checkaction(&client->sock, client->username,
-		client->password, "SET")) {
-
+	if (!user_checkaction(client->username, client->password, "SET")) {
 		send_err(client, NUT_ERR_ACCESS_DENIED);
 		return;
 	}

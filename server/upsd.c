@@ -34,7 +34,6 @@
 #endif
 
 #include "user.h"
-#include "access.h"
 #include "ctype.h"
 #include "stype.h"
 #include "ssl.h"
@@ -503,13 +502,6 @@ static void parse_net(ctype_t *client)
 {
 	int	i;
 
-	/* see if this client is still allowed to talk to us */
-	if (!access_check(&client->sock)) {
-		send_err(client, NUT_ERR_ACCESS_DENIED);
-		client->delete = 1;
-		return;
-	}
-
 	/* paranoia */
 	client->rq[client->rqpos] = '\0';
 
@@ -570,26 +562,14 @@ static void answertcp(stype_t *serv)
 {
 	struct	sockaddr_storage csock;
 #endif
-	int	acc;
-	ctype_t	*tmp, *last;
+	int		acc;
+	ctype_t		*tmp, *last;
 	socklen_t	clen;
 
 	clen = sizeof(csock);
 	acc = accept(serv->sock_fd, (struct sockaddr *) &csock, &clen);
 
 	if (acc < 0) {
-		return;
-	}
-
-	if (!access_check(&csock)) {
-		upslogx(LOG_NOTICE, "Rejecting TCP connection from %s", 
-#ifndef	HAVE_IPV6
-	 		inet_ntoa(csock.sin_addr));
-#else
-			inet_ntopW(&csock));
-#endif
-		shutdown(acc, shutdown_how);
-		close(acc);
 		return;
 	}
 
@@ -600,32 +580,17 @@ static void answertcp(stype_t *serv)
 		tmp = tmp->next;
 	}
 
-	tmp = xmalloc(sizeof(ctype_t));
+	tmp = xcalloc(1, sizeof(*tmp));
 
 	tmp->fd = acc;
-	tmp->delete = 0;
 
 #ifndef	HAVE_IPV6
 	tmp->addr = xstrdup(inet_ntoa(csock.sin_addr));
-	memcpy(&tmp->sock, &csock, sizeof(struct sockaddr_in));
 #else
 	tmp->addr = xstrdup(inet_ntopW(&csock));
-	memcpy(&tmp->sock, &csock, sizeof(struct sockaddr_storage));
 #endif
 
-	tmp->rqpos = 0;
-	memset(tmp->rq, '\0', sizeof(tmp->rq));
-
 	pconf_init(&tmp->ctx, NULL);
-
-	tmp->loginups = NULL;		/* for upsmon */
-	tmp->username = NULL;
-	tmp->password = NULL;
-
-	tmp->ssl = NULL;
-	tmp->ssl_connected = 0;
-
-	tmp->next = NULL;
 
 	if (last == NULL) {
  		firstclient = tmp;
@@ -693,7 +658,17 @@ void server_load(void)
 
 	/* default behaviour if no LISTEN addres has been specified */
 	if (firstaddr == NULL) {
-		listen_add("0.0.0.0", string_const(PORT));
+#ifdef	HAVE_IPV6
+		if (opt_af != AF_INET) {
+			listen_add("::1", string_const(PORT));
+		}
+
+		if (opt_af != AF_INET6) {
+			listen_add("127.0.0.1", string_const(PORT));
+		}
+#else
+		listen_add("127.0.0.1", string_const(PORT));
+#endif
 	}
 
 	for (serv = firstaddr; serv != NULL; serv = serv->next) {
@@ -765,8 +740,6 @@ static void upsd_cleanup(void)
 
 	/* dump everything */
 
-	acl_free();
-	access_free();
 	user_flush();
 	desc_free();
 	server_free();

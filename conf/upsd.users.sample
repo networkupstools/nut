@@ -18,11 +18,6 @@
 #
 # --------------------------------------------------------------------------
 #
-# allowfrom: ACL names that this user may connect from.  ACLs are
-#            defined in upsd.conf.
-#
-# --------------------------------------------------------------------------
-#
 # actions: Let the user do certain things with upsd.  
 # 
 # Valid actions are:
@@ -49,7 +44,6 @@
 #
 #	[admin]
 #		password = mypass
-#		allowfrom = admworkstation admhome
 #		actions = SET
 #		instcmds = ALL
 #
@@ -61,7 +55,6 @@
 #
 #	[monuser]
 #		password  = pass
-#		allowfrom = bigserver
 #
 #		upsmon master			(or upsmon slave)
 #

@@ -18,11 +18,6 @@
 */
 
 typedef struct {
-	char	*aclname;
-	void	*next;
-} acllist_t;
-
-typedef struct {
 	char	*cmd;
 	void	*next;
 } instcmdlist_t;
@@ -34,7 +29,6 @@ typedef struct {
 
 typedef struct {
 	char	*username;
-	acllist_t *firstacl;
 	char	*password;
 	instcmdlist_t *firstcmd;
 	actionlist_t  *firstaction;

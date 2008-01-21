@@ -234,18 +234,16 @@ are many integration issues that have been addressed.
 
  9. Configure upsd, which serves data from the drivers to the clients.
 
-    First, edit upsd.conf to allow access to your client systems.
-    A minimal configuration which allows localhost to read status
-    data (and nothing else) looks like this:
+    First, edit upsd.conf to allow access to your client systems. By
+    default, upsd will only listen to localhost port 3493/tcp. If you want
+    to connect to it from other machines, you must specify each interface you
+    want upsd to listen on for connections, optionally with a port number.
 
-	ACL all 0.0.0.0/0
-	ACL localhost 127.0.0.1/32
+	LISTEN 127.0.0.1 3493
+	LISTEN ::1 3493
 
-	ACCEPT localhost
-	REJECT all
-
-    If you have other hosts or networks which will need to talk to
-    upsd, you should create ACL and ACCEPT directives for them.
+    Note: if you run a firewall of some sort, you may have to add rules
+    to allow these incoming connections.
 
     Next, create upsd.users.  For now, this can be an empty file.
     You can come back and add more to it later when it's time to 
@@ -303,11 +301,6 @@ are many integration issues that have been addressed.
     else (like OB - on battery, or LB - low battery), your driver was 
     probably misconfigured in step 7.  If you reconfigure the driver,
     use 'upsdrvctl stop' to stop it, then start it again in step 8.
-
-    If upsc says "access denied", then your upsd.conf probably doesn't
-    have a good ACL/ACCEPT definition for your host.  Go back to step
-    9 and fix it.  If you reconfigure upsd, you must either stop and
-    restart it, or tell it to reload (upsd -c reload).
 
     *** Reference: man page: upsc(8)
 
@@ -371,39 +364,7 @@ additional configuration and run upsmon.  Here are the basics:
 
 ---------------------------------------------------------------------------
 
- 1. Configure upsd to recognize upsmon.
-
-    First create an ACL in upsd.conf for the host that will be running
-    upsmon.  Then use it in an ACCEPT line to allow that host to monitor
-    the UPS.  This will let upsmon connect to upsd.
-
-    Assuming a host called mybox with the IP address of 192.168.1.50,
-    the configuration looks like this:
-
-	ACL mybox 192.168.1.50/32
-	ACCEPT mybox
-
-    You probably have other ACL and ACCEPT/REJECT lines, so be sure this
-    ACCEPT happens above any REJECTs which may match this client.  Most 
-    users have a "REJECT all" at the bottom.  Here's an example which 
-    grants access to localhost and mybox, then rejects anything else.
-
-	ACL all 0.0.0.0/0
-	ACL localhost 127.0.0.1/32
-	ACL mybox 192.168.1.50/32
-
-	ACCEPT localhost
-	ACCEPT mybox
-	REJECT all
-
-    Note: if you run a firewall of some sort, you may have to add a rule
-    to allow this connection.  upsd runs on port 3493/tcp by default.
-
-    *** References: man pages: upsd(8), upsd.conf(5)
-
----------------------------------------------------------------------------
-
- 2. Create a upsd user for upsmon to use while monitoring this UPS.
+ 1. Create a upsd user for upsmon to use while monitoring this UPS.
 
     Edit upsd.users and create a new section.  upsmon will connect
     to upsd and use this user name (in brackets) and password to
@@ -411,14 +372,13 @@ additional configuration and run upsmon.  Here are the basics:
 
 	[monuser]
 		password = mypass
-		allowfrom = mybox
 		upsmon master		# or upsmon slave
 
     *** References: man pages: upsd(8), upsd.users(5)
 
 ---------------------------------------------------------------------------
 
- 3. Reload upsd.  Depending on your configuration, you may be able to 
+ 2. Reload upsd.  Depending on your configuration, you may be able to 
     do this without stopping upsd:
 
 	/usr/local/ups/sbin/upsd -c reload
@@ -433,7 +393,7 @@ additional configuration and run upsmon.  Here are the basics:
 
 ---------------------------------------------------------------------------
 
- 4. Set the POWERDOWNFLAG location for upsmon.
+ 3. Set the POWERDOWNFLAG location for upsmon.
 
     In upsmon.conf, add a POWERDOWNFLAG directive with a filename.
     upsmon will create this file when the UPS needs to be powered off
@@ -447,7 +407,7 @@ additional configuration and run upsmon.  Here are the basics:
 
 ---------------------------------------------------------------------------
 
- 5. Secure upsmon.conf.
+ 4. Secure upsmon.conf.
 
     The recommended setting is to have it owned by root:nut, then
     make it readable by the group and not world.  This file contains
@@ -462,7 +422,7 @@ additional configuration and run upsmon.  Here are the basics:
 
 ---------------------------------------------------------------------------
 
- 6. Create a MONITOR directive for upsmon
+ 5. Create a MONITOR directive for upsmon
 
     Edit upsmon.conf and create a MONITOR line with the UPS definition
     (<upsname>@<hostname>), username and password from step 2, and
@@ -485,7 +445,7 @@ additional configuration and run upsmon.  Here are the basics:
 
 ---------------------------------------------------------------------------
 
- 7. Define a SHUTDOWNCMD for upsmon.
+ 6. Define a SHUTDOWNCMD for upsmon.
 
     Still in upsmon.conf, add a directive that tells upsmon how to
     shut down your system.  This example seems to work on most systems:
@@ -499,7 +459,7 @@ additional configuration and run upsmon.  Here are the basics:
 
 ---------------------------------------------------------------------------
 
- 8. Start upsmon.
+ 7. Start upsmon.
 
 	/usr/local/ups/sbin/upsmon
 
@@ -507,7 +467,7 @@ additional configuration and run upsmon.  Here are the basics:
 
 ---------------------------------------------------------------------------
 
- 9. Look for messages in the syslog to indicate success.  It should look
+ 8. Look for messages in the syslog to indicate success.  It should look
     something like this:
 
 	May 29 01:11:27 mybox upsmon[102]: Startup successful
@@ -520,7 +480,7 @@ additional configuration and run upsmon.  Here are the basics:
 
 ---------------------------------------------------------------------------
 
-10. Edit your startup scripts: add upsmon
+ 9. Edit your startup scripts: add upsmon
 
     Make sure upsmon starts when your system comes up.  Do it after
     upsdrvctl and upsd, or it will complain about not being able to
@@ -528,7 +488,7 @@ additional configuration and run upsmon.  Here are the basics:
 
 ---------------------------------------------------------------------------
 
-11. Edit your shutdown scripts: add upsdrvctl shutdown
+10. Edit your shutdown scripts: add upsdrvctl shutdown
 
     You should configure your system to power down the UPS after the
     filesystems are remounted read-only.  Have it look for the presence

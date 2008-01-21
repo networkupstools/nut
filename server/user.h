@@ -19,19 +19,8 @@
 
 void user_load(void);
 
-#ifndef	HAVE_IPV6
-int user_checkinstcmd(const struct sockaddr_in *addr,
-#else
-int user_checkinstcmd(const struct sockaddr_storage *addr,
-#endif
-	const char *un, const char *pw, const char *cmd);
-
-#ifndef	HAVE_IPV6
-int user_checkaction(const struct sockaddr_in *addr,
-#else
-int user_checkaction(const struct sockaddr_storage *addr,
-#endif
-	const char *un, const char *pw, const char *action);
+int user_checkinstcmd(const char *un, const char *pw, const char *cmd);
+int user_checkaction(const char *un, const char *pw, const char *action);
 
 void user_flush(void);
 

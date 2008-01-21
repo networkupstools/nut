@@ -17,8 +17,8 @@ run a driver and program that sits on top of the driver socket to do
 local monitoring.
 
 This also makes monitoring extremely easy to automate - you don't need
-to worry about ACLs, usernames and passwords, or firewalling.  Just
-start a driver and drop this program on top of it.
+to worry about usernames, passwords or firewalling.  Just start a driver
+and drop this program on top of it.
 
  - Parse ups.conf and open the state socket for a driver
 
