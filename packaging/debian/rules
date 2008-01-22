@@ -99,7 +99,7 @@ install-stamp:
 	mv $(CURDIR)/debian/nut/usr/lib/libupsclient.a         $(CURDIR)/debian/nut-dev/usr/lib
 	mv $(CURDIR)/debian/nut/usr/lib/libupsclient.la        $(CURDIR)/debian/nut-dev/usr/lib
 
-	rm $(CURDIR)/debian/nut/lib/nut/skel
+	rm -f $(CURDIR)/debian/nut/lib/nut/skel
 	
 	### FIXME: create a new package for shared library later, and remove --disable-shared above
 	# rm $(CURDIR)/debian/nut/usr/lib/libupsclient.so* $(CURDIR)/debian/nut/usr/lib/libupsclient.la 
