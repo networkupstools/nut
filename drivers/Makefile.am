@@ -96,6 +96,7 @@ nitram_SOURCES = nitram.c
 oneac_SOURCES = oneac.c
 optiups_SOURCES = optiups.c
 powercom_SOURCES = powercom.c
+powercom_LDADD = $(LDADD) -lm
 powerpanel_SOURCES = powerpanel.c
 rhino_SOURCES = rhino.c
 rhino_LDADD = $(LDADD) -lm

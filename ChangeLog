@@ -1,3 +1,8 @@
+Tue Jan 22 03:34:34 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - driver/powercom.[ch], data/driver.list, man/powercom.8: Powercom update from
+   Alexey Sidorov.
+
 Tue Jan 22 03:22:11 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - data/driver.list, AUTHORS: update with Oneac information from Jacob Schmier

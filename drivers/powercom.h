@@ -43,7 +43,10 @@ enum general {
 enum commands {
 	SEND_DATA    = '\x01',
 	BATTERY_TEST = '\x03',
-	SHUTDOWN     = '\xbc'
+	WAKEUP_TIME  = '\x04',
+	RESTART	     = '\xb9',
+	SHUTDOWN     = '\xba',
+	COUNTER      = '\xbc'
 };
 
 /* location of data in received string */
@@ -53,22 +56,36 @@ enum data {
 	INPUT_VOLTAGE    = 2U,
 	OUTPUT_VOLTAGE   = 3U,
 	INPUT_FREQUENCY  = 4U,
-	OUTPUT_FREQUENCY = 6U
+	UPSVERSION       = 5U,
+	OUTPUT_FREQUENCY = 6U,
+	STATUS_A         = 9U,
+	STATUS_B         = 10U,
+	MODELNAME        = 11U,
+	MODELNUMBER      = 12U
 };
 
 /* status bits */
 enum status {
 	SUMMARY       = 0U,
 	MAINS_FAILURE = 1U,
-	LOW_BAT       = 2U, 
+	ONLINE        = 1U,
+	FAULT         = 1U,
+	LOW_BAT       = 2U,
 	BAD_BAT       = 2U,
 	TEST          = 4U,
 	AVR_ON        = 8U,
+	AVR_MODE      = 16U,
+	SD_COUNTER    = 16U,
 	OVERLOAD      = 32U,
-	OFF           = 128U,
-	STATUS_A      = 9U,
-	STATUS_B      = 10U
+	SHED_COUNTER  = 32U,
+	DIS_NOLOAD    = 64U,
+	SD_DISPLAY    = 128U,
+	OFF           = 128U
 };
+
+unsigned int voltages[]={100,110,115,120,0,0,0,200,220,230,240};
+unsigned int BNTmodels[]={0,400,500,600,800,801,1000,1200,1500,2000};
+unsigned int KINmodels[]={0,425,500,525,625,800,1000,1200,1500,1600,2200,2200,2500,3000,5000};
 
 /* supported types */
 struct type {
@@ -94,7 +111,7 @@ struct type {
 	 */
 	
 	/* Some UPSs must have a minutes and a seconds arguments for 
-	 * the SHUTDOWN commands while others are known to work with the
+	 * the COUNTER commands while others are known to work with the
 	 * seconds argument alone.
 	 */
 	struct deley_for_power_kill {
