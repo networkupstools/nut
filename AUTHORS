@@ -101,6 +101,10 @@ E: david@santinoli.com
 W: http://www.santinoli.com
 D: Support for Online P-series in genericups driver
 
+N: Jacob Schmier
+E: j.schmier@live.com
+D: support for Universal-Mount ON Series UPS family in oneac driver
+
 N: Peter Selinger
 E: selinger@users.sourceforge.net
 W: http://www.mathstat.dal.ca/~selinger/
