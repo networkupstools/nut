@@ -5,6 +5,9 @@ LIB_PAGES = upsclient.3 upscli_connect.3 upscli_disconnect.3	\
  upscli_splitname.3 upscli_strerror.3 upscli_fd.3 upscli_get.3	\
  upscli_list_next.3 upscli_list_start.3 upscli_ssl.3		\
  upscli_upserror.3
+if WITH_PKG_CONFIG
+ LIB_PAGES += libupsclient-config.1
+endif
 CONF_PAGES = ups.conf.5 upssched.conf.5 upsd.conf.5 upsmon.conf.5	\
  upsd.users.5
 CLIENT_PAGES = upsc.8 upsrw.8 upscmd.8 upslog.8 upssched.8	\

@@ -1,3 +1,9 @@
+Sat Jan 26 21:16:45 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - lib/Makefile.am: only install libupsclient-config if pkg-config support is
+   disabled.
+ - man/libupsclient-config.1: created (Debian Lintian QA report)
+
 Fri Jan 18 14:03:01 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  * snmp-ups: backported from the trunk.
