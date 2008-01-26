@@ -1,5 +1,12 @@
 Sat Jan 26 21:16:45 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
+ * clients/Makefile.am:
+   - set libupsclient version to 1.0.0
+   - use the shared version of libupsclient for LDADD
+ - docs/protocol.txt: mention libupsclient
+
+Sat Jan 26 21:16:45 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+
  - lib/Makefile.am: only install libupsclient-config if pkg-config support is
    disabled.
  - man/libupsclient-config.1: created (Debian Lintian QA report)

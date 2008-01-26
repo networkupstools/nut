@@ -12,6 +12,9 @@ This protocol runs over TCP.  UDP support was dropped in July 2003.  It
 had been deprecated for some time and was only capable of the simplest
 query commands as authentication is impossible over a UDP socket.
 
+A library, named libupsclient, that implement this protocol is provided
+in both static and shared version to help the client application development.
+
 Old command removal notice
 ==========================
 
