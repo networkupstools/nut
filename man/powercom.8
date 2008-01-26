@@ -1,4 +1,4 @@
-.TH POWERCOM 8 "Sat Dec 29 2007" "" "Network UPS Tools (NUT)" 
+.TH POWERCOM 8 "Fri Jan 25 2008" "" "Network UPS Tools (NUT)" 
 .SH NAME  
 powercom \- UPS driver for Powercom/Trust/Advice UPS equipment
 
@@ -39,8 +39,11 @@ Like modelname above, but for the serial number. The default is
 The exact type of the communication protocol within the powercom family, 
 that will be used to communicate with the UPS. The type is named after 
 the first modelname that was coded with that protocol. The acceptable 
-names are KP625AP, Trust, Egys, KIN, BNT, IMP. The default is 
+names are KP625AP, Trust, Egys, KIN, BNT, IMP and BNT-other. The default is 
 \fITrust\fR.
+\fIBNT-other\fR - it's a special type for BNT 100-120V models
+for this type you can (I think must!) specify voltage, batteryPercentage, 
+loadPercentage and validationSequence.
 
 .IP "numOfBytesFromUPS=\fIvalue\fR"
 The number of bytes in a UPS frame. The default is type dependant and 
@@ -60,7 +63,7 @@ given below. The braces and commas are mandatory. Note that there should
 be no white space characters.
 
 .IP "voltage=\fI{coefficient1,coefficient2,coefficient3,coefficient4}\fR"
-Only for KP625AP, Trust, Egys
+Only for KP625AP, Trust, Egys, BNT-other
 A quad that is used convert the raw data to human readable voltage 
 reading. The default is type dependant and is given below. Do note that 
 the braces and commas are mandatory, as well as the lack of white space
@@ -73,21 +76,21 @@ default is type dependant and is given below. Do note that the braces
 and commas are mandatory as well, as the lack of white space characters.
 
 .IP "batteryPercentage=\fI{coefficient1,coefficient2,coefficient3,coefficient4,coefficient5}\fR"
-Only for KP625AP, Trust, Egys
+Only for KP625AP, Trust, Egys, BNT-other
 A 5 tuple to convert the raw data to human readable battery percentage 
 reading. The default is type dependant and is given below. Do note that 
 the braces and commas are mandatory, as the lack of white space 
 characters.
 
 .IP "loadPercentage=\fI{coefficient1,coefficient2,coefficient3,coefficient4}\fR"
-Only for KP625AP, Trust, Egys
+Only for KP625AP, Trust, Egys, BNT-other
 A quad to convert the raw data to human readable load percentage 
 reading. The default is type dependant and is given below. Do note that 
 the braces and commas are mandatory, as the lack of white space 
 characters.
 
 .IP "validationSequence=\fI{{index1,value1},{index2,value2},{index3,value3}}\fR"
-Only for KP625AP, Trust, Egys
+Only for KP625AP, Trust, Egys, BNT-other
 3 pairs to be used for validating the UPS by comparing bytes of the raw 
 data with constant values. The default is type dependant and is given 
 below. The braces and commas are mandatory, as the lack of white space
@@ -162,6 +165,17 @@ dependant:
 .IP "methodOfFlowControl = no_flow_control"
 .IP "validationSequence = {{11,0x42},{8,0},{8,0}}"
 .IP "shutdownArguments = {{1,30},y}"
+.RE
+
+.IP "BNT-other"
+.RS
+.IP "numOfBytesFromUPS = 16"
+.IP "methodOfFlowControl = no_flow_control"
+.IP "validationSequence = {{8,0},{8,0},{8,0}}"
+.IP "shutdownArguments = {{1,30},y}"
+.IP "loadPercentage = {1.4474,0.0,0.8594,0.0}"
+.IP "batteryPercentage = {5.0000,0.3268,\-825.00,0.46511,0}"
+.IP "voltage = {1.9216,\-0.0977,0.82857,0.0000}"
 .RE
 
 .SH AUTHOR

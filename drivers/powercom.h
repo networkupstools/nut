@@ -34,58 +34,6 @@
 /* nut includes */
 #include "timehead.h"
 
-/* general constants */
-enum general {
-	MAX_NUM_OF_BYTES_FROM_UPS = 16
-};
-
-/* values for sending to UPS */
-enum commands {
-	SEND_DATA    = '\x01',
-	BATTERY_TEST = '\x03',
-	WAKEUP_TIME  = '\x04',
-	RESTART	     = '\xb9',
-	SHUTDOWN     = '\xba',
-	COUNTER      = '\xbc'
-};
-
-/* location of data in received string */
-enum data {
-	UPS_LOAD         = 0U,
-	BATTERY_CHARGE   = 1U,
-	INPUT_VOLTAGE    = 2U,
-	OUTPUT_VOLTAGE   = 3U,
-	INPUT_FREQUENCY  = 4U,
-	UPSVERSION       = 5U,
-	OUTPUT_FREQUENCY = 6U,
-	STATUS_A         = 9U,
-	STATUS_B         = 10U,
-	MODELNAME        = 11U,
-	MODELNUMBER      = 12U
-};
-
-/* status bits */
-enum status {
-	SUMMARY       = 0U,
-	MAINS_FAILURE = 1U,
-	ONLINE        = 1U,
-	FAULT         = 1U,
-	LOW_BAT       = 2U,
-	BAD_BAT       = 2U,
-	TEST          = 4U,
-	AVR_ON        = 8U,
-	AVR_MODE      = 16U,
-	SD_COUNTER    = 16U,
-	OVERLOAD      = 32U,
-	SHED_COUNTER  = 32U,
-	DIS_NOLOAD    = 64U,
-	SD_DISPLAY    = 128U,
-	OFF           = 128U
-};
-
-unsigned int voltages[]={100,110,115,120,0,0,0,200,220,230,240};
-unsigned int BNTmodels[]={0,400,500,600,800,801,1000,1200,1500,2000};
-unsigned int KINmodels[]={0,425,500,525,625,800,1000,1200,1500,1600,2200,2200,2500,3000,5000};
 
 /* supported types */
 struct type {

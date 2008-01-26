@@ -40,11 +40,17 @@
  * - fix wrong detection KIN-2200AP
  * - use ser_set_dtr/ser_set_rts
  *
+ * rev 0.11: Alexey Sidorov <alexsid@altlinux.org>
+ * - move variables from .h to .c file (thanks Michael Tokarev for bugreport)
+ * - fix string comparison (thanks Michael Tokarev for bugreport & Charles Lepple for patch)
+ * - added BNT-other, for BNT 100-120V models (I havn't specs for it)
+ *
  * Tested on: BNT-1200AP
  *
  * Known bugs:
  * - strange battery level on BNT1200AP in online mode( & may be on other models)
  * - i don't know how connect to IMP|IMD USB
+ * - i havn't specs for BNT 100-120V models. Add BNT-other type for it
  */ 
 
 #include "main.h"
@@ -52,8 +58,13 @@
 #include "powercom.h"
 #include "math.h"
 
-#define POWERCOM_DRIVER_VERSION      "$ Revision: 0.10 $"
+#define POWERCOM_DRIVER_VERSION      "$ Revision: 0.11 $"
 #define NUM_OF_SUBTYPES              (sizeof (types) / sizeof (*types))
+
+/* general constants */
+enum general {
+	MAX_NUM_OF_BYTES_FROM_UPS = 16
+};
 
 /* variables used by module */
 static unsigned char raw_data[MAX_NUM_OF_BYTES_FROM_UPS]; /* raw data reveived from UPS */
@@ -138,14 +149,73 @@ static struct type types[] = {
                 {  5.0000,  0.3268,  -825.00,  0.46511, 0 },
                 {  1.9216, -0.0977,  0.82857,  0.0000 },
         },
+        {
+                "BNT-other",
+                16,
+				{  "no_flow_control", no_flow_control },
+                { { 8U, 0U }, { 8U, 0U }, { 8U, 0U } },
+                { { 1U, 30U }, 'y' },
+                {  0.00020803, 0.0 },
+                {  1.4474,     0.0,   0.8594,  0.0 },
+                {  5.0000,  0.3268,  -825.00,  0.46511, 0 },
+                {  1.9216, -0.0977,  0.82857,  0.0000 },
+        },
 };
 
+/* values for sending to UPS */
+enum commands {
+	SEND_DATA    = '\x01',
+	BATTERY_TEST = '\x03',
+	WAKEUP_TIME  = '\x04',
+	RESTART	     = '\xb9',
+	SHUTDOWN     = '\xba',
+	COUNTER      = '\xbc'
+};
+
+/* location of data in received string */
+enum data {
+	UPS_LOAD         = 0U,
+	BATTERY_CHARGE   = 1U,
+	INPUT_VOLTAGE    = 2U,
+	OUTPUT_VOLTAGE   = 3U,
+	INPUT_FREQUENCY  = 4U,
+	UPSVERSION       = 5U,
+	OUTPUT_FREQUENCY = 6U,
+	STATUS_A         = 9U,
+	STATUS_B         = 10U,
+	MODELNAME        = 11U,
+	MODELNUMBER      = 12U
+};
+
+/* status bits */
+enum status {
+	SUMMARY       = 0U,
+	MAINS_FAILURE = 1U,
+	ONLINE        = 1U,
+	FAULT         = 1U,
+	LOW_BAT       = 2U,
+	BAD_BAT       = 2U,
+	TEST          = 4U,
+	AVR_ON        = 8U,
+	AVR_MODE      = 16U,
+	SD_COUNTER    = 16U,
+	OVERLOAD      = 32U,
+	SHED_COUNTER  = 32U,
+	DIS_NOLOAD    = 64U,
+	SD_DISPLAY    = 128U,
+	OFF           = 128U
+};
+
+unsigned int voltages[]={100,110,115,120,0,0,0,200,220,230,240};
+unsigned int BNTmodels[]={0,400,500,600,800,801,1000,1200,1500,2000};
+unsigned int KINmodels[]={0,425,500,525,625,800,1000,1200,1500,1600,2200,2200,2500,3000,5000};
+unsigned int IMPmodels[]={0,425,525,625,825,1025,1200,1500,2000};
 
 /*
  * local used functions
  */
 
-static void shutdown(void)
+static void shutdown_halt(void)
 {
 	ser_send_char (upsfd, SHUTDOWN);
 	if (types[type].shutdown_arguments.minutesShouldBeUsed != 'n') 
@@ -179,7 +249,7 @@ static int instcmd (const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
-		shutdown(); 
+		shutdown_halt(); 
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -301,9 +371,9 @@ static float input_voltage(void)
 	unsigned int model;
 	float tmp=0.0;
 			
-	if ( types[type].name=="BNT") {
+	if ( !strcmp(types[type].name, "BNT") && raw_data[MODELNUMBER]%16 > 7 ) {
 		tmp=2.2*raw_data[INPUT_VOLTAGE]-24;
-	} else if ( types[type].name=="KIN"){
+	} else if ( !strcmp(types[type].name, "KIN")) {
 		model=KINmodels[raw_data[MODELNUMBER]/16];
 		if (model<=625){
 			tmp=1.79*raw_data[INPUT_VOLTAGE]+3.35;
@@ -312,7 +382,7 @@ static float input_voltage(void)
 		} else {
 			tmp=1.625*raw_data[INPUT_VOLTAGE];
 		}
-	} else if ( types[type].name=="IMP") {
+	} else if ( !strcmp(types[type].name, "IMP")) {
 		tmp=raw_data[INPUT_VOLTAGE]*2.0;
 	} else {
 	    tmp=linevoltage >= 220 ?
@@ -331,17 +401,17 @@ static float output_voltage(void)
 	static float datay[]={0,1.73,1.74,1.74,1.77,0.9,0.9,0.9,13.204,13.204,0.88,0.88,0.88,6.645};
 	static float dataz[]={0,1.15,0.9,0.9,0.75,1.1,1.1,1.1,0.8,0.8,0.86,0.86,0.86,0.7};
 	
-	if ( types[type].name=="BNT" || types[type].name=="KIN"){
+	if ( !strcmp(types[type].name, "BNT") || !strcmp(types[type].name, "KIN")) {
 		statINV=raw_data[STATUS_A] & ONLINE;
 		statAVR=raw_data[STATUS_A] & AVR_ON;
 		statAVRMode=raw_data[STATUS_A] & AVR_MODE;
 	}
-	if ( types[type].name=="BNT"){
+	if ( !strcmp(types[type].name, "BNT") && raw_data[MODELNUMBER]%16 > 7 ) {
 		if (statINV==0) {
 			if (statAVR==0){
 				tmp=2.2*raw_data[OUTPUT_VOLTAGE]-24;
 			} else {
-				if (statAVRMode==1)
+				if (statAVRMode > 0)
 					tmp=(2.2*raw_data[OUTPUT_VOLTAGE]-24)*31/27;
 				else
 					tmp=(2.22*raw_data[OUTPUT_VOLTAGE]-24)*27/31;
@@ -354,7 +424,7 @@ static float output_voltage(void)
 			else
 				tmp=0.0;
 		}
-	} else if ( types[type].name=="KIN"){
+	} else if ( !strcmp(types[type].name, "KIN")) {
 		model=KINmodels[raw_data[MODELNUMBER]/16];
 		if (statINV==0) {
 			if (statAVR==0) {
@@ -365,7 +435,7 @@ static float output_voltage(void)
 				else
 					tmp=1.625*raw_data[OUTPUT_VOLTAGE];
 			} else {
-				if (statAVRMode==1){
+				if (statAVRMode > 0){
 					if (model<=525)
 						tmp=2.07*raw_data[OUTPUT_VOLTAGE];
 					else if (model==625)
@@ -403,7 +473,7 @@ static float output_voltage(void)
 					tmp=sqrt(tmp)*rdatay;
 			}
 		}
-	} else if ( types[type].name=="IMP") {
+	} else if ( !strcmp(types[type].name, "IMP")) {
 		tmp=raw_data[OUTPUT_VOLTAGE]*2.0;
 	} else {
 		tmp= linevoltage >= 220 ?
@@ -418,9 +488,9 @@ static float output_voltage(void)
 
 static float input_freq(void)
 {
-	if ( types[type].name=="BNT" || types[type].name=="KIN")
+	if ( !strncmp(types[type].name, "BNT",3) || !strcmp(types[type].name, "KIN"))
 		return 4807.0/raw_data[INPUT_FREQUENCY];
-	else if ( types[type].name=="IMP")
+	else if ( !strcmp(types[type].name, "IMP"))
 		return raw_data[INPUT_FREQUENCY];
 	return raw_data[INPUT_FREQUENCY] ? 
 		1.0 / (types[type].freq[0] *
@@ -430,9 +500,9 @@ static float input_freq(void)
 
 static float output_freq(void)
 {
-	if ( types[type].name=="BNT" || types[type].name=="KIN")
+	if ( !strncmp(types[type].name, "BNT",3) || !strcmp(types[type].name, "KIN"))
 		return 4807.0/raw_data[OUTPUT_FREQUENCY];
-	else if ( types[type].name=="IMP")
+	else if ( !strcmp(types[type].name, "IMP"))
 		return raw_data[OUTPUT_FREQUENCY];
 	return raw_data[OUTPUT_FREQUENCY] ? 
 		1.0 / (types[type].freq[0] *
@@ -461,7 +531,7 @@ static float load_level(void)
 	int load1000i[]={1,1,1,1,1,1,1,1,56,54,52};
 	int load1200i[]={1,1,1,1,1,1,1,1,76,74,72};
 	
-	if ( types[type].name=="BNT"){
+	if ( !strcmp(types[type].name, "BNT") && raw_data[MODELNUMBER]%16 > 7 ) {
 		statINV=raw_data[STATUS_A] & ONLINE;
 		voltage=raw_data[MODELNUMBER]%16;
 		model=BNTmodels[raw_data[MODELNUMBER]/16];
@@ -485,7 +555,7 @@ static float load_level(void)
 				case 2000: return raw_data[UPS_LOAD]*110.0/load1000i[voltage];
 			}
 		}
-	} else if (types[type].name=="KIN"){
+	} else if (!strcmp(types[type].name, "KIN")) {
 		statINV=raw_data[STATUS_A] & ONLINE;
 		voltage=raw_data[MODELNUMBER]%16;
 		model=KINmodels[raw_data[MODELNUMBER]/16];
@@ -502,7 +572,7 @@ static float load_level(void)
 			if (model<2000) return raw_data[UPS_LOAD]*1.66;
 			if (model>=2000) return raw_data[UPS_LOAD]*110.0/load2ki[voltage];
 		}
-	} else if ( types[type].name=="IMP") {
+	} else if ( !strcmp(types[type].name, "IMP")) {
 		return raw_data[UPS_LOAD];
 	}
 	return raw_data[STATUS_A] & MAINS_FAILURE ?
@@ -517,7 +587,7 @@ static float batt_level(void)
 	int bat0,bat29,bat100,model;
 	float battval;
 	
-	if ( types[type].name=="BNT"){
+	if ( !strncmp(types[type].name, "BNT",3) ) {
 		bat0=157;
 		bat29=165;
 		bat100=193;
@@ -530,7 +600,7 @@ static float batt_level(void)
 			return 30.0+(battval-bat29)*70.0/(bat100-bat29);
 		return 100.0;
 	}
-	if ( types[type].name=="KIN"){
+	if ( !strcmp(types[type].name, "KIN")) {
 		model=KINmodels[raw_data[MODELNUMBER]/16];
 		if (model>=800 && model<=2000){
 			battval=(raw_data[BATTERY_CHARGE]-165.0)*2.6;
@@ -558,7 +628,7 @@ static float batt_level(void)
 			return 30.0+(battval-bat29)*70.0/(bat100-bat29);
 		return 100;
 	}
-	if ( types[type].name=="IMP")
+	if ( !strcmp(types[type].name, "IMP"))
 		return raw_data[BATTERY_CHARGE];
 	return raw_data[STATUS_A] & ONLINE ?
 		types[type].battpct[0] * raw_data[BATTERY_CHARGE] +
@@ -795,14 +865,17 @@ void upsdrv_initups(void)
 	
 	/* setup flow control */
 	types[type].flowControl.setup_flow_control();
-	if (!strncasecmp(types[type].name, "BNT",3) || !strncasecmp(types[type].name, "KIN",3) || !strncasecmp(types[type].name, "IMP",3)){
+	if (!strncmp(types[type].name, "BNT",3) || !strcmp(types[type].name, "KIN") || !strcmp(types[type].name, "IMP")){
 		if (!ups_getinfo()) return;
 		if (raw_data[UPSVERSION]==0xFF){
 			types[type].name="IMP";
-			model=raw_data[MODELNUMBER]/16;
+			model=IMPmodels[raw_data[MODELNUMBER]/16];
 		}
 		if (raw_data[MODELNAME]==0x42){
-			types[type].name="BNT";
+			if (!strcmp(types[type].name, "BNT-other"))
+				types[type].name="BNT-other";
+			else
+				types[type].name="BNT";
 			model=BNTmodels[raw_data[MODELNUMBER]/16];
 		}
 		if (raw_data[MODELNAME]==0x4B){
@@ -841,7 +914,7 @@ void upsdrv_initups(void)
 	                types[type].shutdown_arguments.delay[0],
 	                types[type].shutdown_arguments.delay[1],
 	                types[type].shutdown_arguments.minutesShouldBeUsed); 
-	if (types[type].name!="KIN" && types[type].name!="BNT" && types[type].name!="IMP") {
+	if ( strcmp(types[type].name, "KIN") && strcmp(types[type].name, "BNT") && strcmp(types[type].name, "IMP")) {
 		upsdebugx(1, " frequency calculation coefficients: '{%f,%f}'",
 								types[type].freq[0], types[type].freq[1]);
 		upsdebugx(1, " load percentage calculation coefficients: "
@@ -862,7 +935,23 @@ void upsdrv_initups(void)
 /* display help */
 void upsdrv_help(void)
 {
-	printf("\n");
+	printf("You must specify type in ups.conf\n");
+	printf("Type of UPS like 'Trust', 'Egys', 'KP625AP', 'IMP', 'KIN' or 'BNT' or 'BNT-other' (default: 'Trust')\n");
+	printf("BNT-other - it's a special type for BNT 100-120V models \n");
+	printf("You can additional cpecify next variables:\n");
+	printf(" shutdownArguments:   The number of delay arguments and their values for the shutdown operation\n");
+	printf("Also, you can specify next variables (not work for 'IMP', 'KIN' or 'BNT', because detected automatically or known\n");
+	printf(" manufacturer:        Specify manufacturer name (default: 'PowerCom')\n");
+	printf(" modelname:           Specify model name, because it cannot detect automagically (default: Unknown)\n");
+	printf(" serialnumber:        Specify serial number, because it cannot detect automatically (default: Unknown)\n");
+	printf(" linevoltage:         Specify line voltage (110-120 or 220-240 V), if it cannot detect automatically (default: 230 V)\n");
+	printf(" numOfBytesFromUPS:   The number of bytes in a UPS frame\n");
+	printf(" methodOfFlowControl: The flow control method engaged by the UPS\n");
+	printf(" validationSequence:  3 pairs to be used for validating the UPS\n");
+	printf(" voltage:             A quad to convert the raw data to human readable voltage\n");
+	printf(" frequency:           A pair to convert the raw data to human readable freqency\n");
+	printf(" batteryPercentage:   A 5 tuple to convert the raw data to human readable battery percentage\n");
+	printf(" loadPercentage:      A quad to convert the raw data to human readable load percentage\n");
 	return;
 }
 
@@ -898,12 +987,12 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "linevoltage",   "Specify line voltage (110-120 or 220-240 V), if it cannot detect automatically (default: 230 V)");
 	addvar(VAR_VALUE, "modelname",     "Specify model name, because it cannot detect automagically (default: Unknown)");
 	addvar(VAR_VALUE, "serialnumber",  "Specify serial number, because it cannot detect automatically (default: Unknown)");
-	addvar(VAR_VALUE, "type",       "Type of UPS like 'Trust', 'Egys', 'KP625AP', 'IMP', 'KIN' or 'BNT' (default: 'Trust')");
+	addvar(VAR_VALUE, "type",       "Type of UPS like 'Trust', 'Egys', 'KP625AP', 'IMP', 'KIN' or 'BNT' or 'BNT-other' (default: 'Trust')");
 	addvar(VAR_VALUE, "numOfBytesFromUPS",  "The number of bytes in a UPS frame");
 	addvar(VAR_VALUE, "methodOfFlowControl",  "The flow control method engaged by the UPS");
 	addvar(VAR_VALUE, "shutdownArguments",  "The number of delay arguments and their values for the shutdown operation");
 	addvar(VAR_VALUE, "validationSequence",  "3 pairs to be used for validating the UPS");
-	if (types[type].name!="KIN" && types[type].name!="BNT" && types[type].name!="IMP") {
+	if ( strcmp(types[type].name, "KIN") && strcmp(types[type].name, "BNT") && strcmp(types[type].name, "IMP")) {
 		addvar(VAR_VALUE, "voltage",  "A quad to convert the raw data to human readable voltage");
 		addvar(VAR_VALUE, "frequency",  "A pair to convert the raw data to human readable freqency");
 		addvar(VAR_VALUE, "batteryPercentage",  "A 5 tuple to convert the raw data to human readable battery percentage");

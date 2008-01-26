@@ -1,3 +1,10 @@
+Sat Jan 26 16:40:01 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ * driver/powercom.[ch], man/powercom.8: Powercom update v0.11 from Alexey Sidorov:
+   - move variables from .h to .c file (thanks Michael Tokarev for bugreport)
+   - fix string comparison (thanks Michael Tokarev for bugreport & Charles Lepple for patch)
+   - added BNT-other, for BNT 100-120V models (I havn't specs for it)
+
 Sat Jan 26 04:27:58 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - drivers/tripplite_usb.c: Starting to add support for protocol 0004. Bumped
