@@ -25,7 +25,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define DRV_VERSION "0.12"
+#define DRV_VERSION "0.13"
 
 /* % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
  *
@@ -288,7 +288,8 @@ static enum tl_model_t {
 	TRIPP_LITE_UNKNOWN = 0,
 	TRIPP_LITE_OMNIVS,
 	TRIPP_LITE_OMNIVS_2001,
-	TRIPP_LITE_SMARTPRO
+	TRIPP_LITE_SMARTPRO,
+	TRIPP_LITE_SMART_0004
 } tl_model = TRIPP_LITE_UNKNOWN;
 
 /*!@brief If a character is not printable, return a dot. */
@@ -441,6 +442,9 @@ static const char *hexascdump(unsigned char *msg, size_t len)
 enum tl_model_t decode_protocol(unsigned int proto)
 {
 	switch(proto) {
+		case 0x0004:
+			upslogx(3, "Using older SMART protocol (%x)", proto);
+			return TRIPP_LITE_SMART_0004;
 		case 0x1001:
 			upslogx(3, "Using OMNIVS protocol (%x)", proto);
 			return TRIPP_LITE_OMNIVS;
@@ -730,7 +734,8 @@ static int control_outlet(int outlet_id, int state)
 	int ret;
 
 	switch(tl_model) {
-		case TRIPP_LITE_SMARTPRO:
+		case TRIPP_LITE_SMARTPRO:   /* tested */
+		case TRIPP_LITE_SMART_0004: /* untested */
 			snprintf(k_cmd, sizeof(k_cmd)-1, "N%02X", 5);
 			ret = send_cmd(k_cmd, strlen(k_cmd) + 1, buf, sizeof buf);
 			snprintf(k_cmd, sizeof(k_cmd)-1, "K%d%d", outlet_id, state & 1);
@@ -905,6 +910,13 @@ void upsdrv_initinfo(void)
 	ret = send_cmd(p_msg, sizeof(p_msg), p_value, sizeof(p_value)-1);
 	va = strtol(p_value+1, NULL, 10);
 
+	if(tl_model == TRIPP_LITE_SMART_0004) {
+		dstate_setinfo("ups.debug.P","%s", hexascdump(p_value+1, 7));
+		va *= 10; /* TODO: confirm? */
+	}
+
+	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
+
 	/* trim "TRIPP LITE" from beginning of model */
 	model = strdup(hd->Product);
 	if(strstr(model, hd->Vendor) == model) {
@@ -952,15 +964,14 @@ void upsdrv_initinfo(void)
 		int i;
 		char outlet_name[80];
 
-		outlet_name[79] = 0;
 		for(i = 1; i <= switchable_load_banks + 1; i++) {
-			snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.id", i);
+			snprintf(outlet_name, sizeof(outlet_name), "outlet.%d.id", i);
 			dstate_setinfo(outlet_name, "%d", i);
 
-			snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.desc", i);
+			snprintf(outlet_name, sizeof(outlet_name), "outlet.%d.desc", i);
 			dstate_setinfo(outlet_name, "Load %d", i);
 
-			snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.switchable", i);
+			snprintf(outlet_name, sizeof(outlet_name), "outlet.%d.switchable", i);
 			if( i <= switchable_load_banks ) {
 				dstate_setinfo(outlet_name, "1");
 				snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.switch", i);
@@ -989,6 +1000,10 @@ void upsdrv_initinfo(void)
 		} else {
 			unit_id = (int)((unsigned)(u_value[1]) << 8) 
 				| (unsigned)(u_value[2]);
+		}
+
+		if(tl_model == TRIPP_LITE_SMART_0004) {
+			debug_message("U", 2);
 		}
 	}
 
@@ -1020,7 +1035,7 @@ void upsdrv_initinfo(void)
 	dstate_setaux("ups.delay.reboot", 3);
 #endif
 
-	if(tl_model == TRIPP_LITE_SMARTPRO) {
+	if(tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_SMART_0004 /* TODO: confirm 0004 */) {
 		dstate_addcmd("test.battery.start");
 		dstate_addcmd("reset.input.minmax");
 	}
@@ -1067,6 +1082,8 @@ void upsdrv_updateinfo(void)
 
 	status_init();
 
+	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
+
 	/* General status (e.g. "S10") */
 	ret = send_cmd(s_msg, sizeof(s_msg), s_value, sizeof(s_value));
 	if(ret <= 0) {
@@ -1078,6 +1095,8 @@ void upsdrv_updateinfo(void)
 	if(tl_model != TRIPP_LITE_OMNIVS && tl_model != TRIPP_LITE_OMNIVS_2001) {
 		dstate_setinfo("ups.debug.S","%s", hexascdump(s_value+1, 7));
 	}
+
+	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
 	if(tl_model == TRIPP_LITE_OMNIVS) {
 		switch(s_value[2]) {
@@ -1107,45 +1126,9 @@ void upsdrv_updateinfo(void)
 		}
 	}
 
+	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
-	if(tl_model == TRIPP_LITE_OMNIVS_2001) {
-		switch(s_value[2]) {
-			case '0':
-				dstate_setinfo("battery.test.status", "Battery OK");
-				break;
-			case '1':
-				dstate_setinfo("battery.test.status", "Battery bad - replace");
-				break;
-			case '2':
-				status_set("CAL");
-				break;
-			case '3':
-				status_set("OVER");
-				dstate_setinfo("battery.test.status", "Overcurrent?");
-				break;
-			case '4':
-				/* The following message is confusing, and may not be accurate: */
-				/* dstate_setinfo("battery.test.status", "Battery state unknown"); */
-				break;
-			case '5':
-				status_set("OVER");
-				dstate_setinfo("battery.test.status", "Battery fail - overcurrent?");
-				break;
-			default:
-				upslogx(LOG_ERR, "Unknown value for s[2]: 0x%02x", s_value[2]);
-				dstate_datastale();
-				break;
-		}
-
-		/* Online/on battery: */
-		if(s_value[4] & 1) {
-			status_set("OB");
-		} else {
-			status_set("OL");
-		}
-	}
-
-	if(tl_model == TRIPP_LITE_SMARTPRO) {
+	if(tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_OMNIVS_2001 || tl_model == TRIPP_LITE_SMART_0004) {
 		switch(s_value[2]) {
 			case '0':
 				dstate_setinfo("battery.test.status", "Battery OK");
@@ -1181,9 +1164,14 @@ void upsdrv_updateinfo(void)
 			status_set("OL");
 		}
 
-		battery_charge = (unsigned)(s_value[5]);
-		dstate_setinfo("battery.charge",  "%u", battery_charge);
+		/* This may not be right... */
+		if(tl_model == TRIPP_LITE_SMARTPRO) {
+			battery_charge = (unsigned)(s_value[5]);
+			dstate_setinfo("battery.charge",  "%u", battery_charge);
+		}
 	}
+
+	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
 	switch(s_value[1]) {
 		case '0':
@@ -1203,6 +1191,8 @@ void upsdrv_updateinfo(void)
 	}
 
 	status_commit();
+
+	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
 	if( tl_model == TRIPP_LITE_OMNIVS || tl_model == TRIPP_LITE_OMNIVS_2001 ) {
 		ret = send_cmd(b_msg, sizeof(b_msg), b_value, sizeof(b_value));
@@ -1231,7 +1221,9 @@ void upsdrv_updateinfo(void)
 		dstate_setinfo("battery.charge",  "%3d", bp);
 	}
 
-	if( tl_model == TRIPP_LITE_SMARTPRO ) {
+	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
+
+	if( tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_SMART_0004 ) {
 		ret = send_cmd(d_msg, sizeof(d_msg), d_value, sizeof(d_value));
 		if(ret <= 0) {
 			dstate_datastale();
@@ -1246,10 +1238,14 @@ void upsdrv_updateinfo(void)
 
 		dstate_setinfo("battery.voltage", "%.2f", bv);
 
-		/* battery charge state is left as an exercise for the reader */
+		/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
 		ret = send_cmd(m_msg, sizeof(m_msg), m_value, sizeof(m_value));
-		dstate_setinfo("ups.debug.M", "%s", hexascdump(m_value+1, 7));
+
+                if(m_value[5] != 0x0d) { /* we only expect 4 hex digits */
+			dstate_setinfo("ups.debug.M", "%s", hexascdump(m_value+1, 7));
+		}
+
 		if(ret <= 0) {
 			dstate_datastale();
 			usb_comm_fail(ret, "Error reading M (min/max input voltage)");
@@ -1258,6 +1254,8 @@ void upsdrv_updateinfo(void)
 
 		dstate_setinfo("input.voltage.minimum", "%3d", hex2d(m_value+1, 2));
 		dstate_setinfo("input.voltage.maximum", "%3d", hex2d(m_value+3, 2));
+
+		/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
 		ret = send_cmd(t_msg, sizeof(t_msg), t_value, sizeof(t_value));
 		dstate_setinfo("ups.debug.T", "%s", hexascdump(t_value+1, 7));
@@ -1270,18 +1268,22 @@ void upsdrv_updateinfo(void)
 		freq = hex2d(t_value + 3, 3);
 		dstate_setinfo("input.frequency", "%.1f", freq / 10.0);
 
-		switch(t_value[6]) {
-			case '1':
-				dstate_setinfo("input.frequency.nominal", "%d", 60);
-				break;
-			case '0':
-				dstate_setinfo("input.frequency.nominal", "%d", 50);
-				break;
+		if( tl_model == TRIPP_LITE_SMARTPRO ) {
+			switch(t_value[6]) {
+				case '1':
+					dstate_setinfo("input.frequency.nominal", "%d", 60);
+					break;
+				case '0':
+					dstate_setinfo("input.frequency.nominal", "%d", 50);
+					break;
+			}
                 }
 
 		/* I'm guessing this is a calibration constant of some sort. */
 		dstate_setinfo("ups.temperature", "%.1f", (unsigned)(hex2d(t_value+1, 2)) * 0.3636 - 21);
 	}
+
+	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
 	ret = send_cmd(l_msg, sizeof(l_msg), l_value, sizeof(l_value));
 	if(ret <= 0) {
@@ -1298,10 +1300,16 @@ void upsdrv_updateinfo(void)
 		case TRIPP_LITE_SMARTPRO:
 			dstate_setinfo("ups.load", "%d", hex2d(l_value+1, 2));
 			break;
+		case TRIPP_LITE_SMART_0004:
+			dstate_setinfo("ups.load", "%d", hex2d(l_value+1, 2));
+			dstate_setinfo("ups.debug.L","%s", hexascdump(l_value+1, 7));
+			break;
 		default:
 			dstate_setinfo("ups.debug.L","%s", hexascdump(l_value+1, 7));
 			break;
 	}
+
+	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
 	if(tl_model != TRIPP_LITE_OMNIVS && tl_model != TRIPP_LITE_OMNIVS_2001) {
 		debug_message("D", 2);
@@ -1311,9 +1319,9 @@ void upsdrv_updateinfo(void)
 			debug_message("V", 2); /* Probably not necessary - seems to be static */
 			debug_message("M", 2);
 			debug_message("T", 2);
+			debug_message("P", 2);
 		}
 		/* debug_message("U", 2); */
-		/* debug_message("Z", 2); */
 	}
 
 	dstate_dataok();

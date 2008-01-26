@@ -1,3 +1,8 @@
+Sat Jan 26 04:27:58 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/tripplite_usb.c: Starting to add support for protocol 0004. Bumped
+   driver revision to 0.13.
+
 Tue Jan 22 04:00:34 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - packaging/debian/rules: The skel driver isn't built if we only build a subset of the
