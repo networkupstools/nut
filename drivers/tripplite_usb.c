@@ -25,7 +25,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define DRV_VERSION "0.14"
+#define DRV_VERSION "0.15"
 
 /* % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
  *
@@ -759,7 +759,7 @@ static int instcmd(const char *cmdname, const char *extra)
 {
 	unsigned char buf[10];
 
-	if(tl_model == TRIPP_LITE_SMARTPRO) {
+	if(tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_SMART_0004) {
 		if (!strcasecmp(cmdname, "test.battery.start")) {
 			send_cmd("A", 2, buf, sizeof buf);
 			return STAT_INSTCMD_HANDLED;
@@ -776,7 +776,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "load.on")) {
 		return control_outlet(0, 0) ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_UNKNOWN;
 	}
-	/* TODO: add code for individual outlets */
+	/* code for individual outlets is in setvar() */
 #if 0
 	if (!strcasecmp(cmdname, "shutdown.reboot")) {
 		do_reboot_now();
@@ -992,7 +992,7 @@ void upsdrv_initinfo(void)
 
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
-	if(tl_model != TRIPP_LITE_OMNIVS) {
+	if(tl_model != TRIPP_LITE_OMNIVS && tl_model != TRIPP_LITE_SMART_0004) {
 		/* Unit ID might not be supported by all models: */
 		ret = send_cmd(u_msg, sizeof(u_msg), u_value, sizeof(u_value)-1);
 		if(ret <= 0) {
