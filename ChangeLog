@@ -1,3 +1,12 @@
+Sun Jan 27 21:26:38 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - clients/upsclient.c: Use upscli_disconnect() if the connection can't be
+   established or is lost to release the memory that was allocated by
+   upscli_connect() (fixes memory leak when connection to the server is lost).
+ - clients/upsmon.c: The upscli_disconnect() is now the opposite of
+   upscli_connect() and no longer attempts to LOGOUT from the server, so
+   we now need to explicitly send this command.
+
 Sun Jan 27 19:54:38 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - drivers/tripplite_usb.c: (rev 0.14) Fix input.frequency for protocol 0004.

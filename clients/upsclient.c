@@ -167,26 +167,6 @@ const char *upscli_strerror(UPSCONN_t *ups)
 	return ups->errbuf;
 }
 
-static void upscli_closefd(UPSCONN_t *ups)
-{
-#ifdef HAVE_SSL
-	if (ups->ssl) {
-		SSL_shutdown(ups->ssl);
-		SSL_free(ups->ssl);
-		ups->ssl = NULL;
-	}
-
-	if (ups->ssl_ctx) {
-		SSL_CTX_free(ups->ssl_ctx);
-		ups->ssl_ctx = NULL;
-	}
-#endif
-
-	shutdown(ups->fd, shutdown_how);
-	close(ups->fd);
-	ups->fd = -1;
-}
-
 /* internal: abstract the SSL calls for the other functions */
 static int net_read(UPSCONN_t *ups, char *buf, size_t buflen)
 {
@@ -198,7 +178,7 @@ static int net_read(UPSCONN_t *ups, char *buf, size_t buflen)
 
 		if (ret < 1) {
 			ups->upserror = UPSCLI_ERR_SSLERR;
-			upscli_closefd(ups);
+			upscli_disconnect(ups);
 		}
 
 		return ret;
@@ -210,16 +190,14 @@ static int net_read(UPSCONN_t *ups, char *buf, size_t buflen)
 	if (ret == 0) {
 		ups->upserror = UPSCLI_ERR_SRVDISC;
 		ups->syserrno = 0;
-		upscli_closefd(ups);
-
+		upscli_disconnect(ups);
 		return -1;
-	}		
+	}
 
 	if (ret < 1) {
 		ups->upserror = UPSCLI_ERR_READ;
 		ups->syserrno = errno;
-
-		upscli_closefd(ups);
+		upscli_disconnect(ups);
 	}
 
 	return ret;
@@ -230,13 +208,12 @@ static int net_write(UPSCONN_t *ups, const char *buf, size_t count)
 	int	ret;
 
 #ifdef HAVE_SSL
-
 	if (ups->ssl) {
 		ret = SSL_write(ups->ssl, buf, count);
 
 		if (ret < 1) {
 			ups->upserror = UPSCLI_ERR_SSLERR;
-			upscli_closefd(ups);
+			upscli_disconnect(ups);
 		}
 
 		return ret;
@@ -248,7 +225,7 @@ static int net_write(UPSCONN_t *ups, const char *buf, size_t count)
 	if (ret < 1) {
 		ups->upserror = UPSCLI_ERR_WRITE;
 		ups->syserrno = errno;
-		upscli_closefd(ups);
+		upscli_disconnect(ups);
 	}
 
 	return ret;
@@ -341,8 +318,6 @@ static int upscli_sslinit(UPSCONN_t *ups)
 	if (ret < 0) {
 		ups->upserror = UPSCLI_ERR_WRITE;
 		ups->syserrno = errno;
-
-		upscli_closefd(ups);
 		return -1;
 	}
 
@@ -352,16 +327,12 @@ static int upscli_sslinit(UPSCONN_t *ups)
 	if (ret == 0) {			/* server hung up on us! */
 		ups->upserror = UPSCLI_ERR_SRVDISC;
 		ups->syserrno = 0;
-
-		upscli_closefd(ups);
 		return -1;
 	}
 
 	if (ret < 1) {
 		ups->upserror = UPSCLI_ERR_READ;
 		ups->syserrno = errno;
-
-		upscli_closefd(ups);
 		return -1;
 	}
 
@@ -459,6 +430,7 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 
 	if ((ups->pc_ctx = malloc(sizeof(PCONF_CTX_t))) == NULL) {
 		ups->upserror = UPSCLI_ERR_NOMEM;
+		upscli_disconnect(ups);
 		return -1;
 	}
 
@@ -469,6 +441,7 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 
 	if (!host) {
 		ups->upserror = UPSCLI_ERR_NOSUCHHOST;
+		upscli_disconnect(ups);
 		return -1;
 	}
 
@@ -480,6 +453,7 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 
 		if (!inet_aton(host, &listenaddr)) {
 			ups->upserror = UPSCLI_ERR_NOSUCHHOST;
+			upscli_disconnect(ups);
 			return -1;
 		}
 
@@ -487,6 +461,7 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 
 		if (serv == NULL) {
 			ups->upserror = UPSCLI_ERR_NOSUCHHOST;
+			upscli_disconnect(ups);
 			return -1;
 		}
 	}
@@ -494,6 +469,7 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 	if ((ups->fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		ups->upserror = UPSCLI_ERR_SOCKFAILURE;
 		ups->syserrno = errno;
+		upscli_disconnect(ups);
 		return -1;
 	}
 
@@ -510,16 +486,14 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 	if (bind(ups->fd, (struct sockaddr *) &local, sizeof(struct sockaddr_in)) == -1) {
 		ups->upserror = UPSCLI_ERR_BINDFAILURE;
 		ups->syserrno = errno;
-		close(ups->fd);
-		ups->fd = -1;
+		upscli_disconnect(ups);
 		return -1;
 	}
 
 	if (connect(ups->fd, (struct sockaddr *) &server, sizeof(struct sockaddr_in)) == -1) {
 		ups->upserror = UPSCLI_ERR_CONNFAILURE;
 		ups->syserrno = errno;
-		close(ups->fd);
-		ups->fd = -1;
+		upscli_disconnect(ups);
 		return -1;
 	}
 #else
@@ -539,14 +513,17 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 	hints.ai_protocol = IPPROTO_TCP;
 
 	while ((v = getaddrinfo(host, sport, &hints, &res)) != 0) {
-		switch (v) {
+		switch (v)
+		{
 		case EAI_AGAIN:
 			continue;
 		case EAI_NONAME:
 			ups->upserror = UPSCLI_ERR_NOSUCHHOST;
+			upscli_disconnect(ups);
 			return -1;
 		case EAI_MEMORY:
 			ups->upserror = UPSCLI_ERR_NOMEM;
+			upscli_disconnect(ups);
 			return -1;
 		case EAI_SYSTEM:
 			ups->syserrno = errno;
@@ -554,6 +531,7 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 		}
 
 		ups->upserror = UPSCLI_ERR_UNKNOWN;
+		upscli_disconnect(ups);
 		return -1;
 	}
 
@@ -600,14 +578,14 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 	freeaddrinfo(res);
 
 	if (ups->fd < 0) {
+		upscli_disconnect(ups);
 		return -1;
 	}
 #endif
 
 	if ((ups->host = strdup(host)) == NULL) {
 		ups->upserror = UPSCLI_ERR_NOMEM;
-		close(ups->fd);
-		ups->fd = -1;
+		upscli_disconnect(ups);
 		return -1;
 	}
 
@@ -618,18 +596,20 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 
 		/* see if something made us die inside sslinit */
 		if (ups->upserror != 0) {
+			upscli_disconnect(ups);
 			return -1;
 		}
 	}
 
 	if ((flags & UPSCLI_CONN_REQSSL) && (upscli_sslinit(ups) != 1)) {
 		ups->upserror = UPSCLI_ERR_SSLFAIL;
-		upscli_closefd(ups);
+		upscli_disconnect(ups);
 		return -1;
 	}
 		
 	return 0;
 }
+
 /* map upsd error strings back to upsclient internal numbers */
 static struct {
 	int	errnum;
@@ -1058,10 +1038,23 @@ int upscli_disconnect(UPSCONN_t *ups)
 
 	if (ups->fd != -1) {
 
-		/* try to disconnect gracefully */
-		net_write(ups, "LOGOUT\n", 7);
+#ifdef HAVE_SSL
+		if (ups->ssl) {
+			SSL_shutdown(ups->ssl);
+			SSL_free(ups->ssl);
+			ups->ssl = NULL;
+		}
 
-		upscli_closefd(ups);
+		if (ups->ssl_ctx) {
+			SSL_CTX_free(ups->ssl_ctx);
+			ups->ssl_ctx = NULL;
+		}
+#endif
+
+		shutdown(ups->fd, shutdown_how);
+
+		close(ups->fd);
+		ups->fd = -1;
 	}
 
 	if (ups->pc_ctx) {
