@@ -1,3 +1,7 @@
+Sun Jan 27 19:54:38 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/tripplite_usb.c: (rev 0.14) Fix input.frequency for protocol 0004.
+
 Sat Jan 26 21:16:45 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  * clients/Makefile.am:

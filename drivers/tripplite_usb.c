@@ -25,7 +25,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define DRV_VERSION "0.13"
+#define DRV_VERSION "0.14"
 
 /* % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
  *
@@ -80,12 +80,12 @@
  * :Q     ->            (while online: reboot)
  * :R     -> R<01><FF>  (query flags for conditions that cause a reset?)
  * :S     -> S100_Z0    (status?)
- * :T     -> T7D2581    (temperature?)
+ * :T     -> T7D2581    (temperature, frequency)
  * :U     -> U<FF><FF>  (unit ID, 1-65535)
  * :V     -> V1062XX	(outlets in groups of 2-2-4, with the groups of 2
  * 			 individually switchable.)
  * :W_    -> W_		(watchdog)
- * :Z     -> Z		(reset for max/min? - apparently not)
+ * :Z     -> Z		(reset for max/min; takes a moment to complete)
  * 
  * % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
  *
@@ -1265,10 +1265,10 @@ void upsdrv_updateinfo(void)
 			return;
 		}
 
-		freq = hex2d(t_value + 3, 3);
-		dstate_setinfo("input.frequency", "%.1f", freq / 10.0);
-
 		if( tl_model == TRIPP_LITE_SMARTPRO ) {
+			freq = hex2d(t_value + 3, 3);
+			dstate_setinfo("input.frequency", "%.1f", freq / 10.0);
+
 			switch(t_value[6]) {
 				case '1':
 					dstate_setinfo("input.frequency.nominal", "%d", 60);
@@ -1278,6 +1278,11 @@ void upsdrv_updateinfo(void)
 					break;
 			}
                 }
+
+		if( tl_model == TRIPP_LITE_SMART_0004 ) {
+			freq = hex2d(t_value + 3, 4);
+			dstate_setinfo("input.frequency", "%.1f", freq / 10.0);
+		}
 
 		/* I'm guessing this is a calibration constant of some sort. */
 		dstate_setinfo("ups.temperature", "%.1f", (unsigned)(hex2d(t_value+1, 2)) * 0.3636 - 21);
