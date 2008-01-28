@@ -1,4 +1,4 @@
-# dummy-ups example definition file ; generated with "upsc ups@host"
+# dummy-ups example definition file ; generated with "upsc ups@host > evolution500.dev"
 
 battery.charge: 90
 battery.charge.low: 30
@@ -35,14 +35,14 @@ outlet.2.switchable: 1
 output.current: 0.00
 output.frequency: 49.0
 output.voltage: 230.0
-output.voltage.nominel: 230.0
+output.voltage.nominal: 230.0
 ups.delay.shutdown: -1
 ups.delay.start: -10
-ups.load: 0
+ups.load: 10
 ups.mfr: MGE UPS SYSTEMS
 ups.model: Pulsar Evolution 500
 ups.power.nominal: 500
-ups.serial: unknown
+ups.serial: AV2G3300L
 ups.status: OL CHRG
-ups.test.interval: -50560
+ups.test.interval: 604800
 ups.test.result: Done and passed

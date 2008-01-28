@@ -1,3 +1,14 @@
+Mon Jan 28 09:25:12 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+
+ * dummy-ups update:
+   - variable values are not truncated anymore when loading the
+     .dev file,
+   - relax the variable existance checking to allow adding valid
+     variables that are not listed,
+   - complete the manual page (dummy-ups.8),
+   - fix a typo error in the sample .dev file,
+   - bump the driver version to 0.04.
+ 
 Mon Jan 28 07:36:41 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - clients/upsclient.c: Don't clear the magic number after disconnecting

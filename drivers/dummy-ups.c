@@ -17,9 +17,18 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+/* TODO list:
+ * - variable/value enforcement using cmdvartab for testing
+ *   the variable existance
+ * - allow variable creation on the fly (using upsrw)
+ * - poll the "port" file for change
+ */
+
 #include "main.h"
 #include "parseconf.h"
 #include "dummy-ups.h"
+
+#define MAX_STRING_SIZE	128
 
 static int setvar(const char *varname, const char *val);
 static int parse_data_file(int upsfd);
@@ -124,7 +133,7 @@ static int setvar(const char *varname, const char *val)
 
 	if (!strncmp(varname, "ups.status", 10)) {
 		status_init();
-		 /* FIXME: split and check values (support multiple values) */
+		 /* FIXME: split and check values (support multiple values), à la usbhid-ups */
 		status_set(val);
 		status_commit();
 
@@ -177,7 +186,7 @@ static dummy_info_t *find_info(const char *varname)
 	return NULL;
 }
 
-/* check if data exists */
+/* check if data exists in our data table */
 static int is_valid_data(const char* varname)
 {
 	dummy_info_t *item;
@@ -186,7 +195,12 @@ static int is_valid_data(const char* varname)
 			return 1;
 	}
 
-	return 0;
+	/* FIXME: we need to have the full data set before
+	 * enforcing controls! */
+	
+	upsdebugx(1, "Unknown data. Commiting anyway...");
+	return 1;
+	/* return 0;*/
 }
 
 /* check if data's value validity */
@@ -199,7 +213,12 @@ static int is_valid_value(const char* varname, const char *value)
 		return 1;
 	}
 
-	return 0;
+	/* FIXME: we need to have the full data set before
+	 * enforcing controls! */
+	
+	upsdebugx(1, "Unknown data. Commiting value anyway...");
+	return 1;
+	/* return 0;*/
 }
 
 /* called for fatal errors in parseconf like malloc failures */
@@ -210,9 +229,10 @@ static void upsconf_err(const char *errmsg)
 
 static int parse_data_file(int upsfd)
 {
-	char	fn[SMALLBUF];
-	char	*ptr;
 	PCONF_CTX_t	ctx;
+	char	fn[SMALLBUF];
+	char	*ptr, *var_value;
+	int		value_args = 0, counter;
 
 	if (device_path[0] == '/')
 		snprintf(fn, sizeof(fn), "%s", device_path);
@@ -247,8 +267,6 @@ static int parse_data_file(int upsfd)
 			upsdebugx(2, "parse_data_file: skipping %s", ctx.arglist[0]);
 			continue;
 		}
-		else
-			upsdebugx(2, "parse_data_file: %s is not a driver. var", ctx.arglist[0]);
 
 		/* From there, we get varname in arg[0], and values in other arg[1...x] */
 		/* FIXME: iteration on arg[2, 3, ...]
@@ -256,12 +274,19 @@ static int parse_data_file(int upsfd)
 			if ups.status, each arg is a value to be set (ie OB LB) + check against enum
 			else int/float values need to be check against bound/enum
 		*/
-		if (setvar(ctx.arglist[0], ctx.arglist[1]) == STAT_SET_UNKNOWN)
-			upsdebugx(2, "parse_data_file: can't add \"%s\" with value \"%s\"",
-				ctx.arglist[0], ctx.arglist[1]);
+		var_value = (char*) xmalloc(MAX_STRING_SIZE);
+		for (counter = 1, value_args = ctx.numargs ; counter < value_args ; counter++) {
+			if (counter != 1) /* don't append the first space separator */
+				strncat(var_value, " ", MAX_STRING_SIZE);
+			strncat(var_value, ctx.arglist[counter], MAX_STRING_SIZE);
+		}
+
+		if (setvar(ctx.arglist[0], var_value) == STAT_SET_UNKNOWN)
+			upsdebugx(2, "parse_data_file: can't add \"%s\" with value \"%s\"\nError: %s",
+				ctx.arglist[0], var_value, ctx.errmsg);
 		else
 			upsdebugx(2, "parse_data_file: added \"%s\" with value \"%s\"",
-				ctx.arglist[0], ctx.arglist[1]);
+				ctx.arglist[0], var_value);
 	}
 
 	return 1;

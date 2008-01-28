@@ -30,7 +30,7 @@
  */
 
 
-#define DRV_VERSION	"0.03"
+#define DRV_VERSION	"0.04"
 
 
 /* from usbhid-ups.h */
@@ -40,21 +40,21 @@
 
 typedef struct {
 	char	*status_str;	/* ups.status string */
-	int	status_value;	/* ups.status value */
+	int		status_value;	/* ups.status value */
 } status_lkp_t;
 
 #define STATUS_CAL		1       /* calibration */
 #define STATUS_TRIM		2       /* SmartTrim */
-#define STATUS_BOOST		4       /* SmartBoost */
+#define STATUS_BOOST	4       /* SmartBoost */
 #define STATUS_OL		8       /* on line */
 #define STATUS_OB		16      /* on battery */
 #define STATUS_OVER		32      /* overload */
 #define STATUS_LB		64      /* low battery */
 #define STATUS_RB		128     /* replace battery */
-#define STATUS_BYPASS		256	/* on bypass */
-#define STATUS_OFF		512	/* ups is off */
+#define STATUS_BYPASS	256		/* on bypass */
+#define STATUS_OFF		512		/* ups is off */
 #define STATUS_CHRG		1024	/* charging */
-#define STATUS_DISCHRG		2048	/* discharging */
+#define STATUS_DISCHRG	2048	/* discharging */
 
 status_lkp_t status_info[] = {
   { "CAL", STATUS_CAL },
@@ -85,13 +85,13 @@ typedef struct {
 
 typedef struct {
 	char	*info_type;		/* NUT variable name */
-	int	info_flags;		/* NUT flags (to set in addinfo) */
+	int		info_flags;		/* NUT flags (to set in addinfo) */
 	float	info_len;		/* if ST_FLAG_STRING: length of the string */
-					/* if HU_TYPE_CMD: command value ; multiplier (or max len) otherwise */
-	char	*default_value;		/* if HU_FLAG_ABSENT: default value ; format otherwise */
-	int	drv_flags;		/* */
-	char **var_values;		/* all possible values for this variable (allows to check data...) */
-					/* FIXME: "void *" so we can have bound or enum */
+							/* if HU_TYPE_CMD: command value ; multiplier (or max len) otherwise */
+	char	*default_value;	/* if HU_FLAG_ABSENT: default value ; format otherwise */
+	int		drv_flags;		/* */
+	char	**var_values;	/* all possible values for this variable (allows to check data...) */
+							/* FIXME: "void *" so we can have bound or enum */
 /*	interpreter interpret;	*/	/* FFE: interpreter fct, NULL if not needed  */
 } dummy_info_t;
 
