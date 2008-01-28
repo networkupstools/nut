@@ -54,6 +54,8 @@
 
 "APC"	"(various)"	"SNMP monitoring card"	"snmp-ups (experimental driver)"
 
+"Atlantis Land"	"A03-P826"	""	"megatec"
+
 "Belkin"	"Home Office F6H350-SER"	""	"genericups upstype=7"
 "Belkin"	"Home Office F6H500-SER"	""	"genericups upstype=7"
 "Belkin"	"Home Office F6H650-SER"	""	"genericups upstype=7"
@@ -392,6 +394,7 @@
 "Mustek"	"Powermust"	"1000VA Plus"	"megatec"
 "Mustek"	"Powermust"	"1400VA Plus"	"megatec"
 "Mustek"	"Powermust"	"2000VA USB"	"megatec"
+"Mustek"	"Powermust Office 650"	"USB"	"megatec_usb"
 
 "Nitram"	"Elite 500"	""	"genericups upstype=8"
 "Nitram"	"Elite 2002"	""	"genericups upstype=16"
@@ -402,6 +405,9 @@
 "Oneac"	"ON900"	"advanced interface"	"oneac"
 "Oneac"	"ON1300"	"advanced interface"	"oneac"
 "Oneac"	"ON2000"	"advanced interface"	"oneac"
+"Oneac"	"ON700XAU"	""	"oneac"
+"Oneac"	"ON1000XAU"	""	"oneac"
+"Oneac"	"ON1500XAU"	""	"oneac"
 "Oneac"	"EG Series"	"advanced interface"	"oneac"
 "Oneac"	"ON700"	"advanced interface"	"oneac"
 "Oneac"	"ON1000"	"advanced interface"	"oneac"
