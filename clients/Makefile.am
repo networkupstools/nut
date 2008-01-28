@@ -1,7 +1,7 @@
 # Network UPS Tools: clients
 
 # by default, link programs in this directory with libcommon.a
-LDADD = ../common/libcommon.a libupsclient.la $(NETLIBS) $(LIBSSL_LDFLAGS)
+LDADD = ../common/libcommon.a -lupsclient $(NETLIBS) $(LIBSSL_LDFLAGS)
 # Avoid per-target CFLAGS, because this will prevent re-use of object
 # files. In any case, CFLAGS are only -I options, so there is no harm. 
 AM_CFLAGS = -I$(top_srcdir)/include $(LIBSSL_CFLAGS) $(LIBGD_CFLAGS)
@@ -36,7 +36,7 @@ upsstats_cgi_SOURCES = upsstats.c upsclient.h status.h upsstats.h	\
 # not LDADD.
 libupsclient_la_SOURCES = upsclient.c upsclient.h
 libupsclient_la_LIBADD = ../common/parseconf.lo
-libupsclient_la_LDFLAGS = -version-info 0:0:0
+libupsclient_la_LDFLAGS = -version-info 1:0:0
 
 # rules for cross-directory targets
 ../common/libcommon.a: FORCE
