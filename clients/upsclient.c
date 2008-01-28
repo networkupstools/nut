@@ -1064,9 +1064,7 @@ int upscli_disconnect(UPSCONN_t *ups)
 	}
 
 	free(ups->host);
-
 	ups->host = NULL;
-	ups->upsclient_magic = 0;
 
 	return 0;
 }
