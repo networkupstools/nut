@@ -129,7 +129,7 @@
 .\" ========================================================================
 .\"
 .IX Title "TRIPPLITE_USB 8"
-.TH TRIPPLITE_USB 8 "2006-10-19" " " "Network UPS Tools (NUT)"
+.TH TRIPPLITE_USB 8 "2008-01-28" "$Rev$" "Network UPS Tools (NUT)"
 .SH "NAME"
 tripplite_usb \- Driver for older Tripp Lite USB UPSes (non\-PDC HID)
 .SH "NOTE"
@@ -161,6 +161,20 @@ This driver has been tested with the following models:
 .IX Item "SMART2200RMXL2U"
 .IP "* \s-1SMART3000RM2U\s0" 4
 .IX Item "SMART3000RM2U"
+.PD
+.PP
+If you have used Tripp Lite's PowerAlert software to connect to your \s-1UPS\s0, there
+is a good chance that \fItripplite_usb\fR\|(8) will work if it uses one of the
+following protocols:
+.IP "* Protocol 0004" 4
+.IX Item "Protocol 0004"
+.PD 0
+.IP "* Protocol 1001" 4
+.IX Item "Protocol 1001"
+.IP "* Protocol 2001" 4
+.IX Item "Protocol 2001"
+.IP "* Protocol 3003" 4
+.IX Item "Protocol 3003"
 .PD
 .SH "EXTRA ARGUMENTS"
 .IX Header "EXTRA ARGUMENTS"
@@ -202,6 +216,13 @@ For more information on regular expressions, see \fIregex\fR\|(7)
 .IX Item "ups.delay.shutdown"
 This variable is the same as the \f(CW\*(C`offdelay\*(C'\fR setting, but it can be changed at
 runtime by \fIupsrw\fR\|(8).
+.IP "outlet.1.switch" 4
+.IX Item "outlet.1.switch"
+Some Tripp Lite units have a switchable outlet (usually outlet #1) which can be
+turned on and off by writing \f(CW1\fR or \f(CW0\fR, respectively, to \f(CW\*(C`outlet.1.switch\*(C'\fR.
+If your unit has multiple switchable outlets, substitute the outlet number for
+\&\*(L"1\*(R" in the variable name. Be sure to test this first \- there is no other way to
+be certain that the number matches the label on the unit.
 .SH "KNOWN ISSUES AND BUGS"
 .IX Header "KNOWN ISSUES AND BUGS"
 The driver was not developed with any official documentation from Tripp Lite,
@@ -240,7 +261,7 @@ Email: info@relevantevidence.com
 .IX Header "SEE ALSO"
 .Sh "The core driver:"
 .IX Subsection "The core driver:"
-\&\fInutupsdrv\fR\|(8), \fIregex\fR\|(7), \fIusbhid-ups\fR\|(8)
+\&\fInutupsdrv\fR\|(8), \fIregex\fR\|(7), \fIusbhid\-ups\fR\|(8)
 .Sh "Internet resources:"
 .IX Subsection "Internet resources:"
 The \s-1NUT\s0 (Network \s-1UPS\s0 Tools) home page: http://www.networkupstools.org/
