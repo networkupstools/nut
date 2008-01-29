@@ -1,3 +1,8 @@
+Tue Jan 29 00:31:55 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/tripplite_usb.c: (rev 0.16) More debugging and logging for
+   protocol 0004.
+
 Mon Jan 28 11:28:32 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  * driver.list: add compatibility information for

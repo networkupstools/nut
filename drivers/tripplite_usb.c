@@ -8,7 +8,7 @@
    Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
    Copyright (C) 2001  Rickard E. (Rik) Faith <faith@alephnull.com>
    Copyright (C) 2004  Nicholas J. Kain <nicholas@kain.us>
-   Copyright (C) 2005-2007  Charles Lepple <clepple+nut@gmail.com>
+   Copyright (C) 2005-2008  Charles Lepple <clepple+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define DRV_VERSION "0.15"
+#define DRV_VERSION "0.16"
 
 /* % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
  *
@@ -131,7 +131,7 @@
 POD ("Plain Old Documentation") - run through pod2html or perldoc. See
 perlpod(1) for more information.
 
-pod2man --name='TRIPPLITE_USB' --section=8 --release=' ' --center='Network UPS Tools (NUT)' tripplite_usb.c
+pod2man --name='TRIPPLITE_USB' --section=8 --release='$Rev$' --center='Network UPS Tools (NUT)' tripplite_usb.c
 
 =head1 NAME
 
@@ -168,6 +168,22 @@ This driver has been tested with the following models:
 =item * SMART2200RMXL2U
 
 =item * SMART3000RM2U
+
+=back
+
+If you have used Tripp Lite's PowerAlert software to connect to your UPS, there
+is a good chance that tripplite_usb(8) will work if it uses one of the
+following protocols:
+
+=over 
+
+=item * Protocol 0004
+
+=item * Protocol 1001
+
+=item * Protocol 2001
+
+=item * Protocol 3003
 
 =back
 
@@ -223,6 +239,14 @@ For more information on regular expressions, see regex(7)
 
 This variable is the same as the C<offdelay> setting, but it can be changed at
 runtime by upsrw(8).
+
+=item outlet.1.switch
+
+Some Tripp Lite units have a switchable outlet (usually outlet #1) which can be
+turned on and off by writing C<1> or C<0>, respectively, to C<outlet.1.switch>.
+If your unit has multiple switchable outlets, substitute the outlet number for
+"1" in the variable name. Be sure to test this first - there is no other way to
+be certain that the number matches the label on the unit.
 
 =back
 
@@ -405,9 +429,9 @@ static int hex2d(const unsigned char *start, unsigned int len)
 	unsigned char buf[32];
 	buf[31] = '\0';
 
-	strncpy(buf, start, (len < (sizeof buf) ? len : (sizeof buf - 1)));
+	strncpy((char *)buf, (char *)start, (len < (sizeof buf) ? len : (sizeof buf - 1)));
 	if(len < sizeof(buf)) buf[len] = '\0';
-	return strtol(buf, NULL, 16);
+	return strtol((char *)buf, NULL, 16);
 }
 
 /*!@brief Dump message in both hex and ASCII
@@ -424,16 +448,19 @@ static const char *hexascdump(unsigned char *msg, size_t len)
 
 	bufp = buf;
 	buf[0] = 0;
+
+	/* Dump each byte in hex: */
 	for(i=0; i<len; i++) {
-		bufp += sprintf(bufp, "%02x ", msg[i]);
+		bufp += sprintf((char *)bufp, "%02x ", msg[i]);
 	}
-#if 1
+
+	/* Dump single-quoted string with printable version of each byte: */
 	*bufp++ = '\'';
 	for(i=0; i<len; i++) {
 		*bufp++ = toprint(msg[i]);
 	}
 	*bufp++ = '\'';
-#endif
+
 	*bufp++ = '\0';
 
 	return buf;
@@ -602,8 +629,9 @@ static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *rep
 			upsdebugx(7, "send_cmd recv_try %d", recv_try+1);
 			ret = comm_driver->get_interrupt(udev, reply, sizeof(buffer_out), RECV_WAIT_MSEC);
 			if(ret != sizeof(buffer_out)) {
-				upslogx(1, "libusb_get_interrupt() returned %d instead of %u",
-					ret, (unsigned)(sizeof(buffer_out)));
+				upslogx(1, "libusb_get_interrupt() returned %d instead of %u while sending %s",
+					ret, (unsigned)(sizeof(buffer_out)),
+					hexascdump(buffer_out, sizeof(buffer_out)));
 			}
 			done = (ret == sizeof(buffer_out)) && (buffer_out[1] == reply[0]);
 		}
@@ -811,7 +839,7 @@ static int setvar(const char *varname, const char *val)
 	if(!strncmp(varname, "outlet.", strlen("outlet."))) {
 		char outlet_name[80];
 		char index_str[10], *first_dot, *next_dot;
-		int index_chars, index, state;
+		int index_chars, index, state, ret;
 
 		first_dot = strstr(varname, ".");
 		next_dot = strstr(first_dot + 1, ".");
@@ -835,9 +863,14 @@ static int setvar(const char *varname, const char *val)
 		upslogx(LOG_DEBUG, "outlet.%d.switch = %s -> %d", index, val, state);
 
 		snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.switch", index);
-		dstate_setinfo(outlet_name, "%d", state);
 
-		return control_outlet(index, state) ? STAT_SET_HANDLED : STAT_SET_UNKNOWN;
+		ret = control_outlet(index, state);
+		if(ret) {
+			dstate_setinfo(outlet_name, "%d", state);
+			return STAT_SET_HANDLED;
+		} else {
+			return STAT_SET_UNKNOWN;
+		}
 	}
 
 #if 0
@@ -1035,7 +1068,7 @@ void upsdrv_initinfo(void)
 	dstate_setaux("ups.delay.reboot", 3);
 #endif
 
-	if(tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_SMART_0004 /* TODO: confirm 0004 */) {
+	if(tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_SMART_0004) {
 		dstate_addcmd("test.battery.start");
 		dstate_addcmd("reset.input.minmax");
 	}
@@ -1157,11 +1190,16 @@ void upsdrv_updateinfo(void)
 				break;
 		}
 
-		/* Online/on battery: */
-		if(s_value[4] & 1) {
-			status_set("OB");
+
+		if(s_value[4] & 4) {
+			status_set("OFF");
 		} else {
-			status_set("OL");
+			/* Online/on battery: */
+			if(s_value[4] & 1) {
+				status_set("OB");
+			} else {
+				status_set("OL");
+			}
 		}
 
 		/* This may not be right... */
