@@ -1,3 +1,9 @@
+Tue Jan 29 01:51:16 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - driver.list: update compatibility information for Oneac models (list all
+   combinations for the more recent models, and just the base model name for
+   units from ~2001).
+
 Tue Jan 29 00:36:35 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - man/tripplite_usb.8: Regenerate man page for tripplite_usb(8)
