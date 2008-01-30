@@ -25,7 +25,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define DRV_VERSION "0.16"
+#define DRV_VERSION "0.17"
 
 /* % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
  *
@@ -833,6 +833,24 @@ static int setvar(const char *varname, const char *val)
 	if (!strcasecmp(varname, "ups.delay.shutdown")) {
 		offdelay = atoi(val);
 		dstate_setinfo("ups.delay.shutdown", val);
+		return STAT_SET_HANDLED;
+	}
+
+	if (unit_id >= 0 && !strcasecmp(varname, "ups.id")) {
+                int new_unit_id, ret;
+		unsigned char J_msg[] = "J__", buf[9];
+
+		new_unit_id = atoi(val);
+		J_msg[1] = new_unit_id >> 8;
+		J_msg[2] = new_unit_id & 0xff;
+                ret = send_cmd(J_msg, sizeof(J_msg), buf, sizeof(buf));
+
+		if(ret != sizeof(J_msg)) {
+			upslogx(LOG_NOTICE, "Could not set Unit ID.");
+			return STAT_SET_UNKNOWN;
+		}
+
+		dstate_setinfo("ups.id", val);
 		return STAT_SET_HANDLED;
 	}
 

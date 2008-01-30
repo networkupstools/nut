@@ -1,3 +1,8 @@
+Wed Jan 30 04:43:17 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/tripplite_usb.c: (rev 0.17) Added preliminary code to test setting
+   the unit ID.
+
 Wed Jan 30 04:23:47 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  * packaging/debian:
