@@ -94,7 +94,8 @@ install-stamp:
 	mv $(CURDIR)/debian/nut/usr/share/man/man3             $(CURDIR)/debian/nut-dev/usr/share/man 
 	mv $(CURDIR)/debian/nut/lib/nut/dummy-ups              $(CURDIR)/debian/nut-dev/lib/nut
 	mv $(CURDIR)/debian/nut/usr/share/man/man8/dummy-ups.8 $(CURDIR)/debian/nut-dev/usr/share/man/man8
-	mv $(CURDIR)/debian/nut/bin/libupsclient-config        $(CURDIR)/debian/nut-dev/usr/bin
+	### libupsclient-config is not generated if pkgconfig is enabled (as it is here, because of the BuildDepends):
+	# mv $(CURDIR)/debian/nut/bin/libupsclient-config        $(CURDIR)/debian/nut-dev/usr/bin
 	mv $(CURDIR)/debian/nut/usr/lib/pkgconfig              $(CURDIR)/debian/nut-dev/usr/lib
 	mv $(CURDIR)/debian/nut/usr/lib/libupsclient.a         $(CURDIR)/debian/nut-dev/usr/lib
 	mv $(CURDIR)/debian/nut/usr/lib/libupsclient.la        $(CURDIR)/debian/nut-dev/usr/lib

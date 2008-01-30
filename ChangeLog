@@ -1,3 +1,10 @@
+Wed Jan 30 04:23:47 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ * packaging/debian:
+   - Fix makefile.am so that all files currently in the directory get
+     distributed (compat was missing from the tarball)
+   - Comment out a line in rules which was causing .debs to fail
+
 Tue Jan 29 01:51:16 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - driver.list: update compatibility information for Oneac models (list all
