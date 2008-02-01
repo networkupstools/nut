@@ -27,10 +27,12 @@
 #include <unistd.h>
 #include <usb.h>
 
+#include "nut_stdint.h" /* for uint16_t */
 #include "nut_usb.h"
 
 extern	int		exit_flag;
 static	unsigned int	comm_failures = 0;
+static	uint16_t	vendor_id;
 
 static void nutusb_open_error(const char *port)
 {
@@ -55,10 +57,11 @@ static usb_dev_handle *open_powerware_usb()
     
 		for (dev = bus->devices; dev; dev = dev->next)
 		{
+			vendor_id = dev->descriptor.idVendor;
 			/* XXX Check for POWERWARE 3105 or 3110 ... other models??? */
 			if (dev->descriptor.bDeviceClass == USB_CLASS_PER_INTERFACE &&
-			    (dev->descriptor.idVendor == 0x0592 ||
-			     dev->descriptor.idVendor == 0x06da) &&
+			    (dev->descriptor.idVendor == POWERWARE ||
+			     dev->descriptor.idVendor == PHOENIXTEC) &&
 			    dev->descriptor.idProduct == 0x0002)
 				return usb_open(dev);
 		}
@@ -205,6 +208,12 @@ void nutusb_comm_good(void)
 int usb_set_descriptor(usb_dev_handle *udev, unsigned char type,
 		       unsigned char index, void *buf, int size)
 {
-	return usb_control_msg(udev, USB_ENDPOINT_OUT, USB_REQ_SET_DESCRIPTOR,
-				(type << 8) + index, 0, buf, size, 1000);
+	if (vendor_id == POWERWARE) {
+		return usb_control_msg(udev, USB_ENDPOINT_OUT, USB_REQ_SET_DESCRIPTOR,
+					(type << 8) + index, 0, buf, size, 1000);
+	}
+	else {
+		return usb_control_msg(udev, 0x42, 0x0d,
+					(0x00 << 8) + 0x0, 0, buf, size, 1000);
+	}
 }

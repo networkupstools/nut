@@ -1,3 +1,8 @@
+Fri Feb  1 22:04:30 UTC 2008 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+
+ - drivers/bcmxcp.c, drivers/nut_usb.c, drivers/nut_usb.h: (backport from the trunk)
+   Changed to version 0.14. Fix for PW5115 and PW9120 running on usb.
+
 Fri Feb  1 15:22:04 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  - include/common.h: move the config.h include before timehead.h so
