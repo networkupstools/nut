@@ -1,3 +1,13 @@
+Fri Feb  1 23:02:55 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+
+ * HAL support: [Alioth Bug #304156]
+   - m4/nut_check_libhal: detect addon and .fdi install paths,
+   - drivers/Makefile.am: modified to install the hald-addon-* in the
+     right directory,
+   - scripts/hal/Makefile.am: created to install the .fdi file in the
+     right directory,
+   - scripts/hal/20-ups-nut-device.fdi: renamed to ups-nut-device.fdi.
+
 Fri Feb  1 19:46:34 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  * man/nutupsdrv.8:

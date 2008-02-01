@@ -27,13 +27,13 @@ if test -z "${nut_have_libhal_seen}"; then
    
    dnl also get cflags from glib-2.0 to workaround a bug in dbus-glib
    AC_MSG_CHECKING(for libhal cflags via pkg-config)
-	CFLAGS=`pkg-config --silence-errors --cflags hal dbus-glib-1`
+     CFLAGS=`pkg-config --silence-errors --cflags hal dbus-glib-1`
    if (test "$?" != "0")
    then
-	AC_MSG_RESULT(not found)
-	nut_have_libhal=no
+     AC_MSG_RESULT(not found)
+     nut_have_libhal=no
    else
-	AC_MSG_RESULT(${CFLAGS})
+     AC_MSG_RESULT(${CFLAGS})
    fi
 
    dnl also get libs from glib-2.0 to workaround a bug in dbus-glib
@@ -59,12 +59,39 @@ if test -z "${nut_have_libhal_seen}"; then
    fi
    AC_DEFINE_UNQUOTED(HAL_USER, "${HAL_USER}", [HAL user])
 
-   dnl A request has been made to get variables for:
-   dnl - addon install path
-   dnl - fdi install path
+   dnl Determine installation paths for callout and .fdi
+   dnl As per HAL spec, §5 Callouts and §2 Device Information Files
+   dnl - addon install path: $libdir/hal
+   AC_MSG_CHECKING(for libhal Callouts path)
+   if (test -d "/usr/lib/hal")
+   then
+     # For Debian
+     HAL_CALLOUTS_PATH="/usr/lib/hal"
+	   AC_MSG_RESULT(${HAL_CALLOUTS_PATH})
+   else # For RedHat
+     if (test -d "/usr/libexec")
+     then
+       HAL_CALLOUTS_PATH="/usr/libexec"
+       AC_MSG_RESULT(${HAL_CALLOUTS_PATH})
+     else
+       # FIXME
+       HAL_CALLOUTS_PATH=""
+	     AC_MSG_RESULT(not found)
+     fi
+   fi
 
-   dnl if this didn't work, try some standard places. For example,
-   dnl HAL 0.5.8 and 0.5.8.1 contain pkg-config bugs.
+   dnl - fdi install path: $datadir/hal/fdi/information/20thirdparty
+   AC_MSG_CHECKING(for libhal Device Information path)
+   if (test -d "/usr/share/hal/fdi/information/20thirdparty")
+   then
+     # seems supported everywhere
+     HAL_FDI_PATH="/usr/share/hal/fdi/information/20thirdparty"
+	   AC_MSG_RESULT(${HAL_FDI_PATH})
+   else
+     # FIXME
+     HAL_FDI_PATH=""
+	   AC_MSG_RESULT(not found)
+   fi
 
    if test "${nut_have_libhal}" != "yes"; then
       dnl try again
@@ -75,8 +102,8 @@ if test -z "${nut_have_libhal_seen}"; then
       
       AC_CHECK_HEADER(libhal.h, , [nut_have_libhal=no])
       AC_CHECK_LIB(hal, libhal_device_new_changeset, [nut_have_libhal=yes], 
-	[nut_have_libhal=no], 
-	${LDFLAGS})
+      [nut_have_libhal=no], 
+      ${LDFLAGS})
    fi
 
    if test "${nut_have_libhal}" = "yes"; then

@@ -24,7 +24,8 @@ SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb megatec_usb
 USB_HIDDEV_DRIVERLIST = energizerups
 USB_DRIVERLIST = $(USB_LIBUSB_DRIVERLIST) $(USB_HIDDEV_DRIVERLIST)
-HAL_DRIVERLIST = hald-addon-usbhid-ups hald-addon-bcmxcp_usb hald-addon-tripplite_usb hald-addon-megatec_usb
+HAL_DRIVERLIST = hald-addon-usbhid-ups hald-addon-bcmxcp_usb \
+ hald-addon-tripplite_usb hald-addon-megatec_usb
 MGEXML_DRIVERLIST = mge-xml
 
 # distribute all drivers, even ones that are not built by default
@@ -50,7 +51,8 @@ if HAVE_HIDDEV
 endif
 endif
 if WITH_HAL
-   driverexec_PROGRAMS += $(HAL_DRIVERLIST)
+   halexecdir = $(HAL_CALLOUTS_PATH)
+   halexec_PROGRAMS = $(HAL_DRIVERLIST)
 endif
 if WITH_MGEXML
    driverexec_PROGRAMS += $(MGEXML_DRIVERLIST)
