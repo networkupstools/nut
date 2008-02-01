@@ -1,3 +1,9 @@
+Fri Feb  1 19:46:34 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+
+ * man/nutupsdrv.8:
+   - mention that "-a" argument is mandatory when calling the driver directly.
+   - complete the Drivers list
+
 Fri Feb  1 19:27:43 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  - man/dummy-ups.8: remove the reference to direct driver launching and
