@@ -39,9 +39,9 @@
 #include <unistd.h>
 #include <assert.h>
 
+#include "config.h"
 #include "timehead.h"
 #include "attribute.h"
-#include "config.h"
 #include "proto.h"
 
 extern const char *UPS_VERSION;
