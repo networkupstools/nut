@@ -1,4 +1,4 @@
-.TH DUMMY-UPS 8 "Mon Jan 28 2008" "" "Network UPS Tools (NUT)"
+.TH DUMMY-UPS 8 "Fri Feb 01 2008" "" "Network UPS Tools (NUT)"
 .SH NAME
 dummy-ups \- Driver for testing UPS software
 
@@ -16,26 +16,22 @@ can be configured, launched and used as any other real driver.
 .SH ARGUMENTS
 The port specify a definition file name for dummy-ups. This can either
 be an absolute or a relative path name. In the latter case the NUT
-"etc" directory (ie /etc/nut, /usr/local/ups/etc, ...) is prepended.
+sysconfig directory (ie /etc/nut, /usr/local/ups/etc, ...) is prepended.
+
 This file, generally named something.dev, contains a list of all
 valid data and associated values, and has the same format as an upsc
 dump (<varname>: <value>). So you can easilly create definition
-files from existing UPS using "upsc > file.dev".
+files from an existing UPS using "upsc > file.dev".
 
-With no arguments, dummy-ups will assume a port name of "null", and
-will preload the following data:
+You will also need add to at least one entry in \fBups.conf\fR(5) like:
 
 .nf
-	driver.name			= dummy-ups
-	driver.version			= (varies)
-	driver.version.internal	= (varies)
-	ups.mfr				= Dummy Manufacturer
-	ups.model 			= Dummy UPS
-	ups.status			= OL
+[dummy]
+	driver = dummy-ups
+  port = evolution500.dev
 .fi
 
-You can also add an entry in \fBups.conf\fR(5), and run multiple
-instances if needed.
+You can also declare several entries to run multiple instances if needed.
 
 .SH INTERACTION
 
@@ -49,8 +45,11 @@ dummycons which required to work from a terminal to interact.
 
 It is useful for NUT client development, and other testing purpose.
 
+It might also help the NUT Quality Assurance effort in auto testing the
+NUT framework.
+
 .SH BUGS
-Instant commands are not yet supported, and data need value checking
+Instant commands are not yet supported, and data need name / value checking
 enforcement, as well as boundaries or enumeration definition.
 
 .SH AUTHOR

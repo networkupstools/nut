@@ -1,3 +1,8 @@
+Fri Feb  1 19:27:43 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - man/dummy-ups.8: remove the reference to direct driver launching and
+   make some other update. [Alioth Bug #310543]
+   
 Fri Feb  1 15:22:04 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  - include/common.h: move the config.h include before timehead.h so
