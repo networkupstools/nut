@@ -1,5 +1,5 @@
 EXTRA_DIST = README \
-hal/20-ups-nut-device.fdi \
+hal/ups-nut-device.fdi \
 HP-UX/Makefile \
 HP-UX/nut-drvctl \
 HP-UX/nut-drvctl.sh \
