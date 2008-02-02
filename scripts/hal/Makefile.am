@@ -5,6 +5,8 @@ if WITH_HAL
 endif
 
 20-ups-nut-device.fdi: ups-nut-device.fdi
-	cp ups-nut-device.fdi 20-ups-nut-device.fdi
+	cp $< $@
 
 MOSTLYCLEANFILES = 20-ups-nut-device.fdi
+
+EXTRA_DIST = ups-nut-device.fdi
