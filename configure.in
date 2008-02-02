@@ -808,6 +808,7 @@ AC_OUTPUT([
  scripts/hotplug/Makefile
  scripts/hotplug/libhidups
  scripts/udev/Makefile
+ scripts/hal/Makefile
  scripts/udev/nut-usbups.rules
  scripts/Makefile
  server/Makefile

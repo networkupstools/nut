@@ -1,3 +1,8 @@
+Sat Feb  2 02:45:28 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - scripts/hal, etc.: changed so that the fix for Alioth Bug #304156 actually
+   gets processed.
+
 Fri Feb  1 23:02:55 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  * HAL support: [Alioth Bug #304156]
