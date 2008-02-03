@@ -38,7 +38,8 @@ with 'configure \-\-with\-port'.  If you don't change it with configure
 or this value, upsd will listen on port 3493 for this interface.
 
 Multiple LISTEN addresses may be specified.  The default is to bind to
-0.0.0.0 if no LISTEN addresses are specified.
+127.0.0.1 if no LISTEN addresses are specified (and ::1 if IPv6 support is
+compiled in).
 
 .IP
 .nf
