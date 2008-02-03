@@ -1,3 +1,7 @@
+Sun Feb  3 21:43:56 UTC 2008 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - man/megatec.8: updated from the trunk.
+
 Sun Feb  3 21:34:23 UTC 2008 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - data/driver.list: A couple more models supported by megatec.

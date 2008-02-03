@@ -13,10 +13,14 @@ Sistem, Fenton Technologies, Mustek and many others. The NUT compatibility
 table lists all the known supported models. Keep in mind, however, that
 other models not listed there may also be supported but haven't been tested.
 
-On models with both a serial port (RS-232) and an USB port, only
-the serial port is supported.
+On models with both a serial port (RS-232) and an USB port, only the serial
+port is supported. Connecting a computer which does not have a serial
+interface to the UPS serial port using a USB-to-serial converter should
+work, provided the converter is supported by your operating system.
 
 .SH EXTRA ARGUMENTS
+
+This driver supports some extra parameters (see \fBups.conf\fR(5)):
 
 .IP "mfr=\fIstring\fR"
 
@@ -53,9 +57,15 @@ Optional.  Low battery level (%). Overrides the hardware default level.
 
 Optional.  The battery voltage interval (see \fBKNOWN PROBLEMS\fR).
 
+.IP "ignoreoff"
+
+Optional.  This option should be used if \fBupsc\fR(8) shows the UPS status
+as OFF when it's clearly on. This will force the driver to ignore the OFF
+status altogether.
+
 .SH UPS COMMANDS
 
-This driver supports some extra commands (see \fBupscmd\fR(8)):
+This driver supports some instant commands (see \fBupscmd\fR(8)):
 
 .IP beeper.toggle
 Toggle the UPS beeper. (Not available on some hardware.)
@@ -64,7 +74,7 @@ Toggle the UPS beeper. (Not available on some hardware.)
 Turn on the load immediately.
 
 .IP load.off
-Turn off the load immediately.
+Turn off the load immediately (see \fBKNOWN PROBLEMS\fR).
 
 .IP reset.input.minmax
 Reset minimum and maximum input voltage status.
@@ -76,10 +86,11 @@ the last time, restarting one minute afterwards. To cancel the watchdog, run
 the "shutdown.stop" command.
 
 .IP shutdown.return
-Turn off the load and return when power is back.
+Turn off the load and return when power is back. Uses the timers defined by
+\fBondelay\fR and \fBoffdelay\fR.
 
 .IP shutdown.stayoff
-Turn off the load and remain off.
+Turn off the load and remain off (see \fBKNOWN PROBLEMS\fR). Uses the timer defined by \fBoffdelay\fR.
 
 .IP shutdown.stop
 Stop a shutdown in progress.
@@ -99,13 +110,19 @@ The battery charge (%) value is only a best-effort calculation and may be
 incorrect, or non-existant, for some UPS models. In any case, you can always
 resort to finding the voltages at which the battery becomes fully discharged
 and fully charged, and specify them manually using the "battvolts" option.
-If you do this, please notify the author of this driver.
+If you do this, please notify the author of this driver so that information
+can be added to the NUT hardware compatibility list.
 
 Some UPS commands aren't supported by all models. In most cases, the driver
 will send a message to the system log when the user tries to execute an
 unsupported command. Unfortunately, some models don't even provide a way for
 the driver to check for this, so the unsupported commands will silently
 fail.
+
+Both the "load.off" and "shutdown.stayoff" instant commands are meant to
+turn the load off indefinitely. However, some UPS models don't allow this.
+When this is the case, the driver will tell the UPS to turn off the load for
+9999 minutes (about 7 days) and a message will be sent to the system log.
 
 Some models report a bogus value for the beeper status (will always be
 "enabled" or "disabled"). So, the "beeper.toggle" command may appear to have
