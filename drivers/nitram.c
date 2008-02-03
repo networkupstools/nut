@@ -206,7 +206,6 @@ static int setvar(const char *varname, const char *val)
 	if (strcasecmp(varname, "battery.charge.low") == 0)
 	{
 		snprintf(command, sizeof(command), "C4:%s", val);
-		command[sizeof(command)] = 0;
 		if (execute_command(command, &reply) == 1)
 		{
 			dstate_setinfo("battery.charge.low", val);

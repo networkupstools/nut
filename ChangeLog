@@ -1,3 +1,7 @@
+Sun Feb  3 11:27:38 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/nitram.c: Array subscript out of range.
+
 Sun Feb  3 11:21:16 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/libhid.c: Remove unused variable from HIDGetItemData() and
