@@ -1,3 +1,8 @@
+Sun Feb  3 21:34:23 UTC 2008 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - data/driver.list: A couple more models supported by megatec.
+ - data/megatec.c: backport from the trunk.
+
 Sun Feb  3 20:47:24 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/upsdrvctl.c: Pass "-u" flag to the driver also in shutdown

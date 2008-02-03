@@ -180,6 +180,7 @@
 "INELT"		"Monolith 1000LT"	""	"megatec"
 
 "Inform"	"GUARD"	"Line Interactive AP model"	"powercom"
+"Inform"	"Guard S 1500AP" ""	"megatec"
 
 "Infosec"	"iPEL 350"	""	"megatec"
 "Infosec"	"iPEL 500"	""	"megatec"
@@ -421,13 +422,13 @@
 
 "Orvaldi Power Protection"	"various"	"not 400 or 600"	"megatec"
 
-"Powercom"	"SMK-800A"			""	"megatec"
-"Powercom"	"SMK-1500A"			""	"megatec"
-"Powercom"	"SXL-1500A"			""	"megatec"
-"Powercom"	"ULT-1000"			""	"megatec"
+"Powercom"	"SMK"			""	"megatec"
+"Powercom"	"SXL"			""	"megatec"
+"Powercom"	"ULT"			""	"megatec"
 "Powercom"	"Trust 425/625"			""	"powercom"
 "Powercom"	"(various)"			""	"powercom"
 "Powercom"	"Advice Partner/King Pr750"	""	"powercom"
+"Powercom"	"Vanguard 6000"			""	"megatec"
 
 "PowerGuard"	"PG-600"	""	"megatec"
 

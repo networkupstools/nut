@@ -78,6 +78,9 @@
 #define UPS_MODEL_CHARS   10
 #define UPS_VERSION_CHARS 10
 
+/* Below this value we can safely consider a voltage to be zero */
+#define RESIDUAL_VOLTAGE 10.0
+
 
 /* The values returned by the UPS for an "I" query */
 typedef struct {
@@ -131,6 +134,10 @@ static BatteryVolts_t batteries[] = {{ 12.0,  9.0, 16.0,  9.7, 13.7,  0.0 },   /
                                      { 72.0,  1.5,  3.0, 1.74, 2.37, 1.82 },   /* Effekta RM2000MH */
                                      { 96.0,  1.5,  3.0, 1.63, 2.29,  1.8 },   /* Ablerex MS3000RT (LB at 25% charge) */
                                      {  0.0,  0.0,  0.0,  0.0,  0.0,  0.0 }};  /* END OF DATA */
+
+
+/* Workaround for buggy models */
+static char ignore_off = 0;  /* ignore FL_LOAD_OFF if it behaves strangely */
 
 /* Defined in upsdrv_initinfo */
 static float battvolt_empty = -1;  /* unknown */
@@ -397,7 +404,7 @@ static int run_query(QueryValues_t *values)
 	 * temperature reading available.
 	 */
 	values->temp = atof(temperature);
-
+	
 	return 0;
 }
 
@@ -433,6 +440,8 @@ void upsdrv_initinfo(void)
 		}
 	}
 
+	dstate_setinfo("ups.type", status.flags[FL_UPS_TYPE] == '1' ? "standby" : "online");
+
 	/*
 	 * Try to identify the UPS.
 	 */
@@ -454,11 +463,23 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("ups.serial", "%s", getval("serial") ? getval("serial") : "unknown");
 
 	/*
+	 * Workaround for buggy models.
+	 */
+	ignore_off = testvar("ignoreoff");
+
+	if (status.flags[FL_LOAD_OFF] == '1' && status.load > 0.01 && !ignore_off) {
+		ignore_off = 1;
+		upslogx(LOG_INFO, "The UPS reports OFF status but appears to be ON. Parameter \"ignoreoff\" set automatically.");
+	}
+	upsdebugx(2, "Parameter [ignoreoff]: [%s]", (ignore_off ? "true" : "false"));
+
+	/*
 	 * Set battery-related values.
 	 */
 	if (get_firmware_values(&values) >= 0) {
-		dstate_setinfo("output.voltage.nominal", "%.1f", values.volt);
 		dstate_setinfo("battery.voltage.nominal", "%.1f", values.battvolt);
+		dstate_setinfo("input.voltage.nominal", "%.1f", values.volt);
+		dstate_setinfo("input.frequency.nominal", "%.1f", values.freq);
 
 		if (set_battery_params(values.battvolt, status.battvolt) < 0) {
 			upslogx(LOG_NOTICE, "This UPS has an unsupported combination of battery voltage/number of batteries.");
@@ -472,7 +493,7 @@ void upsdrv_initinfo(void)
 			fatalx(EXIT_FAILURE, "Error in \"battvolts\" parameter.");
 		}
 
-	    upslogx(LOG_NOTICE, "Overriding battery voltage interval [%.1fV, %.1fV].", battvolt_empty, battvolt_full);
+		upslogx(LOG_NOTICE, "Overriding battery voltage interval [%.1fV, %.1fV].", battvolt_empty, battvolt_full);
 	}
 
 	if (battvolt_empty < 0 || battvolt_full < 0) {
@@ -560,11 +581,16 @@ void upsdrv_updateinfo(void)
 		upsdebugx(2, "Calculated battery charge: %.1f%%", charge);
 	}
 
+	dstate_setinfo("ups.beeper.status", query.flags[FL_BEEPER_ON] == '1' ? "enabled" : "disabled");
+
 	status_init();
 
-	if (query.flags[FL_LOAD_OFF] == '1') {
-		status_set("OFF");
-	} else if (query.flags[FL_ON_BATT] == '1' || query.flags[FL_BATT_TEST] == '1') {
+	/*
+	 * Some models, when OFF, never change to on-battery status when
+	 * line power is unavailable. To get around this, we also look at
+	 * the input voltage level here.
+	 */
+	if (query.flags[FL_ON_BATT] == '1' || query.ivolt < RESIDUAL_VOLTAGE) {
 		status_set("OB");
 	} else {
 		status_set("OL");
@@ -578,27 +604,8 @@ void upsdrv_updateinfo(void)
 				status_set("BYPASS");
 			}
 		}
-	}
 
-	/*
-	 * If "lowbatt > 0", it becomes a "soft" low battery level
-	 * and the hardware flag "FL_LOW_BATT" is always ignored.
-	 */
-	if ((lowbatt <= 0 && query.flags[FL_LOW_BATT] == '1') ||
-	    (lowbatt > 0 && charge < lowbatt)) {
-		status_set("LB");
-	}
-
-	if (query.flags[FL_FAILED] == '1') {
-		status_set("FAILED");
-	}
-
-	status_commit();
-
-	dstate_setinfo("ups.beeper.status", query.flags[FL_BEEPER_ON] == '1' ? "enabled" : "disabled");
-
-	/* Update minimum and maximum input voltage levels only when on line */
-	if (query.flags[FL_ON_BATT] == '0') {
+		/* Update minimum and maximum input voltage levels too */
 		if (query.ivolt < ivolt_min) {
 			ivolt_min = query.ivolt;
 		}
@@ -610,6 +617,33 @@ void upsdrv_updateinfo(void)
 		dstate_setinfo("input.voltage.minimum", "%.1f", ivolt_min);
 		dstate_setinfo("input.voltage.maximum", "%.1f", ivolt_max);
 	}
+
+	/*
+	 * If "lowbatt > 0", it becomes a "soft" low battery level
+	 * and the hardware flag "FL_LOW_BATT" is always ignored.
+	 */
+	if ((lowbatt <= 0 && query.flags[FL_LOW_BATT] == '1') ||
+	    (lowbatt > 0 && charge < lowbatt)) {
+		status_set("LB");
+	}
+
+	if (query.flags[FL_BATT_TEST] == '1') {
+		status_set("CAL");
+	}
+
+	if (query.flags[FL_LOAD_OFF] == '1' && !ignore_off) {
+		status_set("OFF");
+	}
+
+	alarm_init();
+
+	if (query.flags[FL_FAILED] == '1') {
+		alarm_set("Internal UPS fault!");
+	}
+
+	alarm_commit();
+
+	status_commit();
 
 	dstate_dataok();
 }
@@ -634,15 +668,14 @@ int instcmd(const char *cmdname, const char *extra)
 	/*
 	 * Some commands are always supported by every UPS implementing
 	 * the megatec protocol, but others may or may not be supported.
-	 * For these we must check if the UPS returns something, which
-	 * would mean the command is unsupported.
+	 * Unsupported commands are echoed back without ENDCHAR.
 	 */
 
 	if (strcasecmp(cmdname, "test.battery.start.deep") == 0) {
 		ser_send_pace(upsfd, SEND_PACE, "TL%c", ENDCHAR);
 
-		if (ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0) > 0) {
-			upslogx(LOG_NOTICE, "test.battery.start.deep not supported by UPS.");
+		if (ser_get_line(upsfd, buffer, 2 + 1, '\0', IGNCHARS, READ_TIMEOUT, 0) > 0) {
+			upslogx(LOG_NOTICE, "test.battery.start.deep not supported by UPS hardware.");
 		} else {
 			upslogx(LOG_INFO, "Deep battery test started.");
 		}
@@ -653,8 +686,8 @@ int instcmd(const char *cmdname, const char *extra)
 	if (strcasecmp(cmdname, "test.battery.start") == 0) {
 		ser_send_pace(upsfd, SEND_PACE, "T%c", ENDCHAR);
 
-		if (ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0) > 0) {
-			upslogx(LOG_NOTICE, "test.battery.start not supported by UPS.");
+		if (ser_get_line(upsfd, buffer, 1 + 1, '\0', IGNCHARS, READ_TIMEOUT, 0) > 0) {
+			upslogx(LOG_NOTICE, "test.battery.start not supported by UPS hardware.");
 		} else {
 			upslogx(LOG_INFO, "Battery test started.");
 		}
@@ -665,8 +698,8 @@ int instcmd(const char *cmdname, const char *extra)
 	if (strcasecmp(cmdname, "test.battery.stop") == 0) {
 		ser_send_pace(upsfd, SEND_PACE, "CT%c", ENDCHAR);
 
-		if (ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0) > 0) {
-			upslogx(LOG_NOTICE, "test.battery.stop not supported by UPS.");
+		if (ser_get_line(upsfd, buffer, 2 + 1, '\0', IGNCHARS, READ_TIMEOUT, 0) > 0) {
+			upslogx(LOG_NOTICE, "test.battery.stop not supported by UPS hardware.");
 		} else {
 			upslogx(LOG_INFO, "Battery test stopped.");
 		}
@@ -689,7 +722,12 @@ int instcmd(const char *cmdname, const char *extra)
 		ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
 		watchdog_enabled = 0;
 
-		ser_send_pace(upsfd, SEND_PACE, "S%02dR0000%c", shutdown_delay, ENDCHAR);
+		ser_send_pace(upsfd, SEND_PACE, "S%02d%c", shutdown_delay, ENDCHAR);
+
+		if (ser_get_line(upsfd, buffer, 3 + 1, '\0', IGNCHARS, READ_TIMEOUT, 0) > 0) {
+			ser_send_pace(upsfd, SEND_PACE, "S%02dR9999%c", shutdown_delay, ENDCHAR);
+			upslogx(LOG_NOTICE, "UPS refuses to turn the load off indefinitely. Will turn off for 9999 minutes instead.");
+		}
 
 		upslogx(LOG_INFO, "Shutdown (stayoff) initiated.");
 
@@ -709,7 +747,7 @@ int instcmd(const char *cmdname, const char *extra)
 		ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
 		watchdog_enabled = 0;
 
-		upslogx(LOG_INFO, "Turning load on.");
+		upslogx(LOG_INFO, "Turning the load on.");
 
 		return STAT_INSTCMD_HANDLED;
 	}
@@ -718,9 +756,14 @@ int instcmd(const char *cmdname, const char *extra)
 		ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
 		watchdog_enabled = 0;
 
-		ser_send_pace(upsfd, SEND_PACE, "S00R0000%c", ENDCHAR);
+		ser_send_pace(upsfd, SEND_PACE, "S00%c", ENDCHAR);
 
-		upslogx(LOG_INFO, "Turning load off.");
+		if (ser_get_line(upsfd, buffer, 3 + 1, '\0', IGNCHARS, READ_TIMEOUT, 0) > 0) {
+			ser_send_pace(upsfd, SEND_PACE, "S00R9999%c", ENDCHAR);
+			upslogx(LOG_NOTICE, "UPS refuses to turn the load off indefinitely. Will turn off for 9999 minutes instead.");
+		}
+
+		upslogx(LOG_INFO, "Turning the load off.");
 
 		return STAT_INSTCMD_HANDLED;
 	}
@@ -754,7 +797,11 @@ int instcmd(const char *cmdname, const char *extra)
 	if (strcasecmp(cmdname, "beeper.toggle") == 0) {
 		ser_send_pace(upsfd, SEND_PACE, "Q%c", ENDCHAR);
 
-		upslogx(LOG_INFO, "Toggling UPS beeper.");
+		if (ser_get_line(upsfd, buffer, 1 + 1, '\0', IGNCHARS, READ_TIMEOUT, 0) > 0) {
+			upslogx(LOG_NOTICE, "beeper.toggle not supported by UPS hardware.");
+		} else {
+			upslogx(LOG_INFO, "Toggling UPS beeper.");
+		}
 
 		return STAT_INSTCMD_HANDLED;
 	}
@@ -778,13 +825,14 @@ void upsdrv_help(void)
 
 void upsdrv_makevartable(void)
 {
-	addvar(VAR_VALUE, "mfr", "Manufacturer name");
-	addvar(VAR_VALUE, "model", "Model name");
-	addvar(VAR_VALUE, "serial", "UPS serial number");
-	addvar(VAR_VALUE, "lowbatt", "Low battery level (%)");
-	addvar(VAR_VALUE, "ondelay", "Minimum delay before UPS startup (minutes)");
-	addvar(VAR_VALUE, "offdelay", "Delay before UPS shutdown (minutes)");
+	addvar(VAR_VALUE, "mfr"      , "Manufacturer name");
+	addvar(VAR_VALUE, "model"    , "Model name");
+	addvar(VAR_VALUE, "serial"   , "UPS serial number");
+	addvar(VAR_VALUE, "lowbatt"  , "Low battery level (%)");
+	addvar(VAR_VALUE, "ondelay"  , "Minimum delay before UPS startup (minutes)");
+	addvar(VAR_VALUE, "offdelay" , "Delay before UPS shutdown (minutes)");
 	addvar(VAR_VALUE, "battvolts", "Battery voltages (empty:full)");
+	addvar(VAR_FLAG , "ignoreoff", "Ignore the OFF status reported by the UPS.");
 
 	megatec_subdrv_makevartable();
 }
