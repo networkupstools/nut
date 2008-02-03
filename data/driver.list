@@ -180,6 +180,7 @@
 "INELT"		"Monolith 1000LT"	""	"megatec"
 
 "Inform"	"GUARD"	"Line Interactive AP model"	"powercom"
+"Inform"	"Guard S 1500AP" ""	"megatec"
 
 "Infosec"	"iPEL 350"	""	"megatec"
 "Infosec"	"iPEL 500"	""	"megatec"
@@ -437,6 +438,7 @@
 "Powercom"	"Black Knight PRO"	""	"powercom"
 "Powercom"	"King PRO"			""	"powercom"
 "Powercom"	"Imperial"			""	"powercom"
+"Powercom"	"Vanguard 6000"		""	"megatec"
 
 "PowerGuard"	"PG-600"	""	"megatec"
 
