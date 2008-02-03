@@ -1,3 +1,8 @@
+Sun Feb  3 20:47:24 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/upsdrvctl.c: Pass "-u" flag to the driver also in shutdown
+   mode. Print actual command line when debugging. [Peter Selinger]
+
 Sun Feb  3 15:07:34 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - clients/upsclient.c: Fix memory leak when connection to the server

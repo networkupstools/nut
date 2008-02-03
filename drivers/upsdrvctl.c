@@ -166,6 +166,22 @@ static void waitpid_timeout(const int sig)
 	return;
 }
 
+/* print out a command line at the given debug level. */
+static void debugcmdline(int level, char *msg, char *cmd, char **argv) {
+	char cmdline[200];
+
+	cmdline[0] = 0;
+	strncat(cmdline, msg, 200-strlen(cmdline));
+	strncat(cmdline, cmd, 200-strlen(cmdline));
+	argv++;  /* don't repeat command name */
+	while (*argv) {
+		strncat(cmdline, " ", 200-strlen(cmdline));
+		strncat(cmdline, *argv, 200-strlen(cmdline));
+		argv++;
+	}
+	upsdebugx(level, "%s", cmdline);
+}
+
 static void forkexec(const char *prog, char **argv, const ups_t *ups)
 {
 	int	ret;
@@ -247,8 +263,6 @@ static void start_driver(const ups_t *ups)
 	if (ret < 0)
 		fatal_with_errno(EXIT_FAILURE, "Can't start %s", dfn);
 
-	upsdebugx(2, "exec: %s -a %s", dfn, ups->upsname);
-
 	argv[arg++] = dfn;
 	argv[arg++] = "-a";
 	argv[arg++] = ups->upsname;
@@ -264,11 +278,13 @@ static void start_driver(const ups_t *ups)
 		argv[arg++] = pt_user;
 	}
 
-	if (testmode)
-		return;
-
 	/* tie it off */
 	argv[arg++] = NULL;
+
+	debugcmdline(2, "exec: ", dfn, argv);
+
+	if (testmode)
+		return;
 
 	forkexec(dfn, argv, ups);
 }
@@ -302,16 +318,28 @@ static void shutdown_driver(const ups_t *ups)
 
 	snprintf(dfn, sizeof(dfn), "%s/%s", driverpath, ups->driver);
 
-	upsdebugx(2, "exec: %s -a %s -k", dfn, ups->upsname);
-
-	if (testmode)
-		return;
-
 	argv[arg++] = dfn;
 	argv[arg++] = "-a";
 	argv[arg++] = ups->upsname;
 	argv[arg++] = "-k";
+
+	/* stick on the chroot / user args if given to us */
+	if (pt_root) {
+		argv[arg++] = "-r";
+		argv[arg++] = pt_root;
+	}
+
+	if (pt_user) {
+		argv[arg++] = "-u";
+		argv[arg++] = pt_user;
+	}
+
 	argv[arg++] = NULL;
+
+	debugcmdline(2, "exec: ", dfn, argv);
+
+	if (testmode)
+		return;
 
 	forkexec(dfn, argv, ups);
 }
