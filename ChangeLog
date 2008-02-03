@@ -1,3 +1,8 @@
+Sun Feb  3 15:07:34 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - clients/upsclient.c: Fix memory leak when connection to the server
+   is lost 
+
 Sun Feb  3 11:27:38 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/nitram.c: Array subscript out of range.
