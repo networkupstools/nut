@@ -262,10 +262,7 @@ static const long HIDUnits[NB_HID_UNITS][2]=
  */
 void HIDDumpTree(hid_dev_handle_t udev, usage_tables_t *utab)
 {
-	int		j;
-	char		path[128];
-	double		value;
-	HIDData_t	*pData;
+	int	i;
 
 	/* Do not go further if we already know nothing will be displayed.
 	 * Some reports take a while before they timeout, so if these are
@@ -276,27 +273,20 @@ void HIDDumpTree(hid_dev_handle_t udev, usage_tables_t *utab)
 		return;
 	}
 
-	for (j=0; j<pDesc->nitems; j++)
+	for (i = 0; i < pDesc->nitems; i++)
 	{
-		pData = &pDesc->item[j];
-
-		/* Build the path */
-		path_to_string(path, sizeof(path), &pData->Path, utab);
-
-		/* FIXME: enhance this or fix/change the HID parser (see libhid project) */
-		if (strstr(path, "000000") != NULL) {
-			continue;
-		}
+		double		value;
+		HIDData_t	*pData = &pDesc->item[i];
 
 		/* Get data value */
 		if (HIDGetDataValue(udev, pData, &value, MAX_TS) == 1) {
 			upsdebugx(1, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %f",
-				path, HIDDataType(pData), pData->ReportID, pData->Offset, pData->Size, value);
+				HIDGetDataItem(pData, utab), HIDDataType(pData), pData->ReportID, pData->Offset, pData->Size, value);
 			continue;
 		}
 
 		upsdebugx(1, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i",
-			path, HIDDataType(pData), pData->ReportID, pData->Offset, pData->Size);
+			HIDGetDataItem(pData, utab), HIDDataType(pData), pData->ReportID, pData->Offset, pData->Size);
 	}
 
 	fflush(stdout);
@@ -322,7 +312,7 @@ const char *HIDDataType(const HIDData_t *hiddata)
 /* Returns pointer to the corresponding HIDData_t item
  * or NULL if path is not found in report descriptor
  */
-HIDData_t *HIDGetItemData(hid_dev_handle_t udev, const char *hidpath, usage_tables_t *utab)
+HIDData_t *HIDGetItemData(const char *hidpath, usage_tables_t *utab)
 {
 	int	r;
 	HIDPath_t Path;
@@ -336,7 +326,7 @@ HIDData_t *HIDGetItemData(hid_dev_handle_t udev, const char *hidpath, usage_tabl
 	return FindObject_with_Path(pDesc, &Path, ITEM_FEATURE);
 }
 
-char *HIDGetDataItem(hid_dev_handle_t udev, const HIDData_t *hiddata, usage_tables_t *utab)
+char *HIDGetDataItem(const HIDData_t *hiddata, usage_tables_t *utab)
 {
 	/* TODO: not thread safe! */
 	static char itemPath[128];
@@ -380,7 +370,7 @@ int HIDGetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double *Value, in
  */
 int HIDGetItemValue(hid_dev_handle_t udev, const char *hidpath, double *Value, usage_tables_t *utab)
 {
-	return HIDGetDataValue(udev, HIDGetItemData(udev, hidpath, utab), Value, MAX_TS);
+	return HIDGetDataValue(udev, HIDGetItemData(hidpath, utab), Value, MAX_TS);
 }
 
 /* Return pointer to indexed string (empty if not found)
@@ -399,7 +389,7 @@ char *HIDGetItemString(hid_dev_handle_t udev, const char *hidpath, char *buf, si
 {
 	double	Index;
 
-	if (HIDGetDataValue(udev, HIDGetItemData(udev, hidpath, utab), &Index, MAX_TS) != 1) {
+	if (HIDGetDataValue(udev, HIDGetItemData(hidpath, utab), &Index, MAX_TS) != 1) {
 		buf[0] = '\0';
 		return buf;
 	}
@@ -449,7 +439,7 @@ int HIDSetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double Value)
 
 bool_t HIDSetItemValue(hid_dev_handle_t udev, const char *hidpath, double Value, usage_tables_t *utab)
 {
-	if (HIDSetDataValue(udev, HIDGetItemData(udev, hidpath, utab), Value) != 1)
+	if (HIDSetDataValue(udev, HIDGetItemData(hidpath, utab), Value) != 1)
 		return FALSE;
 
 	return TRUE;
@@ -487,6 +477,11 @@ int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventsize)
 
 		if (pData->ReportID != buf[0])
 			continue;
+
+		/* HID Path ends in 0x00000000, so this value should not be used */
+		if (pData->Path.Node[pData->Path.Size-1] == 0x00000000) {
+			continue;
+		}
 
 		/* maximum number of events reached? */
 		if (itemCount >= eventsize) {

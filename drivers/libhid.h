@@ -105,12 +105,12 @@ bool_t HIDSetItemValue(hid_dev_handle_t udev, const char *hidpath, double value,
 /*
  * GetItemData
  * -------------------------------------------------------------------------- */
-HIDData_t *HIDGetItemData(hid_dev_handle_t udev, const char *hidpath, usage_tables_t *utab);
+HIDData_t *HIDGetItemData(const char *hidpath, usage_tables_t *utab);
 
 /*
  * GetDataItem
  * -------------------------------------------------------------------------- */
-char *HIDGetDataItem(hid_dev_handle_t udev, const HIDData_t *hiddata, usage_tables_t *utab);
+char *HIDGetDataItem(const HIDData_t *hiddata, usage_tables_t *utab);
 
 /*
  * HIDGetDataValue

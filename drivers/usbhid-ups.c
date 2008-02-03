@@ -731,12 +731,17 @@ void upsdrv_updateinfo(void)
 		/* Process pending events (HID notifications on Interrupt pipe) */
 		for (i = 0; i < evtCount; i++) {
 
-			if (HIDGetDataValue(udev, event[i], &value, poll_interval) != 1)
+			/* Many UPSes have broken input reports, so we only use the
+			   corresponding feature reports. By setting the age to zero
+			   for the first value we retrieve, we make sure that the
+			   contents of the report buffer are considered stale and we
+			   poll for fresh data. */
+			if (HIDGetDataValue(udev, event[i], &value, (i > 0) ? poll_interval : 0) != 1)
 				continue;
 
 			if (nut_debug_level >= 2) {
 				upsdebugx(2, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %f",
-					HIDGetDataItem(udev, event[i], subdriver->utab),
+					HIDGetDataItem(event[i], subdriver->utab),
 					HIDDataType(event[i]), event[i]->ReportID,
 					event[i]->Offset, event[i]->Size, value);
 			}
@@ -1174,7 +1179,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 				continue;
 
 			/* Refresh the NUT-to-HID mapping and fetch new data */
-			item->hiddata = HIDGetItemData(udev, item->hidpath, subdriver->utab);
+			item->hiddata = HIDGetItemData(item->hidpath, subdriver->utab);
 			if (item->hiddata != NULL)
 				continue;
 
@@ -1215,7 +1220,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 			}
 
 			/* Create the NUT-to-HID mapping */
-			item->hiddata = HIDGetItemData(udev, item->hidpath, subdriver->utab);
+			item->hiddata = HIDGetItemData(item->hidpath, subdriver->utab);
 			if (item->hiddata == NULL)
 				continue;
 
