@@ -1,3 +1,8 @@
+Sun Feb  3 19:35:01 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - m4/nut_check_libhal.m4: use variable install path to complete the
+   fix for Alioth Bug #304156
+
 Sun Feb  3 17:43:40 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - man/upsd.conf.5: LISTEN directive defaults to 127.0.0.1 now that ACLs have
