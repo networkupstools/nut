@@ -175,7 +175,14 @@ void acl_add(const char *aclname, char *ipblock)
 			fatal_with_errno(EXIT_FAILURE, "Invalid CIDR type block: Must be > 0 && < 32");
 		}
 
-		tmp->mask = htonl(0xffffffff << (32 - tmp->mask));
+		if (tmp->mask != 32)
+		{
+			tmp->mask = htonl((uint32_t)((1 << tmp->mask) - 1) << (32 - tmp->mask));
+		}
+		else
+		{
+			tmp->mask = 0xffffffff;	/* avoid overflow from 2^32 */
+		}
 	}
 	else
 	{
@@ -201,7 +208,14 @@ void acl_add(const char *aclname, char *ipblock)
 				fatal_with_errno(EXIT_FAILURE, "Invalid CIDR type block: Must be > 0 && < 32");
 			}
 
-			tmp->mask = htonl(0xffffffff << (32 - tmp->mask));
+			if (tmp->mask != 32)
+			{
+				tmp->mask = htonl((uint32_t)((1 << tmp->mask) - 1) << (32 - tmp->mask));
+			}
+			else
+			{
+				tmp->mask = 0xffffffff;	/* avoid overflow from 2^32 */
+			}
 		}
 		else
 		{

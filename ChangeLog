@@ -1,3 +1,9 @@
+Sun Feb  3 10:36:36 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - server/access.c: On x86 it is only valid to do a left shift operation
+   for 0-31 bits, so the ACL 0.0.0.0/0 was broken. Reverted to the old
+   method of calculating the CIDR bitmask. [Thomas Jarosch]
+
 Fri Feb  1 22:04:30 UTC 2008 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
  - drivers/bcmxcp.c, drivers/nut_usb.c, drivers/nut_usb.h: (backport from the trunk)
