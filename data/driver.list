@@ -394,6 +394,7 @@
 
 "Nitram"	"Elite 500"	""	"genericups upstype=8"
 "Nitram"	"Elite 2002"	""	"genericups upstype=16"
+"Nitram"	"Elite 2005"	""	"powerpanel or nitram or cpsups"
 
 "Oneac"	"ON400"	"advanced interface"	"oneac"
 "Oneac"	"ON600"	"advanced interface"	"oneac"

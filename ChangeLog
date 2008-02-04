@@ -1,3 +1,8 @@
+Mon Feb  4 08:33:02 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - data/driver.list: list Nitram Elite 2005 with "powerpanel or nitram or
+   cpsups" (backport from trunk and reported by Pierre-Louis Bonicoli)
+
 Sun Feb  3 21:43:56 UTC 2008 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - man/megatec.8: updated from the trunk.
