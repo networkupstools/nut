@@ -1,6 +1,6 @@
 
 if WITH_HAL
- halfdidir = $(HAL_FDI_PATH)/
+ halfdidir = $(HAL_FDI_PATH)
  halfdi_DATA = 20-ups-nut-device.fdi
 endif
 

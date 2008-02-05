@@ -1,6 +1,10 @@
+Tue Feb  5 09:15:56 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - finally fix the HAL support installation [Alioth Bug #304156]
+
 Sun Feb  3 21:10:11 UTC 2008 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
-  - data/driver.list: a couple more models supported by megatec.
+ - data/driver.list: a couple more models supported by megatec.
 
 Sun Feb  3 19:35:01 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
