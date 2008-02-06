@@ -1,3 +1,7 @@
+Wed Feb  6 21:07:54 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/Makefile.am: fix typo in previous commit.
+
 Wed Feb  6 20:24:07 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/powerpanel: break up existing powerpanel driver source,
