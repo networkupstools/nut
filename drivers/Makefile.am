@@ -99,7 +99,7 @@ oneac_SOURCES = oneac.c
 optiups_SOURCES = optiups.c
 powercom_SOURCES = powercom.c
 powercom_LDADD = $(LDADD) -lm
-powerpanel_SOURCES = powerpanel.c
+powerpanel_SOURCES = powerpanel.c powerp-bin.c powerp-txt.c
 rhino_SOURCES = rhino.c
 rhino_LDADD = $(LDADD) -lm
 safenet_SOURCES = safenet.c
@@ -190,7 +190,8 @@ dist_noinst_HEADERS = al175.h apccmib.h apc-hid.h apcsmart.h bcmxcp.h	\
  mge-utalk.h netvisionmib.h usbhid-ups.h nitram.h nut_usb.h		\
  oneac.h optiups.h powercom.h pwmib.h safenet.h serial.h		\
  snmp-ups.h solis.h tripplite.h tripplite-hid.h tripplitesu.h		\
- upscode2.h victronups.h powerpanel.h upshandler.h
+ upscode2.h victronups.h powerpanel.h powerp-bin.c powerp-txt.h		\
+ upshandler.h
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,

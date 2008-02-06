@@ -1,3 +1,9 @@
+Wed Feb  6 20:24:07 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/powerpanel: break up existing powerpanel driver source,
+   so that there is a main driver body and separate source files for
+   the binary and text mode protocols.
+
 Tue Feb  5 09:15:56 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  - finally fix the HAL support installation [Alioth Bug #304156]
