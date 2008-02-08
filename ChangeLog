@@ -1,3 +1,9 @@
+Fri Feb  8 07:08:49 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - common/common.c,include/common.h: cleanup and change the arguments
+   to the upsdebug_hex() function so that it no longer requires casting
+   to an unsigned char.
+
 Wed Feb  6 21:07:54 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/Makefile.am: fix typo in previous commit.

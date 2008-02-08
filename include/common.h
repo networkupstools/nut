@@ -96,7 +96,7 @@ void upsdebug_with_errno(int level, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
 void upsdebugx(int level, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
-void upsdebug_hex(int level, const char *msg, const unsigned char *buf, int len);
+void upsdebug_hex(int level, const char *msg, const void *buf, int len);
 		
 void fatal_with_errno(int status, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3))) __attribute((noreturn));

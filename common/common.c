@@ -369,21 +369,23 @@ void upsdebugx(int level, const char *fmt, ...)
 /* dump message msg and len bytes from buf to upsdebugx(level) in
    hexadecimal. (This function replaces Philippe Marzouk's original
    dump_hex() function) */
-void upsdebug_hex(int level, const char *msg, const unsigned char *buf, int len)
+void upsdebug_hex(int level, const char *msg, const void *buf, int len)
 {
 	char line[100];
-	int n = 0; /* number of characters currently in line */
-	int i = 0; /* number of bytes output from buffer */
+	int n;	/* number of characters currently in line */
+	int i;	/* number of bytes output from buffer */
 
-	n += snprintf(line, 100, "%s: (%d bytes) =>", msg, len);
-	while (i < len) {
-		if (n+3 > 75) {
+	n = snprintf(line, sizeof(line), "%s: (%d bytes) =>", msg, len); 
+
+	for (i = 0; i < len; i++) {
+
+		if (n > 72) {
 			upsdebugx(level, "%s", line);
 			line[0] = 0;
-			n = 0;
 		}
-		n += sprintf(line+n, n ? " %02x" : "%02x", buf[i]);
-		i++;
+
+		n = snprintfcat(line, sizeof(line), n ? " %02x" : "%02x",
+			((unsigned char *)buf)[i]);
 	}
 	upsdebugx(level, "%s", line);
 }
