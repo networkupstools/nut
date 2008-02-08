@@ -66,12 +66,12 @@ if test -z "${nut_have_libhal_seen}"; then
    if (test -d "/usr/lib/hal")
    then
      # For Debian
-     HAL_CALLOUTS_PATH="${prefix}/usr/lib/hal"
+     HAL_CALLOUTS_PATH="${prefix}/lib/hal"
 	   AC_MSG_RESULT(${HAL_CALLOUTS_PATH})
    else # For RedHat
      if (test -d "/usr/libexec")
      then
-       HAL_CALLOUTS_PATH="${prefix}/usr/libexec"
+       HAL_CALLOUTS_PATH="${prefix}/libexec"
        AC_MSG_RESULT(${HAL_CALLOUTS_PATH})
      else
        # FIXME
@@ -85,7 +85,7 @@ if test -z "${nut_have_libhal_seen}"; then
    if (test -d "/usr/share/hal/fdi/information/20thirdparty")
    then
      # seems supported everywhere
-     HAL_FDI_PATH="${prefix}/usr/share/hal/fdi/information/20thirdparty"
+     HAL_FDI_PATH="${prefix}/share/hal/fdi/information/20thirdparty"
 	   AC_MSG_RESULT(${HAL_FDI_PATH})
    else
      # FIXME

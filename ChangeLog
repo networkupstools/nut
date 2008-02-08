@@ -1,3 +1,7 @@
+Fri Feb  8 19:25:30 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - fix HAL support installation again [Alioth Bug #304156]
+
 Fri Feb  8 07:08:49 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - common/common.c,include/common.h: cleanup and change the arguments
