@@ -1,3 +1,8 @@
+Fri Feb  8 19:53:01 UTC 2008 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - drivers/megatec.c: flush buffers before ser_send_*/ser_get_* to avoid a
+   possible loss of synchronization if the buffer happens to have garbage.
+
 Fri Feb  8 19:38:01 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/powerp-bin.c: add conversion functions and variable lists
