@@ -238,6 +238,11 @@ int ser_set_rts(int fd, int state)
 	return 0;
 }
 
+int ser_flush_io(int fd)
+{
+	return 0;
+}
+
 int ser_close(int fd, const char *port)
 {
 	usb->close(udev);

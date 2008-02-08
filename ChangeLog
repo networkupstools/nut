@@ -1,3 +1,9 @@
+Fri Feb  8 19:56:23 UTC 2008 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - drivers/megatec.c: flush buffers before ser_send_*/ser_get_* to avoid a
+   possible loss of synchronization if the buffer happens to have garbage.
+ - drivers/megatec_usb.c: dummy ser_flush_io function to please megatec.
+
 Fri Feb  8 07:08:49 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - common/common.c,include/common.h: cleanup and change the arguments
