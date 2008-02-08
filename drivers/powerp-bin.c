@@ -56,37 +56,68 @@ typedef struct {
 	char	command;
 } valtab_t;
 
+static enum {
+	PR = 0,
+	OP = 1
+} type = PR;
+
 static unsigned char	powpan_answer[SMALLBUF];
 
+/* default */
 static const valtab_t	tran_high[] = {
 	{ "138", -9 }, { "139", -8 }, { "140", -7 }, { "141", -6 }, { "142", -5 },
-	{ "143", -4 }, { "144", -3 }, { "145", -2 }, { "146", -1 }, { "147", 0 },
+	{ "143", -4 }, { "144", -3 }, { "145", -2 }, { "146", -1 }, { "147",  0 },
 	{ NULL, 0 }
 };
 
+/* OP series */
+static const valtab_t	tran_high_op[] = {
+	{ "140", -5 }, { "141", -4 }, { "142", -3 }, { "143", -2 }, { "144", -1 },
+	{ "145",  0 }, { "146", +1 }, { "147", +2 }, { "148", +3 }, { "149", +4 },
+	{ "150", +5 }, { NULL, 0 }
+};
+
+/* default */
 static const valtab_t	tran_low[] = {
-	{ "88", 0 }, { "89", 1 }, { "90", 2 }, { "91", 3 }, { "92", 4 },
-	{ "93", 5 }, { "94", 6 }, { "95", 7 }, { "96", 8 }, { "97", 9 },
+	{ "88",  0 }, { "89", +1 }, { "90", +2 }, { "91", +3 }, { "92", +4 },
+	{ "93", +5 }, { "94", +6 }, { "95", +7 }, { "96", +8 }, { "97", +9 },
 	{ NULL, 0 }
 };
 
+/* OP series */
+static const valtab_t	tran_low_op[] = {
+	{ "85", -5 }, { "86", -4 }, { "87", -3 }, { "88", -2 }, { "89", -1 },
+	{ "90",  0 }, { "91", +1 }, { "92", +2 }, { "93", +3 }, { "94", +4 },
+	{ "95", +5 }, { NULL, 0 }
+};
+
+/* default */
 static const valtab_t	batt_low[] = {
-	{ "25", -6 }, { "30", -5 }, { "35", -3 }, { "40", -1 },
-	{ "45", 0 }, { "50", 2 }, { "55", 4 }, { "60", 6 },
-	{ NULL, 0 }
+	{ "25", -6 }, { "30", -5 }, { "35", -3 }, { "40", -1 }, { "45",  0 },
+	{ "50", +2 }, { "55", +4 }, { "60", +6 }, { NULL, 0 }
 };
 
+/* OP series */
+static const valtab_t	batt_low_op[] = {
+	{ "15", -8 }, { "18", -7 }, { "19", -6 }, { "20", -5 }, { "22", -4 },
+	{ "24", -3 }, { "25", -2 }, { "26", -1 }, { "28",  0 }, { "30", +1 },
+	{ "32", +2 }, { "34", +3 }, { "35", +4 }, { "36", +5 }, { "38", +6 },
+	{ "40", +7 }, { NULL, 0 }
+};
+
+/* default */
 static const valtab_t	out_volt[] = {
-	{ "110", -10 }, { "120", 0 }, { "130", 10 },
-	{ NULL, 0 }
+	{ "110", -10 }, { "120",  0 }, { "130", +10 }, { NULL, 0 }
+};
+
+/* OP series */
+static const valtab_t	out_volt_op[] = {
+	{ "110", -10 }, { "115", -5 }, { "120",  0 }, { "124", +4 }, { "128", +8 },
+	{ "130", +10 }, { NULL, 0 }
 };
 
 static const valtab_t 	yes_no_info[] = {
 	{ "yes", 2 }, { "no", 0 },
-	{ NULL, 0 }
-};
-
-static const valtab_t	null_val[] = {
 	{ NULL, 0 }
 };
 
@@ -95,16 +126,23 @@ static const struct {
 	char	*get;
 	char	*set;
 	const valtab_t	*map;
-} vartab[] = {
-	{ "input.transfer.high", "R\002\r", "Q\002%c\r", tran_high },
-	{ "input.transfer.low", "R\004\r", "Q\004%c\r", tran_low },
-	{ "battery.charge.low", "R\010\r", "Q\010%c\r", batt_low },
-	{ "output.voltage.nominal", "R\030\r", "Q\030%c\r", out_volt },
-	{ "ups.start.battery", "R\017\r", "Q\017%c\r", yes_no_info },
-	{ "unknown.variable.0x3d", "R\075\r", "Q\075%c\r", null_val },
-	{ "unknown.variable.0x29", "R\051\r", "Q\051%c\r", null_val },
-	{ "unknown.variable.0x2b", "R\053\r", "Q\053%c\r", null_val },
-	{ NULL, NULL, NULL, NULL }
+} vartab[][6] = {
+	{
+		/* default */
+		{ "input.transfer.high", "R\002\r", "Q\002%c\r", tran_high },
+		{ "input.transfer.low", "R\004\r", "Q\004%c\r", tran_low },
+		{ "battery.charge.low", "R\010\r", "Q\010%c\r", batt_low },
+		{ "output.voltage.nominal", "R\030\r", "Q\030%c\r", out_volt },
+		{ "ups.start.battery", "R\017\r", "Q\017%c\r", yes_no_info },
+		{ NULL, NULL, NULL, NULL }
+	}, {
+		/* OP series */
+		{ "input.transfer.high", "R\002\r", "Q\002%c\r", tran_high_op },
+		{ "input.transfer.low", "R\004\r", "Q\004%c\r", tran_low_op },
+		{ "battery.charge.low", "R\010\r", "Q\010%c\r", batt_low_op },
+		{ "output.voltage.nominal", "R\030\r", "Q\030%c\r", out_volt_op },
+		{ NULL, NULL, NULL, NULL }
+	}	
 };
 
 static const struct {
@@ -124,13 +162,131 @@ static const struct {
 	{ NULL, NULL, 0 }
 };
 
+/* adjust bizarre UPS data to observed voltage data */
+static int op_volt(unsigned char in)
+{
+	const struct {
+		int	end;
+		int	adjust;
+	} volttab[] = {
+		{  36,  +3 }, {  51,  +4 }, {  55,  +5 }, {  60,  +4 }, {  65,  +3 },
+		{  70,  +2 }, {  75,  +1 }, {  80,   0 }, {  85,  -1 }, {  91,  -2 },
+		{  98,  -3 }, { 103,  -4 }, { 108,  -5 }, { 113,  -6 }, { 118,  -7 },
+		{ 123,  -8 }, { 128,  -9 }, { 133, -10 }, { 138, -11 }, { 143, -12 },
+		{ 148, -13 }, { 153, -14 }, { 158, -15 }, { 163, -16 }, { 168, -17 },
+		{ 173, -18 }, { 178, -19 }, { 183, -20 }, { 188, -21 }, { 193, -22 },
+		{ 198, -23 }, { 203, -24 }, { 208, -25 }, { 213, -26 }, { 218, -27 },
+		{ 223, -28 }, { 228, -29 }, { 233, -30 }, { 238, -31 }, { 243, -32 },
+		{ 248, -33 }, { 253, -34 }, { 255, -35 }
+	};
+
+	int i;
+
+	if (in < 27) {
+		return 0;
+	}
+
+	for (i = 0; i < 43; i++) {
+		if (in <= volttab[i].end) {
+			return (in + volttab[i].adjust);
+		}
+	}
+
+	return 0;
+} 
+
+/* map UPS data to charge percentage */
+static int op_chrg(unsigned char in)
+{
+	/* these may only be valid for a load of 0 */
+	const int	chrgtab[] = {
+		  0,   1,   1,   2,   3,   4,   6,   8,  10,  12,
+		 15,  18,  22,  26,  30,  35,  40,  46,  52,  58,
+		 66,  73,  81,  88,  99, 100
+	};
+
+	if (in > 185) {
+		return 100;
+	}
+
+	if (in < 160) {
+		return 0;
+	}
+
+	return (chrgtab[in - 160]);
+} 
+
+/* more wacky mapping - get the picture yet? */ 
+static float op_temp(unsigned char in)
+{
+	const struct {
+		int st;
+		int end;
+		int sz;
+		int base;
+	} temptab[] = {
+		{   0,  39, 5,  0 }, {  40,  43, 4,  8 }, {  44,  78, 5,  9 }, {  79,  82, 4, 16 },
+		{  83, 117, 5, 17 }, { 118, 121, 4, 24 }, { 122, 133, 3, 25 }, { 134, 135, 2, 29 },
+		{ 136, 143, 4, 30 }, { 144, 146, 3, 32 }, { 147, 150, 4, 33 }, { 151, 156, 3, 34 },
+		{ 157, 164, 2, 36 }, { 165, 170, 3, 40 }, { 171, 172, 2, 42 }, { 173, 175, 3, 43 },
+		{ 176, 183, 2, 44 }, { 184, 184, 1, 48 }, { 185, 188, 2, 49 }, { 189, 190, 2, 51 },
+		{ 191, 191, 1, 52 }, { 192, 193, 2, 53 }, { 194, 194, 1, 54 }, { 195, 196, 2, 55 },
+		{ 197, 197, 1, 56 }, { 198, 199, 2, 57 }, { 200, 200, 1, 58 }, { 201, 202, 2, 59 },
+		{ 203, 203, 1, 60 }, { 204, 205, 2, 61 }, { 206, 206, 1, 62 }, { 207, 208, 2, 63 },
+		{ 209, 209, 1, 64 }, { 210, 211, 2, 65 }, { 212, 212, 1, 66 }, { 213, 213, 1, 67 },
+		{ 214, 214, 1, 68 }, { 215, 215, 1, 69 }, { 216, 255, 40, 70 }, { 0, 0, 0, 0 }
+	}; 
+
+	int i, j, found = -1, count;
+
+	for (i = 0; temptab[i].sz != 0; i++) {
+		if ((temptab[i].st <= in) && (temptab[i].end >= in)) {
+			found = i;
+		}
+	}
+
+	if (found == -1) {
+		upslogx(LOG_ERR, "tempconvert: unhandled value %d", in);
+		return 0;
+	}
+
+	count = temptab[found].end - temptab[found].st + 1;
+
+	for (i = 0; i < count; i++) {
+		j = temptab[found].st + (i * temptab[found].sz);
+
+		if ((in - j) < temptab[found].sz) {
+			return ((float)((in - j) / temptab[found].sz) + temptab[found].base + i);
+		}
+	}
+
+	upslogx(LOG_ERR, "tempconvert: fell through with %d", in);
+	return 0;
+} 
+
+/* map UPS data to frequency */
+static float op_freq(unsigned char in)
+{
+	const float	freqtab[] = {
+		63.0, 62.7, 62.4, 62.1, 61.8, 61.4, 61.1, 60.8, 60.5, 60.2,
+		60.0, 59.7, 59.4, 59.1, 58.8, 58.5, 58.3, 58.0, 57.7, 57.4,
+		57.2, 57.0
+	};
+
+	if ((in < 168) || (in > 189)) {
+		return 0;
+	} 
+
+	return freqtab[in - 168];
+}
+
 static int powpan_command(const char *buf, size_t bufsize)
 {
 	int	ret;
 
 	ser_flush_io(upsfd);
 
-	upsdebug_hex(3, "send", (unsigned char *)buf, bufsize);
+	upsdebug_hex(3, "send", buf, bufsize);
 
 	ret = ser_send_buf_pace(upsfd, UPSDELAY, (unsigned char *)buf, bufsize);
 
@@ -180,9 +336,9 @@ static int powpan_setvar(const char *varname, const char *val)
 	char	command[SMALLBUF];
 	int 	i, j;
 
-	for (i = 0;  vartab[i].var != NULL; i++) {
+	for (i = 0;  vartab[type][i].var != NULL; i++) {
 
-		if (strcasecmp(varname, vartab[i].var)) {
+		if (strcasecmp(varname, vartab[type][i].var)) {
 			continue;
 		}
 
@@ -191,14 +347,14 @@ static int powpan_setvar(const char *varname, const char *val)
 			return STAT_SET_HANDLED;
 		}
 
-		for (j = 0; vartab[i].map[j].val != NULL; j++) {
+		for (j = 0; vartab[type][i].map[j].val != NULL; j++) {
 
-			if (strcasecmp(val, vartab[i].map[j].val)) {
+			if (strcasecmp(val, vartab[type][i].map[j].val)) {
 				continue;
 			}
 
-			snprintf(command, sizeof(command), vartab[i].set,
-				vartab[i].map[j].command);
+			snprintf(command, sizeof(command), vartab[type][i].set,
+				vartab[type][i].map[j].command);
 
 			if ((powpan_command(command, 4) == 3) && (!memcmp(powpan_answer, command, 3))) {
 				dstate_setinfo(varname, val);
@@ -243,32 +399,32 @@ static void powpan_initinfo()
 		dstate_addcmd(cmdtab[i].cmd);
 	}
 
-	for (i = 0; vartab[i].var != NULL; i++) {
+	for (i = 0; vartab[type][i].var != NULL; i++) {
 		
-		if (powpan_command(vartab[i].get, 3) < 2) {
+		if (powpan_command(vartab[type][i].get, 3) < 2) {
 			continue;
 		}
 
-		for (j = 0; vartab[i].map[j].val != NULL; j++) {
+		for (j = 0; vartab[type][i].map[j].val != NULL; j++) {
 
-			if (vartab[i].map[j].command != powpan_answer[1]) {
+			if (vartab[type][i].map[j].command != powpan_answer[1]) {
 				continue;
 			}
 
-			dstate_setinfo(vartab[i].var, vartab[i].map[j].val);
+			dstate_setinfo(vartab[type][i].var, vartab[type][i].map[j].val);
 			break;
 		}
 	
-		if (dstate_getinfo(vartab[i].var) == NULL) {
+		if (dstate_getinfo(vartab[type][i].var) == NULL) {
 			upslogx(LOG_WARNING, "warning: [%d] unknown value for [%s]!",
-				powpan_answer[1], vartab[i].var);
+				powpan_answer[1], vartab[type][i].var);
 			continue;
 		}
 
-		dstate_setflags(vartab[i].var, ST_FLAG_RW);
+		dstate_setflags(vartab[type][i].var, ST_FLAG_RW);
 
-		for (j = 0; vartab[i].map[j].val != 0; j++) {
-			dstate_addenum(vartab[i].var, vartab[i].map[j].val);
+		for (j = 0; vartab[type][i].map[j].val != 0; j++) {
+			dstate_addenum(vartab[type][i].var, vartab[type][i].map[j].val);
 		}
 	}
 
@@ -287,7 +443,7 @@ static int powpan_status(status_t *status)
 	 * READ #VVL.CTF.....\r
         *      01234567890123
 	 */
-	upsdebug_hex(3, "send", (unsigned char *)"D\r", 2);
+	upsdebug_hex(3, "send", "D\r", 2);
 
 	ret = ser_send_pace(upsfd, UPSDELAY, "D\r");
 	if (ret < 2) {
@@ -302,7 +458,7 @@ static int powpan_status(status_t *status)
 		return -1;
 	}
 
-	upsdebug_hex(3, "read", (unsigned char *)status, ret);
+	upsdebug_hex(3, "read", status, ret);
 
 	if (ret < (int)sizeof(*status)) {
 		upsdebugx(4, "Short status read");
@@ -332,17 +488,31 @@ static void powpan_updateinfo()
 		return;
 	}
 
-	dstate_setinfo("input.voltage", "%d", status.i_volt);
-	dstate_setinfo("output.voltage", "%d", status.o_volt);
-	dstate_setinfo("ups.load", "%d", status.o_load);
-	dstate_setinfo("battery.charge", "%d", status.b_chrg);
-	dstate_setinfo("ups.temperature", "%d", status.u_temp);
-	/*
-	 * The following is just a wild guess. With a nominal input
-	 * frequency of 60 Hz, the PR2200 shows a value of 150 (decimal).
-	 * No idea what it means though, since we got only one reading.
-	 */
-	dstate_setinfo("input.frequency", "%.1f", (float)status.i_freq / 2.5);
+	switch (type)
+	{
+	case OP:
+		dstate_setinfo("input.voltage", "%d", op_volt(status.i_volt));
+		dstate_setinfo("output.voltage", "%d", op_volt(status.o_volt));
+		dstate_setinfo("ups.load", "%d", status.o_load * 2);
+		dstate_setinfo("battery.charge", "%d", op_chrg(status.b_chrg));
+		dstate_setinfo("ups.temperature", "%.1f", op_temp(status.u_temp));
+		dstate_setinfo("input.frequency", "%.1f", op_freq(status.i_freq));
+		break;
+
+	default:
+		dstate_setinfo("input.voltage", "%d", status.i_volt);
+		dstate_setinfo("output.voltage", "%d", status.o_volt);
+		dstate_setinfo("ups.load", "%d", status.o_load);
+		dstate_setinfo("battery.charge", "%d", status.b_chrg);
+		dstate_setinfo("ups.temperature", "%d", status.u_temp);
+		/*
+		 * The following is just a wild guess. With a nominal input
+		 * frequency of 60 Hz, the PR2200 shows a value of 150 (decimal).
+		 * No idea what it means though, since we got only one reading.
+		 */
+		dstate_setinfo("input.frequency", "%.1f", (float)status.i_freq / 2.5);
+		break;
+	}
 
 	if (status.flags[0] & 0x01) {
 		dstate_setinfo("ups.beeper.status", "enabled");
@@ -468,6 +638,11 @@ static int powpan_initups()
 		if (powpan_answer[0] != '.') {
 			upsdebugx(2, "Expected start character '.' but got '%c'", (char)powpan_answer[0]);
 			continue;
+		}
+
+		/* See if we need to use the 'old' protocol for the OP series */
+		if (!strncmp((char *)&powpan_answer[1], "OP", 2)) {
+			type = OP;
 		}
 
 		return ret;

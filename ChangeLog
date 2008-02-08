@@ -1,3 +1,8 @@
+Fri Feb  8 19:38:01 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/powerp-bin.c: add conversion functions and variable lists
+   for the CyberPower OP series (autodetected)
+
 Fri Feb  8 19:25:30 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - fix HAL support installation again [Alioth Bug #304156]
