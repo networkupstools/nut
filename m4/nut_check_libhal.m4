@@ -80,12 +80,12 @@ if test -z "${nut_have_libhal_seen}"; then
      fi
    fi
 
-   dnl - fdi install path: $datadir/hal/fdi/information/20thirdparty
+   dnl - fdi install path: $datarootdir/hal/fdi/information/20thirdparty
    AC_MSG_CHECKING(for libhal Device Information path)
    if (test -d "/usr/share/hal/fdi/information/20thirdparty")
    then
      # seems supported everywhere
-     HAL_FDI_PATH="${datadir}/../hal/fdi/information/20thirdparty"
+     HAL_FDI_PATH="${datarootdir}/hal/fdi/information/20thirdparty"
 	   AC_MSG_RESULT(${HAL_FDI_PATH})
    else
      # FIXME
