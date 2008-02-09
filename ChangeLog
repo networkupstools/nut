@@ -1,3 +1,7 @@
+Sat Feb  9 10:50:09 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - fix HAL support installation yet once again [Alioth Bug #304156]
+
 Sat Feb  9 00:21:49 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - packaging/debian/rules: updated for HAL path changes
