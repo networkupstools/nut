@@ -353,7 +353,7 @@ unsigned int ser_send_pace(int fd, unsigned long d_usec, const char *fmt, ...)
 	return ret;
 }
 
-int ser_get_line(int fd, char *buf, size_t buflen, char endchar, const char *ignset, long d_sec, long d_usec)
+int ser_get_line(int fd, void *buf, size_t buflen, char endchar, const char *ignset, long d_sec, long d_usec)
 {
 	int len;
 	char *src, *dst, c;
@@ -361,15 +361,15 @@ int ser_get_line(int fd, char *buf, size_t buflen, char endchar, const char *ign
 	if ((udev == NULL) && (! reconnect_ups()))
 		return -1;
 
-	len = subdriver->get_data(buf, buflen);
+	len = subdriver->get_data((char *)buf, buflen);
 	if (len < 0) {
 		usb_comm_fail(len, "ser_get_line");
 		return len;
 	}
 
-	dst = buf;
+	dst = (char *)buf;
 
-	for (src = buf; src != (buf + len); src++) {
+	for (src = (char *)buf; src != ((char *)buf + len); src++) {
 		c = *src;
 
 		if (c == endchar)
@@ -382,10 +382,10 @@ int ser_get_line(int fd, char *buf, size_t buflen, char endchar, const char *ign
 	}
 
 	/* terminate string if we have space */
-	if (dst != (buf + len))
+	if (dst != ((char *)buf + len))
 		*dst = 0;
 
-	return (dst - buf);
+	return (dst - (char *)buf);
 }
 
 /************** minidrivers go after this point **************************/

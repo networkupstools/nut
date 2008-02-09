@@ -294,20 +294,20 @@ unsigned int ser_send(int fd, const char *fmt, ...)
 }
 
 /* send buflen bytes from buf with no delay */
-int ser_send_buf(int fd, const unsigned char *buf, size_t buflen)
+int ser_send_buf(int fd, const void *buf, size_t buflen)
 {
-	return (write(fd, buf, buflen));
+	return write(fd, buf, buflen);
 }
 
 /* send buflen bytes from buf with d_usec delay after each char */
-int ser_send_buf_pace(int fd, unsigned long d_usec, const unsigned char *buf, 
+int ser_send_buf_pace(int fd, unsigned long d_usec, const void *buf, 
 	size_t buflen)
 {
 	int	ret;
 	unsigned int	i;
 
 	for (i = 0; i < buflen; i++) {
-		ret = ser_send_char(fd, buf[i]);
+		ret = ser_send_char(fd, ((unsigned char *)buf)[i]);
 
 		if (ret != 1)
 			return ret;
@@ -318,7 +318,7 @@ int ser_send_buf_pace(int fd, unsigned long d_usec, const unsigned char *buf,
 	return buflen;
 }
 
-static int get_buf(int fd, unsigned char *buf, size_t buflen, long d_sec, long d_usec)
+static int get_buf(int fd, void *buf, size_t buflen, long d_sec, long d_usec)
 {
 	int	ret;
 	fd_set	rfds;
@@ -350,17 +350,17 @@ static int get_buf(int fd, unsigned char *buf, size_t buflen, long d_sec, long d
 	return ret;
 }
 
-int ser_get_char(int fd, unsigned char *ch, long d_sec, long d_usec)
+int ser_get_char(int fd, void *ch, long d_sec, long d_usec)
 {
 	return get_buf(fd, ch, 1, d_sec, d_usec);
 }
 
 /* keep reading until buflen bytes are received or a timeout occurs */
-int ser_get_buf_len(int fd, unsigned char *buf, size_t buflen, long d_sec, long d_usec)
+int ser_get_buf_len(int fd, void *buf, size_t buflen, long d_sec, long d_usec)
 {
-	int	       i, ret;
-	unsigned char  tmp[64];
-	size_t	       count = 0, tmplen;
+	int	i, ret;
+	char	tmp[64];
+	size_t	count = 0, tmplen;
 
 	memset(buf, '\0', buflen);
 
@@ -377,10 +377,10 @@ int ser_get_buf_len(int fd, unsigned char *buf, size_t buflen, long d_sec, long 
 			return -1;
 
 		for (i = 0; i < ret; i++) {
-			if (count == buflen) 
+			if (count == buflen)
 				return count;
 
-			buf[count++] = tmp[i];
+			((char *)buf)[count++] = tmp[i];
 		}
 
 		/* make sure we don't read too much next time */
@@ -396,7 +396,7 @@ int ser_get_buf_len(int fd, unsigned char *buf, size_t buflen, long d_sec, long 
 
 /* reads a line up to <endchar>, discarding anything else that may follow,
    with callouts to the handler if anything matches the alertset */
-int ser_get_line_alert(int fd, char *buf, size_t buflen, char endchar,
+int ser_get_line_alert(int fd, void *buf, size_t buflen, char endchar,
 	const char *ignset, const char *alertset, void handler(char ch), 
 	long d_sec, long d_usec)
 {
@@ -409,7 +409,7 @@ int ser_get_line_alert(int fd, char *buf, size_t buflen, char endchar,
 	maxcount = buflen - 1;		/* for trailing \0 */
 
 	while (count < maxcount) {
-		ret = get_buf(fd, (unsigned char*)tmp, sizeof(tmp), d_sec, d_usec);
+		ret = get_buf(fd, tmp, sizeof(tmp), d_sec, d_usec);
 
 		if (ret < 1)
 			return -1;
@@ -417,7 +417,6 @@ int ser_get_line_alert(int fd, char *buf, size_t buflen, char endchar,
 		for (i = 0; i < ret; i++) {
 
 			if ((count == maxcount) || (tmp[i] == endchar)) {
-				buf[count] = '\0';
 				return count;
 			}
 
@@ -431,17 +430,15 @@ int ser_get_line_alert(int fd, char *buf, size_t buflen, char endchar,
 				continue;
 			}
 
-			buf[count++] = tmp[i];
+			((char *)buf)[count++] = tmp[i];
 		}
 	}
-
-	buf[count] = '\0';
 
 	return count;
 }
 
 /* as above, only with no alertset handling (just a wrapper) */
-int ser_get_line(int fd, char *buf, size_t buflen, char endchar,
+int ser_get_line(int fd, void *buf, size_t buflen, char endchar,
 	const char *ignset, long d_sec, long d_usec)
 {
 	return ser_get_line_alert(fd, buf, buflen, endchar, ignset, "", NULL,
@@ -453,7 +450,7 @@ int ser_flush_in(int fd, const char *ignset, int verbose)
 	int	ret, extra = 0;
 	char	ch;
 
-	while ((ret = ser_get_char(fd, (unsigned char*)&ch, 0, 0)) > 0) {
+	while ((ret = ser_get_char(fd, &ch, 0, 0)) > 0) {
 
 		if (strchr(ignset, ch))
 			continue;

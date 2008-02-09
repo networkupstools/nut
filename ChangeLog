@@ -1,3 +1,12 @@
+Sat Feb  9 19:44:41 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/serial.[ch]: pass the buffer argument as (void *) pointer,
+   rather than as a (char *) or (unsigned char *) where possible, to
+   shut up compiler warnings about mismatches in signedness and to
+   allow passing other variable types too without typecasting
+ - drivers/megatec_usb.c: adapt the ser_get_line() function to the
+   above
+
 Sat Feb  9 11:40:50 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - no comment (it has to do with the HAL support once more)
