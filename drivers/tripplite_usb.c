@@ -25,7 +25,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define DRV_VERSION "0.17"
+#define DRV_VERSION "0.18"
 
 /* % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
  *
@@ -240,13 +240,18 @@ For more information on regular expressions, see regex(7)
 This variable is the same as the C<offdelay> setting, but it can be changed at
 runtime by upsrw(8).
 
+=item ups.id
+
+Some SMARTPRO models feature an ID that can be set and retrieved. If your UPS
+supports this feature, this variable will be listed in the output of upsrw(8).
+
 =item outlet.1.switch
 
 Some Tripp Lite units have a switchable outlet (usually outlet #1) which can be
 turned on and off by writing C<1> or C<0>, respectively, to C<outlet.1.switch>.
 If your unit has multiple switchable outlets, substitute the outlet number for
 "1" in the variable name. Be sure to test this first - there is no other way to
-be certain that the number matches the label on the unit.
+be certain that the number used by the driver matches the label on the unit.
 
 =back
 
@@ -845,8 +850,8 @@ static int setvar(const char *varname, const char *val)
 		J_msg[2] = new_unit_id & 0xff;
                 ret = send_cmd(J_msg, sizeof(J_msg), buf, sizeof(buf));
 
-		if(ret != sizeof(J_msg)) {
-			upslogx(LOG_NOTICE, "Could not set Unit ID.");
+		if(ret <= 0) {
+			upslogx(LOG_NOTICE, "Could not set Unit ID (return code: %d).", ret);
 			return STAT_SET_UNKNOWN;
 		}
 
@@ -1060,6 +1065,8 @@ void upsdrv_initinfo(void)
 
 	if(unit_id >= 0) {
 		dstate_setinfo("ups.id", "%d", unit_id);
+		dstate_setflags("ups.id", ST_FLAG_RW | ST_FLAG_STRING);
+		dstate_setaux("ups.id", 5);
 		upslogx(LOG_DEBUG,"Unit ID: %d", unit_id);
 	}
 

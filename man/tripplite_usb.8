@@ -129,7 +129,7 @@
 .\" ========================================================================
 .\"
 .IX Title "TRIPPLITE_USB 8"
-.TH TRIPPLITE_USB 8 "2008-01-28" "$Rev$" "Network UPS Tools (NUT)"
+.TH TRIPPLITE_USB 8 "2008-02-08" "$Rev$" "Network UPS Tools (NUT)"
 .SH "NAME"
 tripplite_usb \- Driver for older Tripp Lite USB UPSes (non\-PDC HID)
 .SH "NOTE"
@@ -216,13 +216,17 @@ For more information on regular expressions, see \fIregex\fR\|(7)
 .IX Item "ups.delay.shutdown"
 This variable is the same as the \f(CW\*(C`offdelay\*(C'\fR setting, but it can be changed at
 runtime by \fIupsrw\fR\|(8).
+.IP "ups.id" 4
+.IX Item "ups.id"
+Some \s-1SMARTPRO\s0 models feature an \s-1ID\s0 that can be set and retrieved. If your \s-1UPS\s0
+supports this feature, this variable will be listed in the output of \fIupsrw\fR\|(8).
 .IP "outlet.1.switch" 4
 .IX Item "outlet.1.switch"
 Some Tripp Lite units have a switchable outlet (usually outlet #1) which can be
 turned on and off by writing \f(CW1\fR or \f(CW0\fR, respectively, to \f(CW\*(C`outlet.1.switch\*(C'\fR.
 If your unit has multiple switchable outlets, substitute the outlet number for
 \&\*(L"1\*(R" in the variable name. Be sure to test this first \- there is no other way to
-be certain that the number matches the label on the unit.
+be certain that the number used by the driver matches the label on the unit.
 .SH "KNOWN ISSUES AND BUGS"
 .IX Header "KNOWN ISSUES AND BUGS"
 The driver was not developed with any official documentation from Tripp Lite,

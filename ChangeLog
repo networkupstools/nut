@@ -1,3 +1,7 @@
+Fri Feb  8 23:59:24 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/tripplite_usb.c: enable code to set Unit ID.
+
 Fri Feb  8 19:53:01 UTC 2008 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - drivers/megatec.c: flush buffers before ser_send_*/ser_get_* to avoid a
