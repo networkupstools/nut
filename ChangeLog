@@ -1,3 +1,7 @@
+Sat Feb  9 00:21:49 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - packaging/debian/rules: updated for HAL path changes
+
 Fri Feb  8 23:59:24 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - drivers/tripplite_usb.c: enable code to set Unit ID.
