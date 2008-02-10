@@ -11,9 +11,9 @@ LDADD_DRIVERS_SERIAL = $(LDADD_DRIVERS) $(SERLIBS) serial.o
 # most targets are drivers, so make this the default
 LDADD = $(LDADD_DRIVERS_SERIAL)
 # Avoid per-target CFLAGS, because this will prevent re-use of object
-# files. In any case, CFLAGS are only -I options, so there is no harm...
+# files. In any case, CFLAGS are only -I options, so there is no harm,
+# but only add them if we really use the target.
 AM_CFLAGS = -I$(top_srcdir)/include
-# ...but only add them if we really use the target.
 if WITH_HAL
   AM_CFLAGS += $(LIBHAL_CFLAGS)
 endif
@@ -141,7 +141,10 @@ USBHID_UPS_SUBDRIVERS = apc-hid.c belkin-hid.c cps-hid.c explore-hid.c \
  liebert-hid.c mge-hid.c tripplite-hid.c
 usbhid_ups_SOURCES = usbhid-ups.c libhid.c libusb.c hidparser.c	\
  $(USBHID_UPS_SUBDRIVERS)
-usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBSSL_LDFLAGS)
+usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
+if WITH_SSL
+  usbhid_ups_LDADD += $(LIBSSL_LDFLAGS)
+endif
 
 energizerups_SOURCES = energizerups.c
 energizerups_LDADD = $(LDADD_DRIVERS)

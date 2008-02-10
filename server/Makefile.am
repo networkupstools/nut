@@ -1,14 +1,17 @@
 # Network UPS Tools: server
 
 # Avoid per-target CFLAGS, because this will prevent re-use of object
-# files. In any case, CFLAGS are only -I options, so there is no harm...
+# files. In any case, CFLAGS are only -I options, so there is no harm,
+# but only add them if we really use the target.
 AM_CFLAGS = -I$(top_srcdir)/include
-# ...but only when the target is used
 if WITH_SSL
   AM_CFLAGS += $(LIBSSL_CFLAGS)
 endif
 LDADD = ../common/libcommon.a ../common/state.o ../common/upsconf.o	\
- ../common/parseconf.o $(LIBSSL_LDFLAGS) $(NETLIBS)
+ ../common/parseconf.o $(NETLIBS)
+if WITH_SSL
+   LDADD += $(LIBSSL_LDFLAGS)
+endif
 
 sbin_PROGRAMS = upsd
 EXTRA_PROGRAMS = sockdebug
