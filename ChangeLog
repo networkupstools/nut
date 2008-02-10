@@ -1,3 +1,8 @@
+Sun Feb 10 15:32:27 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - configure.in,(clients|drivers|server)/Makefile.am: only add target
+   specific CFLAGS if the target is enabled [Alioth Bug #310582]
+
 Sat Feb  9 19:44:41 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/serial.[ch]: pass the buffer argument as (void *) pointer,

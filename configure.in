@@ -251,6 +251,9 @@ fi
 if test "${nut_with_ssl}" = "yes"; then
    AC_DEFINE(HAVE_SSL, 1, [Define to enable SSL development code])
 fi
+
+AM_CONDITIONAL(WITH_SSL, test "${nut_with_ssl}" = "yes")
+
 NUT_REPORT_FEATURE([enable SSL development code], [${nut_with_ssl}])
 
 dnl ----------------------------------------------------------------------

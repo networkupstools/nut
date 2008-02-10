@@ -3,8 +3,15 @@
 # by default, link programs in this directory with libcommon.a
 LDADD = ../common/libcommon.a -lupsclient $(NETLIBS) $(LIBSSL_LDFLAGS)
 # Avoid per-target CFLAGS, because this will prevent re-use of object
-# files. In any case, CFLAGS are only -I options, so there is no harm. 
-AM_CFLAGS = -I$(top_srcdir)/include $(LIBSSL_CFLAGS) $(LIBGD_CFLAGS)
+# files. In any case, CFLAGS are only -I options, so there is no harm...
+AM_CFLAGS = -I$(top_srcdir)/include
+# ...but only when the target is used
+if WITH_SSL
+  AM_CFLAGS += $(LIBSSL_CFLAGS)
+endif
+if WITH_CGI
+  AM_CFLAGS += $(LIBGD_CFLAGS)
+endif
 
 bin_PROGRAMS = upsc upslog upsrw upscmd
 dist_bin_SCRIPTS = upssched-cmd

@@ -11,9 +11,23 @@ LDADD_DRIVERS_SERIAL = $(LDADD_DRIVERS) $(SERLIBS) serial.o
 # most targets are drivers, so make this the default
 LDADD = $(LDADD_DRIVERS_SERIAL)
 # Avoid per-target CFLAGS, because this will prevent re-use of object
-# files. In any case, CFLAGS are only -I options, so there is no harm. 
-AM_CFLAGS = -I$(top_srcdir)/include $(LIBHAL_CFLAGS) $(LIBUSB_CFLAGS) \
- $(LIBNETSNMP_CFLAGS) $(LIBSSL_CFLAGS)
+# files. In any case, CFLAGS are only -I options, so there is no harm...
+AM_CFLAGS = -I$(top_srcdir)/include
+# ...but only add them if we really use the target.
+if WITH_HAL
+  AM_CFLAGS += $(LIBHAL_CFLAGS)
+endif
+if WITH_USB
+if HAVE_LIBUSB
+  AM_CFLAGS += $(LIBUSB_CFLAGS)
+endif
+endif
+if WITH_SNMP
+  AM_CFLAGS += $(LIBNETSNMP_CFLAGS)
+endif
+if WITH_SNMP
+  AM_CFLAGS += $(LIBSSL_CFLAGS)
+endif
 
 SERIAL_DRIVERLIST = al175 apcsmart bcmxcp belkin belkinunv bestfcom	\
  bestuferrups bestups cpsups cyberpower dummy-ups etapro everups 	\
