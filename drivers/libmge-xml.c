@@ -833,7 +833,7 @@ char *getHTTP(const char* url, const char* login, const char* password)
 
 	upsdebugx(4, "request %s", request);
 	
-	if( (err = send(tcp_port, request, rqlen, MSG_NOSIGNAL)) > 0)
+	if( (err = send(tcp_port, request, rqlen, 0)) > 0)
 	{
 		int count = tcp_receive(tmpbuf);
 

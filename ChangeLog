@@ -1,3 +1,8 @@
+Tue Feb 12 04:43:11 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/libmge-xml.c: Remove MSG_NOSIGNAL, as it is non-standard, and
+   apparently not necessary in this case.
+
 Sun Feb 10 16:06:59 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - (clients|drivers|server)/Makefile.am: only add target specific
