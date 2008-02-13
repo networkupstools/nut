@@ -1,3 +1,9 @@
+Wed Feb 13 19:38:44 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/genericups.c: output signal overrides must be handled
+   in upsdrv_initups(), since we might go straight to upsdrv_shutdown()
+   afterwards.
+
 Wed Feb 13 02:10:27 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - drivers/bestfcom.c: Patch from Chris Adams to accept output from older

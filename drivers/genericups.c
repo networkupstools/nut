@@ -17,7 +17,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define DRV_VERSION "1.33"
+#define DRV_VERSION "1.34"
 
 #include <sys/ioctl.h>
 
@@ -34,23 +34,29 @@ static void parse_output_signals(const char *value, int *line)
  
 	*line = 0;
  
-	if (strstr(value, "DTR") && !strstr(value, "-DTR"))
+	if (strstr(value, "DTR") && !strstr(value, "-DTR")) {
 		*line |= TIOCM_DTR;
- 
-	if (strstr(value, "RTS") && !strstr(value, "-RTS"))
+ 	}
+
+	if (strstr(value, "RTS") && !strstr(value, "-RTS")) {
 		*line |= TIOCM_RTS;
+	}
  
-	if (strstr(value, "ST"))
+	if (strstr(value, "ST")) {
 		*line |= TIOCM_ST;
+	}
 
-	if (strstr(value, "CTS"))
+	if (strstr(value, "CTS")) {
 		fatalx(EXIT_FAILURE, "Can't override output with CTS (not an output)");
+	}
 
-	if (strstr(value, "DCD"))
+	if (strstr(value, "DCD")) {
 		fatalx(EXIT_FAILURE, "Can't override output with DCD (not an output)");
+	}
 
-	if (strstr(value, "RNG"))
+	if (strstr(value, "RNG")) {
 		fatalx(EXIT_FAILURE, "Can't override output with RNG (not an output)");
+	}
 } 
  
 static void parse_input_signals(const char *value, int *line, int *val)
@@ -60,38 +66,41 @@ static void parse_input_signals(const char *value, int *line, int *val)
 	*line = 0;
 	*val = 0;
  
-	if (strstr(value, "CTS"))
-	{
+	if (strstr(value, "CTS")) {
 		*line |= TIOCM_CTS;
 
-		if (!strstr(value, "-CTS"))
+		if (!strstr(value, "-CTS")) {
 			*val |= TIOCM_CTS;
+		}
  	}
 
-	if (strstr(value, "DCD"))
-	{
+	if (strstr(value, "DCD")) {
 		*line |= TIOCM_CD;
 
-		if (!strstr(value, "-DCD"))
+		if (!strstr(value, "-DCD")) {
 			*val |= TIOCM_CD;
+		}
  	}
 
-	if (strstr(value, "RNG"))
-	{
-		*line |= TIOCM_RNG; 
+	if (strstr(value, "RNG")) {
+		*line |= TIOCM_RNG;
 
-		if (!strstr(value, "-RNG"))
+		if (!strstr(value, "-RNG")) {
 			*val |= TIOCM_RNG;
+		}
 	}
 
-	if (strstr(value, "DTR"))
+	if (strstr(value, "DTR")) {
 		fatalx(EXIT_FAILURE, "Can't override input with DTR (not an input)");
+	}
 
-	if (strstr(value, "RTS"))
+	if (strstr(value, "RTS")) {
 		fatalx(EXIT_FAILURE, "Can't override input with RTS (not an input)");
+	}
 
-	if (strstr(value, "ST"))
+	if (strstr(value, "ST")) {
 		fatalx(EXIT_FAILURE, "Can't override input with ST (not an input)");
+	}
 }
 
 void upsdrv_initinfo(void)
@@ -105,33 +114,21 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("ups.mfr", "%s", ((v = getval("mfr")) != NULL) ? v : upstab[upstype].mfr);
 	dstate_setinfo("ups.model", "%s", ((v = getval("model")) != NULL) ? v : upstab[upstype].model);
 
-	if ((v = getval("serial")) != NULL)
+	if ((v = getval("serial")) != NULL) {
 		dstate_setinfo("ups.serial", "%s", v);
-
-	/* see if the user wants to override the signal definitions */
-
-	if ((v = getval("CP")) != NULL)
-	{
-		parse_output_signals(v, &upstab[upstype].line_norm);
-		upsdebugx(2, "parse_output_signals: CP overriden with %s\n", v);
 	}
 
-	if ((v = getval("OL")) != NULL)
-	{
+	/*
+	 User wants to override the input signal definitions. See also upsdrv_initups().
+	 */
+	if ((v = getval("OL")) != NULL) {
 		parse_input_signals(v, &upstab[upstype].line_ol, &upstab[upstype].val_ol);
 		upsdebugx(2, "parse_input_signals: OL overriden with %s\n", v);
 	}
 
-	if ((v = getval("LB")) != NULL)
-	{
+	if ((v = getval("LB")) != NULL) {
 		parse_input_signals(v, &upstab[upstype].line_bl, &upstab[upstype].val_bl);
- 		upsdebugx(2, "parse_input_signals: LB overriden with %s\n", v);
-	}
-
-	if ((v = getval("SD")) != NULL)
-	{
-		parse_output_signals(v, &upstab[upstype].line_sd);
-		upsdebugx(2, "parse_output_signals: SD overriden with %s\n", v);
+		upsdebugx(2, "parse_input_signals: LB overriden with %s\n", v);
 	}
 }
 
@@ -154,13 +151,15 @@ void upsdrv_updateinfo(void)
 
 	status_init();
 
-	if (bl)
+	if (bl) {
 		status_set("LB");	/* low battery */
+	}
 
-	if (ol)
+	if (ol) {
 		status_set("OL");	/* on line */
-	else
+	} else {
 		status_set("OB");	/* on battery */
+	}
 
 	status_commit();
 
@@ -177,8 +176,9 @@ static void listtypes(void)
 
 	printf("Valid UPS types:\n\n");
 
-	for (i = 0; upstab[i].mfr != NULL; i++)
+	for (i = 0; upstab[i].mfr != NULL; i++) {
 		printf("%i: %s\n", i, upstab[i].desc);
+	}
 }
 
 /* set the flags for this UPS type */
@@ -186,13 +186,14 @@ static void set_ups_type(void)
 {
 	int	i;
 
-	if (!getval("upstype"))
+	if (!getval("upstype")) {
 		fatalx(EXIT_FAILURE, "No upstype set - see help text / man page!");
-	
+	}
+
 	upstype = atoi(getval("upstype"));
 
-	for (i = 0; upstab[i].mfr != NULL; i++)
-	{
+	for (i = 0; upstab[i].mfr != NULL; i++) {
+
 		if (upstype == i) {
 			upslogx(LOG_INFO, "UPS type: %s\n", upstab[i].desc);
 			return;
@@ -209,13 +210,15 @@ void upsdrv_shutdown(void)
 {
 	int	flags, ret;
 
-	if (upstype == -1)
+	if (upstype == -1) {
 		fatalx(EXIT_FAILURE, "No upstype set - see help text / man page!");
+	}
 
 	flags = upstab[upstype].line_sd;
 
-	if (flags == -1)
+	if (flags == -1) {
 		fatalx(EXIT_FAILURE, "No shutdown command defined for this model!");
+	}
 
 	if (flags == TIOCM_ST) {
 
@@ -225,16 +228,18 @@ void upsdrv_shutdown(void)
 
 		ret = tcsendbreak(upsfd, 4901);
 
-		if (ret != 0)
+		if (ret != 0) {
 			fatal_with_errno(EXIT_FAILURE, "tcsendbreak");
+		}
 
 		return;
 	}
 
 	ret = ioctl(upsfd, TIOCMSET, &flags);
 
-	if (ret != 0)
+	if (ret != 0) {
 		fatal_with_errno(EXIT_FAILURE, "ioctl TIOCMSET");
+	}
 
 	if (getval("sdtime")) {
 		int	sdtime;
@@ -278,8 +283,25 @@ void upsdrv_initups(void)
 
 	upsfd = ser_open(device_path);
 
-	if (ioctl(upsfd, TIOCMSET, &upstab[upstype].line_norm))
+	/*
+	 See if the user wants to override the output signal definitions
+	 this must be done here, since we might go to upsdrv_shutdown()
+	 immediately. Input signal definition override is handled in
+	 upsdrv_initinfo()
+	 */
+	if ((v = getval("CP")) != NULL) {
+		parse_output_signals(v, &upstab[upstype].line_norm);
+		upsdebugx(2, "parse_output_signals: CP overriden with %s\n", v);
+	}
+
+	if ((v = getval("SD")) != NULL) {
+		parse_output_signals(v, &upstab[upstype].line_sd);
+		upsdebugx(2, "parse_output_signals: SD overriden with %s\n", v);
+	}
+
+	if (ioctl(upsfd, TIOCMSET, &upstab[upstype].line_norm)) {
 		fatal_with_errno(EXIT_FAILURE, "ioctl TIOCMSET");
+	}
 }
 
 void upsdrv_cleanup(void)
