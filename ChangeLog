@@ -1,3 +1,8 @@
+Wed Feb 13 02:10:27 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/bestfcom.c: Patch from Chris Adams to accept output from older
+   Ferrups models.
+
 Tue Feb 12 04:43:11 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - drivers/libmge-xml.c: Remove MSG_NOSIGNAL, as it is non-standard, and
