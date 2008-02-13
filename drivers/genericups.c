@@ -279,6 +279,8 @@ void upsdrv_makevartable(void)
 
 void upsdrv_initups(void)
 {
+	char	*v;
+
 	set_ups_type();
 
 	upsfd = ser_open(device_path);
