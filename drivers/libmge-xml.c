@@ -71,24 +71,23 @@
 
 /* UPS properties buffer structure: holds upsprop data */
 typedef struct upsprop_s {
-       time_t	ts;						/* timestamp when report was retrieved */
+       time_t	ts;		/* timestamp when report was retrieved */
        ezxml_t xmlUpsProp;	/* XML data */
 } upsprop_t;
 
 upsprop_t *ups_properties = NULL;
 
-#define MAX_TIME		5	/* validity period of upsprop (5 sec) */
+#define MAX_TIME	5	/* validity period of upsprop (5 sec) */
 
 
 /* TCP Network defines, variables and functions */ 
 static int comport = -1;
-#define DEFAULT_PORT 80 /* works on the standard HTTP port */
+#define DEFAULT_PORT 80 	/* works on the standard HTTP port */
 #define ALT_PORT 4679		/* atlernate MGE dedicated HTTP port */
 
 struct sockaddr_in *agent_sock = NULL;
-static int tcp_port = -1;
 
-static int tcp_connect ();
+static int tcp_connect();
 static void tcp_close();
 
 /* To obtain the <PRODUCT_INFO><SUMMARY><XML_SUMMARY_PAGE> tag */
@@ -225,7 +224,7 @@ char * mge_xml_strerror() { return ""; }
  * return TRUE on success, FALSE on failure
  *
  ************************************************************************/
-int xml_synchronise(int upsfd)
+int xml_synchronise()
 {
 	/* Try to get the default root document */
 	if (getHTTP("", "", "") != NULL)
@@ -274,13 +273,13 @@ int get_ups_properties()
 /* On success, fill in the curDevice structure and return the report
  * descriptor length. On failure, return -1.
  * Note: When callback is not NULL, the report descriptor will be
- * passed to this function together with the upsfd and SHUTDevice_t
+ * passed to this function together with the udev and MGEXMLDevice_t
  * information. This callback should return a value > 0 if the device
  * is accepted, or < 1 if not.
  */
 
-int libmge_xml_open(int *upsfd, MGEXMLDevice_t *curDevice, char *device_path,
-	int (*callback)(int upsfd, MGEXMLDevice_t *hd, unsigned char *rdbuf, int rdlen))
+int libmge_xml_open(hid_dev_handle_t *udev, MGEXMLDevice_t *curDevice, char *matcher,
+	int (*callback)(hid_dev_handle_t udev, MGEXMLDevice_t *hd, unsigned char *rdbuf, int rdlen))
 {
 	int res;
 	char *string;
@@ -292,7 +291,7 @@ int libmge_xml_open(int *upsfd, MGEXMLDevice_t *curDevice, char *device_path,
 	/* Initial connection */
 	tcp_connect();
 
-	if (!xml_synchronise(*upsfd))
+	if (!xml_synchronise())
 	{
 		upsdebugx(2, "No communication with UPS");
 		return -1;
@@ -390,7 +389,7 @@ int libmge_xml_open(int *upsfd, MGEXMLDevice_t *curDevice, char *device_path,
 
 	/* No existing REPORT descriptor! */
 
-	res = callback(*upsfd, curDevice, NULL, 0);
+	res = callback(*udev, curDevice, NULL, 0);
 	
 	upsdebugx(2, "Found HID device");
 	fflush(stdout);
@@ -398,25 +397,21 @@ int libmge_xml_open(int *upsfd, MGEXMLDevice_t *curDevice, char *device_path,
 	return 1;
 }
 
-void libmge_xml_close(int upsfd)
+void libmge_xml_close(hid_dev_handle_t udev)
 {
-	if (upsfd < 1) {
-		return;
-	}
+	free (ups_properties);
+	ups_properties = NULL;
 
-	if (ups_properties == NULL)
-		free (ups_properties);
+	free (upsprop_url);
+	upsprop_url = NULL;
 
-	if (upsprop_url == NULL)
-		free (upsprop_url);
-
-	close(upsfd);
+	tcp_close();
 }
 
 /* Fake report retrieval stub
  * XML/HTTP doesn't have the report notion
  */
-int libmge_xml_get_report(int upsfd, int ReportId,
+int libmge_xml_get_report(hid_dev_handle_t udev, int ReportId,
 		       unsigned char *raw_buf, int ReportSize )
 {
 	return 0; /* sufficient? */
@@ -425,7 +420,7 @@ int libmge_xml_get_report(int upsfd, int ReportId,
 /* Fake report setting stub
  * XML/HTTP doesn't have the report notion
  */
-int libmge_xml_set_report(int upsfd, int ReportId,
+int libmge_xml_set_report(hid_dev_handle_t udev, int ReportId,
 		       unsigned char *raw_buf, int ReportSize )
 {
 	return 0; /* sufficient? */
@@ -434,7 +429,7 @@ int libmge_xml_set_report(int upsfd, int ReportId,
 /* Fake string retrieval stub
  * XML/HTTP doesn't have the indexed string notion
  */
-int libmge_xml_get_string(int upsfd, int StringIdx, char *buf, size_t buflen)
+int libmge_xml_get_string(hid_dev_handle_t udev, int StringIdx, char *buf, size_t buflen)
 {
 	return 0; /* sufficient? */
 }
@@ -443,7 +438,7 @@ int libmge_xml_get_string(int upsfd, int StringIdx, char *buf, size_t buflen)
  * XML/HTTP support notifications through alarms (tcp/connected mode)
  * or through broadcasted alarms (udp mode)
  */
-int libmge_xml_get_interrupt(int upsfd, unsigned char *buf,
+int libmge_xml_get_interrupt(hid_dev_handle_t udev, unsigned char *buf,
 			   int bufsize, int timeout)
 {
 	return 0;
@@ -678,14 +673,16 @@ HIDData_t *FindObject_with_Path(HIDDesc_t *pDesc, HIDPath_t *Path, u_char Type)
  * HTTP Network handling code 
  **********************************************************************/
 
-static void tcp_close()
+static void tcp_close(void)
 {
-	if (tcp_port > 0) {
-		close(tcp_port);
+	if (upsfd < 1) {
+		return;
 	}
+
+	close(upsfd);
 }
 
-static int tcp_connect ()
+static int tcp_connect(void)
 {
 	int ret = -1;
 	struct hostent *serv;
@@ -709,7 +706,7 @@ static int tcp_connect ()
 		}
 
 		/* initialize network port */
-		if ((tcp_port = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
+		if ((upsfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
 			upsdebug_with_errno(3, "libmge_xml_open: socket");
 			return -1;
 		}
@@ -722,16 +719,16 @@ static int tcp_connect ()
 		agent_sock->sin_family = AF_INET;
 		agent_sock->sin_port = htons(DEFAULT_PORT);
 		memcpy(&agent_sock->sin_addr, serv->h_addr, serv->h_length);
-		if (connect(tcp_port, (struct sockaddr *) agent_sock, sizeof(struct sockaddr_in)) == -1) {
+		if (connect(upsfd, (struct sockaddr *) agent_sock, sizeof(struct sockaddr_in)) == -1) {
 			upsdebug_with_errno(3, "libmge_xml_open: failed to connect on port %i", DEFAULT_PORT);
-			close(tcp_port);
-			tcp_port = -1;
+			close(upsfd);
+			upsfd = -1;
 			/* Try the alternate port */
 			agent_sock->sin_port = htons(ALT_PORT);
-			if (connect(tcp_port, (struct sockaddr *) agent_sock, sizeof(struct sockaddr_in)) == -1) {
+			if (connect(upsfd, (struct sockaddr *) agent_sock, sizeof(struct sockaddr_in)) == -1) {
 			upsdebug_with_errno(3, "libmge_xml_open: failed to connect on port %i", ALT_PORT);
-				close(tcp_port);
-				tcp_port = -1;
+				close(upsfd);
+				upsfd = -1;
 				return -1;
 			}
 			else {
@@ -746,14 +743,14 @@ static int tcp_connect ()
 	}
 	else {
 		/* initialize network port */
-		if ((tcp_port = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
+		if ((upsfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
 			upsdebug_with_errno(3, "libmge_xml_open: socket");
 			return -1;
 		}
 
-		if (connect(tcp_port, (struct sockaddr *) agent_sock, sizeof(struct sockaddr_in)) == -1) {
-			close(tcp_port);
-			tcp_port = -1;
+		if (connect(upsfd, (struct sockaddr *) agent_sock, sizeof(struct sockaddr_in)) == -1) {
+			close(upsfd);
+			upsfd = -1;
 			ret = -1;
 		}
 		else
@@ -761,7 +758,7 @@ static int tcp_connect ()
 	}
 	
 	if (ret != -1)	
-		upsdebugx(2, "Connected on host %s, port %i (fd %i)", device_path, ntohs(agent_sock->sin_port), tcp_port);
+		upsdebugx(2, "Connected on host %s, port %i (fd %i)", device_path, ntohs(agent_sock->sin_port), upsfd);
 
 	return ret;
 }
@@ -785,7 +782,7 @@ static int tcp_receive(char *buf)
     bufPos = 0;
     while(ret > 0 && c > 0 && bufPos < (BUFF_SIZE - 1))
     {
-      ret = recv(tcp_port, (char*)&c, 1, 0);
+      ret = recv(upsfd, (char*)&c, 1, 0);
       if(ret > 0)
       {
         buf[bufPos] = c;
@@ -815,12 +812,12 @@ char *getHTTP(const char* url, const char* login, const char* password)
 		
 	tcp_connect ();
 	
-	if (tcp_port < 1) {
-		upsdebugx(2, "getHTTP: socket (%i) is NULL", tcp_port);
+	if (upsfd < 1) {
+		upsdebugx(2, "getHTTP: socket (%i) is NULL", upsfd);
 		return NULL;
 	}
 
-	upsdebugx(2, "getHTTP: socket is %i", tcp_port);
+	upsdebugx(2, "getHTTP: socket is %i", upsfd);
 		
 	sprintf(request, "GET /%s HTTP/1.0\r\n"
 					"Content-type: text/plain\r\n"
@@ -833,7 +830,7 @@ char *getHTTP(const char* url, const char* login, const char* password)
 
 	upsdebugx(4, "request %s", request);
 	
-	if( (err = send(tcp_port, request, rqlen, 0)) > 0)
+	if( (err = send(upsfd, request, rqlen, 0)) > 0)
 	{
 		int count = tcp_receive(tmpbuf);
 

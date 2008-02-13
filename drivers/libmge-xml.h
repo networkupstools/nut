@@ -54,7 +54,7 @@ typedef struct mgexml_communication_subdriver_s {
 	char *version;				/* version of this subdriver		*/
 	int (*open)(int *upsfd,			/* try to open the next available	*/
 		MGEXMLDevice_t *curDevice,	/* device matching USBDeviceMatcher_t	*/
-		char *device_path,
+		char *matcher,
 		int (*callback)(int upsfd, MGEXMLDevice_t *hd, unsigned char *rdbuf, int rdlen));
 	void (*close)(int upsfd);
 	int (*get_report)(int upsfd, int ReportId,
