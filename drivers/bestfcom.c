@@ -423,6 +423,9 @@ static void ups_sync(void)
 	} else {
 		fatalx(EXIT_FAILURE, "Error connecting to UPS.");
 	}
+	/* old Ferrups prompt for new time so send a blank line */
+	execute("\r", buf, sizeof(buf));
+	ser_get_line(upsfd, buf, sizeof(buf), '>', "\012", 3, 0);
 }
 
 /* power down the attached load immediately */
@@ -570,7 +573,8 @@ void upsdrv_init_nofc()
 			fc.watts = 3000;
 		}
 	} else
-	if (strstr(rstring, "Model:	   FE")){
+	if (strstr(rstring, "Model:	   FE")
+	    || strstr(rstring, "Model:    FE")){
 		fc.model = FExxxx;
 		fc.type = FERRUPS;
 		snprintf(fc.name, sizeof(fc.name), "%s", "Ferrups");
@@ -591,15 +595,15 @@ void upsdrv_init_nofc()
 	  case FDxxxx:
 		/* determine shutdown battery voltage */
 		if (execute("d 27\r", tmp, sizeof(tmp)) > 0) {
-			sscanf(tmp, "27 LowBatt	 %f", &fc.emptyvolts);
+			sscanf(tmp, "27 LowBatt %f", &fc.emptyvolts);
 		}
 		/* determine near low battery voltage */
 		if (execute("d 30\r", tmp, sizeof(tmp)) > 0) {
-			sscanf(tmp, "30 NLBatt	%f", &fc.lowvolts);
+			sscanf(tmp, "30 NLBatt %f", &fc.lowvolts);
 		}
 		/* determine fully charged battery voltage */
 		if (execute("d 28\r", tmp, sizeof(tmp)) > 0) {
-			sscanf(tmp, "28 Hi Batt	 %f", &fc.fullvolts);
+			sscanf(tmp, "28 Hi Batt %f", &fc.fullvolts);
 		}
 		fc.fullvolts = 13.70;
 		/* determine "ideal" voltage by a guess */
@@ -607,19 +611,19 @@ void upsdrv_init_nofc()
 		break;
 	  case FExxxx:
 		if (execute("d 45\r", tmp, sizeof(tmp)) > 0) {
-			sscanf(tmp, "45 RatedVA	 %d", &fc.va);			/* 4300  */
+			sscanf(tmp, "45 RatedVA %d", &fc.va);			/* 4300  */
 		}
 		if (execute("d 46\r", tmp, sizeof(tmp)) > 0) {
-			sscanf(tmp, "46 RatedW	%d", &fc.watts);		/* 3000  */
+			sscanf(tmp, "46 RatedW %d", &fc.watts);		/* 3000  */
 		}
 		if (execute("d 65\r", tmp, sizeof(tmp)) > 0) {
-			sscanf(tmp, "65 LoBatV	%f", &fc.emptyvolts);	/* 41.00 */
+			sscanf(tmp, "65 LoBatV %f", &fc.emptyvolts);	/* 41.00 */
 		}
 		if (execute("d 66\r", tmp, sizeof(tmp)) > 0) {
-			sscanf(tmp, "66 NLBatV	%f", &fc.lowvolts);		/* 44.00 */
+			sscanf(tmp, "66 NLBatV %f", &fc.lowvolts);		/* 44.00 */
 		}
 		if (execute("d 67\r", tmp, sizeof(tmp)) > 0) {
-			sscanf(tmp, "67 HiBatV	%f", &fc.fullvolts);	/* 59.60 */
+			sscanf(tmp, "67 HiBatV %f", &fc.fullvolts);	/* 59.60 */
 		}
 		fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
 		if (fc.va < 1.0) {
@@ -741,6 +745,7 @@ void upsdrv_initups ()
 
 	execute("fc\r", rstring, sizeof(rstring));
 	if (strlen(rstring) < 80 ) {
+		ser_get_line(upsfd, rstring, sizeof(rstring), '>', "\012", 3, 0);
 		upsdrv_init_nofc();
 	} else {
 		upsdrv_init_fc(rstring);

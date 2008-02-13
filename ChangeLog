@@ -1,3 +1,8 @@
+Wed Feb 13 02:10:27 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/bestfcom.c: Patch from Chris Adams to accept output from older
+   Ferrups models.
+
 Fri Feb  8 19:56:23 UTC 2008 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - drivers/megatec.c: flush buffers before ser_send_*/ser_get_* to avoid a
