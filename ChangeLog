@@ -1,3 +1,8 @@
+Thu Feb 14 08:47:32 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - man/megatec_usb.8, man/upscode2.8, man/bcmxcp.8, man/bcmxcp_usb.8,
+   man/solis.8, man/rhino.8: fix various errors (backport from the trunk r1304)
+
 Wed Feb 13 19:47:32 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/genericups.c: output signal overrides must be handled
