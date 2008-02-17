@@ -56,6 +56,7 @@
 
 "Atlantis Land"	"A03-P826"	""	"megatec"
 
+"Belkin"	"Active Battery Backup BU30 series"	"USB"	"megatec_usb"
 "Belkin"	"Home Office F6H350-SER"	""	"genericups upstype=7"
 "Belkin"	"Home Office F6H500-SER"	""	"genericups upstype=7"
 "Belkin"	"Home Office F6H650-SER"	""	"genericups upstype=7"
@@ -537,6 +538,7 @@
 "UNITEK"	"Alpha 500 ipE"		""	"megatec"
 "UNITEK"	"Alpha 2600"		""	"megatec"
 "UNITEK"	"Alpha 1200Sx"		"USB"	"megatec_usb"
+"UNITEK"	"Alpha 1250xD"		"USB"	"megatec_usb"
 
 "UPSonic"	"CXR1000"		""	"megatec"
 "UPSonic"	"LAN Saver 600"		""	"genericups upstype=0"

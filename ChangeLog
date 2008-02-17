@@ -1,3 +1,8 @@
+Sun Feb 17 19:58:59 UTC 2008 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ - data/driver.list: added Unitek Alpha 1250xD and Belkin Active
+   Battery Backup BU30 series to the list.
+
 Wed Feb 13 20:51:45 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/libmge-xml.[ch]: fix memory leak in libmge_xml_close(), use
