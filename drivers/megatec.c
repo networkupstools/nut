@@ -62,6 +62,8 @@
 #define MAX_START_DELAY_LEN    4
 #define MAX_SHUTDOWN_DELAY_LEN 2
 
+#define MAX_POLL_FAILURES 3
+
 #define N_FLAGS 8
 
 /* The UPS status flags */
@@ -452,6 +454,9 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("ups.type", status.flags[FL_UPS_TYPE] == '1' ? "standby" : "online");
 
+	upsdebugx(1, "Cancelling any pending shutdown or battery test.");
+	ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
+
 	/*
 	 * Try to identify the UPS.
 	 */
@@ -550,9 +555,6 @@ void upsdrv_initinfo(void)
 	upsh.instcmd = instcmd;
 	upsh.setvar = setvar;
 
-	/* clean up a possible shutdown in progress */
-	ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
-
 	upsdebugx(1, "Done setting up the UPS.");
 }
 
@@ -560,7 +562,8 @@ void upsdrv_initinfo(void)
 void upsdrv_updateinfo(void)
 {
 	QueryValues_t query;
-	float charge;
+	float charge;	
+	static int poll_fail = 0;
 
 	if (run_query(&query) < 0) {
 		/*
@@ -571,10 +574,20 @@ void upsdrv_updateinfo(void)
 		 * Some fault tolerance is good, we just assume
 		 * that the UPS is just taking a nap. ;)
 		 */
-		dstate_datastale();
+		poll_fail++;
+		upsdebugx(2, "Poll failure [%d].", poll_fail);		
+		ser_comm_fail("No status from UPS.");
+
+		if (poll_fail >= MAX_POLL_FAILURES) {
+			upsdebugx(2, "Too many poll failures, data is stale.");
+			dstate_datastale();
+		}
 
 		return;
 	}
+
+	poll_fail = 0;
+	ser_comm_good();
 
 	dstate_setinfo("input.voltage", "%.1f", query.ivolt);
 	dstate_setinfo("input.voltage.fault", "%.1f", query.fvolt);

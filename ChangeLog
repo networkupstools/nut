@@ -1,3 +1,10 @@
+Sun Feb 17 22:40:34 UTC 2008 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ * drivers/megatec.c:
+   - cancel any pending shutdowns soon after detecting the
+     UPS to avoid tripping the bogus OFF flag test
+   - set datastale() only after 3 failed polling cycles.
+
 Sun Feb 17 19:58:59 UTC 2008 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
 
  - data/driver.list: added Unitek Alpha 1250xD and Belkin Active

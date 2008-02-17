@@ -268,6 +268,14 @@ int ser_flush_io(int fd)
 	return 0;
 }
 
+void ser_comm_fail(const char *fmt, ...)
+{
+}
+
+void ser_comm_good(void)
+{
+}
+
 int ser_close(int fd, const char *port)
 {
 	usb->close(udev);
