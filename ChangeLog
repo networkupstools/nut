@@ -1,3 +1,13 @@
+Mon Feb 18 16:07:35 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+
+ * Integrated Power Management (HAL integration) (port from Testing r1309):
+   - fix the reporting of the battery technology,
+   - fix the reporting of levels by adding a warning and a critical level,
+   - report battery granularity,
+   - only report the charging status if the battery charge is below 100 %,
+   - report the current battery computed state (capacity_state),
+   - report battery.alarm.{design,unit}
+
 Sun Feb 17 22:40:34 UTC 2008 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  * drivers/megatec.c:

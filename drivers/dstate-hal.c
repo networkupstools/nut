@@ -85,9 +85,11 @@ struct	ups_handler	upsh;
 
 LibHalContext *halctx = NULL;
 char *udi;
-
 int ac_present = 0; /* 0 = false ; 1 = true */
+
 static void* runtime_handler(LibHalChangeSet *cs, char* runtime);
+static void* level_handler(LibHalChangeSet *cs, char* critical_level);
+static void* battery_type_handler(LibHalChangeSet *cs, char* battery_type);
 
 /* Structure to lookup between NUT and HAL */
 typedef struct {
@@ -110,15 +112,19 @@ enum hal_type_t
 static info_lkp_t nut2hal[] =
 {
 	/* ups.status is handled by status_set() calls */
-	{ "battery.charge.low", "battery.charge_level.low", HAL_TYPE_INT, NULL },
-	{ "battery.charge.low", "battery.reporting.low", HAL_TYPE_INT, NULL },
+	{ "battery.charge.low", "battery.charge_level.low", HAL_TYPE_INT, *level_handler },
+	/* { "battery.charge.low", "battery.reporting.low", HAL_TYPE_INT, NULL }, */
+	{ "battery.charge.low", "battery.alarm.design", HAL_TYPE_INT, NULL },
+	
 	{ "battery.charge", "battery.charge_level.current", HAL_TYPE_INT, NULL },
 	{ "battery.charge", "battery.charge_level.percentage", HAL_TYPE_INT, NULL },
 	{ "battery.charge", "battery.reporting.current", HAL_TYPE_INT, NULL },
 	{ "battery.charge", "battery.reporting.percentage", HAL_TYPE_INT, NULL },
 	{ "battery.runtime", "battery.remaining_time", HAL_TYPE_INT, *runtime_handler },
-	{ "battery.type", "battery.technology", HAL_TYPE_STRING, NULL },
+	/* raw version (PbAc) */
 	{ "battery.type", "battery.reporting.technology", HAL_TYPE_STRING, NULL },
+	/* Human readable version */
+	{ "battery.type", "battery.technology", HAL_TYPE_STRING, *battery_type_handler },
 	
 	/* AQ note: Not sure it fits!	*/
 	/* HAL marked as mandatory! */
@@ -139,7 +145,28 @@ static info_lkp_t *find_nut_info(const char *nut_varname, info_lkp_t *prev_info_
 /* HAL accessors wrappers */
 void hal_set_string(LibHalChangeSet *cs, const char *key, const char *value);
 void hal_set_int(LibHalChangeSet *cs, const char *key, const int value);
+int hal_get_int(LibHalChangeSet *cs, const char *key);
 void hal_set_bool(LibHalChangeSet *cs, const char *key, const dbus_bool_t value);
+
+/* Handle warning charge level according to the critical level */
+static void* level_handler(LibHalChangeSet *cs, char* critical_level)
+{
+	/* Magic formula to generate the warning level */
+	int int_critical_level = atoi(critical_level);
+	/* warning level = critical + 1/3 of (100 % - critical level), approx at the leat mod 10 */
+	int int_warning_level = int_critical_level + ((100 - int_critical_level) / 3);
+	int_warning_level -= (int_warning_level % 10);
+
+	/* Set the critical level value */
+	hal_set_int (cs, "battery.charge_level.low", int_critical_level);
+	hal_set_int (cs, "battery.reporting.low", int_critical_level);
+	
+	/* Set the warning level value (FIXME: set to 50 % for now) */
+	hal_set_int (cs, "battery.charge_level.warning", int_warning_level);
+	hal_set_int (cs, "battery.reporting.warning", int_warning_level);
+
+	return NULL; /* Nothing to return */
+}
 
 /* Handle runtime exposition according to the AC status */
 static void* runtime_handler(LibHalChangeSet *cs, char* runtime)
@@ -161,6 +188,17 @@ static void* runtime_handler(LibHalChangeSet *cs, char* runtime)
 	return NULL; /* Nothing to return */
 }
 
+/* Handle the battery technology reporting */
+static void* battery_type_handler(LibHalChangeSet *cs, char* battery_type)
+{
+	if (!strncmp (battery_type, "PbAc", 4)) {
+		hal_set_string(cs, "battery.technology", "lead-acid");
+	}
+	/* FIXME: manage other types (lithium-ion, lithium-polymer,
+	 *  nickel-metal-hydride, unknown */
+
+	return NULL; /* Nothing to return */
+}
 
 /********************************************************************
  * dstate compatibility interface
@@ -180,6 +218,7 @@ void dstate_init(const char *prog, const char *port)
 	/* UPS always report charge as percent */
 	hal_set_string (cs, "battery.charge_level.unit", "percent");
 	hal_set_string (cs, "battery.reporting.unit", "percent");
+	hal_set_string (cs, "battery.alarm.unit", "percent");
 
 	/* Various UPSs assumptions */
 	/****************************/
@@ -215,11 +254,12 @@ void dstate_init(const char *prog, const char *port)
 	libhal_device_add_capability (halctx, udi, "battery", &dbus_error);
 	libhal_device_add_capability (halctx, udi, "ac_adaptor", &dbus_error);
 	
-	/* FIXME: what's that? (from addon-hidups) */
-	/* UPS_DEVICENAME
-	libhal_changeset_set_property_string (
-	cs, "foo", ups_get_string (fd, uref.value)); */
-
+	/* FIXME: can be improved?! Set granularity (1 %)*/
+	hal_set_int (cs, "battery.charge_level.granularity_1", 1);
+	hal_set_int (cs, "battery.charge_level.granularity_2", 1);
+	hal_set_int (cs, "battery.reporting.granularity_1", 1);
+	hal_set_int (cs, "battery.reporting.granularity_2", 1);
+	
 	dbus_error_init (&dbus_error);
 	/* NOTE: commit_changeset won't do IPC if set is empty */
 	libhal_device_commit_changeset (halctx, cs, &dbus_error);
@@ -367,6 +407,7 @@ void status_commit(void)
 {
 	LibHalChangeSet *cs;
 	DBusError dbus_error;
+	int curlevel, warnlevel, lowlevel;
 
 	upsdebugx(2, "status_commit");
 
@@ -374,6 +415,11 @@ void status_commit(void)
 	if (cs == NULL) {
 		fatalx (EXIT_FAILURE, "Cannot initialize changeset");
 	}
+
+	/* Retrieve the levels */
+	curlevel = hal_get_int (cs, "battery.charge_level.current");
+	warnlevel = hal_get_int (cs, "battery.charge_level.warning");
+	lowlevel = hal_get_int (cs, "battery.charge_level.low");
 
 	/* Set AC present status */
 	/* Note: UPSs are also AC adaptors! */
@@ -383,7 +429,16 @@ void status_commit(void)
 	hal_set_bool (cs, "battery.rechargeable.is_discharging", (ac_present == 0)?TRUE:FALSE);
 
 	/* Set charging status */
-	hal_set_bool (cs, "battery.rechargeable.is_charging", (ac_present == 0)?FALSE:TRUE);
+	if (curlevel != 100)
+		hal_set_bool (cs, "battery.rechargeable.is_charging", (ac_present == 0)?FALSE:TRUE);
+
+	/* Set the battery status (FIXME: are these values valid?) */
+	if (curlevel <= lowlevel)
+		hal_set_string(cs, "battery.charge_level.capacity_state", "critical");
+	else if (curlevel <= warnlevel)
+		hal_set_string(cs, "battery.charge_level.capacity_state", "warning"); /*low?*/
+	else
+		hal_set_string(cs, "battery.charge_level.capacity_state", "ok");
 
 	dbus_error_init (&dbus_error);
 	/* NOTE: commit_changeset won't do IPC if set is empty */
@@ -613,6 +668,24 @@ void hal_set_int(LibHalChangeSet *cs, const char *key, const int value)
 	else {
 		libhal_changeset_set_property_int (cs, key, value);
 	}	
+}
+
+int hal_get_int(LibHalChangeSet *cs, const char *key)
+{
+	DBusError dbus_error;
+	int value = -1;
+
+	upsdebugx(2, "hal_get_int: %s", key);
+
+	dbus_error_init(&dbus_error);
+
+	/* Check if the property already exists */
+	if (libhal_device_property_exists (halctx, udi, key, &dbus_error) == TRUE) {
+		
+		value = libhal_device_get_property_int (halctx, udi,
+				key, &dbus_error);
+	}
+	return value;
 }
 
 /* Only update HAL int values if there are real changes */
