@@ -1,3 +1,8 @@
+Tue Feb 19 20:41:51 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/netxml-ups.[ch],drivers/mge-xml.[ch]: Sneak preview for the
+   new XML driver based on the 'neon' library. Work in progress!
+
 Mon Feb 18 16:07:35 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  * Integrated Power Management (HAL integration) (port from Testing r1309):
