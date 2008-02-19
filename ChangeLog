@@ -1,3 +1,8 @@
+Tue Feb 19 13:05:00 UTC 2008 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+
+ - Fix scripts/udev/nut-usbups.rules.in to include Powerware 5115 9120 and
+   all the powerware using the PHOENIXTEC interface.
+
 Fri Feb 15 15:29:08 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  * Integrated Power Management (HAL integration):
