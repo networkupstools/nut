@@ -1,3 +1,8 @@
+Tue Feb 19 20:41:51 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/netxml-ups.[ch],drivers/mge-xml.c: Integration work in NUT
+   started. Supports currently one (1) variable. Work in progress!
+
 Wed Feb 20 21:29:54 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/*-hid.c: Removed 'shutdown.return' and 'shutdown.stop' commands

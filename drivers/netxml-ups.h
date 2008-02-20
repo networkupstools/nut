@@ -22,7 +22,7 @@
 #define NETXML_UPS_H
 
 struct subdriver_s {
-	const char	*name;		/* name of this subdriver */
+	const char	*version;		/* name of this subdriver */
 	char		*initups;
 	char		*initinfo;
 	char		*updateinfo;

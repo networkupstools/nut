@@ -22,22 +22,26 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <ne_xml.h>
+
+#include "common.h"
+#include "dstate.h"
+
 #include "netxml-ups.h"
 #include "mge-xml.h"
 
-#include "ne_xml.h"
+#define MGE_XML_VERSION		"MGEXML/0.10"
 
-#define MGE_XML_VERSION	"MGE XML 0.10"
-
-static char	mge_xml_initups[] = "/mgeups/product.xml";
-static char	mge_xml_initinfo[32] = "";
-static char	mge_xml_updateinfo[32] = ""; 
+static char	mge_xml_initups[] = "/";
+static char	mge_xml_initinfo[] = "/mgeups/product.xml";
+static char	mge_xml_updateinfo[32] = "";
 
 static char	var[128];
 static char	val[128];
 
-static enum {
-	_ROOTPARENT = NE_XML_STATEROOT,
+typedef  enum {
+	ROOTPARENT = NE_XML_STATEROOT,
+
 	_UNEXPECTED,
 	_PARSEERROR,
 
@@ -75,23 +79,22 @@ static enum {
 	/* /GET_OBJECT */
 
 	SET_OBJECT = 400,	/* "/setvalue.cgi" */
-		SO_OBJECT,
+		SO_OBJECT
 	/* /SET_OBJECT */
 
-} mge_xml_state_e;
+} mge_xml_state_t;
 
 /* A start-element callback for element with given namespace/name. */
 static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, const char *name, const char **atts)
 {
-	fprintf(stderr, "%s: name <%s> started (parent = %d)\n", __FUNCTION__, name, parent);
+	int	state = _UNEXPECTED;
 
 	switch(parent)
 	{
-	case _ROOTPARENT:
+	case ROOTPARENT:
 		if (!strcasecmp(name, "PRODUCT_INFO")) {
 			/* name="Network Management Card" type="Mosaic M" version="BA" */
 			int	i;
-			snprintf(var, sizeof(var), "%s", "ups.firmware.aux");
 			for (i = 0; atts[i] && atts[i+1]; i += 2) {
 				if (i == 0) {
 					snprintf(val, sizeof(val), "%s", atts[i+1]);
@@ -99,67 +102,79 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 					snprintf(val + strlen(val), sizeof(val) - strlen(val), "/%s", atts[i+1]);
 				}
 			}
-			return PRODUCT_INFO;
+			state = PRODUCT_INFO;
+			break;
 		}
 		if (!strcasecmp(name, "SUMMARY")) {
-			return SUMMARY;
+			state = SUMMARY;
+			break;
 		}
 		if (!strcasecmp(name, "GET_OBJECT")) {
-			return GET_OBJECT;
+			state = GET_OBJECT;
+			break;
 		}
 		if (!strcasecmp(name, "SET_OBJECT")) {
-			return SET_OBJECT;
+			state = SET_OBJECT;
+			break;
 		}
 		break;
 
 	case PRODUCT_INFO:
 		if (!strcasecmp(name, "SUMMARY")) {
-			return PI_SUMMARY;
+			state = PI_SUMMARY;
+			break;
 		}
 
 		if (!strcasecmp(name, "ALARMS")) {
-			return PI_ALARMS;
+			state = PI_ALARMS;
+			break;
 		}
 
 		if (!strcasecmp(name, "MANAGEMENT")) {
-			return PI_MANAGEMENT;
+			state = PI_MANAGEMENT;
+			break;
 		}
 
 		if (!strcasecmp(name, "UPS_DATA")) {
-			return PI_UPS_DATA;
+			state = PI_UPS_DATA;
+			break;
 		}
 		break;
 
 	case PI_SUMMARY:
 		if (!strcasecmp(name, "HTML_PROPERTIES_PAGE")) {
 			/* url="mgeups/default.htm" */
-			return PI_HTML_PROPERTIES_PAGE;
+			state = PI_HTML_PROPERTIES_PAGE;
+			break;
 		}
 		if (!strcasecmp(name, "XML_SUMMARY_PAGE")) {
 			/* url="upsprop.xml" */
 			int	i;
 			for (i = 0; atts[i] && atts[i+1]; i += 2) {
 				if (!strcasecmp(atts[i], "url")) {
-					snprintf(mge_xml_initinfo, sizeof(mge_xml_initinfo), "/%s", atts[i+1]);
 					snprintf(mge_xml_updateinfo, sizeof(mge_xml_updateinfo), "/%s", atts[i+1]);
 				}
 			}
-			return PI_XML_SUMMARY_PAGE;
+			state = PI_XML_SUMMARY_PAGE;
+			break;
 		}
 		if (!strcasecmp(name, "CENTRAL_CFG")) {
 			/* url="config.xml" */
-			return PI_CENTRAL_CFG;
+			state = PI_CENTRAL_CFG;
+			break;
 		}
 		if (!strcasecmp(name, "CSV_LOGS")) {
 			/* url="logevent.csv" dateRange="no" eventFiltering="no" */
-			return PI_CSV_LOGS;
+			state = PI_CSV_LOGS;
+			break;
 		}
 		break;
 
 	case PI_ALARMS:
 		if (!strcasecmp(name, "SUBSCRIPTION")) {
 			/* url="subscribe.cgi" security="basic" */
-			PI_SUBSCRIPTION;
+			state = PI_SUBSCRIPTION;
+			break;
 		}
 		break;
 
@@ -169,22 +184,26 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 			/* name="Shutdown criteria settings" id="Shutdown" url="FS/FLASH0/ShutdownParameters.cfg" security="none" */
 			/* name="Network settings" id="Network" url="FS/FLASH0/NetworkSettings.cfg" security="none" */
 			/* name="Centralized configuration settings" id="ClientCfg" url="FS/FLASH0/CentralizedConfig.cfg" security="none" */
-			return PI_MANAGEMENT_PAGE;
+			state = PI_MANAGEMENT_PAGE;
+			break;
 		}
 		if (!strcasecmp(name, "XML_MANAGEMENT_PAGE")) {
 			/* name="Set Card Time" id="SetTime" url="management/set_time.xml" security="none" */
-			return PI_XML_MANAGEMENT_PAGE;
+			state = PI_XML_MANAGEMENT_PAGE;
+			break;
 		}
 		break;
 
 	case PI_UPS_DATA:
 		if (!strcasecmp(name, "GET_OBJECT")) {
 			/* url="getvalue.cgi" security="none" */
-			return PI_GET_OBJECT;
+			state = PI_GET_OBJECT;
+			break;
 		}
 		if (!strcasecmp(name, "SET_OBJECT")) {
 			/* url="setvalue.cgi" security="ssl" */
-			return PI_SET_OBJECT;
+			state = PI_SET_OBJECT;
+			break;
 		}
 		break;
 
@@ -197,7 +216,8 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 					snprintf(var, sizeof(var), "%s", atts[i+1]);
 				}
 			}
-			return SU_OBJECT;
+			state = SU_OBJECT;
+			break;
 		}
 		break;
 			
@@ -213,13 +233,14 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 					/* do something with RO/RW access? */
 				}
 			}
-			return GO_OBJECT;
+			state = GO_OBJECT;
+			break;
 		}
 		break;
 	}
 
-	fprintf(stderr, "%s: name <%s> unexpected (parent = %d)\n", __FUNCTION__, name, parent);
-	return _UNEXPECTED;
+	upsdebugx(3, "%s: name <%s> (parent = %d, state = %d)\n", __func__, name, parent, state);
+	return state;
 }
 
 /* Character data callback; may return non-zero to abort the parse. */
@@ -227,6 +248,7 @@ static int mge_xml_cdata_cb(void *userdata, int state, const char *cdata, size_t
 {
 	/* skip empty lines */
 	if ((len == 1) && (cdata[0] == '\n')) {
+		upsdebugx(3, "%s: cdata ignored (state = %d)\n", __func__, state);
 		return 0;
 	}
 
@@ -234,19 +256,11 @@ static int mge_xml_cdata_cb(void *userdata, int state, const char *cdata, size_t
 	{
 	case SU_OBJECT:
 	case GO_OBJECT:
-		if (len >= sizeof(val)) {
-			fprintf(stderr, "%s: len = %d, but only have space for %d\n", len, sizeof(val));
-			len = sizeof(val) - 1;
-		}
-		memcpy(val, cdata, len);
-		val[len] = '\0';
-		return 0;
+		snprintf(val, sizeof(val), "%.*s", len, cdata);
+		break;
 	}
 
-	if (len > 0) {
-		fprintf(stderr, "%s: state %d not handled (len = %d)\n", __FUNCTION__, state, len);
-	}
-
+	upsdebugx(3, "%s: cdata [%.*s] (state = %d)\n", __func__, len, cdata, state);
 	return 0;
 }
 
@@ -256,13 +270,16 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 	switch(state)
 	{
 	case PRODUCT_INFO:
+		dstate_setinfo("ups.firmware.aux", val);
+		break;
+
 	case SU_OBJECT:
 	case GO_OBJECT:
-		fprintf(stdout, "dstate_setinfo(\"%s\", \"%s\");\n", var, val);
-		return 0;
+		upsdebugx(2, "dstate_setinfo(\"%s\", \"%s\");\n", var, val);
+		break;
 	}
 	
-	fprintf(stderr, "%s: state %d not handled (name = </%s>)\n", __FUNCTION__, state, name);
+	upsdebugx(3, "%s: name </%s> (state = %d)\n", __func__, name, state);
 	return 0;
 }
 
@@ -275,4 +292,3 @@ subdriver_t mge_xml_subdriver = {
 	mge_xml_cdata_cb,
 	mge_xml_endelm_cb,
 };
-
