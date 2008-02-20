@@ -100,6 +100,19 @@ static int instcmd(const char *cmdname, const char *extra)
 }
 */
 
+/*
+static int setvar(const char *varname, const char *val)
+{
+	if (!strcasecmp(varname, "ups.test.interval")) {
+		ser_send_buf(upsfd, ...);
+		return STAT_SET_HANDLED;
+	}
+
+	upslogx(LOG_NOTICE, "setvar: unknown variable [%s]", varname);
+	return STAT_SET_UNKNOWN;
+}
+*/
+
 void upsdrv_help(void)
 {
 }

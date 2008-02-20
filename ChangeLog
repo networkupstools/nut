@@ -1,4 +1,8 @@
-Tue Feb 19 20:41:51 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+Wed Feb 20 22:31:56 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/skel.c: Added setvar function. 
+
+Wed Feb 20 22:31:38 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/netxml-ups.[ch],drivers/mge-xml.c: Integration work in NUT
    started. Supports currently one (1) variable. Work in progress!
