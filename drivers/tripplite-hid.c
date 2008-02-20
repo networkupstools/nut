@@ -228,9 +228,7 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ "load.on", 0, 0, "UPS.OutletSystem.Outlet.DelayBeforeStartup", NULL, "0", HU_TYPE_CMD, NULL },
 
 	{ "shutdown.stayoff", 0, 0, "UPS.OutletSystem.Outlet.DelayBeforeShutdown", NULL, "20", HU_TYPE_CMD, NULL },
-	{ "shutdown.return", 0, 0, "UPS.OutletSystem.Outlet.DelayBeforeStartup", NULL, "30", HU_TYPE_CMD, NULL },
 	{ "shutdown.reboot", 0, 0, "UPS.OutletSystem.Outlet.DelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL },
-	{ "shutdown.stop", 0, 0, "UPS.OutletSystem.Outlet.DelayBeforeShutdown", NULL, "-1", HU_TYPE_CMD, NULL },
 
 	/* WARNING: if this timer expires, the UPS will reboot! Defaults to 60 seconds */
 	{ "reset.watchdog", 0, 0, "UPS.OutletSystem.Outlet.TLWatchdog", NULL, "60", HU_TYPE_CMD, NULL },

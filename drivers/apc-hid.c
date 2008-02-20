@@ -228,16 +228,12 @@ static hid_info_t apc_hid2nut[] = {
   { "load.off", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "0", HU_TYPE_CMD, NULL },
   { "load.on", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, "0", HU_TYPE_CMD, NULL },
   { "shutdown.stayoff", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "20", HU_TYPE_CMD, NULL },
-  { "shutdown.return", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, "30", HU_TYPE_CMD, NULL },
   { "shutdown.reboot", 0, 0, "UPS.PowerSummary.DelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL },
-  { "shutdown.stop", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "-1", HU_TYPE_CMD, NULL },
   /* APC Backups ES */
   { "load.off", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, "0", HU_TYPE_CMD, NULL },
   { "load.on", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeStartup", NULL, "0", HU_TYPE_CMD, NULL },
   { "shutdown.stayoff", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, "20", HU_TYPE_CMD, NULL },
-  { "shutdown.return", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeStartup", NULL, "30", HU_TYPE_CMD, NULL },
   { "shutdown.reboot", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL },
-  { "shutdown.stop", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, "-1", HU_TYPE_CMD, NULL },
 
   { "beeper.on", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },
   { "beeper.off", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "3", HU_TYPE_CMD, NULL },

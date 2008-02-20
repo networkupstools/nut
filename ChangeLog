@@ -1,3 +1,13 @@
+Wed Feb 20 21:29:54 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/*-hid.c: Removed 'shutdown.return' and 'shutdown.stop' commands
+   from the USB HID subdrivers, since they currently don't conform to the
+   NUT standards for these commands.
+ - drivers/usbhid-ups.c: The 'upsdrv_shutdown()' function now uses the
+   'load.on' and 'load.off' commands to accomplish the same as with the
+   previous 'shutdown.return' and 'shutdown.stop' commands (HID commands
+   to the UPS are identical).
+
 Tue Feb 19 20:41:51 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/netxml-ups.[ch],drivers/mge-xml.[ch]: Sneak preview for the
