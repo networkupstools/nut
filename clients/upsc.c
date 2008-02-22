@@ -52,6 +52,7 @@ static void clean_exit(UPSCONN_t *ups, char *upsname, char *hostname, int code)
 	free(upsname);
 	free(hostname);
 
+	upscli_sendline(ups, "LOGOUT\n", 7);
 	upscli_disconnect(ups);
 
 	exit(code);
@@ -208,7 +209,6 @@ static int list_upses(const char *name, int verbose)
 		ret = upscli_list_next(&ups, numq, query, &numa, &answer);
 	}
 
-	upscli_disconnect(&ups);
 	return EXIT_SUCCESS;
 }
 
@@ -232,7 +232,7 @@ int main(int argc, char **argv)
 
 	if (!strcmp(argv[1], "-l") || !strcmp(argv[1], "-L")) {
 		ret = list_upses(argv[2] ? argv[2] : "localhost", argv[1][1] == 'L');
-		exit(ret);
+		clean_exit(&ups, upsname, hostname, ret);
 	}
 
 	upsname = hostname = NULL;

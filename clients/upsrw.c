@@ -56,6 +56,7 @@ static void clean_exit(UPSCONN_t *ups, char *upsname, char *hostname, int code)
 	free(upsname);
 	free(hostname);
 
+	upscli_sendline(ups, "LOGOUT\n", 7);
 	upscli_disconnect(ups);
 
 	exit(code);
