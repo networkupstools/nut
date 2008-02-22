@@ -1,3 +1,7 @@
+Fri Feb 22 19:12:20 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/skel.c: Added setvar function.
+
 Fri Feb 22 18:45:54 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/mge-hid.c: HU_FLAG_ABSENT implies that the value isn't stored
