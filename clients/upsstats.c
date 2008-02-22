@@ -380,6 +380,7 @@ static void ups_connect(void)
 		free(newhost);
 	}
 
+	upscli_sendline(&ups, "LOGOUT\n", 7);
 	upscli_disconnect(&ups);
 
 	free(upsname);
@@ -1028,6 +1029,7 @@ static void display_single(void)
 	else
 		display_template("upsstats-single.html");
 
+	upscli_sendline(&ups, "LOGOUT\n", 7);
 	upscli_disconnect(&ups);
 }
 
@@ -1053,6 +1055,7 @@ int main(int argc, char **argv)
 
 	display_template("upsstats.html");
 
+	upscli_sendline(&ups, "LOGOUT\n", 7);
 	upscli_disconnect(&ups);
 
 	return 0;

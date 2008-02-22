@@ -1,3 +1,9 @@
+Fri Feb 22 19:14:04 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - clients/*.c: The upscli_disconnect() function does no longer LOGOUT
+   from the server. Adding this to the clients that use this to prevent
+   the server from logging warnings.
+
 Fri Feb 22 19:12:20 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/skel.c: Added setvar function.
