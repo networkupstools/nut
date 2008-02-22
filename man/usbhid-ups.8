@@ -22,6 +22,7 @@ At the present time, usbhid-ups supports:
     some APC models,
     some Belkin models,
     some Cyber Power Systems models.
+    some TrippLite models
 
 For a more complete list, refer to the NUT hardware compatibility list,
 available in the source distribution as data/drivers.list, or on the
@@ -41,14 +42,16 @@ This driver also supports the following optional settings:
 .IP "offdelay=\fInum\fR"
 Set the timer before the UPS is turned off after the kill power command is
 sent (via the \fB\-k\fR switch).
-The default value is 20 (in seconds), and MUST BE LOWER than ondelay.
+The default value is 20 (in seconds). Usually this MUST BE LOWER than
+ondelay and the driver will warn you upon startup if it isn't.
  
 .IP "ondelay=\fInum\fR"
 Set the timer for the UPS to switch on in case the power returns after the
 kill power command had been sent but before the actual switch off. This
 ensures the machines connected to the UPS are, in all cases, rebooted after
 a power failure.
-The default value is 30 (in seconds), and MUST BE GREATER than offdelay.
+The default value is 30 (in seconds). Usually this MUST BE GREATER than
+offdelay and the driver will warn you upon startup if it isn't.
 
 .IP "pollfreq=\fInum\fR"
 Set polling frequency, in seconds, to reduce the USB data flow.
@@ -110,8 +113,8 @@ well as libusb-0.1.8 or later to disable hiddev support and avoid conflict.
 .SH IMPLEMENTATION
 The driver ignores the "port" value in \fBups.conf\fR. Unlike previous
 versions of this driver, it is now possible to control multiple UPS
-units simultaneously with this driver. They can be distinguished by
-setting some combination of the "vendor", "product", "serial",
+units simultaneously with this driver, provided they can be distinguished
+by setting some combination of the "vendor", "product", "serial",
 "vendorid", and "productid" options. For instance:
 
 .nf
@@ -132,9 +135,25 @@ You have forgotten to install the hotplug files, as explained
 in the INSTALLATION section above. Don't forget to restart
 hotplug so that it applies these changes.
 
+.SS "Unattended shutdowns"
+
+The hardware which was used for development of this driver is almost
+certainly different from what you have and not all manufacturers follow
+the USB HID Power Device Class specifications to the letter. You don't
+want to find out that yours has issues here when a power failure hits
+your server room and you're not around to manually restart your servers.
+
+If you rely on the UPS to shutdown your systems in case of mains failure
+and to restart them when the power returns, you MUST TEST this. You can
+do so by running 'upsmon -c fsd'. With the mains present, this should
+bring your systems down and then cycle the power to restart them again.
+If you do the same without mains present, it should do the same, but in
+this case, the outputs shall remain off until mains power is applied
+again.
+
 .SH AUTHORS
 .SS Sponsored by MGE UPS SYSTEMS <http://opensource.mgeups.com/>
-Arnaud Quette, Peter Selinger
+Arnaud Quette, Peter Selinger, Arjen de Korte
 
 .SH SEE ALSO
 
