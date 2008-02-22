@@ -1438,6 +1438,9 @@ static hid_info_t *find_nut_info(const char *varname)
 
 		if (hidups_item->hiddata != NULL)
 			return hidups_item;
+
+		if (hidups_item->hidflags & HU_FLAG_ABSENT)
+			return hidups_item;
 	}
 
 	upsdebugx(2, "find_nut_info: unknown info type: %s\n", varname);

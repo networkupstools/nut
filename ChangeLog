@@ -1,3 +1,9 @@
+Fri Feb 22 18:45:54 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/mge-hid.c: HU_FLAG_ABSENT implies that the value isn't stored
+   in the UPS, so the HU_FLAG_STATIC is redundant.
+ - drivers/usbhid-ups.c: Allow changing server side variables (bugfix).
+
 Tue Feb 19 13:05:00 UTC 2008 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
  - Fix scripts/udev/nut-usbups.rules.in to include Powerware 5115 9120 and
