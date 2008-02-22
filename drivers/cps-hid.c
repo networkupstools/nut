@@ -107,7 +107,7 @@ static hid_info_t cps_hid2nut[] = {
   { "test.battery.stop", 0, 0, "UPS.Output.Test", NULL, "3", HU_TYPE_CMD, NULL },
   { "load.off", 0, 0, "UPS.Output.DelayBeforeShutdown", NULL, "0", HU_TYPE_CMD, NULL },
   { "load.on", 0, 0, "UPS.Output.DelayBeforeStartup", NULL, "0", HU_TYPE_CMD, NULL },
-  { "shutdown.stayoff", 0, 0, "UPS.Output.DelayBeforeShutdown", NULL, "20", HU_TYPE_CMD, NULL },
+  { "shutdown.stop", 0, 0, "UPS.Output.DelayBeforeShutdown", NULL, "-1", HU_TYPE_CMD, NULL },
   { "shutdown.reboot", 0, 0, "UPS.Output.DelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL },
   { "beeper.on", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },
   { "beeper.off", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "3", HU_TYPE_CMD, NULL },

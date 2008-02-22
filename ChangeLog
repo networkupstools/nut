@@ -1,3 +1,12 @@
+Fri Feb 22 09:52:24 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/*-hid.c: Commit r1314 accidentally removed the 'shutdown.stop'
+   command, where it should have been 'shutdown.stayoff' that needed to
+   be removed.
+ - drivers/usbhid-ups.c: The 'shutdown.return' and 'shutdown.stayoff'
+   commands are now 'composite' commands. If the UPS follows the HID PDC
+   specification, these act as supposed to be by the NUT standards.
+
 Wed Feb 20 22:31:56 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/skel.c: Added setvar function. 

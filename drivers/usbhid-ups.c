@@ -84,6 +84,7 @@ static int pollfreq = DEFAULT_POLLFREQ;
 static int ups_status = 0;
 static bool_t data_has_changed = FALSE; /* for SEMI_STATIC data polling */
 static time_t lastpoll; /* Timestamp the last polling */
+static int offdelay = DEFAULT_OFFDELAY, ondelay = DEFAULT_ONDELAY;
 hid_dev_handle_t udev;
 
 /* support functions */
@@ -506,7 +507,7 @@ int instcmd(const char *cmdname, const char *extradata)
 	hid_info_t	*hidups_item;
 	const char	*val;
 	double		value;
-	
+
 	if (!strcasecmp(cmdname, "beeper.off")) {
 		/* compatibility mode for old command */
 		upslogx(LOG_WARNING,
@@ -519,6 +520,36 @@ int instcmd(const char *cmdname, const char *extradata)
 		upslogx(LOG_WARNING,
 			"The 'beeper.on' command has been renamed to 'beeper.enable'");
 		return instcmd("beeper.enable", NULL);
+	}
+
+	if (!strcasecmp(cmdname, "shutdown.return")) {
+		int	ret;
+		char	buffer[16];
+
+		snprintf(buffer, sizeof(buffer), "%d", ondelay);
+
+		ret = instcmd("load.on", buffer);
+		if (ret != STAT_INSTCMD_HANDLED) {
+			return ret;
+		}
+
+		snprintf(buffer, sizeof(buffer), "%d", offdelay);
+
+		return instcmd("load.off", buffer);
+	}
+
+	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		int	ret;
+		char	buffer[16];
+
+		ret = instcmd("load.on", "-1");
+		if (ret != STAT_INSTCMD_HANDLED) {
+			return ret;
+		}
+
+		snprintf(buffer, sizeof(buffer), "%d", offdelay);
+
+		return instcmd("load.off", buffer);
 	}
 
 	upsdebugx(1, "instcmd(%s, %s)", cmdname, extradata ? extradata : "[NULL]");
@@ -617,30 +648,16 @@ int setvar(const char *varname, const char *val)
 
 void upsdrv_shutdown(void)
 {
-	char	ondelay[8], offdelay[8];
-	char	*val;
-
 	upsdebugx(1, "upsdrv_shutdown...");
 	
-	/* Retrieve user defined delay settings */
-	val = getval(HU_VAR_ONDELAY);
-	snprintf(ondelay, sizeof(ondelay), "%i", val ? atoi(val) : DEFAULT_ONDELAY);
-
-	val = getval(HU_VAR_OFFDELAY);
-	snprintf(offdelay, sizeof(offdelay), "%i", val ? atoi(val) : DEFAULT_OFFDELAY);
-
 	/* Try to shutdown with delay */
-	if (instcmd("load.on", ondelay) != STAT_INSTCMD_HANDLED) {
-		upsdebugx(2, "Shutdown failed (setting ondelay)");
-	} else if (instcmd("load.off", offdelay) != STAT_INSTCMD_HANDLED) {
-		upsdebugx(2, "Shutdown failed (setting offdelay)");
-	} else {
+	if (instcmd("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
 		/* Shutdown successful */
 		return;
 	}
 
 	/* If the above doesn't work, try shutdown.reboot */
-	if (instcmd("shutdown.reboot", ondelay) == STAT_INSTCMD_HANDLED) {
+	if (instcmd("shutdown.reboot", NULL) == STAT_INSTCMD_HANDLED) {
 		/* Shutdown successful */
 		return;
 	}
@@ -663,7 +680,7 @@ void upsdrv_makevartable(void)
 		DEFAULT_OFFDELAY);
 	addvar(VAR_VALUE, HU_VAR_OFFDELAY, temp);
 	
-	snprintf(temp, sizeof(temp), "Set startup delay, in ten seconds units for MGE (default=%d)",
+	snprintf(temp, sizeof(temp), "Set startup delay, in seconds (default=%d)",
 		DEFAULT_ONDELAY);
 	addvar(VAR_VALUE, HU_VAR_ONDELAY, temp);
 	
@@ -806,21 +823,13 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_initinfo(void)
 {
-	char	ondelay[8], offdelay[8];
 	char	*val;
 
 	upsdebugx(1, "upsdrv_initinfo...");
 
-	/* Retrieve user defined delay settings */
-	val = getval(HU_VAR_ONDELAY);
-	snprintf(ondelay, sizeof(ondelay), "%i", val ? atoi(val) : DEFAULT_ONDELAY);
-
-	val = getval(HU_VAR_OFFDELAY);
-	snprintf(offdelay, sizeof(offdelay), "%i", val ? atoi(val) : DEFAULT_OFFDELAY);
-
-	/* Abort if ondelay is too small */
-	if (atoi(ondelay) <= atoi(offdelay)) {
-		fatalx(EXIT_FAILURE, "%s (%s) must be greater than %s (%s)",
+	/* Warn if ondelay is too small */
+	if (ondelay <= offdelay) {
+		upslogx(LOG_WARNING, "warning: %s (%d) is smaller than or equal to %s (%d)",
 			HU_VAR_ONDELAY, ondelay, HU_VAR_OFFDELAY, offdelay);
 	}
 
@@ -830,6 +839,10 @@ void upsdrv_initinfo(void)
 		pollfreq = atoi(val);
 
 	dstate_setinfo("driver.parameter.pollfreq", "%d", pollfreq);
+
+	/* Add composite instcmds (that require setting multiple HID values */
+	dstate_addcmd("shutdown.return");
+	dstate_addcmd("shutdown.stayoff");
 
 	/* install handlers */
 	upsh.setvar = setvar;
@@ -841,6 +854,7 @@ void upsdrv_initinfo(void)
 void upsdrv_initups(void)
 {
 	int ret;
+	char *val;
 #ifdef MGE_MODE
 	/*!
 	 * SHUT is a serial protocol, so it needs
@@ -850,7 +864,6 @@ void upsdrv_initups(void)
 
 	subdriver_matcher = device_path;
 #else
-	char *val;
 	char *regex_array[6];
 	matching_lkp_t	*key;
 
@@ -915,6 +928,17 @@ void upsdrv_initups(void)
 
 	if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
 		fatalx(EXIT_FAILURE, "Can't initialize data from HID UPS");
+	}
+
+	/* Retrieve user defined delay settings */
+	val = getval(HU_VAR_ONDELAY);
+	if (val) {
+		ondelay = atoi(val);
+	}
+
+	val = getval(HU_VAR_OFFDELAY);
+	if (val) {
+		offdelay = atoi(val);
 	}
 }
 
