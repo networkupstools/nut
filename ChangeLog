@@ -1,3 +1,9 @@
+Fri Feb 22 18:45:54 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/mge-hid.c: HU_FLAG_ABSENT implies that the value isn't stored
+   in the UPS, so the HU_FLAG_STATIC is redundant.
+ - drivers/usbhid-ups.c: Allow changing server side variables (bugfix).
+
 Fri Feb 22 09:52:24 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/*-hid.c: Commit r1314 accidentally removed the 'shutdown.stop'
