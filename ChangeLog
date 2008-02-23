@@ -1,3 +1,8 @@
+Sat Feb 23 21:27:10 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/netxml-ups.[ch]: Add 'ups.status' and 'ups.alarm' processing.
+ - drivers/mge-xml.c: Create mapping between XML and NUT variables.
+
 Fri Feb 22 20:11:33 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - man/usbhid-ups.8: Added cautionary warning for unattended shutdowns.

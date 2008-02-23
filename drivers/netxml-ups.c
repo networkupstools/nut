@@ -35,8 +35,14 @@
 
 #define	DRV_VERSION	"0.10"
 
+/* Global vars */
+uint32_t		ups_status = 0;
 static subdriver_t	*subdriver = &mge_xml_subdriver;
 static ne_session	*session;
+
+/* Support functions */
+static void ups_alarm_set(void);
+static void ups_status_set(void);
 
 void upsdrv_initinfo(void)
 {
@@ -99,10 +105,22 @@ void upsdrv_updateinfo(void)
 
 	if (ret != NE_OK) {
 		upslogx(LOG_ERR, "Failed: %s", ne_get_error(session));
+		dstate_datastale();
 	}
 
 	ne_xml_destroy(parser);
 	ne_request_destroy(request);
+
+	status_init();
+
+	alarm_init();
+	ups_alarm_set();
+	alarm_commit();
+
+	ups_status_set();
+	status_commit();
+
+	dstate_dataok();
 }
 
 void upsdrv_shutdown(void)
@@ -167,6 +185,7 @@ void upsdrv_banner(void)
 {
 	printf("Network UPS Tools - network XML UPS driver %s (%s)\n\n", 
 		DRV_VERSION, UPS_VERSION);
+	experimental_driver = 1;
 }
 
 void upsdrv_initups(void)
@@ -210,3 +229,95 @@ void upsdrv_cleanup(void)
 {
 	ne_session_destroy(session);
 }
+
+/**********************************************************************
+ * Support functions
+ *********************************************************************/
+
+/* Convert the local status information to NUT format and set NUT
+   alarms. */
+static void ups_alarm_set(void)
+{
+	if (ups_status & STATUS_BIT(REPLACEBATT)) {
+		alarm_set("Replace battery!");
+	}
+	if (ups_status & STATUS_BIT(SHUTDOWNIMM)) {
+		alarm_set("Shutdown imminent!");
+	}
+	if (ups_status & STATUS_BIT(FANFAIL)) {
+		alarm_set("Fan failure!");
+	}
+	if (ups_status & STATUS_BIT(NOBATTERY)) {
+		alarm_set("No battery installed!");
+	}
+	if (ups_status & STATUS_BIT(BATTVOLTLO)) {
+		alarm_set("Battery voltage too low!");
+	}
+	if (ups_status & STATUS_BIT(BATTVOLTHI)) {
+		alarm_set("Battery voltage too high!");
+	}
+	if (ups_status & STATUS_BIT(CHARGERFAIL)) {
+		alarm_set("Battery charger fail!");
+	}
+	if (ups_status & STATUS_BIT(OVERHEAT)) {
+		alarm_set("Temperature too high!");	/* overheat; Belkin, TrippLite */
+	}
+	if (ups_status & STATUS_BIT(COMMFAULT)) {
+		alarm_set("Internal UPS fault!");	/* UPS fault; Belkin, TrippLite */
+	}
+	if (ups_status & STATUS_BIT(AWAITINGPOWER)) {
+		alarm_set("Awaiting power!");		/* awaiting power; Belkin, TrippLite */
+	}
+}
+
+/* Convert the local status information to NUT format and set NUT
+   status. */
+static void ups_status_set(void)
+{
+	if (ups_status & STATUS_BIT(VRANGE)) {
+		dstate_setinfo("input.transfer.reason", "input voltage out of range");
+	} else if (ups_status & STATUS_BIT(FRANGE)) {
+		dstate_setinfo("input.transfer.reason", "input frequency out of range");
+	} else {
+		dstate_delinfo("input.transfer.reason");
+	}
+
+	if (ups_status & STATUS_BIT(ONLINE)) {
+		status_set("OL");		/* on line */
+	} else {
+		status_set("OB");               /* on battery */
+	}
+	if ((ups_status & STATUS_BIT(DISCHRG)) &&
+		!(ups_status & STATUS_BIT(DEPLETED))) {
+		status_set("DISCHRG");	        /* discharging */
+	}
+	if ((ups_status & STATUS_BIT(CHRG)) &&
+		!(ups_status & STATUS_BIT(FULLYCHARGED))) {
+		status_set("CHRG");		/* charging */
+	}
+	if (ups_status & (STATUS_BIT(LOWBATT) | STATUS_BIT(TIMELIMITEXP) | STATUS_BIT(SHUTDOWNIMM))) {
+		status_set("LB");		/* low battery */
+	}
+	if (ups_status & STATUS_BIT(OVERLOAD)) {
+		status_set("OVER");		/* overload */
+	}
+	if (ups_status & STATUS_BIT(REPLACEBATT)) {
+		status_set("RB");		/* replace batt */
+	}
+	if (ups_status & STATUS_BIT(TRIM)) {
+		status_set("TRIM");		/* SmartTrim */
+	}
+	if (ups_status & STATUS_BIT(BOOST)) {
+		status_set("BOOST");	        /* SmartBoost */
+	}
+	if (ups_status & STATUS_BIT(BYPASS)) {
+		status_set("BYPASS");	        /* on bypass */   
+	}
+	if (ups_status & STATUS_BIT(OFF)) {
+		status_set("OFF");              /* ups is off */
+	}
+	if (ups_status & STATUS_BIT(CAL)) {
+		status_set("CAL");		/* calibration */
+	}
+}
+

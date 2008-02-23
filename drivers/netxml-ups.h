@@ -21,6 +21,8 @@
 #ifndef NETXML_UPS_H
 #define NETXML_UPS_H
 
+#include "nut_stdint.h"
+
 struct subdriver_s {
 	const char	*version;		/* name of this subdriver */
 	char		*initups;
@@ -32,5 +34,42 @@ struct subdriver_s {
 };
 
 typedef struct subdriver_s subdriver_t;
+
+/* ---------------------------------------------------------------------- */
+/* data for processing boolean values from UPS */
+
+#define STATUS_BIT(x)	((uint32_t)1<<x)
+#define STATUS_SET(x)	(ups_status |= STATUS_BIT(x))
+#define STATUS_CLR(x)	(ups_status &= ~STATUS_BIT(x))
+
+typedef enum {
+	ONLINE = 0,	/* on line */
+	DISCHRG,	/* discharging */
+	CHRG,		/* charging */
+	LOWBATT,	/* low battery */
+	OVERLOAD,	/* overload */
+	REPLACEBATT,	/* replace battery */
+	SHUTDOWNIMM,	/* shutdown imminent */
+	TRIM,		/* SmartTrim */
+	BOOST,		/* SmartBoost */
+	BYPASS,		/* on bypass */
+	OFF,		/* ups is off */
+	CAL,		/* calibration */
+	OVERHEAT,	/* overheat; Belkin, TrippLite */
+	COMMFAULT,	/* UPS fault; Belkin, TrippLite */
+	DEPLETED,	/* battery depleted; Belkin */
+	TIMELIMITEXP,	/* time limit expired; APC */
+	FULLYCHARGED,	/* battery full; CyberPower */
+	AWAITINGPOWER,	/* awaiting power; Belkin, TrippLite */
+	FANFAIL,	/* fan failure; MGE */
+	NOBATTERY,	/* battery missing; MGE */
+	BATTVOLTLO,	/* battery voltage too low; MGE */
+	BATTVOLTHI,	/* battery voltage too high; MGE */
+	CHARGERFAIL,	/* battery charger failure; MGE */
+	VRANGE,		/* voltage out of range */
+	FRANGE		/* frequency out of range */
+} status_bit_t;
+
+extern uint32_t	ups_status;
 
 #endif /* NETXML_UPS_H */

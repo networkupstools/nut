@@ -84,6 +84,455 @@ typedef  enum {
 
 } mge_xml_state_t;
 
+typedef struct {
+	char	*nutname;	/* NUT variable name */
+	uint32_t nutflags;	/* NUT flags (to set in addinfo) */
+	size_t	nutlen;		/* length of the NUT string */
+	char	*xmlname;	/* XML varianle name */
+	uint32_t xmlflags;	/* XML flags (to be used to determine what kind of variable this is */
+	size_t	xmllen;		/* length of the XML string */
+	char	*(*convert)(const char *value);	/* conversion function from XML<->NUT value (returns
+						   NULL if no further processing is required) */
+} xml_info_t;
+
+static char *online_info(const char *val)
+{
+	if (val[0] == '1') {
+		STATUS_SET(ONLINE);
+	} else {
+		STATUS_CLR(ONLINE);
+	}
+
+	return NULL;
+}
+
+static char *discharging_info(const char *val)
+{
+	if (val[0] == '1') {
+		STATUS_SET(DISCHRG);
+	} else {
+		STATUS_CLR(DISCHRG);
+	}
+
+	return NULL;
+}
+
+static char *charging_info(const char *val)
+{
+	if (val[0] == '1') {
+		STATUS_SET(CHRG);
+	} else {
+		STATUS_CLR(CHRG);
+	}
+
+	return NULL;
+}
+
+static char *lowbatt_info(const char *val)
+{
+	if (val[0] == '1') {
+		STATUS_SET(LOWBATT);
+	} else {
+		STATUS_CLR(LOWBATT);
+	}
+
+	return NULL;
+}
+
+static char *overload_info(const char *val)
+{
+	if (val[0] == '1') {
+		STATUS_SET(OVERLOAD);
+	} else {
+		STATUS_CLR(OVERLOAD);
+	}
+
+	return NULL;
+}
+
+static char *replacebatt_info(const char *val)
+{
+	if (val[0] == '1') {
+		STATUS_SET(REPLACEBATT);
+	} else {
+		STATUS_CLR(REPLACEBATT);
+	}
+
+	return NULL;
+}
+
+static char *trim_info(const char *val)
+{
+	if (val[0] == '1') {
+		STATUS_SET(TRIM);
+	} else {
+		STATUS_CLR(TRIM);
+	}
+
+	return NULL;
+}
+
+static char *boost_info(const char *val)
+{
+	if (val[0] == '1') {
+		STATUS_SET(BOOST);
+	} else {
+		STATUS_CLR(BOOST);
+	}
+
+	return NULL;
+}
+
+static char *bypass_info(const char *val)
+{
+	if (val[0] == '1') {
+		STATUS_SET(BYPASS);
+	} else {
+		STATUS_CLR(BYPASS);
+	}
+
+	return NULL;
+}
+
+static char *off_info(const char *val)
+{
+	if (val[0] == '0') {
+		STATUS_SET(OFF);
+	} else {
+		STATUS_CLR(OFF);
+	}
+
+	return NULL;
+}
+
+static char *calibration_info(const char *val)
+{
+	if (val[0] == '1') {
+		STATUS_SET(CAL);
+	} else {
+		STATUS_CLR(CAL);
+	}
+
+	return NULL;
+}
+
+/* note: this value is reverted (0=set, 1=not set). We report "battery
+   not installed" rather than "battery installed", so that devices
+   that don't implement this variable have a battery by default */
+static char *nobattery_info(const char *val)
+{
+	if (val[0] == '1') {
+		STATUS_SET(NOBATTERY);
+	} else {
+		STATUS_CLR(NOBATTERY);
+	}
+
+	return NULL;
+}
+
+static char *fanfail_info(const char *val)
+{
+	if (val[0] == '1') {
+		STATUS_SET(FANFAIL);
+	} else {
+		STATUS_CLR(FANFAIL);
+	}
+
+	return NULL;
+}
+
+static char *shutdownimm_info(const char *val)
+{
+	if (val[0] == '1') {
+		STATUS_SET(SHUTDOWNIMM);
+	} else {
+		STATUS_CLR(SHUTDOWNIMM);
+	}
+
+	return NULL;
+}
+
+static char *overheat_info(const char *val)
+{
+	if (val[0] == '1') {
+		STATUS_SET(OVERHEAT);
+	} else {
+		STATUS_CLR(OVERHEAT);
+	}
+
+	return NULL;
+}
+
+static char *awaitingpower_info(const char *val)
+{
+	if (val[0] == '1') {
+		STATUS_SET(AWAITINGPOWER);
+	} else {
+		STATUS_CLR(AWAITINGPOWER);
+	}
+
+	return NULL;
+}
+
+static char *commfault_info(const char *val)
+{
+	if (val[0] == '1') {
+		STATUS_SET(COMMFAULT);
+	} else {
+		STATUS_CLR(COMMFAULT);
+	}
+
+	return NULL;
+}
+
+static char *timelimitexpired_info(const char *val)
+{
+	if (val[0] == '1') {
+		STATUS_SET(TIMELIMITEXP);
+	} else {
+		STATUS_CLR(TIMELIMITEXP);
+	}
+
+	return NULL;
+}
+
+static char *battvoltlo_info(const char *val)
+{
+	if (val[0] == '1') {
+		STATUS_SET(BATTVOLTLO);
+	} else {
+		STATUS_CLR(BATTVOLTLO);
+	}
+
+	return NULL;
+}
+
+static char *battvolthi_info(const char *val)
+{
+	if (val[0] == '1') {
+		STATUS_SET(BATTVOLTHI);
+	} else {
+		STATUS_CLR(BATTVOLTHI);
+	}
+
+	return NULL;
+}
+
+static char *chargerfail_info(const char *val)
+{
+	if (val[0] == '1') {
+		STATUS_SET(CHARGERFAIL);
+	} else {
+		STATUS_CLR(CHARGERFAIL);
+	}
+
+	return NULL;
+}
+
+static char *fullycharged_info(const char *val)
+{
+	if (val[0] == '1') {
+		STATUS_SET(FULLYCHARGED);
+	} else {
+		STATUS_CLR(FULLYCHARGED);
+	}
+
+	return NULL;
+}
+
+static char *depleted_info(const char *val)
+{
+	if (val[0] == '1') {
+		STATUS_SET(DEPLETED);
+	} else {
+		STATUS_CLR(DEPLETED);
+	}
+
+	return NULL;
+}
+
+static char *vrange_info(const char *val)
+{
+	if (val[0] == '1') {
+		STATUS_SET(VRANGE);
+	} else {
+		STATUS_CLR(VRANGE);
+	}
+
+	return NULL;
+}
+
+static char *frange_info(const char *val)
+{
+	if (val[0] == '1') {
+		STATUS_SET(FRANGE);
+	} else {
+		STATUS_CLR(FRANGE);
+	}
+
+	return NULL;
+}
+
+static char *yes_no_info(const char *val)
+{
+	switch(val[0])
+	{
+	case '1':
+		return "yes";
+	case '0':
+		return "no";
+	default:
+		upsdebugx(2, "%s: unexpected value [%s]", __func__, val);
+		return "<unknown>";
+	}
+}
+
+static char *on_off_info(const char *val)
+{
+	switch(val[0])
+	{
+	case '1':
+		return "on";
+	case '0':
+		return "off";
+	default:
+		upsdebugx(2, "%s: unexpected value [%s]", __func__, val);
+		return "<unknown>";
+	}
+}
+
+#define ST_FLAG_RW	0
+#define ST_FLAG_STRING	0
+
+static xml_info_t mge_xml2nut[] = {
+	/* Special case: boolean values that are mapped to ups.status and ups.alarm */
+	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", 0, 0, online_info },
+	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.Discharging", 0, 0, discharging_info },
+	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.Charging", 0, 0, charging_info },
+	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", 0, 0, lowbatt_info },
+	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.Overload", 0, 0, overload_info },
+	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.NeedReplacement", 0, 0, replacebatt_info },
+	{ NULL, 0, 0, "UPS.PowerConverter.Input[1].PresentStatus.Buck", 0, 0, trim_info },
+	{ NULL, 0, 0, "UPS.PowerConverter.Input[1].PresentStatus.Boost", 0, 0, boost_info },
+	{ NULL, 0, 0, "UPS.PowerConverter.Input[1].PresentStatus.VoltageOutOfRange", 0, 0, vrange_info },
+	{ NULL, 0, 0, "UPS.PowerConverter.Input[1].PresentStatus.FrequencyOutOfRange", 0, 0, frange_info },
+	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.Good", 0, 0, off_info },
+	/* Manual bypass */
+	{ NULL, 0, 0, "UPS.PowerConverter.Input[4].PresentStatus.Used", 0, 0, bypass_info },
+	/* { NULL, 0, 0, "UPS.PowerConverter.Input[3].PresentStatus.Used", 0, 0, onbatt_info }, */
+	/* Automatic bypass */
+	{ NULL, 0, 0, "UPS.PowerConverter.Input[2].PresentStatus.Used", 0, 0, bypass_info },
+	/* { NULL, 0, 0, "UPS.PowerConverter.Input[1].PresentStatus.Used", 0, 0, online_info }, */
+	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.FanFailure", 0, 0, fanfail_info },
+	{ NULL, 0, 0, "UPS.BatterySystem.Battery.PresentStatus.Present", 0, 0, nobattery_info },
+	{ NULL, 0, 0, "UPS.BatterySystem.Charger.PresentStatus.InternalFailure", 0, 0, chargerfail_info },
+	{ NULL, 0, 0, "UPS.BatterySystem.Charger.PresentStatus.VoltageTooHigh", 0, 0, battvolthi_info },
+	{ NULL, 0, 0, "UPS.BatterySystem.Charger.PresentStatus.VoltageTooLow", 0, 0, battvoltlo_info },
+	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.InternalFailure", 0, 0, commfault_info },
+	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.CommunicationLost", 0, 0, commfault_info },
+	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.OverTemperature", 0, 0, overheat_info },
+	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.ShutdownImminent", 0, 0, shutdownimm_info },
+
+	/* Battery page */
+	{ "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", 0, 0, NULL },
+	{ "battery.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerSummary.RemainingCapacityLimitSetting", 0, 0, NULL },
+	{ "battery.charge.low", 0, 0, "UPS.PowerSummary.RemainingCapacityLimit", 0, 0, NULL }, /* Read only */
+	{ "battery.charge.restart", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.PowerSummary.RestartLevel", 0, 0, NULL },
+	{ "battery.capacity", 0, 0, "UPS.BatterySystem.Battery.DesignCapacity", 0, 0, NULL }, /* mge_battery_capacity, conversion needed from As to Ah */
+	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", 0, 0, NULL },
+	{ "battery.temperature", 0, 0, "UPS.BatterySystem.Battery.Temperature", 0, 0, NULL },
+	{ "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", 0, 0, NULL },
+	{ "battery.voltage", 0, 0, "UPS.PowerSummary.Voltage", 0, 0, NULL },
+	{ "battery.voltage.nominal", 0, 0, "UPS.BatterySystem.ConfigVoltage", 0, 0, NULL },
+	{ "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", 0, 0, NULL }, /* mge_battery_voltage_nominal */
+	{ "battery.protection", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.BatterySystem.Battery.DeepDischargeProtection", 0, 0, yes_no_info },
+	{ "battery.energysave", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Input[3].EnergySaving", 0, 0, yes_no_info },
+
+	/* UPS page */
+	{ "ups.model", 0, 0, "System.Description", 0, 0, NULL },
+	{ "ups.date", 0, 0, "System.LastAcquisition", 0, 0, NULL },
+	/* -> XML variable System.Location [Computer Room] doesn't map to any NUT variable */
+	/* -> XML variable System.Contact [Computer Room Manager] doesn't map to any NUT variable */
+	/* -> XML variable UPS.PowerSummary.iProduct [Evolution] doesn't map to any NUT variable */
+	/* -> XML variable UPS.PowerSummary.iModel [650] doesn't map to any NUT variable */
+	{ "ups.serial", 0, 0, "UPS.PowerSummary.iSerialNumber", 0, 0, NULL },
+	{ "ups.firmware", 0, 0, "UPS.PowerSummary.iVersion", 0, 0, NULL },
+	{ "ups.load", 0, 0, "UPS.PowerSummary.PercentLoad", 0, 0, NULL },
+	{ "ups.load.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.Flow[4].ConfigPercentLoad", 0, 0, NULL },
+	{ "ups.delay.shutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", 0, 0, NULL },
+	{ "ups.delay.reboot", 0, 0, "UPS.PowerSummary.DelayBeforeReboot", 0, 0, NULL},
+	{ "ups.delay.start", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", 0, 0, NULL},
+	{ "ups.test.result", 0, 0, "UPS.BatterySystem.Battery.Test", 0, 0, NULL }, /* test_read_info */
+	{ "ups.test.interval", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.BatterySystem.Battery.TestPeriod", 0, 0, NULL },
+	{ "ups.beeper.status", 0 ,0, "UPS.PowerSummary.AudibleAlarmControl", 0, 0, NULL }, /* beeper_info */
+	{ "ups.temperature", 0, 0, "UPS.PowerSummary.Temperature", 0, 0, NULL },
+	{ "ups.power", 0, 0, "UPS.PowerConverter.Output.ApparentPower", 0, 0, NULL},
+	{ "ups.power.nominal", 0, 0, "UPS.Flow[4].ConfigApparentPower", 0, 0, NULL },
+	{ "ups.realpower", 0, 0, "UPS.PowerConverter.Output.ActivePower", 0, 0, NULL },
+	{ "ups.realpower.nominal", 0, 0, "UPS.Flow[4].ConfigActivePower", 0, 0, NULL },
+	{ "ups.start.auto", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Input[1].AutomaticRestart", 0, 0, yes_no_info },
+	{ "ups.start.battery", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Input[3].StartOnBattery", 0, 0, yes_no_info },
+	{ "ups.start.reboot", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.ForcedReboot",  0, 0, yes_no_info },
+
+	/* Input page */
+	{ "input.voltage", 0, 0, "UPS.PowerConverter.Input[1].Voltage",  0, 0, NULL },
+	{ "input.voltage.nominal", 0, 0, "UPS.Flow[1].ConfigVoltage", 0, 0, NULL },
+	{ "input.voltage.extended", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.ExtendedVoltageMode", 0, 0, yes_no_info },
+	{ "input.frequency", 0, 0, "UPS.PowerConverter.Input[1].Frequency", 0, 0, NULL },
+	{ "input.frequency.nominal", 0, 0, "UPS.Flow[1].ConfigFrequency", 0, 0, NULL },
+	{ "input.frequency.extended", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.ExtendedFrequencyMode", 0, 0, yes_no_info },
+	/* same as "input.transfer.boost.low" */
+	{ "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.LowVoltageTransfer", 0, 0, NULL },
+	{ "input.transfer.boost.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.LowVoltageBoostTransfer", 0, 0, NULL },
+	{ "input.transfer.boost.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.HighVoltageBoostTransfer", 0, 0, NULL },
+	{ "input.transfer.trim.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.LowVoltageBuckTransfer", 0, 0, NULL },
+	/* same as "input.transfer.trim.high" */
+	{ "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.HighVoltageTransfer", 0, 0, NULL },
+	{ "input.transfer.trim.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.HighVoltageBuckTransfer", 0, 0, NULL },
+	{ "input.sensitivity", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerConverter.Output.SensitivityMode", 0, 0, NULL },
+
+	/* Output page */
+	{ "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", 0, 0, NULL },
+	{ "output.voltage.nominal", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.Flow[4].ConfigVoltage", 0, 0, NULL },
+	{ "output.current", 0, 0, "UPS.PowerConverter.Output.Current", 0, 0, NULL },
+	{ "output.powerfactor", 0, 0, "UPS.PowerConverter.Output.PowerFactor", 0, 0, NULL }, /* mge_powerfactor_conversion */
+	{ "output.frequency", 0, 0, "UPS.PowerConverter.Output.Frequency", 0, 0, NULL },
+	{ "output.frequency.nominal", 0, 0, "UPS.Flow[4].ConfigFrequency", 0, 0, NULL },
+
+	/* Ambient page: Environment Sensor (ref 66 846)
+	 * This will only work with mge-xml since it's an NMC addon! */
+	{ "ambient.temperature", 0, 0, "Environment.Temperature", 0, 0, NULL },
+	{ "ambient.humidity", 0, 0, "Environment.Humidity", 0, 0, NULL },
+
+	/* Outlet page (using MGE UPS SYSTEMS - PowerShare technology) */
+	{ "outlet.0.id", 0, 0, "UPS.OutletSystem.Outlet[1].OutletID", 0, 0, NULL },
+	{ "outlet.0.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet[1].iName", 0, 0, NULL },
+	{ "outlet.0.switchable", 0, 0, "UPS.OutletSystem.Outlet[1].PresentStatus.Switchable", 0, 0, yes_no_info },
+	/* -> XML variable System.ShutdownDuration [120] doesn't map to any NUT variable */
+
+	{ "outlet.1.id", 0, 0, "UPS.OutletSystem.Outlet[2].OutletID", 0, 0, NULL },
+	{ "outlet.1.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet[2].iName", 0, 0, NULL },
+	{ "outlet.1.switchable", 0, 0, "UPS.OutletSystem.Outlet[2].PresentStatus.Switchable", 0, 0, yes_no_info },
+	{ "outlet.1.status", 0, 0, "UPS.OutletSystem.Outlet[2].PresentStatus.SwitchOnOff", 0, 0, on_off_info },
+	/* For low end models, with 1 non backup'ed outlet */
+	{ "outlet.1.status", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", 0, 0, NULL }, /* on_off_info */
+	{ "outlet.1.autoswitch.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet[2].RemainingCapacityLimit", 0, 0, NULL },
+	{ "outlet.1.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet[2].ShutdownTimer", 0, 0, NULL },
+	{ "outlet.1.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet[2].StartupTimer", 0, 0, NULL },
+	/* -> XML variable System.Outlet[2].ShutdownDuration [120] doesn't map to any NUT variable */
+
+	{ "outlet.2.id", 0, 0, "UPS.OutletSystem.Outlet[3].OutletID", 0, 0, NULL },
+	{ "outlet.2.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet[3].iName", 0, 0, NULL },
+	{ "outlet.2.switchable", 0, 0, "UPS.OutletSystem.Outlet[3].PresentStatus.Switchable",  0, 0, yes_no_info },
+	{ "outlet.2.status", 0, 0, "UPS.OutletSystem.Outlet[3].PresentStatus.SwitchOnOff", 0, 0, on_off_info },
+	{ "outlet.2.autoswitch.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet[3].RemainingCapacityLimit", 0, 0, NULL },
+	{ "outlet.2.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet[3].ShutdownTimer", 0, 0, NULL },
+	{ "outlet.2.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet[3].StartupTimer", 0, 0, NULL },
+	/* -> XML variable System.Outlet[3].ShutdownDuration [120] doesn't map to any NUT variable */
+
+	{ NULL, 0, 0, NULL, 0, 0, NULL }
+};
+
 /* A start-element callback for element with given namespace/name. */
 static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, const char *name, const char **atts)
 {
@@ -252,6 +701,8 @@ static int mge_xml_cdata_cb(void *userdata, int state, const char *cdata, size_t
 		return 0;
 	}
 
+	upsdebugx(3, "%s: cdata [%.*s] (state = %d)\n", __func__, len, cdata, state);
+
 	switch(state)
 	{
 	case SU_OBJECT:
@@ -260,26 +711,47 @@ static int mge_xml_cdata_cb(void *userdata, int state, const char *cdata, size_t
 		break;
 	}
 
-	upsdebugx(3, "%s: cdata [%.*s] (state = %d)\n", __func__, len, cdata, state);
 	return 0;
 }
 
 /* End element callback; may return non-zero to abort the parse. */
 static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, const char *name)
 {
+	xml_info_t	*info;
+	char		*value = val;
+
+	upsdebugx(3, "%s: name </%s> (state = %d)\n", __func__, name, state);
+
 	switch(state)
 	{
 	case PRODUCT_INFO:
-		dstate_setinfo("ups.firmware.aux", val);
+		dstate_setinfo("ups.firmware.aux", value);
 		break;
 
 	case SU_OBJECT:
 	case GO_OBJECT:
-		upsdebugx(2, "dstate_setinfo(\"%s\", \"%s\");\n", var, val);
+		for (info = mge_xml2nut; info->xmlname != NULL; info++) {
+			if (strcasecmp(var, info->xmlname)) {
+				continue;
+			}
+
+			upsdebugx(3, "-> XML variable %s [%s] maps to NUT variable %s", var, value, info->nutname);
+
+			if (info->convert) {
+				value = info->convert(value);
+			}
+
+			if (value != NULL) {
+				dstate_setinfo(info->nutname, value);
+			}
+
+			return 0;
+		}
+
+		upsdebugx(2, "-> XML variable %s [%s] doesn't map to any NUT variable", var, value);
 		break;
 	}
 	
-	upsdebugx(3, "%s: name </%s> (state = %d)\n", __func__, name, state);
 	return 0;
 }
 
