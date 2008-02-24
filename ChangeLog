@@ -1,3 +1,8 @@
+Sun Feb 24 19:56:54 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - common/serial.c: Cleanup some of the serial I/O functions (no
+   functional changes).
+
 Sun Feb 24 11:17:36 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - netxml-ups: Add autoconf and configure magic.

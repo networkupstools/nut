@@ -237,58 +237,49 @@ int ser_close(int fd, const char *port)
 
 int ser_send_char(int fd, unsigned char ch)
 {
-	return write(fd, &ch, 1);
+	return ser_send_buf_pace(fd, 0, &ch, 1);
+}
+
+static unsigned int send_formatted(int fd, const char *fmt, va_list va, unsigned long d_usec)
+{
+	int	ret;
+	char	buf[LARGEBUF];
+
+	ret = vsnprintf(buf, sizeof(buf), fmt, va);
+
+	if (ret >= (int)sizeof(buf)) {
+		upslogx(LOG_WARNING, "vsnprintf needed more than %d bytes", sizeof(buf));
+	}
+
+	return ser_send_buf_pace(fd, d_usec, buf, strlen(buf));
 }
 
 /* send the results of the format string with d_usec delay after each char */
 unsigned int ser_send_pace(int fd, unsigned long d_usec, const char *fmt, ...)
 {
 	int	ret;
-	char	buf[1024], *p;
 	va_list	ap;
-	unsigned int	sent = 0;
 
 	va_start(ap, fmt);
 
-	ret = vsnprintf(buf, sizeof(buf), fmt, ap);
+	ret = send_formatted(fd, fmt, ap, d_usec);
 
 	va_end(ap);
 
-	if ((ret < 1) || (ret >= (int) sizeof(buf)))
-		upslogx(LOG_WARNING, "ser_send_pace: vsnprintf needed more "
-			"than %d bytes", sizeof(buf));
-
-	for (p = buf; *p; p++) {
-		if (write(fd, p, 1) != 1)
-			return -1;
-
-		if (d_usec)
-			usleep(d_usec);
-
-		sent++;
-	}
-
-	return sent;
+	return ret;
 }
 
 /* send the results of the format string with no delay */
 unsigned int ser_send(int fd, const char *fmt, ...)
 {
 	int	ret;
-	char	buf[1024];
 	va_list	ap;
 
 	va_start(ap, fmt);
 
-	ret = vsnprintf(buf, sizeof(buf), fmt, ap);
+	ret = send_formatted(fd, fmt, ap, 0);
 
 	va_end(ap);
-
-	if ((ret < 1) || (ret >= (int) sizeof(buf)))
-		upslogx(LOG_WARNING, "ser_send: vsnprintf needed more "
-			"than %d bytes", sizeof(buf));
-
-	ret = write(fd, buf, strlen(buf));
 
 	return ret;
 }
@@ -296,26 +287,28 @@ unsigned int ser_send(int fd, const char *fmt, ...)
 /* send buflen bytes from buf with no delay */
 int ser_send_buf(int fd, const void *buf, size_t buflen)
 {
-	return write(fd, buf, buflen);
+	return ser_send_buf_pace(fd, 0, buf, buflen);
 }
 
 /* send buflen bytes from buf with d_usec delay after each char */
-int ser_send_buf_pace(int fd, unsigned long d_usec, const void *buf, 
+int ser_send_buf_pace(int fd, unsigned long d_usec, const void *buf,
 	size_t buflen)
 {
 	int	ret;
-	unsigned int	i;
+	size_t	sent;
 
-	for (i = 0; i < buflen; i++) {
-		ret = ser_send_char(fd, ((unsigned char *)buf)[i]);
+	for (sent = 0; sent < buflen; sent += ret) {
 
-		if (ret != 1)
+		ret = write(fd, &((char *)buf)[sent], (d_usec == 0) ? (buflen - sent) : 1);
+
+		if (ret < 1) {
 			return ret;
+		}
 
 		usleep(d_usec);
 	}
 
-	return buflen;
+	return sent;
 }
 
 static int get_buf(int fd, void *buf, size_t buflen, long d_sec, long d_usec)
@@ -333,9 +326,9 @@ static int get_buf(int fd, void *buf, size_t buflen, long d_sec, long d_usec)
 	ret = select(fd + 1, &rfds, NULL, NULL, &tv);
 
 	if (ret == -1) {
-		if (errno != EINTR)
+		if (errno != EINTR) {
 			upslog_with_errno(LOG_ERR, "select fd %d", fd);
-
+		}
 		return -1;
 	}
 
@@ -358,40 +351,21 @@ int ser_get_char(int fd, void *ch, long d_sec, long d_usec)
 /* keep reading until buflen bytes are received or a timeout occurs */
 int ser_get_buf_len(int fd, void *buf, size_t buflen, long d_sec, long d_usec)
 {
-	int	i, ret;
-	char	tmp[64];
-	size_t	count = 0, tmplen;
+	int	ret;
+	size_t	recv;
 
 	memset(buf, '\0', buflen);
 
-	/* don't use all of tmp if the caller has a small buffer */
-	tmplen = sizeof(tmp);
+	for (recv = 0; recv < buflen; recv += ret) {
 
-	if (buflen < tmplen)
-		tmplen = buflen;
+		ret = get_buf(fd, &((char *)buf)[recv], buflen - recv, d_sec, d_usec);
 
-	while (count < buflen) {
-		ret = get_buf(fd, tmp, tmplen, d_sec, d_usec);
-
-		if (ret < 1)
-			return -1;
-
-		for (i = 0; i < ret; i++) {
-			if (count == buflen)
-				return count;
-
-			((char *)buf)[count++] = tmp[i];
+		if (ret < 1) {
+			return ret;
 		}
-
-		/* make sure we don't read too much next time */
-		tmplen = sizeof(tmp);
-
-		if ((buflen - count) < tmplen)
-			tmplen = buflen - count;
-		
 	}
 
-	return count;
+	return recv;
 }
 
 /* reads a line up to <endchar>, discarding anything else that may follow,
