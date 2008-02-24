@@ -27,6 +27,8 @@
 #include <ne_props.h>
 #include <ne_uri.h>
 #include <ne_xmlreq.h>
+#include <ne_ssl.h>
+#include <ne_auth.h>
 
 #include "main.h"
 
@@ -43,6 +45,7 @@ static ne_session	*session;
 /* Support functions */
 static void ups_alarm_set(void);
 static void ups_status_set(void);
+static int authenticate(void *userdata, const char *realm, int attempt, char *username, char *password);
 
 void upsdrv_initinfo(void)
 {
@@ -174,11 +177,8 @@ void upsdrv_help(void)
 /* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {
-	/* allow '-x xyzzy' */
-	/* addvar(VAR_FLAG, "xyzzy", "Enable xyzzy mode"); */
-
-	/* allow '-x foo=<some value>' */
-	/* addvar(VAR_VALUE, "foo", "Override foo setting"); */
+	addvar(VAR_VALUE, "login", "login value for authenticated mode");
+	addvar(VAR_VALUE, "password", "password value for authenticated mode");
 }
 
 void upsdrv_banner(void)
@@ -190,7 +190,7 @@ void upsdrv_banner(void)
 
 void upsdrv_initups(void)
 {
-	ne_uri		uri;
+	ne_uri	uri;
 
 	/* Initialize socket libraries */
 	if (ne_sock_init()) {
@@ -217,12 +217,13 @@ void upsdrv_initups(void)
 
 	/* Sets the user-agent string */
 	ne_set_useragent(session, subdriver->version);
-#if 0
-	/* Load default CAs if using SSL. */
-	if (strcasecmp(uri.scheme, "https") == 0)
-		if (ne_ssl_load_default_ca(session))
-			fprintf(stdout, "Failed to load default CAs.\n");
-#endif
+
+	if (strcasecmp(uri.scheme, "https") == 0) {
+		/* Load default CAs if using SSL. */
+		ne_ssl_trust_default_ca(session);
+	}
+
+	ne_set_server_auth(session, authenticate, NULL);
 }
 
 void upsdrv_cleanup(void)
@@ -233,6 +234,22 @@ void upsdrv_cleanup(void)
 /**********************************************************************
  * Support functions
  *********************************************************************/
+
+/* Supply the 'login' and 'password' when authentication is required */
+static int authenticate(void *userdata, const char *realm, int attempt, char *username, char *password)
+{
+	char	*val;
+
+	upsdebugx(2, "%s: realm = [%s], attempt = %d", __func__, realm, attempt);
+
+	val = getval("login");
+	snprintf(username, NE_ABUFSIZ, "%s", val ? val : "");
+
+	val = getval("password");
+	snprintf(password, NE_ABUFSIZ, "%s", val ? val : "");
+
+	return attempt;
+}
 
 /* Convert the local status information to NUT format and set NUT
    alarms. */
@@ -320,4 +337,3 @@ static void ups_status_set(void)
 		status_set("CAL");		/* calibration */
 	}
 }
-

@@ -725,6 +725,7 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 	switch(state)
 	{
 	case PRODUCT_INFO:
+		dstate_setinfo("ups.mfr", "MGE UPS SYSTEMS");
 		dstate_setinfo("ups.firmware.aux", value);
 		break;
 
