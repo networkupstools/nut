@@ -58,6 +58,7 @@ SNMP_PAGES = snmp-ups.8
 USB_LIBUSB_PAGES = usbhid-ups.8 bcmxcp_usb.8 tripplite_usb.8 megatec_usb.8
 USB_HIDDEV_PAGES = energizerups.8
 MGEXML_PAGES = mge-xml.8
+NETXML_PAGES = netxml-ups.8
 
 # decide which pages to install
 man_MANS = $(CONF_PAGES) $(CLIENT_PAGES)
@@ -87,6 +88,9 @@ if HAVE_HIDDEV
 endif
 if WITH_MGEXML
    man_MANS += $(MGEXML_PAGES)
+endif
+if WITH_NEONXML
+   man_MANS += $(NETXML_PAGES)
 endif
 endif
 endif

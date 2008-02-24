@@ -1,3 +1,8 @@
+Sun Feb 24 21:36:23 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - man/netxml-ups.8: Add manual page for 'netxml-ups' driver (shameless
+   copy from the 'mge-xml' man page with some additional comments).
+
 Sun Feb 24 20:31:59 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - driver/mge-xml.c: Add manufacturer string if we succesfully parsed
