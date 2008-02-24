@@ -166,6 +166,7 @@ AC_HELP_STRING([--with-all], [enable serial, usb, snmp, hal, cgi, lib, mgexml]),
 		if test -z "${with_usb}"; then with_usb="${withval}"; fi
 		if test -z "${with_hal}"; then with_hal="${withval}"; fi
 		if test -z "${with_mgexml}"; then with_mgexml="${withval}"; fi
+		if test -z "${with_neonxml}"; then with_neonxml="${withval}"; fi
 		AC_MSG_RESULT("${withval}")		
 	else
 		AC_MSG_RESULT(not given)
@@ -184,6 +185,7 @@ NUT_ARG_WITH([hal], [build and install HAL support], [no])
 NUT_ARG_WITH([cgi], [build and install the CGI programs], [no])
 NUT_ARG_WITH([lib], [build and install the upsclient library], [no])
 NUT_ARG_WITH([mgexml], [build and install MGE XML/HTTP driver], [yes])
+NUT_ARG_WITH([neonxml], [build and install neon based XML/HTTP driver], [auto])
 
 dnl ----------------------------------------------------------------------
 dnl Check for presence and compiler flags of various libraries
@@ -195,6 +197,7 @@ dnl what will be in the --with-drivers argument.
 NUT_CHECK_LIBNETSNMP
 NUT_CHECK_LIBUSB
 NUT_CHECK_LIBHAL
+NUT_CHECK_LIBNEON
 
 dnl ----------------------------------------------------------------------
 dnl additional USB-related checks
@@ -410,6 +413,20 @@ fi
 AM_CONDITIONAL(WITH_MGEXML, test "${nut_with_mgexml}" = "yes")
 NUT_REPORT_FEATURE([enable MGE XML/HTTP support], [${nut_with_mgexml}])
 
+dnl ----------------------------------------------------------------------
+dnl checks related to --with-neonxml
+
+dnl ${nut_with_neonxml}: any value except "yes" or "no" is treated as "auto". 
+if test "${nut_with_neonxml}" = "yes" -a "${nut_have_neon}" != "yes"; then
+   AC_MSG_ERROR(["neon libraries not found, required for neon based XML/HTTP driver"])
+fi
+
+if test "${nut_with_neonxml}" != "no"; then
+   nut_with_neonxml="${nut_have_neon}"
+fi
+
+AM_CONDITIONAL(WITH_NEONXML, test "${nut_with_neonxml}" = "yes")
+NUT_REPORT_FEATURE([build neon based XML driver], [${nut_with_neonxml}])
 
 dnl ----------------------------------------------------------------------
 
@@ -764,6 +781,8 @@ AC_SUBST(LIBNETSNMP_CFLAGS)
 AC_SUBST(LIBNETSNMP_LDFLAGS)
 AC_SUBST(LIBUSB_CFLAGS)
 AC_SUBST(LIBUSB_LDFLAGS)
+AC_SUBST(LIBNEON_CFLAGS)
+AC_SUBST(LIBNEON_LDFLAGS)
 AC_SUBST(HAL_USER)
 AC_SUBST(HAL_FDI_PATH)
 AC_SUBST(HAL_CALLOUTS_PATH)

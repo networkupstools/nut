@@ -28,6 +28,9 @@ endif
 if WITH_SNMP
   AM_CFLAGS += $(LIBSSL_CFLAGS)
 endif
+if WITH_NEONXML
+  AM_CFLAGS += $(LIBNEON_CFLAGS)
+endif
 
 SERIAL_DRIVERLIST = al175 apcsmart bcmxcp belkin belkinunv bestfcom	\
  bestuferrups bestups cpsups cyberpower dummy-ups etapro everups 	\
@@ -41,9 +44,10 @@ USB_DRIVERLIST = $(USB_LIBUSB_DRIVERLIST) $(USB_HIDDEV_DRIVERLIST)
 HAL_DRIVERLIST = hald-addon-usbhid-ups hald-addon-bcmxcp_usb \
  hald-addon-tripplite_usb hald-addon-megatec_usb
 MGEXML_DRIVERLIST = mge-xml
+NEONXML_DRIVERLIST = netxml-ups
 
 # distribute all drivers, even ones that are not built by default
-EXTRA_PROGRAMS = $(SERIAL_DRIVERLIST) $(SNMP_DRIVERLIST) $(USB_DRIVERLIST) $(MGEXML_DRIVERLIST)
+EXTRA_PROGRAMS = $(SERIAL_DRIVERLIST) $(SNMP_DRIVERLIST) $(USB_DRIVERLIST) $(MGEXML_DRIVERLIST) $(NEONXML_DRIVERLIST)
 
 # construct the list of drivers to build
 if SOME_DRIVERS
@@ -70,6 +74,9 @@ if WITH_HAL
 endif
 if WITH_MGEXML
    driverexec_PROGRAMS += $(MGEXML_DRIVERLIST)
+endif
+if WITH_NEONXML
+   driverexec_PROGRAMS += $(NEONXML_DRIVERLIST)
 endif
 else
    driverexec_PROGRAMS += skel
@@ -190,6 +197,10 @@ mge_xml_SOURCES = usbhid-ups.c libmge-xml.c mge-hid.c ezxml.c
 mge_xml_CFLAGS = $(AM_CFLAGS) -DMGEXML_MODE -DMGE_MODE
 mge_xml_LDADD = $(LDADD_DRIVERS)
 
+# NEON XML/HTTP
+netxml_ups_SOURCES = netxml-ups.c mge-xml.c
+netxml_ups_LDADD = $(LDADD_DRIVERS) $(LIBNEON_LDFLAGS)
+
 # ----------------------------------------------------------------------
 # List of header files. The purpose of this list is not dependency
 # tracking (which is automatic), but to ensure these files are
@@ -208,7 +219,7 @@ dist_noinst_HEADERS = al175.h apccmib.h apc-hid.h apcsmart.h bcmxcp.h	\
  oneac.h optiups.h powercom.h pwmib.h safenet.h serial.h		\
  snmp-ups.h solis.h tripplite.h tripplite-hid.h tripplitesu.h		\
  upscode2.h victronups.h powerpanel.h powerp-bin.h powerp-txt.h		\
- upshandler.h
+ upshandler.h netxml-ups.h mge-xml.h
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,
