@@ -1,3 +1,8 @@
+Mon Feb 25 20:38:45 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/hidparser.c: Allocate twice the maximum number of reports
+   we expect (MAX_REPORTS), to allow for bogus/duplicate reports.
+
 Mon Feb 25 13:04:24 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - man/Makefile.am: Include netxml-ups man page in distribution.

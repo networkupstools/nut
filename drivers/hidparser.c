@@ -582,7 +582,8 @@ HIDDesc_t *Parse_ReportDesc(u_char *ReportDesc, int n) {
 		return NULL;
 	}
 
-	pDesc->item = calloc(MAX_REPORT, sizeof(*pDesc->item));
+	/* allow for some bogus/duplicate reports */
+	pDesc->item = calloc(2 * MAX_REPORT, sizeof(*pDesc->item));
 	if (!pDesc->item) {
 		Free_ReportDesc(pDesc);
 		return NULL;
@@ -597,7 +598,7 @@ HIDDesc_t *Parse_ReportDesc(u_char *ReportDesc, int n) {
 	parser->ReportDesc = ReportDesc;
 	parser->ReportDescSize = n;
 
-	for (i = 0; i < MAX_REPORT; i++) {
+	for (i = 0; i < (2 * MAX_REPORT); i++) {
 		if (!HIDParse(parser, &pDesc->item[i])) {
 			break;
 		}
