@@ -1,3 +1,7 @@
+Mon Feb 25 13:04:24 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - man/Makefile.am: Include netxml-ups man page in distribution.
+
 Mon Feb 25 12:34:32 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  * data/driver.list:
