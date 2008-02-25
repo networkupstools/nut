@@ -1,3 +1,8 @@
+Mon Feb 25 20:38:45 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/hidparser.c: Allocate twice the maximum number of reports
+   we expect (MAX_REPORTS), to allow for bogus/duplicate reports.
+
 Mon Feb 25 12:34:32 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  * data/driver.list:
