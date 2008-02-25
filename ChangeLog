@@ -1,3 +1,9 @@
+Mon Feb 25 12:34:32 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+
+ * data/driver.list:
+   - add APC BACK-UPS XS LCD (reported by Chad Miller), (backport from trunk)
+   - USB completion for Powerware (for PW5115 and PW9120)
+
 Fri Feb 22 19:14:04 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - clients/*.c: The upscli_disconnect() function does no longer LOGOUT
