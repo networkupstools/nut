@@ -1,3 +1,11 @@
+Tue Feb 26 19:24:48 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/hidparser.c: If a HID path for a report ends in 0x00000000,
+   it will not be made available. These are continuations of previous
+   objects (that we can't handle anyway). Instead, we will only use
+   them to calculate the size of the report.
+ - drivers/libhid.c: We no longer need to skip the reports above.
+
 Mon Feb 25 20:38:45 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/hidparser.c: Allocate twice the maximum number of reports

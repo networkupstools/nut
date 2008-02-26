@@ -480,11 +480,6 @@ int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventsize)
 		if (pData->Type != ITEM_INPUT)
 			continue;
 
-		/* HID Path ends in 0x00000000, so this value should not be used */
-		if (pData->Path.Node[pData->Path.Size-1] == 0x00000000) {
-			continue;
-		}
-
 		/* maximum number of events reached? */
 		if (itemCount >= eventsize) {
 			upsdebugx(1, "HIDGetEvents: too many events (truncated)");

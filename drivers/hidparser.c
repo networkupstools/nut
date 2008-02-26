@@ -147,13 +147,14 @@ static long FormatValue(long Value, u_char Size)
  * Analyse Report descriptor stored in HIDParser struct and store local and
  * global context. 
  * Return in pData the last object found.
- * Return TRUE when there is other Item to parse.
+ * Return -1 when there is no other Item to parse, 1 if a new object was found
+ * or 0 if a continuation of a previous object was found.
  * -------------------------------------------------------------------------- */
 static int HIDParse(HIDParser_t* pParser, HIDData_t* pData)
 {
-  int Found=0;
+  int Found = -1;
 
-  while(!Found && pParser->Pos<pParser->ReportDescSize)
+  while ((Found < 0) && (pParser->Pos < pParser->ReportDescSize))
   {
     /* Get new pParser->Item if current pParser->Count is empty */
     if(pParser->Count==0)
@@ -241,8 +242,13 @@ static int HIDParse(HIDParser_t* pParser, HIDData_t* pData)
       case ITEM_INPUT :
       case ITEM_OUTPUT :
       {
-        /* An object was found */
-        Found=1;
+	if (pParser->UsageTab[0] != 0x00000000) {
+	  /* An object was found if the path does not end with 0x00000000 */
+	  Found = 1;
+	} else {
+	  /* It is a continuation of a previous object */
+	  Found = 0;
+	}
 
         /* Increment object count */
         pParser->nObject++;
@@ -352,7 +358,7 @@ static int HIDParse(HIDParser_t* pParser, HIDData_t* pData)
 	pParser->Pos+=(u_char)(pParser->Value & 0xff);
       }
     }
-  } /* while(!Found && pParser->Pos<pParser->ReportDescSize) */
+  } /* while ((Found < 0) && (pParser->Pos < pParser->ReportDescSize)) */
 
   ERROR(pParser->Data.Path.Size>=PATH_SIZE);
   ERROR(pParser->ReportDescSize>=REPORT_DSC_SIZE);
@@ -571,19 +577,18 @@ void SetValue(const HIDData_t* pData, u_char* Buf, long Value)
    Output: parsed data structure. Returns allocated HIDDesc structure
    on success, NULL on failure with errno set. Note: the value
    returned by this function must be freed with Free_ReportDesc(). */
-HIDDesc_t *Parse_ReportDesc(u_char *ReportDesc, int n) {
-	HIDParser_t *parser;
-	HIDData_t *item = NULL;
-	HIDDesc_t *pDesc;
-	int i, id, max;
+HIDDesc_t *Parse_ReportDesc(u_char *ReportDesc, int n)
+{
+	int		ret;
+	HIDDesc_t	*pDesc;
+	HIDParser_t	*parser;
 
 	pDesc = calloc(1, sizeof(*pDesc));
 	if (!pDesc) {
 		return NULL;
 	}
 
-	/* allow for some bogus/duplicate reports */
-	pDesc->item = calloc(2 * MAX_REPORT, sizeof(*pDesc->item));
+	pDesc->item = calloc(MAX_REPORT, sizeof(*pDesc->item));
 	if (!pDesc->item) {
 		Free_ReportDesc(pDesc);
 		return NULL;
@@ -598,33 +603,18 @@ HIDDesc_t *Parse_ReportDesc(u_char *ReportDesc, int n) {
 	parser->ReportDesc = ReportDesc;
 	parser->ReportDescSize = n;
 
-	for (i = 0; i < (2 * MAX_REPORT); i++) {
-		if (!HIDParse(parser, &pDesc->item[i])) {
+	for (pDesc->nitems = 0; pDesc->nitems < MAX_REPORT; pDesc->nitems += ret) {
+		int	id, max;
+
+		ret = HIDParse(parser, &pDesc->item[pDesc->nitems]);
+		if (ret < 0) {
 			break;
 		}
-	}
 
-	free(parser);
-
-	if (i > 0) {
-		item = realloc(pDesc->item, i * sizeof(*pDesc->item));
-	}
-	if (!item) {
-		Free_ReportDesc(pDesc);
-		return NULL;
-	}
-
-	pDesc->nitems = i;
-	pDesc->item = item;
-
-	/* done scanning report descriptor; now calculate derived data */
-
-	/* make a list of reports and their lengths */
-	for (i=0; i<pDesc->nitems; i++) {
-		id = item[i].ReportID;
+		id = pDesc->item[pDesc->nitems].ReportID;
 
 		/* calculate bit range of this item within report */
-		max = item[i].Offset + item[i].Size;
+		max = pDesc->item[pDesc->nitems].Offset + pDesc->item[pDesc->nitems].Size;
 
 		/* convert to bytes */
 		max = (max + 7) >> 3;
@@ -635,14 +625,25 @@ HIDDesc_t *Parse_ReportDesc(u_char *ReportDesc, int n) {
 		}
 	}
 
+	free(parser);
+
+	if (pDesc->nitems == 0) {
+		Free_ReportDesc(pDesc);
+		return NULL;
+	}
+
+	pDesc->item = realloc(pDesc->item, pDesc->nitems * sizeof(*pDesc->item));
+
 	return pDesc;
 }
 
 /* free a parsed report descriptor, as allocated by Parse_ReportDesc() */
-void Free_ReportDesc(HIDDesc_t *pDesc) {
+void Free_ReportDesc(HIDDesc_t *pDesc)
+{
 	if (!pDesc) {
 		return;
 	}
+
 	free(pDesc->item);
 	free(pDesc);
 }
