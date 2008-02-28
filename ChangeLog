@@ -1,3 +1,7 @@
+Thu Feb 28 21:10:47 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/netxml-ups: Add 3-phase variables (based on MGE Galaxy).
+
 Thu Feb 28 15:57:24 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/bestups:

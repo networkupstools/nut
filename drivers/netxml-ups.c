@@ -78,10 +78,8 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("driver.version.internal", "%s", subdriver->version);
 
-	/* dstate_setinfo("ups.mfr", "skel driver"); */
-	/* dstate_setinfo("ups.model", "longrun 15000"); */
-
 	/* upsh.instcmd = instcmd; */
+	/* upsh.setvar = setvar; */
 }
 
 void upsdrv_updateinfo(void)
