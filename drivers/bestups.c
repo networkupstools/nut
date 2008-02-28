@@ -30,8 +30,8 @@
 #define SER_WAIT_SEC	3	/* allow 3.0 sec for ser_get calls */
 #define SER_WAIT_USEC	0
 
-static	float	lowvolt = 0, highvolt = 0, voltrange = 0;
-static	int	linenorm = 0;
+static	float	lowvolt = 0, highvolt = 0;
+static	int	battvoltmult = 1;
 static	int	inverted_bypass_bit = 0;
 
 static void model_set(const char *abbr, const char *rating)
@@ -152,61 +152,77 @@ static int get_ident(char *buf, size_t bufsize)
 
 static void ups_ident(void)
 {
-	char	buf[256], *ptr, *com, *model, *rating, *bvs;
 	int	i;
+	char	buf[256], *ptr;
+	char	*model = NULL, *rating = NULL;
 
-	if (!get_ident(buf, sizeof(buf)))
+	if (!get_ident(buf, sizeof(buf))) {
 		fatalx(EXIT_FAILURE, "Unable to detect a Best/SOLA or Phoenix protocol UPS");
-
-	model = rating = NULL;
+	}
 
 	/* FOR,750,120,120,20.0,27.6 */
-	ptr = buf;
+	ptr = strtok(buf, ",");
 
-	for (i = 0; i < 6; i++) {
-		com = strchr(ptr, ',');
+	for (i = 0; ptr; i++) {
 
-		if (com)
-			*com = '\0';
+		switch (i)
+		{
+		case 0:
+			model = ptr;
+			break;
 
-		switch (i) {
-			case 0: model = ptr;
-				break;
-			case 1: rating = ptr;
-				break;
-			case 2: linenorm = atoi(ptr);
-				break;
-			case 4: lowvolt = atof(ptr);
-				break;
-			case 5: highvolt = atof(ptr);
-				break;
-			default:
-				break;
+		case 1:
+			rating = ptr;
+			break;
+
+		case 2:
+			dstate_setinfo("input.voltage.nominal", "%d", atoi(ptr));
+			break;
+
+		case 3:
+			dstate_setinfo("output.voltage.nominal", "%d", atoi(ptr));
+			break;
+
+		case 4:
+			lowvolt = atof(ptr);
+			break;
+
+		case 5:
+			highvolt = atof(ptr);
+			break;
 		}
 
-		if (com)
-			ptr = com + 1;
+		ptr = strtok(NULL, ",");
 	}
 
-	if ((!model) || (!rating))
+	if ((!model) || (!rating)) {
 		fatalx(EXIT_FAILURE, "Didn't get a valid ident string");
+	}
+	
+	model_set(model, rating);
 
-	bvs = getval("nombattvolt");
+	/* Battery voltage multiplier */
+	ptr = getval("battvoltmult");
 
-	if (bvs) {
-		float	nomvolt;
-
-		nomvolt = strtod(bvs, (char **) NULL);
-
-		if (nomvolt > 0)
-			highvolt = nomvolt;
+	if (ptr) {
+		battvoltmult = atoi(ptr);
 	}
 
-	dstate_setinfo("battery.voltage.nominal", "%2.1f", highvolt);
+	/* Lookup the nominal battery voltage (should be between lowvolt and highvolt */
+	for (i = 0; i < 8; i++) {
+		const int	nominal[] = { 2, 6, 12, 24, 36, 48, 72, 96 };
 
-	voltrange = highvolt - lowvolt;
+		if ((lowvolt < nominal[i]) && (highvolt > nominal[i])) {
+			dstate_setinfo("battery.voltage.nominal", "%d", battvoltmult * nominal[i]);
+			break;
+	 	}
+	}
 
-	model_set(model, rating);
+	ptr = getval("nombattvolt");
+
+	if (ptr) {
+		highvolt = atof(ptr);
+	}
 }
 
 static void ups_sync(void)
@@ -341,13 +357,15 @@ void upsdrv_updateinfo(void)
 
 	sscanf(buf, "%*c%s %*s %s %s %s %s %s %s", involt, outvolt, 
 		loadpct, acfreq, battvolt, upstemp, pstat);
-	
-	bvoltp = ((atof (battvolt) - lowvolt) / voltrange) * 100.0;
 
-	if (bvoltp > 100.0)
-		bvoltp = 100.0;
+	/* Guesstimation of battery charge left (inaccurate) */
+	bvoltp = 100 * (atof(battvolt) - lowvolt) / (highvolt - lowvolt);
 
-	dstate_setinfo("battery.voltage", "%s", battvolt);
+	if (bvoltp > 100) {
+		bvoltp = 100;
+	}
+
+	dstate_setinfo("battery.voltage", "%.1f", battvoltmult * atof(battvolt));
 	dstate_setinfo("input.voltage", "%s", involt);
 	dstate_setinfo("output.voltage", "%s", outvolt);
 	dstate_setinfo("ups.load", "%s", loadpct);

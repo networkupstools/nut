@@ -1,3 +1,17 @@
+Thu Feb 28 15:57:24 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/bestups:
+   - add 'input.voltage.nominal' and 'output.voltage.nominal'
+   - new option 'battvoltmult' allows setting a multiplication
+     factor for devices that report only a fraction of the battery
+     string voltage.
+   - corrected 'battery.voltage.nominal' to comply with NUT standard.
+   - user overrides should be unconditional, the driver should not
+     attempt to silently correct/ignore values.
+   - display 'battery.charge' with resolution of one decimal (which is
+     probably way more than the precision of the calculation).
+   - updated man page.
+
 Tue Feb 26 19:24:48 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/hidparser.c: If a HID path for a report ends in 0x00000000,
