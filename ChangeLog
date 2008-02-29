@@ -1,3 +1,12 @@
+Fri Feb 29 21:16:21 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/mge-hid.c: HID path 'UPS.PowerSummary.(Config)Voltage'
+   is only indicating the 'battery.voltage(.nominal)' on specific
+   models/series, ignore these otherwise.
+ - drivers/usbhid-ups.h: DEFAULT_ONDELAY and DEFAULT_OFFDELAY should
+   match the values mentioned in 'usbhid-ups.8'. This was changed
+   (incorrectly) in r1113.
+
 Thu Feb 28 21:10:47 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/netxml-ups: Add 3-phase variables (based on MGE Galaxy).

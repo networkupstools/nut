@@ -33,21 +33,9 @@
 #include "config.h"
 #include "libhid.h"
 
-#define DRIVER_VERSION		"0.32"
+#define DRIVER_VERSION		"0.33"
 
 extern hid_dev_handle_t	udev;
-
-/* --------------------------------------------------------------- */
-/*      Model Name formating entries                               */
-/* --------------------------------------------------------------- */
-
-typedef struct
-{
-	char	*iProduct;
-	char	*iModel;
-	int	comp_size;	/* size of the comparison, -1 for full */
-	char	*finalname;
-} models_name_t;
 
 /* Driver's parameters */
 #define HU_VAR_ONDELAY		"ondelay"
@@ -55,10 +43,10 @@ typedef struct
 #define HU_VAR_POLLFREQ		"pollfreq"
 
 /* Parameters default values */
-#define DEFAULT_ONDELAY		10	/* Delay between return of utility power */
+#define DEFAULT_ONDELAY		30	/* Delay between return of utility power */
 					/* and powering up of load, in seconds */
 					/* CAUTION: ondelay > offdelay */
-#define DEFAULT_OFFDELAY	1	/* Delay before power off, in seconds */
+#define DEFAULT_OFFDELAY	20	/* Delay before power off, in seconds */
 #define DEFAULT_POLLFREQ	30	/* Polling interval, in seconds */
 					/* The driver will wait for Interrupt */
 					/* and do "light poll" in the meantime */

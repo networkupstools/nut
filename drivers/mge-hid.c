@@ -28,55 +28,92 @@
 #include "main.h"     /* for getval() */
 #include "common.h"
 
-#define MGE_HID_VERSION	"MGE HID 1.02"
+#define MGE_HID_VERSION		"MGE HID 1.10"
 #define MGE_VENDORID		0x0463
 
-/* returns statically allocated string - must not use it again before
-   done with result! */
+typedef enum {
+	MGE_DEFAULT = 0,
+	MGE_EVOLUTION = 0x100,		/* MGE Evolution series */
+		MGE_EVOLUTION_650,
+		MGE_EVOLUTION_850,
+		MGE_EVOLUTION_1150,
+		MGE_EVOLUTION_S_1250,
+		MGE_EVOLUTION_1550,
+		MGE_EVOLUTION_S_1750,
+		MGE_EVOLUTION_2000,
+		MGE_EVOLUTION_S_2500,
+		MGE_EVOLUTION_S_3000,
+	MGE_PULSAR_M = 0x200,		/* MGE Pulsar M series */
+		MGE_PULSAR_M_2200,
+		MGE_PULSAR_M_3000,
+		MGE_PULSAR_M_3000_XL
+} models_type_t;
+
+static models_type_t	mge_type = MGE_DEFAULT;
+static char		mge_scratch_buf[16];
+
+/* The HID path 'UPS.PowerSummary.ConfigVoltage' only reports
+   'battery.voltage.nominal' for specific UPS series. Ignore
+   the value for other series (default behavior). */
 static char *mge_battery_voltage_nominal_fun(double value)
 {
-	static char buf[10];
-	const char *model;
+	switch (mge_type & 0xFF00)	/* Ignore model byte */
+	{
+	case MGE_EVOLUTION:
+		if (mge_type == MGE_EVOLUTION_650) {
+			value = 12.0;
+		}
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.0f", value);
+		return mge_scratch_buf;
 
-	model = dstate_getinfo("ups.model");
+	case MGE_PULSAR_M:
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.0f", value);
+		return mge_scratch_buf;
 
-	/* Work around for Evolution 650 bug(?) */
-	if (!strcmp(model, "Evolution 650"))
-		value = 12.0;
-
-	snprintf(buf, sizeof(buf), "%.0f", value);
-
-	return buf;
+	default:
+		return NULL;
+	}
 }
 
 static info_lkp_t mge_battery_voltage_nominal[] = {
 	{ 0, NULL, mge_battery_voltage_nominal_fun }
 };
 
-/* returns statically allocated string - must not use it again before
-   done with result! */
+/* The HID path 'UPS.PowerSummary.Voltage' only reports
+   'battery.voltage' for specific UPS series. Ignore the
+   value for other series (default behavior). */
+static char *mge_battery_voltage_fun(double value)
+{
+	switch (mge_type & 0xFF00)	/* Ignore model byte */
+	{
+	case MGE_EVOLUTION:
+	case MGE_PULSAR_M:
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.1f", value);
+		return mge_scratch_buf;
+
+	default:
+		return NULL;
+	}
+}
+
+static info_lkp_t mge_battery_voltage[] = {
+	{ 0, NULL, mge_battery_voltage_fun }
+};
+
 static char *mge_powerfactor_conversion_fun(double value)
 {
-	static char buf[20];
-
-	snprintf(buf, sizeof(buf), "%.2f", value / 100);
-
-	return buf;
+	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.2f", value / 100);
+	return mge_scratch_buf;
 }
 
 static info_lkp_t mge_powerfactor_conversion[] = {
 	{ 0, NULL, mge_powerfactor_conversion_fun }
 };
 
-/* returns statically allocated string - must not use it again before
-   done with result! */
 static char *mge_battery_capacity_fun(double value)
 {
-	static char buf[10];
-
-	snprintf(buf, sizeof(buf), "%.2f", value / 3600);
-
-	return buf;
+	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.2f", value / 3600);
+	return mge_scratch_buf;
 }
 
 static info_lkp_t mge_battery_capacity[] = {
@@ -231,98 +268,120 @@ static usage_tables_t mge_utab[] = {
 /*      Model Name formating entries                               */
 /* --------------------------------------------------------------- */
 
+typedef struct {
+	const char	*iProduct;
+	const char	*iModel;
+	models_type_t	type;		/* Enumerated model type */
+	const char	*name;
+} models_name_t;
+
 static models_name_t mge_model_names [] =
 {
 	/* Ellipse models */
-	{ "ELLIPSE", "300", -1, "ellipse 300" },
-	{ "ELLIPSE", "500", -1, "ellipse 500" },
-	{ "ELLIPSE", "650", -1, "ellipse 650" },
-	{ "ELLIPSE", "800", -1, "ellipse 800" },
-	{ "ELLIPSE", "1200", -1, "ellipse 1200" },
+	{ "ELLIPSE", "300", MGE_DEFAULT, "ellipse 300" },
+	{ "ELLIPSE", "500", MGE_DEFAULT, "ellipse 500" },
+	{ "ELLIPSE", "650", MGE_DEFAULT, "ellipse 650" },
+	{ "ELLIPSE", "800", MGE_DEFAULT, "ellipse 800" },
+	{ "ELLIPSE", "1200", MGE_DEFAULT, "ellipse 1200" },
+
 	/* Ellipse Premium models */
-	{ "ellipse", "PR500", -1, "ellipse premium 500" },
-	{ "ellipse", "PR650", -1, "ellipse premium 650" },
-	{ "ellipse", "PR800", -1, "ellipse premium 800" },
-	{ "ellipse", "PR1200", -1, "ellipse premium 1200" },
+	{ "ellipse", "PR500", MGE_DEFAULT, "ellipse premium 500" },
+	{ "ellipse", "PR650", MGE_DEFAULT, "ellipse premium 650" },
+	{ "ellipse", "PR800", MGE_DEFAULT, "ellipse premium 800" },
+	{ "ellipse", "PR1200", MGE_DEFAULT, "ellipse premium 1200" },
+
 	/* Ellipse "Pro" */
-	{ "ELLIPSE", "600", -1, "Ellipse 600" },
-	{ "ELLIPSE", "750", -1, "Ellipse 750" },
-	{ "ELLIPSE", "1000", -1, "Ellipse 1000" },
-	{ "ELLIPSE", "1500", -1, "Ellipse 1500" },
+	{ "ELLIPSE", "600", MGE_DEFAULT, "Ellipse 600" },
+	{ "ELLIPSE", "750", MGE_DEFAULT, "Ellipse 750" },
+	{ "ELLIPSE", "1000", MGE_DEFAULT, "Ellipse 1000" },
+	{ "ELLIPSE", "1500", MGE_DEFAULT, "Ellipse 1500" },
+
 	/* Ellipse "MAX" */
-	{ "Ellipse MAX", "600", -1, "Ellipse MAX 600" },
-	{ "Ellipse MAX", "850", -1, "Ellipse MAX 850" },
-	{ "Ellipse MAX", "1100", -1, "Ellipse MAX 1100" },
-	{ "Ellipse MAX", "1500", -1, "Ellipse MAX 1500" },
+	{ "Ellipse MAX", "600", MGE_DEFAULT, "Ellipse MAX 600" },
+	{ "Ellipse MAX", "850", MGE_DEFAULT, "Ellipse MAX 850" },
+	{ "Ellipse MAX", "1100", MGE_DEFAULT, "Ellipse MAX 1100" },
+	{ "Ellipse MAX", "1500", MGE_DEFAULT, "Ellipse MAX 1500" },
+
 	/* Protection Center */
-	{ "PROTECTIONCENTER", "420", -1, "Protection Center 420" },
-	{ "PROTECTIONCENTER", "500", -1, "Protection Center 500" },
-	{ "PROTECTIONCENTER", "675", -1, "Protection Center 675" },
+	{ "PROTECTIONCENTER", "420", MGE_DEFAULT, "Protection Center 420" },
+	{ "PROTECTIONCENTER", "500", MGE_DEFAULT, "Protection Center 500" },
+	{ "PROTECTIONCENTER", "675", MGE_DEFAULT, "Protection Center 675" },
+
 	/* Evolution models */
-	{ "Evolution", "500", -1, "Pulsar Evolution 500" },
-	{ "Evolution", "800", -1, "Pulsar Evolution 800" },
-	{ "Evolution", "1100", -1, "Pulsar Evolution 1100" },
-	{ "Evolution", "1500", -1, "Pulsar Evolution 1500" },
-	{ "Evolution", "2200", -1, "Pulsar Evolution 2200" },
-	{ "Evolution", "3000", -1, "Pulsar Evolution 3000" },
-	{ "Evolution", "3000XL", -1, "Pulsar Evolution 3000 XL" },
+	{ "Evolution", "500", MGE_DEFAULT, "Pulsar Evolution 500" },
+	{ "Evolution", "800", MGE_DEFAULT, "Pulsar Evolution 800" },
+	{ "Evolution", "1100", MGE_DEFAULT, "Pulsar Evolution 1100" },
+	{ "Evolution", "1500", MGE_DEFAULT, "Pulsar Evolution 1500" },
+	{ "Evolution", "2200", MGE_DEFAULT, "Pulsar Evolution 2200" },
+	{ "Evolution", "3000", MGE_DEFAULT, "Pulsar Evolution 3000" },
+	{ "Evolution", "3000XL", MGE_DEFAULT, "Pulsar Evolution 3000 XL" },
+
 	/* Newer Evolution models */
-	{ "Evolution", "650", -1, "Evolution 650" },
-	{ "Evolution", "850", -1, "Evolution 850" },
-	{ "Evolution", "1150", -1, "Evolution 1150" },
-	{ "Evolution", "S 1250", -1, "Evolution S 1250" },
-	{ "Evolution", "1550", -1, "Evolution 1550" },
-	{ "Evolution", "S 1750", -1, "Evolution S 1750" },
-	{ "Evolution", "2000", -1, "Evolution 2000" },
-	{ "Evolution", "S 2500", -1, "Evolution S 2500" },
-	{ "Evolution", "S 3000", -1, "Evolution S 3000" },
+	{ "Evolution", "650", MGE_EVOLUTION_650, "Evolution 650" },
+	{ "Evolution", "850", MGE_EVOLUTION_850, "Evolution 850" },
+	{ "Evolution", "1150", MGE_EVOLUTION_1150, "Evolution 1150" },
+	{ "Evolution", "S 1250", MGE_EVOLUTION_S_1250, "Evolution S 1250" },
+	{ "Evolution", "1550", MGE_EVOLUTION_1550, "Evolution 1550" },
+	{ "Evolution", "S 1750", MGE_EVOLUTION_S_1750, "Evolution S 1750" },
+	{ "Evolution", "2000", MGE_EVOLUTION_2000, "Evolution 2000" },
+	{ "Evolution", "S 2500", MGE_EVOLUTION_S_2500, "Evolution S 2500" },
+	{ "Evolution", "S 3000", MGE_EVOLUTION_S_3000, "Evolution S 3000" },
+
 	/* Pulsar M models */
-	{ "PULSAR M", "2200", -1, "Pulsar M 2200" },
-	{ "PULSAR M", "3000", -1, "Pulsar M 3000" },
-	{ "PULSAR M", "3000 XL", -1, "Pulsar M 3000 XL" },
+	{ "PULSAR M", "2200", MGE_PULSAR_M_2200, "Pulsar M 2200" },
+	{ "PULSAR M", "3000", MGE_PULSAR_M_3000, "Pulsar M 3000" },
+	{ "PULSAR M", "3000 XL", MGE_PULSAR_M_3000_XL, "Pulsar M 3000 XL" },
+
 	/* Pulsar models */
-	{ "Pulsar", "700", -1, "Pulsar 700" },
-	{ "Pulsar", "1000", -1, "Pulsar 1000" },
-	{ "Pulsar", "1500", -1, "Pulsar 1500" },
-	{ "Pulsar", "1000 RT2U", -1, "Pulsar 1000 RT2U" },
-	{ "Pulsar", "1500 RT2U", -1, "Pulsar 1500 RT2U" },
+	{ "Pulsar", "700", MGE_DEFAULT, "Pulsar 700" },
+	{ "Pulsar", "1000", MGE_DEFAULT, "Pulsar 1000" },
+	{ "Pulsar", "1500", MGE_DEFAULT, "Pulsar 1500" },
+	{ "Pulsar", "1000 RT2U", MGE_DEFAULT, "Pulsar 1000 RT2U" },
+	{ "Pulsar", "1500 RT2U", MGE_DEFAULT, "Pulsar 1500 RT2U" },
+
 	/* Pulsar MX models */
-	{ "PULSAR", "MX4000", -1, "Pulsar MX 4000 RT" },
-	{ "PULSAR", "MX5000", -1, "Pulsar MX 5000 RT" },
+	{ "PULSAR", "MX4000", MGE_DEFAULT, "Pulsar MX 4000 RT" },
+	{ "PULSAR", "MX5000", MGE_DEFAULT, "Pulsar MX 5000 RT" },
+
 	/* NOVA models */	
-	{ "NOVA AVR", "600", -1, "NOVA 600 AVR" },
-	{ "NOVA AVR", "1100", -1, "NOVA 1100 AVR" },
+	{ "NOVA AVR", "600", MGE_DEFAULT, "NOVA 600 AVR" },
+	{ "NOVA AVR", "1100", MGE_DEFAULT, "NOVA 1100 AVR" },
+
 	/* EXtreme C (EMEA) */
-	{ "EXtreme", "700C", -1, "Pulsar EXtreme 700C" },
-	{ "EXtreme", "1000C", -1, "Pulsar EXtreme 1000C" },
-	{ "EXtreme", "1500C", -1, "Pulsar EXtreme 1500C" },
-	{ "EXtreme", "1500CCLA", -1, "Pulsar EXtreme 1500C CLA" },
-	{ "EXtreme", "2200C", -1, "Pulsar EXtreme 2200C" },
-	{ "EXtreme", "3200C", -1, "Pulsar EXtreme 3200C" },
+	{ "EXtreme", "700C", MGE_DEFAULT, "Pulsar EXtreme 700C" },
+	{ "EXtreme", "1000C", MGE_DEFAULT, "Pulsar EXtreme 1000C" },
+	{ "EXtreme", "1500C", MGE_DEFAULT, "Pulsar EXtreme 1500C" },
+	{ "EXtreme", "1500CCLA", MGE_DEFAULT, "Pulsar EXtreme 1500C CLA" },
+	{ "EXtreme", "2200C", MGE_DEFAULT, "Pulsar EXtreme 2200C" },
+	{ "EXtreme", "3200C", MGE_DEFAULT, "Pulsar EXtreme 3200C" },
+
 	/* EXtreme C (USA, aka "EX RT") */
-	{ "EX", "700RT", -1, "Pulsar EX 700 RT" },
-	{ "EX", "1000RT", -1, "Pulsar EX 1000 RT" },
-	{ "EX", "1500RT", -1, "Pulsar EX 1500 RT" },
-	{ "EX", "2200RT", -1, "Pulsar EX 2200 RT" },
-	{ "EX", "3200RT", -1, "Pulsar EX 3200 RT" },
+	{ "EX", "700RT", MGE_DEFAULT, "Pulsar EX 700 RT" },
+	{ "EX", "1000RT", MGE_DEFAULT, "Pulsar EX 1000 RT" },
+	{ "EX", "1500RT", MGE_DEFAULT, "Pulsar EX 1500 RT" },
+	{ "EX", "2200RT", MGE_DEFAULT, "Pulsar EX 2200 RT" },
+	{ "EX", "3200RT", MGE_DEFAULT, "Pulsar EX 3200 RT" },
+
 	/* Comet EX RT three phased */
-	{ "EX", "5RT31", -1, "EX 5 RT 3:1" },
-	{ "EX", "7RT31", -1, "EX 7 RT 3:1" },
-	{ "EX", "11RT31", -1, "EX 11 RT 3:1" },
+	{ "EX", "5RT31", MGE_DEFAULT, "EX 5 RT 3:1" },
+	{ "EX", "7RT31", MGE_DEFAULT, "EX 7 RT 3:1" },
+	{ "EX", "11RT31", MGE_DEFAULT, "EX 11 RT 3:1" },
+
 	/* Comet EX RT mono phased */
-	{ "EX", "5RT", -1, "EX 5 RT" },
-	{ "EX", "7RT", -1, "EX 7 RT" },
-	{ "EX", "11RT", -1, "EX 11 RT" },
+	{ "EX", "5RT", MGE_DEFAULT, "EX 5 RT" },
+	{ "EX", "7RT", MGE_DEFAULT, "EX 7 RT" },
+	{ "EX", "11RT", MGE_DEFAULT, "EX 11 RT" },
+
 	/* Galaxy 3000 */
-	{ "GALAXY", "3000_10", -1, "Galaxy 3000 10 kVA" },
-	{ "GALAXY", "3000_15", -1, "Galaxy 3000 15 kVA" },
-	{ "GALAXY", "3000_20", -1, "Galaxy 3000 20 kVA" },
-	{ "GALAXY", "3000_30", -1, "Galaxy 3000 30 kVA" },
+	{ "GALAXY", "3000_10", MGE_DEFAULT, "Galaxy 3000 10 kVA" },
+	{ "GALAXY", "3000_15", MGE_DEFAULT, "Galaxy 3000 15 kVA" },
+	{ "GALAXY", "3000_20", MGE_DEFAULT, "Galaxy 3000 20 kVA" },
+	{ "GALAXY", "3000_30", MGE_DEFAULT, "Galaxy 3000 30 kVA" },
 
 	/* FIXME: To be completed (Comet, Galaxy, Esprit, ...) */
 
 	/* end of structure. */
-	{ NULL, NULL, -1, "Generic MGE HID model" }
+	{ NULL, NULL, MGE_DEFAULT, "Generic MGE HID model" }
 };
 
 
@@ -345,7 +404,8 @@ static hid_info_t mge_hid2nut[] =
 	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", 0, NULL },
 	{ "battery.temperature", 0, 0, "UPS.BatterySystem.Battery.Temperature", NULL, "%.1f", 0, NULL },
 	{ "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
-	{ "battery.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, "%.1f", 0, NULL },
+	{ "battery.voltage", 0, 0, "UPS.BatterySystem.Voltage", NULL, "%.1f", 0, NULL },
+	{ "battery.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, "%s", 0, mge_battery_voltage },
 	{ "battery.voltage.nominal", 0, 0, "UPS.BatterySystem.ConfigVoltage", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 	{ "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%s", HU_FLAG_STATIC, mge_battery_voltage_nominal },
 	{ "battery.protection", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.BatterySystem.Battery.DeepDischargeProtection", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
@@ -403,10 +463,10 @@ static hid_info_t mge_hid2nut[] =
 	/* Input page */
 	{ "input.voltage", 0, 0, "UPS.PowerConverter.Input.[1].Voltage", NULL, "%.1f", 0, NULL },
 	{ "input.voltage.nominal", 0, 0, "UPS.Flow.[1].ConfigVoltage", NULL, "%.0f", HU_FLAG_STATIC, NULL },
-	{ "input.voltage.extended", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.ExtendedVoltageMode", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
+	{ "input.corrent", 0, 0, "UPS.PowerConverter.Input.[1].Current", NULL, "%.2f", 0, NULL },
+	{ "input.current.nominal", 0, 0, "UPS.Flow.[1].ConfigCurrent", NULL, "%.2f", HU_FLAG_STATIC, NULL },
 	{ "input.frequency", 0, 0, "UPS.PowerConverter.Input.[1].Frequency", NULL, "%.1f", 0, NULL },
 	{ "input.frequency.nominal", 0, 0, "UPS.Flow.[1].ConfigFrequency", NULL, "%.0f", HU_FLAG_STATIC, NULL },
-	{ "input.frequency.extended", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.ExtendedFrequencyMode", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
 	/* same as "input.transfer.boost.low" */
 	{ "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.LowVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.transfer.boost.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.LowVoltageBoostTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
@@ -416,14 +476,17 @@ static hid_info_t mge_hid2nut[] =
 	{ "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.HighVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.transfer.trim.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.HighVoltageBuckTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.sensitivity", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerConverter.Output.SensitivityMode", NULL, "%s", HU_FLAG_SEMI_STATIC, mge_sensitivity_info },
+	{ "input.voltage.extended", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.ExtendedVoltageMode", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
+	{ "input.frequency.extended", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.ExtendedFrequencyMode", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
 
 	/* Output page */
 	{ "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", NULL, "%.1f", 0, NULL },
 	{ "output.voltage.nominal", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.Flow.[4].ConfigVoltage", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "output.current", 0, 0, "UPS.PowerConverter.Output.Current", NULL, "%.2f", 0, NULL },
-	{ "output.powerfactor", 0, 0, "UPS.PowerConverter.Output.PowerFactor", NULL, "%s", 0, mge_powerfactor_conversion },
+	{ "output.current.nominal", 0, 0, "UPS.Flow.[4].ConfigCurrent", NULL, "%.2f", 0, NULL },
 	{ "output.frequency", 0, 0, "UPS.PowerConverter.Output.Frequency", NULL, "%.1f", 0, NULL },
 	{ "output.frequency.nominal", 0, 0, "UPS.Flow.[4].ConfigFrequency", NULL, "%.0f", HU_FLAG_STATIC, NULL },
+	{ "output.powerfactor", 0, 0, "UPS.PowerConverter.Output.PowerFactor", NULL, "%s", 0, mge_powerfactor_conversion },
 
 	/* Ambient page: Environment Sensor (ref 66 846)
 	 * This will only work with mge-xml since it's an NMC addon! */
@@ -479,34 +542,37 @@ static hid_info_t mge_hid2nut[] =
 };
 
 /* All the logic for finely formatting the MGE model name */
-static char *get_model_name(const char *iProduct, char *iModel)
+static const char *get_model_name(const char *iProduct, const char *iModel)
 {
-	models_name_t *model = NULL;
+	models_name_t	*model = NULL;
 
 	upsdebugx(2, "get_model_name(%s, %s)\n", iProduct, iModel);
 
 	/* Search for formatting rules */
-	for (model = mge_model_names; model->iProduct; model++)
-	{
-		upsdebugx(2, "comparing with: %s", model->finalname);
+	for (model = mge_model_names; model->iProduct; model++) {
+		upsdebugx(2, "comparing with: %s", model->name);
 
-		if (strncmp(iProduct, model->iProduct, strlen(model->iProduct)))
+		if (strncmp(iProduct, model->iProduct, strlen(model->iProduct))) {
 			continue;
+		}
 
-		if (strncmp(iModel, model->iModel, strlen(model->iModel)))
+		if (strncmp(iModel, model->iModel, strlen(model->iModel))) {
 			continue;
+		}
 
-		upsdebugx(2, "Found %s\n", model->finalname);
+		upsdebugx(2, "Found %s\n", model->name);
 		break;
 	}
 
-	return model->finalname;
+	mge_type = model->type;		/* enumerated model type */
+
+	return model->name;
 }
 
 static char *mge_format_model(HIDDevice_t *hd) {
-	char *product;
-	char model[64];
-	double value;
+	char	*product;
+	char	model[64];
+	double	value;
 
 	/* Get iProduct and iModel strings */
 	product = hd->Product ? hd->Product : "unknown";
