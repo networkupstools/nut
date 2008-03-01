@@ -1,3 +1,7 @@
+Sat Mar  1 19:24:09 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/liebert-hid.c: Add support for some additional params.
+
 Sat Mar  1 19:01:16 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - clients/upsclient.c: Use strtok_r() instead of strtok(), so that
