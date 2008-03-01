@@ -72,8 +72,8 @@ typedef int bool_t;
 
 /* structure to describe an item in a usage table */
 typedef struct {
-	const char *usage_name;
-	const long usage_code;
+	const char	*usage_name;
+	const HIDNode_t	usage_code;
 } usage_lkp_t;
 
 extern usage_lkp_t hid_usage_lkp[];

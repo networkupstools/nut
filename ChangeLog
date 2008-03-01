@@ -1,3 +1,13 @@
+Sat Mar  1 19:28:19 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/hidparser.c, drivers/hidtypes.h, drivers/libhid.h:
+   - reformattedhidparsersothatitnowhasmorewhitespace (and conforms
+     to the preferred coding style regarding indentation)
+   - removed nObject and nReports from HIDParser_t since they were
+     not used (and would overflow if more than 255 Objects or Reports
+     are found anyway)
+   - changed the type of HIDNode_t from unsigned int to uint32_t
+
 Sat Mar  1 19:24:09 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/liebert-hid.c: Add support for some additional params.
