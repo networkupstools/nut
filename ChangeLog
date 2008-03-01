@@ -1,3 +1,9 @@
+Sat Mar  1 19:01:16 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - clients/upsclient.c: Use strtok_r() instead of strtok(), so that
+   we don't accidentally interfer with the caller (strtok() is not
+   guaranteed to be reentrant).
+
 Sat Mar  1 18:47:52 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/netxml-ups:

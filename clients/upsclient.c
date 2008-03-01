@@ -939,7 +939,7 @@ int upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen)
 /* split upsname[@hostname[:port]] into separate components */
 int upscli_splitname(const char *buf, char **upsname, char **hostname, int *port)
 {
-	char	*s, tmp[SMALLBUF];
+	char	*s, tmp[SMALLBUF], *last = NULL;
 
 	/* paranoia */
 	if ((!buf) || (!upsname) || (!hostname) || (!port)) {
@@ -953,7 +953,7 @@ int upscli_splitname(const char *buf, char **upsname, char **hostname, int *port
 
 	s = strchr(tmp, '@');
 
-	if ((*upsname = strdup(strtok(tmp, "@"))) == NULL) {
+	if ((*upsname = strdup(strtok_r(tmp, "@", &last))) == NULL) {
 		fprintf(stderr, "upscli_splitname: strdup failed\n");
 		return -1;
 	}
@@ -975,7 +975,7 @@ int upscli_splitname(const char *buf, char **upsname, char **hostname, int *port
 /* split hostname[:port] into separate components */
 int upscli_splitaddr(const char *buf, char **hostname, int *port)
 {
-	char	*s, tmp[SMALLBUF];
+	char	*s, tmp[SMALLBUF], *last = NULL;
 
 	/* paranoia */
 	if ((!buf) || (!hostname) || (!port)) {
@@ -993,20 +993,20 @@ int upscli_splitaddr(const char *buf, char **hostname, int *port)
 			return -1;
 		}
 
-		if ((*hostname = strdup(strtok(tmp+1, "]"))) == NULL) {
+		if ((*hostname = strdup(strtok_r(tmp+1, "]", &last))) == NULL) {
 			fprintf(stderr, "upscli_splitaddr: strdup failed\n");
 			return -1;
 		}
 
 		/* no port specified, use default */
-		if (((s = strtok(NULL, "\0")) == NULL) || (*s != ':')) {
+		if (((s = strtok_r(NULL, "\0", &last)) == NULL) || (*s != ':')) {
 			*port = PORT;
 			return 0;
 		}
 	} else {
 		s = strchr(tmp, ':');
 
-		if ((*hostname = strdup(strtok(tmp, ":"))) == NULL) {
+		if ((*hostname = strdup(strtok_r(tmp, ":", &last))) == NULL) {
 			fprintf(stderr, "upscli_splitaddr: strdup failed\n");
 			return -1;
 		}
