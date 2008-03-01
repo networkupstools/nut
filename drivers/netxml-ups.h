@@ -38,9 +38,9 @@ typedef struct subdriver_s subdriver_t;
 /* ---------------------------------------------------------------------- */
 /* data for processing boolean values from UPS */
 
-#define STATUS_BIT(x)	((uint32_t)1<<x)
-#define STATUS_SET(x)	(ups_status |= STATUS_BIT(x))
-#define STATUS_CLR(x)	(ups_status &= ~STATUS_BIT(x))
+#define STATUS_BIT(x)	(ups_status & (uint32_t)1<<x)
+#define STATUS_SET(x)	(ups_status |= (uint32_t)1<<x)
+#define STATUS_CLR(x)	(ups_status &= ~((uint32_t)1<<x))
 
 typedef enum {
 	ONLINE = 0,	/* on line */
@@ -67,7 +67,8 @@ typedef enum {
 	BATTVOLTHI,	/* battery voltage too high; MGE */
 	CHARGERFAIL,	/* battery charger failure; MGE */
 	VRANGE,		/* voltage out of range */
-	FRANGE		/* frequency out of range */
+	FRANGE,		/* frequency out of range */
+	FUSEFAULT	/* fuse fault */
 } status_bit_t;
 
 extern uint32_t	ups_status;

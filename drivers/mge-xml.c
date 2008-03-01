@@ -36,6 +36,8 @@ static char	mge_xml_initups[] = "/";
 static char	mge_xml_initinfo[] = "/mgeups/product.xml";
 static char	mge_xml_updateinfo[32] = "";
 
+static char	mge_scratch_buf[32];
+
 static char	var[128];
 static char	val[128];
 
@@ -47,24 +49,24 @@ typedef  enum {
 
 	PRODUCT_INFO = 100,	/* "/mgeups/product.xml" */
 
-		PI_SUMMARY,
+		PI_SUMMARY = 110,
 			PI_HTML_PROPERTIES_PAGE,
 			PI_XML_SUMMARY_PAGE,
 			PI_CENTRAL_CFG,
 			PI_CSV_LOGS,
 		/* /PI_SUMMARY */
 
-		PI_ALARMS,
+		PI_ALARMS = 120,
 			PI_SUBSCRIPTION,
 			PI_POLLING,
 		/* /ALARMS */
 
-		PI_MANAGEMENT,
+		PI_MANAGEMENT = 130,
 			PI_MANAGEMENT_PAGE,
 			PI_XML_MANAGEMENT_PAGE,
 		/* /MANAGEMENT */
 
-		PI_UPS_DATA,
+		PI_UPS_DATA = 140,
 			PI_GET_OBJECT,
 			PI_SET_OBJECT,
 		/* /UPS_DATA */
@@ -321,7 +323,7 @@ static char *battvolthi_info(const char *val)
 
 static char *chargerfail_info(const char *val)
 {
-	if (val[0] == '1') {
+	if ((val[0] == '1') || !strncasecmp(val, "Yes", 3)) {
 		STATUS_SET(CHARGERFAIL);
 	} else {
 		STATUS_CLR(CHARGERFAIL);
@@ -354,7 +356,7 @@ static char *depleted_info(const char *val)
 
 static char *vrange_info(const char *val)
 {
-	if (val[0] == '1') {
+	if ((val[0] == '1') || !strncasecmp(val, "Yes", 3))  {
 		STATUS_SET(VRANGE);
 	} else {
 		STATUS_CLR(VRANGE);
@@ -365,10 +367,21 @@ static char *vrange_info(const char *val)
 
 static char *frange_info(const char *val)
 {
-	if (val[0] == '1') {
+	if ((val[0] == '1') || !strncasecmp(val, "Yes", 3)) {
 		STATUS_SET(FRANGE);
 	} else {
 		STATUS_CLR(FRANGE);
+	}
+
+	return NULL;
+}
+
+static char *fuse_fault_info(const char *val)
+{
+	if (val[0] == '1') {
+		STATUS_SET(FUSEFAULT);
+	} else {
+		STATUS_CLR(FUSEFAULT);
 	}
 
 	return NULL;
@@ -404,11 +417,31 @@ static char *on_off_info(const char *val)
 
 static char *convert_deci(const char *val)
 {
-	static char	buf[8];
+	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.1f", 0.1 * (float)atoi(val));
 
-	snprintf(buf, sizeof(buf), "%.1f", 0.1 * atoi(val));
+	return mge_scratch_buf;
+}
 
-	return buf;
+/* Ignore a zero value if the UPS is not switched off */
+static char *ignore_if_zero(const char *val)
+{
+	if (!STATUS_BIT(OFF) && (atoi(val) == 0)) {
+		return NULL;
+	}
+
+	return convert_deci(val);
+}
+
+/* Set the 'ups.date' from the combined value
+ * (ex. 2008/03/01 15:23:26) and return the time */
+static char *split_date_time(const char *val)
+{
+	char	*last = NULL;
+
+	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", val);
+	dstate_setinfo("ups.date", strtok_r(mge_scratch_buf, " ", &last));
+
+	return strtok_r(NULL, " ", &last);
 }
 
 #define ST_FLAG_RW	0
@@ -425,6 +458,7 @@ static xml_info_t mge_xml2nut[] = {
 	{ NULL, 0, 0, "UPS.PowerConverter.Input[1].PresentStatus.Boost", 0, 0, boost_info },
 	{ NULL, 0, 0, "UPS.PowerConverter.Input[1].PresentStatus.VoltageOutOfRange", 0, 0, vrange_info },
 	{ NULL, 0, 0, "UPS.PowerConverter.Input[1].PresentStatus.FrequencyOutOfRange", 0, 0, frange_info },
+	{ NULL, 0, 0, "UPS.PowerConverter.Input[1].PresentStatus.FuseFault", 0, 0, fuse_fault_info },
 	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.Good", 0, 0, off_info },
 	/* Manual bypass */
 	{ NULL, 0, 0, "UPS.PowerConverter.Input[4].PresentStatus.Used", 0, 0, bypass_info },
@@ -460,7 +494,7 @@ static xml_info_t mge_xml2nut[] = {
 
 	/* UPS page */
 	{ "ups.model", 0, 0, "System.Description", 0, 0, NULL },
-	{ "ups.date", 0, 0, "System.LastAcquisition", 0, 0, NULL },
+	{ "ups.time", 0, 0, "System.LastAcquisition", 0, 0, split_date_time },
 	/* -> XML variable System.Location [Computer Room] doesn't map to any NUT variable */
 	/* -> XML variable System.Contact [Computer Room Manager] doesn't map to any NUT variable */
 	/* -> XML variable UPS.PowerSummary.iProduct [Evolution] doesn't map to any NUT variable */
@@ -477,14 +511,14 @@ static xml_info_t mge_xml2nut[] = {
 	{ "ups.beeper.status", 0 ,0, "UPS.PowerSummary.AudibleAlarmControl", 0, 0, NULL }, /* beeper_info */
 	{ "ups.temperature", 0, 0, "UPS.PowerSummary.Temperature", 0, 0, NULL },
 	{ "ups.power", 0, 0, "UPS.PowerConverter.Output.ApparentPower", 0, 0, NULL },
-	{ "ups.[L1].power", 0, 0, "UPS.PowerConverter.Output.Phase[1].ApparentPower", 0, 0, NULL },
-	{ "ups.[L2].power", 0, 0, "UPS.PowerConverter.Output.Phase[2].ApparentPower", 0, 0, NULL },
-	{ "ups.[L3].power", 0, 0, "UPS.PowerConverter.Output.Phase[3].ApparentPower", 0, 0, NULL },
+	{ "ups.[L1].power", 0, 0, "UPS.PowerConverter.Output.Phase[1].ApparentPower", 0, 0, ignore_if_zero },
+	{ "ups.[L2].power", 0, 0, "UPS.PowerConverter.Output.Phase[2].ApparentPower", 0, 0, ignore_if_zero },
+	{ "ups.[L3].power", 0, 0, "UPS.PowerConverter.Output.Phase[3].ApparentPower", 0, 0, ignore_if_zero },
 	{ "ups.power.nominal", 0, 0, "UPS.Flow[4].ConfigApparentPower", 0, 0, NULL },
 	{ "ups.realpower", 0, 0, "UPS.PowerConverter.Output.ActivePower", 0, 0, NULL },
-	{ "ups.[L1].realpower", 0, 0, "UPS.PowerConverter.Output.Phase[1].ActivePower", 0, 0, NULL },
-	{ "ups.[L2].realpower", 0, 0, "UPS.PowerConverter.Output.Phase[2].ActivePower", 0, 0, NULL },
-	{ "ups.[L3].realpower", 0, 0, "UPS.PowerConverter.Output.Phase[3].ActivePower", 0, 0, NULL },
+	{ "ups.[L1].realpower", 0, 0, "UPS.PowerConverter.Output.Phase[1].ActivePower", 0, 0, ignore_if_zero },
+	{ "ups.[L2].realpower", 0, 0, "UPS.PowerConverter.Output.Phase[2].ActivePower", 0, 0, ignore_if_zero },
+	{ "ups.[L3].realpower", 0, 0, "UPS.PowerConverter.Output.Phase[3].ActivePower", 0, 0, ignore_if_zero },
 	{ "ups.realpower.nominal", 0, 0, "UPS.Flow[4].ConfigActivePower", 0, 0, NULL },
 	{ "ups.start.auto", ST_FLAG_RW, 5, "UPS.PowerConverter.Input[1].AutomaticRestart", 0, 0, yes_no_info },
 	{ "ups.start.battery", ST_FLAG_RW, 5, "UPS.PowerConverter.Input[3].StartOnBattery", 0, 0, yes_no_info },
@@ -516,14 +550,15 @@ static xml_info_t mge_xml2nut[] = {
 
 	/* Output page */
 	{ "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", 0, 0, NULL },
-	{ "output.[L1-L2].voltage", 0, 0, "UPS.PowerConverter.Output.Phase[11].Voltage", 0, 0, convert_deci },
-	{ "output.[L2-L3].voltage", 0, 0, "UPS.PowerConverter.Output.Phase[22].Voltage", 0, 0, convert_deci },
-	{ "output.[L3-L1].voltage", 0, 0, "UPS.PowerConverter.Output.Phase[33].Voltage", 0, 0, convert_deci },
+	{ "output.[L1-L2].voltage", 0, 0, "UPS.PowerConverter.Output.Phase[11].Voltage", 0, 0, ignore_if_zero },
+	{ "output.[L2-L3].voltage", 0, 0, "UPS.PowerConverter.Output.Phase[22].Voltage", 0, 0, ignore_if_zero },
+	{ "output.[L3-L1].voltage", 0, 0, "UPS.PowerConverter.Output.Phase[33].Voltage", 0, 0, ignore_if_zero },
 	{ "output.voltage.nominal", ST_FLAG_RW, 5, "UPS.Flow[4].ConfigVoltage", 0, 0, NULL },
 	{ "output.current", 0, 0, "UPS.PowerConverter.Output.Current", 0, 0, NULL },
 	{ "output.[L1].current", 0, 0, "UPS.PowerConverter.Output.Phase[1].Current", 0, 0, convert_deci },
 	{ "output.[L2].current", 0, 0, "UPS.PowerConverter.Output.Phase[2].Current", 0, 0, convert_deci },
 	{ "output.[L3].current", 0, 0, "UPS.PowerConverter.Output.Phase[3].Current", 0, 0, convert_deci },
+	{ "output.current.nominal", 0, 0, "UPS.Flow[4].ConfigCurrent", 0, 0, NULL },
 	{ "output.powerfactor", 0, 0, "UPS.PowerConverter.Output.PowerFactor", 0, 0, NULL }, /* mge_powerfactor_conversion */
 	{ "output.frequency", 0, 0, "UPS.PowerConverter.Output.Frequency", 0, 0, NULL },
 	{ "output.frequency.nominal", 0, 0, "UPS.Flow[4].ConfigFrequency", 0, 0, NULL },

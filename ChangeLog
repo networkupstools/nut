@@ -1,3 +1,13 @@
+Sat Mar  1 18:47:52 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/netxml-ups:
+   - fix decimal conversion (decimal was lost in conversion).
+   - ignore variables that should never be zero (but that are).
+   - split date and time.
+   - some status bits are reported as numeric (0/1) and text (yes/no)
+     depending on the model (accept both).
+   - add a few more variables.
+
 Fri Feb 29 21:16:21 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/mge-hid.c: HID path 'UPS.PowerSummary.(Config)Voltage'
