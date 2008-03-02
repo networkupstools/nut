@@ -503,9 +503,9 @@ static xml_info_t mge_xml2nut[] = {
 	{ "ups.firmware", 0, 0, "UPS.PowerSummary.iVersion", 0, 0, NULL },
 	{ "ups.load", 0, 0, "UPS.PowerSummary.PercentLoad", 0, 0, NULL },
 	{ "ups.load.high", ST_FLAG_RW, 5, "UPS.Flow[4].ConfigPercentLoad", 0, 0, NULL },
-	{ "ups.delay.shutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", 0, 0, NULL },
-	{ "ups.delay.reboot", 0, 0, "UPS.PowerSummary.DelayBeforeReboot", 0, 0, NULL},
-	{ "ups.delay.start", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", 0, 0, NULL},
+	{ "ups.timer.start", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", 0, 0, NULL},
+	{ "ups.timer.shutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", 0, 0, NULL },
+	{ "ups.timer.reboot", 0, 0, "UPS.PowerSummary.DelayBeforeReboot", 0, 0, NULL},
 	{ "ups.test.result", 0, 0, "UPS.BatterySystem.Battery.Test", 0, 0, NULL }, /* test_read_info */
 	{ "ups.test.interval", ST_FLAG_RW, 8, "UPS.BatterySystem.Battery.TestPeriod", 0, 0, NULL },
 	{ "ups.beeper.status", 0 ,0, "UPS.PowerSummary.AudibleAlarmControl", 0, 0, NULL }, /* beeper_info */

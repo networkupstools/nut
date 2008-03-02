@@ -1,3 +1,9 @@
+Sun Mar  2 13:40:02 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/netxml-ups: Apply the change from 'ups.delay.start' to
+   'ups.timer.start' to this driver as well (the first is writeable,
+   while the second is a read-only countdown timer)
+
 Sun Mar  2 13:13:23 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/usbhid-ups:
