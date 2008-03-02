@@ -49,7 +49,7 @@
 /* support functions */
 static double logical_to_physical(HIDData_t *Data, long logical);
 static long physical_to_logical(HIDData_t *Data, double physical);
-static const char *hid_lookup_path(const long usage, usage_tables_t *utab);
+static const char *hid_lookup_path(const HIDNode_t usage, usage_tables_t *utab);
 static long hid_lookup_usage(const char *name, usage_tables_t *utab);
 static int string_to_path(const char *string, HIDPath_t *path, usage_tables_t *utab);
 static int path_to_string(char *string, size_t size, const HIDPath_t *path, usage_tables_t *utab);
@@ -699,7 +699,7 @@ static long hid_lookup_usage(const char *name, usage_tables_t *utab)
 }
 
 /* usage conversion numeric -> string */
-static const char *hid_lookup_path(const long usage, usage_tables_t *utab)
+static const char *hid_lookup_path(const HIDNode_t usage, usage_tables_t *utab)
 {
 	int i, j;
 
