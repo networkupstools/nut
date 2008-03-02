@@ -1,3 +1,9 @@
+Sun Mar  2 12:39:48 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/netxml-ups: The ne_parse_uri() function doesn't handle
+   parsing uri's that don't contain a method how to connect. It is
+   mandatory to specifiy this.
+
 Sun Mar  2 12:23:29 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/libhid.c: Fix incorrect size (usage paths are of type

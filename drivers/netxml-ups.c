@@ -41,6 +41,7 @@
 uint32_t		ups_status = 0;
 static subdriver_t	*subdriver = &mge_xml_subdriver;
 static ne_session	*session;
+static ne_uri		uri;
 
 /* Support functions */
 static void ups_alarm_set(void);
@@ -188,8 +189,6 @@ void upsdrv_banner(void)
 
 void upsdrv_initups(void)
 {
-	ne_uri	uri;
-
 	/* Initialize socket libraries */
 	if (ne_sock_init()) {
 		fatalx(EXIT_FAILURE, "%s: failed to initialize socket libraries", progname);
@@ -197,13 +196,17 @@ void upsdrv_initups(void)
 
 	/* Parse the URI argument. */
 	if (ne_uri_parse(device_path, &uri) || uri.host == NULL) {
-		fatalx(EXIT_FAILURE, "%s: invalid hostname '%s'\n", progname, device_path);
+		fatalx(EXIT_FAILURE, "%s: invalid hostname '%s'", progname, device_path);
 	}
-
+/*
 	if (uri.scheme == NULL) {
-		uri.scheme = "http";
+		uri.scheme = strdup("http");
 	}
-
+ 
+	if (uri.host == NULL) {
+		uri.host = strdup(device_path);
+	}
+ */
 	if (uri.port == 0) {
 		uri.port = ne_uri_defaultport(uri.scheme);
 	}
@@ -227,6 +230,7 @@ void upsdrv_initups(void)
 void upsdrv_cleanup(void)
 {
 	ne_session_destroy(session);
+	ne_uri_free(&uri);
 }
 
 /**********************************************************************
