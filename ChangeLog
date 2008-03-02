@@ -1,3 +1,15 @@
+Sun Mar  2 13:13:23 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/usbhid-ups:
+   - change 'ups.delay.start' and 'ups.delay.shutdown' to server
+     side variables that control the ondelay and offdelay for
+     the 'shutdown.return' and 'shutdown.stayoff' instcmd's
+   - create 'ups.timer.(start|shutdown|reboot)' that indicate the
+     time before these respective timers elapse (read-only)
+   - remove the test for ondelay>offdelay (the values can be
+     changed at runtime too and for some devices we already know
+     there may be legitimate reasons for doing so)
+
 Sun Mar  2 12:39:48 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/netxml-ups: The ne_parse_uri() function doesn't handle

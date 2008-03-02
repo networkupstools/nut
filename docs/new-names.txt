@@ -78,6 +78,15 @@ ups: General unit information
    | ups.delay.shutdown    | shutdown with delay command  | 20               |
    |                       | (seconds)                    |                  |
    |-----------------------+------------------------------+------------------|
+   | ups.timer.start       | Time before the load will be | 30               |
+   |                       | started (seconds)            |                  |
+   |-----------------------+------------------------------+------------------|
+   | ups.timer.reboot      | Time before the load will be | 10               |
+   |                       | rebooted (seconds)           |                  |
+   |-----------------------+------------------------------+------------------|
+   | ups.timer.shutdown    | Time before the load will be | 20               |
+   |                       | shutdown (seconds)           |                  |
+   |-----------------------+------------------------------+------------------|
    | ups.test.interval     | Interval between self tests  | 1209600 (two     |
    |                       | (seconds)                    | weeks)           |
    |-----------------------+------------------------------+------------------|

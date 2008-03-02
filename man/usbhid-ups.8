@@ -42,16 +42,21 @@ This driver also supports the following optional settings:
 .IP "offdelay=\fInum\fR"
 Set the timer before the UPS is turned off after the kill power command is
 sent (via the \fB\-k\fR switch).
-The default value is 20 (in seconds). Usually this MUST BE LOWER than
-ondelay and the driver will warn you upon startup if it isn't.
+
+The default value is 20 (in seconds). Usually this \fBmust be lower\fR than
+ondelay, but the driver will \fBnot\fR warn you upon startup if it isn't.
  
 .IP "ondelay=\fInum\fR"
 Set the timer for the UPS to switch on in case the power returns after the
 kill power command had been sent but before the actual switch off. This
 ensures the machines connected to the UPS are, in all cases, rebooted after
 a power failure.
-The default value is 30 (in seconds). Usually this MUST BE GREATER than
-offdelay and the driver will warn you upon startup if it isn't.
+
+The default value is 30 (in seconds). Usually this \fBmust be greater\fR
+than offdelay, but the driver will \fBnot\fR warn you upon startup if it
+isn't. Some UPS'es will restart no matter what, even if the power is
+(still) out at the moment this timer elapses. In that case, you could try
+if setting 'ondelay = -1' in \fBups.conf\fR helps.
 
 .IP "pollfreq=\fInum\fR"
 Set polling frequency, in seconds, to reduce the USB data flow.
@@ -144,8 +149,8 @@ want to find out that yours has issues here when a power failure hits
 your server room and you're not around to manually restart your servers.
 
 If you rely on the UPS to shutdown your systems in case of mains failure
-and to restart them when the power returns, you MUST TEST this. You can
-do so by running 'upsmon -c fsd'. With the mains present, this should
+and to restart them when the power returns, you \fBmust\fR test this. You
+can do so by running 'upsmon -c fsd'. With the mains present, this should
 bring your systems down and then cycle the power to restart them again.
 If you do the same without mains present, it should do the same, but in
 this case, the outputs shall remain off until mains power is applied

@@ -43,10 +43,10 @@ extern hid_dev_handle_t	udev;
 #define HU_VAR_POLLFREQ		"pollfreq"
 
 /* Parameters default values */
-#define DEFAULT_ONDELAY		30	/* Delay between return of utility power */
+#define DEFAULT_ONDELAY		"30"	/* Delay between return of utility power */
 					/* and powering up of load, in seconds */
 					/* CAUTION: ondelay > offdelay */
-#define DEFAULT_OFFDELAY	20	/* Delay before power off, in seconds */
+#define DEFAULT_OFFDELAY	"20"	/* Delay before power off, in seconds */
 #define DEFAULT_POLLFREQ	30	/* Polling interval, in seconds */
 					/* The driver will wait for Interrupt */
 					/* and do "light poll" in the meantime */

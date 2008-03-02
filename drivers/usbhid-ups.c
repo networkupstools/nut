@@ -84,7 +84,6 @@ static int pollfreq = DEFAULT_POLLFREQ;
 static int ups_status = 0;
 static bool_t data_has_changed = FALSE; /* for SEMI_STATIC data polling */
 static time_t lastpoll; /* Timestamp the last polling */
-static int offdelay = DEFAULT_OFFDELAY, ondelay = DEFAULT_ONDELAY;
 hid_dev_handle_t udev;
 
 /* support functions */
@@ -524,32 +523,24 @@ int instcmd(const char *cmdname, const char *extradata)
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		int	ret;
-		char	buffer[16];
 
-		snprintf(buffer, sizeof(buffer), "%d", ondelay);
-
-		ret = instcmd("load.on", buffer);
+		ret = instcmd("load.on", dstate_getinfo("ups.delay.start"));
 		if (ret != STAT_INSTCMD_HANDLED) {
 			return ret;
 		}
 
-		snprintf(buffer, sizeof(buffer), "%d", offdelay);
-
-		return instcmd("load.off", buffer);
+		return instcmd("load.off", dstate_getinfo("ups.delay.shutdown"));
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
 		int	ret;
-		char	buffer[16];
 
 		ret = instcmd("load.on", "-1");
 		if (ret != STAT_INSTCMD_HANDLED) {
 			return ret;
 		}
 
-		snprintf(buffer, sizeof(buffer), "%d", offdelay);
-
-		return instcmd("load.off", buffer);
+		return instcmd("load.off", dstate_getinfo("ups.delay.shutdown"));
 	}
 
 	upsdebugx(1, "instcmd(%s, %s)", cmdname, extradata ? extradata : "[NULL]");
@@ -676,11 +667,11 @@ void upsdrv_makevartable(void)
 	
 	upsdebugx(1, "upsdrv_makevartable...");
 
-	snprintf(temp, sizeof(temp), "Set shutdown delay, in seconds (default=%d)",
+	snprintf(temp, sizeof(temp), "Set shutdown delay, in seconds (default=%s)",
 		DEFAULT_OFFDELAY);
 	addvar(VAR_VALUE, HU_VAR_OFFDELAY, temp);
 	
-	snprintf(temp, sizeof(temp), "Set startup delay, in seconds (default=%d)",
+	snprintf(temp, sizeof(temp), "Set startup delay, in seconds (default=%s)",
 		DEFAULT_ONDELAY);
 	addvar(VAR_VALUE, HU_VAR_ONDELAY, temp);
 	
@@ -827,12 +818,6 @@ void upsdrv_initinfo(void)
 
 	upsdebugx(1, "upsdrv_initinfo...");
 
-	/* Warn if ondelay is too small */
-	if (ondelay <= offdelay) {
-		upslogx(LOG_WARNING, "warning: %s (%d) is smaller than or equal to %s (%d)",
-			HU_VAR_ONDELAY, ondelay, HU_VAR_OFFDELAY, offdelay);
-	}
-
 	/* init polling frequency */
 	val = getval(HU_VAR_POLLFREQ);
 	if (val)
@@ -931,14 +916,12 @@ void upsdrv_initups(void)
 	}
 
 	/* Retrieve user defined delay settings */
-	val = getval(HU_VAR_ONDELAY);
-	if (val) {
-		ondelay = atoi(val);
+	if (dstate_getinfo("ups.delay.start") && (val = getval(HU_VAR_ONDELAY))) {
+		dstate_setinfo("ups.delay.start", val);
 	}
 
-	val = getval(HU_VAR_OFFDELAY);
-	if (val) {
-		offdelay = atoi(val);
+	if (dstate_getinfo("ups.delay.shutdown") && (val = getval(HU_VAR_OFFDELAY))) {
+		dstate_setinfo("ups.delay.start", val);
 	}
 }
 
