@@ -1,3 +1,12 @@
+Mon Mar  3 09:50:30 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/netxml-ups:
+   - fix the 'ups.serial' for devices that report this number in
+     PRODUCT_INFO
+   - don't inherit value from previous object if no value is set
+     for the current object
+   - 'battery.current' was off by a factor of 10
+
 Sun Mar  2 13:40:02 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/netxml-ups: Apply the change from 'ups.delay.start' to

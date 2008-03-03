@@ -488,7 +488,7 @@ static xml_info_t mge_xml2nut[] = {
 	{ "battery.voltage", 0, 0, "UPS.PowerSummary.Voltage", 0, 0, NULL },
 	{ "battery.voltage.nominal", 0, 0, "UPS.BatterySystem.ConfigVoltage", 0, 0, NULL },
 	{ "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", 0, 0, NULL }, /* mge_battery_voltage_nominal */
-	{ "battery.current", 0, 0, "UPS.PowerSummary.Current", 0, 0, convert_deci },
+	{ "battery.current", 0, 0, "UPS.PowerSummary.Current", 0, 0, NULL },
 	{ "battery.protection", ST_FLAG_RW, 5, "UPS.BatterySystem.Battery.DeepDischargeProtection", 0, 0, yes_no_info },
 	{ "battery.energysave", ST_FLAG_RW, 5, "UPS.PowerConverter.Input[3].EnergySaving", 0, 0, yes_no_info },
 
@@ -611,6 +611,7 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 	case ROOTPARENT:
 		if (!strcasecmp(name, "PRODUCT_INFO")) {
 			/* name="Network Management Card" type="Mosaic M" version="BA" */
+			/* name="Network Management Card" type="Transverse" version="GB (SN 49EH29101)" */
 			int	i;
 			for (i = 0; atts[i] && atts[i+1]; i += 2) {
 				if (i == 0) {
@@ -738,6 +739,7 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 			for (i = 0; atts[i] && atts[i+1]; i += 2) {
 				if (!strcasecmp(atts[i], "name")) {
 					snprintf(var, sizeof(var), "%s", atts[i+1]);
+					val[0] = '\0';	/*don't inherit something from another object */
 				}
 			}
 			state = SU_OBJECT;
@@ -752,6 +754,7 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 			for (i = 0; atts[i] && atts[i+1]; i += 2) {
 				if (!strcasecmp(atts[i], "name")) {
 					snprintf(var, sizeof(var), "%s", atts[i+1]);
+					val[0] = '\0';	/*don't inherit something from another object */
 				}
 				if (!strcasecmp(atts[i], "access")) {
 					/* do something with RO/RW access? */
@@ -793,7 +796,13 @@ static int mge_xml_cdata_cb(void *userdata, int state, const char *cdata, size_t
 static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, const char *name)
 {
 	xml_info_t	*info;
-	char		*value = val;
+	char		*value;
+
+	/* ignore objects for which no value was set */
+	if (strlen(val) == 0) {
+		upsdebugx(3, "%s: name ignored, no value set (state = %d)\n", __func__, state);
+		return 0;
+	}
 
 	upsdebugx(3, "%s: name </%s> (state = %d)\n", __func__, name, state);
 
@@ -801,7 +810,15 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 	{
 	case PRODUCT_INFO:
 		dstate_setinfo("ups.mfr", "MGE UPS SYSTEMS");
-		dstate_setinfo("ups.firmware.aux", value);
+
+		/* Some devices also return the serial number here */
+		value = strstr(val, " (SN ");
+		if (value) {
+			dstate_setinfo("ups.serial", rtrim(value + 5, ')'));
+			value[0] = '\0';
+		}
+
+		dstate_setinfo("ups.firmware.aux", val);
 		break;
 
 	case SU_OBJECT:
@@ -811,10 +828,12 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 				continue;
 			}
 
-			upsdebugx(3, "-> XML variable %s [%s] maps to NUT variable %s", var, value, info->nutname);
+			upsdebugx(3, "-> XML variable %s [%s] maps to NUT variable %s", var, val, info->nutname);
 
 			if (info->convert) {
-				value = info->convert(value);
+				value = info->convert(val);
+			} else {
+				value = val;
 			}
 
 			if (value != NULL) {
@@ -824,7 +843,7 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 			return 0;
 		}
 
-		upsdebugx(2, "-> XML variable %s [%s] doesn't map to any NUT variable", var, value);
+		upsdebugx(2, "-> XML variable %s [%s] doesn't map to any NUT variable", var, val);
 		break;
 	}
 	
