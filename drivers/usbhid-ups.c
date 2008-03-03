@@ -1307,7 +1307,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 
 		default:
 			/* Don't know what happened, try again later... */
-			upslog_with_errno(LOG_DEBUG, "HIDGetDataValue");
+			upsdebug_with_errno(2, "HIDGetDataValue");
 			continue;
 		}
 

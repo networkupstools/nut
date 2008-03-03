@@ -1,3 +1,8 @@
+Mon Mar  3 19:57:11 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/usbhid-ups: Quite a few users have already complained
+   about the driver 'failing to start' due to this.
+
 Mon Mar  3 10:38:14 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/netxml-ups: I should read 'new-names.txt' more carefully.
