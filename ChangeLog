@@ -1,3 +1,8 @@
+Mon Mar  3 10:38:14 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/netxml-ups: I should read 'new-names.txt' more carefully.
+   The indexes for 3-phase systems don't have square brackets.
+
 Mon Mar  3 10:09:42 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  * driver/usbhid-ups:
