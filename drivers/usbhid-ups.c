@@ -590,7 +590,7 @@ int setvar(const char *varname, const char *val)
 	double		value;
 
 	upsdebugx(1, "setvar(%s, %s)", varname, val);
-	
+
 	/* retrieve and check netvar & item_path */	
 	hidups_item = find_nut_info(varname);
 	
@@ -667,15 +667,13 @@ void upsdrv_makevartable(void)
 	
 	upsdebugx(1, "upsdrv_makevartable...");
 
-	snprintf(temp, sizeof(temp), "Set shutdown delay, in seconds (default=%s)",
-		DEFAULT_OFFDELAY);
+	snprintf(temp, sizeof(temp), "Set shutdown delay, in seconds (default=%s)", DEFAULT_OFFDELAY);
 	addvar(VAR_VALUE, HU_VAR_OFFDELAY, temp);
 	
-	snprintf(temp, sizeof(temp), "Set startup delay, in seconds (default=%s)",
-		DEFAULT_ONDELAY);
+	snprintf(temp, sizeof(temp), "Set startup delay, in seconds (default=%s)", DEFAULT_ONDELAY);
 	addvar(VAR_VALUE, HU_VAR_ONDELAY, temp);
 	
-	snprintf(temp, sizeof(temp), "Set polling frequency, in seconds, to reduce data flow (default=%d).",
+	snprintf(temp, sizeof(temp), "Set polling frequency, in seconds, to reduce data flow (default=%d)",
 		DEFAULT_POLLFREQ);
 	addvar(VAR_VALUE, HU_VAR_POLLFREQ, temp);
 #ifndef MGE_MODE
@@ -825,15 +823,17 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("driver.parameter.pollfreq", "%d", pollfreq);
 
-	/* Add composite instcmds (that require setting multiple HID values */
-	dstate_addcmd("shutdown.return");
-	dstate_addcmd("shutdown.stayoff");
+	/* Add composite instcmds (require setting multiple HID values) */
+	if (dstate_getinfo("ups.delay.shutdown") && dstate_getinfo("ups.delay.start")) {
+		dstate_addcmd("shutdown.return");
+		dstate_addcmd("shutdown.stayoff");
+	}
+
+	time(&lastpoll);
 
 	/* install handlers */
 	upsh.setvar = setvar;
 	upsh.instcmd = instcmd;
-
-	time(&lastpoll);
 }
 
 void upsdrv_initups(void)
@@ -1224,6 +1224,10 @@ static bool_t hid_ups_walk(walkmode_t mode)
 
 			/* Special case for handling server side variables */
 			if (item->hidflags & HU_FLAG_ABSENT) {
+
+				/* already set */
+				if (dstate_getinfo(item->info_type))
+					continue;
 
 				dstate_setinfo(item->info_type, item->dfl);
 				dstate_setflags(item->info_type, item->info_flags);

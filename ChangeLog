@@ -1,3 +1,12 @@
+Mon Mar  3 10:09:42 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ * driver/usbhid-ups:
+   - only use defaults for server side variables on startup (and
+     don't reset them to the defaults when reconnecting)
+   - only register 'shutdown.restart' and 'shutdown.stayoff', if
+     we have 'ups.delay.start' and 'ups.delay.shutdown' (when
+     'DelayBeforeShutdown' and 'DelayBeforeStartup' are available)
+
 Mon Mar  3 09:50:30 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/netxml-ups:
