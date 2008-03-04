@@ -1,3 +1,8 @@
+Tue Mar  4 21:30:06 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - man/nutupsdrv.8: explain what happens when debugging is enabled
+   for drivers
+
 Mon Mar  3 19:57:11 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/usbhid-ups: Quite a few users have already complained
