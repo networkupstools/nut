@@ -34,9 +34,8 @@
 
 static char	mge_xml_initups[] = "/";
 static char	mge_xml_initinfo[] = "/mgeups/product.xml";
-static char	mge_xml_updateinfo[32] = "";
 
-static char	mge_scratch_buf[32];
+static char	mge_scratch_buf[256];
 
 static char	var[128];
 static char	val[128];
@@ -186,12 +185,23 @@ static char *boost_info(const char *val)
 	return NULL;
 }
 
-static char *bypass_info(const char *val)
+static char *bypass_aut_info(const char *val)
 {
 	if (val[0] == '1') {
-		STATUS_SET(BYPASS);
+		STATUS_SET(BYPASSAUTO);
 	} else {
-		STATUS_CLR(BYPASS);
+		STATUS_CLR(BYPASSAUTO);
+	}
+
+	return NULL;
+}
+
+static char *bypass_man_info(const char *val)
+{
+	if (val[0] == '1') {
+		STATUS_SET(BYPASSMAN);
+	} else {
+		STATUS_CLR(BYPASSMAN);
 	}
 
 	return NULL;
@@ -444,6 +454,16 @@ static char *split_date_time(const char *val)
 	return strtok_r(NULL, " ", &last);
 }
 
+static char *url_convert(const char *val)
+{
+	char	buf[256], *last = NULL;
+
+	snprintf(buf, sizeof(buf), "%s", val);
+	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "/%s", strtok_r(buf, " \r\n\t", &last));
+
+	return mge_scratch_buf;
+}
+
 #define ST_FLAG_RW	0
 
 static xml_info_t mge_xml2nut[] = {
@@ -460,12 +480,10 @@ static xml_info_t mge_xml2nut[] = {
 	{ NULL, 0, 0, "UPS.PowerConverter.Input[1].PresentStatus.FrequencyOutOfRange", 0, 0, frange_info },
 	{ NULL, 0, 0, "UPS.PowerConverter.Input[1].PresentStatus.FuseFault", 0, 0, fuse_fault_info },
 	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.Good", 0, 0, off_info },
-	/* Manual bypass */
-	{ NULL, 0, 0, "UPS.PowerConverter.Input[4].PresentStatus.Used", 0, 0, bypass_info },
-	/* { NULL, 0, 0, "UPS.PowerConverter.Input[3].PresentStatus.Used", 0, 0, onbatt_info }, */
-	/* Automatic bypass */
-	{ NULL, 0, 0, "UPS.PowerConverter.Input[2].PresentStatus.Used", 0, 0, bypass_info },
 	/* { NULL, 0, 0, "UPS.PowerConverter.Input[1].PresentStatus.Used", 0, 0, online_info }, */
+	{ NULL, 0, 0, "UPS.PowerConverter.Input[2].PresentStatus.Used", 0, 0, bypass_aut_info }, /* Automatic bypass */
+	/* { NULL, 0, 0, "UPS.PowerConverter.Input[3].PresentStatus.Used", 0, 0, onbatt_info }, */
+	{ NULL, 0, 0, "UPS.PowerConverter.Input[4].PresentStatus.Used", 0, 0, bypass_man_info }, /* Manual bypass */
 	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.FanFailure", 0, 0, fanfail_info },
 	{ NULL, 0, 0, "UPS.BatterySystem.Battery.PresentStatus.Present", 0, 0, nobattery_info },
 	{ NULL, 0, 0, "UPS.BatterySystem.Charger.PresentStatus.InternalFailure", 0, 0, chargerfail_info },
@@ -534,6 +552,7 @@ static xml_info_t mge_xml2nut[] = {
 	{ "input.L1.current", 0, 0, "UPS.PowerConverter.Input[1].Phase[1].Current", 0, 0, convert_deci },
 	{ "input.L2.current", 0, 0, "UPS.PowerConverter.Input[1].Phase[2].Current", 0, 0, convert_deci },
 	{ "input.L3.current", 0, 0, "UPS.PowerConverter.Input[1].Phase[3].Current", 0, 0, convert_deci },
+	{ "input.current.nominal", 0, 0, "UPS.Flow[1].ConfigCurrent", 0, 0, NULL },
 	{ "input.frequency", 0, 0, "UPS.PowerConverter.Input[1].Frequency", 0, 0, NULL },
 	{ "input.frequency.nominal", 0, 0, "UPS.Flow[1].ConfigFrequency", 0, 0, NULL },
 	{ "input.voltage.extended", ST_FLAG_RW, 5, "UPS.PowerConverter.Output.ExtendedVoltageMode", 0, 0, yes_no_info },
@@ -547,6 +566,21 @@ static xml_info_t mge_xml2nut[] = {
 	{ "input.transfer.high", ST_FLAG_RW, 5, "UPS.PowerConverter.Output.HighVoltageTransfer", 0, 0, NULL },
 	{ "input.transfer.trim.high", ST_FLAG_RW, 5, "UPS.PowerConverter.Output.HighVoltageBuckTransfer", 0, 0, NULL },
 	{ "input.sensitivity", ST_FLAG_RW, 10, "UPS.PowerConverter.Output.SensitivityMode", 0, 0, NULL },
+
+	/* Bypass page */
+	/* TODO: list these variables in 'docs/new-names.txt' */
+	{ "bypass.voltage", 0, 0, "UPS.PowerConverter.Input[2].Voltage",  0, 0, NULL },
+	{ "bypass.L1-L2.voltage", 0, 0, "UPS.PowerConverter.Input[2].Phase[11].Voltage", 0, 0, NULL },
+	{ "bypass.L2-L3.voltage", 0, 0, "UPS.PowerConverter.Input[2].Phase[22].Voltage", 0, 0, NULL },
+	{ "bypass.L3-L1.voltage", 0, 0, "UPS.PowerConverter.Input[2].Phase[33].Voltage", 0, 0, NULL },
+	/* { "bypass.voltage.nominal", 0, 0, "UPS.Flow[2].ConfigVoltage", 0, 0, NULL }, */
+	{ "bypass.current", 0, 0, "UPS.PowerConverter.Input[2].Current",  0, 0, NULL },
+	{ "bypass.L1.current", 0, 0, "UPS.PowerConverter.Input[2].Phase[1].Current", 0, 0, NULL },
+	{ "bypass.L2.current", 0, 0, "UPS.PowerConverter.Input[2].Phase[2].Current", 0, 0, NULL },
+	{ "bypass.L3.current", 0, 0, "UPS.PowerConverter.Input[2].Phase[3].Current", 0, 0, NULL },
+	/* { "bypass.current.nominal", 0, 0, "UPS.Flow[2].ConfigCurrent", 0, 0, NULL }, */
+	{ "bypass.frequency", 0, 0, "UPS.PowerConverter.Input[2].Frequency", 0, 0, NULL },
+	/* { "bypass.frequency.nominal", 0, 0, "UPS.Flow[2].ConfigFrequency", 0, 0, NULL }, */
 
 	/* Output page */
 	{ "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", 0, 0, NULL },
@@ -670,7 +704,8 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 			int	i;
 			for (i = 0; atts[i] && atts[i+1]; i += 2) {
 				if (!strcasecmp(atts[i], "url")) {
-					snprintf(mge_xml_updateinfo, sizeof(mge_xml_updateinfo), "/%s", atts[i+1]);
+					free(mge_xml_subdriver.getobject);
+					mge_xml_subdriver.getobject = strdup(url_convert(atts[i+1]));
 				}
 			}
 			state = PI_XML_SUMMARY_PAGE;
@@ -722,11 +757,29 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 	case PI_UPS_DATA:
 		if (!strcasecmp(name, "GET_OBJECT")) {
 			/* url="getvalue.cgi" security="none" */
+			/* unfortunately, this page contains invalid UTF-8
+			   encoded characters on the MGE 66102 NMC */
+#if 0
+			int	i;
+			for (i = 0; atts[i] && atts[i+1]; i += 2) {
+				if (!strcasecmp(atts[i], "url")) {
+					free(mge_xml_subdriver.getobject);
+					mge_xml_subdriver.getobject = strdup(url_convert(atts[i+1]));
+				}
+			}
+#endif
 			state = PI_GET_OBJECT;
 			break;
 		}
 		if (!strcasecmp(name, "SET_OBJECT")) {
 			/* url="setvalue.cgi" security="ssl" */
+			int	i;
+			for (i = 0; atts[i] && atts[i+1]; i += 2) {
+				if (!strcasecmp(atts[i], "url")) {
+					free(mge_xml_subdriver.setobject);
+					mge_xml_subdriver.setobject = strdup(url_convert(atts[i+1]));
+				}
+			}
 			state = PI_SET_OBJECT;
 			break;
 		}
@@ -854,7 +907,8 @@ subdriver_t mge_xml_subdriver = {
 	MGE_XML_VERSION,
 	mge_xml_initups,
 	mge_xml_initinfo,
-	mge_xml_updateinfo,
+	NULL,
+	NULL,
 	mge_xml_startelm_cb,
 	mge_xml_cdata_cb,
 	mge_xml_endelm_cb,

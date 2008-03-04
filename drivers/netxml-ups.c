@@ -77,6 +77,14 @@ void upsdrv_initinfo(void)
 	ne_xml_destroy(parser);
 	ne_request_destroy(request);
 
+	if (!subdriver->getobject) {
+		fatalx(EXIT_FAILURE, "FATAL: %s found no way to get variables", __func__);
+	}
+
+	if (!subdriver->setobject) {
+		upsdebugx(2, "INFO: %s found no way to set variables", __func__);
+	}
+
 	dstate_setinfo("driver.version.internal", "%s", subdriver->version);
 
 	/* upsh.instcmd = instcmd; */
@@ -89,13 +97,13 @@ void upsdrv_updateinfo(void)
 	ne_request	*request;
 	ne_xml_parser	*parser;
 
-	upsdebugx(3, "ne_request_create(session, \"GET\", \"%s\");", subdriver->updateinfo);
+	upsdebugx(3, "ne_request_create(session, \"GET\", \"%s\");", subdriver->getobject);
 
-	if (strlen(subdriver->updateinfo) < 1) {
-		fatalx(EXIT_FAILURE, "%s: failure to read updateinfo element", __func__);
+	if (strlen(subdriver->getobject) < 1) {
+		fatalx(EXIT_FAILURE, "%s: failure to read getobject element", __func__);
 	}
 
-	request = ne_request_create(session, "GET", subdriver->updateinfo);
+	request = ne_request_create(session, "GET", subdriver->getobject);
 
 	/* Create an XML parser. */
 	parser = ne_xml_create();
@@ -229,6 +237,8 @@ void upsdrv_initups(void)
 
 void upsdrv_cleanup(void)
 {
+	free(subdriver->getobject);
+	free(subdriver->setobject);
 	ne_session_destroy(session);
 	ne_uri_free(&uri);
 }
@@ -290,6 +300,12 @@ static void ups_alarm_set(void)
 	if (STATUS_BIT(FUSEFAULT)) {
 		alarm_set("Fuse fault!");
 	}
+	if (STATUS_BIT(BYPASSAUTO)) {
+		alarm_set("Automatic bypass mode!");
+	}
+	if (STATUS_BIT(BYPASSMAN)) {
+		alarm_set("Manual bypass mode!");
+	}
 }
 
 /* Convert the local status information to NUT format and set NUT
@@ -330,8 +346,8 @@ static void ups_status_set(void)
 	if (STATUS_BIT(BOOST)) {
 		status_set("BOOST");	        /* SmartBoost */
 	}
-	if (STATUS_BIT(BYPASS)) {
-		status_set("BYPASS");	        /* on bypass */   
+	if (STATUS_BIT(BYPASSAUTO) || STATUS_BIT(BYPASSMAN)) {
+		status_set("BYPASS");	        /* on bypass */
 	}
 	if (STATUS_BIT(OFF)) {
 		status_set("OFF");              /* ups is off */

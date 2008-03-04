@@ -27,7 +27,8 @@ struct subdriver_s {
 	const char	*version;		/* name of this subdriver */
 	char		*initups;
 	char		*initinfo;
-	char		*updateinfo;
+	char		*getobject;
+	char		*setobject;
 	int		(*startelm_cb)(void *userdata, int parent, const char *nspace, const char *name, const char **atts);
 	int		(*cdata_cb)(void *userdata, int state, const char *cdata, size_t len);
 	int		(*endelm_cb)(void *userdata, int state, const char *nspace, const char *name);
@@ -52,7 +53,8 @@ typedef enum {
 	SHUTDOWNIMM,	/* shutdown imminent */
 	TRIM,		/* SmartTrim */
 	BOOST,		/* SmartBoost */
-	BYPASS,		/* on bypass */
+	BYPASSAUTO,	/* on automatic bypass */
+	BYPASSMAN,	/* on manual/service bypass */
 	OFF,		/* ups is off */
 	CAL,		/* calibration */
 	OVERHEAT,	/* overheat; Belkin, TrippLite */

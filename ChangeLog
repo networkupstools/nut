@@ -1,3 +1,13 @@
+Tue Mar  4 21:35:58 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/netxml-ups:
+   - handle manual/service and automatic bypass separately (will
+     show up as BYPASS in 'ups.status' and informative message
+     will be shown in 'ups.alarm'
+   - add (experimental) variables for bypass input (unofficial
+     variable names)
+   - handle unexpected whitespace characters in url better
+
 Tue Mar  4 21:30:06 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - man/nutupsdrv.8: explain what happens when debugging is enabled
