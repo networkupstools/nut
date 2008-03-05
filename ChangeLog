@@ -1,3 +1,7 @@
+Wed Mar  5 22:01:06 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - scripts/hal/ups-nut-device.fdi: name was changed
+
 Wed Mar  5 21:16:30 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - fix HAL support [Alioth Bug #304156] (backport from r1294)
