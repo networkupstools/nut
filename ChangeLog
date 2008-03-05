@@ -1,3 +1,8 @@
+Wed Mar  5 21:05:06 UTC 2008 / Arjen de Korte
+
+ - drivers/mge-xml: This driver has been replaced by the netxml-ups
+   driver
+
 Wed Mar  5 16:11:02 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  * Integrated Power Management (HAL integration)

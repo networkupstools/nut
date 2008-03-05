@@ -31,7 +31,7 @@
 
 /* include all known subdrivers */
 #include "mge-hid.h"
-#ifndef MGE_MODE
+#ifndef SHUT_MODE
 	#include "explore-hid.h"
 	#include "apc-hid.h"
 	#include "belkin-hid.h"
@@ -46,11 +46,11 @@
 
 /* master list of avaiable subdrivers */
 static subdriver_t *subdriver_list[] = {
-#ifndef MGE_MODE
+#ifndef SHUT_MODE
 	&explore_subdriver,
 #endif
 	&mge_subdriver,
-#ifndef MGE_MODE
+#ifndef SHUT_MODE
 	&apc_subdriver,
 	&belkin_subdriver,
 	&cps_subdriver,
@@ -75,7 +75,7 @@ static subdriver_t *subdriver = NULL;
 static HIDDevice_t *hd = NULL;
 static HIDDevice_t curDevice = { 0x0000, 0x0000, NULL, NULL, NULL, NULL };
 static HIDDeviceMatcher_t *subdriver_matcher = NULL;
-#ifndef	MGE_MODE
+#ifndef SHUT_MODE
 static HIDDeviceMatcher_t *exact_matcher = NULL;
 static HIDDeviceMatcher_t *regex_matcher = NULL;
 static unsigned char *checksum = NULL;
@@ -105,7 +105,7 @@ static double interval(void);
 /* global variables */
 HIDDesc_t	*pDesc = NULL;		/* parsed Report Descriptor */
 reportbuf_t	*reportbuf = NULL;	/* buffer for most recent reports */
-#ifndef	MGE_MODE
+#ifndef SHUT_MODE
 matching_t	matching = NORMAL;
 #endif
 
@@ -185,7 +185,7 @@ static status_lkp_t status_info[] = {
 	{ NULL, 0 },
 };
 
-#ifndef	MGE_MODE
+#ifndef SHUT_MODE
 typedef struct {
 	char		*val;
 	matching_t	mode;
@@ -478,7 +478,7 @@ info_lkp_t kelvin_celsius_conversion[] = {
  * as SHUT is only supported by MGE UPS SYSTEMS units
  */
 
-#ifndef MGE_MODE
+#ifndef SHUT_MODE
 static int match_function_subdriver(HIDDevice_t *d, void *privdata) {
 	int i;
 
@@ -676,7 +676,7 @@ void upsdrv_makevartable(void)
 	snprintf(temp, sizeof(temp), "Set polling frequency, in seconds, to reduce data flow (default=%d)",
 		DEFAULT_POLLFREQ);
 	addvar(VAR_VALUE, HU_VAR_POLLFREQ, temp);
-#ifndef MGE_MODE
+#ifndef SHUT_MODE
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
 	addvar(VAR_VALUE, "vendor", "Regular expression to match UPS Manufacturer string");
 	addvar(VAR_VALUE, "product", "Regular expression to match UPS Product string");
@@ -694,8 +694,7 @@ void upsdrv_banner(void)
 	printf("Network UPS Tools: %s %s - core %s (%s)\n\n",
 		comm_driver->name, comm_driver->version,
 		DRIVER_VERSION, UPS_VERSION);
-		
-#ifndef MGE_MODE /* newmge-shut and mge-xml are both experimental */
+#ifdef SHUT_MODE /* newmge-shut is experimental */
 	experimental_driver = 1;
 #endif
 }
@@ -840,7 +839,7 @@ void upsdrv_initups(void)
 {
 	int ret;
 	char *val;
-#ifdef MGE_MODE
+#ifdef SHUT_MODE
 	/*!
 	 * SHUT is a serial protocol, so it needs
 	 * only the device path
@@ -898,7 +897,7 @@ void upsdrv_initups(void)
 		/* link the matchers */
 		subdriver_matcher->next = regex_matcher;
 	}
-#endif /* MGE_MODE */
+#endif /* SHUT_MODE */
 
 	/* Search for the first supported UPS matching the
 	   regular expression (USB) or device_path (SHUT) */
@@ -932,7 +931,7 @@ void upsdrv_cleanup(void)
 	comm_driver->close(udev);
 	Free_ReportDesc(pDesc);
 	free_report_buffer(reportbuf);
-#ifndef MGE_MODE
+#ifndef SHUT_MODE
 	USBFreeExactMatcher(exact_matcher);
 	USBFreeRegexMatcher(regex_matcher);
 
@@ -993,10 +992,12 @@ static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf
 {
 	int i;
 	char *mfr = NULL, *model = NULL, *serial = NULL;
-#ifndef	MGE_MODE
+#ifndef SHUT_MODE
 	int ret;
+#endif
 	upsdebugx(2, "Report Descriptor size = %d", rdlen);
-
+	
+#ifndef SHUT_MODE
 	if (matching == CHECKSUM) {
 #ifdef HAVE_SSL
 		unsigned char buf[SHA_DIGEST_LENGTH];
@@ -1025,6 +1026,7 @@ static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf
 		fatalx(EXIT_FAILURE, "Checksum matching requires SSL support!");
 #endif /* HAVE_SSL */
 	}
+#endif /* SHUT_MODE */
 
 	upsdebug_hex(3, "Report Descriptor", rdbuf, rdlen);
 
@@ -1044,7 +1046,6 @@ static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf
 		Free_ReportDesc(pDesc);
 		return 0;
 	}
-#endif /* MGEXML_MODE */
 
 	/* select the subdriver for this device */
 	for (i=0; subdriver_list[i] != NULL; i++) {
@@ -1063,7 +1064,7 @@ static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf
 
 	HIDDumpTree(udev, subdriver->utab);
 
-#ifndef MGE_MODE
+#ifndef SHUT_MODE
 	if (matching == DELAYED) {
 		USBDeviceMatcher_t *m;
 
@@ -1105,13 +1106,13 @@ static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf
 	regex_matcher->next = exact_matcher;
 
 	if (matching != DELAYED) {
-#endif /* MGE_MODE */
+#endif /* SHUT_MODE */
 		/* apply subdriver specific formatting
 		 */
 		mfr = subdriver->format_mfr(hd);
 		model = subdriver->format_model(hd);
 		serial = subdriver->format_serial(hd);
-#ifndef MGE_MODE
+#ifndef SHUT_MODE
 	}
 #endif
 	if (mfr != NULL) {
@@ -1135,7 +1136,7 @@ static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf
 	dstate_setinfo("ups.vendorid", "%04x", hd->VendorID);
 	dstate_setinfo("ups.productid", "%04x", hd->ProductID);
 
-#ifndef MGE_MODE
+#ifndef SHUT_MODE
 	if (exact_matcher) {
 		/* reload all NUT variables & commands */
 		hid_ups_walk(HU_WALKMODE_RELOAD);
@@ -1173,8 +1174,8 @@ static bool_t hid_ups_walk(walkmode_t mode)
 	/* Device data walk ----------------------------- */
 	for (item = subdriver->hid2nut; item->info_type != NULL; item++) {
 
-#ifdef MGE_MODE
-		/* Check if we are asked to stop (reactivity++) in SHUT or XML/HTTP mode.
+#ifdef SHUT_MODE
+		/* Check if we are asked to stop (reactivity++) in SHUT mode.
 		 * In USB mode, looping through this takes well under a second,
 		 * so any effort to improve reactivity here is wasted. */
 		if (exit_flag != 0)
@@ -1280,11 +1281,8 @@ static bool_t hid_ups_walk(walkmode_t mode)
 			fatalx(EXIT_FAILURE, "hid_ups_walk: unknown update mode!");
 		}
 
-#ifndef MGEXML_MODE
 		retcode = HIDGetDataValue(udev, item->hiddata, &value, poll_interval);
-#else
-		retcode = HIDGetDataValue(udev, item->hidpath, &value, poll_interval);
-#endif
+
 		switch (retcode)
 		{
 		case -EBUSY:
@@ -1311,13 +1309,9 @@ static bool_t hid_ups_walk(walkmode_t mode)
 			continue;
 		}
 
-#ifndef MGEXML_MODE
 		upsdebugx(2, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %f",
 			item->hidpath, HIDDataType(item->hiddata), item->hiddata->ReportID,
 			item->hiddata->Offset, item->hiddata->Size, value);
-#else
-		upsdebugx(2, "Path: %s, Value: %f", item->hidpath, value);
-#endif
 
 		if (item->hidflags & HU_TYPE_CMD) {
 			dstate_addcmd(item->info_type);
@@ -1352,7 +1346,7 @@ static int reconnect_ups(void)
 	upsdebugx(4, "==================================================");
 
 	ret = comm_driver->open(&udev, &curDevice, subdriver_matcher,
-#ifdef MGE_MODE
+#ifdef SHUT_MODE
 		NULL);
 #else
 		(matching == NORMAL) ? NULL : &callback);

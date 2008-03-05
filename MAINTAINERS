@@ -39,11 +39,11 @@ P: Arnaud Quette
 M: aquette.dev@gmail.com
 M: arnaud.quette@mgeups.com
 S: Maintained or Supported: dummy-ups, usbhid-ups, mge-shut, newmge-shut
-                            mge-utalk, snmp-ups, mge-xml, HAL support
+                            mge-utalk, snmp-ups, HAL support
 
 P: Arjen de Korte
 M: arjen@de-korte.org
-S: Maintained: safenet, genericups
+S: Maintained: safenet, genericups, powerpanel, netxml-ups
 
 P: Fabio Di Niro
 M: blaxwan@users.sourceforge.net
@@ -71,14 +71,6 @@ S: Maintained: nut.spec.in (for Red Hat RPM builds)
 P: Arnaud Quette
 M: aquette@debian.org
 S: Maintained: Official Debian packages
-
-Third party code
-================
-
-P: Aaron Voisine
-M: aaron@voisine.org
-W: http://ezxml.sourceforge.net/
-S: Maintained: ezXML (XML Parser for the mge-xml driver)
 
 Everything else
 ===============

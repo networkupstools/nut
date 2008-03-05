@@ -155,7 +155,7 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-AC_HELP_STRING([--with-all], [enable serial, usb, snmp, hal, cgi, lib, mgexml]),
+AC_HELP_STRING([--with-all], [enable serial, usb, snmp, hal, cgi, lib, neonxml]),
 [	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
 		dnl this is what the user expects from --without-all
@@ -165,7 +165,6 @@ AC_HELP_STRING([--with-all], [enable serial, usb, snmp, hal, cgi, lib, mgexml]),
 		if test -z "${with_snmp}"; then with_snmp="${withval}"; fi
 		if test -z "${with_usb}"; then with_usb="${withval}"; fi
 		if test -z "${with_hal}"; then with_hal="${withval}"; fi
-		if test -z "${with_mgexml}"; then with_mgexml="${withval}"; fi
 		if test -z "${with_neonxml}"; then with_neonxml="${withval}"; fi
 		AC_MSG_RESULT("${withval}")		
 	else
@@ -184,7 +183,6 @@ NUT_ARG_WITH([snmp], [build and install SNMP drivers], [auto])
 NUT_ARG_WITH([hal], [build and install HAL support], [no])
 NUT_ARG_WITH([cgi], [build and install the CGI programs], [no])
 NUT_ARG_WITH([lib], [build and install the upsclient library], [no])
-NUT_ARG_WITH([mgexml], [build and install MGE XML/HTTP driver], [yes])
 NUT_ARG_WITH([neonxml], [build and install neon based XML/HTTP driver], [auto])
 
 dnl ----------------------------------------------------------------------
@@ -400,18 +398,6 @@ fi
 
 AM_CONDITIONAL(WITH_HAL, test "${nut_with_hal}" = "yes")
 NUT_REPORT_FEATURE([enable HAL support], [${nut_with_hal}])
-
-dnl ----------------------------------------------------------------------
-dnl checks related to --with-mgexml
-
-if test "${nut_with_mgexml}" != "no"; then
-   nut_with_mgexml="yes"
-else
-   nut_with_mgexml="no"
-fi
-
-AM_CONDITIONAL(WITH_MGEXML, test "${nut_with_mgexml}" = "yes")
-NUT_REPORT_FEATURE([enable MGE XML/HTTP support], [${nut_with_mgexml}])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-neonxml

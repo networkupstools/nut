@@ -36,18 +36,17 @@ SERIAL_DRIVERLIST = al175 apcsmart bcmxcp belkin belkinunv bestfcom	\
  bestuferrups bestups cpsups cyberpower dummy-ups etapro everups 	\
  gamatronic genericups isbmex liebert masterguard megatec metasys 	\
  mge-shut mge-utalk newmge-shut	nitram oneac optiups powercom rhino 	\
- safenet solis tripplite tripplitesu upscode2 victronups powerpanel
+ safenet skel solis tripplite tripplitesu upscode2 victronups powerpanel
 SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb megatec_usb
 USB_HIDDEV_DRIVERLIST = energizerups
 USB_DRIVERLIST = $(USB_LIBUSB_DRIVERLIST) $(USB_HIDDEV_DRIVERLIST)
 HAL_DRIVERLIST = hald-addon-usbhid-ups hald-addon-bcmxcp_usb \
  hald-addon-tripplite_usb hald-addon-megatec_usb
-MGEXML_DRIVERLIST = mge-xml
 NEONXML_DRIVERLIST = netxml-ups
 
 # distribute all drivers, even ones that are not built by default
-EXTRA_PROGRAMS = $(SERIAL_DRIVERLIST) $(SNMP_DRIVERLIST) $(USB_DRIVERLIST) $(MGEXML_DRIVERLIST) $(NEONXML_DRIVERLIST)
+EXTRA_PROGRAMS = $(SERIAL_DRIVERLIST) $(SNMP_DRIVERLIST) $(USB_DRIVERLIST) $(NEONXML_DRIVERLIST)
 
 # construct the list of drivers to build
 if SOME_DRIVERS
@@ -71,9 +70,6 @@ endif
 if WITH_HAL
    halexecdir = $(HAL_CALLOUTS_PATH)
    halexec_PROGRAMS = $(HAL_DRIVERLIST)
-endif
-if WITH_MGEXML
-   driverexec_PROGRAMS += $(MGEXML_DRIVERLIST)
 endif
 if WITH_NEONXML
    driverexec_PROGRAMS += $(NEONXML_DRIVERLIST)
@@ -169,7 +165,7 @@ megatec_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 # HID-over-serial
 newmge_shut_SOURCES = usbhid-ups.c libshut.c libhid.c hidparser.c mge-hid.c
 # per-target CFLAGS are necessary here
-newmge_shut_CFLAGS = $(AM_CFLAGS) -DSHUT_MODE -DMGE_MODE
+newmge_shut_CFLAGS = $(AM_CFLAGS) -DSHUT_MODE
 newmge_shut_LDADD = $(LDADD)
 
 # SNMP
@@ -191,12 +187,6 @@ hald_addon_megatec_usb_SOURCES = megatec.c megatec_usb.c libusb.c
 hald_addon_megatec_usb_CFLAGS = $(AM_CFLAGS) -DMEGATEC_SUBDRV
 hald_addon_megatec_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS)
 
-# MGE XML/HTTP
-mge_xml_SOURCES = usbhid-ups.c libmge-xml.c mge-hid.c ezxml.c
-# per-target CFLAGS are necessary here
-mge_xml_CFLAGS = $(AM_CFLAGS) -DMGEXML_MODE -DMGE_MODE
-mge_xml_LDADD = $(LDADD_DRIVERS)
-
 # NEON XML/HTTP
 netxml_ups_SOURCES = netxml-ups.c mge-xml.c
 netxml_ups_LDADD = $(LDADD_DRIVERS) $(LIBNEON_LDFLAGS)
@@ -212,8 +202,8 @@ dist_noinst_HEADERS = al175.h apccmib.h apc-hid.h apcsmart.h bcmxcp.h	\
  dstate-hal.h								\
  dummy-ups.h etapro.h everups.h gamatronic.h				\
  explore-hid.h genericups.h hidparser.h hidtypes.h ietfmib.h		\
- isbmex.h libhid.h libshut.h libusb.h liebert.h liebert-hid.h \
- libmge-xml.h ezxml.h main.h main-hal.h								\
+ isbmex.h libhid.h libshut.h libusb.h liebert.h liebert-hid.h main.h	\
+ main-hal.h								\
  masterguard.h megatec.h metasys.h mge-hid.h mgemib.h mge-shut.h	\
  mge-utalk.h netvisionmib.h usbhid-ups.h nitram.h nut_usb.h		\
  oneac.h optiups.h powercom.h pwmib.h safenet.h serial.h		\
