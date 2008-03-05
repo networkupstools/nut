@@ -11,9 +11,26 @@ LDADD_DRIVERS_SERIAL = $(LDADD_DRIVERS) $(SERLIBS) serial.o
 # most targets are drivers, so make this the default
 LDADD = $(LDADD_DRIVERS_SERIAL)
 # Avoid per-target CFLAGS, because this will prevent re-use of object
-# files. In any case, CFLAGS are only -I options, so there is no harm. 
-AM_CFLAGS = -I$(top_srcdir)/include $(LIBHAL_CFLAGS) $(LIBUSB_CFLAGS) \
- $(LIBNETSNMP_CFLAGS) $(LIBSSL_CFLAGS)
+# files. In any case, CFLAGS are only -I options, so there is no harm,
+# but only add them if we really use the target.
+AM_CFLAGS = -I$(top_srcdir)/include
+if WITH_HAL
+  AM_CFLAGS += $(LIBHAL_CFLAGS)
+endif
+if WITH_USB
+if HAVE_LIBUSB
+  AM_CFLAGS += $(LIBUSB_CFLAGS)
+endif
+endif
+if WITH_SNMP
+  AM_CFLAGS += $(LIBNETSNMP_CFLAGS)
+endif
+if WITH_SNMP
+  AM_CFLAGS += $(LIBSSL_CFLAGS)
+endif
+if WITH_NEONXML
+  AM_CFLAGS += $(LIBNEON_CFLAGS)
+endif
 
 SERIAL_DRIVERLIST = al175 apcsmart bcmxcp belkin belkinunv bestfcom	\
  bestuferrups bestups cpsups cyberpower dummy-ups etapro everups 	\
@@ -24,10 +41,12 @@ SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb megatec_usb
 USB_HIDDEV_DRIVERLIST = energizerups
 USB_DRIVERLIST = $(USB_LIBUSB_DRIVERLIST) $(USB_HIDDEV_DRIVERLIST)
-HAL_DRIVERLIST = hald-addon-usbhid-ups hald-addon-bcmxcp_usb hald-addon-tripplite_usb hald-addon-megatec_usb
+HAL_DRIVERLIST = hald-addon-usbhid-ups hald-addon-bcmxcp_usb \
+ hald-addon-tripplite_usb hald-addon-megatec_usb
+NEONXML_DRIVERLIST = netxml-ups
 
 # distribute all drivers, even ones that are not built by default
-EXTRA_PROGRAMS = $(SERIAL_DRIVERLIST) $(SNMP_DRIVERLIST) $(USB_DRIVERLIST)
+EXTRA_PROGRAMS = $(SERIAL_DRIVERLIST) $(SNMP_DRIVERLIST) $(USB_DRIVERLIST) $(NEONXML_DRIVERLIST)
 
 # construct the list of drivers to build
 if SOME_DRIVERS
@@ -49,8 +68,14 @@ if HAVE_HIDDEV
 endif
 endif
 if WITH_HAL
-   driverexec_PROGRAMS += $(HAL_DRIVERLIST)
+   halexecdir = $(HAL_CALLOUTS_PATH)
+   halexec_PROGRAMS = $(HAL_DRIVERLIST)
 endif
+if WITH_NEONXML
+   driverexec_PROGRAMS += $(NEONXML_DRIVERLIST)
+endif
+else
+   driverexec_PROGRAMS += skel
 endif
 
 # always build upsdrvctl
@@ -108,6 +133,8 @@ victronups_SOURCES = victronups.c
 dummy_ups_SOURCES = dummy-ups.c
 dummy_ups_LDADD = $(LDADD_DRIVERS)
 
+# sample skeleton driver
+
 skel_SOURCES = skel.c
 skel_LDADD = $(LDADD_DRIVERS)
 
@@ -116,7 +143,10 @@ USBHID_UPS_SUBDRIVERS = apc-hid.c belkin-hid.c cps-hid.c explore-hid.c \
  liebert-hid.c mge-hid.c tripplite-hid.c
 usbhid_ups_SOURCES = usbhid-ups.c libhid.c libusb.c hidparser.c	\
  $(USBHID_UPS_SUBDRIVERS)
-usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBSSL_LDFLAGS)
+usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
+if WITH_SSL
+  usbhid_ups_LDADD += $(LIBSSL_LDFLAGS)
+endif
 
 energizerups_SOURCES = energizerups.c
 energizerups_LDADD = $(LDADD_DRIVERS)
@@ -156,6 +186,9 @@ hald_addon_megatec_usb_SOURCES = megatec.c megatec_usb.c libusb.c
 hald_addon_megatec_usb_CFLAGS = $(AM_CFLAGS) -DMEGATEC_SUBDRV
 hald_addon_megatec_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS)
 
+# NEON XML/HTTP
+netxml_ups_SOURCES = netxml-ups.c mge-xml.c
+netxml_ups_LDADD = $(LDADD_DRIVERS) $(LIBNEON_LDFLAGS)
 
 # ----------------------------------------------------------------------
 # List of header files. The purpose of this list is not dependency
@@ -174,7 +207,8 @@ dist_noinst_HEADERS = al175.h apccmib.h apc-hid.h apcsmart.h bcmxcp.h	\
  mge-utalk.h netvisionmib.h usbhid-ups.h nitram.h nut_usb.h		\
  oneac.h optiups.h powercom.h pwmib.h safenet.h serial.h		\
  snmp-ups.h solis.h tripplite.h tripplite-hid.h tripplitesu.h		\
- upscode2.h victronups.h powerpanel.h upshandler.h
+ upscode2.h victronups.h powerpanel.h upshandler.h netxml-ups.h		\
+ mge-xml.h
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,

@@ -8,6 +8,7 @@ LIB_PAGES = upsclient.3 upscli_connect.3 upscli_disconnect.3	\
 if WITH_PKG_CONFIG
  LIB_PAGES += libupsclient-config.1
 endif
+
 CONF_PAGES = ups.conf.5 upssched.conf.5 upsd.conf.5 upsmon.conf.5	\
  upsd.users.5
 CLIENT_PAGES = upsc.8 upsrw.8 upscmd.8 upslog.8 upssched.8	\
@@ -56,6 +57,7 @@ SNMP_PAGES = snmp-ups.8
 
 USB_LIBUSB_PAGES = usbhid-ups.8 bcmxcp_usb.8 tripplite_usb.8 megatec_usb.8
 USB_HIDDEV_PAGES = energizerups.8
+NETXML_PAGES = netxml-ups.8
 
 # decide which pages to install
 man_MANS = $(CONF_PAGES) $(CLIENT_PAGES)
@@ -83,10 +85,13 @@ endif
 if HAVE_HIDDEV
    man_MANS += $(USB_HIDDEV_PAGES)
 endif
+if WITH_NEONXML
+   man_MANS += $(NETXML_PAGES)
+endif
 endif
 endif
 
 # distribute everything, even that which is not installed by default
 EXTRA_DIST = $(LIB_PAGES) $(CONF_PAGES) $(CLIENT_PAGES)		\
  $(CGI_PAGES) $(SERIAL_PAGES) $(SNMP_PAGES) $(USB_LIBUSB_PAGES)	\
- $(USB_HIDDEV_PAGES) skel.8
+ $(USB_HIDDEV_PAGES) $(NETXML_PAGES) skel.8

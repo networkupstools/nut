@@ -1,3 +1,10 @@
+Wed Mar  5 21:16:30 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - fix HAL support [Alioth Bug #304156] (backport from r1294)
+ - only include target specific CFLAGS and LDFLAGS only if target is
+   actually used (backport from r1296 and r1297)
+ - add netxml-ups driver
+
 Sat Mar  1 19:24:09 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/liebert-hid.c: Add support for some additional params.

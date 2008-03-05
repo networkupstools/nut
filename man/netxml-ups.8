@@ -1,0 +1,67 @@
+.TH netxml\-ups 8 "Sun Feb 24 2008" "" "Network UPS Tools (NUT)" 
+.SH NAME  
+netxml\(hyups \- Driver for MGE Network Management Card / Proxy (XML/HTTP
+Protocol) equipment
+.SH NOTE
+This man page only documents the hardware\(hyspecific features of the
+netxml\(hyups driver.  For information about the core driver, see  
+\fBnutupsdrv\fR(8).
+
+.SH SUPPORTED HARDWARE
+netxml\(hyups support all recent MGE models which use a Network Management Card
+or Proxy (MGE XML/HTTP protocol based). This applies to both MGE Office Protection
+Systems and to MGE UPS SYSTEMS. Supported card and proxy models are:
+
+    NMC Minislot (Ref 66102),
+    SNMP/Web Minislot card (Ref 66244)
+    NMC Transverse (Ref 66074),
+    NMC & Modbus/JBus (Ref 66103),
+    Network Management Proxy. 
+
+Older models, such as SNMP card (Ref 66062 and Ref 66045), use the SNMP
+protocol and should use the snmp\(hyups driver with the "mibs=mge" parameter.
+
+.SH EXTRA ARGUMENTS
+This driver supports the following optional settings in the 
+\fBups.conf\fR(5):
+
+.IP "login=\fIvalue\fR"
+Set the login value for authenticated mode. This feature also needs the
+password argument, and allows value settings in the card.
+This feature is not used yet.
+
+.IP "password=\fIvalue\fR"
+Set the password value, needed with the login for authenticated mode.
+This feature is not used yet.
+
+.SH IMPLEMENTATION
+The hostname of the UPS is specified with the "port" value in
+\fBups.conf\fR, i.e.:
+
+.nf
+	[mgexml]
+		driver = netxml\-ups
+		port = http://netxml\-ups.example.com:80
+.fi
+
+Specifying the method how to connect to the UPS (http, https) is mandatory.
+If the port is equal to the default for the method specified (80 for http,
+443 for https) it may be omitted.
+
+.SH KNOWN ISSUES
+Don't connect to the UPS through a proxy. Although it would be trivial to add
+support for proxies, this is not recommended and don't ask for it. Not only
+because it will prevent the driver to make a persistent connection to the UPS,
+but also it adds an additional failure mode. If the proxy goes down (for
+whatever reason), the driver will no longer be able to reach the UPS.
+
+.SH AUTHORS
+Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+.SH SEE ALSO
+
+.SS The core driver:
+\fBnutupsdrv\fR(8)
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
