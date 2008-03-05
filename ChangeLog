@@ -1,3 +1,11 @@
+Wed Mar  5 16:11:02 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+
+ * Integrated Power Management (HAL integration)
+   - general rework of {dstate,main}-hal.ch, using GMainLoop,
+   - done some code cleaning and removal,
+   - add support for DBus methods (with Shutdown and SetBeeper),
+   - complete the documentation to mention the DBus (RW) interface.
+
 Tue Mar  4 21:35:58 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/netxml-ups:

@@ -1,4 +1,5 @@
 #include "common.h"
+#include "config.h"
 /* #include "upsconf.h" */
 #include "dstate.h"
 #include "extstate.h"
