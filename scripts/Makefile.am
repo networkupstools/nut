@@ -1,5 +1,4 @@
 EXTRA_DIST = README \
-hal/20-ups-nut-device.fdi \
 HP-UX/Makefile \
 HP-UX/nut-drvctl \
 HP-UX/nut-drvctl.sh \
@@ -20,4 +19,4 @@ subdriver/path-to-subdriver.sh \
 Windows/halt.c \
 Windows/Makefile
 
-SUBDIRS = hotplug udev
+SUBDIRS = hotplug udev hal

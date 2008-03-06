@@ -1,3 +1,8 @@
+Thu Mar  6 20:45:49 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - scripts/Makefile.am: this completes the backport of HAL support
+   from the trunk
+
 Wed Mar  5 22:01:06 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - scripts/hal/ups-nut-device.fdi: name was changed
