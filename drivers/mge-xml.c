@@ -31,16 +31,15 @@
 #include "mge-xml.h"
 
 #define MGE_XML_VERSION		"MGEXML/0.10"
-
-static char	mge_xml_initups[] = "/";
-static char	mge_xml_initinfo[] = "/mgeups/product.xml";
+#define MGE_XML_INITUPS		"/"
+#define MGE_XML_INITINFO	"/mgeups/product.xml"
 
 static char	mge_scratch_buf[256];
 
 static char	var[128];
 static char	val[128];
 
-typedef  enum {
+typedef enum {
 	ROOTPARENT = NE_XML_STATEROOT,
 
 	_UNEXPECTED,
@@ -366,7 +365,7 @@ static char *depleted_info(const char *val)
 
 static char *vrange_info(const char *val)
 {
-	if ((val[0] == '1') || !strncasecmp(val, "Yes", 3))  {
+	if ((val[0] == '1') || !strncasecmp(val, "Yes", 3)) {
 		STATUS_SET(VRANGE);
 	} else {
 		STATUS_CLR(VRANGE);
@@ -540,15 +539,21 @@ static xml_info_t mge_xml2nut[] = {
 	{ "ups.realpower.nominal", 0, 0, "UPS.Flow[4].ConfigActivePower", 0, 0, NULL },
 	{ "ups.start.auto", ST_FLAG_RW, 5, "UPS.PowerConverter.Input[1].AutomaticRestart", 0, 0, yes_no_info },
 	{ "ups.start.battery", ST_FLAG_RW, 5, "UPS.PowerConverter.Input[3].StartOnBattery", 0, 0, yes_no_info },
-	{ "ups.start.reboot", ST_FLAG_RW, 5, "UPS.PowerConverter.Output.ForcedReboot",  0, 0, yes_no_info },
+	{ "ups.start.reboot", ST_FLAG_RW, 5, "UPS.PowerConverter.Output.ForcedReboot", 0, 0, yes_no_info },
 
 	/* Input page */
-	{ "input.voltage", 0, 0, "UPS.PowerConverter.Input[1].Voltage",  0, 0, NULL },
+	{ "input.voltage", 0, 0, "UPS.PowerConverter.Input[1].Voltage", 0, 0, NULL },
+	{ "input.L1-N.voltage", 0, 0, "UPS.PowerConverter.Input[1].Phase[1].Voltage", 0, 0, NULL },
+	{ "input.L2-N.voltage", 0, 0, "UPS.PowerConverter.Input[1].Phase[2].Voltage", 0, 0, NULL },
+	{ "input.L3-N.voltage", 0, 0, "UPS.PowerConverter.Input[1].Phase[3].Voltage", 0, 0, NULL },
+	{ "input.L1-L2.voltage", 0, 0, "UPS.PowerConverter.Input[1].Phase[12].Voltage", 0, 0, NULL },
+	{ "input.L2-L3.voltage", 0, 0, "UPS.PowerConverter.Input[1].Phase[23].Voltage", 0, 0, NULL },
+	{ "input.L3-L1.voltage", 0, 0, "UPS.PowerConverter.Input[1].Phase[31].Voltage", 0, 0, NULL },
 	{ "input.L1-L2.voltage", 0, 0, "UPS.PowerConverter.Input[1].Phase[11].Voltage", 0, 0, convert_deci },
 	{ "input.L2-L3.voltage", 0, 0, "UPS.PowerConverter.Input[1].Phase[22].Voltage", 0, 0, convert_deci },
 	{ "input.L3-L1.voltage", 0, 0, "UPS.PowerConverter.Input[1].Phase[33].Voltage", 0, 0, convert_deci },
 	{ "input.voltage.nominal", 0, 0, "UPS.Flow[1].ConfigVoltage", 0, 0, NULL },
-	{ "input.current", 0, 0, "UPS.PowerConverter.Input[1].Current",  0, 0, NULL },
+	{ "input.current", 0, 0, "UPS.PowerConverter.Input[1].Current", 0, 0, NULL },
 	{ "input.L1.current", 0, 0, "UPS.PowerConverter.Input[1].Phase[1].Current", 0, 0, convert_deci },
 	{ "input.L2.current", 0, 0, "UPS.PowerConverter.Input[1].Phase[2].Current", 0, 0, convert_deci },
 	{ "input.L3.current", 0, 0, "UPS.PowerConverter.Input[1].Phase[3].Current", 0, 0, convert_deci },
@@ -568,22 +573,33 @@ static xml_info_t mge_xml2nut[] = {
 	{ "input.sensitivity", ST_FLAG_RW, 10, "UPS.PowerConverter.Output.SensitivityMode", 0, 0, NULL },
 
 	/* Bypass page */
-	/* TODO: list these variables in 'docs/new-names.txt' */
-	{ "bypass.voltage", 0, 0, "UPS.PowerConverter.Input[2].Voltage",  0, 0, NULL },
-	{ "bypass.L1-L2.voltage", 0, 0, "UPS.PowerConverter.Input[2].Phase[11].Voltage", 0, 0, NULL },
-	{ "bypass.L2-L3.voltage", 0, 0, "UPS.PowerConverter.Input[2].Phase[22].Voltage", 0, 0, NULL },
-	{ "bypass.L3-L1.voltage", 0, 0, "UPS.PowerConverter.Input[2].Phase[33].Voltage", 0, 0, NULL },
-	/* { "bypass.voltage.nominal", 0, 0, "UPS.Flow[2].ConfigVoltage", 0, 0, NULL }, */
-	{ "bypass.current", 0, 0, "UPS.PowerConverter.Input[2].Current",  0, 0, NULL },
-	{ "bypass.L1.current", 0, 0, "UPS.PowerConverter.Input[2].Phase[1].Current", 0, 0, NULL },
-	{ "bypass.L2.current", 0, 0, "UPS.PowerConverter.Input[2].Phase[2].Current", 0, 0, NULL },
-	{ "bypass.L3.current", 0, 0, "UPS.PowerConverter.Input[2].Phase[3].Current", 0, 0, NULL },
-	/* { "bypass.current.nominal", 0, 0, "UPS.Flow[2].ConfigCurrent", 0, 0, NULL }, */
-	{ "bypass.frequency", 0, 0, "UPS.PowerConverter.Input[2].Frequency", 0, 0, NULL },
-	/* { "bypass.frequency.nominal", 0, 0, "UPS.Flow[2].ConfigFrequency", 0, 0, NULL }, */
+	{ "input.bypass.voltage", 0, 0, "UPS.PowerConverter.Input[2].Voltage", 0, 0, NULL },
+	{ "input.bypass.L1-N.voltage", 0, 0, "UPS.PowerConverter.Input[2].Phase[1].Voltage", 0, 0, NULL },
+	{ "input.bypass.L2-N.voltage", 0, 0, "UPS.PowerConverter.Input[2].Phase[2].Voltage", 0, 0, NULL },
+	{ "input.bypass.L3-N.voltage", 0, 0, "UPS.PowerConverter.Input[2].Phase[3].Voltage", 0, 0, NULL },
+	{ "input.bypass.L1-L2.voltage", 0, 0, "UPS.PowerConverter.Input[2].Phase[12].Voltage", 0, 0, NULL },
+	{ "input.bypass.L2-L3.voltage", 0, 0, "UPS.PowerConverter.Input[2].Phase[23].Voltage", 0, 0, NULL },
+	{ "input.bypass.L3-L1.voltage", 0, 0, "UPS.PowerConverter.Input[2].Phase[31].Voltage", 0, 0, NULL },
+	{ "input.bypass.L1-L2.voltage", 0, 0, "UPS.PowerConverter.Input[2].Phase[11].Voltage", 0, 0, NULL },
+	{ "input.bypass.L2-L3.voltage", 0, 0, "UPS.PowerConverter.Input[2].Phase[22].Voltage", 0, 0, NULL },
+	{ "input.bypass.L3-L1.voltage", 0, 0, "UPS.PowerConverter.Input[2].Phase[33].Voltage", 0, 0, NULL },
+	{ "input.bypass.voltage.nominal", 0, 0, "UPS.Flow[2].ConfigVoltage", 0, 0, NULL },
+	{ "input.bypass.current", 0, 0, "UPS.PowerConverter.Input[2].Current", 0, 0, NULL },
+	{ "input.bypass.L1.current", 0, 0, "UPS.PowerConverter.Input[2].Phase[1].Current", 0, 0, NULL },
+	{ "input.bypass.L2.current", 0, 0, "UPS.PowerConverter.Input[2].Phase[2].Current", 0, 0, NULL },
+	{ "input.bypass.L3.current", 0, 0, "UPS.PowerConverter.Input[2].Phase[3].Current", 0, 0, NULL },
+	{ "input.bypass.current.nominal", 0, 0, "UPS.Flow[2].ConfigCurrent", 0, 0, NULL },
+	{ "input.bypass.frequency", 0, 0, "UPS.PowerConverter.Input[2].Frequency", 0, 0, NULL },
+	{ "input.bypass.frequency.nominal", 0, 0, "UPS.Flow[2].ConfigFrequency", 0, 0, NULL },
 
 	/* Output page */
 	{ "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", 0, 0, NULL },
+	{ "output.L1-N.voltage", 0, 0, "UPS.PowerConverter.Output.Phase[1].Voltage", 0, 0, NULL },
+	{ "output.L2-N.voltage", 0, 0, "UPS.PowerConverter.Output.Phase[2].Voltage", 0, 0, NULL },
+	{ "output.L3-N.voltage", 0, 0, "UPS.PowerConverter.Output.Phase[3].Voltage", 0, 0, NULL },
+	{ "output.L1-L2.voltage", 0, 0, "UPS.PowerConverter.Output.Phase[12].Voltage", 0, 0, NULL },
+	{ "output.L2-L3.voltage", 0, 0, "UPS.PowerConverter.Output.Phase[23].Voltage", 0, 0, NULL },
+	{ "output.L3-L1.voltage", 0, 0, "UPS.PowerConverter.Output.Phase[31].Voltage", 0, 0, NULL },
 	{ "output.L1-L2.voltage", 0, 0, "UPS.PowerConverter.Output.Phase[11].Voltage", 0, 0, ignore_if_zero },
 	{ "output.L2-L3.voltage", 0, 0, "UPS.PowerConverter.Output.Phase[22].Voltage", 0, 0, ignore_if_zero },
 	{ "output.L3-L1.voltage", 0, 0, "UPS.PowerConverter.Output.Phase[33].Voltage", 0, 0, ignore_if_zero },
@@ -593,9 +609,9 @@ static xml_info_t mge_xml2nut[] = {
 	{ "output.L2.current", 0, 0, "UPS.PowerConverter.Output.Phase[2].Current", 0, 0, convert_deci },
 	{ "output.L3.current", 0, 0, "UPS.PowerConverter.Output.Phase[3].Current", 0, 0, convert_deci },
 	{ "output.current.nominal", 0, 0, "UPS.Flow[4].ConfigCurrent", 0, 0, NULL },
-	{ "output.powerfactor", 0, 0, "UPS.PowerConverter.Output.PowerFactor", 0, 0, NULL }, /* mge_powerfactor_conversion */
 	{ "output.frequency", 0, 0, "UPS.PowerConverter.Output.Frequency", 0, 0, NULL },
 	{ "output.frequency.nominal", 0, 0, "UPS.Flow[4].ConfigFrequency", 0, 0, NULL },
+	{ "output.powerfactor", 0, 0, "UPS.PowerConverter.Output.PowerFactor", 0, 0, NULL }, /* mge_powerfactor_conversion */
 
 	/* Ambient page */
 	/* TODO: Add 'ambient.(humidity|temperature).(maximum|minimum)' to docs/new-names.txt */
@@ -625,7 +641,7 @@ static xml_info_t mge_xml2nut[] = {
 
 	{ "outlet.2.id", 0, 0, "UPS.OutletSystem.Outlet[3].OutletID", 0, 0, NULL },
 	{ "outlet.2.desc", ST_FLAG_RW, 20, "UPS.OutletSystem.Outlet[3].iName", 0, 0, NULL },
-	{ "outlet.2.switchable", 0, 0, "UPS.OutletSystem.Outlet[3].PresentStatus.Switchable",  0, 0, yes_no_info },
+	{ "outlet.2.switchable", 0, 0, "UPS.OutletSystem.Outlet[3].PresentStatus.Switchable", 0, 0, yes_no_info },
 	{ "outlet.2.status", 0, 0, "UPS.OutletSystem.Outlet[3].PresentStatus.SwitchOnOff", 0, 0, on_off_info },
 	{ "outlet.2.autoswitch.charge.low", ST_FLAG_RW, 3, "UPS.OutletSystem.Outlet[3].RemainingCapacityLimit", 0, 0, NULL },
 	{ "outlet.2.delay.shutdown", ST_FLAG_RW, 5, "UPS.OutletSystem.Outlet[3].ShutdownTimer", 0, 0, NULL },
@@ -905,8 +921,8 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 
 subdriver_t mge_xml_subdriver = {
 	MGE_XML_VERSION,
-	mge_xml_initups,
-	mge_xml_initinfo,
+	MGE_XML_INITUPS,
+	MGE_XML_INITINFO,
 	NULL,
 	NULL,
 	mge_xml_startelm_cb,

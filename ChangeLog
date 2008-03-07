@@ -1,3 +1,8 @@
+Fri Mar  7 19:17:59 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/netxml-ups: extend three phase support, rename 'bypass.*'
+   variables to standard 'input.bypass.*'
+
 Fri Mar  7 19:11:07 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/mge-hid.c:
