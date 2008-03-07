@@ -124,7 +124,8 @@ typedef enum {
 	SHUTDOWNIMM,	/* shutdown imminent */
 	TRIM,		/* SmartTrim */
 	BOOST,		/* SmartBoost */
-	BYPASS,		/* on bypass */
+	BYPASSAUTO,	/* on automatic bypass */
+	BYPASSMAN,	/* on manual/service bypass */
 	OFF,		/* ups is off */
 	CAL,		/* calibration */
 	OVERHEAT,	/* overheat; Belkin, TrippLite */
@@ -166,7 +167,8 @@ static status_lkp_t status_info[] = {
 	{ "shutdownimm", STATUS(SHUTDOWNIMM) },
 	{ "trim", STATUS(TRIM) },
 	{ "boost", STATUS(BOOST) },
-	{ "bypass", STATUS(BYPASS) },
+	{ "bypassauto", STATUS(BYPASSAUTO) },
+	{ "bypassman", STATUS(BYPASSMAN) },
 	{ "off", STATUS(OFF) },
 	{ "cal", STATUS(CAL) },
 	{ "overheat", STATUS(OVERHEAT) },
@@ -262,9 +264,14 @@ info_lkp_t boost_info[] = {
 	{ 0, "!boost", NULL },
 	{ 0, NULL, NULL }
 };
-info_lkp_t bypass_info[] = {
-	{ 1, "bypass", NULL },
-	{ 0, "!bypass", NULL },
+info_lkp_t bypass_auto_info[] = {
+	{ 1, "bypassauto", NULL },
+	{ 0, "!bypassauto", NULL },
+	{ 0, NULL, NULL }
+};
+info_lkp_t bypass_manual_info[] = {
+	{ 1, "bypassman", NULL },
+	{ 0, "!bypassman", NULL },
 	{ 0, NULL, NULL }
 };
 /* note: this value is reverted (0=set, 1=not set). We report "being
@@ -658,7 +665,7 @@ void upsdrv_shutdown(void)
 
 void upsdrv_help(void)
 {
-  /* FIXME: to be completed */
+	/* FIXME: to be completed */
 }
 
 void upsdrv_makevartable(void) 
@@ -860,7 +867,7 @@ void upsdrv_initups(void)
 		fatalx(EXIT_FAILURE, "must specify \"vendorid\" when using \"explore\"");
 	}
 
-        /* process the UPS selection options */
+	/* process the UPS selection options */
 	regex_array[0] = getval("vendorid");
 	regex_array[1] = getval("productid");
 	regex_array[2] = getval("vendor");
@@ -1099,8 +1106,8 @@ static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf
 	USBFreeExactMatcher(exact_matcher);
 	ret = USBNewExactMatcher(&exact_matcher, hd);
 	if (ret) {
-	        upsdebug_with_errno(1, "USBNewExactMatcher()");
-	        return 0;
+		upsdebug_with_errno(1, "USBNewExactMatcher()");
+		return 0;
 	}
 
 	regex_matcher->next = exact_matcher;
@@ -1392,6 +1399,12 @@ static void ups_alarm_set(void)
 	if (ups_status & STATUS(AWAITINGPOWER)) {
 		alarm_set("Awaiting power!");		/* awaiting power; Belkin, TrippLite */
 	}
+	if (ups_status & STATUS(BYPASSAUTO)) {
+		alarm_set("Automatic bypass mode!");
+	}
+	if (ups_status & STATUS(BYPASSMAN)) {
+		alarm_set("Manual bypass mode!");
+	}
 }
 
 /* Convert the local status information to NUT format and set NUT
@@ -1409,11 +1422,11 @@ static void ups_status_set(void)
 	if (ups_status & STATUS(ONLINE)) {
 		status_set("OL");		/* on line */
 	} else {
-		status_set("OB");               /* on battery */
+		status_set("OB");		/* on battery */
 	}
 	if ((ups_status & STATUS(DISCHRG)) &&
 		!(ups_status & STATUS(DEPLETED))) {
-		status_set("DISCHRG");	        /* discharging */
+		status_set("DISCHRG");		/* discharging */
 	}
 	if ((ups_status & STATUS(CHRG)) &&
 		!(ups_status & STATUS(FULLYCHARGED))) {
@@ -1432,13 +1445,13 @@ static void ups_status_set(void)
 		status_set("TRIM");		/* SmartTrim */
 	}
 	if (ups_status & STATUS(BOOST)) {
-		status_set("BOOST");	        /* SmartBoost */
+		status_set("BOOST");		/* SmartBoost */
 	}
-	if (ups_status & STATUS(BYPASS)) {
-		status_set("BYPASS");	        /* on bypass */   
+	if (ups_status & (STATUS(BYPASSAUTO) | STATUS(BYPASSMAN))) {
+		status_set("BYPASS");		/* on bypass */
 	}
 	if (ups_status & STATUS(OFF)) {
-		status_set("OFF");              /* ups is off */
+		status_set("OFF");		/* ups is off */
 	}
 	if (ups_status & STATUS(CAL)) {
 		status_set("CAL");		/* calibration */
@@ -1498,7 +1511,7 @@ static long hu_find_valinfo(info_lkp_t *hid2info, const char* value)
 
 		if (!(strcmp(info_lkp->nut_value, value))) {
 			upsdebugx(5, "hu_find_valinfo: found %s (value: %ld)\n",
-				  info_lkp->nut_value, info_lkp->hid_value);
+				info_lkp->nut_value, info_lkp->hid_value);
 	
 			return info_lkp->hid_value;
 		}

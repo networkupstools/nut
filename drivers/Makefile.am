@@ -117,6 +117,7 @@ optiups_SOURCES = optiups.c
 powercom_SOURCES = powercom.c
 powercom_LDADD = $(LDADD) -lm
 powerpanel_SOURCES = powerpanel.c powerp-bin.c powerp-txt.c
+powerpanel_LDADD = $(LDADD) -lm
 rhino_SOURCES = rhino.c
 rhino_LDADD = $(LDADD) -lm
 safenet_SOURCES = safenet.c

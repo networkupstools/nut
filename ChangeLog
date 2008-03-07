@@ -1,4 +1,17 @@
-Wed Mar  5 21:05:06 UTC 2008 / Arjen de Korte
+Fri Mar  7 19:11:07 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/mge-hid.c:
+   - add support for three phase
+   - detect UPS type
+ - drivers/usbhid-ups.[ch]: handle manual/service and automatic
+   bypass separately (will show up as BYPASS in 'ups.status' and
+   informative message will be shown in 'ups.alarm'
+ - docs/new-names.txt: add missing variables that are already
+   widely used
+ - data/cmdvartab: add description for missing variables and add
+   missing units
+
+Wed Mar  5 21:05:06 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/mge-xml: This driver has been replaced by the netxml-ups
    driver

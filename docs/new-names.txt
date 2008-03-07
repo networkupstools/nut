@@ -172,6 +172,10 @@ input: Incoming line/power information
    | input.quality             | Input power quality (***   | FF            |
    |                           | opaque)                    |               |
    |---------------------------+----------------------------+---------------|
+   | input.current             | Input current (A)          | 4.25          |
+   |---------------------------+----------------------------+---------------|
+   | input.current.nominal     | Nominal input current (A)  | 5.0           |
+   |---------------------------+----------------------------+---------------|
    | input.frequency           | Input line frequency (Hz)  | 60.00         |
    |---------------------------+----------------------------+---------------|
    | input.frequency.nominal   | Nominal input line         | 60            |
@@ -210,7 +214,9 @@ output: Outgoing power/inverter information
    |-------------------------------+--------------------------------+-------|
    | output.frequency.nominal      | Nominal output frequency (Hz)  | 60    |
    |-------------------------------+--------------------------------+-------|
-   | output.current                | Output current (amps)          | 4.25  |
+   | output.current                | Output current (A)             | 4.25  |
+   |-------------------------------+--------------------------------+-------|
+   | output.current.nominal        | Nominal output current (A)     | 5.0   |
    +------------------------------------------------------------------------+
 
 Three-phase additions:
