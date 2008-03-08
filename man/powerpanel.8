@@ -1,4 +1,4 @@
-.TH POWERPANEL 8 "Tue Jan 2 2007" "" "Network UPS Tools (NUT)"
+.TH POWERPANEL 8 "Sat Mar 8 2008" "" "Network UPS Tools (NUT)"
 .SH NAME
 powerpanel \- Driver for PowerPanel Plus compatible UPS equipment
 .SH NOTE
@@ -44,8 +44,8 @@ writable: remaining battery charge percentage for low battery warning
 .B output.voltage.nominal
 writable: nominal output voltage in V
 .TP
-.B ups.coldstart
-writable: enable or disable cold start from battery
+.B ups.start.battery
+writable: allow cold start from battery
 .PD
 
 .SH COMMANDS
@@ -55,10 +55,8 @@ be available.
 .B test.failure.start, test.failure.stop
 start/stop 20 second battery test.
 .TP
-.B beeper.on, beeper.off, beeper.toggle
-turn the panel beeper on (enabled state) or off (disabled state). Note
-that if the beeper is disabled, it is automatically turned back on at
-the next event (AC failure, battery test, etc).
+.B beeper.enable, beeper.disable, beeper.toggle
+enable, disable or toggle the panel beeper.
 .TP
 .B shutdown.reboot
 shut down load immediately for ca. 1\(hy2 minutes.
@@ -69,6 +67,20 @@ shut down load immediately and stay off until the mains power returns.
 .B shutdown.stop
 cancel pending shutdown.
 .PD
+
+.SH KNOWN ISSUES
+The CyberPower OP series don't offer direct voltage, charge, frequency
+and temperature readings. Instead, they will return a binary value
+that needs conversion to the actual value.
+
+The exact conversion needed is unknown at the time of this writing,
+hence an estimation was made based om readings from actual devices.
+This may (probably will) be off, possibly a lot. Unless you can tell
+us the exact mapping between values from the UPS and actual readings,
+don't bother to complain. We've done the best we can based on the
+limited information available.
+
+Remember, a UPS isn't a measuring instrument.
 
 .SH AUTHOR
 Arjen de Korte <arjen@de\(hykorte.org>, Doug Reynolds <mav@wastegate.net>

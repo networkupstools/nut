@@ -1,4 +1,4 @@
-/* powerpanel.h	Model specific data/definitions for CyberPower text/binary
+/* powerp-txt.h	Model specific data/definitions for CyberPower text
 			protocol UPSes 
 
    Copyright (C)
@@ -20,20 +20,9 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define ENDCHAR		'\r'
-#define IGNCHAR		""
-#define MAXTRIES	3
-#define UPSDELAY	50000
+#ifndef	POWERP_TXT_H
+#define	POWERP_TXT_H
 
-#define SER_WAIT_SEC	0
-#define SER_WAIT_USEC	250000
+extern subdriver_t powpan_text;
 
-#define DRV_VERSION "0.23"
-
-typedef struct {
-	char	*version;
-	int	(*initups)(void);
-	void	(*initinfo)(void);
-	void	(*updateinfo)(void);
-	void	(*shutdown)(void);
-} subdriver_t;
+#endif

@@ -1,3 +1,8 @@
+Sat Mar  8 21:00:07 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/powerpanel: backport from the trunk (now includes support
+   for the CyberPower OP series)
+
 Sat Mar  8 20:01:24 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - clients/upsc.c: reverse this change from r1322, that causes upsc
