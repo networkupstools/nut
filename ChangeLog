@@ -1,3 +1,8 @@
+Sat Mar  8 20:01:24 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - clients/upsc.c: reverse this change from r1322, that causes upsc
+   to segfault when running it with the -l or -L options
+
 Thu Mar  6 20:45:49 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - scripts/Makefile.am: this completes the backport of HAL support
