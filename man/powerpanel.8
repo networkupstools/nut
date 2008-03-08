@@ -1,4 +1,4 @@
-.TH POWERPANEL 8 "Tue Jan 2 2007" "" "Network UPS Tools (NUT)"
+.TH POWERPANEL 8 "Sat Mar 8 2008" "" "Network UPS Tools (NUT)"
 .SH NAME
 powerpanel \- Driver for PowerPanel Plus compatible UPS equipment
 .SH NOTE
@@ -67,6 +67,20 @@ shut down load immediately and stay off until the mains power returns.
 .B shutdown.stop
 cancel pending shutdown.
 .PD
+
+.SH KNOWN ISSUES
+The CyberPower OP series don't offer direct voltage, charge, frequency
+and temperature readings. Instead, they will return a binary value
+that needs conversion to the actual value.
+
+The exact conversion needed is unknown at the time of this writing,
+hence an estimation was made based om readings from actual devices.
+This may (probably will) be off, possibly a lot. Unless you can tell
+us the exact mapping between values from the UPS and actual readings,
+don't bother to complain. We've done the best we can based on the
+limited information available.
+
+Remember, a UPS isn't a measuring instrument.
 
 .SH AUTHOR
 Arjen de Korte <arjen@de\(hykorte.org>, Doug Reynolds <mav@wastegate.net>

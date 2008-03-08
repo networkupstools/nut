@@ -1,3 +1,8 @@
+Sat Mar  8 20:52:51 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/powerpanel: update man page and OP series conversion
+   functions
+
 Sat Mar  8 20:01:24 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - clients/upsc.c: reverse this change from r1320, that causes upsc

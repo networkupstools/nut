@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
 
 #include "main.h"
 #include "serial.h"
@@ -162,49 +163,19 @@ static const struct {
 	{ NULL, NULL, 0 }
 };
 
-/* adjust bizarre UPS data to observed voltage data */
+/* map UPS data to (approximated) input/output voltage */
 static int op_volt(unsigned char in)
 {
-	const struct {
-		int	end;
-		int	adjust;
-	} volttab[] = {
-		{  36,  +3 }, {  51,  +4 }, {  55,  +5 }, {  60,  +4 }, {  65,  +3 },
-		{  70,  +2 }, {  75,  +1 }, {  80,   0 }, {  85,  -1 }, {  91,  -2 },
-		{  98,  -3 }, { 103,  -4 }, { 108,  -5 }, { 113,  -6 }, { 118,  -7 },
-		{ 123,  -8 }, { 128,  -9 }, { 133, -10 }, { 138, -11 }, { 143, -12 },
-		{ 148, -13 }, { 153, -14 }, { 158, -15 }, { 163, -16 }, { 168, -17 },
-		{ 173, -18 }, { 178, -19 }, { 183, -20 }, { 188, -21 }, { 193, -22 },
-		{ 198, -23 }, { 203, -24 }, { 208, -25 }, { 213, -26 }, { 218, -27 },
-		{ 223, -28 }, { 228, -29 }, { 233, -30 }, { 238, -31 }, { 243, -32 },
-		{ 248, -33 }, { 253, -34 }, { 255, -35 }
-	};
-
-	int i;
-
 	if (in < 27) {
 		return 0;
 	}
 
-	for (i = 0; i < 43; i++) {
-		if (in <= volttab[i].end) {
-			return (in + volttab[i].adjust);
-		}
-	}
+	return (((float)in * 200 / 230) + 6);
+}
 
-	return 0;
-} 
-
-/* map UPS data to charge percentage */
+/* map UPS data to (approximated) charge percentage */
 static int op_chrg(unsigned char in)
 {
-	/* these may only be valid for a load of 0 */
-	const int	chrgtab[] = {
-		  0,   1,   1,   2,   3,   4,   6,   8,  10,  12,
-		 15,  18,  22,  26,  30,  35,  40,  46,  52,  58,
-		 66,  73,  81,  88,  99, 100
-	};
-
 	if (in > 185) {
 		return 100;
 	}
@@ -213,71 +184,19 @@ static int op_chrg(unsigned char in)
 		return 0;
 	}
 
-	return (chrgtab[in - 160]);
-} 
+	return pow((float)(in - 160)/2.56, 2);
+}
 
-/* more wacky mapping - get the picture yet? */ 
+/* map UPS data to (approximated) temperature */
 static float op_temp(unsigned char in)
 {
-	const struct {
-		int st;
-		int end;
-		int sz;
-		int base;
-	} temptab[] = {
-		{   0,  39, 5,  0 }, {  40,  43, 4,  8 }, {  44,  78, 5,  9 }, {  79,  82, 4, 16 },
-		{  83, 117, 5, 17 }, { 118, 121, 4, 24 }, { 122, 133, 3, 25 }, { 134, 135, 2, 29 },
-		{ 136, 143, 4, 30 }, { 144, 146, 3, 32 }, { 147, 150, 4, 33 }, { 151, 156, 3, 34 },
-		{ 157, 164, 2, 36 }, { 165, 170, 3, 40 }, { 171, 172, 2, 42 }, { 173, 175, 3, 43 },
-		{ 176, 183, 2, 44 }, { 184, 184, 1, 48 }, { 185, 188, 2, 49 }, { 189, 190, 2, 51 },
-		{ 191, 191, 1, 52 }, { 192, 193, 2, 53 }, { 194, 194, 1, 54 }, { 195, 196, 2, 55 },
-		{ 197, 197, 1, 56 }, { 198, 199, 2, 57 }, { 200, 200, 1, 58 }, { 201, 202, 2, 59 },
-		{ 203, 203, 1, 60 }, { 204, 205, 2, 61 }, { 206, 206, 1, 62 }, { 207, 208, 2, 63 },
-		{ 209, 209, 1, 64 }, { 210, 211, 2, 65 }, { 212, 212, 1, 66 }, { 213, 213, 1, 67 },
-		{ 214, 214, 1, 68 }, { 215, 215, 1, 69 }, { 216, 255, 40, 70 }, { 0, 0, 0, 0 }
-	}; 
+	return (pow((float)in / 32, 2) + 10);
+}
 
-	int i, j, found = -1, count;
-
-	for (i = 0; temptab[i].sz != 0; i++) {
-		if ((temptab[i].st <= in) && (temptab[i].end >= in)) {
-			found = i;
-		}
-	}
-
-	if (found == -1) {
-		upslogx(LOG_ERR, "tempconvert: unhandled value %d", in);
-		return 0;
-	}
-
-	count = temptab[found].end - temptab[found].st + 1;
-
-	for (i = 0; i < count; i++) {
-		j = temptab[found].st + (i * temptab[found].sz);
-
-		if ((in - j) < temptab[found].sz) {
-			return ((float)((in - j) / temptab[found].sz) + temptab[found].base + i);
-		}
-	}
-
-	upslogx(LOG_ERR, "tempconvert: fell through with %d", in);
-	return 0;
-} 
-
-/* map UPS data to frequency */
+/* map UPS data to (approximated) frequency */
 static float op_freq(unsigned char in)
 {
-	const float	freqtab[] = {
-		63.0, 62.7, 62.4, 62.1, 61.8, 61.4, 61.1, 60.8, 60.5, 60.2,
-		60.0, 59.7, 59.4, 59.1, 58.8, 58.5, 58.3, 58.0, 57.7, 57.4,
-		57.2, 57.0
-	};
-
-	if ((in < 168) || (in > 189)) {
-		return 0;
-	} 
-
-	return freqtab[in - 168];
+	return (12600.0 / (in + 32));
 }
 
 static int powpan_command(const char *buf, size_t bufsize)
