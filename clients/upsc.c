@@ -232,7 +232,7 @@ int main(int argc, char **argv)
 
 	if (!strcmp(argv[1], "-l") || !strcmp(argv[1], "-L")) {
 		ret = list_upses(argv[2] ? argv[2] : "localhost", argv[1][1] == 'L');
-		clean_exit(&ups, upsname, hostname, ret);
+		exit(ret);
 	}
 
 	upsname = hostname = NULL;

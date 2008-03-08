@@ -1,3 +1,8 @@
+Sat Mar  8 20:01:24 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - clients/upsc.c: reverse this change from r1320, that causes upsc
+   to segfault when running it with the -l or -L options
+
 Fri Mar  7 19:17:59 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/netxml-ups: extend three phase support, rename 'bypass.*'
