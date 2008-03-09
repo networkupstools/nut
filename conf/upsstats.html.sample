@@ -157,6 +157,10 @@ Network UPS Tools upsstats
 @IFSUPP ups.temperature@
 @UPSTEMP@
 @DEGREES@
+@ELSE@
+@IFSUPP battery.temperature@
+@BATTTEMP@
+@DEGREES@
 @ENDIF@
 </td>
 

@@ -788,6 +788,11 @@ static int parse_line(const char *buf)
 		return 1;
 	}
 
+       if (!strcmp(cmd, "BATTTEMP")) {
+               do_temp("battery.temperature");
+               return 1;
+       }
+
 	if (!strcmp(cmd, "AMBTEMP")) {
 		do_temp("ambient.temperature");
 		return 1;
