@@ -370,7 +370,11 @@ void upsdrv_updateinfo(void)
 	dstate_setinfo("output.voltage", "%s", outvolt);
 	dstate_setinfo("ups.load", "%s", loadpct);
 	dstate_setinfo("input.frequency", "%s", acfreq);
-	dstate_setinfo("ups.temperature", "%s", upstemp);
+
+	if(upstemp[0] != 'X') {
+		dstate_setinfo("ups.temperature", "%s", upstemp);
+	}
+
 	dstate_setinfo("battery.charge", "%02.1f", bvoltp);
 
 	status_init();
