@@ -173,3 +173,12 @@ CMDDESC outlet.1.load.on "Turn on the load on outlet 1 immediately"
 CMDDESC outlet.2.load.off "Turn off the load on outlet 2 immediately"
 CMDDESC outlet.2.load.on "Turn on the load on outlet 2 immediately"
 
+# The following two commands should *only* be defined when you need
+# to compose a 'shutdown.return' command by sending both a switch-off
+# with delay and a switch-on with delay command to the UPS. If this
+# can be done with a single command, use 'shutdown.return' instead.
+# Note that the switch-on with delay command *must not* turn on the
+# load if the UPS is on battery.
+#
+CMDDESC load.off.delay "Turn off the load with a delay (seconds)"
+CMDDESC load.on.delay "Turn on the load with a delay (seconds)"

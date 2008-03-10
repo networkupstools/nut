@@ -175,3 +175,47 @@ apc-hid.c/h
 belkin-hid.c/h
 
 to see how the currently implemented subdrivers are written.
+
+Shutting down the UPS
+=====================
+
+It is desireable to support shutting down the UPS. Usually (for
+devices that follow the HID Power Device Class specification), this
+requires sending the UPS two commands. One for shutting down the UPS
+(with an 'offdelay') and one for restarting it (with an 'ondelay'),
+where offdelay < ondelay. The two NUT commands for which this is
+relevant, are 'shutdown.return' and 'shutdown.stayoff'.
+
+Since the one-to-one mapping above doesn't allow sending two HID
+commands to the UPS in response to sending one NUT command to the
+driver, this is handled by the driver. In order to make this work,
+you need to define the following four NUT values:
+
+  ups.delay.start    (variable, R/W)
+  ups.delay.shutdown (variable, R/W)
+  load.off.delay     (command)
+  load.on.delay      (command)
+
+If the UPS supports it, the following variables can be used to show
+the countdown to start/shutdown:
+
+  ups.timer.start    (variable, R/O)
+  ups.timer.shutdown (variable, R/O)
+
+The 'load.on' and 'load.off' commands will be defined implicitly by
+the driver (using a delay value of '0'). Define these commands
+yourself, if your UPS requires a different value to switch on/off
+the load without delay.
+
+Note that the driver expects the 'load.off.delay' and 'load.on.delay'
+to follow the HID Power Device Class specification, which means that
+the 'load.on.delay' command should NOT switch on the load in the
+absence of mains power. If your UPS switches on the load regardless of
+the mains status, DO NOT define this command. You probably want to
+define the 'shutdown.return' and/or 'shutdown.stayoff' commands in
+that case. Commands defined in the subdriver will take precedence over
+the ones that are composed in the driver.
+
+When running the driver with the '-k' flag, it will first attempt to
+send a 'shutdown.return' command and if that fails, will fallback to
+'shutdown.reboot'.

@@ -63,16 +63,17 @@ static char *mge_battery_voltage_nominal_fun(double value)
 		if (mge_type == MGE_EVOLUTION_650) {
 			value = 12.0;
 		}
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.0f", value);
-		return mge_scratch_buf;
+		break;
 
 	case MGE_PULSAR_M:
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.0f", value);
-		return mge_scratch_buf;
+		break;
 
 	default:
 		return NULL;
 	}
+
+	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.0f", value);
+	return mge_scratch_buf;
 }
 
 static info_lkp_t mge_battery_voltage_nominal[] = {
@@ -88,12 +89,14 @@ static char *mge_battery_voltage_fun(double value)
 	{
 	case MGE_EVOLUTION:
 	case MGE_PULSAR_M:
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.1f", value);
-		return mge_scratch_buf;
+		break;
 
 	default:
 		return NULL;
 	}
+
+	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.1f", value);
+	return mge_scratch_buf;
 }
 
 static info_lkp_t mge_battery_voltage[] = {
@@ -120,27 +123,13 @@ static info_lkp_t mge_battery_capacity[] = {
 	{ 0, NULL, mge_battery_capacity_fun }
 };
 
-static char *mge_upstype_conversion_fun(double value)
-{
-	switch ((long)value & 0x0f)
-	{
-	case 1:
-		return "offline / line interactive";
-	case 2:
-		return "online";
-	case 3:
-		return "online - unitary/parallel";
-	case 4:
-		return "online - parallel with hot standy";
-	case 5:
-		return "online - hot standby redundancy";
-	default:
-		return "[unknown]";
-	}
-}
-
 static info_lkp_t mge_upstype_conversion[] = {
-	{ 0, NULL, mge_upstype_conversion_fun }
+	{ 1, "offline / line interactive", NULL },
+	{ 2, "online", NULL },
+	{ 3, "online - unitary/parallel", NULL },
+	{ 4, "online - parallel with hot standy", NULL },
+	{ 5, "online - hot standby redundancy", NULL },
+	{ 0, NULL, NULL }
 };
 
 static info_lkp_t mge_sensitivity_info[] = {
@@ -581,8 +570,8 @@ static hid_info_t mge_hid2nut[] =
 	{ "test.battery.start.quick", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "1", HU_TYPE_CMD, NULL },
 	{ "test.battery.start.deep", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "2", HU_TYPE_CMD, NULL },
 	{ "test.battery.stop", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "3", HU_TYPE_CMD, NULL },
-	{ "load.off", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "0", HU_TYPE_CMD, NULL },
-	{ "load.on", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, "0", HU_TYPE_CMD, NULL },
+	{ "load.off.delay", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_TYPE_CMD, NULL },
+	{ "load.on.delay", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_TYPE_CMD, NULL },
 	{ "shutdown.stop", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "-1", HU_TYPE_CMD, NULL },
 	{ "shutdown.reboot", 0, 0, "UPS.PowerSummary.DelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL},
 	{ "beeper.off", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "1", HU_TYPE_CMD, NULL },

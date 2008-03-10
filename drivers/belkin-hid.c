@@ -341,6 +341,8 @@ static hid_info_t belkin_hid2nut[] = {
   { "beeper.mute", 0, 0, "UPS.BELKINControls.BELKINAudibleAlarmControl", NULL, "3", HU_TYPE_CMD, NULL },
   { "load.off", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeShutdown", NULL, "1", HU_TYPE_CMD, NULL },
   { "load.on", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeStartup", NULL, "1", HU_TYPE_CMD, NULL },
+  { "load.off.delay", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_TYPE_CMD, NULL },
+  { "load.on.delay", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_TYPE_CMD, NULL },
   { "shutdown.stop", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeShutdown", NULL, "-1", HU_TYPE_CMD, NULL },
   { "shutdown.reboot", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL },
 

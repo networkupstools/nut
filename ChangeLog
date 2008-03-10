@@ -1,3 +1,14 @@
+Mon Mar 10 10:02:36 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/usbhid-ups:
+   - allow subdrivers to override the 'shutdown.(return|stayoff)'
+     commands that are 'composed' in the driver
+   - add new 'load.(on|off).delay' commands to allow the above (will
+     implicitly define 'load.(on|off)' command with a delay value of
+     '0')
+   - add description of how the driver will deal with these commands
+     in the documentation for the HID subdrivers
+
 Sun Mar  9 02:45:35 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - Patches from George Ross to support ups.temperature in upsstats.cgi

@@ -528,37 +528,45 @@ int instcmd(const char *cmdname, const char *extradata)
 		return instcmd("beeper.enable", NULL);
 	}
 
-	if (!strcasecmp(cmdname, "shutdown.return")) {
-		int	ret;
-
-		ret = instcmd("load.on", dstate_getinfo("ups.delay.start"));
-		if (ret != STAT_INSTCMD_HANDLED) {
-			return ret;
-		}
-
-		return instcmd("load.off", dstate_getinfo("ups.delay.shutdown"));
-	}
-
-	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
-		int	ret;
-
-		ret = instcmd("load.on", "-1");
-		if (ret != STAT_INSTCMD_HANDLED) {
-			return ret;
-		}
-
-		return instcmd("load.off", dstate_getinfo("ups.delay.shutdown"));
-	}
-
 	upsdebugx(1, "instcmd(%s, %s)", cmdname, extradata ? extradata : "[NULL]");
 
 	/* Retrieve and check netvar & item_path */	
 	hidups_item = find_nut_info(cmdname);
 
-	/* Check validity of the found the item */
+	/* Check for fallback if not found */
 	if (hidups_item == NULL) {
+
+		if (!strcasecmp(cmdname, "load.on")) {
+			return instcmd("load.on.delay", "0");
+		}
+
+		if (!strcasecmp(cmdname, "load.off")) {
+			return instcmd("load.off.delay", "0");
+		}
+
+		if (!strcasecmp(cmdname, "shutdown.return")) {
+			int	ret;
+
+			ret = instcmd("load.on.delay", dstate_getinfo("ups.delay.start"));
+			if (ret != STAT_INSTCMD_HANDLED) {
+				return ret;
+			}
+
+			return instcmd("load.off.delay", dstate_getinfo("ups.delay.shutdown"));
+		}
+
+		if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+			int	ret;
+
+			ret = instcmd("load.on.delay", "-1");
+			if (ret != STAT_INSTCMD_HANDLED) {
+				return ret;
+			}
+
+			return instcmd("load.off.delay", dstate_getinfo("ups.delay.shutdown"));
+		}
+
 		upsdebugx(2, "instcmd: info element unavailable %s\n", cmdname);
-		/* TODO: manage items handled "manually" */
 		return STAT_INSTCMD_UNKNOWN;
 	}
 
@@ -829,8 +837,11 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("driver.parameter.pollfreq", "%d", pollfreq);
 
-	/* Add composite instcmds (require setting multiple HID values) */
 	if (dstate_getinfo("ups.delay.shutdown") && dstate_getinfo("ups.delay.start")) {
+		/* Add defaults with a delay value of '0' (= immediate) */
+		dstate_addcmd("load.off");
+		dstate_addcmd("load.on");
+		/* Add composite instcmds (require setting multiple HID values) */
 		dstate_addcmd("shutdown.return");
 		dstate_addcmd("shutdown.stayoff");
 	}
