@@ -72,9 +72,7 @@ Network UPS Tools upsstats
 @VAR ups.model@
 </td>
 
-<td BGCOLOR="
-@STATUSCOLOR@
-">
+<td BGCOLOR="@STATUSCOLOR@">
 @STATUS@
 </td>
 
@@ -85,25 +83,23 @@ Network UPS Tools upsstats
 @ENDIF@
 </td>
 
-<td BGCOLOR="
 @IFSUPP input.L2-L3.voltage@
 @IFBETWEEN input.transfer.low input.transfer.high input.L1-L2.voltage@
 @IFBETWEEN input.transfer.low input.transfer.high input.L2-L3.voltage@
 @IFBETWEEN input.transfer.low input.transfer.high input.L3-L1.voltage@
-#00FF00
+<td BGCOLOR="#00FF00">
 @ELSE@
 @IFSUPP input.L2-N.voltage@
 @IFBETWEEN input.transfer.low input.transfer.high input.L1-N.voltage@
 @IFBETWEEN input.transfer.low input.transfer.high input.L2-N.voltage@
 @IFBETWEEN input.transfer.low input.transfer.high input.L3-N.voltage@
-#00FF00
+<td BGCOLOR="#00FF00">
 @ELSE@
 @IFBETWEEN input.transfer.low input.transfer.high input.voltage@
-#00FF00
+<td BGCOLOR="#00FF00">
 @ELSE@
-#FF0000
+<td BGCOLOR="#FF0000">
 @ENDIF@
-">
 
 @IFSUPP input.L2-L3.voltage@
 @VAR input.L1-L2.voltage@

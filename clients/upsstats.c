@@ -589,13 +589,13 @@ static void do_statuscolor(void)
 	if (!check_ups_fd(0)) {
 
 		/* can't print the warning here - give a red error condition */
-		printf("#FF0000\n");
+		printf("#FF0000");
 		return;
 	}
 
 	if (!get_var("ups.status", stat, sizeof(stat), 0)) {
 		/* status not available - give yellow as a warning */
-		printf("#FFFF00\n");
+		printf("#FFFF00");
 		return;
 	}
 
@@ -617,18 +617,28 @@ static void do_statuscolor(void)
 	}
 
 	switch(severity) {
-		case 0:	printf("#00FF00\n"); break;	/* green  : OK      */
-		case 1:	printf("#FFFF00\n"); break;	/* yellow : warning */
+		case 0:	printf("#00FF00"); break;	/* green  : OK      */
+		case 1:	printf("#FFFF00"); break;	/* yellow : warning */
 
-		default: printf("#FF0000\n"); break;	/* red    : error   */
+		default: printf("#FF0000"); break;	/* red    : error   */
 	}
 }
 
+/* print the remainder of inline commands */
+static void print_line_remainder(const char *buf)
+{
+	if (buf != NULL)
+		printf("%s", &buf[0]);
+}
 
-/* look for lines starting and ending with @ containing valid commands */
+/* look for lines with @ containing valid commands
+ * Note: a line can only contain 1 variable
+ */
 static int parse_line(const char *buf)
 {
 	static	char	*cmd = NULL;
+	static	char	*startptr = NULL;
+	static	char	*endptr = NULL;
 
 	/* deal with extremely short lines as a special case */
 	if (strlen(buf) < 3) {
@@ -639,24 +649,47 @@ static int parse_line(const char *buf)
 		return 0;
 	}
 
+	/* deal with inline commands, like <td BGCOLOR="@STATUSCOLOR@"> */
 	if (buf[0] != '@') {
 
 		/* if skipping a section, act like we parsed the line */
 		if (skip_clause || skip_block)
 			return 1;
 		
-		/* otherwise pass it through for normal printing */
-		return 0;
+		/* otherwise check for inline command (like STATUSCOLOR) */
+		if ( (startptr = strchr(buf, '@')) != NULL) {
+
+			/* strip off and skip initial @ */
+			startptr[0] = '\0';
+			startptr++;
+
+			/* print the heading data */
+			printf("%s", &buf[0]);
+
+			if ( (endptr = strchr(startptr, '@')) == NULL)
+				return 0;
+
+			/* strip off and skip final @ */
+			endptr[0] = '\0';
+			endptr++;
+
+			free(cmd);
+			cmd = xstrdup(startptr);
+		}
+		else
+			/* else pass it through for normal printing */
+			return 0;
 	}
+	else {
+		if (buf[strlen(buf) - 1] != '@')
+			return 0;
 
-	if (buf[strlen(buf) - 1] != '@')
-		return 0;
+		free(cmd);
+		cmd = xstrdup(&buf[1]);
 
-	free(cmd);
-	cmd = xstrdup(&buf[1]);
-
-	/* strip off final @ */
-	cmd[strlen(cmd) - 1] = '\0';
+		/* strip off final @ */
+		cmd[strlen(cmd) - 1] = '\0';
+	}
 
 	/* ending an if block? */
 	if (!strcmp(cmd, "ENDIF")) {
@@ -712,16 +745,19 @@ static int parse_line(const char *buf)
 
 	if (!strcmp(cmd, "STATUSCOLOR")) {
 		do_statuscolor();
+		print_line_remainder(endptr);
 		return 1;
 	}
 
 	if (!strcmp(cmd, "TEMPF")) {
 		use_celsius = 0;
+		print_line_remainder(endptr);
 		return 1;
 	}
 
 	if (!strcmp(cmd, "TEMPC")) {
 		use_celsius = 1;
+		print_line_remainder(endptr);
 		return 1;
 	}
 
@@ -770,11 +806,13 @@ static int parse_line(const char *buf)
 
 	if (!strcmp(cmd, "HOSTLINK")) {
 		do_hostlink();
+		print_line_remainder(endptr);
 		return 1;
 	}
 
 	if (!strcmp(cmd, "TREELINK")) {
 		do_treelink();
+		print_line_remainder(endptr);
 		return 1;
 	}
 
@@ -785,21 +823,25 @@ static int parse_line(const char *buf)
 
 	if (!strcmp(cmd, "UPSTEMP")) {
 		do_temp("ups.temperature");
+		print_line_remainder(endptr);
 		return 1;
 	}
 
-       if (!strcmp(cmd, "BATTTEMP")) {
-               do_temp("battery.temperature");
-               return 1;
-       }
+	if (!strcmp(cmd, "BATTTEMP")) {
+		do_temp("battery.temperature");
+		print_line_remainder(endptr);
+		return 1;
+	}
 
 	if (!strcmp(cmd, "AMBTEMP")) {
 		do_temp("ambient.temperature");
+		print_line_remainder(endptr);
 		return 1;
 	}
 
 	if (!strcmp(cmd, "DEGREES")) {
 		do_degrees();
+		print_line_remainder(endptr);
 		return 1;
 	}
 
@@ -815,11 +857,13 @@ static int parse_line(const char *buf)
 
 	if(!strncmp(cmd, "UPSSTATSPATH ", 13)) {
 		do_upsstatpath(&cmd[13]);
+		print_line_remainder(endptr);
 		return 1;
 	}
 		
 	if(!strncmp(cmd, "UPSIMAGEPATH ", 13)) {
 		do_upsimgpath(&cmd[13]);
+		print_line_remainder(endptr);
 		return 1;
 	}
 		
