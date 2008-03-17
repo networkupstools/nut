@@ -1,3 +1,8 @@
+Mon Mar 17 13:43:21 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - data/cmdvartab: add obsolete 'beeper.on' and 'beeper.off' commands
+   with an informative message to use the new replacements
+
 Thu Mar 13 15:25:32 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - clients/upsstats.c, conf/upsstats.html.sample: fixed the Internet
