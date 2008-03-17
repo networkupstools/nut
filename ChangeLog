@@ -1,3 +1,8 @@
+Mon Mar 17 10:23:24 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/bestups: backport from the trunk (r1337) which added
+   additional information and fixes 'battery.voltage.nominal'
+
 Sat Mar  8 21:00:07 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/powerpanel: backport from the trunk (now includes support

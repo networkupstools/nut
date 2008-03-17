@@ -24,7 +24,7 @@ This driver supports the following optional settings in the
 
 .IP "nombattvolt=\fInum\fR"
 
-Override the nominal battery voltage which is normally determined by
+Override the battery float voltage which is normally determined by
 asking the hardware.  This is useful if your UPS constantly reports
 battery.charge values just below 100% even when it's completely charged.
 
@@ -32,6 +32,15 @@ If you have this problem, set this to whatever battery.voltage reports
 when the UPS is known to be completely charged with a good battery.
 
 The author's Best Fortress 750 uses nombattvolt=27.4.
+
+.IP "battvoltmult=\fInum\fR"
+
+Multiply the reported battery voltage by this number. Some devices
+report only a fraction of the total battery voltage.
+
+For example, the SOLA 610 700VA UPS (with a 24V battery) reports the
+single cell voltage (about 2.27V when fully charged). In this particular
+case you can set 'battvoltmult = 12' in \fBups.conf\fR(8) to fix this.
 
 .IP "ID=\fIstring\fR"
 
