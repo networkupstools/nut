@@ -62,6 +62,12 @@ void server_free(void);
 
 void check_perms(const char *fn);
 
+/* declarations from upsd.c */
+
+extern int		maxage, maxconn;
+extern char		*statepath, *datapath;
+extern upstype_t	*firstups;
+
 /* map commands onto signals */
 
 #define SIGCMD_STOP	SIGTERM

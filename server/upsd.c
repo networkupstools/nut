@@ -27,6 +27,7 @@
 #include <sys/un.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <poll.h>
 
 #ifdef HAVE_SSL
 #include <openssl/err.h>
@@ -48,6 +49,9 @@
 	/* default 15 seconds before data is marked stale */
 	int	maxage = 15;
 
+	/* default FD_SETSIZE connections allowed */
+	int	maxconn = FD_SETSIZE;
+
 	/* preloaded to STATEPATH in main, can be overridden via upsd.conf */
 	char	*statepath = NULL;
 
@@ -64,6 +68,21 @@ static stype_t	*firstaddr = NULL;
 #ifdef	HAVE_IPV6
 static int 	opt_af = AF_UNSPEC;
 #endif
+
+typedef enum {
+	DRIVER = 1,
+	CLIENT,
+	SERVER
+} handler_type_t;
+
+typedef struct {
+	handler_type_t	type;
+	void		*data;
+} handler_t;
+
+	/* pollfd  */
+static struct pollfd	*fds = NULL;
+static handler_t	*handler = NULL;
 
 	/* signal handlers */
 static struct sigaction	sa;
@@ -747,110 +766,145 @@ static void upsd_cleanup(void)
 	free(statepath);
 	free(datapath);
 	free(certfile);
+
+	free(fds);
+	free(handler);
+}
+
+void poll_reload(void)
+{
+	int	ret;
+
+	ret = sysconf(_SC_OPEN_MAX);
+
+	if (ret < maxconn) {
+		fatalx(EXIT_FAILURE, "Maximum number of connections limited to %d [requested %d]", ret, maxconn);
+	}
+
+	fds = xrealloc(fds, maxconn * sizeof(*fds));
+	handler = xrealloc(handler, maxconn * sizeof(*handler));
 }
 
 /* service requests and check on new data */
 static void mainloop(void)
 {
-	fd_set	rfds;
-	struct	timeval	tv;
-	int	res, maxfd = -1;
-	ctype_t	*tmpcli, *tmpnext;
-	upstype_t	*utmp, *unext;
-	stype_t	*stmp, *snext;
+	int	i, ret, nfds = 0;
+
+	upstype_t	*utmp;
+	ctype_t		*ctmp;
+	stype_t		*stmp;
 
 	if (reload_flag) {
 		conf_reload();
+		poll_reload();
 		reload_flag = 0;
 	}
-	
-	tv.tv_sec = 2;
-	tv.tv_usec = 0;
 
-	FD_ZERO(&rfds);
-
-	/* scan through servers and add to FD_SET */
-	for (stmp = firstaddr; stmp != NULL; stmp = stmp->next) {
-		if (stmp->sock_fd != -1) {
-			FD_SET(stmp->sock_fd, &rfds);
-
-			if (stmp->sock_fd > maxfd) {
-				maxfd = stmp->sock_fd;
-			}
+	/* scan through driver sockets */
+	for (utmp = firstups; utmp != NULL && nfds < maxconn; utmp = utmp->next) {
+		if (utmp->sock_fd < 0) {
+			continue;
 		}
+
+		fds[nfds].fd = utmp->sock_fd;
+		fds[nfds].events = POLLIN;
+
+		handler[nfds].type = DRIVER;
+		handler[nfds].data = utmp;
+
+		nfds++;
 	}
 
-	/* scan through clients and add to FD_SET */
-	for (tmpcli = firstclient; tmpcli != NULL; tmpcli = tmpcli->next) {
-		if (tmpcli->fd != -1) {
-			FD_SET(tmpcli->fd, &rfds);
-
-			if (tmpcli->fd > maxfd) {
-				maxfd = tmpcli->fd;
-			}
+	/* scan through client sockets */
+	for (ctmp = firstclient; ctmp != NULL; ctmp = ctmp->next) {
+		if (ctmp->fd < 0) {
+			continue;
 		}
+
+		if (nfds >= maxconn) {
+			/* shed clients that we are unable to handle */
+			delclient(ctmp);
+			continue;
+		}
+
+		fds[nfds].fd = ctmp->fd;
+		fds[nfds].events = POLLIN;
+
+		handler[nfds].type = CLIENT;
+		handler[nfds].data = ctmp;
+
+		nfds++;
 	}
 
-	/* also add new driver sockets */
-	for (utmp = firstups; utmp != NULL; utmp = utmp->next) {
-		if (utmp->sock_fd != -1) {
-			FD_SET(utmp->sock_fd, &rfds);
-
-			if (utmp->sock_fd > maxfd) {
-				maxfd = utmp->sock_fd;
-			}
+	/* scan through server sockets */
+	for (stmp = firstaddr; stmp != NULL && nfds < maxconn; stmp = stmp->next) {
+		if (stmp->sock_fd < 0) {
+			continue;
 		}
+
+		fds[nfds].fd = stmp->sock_fd;
+		fds[nfds].events = POLLIN;
+
+		handler[nfds].type = SERVER;
+		handler[nfds].data = stmp;
+
+		nfds++;
 	}
-	
-	res = select(maxfd + 1, &rfds, NULL, NULL, &tv);
 
-	if (res > 0) {
-		/* scan servers for activity */
-		stmp = firstaddr;
+	ret = poll(fds, nfds, 2000);
 
-		while (stmp) {
-			snext = stmp->next;
+	if (ret == 0) {
+		upsdebugx(2, "%s: no data available");
+		return;
+	}
 
-			if (stmp->sock_fd != -1) {
-				if (FD_ISSET(stmp->sock_fd, &rfds)) {
-					answertcp(stmp);
-				}
+	if (ret < 0) {
+		upslog_with_errno(LOG_ERR, "%s", __func__);
+		return;
+	}
+
+	for (i = 0; i < nfds; i++) {
+
+		if (fds[i].revents & POLLIN) {
+
+			switch(handler[i].type)
+			{
+			case DRIVER:
+				sstate_sock_read((upstype_t *)handler[i].data);
+				break;
+			case CLIENT:
+				readtcp((ctype_t *)handler[i].data);
+				break;
+			case SERVER:
+				answertcp((stype_t *)handler[i].data);
+				break;
+			default:
+				upsdebugx(2, "%s: <unknown> has data available", __func__);
+				break;
 			}
 
-			stmp = snext;
+			continue;
 		}
-		
-		/* scan clients for activity */
-		tmpcli = firstclient;
 
-		while (tmpcli != NULL) {
+		if (fds[i].revents & POLLHUP) {
 
-			/* preserve for later since delclient may run */
-			tmpnext = tmpcli->next;
-
-			if (tmpcli->fd != -1) {
-				if (FD_ISSET(tmpcli->fd, &rfds)) {
-					readtcp(tmpcli);
-				}
+			switch(handler[i].type)
+			{
+			case DRIVER:
+				upsdebugx(2, "%s: driver disconnected", __func__);
+				break;
+			case CLIENT:
+				delclient((ctype_t *)handler[i].data);
+				break;
+			case SERVER:
+				upsdebugx(2, "%s: server disconnected", __func__);
+				break;
+			default:
+				upsdebugx(2, "%s: <unknown> disconnected", __func__);
+				break;
 			}
 
-			tmpcli = tmpnext;
-		}
-
-		/* now scan ups sockets for activity */
-		utmp = firstups;
-
-		while (utmp) {
-			unext = utmp->next;
-
-			if (utmp->sock_fd != -1) {
-				if (FD_ISSET(utmp->sock_fd, &rfds)) {
-					sstate_sock_read(utmp);
-				}
-
-			}
-
-			utmp = unext;
+			continue;
 		}
 	}
 
@@ -1051,6 +1105,7 @@ int main(int argc, char **argv)
 	/* handle ups.conf */
 	read_upsconf();
 	upsconf_add(0);		/* 0 = initial */
+	poll_reload();
 
 	if (num_ups == 0) {
 		fatalx(EXIT_FAILURE, "Fatal error: at least one UPS must be defined in ups.conf");

@@ -1,3 +1,10 @@
+Tue Mar 18 19:51:53 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - server/upsd: use poll() instead of select() to allow larger numbers
+   of clients to connect to the server than FD_SETSIZE allows (maximum
+   number can be specified with MAXCONN in upsd.conf, defaults to
+   FD_SETSIZE)
+
 Mon Mar 17 13:43:21 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - data/cmdvartab: add obsolete 'beeper.on' and 'beeper.off' commands

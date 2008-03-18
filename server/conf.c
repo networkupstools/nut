@@ -22,10 +22,8 @@
 #include "upsconf.h"
 #include "sstate.h"
 #include "user.h"
+#include "ssl.h"
 
-	extern	int	maxage;
-	extern	char	*statepath, *datapath, *certfile;
-	extern	upstype_t	*firstups;
 	ups_t	*upstable = NULL;
 	int	num_ups = 0;
 
@@ -150,6 +148,12 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 	/* MAXAGE <seconds> */
 	if (!strcmp(arg[0], "MAXAGE")) {
 		maxage = atoi(arg[1]);
+		return 1;
+	}
+
+	/* MAXCONN <connections> */
+	if (!strcmp(arg[0], "MAXCONN")) {
+		maxconn = atoi(arg[1]);
 		return 1;
 	}
 
