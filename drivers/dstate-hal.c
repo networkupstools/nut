@@ -28,6 +28,7 @@
 #include <sys/un.h>
 
 #include "common.h"
+#include "config.h"
 #include "dstate-hal.h"
 #include "extstate.h"
 /* #include "state.h"
@@ -86,12 +87,13 @@ struct	ups_handler	upsh;
 LibHalContext *halctx = NULL;
 char *udi;
 int ac_present = 0; /* 0 = false ; 1 = true */
+extern char *dbus_methods_introspection;
 
 static void* runtime_handler(LibHalChangeSet *cs, char* runtime);
 static void* level_handler(LibHalChangeSet *cs, char* critical_level);
 static void* battery_type_handler(LibHalChangeSet *cs, char* battery_type);
 
-/* Structure to lookup between NUT and HAL */
+/* Structure to lookup between NUT and HAL data */
 typedef struct {
 	char	*nut_name;				/* NUT variable name */
 	char	*hal_name;				/* HAL variable name */
@@ -108,8 +110,36 @@ enum hal_type_t
 	HAL_TYPE_STRING
 };
 
+/* Structure to lookup between NUT commands and HAL/DBus methods */
+typedef struct {
+	char	*nut_name;				/* NUT command name */
+	char	*hal_name;				/* HAL/DBus method name */
+	char	*xml_introspection;		/* HAL/DBus method introspection */
+/* FIXME: how to lookup param values between HAL and NUT?? */
+/*	void    *(*fun)(LibHalChangeSet *cs, 
+					char *value);*/	/* NUT function */
+} method_lkp_t;
+
+/* Data to lookup between NUT commands and HAL/DBus methods
+ * for dstate_addcmd() */
+static method_lkp_t nut2hal_cmd[] =
+{
+	/* ups.status is handled by status_set() calls */
+	{
+		"beeper.enable",
+		"SetBeeper",
+		"    <method name=\"SetBeeper\">\n"
+		"      <arg name=\"beeper_mode\" direction=\"in\" type=\"b\"/>\n"
+		"      <arg name=\"return_code\" direction=\"out\" type=\"i\"/>\n"
+		"    </method>\n"
+ 	},
+ 
+	/* Terminating element */
+	{ NULL, NULL, NULL }
+};
+
 /* Data to lookup between NUT and HAL for dstate_setinfo() */
-static info_lkp_t nut2hal[] =
+static info_lkp_t nut2hal_info[] =
 {
 	/* ups.status is handled by status_set() calls */
 	{ "battery.charge.low", "battery.charge_level.low", HAL_TYPE_INT, *level_handler },
@@ -145,8 +175,9 @@ static info_lkp_t *find_nut_info(const char *nut_varname, info_lkp_t *prev_info_
 /* HAL accessors wrappers */
 void hal_set_string(LibHalChangeSet *cs, const char *key, const char *value);
 void hal_set_int(LibHalChangeSet *cs, const char *key, const int value);
-int hal_get_int(LibHalChangeSet *cs, const char *key);
 void hal_set_bool(LibHalChangeSet *cs, const char *key, const dbus_bool_t value);
+int hal_get_int(const char *key);
+char *hal_get_string(const char *key);
 
 /* Handle warning charge level according to the critical level */
 static void* level_handler(LibHalChangeSet *cs, char* critical_level)
@@ -272,9 +303,31 @@ void dstate_init(const char *prog, const char *port)
 
 const char *dstate_getinfo(const char *var)
 {
-	/* FIXME: use revert lookup from nut2hal_info or
-	from raw NUT info? */
-	return NULL;
+	char *value = NULL;
+	int ivalue;
+	info_lkp_t *nut2hal_info = find_nut_info(var, NULL);
+
+/* FIXME: use the data exposed by NUT on the DBus when available */
+	
+	if (nut2hal_info != NULL) {
+
+		switch (nut2hal_info->hal_type)
+		{
+/*			case HAL_TYPE_INT:
+				ivalue = hal_get_int(nut2hal_info->hal_name);
+				value = xstrdup("12345");
+				snprintf(value, 5, "%i", ivalue);
+				break;
+			case HAL_TYPE_BOOL:
+				hal_set_bool(cs, nut2hal_info->hal_name, TRUE);
+				break;
+*/
+			case HAL_TYPE_STRING:
+				value = hal_get_string(nut2hal_info->hal_name);
+				break;
+		}
+	}	
+	return value;
 }
 
 int dstate_setinfo(const char *var, const char *fmt, ...)
@@ -369,8 +422,6 @@ void dstate_free(void)
 /* extrafd: provided for waking up based on the driver's UPS fd */
 int dstate_poll_fds(int interval, int extrafd)
 {
-	/* FIXME: can it be enhanced? */
-	sleep (interval);
 	return 0;
 }	
 
@@ -417,9 +468,9 @@ void status_commit(void)
 	}
 
 	/* Retrieve the levels */
-	curlevel = hal_get_int (cs, "battery.charge_level.current");
-	warnlevel = hal_get_int (cs, "battery.charge_level.warning");
-	lowlevel = hal_get_int (cs, "battery.charge_level.low");
+	curlevel = hal_get_int ("battery.charge_level.current");
+	warnlevel = hal_get_int ("battery.charge_level.warning");
+	lowlevel = hal_get_int ("battery.charge_level.low");
 
 	/* Set AC present status */
 	/* Note: UPSs are also AC adaptors! */
@@ -467,7 +518,8 @@ void alarm_commit(void)
 	return;
 }
 
-/* Register DBus methods */
+/* FIXME: complete and use nut2hal_cmd */
+/* Register DBus methods, by feeling the methods buffer */
 void dstate_addcmd(const char *cmdname)
 {
 	DBusError dbus_error;
@@ -476,139 +528,19 @@ void dstate_addcmd(const char *cmdname)
 	upsdebugx(2, "dstate_addcmd: %s\n", cmdname);
 
 	/* beeper.{on,off} */
-/*	if (!strncasecmp(cmdname, "beeper.o", 8))
+	/* FIXME: how to deal with beeper.toggle */
+	if (!strncasecmp(cmdname, "beeper.disable", 14))
 	{
-		if (!libhal_device_claim_interface(halctx, udi, DBUS_INTERFACE,
-			"    <method name=\"SetBeeper\">\n"
-			"      <arg name=\"beeper_mode\" direction=\"in\" type=\"b\"/>\n"
-			"      <arg name=\"return_code\" direction=\"out\" type=\"i\"/>\n"
-			"    </method>\n",
-			&dbus_error)) {
-				fprintf(stderr, "Error: can't claim DBus interface: %s", dbus_error.message);
-				exit(EXIT_FAILURE);
-		}
-	}
-
-	dbus_connection_setup_with_g_main(dbus_connection, NULL);
-	dbus_connection_add_filter(dbus_connection, dbus_filter_function, NULL, NULL);
-	dbus_connection_set_exit_on_disconnect(dbus_connection, 0);
-*/
-/*
-	if (!libhal_device_claim_interface(halctx, udi, DBUS_INTERFACE,
-		"    <method name=\"Shutdown\">\n"
-		"      <arg name=\"shutdown_type\" direction=\"in\" type=\"s\"/>\n"
+		strcat(dbus_methods_introspection,
+		"    <method name=\"SetBeeper\">\n"
+		"      <arg name=\"beeper_mode\" direction=\"in\" type=\"b\"/>\n"
 		"      <arg name=\"return_code\" direction=\"out\" type=\"i\"/>\n"
-		"    </method>\n",
-		&dbus_error)) {
-			fprintf(stderr, "Error: can't claim DBus interface: %s", dbus_error.message);
-			exit(EXIT_FAILURE);
+		"    </method>\n");
 	}
-*/
-	
-/*	if (dbus_error_is_set (&dbus_error))
-		dbus_error_free (&dbus_error); */
-}
-
-/********************************************************************
- * DBus interface functions and data
- *******************************************************************/
-
-
-static DBusHandlerResult dbus_filter_function_local(DBusConnection *connection,
-						    DBusMessage *message,
-						    void *user_data)
-{
-	if (dbus_message_is_signal(message, DBUS_INTERFACE_LOCAL, "Disconnected")) {
-		upsdebugx(1, "DBus daemon disconnected. Trying to reconnect...");
-		dbus_connection_unref(connection);
-		g_timeout_add(5000, (GSourceFunc)dbus_init_local, NULL);
-	}
-	return DBUS_HANDLER_RESULT_HANDLED;
-}
-
-/* returns FALSE on success because it's used as a callback */
-gboolean dbus_init_local(void)
-{
-	DBusConnection	*dbus_connection;
-	DBusError	dbus_error;
-
-	dbus_error_init(&dbus_error);
-
-	dbus_connection = dbus_bus_get(DBUS_BUS_SYSTEM, &dbus_error);
-	if (dbus_error_is_set(&dbus_error)) {
-		upsdebugx(1, "Cannot get D-Bus connection");
-/*		dbus_error_free (&dbus_error); */
-		return TRUE;
-	}
-
-	dbus_connection_setup_with_g_main(dbus_connection, NULL);
-	dbus_connection_add_filter(dbus_connection, dbus_filter_function_local,
-				   NULL, NULL);
-	dbus_connection_set_exit_on_disconnect(dbus_connection, 0);
-	return FALSE;
 }
 
 
-/** 
- * dbus_filter_function:
- * @connection:		connection to D-Bus
- * @message:		message
- * @user_data:  pointer to the data
- *
- * Returns: 		the result
- * 
- * @raises UnknownMethod
- *
- * D-Bus filter function
- */
-DBusHandlerResult dbus_filter_function(DBusConnection *connection,
-					      DBusMessage *message,
-					      void *user_data)
-{
-	DBusError dbus_error;
-	DBusConnection	*dbus_connection;
-	const char	*member		= dbus_message_get_member(message);
-	const char	*path		= dbus_message_get_path(message);
 
-	upsdebugx(2, "Received DBus message with\n\tmember %s\n\tpath %s", member, path);
-exit(0);
-
-	dbus_error_init(&dbus_error);
-	if (dbus_error_is_set (&dbus_error))
-   	{
-		fprintf (stderr, "an error occurred: %s\n", dbus_error.message);
-/*		dbus_error_free (&dbus_error); */
-	}
-	else
-	{
-#ifdef HAVE_POLKIT
-		if (!dbus_is_privileged(connection, message, &dbus_error))
-			return DBUS_HANDLER_RESULT_HANDLED;
-#endif
-
-		if (dbus_message_is_method_call(message, DBUS_INTERFACE,
-						"Shutdown")) {
-			char *arg;
-/*
-			if (!dbus_get_argument(connection, message, &dbus_error,
-					       DBUS_TYPE_STRING, &arg)) {
-				return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-			}
-	 		HAL_DEBUG(("Received argument: %s", arg));
-				
-			if (set_governors(connection, message, arg))
-				dbus_send_reply(connection, message, DBUS_TYPE_INVALID, NULL);
-
-		}
-*/
-		} else {
-			return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-		}
-	}
-	return DBUS_HANDLER_RESULT_HANDLED;
-}
-
-	
 /*******************************************************************
  * internal functions
  *******************************************************************/
@@ -670,7 +602,25 @@ void hal_set_int(LibHalChangeSet *cs, const char *key, const int value)
 	}	
 }
 
-int hal_get_int(LibHalChangeSet *cs, const char *key)
+char *hal_get_string(const char *key)
+{
+	DBusError dbus_error;
+	char *value = NULL;
+
+	upsdebugx(2, "hal_get_string: %s", key);
+
+	dbus_error_init(&dbus_error);
+
+	/* Check if the property already exists */
+	if (libhal_device_property_exists (halctx, udi, key, &dbus_error) == TRUE) {
+		
+		value = libhal_device_get_property_string (halctx, udi,
+				key, &dbus_error);
+	}
+	return value;
+}
+
+int hal_get_int(const char *key)
 {
 	DBusError dbus_error;
 	int value = -1;
@@ -729,7 +679,7 @@ static info_lkp_t *find_nut_info(const char *nut_varname, info_lkp_t *prev_info_
 		info_item = ++prev_info_item;
 	}
 	else {
-		info_item = nut2hal;
+		info_item = nut2hal_info;
 	}
 
 	for ( ; info_item != NULL && info_item->nut_name != NULL ; info_item++) {

@@ -1,7 +1,7 @@
 /* main-hal.c - Network UPS Tools driver core for HAL
 
-   Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
    Copyright (C) 2006  Arnaud Quette <aquette.dev@gmail.com>
+   Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,6 +18,12 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+/* TODO list:
+ * -more cleanup
+ * - dstate-hal: expose all data on org.freedesktop.NUT to prepare
+ * a full HAL/DBus enabled nut (remove the need of {d,s}state layer
+ * - use HAL logging functions
+ */
 
 #include "main-hal.h"
 #include "dstate-hal.h"
@@ -47,14 +53,11 @@
 	int	experimental_driver = 0;
 	int	broken_driver = 0;
 
-	/* for detecting -a values that don't match anything */
-	static	int	upsname_found = 0;
-
 	static vartab_t	*vartab_h = NULL;
 
 	/* variables possibly set by the global part of ups.conf */
 	unsigned int	poll_interval = 2;
-	static char	*chroot_path = NULL, *user = NULL;
+	static char	*chroot_path = NULL;
 
 	/* signal handling */
 	int	exit_flag = 0;
@@ -63,120 +66,8 @@
 
 	/* everything else */
 	static	char	*pidfn = NULL;
-
-#if 0 /* HAL stripping */
-/* power down the attached load immediately */
-static void forceshutdown(void)
-{
-	upslogx(LOG_NOTICE, "Initiating UPS shutdown");
-
-	/* the driver must not block in this function */
-	upsdrv_shutdown();
-	exit(EXIT_SUCCESS);
-}
-
-/* this function only prints the usage message; it does not call exit() */
-static void help_msg(void)
-{
-	vartab_t	*tmp;
-
-	printf("\nusage: %s [OPTIONS] [<device>]\n\n", progname);
-
-	printf("  -V             - print version, then exit\n");
-	printf("  -L             - print parseable list of driver variables\n");
-	printf("  -a <id>        - autoconfig using ups.conf section <id>\n");
-	printf("                 - note: -x after -a overrides ups.conf settings\n");
-	printf("  -D             - raise debugging level\n");
-	printf("  -h             - display this help\n");
-	printf("  -k             - force shutdown\n");
-	printf("  -i <int>       - poll interval\n");
-	printf("  -r <dir>       - chroot to <dir>\n");
-	printf("  -u <user>      - switch to <user> (if started as root)\n");
-	printf("  -x <var>=<val> - set driver variable <var> to <val>\n");
-	printf("                 - example: -x cable=940-0095B\n\n");
-
-	printf("  <device>       - /dev entry corresponding to UPS port\n");
-	printf("                 - Only optional when using -a!\n\n");
-
-	if (vartab_h) {
-		tmp = vartab_h;
-
-		printf("Acceptable values for -x or ups.conf in this driver:\n\n");
-
-		while (tmp) {
-			if (tmp->vartype == VAR_VALUE)
-				printf("%40s : -x %s=<value>\n", 
-					tmp->desc, tmp->var);
-			else
-				printf("%40s : -x %s\n", tmp->desc, tmp->var);
-			tmp = tmp->next;
-		}
-	}
-
-	upsdrv_help();
-}
-
-/* store these in dstate as driver.(parameter|flag) */
-static void dparam_setinfo(const char *var, const char *val)
-{
-	char	vtmp[SMALLBUF];
-
-	/* store these in dstate for debugging and other help */
-	if (val) {
-		snprintf(vtmp, sizeof(vtmp), "driver.parameter.%s", var);
-		dstate_setinfo(vtmp, "%s", val);
-		return;
-	}
-
-	/* no value = flag */
-
-	snprintf(vtmp, sizeof(vtmp), "driver.flag.%s", var);
-	dstate_setinfo(vtmp, "enabled");
-}
-
-/* cram var [= <val>] data into storage */
-static void storeval(const char *var, char *val)
-{
-	vartab_t	*tmp, *last;
-
-	tmp = last = vartab_h;
-
-	while (tmp) {
-		last = tmp;
-
-		/* sanity check */
-		if (!tmp->var) {
-			tmp = tmp->next;
-			continue;
-		}
-
-		/* later definitions overwrite earlier ones */
-		if (!strcasecmp(tmp->var, var)) {
-			free(tmp->val);
-			if (val)
-				tmp->val = xstrdup(val);
-
-			/* don't keep things like SNMP community strings */
-			if ((tmp->vartype & VAR_SENSITIVE) == 0)
-				dparam_setinfo(var, val);
-
-			tmp->found = 1;
-			return;
-		}
-
-		tmp = tmp->next;
-	}
-
-	/* try to help them out */
-	printf("\nFatal dbus_error: '%s' is not a valid %s for this driver.\n", var,
-		val ? "variable name" : "flag");
-	printf("\n");
-	printf("Look in the man page or call this driver with -h for a list of\n");
-	printf("valid variable names and flags.\n");
-
-	exit(EXIT_SUCCESS);
-}
-#endif
+	GMainLoop *gmain;
+	char *dbus_methods_introspection;
 
 /* retrieve the value of variable <var> if possible */
 char *getval(const char *var)
@@ -233,167 +124,6 @@ void addvar(int vartype, const char *name, const char *desc)
 		vartab_h = tmp;
 }
 
-#if 0 /* HAL stripping */
-/* handle -x / ups.conf config details that are for this part of the code */
-static int main_arg(char *var, char *val)
-{
-	/* flags for main: just 'nolock' for now */
-
-	if (!strcmp(var, "nolock")) {
-		do_lock_port = 0;
-		dstate_setinfo("driver.flag.nolock", "enabled");
-		return 1;	/* handled */
-	}
-
-	/* any other flags are for the driver code */
-	if (!val)
-		return 0;
-
-	/* variables for main: port */
-
-	if (!strcmp(var, "port")) {
-		device_path = xstrdup(val);
-		device_name = xbasename(device_path);
-		dstate_setinfo("driver.parameter.port", "%s", val);
-		return 1;	/* handled */
-	}
-
-	if (!strcmp(var, "sddelay")) {
-		upslogx(LOG_INFO, "Obsolete value sddelay found in ups.conf");
-		return 1;	/* handled */
-	}
-
-	/* only for upsdrvctl - ignored here */
-	if (!strcmp(var, "sdorder"))
-		return 1;	/* handled */
-
-	/* only for upsd (at the moment) - ignored here */
-	if (!strcmp(var, "desc"))
-		return 1;	/* handled */
-
-	return 0;	/* unhandled, pass it through to the driver */
-}
-
-static void do_global_args(const char *var, const char *val)
-{
-	if (!strcmp(var, "pollinterval")) {
-		poll_interval = atoi(val);
-		return;
-	}
-
-	if (!strcmp(var, "chroot")) {
-		free(chroot_path);
-		chroot_path = xstrdup(val);
-	}
-
-	if (!strcmp(var, "user")) {
-		free(user);
-		user = xstrdup(val);
-	}
-
-
-	/* unrecognized */
-}
-
-void do_upsconf_args(char *confupsname, char *var, char *val)
-{
-	char	tmp[SMALLBUF];
-
-	/* handle global declarations */
-	if (!confupsname) {
-		do_global_args(var, val);
-		return;
-	}
-
-	/* no match = not for us */
-	if (strcmp(confupsname, upsname) != 0)
-		return;
-
-	upsname_found = 1;
-
-	if (main_arg(var, val))
-		return;
-
-	/* flags (no =) now get passed to the driver-level stuff */
-	if (!val) {
-
-		/* also store this, but it's a bit different */
-		snprintf(tmp, sizeof(tmp), "driver.flag.%s", var);
-		dstate_setinfo(tmp, "enabled");
-
-		storeval(var, NULL);
-		return;
-	}
-
-	/* don't let the user shoot themselves in the foot */
-	if (!strcmp(var, "driver")) {
-		if (strcmp(val, progname) != 0)
-			fatalx(EXIT_FAILURE, "Error: UPS [%s] is for driver %s, but I'm %s!\n",
-				confupsname, val, progname);
-		return;
-	}
-
-	/* allow per-driver overrides of the global setting */
-	if (!strcmp(var, "pollinterval")) {
-		poll_interval = atoi(val);
-		return;
-	}
-
-	/* everything else must be for the driver */
-
-	storeval(var, val);
-}
-
-/* split -x foo=bar into 'foo' and 'bar' */
-static void splitxarg(char *inbuf)
-{
-	char	*eqptr, *val, *buf;
-
-	/* make our own copy - avoid changing argv */
-	buf = xstrdup(inbuf);
-
-	eqptr = strchr(buf, '=');
-
-	if (!eqptr)
-		val = NULL;
-	else {
-		*eqptr++ = '\0';
-		val = eqptr;
-	}
-
-	/* see if main handles this first */
-	if (main_arg(buf, val))
-		return;
-
-	/* otherwise store it for later */
-	storeval(buf, val);
-}
-
-/* dump the list from the vartable for external parsers */
-static void listxarg(void)
-{
-	vartab_t	*tmp;
-
-	tmp = vartab_h;
-
-	if (!tmp)
-		return;
-
-	while (tmp) {
-
-		switch (tmp->vartype) {
-			case VAR_VALUE: printf("VALUE"); break;
-			case VAR_FLAG: printf("FLAG"); break;
-			default: printf("UNKNOWN"); break;
-		}
-
-		printf(" %s \"%s\"\n", tmp->var, tmp->desc);
-
-		tmp = tmp->next;
-	}
-}
-#endif
-
 static void vartab_free(void)
 {
 	vartab_t	*tmp, *next;
@@ -412,20 +142,16 @@ static void vartab_free(void)
 	}
 }
 
-#if 0 /* HAL stripping */
-/* FIXME: really needed by drivers? */
-char *getval(const char *var) { return ""; }
-int testvar(const char *var) { return 0; /* not found */}
-void addvar(int vartype, const char *name, const char *desc) {}
-#endif
-
-static void exit_cleanup(void)
+static void exit_cleanup(int sig)
 {
+	upsdebugx(2, "exit_cleanup(%i", sig);
+
+	exit_flag = sig;
+
 	upsdrv_cleanup();
 
 	free(chroot_path);
 	free(device_path);
-	free(user);
 
 	if (pidfn) {
 		unlink(pidfn);
@@ -434,27 +160,32 @@ static void exit_cleanup(void)
 
 	dstate_free();
 	vartab_free();
-}
-
-static void set_exit_flag(int sig)
-{
-	exit_flag = sig;
+	
+	/* break the main loop */
+	g_main_loop_quit(gmain);
 }
 
 static void setup_signals(void)
 {
 	sigemptyset(&main_sigmask);
 	main_sa.sa_mask = main_sigmask;
-	main_sa.sa_flags = 0;
+	main_sa.sa_flags = SA_RESTART || SA_NOCLDSTOP;
 
-	main_sa.sa_handler = set_exit_flag;
+	main_sa.sa_handler = exit_cleanup;
 	sigaction(SIGTERM, &main_sa, NULL);
 	sigaction(SIGINT, &main_sa, NULL);
 	sigaction(SIGQUIT, &main_sa, NULL);
 
-	main_sa.sa_handler = SIG_IGN;
+/*	main_sa.sa_handler = SIG_IGN;
 	sigaction(SIGHUP, &main_sa, NULL);
-	sigaction(SIGPIPE, &main_sa, NULL);
+	sigaction(SIGPIPE, &main_sa, NULL);*/
+}
+
+/* (*GSourceFunc) wrapper */
+static gboolean update_data (gpointer data)
+{
+	upsdrv_updateinfo();
+	return (exit_flag == 0);
 }
 
 int main(int argc, char **argv)
@@ -462,11 +193,8 @@ int main(int argc, char **argv)
 	DBusError dbus_error;
 	DBusConnection	*dbus_connection;
 	struct	passwd	*new_uid = NULL;
-	int	i, do_forceshutdown = 0;
-
-	/* pick up a default from configure --with-user */
-	/* FIXME: really needed, or use inherited privs from hald? */
-	user = xstrdup(HAL_USER);	/* xstrdup: this gets freed at exit */
+	char *hal_debug_level;
+/*	int	i, do_forceshutdown = 0; */
 
 	upsdrv_banner();
 
@@ -477,6 +205,18 @@ int main(int argc, char **argv)
 
 	progname = xbasename(argv[0]);
 	open_syslog(progname);
+
+	dbus_methods_introspection = xmalloc(1024);
+
+	/* Register the basic supported method (Shutdown)
+	 * Leave other methods registration to driver core calls to
+	 * dstate_addcmd(), at initinfo() time
+	 */
+	sprintf(dbus_methods_introspection, "%s",
+		"    <method name=\"Shutdown\">\n"
+/*		"      <arg name=\"shutdown_type\" direction=\"in\" type=\"s\"/>\n" */
+		"      <arg name=\"return_code\" direction=\"out\" type=\"i\"/>\n"
+		"    </method>\n");
 
 	/* initialise HAL and DBus interface*/
 	halctx = NULL;
@@ -497,155 +237,40 @@ int main(int argc, char **argv)
 		dbus_error_free (&dbus_error);
 	}
 	
-/*	if ((dbus_connection = libhal_ctx_get_dbus_connection(halctx)) == NULL) {
+	if ((dbus_connection = libhal_ctx_get_dbus_connection(halctx)) == NULL) {
 		fprintf(stderr, "Error: can't get DBus connection.\n");
 		exit(EXIT_FAILURE);
 	}
-*/
-	/* FIXME: rework HAL param interface! or get path/regex from UDI? */
-	/* from UDI, appending usbraw, you can access to usbraw.device. Ex
-	/* /org/freedesktop/Hal/devices/usb_device_463_ffff_1H2E300AH_usbraw
-	 * => usbraw.device = /dev/bus/usb/002/065 */	
-	device_path = xstrdup("auto"); /*getenv ("HAL_PROP_HIDDEV_DEVICE"); */
-	nut_debug_level = 3;
+
+	/* FIXME: rework HAL param interface! or get path/regex from UDI
+	 * Example:
+	 * /org/freedesktop/Hal/devices/usb_device_463_ffff_1H2E300AH
+	 * => linux.device_file = /dev/bus/usb/002/065
+	 */
+	/* FIXME: the naming should be abstracted to os.device_file! */
+	device_path = xstrdup("auto");
+	
+	/* FIXME: bridge debug/warning on HAL equivalent (need them
+	 * to externalize these in a lib... */
+	hal_debug_level = getenv ("NUT_HAL_DEBUG");
+	if (hal_debug_level == NULL)
+		nut_debug_level = 0;
+	else
+		nut_debug_level = atoi(hal_debug_level);
 
 	/* Sleep 2 seconds to be able to view the device through usbfs! */
 	sleep(2);
 
-/*	dbus_error_init (&dbus_error);
-	if (!libhal_device_addon_is_ready (halctx, udi, &dbus_error)) {
-		fprintf(stderr, "Error (libhal): device addon is not ready\n");
-		exit(EXIT_FAILURE);
-	}
-*/
-	/* Claim interface with void methods, while waiting to register
-	 * actual methods, through driver core calling dstate_addcmd()
-	 */
-/*	if (!libhal_device_claim_interface(halctx, udi, DBUS_INTERFACE,
-		"    <method name=\"SetBeeper\">\n"
-		"      <arg name=\"beeper_mode\" direction=\"in\" type=\"b\"/>\n"
-		"      <arg name=\"return_code\" direction=\"out\" type=\"i\"/>\n"
-		"    </method>\n",
-		&dbus_error)) {
-			fprintf(stderr, "Error: can't claim DBus interface: %s", dbus_error.message);
-			exit(EXIT_FAILURE);
-	}
-*/
-/*	if (!libhal_device_claim_interface(halctx, udi, DBUS_INTERFACE,
-		"<method></method>", &dbus_error)) {
-		fprintf(stderr, "Error: can't claim DBus interface: %s", dbus_error.message);
-		exit(EXIT_FAILURE);
-	}
-	libhal_device_add_capability(halctx,
-				     "/org/freedesktop/Hal/devices/computer",
-				     "UPS",
-				     &dbus_error);
-*/    
-/* FIXME: got an undef ref! */
-/*	dbus_connection_setup_with_g_main(dbus_connection, NULL);
-	dbus_connection_add_filter(dbus_connection, dbus_filter_function, NULL, NULL);
-	dbus_connection_set_exit_on_disconnect(dbus_connection, 0);
-
-	dbus_init_local(); */
-	/* end of HAL init */
-	
 	/* build the driver's extra (-x) variable table */
 	upsdrv_makevartable();
 
-/* HAL stripping */
-#if 0
-	while ((i = getopt(argc, argv, "+a:kDhx:Lr:u:Vi:")) != -1) {
-		switch (i) {
-			case 'a':
-				upsname = optarg;
-
-				read_upsconf();
-
-				if (!upsname_found)
-					upslogx(LOG_WARNING, "Warning: Section %s not found in ups.conf",
-						optarg);
-				break;
-			case 'D':
-				nut_debug_level++;
-				break;
-			case 'i':
-				poll_interval = atoi(optarg);
-				break;
-			case 'k':
-				do_lock_port = 0;
-				do_forceshutdown = 1;
-				break;
-			case 'L':
-				listxarg();
-				exit(EXIT_SUCCESS);
-			case 'r':
-				chroot_path = xstrdup(optarg);
-				break;
-			case 'u':
-				user = xstrdup(optarg);
-				break;
-			case 'V':
-				/* already printed the banner, so exit */
-				exit(EXIT_SUCCESS);
-			case 'x':
-				splitxarg(optarg);
-				break;
-			case 'h':
-				help_msg();
-				exit(EXIT_SUCCESS);
-			default:
-				fprintf(stderr, "Error: unknown option -%c. Try -h for help.\n", i);
-				exit(EXIT_FAILURE);
-				break;
-		}
-	}
-
-	argc -= optind;
-	argv += optind;
-
-	if (argc > 1) {
-		fprintf(stderr, "Error: too many non-option arguments. Try -h for help.\n");
-		exit(EXIT_FAILURE);
-	}
-
-	/* we need to get the port from somewhere */
-	if (argc < 1) {
-		if (!device_path) {
-			fprintf(stderr, "Error: You must specify a port name in ups.conf or on the command line.\n");
-			fprintf(stderr, "Try -h for help.\n");
-			exit(EXIT_FAILURE);
-		}
-	}
-
-	/* allow argv to override the ups.conf entry if specified */
-	else {
-		device_path = xstrdup(argv[0]);
-		device_name = xbasename(device_path);
-	}
-#endif
-	device_name = xbasename(device_path);
-
-	pidfn = xmalloc(SMALLBUF);
-
-	if (upsname_found)
-		snprintf(pidfn, SMALLBUF, "%s/%s-%s.pid", 
-			altpidpath(), progname, upsname);
-	else
-		snprintf(pidfn, SMALLBUF, "%s/%s-%s.pid", 
-			 altpidpath(), progname, device_name);
-
-	upsdebugx(1, "debug level is '%d'", nut_debug_level);
-
-	new_uid = get_user_pwent(user);
-	
-	if (chroot_path)
-		chroot_start(chroot_path);
-
+	/* Switch to the HAL user */
+	new_uid = get_user_pwent(HAL_USER);
 	become_user(new_uid);
 
 	/* Only switch to statepath if we're not powering off */
 	/* This avoid case where ie /var is umounted */
-/*	! Not needed for HAL !
+/*	?! Not needed for HAL !?
 	if (!do_forceshutdown)
 		if (chdir(dflt_statepath()))
 			fatal_with_errno(EXIT_FAILURE, "Can't chdir to %s", dflt_statepath());
@@ -657,27 +282,36 @@ int main(int argc, char **argv)
 
 	upsdrv_initups();
 
-	/* now see if things are very wrong out there */
-	if (broken_driver) {
-		printf("Fatal dbus_error: broken driver. It probably needs to be converted.\n");
-		printf("Search for 'broken_driver = 1' in the source for more details.\n");
-		exit(EXIT_FAILURE);
-	}
-
 #if 0
 	if (do_forceshutdown)
 		forceshutdown();
 #endif
-	/* get the base data established before allowing connections */
+
+	/* get the supported data and commands before allowing connections */
  	upsdrv_initinfo();
 	upsdrv_updateinfo();
 
 	/* now we can start servicing requests */
-	if (upsname_found)
-		dstate_init(upsname, NULL);
-	else
-		dstate_init(progname, device_name);
+	dstate_init(NULL, NULL);
 
+	/* Commit DBus methods */
+	if (!libhal_device_claim_interface(halctx, udi, DBUS_INTERFACE, 
+		dbus_methods_introspection,	&dbus_error)) {
+			fprintf(stderr, "Cannot claim interface: %s\n", dbus_error.message);
+	}
+	else
+		fprintf(stdout, "Claimed the following DBus interfaces on %s:\n%s",
+			DBUS_INTERFACE, dbus_methods_introspection);
+
+	/* Complete DBus binding */
+	dbus_connection_setup_with_g_main(dbus_connection, NULL);
+	dbus_connection_add_filter(dbus_connection, dbus_filter_function, NULL, NULL);
+	dbus_connection_set_exit_on_disconnect(dbus_connection, 0);
+
+	dbus_init_local();
+	/* end of HAL init */
+
+#if 0
 	/* publish the top-level data: version number, driver name */
 	dstate_setinfo("driver.version", "%s", UPS_VERSION);
 	dstate_setinfo("driver.name", "%s", progname);
@@ -685,14 +319,12 @@ int main(int argc, char **argv)
 	/* The poll_interval may have been changed from the default */
 	dstate_setinfo("driver.parameter.pollinterval", "%d", poll_interval);
 
+/* FIXME: needed? */
 	if (nut_debug_level == 0) {
 		background();
 		writepid(pidfn);
 	}
-
-	/* safe to do this now that the parent has exited */
-	atexit(exit_cleanup);
-
+#endif
 	/* End HAL init */
 	dbus_error_init (&dbus_error);
 	if (!libhal_device_addon_is_ready (halctx, udi, &dbus_error)) {
@@ -700,15 +332,238 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	while (exit_flag == 0) {
-		upsdrv_updateinfo();
+	/* add a timer for data update */
+	g_timeout_add_seconds (poll_interval,
+							(GSourceFunc)update_data,
+							NULL);
 
-		dstate_poll_fds(poll_interval, extrafd);
+	/* setup and run the main loop */
+	gmain = g_main_loop_new(NULL, FALSE);
+	g_main_loop_run(gmain);
+
+	/* reached upon addon exit */
+	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
+	exit(EXIT_SUCCESS);
+}
+
+/********************************************************************
+ * DBus interface functions and data
+ *******************************************************************/
+
+static DBusHandlerResult dbus_filter_function_local(DBusConnection *connection,
+						    DBusMessage *message,
+						    void *user_data)
+{
+	if (dbus_message_is_signal(message, DBUS_INTERFACE_LOCAL, "Disconnected")) {
+		upsdebugx(1, "DBus daemon disconnected. Trying to reconnect...");
+		dbus_connection_unref(connection);
+		g_timeout_add(5000, (GSourceFunc)dbus_init_local, NULL);
+	}
+	return DBUS_HANDLER_RESULT_HANDLED;
+}
+
+/* returns FALSE on success because it's used as a callback */
+gboolean dbus_init_local(void)
+{
+	DBusConnection	*dbus_connection;
+	DBusError	dbus_error;
+
+	dbus_error_init(&dbus_error);
+
+	dbus_connection = dbus_bus_get(DBUS_BUS_SYSTEM, &dbus_error);
+	if (dbus_error_is_set(&dbus_error)) {
+		upsdebugx(1, "Cannot get D-Bus connection");
+/*		dbus_error_free (&dbus_error); */
+		return TRUE;
 	}
 
-	/* if we get here, the exit flag was set by a signal handler */
+	dbus_connection_setup_with_g_main(dbus_connection, NULL);
+	dbus_connection_add_filter(dbus_connection, dbus_filter_function_local,
+				   NULL, NULL);
+	dbus_connection_set_exit_on_disconnect(dbus_connection, 0);
+	return FALSE;
+}
 
-	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
+#ifdef HAVE_POLKIT
+/** 
+ * dbus_is_privileged:
+ * @connection:		connection to D-Bus
+ * @message:		Message
+ * @error:		the error
+ *
+ * Returns: 		TRUE if the caller is privileged
+ *
+ * checks if caller of message possesses the CPUFREQ_POLKIT_PRIVILGE 
+ */
+static gboolean 
+dbus_is_privileged (DBusConnection *connection, DBusMessage *message, DBusError *error)
+{
+        gboolean ret;
+        char *polkit_result;
+        const char *invoked_by_syscon_name;
 
-	exit(EXIT_SUCCESS);
+        ret = FALSE;
+        polkit_result = NULL;
+/* FIXME: CPUFREQ_POLKIT_PRIVILEGE, CPUFREQ_ERROR_GENERAL */
+        invoked_by_syscon_name = dbus_message_get_sender (message);
+        
+        polkit_result = libhal_device_is_caller_privileged (halctx,
+                                                            udi,
+                                                            CPUFREQ_POLKIT_PRIVILEGE,
+                                                            invoked_by_syscon_name,
+                                                            error);
+        if (polkit_result == NULL) {
+			dbus_raise_error (connection, message, CPUFREQ_ERROR_GENERAL,
+                                  "Cannot determine if caller is privileged");
+        }
+        else {
+			if (strcmp (polkit_result, "yes") != 0) {
+
+				dbus_raise_error (connection, message, 
+									  "org.freedesktop.Hal.Device.PermissionDeniedByPolicy",
+									  "%s %s <-- (action, result)",
+									  CPUFREQ_POLKIT_PRIVILEGE, polkit_result);
+			}
+			else
+				ret = TRUE;
+		}
+
+        if (polkit_result != NULL)
+                libhal_free_string (polkit_result);
+        return ret;
+}
+#endif
+
+/** 
+ * dbus_send_reply:
+ * @connection:		connection to D-Bus
+ * @message:		Message
+ * @type:               the type of data param
+ * @data:		data to send
+ *
+ * Returns: 		TRUE/FALSE
+ *
+ * sends a reply to message with the given data and its dbus_type 
+ */
+static gboolean dbus_send_reply(DBusConnection *connection, DBusMessage *message,
+				int dbus_type, void *data)
+{
+	DBusMessage *reply;
+
+	if ((reply = dbus_message_new_method_return(message)) == NULL) {
+		upslogx(LOG_WARNING, "Could not allocate memory for the DBus reply");
+		return FALSE;
+	}
+
+	if (data != NULL)
+		dbus_message_append_args(reply, dbus_type, data, DBUS_TYPE_INVALID);
+
+	if (!dbus_connection_send(connection, reply, NULL)) {
+		upslogx(LOG_WARNING, "Could not sent reply");
+		return FALSE;
+	}
+	dbus_connection_flush(connection);
+	dbus_message_unref(reply);
+	
+	return TRUE;
+}
+
+/** 
+ * dbus_get_argument:
+ * @connection:		connection to D-Bus
+ * @message:		Message
+ * @dbus_error:         the D-Bus error
+ * @type:               the type of arg param
+ * @arg:		the value to get from the message
+ *
+ * Returns: 		TRUE/FALSE
+ *
+ * gets one argument from message with the given dbus_type and stores it in arg
+ */
+static gboolean dbus_get_argument(DBusConnection *connection, DBusMessage *message,
+				  DBusError *dbus_error, int dbus_type, void *arg)
+{
+	dbus_message_get_args(message, dbus_error, dbus_type, arg,
+			      DBUS_TYPE_INVALID);
+	if (dbus_error_is_set(dbus_error)) {
+		upslogx(LOG_WARNING, "Could not get argument of DBus message: %s",
+			     dbus_error->message);
+		dbus_error_free(dbus_error);
+		return FALSE;
+	}
+	return TRUE;
+}
+
+/** 
+ * dbus_filter_function:
+ * @connection:		connection to D-Bus
+ * @message:		message
+ * @user_data:  pointer to the data
+ *
+ * Returns: 		the result
+ * 
+ * @raises UnknownMethod
+ *
+ * D-Bus filter function
+ */
+DBusHandlerResult dbus_filter_function(DBusConnection *connection,
+					      DBusMessage *message,
+					      void *user_data)
+{
+	DBusError dbus_error;
+	const char	*member		= dbus_message_get_member(message);
+	const char	*path		= dbus_message_get_path(message);
+/*	int ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED; */
+
+	/* upsdebugx(2, "Received DBus message with member %s path %s", member, path); */
+	fprintf(stdout, "Received DBus message with member %s on path %s\n", member, path);
+
+	dbus_error_init(&dbus_error);
+	if (dbus_error_is_set (&dbus_error))
+   	{
+		fprintf (stderr, "an error occurred: %s\n", dbus_error.message);
+/*		dbus_error_free (&dbus_error); */
+	}
+	else
+	{
+#ifdef HAVE_POLKIT
+		if (!dbus_is_privileged(connection, message, &dbus_error))
+			return DBUS_HANDLER_RESULT_HANDLED;
+#endif
+
+		if (dbus_message_is_method_call(message, DBUS_INTERFACE, "Shutdown")) {
+			
+	 		fprintf(stdout, "executing Shutdown\n");
+			upsdrv_shutdown();
+			dbus_send_reply(connection, message, DBUS_TYPE_INT32, 0);
+
+		} else if (dbus_message_is_method_call(message,
+												DBUS_INTERFACE, "SetBeeper")) {
+	 		fprintf(stdout, "executing SetBeeper\n");
+			gboolean b_enable;
+			if (!dbus_get_argument(connection, message, &dbus_error,
+					       DBUS_TYPE_BOOLEAN, &b_enable)) {
+	 			fprintf(stderr, "Error receiving boolean argument\n");
+				return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+			}
+	 		fprintf(stdout, "Received argument: %s\n", (b_enable==TRUE)?"true":"false");
+			
+			if (b_enable==TRUE) {
+				if (upsh.instcmd("beeper.enable", NULL) != STAT_INSTCMD_HANDLED) {
+					dbus_send_reply(connection, message, DBUS_TYPE_INT32, -1);
+					return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+				}
+			}
+			else {
+				if (upsh.instcmd("beeper.disable", NULL) != STAT_INSTCMD_HANDLED) {
+					dbus_send_reply(connection, message, DBUS_TYPE_INT32, -1);
+					return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+				}
+			}
+		} else {
+			return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+		}
+	}
+	dbus_send_reply(connection, message, DBUS_TYPE_INT32, 0);
+	return DBUS_HANDLER_RESULT_HANDLED;
 }

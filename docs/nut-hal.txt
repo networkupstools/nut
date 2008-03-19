@@ -1,10 +1,10 @@
 Desc: NUT integration with FreeDesktop HAL - Hardware Abstraction Layer
 File: nut-hal.txt
-Date: 12 April 2007
+Date: 05 March 2008
 Auth: Arnaud Quette <aquette.dev@gmail.com>
 
 This document introduces NUT integration with FreeDesktop HAL
-(Hardware Abstraction Layer).
+(Hardware Abstraction Layer), also called Integrated Power Management (IPM).
 
 Introduction
 ------------
@@ -85,6 +85,23 @@ USB support with a classic NUT installation.
 
 This will be addressed when the new NUT configuration framework
 will be merged in the main code branch.
+
+Developing information
+----------------------
+
+As of NUT 2.2.2, the HAL integration also provide a DBus interface to
+allow the calling of two method:
+- Shutdown
+- SetBeeper (boolean)
+
+Example:
+dbus-send --system --print-reply --dest=org.freedesktop.Hal \
+	/org/freedesktop/Hal/devices/usb_device_463_ffff_1H2E300AH \
+	org.freedesktop.Hal.Device.UPS.Shutdown
+
+For development purposes, you might want to set the environment variable
+"NUT_HAL_DEBUG" to something between "1" and "5". This matches the NUT debug
+levels (-DDDDD).
 
 Credits
 -------

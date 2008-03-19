@@ -22,7 +22,7 @@
 
 #include "attribute.h"
 
-#include "parseconf.h"
+/*#include "parseconf.h"*/
 #include "upshandler.h"
 
 #include <glib.h>
@@ -41,6 +41,8 @@ DBusHandlerResult dbus_filter_function(DBusConnection *connection,
 					      void *user_data);
 
 gboolean	dbus_init_local		(void);
+
+#define HAL_WARNING 
 
 /* track client connections */
 /* struct conn_t {
