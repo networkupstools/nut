@@ -1,3 +1,11 @@
+Wed Mar 19 20:15:20 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - clients/upsclient.c: Don't assume the server will answer immediately,
+   but instead use select() to see if data is available. This should fix
+   the problem that 'upsmon' loses connections on highly loaded servers.
+   Likewise, also check if the server is ready to receive data before
+   trying to send it.
+
 Tue Mar 18 19:51:53 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - server/upsd: use poll() instead of select() to allow larger numbers

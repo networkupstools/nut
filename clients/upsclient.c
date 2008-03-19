@@ -170,7 +170,9 @@ const char *upscli_strerror(UPSCONN_t *ups)
 /* internal: abstract the SSL calls for the other functions */
 static int net_read(UPSCONN_t *ups, char *buf, size_t buflen)
 {
-	int	ret;
+	int		ret;
+	fd_set		rfds;
+	struct timeval	tv;
 
 #ifdef HAVE_SSL
 	if (ups->ssl) {
@@ -185,14 +187,22 @@ static int net_read(UPSCONN_t *ups, char *buf, size_t buflen)
 	}
 #endif
 
-	ret = read(ups->fd, buf, buflen);
+	FD_ZERO(&rfds);
+	FD_SET(ups->fd, &rfds);
 
-	if (ret == 0) {
+	tv.tv_sec = 2;
+	tv.tv_usec = 0;
+
+	ret = select(ups->fd + 1, &rfds, NULL, NULL, &tv);
+
+	if (ret < 1) {
 		ups->upserror = UPSCLI_ERR_SRVDISC;
 		ups->syserrno = 0;
 		upscli_disconnect(ups);
 		return -1;
 	}
+
+	ret = read(ups->fd, buf, buflen);
 
 	if (ret < 1) {
 		ups->upserror = UPSCLI_ERR_READ;
@@ -205,7 +215,9 @@ static int net_read(UPSCONN_t *ups, char *buf, size_t buflen)
 
 static int net_write(UPSCONN_t *ups, const char *buf, size_t count)
 {
-	int	ret;
+	int		ret;
+	fd_set		rfds;
+	struct timeval	tv;
 
 #ifdef HAVE_SSL
 	if (ups->ssl) {
@@ -220,9 +232,24 @@ static int net_write(UPSCONN_t *ups, const char *buf, size_t count)
 	}
 #endif
 
-	ret = write(ups->fd, buf, count);
+	FD_ZERO(&rfds);
+	FD_SET(ups->fd, &rfds);
+
+	tv.tv_sec = 2;
+	tv.tv_usec = 0;
+
+	ret = select(ups->fd + 1, NULL, &rfds, NULL, &tv);
 
 	if (ret < 1) {
+		ups->upserror = UPSCLI_ERR_SRVDISC;
+		ups->syserrno = 0;
+		upscli_disconnect(ups);
+		return -1;
+	}
+
+	ret = write(ups->fd, buf, count);
+
+	if (ret < count) {
 		ups->upserror = UPSCLI_ERR_WRITE;
 		ups->syserrno = errno;
 		upscli_disconnect(ups);
@@ -235,14 +262,14 @@ static int net_write(UPSCONN_t *ups, const char *buf, size_t count)
 static int upscli_read(UPSCONN_t *ups, char *buf, size_t buflen)
 {
 	int	ret;
-	size_t	numrec = 0;
-	char	ch;
+	size_t	numrec;
 
-	if (!ups) {
+	if ((!ups) || (ups->fd == -1)) {
+		ups->upserror = UPSCLI_ERR_DRVNOTCONN;
 		return -1;
 	}
 
-	if ((!buf) || (buflen < 1) || (ups->fd == -1)) {
+	if ((!buf) || (buflen < 1)) {
 		ups->upserror = UPSCLI_ERR_INVALIDARG;
 		return -1;
 	}
@@ -252,26 +279,23 @@ static int upscli_read(UPSCONN_t *ups, char *buf, size_t buflen)
 		return -1;
 	}
 
-	for (;;) {
-		ret = net_read(ups, &ch, 1);
+	for (numrec = 0; numrec < buflen-1; numrec += ret) {
+
+		ret = net_read(ups, &buf[numrec], 1);
 
 		if (ret < 1) {
-			return -1;	
+			return -1;
 		}
 
-		if ((ch == 10) || (numrec == (buflen - 1))) {
-
-			/* tie off the end */
-			buf[numrec] = '\0';
-			return 0;
+		if (buf[numrec] == 10) {
+			break;
 		}
-
-		buf[numrec++] = ch;
 	}
 
-	/* NOTREACHED */
+	buf[numrec] = '\0';
+	return numrec;
 }
-	
+
 /* stub first */
 #ifndef HAVE_SSL
 static int upscli_sslinit(UPSCONN_t *ups)
@@ -744,7 +768,7 @@ int upscli_get(UPSCONN_t *ups, unsigned int numq, const char **query,
 		return -1;
 	}
 
-	if (upscli_read(ups, tmp, sizeof(tmp)) != 0) {
+	if (upscli_read(ups, tmp, sizeof(tmp)) < 0) {
 		return -1;
 	}
 
@@ -795,7 +819,7 @@ int upscli_list_start(UPSCONN_t *ups, unsigned int numq, const char **query)
 		return -1;
 	}
 
-	if (upscli_read(ups, tmp, sizeof(tmp)) != 0) {
+	if (upscli_read(ups, tmp, sizeof(tmp)) < 0) {
 		return -1;
 	}
 
@@ -838,7 +862,7 @@ int upscli_list_next(UPSCONN_t *ups, unsigned int numq, const char **query,
 {
 	char	tmp[UPSCLI_NETBUF_LEN];
 
-	if (upscli_read(ups, tmp, sizeof(tmp)) != 0) {
+	if (upscli_read(ups, tmp, sizeof(tmp)) < 0) {
 		return -1;
 	}
 
@@ -923,7 +947,7 @@ int upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen)
 		return -1;
 	}
 
-	if (upscli_read(ups, tmp, sizeof(tmp)) != 0) {
+	if (upscli_read(ups, tmp, sizeof(tmp)) < 0) {
 		return -1;
 	}
 
