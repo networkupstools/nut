@@ -1,3 +1,9 @@
+Thu Mar 20 19:59:23 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - server/upsd: add clients last in the list of filedescriptors to
+   poll, so that the server won't become unresponsive if the maximum
+   number of connections is exceeded
+
 Wed Mar 19 20:15:20 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - clients/upsclient.c: Don't assume the server will answer immediately,

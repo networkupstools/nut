@@ -815,6 +815,21 @@ static void mainloop(void)
 		nfds++;
 	}
 
+	/* scan through server sockets */
+	for (stmp = firstaddr; stmp != NULL && nfds < maxconn; stmp = stmp->next) {
+		if (stmp->sock_fd < 0) {
+			continue;
+		}
+
+		fds[nfds].fd = stmp->sock_fd;
+		fds[nfds].events = POLLIN;
+
+		handler[nfds].type = SERVER;
+		handler[nfds].data = stmp;
+
+		nfds++;
+	}
+
 	/* scan through client sockets */
 	for (ctmp = firstclient; ctmp != NULL; ctmp = ctmp->next) {
 		if (ctmp->fd < 0) {
@@ -832,21 +847,6 @@ static void mainloop(void)
 
 		handler[nfds].type = CLIENT;
 		handler[nfds].data = ctmp;
-
-		nfds++;
-	}
-
-	/* scan through server sockets */
-	for (stmp = firstaddr; stmp != NULL && nfds < maxconn; stmp = stmp->next) {
-		if (stmp->sock_fd < 0) {
-			continue;
-		}
-
-		fds[nfds].fd = stmp->sock_fd;
-		fds[nfds].events = POLLIN;
-
-		handler[nfds].type = SERVER;
-		handler[nfds].data = stmp;
 
 		nfds++;
 	}
@@ -886,7 +886,7 @@ static void mainloop(void)
 			continue;
 		}
 
-		if (fds[i].revents & POLLHUP) {
+		if (fds[i].revents & (POLLHUP | POLLNVAL)) {
 
 			switch(handler[i].type)
 			{
