@@ -35,7 +35,8 @@
 #include "netxml-ups.h"
 #include "mge-xml.h"
 
-#define	DRV_VERSION	"0.10"
+#define DRV_VERSION	"0.11"
+#define MAXRETRIES	3
 
 /* Global vars */
 uint32_t		ups_status = 0;
@@ -70,19 +71,19 @@ void upsdrv_initinfo(void)
 
 	ret = ne_xml_dispatch_request(request, parser);
 
-	if (ret != NE_OK) {
-		upslogx(LOG_ERR, "Failed: %s", ne_get_error(session));
-	}
-
 	ne_xml_destroy(parser);
 	ne_request_destroy(request);
 
+	if (ret != NE_OK) {
+		fatalx(EXIT_FAILURE, "%s: communication failure [%s]", __func__, ne_get_error(session));
+	}
+
 	if (!subdriver->getobject) {
-		fatalx(EXIT_FAILURE, "FATAL: %s found no way to get variables", __func__);
+		fatalx(EXIT_FAILURE, "%s: found no way to get variables", __func__);
 	}
 
 	if (!subdriver->setobject) {
-		upsdebugx(2, "INFO: %s found no way to set variables", __func__);
+		upsdebugx(2, "%s: found no way to set variables", __func__);
 	}
 
 	dstate_setinfo("driver.version.internal", "%s", subdriver->version);
@@ -93,6 +94,7 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
+	static int	retries = 0;
 	int		ret;
 	ne_request	*request;
 	ne_xml_parser	*parser;
@@ -113,13 +115,22 @@ void upsdrv_updateinfo(void)
 
 	ret = ne_xml_dispatch_request(request, parser);
 
-	if (ret != NE_OK) {
-		upslogx(LOG_ERR, "Failed: %s", ne_get_error(session));
-		dstate_datastale();
-	}
-
 	ne_xml_destroy(parser);
 	ne_request_destroy(request);
+
+	if (ret != NE_OK) {
+		upslogx(LOG_ERR, "%s: communication failure [%s]", __func__, ne_get_error(session));
+
+		if (retries < MAXRETRIES) {
+			retries++;
+		} else {
+			dstate_datastale();
+		}
+
+		return;
+	}
+
+	retries = 0;
 
 	status_init();
 
