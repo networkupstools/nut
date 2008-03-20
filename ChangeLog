@@ -1,3 +1,9 @@
+Thu Mar 20 20:11:55 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/netxml-ups: missing return statement caused the driver to
+   ignore communication failures (will now report properly after three
+   consecutive failures)
+
 Tue Mar 18 10:31:42 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  * Integrated Power Management (HAL integration)
