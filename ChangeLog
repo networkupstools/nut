@@ -1,3 +1,10 @@
+Fri Mar 21 20:48:27 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - clients/upsclient.c: handle all communications with the server
+   through upscli_sendline/readline to prevent blocking on I/O
+   calls when the server is not responding (while still allowing
+   it a couple of seconds to reply).
+
 Thu Mar 20 20:11:55 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/netxml-ups: missing return statement caused the driver to

@@ -1,6 +1,8 @@
 /* upsclient - network communications functions for UPS clients
 
-   Copyright (C) 2002  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+	2002	Russell Kroll <rkroll@exploits.org>
+	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -89,20 +91,6 @@ struct {
 	{ 0, "Protocol error",			},	/* 42: UPSCLI_ERR_PROTOCOL */
 };
 
-/* make sure we're using a struct that's been through upscli_connect */
-static int upscli_checkmagic(UPSCONN_t *ups)
-{
-	if (!ups) {
-		return 0;
-	}
-
-	if (ups->upsclient_magic != UPSCLIENT_MAGIC) {
-		return 0;
-	}
-
-	return 1;
-}
-
 const char *upscli_strerror(UPSCONN_t *ups)
 {
 #ifdef HAVE_SSL
@@ -114,7 +102,7 @@ const char *upscli_strerror(UPSCONN_t *ups)
 		return upscli_errlist[UPSCLI_ERR_INVALIDARG].str;
 	}
 
-	if (!upscli_checkmagic(ups)) {
+	if (ups->upsclient_magic != UPSCLIENT_MAGIC) {
 		return upscli_errlist[UPSCLI_ERR_INVALIDARG].str;
 	}
 
@@ -180,7 +168,6 @@ static int net_read(UPSCONN_t *ups, char *buf, size_t buflen)
 
 		if (ret < 1) {
 			ups->upserror = UPSCLI_ERR_SSLERR;
-			upscli_disconnect(ups);
 		}
 
 		return ret;
@@ -195,105 +182,65 @@ static int net_read(UPSCONN_t *ups, char *buf, size_t buflen)
 
 	ret = select(ups->fd + 1, &rfds, NULL, NULL, &tv);
 
+	/* not ready for reading, server disconnected? */
 	if (ret < 1) {
 		ups->upserror = UPSCLI_ERR_SRVDISC;
-		ups->syserrno = 0;
-		upscli_disconnect(ups);
-		return -1;
+		return ret;
 	}
 
 	ret = read(ups->fd, buf, buflen);
 
-	if (ret < 1) {
+	/* ready for reading, but no data can be read */
+	if (ret < 0) {
 		ups->upserror = UPSCLI_ERR_READ;
 		ups->syserrno = errno;
-		upscli_disconnect(ups);
 	}
 
 	return ret;
 }
 
-static int net_write(UPSCONN_t *ups, const char *buf, size_t count)
+/* internal: abstract the SSL calls for the other functions */
+static int net_write(UPSCONN_t *ups, const char *buf, size_t buflen)
 {
 	int		ret;
-	fd_set		rfds;
+	fd_set		wfds;
 	struct timeval	tv;
 
 #ifdef HAVE_SSL
 	if (ups->ssl) {
-		ret = SSL_write(ups->ssl, buf, count);
+		ret = SSL_write(ups->ssl, buf, buflen);
 
 		if (ret < 1) {
 			ups->upserror = UPSCLI_ERR_SSLERR;
-			upscli_disconnect(ups);
 		}
 
 		return ret;
 	}
 #endif
 
-	FD_ZERO(&rfds);
-	FD_SET(ups->fd, &rfds);
+	FD_ZERO(&wfds);
+	FD_SET(ups->fd, &wfds);
 
 	tv.tv_sec = 2;
 	tv.tv_usec = 0;
 
-	ret = select(ups->fd + 1, NULL, &rfds, NULL, &tv);
+	ret = select(ups->fd + 1, NULL, &wfds, NULL, &tv);
 
+	/* not ready for writing, server disconnected? */
 	if (ret < 1) {
 		ups->upserror = UPSCLI_ERR_SRVDISC;
-		ups->syserrno = 0;
-		upscli_disconnect(ups);
-		return -1;
+		return ret;
 	}
 
-	ret = write(ups->fd, buf, count);
+	ret = write(ups->fd, buf, buflen);
 
-	if (ret < count) {
+	/* ready for writing, but no data can be written */
+	if (ret < 0) {
 		ups->upserror = UPSCLI_ERR_WRITE;
 		ups->syserrno = errno;
-		upscli_disconnect(ups);
 	}
 
 	return ret;
-}
-
-/* internal: bring back a line (up to LF or buflen bytes) */
-static int upscli_read(UPSCONN_t *ups, char *buf, size_t buflen)
-{
-	int	ret;
-	size_t	numrec;
-
-	if ((!ups) || (ups->fd == -1)) {
-		ups->upserror = UPSCLI_ERR_DRVNOTCONN;
-		return -1;
-	}
-
-	if ((!buf) || (buflen < 1)) {
-		ups->upserror = UPSCLI_ERR_INVALIDARG;
-		return -1;
-	}
-
-	if (!upscli_checkmagic(ups)) {
-		ups->upserror = UPSCLI_ERR_INVALIDARG;
-		return -1;
-	}
-
-	for (numrec = 0; numrec < buflen-1; numrec += ret) {
-
-		ret = net_read(ups, &buf[numrec], 1);
-
-		if (ret < 1) {
-			return -1;
-		}
-
-		if (buf[numrec] == 10) {
-			break;
-		}
-	}
-
-	buf[numrec] = '\0';
-	return numrec;
 }
 
 /* stub first */
@@ -322,41 +269,16 @@ int upscli_sslcert(UPSCONN_t *ups, const char *dir, const char *file, int verify
 
 static int upscli_sslinit(UPSCONN_t *ups)
 {
-	int	ret;
 	char	buf[UPSCLI_NETBUF_LEN];
-
-	if (!ups) {
-		return -1;
-	}
-
-	if (!upscli_checkmagic(ups)) {
-		ups->upserror = UPSCLI_ERR_INVALIDARG;
-		return -1;
-	}
 
 	/* see if upsd even talks SSL/TLS */
 	snprintf(buf, sizeof(buf), "STARTTLS\n");
 
-	ret = write(ups->fd, buf, strlen(buf));
-
-	if (ret < 0) {
-		ups->upserror = UPSCLI_ERR_WRITE;
-		ups->syserrno = errno;
+	if (upscli_sendline(ups, buf, strlen(buf)) != 0) {
 		return -1;
 	}
 
-	memset(buf, '\0', sizeof(buf));
-	ret = read(ups->fd, buf, sizeof(buf));
-
-	if (ret == 0) {			/* server hung up on us! */
-		ups->upserror = UPSCLI_ERR_SRVDISC;
-		ups->syserrno = 0;
-		return -1;
-	}
-
-	if (ret < 1) {
-		ups->upserror = UPSCLI_ERR_READ;
-		ups->syserrno = errno;
+	if (upscli_readline(ups, buf, sizeof(buf)) != 0) {
 		return -1;
 	}
 
@@ -381,9 +303,7 @@ static int upscli_sslinit(UPSCONN_t *ups)
 		return 0;
 	}
 
-	ret = SSL_set_fd(ups->ssl, ups->fd);
-
-	if (ret != 1) {
+	if (SSL_set_fd(ups->ssl, ups->fd) != 1) {
 		return -1;
 	}
 
@@ -751,7 +671,6 @@ static int verify_resp(int num, const char **q, char **a)
 int upscli_get(UPSCONN_t *ups, unsigned int numq, const char **query, 
 		unsigned int *numa, char ***answer)
 {
-	int	ret;
 	char	cmd[UPSCLI_NETBUF_LEN], tmp[UPSCLI_NETBUF_LEN];
 	
 	if (numq < 1) {
@@ -762,13 +681,11 @@ int upscli_get(UPSCONN_t *ups, unsigned int numq, const char **query,
 	/* create the string to send to upsd */
 	build_cmd(cmd, sizeof(cmd), "GET", numq, query);
 
-	ret = net_write(ups, cmd, strlen(cmd));
-
-	if (ret < 0) {
+	if (upscli_sendline(ups, cmd, strlen(cmd)) != 0) {
 		return -1;
 	}
 
-	if (upscli_read(ups, tmp, sizeof(tmp)) < 0) {
+	if (upscli_readline(ups, tmp, sizeof(tmp)) != 0) {
 		return -1;
 	}
 
@@ -802,7 +719,6 @@ int upscli_get(UPSCONN_t *ups, unsigned int numq, const char **query,
 
 int upscli_list_start(UPSCONN_t *ups, unsigned int numq, const char **query)
 {
-	int	ret;
 	char	cmd[UPSCLI_NETBUF_LEN], tmp[UPSCLI_NETBUF_LEN];
 
 	if (numq < 1) {
@@ -813,13 +729,11 @@ int upscli_list_start(UPSCONN_t *ups, unsigned int numq, const char **query)
 	/* create the string to send to upsd */
 	build_cmd(cmd, sizeof(cmd), "LIST", numq, query);
 
-	ret = net_write(ups, cmd, strlen(cmd));
-
-	if (ret < 0) {
+	if (upscli_sendline(ups, cmd, strlen(cmd)) != 0) {
 		return -1;
 	}
 
-	if (upscli_read(ups, tmp, sizeof(tmp)) < 0) {
+	if (upscli_readline(ups, tmp, sizeof(tmp)) != 0) {
 		return -1;
 	}
 
@@ -862,7 +776,7 @@ int upscli_list_next(UPSCONN_t *ups, unsigned int numq, const char **query,
 {
 	char	tmp[UPSCLI_NETBUF_LEN];
 
-	if (upscli_read(ups, tmp, sizeof(tmp)) < 0) {
+	if (upscli_readline(ups, tmp, sizeof(tmp)) != 0) {
 		return -1;
 	}
 
@@ -905,25 +819,31 @@ int upscli_list_next(UPSCONN_t *ups, unsigned int numq, const char **query,
 int upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen)
 {
 	int	ret;
+	size_t	sent;
 
-	if (!ups) {
+	if ((!ups) || (ups->fd == -1)) {
+		ups->upserror = UPSCLI_ERR_DRVNOTCONN;
 		return -1;
 	}
 
-	if ((!buf) || (buflen < 1) || (ups->fd == -1)) {
+	if ((!buf) || (buflen < 1)) {
 		ups->upserror = UPSCLI_ERR_INVALIDARG;
 		return -1;
 	}
 
-	if (!upscli_checkmagic(ups)) {
+	if (ups->upsclient_magic != UPSCLIENT_MAGIC) {
 		ups->upserror = UPSCLI_ERR_INVALIDARG;
 		return -1;
 	}
 
-	ret = net_write(ups, buf, buflen);
+	for (sent = 0; sent < buflen; sent += ret) {
 
-	if (ret < 0) {
-		return -1;
+		ret = net_write(ups, &buf[sent], buflen - sent);
+
+		if (ret < 1) {
+			upscli_disconnect(ups);
+			return -1;
+		}
 	}
 
 	return 0;
@@ -931,32 +851,39 @@ int upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen)
 
 int upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen)
 {
-	char	tmp[LARGEBUF];
+	int	ret;
+	size_t	recv;
 
-	if (!ups) {
+	if ((!ups) || (ups->fd == -1)) {
+		ups->upserror = UPSCLI_ERR_DRVNOTCONN;
 		return -1;
 	}
 
-	if ((!buf) || (buflen < 1) || (ups->fd == -1)) {
+	if ((!buf) || (buflen < 1)) {
 		ups->upserror = UPSCLI_ERR_INVALIDARG;
 		return -1;
 	}
 
-	if (!upscli_checkmagic(ups)) {
+	if (ups->upsclient_magic != UPSCLIENT_MAGIC) {
 		ups->upserror = UPSCLI_ERR_INVALIDARG;
 		return -1;
 	}
 
-	if (upscli_read(ups, tmp, sizeof(tmp)) < 0) {
-		return -1;
+	for (recv = 0; recv < buflen-1; recv += ret) {
+
+		ret = net_read(ups, &buf[recv], 1);
+
+		if (ret < 1) {
+			upscli_disconnect(ups);
+			return -1;
+		}
+
+		if (buf[recv] == '\n') {
+			break;
+		}
 	}
 
-	if (upscli_errcheck(ups, tmp) != 0) {
-		return -1;
-	}
-
-	snprintf(buf, buflen, "%s", tmp);
-
+	buf[recv] = '\0';
 	return 0;
 }
 
@@ -1056,7 +983,7 @@ int upscli_disconnect(UPSCONN_t *ups)
 		return -1;
 	}
 
-	if (!upscli_checkmagic(ups)) {
+	if (ups->upsclient_magic != UPSCLIENT_MAGIC) {
 		return -1;
 	}
 
@@ -1099,7 +1026,7 @@ int upscli_fd(UPSCONN_t *ups)
 		return -1;
 	}
 
-	if (!upscli_checkmagic(ups)) {
+	if (ups->upsclient_magic != UPSCLIENT_MAGIC) {
 		return -1;
 	}
 
@@ -1112,7 +1039,7 @@ int upscli_upserror(UPSCONN_t *ups)
 		return -1;
 	}
 
-	if (!upscli_checkmagic(ups)) {
+	if (ups->upsclient_magic != UPSCLIENT_MAGIC) {
 		return -1;
 	}
 
@@ -1125,7 +1052,7 @@ int upscli_ssl(UPSCONN_t *ups)
 		return -1;
 	}
 
-	if (!upscli_checkmagic(ups)) {
+	if (ups->upsclient_magic != UPSCLIENT_MAGIC) {
 		return -1;
 	}
 
