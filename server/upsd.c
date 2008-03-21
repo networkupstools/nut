@@ -815,21 +815,6 @@ static void mainloop(void)
 		nfds++;
 	}
 
-	/* scan through server sockets */
-	for (stmp = firstaddr; stmp != NULL && nfds < maxconn; stmp = stmp->next) {
-		if (stmp->sock_fd < 0) {
-			continue;
-		}
-
-		fds[nfds].fd = stmp->sock_fd;
-		fds[nfds].events = POLLIN;
-
-		handler[nfds].type = SERVER;
-		handler[nfds].data = stmp;
-
-		nfds++;
-	}
-
 	/* scan through client sockets */
 	for (ctmp = firstclient; ctmp != NULL; ctmp = ctmp->next) {
 		if (ctmp->fd < 0) {
@@ -851,10 +836,25 @@ static void mainloop(void)
 		nfds++;
 	}
 
+	/* scan through server sockets */
+	for (stmp = firstaddr; stmp != NULL && nfds < maxconn; stmp = stmp->next) {
+		if (stmp->sock_fd < 0) {
+			continue;
+		}
+
+		fds[nfds].fd = stmp->sock_fd;
+		fds[nfds].events = POLLIN;
+
+		handler[nfds].type = SERVER;
+		handler[nfds].data = stmp;
+
+		nfds++;
+	}
+
 	ret = poll(fds, nfds, 2000);
 
 	if (ret == 0) {
-		upsdebugx(2, "%s: no data available");
+		upsdebugx(2, "%s: no data available", __func__);
 		return;
 	}
 
@@ -886,7 +886,7 @@ static void mainloop(void)
 			continue;
 		}
 
-		if (fds[i].revents & (POLLHUP | POLLNVAL)) {
+		if (fds[i].revents & POLLHUP) {
 
 			switch(handler[i].type)
 			{
