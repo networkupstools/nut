@@ -1,3 +1,8 @@
+Fri Mar 21 20:54:31 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/dstate.c: send data to the server with a timeout (so that
+   it doesn't have to accept everything in one write action)
+
 Fri Mar 21 20:48:27 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - clients/upsclient.c: handle all communications with the server
