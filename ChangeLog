@@ -1,3 +1,8 @@
+Sun Mar 23 17:00:53 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/dstate.c: revert r1383 that horribly broke the drivers
+   (sorry about that, didn't quite test this enough)
+
 Fri Mar 21 21:04:53 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - server/upsd: revert changes from r1379 which seem to have a bad

@@ -1,8 +1,6 @@
 /* dstate.c - Network UPS Tools driver-side state management
 
-   Copyright (C)
-	2003	Russell Kroll <rkroll@exploits.org>
-	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
+   Copyright (C) 2003  Russell Kroll <rkroll@exploits.org>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -150,8 +148,6 @@ static void conn_del(struct conn_t *target)
 
 			pconf_finish(&tmp->ctx);
 
-			close(tmp->fd);
-
 			free(tmp);
 			return;
 		}
@@ -161,29 +157,6 @@ static void conn_del(struct conn_t *target)
 	}
 
 	upslogx(LOG_ERR, "Tried to delete a bogus state connection");
-}
-
-static int sock_write(int fd, const char *buf, size_t buflen)
-{
-	int	ret;
-	fd_set	wfds;
-	struct timeval	tv;
-
-	FD_ZERO(&wfds);
-	FD_SET(fd, &wfds);
-
-	tv.tv_sec = 2;
-	tv.tv_usec = 0;
-
-	ret = select(fd + 1, NULL, &wfds, NULL, &tv);
-
-	if (ret < 1) {
-		return ret;
-	}
-
-	ret = write(fd, buf, buflen);
-
-	return ret;
 }
 
 static void send_to_all(const char *fmt, ...)
@@ -200,19 +173,16 @@ static void send_to_all(const char *fmt, ...)
 	tmp = connhead;
 
 	while (tmp) {
-		size_t	sent;
-
 		tmpnext = tmp->next;
 
-		for (sent = 0; sent < sizeof(buf); sent += ret) {
+		ret = write(tmp->fd, buf, strlen(buf));
 
-			ret = sock_write(tmp->fd, &buf[sent], strlen(buf) - sent);
+		if ((ret < 1) || (ret != (int) strlen(buf))) {
+			upsdebugx(2, "write %d bytes to socket %d failed",
+				strlen(buf), tmp->fd);
 
-			if (ret < 1) {
-				upslogx(LOG_ERR, "write %d bytes to socket %d failed", strlen(buf), tmp->fd);
-				conn_del(tmp);
-				break;
-			}
+			close(tmp->fd);
+			conn_del(tmp);
 		}
 
 		tmp = tmpnext;
@@ -224,21 +194,20 @@ static int send_to_one(struct conn_t *conn, const char *fmt, ...)
 	int	ret;
 	va_list	ap;
 	char	buf[ST_SOCK_BUF_LEN];
-	size_t	sent;
 
 	va_start(ap, fmt);
 	vsnprintf(buf, sizeof(buf), fmt, ap);
 	va_end(ap);
 
-	for (sent = 0; sent < sizeof(buf); sent += ret) {
+	ret = write(conn->fd, buf, strlen(buf));
 
-		ret = sock_write(conn->fd, buf, strlen(buf));
+	if ((ret < 1) || (ret != (int) strlen(buf))) {
+		upsdebugx(2, "write to fd %d failed", conn->fd);
 
-		if (ret < 1) {
-			upslogx(LOG_ERR, "write %d bytes to socket %d failed", strlen(buf), conn->fd);
-			conn_del(conn);
-			return 0;	/* failed */
-		}
+		close(conn->fd);
+		conn_del(conn);
+
+		return 0;	/* failed */
 	}
 
 	return 1;	/* OK */
@@ -572,6 +541,7 @@ int dstate_poll_fds(int interval, int extrafd)
 
 		if (FD_ISSET(tmp->fd, &rfds)) {
 			if (sock_read(tmp) < 0) {
+				close(tmp->fd);
 				conn_del(tmp);
 			}
 		}
