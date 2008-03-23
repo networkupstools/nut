@@ -36,42 +36,44 @@
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *apc_date_conversion_fun(long value) {
-  static char buf[20];
-  int year, month, day;
+static char *apc_date_conversion_fun(double value)
+{
+	static char buf[20];
+	int year, month, day;
 
-  if (value == 0) {
-    return "not set";
-  }
+	if ((long)value == 0) {
+		return "not set";
+	}
 
-  /* APC apparently uses a hexadecimal-as-decimal format, e.g.,
-  0x102202 = October 22, 2002 */
-  year = (value & 0xf) + 10 * ((value>>4) & 0xf);
-  month = ((value>>16) & 0xf) + 10 * ((value>>20) & 0xf);
-  day = ((value>>8) & 0xf) + 10 * ((value>>12) & 0xf);
+	/* APC apparently uses a hexadecimal-as-decimal format, e.g.,
+	0x102202 = October 22, 2002 */
+	year = ((long)value & 0xf) + 10 * (((long)value>>4) & 0xf);
+	month = (((long)value>>16) & 0xf) + 10 * (((long)value>>20) & 0xf);
+	day = (((long)value>>8) & 0xf) + 10 * (((long)value>>12) & 0xf);
 
-  /* Y2K conversion - hope that this format will be retired before 2070 :) */
-  if (year >= 70) {
-    year += 1900;
-  } else {
-    year += 2000;
-  }
+	/* Y2K conversion - hope that this format will be retired before 2070 :) */
+	if (year >= 70) {
+		year += 1900;
+	} else {
+		year += 2000;
+	}
 
-  snprintf(buf, sizeof(buf), "%04d/%02d/%02d", year, month, day);
-  return buf;
+	snprintf(buf, sizeof(buf), "%04d/%02d/%02d", year, month, day);
+
+	return buf;
 }
 
 info_lkp_t apc_date_conversion[] = {
-  { 0, NULL, apc_date_conversion_fun }
+	{ 0, NULL, apc_date_conversion_fun }
 };
 
 /* This was determined empirically from observing a BackUPS LS 500.
  */
 static info_lkp_t apcstatusflag_info[] = {
-  { 8, "!off", NULL },  /* Normal operation */
-  { 16, "!off", NULL }, /* This occurs briefly during power-on, and corresponds to status 'DISCHRG'. */
-  { 0, "off", NULL },
-  { 0, NULL, NULL }
+	{ 8, "!off", NULL },  /* Normal operation */
+	{ 16, "!off", NULL }, /* This occurs briefly during power-on, and corresponds to status 'DISCHRG'. */
+	{ 0, "off", NULL },
+	{ 0, NULL, NULL }
 };
 
 /* --------------------------------------------------------------- */
@@ -169,10 +171,16 @@ static hid_info_t apc_hid2nut[] = {
   /* UPS page */
   { "ups.load", 0, 0, "UPS.Output.PercentLoad", NULL, "%.1f", 0, NULL },
   { "ups.load", 0, 0, "UPS.PowerConverter.PercentLoad", NULL, "%.0f", 0, NULL },
-  { "ups.delay.shutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "%.0f", 0, NULL},
-  { "ups.delay.shutdown", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, "%.0f", 0, NULL}, /* APC */
-  { "ups.delay.start", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, "%.0f", 0, NULL},
-  { "ups.delay.start", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeStartup", NULL, "%.0f", 0, NULL}, /* APC */
+  { "ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.DelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_FLAG_ABSENT, NULL},
+  { "ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.APCGeneralCollection.APCDelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_FLAG_ABSENT, NULL}, /* APC */
+  { "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_FLAG_ABSENT, NULL},
+  { "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_FLAG_ABSENT, NULL}, /* APC */
+  { "ups.timer.start", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, "%.0f", 0, NULL},
+  { "ups.timer.start", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeStartup", NULL, "%.0f", 0, NULL}, /* APC */
+  { "ups.timer.shutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "%.0f", 0, NULL},
+  { "ups.timer.shutdown", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, "%.0f", 0, NULL}, /* APC */
+  { "ups.timer.reboot", 0, 0, "UPS.PowerSummary.DelayBeforeReboot", NULL, "%.0f", 0, NULL},
+  { "ups.timer.reboot", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeReboot", NULL, "%.0f", 0, NULL}, /* APC */
   { "ups.test.result", 0, 0, "UPS.Battery.Test", NULL, "%s", 0, test_read_info },
   { "ups.beeper.status", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", 0, beeper_info },
   { "ups.mfr.date", 0, 0, "UPS.ManufacturerDate", NULL, "%s", 0, date_conversion },
@@ -223,19 +231,15 @@ static hid_info_t apc_hid2nut[] = {
   { "test.panel.start", 0, 0, "UPS.PowerSummary.APCPanelTest", NULL, "1", HU_TYPE_CMD, NULL }, /* Back-UPS 500 */
   { "test.panel.stop", 0, 0, "UPS.PowerSummary.APCPanelTest", NULL, "0", HU_TYPE_CMD, NULL }, /* Back-UPS 500 */
 
-  { "load.off", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "0", HU_TYPE_CMD, NULL },
-  { "load.on", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, "0", HU_TYPE_CMD, NULL },
-  { "shutdown.stayoff", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "20", HU_TYPE_CMD, NULL },
-  { "shutdown.return", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, "30", HU_TYPE_CMD, NULL },
-  { "shutdown.reboot", 0, 0, "UPS.PowerSummary.DelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL },
+  { "load.off.delay", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_TYPE_CMD, NULL },
+  { "load.on.delay", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_TYPE_CMD, NULL },
   { "shutdown.stop", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "-1", HU_TYPE_CMD, NULL },
+  { "shutdown.reboot", 0, 0, "UPS.PowerSummary.DelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL },
   /* APC Backups ES */
-  { "load.off", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, "0", HU_TYPE_CMD, NULL },
-  { "load.on", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeStartup", NULL, "0", HU_TYPE_CMD, NULL },
-  { "shutdown.stayoff", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, "20", HU_TYPE_CMD, NULL },
-  { "shutdown.return", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeStartup", NULL, "30", HU_TYPE_CMD, NULL },
-  { "shutdown.reboot", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL },
+  { "load.off.delay", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_TYPE_CMD, NULL },
+  { "load.on.delay", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_TYPE_CMD, NULL },
   { "shutdown.stop", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, "-1", HU_TYPE_CMD, NULL },
+  { "shutdown.reboot", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL },
 
   { "beeper.on", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },
   { "beeper.off", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "3", HU_TYPE_CMD, NULL },

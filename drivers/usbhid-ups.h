@@ -33,21 +33,9 @@
 #include "config.h"
 #include "libhid.h"
 
-#define DRIVER_VERSION		"0.32"
+#define DRIVER_VERSION		"0.33"
 
 extern hid_dev_handle_t	udev;
-
-/* --------------------------------------------------------------- */
-/*      Model Name formating entries                               */
-/* --------------------------------------------------------------- */
-
-typedef struct
-{
-	char	*iProduct;
-	char	*iModel;
-	int	comp_size;	/* size of the comparison, -1 for full */
-	char	*finalname;
-} models_name_t;
 
 /* Driver's parameters */
 #define HU_VAR_ONDELAY		"ondelay"
@@ -55,10 +43,10 @@ typedef struct
 #define HU_VAR_POLLFREQ		"pollfreq"
 
 /* Parameters default values */
-#define DEFAULT_ONDELAY		10	/* Delay between return of utility power */
+#define DEFAULT_ONDELAY		"30"	/* Delay between return of utility power */
 					/* and powering up of load, in seconds */
 					/* CAUTION: ondelay > offdelay */
-#define DEFAULT_OFFDELAY	1	/* Delay before power off, in seconds */
+#define DEFAULT_OFFDELAY	"20"	/* Delay before power off, in seconds */
 #define DEFAULT_POLLFREQ	30	/* Polling interval, in seconds */
 					/* The driver will wait for Interrupt */
 					/* and do "light poll" in the meantime */
@@ -74,7 +62,7 @@ typedef struct
 typedef struct {
 	long	hid_value;	/* HID value */
 	char	*nut_value;	/* NUT value */
-        char    *(*fun)(long value); /* special case: if fun!=NULL, then
+        char    *(*fun)(double value); /* special case: if fun!=NULL, then
 				     ignore hid_value and nut_value,
 				     and use the conversion function
 				     instead. This is used for more
@@ -93,7 +81,8 @@ extern info_lkp_t overload_info[];
 extern info_lkp_t replacebatt_info[];
 extern info_lkp_t trim_info[];
 extern info_lkp_t boost_info[];
-extern info_lkp_t bypass_info[];
+extern info_lkp_t bypass_auto_info[];
+extern info_lkp_t bypass_manual_info[];
 extern info_lkp_t off_info[];
 extern info_lkp_t calibration_info[];
 extern info_lkp_t nobattery_info[];

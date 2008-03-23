@@ -33,8 +33,8 @@
 
 #include <sys/types.h>
 #include "hidtypes.h"
-#include "timehead.h"
 
+#include "timehead.h"
 #ifdef SHUT_MODE
 	#include "libshut.h"
 	typedef SHUTDevice_t			HIDDevice_t;
@@ -56,14 +56,18 @@ typedef enum ebool { FALSE, TRUE } bool_t;
 typedef int bool_t;
 #endif
 
+/* Device open modes */
+#define MODE_OPEN	0	/* open a HID device for the first time */
+#define MODE_REOPEN	1	/* reopen a HID device that was opened before */
+
 #define MAX_TS		2	/* validity period of a gotten report (2 sec) */
 
 /* ---------------------------------------------------------------------- */
 
 /* structure to describe an item in a usage table */
 typedef struct {
-	const char *usage_name;
-	const long usage_code;
+	const char	*usage_name;
+	const HIDNode_t	usage_code;
 } usage_lkp_t;
 
 extern usage_lkp_t hid_usage_lkp[];
@@ -140,6 +144,5 @@ const char *HIDDataType(const HIDData_t *hiddata);
 
 void free_report_buffer(reportbuf_t *rbuf);
 reportbuf_t *new_report_buffer(HIDDesc_t *pDesc);
-
 
 #endif /* _LIBHID_H */

@@ -1,3 +1,14 @@
+Sun Mar 23 20:00:29 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/usbhid-ups:
+   - changes in the way we tell the UPS to shutdown
+   - reformatted hidparser
+   - the variable passed to the conversion functions in the HID-to-NUT
+     mapping is now a double and not a long anymore (to maintain
+     resolution for non-integer values)
+   - added some additional parameters and three phase support for the
+     mge-hid subdriver
+
 Thu Mar 20 20:11:55 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/netxml-ups: missing return statement caused the driver to

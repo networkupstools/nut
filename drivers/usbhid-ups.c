@@ -75,7 +75,7 @@ static subdriver_t *subdriver = NULL;
 static HIDDevice_t *hd = NULL;
 static HIDDevice_t curDevice = { 0x0000, 0x0000, NULL, NULL, NULL, NULL };
 static HIDDeviceMatcher_t *subdriver_matcher = NULL;
-#ifndef	SHUT_MODE
+#ifndef SHUT_MODE
 static HIDDeviceMatcher_t *exact_matcher = NULL;
 static HIDDeviceMatcher_t *regex_matcher = NULL;
 static unsigned char *checksum = NULL;
@@ -105,7 +105,7 @@ static double interval(void);
 /* global variables */
 HIDDesc_t	*pDesc = NULL;		/* parsed Report Descriptor */
 reportbuf_t	*reportbuf = NULL;	/* buffer for most recent reports */
-#ifndef	SHUT_MODE
+#ifndef SHUT_MODE
 matching_t	matching = NORMAL;
 #endif
 
@@ -124,7 +124,8 @@ typedef enum {
 	SHUTDOWNIMM,	/* shutdown imminent */
 	TRIM,		/* SmartTrim */
 	BOOST,		/* SmartBoost */
-	BYPASS,		/* on bypass */
+	BYPASSAUTO,	/* on automatic bypass */
+	BYPASSMAN,	/* on manual/service bypass */
 	OFF,		/* ups is off */
 	CAL,		/* calibration */
 	OVERHEAT,	/* overheat; Belkin, TrippLite */
@@ -166,7 +167,8 @@ static status_lkp_t status_info[] = {
 	{ "shutdownimm", STATUS(SHUTDOWNIMM) },
 	{ "trim", STATUS(TRIM) },
 	{ "boost", STATUS(BOOST) },
-	{ "bypass", STATUS(BYPASS) },
+	{ "bypassauto", STATUS(BYPASSAUTO) },
+	{ "bypassman", STATUS(BYPASSMAN) },
 	{ "off", STATUS(OFF) },
 	{ "cal", STATUS(CAL) },
 	{ "overheat", STATUS(OVERHEAT) },
@@ -185,7 +187,7 @@ static status_lkp_t status_info[] = {
 	{ NULL, 0 },
 };
 
-#ifndef	SHUT_MODE
+#ifndef SHUT_MODE
 typedef struct {
 	char		*val;
 	matching_t	mode;
@@ -262,9 +264,14 @@ info_lkp_t boost_info[] = {
 	{ 0, "!boost", NULL },
 	{ 0, NULL, NULL }
 };
-info_lkp_t bypass_info[] = {
-	{ 1, "bypass", NULL },
-	{ 0, "!bypass", NULL },
+info_lkp_t bypass_auto_info[] = {
+	{ 1, "bypassauto", NULL },
+	{ 0, "!bypassauto", NULL },
+	{ 0, NULL, NULL }
+};
+info_lkp_t bypass_manual_info[] = {
+	{ 1, "bypassman", NULL },
+	{ 0, "!bypassman", NULL },
 	{ 0, NULL, NULL }
 };
 /* note: this value is reverted (0=set, 1=not set). We report "being
@@ -393,19 +400,21 @@ info_lkp_t on_off_info[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *date_conversion_fun(long value) {
+static char *date_conversion_fun(double value)
+{
 	static char buf[20];
 	int year, month, day;
 
-	if (value == 0) {
+	if ((long)value == 0) {
 		return "not set";
 	}
 
-	year = 1980 + (value >> 9); /* negative value represents pre-1980 date */ 
-	month = (value >> 5) & 0x0f;
-	day = value & 0x1f;
+	year = 1980 + ((long)value >> 9); /* negative value represents pre-1980 date */ 
+	month = ((long)value >> 5) & 0x0f;
+	day = (long)value & 0x1f;
 
 	snprintf(buf, sizeof(buf), "%04d/%02d/%02d", year, month, day);
+
 	return buf;
 }
 
@@ -415,10 +424,12 @@ info_lkp_t date_conversion[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *hex_conversion_fun(long value) {
+static char *hex_conversion_fun(double value)
+{
 	static char buf[20];
 	
-	snprintf(buf, sizeof(buf), "%08lx", value);
+	snprintf(buf, sizeof(buf), "%08lx", (long)value);
+
 	return buf;
 }
 
@@ -428,10 +439,11 @@ info_lkp_t hex_conversion[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *stringid_conversion_fun(long value) {
+static char *stringid_conversion_fun(double value)
+{
 	static char buf[20];
 
-	return HIDGetIndexString(udev, value, buf, sizeof(buf));
+	return HIDGetIndexString(udev, (int)value, buf, sizeof(buf));
 }
 
 info_lkp_t stringid_conversion[] = {
@@ -440,10 +452,12 @@ info_lkp_t stringid_conversion[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *divide_by_10_conversion_fun(long value) {
+static char *divide_by_10_conversion_fun(double value)
+{
 	static char buf[20];
 	
 	snprintf(buf, sizeof(buf), "%0.1f", value * 0.1);
+
 	return buf;
 }
 
@@ -453,12 +467,12 @@ info_lkp_t divide_by_10_conversion[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *kelvin_celsius_conversion_fun(long value) {
+static char *kelvin_celsius_conversion_fun(double value)
+{
 	static char buf[20];
 	
-	/* we should be working with doubles, not integers, but integers it
-	   is for now */
-	snprintf(buf, sizeof(buf), "%d", (int)(value - 273.15));
+	snprintf(buf, sizeof(buf), "%.1f", value - 273.15);
+
 	return buf;
 }
 
@@ -499,7 +513,7 @@ int instcmd(const char *cmdname, const char *extradata)
 	hid_info_t	*hidups_item;
 	const char	*val;
 	double		value;
-	
+
 	if (!strcasecmp(cmdname, "beeper.off")) {
 		/* compatibility mode for old command */
 		upslogx(LOG_WARNING,
@@ -519,10 +533,40 @@ int instcmd(const char *cmdname, const char *extradata)
 	/* Retrieve and check netvar & item_path */	
 	hidups_item = find_nut_info(cmdname);
 
-	/* Check validity of the found the item */
+	/* Check for fallback if not found */
 	if (hidups_item == NULL) {
+
+		if (!strcasecmp(cmdname, "load.on")) {
+			return instcmd("load.on.delay", "0");
+		}
+
+		if (!strcasecmp(cmdname, "load.off")) {
+			return instcmd("load.off.delay", "0");
+		}
+
+		if (!strcasecmp(cmdname, "shutdown.return")) {
+			int	ret;
+
+			ret = instcmd("load.on.delay", dstate_getinfo("ups.delay.start"));
+			if (ret != STAT_INSTCMD_HANDLED) {
+				return ret;
+			}
+
+			return instcmd("load.off.delay", dstate_getinfo("ups.delay.shutdown"));
+		}
+
+		if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+			int	ret;
+
+			ret = instcmd("load.on.delay", "-1");
+			if (ret != STAT_INSTCMD_HANDLED) {
+				return ret;
+			}
+
+			return instcmd("load.off.delay", dstate_getinfo("ups.delay.shutdown"));
+		}
+
 		upsdebugx(2, "instcmd: info element unavailable %s\n", cmdname);
-		/* TODO: manage items handled "manually" */
 		return STAT_INSTCMD_UNKNOWN;
 	}
 
@@ -561,7 +605,7 @@ int setvar(const char *varname, const char *val)
 	double		value;
 
 	upsdebugx(1, "setvar(%s, %s)", varname, val);
-	
+
 	/* retrieve and check netvar & item_path */	
 	hidups_item = find_nut_info(varname);
 	
@@ -610,30 +654,16 @@ int setvar(const char *varname, const char *val)
 
 void upsdrv_shutdown(void)
 {
-	char	ondelay[8], offdelay[8];
-	char	*val;
-
 	upsdebugx(1, "upsdrv_shutdown...");
 	
-	/* Retrieve user defined delay settings */
-	val = getval(HU_VAR_ONDELAY);
-	snprintf(ondelay, sizeof(ondelay), "%i", val ? atoi(val) : DEFAULT_ONDELAY);
-
-	val = getval(HU_VAR_OFFDELAY);
-	snprintf(offdelay, sizeof(offdelay), "%i", val ? atoi(val) : DEFAULT_OFFDELAY);
-
 	/* Try to shutdown with delay */
-	if (instcmd("shutdown.return", ondelay) != STAT_INSTCMD_HANDLED) {
-		upsdebugx(2, "Shutdown failed (setting ondelay)");
-	} else if (instcmd("shutdown.stayoff", offdelay) != STAT_INSTCMD_HANDLED) {
-		upsdebugx(2, "Shutdown failed (setting offdelay)");
-	} else {
+	if (instcmd("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
 		/* Shutdown successful */
 		return;
 	}
 
 	/* If the above doesn't work, try shutdown.reboot */
-	if (instcmd("shutdown.reboot", ondelay) == STAT_INSTCMD_HANDLED) {
+	if (instcmd("shutdown.reboot", NULL) == STAT_INSTCMD_HANDLED) {
 		/* Shutdown successful */
 		return;
 	}
@@ -643,7 +673,7 @@ void upsdrv_shutdown(void)
 
 void upsdrv_help(void)
 {
-  /* FIXME: to be completed */
+	/* FIXME: to be completed */
 }
 
 void upsdrv_makevartable(void) 
@@ -652,15 +682,13 @@ void upsdrv_makevartable(void)
 	
 	upsdebugx(1, "upsdrv_makevartable...");
 
-	snprintf(temp, sizeof(temp), "Set shutdown delay, in seconds (default=%d)",
-		DEFAULT_OFFDELAY);
+	snprintf(temp, sizeof(temp), "Set shutdown delay, in seconds (default=%s)", DEFAULT_OFFDELAY);
 	addvar(VAR_VALUE, HU_VAR_OFFDELAY, temp);
 	
-	snprintf(temp, sizeof(temp), "Set startup delay, in ten seconds units for MGE (default=%d)",
-		DEFAULT_ONDELAY);
+	snprintf(temp, sizeof(temp), "Set startup delay, in seconds (default=%s)", DEFAULT_ONDELAY);
 	addvar(VAR_VALUE, HU_VAR_ONDELAY, temp);
 	
-	snprintf(temp, sizeof(temp), "Set polling frequency, in seconds, to reduce data flow (default=%d).",
+	snprintf(temp, sizeof(temp), "Set polling frequency, in seconds, to reduce data flow (default=%d)",
 		DEFAULT_POLLFREQ);
 	addvar(VAR_VALUE, HU_VAR_POLLFREQ, temp);
 #ifndef SHUT_MODE
@@ -681,9 +709,12 @@ void upsdrv_banner(void)
 	printf("Network UPS Tools: %s %s - core %s (%s)\n\n",
 		comm_driver->name, comm_driver->version,
 		DRIVER_VERSION, UPS_VERSION);
+#ifdef SHUT_MODE /* newmge-shut is experimental */
+	experimental_driver = 1;
+#endif
 }
 
-#define	MAX_EVENT_NUM	16
+#define	MAX_EVENT_NUM	32
 
 void upsdrv_updateinfo(void) 
 {
@@ -749,7 +780,7 @@ void upsdrv_updateinfo(void)
 			/* Skip Input reports, if we don't use the Feature report */
 			item = find_hid_info(FindObject_with_Path(pDesc, &(event[i]->Path), ITEM_FEATURE));
 			if (!item) {
-				upsdebugx(1, "NUT doesn't use this HID object");
+				upsdebugx(3, "NUT doesn't use this HID object");
 				continue;
 			}
 
@@ -795,23 +826,9 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_initinfo(void)
 {
-	char	ondelay[8], offdelay[8];
 	char	*val;
 
 	upsdebugx(1, "upsdrv_initinfo...");
-
-	/* Retrieve user defined delay settings */
-	val = getval(HU_VAR_ONDELAY);
-	snprintf(ondelay, sizeof(ondelay), "%i", val ? atoi(val) : DEFAULT_ONDELAY);
-
-	val = getval(HU_VAR_OFFDELAY);
-	snprintf(offdelay, sizeof(offdelay), "%i", val ? atoi(val) : DEFAULT_OFFDELAY);
-
-	/* Abort if ondelay is too small */
-	if (atoi(ondelay) <= atoi(offdelay)) {
-		fatalx(EXIT_FAILURE, "%s (%s) must be greater than %s (%s)",
-			HU_VAR_ONDELAY, ondelay, HU_VAR_OFFDELAY, offdelay);
-	}
 
 	/* init polling frequency */
 	val = getval(HU_VAR_POLLFREQ);
@@ -820,26 +837,35 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("driver.parameter.pollfreq", "%d", pollfreq);
 
+	if (dstate_getinfo("ups.delay.shutdown") && dstate_getinfo("ups.delay.start")) {
+		/* Add defaults with a delay value of '0' (= immediate) */
+		dstate_addcmd("load.off");
+		dstate_addcmd("load.on");
+		/* Add composite instcmds (require setting multiple HID values) */
+		dstate_addcmd("shutdown.return");
+		dstate_addcmd("shutdown.stayoff");
+	}
+
+	time(&lastpoll);
+
 	/* install handlers */
 	upsh.setvar = setvar;
 	upsh.instcmd = instcmd;
-
-	time(&lastpoll);
 }
 
 void upsdrv_initups(void)
 {
 	int ret;
+	char *val;
 #ifdef SHUT_MODE
 	/*!
 	 * SHUT is a serial protocol, so it needs
-	 * the device path
+	 * only the device path
 	 */
 	upsdebugx(1, "upsdrv_initups...");
 
 	subdriver_matcher = device_path;
 #else
-	char *val;
 	char *regex_array[6];
 	matching_lkp_t	*key;
 
@@ -852,7 +878,7 @@ void upsdrv_initups(void)
 		fatalx(EXIT_FAILURE, "must specify \"vendorid\" when using \"explore\"");
 	}
 
-        /* process the UPS selection options */
+	/* process the UPS selection options */
 	regex_array[0] = getval("vendorid");
 	regex_array[1] = getval("productid");
 	regex_array[2] = getval("vendor");
@@ -904,6 +930,15 @@ void upsdrv_initups(void)
 
 	if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
 		fatalx(EXIT_FAILURE, "Can't initialize data from HID UPS");
+	}
+
+	/* Retrieve user defined delay settings */
+	if (dstate_getinfo("ups.delay.start") && (val = getval(HU_VAR_ONDELAY))) {
+		dstate_setinfo("ups.delay.start", val);
+	}
+
+	if (dstate_getinfo("ups.delay.shutdown") && (val = getval(HU_VAR_OFFDELAY))) {
+		dstate_setinfo("ups.delay.start", val);
 	}
 }
 
@@ -975,7 +1010,7 @@ static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf
 {
 	int i;
 	char *mfr = NULL, *model = NULL, *serial = NULL;
-#ifndef	SHUT_MODE
+#ifndef SHUT_MODE
 	int ret;
 #endif
 	upsdebugx(2, "Report Descriptor size = %d", rdlen);
@@ -1082,8 +1117,8 @@ static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf
 	USBFreeExactMatcher(exact_matcher);
 	ret = USBNewExactMatcher(&exact_matcher, hd);
 	if (ret) {
-	        upsdebug_with_errno(1, "USBNewExactMatcher()");
-	        return 0;
+		upsdebug_with_errno(1, "USBNewExactMatcher()");
+		return 0;
 	}
 
 	regex_matcher->next = exact_matcher;
@@ -1209,6 +1244,10 @@ static bool_t hid_ups_walk(walkmode_t mode)
 			/* Special case for handling server side variables */
 			if (item->hidflags & HU_FLAG_ABSENT) {
 
+				/* already set */
+				if (dstate_getinfo(item->info_type))
+					continue;
+
 				dstate_setinfo(item->info_type, item->dfl);
 				dstate_setflags(item->info_type, item->info_flags);
 
@@ -1284,7 +1323,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 
 		default:
 			/* Don't know what happened, try again later... */
-			upslog_with_errno(LOG_DEBUG, "HIDGetDataValue");
+			upsdebug_with_errno(2, "HIDGetDataValue");
 			continue;
 		}
 
@@ -1325,7 +1364,7 @@ static int reconnect_ups(void)
 	upsdebugx(4, "==================================================");
 
 	ret = comm_driver->open(&udev, &curDevice, subdriver_matcher,
-#ifdef	SHUT_MODE
+#ifdef SHUT_MODE
 		NULL);
 #else
 		(matching == NORMAL) ? NULL : &callback);
@@ -1371,6 +1410,12 @@ static void ups_alarm_set(void)
 	if (ups_status & STATUS(AWAITINGPOWER)) {
 		alarm_set("Awaiting power!");		/* awaiting power; Belkin, TrippLite */
 	}
+	if (ups_status & STATUS(BYPASSAUTO)) {
+		alarm_set("Automatic bypass mode!");
+	}
+	if (ups_status & STATUS(BYPASSMAN)) {
+		alarm_set("Manual bypass mode!");
+	}
 }
 
 /* Convert the local status information to NUT format and set NUT
@@ -1388,11 +1433,11 @@ static void ups_status_set(void)
 	if (ups_status & STATUS(ONLINE)) {
 		status_set("OL");		/* on line */
 	} else {
-		status_set("OB");               /* on battery */
+		status_set("OB");		/* on battery */
 	}
 	if ((ups_status & STATUS(DISCHRG)) &&
 		!(ups_status & STATUS(DEPLETED))) {
-		status_set("DISCHRG");	        /* discharging */
+		status_set("DISCHRG");		/* discharging */
 	}
 	if ((ups_status & STATUS(CHRG)) &&
 		!(ups_status & STATUS(FULLYCHARGED))) {
@@ -1411,13 +1456,13 @@ static void ups_status_set(void)
 		status_set("TRIM");		/* SmartTrim */
 	}
 	if (ups_status & STATUS(BOOST)) {
-		status_set("BOOST");	        /* SmartBoost */
+		status_set("BOOST");		/* SmartBoost */
 	}
-	if (ups_status & STATUS(BYPASS)) {
-		status_set("BYPASS");	        /* on bypass */   
+	if (ups_status & (STATUS(BYPASSAUTO) | STATUS(BYPASSMAN))) {
+		status_set("BYPASS");		/* on bypass */
 	}
 	if (ups_status & STATUS(OFF)) {
-		status_set("OFF");              /* ups is off */
+		status_set("OFF");		/* ups is off */
 	}
 	if (ups_status & STATUS(CAL)) {
 		status_set("CAL");		/* calibration */
@@ -1477,7 +1522,7 @@ static long hu_find_valinfo(info_lkp_t *hid2info, const char* value)
 
 		if (!(strcmp(info_lkp->nut_value, value))) {
 			upsdebugx(5, "hu_find_valinfo: found %s (value: %ld)\n",
-				  info_lkp->nut_value, info_lkp->hid_value);
+				info_lkp->nut_value, info_lkp->hid_value);
 	
 			return info_lkp->hid_value;
 		}
@@ -1497,9 +1542,8 @@ static char *hu_find_infoval(info_lkp_t *hid2info, const double value)
 	/* if a conversion function is defined,
 	 * use 'value' as argument for it */
 	if (hid2info->fun != NULL) {
-		nut_value = hid2info->fun((long)value);
-		upsdebugx(5, "hu_find_infoval: found %s (value: %ld)\n",
-			nut_value, (long)value);
+		nut_value = hid2info->fun(value);
+		upsdebugx(5, "hu_find_infoval: found %s (value: %g)\n", nut_value, value);
 		return nut_value;
 	}
 

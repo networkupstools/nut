@@ -37,9 +37,11 @@
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *belkin_firmware_conversion_fun(long value) {
+static char *belkin_firmware_conversion_fun(double value)
+{
 	static char buf[20];
-	snprintf(buf, sizeof(buf), "%ld", value >> 4);
+
+	snprintf(buf, sizeof(buf), "%ld", (long)value >> 4);
 	
 	return buf;
 }
@@ -48,10 +50,10 @@ static info_lkp_t belkin_firmware_conversion[] = {
 	{ 0, NULL, belkin_firmware_conversion_fun }
 };
 
-static char *belkin_upstype_conversion_fun(long value) {
-	switch (value & 0x0f) {
-	case 0: default:
-		return "online";
+static char *belkin_upstype_conversion_fun(double value)
+{
+	switch ((long)value & 0x0f)
+	{
 	case 1:
 		return "offline";
 	case 2:
@@ -62,6 +64,8 @@ static char *belkin_upstype_conversion_fun(long value) {
 		return "simple offline";
 	case 5:
 		return "simple line-interactive";
+	default:
+		return "online";
 	}
 }
 
@@ -69,14 +73,16 @@ static info_lkp_t belkin_upstype_conversion[] = {
 	{ 0, NULL, belkin_upstype_conversion_fun }
 };
 
-static char *belkin_sensitivity_conversion_fun(long value) {
-	switch (value) {
-	case 0: default:
-		return "normal";
+static char *belkin_sensitivity_conversion_fun(double value)
+{
+	switch ((long)value)
+	{
 	case 1:
 		return "reduced";
 	case 2:
 		return "low";
+	default:
+		return "normal";
 	}
 }
 
@@ -85,17 +91,18 @@ static info_lkp_t belkin_sensitivity_conversion[] = {
 };
 
 static info_lkp_t belkin_test_info[] = {
-  { 0, "No test initiated", NULL },
-  { 1, "Done and passed", NULL },
-  { 2, "Done and warning", NULL },
-  { 3, "Done and error", NULL },
-  { 4, "Aborted", NULL },
-  { 5, "In progress", NULL },
-  { 0, NULL, NULL }
+	{ 0, "No test initiated", NULL },
+	{ 1, "Done and passed", NULL },
+	{ 2, "Done and warning", NULL },
+	{ 3, "Done and error", NULL },
+	{ 4, "Aborted", NULL },
+	{ 5, "In progress", NULL },
+	{ 0, NULL, NULL }
 };
 
-static char *belkin_overload_conversion_fun(long value) {
-	if (value & 0x0010) {
+static char *belkin_overload_conversion_fun(double value)
+{
+	if ((long)value & 0x0010) {
 		return "overload";
 	} else {
 		return "!overload";
@@ -106,8 +113,9 @@ static info_lkp_t belkin_overload_conversion[] = {
 	{ 0, NULL, belkin_overload_conversion_fun }
 };
 
-static char *belkin_overheat_conversion_fun(long value) {
-	if (value & 0x0040) {
+static char *belkin_overheat_conversion_fun(double value)
+{
+	if ((long)value & 0x0040) {
 		return "overheat";
 	} else {
 		return "!overheat";
@@ -118,8 +126,9 @@ static info_lkp_t belkin_overheat_conversion[] = {
 	{ 0, NULL, belkin_overheat_conversion_fun }
 };
 
-static char *belkin_commfault_conversion_fun(long value) {
-	if (value & 0x0080) {
+static char *belkin_commfault_conversion_fun(double value)
+{
+	if ((long)value & 0x0080) {
 		return "commfault";
 	} else {
 		return "!commfault";
@@ -130,8 +139,9 @@ static info_lkp_t belkin_commfault_conversion[] = {
 	{ 0, NULL, belkin_commfault_conversion_fun }
 };
 
-static char *belkin_awaitingpower_conversion_fun(long value) {
-	if (value & 0x2000) {
+static char *belkin_awaitingpower_conversion_fun(double value)
+{
+	if ((long)value & 0x2000) {
 		return "awaitingpower";
 	} else {
 		return "!awaitingpower";
@@ -142,8 +152,9 @@ static info_lkp_t belkin_awaitingpower_conversion[] = {
 	{ 0, NULL, belkin_awaitingpower_conversion_fun }
 };
 
-static char *belkin_online_conversion_fun(long value) {
-	if (value & 0x0001) {
+static char *belkin_online_conversion_fun(double value)
+{
+	if ((long)value & 0x0001) {
 		return "!online";
 	} else {
 		return "online";
@@ -154,8 +165,9 @@ static info_lkp_t belkin_online_conversion[] = {
 	{ 0, NULL, belkin_online_conversion_fun }
 };
 
-static char *belkin_lowbatt_conversion_fun(long value) {
-	if (value & 0x04) {
+static char *belkin_lowbatt_conversion_fun(double value)
+{
+	if ((long)value & 0x0004) {
 		return "lowbatt";
 	} else {
 		return "!lowbatt";
@@ -166,8 +178,9 @@ static info_lkp_t belkin_lowbatt_conversion[] = {
 	{ 0, NULL, belkin_lowbatt_conversion_fun }
 };
 
-static char *belkin_depleted_conversion_fun(long value) {
-	if (value & 0x40) {
+static char *belkin_depleted_conversion_fun(double value)
+{
+	if ((long)value & 0x0040) {
 		return "depleted";
 	} else {
 		return "!depleted";
@@ -178,8 +191,9 @@ static info_lkp_t belkin_depleted_conversion[] = {
 	{ 0, NULL, belkin_depleted_conversion_fun }
 };
 
-static char *belkin_replacebatt_conversion_fun(long value) {
-	if (value & 0x80) {
+static char *belkin_replacebatt_conversion_fun(double value)
+{
+	if ((long)value & 0x0080) {
 		return "replacebatt";
 	} else {
 		return "!replacebatt";
@@ -280,9 +294,11 @@ static hid_info_t belkin_hid2nut[] = {
   { "output.frequency", 0, 0, "UPS.BELKINPowerState.BELKINOutput.BELKINFrequency", NULL, "%s", 0, divide_by_10_conversion },
   { "output.voltage", 0, 0, "UPS.BELKINPowerState.BELKINOutput.BELKINVoltage", NULL, "%s", 0, divide_by_10_conversion },
   { "ups.beeper.status", 0, 0, "UPS.BELKINControls.BELKINAudibleAlarmControl", NULL, "%s", 0, beeper_info },
-  { "ups.delay.start", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeStartup", NULL, "%.0f", 0, NULL },
-  { "ups.delay.reboot", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeReboot", NULL, "%.0f", 0, NULL },
-  { "ups.delay.shutdown", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeShutdown", NULL, "%.0f", 0, NULL },
+  { "ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.BELKINControls.BELKINDelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_FLAG_ABSENT, NULL },
+  { "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.BELKINControls.BELKINDelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_FLAG_ABSENT, NULL },
+  { "ups.timer.start", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeStartup", NULL, "%.0f", 0, NULL },
+  { "ups.timer.shutdown", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeShutdown", NULL, "%.0f", 0, NULL },
+  { "ups.timer.reboot", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeReboot", NULL, "%.0f", 0, NULL },
   { "ups.firmware", 0, 0, "UPS.BELKINDevice.BELKINUPSType", NULL, "%s", 0, belkin_firmware_conversion },
   { "ups.load", 0, 0, "UPS.BELKINPowerState.BELKINOutput.BELKINPercentLoad", NULL, "%.0f", 0, NULL },
   { "ups.load.high", 0, 0, "UPS.BELKINConfig.BELKINConfigOverloadTransfer", NULL, "%.0f", 0, NULL },
@@ -325,10 +341,10 @@ static hid_info_t belkin_hid2nut[] = {
   { "beeper.mute", 0, 0, "UPS.BELKINControls.BELKINAudibleAlarmControl", NULL, "3", HU_TYPE_CMD, NULL },
   { "load.off", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeShutdown", NULL, "1", HU_TYPE_CMD, NULL },
   { "load.on", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeStartup", NULL, "1", HU_TYPE_CMD, NULL },
-  { "shutdown.stayoff", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeShutdown", NULL, "20", HU_TYPE_CMD, NULL },
-  { "shutdown.return", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeStartup", NULL, "30", HU_TYPE_CMD, NULL },
-  { "shutdown.reboot", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL },
+  { "load.off.delay", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_TYPE_CMD, NULL },
+  { "load.on.delay", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_TYPE_CMD, NULL },
   { "shutdown.stop", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeShutdown", NULL, "-1", HU_TYPE_CMD, NULL },
+  { "shutdown.reboot", 0, 0, "UPS.BELKINControls.BELKINDelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL },
 
   /* Note: on my Belkin UPS, there is no way to implement
      shutdown.return or load.on, even though they should exist in

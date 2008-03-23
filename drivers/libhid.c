@@ -49,7 +49,7 @@
 /* support functions */
 static double logical_to_physical(HIDData_t *Data, long logical);
 static long physical_to_logical(HIDData_t *Data, double physical);
-static const char *hid_lookup_path(const long usage, usage_tables_t *utab);
+static const char *hid_lookup_path(const HIDNode_t usage, usage_tables_t *utab);
 static long hid_lookup_usage(const char *name, usage_tables_t *utab);
 static int string_to_path(const char *string, HIDPath_t *path, usage_tables_t *utab);
 static int path_to_string(char *string, size_t size, const HIDPath_t *path, usage_tables_t *utab);
@@ -472,16 +472,13 @@ int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventsize)
 
 		pData = &pDesc->item[i];
 
-		if (pData->Type != ITEM_INPUT)
-			continue;
-
+		/* Variable not part of this report */
 		if (pData->ReportID != buf[0])
 			continue;
 
-		/* HID Path ends in 0x00000000, so this value should not be used */
-		if (pData->Path.Node[pData->Path.Size-1] == 0x00000000) {
+		/* Not an input report */
+		if (pData->Type != ITEM_INPUT)
 			continue;
-		}
 
 		/* maximum number of events reached? */
 		if (itemCount >= eventsize) {
@@ -702,7 +699,7 @@ static long hid_lookup_usage(const char *name, usage_tables_t *utab)
 }
 
 /* usage conversion numeric -> string */
-static const char *hid_lookup_path(const long usage, usage_tables_t *utab)
+static const char *hid_lookup_path(const HIDNode_t usage, usage_tables_t *utab)
 {
 	int i, j;
 
