@@ -472,3 +472,51 @@ char *rtrim(char *in, const char sep)
 	
 	return in;
 }
+
+/* Read up to buflen bytes from fd and return the number of bytes
+   read. If no data is available within d_sec + d_usec, return 0.
+   On error, a value < 0 is returned (errno indicates error). */
+int select_read(const int fd, void *buf, const size_t buflen, const long d_sec, const long d_usec)
+{
+	int		ret;
+	fd_set		fds;
+	struct timeval	tv;
+
+	FD_ZERO(&fds);
+	FD_SET(fd, &fds);
+
+	tv.tv_sec = d_sec;
+	tv.tv_usec = d_usec;
+
+	ret = select(fd + 1, &fds, NULL, NULL, &tv);
+
+	if (ret < 1) {
+		return ret;
+	}
+
+	return read(fd, buf, buflen);
+}
+
+/* Write up to buflen bytes to fd and return the number of bytes
+   written. If no data is available within d_sec + d_usec, return 0.
+   On error, a value < 0 is returned (errno indicates error). */
+int select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec)
+{
+	int		ret;
+	fd_set		fds;
+	struct timeval	tv;
+
+	FD_ZERO(&fds);
+	FD_SET(fd, &fds);
+
+	tv.tv_sec = d_sec;
+	tv.tv_usec = d_usec;
+
+	ret = select(fd + 1, NULL, &fds, NULL, &tv);
+
+	if (ret < 1) {
+		return ret;
+	}
+
+	return write(fd, buf, buflen);
+}

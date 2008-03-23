@@ -112,6 +112,9 @@ char *xstrdup(const char *string);
 
 char *rtrim(char *in, const char sep);
 
+int select_read(const int fd, void *buf, const size_t buflen, const long d_sec, const long d_usec);
+int select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec);
+
 /* Buffer sizes used for various functions */
 #define SMALLBUF	512
 #define LARGEBUF	1024

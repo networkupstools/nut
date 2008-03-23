@@ -1,3 +1,10 @@
+Sun Mar 23 20:20:57 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - clients/upsclient.c: handle all communications with the server
+   through upscli_sendline/readline to prevent blocking on I/O
+   calls when the server is not responding (while still allowing
+   it a couple of seconds to reply)
+
 Sun Mar 23 20:00:29 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  * drivers/usbhid-ups:
