@@ -311,41 +311,17 @@ int ser_send_buf_pace(int fd, unsigned long d_usec, const void *buf,
 	return sent;
 }
 
-static int get_buf(int fd, void *buf, size_t buflen, long d_sec, long d_usec)
+int ser_get_char(int fd, void *ch, long d_sec, long d_usec)
 {
 	int	ret;
-	fd_set	rfds;
-	struct	timeval	tv; 
 
-	FD_ZERO(&rfds);
-	FD_SET(fd, &rfds);
+	ret = select_read(fd, ch, 1, d_sec, d_usec);
 
-	tv.tv_sec = d_sec;
-	tv.tv_usec = d_usec;
-
-	ret = select(fd + 1, &rfds, NULL, NULL, &tv);
-
-	if (ret == -1) {
-		if (errno != EINTR) {
-			upslog_with_errno(LOG_ERR, "select fd %d", fd);
-		}
+	if (ret < 1) {
 		return -1;
 	}
 
-	if (ret == 0)
-		return -1;	/* timeout */
-
-	ret = read(fd, buf, buflen);
-
-	if (ret < 1)
-		return -1;	/* read error */
-
 	return ret;
-}
-
-int ser_get_char(int fd, void *ch, long d_sec, long d_usec)
-{
-	return get_buf(fd, ch, 1, d_sec, d_usec);
 }
 
 /* keep reading until buflen bytes are received or a timeout occurs */
@@ -358,10 +334,10 @@ int ser_get_buf_len(int fd, void *buf, size_t buflen, long d_sec, long d_usec)
 
 	for (recv = 0; recv < buflen; recv += ret) {
 
-		ret = get_buf(fd, &((char *)buf)[recv], buflen - recv, d_sec, d_usec);
+		ret = select_read(fd, &((char *)buf)[recv], buflen - recv, d_sec, d_usec);
 
 		if (ret < 1) {
-			return ret;
+			return -1;
 		}
 	}
 
@@ -383,7 +359,7 @@ int ser_get_line_alert(int fd, void *buf, size_t buflen, char endchar,
 	maxcount = buflen - 1;		/* for trailing \0 */
 
 	while (count < maxcount) {
-		ret = get_buf(fd, tmp, sizeof(tmp), d_sec, d_usec);
+		ret = select_read(fd, tmp, sizeof(tmp), d_sec, d_usec);
 
 		if (ret < 1)
 			return -1;

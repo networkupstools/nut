@@ -159,8 +159,6 @@ const char *upscli_strerror(UPSCONN_t *ups)
 static int net_read(UPSCONN_t *ups, char *buf, size_t buflen)
 {
 	int		ret;
-	fd_set		rfds;
-	struct timeval	tv;
 
 #ifdef HAVE_SSL
 	if (ups->ssl) {
@@ -174,26 +172,17 @@ static int net_read(UPSCONN_t *ups, char *buf, size_t buflen)
 	}
 #endif
 
-	FD_ZERO(&rfds);
-	FD_SET(ups->fd, &rfds);
+	ret = select_read(ups->fd, buf, buflen, 2, 0);
 
-	tv.tv_sec = 2;
-	tv.tv_usec = 0;
-
-	ret = select(ups->fd + 1, &rfds, NULL, NULL, &tv);
-
-	/* not ready for reading, server disconnected? */
-	if (ret < 1) {
-		ups->upserror = UPSCLI_ERR_SRVDISC;
-		return ret;
-	}
-
-	ret = read(ups->fd, buf, buflen);
-
-	/* ready for reading, but no data can be read */
+	/* error reading data, server disconnected? */
 	if (ret < 0) {
 		ups->upserror = UPSCLI_ERR_READ;
 		ups->syserrno = errno;
+	}
+
+	/* no data available, server disconnected? */
+	if (ret == 0) {
+		ups->upserror = UPSCLI_ERR_SRVDISC;
 	}
 
 	return ret;
@@ -203,8 +192,6 @@ static int net_read(UPSCONN_t *ups, char *buf, size_t buflen)
 static int net_write(UPSCONN_t *ups, const char *buf, size_t buflen)
 {
 	int		ret;
-	fd_set		wfds;
-	struct timeval	tv;
 
 #ifdef HAVE_SSL
 	if (ups->ssl) {
@@ -218,26 +205,17 @@ static int net_write(UPSCONN_t *ups, const char *buf, size_t buflen)
 	}
 #endif
 
-	FD_ZERO(&wfds);
-	FD_SET(ups->fd, &wfds);
+	ret = select_write(ups->fd, buf, buflen, 2, 0);
 
-	tv.tv_sec = 2;
-	tv.tv_usec = 0;
-
-	ret = select(ups->fd + 1, NULL, &wfds, NULL, &tv);
-
-	/* not ready for writing, server disconnected? */
-	if (ret < 1) {
-		ups->upserror = UPSCLI_ERR_SRVDISC;
-		return ret;
-	}
-
-	ret = write(ups->fd, buf, buflen);
-
-	/* ready for writing, but no data can be written */
+	/* error writing data, server disconnected? */
 	if (ret < 0) {
 		ups->upserror = UPSCLI_ERR_WRITE;
 		ups->syserrno = errno;
+	}
+
+	/* not ready for writing, server disconnected? */
+	if (ret == 0) {
+		ups->upserror = UPSCLI_ERR_SRVDISC;
 	}
 
 	return ret;

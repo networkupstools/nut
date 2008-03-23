@@ -1,3 +1,10 @@
+Sun Mar 23 20:10:15 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - common/common.c,include/common.h: added select_read/write that
+   combine a call to select() and read()/write() so that we don't
+   need to duplicate this code
+ - clients/upsclient.c,drivers/serial.c: use the above
+
 Sun Mar 23 17:00:53 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/dstate.c: revert r1383 that horribly broke the drivers
