@@ -356,6 +356,7 @@ static void delclient(ctype_t *dclient)
 				free(tmp->loginups);
 			}
 
+			free(tmp->username);
 			free(tmp->password);
 
 #ifdef HAVE_SSL
