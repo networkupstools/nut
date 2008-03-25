@@ -1,6 +1,8 @@
 /* upstype.h - internal UPS tracking structure details
 
-   Copyright (C) 2003  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+	2003	Russell Kroll <rkroll@exploits.org>
+	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -23,7 +25,7 @@
 #include "parseconf.h"
 
 /* structure for the linked list of each UPS that we track */
-typedef struct {
+typedef struct upstype_s {
 	char			*name;
 	char			*fn;
 	char			*desc;
@@ -36,15 +38,17 @@ typedef struct {
 	time_t			last_ping;
 	time_t			last_connfail;
 	PCONF_CTX_t		sock_ctx;
-	struct	st_tree_t	*inforoot;
-	struct	cmdlist_t	*cmdlist;
+	struct st_tree_t	*inforoot;
+	struct cmdlist_t	*cmdlist;
 
 	int	numlogins;
 	int	fsd;		/* forced shutdown in effect? */
 
 	int	retain;
-	void	*next;
-}	upstype_t;
+	
+	struct upstype_s	*next;
+
+} upstype_t;
 
 extern upstype_t	*firstups;
 

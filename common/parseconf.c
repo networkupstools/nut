@@ -383,13 +383,11 @@ int pconf_init(PCONF_CTX_t *ctx, void errhandler(const char *))
 	ctx->argsize = NULL;
 
 	ctx->wordbufsize = 16;
-	ctx->wordbuf = malloc(ctx->wordbufsize);
+	ctx->wordbuf = calloc(1, ctx->wordbufsize);
 
 	if (!ctx->wordbuf)
 		pconf_fatal(ctx, "malloc wordbuf failed");
-
-	memset(ctx->wordbuf, '\0', ctx->wordbufsize);
-	ctx->wordptr = ctx->wordbuf;		
+	ctx->wordptr = ctx->wordbuf;
 
 	ctx->errhandler = errhandler;
 	ctx->magic = PCONF_CTX_t_MAGIC;

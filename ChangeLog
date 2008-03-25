@@ -1,3 +1,15 @@
+Tue Mar 25 19:08:11 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ * server/upsd:
+   - improved performance for servers handling many clients by using
+     a doubly (instead of a singly) linked list for the clients (so
+     that we don't have to traverse the whole list if we want to add
+     or remove a client)
+   - let the parser deal with fragmented reads from the server and
+     the clients (don't duplicate this in the server), just feed it
+     with the raw data
+   - cleaned up code
+
 Tue Mar 25 18:47:41 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - clients/upsclient.c: performance improvement

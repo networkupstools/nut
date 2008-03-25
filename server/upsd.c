@@ -1,6 +1,8 @@
 /* upsd.c - watches ups state files and answers queries 
 
-   Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+	1999	Russell Kroll <rkroll@exploits.org>
+	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -61,6 +63,7 @@
 	/* everything else */
 
 static ctype_t	*firstclient = NULL;
+/* static ctype_t	*lastclient = NULL; */
 
 	/* default is to listen on all local interfaces */
 static stype_t	*firstaddr = NULL;
@@ -95,10 +98,12 @@ static	char	pidfn[SMALLBUF];
 static	int	reload_flag = 0, exit_flag = 0;
 
 #ifdef	HAVE_IPV6
-static const char *inet_ntopW (struct sockaddr_storage *s) {
+static const char *inet_ntopW (struct sockaddr_storage *s)
+{
 	static char str[40];
 
-	switch (s->ss_family) {
+	switch (s->ss_family)
+	{
 	case AF_INET:
 		return inet_ntop (AF_INET, &(((struct sockaddr_in *)s)->sin_addr), str, 16);
 	case AF_INET6:
@@ -119,7 +124,7 @@ upstype_t *get_ups_ptr(const char *name)
 		return NULL;
 	}
 
-	for (tmp = firstups; tmp != NULL; tmp = tmp->next) {
+	for (tmp = firstups; tmp; tmp = tmp->next) {
 		if (!strcasecmp(tmp->name, name)) {
 			return tmp;
 		}
@@ -148,125 +153,93 @@ static void ups_data_ok(upstype_t *ups)
 		return;
 	}
 
-	upslogx(LOG_NOTICE, "UPS [%s] data is no longer stale", ups->name);
 	ups->stale = 0;
-}
 
-/* make sure this UPS is connected and has fresh data */
-static void check_ups(upstype_t *ups)
-{
-	/* sanity checks */
-	if ((!ups) || (!ups->fn)) {
-		return;
-	}
-
-	/* see if we need to (re)connect to the socket */
-	if (ups->sock_fd == -1) {
-		ups->sock_fd = sstate_connect(ups);
-	}
-
-	/* throw some warnings if it's not feeding us data any more */
-	if (sstate_dead(ups, maxage)) {
-		ups_data_stale(ups);
-	} else {
-		ups_data_ok(ups);
-	}
+	upslogx(LOG_NOTICE, "UPS [%s] data is no longer stale", ups->name);
 }
 
 /* add another listening address */
 void listen_add(const char *addr, const char *port)
 {
-	stype_t	*stmp, *last;
+	stype_t	*server;
 
 	/* don't change listening addresses on reload */
 	if (reload_flag) {
 		return;
 	}
 
-	stmp = last = firstaddr;
-
-	/* find end of linked list */
-	while (stmp != NULL) {
-		last = stmp;
-		stmp = stmp->next;
-	}
-
 	/* grab some memory and add the info */
-	stmp = xmalloc(sizeof(stype_t));
-	stmp->addr = xstrdup(addr);
-	stmp->port = xstrdup(port);
-	stmp->sock_fd = -1;
-	stmp->next = NULL;
+	server = xcalloc(1, sizeof(*server));
+	server->addr = xstrdup(addr);
+	server->port = xstrdup(port);
+	server->sock_fd = -1;
+	server->next = firstaddr;
 
-	if (last == NULL) {
-		firstaddr = stmp;
-	} else {
-		last->next = stmp;
-	}
+	firstaddr = server;
 
-	upsdebugx(3, "listen_add: added %s:%s", stmp->addr, stmp->port);
+	upsdebugx(3, "listen_add: added %s:%s", server->addr, server->port);
 }
 
 /* create a listening socket for tcp connections */
-static void setuptcp(stype_t *serv)
+static void setuptcp(stype_t *server)
 {
 #ifndef	HAVE_IPV6
 	struct hostent		*host;
-	struct sockaddr_in	server;
+	struct sockaddr_in	sockin;
 	int	res, one = 1;
 
-	host = gethostbyname(serv->addr);
+	host = gethostbyname(server->addr);
 
-	if (host == NULL) {
+	if (!host) {
 		struct  in_addr	listenaddr;
 
-		if (!inet_aton(serv->addr, &listenaddr)) {
+		if (!inet_aton(server->addr, &listenaddr)) {
 			fatal_with_errno(EXIT_FAILURE, "inet_aton");
 		}
 
 		host = gethostbyaddr(&listenaddr, sizeof(listenaddr), AF_INET);
 
-		if (host == NULL) {
+		if (!host) {
 			fatal_with_errno(EXIT_FAILURE, "gethostbyaddr");
 		}
 	}
 
-	if ((serv->sock_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+	if ((server->sock_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		fatal_with_errno(EXIT_FAILURE, "socket");
 	}
 
-	res = setsockopt(serv->sock_fd, SOL_SOCKET, SO_REUSEADDR, (void *) &one, sizeof(one));
+	res = setsockopt(server->sock_fd, SOL_SOCKET, SO_REUSEADDR, (void *) &one, sizeof(one));
 
 	if (res != 0) {
 		fatal_with_errno(EXIT_FAILURE, "setsockopt(SO_REUSEADDR)");
 	}
 
-	memset(&server, '\0', sizeof(server));
-	server.sin_family = AF_INET;
-	server.sin_port = htons(atoi(serv->port));
+	memset(&sockin, '\0', sizeof(sockin));
+	sockin.sin_family = AF_INET;
+	sockin.sin_port = htons(atoi(server->port));
 
-	memcpy(&server.sin_addr, host->h_addr, host->h_length);
+	memcpy(&sockin.sin_addr, host->h_addr, host->h_length);
 
-	if (bind(serv->sock_fd, (struct sockaddr *) &server, sizeof(server)) == -1) {
-		fatal_with_errno(EXIT_FAILURE, "Can't bind TCP port %s", serv->port);
+	if (bind(server->sock_fd, (struct sockaddr *) &sockin, sizeof(sockin)) == -1) {
+		fatal_with_errno(EXIT_FAILURE, "Can't bind TCP port %s", server->port);
 	}
 
-	if ((res = fcntl(serv->sock_fd, F_GETFL, 0)) == -1) {
+	if ((res = fcntl(server->sock_fd, F_GETFL, 0)) == -1) {
 		fatal_with_errno(EXIT_FAILURE, "fcntl(get)");
 	}
 
-	if (fcntl(serv->sock_fd, F_SETFL, res | O_NDELAY) == -1) {
+	if (fcntl(server->sock_fd, F_SETFL, res | O_NDELAY) == -1) {
 		fatal_with_errno(EXIT_FAILURE, "fcntl(set)");
 	}
 
-	if (listen(serv->sock_fd, 16)) {
+	if (listen(server->sock_fd, 16)) {
 		fatal_with_errno(EXIT_FAILURE, "listen");
 	}
 #else
 	struct addrinfo		hints, *res, *ai;
 	int	v = 0, one = 1;
 
-	upsdebugx(3, "setuptcp: try to bind to %s port %s", serv->addr, serv->port);
+	upsdebugx(3, "setuptcp: try to bind to %s port %s", server->addr, server->port);
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_flags		= AI_PASSIVE;
@@ -274,7 +247,7 @@ static void setuptcp(stype_t *serv)
 	hints.ai_socktype	= SOCK_STREAM;
 	hints.ai_protocol	= IPPROTO_TCP;
 
-        if ((v = getaddrinfo(serv->addr, serv->port, &hints, &res)) != 0) {
+        if ((v = getaddrinfo(server->addr, server->port, &hints, &res)) != 0) {
 		if (v == EAI_SYSTEM) {
                         fatal_with_errno(EXIT_FAILURE, "getaddrinfo");
 		}
@@ -282,7 +255,7 @@ static void setuptcp(stype_t *serv)
                 fatalx(EXIT_FAILURE, "getaddrinfo: %s", gai_strerror(v));
         }
 
-       for (ai = res; ai != NULL; ai = ai->ai_next) {
+       for (ai = res; ai; ai = ai->ai_next) {
 		int sock_fd;
 
 		if ((sock_fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol)) < 0) {
@@ -314,7 +287,7 @@ static void setuptcp(stype_t *serv)
 			continue;
 		}
 
-		serv->sock_fd = sock_fd;
+		server->sock_fd = sock_fd;
 		break;
 	}
 
@@ -322,10 +295,10 @@ static void setuptcp(stype_t *serv)
 #endif
 
 	/* don't fail silently */
-	if (serv->sock_fd < 0) {
-		fatalx(EXIT_FAILURE, "not listening on %s port %s", serv->addr, serv->port);
+	if (server->sock_fd < 0) {
+		fatalx(EXIT_FAILURE, "not listening on %s port %s", server->addr, server->port);
 	} else {
-		upslogx(LOG_INFO, "listening on %s port %s", serv->addr, serv->port);
+		upslogx(LOG_INFO, "listening on %s port %s", server->addr, server->port);
 	}
 
 	return;
@@ -338,7 +311,7 @@ static void declogins(const char *upsname)
 
 	ups = get_ups_ptr(upsname);
 
-	if (ups == NULL) {
+	if (!ups) {
 		upslogx(LOG_INFO, "Tried to decrement invalid ups name (%s)", upsname);
 		return;
 	}
@@ -351,55 +324,46 @@ static void declogins(const char *upsname)
 }
 
 /* disconnect a client connection and free all related memory */
-static void delclient(ctype_t *dclient)
+static void client_disconnect(ctype_t *client)
 {
-	ctype_t	*tmp, *last;
-
-	if (dclient == NULL) {
+	if (!client) {
 		return;
 	}
 
-	last = NULL;
-	tmp = firstclient;
+	shutdown(client->sock_fd, 2);
+	close(client->sock_fd);
 
-	while (tmp != NULL) {
-		if (tmp == dclient) {		/* found it */
-			shutdown(dclient->fd, 2);
-			close(dclient->fd);
-
-			free(tmp->addr);
-
-			if (tmp->loginups != NULL) {
-				declogins(tmp->loginups);
-				free(tmp->loginups);
-			}
-
-			free(tmp->password);
-
-#ifdef HAVE_SSL
-			if (tmp->ssl) {
-				SSL_free(tmp->ssl);
-			}
-#endif
-
-			pconf_finish(&tmp->ctx);
-
-			if (last == NULL) {	/* deleting first entry */
-				firstclient = tmp->next;
-			} else {
-				last->next = tmp->next;
-			}
-
-			free(tmp);
-			return;
-		}
-
-		last = tmp;
-		tmp = tmp->next;
+	if (client->loginups) {
+		declogins(client->loginups);
 	}
 
-	/* not found?! */
-	upslogx(LOG_WARNING, "Tried to delete client struct that doesn't exist!");
+#ifdef HAVE_SSL
+	if (client->ssl) {
+		SSL_free(client->ssl);
+	}
+#endif
+
+	pconf_finish(&client->ctx);
+
+	if (client->prev) {
+		client->prev->next = client->next;
+	} else {
+		/* deleting first entry */
+		firstclient = client->next;
+	}
+
+	if (client->next) {
+		client->next->prev = client->prev;
+	} else {
+		/* deleting last entry */
+		/* lastclient = client->prev; */
+	}
+
+	free(client->addr);
+	free(client->loginups);
+	free(client->password);
+	free(client->username);
+	free(client);
 
 	return;
 }
@@ -428,10 +392,10 @@ int sendback(ctype_t *client, const char *fmt, ...)
 	if (client->ssl) {
 		res = ssl_write(client, ans, len);
 	} else {
-		res = write(client->fd, ans, len);
+		res = write(client->sock_fd, ans, len);
 	}
 
-	upsdebugx(2, "write: [destfd=%d] [len=%d] [%s]", client->fd, len, rtrim(ans, '\n'));
+	upsdebugx(2, "write: [destfd=%d] [len=%d] [%s]", client->sock_fd, len, rtrim(ans, '\n'));
 
 	if (len != res) {
 		upslog_with_errno(LOG_NOTICE, "write() failed for %s", client->addr);
@@ -457,25 +421,21 @@ int send_err(ctype_t *client, const char *errtype)
 /* disconnect anyone logged into this UPS */
 void kick_login_clients(const char *upsname)
 {
-	ctype_t   *tmp, *next;
+	ctype_t   *client, *cnext;
 
-	tmp = firstclient;
+	for (client = firstclient; client; client = cnext) {
 
-	while (tmp) {
-		next = tmp->next;
+		cnext = client->next;
 
 		/* if it's not logged in, don't check it */
-		if (!tmp->loginups) {
-			tmp = next;
+		if (!client->loginups) {
 			continue;
 		}
 
-		if (!strcmp(tmp->loginups, upsname)) {
-			upslogx(LOG_INFO, "Kicking client %s (was on UPS [%s])\n", tmp->addr, upsname);
-			delclient(tmp);
+		if (!strcmp(client->loginups, upsname)) {
+			upslogx(LOG_INFO, "Kicking client %s (was on UPS [%s])\n", client->addr, upsname);
+			client_disconnect(client);
 		}
-
-		tmp = next;
 	}
 }
 
@@ -501,6 +461,7 @@ static void check_command(int cmdnum, ctype_t *client, int numarg,
 	const char **arg)
 {
 	if (netcmds[cmdnum].flags & FLAG_USER) {
+
 		if (!client->username) {
 			send_err(client, NUT_ERR_USERNAME_REQUIRED);
 			return;
@@ -521,35 +482,15 @@ static void parse_net(ctype_t *client)
 {
 	int	i;
 
-	/* paranoia */
-	client->rq[client->rqpos] = '\0';
-
-	/* by this point we should always have a usable line */
-	if (pconf_line(&client->ctx, client->rq) != 1) {
-
-		/* shouldn't happen */
-		upslogx(LOG_WARNING, "pconf_line couldn't handle the input");
-		send_err(client, NUT_ERR_UNKNOWN_COMMAND);
-		return;
-	}
-
-	if (pconf_parse_error(&client->ctx)) {
-		upsdebugx(4, "parse error on net read");
-		send_err(client, NUT_ERR_UNKNOWN_COMMAND);
-		return;
-	}
-
 	/* shouldn't happen */
 	if (client->ctx.numargs < 1) {
 		send_err(client, NUT_ERR_UNKNOWN_COMMAND);
 		return;
 	}
 
-	for (i = 0; netcmds[i].name != NULL; i++) {
+	for (i = 0; netcmds[i].name; i++) {
 		if (!strcasecmp(netcmds[i].name, client->ctx.arglist[0])) {
-			check_command(i, client, client->ctx.numargs, 
-			(const char **) client->ctx.arglist);
-
+			check_command(i, client, client->ctx.numargs, (const char **) client->ctx.arglist);
 			return;
 		}
 	}
@@ -559,112 +500,95 @@ static void parse_net(ctype_t *client)
 	send_err(client, NUT_ERR_UNKNOWN_COMMAND);
 }
 
-/* scan the list of UPSes for sanity */
-static void check_every_ups(void)
-{
-	upstype_t *ups;
-
-	ups = firstups;
-
-	while (ups != NULL) {
-		check_ups(ups);
-		ups = ups->next;
-	}
-}
-
 /* answer incoming tcp connections */
-static void answertcp(stype_t *serv)
-#ifndef	HAVE_IPV6
+static void client_connect(stype_t *server)
 {
+#ifndef	HAVE_IPV6
 	struct	sockaddr_in csock;
 #else
-{
 	struct	sockaddr_storage csock;
 #endif
-	int		acc;
-	ctype_t		*tmp, *last;
 	socklen_t	clen;
+	int		fd;
+	ctype_t		*client;
 
 	clen = sizeof(csock);
-	acc = accept(serv->sock_fd, (struct sockaddr *) &csock, &clen);
+	fd = accept(server->sock_fd, (struct sockaddr *) &csock, &clen);
 
-	if (acc < 0) {
+	if (fd < 0) {
 		return;
 	}
 
-	last = tmp = firstclient;
+	client = xcalloc(1, sizeof(*client));
 
-	while (tmp != NULL) {
-		last = tmp;
-		tmp = tmp->next;
-	}
-
-	tmp = xcalloc(1, sizeof(*tmp));
-
-	tmp->fd = acc;
+	client->sock_fd = fd;
 
 #ifndef	HAVE_IPV6
-	tmp->addr = xstrdup(inet_ntoa(csock.sin_addr));
+	client->addr = xstrdup(inet_ntoa(csock.sin_addr));
 #else
-	tmp->addr = xstrdup(inet_ntopW(&csock));
+	client->addr = xstrdup(inet_ntopW(&csock));
 #endif
 
-	pconf_init(&tmp->ctx, NULL);
+	pconf_init(&client->ctx, NULL);
 
-	if (last == NULL) {
- 		firstclient = tmp;
-	} else {
-		last->next = tmp;
+	if (firstclient) {
+		firstclient->prev = client;
+		client->next = firstclient;
 	}
 
-	upslogx(LOG_DEBUG, "Connection from %s", tmp->addr);
+	firstclient = client;
+
+/*
+	if (lastclient) {
+		client->prev = lastclient;
+		lastclient->next = client;
+	}
+
+	lastclient = client;
+ */
+	upslogx(LOG_DEBUG, "Connection from %s", client->addr);
 }
 
 /* read tcp messages and handle them */
-static void readtcp(ctype_t *client)
+static void client_readline(ctype_t *client)
 {
 	char	buf[SMALLBUF];
 	int	i, ret;
 
-	memset(buf, '\0', sizeof(buf));
-
 	if (client->ssl) {
 		ret = ssl_read(client, buf, sizeof(buf));
 	} else {
-		ret = read(client->fd, buf, sizeof(buf));
+		ret = read(client->sock_fd, buf, sizeof(buf));
 	}
 
 	if (ret < 1) {
 		upslogx(LOG_INFO, "Host %s disconnected (read failure)", client->addr);
-		delclient(client);
+		client_disconnect(client);
 		return;
 	}
 
-	/* if an overflow will happen, then clear the queue */
-	if ((ret + client->rqpos) >= sizeof(client->rq)) {
-		memset(client->rq, '\0', sizeof(client->rq));
-		client->rqpos = 0;
-	}
-
 	/* fragment handling code */
-
 	for (i = 0; i < ret; i++) {
+
 		/* add to the receive queue one by one */
-		client->rq[client->rqpos++] = buf[i];
-
-		/* parse on linefeed ("blah blah\n") */
-		if (buf[i] == 10) {	/* LF */
+		switch (pconf_char(&client->ctx, buf[i]))
+		{
+		case 1:
 			parse_net(client);
-
 			/* bail out if the connection closed in parse_net */
 			if (client->delete) {
-				delclient(client);
+				client_disconnect(client);
 				return;
 			}
-			
-			/* reset queue */
-			client->rqpos = 0;
-			memset(client->rq, '\0', sizeof(client->rq));
+			continue;
+
+		case 0:
+			continue;	/* haven't gotten a line yet */
+
+		default:
+			/* parse error */
+			upslogx(LOG_NOTICE, "Parse error on sock: %s", client->ctx.errmsg);
+			return;
 		}
 	}
 
@@ -673,10 +597,10 @@ static void readtcp(ctype_t *client)
 
 void server_load(void)
 {
-	stype_t	*serv;
+	stype_t	*server;
 
 	/* default behaviour if no LISTEN addres has been specified */
-	if (firstaddr == NULL) {
+	if (!firstaddr) {
 #ifdef	HAVE_IPV6
 		if (opt_af != AF_INET) {
 			listen_add("::1", string_const(PORT));
@@ -690,55 +614,47 @@ void server_load(void)
 #endif
 	}
 
-	for (serv = firstaddr; serv != NULL; serv = serv->next) {
-		setuptcp(serv);
+	for (server = firstaddr; server; server = server->next) {
+		setuptcp(server);
 	}
 }
 
 void server_free(void)
 {
-	stype_t	*stmp, *snext;
+	stype_t	*server, *snext;
 
 	/* cleanup server fds */
-	stmp = firstaddr;
+	for (server = firstaddr; server; server = snext) {
+		snext = server->next;
 
-	while (stmp) {
-		snext = stmp->next;
+		if (server->sock_fd != -1) {
+			close(server->sock_fd);
+		}
 
-		if (stmp->sock_fd != -1)
-			close(stmp->sock_fd);
-
-		free(stmp->addr);
-		free(stmp->port);
-		free(stmp);
-
-		stmp = snext;
+		free(server->addr);
+		free(server->port);
+		free(server);
 	}
 
 	firstaddr = NULL;
 }
 
-static void upsd_cleanup(void)
+static void client_free(void)
 {
-	ctype_t	*tmpcli, *tmpnext;
-	upstype_t	*ups, *unext;
+	ctype_t		*client, *cnext;
 
 	/* cleanup client fds */
-	tmpcli = firstclient;
-
-	while (tmpcli) {
-		tmpnext = tmpcli->next;
-		delclient(tmpcli);
-		tmpcli = tmpnext;
+	for (client = firstclient; client; client = cnext) {
+		cnext = client->next;
+		client_disconnect(client);
 	}
+}
 
-	if (strcmp(pidfn, "") != 0) {
-		unlink(pidfn);
-	}
+void driver_free(void)
+{
+	upstype_t	*ups, *unext;
 
-	ups = firstups;
-
-	while (ups) {
+	for (ups = firstups; ups; ups = unext) {
 		unext = ups->next;
 
 		if (ups->sock_fd != -1) {
@@ -747,21 +663,30 @@ static void upsd_cleanup(void)
 
 		sstate_infofree(ups);
 		sstate_cmdfree(ups);
+
 		pconf_finish(&ups->sock_ctx);
 
 		free(ups->fn);
 		free(ups->name);
 		free(ups->desc);
 		free(ups);
+	}
+}
 
-		ups = unext;
+static void upsd_cleanup(void)
+{
+	if (strcmp(pidfn, "") != 0) {
+		unlink(pidfn);
 	}
 
 	/* dump everything */
 
 	user_flush();
 	desc_free();
+	
 	server_free();
+	client_free();
+	driver_free();
 
 	free(statepath);
 	free(datapath);
@@ -790,9 +715,9 @@ static void mainloop(void)
 {
 	int	i, ret, nfds = 0;
 
-	upstype_t	*utmp;
-	ctype_t		*ctmp;
-	stype_t		*stmp;
+	upstype_t	*ups;
+	ctype_t		*client;
+	stype_t		*server;
 
 	if (reload_flag) {
 		conf_reload();
@@ -801,52 +726,64 @@ static void mainloop(void)
 	}
 
 	/* scan through driver sockets */
-	for (utmp = firstups; utmp != NULL && nfds < maxconn; utmp = utmp->next) {
-		if (utmp->sock_fd < 0) {
+	for (ups = firstups; ups && (nfds < maxconn); ups = ups->next) {
+
+		/* see if we need to (re)connect to the socket */
+		if (ups->sock_fd < 0) {
+			ups->sock_fd = sstate_connect(ups);
 			continue;
 		}
 
-		fds[nfds].fd = utmp->sock_fd;
+		/* throw some warnings if it's not feeding us data any more */
+		if (sstate_dead(ups, maxage)) {
+			ups_data_stale(ups);
+		} else {
+			ups_data_ok(ups);
+		}
+
+		fds[nfds].fd = ups->sock_fd;
 		fds[nfds].events = POLLIN;
 
 		handler[nfds].type = DRIVER;
-		handler[nfds].data = utmp;
+		handler[nfds].data = ups;
 
 		nfds++;
 	}
 
 	/* scan through client sockets */
-	for (ctmp = firstclient; ctmp != NULL; ctmp = ctmp->next) {
-		if (ctmp->fd < 0) {
+	for (client = firstclient; client; client = client->next) {
+
+		if (client->sock_fd < 0) {
 			continue;
 		}
 
 		if (nfds >= maxconn) {
 			/* shed clients that we are unable to handle */
-			delclient(ctmp);
+			client_disconnect(client);
 			continue;
 		}
 
-		fds[nfds].fd = ctmp->fd;
+		fds[nfds].fd = client->sock_fd;
 		fds[nfds].events = POLLIN;
 
 		handler[nfds].type = CLIENT;
-		handler[nfds].data = ctmp;
+		handler[nfds].data = client;
 
 		nfds++;
 	}
 
 	/* scan through server sockets */
-	for (stmp = firstaddr; stmp != NULL && nfds < maxconn; stmp = stmp->next) {
-		if (stmp->sock_fd < 0) {
+	for (server = firstaddr; server && (nfds < maxconn); server = server->next) {
+
+		if (server->sock_fd < 0) {
 			continue;
 		}
 
-		fds[nfds].fd = stmp->sock_fd;
+		fds[nfds].fd = server->sock_fd;
 		fds[nfds].events = POLLIN;
 
 		handler[nfds].type = SERVER;
-		handler[nfds].data = stmp;
+		handler[nfds].data = server;
 
 		nfds++;
 	}
@@ -865,36 +802,15 @@ static void mainloop(void)
 
 	for (i = 0; i < nfds; i++) {
 
-		if (fds[i].revents & POLLIN) {
-
-			switch(handler[i].type)
-			{
-			case DRIVER:
-				sstate_sock_read((upstype_t *)handler[i].data);
-				break;
-			case CLIENT:
-				readtcp((ctype_t *)handler[i].data);
-				break;
-			case SERVER:
-				answertcp((stype_t *)handler[i].data);
-				break;
-			default:
-				upsdebugx(2, "%s: <unknown> has data available", __func__);
-				break;
-			}
-
-			continue;
-		}
-
 		if (fds[i].revents & POLLHUP) {
 
 			switch(handler[i].type)
 			{
 			case DRIVER:
-				upsdebugx(2, "%s: driver disconnected", __func__);
+				sstate_disconnect((upstype_t *)handler[i].data);
 				break;
 			case CLIENT:
-				delclient((ctype_t *)handler[i].data);
+				client_disconnect((ctype_t *)handler[i].data);
 				break;
 			case SERVER:
 				upsdebugx(2, "%s: server disconnected", __func__);
@@ -906,9 +822,28 @@ static void mainloop(void)
 
 			continue;
 		}
-	}
 
-	check_every_ups();
+		if (fds[i].revents & POLLIN) {
+
+			switch(handler[i].type)
+			{
+			case DRIVER:
+				sstate_readline((upstype_t *)handler[i].data);
+				break;
+			case CLIENT:
+				client_readline((ctype_t *)handler[i].data);
+				break;
+			case SERVER:
+				client_connect((stype_t *)handler[i].data);
+				break;
+			default:
+				upsdebugx(2, "%s: <unknown> has data available", __func__);
+				break;
+			}
+
+			continue;
+		}
+	}
 }
 
 static void help(const char *progname) 
@@ -981,7 +916,7 @@ void check_perms(const char *fn)
 	if (st.st_mode & (S_IROTH | S_IXOTH)) {
 		upslogx(LOG_WARNING, "%s is world readable", fn);
 	}
-}	
+}
 
 int main(int argc, char **argv)
 {
@@ -1127,12 +1062,12 @@ int main(int argc, char **argv)
 		memset(&pidfn, '\0', sizeof(pidfn));
 	}
 
-	while (exit_flag == 0) {
+	atexit(upsd_cleanup);
+
+	while (!exit_flag) {
 		mainloop();
 	}
 
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
-	upsd_cleanup();
-
-	exit(EXIT_SUCCESS);
+	return EXIT_SUCCESS;
 }

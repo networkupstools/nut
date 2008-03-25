@@ -1,6 +1,7 @@
 /* stype.h - server data definitions for upsd
 
-   Copyright (C) 2007  Arjen de Korte <arjen@de-korte.org>
+   Copyright (C)
+	2007	Arjen de Korte <arjen@de-korte.org>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -30,11 +31,11 @@
 #define NI_MAXSERV      32
 #endif
 
-typedef struct {
+typedef struct stype_s {
 	char	*addr;
 	char	*port;
 	int	sock_fd;
-	void	*next;
-}	stype_t;
+	struct stype_s	*next;
+} stype_t;
 
 #endif	/* STYPE_H_SEEN */

@@ -1,6 +1,8 @@
 /* sstate.c - Network UPS Tools server-side state management
 
-   Copyright (C) 2003  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+	2003	Russell Kroll <rkroll@exploits.org>
+	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -120,22 +122,19 @@ static int parse_args(upstype_t *ups, int numargs, char **arg)
 static void sendping(upstype_t *ups)
 {
 	int	ret;
-	const	char	*cmd = "PING\n";
+	const char	*cmd = "PING\n";
+
+	if ((!ups) || (ups->sock_fd < 0)) {
+		return;
+	}
 
 	upsdebugx(3, "Pinging UPS [%s]", ups->name);
 
 	ret = write(ups->sock_fd, cmd, strlen(cmd));
 
-	if ((ret < 1) || (ret != (int) strlen(cmd))) {
+	if (ret != (int)strlen(cmd))  {
 		upslog_with_errno(LOG_NOTICE, "Send ping to UPS [%s] failed", ups->name);
-
-		sstate_infofree(ups);
-		sstate_cmdfree(ups);
-		pconf_finish(&ups->sock_ctx);
-
-		close(ups->sock_fd);
-		ups->sock_fd = -1;
-		ups->dumpdone = 0;
+		sstate_disconnect(ups);
 		return;
 	}
 
@@ -147,8 +146,8 @@ static void sendping(upstype_t *ups)
 int sstate_connect(upstype_t *ups)
 {
 	int	ret, fd;
-	const	char	*dumpcmd = "DUMPALL\n";
-	struct	sockaddr_un sa;
+	const char	*dumpcmd = "DUMPALL\n";
+	struct sockaddr_un	sa;
 
 	memset(&sa, '\0', sizeof(sa));
 	sa.sun_family = AF_UNIX;
@@ -183,33 +182,35 @@ int sstate_connect(upstype_t *ups)
 	ret = fcntl(fd, F_GETFL, 0);
 
 	if (ret < 0) {
-		close(fd);
 		upslog_with_errno(LOG_ERR, "fcntl get on UPS [%s] failed", ups->name);
+		close(fd);
 		return -1;
 	}
 
 	ret = fcntl(fd, F_SETFL, ret | O_NDELAY);
 
 	if (ret < 0) {
-		close(fd);
 		upslog_with_errno(LOG_ERR, "fcntl set O_NDELAY on UPS [%s] failed", ups->name);
+		close(fd);
 		return -1;
 	}
 
 	/* get a dump started so we have a fresh set of data */
 	ret = write(fd, dumpcmd, strlen(dumpcmd));
 
-	if ((ret < 1) || (ret != (int) strlen(dumpcmd))) {
-		close(fd);
+	if (ret != (int)strlen(dumpcmd)) {
 		upslog_with_errno(LOG_ERR, "Initial write to UPS [%s] failed", ups->name);
+		close(fd);
 		return -1;
 	}
 
-	/* clear out any old junk from before */
-	sstate_infofree(ups);
-	sstate_cmdfree(ups);
 	pconf_init(&ups->sock_ctx, NULL);
+
+	ups->dumpdone = 0;
 	ups->stale = 0;
+
+	/* now is the last time we heard something from the driver */
+	time(&ups->last_heard);
 
 	/* set ups.status to "WAIT" while waiting for the driver response to dumpcmd */
 	state_setinfo(&ups->inforoot, "ups.status", "WAIT");
@@ -219,66 +220,72 @@ int sstate_connect(upstype_t *ups)
 	return fd;
 }
 
-void sstate_sock_read(upstype_t *ups)
+void sstate_disconnect(upstype_t *ups)
+{
+	if ((!ups) || (ups->sock_fd < 0)) {
+		return;
+	}
+
+	sstate_infofree(ups);
+	sstate_cmdfree(ups);
+
+	pconf_finish(&ups->sock_ctx);
+
+	close(ups->sock_fd);
+	ups->sock_fd = -1;
+}
+
+void sstate_readline(upstype_t *ups)
 {
 	int	i, ret;
-	char	ch;
+	char	buf[SMALLBUF];
 
-	for (i = 0; i < SS_MAX_READ; i++) {
+	if ((!ups) || (ups->sock_fd < 0)) {
+		return;
+	}
 
-		ret = read(ups->sock_fd, &ch, 1);
+	ret = read(ups->sock_fd, buf, sizeof(buf));
 
-		if (ret < 1) {
-
-			/* ran out of data pre-parse */
-			if ((ret == -1) && (errno == EAGAIN))
-				return;
-
-			if (ret == 0)
-				upslogx(LOG_WARNING, "UPS [%s] disconnected - "
-					"check driver", ups->name);
-			else
-				upslog_with_errno(LOG_WARNING, "Read from UPS [%s] failed",
-					ups->name);
-
-			sstate_infofree(ups);
-			sstate_cmdfree(ups);
-			pconf_finish(&ups->sock_ctx);
-
-			close(ups->sock_fd);
-			ups->sock_fd = -1;
-			ups->dumpdone = 0;
-
+	if (ret < 0) {
+		if (errno == EAGAIN) {
 			return;
 		}
 
-		ret = pconf_char(&ups->sock_ctx, ch);
+		upslog_with_errno(LOG_WARNING, "Read from UPS [%s] failed", ups->name);
+		sstate_disconnect(ups);
+		return;
+	}
 
-		if (ret == 0)
+	if (ret == 0) {
+		upslogx(LOG_WARNING, "UPS [%s] disconnected - check driver", ups->name);
+		sstate_disconnect(ups);
+		return;
+	}
+
+	for (i = 0; i < ret; i++) {
+
+		switch (pconf_char(&ups->sock_ctx, buf[i]))
+		{
+		case 1:
+			/* set the 'last heard' time to now for later staleness checks */
+			if (parse_args(ups, ups->sock_ctx.numargs, ups->sock_ctx.arglist)) {
+			        time(&ups->last_heard);
+			}
+			continue;
+
+		case 0:
 			continue;	/* haven't gotten a line yet */
 
-		if (ret == 1) {		/* got one - parse it */
-			/* set the 'last heard' time to now for later staleness checks */
-			if (parse_args(ups, ups->sock_ctx.numargs,
-				ups->sock_ctx.arglist))
-			        time(&ups->last_heard);
-				
-			/* only one command per pass */
+		default:
+			/* parse error */
+			upslogx(LOG_NOTICE, "Parse error on sock: %s", ups->sock_ctx.errmsg);
 			return;
 		}
-
-		/* parse error */
-		upslogx(LOG_NOTICE, "Parse error on sock: %s",
-			ups->sock_ctx.errmsg);
 	}
 }
 
 const char *sstate_getinfo(const upstype_t *ups, const char *var)
 {
-	/* requesting an old variable name? */
-	if (!strchr(var, '.'))
-		return NULL;
-
 	return state_getinfo(ups->inforoot, var);
 }
 
@@ -308,7 +315,7 @@ int sstate_dead(upstype_t *ups, int maxage)
 	double	elapsed;
 
 	/* an unconnected ups is always dead */
-	if (ups->sock_fd == -1) {
+	if (ups->sock_fd < 0) {
 		upsdebugx(3, "sstate_dead: connection to driver socket for UPS [%s] lost", ups->name);
 		return 1;	/* dead */
 	}
@@ -355,25 +362,20 @@ int sstate_sendline(upstype_t *ups, const char *buf)
 {
 	int	ret;
 
-	if (ups->sock_fd == -1)
-		return 0;	/* failed */
-
-	ret = write(ups->sock_fd, buf, strlen(buf));
-
-	if ((ret < 1) || (ret != (int) strlen(buf))) {
-		upslog_with_errno(LOG_NOTICE, "Send to UPS [%s] failed", ups->name);
-
-		sstate_infofree(ups);
-		sstate_cmdfree(ups);
-		pconf_finish(&ups->sock_ctx);
-
-		close(ups->sock_fd);
-		ups->sock_fd = -1;
-
+	if ((!ups) ||(ups->sock_fd < 0)) {
 		return 0;	/* failed */
 	}
 
-	return 1;	
+	ret = write(ups->sock_fd, buf, strlen(buf));
+
+	if (ret == (int)strlen(buf)) {
+		return 1;	
+	}
+
+	upslog_with_errno(LOG_NOTICE, "Send to UPS [%s] failed", ups->name);
+	sstate_disconnect(ups);
+
+	return 0;	/* failed */
 }
 
 const struct st_tree_t *sstate_getnode(const upstype_t *ups, const char *varname)

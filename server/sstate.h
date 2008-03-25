@@ -1,6 +1,8 @@
 /* sstate.h - Network UPS Tools server-side state management
 
-   Copyright (C) 2003  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+	2003	Russell Kroll <rkroll@exploits.org>
+	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -23,7 +25,8 @@
 #define SS_MAX_READ 256		/* don't let drivers tie us up in read()     */
 
 int sstate_connect(upstype_t *ups);
-void sstate_sock_read(upstype_t *ups);
+void sstate_disconnect(upstype_t *ups);
+void sstate_readline(upstype_t *ups);
 const char *sstate_getinfo(const upstype_t *ups, const char *var);
 int sstate_getflags(const upstype_t *ups, const char *var);
 int sstate_getaux(const upstype_t *ups, const char *var);

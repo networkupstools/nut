@@ -1,6 +1,8 @@
 /* ssl.c - Interface to OpenSSL for upsd
 
-   Copyright (C) 2002  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+	2002	Russell Kroll <rkroll@exploits.org>
+	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
 
    based on the original implementation:
 
@@ -106,7 +108,7 @@ void net_starttls(ctype_t *client, int numarg, const char **arg)
 		return;
 	}
 
-	if (SSL_set_fd(client->ssl, client->fd) != 1) {
+	if (SSL_set_fd(client->ssl, client->sock_fd) != 1) {
 		upslog_with_errno(LOG_ERR, "SSL_set_fd failed\n");
 		ssl_debug();
 	}

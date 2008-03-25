@@ -1,6 +1,8 @@
 /* ctype.h - client data definitions for upsd
 
-   Copyright (C) 2002  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+	2002	Russell Kroll <rkroll@exploits.org>
+	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -28,9 +30,9 @@
 #include "parseconf.h"
 
 /* client structure */
-typedef struct {
+typedef struct ctype_s {
 	char	*addr;
-	int	fd;
+	int	sock_fd;
 	int	delete;			/* set after a write fails */
 	char	rq[SMALLBUF];
 	size_t	rqpos;
@@ -47,7 +49,9 @@ typedef struct {
 
 	PCONF_CTX_t	ctx;
 
-	void	*next;
-}	ctype_t;
+	/* doubly linked list */
+	struct ctype_s	*prev;
+	struct ctype_s	*next;
+} ctype_t;
 
 #endif	/* CTYPE_H_SEEN */

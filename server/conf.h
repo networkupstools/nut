@@ -1,6 +1,8 @@
 /* conf.h - supporting elements of conf parsing functions for upsd
 
-   Copyright (C) 2001  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+	2001	Russell Kroll <rkroll@exploits.org>
+	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -26,13 +28,13 @@ void upsconf_add(int reloading);
 /* flush existing config, then reread everything */
 void conf_reload(void);
 
-typedef struct {
+typedef struct ups_s {
 	char	*upsname;
 	char	*driver;
 	char	*port;
 	char	*desc;
-	void	*next;
-}	ups_t;
+	struct ups_s	*next;
+} ups_t;
 
 /* used for really clean shutdowns */
 void delete_acls(void);
