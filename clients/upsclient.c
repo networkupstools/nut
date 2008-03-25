@@ -826,6 +826,7 @@ int upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen)
 int upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen)
 {
 	int	ret;
+	size_t	recv;
 
 	if ((!ups) || (ups->fd == -1)) {
 		ups->upserror = UPSCLI_ERR_DRVNOTCONN;
@@ -842,15 +843,21 @@ int upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen)
 		return -1;
 	}
 
-	memset(buf, 0, buflen);
+	for (recv = 0; recv < (buflen-1); recv += ret) {
 
-	ret = net_read(ups, buf, buflen-1);
+		ret = net_read(ups, &buf[recv], 1);
 
-	if (ret < 1) {
-		upscli_disconnect(ups);
-		return -1;
+		if (ret < 1) {
+			upscli_disconnect(ups);
+			return -1;
+		}
+
+		if (buf[recv] == '\n') {
+			break;
+		}
 	}
 
+	buf[recv] = '\0';
 	return 0;
 }
 

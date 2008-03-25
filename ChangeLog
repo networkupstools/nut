@@ -1,3 +1,8 @@
+Tue Mar 25 20:09:12 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - clients/upsclient.c: partially revert r1394 (breaks the LIST
+   command, that depends on reading replies line-by-line)
+
 Tue Mar 25 19:08:11 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  * server/upsd:
