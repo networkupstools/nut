@@ -1,6 +1,6 @@
 # Network UPS Tools: lib
 
-if WITH_LIB
+if WITH_DEV
 if WITH_PKG_CONFIG
  pkgconfig_DATA = libupsclient.pc
 else

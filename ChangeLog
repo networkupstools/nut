@@ -1,3 +1,10 @@
+Fri Mar 21 09:59:23 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - replace "--with-lib" by "--with-dev" since we now always distribute
+   the shared version of libupsclient. This change allow to build and
+   install the static version of libupsclient, along with its helpers
+   and manpages.
+   
 Sun Mar 23 20:10:15 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - common/common.c,include/common.h: added select_read/write that
@@ -59,7 +66,7 @@ Mon Mar 17 13:43:21 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
  - data/cmdvartab: add obsolete 'beeper.on' and 'beeper.off' commands
    with an informative message to use the new replacements
 
-Thu Mar 13 15:25:32 / Arnaud Quette <ArnaudQuette@Eaton.com>
+Thu Mar 13 15:25:32 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - clients/upsstats.c, conf/upsstats.html.sample: fixed the Internet
    Explorer compatibility. It doesn't like HTML attribute values on a
