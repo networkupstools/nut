@@ -66,7 +66,7 @@ AC_PROG_INSTALL
 AC_PROG_EGREP
 AC_PATH_PROG(AR, ar)
 AC_CHECK_TOOL(RANLIB, ranlib, :)
-AC_PROG_LIBTOOL
+dnl Postpone call to AC_PROG_LIBTOOL to allow disabling static lib
 AC_C_INLINE
 AC_CHECK_FUNCS(flock lockf fcvt fcvtl)
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
@@ -155,12 +155,12 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-AC_HELP_STRING([--with-all], [enable serial, usb, snmp, hal, cgi, lib, neonxml]),
+AC_HELP_STRING([--with-all], [enable serial, usb, snmp, hal, cgi, dev, neonxml]),
 [	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
 		dnl this is what the user expects from --without-all
 		if test -z "${with_cgi}"; then with_cgi="${withval}"; fi
-		if test -z "${with_lib}"; then with_lib="${withval}"; fi
+		if test -z "${with_dev}"; then with_dev="${withval}"; fi
 		if test -z "${with_serial}"; then with_serial="${withval}"; fi
 		if test -z "${with_snmp}"; then with_snmp="${withval}"; fi
 		if test -z "${with_usb}"; then with_usb="${withval}"; fi
@@ -182,7 +182,7 @@ NUT_ARG_WITH([usb], [build and install USB drivers], [auto])
 NUT_ARG_WITH([snmp], [build and install SNMP drivers], [auto])
 NUT_ARG_WITH([hal], [build and install HAL support], [no])
 NUT_ARG_WITH([cgi], [build and install the CGI programs], [no])
-NUT_ARG_WITH([lib], [build and install the upsclient library], [no])
+NUT_ARG_WITH([dev], [build and install the development files], [no])
 NUT_ARG_WITH([neonxml], [build and install neon based XML/HTTP driver], [auto])
 
 dnl ----------------------------------------------------------------------
@@ -303,14 +303,19 @@ AM_CONDITIONAL(WITH_CGI, test "${nut_with_cgi}" = "yes")
 NUT_REPORT_FEATURE([build CGI programs], [${nut_with_cgi}])
 
 dnl ----------------------------------------------------------------------
-dnl checks related to --with-lib
+dnl checks related to --with-dev
 
-dnl ${nut_with_lib}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_lib}" != "no"; then
-  nut_with_lib="yes"
+dnl ${nut_with_dev}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_dev}" != "no"; then
+  nut_with_dev="yes"
+else
+  AC_DISABLE_STATIC
 fi
-AM_CONDITIONAL(WITH_LIB, test "${nut_with_lib}" = "yes")
-NUT_REPORT_FEATURE([build upsclient library], [${nut_with_lib}])
+AM_CONDITIONAL(WITH_DEV, test "${nut_with_dev}" = "yes")
+NUT_REPORT_FEATURE([build and install the development files], [${nut_with_dev}])
+
+dnl We only init libtool there to allow AC_DISABLE_STATIC
+AC_PROG_LIBTOOL
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-serial

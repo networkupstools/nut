@@ -65,7 +65,7 @@ man_MANS = $(CONF_PAGES) $(CLIENT_PAGES)
 if WITH_CGI
  man_MANS += $(CGI_PAGES)
 endif
-if WITH_LIB
+if WITH_DEV
  man_MANS += $(LIB_PAGES)
 endif
 

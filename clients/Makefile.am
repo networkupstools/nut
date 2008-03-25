@@ -20,8 +20,8 @@ endif
 bin_PROGRAMS = upsc upslog upsrw upscmd
 dist_bin_SCRIPTS = upssched-cmd
 sbin_PROGRAMS = upsmon upssched
-if WITH_LIB
- lib_LTLIBRARIES = libupsclient.la
+lib_LTLIBRARIES = libupsclient.la
+if WITH_DEV
  include_HEADERS = upsclient.h ../include/parseconf.h
 endif
 if WITH_CGI

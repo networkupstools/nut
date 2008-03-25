@@ -1,3 +1,10 @@
+Fri Mar 21 09:59:23 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - replace "--with-lib" by "--with-dev" since we now always distribute
+   the shared version of libupsclient. This change allow to build and
+   install the static version of libupsclient, along with its helpers
+   and manpages.
+
 Mon Mar 24 15:19:33 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - server/upsd.c: fix memory leak
