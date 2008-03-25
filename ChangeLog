@@ -1,3 +1,9 @@
+Tue Mar 25 18:40:00 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/netxml-ups: lower read timeout from the default (neon)
+   value of 60 seconds to 10 seconds (to prevent the server from
+   declaring the driver stale)
+
 Fri Mar 21 09:59:23 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - replace "--with-lib" by "--with-dev" since we now always distribute
