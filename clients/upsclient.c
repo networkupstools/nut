@@ -172,7 +172,7 @@ static int net_read(UPSCONN_t *ups, char *buf, size_t buflen)
 	}
 #endif
 
-	ret = select_read(ups->fd, buf, buflen, 2, 0);
+	ret = select_read(ups->fd, buf, buflen, 5, 0);
 
 	/* error reading data, server disconnected? */
 	if (ret < 0) {
@@ -205,7 +205,7 @@ static int net_write(UPSCONN_t *ups, const char *buf, size_t buflen)
 	}
 #endif
 
-	ret = select_write(ups->fd, buf, buflen, 2, 0);
+	ret = select_write(ups->fd, buf, buflen, 0, 0);
 
 	/* error writing data, server disconnected? */
 	if (ret < 0) {
@@ -797,7 +797,6 @@ int upscli_list_next(UPSCONN_t *ups, unsigned int numq, const char **query,
 int upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen)
 {
 	int	ret;
-	size_t	sent;
 
 	if ((!ups) || (ups->fd == -1)) {
 		ups->upserror = UPSCLI_ERR_DRVNOTCONN;
@@ -814,14 +813,11 @@ int upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen)
 		return -1;
 	}
 
-	for (sent = 0; sent < buflen; sent += ret) {
+	ret = net_write(ups, buf, buflen);
 
-		ret = net_write(ups, &buf[sent], buflen - sent);
-
-		if (ret < 1) {
-			upscli_disconnect(ups);
-			return -1;
-		}
+	if (ret < 1) {
+		upscli_disconnect(ups);
+		return -1;
 	}
 
 	return 0;
@@ -830,7 +826,6 @@ int upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen)
 int upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen)
 {
 	int	ret;
-	size_t	recv;
 
 	if ((!ups) || (ups->fd == -1)) {
 		ups->upserror = UPSCLI_ERR_DRVNOTCONN;
@@ -847,21 +842,15 @@ int upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen)
 		return -1;
 	}
 
-	for (recv = 0; recv < buflen-1; recv += ret) {
+	memset(buf, 0, buflen);
 
-		ret = net_read(ups, &buf[recv], 1);
+	ret = net_read(ups, buf, buflen-1);
 
-		if (ret < 1) {
-			upscli_disconnect(ups);
-			return -1;
-		}
-
-		if (buf[recv] == '\n') {
-			break;
-		}
+	if (ret < 1) {
+		upscli_disconnect(ups);
+		return -1;
 	}
 
-	buf[recv] = '\0';
 	return 0;
 }
 
