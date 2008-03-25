@@ -235,6 +235,9 @@ void upsdrv_initups(void)
 	/* create the session */
 	session = ne_session_create(uri.scheme, uri.host, uri.port);
 
+	/* just wait for a couple of seconds */
+	ne_set_read_timeout(session, 10);
+
 	/* Sets the user-agent string */
 	ne_set_useragent(session, subdriver->version);
 
