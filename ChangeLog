@@ -1,3 +1,7 @@
+Tue Mar 25 18:47:41 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - clients/upsclient.c: performance improvement
+
 Tue Mar 25 18:40:00 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/netxml-ups: lower read timeout from the default (neon)
