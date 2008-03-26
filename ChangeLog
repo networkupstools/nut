@@ -1,3 +1,7 @@
+Wed Mar 26 09:47:32 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - NEWS, UPGRADING: completion for 2.2.2 release
+
 Tue Mar 25 20:09:12 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - clients/upsclient.c: partially revert r1395 (breaks the LIST
