@@ -1,3 +1,8 @@
+Thu Mar 27 20:24:54 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/netxml-ups: default to 5 seconds if pollinterval is not
+   specified (to prevent overloading older NMCs by default)
+
 Thu Mar 27 15:39:43 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - UPGRADING: prefer calling "upsmon -c fsd" for usbhid-ups testing

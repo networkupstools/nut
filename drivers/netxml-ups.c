@@ -208,6 +208,11 @@ void upsdrv_banner(void)
 
 void upsdrv_initups(void)
 {
+	if (!getval("pollinterval")) {
+		upslogx(LOG_INFO, "No value specified for 'pollinterval' (defaulting to 5 seconds).\n");
+		poll_interval = 5;
+	}
+
 	/* Initialize socket libraries */
 	if (ne_sock_init()) {
 		fatalx(EXIT_FAILURE, "%s: failed to initialize socket libraries", progname);
