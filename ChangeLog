@@ -1,3 +1,8 @@
+Thu Mar 27 20:24:54 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/netxml-ups: default to 5 seconds if pollinterval is not
+   specified (to prevent overloading older NMCs by default)
+
 Tue Mar 25 20:09:12 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - clients/upsclient.c: partially revert r1394 (breaks the LIST

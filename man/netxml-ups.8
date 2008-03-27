@@ -48,6 +48,11 @@ Specifying the method how to connect to the UPS (http, https) is mandatory.
 If the port is equal to the default for the method specified (80 for http,
 443 for https) it may be omitted.
 
+If "pollinterval" is not specified (see \fBnutupsdrv\fR(8)) and
+\fBups.conf\fR(5)), the driver will default to 5 seconds in order not to
+overload older NMCs by polling them too frequently. Don't lower this unless
+you know exactly what you're doing.
+
 .SH KNOWN ISSUES
 Don't connect to the UPS through a proxy. Although it would be trivial to add
 support for proxies, this is not recommended and don't ask for it. Not only
