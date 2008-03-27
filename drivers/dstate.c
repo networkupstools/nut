@@ -462,11 +462,11 @@ static void conn_close_all(void)
 		next = tmp->next;
 
 		close(tmp->fd);
-		free(tmp);
+		conn_del(tmp);
 
 		tmp = next;
 	}
-}		
+}	
 
 /* interface */
 
@@ -720,6 +720,7 @@ void dstate_free(void)
 	cmdhead = NULL;
 
 	conn_close_all();
+	connhead = NULL;
 }
 
 const struct st_tree_t *dstate_getroot(void)

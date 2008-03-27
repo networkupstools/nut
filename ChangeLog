@@ -1,3 +1,7 @@
+Thu Mar 27 21:36:54 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/dstate.c: fix memory leak (minor)
+
 Thu Mar 27 20:24:54 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/netxml-ups: default to 5 seconds if pollinterval is not
