@@ -1,3 +1,7 @@
+Thu Mar 27 15:39:43 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - UPGRADING: prefer calling "upsmon -c fsd" for usbhid-ups testing
+ 
 Wed Mar 26 09:47:32 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - ChangeLog: trimmed everything previous to 2.2.0

@@ -11,10 +11,10 @@ Changes from 2.2.1 to 2.2.2:
    pages. The default configure option is to distribute only the shared
    version of libupsclient. This can be overriden by using the
    "--disable-shared" configure option (distribute static only binaries).
- - The shutdown handling of the usbhid-ups driver has been reworked.
+ - The UPS poweroff handling of the usbhid-ups driver has been reworked.
    Though regression are not expected, users of this driver are
-   encouraged to test this feature in a safe way (no sensitive load on
-   the UPS output, when calling "usbhid-ups -k")
+   encouraged to test this feature by calling "upsmon -c fsd" and
+   report any issue on the NUT mailing lists.
 
 ---------------------------------------------------------------------------
 Changes from 2.2.0 to 2.2.1:
