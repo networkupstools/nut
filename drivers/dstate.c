@@ -1,6 +1,8 @@
 /* dstate.c - Network UPS Tools driver-side state management
 
-   Copyright (C) 2003  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+	2003	Russell Kroll <rkroll@exploits.org>
+	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -30,21 +32,20 @@
 #include "state.h"
 #include "parseconf.h"
 
-	static	int	sockfd = -1, stale = 1, alarm_active = 0;
-	static	struct	st_tree_t	*dtree_root = NULL;
-	static	struct	conn_t	*connhead = NULL;
-	static	struct	cmdlist_t *cmdhead = NULL;
-	static	char	*sockfn = NULL;
-	static	char	status_buf[ST_MAX_VALUE_LEN],
-			alarm_buf[ST_MAX_VALUE_LEN];
+	static int	sockfd = -1, stale = 1, alarm_active = 0;
+	static char	*sockfn = NULL;
+	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[ST_MAX_VALUE_LEN];
+	static struct st_tree_t	*dtree_root = NULL;
+	static struct conn_t	*connhead = NULL;
+	static struct cmdlist_t *cmdhead = NULL;
 
-	struct	ups_handler	upsh;
+	struct ups_handler	upsh;
 
 /* this may be a frequent stumbling point for new users, so be verbose here */
 static void sock_fail(const char *fn)
 {
 	int	sockerr;
-	struct	passwd	*user;
+	struct passwd	*user;
 
 	/* save this so it doesn't get overwritten */
 	sockerr = errno;
@@ -56,32 +57,34 @@ static void sock_fail(const char *fn)
 
 	user = getpwuid(getuid());
 
-	if (!user)
+	if (!user) {
 		fatal_with_errno(EXIT_FAILURE, "getpwuid");
+	}
 
 	/* deal with some common problems */
-	switch (errno) {
-		case EACCES:
-			printf("\nCurrent user: %s (UID %d)\n\n",
-				user->pw_name, (int)user->pw_uid);
+	switch (errno)
+	{
+	case EACCES:
+		printf("\nCurrent user: %s (UID %d)\n\n",
+			user->pw_name, (int)user->pw_uid);
 
-			printf("Things to try:\n\n");
-			printf(" - set different owners or permissions on %s\n\n", 
-				dflt_statepath());
-			printf(" - run this as some other user "
-				"(try -u <username>)\n");
-			break;
+		printf("Things to try:\n\n");
+		printf(" - set different owners or permissions on %s\n\n", 
+			dflt_statepath());
+		printf(" - run this as some other user "
+			"(try -u <username>)\n");
+		break;
 
-		case ENOENT:
-			printf("\nThings to try:\n\n");
-			printf(" - mkdir %s\n", dflt_statepath());
-			break;
+	case ENOENT:
+		printf("\nThings to try:\n\n");
+		printf(" - mkdir %s\n", dflt_statepath());
+		break;
 
-		case ENOTDIR:
-			printf("\nThings to try:\n\n");
-			printf(" - rm %s\n\n", dflt_statepath());
-			printf(" - mkdir %s\n", dflt_statepath());
-			break;
+	case ENOTDIR:
+		printf("\nThings to try:\n\n");
+		printf(" - rm %s\n\n", dflt_statepath());
+		printf(" - mkdir %s\n", dflt_statepath());
+		break;
 	}
 	
 	/*
@@ -93,15 +96,16 @@ static void sock_fail(const char *fn)
 	fatalx(EXIT_FAILURE, "Exiting.");
 }
 
-static int open_sock(const char *fn)
+static int sock_open(const char *fn)
 {
 	int	ret, fd;
-	struct	sockaddr_un	ssaddr;
+	struct sockaddr_un	ssaddr;
 
 	fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
-	if (fd < 0)
+	if (fd < 0) {
 		fatal_with_errno(EXIT_FAILURE, "Can't create a unix domain socket");
+	}
 
 	/* keep this around for the unlink() when exiting */
 	sockfn = xstrdup(fn);
@@ -116,76 +120,66 @@ static int open_sock(const char *fn)
 
 	ret = bind(fd, (struct sockaddr *) &ssaddr, sizeof ssaddr);
 
-	if (ret < 0)
+	if (ret < 0) {
 		sock_fail(sockfn);
+	}
 
 	ret = chmod(sockfn, 0660);
 
-	if (ret < 0)
+	if (ret < 0) {
 		fatal_with_errno(EXIT_FAILURE, "chmod(%s, 0660) failed", sockfn);
+	}
 
 	ret = listen(fd, DS_LISTEN_BACKLOG);
 
-	if (ret < 0)
+	if (ret < 0) {
 		fatal_with_errno(EXIT_FAILURE, "listen(%d, %d) failed", fd, DS_LISTEN_BACKLOG);
+	}
 
 	return fd;
 }
 
-static void conn_del(struct conn_t *target)
+static void sock_disconnect(struct conn_t *conn)
 {
-	struct	conn_t	*tmp, *last = NULL;
+	close(conn->fd);
 
-	tmp = connhead;
+	pconf_finish(&conn->ctx);
 
-	while (tmp) {
-		if (tmp == target) {
-
-			if (last)
-				last->next = tmp->next;
-			else
-				connhead = tmp->next;
-
-			pconf_finish(&tmp->ctx);
-
-			free(tmp);
-			return;
-		}
-
-		last = tmp;
-		tmp = tmp->next;
+	if (conn->prev) {
+		conn->prev->next = conn->next;
+	} else {
+		connhead = conn->next;
 	}
 
-	upslogx(LOG_ERR, "Tried to delete a bogus state connection");
+	if (conn->next) {
+		conn->next->prev = conn->prev;
+	} else {
+		/* conntail = conn->prev; */
+	}
+
+	free(conn);
 }
 
 static void send_to_all(const char *fmt, ...)
 {
 	int	ret;
-	va_list	ap;
 	char	buf[ST_SOCK_BUF_LEN];
-	struct	conn_t	*tmp, *tmpnext;
+	va_list	ap;
+	struct conn_t	*conn, *cnext;
 
 	va_start(ap, fmt);
 	vsnprintf(buf, sizeof(buf), fmt, ap);
 	va_end(ap);
 
-	tmp = connhead;
+	for (conn = connhead; conn; conn = cnext) {
+		cnext = conn->next;
 
-	while (tmp) {
-		tmpnext = tmp->next;
+		ret = write(conn->fd, buf, strlen(buf));
 
-		ret = write(tmp->fd, buf, strlen(buf));
-
-		if ((ret < 1) || (ret != (int) strlen(buf))) {
-			upsdebugx(2, "write %d bytes to socket %d failed",
-				strlen(buf), tmp->fd);
-
-			close(tmp->fd);
-			conn_del(tmp);
+		if (ret != (int)strlen(buf)) {
+			upsdebugx(2, "write %d bytes to socket %d failed", strlen(buf), conn->fd);
+			sock_disconnect(conn);
 		}
-
-		tmp = tmpnext;
 	}
 }
 
@@ -202,129 +196,129 @@ static int send_to_one(struct conn_t *conn, const char *fmt, ...)
 	ret = write(conn->fd, buf, strlen(buf));
 
 	if ((ret < 1) || (ret != (int) strlen(buf))) {
-		upsdebugx(2, "write to fd %d failed", conn->fd);
-
-		close(conn->fd);
-		conn_del(conn);
-
+		upsdebugx(2, "write %d bytes to socket %d failed", strlen(buf), conn->fd);
+		sock_disconnect(conn);
 		return 0;	/* failed */
 	}
 
 	return 1;	/* OK */
 }
 
-static void conn_add(int fd)
+static void sock_connect(int sock)
 {
-	int	acc, ret;
-	struct	conn_t	*tmp, *last;
-	struct	sockaddr_un sa;
+	int	fd, ret;
+	struct conn_t	*conn;
+	struct sockaddr_un sa;
 	socklen_t	salen;
 
 	salen = sizeof(sa);
-	acc = accept(fd, (struct sockaddr *) &sa, &salen);
+	fd = accept(sock, (struct sockaddr *) &sa, &salen);
 
-	if (acc < 0) {
+	if (fd < 0) {
 		upslog_with_errno(LOG_ERR, "accept on unix fd failed");
 		return;
 	}
 
 	/* enable nonblocking I/O */
 
-	ret = fcntl(acc, F_GETFL, 0);
+	ret = fcntl(fd, F_GETFL, 0);
 
 	if (ret < 0) {
 		upslog_with_errno(LOG_ERR, "fcntl get on unix fd failed");
-		close(acc);
+		close(fd);
 		return;
 	}
 
-	ret = fcntl(acc, F_SETFL, ret | O_NDELAY);
+	ret = fcntl(fd, F_SETFL, ret | O_NDELAY);
 
 	if (ret < 0) {
 		upslog_with_errno(LOG_ERR, "fcntl set O_NDELAY on unix fd failed");
-		close(acc);
+		close(fd);
 		return;
 	}	
 
-	tmp = last = connhead;
+	conn = xcalloc(1, sizeof(*conn));
+	conn->fd = fd;
 
-	while (tmp) {
-		last = tmp;	
-		tmp = tmp->next;
+	pconf_init(&conn->ctx, NULL);
+
+	if (connhead) {
+		conn->next = connhead;
+		connhead->prev = conn;
 	}
 
-	tmp = xmalloc(sizeof(struct conn_t));
-	tmp->fd = acc;
-	tmp->next = NULL;
+	connhead = conn;
 
-	pconf_init(&tmp->ctx, NULL);
-
-	if (last)
-		last->next = tmp;
-	else
-		connhead = tmp;
-
-	upsdebugx(3, "new connection on fd %d", acc);
+	upsdebugx(3, "new connection on fd %d", fd);
 }
 
 static int st_tree_dump_conn(struct st_tree_t *node, struct conn_t *conn)
 {
 	int	ret;
-	struct	enum_t	*etmp;
+	struct enum_t	*etmp;
 
-	if (!node)
+	if (!node) {
 		return 1;	/* not an error */
+	}
 
 	if (node->left) {
 		ret = st_tree_dump_conn(node->left, conn);
 
-		if (!ret)
+		if (!ret) {
 			return 0;	/* write failed in the child */
+		}
 	}
 
-	if (!send_to_one(conn, "SETINFO %s \"%s\"\n", node->var, node->val))
+	if (!send_to_one(conn, "SETINFO %s \"%s\"\n", node->var, node->val)) {
 		return 0;	/* write failed, bail out */
+	}
 
 	/* send any enums */
-	for (etmp = node->enum_list; etmp != NULL; etmp = etmp->next)
-		if (!send_to_one(conn, "ADDENUM %s \"%s\"\n",
-			node->var, etmp->val))
+	for (etmp = node->enum_list; etmp; etmp = etmp->next) {
+		if (!send_to_one(conn, "ADDENUM %s \"%s\"\n", node->var, etmp->val)) {
 			return 0;
+		}
+	}
 
 	/* provide any auxiliary data */
-	if (node->aux != 0) {
-		if (!send_to_one(conn, "SETAUX %s %d\n", node->var, node->aux))
+	if (node->aux) {
+		if (!send_to_one(conn, "SETAUX %s %d\n", node->var, node->aux)) {
 			return 0;
+		}
 	}
 
 	/* finally report any flags */
-	if (node->flags != 0) {
+	if (node->flags) {
 		char	flist[SMALLBUF];
 
 		/* build the list */
 		snprintf(flist, sizeof(flist), "%s", node->var);
 
-		if (node->flags & ST_FLAG_RW)
+		if (node->flags & ST_FLAG_RW) {
 			snprintfcat(flist, sizeof(flist), " RW");
-		if (node->flags & ST_FLAG_STRING)
+		}
+		if (node->flags & ST_FLAG_STRING) {
 			snprintfcat(flist, sizeof(flist), " STRING");
+		}
 
 		send_to_one(conn, "SETFLAGS %s\n", flist);
 	}
 
-	if (node->right)
+	if (node->right) {
 		return st_tree_dump_conn(node->right, conn);
+	}
 
 	return 1;	/* everything's OK here ... */
 }
 
 static int cmd_dump_conn(struct conn_t *conn)
 {
-	struct	cmdlist_t	*tmp;
+	struct cmdlist_t	*cmd;
 
-	for (tmp = cmdhead; tmp != NULL; tmp = tmp->next) {
-		if (!send_to_one(conn, "ADDCMD %s\n", tmp->name))
+	for (cmd = cmdhead; cmd; cmd = cmd->next) {
+		if (!send_to_one(conn, "ADDCMD %s\n", cmd->name)) {
 			return 0;
+		}
 	}
 
 	return 1;
@@ -332,25 +326,28 @@ static int cmd_dump_conn(struct conn_t *conn)
 
 static int sock_arg(struct conn_t *conn, int numarg, char **arg)
 {
-	if (numarg < 1)
+	if (numarg < 1) {
 		return 0;
+	}
 
 	if (!strcasecmp(arg[0], "DUMPALL")) {
 
 		/* first thing: the staleness flag */
-		if (stale == 1)
-			if (!send_to_one(conn, "DATASTALE\n"))
-				return 1;
-
-		if (!st_tree_dump_conn(dtree_root, conn))
+		if ((stale == 1) && !send_to_one(conn, "DATASTALE\n")) {
 			return 1;
+		}
 
-		if (!cmd_dump_conn(conn))
+		if (!st_tree_dump_conn(dtree_root, conn)) {
 			return 1;
+		}
 
-		if (stale == 0)
-			if (!send_to_one(conn, "DATAOK\n"))
-				return 1;
+		if (!cmd_dump_conn(conn)) {
+			return 1;
+		}
+
+		if ((stale == 0) && !send_to_one(conn, "DATAOK\n")) {
+			return 1;
+		}
 
 		send_to_one(conn, "DUMPDONE\n");
 		return 1;
@@ -361,8 +358,9 @@ static int sock_arg(struct conn_t *conn, int numarg, char **arg)
 		return 1;
 	}
 
-	if (numarg < 2)
+	if (numarg < 2) {
 		return 0;
+	}
 
 	/* INSTCMD <cmdname> [<value>]*/
 	if (!strcasecmp(arg[0], "INSTCMD")) {
@@ -373,6 +371,7 @@ static int sock_arg(struct conn_t *conn, int numarg, char **arg)
 				upsh.instcmd(arg[1], arg[2]);
 				return 1;
 			}
+
 			upsh.instcmd(arg[1], NULL);
 			return 1;
 		}
@@ -381,8 +380,9 @@ static int sock_arg(struct conn_t *conn, int numarg, char **arg)
 		return 1;
 	}
 
-	if (numarg < 3)
+	if (numarg < 3) {
 		return 0;
+	}
 
 	/* SET <var> <value> */
 	if (!strcasecmp(arg[0], "SET")) {
@@ -401,72 +401,75 @@ static int sock_arg(struct conn_t *conn, int numarg, char **arg)
 	return 0;
 }
 
-static void log_unknown(int numarg, char **arg)
-{
-	int	i;
-
-	upslogx(LOG_INFO, "Unknown command on socket: ");
-
-	for (i = 0; i < numarg; i++)
-		upslogx(LOG_INFO, "arg %d: %s", i, arg[i]);
-}
-
-static int sock_read(struct conn_t *conn)
+static void sock_read(struct conn_t *conn)
 {
 	int	i, ret;
-	char	ch;
+	char	buf[SMALLBUF];
 
-	for (i = 0; i < DS_MAX_READ; i++) {
+	ret = read(conn->fd, buf, sizeof(buf));
 
-		ret = read(conn->fd, &ch, 1);
+	if (ret < 0) {
+		switch(errno)
+		{
+		case EINTR:
+		case EAGAIN:
+			return;
 
-		if (ret < 1) {
-
-			/* short read = no parsing, come back later */
-			if ((ret == -1) && (errno == EAGAIN))
-				return 0;
-
-			/* some other problem */
-			return -1;	/* error */
+		default:
+			sock_disconnect(conn);
+			return;
 		}
+	}
 
-		ret = pconf_char(&conn->ctx, ch);
+	for (i = 0; i < ret; i++) {
 
-		if (ret == 0)		/* nothing to parse yet */
+		switch(pconf_char(&conn->ctx, buf[i]))
+		{
+		case 0: /* nothing to parse yet */
 			continue;
 
-		if (ret == -1) {
-			upslogx(LOG_NOTICE, "Parse error on sock: %s",
-				conn->ctx.errmsg);
+		case 1: /* try to use it, and complain about unknown commands */
+			if (!sock_arg(conn, conn->ctx.numargs, conn->ctx.arglist)) {
+				size_t	arg;
 
-			return 0;	/* nothing parsed */
+				upslogx(LOG_INFO, "Unknown command on socket: ");
+
+				for (arg = 0; arg < conn->ctx.numargs; arg++) {
+					upslogx(LOG_INFO, "arg %d: %s", arg, conn->ctx.arglist[arg]);
+				}
+			}
+			continue;
+
+		default: /* nothing parsed */
+			upslogx(LOG_NOTICE, "Parse error on sock: %s", conn->ctx.errmsg);
+			return;
 		}
-
-		/* try to use it, and complain about unknown commands */
-		if (!sock_arg(conn, conn->ctx.numargs, conn->ctx.arglist))
-			log_unknown(conn->ctx.numargs, conn->ctx.arglist);
-
-		return 1;	/* we did some work */
 	}
-
-	return 0;	/* fell out without parsing anything */
 }
 
-static void conn_close_all(void)
+static void sock_close(void)
 {
-	struct	conn_t	*tmp, *next;
+	struct conn_t	*conn, *cnext;
 
-	tmp = connhead;
+	if (sockfd != -1) {
+		close(sockfd);
+		sockfd = -1;
 
-	while (tmp) {
-		next = tmp->next;
-
-		close(tmp->fd);
-		conn_del(tmp);
-
-		tmp = next;
+		if (sockfn) {
+			unlink(sockfn);
+			free(sockfn);
+			sockfn = NULL;
+		}
 	}
-}	
+
+	for (conn = connhead; conn; conn = cnext) {
+		cnext = conn->next;
+		sock_disconnect(conn);
+	}
+
+	connhead = NULL;
+	/* conntail = NULL; */
+}
 
 /* interface */
 
@@ -477,14 +480,13 @@ void dstate_init(const char *prog, const char *port)
 	/* do this here for now */
 	signal(SIGPIPE, SIG_IGN);
 
-	if (port != NULL)
-		snprintf(sockname, sizeof(sockname), "%s/%s-%s",
-			dflt_statepath(), prog, port);
-	else
-		snprintf(sockname, sizeof(sockname), "%s/%s",
-			dflt_statepath(), prog);
+	if (port) {
+		snprintf(sockname, sizeof(sockname), "%s/%s-%s", dflt_statepath(), prog, port);
+	} else {
+		snprintf(sockname, sizeof(sockname), "%s/%s", dflt_statepath(), prog);
+	}
 
-	sockfd = open_sock(sockname);
+	sockfd = sock_open(sockname);
 
 	upsdebugx(2, "dstate_init: sock %s open on fd %d", sockname, sockfd);
 }
@@ -492,10 +494,10 @@ void dstate_init(const char *prog, const char *port)
 /* extrafd: provided for waking up based on the driver's UPS fd */
 int dstate_poll_fds(int interval, int extrafd)
 {
-	int	ret, maxfd;
+	int		ret, maxfd;
 	fd_set	rfds;
-	struct	timeval tv;
-	struct	conn_t	*tmp, *tmpnext;
+	struct timeval	tv;
+	struct conn_t	*conn, *cnext;
 
 	tv.tv_sec = interval;
 	tv.tv_usec = 0;
@@ -508,50 +510,49 @@ int dstate_poll_fds(int interval, int extrafd)
 	if (extrafd != -1) {
 		FD_SET(extrafd, &rfds);
 
-		if (extrafd > maxfd)
+		if (extrafd > maxfd) {
 			maxfd = extrafd;
+		}
 	}
 
-	for (tmp = connhead; tmp != NULL; tmp = tmp->next) {
-		FD_SET(tmp->fd, &rfds);
+	for (conn = connhead; conn; conn = conn->next) {
+		FD_SET(conn->fd, &rfds);
 
-		if (tmp->fd > maxfd)
-			maxfd = tmp->fd;
+		if (conn->fd > maxfd) {
+			maxfd = conn->fd;
+		}
 	}
 
 	ret = select(maxfd + 1, &rfds, NULL, NULL, &tv);
 
-	if (ret == 0)
+	if (ret == 0) {
 		return 0;
+	}
 
 	if (ret < 0) {
 		/* ignore interruptions from signals */
-		if (errno != EINTR)
+		if (errno != EINTR) {
 			upslog_with_errno(LOG_ERR, "select unix sockets failed");
+		}
 		return 0;
 	}
 
-	if (FD_ISSET(sockfd, &rfds))
-		conn_add(sockfd);
+	if (FD_ISSET(sockfd, &rfds)) {
+		sock_connect(sockfd);
+	}
 
-	tmp = connhead;
+	for (conn = connhead; conn; conn = cnext) {
+		cnext = conn->next;
 
-	while (tmp) {
-		tmpnext = tmp->next;
-
-		if (FD_ISSET(tmp->fd, &rfds)) {
-			if (sock_read(tmp) < 0) {
-				close(tmp->fd);
-				conn_del(tmp);
-			}
+		if (FD_ISSET(conn->fd, &rfds)) {
+			sock_read(conn);
 		}
-
-		tmp = tmpnext;
 	}
 
 	/* tell the caller if that fd woke up */
-	if ((extrafd != -1) && (FD_ISSET(extrafd, &rfds)))
+	if ((extrafd != -1) && (FD_ISSET(extrafd, &rfds))) {
 		return 1;
+	}
 
 	return 0;
 }	
@@ -568,8 +569,9 @@ int dstate_setinfo(const char *var, const char *fmt, ...)
 
 	ret = state_setinfo(&dtree_root, var, value);
 
-	if (ret == 1)
+	if (ret == 1) {
 		send_to_all("SETINFO %s \"%s\"\n", var, value);
+	}
 
 	return ret;
 }
@@ -586,38 +588,42 @@ int dstate_addenum(const char *var, const char *fmt, ...)
 
 	ret = state_addenum(dtree_root, var, value);
 
-	if (ret == 1)
+	if (ret == 1) {
 		send_to_all("ADDENUM %s \"%s\"\n", var, value);
+	}
 
 	return ret;
 }
 
 void dstate_setflags(const char *var, int flags)
 {
-	struct	st_tree_t	*sttmp;
+	struct st_tree_t	*sttmp;
 	char	flist[SMALLBUF];
 
 	/* find the dtree node for var */
 	sttmp = state_tree_find(dtree_root, var);
 
 	if (!sttmp) {
-		upslogx(LOG_ERR, "dstate_setflags: base variable (%s) "
-			"does not exist", var);
+		upslogx(LOG_ERR, "dstate_setflags: base variable (%s) does not exist", var);
 		return;
 	}
 
-	if (sttmp->flags == flags)
+	if (sttmp->flags == flags) {
 		return;		/* no change */
+	}
 
 	sttmp->flags = flags;
 
 	/* build the list */
 	snprintf(flist, sizeof(flist), "%s", var);
 
-	if (flags & ST_FLAG_RW)
+	if (flags & ST_FLAG_RW) {
 		snprintfcat(flist, sizeof(flist), " RW");
-	if (flags & ST_FLAG_STRING)
+	}
+
+	if (flags & ST_FLAG_STRING) {
 		snprintfcat(flist, sizeof(flist), " STRING");
+	}
 
 	/* update listeners */
 	send_to_all("SETFLAGS %s\n", flist);
@@ -625,19 +631,19 @@ void dstate_setflags(const char *var, int flags)
 
 void dstate_setaux(const char *var, int aux)
 {
-	struct	st_tree_t	*sttmp;
+	struct st_tree_t	*sttmp;
 
 	/* find the dtree node for var */
 	sttmp = state_tree_find(dtree_root, var);
 
 	if (!sttmp) {
-		upslogx(LOG_ERR, "dstate_setaux: base variable (%s) "
-			"does not exist", var);
+		upslogx(LOG_ERR, "dstate_setaux: base variable (%s) does not exist", var);
 		return;
 	}
 
-	if (sttmp->aux == aux)
+	if (sttmp->aux == aux) {
 		return;		/* no change */
+	}
 
 	sttmp->aux = aux;
 
@@ -657,8 +663,9 @@ void dstate_addcmd(const char *cmdname)
 	ret = state_addcmd(&cmdhead, cmdname);
 
 	/* update listeners */
-	if (ret == 1)
+	if (ret == 1) {
 		send_to_all("ADDCMD %s\n", cmdname);
+	}
 }
 
 int dstate_delinfo(const char *var)
@@ -668,8 +675,9 @@ int dstate_delinfo(const char *var)
 	ret = state_delinfo(&dtree_root, var);
 
 	/* update listeners */
-	if (ret == 1)
+	if (ret == 1) {
 		send_to_all("DELINFO %s\n", var);
+	}
 
 	return ret;
 }
@@ -681,8 +689,9 @@ int dstate_delenum(const char *var, const char *val)
 	ret = state_delenum(dtree_root, var, val);
 
 	/* update listeners */
-	if (ret == 1)
+	if (ret == 1) {
 		send_to_all("DELENUM %s \"%s\"\n", var, val);
+	}
 
 	return ret;
 }
@@ -694,33 +703,22 @@ int dstate_delcmd(const char *cmd)
 	ret = state_delcmd(&cmdhead, cmd);
 
 	/* update listeners */
-	if (ret == 1)
+	if (ret == 1) {
 		send_to_all("DELCMD %s\n", cmd);
+	}
 
 	return ret;
 }
 
 void dstate_free(void)
 {
-	if (sockfd != -1) {
-		close(sockfd);
-		sockfd = -1;
-
-		if (sockfn) {
-			unlink(sockfn);
-			free(sockfn);
-			sockfn = NULL;
-		}
-	}
-
 	state_infofree(dtree_root);
 	dtree_root = NULL;
 	
 	state_cmdfree(cmdhead);
 	cmdhead = NULL;
 
-	conn_close_all();
-	connhead = NULL;
+	sock_close();
 }
 
 const struct st_tree_t *dstate_getroot(void)
@@ -766,19 +764,21 @@ void status_init(void)
 void status_set(const char *buf)
 {
 	/* separate with a space if multiple elements are present */
-	if (strlen(status_buf) != 0)
+	if (strlen(status_buf) > 0) {
 		snprintfcat(status_buf, sizeof(status_buf), " %s", buf);
-	else
+	} else {
 		snprintfcat(status_buf, sizeof(status_buf), "%s", buf);
+	}
 }
 
 /* write the status_buf into the externally visible dstate storage */
 void status_commit(void)
 {
-	if (alarm_active)
+	if (alarm_active) {
 		dstate_setinfo("ups.status", "ALARM %s", status_buf);
-	else
+	} else {
 		dstate_setinfo("ups.status", "%s", status_buf);
+	}
 }
 
 /* similar handlers for ups.alarm */
@@ -790,16 +790,17 @@ void alarm_init(void)
 
 void alarm_set(const char *buf)
 {
-	if (strlen(alarm_buf) != 0)
+	if (strlen(alarm_buf) > 0) {
 		snprintfcat(alarm_buf, sizeof(alarm_buf), " %s", buf);
-	else
+	} else {
 		snprintfcat(alarm_buf, sizeof(alarm_buf), "%s", buf);
+	}
 }
 
 /* write the status_buf into the info array */
 void alarm_commit(void)
 {
-	if (strlen(alarm_buf) != 0) {
+	if (strlen(alarm_buf) > 0) {
 		dstate_setinfo("ups.alarm", "%s", alarm_buf);
 		alarm_active = 1;
 	} else {

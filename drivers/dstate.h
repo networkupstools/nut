@@ -32,7 +32,8 @@
 struct conn_t {
 	int     fd;
 	PCONF_CTX_t	ctx;
-	void    *next;
+	struct conn_t	*prev;
+	struct conn_t	*next;
 };
 
 	extern	struct	ups_handler	upsh;

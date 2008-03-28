@@ -1,6 +1,11 @@
+Fri Mar 28 20:20:08 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+- drivers/dstate.[ch]: use doubly linked list for connections to the
+  driver (to speedup adding/removing connections) and code cleanup
+
 Fri Mar 28 20:01:24 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
- - drivers/sstate.c,upsd.c: don't terminate connection on EAGAIN,
+ - server/sstate.c,upsd.c: don't terminate connection on EAGAIN,
    EINTR or if no data was received (these are not really errors)
 
 Thu Mar 27 21:36:54 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
