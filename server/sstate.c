@@ -247,19 +247,17 @@ void sstate_readline(upstype_t *ups)
 	ret = read(ups->sock_fd, buf, sizeof(buf));
 
 	if (ret < 0) {
-		if (errno == EAGAIN) {
+		switch(errno)
+		{
+		case EINTR:
+		case EAGAIN:
+			return;
+
+		default:
+			upslog_with_errno(LOG_WARNING, "Read from UPS [%s] failed", ups->name);
+			sstate_disconnect(ups);
 			return;
 		}
-
-		upslog_with_errno(LOG_WARNING, "Read from UPS [%s] failed", ups->name);
-		sstate_disconnect(ups);
-		return;
-	}
-
-	if (ret == 0) {
-		upslogx(LOG_WARNING, "UPS [%s] disconnected - check driver", ups->name);
-		sstate_disconnect(ups);
-		return;
 	}
 
 	for (i = 0; i < ret; i++) {

@@ -561,10 +561,18 @@ static void client_readline(ctype_t *client)
 		ret = read(client->sock_fd, buf, sizeof(buf));
 	}
 
-	if (ret < 1) {
-		upslogx(LOG_INFO, "Host %s disconnected (read failure)", client->addr);
-		client_disconnect(client);
-		return;
+	if (ret < 0) {
+		switch(errno)
+		{
+		case EINTR:
+		case EAGAIN:
+			return;
+
+		default:
+			upslogx(LOG_INFO, "Host %s disconnected (read failure)", client->addr);
+			client_disconnect(client);
+			return;
+		}
 	}
 
 	/* fragment handling code */
