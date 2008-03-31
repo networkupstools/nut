@@ -1,3 +1,8 @@
+Mon Mar 31 19:21:05 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - clients/upsclient.c: parameter checking would segfault on NULL
+   pointers in upscli_read/sendline
+
 Thu Mar 27 20:24:54 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/netxml-ups: default to 5 seconds if pollinterval is not
