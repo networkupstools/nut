@@ -1,3 +1,12 @@
+Mon Mar 31 11:31:49 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ * clients/upsclient.[ch]:
+   - add read buffer (so that we can read in larger chunks, instead
+     of character by character)
+   - the context buffer is now statically allocated (since we always
+     need it)
+   - code cleanup
+
 Fri Mar 28 20:20:08 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
 - drivers/dstate.[ch]: use doubly linked list for connections to the
