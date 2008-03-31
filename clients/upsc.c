@@ -25,7 +25,10 @@
 
 #include "upsclient.h"
 
-static void help(const char *prog)
+static char		*upsname = NULL, *hostname = NULL;
+static UPSCONN_t	*ups = NULL;
+
+static void usage(const char *prog)
 {
 	printf("Network UPS Tools upsc %s\n\n", UPS_VERSION);
 
@@ -43,37 +46,18 @@ static void help(const char *prog)
 	printf("  <ups>      - upsd server, <upsname>[@<hostname>[:<port>]] form\n");
 	printf("  <variable> - optional, display this variable only.\n");
 	printf("               Default: list all variables for <host>\n");
-
-	exit(EXIT_SUCCESS);
 }
 
-static void clean_exit(UPSCONN_t *ups, char *upsname, char *hostname, int code)
+static void printvar(const char *var)
 {
-	free(upsname);
-	free(hostname);
-
-	upscli_sendline(ups, "LOGOUT\n", 7);
-	upscli_disconnect(ups);
-
-	exit(code);
-}
-
-static int printvar(UPSCONN_t *ups, const char *upsname, const char *var)
-{
-	int	ret;
+	int		ret;
 	unsigned int	numq, numa;
-	const	char	*query[4];
-	char	**answer;
+	const char	*query[4];
+	char		**answer;
 
 	/* old-style variable name? */
 	if (!strchr(var, '.')) {
-		fprintf(stderr, "Error: old-style variable names are not supported\n");
-		return EXIT_FAILURE;
-	}
-
-	if (!upsname) {
-		fprintf(stderr, "Error: ups name must be defined\n");
-		return EXIT_FAILURE;
+		fatalx(EXIT_FAILURE, "Error: old-style variable names are not supported");
 	}
 
 	query[0] = "VAR";
@@ -88,35 +72,25 @@ static int printvar(UPSCONN_t *ups, const char *upsname, const char *var)
 
 		/* new var and old upsd?  try to explain the situation */
 		if (upscli_upserror(ups) == UPSCLI_ERR_UNKCOMMAND) {
-			fprintf(stderr, "Error: variable unknown (old upsd detected)\n");
-			return EXIT_FAILURE;
+			fatalx(EXIT_FAILURE, "Error: variable unknown (old upsd detected)");
 		}
 
-		fprintf(stderr, "Error: %s\n", upscli_strerror(ups));
-		return EXIT_FAILURE;
+		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
 	}
 
 	if (numa < numq) {
-		fprintf(stderr, "Error: insufficient data "
-			"(got %d args, need at least %d)\n", numa, numq);
-		return EXIT_FAILURE;
+		fatalx(EXIT_FAILURE, "Error: insufficient data (got %d args, need at least %d)", numa, numq);
 	}
 
 	printf("%s\n", answer[3]);
-	return EXIT_SUCCESS;
 }
 
-static int list_vars(UPSCONN_t *ups, const char *upsname)
+static void list_vars(void)
 {
-	int	ret;
+	int		ret;
 	unsigned int	numq, numa;
-	const	char	*query[4];
-	char	**answer;
-
-	if (!upsname) {
-		fprintf(stderr, "Error: a UPS name must be specified (upsname[@hostname[:port]])\n");
-		return EXIT_FAILURE;
-	}
+	const char	*query[4];
+	char		**answer;
 
 	query[0] = "VAR";
 	query[1] = upsname;
@@ -128,76 +102,49 @@ static int list_vars(UPSCONN_t *ups, const char *upsname)
 
 		/* check for an old upsd */
 		if (upscli_upserror(ups) == UPSCLI_ERR_UNKCOMMAND) {
-			fprintf(stderr, "Error: upsd is too old to support this query\n");
-			return EXIT_FAILURE;
+			fatalx(EXIT_FAILURE, "Error: upsd is too old to support this query");
 		}
 
-		fprintf(stderr, "Error: %s\n", upscli_strerror(ups));
-		return EXIT_FAILURE;
+		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
 	}
 
-	ret = upscli_list_next(ups, numq, query, &numa, &answer);
-
-	while (ret == 1) {
+	while (upscli_list_next(ups, numq, query, &numa, &answer) == 1) {
 
 		/* VAR <upsname> <varname> <val> */
 		if (numa < 4) {
-			fprintf(stderr, "Error: insufficient data "
-				"(got %d args, need at least 4)\n", numa);
-			return EXIT_FAILURE;
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %d args, need at least 4)", numa);
 		}
 
 		printf("%s: %s\n", answer[2], answer[3]);
-
-		ret = upscli_list_next(ups, numq, query, &numa, &answer);
 	}
-
-	return EXIT_SUCCESS;
 }
 
-static int list_upses(const char *name, int verbose)
+static void list_upses(int verbose)
 {
-	int	ret, port;
-	char	*upsname = NULL, *hostname = NULL;
-	UPSCONN_t	ups;
+	int		ret;
 	unsigned int	numq, numa;
-	const	char	*query[4];
-	char	**answer;
-
-	if(upscli_splitaddr(name, &hostname, &port) != 0)
-		clean_exit(&ups, upsname, hostname, EXIT_FAILURE);
-
-	if (upscli_connect(&ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
-		fprintf(stderr, __FILE__ ":%d: Error: %s\n", __LINE__, upscli_strerror(&ups));
-
-		clean_exit(&ups, NULL, NULL, EXIT_FAILURE);
-	}
+	const char	*query[4];
+	char		**answer;
 
 	query[0] = "UPS";
 	numq = 1;
 
-	ret = upscli_list_start(&ups, numq, query);
+	ret = upscli_list_start(ups, numq, query);
 	
 	if (ret < 0) {
 		/* check for an old upsd */
-		if (upscli_upserror(&ups) == UPSCLI_ERR_UNKCOMMAND) {
-			fprintf(stderr, "Error: upsd is too old to support this query\n");
-			return EXIT_FAILURE;
+		if (upscli_upserror(ups) == UPSCLI_ERR_UNKCOMMAND) {
+			fatalx(EXIT_FAILURE, "Error: upsd is too old to support this query");
 		}
 
-		fprintf(stderr, "Error: %s\n", upscli_strerror(&ups));
-		return EXIT_FAILURE;
+		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
 	}
 
-	ret = upscli_list_next(&ups, numq, query, &numa, &answer);
-
-	while (ret == 1) {
+	while (upscli_list_next(ups, numq, query, &numa, &answer) == 1) {
 
 		/* UPS <upsname> <description> */
 		if (numa < 3) {
-			fprintf(stderr, "Error: insufficient data "
-				"(got %d args, need at least 3)\n", numa);
-			return EXIT_FAILURE;
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %d args, need at least 3)", numa);
 		}
 
 		if(verbose) {
@@ -205,58 +152,79 @@ static int list_upses(const char *name, int verbose)
 		} else {
 			printf("%s\n", answer[1]);
 		}
+	}
+}
 
-		ret = upscli_list_next(&ups, numq, query, &numa, &answer);
+static void clean_exit(void)
+{
+	if (ups) {
+		upscli_sendline(ups, "LOGOUT\n", 7);
+		upscli_disconnect(ups);
 	}
 
-	return EXIT_SUCCESS;
+	free(upsname);
+	free(hostname);
+	free(ups);
 }
 
 int main(int argc, char **argv)
 {
-	int	port, ret;
-	char	*upsname, *hostname;
-	UPSCONN_t	ups;
+	int	i, port;
+	int	varlist = 0, verbose = 0;
+	const char	*prog = xbasename(argv[0]);
 
-	if (argc < 2)
-		help(argv[0]);
+	while ((i = getopt(argc, argv, "+hlLV")) != -1) {
 
-	/* special cases since we're not using getopt */
-	if (!strcmp(argv[1], "-V")) {
-		printf("Network UPS Tools upsc %s\n", UPS_VERSION);
+		switch (i)
+		{
+		case 'L':
+			verbose = 1;
+		case 'l':
+			varlist = 1;
+			break;
+
+		case 'V':
+			fatalx(EXIT_SUCCESS, "Network UPS Tools upscmd %s", UPS_VERSION);
+
+		case 'h':
+		default:
+			usage(prog);
+			exit(EXIT_SUCCESS);
+		}
+	}
+
+	argc -= optind;
+	argv += optind;
+
+	/* be a good little client that cleans up after itself */
+	atexit(clean_exit);
+
+	if (varlist) {
+		if (upscli_splitaddr(argv[0] ? argv[0] : "localhost", &hostname, &port) != 0) {
+			fatalx(EXIT_FAILURE, "Error: invalid hostname.\nRequired format: [hostname[:port]]");
+		}
+	} else {
+		if (upscli_splitname(argv[0], &upsname, &hostname, &port) != 0) {
+			fatalx(EXIT_FAILURE, "Error: invalid UPS definition.\nRequired format: upsname[@hostname[:port]]");
+		}
+	}
+
+	ups = xmalloc(sizeof(*ups));
+
+	if (upscli_connect(ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
+		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
+	}
+
+	if (varlist) {
+		list_upses(verbose);
 		exit(EXIT_SUCCESS);
 	}
 
-	if (!strcmp(argv[1], "-h"))
-		help(argv[0]);
-
-	if (!strcmp(argv[1], "-l") || !strcmp(argv[1], "-L")) {
-		ret = list_upses(argv[2] ? argv[2] : "localhost", argv[1][1] == 'L');
-		exit(ret);
+	if (argc > 1) {
+		printvar(argv[1]);
+	} else {
+		list_vars();
 	}
 
-	upsname = hostname = NULL;
-
-	if (upscli_splitname(argv[1], &upsname, &hostname, &port) != 0) {
-		fprintf(stderr, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
-
-		clean_exit(&ups, upsname, hostname, EXIT_FAILURE);
-	}
-
-	if (upscli_connect(&ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
-		fprintf(stderr, "Error: %s\n", upscli_strerror(&ups));
-
-		clean_exit(&ups, upsname, hostname, EXIT_FAILURE);
-	}
-
-	if (argc >= 3) {
-		ret = printvar(&ups, upsname, argv[2]);
-		clean_exit(&ups, upsname, hostname, ret);
-	}
-
-	ret = list_vars(&ups, upsname);
-	clean_exit(&ups, upsname, hostname, ret);
-
-	/* NOTREACHED */
-	exit(EXIT_FAILURE);
+	exit(EXIT_SUCCESS);
 }

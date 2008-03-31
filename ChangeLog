@@ -1,3 +1,7 @@
+Mon Mar 31 19:53:47 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - clients/upsc: be a good little client that cleans up after itself
+
 Mon Mar 31 11:31:49 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  * clients/upsclient.[ch]:
