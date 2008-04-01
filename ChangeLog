@@ -1,3 +1,7 @@
+Tue Apr  1 20:15:44 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - clients/upscmd: be a good little client that cleans up after itself
+
 Tue Apr  1 20:01:45 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - common/state.c: make the command list sorted (so that commands
