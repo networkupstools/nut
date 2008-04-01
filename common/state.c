@@ -349,24 +349,26 @@ void state_setflags(struct st_tree_t *root, const char *var, int numflags,
 
 int state_addcmd(struct cmdlist_t **list, const char *cmdname)
 {
-	struct	cmdlist_t	*item = *list;
+	if (!(*list) || (strcasecmp((*list)->name, cmdname) > 0)) {
+		/* insertion point reached */
+		struct cmdlist_t	*item;
 
-	if (!item) {	/* end of list reached */
-		item = xmalloc(sizeof(struct cmdlist_t));
+		item = xmalloc(sizeof(*item));
 		item->name = xstrdup(cmdname);
-		item->next = NULL;
+		item->next = *list;
 
-		/* now we're done creating it, add it to the list */
+		/* now we're done creating it, insert it in the list */
 		*list = item;
 
 		return 1;
 	}
 
-	/* don't add duplicates - silently ignore them */
-	if (!strcasecmp(item->name, cmdname))
-		return 0;
+	if (strcasecmp((*list)->name, cmdname) < 0) {
+		return state_addcmd(&(*list)->next, cmdname);
+	}
 
-	return state_addcmd(&item->next, cmdname);
+	/* don't add duplicates - silently ignore them */
+	return 0;
 }
 
 void state_infofree(struct st_tree_t *node)
@@ -394,14 +396,16 @@ void state_cmdfree(struct cmdlist_t *list)
 
 int state_delcmd(struct cmdlist_t **list, const char *cmd)
 {
-	struct	cmdlist_t	*item = *list;
+	struct cmdlist_t	*item = *list;
 
-	if (!item)	/* not found */
+	if ((!item) || (strcasecmp(item->name, cmd) > 0)) {	/* not found */
 		return 0;
+	}
 
 	/* if this is not the right command, go on to the next */
-	if (strcmp(item->name, cmd))
+	if (strcasecmp(item->name, cmd) < 0) {
 		return state_delcmd(&item->next, cmd);
+	}
 
 	/* we found it! */
 

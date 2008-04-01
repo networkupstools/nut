@@ -1,3 +1,8 @@
+Tue Apr  1 20:01:45 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - common/state.c: make the command list sorted (so that commands
+   will be listed in alphabetic order by upscmd)
+
 Mon Mar 31 19:53:47 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - clients/upsc: be a good little client that cleans up after itself
