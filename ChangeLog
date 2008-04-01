@@ -1,3 +1,9 @@
+Tue Apr  1 09:03:20 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - include/Makefile.am: remove GNU Make extensions from rule to create
+   nut_version.h, and handle case where svnversion does not exist.
+   (backport from trunk, r1207, Charles Lepple)
+
 Mon Mar 31 19:21:05 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - clients/upsclient.c: parameter checking would segfault on NULL
