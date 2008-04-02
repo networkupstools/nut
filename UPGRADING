@@ -12,7 +12,7 @@ Changes from 2.2.1 to 2.2.2:
    version of libupsclient. This can be overriden by using the
    "--disable-shared" configure option (distribute static only binaries).
  - The UPS poweroff handling of the usbhid-ups driver has been reworked.
-   Though regression are not expected, users of this driver are
+   Though regression is not expected, users of this driver are
    encouraged to test this feature by calling "upsmon -c fsd" and
    report any issue on the NUT mailing lists.
 

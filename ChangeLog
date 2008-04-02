@@ -1,3 +1,10 @@
+2.2.2-pre1
+
+Wed Apr  2 14:22:02 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - configure.in: change version to 2.2.2-pre1.
+ - UPGRADING: fix a typo
+
 Tue Apr  1 09:03:20 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - include/Makefile.am: remove GNU Make extensions from rule to create
