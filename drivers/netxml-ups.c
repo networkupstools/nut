@@ -35,13 +35,13 @@
 #include "netxml-ups.h"
 #include "mge-xml.h"
 
-#define DRV_VERSION	"0.11"
-#define MAXRETRIES	3
+#define DRV_VERSION	"0.12"
+#define MAXRETRIES	10
 
 /* Global vars */
 uint32_t		ups_status = 0;
 static subdriver_t	*subdriver = &mge_xml_subdriver;
-static ne_session	*session;
+static ne_session	*session = NULL;
 static ne_uri		uri;
 
 /* Support functions */
@@ -98,6 +98,9 @@ void upsdrv_updateinfo(void)
 	int		ret;
 	ne_request	*request;
 	ne_xml_parser	*parser;
+#ifdef DEBUG
+	struct timeval	start, stop;
+#endif
 
 	upsdebugx(3, "ne_request_create(session, \"GET\", \"%s\");", subdriver->getobject);
 
@@ -113,7 +116,16 @@ void upsdrv_updateinfo(void)
 	/* Push a new handler on the parser stack */
 	ne_xml_push_handler(parser, subdriver->startelm_cb, subdriver->cdata_cb, subdriver->endelm_cb, NULL);
 
+#ifdef DEBUG
+	gettimeofday(&start, NULL);
+#endif
 	ret = ne_xml_dispatch_request(request, parser);
+#ifdef DEBUG
+	gettimeofday(&stop, NULL);
+
+	upsdebugx(1, "ne_xml_dispatch_request() took %d ms",
+		(stop.tv_sec - start.tv_sec) * 1000 + (stop.tv_usec - start.tv_usec) / 1000);
+#endif
 
 	ne_xml_destroy(parser);
 	ne_request_destroy(request);
@@ -209,7 +221,7 @@ void upsdrv_banner(void)
 void upsdrv_initups(void)
 {
 	if (!getval("pollinterval")) {
-		upslogx(LOG_INFO, "No value specified for 'pollinterval' (defaulting to 5 seconds).\n");
+		upslogx(LOG_INFO, "No value specified for 'pollinterval' in UPS configuration (defaulting to 5 seconds).\n");
 		poll_interval = 5;
 	}
 
@@ -241,7 +253,7 @@ void upsdrv_initups(void)
 	session = ne_session_create(uri.scheme, uri.host, uri.port);
 
 	/* just wait for a couple of seconds */
-	ne_set_read_timeout(session, 10);
+	ne_set_read_timeout(session, 3);
 
 	/* Sets the user-agent string */
 	ne_set_useragent(session, subdriver->version);
@@ -258,7 +270,11 @@ void upsdrv_cleanup(void)
 {
 	free(subdriver->getobject);
 	free(subdriver->setobject);
-	ne_session_destroy(session);
+
+	if (session) {
+		ne_session_destroy(session);
+	}
+
 	ne_uri_free(&uri);
 }
 

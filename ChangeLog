@@ -1,3 +1,12 @@
+Wed Apr  2 20:41:38 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/netxml-ups: lower timeout value for communication with the
+   UPS to 3 seconds and increase number of retries allowed to 10
+   before complaining about stale data (also fix minor issue with
+   cleanup of the driver)
+ - man/netxml-ups.8: update manual page to reflect how this driver
+   deals with 'pollinterval'
+
 Tue Apr  1 20:15:44 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - clients/upscmd: be a good little client that cleans up after itself

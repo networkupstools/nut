@@ -30,7 +30,7 @@
 #include "netxml-ups.h"
 #include "mge-xml.h"
 
-#define MGE_XML_VERSION		"MGEXML/0.10"
+#define MGE_XML_VERSION		"MGEXML/0.12"
 #define MGE_XML_INITUPS		"/"
 #define MGE_XML_INITINFO	"/mgeups/product.xml"
 
@@ -912,7 +912,7 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 			return 0;
 		}
 
-		upsdebugx(2, "-> XML variable %s [%s] doesn't map to any NUT variable", var, val);
+		upsdebugx(3, "-> XML variable %s [%s] doesn't map to any NUT variable", var, val);
 		break;
 	}
 	
