@@ -1,3 +1,8 @@
+Wed Apr  2 20:09:41 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - common/state.[ch]: make the command list sorted (so that commands
+   will be listed in alphabetic order by upscmd)
+
 2.2.2-pre1
 
 Wed Apr  2 14:22:02 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>

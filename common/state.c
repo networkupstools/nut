@@ -215,7 +215,7 @@ static void st_tree_enum_add(struct enum_t **list, const char *enc)
 	st_tree_enum_add(&item->next, enc);
 }
 
-int state_addenum(struct st_tree_t *root, const char *var, const char *value)
+int state_addenum(struct st_tree_t *root, const char *var, const char *val)
 {
 	struct	st_tree_t	*sttmp;
 	char	enc[ST_MAX_VALUE_LEN];
@@ -230,7 +230,7 @@ int state_addenum(struct st_tree_t *root, const char *var, const char *value)
 	}
 
 	/* smooth over any oddities in the enum value */
-	pconf_encode(value, enc, sizeof(enc));
+	pconf_encode(val, enc, sizeof(enc));
 
 	st_tree_enum_add(&sttmp->enum_list, enc);
 
@@ -347,26 +347,33 @@ void state_setflags(struct st_tree_t *root, const char *var, int numflags,
 	}
 }
 
-int state_addcmd(struct cmdlist_t **list, const char *cmdname)
+int state_addcmd(struct cmdlist_t **list, const char *cmd)
 {
-	struct	cmdlist_t	*item = *list;
+	struct cmdlist_t	*item;
 
-	if (!item) {	/* end of list reached */
-		item = xmalloc(sizeof(struct cmdlist_t));
-		item->name = xstrdup(cmdname);
-		item->next = NULL;
+	while (*list) {
 
-		/* now we're done creating it, add it to the list */
-		*list = item;
+		if (strcasecmp((*list)->name, cmd) > 0) {
+			/* insertion point reached */
+			break;
+		}
 
-		return 1;
+		if (strcasecmp((*list)->name, cmd) < 0) {
+			list = &(*list)->next;
+			continue;
+		}
+
+		return 0;	/* duplicate */
 	}
 
-	/* don't add duplicates - silently ignore them */
-	if (!strcasecmp(item->name, cmdname))
-		return 0;
+	item = xcalloc(1, sizeof(*item));
+	item->name = xstrdup(cmd);
+	item->next = *list;
 
-	return state_addcmd(&item->next, cmdname);
+	/* now we're done creating it, insert it in the list */
+	*list = item;
+
+	return 1;
 }
 
 void state_infofree(struct st_tree_t *node)
@@ -394,23 +401,31 @@ void state_cmdfree(struct cmdlist_t *list)
 
 int state_delcmd(struct cmdlist_t **list, const char *cmd)
 {
-	struct	cmdlist_t	*item = *list;
+	while (*list) {
 
-	if (!item)	/* not found */
-		return 0;
+		struct cmdlist_t	*item = *list;
 
-	/* if this is not the right command, go on to the next */
-	if (strcmp(item->name, cmd))
-		return state_delcmd(&item->next, cmd);
+		if (strcasecmp(item->name, cmd) > 0) {
+			/* not found */
+			break;
+		}
 
-	/* we found it! */
+		if (strcasecmp(item->name, cmd) < 0) {
+			list = &item->next;
+			continue;
+		}
 
-	*list = item->next;
+		/* we found it! */
 
-	free(item->name);
-	free(item);
+		*list = item->next;
 
-	return 1;	/* deleted */
+		free(item->name);
+		free(item);
+
+		return 1;	/* deleted */
+	}
+
+	return 0;
 }
 
 static int st_tree_del_enum(struct enum_t **list, const char *val)
