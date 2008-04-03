@@ -54,7 +54,7 @@ gboolean	dbus_init_local		(void);
 	extern	struct	ups_handler	upsh;
 
 void dstate_init(const char *prog, const char *port);
-int dstate_poll_fds(int interval, int extrafd);
+int dstate_poll_fds(struct timeval timeout, int extrafd);
 int dstate_setinfo(const char *var, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
 int dstate_addenum(const char *var, const char *fmt, ...)

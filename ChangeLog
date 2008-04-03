@@ -1,3 +1,15 @@
+Thu Apr  3 20:43:29 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/main.c: keep polling the filedescriptors until the poll
+   interval has elapsed or the 'extrafd' draws the attention
+   (previously, anything happening on the filedescriptors, would
+   trigger upsdrv_updateinfo() too, even errors)
+ - drivers/dstate.[ch]: see the above
+ - drivers/dstate-hal.[ch]: added sleep here, to limit the polling
+   rate (previously, the driver would completely ignore the poll
+   interval and would run upsdrv_updateinfo() without any delays
+   in between)
+
 Wed Apr  2 20:41:38 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/netxml-ups: lower timeout value for communication with the

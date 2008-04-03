@@ -439,6 +439,9 @@ int main(int argc, char **argv)
 	struct	passwd	*new_uid = NULL;
 	int	i, do_forceshutdown = 0;
 
+	/* safe to do this now that the parent has exited */
+	atexit(exit_cleanup);
+
 	/* pick up a default from configure --with-user */
 	user = xstrdup(RUN_AS_USER);	/* xstrdup: this gets freed at exit */
 
@@ -573,17 +576,21 @@ int main(int argc, char **argv)
 		writepid(pidfn);
 	}
 
-	/* safe to do this now that the parent has exited */
-	atexit(exit_cleanup);
+	while (!exit_flag) {
 
-	while (exit_flag == 0) {
+		struct timeval	timeout;
+	
+		gettimeofday(&timeout, NULL);
+		timeout.tv_sec += poll_interval;
+
 		upsdrv_updateinfo();
 
-		dstate_poll_fds(poll_interval, extrafd);
+		while (!dstate_poll_fds(timeout, extrafd)) {
+			/* repeat until time is up or extrafd has data */
+		}
 	}
 
 	/* if we get here, the exit flag was set by a signal handler */
-
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
 
 	exit(EXIT_SUCCESS);

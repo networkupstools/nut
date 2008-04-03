@@ -420,10 +420,14 @@ void dstate_free(void)
 }
 
 /* extrafd: provided for waking up based on the driver's UPS fd */
-int dstate_poll_fds(int interval, int extrafd)
+int dstate_poll_fds(struct timeval timeout, int extrafd)
 {
-	return 0;
-}	
+	/* drivers expect us to limit the polling rate here */
+	sleep(timeout.tv_sec);
+
+	/* the timeout expired */
+	return 1;
+}
 
 /* clean out the temp space for a new pass */
 void status_init(void)

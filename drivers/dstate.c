@@ -491,16 +491,13 @@ void dstate_init(const char *prog, const char *port)
 	upsdebugx(2, "dstate_init: sock %s open on fd %d", sockname, sockfd);
 }
 
-/* extrafd: provided for waking up based on the driver's UPS fd */
-int dstate_poll_fds(int interval, int extrafd)
+/* returns 1 if timeout expired or data is available on UPS fd, 0 otherwise */
+int dstate_poll_fds(struct timeval timeout, int extrafd)
 {
-	int		ret, maxfd;
+	int	ret, maxfd, overrun = 0;
 	fd_set	rfds;
-	struct timeval	tv;
+	struct timeval	now;
 	struct conn_t	*conn, *cnext;
-
-	tv.tv_sec = interval;
-	tv.tv_usec = 0;
 
 	FD_ZERO(&rfds);
 	FD_SET(sockfd, &rfds);
@@ -523,18 +520,42 @@ int dstate_poll_fds(int interval, int extrafd)
 		}
 	}
 
-	ret = select(maxfd + 1, &rfds, NULL, NULL, &tv);
+	gettimeofday(&now, NULL);
+
+	/* number of microseconds should always be positive */
+	if (timeout.tv_usec < now.tv_usec) {
+		timeout.tv_sec -= 1;
+		timeout.tv_usec += 1000000;
+	}
+
+	if (timeout.tv_sec < now.tv_sec) {
+		timeout.tv_sec = 0;
+		timeout.tv_usec = 0;
+		overrun = 1;	/* no time left */
+	} else {
+		timeout.tv_sec -= now.tv_sec;
+		timeout.tv_usec -= now.tv_usec;
+	}
+	
+	ret = select(maxfd + 1, &rfds, NULL, NULL, &timeout);
 
 	if (ret == 0) {
-		return 0;
+		return 1;	/* timer expired */
 	}
 
 	if (ret < 0) {
-		/* ignore interruptions from signals */
-		if (errno != EINTR) {
+		switch (errno)
+		{
+		case EINTR:
+		case EAGAIN:
+			/* ignore interruptions from signals */
+			break;
+
+		default:
 			upslog_with_errno(LOG_ERR, "select unix sockets failed");
 		}
-		return 0;
+
+		return overrun;
 	}
 
 	if (FD_ISSET(sockfd, &rfds)) {
@@ -554,8 +575,8 @@ int dstate_poll_fds(int interval, int extrafd)
 		return 1;
 	}
 
-	return 0;
-}	
+	return overrun;
+}
 
 int dstate_setinfo(const char *var, const char *fmt, ...)
 {
