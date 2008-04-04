@@ -585,7 +585,7 @@ int main(int argc, char **argv)
 
 		upsdrv_updateinfo();
 
-		while (!dstate_poll_fds(timeout, extrafd)) {
+		while (!dstate_poll_fds(timeout, extrafd) && !exit_flag) {
 			/* repeat until time is up or extrafd has data */
 		}
 	}
