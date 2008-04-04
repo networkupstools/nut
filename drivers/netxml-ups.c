@@ -36,10 +36,15 @@
 #include "mge-xml.h"
 
 #define DRV_VERSION	"0.12"
-#define MAXRETRIES	10
+#define MAXRETRIES	5
+
+#ifdef DEBUG
+#define difftimeval(x,y)	((double)y.tv_sec-x.tv_sec+((double)(y.tv_usec-x.tv_usec)/1000000))
+#endif
 
 /* Global vars */
 uint32_t		ups_status = 0;
+static int		timeout = 5;
 static subdriver_t	*subdriver = &mge_xml_subdriver;
 static ne_session	*session = NULL;
 static ne_uri		uri;
@@ -86,6 +91,10 @@ void upsdrv_initinfo(void)
 		upsdebugx(2, "%s: found no way to set variables", __func__);
 	}
 
+
+	/* don't allow too much time after the initial connect now on */
+	/* ne_set_connect_timeout(session, timeout); */
+
 	dstate_setinfo("driver.version.internal", "%s", subdriver->version);
 
 	/* upsh.instcmd = instcmd; */
@@ -123,19 +132,21 @@ void upsdrv_updateinfo(void)
 #ifdef DEBUG
 	gettimeofday(&stop, NULL);
 
-	upsdebugx(1, "ne_xml_dispatch_request() took %d ms",
-		(stop.tv_sec - start.tv_sec) * 1000 + (stop.tv_usec - start.tv_usec) / 1000);
+	upsdebugx(1, "ne_xml_dispatch_request (%.3f seconds)", difftimeval(start, stop));
 #endif
 
 	ne_xml_destroy(parser);
 	ne_request_destroy(request);
 
 	if (ret != NE_OK) {
-		upslogx(LOG_ERR, "%s: communication failure [%s]", __func__, ne_get_error(session));
-
+#ifdef DEBUG
+		upslogx(LOG_ERR, "%s (%.3f seconds)", ne_get_error(session), difftimeval(start, stop));
+#endif
 		if (retries < MAXRETRIES) {
+			upsdebugx(1, "%s (%d from %d)", ne_get_error(session), retries, MAXRETRIES);
 			retries++;
 		} else {
+			upslogx(LOG_ERR, "%s", ne_get_error(session));
 			dstate_datastale();
 		}
 
@@ -207,22 +218,32 @@ void upsdrv_help(void)
 /* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {
+	char	buf[SMALLBUF];
+
+	snprintf(buf, sizeof(buf), "network timeout (default %d seconds)", timeout);
+	addvar(VAR_VALUE, "timeout", buf);
+
 	addvar(VAR_VALUE, "login", "login value for authenticated mode");
 	addvar(VAR_VALUE, "password", "password value for authenticated mode");
 }
 
 void upsdrv_banner(void)
 {
-	printf("Network UPS Tools - network XML UPS driver %s (%s)\n\n", 
+	printf("Network UPS Tools - network XML UPS driver %s (%s)\n\n",
 		DRV_VERSION, UPS_VERSION);
+
 	experimental_driver = 1;
 }
 
 void upsdrv_initups(void)
 {
-	if (!getval("pollinterval")) {
-		upslogx(LOG_INFO, "No value specified for 'pollinterval' in UPS configuration (defaulting to 5 seconds).\n");
-		poll_interval = 5;
+	char	*val;
+
+	/* allow override of default network timeout value */
+	val = getval("timeout");
+
+	if (val) {
+		timeout = atoi(val);
 	}
 
 	/* Initialize socket libraries */
@@ -253,7 +274,7 @@ void upsdrv_initups(void)
 	session = ne_session_create(uri.scheme, uri.host, uri.port);
 
 	/* just wait for a couple of seconds */
-	ne_set_read_timeout(session, 3);
+	ne_set_read_timeout(session, timeout);
 
 	/* Sets the user-agent string */
 	ne_set_useragent(session, subdriver->version);

@@ -1,3 +1,10 @@
+Fri Apr  4 21:04:52 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/netxml-ups: added some debugging code and a timeout
+   parameter that allows changing the network timeouts
+ - m4/nut_check_libneon.m4: use pkg-config to reveal the version
+   of the installed neon library
+
 Thu Apr  3 20:43:29 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/main.c: keep polling the filedescriptors until the poll
