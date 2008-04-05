@@ -104,10 +104,12 @@ typedef struct {
 
 /* list of all known devices */
 static usb_ups_t KnownDevices[] = {
-	{0x05b8, 0x0000, &agiler_subdriver},	/* Agiler UPS */
-	{0x0001, 0x0000, &krauler_subdriver},	/* Krauler UP-M500VA */
-	{0xffff, 0x0000, &krauler_subdriver},	/* Ablerex 625L USB */
-	{0x0665, 0x5161, &agiler_subdriver},	/* Belkin F6C1200-UNV */
+	{0x05b8, 0x0000, &agiler_old_subdriver},	/* Agiler UPS */
+	{0x0001, 0x0000, &krauler_subdriver},		/* Krauler UP-M500VA */
+	{0xffff, 0x0000, &krauler_subdriver},		/* Ablerex 625L USB */
+	{0x0665, 0x5161, &agiler_old_subdriver},	/* Belkin F6C1200-UNV */
+	{0x06da, 0x0003, &agiler_old_subdriver},	/* Mustek Powermust */
+	{0x0f03, 0x0001, &agiler_old_subdriver},	/* Unitek Alpha 1200Sx */
 	{-1, -1, NULL}		/* end of list */
 };
 
@@ -457,12 +459,6 @@ static int get_data_agiler_old(char *buffer, int buffer_size)
 
 /*
     Agiler serial-to-usb device.
-
-    Protocol was reverse-engineered from Windows driver
-    HID tables are completely bogus
-    Data is transferred out as one 8-byte packet with report ID 0
-    Data comes in as 6 8-byte reports per line , padded with zeroes
-    All constants are hardcoded in windows driver
 */
 
 static int set_data_agiler(const char *str)

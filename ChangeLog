@@ -1,3 +1,9 @@
+Sat Apr  5 14:13:30 UTC 2008 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ - drivers/megatec_usb.c: changed the default subdriver from agiler
+   to agiler-old for several devices known for incompatibility with
+   agiler subdriver.
+
 Sat Apr  5 14:05:39 UTC 2008 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
 
  - drivers/megatec_usb.c: (backported from trunk r1423)
