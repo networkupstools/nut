@@ -57,6 +57,7 @@
 
 "Atlantis Land"	"A03-P826"	""	"megatec"
 
+"Belkin"	"Active Battery Backup BU30 series"	"USB"	"megatec_usb"
 "Belkin"	"Home Office F6H350-SER"	""	"genericups upstype=7"
 "Belkin"	"Home Office F6H500-SER"	""	"genericups upstype=7"
 "Belkin"	"Home Office F6H650-SER"	""	"genericups upstype=7"
@@ -187,11 +188,13 @@
 "Infosec"	"iPEL 500"	""	"megatec"
 "Infosec"	"iPEL 750"	""	"megatec"
 "Infosec"	"iPEL 1000"	""	"megatec"
+"Infosec"	"XP 500"	"USB"	"megatec_usb"
 
 "Ippon"		"(various)"		""	"megatec"
 
 "Jageson Technology"	"Jasuny USPS"	""	"genericups upstype=4"
 
+"Krauler"	"UP-D1200VA"	"USB"	"megatec_usb ignoreoff"
 "Krauler"	"UP-M500VA"	"USB"	"megatec_usb"
 
 "Lestar"	"MD-800E"	""	"megatec"
@@ -424,13 +427,15 @@
 
 "Orvaldi Power Protection"	"various"	"not 400 or 600"	"megatec"
 
+"Plexus"	"1000VA Pro"	"USB"	"megatec_usb ignoreoff"
+
 "Powercom"	"SMK"			""	"megatec"
 "Powercom"	"SXL"			""	"megatec"
 "Powercom"	"ULT"			""	"megatec"
 "Powercom"	"Trust 425/625"			""	"powercom"
 "Powercom"	"(various)"			""	"powercom"
 "Powercom"	"Advice Partner/King Pr750"	""	"powercom"
-"Powercom"	"Vanguard 6000"			""	"megatec"
+"Powercom"	"Vanguard 6000"		""	"megatec"
 
 "PowerGuard"	"PG-600"	""	"megatec"
 
@@ -530,10 +535,13 @@
 "UNITEK"	"Alpha 1000is"		""	"megatec"
 "UNITEK"	"Alpha 500 ipE"		""	"megatec"
 "UNITEK"	"Alpha 2600"		""	"megatec"
+"UNITEK"	"Alpha 1200Sx"		"USB"	"megatec_usb"
+"UNITEK"	"Alpha 1250xD"		"USB"	"megatec_usb"
 
 "UPSonic"	"CXR1000"		""	"megatec"
 "UPSonic"	"LAN Saver 600"		""	"genericups upstype=0"
 "UPSonic"	"Power Guardian"	""	"genericups upstype=7"
+"UPSonic"	"PrOffice 650"		"USB"	"megatec_usb"
 
 "Various"	"(various)"	"SEC protocol"		"gamatronic"
 "Various"	"(various)"	"Generic RUPS model"	"genericups upstype=4"

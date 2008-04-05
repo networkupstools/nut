@@ -1,3 +1,8 @@
+Sat Apr  5 14:54:38 UTC 2008 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - data/drivers.list: added models supported by megatec and megatec_usb
+ - drivers/megatec.c: backport from the trunk (better at handling bad data)
+
 Sat Apr  5 13:49:46 UTC 2008 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
 
  - drivers/megatec_usb.c: (backported from trunk r1168, r1211)
