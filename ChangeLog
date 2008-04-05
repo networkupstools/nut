@@ -1,3 +1,10 @@
+Sat Apr  5 13:41:43 UTC 2008 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ - drivers/megatec_usb.c: (backported from trunk r1151)
+   merged all functionality of get_data_krauler
+   to set_data_krauler thus removing most sources of code duplication
+   in krauler subdriver.
+
 Wed Apr  2 20:09:41 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - common/state.[ch]: make the command list sorted (so that commands
