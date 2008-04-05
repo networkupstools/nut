@@ -1,3 +1,8 @@
+Sat Apr  5 14:05:39 UTC 2008 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ - drivers/megatec_usb.c: (backported from trunk r1423)
+   resurrected an old stable version of agiler subdriver.
+
 Sat Apr  5 14:54:38 UTC 2008 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - data/drivers.list: added models supported by megatec and megatec_usb
