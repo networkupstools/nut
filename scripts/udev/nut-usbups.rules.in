@@ -24,7 +24,7 @@ SYSFS{idVendor}=="06da", SYSFS{idProduct}=="0003", MODE="664", GROUP="@RUN_AS_GR
 # LIEBERT/PowerSure Personal XT
 SYSFS{idVendor}=="06da", SYSFS{idProduct}=="ffff", MODE="664", GROUP="@RUN_AS_GROUP@"
 
-# Cypress Semiconductor USB to Serial
+# Cypress Semiconductor USB to Serial - megatec_usb
 SYSFS{idVendor}=="0665", SYSFS{idProduct}=="5161", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 # Powercom - unknown driver
@@ -39,6 +39,9 @@ SYSFS{idVendor}=="0001", SYSFS{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_GR
 
 # Ablerex - megatec_usb
 SYSFS{idVendor}=="ffff", SYSFS{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_GROUP@"
+
+# Unitek - megatec_usb
+SYSFS{idVendor}=="0f03", SYSFS{idProduct}=="0001", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 # Powerware - bcmxcp_usb
 SYSFS{idVendor}=="0592", SYSFS{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_GROUP@"

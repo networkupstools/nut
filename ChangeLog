@@ -1,3 +1,8 @@
+Sat Apr  5 14:30:00 UTC 2008 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ - added several devices supported by megatec_usb to the compatibility
+   list and udev script.
+
 Sat Apr  5 14:13:30 UTC 2008 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
 
  - drivers/megatec_usb.c: changed the default subdriver from agiler
