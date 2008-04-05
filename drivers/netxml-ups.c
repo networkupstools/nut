@@ -229,14 +229,17 @@ void upsdrv_makevartable(void)
 
 void upsdrv_banner(void)
 {
-	printf("Network UPS Tools - network XML UPS driver %s (%s)\n\n",
+	printf("Network UPS Tools - network XML UPS driver %s (%s)\n",
 		DRV_VERSION, UPS_VERSION);
+	printf("%s\n\n", ne_version_string());
 
 	experimental_driver = 1;
 }
 
 void upsdrv_initups(void)
 {
+	FILE	*fp;
+	int	ret;
 	char	*val;
 
 	/* allow override of default network timeout value */
@@ -285,6 +288,27 @@ void upsdrv_initups(void)
 	}
 
 	ne_set_server_auth(session, authenticate, NULL);
+
+	/* if debug level is set, direct output to stderr */
+	if (!nut_debug_level) {
+		fp = fopen("/dev/null", "w");
+	} else {
+		fp = stderr;
+	}
+
+	if (!fp) {
+		upslog_with_errno(LOG_INFO, "Connectivity test");
+		return;
+	}
+
+	/* see if we have a connection */
+	ret = ne_get(session, subdriver->initinfo, fileno(fp));
+
+	if (ret != NE_OK) {
+		fatalx(LOG_INFO, "Connectivity test: %s", ne_get_error(session));
+	}
+
+	upslogx(LOG_INFO, "Connectivity test: %s", ne_get_error(session));
 }
 
 void upsdrv_cleanup(void)
