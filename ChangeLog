@@ -1,3 +1,8 @@
+Sat Apr  5 13:25:03 UTC 2008 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ - drivers/megatec_usb.c: resurrected an old version of agiler
+   subdriver for testing.
+
 Fri Apr  4 21:09:16 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/main.c: check for the exit flag

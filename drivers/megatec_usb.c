@@ -55,6 +55,16 @@ typedef struct {
 	int	(*set_data) (const char *str);
 } subdriver_t;
 
+/* agiler-old subdriver definition */
+static int get_data_agiler_old(char *buffer, int buffer_size);
+static int set_data_agiler_old(const char *str);
+
+static subdriver_t agiler_old_subdriver = {
+	"agiler-old",
+	get_data_agiler_old,
+	set_data_agiler_old
+};
+
 /* agiler subdriver definition */
 static int get_data_agiler(char *buffer, int buffer_size);
 static int set_data_agiler(const char *str);
@@ -87,6 +97,7 @@ static subdriver_t krauler_subdriver = {
 
 /* list of subdrivers */
 static subdriver_t *subdriver_list[] = {
+	&agiler_old_subdriver,
 	&agiler_subdriver,
 	&krauler_subdriver,
 	&phoenix_subdriver,
@@ -397,6 +408,64 @@ int ser_get_line(int fd, void *buf, size_t buflen, char endchar, const char *ign
 }
 
 /************** minidrivers go after this point **************************/
+
+/*
+    agiler-old subdriver
+*/
+/*  Protocol was reverse-engineered from Windows driver
+    HID tables are completely bogus
+    Data is transferred out as one 8-byte packet with report ID 0
+    Data comes in as 6 8-byte reports per line , padded with zeroes
+    All constants are hardcoded in windows driver
+*/
+
+#define AGILER_REPORT_SIZE      8
+#define AGILER_REPORT_COUNT     6
+#define AGILER_TIMEOUT          5000
+
+static int set_data_agiler_old(const char *str)
+{
+        unsigned char report_buf[AGILER_REPORT_SIZE];
+
+        if (strlen(str) > AGILER_REPORT_SIZE) {
+                upslogx(LOG_ERR, "set_data_agiler: output string too large");
+                return -1;
+        }
+
+        memset(report_buf, 0, sizeof(report_buf));
+        memcpy(report_buf, str, strlen(str));
+
+        return usb->set_report(udev, 0, report_buf, sizeof(report_buf));
+}
+
+static int get_data_agiler_old(char *buffer, int buffer_size)
+{
+        int i, len;
+        char buf[AGILER_REPORT_SIZE * AGILER_REPORT_COUNT + 1];
+
+        memset(buf, 0, sizeof(buf));
+
+        for (i = 0; i < AGILER_REPORT_COUNT; i++) {
+                len = usb->get_interrupt(udev, (unsigned char *) buf + i * AGILER_REPORT_SIZE, AGILER_REPORT_SIZE, AGILER_TIMEOUT);
+                if (len != AGILER_REPORT_SIZE) {
+                        if (len < 0)
+                                len = 0;
+                        buf[i * AGILER_REPORT_SIZE + len] = 0;
+                        upsdebug_hex(5, "get_data_agiler: raw dump", buf, i * AGILER_REPORT_SIZE + len);
+                        break;
+                }
+        }
+
+        len = strlen(buf);
+
+        if (len > buffer_size) {
+                upslogx(LOG_ERR, "get_data_agiler: input buffer too small");
+                len = buffer_size;
+        }
+
+        memcpy(buffer, buf, len);
+        return len;
+}
 
 
 /*
