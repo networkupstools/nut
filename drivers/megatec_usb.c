@@ -46,6 +46,8 @@ KnownDevices table.
 static usb_communication_subdriver_t *usb = &usb_subdriver;
 static usb_dev_handle *udev = NULL;
 static USBDevice_t usbdevice;
+static USBDeviceMatcher_t *reopen_matcher = NULL;
+static USBDeviceMatcher_t *regex_matcher = NULL;
 
 typedef struct {
 	char	*name;
@@ -98,7 +100,7 @@ static usb_ups_t KnownDevices[] = {
 	{-1, -1, NULL}		/* end of list */
 };
 
-static int comm_usb_match(USBDevice_t *d, void *privdata)
+static int subdriver_match_func(USBDevice_t *d, void *privdata)
 {
 	usb_ups_t *p;
 
@@ -114,6 +116,12 @@ static int comm_usb_match(USBDevice_t *d, void *privdata)
 
 	return 0;
 }
+
+static USBDeviceMatcher_t subdriver_matcher = {
+	subdriver_match_func,
+	NULL,
+	NULL
+};
 
 static void usb_open_error(const char *port)
 {
@@ -148,13 +156,8 @@ void megatec_subdrv_makevartable()
 
 int ser_open(const char *port)
 {
-	USBDeviceMatcher_t subdriver_matcher;
-	int ret, i;
-	char flush_buf[256];
-
-	USBDeviceMatcher_t *regex_matcher = NULL;
-	int r;
 	char *regex_array[6];
+	int ret;
 
 	char *subdrv = getval("subdriver");
 	char *vid = getval("vendorid");
@@ -162,6 +165,7 @@ int ser_open(const char *port)
 	char *vend = getval("vendor");
 	char *prod = getval("product");
 
+	/* pick up the subdriver name if set explicitly */
 	if(subdrv)
 	{
 		subdriver_t **p;
@@ -186,9 +190,6 @@ int ser_open(const char *port)
 			fatalx(EXIT_FAILURE, "No subdrivers named \"%s\" found!", subdrv);
 	}
 
-	memset(&subdriver_matcher, 0, sizeof(subdriver_matcher));
-	subdriver_matcher.match_function = &comm_usb_match;
-
 	/* FIXME: fix "serial" variable */
         /* process the UPS selection options */
 	regex_array[0] = vid;
@@ -198,11 +199,11 @@ int ser_open(const char *port)
 	regex_array[4] = NULL; /* getval("serial"); */
 	regex_array[5] = getval("bus");
 
-	r = USBNewRegexMatcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
-	if (r==-1) {
+	ret = USBNewRegexMatcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
+	if (ret == -1) {
 		fatal_with_errno(EXIT_FAILURE, "USBNewRegexMatcher");
-	} else if (r) {
-		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[r]);
+	} else if (ret) {
+		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[ret]);
 	}
 	/* link the matchers */
 	regex_matcher->next = &subdriver_matcher;
@@ -211,14 +212,16 @@ int ser_open(const char *port)
 	if (ret < 0)
 		usb_open_error(port);
 
-	/* TODO: Add make exact matcher for reconnecting feature support */
-	USBFreeRegexMatcher(regex_matcher);
-
-	/* flush input buffers */
-	for (i = 0; i < 10; i++) {
-		if (ser_get_line(upsfd, flush_buf, sizeof(flush_buf), 0, NULL, 0, 0) < 1)
-			break;
+	/* create a new matcher for later reopening */
+	ret = USBNewExactMatcher(&reopen_matcher, &usbdevice);
+	if (ret) {
+		fatal_with_errno(EXIT_FAILURE, "USBNewExactMatcher");
 	}
+	/* link the matchers */
+	reopen_matcher->next = regex_matcher;
+
+	/* NOTE: This is here until ser_flush_io() is used in megatec.c */
+	ser_flush_io(0);
 
 	return 0;
 }
@@ -240,13 +243,80 @@ int ser_set_rts(int fd, int state)
 
 int ser_flush_io(int fd)
 {
+	char flush_buf[256];
+	int i;
+
+	/* flush input buffers */
+	for (i = 0; i < 10; i++) {
+		if (subdriver->get_data(flush_buf, sizeof(flush_buf)) < 1)
+			break;
+	}
+
 	return 0;
+}
+
+void ser_comm_fail(const char *fmt, ...)
+{
+}
+
+void ser_comm_good(void)
+{
 }
 
 int ser_close(int fd, const char *port)
 {
 	usb->close(udev);
+	USBFreeExactMatcher(reopen_matcher);
+	USBFreeRegexMatcher(regex_matcher);
 	return 0;
+}
+
+/*!@brief Try to reconnect once.
+ * @return 1 if reconnection was successful.
+ */
+static int reconnect_ups(void)
+{
+	int ret;
+
+	upsdebugx(2, "==================================================");
+	upsdebugx(2, "= device has been disconnected, try to reconnect =");
+	upsdebugx(2, "==================================================");
+
+	usb->close(udev);
+
+	ret = usb->open(&udev, &usbdevice, reopen_matcher, NULL);
+	if (ret < 1) {
+		upslogx(LOG_INFO, "Reconnecting to UPS failed; will retry later...");
+		udev = NULL;
+		return 0;
+	} else
+		upslogx(LOG_NOTICE, "Successfully reconnected");
+
+	return ret;
+}
+
+/*!@brief Report a USB comm failure, and reconnect if necessary
+ * 
+ * @param[in] res	Result code from libusb/libhid call
+ * @param[in] msg	Error message to display
+ */
+void usb_comm_fail(int res, const char *msg)
+{
+	switch(res) {
+		case -EBUSY:
+			upslogx(LOG_WARNING, "%s: Device claimed by another process", msg);
+			fatalx(EXIT_FAILURE, "Terminating: EBUSY");
+			//upsdrv_cleanup();
+			break;
+
+		default:
+			upslogx(LOG_WARNING, "%s: Device detached? (error %d: %s)", msg, res, usb_strerror());
+
+			if(reconnect_ups()) {
+				//upsdrv_initinfo();
+			}
+			break;
+	}
 }
 
 unsigned int ser_send_pace(int fd, unsigned long d_usec, const char *fmt, ...)
@@ -254,8 +324,9 @@ unsigned int ser_send_pace(int fd, unsigned long d_usec, const char *fmt, ...)
 	char buf[128];
 	size_t len;
 	va_list ap;
+	int ret;
 
-	if (NULL == udev)
+	if ((udev == NULL) && (! reconnect_ups()))
 		return -1;
 
 	va_start(ap, fmt);
@@ -269,7 +340,12 @@ unsigned int ser_send_pace(int fd, unsigned long d_usec, const char *fmt, ...)
 		buf[sizeof(buf) - 1] = 0;
 	}
 
-	return subdriver->set_data(buf);
+	ret = subdriver->set_data(buf);
+	if(ret < 0) {
+		usb_comm_fail(ret, "ser_send_pace");
+	}
+
+	return ret;
 }
 
 int ser_get_line(int fd, char *buf, size_t buflen, char endchar, const char *ignset, long d_sec, long d_usec)
@@ -277,16 +353,18 @@ int ser_get_line(int fd, char *buf, size_t buflen, char endchar, const char *ign
 	int len;
 	char *src, *dst, c;
 
-	if (NULL == udev)
+	if ((udev == NULL) && (! reconnect_ups()))
 		return -1;
 
-	len = subdriver->get_data(buf, buflen);
-	if (len < 0)
+	len = subdriver->get_data((char *)buf, buflen);
+	if (len < 0) {
+		usb_comm_fail(len, "ser_get_line");
 		return len;
+	}
 
-	dst = buf;
+	dst = (char *)buf;
 
-	for (src = buf; src != (buf + len); src++) {
+	for (src = (char *)buf; src != ((char *)buf + len); src++) {
 		c = *src;
 
 		if (c == endchar)
@@ -299,10 +377,10 @@ int ser_get_line(int fd, char *buf, size_t buflen, char endchar, const char *ign
 	}
 
 	/* terminate string if we have space */
-	if (dst != (buf + len))
+	if (dst != ((char *)buf + len))
 		*dst = 0;
 
-	return (dst - buf);
+	return (dst - (char *)buf);
 }
 
 /************** minidrivers go after this point **************************/

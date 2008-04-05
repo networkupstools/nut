@@ -1,3 +1,8 @@
+Sat Apr  5 13:49:46 UTC 2008 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ - drivers/megatec_usb.c: (backported from trunk r1168, r1211)
+   added reconnect support.
+
 Sat Apr  5 13:41:43 UTC 2008 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
 
  - drivers/megatec_usb.c: (backported from trunk r1151)
