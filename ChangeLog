@@ -1,3 +1,8 @@
+Sun Apr  6 11:04:02 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - common/state.c,include/state.h: don't use recursion if we are only
+   walking through a tree or list
+
 Sun Apr  6 08:30:06 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/netxml-ups: use connect with timeout to prevent the

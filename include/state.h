@@ -41,15 +41,14 @@ struct st_tree_t {
 };
 
 int state_setinfo(struct st_tree_t **nptr, const char *var, const char *val);
-int state_addenum(struct st_tree_t *root, const char *var, const char *value);
+int state_addenum(struct st_tree_t *root, const char *var, const char *val);
 int state_setaux(struct st_tree_t *root, const char *var, const char *auxs);
 const char *state_getinfo(struct st_tree_t *root, const char *var);
 int state_getflags(struct st_tree_t *root, const char *var);
 int state_getaux(struct st_tree_t *root, const char *var);
 const struct enum_t *state_getenumlist(struct st_tree_t *root, const char *var);
-void state_setflags(struct st_tree_t *root, const char *var, int numflags,
-        char **flags);
-int state_addcmd(struct cmdlist_t **list, const char *cmdname);
+void state_setflags(struct st_tree_t *root, const char *var, int numflags, char **flags);
+int state_addcmd(struct cmdlist_t **list, const char *cmd);
 void state_infofree(struct st_tree_t *node);
 void state_cmdfree(struct cmdlist_t *list);
 int state_delcmd(struct cmdlist_t **list, const char *cmd);
