@@ -53,6 +53,7 @@ static ne_uri		uri;
 static void ups_alarm_set(void);
 static void ups_status_set(void);
 static int authenticate(void *userdata, const char *realm, int attempt, char *username, char *password);
+static int dispatch_request(ne_request *request, ne_xml_parser *parser);
 
 void upsdrv_initinfo(void)
 {
@@ -74,7 +75,7 @@ void upsdrv_initinfo(void)
 	/* Push a new handler on the parser stack */
 	ne_xml_push_handler(parser, subdriver->startelm_cb, subdriver->cdata_cb, subdriver->endelm_cb, NULL);
 
-	ret = ne_xml_dispatch_request(request, parser);
+	ret = dispatch_request(request, parser);
 
 	ne_xml_destroy(parser);
 	ne_request_destroy(request);
@@ -90,10 +91,6 @@ void upsdrv_initinfo(void)
 	if (!subdriver->setobject) {
 		upsdebugx(2, "%s: found no way to set variables", __func__);
 	}
-
-
-	/* don't allow too much time after the initial connect now on */
-	/* ne_set_connect_timeout(session, timeout); */
 
 	dstate_setinfo("driver.version.internal", "%s", subdriver->version);
 
@@ -128,11 +125,11 @@ void upsdrv_updateinfo(void)
 #ifdef DEBUG
 	gettimeofday(&start, NULL);
 #endif
-	ret = ne_xml_dispatch_request(request, parser);
+	ret = dispatch_request(request, parser);
 #ifdef DEBUG
 	gettimeofday(&stop, NULL);
 
-	upsdebugx(1, "ne_xml_dispatch_request (%.3f seconds)", difftimeval(start, stop));
+	upsdebugx(1, "dispatch request (%.3f seconds)", difftimeval(start, stop));
 #endif
 
 	ne_xml_destroy(parser);
@@ -229,9 +226,8 @@ void upsdrv_makevartable(void)
 
 void upsdrv_banner(void)
 {
-	printf("Network UPS Tools - network XML UPS driver %s (%s)\n",
+	printf("Network UPS Tools - network XML UPS driver %s (%s)\n\n",
 		DRV_VERSION, UPS_VERSION);
-	printf("%s\n\n", ne_version_string());
 
 	experimental_driver = 1;
 }
@@ -276,6 +272,10 @@ void upsdrv_initups(void)
 	/* create the session */
 	session = ne_session_create(uri.scheme, uri.host, uri.port);
 
+	/* allow the first connection some extra time, as
+	   we may need to resolve the name of the UPS first */
+	ne_set_connect_timeout(session, 60);
+
 	/* just wait for a couple of seconds */
 	ne_set_read_timeout(session, timeout);
 
@@ -297,18 +297,27 @@ void upsdrv_initups(void)
 	}
 
 	if (!fp) {
-		upslog_with_errno(LOG_INFO, "Connectivity test");
+		upslog_with_errno(LOG_INFO, "Connectivity test skipped");
 		return;
 	}
 
 	/* see if we have a connection */
-	ret = ne_get(session, subdriver->initinfo, fileno(fp));
+	ret = ne_get(session, subdriver->initups, fileno(fp));
+
+	if (!nut_debug_level) {
+		fclose(fp);
+	} else {
+		fprintf(fp, "\n...done\n");
+	}
 
 	if (ret != NE_OK) {
 		fatalx(LOG_INFO, "Connectivity test: %s", ne_get_error(session));
 	}
 
 	upslogx(LOG_INFO, "Connectivity test: %s", ne_get_error(session));
+
+	/* following connects shouldn't require DNS queries anymore */
+	ne_set_connect_timeout(session, timeout);
 }
 
 void upsdrv_cleanup(void)
@@ -326,6 +335,32 @@ void upsdrv_cleanup(void)
 /**********************************************************************
  * Support functions
  *********************************************************************/
+
+/* Starting with neon-0.27.0 the ne_dispatch_request() function will check
+   for a valid XML content-type (following RFC 3023 rules) in the header.
+   Unfortunately, (at least) the Transverse NMC doesn't follow this RFC, so
+   we can't use this anymore and we'll have to roll our own here. */
+static int dispatch_request(ne_request *request, ne_xml_parser *parser)
+{
+	int ret;
+
+	do {
+		ret = ne_begin_request(request);
+
+		if (ret != NE_OK) {
+			break;
+		}
+
+		ret = ne_xml_parse_response(request, parser);
+
+		if (ret == NE_OK) {
+			ret = ne_end_request(request);
+		}
+
+	} while (ret == NE_RETRY);
+
+	return ret;
+}
 
 /* Supply the 'login' and 'password' when authentication is required */
 static int authenticate(void *userdata, const char *realm, int attempt, char *username, char *password)
@@ -403,10 +438,10 @@ static void ups_status_set(void)
 	if (STATUS_BIT(ONLINE)) {
 		status_set("OL");		/* on line */
 	} else {
-		status_set("OB");               /* on battery */
+		status_set("OB");		/* on battery */
 	}
 	if (STATUS_BIT(DISCHRG) && !STATUS_BIT(DEPLETED)) {
-		status_set("DISCHRG");	        /* discharging */
+		status_set("DISCHRG");		/* discharging */
 	}
 	if (STATUS_BIT(CHRG) && !STATUS_BIT(FULLYCHARGED)) {
 		status_set("CHRG");		/* charging */
@@ -424,13 +459,13 @@ static void ups_status_set(void)
 		status_set("TRIM");		/* SmartTrim */
 	}
 	if (STATUS_BIT(BOOST)) {
-		status_set("BOOST");	        /* SmartBoost */
+		status_set("BOOST");		/* SmartBoost */
 	}
 	if (STATUS_BIT(BYPASSAUTO) || STATUS_BIT(BYPASSMAN)) {
-		status_set("BYPASS");	        /* on bypass */
+		status_set("BYPASS");		/* on bypass */
 	}
 	if (STATUS_BIT(OFF)) {
-		status_set("OFF");              /* ups is off */
+		status_set("OFF");		/* ups is off */
 	}
 	if (STATUS_BIT(CAL)) {
 		status_set("CAL");		/* calibration */

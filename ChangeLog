@@ -1,3 +1,8 @@
+Sun Apr  6 08:30:06 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/netxml-ups: use connect with timeout to prevent the
+   server declaring us stale (requires neon-0.27.0 or newer)
+
 Sat Apr  5 16:03:25 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/netxml-ups: add connectivity test
