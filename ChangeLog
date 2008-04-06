@@ -1,3 +1,8 @@
+Sun Apr  6 12:29:52 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - man/netxml-ups.8: be more verbose in explanation of the 'timeout'
+   value that can be specified in 'ups.conf'
+
 Sun Apr  6 11:41:03 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/netxml-ups: require connectivity test to pass and fix

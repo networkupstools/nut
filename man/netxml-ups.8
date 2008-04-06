@@ -27,6 +27,13 @@ This driver supports the following optional settings in the
 
 .IP "timeout=\fIvalue\fR"
 The timeout for connecting to and reading from the UPS. Defaults to 5 seconds.
+On the first connect, this value will be ignored and a value of 60 seconds is
+used, to allow enough time for DNS queries to resolve (should these be needed).
+Don't change this value unless you know exactly what you're doing.
+
+This value \fBmust never\fR be higher than half the MAXAGE value specified in
+\fBupsd.conf\fR(5), otherwise you risk that \fBupsd\fR(8) declares the driver
+stale while it is waiting for a connection to timeout.
 
 .IP "login=\fIvalue\fR"
 Set the login value for authenticated mode. This feature also needs the
