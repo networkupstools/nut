@@ -140,8 +140,8 @@ void upsdrv_updateinfo(void)
 		upslogx(LOG_ERR, "%s (%.3f seconds)", ne_get_error(session), difftimeval(start, stop));
 #endif
 		if (retries < MAXRETRIES) {
-			upsdebugx(1, "%s (%d from %d)", ne_get_error(session), retries, MAXRETRIES);
 			retries++;
+			upsdebugx(1, "%s (%d from %d)", ne_get_error(session), retries, MAXRETRIES);
 		} else {
 			upslogx(LOG_ERR, "%s", ne_get_error(session));
 			dstate_datastale();
@@ -297,8 +297,7 @@ void upsdrv_initups(void)
 	}
 
 	if (!fp) {
-		upslog_with_errno(LOG_INFO, "Connectivity test skipped");
-		return;
+		fatal_with_errno(EXIT_FAILURE, "Connectivity test failed");
 	}
 
 	/* see if we have a connection */
@@ -307,11 +306,11 @@ void upsdrv_initups(void)
 	if (!nut_debug_level) {
 		fclose(fp);
 	} else {
-		fprintf(fp, "\n...done\n");
+		fprintf(fp, "\n");
 	}
 
 	if (ret != NE_OK) {
-		fatalx(LOG_INFO, "Connectivity test: %s", ne_get_error(session));
+		fatalx(EXIT_FAILURE, "Connectivity test: %s", ne_get_error(session));
 	}
 
 	upslogx(LOG_INFO, "Connectivity test: %s", ne_get_error(session));

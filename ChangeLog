@@ -1,3 +1,8 @@
+Sun Apr  6 11:41:03 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/netxml-ups: require connectivity test to pass and fix
+   some minor cosmetic things
+
 Sun Apr  6 11:04:02 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - common/state.c,include/state.h: don't use recursion if we are only
