@@ -1,3 +1,7 @@
+Sun Apr  6 13:20:47 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - clients/upsclient.c: add some sanity checks
+
 Sun Apr  6 12:29:52 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - man/netxml-ups.8: be more verbose in explanation of the 'timeout'

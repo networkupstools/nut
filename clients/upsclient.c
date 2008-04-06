@@ -342,6 +342,10 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 	int			v;
 #endif
 
+	if (!ups) {
+		return -1;
+	}
+
 	/* clear out any lingering junk */
 	memset(ups, 0, sizeof(*ups));
 	ups->upsclient_magic = UPSCLIENT_MAGIC;
@@ -640,6 +644,10 @@ int upscli_get(UPSCONN_t *ups, unsigned int numq, const char **query,
 {
 	char	cmd[UPSCLI_NETBUF_LEN], tmp[UPSCLI_NETBUF_LEN];
 	
+	if (!ups) {
+		return -1;
+	}
+
 	if (numq < 1) {
 		ups->upserror = UPSCLI_ERR_INVALIDARG;
 		return -1;
@@ -687,6 +695,10 @@ int upscli_get(UPSCONN_t *ups, unsigned int numq, const char **query,
 int upscli_list_start(UPSCONN_t *ups, unsigned int numq, const char **query)
 {
 	char	cmd[UPSCLI_NETBUF_LEN], tmp[UPSCLI_NETBUF_LEN];
+
+	if (!ups) {
+		return -1;
+	}
 
 	if (numq < 1) {
 		ups->upserror = UPSCLI_ERR_INVALIDARG;
@@ -743,6 +755,10 @@ int upscli_list_next(UPSCONN_t *ups, unsigned int numq, const char **query,
 {
 	char	tmp[UPSCLI_NETBUF_LEN];
 
+	if (!ups) {
+		return -1;
+	}
+
 	if (upscli_readline(ups, tmp, sizeof(tmp)) != 0) {
 		return -1;
 	}
@@ -787,7 +803,11 @@ int upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen)
 {
 	int	ret;
 
-	if ((!ups) || (ups->fd == -1)) {
+	if (!ups) {
+		return -1;
+	}
+
+	if (ups->fd == -1) {
 		ups->upserror = UPSCLI_ERR_DRVNOTCONN;
 		return -1;
 	}
@@ -817,7 +837,11 @@ int upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen)
 	int	ret;
 	size_t	recv;
 
-	if ((!ups) || (ups->fd == -1)) {
+	if (!ups) {
+		return -1;
+	}
+
+	if (ups->fd == -1) {
 		ups->upserror = UPSCLI_ERR_DRVNOTCONN;
 		return -1;
 	}
