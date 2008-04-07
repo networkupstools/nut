@@ -230,12 +230,12 @@ void upsdrv_banner(void)
 	       "                  - built with neon library %s\n\n",
 		DRV_VERSION, UPS_VERSION, LIBNEON_VERSION);
 
-#ifndef HAVE_LIBNEON_CONNECT_TIMEOUT
-		"This driver may block on connection failures for a (system dependent)\n"
+#ifndef HAVE_LIBNEON_SET_CONNECT_TIMEOUT
+	printf("This driver may block on connection failures for a (system dependent)\n"
 		"time. During this timeout period, the driver will be unresponsive to\n"
 		"the server, which in result may declare this driver stale.\n\n"
 		"If this is bothering you, upgrade to neon >= 0.27.0 and rebuild the\n"
-		"driver.\n\n"
+		"driver.\n\n");
 #endif
 
 	experimental_driver = 1;
@@ -281,7 +281,7 @@ void upsdrv_initups(void)
 	/* create the session */
 	session = ne_session_create(uri.scheme, uri.host, uri.port);
 
-#ifdef HAVE_LIBNEON_CONNECT_TIMEOUT
+#ifdef HAVE_LIBNEON_SET_CONNECT_TIMEOUT
 	/* timeout if we can't connect to the UPS */
 	ne_set_connect_timeout(session, timeout);
 #else
@@ -327,9 +327,9 @@ void upsdrv_initups(void)
 
 	upslogx(LOG_INFO, "Connectivity test: %s", ne_get_error(session));
 
-#ifndef HAVE_LIBNEON_CONNECT_TIMEOUT
+#ifdef HAVE_LIBNEON_GET_SESSION_FLAG
 	if (ne_get_session_flag(session, NE_SESSFLAG_PERSIST) < 1) {
-		upslogx(LOG_WARN, "Persistent connection not available (see 'man 8 %s')");
+		upslogx(LOG_WARNING, "Persistent connection not available (see 'man 8 %s')");
 	}
 #endif
 }

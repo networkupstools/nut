@@ -16,15 +16,27 @@ if test -z "${nut_have_neon_seen}"; then
    nut_have_neon=yes
 
    dnl See which version of the neon library (if any) is installed
-   AC_MSG_CHECKING(for libneon version via pkg-config)
+   AC_MSG_CHECKING(for libneon version via pkg-config (0.25.0 minimum required))
    NEON_VERSION=`pkg-config --silence-errors --modversion neon`
+   NEON_MIN_VERSION=`pkg-config --silence-errors --atleast-version=0.25.0 neon`
    if (test "$?" != "0")
    then
-      AC_MSG_RESULT(not found)
+      AC_MSG_RESULT(${NEON_VERSION} found)
       nut_have_neon=no
    else
       AC_MSG_RESULT(${NEON_VERSION} found)
       AC_DEFINE_UNQUOTED(LIBNEON_VERSION, "${NEON_VERSION}", [Define version of the neon library])
+
+      dnl We need at least 0.26.0 if we want to use ne_get_session_flag()
+      AC_MSG_CHECKING(if libneon has ne_get_session_flag())
+      NEON_MIN_VERSION=`pkg-config --silence-errors --atleast-version=0.26.0 neon`
+      if (test "$?" != "0")
+      then
+         AC_MSG_RESULT(not found)
+      else
+         AC_MSG_RESULT(found)
+         AC_DEFINE(HAVE_LIBNEON_GET_SESSION_FLAG, 1, [Define if neon >= 0.26.0])
+      fi
 
       dnl We need at least 0.27.0 if we want to use ne_set_connect_timeout()
       AC_MSG_CHECKING(if libneon has ne_set_connect_timeout())
@@ -34,7 +46,7 @@ if test -z "${nut_have_neon_seen}"; then
          AC_MSG_RESULT(not found)
       else
          AC_MSG_RESULT(found)
-         AC_DEFINE(HAVE_LIBNEON_CONNECT_TIMEOUT, 1, [Define if neon >= 0.27.0])
+         AC_DEFINE(HAVE_LIBNEON_SET_CONNECT_TIMEOUT, 1, [Define if neon >= 0.27.0])
       fi
    fi
 
