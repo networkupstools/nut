@@ -27,8 +27,6 @@ This driver supports the following optional settings in the
 
 .IP "timeout=\fIvalue\fR"
 The timeout for connecting to and reading from the UPS. Defaults to 5 seconds.
-On the first connect, this value will be ignored and a value of 60 seconds is
-used, to allow enough time for DNS queries to resolve (should these be needed).
 Don't change this value unless you know exactly what you're doing.
 
 This value \fBmust never\fR be higher than half the MAXAGE value specified in
@@ -63,15 +61,6 @@ recommended to increase the "pollinterval" (see \fBnutupsdrv\fR(8)) and
 \fBups.conf\fR(5)) to at least 5 seconds.
 
 .SH KNOWN ISSUES
-If this driver is built against neon < 0.27.0 it will block on (re)connect.
-This means that while the driver is waiting for a failed connection attempt
-to timeout, it won't be able to update the status of the UPS. Whether or not
-this is a problem, depends on the NMC that it is connecting to. If the driver
-logs "Persistent connection not available" you're definitly at risk, since it
-will have to reconnect for each status update. If a persistent connection can
-be setup (can be detected if neon >= 0.26.0), the problem is mitigated
-because it will probably rarely have to reconnect.
-
 Don't connect to the UPS through a proxy. Although it would be trivial to add
 support for proxies, this is not recommended and don't ask for it. Not only
 because it will prevent the driver to make a persistent connection to the UPS,

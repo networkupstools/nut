@@ -49,6 +49,12 @@ static subdriver_t	*subdriver = &mge_xml_subdriver;
 static ne_session	*session = NULL;
 static ne_uri		uri;
 
+#ifndef HAVE_LIBNEON_SET_CONNECT_TIMEOUT
+static sigset_t		netxml_ups_sigmask;
+
+static void alarm_connect_timeout(int sig);
+#endif
+
 /* Support functions */
 static void ups_alarm_set(void);
 static void ups_status_set(void);
@@ -230,14 +236,6 @@ void upsdrv_banner(void)
 	       "                  - built with neon library %s\n\n",
 		DRV_VERSION, UPS_VERSION, LIBNEON_VERSION);
 
-#ifndef HAVE_LIBNEON_SET_CONNECT_TIMEOUT
-	printf("This driver may block on connection failures for a (system dependent)\n"
-		"time. During this timeout period, the driver will be unresponsive to\n"
-		"the server, which in result may declare this driver stale.\n\n"
-		"If this is bothering you, upgrade to neon >= 0.27.0 and rebuild the\n"
-		"driver.\n\n");
-#endif
-
 	experimental_driver = 1;
 }
 
@@ -247,11 +245,25 @@ void upsdrv_initups(void)
 	int	ret;
 	char	*val;
 
+#ifndef HAVE_LIBNEON_SET_CONNECT_TIMEOUT
+	struct sigaction	sa;
+
+	sigemptyset(&netxml_ups_sigmask);
+	sa.sa_mask = netxml_ups_sigmask;
+	sa.sa_flags = 0;
+	sa.sa_handler = alarm_connect_timeout;
+	sigaction(SIGALRM, &sa, NULL);
+#endif
+
 	/* allow override of default network timeout value */
 	val = getval("timeout");
 
 	if (val) {
 		timeout = atoi(val);
+
+		if (timeout < 1) {
+			fatalx(EXIT_FAILURE, "timeout must be greater than 0");
+		}
 	}
 
 	/* Initialize socket libraries */
@@ -284,8 +296,6 @@ void upsdrv_initups(void)
 #ifdef HAVE_LIBNEON_SET_CONNECT_TIMEOUT
 	/* timeout if we can't connect to the UPS */
 	ne_set_connect_timeout(session, timeout);
-#else
-	upslogx(LOG_INFO, "Timeout on (re)connect not available");
 #endif
 
 	/* just wait for a couple of seconds */
@@ -326,12 +336,6 @@ void upsdrv_initups(void)
 	}
 
 	upslogx(LOG_INFO, "Connectivity test: %s", ne_get_error(session));
-
-#ifdef HAVE_LIBNEON_GET_SESSION_FLAG
-	if (ne_get_session_flag(session, NE_SESSFLAG_PERSIST) < 1) {
-		upslogx(LOG_WARNING, "Persistent connection not available (see 'man 8 %s')");
-	}
-#endif
 }
 
 void upsdrv_cleanup(void)
@@ -350,6 +354,11 @@ void upsdrv_cleanup(void)
  * Support functions
  *********************************************************************/
 
+static void alarm_connect_timeout(int sig)
+{
+	/* don't do anything here, just return */
+}
+
 /* Starting with neon-0.27.0 the ne_dispatch_request() function will check
    for a valid XML content-type (following RFC 3023 rules) in the header.
    Unfortunately, (at least) the Transverse NMC doesn't follow this RFC, so
@@ -358,6 +367,9 @@ static int dispatch_request(ne_request *request, ne_xml_parser *parser)
 {
 	int ret;
 
+#ifndef HAVE_LIBNEON_SET_CONNECT_TIMEOUT
+	alarm(timeout+1);
+#endif
 	do {
 		ret = ne_begin_request(request);
 
@@ -373,6 +385,9 @@ static int dispatch_request(ne_request *request, ne_xml_parser *parser)
 
 	} while (ret == NE_RETRY);
 
+#ifndef HAVE_LIBNEON_SET_CONNECT_TIMEOUT
+	alarm(0);
+#endif
 	return ret;
 }
 

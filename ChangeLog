@@ -1,3 +1,10 @@
+Mon Apr  7 19:14:16 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/netxml-ups: use alarm() to replace the behaviour of
+   ne_set_connect_timeout() for neon < 0.27.0 (this will save us
+   questions from people that complain that upsd is declaring the
+   driver stale)
+
 Mon Apr  7 14:10:32 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/netxml-ups: require neon-0.25.0 or newer (essential
