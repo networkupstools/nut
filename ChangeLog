@@ -1,3 +1,10 @@
+Mon Apr  7 12:50:47 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/netxml-ups: some autoconf magic added to selectively build
+   with connect timeout, depending on the neon library installed (it
+   will build for neon < 0.27.0, but will inform the user about the
+   risk of failed (re)connect attempts)
+
 Sun Apr  6 13:20:47 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - clients/upsclient.c: add some sanity checks

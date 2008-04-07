@@ -220,14 +220,23 @@ void upsdrv_makevartable(void)
 	snprintf(buf, sizeof(buf), "network timeout (default %d seconds)", timeout);
 	addvar(VAR_VALUE, "timeout", buf);
 
-	addvar(VAR_VALUE, "login", "login value for authenticated mode");
-	addvar(VAR_VALUE, "password", "password value for authenticated mode");
+	addvar(VAR_VALUE | VAR_SENSITIVE, "login", "login value for authenticated mode");
+	addvar(VAR_VALUE | VAR_SENSITIVE, "password", "password value for authenticated mode");
 }
 
 void upsdrv_banner(void)
 {
-	printf("Network UPS Tools - network XML UPS driver %s (%s)\n\n",
-		DRV_VERSION, UPS_VERSION);
+	printf("Network UPS Tools - network XML UPS driver %s (%s)\n"
+	       "                  - built with neon library %s\n\n",
+		DRV_VERSION, UPS_VERSION, LIBNEON_VERSION);
+
+#ifndef HAVE_LIBNEON_CONNECT_TIMEOUT
+		"This driver may block on connection failures for a (system dependent)\n"
+		"time. During this timeout period, the driver will be unresponsive to\n"
+		"the server, which in result may declare this driver stale.\n\n"
+		"If this is bothering you, upgrade to neon >= 0.27.0 and rebuild the\n"
+		"driver.\n\n"
+#endif
 
 	experimental_driver = 1;
 }
@@ -272,9 +281,12 @@ void upsdrv_initups(void)
 	/* create the session */
 	session = ne_session_create(uri.scheme, uri.host, uri.port);
 
-	/* allow the first connection some extra time, as
-	   we may need to resolve the name of the UPS first */
-	ne_set_connect_timeout(session, 60);
+#ifdef HAVE_LIBNEON_CONNECT_TIMEOUT
+	/* timeout if we can't connect to the UPS */
+	ne_set_connect_timeout(session, timeout);
+#else
+	upslogx(LOG_INFO, "Timeout on (re)connect not available");
+#endif
 
 	/* just wait for a couple of seconds */
 	ne_set_read_timeout(session, timeout);
@@ -315,8 +327,11 @@ void upsdrv_initups(void)
 
 	upslogx(LOG_INFO, "Connectivity test: %s", ne_get_error(session));
 
-	/* following connects shouldn't require DNS queries anymore */
-	ne_set_connect_timeout(session, timeout);
+#ifndef HAVE_LIBNEON_CONNECT_TIMEOUT
+	if (ne_get_session_flag(session, NE_SESSFLAG_PERSIST) < 1) {
+		upslogx(LOG_WARN, "Persistent connection not available (see 'man 8 %s')");
+	}
+#endif
 }
 
 void upsdrv_cleanup(void)

@@ -15,16 +15,27 @@ if test -z "${nut_have_neon_seen}"; then
    dnl innocent until proven guilty
    nut_have_neon=yes
 
-   dnl We need at least 0.27.0 since we use ne_set_connect_timeout()
-   AC_MSG_CHECKING(for libneon version via pkg-config (0.27.0 minimum required))
+   dnl See which version of the neon library (if any) is installed
+   AC_MSG_CHECKING(for libneon version via pkg-config)
    NEON_VERSION=`pkg-config --silence-errors --modversion neon`
-   NEON_MIN_VERSION=`pkg-config --silence-errors --atleast-version=0.27.0 neon`
    if (test "$?" != "0")
    then
-	AC_MSG_RESULT(${NEON_VERSION} found)
-	nut_have_neon=no
+      AC_MSG_RESULT(not found)
+      nut_have_neon=no
    else
-	AC_MSG_RESULT(${NEON_VERSION} found)
+      AC_MSG_RESULT(${NEON_VERSION} found)
+      AC_DEFINE_UNQUOTED(LIBNEON_VERSION, "${NEON_VERSION}", [Define version of the neon library])
+
+      dnl We need at least 0.27.0 if we want to use ne_set_connect_timeout()
+      AC_MSG_CHECKING(if libneon has ne_set_connect_timeout())
+      NEON_MIN_VERSION=`pkg-config --silence-errors --atleast-version=0.27.0 neon`
+      if (test "$?" != "0")
+      then
+         AC_MSG_RESULT(not found)
+      else
+         AC_MSG_RESULT(found)
+         AC_DEFINE(HAVE_LIBNEON_CONNECT_TIMEOUT, 1, [Define if neon >= 0.27.0])
+      fi
    fi
 
    dnl Check for neon libs and flags
@@ -32,25 +43,25 @@ if test -z "${nut_have_neon_seen}"; then
    CFLAGS=`pkg-config --silence-errors --cflags neon`
    if (test "$?" != "0")
    then
-	AC_MSG_RESULT(not found)
-	nut_have_neon=no
+      AC_MSG_RESULT(not found)
+      nut_have_neon=no
    else
-	AC_MSG_RESULT(${CFLAGS})
+      AC_MSG_RESULT(${CFLAGS})
    fi
 
    AC_MSG_CHECKING(for libneon ldflags via pkg-config)
    LDFLAGS=`pkg-config --silence-errors --libs neon`
    if (test "$?" != "0")
    then
-	AC_MSG_RESULT(not found)
-	nut_have_neon=no
+      AC_MSG_RESULT(not found)
+      nut_have_neon=no
    else
-	AC_MSG_RESULT(${LDFLAGS})
+      AC_MSG_RESULT(${LDFLAGS})
    fi
 
    if test "${nut_have_neon}" = "yes"; then
-	LIBNEON_CFLAGS="${CFLAGS}"
-	LIBNEON_LDFLAGS="${LDFLAGS}"
+      LIBNEON_CFLAGS="${CFLAGS}"
+      LIBNEON_LDFLAGS="${LDFLAGS}"
    fi
 
    dnl restore original CFLAGS and LDFLAGS
