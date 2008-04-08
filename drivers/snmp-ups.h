@@ -201,7 +201,6 @@ void su_shutdown_ups(void);
 
 void read_mibconf(char *mib);
 
-extern char *upsname;
 struct snmp_session g_snmp_sess, *g_snmp_sess_p;
 const char *OID_pwr_status;
 int g_pwr_battery;

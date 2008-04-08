@@ -4,11 +4,13 @@
 #include "extstate.h"
 
 /* public functions & variables from main.c */
-extern const char *progname;
-extern char *device_path;
-extern const char *device_name;
-extern int	upsfd, extrafd, broken_driver, experimental_driver, exit_flag;
+extern const char	*progname, *upsname, *device_name;
+extern char		*device_path;
+extern int		upsfd, extrafd, broken_driver, experimental_driver, do_lock_port, exit_flag;
 extern unsigned int	poll_interval;
+
+/* drivers can add additional signal handlers in upsdrv_initups() */
+extern struct sigaction	main_sa;
 
 /* functions & variables required in each driver */
 void upsdrv_initups(void);	/* open connection to UPS, fail if not found */

@@ -1,3 +1,8 @@
+Tue Apr  8 18:32:30 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/main.[ch]: added some variables in list of globals
+ - drivers/serial.c,drivers/snmp-ups.h: implemented the above
+
 Mon Apr  7 19:14:16 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/netxml-ups: use alarm() to replace the behaviour of

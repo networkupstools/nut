@@ -47,8 +47,8 @@
 
 	/* signal handling */
 	int	exit_flag = 0;
-	static	sigset_t		main_sigmask;
-	static	struct	sigaction	main_sa;
+	static sigset_t		main_sigmask;
+	struct sigaction	main_sa;
 
 	/* everything else */
 	static	char	*pidfn = NULL;
