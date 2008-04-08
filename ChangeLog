@@ -1,3 +1,7 @@
+Tue Apr  8 19:24:46 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/netxml-ups: cleanup the driver a bit
+
 Tue Apr  8 18:32:30 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/main.[ch]: added some variables in list of globals
