@@ -1,3 +1,8 @@
+Sat Apr 12 07:08:49 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/netxml-ups: backported from the trunk r1437 (re)connect timeout
+   (add requirement for build neon >= 0.25.0)
+
 Sat Apr  5 14:30:00 UTC 2008 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
 
  - added several devices supported by megatec_usb to the compatibility

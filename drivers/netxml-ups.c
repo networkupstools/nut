@@ -35,19 +35,34 @@
 #include "netxml-ups.h"
 #include "mge-xml.h"
 
-#define DRV_VERSION	"0.11"
-#define MAXRETRIES	3
+#define DRV_VERSION	"0.20"
+#define MAXRETRIES	5
+
+#ifdef DEBUG
+#define difftimeval(x,y)	((double)y.tv_sec-x.tv_sec+((double)(y.tv_usec-x.tv_usec)/1000000))
+#endif
 
 /* Global vars */
 uint32_t		ups_status = 0;
+static int		timeout = 5;
 static subdriver_t	*subdriver = &mge_xml_subdriver;
-static ne_session	*session;
+static ne_session	*session = NULL;
 static ne_uri		uri;
 
 /* Support functions */
-static void ups_alarm_set(void);
-static void ups_status_set(void);
-static int authenticate(void *userdata, const char *realm, int attempt, char *username, char *password);
+static void netxml_alarm_set(void);
+static void netxml_status_set(void);
+static int netxml_authenticate(void *userdata, const char *realm, int attempt, char *username, char *password);
+static int netxml_dispatch_request(ne_request *request, ne_xml_parser *parser);
+
+#ifndef HAVE_LIBNEON_SET_CONNECT_TIMEOUT
+static sigset_t		netxml_sigmask;
+
+static void netxml_alarm_handler(int sig)
+{
+	/* don't do anything here, just return */
+}
+#endif
 
 void upsdrv_initinfo(void)
 {
@@ -55,21 +70,19 @@ void upsdrv_initinfo(void)
 	ne_request	*request;
 	ne_xml_parser	*parser;
 
-	upsdebugx(3, "ne_request_create(session, \"GET\", \"%s\");", subdriver->initinfo);
-
 	if (strlen(subdriver->initinfo) < 1) {
 		fatalx(EXIT_FAILURE, "%s: failure to read initinfo element", __func__);
 	}
 
+	upsdebugx(3, "ne_request_create(session, \"GET\", \"%s\");", subdriver->initinfo);
+
 	request = ne_request_create(session, "GET", subdriver->initinfo);
 
-	/* Create an XML parser. */
 	parser = ne_xml_create();
 
-	/* Push a new handler on the parser stack */
 	ne_xml_push_handler(parser, subdriver->startelm_cb, subdriver->cdata_cb, subdriver->endelm_cb, NULL);
 
-	ret = ne_xml_dispatch_request(request, parser);
+	ret = netxml_dispatch_request(request, parser);
 
 	ne_xml_destroy(parser);
 	ne_request_destroy(request);
@@ -98,32 +111,44 @@ void upsdrv_updateinfo(void)
 	int		ret;
 	ne_request	*request;
 	ne_xml_parser	*parser;
-
-	upsdebugx(3, "ne_request_create(session, \"GET\", \"%s\");", subdriver->getobject);
+#ifdef DEBUG
+	struct timeval	start, stop;
+#endif
 
 	if (strlen(subdriver->getobject) < 1) {
 		fatalx(EXIT_FAILURE, "%s: failure to read getobject element", __func__);
 	}
 
+	upsdebugx(3, "ne_request_create(session, \"GET\", \"%s\");", subdriver->getobject);
+
 	request = ne_request_create(session, "GET", subdriver->getobject);
 
-	/* Create an XML parser. */
 	parser = ne_xml_create();
 
-	/* Push a new handler on the parser stack */
 	ne_xml_push_handler(parser, subdriver->startelm_cb, subdriver->cdata_cb, subdriver->endelm_cb, NULL);
 
-	ret = ne_xml_dispatch_request(request, parser);
+#ifdef DEBUG
+	gettimeofday(&start, NULL);
+#endif
+	ret = netxml_dispatch_request(request, parser);
+#ifdef DEBUG
+	gettimeofday(&stop, NULL);
+
+	upsdebugx(1, "dispatch request (%.3f seconds)", difftimeval(start, stop));
+#endif
 
 	ne_xml_destroy(parser);
 	ne_request_destroy(request);
 
 	if (ret != NE_OK) {
-		upslogx(LOG_ERR, "%s: communication failure [%s]", __func__, ne_get_error(session));
-
+#ifdef DEBUG
+		upslogx(LOG_ERR, "%s (%.3f seconds)", ne_get_error(session), difftimeval(start, stop));
+#endif
 		if (retries < MAXRETRIES) {
 			retries++;
+			upsdebugx(1, "%s (%d from %d)", ne_get_error(session), retries, MAXRETRIES);
 		} else {
+			upslogx(LOG_ERR, "%s", ne_get_error(session));
 			dstate_datastale();
 		}
 
@@ -135,10 +160,10 @@ void upsdrv_updateinfo(void)
 	status_init();
 
 	alarm_init();
-	ups_alarm_set();
+	netxml_alarm_set();
 	alarm_commit();
 
-	ups_status_set();
+	netxml_status_set();
 	status_commit();
 
 	dstate_dataok();
@@ -195,30 +220,55 @@ void upsdrv_help(void)
 /* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {
-	addvar(VAR_VALUE, "login", "login value for authenticated mode");
-	addvar(VAR_VALUE, "password", "password value for authenticated mode");
+	char	buf[SMALLBUF];
+
+	snprintf(buf, sizeof(buf), "network timeout (default %d seconds)", timeout);
+	addvar(VAR_VALUE, "timeout", buf);
+
+	addvar(VAR_VALUE | VAR_SENSITIVE, "login", "login value for authenticated mode");
+	addvar(VAR_VALUE | VAR_SENSITIVE, "password", "password value for authenticated mode");
 }
 
 void upsdrv_banner(void)
 {
-	printf("Network UPS Tools - network XML UPS driver %s (%s)\n\n", 
-		DRV_VERSION, UPS_VERSION);
+	printf("Network UPS Tools - network XML UPS driver %s (%s)\n"
+	       "                  - built with neon library %s\n\n",
+		DRV_VERSION, UPS_VERSION, LIBNEON_VERSION);
+
 	experimental_driver = 1;
 }
 
 void upsdrv_initups(void)
 {
-	if (!getval("pollinterval")) {
-		upslogx(LOG_INFO, "No value specified for 'pollinterval' (defaulting to 5 seconds).\n");
-		poll_interval = 5;
+	int	ret;
+	char	*val;
+	FILE	*fp;
+
+#ifndef HAVE_LIBNEON_SET_CONNECT_TIMEOUT
+	struct sigaction	sa;
+
+	sigemptyset(&netxml_sigmask);
+	sa.sa_mask = netxml_sigmask;
+	sa.sa_flags = 0;
+	sa.sa_handler = netxml_alarm_handler;
+	sigaction(SIGALRM, &sa, NULL);
+#endif
+
+	/* allow override of default network timeout value */
+	val = getval("timeout");
+
+	if (val) {
+		timeout = atoi(val);
+
+		if (timeout < 1) {
+			fatalx(EXIT_FAILURE, "timeout must be greater than 0");
+		}
 	}
 
-	/* Initialize socket libraries */
 	if (ne_sock_init()) {
 		fatalx(EXIT_FAILURE, "%s: failed to initialize socket libraries", progname);
 	}
 
-	/* Parse the URI argument. */
 	if (ne_uri_parse(device_path, &uri) || uri.host == NULL) {
 		fatalx(EXIT_FAILURE, "%s: invalid hostname '%s'", progname, device_path);
 	}
@@ -237,28 +287,60 @@ void upsdrv_initups(void)
 
 	upsdebugx(1, "using %s://%s port %d", uri.scheme, uri.host, uri.port);
 
-	/* create the session */
 	session = ne_session_create(uri.scheme, uri.host, uri.port);
 
-	/* just wait for a couple of seconds */
-	ne_set_read_timeout(session, 10);
+	/* timeout if we can't (re)connect to the UPS */
+#ifdef HAVE_LIBNEON_SET_CONNECT_TIMEOUT
+	ne_set_connect_timeout(session, timeout);
+#endif
 
-	/* Sets the user-agent string */
+	/* just wait for a couple of seconds */
+	ne_set_read_timeout(session, timeout);
+
 	ne_set_useragent(session, subdriver->version);
 
 	if (strcasecmp(uri.scheme, "https") == 0) {
-		/* Load default CAs if using SSL. */
 		ne_ssl_trust_default_ca(session);
 	}
 
-	ne_set_server_auth(session, authenticate, NULL);
+	ne_set_server_auth(session, netxml_authenticate, NULL);
+
+	/* if debug level is set, direct output to stderr */
+	if (!nut_debug_level) {
+		fp = fopen("/dev/null", "w");
+	} else {
+		fp = stderr;
+	}
+
+	if (!fp) {
+		fatal_with_errno(EXIT_FAILURE, "Connectivity test failed");
+	}
+
+	/* see if we have a connection */
+	ret = ne_get(session, subdriver->initups, fileno(fp));
+
+	if (!nut_debug_level) {
+		fclose(fp);
+	} else {
+		fprintf(fp, "\n");
+	}
+
+	if (ret != NE_OK) {
+		fatalx(EXIT_FAILURE, "Connectivity test: %s", ne_get_error(session));
+	}
+
+	upslogx(LOG_INFO, "Connectivity test: %s", ne_get_error(session));
 }
 
 void upsdrv_cleanup(void)
 {
 	free(subdriver->getobject);
 	free(subdriver->setobject);
-	ne_session_destroy(session);
+
+	if (session) {
+		ne_session_destroy(session);
+	}
+
 	ne_uri_free(&uri);
 }
 
@@ -266,8 +348,51 @@ void upsdrv_cleanup(void)
  * Support functions
  *********************************************************************/
 
+static int netxml_dispatch_request(ne_request *request, ne_xml_parser *parser)
+{
+	int ret;
+
+#ifdef HAVE_LIBNEON_SET_CONNECT_TIMEOUT
+	/*
+	 * Starting with neon-0.27.0 the ne_xml_dispatch_request() function will check
+	 * for a valid XML content-type (following RFC 3023 rules) in the header.
+	 * Unfortunately, (at least) the Transverse NMC doesn't follow this RFC, so
+	 * we can't use this anymore and we'll have to roll our own here.
+	 */
+	do {
+		ret = ne_begin_request(request);
+
+		if (ret != NE_OK) {
+			break;
+		}
+
+		ret = ne_xml_parse_response(request, parser);
+
+		if (ret == NE_OK) {
+			ret = ne_end_request(request);
+		}
+
+	} while (ret == NE_RETRY);
+
+#else
+	/*
+	 * Up to neon-0.27.0 this library would connect() in blocking mode. We
+	 * don't want that, so we interrupt it with an alarm if it takes longer
+	 * than we think is reasonable so that we don't have to wait until it
+	 * finally times out (which may take several minutes).
+	 */
+	alarm(timeout+1);
+
+	ret = ne_xml_dispatch_request(request, parser);
+
+ 	alarm(0);
+#endif
+
+	return ret;
+}
+
 /* Supply the 'login' and 'password' when authentication is required */
-static int authenticate(void *userdata, const char *realm, int attempt, char *username, char *password)
+static int netxml_authenticate(void *userdata, const char *realm, int attempt, char *username, char *password)
 {
 	char	*val;
 
@@ -284,7 +409,7 @@ static int authenticate(void *userdata, const char *realm, int attempt, char *us
 
 /* Convert the local status information to NUT format and set NUT
    alarms. */
-static void ups_alarm_set(void)
+static void netxml_alarm_set(void)
 {
 	if (STATUS_BIT(REPLACEBATT)) {
 		alarm_set("Replace battery!");
@@ -329,7 +454,7 @@ static void ups_alarm_set(void)
 
 /* Convert the local status information to NUT format and set NUT
    status. */
-static void ups_status_set(void)
+static void netxml_status_set(void)
 {
 	if (STATUS_BIT(VRANGE)) {
 		dstate_setinfo("input.transfer.reason", "input voltage out of range");
@@ -342,10 +467,10 @@ static void ups_status_set(void)
 	if (STATUS_BIT(ONLINE)) {
 		status_set("OL");		/* on line */
 	} else {
-		status_set("OB");               /* on battery */
+		status_set("OB");		/* on battery */
 	}
 	if (STATUS_BIT(DISCHRG) && !STATUS_BIT(DEPLETED)) {
-		status_set("DISCHRG");	        /* discharging */
+		status_set("DISCHRG");		/* discharging */
 	}
 	if (STATUS_BIT(CHRG) && !STATUS_BIT(FULLYCHARGED)) {
 		status_set("CHRG");		/* charging */
@@ -363,13 +488,13 @@ static void ups_status_set(void)
 		status_set("TRIM");		/* SmartTrim */
 	}
 	if (STATUS_BIT(BOOST)) {
-		status_set("BOOST");	        /* SmartBoost */
+		status_set("BOOST");		/* SmartBoost */
 	}
 	if (STATUS_BIT(BYPASSAUTO) || STATUS_BIT(BYPASSMAN)) {
-		status_set("BYPASS");	        /* on bypass */
+		status_set("BYPASS");		/* on bypass */
 	}
 	if (STATUS_BIT(OFF)) {
-		status_set("OFF");              /* ups is off */
+		status_set("OFF");		/* ups is off */
 	}
 	if (STATUS_BIT(CAL)) {
 		status_set("CAL");		/* calibration */

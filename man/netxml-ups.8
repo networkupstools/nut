@@ -1,4 +1,4 @@
-.TH netxml\-ups 8 "Sun Feb 24 2008" "" "Network UPS Tools (NUT)" 
+.TH netxml\-ups 8 "Fri Apr 04 2008" "" "Network UPS Tools (NUT)" 
 .SH NAME  
 netxml\(hyups \- Driver for MGE Network Management Card / Proxy (XML/HTTP
 Protocol) equipment
@@ -25,6 +25,14 @@ protocol and should use the snmp\(hyups driver with the "mibs=mge" parameter.
 This driver supports the following optional settings in the 
 \fBups.conf\fR(5):
 
+.IP "timeout=\fIvalue\fR"
+The timeout for connecting to and reading from the UPS. Defaults to 5 seconds.
+Don't change this value unless you know exactly what you're doing.
+
+This value \fBmust never\fR be higher than half the MAXAGE value specified in
+\fBupsd.conf\fR(5), otherwise you risk that \fBupsd\fR(8) declares the driver
+stale while it is waiting for a connection to timeout.
+
 .IP "login=\fIvalue\fR"
 Set the login value for authenticated mode. This feature also needs the
 password argument, and allows value settings in the card.
@@ -48,10 +56,9 @@ Specifying the method how to connect to the UPS (http, https) is mandatory.
 If the port is equal to the default for the method specified (80 for http,
 443 for https) it may be omitted.
 
-If "pollinterval" is not specified (see \fBnutupsdrv\fR(8)) and
-\fBups.conf\fR(5)), the driver will default to 5 seconds in order not to
-overload older NMCs by polling them too frequently. Don't lower this unless
-you know exactly what you're doing.
+In order not to overload older NMCs by polling them too frequently, it is
+recommended to increase the "pollinterval" (see \fBnutupsdrv\fR(8)) and
+\fBups.conf\fR(5)) to at least 5 seconds.
 
 .SH KNOWN ISSUES
 Don't connect to the UPS through a proxy. Although it would be trivial to add
