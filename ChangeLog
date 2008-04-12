@@ -1,3 +1,7 @@
+Sat Apr 12 20:17:04 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - clients/upssched.c: fix typo (clears wrong variable)
+
 Sat Apr 12 07:08:49 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/netxml-ups: backported from the trunk r1437 (re)connect timeout

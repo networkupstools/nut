@@ -595,7 +595,7 @@ static int try_connect(void)
 	int	pipefd, ret;
 	struct	sockaddr_un saddr;
 
-	memset(&sa, '\0', sizeof(saddr));
+	memset(&saddr, '\0', sizeof(saddr));
 	saddr.sun_family = AF_UNIX;
 	snprintf(saddr.sun_path, sizeof(saddr.sun_path), "%s", pipefn);
 
