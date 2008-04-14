@@ -433,10 +433,10 @@ static void netxml_alarm_set(void)
 		alarm_set("Temperature too high!");
 	}
 	if (STATUS_BIT(COMMFAULT)) {
-		alarm_set("Internal UPS fault!");
+		alarm_set("Communication fault!");
 	}
-	if (STATUS_BIT(AWAITINGPOWER)) {
-		alarm_set("Awaiting power!");
+	if (STATUS_BIT(INTERNALFAULT)) {
+		alarm_set("Internal UPS fault!");
 	}
 	if (STATUS_BIT(FUSEFAULT)) {
 		alarm_set("Fuse fault!");
@@ -466,13 +466,13 @@ static void netxml_status_set(void)
 	} else {
 		status_set("OB");		/* on battery */
 	}
-	if (STATUS_BIT(DISCHRG) && !STATUS_BIT(DEPLETED)) {
+	if (STATUS_BIT(DISCHRG)) {
 		status_set("DISCHRG");		/* discharging */
 	}
-	if (STATUS_BIT(CHRG) && !STATUS_BIT(FULLYCHARGED)) {
+	if (STATUS_BIT(CHRG)) {
 		status_set("CHRG");		/* charging */
 	}
-	if (STATUS_BIT(LOWBATT) || STATUS_BIT(TIMELIMITEXP) || STATUS_BIT(SHUTDOWNIMM)) {
+	if (STATUS_BIT(LOWBATT) || STATUS_BIT(SHUTDOWNIMM)) {
 		status_set("LB");		/* low battery */
 	}
 	if (STATUS_BIT(OVERLOAD)) {
@@ -492,8 +492,5 @@ static void netxml_status_set(void)
 	}
 	if (STATUS_BIT(OFF)) {
 		status_set("OFF");		/* ups is off */
-	}
-	if (STATUS_BIT(CAL)) {
-		status_set("CAL");		/* calibration */
 	}
 }

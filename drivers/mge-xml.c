@@ -217,17 +217,6 @@ static char *off_info(const char *val)
 	return NULL;
 }
 
-static char *calibration_info(const char *val)
-{
-	if (val[0] == '1') {
-		STATUS_SET(CAL);
-	} else {
-		STATUS_CLR(CAL);
-	}
-
-	return NULL;
-}
-
 /* note: this value is reverted (0=set, 1=not set). We report "battery
    not installed" rather than "battery installed", so that devices
    that don't implement this variable have a battery by default */
@@ -275,17 +264,6 @@ static char *overheat_info(const char *val)
 	return NULL;
 }
 
-static char *awaitingpower_info(const char *val)
-{
-	if (val[0] == '1') {
-		STATUS_SET(AWAITINGPOWER);
-	} else {
-		STATUS_CLR(AWAITINGPOWER);
-	}
-
-	return NULL;
-}
-
 static char *commfault_info(const char *val)
 {
 	if (val[0] == '1') {
@@ -297,12 +275,12 @@ static char *commfault_info(const char *val)
 	return NULL;
 }
 
-static char *timelimitexpired_info(const char *val)
+static char *internalfailure_info(const char *val)
 {
 	if (val[0] == '1') {
-		STATUS_SET(TIMELIMITEXP);
+		STATUS_SET(INTERNALFAULT);
 	} else {
-		STATUS_CLR(TIMELIMITEXP);
+		STATUS_CLR(INTERNALFAULT);
 	}
 
 	return NULL;
@@ -336,28 +314,6 @@ static char *chargerfail_info(const char *val)
 		STATUS_SET(CHARGERFAIL);
 	} else {
 		STATUS_CLR(CHARGERFAIL);
-	}
-
-	return NULL;
-}
-
-static char *fullycharged_info(const char *val)
-{
-	if (val[0] == '1') {
-		STATUS_SET(FULLYCHARGED);
-	} else {
-		STATUS_CLR(FULLYCHARGED);
-	}
-
-	return NULL;
-}
-
-static char *depleted_info(const char *val)
-{
-	if (val[0] == '1') {
-		STATUS_SET(DEPLETED);
-	} else {
-		STATUS_CLR(DEPLETED);
 	}
 
 	return NULL;
@@ -434,7 +390,7 @@ static char *convert_deci(const char *val)
 /* Ignore a zero value if the UPS is not switched off */
 static char *ignore_if_zero(const char *val)
 {
-	if (!STATUS_BIT(OFF) && (atoi(val) == 0)) {
+	if (atoi(val) == 0) {
 		return NULL;
 	}
 
@@ -488,7 +444,7 @@ static xml_info_t mge_xml2nut[] = {
 	{ NULL, 0, 0, "UPS.BatterySystem.Charger.PresentStatus.InternalFailure", 0, 0, chargerfail_info },
 	{ NULL, 0, 0, "UPS.BatterySystem.Charger.PresentStatus.VoltageTooHigh", 0, 0, battvolthi_info },
 	{ NULL, 0, 0, "UPS.BatterySystem.Charger.PresentStatus.VoltageTooLow", 0, 0, battvoltlo_info },
-	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.InternalFailure", 0, 0, commfault_info },
+	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.InternalFailure", 0, 0, internalfailure_info },
 	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.CommunicationLost", 0, 0, commfault_info },
 	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.OverTemperature", 0, 0, overheat_info },
 	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.ShutdownImminent", 0, 0, shutdownimm_info },
