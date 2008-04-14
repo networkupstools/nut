@@ -141,12 +141,12 @@ void upsdrv_updateinfo(void)
 	if (ret != NE_OK) {
 #ifdef DEBUG
 		upslogx(LOG_ERR, "%s (%.3f seconds)", ne_get_error(session), difftimeval(start, stop));
+#else
+		upsdebugx(1, "%s (%d from %d)", ne_get_error(session), retries, MAXRETRIES);
 #endif
 		if (retries < MAXRETRIES) {
 			retries++;
-			upsdebugx(1, "%s (%d from %d)", ne_get_error(session), retries, MAXRETRIES);
 		} else {
-			upslogx(LOG_ERR, "%s", ne_get_error(session));
 			dstate_datastale();
 		}
 
@@ -238,10 +238,19 @@ void upsdrv_banner(void)
 
 void upsdrv_initups(void)
 {
-	FILE	*fp;
 	int	ret;
 	char	*val;
+	FILE	*fp;
 
+#ifndef HAVE_LIBNEON_SET_CONNECT_TIMEOUT
+	struct sigaction	sa;
+
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+
+	sa.sa_handler = netxml_alarm_handler;
+	sigaction(SIGALRM, &sa, NULL);
+#endif
 	/* allow override of default network timeout value */
 	val = getval("timeout");
 
@@ -280,9 +289,6 @@ void upsdrv_initups(void)
 	/* timeout if we can't (re)connect to the UPS */
 #ifdef HAVE_LIBNEON_SET_CONNECT_TIMEOUT
 	ne_set_connect_timeout(session, timeout);
-#else
-	main_sa.sa_handler = netxml_alarm_handler;
-	sigaction(SIGALRM, &main_sa, NULL);
 #endif
 
 	/* just wait for a couple of seconds */
