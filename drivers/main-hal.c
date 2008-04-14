@@ -169,7 +169,7 @@ static void setup_signals(void)
 {
 	sigemptyset(&main_sigmask);
 	main_sa.sa_mask = main_sigmask;
-	main_sa.sa_flags = SA_RESTART || SA_NOCLDSTOP;
+	main_sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
 
 	main_sa.sa_handler = exit_cleanup;
 	sigaction(SIGTERM, &main_sa, NULL);
