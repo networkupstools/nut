@@ -1,3 +1,8 @@
+Mon Apr 14 06:58:39 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - server/upsd.c: cleanup signal handling, removed -f option
+   (programs won't background when running in debug mode)
+
 Mon Apr 14 06:47:51 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/netxml-ups: don't spam the syslog if we can't connect to

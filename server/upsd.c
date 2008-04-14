@@ -87,15 +87,11 @@ typedef struct {
 static struct pollfd	*fds = NULL;
 static handler_t	*handler = NULL;
 
-	/* signal handlers */
-static struct sigaction	sa;
-static sigset_t	nut_upsd_sigmask;
-
 	/* pid file */
-static	char	pidfn[SMALLBUF];
+static char	pidfn[SMALLBUF];
 
 	/* set by signal handlers */
-static	int	reload_flag = 0, exit_flag = 0;
+static int	reload_flag = 0, exit_flag = 0;
 
 #ifdef	HAVE_IPV6
 static const char *inet_ntopW (struct sockaddr_storage *s)
@@ -683,7 +679,7 @@ void driver_free(void)
 
 static void upsd_cleanup(void)
 {
-	if (strcmp(pidfn, "") != 0) {
+	if (strlen(pidfn) > 0) {
 		unlink(pidfn);
 	}
 
@@ -865,7 +861,6 @@ static void help(const char *progname)
 	printf("		 - reload: reread configuration files\n");
 	printf("		 - stop: stop process and exit\n");
 	printf("  -D		raise debugging level\n");
-	printf("  -f		stay in the foreground for testing\n");
 	printf("  -h		display this help\n");
 	printf("  -r <dir>	chroots to <dir>\n");
 	printf("  -u <user>	switch to <user> (if started as root)\n");
@@ -888,13 +883,15 @@ static void set_exit_flag(int sig)
 	exit_flag = sig;
 }
 
-/* basic signal setup to ignore SIGPIPE */
-static void setupsignals(void)
+static void setup_signals(void)
 {
-	sigemptyset(&nut_upsd_sigmask);
-	sa.sa_mask = nut_upsd_sigmask;
+	struct sigaction	sa;
+
+	sigemptyset(&sa.sa_mask);
+	sigaddset(&sa.sa_mask, SIGHUP);
 	sa.sa_flags = 0;
 
+	/* basic signal setup to ignore SIGPIPE */
 	sa.sa_handler = SIG_IGN;
 	sigaction(SIGPIPE, &sa, NULL);
 
@@ -929,7 +926,6 @@ void check_perms(const char *fn)
 int main(int argc, char **argv)
 {
 	int	i, cmd = 0;
-	int	do_background = 1;
 	char	*progname, *chroot_path = NULL;
 	const char	*user = NULL;
 	struct passwd	*new_uid = NULL;
@@ -961,9 +957,6 @@ int main(int argc, char **argv)
 			case 'r':
 				chroot_path = optarg;
 				break;
-			case 'f':
-				do_background = 0;
-				break;
 			case 'u':
 				user = optarg;
 				break;
@@ -984,7 +977,6 @@ int main(int argc, char **argv)
 				break;
 
 			case 'D':
-				do_background = 0;
 				nut_debug_level++;
 				break;
 
@@ -1016,7 +1008,9 @@ int main(int argc, char **argv)
 		help(progname);
 	}
 
-	setupsignals();
+	atexit(upsd_cleanup);
+
+	setup_signals();
 
 	open_syslog("upsd");
 
@@ -1062,15 +1056,12 @@ int main(int argc, char **argv)
 	/* handle upsd.users */
 	user_load();
 
-	if (do_background) {
+	if (!nut_debug_level) {
 		background();
-
 		writepid(pidfn);
 	} else {
-		memset(&pidfn, '\0', sizeof(pidfn));
+		memset(pidfn, 0, sizeof(pidfn));
 	}
-
-	atexit(upsd_cleanup);
 
 	while (!exit_flag) {
 		mainloop();
