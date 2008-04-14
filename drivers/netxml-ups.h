@@ -56,18 +56,14 @@ typedef enum {
 	BYPASSAUTO,	/* on automatic bypass */
 	BYPASSMAN,	/* on manual/service bypass */
 	OFF,		/* ups is off */
-	CAL,		/* calibration */
-	OVERHEAT,	/* overheat; Belkin, TrippLite */
-	COMMFAULT,	/* UPS fault; Belkin, TrippLite */
-	DEPLETED,	/* battery depleted; Belkin */
-	TIMELIMITEXP,	/* time limit expired; APC */
-	FULLYCHARGED,	/* battery full; CyberPower */
-	AWAITINGPOWER,	/* awaiting power; Belkin, TrippLite */
-	FANFAIL,	/* fan failure; MGE */
-	NOBATTERY,	/* battery missing; MGE */
-	BATTVOLTLO,	/* battery voltage too low; MGE */
-	BATTVOLTHI,	/* battery voltage too high; MGE */
-	CHARGERFAIL,	/* battery charger failure; MGE */
+	OVERHEAT,	/* overheat */
+	COMMFAULT,	/* communication failure */
+	INTERNALFAULT,	/* internal failure */
+	FANFAIL,	/* fan failure */
+	NOBATTERY,	/* battery missing */
+	BATTVOLTLO,	/* battery voltage too low */
+	BATTVOLTHI,	/* battery voltage too high */
+	CHARGERFAIL,	/* battery charger failure */
 	VRANGE,		/* voltage out of range */
 	FRANGE,		/* frequency out of range */
 	FUSEFAULT	/* fuse fault */
