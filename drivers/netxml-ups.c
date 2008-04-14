@@ -56,8 +56,6 @@ static int netxml_authenticate(void *userdata, const char *realm, int attempt, c
 static int netxml_dispatch_request(ne_request *request, ne_xml_parser *parser);
 
 #ifndef HAVE_LIBNEON_SET_CONNECT_TIMEOUT
-static sigset_t		netxml_sigmask;
-
 static void netxml_alarm_handler(int sig)
 {
 	/* don't do anything here, just return */
@@ -143,12 +141,12 @@ void upsdrv_updateinfo(void)
 	if (ret != NE_OK) {
 #ifdef DEBUG
 		upslogx(LOG_ERR, "%s (%.3f seconds)", ne_get_error(session), difftimeval(start, stop));
+#else
+		upsdebugx(1, "%s (%d from %d)", ne_get_error(session), retries, MAXRETRIES);
 #endif
 		if (retries < MAXRETRIES) {
 			retries++;
-			upsdebugx(1, "%s (%d from %d)", ne_get_error(session), retries, MAXRETRIES);
 		} else {
-			upslogx(LOG_ERR, "%s", ne_get_error(session));
 			dstate_datastale();
 		}
 
@@ -247,13 +245,12 @@ void upsdrv_initups(void)
 #ifndef HAVE_LIBNEON_SET_CONNECT_TIMEOUT
 	struct sigaction	sa;
 
-	sigemptyset(&netxml_sigmask);
-	sa.sa_mask = netxml_sigmask;
+	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = 0;
+
 	sa.sa_handler = netxml_alarm_handler;
 	sigaction(SIGALRM, &sa, NULL);
 #endif
-
 	/* allow override of default network timeout value */
 	val = getval("timeout");
 
