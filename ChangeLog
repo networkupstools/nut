@@ -1,3 +1,8 @@
+Mon Apr 14 09:48:54 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/netxml-ups: add internal fault as separate alarm status,
+   removed unused status and alarm bits
+
 Mon Apr 14 06:47:51 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - drivers/main-hal.c: fix a bitwising error on setup_signals.
