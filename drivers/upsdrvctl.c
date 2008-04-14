@@ -51,9 +51,6 @@ static	char	*driverpath = NULL;
 	/* passthrough to the drivers: chroot path and new user name */
 static	char	*pt_root = NULL, *pt_user = NULL;
 
-static	sigset_t	nut_upsdrvctl_sigmask;
-static	struct	sigaction	sa;
-
 void do_upsconf_args(char *upsname, char *var, char *val)
 {
 	ups_t	*tmp, *last;
@@ -194,9 +191,9 @@ static void forkexec(const char *prog, char **argv, const ups_t *ups)
 
 	if (pid != 0) {			/* parent */
 		int	wstat;
+		struct sigaction	sa;
 
-		sigemptyset(&nut_upsdrvctl_sigmask);
-		sa.sa_mask = nut_upsdrvctl_sigmask;
+		sigemptyset(&sa.sa_mask);
 		sa.sa_flags = 0;
 		sa.sa_handler = waitpid_timeout;
 		sigaction(SIGALRM, &sa, NULL);
@@ -208,7 +205,6 @@ static void forkexec(const char *prog, char **argv, const ups_t *ups)
 
 		ret = waitpid(pid, &wstat, 0);
 
-		signal(SIGALRM, SIG_IGN);
 		alarm(0);
 
 		if (ret == -1) {

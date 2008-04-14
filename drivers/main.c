@@ -47,8 +47,6 @@
 
 	/* signal handling */
 	int	exit_flag = 0;
-	static sigset_t		main_sigmask;
-	struct sigaction	main_sa;
 
 	/* everything else */
 	static	char	*pidfn = NULL;
@@ -420,18 +418,19 @@ static void set_exit_flag(int sig)
 
 static void setup_signals(void)
 {
-	sigemptyset(&main_sigmask);
-	main_sa.sa_mask = main_sigmask;
-	main_sa.sa_flags = 0;
+	struct sigaction	sa;
 
-	main_sa.sa_handler = set_exit_flag;
-	sigaction(SIGTERM, &main_sa, NULL);
-	sigaction(SIGINT, &main_sa, NULL);
-	sigaction(SIGQUIT, &main_sa, NULL);
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
 
-	main_sa.sa_handler = SIG_IGN;
-	sigaction(SIGHUP, &main_sa, NULL);
-	sigaction(SIGPIPE, &main_sa, NULL);
+	sa.sa_handler = set_exit_flag;
+	sigaction(SIGTERM, &sa, NULL);
+	sigaction(SIGINT, &sa, NULL);
+	sigaction(SIGQUIT, &sa, NULL);
+
+	sa.sa_handler = SIG_IGN;
+	sigaction(SIGHUP, &sa, NULL);
+	sigaction(SIGPIPE, &sa, NULL);
 }
 
 int main(int argc, char **argv)
