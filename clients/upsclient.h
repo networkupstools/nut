@@ -43,7 +43,7 @@ typedef struct {
 	int	syserrno;
 	int	upsclient_magic;
 
-	PCONF_CTX_t	*pc_ctx;
+	PCONF_CTX_t	pc_ctx;
 
 	char	errbuf[UPSCLI_ERRBUF_LEN];
 
@@ -54,6 +54,10 @@ typedef struct {
 	void	*ssl_ctx;
 	void	*ssl;
 #endif
+
+	char	readbuf[64];
+	size_t	readlen;
+	size_t	readidx;
 
 }	UPSCONN_t;
 

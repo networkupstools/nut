@@ -1,3 +1,14 @@
+Tue Apr 22 20:13:00 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ * clients/upsclient.[ch]:
+   - add read buffer (so that we can read in larger chunks, instead of
+     character by character) [ r1407 ]
+   - the context buffer is now statically allocated (since we always
+     need it) [ r1407 ]
+   - code cleanup [ r1407 ]
+   - functions in common/common.c will not be available to clients
+     that are linked to the library [ r1452 ]
+
 Tue Apr 22 19:45:34 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - man/Makefile.am: fix dependencies for libupsclient-config.1 and

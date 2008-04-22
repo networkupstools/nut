@@ -19,7 +19,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#include "common.h"
+#include "config.h"	/* safe because it doesn't contain prototypes */
 
 #include <errno.h>
 #include <netdb.h>
@@ -34,6 +34,8 @@
 #include "upsclient.h"
 
 #define UPSCLIENT_MAGIC 0x19980308
+
+#define SMALLBUF	512
 
 #ifdef SHUT_RDWR
 #define shutdown_how SHUT_RDWR
@@ -143,7 +145,7 @@ const char *upscli_strerror(UPSCONN_t *ups)
 	case 3:		/* parsing (parseconf) error */
 		snprintf(ups->errbuf, UPSCLI_ERRBUF_LEN,
 			upscli_errlist[ups->upserror].str,
-			ups->pc_ctx->errmsg);
+			ups->pc_ctx.errmsg);
 		return ups->errbuf;
 	}
 
@@ -153,6 +155,30 @@ const char *upscli_strerror(UPSCONN_t *ups)
 		upscli_errlist[ups->upserror].flags);
 
 	return ups->errbuf;
+}
+
+/* Read up to buflen bytes from fd and return the number of bytes
+   read. If no data is available within d_sec + d_usec, return 0.
+   On error, a value < 0 is returned (errno indicates error). */
+static int select_read(const int fd, void *buf, const size_t buflen, const long d_sec, const long d_usec)
+{
+	int		ret;
+	fd_set		fds;
+	struct timeval	tv;
+
+	FD_ZERO(&fds);
+	FD_SET(fd, &fds);
+
+	tv.tv_sec = d_sec;
+	tv.tv_usec = d_usec;
+
+	ret = select(fd + 1, &fds, NULL, NULL, &tv);
+
+	if (ret < 1) {
+		return ret;
+	}
+
+	return read(fd, buf, buflen);
 }
 
 /* internal: abstract the SSL calls for the other functions */
@@ -186,6 +212,30 @@ static int net_read(UPSCONN_t *ups, char *buf, size_t buflen)
 	}
 
 	return ret;
+}
+
+/* Write up to buflen bytes to fd and return the number of bytes
+   written. If no data is available within d_sec + d_usec, return 0.
+   On error, a value < 0 is returned (errno indicates error). */
+static int select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec)
+{
+	int		ret;
+	fd_set		fds;
+	struct timeval	tv;
+
+	FD_ZERO(&fds);
+	FD_SET(fd, &fds);
+
+	tv.tv_sec = d_sec;
+	tv.tv_usec = d_usec;
+
+	ret = select(fd + 1, NULL, &fds, NULL, &tv);
+
+	if (ret < 1) {
+		return ret;
+	}
+
+	return write(fd, buf, buflen);
 }
 
 /* internal: abstract the SSL calls for the other functions */
@@ -225,7 +275,7 @@ static int net_write(UPSCONN_t *ups, const char *buf, size_t buflen)
 #ifndef HAVE_SSL
 static int upscli_sslinit(UPSCONN_t *ups)
 {
-	return 0;		/* not supported */
+	return 0;	/* not supported */
 }
 
 int upscli_sslcert(UPSCONN_t *ups, const char *dir, const char *file, int verify)
@@ -347,23 +397,11 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 	}
 
 	/* clear out any lingering junk */
-	ups->fd = -1;
-	ups->host = NULL;
-	ups->flags = 0;
-	ups->upserror = 0;
-	ups->syserrno = 0;
+	memset(ups, 0, sizeof(*ups));
 	ups->upsclient_magic = UPSCLIENT_MAGIC;
+	ups->fd = -1;
 
-	if ((ups->pc_ctx = malloc(sizeof(PCONF_CTX_t))) == NULL) {
-		ups->upserror = UPSCLI_ERR_NOMEM;
-		upscli_disconnect(ups);
-		return -1;
-	}
-
-	pconf_init(ups->pc_ctx, NULL);
-
-	ups->ssl_ctx = NULL;
-	ups->ssl = NULL;
+	pconf_init(&ups->pc_ctx, NULL);
 
 	if (!host) {
 		ups->upserror = UPSCLI_ERR_NOSUCHHOST;
@@ -374,7 +412,7 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 #ifndef	HAVE_IPV6
 	serv = gethostbyname(host);
 
-	if (serv == NULL) {
+	if (!serv) {
 		struct  in_addr	listenaddr;
 
 		if (!inet_aton(host, &listenaddr)) {
@@ -385,7 +423,7 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 
 		serv = gethostbyaddr(&listenaddr, sizeof(listenaddr), AF_INET);
 
-		if (serv == NULL) {
+		if (!serv) {
 			ups->upserror = UPSCLI_ERR_NOSUCHHOST;
 			upscli_disconnect(ups);
 			return -1;
@@ -399,33 +437,33 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 		return -1;
 	}
 
-	memset(&local, '\0', sizeof(struct sockaddr_in));
+	memset(&local, '\0', sizeof(local));
 	local.sin_family = AF_INET;
 	local.sin_port = htons(INADDR_ANY);
 
-	memset(&server, '\0', sizeof(struct sockaddr_in));
+	memset(&server, '\0', sizeof(server));
 	server.sin_family = AF_INET;
 	server.sin_port = htons(port);
 
 	memcpy(&server.sin_addr, serv->h_addr, serv->h_length);
 
-	if (bind(ups->fd, (struct sockaddr *) &local, sizeof(struct sockaddr_in)) == -1) {
+	if (bind(ups->fd, (struct sockaddr *) &local, sizeof(local)) < 0) {
 		ups->upserror = UPSCLI_ERR_BINDFAILURE;
 		ups->syserrno = errno;
 		upscli_disconnect(ups);
 		return -1;
 	}
 
-	if (connect(ups->fd, (struct sockaddr *) &server, sizeof(struct sockaddr_in)) == -1) {
+	if (connect(ups->fd, (struct sockaddr *) &server, sizeof(struct sockaddr_in)) < 0) {
 		ups->upserror = UPSCLI_ERR_CONNFAILURE;
 		ups->syserrno = errno;
 		upscli_disconnect(ups);
 		return -1;
 	}
 #else
-	snprintf(sport, NI_MAXSERV, "%hu", (unsigned short int)port);
+	snprintf(sport, sizeof(sport), "%hu", (unsigned short int)port);
 
-	memset (&hints, 0, sizeof (struct addrinfo));
+	memset(&hints, 0, sizeof(hints));
 
 	if (flags & UPSCLI_CONN_INET6) {
 		hints.ai_family = AF_INET6;
@@ -508,8 +546,9 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 		return -1;
 	}
 #endif
+	ups->host = strdup(host);
 
-	if ((ups->host = strdup(host)) == NULL) {
+	if (!ups->host) {
 		ups->upserror = UPSCLI_ERR_NOMEM;
 		upscli_disconnect(ups);
 		return -1;
@@ -679,7 +718,7 @@ int upscli_get(UPSCONN_t *ups, unsigned int numq, const char **query,
 		return -1;
 	}
 
-	if (!pconf_line(ups->pc_ctx, tmp)) {
+	if (!pconf_line(&ups->pc_ctx, tmp)) {
 		ups->upserror = UPSCLI_ERR_PARSE;
 		return -1;
 	}
@@ -687,18 +726,18 @@ int upscli_get(UPSCONN_t *ups, unsigned int numq, const char **query,
 	/* q: [GET] VAR <ups> <var>   *
 	 * a: VAR <ups> <var> <val> */
 
-	if (ups->pc_ctx->numargs < numq) {
+	if (ups->pc_ctx.numargs < numq) {
 		ups->upserror = UPSCLI_ERR_PROTOCOL;
 		return -1;
 	}
 
-	if (!verify_resp(numq, query, ups->pc_ctx->arglist)) {
+	if (!verify_resp(numq, query, ups->pc_ctx.arglist)) {
 		ups->upserror = UPSCLI_ERR_PROTOCOL;
 		return -1;
 	}
 
-	*numa = ups->pc_ctx->numargs;
-	*answer = ups->pc_ctx->arglist;
+	*numa = ups->pc_ctx.numargs;
+	*answer = ups->pc_ctx.arglist;
 
 	return 0;
 }
@@ -731,19 +770,19 @@ int upscli_list_start(UPSCONN_t *ups, unsigned int numq, const char **query)
 		return -1;
 	}
 
-	if (!pconf_line(ups->pc_ctx, tmp)) {
+	if (!pconf_line(&ups->pc_ctx, tmp)) {
 		ups->upserror = UPSCLI_ERR_PARSE;
 		return -1;
 	}
 
-	if (ups->pc_ctx->numargs < 2) {
+	if (ups->pc_ctx.numargs < 2) {
 		ups->upserror = UPSCLI_ERR_PROTOCOL;
 		return -1;
 	}
 
 	/* the response must start with BEGIN LIST */
-	if ((strcasecmp(ups->pc_ctx->arglist[0], "BEGIN") != 0) || 
-		(strcasecmp(ups->pc_ctx->arglist[1], "LIST") != 0)) {
+	if ((strcasecmp(ups->pc_ctx.arglist[0], "BEGIN") != 0) ||
+		(strcasecmp(ups->pc_ctx.arglist[1], "LIST") != 0)) {
 		ups->upserror = UPSCLI_ERR_PROTOCOL;
 		return -1;
 	}
@@ -753,7 +792,7 @@ int upscli_list_start(UPSCONN_t *ups, unsigned int numq, const char **query)
 
 	/* compare q[0]... to a[2]... */
 
-	if (!verify_resp(numq, query, &ups->pc_ctx->arglist[2])) {
+	if (!verify_resp(numq, query, &ups->pc_ctx.arglist[2])) {
 		ups->upserror = UPSCLI_ERR_PROTOCOL;
 		return -1;
 	}
@@ -778,30 +817,30 @@ int upscli_list_next(UPSCONN_t *ups, unsigned int numq, const char **query,
 		return -1;
 	}
 
-	if (!pconf_line(ups->pc_ctx, tmp)) {
+	if (!pconf_line(&ups->pc_ctx, tmp)) {
 		ups->upserror = UPSCLI_ERR_PARSE;
 		return -1;
 	}
 
-	if (ups->pc_ctx->numargs < 1) {
+	if (ups->pc_ctx.numargs < 1) {
 		ups->upserror = UPSCLI_ERR_PROTOCOL;
 		return -1;
 	}
 
-	*numa = ups->pc_ctx->numargs;
-	*answer = ups->pc_ctx->arglist;
+	*numa = ups->pc_ctx.numargs;
+	*answer = ups->pc_ctx.arglist;
 
 	/* see if this is the end */
-	if (ups->pc_ctx->numargs >= 2) {
-		if ((!strcmp(ups->pc_ctx->arglist[0], "END")) &&
-			(!strcmp(ups->pc_ctx->arglist[1], "LIST")))
+	if (ups->pc_ctx.numargs >= 2) {
+		if ((!strcmp(ups->pc_ctx.arglist[0], "END")) &&
+			(!strcmp(ups->pc_ctx.arglist[1], "LIST")))
 			return 0;
 	}
 
 	/* q: VAR <ups> */
 	/* a: VAR <ups> <val> */
 
-	if (!verify_resp(numq, query, ups->pc_ctx->arglist)) {
+	if (!verify_resp(numq, query, ups->pc_ctx.arglist)) {
 		ups->upserror = UPSCLI_ERR_PROTOCOL;
 		return -1;
 	}
@@ -867,14 +906,22 @@ int upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen)
 		return -1;
 	}
 
-	for (recv = 0; recv < (buflen-1); recv += ret) {
+	for (recv = 0; recv < (buflen-1); recv++) {
 
-		ret = net_read(ups, &buf[recv], 1);
+		if (ups->readidx == ups->readlen) {
 
-		if (ret < 1) {
-			upscli_disconnect(ups);
-			return -1;
+			ret = net_read(ups, ups->readbuf, sizeof(ups->readbuf));
+
+			if (ret < 1) {
+				upscli_disconnect(ups);
+				return -1;
+			}
+
+			ups->readlen = ret;
+			ups->readidx = 0;
 		}
+
+		buf[recv] = ups->readbuf[ups->readidx++];
 
 		if (buf[recv] == '\n') {
 			break;
@@ -895,7 +942,7 @@ int upscli_splitname(const char *buf, char **upsname, char **hostname, int *port
 		return -1;
 	}
 
-	if (snprintf(tmp, SMALLBUF, "%s", buf) < 1) {
+	if (snprintf(tmp, sizeof(tmp), "%s", buf) < 1) {
 		fprintf(stderr, "upscli_splitname: can't parse empty string\n");
 		return -1;
 	}
@@ -931,7 +978,7 @@ int upscli_splitaddr(const char *buf, char **hostname, int *port)
 		return -1;
 	}
 
-	if (snprintf(tmp, SMALLBUF, "%s", buf) < 1) {
+	if (snprintf(tmp, sizeof(tmp), "%s", buf) < 1) {
 		fprintf(stderr, "upscli_splitaddr: can't parse empty string\n");
 		return -1;
 	}
@@ -985,35 +1032,32 @@ int upscli_disconnect(UPSCONN_t *ups)
 		return -1;
 	}
 
-	if (ups->fd != -1) {
-
-#ifdef HAVE_SSL
-		if (ups->ssl) {
-			SSL_shutdown(ups->ssl);
-			SSL_free(ups->ssl);
-			ups->ssl = NULL;
-		}
-
-		if (ups->ssl_ctx) {
-			SSL_CTX_free(ups->ssl_ctx);
-			ups->ssl_ctx = NULL;
-		}
-#endif
-
-		shutdown(ups->fd, shutdown_how);
-
-		close(ups->fd);
-		ups->fd = -1;
-	}
-
-	if (ups->pc_ctx) {
-		pconf_finish(ups->pc_ctx);
-		free(ups->pc_ctx);
-		ups->pc_ctx = NULL;
-	}
+	pconf_finish(&ups->pc_ctx);
 
 	free(ups->host);
 	ups->host = NULL;
+
+	if (ups->fd < 0) {
+		return 0;
+	}
+
+#ifdef HAVE_SSL
+	if (ups->ssl) {
+		SSL_shutdown(ups->ssl);
+		SSL_free(ups->ssl);
+		ups->ssl = NULL;
+	}
+
+	if (ups->ssl_ctx) {
+		SSL_CTX_free(ups->ssl_ctx);
+		ups->ssl_ctx = NULL;
+	}
+#endif
+
+	shutdown(ups->fd, shutdown_how);
+
+	close(ups->fd);
+	ups->fd = -1;
 
 	return 0;
 }
