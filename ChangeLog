@@ -1,3 +1,8 @@
+Tue Apr 22 19:45:34 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - man/Makefile.am: fix dependencies for libupsclient-config.1 and
+   netxml-ups.8
+
 Tue Apr 22 17:58:12 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/usbhid-ups: only check once for input reports in
