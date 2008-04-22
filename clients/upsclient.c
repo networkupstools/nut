@@ -19,7 +19,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#include "common.h"
+#include "config.h"	/* safe because it doesn't contain prototypes */
 
 #include <errno.h>
 #include <netdb.h>
@@ -34,6 +34,8 @@
 #include "upsclient.h"
 
 #define UPSCLIENT_MAGIC 0x19980308
+
+#define SMALLBUF	512
 
 #ifdef SHUT_RDWR
 #define shutdown_how SHUT_RDWR
@@ -155,6 +157,30 @@ const char *upscli_strerror(UPSCONN_t *ups)
 	return ups->errbuf;
 }
 
+/* Read up to buflen bytes from fd and return the number of bytes
+   read. If no data is available within d_sec + d_usec, return 0.
+   On error, a value < 0 is returned (errno indicates error). */
+static int select_read(const int fd, void *buf, const size_t buflen, const long d_sec, const long d_usec)
+{
+	int		ret;
+	fd_set		fds;
+	struct timeval	tv;
+
+	FD_ZERO(&fds);
+	FD_SET(fd, &fds);
+
+	tv.tv_sec = d_sec;
+	tv.tv_usec = d_usec;
+
+	ret = select(fd + 1, &fds, NULL, NULL, &tv);
+
+	if (ret < 1) {
+		return ret;
+	}
+
+	return read(fd, buf, buflen);
+}
+
 /* internal: abstract the SSL calls for the other functions */
 static int net_read(UPSCONN_t *ups, char *buf, size_t buflen)
 {
@@ -186,6 +212,30 @@ static int net_read(UPSCONN_t *ups, char *buf, size_t buflen)
 	}
 
 	return ret;
+}
+
+/* Write up to buflen bytes to fd and return the number of bytes
+   written. If no data is available within d_sec + d_usec, return 0.
+   On error, a value < 0 is returned (errno indicates error). */
+static int select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec)
+{
+	int		ret;
+	fd_set		fds;
+	struct timeval	tv;
+
+	FD_ZERO(&fds);
+	FD_SET(fd, &fds);
+
+	tv.tv_sec = d_sec;
+	tv.tv_usec = d_usec;
+
+	ret = select(fd + 1, NULL, &fds, NULL, &tv);
+
+	if (ret < 1) {
+		return ret;
+	}
+
+	return write(fd, buf, buflen);
 }
 
 /* internal: abstract the SSL calls for the other functions */
@@ -892,7 +942,7 @@ int upscli_splitname(const char *buf, char **upsname, char **hostname, int *port
 		return -1;
 	}
 
-	if (snprintf(tmp, SMALLBUF, "%s", buf) < 1) {
+	if (snprintf(tmp, sizeof(tmp), "%s", buf) < 1) {
 		fprintf(stderr, "upscli_splitname: can't parse empty string\n");
 		return -1;
 	}
@@ -928,7 +978,7 @@ int upscli_splitaddr(const char *buf, char **hostname, int *port)
 		return -1;
 	}
 
-	if (snprintf(tmp, SMALLBUF, "%s", buf) < 1) {
+	if (snprintf(tmp, sizeof(tmp), "%s", buf) < 1) {
 		fprintf(stderr, "upscli_splitaddr: can't parse empty string\n");
 		return -1;
 	}
