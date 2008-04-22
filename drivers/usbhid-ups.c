@@ -754,38 +754,36 @@ void upsdrv_updateinfo(void)
 	interval();
 #endif
 	/* Get HID notifications on Interrupt pipe first */
-	/* TODO: cap number of times we check for events? */
-	while ((evtCount = HIDGetEvents(udev, event, MAX_EVENT_NUM)) > 0) {
+	evtCount = HIDGetEvents(udev, event, MAX_EVENT_NUM);
 
-		upsdebugx(1, "Got %i HID objects...", evtCount);
-			
-		/* Process pending events (HID notifications on Interrupt pipe) */
-		for (i = 0; i < evtCount; i++) {
+	upsdebugx(1, "Got %i HID objects...", evtCount);
 
-			/* Many UPSes have broken input reports, so we only use the
-			   corresponding feature reports. By setting the age to zero
-			   for the first value we retrieve, we make sure that the
-			   contents of the report buffer are considered stale and we
-			   poll for fresh data. */
-			if (HIDGetDataValue(udev, event[i], &value, (i > 0) ? poll_interval : 0) != 1)
-				continue;
+	/* Process pending events (HID notifications on Interrupt pipe) */
+	for (i = 0; i < evtCount; i++) {
 
-			if (nut_debug_level >= 2) {
-				upsdebugx(2, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %f",
-					HIDGetDataItem(event[i], subdriver->utab),
-					HIDDataType(event[i]), event[i]->ReportID,
-					event[i]->Offset, event[i]->Size, value);
-			}
+		/* Many UPSes have broken input reports, so we only use the
+		   corresponding feature reports. By setting the age to zero
+		   for the first value we retrieve, we make sure that the
+		   contents of the report buffer are considered stale and we
+		   poll for fresh data. */
+		if (HIDGetDataValue(udev, event[i], &value, (i > 0) ? poll_interval : 0) != 1)
+			continue;
 
-			/* Skip Input reports, if we don't use the Feature report */
-			item = find_hid_info(FindObject_with_Path(pDesc, &(event[i]->Path), ITEM_FEATURE));
-			if (!item) {
-				upsdebugx(3, "NUT doesn't use this HID object");
-				continue;
-			}
-
-			ups_infoval_set(item, value);
+		if (nut_debug_level >= 2) {
+			upsdebugx(2, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %f",
+				HIDGetDataItem(event[i], subdriver->utab),
+				HIDDataType(event[i]), event[i]->ReportID,
+				event[i]->Offset, event[i]->Size, value);
 		}
+
+		/* Skip Input reports, if we don't use the Feature report */
+		item = find_hid_info(FindObject_with_Path(pDesc, &(event[i]->Path), ITEM_FEATURE));
+		if (!item) {
+			upsdebugx(3, "NUT doesn't use this HID object");
+			continue;
+		}
+
+		ups_infoval_set(item, value);
 	}
 #ifdef DEBUG
 	upsdebugx(1, "took %.3f seconds handling interrupt reports...\n", interval());

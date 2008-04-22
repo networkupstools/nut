@@ -1,3 +1,10 @@
+Tue Apr 22 17:58:12 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/usbhid-ups: only check once for input reports in
+   upsdrv_updateinfo() to prevent lockups if the UPS floods the
+   driver (some Tripplite units will generate one each time you
+   ask them)
+
 Mon Apr 14 09:48:54 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/netxml-ups: add internal fault as separate alarm status,
