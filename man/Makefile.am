@@ -5,8 +5,11 @@ LIB_PAGES = upsclient.3 upscli_connect.3 upscli_disconnect.3	\
  upscli_splitname.3 upscli_strerror.3 upscli_fd.3 upscli_get.3	\
  upscli_list_next.3 upscli_list_start.3 upscli_ssl.3		\
  upscli_upserror.3
+if WITH_DEV
 if WITH_PKG_CONFIG
+else
  LIB_PAGES += libupsclient-config.1
+endif
 endif
 
 CONF_PAGES = ups.conf.5 upssched.conf.5 upsd.conf.5 upsmon.conf.5	\
@@ -85,9 +88,9 @@ endif
 if HAVE_HIDDEV
    man_MANS += $(USB_HIDDEV_PAGES)
 endif
+endif
 if WITH_NEONXML
    man_MANS += $(NETXML_PAGES)
-endif
 endif
 endif
 
