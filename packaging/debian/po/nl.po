@@ -1,0 +1,122 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: nut\n"
+"Report-Msgid-Bugs-To: aquette@debian.org\n"
+"POT-Creation-Date: 2007-08-03 23:40+0200\n"
+"PO-Revision-Date: 2007-10-23 13:21+0100\n"
+"Last-Translator: Bart Cornelis <cobaco@skolelinux.no>\n"
+"Language-Team: debian-l10n-dutch <debian-l10n-dutch@lists.debian.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Dutch\n"
+
+#. Type: note
+#. Description
+#: ../nut.templates:1001
+msgid "Remove user \"nut\" from dialout group. Continue?"
+msgstr "Gebruiker 'nut' wordt verwijderd uit de 'dialout'-groep. Wilt u doorgaan?"
+
+#. Type: note
+#. Description
+#: ../nut.templates:1001
+msgid "The system user, \"nut\", will be removed from the dialout group.  A new system group, \"nut\", will be created.  Users must manually change the permissions on the serial port devices, /dev/ttyS*, to permit access by the nut group."
+msgstr "De systeemgebruiker 'nut' zal verwijderdt worden uit de 'dialout'-groep. Er wordt een nieuwe systeemgroep 'nut' aangemaakt. Rechten op de seriële poort apparaten (/dev/ttyS*) dienen door de gebruikers handmatig aangepast toe worden zodat de 'nut'-groep hier toegang tot heeft."
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:2001
+msgid "Please manually modify your configuration files! Continue?"
+msgstr "Gelieve uw configuratiebestanden handmatig aan te passen.  Wilt u doorgaan?"
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:2001
+msgid "This is a serious advisory. Please take note."
+msgstr "Dit is een serieus advies, gelieve er rekening mee te houden."
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:2001
+msgid "There have been significant changes by the upstream authors to the behaviour of this software. Specifically, the configuration files in /etc/nut are different, some ups drivers have been renamed, ..."
+msgstr "Er zijn belangrijke aanpassingen aangebracht in het gedrag van deze software door de bovenstroomse auteur. Meer bepaald zijn sommige van de configuratiebestanden in /etc/nut veranderd, en zijn sommige ups-stuurprogramma's hernoemd, ..."
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:2001
+msgid "If you continue with the installation of this package, NUT will NOT restart unless you manually change your configuration files and edit /etc/default/nut.  You have been warned! Please read /usr/share/doc/nut/UPGRADING.gz for the upgrading procedure."
+msgstr "Als u doorgaat met de installatie van dit pakket zal NUT pas starten na dat u de configuratiebestanden en /etc/default/nut handmatig aangepast heeft. U bent gewaarschuwd! Meer informatie betreffende het opwaarderingsproces vindt u in /usr/share/doc/nut/UPGRADING.gz ."
+
+#~ msgid "Remove obsolete /etc/nut/debian.conf file?"
+#~ msgstr "Wilt u het verouderde bestand /etc/nut/debian.conf verwijderen?"
+#~ msgid ""
+#~ "The upstream author has changed the behaviour of upsd and upsmon. This "
+#~ "has necessited modifications in /etc/init.d/nut, the start up script for "
+#~ "the daemons. The init script no longer looks for /etc/nut/debian.conf. "
+#~ "Instead it reads /etc/nut/upsd.conf and /etc/nut/upsmon.conf directly."
+#~ msgstr ""
+#~ "De bovenstroomse auteur heeft het gedrag van upsd en upsmon veranderd. "
+#~ "Hierdoor waren aanpassingen in het startop-script van de "
+#~ "achtergronddienst (/etc/init.d/nut) nodig. Het init-script zoekt niet "
+#~ "langer naar /etc/nut/debian.conf maar leest /etc/nut/upsd.conf en /etc/"
+#~ "nut/upsmon.conf nu rechtstreeks in."
+#~ msgid ""
+#~ "Therefore, /etc/nut/debian.conf will be removed. Note that in order to "
+#~ "get upsmon to work, you will have to modify /etc/nut/upsmon.conf by "
+#~ "adding a MONITOR line. Please read the instructions in /usr/share/doc/nut/"
+#~ "README.Debian."
+#~ msgstr ""
+#~ "Hierdoor zal /etc/nut/debian.conf dan ook verwijderd worden. Merk op dat "
+#~ "u /etc/nut/upsmon.conf dient aan te passen om upsmon werkend te krijgen "
+#~ "door een MONITOR-regel toe te voegen. Meer informatie vindt u in /usr/"
+#~ "share/doc/nut/README.Debian."
+#~ msgid ""
+#~ "There has been a significant change by the upstream author to the syntax "
+#~ "of the UPS lines in the /etc/nut/upsd.conf configuration file. The init "
+#~ "script in this package takes advantage of this new syntax. You will need "
+#~ "to manually modify your configuration file in order for the init script "
+#~ "to work."
+#~ msgstr ""
+#~ "De bovenstroomse auteur heeft belangrijke veranderingen aangebracht in de "
+#~ "syntax van de UPS-regels in configuratiebestand /etc/nut/upsd.conf . Het "
+#~ "init-script in dit pakket maakt gebruik van de nieuwe syntax. U dient uw "
+#~ "configuratiebestand handmatig aan te passen opdat het init-script zal "
+#~ "werken."
+#~ msgid ""
+#~ "There has been a significant change to the syntax of the SHUTDOWNCMD line "
+#~ "in the /etc/nut/upsmon.conf file. The SHUTDOWNCMD must use \"quotes\" "
+#~ "around the command or only the first word will be invoked. The new style "
+#~ "is:\n"
+#~ "  SHUTDOWNCMD \"/sbin/shutdown -h\""
+#~ msgstr ""
+#~ "Er is een belangrijke verandering gemaakt in de syntax van de SHUTDOWNCMD-"
+#~ "regel in het bestand /etc/nut/upsmon.conf . Om te vermijden dat enkel het "
+#~ "eerste woord aangeroepen wordt moeten er \"-aanhalingstekens rond het "
+#~ "commando staan. De nieuwe stijl is:\n"
+#~ "   SHUTDOWNCMD \"/sbin/shutdown -h\""
+#~ msgid ""
+#~ "There have been significant changes by the upstream author to the "
+#~ "behaviour of this software.  Specifically, the configuration files in /"
+#~ "etc/nut are completely different, most of the ups drivers have been "
+#~ "rewritten (those that weren't rewritten have been dropped), and the TCP "
+#~ "port on which upsd listens has changed."
+#~ msgstr ""
+#~ "Er zijn belangrijke aanpassingen aangebracht in het gedrag van deze "
+#~ "software door de bovenstroomse auteur. Meer bepaald zijn de "
+#~ "configuratiebestanden in /etc/nut volledig veranderd, zijn de meeste ups-"
+#~ "stuurprogramma's herschreven (diegenen die niet herschreven zijn, zijn er "
+#~ "niet meer), en luistert upsd nu op een andere TCP-poort."
+#~ msgid ""
+#~ "If you continue with the installation of this package, upsd/upsmon will "
+#~ "NOT restart unless you manually change your configuration files and edit /"
+#~ "etc/default/nut.  You have been warned!"
+#~ msgstr ""
+#~ "Als u doorgaat met de installatie van dit pakket zal upsd/upsmon NIET "
+#~ "starten voordat u de configuratiebestanden en /etc/default/nut handmatig "
+#~ "aangepast heeft. U bent gewaarschuwd!"
+

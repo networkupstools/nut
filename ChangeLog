@@ -1,3 +1,9 @@
+Fri Apr 25 15:39:32 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - packaging/debian: synchronize with the official package and update
+   according to the many changes in 2.2.2. For more information, refer to
+   packaging/debian/changelog
+
 Fri Apr 25 14:10:47 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - man/Makefile.am: smarter fix for libupsclient-config.1

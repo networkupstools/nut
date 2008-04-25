@@ -40,11 +40,26 @@ Note that sample configuration files are provided in
       /sbin/upsdrvctl stop [myups]
 
 (2) serial port permissions
-    The nut user need to be added to the dialout group for the serial
-    communication to work.  The following command accomplishes this:
-      addgroup nut dialout
+    The nut user need to be able to access the serial port both for
+    reading and writing.
 
-    This is not done by default for security reason.
+    There are two possibilities:
+
+    a) You can add the nut user to the dialout group.
+       The following command accomplishes this:
+         addgroup nut dialout
+
+       This is not done by default for security reason.
+
+    b) Another solution, for system supporting udev, is to create a file
+       (for example /etc/udev/rules.d/01-ups.rules) and to add something
+       like:
+         KERNEL="ttyS1", GROUP="nut"
+
+       where 'ttyS1' has to be replaced by the exact name of your serial port.
+
+    Note that the USB device permission are automatically set by a
+    udev rules file.
 
 (3) /etc/nut/upsd.conf (see 'man 5 upsd.conf' for more information)
     Edit /etc/nut/upsd.conf and add something like the following:

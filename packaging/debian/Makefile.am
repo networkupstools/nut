@@ -5,4 +5,4 @@ EXTRA_DIST = changelog control copyright description.subst hotplug	\
  nut.init nut.links nut.postinst nut.postrm nut.preinst nut.prerm	\
  nut.README.Debian nut.templates nut.TODO.Debian \
  rules watch po/ca.po po/cs.po po/de.po po/fr.po po/POTFILES.in		\
- po/templates.pot po/vi.po
+ po/pt.po po/pt_BR.po po/templates.pot po/vi.po

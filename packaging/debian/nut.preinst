@@ -33,7 +33,7 @@ case "$1" in
     check_and_create_user
 
     # remove the obsolete config file (upgrading from nut < 0.44.0)
-    db_get nut/remove_debian_conf
+    db_get nut/remove_debian_conf || true
     if [ "$RET" = "true" ] ; then
       rm -f /etc/nut/debian.conf
     fi

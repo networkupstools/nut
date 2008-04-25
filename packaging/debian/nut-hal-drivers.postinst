@@ -6,18 +6,6 @@
 case "$1" in
 
   configure)
-    if [ -d /etc/nut/ ] ; then
-    	chown root:nut /etc/nut/
-    fi
-    for file in ups.conf upsd.conf upsmon.conf upsd.users upssched.conf ; do
-        if [ -f /etc/nut/$file ] ; then
-            chown root:nut /etc/nut/$file
-            chmod 640 /etc/nut/$file
-        fi
-    done
-    chown root:nut /var/run/nut /var/lib/nut
-    chmod 770 /var/run/nut /var/lib/nut
-
     # restart udev to apply the USB rules to the already plugged devices
     # only if it's already running in this environment
     udevd_pid=$(pidof udevd 2>/dev/null) || true
@@ -49,9 +37,4 @@ case "$1" in
 
 esac
 
-/etc/init.d/nut stop
 #DEBHELPER#
-
-# handle upsmon failing to close
-# all inherited file descriptors
-db_stop
