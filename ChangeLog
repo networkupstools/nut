@@ -1,3 +1,7 @@
+Fri Apr 25 14:10:47 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - man/Makefile.am: smarter fix for libupsclient-config.1
+
 Tue Apr 22 20:13:00 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  * clients/upsclient.[ch]:
