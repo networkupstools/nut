@@ -1,3 +1,9 @@
+2.2.2-pre3
+
+Fri Apr 25 15:39:33 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - configure.in: change version to 2.2.2-pre3.
+
 Fri Apr 25 15:39:32 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - packaging/debian: synchronize with the official package and update
