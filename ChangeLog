@@ -1,3 +1,9 @@
+Tue Apr 29 08:37:07 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - packaging/opensuse/nut.spec.in: nut-hal package should conflict
+   with nut package to make sure that if people update an existing
+   installation nut must be uninstalled prior to installing nut-hal
+
 Tue Apr 29 08:19:52 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - packaging/opensuse/Makefile.am,nut.spec.in: change numeric NUT
