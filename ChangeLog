@@ -1,3 +1,7 @@
+Tue Apr 29 19:13:22 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - packaging/opensuse/nut.spec.in: fix broken shell scripting
+
 Tue Apr 29 08:37:07 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - packaging/opensuse/nut.spec.in: nut-hal package should conflict
