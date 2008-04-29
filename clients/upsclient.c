@@ -383,6 +383,7 @@ int upscli_sslcert(UPSCONN_t *ups, const char *file, const char *path, int verif
 
 int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 {
+	int	sock_fd;
 #ifndef	HAVE_IPV6
 	struct sockaddr_in	local, server;
 	struct hostent		*serv;
@@ -401,11 +402,8 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 	ups->upsclient_magic = UPSCLIENT_MAGIC;
 	ups->fd = -1;
 
-	pconf_init(&ups->pc_ctx, NULL);
-
 	if (!host) {
 		ups->upserror = UPSCLI_ERR_NOSUCHHOST;
-		upscli_disconnect(ups);
 		return -1;
 	}
 
@@ -417,7 +415,6 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 
 		if (!inet_aton(host, &listenaddr)) {
 			ups->upserror = UPSCLI_ERR_NOSUCHHOST;
-			upscli_disconnect(ups);
 			return -1;
 		}
 
@@ -425,15 +422,14 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 
 		if (!serv) {
 			ups->upserror = UPSCLI_ERR_NOSUCHHOST;
-			upscli_disconnect(ups);
 			return -1;
 		}
 	}
 
-	if ((ups->fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+	if ((sock_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		ups->upserror = UPSCLI_ERR_SOCKFAILURE;
 		ups->syserrno = errno;
-		upscli_disconnect(ups);
+		close(sock_fd);
 		return -1;
 	}
 
@@ -447,19 +443,21 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 
 	memcpy(&server.sin_addr, serv->h_addr, serv->h_length);
 
-	if (bind(ups->fd, (struct sockaddr *) &local, sizeof(local)) < 0) {
+	if (bind(sock_fd, (struct sockaddr *) &local, sizeof(local)) < 0) {
 		ups->upserror = UPSCLI_ERR_BINDFAILURE;
 		ups->syserrno = errno;
-		upscli_disconnect(ups);
+		close(sock_fd);
 		return -1;
 	}
 
-	if (connect(ups->fd, (struct sockaddr *) &server, sizeof(struct sockaddr_in)) < 0) {
+	if (connect(sock_fd, (struct sockaddr *) &server, sizeof(struct sockaddr_in)) < 0) {
 		ups->upserror = UPSCLI_ERR_CONNFAILURE;
 		ups->syserrno = errno;
-		upscli_disconnect(ups);
+		close(sock_fd);
 		return -1;
 	}
+
+	ups->fd = sock_fd;
 #else
 	snprintf(sport, sizeof(sport), "%hu", (unsigned short int)port);
 
@@ -500,10 +498,10 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 	}
 
 	for (ai = res; ai != NULL; ai = ai->ai_next) {
-		int	sock_fd;
 
 		if ((sock_fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol)) < 0) {
-			switch (errno) {
+			switch (errno)
+			{
 			case EAFNOSUPPORT:
 			case EINVAL:
                                 break;
@@ -515,7 +513,8 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 		}
 
 		while ((v = connect(sock_fd, ai->ai_addr, ai->ai_addrlen)) < 0) {
-			switch (errno) {
+			switch (errno)
+			{
 			case EAFNOSUPPORT:
 				break;
 			case EINTR:
@@ -537,15 +536,16 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 		ups->upserror = 0;
 		ups->syserrno = 0;
 		break;
-	}		
+	}
 
 	freeaddrinfo(res);
 
 	if (ups->fd < 0) {
-		upscli_disconnect(ups);
 		return -1;
 	}
 #endif
+	pconf_init(&ups->pc_ctx, NULL);
+
 	ups->host = strdup(host);
 
 	if (!ups->host) {
