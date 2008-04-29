@@ -1,3 +1,9 @@
+Tue Apr 29 08:19:52 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - packaging/opensuse/Makefile.am,nut.spec.in: change numeric NUT
+   port to service name
+ - configure.in: forgot to add opensuse
+
 Tue Apr 29 07:47:34 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - packaging/Makefile.am,README: forgot to add opensuse

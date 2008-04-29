@@ -820,6 +820,8 @@ AC_OUTPUT([
  packaging/generic-rpm/nut.spec
  packaging/redhat/Makefile
  packaging/redhat/nut.spec
+ packaging/opensuse/Makefile
+ packaging/opensuse/nut.spec
  scripts/hal/Makefile
  scripts/hotplug/Makefile
  scripts/hotplug/libhidups

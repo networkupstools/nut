@@ -32,7 +32,7 @@ Source1:        upsd.init
 Source2:        README.SUSE
 Source3:        upsd-early-powerdown.init
 Source4:        upsd.dbus-1
-Source5:        nut.firewall
+Source5:        nut.firewall.in
 Source6:        upsd.pm.hooks
 Source7:        upsmon.init
 Patch:          nut-preconfig.patch
@@ -201,6 +201,11 @@ CFLAGS="$RPM_OPT_FLAGS -pedantic -Wuninitialized -Wdeclaration-after-statement -
 	--with-user=%{USER}\
 	--with-group=%{GROUP}
 make %{?jobs:-j%jobs}
+PORT=$(sed -n 's/#define PORT //p' config.log)
+if "$PORT" = 3493 ; then
+    PORT=nut
+fi
+sed s/@PORT@/$PORT/ <%{S:5} >nut.firewall
 
 %install
 make DESTDIR=$RPM_BUILD_ROOT install
