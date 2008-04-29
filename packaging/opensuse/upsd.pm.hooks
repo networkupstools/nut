@@ -1,0 +1,16 @@
+#!/bin/bash
+
+. /etc/pm/functions
+
+case "$1" in
+	hibernate|suspend)
+		stopservice upsmon
+		stopservice upsd
+		;;
+	thaw|resume)
+		restartservice upsd
+		restartservice upsmon
+		;;
+	*)
+		;;
+esac

@@ -1,0 +1,132 @@
+#! /bin/sh
+#
+# Sample script for early powerdown. Edit and copy to /etc/init.d/. See
+# /usr/share/doc/packages/nut/README.SUSE for more.
+#
+# Copyright (c) 2006  SUSE / Novell Inc.
+# All rights reserved.
+#
+# Author: Stanislav Brabec, 2006
+# Please send feedback to http://www.suse.de/feedback/
+#
+# /etc/init.d/upsd-early-powerdown
+#
+#    This program is free software; you can redistribute it and/or modify 
+#    it under the terms of the GNU General Public License as published by 
+#    the Free Software Foundation; either version 2 of the License, or 
+#    (at your option) any later version. 
+# 
+#    This program is distributed in the hope that it will be useful, 
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of 
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
+#    GNU General Public License for more details. 
+# 
+#    You should have received a copy of the GNU General Public License 
+#    along with this program; if not, write to the Free Software 
+#    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+# System startup script for NUT UPS daemon
+#
+# LSB compatible service control script; see http://www.linuxbase.org/spec/
+# 
+### BEGIN INIT INFO
+# Provides:          upsd-early-powerdown
+# Required-Start:    
+# Should-Start:      FIXME scripts which should not stop before powerdown
+# Required-Stop:     
+# Should-Stop:       FIXME scripts which should stop before powerdown
+# Default-Start:     3 5
+# Default-Stop:      0 1 2 6
+# Short-Description: Early UPS powerdown
+# Description:       Script for early, quick but incorrect power down
+#	while going out of batteries. You need it only if you run slowly
+#	stopping services and UPS battery power fails before stopping of
+#	these services.
+### END INIT INFO
+#
+# Note on runlevels:
+# 0 - halt/poweroff 			6 - reboot
+# 1 - single user			2 - multiuser without network exported
+# 3 - multiuser w/ network (text mode)  5 - multiuser w/ network and X11 (xdm)
+# 
+
+# Check for existence of needed config files
+UPSMON_CONFIG=/etc/ups/upsmon.conf
+test -r $UPSMON_CONFIG || { echo "$UPSMON_CONFIG not existing";
+	if [ "$1" = "stop" ]; then exit 0; else exit 6; fi;
+}
+# If this file exists, power is failing.
+POWERDOWNFLAG=$(sed -n 's/^POWERDOWNFLAG[[:space:]]*//p' <$UPSMON_CONFIG)
+
+# Shell functions sourced from /etc/rc.status:
+#      rc_check         check and set local and overall rc status
+#      rc_status        check and set local and overall rc status
+#      rc_status -v     be verbose in local rc status and clear it afterwards
+#      rc_status -v -r  ditto and clear both the local and overall rc status
+#      rc_status -s     display "skipped" and exit with status 3
+#      rc_status -u     display "unused" and exit with status 3
+#      rc_failed        set local and overall rc status to failed
+#      rc_failed <num>  set local and overall rc status to <num>
+#      rc_reset         clear both the local and overall rc status
+#      rc_exit          exit appropriate to overall rc status
+#      rc_active        checks whether a service is activated by symlinks
+. /etc/rc.status
+
+# Reset status of this service
+rc_reset
+
+# Return values acc. to LSB for all commands but status:
+# 0	  - success
+# 1       - generic or unspecified error
+# 2       - invalid or excess argument(s)
+# 3       - unimplemented feature (e.g. "reload")
+# 4       - user had insufficient privileges
+# 5       - program is not installed
+# 6       - program is not configured
+# 7       - program is not running
+# 8--199  - reserved (8--99 LSB, 100--149 distrib, 150--199 appl)
+# 
+# Note that starting an already running service, stopping
+# or restarting a not-running service as well as the restart
+# with force-reload (in case signaling is not supported) are
+# considered a success.
+
+case "$1" in
+    start|probe)
+	## Start silently. No action.
+	;;
+    stop)
+	# If power is failing and shutdown is running, shutdown as fast as possible.
+	if test "$RUNLEVEL" = "0" -a -n "$POWERDOWNFLAG " -a -f "$POWERDOWNFLAG" ; then
+	    echo "Initiating early UPS power down..."
+	    echo "Power is failing. Running fast shutdown."
+	    echo "Sending all processes the TERM signal..."
+	    killall5 -15
+	    sleep 3
+	    echo "Sending all processes the KILL signal..."
+	    killall5 -9
+	    echo "Remounting filesystems read-only."
+	    mounts=/etc/fstab
+	    test -r /proc/mounts && mounts=/proc/mounts
+	    while read des fs rest; do
+		mount -v -n -o remount,ro $fs
+	    done < $mounts
+	    /etc/init.d/upsd powerdown
+	fi
+	;;
+    restart|try-restart|condrestart|force-reload|reload)
+	# Unimplemented.
+	rc_failed 3
+	rc_status -v
+	;;
+    status)
+	# Service status unknown.
+	rc_failed 4
+	rc_status -v
+	;;
+    *)
+	echo "Usage: $0 {start|stop|status|try-restart|restart|force-reload|reload|probe}"
+	exit 1
+	;;
+esac
+rc_exit

@@ -1,0 +1,62 @@
+--- conf/hosts.conf.sample
++++ conf/hosts.conf.sample
+@@ -27,3 +27,5 @@
+ # MONITOR myups@localhost "Local UPS"
+ # MONITOR su2200@10.64.1.1 "Finance department"
+ # MONITOR matrix@shs-server.example.edu "Sierra High School data room #1"
++
++MONITOR myups@localhost "Local UPS"
+--- conf/ups.conf.sample
++++ conf/ups.conf.sample
+@@ -102,3 +102,8 @@
+ #
+ # To find out if your driver supports any extra settings, start it with
+ # the -h option and/or read the driver's documentation.
++
++[myups]
++	driver = undefined
++	port = /dev/undefined
++	desc = "Local UPS"
+--- conf/upsd.users.sample
++++ conf/upsd.users.sample
+@@ -68,3 +68,13 @@
+ # The matching MONITOR line in your upsmon.conf would look like this:
+ #
+ # MONITOR myups@myhost 1 monuser pass master	(or slave)
++
++[upsmaster]
++	password = @UPSD_INITIAL_MASTER_PASSWORD@
++	allowfrom = localhost
++	upsmon master
++
++[upsslave]
++	password = @UPSD_INITIAL_SLAVE_PASSWORD@
++	allowfrom = localhost
++	upsmon slave
+--- conf/upsmon.conf.sample
++++ conf/upsmon.conf.sample
+@@ -21,13 +21,13 @@
+ # user, since it creates an opportunity for an attack by changing the
+ # SHUTDOWNCMD to something malicious.
+ #
+-# For best results, you should create a new normal user like "nutmon",
++# For best results, you should create a new normal user like "@UPSD_USER@",
+ # and make it a member of a "nut" group or similar.  Then specify it
+ # here and grant read access to the upsmon.conf for that group.
+ #
+ # This user should not have write access to upsmon.conf.
+ #
+-# RUN_AS_USER nutmon
++# RUN_AS_USER @UPSD_USER@
+ 
+ # --------------------------------------------------------------------------
+ # MONITOR <system> <powervalue> <username> <password> ("master"|"slave")
+@@ -83,6 +83,8 @@
+ # MONITOR myups@bigserver 1 monmaster blah master
+ # MONITOR su700@server.example.com 1 upsmon secretpass slave
+ 
++MONITOR myups@localhost 1 upsmaster @UPSD_INITIAL_MASTER_PASSWORD@ master
++
+ # --------------------------------------------------------------------------
+ # MINSUPPLIES <num>
+ #
