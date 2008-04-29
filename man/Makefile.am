@@ -6,8 +6,7 @@ LIB_PAGES = upsclient.3 upscli_connect.3 upscli_disconnect.3	\
  upscli_list_next.3 upscli_list_start.3 upscli_ssl.3		\
  upscli_upserror.3
 if WITH_DEV
-if WITH_PKG_CONFIG
-else
+if !WITH_PKG_CONFIG
  LIB_PAGES += libupsclient-config.1
 endif
 endif
