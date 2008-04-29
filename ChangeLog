@@ -1,3 +1,7 @@
+Tue Apr 29 07:47:34 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - packaging/Makefile.am,README: forgot to add opensuse
+
 Tue Apr 29 07:44:59 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - man/Makefile.am: backport from Testing [r1456]
