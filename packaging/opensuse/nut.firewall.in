@@ -1,0 +1,17 @@
+## Name: Network UPS Tools
+## Description: Opens ports for remote UPS signalling for Network UPS Tools.
+
+# space separated list of allowed TCP ports
+TCP="@PORT@"
+
+# space separated list of allowed UDP ports
+UDP="@PORT@"
+
+# space separated list of allowed RPC services
+RPC=""
+
+# space separated list of allowed IP protocols
+IP=""
+
+# space separated list of allowed UDP broadcast ports
+BROADCAST=""

@@ -1,0 +1,28 @@
+--- conf/upsmon.conf.sample
++++ conf/upsmon.conf.sample
+@@ -130,6 +130,8 @@
+ # Example:
+ # NOTIFYCMD /usr/local/ups/bin/notifyme
+ 
++NOTIFYCMD /usr/lib/powersave/powersave-notify
++
+ # --------------------------------------------------------------------------
+ # POLLFREQ <n> 
+ #
+@@ -247,11 +249,11 @@
+ NOTIFYFLAG ONLINE   SYSLOG
+ NOTIFYFLAG COMMOK   SYSLOG
+ NOTIFYFLAG SHUTDOWN SYSLOG
+-NOTIFYFLAG ONBATT   SYSLOG+WALL
+-NOTIFYFLAG LOWBATT  SYSLOG+WALL
+-NOTIFYFLAG FSD      SYSLOG+WALL
+-NOTIFYFLAG NOCOMM   SYSLOG+WALL
+-NOTIFYFLAG COMMBAD  SYSLOG+WALL
++NOTIFYFLAG ONBATT   SYSLOG+WALL+EXEC
++NOTIFYFLAG LOWBATT  SYSLOG+WALL+EXEC
++NOTIFYFLAG FSD      SYSLOG+WALL+EXEC
++NOTIFYFLAG NOCOMM   SYSLOG+WALL+EXEC
++NOTIFYFLAG COMMBAD  SYSLOG+WALL+EXEC
+ 
+ # --------------------------------------------------------------------------
+ # RBWARNTIME - replace battery warning time in seconds

@@ -1,0 +1,671 @@
+#
+# spec file for package @PACKAGE_NAME@ (Version @PACKAGE_VERSION@)
+#
+# Copyright (c) 2007 SUSE LINUX Products GmbH, Nuernberg, Germany.
+# This file and all modifications and additions to the pristine
+# package are under the same license as the package itself.
+#
+
+# norootforbuild
+
+Name:           @PACKAGE_NAME@
+Version:        @PACKAGE_VERSION@
+Release:        1
+BuildRequires:  apache2-devel dbus-1-devel gd-devel hal-devel libopenssl-devel libusb-devel net-snmp-devel openssl-devel pkg-config tcpd-devel neon-devel
+License:        GPL v2 or later
+Group:          Hardware/UPS
+Provides:       smartups
+Requires:       %{_bindir}/pgrep %{_bindir}/pkill %{_bindir}/grep %{_bindir}/fgrep %{_bindir}/readlink
+Requires:	%{name}-client %{name}-server %{name}-cgi
+%if %suse_version > 1000 && %suse_version < 1020
+Requires:       powersave
+%endif
+%if %suse_version >= 1020
+Requires:       pm-utils
+%endif
+Obsoletes:      smartups
+AutoReqProv:    on
+Summary:        UPS Monitoring Software
+Url:            http://www.networkupstools.org/
+Source:         %{name}-%{version}.tar.gz
+Source1:        upsd.init
+Source2:        README.SUSE
+Source3:        upsd-early-powerdown.init
+Source4:        upsd.dbus-1
+Source5:        nut.firewall.in
+Source6:        upsd.pm.hooks
+Source7:        upsmon.init
+Patch:          nut-preconfig.patch
+Patch4:         nut-powersave.patch
+BuildRoot:      %{_tmppath}/%{name}-%{version}-build
+PreReq:         %insserv_prereq /bin/chown /bin/chmod %{_bindir}/fgrep %{_bindir}/grep %{_bindir}/sed %{_bindir}/head %{_bindir}/md5sum
+%define apache_serverroot %(%{_sbindir}/apxs2 -q datadir 2>/dev/null || %{_sbindir}/apxs -q PREFIX)
+%define CGIPATH		%{apache_serverroot}/cgi-bin/nut
+%define HTMLPATH	%{apache_serverroot}/htdocs/nut
+%define MODELPATH       %{_prefix}/lib/ups/driver
+%define STATEPATH       %{_localstatedir}/lib/ups
+%define CONFPATH	%{_sysconfdir}/ups
+%define USER		upsd
+%define GROUP		daemon
+
+%description
+These programs are part of a developing project to monitor the assortment 
+of UPSes that are found out there in the field. Many models have serial 
+ports of some kind that allow some form of state checking. This
+capability has been harnessed where possible to allow for safe shutdowns, 
+live status tracking on web pages, and more.
+
+This is a meta package that makes sure that unsuspecting users that didn't
+notice that we now have separate packages for client, server and CGI don't
+break their systems. It contains a requirement for the aforementioned
+packages and a single file that explains what happened. On new installations,
+this will also attempt to create a useable client and server configuration
+(we can't do that for the driver).
+
+%package client
+Summary:        UPS Monitoring Software
+Group:          Hardware/UPS
+Conflicts:	apcups %{name} < %{version}
+
+%description client
+These programs are part of a developing project to monitor the assortment 
+of UPSes that are found out there in the field. Many models have serial 
+ports of some kind that allow some form of state checking. This
+capability has been harnessed where possible to allow for safe shutdowns, 
+live status tracking on web pages, and more.
+
+This package includes the client utilities that are required to monitor a
+UPS that the client host is powered from - either connected directly via
+a serial port (in which case the main nut package needs to be installed on
+this machine) or across the network (where another host on the network
+monitors the UPS via serial cable and runs the main nut package to allow
+clients to see the information).
+
+%package server
+Summary:        UPS Monitoring Software
+Group:          Hardware/UPS
+Requires:       %{name}-client = %{version}
+
+%description server
+These programs are part of a developing project to monitor the assortment 
+of UPSes that are found out there in the field. Many models have serial 
+serial ports of some kind that allow some form of state checking. This
+capability has been harnessed where possible to allow for safe shutdowns, 
+live status tracking on web pages, and more.
+
+This package is the main NUT upsd daemon and the associated per-UPS-model
+drivers which talk to the UPSes.  You also need to install the base NUT
+package.
+
+%package cgi
+Summary:        UPS Monitoring Software
+Group:          Hardware/UPS
+Requires:       %{name}-client = %{version}
+
+%description cgi
+These programs are part of a developing project to monitor the assortment 
+of UPSes that are found out there in the field. Many models have serial 
+serial ports of some kind that allow some form of state checking. This
+capability has been harnessed where possible to allow for safe shutdowns, 
+live status tracking on web pages, and more.
+
+This package adds the web CGI programs.   These can be installed on a
+separate machine to the rest of the NUT package.
+
+%package snmp
+Summary:        UPS Monitoring Software
+Group:          Hardware/UPS
+Requires:       %{name}-server = %{version}
+
+%description snmp
+These programs are part of a developing project to monitor the assortment 
+of UPSes that are found out there in the field. Many models have serial 
+serial ports of some kind that allow some form of state checking. This
+capability has been harnessed where possible to allow for safe shutdowns, 
+live status tracking on web pages, and more.
+
+This package adds the snmp-ups driver, that allows NUT to monitor a SNMP
+capable UPS.
+
+%package xml
+Summary:        UPS Monitoring Software
+Group:          Hardware/UPS
+Requires:       %{name}-server = %{version}
+
+%description xml
+These programs are part of a developing project to monitor the assortment 
+of UPSes that are found out there in the field. Many models have serial 
+serial ports of some kind that allow some form of state checking. This
+capability has been harnessed where possible to allow for safe shutdowns, 
+live status tracking on web pages, and more.
+
+This package adds the netxml-ups driver, that allows NUT to monitor a XML
+capable UPS.
+
+%package hal
+Summary:        UPS Monitoring Software
+Group:          Hardware/UPS
+Requires:       hal
+Conflicts:	%{name}-server apcupsd
+
+%description hal
+These programs are part of a developing project to monitor the assortment 
+of UPSes that are found out there in the field. Many models have serial 
+serial ports of some kind that allow some form of state checking. This
+capability has been harnessed where possible to allow for safe shutdowns, 
+live status tracking on web pages, and more.
+
+This package contains the HAL enabled version of the drivers. You can use
+this for most USB connected UPSes that are powering a single system with a
+graphical desktop.
+
+%package devel
+Summary:        UPS Monitoring Software
+Group:          Hardware/UPS
+Requires:       %{name}-client = %{version}
+
+%description devel
+These programs are part of a developing project to monitor the assortment 
+of UPSes that are found out there in the field. Many models have serial 
+serial ports of some kind that allow some form of state checking. This
+capability has been harnessed where possible to allow for safe shutdowns, 
+live status tracking on web pages, and more.
+
+This package contains the libraries that are needed for custom clients.
+
+%prep
+%setup -q
+cp -a %{S:2} .
+cp -a %{S:3} upsd-early-powerdown
+%patch
+%if %suse_version > 1000 && %suse_version < 1020
+%patch4
+%endif
+sed -i "s/@UPSD_USER@/%{USER}/g" %{S:1} conf/upsmon.conf.sample
+
+%build
+CFLAGS="$RPM_OPT_FLAGS -pedantic -Wuninitialized -Wdeclaration-after-statement -DDEBUG" \
+%configure\
+	--enable-maintainermode \
+	--prefix=/usr \
+	--exec-prefix=/usr \
+	--sysconfdir=%{CONFPATH} \
+	--datadir=%{_datadir}/nut \
+	--with-all \
+	--with-ssl\
+	--with-linux-hiddev=%{_includedir}/linux/hiddev.h\
+	--with-htmlpath=%{HTMLPATH}\
+	--with-cgipath=%{CGIPATH}\
+	--with-statepath=%{STATEPATH}\
+	--with-drvpath=%{MODELPATH}\
+	--with-user=%{USER}\
+	--with-group=%{GROUP}
+make %{?jobs:-j%jobs}
+PORT=$(sed -n 's/#define PORT //p' config.log)
+if "$PORT" = 3493 ; then
+    PORT=nut
+fi
+sed s/@PORT@/$PORT/ <%{S:5} >nut.firewall
+
+%install
+make DESTDIR=$RPM_BUILD_ROOT install
+mkdir -p $RPM_BUILD_ROOT%{STATEPATH}
+mkdir -p $RPM_BUILD_ROOT%{STATEPATH}/upssched
+# SuSE rc
+mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/init.d
+mkdir -p $RPM_BUILD_ROOT%{_sbindir}
+install -m 755 %{S:7} $RPM_BUILD_ROOT%{_sysconfdir}/init.d/upsmon
+ln -sf ../..%{_sysconfdir}/init.d/upsmon $RPM_BUILD_ROOT%{_sbindir}/rcupsmon
+install -m 755 %{S:1} $RPM_BUILD_ROOT%{_sysconfdir}/init.d/upsd
+ln -sf ../..%{_sysconfdir}/init.d/upsd $RPM_BUILD_ROOT%{_sbindir}/rcupsd
+mkdir -p $RPM_BUILD_ROOT%{STATEPATH}
+mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/dbus-1/system.d
+install -m 644 %{S:4} $RPM_BUILD_ROOT%{_sysconfdir}/dbus-1/system.d/upsd.conf
+rename .sample "" $RPM_BUILD_ROOT%{_sysconfdir}/ups/*.sample
+%if %suse_version >= 1030
+mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/SuSEfirewall2.d/services
+cp nut.firewall $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/SuSEfirewall2.d/services/nut
+%endif
+%if %suse_version >= 1030
+mkdir -p $RPM_BUILD_ROOT%{_libdir}/pm-utils/sleep.d/
+install -m 755 %{S:6} $RPM_BUILD_ROOT%{_libdir}/pm-utils/sleep.d/40upsd
+%endif
+%if %suse_version >= 1020 && %suse_version < 1030
+mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/pm/hooks
+install -m 755 %{S:6} $RPM_BUILD_ROOT%{_sysconfdir}/pm/hooks/40upsd
+%endif
+
+%pre client
+usr/sbin/useradd -r -o -g %{GROUP} -s /bin/false \
+  -c "UPS daemon" -d /sbin %{USER} 2>/dev/null || :
+
+%post client
+%{fillup_and_insserv -f -n upsmon}
+
+%post server
+%{fillup_and_insserv -f -n upsd}
+
+%post
+# Generate initial passwords.
+if usr/bin/fgrep -q "password = @UPSD_INITIAL_MASTER_PASSWORD@" %{CONFPATH}/{upsmon.conf,upsd.users} ; then
+  UPSD_INITIAL_MASTER_PASSWORD=$(usr/bin/head -c 20 /dev/urandom | usr/bin/md5sum | usr/bin/head -c 10)
+  usr/bin/sed -i s/@UPSD_INITIAL_MASTER_PASSWORD@/$UPSD_INITIAL_MASTER_PASSWORD/ %{CONFPATH}/{upsmon.conf,upsd.users}
+fi
+if usr/bin/fgrep -q "password = @UPSD_INITIAL_SLAVE_PASSWORD@" %{CONFPATH}/upsd.users ; then
+  UPSD_INITIAL_SLAVE_PASSWORD=$(usr/bin/head -c 20 /dev/urandom | usr/bin/md5sum | usr/bin/head -c 10)
+  usr/bin/sed -i s/@UPSD_INITIAL_SLAVE_PASSWORD@/$UPSD_INITIAL_SLAVE_PASSWORD/ %{CONFPATH}/upsd.users
+fi
+# Be sure that all files are owned by a dedicated user.
+bin/chown -R root:%{GROUP} %{STATEPATH}
+bin/chown root:%{GROUP} %{CONFPATH}/ups.conf %{CONFPATH}/upsd.* %{CONFPATH}/upsmon.conf %{CONFPATH}/upssched.conf
+bin/chmod 640 %{CONFPATH}/ups.conf %{CONFPATH}/upsd.* %{CONFPATH}/upsmon.conf %{CONFPATH}/upssched.conf
+# Install HALT_POWERDOWN_INSERT
+if usr/bin/grep -q '^HALT_POWERDOWN_INSERT="\(%{_sysconfdir}/init\.d/upsd try-powerdown\|\)"' etc/sysconfig/shutdown ; then
+  usr/bin/sed -i 's:^\(HALT_POWERDOWN_INSERT="\).*"[[:space:]]*:\1%{_sysconfdir}/init.d/upsd try-powerdown":' etc/sysconfig/shutdown
+else
+  echo >&2 "nut: WARNING: Unknown value of HALT_POWERDOWN_INSERT in %{_sysconfdir}/sysconfig/shutdown."
+  echo >&2 "     Keeping unchanged. Should be:"
+  echo >&2 "HALT_POWERDOWN_INSERT=\"%{_sysconfdir}/init.d/upsd try-powerdown\""
+fi
+# Silently remove %{_sysconfdir}/sysconfig/smartups. File is now obsolete and
+# values are copied to not replaced config files.
+# %{_sysconfdir}/sysconfig/smartups was last present in SuSE Linux 10.0
+rm -f %{_sysconfdir}/sysconfig/smartups
+
+%preun client
+%{stop_on_removal upsmon}
+
+%preun server
+%{stop_on_removal upsd}
+
+%postun client
+%{restart_on_update upsmon}
+%insserv_cleanup
+
+%postun server
+%{restart_on_update upsd}
+# Remove HALT_POWERDOWN_INSERT
+if test $1 -eq 0 -a ! -f %{_sysconfdir}/init.d/upsd ; then
+  if usr/bin/grep -q '^HALT_POWERDOWN_INSERT="%{_sysconfdir}/init\.d/upsd try-powerdown"' etc/sysconfig/shutdown ; then
+    usr/bin/sed -i 's:^\(HALT_POWERDOWN_INSERT="\)%{_sysconfdir}/init\.d/upsd try-powerdown":\1":' etc/sysconfig/shutdown
+  else
+    echo >&2 "nut: WARNING: Unknown value of HALT_POWERDOWN_INSERT in %{_sysconfdir}/sysconfig/shutdown."
+    echo >&2 "     Keeping unchanged. Should be:"
+    echo >&2 "HALT_POWERDOWN_INSERT=\"\""
+  fi
+  if test -f %{_sysconfdir}/init.d/upsd-early-powerdown ; then
+    echo >&2 "nut: WARNING: You may want to remove your %{_sysconfdir}/init.d/upsd-early-powerdown."
+  fi
+fi
+%insserv_cleanup
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+%files
+%doc README.SUSE
+
+%files client
+%defattr(-,root,root)
+%doc AUTHORS COPYING ChangeLog MAINTAINERS NEWS README UPGRADING docs/FAQ docs/*.txt
+%{_sysconfdir}/init.d/upsmon
+%{_sysconfdir}/dbus-1/system.d/upsd.conf
+%if %suse_version >= 1020 && %suse_version < 1030
+%{_sysconfdir}/pm/hooks/40upsd
+%endif
+%if %suse_version >= 1030
+%{_libdir}/pm-utils/sleep.d/40upsd
+%endif
+%config(noreplace) %attr(640,root,%{GROUP}) %{CONFPATH}/upsmon.conf
+%config(noreplace) %attr(640,root,%{GROUP}) %{CONFPATH}/upssched.conf
+%config(noreplace) %{_bindir}/upssched-cmd
+%{_bindir}/upsc
+%{_bindir}/upscmd
+%{_bindir}/upsrw
+%{_bindir}/upslog
+%{_sbindir}/rcupsmon
+%{_sbindir}/upsmon
+%{_sbindir}/upssched
+%{_libdir}/*.so.*
+%doc %{_mandir}/man5/upsmon.conf.5.gz
+%doc %{_mandir}/man5/upssched.conf.5.gz
+%doc %{_mandir}/man8/nutupsdrv.8.gz
+%doc %{_mandir}/man8/upsc.8.gz
+%doc %{_mandir}/man8/upsrw.8.gz
+%doc %{_mandir}/man8/upslog.8.gz
+%doc %{_mandir}/man8/upscmd.8.gz
+%doc %{_mandir}/man8/upsmon.8.gz
+%doc %{_mandir}/man8/upssched.8.gz
+
+%files server
+%defattr(-,root,root)
+%dir %attr(770,root,%{GROUP}) %{STATEPATH}
+%doc upsd-early-powerdown docs/cables
+%{_sysconfdir}/udev/rules.d
+%{_sysconfdir}/init.d/upsd
+%if %suse_version >= 1030
+%{_sysconfdir}/sysconfig/SuSEfirewall2.d/services/nut
+%endif
+%{_sbindir}/upsd
+%{_sbindir}/rcupsd
+%{_datadir}/nut
+%config(noreplace) %attr(640,root,%{GROUP}) %{CONFPATH}/ups.conf
+%config(noreplace) %attr(640,root,%{GROUP}) %{CONFPATH}/upsd.conf
+%config(noreplace) %attr(640,root,%{GROUP}) %{CONFPATH}/upsd.users
+%{MODELPATH}
+%exclude %{MODELPATH}/snmp-ups
+%exclude %{MODELPATH}/netxml-ups
+%doc %{_mandir}/man5
+%exclude %{_mandir}/man5/hosts.conf.5.gz
+%exclude %{_mandir}/man5/upsset.conf.5.gz
+%exclude %{_mandir}/man5/upsmon.conf.5.gz
+%exclude %{_mandir}/man5/upssched.conf.5.gz
+%exclude %{_mandir}/man5/upsstats.html.5.gz
+%doc %{_mandir}/man8
+%exclude %{_mandir}/man8/upsimage.cgi.8.gz
+%exclude %{_mandir}/man8/upsset.cgi.8.gz
+%exclude %{_mandir}/man8/upsstats.cgi.8.gz
+%exclude %{_mandir}/man8/snmp-ups.8.gz
+%exclude %{_mandir}/man8/netxml-ups.8.gz
+%exclude %{_mandir}/man8/nutupsdrv.8.gz
+%exclude %{_mandir}/man8/upsc.8.gz
+%exclude %{_mandir}/man8/upsrw.8.gz
+%exclude %{_mandir}/man8/upslog.8.gz
+%exclude %{_mandir}/man8/upscmd.8.gz
+%exclude %{_mandir}/man8/upsmon.8.gz
+%exclude %{_mandir}/man8/upssched.8.gz
+
+%files cgi
+%defattr(-,root,root)
+%config(noreplace) %{CONFPATH}/hosts.conf
+%config(noreplace) %{CONFPATH}/upsset.conf
+%config(noreplace) %{CONFPATH}/upsstats-single.html
+%config(noreplace) %{CONFPATH}/upsstats.html
+%{CGIPATH}
+%{HTMLPATH}
+%doc %{_mandir}/man5/hosts.conf.5.gz
+%doc %{_mandir}/man5/upsset.conf.5.gz
+%doc %{_mandir}/man5/upsstats.html.5.gz
+%doc %{_mandir}/man8/upsimage.cgi.8.gz
+%doc %{_mandir}/man8/upsset.cgi.8.gz
+%doc %{_mandir}/man8/upsstats.cgi.8.gz
+
+%files snmp
+%defattr(-,root,root)
+%{MODELPATH}/snmp-ups
+%doc %{_mandir}/man8/snmp-ups.8.gz
+
+%files xml
+%defattr(-,root,root)
+%{MODELPATH}/netxml-ups
+%doc %{_mandir}/man8/netxml-ups.8.gz
+
+%files hal
+%defattr(-,root,root)
+%doc AUTHORS COPYING ChangeLog MAINTAINERS NEWS README README.SUSE UPGRADING docs/nut-hal.txt
+%{_sysconfdir}/udev/rules.d
+%{_libdir}/hal
+%{_datadir}/hal
+
+%files devel
+%defattr(-,root,root)
+%{_includedir}/*.h
+%{_libdir}/*.so
+%{_libdir}/*.*a
+%{_libdir}/pkgconfig/*.pc
+%doc %{_mandir}/man3/*.*
+
+%changelog
+* Sat Apr 26 2008 arjen@de-korte.org
+- Updated to version 2.2.2-pre3
+* Thu Apr 24 2008 arjen@de-korte.org
+- Updated to version 2.2.2-pre2
+- Move client, server, CGI, HAL, SNMP and XML to separate packages
+- Add meta package that requires client, server and CGI packages
+  when users upgrade nut
+* Thu Oct 25 2007 sbrabec@suse.cz
+- Fixed use of uninitialized memory (#331749#c13).
+* Tue Oct 23 2007 sbrabec@suse.cz
+- Renamed web pages to prevent conflicts.
+* Mon Oct 22 2007 sbrabec@suse.cz
+- Fixed udev USB rules for current kernels (#331749).
+- Added SuSEfirewall2 rule and fixed documentation (#335466).
+* Tue Aug  7 2007 sbrabec@suse.cz
+- Updated to version 2.2.0:
+  * New build infrastructure, with shared library.
+  * Support for HAL and Plug and Play.
+  * New drivers.
+  * Support for many new devices.
+  * IPv6 support.
+  * Client commands now defaults to localhost.
+  * Driver improvements.
+  * Documentation improvements.
+* Wed May 16 2007 olh@suse.de
+- Buildrequires libusb -> libusb-devel
+* Tue Feb 20 2007 mvaner@suse.cz
+- Comparison with string literal (bug #232417)
+  - setcmd-literal.patch
+* Mon Sep 18 2006 anosek@suse.cz
+- fixed compiler warning: array subscript out of range [#204417]
+  (overflow.patch)
+* Fri Sep  1 2006 anosek@suse.cz
+- updated to 2.0.4
+  * A bug has been fixed in NUT core to support resuming from
+    suspend-to-disk. This should also fix other similar issues,
+    like time synchronisation through the NTP.
+  * The mge-shut driver now better detects the Low Battery status,
+    support new models and fixes some wrong status and data.
+    It also fixes some issue where the UPS wasn't restarting
+    (refer to mge-shut manpage).
+  * The genericups custom configuration through ups.conf
+    is working again
+  * The genericups driver type 22 also support CyberPower 725SL
+    (and maybe others SL models)
+  * The new megatec driver, which will replace a bunch of drivers
+    by nut 2.2 (refer to docs/megatec.txt and UPGRADING) has been
+    backported from the trunk (Development tree). The powermust
+    driver has also received some attention.
+  * The new rhino driver was added to support Microsol Rhino UPS
+    hardware. The solis has also been improved for solaris
+    compatibility, and internal / external shutdown programming.
+    Solis can now save external shutdown programming to ups,
+    and support new cables for solis 3
+- dropped obsolete patch (nut-2.0.4-memset.patch)
+- fixed subscript out of range [#185610] (overflow.patch)
+* Fri Jun 23 2006 sbrabec@suse.cz
+- Typo fix in the init script.
+* Thu Apr 27 2006 sbrabec@suse.cz
+- Work correctly, if port is a symlink (168611#c6).
+* Tue Apr 25 2006 sbrabec@suse.cz
+- Fixed init script to behave correctly for port = auto (#168611).
+* Fri Mar 24 2006 sbrabec@suse.cz
+- Typo fixes.
+* Tue Mar 21 2006 sbrabec@suse.cz
+- Added D-BUS policy file (#159668).
+* Mon Mar 20 2006 sbrabec@suse.cz
+- Support for UPS powerdown using HALT_POWERDOWN_INSERT.
+- Added upsd-early-powerdown template and improved README.SUSE.
+- Remove obsolete /etc/sysconfig/smartups in %%post.
+* Fri Mar 17 2006 sbrabec@suse.cz
+- README.SUSE fixes (Marius Tomaschewski).
+- Init script fix.
+- Install all driver manual pages.
+- Use new powersave-notify path.
+* Wed Mar 15 2006 sbrabec@suse.cz
+- Build all available drivers.
+* Tue Mar 14 2006 sbrabec@suse.cz
+- Improved README.SUSE and predefined configuration.
+- Checks and fixes in the init script.
+- Improved notify flags, integrate with powersave.
+  (Some fixes provided by Marius Tomaschewski.)
+* Fri Mar 10 2006 sbrabec@suse.cz
+- Fixed memset error in upsrw.c.
+- Fixed upsmon typo in the init script.
+- Preconfigure upsd with one local UPS as default.
+* Thu Mar  9 2006 sbrabec@suse.cz
+- Updated to version 2.0.3.
+- Removed SuSEconfig, wrote new init script
+  (#27721, #141948, #156614).
+* Mon Feb 20 2006 mmarek@suse.cz
+- fix array index out of range
+  [#133610] (overflow.patch)
+* Wed Jan 25 2006 mls@suse.de
+- converted neededforbuild to BuildRequires
+* Thu Jan 12 2006 sbrabec@suse.cz
+- Updated to version 2.0.3-pre2.
+* Thu Nov  3 2005 dmueller@suse.de
+- don't build as root
+* Mon Aug  1 2005 sbrabec@suse.cz
+- Updated to version 2.0.2.
+* Fri Jan 21 2005 sbrabec@suse.cz
+- Updated to version 2.0.1-pre4.
+* Mon Aug 23 2004 sbrabec@suse.cz
+- Updated to version 2.0.0.
+* Mon Apr 19 2004 ro@suse.de
+- build with apache2
+* Wed Apr 14 2004 aj@suse.de
+- build without kernel-source.
+* Tue Mar 23 2004 sbrabec@suse.cz
+- Force-define HID_MAX_USAGES (kernel 2.6.4 include file bug, should
+  be fixed in later kernels).
+* Mon Feb  9 2004 sbrabec@suse.cz
+- Updated to version 1.4.1.
+* Thu Oct  2 2003 stark@suse.de
+- adapted pre-configuration and startscript to reflect changes
+  in 1.4.0
+- changed file-permissions
+* Mon Sep 29 2003 stark@suse.de
+- update to 1.4.0
+* Tue Aug 19 2003 mmj@suse.de
+- Add sysconfig metadata [#28939]
+* Thu Jun 26 2003 stark@suse.de
+- update to 1.2.2
+- removed config-check in init-script
+* Fri Jun 20 2003 ro@suse.de
+- added directories to filelist
+* Tue May 13 2003 mmj@suse.de
+- use %%defattr
+* Thu Feb 20 2003 mmj@suse.de
+- Add sysconfig metadata [#22688]
+* Tue Aug  6 2002 olh@suse.de
+- use X-UnitedLinux-Should-Start
+* Mon Aug  5 2002 olh@suse.de
+- Required-start: setserial, add Prereq
+* Fri Aug  2 2002 ro@suse.de
+- adapt server-root
+* Sat Jul 27 2002 kukuk@suse.de
+- fix SuSEconfig.nut:
+  - don't include rc.config [Bug #17267]
+  - use correct path to sysconfig directory
+* Fri Jul 26 2002 adrian@suse.de
+- fix neededforbuild
+* Tue May 28 2002 stark@suse.de
+- update to 0.50.0
+- changed init-script to use upsdrvctl
+  (make it possible to change config-files manually without
+  changing /etc/sysconfig/smartups)
+* Tue Apr  9 2002 stark@suse.de
+- update to 0.45.5
+- fixed SuSEconfig.nut to sysconfig scheme
+* Fri Feb  1 2002 ro@suse.de
+- changed neededforbuild <libpng> to <libpng-devel-packages>
+* Sat Jan 12 2002 stark@suse.de
+- little ifarch fix again :-(
+* Fri Jan 11 2002 stark@suse.de
+- changed rc.config.d leftover in rcups
+- build hidups on all archs excluding s390 (finally)
+* Tue Jan  8 2002 stark@suse.de
+- build hidups only on i386
+* Thu Jan  3 2002 stark@suse.de
+- build hidups driver for EXPERIMENTAL USB usage
+* Wed Dec 12 2001 stark@suse.de
+- updated to 0.45.3
+- removed START_SMARTUPS
+- renamed package to nut
+- b2zipped sources
+- moved rc.config.d/smartups.rc.config -> sysconfig/smartups
+* Mon Oct 22 2001 stark@suse.de
+- fixed init-script to POWERDOWN correctly (#11909)
+- added rc.config variable UPSLOG_INTERVAL
+* Tue Sep 18 2001 stark@suse.de
+- changed STATEPATH to /var/lib/ups according to FHS (#8678)
+* Fri Sep  7 2001 stark@suse.de
+- added Conflicts: apcupsd
+  (/usr/local/httpd/cgi-bin/multimon.cgi is in both packages)
+* Mon Sep  3 2001 stark@suse.de
+- added a patch to be able to write the POWERDOWNFLAG to
+  only-root-writable directories
+* Mon Aug 13 2001 stark@suse.de
+- update to 0.45.1
+* Mon Jun 18 2001 stark@suse.de
+- update to 0.45.0
+* Fri Apr 27 2001 stark@suse.de
+- minor changes in init-script to avoid premature aborts
+* Thu Apr 19 2001 stark@suse.de
+- minor changes on %%config-files and %%clean
+- changed upsd-exec-group to uucp
+- added libjpeg freetype2 freetype2-devel xf86
+  to neededforbuild
+* Tue Apr 17 2001 stark@suse.de
+- init-script cleanup: try-restart and exitcodes
+* Fri Mar 23 2001 stark@suse.de
+- update to 0.44.3
+* Fri Mar 16 2001 stark@suse.de
+- minor changes in init-script and documentation
+* Thu Jan  4 2001 stark@suse.de
+- update to 0.44.2
+* Thu Dec 14 2000 stark@suse.de
+- fixed case in rc-script
+- move SuSE scripts and configs out of the diff
+- minor changes in config for insserv (use macros)
+* Mon Nov 27 2000 stark@suse.de
+- moved /sbin/init.d -> /etc/init.d
+* Fri Nov 24 2000 stark@suse.de
+- init script more LSB compliant
+* Wed Nov 22 2000 stark@suse.de
+- improved runlevel position
+- spec now uses %%{_tmppath}
+* Tue Nov 21 2000 stark@suse.de
+- removed runlevel-links from spec-file and moved to insserv
+- added init information to rc-script
+* Mon Nov 20 2000 stark@suse.de
+- minor changes in rc-script (status)
+* Wed Nov 15 2000 ro@suse.de
+- fixed neededforbuild gdlib -> gd gd-devel
+* Thu Nov  9 2000 ro@suse.de
+- neededforbuild gd -> perl-GD
+* Wed Nov  8 2000 stark@suse.de
+- adapted rc-script to use rc.status
+* Thu Oct  5 2000 stark@suse.de
+- fixed typo in SuSEconfig.smartups
+* Mon Sep 18 2000 stark@suse.de
+- update to 0.44.1
+- new spec-file (with buildroot etc.)
+- fixed rc-script for server/client
+- added SuSEconfig.smartups
+* Thu Sep 14 2000 stark@suse.de
+- fixed rc-script (added . /etc/rc.config)
+* Tue Jul 11 2000 lemsi@suse.de
+- bugfix in ups start-script
+- changed /etc/rc.config to /etc/rc.config.d/smartups.rc.config
+* Mon Feb 28 2000 kukuk@suse.de
+- Move most variables from rc.config -> rc.config.d
+* Thu Feb 24 2000 lemsi@suse.de
+- new version
+- the orginal source is renamed, new name is nut-0.XX.X.tar.gz
+- added 2 new variables in rc.config; GENERICUPS_MODEL; SMARTUPS_MASTER
+- model check in rcups for genericups
+- starting all 4 deamons in rcups
+- new binary-installpath /usr/sbin
+* Wed Nov 10 1999 ro@suse.de
+- fixed postinstall: (its post and not pre)
+* Tue Oct 26 1999 lemsi@suse.de
+- added 2 new variables in rc.config; SMARTUPS_DEVICE; SMARTUPS_MODEL
+- modified rcups and smartups.spec
+- sending mail after instalation
+* Fri Oct 15 1999 ro@suse.de
+- added libpng to neededforbuild (now needed for libgd)
+* Fri Oct 15 1999 ro@suse.de
+- fixed patch arg
+* Thu Oct 14 1999 ray@suse.de
+- new package

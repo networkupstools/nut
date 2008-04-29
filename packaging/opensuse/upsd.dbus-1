@@ -1,0 +1,9 @@
+<!DOCTYPE busconfig PUBLIC
+ "-//freedesktop//DTD D-BUS Bus Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
+<busconfig>
+  <!-- Allow user upsd to send powersave-notify messages -->
+  <policy user="upsd">
+    <allow send_interface="com.novell.powersave.scripts"/>
+  </policy>
+</busconfig>

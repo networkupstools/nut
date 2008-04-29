@@ -1,0 +1,142 @@
+NUT is preconfigured to use a local or remote UPS as far as possible.
+But it still requires a minimal manual configuration before the first
+use.
+
+This document contains:
+- How to configure local or remote UPS (mandatory reading).
+- How to configure to suspend to disk (optional reading).
+- What to do in environment with possible service timeouts (optional
+  reading).
+
+
+The default setup uses one local UPS. You have to define UPS type in
+file /etc/ups/ups.conf.
+
+
+It requires only few adoptions before you can start the service:
+
+
+ * Configuration of a locally connected UPS:
+
+   In /etc/ups/ups.conf:
+	- Go to the [myups] section at the end of the file.
+	- Set driver key to the driver name supporting your UPS.
+	  (see /usr/lib/ups/driver/ for possible drivers. Each driver
+	  has a man page. Many USB UPSes are hidups.)
+	- Set port key to the device your UPS is connected to,
+	  e.g. /dev/ttyS0 for first serial port (COM1) or /dev/hiddev0
+	  for USB HID UPS.
+	- Adjust desc key as you want.
+
+   Start the service:
+	- "/etc/init.d/upsd start"
+
+
+ * Configuration of a UPS connected to a remote machine:
+
+   In /etc/ups/ups.conf:
+	- Comment out or remove the [myups] section at the end of the
+	  file.
+
+   In /etc/ups/upsmon.conf:
+	- Find the uncommented MONITOR line followed by
+	  "myups@localhost" and change it to:
+MONITOR myups@remote_machine 1 upsslave remote_password slave
+	  Where:
+	  remote_machine is a hostname of the remote machine.
+	  remote_password is the password used for upsslave on the
+	    remote machine (you can find it in the remote file
+	    /etc/ups/upsd.users).
+
+   In /etc/ups/hosts.conf:
+	- Find the uncommented MONITOR line followed by
+	  "myups@localhost".
+	- Change the hostname from "localhost" to the hostname of
+	  the remote machine.
+	- Change the description as you want.
+
+   In the remote /etc/ups/upsd.conf:
+	- Add a rule for the remote clients relevant to your network or
+	  your needs. Standard local networks are:
+	  10.0.0.0/8, 172.16.0.0/12 and 192.168.0.0/16
+ACL my_network 192.168.0.0/16
+ACCEPT my_network
+
+   In the remote /etc/ups/upsd.users:
+	- Find the line allowfrom for upsslave user.
+	- Add your local machine name to the allowfrom list.
+
+   In the remote SuSE firewall:
+	- Enable nut (Network UPS Tools) service (port 3493), e. g. by
+	  "YaST2 firewall".
+
+   Start the service:
+	- "/etc/init.d/upsd start" on both local and remote machines.
+	- If you have edited configuration of a running server, run
+	"/etc/init.d/upsd reload"
+
+
+ * Test the configuration using upsc or upslog:
+
+	- "upsc myups@localhost"
+	  Should display information about the UPS status.
+
+	- "upslog -s myups@localhost -l -"
+	  Should display UPS status log every 30 seconds.
+	  (Press Ctrl-C keys to stop upslog).
+
+Notes:
+
+- Predefined user upsmaster
+
+  There are two predefined users - upsmaster and upsslave. The passwords
+  for them are generated during the installation (see the "password"
+  lines in /etc/ups/upsd.users).
+
+  User upsmaster has privileges to shut down master machine (default for
+  local UPS), upsslave has privileges to shut down slave machines.
+
+  If you change it, or add another user, don't forget to adopt the
+  MONITOR lines in upsmon.conf on all machines using this user and
+  password combination to connect to the upsd.
+
+
+
+Suspend to disk
+
+If you want to configure nut to do suspend to disk instead of shutdown
+you should:
+
+- Verify, that suspend to disk works correctly with your desktop:
+  shutdown -z +0
+  (You can lose your unsaved data, if your computer does not support
+  suspend.)
+- Change SHUTDOWNCMD in /etc/ups/upsmon.conf to:
+SHUTDOWNCMD "/sbin/shutdown -z +0"
+- Verify, that your UPS provides reasonable grant period to complete
+  suspend in all situations.
+
+
+
+Environment with possible service timeouts
+
+In some environments, there is no guarantee, that the machine will
+correctly shut down, either because other machines providing critical
+services are already down or because some services (e. g. squid) are
+stopping too long and battery power is not sufficient. In this case,
+you can prefer incorrect but fast shutdown.
+
+To fix this problem, you need to do:
+
+- Copy upsd-early-powerdown script to your /etc/init.d/ directory.
+
+- Edit following lines:
+
+  Replace "FIXME scripts which should not stop before powerdown" by an
+  appropriate init script list.
+
+  Replace "FIXME scripts which should stop before powerdown" by an
+  appropriate init script list.
+
+- Start YaST Runlevel Editor and enable this meta-service in
+  runlevels, where you want to apply early shutdown.
