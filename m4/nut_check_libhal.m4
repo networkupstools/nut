@@ -63,7 +63,7 @@ if test -z "${nut_have_libhal_seen}"; then
    dnl As per HAL spec, §5 Callouts and §2 Device Information Files
    dnl - addon install path: $libdir/hal
    AC_MSG_CHECKING(for libhal Callouts path)
-   if (test -d "/usr/lib/hal")
+   if (test -d "${libdir}/hal")
    then
      # For Debian
      HAL_CALLOUTS_PATH="${libdir}/hal"
