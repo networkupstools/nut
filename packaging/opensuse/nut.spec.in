@@ -65,7 +65,7 @@ this will also attempt to create a useable client and server configuration
 %package client
 Summary:        UPS Monitoring Software
 Group:          Hardware/UPS
-Conflicts:	apcups %{name} < %{version}
+Conflicts:      apcups, %{name} < %{version}
 
 %description client
 These programs are part of a developing project to monitor the assortment 
@@ -146,7 +146,7 @@ capable UPS.
 Summary:        UPS Monitoring Software
 Group:          Hardware/UPS
 Requires:       hal
-Conflicts:	%{name}-server apcupsd
+Conflicts:      apcupsd, %{name}, %{name}-server
 
 %description hal
 These programs are part of a developing project to monitor the assortment 
@@ -202,7 +202,7 @@ CFLAGS="$RPM_OPT_FLAGS -pedantic -Wuninitialized -Wdeclaration-after-statement -
 	--with-group=%{GROUP}
 make %{?jobs:-j%jobs}
 PORT=$(sed -n 's/#define PORT //p' config.log)
-if "$PORT" = 3493 ; then
+if [ "$PORT" = "3493" ]; then
     PORT=nut
 fi
 sed s/@PORT@/$PORT/ <%{S:5} >nut.firewall
@@ -416,10 +416,7 @@ rm -rf $RPM_BUILD_ROOT
 %doc %{_mandir}/man3/*.*
 
 %changelog
-* Sat Apr 26 2008 arjen@de-korte.org
-- Updated to version 2.2.2-pre3
 * Thu Apr 24 2008 arjen@de-korte.org
-- Updated to version 2.2.2-pre2
 - Move client, server, CGI, HAL, SNMP and XML to separate packages
 - Add meta package that requires client, server and CGI packages
   when users upgrade nut
