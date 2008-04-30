@@ -1,6 +1,6 @@
 %define name		nut
 %define version		@NUT-VERSION@
-%define release		1mdk
+%define release		2mdk
 %define nutuser		ups
 
 %define STATEPATH  	/var/state/ups
@@ -20,7 +20,6 @@ Source:		%{name}-%{version}.tar.bz2
 Source1:	upsd
 Source2:	upsmon
 Patch0:		nut-2.0.1-lib64.patch.bz2
-Patch1:		bouissou2.patch.bz2
 URL:		http://random.networkupstools.org
 
 BuildRoot:	%{_tmppath}/%{name}-%{version}-root
@@ -293,6 +292,9 @@ rm -rf %{buildroot}
 %{_mandir}/man3/upscli_*.3.bz2
 
 %changelog
+* Thu Jun 23 2005 Arnaud Quette <arnaud.quette@free.fr> 2.0.2-1mdk
+- remove Michel Bouissou's patch1 at it has been merged upstream
+
 * Tue Mar 22 2005 Gwenole Beauchesne <gbeauchesne@mandrakesoft.com> 2.0.1-2mdk
 - lib64 fixes (again)
 

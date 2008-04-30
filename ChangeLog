@@ -1,3 +1,7 @@
+Wed Apr 30 08:40:55 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - packaging/mandriva: remove generated nut.spec file
+
 Tue Apr 29 19:16:13 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - clients/upsclient.c: delay initialization of the context buffer
