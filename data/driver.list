@@ -127,6 +127,7 @@
 "Deltec"	"PowerRite Pro II"	""	"genericups upstype=15"
 
 "Dynamix"	"UPS1700D"		""	"megatec"
+"Dynamix"	"UPS-650VA"		""	"megatec ignoreoff"
 
 "Dynex"		"975AVR"		""	"genericups upstype=7"
 "Dynex"		"DX-800U"		"USB"	"usbhid-ups"
@@ -199,6 +200,7 @@
 
 "Lestar"	"MD-800E"	""	"megatec"
 
+"Liebert"	"ITON 600VA"	""	"megatec"
 "Liebert"	"UPStation GXT2"	"contact-closure cable"	"liebert" 
 "Liebert"	"PowerSure Personal XT"		"USB"	"usbhid-ups"
 

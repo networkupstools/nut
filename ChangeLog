@@ -1,3 +1,8 @@
+Sun May  4 12:43:56 UTC 2008 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
+
+ - data/driver.list: added two models supported by megatec
+ - drivers/megatec.c: don't show a temp reading if it's clearly bogus
+
 Wed Apr 30 15:14:34 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - m4/nut_check_libhal.m4: fix the HAL addon install path on SuSE x86_64

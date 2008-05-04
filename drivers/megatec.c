@@ -562,7 +562,7 @@ void upsdrv_initinfo(void)
 void upsdrv_updateinfo(void)
 {
 	QueryValues_t query;
-	float charge;	
+	float charge;
 	static int poll_fail = 0;
 
 	if (run_query(&query) < 0) {
@@ -595,7 +595,10 @@ void upsdrv_updateinfo(void)
 	dstate_setinfo("ups.load", "%.1f", query.load);
 	dstate_setinfo("input.frequency", "%.1f", query.freq);
 	dstate_setinfo("battery.voltage", "%.2f", query.battvolt);
-	dstate_setinfo("ups.temperature", "%.1f", query.temp);
+
+	if (query.temp > 0.01) {
+		dstate_setinfo("ups.temperature", "%.1f", query.temp);
+	}
 
 	charge = get_battery_charge(query.battvolt);
 	if (charge >= 0) {
