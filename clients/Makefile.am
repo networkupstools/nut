@@ -1,7 +1,7 @@
 # Network UPS Tools: clients
 
 # by default, link programs in this directory with libcommon.a
-LDADD = ../common/libcommon.a -lupsclient $(NETLIBS)
+LDADD = ../common/libcommon.a libupsclient.la $(NETLIBS)
 if WITH_SSL
   LDADD += $(LIBSSL_LDFLAGS)
 endif

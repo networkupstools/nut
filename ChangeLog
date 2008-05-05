@@ -1,3 +1,7 @@
+Mon May  5 12:15:31 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - clients/Makefile.am: fix the use of libupsclient
+
 Sun May  4 12:45:32 UTC 2008 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - data/driver.list: added two models supported by megatec
