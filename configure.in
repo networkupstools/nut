@@ -816,6 +816,7 @@ AC_OUTPUT([
  packaging/Makefile
  packaging/debian/Makefile
  packaging/mandriva/Makefile
+ packaging/mandriva/nut.spec
  packaging/generic-rpm/Makefile
  packaging/generic-rpm/nut.spec
  packaging/redhat/Makefile

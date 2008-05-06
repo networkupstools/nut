@@ -1,3 +1,7 @@
+Tue May  6 02:35:09 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - configure.in: tell autoconf to generate packaging/mandriva/nut.spec
+
 Sun May  4 12:43:56 UTC 2008 / Carlos Rodrigues <carlos.efr@mail.telepac.pt>
 
  - data/driver.list: added two models supported by megatec
