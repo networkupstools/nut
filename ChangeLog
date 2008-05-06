@@ -1,3 +1,9 @@
+2.2.2
+
+Tue May  6 11:13:42 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - configure.in: final version bump to 2.2.2.
+
 Mon May  5 12:15:31 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - clients/Makefile.am: fix the use of libupsclient
