@@ -1,3 +1,7 @@
+Tue May  6 03:20:07 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - m4/nut_check_libhal.m4: fix printing of default Callout directory.
+
 Tue May  6 02:38:20 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - m4/nut_check_libhal.m4: default to ${libdir}/hal, since ${libdir} might not
