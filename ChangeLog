@@ -1,3 +1,8 @@
+Tue May  6 02:38:20 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - m4/nut_check_libhal.m4: default to ${libdir}/hal, since ${libdir} might not
+   point to /usr/lib/hal when running e.g. make distcheck.
+
 Tue May  6 02:35:09 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - configure.in: tell autoconf to generate packaging/mandriva/nut.spec

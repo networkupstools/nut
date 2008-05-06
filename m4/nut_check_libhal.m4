@@ -75,8 +75,8 @@ if test -z "${nut_have_libhal_seen}"; then
        AC_MSG_RESULT(${HAL_CALLOUTS_PATH})
      else
        # FIXME
-       HAL_CALLOUTS_PATH=""
-	     AC_MSG_RESULT(not found)
+       HAL_CALLOUTS_PATH="${libdir}/hal"
+	     AC_MSG_RESULT(not found, defaulting to ${HAL_CALLOUTS_PATH})
      fi
    fi
 
