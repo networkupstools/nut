@@ -63,34 +63,49 @@ if test -z "${nut_have_libhal_seen}"; then
    dnl As per HAL spec, §5 Callouts and §2 Device Information Files
    dnl - addon install path: $libdir/hal
    AC_MSG_CHECKING(for libhal Callouts path)
-   if (test -d "${libdir}/hal")
+   HAL_CALLOUTS_PATH=`pkg-config --silence-errors  --variable=libexecdir hal`
+   if (test -z "$HAL_CALLOUTS_PATH")
    then
-     # For Debian
-     HAL_CALLOUTS_PATH="${libdir}/hal"
-	   AC_MSG_RESULT(${HAL_CALLOUTS_PATH})
-   else # For RedHat
-     if (test -d "/usr/libexec")
+     # fallback to detecting the right path
+     if (test -d "${libdir}/hal")
      then
-       HAL_CALLOUTS_PATH="${libexecdir}"
-       AC_MSG_RESULT(${HAL_CALLOUTS_PATH})
-     else
-       # FIXME
+       # For Debian
        HAL_CALLOUTS_PATH="${libdir}/hal"
+	     AC_MSG_RESULT(${HAL_CALLOUTS_PATH})
+     else # For RedHat
+       if (test -d "/usr/libexec")
+       then
+         HAL_CALLOUTS_PATH="${libexecdir}"
+         AC_MSG_RESULT(${HAL_CALLOUTS_PATH})
+       else
+         # FIXME
+         HAL_CALLOUTS_PATH="${libdir}/hal"
 	     AC_MSG_RESULT(using default (${HAL_CALLOUTS_PATH}))
+       fi
      fi
+   else
+	   AC_MSG_RESULT(${HAL_CALLOUTS_PATH})
    fi
-
+   
    dnl - fdi install path: $datarootdir/hal/fdi/information/20thirdparty
    AC_MSG_CHECKING(for libhal Device Information path)
-   if (test -d "/usr/share/hal/fdi/information/20thirdparty")
+   HAL_FDI_PATH=`pkg-config --silence-errors  --variable=hal_fdidir hal`
+   if (test -z "$HAL_FDI_PATH")
    then
-     # seems supported everywhere
-     HAL_FDI_PATH="${datarootdir}/hal/fdi/information/20thirdparty"
-	   AC_MSG_RESULT(${HAL_FDI_PATH})
+     # fallback to detecting the right path
+     if (test -d "/usr/share/hal/fdi/information/20thirdparty")
+     then
+       # seems supported everywhere
+       HAL_FDI_PATH="${datarootdir}/hal/fdi/information/20thirdparty"
+       AC_MSG_RESULT(${HAL_FDI_PATH})
+     else
+       # FIXME
+       HAL_FDI_PATH=""
+       AC_MSG_RESULT(not found)
+     fi
    else
-     # FIXME
-     HAL_FDI_PATH=""
-	   AC_MSG_RESULT(not found)
+     HAL_FDI_PATH="${HAL_FDI_PATH}/information/20thirdparty
+     AC_MSG_RESULT(${HAL_FDI_PATH})
    fi
 
    if test "${nut_have_libhal}" != "yes"; then

@@ -1,3 +1,7 @@
+Wed May  7 15:35:06 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - m4/nut_check_libhal.m4: prepare for the hal.pc improvements.
+
 Wed May  7 12:32:12 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - drivers/main-hal.c: fix the calls to dbus_send_reply
