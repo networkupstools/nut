@@ -3,7 +3,8 @@
 Tue May  6 11:13:42 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - configure.in: final version bump to 2.2.2.
-
+ - m4/nut_check_libhal.m4: fix the HAL_CALLOUT_PATH for distcheck 
+ 
 Mon May  5 12:15:31 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - clients/Makefile.am: fix the use of libupsclient
