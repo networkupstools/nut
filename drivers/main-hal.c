@@ -510,6 +510,7 @@ DBusHandlerResult dbus_filter_function(DBusConnection *connection,
 					      void *user_data)
 {
 	DBusError dbus_error;
+	int retcode = -1;
 	const char	*member		= dbus_message_get_member(message);
 	const char	*path		= dbus_message_get_path(message);
 /*	int ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED; */
@@ -534,7 +535,7 @@ DBusHandlerResult dbus_filter_function(DBusConnection *connection,
 			
 	 		fprintf(stdout, "executing Shutdown\n");
 			upsdrv_shutdown();
-			dbus_send_reply(connection, message, DBUS_TYPE_INT32, 0);
+			dbus_send_reply(connection, message, DBUS_TYPE_INVALID, NULL);
 
 		} else if (dbus_message_is_method_call(message,
 												DBUS_INTERFACE, "SetBeeper")) {
@@ -549,13 +550,13 @@ DBusHandlerResult dbus_filter_function(DBusConnection *connection,
 			
 			if (b_enable==TRUE) {
 				if (upsh.instcmd("beeper.enable", NULL) != STAT_INSTCMD_HANDLED) {
-					dbus_send_reply(connection, message, DBUS_TYPE_INT32, -1);
+					dbus_send_reply(connection, message, DBUS_TYPE_INT32, &retcode);
 					return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 				}
 			}
 			else {
 				if (upsh.instcmd("beeper.disable", NULL) != STAT_INSTCMD_HANDLED) {
-					dbus_send_reply(connection, message, DBUS_TYPE_INT32, -1);
+					dbus_send_reply(connection, message, DBUS_TYPE_INT32, &retcode);
 					return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 				}
 			}
@@ -563,6 +564,6 @@ DBusHandlerResult dbus_filter_function(DBusConnection *connection,
 			return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 		}
 	}
-	dbus_send_reply(connection, message, DBUS_TYPE_INT32, 0);
+	dbus_send_reply(connection, message, DBUS_TYPE_INVALID, NULL);
 	return DBUS_HANDLER_RESULT_HANDLED;
 }

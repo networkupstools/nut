@@ -1,3 +1,8 @@
+Wed May  7 12:32:12 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - drivers/main-hal.c: fix the calls to dbus_send_reply
+   (reported by Stanislav Brabec, SuSE)
+
 Wed May  7 11:01:06 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  * Synchronisation with (backport from) the Testing branch:
