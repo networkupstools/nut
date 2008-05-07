@@ -3,10 +3,24 @@ of this software.  When upgrading from an older version, be sure to
 check this file to see if you need to make changes to your system.
 
 ---------------------------------------------------------------------------
+Changes from 2.2.1 to 2.2.2:
+
+ - The configure option "--with-lib" has been replaced by "--with-dev".
+   This enable the additional build and distribution of the static
+   version of libupsclient, along with the pkg-config helper and manual
+   pages. The default configure option is to distribute only the shared
+   version of libupsclient. This can be overriden by using the
+   "--disable-shared" configure option (distribute static only binaries).
+ - The UPS poweroff handling of the usbhid-ups driver has been reworked.
+   Though regression is not expected, users of this driver are
+   encouraged to test this feature by calling "upsmon -c fsd" and
+   report any issue on the NUT mailing lists.
+
+---------------------------------------------------------------------------
 Changes from 2.2.0 to 2.2.1:
 
  - nothing that affects upgraded systems.
- (The below message is repetead due to previous omission)
+   (The below message is repetead due to previous omission)
  - Developers of external client application using libupsclient are
    encouraged to rename their "UPSCONN" client structure to "UPSCONN_t"
    since the former will disappear by the release of NUT 2.4.

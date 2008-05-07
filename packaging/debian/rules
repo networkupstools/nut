@@ -3,13 +3,16 @@
 #export DH_VERBOSE=1
 export DH_OPTIONS=
 
+DEB_HOST_ARCH_OS := $(shell dpkg-architecture -qDEB_HOST_ARCH_OS 2>/dev/null)
 CFLAGS+=$(if $(findstring debug,$(DEB_BUILD_OPTIONS)),-g)
 CFLAGS+=$(if $(findstring noopt,$(DEB_BUILD_OPTIONS)),-O0,-O2)
 CONFIGUREFLAGS+=$(if $(findstring nostrip,$(DEB_BUILD_OPTIONS)),,--enable-strip)
 CONFIGUREFLAGS+=--build=$(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 CONFIGUREFLAGS+=--host=$(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
 CONFIGUREFLAGS+=$(if $(wildcard /usr/include/linux/hiddev.h),--with-linux-hiddev=/usr/include/linux/hiddev.h,--without-linux-hiddev)
-DEB_HOST_ARCH_OS := $(shell dpkg-architecture -qDEB_HOST_ARCH_OS 2>/dev/null)
+ifeq (linux,$(DEB_HOST_ARCH_OS))
+	CONFIGUREFLAGS+=--with-udev-dir=/etc/udev
+endif
 
 configure: patch configure-stamp
 configure-stamp:
@@ -23,8 +26,8 @@ configure-stamp:
 	    --without-ssl \
 	    --with-hal \
 	    --with-cgi \
-	    --with-lib \
-	    --disable-shared \
+	    --with-dev \
+	    --enable-static \
 	    --with-statepath=/var/run/nut \
 	    --with-altpidpath=/var/run/nut \
 	    --with-drvpath=/lib/nut \
@@ -39,7 +42,7 @@ build: configure
 build: build-stamp
 build-stamp:
 	dh_testdir
-	$(MAKE) all cgi snmp usb
+	$(MAKE)
 	touch $@
 
 clean: clean-patched unpatch
@@ -47,11 +50,9 @@ clean-patched:
 	dh_testdir
 	dh_testroot
 	rm -f configure-stamp build-stamp install-stamp
-#	-$(MAKE) clean
-	# temp. workaround to clean drivers/tripplite_usb
-#	rm -f $(CURDIR)/drivers/tripplite_usb
-	-$(MAKE) distclean
+	[ ! -f Makefile ] || $(MAKE) distclean
 	dh_clean
+	debconf-updatepo
 	-test -r /usr/share/misc/config.sub && \
 	  cp -f /usr/share/misc/config.sub config.sub
 	-test -r /usr/share/misc/config.guess && \
@@ -59,11 +60,11 @@ clean-patched:
 
 patch: patch-stamp
 patch-stamp:
-	# dpatch apply-all
+	dpatch apply-all
 	touch $@
 
 unpatch:
-	# dpatch deapply-all
+	dpatch deapply-all
 	rm -rf patch-stamp debian/patched
 
 uninstall:
@@ -82,28 +83,6 @@ install-stamp:
 	dh_installdirs
 	$(MAKE) install \
 		DESTDIR=$(CURDIR)/debian/nut RUNUID=65534 RUNGID=65534
-	# install dummy-ups test driver (manpage already installed)
-#	mkdir -p $(CURDIR)/debian/nut-dev/lib/nut
-#	mkdir -p $(CURDIR)/debian/nut-dev/usr/share/man/man8/
-#	cp $(CURDIR)/drivers/dummy-ups $(CURDIR)/debian/nut-dev/lib/nut
-    
-	mkdir -p $(CURDIR)/debian/nut-dev/usr/bin $(CURDIR)/debian/nut-dev/usr/include
-	mkdir -p $(CURDIR)/debian/nut-dev/usr/share/man/man8 $(CURDIR)/debian/nut-dev/usr/lib 
-	mkdir -p $(CURDIR)/debian/nut-dev/lib/nut 
-	mv $(CURDIR)/debian/nut/usr/include/*                  $(CURDIR)/debian/nut-dev/usr/include/ 
-	mv $(CURDIR)/debian/nut/usr/share/man/man3             $(CURDIR)/debian/nut-dev/usr/share/man 
-	mv $(CURDIR)/debian/nut/lib/nut/dummy-ups              $(CURDIR)/debian/nut-dev/lib/nut
-	mv $(CURDIR)/debian/nut/usr/share/man/man8/dummy-ups.8 $(CURDIR)/debian/nut-dev/usr/share/man/man8
-	### libupsclient-config is not generated if pkgconfig is enabled (as it is here, because of the BuildDepends):
-	# mv $(CURDIR)/debian/nut/bin/libupsclient-config        $(CURDIR)/debian/nut-dev/usr/bin
-	mv $(CURDIR)/debian/nut/usr/lib/pkgconfig              $(CURDIR)/debian/nut-dev/usr/lib
-	mv $(CURDIR)/debian/nut/usr/lib/libupsclient.a         $(CURDIR)/debian/nut-dev/usr/lib
-	mv $(CURDIR)/debian/nut/usr/lib/libupsclient.la        $(CURDIR)/debian/nut-dev/usr/lib
-
-	rm -f $(CURDIR)/debian/nut/lib/nut/skel
-	
-	### FIXME: create a new package for shared library later, and remove --disable-shared above
-	# rm $(CURDIR)/debian/nut/usr/lib/libupsclient.so* $(CURDIR)/debian/nut/usr/lib/libupsclient.la 
 
 	# CGI:
 	mkdir -p $(CURDIR)/debian/nut-cgi/usr/lib/cgi-bin/nut $(CURDIR)/debian/nut-cgi/usr/share/man/man5 $(CURDIR)/debian/nut-cgi/usr/share/man/man8 
@@ -128,26 +107,43 @@ install-stamp:
 
 	# HAL:
 	mkdir -p $(CURDIR)/debian/nut-hal-drivers/usr/lib/hal \
-		$(CURDIR)/debian/nut-hal-drivers/usr/share/hal/fdi/information/20thirdparty \
+		$(CURDIR)/debian/nut-hal-drivers/usr/share \
 		$(CURDIR)/debian/nut-hal-drivers/etc/udev/rules.d
 	mv $(CURDIR)/debian/nut/usr/lib/hal/hald-addon-* $(CURDIR)/debian/nut-hal-drivers/usr/lib/hal
-	# FIXME: this should have a 'make install' rule:
-	cp $(CURDIR)/scripts/hal/* $(CURDIR)/debian/nut-hal-drivers/usr/share/hal/fdi/information/20thirdparty
+	mv $(CURDIR)/debian/nut/share/hal $(CURDIR)/debian/nut-hal-drivers/usr/share/
 	# HAL support also requires the udev rules
 	install -m 644 $(CURDIR)/scripts/udev/nut-usbups.rules \
 		$(CURDIR)/debian/nut-hal-drivers/etc/udev/rules.d/025_nut-usbups.rules
 
+	# shared library and -dev
+	# Note: leave dummy-ups in the nut package to allow Debian/Ubuntu QA tests
+	mkdir -p $(CURDIR)/debian/libupsclient1/usr/lib
+	mv $(CURDIR)/debian/nut/usr/lib/*.so.* $(CURDIR)/debian/libupsclient1/usr/lib
+	
+	mkdir -p $(CURDIR)/debian/libupsclient1-dev/usr/include \
+		$(CURDIR)/debian/libupsclient1-dev/usr/lib \
+		$(CURDIR)/debian/libupsclient1-dev/usr/share/man/man8 
+	mv $(CURDIR)/debian/nut/usr/include/*                  $(CURDIR)/debian/libupsclient1-dev/usr/include/ 
+	mv $(CURDIR)/debian/nut/usr/share/man/man3             $(CURDIR)/debian/libupsclient1-dev/usr/share/man 
+	mv $(CURDIR)/debian/nut/usr/lib/pkgconfig              $(CURDIR)/debian/libupsclient1-dev/usr/lib
+	mv $(CURDIR)/debian/nut/usr/lib/libupsclient.a         $(CURDIR)/debian/libupsclient1-dev/usr/lib
+	mv $(CURDIR)/debian/nut/usr/lib/libupsclient.la        $(CURDIR)/debian/libupsclient1-dev/usr/lib
+	mv $(CURDIR)/debian/nut/usr/lib/*.so                   $(CURDIR)/debian/libupsclient1-dev/usr/lib
+
+	# a bit of cleanup (empty dirs, ...)
+	rm -rf $(CURDIR)/debian/nut/usr/include $(CURDIR)/debian/nut/usr/lib
+	rm $(CURDIR)/debian/nut/lib/nut/skel
 
 	dh_installexamples
-	rm $(CURDIR)/debian/nut/etc/nut/*
+	rm -f $(CURDIR)/debian/nut/etc/nut/*
 
 	dh_installdocs -X.svn
-	rm $(CURDIR)/debian/nut/usr/share/doc/nut/docs/Makefile*
+	rm -f $(CURDIR)/debian/nut/usr/share/doc/nut/docs/Makefile*
 
 	mv $(CURDIR)/debian/nut/bin/upssched-cmd $(CURDIR)/debian/nut/usr/share/doc/nut/examples
 
 	dh_installchangelogs ChangeLog
-	dh_installinit
+	dh_installinit -- start 50 2 3 4 5 . stop 50 0 1 6 .
 	dh_link
 	touch $@
 
@@ -163,7 +159,9 @@ binary-arch: install
 	dh_compress
 	dh_fixperms
 	dh_installdeb
-	dh_shlibdeps -Xlibupsclient.a
+	dh_makeshlibs
+	dh_shlibdeps
+#	dh_shlibdeps -Xlibupsclient.a
 ifeq (linux,$(DEB_HOST_ARCH_OS))
 	dh_gencontrol -- -Vudev="udev"
 else

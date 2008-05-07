@@ -1,8 +1,8 @@
 #! /bin/sh
 ### BEGIN INIT INFO
 # Provides:          nut
-# Required-Start:    $local_fs
-# Required-Stop:     $local_fs
+# Required-Start:    $local_fs $syslog $network
+# Required-Stop:     $local_fs $syslog $network
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: Network UPS Tools initscript
@@ -43,7 +43,8 @@ start_stop_server () {
         start)
           ! /sbin/upsdrvctl start >/dev/null 2>&1  &&  \
             log_progress_msg "(upsdrvctl failed)" || log_progress_msg "upsdrvctl"
-          start-stop-daemon -S -q -p $upsd_pid -x $upsd >/dev/null 2>&1
+          start-stop-daemon -S -q -p $upsd_pid -x $upsd \
+	          -- $UPSD_OPTIONS >/dev/null 2>&1
           ;;
         stop)
           start-stop-daemon -K -o -q -p $upsd_pid -n upsd >/dev/null 2>&1
@@ -63,7 +64,8 @@ start_stop_client () {
     y|Y|yes|YES|Yes)
       case "$1" in
         start)
-          start-stop-daemon -S -q -p $upsmon_pid -x $upsmon >/dev/null 2>&1
+          start-stop-daemon -S -q -p $upsmon_pid -x $upsmon \
+	          -- $UPSMON_OPTIONS >/dev/null 2>&1
           ;;
         stop)
           start-stop-daemon -K -o -q -p $upsmon_pid -n upsmon >/dev/null 2>&1

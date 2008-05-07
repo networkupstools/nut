@@ -9,3 +9,6 @@ nut-dev
 nut-hal-drivers
 nut-snmp
 nut-usb
+libupsclient1
+libupsclient1-dev
+nut-xml

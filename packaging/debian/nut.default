@@ -1,8 +1,14 @@
 # start upsd
 START_UPSD=no
 
+# set upsd specific options. use "man upsd" for more info
+UPSD_OPTIONS=""
+
 # start upsmon
 START_UPSMON=no
+
+# set upsmon specific options. use "man upsmon" for more info
+UPSMON_OPTIONS=""
 
 # At the end of an emergency system halt, the upsmon master will signal the
 # UPS to switch off. This may fail for any number of reasons, however, most
