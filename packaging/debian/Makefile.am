@@ -36,7 +36,5 @@ EXTRA_DIST = \
 	po/de.po \
 	po/fr.po \
 	po/POTFILES.in	\
-	po/pt.po \
-	po/pt_BR.po \
 	po/templates.pot \
 	po/vi.po
