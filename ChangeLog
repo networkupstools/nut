@@ -1,3 +1,7 @@
+Mon May 12 01:09:30 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - packaging/debian/Makefile.am: reformatted
+
 Sun May 11 17:24:33 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - m4/nut_check_libhal.m4: Fix syntax error (introduced in rev 1485) that was
