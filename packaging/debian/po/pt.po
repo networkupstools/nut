@@ -1,0 +1,75 @@
+# Portuguese translation of nut's debconf messages.
+# Copyright (C) 2007
+# This file is distributed under the same license as the nut package.
+# Luísa Lourenço <kikentai@gmail.com>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: nut 2.0.5-3\n"
+"Report-Msgid-Bugs-To: aquette@debian.org\n"
+"POT-Creation-Date: 2007-08-31 11:57\n"
+"PO-Revision-Date: 2007-03-16 10:48+0000\n"
+"Last-Translator: Luísa Lourenço <kikentai@gmail.com>\n"
+"Language-Team: Portuguese <traduz@debianpt.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: note
+#. Description
+#: ../nut.templates:1001
+msgid "Remove user \"nut\" from dialout group. Continue?"
+msgstr "Remover o utilizador \"nut\" do grupo dialout. Continuar?"
+
+#. Type: note
+#. Description
+#: ../nut.templates:1001
+msgid ""
+"The system user, \"nut\", will be removed from the dialout group.  A new "
+"system group, \"nut\", will be created.  Users must manually change the "
+"permissions on the serial port devices, /dev/ttyS*, to permit access by the "
+"nut group."
+msgstr ""
+"O utilizador do sistema, \"nut\", irá ser removido do grupo dialout. Um novo "
+"grupo do sistema, \"nut\", irá ser criado. Os utilizadores têm de mudar "
+"manualmente as permissões dos dispositivos de porta em série, /dev/ttyS*, "
+"para permitir acesso pelo grupo nut."
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:2001
+msgid "Please manually modify your configuration files! Continue?"
+msgstr ""
+"Por favor modifique manualmente os seus ficheiros de configuração! Continuar?"
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:2001
+msgid "This is a serious advisory. Please take note."
+msgstr "Isto é um aviso sério. Por favor tome nota."
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:2001
+msgid ""
+"There have been significant changes by the upstream authors to the behaviour "
+"of this software. Specifically, the configuration files in /etc/nut are "
+"different, some ups drivers have been renamed, ..."
+msgstr ""
+"Efectuaram-se modificações significativas pelos autores do upstream ao "
+"comportamento deste software. Especificamente, os ficheiros de configuração em "
+"/etc/nut são diferentes, alguns drivers ups foram renomeados, ..."
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:2001
+msgid ""
+"If you continue with the installation of this package, NUT will NOT restart "
+"unless you manually change your configuration files and edit /etc/default/"
+"nut.  You have been warned! Please read /usr/share/doc/nut/UPGRADING.gz for "
+"the upgrading procedure."
+msgstr ""
+"Se continuar a instalação deste pacote, o NUT NÃO irá reiniciar a não "
+"ser que modifique manualmente os seus ficheiros de configuração e edite o "
+"/etc/default/nut. Foi avisado! Por favor leia /usr/share/doc/nut/UPGRADING.gz "
+"para o processo de actualização."

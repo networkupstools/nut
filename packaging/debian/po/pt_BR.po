@@ -1,0 +1,76 @@
+# nut Brazilian Portuguese translation
+# Copyright (c) 2007 nut's PACKAGE COPYRIGHT HOLDER
+# This file is distributed under the same license as the nut package.
+# Eder L. Marques <frolic@debian-ce.org>, 2007.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: nut_2.2.0-1\n"
+"Report-Msgid-Bugs-To: aquette@debian.org\n"
+"POT-Creation-Date: 2007-08-03 23:40+0200\n"
+"PO-Revision-Date: 2007-08-18 20:26-0300\n"
+"Last-Translator: Eder L. Marques <frolic@debian-ce.org>\n"
+"Language-Team: l10n Portuguese <debian-l10n-portuguese@lists.debian.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"pt_BR utf-8\n"
+
+#. Type: note
+#. Description
+#: ../nut.templates:1001
+msgid "Remove user \"nut\" from dialout group. Continue?"
+msgstr "Remover o usuário \"nut\" do grupo dialout. Continuar?"
+
+#. Type: note
+#. Description
+#: ../nut.templates:1001
+msgid ""
+"The system user, \"nut\", will be removed from the dialout group.  A new "
+"system group, \"nut\", will be created.  Users must manually change the "
+"permissions on the serial port devices, /dev/ttyS*, to permit access by the "
+"nut group."
+msgstr ""
+"O usuário de sistema, \"nut\", será removido do grupo dialout. Um novo grupo "
+"de sistema, \"nut\", será criado. Usuários devem modificar manualmente as "
+"permissões nos dispositivos de porta serial, /dev/ttyS*, para permitir o "
+"acesso pelo grupo nut."
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:2001
+msgid "Please manually modify your configuration files! Continue?"
+msgstr ""
+"Por favor, modifique manualmente seus arquivos de configuração! Continuar?"
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:2001
+msgid "This is a serious advisory. Please take note."
+msgstr "Este é um alerta sério. Por favor, tome nota."
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:2001
+msgid ""
+"There have been significant changes by the upstream authors to the behaviour "
+"of this software. Specifically, the configuration files in /etc/nut are "
+"different, some ups drivers have been renamed, ..."
+msgstr ""
+"Existem mudanças significantes entre os autores upstream para o "
+"comportamento deste aplicativo. Especificamente, os arquivos de configuração "
+"em /etc/nut são diferentes, alguns drivers foram renomeados, ..."
+
+#. Type: boolean
+#. Description
+#: ../nut.templates:2001
+msgid ""
+"If you continue with the installation of this package, NUT will NOT restart "
+"unless you manually change your configuration files and edit /etc/default/"
+"nut.  You have been warned! Please read /usr/share/doc/nut/UPGRADING.gz for "
+"the upgrading procedure."
+msgstr ""
+"Se você continuar com a instalação deste pacote, NUT Não irá reinicializar a "
+"menos que você mude manualmente seus arquivos de configuração e edite /etc/"
+"default/nut. Você foi avisado! Por favor, leia /usr/share/doc/nut/UPGRADING."
+"gz para os procedimentos de atualização."
