@@ -1,3 +1,8 @@
+Thu May 15 11:26:21 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - data/driver.list: add Trust UPS 1300VA Management PW-4130M
+   (reported by Kristian Wiklund)
+
 Mon May 12 12:30:24 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - packaging/debian/Makefile.am: copied missing po/ entries from
