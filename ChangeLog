@@ -1,3 +1,8 @@
+Sun Jun  8 10:56:21 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/mge-xml.c, man/netxml-ups.8: use <GET_OBJECT> page instead
+   of <XML_SUMMARY_PAGE> to read parameters from the UPS
+
 Thu May 15 11:26:21 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - data/driver.list: add Trust UPS 1300VA Management PW-4130M
