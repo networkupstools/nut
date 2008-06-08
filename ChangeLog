@@ -1,3 +1,7 @@
+Sun Jun  8 11:11:53 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/tripplite_usb.c: don't use upsdrv_cleanup() on reconnection
+
 Sun Jun  8 10:56:21 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/mge-xml.c, man/netxml-ups.8: use <GET_OBJECT> page instead

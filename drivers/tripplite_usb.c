@@ -388,8 +388,6 @@ static int reconnect_ups(void)
 	upsdebugx(2, "= device has been disconnected, try to reconnect =");
 	upsdebugx(2, "==================================================");
 
-	upsdrv_cleanup();
-
 	ret = comm_driver->open(&udev, &curDevice, reopen_matcher, NULL);
 	if (ret < 1) {
 		upslogx(LOG_INFO, "Reconnecting to UPS failed; will retry later...");
@@ -551,12 +549,10 @@ void usb_comm_fail(int res, const char *msg)
 		case -EBUSY:
 			upslogx(LOG_WARNING, "%s: Device claimed by another process", msg);
 			fatalx(EXIT_FAILURE, "Terminating: EBUSY");
-			upsdrv_cleanup();
 			break;
 
 		default:
 			upslogx(LOG_WARNING, "%s: Device detached? (error %d: %s)", msg, res, usb_strerror());
-			upsdrv_cleanup();
 
 			upslogx(LOG_NOTICE, "Reconnect attempt #%d", ++try);
 			hd = NULL;
