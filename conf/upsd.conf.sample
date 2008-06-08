@@ -31,3 +31,11 @@
 #
 # This will only be read at startup of upsd.  If you make changes here,
 # you'll need to restart upsd, reload will have no effect.
+
+# =======================================================================
+# MAXCONN <connections>
+# MAXCONN 1024
+#
+# This defaults to 1024 connections. Each UPS, each LISTEN address and each
+# client count as one connection. If the server runs out of connections, it
+# will no longer accept new incoming client connections.

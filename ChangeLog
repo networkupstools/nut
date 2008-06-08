@@ -1,3 +1,8 @@
+Sun Jun  8 11:14:02 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - conf/upsd.conf.sample: add MAXCONN parameter to the sample
+   configuration file
+
 Sun Jun  8 11:11:53 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/tripplite_usb.c: don't use upsdrv_cleanup() on reconnection
