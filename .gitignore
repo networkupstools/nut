@@ -6,6 +6,7 @@ Makefile
 config.log
 config.status
 autom4te.cache
+*-stamp
 svn-commit.tmp
 aclocal.m4
 configure
