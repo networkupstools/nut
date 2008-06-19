@@ -1,3 +1,8 @@
+Thu Jun 19 02:26:23 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/bestfcom.c: UPS reports runtime in minutes. Patch provided by Chris
+   Adams; tested against Ferrups 18KVA.
+
 Tue Jun 17 02:36:44 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - (various): ignore auto-generated files

@@ -277,8 +277,8 @@ void upsdrv_updateinfo(void)
 		/* AC line frequency */
 		acfreq = ((double)bcd2i(&fstring[54], 4) / 100.0);
 
-		/* Runtime remaining */
-		btimeleft = bcd2i(&fstring[58], 4);
+		/* Runtime remaining (UPS reports minutes) */
+		btimeleft = bcd2i(&fstring[58], 4) * 60;
 
 		if (fc.model != FDxxxx) {
 			/* Iout.  int times 10 */
