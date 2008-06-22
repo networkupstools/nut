@@ -1,3 +1,10 @@
+nut (2.2.2+trunk-1) UNRELEASED; urgency=low
+
+  * Changed version to disambiguate from branches/Testing
+  * Added rule to put netxml-ups driver in nut-xml package
+
+ -- Charles Lepple <clepple@gmail.com>  Sun, 22 Jun 2008 14:08:08 -0400
+
 nut (2.2.2-1) UNRELEASED; urgency=low
 
   * New upstream release (Closes: #471828, #462468, #334105, #463150)
