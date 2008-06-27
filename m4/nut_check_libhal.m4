@@ -59,6 +59,18 @@ if test -z "${nut_have_libhal_seen}"; then
    fi
    AC_DEFINE_UNQUOTED(HAL_USER, "${HAL_USER}", [HAL user])
 
+   dnl the device match key changed with HAL 0.5.11
+   AC_MSG_CHECKING(for hal-${HAL_VERSION} device match key)
+   HAL_DEVICE_MATCH_KEY=`pkg-config --silence-errors --atleast-version=0.5.11 hal`
+   if (test "$?" != "0")
+   then
+	HAL_DEVICE_MATCH_KEY="info.bus"
+   else
+	HAL_DEVICE_MATCH_KEY="info.subsystem"
+   fi
+   AC_MSG_RESULT(${HAL_DEVICE_MATCH_KEY})
+   AC_DEFINE_UNQUOTED(HAL_DEVICE_MATCH_KEY, "${HAL_DEVICE_MATCH_KEY}", [HAL device match key])
+
    dnl Determine installation paths for callout and .fdi
    dnl As per HAL spec, §5 Callouts and §2 Device Information Files
    dnl - addon install path: $libdir/hal

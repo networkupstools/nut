@@ -1,3 +1,8 @@
+Fri Jun 27 20:27:35 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - scripts/hal/ups-nut-device.fdi: since HAL 0.5.11, "info.bus" is no longer
+   used and is replaced by "info.subsystem"
+
 Sun Jun 22 18:09:03 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - debian/rules, debian/changelog: changed version to disambiguate trunk from
