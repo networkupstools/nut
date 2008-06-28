@@ -1,3 +1,14 @@
+Sat Jun 28 19:41:23 UTC 2008 / Carlos Rodrigues <cefrodrigues@gmail.com>
+
+ * drivers/megatec.c:
+   - Add parameters to set DTR and RTS explicitly in case the default values
+     don't work.
+   - Allow the UPS load value to be undefined.
+   - Send an "I" command before detection because some models seem to
+     require it.
+   - Do nothing in upsdrv_cleanup if the file descriptor is invalid (to shut
+     up a warning displayed when running "megatec -h").
+
 Sat Jun 28 14:25:42 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - configure.in, scripts/hal/Makefile.am: generate ups-nut-device.fdi based on

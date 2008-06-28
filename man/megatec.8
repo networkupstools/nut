@@ -51,11 +51,24 @@ The default is 2 minutes.
 
 .IP "lowbatt=\fIfloat\fR"
 
-Optional.  Low battery level (%). Overrides the hardware default level.
+Optional.  Low battery level (%). Overrides the hardware default level. Cannot be
+used if the driver is unable to calculate the charge percentage for your UPS
+automatically (see \fBKNOWN PROBLEMS\fR) and the \fBbattvolts\fR parameter
+isn't specified.
 
 .IP "battvolts=\fIfloat\fR:\fIfloat\fR"
 
 Optional.  The battery voltage interval (see \fBKNOWN PROBLEMS\fR).
+
+.IP "dtr=\fIint\fR"
+
+Optional.  Some UPS models need the DTR serial line set to a specific
+state, either \fI0\fR or \fI1\fR. See also \fBrts\fR.
+
+.IP "rts=\fIint\fR"
+
+Optional.  Some UPS models need the RTS serial line set to a specific
+state, either \fI0\fR or \fI1\fR. See also \fBdtr\fR.
 
 .IP "ignoreoff"
 

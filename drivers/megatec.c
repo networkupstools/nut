@@ -139,6 +139,10 @@ static BatteryVolts_t batteries[] = {{ 12.0,  9.0, 16.0,  9.7, 13.7,  0.0 },   /
                                      {  0.0,  0.0,  0.0,  0.0,  0.0,  0.0 }};  /* END OF DATA */
 
 
+/* Some models need this */
+static char state_dtr = 1;
+static char state_rts = 0;
+
 /* Workaround for buggy models */
 static char ignore_off = 0;  /* ignore FL_LOAD_OFF if it behaves strangely */
 
@@ -375,6 +379,7 @@ static int get_firmware_values(FirmwareValues_t *values)
 static int run_query(QueryValues_t *values)
 {
 	char buffer[RECV_BUFFER_LEN];
+	char load[8];
 	char temperature[8];
 	int ret;
 
@@ -407,16 +412,17 @@ static int run_query(QueryValues_t *values)
 
 	upsdebugx(2, "Q1 => OK [%s]", buffer);
 
-	sscanf(buffer, "(%f %f %f %f %f %f %s %s", &values->ivolt, &values->fvolt, &values->ovolt,
-	       &values->load, &values->freq, &values->battvolt, temperature, values->flags);
+	sscanf(buffer, "(%f %f %f %s %f %f %s %s", &values->ivolt, &values->fvolt, &values->ovolt,
+	       load, &values->freq, &values->battvolt, temperature, values->flags);
 
 	/*
-	 * UPS temperature must be parsed on its own. Some models put
-	 * something other than a float in this field, meaning there is no
-	 * temperature reading available.
+	 * These values must be parsed on their own. Some models
+	 * put something other than a float in this field, meaning
+	 * there is no reading available.
 	 */
+	values->load = atof(load);
 	values->temp = atof(temperature);
-	
+
 	return 0;
 }
 
@@ -435,6 +441,11 @@ void upsdrv_initinfo(void)
 	 * UPS detection sequence.
 	 */
 	upsdebugx(1, "Starting UPS detection process...");
+	
+	/* Some models seem to need this. We'll just discard the ouput for now... */
+	get_ups_info(&info);
+
+	/* Check for a compatible UPS and for a reliable connection... */
 	for (i = 0; i < IDENT_MAXTRIES; i++) {
 		if (check_ups(&status) == 0) {
 			success++;
@@ -871,6 +882,8 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "offdelay" , "Delay before UPS shutdown (minutes)");
 	addvar(VAR_VALUE, "battvolts", "Battery voltages (empty:full)");
 	addvar(VAR_FLAG , "ignoreoff", "Ignore the OFF status reported by the UPS.");
+	addvar(VAR_VALUE, "dtr"      , "Serial DTR line state (0/1)");
+	addvar(VAR_VALUE, "rts"      , "Serial RTS line state (0/1)");
 
 	megatec_subdrv_makevartable();
 }
@@ -890,14 +903,39 @@ void upsdrv_initups(void)
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
 
-	/* Some UPS models need this. */
-	ser_set_dtr(upsfd, 1);
-	ser_set_rts(upsfd, 0);
+	if (getval("dtr")) {
+		upsdebugx(2, "Parameter [dtr]: [%s]", getval("dtr"));
+
+		if (strcmp(getval("dtr"), "0") != 0 && strcmp(getval("dtr"), "1") != 0) {
+			fatalx(EXIT_FAILURE, "Error in \"dtr\" parameter.");
+		}
+
+		state_dtr = atoi(getval("dtr"));
+	}
+
+	if (getval("rts")) {
+		upsdebugx(2, "Parameter [rts]: [%s]", getval("rts"));
+
+		if (strcmp(getval("rts"), "0") != 0 && strcmp(getval("rts"), "1") != 0) {
+			fatalx(EXIT_FAILURE, "Error in \"rts\" parameter.");
+		}
+
+		state_rts = atoi(getval("rts"));
+	}
+
+	upsdebugx(2, "DTR=%d, RTS=%d", state_dtr, state_rts);
+
+	ser_set_dtr(upsfd, state_dtr);
+	ser_set_rts(upsfd, state_rts);
 }
 
 
 void upsdrv_cleanup(void)
 {
+	if (upsfd < 0) {
+		return;
+	}
+
 	ser_set_dtr(upsfd, 0);
 	ser_close(upsfd, device_path);
 }
