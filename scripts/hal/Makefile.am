@@ -9,4 +9,4 @@ endif
 
 MOSTLYCLEANFILES = 20-ups-nut-device.fdi
 
-EXTRA_DIST = ups-nut-device.fdi
+EXTRA_DIST = ups-nut-device.fdi.in

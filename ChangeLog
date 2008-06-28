@@ -1,3 +1,8 @@
+Sat Jun 28 14:25:42 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - configure.in, scripts/hal/Makefile.am: generate ups-nut-device.fdi based on
+   Arjen's autoconf test.
+
 Fri Jun 27 20:27:35 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - scripts/hal/ups-nut-device.fdi: since HAL 0.5.11, "info.bus" is no longer

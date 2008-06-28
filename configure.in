@@ -825,6 +825,7 @@ AC_OUTPUT([
  packaging/opensuse/Makefile
  packaging/opensuse/nut.spec
  scripts/hal/Makefile
+ scripts/hal/ups-nut-device.fdi
  scripts/hotplug/Makefile
  scripts/hotplug/libhidups
  scripts/udev/Makefile
