@@ -1,3 +1,8 @@
+Mon Jun 30 07:54:36 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/main.c: only call upsdrv_cleanup() if upsdrv_initups() was
+   successful (to prevent cleaning up non-existant drivers)
+
 Sat Jun 28 19:41:23 UTC 2008 / Carlos Rodrigues <cefrodrigues@gmail.com>
 
  * drivers/megatec.c:

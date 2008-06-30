@@ -396,8 +396,6 @@ static void vartab_free(void)
 
 static void exit_cleanup(void)
 {
-	upsdrv_cleanup();
-
 	free(chroot_path);
 	free(device_path);
 	free(user);
@@ -438,7 +436,6 @@ int main(int argc, char **argv)
 	struct	passwd	*new_uid = NULL;
 	int	i, do_forceshutdown = 0;
 
-	/* safe to do this now that the parent has exited */
 	atexit(exit_cleanup);
 
 	/* pick up a default from configure --with-user */
@@ -545,6 +542,9 @@ int main(int argc, char **argv)
 	memset(&upsh, '\0', sizeof(upsh));
 
 	upsdrv_initups();
+
+	/* UPS is detected now, cleanup upon exit */
+	atexit(upsdrv_cleanup);
 
 	/* now see if things are very wrong out there */
 	if (broken_driver) {

@@ -932,10 +932,6 @@ void upsdrv_initups(void)
 
 void upsdrv_cleanup(void)
 {
-	if (upsfd < 0) {
-		return;
-	}
-
 	ser_set_dtr(upsfd, 0);
 	ser_close(upsfd, device_path);
 }
