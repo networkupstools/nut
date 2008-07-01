@@ -96,4 +96,4 @@ endif
 # distribute everything, even that which is not installed by default
 EXTRA_DIST = $(LIB_PAGES) $(CONF_PAGES) $(CLIENT_PAGES)		\
  $(CGI_PAGES) $(SERIAL_PAGES) $(SNMP_PAGES) $(USB_LIBUSB_PAGES)	\
- $(USB_HIDDEV_PAGES) $(NETXML_PAGES) skel.8
+ $(USB_HIDDEV_PAGES) $(NETXML_PAGES) libupsclient-config.1 skel.8

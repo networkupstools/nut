@@ -1,3 +1,8 @@
+Tue Jul  1 12:33:43 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - man/Makefile.am: also distribute libupsclient-config.1
+   (reported by Lab10)
+
 Mon Jun 30 07:54:36 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/main.c: only call upsdrv_cleanup() if upsdrv_initups() was
