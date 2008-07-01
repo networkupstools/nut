@@ -1,5 +1,10 @@
 Tue Jul  1 12:33:43 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
+ - man/al175.8: fix a manpage error
+   (reported by Debian Lintian QA tool)
+
+Tue Jul  1 12:33:43 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
  - man/Makefile.am: also distribute libupsclient-config.1
    (reported by Lab10)
 
