@@ -1,3 +1,8 @@
+Thu Jul  3 12:49:01 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - data/driver: add Cyber Power Systems Value range (400E, 600E and 800E)
+   (reported by Thomas Backman)
+   
 Tue Jul  1 12:33:43 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - man/al175.8: fix a manpage error

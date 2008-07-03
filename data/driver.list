@@ -123,6 +123,9 @@
 "Cyber Power Systems"	"685AVR"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"800AVR"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"AE550"		"USB"	"usbhid-ups"
+"Cyber Power Systems"	"Value 400E"		"USB"	"usbhid-ups"
+"Cyber Power Systems"	"Value 600E"		"USB"	"usbhid-ups"
+"Cyber Power Systems"	"Value 800E"		"USB"	"usbhid-ups"
 
 "Deltec"	"PowerRite Pro II"	""	"genericups upstype=15"
 
