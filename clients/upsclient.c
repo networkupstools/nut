@@ -32,6 +32,7 @@
 #include <arpa/inet.h>
 
 #include "upsclient.h"
+#include "timehead.h"
 
 #define UPSCLIENT_MAGIC 0x19980308
 
