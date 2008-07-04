@@ -1,3 +1,8 @@
+Fri Jul  4 14:15:24 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/apcsmart.c: print the firmware identifier for older Smart-UPS
+   models, if it is successfully retrieved. (driver v1.99.9)
+
 Fri Jul  4 12:04:55 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - clients/upsclient.c: fix a compilation error due to the missing include

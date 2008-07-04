@@ -19,7 +19,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define APC_DRIVER_VERSION	"1.99.8"
+#define APC_DRIVER_VERSION	"1.99.9"
 
 #include "main.h"
 #include "serial.h"
@@ -533,6 +533,13 @@ static int firmware_table_lookup(void)
 		ret = ser_get_line(upsfd, buf, sizeof(buf), ENDCHAR, IGNCHARS,
 			SER_WAIT_SEC, SER_WAIT_USEC);
 
+		if (ret < 1) {
+			upslog_with_errno(LOG_ERR, "firmware_table_lookup: ser_get_line failed");
+			return 0;
+		}
+
+		upsdebugx(2, "Firmware: [%s]", buf);
+
 		/* found one, force the model information */
 		if (!strcmp(buf, "6QD") || /* (APC600.) */
 				!strcmp(buf, "8QD") || /* (SmartUPS 1250, vintage 07/94.) */
@@ -543,8 +550,6 @@ static int firmware_table_lookup(void)
 		}
 		else return 0;
 	}
-
-	upsdebugx(2, "Firmware: [%s]", buf);
 
 	/* this will be reworked if we get a lot of these things */
 	if (!strcmp(buf, "451.2.I")) {
