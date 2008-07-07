@@ -1,3 +1,8 @@
+Mon Jul  7 19:00:00 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - m4/nut_check_libhal.m4, drivers/main-hal.c: test for g_timeout_add_seconds
+   availability (need Glib 2.14) (reported by Jordi Mallach, from Debian)
+
 Fri Jul  4 14:15:24 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - drivers/apcsmart.c: print the firmware identifier for older Smart-UPS

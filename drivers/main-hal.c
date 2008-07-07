@@ -332,7 +332,11 @@ int main(int argc, char **argv)
 	}
 
 	/* add a timer for data update */
+#ifdef HAVE_GLIB_2_14
 	g_timeout_add_seconds (poll_interval,
+#else
+	g_timeout_add (1000 * poll_interval,				/* seconds */
+#endif
 							(GSourceFunc)update_data,
 							NULL);
 

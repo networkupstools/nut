@@ -142,6 +142,15 @@ if test -z "${nut_have_libhal_seen}"; then
    CPPFLAGS="${CPPFLAGS_ORIG}"
    LDFLAGS="${LDFLAGS_ORIG}"
 
+   dnl - test for g_timeout_add_seconds availability
+   AC_MSG_CHECKING([if GLib is version 2.14.0 or newer])
+   if pkg-config --atleast-version=2.14.0 glib-2.0; then
+      AC_DEFINE(HAVE_GLIB_2_14, 1, [Define to 1 if GLib is version 2.14 or newer])
+      AC_MSG_RESULT(yes)
+   else
+      AC_MSG_RESULT(no)
+   fi
+
 fi
 ])
 
