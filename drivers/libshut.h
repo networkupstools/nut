@@ -29,6 +29,9 @@
 
 #include "nut_stdint.h" /* for uint16_t */
 
+#define COMM_DRIVER_NAME	"MGE SHUT communication layer"
+#define COMM_DRIVER_VERSION	"0.81"
+
 /*!
  * SHUTDevice_t: Describe a SHUT device. This structure contains exactly
  * the 5 pieces of information by which a SHUT device identifies

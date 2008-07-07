@@ -58,6 +58,21 @@ snmp_info_t *snmp_info;
 const char *mibname;
 const char *mibvers;
 
+#define DRIVER_NAME	"Generic SNMP UPS driver"
+
+/* driver description structure */
+upsdrv_info_t	upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Arnaud Quette <arnaud.quette@free.fr>\n" \
+	"Dmitry Frolov <frolov@riss-telecom.ru>\n" \
+	"J.W. Hoogervorst <jeroen@hoogervorst.net>\n" \
+	"Niels Baggesen <niels@baggesen.net>",
+	DRV_STABLE,
+	{ NULL }
+};
+/* FIXME: integrate MIBs info? do the same as for usbhid-ups! */
+
 time_t lastpoll = 0;
 
 /* ---------------------------------------------
@@ -73,7 +88,7 @@ void upsdrv_initinfo(void)
 	snprintf(version, sizeof version, "%s (mib: %s %s)",
 		DRIVER_VERSION, mibname, mibvers);
 	dstate_setinfo("driver.version.internal", version);
-	
+
 	/* add instant commands to the info database. */
 	for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++)			
 	{
@@ -151,14 +166,6 @@ void upsdrv_makevartable(void)
 	    "Set polling frequency in seconds, to reduce network flow (default=30)");
 	addvar(VAR_FLAG, "notransferoids",
 	    "Disable transfer OIDs (use on APCC Symmetras)");
-}
-
-void upsdrv_banner(void)
-{
-	upslogx(1,"Network UPS Tools - Multi-MIBS SNMP UPS driver %s (%s)", 
-		DRIVER_VERSION, UPS_VERSION);
-	
-	experimental_driver = 1;
 }
 
 void upsdrv_initups(void)

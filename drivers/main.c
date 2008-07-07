@@ -33,7 +33,6 @@
 	int	do_lock_port = 1;
 
 	/* set by the drivers */
-	int	experimental_driver = 0;
 	int	broken_driver = 0;
 
 	/* for detecting -a values that don't match anything */
@@ -50,6 +49,31 @@
 
 	/* everything else */
 	static	char	*pidfn = NULL;
+
+/* print the driver banner */
+void upsdrv_banner (void)
+{
+	int i;
+	upsdrv_info_t *sub_upsdrv_info;
+
+	printf("Network UPS Tools (%s) - %s %s\n", 
+		UPS_VERSION, upsdrv_info.name, upsdrv_info.version);
+/* or	printf("Network UPS Tools - %s %s (%s)\n", 
+		upsdrv_info.name, upsdrv_info.version, UPS_VERSION); */
+
+	/* process sub driver(s) information */
+	if (upsdrv_info.sub_upsdrv_info == NULL)
+		return;
+
+	for (i=0; upsdrv_info.sub_upsdrv_info[i] != NULL; i++) {
+		sub_upsdrv_info = (upsdrv_info_t *)upsdrv_info.sub_upsdrv_info[i];
+		if ( (sub_upsdrv_info->name != NULL) &&
+			(sub_upsdrv_info->version != NULL) ) {
+				printf("%s %s\n",	sub_upsdrv_info->name,
+						sub_upsdrv_info->version);
+		}
+	}
+}
 
 /* power down the attached load immediately */
 static void forceshutdown(void)
@@ -446,7 +470,7 @@ int main(int argc, char **argv)
 
 	upsdrv_banner();
 
-	if (experimental_driver) {
+	if (upsdrv_info.status == DRV_EXPERIMENTAL) {
 		printf("Warning: This is an experimental driver.\n");
 		printf("Some features may not function correctly.\n\n");
 	}
@@ -547,7 +571,7 @@ int main(int argc, char **argv)
 	atexit(upsdrv_cleanup);
 
 	/* now see if things are very wrong out there */
-	if (broken_driver) {
+	if (upsdrv_info.status == DRV_BROKEN) {
 		fatalx(EXIT_FAILURE,
 			"Fatal error: broken driver. It probably needs to be converted.\n"
 			"Search for 'broken_driver = 1' in the source for more details.");

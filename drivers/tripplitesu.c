@@ -126,6 +126,17 @@
 #include "serial.h"
 #include "tripplitesu.h"
 
+#define DRIVER_NAME		"Tripp Lite SmartOnline driver"
+
+/* driver description structure */
+upsdrv_info_t	upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Allan N. Hessenflow <allanh@kallisti.com>",
+	DRV_EXPERIMENTAL,
+	{ NULL }
+};
+
 #define MAX_RESPONSE_LENGTH 256
 
 static const char *test_result_names[] = {
@@ -558,7 +569,7 @@ void upsdrv_initinfo(void)
 		        device_path);
 	min_low_transfer = max_low_transfer = 0;
 	min_high_transfer = max_high_transfer = 0;
-	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
+	dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION);
 
 	/* get all the read-only fields here */
 	if (do_command(POLL, MANUFACTURER, "", response) > 0)
@@ -822,14 +833,6 @@ void upsdrv_help(void)
 void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE, "lowbatt", "Set low battery level, in percent");
-}
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - Tripp Lite SmartOnline driver %s (%s)\n\n", 
-	       DRV_VERSION, UPS_VERSION);
-
-	experimental_driver = 1;
 }
 
 void upsdrv_initups(void)

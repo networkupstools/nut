@@ -41,5 +41,5 @@
 
 */
 
-#define DRV_VERSION "0.11"
+#define DRIVER_VERSION "0.12"
 

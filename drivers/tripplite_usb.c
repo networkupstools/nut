@@ -25,8 +25,6 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define DRV_VERSION "0.18"
-
 /* % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
  *
  * Protocol 1001
@@ -312,6 +310,21 @@ The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 #include <math.h>
 #include <ctype.h>
 #include <usb.h>
+
+#define DRIVER_VERSION	"0.19"
+#define DRIVER_NAME		"Tripp Lite OMNIVS / SMARTPRO driver"
+
+/* driver description structure */
+upsdrv_info_t	upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Charles Lepple <clepple+nut@gmail.com>\n" \
+	"Russell Kroll <rkroll@exploits.org>\n" \
+	"Rickard E. (Rik) Faith <faith@alephnull.com>\n" \
+	"Nicholas J. Kain <nicholas@kain.us>",
+	DRV_EXPERIMENTAL,
+	{ NULL }
+};
 
 static enum tl_model_t {
 	TRIPP_LITE_UNKNOWN = 0,
@@ -1114,7 +1127,7 @@ void upsdrv_initinfo(void)
 	printf("Attached to %s %s\n",
 			dstate_getinfo("ups.mfr"), dstate_getinfo("ups.model"));
 
-	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
+	dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION);
 }
 
 void upsdrv_shutdown(void)
@@ -1418,14 +1431,6 @@ void upsdrv_makevartable(void)
 		DEFAULT_BOOTDELAY);
 	addvar(VAR_VALUE, "rebootdelay", msg);
 #endif
-}
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - Tripp Lite OMNIVS and SMARTPRO driver %s (%s)\n",
-			DRV_VERSION, UPS_VERSION);
-
-	experimental_driver = 1;
 }
 
 /*!@brief Initialize UPS and variables from ups.conf

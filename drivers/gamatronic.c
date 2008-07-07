@@ -6,7 +6,7 @@
  *   2001 John Marley <John.Marley@alcatel.com.au>
  *   2002 Jules Taplin <jules@netsitepro.co.uk>
  *   2002 Eric Lawson <elawson@inficad.com>
- *   2005 Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
+ *   2005 Arnaud Quette <arnaud.quette@gmail.com>
  *   2005 Nadav Moskovitch <blutz@walla.com / http://www.gamatronic.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -29,12 +29,26 @@
 #include "serial.h" 
 #include "gamatronic.h"
 
+#define DRIVER_VERSION	"0.02"
+#define DRIVER_NAME    "Gamatronic UPS driver"
+
+/* driver description structure */
+upsdrv_info_t	upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"John Marley <John.Marley@alcatel.com.au>" \
+	"Jules Taplin <jules@netsitepro.co.uk>" \
+	"Eric Lawson <elawson@inficad.com>" \
+	"Arnaud Quette <arnaud.quette@gmail.com>" \
+	"Nadav Moskovitch <blutz@walla.com / http://www.gamatronic.com>",
+	DRV_STABLE,
+	{ NULL }
+};
 
 #define ENDCHAR	'\r'	
 #define IGNCHARS ""
 #define SER_WAIT_SEC    1	/* allow 3.0 sec for ser_get calls */
 #define SER_WAIT_USEC	0
-#define DRV_VERSION	"0.01"
 
 int sec_upsrecv (char *buf)
 {
@@ -237,7 +251,7 @@ void upsdrv_initinfo(void)
     int msglen, e, v;
     char *a,*p,avail_list[300];
  
-    dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
+    dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION);
  
     /* find out which variables/commands this UPS supports */
     msglen = 0;
@@ -323,12 +337,6 @@ void upsdrv_makevartable(void)
 
 	/* allow '-x foo=<some value>' */
 	/* addvar(VAR_VALUE, "foo", "Override foo setting"); */
-}
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - Gamatronic UPS driver %s (%s)\n\n", 
-		DRV_VERSION, UPS_VERSION);
 }
 
 void setup_serial(const char *port)

@@ -249,7 +249,7 @@ struct {
 	  TIOCM_RTS | TIOCM_DTR         /* shutdown: RTS+DTR		*/
 	},
 	
-	/* Type 22 (duplicate from 7)*/
+	/* Type 22 (duplicate from 7) */
 	{ "Gamatronic Electronic Industries",
 	  "Generic Alarm UPS",
 	  "Gamatronic UPSs with alarm interface",

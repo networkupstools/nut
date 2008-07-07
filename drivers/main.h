@@ -47,3 +47,29 @@ typedef struct {
 
 /* callback from driver - create the table for future -x entries */
 void addvar(int vartype, const char *name, const char *desc);
+
+/* driver description structure */
+typedef struct {
+	char	*name;		/* driver full name, for banner printing, ... */ 
+	char	*version;	/* driver version */
+	char	*authors;	/* authors name */
+        int	status;		/* driver development status */
+	struct upsdrv_info_t *sub_upsdrv_info[];	/* sub driver information */
+}	upsdrv_info_t;
+
+/* flags to define the driver development status */
+#define DRV_BROKEN		0x0001	/* dito... */
+#define DRV_EXPERIMENTAL	0x0002	/* dito... */
+#define DRV_BETA		0x0004	/* more stable and complete, but still
+					 * not suitable for production systems
+					 */
+#define DRV_STABLE		0x0008	/* suitable for production systems, but
+					 * not 100 % feature complete */
+#define DRV_COMPLETE		0x0010	/* gold level: implies 100 % of the
+					 * protocol implemented and the full QA
+					 * pass */
+/* FIXME: complete with mfr support, and other interesting info */
+
+/* public driver information from the driver file */
+extern upsdrv_info_t upsdrv_info;
+

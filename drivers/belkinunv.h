@@ -19,4 +19,4 @@
 */
 
 /* driver version */
-#define DRV_VERSION	"0.06"
+#define DRIVER_VERSION	"0.07"

@@ -35,7 +35,21 @@
 #include "netxml-ups.h"
 #include "mge-xml.h"
 
-#define DRV_VERSION	"0.20"
+#define DRIVER_VERSION	"0.21"
+#define DRIVER_NAME	"network XML UPS driver"
+
+/* driver description structure */
+upsdrv_info_t	upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Arjen de Korte <adkorte-guest@alioth.debian.org>",
+	DRV_EXPERIMENTAL,
+	NULL
+};
+/* FIXME:
+ * "built with neon library %s" LIBNEON_VERSION 
+ * subdrivers (limited to MGE only ATM) */
+
 #define MAXRETRIES	5
 
 #ifdef DEBUG
@@ -225,15 +239,6 @@ void upsdrv_makevartable(void)
 
 	addvar(VAR_VALUE | VAR_SENSITIVE, "login", "login value for authenticated mode");
 	addvar(VAR_VALUE | VAR_SENSITIVE, "password", "password value for authenticated mode");
-}
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - network XML UPS driver %s (%s)\n"
-	       "                  - built with neon library %s\n\n",
-		DRV_VERSION, UPS_VERSION, LIBNEON_VERSION);
-
-	experimental_driver = 1;
 }
 
 void upsdrv_initups(void)

@@ -1,14 +1,14 @@
 # translation of po-debconf template to German
-# Copyright (C) 2006, Matthias Julius
 # This file is distributed under the same license as the nut package.
+# Copyright (C):
 #
-# Matthias Julius <mdeb@julius-net.net>, 2006.
+# Matthias Julius <mdeb@julius-net.net>, 2006 - 2008.
 msgid ""
 msgstr ""
-"Project-Id-Version: nut 2.0.4-2.3\n"
-"Report-Msgid-Bugs-To: nut@packages.debian.org\n"
-"POT-Creation-Date: 2006-11-18 05:41+0100\n"
-"PO-Revision-Date: 2006-11-24 18:06-0500\n"
+"Project-Id-Version: nut 2.2.0-2\n"
+"Report-Msgid-Bugs-To: aquette@debian.org\n"
+"POT-Creation-Date: 2007-08-03 23:40+0200\n"
+"PO-Revision-Date: 2008-02-06 21:20-0500\n"
 "Last-Translator: Matthias Julius <mdeb@julius-net.net>\n"
 "Language-Team: German <debian-l10n-german@lists.debian.org>\n"
 "MIME-Version: 1.0\n"
@@ -16,57 +16,35 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: KBabel 1.11.4\n"
 
-#. Type: boolean
+#. Type: note
 #. Description
 #: ../nut.templates:1001
-msgid "Remove obsolete /etc/nut/debian.conf file?"
-msgstr "Veraltete Datei /etc/nut/debian.conf entfernen?"
+msgid "Remove user \"nut\" from dialout group. Continue?"
+msgstr "Entfernen des Benutzers »nut« aus der dialout-Gruppe. Fortfahren?"
 
-#. Type: boolean
-#. Description
-#: ../nut.templates:1001
-msgid ""
-"The upstream author has changed the behaviour of upsd and upsmon. This has "
-"necessited modifications in /etc/init.d/nut, the start up script for the "
-"daemons. The init script no longer looks for /etc/nut/debian.conf. Instead "
-"it reads /etc/nut/upsd.conf and /etc/nut/upsmon.conf directly."
-msgstr ""
-"Der Originalautor hat das Verhalten von upsd und upsmon geändert. Dies hat "
-"Änderungen in /etc/init.d/nut, dem Startskript der Daemons, erforderlich "
-"gemacht. Das Startskript verwendet /etc/nut/debian.conf nicht mehr. "
-"Stattdessen liest es /etc/nut/upsd.conf und /etc/nut/upsmon.conf direkt."
-
-#. Type: boolean
+#. Type: note
 #. Description
 #: ../nut.templates:1001
 msgid ""
-"Therefore, /etc/nut/debian.conf will be removed. Note that in order to get "
-"upsmon to work, you will have to modify /etc/nut/upsmon.conf by adding a "
-"MONITOR line. Please read the instructions in /usr/share/doc/nut/README."
-"Debian."
+"The system user, \"nut\", will be removed from the dialout group.  A new "
+"system group, \"nut\", will be created.  Users must manually change the "
+"permissions on the serial port devices, /dev/ttyS*, to permit access by the "
+"nut group."
 msgstr ""
-"Deshalb wird /etc/nut/debian.conf entfernt. Beachten Sie, dass Sie "
-"/etc/nut/upsmon.conf durch Hinzufügen einer »MONITOR«-Zeile anpassen müssen, "
-"damit upsmon funktioniert. Bitte lesen Sie die Anleitung in "
-"/usr/share/doc/nut/README.Debian."
+"Der Systembenutzer »nut« wird aus der dialout-Gruppe entfernt. Eine neue "
+"Systemgruppe »nut« wird angelegt. Anwender müssen die Berechtigungen der "
+"Gerätedateien für die seriellen Schnittstellen (/dev/ttyS*) anpassen, um den "
+"Zugriff durch die nut-Gruppe zu erlauben."
 
 #. Type: boolean
 #. Description
-#. Type: boolean
-#. Description
-#. Type: boolean
-#. Description
-#: ../nut.templates:2001 ../nut.templates:4001 ../nut.templates:5001
+#: ../nut.templates:2001
 msgid "Please manually modify your configuration files! Continue?"
 msgstr "Bitte passen Sie Ihre Konfigurationsdateien manuell an! Fortfahren?"
 
 #. Type: boolean
 #. Description
-#. Type: boolean
-#. Description
-#. Type: boolean
-#. Description
-#: ../nut.templates:2001 ../nut.templates:4001 ../nut.templates:5001
+#: ../nut.templates:2001
 msgid "This is a serious advisory. Please take note."
 msgstr "Dies ist ein ernster Hinweis. Bitte beachten Sie ihn."
 
@@ -74,101 +52,24 @@ msgstr "Dies ist ein ernster Hinweis. Bitte beachten Sie ihn."
 #. Description
 #: ../nut.templates:2001
 msgid ""
-"There has been a significant change by the upstream author to the syntax of "
-"the UPS lines in the /etc/nut/upsd.conf configuration file. The init script "
-"in this package takes advantage of this new syntax. You will need to "
-"manually modify your configuration file in order for the init script to work."
+"There have been significant changes by the upstream authors to the behaviour "
+"of this software. Specifically, the configuration files in /etc/nut are "
+"different, some ups drivers have been renamed, ..."
 msgstr ""
-"Es gab eine bedeutende Änderung in der Syntax der »UPS«-Zeilen in der "
-"Konfigurationsdatei /etc/nut/upsd.conf durch den Programmautor. Das "
-"Startskript in diesem Paket nutzt diese neue Syntax. Sie müssen Ihre "
-"Konfigurationsdatei manuell anpassen, damit das Startskript funktioniert."
+"Es gab bedeutende Änderungen durch die Programmautoren am Verhalten dieser "
+"Software. Im Besonderen wurden die Konfigurationsdateien in /etc/nut "
+"geändert, manche USV-Treiber wurden umbenannt, ..."
 
 #. Type: boolean
 #. Description
 #: ../nut.templates:2001
 msgid ""
-"There has been a significant change to the syntax of the SHUTDOWNCMD line in "
-"the /etc/nut/upsmon.conf file. The SHUTDOWNCMD must use \"quotes\" around "
-"the command or only the first word will be invoked. The new style is:\n"
-"  SHUTDOWNCMD \"/sbin/shutdown -h\""
+"If you continue with the installation of this package, NUT will NOT restart "
+"unless you manually change your configuration files and edit /etc/default/"
+"nut.  You have been warned! Please read /usr/share/doc/nut/UPGRADING.gz for "
+"the upgrading procedure."
 msgstr ""
-"Es gab eine bedeutende Änderung an der Syntax der »SHUTDOWNCMD«-Zeile in der "
-"Datei /etc/nut/upsmon.conf. Das SHUTDOWNCMD muss Anführungszeichen (\") um "
-"das Kommando verwenden, oder nur das erste Wort wird aufgerufen. Die neue "
-"Form ist:\n"
-"  SHUTDOWNCMD \"/sbin/shutdown -h\""
-
-#. Type: note
-#. Description
-#: ../nut.templates:3001
-msgid "Remove user \"nut\" from dialout group. Continue?"
-msgstr "Benutzer »nut« aus der dialout-Gruppe entfernen. Fortfahren?"
-
-#. Type: note
-#. Description
-#: ../nut.templates:3001
-msgid ""
-"The system user, \"nut\", will be removed from the dialout group.  A new "
-"system group, \"nut\", will be created.  Users must manually change the "
-"permissions on the serial port devices, /dev/ttyS*, to permit access by the "
-"nut group."
-msgstr ""
-"Der System-Benutzer »nut« wird aus der dialout-Gruppe entfernt. Eine neue "
-"Systemgruppe »nut« wird angelegt. Anwender müssen die Berechtigungen der "
-"Gerätedateien für die seriellen Schnittstellen (/dev/ttyS*) anpassen, um den "
-"Zugriff durch die nut-Gruppe zu erlauben."
-
-#. Type: boolean
-#. Description
-#: ../nut.templates:4001
-msgid ""
-"There have been significant changes by the upstream author to the behaviour "
-"of this software.  Specifically, the configuration files in /etc/nut are "
-"completely different, most of the ups drivers have been rewritten (those "
-"that weren't rewritten have been dropped), and the TCP port on which upsd "
-"listens has changed."
-msgstr ""
-"Es gab bedeutende Änderungen durch den Programmautor am Verhalten dieser "
-"Software. Im Besonderen wurden die Konfigurationsdateien in /etc/nut komplett"
-"geändert, die meisten der ups-Treiber wurden neu geschrieben (diejenigen, "
-"die nicht neu geschrieben wurden, wurden weggelassen) und der TCP-Port, an "
-"dem upsd Verbindungen erwartet, hat sich geändert."
-
-#. Type: boolean
-#. Description
-#: ../nut.templates:4001
-msgid ""
-"If you continue with the installation of this package, upsd/upsmon will NOT "
-"restart unless you manually change your configuration files and edit /etc/"
-"default/nut.  You have been warned!"
-msgstr ""
-"Falls Sie mit der Installation dieses Pakets fortfahren, werden upsd/upsmon "
-"NICHT neu starten, bis Sie Ihre Konfigurationsdateien manuell ändern und "
-"/etc/default/nut anpassen. Sie wurden gewarnt!"
-
-#. Type: boolean
-#. Description
-#: ../nut.templates:5001
-msgid ""
-"There have been significant changes by the upstream author to the behaviour "
-"of this software. Specifically, the configuration files in /etc/nut are "
-"different, some ups drivers have been renamed, ..."
-msgstr ""
-"Es gab bedeutende Änderungen durch den Programmautor am Verhalten dieser "
-"Software. Im Besonderen wurden die Konfigurationsdateien in /etc/nut "
-"geändert, manche ups-Treiber wurden umbenannt, ..."
-
-#. Type: boolean
-#. Description
-#: ../nut.templates:5001
-msgid ""
-"If you continue with the installation of this package, upsd/upsmon will NOT "
-"restart unless you manually change your configuration files. Please read /"
-"usr/share/doc/nut/UPGRADING.gz for the upgrading procedure."
-msgstr ""
-"Wenn Sie mit der Installation dieses Pakets fortfahren, werden upsd/upsmon "
-"NICHT neu starten, bis Sie Ihre Konfigurationsdateien manuell ändern. Bitte "
-"lesen Sie /usr/share/doc/nut/UPGRADING.gz bezüglich der Vorgehensweise beim "
-"Upgrade."
-
+"Falls Sie mit der Installation dieses Pakets fortfahren, wird NUT NICHT neu "
+"starten, außer Sie ändern Ihre Konfigurationsdateien manuell und passen /etc/"
+"default/nut an. Sie wurden gewarnt! Bitte lesen Sie /usr/share/doc/nut/"
+"UPGRADING.gz bezüglich der Vorgehensweise beim Upgrade."

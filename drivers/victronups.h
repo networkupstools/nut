@@ -28,5 +28,4 @@
  *
  */
 
-/* FIXME (AQU): DRV_VERSION should be "X.YZ", ie "0.19" */
-#define DRV_VERSION "0.1.9"
+#define DRIVER_VERSION "0.19"

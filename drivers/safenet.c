@@ -70,7 +70,17 @@
 #include "serial.h"
 #include "safenet.h"
 
-#define DRV_VERSION	"1.4"
+#define DRIVER_VERSION	"1.41"
+#define DRIVER_NAME		"Generic SafeNet UPS driver"
+
+/* driver description structure */
+upsdrv_info_t	upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Arjen de Korte <arjen@de-korte.org>",
+	DRV_STABLE,
+	{ NULL }
+};
 
 /*
  * Here we keep the last known status of the UPS
@@ -279,7 +289,7 @@ void upsdrv_initinfo(void)
 	int	retry = 3;
 	char	*v;
 
-	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
+	dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION);
 	
 	usleep(100000);
 
@@ -429,11 +439,6 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "manufacturer", "manufacturer [unknown]");
 	addvar(VAR_VALUE, "modelname", "modelname [unknown]");
 	addvar(VAR_VALUE, "serialnumber", "serialnumber [unknown]");
-}
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - Generic SafeNet UPS driver %s (%s)\n\n", DRV_VERSION, UPS_VERSION);
 }
 
 void upsdrv_initups(void)

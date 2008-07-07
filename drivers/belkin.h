@@ -51,3 +51,4 @@ static int init_communication (void);
 static int init_ups_data (void);
 static int get_belkin_reply (char*);
 static void set_serialDTR0RTS1(void);
+

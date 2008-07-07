@@ -27,6 +27,17 @@
 #include "metasys.h"
 #include <string.h>
 
+#define DRIVER_NAME    "Metasystem UPS driver"
+
+/* driver description structure */
+upsdrv_info_t	upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Fabio Di Niro <fabio.diniro@email.it>",
+	DRV_STABLE,
+	{ NULL }
+};
+
 /* Autorestart flag */
 int autorestart = 0;
 int nominal_power = 0;
@@ -308,7 +319,7 @@ void upsdrv_initinfo(void)
 	  dstate_setaux("ups.test.result", 20);
 	
 	/* Fixed variables */
-	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
+	dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION);
 	/* UPS INFO READ */
 	res = command_read_sequence(UPS_INFO, my_answer);
 	if (res < 0) fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
@@ -1028,12 +1039,6 @@ void upsdrv_makevartable(void)
 	/* allow '-x foo=<some value>' */
 	/* addvar(VAR_VALUE, "foo", "Override foo setting"); */
 
-}
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - Metasystem UPS driver %s \n\n", 
-		DRV_VERSION);
 }
 
 void upsdrv_initups(void)

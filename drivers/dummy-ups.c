@@ -1,6 +1,6 @@
 /* dummy-ups.c - new testing driver
 
-   Copyright (C) 2005  Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
+   Copyright (C) 2005-2008  Arnaud Quette <arnaud.quette@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -27,6 +27,17 @@
 #include "main.h"
 #include "parseconf.h"
 #include "dummy-ups.h"
+
+#define DRIVER_NAME    "Dummy UPS driver"
+
+/* driver description structure */
+upsdrv_info_t	upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Arnaud Quette <arnaud.quette@gmail.com>",
+	DRV_STABLE,
+	{ NULL }
+};
 
 #define MAX_STRING_SIZE	128
 
@@ -106,12 +117,6 @@ void upsdrv_makevartable(void)
 
 	/* allow '-x foo=<some value>' */
 	/* addvar(VAR_VALUE, "foo", "Override foo setting"); */
-}
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - Dummy UPS driver %s (%s)\n\n", 
-		DRV_VERSION, UPS_VERSION);
 }
 
 void upsdrv_initups(void)

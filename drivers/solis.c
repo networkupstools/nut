@@ -31,8 +31,6 @@
 
 */
 
-#define DRV_VERSION "0.60"
-
 #include <ctype.h>
 #include <stdio.h>
 
@@ -40,6 +38,18 @@
 #include "serial.h"
 #include "solis.h"
 #include "timehead.h"
+
+#define DRIVER_VERSION	"0.61"
+#define DRIVER_NAME		"Microsol Solis UPS driver"
+
+/* driver description structure */
+upsdrv_info_t	upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Silvino B. Magalhães <sbm2yk@gmail.com>",
+	DRV_STABLE,
+	{ NULL }
+};
 
 #define false 0
 #define true 1
@@ -1025,7 +1035,7 @@ void upsdrv_initinfo(void)
 	getbaseinfo();
 
 	upsh.instcmd = instcmd;
-	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
+	dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION);
 }
 
 void upsdrv_updateinfo(void)
@@ -1119,13 +1129,6 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "houron",   "Power on hour (hh:mm)");
 	addvar(VAR_VALUE, "houroff",  "Power off hour (hh:mm)");
 	
-}
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - Microsol Solis UPS driver %s (%s)\n", 
-		DRV_VERSION, UPS_VERSION);
-        printf("by Silvino B. Magalhaes for Microsol - sbm2yk@gmail.com\n\n");
 }
 
 void upsdrv_initups(void)

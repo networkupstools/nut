@@ -27,6 +27,19 @@
 #include <math.h>		/* for sqrt */
 #include <string.h>
 
+#define DRIVER_NAME    "ISBMEX UPS driver"
+
+/* driver description structure */
+upsdrv_info_t	upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Ricardo Martinezgarza <ricardo@nexxis.com.mx>" \
+	"Edscott Wilson Garcia <edscott@imp.mx>" \
+	"Russell Kroll <rkroll@exploits.org>",
+	DRV_STABLE,
+	{ NULL }
+};
+
 #define xDEBUG
 
 #ifdef DEBUG
@@ -132,7 +145,7 @@ void upsdrv_initinfo(void)
  	 /* addinfo(INFO_, "", 0, 0); */
 	 /*printf("Using %s %s on %s\n", getdata(INFO_MFR), getdata(INFO_MODEL), device_path);*/
 
-	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
+	dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION);
 }
 
 static const char *getpacket(int *we_know){
@@ -328,12 +341,6 @@ void upsdrv_help(void)
 /* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {
-}
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - ISBMEX UPS driver %s (%s)\n\n",
-		DRV_VERSION, UPS_VERSION);
 }
 
 void upsdrv_initups(void)

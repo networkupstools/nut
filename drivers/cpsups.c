@@ -27,13 +27,28 @@
 /* hack version for 1200VA
 * by DJR
 * 
-* Ported to 2.0.4 and generialized
+* Ported to 2.0.4 and generalized
 * by RHR
 */
 
 #include "cpsups.h"
 
-#define DRV_VERSION ".05"
+#define DRIVER_VERSION "0.06"
+#define DRIVER_NAME    "CyberPower text protocol UPS driver"
+
+/* driver description structure */
+upsdrv_info_t	upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Walt Holman <waltabbyh@comcast.net>", /* FIXME: DJR & RHR? */
+	DRV_BROKEN,
+	{ NULL }
+/*
+ * This driver segfaults on some systems for some unknown reason.
+ * Since it has been superseded by the powerpanel driver, unless
+ * this is fixed, we set the broken flag.
+ */
+};
 
 static int rmchar = 0;
 
@@ -318,7 +333,7 @@ void upsdrv_initinfo(void)
 
 	upsh.instcmd = instcmd;
 
-	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
+	dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION);
 	dstate_addcmd("test.battery.start");
 	dstate_addcmd("test.battery.stop");
 }
@@ -459,18 +474,6 @@ void upsdrv_help(void)
 
 void upsdrv_makevartable(void)
 {
-}
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools -  CyberPower text protocol UPS driver %s (%s)\n",
-		DRV_VERSION, UPS_VERSION);
-/*
- * This driver segfaults on some systems for some unknown reason.
- * Since it has been superseded by the powerpanel driver, unless
- * this is fixed, we set the broken flag.
- */
-	broken_driver = 1;
 }
 
 void upsdrv_initups(void)

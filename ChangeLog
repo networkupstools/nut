@@ -1,3 +1,14 @@
+Mon Jul  7 09:22:32 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ * introduce the upsdrv_info_t structure: this is a structure containing all the
+   common driver information, like name, version, author(s) and development
+   status.
+   - main.ch: declare the upsdrv_info_t structure, and a generic upsdrv_banner
+     function to print the banner information. 
+   - drivers/*: create and fill the upsdrv_info_t entry, and remove the
+     upsdrv_banner function.Bump the release version.
+   - docs/new-drivers.txt: add and update the according information.
+
 Fri Jul  4 14:15:24 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - drivers/apcsmart.c: print the firmware identifier for older Smart-UPS

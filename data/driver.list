@@ -561,6 +561,7 @@
 "Various"	"(various)"	"PhoenixTec protocol"	"bestups"
 "Various"	"(various)"	"SNMP - RFC 1628"	"snmp-ups (experimental)"
 "Various"	"(various)"	"Safenet software"	"safenet"
+"Various"	"(various)"	"USB/HID protocol"	"usbhid-ups"
 
 "Victron/IMV"	"(various)"	""		"victronups"
 "Victron/IMV"	"Lite"		"crack cable"	"genericups upstype=10"

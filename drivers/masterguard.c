@@ -34,6 +34,17 @@
 #include "serial.h"
 #include "masterguard.h"
 
+#define DRIVER_NAME    "MASTERGUARD UPS driver"
+
+/* driver description structure */
+upsdrv_info_t	upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Michael Spanier <mail@michael-spanier.de>",
+	DRV_STABLE,
+	{ NULL }
+};
+
 #define UPSDELAY 3
 #define MAXTRIES 10
 #define UPS_PACE 100	/* 100 us between chars on write */
@@ -459,7 +470,7 @@ void upsdrv_initinfo(void)
 	if( strlen( firmware ) > 0 )
         	dstate_setinfo("ups.firmware", "%s", firmware);
 
-	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
+	dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION);
 }
 
 /********************************************************************
@@ -550,18 +561,6 @@ void upsdrv_shutdown(void)
 void upsdrv_makevartable(void)
 {
     addvar( VAR_FLAG, "CS", "Cancel Shutdown" );
-}
-
-/********************************************************************
- *
- * The UPS banner shown during the startup.
- * Spiffy isn't it?  ;-)
- * 
- ********************************************************************/
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - MASTERGUARD UPS driver %s (%s)\n\n",
-            DRV_VERSION, UPS_VERSION);
 }
 
 /********************************************************************

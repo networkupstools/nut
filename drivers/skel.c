@@ -10,13 +10,23 @@
 /* #define ENDCHAR	'\r'	*/
 /* #define IGNCHARS	""	*/
 
-#define DRV_VERSION	"0.01"
+#define DRIVER_VERSION	"0.02"
+#define DRIVER_NAME	"Skeleton UPS driver"
+
+/* driver description structure */
+upsdrv_info_t	upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"John Doe <john@doe.org>",
+	DRV_STABLE,
+	NULL
+};
 
 void upsdrv_initinfo(void)
 {
 	/* try to detect the UPS here - call fatal_with_errno(EXIT_FAILURE, ) if it fails */
 
-	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
+	dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION);
 	/* dstate_setinfo("ups.mfr", "skel driver"); */
 	/* dstate_setinfo("ups.model", "longrun 15000"); */
 
@@ -125,12 +135,6 @@ void upsdrv_makevartable(void)
 
 	/* allow '-x foo=<some value>' */
 	/* addvar(VAR_VALUE, "foo", "Override foo setting"); */
-}
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - Skeleton UPS driver %s (%s)\n\n", 
-		DRV_VERSION, UPS_VERSION);
 }
 
 void upsdrv_initups(void)

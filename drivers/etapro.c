@@ -54,6 +54,17 @@
 #include "serial.h"
 #include "etapro.h"
 
+#define DRIVER_NAME    "ETA PRO driver"
+
+/* driver description structure */
+upsdrv_info_t	upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Marek Michalkiewicz <marekm@amelek.gda.pl>",
+	DRV_STABLE,
+	{ NULL }
+};
+
 static int
 etapro_get_response(const char *resp_type)
 {
@@ -339,13 +350,6 @@ upsdrv_help(void)
 void
 upsdrv_makevartable(void)
 {
-}
-
-void
-upsdrv_banner(void)
-{
-	printf("Network UPS Tools - ETA PRO driver %s (%s)\n\n", 
-		DRV_VERSION, UPS_VERSION);
 }
 
 void

@@ -25,10 +25,20 @@
 
 #include "main.h"
 #include "serial.h"
-
 #include "belkin.h"
 
-#define DRV_VERSION "0.21"
+#define DRIVER_VERSION "0.22"
+#define DRIVER_NAME    "Belkin Smart protocol driver"
+
+/* driver description structure */
+upsdrv_info_t	upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Marcus Mller <marcus@ebootis.de>",
+	DRV_STABLE,
+	{ NULL }
+};
+
 
 static void send_belkin_command(char cmd, const char *subcmd, const char *data)
 {
@@ -387,12 +397,6 @@ static void set_serialDTR0RTS1(void)
 	ser_set_rts(upsfd, 1);
 }
 
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - Belkin Smart protocol driver %s (%s)\n",
-		DRV_VERSION, UPS_VERSION);
-}
-
 void upsdrv_help(void)
 {
 }
@@ -427,7 +431,7 @@ void upsdrv_initinfo(void)
 	}
 
 	dstate_setinfo("ups.mfr", "BELKIN");
-	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
+	dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION);
 
 	/* see what's out there */
 	init_ups_data();

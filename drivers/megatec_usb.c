@@ -29,6 +29,20 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define SUB_DRIVER_VERSION	"0.10"
+#define SUB_DRIVER_NAME		"Serial-over-USB transport layer"
+
+/* driver description structure */
+upsdrv_info_t	megatec_subdrv_info = {
+	SUB_DRIVER_NAME,
+	SUB_DRIVER_VERSION,
+	"Andrey Lelikov <nut-driver@lelik.org>" \
+	"Alexander Gordeev <lasaine@lvk.cs.msu.su>" \
+	"Jon Gough <jon.gough@eclipsesystems.com.au>",
+	DRV_STABLE,
+	{ NULL }
+};
+
 /*
     This is a communication driver for "USB HID" UPS-es which use proprietary
 usb-to-serial converter and speak megatec protocol. Usually these are cheap
@@ -158,12 +172,6 @@ static void usb_open_error(const char *port)
 "Please report your results to the NUT user's mailing list\n"
 "<nut-upsuser@lists.alioth.debian.org>.\n"
 		);
-}
-
-void megatec_subdrv_banner()
-{
-	printf("Serial-over-USB transport layer for Megatec protocol driver [%s]\n", progname);
-	printf("Andrey Lelikov (c) 2006, Alexander Gordeev (c) 2006-2007, Jon Gough (c) 2007\n\n");
 }
 
 /* FIXME: Fix "serial" variable (which conflicts with "serial" variable in megatec.c) */

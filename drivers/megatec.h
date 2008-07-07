@@ -26,10 +26,11 @@
 #define MEGATEC_H
 
 
-#define DRV_VERSION "1.5.15"
+#define DRIVER_VERSION "1.5.16" /* FIXME: doesn't conform to "X.YZ" */
 
 
 #ifdef MEGATEC_SUBDRV
+	extern upsdrv_info_t megatec_subdrv_info;
 	void megatec_subdrv_makevartable(void);
 	void megatec_subdrv_banner(void);
 #else

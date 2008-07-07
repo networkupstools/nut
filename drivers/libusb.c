@@ -45,9 +45,6 @@
  * improve reactivity */
 #define USB_TIMEOUT 4000
 
-#define USB_DRIVER_NAME		"USB communication driver"
-#define USB_DRIVER_VERSION	"0.29"
-
 #define MAX_REPORT_SIZE         0x1800
 
 /* From usbutils: workaround libusb API goofs:  "byte" should never be sign extended;
@@ -418,8 +415,8 @@ static void libusb_close(usb_dev_handle *udev)
 }
 
 usb_communication_subdriver_t usb_subdriver = {
-	USB_DRIVER_VERSION,
-	USB_DRIVER_NAME,
+	COMM_DRIVER_VERSION,
+	COMM_DRIVER_NAME,
 	libusb_open,
 	libusb_close,
 	libusb_get_report,

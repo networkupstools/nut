@@ -44,6 +44,19 @@
 #include "upscode2.h"
 #include "timehead.h"
 
+#define DRIVER_NAME	"UPScode II UPS driver"
+
+/* driver description structure */
+upsdrv_info_t	upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"H K Lygre, <hklygre@online.no>\n" \
+	"Niels Baggesen <niels@baggesen.net>\n" \
+	"Niklas Edmundsson <nikke@acc.umu.se>",
+	DRV_EXPERIMENTAL,
+	{ NULL }
+};
+
 #define ENDCHAR		'\n'	
 #define IGNCHARS	"\r"
 
@@ -440,17 +453,6 @@ static void check_uppm(void);
 static float batt_charge_pct(void);
 
 
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - UPScode II UPS driver %s (%s)\n", 
-		DRV_VERSION, UPS_VERSION);
-	printf("Copyright (C) 2001-2002 H K Lygre, <hklygre@online.no>\n");
-	printf("Copyright (C) 2004-2006 Niels Baggesen <niels@baggesen.net>\n");
-	printf("Copyright (C) 2006 Niklas Edmundsson <nikke@acc.umu.se>\n\n");
-
-	experimental_driver = 1;
-}
-
 
 void upsdrv_help(void)
 {
@@ -463,7 +465,7 @@ void upsdrv_initups(void)
 	int baud = B1200;
 	char *str;
 
-	upsdebugx(1, "upscode2 version %s", DRV_VERSION);
+	upsdebugx(1, "upscode2 version %s", DRIVER_VERSION);
 	if ((str = getval("baudrate")) != NULL) {
 		int temp = atoi(str);
 		switch (temp) {
@@ -531,7 +533,7 @@ void upsdrv_initups(void)
 
 void upsdrv_initinfo(void)
 {
-	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
+	dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION);
 
 	if (!upsc_commandlist()) {
 		upslogx(LOG_ERR, "No contact with UPS, delaying init.");

@@ -36,6 +36,9 @@
 
 #include "nut_stdint.h" /* for uint16_t */
 
+#define COMM_DRIVER_NAME		"USB communication layer"
+#define COMM_DRIVER_VERSION		"0.30"
+
 /*!
  * USBDevice_t: Describe a USB device. This structure contains exactly
  * the 5 pieces of information by which a USB device identifies

@@ -17,14 +17,23 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define DRV_VERSION "1.34"
-
 #include <sys/ioctl.h>
 
 #include "main.h"
 #include "serial.h"
-
 #include "genericups.h"
+
+#define DRIVER_VERSION "1.35"
+#define DRIVER_NAME    "Generic contact-closure UPS driver"
+
+/* driver description structure */
+upsdrv_info_t	upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Russell Kroll <rkroll@exploits.org>",
+	DRV_STABLE,
+	{ NULL }
+};
 
 	static	int	upstype = -1;
 
@@ -107,7 +116,7 @@ void upsdrv_initinfo(void)
 {
 	char	*v;
 
-	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
+	dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION);
 
 	/* setup the basics */
 
@@ -256,12 +265,6 @@ void upsdrv_shutdown(void)
 void upsdrv_help(void)
 {
 	listtypes();
-}
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - Generic UPS driver %s (%s)\n",
-		DRV_VERSION, UPS_VERSION);
 }
 
 void upsdrv_makevartable(void)

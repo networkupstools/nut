@@ -177,7 +177,6 @@ void upsdrv_cleanup(void)
 
 void upsdrv_reconnect(void)
 {
-	
 	upslogx(LOG_WARNING, "RECONNECT USB DEVICE\n");
 	nutusb_close(upsdev, "USB");
 	upsdev = NULL;

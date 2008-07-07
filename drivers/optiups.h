@@ -19,4 +19,4 @@
 
 */
 
-#define DRV_VERSION "1.00"
+#define DRIVER_VERSION "1.01"

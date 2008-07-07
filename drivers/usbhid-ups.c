@@ -1,10 +1,10 @@
 /* usbhid-ups.c - Driver for USB and serial (MGE SHUT) HID UPS units
  * 
  * Copyright (C)
- *   2003-2005 Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
- *   2005      John Stamp <kinsayder@hotmail.com>
+ *   2003-2005 Arnaud Quette <arnaud.quette@gmail.com>
  *   2005-2006 Peter Selinger <selinger@users.sourceforge.net>
  *   2007      Arjen de Korte <adkorte-guest@alioth.debian.org>
+ *   2005      John Stamp <kinsayder@hotmail.com>
  *
  * This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
  *
@@ -58,6 +58,31 @@ static subdriver_t *subdriver_list[] = {
 	&tripplite_subdriver,
 #endif
 	NULL
+};
+
+/* driver description structure */
+upsdrv_info_t	comm_upsdrv_info = {
+	COMM_DRIVER_NAME,
+	COMM_DRIVER_VERSION,	
+	NULL,
+#ifdef SHUT_MODE /* newmge-shut is experimental */
+	DRV_EXPERIMENTAL,
+#else
+	DRV_STABLE,
+#endif
+	{ NULL }
+};
+	
+upsdrv_info_t	upsdrv_info = {
+	"Generic HID driver",
+	DRIVER_VERSION,
+	"Arnaud Quette <arnaud.quette@gmail.com>\n" \
+ 	"Peter Selinger <selinger@users.sourceforge.net>\n" \
+	"Arjen de Korte <adkorte-guest@alioth.debian.org>\n" \
+	"John Stamp <kinsayder@hotmail.com>",
+	/*FIXME: link the subdrivers? do the same as for the mibs! */
+	DRV_STABLE,
+	{ &comm_upsdrv_info, NULL }
 };
 
 /* Data walk modes */
@@ -701,16 +726,6 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
 	addvar(VAR_VALUE, "matching", "Use 'normal' or 'delayed' matching");
 	addvar(VAR_FLAG, "explore", "Diagnostic matching of unsupported UPS");
-#endif
-}
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools: %s %s - core %s (%s)\n\n",
-		comm_driver->name, comm_driver->version,
-		DRIVER_VERSION, UPS_VERSION);
-#ifdef SHUT_MODE /* newmge-shut is experimental */
-	experimental_driver = 1;
 #endif
 }
 

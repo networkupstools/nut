@@ -28,6 +28,18 @@
 #include "serial.h"
 #include "nitram.h"
 
+#define DRIVER_NAME	"Nitram UPS driver"
+
+/* driver description structure */
+upsdrv_info_t	upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Olivier Albiez <oalbiez@free.fr>\n" \
+	"Nadine Albiez <oalbiez@free.fr>",
+	DRV_EXPERIMENTAL,
+	{ NULL }
+};
+
 #define ENDCHAR	'\r'
 #define IGNCHARS ""
 #define UPSDELAY 50000
@@ -229,7 +241,7 @@ void upsdrv_initinfo(void)
 		dstate_setinfo("ups.model", "%s", fields.field[0]);
 		dstate_setinfo("ups.firmware", "%s", fields.field[1]);
 		dstate_setinfo("ups.mfr", "CyberPower for Nitram");
-		dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
+		dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION);
 	}
 	else
 	{
@@ -336,15 +348,6 @@ void upsdrv_help(void)
 
 void upsdrv_makevartable(void)
 {
-}
-
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - Nitram UPS driver %s (%s)\n\n",
-		DRV_VERSION, UPS_VERSION);
-	
-	experimental_driver = 1;
 }
 
 

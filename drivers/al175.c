@@ -31,6 +31,18 @@
 #include "serial.h"
 #include "al175.h"
 
+#define DRIVER_NAME    "Eltek AL175/COMLI driver"
+
+/* driver description structure */
+upsdrv_info_t	upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Kirill Smelkov <kirr@mns.spb.ru>" \
+	"Marine & Bridge Navigation Systems <http://mns.spb.ru>",
+	DRV_BROKEN,
+	{ NULL }
+};
+
 #define DEBUG	1
 
 #define	STX	0x02
@@ -1293,30 +1305,6 @@ void upsdrv_makevartable(void)
 	/* addvar(VAR_VALUE, "foo", "Override foo setting"); */
 }
 
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - Eltek AL175/COMLI support module %s (%s)\n\n", 
-		DRV_VERSION, UPS_VERSION);
-	/*
-	 * This driver does not support upsdrv_shutdown(), which makes
-	 * it not very useful in a real world application. This alone
-	 * warrants 'experimental' status, but for the below mentioned
-	 * reasons (to name a few), it's flagged 'broken' instead.
-	 *
-	 * - ‘return’ with a value, in function returning void (2x)
-	 * - anonymous variadic macros were introduced in C99
-	 * - C++ style comments are not allowed in ISO C90
-	 * - ISO C forbids braced-groups within expressions (5x)
-	 * - ISO C90 forbids specifying subobject to initialize (16x)
-	 * - ISO C99 requires rest arguments to be used (18x)
-	 * - initializer element is not computable at load time (4x)
-	 *
-	 * In short, there is a lot of rewriting to be done. Not the
-	 * whole world is a Linux box with the latest gcc on it.
-	 */
-	broken_driver = 1;
-}
-
 void upsdrv_initups(void)
 {
 	signal(SIGALRM, alarm_handler);
@@ -1369,7 +1357,7 @@ void upsdrv_initinfo(void)
 {
 	/* try to detect the UPS here - call fatal_with_errno(EXIT_FAILURE, ) if it fails */
 
-	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
+	dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION);
 	dstate_setinfo("ups.mfr", "Eltek");
 	dstate_setinfo("ups.model", "AL175");
         /* ... */

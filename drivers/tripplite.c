@@ -111,6 +111,19 @@
 #include <math.h>
 #include <ctype.h>
 
+#define DRIVER_NAME	"Tripp-Lite SmartUPS driver"
+
+/* driver description structure */
+upsdrv_info_t	upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Russell Kroll <rkroll@exploits.org>\n" \
+	"Rickard E. (Rik) Faith <faith@alephnull.com>\n" \
+	"Nicholas J. Kain <nicholas@kain.us>",
+	DRV_STABLE,
+	{ NULL }
+};
+
 #define ENDCHAR '\n'           /* replies end with CR LF -- use LF to end */
 #define IGNCHAR '\r'           /* ignore CR */
 #define MAXTRIES 3
@@ -354,7 +367,7 @@ void upsdrv_initinfo(void)
 	printf("Detected %s %s on %s\n",
 	dstate_getinfo("ups.mfr"), dstate_getinfo("ups.model"), device_path);
 
-	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
+	dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION);
 }
 
 void upsdrv_shutdown(void)
@@ -513,12 +526,6 @@ void upsdrv_makevartable(void)
 	snprintf(msg, sizeof msg, "Set reboot delay, in seconds (default=%d).",
 		DEFAULT_BOOTDELAY);
 	addvar(VAR_VALUE, "rebootdelay", msg);
-}
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - Tripp-Lite SmartUPS driver %s (%s)\n",
-			DRV_VERSION, UPS_VERSION);
 }
 
 void upsdrv_initups(void)

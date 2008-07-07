@@ -58,7 +58,20 @@
 #include "powercom.h"
 #include "math.h"
 
-#define POWERCOM_DRIVER_VERSION      "$ Revision: 0.11 $"
+#define DRIVER_VERSION	"0.12"
+#define DRIVER_NAME		"PowerCom protocol UPS driver"
+
+/* driver description structure */
+upsdrv_info_t	upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Simon Rozman <simon@rozman.net>\n" \
+	"Peter Bieringer <pb@bieringer.de>\n" \
+	"Alexey Sidorov <alexsid@altlinux.org>",
+	DRV_STABLE,
+	{ NULL }
+};
+
 #define NUM_OF_SUBTYPES              (sizeof (types) / sizeof (*types))
 
 /* general constants */
@@ -955,18 +968,11 @@ void upsdrv_help(void)
 	return;
 }
 
-/* display banner */
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - PowerCom and similars protocol UPS driver %s (%s)\n\n", 
-		POWERCOM_DRIVER_VERSION, UPS_VERSION);
-}
-
 /* initialize information */
 void upsdrv_initinfo(void)
 {
 	/* write constant data for this model */
-	dstate_setinfo("driver.version.internal", "%s", POWERCOM_DRIVER_VERSION);
+	dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION);
 	dstate_setinfo ("ups.mfr", "%s", manufacturer);
 	dstate_setinfo ("ups.model", "%s", modelname);
 	dstate_setinfo ("ups.serial", "%s", serialnumber);

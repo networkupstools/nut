@@ -23,4 +23,4 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define DRV_VERSION "0.8"
+#define DRIVER_VERSION "0.81"

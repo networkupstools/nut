@@ -19,12 +19,23 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define APC_DRIVER_VERSION	"1.99.9"
-
 #include "main.h"
 #include "serial.h"
-
 #include "apcsmart.h"
+
+#define APC_DRIVER_VERSION	"2.00"
+#define DRIVER_NAME		"APC Smart protocol driver"
+
+/* driver description structure */
+upsdrv_info_t	upsdrv_info = {
+	DRIVER_NAME,
+	APC_DRIVER_VERSION,
+	"Russell Kroll <rkroll@exploits.org>" \
+	"Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk>",
+	DRV_STABLE,
+	{ NULL }
+};
+/* FIXME: miss "command table %s" APC_TABLE_VERSION */
 
 #define ALT_CABLE_1 "940-0095B"
 
@@ -1196,15 +1207,6 @@ static void setuphandlers(void)
 }
 
 /* functions that interface with main.c */
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools (version %s) - APC Smart protocol driver\n",
-		UPS_VERSION);
-	printf("\tDriver version %s, command table %s\n",
-		APC_DRIVER_VERSION,
-		APC_TABLE_VERSION);
-}
 
 void upsdrv_makevartable(void)
 {

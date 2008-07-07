@@ -46,11 +46,24 @@ static subdriver_t *subdriver[] = {
 	NULL
 };
 
+#define DRIVER_NAME	"CyberPower text/binary protocol UPS driver"
+
+/* driver description structure */
+upsdrv_info_t	upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Doug Reynolds <mav@wastegate.net>\n" \
+	"Arjen de Korte <adkorte-guest@alioth.debian.org>",
+	DRV_EXPERIMENTAL,
+	{ NULL }
+};
+/* FIXME: add a sub version for binary and text subdrivers? */
+
 void upsdrv_initinfo(void)
 {
 	char	*s;
 
-	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
+	dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION);
 
 	dstate_setinfo("ups.mfr", "CyberPower");
 	dstate_setinfo("ups.model", "[unknown]");
@@ -126,13 +139,6 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "model", "modelname");
 	addvar(VAR_VALUE, "serial", "serialnumber");
 	addvar(VAR_VALUE, "protocol", "protocol to use [text|binary] (default: autodection)");
-}
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools -  CyberPower text/binary protocol UPS driver %s (%s)\n",
-		DRV_VERSION, UPS_VERSION);
-	experimental_driver = 1;
 }
 
 void upsdrv_cleanup(void)

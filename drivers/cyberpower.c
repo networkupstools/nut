@@ -21,8 +21,19 @@
 #include "main.h"
 #include "serial.h"
 #include "cyberpower.h"
-
 #include "timehead.h"
+
+#define DRIVER_NAME    "CyberPower driver"
+
+/* driver description structure */
+upsdrv_info_t	upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Russell Kroll <rkroll@exploits.org>" \
+	"Len White <lwhite@darkfires.net>",
+	DRV_STABLE,
+	{ NULL }
+};
 
 /* window for repeating dangerous command (shutdown.stayoff) */
 #define MINCMDTIME	3
@@ -514,12 +525,6 @@ static void setuphandlers(void)
 	upsh.instcmd = instcmd;
 }
 
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - CyberPower driver %s (%s)\n", 
-		DRV_VERSION, UPS_VERSION);
-}
-
 void upsdrv_help(void)
 {
 }
@@ -549,7 +554,7 @@ void upsdrv_initinfo(void)
 	}
 
 	dstate_setinfo("ups.mfr", "CyberPower");
-	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
+	dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION);
 
 	/* poll once to put in some good data */
 	upsdrv_updateinfo();

@@ -37,7 +37,19 @@
 
 #include "main.h"
 
-#define DRV_VERSION "0.02"
+#define DRIVER_VERSION "0.03"
+#define DRIVER_NAME    "Energizer USB UPS driver"
+
+/* driver description structure */
+upsdrv_info_t	upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Viktor T. Toth <vttoth@vttoth.com>" \
+	"Russell Kroll <rkroll@exploits.org>",
+	DRV_EXPERIMENTAL,
+	{ NULL }
+};
+
 
 #define NUM_EVTS 64
 
@@ -373,7 +385,7 @@ void upsdrv_initinfo(void)
     rtrim(MDLNUM, ' ');
     rtrim(HWVERS, ' ');
 
-    dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
+    dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION);
     dstate_setinfo("ups.mfr", "%s", MANUFR);
     dstate_setinfo("ups.model", "%s", MDLNUM);
 
@@ -497,13 +509,6 @@ void upsdrv_help(void)
 /* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {
-}
-
-void upsdrv_banner(void)
-{
-    printf("Network UPS Tools - Energizer USB UPS driver %s (%s)\n\n", 
-        DRV_VERSION, UPS_VERSION);
-    experimental_driver = 1;    /* Causes a warning to be printed */
 }
 
 void upsdrv_initups(void)
