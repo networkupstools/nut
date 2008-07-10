@@ -263,6 +263,7 @@ struct {
 	{ "D4",         "789ABCEFGKLMNOPQRSUVWXYZ", 0 },
 	/* SmartUPS 1250. */
 	{ "8QD",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
+	{ "8TI",        "79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
 
 	{ NULL,		NULL,			0 },
 };

@@ -543,6 +543,7 @@ static int firmware_table_lookup(void)
 		/* found one, force the model information */
 		if (!strcmp(buf, "6QD") || /* (APC600.) */
 				!strcmp(buf, "8QD") || /* (SmartUPS 1250, vintage 07/94.) */
+				!strcmp(buf, "8TI") || /* (SmartUPS 1250, vintage 08/24/95.) */
 				!strcmp(buf, "6TI") || /* (APC600.) */
 				!strcmp(buf, "6QI")) { /* (APC600.) */
 			upsdebugx(1, "Found Smart-UPS");

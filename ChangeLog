@@ -1,3 +1,8 @@
+Thu Jul 10 12:22:54 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/apcsmart.[ch]: patch to recognize older APC Smart-UPS 1250
+   (patch provided by Don Harvie)
+
 Mon Jul  7 19:00:00 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  - m4/nut_check_libhal.m4, drivers/main-hal.c: test for g_timeout_add_seconds
