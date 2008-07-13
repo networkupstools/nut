@@ -42,6 +42,7 @@
 #define IGNCHARS ""
 
 #define RECV_BUFFER_LEN 128
+#define FIELD_BUFFER_LEN 16
 
 /* The expected reply lengths */
 #define F_CMD_REPLY_LEN  21
@@ -286,7 +287,7 @@ static int check_ups(QueryValues_t *status)
 
 static int get_ups_info(UPSInfo_t *info)
 {
-	char buffer[I_CMD_REPLY_LEN + 1];
+	char buffer[RECV_BUFFER_LEN];
 	char *anchor;
 	int ret;
 
@@ -295,7 +296,10 @@ static int get_ups_info(UPSInfo_t *info)
 	ser_send_pace(upsfd, SEND_PACE, "I%c", ENDCHAR);
 	usleep(READ_PACE);
 
-	ret = ser_get_line(upsfd, buffer, I_CMD_REPLY_LEN + 1, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
+	/*
+	 * Expected reply: "#UPS_MFR........ UPS_MODEL. UPS_VER...<cr>"
+	 */
+	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 
 	if (ret < 0) {
 		upsdebugx(2, "I => FAILED [timeout]");
@@ -338,7 +342,9 @@ static int get_ups_info(UPSInfo_t *info)
 
 static int get_firmware_values(FirmwareValues_t *values)
 {
-	char buffer[F_CMD_REPLY_LEN + 1];
+	char buffer[RECV_BUFFER_LEN];
+	char field[FIELD_BUFFER_LEN];
+	char *anchor;
 	int ret;
 
 	upsdebugx(2, "Asking for UPS power ratings [F]...");
@@ -346,7 +352,10 @@ static int get_firmware_values(FirmwareValues_t *values)
 	ser_send_pace(upsfd, SEND_PACE, "F%c", ENDCHAR);
 	usleep(READ_PACE);
 
-	ret = ser_get_line(upsfd, buffer, F_CMD_REPLY_LEN + 1, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
+	/*
+	 * Expected reply: "#MMM.M QQQ SS.SS RR.R<cr>"
+	 */
+	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 
 	if (ret < 0) {
 		upsdebugx(2, "F => FAILED [timeout]");
@@ -371,8 +380,17 @@ static int get_firmware_values(FirmwareValues_t *values)
 
 	upsdebugx(2, "F => OK [%s]", buffer);
 
-	sscanf(buffer, "#%f %f %f %f", &values->volt, &values->current,
-	       &values->battvolt, &values->freq);
+	anchor = copy_field(field, &buffer[1], 5);
+	values->volt = atof(field);
+
+	anchor = copy_field(field, anchor + 1, 3);
+	values->current = atof(field);
+
+	anchor = copy_field(field, anchor + 1, 5);
+	values->battvolt = atof(field);
+
+	anchor = copy_field(field, anchor + 1, 4);
+	values->freq = atof(field);
 
 	upsdebugx(2, "F VALUES => [%.1f %.1f %.1f %.1f]", values->volt,
 	          values->current, values->battvolt, values->freq);
@@ -383,9 +401,9 @@ static int get_firmware_values(FirmwareValues_t *values)
 
 static int run_query(QueryValues_t *values)
 {
-	char buffer[Q1_CMD_REPLY_LEN + 1];
-	char load[8];
-	char temp[8];
+	char buffer[RECV_BUFFER_LEN];
+	char field[FIELD_BUFFER_LEN];
+	char *anchor;
 	int ret;
 
 	upsdebugx(2, "Asking for UPS status [Q1]...");
@@ -393,7 +411,10 @@ static int run_query(QueryValues_t *values)
 	ser_send_pace(upsfd, SEND_PACE, "Q1%c", ENDCHAR);
 	usleep(READ_PACE);
 
-	ret = ser_get_line(upsfd, buffer, Q1_CMD_REPLY_LEN + 1, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
+	/*
+	 * Expected reply: "(MMM.M NNN.N PPP.P QQQ RR.R S.SS TT.T b7b6b5b4b3b2b1b0<cr>"
+	 */
+	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 
 	if (ret < 0) {
 		upsdebugx(2, "Q1 => FAILED [timeout]");
@@ -417,25 +438,37 @@ static int run_query(QueryValues_t *values)
 
 	upsdebugx(2, "Q1 => OK [%s]", buffer);
 
-	sscanf(buffer, "(%f %f %f %7s %f %f %7s %8s", &values->ivolt, &values->fvolt,
-	       &values->ovolt, load, &values->freq, &values->battvolt, temp, values->flags);
+	anchor = copy_field(field, &buffer[1], 5);
+	values->ivolt = atof(field);
 
-	/*
-	 * These values must be parsed on their own. Some models
-	 * put something other than a float in this field, meaning
-	 * there is no reading available.
-	 */
-	values->load = atof(load);
-	values->temp = atof(temp);
+	anchor = copy_field(field, anchor + 1, 5);
+	values->fvolt = atof(field);
+
+	anchor = copy_field(field, anchor + 1, 5);
+	values->ovolt = atof(field);
+
+	anchor = copy_field(field, anchor + 1, 3);
+	values->load = atof(field);
+
+	anchor = copy_field(field, anchor + 1, 4);
+	values->freq = atof(field);
+
+	anchor = copy_field(field, anchor + 1, 4);
+	values->battvolt = atof(field);
+
+	anchor = copy_field(field, anchor + 1, 4);
+	values->temp = atof(field);
+
+	anchor = copy_field(values->flags, anchor + 1, N_FLAGS);
+
+	if (strlen(values->flags) < N_FLAGS) {
+		upsdebugx(2, "Q1 => FAILED [flags error]");
+		return -1;
+	}
 
 	upsdebugx(2, "Q1 VALUES => [%.1f %.1f %.1f %.1f %.1f %.1f %.1f %s]",
 	          values->ivolt, values->fvolt, values->ovolt, values->load,
 	          values->freq, values->battvolt, values->temp, values->flags);
-
-	if (strlen(values->flags) < N_FLAGS) {
-		upsdebugx(2, "Q1 VALUES => FAILED [strlen(%s) < %d]", values->flags, N_FLAGS);
-		return -1;
-	}
 
 	return 0;
 }
