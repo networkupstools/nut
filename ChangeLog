@@ -1,3 +1,7 @@
+Sun Jul 13 12:30:02 UTC 2008 / Carlos Rodrigues <cefrodrigues@gmail.com>
+
+ - drivers/megatec.c: better handling of strange input
+
 Thu Jul 10 12:22:54 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - drivers/apcsmart.[ch]: patch to recognize older APC Smart-UPS 1250
