@@ -50,6 +50,8 @@
 
 #define MAX_REPORT_SIZE         0x1800
 
+static void libusb_close(usb_dev_handle *udev);
+
 /* From usbutils: workaround libusb API goofs:  "byte" should never be sign extended;
  * using "char" is trouble.  Likewise, sizes should never be negative.
  */

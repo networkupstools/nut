@@ -1,3 +1,8 @@
+Wed Jul 30 03:18:34 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/libusb.c: add prototype for libusb_close() for Solaris (pointed out
+   by John-Mark Gurney)
+
 Sun Jul 13 15:18:23 UTC 2008 / Carlos Rodrigues <cefrodrigues@gmail.com>
 
  - drivers/megatec.c: don't parse replies with sscanf (better input handling)
