@@ -1,3 +1,7 @@
+Mon Aug  4 12:49:13 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - docs/shutdown.txt: fix documentation bug
+
 Wed Jul 30 03:18:34 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - drivers/libusb.c: add prototype for libusb_close() for Solaris (pointed out

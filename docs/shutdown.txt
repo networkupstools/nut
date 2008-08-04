@@ -26,7 +26,7 @@ Here are the steps that occur when a critical power event happens:
    - generate a NOTIFY_SHUTDOWN event
    - wait FINALDELAY seconds - typically 5
    - call their SHUTDOWNCMD
-   - disconnect from upsd when killed by init
+   - disconnect from upsd
 
 5. The upsmon master system waits up to HOSTSYNC seconds (typically 15) 
    for the slaves to disconnect from upsd.  If any are connected after 
