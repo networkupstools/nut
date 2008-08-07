@@ -1,3 +1,8 @@
+Thu Aug  7 09:39:57 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/tripplite.[ch]: significantly improved failure mode handling and
+   also basic checks of data validity (from Nicholas J. Kain)
+
 Mon Aug  4 12:49:13 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - docs/shutdown.txt: fix documentation bug

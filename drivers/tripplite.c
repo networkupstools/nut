@@ -6,7 +6,7 @@
 
    Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
    Copyright (C) 2001  Rickard E. (Rik) Faith <faith@alephnull.com>
-   Copyright (C) 2004  Nicholas J. Kain <nicholas@kain.us>
+   Copyright (C) 2004,2008  Nicholas J. Kain <nicholas@kain.us>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -26,8 +26,8 @@
 /* REFERENCE 1
 
    A few magic numbers were derived from the GPL'd file
-   opensrc_server/upscmd.cpp, available from Tripp Lite at
-   http://www.tripplite.com/linux/.
+   opensrc_server/upscmd.cpp, formerly (but not longer) available from
+   Tripp Lite at http://www.tripplite.com/linux/.
 */
 
 /* REFERENCE 2
@@ -111,30 +111,6 @@
 #include <math.h>
 #include <ctype.h>
 
-#define ENDCHAR '\n'           /* replies end with CR LF -- use LF to end */
-#define IGNCHAR '\r'           /* ignore CR */
-#define MAXTRIES 3
-#define SER_WAIT_SEC  3        /* allow 3.0 sec for ser_get calls */
-#define SER_WAIT_USEC 0
-#define DEFAULT_OFFDELAY   64  /* seconds (max 0xFF) */
-#define DEFAULT_STARTDELAY 60  /* seconds (max 0xFFFFFF) */
-#define DEFAULT_BOOTDELAY  64  /* seconds (max 0xFF) */
-#define MAX_VOLT 13.4          /* Max battery voltage (100%) */
-#define MIN_VOLT 11.0          /* Min battery voltage (10%) */
-
-/* We calculate battery charge (q) as a function of voltage (V).
- * It seems that this function probably varies by firmware revision or
- * UPS model - the Windows monitoring software gives different q for a
- * given V than the old open source Tripp Lite monitoring software.
- *
- * The discharge curve should be the same for any given battery chemistry,
- * so it should only be necessary to specify the minimum and maximum
- * voltages likely to be seen in operation.
- */
-
-/* Interval notation for Q% = 10% <= [minV, maxV] <= 100%  */
-static float V_interval[2] = {MIN_VOLT, MAX_VOLT};
-
 /* Time in seconds to delay before shutting down. */
 static unsigned int offdelay = DEFAULT_OFFDELAY;
 static unsigned int startdelay = DEFAULT_STARTDELAY;
@@ -143,9 +119,8 @@ static unsigned int bootdelay = DEFAULT_BOOTDELAY;
 static int hex2d(char *start, unsigned int len)
 {
 	char buf[32];
-	buf[31] = '\0';
 
-	strncpy(buf, start, (len < (sizeof buf) ? len : (sizeof buf - 1)));
+	snprintf(buf, sizeof buf, "%.*s", len, start);
 	return strtol(buf, NULL, 16);
 }
 
@@ -159,10 +134,11 @@ static int hex2d(char *start, unsigned int len)
  * return: # of chars in buf, excluding terminating \0 */
 static int send_cmd(const char *str, char *buf, size_t len)
 {
-	char c;
-	int ret;
+	unsigned char c;
+	int ret = 0;
 	size_t i = 0;
 
+	ser_flush_io(upsfd);
 	ser_send(upsfd, str);
 
 	if (!len || !buf)
@@ -171,31 +147,29 @@ static int send_cmd(const char *str, char *buf, size_t len)
 	for (;;) {
 		ret = ser_get_char(upsfd, &c, SER_WAIT_SEC, SER_WAIT_USEC);
 		if (ret == -1)
-			return -1;
+			return ret;
 		if (c == ENDCHAR)
 			break;
 	}
 	do {
 		ret = ser_get_char(upsfd, &c, SER_WAIT_SEC, SER_WAIT_USEC);
 		if (ret == -1)
-			return -1;
+			return ret;
 
 		if (c == IGNCHAR || c == ENDCHAR)
 			continue;
 		buf[i++] = c;
 	} while (c != ENDCHAR && i < len);
 	buf[i] = '\0';
-	ser_flush_in(upsfd, NULL, 0);
 	return i;
 }
 
-static void ups_sync(void)
+static void get_letter_cmd(char *str, char *buf, size_t len)
 {
-	char buf[256];
 	int tries, ret;
 
 	for (tries = 0; tries < MAXTRIES; ++tries) {
-		ret = send_cmd(":W\r", buf, sizeof buf);
+		ret = send_cmd(str, buf, len);
 		if ((ret > 0) && isdigit((unsigned char)buf[0]))
 			return;
 	}
@@ -301,14 +275,10 @@ void upsdrv_initinfo(void)
 	int  va;
 	long w, l;
 
-
-	/* Detect the UPS or die. */
-	ups_sync();
-
-	send_cmd(":W\r", w_value, sizeof w_value);
-	send_cmd(":L\r", l_value, sizeof l_value);
-	send_cmd(":V\r", v_value, sizeof v_value);
-	send_cmd(":X\r", x_value, sizeof x_value);
+	get_letter_cmd(":W\r", w_value, sizeof w_value);
+	get_letter_cmd(":L\r", l_value, sizeof l_value);
+	get_letter_cmd(":V\r", v_value, sizeof v_value);
+	get_letter_cmd(":X\r", x_value, sizeof x_value);
 
 	dstate_setinfo("ups.mfr", "%s", "Tripp Lite");
 
@@ -364,58 +334,140 @@ void upsdrv_shutdown(void)
 
 void upsdrv_updateinfo(void)
 {
+	static int numfails;
 	char buf[256];
-	int bp;
-	float bv;
+	int bp, volt, temp, load, vmax, vmin, stest, len;
+	int bcond, lstate, tstate, mode;
+	float bv, freq;
 
-	send_cmd(":D\r", buf, sizeof buf);
-
-	if (strlen(buf) < 21) {
-		ser_comm_fail("Failed to get data: short read from UPS");
-		dstate_datastale();
+	len = send_cmd(":D\r", buf, sizeof buf);
+	if (len != 21) {
+		++numfails;
+		if (numfails > MAXTRIES) {
+			ser_comm_fail("Data command failed: [%d] bytes != 21 bytes.", len);
+			dstate_datastale();
+		}
 		return;
 	}
 
-	if (strlen(buf) > 21) {
-		ser_comm_fail("Failed to get data: oversized read from UPS");
-		dstate_datastale();
+	volt = hex2d(buf + 2, 2);
+	temp = (int)(hex2d(buf + 6, 2)*0.3636 - 21.0);
+	load = hex2d(buf + 12, 2);
+	freq = hex2d(buf + 18, 3) / 10.0;
+	bcond = buf[0];
+	lstate = buf[1];
+	tstate = buf[4];
+	mode = buf[5];
+	if (volt > INVOLT_MAX || volt < INVOLT_MIN ||
+			temp > TEMP_MAX || temp < TEMP_MIN ||
+			load > LOAD_MAX || load < LOAD_MIN ||
+			freq > FREQ_MAX || freq < FREQ_MIN) {
+		++numfails;
+		if (numfails > MAXTRIES) {
+			ser_comm_fail("Data out of bounds: [%0d,%3d,%3d,%02.2f]",
+					volt, temp, load, freq);
+			dstate_datastale();
+		}
 		return;
 	}
 
-	dstate_setinfo("input.voltage", "%0d", hex2d(buf + 2, 2));
-	dstate_setinfo("ups.temperature", "%3d",
-			(int)(hex2d(buf + 6, 2)*0.3636 - 21.0));
-	dstate_setinfo("ups.load", "%3d", hex2d(buf + 12, 2));
-	dstate_setinfo("input.frequency", "%02.2f", hex2d(buf + 18, 3) / 10.0);
+	send_cmd(":B\r", buf, sizeof buf);
+	bv = (float)hex2d(buf, 2) / 10.0;
+	if (bv > 50.0 || bv < 0.0) {
+		++numfails;
+		if (numfails > MAXTRIES) {
+			ser_comm_fail("Battery voltage out of bounds: [%02.1f]", bv);
+			dstate_datastale();
+		}
+		return;
+	}
+
+	send_cmd(":M\r", buf, sizeof buf);
+	vmax = hex2d(buf, 2);
+	if (vmax > INVOLT_MAX || vmax < INVOLT_MIN) {
+		++numfails;
+		if (numfails > MAXTRIES) {
+			ser_comm_fail("InVoltMax out of bounds: [%d]", vmax);
+			dstate_datastale();
+		}
+		return;
+	}
+
+	send_cmd(":I\r", buf, sizeof buf);
+	vmin = hex2d(buf, 2);
+	if (vmin > INVOLT_MAX || vmin < INVOLT_MIN) {
+		++numfails;
+		if (numfails > MAXTRIES) {
+			ser_comm_fail("InVoltMin out of bounds: [%d]", vmin);
+			dstate_datastale();
+		}
+		return;
+	}
+
+	send_cmd(":C\r", buf, sizeof buf);
+	errno = 0;
+	stest = strtol(buf, 0, 10);
+	if (errno == ERANGE) {
+		++numfails;
+		if (numfails > MAXTRIES) {
+			ser_comm_fail("Self test is out of range: [%d]", stest);
+			dstate_datastale();
+		}
+		return;
+	}
+	if (errno == EINVAL) {
+		++numfails;
+		if (numfails > MAXTRIES) {
+			ser_comm_fail("Self test returned non-numeric data.");
+			dstate_datastale();
+		}
+		return;
+	}
+	if (stest > 3 || stest < 0) {
+		++numfails;
+		if (numfails > MAXTRIES) {
+			ser_comm_fail("Self test out of bounds: [%d]", stest);
+			dstate_datastale();
+		}
+		return;
+	}
+
+	/* We've successfully gathered all the data for an update. */
+	numfails = 0;
+
+	dstate_setinfo("input.voltage", "%0d", volt);
+	dstate_setinfo("ups.temperature", "%3d", temp);
+	dstate_setinfo("ups.load", "%3d", load);
+	dstate_setinfo("input.frequency", "%02.2f", freq);
 
 	status_init();
 
 	/* Battery Voltage Condition */
-	switch (buf[0]) {
+	switch (bcond) {
 		case '0': /* Low Battery */
 			status_set("LB");
 			break;
 		case '1': /* Normal */
 			break;
 		default: /* Unknown */
-			upslogx(LOG_ERR, "Unknown battery state: %c", buf[0]);
+			upslogx(LOG_ERR, "Unknown battery state: %c", bcond);
 			break;
 	}
 
 	/* Load State */
-	switch (buf[1]) {
+	switch (lstate) {
 		case '0': /* Overload */
 			status_set("OVER");
 			break;
 		case '1': /* Normal */
 			break;
 		default: /* Unknown */
-			upslogx(LOG_ERR, "Unknown load state: %c", buf[1]);
+			upslogx(LOG_ERR, "Unknown load state: %c", lstate);
 			break;
 	}
 
 	/* Tap State */
-	switch (buf[4]) {
+	switch (tstate) {
 		case '0': /* Normal */
 			break;
 		case '1': /* Reducing */
@@ -426,12 +478,12 @@ void upsdrv_updateinfo(void)
 			status_set("BOOST");
 			break;
 		default: /* Unknown */
-			upslogx(LOG_ERR, "Unknown tap state: %c", buf[4]);
+			upslogx(LOG_ERR, "Unknown tap state: %c", tstate);
 			break;
 	}
 
 	/* Mode */
-	switch (buf[5]) {
+	switch (mode) {
 		case '0': /* Off */
 			status_set("OFF");
 			break;
@@ -445,36 +497,28 @@ void upsdrv_updateinfo(void)
 			status_set("OB");
 			break;
 		default: /* Unknown */
-			upslogx(LOG_ERR, "Unknown mode state: %c", buf[4]);
+			upslogx(LOG_ERR, "Unknown mode state: %c", mode);
 			break;
 	}
 
 	status_commit();
-	send_cmd(":B\r", buf, sizeof buf);
-	bv = (float)hex2d(buf, 2) / 10.0;
 
 	/* dq ~= sqrt(dV) is a reasonable approximation
 	 * Results fit well against the discrete function used in the Tripp Lite
 	 * source, but give a continuous result. */
-	if (bv >= V_interval[1])
+	if (bv >= MAX_VOLT)
 		bp = 100;
-	else if (bv <= V_interval[0])
+	else if (bv <= MIN_VOLT)
 		bp = 10;
 	else
-		bp = (int)(100*sqrt((bv - V_interval[0])
-							/ (V_interval[1] - V_interval[0])));
+		bp = (int)(100*sqrt((bv - MIN_VOLT) / (MAX_VOLT - MIN_VOLT)));
 
 	dstate_setinfo("battery.voltage", "%.1f", bv);
 	dstate_setinfo("battery.charge",  "%3d", bp);
+	dstate_setinfo("input.voltage.maximum", "%d", vmax);
+	dstate_setinfo("input.voltage.minimum", "%d", vmin);
 
-	send_cmd(":M\r", buf, sizeof buf);
-	dstate_setinfo("input.voltage.maximum", "%d", hex2d(buf, 2));
-
-	send_cmd(":I\r", buf, sizeof buf);
-	dstate_setinfo("input.voltage.minimum", "%d", hex2d(buf, 2));
-
-	send_cmd(":C\r", buf, sizeof buf);
-	switch (atoi(buf)) {
+	switch (stest) {
 		case 0:
 			dstate_setinfo("ups.test.result", "%s", "OK");
 			break;
