@@ -1,3 +1,8 @@
+Fri Aug 15 23:48:38 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/tripplite_usb.c: Increase send retries to 10 (as needed by some
+   protocol 2001 units)
+
 Thu Aug  7 09:39:57 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/tripplite.[ch]: significantly improved failure mode handling and

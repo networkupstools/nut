@@ -326,7 +326,7 @@ static enum tl_model_t {
 
 #define ENDCHAR 13
 
-#define MAX_SEND_TRIES 3
+#define MAX_SEND_TRIES 10
 #define SEND_WAIT_SEC 0
 #define SEND_WAIT_NSEC (1000*1000*100)
 
