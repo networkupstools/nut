@@ -1,3 +1,7 @@
+Thu Aug 21 19:37:40 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - common/Makefile.am: restore revision number for development builds
+
 Thu Aug 21 19:08:59 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - <various>/Makefile.am: libtool fixes (patch provided by Stanislav
