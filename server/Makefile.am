@@ -7,8 +7,7 @@ AM_CFLAGS = -I$(top_srcdir)/include
 if WITH_SSL
   AM_CFLAGS += $(LIBSSL_CFLAGS)
 endif
-LDADD = ../common/libcommon.a ../common/state.o ../common/upsconf.o	\
- ../common/parseconf.o $(NETLIBS)
+LDADD = ../common/libcommon.a ../common/libparseconf.la $(NETLIBS)
 if WITH_SSL
    LDADD += $(LIBSSL_LDFLAGS)
 endif
@@ -22,19 +21,4 @@ upsd_SOURCES = upsd.c user.c conf.c ssl.c sstate.c desc.c		\
  netlist.h netmisc.h netset.h netuser.h ssl.h sstate.h stype.h upsd.h   \
  upstype.h user-data.h user.h
 
-sockdebug_SOURCES = sockdebug.c 
-
-# rules for cross-directory targets
-../common/libcommon.a: FORCE
-	(cd ../common/ && $(MAKE) $(AM_MAKEFLAGS) libcommon.a)
-
-../common/upsconf.o:
-	(cd ../common/ && $(MAKE) $(AM_MAKEFLAGS) upsconf.o)
-
-../common/parseconf.o:
-	(cd ../common/ && $(MAKE) $(AM_MAKEFLAGS) parseconf.o)
-
-../common/state.o:
-	(cd ../common/ && $(MAKE) $(AM_MAKEFLAGS) state.o)
-
-FORCE:
+sockdebug_SOURCES = sockdebug.c

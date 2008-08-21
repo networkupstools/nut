@@ -35,7 +35,7 @@ upslog_SOURCES = upslog.c upsclient.h upslog.h
 upsmon_SOURCES = upsmon.c upsmon.h upsclient.h
 
 upssched_SOURCES = upssched.c upssched.h
-upssched_LDADD = ../common/libcommon.a $(NETLIBS) ../common/parseconf.o 
+upssched_LDADD = ../common/libcommon.a ../common/libparseconf.la $(NETLIBS)
 
 upsimage_cgi_SOURCES = upsimage.c upsclient.h upsimagearg.h cgilib.c cgilib.h
 upsimage_cgi_LDADD = $(LDADD) $(LIBGD_LDFLAGS)
@@ -46,17 +46,5 @@ upsstats_cgi_SOURCES = upsstats.c upsclient.h status.h upsstats.h	\
 
 # not LDADD.
 libupsclient_la_SOURCES = upsclient.c upsclient.h
-libupsclient_la_LIBADD = ../common/parseconf.lo
+libupsclient_la_LIBADD = ../common/libparseconf.la
 libupsclient_la_LDFLAGS = -version-info 1:0:0
-
-# rules for cross-directory targets
-../common/libcommon.a: FORCE
-	(cd ../common/ && $(MAKE) $(AM_MAKEFLAGS) libcommon.a)
-
-../common/parseconf.o:
-	(cd ../common/ && $(MAKE) $(AM_MAKEFLAGS) parseconf.o)
-
-../common/parseconf.lo:
-	(cd ../common/ && $(MAKE) $(AM_MAKEFLAGS) parseconf.lo)
-
-FORCE:

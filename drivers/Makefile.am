@@ -2,9 +2,8 @@
 
 # by default, link programs in this directory with libcommon.a
 #FIXME: SERLIBS is only useful for LDADD_DRIVERS_SERIAL not for LDADD_COMMON
-LDADD_COMMON = ../common/libcommon.a
-LDADD_DRIVERS = $(LDADD_COMMON) ../common/upsconf.o	\
- ../common/parseconf.o ../common/state.o main.o dstate.o
+LDADD_COMMON = ../common/libcommon.a ../common/libparseconf.la
+LDADD_DRIVERS = $(LDADD_COMMON) main.o dstate.o
 LDADD_HAL_DRIVERS = $(LDADD_COMMON) libnuthalmain.a
 LDADD_DRIVERS_SERIAL = $(LDADD_DRIVERS) $(SERLIBS) serial.o
 
@@ -86,7 +85,7 @@ driverexec_PROGRAMS += upsdrvctl
 
 # upsdrvctl: the all-singing all-dancing driver control program
 upsdrvctl_SOURCES = upsdrvctl.c
-upsdrvctl_LDADD = $(LDADD_COMMON) ../common/upsconf.o ../common/parseconf.o
+upsdrvctl_LDADD = $(LDADD_COMMON)
 
 # serial drivers: all of them use standard LDADD and CFLAGS
 al175_SOURCES = al175.c
@@ -227,18 +226,3 @@ EXTRA_LIBRARIES += libnuthalmain.a
 libnuthalmain_a_SOURCES = main-hal.c dstate-hal.c
 
 MOSTLYCLEANFILES = libnuthalmain.a
-
-# rules for cross-directory targets
-../common/libcommon.a: FORCE
-	(cd ../common/ && $(MAKE) $(AM_MAKEFLAGS) libcommon.a)
-
-../common/upsconf.o:
-	(cd ../common/ && $(MAKE) $(AM_MAKEFLAGS) upsconf.o)
-
-../common/parseconf.o:
-	(cd ../common/ && $(MAKE) $(AM_MAKEFLAGS) parseconf.o)
-
-../common/state.o:
-	(cd ../common/ && $(MAKE) $(AM_MAKEFLAGS) state.o)
-
-FORCE:
