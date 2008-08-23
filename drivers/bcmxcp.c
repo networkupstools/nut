@@ -136,6 +136,7 @@ static void init_alarm_map(void);
 static void init_ups_meter_map(const unsigned char *map, unsigned char len);
 static void init_ups_alarm_map(const unsigned char *map, unsigned char len);
 static void decode_meter_map_entry(const unsigned char *entry, const unsigned char format, char* value);
+static int init_outlet(unsigned char len);
 static int instcmd(const char *cmdname, const char *extra);
 
 
@@ -143,6 +144,7 @@ char *FreqTol[3] = {"+/-2%", "+/-5%", "+/-7"};
 char *ABMStatus[4] = {"Charging", "Discharging", "Floating", "Resting"};
 unsigned char AUTHOR[4] = {0xCF, 0x69, 0xE8, 0xD5};		/* Autorisation	command	*/
 int nphases = 0;
+int outlet_block_len = 0;
 char *cpu_name[] = {"Cont:", "Inve:", "Rect:", "Netw:", "Disp:"};
 
 /* get_word funktion from nut driver metasys.c */
@@ -810,12 +812,61 @@ void init_ups_alarm_map(const unsigned char *map, unsigned char len)
 	upsdebugx(2, "\n");
 }
 
+int init_outlet(unsigned char len)
+{
+	unsigned char answer[len];
+	int iIndex = 0, res, num;
+	int num_outlet, size_outlet;
+	int outlet_num, outlet_state;
+	short auto_dly_off, auto_dly_on;
+	char outlet_name[25];
+
+	res = command_read_sequence(PW_OUT_MON_BLOCK_REQ, answer);
+	if (res <= 0)
+		fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
+
+	num_outlet = answer[iIndex++];
+	upsdebugx(2, "Number of outlets: %d\n", num_outlet); 
+
+	size_outlet = answer[iIndex++];
+	upsdebugx(2, "Number of bytes: %d\n", size_outlet); 
+
+	for(num = 1 ; num <= num_outlet ; num++) {
+		outlet_num = answer[iIndex++];
+		upsdebugx(2, "Outlet number: %d\n", outlet_num);
+		snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.id", num);
+		dstate_setinfo(outlet_name, "%d", outlet_num);
+
+		outlet_state = answer[iIndex++];
+		upsdebugx(2, "Outlet state: %d\n", outlet_state);
+		snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.status", num);
+		dstate_setinfo(outlet_name, "%s", (outlet_state & 0x01 ? "On" : "Off"));
+
+		auto_dly_off = get_word(answer+iIndex);
+		iIndex += 2;
+		upsdebugx(2, "Auto delay off: %d\n", auto_dly_off);
+		snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.delay.shutdown", num);
+		dstate_setinfo(outlet_name, "%d", auto_dly_off);
+
+		auto_dly_on = get_word(answer+iIndex);
+		iIndex += 2;
+		upsdebugx(2, "Auto delay on: %d\n", auto_dly_on);
+		snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.delay.start", num);
+		dstate_setinfo(outlet_name, "%d", auto_dly_on);
+	}	
+
+	return num_outlet;
+
+}
+
 void upsdrv_initinfo(void)
 {
 	unsigned char answer[256];
 	char *pTmp, sValue[17];
+	char outlet_name[27];
 	int iRating = 0, iIndex = 0, res, len;
 	int voltage = 0, ncpu = 0, buf;
+	int conf_block_len = 0, alarm_block_len = 0, cmd_list_len = 0;
 
 	/* Set driver version info */
 	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
@@ -828,7 +879,7 @@ void upsdrv_initinfo(void)
 		bcmxcp_status.shutdowndelay = atoi(getval("shutdown_delay"));
 	else
 		bcmxcp_status.shutdowndelay = 120;
-
+		
 	/* Get information on UPS from UPS */
 	res = command_read_sequence(PW_ID_BLOCK_REQ, answer);
 	if (res <= 0)
@@ -897,13 +948,9 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("ups.model", pTmp);
 	free(pTmp);
 
-	/* Display startup banner */
-	printf("Model = %s\n", dstate_getinfo("ups.model"));
-	printf("Firmware = %s\n", dstate_getinfo("ups.firmware"));
-	upslogx(LOG_INFO,"Shutdown delay =  %d seconds", bcmxcp_status.shutdowndelay);
-	
 	/* Get meter map info from ups, and init our map */
 	len = answer[iIndex++];
+	upsdebugx(2, "Length of meter map: %d\n", len); 
 	init_ups_meter_map(answer+iIndex, len);
 	iIndex += len;
 
@@ -913,13 +960,63 @@ void upsdrv_initinfo(void)
 	init_ups_alarm_map(answer+iIndex, len);
 	iIndex += len;
 
+	/* Then the Config_block_length */
+	conf_block_len = get_word(answer+iIndex);
+	upsdebugx(2, "Lengt of Config_block: %d\n", conf_block_len);
+	iIndex += 2;
+
+	/* Next is statistics map */
+	len = answer[iIndex++];
+	upsdebugx(2, "Length of statistics map: %d\n", len); 
+	/* init_statistics_map(answer+iIndex, len); */
+	iIndex += len;
+
+	/* Size of the alarm history log */
+	iIndex += 2;
+
+	/* Size of custom event log */
+	iIndex += 2;
+
+	/* Size of topology block */
+	iIndex += 2;
+
+	/* Maximum supported command length */
+	iIndex += 1;
+
+	/* Size of command list block */
+	cmd_list_len = get_word(answer+iIndex);
+	upsdebugx(2, "Lengt of command list: %d\n", cmd_list_len);
+	iIndex += 2;
+
+	/* Size of outlet monitoring block */
+	outlet_block_len = get_word(answer+iIndex);
+	upsdebugx(2, "Lengt of outlet_block: %d\n", outlet_block_len);
+	iIndex += 2;
+
+	/* Size of the alarm block */
+	alarm_block_len = get_word(answer+iIndex);
+	upsdebugx(2, "Lengt of alarm_block: %d\n", alarm_block_len);
+	/* End of config block request */
+
+	/* Due to a bug in PW5115 firmware, we need to use blocklength > 8.
+	The protocol state that outlet block is only implemented if ther is
+	at least 2 outlet block. 5115 has only one outlet, but has outlet block. */ 
+	if (outlet_block_len > 8) {
+		len = init_outlet(outlet_block_len);
+
+		for(res = 1 ; res <= len ; res++) {
+			snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.shutdown.return", res);
+			dstate_addcmd(outlet_name);
+		}
+	}
+
 	/* Get information on UPS configuration */
 	res = command_read_sequence(PW_CONFIG_BLOC_REQ, answer);
 	if (res <= 0)
 		fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
 
 	/* Get validation mask for status bitmap */
-	bcmxcp_status.topology_mask = answer[BCMXCP_CONFIG_BLOCK_HW_MODULES_INSTALLED_BYTE4];
+	bcmxcp_status.topology_mask = answer[BCMXCP_CONFIG_BLOCK_HW_MODULES_INSTALLED_BYTE3];
 
 	/* Nominal output voltage of ups */
 	voltage = get_word((answer + BCMXCP_CONFIG_BLOCK_NOMINAL_OUTPUT_VOLTAGE));
@@ -957,10 +1054,10 @@ void upsdrv_initinfo(void)
 	/* Add instant commands */
 	dstate_addcmd("shutdown.return");
 	dstate_addcmd("shutdown.stayoff");
-	dstate_addcmd("outlet.1.shutdown.return"); /* ojw0000 */
-	dstate_addcmd("outlet.2.shutdown.return"); /* ojw0000 */
 	dstate_addcmd("test.battery.start");
+
 	upsh.instcmd = instcmd;
+
 	return;
 }
 
@@ -1021,6 +1118,13 @@ void upsdrv_updateinfo(void)
 		if (max_output > 0.0)
 			fValue = 100 * (output / max_output);
 		dstate_setinfo("ups.load", "%5.1f", fValue);
+	}
+
+	/* Due to a bug in PW5115 firmware, we need to use blocklength > 8.
+	The protocol state that outlet block is only implemented if ther is
+	at least 2 outlet block. 5115 has only one outlet, but has outlet block. */ 
+	if (outlet_block_len > 8) {
+		init_outlet(outlet_block_len);
 	}
 
 	/* Get alarm info from UPS */
@@ -1201,7 +1305,8 @@ static int instcmd(const char *cmdname, const char *extra)
 	/* ojw0000 outlet power cycle for PW5125 and perhaps others */
 	if (!strcasecmp(cmdname, "outlet.1.shutdown.return")
 		|| !strcasecmp(cmdname, "outlet.2.shutdown.return")
-	) {
+		|| !strcasecmp(cmdname, "outlet.3.shutdown.return")
+	    ) {
 		send_write_command(AUTHOR, 4);
 
 		sleep(1);	/* Need to. Have to wait at least 0,25 sec max 16 sec */

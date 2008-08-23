@@ -1,3 +1,9 @@
+Sat Aug 23 19:48:20 UTC 2008 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+
+  - drivers/bcmxcp.[ch]: Added info from loadsegment. Also changed so the
+    instantcommand for outlet switching is only visible if you have it.
+    Changed revision for the driver to 0.14.
+
 Thu Aug 21 19:37:40 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - common/Makefile.am: restore revision number for development builds
