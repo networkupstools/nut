@@ -1,3 +1,7 @@
+Sat Sep 6 09:52:20 UTC 2008 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+
+  - drivers/bcmxcp.c: Changed some comments and TODO list.
+
 Sat Aug 23 20:11:10 UTC 2008 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
   - drivers/bcmxcp.c: Set the right version number that should be 0.15.

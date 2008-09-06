@@ -37,18 +37,6 @@ TODO List:
 
 	Extend the parsing of the Standard ID Block, to read:
 
-		Size of outlet monitoring block: (High priority)
-		To check if a outlet block is present.
-		Parse the outlet block to get the info about the
-		number of outlets and load segment state
-		(On, Off, On pending Off, Off pending On, Failed and closed, Failed and Open)
-		And the timers (Auto off delay, Auto on delay)
-		If this exist it is possible to use the
-		'Set outlet parameter command (0x97)' to alter the delay
-		settings or turn the outlet on or off with a delay (0 - 32767 seconds)
-		Also enable the outlet on off or shutdown-return commands in the driver.
-		(Check 'Communication Port List Block' down the list for more info)
-
 		Config Block Length: (High priority)
 		Give information if config block is
 		present, and how long it is, if it exist.
@@ -112,6 +100,9 @@ TODO List:
 			8 = Communicating with an Outlet Controller
 		Number of outlets. (Number of Outlets "assigned to" (controlled by) this Comm Port)
 		Outlet number. (Each assigned Outlet is listed (1-64))
+
+		'Set outlet parameter command (0x97)' to alter the delay
+		settings or turn the outlet on or off with a delay (0 - 32767 seconds)
 
 
 	Rewrite some parts of the driver, to minimise code duplication. (Like the inst commands) 
@@ -880,7 +871,7 @@ void upsdrv_initinfo(void)
 	else
 		bcmxcp_status.shutdowndelay = 120;
 		
-	/* Get information on UPS from UPS */
+	/* Get information on UPS from UPS ID block */
 	res = command_read_sequence(PW_ID_BLOCK_REQ, answer);
 	if (res <= 0)
 		fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
@@ -996,7 +987,7 @@ void upsdrv_initinfo(void)
 	/* Size of the alarm block */
 	alarm_block_len = get_word(answer+iIndex);
 	upsdebugx(2, "Lengt of alarm_block: %d\n", alarm_block_len);
-	/* End of config block request */
+	/* End of UPS ID block request */
 
 	/* Due to a bug in PW5115 firmware, we need to use blocklength > 8.
 	The protocol state that outlet block is only implemented if ther is
