@@ -123,6 +123,17 @@ static void storeval(const char *var, char *val)
 {
 	vartab_t	*tmp, *last;
 
+	if (!strncasecmp(var, "override.", 9)) {
+		dstate_setinfo(var+9, val);
+		dstate_setflags(var+9, ST_FLAG_IMMUTABLE);
+		return;
+	}
+
+	if (!strncasecmp(var, "default.", 8)) {
+		dstate_setinfo(var+8, val);
+		return;
+	}
+
 	tmp = last = vartab_h;
 
 	while (tmp) {

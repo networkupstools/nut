@@ -9,6 +9,7 @@
 /* state tree flags */
 #define ST_FLAG_RW      0x0001
 #define ST_FLAG_STRING  0x0002
+#define ST_FLAG_IMMUTABLE	0x0004
 
 /* list of possible ENUM values */
 struct enum_t {

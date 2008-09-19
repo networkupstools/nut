@@ -159,6 +159,11 @@ int state_setinfo(struct st_tree_t **nptr, const char *var, const char *val)
 			return 0;	/* no change */
 		}
 
+		/* changes should be ignorded */
+		if (node->flags & ST_FLAG_IMMUTABLE) {
+			return 0;	/* no change */
+		}
+
 		/* expand the buffer if the value grows */
 		if (node->rawsize < (strlen(val) + 1)) {
 			node->rawsize = strlen(val) + 1;
