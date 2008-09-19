@@ -477,6 +477,26 @@ static char *mge_sensitivity_info(const char *val)
 	return NULL;
 }
 
+static char *mge_test_result_info(const char *val)
+{
+	switch (atoi(val))
+	{
+	case 1:
+		return "done and passed";
+	case 2:
+		return "done and warning";
+	case 3:
+		return "done and error";
+	case 4:
+		return "aborted";
+	case 5:
+		return "in progress";
+	case 6:
+		return "no test initiated";
+	}
+	return NULL;
+}
+
 #define ST_FLAG_RW	0
 
 static xml_info_t mge_xml2nut[] = {
@@ -542,7 +562,7 @@ static xml_info_t mge_xml2nut[] = {
 	{ "ups.timer.start", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", 0, 0, NULL},
 	{ "ups.timer.shutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", 0, 0, NULL },
 	{ "ups.timer.reboot", 0, 0, "UPS.PowerSummary.DelayBeforeReboot", 0, 0, NULL},
-	{ "ups.test.result", 0, 0, "UPS.BatterySystem.Battery.Test", 0, 0, NULL }, /* test_read_info */
+	{ "ups.test.result", 0, 0, "UPS.BatterySystem.Battery.Test", 0, 0, mge_test_result_info },
 	{ "ups.test.interval", ST_FLAG_RW, 8, "UPS.BatterySystem.Battery.TestPeriod", 0, 0, NULL },
 	{ "ups.beeper.status", 0 ,0, "UPS.BatterySystem.Battery.AudibleAlarmControl", 0, 0, mge_beeper_info },
 	{ "ups.beeper.status", 0 ,0, "UPS.PowerSummary.AudibleAlarmControl", 0, 0, mge_beeper_info },

@@ -1,3 +1,7 @@
+Fri Sep 19 11:50:35 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/mge-xml.c: Change from numerical to text message in test result.
+
 Sat Sep 6 09:52:20 UTC 2008 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
   - drivers/bcmxcp.c: Changed some comments and TODO list.
