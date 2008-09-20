@@ -1,3 +1,7 @@
+Sat Sep 20 18:04:50 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/apc-hid.c: Fix typo.
+
 Sat Sep 20 09:29:05 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/apc-hid.c: Add enviromental sensor

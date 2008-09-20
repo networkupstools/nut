@@ -224,7 +224,7 @@ static hid_info_t apc_hid2nut[] = {
   { "output.voltage.nominal", 0, 0, "UPS.Output.ConfigVoltage", NULL, "%.1f", 0, NULL },
 
   /* Environmental page */
-  { "ambient.temperature", 0, 0, "UPS.APCEnvironment.APCProbe1.Temperature", NULL, "%.1f", 0, kelvin_celsius_conversion },
+  { "ambient.temperature", 0, 0, "UPS.APCEnvironment.APCProbe1.Temperature", NULL, "%s", 0, kelvin_celsius_conversion },
   { "ambient.humidity", 0, 0, "UPS.APCEnvironment.APCProbe1.Humidity", NULL, "%.1f", 0, NULL },
 /*
   { "ambient.temperature", 0, 0, "UPS.APCEnvironment.APCProbe2.Temperature", NULL, "%.1f", 0, kelvin_celsius_conversion },
