@@ -71,5 +71,8 @@ SYSFS{idVendor}=="050d", SYSFS{idProduct}=="1100", MODE="664", GROUP="@RUN_AS_GR
 # Kebo - unsupported
 SYSFS{idVendor}=="0925", SYSFS{idProduct}=="1234", MODE="664", GROUP="@RUN_AS_GROUP@"
 
+# Hewlett Packard
+SYSFS{idVendor}=="03f0", SYSFS{idProduct}=="1f0a", MODE="664", GROUP="@RUN_AS_GROUP@"
+
 LABEL="nut-usbups_rules_end"
 

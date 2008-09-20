@@ -241,6 +241,16 @@
         </match>
       </match>
 
+      <!-- Hewlett Packard -->
+      <match key="usb_device.vendor_id" int="0x03f0">
+        <match key="usb_device.product_id" int="0x1f0a">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
+      </match>
+
     </match>
   </device>
 </deviceinfo>

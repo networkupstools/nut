@@ -1,3 +1,8 @@
+Sat Sep 20 19:41:07 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - data/driver.list, scripts/{hal/hotplug/udev}: Add support for
+   Hewlett Packard R/T 2200 UPS.
+
 Sat Sep 20 19:03:06 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/{Makefile.am,hp-hid.c,usbhid-ups.c}:

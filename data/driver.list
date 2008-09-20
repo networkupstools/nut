@@ -182,6 +182,7 @@
 
 "HP"		"R3000 XR"	""	"bcmxcp"
 "HP"		"R5500 XR"	""	"bcmxcp"
+"HP"		"R/T 2200 G2"	""	"usbhid-ups"
 
 "INELT"		"Monolith 1000LT"	""	"megatec"
 
