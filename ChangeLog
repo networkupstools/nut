@@ -1,3 +1,7 @@
+Sun Sep 21 07:52:27 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/hp-hid.c: Fix typo.
+
 Sat Sep 20 19:41:07 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - data/driver.list, scripts/{hal/hotplug/udev}: Add support for

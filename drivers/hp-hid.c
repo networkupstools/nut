@@ -142,7 +142,7 @@ static hid_info_t hp_hid2nut[] = {
 
   { "output.frequency.nominal", 0, 0, "UPS.Flow.ConfigFrequency", NULL, "%.0f", HU_FLAG_STATIC, NULL },
   { "output.frequency", 0, 0, "UPS.PowerConverter.Output.Frequency", NULL, "%.0f", 0, NULL },
-  { "output.voltage.nominal", ST_FLAG_RW | ST_FLAG_STRING, "UPS.Flow.ConfigVoltage", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+  { "output.voltage.nominal", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.Flow.ConfigVoltage", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
   { "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", NULL, "%.0f", 0, NULL },
 
   /* instant commands. */
