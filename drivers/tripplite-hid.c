@@ -30,9 +30,10 @@
 #include "extstate.h" /* for ST_FLAG_STRING */
 #include "common.h"
 
-#define TRIPPLITE_HID_VERSION "TrippLite HID 0.2 (experimental)"
+#define TRIPPLITE_HID_VERSION "TrippLite HID 0.3 (experimental)"
 
 #define TRIPPLITE_VENDORID 0x09ae 
+#define HP_VENDORID 0x03f0
 
 /* For some devices, the reported battery voltage is off by
  * factor of 10 (due to an error in the report descriptor),
@@ -123,16 +124,44 @@ static hid_info_t tripplite_hid2nut[] = {
 #ifdef USBHID_UPS_TRIPPLITE_DEBUG
 
 	/* unmapped variables - meaning unknown */
-	{ "UPS.ffff0010.[1].ffff007d", 0, 0, "UPS.ffff0010.[1].ffff007d", NULL, "%.0f", 0, NULL },
-	{ "UPS.ffff0015.[1].ffff00c0", 0, 0, "UPS.ffff0015.[1].ffff00c0", NULL, "%.0f", 0, NULL },
-	{ "UPS.ffff0015.[1].ffff00c1", 0, 0, "UPS.ffff0015.[1].ffff00c1", NULL, "%.0f", 0, NULL },
-	{ "UPS.ffff0015.[1].ffff00c2", 0, 0, "UPS.ffff0015.[1].ffff00c2", NULL, "%.0f", 0, NULL },
-	{ "UPS.ffff0015.[1].ffff00c3", 0, 0, "UPS.ffff0015.[1].ffff00c3", NULL, "%.0f", 0, NULL },
-	{ "UPS.ffff0015.[1].ffff00c4", 0, 0, "UPS.ffff0015.[1].ffff00c4", NULL, "%.0f", 0, NULL },
-	{ "UPS.ffff0015.[1].ffff00c5", 0, 0, "UPS.ffff0015.[1].ffff00c5", NULL, "%.0f", 0, NULL },
-	{ "UPS.ffff0015.[1].ffff00d2", 0, 0, "UPS.ffff0015.[1].ffff00d2", NULL, "%.0f", 0, NULL },
-	{ "UPS.OutletSystem.Outlet.ffff0091", 0, 0, "UPS.OutletSystem.Outlet.ffff0091", NULL, "%.0f", 0, NULL },
-	{ "UPS.OutletSystem.Outlet.ffff00c7", 0, 0, "UPS.OutletSystem.Outlet.ffff00c7", NULL, "%.0f", 0, NULL },
+	{ "UPS.Flow.0xffff0097", 0, 0, "UPS.Flow.0xffff0097", NULL, "%.0f", 0, NULL },
+	{ "UPS.0xffff0010.[1].0xffff0075", 0, 0, "UPS.0xffff0010.[1].0xffff0075", NULL, "%.0f", 0, NULL },
+	{ "UPS.0xffff0010.[1].0xffff0076", 0, 0, "UPS.0xffff0010.[1].0xffff0076", NULL, "%.0f", 0, NULL },
+	{ "UPS.0xffff0010.[1].0xffff007c", 0, 0, "UPS.0xffff0010.[1].0xffff007c", NULL, "%.0f", 0, NULL },
+	{ "UPS.0xffff0010.[1].0xffff007d", 0, 0, "UPS.0xffff0010.[1].0xffff007d", NULL, "%.0f", 0, NULL },
+	{ "UPS.0xffff0010.[1].0xffff00e0", 0, 0, "UPS.0xffff0010.[1].0xffff00e0", NULL, "%.0f", 0, NULL },
+	{ "UPS.0xffff0010.[1].0xffff00e1", 0, 0, "UPS.0xffff0010.[1].0xffff00e1", NULL, "%.0f", 0, NULL },
+	{ "UPS.0xffff0010.[1].0xffff00e2", 0, 0, "UPS.0xffff0010.[1].0xffff00e2", NULL, "%.0f", 0, NULL },
+	{ "UPS.0xffff0010.[1].0xffff00e3", 0, 0, "UPS.0xffff0010.[1].0xffff00e3", NULL, "%.0f", 0, NULL },
+	{ "UPS.0xffff0010.[1].0xffff00e4", 0, 0, "UPS.0xffff0010.[1].0xffff00e4", NULL, "%.0f", 0, NULL },
+	{ "UPS.0xffff0010.[1].0xffff00e5", 0, 0, "UPS.0xffff0010.[1].0xffff00e5", NULL, "%.0f", 0, NULL },
+	{ "UPS.0xffff0010.[1].0xffff00e6", 0, 0, "UPS.0xffff0010.[1].0xffff00e6", NULL, "%.0f", 0, NULL },
+	{ "UPS.0xffff0010.[1].0xffff00e7", 0, 0, "UPS.0xffff0010.[1].0xffff00e7", NULL, "%.0f", 0, NULL },
+	{ "UPS.0xffff0010.[1].0xffff00e8", 0, 0, "UPS.0xffff0010.[1].0xffff00e8", NULL, "%.0f", 0, NULL },
+	{ "UPS.0xffff0015.[1].0xffff00c0", 0, 0, "UPS.0xffff0015.[1].0xffff00c0", NULL, "%.0f", 0, NULL },
+	{ "UPS.0xffff0015.[1].0xffff00c1", 0, 0, "UPS.0xffff0015.[1].0xffff00c1", NULL, "%.0f", 0, NULL },
+	{ "UPS.0xffff0015.[1].0xffff00c2", 0, 0, "UPS.0xffff0015.[1].0xffff00c2", NULL, "%.0f", 0, NULL },
+	{ "UPS.0xffff0015.[1].0xffff00c3", 0, 0, "UPS.0xffff0015.[1].0xffff00c3", NULL, "%.0f", 0, NULL },
+	{ "UPS.0xffff0015.[1].0xffff00c4", 0, 0, "UPS.0xffff0015.[1].0xffff00c4", NULL, "%.0f", 0, NULL },
+	{ "UPS.0xffff0015.[1].0xffff00c5", 0, 0, "UPS.0xffff0015.[1].0xffff00c5", NULL, "%.0f", 0, NULL },
+	{ "UPS.0xffff0015.[1].0xffff00d2", 0, 0, "UPS.0xffff0015.[1].0xffff00d2", NULL, "%.0f", 0, NULL },
+	{ "UPS.0xffff0015.[1].0xffff00d3", 0, 0, "UPS.0xffff0015.[1].0xffff00d3", NULL, "%.0f", 0, NULL },
+	{ "UPS.0xffff0015.[1].0xffff00d6", 0, 0, "UPS.0xffff0015.[1].0xffff00d6", NULL, "%.0f", 0, NULL },
+	{ "UPS.OutletSystem.Outlet.0xffff0056", 0, 0, "UPS.OutletSystem.Outlet.0xffff0056", NULL, "%.0f", 0, NULL },
+	{ "UPS.OutletSystem.Outlet.0xffff0081", 0, 0, "UPS.OutletSystem.Outlet.0xffff0081", NULL, "%.0f", 0, NULL },
+	{ "UPS.OutletSystem.Outlet.0xffff0091", 0, 0, "UPS.OutletSystem.Outlet.0xffff0091", NULL, "%.0f", 0, NULL },
+	{ "UPS.OutletSystem.Outlet.0xffff0093", 0, 0, "UPS.OutletSystem.Outlet.0xffff0093", NULL, "%.0f", 0, NULL },
+	{ "UPS.OutletSystem.Outlet.0xffff0095", 0, 0, "UPS.OutletSystem.Outlet.0xffff0095", NULL, "%.0f", 0, NULL },
+	{ "UPS.OutletSystem.Outlet.0xffff0096", 0, 0, "UPS.OutletSystem.Outlet.0xffff0096", NULL, "%.0f", 0, NULL },
+	{ "UPS.OutletSystem.Outlet.0xffff0098", 0, 0, "UPS.OutletSystem.Outlet.0xffff0098", NULL, "%.0f", 0, NULL },
+	{ "UPS.OutletSystem.Outlet.0xffff00a2", 0, 0, "UPS.OutletSystem.Outlet.0xffff00a2", NULL, "%.0f", 0, NULL },
+	{ "UPS.OutletSystem.Outlet.0xffff00a4", 0, 0, "UPS.OutletSystem.Outlet.0xffff00a4", NULL, "%.0f", 0, NULL },
+	{ "UPS.OutletSystem.Outlet.0xffff00a7", 0, 0, "UPS.OutletSystem.Outlet.0xffff00a7", NULL, "%.0f", 0, NULL },
+	{ "UPS.OutletSystem.Outlet.0xffff00a9", 0, 0, "UPS.OutletSystem.Outlet.0xffff00a9", NULL, "%.0f", 0, NULL },
+	{ "UPS.OutletSystem.Outlet.0xffff00aa", 0, 0, "UPS.OutletSystem.Outlet.0xffff00aa", NULL, "%.0f", 0, NULL },
+	{ "UPS.OutletSystem.Outlet.0xffff00ab", 0, 0, "UPS.OutletSystem.Outlet.0xffff00ab", NULL, "%.0f", 0, NULL },
+	{ "UPS.OutletSystem.Outlet.0xffff00ac", 0, 0, "UPS.OutletSystem.Outlet.0xffff00ac", NULL, "%.0f", 0, NULL },
+	{ "UPS.PowerSummary.iOEMInformation", 0, 0, "UPS.PowerSummary.iOEMInformation", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
 
 #endif /* USBHID_UPS_TRIPPLITE_DEBUG */
 
@@ -260,42 +289,64 @@ static char *tripplite_format_serial(HIDDevice_t *hd) {
 /* this function allows the subdriver to "claim" a device: return 1 if
  * the device is supported by this subdriver, else 0. */
 static int tripplite_claim(HIDDevice_t *hd) {
-	if (hd->VendorID != TRIPPLITE_VENDORID) {
-		return 0;
-	}
-
-	/* accept any known UPS - add devices here as needed.
-	   Remember: also update scripts/udev/nutusb-ups.rules.in
-	   and scripts/hotplug/libhid.usermap */
-	switch (hd->ProductID)
+	switch (hd->VendorID)
 	{
-	case 0x1003:  /* e.g. AVR550U */
-	case 0x2005:  /* e.g. OMNI1000LCD */
-	case 0x2007:  /* e.g. OMNI900LCD */
-		battery_scale = 0.1;
-		return 1;
+	case TRIPPLITE_VENDORID:
 
-	case 0x3012:  /* e.g. smart2200RMXL2U */
-	case 0x4002:  /* e.g. SmartOnline SU6000RT4U? */
-	case 0x4003:  /* e.g. SmartOnline SU1500RTXL2ua */
-		battery_scale = 1.0;
-		return 1;
-
-	/* reject known non-HID devices */
-	/* not all Tripp Lite products are HID, some are "serial over USB". */
-	case 0x0001:  /* e.g. SMART550USB, SMART3000RM2U */
-		upsdebugx(0,
-"This Tripp Lite device (%04x/%04x) is not supported by usbhid-ups.\n"
-"Please use the tripplite_usb driver instead.\n",
-					 hd->VendorID, hd->ProductID);
-		return 0;
-
-	/* by default, reject, unless the productid option is given */
-	default:
-		if (getval("productid")) {
+		/* accept any known UPS - add devices here as needed.
+		   Remember: also update scripts/udev/nutusb-ups.rules.in
+		   and scripts/hotplug/libhid.usermap */
+		switch (hd->ProductID)
+		{
+		case 0x1003:  /* e.g. AVR550U */
+		case 0x2005:  /* e.g. OMNI1000LCD */
+		case 0x2007:  /* e.g. OMNI900LCD */
+			battery_scale = 0.1;
 			return 1;
+	
+		case 0x3012:  /* e.g. smart2200RMXL2U */
+		case 0x4002:  /* e.g. SmartOnline SU6000RT4U? */
+		case 0x4003:  /* e.g. SmartOnline SU1500RTXL2ua */
+			battery_scale = 1.0;
+			return 1;
+
+		/* reject known non-HID devices */
+		/* not all Tripp Lite products are HID, some are "serial over USB". */
+		case 0x0001:  /* e.g. SMART550USB, SMART3000RM2U */
+			upsdebugx(0,
+	"This Tripp Lite device (%04x/%04x) is not supported by usbhid-ups.\n"
+	"Please use the tripplite_usb driver instead.\n",
+					 hd->VendorID, hd->ProductID);
+			return 0;
+
+		/* by default, reject, unless the productid option is given */
+		default:
+			if (getval("productid")) {
+				return 1;
+			}
+			possibly_supported("Tripp Lite", hd);
+			return 0;
 		}
-		possibly_supported("Tripp Lite", hd);
+
+	case HP_VENDORID:
+		switch(hd->ProductID)
+		{
+		case 0x1f0a:	/* HP R/T 2200 INTL (like SMART2200RMXL2U) */
+			battery_scale = 1.0;
+			return 1;
+
+		case 0x1027:	/* Virtual keyboard (not a UPS) */
+			return 0;
+
+		default:
+			if (getval("productid")) {
+				return 1;
+			}
+			possibly_supported("Hewlett Packard", hd);
+			return 0;
+		}
+
+	default:
 		return 0;
 	}
 }
