@@ -323,10 +323,6 @@ static hid_info_t belkin_hid2nut[] = {
   { "BOOL", 0, 0, "UPS.BELKINStatus.BELKINBatteryStatus", NULL, NULL, 0, belkin_replacebatt_conversion },
   { "BOOL", 0, 0, "UPS.BELKINStatus.BELKINBatteryStatus", NULL, NULL, HU_FLAG_QUICK_POLL, belkin_lowbatt_conversion },
 
-  /* Server side variables */
-  { "driver.version.internal", ST_FLAG_STRING, sizeof(DRIVER_VERSION), NULL, NULL, DRIVER_VERSION, HU_FLAG_ABSENT, NULL },
-  { "driver.version.data", ST_FLAG_STRING, sizeof(BELKIN_HID_VERSION), NULL, NULL, BELKIN_HID_VERSION, HU_FLAG_ABSENT, NULL },
-  
   /* instant commands. */
   /* split into subsets while waiting for extradata support
    * ie: test.battery.start quick

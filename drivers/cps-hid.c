@@ -53,10 +53,6 @@ static usage_tables_t cps_utab[] = {
 /* --------------------------------------------------------------- */
 
 static hid_info_t cps_hid2nut[] = {
-  /* Server side variables */
-  { "driver.version.internal", ST_FLAG_STRING, sizeof(DRIVER_VERSION), NULL, NULL, DRIVER_VERSION, HU_FLAG_ABSENT, NULL },
-  { "driver.version.data", ST_FLAG_STRING, sizeof(CPS_HID_VERSION), NULL, NULL, CPS_HID_VERSION, HU_FLAG_ABSENT, NULL },
-
   /* { "unmapped.ups.powersummary.rechargeable", 0, 0, "UPS.PowerSummary.Rechargeable", NULL, "%.0f", 0, NULL }, */
   /* { "unmapped.ups.powersummary.capacitymode", 0, 0, "UPS.PowerSummary.CapacityMode", NULL, "%.0f", 0, NULL }, */
   /* { "unmapped.ups.powersummary.designcapacity", 0, 0, "UPS.PowerSummary.DesignCapacity", NULL, "%.0f", 0, NULL }, */

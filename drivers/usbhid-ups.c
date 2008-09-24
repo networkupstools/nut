@@ -23,6 +23,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#define DRIVER_VERSION		"0.34"
+
 #include "main.h"
 #include "libhid.h"
 #include "usbhid-ups.h"
@@ -668,6 +670,12 @@ void upsdrv_shutdown(void)
 		return;
 	}
 
+	/* If the above doesn't work, try load.off.delay */
+	if (instcmd("load.off.delay", NULL) == STAT_INSTCMD_HANDLED) {
+		/* Shutdown successful */
+		return;
+	}
+
 	fatalx(EXIT_FAILURE, "Shutdown failed!");
 }
 
@@ -828,21 +836,15 @@ void upsdrv_initinfo(void)
 
 	upsdebugx(1, "upsdrv_initinfo...");
 
+	dstate_setinfo("driver.version.data", subdriver->name);
+	dstate_setinfo("driver.version.internal", DRIVER_VERSION);
+
 	/* init polling frequency */
-	val = getval(HU_VAR_POLLFREQ);
-	if (val)
+	if (val = getval(HU_VAR_POLLFREQ)) {
 		pollfreq = atoi(val);
+	}
 
 	dstate_setinfo("driver.parameter.pollfreq", "%d", pollfreq);
-
-	if (dstate_getinfo("ups.delay.shutdown") && dstate_getinfo("ups.delay.start")) {
-		/* Add defaults with a delay value of '0' (= immediate) */
-		dstate_addcmd("load.off");
-		dstate_addcmd("load.on");
-		/* Add composite instcmds (require setting multiple HID values) */
-		dstate_addcmd("shutdown.return");
-		dstate_addcmd("shutdown.stayoff");
-	}
 
 	time(&lastpoll);
 
@@ -930,14 +932,32 @@ void upsdrv_initups(void)
 		fatalx(EXIT_FAILURE, "Can't initialize data from HID UPS");
 	}
 
-	/* Retrieve user defined delay settings */
-	if (dstate_getinfo("ups.delay.start") && (val = getval(HU_VAR_ONDELAY))) {
-		dstate_setinfo("ups.delay.start", val);
+	if (dstate_getinfo("ups.delay.start")) {
+		/* Retrieve user defined delay settings */
+		if (val = getval(HU_VAR_ONDELAY)) {
+			dstate_setinfo("ups.delay.start", val);
+		}
+
+	        /* Adds default with a delay value of '0' (= immediate) */
+	        dstate_addcmd("load.on");
 	}
 
-	if (dstate_getinfo("ups.delay.shutdown") && (val = getval(HU_VAR_OFFDELAY))) {
-		dstate_setinfo("ups.delay.start", val);
+	if (dstate_getinfo("ups.delay.shutdown")) {
+		/* Retrieve user defined delay settings */
+		if (val = getval(HU_VAR_OFFDELAY)) {
+			dstate_setinfo("ups.delay.start", val);
+		}
+
+	        /* Adds default with a delay value of '0' (= immediate) */
+	        dstate_addcmd("load.off");
 	}
+
+	if (dstate_getinfo("ups.delay.start") && dstate_getinfo("ups.delay.shutdown")) {
+	        /* Add composite instcmds (require setting multiple HID values) */
+	        dstate_addcmd("shutdown.return");
+	        dstate_addcmd("shutdown.stayoff");
+	}
+
 }
 
 void upsdrv_cleanup(void)
@@ -1239,6 +1259,11 @@ static bool_t hid_ups_walk(walkmode_t mode)
 			if (item->hiddata != NULL)
 				break;
 
+			/* Create the NUT-to-HID mapping */
+			item->hiddata = HIDGetItemData(item->hidpath, subdriver->utab);
+			if (item->hiddata == NULL)
+				continue;
+
 			/* Special case for handling server side variables */
 			if (item->hidflags & HU_FLAG_ABSENT) {
 
@@ -1255,11 +1280,6 @@ static bool_t hid_ups_walk(walkmode_t mode)
 
 				continue;
 			}
-
-			/* Create the NUT-to-HID mapping */
-			item->hiddata = HIDGetItemData(item->hidpath, subdriver->utab);
-			if (item->hiddata == NULL)
-				continue;
 
 			/* Allow duplicates for these NUT variables... */
 			if (!strncmp(item->info_type, "ups.alarm", 9)) {
@@ -1481,9 +1501,6 @@ static hid_info_t *find_nut_info(const char *varname)
 
 		if (hidups_item->hiddata != NULL)
 			return hidups_item;
-
-		if (hidups_item->hidflags & HU_FLAG_ABSENT)
-			return hidups_item;
 	}
 
 	upsdebugx(2, "find_nut_info: unknown info type: %s\n", varname);
@@ -1499,8 +1516,8 @@ static hid_info_t *find_hid_info(const HIDData_t *hiddata)
 	
 	for (hidups_item = subdriver->hid2nut; hidups_item->info_type != NULL ; hidups_item++) {
 
-		/* Skip NULL HID path (server side vars) */
-		if (hidups_item->hidpath == NULL)
+		/* Skip server side vars */
+		if (hidups_item->hidflags & HU_FLAG_ABSENT)
 			continue;
 	
 		if (hidups_item->hiddata == hiddata)

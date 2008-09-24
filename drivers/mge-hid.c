@@ -403,10 +403,6 @@ static models_name_t mge_model_names [] =
 
 static hid_info_t mge_hid2nut[] =
 {
-	/* Server side variables */
-	{ "driver.version.internal", 0, 0, NULL, NULL, DRIVER_VERSION, HU_FLAG_ABSENT, NULL },
-	{ "driver.version.data", 0, 0, NULL, NULL, MGE_HID_VERSION, HU_FLAG_ABSENT, NULL },
-
 	/* Battery page */
 	{ "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", 0, NULL },
 	{ "battery.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerSummary.RemainingCapacityLimitSetting", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },

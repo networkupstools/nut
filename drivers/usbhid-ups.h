@@ -33,8 +33,6 @@
 #include "config.h"
 #include "libhid.h"
 
-#define DRIVER_VERSION		"0.33"
-
 extern hid_dev_handle_t	udev;
 
 /* Driver's parameters */

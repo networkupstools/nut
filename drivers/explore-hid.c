@@ -41,12 +41,6 @@ static usage_tables_t explore_utab[] = {
 
 static hid_info_t explore_hid2nut[] =
 {
-  /* Server side variables */
-  { "driver.version.internal", ST_FLAG_STRING, 5, NULL, NULL,
-    DRIVER_VERSION, HU_FLAG_ABSENT, NULL },
-  { "driver.version.data", ST_FLAG_STRING, 11, NULL, NULL,
-    EXPLORE_HID_VERSION, HU_FLAG_ABSENT, NULL },
-
   /* end of structure. */
   { NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
 };

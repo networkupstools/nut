@@ -1,3 +1,14 @@
+Wed Sep 24 18:18:31 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/usbhid-ups.[ch]:
+   - Fix server side variables 'ups.delay.start' and 'ups.delay.shutdown'
+     so that they won't show if the underlying HID path needed to use
+     them is not available.
+   - The 'load.on' and 'load.off' commands only need 'ups.delay.start'
+     and 'ups.delay.shutdown' respectively (not both).
+   - Fallback to 'load.off.delay' if both 'shutdown.return' and
+     'shutdown.reboot' fail to shutdown the UPS.
+
 Mon Sep 22 18:01:50 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/tripplite-hid.c: Add support for HP R/T2200 G2 (which seems to

@@ -153,10 +153,6 @@ static usage_tables_t apc_utab[] = {
 
 /* HID2NUT lookup table */
 static hid_info_t apc_hid2nut[] = {
-  /* Server side variables */
-  { "driver.version.internal", ST_FLAG_STRING, sizeof(DRIVER_VERSION), NULL, NULL, DRIVER_VERSION, HU_FLAG_ABSENT, NULL },
-  { "driver.version.data", ST_FLAG_STRING, sizeof(APC_HID_VERSION), NULL, NULL, APC_HID_VERSION, HU_FLAG_ABSENT, NULL },
-  
   /* Battery page */
   { "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", 0, NULL },
   { "battery.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
