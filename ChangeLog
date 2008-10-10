@@ -1,3 +1,10 @@
+Fri Oct 10 20:43:32 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - data/driver.list, drivers/tripplite-hid.c, scripts/hal/ups-nut-device.fdi
+   scripts/hotplug/libhid.usermap, scripts/udev/nut-usbups.rules.in: add 
+   support for Tripp-Lite AVR750U (patch provided by Raphael Geissert)
+ - data/driver.list: add support for HP PowerTrust 2997A
+
 Fri Sep 26 00:24:26 UTC 2008 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
 
  - data/driver.list: added several UPS models.

@@ -295,6 +295,7 @@ static int tripplite_claim(HIDDevice_t *hd) {
 		switch (hd->ProductID)
 		{
 		case 0x1003:  /* e.g. AVR550U */
+		case 0x1007:  /* e.g. AVR750U */
 		case 0x2005:  /* e.g. OMNI1000LCD */
 		case 0x2007:  /* e.g. OMNI900LCD */
 			battery_scale = 0.1;

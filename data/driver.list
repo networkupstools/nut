@@ -182,6 +182,7 @@
 
 "Gemini"	"UPS625/UPS1000"	""	"safenet"
 
+"HP"		"PowerTrust 2997A"	"HP 5061-2575 cable"	"apcsmart"
 "HP"		"R3000 XR"	""	"bcmxcp"
 "HP"		"R5500 XR"	""	"bcmxcp"
 "HP"		"R/T 2200 G2"	""	"usbhid-ups"
@@ -540,6 +541,7 @@
 "Tripp-Lite"	"OMNI650LCD"    "USB"   "usbhid-ups"
 "Tripp-Lite"	"1500 LCD"	"USB"   "usbhid-ups"
 "Tripp-Lite"	"AVR550U"	"USB"   "usbhid-ups"
+"Tripp-Lite"	"AVR750U"	"USB"	"usbhid-ups"
 "Tripp-Lite"	"SmartOnline SU1500RTXL2ua"	"USB"	"usbhid-ups"
 "Tripp-Lite"	"smart2200RMXL2U"	"USB, newer models"	"usbhid-ups"
 
