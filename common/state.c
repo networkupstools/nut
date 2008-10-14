@@ -159,7 +159,7 @@ int state_setinfo(struct st_tree_t **nptr, const char *var, const char *val)
 			return 0;	/* no change */
 		}
 
-		/* changes should be ignorded */
+		/* changes should be ignored */
 		if (node->flags & ST_FLAG_IMMUTABLE) {
 			return 0;	/* no change */
 		}
