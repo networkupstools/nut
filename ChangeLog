@@ -1,3 +1,8 @@
+Tue Oct 14 14:00:00 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - driver.list: add the full Eaton range (addressing MGE Office Protection
+   Systems), and the Protection Station from MGE Office Protection Systems.
+
 Fri Oct 10 20:43:32 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  - data/driver.list, drivers/tripplite-hid.c, scripts/hal/ups-nut-device.fdi
