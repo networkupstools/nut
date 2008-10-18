@@ -127,6 +127,8 @@
 "Cyber Power Systems"	"Value 600E"		"USB"	"usbhid-ups"
 "Cyber Power Systems"	"Value 800E"		"USB"	"usbhid-ups"
 
+"Delta"	"GES602N"	""	"belkin"
+
 "Deltec"	"PowerRite Pro II"	""	"genericups upstype=15"
 
 "Dynamix"	"UPS1700D"		""	"megatec"

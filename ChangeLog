@@ -1,3 +1,7 @@
+Sat Oct 18 17:15:20 UTC 2008 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+
+  - data/driver.list: Add the Delta GES602N. Reported working by Jerome Benoit.
+
 Tue Oct 14 14:00:00 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - driver.list: add the full Eaton range (addressing MGE Office Protection
