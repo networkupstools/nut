@@ -302,6 +302,7 @@ static int tripplite_claim(HIDDevice_t *hd) {
 			return 1;
 	
 		case 0x3012:  /* e.g. smart2200RMXL2U */
+		case 0x3014:
 		case 0x4002:  /* e.g. SmartOnline SU6000RT4U? */
 		case 0x4003:  /* e.g. SmartOnline SU1500RTXL2ua */
 			battery_scale = 1.0;

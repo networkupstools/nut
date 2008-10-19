@@ -1,3 +1,9 @@
+Sun Oct 19 09:59:06 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/tripplite-hid.c, scripts/hal/ups-nut-device.fdi,
+   scripts/hotplug/libhid.usermap, scripts/udev/nut-usbups.rules.in: Add
+   an additional productid for Tripp-Lite SMART2200RXML2U.
+
 Sat Oct 18 17:15:20 UTC 2008 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
   - data/driver.list: Add the Delta GES602N. Reported working by Jerome Benoit.
