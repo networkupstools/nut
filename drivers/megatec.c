@@ -151,6 +151,9 @@ static char ignore_off = 0;  /* ignore FL_LOAD_OFF if it behaves strangely */
 static float battvolt_empty = -1;  /* unknown */
 static float battvolt_full = -1;   /* unknown */
 
+/* Battery voltage multiplier (to match the nominal voltage on some models) */
+static float battvolt_mult = 1;
+
 /* Minimum and maximum voltage seen on input */
 static float ivolt_min = INT_MAX;  /* unknown */
 static float ivolt_max = -1;       /* unknown */
@@ -559,6 +562,15 @@ void upsdrv_initinfo(void)
 		}
 	}
 
+	if (getval("battvoltmult")) {
+		upsdebugx(2, "Parameter [battvoltmult]: [%s]", getval("battvoltmult"));
+
+		/* Having SHRT_MAX as the upper-bound is an arbitrary choice... */
+		battvolt_mult = CLAMP(atof(getval("battvoltmult")), 1, SHRT_MAX);
+
+		upslogx(LOG_NOTICE, "The battery voltage reported by the UPS will be multiplied by %.1f.", battvolt_mult);
+	}
+
 	if (getval("battvolts")) {
 		upsdebugx(2, "Parameter [battvolts]: [%s]", getval("battvolts"));
 
@@ -652,7 +664,12 @@ void upsdrv_updateinfo(void)
 	dstate_setinfo("output.voltage", "%.1f", query.ovolt);
 	dstate_setinfo("ups.load", "%.1f", query.load);
 	dstate_setinfo("input.frequency", "%.1f", query.freq);
-	dstate_setinfo("battery.voltage", "%.2f", query.battvolt);
+	/*
+	 * The battery voltage multiplier should only be applied to battery.volage
+	 * in order not to break the charge calculation (that uses the 'raw' value
+	 * that is reported by the UPS)
+	 */
+	dstate_setinfo("battery.voltage", "%.2f", battvolt_mult * query.battvolt);
 
 	if (query.temp > 0.01) {
 		dstate_setinfo("ups.temperature", "%.1f", query.temp);
@@ -921,16 +938,17 @@ void upsdrv_help(void)
 
 void upsdrv_makevartable(void)
 {
-	addvar(VAR_VALUE, "mfr"      , "Manufacturer name");
-	addvar(VAR_VALUE, "model"    , "Model name");
-	addvar(VAR_VALUE, "serial"   , "UPS serial number");
-	addvar(VAR_VALUE, "lowbatt"  , "Low battery level (%)");
-	addvar(VAR_VALUE, "ondelay"  , "Minimum delay before UPS startup (minutes)");
-	addvar(VAR_VALUE, "offdelay" , "Delay before UPS shutdown (minutes)");
+	addvar(VAR_VALUE, "mfr", "Manufacturer name");
+	addvar(VAR_VALUE, "model", "Model name");
+	addvar(VAR_VALUE, "serial", "UPS serial number");
+	addvar(VAR_VALUE, "lowbatt", "Low battery level (%)");
+	addvar(VAR_VALUE, "ondelay", "Minimum delay before UPS startup (minutes)");
+	addvar(VAR_VALUE, "offdelay", "Delay before UPS shutdown (minutes)");
 	addvar(VAR_VALUE, "battvolts", "Battery voltages (empty:full)");
+	addvar(VAR_VALUE, "battvoltmult", "Battery voltage multiplier");
 	addvar(VAR_FLAG , "ignoreoff", "Ignore the OFF status reported by the UPS.");
-	addvar(VAR_VALUE, "dtr"      , "Serial DTR line state (0/1)");
-	addvar(VAR_VALUE, "rts"      , "Serial RTS line state (0/1)");
+	addvar(VAR_VALUE, "dtr", "Serial DTR line state (0/1)");
+	addvar(VAR_VALUE, "rts", "Serial RTS line state (0/1)");
 
 	megatec_subdrv_makevartable();
 }

@@ -60,6 +60,11 @@ isn't specified.
 
 Optional.  The battery voltage interval (see \fBKNOWN PROBLEMS\fR).
 
+.IP "battvoltmult=\fInum\fR"
+
+Optional.  Multiply the reported battery voltage by this number. Some devices
+report only a fraction of the total battery voltage. The default is 1.
+
 .IP "dtr=\fIint\fR"
 
 Optional.  Some UPS models need the DTR serial line set to a specific
@@ -124,7 +129,9 @@ incorrect, or non-existant, for some UPS models. In any case, you can always
 resort to finding the voltages at which the battery becomes fully discharged
 and fully charged, and specify them manually using the "battvolts" option.
 If you do this, please notify the author of this driver so that information
-can be added to the NUT hardware compatibility list.
+can be added to the NUT hardware compatibility list. Note that if you also
+specified the "battvoltmult" option, you need to divide the found voltages
+for fully discharged and fully charged by this number.
 
 Some UPS commands aren't supported by all models. In most cases, the driver
 will send a message to the system log when the user tries to execute an

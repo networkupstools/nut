@@ -1,3 +1,8 @@
+Mon Oct 20 11:31:14 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/megatec.c, man/megatec.8: Adds a "battvoltmult" parameter to the
+   megatec driver (based on a patch from Carlos Rodrigues)
+
 Sun Oct 19 09:59:06 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/tripplite-hid.c, scripts/hal/ups-nut-device.fdi,
