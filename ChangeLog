@@ -1,3 +1,7 @@
+Sun Nov  2 12:17:56 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/safenet.c: Improve debugging of the serial communication.
+
 Sun Nov  2 12:14:06 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - docs/new-drivers.txt, drivers/serial.[ch]: The return code of the

@@ -45,8 +45,10 @@
  *  20070304/Revision 1.3 - Arjen de Korte <arjen@de-korte.org>
  *   - in battery test mode (CAL state) stop the test when the
  *     the low battery state is reached
+ *  20070304/Revision 1.41 - Arjen de Korte <arjen@de-korte.org>
+ *   - allow more time for reading reply to command
  *
- * Copyright (C) 2003-2006  Arjen de Korte <arjen@de-korte.org>
+ * Copyright (C) 2003-2008  Arjen de Korte <arjen@de-korte.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -70,7 +72,7 @@
 #include "serial.h"
 #include "safenet.h"
 
-#define DRV_VERSION	"1.4"
+#define DRV_VERSION	"1.41"
 
 /*
  * Here we keep the last known status of the UPS
@@ -83,7 +85,7 @@ static union	{
 static int safenet_command(const char *command)
 {
 	char	reply[32];
-	int	i;
+	int	i, ret;
 
 	/*
 	 * Get rid of whatever is in the in- and output buffers.
@@ -94,29 +96,55 @@ static int safenet_command(const char *command)
 	 * Send the command and read back the status line. When we just send
 	 * a status polling command, it will return the actual status.
 	 */
-	ser_send_pace(upsfd, 10000, command);
-	upsdebugx(3, "UPS command %s", command);
+	ret = ser_send_pace(upsfd, 25000, command);
+
+	if (ret < 0) {
+		upsdebug_with_errno(3, "send");
+		return -1;
+	}
+
+	if (ret == 0) {
+		upsdebug_with_errno(3, "send: timeout");
+		return -1;
+	}
+
+	upsdebug_hex(3, "send", command, strlen(command));
+
+	usleep(250000);
 
 	/*
 	 * Read the reply from the UPS. Allow twice the time needed to read 12
 	 * bytes (120 bits (including start & stop bits) / 1200 baud = 100ms).
 	 */
-	ser_get_line(upsfd, reply, sizeof(reply), '\r', "", 0, 200000);
-	upsdebugx(3, "UPS answers %s", (strlen(reply)>0) ? reply : "[INVALID]");
+	ret = ser_get_line(upsfd, reply, sizeof(reply), '\r', "", 0, 250000);
 
+	if (ret < 0) {
+		upsdebug_with_errno(3, "read");
+		upsdebug_hex(4, "  \_", reply, strlen(reply));
+		return -1;
+	}
+
+	if (ret == 0) {
+		upsdebugx(3, "read: timeout");
+		upsdebug_hex(4, "  \_", reply, strlen(reply));
+		return -1;
+	}
+
+	upsdebug_hex(3, "read", reply, ret);
+	
 	/*
 	 * We check if the reply looks like a valid status.
 	 */
 
-	if ((strlen(reply) != 11) || (reply[0] != '$') || (strspn(reply+1, "AB") != 10)) {
-		return(-1);
+	if (ret != 11) || (reply[0] != '$') || (strspn(reply+1, "AB") != 10)) {
+		return -1;
 	}
 
-	for (i=0; i<10; i++) {
+	for (i = 0; i < 10; i++) {
 		ups.reply[i] = ((reply[i+1] == 'B') ? 1 : 0);
 	}
 
-	return(0);
+	return 0;
 }
 
 static void safenet_update()
