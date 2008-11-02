@@ -205,20 +205,33 @@ static int powpan_command(const char *buf, size_t bufsize)
 
 	ser_flush_io(upsfd);
 
-	upsdebug_hex(3, "send", buf, bufsize);
+	ret = ser_send_buf_pace(upsfd, UPSDELAY, buf, bufsize);
 
-	ret = ser_send_buf_pace(upsfd, UPSDELAY, (unsigned char *)buf, bufsize);
-
-	if (ret < (int)bufsize) {
+	if (ret < 0) {
+		upsdebug_with_errno(3, "send");
 		return -1;
 	}
 
+	if (ret == 0) {
+		upsdebug_with_errno(3, "send: timeout");
+		return -1;
+	}
+
+	upsdebug_hex(3, "send", buf, bufsize);
+
 	usleep(100000);
 
-	ret = ser_get_buf_len(upsfd, powpan_answer, bufsize - 1, SER_WAIT_SEC, SER_WAIT_USEC);
+	ret = ser_get_buf_len(upsfd, powpan_answer, bufsize-1, SER_WAIT_SEC, SER_WAIT_USEC);
 
-	if (ret < 1) {
-		upsdebugx(3, "read: timed out");
+	if (ret < 0) {
+		upsdebug_with_errno(3, "read");
+		upsdebug_hex(4, "  \_", buf, bufsize-1);
+		return -1;
+	}
+
+	if (ret == 0) {
+		upsdebugx(3, "read: timeout");
+		upsdebug_hex(4, "  \_", buf, bufsize-1);
 		return -1;
 	}
 
@@ -362,49 +375,57 @@ static int powpan_status(status_t *status)
 	 * READ #VVL.CTF.....\r
         *      01234567890123
 	 */
-	upsdebug_hex(3, "send", "D\r", 2);
-
 	ret = ser_send_pace(upsfd, UPSDELAY, "D\r");
-	if (ret < 2) {
+
+	if (ret < 0) {
+		upsdebug_with_errno(3, "send");
 		return -1;
 	}
 
+	if (ret == 0) {
+		upsdebug_with_errno(3, "send: timeout");
+		return -1;
+	}
+
+	upsdebug_hex(3, "send", "D\r", 2);
+
 	usleep(200000);
 
-	ret = ser_get_buf_len(upsfd, (unsigned char *)status, sizeof(*status), SER_WAIT_SEC, SER_WAIT_USEC);
-	if (ret < 1) {
-		upsdebugx(3, "read: timed out");
+	ret = ser_get_buf_len(upsfd, status, sizeof(*status), SER_WAIT_SEC, SER_WAIT_USEC);
+
+	if (ret < 0) {
+		upsdebug_with_errno(3, "read");
+		upsdebug_hex(4, "  \_", status, sizeof(*status));
+		return -1;
+	}
+
+	if (ret == 0) {
+		upsdebugx(3, "read: timeout");
+		upsdebug_hex(4, "  \_", status, sizeof(*status));
 		return -1;
 	}
 
 	upsdebug_hex(3, "read", status, ret);
 
-	if (ret < (int)sizeof(*status)) {
-		upsdebugx(4, "Short status read");
-		return -1;
-	}
-	
 	if ((status->flags[0] + status->flags[1]) != 255) {
-		upsdebugx(4, "Checksum flags[0..1] failed");
+		upsdebugx(4, "  \_ : checksum flags[0..1] failed");
 		return -1;
 	}
 
 	if ((status->flags[2] + status->flags[3]) != 255) {
-		upsdebugx(4, "Checksum flags[2..3] failed");
+		upsdebugx(4, "  \_ : checksum flags[2..3] failed");
 		return -1;
 	}
 
 	return 0;
 }
 
-static void powpan_updateinfo()
+static int powpan_updateinfo()
 {
 	status_t	status;
 
 	if (powpan_status(&status)) {
-		ser_comm_fail("Status read failed!");
-		dstate_datastale();
-		return;
+		return -1;
 	}
 
 	switch (type)
@@ -472,10 +493,7 @@ static void powpan_updateinfo()
 
 	status_commit();
 
-	ser_comm_good();
-	dstate_dataok();
-
-	return;
+	return 0;
 }
 
 static void powpan_shutdown()
@@ -527,23 +545,46 @@ static int powpan_initups()
 
 	ser_set_speed(upsfd, device_path, B1200);
 
+	/* This fails for many devices, so don't bother to complain */
 	ser_send_pace(upsfd, UPSDELAY, "\r\r");
 
 	for (i = 0; i < MAXTRIES; i++) {
+
+		ser_flush_io(upsfd);
 
 		/*
 		 * WRITE F\r
 		 * READ .PR2200    .x.<.1100
 		 *      01234567890123456789
 		 */
-		ser_flush_io(upsfd);
-		ser_send_pace(upsfd, UPSDELAY, "F\r");
-		usleep(100000);
-		ret = ser_get_line(upsfd, (char *)powpan_answer, sizeof(powpan_answer),
+		ret = ser_send_pace(upsfd, UPSDELAY, "F\r");
+
+		if (ret < 0) {
+			upsdebug_with_errno(3, "send");
+			continue;
+		}
+
+		if (ret == 0) {
+			upsdebug_with_errno(3, "send: timeout");
+			continue;
+		}
+
+		upsdebug_hex(3, "send", "F\r", 2);
+
+		usleep(200000);
+
+		ret = ser_get_line(upsfd, powpan_answer, sizeof(powpan_answer),
 			ENDCHAR, IGNCHAR, SER_WAIT_SEC, SER_WAIT_USEC);
 
-		if (ret < 1) {
-			upsdebugx(3, "read: timed out");
+		if (ret < 0) {
+			upsdebug_with_errno(3, "read");
+			upsdebug_hex(4, "  \_", powpan_answer, strlen(powpan_answer));
+			continue;
+		}
+
+		if (ret == 0) {
+			upsdebugx(3, "read: timeout");
+			upsdebug_hex(4, "  \_", powpan_answer, strlen(powpan_answer));
 			continue;
 		}
 

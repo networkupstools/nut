@@ -72,10 +72,25 @@ void upsdrv_initinfo(void)
 	}
 }
 
-
 void upsdrv_updateinfo(void)
 {
-	subdriver[mode]->updateinfo();
+	static int	retry = 0;
+
+	if (subdriver[mode]->updateinfo() == 0) {
+		ser_comm_good();
+		dstate_dataok();
+		retry = 0;
+		return;
+	}
+
+	ser_comm_fail("Status read failed!");
+
+	if (retry < 3) {
+		retry++;
+		return;
+	}
+
+	dstate_datastale();
 }
 
 void upsdrv_shutdown(void)

@@ -1,3 +1,8 @@
+Sun Nov  2 12:21:03 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/powerpanel: Allow three polls to fail, before declaring data
+   stale. Improve debugging of the serial communication [commit r1542].
+
 Sun Nov  2 12:17:56 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/safenet.c: Improve debugging of the serial communication.

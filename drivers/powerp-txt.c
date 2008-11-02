@@ -83,25 +83,38 @@ static int powpan_command(const char *command)
 
 	ser_flush_io(upsfd);
 
-	upsdebug_hex(3, "send", (unsigned char *)command, strlen(command));
-
 	ret = ser_send_pace(upsfd, UPSDELAY, command);
 
-	if (ret < (int)strlen(command)) {
+	if (ret < 0) {
+		upsdebug_with_errno(3, "send");
 		return -1;
 	}
+
+	if (ret == 0) {
+		upsdebug_with_errno(3, "send: timeout");
+		return -1;
+	}
+
+	upsdebug_hex(3, "send", command, strlen(command));
 
 	usleep(100000);
 
 	ret = ser_get_line(upsfd, powpan_answer, sizeof(powpan_answer),
 		ENDCHAR, IGNCHAR, SER_WAIT_SEC, SER_WAIT_USEC);
 
-	if (ret < 1) {
-		upsdebugx(3, "read: timed out");
-		return ret;
+	if (ret < 0) {
+		upsdebug_with_errno(3, "read");
+		upsdebug_hex(4, "  \_", powpan_answer, strlen(powpan_answer));
+		return -1;
 	}
 
-	upsdebug_hex(3, "read", (unsigned char *)powpan_answer, ret);
+	if (ret == 0) {
+		upsdebugx(3, "read: timeout");
+		upsdebug_hex(4, "  \_", powpan_answer, strlen(powpan_answer));
+		return -1;
+	}
+
+	upsdebug_hex(3, "read", powpan_answer, ret);
 	return ret;
 }
 
@@ -324,22 +337,37 @@ static int powpan_status(status_t *status)
 	 * READ #I119.0O119.0L000B100T027F060.0S..\r
 	 *      01234567890123456789012345678901234
 	 */
-	upsdebug_hex(3, "send", (unsigned char *)"D\r", 2);
-
 	ret = ser_send_pace(upsfd, UPSDELAY, "D\r");
-	if (ret < 2) {
+
+	if (ret < 0) {
+		upsdebug_with_errno(3, "send");
 		return -1;
 	}
+
+	if (ret == 0) {
+		upsdebug_with_errno(3, "send: timeout");
+		return -1;
+	}
+
+	upsdebug_hex(3, "send", "D\r", 2);
 
 	usleep(200000);
 
-	ret = ser_get_buf_len(upsfd, (unsigned char *)powpan_answer, 35, SER_WAIT_SEC, SER_WAIT_USEC);
-	if (ret < 1) {
-		upsdebugx(3, "read: timed out");
+	ret = ser_get_buf_len(upsfd, powpan_answer, 35, SER_WAIT_SEC, SER_WAIT_USEC);
+
+	if (ret < 0) {
+		upsdebug_with_errno(3, "read");
+		upsdebug_hex(4, "  \_", powpan_answer, 35);
 		return -1;
 	}
 
-	upsdebug_hex(3, "read", (unsigned char *)powpan_answer, ret);
+	if (ret == 0) {
+		upsdebugx(3, "read: timeout");
+		upsdebug_hex(4, "  \_", powpan_answer, 35);
+		return -1;
+	}
+
+	upsdebug_hex(3, "read", powpan_answer, ret);
 
 	ret = sscanf(powpan_answer, "#I%fO%fL%dB%dT%dF%fS%2c\r",
 		&status->i_volt, &status->o_volt, &status->o_load,
@@ -354,14 +382,12 @@ static int powpan_status(status_t *status)
 	return 0;
 }
 
-static void powpan_updateinfo()
+static int powpan_updateinfo()
 {
 	status_t	status;
 
 	if (powpan_status(&status)) {
-		ser_comm_fail("Status read failed!");
-		dstate_datastale();
-		return;
+		return -1;
 	}
 
 	dstate_setinfo("input.voltage", "%.1f", status.i_volt);
@@ -404,10 +430,7 @@ static void powpan_updateinfo()
 
 	status_commit();
 
-	ser_comm_good();
-	dstate_dataok();
-
-	return;
+	return 0;
 }
 
 static void powpan_shutdown()
@@ -433,6 +456,7 @@ static int powpan_initups()
 
 	ser_set_speed(upsfd, device_path, B2400);
 
+	/* This fails for many devices, so don't bother to complain */
 	powpan_command("\r\r");
 
 	for (i = 0; i < MAXTRIES; i++) {
@@ -443,13 +467,11 @@ static int powpan_initups()
 		 *      01234567890123456789012345678901234567890123456
 		 */
 		ret = powpan_command("P4\r");
+
 		if (ret < 1) {
-			upsdebugx(3, "read: timed out");
 			continue;
 		}
 		
-		upsdebug_hex(3, "read", (unsigned char *)powpan_answer, ret);
-
 		if (ret < 46) {
 			upsdebugx(2, "Expected 46 bytes, but only got %d", ret);
 			continue;
