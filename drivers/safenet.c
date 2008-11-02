@@ -120,13 +120,13 @@ static int safenet_command(const char *command)
 
 	if (ret < 0) {
 		upsdebug_with_errno(3, "read");
-		upsdebug_hex(4, "  \_", reply, strlen(reply));
+		upsdebug_hex(4, "  \\_", reply, strlen(reply));
 		return -1;
 	}
 
 	if (ret == 0) {
 		upsdebugx(3, "read: timeout");
-		upsdebug_hex(4, "  \_", reply, strlen(reply));
+		upsdebug_hex(4, "  \\_", reply, strlen(reply));
 		return -1;
 	}
 
@@ -136,7 +136,7 @@ static int safenet_command(const char *command)
 	 * We check if the reply looks like a valid status.
 	 */
 
-	if (ret != 11) || (reply[0] != '$') || (strspn(reply+1, "AB") != 10)) {
+	if ((ret != 11) || (reply[0] != '$') || (strspn(reply+1, "AB") != 10)) {
 		return -1;
 	}
 

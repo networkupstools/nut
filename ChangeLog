@@ -1,3 +1,8 @@
+Sun Nov  2 12:34:29 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/safenet.c, drivers/powerp-bin.c, drivers/powerp-txt.c:
+   Fix typo and unknown escape sequences.
+
 Sun Nov  2 12:21:03 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/powerpanel: Allow three polls to fail, before declaring data

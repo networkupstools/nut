@@ -225,13 +225,13 @@ static int powpan_command(const char *buf, size_t bufsize)
 
 	if (ret < 0) {
 		upsdebug_with_errno(3, "read");
-		upsdebug_hex(4, "  \_", buf, bufsize-1);
+		upsdebug_hex(4, "  \\_", buf, bufsize-1);
 		return -1;
 	}
 
 	if (ret == 0) {
 		upsdebugx(3, "read: timeout");
-		upsdebug_hex(4, "  \_", buf, bufsize-1);
+		upsdebug_hex(4, "  \\_", buf, bufsize-1);
 		return -1;
 	}
 
@@ -395,25 +395,25 @@ static int powpan_status(status_t *status)
 
 	if (ret < 0) {
 		upsdebug_with_errno(3, "read");
-		upsdebug_hex(4, "  \_", status, sizeof(*status));
+		upsdebug_hex(4, "  \\_", status, sizeof(*status));
 		return -1;
 	}
 
 	if (ret == 0) {
 		upsdebugx(3, "read: timeout");
-		upsdebug_hex(4, "  \_", status, sizeof(*status));
+		upsdebug_hex(4, "  \\_", status, sizeof(*status));
 		return -1;
 	}
 
 	upsdebug_hex(3, "read", status, ret);
 
 	if ((status->flags[0] + status->flags[1]) != 255) {
-		upsdebugx(4, "  \_ : checksum flags[0..1] failed");
+		upsdebugx(4, "  \\_ : checksum flags[0..1] failed");
 		return -1;
 	}
 
 	if ((status->flags[2] + status->flags[3]) != 255) {
-		upsdebugx(4, "  \_ : checksum flags[2..3] failed");
+		upsdebugx(4, "  \\_ : checksum flags[2..3] failed");
 		return -1;
 	}
 
@@ -578,13 +578,13 @@ static int powpan_initups()
 
 		if (ret < 0) {
 			upsdebug_with_errno(3, "read");
-			upsdebug_hex(4, "  \_", powpan_answer, strlen(powpan_answer));
+			upsdebug_hex(4, "  \\_", powpan_answer, strlen(powpan_answer));
 			continue;
 		}
 
 		if (ret == 0) {
 			upsdebugx(3, "read: timeout");
-			upsdebug_hex(4, "  \_", powpan_answer, strlen(powpan_answer));
+			upsdebug_hex(4, "  \\_", powpan_answer, strlen(powpan_answer));
 			continue;
 		}
 

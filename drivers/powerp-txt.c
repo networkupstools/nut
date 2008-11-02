@@ -104,13 +104,13 @@ static int powpan_command(const char *command)
 
 	if (ret < 0) {
 		upsdebug_with_errno(3, "read");
-		upsdebug_hex(4, "  \_", powpan_answer, strlen(powpan_answer));
+		upsdebug_hex(4, "  \\_", powpan_answer, strlen(powpan_answer));
 		return -1;
 	}
 
 	if (ret == 0) {
 		upsdebugx(3, "read: timeout");
-		upsdebug_hex(4, "  \_", powpan_answer, strlen(powpan_answer));
+		upsdebug_hex(4, "  \\_", powpan_answer, strlen(powpan_answer));
 		return -1;
 	}
 
@@ -357,13 +357,13 @@ static int powpan_status(status_t *status)
 
 	if (ret < 0) {
 		upsdebug_with_errno(3, "read");
-		upsdebug_hex(4, "  \_", powpan_answer, 35);
+		upsdebug_hex(4, "  \\_", powpan_answer, 35);
 		return -1;
 	}
 
 	if (ret == 0) {
 		upsdebugx(3, "read: timeout");
-		upsdebug_hex(4, "  \_", powpan_answer, 35);
+		upsdebug_hex(4, "  \\_", powpan_answer, 35);
 		return -1;
 	}
 
