@@ -35,11 +35,11 @@ int ser_close(int fd, const char *port);
 int ser_send_char(int fd, unsigned char ch);
 
 /* send the results of the format string with d_usec delay after each char */
-unsigned int ser_send_pace(int fd, unsigned long d_usec, const char *fmt, ...)
+int ser_send_pace(int fd, unsigned long d_usec, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 3, 4)));
 
 /* send the results of the format string with no delay */
-unsigned int ser_send(int fd, const char *fmt, ...)
+int ser_send(int fd, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
 
 /* send buflen bytes from buf with no delay */

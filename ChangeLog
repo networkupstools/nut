@@ -1,3 +1,13 @@
+Sun Nov  2 12:14:06 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - docs/new-drivers.txt, drivers/serial.[ch]: The return code of the
+   ser_get_*() functions is now 0 on timeouts. This allows drivers to tell
+   the difference between an error that occurred reading from the serial
+   port and timeouts while reading from the UPS. The ser_send() and
+   ser_send_pace() functions return -1 on errors, so the return value
+   should be signed, not unsigned.
+ - drivers/megatec_usb.c: Return code for ser_send_pace() is signed.
+
 Mon Oct 20 11:31:14 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/megatec.c, man/megatec.8: Adds a "battvoltmult" parameter to the

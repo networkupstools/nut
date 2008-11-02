@@ -237,7 +237,7 @@ int ser_send_char(int fd, unsigned char ch)
 	return ser_send_buf_pace(fd, 0, &ch, 1);
 }
 
-static unsigned int send_formatted(int fd, const char *fmt, va_list va, unsigned long d_usec)
+static int send_formatted(int fd, const char *fmt, va_list va, unsigned long d_usec)
 {
 	int	ret;
 	char	buf[LARGEBUF];
@@ -252,7 +252,7 @@ static unsigned int send_formatted(int fd, const char *fmt, va_list va, unsigned
 }
 
 /* send the results of the format string with d_usec delay after each char */
-unsigned int ser_send_pace(int fd, unsigned long d_usec, const char *fmt, ...)
+int ser_send_pace(int fd, unsigned long d_usec, const char *fmt, ...)
 {
 	int	ret;
 	va_list	ap;
@@ -267,7 +267,7 @@ unsigned int ser_send_pace(int fd, unsigned long d_usec, const char *fmt, ...)
 }
 
 /* send the results of the format string with no delay */
-unsigned int ser_send(int fd, const char *fmt, ...)
+int ser_send(int fd, const char *fmt, ...)
 {
 	int	ret;
 	va_list	ap;
@@ -310,15 +310,7 @@ int ser_send_buf_pace(int fd, unsigned long d_usec, const void *buf,
 
 int ser_get_char(int fd, void *ch, long d_sec, long d_usec)
 {
-	int	ret;
-
-	ret = select_read(fd, ch, 1, d_sec, d_usec);
-
-	if (ret < 1) {
-		return -1;
-	}
-
-	return ret;
+	return select_read(fd, ch, 1, d_sec, d_usec);
 }
 
 /* keep reading until buflen bytes are received or a timeout occurs */
@@ -334,7 +326,7 @@ int ser_get_buf_len(int fd, void *buf, size_t buflen, long d_sec, long d_usec)
 		ret = select_read(fd, &((char *)buf)[recv], buflen - recv, d_sec, d_usec);
 
 		if (ret < 1) {
-			return -1;
+			return ret;
 		}
 	}
 
@@ -358,8 +350,9 @@ int ser_get_line_alert(int fd, void *buf, size_t buflen, char endchar,
 	while (count < maxcount) {
 		ret = select_read(fd, tmp, sizeof(tmp), d_sec, d_usec);
 
-		if (ret < 1)
-			return -1;
+		if (ret < 1) {
+			return ret;
+		}
 
 		for (i = 0; i < ret; i++) {
 

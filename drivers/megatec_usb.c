@@ -343,7 +343,7 @@ void usb_comm_fail(int res, const char *msg)
 	}
 }
 
-unsigned int ser_send_pace(int fd, unsigned long d_usec, const char *fmt, ...)
+int ser_send_pace(int fd, unsigned long d_usec, const char *fmt, ...)
 {
 	char buf[128];
 	size_t len;
