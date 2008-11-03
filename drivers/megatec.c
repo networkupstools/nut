@@ -305,6 +305,12 @@ static int get_ups_info(UPSInfo_t *info)
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 
 	if (ret < 0) {
+		upsdebug_with_errno(2, "I => FAILED");
+
+		return -1;
+	}
+
+	if (ret == 0) {
 		upsdebugx(2, "I => FAILED [timeout]");
 
 		return -1;
@@ -361,6 +367,12 @@ static int get_firmware_values(FirmwareValues_t *values)
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 
 	if (ret < 0) {
+		upsdebug_with_errno(2, "F => FAILED");
+
+		return -1;
+	}
+
+	if (ret == 0) {
 		upsdebugx(2, "F => FAILED [timeout]");
 
 		return -1;
@@ -420,6 +432,12 @@ static int run_query(QueryValues_t *values)
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 
 	if (ret < 0) {
+		upsdebug_with_errno(2, "Q1 => FAILED");
+
+		return -1;
+	}
+
+	if (ret == 0) {
 		upsdebugx(2, "Q1 => FAILED [timeout]");
 
 		return -1;

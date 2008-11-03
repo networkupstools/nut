@@ -668,8 +668,8 @@ int shut_packet_recv(int upsfd, u_char *Buf, int datalen)
 	
 	while(datalen>0 && Retry<3)
 	{
-		/* if(serial_read (SHUT_TIMEOUT, &Start[0]) >= 0) */
-		if(ser_get_char(upsfd, &Start[0], SHUT_TIMEOUT/1000, 0) >= 0)
+		/* if(serial_read (SHUT_TIMEOUT, &Start[0]) > 0) */
+		if(ser_get_char(upsfd, &Start[0], SHUT_TIMEOUT/1000, 0) > 0)
 		{
 			sdata.shut_pkt.bType = Start[0];
 			if(Start[0]==SHUT_SYNC)
@@ -680,8 +680,8 @@ int shut_packet_recv(int upsfd, u_char *Buf, int datalen)
 			}
 			else 
 			{
-				/* if((serial_read (SHUT_TIMEOUT, &Start[1]) >= 0) && */
-				if( (ser_get_char(upsfd, &Start[1], SHUT_TIMEOUT/1000, 0) >= 0) &&
+				/* if((serial_read (SHUT_TIMEOUT, &Start[1]) > 0) && */
+				if( (ser_get_char(upsfd, &Start[1], SHUT_TIMEOUT/1000, 0) > 0) &&
 							((Start[1]>>4)==(Start[1]&0x0F)))
 				{
 					upsdebug_hex(4, "Receive", Start, 2);
@@ -689,8 +689,8 @@ int shut_packet_recv(int upsfd, u_char *Buf, int datalen)
 					sdata.shut_pkt.bLength = Size;
 					for(recv=0;recv<Size;recv++)
 					{
-						/* if(serial_read (SHUT_TIMEOUT, &Frame[recv]) < 0) */
-						if(ser_get_char(upsfd, &Frame[recv], SHUT_TIMEOUT/1000, 0) < 0)
+						/* if(serial_read (SHUT_TIMEOUT, &Frame[recv]) < 1) */
+						if(ser_get_char(upsfd, &Frame[recv], SHUT_TIMEOUT/1000, 0) < 1)
 							break;
 					}
 					upsdebug_hex(4, "Receive", Frame, Size);

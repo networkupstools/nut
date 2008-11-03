@@ -195,7 +195,7 @@ void upsdrv_updateinfo(void)
 			IGNCHARS,SECS,USEC);
 	
 	upsdebugx (2,"upsrecv_updateinfo: upsrecv returned: %s\n",buffer);
-	if (ret_value == -1)
+	if (ret_value < 1)
 	{
 		ser_comm_fail("Oneac UPS Comm failure on port %s",device_path);
 		dstate_datastale();

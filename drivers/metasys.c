@@ -158,7 +158,7 @@ int get_answer(unsigned char *data) {
 	int packet_lenght, checksum, i, res;
 	/* Read STX byte */
 	res = ser_get_char(upsfd, my_buf, 1, 0);
-	if (res != 1) {
+	if (res < 1) {
 		ser_comm_fail("Receive error (STX): %d!!!\n", res);
 		return -1;	
 	}
@@ -168,7 +168,7 @@ int get_answer(unsigned char *data) {
 	}
 	/* Read data lenght byte */
 	res = ser_get_char(upsfd, my_buf, 1, 0);
-	if (res != 1) {
+	if (res < 1) {
 		ser_comm_fail("Receive error (lenght): %d!!!\n", res);
 		return -1;	
 	}

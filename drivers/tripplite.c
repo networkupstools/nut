@@ -146,15 +146,15 @@ static int send_cmd(const char *str, char *buf, size_t len)
 
 	for (;;) {
 		ret = ser_get_char(upsfd, &c, SER_WAIT_SEC, SER_WAIT_USEC);
-		if (ret == -1)
-			return ret;
+		if (ret < 1)
+			return -1;
 		if (c == ENDCHAR)
 			break;
 	}
 	do {
 		ret = ser_get_char(upsfd, &c, SER_WAIT_SEC, SER_WAIT_USEC);
-		if (ret == -1)
-			return ret;
+		if (ret < 1)
+			return -1;
 
 		if (c == IGNCHAR || c == ENDCHAR)
 			continue;

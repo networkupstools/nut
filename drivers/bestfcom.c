@@ -739,7 +739,7 @@ void upsdrv_initups ()
 
 	inverter_status = 0;
 	fc.model = UNKNOWN;
-	if (execute("f\r", rstring, sizeof(rstring)) < 0 ) {
+	if (execute("f\r", rstring, sizeof(rstring)) < 1 ) {
 		fatalx(EXIT_FAILURE, "Failed format request in upsdrc_initups()");
 	}
 

@@ -400,7 +400,7 @@ void upsdrv_initups ()
 
   fc.model = UNKNOWN;
   /* Obtain Model */
-  if (execute("id\r", fcstring, sizeof(fcstring)) < 0) {
+  if (execute("id\r", fcstring, sizeof(fcstring)) < 1) {
     fatalx(EXIT_FAILURE, "Failed execute in ups_ident()");
   }
   

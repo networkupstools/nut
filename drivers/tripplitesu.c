@@ -227,7 +227,11 @@ static int do_command(char type, const char *command, const char *parameters, ch
 	upsdebugx(3, "do_command: %d bytes sent [%s] -> OK", ret, buffer);
 
 	ret = ser_get_buf_len(upsfd, (unsigned char *)buffer, 4, 3, 0);
-	if (ret <= 0) {
+	if (ret < 0) {
+		upsdebug_with_errno(3, "do_command: read");
+		return -1;
+	}
+	if (ret == 0) {
 		upsdebugx(3, "do_command: read -> TIMEOUT");
 		return -1;
 	}
@@ -238,7 +242,11 @@ static int do_command(char type, const char *command, const char *parameters, ch
 	if (!strcmp(buffer, "~00D")) {
 
 		ret = ser_get_buf_len(upsfd, (unsigned char *)buffer, 3, 3, 0);
-		if (ret <= 0) {
+		if (ret < 0) {
+			upsdebug_with_errno(3, "do_command: read");
+			return -1;
+		}
+		if (ret == 0) {
 			upsdebugx(3, "do_command: read -> TIMEOUT");
 			return -1;
 		}
@@ -262,7 +270,11 @@ static int do_command(char type, const char *command, const char *parameters, ch
 		}
 
 		ret = ser_get_buf_len(upsfd, (unsigned char *)response, count, 3, 0);
-		if (ret <= 0) {
+		if (ret < 0) {
+			upsdebug_with_errno(3, "do_command: read");
+			return -1;
+		}
+		if (ret == 0) {
 			upsdebugx(3, "do_command: read -> TIMEOUT");
 			return -1;
 		}

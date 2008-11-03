@@ -246,7 +246,10 @@ static int belkin_nut_receive(unsigned char *buf, int bufsize) {
 		return -1;
 	}
 	r = ser_get_buf_len(upsfd, &buf[0], 1, 3, 0);
-	if (r==-1) {
+	if (r<0) {
+		upslog_with_errno(LOG_ERR, "Error reading from UPS");
+		return -1;
+	} else if (r==0) {
 		upslogx(LOG_ERR, "No response from UPS");
 		return -1;
 	} else if (buf[0]!=0x7e) {
