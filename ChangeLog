@@ -1,3 +1,7 @@
+Mon Nov  3 08:37:41 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/upscode2.c: Change required by commit r1542.
+
 Sun Nov  2 12:34:29 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/safenet.c, drivers/powerp-bin.c, drivers/powerp-txt.c:
