@@ -840,7 +840,8 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("driver.version.internal", DRIVER_VERSION);
 
 	/* init polling frequency */
-	if (val = getval(HU_VAR_POLLFREQ)) {
+	val = getval(HU_VAR_POLLFREQ);
+	if (val) {
 		pollfreq = atoi(val);
 	}
 
@@ -934,7 +935,8 @@ void upsdrv_initups(void)
 
 	if (dstate_getinfo("ups.delay.start")) {
 		/* Retrieve user defined delay settings */
-		if (val = getval(HU_VAR_ONDELAY)) {
+		val = getval(HU_VAR_ONDELAY);
+		if (val) {
 			dstate_setinfo("ups.delay.start", val);
 		}
 
@@ -944,7 +946,8 @@ void upsdrv_initups(void)
 
 	if (dstate_getinfo("ups.delay.shutdown")) {
 		/* Retrieve user defined delay settings */
-		if (val = getval(HU_VAR_OFFDELAY)) {
+		val = getval(HU_VAR_OFFDELAY);
+		if (val) {
 			dstate_setinfo("ups.delay.start", val);
 		}
 

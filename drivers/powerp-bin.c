@@ -578,13 +578,13 @@ static int powpan_initups()
 
 		if (ret < 0) {
 			upsdebug_with_errno(3, "read");
-			upsdebug_hex(4, "  \\_", powpan_answer, strlen(powpan_answer));
+			upsdebug_hex(4, "  \\_", powpan_answer, strlen((char *)powpan_answer));
 			continue;
 		}
 
 		if (ret == 0) {
 			upsdebugx(3, "read: timeout");
-			upsdebug_hex(4, "  \\_", powpan_answer, strlen(powpan_answer));
+			upsdebug_hex(4, "  \\_", powpan_answer, strlen((char *)powpan_answer));
 			continue;
 		}
 
