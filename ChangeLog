@@ -1,3 +1,7 @@
+Wed Nov  5 07:47:02 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/upscode2.c: Fix problem with reading replies on slow systems.
+
 Mon Nov  3 12:37:56 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/powerp-bin.c, drivers/usbhid-ups.c: Fix compiler warnings.

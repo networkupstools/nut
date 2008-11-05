@@ -433,8 +433,8 @@ static int upsc_commandlist(void);
 static int upsc_getparams(const char *cmd, const simple_t *table);
 static int upsc_getvalue(const char *cmd, const char *param,
 	const char *resp, const char *var, char *ret);
-static void upscsend(const char *);
-static char *upscrecv(char *);
+static int upscsend(const char *cmd);
+static int upscrecv(char *buf);
 static int upsc_simple(const simple_t *sp, const char *var, const char *val);
 static void check_uppm(void);
 static float batt_charge_pct(void);
@@ -993,71 +993,75 @@ static void upsc_setstatus(unsigned int status)
 
 
 /* Add \r to end of command and send to UPS */
-static void upscsend(const char *cmd)
+/* returns < 0 on errors, 0 on timeout and > 0 on success. */
+static int upscsend(const char *cmd)
 {
-	upsdebugx(3, "upscsend: '%s'", cmd);
-	ser_send_pace(upsfd, output_pace_usec, "%s%s%s",
+	int	res;
+
+	res = ser_send_pace(upsfd, output_pace_usec, "%s%s%s",
 		use_pre_lf ? "\n" : "",
 		cmd,
 		use_crlf ? "\r\n" : "\r");
-	return;
+
+	if (res < 0) {
+		upsdebug_with_errno(3, "upscsend");
+	} else if (res == 0) {
+		upsdebugx(3, "upscsend: Timeout");
+	} else {
+		upsdebugx(3, "upscsend: '%s'", cmd);
+	}
+
+	return res;
 }
 
 
-/* Return a string read from UPS */
-static char *upscrecv(char *buf)
+/* Read a string from UPS */
+/* returns < 0 on errors, 0 on timeout and > 0 on success. */
+static int upscrecv(char *buf)
 {
-	int res = 0;
-
-/* The code below is an unreliable way to get rid of empty lines. The ser_get_line()
-   function will read chunks up to 64 bytes at a time. If the first character read
-   is ENDCHAR, the remaining characters are discarded and lost forever (see also
-   docs/new-drivers.txt).
-
-	while (res == 0) {
-		res = ser_get_line(upsfd, buf, UPSC_BUFLEN, ENDCHAR, IGNCHARS,
-				   input_timeout_sec, 0);
-		if (strlen(buf) == 0)
-			upsdebugx(3, "upscrecv: Empty line");
-	}
-
-   A slightly better way to do this, would be the following code
+	int	res, i = 0;
 
 	do {
-		buf[0] = '\0';
-
-		res = ser_get_char(upsfd, buf, input_timeout_sec, 0);
-
+		res = ser_get_char(upsfd, &buf[i], input_timeout_sec, 0);
 		if (res < 1) {
+			i = 0;	/* clear whatever we received so far */
 			break;
 		}
 
-	} while (buf[0] == ENDCHAR);
+		if (strchr(IGNCHARS, buf[i])) {
+			continue;
+		}
 
-	if (res == 1) {
-		res = ser_get_line(upsfd, buf+1, UPSC_BUFLEN-1, ENDCHAR, IGNCHARS,
-			input_timeout_sec, 0);
+		if (buf[i] != ENDCHAR) {
+			i++;
+			continue;
+		}
+
+		if (i > 0) {	/* non-empty line */
+			break;
+		}
+
+		upsdebugx(3, "upscrecv: Empty line");
+
+	} while (i < UPSC_BUFLEN-1);
+
+	buf[i] = '\0';
+
+	if (res < 0) {
+		upsdebug_with_errno(3, "upscrecv");
+	} else if (res == 0) {
+		upsdebugx(3, "upscrecv: Timeout");
+	} else {
+		upsdebugx(3, "upscrecv: %u bytes:\t'%s'", i, buf);
 	}
 
-   Since there have been no complaints about this so far, chances are that there
-   are no empty lines to discard, so leaving this out is probably not an issue.
-*/
-	res = ser_get_line(upsfd, buf, UPSC_BUFLEN, ENDCHAR, IGNCHARS,
-		input_timeout_sec, 0);
-
-	if (res < 0)
-		upsdebug_with_errno(3, "upscrecv");
-	else if (res == 0)
-		upsdebugx(3, "upscrecv: Timeout");
-	else
-		upsdebugx(3, "upscrecv: %u bytes:\t'%s'",
-			(unsigned int)strlen(buf), buf);
-	return buf;
+	return res;
 }
 
 
 static void upsc_flush_input(void)
 {
+/*
 	char buf[UPSC_BUFLEN];
 
 	do {
@@ -1065,6 +1069,8 @@ static void upsc_flush_input(void)
 		if (strlen(buf) > 0)
 			upsdebugx(1, "Skipping input: %s", buf);
 	} while (strlen(buf) > 0);
+*/
+	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
 }
 
 
