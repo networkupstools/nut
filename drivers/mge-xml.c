@@ -664,9 +664,9 @@ static xml_info_t mge_xml2nut[] = {
 	{ "ambient.temperature.minimum", 0, 0, "Environment.PresentStatus.LowTemperature", 0, 0, NULL },
 
 	/* Outlet page (using MGE UPS SYSTEMS - PowerShare technology) */
-	{ "outlet.0.id", 0, 0, "UPS.OutletSystem.Outlet[1].OutletID", 0, 0, NULL },
-	{ "outlet.0.desc", ST_FLAG_RW, 20, "UPS.OutletSystem.Outlet[1].iName", 0, 0, NULL },
-	{ "outlet.0.switchable", 0, 0, "UPS.OutletSystem.Outlet[1].PresentStatus.Switchable", 0, 0, yes_no_info },
+	{ "outlet.id", 0, 0, "UPS.OutletSystem.Outlet[1].OutletID", 0, 0, NULL },
+	{ "outlet.desc", ST_FLAG_RW, 20, "UPS.OutletSystem.Outlet[1].iName", 0, 0, NULL },
+	{ "outlet.switchable", 0, 0, "UPS.OutletSystem.Outlet[1].PresentStatus.Switchable", 0, 0, yes_no_info },
 	/* -> XML variable System.ShutdownDuration [120] doesn't map to any NUT variable */
 
 	{ "outlet.1.id", 0, 0, "UPS.OutletSystem.Outlet[2].OutletID", 0, 0, NULL },

@@ -15,9 +15,9 @@ input.transfer.high: 294.0
 input.transfer.low: 160.0
 input.transfer.trim.high: 265.0
 input.voltage: 230.0
-outlet.0.desc: Main Outlet
-outlet.0.id: 0
-outlet.0.switchable: 0
+outlet.desc: Main Outlet
+outlet.id: 0
+outlet.switchable: 0
 outlet.1.autoswitch.charge.low: 0
 outlet.1.delay.shutdown: -1
 outlet.1.delay.start: -1

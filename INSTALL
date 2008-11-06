@@ -325,9 +325,9 @@ are many integration issues that have been addressed.
 	driver.version.internal: 0.28
 	input.transfer.high: 264.0
 	input.transfer.low: 184.0
-	outlet.0.desc: Main Outlet
-	outlet.0.id: 1
-	outlet.0.switchable: 0
+	outlet.desc: Main Outlet
+	outlet.id: 1
+	outlet.switchable: 0
 	outlet.1.desc: PowerShare Outlet 1
 	outlet.1.id: 2
 	outlet.1.switch: 0

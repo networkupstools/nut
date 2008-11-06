@@ -383,10 +383,10 @@ static mge_info_item_t mge_info[] = {
 
 	/* Outlet page (using MGE UPS SYSTEMS - PowerShare technology) */
 	/* TODO: add an iterative semantic [%x] to factorise outlets */
-	{ "outlet.0.id", 0, 0, "UPS.OutletSystem.Outlet.[1].OutletID", "%i", NULL, SHUT_FLAG_OK, NULL },
-	{ "outlet.0.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[1].OutletID",
+	{ "outlet.id", 0, 0, "UPS.OutletSystem.Outlet.[1].OutletID", "%i", NULL, SHUT_FLAG_OK, NULL },
+	{ "outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[1].OutletID",
 	  "%s", "Main Outlet", SHUT_FLAG_ABSENT | SHUT_FLAG_OK, NULL },
-	{ "outlet.0.switchable", 0, 0, "UPS.OutletSystem.Outlet.[1].PresentStatus.Switchable",
+	{ "outlet.switchable", 0, 0, "UPS.OutletSystem.Outlet.[1].PresentStatus.Switchable",
 	  "%i", NULL, SHUT_FLAG_OK, NULL },
 	{ "outlet.1.id", 0, 0, "UPS.OutletSystem.Outlet.[2].OutletID", "%i", NULL, SHUT_FLAG_OK, NULL },	
 	{ "outlet.1.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[2].OutletID",

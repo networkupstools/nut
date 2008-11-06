@@ -382,11 +382,11 @@ void upsdrv_initinfo(void)
 
 	if ( optimodel == OPTIMODEL_ZINTO )
 	{
-		dstate_setinfo("outlet.0.desc", "%s", "Main Outlet 1+2");
+		dstate_setinfo("outlet.desc", "%s", "Main Outlet 1+2");
 		dstate_setinfo("outlet.1.desc", "%s", "Switchable Outlet 3+4");
-		dstate_setinfo("outlet.0.id", "%d", 1);
+		dstate_setinfo("outlet.id", "%d", 1);
 		dstate_setinfo("outlet.1.id", "%d", 2);
-		dstate_setinfo("outlet.0.switchable", "%d", 0);
+		dstate_setinfo("outlet.switchable", "%d", 0);
 		dstate_setinfo("outlet.1.switchable", "%d", 1);
 		dstate_setinfo("outlet.1.switch", "%d", 1);
 		dstate_setflags("outlet.1.switch", ST_FLAG_RW | ST_FLAG_STRING);

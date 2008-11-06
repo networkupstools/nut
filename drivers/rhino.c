@@ -728,14 +728,14 @@ void upsdrv_updateinfo(void)
 
 	/* output and bypass tests */
 	if( OutputOn )
-	  dstate_setinfo("outlet.0.switchable", "%s", "Yes");
+	  dstate_setinfo("outlet.switchable", "%s", "yes");
 	else
-	  dstate_setinfo("outlet.0.switchable", "%s", "No");
+	  dstate_setinfo("outlet.switchable", "%s", "no");
 
 	if( BypassOn )
-	  dstate_setinfo("outlet.1.switchable", "%s", "Yes");
+	  dstate_setinfo("outlet.1.switchable", "%s", "yes");
 	else
-	  dstate_setinfo("outlet.1.switchable", "%s", "No");
+	  dstate_setinfo("outlet.1.switchable", "%s", "no");
 
 	status_init();
 

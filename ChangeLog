@@ -1,3 +1,9 @@
+Wed Nov  5 21:20:52 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - INSTALL, docs/powersaving.txt, data/cmdvartab, data/evolution500.dev, 
+   drivers/<various>: Rename the Main Outlet from "outlet.0" to "outlet"
+   according to the Powersave specification.
+ 
 Wed Nov  5 07:47:02 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/upscode2.c: Fix problem with reading replies on slow systems.
