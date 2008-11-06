@@ -45,7 +45,6 @@
 #include "timehead.h"
 
 #define ENDCHAR		'\n'	
-#define IGNCHARS	"\r"
 
 /* default values */
 #define OUT_PACE_USEC	200
@@ -494,6 +493,7 @@ void upsdrv_initups(void)
 	if (tcgetattr(upsfd, &tio) != 0)
 		fatal_with_errno(EXIT_FAILURE, "tcgetattr(%s)", device_path);
 	tio.c_lflag = ICANON;
+	tio.c_iflag |= IGNCR;	/* Ignore CR */
 	tio.c_cc[VMIN] = 0;
 	tio.c_cc[VTIME] = 0;
 	tcsetattr(upsfd, TCSANOW, &tio);
@@ -1015,44 +1015,34 @@ static int upscsend(const char *cmd)
 }
 
 
-/* Read a string from UPS */
+/* Return a string read from UPS */
 /* returns < 0 on errors, 0 on timeout and > 0 on success. */
 static int upscrecv(char *buf)
 {
-	int	res, i = 0;
+	int	res;
 
-	do {
-		res = ser_get_char(upsfd, &buf[i], input_timeout_sec, 0);
-		if (res < 1) {
-			i = 0;	/* clear whatever we received so far */
+	/* NOTE: the serial port is set to use Canonical Mode Input Processing,
+	   which means select_read() either returns one line terminated with
+	   ENDCHAR, an error or times out. */
+
+	while (1) {
+		memset(buf, 0, UPSC_BUFLEN);
+
+		res = select_read(upsfd, buf, UPSC_BUFLEN, input_timeout_sec, 0);
+		if (res != 1) {
 			break;
 		}
 
-		if (strchr(IGNCHARS, buf[i])) {
-			continue;
-		}
-
-		if (buf[i] != ENDCHAR) {
-			i++;
-			continue;
-		}
-
-		if (i > 0) {	/* non-empty line */
-			break;
-		}
-
+		/* Only one character, must be ENDCHAR */
 		upsdebugx(3, "upscrecv: Empty line");
-
-	} while (i < UPSC_BUFLEN-1);
-
-	buf[i] = '\0';
+	}
 
 	if (res < 0) {
 		upsdebug_with_errno(3, "upscrecv");
 	} else if (res == 0) {
 		upsdebugx(3, "upscrecv: Timeout");
 	} else {
-		upsdebugx(3, "upscrecv: %u bytes:\t'%s'", i, buf);
+		upsdebugx(3, "upscrecv: %u bytes:\t'%s'", res-1, rtrim(buf, ENDCHAR));
 	}
 
 	return res;
@@ -1070,7 +1060,7 @@ static void upsc_flush_input(void)
 			upsdebugx(1, "Skipping input: %s", buf);
 	} while (strlen(buf) > 0);
 */
-	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
+	ser_flush_in(upsfd, "", nut_debug_level);
 }
 
 

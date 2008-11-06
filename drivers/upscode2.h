@@ -21,4 +21,4 @@
 
 */
 
-#define DRV_VERSION	"0.85"
+#define DRV_VERSION	"0.86"
