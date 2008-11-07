@@ -11,42 +11,14 @@
  * - others using SafeNet software and serial interface
  *
  * Status:
- *  20031015/Revision 0.1 - Arjen de Korte <arjen@de-korte.org>
- *   - initial release (entirely based on reverse engineering the
- *     serial data stream)
- *  20031022/Revision 0.2 - Arjen de Korte <arjen@de-korte.org>
- *   - status polling command is now "random" (just like the
- *     SafeNet (Windows) driver
- *   - low battery status is "LB" (not "BL")
- *  20031228/Revision 0.3 - Arjen de Korte <arjen@de-korte.org>
- *   - instant command 'shutdown.return' added
- *   - added 'manufacturer', 'modelname' and 'serialnumber'
- *     commandline parameters
- *   - removed experimental driver flag
- *   - documentation & code cleanup
- *  20060108/Revision 0.4 - Arjen de Korte <arjen@de-korte.org>
- *   - minor changes to make sure state changes are not missed
- *   - log errors when instant commands can't be handled
- *   - crude hardware detection which looks for DSR=1
- *  20060128/Revision 0.5 - Arjen de Korte <arjen@de-korte.org>
- *   - removed TRUE/FALSE defines, which were not really
- *     improving the code anyway
- *  20060131/Revision 1.0 - Arjen de Korte <arjen@de-korte.org>
- *   - put all UPS commands in header file (for easy retrieval)
- *   - remove log errors when instant commands can't be handled
- *     (doesn't work reliably on at least one flavor)
- *  20061229/Revision 1.1 - Arjen de Korte <arjen@de-korte.org>
- *   - flush the serial input buffer before sending commands
- *     (to get rid of unsollicited serial PnP replies)
- *  20070211/Revision 1.2 - Arjen de Korte <arjen@de-korte.org>
- *   - wait for three consecutive failed polls before declaring
- *     data stale in order not to bother clients with temporary
- *     problems
  *  20070304/Revision 1.3 - Arjen de Korte <arjen@de-korte.org>
  *   - in battery test mode (CAL state) stop the test when the
  *     the low battery state is reached
- *  20070304/Revision 1.41 - Arjen de Korte <arjen@de-korte.org>
+ *  20081102/Revision 1.41 - Arjen de Korte <arjen@de-korte.org>
  *   - allow more time for reading reply to command
+ *  20081106/Revision 1.5 - Arjen de Korte <arjen@de-korte.org>
+ *   - changed communication with UPS
+ *   - improved handling of battery & system test
  *
  * Copyright (C) 2003-2008  Arjen de Korte <arjen@de-korte.org>
  *
@@ -72,7 +44,7 @@
 #include "serial.h"
 #include "safenet.h"
 
-#define DRV_VERSION	"1.41"
+#define DRV_VERSION	"1.5"
 
 /*
  * Here we keep the last known status of the UPS
@@ -96,7 +68,7 @@ static int safenet_command(const char *command)
 	 * Send the command and read back the status line. When we just send
 	 * a status polling command, it will return the actual status.
 	 */
-	ret = ser_send_pace(upsfd, 25000, command);
+	ret = ser_send(upsfd, command);
 
 	if (ret < 0) {
 		upsdebug_with_errno(3, "send");
@@ -110,23 +82,18 @@ static int safenet_command(const char *command)
 
 	upsdebug_hex(3, "send", command, strlen(command));
 
-	usleep(250000);
-
 	/*
-	 * Read the reply from the UPS. Allow twice the time needed to read 12
-	 * bytes (120 bits (including start & stop bits) / 1200 baud = 100ms).
+	 * Read the reply from the UPS.
 	 */
-	ret = ser_get_line(upsfd, reply, sizeof(reply), '\r', "", 0, 250000);
+	ret = select_read(upsfd, reply, sizeof(reply), 1, 0);
 
 	if (ret < 0) {
 		upsdebug_with_errno(3, "read");
-		upsdebug_hex(4, "  \\_", reply, strlen(reply));
 		return -1;
 	}
 
 	if (ret == 0) {
 		upsdebugx(3, "read: timeout");
-		upsdebug_hex(4, "  \\_", reply, strlen(reply));
 		return -1;
 	}
 
@@ -135,8 +102,7 @@ static int safenet_command(const char *command)
 	/*
 	 * We check if the reply looks like a valid status.
 	 */
-
-	if ((ret != 11) || (reply[0] != '$') || (strspn(reply+1, "AB") != 10)) {
+	if ((ret != 12) || (reply[0] != '$') || (strspn(reply+1, "AB") != 10)) {
 		return -1;
 	}
 
@@ -169,26 +135,17 @@ static void safenet_update()
 		status_set("RB");
 	}
 
-	/*
-	 * This is not actually an indication of the UPS in the BYPASS state, it is
-	 * an indication that the UPS failed the self diagnostics (which is NOT the
-	 * same as a replace battery warning). Since the result is the same (no
-	 * backup in case of mains failure) we give it this status. Introduce a new
-	 * status here?
-	 */
-	if (ups.status.systemfail) {
-		status_set("BYPASS");
-	}
-
-	/*
-	 * This is not actually an indication of the UPS in the CAL state, it is an
-	 * indication that the UPS is in the system test state. The result of this
-	 * test may indicate a battery failure, so this is the closest we can get.
-	 * Introduce a new status here?
-	 */
 	if (ups.status.systemtest) {
 		status_set("CAL");
 	}
+
+	alarm_init();
+
+	if (ups.status.systemfail) {
+		alarm_set("System selftest fail!");
+	}
+
+	alarm_commit();
 
 	status_commit();
 }
@@ -213,43 +170,55 @@ static int instcmd(const char *cmdname, const char *extra)
 	 * Start the UPS selftest
 	 */
 	if (!strcasecmp(cmdname, "test.battery.start")) {
-		safenet_command(COM_BATT_TEST);
-		return STAT_INSTCMD_HANDLED;
+		if (safenet_command(COM_BATT_TEST)) {
+			return STAT_INSTCMD_FAILED;
+		} else {
+			return STAT_INSTCMD_HANDLED;
+		}
 	}
 
 	/*
 	 * Stop the UPS selftest
 	 */
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
-		safenet_command(COM_STOP_TEST);
-		return STAT_INSTCMD_HANDLED;
+		if (safenet_command(COM_STOP_TEST)) {
+			return STAT_INSTCMD_FAILED;
+		} else {
+			return STAT_INSTCMD_HANDLED;
+		}
 	}
 
 	/*
 	 * Start simulated mains failure
 	 */
 	if (!strcasecmp (cmdname, "test.failure.start")) {
-		safenet_command(COM_MAINS_TEST);
-		return STAT_INSTCMD_HANDLED;
+		if (safenet_command(COM_MAINS_TEST)) {
+			return STAT_INSTCMD_FAILED;
+		} else {
+			return STAT_INSTCMD_HANDLED;
+		}
 	}
 
 	/*
 	 * Stop simulated mains failure
 	 */
 	if (!strcasecmp (cmdname, "test.failure.stop")) {
-		safenet_command(COM_STOP_TEST);
-		return STAT_INSTCMD_HANDLED;
+		if (safenet_command(COM_STOP_TEST)) {
+			return STAT_INSTCMD_FAILED;
+		} else {
+			return STAT_INSTCMD_HANDLED;
+		}
 	}
 
 	/*
 	 * If beeper is off, toggle beeper state (so it should be ON after this)
 	 */
 	if (!strcasecmp(cmdname, "beeper.enable")) {
-		if (ups.status.silenced) {
-			safenet_command(COM_TOGGLE_BEEP);
+		if (ups.status.silenced && safenet_command(COM_TOGGLE_BEEP)) {
+			return STAT_INSTCMD_FAILED;
+		} else {
+			return STAT_INSTCMD_HANDLED;
 		}
-
-		return STAT_INSTCMD_HANDLED;
 	}
 
 	/*
@@ -258,20 +227,23 @@ static int instcmd(const char *cmdname, const char *extra)
 	 * event automatically (no way to stop this, besides side cutters)
 	 */
 	if (!strcasecmp(cmdname, "beeper.mute")) {
-		if (!ups.status.silenced) {
-			safenet_command(COM_TOGGLE_BEEP);
+		if (!ups.status.silenced && safenet_command(COM_TOGGLE_BEEP)) {
+			return STAT_INSTCMD_FAILED;
+		} else {
+			return STAT_INSTCMD_HANDLED;
 		}
-
-		return STAT_INSTCMD_HANDLED;
 	}
 
 	/*
 	 * Toggle beeper state unconditionally
 	 */
 	if (!strcasecmp(cmdname, "beeper.toggle")) {
-		safenet_command(COM_TOGGLE_BEEP);
+		if (safenet_command(COM_TOGGLE_BEEP)) {
+			return STAT_INSTCMD_FAILED;
+		} else {
+			return STAT_INSTCMD_HANDLED;
+		}
 
-		return STAT_INSTCMD_HANDLED;
 	}
 
 	/*
@@ -408,7 +380,17 @@ void upsdrv_updateinfo(void)
 	retry = 0;
 
 	if (ups.status.systemtest && ups.status.batterylow) {
-		safenet_command(COM_STOP_TEST);
+
+		/*
+		 * Don't update status after stopping battery test, to
+		 * allow UPS to update the status flags (OB+LB glitch)
+		 */
+		if (safenet_command(COM_STOP_TEST)) {
+			upslogx(LOG_WARNING, "Can't terminate battery test!");
+		} else {
+			upslogx(LOG_INFO, "Battery test finished");
+			return;
+		}
 	}
 
 	safenet_update();
@@ -466,11 +448,44 @@ void upsdrv_banner(void)
 
 void upsdrv_initups(void)
 {
+	struct termios		tio;
+
 	/*
 	 * Open and lock the serial port and set the speed to 1200 baud.
 	 */
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B1200);
+
+	if (tcgetattr(upsfd, &tio)) {
+		fatal_with_errno(EXIT_FAILURE, "tcgetattr");
+	}
+
+	/*
+	 * Use canonical mode input processing (to read reply line)
+	 */
+	tio.c_lflag |= ICANON;	/* Canonical input (erase and kill processing) */
+	tio.c_iflag |= ICRNL;	/* Map CR to NL on input */
+
+	/*
+	 * VEOF and VEOL may have the same values as the VMIN and VTIME
+	 * subscripts respectively, so to prevent surprises, we disable
+	 * them here (EOF and EOL are not used).
+	 */
+	tio.c_cc[VEOF] = _POSIX_VDISABLE;
+	tio.c_cc[VEOL] = _POSIX_VDISABLE;
+/*
+	tio.c_cc[VERASE] = _POSIX_VDISABLE;
+	tio.c_cc[VINTR]  = _POSIX_VDISABLE;
+	tio.c_cc[VKILL]  = _POSIX_VDISABLE;
+	tio.c_cc[VQUIT]  = _POSIX_VDISABLE;
+	tio.c_cc[VSUSP]  = _POSIX_VDISABLE;
+	tio.c_cc[VSTART] = _POSIX_VDISABLE;
+	tio.c_cc[VSTOP]  = _POSIX_VDISABLE;
+*/
+
+	if (tcsetattr(upsfd, TCSANOW, &tio)) {
+		fatal_with_errno(EXIT_FAILURE, "tcsetattr");
+	}
 
 	/*
 	 * Set DTR and clear RTS to provide power for the serial interface.

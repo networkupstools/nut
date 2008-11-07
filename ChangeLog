@@ -1,3 +1,8 @@
+Fri Nov  7 19:46:06 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/safenet.c: Optimized communication with UPS and updated
+   handling of instcmds.
+
 Thu Nov  6 20:54:15 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/upscode2.c: Commit r1549 'fixed' a non-existing problem.
