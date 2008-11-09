@@ -1,3 +1,10 @@
+Sun Now  9 13:45:25 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - docs/new-drivers.txt, drivers/serial.[ch]: Add ser_get_buf() that
+   wraps around the select_read().
+ - drivers/safenet.c, drivers/upscode2.c: Use ser_get_buf() instead
+   of select_read().
+
 Fri Nov  7 19:46:06 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/safenet.c: Optimized communication with UPS and updated

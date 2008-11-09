@@ -332,10 +332,20 @@ upsd.  That will cause an oscillation between staleness and normal
 behavior.
 
 
+ - int ser_get_buf(int fd, char *buf, size_t buflen, long d_sec,
+	long d_usec)
+
+Like ser_get_char, but this one reads up to buflen bytes storing all of
+them in buf.  The buffer is zeroed regardless of success or failure.  It
+returns the number of bytes read, -1 on failure and 0 on a timeout.
+
+This is essentially a single read() function with a timeout.
+
+
  - int ser_get_buf_len(int fd, char *buf, size_t buflen, long d_sec,
 	long d_usec)
 
-Like ser_get_char, but this one waits for buflen bytes to arrive,
+Like ser_get_buf, but this one waits for buflen bytes to arrive,
 storing all of them in buf.  The buffer is zeroed regardless of success
 or failure.  It returns the number of bytes read, -1 on failure
 and 0 on a timeout.

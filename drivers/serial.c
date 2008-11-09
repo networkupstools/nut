@@ -313,6 +313,13 @@ int ser_get_char(int fd, void *ch, long d_sec, long d_usec)
 	return select_read(fd, ch, 1, d_sec, d_usec);
 }
 
+int ser_get_buf(int fd, void *buf, size_t buflen, long d_sec, long d_usec)
+{
+	memset(buf, '\0', buflen);
+
+	return select_read(fd, buf, buflen, d_sec, d_usec);
+}
+
 /* keep reading until buflen bytes are received or a timeout occurs */
 int ser_get_buf_len(int fd, void *buf, size_t buflen, long d_sec, long d_usec)
 {

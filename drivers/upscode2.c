@@ -1,4 +1,4 @@
-/* upscode2.c - model specific routines for UPSes using the UPScode II
+﻿/* upscode2.c - model specific routines for UPSes using the UPScode II
 		command set.  This includes PowerWare, Fiskars, 
 		Compaq (PowerWare OEM?), some IBM (PowerWare OEM?)
 
@@ -1022,13 +1022,11 @@ static int upscrecv(char *buf)
 	int	res;
 
 	/* NOTE: the serial port is set to use Canonical Mode Input Processing,
-	   which means select_read() either returns one line terminated with
+	   which means ser_get_buf() either returns one line terminated with
 	   ENDCHAR, an error or times out. */
 
 	while (1) {
-		memset(buf, 0, UPSC_BUFLEN);
-
-		res = select_read(upsfd, buf, UPSC_BUFLEN, input_timeout_sec, 0);
+		res = ser_get_buf(upsfd, buf, UPSC_BUFLEN, input_timeout_sec, 0);
 		if (res != 1) {
 			break;
 		}

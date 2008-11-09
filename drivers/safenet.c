@@ -85,7 +85,7 @@ static int safenet_command(const char *command)
 	/*
 	 * Read the reply from the UPS.
 	 */
-	ret = select_read(upsfd, reply, sizeof(reply), 1, 0);
+	ret = ser_get_buf(upsfd, reply, sizeof(reply), 1, 0);
 
 	if (ret < 0) {
 		upsdebug_with_errno(3, "read");

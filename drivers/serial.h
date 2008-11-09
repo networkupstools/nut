@@ -51,6 +51,8 @@ int ser_send_buf_pace(int fd, unsigned long d_usec, const void *buf,
 
 int ser_get_char(int fd, void *ch, long d_sec, long d_usec);
 
+int ser_get_buf(int fd, void *buf, size_t buflen, long d_sec, long d_usec);
+
 /* keep reading until buflen bytes are received or a timeout occurs */
 int ser_get_buf_len(int fd, void *buf, size_t buflen, long d_sec, long d_usec);
 
