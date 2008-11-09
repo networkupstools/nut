@@ -1,3 +1,8 @@
+Sun Nov  9 15:34:24 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/upscode2.c: Some weird characters broke the compilation.
+   Fixed.
+
 Sun Now  9 13:45:25 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - docs/new-drivers.txt, drivers/serial.[ch]: Add ser_get_buf() that

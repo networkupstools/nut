@@ -1,5 +1,5 @@
-﻿/* upscode2.c - model specific routines for UPSes using the UPScode II
-		command set.  This includes PowerWare, Fiskars, 
+/* upscode2.c - model specific routines for UPSes using the UPScode II
+		command set.  This includes PowerWare, Fiskars,
 		Compaq (PowerWare OEM?), some IBM (PowerWare OEM?)
 
    Copyright (C) 2002 H�vard Lygre <hklygre@online.no>

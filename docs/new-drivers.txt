@@ -521,3 +521,23 @@ important part here is making the strace/ktrace output easier to read.
 Without that delay, that turns into a mess of selects and reads.
 The select returns almost instantly, and read gets a tiny chunk of the
 data.  Add the delay and you get a nice four-line status poll.
+
+Canonical input mode processing
+===============================
+
+If your UPS uses '\n' and/or '\r' as endchar, consider the use of
+Canonical Input Mode Processing instead of the ser_get_line* functions.
+
+Using a serial port in this mode means that select() will wait until
+a full line is received (or times out). This relieves you from waiting
+between sending a command and reading the reply. Another benefit is,
+that you no longer have to worry about the case that your UPS sends
+"OK\n1234\nabcd\n". This will be broken up cleanly in "OK\n", "1234\n"
+and "abcd\n" on consecutive reads, without risk of losing data (which
+is an often forgotten side effect of the ser_get_line* functions).
+
+Currently an example how this works can be found in the safenet and
+upscode2 drivers. The first uses a single '\r' as endchar, while the
+latter accepts either '\n', "\n\r" or "\r\n" as line termination. You
+can define other termination characters as well, but can't undefine
+'\r' and '\n' (so if you need these as data, this is not for you).
