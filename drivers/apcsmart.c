@@ -545,7 +545,9 @@ static int firmware_table_lookup(void)
 				!strcmp(buf, "8QD") || /* (SmartUPS 1250, vintage 07/94.) */
 				!strcmp(buf, "8TI") || /* (SmartUPS 1250, vintage 08/24/95.) */
 				!strcmp(buf, "6TI") || /* (APC600.) */
-				!strcmp(buf, "6QI")) { /* (APC600.) */
+				!strcmp(buf, "6QI") || /* (APC600.) */
+				!strcmp(buf, "0ZI") || /* (APC Matrix 3000, vintage 10/99.) */
+				!strcmp(buf, "5UI")) { /* (APC Matrix 5000, vintage 10/93.) */
 			upsdebugx(1, "Found Smart-UPS");
 			dstate_setinfo("ups.model", "Smart-UPS");
 		}

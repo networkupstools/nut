@@ -1,3 +1,8 @@
+Tue Nov 11 20:25:12 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/apcsmart.[ch]: Improve support for some vintage Matrix-UPS
+   models [patch by Marcus Wellhardh]
+
 Sun Nov  9 15:34:24 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/upscode2.c: Some weird characters broke the compilation.

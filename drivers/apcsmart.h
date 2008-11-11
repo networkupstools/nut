@@ -264,6 +264,9 @@ struct {
 	/* SmartUPS 1250. */
 	{ "8QD",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
 	{ "8TI",        "79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
+	/* APC Matrix */
+	{ "0ZI",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz/<>", 0 },
+	{ "5UI",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz/<>", 0 },
 
 	{ NULL,		NULL,			0 },
 };
