@@ -1,3 +1,8 @@
+Sat Nov 15 23:40:32 +0100 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - ltmain.sh: update to GNU libtool 2.2.4
+ - configure.in: add AC_CONFIG_MACRO_DIR([m4]) macro
+
 Sat Nov 15 22:24:16 +0100 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  * USB maintenance improvements: create a set of USB helpers, to start laying
