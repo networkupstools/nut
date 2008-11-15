@@ -1,7 +1,7 @@
 /* liebert-hid.c - subdriver to monitor Liebert USB/HID devices with NUT
  *
  *  Copyright (C)
- *  2003 - 2005 Arnaud Quette <arnaud.quette@free.fr>
+ *  2003 - 2008 Arnaud Quette <arnaud.quette@free.fr>
  *  2005 - 2006 Peter Selinger <selinger@users.sourceforge.net>         
  *  2007        Charles Lepple <clepple@gmail.com>
  *
@@ -26,10 +26,22 @@
 #include "extstate.h" /* for ST_FLAG_STRING */
 #include "main.h"     /* for getval() */
 #include "common.h"
+#include "usb-common.h"
 
-#define LIEBERT_HID_VERSION     "Liebert HID 0.2 (experimental)"
+#define LIEBERT_HID_VERSION     "Liebert HID 0.3"
+/* FIXME: experimental flag to be put in upsdrv_info */
 
+/* Liebert */
 #define LIEBERT_VENDORID 0x06da
+
+/* USB IDs device table */
+static usb_device_id liebert_usb_device_table [] = {
+	/* various models */
+	{ USB_DEVICE(LIEBERT_VENDORID, 0xffff), NULL },
+	
+	/* Terminating entry */
+	{ -1, -1, NULL }
+};
 
 /* --------------------------------------------------------------- */
 /*      Vendor-specific usage table */
@@ -97,22 +109,26 @@ static char *liebert_format_serial(HIDDevice_t *hd) {
 /* this function allows the subdriver to "claim" a device: return 1 if
  * the device is supported by this subdriver, else 0. */
 static int liebert_claim(HIDDevice_t *hd) {
-	if (hd->VendorID != LIEBERT_VENDORID) {
-		return 0;
-	}
-	switch (hd->ProductID)
-	{
-	/* accept any known UPS - add devices here as needed */
-	case 0xffff:
-		return 1;
 
-	/* by default, reject, unless the productid option is given */
-	default:
-		if (getval("productid")) {
+	int status = is_usb_device_supported(&liebert_usb_device_table, hd->VendorID,
+								 hd->ProductID);
+
+	switch (status) {
+
+		case POSSIBLY_SUPPORTED:
+			/* by default, reject, unless the productid option is given */
+			if (getval("productid")) {
+				return 1;
+			}
+			possibly_supported("Liebert", hd);
+			return 0;
+
+		case SUPPORTED:
 			return 1;
-		}
-		possibly_supported("Liebert", hd);
-		return 0;
+
+		case NOT_SUPPORTED:
+		default:
+			return 0;
 	}
 }
 

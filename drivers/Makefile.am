@@ -143,24 +143,25 @@ skel_LDADD = $(LDADD_DRIVERS)
 USBHID_UPS_SUBDRIVERS = apc-hid.c belkin-hid.c cps-hid.c explore-hid.c \
  liebert-hid.c mge-hid.c tripplite-hid.c
 usbhid_ups_SOURCES = usbhid-ups.c libhid.c libusb.c hidparser.c	\
- $(USBHID_UPS_SUBDRIVERS)
+ usb-common.c $(USBHID_UPS_SUBDRIVERS)
 usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 if WITH_SSL
   usbhid_ups_LDADD += $(LIBSSL_LDFLAGS)
 endif
 
-energizerups_SOURCES = energizerups.c
-energizerups_LDADD = $(LDADD_DRIVERS)
-
-tripplite_usb_SOURCES = tripplite_usb.c libusb.c
+tripplite_usb_SOURCES = tripplite_usb.c libusb.c usb-common.c
 tripplite_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS) -lm
 
-bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c nut_usb.c
+bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c nut_usb.c usb-common.c
 bcmxcp_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 
-megatec_usb_SOURCES = megatec.c megatec_usb.c libusb.c
+megatec_usb_SOURCES = megatec.c megatec_usb.c libusb.c usb-common.c
 megatec_usb_CFLAGS = $(AM_CFLAGS) -DMEGATEC_SUBDRV
 megatec_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
+
+# broken - to be removed
+energizerups_SOURCES = energizerups.c
+energizerups_LDADD = $(LDADD_DRIVERS)
 
 # HID-over-serial
 newmge_shut_SOURCES = usbhid-ups.c libshut.c libhid.c hidparser.c mge-hid.c
@@ -209,7 +210,7 @@ dist_noinst_HEADERS = al175.h apccmib.h apc-hid.h apcsmart.h bcmxcp.h	\
  oneac.h optiups.h powercom.h pwmib.h safenet.h serial.h		\
  snmp-ups.h solis.h tripplite.h tripplite-hid.h tripplitesu.h		\
  upscode2.h victronups.h powerpanel.h powerp-bin.h powerp-txt.h		\
- upshandler.h netxml-ups.h mge-xml.h
+ upshandler.h usb-common.h netxml-ups.h mge-xml.h
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,
@@ -223,6 +224,6 @@ libdummy_a_SOURCES = main.c dstate.c serial.c
 # and is not meant to be installed.
 
 EXTRA_LIBRARIES += libnuthalmain.a
-libnuthalmain_a_SOURCES = main-hal.c dstate-hal.c
+libnuthalmain_a_SOURCES = main-hal.c dstate-hal.c usb-common.c
 
 MOSTLYCLEANFILES = libnuthalmain.a

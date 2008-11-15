@@ -23,6 +23,7 @@
 #include "megatec.h"
 #include "libusb.h"
 #include "serial.h"
+#include "usb-common.h"
 
 #include <stdio.h>
 #include <limits.h>
@@ -113,15 +114,38 @@ typedef struct {
 	subdriver_t *subdriver;
 } usb_ups_t;
 
+/* Agiler */
+#define AGILER_VENDORID		0x05b8
+/* Krauler (non compliant IDs) */
+#define KRAULER_VENDORID	0x0001
+/* Ablerex (non compliant IDs) */
+#define ABLEREX_VENDORID	0xffff
+/* Belkin */
+#define BELKIN_VENDORID		0x0665
+/* Mustek */
+#define MUSTEK_VENDORID		0x06da
+/* Unitek */
+#define UNITEK_VENDORID		0x0f03
+
 /* list of all known devices */
+
+/* FIXME: move into usb_device_id */
 static usb_ups_t KnownDevices[] = {
-	{0x05b8, 0x0000, &agiler_subdriver},	/* Agiler UPS */
-	{0x0001, 0x0000, &krauler_subdriver},	/* Krauler UP-M500VA */
-	{0xffff, 0x0000, &krauler_subdriver},	/* Ablerex 625L USB */
-	{0x0665, 0x5161, &phoenix_subdriver},	/* Belkin F6C1200-UNV */
-	{0x06da, 0x0003, &phoenix_subdriver},	/* Mustek Powermust */
-	{0x0f03, 0x0001, &phoenix_subdriver},	/* Unitek Alpha 1200Sx */
-	{-1, -1, NULL}		/* end of list */
+	/* Agiler UPS */
+	{ USB_DEVICE(AGILER_VENDORID, 0x0000), &agiler_subdriver},
+	/* Krauler UP-M500VA */
+	{ USB_DEVICE(KRAULER_VENDORID, 0x0000), &krauler_subdriver},
+	/* Ablerex 625L USB */
+	{ USB_DEVICE(ABLEREX_VENDORID, 0x0000), &krauler_subdriver},
+	/* Belkin F6C1200-UNV */
+	{ USB_DEVICE(BELKIN_VENDORID, 0x5161), &phoenix_subdriver},
+	/* Mustek Powermust */
+	{ USB_DEVICE(MUSTEK_VENDORID, 0x0003), &phoenix_subdriver},
+	/* Unitek Alpha 1200Sx */
+	{ USB_DEVICE(UNITEK_VENDORID, 0x0001), &phoenix_subdriver},
+	
+	/* end of list */
+	{-1, -1, NULL}
 };
 
 static int subdriver_match_func(USBDevice_t *d, void *privdata)

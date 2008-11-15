@@ -833,6 +833,7 @@ AC_OUTPUT([
  scripts/udev/nut-usbups.rules
  scripts/Makefile
  server/Makefile
+ tools/Makefile
  Makefile
 ])
 

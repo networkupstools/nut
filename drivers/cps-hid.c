@@ -1,7 +1,7 @@
 /* cps-hid.c - subdriver to monitor CPS USB/HID devices with NUT
  *
  *  Copyright (C)
- *  2003 - 2005 Arnaud Quette <arnaud.quette@free.fr>
+ *  2003 - 2008 Arnaud Quette <arnaud.quette@free.fr>
  *  2005 - 2006 Peter Selinger <selinger@users.sourceforge.net>         
  *
  *  Note: this subdriver was initially generated as a "stub" by the
@@ -28,10 +28,23 @@
 #include "extstate.h" /* for ST_FLAG_STRING */
 #include "main.h"     /* for getval() */
 #include "common.h"
+#include "usb-common.h"
 
-#define CPS_HID_VERSION      "CyberPower HID 0.1"
+#define CPS_HID_VERSION      "CyberPower HID 0.2"
 
+/* Cyber Power Systems */
 #define CPS_VENDORID 0x0764
+
+/* USB IDs device table */
+static usb_device_id cps_usb_device_table [] = {
+	/* 900AVR/BC900D, CP1200AVR/BC1200D */
+	{ USB_DEVICE(CPS_VENDORID, 0x0005), NULL },
+	/* Dynex DX-800U? */
+	{ USB_DEVICE(CPS_VENDORID, 0x0501), NULL },
+	
+	/* Terminating entry */
+	{ -1, -1, NULL }
+};
 
 /* --------------------------------------------------------------- */
 /*      Vendor-specific usage table */
@@ -135,25 +148,26 @@ static char *cps_format_serial(HIDDevice_t *hd) {
 /* this function allows the subdriver to "claim" a device: return 1 if
  * the device is supported by this subdriver, else 0. */
 static int cps_claim(HIDDevice_t *hd) {
-	if (hd->VendorID != CPS_VENDORID) {
-		return 0;
-	}
-	switch (hd->ProductID) {
 
-	/* accept any known UPS - add devices here as needed */
-	case 0x0005:	/* Cyber Power 900AVR/BC900D, CP1200AVR/BC1200D */
-			/* fixme: are the above really HID devices? */
-			/* Dynex DX-800U */
-	case 0x0501:
-		return 1;
+	int status = is_usb_device_supported(&cps_usb_device_table, hd->VendorID,
+								 hd->ProductID);
 
-	/* by default, reject, unless the productid option is given */
-	default:
-		if (getval("productid")) {
+	switch (status) {
+
+		case POSSIBLY_SUPPORTED:
+			/* by default, reject, unless the productid option is given */
+			if (getval("productid")) {
+				return 1;
+			}
+			possibly_supported("CyberPower", hd);
+			return 0;
+
+		case SUPPORTED:
 			return 1;
-		}
-		possibly_supported("CyberPower", hd);
-		return 0;
+
+		case NOT_SUPPORTED:
+		default:
+			return 0;
 	}
 }
 

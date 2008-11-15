@@ -29,11 +29,11 @@
 #include "main.h"
 #include "extstate.h" /* for ST_FLAG_STRING */
 #include "common.h"
+#include "usb-common.h"
 
-#define TRIPPLITE_HID_VERSION "TrippLite HID 0.3 (experimental)"
+#define TRIPPLITE_HID_VERSION "TrippLite HID 0.4"
+/* FIXME: experimental flag to be put in upsdrv_info */
 
-#define TRIPPLITE_VENDORID 0x09ae 
-#define HP_VENDORID 0x03f0
 
 /* For some devices, the reported battery voltage is off by
  * factor of 10 (due to an error in the report descriptor),
@@ -41,6 +41,51 @@
  * battery voltage. By default, the factor is 1 (no scaling).
  */
 static double	battery_scale = 1.0;
+
+/* Specific handlers for USB device matching */
+static void *battery_scale_1dot0()
+{
+	/* FIXME: we could remove this one since it's the default! */
+	battery_scale = 1.0;
+	return NULL;
+}
+static void *battery_scale_0dot1()
+{
+	battery_scale = 0.1;
+	return NULL;
+}
+
+/* TrippLite */
+#define TRIPPLITE_VENDORID 0x09ae 
+
+/* Hewlett Packard */
+#define HP_VENDORID 0x03f0
+
+/* USB IDs device table */
+static usb_device_id tripplite_usb_device_table [] = {
+	/* e.g. TrippLite AVR550U */
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x1003), battery_scale_0dot1 },
+	/* e.g. TrippLite AVR750U */
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x1007), battery_scale_0dot1 },
+	/* e.g. TrippLite OMNI1000LCD */
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x2005), battery_scale_0dot1 },
+	/* e.g. TrippLite OMNI900LCD */
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x2007), battery_scale_0dot1 },
+	/* e.g. TrippLite smart2200RMXL2U */
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3012), battery_scale_1dot0 },
+	/* e.g. ? */
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3014), battery_scale_1dot0 },
+	/* e.g. TrippLite SmartOnline SU6000RT4U? */
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x4002), battery_scale_1dot0 },
+	/* e.g. TrippLite SmartOnline SU1500RTXL2ua */
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x4003), battery_scale_1dot0 },
+
+	/* HP R/T 2200 INTL (like SMART2200RMXL2U) */
+	{ USB_DEVICE(HP_VENDORID, 0x1f0a), battery_scale_1dot0 },
+	
+	/* Terminating entry */
+	{ -1, -1, NULL }
+};
 
 /* returns statically allocated string - must not use it again before
    done with result! */
@@ -285,67 +330,48 @@ static char *tripplite_format_serial(HIDDevice_t *hd) {
 /* this function allows the subdriver to "claim" a device: return 1 if
  * the device is supported by this subdriver, else 0. */
 static int tripplite_claim(HIDDevice_t *hd) {
-	switch (hd->VendorID)
-	{
-	case TRIPPLITE_VENDORID:
 
-		/* accept any known UPS - add devices here as needed.
-		   Remember: also update scripts/udev/nutusb-ups.rules.in
-		   and scripts/hotplug/libhid.usermap */
-		switch (hd->ProductID)
-		{
-		case 0x1003:  /* e.g. AVR550U */
-		case 0x1007:  /* e.g. AVR750U */
-		case 0x2005:  /* e.g. OMNI1000LCD */
-		case 0x2007:  /* e.g. OMNI900LCD */
-			battery_scale = 0.1;
-			return 1;
-	
-		case 0x3012:  /* e.g. smart2200RMXL2U */
-		case 0x3014:
-		case 0x4002:  /* e.g. SmartOnline SU6000RT4U? */
-		case 0x4003:  /* e.g. SmartOnline SU1500RTXL2ua */
-			battery_scale = 1.0;
-			return 1;
+	int status = is_usb_device_supported(&tripplite_usb_device_table, hd->VendorID,
+								 hd->ProductID);
 
-		/* reject known non-HID devices */
-		/* not all Tripp Lite products are HID, some are "serial over USB". */
-		case 0x0001:  /* e.g. SMART550USB, SMART3000RM2U */
-			upsdebugx(0,
-	"This Tripp Lite device (%04x/%04x) is not supported by usbhid-ups.\n"
-	"Please use the tripplite_usb driver instead.\n",
-					 hd->VendorID, hd->ProductID);
-			return 0;
+	switch (status) {
 
-		/* by default, reject, unless the productid option is given */
-		default:
+		case POSSIBLY_SUPPORTED:
+			/* reject any known non-UPS */
+			if (hd->VendorID == HP_VENDORID) {
+				if (hd->ProductID != 0x1027) { /* Virtual keyboard (not a UPS) */
+					possibly_supported("Hewlett Packard", hd);
+				}
+				return 0;
+			}
+			/* reject known non-HID devices */
+			/* not all Tripp Lite products are HID, some are "serial over USB". */
+			if (hd->VendorID == TRIPPLITE_VENDORID) {
+				if (hd->ProductID == 0x0001) {
+					/* e.g. SMART550USB, SMART3000RM2U */
+					upsdebugx(0, "This Tripp Lite device (%04x/%04x) is not supported by usbhid-ups.\n"
+							 "Please use the tripplite_usb driver instead.\n",
+							 hd->VendorID, hd->ProductID);
+				}
+				else {
+					possibly_supported("Tripp Lite", hd);
+				}
+				return 0;
+			}
+			
+			/* by default, reject, unless the productid option is given */
 			if (getval("productid")) {
 				return 1;
 			}
-			possibly_supported("Tripp Lite", hd);
+			possibly_supported("Belkin", hd);
 			return 0;
-		}
 
-	case HP_VENDORID:
-		switch(hd->ProductID)
-		{
-		case 0x1f0a:	/* HP R/T 2200 INTL (like SMART2200RMXL2U) */
-			battery_scale = 1.0;
+		case SUPPORTED:
 			return 1;
 
-		case 0x1027:	/* Virtual keyboard (not a UPS) */
-			return 0;
-
+		case NOT_SUPPORTED:
 		default:
-			if (getval("productid")) {
-				return 1;
-			}
-			possibly_supported("Hewlett Packard", hd);
 			return 0;
-		}
-
-	default:
-		return 0;
 	}
 }
 

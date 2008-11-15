@@ -117,7 +117,8 @@ TODO List:
 #include "bcmxcp_io.h"
 #include "bcmxcp.h"
 
-#define DRV_VERSION "0.15"
+/* FIXME (AQ): the USB and serial should also be versioned */
+#define DRV_VERSION "0.16"
 
 static int get_word(const unsigned char*);
 static long int get_long(const unsigned char*);

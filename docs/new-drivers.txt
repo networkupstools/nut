@@ -446,6 +446,51 @@ to the syslog after communications have been lost.  Your driver should
 call this whenever it has successfully contacted the UPS.  A good place
 for most drivers is where it calls dstate_dataok.
 
+USB port handling
+=================
+
+Drivers which use USB functions should include usb-common.h and use these:
+
+ * structure and macro:
+ 
+   You should us the usb_device_id structure, and the USB_DEVICE macro to
+   declare the supported devices. This allows the automatic extraction of
+   USB information, to generate the HAL, Hotplug and udev support files.
+
+   For example:
+   /* SomeVendor name */
+   #define SOMEVENDOR_VENDORID		0xXXXX
+
+   /* USB IDs device table */
+   static usb_device_id sv_usb_device_table [] = {
+	 /* some models 1 */
+	 { USB_DEVICE(SOMEVENDOR_VENDORID, 0xYYYY), NULL },
+	 /* various models */
+	 { USB_DEVICE(SOMEVENDOR_VENDORID, 0xZZZZ), NULL },
+	 { USB_DEVICE(SOMEVENDOR_VENDORID, 0xAAAA), NULL },
+	 /* Terminating entry */
+	 { -1, -1, NULL }
+   };
+
+ * function:
+
+ - is_usb_device_supported(usb_device_id **usb_device_id_list, 
+							int dev_VendorID, int dev_ProductID)
+
+Call this in your device opening / matching function. Pass your usb_device_id
+structure, and a set of VendorID / DeviceID.
+
+This function returns one of the following value: 
+NOT_SUPPORTED (0), POSSIBLY_SUPPORTED (1) or SUPPORTED (2) 
+POSSIBLY_SUPPORTED is returned when the VendorID is matched, but the DeviceID
+is unknown.
+
+For implementation examples, refer to the various USB drivers, and search for
+the above patterns.
+
+
+This set of USB helpers is due to expand is the near future...
+
 Variable names
 ==============
 

@@ -1,3 +1,28 @@
+Sat Nov 15 22:24:16 +0100 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+
+ * USB maintenance improvements: create a set of USB helpers, to start laying
+   down a common ground for USB support. This provide a standard way to declare
+   supported USB devices, and the extraction of these info to generate the
+   various USB files (HAL, Hotplug and udev)
+   - drivers/usb-common.{c,h}: with a structure
+     (usb_device_id), a macro (USB_DEVICE) and a matching function (
+     is_usb_device_supported())
+   - drivers/*: {usb,hid}*: 
+     - implement a usb_device_id struct instance,
+     - use it in the various claiming/matching function through 
+       is_usb_device_supported(),
+     - bump the [sub]drivers release.     
+   - drivers/Makefile.am: integrate usb-common.{c,h}
+   - tools/nut-usbinfo.pl: created a Perl script that extract all "USB_DEVICE"
+     pattern from the drivers/ directory files, and generate:
+     ups-nut-device.fdi.in, libhid.usermap and nut-usbups.rules.in.
+   - tools/Makefile.am: created with a call to nut-usbinfo.pl upon "make dist",
+     only if Perl is present.
+   - Makefile.am: list tools in SUBDIRS,
+   - scripts/hal/ups-nut-device.fdi.in, scripts/hotplug/libhid.usermap,
+     scripts/udev/nut-usbups.rules.in: regenerate using "make dist"
+   - doc/new-drivers.txt: document these USB helpers.
+      
 Tue Nov 11 20:25:12 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/apcsmart.[ch]: Improve support for some vintage Matrix-UPS

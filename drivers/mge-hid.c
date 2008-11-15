@@ -1,6 +1,6 @@
 /*  mge-hid.c - data to monitor MGE UPS SYSTEMS HID (USB and serial) devices
  *
- *  Copyright (C) 2003 - 2005
+ *  Copyright (C) 2003 - 2008
  *  			Arnaud Quette <arnaud.quette@mgeups.fr>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
@@ -25,11 +25,24 @@
 #include "usbhid-ups.h"
 #include "mge-hid.h"
 #include "extstate.h"	/* for ST_FLAG_STRING */
-#include "main.h"	/* for getval() */
+#include "main.h"		/* for getval() */
 #include "common.h"
+#include "usb-common.h"
 
-#define MGE_HID_VERSION		"MGE HID 1.10"
+#define MGE_HID_VERSION		"MGE HID 1.11"
+
+/* MGE Office Protection Systems, prev. MGE UPS Systems */
 #define MGE_VENDORID		0x0463
+
+/* USB IDs device table */
+static usb_device_id mge_usb_device_table [] = {
+	/* various models */
+	{ USB_DEVICE(MGE_VENDORID, 0x0001), NULL },
+	{ USB_DEVICE(MGE_VENDORID, 0xffff), NULL },
+	
+	/* Terminating entry */
+	{ -1, -1, NULL }
+};
 
 typedef enum {
 	MGE_DEFAULT = 0,
@@ -651,23 +664,31 @@ static char *mge_format_serial(HIDDevice_t *hd) {
 /* this function allows the subdriver to "claim" a device: return 1 if
  * the device is supported by this subdriver, else 0. */
 static int mge_claim(HIDDevice_t *hd) {
-	if (hd->VendorID != MGE_VENDORID) {
-		return 0;
-	}
-	switch (hd->ProductID)
-	{
-	case 0x0001:
-	case 0xffff:
-		return 1;	/* accept known UPSs */
 
-	default:
-		if (getval("productid")) {
+#ifndef SHUT_MODE
+	int status = is_usb_device_supported(&mge_usb_device_table, hd->VendorID,
+								 hd->ProductID);
+
+	switch (status) {
+
+		case POSSIBLY_SUPPORTED:
+			/* by default, reject, unless the productid option is given */
+			if (getval("productid")) {
+				return 1;
+			}
+			possibly_supported("MGE", hd);
+			return 0;
+
+		case SUPPORTED:
 			return 1;
-		}
-		possibly_supported("MGE", hd);
-		return 0;
-		
+
+		case NOT_SUPPORTED:
+		default:
+			return 0;
 	}
+#else
+			return 1;
+#endif
 }
 
 subdriver_t mge_subdriver = {

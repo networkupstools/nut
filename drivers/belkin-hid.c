@@ -1,8 +1,8 @@
 /*  belkin-hid.h - data to monitor Belkin UPS Systems USB/HID devices with NUT
  *
  *  Copyright (C)  
- *	2003 - 2005	Arnaud Quette <arnaud.quette@free.fr>
- *      2005            Peter Selinger <selinger@users.sourceforge.net>
+ *	2003 - 2008	Arnaud Quette <arnaud.quette@free.fr>
+ *  2005        Peter Selinger <selinger@users.sourceforge.net>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
  *
@@ -28,10 +28,35 @@
 #include "extstate.h" /* for ST_FLAG_STRING */
 #include "main.h"     /* for getval() */
 #include "common.h"
+#include "usb-common.h"
 
-#define BELKIN_HID_VERSION      "Belkin HID 0.11"
+#define BELKIN_HID_VERSION      "Belkin HID 0.12"
 
+/* Belkin */
 #define BELKIN_VENDORID 0x050d
+
+/* USB IDs device table */
+static usb_device_id belkin_usb_device_table [] = {
+	/* F6C800-UNV */
+	{ USB_DEVICE(BELKIN_VENDORID, 0x0980), NULL },
+	/* F6C900-UNV */
+	{ USB_DEVICE(BELKIN_VENDORID, 0x0900), NULL },
+	/* F6C100-UNV */
+	{ USB_DEVICE(BELKIN_VENDORID, 0x0910), NULL },
+	/* F6C120-UNV */
+	{ USB_DEVICE(BELKIN_VENDORID, 0x0912), NULL },
+	/* F6C550-AVR */
+	{ USB_DEVICE(BELKIN_VENDORID, 0x0551), NULL },
+	/* F6C1500-TW-RK */
+	{ USB_DEVICE(BELKIN_VENDORID, 0x0751), NULL },
+	/* F6H375-USB */
+	{ USB_DEVICE(BELKIN_VENDORID, 0x0375), NULL },
+	/* F6C1100-UNV, F6C1200-UNV */
+	{ USB_DEVICE(BELKIN_VENDORID, 0x1100), NULL },
+	
+	/* Terminating entry */
+	{ -1, -1, NULL }
+};
 
 /* some conversion functions specific to Belkin */
 
@@ -398,33 +423,30 @@ static char *belkin_format_serial(HIDDevice_t *hd) {
 /* this function allows the subdriver to "claim" a device: return 1 if
  * the device is supported by this subdriver, else 0. */
 static int belkin_claim(HIDDevice_t *hd) {
-	if (hd->VendorID != BELKIN_VENDORID) {
-		return 0;
-	}
-	switch (hd->ProductID)
-	{
-	/* accept any known UPS - add devices here as needed */
-	case 0x0980:  /* F6C800-UNV */
-	case 0x0900:  /* F6C900-UNV */
-	case 0x0910:  /* F6C100-UNV */
-	case 0x0912:  /* F6C120-UNV */
-	case 0x0551:  /* F6C550-AVR */
-	case 0x0751:  /* F6C1500-TW-RK */
-	case 0x0375:  /* F6H375-USB */
-	case 0x1100:  /* F6C1100-UNV, F6C1200-UNV */
-		return 1;
 
-	/* reject any known non-UPS */
-	case 0x0218:  /* F5U218-MOB 4-Port USB Hub */
-		return 0;
+	int status = is_usb_device_supported(&belkin_usb_device_table, hd->VendorID,
+								 hd->ProductID);
 
-	/* by default, reject, unless the productid option is given */
-	default:
-		if (getval("productid")) {
+	switch (status) {
+
+		case POSSIBLY_SUPPORTED:
+			/* reject any known non-UPS */
+			if (hd->ProductID == 0x0218)  /* F5U218-MOB 4-Port USB Hub */
+				return 0;
+
+			/* by default, reject, unless the productid option is given */
+			if (getval("productid")) {
+				return 1;
+			}
+			possibly_supported("Belkin", hd);
+			return 0;
+
+		case SUPPORTED:
 			return 1;
-		}
-		possibly_supported("Belkin", hd);
-		return 0;
+
+		case NOT_SUPPORTED:
+		default:
+			return 0;
 	}
 }
 

@@ -25,8 +25,9 @@
 #ifndef MEGATEC_H
 #define MEGATEC_H
 
-
-#define DRV_VERSION "1.5.17"
+/* FIXME (AQ): non compliant version (should be X.YZ)
+ * USB and serial should also be versioned */
+#define DRV_VERSION "1.5.18"
 
 
 #ifdef MEGATEC_SUBDRV

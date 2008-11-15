@@ -25,7 +25,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define DRV_VERSION "0.18"
+#define DRV_VERSION "0.19"
 
 /* % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
  *
@@ -312,6 +312,19 @@ The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 #include <math.h>
 #include <ctype.h>
 #include <usb.h>
+#include "usb-common.h"
+
+/* TrippLite */
+#define TRIPPLITE_VENDORID 0x09ae 
+
+/* USB IDs device table */
+static usb_device_id tripplite_usb_device_table [] = {
+	/* e.g. OMNIVS1000, SMART550USB, ... */
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x0001) },
+	
+	/* Terminating entry */
+	{ }
+};
 
 static enum tl_model_t {
 	TRIPP_LITE_UNKNOWN = 0,

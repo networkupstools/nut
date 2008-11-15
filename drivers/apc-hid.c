@@ -1,9 +1,9 @@
 /*  apc-hid.c - data to monitor APC USB/HID devices with NUT
  *
  *  Copyright (C)  
- *	2003 - 2005	Arnaud Quette <arnaud.quette@free.fr>
+ *	2003 - 2008	Arnaud Quette <arnaud.quette@free.fr>
  *	2005		John Stamp <kinsayder@hotmail.com>
- *      2005            Peter Selinger <selinger@users.sourceforge.net>
+ *  2005        Peter Selinger <selinger@users.sourceforge.net>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
  *
@@ -29,10 +29,21 @@
 #include "extstate.h" /* for ST_FLAG_STRING */
 #include "main.h"     /* for getval() */
 #include "common.h"
+#include "usb-common.h"
 
-#define APC_HID_VERSION "APC HID 0.92"
+#define APC_HID_VERSION "APC HID 0.93"
 
-#define APC_VENDORID 0x051d /* APC */
+/* APC */
+#define APC_VENDORID 0x051d
+
+/* USB IDs device table */
+static usb_device_id apc_usb_device_table [] = {
+	/* various models */
+	{ USB_DEVICE(APC_VENDORID, 0x0002), NULL },
+	
+	/* Terminating entry */
+	{ -1, -1, NULL }
+};
 
 /* returns statically allocated string - must not use it again before
    done with result! */
@@ -293,21 +304,26 @@ static char *apc_format_serial(HIDDevice_t *hd) {
 /* this function allows the subdriver to "claim" a device: return 1 if
  * the device is supported by this subdriver, else 0. */
 static int apc_claim(HIDDevice_t *hd) {
-	if (hd->VendorID != APC_VENDORID) {
-		return 0;
-	}
-	switch (hd->ProductID) {
 
-	case  0x0002:
-		return 1;
+	int status = is_usb_device_supported(&apc_usb_device_table, hd->VendorID,
+								 hd->ProductID);
 
-	/* by default, reject, unless the productid option is given */
-	default:
-		if (getval("productid")) {
+	switch (status) {
+
+		case POSSIBLY_SUPPORTED:
+			/* by default, reject, unless the productid option is given */
+			if (getval("productid")) {
+				return 1;
+			}
+			possibly_supported("APC", hd);
+			return 0;
+
+		case SUPPORTED:
 			return 1;
-		}
-		possibly_supported("APC", hd);
-		return 0;
+
+		case NOT_SUPPORTED:
+		default:
+			return 0;
 	}
 }
 
