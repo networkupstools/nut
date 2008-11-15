@@ -32,9 +32,9 @@ if WITH_NEONXML
 endif
 
 SERIAL_DRIVERLIST = al175 apcsmart bcmxcp belkin belkinunv bestfcom	\
- bestuferrups bestups cpsups cyberpower dummy-ups etapro everups 	\
+ bestuferrups bestups cyberpower dummy-ups etapro everups 	\
  gamatronic genericups isbmex liebert masterguard megatec metasys 	\
- mge-shut mge-utalk newmge-shut	nitram oneac optiups powercom rhino 	\
+ mge-shut mge-utalk newmge-shut	oneac optiups powercom rhino 	\
  safenet skel solis tripplite tripplitesu upscode2 victronups powerpanel
 SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb megatec_usb
@@ -96,7 +96,6 @@ belkinunv_SOURCES = belkinunv.c
 bestfcom_SOURCES = bestfcom.c
 bestuferrups_SOURCES = bestuferrups.c
 bestups_SOURCES = bestups.c
-cpsups_SOURCES = cpsups.c
 cyberpower_SOURCES = cyberpower.c
 etapro_SOURCES = etapro.c
 everups_SOURCES = everups.c
@@ -110,7 +109,6 @@ megatec_SOURCES = megatec.c
 metasys_SOURCES = metasys.c
 mge_shut_SOURCES = mge-shut.c hidparser.c 
 mge_utalk_SOURCES = mge-utalk.c
-nitram_SOURCES = nitram.c
 oneac_SOURCES = oneac.c
 optiups_SOURCES = optiups.c
 powercom_SOURCES = powercom.c
@@ -199,14 +197,14 @@ netxml_ups_LDADD = $(LDADD_DRIVERS) $(LIBNEON_LDFLAGS)
 
 dist_noinst_HEADERS = al175.h apccmib.h apc-hid.h apcsmart.h bcmxcp.h	\
  bcmxcp_io.h belkin.h belkin-hid.h belkinunv.h bestfcom.h		\
- bestuferrups.h bestups.h cps-hid.h cpsups.h cyberpower.h dstate.h	\
+ bestuferrups.h bestups.h cps-hid.h cyberpower.h dstate.h	\
  dstate-hal.h								\
  dummy-ups.h etapro.h everups.h gamatronic.h				\
  explore-hid.h genericups.h hidparser.h hidtypes.h ietfmib.h		\
  isbmex.h libhid.h libshut.h libusb.h liebert.h liebert-hid.h main.h	\
  main-hal.h								\
  masterguard.h megatec.h metasys.h mge-hid.h mgemib.h mge-shut.h	\
- mge-utalk.h netvisionmib.h usbhid-ups.h nitram.h nut_usb.h		\
+ mge-utalk.h netvisionmib.h usbhid-ups.h nut_usb.h		\
  oneac.h optiups.h powercom.h pwmib.h safenet.h serial.h		\
  snmp-ups.h solis.h tripplite.h tripplite-hid.h tripplitesu.h		\
  upscode2.h victronups.h powerpanel.h powerp-bin.h powerp-txt.h		\

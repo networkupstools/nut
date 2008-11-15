@@ -28,7 +28,6 @@ SERIAL_PAGES = \
 	bestuferrups.8	\
 	bestups.8 	\
 	bestfcom.8	\
-	cpsups.8	\
 	cyberpower.8	\
 	dummy-ups.8	\
 	etapro.8	\
@@ -41,7 +40,6 @@ SERIAL_PAGES = \
 	metasys.8	\
 	mge-shut.8	\
 	mge-utalk.8	\
-	nitram.8	\
 	oneac.8		\
 	optiups.8	\
 	powercom.8 	\

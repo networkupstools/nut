@@ -33,7 +33,6 @@
 "APC"	"Back-UPS Pro"		""	"apcsmart"
 "APC"	"Matrix-UPS"		""	"apcsmart"
 "APC"	"Smart-UPS"		""	"apcsmart"
-
 "APC"	"Back-UPS Pro USB"	"USB"	"usbhid-ups"
 "APC"	"Back-UPS USB"		"USB"	"usbhid-ups"
 "APC"	"Back-UPS RS USB"	"USB"	"usbhid-ups"
@@ -42,18 +41,15 @@
 "APC"	"Back-UPS BF500"	"USB"	"usbhid-ups"
 "APC"	"BACK-UPS XS LCD"	"USB"	"usbhid-ups"
 "APC"	"Smart-UPS USB"		"USB"	"usbhid-ups"
-
 "APC"	"Back-UPS"	"940-0095A/C cables"	"genericups upstype=1"
 "APC"	"Back-UPS"	"940-0020B/C cables"	"genericups upstype=2"
 "APC"	"Back-UPS"	"940-0023A cable"	"genericups upstype=9"
-
 "APC"	"Back-UPS Office"	"940-0119A cable"	"genericups upstype=12"
-
 "APC"	"Masterswitch"	"Not a UPS - 940-0020 cable"	"genericups upstype=12"
-
 "APC"	"Back-UPS RS 500" "custom non-USB cable"	"genericups upstype=20"
+"APC"	"(various)"	"SNMP monitoring card"	"snmp-ups (experimental)"
 
-"APC"	"(various)"	"SNMP monitoring card"	"snmp-ups (experimental driver)"
+"Aphel"	"PDU"	"no report, but various models should be supported"	"snmp-ups (experimental)"
 
 "Atlantis Land"	"A03-P826"	""	"megatec"
 
@@ -162,6 +158,8 @@
 "Eaton"	"various models (SNMP mode)"			"NMC Minislot (Ref 66102)"	"snmp-ups (experimental)"
 "Eaton"	"various models (XML/HTTP mode)"			"SNMP/Web Minislot card (ref 66244)"	"netxml-ups (experimental)"
 "Eaton"	"various models (SNMP mode)"			"SNMP/Web Minislot card (ref 66244)"	"snmp-ups (experimental)"
+"Eaton"	"Powerware ePDU Managed"			""	"snmp-ups (experimental)"
+"Eaton"	"Powerware ePDU Monitored"			""	"snmp-ups (experimental)"
 
 "Effekta"	"MI/MT/MH"	"2502 cable"	"megatec"
 "Effekta"	"RM2000MH"	""	"megatec"
@@ -440,7 +438,7 @@
 
 "Nitram"	"Elite 500"	""	"genericups upstype=8"
 "Nitram"	"Elite 2002"	""	"genericups upstype=16"
-"Nitram"	"Elite 2005"	""	"powerpanel or nitram"
+"Nitram"	"Elite 2005"	""	"powerpanel"
 
 "Oneac"	"ON400"	"advanced interface"	"oneac"
 "Oneac"	"ON600"	"advanced interface"	"oneac"
@@ -514,9 +512,13 @@
 "Powerware"	"9120"	""	"upscode2"
 "Powerware"	"9150"	""	"upscode2"
 "Powerware"	"9305"	""	"upscode2"
-"Powerware"	"(various)"	"ConnectUPS Web/SNMP card"	"snmp-ups (experimental driver)"
+"Powerware"	"(various)"	"ConnectUPS Web/SNMP card"	"snmp-ups (experimental)"
 
 "Powerwell"	"PM525A/-625A/-800A/-1000A/-1250A"	""	"safenet"
+
+"Raritan"	"Intelligent PDU - Dominion PX"	"no report, but should be supported"	"snmp-ups (experimental)"
+"Raritan"	"Metered PDU - Raritan PM"	"no report, but should be supported"	"snmp-ups (experimental)"
+"Raritan"	"Switched PDU - Raritan RPC"	"no report, but should be supported"	"snmp-ups (experimental)"
 
 "Repotec"	"RPF525/625/800/1000"	""	"safenet"
 "Repotec"	"RPT-800A"	""	"genericups upstype=13"
