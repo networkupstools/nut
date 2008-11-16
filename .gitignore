@@ -13,3 +13,6 @@ configure
 libtool
 mkinstalldirs
 Makefile.in
+config.guess
+config.sub
+ltmain.sh
