@@ -1,3 +1,7 @@
+Sun Nov 16 18:04:03 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/dstate.c: add debug commands
+
 Sat Nov 15 23:58:44 +0100 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  * Drivers removal (cpsups, nitram): powerpanel is now officially taking over

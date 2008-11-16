@@ -168,8 +168,15 @@ static void send_to_all(const char *fmt, ...)
 	struct conn_t	*conn, *cnext;
 
 	va_start(ap, fmt);
-	vsnprintf(buf, sizeof(buf), fmt, ap);
+	ret = vsnprintf(buf, sizeof(buf), fmt, ap);
 	va_end(ap);
+
+	if (ret < 1) {
+		upsdebugx(2, "%s: nothing to write", __func__);
+		return;
+	}
+
+	upsdebugx(5, "%s: %.*s", __func__, ret-1, buf);
 
 	for (conn = connhead; conn; conn = cnext) {
 		cnext = conn->next;
@@ -190,12 +197,19 @@ static int send_to_one(struct conn_t *conn, const char *fmt, ...)
 	char	buf[ST_SOCK_BUF_LEN];
 
 	va_start(ap, fmt);
-	vsnprintf(buf, sizeof(buf), fmt, ap);
+	ret = vsnprintf(buf, sizeof(buf), fmt, ap);
 	va_end(ap);
+
+	if (ret < 1) {
+		upsdebugx(2, "%s: nothing to write", __func__);
+		return 1;
+	}
+
+	upsdebugx(5, "%s: %.*s", __func__, ret-1, buf);
 
 	ret = write(conn->fd, buf, strlen(buf));
 
-	if ((ret < 1) || (ret != (int) strlen(buf))) {
+	if (ret != (int)strlen(buf)) {
 		upsdebugx(2, "write %d bytes to socket %d failed", strlen(buf), conn->fd);
 		sock_disconnect(conn);
 		return 0;	/* failed */
