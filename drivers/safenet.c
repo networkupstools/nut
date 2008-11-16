@@ -80,7 +80,7 @@ static int safenet_command(const char *command)
 		return -1;
 	}
 
-	upsdebug_hex(3, "send", command, strlen(command));
+	upsdebugx(3, "send: %s", command);
 
 	/*
 	 * Read the reply from the UPS.
@@ -97,7 +97,7 @@ static int safenet_command(const char *command)
 		return -1;
 	}
 
-	upsdebug_hex(3, "read", reply, ret);
+	upsdebugx(3, "read: %s", reply);
 	
 	/*
 	 * We check if the reply looks like a valid status.
@@ -464,16 +464,9 @@ void upsdrv_initups(void)
 	 * Use canonical mode input processing (to read reply line)
 	 */
 	tio.c_lflag |= ICANON;	/* Canonical input (erase and kill processing) */
-	tio.c_iflag |= ICRNL;	/* Map CR to NL on input */
 
-	/*
-	 * VEOF and VEOL may have the same values as the VMIN and VTIME
-	 * subscripts respectively, so to prevent surprises, we disable
-	 * them here (EOF and EOL are not used).
-	 */
 	tio.c_cc[VEOF] = _POSIX_VDISABLE;
-	tio.c_cc[VEOL] = _POSIX_VDISABLE;
-/*
+	tio.c_cc[VEOL] = '\r';
 	tio.c_cc[VERASE] = _POSIX_VDISABLE;
 	tio.c_cc[VINTR]  = _POSIX_VDISABLE;
 	tio.c_cc[VKILL]  = _POSIX_VDISABLE;
@@ -481,7 +474,6 @@ void upsdrv_initups(void)
 	tio.c_cc[VSUSP]  = _POSIX_VDISABLE;
 	tio.c_cc[VSTART] = _POSIX_VDISABLE;
 	tio.c_cc[VSTOP]  = _POSIX_VDISABLE;
-*/
 
 	if (tcsetattr(upsfd, TCSANOW, &tio)) {
 		fatal_with_errno(EXIT_FAILURE, "tcsetattr");

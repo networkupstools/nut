@@ -1,3 +1,8 @@
+Sun Nov 16 18:06:08 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/safenet.c: display debug information in text mode, rather than
+   in hexadecimal mode
+
 Sun Nov 16 18:04:03 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/dstate.c: add debug commands
