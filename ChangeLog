@@ -1,3 +1,7 @@
+Sun Nov 17 19:06:08 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/Makefile.am: fix changes from r1566 that broke building
+
 Mon Nov 17 09:56:47 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  * dummy-ups repeater mode:

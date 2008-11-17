@@ -130,8 +130,12 @@ victronups_SOURCES = victronups.c
 
 # dummy
 dummy_ups_SOURCES = dummy-ups.c
-dummy_ups_CFLAGS = -I$(top_srcdir)/clients
-dummy_ups_LDADD = $(LDADD_DRIVERS) $(top_srcdir)/clients/libupsclient.la 
+dummy_ups_CFLAGS = $(AM_CFLAGS) -I../clients
+dummy_ups_LDADD = $(LDADD_DRIVERS) ../clients/libupsclient.la 
+if WITH_SSL
+  dummy_ups_CFLAGS += $(LIBSSL_CFLAGS)
+  dummy_ups_LDADD += $(LIBSSL_LDFLAGS)
+endif
 
 # sample skeleton driver
 
