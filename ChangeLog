@@ -1,3 +1,21 @@
+Mon Nov 17 09:56:47 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ * dummy-ups repeater mode:
+   - drivers/dummy-ups.c, drivers/Makefile.am, man/dummy-ups.8: add a new
+     running mode, called "repeater". The existing "dummy" mode which loads its
+     definition from a file, is still suppported. The new "repeater" mode allows
+     to get and relay (forward) data from a NUT server, using libupsclient.
+     This can be useful for supervision purposes. On big network setup, this can
+     also allow some load sharing between several upsd instances, using a point
+     to point communication with the UPS.
+     In a soon future, this will also help in creating the meta (virtual) device
+     approach.
+     This is still a work in progress, since instant commands and settable
+     values are not yet supported.
+ - drivers/dummy-ups.c: call pconf_finish() when we are done with parsing the
+   definition file in "dummy" mode.
+ - drivers/dummy-ups.h: bump driver release to 0.05.
+
 Sun Nov 16 18:06:08 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/safenet.c: display debug information in text mode, rather than

@@ -30,7 +30,7 @@
  */
 
 
-#define DRV_VERSION	"0.04"
+#define DRV_VERSION	"0.05"
 
 
 /* from usbhid-ups.h */

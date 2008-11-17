@@ -1,6 +1,7 @@
-/* dummy-ups.c - new testing driver
+/* dummy-ups.c - NUT testing driver and repeater
 
-   Copyright (C) 2005  Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
+   Copyright (C)
+       2005 - 2008  Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,15 +19,30 @@
 */
 
 /* TODO list:
+ * - separate the code between dummy and repeater/meta
+ * - for repeater/meta: add support for instant commands and setvar
  * - variable/value enforcement using cmdvartab for testing
  *   the variable existance
  * - allow variable creation on the fly (using upsrw)
  * - poll the "port" file for change
  */
 
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <string.h>
+
 #include "main.h"
 #include "parseconf.h"
+#include "upsclient.h"
 #include "dummy-ups.h"
+
+#define MODE_UNKNOWN	0
+#define MODE_DUMMY		1 /* use the embedded defintion or a definition file */
+#define MODE_REPEATER	2 /* use libupsclient to repeat an UPS */
+#define MODE_META		3 /* consolidate data from several UPSs (TBS) */
+
+int mode=MODE_UNKNOWN;
 
 #define MAX_STRING_SIZE	128
 
@@ -35,31 +51,70 @@ static int parse_data_file(int upsfd);
 static dummy_info_t *find_info(const char *varname);
 static int is_valid_data(const char* varname);
 static int is_valid_value(const char* varname, const char *value);
+/* libupsclient update */
+static int upsclient_update_vars(void);
+
+static char		*client_upsname = NULL, *hostname = NULL;
+static UPSCONN_t	*ups = NULL;
+
+/* Driver functions */
 
 void upsdrv_initinfo(void)
 {
+	int	port;
 	dummy_info_t *item;
 
-	/* Initialise basic essential variables */
-	for ( item = nut_data ; item->info_type != NULL ; item++ ) {
-		if (item->drv_flags & DU_FLAG_INIT) {
-			dstate_setinfo(item->info_type, "%s", item->default_value);
-			dstate_setflags(item->info_type, item->info_flags);
+	switch (mode) {
+		case MODE_DUMMY:
+			/* Initialise basic essential variables */
+			for ( item = nut_data ; item->info_type != NULL ; item++ ) {
+				if (item->drv_flags & DU_FLAG_INIT) {
+					dstate_setinfo(item->info_type, "%s", item->default_value);
+					dstate_setflags(item->info_type, item->info_flags);
 
-			/* Set max length for strings, if needed */
-			if (item->info_flags & ST_FLAG_STRING)
-				dstate_setaux(item->info_type, item->info_len);
-		}
+					/* Set max length for strings, if needed */
+					if (item->info_flags & ST_FLAG_STRING)
+						dstate_setaux(item->info_type, item->info_len);
+				}
+			}
+
+			/* Now get user's defined variables */
+			if (parse_data_file(upsfd) < 0)
+				upslogx(LOG_NOTICE, "Unable to parse the definition file %s", device_path);
+
+			/* Initialize handler */
+			upsh.setvar = setvar;
+
+			dstate_dataok();
+			break;
+		case MODE_META:
+		case MODE_REPEATER:
+			/* Obtain the target name */
+			if (upscli_splitname(device_path, &client_upsname, &hostname, &port) != 0) {
+				fatalx(EXIT_FAILURE, "Error: invalid UPS definition.\nRequired format: upsname[@hostname[:port]]");
+			}
+			/* Connect to the target */
+			ups = xmalloc(sizeof(*ups));
+			if (upscli_connect(ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
+				fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
+			}
+			else {
+				upsdebugx(1, "Connected to %s@%s", client_upsname, hostname);
+			}
+			if (upsclient_update_vars() < 0) {
+				/* check for an old upsd */
+				if (upscli_upserror(ups) == UPSCLI_ERR_UNKCOMMAND) {
+					fatalx(EXIT_FAILURE, "Error: upsd is too old to support this query");
+				}
+				fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
+			}
+			/* FIXME: commands and settables! */
+			break;
+		default:
+		case MODE_UNKNOWN:
+			fatalx(EXIT_FAILURE, "no suitable definition found!");
+			break;
 	}
-
-	/* Now get user's defined variables */
-	if (parse_data_file(upsfd) < 0)
-		upslogx(LOG_NOTICE, "Unable to parse the definition file %s", device_path);
-
-	/* Initialize handler */
-	upsh.setvar = setvar;
-
-	dstate_dataok();
 }
 
 void upsdrv_updateinfo(void)
@@ -68,12 +123,20 @@ void upsdrv_updateinfo(void)
 
 	sleep(1);
 
-	/* simply avoid driver staleness */
-	status_init();
-	status_set(dstate_getinfo("ups.status"));
-	status_commit();
-
-	dstate_dataok();
+	switch (mode) {
+		case MODE_DUMMY:
+			/* simply avoid driver staleness */
+			status_init();
+			status_set(dstate_getinfo("ups.status"));
+			status_commit();
+			dstate_dataok();
+			break;
+		case MODE_META:
+		case MODE_REPEATER:
+			if (upsclient_update_vars())
+				dstate_dataok();
+			break;
+	}
 }
 
 void upsdrv_shutdown(void)
@@ -116,14 +179,33 @@ void upsdrv_banner(void)
 
 void upsdrv_initups(void)
 {
-	/* Nothing to do here... */
+	/* check the running mode... */
+	if (strchr(device_path, '@')) {
+		upsdebugx(1, "Repeater mode");
+		mode = MODE_REPEATER;
+		dstate_setinfo("driver.parameter.mode", "repeater");
+		/* if there is at least one more => MODE_META... */
+	}
+	else {
+		upsdebugx(1, "Dummy mode");
+		mode = MODE_DUMMY;
+		dstate_setinfo("driver.parameter.mode", "dummy");
+	}
 }
 
 void upsdrv_cleanup(void)
 {
-	/* Nothing to do here... */
-}
+	if ( (mode == MODE_META) || (mode == MODE_REPEATER) ) {
+		if (ups) {
+			upscli_sendline(ups, "LOGOUT\n", 7);
+			upscli_disconnect(ups);
+		}
 
+		free(client_upsname);
+		free(hostname);
+		free(ups);
+	}
+}
 
 static int setvar(const char *varname, const char *val)
 {
@@ -170,6 +252,37 @@ static int setvar(const char *varname, const char *val)
 /*************************************************/
 /*               Support functions               */
 /*************************************************/
+
+static int upsclient_update_vars(void)
+{
+	int		ret;
+	unsigned int	numq, numa;
+	const char	*query[4];
+	char		**answer;
+
+	query[0] = "VAR";
+	query[1] = client_upsname;
+	numq = 2;
+
+	ret = upscli_list_start(ups, numq, query);
+
+	if (ret < 0) {
+
+		return ret;
+	}
+
+	while (upscli_list_next(ups, numq, query, &numa, &answer) == 1) {
+
+		/* VAR <upsname> <varname> <val> */
+		if (numa < 4) {
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %d args, need at least 4)", numa);
+		}
+		/* do not override the driver collection */
+		if (strncmp(answer[2], "driver.", 7))
+			dstate_setinfo(answer[2], answer[3]);
+	}
+	return 1;
+}
 
 /* find info element definition in info array */
 static dummy_info_t *find_info(const char *varname)
@@ -288,6 +401,9 @@ static int parse_data_file(int upsfd)
 			upsdebugx(2, "parse_data_file: added \"%s\" with value \"%s\"",
 				ctx.arglist[0], var_value);
 	}
+
+	/* cleanup now, since parseconf is not useful anymore! */
+	pconf_finish(&ctx);
 
 	return 1;
 }

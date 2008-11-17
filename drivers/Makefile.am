@@ -130,7 +130,8 @@ victronups_SOURCES = victronups.c
 
 # dummy
 dummy_ups_SOURCES = dummy-ups.c
-dummy_ups_LDADD = $(LDADD_DRIVERS)
+dummy_ups_CFLAGS = -I$(top_srcdir)/clients
+dummy_ups_LDADD = $(LDADD_DRIVERS) $(top_srcdir)/clients/libupsclient.la 
 
 # sample skeleton driver
 
