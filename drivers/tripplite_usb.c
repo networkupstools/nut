@@ -479,7 +479,7 @@ static const char *hexascdump(unsigned char *msg, size_t len)
 
 	*bufp++ = '\0';
 
-	return buf;
+	return (char *)buf;
 }
 
 enum tl_model_t decode_protocol(unsigned int proto)
@@ -678,7 +678,7 @@ void debug_message(const char *msg, int len)
 
 	snprintf(var_name, sizeof(var_name), "ups.debug.%c", *msg);
 
-	ret = send_cmd(msg, len, (char *)tmp_value, sizeof(tmp_value));
+	ret = send_cmd((unsigned char *)msg, len, tmp_value, sizeof(tmp_value));
 	if(ret <= 0) {
 		sprintf(err_msg, "Error reading '%c' value", *msg);
 		usb_comm_fail(ret, err_msg);
@@ -779,9 +779,9 @@ static int control_outlet(int outlet_id, int state)
 		case TRIPP_LITE_SMARTPRO:   /* tested */
 		case TRIPP_LITE_SMART_0004: /* untested */
 			snprintf(k_cmd, sizeof(k_cmd)-1, "N%02X", 5);
-			ret = send_cmd(k_cmd, strlen(k_cmd) + 1, buf, sizeof buf);
+			ret = send_cmd((unsigned char *)k_cmd, strlen(k_cmd) + 1, (unsigned char *)buf, sizeof buf);
 			snprintf(k_cmd, sizeof(k_cmd)-1, "K%d%d", outlet_id, state & 1);
-			ret = send_cmd(k_cmd, strlen(k_cmd) + 1, buf, sizeof buf);
+			ret = send_cmd((unsigned char *)k_cmd, strlen(k_cmd) + 1, (unsigned char *)buf, sizeof buf);
 
 			if(ret != 8) {
 				upslogx(LOG_ERR, "Could not set outlet %d to state %d, ret = %d", outlet_id, state, ret);
@@ -803,12 +803,12 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if(tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_SMART_0004) {
 		if (!strcasecmp(cmdname, "test.battery.start")) {
-			send_cmd("A", 2, buf, sizeof buf);
+			send_cmd((unsigned char *)"A", 2, buf, sizeof buf);
 			return STAT_INSTCMD_HANDLED;
 		}
 
 		if(!strcasecmp(cmdname, "reset.input.minmax")) {
-			return (send_cmd("Z", 2, buf, sizeof buf) == 2) ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_UNKNOWN;
+			return (send_cmd((unsigned char *)"Z", 2, buf, sizeof buf) == 2) ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_UNKNOWN;
 		}
 	}
 
@@ -973,7 +973,7 @@ void upsdrv_initinfo(void)
 
 	/* Get nominal power: */
 	ret = send_cmd(p_msg, sizeof(p_msg), p_value, sizeof(p_value)-1);
-	va = strtol(p_value+1, NULL, 10);
+	va = strtol((char *)(p_value+1), NULL, 10);
 
 	if(tl_model == TRIPP_LITE_SMART_0004) {
 		dstate_setinfo("ups.debug.P","%s", hexascdump(p_value+1, 7));
@@ -1007,7 +1007,7 @@ void upsdrv_initinfo(void)
         /* Fetch firmware version: */
 	ret = send_cmd(f_msg, sizeof(f_msg), f_value, sizeof(f_value)-1);
 
-	toprint_str(f_value+1, 6);
+	toprint_str((char *)(f_value+1), 6);
 	f_value[7] = 0;
 
 	dstate_setinfo("ups.firmware", "F%s", f_value+1);
@@ -1085,19 +1085,19 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("battery.voltage.nominal", "%d", battery_voltage_nominal);
 	dstate_setinfo("ups.debug.load_banks", "%d", switchable_load_banks);
 
-	snprintf(buf, sizeof buf, "%d", offdelay);
-	dstate_setinfo("ups.delay.shutdown", buf);
+	snprintf((char *)buf, sizeof buf, "%d", offdelay);
+	dstate_setinfo("ups.delay.shutdown", (char *)buf);
 	dstate_setflags("ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.shutdown", 3);
 
 #if 0
-	snprintf(buf, sizeof buf, "%d", startdelay);
-	dstate_setinfo("ups.delay.start", buf);
+	snprintf((char *)buf, sizeof buf, "%d", startdelay);
+	dstate_setinfo("ups.delay.start", (char *)buf);
 	dstate_setflags("ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.start", 8);
 
-	snprintf(buf, sizeof buf, "%d", bootdelay);
-	dstate_setinfo("ups.delay.reboot", buf);
+	snprintf((char *)buf, sizeof buf, "%d", bootdelay);
+	dstate_setinfo("ups.delay.reboot", (char *)buf);
 	dstate_setflags("ups.delay.reboot", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.reboot", 3);
 #endif

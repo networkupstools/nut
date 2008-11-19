@@ -220,7 +220,7 @@ void nut_snmp_init(const char *type, const char *hostname, const char *version,
 	snmp_sess_init(&g_snmp_sess);
 
 	g_snmp_sess.peername = xstrdup(hostname);
-	g_snmp_sess.community = xstrdup(community);
+	g_snmp_sess.community = (unsigned char *)xstrdup(community);
 	g_snmp_sess.community_len = strlen(community);
 	if (strcmp(version, "v1") == 0)
 		g_snmp_sess.version = SNMP_VERSION_1;

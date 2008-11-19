@@ -879,9 +879,9 @@ static void getbaseinfo(void)
 
 		j++;
 		if( tam == 25)
-			CommReceive(Pacote, tam);
+			CommReceive((char *)Pacote, tam);
 		else
-			 CommReceive(temp, tam);
+			 CommReceive((char *)temp, tam);
 	} /* while end */
 
 	if( (!detected) ) {
@@ -993,7 +993,7 @@ static void getupdateinfo(void)
 	temp[0] = 0; /* flush temp buffer */
 	tam = ser_get_buf_len(upsfd, temp, pacsize, 3, 0);
 
-	CommReceive(temp, tam);
+	CommReceive((char *)temp, tam);
 
 }
 
