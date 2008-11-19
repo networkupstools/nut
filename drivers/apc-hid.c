@@ -37,7 +37,7 @@
 #define APC_VENDORID 0x051d
 
 /* USB IDs device table */
-static usb_device_id apc_usb_device_table [] = {
+static usb_device_id_t apc_usb_device_table[] = {
 	/* various models */
 	{ USB_DEVICE(APC_VENDORID, 0x0002), NULL },
 	
@@ -305,7 +305,7 @@ static char *apc_format_serial(HIDDevice_t *hd) {
  * the device is supported by this subdriver, else 0. */
 static int apc_claim(HIDDevice_t *hd) {
 
-	int status = is_usb_device_supported(&apc_usb_device_table, hd->VendorID,
+	int status = is_usb_device_supported(apc_usb_device_table, hd->VendorID,
 								 hd->ProductID);
 
 	switch (status) {

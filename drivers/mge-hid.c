@@ -27,15 +27,17 @@
 #include "extstate.h"	/* for ST_FLAG_STRING */
 #include "main.h"		/* for getval() */
 #include "common.h"
-#include "usb-common.h"
 
 #define MGE_HID_VERSION		"MGE HID 1.11"
+
+#ifndef SHUT_MODE
+#include "usb-common.h"
 
 /* MGE Office Protection Systems, prev. MGE UPS Systems */
 #define MGE_VENDORID		0x0463
 
 /* USB IDs device table */
-static usb_device_id mge_usb_device_table [] = {
+static usb_device_id_t mge_usb_device_table[] = {
 	/* various models */
 	{ USB_DEVICE(MGE_VENDORID, 0x0001), NULL },
 	{ USB_DEVICE(MGE_VENDORID, 0xffff), NULL },
@@ -43,6 +45,7 @@ static usb_device_id mge_usb_device_table [] = {
 	/* Terminating entry */
 	{ -1, -1, NULL }
 };
+#endif
 
 typedef enum {
 	MGE_DEFAULT = 0,
@@ -666,7 +669,7 @@ static char *mge_format_serial(HIDDevice_t *hd) {
 static int mge_claim(HIDDevice_t *hd) {
 
 #ifndef SHUT_MODE
-	int status = is_usb_device_supported(&mge_usb_device_table, hd->VendorID,
+	int status = is_usb_device_supported(mge_usb_device_table, hd->VendorID,
 								 hd->ProductID);
 
 	switch (status) {

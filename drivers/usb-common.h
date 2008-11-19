@@ -24,11 +24,11 @@
  * this allows USB information extraction */
 #define USB_DEVICE(vendorID, productID)	vendorID, productID
 
-typedef struct usb_device_id_t {
+typedef struct {
 	int vendorID;
 	int productID;
 	void*(*fun)();				/* handler for specific processing */
-} usb_device_id;
+} usb_device_id_t;
 
 #define NOT_SUPPORTED		0
 #define POSSIBLY_SUPPORTED	1
@@ -37,7 +37,7 @@ typedef struct usb_device_id_t {
 /* Function used to match a VendorID/ProductID pair against a list of
  * supported devices. Return values:
  * NOT_SUPPORTED (0), POSSIBLY_SUPPORTED (1) or SUPPORTED (2) */
-int is_usb_device_supported(usb_device_id **usb_device_id_list, 
+int is_usb_device_supported(usb_device_id_t *usb_device_id_list, 
 							int dev_VendorID, int dev_ProductID);
 
 #endif /* NUT_USB_COMMON_H */

@@ -36,7 +36,7 @@
 #define CPS_VENDORID 0x0764
 
 /* USB IDs device table */
-static usb_device_id cps_usb_device_table [] = {
+static usb_device_id_t cps_usb_device_table[] = {
 	/* 900AVR/BC900D, CP1200AVR/BC1200D */
 	{ USB_DEVICE(CPS_VENDORID, 0x0005), NULL },
 	/* Dynex DX-800U? */
@@ -149,7 +149,7 @@ static char *cps_format_serial(HIDDevice_t *hd) {
  * the device is supported by this subdriver, else 0. */
 static int cps_claim(HIDDevice_t *hd) {
 
-	int status = is_usb_device_supported(&cps_usb_device_table, hd->VendorID,
+	int status = is_usb_device_supported(cps_usb_device_table, hd->VendorID,
 								 hd->ProductID);
 
 	switch (status) {

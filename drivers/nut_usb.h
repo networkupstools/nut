@@ -17,7 +17,7 @@
 #define PHOENIXTEC	0x06da
  
 /* USB IDs device table */
-static usb_device_id pw_usb_device_table [] = {
+static usb_device_id_t pw_usb_device_table[] = {
 	/* various models */
 	{ USB_DEVICE(POWERWARE, 0x0002), NULL },
 

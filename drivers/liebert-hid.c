@@ -35,7 +35,7 @@
 #define LIEBERT_VENDORID 0x06da
 
 /* USB IDs device table */
-static usb_device_id liebert_usb_device_table [] = {
+static usb_device_id_t liebert_usb_device_table[] = {
 	/* various models */
 	{ USB_DEVICE(LIEBERT_VENDORID, 0xffff), NULL },
 	
@@ -110,7 +110,7 @@ static char *liebert_format_serial(HIDDevice_t *hd) {
  * the device is supported by this subdriver, else 0. */
 static int liebert_claim(HIDDevice_t *hd) {
 
-	int status = is_usb_device_supported(&liebert_usb_device_table, hd->VendorID,
+	int status = is_usb_device_supported(liebert_usb_device_table, hd->VendorID,
 								 hd->ProductID);
 
 	switch (status) {

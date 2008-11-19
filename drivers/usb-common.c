@@ -20,11 +20,11 @@
 #include <stdlib.h>
 #include "usb-common.h"
 
-int is_usb_device_supported(usb_device_id **usb_device_id_list, 
+int is_usb_device_supported(usb_device_id_t *usb_device_id_list, 
 							int dev_VendorID, int dev_ProductID)
 {
 	int retval = NOT_SUPPORTED;
-	usb_device_id *usbdev;
+	usb_device_id_t *usbdev;
 
 	for (usbdev = usb_device_id_list; usbdev->vendorID != -1; usbdev++) {
 		if (usbdev->vendorID == dev_VendorID) {

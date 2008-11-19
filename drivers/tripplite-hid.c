@@ -62,7 +62,7 @@ static void *battery_scale_0dot1()
 #define HP_VENDORID 0x03f0
 
 /* USB IDs device table */
-static usb_device_id tripplite_usb_device_table [] = {
+static usb_device_id_t tripplite_usb_device_table[] = {
 	/* e.g. TrippLite AVR550U */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x1003), battery_scale_0dot1 },
 	/* e.g. TrippLite AVR750U */
@@ -331,7 +331,7 @@ static char *tripplite_format_serial(HIDDevice_t *hd) {
  * the device is supported by this subdriver, else 0. */
 static int tripplite_claim(HIDDevice_t *hd) {
 
-	int status = is_usb_device_supported(&tripplite_usb_device_table, hd->VendorID,
+	int status = is_usb_device_supported(tripplite_usb_device_table, hd->VendorID,
 								 hd->ProductID);
 
 	switch (status) {

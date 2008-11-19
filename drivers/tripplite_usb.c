@@ -318,7 +318,7 @@ The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 #define TRIPPLITE_VENDORID 0x09ae 
 
 /* USB IDs device table */
-static usb_device_id tripplite_usb_device_table [] = {
+static usb_device_id_t tripplite_usb_device_table[] = {
 	/* e.g. OMNIVS1000, SMART550USB, ... */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x0001) },
 	

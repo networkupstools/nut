@@ -36,7 +36,7 @@
 #define BELKIN_VENDORID 0x050d
 
 /* USB IDs device table */
-static usb_device_id belkin_usb_device_table [] = {
+static usb_device_id_t belkin_usb_device_table[] = {
 	/* F6C800-UNV */
 	{ USB_DEVICE(BELKIN_VENDORID, 0x0980), NULL },
 	/* F6C900-UNV */
@@ -424,7 +424,7 @@ static char *belkin_format_serial(HIDDevice_t *hd) {
  * the device is supported by this subdriver, else 0. */
 static int belkin_claim(HIDDevice_t *hd) {
 
-	int status = is_usb_device_supported(&belkin_usb_device_table, hd->VendorID,
+	int status = is_usb_device_supported(belkin_usb_device_table, hd->VendorID,
 								 hd->ProductID);
 
 	switch (status) {
