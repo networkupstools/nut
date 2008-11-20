@@ -504,6 +504,7 @@ void upsdrv_banner(void)
     printf("Network UPS Tools - Energizer USB UPS driver %s (%s)\n\n", 
         DRV_VERSION, UPS_VERSION);
     experimental_driver = 1;    /* Causes a warning to be printed */
+	broken_driver = 1;
 }
 
 void upsdrv_initups(void)

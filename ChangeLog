@@ -1,3 +1,7 @@
+Thu Nov 20 09:24:07 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - energizerups: tag as broken_driver, so scheduled for removal by 2.4.0
+
 Mon Nov 17 19:52:28 UTC 2008 / Arjen de Korte <arjen@de-korte.org>3
 
  - drivers/Makefile.am: it looks like r1567 didn't take care of this for all
