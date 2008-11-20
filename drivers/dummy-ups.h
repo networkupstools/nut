@@ -172,14 +172,12 @@ battery.packs.bad
 
 ambient.temperature
 ambient.temperature.alarm
-ambient.temperature.alarm.maximum
-ambient.temperature.alarm.minimum
-ambient.temperature.alarm.enable
+ambient.temperature.high
+ambient.temperature.low
 ambient.humidity
 ambient.humidity.alarm
-ambient.humidity.alarm.maximum
-ambient.humidity.alarm.minimum
-ambient.humidity.alarm.enable
+ambient.humidity.high
+ambient.humidity.low
 
 FIXME: how to manage these?
 outlet.n.id

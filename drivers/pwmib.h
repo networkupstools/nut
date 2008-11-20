@@ -269,9 +269,9 @@ snmp_info_t pw_mib[] = {
 	/* Ambient page */
 	{ "ambient.temperature", 0, 1.0, PW_OID_AMBIENT_TEMP, "",
 		0, NULL },
-	{ "ambient.temperature.alarm.minimum", 0, 1.0, PW_OID_AMBIENT_LOW, "",
+	{ "ambient.temperature.low", 0, 1.0, PW_OID_AMBIENT_LOW, "",
 		0, NULL },
-	{ "ambient.temperature.alarm.maximum", 0, 1.0, PW_OID_AMBIENT_HIGH, "",
+	{ "ambient.temperature.high", 0, 1.0, PW_OID_AMBIENT_HIGH, "",
 		0, NULL },
 
 	/* instant commands */

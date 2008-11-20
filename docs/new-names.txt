@@ -379,37 +379,43 @@ battery: Any battery details
 
 ambient: Conditions from external probe equipment
 
-   +------------------------------------------------------------------------+
-   | ambient.temperature               | Ambient temperature        | 25.40 |
-   |                                   | (degrees C)                |       |
-   |-----------------------------------+----------------------------+-------|
-   | ambient.temperature.alarm         | Set if ambient temperature | 0     |
-   |                                   | alarm is active            |       |
-   |-----------------------------------+----------------------------+-------|
-   | ambient.temperature.alarm.maximum | Maximum allowed            | NO,NO |
-   |                                   | temperature (*** opaque)   |       |
-   |-----------------------------------+----------------------------+-------|
-   | ambient.temperature.alarm.minimum | Minimum allowed            | NO,NO |
-   |                                   | temperature (*** opaque)   |       |
-   |-----------------------------------+----------------------------+-------|
-   | ambient.temperature.alarm.enable  | Enable alarm for ambient   | 1     |
-   |                                   | temperature                |       |
-   |-----------------------------------+----------------------------+-------|
-   | ambient.humidity                  | Ambient relative humidity  | 038.8 |
-   |                                   | (percent)                  |       |
-   |-----------------------------------+----------------------------+-------|
-   | ambient.humidity.alarm            | Set if ambient humidity    | 0     |
-   |                                   | alarm is active            |       |
-   |-----------------------------------+----------------------------+-------|
-   | ambient.humidity.alarm.maximum    | Maximum allowed humidity   | NO,NO |
-   |                                   | (*** opaque)               |       |
-   |-----------------------------------+----------------------------+-------|
-   | ambient.humidity.alarm.minimum    | Minimum allowed humidity   | NO,NO |
-   |                                   | (*** opaque)               |       |
-   |-----------------------------------+----------------------------+-------|
-   | ambient.humidity.alarm.enable     | Enable alarm for ambient   | 1     |
-   |                                   | humidity                   |       |
-   +------------------------------------------------------------------------+
+   +--------------------------------------------------------------------------+
+   | ambient.temperature               | Ambient temperature        | 25.40   |
+   |                                   | (degrees C)                |         |
+   |-----------------------------------+----------------------------+---------|
+   | ambient.temperature.alarm         | Temperature alarm          | enabled |
+   |                                   | (enabled/disabled)         |         |
+   |-----------------------------------+----------------------------+---------|
+   | ambient.temperature.high          | Temperature threshold high | 40      |
+   |                                   | (degrees C)                |         |
+   |-----------------------------------+----------------------------+---------|
+   | ambient.temperature.low           | Temperature threshold low  | 5       |
+   |                                   | (degrees C)                |         |
+   |-----------------------------------+----------------------------+---------|
+   | ambient.temperature.maximum       | Maximum temperature seen   | 37.6    |
+   |                                   | (degrees C)                |         |
+   |-----------------------------------+----------------------------+---------|
+   | ambient.temperature.minimum       | Minimum temperature seen   | 18.1    |
+   |                                   | (degrees C)                |         |
+   |-----------------------------------+----------------------------+---------|
+   | ambient.humidity                  | Ambient relative humidity  | 038.8   |
+   |                                   | (percent)                  |         |
+   |-----------------------------------+----------------------------+---------|
+   | ambient.humidity.alarm            | Relative humidity alarm    | enabled |
+   |                                   | (enabled/disabled)         |         |
+   |-----------------------------------+----------------------------+---------|
+   | ambient.humidity.high             | Relative humidity          | 80      |
+   |                                   | threshold high (percent)   |         |
+   |-----------------------------------+----------------------------+---------|
+   | ambient.humidity.low              | Relative humidity          | 10      |
+   |                                   | threshold high (percent)   |         |
+   |-----------------------------------+----------------------------+---------|
+   | ambient.humidity.maximum          | Maximum relative humidity  | 60      |
+   |                                   | seen (percent)             |         |
+   |-----------------------------------+----------------------------+---------|
+   | ambient.humidity.minimum          | Minimum relative humidity  | 13      |
+   |                                   | seen (percent)             |         |
+   +--------------------------------------------------------------------------+
 
 outlet: Smart outlet management (smart on/off switch, ...)
 

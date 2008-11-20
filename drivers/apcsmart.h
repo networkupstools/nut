@@ -156,16 +156,16 @@ struct apc_vartab_t {
 				APC_F_VOLT,		'o' },
 
 	{ "ambient.humidity",  	APC_POLL|APC_F_PERCENT,	'h' },
-	{ "ambient.humidity.alarm.maximum", 
+	{ "ambient.humidity.high", 
 				APC_F_PERCENT,		'{' },
-	{ "ambient.humidity.alarm.minimum", 
+	{ "ambient.humidity.low", 
 				APC_F_PERCENT,		'}' },
 
 	{ "ambient.temperature", 	
 				APC_POLL|APC_F_CELSIUS, 't' },
-	{ "ambient.temperature.alarm.maximum",	
+	{ "ambient.temperature.high",	
 				APC_F_CELSIUS,		'[' },
-	{ "ambient.temperature.alarm.minimum", 	
+	{ "ambient.temperature.low", 	
 				APC_F_CELSIUS,		']' },
 
 	{ "battery.date",	APC_STRING,		'x' },

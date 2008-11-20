@@ -200,11 +200,11 @@ snmp_info_t apcc_mib[] = {
 	/* Measure-UPS ambient variables */
 /* Environmental sensors (AP9612TH and others) */
 	{ "ambient.temperature", 0, 1, ".1.3.6.1.4.1.318.1.1.2.1.1.0", "", SU_FLAG_OK, NULL },
-	{ "ambient.temperature.alarm.maximum", 0, 1, ".1.3.6.1.4.1.318.1.1.10.1.2.2.1.3.1", "", SU_FLAG_OK, NULL },
-	{ "ambient.temperature.alarm.minimum", 0, 1, ".1.3.6.1.4.1.318.1.1.10.1.2.2.1.4.1", "", SU_FLAG_OK, NULL },
+	{ "ambient.temperature.high", 0, 1, ".1.3.6.1.4.1.318.1.1.10.1.2.2.1.3.1", "", SU_FLAG_OK, NULL },
+	{ "ambient.temperature.low", 0, 1, ".1.3.6.1.4.1.318.1.1.10.1.2.2.1.4.1", "", SU_FLAG_OK, NULL },
 	{ "ambient.humidity", 0, 1, ".1.3.6.1.4.1.318.1.1.2.1.2.0", "", SU_FLAG_OK, NULL },
-	{ "ambient.humidity.alarm.maximum", 0, 1, ".1.3.6.1.4.1.318.1.1.10.1.2.2.1.6.1", "", SU_FLAG_OK, NULL },
-	{ "ambient.humidity.alarm.minimum", 0, 1, ".1.3.6.1.4.1.318.1.1.10.1.2.2.1.7.1", "", SU_FLAG_OK, NULL },
+	{ "ambient.humidity.high", 0, 1, ".1.3.6.1.4.1.318.1.1.10.1.2.2.1.6.1", "", SU_FLAG_OK, NULL },
+	{ "ambient.humidity.low", 0, 1, ".1.3.6.1.4.1.318.1.1.10.1.2.2.1.7.1", "", SU_FLAG_OK, NULL },
 
 	/* IEM ambient variables */
 /* IEM: integrated environment monitor probe */
