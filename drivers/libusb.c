@@ -177,7 +177,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 					upsdebugx(2, "Device does not match - skipping");
 					goto next_device;
 				} else if (ret==-1) {
-					fatalx(EXIT_FAILURE, "matcher: %s", strerror(errno));
+					fatal_with_errno(EXIT_FAILURE, "matcher");
 					goto next_device;
 				} else if (ret==-2) {
 					upsdebugx(2, "matcher: unspecified error");
@@ -193,20 +193,26 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 			 * it force device claiming by unbinding
 			 * attached driver... From libhid */
 			retries = 3;
-			while (usb_claim_interface(udev, 0) != 0 && retries-- > 0) {
+			while (usb_claim_interface(udev, 0) < 0) {
 				
-				upsdebugx(2, "failed to claim USB device, trying %d more time(s)...", retries);
+				upsdebugx(2, "failed to claim USB device: %s", usb_strerror());
 				
-				upsdebugx(2, "detaching kernel driver from USB device...");
 				if (usb_detach_kernel_driver_np(udev, 0) < 0) {
-					upsdebugx(2, "failed to detach kernel driver from USB device...");
+					upsdebugx(2, "failed to detach kernel driver from USB device: %s", usb_strerror());
+				} else {
+					upsdebugx(2, "detached kernel driver from USB device...");
 				}
-				
-				upsdebugx(2, "trying again to claim USB device...");
+
+				if (retries-- > 0) {
+					continue;
+				}
+
+				fatalx(EXIT_FAILURE, "Can't claim USB device [%04x:%04x]: %s", curDevice->VendorID, curDevice->ProductID, usb_strerror());
 			}
 #else
-			if (usb_claim_interface(udev, 0) < 0)
-				upsdebugx(2, "failed to claim USB device...");
+			if (usb_claim_interface(udev, 0) < 0) {
+				fatalx(EXIT_FAILURE, "Can't claim USB device [%04x:%04x]: %s", curDevice->VendorID, curDevice->ProductID, usb_strerror());
+			}
 #endif
 			
 			/* set default interface */

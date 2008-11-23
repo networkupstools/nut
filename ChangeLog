@@ -1,3 +1,9 @@
+Sun Nov 23 20:16:25 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/libusb.c: If claiming a USB device fails (possibly after a couple
+   of retries), bail out. This should catch permissions (and other) problems
+   that need user intervention to be resolved.
+
 Thu Nov 20 20:08:23 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - docs/new-names.txt: change ambient temperature/humidity variable names to
