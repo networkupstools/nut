@@ -50,123 +50,94 @@ static USBDevice_t usbdevice;
 static USBDeviceMatcher_t *reopen_matcher = NULL;
 static USBDeviceMatcher_t *regex_matcher = NULL;
 
-typedef struct {
-	char	*name;
-	int	(*get_data) (char *buffer, int buffer_size);
-	int	(*set_data) (const char *str);
-} subdriver_t;
+static int (*get_data)(char *buffer, int buffer_size) = NULL;
+static int (*set_data)(const char *str) = NULL;
 
 /* agiler-old subdriver definition */
 static int get_data_agiler_old(char *buffer, int buffer_size);
 static int set_data_agiler_old(const char *str);
 
-static subdriver_t agiler_old_subdriver = {
-	"agiler-old",
-	get_data_agiler_old,
-	set_data_agiler_old
-};
+static void *agiler_old_subdriver(void)
+{
+	get_data = &get_data_agiler_old;
+	set_data = &set_data_agiler_old;
+	return NULL;
+}
 
 /* agiler subdriver definition */
 static int get_data_agiler(char *buffer, int buffer_size);
 static int set_data_agiler(const char *str);
 
-static subdriver_t agiler_subdriver = {
-	"agiler",
-	get_data_agiler,
-	set_data_agiler
-};
+static void *agiler_subdriver(void)
+{
+	get_data = &get_data_agiler;
+	set_data = &set_data_agiler;
+	return NULL;
+}
 
 /* Phoenixtec Power Co subdriver definition */
 static int get_data_phoenix(char *buffer, int buffer_size);
 static int set_data_phoenix(const char *str);
 
-static subdriver_t phoenix_subdriver = {
-	"phoenix",
-	get_data_phoenix,
-	set_data_phoenix
-};
+static void *phoenix_subdriver(void)
+{
+	get_data = &get_data_phoenix;
+	set_data = &set_data_phoenix;
+	return NULL;
+}
 
 /* krauler (ablerex) subdriver definition */
 static int get_data_krauler(char *buffer, int buffer_size);
 static int set_data_krauler(const char *str);
 
-static subdriver_t krauler_subdriver = {
-	"krauler",
-	get_data_krauler,
-	set_data_krauler
+static void *krauler_subdriver(void)
+{
+	get_data = &get_data_krauler;
+	set_data = &set_data_krauler;
+	return NULL;
+}
+
+/* list of subdrivers for manual overrides */
+static const struct {
+	const char	*name;
+	void		*(*handler)(void);
+} subdriver[] = {
+	{ "agiler-old",	&agiler_old_subdriver },
+	{ "agiler",	&agiler_subdriver },
+	{ "phoenix",	&phoenix_subdriver },
+	{ "krauler",	&krauler_subdriver },
+	/* end of list */
+	{ NULL }
 };
-
-/* list of subdrivers */
-static subdriver_t *subdriver_list[] = {
-	&agiler_old_subdriver,
-	&agiler_subdriver,
-	&krauler_subdriver,
-	&phoenix_subdriver,
-	NULL	/* end of list */
-};
-
-/* selected subdriver */
-subdriver_t *subdriver = NULL;
-
-typedef struct {
-	int vid;
-	int pid;
-	subdriver_t *subdriver;
-} usb_ups_t;
-
-/* Agiler */
-#define AGILER_VENDORID		0x05b8
-/* Krauler (non compliant IDs) */
-#define KRAULER_VENDORID	0x0001
-/* Ablerex (non compliant IDs) */
-#define ABLEREX_VENDORID	0xffff
-/* Belkin */
-#define BELKIN_VENDORID		0x0665
-/* Mustek */
-#define MUSTEK_VENDORID		0x06da
-/* Unitek */
-#define UNITEK_VENDORID		0x0f03
 
 /* list of all known devices */
-
-/* FIXME: move into usb_device_id */
-static usb_ups_t KnownDevices[] = {
+static usb_device_id_t megatec_usb_id[] = {
 	/* Agiler UPS */
-	{ USB_DEVICE(AGILER_VENDORID, 0x0000), &agiler_subdriver},
+	{ USB_DEVICE(0x05b8, 0x0000), &agiler_subdriver},
 	/* Krauler UP-M500VA */
-	{ USB_DEVICE(KRAULER_VENDORID, 0x0000), &krauler_subdriver},
+	{ USB_DEVICE(0x0001, 0x0000), &krauler_subdriver},
 	/* Ablerex 625L USB */
-	{ USB_DEVICE(ABLEREX_VENDORID, 0x0000), &krauler_subdriver},
+	{ USB_DEVICE(0xffff, 0x0000), &krauler_subdriver},
 	/* Belkin F6C1200-UNV */
-	{ USB_DEVICE(BELKIN_VENDORID, 0x5161), &phoenix_subdriver},
+	{ USB_DEVICE(0x0665, 0x5161), &phoenix_subdriver},
 	/* Mustek Powermust */
-	{ USB_DEVICE(MUSTEK_VENDORID, 0x0003), &phoenix_subdriver},
+	{ USB_DEVICE(0x06da, 0x0003), &phoenix_subdriver},
 	/* Unitek Alpha 1200Sx */
-	{ USB_DEVICE(UNITEK_VENDORID, 0x0001), &phoenix_subdriver},
-	
+	{ USB_DEVICE(0x0f03, 0x0001), &phoenix_subdriver},
 	/* end of list */
 	{-1, -1, NULL}
 };
 
 static int subdriver_match_func(USBDevice_t *d, void *privdata)
 {
-	usb_ups_t *p;
-
 	if(getval("subdriver"))
 		return 1;
 
-	for (p = KnownDevices; p->vid != -1; p++) {
-		if ((p->vid == d->VendorID) && (p->pid == d->ProductID)) {
-			subdriver = p->subdriver;
-			return 1;
-		}
-	}
-
-	return 0;
+	return is_usb_device_supported(megatec_usb_id, d->VendorID, d->ProductID);
 }
 
 static USBDeviceMatcher_t subdriver_matcher = {
-	subdriver_match_func,
+	&subdriver_match_func,
 	NULL,
 	NULL
 };
@@ -216,7 +187,7 @@ int ser_open(const char *port)
 	/* pick up the subdriver name if set explicitly */
 	if(subdrv)
 	{
-		subdriver_t **p;
+		int	i;
 
 		if(!vid && !pid && !vend && !prod)
 		{
@@ -225,16 +196,16 @@ int ser_open(const char *port)
 				" variables.\n");
 		}
 
-		for (p = subdriver_list; *p; p++)
+		for (i = 0; subdriver[i].name; i++)
 		{
-			if (!strcasecmp(subdrv, (*p)->name))
+			if (!strcasecmp(subdrv, subdriver[i].name))
 			{
-				subdriver = *p;
+				(*subdriver[i].handler)();
 				break;
 			}
 		}
 
-		if(!subdriver)
+		if(!subdriver[i].name)
 			fatalx(EXIT_FAILURE, "No subdrivers named \"%s\" found!", subdrv);
 	}
 
@@ -296,7 +267,7 @@ int ser_flush_io(int fd)
 
 	/* flush input buffers */
 	for (i = 0; i < 10; i++) {
-		if (subdriver->get_data(flush_buf, sizeof(flush_buf)) < 1)
+		if ((*get_data)(flush_buf, sizeof(flush_buf)) < 1)
 			break;
 	}
 
@@ -354,14 +325,12 @@ void usb_comm_fail(int res, const char *msg)
 		case -EBUSY:
 			upslogx(LOG_WARNING, "%s: Device claimed by another process", msg);
 			fatalx(EXIT_FAILURE, "Terminating: EBUSY");
-			//upsdrv_cleanup();
-			break;
 
 		default:
 			upslogx(LOG_WARNING, "%s: Device detached? (error %d: %s)", msg, res, usb_strerror());
 
 			if(reconnect_ups()) {
-				//upsdrv_initinfo();
+				/* upsdrv_initinfo(); */
 			}
 			break;
 	}
@@ -388,7 +357,7 @@ int ser_send_pace(int fd, unsigned long d_usec, const char *fmt, ...)
 		buf[sizeof(buf) - 1] = 0;
 	}
 
-	ret = subdriver->set_data(buf);
+	ret = (*set_data)(buf);
 	if(ret < 0) {
 		usb_comm_fail(ret, "ser_send_pace");
 	}
@@ -404,7 +373,7 @@ int ser_get_line(int fd, void *buf, size_t buflen, char endchar, const char *ign
 	if ((udev == NULL) && (! reconnect_ups()))
 		return -1;
 
-	len = subdriver->get_data((char *)buf, buflen);
+	len = (*get_data)((char *)buf, buflen);
 	if (len < 0) {
 		usb_comm_fail(len, "ser_get_line");
 		return len;

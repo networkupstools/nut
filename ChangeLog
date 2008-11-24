@@ -1,3 +1,9 @@
+Mon Nov 24 13:05:06 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/megatec.c: Use new usb_device_id_t and is_usb_device_supported()
+   for selection of the subdriver.
+ - drivers/usb-common.c: Unclutter is_usb_device_supported().
+
 Mon Nov 24 02:48:54 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - data/driver.list: Add Chloride Desk Power 650 UPS to list. (Thanks to Cyril
