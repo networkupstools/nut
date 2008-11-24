@@ -1,3 +1,8 @@
+Mon Nov 24 02:48:54 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - data/driver.list: Add Chloride Desk Power 650 UPS to list. (Thanks to Cyril
+   Pawelko for the report.)
+
 Sun Nov 23 20:16:25 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/libusb.c: If claiming a USB device fails (possibly after a couple

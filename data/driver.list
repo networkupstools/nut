@@ -88,9 +88,11 @@
 
 "Centralion"	"Blazer"		""	"megatec"
 
-"Clary"		"ST-800"		""	"gamatronic"
+"Chloride"	"Desk Power 650"	"serial port"	"megatec"
 
 "Cito Power"	"CPG-SR1000"		""	"megatec"
+
+"Clary"		"ST-800"		""	"gamatronic"
 
 "Compaq"	"T1500h"	""	"upscode2 use_pre_lf"
 "Compaq"	"R3000h"	""	"upscode2"
