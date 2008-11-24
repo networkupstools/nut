@@ -133,7 +133,7 @@ static int subdriver_match_func(USBDevice_t *d, void *privdata)
 	if(getval("subdriver"))
 		return 1;
 
-	switch (is_usb_device_supported(blazer_usb_id, d->VendorID, d->ProductID))
+	switch (is_usb_device_supported(megatec_usb_id, d->VendorID, d->ProductID))
 	{
 	case SUPPORTED:
 		return 1;
