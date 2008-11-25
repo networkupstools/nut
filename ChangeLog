@@ -1,3 +1,8 @@
+Tue Nov 25 13:37:18 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/apccmib.h: Use OID ending in .1 for APC temperature and humidity
+   probes. (Patch courtesy of Seffen Plotnerr; confirmed by George Ross.)
+
 Mon Nov 24 13:05:06 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/megatec.c: Use new usb_device_id_t and is_usb_device_supported()
