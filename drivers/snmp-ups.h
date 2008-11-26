@@ -2,10 +2,10 @@
  *
  *  Based on NET-SNMP API (Simple Network Management Protocol V1-2)
  *
- *  Copyright (C) 2002-2006 
- *  			Arnaud Quette <arnaud.quette@free.fr>
- *  			Dmitry Frolov <frolov@riss-telecom.ru>
- *  			J.W. Hoogervorst <jeroen@hoogervorst.net>
+ *  Copyright (C) 
+ *   2002-2008  Arnaud Quette <arnaud.quette@free.fr>
+ *   2002-2006	Dmitry Frolov <frolov@riss-telecom.ru>
+  *  			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *  			Niels Baggesen <niels@baggesen.net>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://opensource.mgeups.com/>
@@ -27,6 +27,7 @@
  */
 
 /* TODO list:
+- add syscontact/location (to all mib.h or centralized?)
 - complete shutdown
 - add enum values to OIDs.
 - optimize network flow by constructing one big packet (calling snmp_add_null_var
@@ -35,7 +36,6 @@ for each OID request we made), instead of sending many small packets
 - complete mib2nut data (add all OID translation to NUT)
 - externalize mib2nut data in .m2n files and load at driver startup using parseconf()...
 - ... and use Net-SNMP lookup mecanism for OIDs (use string path, not numeric)
-- add mib autodetection support (=> -x mibs=auto) and make it the default (instead of ietf),
 - adjust information logging.
 */
 
@@ -55,7 +55,7 @@ for each OID request we made), instead of sending many small packets
 
 #include "attribute.h"
 
-#define DRIVER_VERSION		"0.43"
+#define DRIVER_VERSION		"0.44"
 
 #define DEFAULT_POLLFREQ	30		/* in seconds */
 
@@ -190,7 +190,7 @@ snmp_info_t *su_find_info(const char *type);
 bool_t snmp_ups_walk(int mode);
 bool_t su_ups_get(snmp_info_t *su_info_p);
 
-void load_mib2nut(const char *mib);
+bool_t load_mib2nut(const char *mib);
 	
 const char *su_find_infoval(info_lkp_t *oid2info, long value);
 long su_find_valinfo(info_lkp_t *oid2info, char* value);

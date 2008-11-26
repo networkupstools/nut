@@ -447,6 +447,22 @@ outlet: Smart outlet management (smart on/off switch, ...)
    |                                | Interval to wait before |             |
    | outlet.n.delay.start           | restarting this outlet  | 120         |
    |                                | (seconds)               |             |
+   |--------------------------------+-------------------------+-------------|   
+   | outlet.n.current               | Current (milliamps RMS) | 0.19        |
+   |--------------------------------+-------------------------+-------------|
+   | outlet.n.current.maximum       | Maximum seen current    | 0.56        |
+   |                                | (milliamps RMS)         |             |
+   |--------------------------------+-------------------------+-------------|
+   | outlet.n.realpower             | Current value of real   | 28.00       |
+   |                                | power (Watts)           |             |
+   |--------------------------------+-------------------------+-------------|
+   | outlet.n.voltage               | Voltage (V)             | 247.00      |
+   |--------------------------------+-------------------------+-------------|
+   |                                | Power Factor            |             |
+   | outlet.n.powerfactor           | (dimensionless value    | 0.60        |
+   |                                | between 0.00 and 1.00)  |             |
+   |--------------------------------+-------------------------+-------------|
+   | outlet.n.power                 | Apparent power (VA)     | 46.00       |
    +------------------------------------------------------------------------+
 
 driver: Internal driver information

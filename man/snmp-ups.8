@@ -1,4 +1,4 @@
-.TH snmp\-ups 8 "Fri Jan 19 2007" "" "Network UPS Tools (NUT)"
+.TH snmp\-ups 8 "Wed Nov 26 2008" "" "Network UPS Tools (NUT)"
 .SH NAME
 snmp\(hyups \- Multi\(hyMIB Driver for SNMP UPS equipment
 .SH NOTE
@@ -7,17 +7,23 @@ snmp\(hyups driver.  For information about the core driver, see
 \fBnutupsdrv\fR(8).
 
 .SH SUPPORTED HARDWARE
-The new snmp\(hyups driver supports a wide range of devices by loading various MIBS:
+The snmp\(hyups driver automatically detects and supports a wide range of devices by loading various MIBS:
 .IP "ietf:"
 UPS that is RFC 1628 (UPS MIB) compliant, ie MGE UPS SYSTEMS, Liebert, perhaps others (default)
 .IP "mge:"
-MGE UPS SYSTEMS devices with SNMP cards (ref 66062, 66045, 66074 and 66244)
+MGE UPS SYSTEMS and MGE Office Protection Systems devices with SNMP cards (ref 66062, 66045, 66074 and 66244)
 .IP "apcc:"
 APC AP9606 APC Web/SNMP management card, perhaps others
 .IP "netvision:"
 Socomec Sicon UPS with Netvision Web/SNMP management card/external box
 .IP "pw:"
 Powerware devices with ConnectUPS SNMP cards
+.IP "aphel_genesisII:"
+Eaton Powerware ePDU Monitored
+.IP "aphel_revelation:"
+Eaton Powerware ePDU Managed
+.IP "raritan:"
+Various Raritan PDUs
 
 .SH EXTRA ARGUMENTS
 
@@ -25,7 +31,7 @@ This driver supports the following optional settings in the
 \fBups.conf\fR(5):
 
 .IP "mibs=\fIname\fR"
-Set MIB compliance (default=auto, allowed ietf,mge,apcc,netvision,pw).
+Set MIB compliance (default=auto, allowed ietf,mge,apcc,netvision,pw,aphel_genesisII,aphel_revelation, raritan).
 With auto the driver will try a select set of objets untill it finds one
 that the device responds to.
 
@@ -51,8 +57,9 @@ http://www.net\(hysnmp.org/ before building this driver.
 
 .SH EXPERIMENTAL DRIVER
 This driver has been tagged experimental, even if it has been reported
-to be stable. Thus it is not suitable for production systems and it is
-not built by default. This is mainly due to the fact that there is still
+to be stable. Thus it may not be suitable for production systems and it is
+only built if the Net SNMP development files are present on the system.
+This is mainly due to the fact that there is still
 no proper upsdrv_shutdown() function implemented. There probably never
 will be one, since at the time this script should run (near the end of
 the system halt script), there will be no network capabilities anymore.
@@ -61,8 +68,8 @@ with delay command through \fBupscmd\fR(8) and hope for the best that the
 system will have finished shutting down before the power is cut.
 
 .SH INSTALLATION
-This driver is not built by default.  You can build it by using
-"configure \-\-with\-snmp=yes" before calling make.
+This driver is only built if the Net SNMP development files are present on the system.
+You can also force it to be built by using "configure \-\-with\-snmp=yes" before calling make.
 
 .SH IMPLEMENTATION
 The hostname of the UPS is specified with the "port" value in

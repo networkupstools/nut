@@ -1,3 +1,25 @@
+Thu Nov 20 09:40:24 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ * Power Distribution Unit (PDU) preliminary support:
+   - drivers/eaton-aphel-mib.h: add support for Eaton ePDUs (Managed and
+     Monitored) and some Aphel models.
+   - drivers/raritan-mib.h: add support for some Raritan PDUs.
+   These two MIBs add the new "device.*" collection, as presented on nut-upsdev
+   mailing list.
+   - drivers/snmp-ups.c:
+     - switch to a 2 decimals precision for numeric values
+     - improve reactivity for stop requests
+     - differentiate "unknown mib" and "device not detected" (which is equal to
+       "no supported mib found"), to prepare for the probe flag
+     - trace the requested OID in nut_snmp_get()
+   - drivers/snmp-ups.h: bump the driver release to 0.44, and update the
+     load_mib2nut() prototype.
+   - drivers/Makefile.am: add the new MIB files
+   - data/driver.list: add the supported PDUs from Eaton, Aphel and Raritan,
+   - man/snmp-ups.8: document the new MIBS and devices,
+   - doc/new-names.txt: add some new variables, in the outlet collection, to
+     report PDUs values.
+
 Tue Nov 25 13:37:18 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - drivers/apccmib.h: Use OID ending in .1 for APC temperature and humidity

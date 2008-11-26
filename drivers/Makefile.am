@@ -204,13 +204,13 @@ dist_noinst_HEADERS = al175.h apccmib.h apc-hid.h apcsmart.h bcmxcp.h	\
  bcmxcp_io.h belkin.h belkin-hid.h belkinunv.h bestfcom.h		\
  bestuferrups.h bestups.h cps-hid.h cyberpower.h dstate.h	\
  dstate-hal.h								\
- dummy-ups.h etapro.h everups.h gamatronic.h				\
+ dummy-ups.h eaton-aphel-mib.h etapro.h everups.h gamatronic.h				\
  explore-hid.h genericups.h hidparser.h hidtypes.h ietfmib.h		\
  isbmex.h libhid.h libshut.h libusb.h liebert.h liebert-hid.h main.h	\
  main-hal.h								\
  masterguard.h megatec.h metasys.h mge-hid.h mgemib.h mge-shut.h	\
  mge-utalk.h netvisionmib.h usbhid-ups.h nut_usb.h		\
- oneac.h optiups.h powercom.h pwmib.h safenet.h serial.h		\
+ oneac.h optiups.h powercom.h pwmib.h raritan-mib.h safenet.h serial.h		\
  snmp-ups.h solis.h tripplite.h tripplite-hid.h tripplitesu.h		\
  upscode2.h victronups.h powerpanel.h powerp-bin.h powerp-txt.h		\
  upshandler.h usb-common.h netxml-ups.h mge-xml.h

@@ -49,6 +49,8 @@
 "APC"	"Back-UPS RS 500" "custom non-USB cable"	"genericups upstype=20"
 "APC"	"(various)"	"SNMP monitoring card"	"snmp-ups (experimental)"
 
+"Aphel"	"PDU"	"no report, but various models should be supported"	"snmp-ups (experimental)"
+
 "Atlantis Land"	"A03-P826"	""	"megatec"
 
 "Belkin"	"Active Battery Backup BU30 series"	"USB"	"megatec_usb"
@@ -158,6 +160,8 @@
 "Eaton"	"various models (SNMP mode)"			"NMC Minislot (Ref 66102)"	"snmp-ups (experimental)"
 "Eaton"	"various models (XML/HTTP mode)"			"SNMP/Web Minislot card (ref 66244)"	"netxml-ups (experimental)"
 "Eaton"	"various models (SNMP mode)"			"SNMP/Web Minislot card (ref 66244)"	"snmp-ups (experimental)"
+"Eaton"	"Powerware ePDU Managed"			""	"snmp-ups (experimental)"
+"Eaton"	"Powerware ePDU Monitored"			""	"snmp-ups (experimental)"
 
 "Effekta"	"MI/MT/MH"	"2502 cable"	"megatec"
 "Effekta"	"RM2000MH"	""	"megatec"
@@ -513,6 +517,10 @@
 "Powerware"	"(various)"	"ConnectUPS Web/SNMP card"	"snmp-ups (experimental)"
 
 "Powerwell"	"PM525A/-625A/-800A/-1000A/-1250A"	""	"safenet"
+
+"Raritan"	"Intelligent PDU - Dominion PX"	"no report, but should be supported"	"snmp-ups (experimental)"
+"Raritan"	"Metered PDU - Raritan PM"	"no report, but should be supported"	"snmp-ups (experimental)"
+"Raritan"	"Switched PDU - Raritan RPC"	"no report, but should be supported"	"snmp-ups (experimental)"
 
 "Repotec"	"RPF525/625/800/1000"	""	"safenet"
 "Repotec"	"RPT-800A"	""	"genericups upstype=13"

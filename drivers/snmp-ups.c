@@ -2,9 +2,9 @@
  *
  *  Based on NetSNMP API (Simple Network Management Protocol V1-2)
  *
- *  Copyright (C) 2002-2006 
- *  			Arnaud Quette <arnaud.quette@free.fr>
- *  			Dmitry Frolov <frolov@riss-telecom.ru>
+ *  Copyright (C) 
+ *   2002-2008  Arnaud Quette <arnaud.quette@free.fr>
+ *   2002-2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *  			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *  			Niels Baggesen <niels@baggesen.net>
  *
@@ -34,6 +34,8 @@
 
 /* include all known mib2nut lookup tables */
 #include "apccmib.h"
+#include "eaton-aphel-mib.h"
+#include "raritan-mib.h"
 #include "ietfmib.h"
 #include "mgemib.h"
 #include "netvisionmib.h"
@@ -50,6 +52,12 @@ mib2nut_info_t mib2nut[] = {
 		PW_OID_MODEL_NAME, pw_mib },
 	{ "ietf", IETF_MIB_VERSION, IETF_OID_POWER_STATUS,
 		IETF_OID_MFR_NAME, ietf_mib },
+	{ "aphel_genesisII", EATON_APHEL_MIB_VERSION, "",
+		APHEL1_OID_MODEL_NAME, eaton_aphel_genesisII_mib },
+	{ "aphel_revelation", EATON_APHEL_MIB_VERSION, "",
+		APHEL2_OID_MODEL_NAME, eaton_aphel_revelation_mib },
+	{ "raritan", RARITAN_MIB_VERSION, "",
+		RARITAN_OID_MODEL_NAME, raritan_mib },
 	{ NULL }
 };
 
@@ -195,7 +203,8 @@ void upsdrv_initups(void)
 		upslogx(0, "Detected %s on host %s (mib: %s %s)",
 			 model, device_path, mibname, mibvers);
 	else
-		fatalx(EXIT_FAILURE, "%s MIB wasn't found on %s", mibs, g_snmp_sess.peername);   
+		fatalx(EXIT_FAILURE, "%s MIB wasn't found on %s", mibs, g_snmp_sess.peername);
+		/* No supported device detected */
 }
 
 void upsdrv_cleanup(void)
@@ -256,6 +265,8 @@ struct snmp_pdu *nut_snmp_get(const char *OID)
 	size_t name_len = MAX_OID_LEN;
 	static unsigned int numerr = 0;
 
+	upsdebugx(3, "nut_snmp_get(%s)", OID);
+
 	/* create and send request. */
 	if (!snmp_parse_oid(OID, name, &name_len)) {
 		upsdebugx(2, "[%s] nut_snmp_get: %s: %s",
@@ -307,7 +318,7 @@ bool_t nut_snmp_get_str(const char *OID, char *buf, size_t buf_len, info_lkp_t *
 {
 	size_t len = 0;
 	struct snmp_pdu *pdu;
-
+	
 	/* zero out buffer. */
 	memset(buf, 0, buf_len);
 
@@ -562,8 +573,9 @@ snmp_info_t *su_find_info(const char *type)
 }
 
 /* Load the right snmp_info_t structure matching mib parameter */
-void load_mib2nut(const char *mib)
+bool_t load_mib2nut(const char *mib)
 {
+	bool_t ret = FALSE;
 	mib2nut_info_t *mp = mib2nut;
 	upsdebugx(2, "SNMP UPS driver : entering load_mib2nut(%s)", mib);
 	
@@ -578,8 +590,10 @@ void load_mib2nut(const char *mib)
 			upsdebugx(1, "load_mib2nut: trying %s mib", mp->mib_name);
 			status = nut_snmp_get_str(mp->oid_auto_check,
 						buf, sizeof buf, NULL);
-			if (status)
+			if (status) {
+				ret = TRUE;
 				break;
+			}
 		}
 		mp++;
 	}
@@ -590,8 +604,15 @@ void load_mib2nut(const char *mib)
 		mibvers = mp->mib_version;
 		upsdebugx(1, "load_mib2nut: using %s mib", mibname);
 	}
-	else
-		fatalx(EXIT_FAILURE, "Unknown mibs value: %s", mib);
+	else {
+		/* Did we find something or is it really an unknown mib */
+		/* we assume (ret == FALSE) */
+		if (strcmp(mib, "auto") != 0)
+			fatalx(EXIT_FAILURE, "Unknown mibs value: %s", mib);
+		else
+			fatalx(EXIT_FAILURE, "No supported device detected");
+	}
+	return ret;
 }
 
 /* find the OID value matching that INFO_* value */
@@ -653,6 +674,10 @@ bool_t snmp_ups_walk(int mode)
 	bool_t status = FALSE;
 	
 	for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++) {
+
+		/* Check if we are asked to stop (reactivity++). */
+		if (exit_flag != 0)
+			return TRUE;
 
 		/* skip instcmd. */
 		if (SU_TYPE(su_info_p) == SU_TYPE_CMD) {
@@ -839,7 +864,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 			    	upsdebugx(1, "setvar %s", su_info_p->OID);
 			    	*su_info_p->setvar = value;
 			}
-			snprintf(buf, sizeof(buf), "%.1f", value * su_info_p->info_len);
+			snprintf(buf, sizeof(buf), "%.2f", value * su_info_p->info_len);
 		}
 	} else {
 		status = nut_snmp_get_str(su_info_p->OID, buf, sizeof(buf), su_info_p->oid2info);
