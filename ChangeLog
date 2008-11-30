@@ -1,6 +1,20 @@
+Wed Nov 26 22:18:43 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+
+ * Power Distribution Unit (PDU) preliminary support (2): add support for a wide
+   range of PDUs through the Powerman project, and its libpowerman.
+   - drivers/powerman-pdu.[ch]: created a driver that use libpowerman to
+     interact with the Powerman daemon,
+   - drivers/Makefile.am: add the necessary rules for the powerman-pdu driver,
+   - man/Makefile.am: add the necessary rules for the powerman-pdu manpage,
+   - man/powerman-pdu.8: add the manpage to document powerman-pdu,
+   - man/nutupsdrv.8: add a reference to powerman-pdu 
+   - configure.in, m4/nut_check_libpowerman.m4: add and use a macro to detect
+     libpowerman and its flags, and propose a --with-powerman configure option,
+   - data/driver.list: add the devices supported by Powerman.
+
 Thu Nov 20 09:40:24 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
- * Power Distribution Unit (PDU) preliminary support:
+ * Power Distribution Unit (PDU) preliminary support (1):
    - drivers/eaton-aphel-mib.h: add support for Eaton ePDUs (Managed and
      Monitored) and some Aphel models.
    - drivers/raritan-mib.h: add support for some Raritan PDUs.
@@ -88,7 +102,7 @@ Sun Nov 16 18:04:03 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/dstate.c: add debug commands
 
-Sat Nov 15 23:58:44 +0100 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+Sat Nov 15 23:58:44 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  * Drivers removal (cpsups, nitram): powerpanel is now officially taking over
    - nitram: the original author confirmed the powerpanel takeover (thanks to
@@ -96,12 +110,12 @@ Sat Nov 15 23:58:44 +0100 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
    - cpsups: this driver was broken for a long time, and powerpanel already
      covers all features (thanks to Arjen de Korte).
 
-Sat Nov 15 23:40:32 +0100 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+Sat Nov 15 23:40:32 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  - ltmain.sh: update to GNU libtool 2.2.4
  - configure.in: add AC_CONFIG_MACRO_DIR([m4]) macro
 
-Sat Nov 15 22:24:16 +0100 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+Sat Nov 15 22:24:16 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  * USB maintenance improvements: create a set of USB helpers, to start laying
    down a common ground for USB support. This provide a standard way to declare

@@ -156,7 +156,7 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-AC_HELP_STRING([--with-all], [enable serial, usb, snmp, hal, cgi, dev, neonxml]),
+AC_HELP_STRING([--with-all], [enable serial, usb, snmp, hal, cgi, dev, neonxml, powerman]),
 [	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
 		dnl this is what the user expects from --without-all
@@ -167,6 +167,7 @@ AC_HELP_STRING([--with-all], [enable serial, usb, snmp, hal, cgi, dev, neonxml])
 		if test -z "${with_usb}"; then with_usb="${withval}"; fi
 		if test -z "${with_hal}"; then with_hal="${withval}"; fi
 		if test -z "${with_neonxml}"; then with_neonxml="${withval}"; fi
+		if test -z "${with_powerman}"; then with_powerman="${withval}"; fi
 		AC_MSG_RESULT("${withval}")		
 	else
 		AC_MSG_RESULT(not given)
@@ -185,6 +186,7 @@ NUT_ARG_WITH([hal], [build and install HAL support], [no])
 NUT_ARG_WITH([cgi], [build and install the CGI programs], [no])
 NUT_ARG_WITH([dev], [build and install the development files], [no])
 NUT_ARG_WITH([neonxml], [build and install neon based XML/HTTP driver], [auto])
+NUT_ARG_WITH([powerman], [build and install Powerman PDU client driver], [auto])
 
 dnl ----------------------------------------------------------------------
 dnl Check for presence and compiler flags of various libraries
@@ -197,6 +199,7 @@ NUT_CHECK_LIBNETSNMP
 NUT_CHECK_LIBUSB
 NUT_CHECK_LIBHAL
 NUT_CHECK_LIBNEON
+NUT_CHECK_LIBPOWERMAN
 
 dnl ----------------------------------------------------------------------
 dnl additional USB-related checks
@@ -419,6 +422,22 @@ fi
 
 AM_CONDITIONAL(WITH_NEONXML, test "${nut_with_neonxml}" = "yes")
 NUT_REPORT_FEATURE([build neon based XML driver], [${nut_with_neonxml}])
+
+dnl ----------------------------------------------------------------------
+
+dnl checks related to --with-powerman
+
+dnl ${nut_with_powerman}: any value except "yes" or "no" is treated as "auto". 
+if test "${nut_with_powerman}" = "yes" -a "${nut_have_libpowerman}" != "yes"; then
+   AC_MSG_ERROR(["Powerman client libraries not found, required for Powerman PDU client driver"])
+fi
+
+if test "${nut_with_powerman}" != "no"; then
+   nut_with_powerman="${nut_have_libpowerman}"
+fi
+
+AM_CONDITIONAL(WITH_LIBPOWERMAN, test "${nut_with_powerman}" = "yes")
+NUT_REPORT_FEATURE([build Powerman PDU client driver], [${nut_with_powerman}])
 
 dnl ----------------------------------------------------------------------
 
@@ -775,6 +794,8 @@ AC_SUBST(LIBUSB_CFLAGS)
 AC_SUBST(LIBUSB_LDFLAGS)
 AC_SUBST(LIBNEON_CFLAGS)
 AC_SUBST(LIBNEON_LDFLAGS)
+AC_SUBST(LIBPOWERMAN_CFLAGS)
+AC_SUBST(LIBPOWERMAN_LDFLAGS)
 AC_SUBST(HAL_USER)
 AC_SUBST(HAL_DEVICE_MATCH_KEY)
 AC_SUBST(HAL_FDI_PATH)

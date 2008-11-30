@@ -91,6 +91,12 @@ Contents:
     See docs/nut-hal.txt for additional information on how to set up
     and use HAL support.
  
+  --with-powerman  (default: auto-detect)
+
+    Build and install Powerman PDU client driver.
+    This allows to interact with the Powerman daemon, and the numerous
+    Power Distribution Units (PDU) supported by the project.
+ 
 3. Other configuration options:
 ===============================
 

@@ -30,6 +30,9 @@ endif
 if WITH_NEONXML
   AM_CFLAGS += $(LIBNEON_CFLAGS)
 endif
+if WITH_LIBPOWERMAN
+  AM_CFLAGS += $(LIBPOWERMAN_CFLAGS)
+endif
 
 SERIAL_DRIVERLIST = al175 apcsmart bcmxcp belkin belkinunv bestfcom	\
  bestuferrups bestups cyberpower dummy-ups etapro everups 	\
@@ -72,6 +75,9 @@ if WITH_HAL
 endif
 if WITH_NEONXML
    driverexec_PROGRAMS += $(NEONXML_DRIVERLIST)
+endif
+if WITH_LIBPOWERMAN
+   driverexec_PROGRAMS += powerman-pdu
 endif
 else
    driverexec_PROGRAMS += skel
@@ -195,6 +201,10 @@ hald_addon_megatec_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_L
 netxml_ups_SOURCES = netxml-ups.c mge-xml.c
 netxml_ups_LDADD = $(LDADD_DRIVERS) $(LIBNEON_LDFLAGS)
 
+# Powerman
+powerman_pdu_SOURCES = powerman-pdu.c
+powerman_pdu_LDADD = $(LDADD) $(LIBPOWERMAN_LDFLAGS)
+
 # ----------------------------------------------------------------------
 # List of header files. The purpose of this list is not dependency
 # tracking (which is automatic), but to ensure these files are
@@ -213,7 +223,7 @@ dist_noinst_HEADERS = al175.h apccmib.h apc-hid.h apcsmart.h bcmxcp.h	\
  oneac.h optiups.h powercom.h pwmib.h raritan-mib.h safenet.h serial.h		\
  snmp-ups.h solis.h tripplite.h tripplite-hid.h tripplitesu.h		\
  upscode2.h victronups.h powerpanel.h powerp-bin.h powerp-txt.h		\
- upshandler.h usb-common.h netxml-ups.h mge-xml.h
+ upshandler.h usb-common.h netxml-ups.h mge-xml.h powerman-pdu.h
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,

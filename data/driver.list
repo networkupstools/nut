@@ -45,13 +45,21 @@
 "APC"	"Back-UPS"	"940-0020B/C cables"	"genericups upstype=2"
 "APC"	"Back-UPS"	"940-0023A cable"	"genericups upstype=9"
 "APC"	"Back-UPS Office"	"940-0119A cable"	"genericups upstype=12"
-"APC"	"Masterswitch"	"Not a UPS - 940-0020 cable"	"genericups upstype=12"
 "APC"	"Back-UPS RS 500" "custom non-USB cable"	"genericups upstype=20"
+"APC"	"Masterswitch"	"Not a UPS - 940-0020 cable"	"genericups upstype=12"
+"APC"	"AP9210"	"8 outlets"	"powerman-pdu (experimental)"
+"APC"	"AP79xx"	"8 to 24 outlets"	"powerman-pdu (experimental)"
 "APC"	"(various)"	"SNMP monitoring card"	"snmp-ups (experimental)"
 
 "Aphel"	"PDU"	"no report, but various models should be supported"	"snmp-ups (experimental)"
 
+"Appro"	"SWPDU"	"48 outlets"	"powerman-pdu (experimental)"
+
 "Atlantis Land"	"A03-P826"	""	"megatec"
+
+"Baytech"	"RPC3"	"8 outlets"	"powerman-pdu (experimental)"
+"Baytech"	"RPC3-20NC"	"8 outlets"	"powerman-pdu (experimental)"
+"Baytech"	"RPC28-30NC"	"20 outlets"	"powerman-pdu (experimental)"
 
 "Belkin"	"Active Battery Backup BU30 series"	"USB"	"megatec_usb"
 "Belkin"	"Home Office F6H350-SER"	""	"genericups upstype=7"
@@ -125,9 +133,14 @@
 "Cyber Power Systems"	"Value 600E"		"USB"	"usbhid-ups"
 "Cyber Power Systems"	"Value 800E"		"USB"	"usbhid-ups"
 
+"Cyclades"	"PM8"	"8 outlets"	"powerman-pdu (experimental)"
+"Cyclades"	"PM10"	"10 outlets"	"powerman-pdu (experimental)"
+
 "Delta"	"GES602N"	""	"belkin"
 
 "Deltec"	"PowerRite Pro II"	""	"genericups upstype=15"
+
+"Digital Loggers"	"LPC, EPCR2, DIN"	"8 outlets"	"powerman-pdu (experimental)"
 
 "Dynamix"	"UPS1700D"		""	"megatec"
 "Dynamix"	"UPS-650VA"		""	"megatec ignoreoff"
@@ -210,10 +223,15 @@
 
 "Gemini"	"UPS625/UPS1000"	""	"safenet"
 
-"HP"		"PowerTrust 2997A"	"HP 5061-2575 cable"	"apcsmart"
-"HP"		"R3000 XR"	""	"bcmxcp"
-"HP"		"R5500 XR"	""	"bcmxcp"
-"HP"		"R/T 2200 G2"	""	"usbhid-ups"
+"HP"	"PowerTrust 2997A"	"HP 5061-2575 cable"	"apcsmart"
+"HP"	"R3000 XR"	""	"bcmxcp"
+"HP"	"R5500 XR"	""	"bcmxcp"
+"HP"	"R/T 2200 G2"	""	"usbhid-ups"
+"HP"	"HP3488 Switch/Control Unit"	""	"powerman-pdu (experimental)"
+
+"IBM"	"Blade Center Management Module"	"15 outlets"	"powerman-pdu (experimental)"
+
+"ICS"	"8064 Ethernet Relay Interface"	"16 outlets"	"powerman-pdu (experimental)"
 
 "INELT"		"Monolith 1000LT"	""	"megatec"
 
@@ -225,6 +243,8 @@
 "Infosec"	"iPEL 750"	""	"megatec"
 "Infosec"	"iPEL 1000"	""	"megatec"
 "Infosec"	"XP 500"	"USB"	"megatec_usb"
+
+"IPMI"	""	""		"powerman-pdu (experimental)"
 
 "Ippon"		"(various)"		""	"megatec"
 "Ippon"		"Back Power Pro 700"	"USB"	"megatec_usb"
@@ -239,6 +259,8 @@
 "Liebert"	"ITON 600VA"	""	"megatec"
 "Liebert"	"UPStation GXT2"	"contact-closure cable"	"liebert" 
 "Liebert"	"PowerSure Personal XT"		"USB"	"usbhid-ups"
+
+"LNXI"	"Icebox"	"10 outlets"	"powerman-pdu (experimental)"
 
 "Masterguard"	"(various)"	""	"masterguard"
 
@@ -518,6 +540,8 @@
 
 "Powerwell"	"PM525A/-625A/-800A/-1000A/-1250A"	""	"safenet"
 
+"Phantom"	"Rackable Systems"	"1 outlets"	"powerman-pdu (experimental)"
+
 "Raritan"	"Intelligent PDU - Dominion PX"	"no report, but should be supported"	"snmp-ups (experimental)"
 "Raritan"	"Metered PDU - Raritan PM"	"no report, but should be supported"	"snmp-ups (experimental)"
 "Raritan"	"Switched PDU - Raritan RPC"	"no report, but should be supported"	"snmp-ups (experimental)"
@@ -525,6 +549,8 @@
 "Repotec"	"RPF525/625/800/1000"	""	"safenet"
 "Repotec"	"RPT-800A"	""	"genericups upstype=13"
 "Repotec"	"RPT-162A"	""	"genericups upstype=13"
+
+"SmartLabs"	"2412S Power Line Modem"	"for X10/Insteon"	"powerman-pdu (experimental)"
 
 "SMS (Brazil)"	"Manager III"	""	"megatec"
 
@@ -547,6 +573,8 @@
 "Soyntec"	"Sekury C 800"		""	"megatec"	
 
 "SquareOne Power"	"QP1000"		""	"megatec"
+
+"Sun"	"ILOM Management Module"	"1 outlet"	"powerman-pdu (experimental)"
 
 "SuperPower"	"HP360, Hope-550"	""	"megatec"
 
@@ -606,3 +634,6 @@
 "Victron/IMV"	"Lite"		"crack cable"	"genericups upstype=10"
 
 "Viewsonic"	"PowerES"	"420E"	"optiups"
+
+"WTI"	"RPS-10"	"10 outlets"	"powerman-pdu (experimental)"
+"WTI"	"NPS"	"8 outlets"	"powerman-pdu (experimental)"
