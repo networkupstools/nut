@@ -278,9 +278,9 @@ N  - for current measurement
 Valid SPECs:
 -----------
 Valid with/without context (ie. per phase or aggregated/averaged)
-current         Current (A RMS)
-current.maximum Maximum seen current (A RMS)
-current.minimum Minimum seen current (A RMS)
+current         Current (A)
+current.maximum Maximum seen current (A)
+current.minimum Minimum seen current (A)
 peakcurrent     Peak current
 voltage         Voltage (V)
 voltage.nominal Nominal voltage (V)
@@ -337,12 +337,11 @@ battery: Any battery details
    |                         | switches to "Warning" state  | 50            |
    |                         | (percent)                    |               |
    |-------------------------+------------------------------+---------------|
-   | battery.voltage         | Battery voltage (volts)      | 24.84         |
+   | battery.voltage         | Battery voltage (V)          | 24.84         |
    |-------------------------+------------------------------+---------------|
-   | battery.capacity        | Battery capacity             | 7.2           |
-   |                         | (Amp - hours)                |               |
+   | battery.capacity        | Battery capacity (Ah)        | 7.2           |
    |-------------------------+------------------------------+---------------|
-   | battery.current         | Battery current (amps)       | 1.19          |
+   | battery.current         | Battery current (A)          | 1.19          |
    |-------------------------+------------------------------+---------------|
    | battery.temperature     | Battery temperature (degrees | 050.7         |
    |                         | C)                           |               |
@@ -448,21 +447,21 @@ outlet: Smart outlet management (smart on/off switch, ...)
    | outlet.n.delay.start           | restarting this outlet  | 120         |
    |                                | (seconds)               |             |
    |--------------------------------+-------------------------+-------------|   
-   | outlet.n.current               | Current (milliamps RMS) | 0.19        |
+   | outlet.n.current               | Current (A)             | 0.19        |
    |--------------------------------+-------------------------+-------------|
    | outlet.n.current.maximum       | Maximum seen current    | 0.56        |
-   |                                | (milliamps RMS)         |             |
+   |                                | (A)                     |             |
    |--------------------------------+-------------------------+-------------|
-   | outlet.n.realpower             | Current value of real   | 28.00       |
-   |                                | power (Watts)           |             |
+   | outlet.n.realpower             | Current value of real   | 28          |
+   |                                | power (W)               |             |
    |--------------------------------+-------------------------+-------------|
-   | outlet.n.voltage               | Voltage (V)             | 247.00      |
+   | outlet.n.voltage               | Voltage (V)             | 247.0       |
    |--------------------------------+-------------------------+-------------|
    |                                | Power Factor            |             |
-   | outlet.n.powerfactor           | (dimensionless value    | 0.60        |
-   |                                | between 0.00 and 1.00)  |             |
+   | outlet.n.powerfactor           | (dimensionless value    | 0.85        |
+   |                                | between 0 and 1)        |             |
    |--------------------------------+-------------------------+-------------|
-   | outlet.n.power                 | Apparent power (VA)     | 46.00       |
+   | outlet.n.power                 | Apparent power (VA)     | 46          |
    +------------------------------------------------------------------------+
 
 driver: Internal driver information
