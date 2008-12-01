@@ -111,7 +111,9 @@ static int do_setvar(UPSCONN_t *ups, const char *varname, char *uin,
 		else
 			printf("Username: ");
 
-		fgets(user, sizeof(user), stdin);
+		if (fgets(user, sizeof(user), stdin) == NULL) {
+			upsdebug_with_errno(LOG_INFO, "%s", __func__);
+		}
 
 		/* deal with that pesky newline */
 		if (strlen(user) > 1)
@@ -143,7 +145,9 @@ static int do_setvar(UPSCONN_t *ups, const char *varname, char *uin,
 	} else {
 		printf("Enter new value for %s: ", varname);
 		fflush(stdout);
-		fgets(newval, sizeof(newval), stdin);
+		if (fgets(newval, sizeof(newval), stdin) == NULL) {
+			upsdebug_with_errno(LOG_INFO, "%s", __func__);
+		}
 		newval[strlen(newval) - 1] = '\0';
 	}
 

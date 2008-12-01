@@ -171,7 +171,9 @@ static void notify(const char *notice, int flags, const char *ntype,
 				setenv("UPSNAME", "", 1);
 
 			setenv("NOTIFYTYPE", ntype, 1);
-			system(exec);
+			if (system(exec) == -1) {
+				upslog_with_errno(LOG_ERR, "%s", __func__);
+			}
 		}
 	}
 
@@ -1617,7 +1619,9 @@ static int pdflag_status(void)
 
 	/* if it exists, see if it has the right text in it */
 
-	fgets(buf, sizeof(buf), pdf);
+	if (fgets(buf, sizeof(buf), pdf) == NULL) {
+		upslog_with_errno(LOG_ERR, "'%s' exists, but we can't read from it", powerdownflag);
+	}
 	fclose(pdf);
 
 	/* reasoning: say upsmon.conf is world-writable (!) and some nasty
