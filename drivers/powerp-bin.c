@@ -289,7 +289,7 @@ static int powpan_setvar(const char *varname, const char *val)
 				vartab[type][i].map[j].command);
 
 			if ((powpan_command(command, 4) == 3) && (!memcmp(powpan_answer, command, 3))) {
-				dstate_setinfo(varname, val);
+				dstate_setinfo(varname, "%s", val);
 				return STAT_SET_HANDLED;
 			}
 
@@ -343,7 +343,7 @@ static void powpan_initinfo()
 				continue;
 			}
 
-			dstate_setinfo(vartab[type][i].var, vartab[type][i].map[j].val);
+			dstate_setinfo(vartab[type][i].var, "%s", vartab[type][i].map[j].val);
 			break;
 		}
 	
@@ -356,7 +356,7 @@ static void powpan_initinfo()
 		dstate_setflags(vartab[type][i].var, ST_FLAG_RW);
 
 		for (j = 0; vartab[type][i].map[j].val != 0; j++) {
-			dstate_addenum(vartab[type][i].var, vartab[type][i].map[j].val);
+			dstate_addenum(vartab[type][i].var, "%s", vartab[type][i].map[j].val);
 		}
 	}
 

@@ -193,7 +193,7 @@ static int execute(const char *cmd, char *result, int resultsize)
 	ser_get_line_alert(upsfd, buf, sizeof(buf), '\012', "",
 		POLL_ALERT, alert_handler, 0, 20000);
 
-	ser_send(upsfd, cmd);
+	ser_send(upsfd, "%s", cmd);
 
 	/* Give the UPS some time to chew on what we just sent */
 	usleep(50000);

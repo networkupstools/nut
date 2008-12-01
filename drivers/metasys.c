@@ -535,7 +535,7 @@ void upsdrv_initinfo(void)
 	memcpy(serial, my_answer + 7, res - 7);
 	/* serial number start from the 8th byte */
 	serial[12]=0;		/* terminate string */
-	dstate_setinfo("ups.serial", serial);
+	dstate_setinfo("ups.serial", "%s", serial);
 	
 	/* get the ups firmware. The major number is in the 5th byte, the minor is in the 6th */
 	dstate_setinfo("ups.firmware", "%u.%u", my_answer[5], my_answer[6]);

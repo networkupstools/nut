@@ -279,7 +279,7 @@ static int upsclient_update_vars(void)
 		}
 		/* do not override the driver collection */
 		if (strncmp(answer[2], "driver.", 7))
-			dstate_setinfo(answer[2], answer[3]);
+			dstate_setinfo(answer[2], "%s", answer[3]);
 	}
 	return 1;
 }

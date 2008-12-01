@@ -62,13 +62,13 @@ void upsdrv_initinfo(void)
 	 * Allow to override the following parameters
 	 */
 	if ((s = getval("manufacturer")) != NULL) {
-		dstate_setinfo("ups.mfr", s);
+		dstate_setinfo("ups.mfr", "%s", s);
 	}
 	if ((s = getval("model")) != NULL) {
-		dstate_setinfo("ups.model", s);
+		dstate_setinfo("ups.model", "%s", s);
 	}
 	if ((s = getval("serial")) != NULL) {
-		dstate_setinfo("ups.serial", s);
+		dstate_setinfo("ups.serial", "%s", s);
 	}
 }
 

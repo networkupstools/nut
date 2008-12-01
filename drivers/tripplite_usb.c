@@ -846,7 +846,7 @@ static int setvar(const char *varname, const char *val)
 {
 	if (!strcasecmp(varname, "ups.delay.shutdown")) {
 		offdelay = atoi(val);
-		dstate_setinfo("ups.delay.shutdown", val);
+		dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
 		return STAT_SET_HANDLED;
 	}
 
@@ -864,7 +864,7 @@ static int setvar(const char *varname, const char *val)
 			return STAT_SET_UNKNOWN;
 		}
 
-		dstate_setinfo("ups.id", val);
+		dstate_setinfo("ups.id", "%d", val);
 		return STAT_SET_HANDLED;
 	}
 
@@ -924,9 +924,9 @@ void upsdrv_initinfo(void)
 {
 	const unsigned char proto_msg[] = "\0", f_msg[] = "F", p_msg[] = "P",
 		s_msg[] = "S", u_msg[] = "U", v_msg[] = "V", w_msg[] = "W\0";
-	char *model, *model_end, proto_string[5 + sizeof("protocol ")];
+	char *model, *model_end;
 	unsigned char proto_value[9], f_value[9], p_value[9], s_value[9],
-	     u_value[9], v_value[9], w_value[9], buf[256];
+	     u_value[9], v_value[9], w_value[9];
 	int  va, ret;
 	unsigned int proto_number = 0;
 
@@ -954,11 +954,9 @@ void upsdrv_initinfo(void)
 	tl_model = decode_protocol(proto_number);
 
 	if(tl_model == TRIPP_LITE_UNKNOWN)
-		dstate_setinfo("ups.debug.0", hexascdump(proto_value+1, 7));
+		dstate_setinfo("ups.debug.0", "%s", hexascdump(proto_value+1, 7));
 
-	snprintf(proto_string, sizeof(proto_string), "protocol %04x", proto_number);
-
-	dstate_setinfo("ups.firmware.aux", proto_string);
+	dstate_setinfo("ups.firmware.aux", "protocol %04x", proto_number);
 
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
@@ -998,7 +996,7 @@ void upsdrv_initinfo(void)
 		*model_end = '\0';
 	}
 
-	dstate_setinfo("ups.model", model);
+	dstate_setinfo("ups.model", "%s", model);
 
 	dstate_setinfo("ups.power.nominal", "%d", va);
 
@@ -1085,19 +1083,16 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("battery.voltage.nominal", "%d", battery_voltage_nominal);
 	dstate_setinfo("ups.debug.load_banks", "%d", switchable_load_banks);
 
-	snprintf((char *)buf, sizeof buf, "%d", offdelay);
-	dstate_setinfo("ups.delay.shutdown", (char *)buf);
+	dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
 	dstate_setflags("ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.shutdown", 3);
 
 #if 0
-	snprintf((char *)buf, sizeof buf, "%d", startdelay);
-	dstate_setinfo("ups.delay.start", (char *)buf);
+	dstate_setinfo("ups.delay.start", "%d", startdelay);
 	dstate_setflags("ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.start", 8);
 
-	snprintf((char *)buf, sizeof buf, "%d", bootdelay);
-	dstate_setinfo("ups.delay.reboot", (char *)buf);
+	dstate_setinfo("ups.delay.reboot", "%d", bootdelay);
 	dstate_setflags("ups.delay.reboot", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.reboot", 3);
 #endif

@@ -139,7 +139,7 @@ static int send_cmd(const char *str, char *buf, size_t len)
 	size_t i = 0;
 
 	ser_flush_io(upsfd);
-	ser_send(upsfd, str);
+	ser_send(upsfd, "%s", str);
 
 	if (!len || !buf)
 		return -1;
@@ -252,17 +252,17 @@ static int setvar(const char *varname, const char *val)
 {
 	if (!strcasecmp(varname, "ups.delay.shutdown")) {
 		offdelay = atoi(val);
-		dstate_setinfo("ups.delay.shutdown", val);
+		dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
 		return STAT_SET_HANDLED;
 	}
 	if (!strcasecmp(varname, "ups.delay.start")) {
 		startdelay = atoi(val);
-		dstate_setinfo("ups.delay.start", val);
+		dstate_setinfo("ups.delay.start", "%d", startdelay);
 		return STAT_SET_HANDLED;
 	}
 	if (!strcasecmp(varname, "ups.delay.reboot")) {
 		bootdelay = atoi(val);
-		dstate_setinfo("ups.delay.reboot", val);
+		dstate_setinfo("ups.delay.reboot", "%d", bootdelay);
 		return STAT_SET_HANDLED;
 	}
 	return STAT_SET_UNKNOWN;
@@ -271,7 +271,7 @@ static int setvar(const char *varname, const char *val)
 void upsdrv_initinfo(void)
 {
 	const char *model;
-	char buf[16], w_value[16], l_value[16], v_value[16], x_value[16];
+	char w_value[16], l_value[16], v_value[16], x_value[16];
 	int  va;
 	long w, l;
 
@@ -297,16 +297,13 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("ups.firmware", "%c%c",
 			'A'+v_value[0]-'0', 'A'+v_value[1]-'0');
 
-	snprintf(buf, sizeof buf, "%d", offdelay);
-	dstate_setinfo("ups.delay.shutdown", buf);
+	dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
 	dstate_setflags("ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.shutdown", 3);
-	snprintf(buf, sizeof buf, "%d", startdelay);
-	dstate_setinfo("ups.delay.start", buf);
+	dstate_setinfo("ups.delay.start", "%d", startdelay);
 	dstate_setflags("ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.start", 8);
-	snprintf(buf, sizeof buf, "%d", bootdelay);
-	dstate_setinfo("ups.delay.reboot", buf);
+	dstate_setinfo("ups.delay.reboot", "%d", bootdelay);
 	dstate_setflags("ups.delay.reboot", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.reboot", 3);
 

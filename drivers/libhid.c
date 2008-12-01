@@ -608,7 +608,7 @@ static int string_to_path(const char *string, HIDPath_t *path, usage_tables_t *u
 	char	buf[SMALLBUF];
 	char	*token, *last; 
 	
-	snprintf(buf, sizeof(buf), string);
+	snprintf(buf, sizeof(buf), "%s", string);
 
 	for (token = strtok_r(buf, ".", &last); token != NULL; token = strtok_r(NULL, ".", &last))
 	{

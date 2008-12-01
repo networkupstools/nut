@@ -1277,7 +1277,7 @@ static int upsc_simple(const simple_t *sp, const char *var, const char *val)
 				if (stat != 1)
 					upslogx(LOG_ERR, "Bad float: %s %s", var, val);
 				if (sp->desc)
-					dstate_setinfo(sp->desc, val);
+					dstate_setinfo(sp->desc, "%s", val);
 				*sp->aux = 1/fval;
 				break;
 			case t_setpct:
@@ -1286,7 +1286,7 @@ static int upsc_simple(const simple_t *sp, const char *var, const char *val)
 					upslogx(LOG_ERR, "Bad float: %s %s", var, val);
 				*sp->aux = fval*100;
 				if (sp->desc)
-					dstate_setinfo(sp->desc, val);
+					dstate_setinfo(sp->desc, "%s", val);
 				break;
 			case t_setrecpct:
 				stat = sscanf(val, "%f", &fval);
@@ -1294,7 +1294,7 @@ static int upsc_simple(const simple_t *sp, const char *var, const char *val)
 					upslogx(LOG_ERR, "Bad float: %s %s", var, val);
 				*sp->aux = 1/fval*100;
 				if (sp->desc)
-					dstate_setinfo(sp->desc, val);
+					dstate_setinfo(sp->desc, "%s", val);
 				break;
 			case t_final:
 				buffer_empty = 1;
@@ -1310,7 +1310,7 @@ static int upsc_simple(const simple_t *sp, const char *var, const char *val)
 				}
 				else {
 					upslogx(LOG_ERR, "Bad float in %s: %s", var, val);
-					dstate_setinfo(sp->desc, val);
+					dstate_setinfo(sp->desc, "%s", val);
 				}
 				break;
 			case t_finstr:

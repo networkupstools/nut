@@ -398,7 +398,7 @@ void upsdrv_updateinfo(void)
 			
 			if ( bytes_rcvd > 0 && buf[0] != '?' )  {
 				extract_info(buf, item, infostr, sizeof(infostr));
-				dstate_setinfo(item->type, infostr);
+				dstate_setinfo(item->type, "%s", infostr);
 				upsdebugx(2, "updateinfo: %s == >%s<", item->type, infostr);
 				dstate_dataok();
 			} else {

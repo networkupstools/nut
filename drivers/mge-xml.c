@@ -404,7 +404,7 @@ static char *split_date_time(const char *val)
 	char	*last = NULL;
 
 	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", val);
-	dstate_setinfo("ups.date", strtok_r(mge_scratch_buf, " ", &last));
+	dstate_setinfo("ups.date", "%s", strtok_r(mge_scratch_buf, " ", &last));
 
 	return strtok_r(NULL, " ", &last);
 }
@@ -923,11 +923,11 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 		/* Some devices also return the serial number here */
 		value = strstr(val, " (SN ");
 		if (value) {
-			dstate_setinfo("ups.serial", rtrim(value + 5, ')'));
+			dstate_setinfo("ups.serial", "%s", rtrim(value + 5, ')'));
 			value[0] = '\0';
 		}
 
-		dstate_setinfo("ups.firmware.aux", val);
+		dstate_setinfo("ups.firmware.aux", "%s", val);
 		break;
 
 	case SU_OBJECT:
@@ -946,7 +946,7 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 			}
 
 			if (value != NULL) {
-				dstate_setinfo(info->nutname, value);
+				dstate_setinfo(info->nutname, "%s", value);
 			}
 
 			return 0;

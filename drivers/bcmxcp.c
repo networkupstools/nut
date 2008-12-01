@@ -937,7 +937,7 @@ void upsdrv_initinfo(void)
 
 	/* Make a nice model string and tell NUT about it */
 	snprintfcat(pTmp, len+10, " %dVA", iRating);
-	dstate_setinfo("ups.model", pTmp);
+	dstate_setinfo("ups.model", "%s", pTmp);
 	free(pTmp);
 
 	/* Get meter map info from ups, and init our map */
@@ -1029,7 +1029,7 @@ void upsdrv_initinfo(void)
 		}
 	}
 	
-	dstate_setinfo("ups.serial", sValue);
+	dstate_setinfo("ups.serial", "%s", sValue);
 	
 	/* Get information on UPS extended limits */
 	res = command_read_sequence(PW_LIMIT_BLOCK_REQ, answer);
@@ -1076,7 +1076,7 @@ void upsdrv_updateinfo(void)
 						 bcmxcp_meter_map[iIndex].format, sValue);
 
 			/* Set result */
-			dstate_setinfo(bcmxcp_meter_map[iIndex].nut_entity, sValue);
+			dstate_setinfo(bcmxcp_meter_map[iIndex].nut_entity, "%s", sValue);
 		}
 	}
 

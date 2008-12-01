@@ -155,7 +155,7 @@ static inline int optireadline()
 static inline int optiquery( const char *cmd )
 {
 	upsdebugx(2, "SEND: \"%s\"", cmd );
-	ser_send( upsfd, cmd );
+	ser_send( upsfd, "%s", cmd );
 	if ( optimodel == OPTIMODEL_ZINTO )
 		ser_send( upsfd, "\r\n" );
 	return optireadline();
@@ -195,7 +195,7 @@ static void optifill( ezfill_t *a, int len )
 		}
 		else
 		{
-			dstate_setinfo( a[i].var, _buf);
+			dstate_setinfo( a[i].var, "%s", _buf);
 		}
 	}
 }

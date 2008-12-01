@@ -68,7 +68,7 @@ static int safenet_command(const char *command)
 	 * Send the command and read back the status line. When we just send
 	 * a status polling command, it will return the actual status.
 	 */
-	ret = ser_send(upsfd, command);
+	ret = ser_send(upsfd, "%s", command);
 
 	if (ret < 0) {
 		upsdebug_with_errno(3, "send");

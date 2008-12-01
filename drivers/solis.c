@@ -865,7 +865,7 @@ static void getbaseinfo(void)
 
 	/* dummy read attempt to sync - throw it out */
 	snprintf(mycmd, sizeof(mycmd), "%c%c",CMD_UPSCONT, ENDCHAR);
-	ser_send(upsfd, mycmd);
+	ser_send(upsfd, "%s", mycmd);
 
 	/* trying detect solis model */
 	while ( ( !detected ) && ( j < 20 ) )  {

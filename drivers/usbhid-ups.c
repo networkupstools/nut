@@ -836,7 +836,7 @@ void upsdrv_initinfo(void)
 
 	upsdebugx(1, "upsdrv_initinfo...");
 
-	dstate_setinfo("driver.version.data", subdriver->name);
+	dstate_setinfo("driver.version.data", "%s", subdriver->name);
 	dstate_setinfo("driver.version.internal", DRIVER_VERSION);
 
 	/* init polling frequency */
@@ -937,7 +937,7 @@ void upsdrv_initups(void)
 		/* Retrieve user defined delay settings */
 		val = getval(HU_VAR_ONDELAY);
 		if (val) {
-			dstate_setinfo("ups.delay.start", val);
+			dstate_setinfo("ups.delay.start", "%ld", strtol(val, NULL, 10));
 		}
 
 	        /* Adds default with a delay value of '0' (= immediate) */
@@ -948,7 +948,7 @@ void upsdrv_initups(void)
 		/* Retrieve user defined delay settings */
 		val = getval(HU_VAR_OFFDELAY);
 		if (val) {
-			dstate_setinfo("ups.delay.start", val);
+			dstate_setinfo("ups.delay.start", "%ld", strtol(val, NULL, 10));
 		}
 
 	        /* Adds default with a delay value of '0' (= immediate) */
@@ -1274,7 +1274,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 				if (dstate_getinfo(item->info_type))
 					continue;
 
-				dstate_setinfo(item->info_type, item->dfl);
+				dstate_setinfo(item->info_type, "%s", item->dfl);
 				dstate_setflags(item->info_type, item->info_flags);
 
 				/* Set max length for strings, if needed */

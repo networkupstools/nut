@@ -218,7 +218,7 @@ static int do_command(char type, const char *command, const char *parameters, ch
 
 	snprintf(buffer, sizeof(buffer), "~00%c%03d%s%s", type, strlen(command) + strlen(parameters), command, parameters);
 
-	ret = ser_send_pace(upsfd, 10000, buffer);
+	ret = ser_send_pace(upsfd, 10000, "%s", buffer);
 	if (ret <= 0) {
 		upsdebug_with_errno(3, "do_command: send [%s]", buffer);
 		return -1;

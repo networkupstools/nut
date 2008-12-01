@@ -82,7 +82,7 @@ int sec_cmd(const char mode, const char *command, char *msgbuf, int *buflen)
 		mode, command);
     }	
     upsdebugx(1, "PC-->UPS: \"%s\"",msg);
-    ret = ser_send(upsfd,msg);
+    ret = ser_send(upsfd, "%s", msg);
     
     upsdebugx(1, " send returned: %d",ret);
 

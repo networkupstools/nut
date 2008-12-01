@@ -83,7 +83,7 @@ static int powpan_command(const char *command)
 
 	ser_flush_io(upsfd);
 
-	ret = ser_send_pace(upsfd, UPSDELAY, command);
+	ret = ser_send_pace(upsfd, UPSDELAY, "%s", command);
 
 	if (ret < 0) {
 		upsdebug_with_errno(3, "send");
@@ -173,7 +173,7 @@ static int powpan_setvar(const char *varname, const char *val)
 		snprintf(command, sizeof(command), vartab[i].set, atoi(val));
 
 		if ((powpan_command(command) == 2) && (!strcasecmp(powpan_answer, "#0"))) {
-			dstate_setinfo(varname, val);
+			dstate_setinfo(varname, "%s", val);
 			return STAT_SET_HANDLED;
 		}
 
@@ -198,10 +198,10 @@ static void powpan_initinfo()
 		dstate_setinfo("ups.model", "%s", rtrim(s, ' '));
 	}
 	if ((s = strtok(NULL, ",")) != NULL) {
-		dstate_setinfo("ups.firmware", s);
+		dstate_setinfo("ups.firmware", "%s", s);
 	}
 	if ((s = strtok(NULL, ",")) != NULL) {
-		dstate_setinfo("ups.serial", s);
+		dstate_setinfo("ups.serial", "%s", s);
 	}
 	if ((s = strtok(NULL, ",")) != NULL) {
 		dstate_setinfo("ups.mfr", "%s", rtrim(s, ' '));

@@ -80,7 +80,7 @@ void upsdrv_initinfo(void)
 
 	snprintf(version, sizeof version, "%s (mib: %s %s)",
 		DRIVER_VERSION, mibname, mibvers);
-	dstate_setinfo("driver.version.internal", version);
+	dstate_setinfo("driver.version.internal", "%s", version);
 	
 	/* add instant commands to the info database. */
 	for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++)			
@@ -538,7 +538,7 @@ void su_setinfo(const char *type, const char *value, int flags, int auxdata)
 		return;
 
 	if (strcasecmp(type, "ups.status")) {
-		dstate_setinfo(type, value);
+		dstate_setinfo(type, "%s", value);
 		dstate_setflags(type, flags);
 		dstate_setaux(type, auxdata);
 	}
