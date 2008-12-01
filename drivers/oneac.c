@@ -101,7 +101,7 @@ void upsdrv_initinfo(void)
 	if(strncmp(buffer,MFGR, sizeof(MFGR)))
 		fatalx(EXIT_FAILURE, "Unable to connect to ONEAC UPS on %s\n",device_path);	
  
-	dstate_setinfo("ups.mfr", buffer);
+	dstate_setinfo("ups.mfr", "%s", buffer);
 	dstate_addcmd("test.battery.start");
 	dstate_addcmd("test.battery.stop");
 	dstate_addcmd("test.failure.start");
@@ -149,7 +149,7 @@ void upsdrv_initinfo(void)
 			buffer2[i] = '\0';
 		}
 
-		dstate_setinfo("ups.model", buffer2);
+		dstate_setinfo("ups.model", "%s", buffer2);
 		printf("Found %.10s UPS\n", buffer2);
 	}
 
