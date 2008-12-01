@@ -864,7 +864,7 @@ static int setvar(const char *varname, const char *val)
 			return STAT_SET_UNKNOWN;
 		}
 
-		dstate_setinfo("ups.id", "%d", val);
+		dstate_setinfo("ups.id", "%s", val);
 		return STAT_SET_HANDLED;
 	}
 
