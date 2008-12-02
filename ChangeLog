@@ -1,3 +1,7 @@
+Tue Dec  2 00:41:00 UTC 2008 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ * added lakeview_usb driver.
+
 Wed Nov 26 22:18:43 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  * Power Distribution Unit (PDU) preliminary support (2): add support for a wide
