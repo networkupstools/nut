@@ -1,3 +1,8 @@
+Tue Dec  2 00:57:23 UTC 2008 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ - drivers: added lakeview_usb to svn:ignore.
+ - drivers/lakeview_usb.c: set the 'experimental' flag for lakeview_usb.
+
 Tue Dec  2 00:41:00 UTC 2008 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
 
  * added lakeview_usb driver.
