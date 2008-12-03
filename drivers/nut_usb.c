@@ -34,6 +34,24 @@ extern	int		exit_flag;
 static	unsigned int	comm_failures = 0;
 static	uint16_t	vendor_id;
 
+/* Powerware */
+#define POWERWARE	0x0592
+
+/* Phoenixtec Power Co., Ltd */
+#define PHOENIXTEC	0x06da
+ 
+/* USB IDs device table */
+static usb_device_id_t pw_usb_device_table[] = {
+	/* various models */
+	{ USB_DEVICE(POWERWARE, 0x0002), NULL },
+
+	/* various models */
+	{ USB_DEVICE(PHOENIXTEC, 0x0002), NULL },
+	
+	/* Terminating entry */
+	{ -1, -1, NULL }
+};
+
 static void nutusb_open_error(const char *port)
 {
 	printf("Unable to find POWERWARE UPS device on USB bus \n\n");
