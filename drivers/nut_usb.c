@@ -57,13 +57,13 @@ static usb_dev_handle *open_powerware_usb()
     
 		for (dev = bus->devices; dev; dev = dev->next)
 		{
-			vendor_id = dev->descriptor.idVendor;
-			/* XXX Check for POWERWARE 3105 or 3110 ... other models??? */
-			if (dev->descriptor.bDeviceClass == USB_CLASS_PER_INTERFACE &&
-			    (dev->descriptor.idVendor == POWERWARE ||
-			     dev->descriptor.idVendor == PHOENIXTEC) &&
-			    dev->descriptor.idProduct == 0x0002)
+			if (dev->descriptor.bDeviceClass != USB_CLASS_PER_INTERFACE) {
+				continue;
+			}
+
+			if (is_usb_device_supported(pw_usb_device_table, dev->descriptor.idVendor, dev->descriptor.idProduct) == SUPPORTED) {
 				return usb_open(dev);
+			}
 		}
 	}
 
