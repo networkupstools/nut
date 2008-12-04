@@ -1,3 +1,8 @@
+Thu Dec  4 21:47:42 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/richcomm_usb.[ch]: Added new richcomm_usb driver based on the
+   lakeview_usb driver (using libusb)
+
 Tue Dec  2 00:57:23 UTC 2008 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
 
  - drivers: added lakeview_usb to svn:ignore.
