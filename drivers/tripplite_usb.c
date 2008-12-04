@@ -320,10 +320,34 @@ The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 /* USB IDs device table */
 static usb_device_id_t tripplite_usb_device_table[] = {
 	/* e.g. OMNIVS1000, SMART550USB, ... */
-	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x0001) },
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x0001), NULL },
 	
 	/* Terminating entry */
-	{ }
+	{ -1, -1, NULL }
+};
+
+static int subdriver_match_func(USBDevice_t *hd, void *privdata)
+{
+	switch (is_usb_device_supported(tripplite_usb_device_table, hd->VendorID, hd->ProductID))
+	{
+	case SUPPORTED:
+		return 1;
+
+	case POSSIBLY_SUPPORTED:
+		/* by default, reject, unless the productid option is given */
+		if (getval("productid")) {
+			return 1;
+		}
+	case NOT_SUPPORTED:
+	default:
+		return 0;
+	}
+}
+
+static USBDeviceMatcher_t subdriver_matcher = {
+	&subdriver_match_func,
+	NULL,
+	NULL
 };
 
 static enum tl_model_t {
@@ -1447,9 +1471,8 @@ void upsdrv_initups(void)
 	int r;
 
 	/* process the UPS selection options */
-	regex_array[0] = "09AE" /* getval("vendorid") */;
+	regex_array[0] = NULL; /* handled by USB IDs device table */
 	regex_array[1] = getval("productid");
-	if(!regex_array[1]) regex_array[1] = "0001";
 	regex_array[2] = getval("vendor"); /* vendor string */
 	regex_array[3] = getval("product"); /* product string */
 	regex_array[4] = getval("serial"); /* probably won't see this */
@@ -1462,6 +1485,9 @@ void upsdrv_initups(void)
 		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[r]);
 	}
 
+	/* link the matchers */
+	regex_matcher->next = &subdriver_matcher;
+
 	/* Search for the first supported UPS matching the regular
 	 *            expression */
 	r = comm_driver->open(&udev, &curDevice, regex_matcher, NULL);
@@ -1472,6 +1498,9 @@ void upsdrv_initups(void)
 	hd = &curDevice;
 	
 	upslogx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
+
+	dstate_setinfo("ups.vendorid", "%04x", hd->VendorID);
+	dstate_setinfo("ups.productid", "%04x", hd->ProductID);
 
 	/* create a new matcher for later reopening */
 	r = USBNewExactMatcher(&reopen_matcher, hd);
