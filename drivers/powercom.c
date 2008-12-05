@@ -370,7 +370,7 @@ static float input_voltage(void)
 static float output_voltage(void)
 {
 	float tmp,rdatax,rdatay,rdataz,boostdata;
-	unsigned int statINV,statAVR,statAVRMode,model,t;
+	unsigned int statINV = 0,statAVR = 0,statAVRMode = 0,model,t;
 	static float datax[]={0,1.0,1.0,1.0,1.0,1.89,1.89,1.89,0.127,0.127,1.89,1.89,1.89,0.256};
 	static float datay[]={0,1.73,1.74,1.74,1.77,0.9,0.9,0.9,13.204,13.204,0.88,0.88,0.88,6.645};
 	static float dataz[]={0,1.15,0.9,0.9,0.75,1.1,1.1,1.1,0.8,0.8,0.86,0.86,0.86,0.7};
