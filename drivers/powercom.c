@@ -73,12 +73,10 @@ static const char *manufacturer = "PowerCom";
 static const char *modelname    = "Unknown";
 static const char *serialnumber = "Unknown";
 static unsigned int type = 0;
-static unsigned int upsispcm = 0;
 
 
 /* forward declaration of functions used to setup flow control */
 static void dtr0rts1 (void);
-static void dtr1 (void);
 static void no_flow_control (void);
 
 /* struct defining types */
@@ -265,30 +263,6 @@ static void dtr0rts1 (void)
 	ser_set_dtr(upsfd, 0); 
 	ser_set_rts(upsfd, 1); 
 	upsdebugx(2, "DTR => 0, RTS => 1");
-/*
- 	int dtr_bit = TIOCM_DTR;
-	int rts_bit = TIOCM_RTS;
-
-
-	ioctl(upsfd, TIOCMBIC, &dtr_bit);
-	ioctl(upsfd, TIOCMBIS, &rts_bit);
-*/
-}
-
-/* set DTR line on a serial port for KIN525AP
- * serial interface: DTR to 1 (+V)
- */
-static void dtr1 (void)
-{
-	ser_set_dtr(upsfd, 1); 
-	upsdebugx(2, "DTR => 1");
-/*	
-	int dtr_bit = TIOCM_DTR;
-
-	upsdebugx(2, "DTR => 1");
-
-	ioctl(upsfd, TIOCMBIS, &dtr_bit);
-*/
 }
 
 /* clear any flow control */
@@ -726,7 +700,7 @@ void upsdrv_shutdown(void)
 /* initialize UPS */
 void upsdrv_initups(void)
 {
-	int tmp,model;
+	int tmp,model = 0;
 	unsigned int i;
 	static char buf[20];
 
@@ -883,7 +857,7 @@ void upsdrv_initups(void)
 			model=KINmodels[raw_data[MODELNUMBER]/16];
 		}
 		linevoltage=voltages[raw_data[MODELNUMBER]%16];
-		sprintf(buf,"%s-%dAP",types[type].name,model);
+		snprintf(buf,sizeof(buf),"%s-%dAP",types[type].name,model);
 		modelname=buf;
 		upsdebugx(1,"Detected: %s , %dV",modelname,linevoltage);
 		if (ser_send_char (upsfd, BATTERY_TEST) != 1) {
