@@ -120,6 +120,7 @@ typedef struct {
 					char *value);*/	/* NUT function */
 } method_lkp_t;
 
+#if 0
 /* Data to lookup between NUT commands and HAL/DBus methods
  * for dstate_addcmd() */
 static method_lkp_t nut2hal_cmd[] =
@@ -137,6 +138,7 @@ static method_lkp_t nut2hal_cmd[] =
 	/* Terminating element */
 	{ NULL, NULL, NULL }
 };
+#endif
 
 /* Data to lookup between NUT and HAL for dstate_setinfo() */
 static info_lkp_t nut2hal_info[] =
@@ -303,8 +305,7 @@ void dstate_init(const char *prog, const char *port)
 
 const char *dstate_getinfo(const char *var)
 {
-	char *value = NULL;
-	int ivalue;
+	static char	value[8];
 	info_lkp_t *nut2hal_info = find_nut_info(var, NULL);
 
 /* FIXME: use the data exposed by NUT on the DBus when available */
@@ -314,9 +315,7 @@ const char *dstate_getinfo(const char *var)
 		switch (nut2hal_info->hal_type)
 		{
 /*			case HAL_TYPE_INT:
-				ivalue = hal_get_int(nut2hal_info->hal_name);
-				value = xstrdup("12345");
-				snprintf(value, 5, "%i", ivalue);
+				snprintf(value, sizeof(value), "%i", hal_get_int(nut2hal_info->hal_name));
 				break;
 			case HAL_TYPE_BOOL:
 				hal_set_bool(cs, nut2hal_info->hal_name, TRUE);
