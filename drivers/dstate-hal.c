@@ -305,7 +305,6 @@ void dstate_init(const char *prog, const char *port)
 
 const char *dstate_getinfo(const char *var)
 {
-	static char	value[8];
 	info_lkp_t *nut2hal_info = find_nut_info(var, NULL);
 
 /* FIXME: use the data exposed by NUT on the DBus when available */
@@ -315,18 +314,18 @@ const char *dstate_getinfo(const char *var)
 		switch (nut2hal_info->hal_type)
 		{
 /*			case HAL_TYPE_INT:
+				static char	value[8];
 				snprintf(value, sizeof(value), "%i", hal_get_int(nut2hal_info->hal_name));
-				break;
+				return value;
 			case HAL_TYPE_BOOL:
 				hal_set_bool(cs, nut2hal_info->hal_name, TRUE);
 				break;
 */
 			case HAL_TYPE_STRING:
-				value = hal_get_string(nut2hal_info->hal_name);
-				break;
+				return hal_get_string(nut2hal_info->hal_name);
 		}
 	}	
-	return value;
+	return NULL;
 }
 
 int dstate_setinfo(const char *var, const char *fmt, ...)
