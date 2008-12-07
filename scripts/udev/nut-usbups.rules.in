@@ -97,4 +97,7 @@ SYSFS{idVendor}=="0x0f03", SYSFS{idProduct}=="0x0001", MODE="664", GROUP="@RUN_A
 #  Ablerex 625L USB  - megatec_usb
 SYSFS{idVendor}=="0xffff", SYSFS{idProduct}=="0x0000", MODE="664", GROUP="@RUN_AS_GROUP@"
 
+# Kebo - lakeview_usb / richcomm_usb
+SYSFS{idVendor}=="0x0925", SYSFS{idProduct}=="0x1234", MODE="664", GROUP="@RUN_AS_GROUP@"
+
 LABEL="nut-usbups_rules_end"

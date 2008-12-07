@@ -85,8 +85,8 @@ static int richcomm_command(unsigned char *query, unsigned char *reply)
 {
 	int ret;
 
-	/* ret = usb_control_msg(udev, 0x21, 0x09, 0x200, 0, query, QUERY_PACKETSIZE, 1000); */
-	ret = usb->set_report(udev, 0, query, QUERY_PACKETSIZE);
+	ret = usb_control_msg(udev, 0x21, 0x09, 0x200, 0, query, QUERY_PACKETSIZE, 1000);
+	/* ret = usb->set_report(udev, 0, query, QUERY_PACKETSIZE); /*
 	if (ret < 0) {
 		upsdebug_with_errno(3, "send");
 		return ret;
@@ -97,8 +97,8 @@ static int richcomm_command(unsigned char *query, unsigned char *reply)
 
 	upsdebug_hex(3, "send", query, ret);
 
-	/* usb_interrupt_read(upsdev, 0x81, reply, REPLY_PACKETSIZE, 1000); */
-	ret = usb->get_interrupt(udev, reply, REPLY_PACKETSIZE, 1000);
+	ret = usb_interrupt_read(upsdev, 0x81, reply, REPLY_PACKETSIZE, 1000);
+	/* ret = usb->get_interrupt(udev, reply, REPLY_PACKETSIZE, 1000); */
 	if (ret < 0) {
 		upsdebug_with_errno(3, "read");
 		return ret;
