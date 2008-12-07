@@ -45,7 +45,7 @@ typedef enum {
 	SHUTDOWN_RETURN
 } richcomm_query_t;
 
-static unsigned char richcomm_usb_cmd[][QUERY_PACKETSIZE] = {
+static char richcomm_usb_cmd[][QUERY_PACKETSIZE] = {
 	/* This packet is a status request to the UPS */
 	{ 0x01, 0x00, 0x00, 0x30 },
 	/* This packet shuts down the UPS, that is, if it is not currently on line power */
@@ -81,12 +81,12 @@ static USBDeviceMatcher_t device_matcher = {
 	NULL
 };
 
-static int richcomm_command(unsigned char *query, unsigned char *reply)
+static int richcomm_command(char *query, char *reply)
 {
 	int ret;
 
 	ret = usb_control_msg(udev, 0x21, 0x09, 0x200, 0, query, QUERY_PACKETSIZE, 1000);
-	/* ret = usb->set_report(udev, 0, query, QUERY_PACKETSIZE); /*
+	/* ret = usb->set_report(udev, 0, query, QUERY_PACKETSIZE); */
 	if (ret < 0) {
 		upsdebug_with_errno(3, "send");
 		return ret;
@@ -111,7 +111,7 @@ static int richcomm_command(unsigned char *query, unsigned char *reply)
 	return ret;
 }
 
-static int do_command(unsigned char *query, unsigned char *reply)
+static int do_command(char *query, char *reply)
 {
 	int	ret;
 
@@ -158,7 +158,7 @@ static int do_command(unsigned char *query, unsigned char *reply)
 void upsdrv_initups(void)
 {
 	int	i, ret;
-	unsigned char	reply[REPLY_PACKETSIZE];
+	char	reply[REPLY_PACKETSIZE];
 	char	*regex_array[6];
 
 	regex_array[0] = NULL;
@@ -231,7 +231,7 @@ void upsdrv_initinfo(void)
 void upsdrv_updateinfo(void)
 {
 	static int	retry = 0;
-	unsigned char	reply[REPLY_PACKETSIZE];
+	char	reply[REPLY_PACKETSIZE];
 
 	if (do_command(richcomm_usb_cmd[STATUS], reply) < 4) {
 
@@ -276,7 +276,7 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	unsigned char	reply[REPLY_PACKETSIZE];
+	char	reply[REPLY_PACKETSIZE];
 
 	do_command(richcomm_usb_cmd[SHUTDOWN_STAYOFF], reply);
 
