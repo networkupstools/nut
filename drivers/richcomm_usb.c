@@ -97,7 +97,7 @@ static int richcomm_command(char *query, char *reply)
 
 	upsdebug_hex(3, "send", query, ret);
 
-	ret = usb_interrupt_read(upsdev, 0x81, reply, REPLY_PACKETSIZE, 1000);
+	ret = usb_interrupt_read(udev, 0x81, reply, REPLY_PACKETSIZE, 1000);
 	/* ret = usb->get_interrupt(udev, reply, REPLY_PACKETSIZE, 1000); */
 	if (ret < 0) {
 		upsdebug_with_errno(3, "read");
