@@ -120,8 +120,20 @@ static int do_command(char *query, char *reply)
 
 	if (udev == NULL) {
 		ret = usb->open(&udev, &usbdevice, reopen_matcher, NULL);
-
 		if (ret < 1) {
+			upsdebug_with_errno(3, "Can't open USB device");
+			return ret;
+		}
+
+		ret = usb_set_configuration(udev, 1);
+		if (ret < 0) {
+			upsdebug_with_errno(3, "Can't set USB configuration");
+			return ret;
+		}
+
+		ret = usb_clear_halt(udev, 0x81);
+		if (ret < 0) {
+			upsdebug_with_errno(3, "Can't reset USB endpoint");
 			return ret;
 		}
 	}
@@ -199,8 +211,14 @@ void upsdrv_initups(void)
 	/* link the matchers */
 	reopen_matcher->next = regex_matcher;
 
-	if (usb_clear_halt(udev, 0x81) < 0) {
-		fatalx(EXIT_FAILURE, "Can't reset USB endpoint");
+	ret = usb_set_configuration(udev, 1);
+	if (ret < 0) {
+		fatal_with_errno(EXIT_FAILURE, "Can't set USB configuration");
+	}
+
+	ret = usb_clear_halt(udev, 0x81);
+	if (ret < 0) {
+		fatal_with_errno(EXIT_FAILURE, "Can't reset USB endpoint");
 	}
 
 	/*
