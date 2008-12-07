@@ -23,6 +23,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include <usb.h>
+
 #include "main.h"
 #include "libusb.h"
 #include "usb-common.h"
@@ -85,8 +87,10 @@ static int richcomm_command(char *query, char *reply)
 {
 	int ret;
 
-	ret = usb_control_msg(udev, 0x21, 0x09, 0x200, 0, query, QUERY_PACKETSIZE, 1000);
-	/* ret = usb->set_report(udev, 0, query, QUERY_PACKETSIZE); */
+	ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+				0x09, /* HID_REPORT_SET */
+				0x200, /* HID_REPORT_TYPE_OUTPUT */
+				0, query, QUERY_PACKETSIZE, 1000);
 	if (ret < 0) {
 		upsdebug_with_errno(3, "send");
 		return ret;
@@ -98,7 +102,6 @@ static int richcomm_command(char *query, char *reply)
 	upsdebug_hex(3, "send", query, ret);
 
 	ret = usb_interrupt_read(udev, 0x81, reply, REPLY_PACKETSIZE, 1000);
-	/* ret = usb->get_interrupt(udev, reply, REPLY_PACKETSIZE, 1000); */
 	if (ret < 0) {
 		upsdebug_with_errno(3, "read");
 		return ret;
@@ -195,6 +198,10 @@ void upsdrv_initups(void)
 
 	/* link the matchers */
 	reopen_matcher->next = regex_matcher;
+
+	if (usb_clear_halt(udev, 0x81) < 0) {
+		fatalx(EXIT_FAILURE, "Can't reset USB endpoint");
+	}
 
 	/*
 	 * Read rubbish data a few times; the UPS doesn't seem to respond properly
