@@ -9,95 +9,95 @@ LABEL="nut-usbups_rules_real"
 
 #  Krauler (non compliant IDs) 
 #  Krauler UP-M500VA  - megatec_usb
-SYSFS{idVendor}=="0x0001", SYSFS{idProduct}=="0x0000", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="0001", SYSFS{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 #  Hewlett Packard 
 #  HP R/T 2200 INTL (like SMART2200RMXL2U)  - usbhid-ups
-SYSFS{idVendor}=="0x03f0", SYSFS{idProduct}=="0x1f0a", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="03f0", SYSFS{idProduct}=="1f0a", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 #  MGE Office Protection Systems, prev. MGE UPS Systems 
 #  various models  - usbhid-ups
-SYSFS{idVendor}=="0x0463", SYSFS{idProduct}=="0x0001", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="0463", SYSFS{idProduct}=="0001", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  various models  - usbhid-ups
-SYSFS{idVendor}=="0x0463", SYSFS{idProduct}=="0xffff", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="0463", SYSFS{idProduct}=="ffff", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 #  Belkin 
 #  F6H375-USB  - usbhid-ups
-SYSFS{idVendor}=="0x050d", SYSFS{idProduct}=="0x0375", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0375", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  F6C550-AVR  - usbhid-ups
-SYSFS{idVendor}=="0x050d", SYSFS{idProduct}=="0x0551", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0551", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  F6C1500-TW-RK  - usbhid-ups
-SYSFS{idVendor}=="0x050d", SYSFS{idProduct}=="0x0751", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0751", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  F6C900-UNV  - usbhid-ups
-SYSFS{idVendor}=="0x050d", SYSFS{idProduct}=="0x0900", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0900", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  F6C100-UNV  - usbhid-ups
-SYSFS{idVendor}=="0x050d", SYSFS{idProduct}=="0x0910", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0910", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  F6C120-UNV  - usbhid-ups
-SYSFS{idVendor}=="0x050d", SYSFS{idProduct}=="0x0912", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0912", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  F6C800-UNV  - usbhid-ups
-SYSFS{idVendor}=="0x050d", SYSFS{idProduct}=="0x0980", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="050d", SYSFS{idProduct}=="0980", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  F6C1100-UNV, F6C1200-UNV  - usbhid-ups
-SYSFS{idVendor}=="0x050d", SYSFS{idProduct}=="0x1100", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="050d", SYSFS{idProduct}=="1100", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 #  APC 
 #  various models  - usbhid-ups
-SYSFS{idVendor}=="0x051d", SYSFS{idProduct}=="0x0002", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="051d", SYSFS{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 #  Powerware 
 #  various models  - bcmxcp_usb
-SYSFS{idVendor}=="0x0592", SYSFS{idProduct}=="0x0002", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="0592", SYSFS{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 #  Agiler 
 #  Agiler UPS  - megatec_usb
-SYSFS{idVendor}=="0x05b8", SYSFS{idProduct}=="0x0000", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="05b8", SYSFS{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 #  Belkin 
 #  Belkin F6C1200-UNV  - megatec_usb
-SYSFS{idVendor}=="0x0665", SYSFS{idProduct}=="0x5161", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="0665", SYSFS{idProduct}=="5161", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 #  Phoenixtec Power Co., Ltd 
 #  various models  - bcmxcp_usb
-SYSFS{idVendor}=="0x06da", SYSFS{idProduct}=="0x0002", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="06da", SYSFS{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  Mustek Powermust  - megatec_usb
-SYSFS{idVendor}=="0x06da", SYSFS{idProduct}=="0x0003", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="06da", SYSFS{idProduct}=="0003", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  various models  - usbhid-ups
-SYSFS{idVendor}=="0x06da", SYSFS{idProduct}=="0xffff", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="06da", SYSFS{idProduct}=="ffff", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 #  Cyber Power Systems 
 #  900AVR/BC900D, CP1200AVR/BC1200D  - usbhid-ups
-SYSFS{idVendor}=="0x0764", SYSFS{idProduct}=="0x0005", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="0764", SYSFS{idProduct}=="0005", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  Dynex DX-800U?  - usbhid-ups
-SYSFS{idVendor}=="0x0764", SYSFS{idProduct}=="0x0501", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="0764", SYSFS{idProduct}=="0501", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 #  TrippLite 
 #  e.g. OMNIVS1000, SMART550USB, ...  - tripplite_usb
-SYSFS{idVendor}=="0x09ae", SYSFS{idProduct}=="0x0001", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="0001", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  e.g. TrippLite AVR550U  - usbhid-ups
-SYSFS{idVendor}=="0x09ae", SYSFS{idProduct}=="0x1003", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="1003", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  e.g. TrippLite AVR750U  - usbhid-ups
-SYSFS{idVendor}=="0x09ae", SYSFS{idProduct}=="0x1007", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="1007", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  e.g. TrippLite OMNI1000LCD  - usbhid-ups
-SYSFS{idVendor}=="0x09ae", SYSFS{idProduct}=="0x2005", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="2005", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  e.g. TrippLite OMNI900LCD  - usbhid-ups
-SYSFS{idVendor}=="0x09ae", SYSFS{idProduct}=="0x2007", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="2007", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  e.g. TrippLite smart2200RMXL2U  - usbhid-ups
-SYSFS{idVendor}=="0x09ae", SYSFS{idProduct}=="0x3012", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="3012", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  e.g. ?  - usbhid-ups
-SYSFS{idVendor}=="0x09ae", SYSFS{idProduct}=="0x3014", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="3014", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  e.g. TrippLite SmartOnline SU6000RT4U?  - usbhid-ups
-SYSFS{idVendor}=="0x09ae", SYSFS{idProduct}=="0x4002", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="4002", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  e.g. TrippLite SmartOnline SU1500RTXL2ua  - usbhid-ups
-SYSFS{idVendor}=="0x09ae", SYSFS{idProduct}=="0x4003", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="4003", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 #  Unitek 
 #  Unitek Alpha 1200Sx  - megatec_usb
-SYSFS{idVendor}=="0x0f03", SYSFS{idProduct}=="0x0001", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="0f03", SYSFS{idProduct}=="0001", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 #  Ablerex (non compliant IDs) 
 #  Ablerex 625L USB  - megatec_usb
-SYSFS{idVendor}=="0xffff", SYSFS{idProduct}=="0x0000", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="ffff", SYSFS{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 # Kebo - lakeview_usb / richcomm_usb
-SYSFS{idVendor}=="0x0925", SYSFS{idProduct}=="0x1234", MODE="664", GROUP="@RUN_AS_GROUP@"
+SYSFS{idVendor}=="0925", SYSFS{idProduct}=="1234", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 LABEL="nut-usbups_rules_end"
