@@ -1,0 +1,196 @@
+.TH BLAZER 8 "Fri Nov 14 2008" "" "Network UPS Tools (NUT)" 
+.SH NAME  
+blazer \- Driver for Megatec/Q1 protocol serial/USB based UPS equipment
+.SH NOTE
+This man page only documents the hardware\(hyspecific features of the
+blazer driver. For information about the core driver, see
+\fBnutupsdrv\fR(8).
+
+.SH SUPPORTED HARDWARE
+
+The blazer driver is known to work with various UPSes from Blazer, Energy
+Sistem, Fenton Technologies, Mustek and many others. The NUT compatibility
+table lists all the known supported models. Keep in mind, however, that
+other models not listed there may also be supported but haven't been tested.
+
+.SH EXTRA ARGUMENTS
+
+You may need to override or provide defaults for some values, depending on
+the make and model of your UPS. The following are the ones that most likely
+will need changing (see \fBups.conf\fR(5)):
+
+.IP "battery.voltage.high = \fIvalue\fR"
+Maximum battery voltage that is reached after about 12 to 24 hours charging.
+If you want the driver to report a guesstimated \fBbattery.charge\fR, you need
+to specify this (see \fBBATTERY CHARGE\fR).
+
+.IP "battery.voltage.low = \fIvalue\fR"
+Minimum battery voltage just before the UPS automatically shuts down.
+If you want the driver to report a guesstimated \fBbattery.charge\fR, you need
+to specify this (see \fBBATTERY CHARGE\fR).
+
+.IP "battery.voltage.nominal = \fIvalue\fR"
+Some devices show a wrong nominal battery voltage (or none at all), so you may
+need to override this or set a default value.
+
+.IP "battery.packs = \fIvalue\fR"
+Some devices report a part of the total battery voltage. For instance, if
+\fBbattery.voltage.nominal\fR is 24 V, but it reports a \fBbattery.voltage\fR
+of around 2 V, the number of \fBbattery.packs\fR to correct this reading would
+be 12. The driver will attempt to detect this automatically, but if this fails
+somehow, you may want to override this value.
+
+.IP "ondelay = \fIvalue\fR"
+Time to wait before switching on the UPS (minutes). Note that a value below 3
+minutes, may cause earlier firmware versions to not switch on automatically,
+so it defaults to 3 minutes.
+
+.IP "offdelay = \fIvalue\fR"
+Time to wait before shutting down the UPS (seconds). This value is truncated
+to units of 6 seconds (less than 60 seconds) or 60 seconds (more than 60
+seconds). Defaults to 30 seconds.
+
+.IP "norating"
+Some UPSes will lock up if you attempt to read rating information from them.
+Setting this flag will skip this step.
+
+.IP "novendor"
+Some UPSes will lock up if you attempt to read vendor information from them.
+Setting this flag will skip this step.
+
+.SH SERIAL INTERFACE
+
+.IP "cablepower = \fInormal,reverse,both,none\fR"
+By default the driver will set DTR and clear RTS (\fInormal\fR). If you find that
+your UPS isn't detected or the communication with the UPS is unreliable, you may
+try if clear DTR and set RTS (\fIreverse\fR), set DTR and RTS (\fIboth\fR) or
+clear DTR and RTS (\fInone\fR) improves this situation.
+
+.SH USB INTERFACE
+
+.IP "vendor=\fIregex\fR"
+.IP "product=\fIregex\fR"
+.IP "serial=\fIregex\fR"
+.IP "vendorid=\fIregex\fR"
+.IP "productid=\fIregex\fR"
+
+Select a specific UPS, in case there is more than one connected via
+USB. Each option specifies an extended regular expression (see
+\fBregex(7)\fR) that must match the UPS's entire vendor/product/serial
+string (minus any surrounding whitespace), or the whole 4-digit
+hexadecimal code for vendorid and productid. Try \fB-DD\fR for
+finding out the strings to match.
+
+Examples: 
+
+    \fB-x vendor="Foo.Corporation.*"\fR
+
+    \fB-x vendorid=051d\fR (APC)
+
+    \fB-x product=".*(Smart|Back)-?UPS.*"\fR
+
+.IP "bus=\fIregex\fR"
+
+Select a UPS on a specific USB bus or group of busses. The argument is
+a regular expression that must match the bus name where the UPS is
+connected (e.g. bus="002", bus="00[2-3]"). 
+
+.IP "subdriver=\fIstring\fR"
+
+Select a serial-over-USB subdriver to use. You have a choice between "phoenix"
+and "krauler".
+
+.SH UPS COMMANDS
+
+This driver supports some instant commands (see \fBupscmd\fR(8)):
+
+.IP "beeper.toggle"
+Toggle the UPS beeper. (Not available on some hardware.)
+
+.IP "load.on"
+Turn on the load immediately.
+
+.IP "load.off"
+Turn off the load immediately (see \fBKNOWN PROBLEMS\fR).
+
+.IP "shutdown.return [\fIvalue\fR]"
+Turn off the load and return when power is back. Uses the timers defined by
+\fBondelay\fR and \fBoffdelay\fR.
+
+.IP "shutdown.stayoff [\fIvalue\fR]"
+Turn off the load and remain off (see \fBKNOWN PROBLEMS\fR). Uses the timer
+defined by \fBoffdelay\fR.
+
+.IP "shutdown.stop"
+Stop a shutdown in progress.
+
+.IP "test.battery.start.deep"
+Perform a long battery test (Not available on some hardware.)
+
+.IP "test.battery.start.quick"
+Perform a (10 second) battery test.
+
+.IP "test.battery.start \fIvalue\fR"
+Perform a battery test for the duration of num seconds (truncated to units of
+60 seconds).
+
+.IP "test.battery.stop"
+Stop a running battery test (not available on some hardware.)
+
+.SH BATTERY CHARGE
+
+Due to popular demand, this driver will report a guesstimated \fBbattery.charge\fR
+if you specify both \fBbattery.voltage.high\fR and \fBbattery.voltage.low\fR in
+\fBups.conf\fR(5).
+
+Before we start, it is impossible to determine state of charge in a UPS by looking at
+the battery voltage alone. You'd have to disconnect the load, let the battery rest for
+a couple of minutes and then measure the open cell voltage. This just isn't practical
+if the power went out and the UPS is providing power for your systems.
+
+There are ways to get a fairly accurate reading without disconnecting the load but
+these invariably don't use the battery voltage, but instead keep track on how much
+(and how fast) current is going in- and out of the battery. By putting these in a
+formula known as the Peukert equation you'll be able to get a fairly accurate measure
+on the state of charge. Unfortunately, your UPS doesn't report all the parameters that
+go into this equation, so we're stuck with the below (unreliable) guesstimate.
+.nf
+
+                     battery.voltage - battery.voltage.low
+battery.charge =  ------------------------------------------ x 100 %
+                  battery.voltage.high - battery.voltage.low
+
+.fi
+This is better than nothing (but not much). If this calculation is giving you incorrect
+readings, you are the one that put in the values in \fBups.conf\fR(5), so don't complain
+with the author. If you need something better, buy a UPS that reports \fBbattery.charge\fR
+all by itself without the help of a NUT driver.
+
+.SH KNOWN PROBLEMS
+
+Some UPS commands aren't supported by all models. In most cases, the driver
+will send a message to the system log when the user tries to execute an
+unsupported command. Unfortunately, some models don't even provide a way for
+the driver to check for this, so the unsupported commands will silently
+fail.
+
+Both the \fBload.off\fR and \fBshutdown.stayoff\fR instant commands are meant to
+turn the load off indefinitely. However, some UPS models don't allow this.
+
+Some models report a bogus value for the beeper status (will always be \fIenabled\fR
+or \fIdisabled\fR). So, the \fBbeeper.toggle\fR command may appear to have no effect
+in the status reported by the driver when, in fact, it is working fine.
+
+The temperature value is also known to be bogus in some models.
+
+.SH AUTHOR
+
+Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+.SH SEE ALSO
+
+\fBnutupsdrv\fR(8), \fBupsc\fR(8), \fBupscmd\fR(8), \fBupsrw\fR(8)
+
+.SS Internet resources:
+
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

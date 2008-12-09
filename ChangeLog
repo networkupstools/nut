@@ -1,3 +1,10 @@
+Tue Dec  9 21:44:19 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/blazer.[ch]: core for Megatec/Q1 protocol.
+ - drivers/blazer_ser.c: driver for serial interface UPS.
+ - drivers/blazer_usb.c: driver for USB interface UPS.
+ - man/blazer.8: combined manual page for serial/USB
+
 Thu Dec  4 21:47:42 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/richcomm_usb.[ch]: Added new richcomm_usb driver based on the
