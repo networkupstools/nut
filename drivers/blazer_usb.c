@@ -64,6 +64,8 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 
 	upsdebugx(3, "send: %s", tmp);
 
+	memset(buf, 0, buflen);
+
 	for (i = 0; (i <= buflen-8) && (strchr(buf, '\r') == NULL); i += ret) {
 
 		/* Read data in 8-byte chunks */
