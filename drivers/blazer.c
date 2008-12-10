@@ -46,7 +46,7 @@ static const struct {
 	const char	*vendor;
 } command[] = {
 	{ "megatec", "Q1\r", "F\r", "I\r" },
-	{ "mustek", "QS\r", NULL, NULL },
+	{ "mustek", "QS\r", "F\r", "I\r" },
 	{ "megatec/old", "D\r", "F\r", "I\r" },
 	{ NULL }
 };
