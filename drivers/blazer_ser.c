@@ -41,7 +41,7 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 
 	ser_flush_io(upsfd);
 
-	ret = ser_send(upsfd, cmd);
+	ret = ser_send(upsfd, "%s", cmd);
 
 	if (ret < 0) {
 		upsdebug_with_errno(3, "send");
@@ -175,8 +175,17 @@ void upsdrv_initups(void)
 		}
 	}
 
+	if (!cablepower[i].val) {
+		fatalx(EXIT_FAILURE, "Value '%s' not valid for 'cablepower'", val);
+	}
+
 	ser_set_dtr(upsfd, cablepower[i].dtr);
 	ser_set_rts(upsfd, cablepower[i].rts);
+
+	/*
+	 * Allow some time to settle for the cablepower
+	 */
+	usleep(100000);
 #endif
 	blazer_initups();
 }
@@ -184,6 +193,8 @@ void upsdrv_initups(void)
 
 void upsdrv_initinfo(void)
 {
+	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
+
 	blazer_initinfo();
 }
 

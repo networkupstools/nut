@@ -401,6 +401,8 @@ void upsdrv_initups(void)
 
 void upsdrv_initinfo(void)
 {
+	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
+
 	blazer_initinfo();
 
 	dstate_setinfo("ups.vendorid", "%04x", usbdevice.VendorID);
