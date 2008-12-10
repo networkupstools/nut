@@ -62,7 +62,7 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 		}		
 	}
 
-	upsdebugx(3, "send: %s", tmp);
+	upsdebugx(3, "send: %.*s", strcspn(tmp, "\r"), tmp);
 
 	memset(buf, 0, buflen);
 
@@ -82,7 +82,7 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 		}
 	}
 
-	upsdebugx(3, "read: %s", buf);
+	upsdebugx(3, "read: %.*s", strcspn(buf, "\r"), buf);
 	return i;
 }
 
@@ -112,7 +112,7 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 
 	int	i;
 
-	upsdebugx(3, "send: %s", cmd);
+	upsdebugx(3, "send: %.*s", strcspn(cmd, "\r"), cmd);
 	
 	for (i = 0; command[i].str; i++) {
 		int	retry;
@@ -147,13 +147,13 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 			return res;
 		}
 
-		upsdebugx(3, "read: %s", buf);
+		upsdebugx(3, "read: %.*s", strcspn(buf, "\r"), buf);
 		return 0;
 	}
 
 	/* echo the unknown command back */
-	upsdebugx(3, "read: %s", cmd);
-	return snprintf(buf, buflen, "%s", cmd);;
+	upsdebugx(3, "read: %.*s", strcspn(cmd, "\r"), cmd);
+	return snprintf(buf, buflen, "%s", cmd);
 }
 
 
