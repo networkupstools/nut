@@ -1,3 +1,10 @@
+Wed Dec 10 08:48:27 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - tools/nut-usbinfo.pl: remove the hexadecimal suffix for the HAL file, and
+   complete the script for the new richcomm_usb and blazer_usb drivers
+ - ups-nut-device.fdi.in, libhid.usermap and nut-usbups.rules.in: regenerated
+   with the updated script
+
 Tue Dec  9 21:44:19 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/blazer.[ch]: core for Megatec/Q1 protocol.

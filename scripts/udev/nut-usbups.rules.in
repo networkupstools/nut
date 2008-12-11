@@ -6,8 +6,6 @@ SUBSYSTEM=="usb", GOTO="nut-usbups_rules_real"
 BUS!="usb", GOTO="nut-usbups_rules_end"
 
 LABEL="nut-usbups_rules_real"
-
-#  Krauler (non compliant IDs) 
 #  Krauler UP-M500VA  - megatec_usb
 SYSFS{idVendor}=="0001", SYSFS{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_GROUP@"
 
@@ -46,16 +44,10 @@ SYSFS{idVendor}=="051d", SYSFS{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_GR
 #  Powerware 
 #  various models  - bcmxcp_usb
 SYSFS{idVendor}=="0592", SYSFS{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_GROUP@"
-
-#  Agiler 
 #  Agiler UPS  - megatec_usb
 SYSFS{idVendor}=="05b8", SYSFS{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_GROUP@"
-
-#  Belkin 
 #  Belkin F6C1200-UNV  - megatec_usb
 SYSFS{idVendor}=="0665", SYSFS{idProduct}=="5161", MODE="664", GROUP="@RUN_AS_GROUP@"
-
-#  Phoenixtec Power Co., Ltd 
 #  various models  - bcmxcp_usb
 SYSFS{idVendor}=="06da", SYSFS{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  Mustek Powermust  - megatec_usb
@@ -68,6 +60,8 @@ SYSFS{idVendor}=="06da", SYSFS{idProduct}=="ffff", MODE="664", GROUP="@RUN_AS_GR
 SYSFS{idVendor}=="0764", SYSFS{idProduct}=="0005", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  Dynex DX-800U?  - usbhid-ups
 SYSFS{idVendor}=="0764", SYSFS{idProduct}=="0501", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  Sweex 1000VA  - richcomm_usb
+SYSFS{idVendor}=="0925", SYSFS{idProduct}=="1234", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 #  TrippLite 
 #  e.g. OMNIVS1000, SMART550USB, ...  - tripplite_usb
@@ -88,16 +82,9 @@ SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="3014", MODE="664", GROUP="@RUN_AS_GR
 SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="4002", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  e.g. TrippLite SmartOnline SU1500RTXL2ua  - usbhid-ups
 SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="4003", MODE="664", GROUP="@RUN_AS_GROUP@"
-
-#  Unitek 
 #  Unitek Alpha 1200Sx  - megatec_usb
 SYSFS{idVendor}=="0f03", SYSFS{idProduct}=="0001", MODE="664", GROUP="@RUN_AS_GROUP@"
-
-#  Ablerex (non compliant IDs) 
 #  Ablerex 625L USB  - megatec_usb
 SYSFS{idVendor}=="ffff", SYSFS{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_GROUP@"
-
-# Kebo - lakeview_usb / richcomm_usb
-SYSFS{idVendor}=="0925", SYSFS{idProduct}=="1234", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 LABEL="nut-usbups_rules_end"

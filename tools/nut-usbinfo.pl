@@ -82,14 +82,20 @@ sub gen_usb_files
 	foreach my $vendorId (sort { lc $a cmp lc $b } keys  %vendorName)
 	{
 		# HAL vendor header
-		print $outHAL "\n      <!-- ".$vendorName{$vendorId}." -->\n";
+		if ($vendorName{$vendorId}) {
+			print $outHAL "\n      <!-- ".$vendorName{$vendorId}." -->\n";
+		}
 		print $outHAL "      <match key=\"usb_device.vendor_id\" int=\"".$vendorId."\">\n";
 
 		# Hotplug vendor header
-		print $outHotplug "\n# ".$vendorName{$vendorId}."\n";
+		if ($vendorName{$vendorId}) {
+			print $outHotplug "\n# ".$vendorName{$vendorId}."\n";
+		}
 
 		# udev vendor header
-		print $outUdev "\n# ".$vendorName{$vendorId}."\n";
+		if ($vendorName{$vendorId}) {
+			print $outUdev "\n# ".$vendorName{$vendorId}."\n";
+		}
 
 		foreach my $productId (sort { lc $a cmp lc $b } keys %{$vendor{$vendorId}})
 		{
@@ -109,7 +115,8 @@ sub gen_usb_files
 
 			# udev device entry
 			print $outUdev "# ".$vendor{$vendorId}{$productId}{"comment"}.' - '.$vendor{$vendorId}{$productId}{"driver"}."\n";
-			print $outUdev "SYSFS{idVendor}==\"".$vendorId."\", SYSFS{idProduct}==\"".$productId."\",";
+			print $outUdev "SYSFS{idVendor}==\"".removeHexPrefix($vendorId);
+			print $outUdev "\", SYSFS{idProduct}==\"".removeHexPrefix($productId)."\",";
 			print $outUdev ' MODE="664", GROUP="@RUN_AS_GROUP@"'."\n";
 		}
 		# HAL vendor footer
@@ -188,9 +195,10 @@ sub find_usbdevs
 			if($nameFile=~/(.+)-hid\.c/) {
 				$driver="usbhid-ups";
 			}
-			elsif ($nameFile eq "nut_usb.h") {
+			elsif ($nameFile eq "nut_usb.c") {
 				$driver="bcmxcp_usb";
 			}
+			# FIXME: make a common matching rule *.c => *
 			elsif ($nameFile eq "tripplite_usb.c") {
 				$driver="tripplite_usb";
 			}
@@ -200,12 +208,22 @@ sub find_usbdevs
 			elsif ($nameFile eq "richcomm_usb.c") {
 				$driver="richcomm_usb";
 			}
+			elsif ($nameFile eq "blazer_usb.c") {
+				$driver="blazer_usb";
+			}
 			else {
 				die "Unknown driver type: $nameFile";
 			}
 			$vendor{$VendorID}{$ProductID}{"driver"}=$driver;
 		}
 	}
+}
+
+sub removeHexPrefix {
+	# make a local copy, not to alter the original entry
+	my $string = $_[0];
+	$string =~ s/0x//;
+	return $string;
 }
 
 sub trim {
