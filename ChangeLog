@@ -1,3 +1,9 @@
+Thu Dec 11 04:12:54 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - Apply other portion of Steffen Plotner's patch to fetch ambient temperature
+   for APC SNMP module (APCC_OID_IEM_TEMP value). Should also fix Alioth bug
+   #310613.
+
 Wed Dec 10 08:48:27 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  - tools/nut-usbinfo.pl: remove the hexadecimal suffix for the HAL file, and
@@ -65,7 +71,7 @@ Thu Nov 20 09:40:24 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 Tue Nov 25 13:37:18 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - drivers/apccmib.h: Use OID ending in .1 for APC temperature and humidity
-   probes. (Patch courtesy of Seffen Plotnerr; confirmed by George Ross.)
+   probes. (Patch courtesy of Steffen Plotner; confirmed by George Ross.)
 
 Mon Nov 24 13:05:06 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 

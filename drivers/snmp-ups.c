@@ -837,6 +837,8 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 			/* no response, or units == F */
 			if ((su == FALSE) || (units == APCC_IEM_FAHRENHEIT))
 				temp = (value - 32) / 1.8;
+			else
+				temp = value;
 		}
 		else {
 			temp = value * su_info_p->info_len;
