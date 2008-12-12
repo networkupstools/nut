@@ -105,7 +105,6 @@ bestfcom_SOURCES = bestfcom.c
 bestuferrups_SOURCES = bestuferrups.c
 bestups_SOURCES = bestups.c
 blazer_ser_SOURCES = blazer.c blazer_ser.c
-blazer_ser_LDADD = $(LDADD) -lm
 cyberpower_SOURCES = cyberpower.c
 etapro_SOURCES = etapro.c
 everups_SOURCES = everups.c
@@ -179,7 +178,7 @@ richcomm_usb_SOURCES = richcomm_usb.c libusb.c  usb-common.c
 richcomm_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 
 blazer_usb_SOURCES = blazer.c blazer_usb.c libusb.c  usb-common.c
-blazer_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS) -lm
+blazer_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 
 # broken - to be removed
 energizerups_SOURCES = energizerups.c

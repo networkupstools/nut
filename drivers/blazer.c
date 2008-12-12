@@ -24,8 +24,6 @@
 #include "main.h"
 #include "blazer.h"
 
-#include <math.h>
-
 static int	ondelay = 3;	/* minutes */
 static int	offdelay = 30;	/* seconds */
 
@@ -82,7 +80,9 @@ static double blazer_battery(const char *ptr, char **endptr)
 	 * If "battery.voltage.(low|high)" are both set, guesstimate "battery.charge".
 	 */
 	if ((bl > 0) && (bh > bl)) {
-		dstate_setinfo("battery.charge", "%.0f", 100 * fmin(fmax((bv-bl)/(bh-bl), 0), 1));
+		double	bc = 100 * (bv - bl) / (bh - bl);
+
+		dstate_setinfo("battery.charge", "%.0f", (bc < 0) ? 0 : (bc > 100) ? 100 : bc);
 	}
 
 	return bv;
