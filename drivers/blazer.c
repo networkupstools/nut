@@ -21,11 +21,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include <math.h>
-
 #include "main.h"
 #include "blazer.h"
 
+#include <math.h>
 
 static int	ondelay = 3;	/* minutes */
 static int	offdelay = 30;	/* seconds */
