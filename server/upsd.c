@@ -44,6 +44,10 @@
 #include "desc.h"
 #include "neterr.h"
 
+#ifdef HAVE_WRAP
+#include <tcpd.h>
+#endif	/* HAVE_WRAP */
+
 	/* externally-visible settings and pointers */
 
 	upstype_t	*firstups = NULL;
@@ -457,6 +461,9 @@ static void check_command(int cmdnum, ctype_t *client, int numarg,
 	const char **arg)
 {
 	if (netcmds[cmdnum].flags & FLAG_USER) {
+#ifdef HAVE_WRAP
+		struct request_info	req;
+#endif	/* HAVE_WRAP */
 
 		if (!client->username) {
 			send_err(client, NUT_ERR_USERNAME_REQUIRED);
@@ -467,6 +474,16 @@ static void check_command(int cmdnum, ctype_t *client, int numarg,
 			send_err(client, NUT_ERR_PASSWORD_REQUIRED);
 			return;
 		}
+
+#ifdef HAVE_WRAP
+		request_init(&req, RQ_DAEMON, "upsd", RQ_CLIENT_ADDR, client->addr, RQ_USER, client->username, 0);
+
+		if (!hosts_access(&req)) {
+			/* tcp-wrappers says access should be denied */
+			send_err(client, NUT_ERR_ACCESS_DENIED);
+			return;
+		}
+#endif	/* HAVE_WRAP */
 	}
 
 	/* looks good - call the command */

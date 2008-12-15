@@ -262,6 +262,33 @@ AM_CONDITIONAL(WITH_SSL, test "${nut_with_ssl}" = "yes")
 NUT_REPORT_FEATURE([enable SSL development code], [${nut_with_ssl}])
 
 dnl ----------------------------------------------------------------------
+dnl Check for --with-wrap
+
+NUT_ARG_WITH([wrap], [enable tcp-wrappers support], [auto])
+
+dnl ${nut_with_wrap}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_wrap}" != "no"; then
+   dnl check for libwrap compiler flags
+   NUT_CHECK_LIBWRAP
+fi
+
+if test "${nut_with_wrap}" = "yes" -a "${nut_have_libwrap}" != "yes"; then
+   AC_MSG_ERROR(["libwrap not found"])
+fi
+
+if test "${nut_with_wrap}" != "no"; then
+   nut_with_wrap="${nut_have_libwrap}"
+fi
+
+if test "${nut_with_wrap}" = "yes"; then
+   AC_DEFINE(HAVE_WRAP, 1, [Define to enable tcp-wrappers support])
+fi
+
+AM_CONDITIONAL(WITH_WRAP, test "${nut_with_wrap}" = "yes")
+
+NUT_REPORT_FEATURE([enable tcp-wrappers support], [${nut_with_wrap}])
+
+dnl ----------------------------------------------------------------------
 dnl check whether to compile IPv6 features 
 
 NUT_ARG_WITH([ipv6], [enable IPv6 support], [auto])
@@ -796,6 +823,8 @@ AC_SUBST(LIBNEON_CFLAGS)
 AC_SUBST(LIBNEON_LDFLAGS)
 AC_SUBST(LIBPOWERMAN_CFLAGS)
 AC_SUBST(LIBPOWERMAN_LDFLAGS)
+AC_SUBST(LIBWRAP_CFLAGS)
+AC_SUBST(LIBWRAP_LDFLAGS)
 AC_SUBST(HAL_USER)
 AC_SUBST(HAL_DEVICE_MATCH_KEY)
 AC_SUBST(HAL_FDI_PATH)

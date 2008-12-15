@@ -94,6 +94,14 @@ with the UPS.  In this case, the driver should also provide diagnostic
 information in the syslog.  If this happens, check the serial or
 USB cabling, or inspect the network path in the case of a SNMP UPS.
 
+.SH ACCESS CONTROL
+
+If the server is build with tcp-wrappers support enabled, it will check if
+the NUT username is allowed to connect from the client address through the
+\fB/etc/hosts.allow\fR and \fB/etc/hosts.deny\fR files. Note that this will
+only be done for commands that require to be logged into the server. Further
+details are described in \fBhosts_access\fR(5).
+
 .SH FILES
 
 The general upsd configuration file is \fBupsd.conf\fR(5).  The
