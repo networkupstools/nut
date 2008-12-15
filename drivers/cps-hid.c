@@ -35,15 +35,43 @@
 /* Cyber Power Systems */
 #define CPS_VENDORID 0x0764
 
+/*
+ * For some devices, the reported battery voltage is off by factor
+ * of 1.5 so we need to apply a scale factor to it to get the real
+ * battery voltage. By default, the factor is 1 (no scaling).
+ */
+static double	battery_scale = 1;
+
+static void *cps_battery_scale(void)
+{
+	battery_scale = 0.667;
+	return NULL;
+}
+
 /* USB IDs device table */
 static usb_device_id_t cps_usb_device_table[] = {
 	/* 900AVR/BC900D, CP1200AVR/BC1200D */
 	{ USB_DEVICE(CPS_VENDORID, 0x0005), NULL },
 	/* Dynex DX-800U? */
-	{ USB_DEVICE(CPS_VENDORID, 0x0501), NULL },
-	
+	{ USB_DEVICE(CPS_VENDORID, 0x0501), &cps_battery_scale },
+
 	/* Terminating entry */
 	{ -1, -1, NULL }
+};
+
+/* returns statically allocated string - must not use it again before
+   done with result! */
+static char *cps_battvolt_fun(double value)
+{
+	static char	buf[8];
+
+	snprintf(buf, sizeof(buf), "%.1f", battery_scale * value);
+
+	return buf;
+}
+
+static info_lkp_t cps_battvolt[] = {
+	{ 0, NULL, &cps_battvolt_fun }
 };
 
 /* --------------------------------------------------------------- */
@@ -82,7 +110,7 @@ static hid_info_t cps_hid2nut[] = {
   { "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", 0, NULL },
   { "battery.runtime.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.RemainingTimeLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
   { "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%.0f", 0, NULL },
-  { "battery.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, "%.1f", 0, NULL },
+  { "battery.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, "%s", 0, cps_battvolt },
 
   /* UPS page */
   { "ups.load", 0, 0, "UPS.Output.PercentLoad", NULL, "%.0f", 0, NULL },
