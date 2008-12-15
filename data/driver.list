@@ -243,6 +243,7 @@
 "Infosec"	"iPEL 750"	""	"megatec"
 "Infosec"	"iPEL 1000"	""	"megatec"
 "Infosec"	"XP 500"	"USB"	"megatec_usb"
+"Infosec"	"XP 1000"	""	"megatec"
 
 "IPMI"	""	""		"powerman-pdu (experimental)"
 
@@ -250,6 +251,8 @@
 "Ippon"		"Back Power Pro 700"	"USB"	"megatec_usb"
 
 "Jageson Technology"	"Jasuny USPS"	""	"genericups upstype=4"
+
+"Kebo"	"1200D/D Series"	""	"megatec"
 
 "Krauler"	"UP-D1200VA"	"USB"	"megatec_usb ignoreoff"
 "Krauler"	"UP-M500VA"	"USB"	"megatec_usb"

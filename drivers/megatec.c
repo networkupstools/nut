@@ -52,7 +52,6 @@
 #define IDENT_MAXTRIES   5
 #define IDENT_MINSUCCESS 3
 
-#define SEND_PACE    100000  /* interval between chars on send (usec) */
 #define READ_TIMEOUT 2       /* timeout on read (seconds) */
 #define READ_PACE    300000  /* interval to wait between sending a command and reading the response (usec) */
 
@@ -139,6 +138,8 @@ static BatteryVolts_t batteries[] = {{ 12.0,  9.0, 16.0,  9.7, 13.7,  0.0 },   /
                                      { 96.0,  1.5,  3.0, 1.63, 2.29,  1.8 },   /* Ablerex MS3000RT (LB at 25% charge) */
                                      {  0.0,  0.0,  0.0,  0.0,  0.0,  0.0 }};  /* END OF DATA */
 
+/* Interval between chars on send (usec) */
+static int send_pace = 100000;
 
 /* Some models need this */
 static char state_dtr = 1;
@@ -296,7 +297,7 @@ static int get_ups_info(UPSInfo_t *info)
 
 	upsdebugx(2, "Asking for UPS information [I]...");
 	ser_flush_io(upsfd);
-	ser_send_pace(upsfd, SEND_PACE, "I%c", ENDCHAR);
+	ser_send_pace(upsfd, send_pace, "I%c", ENDCHAR);
 	usleep(READ_PACE);
 
 	/*
@@ -358,7 +359,7 @@ static int get_firmware_values(FirmwareValues_t *values)
 
 	upsdebugx(2, "Asking for UPS power ratings [F]...");
 	ser_flush_io(upsfd);
-	ser_send_pace(upsfd, SEND_PACE, "F%c", ENDCHAR);
+	ser_send_pace(upsfd, send_pace, "F%c", ENDCHAR);
 	usleep(READ_PACE);
 
 	/*
@@ -423,7 +424,7 @@ static int run_query(QueryValues_t *values)
 
 	upsdebugx(2, "Asking for UPS status [Q1]...");
 	ser_flush_io(upsfd);
-	ser_send_pace(upsfd, SEND_PACE, "Q1%c", ENDCHAR);
+	ser_send_pace(upsfd, send_pace, "Q1%c", ENDCHAR);
 	usleep(READ_PACE);
 
 	/*
@@ -506,6 +507,21 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
 
 	/*
+	 * Some models apparently time-out with the default send pace, so we must
+	 * allow the user to override it if needed be. The configuration parameter
+	 * is specified in milliseconds for the user's benefit.
+	 */
+	if (getval("sendpace")) {
+		upsdebugx(2, "Default command send pace is %d usec.", send_pace);
+		upsdebugx(2, "Parameter [sendpace]: [%s]", getval("sendpace"));
+
+		/* Having 1 second as the upper-bound is an arbitrary choice... */
+		send_pace = CLAMP(atoi(getval("sendpace")), 1, 1000) * 1000;
+
+		upslogx(LOG_NOTICE, "Command send pace changed to %d usec.", send_pace);
+	}
+
+	/*
 	 * UPS detection sequence.
 	 */
 	upsdebugx(1, "Starting UPS detection process...");
@@ -534,7 +550,7 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("ups.type", status.flags[FL_UPS_TYPE] == '1' ? "standby" : "online");
 
 	upsdebugx(1, "Cancelling any pending shutdown or battery test.");
-	ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
+	ser_send_pace(upsfd, send_pace, "C%c", ENDCHAR);
 
 	/*
 	 * Try to identify the UPS.
@@ -682,10 +698,11 @@ void upsdrv_updateinfo(void)
 	dstate_setinfo("output.voltage", "%.1f", query.ovolt);
 	dstate_setinfo("ups.load", "%.1f", query.load);
 	dstate_setinfo("input.frequency", "%.1f", query.freq);
+
 	/*
-	 * The battery voltage multiplier should only be applied to battery.volage
+	 * The battery voltage multiplier should only be applied to battery.voltage
 	 * in order not to break the charge calculation (that uses the 'raw' value
-	 * that is reported by the UPS)
+	 * that is reported by the UPS).
 	 */
 	dstate_setinfo("battery.voltage", "%.2f", battvolt_mult * query.battvolt);
 
@@ -775,8 +792,8 @@ void upsdrv_shutdown(void)
 
 	upslogx(LOG_INFO, "Shutting down UPS.");
 
-	ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
-	ser_send_pace(upsfd, SEND_PACE, "S%02dR%04d%c", s_wait, r_wait, ENDCHAR);
+	ser_send_pace(upsfd, send_pace, "C%c", ENDCHAR);
+	ser_send_pace(upsfd, send_pace, "S%02dR%04d%c", s_wait, r_wait, ENDCHAR);
 }
 
 
@@ -792,7 +809,7 @@ int instcmd(const char *cmdname, const char *extra)
 
 	if (strcasecmp(cmdname, "test.battery.start.deep") == 0) {
 		ser_flush_io(upsfd);
-		ser_send_pace(upsfd, SEND_PACE, "TL%c", ENDCHAR);
+		ser_send_pace(upsfd, send_pace, "TL%c", ENDCHAR);
 		usleep(READ_PACE);
 
 		if (ser_get_line(upsfd, buffer, 2 + 1, '\0', IGNCHARS, READ_TIMEOUT, 0) > 0) {
@@ -806,7 +823,7 @@ int instcmd(const char *cmdname, const char *extra)
 
 	if (strcasecmp(cmdname, "test.battery.start") == 0) {
 		ser_flush_io(upsfd);
-		ser_send_pace(upsfd, SEND_PACE, "T%c", ENDCHAR);
+		ser_send_pace(upsfd, send_pace, "T%c", ENDCHAR);
 		usleep(READ_PACE);
 
 		if (ser_get_line(upsfd, buffer, 1 + 1, '\0', IGNCHARS, READ_TIMEOUT, 0) > 0) {
@@ -820,7 +837,7 @@ int instcmd(const char *cmdname, const char *extra)
 
 	if (strcasecmp(cmdname, "test.battery.stop") == 0) {
 		ser_flush_io(upsfd);
-		ser_send_pace(upsfd, SEND_PACE, "CT%c", ENDCHAR);
+		ser_send_pace(upsfd, send_pace, "CT%c", ENDCHAR);
 		usleep(READ_PACE);
 
 		if (ser_get_line(upsfd, buffer, 2 + 1, '\0', IGNCHARS, READ_TIMEOUT, 0) > 0) {
@@ -833,10 +850,10 @@ int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (strcasecmp(cmdname, "shutdown.return") == 0) {
-		ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
+		ser_send_pace(upsfd, send_pace, "C%c", ENDCHAR);
 		watchdog_enabled = 0;
 
-		ser_send_pace(upsfd, SEND_PACE, "S%02dR%04d%c", shutdown_delay, start_delay, ENDCHAR);
+		ser_send_pace(upsfd, send_pace, "S%02dR%04d%c", shutdown_delay, start_delay, ENDCHAR);
 
 		upslogx(LOG_INFO, "Shutdown (return) initiated.");
 
@@ -844,15 +861,15 @@ int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (strcasecmp(cmdname, "shutdown.stayoff") == 0) {
-		ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
+		ser_send_pace(upsfd, send_pace, "C%c", ENDCHAR);
 		watchdog_enabled = 0;
 
 		ser_flush_io(upsfd);
-		ser_send_pace(upsfd, SEND_PACE, "S%02d%c", shutdown_delay, ENDCHAR);
+		ser_send_pace(upsfd, send_pace, "S%02d%c", shutdown_delay, ENDCHAR);
 		usleep(READ_PACE);
 
 		if (ser_get_line(upsfd, buffer, 3 + 1, '\0', IGNCHARS, READ_TIMEOUT, 0) > 0) {
-			ser_send_pace(upsfd, SEND_PACE, "S%02dR9999%c", shutdown_delay, ENDCHAR);
+			ser_send_pace(upsfd, send_pace, "S%02dR9999%c", shutdown_delay, ENDCHAR);
 			upslogx(LOG_NOTICE, "UPS refuses to turn the load off indefinitely. Will turn off for 9999 minutes instead.");
 		}
 
@@ -862,7 +879,7 @@ int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (strcasecmp(cmdname, "shutdown.stop") == 0) {
-		ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
+		ser_send_pace(upsfd, send_pace, "C%c", ENDCHAR);
 		watchdog_enabled = 0;
 
 		upslogx(LOG_INFO, "Shutdown canceled.");
@@ -871,7 +888,7 @@ int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (strcasecmp(cmdname, "load.on") == 0) {
-		ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
+		ser_send_pace(upsfd, send_pace, "C%c", ENDCHAR);
 		watchdog_enabled = 0;
 
 		upslogx(LOG_INFO, "Turning the load on.");
@@ -880,15 +897,15 @@ int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (strcasecmp(cmdname, "load.off") == 0) {
-		ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
+		ser_send_pace(upsfd, send_pace, "C%c", ENDCHAR);
 		watchdog_enabled = 0;
 
 		ser_flush_io(upsfd);
-		ser_send_pace(upsfd, SEND_PACE, "S00%c", ENDCHAR);
+		ser_send_pace(upsfd, send_pace, "S00%c", ENDCHAR);
 		usleep(READ_PACE);
 
 		if (ser_get_line(upsfd, buffer, 3 + 1, '\0', IGNCHARS, READ_TIMEOUT, 0) > 0) {
-			ser_send_pace(upsfd, SEND_PACE, "S00R9999%c", ENDCHAR);
+			ser_send_pace(upsfd, send_pace, "S00R9999%c", ENDCHAR);
 			upslogx(LOG_NOTICE, "UPS refuses to turn the load off indefinitely. Will turn off for 9999 minutes instead.");
 		}
 
@@ -910,8 +927,8 @@ int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (strcasecmp(cmdname, "reset.watchdog") == 0) {
-		ser_send_pace(upsfd, SEND_PACE, "C%c", ENDCHAR);
-		ser_send_pace(upsfd, SEND_PACE, "S%02dR0001%c", watchdog_timeout, ENDCHAR);
+		ser_send_pace(upsfd, send_pace, "C%c", ENDCHAR);
+		ser_send_pace(upsfd, send_pace, "S%02dR0001%c", watchdog_timeout, ENDCHAR);
 
 		if (watchdog_enabled) {
 			upsdebugx(2, "Resetting the UPS watchdog.");
@@ -925,7 +942,7 @@ int instcmd(const char *cmdname, const char *extra)
 
 	if (strcasecmp(cmdname, "beeper.toggle") == 0) {
 		ser_flush_io(upsfd);
-		ser_send_pace(upsfd, SEND_PACE, "Q%c", ENDCHAR);
+		ser_send_pace(upsfd, send_pace, "Q%c", ENDCHAR);
 		usleep(READ_PACE);
 
 		if (ser_get_line(upsfd, buffer, 1 + 1, '\0', IGNCHARS, READ_TIMEOUT, 0) > 0) {
@@ -960,11 +977,12 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "model", "Model name");
 	addvar(VAR_VALUE, "serial", "UPS serial number");
 	addvar(VAR_VALUE, "lowbatt", "Low battery level (%)");
-	addvar(VAR_VALUE, "ondelay", "Minimum delay before UPS startup (minutes)");
+	addvar(VAR_VALUE, "ondelay", "Min. delay before UPS startup (minutes)");
 	addvar(VAR_VALUE, "offdelay", "Delay before UPS shutdown (minutes)");
 	addvar(VAR_VALUE, "battvolts", "Battery voltages (empty:full)");
 	addvar(VAR_VALUE, "battvoltmult", "Battery voltage multiplier");
-	addvar(VAR_FLAG , "ignoreoff", "Ignore the OFF status reported by the UPS.");
+	addvar(VAR_FLAG , "ignoreoff", "Ignore the OFF status from the UPS");
+	addvar(VAR_VALUE, "sendpace", "Interval between command chars (msec)");
 	addvar(VAR_VALUE, "dtr", "Serial DTR line state (0/1)");
 	addvar(VAR_VALUE, "rts", "Serial RTS line state (0/1)");
 

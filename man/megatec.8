@@ -81,6 +81,13 @@ Optional.  This option should be used if \fBupsc\fR(8) shows the UPS status
 as OFF when it's clearly on. This will force the driver to ignore the OFF
 status altogether.
 
+.IP "sendpace=\fIint\fR"
+
+Optional.  This option can be used to change the wait interval between each
+character that is sent to the UPS, between 1 and 1000 milliseconds. Some models
+may need this if the default interval (100 milliseconds) proves to be too long,
+or too short. 
+
 .SH UPS COMMANDS
 
 This driver supports some instant commands (see \fBupscmd\fR(8)):
