@@ -65,6 +65,7 @@
 	char	*datapath = NULL;
 
 	/* everything else */
+	const char	*progname;
 
 static ctype_t	*firstclient = NULL;
 /* static ctype_t	*lastclient = NULL; */
@@ -476,7 +477,7 @@ static void check_command(int cmdnum, ctype_t *client, int numarg,
 		}
 
 #ifdef HAVE_WRAP
-		request_init(&req, RQ_DAEMON, "upsd", RQ_CLIENT_ADDR, client->addr, RQ_USER, client->username, 0);
+		request_init(&req, RQ_DAEMON, progname, RQ_CLIENT_ADDR, client->addr, RQ_USER, client->username, 0);
 
 		if (!hosts_access(&req)) {
 			/* tcp-wrappers says access should be denied */
@@ -943,11 +944,11 @@ void check_perms(const char *fn)
 int main(int argc, char **argv)
 {
 	int	i, cmd = 0;
-	char	*progname, *chroot_path = NULL;
+	char	*chroot_path = NULL;
 	const char	*user = NULL;
 	struct passwd	*new_uid = NULL;
 
-	progname = argv[0];
+	progname = xbasename(argv[0]);
 
 	/* pick up a default from configure --with-user */
 	user = RUN_AS_USER;
