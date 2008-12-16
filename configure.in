@@ -866,16 +866,6 @@ AC_OUTPUT([
  lib/libupsclient.pc
  lib/Makefile
  man/Makefile
- packaging/Makefile
- packaging/debian/Makefile
- packaging/mandriva/Makefile
- packaging/mandriva/nut.spec
- packaging/generic-rpm/Makefile
- packaging/generic-rpm/nut.spec
- packaging/redhat/Makefile
- packaging/redhat/nut.spec
- packaging/opensuse/Makefile
- packaging/opensuse/nut.spec
  scripts/hal/Makefile
  scripts/hal/ups-nut-device.fdi
  scripts/hotplug/Makefile

@@ -1,6 +1,0 @@
-# If the UPS is locally attached set it to "yes"
-SERVER=yes
-# Any options to pass to upsd
-UPSD_OPTIONS=
-#
-# [End]
