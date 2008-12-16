@@ -19,14 +19,19 @@
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-
-    #include "nut_usb.h"
 */
 
 #include "main.h"
+#include "libusb.h"
+#include "usb-common.h"
 #include "lakeview_usb.h"
 
-#include <usb.h>
+static usb_device_id_t lakeview_usb_id[] = {
+	/* Sweex 1000VA */
+	{ USB_DEVICE(0x0925, 0x1234),  NULL },
+	/* end of list */
+	{-1, -1, NULL}
+};
 
 usb_dev_handle *upsdev = NULL;
 
@@ -143,12 +148,16 @@ static usb_dev_handle *open_lakeview_usb()
         {
                 struct usb_device *dev;
 
-                for (dev = bus->devices; dev; dev = dev->next)                                                                                                                {
+                for (dev = bus->devices; dev; dev = dev->next) {
                         /* XXX Check for Lakeview USB compatible devices  */
-                        if (dev->descriptor.bDeviceClass == USB_CLASS_PER_INTERFACE &&
-                            (dev->descriptor.idVendor == 0x0925 &&
-                             dev->descriptor.idProduct == 0x1234))
-                                return usb_open(dev);
+                        if (dev->descriptor.bDeviceClass != USB_CLASS_PER_INTERFACE) {
+                        	continue;
+                        }
+
+                        if (is_usb_device_supported(lakeview_usb_id,
+                        		dev->descriptor.idVendor, dev->descriptor.idProduct) == SUPPORTED) {
+                        	return usb_open(dev);
+                        }
                 }
         }
 
