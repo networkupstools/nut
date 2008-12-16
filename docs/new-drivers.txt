@@ -57,7 +57,8 @@ upsdrv_initinfo
 
 Try to detect what kind of UPS is out there, if any, assuming that's
 possible for your hardware.  If there is a way to detect that hardware
-and it doesn't appear to be connected, display an error and exit.
+and it doesn't appear to be connected, display an error and exit. This
+is the last time your driver is allowed to bail out.
 
 This is usually a good place to create variables like ups.mfr,
 ups.model, ups.serial, and other "one time only" items.
@@ -72,10 +73,18 @@ Do at most one pass of the variables.  You MUST return from this
 function or upsd will be unable to read data from your driver.  main
 will call this function at regular intervals.
 
-Don't spent more than a couple of seconds in this function.  If your
-UPS hardware requires a timeout period of several seconds before it
-answers, consider returning from this function after sending a
-command immediately and read the answer the next time it is called.
+Don't spent more than a couple of seconds in this function. Typically
+five (5) seconds is the maximum time allowed before you risk that the
+server declares the driver stale. If your UPS hardware requires a
+timeout period of several seconds before it answers, consider returning
+from this function after sending a command immediately and read the
+answer the next time it is called.
+
+You must never abort from upsdrv_updateinfo(), even when the UPS doesn't
+seem to be attached anymore. If the connection with the UPS is lost, the
+driver should retry to re-establish communication for as long as it is
+running. Calling exit() or any of the fatal*() functions is specifically
+not allowed anymore.
 
 upsdrv_shutdown
 ---------------
