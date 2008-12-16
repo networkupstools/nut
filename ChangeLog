@@ -1,3 +1,9 @@
+Mon Dec 15 13:14:32 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - docs/upsd.users.sample, docs/upsmon.conf.sample: make the base configuration
+   examples more coherent accross the various files, and more easy to use for
+   the predominant use case (simple configuration)
+    
 Mon Dec 15 10:07:55 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - Add tcp-wrappers support to the upsd server. This will restore the

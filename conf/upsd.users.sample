@@ -53,11 +53,12 @@
 #
 # To add a user for your upsmon, use this example:
 #
-#	[monuser]
+#	[upsmon]
 #		password  = pass
-#
-#		upsmon master			(or upsmon slave)
+#		upsmon master
+# or
+#		upsmon slave
 #
 # The matching MONITOR line in your upsmon.conf would look like this:
 #
-# MONITOR myups@myhost 1 monuser pass master	(or slave)
+# MONITOR myups@localhost 1 upsmon pass master	(or slave)

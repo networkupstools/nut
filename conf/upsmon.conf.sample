@@ -82,6 +82,7 @@
 #
 # MONITOR myups@bigserver 1 monmaster blah master
 # MONITOR su700@server.example.com 1 upsmon secretpass slave
+# MONITOR myups@localhost 1 upsmon pass master	(or slave)
 
 # --------------------------------------------------------------------------
 # MINSUPPLIES <num>
