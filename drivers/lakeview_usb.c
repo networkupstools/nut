@@ -37,20 +37,6 @@ usb_dev_handle *upsdev = NULL;
 
 static unsigned int	comm_failures = 0;
 
-static int query_ups (char *reply) {
-        char buf[4];
-
-        /*
-         * This packet is a status request to the UPS
-         */
-        buf[0]=0x01;
-        buf[1]=0x00;
-        buf[2]=0x00;
-        buf[3]=0x30;
-
-        return execute_and_retrieve_query(buf, reply);
-}
-
 static int execute_and_retrieve_query(char *query, char *reply)
 {
 	int ret;
@@ -84,6 +70,20 @@ static int execute_and_retrieve_query(char *query, char *reply)
 
 	upsdebug_hex(3, "read", reply, ret);
 	return ret;
+}
+
+static int query_ups (char *reply) {
+        char buf[4];
+
+        /*
+         * This packet is a status request to the UPS
+         */
+        buf[0]=0x01;
+        buf[1]=0x00;
+        buf[2]=0x00;
+        buf[3]=0x30;
+
+        return execute_and_retrieve_query(buf, reply);
 }
 
 static void usb_open_error(const char *port)

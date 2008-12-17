@@ -35,5 +35,3 @@
 /* limit the amount of spew that goes in the syslog when we lose the UPS (from nut_usb.h) */
 #define USB_ERR_LIMIT 10        /* start limiting after 10 in a row  */
 #define USB_ERR_RATE 10         /* then only print every 10th error */
-
-int execute_and_retrieve_query(char *query, char *reply);
