@@ -205,9 +205,6 @@ sub find_usbdevs
 			elsif ($nameFile eq "megatec_usb.c") {
 				$driver="megatec_usb";
 			}
-			elsif ($nameFile eq "lakeview_usb.c") {
-				$driver="lakeview_usb";
-			}
 			elsif ($nameFile eq "blazer_usb.c") {
 				$driver="blazer_usb";
 			}

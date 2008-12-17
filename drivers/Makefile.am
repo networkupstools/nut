@@ -37,12 +37,12 @@ endif
 SERIAL_DRIVERLIST = al175 apcsmart bcmxcp belkin belkinunv bestfcom	\
  bestuferrups bestups cyberpower dummy-ups etapro everups 	\
  gamatronic genericups isbmex liebert masterguard megatec metasys 	\
- mge-shut mge-utalk newmge-shut	oneac optiups powercom rhino 	\
+ mge-shut mge-utalk newmge-shut oneac optiups powercom rhino 	\
  safenet skel solis tripplite tripplitesu upscode2 victronups powerpanel \
  blazer_ser
 SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb megatec_usb \
- lakeview_usb blazer_usb
+ blazer_usb
 USB_HIDDEV_DRIVERLIST = energizerups
 USB_DRIVERLIST = $(USB_LIBUSB_DRIVERLIST) $(USB_HIDDEV_DRIVERLIST)
 HAL_DRIVERLIST = hald-addon-usbhid-ups hald-addon-bcmxcp_usb \
@@ -171,9 +171,6 @@ megatec_usb_SOURCES = megatec.c megatec_usb.c libusb.c usb-common.c
 megatec_usb_CFLAGS = $(AM_CFLAGS) -DMEGATEC_SUBDRV
 megatec_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 
-lakeview_usb_SOURCES = lakeview_usb.c usb-common.c
-lakeview_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
-
 blazer_usb_SOURCES = blazer.c blazer_usb.c libusb.c usb-common.c
 blazer_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 
@@ -233,7 +230,7 @@ dist_noinst_HEADERS = al175.h apccmib.h apc-hid.h apcsmart.h bcmxcp.h	\
  snmp-ups.h solis.h tripplite.h tripplite-hid.h tripplitesu.h		\
  upscode2.h victronups.h powerpanel.h powerp-bin.h powerp-txt.h		\
  upshandler.h usb-common.h netxml-ups.h mge-xml.h powerman-pdu.h	\
- lakeview_usb.h blazer.h
+ blazer.h
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,
