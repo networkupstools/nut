@@ -35,12 +35,10 @@ static usb_device_id_t lakeview_usb_id[] = {
 
 usb_dev_handle *upsdev = NULL;
 
-extern  int             exit_flag;
-static  unsigned int    comm_failures = 0;
+static unsigned int	comm_failures = 0;
 
-int query_ups (unsigned char *reply) {
-        unsigned char buf[4];
-        int ret;
+static int query_ups (char *reply) {
+        char buf[4];
 
         /*
          * This packet is a status request to the UPS
@@ -53,26 +51,39 @@ int query_ups (unsigned char *reply) {
         return execute_and_retrieve_query(buf, reply);
 }
 
-int execute_and_retrieve_query(unsigned char *query, unsigned char *reply) {
-        int ret;
+static int execute_and_retrieve_query(char *query, char *reply)
+{
+	int ret;
 
-        ret = usb_control_msg(upsdev, STATUS_REQUESTTYPE, REQUEST_VALUE,
-                MESSAGE_VALUE, INDEX_VALUE, query, sizeof(query), 1000);
+	ret = usb_control_msg(upsdev, STATUS_REQUESTTYPE, REQUEST_VALUE,
+		MESSAGE_VALUE, INDEX_VALUE, query, sizeof(query), 1000);
 
-        if (ret < 0) {
-	    usb_comm_fail("Error sending control message to USB device\n");
-            return ret;
-        }
-
-        ret = usb_interrupt_read(upsdev, REPLY_REQUESTTYPE, reply, sizeof(REPLY_PACKETSIZE), 1000);
-
-	upsdebugx(5, "usb_interrupt_read return code: %d", ret);
 	if (ret < 0) {
-		usb_comm_fail("Receive error (Request command): COMMAND: %x\n", query);
-		return -1;
+		upsdebug_with_errno(3, "send");
+		return ret;
 	}
 
-        return ret;
+	if (ret == 0) {
+		upsdebugx(3, "send: timeout");
+		return ret;
+	}
+
+	upsdebug_hex(3, "send", query, ret);
+
+	ret = usb_interrupt_read(upsdev, REPLY_REQUESTTYPE, reply, sizeof(REPLY_PACKETSIZE), 1000);
+
+	if (ret < 0) {
+		upsdebug_with_errno(3, "read");
+		return ret;
+	}
+
+	if (ret == 0) {
+		upsdebugx(3, "read: timeout");
+		return ret;
+	}
+
+	upsdebug_hex(3, "read", reply, ret);
+	return ret;
 }
 
 static void usb_open_error(const char *port)
@@ -87,7 +98,7 @@ static void usb_open_error(const char *port)
         fatalx(EXIT_FAILURE, "Fatal error: unusable configuration");
 }
 
-void usb_comm_fail(const char *fmt, ...)
+static void usb_comm_fail(const char *fmt, ...)
 {
         int     ret;
         char    why[SMALLBUF];
@@ -130,7 +141,7 @@ void usb_comm_fail(const char *fmt, ...)
         upslogx(LOG_WARNING, "Communications with UPS lost: %s", why);
 }
 
-void upsdrv_comm_good()
+static void usb_comm_good()
 {
 	if (comm_failures == 0)
 		return;
@@ -168,7 +179,7 @@ static usb_dev_handle *open_lakeview_usb()
  * Connect to the UPS
  */
 
-usb_dev_handle *open_ups(const char *port) {
+static usb_dev_handle *open_ups(const char *port) {
         static int     libusb_init = 0;
         int            dev_claimed = 0;
         usb_dev_handle *dev_h = NULL;
@@ -263,7 +274,7 @@ errout:
         return 0;
 }
 
-int close_ups(usb_dev_handle *dev_h, const char *port)
+static int close_ups(usb_dev_handle *dev_h, const char *port)
 {
         if (dev_h)
         {
@@ -281,7 +292,7 @@ int close_ups(usb_dev_handle *dev_h, const char *port)
 
 void upsdrv_initups(void)
 {
-        unsigned char reply[REPLY_PACKETSIZE];
+        char reply[REPLY_PACKETSIZE];
         int i;
 
 	/* open the USB connection to the UPS */
@@ -304,7 +315,7 @@ void upsdrv_cleanup(void)
         close_ups(upsdev, "USB");
 }
 
-void upsdrv_reconnect(void)
+static void usb_reconnect(void)
 {
 
         upslogx(LOG_WARNING, "RECONNECT USB DEVICE\n");
@@ -325,23 +336,22 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
-        unsigned char reply[REPLY_PACKETSIZE];
+        char reply[REPLY_PACKETSIZE];
         int ret, online, battery_normal;
-
-        unsigned char test;
 
         ret = query_ups(reply);
 
-        if (ret < 0) {
-                upslog_with_errno(LOG_INFO, "Query to UPS failed");
+        if (ret < 4) {
+                usb_comm_fail("Query to UPS failed");
                 dstate_datastale();
 
 		/* reconnect the UPS */
-                upsdebugx(2, "Query failed, reconnecting UPS...");
-                upsdrv_reconnect();			
+                usb_reconnect();
 
                 return;
         }
+
+	usb_comm_good();
 
         /*
          * 3rd bit of 4th byte indicates whether the UPS is on line (1)
@@ -388,9 +398,8 @@ void upsdrv_updateinfo(void)
  */
 void upsdrv_shutdown(void)
 {
-	unsigned char reply[REPLY_PACKETSIZE];
-        unsigned char buf[4];
-        int ret;
+	char reply[REPLY_PACKETSIZE];
+        char buf[4];
 
         /*
          * This packet shuts down the UPS, that is, if it is

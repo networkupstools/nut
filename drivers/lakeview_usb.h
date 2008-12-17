@@ -22,7 +22,7 @@
 */
 
 /* driver version */
-#define DRV_VERSION	"0.02"
+#define DRV_VERSION	"0.03"
 
 /* driver definitions */
 #define STATUS_REQUESTTYPE	0x21
@@ -37,7 +37,3 @@
 #define USB_ERR_RATE 10         /* then only print every 10th error */
 
 int execute_and_retrieve_query(unsigned char *query, unsigned char *reply);
-
-void usb_comm_fail(const char *fmt, ...)
-	__attribute__ ((__format__ (__printf__, 1, 2)));
-void usb_comm_good(void);
