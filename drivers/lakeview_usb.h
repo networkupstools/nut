@@ -36,4 +36,4 @@
 #define USB_ERR_LIMIT 10        /* start limiting after 10 in a row  */
 #define USB_ERR_RATE 10         /* then only print every 10th error */
 
-int execute_and_retrieve_query(unsigned char *query, unsigned char *reply);
+int execute_and_retrieve_query(char *query, char *reply);
