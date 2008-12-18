@@ -334,44 +334,49 @@ static int tripplite_claim(HIDDevice_t *hd) {
 	int status = is_usb_device_supported(tripplite_usb_device_table, hd->VendorID,
 								 hd->ProductID);
 
-	switch (status) {
+	switch (status)
+	{
+	case POSSIBLY_SUPPORTED:
 
-		case POSSIBLY_SUPPORTED:
-			/* reject any known non-UPS */
-			if (hd->VendorID == HP_VENDORID) {
-				if (hd->ProductID != 0x1027) { /* Virtual keyboard (not a UPS) */
-					possibly_supported("Hewlett Packard", hd);
-				}
-				return 0;
+		switch (hd->VendorID)
+		{
+		/*
+		 * this vendor makes lots of USB devices that are
+		 * not a UPS, so don't use possibly_supported here
+		 */
+		case HP_VENDORID:
+			return 0;
+	
+		/* reject known non-HID devices */
+		/* not all Tripp Lite products are HID, some are "serial over USB". */
+		case TRIPPLITE_VENDORID:
+			if (hd->ProductID == 0x0001) {
+				/* e.g. SMART550USB, SMART3000RM2U */
+				upsdebugx(0, "This Tripp Lite device (%04x/%04x) is not supported by usbhid-ups.\n"
+						 "Please use the tripplite_usb driver instead.\n",
+						 hd->VendorID, hd->ProductID);
+			} else {
+				possibly_supported("Tripp Lite", hd);
 			}
-			/* reject known non-HID devices */
-			/* not all Tripp Lite products are HID, some are "serial over USB". */
-			if (hd->VendorID == TRIPPLITE_VENDORID) {
-				if (hd->ProductID == 0x0001) {
-					/* e.g. SMART550USB, SMART3000RM2U */
-					upsdebugx(0, "This Tripp Lite device (%04x/%04x) is not supported by usbhid-ups.\n"
-							 "Please use the tripplite_usb driver instead.\n",
-							 hd->VendorID, hd->ProductID);
-				}
-				else {
-					possibly_supported("Tripp Lite", hd);
-				}
-				return 0;
-			}
-			
-			/* by default, reject, unless the productid option is given */
+
+			return 0;
+
+		/* by default, reject, unless the productid option is given */
+		default:
 			if (getval("productid")) {
 				return 1;
 			}
+
 			possibly_supported("Belkin", hd);
 			return 0;
+		}
 
-		case SUPPORTED:
-			return 1;
+	case SUPPORTED:
+		return 1;
 
-		case NOT_SUPPORTED:
-		default:
-			return 0;
+	case NOT_SUPPORTED:
+	default:
+		return 0;
 	}
 }
 
