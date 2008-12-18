@@ -5,11 +5,12 @@ dnl +------------------------------------------------------------------+
 dnl NUT version number is defined here and *only* here (no more include/version)
 AC_INIT(nut, 2.3.0)
 AC_CONFIG_SRCDIR(server/upsd.c)
+AC_CONFIG_MACRO_DIR([m4])
 echo "Network UPS Tools version ${PACKAGE_VERSION}"
 AC_CANONICAL_SYSTEM
+NUT_CHECK_OS
 AC_CONFIG_HEADER(include/config.h)
 AC_PREFIX_DEFAULT(/usr/local/ups)
-AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE
 
 dnl Use "./configure --enable-maintainer-mode" to keep Makefile.in and Makefile
@@ -811,6 +812,7 @@ eval conftemp=\"${conftemp}\"
 AC_DEFINE_UNQUOTED(DATADIR, "${conftemp}",
 			[Default path for data files])
 
+AC_SUBST(OS_NAME)
 AC_SUBST(LIBSSL_CFLAGS)
 AC_SUBST(LIBSSL_LDFLAGS)
 AC_SUBST(LIBGD_CFLAGS)

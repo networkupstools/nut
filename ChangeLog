@@ -1,3 +1,8 @@
+Tue Dec 16 21:55:24 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - configure.in, m4/nut_check_os.m4: declare and use the NUT_CHECK_OS m4 macro
+   to determine the exact system name
+
 Mon Dec 15 13:14:32 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  - docs/upsd.users.sample, docs/upsmon.conf.sample: make the base configuration
