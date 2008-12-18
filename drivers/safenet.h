@@ -1,7 +1,7 @@
 /*
  * safenet.h - defines/macros for the safenet driver
  *
- * Copyright (C) 2003  Arjen de Korte <arjen@de-korte.org>
+ * Copyright (C) 2003  Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

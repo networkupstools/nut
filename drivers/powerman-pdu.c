@@ -23,6 +23,18 @@
 #include "powerman-pdu.h"
 #include "libpowerman.h"
 
+#define DRIVER_NAME	"Powerman PDU client driver"
+#define DRIVER_VERSION	"0.1"
+
+/* driver description structure */
+upsdrv_info_t upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Arnaud Quette <aquette.dev@gmail.com>"
+	DRV_EXPERIMENTAL,
+	{ NULL }
+};
+
 /* Powerman functions and variables */
 static pm_err_t query_one(pm_handle_t pm, char *s, int mode);
 static pm_err_t query_all(pm_handle_t pm, int mode);
@@ -103,9 +115,7 @@ void upsdrv_initinfo(void)
 
 	/* try to detect the PDU here - call fatal_with_errno(EXIT_FAILURE, ) if it fails */
 
-	dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION);
-
-	/* FIXME: can we report something useful? */
+	dstate_setinf	/* FIXME: can we report something useful? */
 	dstate_setinfo("ups.mfr", "Powerman");
 	dstate_setinfo("device.mfr", "Powerman");
 	dstate_setinfo("ups.model", "unknown PDU");
@@ -155,14 +165,6 @@ void upsdrv_help(void)
 void upsdrv_makevartable(void)
 {
 	/* FIXME: anything useful to be put here? */
-}
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - Powerman PDU client driver %s (%s)\n\n", 
-		DRIVER_VERSION, UPS_VERSION);
-
-	experimental_driver = 1;
 }
 
 void upsdrv_initups(void)

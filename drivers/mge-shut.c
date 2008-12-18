@@ -1,9 +1,7 @@
 /*  mge-shut.c - monitor MGE UPS for NUT with SHUT protocol
  * 
- *  Copyright (C) 2002 - 2005
- *     Arnaud Quette <arnaud.quette@free.fr> & <arnaud.quette@mgeups.com>
- *     Philippe Marzouk <philm@users.sourceforge.net>
- *     Russell Kroll <rkroll@exploits.org>
+ *  Copyright (C) 2002 - 2008
+ *     Arnaud Quette <arnaud.quette@gmail.com>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://opensource.mgeups.com/>
  *
@@ -38,7 +36,17 @@
 /*                  Define "technical" constants                   */
 /* --------------------------------------------------------------- */
 
-#define DRIVER_NAME    "MGE UPS SYSTEMS/SHUT driver"
+#define DRIVER_NAME	"MGE UPS SYSTEMS/SHUT driver"
+#define DRIVER_VERSION	"0.67"
+
+/* driver description structure */
+upsdrv_info_t upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Arnaud Quette <ArnaudQuette@Eaton.com>",
+	DRV_STABLE,
+	{ NULL }
+};
 
 #define MAX_TRY 4
 
@@ -274,14 +282,6 @@ void upsdrv_makevartable (void)
 	snprintf(msg, sizeof(msg), "Set notification type, 1 = no, 2 = light, 3 = yes (default=%d).",
 		DEFAULT_NOTIFICATION);
 	addvar (VAR_VALUE, "notification", msg);
-}
-
-/* --------------------------------------------------------------- */
-
-void upsdrv_banner (void)
-{
-	printf("Network UPS Tools - %s %s (%s)\n", 
-			DRIVER_NAME, DRIVER_VERSION, UPS_VERSION);
 }
 
 /* --------------------------------------------------------------- */

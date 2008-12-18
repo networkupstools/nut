@@ -28,8 +28,6 @@
 #define SER_WAIT_SEC	0
 #define SER_WAIT_USEC	250000
 
-#define DRV_VERSION "0.24"
-
 typedef struct {
 	char	*version;
 	int	(*initups)(void);

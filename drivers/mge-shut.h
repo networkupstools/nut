@@ -25,8 +25,6 @@
 #include "hidparser.h"
 #include "hidtypes.h"
 
-#define DRIVER_VERSION "0.66"
-
 #define DEFAULT_TIMEOUT 	3000
 #define MAX_STRING      	64
 
@@ -350,7 +348,6 @@ typedef struct {
 
 /* FIXME: should be shared with mgehid.h */
 static mge_info_item_t mge_info[] = {
-	{ "driver.version.internal", ST_FLAG_STRING, 5, NULL, "%s", DRIVER_VERSION, SHUT_FLAG_ABSENT | SHUT_FLAG_OK, NULL },
 	/* Battery page */
 	{ "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", "%i", NULL, SHUT_FLAG_OK, NULL },
 	{ "battery.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerSummary.RemainingCapacityLimitSetting",

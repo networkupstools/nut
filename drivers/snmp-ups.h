@@ -55,8 +55,6 @@ for each OID request we made), instead of sending many small packets
 
 #include "attribute.h"
 
-#define DRIVER_VERSION		"0.44"
-
 #define DEFAULT_POLLFREQ	30		/* in seconds */
 
 /* use explicit booleans */

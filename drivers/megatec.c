@@ -37,6 +37,21 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define DRIVER_NAME	"Megatec protocol driver"
+#define DRIVER_VERSION	"1.6" /* FIXME: doesn't conform to "X.YZ" */
+
+/* driver description structure */
+upsdrv_info_t upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Carlos Rodrigues <carlos.efr@mail.telepac.pt>",
+	DRV_STABLE,
+#ifdef MEGATEC_SUBDRV
+	{ &megatec_subdrv_info, NULL }
+#else
+	{ NULL }
+#endif
+};
 
 #define ENDCHAR  '\r'
 #define IGNCHARS ""
@@ -503,8 +518,6 @@ void upsdrv_initinfo(void)
 	FirmwareValues_t values;
 	QueryValues_t status;
 	UPSInfo_t info;
-
-	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
 
 	/*
 	 * Some models apparently time-out with the default send pace, so we must
@@ -987,15 +1000,6 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "rts", "Serial RTS line state (0/1)");
 
 	megatec_subdrv_makevartable();
-}
-
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools %s - Megatec protocol driver %s [%s]\n", UPS_VERSION, DRV_VERSION, progname);
-	printf("Carlos Rodrigues (c) 2003-2008\n\n");
-
-	megatec_subdrv_banner();
 }
 
 

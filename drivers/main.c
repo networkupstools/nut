@@ -21,20 +21,15 @@
 #include "dstate.h"
 
 	/* data which may be useful to the drivers */	
-	int	upsfd = -1;
-	char	*device_path = NULL;
-	const	char	*progname = NULL, *upsname = NULL, 
-			*device_name = NULL;
+	int		upsfd = -1;
+	char		*device_path = NULL;
+	const char	*progname = NULL, *upsname = NULL, *device_name = NULL;
 
 	/* may be set by the driver to wake up while in dstate_poll_fds */
 	int	extrafd = -1;
 
 	/* for ser_open */
 	int	do_lock_port = 1;
-
-	/* set by the drivers */
-	int	experimental_driver = 0;
-	int	broken_driver = 0;
 
 	/* for detecting -a values that don't match anything */
 	static	int	upsname_found = 0;
@@ -49,7 +44,30 @@
 	int	exit_flag = 0;
 
 	/* everything else */
-	static	char	*pidfn = NULL;
+	static char	*pidfn = NULL;
+
+/* print the driver banner */
+void upsdrv_banner (void)
+{
+	int i;
+
+	printf("Network UPS Tools - %s %s (%s)\n", upsdrv_info.name, upsdrv_info.version, UPS_VERSION);
+
+	/* process sub driver(s) information */
+	for (i = 0; upsdrv_info.subdrv_info[i]; i++) {
+
+		if (!upsdrv_info.subdrv_info[i]->name) {
+			continue;
+		}
+
+		if (!upsdrv_info.subdrv_info[i]->version) {
+			continue;
+		}
+
+		printf("%s %s\n", upsdrv_info.subdrv_info[i]->name,
+			upsdrv_info.subdrv_info[i]->version);
+	}
+}
 
 /* power down the attached load immediately */
 static void forceshutdown(void)
@@ -457,7 +475,7 @@ int main(int argc, char **argv)
 
 	upsdrv_banner();
 
-	if (experimental_driver) {
+	if (upsdrv_info.status == DRV_EXPERIMENTAL) {
 		printf("Warning: This is an experimental driver.\n");
 		printf("Some features may not function correctly.\n\n");
 	}
@@ -558,10 +576,8 @@ int main(int argc, char **argv)
 	atexit(upsdrv_cleanup);
 
 	/* now see if things are very wrong out there */
-	if (broken_driver) {
-		fatalx(EXIT_FAILURE,
-			"Fatal error: broken driver. It probably needs to be converted.\n"
-			"Search for 'broken_driver = 1' in the source for more details.");
+	if (upsdrv_info.status == DRV_BROKEN) {
+		fatalx(EXIT_FAILURE, "Fatal error: broken driver. It probably needs to be converted.\n");
 	}
 
 	if (do_forceshutdown)
@@ -576,6 +592,7 @@ int main(int argc, char **argv)
 
 	/* publish the top-level data: version number, driver name */
 	dstate_setinfo("driver.version", "%s", UPS_VERSION);
+	dstate_setinfo("driver.version.internal", "%s", upsdrv_info.version);
 	dstate_setinfo("driver.name", "%s", progname);
 
 	/* The poll_interval may have been changed from the default */

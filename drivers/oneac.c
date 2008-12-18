@@ -30,13 +30,24 @@
  * into submission
 */
 
-#define DRV_VERSION "0.5"
-#define SECS 2		/*wait time*/
-#define USEC 0		/*rest of wait time*/
-
 #include "main.h"
 #include "serial.h"
 #include "oneac.h"
+
+#define DRIVER_NAME	"Oneac EG/ON UPS driver"
+#define DRIVER_VERSION	"0.51"
+
+/* driver description structure */
+upsdrv_info_t upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Eric Lawson <elawson@inficad.com>",
+	DRV_EXPERIMENTAL,
+	{ NULL }
+};
+
+#define SECS 2		/*wait time*/
+#define USEC 0		/*rest of wait time*/
 
 void do_battery_test(void)
 {
@@ -289,13 +300,6 @@ void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE,"testtime",
 		"Change battery test time from 2 minute default.");
-}
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - Oneac EG/ON UPS driver %s (%s)\n\n", 
-		DRV_VERSION, UPS_VERSION);
-	experimental_driver = 1;	/*causes a warning to be printed*/
 }
 
 void upsdrv_initups(void)

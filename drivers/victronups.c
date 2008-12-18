@@ -30,7 +30,21 @@
 
 #include "main.h"
 #include "serial.h"
-#include "victronups.h"
+
+#define DRIVER_NAME	"GE/IMV/Victron UPS driver"
+#define DRIVER_VERSION	"0.19"
+
+/* driver description structure */
+upsdrv_info_t upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Russell Kroll <rkroll@exploits.org>\n" \
+	"Radek Benedikt <benedikt@lphard.cz>\n" \
+	"Daniel Prynych <Daniel.Prynych@hornet.cz>\n" \
+	"Gert Lynge <gert@lynge.org>",
+	DRV_STABLE,
+	{ NULL }
+};
 
 #define ENDCHAR	'\r'
 #define IGNCHARS "\n"
@@ -204,7 +218,6 @@ static int instcmd(const char *cmdname, const char *extra)
 void upsdrv_initinfo(void)
 {
        	
-	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
 	if (model_name)
 		dstate_setinfo("ups.model", "%s", model_name);
 
@@ -499,12 +512,6 @@ void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE, "usd", "Seting delay before shutdown");
 	addvar(VAR_VALUE, "modelname", "Seting model name"); 
-}
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - GE/IMV/Victron UPS driver %s (%s)\n\n",
-		DRV_VERSION, UPS_VERSION);
 }
 
 void upsdrv_initups(void)

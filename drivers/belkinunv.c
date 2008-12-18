@@ -93,7 +93,18 @@
 
 #include "main.h"
 #include "serial.h"
-#include "belkinunv.h"
+
+#define DRIVER_NAME	"Belkin 'Universal UPS' driver"
+#define DRIVER_VERSION	"0.07"
+
+/* driver description structure */
+upsdrv_info_t upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Peter Selinger <selinger@users.sourceforge.net>",
+	DRV_STABLE,
+	{ NULL }
+};
 
 /* somewhat arbitrary buffer size - the longest actually occuring
    message is 18 bytes for the F6C800-UNV. But since message length is
@@ -857,8 +868,6 @@ void upsdrv_initinfo(void)
 	int val;
 	int i;
 
-	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
-
 	/* read hard-wired values */
 	val = belkin_nut_read_int(REG_VOLTRATING);
 	if (val!=-1) {
@@ -1296,12 +1305,6 @@ void upsdrv_makevartable(void)
 	/* allow '-x dumbterm' */
 	addvar(VAR_FLAG, "dumbterm", "In wait mode: simpler status line  ");
 
-}
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - Belkin 'Universal UPS' driver %s (%s)\n\n", 
-	       DRV_VERSION, UPS_VERSION);
 }
 
 /* prep the serial port */

@@ -117,8 +117,21 @@ TODO List:
 #include "bcmxcp_io.h"
 #include "bcmxcp.h"
 
-/* FIXME (AQ): the USB and serial should also be versioned */
-#define DRV_VERSION "0.16"
+#define DRIVER_NAME	"BCMXCP UPS driver"
+#define DRIVER_VERSION	"0.17"
+
+/* driver description structure */
+upsdrv_info_t upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Martin Schroeder <emes@geomer.de>\n" \
+	"Kjell Claesson <kjell.claesson@epost.tidanet.se>\n" \
+	"Tore Ørpetveit <tore@orpetveit.net>\n" \
+	"Wolfgang Ocker <weo@weo1.de>\n" \
+	"Oliver Wilcock",
+	DRV_EXPERIMENTAL, /* FIXME: move to BETA?! */
+	{ &comm_upsdrv_info, NULL }
+};
 
 static int get_word(const unsigned char*);
 static long int get_long(const unsigned char*);
@@ -860,9 +873,6 @@ void upsdrv_initinfo(void)
 	int voltage = 0, ncpu = 0, buf;
 	int conf_block_len = 0, alarm_block_len = 0, cmd_list_len = 0;
 
-	/* Set driver version info */
-	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
-
 	/* Init BCM/XCP alarm descriptions */
 	init_alarm_map();
 
@@ -1489,10 +1499,3 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "baud_rate", "Specify communication speed (ex: 9600)");
 }
 
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - BCMXCP UPS driver %s (%s)\n\n",
-		DRV_VERSION, UPS_VERSION);
-
-	experimental_driver = 1;	
-}

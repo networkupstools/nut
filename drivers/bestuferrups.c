@@ -31,7 +31,22 @@
 
 #include "main.h"
 #include "serial.h"
-#include "bestuferrups.h"
+
+#define DRIVER_NAME	"Best Ferrups Series ME/RE/MD driver"
+#define DRIVER_VERSION	"0.03"
+
+/* driver description structure */
+upsdrv_info_t upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Andreas Wrede  <andreas@planix.com>\n" \
+	"John Stone  <johns@megapixel.com>\n" \
+	"Grant Taylor <gtaylor@picante.com>\n" \
+	"Russell Kroll <rkroll@exploits.org>\n" \
+	"Tim Thompson",
+	DRV_BETA, /* FIXME: STABLE? */
+	{ NULL }
+};
 
 #define ENDCHAR		'\r'
 #define IGNCHARS	"\012"
@@ -338,13 +353,6 @@ void upsdrv_makevartable(void)
 
 void upsdrv_help(void)
 {
-}
-
-
-void upsdrv_banner(void)
-{
-        printf("Network UPS Tools - Best Ferrups Series ME/RE/MD %s (%s)\n\n", 
-		DRV_VERSION, UPS_VERSION);
 }
 
 static void sync_serial(void) {

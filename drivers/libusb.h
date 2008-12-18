@@ -34,7 +34,10 @@
 #include <usb.h> /* libusb header file */
 #include <regex.h>
 
-#include "nut_stdint.h" /* for uint16_t */
+#include "main.h"	/* for subdrv_info_t */
+#include "nut_stdint.h"	/* for uint16_t */
+
+extern upsdrv_info_t comm_upsdrv_info; 
 
 /*!
  * USBDevice_t: Describe a USB device. This structure contains exactly

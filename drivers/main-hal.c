@@ -195,8 +195,6 @@ int main(int argc, char **argv)
 	char *hal_debug_level;
 /*	int	i, do_forceshutdown = 0; */
 
-	upsdrv_banner();
-
 	if (experimental_driver) {
 		printf("Warning: This is an experimental driver.\n");
 		printf("Some features may not function correctly.\n\n");

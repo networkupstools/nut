@@ -11,16 +11,16 @@
  * - others using SafeNet software and serial interface
  *
  * Status:
- *  20070304/Revision 1.3 - Arjen de Korte <arjen@de-korte.org>
+ *  20070304/Revision 1.3 - Arjen de Korte <adkorte-guest@alioth.debian.org>
  *   - in battery test mode (CAL state) stop the test when the
  *     the low battery state is reached
- *  20081102/Revision 1.41 - Arjen de Korte <arjen@de-korte.org>
+ *  20081102/Revision 1.41 - Arjen de Korte <adkorte-guest@alioth.debian.org>
  *   - allow more time for reading reply to command
- *  20081106/Revision 1.5 - Arjen de Korte <arjen@de-korte.org>
+ *  20081106/Revision 1.5 - Arjen de Korte <adkorte-guest@alioth.debian.org>
  *   - changed communication with UPS
  *   - improved handling of battery & system test
  *
- * Copyright (C) 2003-2008  Arjen de Korte <arjen@de-korte.org>
+ * Copyright (C) 2003-2008  Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,14 +37,21 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include <stdlib.h>
-#include <ctype.h>
-
 #include "main.h"
 #include "serial.h"
 #include "safenet.h"
 
-#define DRV_VERSION	"1.5"
+#define DRIVER_NAME		"Generic SafeNet UPS driver"
+#define DRIVER_VERSION	"1.51"
+
+/* driver description structure */
+upsdrv_info_t upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Arjen de Korte <adkorte-guest@alioth.debian.org>",
+	DRV_STABLE,
+	{ NULL }
+};
 
 /*
  * Here we keep the last known status of the UPS
@@ -279,7 +286,7 @@ void upsdrv_initinfo(void)
 	int	retry = 3;
 	char	*v;
 
-	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
+	dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION);
 	
 	usleep(100000);
 
@@ -439,11 +446,6 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "manufacturer", "manufacturer [unknown]");
 	addvar(VAR_VALUE, "modelname", "modelname [unknown]");
 	addvar(VAR_VALUE, "serialnumber", "serialnumber [unknown]");
-}
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - Generic SafeNet UPS driver %s (%s)\n\n", DRV_VERSION, UPS_VERSION);
 }
 
 void upsdrv_initups(void)

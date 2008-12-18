@@ -40,7 +40,17 @@
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
 
 #define SHUT_DRIVER_NAME	"MGE SHUT communication driver"
-#define SHUT_DRIVER_VERSION	"0.80"
+#define SHUT_DRIVER_VERSION	"0.81"
+
+/* communication driver description structure */
+upsdrv_info_t comm_upsdrv_info = {
+	SHUT_DRIVER_NAME,
+	SHUT_DRIVER_VERSION,
+	NULL,
+	0,
+	{ NULL }
+};
+
 #define MAX_TRY 4
 
 /*!
@@ -911,6 +921,10 @@ int shut_control_msg(int upsfd, int requesttype, int request,
 				break;
 			case -3:
 				/* FIXME: notification caught => to be processed */
+
+				/* Send a NACK for the moment, to get a resend from the UPS */
+				ser_send_char(upsfd, SHUT_NOK);
+				Retry++;
 			default:
 				;
 		}

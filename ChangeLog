@@ -1,3 +1,16 @@
+Thu Dec 18 20:15:24 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ * introduce the upsdrv_info_t structure: this is a structure containing all the
+   common driver information, like name, version, author(s) and development
+   status (patch provided by Arnaud Quette).
+   - main.ch: declare the upsdrv_info_t structure and a generic upsdrv_banner
+     function to print the banner information.
+   - drivers/*: create and fill the upsdrv_info_t entry and remove the
+     upsdrv_banner function. Bump the release version. Remove header files that
+     only contain the driver version (this information is now available through
+     upsdrv_info_t upsdrv_info that is filled in every driver)
+   - docs/new-drivers.txt: add and update the according information.
+
 Thu Dec 18 12:13:22 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - clients/Makefile.am: apply nut-openssl_linkage_fix.diff (from Oden Eriksson)

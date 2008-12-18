@@ -25,7 +25,17 @@
 #include "serial.h"
 #include "blazer.h"
 
-#define DRV_VERSION	"0.01"
+#define DRIVER_NAME	"Megatec/Q1 protocol serial driver"
+#define DRIVER_VERSION	"1.51"
+
+/* driver description structure */
+upsdrv_info_t upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Arjen de Korte <adkorte-guest@alioth.debian.org>",
+	DRV_BETA,
+	{ NULL }
+};
 
 #define SER_WAIT_SEC	1
 
@@ -112,12 +122,6 @@ void upsdrv_makevartable(void)
 }
 
 
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools %s - Megatec/Q1 protocol serial driver %s\n", UPS_VERSION, DRV_VERSION);
-}
-
-
 void upsdrv_initups(void)
 {
 	const struct {
@@ -193,8 +197,6 @@ void upsdrv_initups(void)
 
 void upsdrv_initinfo(void)
 {
-	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
-
 	blazer_initinfo();
 }
 

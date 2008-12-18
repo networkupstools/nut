@@ -27,10 +27,10 @@
 
 /* FIXME (AQ): non compliant version (should be X.YZ)
  * USB and serial should also be versioned */
-#define DRV_VERSION "1.5.18"
 
 
 #ifdef MEGATEC_SUBDRV
+	extern upsdrv_info_t megatec_subdrv_info;
 	void megatec_subdrv_makevartable(void);
 	void megatec_subdrv_banner(void);
 #else

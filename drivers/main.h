@@ -1,3 +1,6 @@
+#ifndef MAIN_H
+#define MAIN_H
+
 #include "common.h"
 #include "upsconf.h"
 #include "dstate.h"
@@ -30,14 +33,14 @@ char *getval(const char *var);
 int testvar(const char *var);
 
 /* extended variable table - used for -x defines/flags */
-typedef struct {
+typedef struct vartab_s {
 	int	vartype;	/* VAR_* value, below			 */
 	char	*var;		/* left side of =, or whole word if none */
 	char	*val;		/* right side of = 			 */
 	char	*desc;		/* 40 character description for -h text	 */
 	int	found;		/* set once encountered, for testvar()	 */
-	void	*next;
-}	vartab_t;
+	struct vartab_s	*next;
+} vartab_t;
 
 /* flags to define types in the vartab */
 
@@ -47,3 +50,30 @@ typedef struct {
 
 /* callback from driver - create the table for future -x entries */
 void addvar(int vartype, const char *name, const char *desc);
+
+/* subdriver description structure */
+typedef struct upsdrv_info_s {
+	const char	*name;		/* driver full name, for banner printing, ... */ 
+	const char	*version;	/* driver version */
+	const char	*authors;	/* authors name */
+	const int	status;		/* driver development status */
+	struct upsdrv_info_s	*subdrv_info[];	/* sub driver information */
+} upsdrv_info_t;
+
+/* flags to define the driver development status */
+#define DRV_BROKEN		0x0001	/* dito... */
+#define DRV_EXPERIMENTAL	0x0002	/* dito... */
+#define DRV_BETA		0x0004	/* more stable and complete, but still
+					 * not suitable for production systems
+					 */
+#define DRV_STABLE		0x0008	/* suitable for production systems, but
+					 * not 100 % feature complete */
+#define DRV_COMPLETE		0x0010	/* gold level: implies 100 % of the
+					 * protocol implemented and the full QA
+					 * pass */
+/* FIXME: complete with mfr support, and other interesting info */
+
+/* public driver information from the driver file */
+extern upsdrv_info_t	upsdrv_info;
+
+#endif /* MAIN_H */

@@ -29,10 +29,6 @@
  *   editing the definition file?
  */
 
-
-#define DRV_VERSION	"0.05"
-
-
 /* from usbhid-ups.h */
 /* --------------------------------------------------------------- */
 /* Struct & data for ups.status processing                         */
@@ -40,7 +36,7 @@
 
 typedef struct {
 	char	*status_str;	/* ups.status string */
-	int		status_value;	/* ups.status value */
+	int	status_value;	/* ups.status value */
 } status_lkp_t;
 
 #define STATUS_CAL		1       /* calibration */
@@ -84,14 +80,14 @@ typedef struct {
 /* --------------------------------------------------------------- */
 
 typedef struct {
-	char	*info_type;		/* NUT variable name */
-	int		info_flags;		/* NUT flags (to set in addinfo) */
-	float	info_len;		/* if ST_FLAG_STRING: length of the string */
-							/* if HU_TYPE_CMD: command value ; multiplier (or max len) otherwise */
+	char	*info_type;	/* NUT variable name */
+	int	info_flags;	/* NUT flags (to set in addinfo) */
+	float	info_len;	/* if ST_FLAG_STRING: length of the string */
+				/* if HU_TYPE_CMD: command value ; multiplier (or max len) otherwise */
 	char	*default_value;	/* if HU_FLAG_ABSENT: default value ; format otherwise */
-	int		drv_flags;		/* */
+	int	drv_flags;	/* */
 	char	**var_values;	/* all possible values for this variable (allows to check data...) */
-							/* FIXME: "void *" so we can have bound or enum */
+				/* FIXME: "void *" so we can have bound or enum */
 /*	interpreter interpret;	*/	/* FFE: interpreter fct, NULL if not needed  */
 } dummy_info_t;
 
@@ -108,7 +104,6 @@ typedef struct {
 dummy_info_t nut_data[] =
 {
 	/* Essential variables, loaded before parsing the definition file */
-	{ "driver.version.internal", ST_FLAG_STRING, 5, DRV_VERSION, DU_FLAG_INIT, NULL },
 	{ "ups.mfr", ST_FLAG_STRING | ST_FLAG_RW, 32, "Dummy Manufacturer", DU_FLAG_INIT, NULL },
 	{ "ups.model", ST_FLAG_STRING | ST_FLAG_RW, 32, "Dummy UPS", DU_FLAG_INIT, NULL },
 	{ "ups.status", ST_FLAG_STRING | ST_FLAG_RW, 32, "OL", DU_FLAG_INIT, NULL },

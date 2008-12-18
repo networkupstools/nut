@@ -23,8 +23,6 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#define DRV_VERSION "0.9"
-
 #define ENDCHAR '\n'           /* replies end with CR LF -- use LF to end */
 #define IGNCHAR '\r'           /* ignore CR */
 #define MAXTRIES 3             /* max number of times we try to detect ups */

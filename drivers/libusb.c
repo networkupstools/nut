@@ -46,7 +46,16 @@
 #define USB_TIMEOUT 4000
 
 #define USB_DRIVER_NAME		"USB communication driver"
-#define USB_DRIVER_VERSION	"0.29"
+#define USB_DRIVER_VERSION	"0.30"
+
+/* driver description structure */
+upsdrv_info_t comm_upsdrv_info = {
+	USB_DRIVER_NAME,
+	USB_DRIVER_VERSION,
+	NULL,
+	0,
+	{ NULL }
+};
 
 #define MAX_REPORT_SIZE         0x1800
 

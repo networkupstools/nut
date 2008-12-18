@@ -21,7 +21,19 @@
 
 #include "main.h"
 #include "serial.h"
-#include "bestups.h"
+
+#define DRIVER_NAME	"Best UPS driver"
+#define DRIVER_VERSION	"1.05"
+
+/* driver description structure */
+upsdrv_info_t upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Russell Kroll <rkroll@exploits.org>\n" \
+	"Jason White <jdwhite@jdwhite.org>",
+	DRV_STABLE,
+	{ NULL }
+};
 
 #define ENDCHAR  13	/* replies end with CR */
 #define MAXTRIES 5
@@ -259,7 +271,6 @@ void upsdrv_initinfo(void)
 
 	upsh.instcmd = instcmd;
 
-	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
 	dstate_addcmd("test.battery.start");
 	dstate_addcmd("test.battery.stop");
 }
@@ -412,12 +423,6 @@ void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE, "nombattvolt", "Override nominal battery voltage");
 	addvar(VAR_VALUE, "ID", "Force UPS ID response string");
-}
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - Best UPS driver %s (%s)\n", 
-		DRV_VERSION, UPS_VERSION);
 }
 
 void upsdrv_initups(void)

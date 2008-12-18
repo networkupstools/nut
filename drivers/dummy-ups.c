@@ -37,6 +37,18 @@
 #include "upsclient.h"
 #include "dummy-ups.h"
 
+#define DRIVER_NAME	"Dummy UPS driver"
+#define DRIVER_VERSION	"0.05"
+
+/* driver description structure */
+upsdrv_info_t upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Arnaud Quette <arnaud.quette@gmail.com>",
+	DRV_STABLE,
+	{ NULL }
+};
+
 #define MODE_UNKNOWN	0
 #define MODE_DUMMY		1 /* use the embedded defintion or a definition file */
 #define MODE_REPEATER	2 /* use libupsclient to repeat an UPS */
@@ -169,12 +181,6 @@ void upsdrv_makevartable(void)
 
 	/* allow '-x foo=<some value>' */
 	/* addvar(VAR_VALUE, "foo", "Override foo setting"); */
-}
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - Dummy UPS driver %s (%s)\n\n", 
-		DRV_VERSION, UPS_VERSION);
 }
 
 void upsdrv_initups(void)

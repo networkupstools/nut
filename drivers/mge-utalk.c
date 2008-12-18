@@ -1,7 +1,7 @@
 /* mge-utalk.c - monitor MGE UPS for NUT with UTalk protocol
  *
  *  Copyright (C) 2002 - 2005
- *     Arnaud Quette <arnaud.quette@free.fr>  & <arnaud.quette@mgeups.com>
+ *     Arnaud Quette <arnaud.quette@gmail.com>
  *     Hans Ekkehard Plesser <hans.plesser@itf.nlh.no>
  *     Martin Loyer <martin@ouifi.net>
  *     Patrick Agrain <patrick.agrain@alcatel.fr>
@@ -39,8 +39,24 @@
 /*                  Define "technical" constants                   */
 /* --------------------------------------------------------------- */
 
-#define DRIVER_NAME    "MGE UPS SYSTEMS/U-Talk driver"
-#define DRIVER_VERSION "0.88"
+#define DRIVER_NAME	"MGE UPS SYSTEMS/U-Talk driver"
+#define DRIVER_VERSION	"0.89"
+
+
+/* driver description structure */
+upsdrv_info_t upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Arnaud Quette <ArnaudQuette@gmail.com>\n" \
+	"Hans Ekkehard Plesser <hans.plesser@itf.nlh.no>\n" \
+	"Martin Loyer <martin@ouifi.net>\n" \
+	"Patrick Agrain <patrick.agrain@alcatel.fr>\n" \
+	"Nicholas Reilly <nreilly@magma.ca>\n" \
+	"Dave Abbott <d.abbott@dcs.shef.ac.uk>\n" \
+	"Marek Kralewski <marek@mercy49.de>",
+	DRV_STABLE,
+	{ NULL }
+};
 
 /* delay after sending each char to UPS (in MICROSECONDS) */
 #define MGE_CHAR_DELAY 0
@@ -95,14 +111,6 @@ static void format_model_name(char *model);
 
 /* --------------------------------------------------------------- */
 /*                    UPS Driver Functions                         */
-/* --------------------------------------------------------------- */
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - %s %s (%s)\n", 
-		DRIVER_NAME, DRIVER_VERSION, UPS_VERSION);
-}
-
 /* --------------------------------------------------------------- */
 
 void upsdrv_makevartable(void)

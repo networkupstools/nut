@@ -27,14 +27,24 @@
 
 */
 
-#define DRV_VERSION "0.50"
-
 #include <stdio.h>
 #include <math.h>
 
 #include "main.h"
 #include "serial.h"
 #include "timehead.h"
+
+#define DRIVER_NAME		"Microsol Rhino UPS driver"
+#define DRIVER_VERSION	"0.51"
+
+/* driver description structure */
+upsdrv_info_t upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Silvino B. Magalhaes <sbm2yk@gmail.com>",
+	DRV_STABLE,
+	{ NULL }
+};
 
 #define UPSDELAY 500 /* 0.5 ms delay */
 
@@ -714,7 +724,6 @@ void upsdrv_initinfo(void)
 	getbaseinfo();
 
 	upsh.instcmd = instcmd;
-	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
 }
 
 void upsdrv_updateinfo(void)
@@ -784,13 +793,6 @@ void upsdrv_makevartable(void)
 	
 	addvar(VAR_VALUE, "battext", "Battery Extension (0-80)min");
 
-}
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - Microsol Rhino UPS driver %s (%s)\n", 
-		DRV_VERSION, UPS_VERSION);
-        printf("by Silvino B. Magalhaes for Microsol - sbm2yk@gmail.com\n\n");
 }
 
 void upsdrv_initups(void)

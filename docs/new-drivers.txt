@@ -2,6 +2,7 @@ Desc: How to make a new driver to support another UPS
 File: new-drivers.txt
 Date: 14 March 2004
 Auth: Russell Kroll <rkroll@exploits.org>
+      Arnaud Quette <arnaud.quette@gmail.com>
 
 Smart vs. Contact-closure
 =========================
@@ -11,8 +12,8 @@ contact-closure.txt document for information on adding support.  It's a
 lot easier to add a few lines to a header file than it is to create a
 whole new driver.
 
-Serial vs. USB vs. SNMP
-=======================
+Serial vs. USB vs. SNMP and more
+================================
 
 If your UPS connects to your computer via a USB port, then go straight
 to the document hid-subdrivers.txt. You can probably add support for
@@ -38,6 +39,40 @@ Skeleton driver
 Familiarize yourself with the design of skel.c in the drivers directory.
 It shows a few examples of the functions that main will call to obtain
 updated information from the hardware.
+
+Essential structure
+===================
+
+upsdrv_info_t
+-------------
+
+This structure tracks several description information about the driver:
+
+ * name: the driver full name, for banner printing.
+ * version: the driver's own version. For sub driver information, refer below
+            to sub_upsdrv_info. This value has the form "X.YZ", and is
+            published by main as "driver.version.internal".
+ * authors: the driver's author(s) name. If multiple authors are listed, separate
+            them with '\n' so that it can be broken up by author if needed.
+ * status: the driver development status. The following values are allowed:
+           - DRV_BROKEN: setting this value will cause main to print an error
+             and exit. This is only used during conversions of the driver core
+             to keep users from using drivers which have not been converted.
+             Drivers in this state will be removed from the tree after some
+             period if they are not fixed.
+           - DRV_EXPERIMENTAL: set this value if your driver is potentially
+             broken. This will trigger a warning when it starts so the user
+             doesn't take it for granted.
+           - DRV_BETA: this value means that the driver is more stable and
+             complete. But it is still not recommended for production systems.
+           - DRV_STABLE: the driver is suitable for production systems, but not
+             100 % feature complete.
+           - DRV_COMPLETE: this is the gold level! It implies that 100 % of the
+             protocol is implemented, and a full QA pass.
+ * subdrv_info: array of upsdrv_info_t for sub driver(s) information. This
+                is used for example by usbhid-ups and megatec.
+
+These information are currently used for the startup banner printing and tests.
 
 Essential functions
 ===================
@@ -98,18 +133,6 @@ You should attempt the UPS shutdown command even if the UPS detection
 fails.  If the UPS does not shut down the load, then the user is
 vulnerable to a race if the power comes back on during the shutdown
 process.
-
-Flags for main.c
-================
-
-Set experimental_driver to 1 if your driver is potentially broken.  This
-will trigger a warning when it starts so the user doesn't take it for
-granted.
-
-Setting broken_driver to 1 will cause main to print an error and exit.
-This is only used during conversions of the driver core to keep users
-from using drivers which have not been converted.  Drivers in this state 
-will be removed from the tree after some period if they are not fixed.
 
 Data types
 ==========

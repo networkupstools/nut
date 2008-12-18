@@ -5,6 +5,18 @@
 
 usb_dev_handle *upsdev = NULL;
 
+#define SUBDRIVER_NAME	"USB communication subdriver"
+#define SUBDRIVER_VERSION	"0.17"
+
+/* communication driver description structure */
+upsdrv_info_t comm_upsdrv_info = {
+	SUBDRIVER_NAME,
+	SUBDRIVER_VERSION,
+	NULL,
+	0,
+	{ NULL }
+};
+
 void send_read_command(unsigned char command)
 {
         unsigned char buf[4];

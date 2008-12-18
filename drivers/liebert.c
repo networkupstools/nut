@@ -23,7 +23,19 @@
 
 #include "main.h"
 #include "serial.h"
-#include "liebert.h"
+
+#define DRIVER_NAME	"Liebert MultiLink UPS driver"
+#define DRIVER_VERSION	"1.02"
+
+/* driver description structure */
+upsdrv_info_t upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Russell Kroll <rkroll@exploits.org>\n" \
+	"Rick Lyons <rick@powerup.com.au>",
+	DRV_EXPERIMENTAL,
+	{ NULL }
+};
 
 #define	ML_ONBATTERY	0x55
 
@@ -148,14 +160,6 @@ void upsdrv_updateinfo(void)
 
 	status_commit();
 	dstate_dataok();
-}
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - Liebert MultiLink UPS driver %s (%s)\n",
-		DRV_VERSION, UPS_VERSION);
-
-	experimental_driver = 1;
 }
 
 void upsdrv_makevartable(void)

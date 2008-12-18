@@ -19,7 +19,18 @@
 
 #include "main.h"
 #include "serial.h"
-#include "everups.h"
+
+#define DRIVER_NAME	"Ever UPS driver"
+#define DRIVER_VERSION	"0.03"
+
+/* driver description structure */
+upsdrv_info_t upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Bartek Szady <bszx@bszxdomain.edu.eu.org>",
+	DRV_STABLE,
+	{ NULL }
+};
 
 static	unsigned char	upstype = 0;
 
@@ -173,12 +184,6 @@ void upsdrv_help(void)
 /* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {
-}
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - Ever UPS driver %s (%s)\n\n", 
-		DRV_VERSION, UPS_VERSION);
 }
 
 void upsdrv_initups(void)

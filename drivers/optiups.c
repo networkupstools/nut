@@ -23,6 +23,23 @@
    ==================================================================================
 */
 
+#include "main.h"
+#include "serial.h"
+
+#define DRIVER_NAME	"Opti-UPS driver"
+#define DRIVER_VERSION "1.01"
+
+/* driver description structure */
+upsdrv_info_t upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Russell Kroll <rkroll@exploits.org>\n" \
+	"Scott Heavner <debian@scottheavner.com>\n" \
+	"Matthias Goebl <matthias.goebl@goebl.net>",
+	DRV_STABLE,
+	{ NULL }
+};
+
 #define HELP                                                                    "\n" \
    "**********************************************************"                 "\n" \
    "This driver has been tested only with the OPTI SAFE 420E using"             "\n" \
@@ -48,10 +65,6 @@
  * file for more information on the cable and the OPTI-UPS serial protocol used on
  * at least the older OPTI UPS models (420E, 820ES).
  */
-
-#include "main.h"
-#include "serial.h"
-#include "optiups.h"
 
 #define ENDCHAR		'\n'
 #define IGNCHARS	"\r"
@@ -301,8 +314,6 @@ void upsdrv_initinfo(void)
 {
 	int r;
 
-	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
-
 	/* If an Zinto Online-USV is off, switch it on first. */
 	/* It sends only "2" when off, without "\r\n", and doesn't */
 	/* answer other commands. Therefore without power we'll be */
@@ -527,12 +538,6 @@ void upsdrv_makevartable(void)
 	addvar(VAR_FLAG, OPTI_FAKELOW, "Fake a low battery status" );
 	addvar(VAR_FLAG, OPTI_NOWARN_NOIMP, "Supress warnings of unsupported commands");
 	addvar(VAR_FLAG, OPTI_POWERUP, "(Zinto D) Power-up UPS at start (cannot identify a powered-down Zinto D)");
-}
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - Opti-UPS driver %s (%s)\n\n", 
-		DRV_VERSION, UPS_VERSION);
 }
 
 void upsdrv_initups(void)

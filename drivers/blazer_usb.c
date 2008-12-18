@@ -26,7 +26,17 @@
 #include "usb-common.h"
 #include "blazer.h"
 
-#define DRV_VERSION	"0.01"
+#define DRIVER_NAME	"Megatec/Q1 protocol USB driver"
+#define DRIVER_VERSION	"0.02"
+
+/* driver description structure */
+upsdrv_info_t upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Arjen de Korte <adkorte-guest@alioth.debian.org>",
+	DRV_BETA,
+	{ NULL }
+};
 
 static usb_communication_subdriver_t *usb = &usb_subdriver;
 static usb_dev_handle		*udev = NULL;
@@ -305,12 +315,6 @@ void upsdrv_makevartable(void)
 }
 
 
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools %s - Megatec/Q1 protocol USB driver %s\n", UPS_VERSION, DRV_VERSION);
-}
-
-
 void upsdrv_initups(void)
 {
 #ifndef TESTING
@@ -401,8 +405,6 @@ void upsdrv_initups(void)
 
 void upsdrv_initinfo(void)
 {
-	dstate_setinfo("driver.version.internal", "%s", DRV_VERSION);
-
 	blazer_initinfo();
 
 	dstate_setinfo("ups.vendorid", "%04x", usbdevice.VendorID);

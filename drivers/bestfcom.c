@@ -43,7 +43,21 @@
 
 #include "main.h"
 #include "serial.h"
-#include "bestfcom.h"
+
+#define DRIVER_NAME	"Best Ferrups/Fortress driver"
+#define DRIVER_VERSION	"0.12"
+
+/* driver description structure */
+upsdrv_info_t upsdrv_info = {
+	DRIVER_NAME,
+	DRIVER_VERSION,
+	"Andreas Wrede  <andreas@planix.com>\n" \
+	"John Stone  <johns@megapixel.com>\n" \
+	"Grant Taylor <gtaylor@picante.com>\n" \
+	"Russell Kroll <rkroll@exploits.org>",
+	DRV_EXPERIMENTAL,
+	{ NULL }
+};
 
 #define ENDCHAR			'\r'
 #define IGNCHARS		"\012"
@@ -443,14 +457,6 @@ void upsdrv_makevartable(void)
 
 void upsdrv_help(void)
 {
-}
-
-void upsdrv_banner(void)
-{
-	printf("Network UPS Tools - Best Ferrups/Fortress %s (%s)\n",
-		DRV_VERSION, UPS_VERSION);
-
-	experimental_driver = 1;
 }
 
 static void sync_serial(void) {
