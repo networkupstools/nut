@@ -46,5 +46,8 @@ upsstats_cgi_SOURCES = upsstats.c upsclient.h status.h upsstats.h	\
 
 # not LDADD.
 libupsclient_la_SOURCES = upsclient.c upsclient.h
-libupsclient_la_LIBADD = ../common/libparseconf.la $(LIBSSL_LDFLAGS)
+libupsclient_la_LIBADD = ../common/libparseconf.la
+if WITH_SSL
+  libupsclient_la_LIBADD += $(LIBSSL_LDFLAGS)
+endif
 libupsclient_la_LDFLAGS = -version-info 1:0:0
