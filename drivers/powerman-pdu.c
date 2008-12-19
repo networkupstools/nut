@@ -20,7 +20,6 @@
 
 #include <stdlib.h>
 #include "main.h"
-#include "powerman-pdu.h"
 #include "libpowerman.h"
 
 #define DRIVER_NAME	"Powerman PDU client driver"
