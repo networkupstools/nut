@@ -1,9 +1,9 @@
-/* powerp-txt.h	Model specific data/definitions for CyberPower text
-			protocol UPSes 
+/* powerp-txt.h - Model specific data/definitions for CyberPower text
+                  protocol UPSes 
 
    Copyright (C)
-	2007		Doug Reynolds <mav@wastegate.net>
-	2007-2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2007        Doug Reynolds <mav@wastegate.net>
+	2007-2008   Arjen de Korte <adkorte-guest@alioth.debian.org>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
