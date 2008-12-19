@@ -26,15 +26,8 @@
    decoding the protocol (with a serial logger).
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-
 #include "main.h"
 #include "serial.h"
-
-#include "powerpanel.h"
 #include "powerp-bin.h"
 #include "powerp-txt.h"
 

@@ -23,6 +23,8 @@
 #ifndef	POWERP_TXT_H
 #define	POWERP_TXT_H
 
+#include "powerpanel.h"
+
 extern subdriver_t powpan_text;
 
 #endif

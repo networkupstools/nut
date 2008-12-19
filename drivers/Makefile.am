@@ -221,7 +221,7 @@ dist_noinst_HEADERS = apccmib.h apc-hid.h apcsmart.h bcmxcp.h bcmxcp_io.h belkin
  explore-hid.h gamatronic.h genericups.h hidparser.h hidtypes.h ietfmib.h libhid.h	\
  libshut.h libusb.h liebert-hid.h main.h main-hal.h megatec.h mge-hid.h mgemib.h	\
  mge-shut.h mge-utalk.h mge-xml.h netvisionmib.h netxml-ups.h nut_usb.h oneac.h		\
- powercom.h powerman-pdu.h powerpanel.h powerp-bin.h powerp-txt.h pwmib.h raritan-mib.h	\
+ powercom.h powerpanel.h powerp-bin.h powerp-txt.h pwmib.h raritan-mib.h	\
  safenet.h serial.h snmp-ups.h solis.h tripplite.h tripplite-hid.h upshandler.h		\
  usb-common.h usbhid-ups.h
 

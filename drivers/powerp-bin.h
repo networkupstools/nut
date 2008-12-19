@@ -23,6 +23,8 @@
 #ifndef	POWERP_BIN_H
 #define	POWERP_BIN_H
 
-extern subdriver_t	powpan_binary;
+#include "powerpanel.h"
+
+extern subdriver_t powpan_binary;
 
 #endif	/* POWERP_BIN_H */

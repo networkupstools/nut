@@ -20,6 +20,9 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifndef POWERPANEL_H
+#define POWERPANEL_H
+
 #define ENDCHAR		'\r'
 #define IGNCHAR		""
 #define MAXTRIES	3
@@ -35,3 +38,5 @@ typedef struct {
 	int	(*updateinfo)(void);
 	void	(*shutdown)(void);
 } subdriver_t;
+
+#endif /* POWERPANEL_H */
