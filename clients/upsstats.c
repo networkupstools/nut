@@ -380,7 +380,6 @@ static void ups_connect(void)
 		free(newhost);
 	}
 
-	upscli_sendline(&ups, "LOGOUT\n", 7);
 	upscli_disconnect(&ups);
 
 	free(upsname);

@@ -157,7 +157,6 @@ static void do_cmd(char **argv, const int argc)
 static void clean_exit(void)
 {
 	if (ups) {
-		upscli_sendline(ups, "LOGOUT\n", 7);
 		upscli_disconnect(ups);
 	}
 

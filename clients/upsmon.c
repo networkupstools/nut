@@ -784,14 +784,17 @@ static void drop_connection(utype_t *ups)
 {
 	debug("Dropping connection to UPS [%s]\n", ups->sys);
 
+	/* Attempt to logout from this UPS. If this doesn't work,
+	don't bother (it may not be listening to us anymore) */
+	if (flag_isset(ups->status, ST_LOGIN)) {
+		upscli_sendline(&ups->conn, "LOGOUT\n", 7);
+	}
+
 	ups->commstate = 0;
 	ups->linestate = 0;
 	clearflag(&ups->status, ST_LOGIN);
 	clearflag(&ups->status, ST_CONNECTED);
 
-	/* Attempt to logout from this UPS. If this doesn't work,
-	don't bother (it may not be listening to us anymore) */
-	upscli_sendline(&ups->conn, "LOGOUT\n", 7);
 	upscli_disconnect(&ups->conn);
 }
 

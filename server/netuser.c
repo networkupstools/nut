@@ -39,13 +39,7 @@ void net_login(ctype_t *client, int numarg, const char **arg)
 
 	if (client->loginups != NULL) {
 
-		if (client->username)
-			upslogx(LOG_INFO, "Client %s@%s tried to login twice",
-				client->username, client->addr);
-		else
-			upslogx(LOG_INFO, "Client on %s tried to login twice",
-				client->addr);
-
+		upslogx(LOG_INFO, "Client %s@%s tried to login twice", client->username, client->addr);
 		send_err(client, NUT_ERR_ALREADY_LOGGED_IN);
 		return;
 	}
@@ -61,10 +55,8 @@ void net_login(ctype_t *client, int numarg, const char **arg)
 	ups->numlogins++;
 	client->loginups = xstrdup(ups->name);
 
-	upslogx(LOG_INFO, "Client %s@%s logged into UPS [%s]%s",
-		client->username, client->addr, client->loginups,
-		client->ssl ? " (SSL)" : "");
-
+	upslogx(LOG_INFO, "Client %s@%s logged into UPS [%s]%s", client->username, client->addr,
+		client->loginups, client->ssl ? " (SSL)" : "");
 	sendback(client, "OK\n");
 }
 
@@ -75,13 +67,14 @@ void net_logout(ctype_t *client, int numarg, const char **arg)
 		return;
 	}
 
-	if (client->username)
-		upslogx(LOG_DEBUG, "Client %s@%s logged out",
-			client->username, client->addr);
-	else
-		upslogx(LOG_DEBUG, "Client on %s logged out", client->addr);
+	if (client->loginups != NULL) {
+		/* Not logged in, silently ignore this */
+		return;
+	}
 
+	upslogx(LOG_DEBUG, "Client %s@%s logged out", client->username, client->addr);
 	sendback(client, "OK Goodbye\n");
+
 	client->last_heard = 0;
 }
 
