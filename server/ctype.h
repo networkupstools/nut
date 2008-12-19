@@ -33,9 +33,7 @@
 typedef struct ctype_s {
 	char	*addr;
 	int	sock_fd;
-	int	delete;			/* set after a write fails */
-	char	rq[SMALLBUF];
-	size_t	rqpos;
+	time_t	last_heard;
 	char	*loginups;
 	char	*password;
 	char	*username;

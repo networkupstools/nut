@@ -1,3 +1,8 @@
+Fri Dec 19 17:30:14 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - server/upsd: Shed clients after one minute of inactivity, to prevent that
+   stalled clients keep resources occupied.
+
 Thu Dec 18 20:15:24 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  * introduce the upsdrv_info_t structure: this is a structure containing all the

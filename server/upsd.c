@@ -248,15 +248,15 @@ static void setuptcp(stype_t *server)
 	hints.ai_socktype	= SOCK_STREAM;
 	hints.ai_protocol	= IPPROTO_TCP;
 
-        if ((v = getaddrinfo(server->addr, server->port, &hints, &res)) != 0) {
+	if ((v = getaddrinfo(server->addr, server->port, &hints, &res)) != 0) {
 		if (v == EAI_SYSTEM) {
-                        fatal_with_errno(EXIT_FAILURE, "getaddrinfo");
+			fatal_with_errno(EXIT_FAILURE, "getaddrinfo");
 		}
 
-                fatalx(EXIT_FAILURE, "getaddrinfo: %s", gai_strerror(v));
-        }
+		fatalx(EXIT_FAILURE, "getaddrinfo: %s", gai_strerror(v));
+	}
 
-       for (ai = res; ai; ai = ai->ai_next) {
+	for (ai = res; ai; ai = ai->ai_next) {
 		int sock_fd;
 
 		if ((sock_fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol)) < 0) {
@@ -331,6 +331,8 @@ static void client_disconnect(ctype_t *client)
 		return;
 	}
 
+	upsdebugx(2, "Disconnect from %s (%s)", client->addr, client->last_heard ? "server" : "client");
+
 	shutdown(client->sock_fd, 2);
 	close(client->sock_fd);
 
@@ -380,10 +382,6 @@ int sendback(ctype_t *client, const char *fmt, ...)
 		return 0;
 	}
 
-	if (client->delete) {
-		return 0;
-	}
-
 	va_start(ap, fmt);
 	vsnprintf(ans, sizeof(ans), fmt, ap);
 	va_end(ap);
@@ -400,7 +398,7 @@ int sendback(ctype_t *client, const char *fmt, ...)
 
 	if (len != res) {
 		upslog_with_errno(LOG_NOTICE, "write() failed for %s", client->addr);
-		client->delete = 1;
+		client->last_heard = 0;
 		return 0;	/* failed */
 	}
 
@@ -422,7 +420,7 @@ int send_err(ctype_t *client, const char *errtype)
 /* disconnect anyone logged into this UPS */
 void kick_login_clients(const char *upsname)
 {
-	ctype_t   *client, *cnext;
+	ctype_t	*client, *cnext;
 
 	for (client = firstclient; client; client = cnext) {
 
@@ -537,6 +535,8 @@ static void client_connect(stype_t *server)
 
 	client->sock_fd = fd;
 
+	time(&client->last_heard);
+
 #ifndef	HAVE_IPV6
 	client->addr = xstrdup(inet_ntoa(csock.sin_addr));
 #else
@@ -560,7 +560,7 @@ static void client_connect(stype_t *server)
 
 	lastclient = client;
  */
-	upslogx(LOG_DEBUG, "Connection from %s", client->addr);
+	upsdebugx(2, "Connection from %s", client->addr);
 }
 
 /* read tcp messages and handle them */
@@ -596,12 +596,8 @@ static void client_readline(ctype_t *client)
 		switch (pconf_char(&client->ctx, buf[i]))
 		{
 		case 1:
+			time(&client->last_heard);	/* command received */
 			parse_net(client);
-			/* bail out if the connection closed in parse_net */
-			if (client->delete) {
-				client_disconnect(client);
-				return;
-			}
 			continue;
 
 		case 0:
@@ -738,8 +734,11 @@ static void mainloop(void)
 	int	i, ret, nfds = 0;
 
 	upstype_t	*ups;
-	ctype_t		*client;
+	ctype_t		*client, *cnext;
 	stype_t		*server;
+	time_t	now;
+
+	time(&now);
 
 	if (reload_flag) {
 		conf_reload();
@@ -773,15 +772,18 @@ static void mainloop(void)
 	}
 
 	/* scan through client sockets */
-	for (client = firstclient; client; client = client->next) {
+	for (client = firstclient; client; client = cnext) {
 
-		if (client->sock_fd < 0) {
+		cnext = client->next;
+
+		if (difftime(now, client->last_heard) > 60) {
+			/* shed clients after 1 minute of inactivity */
+			client_disconnect(client);
 			continue;
 		}
 
 		if (nfds >= maxconn) {
-			/* shed clients that we are unable to handle */
-			client_disconnect(client);
+			/* ignore clients that we are unable to handle */
 			continue;
 		}
 
@@ -809,6 +811,8 @@ static void mainloop(void)
 
 		nfds++;
 	}
+
+	upsdebugx(2, "%s: polling %d filedescriptors", __func__, nfds);
 
 	ret = poll(fds, nfds, 2000);
 

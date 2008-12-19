@@ -82,7 +82,7 @@ void net_logout(ctype_t *client, int numarg, const char **arg)
 		upslogx(LOG_DEBUG, "Client on %s logged out", client->addr);
 
 	sendback(client, "OK Goodbye\n");
-	client->delete = 1;
+	client->last_heard = 0;
 }
 
 /* MASTER <upsname> */
