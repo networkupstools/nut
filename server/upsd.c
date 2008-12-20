@@ -331,7 +331,7 @@ static void client_disconnect(ctype_t *client)
 		return;
 	}
 
-	upsdebugx(2, "Disconnect from %s (%s)", client->addr, client->last_heard ? "server" : "client");
+	upslogx(LOG_DEBUG, "Disconnect from %s", client->addr);
 
 	shutdown(client->sock_fd, 2);
 	close(client->sock_fd);
@@ -441,7 +441,7 @@ void kick_login_clients(const char *upsname)
 /* make sure a UPS is sane - connected, with fresh data */
 int ups_available(const upstype_t *ups, ctype_t *client)
 {
-	if (ups->sock_fd == -1) {
+	if (ups->sock_fd < 0) {
 		send_err(client, NUT_ERR_DRIVER_NOT_CONNECTED);
 		return 0;
 	}
@@ -560,7 +560,7 @@ static void client_connect(stype_t *server)
 
 	lastclient = client;
  */
-	upsdebugx(2, "Connection from %s", client->addr);
+	upslogx(LOG_DEBUG, "Connect from %s", client->addr);
 }
 
 /* read tcp messages and handle them */

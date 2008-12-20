@@ -124,7 +124,6 @@ static void drawimage(gdImagePtr im)
 	gdImagePng(im, stdout);
 	gdImageDestroy(im);
 
-	upscli_sendline(&ups, "LOGOUT\n", 7);
 	upscli_disconnect(&ups);
 
 	exit(EXIT_SUCCESS);

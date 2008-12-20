@@ -203,7 +203,6 @@ void upsdrv_cleanup(void)
 {
 	if ( (mode == MODE_META) || (mode == MODE_REPEATER) ) {
 		if (ups) {
-			upscli_sendline(ups, "LOGOUT\n", 7);
 			upscli_disconnect(ups);
 		}
 

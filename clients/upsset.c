@@ -278,7 +278,6 @@ static void error_page(const char *next, const char *title,
 	printf("</TD></TR></TABLE>\n");
 	printf("</BODY></HTML>\n");
 
-	upscli_sendline(&ups, "LOGOUT\n", 7);
 	upscli_disconnect(&ups);
 	exit(EXIT_SUCCESS);
 }
@@ -308,7 +307,6 @@ static void loginscreen(void)
 	printf("</TD></TR></TABLE>\n");
 	printf("</BODY></HTML>\n");
 
-	upscli_sendline(&ups, "LOGOUT\n", 7);
 	upscli_disconnect(&ups);
 	exit(EXIT_SUCCESS);
 }
@@ -466,7 +464,6 @@ static void showcmds(void)
 	printf("</TABLE>\n");
 	printf("</BODY></HTML>\n");
 
-	upscli_sendline(&ups, "LOGOUT\n", 7);
 	upscli_disconnect(&ups);
 	exit(EXIT_SUCCESS);
 }	
@@ -550,7 +547,6 @@ static void docmd(void)
 		printf("</TD></TR></TABLE>\n");
 		printf("</BODY></HTML>\n");
 
-		upscli_sendline(&ups, "LOGOUT\n", 7);
 		upscli_disconnect(&ups);
 		exit(EXIT_SUCCESS);
 	}
@@ -572,7 +568,6 @@ static void docmd(void)
 		printf("</TD></TR></TABLE>\n");
 		printf("</BODY></HTML>\n");
 
-		upscli_sendline(&ups, "LOGOUT\n", 7);
 		upscli_disconnect(&ups);
 		exit(EXIT_SUCCESS);
 	}
@@ -593,7 +588,6 @@ static void docmd(void)
 	printf("</TD></TR></TABLE>\n");
 	printf("</BODY></HTML>\n");
 
-	upscli_sendline(&ups, "LOGOUT\n", 7);
 	upscli_disconnect(&ups);
 	exit(EXIT_SUCCESS);
 }
@@ -867,7 +861,6 @@ static void showsettings(void)
 	printf("</TABLE>\n");
 	printf("</BODY></HTML>\n");
 
-	upscli_sendline(&ups, "LOGOUT\n", 7);
 	upscli_disconnect(&ups);
 	exit(EXIT_SUCCESS);
 }
@@ -956,7 +949,6 @@ static void savesettings(void)
 	printf("</TD></TR></TABLE>\n");
 	printf("</BODY></HTML>\n");
 
-	upscli_sendline(&ups, "LOGOUT\n", 7);
 	upscli_disconnect(&ups);
 	exit(EXIT_SUCCESS);
 }
@@ -974,7 +966,6 @@ static void initial_pickups(void)
 	printf("</TD></TR></TABLE>\n");
 	printf("</BODY></HTML>\n");
 
-	upscli_sendline(&ups, "LOGOUT\n", 7);
 	upscli_disconnect(&ups);
 	exit(EXIT_SUCCESS);
 }

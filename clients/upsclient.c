@@ -482,11 +482,9 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 			continue;
 		case EAI_NONAME:
 			ups->upserror = UPSCLI_ERR_NOSUCHHOST;
-			upscli_disconnect(ups);
 			return -1;
 		case EAI_MEMORY:
 			ups->upserror = UPSCLI_ERR_NOMEM;
-			upscli_disconnect(ups);
 			return -1;
 		case EAI_SYSTEM:
 			ups->syserrno = errno;
@@ -494,13 +492,14 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 		}
 
 		ups->upserror = UPSCLI_ERR_UNKNOWN;
-		upscli_disconnect(ups);
 		return -1;
 	}
 
 	for (ai = res; ai != NULL; ai = ai->ai_next) {
 
-		if ((sock_fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol)) < 0) {
+		sock_fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+
+		if (sock_fd < 0) {
 			switch (errno)
 			{
 			case EAFNOSUPPORT:
@@ -858,7 +857,7 @@ int upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen)
 		return -1;
 	}
 
-	if (ups->fd == -1) {
+	if (ups->fd < 0) {
 		ups->upserror = UPSCLI_ERR_DRVNOTCONN;
 		return -1;
 	}
@@ -892,7 +891,7 @@ int upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen)
 		return -1;
 	}
 
-	if (ups->fd == -1) {
+	if (ups->fd < 0) {
 		ups->upserror = UPSCLI_ERR_DRVNOTCONN;
 		return -1;
 	}
@@ -1041,6 +1040,8 @@ int upscli_disconnect(UPSCONN_t *ups)
 	if (ups->fd < 0) {
 		return 0;
 	}
+
+	net_write(ups, "LOGOUT\n", 7);
 
 #ifdef HAVE_SSL
 	if (ups->ssl) {

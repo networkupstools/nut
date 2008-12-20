@@ -601,7 +601,7 @@ static int try_connect(void)
 
 	pipefd = socket(AF_UNIX, SOCK_STREAM, 0);
 
-	if (pipefd == -1)
+	if (pipefd < 0)
 		fatal_with_errno(EXIT_FAILURE, "socket");
 
 	ret = connect(pipefd, (const struct sockaddr *) &saddr, sizeof(saddr));

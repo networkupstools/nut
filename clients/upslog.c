@@ -505,7 +505,6 @@ int main(int argc, char **argv)
 	if (logfile != stdout)
 		fclose(logfile);
 
-	upscli_sendline(&ups, "LOGOUT\n", 7);
 	upscli_disconnect(&ups);
 	
 	exit(EXIT_SUCCESS);
