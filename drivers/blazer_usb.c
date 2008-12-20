@@ -59,7 +59,9 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 	for (i = 0; i < strlen(tmp); i += ret) {
 
 		/* Write data in 8-byte chunks */
-		ret = usb->set_report(udev, 0, (unsigned char *)&tmp[i], 8);
+		/* ret = usb->set_report(udev, 0, (unsigned char *)&tmp[i], 8); */
+		ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+			0x09, 0x200, 0, &tmp[i], 8, 1000);
 
 		if (ret < 0) {
 			upsdebug_with_errno(3, "send");
@@ -69,7 +71,7 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 		if (ret == 0) {
 			upsdebugx(3, "send: timeout");
 			return ret;
-		}		
+		}
 	}
 
 	upsdebugx(3, "send: %.*s", strcspn(tmp, "\r"), tmp);
@@ -79,7 +81,8 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 	for (i = 0; (i <= buflen-8) && (strchr(buf, '\r') == NULL); i += ret) {
 
 		/* Read data in 8-byte chunks */
-		ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000);
+		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
+		ret = usb_interrupt_read(udev, 0x81, &buf[i], 8, 1000);
 
 		if (ret < 0) {
 			upsdebug_with_errno(3, "read");
@@ -253,10 +256,16 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 		fatal_with_errno(EXIT_FAILURE, "Permissions problem");
 
 	case EPIPE:
+		if (!usb_clear_halt(udev, 0x81)) {
+			/* stall condition cleared */
+			break;
+		}
 	case ENODEV:
 	case EACCES:
 	case EIO:
 	case ENOENT:
+	case ETIMEDOUT:
+	default:
 		/* Uh oh, got to reconnect! */
 		usb->close(udev);
 		udev = NULL;
