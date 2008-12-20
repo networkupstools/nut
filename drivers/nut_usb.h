@@ -20,7 +20,8 @@ void nutusb_comm_fail(const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 1, 2)));
 void nutusb_comm_good(void);
 
-int usb_set_descriptor(usb_dev_handle *udev, unsigned char type,
-		       unsigned char index, void *buf, int size);
+/* function pointer, set depending on which device is used */
+int (*usb_set_descriptor)(usb_dev_handle *udev, unsigned char type,
+	unsigned char index, void *buf, int size);
 
 #endif	/* NUT_USB_H_SEEN */

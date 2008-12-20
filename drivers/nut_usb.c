@@ -32,21 +32,42 @@
 
 extern	int		exit_flag;
 static	unsigned int	comm_failures = 0;
-static	uint16_t	vendor_id;
 
 /* Powerware */
 #define POWERWARE	0x0592
 
 /* Phoenixtec Power Co., Ltd */
 #define PHOENIXTEC	0x06da
- 
+
+/* usb_set_descriptor() for Powerware devices */
+static int usb_set_powerware(usb_dev_handle *udev, unsigned char type, unsigned char index, void *buf, int size)
+{
+	return usb_control_msg(udev, USB_ENDPOINT_OUT, USB_REQ_SET_DESCRIPTOR, (type << 8) + index, 0, buf, size, 1000);
+}
+
+static void *powerware_ups(void) {
+	usb_set_descriptor = &usb_set_powerware;
+	return NULL;
+}
+
+/* usb_set_descriptor() for Phoenixtec devices */
+static int usb_set_phoenixtec(usb_dev_handle *udev, unsigned char type, unsigned char index, void *buf, int size)
+{
+	return usb_control_msg(udev, 0x42, 0x0d, (0x00 << 8) + 0x0, 0, buf, size, 1000);
+}
+
+static void *phoenixtec_ups(void) {
+	usb_set_descriptor = &usb_set_phoenixtec;
+	return NULL;
+}
+
 /* USB IDs device table */
 static usb_device_id_t pw_usb_device_table[] = {
 	/* various models */
-	{ USB_DEVICE(POWERWARE, 0x0002), NULL },
+	{ USB_DEVICE(POWERWARE, 0x0002), &powerware_ups },
 
 	/* various models */
-	{ USB_DEVICE(PHOENIXTEC, 0x0002), NULL },
+	{ USB_DEVICE(PHOENIXTEC, 0x0002), &phoenixtec_ups },
 	
 	/* Terminating entry */
 	{ -1, -1, NULL }
@@ -221,17 +242,4 @@ void nutusb_comm_good(void)
 
 	upslogx(LOG_NOTICE, "Communications with UPS re-established");
 	comm_failures = 0;
-}
-
-int usb_set_descriptor(usb_dev_handle *udev, unsigned char type,
-		       unsigned char index, void *buf, int size)
-{
-	if (vendor_id == POWERWARE) {
-		return usb_control_msg(udev, USB_ENDPOINT_OUT, USB_REQ_SET_DESCRIPTOR,
-					(type << 8) + index, 0, buf, size, 1000);
-	}
-	else {
-		return usb_control_msg(udev, 0x42, 0x0d,
-					(0x00 << 8) + 0x0, 0, buf, size, 1000);
-	}
 }
