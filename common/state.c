@@ -84,7 +84,11 @@ static void st_tree_node_free(struct st_tree_t *node)
 /* add a subtree to another subtree */
 static void st_tree_node_add(struct st_tree_t **nptr, struct st_tree_t *sptr)
 {
-	while (*nptr && sptr) {
+	if (!sptr) {
+		return;
+	}
+
+	while (*nptr) {
 
 		struct st_tree_t	*node = *nptr;
 
