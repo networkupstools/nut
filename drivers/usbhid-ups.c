@@ -1128,7 +1128,7 @@ static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf
 		upsdebugx(2, "- Bus: %s", hd->Bus ? hd->Bus : "unknown");
 
 		for (m = regex_matcher; m; m = m->next) {
-			ret = matches(m, hd);
+			ret = m->match_function(hd, m->privdata);
 			if (ret != 1) {
 				return 0;
 			}

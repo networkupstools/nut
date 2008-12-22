@@ -31,66 +31,12 @@
 #ifndef LIBUSB_H
 #define LIBUSB_H
 
-#include <usb.h> /* libusb header file */
-#include <regex.h>
-
 #include "main.h"	/* for subdrv_info_t */
-#include "nut_stdint.h"	/* for uint16_t */
+#include "usb-common.h"	/* for USBDevice_t and USBDeviceMatcher_t */
+
+#include <usb.h>	/* libusb header file */
 
 extern upsdrv_info_t comm_upsdrv_info; 
-
-/*!
- * USBDevice_t: Describe a USB device. This structure contains exactly
- * the 5 pieces of information by which a USB device identifies
- * itself, so it serves as a kind of "fingerprint" of the device. This
- * information must be matched exactly when reopening a device, and
- * therefore must not be "improved" or updated by a client
- * program. Vendor, Product, and Serial can be NULL if the
- * corresponding string did not exist or could not be retrieved.
- */
-typedef struct USBDevice_s {
-	uint16_t	VendorID; /*!< Device's Vendor ID */
-	uint16_t	ProductID; /*!< Device's Product ID */
-	char*		Vendor; /*!< Device's Vendor Name */
-	char*		Product; /*!< Device's Product Name */
-	char*		Serial; /* Product serial number */
-	char*		Bus;    /* Bus name, e.g. "003" */
-} USBDevice_t;
-
-/*!
- * USBDeviceMatcher_t: A "USB matcher" is a callback function that
- * inputs a USBDevice_t structure, and returns 1 for a match and 0
- * for a non-match.  Thus, a matcher provides a criterion for
- * selecting a USB device.  The callback function further is
- * expected to return -1 on error with errno set, and -2 on other
- * errors. Matchers can be connected in a linked list via the
- * "next" field.
- */
-typedef struct USBDeviceMatcher_s {
-	int (*match_function)(USBDevice_t *d, void *privdata);
-	void *privdata;
-	struct USBDeviceMatcher_s *next;
-} USBDeviceMatcher_t;
-
-/* invoke matcher against device */
-static inline int matches(USBDeviceMatcher_t *matcher, USBDevice_t *device) {
-	if (!matcher) {
-		return 1;
-	}
-	return matcher->match_function(device, matcher->privdata);
-}
-
-/* constructors and destructors for specific types of matchers. An
-   exact matcher matches a specific usb_device_t structure (except for
-   the Bus component, which is ignored). A regex matcher matches
-   devices based on a set of regular expressions. The USBNew* functions
-   return a matcher on success, or -1 on error with errno set. Note
-   that the "USBFree*" functions only free the current matcher, not
-   any others that are linked via "next" fields. */
-int USBNewExactMatcher(USBDeviceMatcher_t **matcher, USBDevice_t *hd);
-int USBNewRegexMatcher(USBDeviceMatcher_t **matcher, char **regex, int cflags);
-void USBFreeExactMatcher(USBDeviceMatcher_t *matcher);
-void USBFreeRegexMatcher(USBDeviceMatcher_t *matcher);
 
 /*!
  * usb_communication_subdriver_s: structure to describe the communication routines
