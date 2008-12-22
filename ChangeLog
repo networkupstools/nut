@@ -1,3 +1,9 @@
+Mon Dec 22 21:23:23 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - data/driver.list: complete compatibility information from OpenUPSmart
+   (http://openupsmart.sourceforge.net) since these are all supported by the
+   megatec driver (Centralion rebranded units)
+
 Fri Dec 19 17:30:14 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - server/upsd: Shed clients after one minute of inactivity, to prevent that

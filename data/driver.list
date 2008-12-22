@@ -21,6 +21,7 @@
 
 "Ablerex"	"MS-RT"		""	"megatec"
 "Ablerex"	"625L"		"USB"	"megatec_usb"
+"Ablerex"	"Hope Office 400/600"	""	"megatec"
 
 "ActivePower"	"400VA"	""	"megatec"
 "ActivePower"	"1400VA"	""	"megatec"
@@ -97,6 +98,7 @@
 "Best Power"	"Fortress/Ferrups"	"f-command support"	"bestfcom"
 
 "Centralion"	"Blazer"		""	"megatec"
+"Centralion"	"Micro Master"		""	"megatec"
 
 "Chloride"	"Desk Power 650"	"serial port"	"megatec"
 
@@ -242,12 +244,14 @@
 "Infosec"	"iPEL 500"	""	"megatec"
 "Infosec"	"iPEL 750"	""	"megatec"
 "Infosec"	"iPEL 1000"	""	"megatec"
+"Infosec"	"500XP"	""	"megatec"
 "Infosec"	"XP 500"	"USB"	"megatec_usb"
 "Infosec"	"XP 1000"	""	"megatec"
 
 "IPMI"	""	""		"powerman-pdu (experimental)"
 
 "Ippon"		"(various)"		""	"megatec"
+"Ippon"		"Back Power Pro"	""	"megatec"
 "Ippon"		"Back Power Pro 700"	"USB"	"megatec_usb"
 
 "Jageson Technology"	"Jasuny USPS"	""	"genericups upstype=4"
@@ -453,8 +457,6 @@
 "Microsol"	"Rhino 10.0"	"10000VA"	"rhino"
 "Microsol"	"Rhino 20.0"	"20000VA"	"rhino"
 
-"Mustek"	"Various"	""	"megatec"
-
 "Mustek"	"Powermust"	"400VA Plus"	"megatec"
 "Mustek"	"Powermust"	"600VA Plus"	"megatec"
 "Mustek"	"Powermust"	"800VA Pro"	"megatec"
@@ -462,6 +464,9 @@
 "Mustek"	"Powermust"	"1400VA Plus"	"megatec"
 "Mustek"	"Powermust"	"2000VA USB"	"megatec"
 "Mustek"	"Powermust Office 650"	"USB"	"megatec_usb"
+"Mustek"	"Various"	""	"megatec"
+
+"Neus"	"400va / 600va"	""	"megatec"
 
 "Nitram"	"Elite 500"	""	"genericups upstype=8"
 "Nitram"	"Elite 2002"	""	"genericups upstype=16"
@@ -494,6 +499,8 @@
 
 "Orvaldi Power Protection"	"various"	"not 400 or 600"	"megatec"
 
+"Phasak"	"400VA / 600VA"	""	"megatec"
+
 "Plexus"	"500VA"		"USB"	"megatec_usb ignoreoff"
 "Plexus"	"1000VA Pro"	"USB"	"megatec_usb ignoreoff"
 
@@ -510,6 +517,7 @@
 "PowerGuard"	"PG-600"	""	"megatec"
 
 "PowerKinetics"	"9001"		""	"genericups upstype=17"
+"PowerKinetics"	"BlackOut Buster"		""	"megatec"
 
 "PowerMan"	"RealSmart 800"	""	"megatec"
 "PowerMan"	"RealSmart 1000"	""	"megatec"
@@ -615,6 +623,7 @@
 
 "UNITEK"	"ALPHA 500 IC"		""	"megatec dtr=0 rts=1"
 "UNITEK"	"Alpha 1000is"		""	"megatec"
+"UNITEK"	"Alpha 500"		""	"megatec"
 "UNITEK"	"Alpha 500 ipE"		""	"megatec"
 "UNITEK"	"Alpha 2600"		""	"megatec"
 "UNITEK"	"Alpha 1200Sx"		"USB"	"megatec_usb"
@@ -637,6 +646,8 @@
 "Victron/IMV"	"Lite"		"crack cable"	"genericups upstype=10"
 
 "Viewsonic"	"PowerES"	"420E"	"optiups"
+
+"WinPower"	"CPM-800"	""	"megatec"
 
 "WTI"	"RPS-10"	"10 outlets"	"powerman-pdu (experimental)"
 "WTI"	"NPS"	"8 outlets"	"powerman-pdu (experimental)"
