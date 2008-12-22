@@ -41,7 +41,7 @@
 #include "serial.h"
 #include "safenet.h"
 
-#define DRIVER_NAME		"Generic SafeNet UPS driver"
+#define DRIVER_NAME	"Generic SafeNet UPS driver"
 #define DRIVER_VERSION	"1.51"
 
 /* driver description structure */
@@ -87,7 +87,7 @@ static int safenet_command(const char *command)
 		return -1;
 	}
 
-	upsdebugx(3, "send: %s", command);
+	upsdebugx(3, "send: %.*s", strcspn(command, "\r"), command);
 
 	/*
 	 * Read the reply from the UPS.
@@ -104,8 +104,8 @@ static int safenet_command(const char *command)
 		return -1;
 	}
 
-	upsdebugx(3, "read: %s", reply);
-	
+	upsdebugx(3, "read: %.*s", strcspn(reply, "\r"), reply);
+
 	/*
 	 * We check if the reply looks like a valid status.
 	 */
