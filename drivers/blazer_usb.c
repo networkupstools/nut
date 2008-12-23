@@ -137,7 +137,7 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 		for (retry = 0; retry < 10; retry++) {
 			int	res;
 
-			ret = usb_get_string_simple(udev, command[i].index, buf, buflen);
+			res = usb_get_string_simple(udev, command[i].index, buf, buflen);
 
 			if (res < 0) {
 				upsdebug_with_errno(3, "read");
