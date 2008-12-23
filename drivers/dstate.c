@@ -792,7 +792,7 @@ int dstate_is_stale(void)
 /* clean out the temp space for a new pass */
 void status_init(void)
 {
-	memset(&status_buf, '\0', sizeof(status_buf));
+	memset(status_buf, 0, sizeof(status_buf));
 }
 
 /* add a status element */
@@ -820,7 +820,7 @@ void status_commit(void)
 
 void alarm_init(void)
 {
-	memset(&alarm_buf, '\0', sizeof(alarm_buf));
+	memset(alarm_buf, 0, sizeof(alarm_buf));
 }
 
 void alarm_set(const char *buf)
