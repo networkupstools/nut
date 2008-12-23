@@ -23,6 +23,7 @@
 #include "nut_stdint.h"	/* for uint16_t */
 
 #include <regex.h>
+#include <usb.h>
 
 /*!
  * USBDevice_t: Describe a USB device. This structure contains exactly

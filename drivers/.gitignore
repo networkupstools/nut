@@ -59,8 +59,7 @@ upsdrvctl
 victronups
 usbhid-ups
 hald-addon-megatec_usb
-
-
 powerman-pdu
 blazer_ser
 blazer_usb
+richcomm_usb

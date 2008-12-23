@@ -42,7 +42,7 @@ SERIAL_DRIVERLIST = al175 apcsmart bcmxcp belkin belkinunv bestfcom	\
  blazer_ser
 SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb megatec_usb \
- blazer_usb
+ blazer_usb richcomm_usb
 USB_HIDDEV_DRIVERLIST = energizerups
 USB_DRIVERLIST = $(USB_LIBUSB_DRIVERLIST) $(USB_HIDDEV_DRIVERLIST)
 HAL_DRIVERLIST = hald-addon-usbhid-ups hald-addon-bcmxcp_usb \
@@ -173,6 +173,9 @@ megatec_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 
 blazer_usb_SOURCES = blazer.c blazer_usb.c libusb.c usb-common.c
 blazer_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
+
+richcomm_usb_SOURCES = richcomm_usb.c usb-common.c
+richcomm_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 
 # broken - to be removed
 energizerups_SOURCES = energizerups.c

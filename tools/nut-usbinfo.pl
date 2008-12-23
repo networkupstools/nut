@@ -208,6 +208,9 @@ sub find_usbdevs
 			elsif ($nameFile eq "blazer_usb.c") {
 				$driver="blazer_usb";
 			}
+			elsif ($nameFile eq "richcomm_usb.c") {
+				$driver="richcomm_usb";
+			}
 			else {
 				die "Unknown driver type: $nameFile";
 			}
