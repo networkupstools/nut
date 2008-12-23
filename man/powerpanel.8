@@ -1,6 +1,6 @@
-.TH POWERPANEL 8 "Sat Mar 8 2008" "" "Network UPS Tools (NUT)"
+.TH POWERPANEL 8 "Tue Dec 23 2008" "" "Network UPS Tools (NUT)"
 .SH NAME
-powerpanel \- Driver for PowerPanel Plus compatible UPS equipment
+powerpanel \(hy Driver for PowerPanel Plus compatible UPS equipment
 .SH NOTE
 This man page only documents the hardware\(hyspecific features of the
 powerpanel driver.  For information about the core driver, see
@@ -27,6 +27,16 @@ Like manufacturer above.
 .IP "serial=\fIvalue\fR"
 Like manufacturer above.
 
+.IP "ondelay=\fIvalue\fR"
+Time to wait before switching on the UPS (1 - 9999 minutes, 0 indefinite).
+Only available with the text protocol driver (see \fBSUPPORT STATUS\fR).
+
+.IP "offdelay=\fIvalue\fR"
+Time to wait before shutting down the UPS (6 - 600 seconds). Values below 60
+seconds will be truncated to 6 seconds intervals, values above 60 seconds to
+60 seconds intervals. Only available with the text protocol driver (see
+\fBSUPPORT STATUS\fR).
+
 .SH VARIABLES
 Depending on the type of your UPS unit, some of the following variables may
 be changed. If the driver can't read a variable from the UPS, it will not be
@@ -52,23 +62,42 @@ writable: allow cold start from battery
 Depending on the type of your UPS unit, some of the following commands may
 be available.
 .TP 12
-.B test.failure.start, test.failure.stop
-start/stop 20 second battery test.
+.B test.battery.start.quick, test.battery.stop
 .TP
 .B beeper.enable, beeper.disable, beeper.toggle
-enable, disable or toggle the panel beeper.
 .TP
-.B shutdown.reboot
-shut down load immediately for ca. 1\(hy2 minutes.
-.TP
-.B shutdown.return
-shut down load immediately and stay off until the mains power returns.
+.B shutdown.return, shutdown.reboot, shutdown.stayoff
+On many devices, these commands are unreliable, so before using them you
+must verify that these work as expected (see \fBSHUTDOWN ISSUES\fR).
 .TP
 .B shutdown.stop
-cancel pending shutdown.
 .PD
 
-.SH KNOWN ISSUES
+.SH SUPPORT STATUS
+Vendor support is absent for this driver, so if you need some features that
+are currently not available, provide ample documentation on what the driver
+should sent to the UPS in order to make this work. If more information
+would be available on the binary protocol, it would probably be possible to
+make ondelay and offdelay configurable. So far, nobody has taken the time
+to investigate what we should tell the UPS to make this work and CyberPower
+isn't willing to share this with us.
+
+.SH SHUTDOWN ISSUES
+The the \fBshutdown.return\fR command on your UPS doesn't seem to work,
+chances are that your UPS is of an older model. Try a couple of different
+settings for \fIoffdelay\fR. If no value in the range 6..600 works, your
+UPS likely doesn't support this. In order to get the expected behaviour,
+it requires \fBshutdown.stayoff\fR (when on battery) and \fBshutdown.reboot\fR
+(when on mains). The driver will automatically fallback to these commands if
+\fBshutdown.return\fR fails and tries to detect which one should be used when
+called with the '\(hyk' option (or through \fBupsdrvctl shutdown\fR).
+
+This isn't bullet proof however and you should be prepared that the
+power will either not be shutdown or that it doesn't return when the
+power comes back. All models supported by the binary protocol and many
+supported through the text protocol are affected by this.
+
+.SH KNOWN PROBLEMS
 The CyberPower OP series don't offer direct voltage, charge, frequency
 and temperature readings. Instead, they will return a binary value
 that needs conversion to the actual value.
@@ -78,11 +107,10 @@ hence an estimation was made based om readings from actual devices.
 This may (probably will) be off, possibly a lot. Unless you can tell
 us the exact mapping between values from the UPS and actual readings,
 don't bother to complain. We've done the best we can based on the
-limited information available.
+limited information available. Remember, a UPS isn't a measuring
+instrument.
 
-Remember, a UPS isn't a measuring instrument.
-
-.SH AUTHOR
+.SH AUTHORS
 Arjen de Korte <arjen@de\(hykorte.org>, Doug Reynolds <mav@wastegate.net>
 
 .SH SEE ALSO

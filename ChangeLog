@@ -1,3 +1,16 @@
+Tue Dec 23 14:53:05 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ * drivers/powerpanel: functionality added/changed
+   - text mode driver supports setting 'ondelay' and 'offdelay' (to allow
+     delayed shutdown and start)
+   - upsdrv_shutdown() function falls back from 'shutdown.return' to
+     'shutdown.stayoff' and 'shutdown.reboot' (depending on line state)
+     which is needed for older text mode protocol units that can't do this
+     by themselves
+   - renamed 'test.failure.start' and 'test.failure.stop' to
+     'test.battery.start.quick' and 'test.battery.stop' respectively
+  * man/powerpanel.8: manual page updated to reflect the above changes
+
 Mon Dec 22 21:23:23 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  - data/driver.list: complete compatibility information from OpenUPSmart
