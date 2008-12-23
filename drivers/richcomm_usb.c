@@ -406,8 +406,12 @@ void upsdrv_cleanup(void)
 
 void upsdrv_initinfo(void)
 {
-	dstate_setinfo("ups.mfr", "Richcomm dry-contact to USB solution");
-	dstate_setinfo("ups.model", "unknown");
+	dstate_setinfo("ups.mfr", "%s", "Richcomm dry-contact to USB solution");
+	dstate_setinfo("ups.model", "%s", usbdevice.Product ? usbdevice.Product : "unknown");
+	dstate_setinfo("ups.serial", "%s", usbdevice.Serial ? usbdevice.Serial : "unknown");
+
+	dstate_setinfo("ups.vendorid", "%04x", usbdevice.VendorID);
+	dstate_setinfo("ups.productid", "%04x", usbdevice.ProductID);
 }
 
 void upsdrv_updateinfo(void)
