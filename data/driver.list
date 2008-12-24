@@ -181,8 +181,6 @@
 "Effekta"	"MI/MT/MH"	"2502 cable"	"megatec"
 "Effekta"	"RM2000MH"	""	"megatec"
 
-"Eltek"		"any with AL175 alarm module"	""	"al175"
-
 "Energizer"	"(various)"	"USB"		"energizerups (experimental USB driver for Linux)"
 
 "Energy Sistem"	"(various)"	""	"megatec"

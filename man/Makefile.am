@@ -20,7 +20,6 @@ CGI_PAGES = hosts.conf.5 upsset.conf.5 upsstats.html.5	\
  upsset.cgi.8 upsstats.cgi.8 upsimage.cgi.8
 
 SERIAL_PAGES = \
-	al175.8		\
 	apcsmart.8	\
 	bcmxcp.8 	\
 	belkin.8 	\

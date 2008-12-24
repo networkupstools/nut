@@ -1,3 +1,10 @@
+Wed Dec 24 12:15:53 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ * final removal of the al175 driver:
+   - drivers/al175.c, man/al175.8, docs/al175-vars.txt: removed
+   - MAINTAINERS, data/driver.list, docs/Makefile.am, drivers/Makefile.am,
+     man/Makefile.am, man/nutupsdrv.8: updated
+
 Wed Dec 24 11:26:32 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - conf/nut.conf.sample: add a generic NUT configuration file, to standardize

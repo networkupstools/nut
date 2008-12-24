@@ -34,7 +34,7 @@ if WITH_LIBPOWERMAN
   AM_CFLAGS += $(LIBPOWERMAN_CFLAGS)
 endif
 
-SERIAL_DRIVERLIST = al175 apcsmart bcmxcp belkin belkinunv bestfcom	\
+SERIAL_DRIVERLIST = apcsmart bcmxcp belkin belkinunv bestfcom	\
  bestuferrups bestups cyberpower dummy-ups etapro everups 	\
  gamatronic genericups isbmex liebert masterguard megatec metasys 	\
  mge-shut mge-utalk newmge-shut oneac optiups powercom rhino 	\
@@ -96,7 +96,6 @@ upsdrvctl_SOURCES = upsdrvctl.c
 upsdrvctl_LDADD = $(LDADD_COMMON)
 
 # serial drivers: all of them use standard LDADD and CFLAGS
-al175_SOURCES = al175.c
 apcsmart_SOURCES = apcsmart.c
 bcmxcp_SOURCES = bcmxcp.c bcmxcp_ser.c
 belkin_SOURCES = belkin.c
