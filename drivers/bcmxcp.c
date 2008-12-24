@@ -118,7 +118,7 @@ TODO List:
 #include "bcmxcp.h"
 
 #define DRIVER_NAME	"BCMXCP UPS driver"
-#define DRIVER_VERSION	"0.17"
+#define DRIVER_VERSION	"0.18"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -129,7 +129,7 @@ upsdrv_info_t upsdrv_info = {
 	"Tore Ørpetveit <tore@orpetveit.net>\n" \
 	"Wolfgang Ocker <weo@weo1.de>\n" \
 	"Oliver Wilcock",
-	DRV_EXPERIMENTAL, /* FIXME: move to BETA?! */
+	DRV_STABLE,
 	{ &comm_upsdrv_info, NULL }
 };
 

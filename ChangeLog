@@ -1,3 +1,8 @@
+Wed Dec 24 13:47:21 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - drivers/bcmxcp.c: remove the experimental tag, to the profit of stable, as
+   per the maintainer comment (Kjell Claesson), and bump the driver release. 
+ 
 Wed Dec 24 13:26:31 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - man/powerman-pdu.8: add a configuration example to illustrate the use of
