@@ -43,8 +43,7 @@ SERIAL_DRIVERLIST = apcsmart bcmxcp belkin belkinunv bestfcom	\
 SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb megatec_usb \
  blazer_usb richcomm_usb
-USB_HIDDEV_DRIVERLIST = energizerups
-USB_DRIVERLIST = $(USB_LIBUSB_DRIVERLIST) $(USB_HIDDEV_DRIVERLIST)
+USB_DRIVERLIST = $(USB_LIBUSB_DRIVERLIST)
 HAL_DRIVERLIST = hald-addon-usbhid-ups hald-addon-bcmxcp_usb \
  hald-addon-tripplite_usb hald-addon-megatec_usb
 NEONXML_DRIVERLIST = netxml-ups
@@ -66,9 +65,6 @@ endif
 if WITH_USB
 if HAVE_LIBUSB
    driverexec_PROGRAMS += $(USB_LIBUSB_DRIVERLIST)
-endif
-if HAVE_HIDDEV
-   driverexec_PROGRAMS += $(USB_HIDDEV_DRIVERLIST)
 endif
 endif
 if WITH_HAL
@@ -175,10 +171,6 @@ blazer_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 
 richcomm_usb_SOURCES = richcomm_usb.c usb-common.c
 richcomm_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
-
-# broken - to be removed
-energizerups_SOURCES = energizerups.c
-energizerups_LDADD = $(LDADD_DRIVERS)
 
 # HID-over-serial
 newmge_shut_SOURCES = usbhid-ups.c libshut.c libhid.c hidparser.c mge-hid.c

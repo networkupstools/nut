@@ -287,13 +287,6 @@ Contents:
 6. Things the compiler might need to find:
 ==========================================
 
- --with-linux-hiddev=FILE
-
-   Sets the location of the hiddev.h for USB UPS support on Linux. 
-   This defaults to /usr/include/linux/hiddev.h, and is only used when
-   building the experimental "energizerups" driver.  If your kernel
-   header files live somewhere else, you will need to use this.
-
  --with-gd-includes="-I/foo/bar"
 
    If you installed gd in some place where your C preprocessor can't

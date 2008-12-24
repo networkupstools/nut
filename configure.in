@@ -212,16 +212,6 @@ AC_CHECK_LIB(usb, usb_detach_kernel_driver_np, [
     [Define to 1 if libusb supports `usb_detach_kernel_driver_np' function.])
 ], [], [${LIBUSB_LDFLAGS}])
 
-dnl Check for Linux hiddev
-dnl the actual check is done in a macro, see m4/nut_check_hiddev.m4
-NUT_CHECK_HIDDEV
-if test -n "${nut_linux_hiddev}"; then
-   AC_DEFINE_UNQUOTED(LINUX_HIDDEV, "${nut_linux_hiddev}", [Complete path for Linux hiddev.h])
-   nut_have_hiddev=yes
-else
-   nut_have_hiddev=no
-fi
-
 dnl Solaris 10/11 USB handling (need librt and libusb runtime path)
 case ${target_os} in
    solaris2.1* )
@@ -377,28 +367,21 @@ NUT_REPORT_FEATURE([build SNMP drivers], [${nut_with_snmp}])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-usb
+dnl FIXME: to be simplified since we now only rely on libusb (no more hiddev!)
 
 dnl ${nut_with_usb}: any value except "yes" or "no" is treated as "auto". 
 
 dnl If user requested USB drivers, insist on building all of them
 if test "${nut_with_usb}" = "yes"; then
-   if test "${nut_have_libusb}" != "yes" -a "${nut_have_hiddev}" != "yes"; then
-      AC_MSG_ERROR([USB drivers requested but neither libusb nor hiddev.h found])
-   elif test "${nut_have_libusb}" != "yes"; then
-      AC_MSG_ERROR([USB drivers requested, but libusb not found. Use --with-usb=auto to build only available drivers.])
-   elif test "${nut_have_hiddev}" != "yes"; then
-      AC_MSG_ERROR([USB drivers requested, but hiddev not found. Use --with-usb=auto to build only available drivers.])
+   if test "${nut_have_libusb}" != "yes"; then
+      AC_MSG_ERROR([USB drivers requested, but libusb not found.])
    fi
 fi
 
 if test "${nut_with_usb}" != "no"; then
    nut_with_usb="yes"
-   if test "${nut_have_libusb}" = "yes" -a "${nut_have_hiddev}" = "yes"; then
-      nut_usb_msg="yes"
-   elif test "${nut_have_libusb}" = "yes"; then
+   if test "${nut_have_libusb}" = "yes"; then
       nut_usb_msg="libusb-based drivers only"
-   elif test "${nut_have_hiddev}" = "yes"; then
-      nut_usb_msg="hiddev-based drivers only"
    else
       nut_usb_msg="no"
       nut_with_usb="no"
@@ -409,7 +392,6 @@ fi
 
 AM_CONDITIONAL(WITH_USB, test "${nut_with_usb}" = "yes")
 AM_CONDITIONAL(HAVE_LIBUSB, test "${nut_have_libusb}" = "yes")
-AM_CONDITIONAL(HAVE_HIDDEV, test "${nut_have_hiddev}" = "yes")
 
 NUT_REPORT_FEATURE([build USB drivers], [${nut_usb_msg}])
 
@@ -843,7 +825,6 @@ AC_SUBST(STATEPATH)
 AC_SUBST(CONFPATH)
 AC_SUBST(RUN_AS_USER)
 AC_SUBST(RUN_AS_GROUP)
-AC_SUBST(LINUX_HIDDEV)
 AC_SUBST(SUN_LIBUSB)
 AC_SUBST(WORDS_BIGENDIAN)
 AC_SUBST(cgiexecdir)

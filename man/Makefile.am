@@ -56,7 +56,6 @@ SERIAL_PAGES = \
 SNMP_PAGES = snmp-ups.8
 
 USB_LIBUSB_PAGES = usbhid-ups.8 bcmxcp_usb.8 tripplite_usb.8 megatec_usb.8
-USB_HIDDEV_PAGES = energizerups.8
 NETXML_PAGES = netxml-ups.8
 POWERMAN_PAGES = powerman-pdu.8
 
@@ -83,9 +82,6 @@ if WITH_USB
 if HAVE_LIBUSB
    man_MANS += $(USB_LIBUSB_PAGES)
 endif
-if HAVE_HIDDEV
-   man_MANS += $(USB_HIDDEV_PAGES)
-endif
 endif
 if WITH_NEONXML
    man_MANS += $(NETXML_PAGES)
@@ -98,5 +94,4 @@ endif
 # distribute everything, even that which is not installed by default
 EXTRA_DIST = $(LIB_PAGES) $(CONF_PAGES) $(CLIENT_PAGES)		\
  $(CGI_PAGES) $(SERIAL_PAGES) $(SNMP_PAGES) $(USB_LIBUSB_PAGES)	\
- $(USB_HIDDEV_PAGES) $(NETXML_PAGES) $(POWERMAN_PAGES) \
- libupsclient-config.1 skel.8
+ $(NETXML_PAGES) $(POWERMAN_PAGES) libupsclient-config.1 skel.8
