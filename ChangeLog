@@ -1,3 +1,7 @@
+Fri Dec 19 12:02:34 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - mge-hid.c: add Protection Station, and the master/slave mode.
+
 Tue Dec 23 21:01:12 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/richcomm_usb: rewritten driver formerly known as lakeview_usb

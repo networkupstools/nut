@@ -160,6 +160,13 @@ static info_lkp_t mge_emergency_stop[] = {
 	{ 0, NULL, NULL }
 };
 
+/* FIXME: limit to ups.model ~= Protection Station... */
+static info_lkp_t pegasus_threshold_info[] = {
+	{ 10, "10", NULL },
+	{ 25, "25", NULL },
+	{ 60, "60", NULL },
+	{ 0, NULL, NULL }
+};
 
 /* --------------------------------------------------------------- */
 /*      Vendor-specific usage table */
@@ -334,6 +341,11 @@ static models_name_t mge_model_names [] =
 	{ "PROTECTIONCENTER", "420", MGE_DEFAULT, "Protection Center 420" },
 	{ "PROTECTIONCENTER", "500", MGE_DEFAULT, "Protection Center 500" },
 	{ "PROTECTIONCENTER", "675", MGE_DEFAULT, "Protection Center 675" },
+
+	/* Protection Station */
+	{ "Protection Station", "500", MGE_DEFAULT, "Protection Station 500" },
+	{ "Protection Station", "650", MGE_DEFAULT, "Protection Station 650" },
+	{ "Protection Station", "800", MGE_DEFAULT, "Protection Station 800" },
 
 	/* Evolution models */
 	{ "Evolution", "500", MGE_DEFAULT, "Pulsar Evolution 500" },
@@ -558,6 +570,10 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.id", 0, 0, "UPS.OutletSystem.Outlet.[1].OutletID", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 	{ "outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[1].OutletID", NULL, "Main Outlet", HU_FLAG_ABSENT, NULL },
 	{ "outlet.switchable", 0, 0, "UPS.OutletSystem.Outlet.[1].PresentStatus.Switchable", NULL, "%s", HU_FLAG_STATIC, yes_no_info },
+	/* The line below is the power consumption threshold on the master outlet
+	 * used as criteria to manage the slave outlets. Values: 10, 25 or 60 VA.
+	 * The default value is 25. */
+	{ "outlet.power", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet.[1].ConfigApparentPower", NULL, "%s", HU_FLAG_SEMI_STATIC, NULL },
 	{ "outlet.1.id", 0, 0, "UPS.OutletSystem.Outlet.[2].OutletID", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 	{ "outlet.1.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[2].OutletID", NULL, "PowerShare Outlet 1", HU_FLAG_ABSENT, NULL },
 	{ "outlet.1.switchable", 0, 0, "UPS.OutletSystem.Outlet.[2].PresentStatus.Switchable", NULL, "%s", HU_FLAG_STATIC, yes_no_info },
@@ -569,7 +585,8 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.1.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[2].StartupTimer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "outlet.2.id", 0, 0, "UPS.OutletSystem.Outlet.[3].OutletID", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 	{ "outlet.2.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[3].OutletID", NULL, "PowerShare Outlet 2", HU_FLAG_ABSENT, NULL },
-	{ "outlet.2.switchable", 0, 0, "UPS.OutletSystem.Outlet.[3].PresentStatus.Switchable", NULL, "%s", HU_FLAG_STATIC, yes_no_info },
+	/* needed for Pegasus to enable master/slave mode */
+	{ "outlet.2.switchable", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet.[3].PresentStatus.Switchable", NULL, "%s", HU_FLAG_STATIC, yes_no_info },
 	{ "outlet.2.status", 0, 0, "UPS.OutletSystem.Outlet.[3].PresentStatus.SwitchOn/Off", NULL, "%s", 0, on_off_info },
 	{ "outlet.2.autoswitch.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet.[3].RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "outlet.2.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[3].ShutdownTimer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
@@ -613,11 +630,11 @@ static const char *get_model_name(const char *iProduct, const char *iModel)
 	for (model = mge_model_names; model->iProduct; model++) {
 		upsdebugx(2, "comparing with: %s", model->name);
 
-		if (strncmp(iProduct, model->iProduct, strlen(model->iProduct))) {
+		if (strcmp(iProduct, model->iProduct)) {
 			continue;
 		}
 
-		if (strncmp(iModel, model->iModel, strlen(model->iModel))) {
+		if (strcmp(iModel, model->iModel)) {
 			continue;
 		}
 
