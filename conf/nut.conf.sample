@@ -1,0 +1,27 @@
+# Network UPS Tools: example nut.conf
+#
+##############################################################################
+# General section
+##############################################################################
+# The MODE determines which part of the NUT is to be started, and which
+# configuration files must be modified.
+#
+# This file try to standardize the various files being found in the field, like
+# /etc/default/nut on Debian based systems, /etc/sysconfig/nut on RedHat based
+# systems, ... Distribution's init script should source this file to see which
+# component(s) has to be started.
+#
+# The values of MODE can be:
+# - none: NUT is not configured, or use the Integrated Power Management, or use
+#   some external system to startup NUT components. So nothing is to be started.
+# - standalone: This mode address a local only configuration, with 1 UPS 
+#   protecting the local system. This implies to start the 3 NUT layers (driver,
+#   upsd and upsmon) and the matching configuration files. This mode can also
+#   address UPS redundancy.
+# - netserver: same as for the standalone configuration, but also need
+#   some more ACLs and possibly a specific LISTEN directive in upsd.conf.
+#   Since this MODE is opened to the network, a special care should be applied
+#   to security concerns.
+# - netclient: this mode only requires upsmon.
+
+MODE = none
