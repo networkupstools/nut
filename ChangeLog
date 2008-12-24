@@ -1,3 +1,8 @@
+Wed Dec 24 13:26:31 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - man/powerman-pdu.8: add a configuration example to illustrate the use of
+   the "port" in ups.conf
+
 Wed Dec 24 13:12:42 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
 - clients/upsclient.h: remove the backward compatibility for client application,

@@ -1,4 +1,4 @@
-.TH powerman\-pdu 8 "Wed Nov 26 2008" "" "Network UPS Tools (NUT)"
+.TH powerman\-pdu 8 "Wed Dec 24 2008" "" "Network UPS Tools (NUT)"
 .SH NAME
 powerman-pdu \- Driver for Powerman PDU
 .SH NOTE
@@ -31,6 +31,18 @@ power off the outlet.
 .B outlet.X.load.cycle
 cycle the outlet (power off then power on, possibly with a delay).
 .PD
+
+.SH IMPLEMENTATION
+The hostname of the Powerman server is specified using the "port" value in
+\fBups.conf\fR, i.e.:
+
+.nf
+	[pdu]
+		driver = powerman\-pdu
+		port = host.example.com:port
+.fi
+
+The port used to reach powermand is optional if the default port is used.
 
 .SH KNOWN ISSUES
 ups.status is still exposed, with the value "WAIT". Some other values from the
