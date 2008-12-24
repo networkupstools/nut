@@ -14,6 +14,8 @@ Changes from 2.2.2 to 2.4.0:
    these were tagged broken for a long time.
  - Developers of external client application using libupsclient must rename
    their "UPSCONN" client structure to "UPSCONN_t".
+ - The upsd server will now disconnect clients that remain silent for more than
+   60 seconds.
 
 ---------------------------------------------------------------------------
 Changes from 2.2.1 to 2.2.2:
