@@ -23,13 +23,13 @@
 #include "libpowerman.h"
 
 #define DRIVER_NAME	"Powerman PDU client driver"
-#define DRIVER_VERSION	"0.1"
+#define DRIVER_VERSION	"0.11"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
 	DRIVER_VERSION,
-	"Arnaud Quette <aquette.dev@gmail.com>"
+	"Arnaud Quette <aquette.dev@gmail.com>",
 	DRV_EXPERIMENTAL,
 	{ NULL }
 };
@@ -114,7 +114,7 @@ void upsdrv_initinfo(void)
 
 	/* try to detect the PDU here - call fatal_with_errno(EXIT_FAILURE, ) if it fails */
 
-	dstate_setinf	/* FIXME: can we report something useful? */
+	/* FIXME: can we report something useful? */
 	dstate_setinfo("ups.mfr", "Powerman");
 	dstate_setinfo("device.mfr", "Powerman");
 	dstate_setinfo("ups.model", "unknown PDU");
@@ -171,7 +171,7 @@ void upsdrv_initups(void)
 	pm_err_t rv = PM_ESUCCESS;
 
 	/* Connect to the PowerMan daemon */
-	if ((rv = pm_connect(device_path, NULL, &pm)) != PM_ESUCCESS) {
+	if ((rv = pm_connect(device_path, NULL, &pm, 0)) != PM_ESUCCESS) {
 		fatalx(EXIT_FAILURE, "Can't connect to %s: %s\n", device_path,
 			pm_strerror(rv, ebuf, sizeof(ebuf)));
 	}
@@ -197,7 +197,7 @@ static int reconnect_ups(void)
 	pm_disconnect(pm);
 
 	/* Connect to the PowerMan daemon */
-	if ((rv = pm_connect(device_path, NULL, &pm)) != PM_ESUCCESS)
+	if ((rv = pm_connect(device_path, NULL, &pm, 0)) != PM_ESUCCESS)
 		return 0;
 	else {
 		upsdebugx(4, "connexion restored with Powerman");

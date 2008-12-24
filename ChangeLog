@@ -1,3 +1,8 @@
+Wed Dec 24 11:08:21 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - drivers/powerman-pdu.c: minor adjustment following the last API change
+ - man/powerman-pdu.8: minor completion
+
 Fri Dec 19 12:02:34 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - mge-hid.c: add Protection Station, and the master/slave mode.
