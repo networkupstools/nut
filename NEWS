@@ -1,6 +1,51 @@
 If you're upgrading from an earlier version, see the UPGRADING file.
 
 ---------------------------------------------------------------------------
+Release notes for NUT 2.4.0 - what's new since 2.2.2:
+
+ - preliminary support for Power Distribution Units (PDUs): NUT now support
+   PDUs, either natively (ie using NUT snmp-ups driver), or through a binding to
+   the Powerman daemon. The list of supported PDUs is already quite long,
+   including: Eaton ePDUs (Managed and Monitored), some Aphel models, some
+   Raritan PDUs, and the whole list of Powerman supported devices:
+   http://powerman.sourceforge.net/supported.html
+ 
+ - support for new devices: the various PDUs cited above, Centralion Micro
+   Master, Chloride Desk Power 650, Cyber Power Systems Value 400E/600E/800E
+   (USB models), Delta GES602N, the whole Eaton ranges (mostly composed of
+   MGE Office Protection Systems and Powerware units), Forza Power Technologies
+   SL-1001, HP PowerTrust 2997A, HP R/T 2200 G2, Infosec XP 1000 and XP 500,
+   Ippon Back Power Pro (serial and USB), Kebo 1200D/D Series, Liebert PowerSure
+   Personal XT, MGE Office Protection Systems Protection Station, Neus 400va and
+   600va, Phasak 400VA and 600VA, Plexus 500VA, Powercom Black Knight PRO / King
+   PRO and Imperial, PowerKinetics BlackOut Buster, UNITEK Alpha 500, WinPower
+   CPM-800.
+
+ - the dummy-ups driver now support a "repeater" mode. This allows it to act as
+   a NUT client, and to forward data. This can be useful for supervision and
+   load sharing purposes.
+
+ - tcp-wrappers support has been added to the upsd server, to grant users access
+   by source IP for commands that require to be logged into the server. This
+   replaces the previous internal implementation.
+
+ - the nut.conf file has been introduced to standardize startup configuration
+   across the various systems.
+
+ - many internal changes to improve maintenability, while lowering the
+   maintenance cost (thus allowing developers to focus on what matters: the
+   code!). Examples of this are:
+   - the USB information automatic extraction to generate the various USB helper
+     files,
+   - the upsdrv_info_t structure to track more driver information, and remove
+     the need for the upsdrv_banner() function
+   - common USB code refactoring, as it is done for the serial functions.
+
+ - tons of bugfixes, cleanup and improvements to make NUT stronger than ever!
+
+ For a complete list of changes, please refer to the ChangeLog file.
+
+---------------------------------------------------------------------------
 Release notes for NUT 2.2.2 - what's new since 2.2.1:
 
  - support for new devices: APC BACK-UPS XS LCD, Atlantis Land,

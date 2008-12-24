@@ -3,6 +3,19 @@ of this software.  When upgrading from an older version, be sure to
 check this file to see if you need to make changes to your system.
 
 ---------------------------------------------------------------------------
+Changes from 2.2.2 to 2.4.0:
+
+ - The nut.conf file has been introduced to standardize startup configuration
+   across the various systems.
+ - The cpsups and nitram drivers have been replaced by the powerpanel driver,
+   and removed from the tree. The cyberpower driver may suffer the same in the
+   future.
+ - The al175 and energizerups drivers have been removed from the tree, since
+   these were tagged broken for a long time.
+ - Developers of external client application using libupsclient must rename
+   their "UPSCONN" client structure to "UPSCONN_t".
+
+---------------------------------------------------------------------------
 Changes from 2.2.1 to 2.2.2:
 
  - The configure option "--with-lib" has been replaced by "--with-dev".

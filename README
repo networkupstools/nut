@@ -15,7 +15,7 @@ Description
 ===========
 
 Network UPS Tools is a collection of programs which provide a common
-interface for monitoring and administering UPS hardware.  NUT comes in
+interface for monitoring and administering UPS and PDU hardware.  NUT comes in
 two flavors: the "classic" and the "HAL enabled" one.
 
 The "classic" flavor
@@ -25,17 +25,18 @@ It is the standard installation that uses a layered approach to connect
 all of the NUT parts.
 
 Drivers are provided for a wide assortment of equipment.  They
-understand the specific language of each UPS and map it back to a
+understand the specific language of each device and map it back to a
 compatibility layer.  This means both an expensive "smart" protocol UPS
 and a simple "power strip" model can be handled transparently.
 
 This information is cached by the network server ``upsd``, which then
 answers queries from the clients.  upsd contains a number of access
 control features to limit the abilities of the clients.  Only authorized
-hosts may monitor or control your UPS hardware if you wish.  Since the
+hosts may monitor or control your hardware if you wish.  Since the
 notion of monitoring over the network is built into the software, you
 can hang many systems off one large UPS and they will all shut down
-together.
+together. You can also use NUT to power on, off or cycle your data centers
+nodes, individually or globally through PDUs outlets.
 
 Clients such as upsmon check on the status of the hardware and do things
 when necessary.  The most important task is shutting down the operating
@@ -48,9 +49,9 @@ The "HAL enabled" flavor
 
 This one is intended for use:
 
-- with supported USB devices,
+- with supported USB UPS,
 - on HAL enabled systems (Linux, FreeBSD, Sun Solaris),
-- on HAL enabled desktops (Gnome and KDE) 
+- on HAL enabled desktops (Gnome and possibly KDE) 
 
 Using this approach, you don't have to configure NUT files, nor to
 manually start components, nor to install a specific NUT client.

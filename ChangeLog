@@ -1,3 +1,7 @@
+Wed Dec 24 14:13:52 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - NEWS, README, UPGRADING: first update round for 2.4.0.
+ 
 Wed Dec 24 13:47:21 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - drivers/bcmxcp.c: remove the experimental tag, to the profit of stable, as
