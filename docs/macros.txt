@@ -14,10 +14,12 @@ directory.
 
  - Macro: NUT_CHECK_LIBGD
  - Macro: NUT_CHECK_LIBHAL
+ - Macro: NUT_CHECK_LIBNEON
  - Macro: NUT_CHECK_LIBNETSNMP
  - Macro: NUT_CHECK_LIBPOWERMAN
  - Macro: NUT_CHECK_LIBSSL
  - Macro: NUT_CHECK_LIBUSB
+ - Macro: NUT_CHECK_LIBWRAP
    Determine the compiler flags for the corresponding library. On
    success, set nut_have_libxxx="yes" and set LIBXXX_CFLAGS and
    LIBXXX_LDFLAGS. On failure, set nut_have_libxxx="no". This macro
