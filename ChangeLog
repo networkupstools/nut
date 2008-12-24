@@ -1,3 +1,9 @@
+Wed Dec 24 12:53:22 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - docs/configure.txt: missing bump of the date, from the previous commit
+ - docs/macros.txt: add the missing documentation for NUT_CHECK_LIBPOWERMAN and
+   NUT_CHECK_OS
+
 Wed Dec 24 12:24:35 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  * final removal of the energizerups driver (broken):

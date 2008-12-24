@@ -1,6 +1,6 @@
 Desc: Configure options
 File: configure.txt
-Date: 08 January 2007
+Date: 24 December 2008
 Auth: Russell Kroll <rkroll@exploits.org>
 Auth: Peter Selinger <selinger@sourceforge.net>
 Auth: Arnaud Quette <aquette.dev@gmail.com>

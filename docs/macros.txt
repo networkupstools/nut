@@ -15,6 +15,7 @@ directory.
  - Macro: NUT_CHECK_LIBGD
  - Macro: NUT_CHECK_LIBHAL
  - Macro: NUT_CHECK_LIBNETSNMP
+ - Macro: NUT_CHECK_LIBPOWERMAN
  - Macro: NUT_CHECK_LIBSSL
  - Macro: NUT_CHECK_LIBUSB
    Determine the compiler flags for the corresponding library. On
@@ -36,6 +37,12 @@ directory.
    HAVE_AI_ADDRCONFIG). Also set the shell variable nut_have_ipv6=yes
    if all the required features are present. Set nut_have_ipv6=no
    otherwise.
+
+ - Macro: NUT_CHECK_OS
+   Check for the exact system name and type.
+   This was only used in the past to determine the packaging rule to be used
+   through the OS_NAME variable, but may be useful for other purposes in the
+   future.
 
  - Macro: NUT_REPORT_FEATURE(FEATURE, VALUE) 
    Schedule a line for the end-of-configuration feature summary.  The
