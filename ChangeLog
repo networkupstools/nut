@@ -1,3 +1,9 @@
+2.4.0-pre1
+
+Wed Dec 24 14:32:42 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - configure.in: 2.4.0-pre1
+
 Wed Dec 24 14:13:52 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - NEWS, README, UPGRADING: first update round for 2.4.0.
