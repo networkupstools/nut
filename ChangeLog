@@ -1,3 +1,9 @@
+Wed Dec 24 13:12:42 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+- clients/upsclient.h: remove the backward compatibility for client application,
+  through the "UPSCONN" typedef. Developers must now use "UPSCONN_t" for the
+  client structure, as advertized since NUT 2.2.1.
+
 Wed Dec 24 12:53:22 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - docs/configure.txt: missing bump of the date, from the previous commit

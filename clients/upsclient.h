@@ -61,10 +61,6 @@ typedef struct {
 
 }	UPSCONN_t;
 
-/* manage backward compatibility for external client application */
-/* FIXME: bug all external client apps to adapt their code */
-typedef UPSCONN_t UPSCONN;
-
 const char *upscli_strerror(UPSCONN_t *ups);
 
 int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags);
