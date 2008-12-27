@@ -1,4 +1,7 @@
-2.4.0-pre1
+Sat Dec 27 16:17:34 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - man/libupsclient-config.8, man/powerpanel.8, man/richcomm_usb.8: normalize
+   the dash between the program name and the one-line description.
 
 Wed Dec 24 14:32:42 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
