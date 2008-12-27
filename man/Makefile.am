@@ -55,7 +55,7 @@ SERIAL_PAGES = \
 
 SNMP_PAGES = snmp-ups.8
 
-USB_LIBUSB_PAGES = usbhid-ups.8 bcmxcp_usb.8 tripplite_usb.8 megatec_usb.8
+USB_LIBUSB_PAGES = usbhid-ups.8 bcmxcp_usb.8 tripplite_usb.8 megatec_usb.8 richcomm_usb.8
 NETXML_PAGES = netxml-ups.8
 POWERMAN_PAGES = powerman-pdu.8
 

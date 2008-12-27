@@ -590,6 +590,7 @@
 
 "Sweex"		"500/1000"	"smart - shipped with SafeNet"	"safenet"
 "Sweex"		"500/1000"	""	"genericups upstype=7"
+"Sweex"		"1000"	"USB"	"richcomm_usb"
 "Sweex"		"(various)"	""	"megatec"
 
 "Sysgration"	"UPGUARDS Pro650"	""	"megatec"
