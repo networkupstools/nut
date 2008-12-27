@@ -8,27 +8,23 @@ AC_DEFUN([NUT_CHECK_LIBWRAP],
 if test -z "${nut_have_libwrap_seen}"; then
    nut_have_libwrap_seen=yes
 
-   AC_MSG_CHECKING(for tcp-wrappers library availability)
+   nut_have_libwrap=yes
 
-   dnl save CFLAGS and LDFLAGS
-   CFLAGS_ORIG="${CFLAGS}"
-   LDFLAGS_ORIG="${LDFLAGS}"
+   dnl save LIBS
+   LIBS_ORIG="${LIBS}"
 
-   CFLAGS=""
-   LDFLAGS="-lwrap"
+   LIBS=""
 
-   AC_CHECK_LIB(wrap, request_init, nut_have_libwrap=yes, nut_have_libwrap=no)
+   AC_CHECK_HEADER(tcpd.h, [], nut_have_libwrap=no)
+   AC_CHECK_LIB(wrap, request_init, [], nut_have_libwrap=no)
+   AC_SEARCH_LIBS(yp_get_default_domain, nsl, [], nut_have_libwrap=no)
 
    if test "${nut_have_libwrap}" = "yes"; then
-	LIBWRAP_CFLAGS="${CFLAGS}"
-	LIBWRAP_LDFLAGS="${LDFLAGS}"
+	LIBWRAP_CFLAGS=""
+	LIBWRAP_LDFLAGS="${LIBS}"
    fi
 
-   dnl restore original CFLAGS and LDFLAGS
-   CFLAGS="${CFLAGS_ORIG}"
-   LDFLAGS="${LDFLAGS_ORIG}"
-
-   AC_MSG_RESULT([${nut_have_libwrap}])
-
+   dnl restore original LIBS
+   LIBS="${LIBS_ORIG}"
 fi
 ])
