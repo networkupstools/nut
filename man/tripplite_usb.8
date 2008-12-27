@@ -129,9 +129,9 @@
 .\" ========================================================================
 .\"
 .IX Title "TRIPPLITE_USB 8"
-.TH TRIPPLITE_USB 8 "2008-02-08" "$Rev$" "Network UPS Tools (NUT)"
+.TH TRIPPLITE_USB 8 "2008-12-27" "$Rev$" "Network UPS Tools (NUT)"
 .SH "NAME"
-tripplite_usb \- Driver for older Tripp Lite USB UPSes (non\-PDC HID)
+tripplite_usb \- Driver for older Tripp Lite USB UPSes (not PDC HID)
 .SH "NOTE"
 .IX Header "NOTE"
 This man page only documents the hardware-specific features of the
@@ -142,8 +142,8 @@ tripplite_usb driver.  For information about the core driver, see
 This driver should work with older Tripp Lite UPSes which are detected as \s-1USB\s0
 HID-class devices, but are not true \s-1HID\s0 Power-Device Class devices.  So far,
 the devices supported by tripplite_usb have product \s-1ID\s0 0001, and the newer
-units (such as those with \*(L"\s-1LCD\s0\*(R" in the model name) with product \s-1ID\s0 2001 will
-work with the usbhid-ups driver instead.  Please report success or failure to
+units (such as those with \*(L"\s-1LCD\s0\*(R" in the model name) with product \s-1ID\s0 2001 require
+the usbhid-ups driver instead.  Please report success or failure to
 the nut-upsuser mailing list.  A key piece of information is the protocol
 number, returned in ups.debug.0.  Also, be sure to turn on debugging (\f(CW\*(C`\-DDD\*(C'\fR)
 for more informative log messages.  If your Tripp Lite \s-1UPS\s0 uses a serial port,

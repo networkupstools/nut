@@ -1,3 +1,9 @@
+Sat Dec 27 16:28:48 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/tripplite_usb.c, man/tripplite_usb.8: Fix man page description (as
+   in previous changeset) for tripplite_usb, and reword part of introduction.
+   (No code changes, only comments.)
+
 Sat Dec 27 16:17:34 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - man/libupsclient-config.8, man/powerpanel.8, man/richcomm_usb.8: normalize

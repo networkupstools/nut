@@ -134,7 +134,7 @@ pod2man --name='TRIPPLITE_USB' --section=8 --release='$Rev$' --center='Network U
 
 =head1 NAME
 
-tripplite_usb - Driver for older Tripp Lite USB UPSes (non-PDC HID)
+tripplite_usb - Driver for older Tripp Lite USB UPSes (not PDC HID)
 
 =head1 NOTE
 
@@ -147,8 +147,8 @@ nutupsdrv(8).
 This driver should work with older Tripp Lite UPSes which are detected as USB
 HID-class devices, but are not true HID Power-Device Class devices.  So far,
 the devices supported by tripplite_usb have product ID 0001, and the newer
-units (such as those with "LCD" in the model name) with product ID 2001 will
-work with the usbhid-ups driver instead.  Please report success or failure to
+units (such as those with "LCD" in the model name) with product ID 2001 require
+the usbhid-ups driver instead.  Please report success or failure to
 the nut-upsuser mailing list.  A key piece of information is the protocol
 number, returned in ups.debug.0.  Also, be sure to turn on debugging (C<-DDD>)
 for more informative log messages.  If your Tripp Lite UPS uses a serial port,
