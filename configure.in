@@ -365,7 +365,7 @@ dnl ----------------------------------------------------------------------
 dnl checks related to --with-usb
 
 dnl ${nut_with_usb}: any value except "yes" or "no" is treated as "auto". 
-if test "${nut_with_usb}" = "yes -a "${nut_have_libusb}" != "yes"; then
+if test "${nut_with_usb}" = "yes" -a "${nut_have_libusb}" != "yes"; then
    AC_MSG_ERROR(["USB drivers requested, but libusb not found."])
 fi
 
