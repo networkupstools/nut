@@ -934,7 +934,7 @@ void upsdrv_initups(void)
 	hd = &curDevice;
 
 	upsdebugx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown",
-		 hd->Product ? hd->Product : "unknown");
+		hd->Product ? hd->Product : "unknown");
 
 	if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
 		fatalx(EXIT_FAILURE, "Can't initialize data from HID UPS");
@@ -947,25 +947,25 @@ void upsdrv_initups(void)
 			dstate_setinfo("ups.delay.start", "%ld", strtol(val, NULL, 10));
 		}
 
-	        /* Adds default with a delay value of '0' (= immediate) */
-	        dstate_addcmd("load.on");
+		/* Adds default with a delay value of '0' (= immediate) */
+		dstate_addcmd("load.on");
 	}
 
 	if (dstate_getinfo("ups.delay.shutdown")) {
 		/* Retrieve user defined delay settings */
 		val = getval(HU_VAR_OFFDELAY);
 		if (val) {
-			dstate_setinfo("ups.delay.start", "%ld", strtol(val, NULL, 10));
+			dstate_setinfo("ups.delay.shutdown", "%ld", strtol(val, NULL, 10));
 		}
 
-	        /* Adds default with a delay value of '0' (= immediate) */
-	        dstate_addcmd("load.off");
+		/* Adds default with a delay value of '0' (= immediate) */
+		dstate_addcmd("load.off");
 	}
 
 	if (dstate_getinfo("ups.delay.start") && dstate_getinfo("ups.delay.shutdown")) {
-	        /* Add composite instcmds (require setting multiple HID values) */
-	        dstate_addcmd("shutdown.return");
-	        dstate_addcmd("shutdown.stayoff");
+		/* Add composite instcmds (require setting multiple HID values) */
+		dstate_addcmd("shutdown.return");
+		dstate_addcmd("shutdown.stayoff");
 	}
 
 }
