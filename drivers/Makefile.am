@@ -17,9 +17,7 @@ if WITH_HAL
   AM_CFLAGS += $(LIBHAL_CFLAGS)
 endif
 if WITH_USB
-if HAVE_LIBUSB
   AM_CFLAGS += $(LIBUSB_CFLAGS)
-endif
 endif
 if WITH_SNMP
   AM_CFLAGS += $(LIBNETSNMP_CFLAGS)
@@ -63,9 +61,7 @@ if WITH_SNMP
   driverexec_PROGRAMS += $(SNMP_DRIVERLIST)
 endif
 if WITH_USB
-if HAVE_LIBUSB
    driverexec_PROGRAMS += $(USB_LIBUSB_DRIVERLIST)
-endif
 endif
 if WITH_HAL
    halexecdir = $(HAL_CALLOUTS_PATH)

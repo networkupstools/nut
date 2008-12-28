@@ -79,9 +79,7 @@ if WITH_SNMP
   man_MANS += $(SNMP_PAGES)
 endif
 if WITH_USB
-if HAVE_LIBUSB
    man_MANS += $(USB_LIBUSB_PAGES)
-endif
 endif
 if WITH_NEONXML
    man_MANS += $(NETXML_PAGES)
