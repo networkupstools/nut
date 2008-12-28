@@ -249,13 +249,12 @@ if test "${nut_with_ssl}" = "yes"; then
 fi
 
 AM_CONDITIONAL(WITH_SSL, test "${nut_with_ssl}" = "yes")
-
 NUT_REPORT_FEATURE([enable SSL development code], [${nut_with_ssl}])
 
 dnl ----------------------------------------------------------------------
 dnl Check for --with-wrap
 
-NUT_ARG_WITH([wrap], [enable tcp-wrappers support], [auto])
+NUT_ARG_WITH([wrap], [enable libwrap (tcp-wrappers) support], [auto])
 
 dnl ${nut_with_wrap}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_wrap}" != "no"; then
@@ -272,12 +271,11 @@ if test "${nut_with_wrap}" != "no"; then
 fi
 
 if test "${nut_with_wrap}" = "yes"; then
-   AC_DEFINE(HAVE_WRAP, 1, [Define to enable tcp-wrappers support])
+   AC_DEFINE(HAVE_WRAP, 1, [Define to enable libwrap support])
 fi
 
 AM_CONDITIONAL(WITH_WRAP, test "${nut_with_wrap}" = "yes")
-
-NUT_REPORT_FEATURE([enable tcp-wrappers support], [${nut_with_wrap}])
+NUT_REPORT_FEATURE([enable libwrap (tcp-wrappers) support], [${nut_with_wrap}])
 
 dnl ----------------------------------------------------------------------
 dnl check whether to compile IPv6 features 
@@ -321,7 +319,6 @@ if test "${nut_with_cgi}" != "no"; then
 fi
 
 AM_CONDITIONAL(WITH_CGI, test "${nut_with_cgi}" = "yes")
-
 NUT_REPORT_FEATURE([build CGI programs], [${nut_with_cgi}])
 
 dnl ----------------------------------------------------------------------
@@ -362,38 +359,22 @@ if test "${nut_with_snmp}" != "no"; then
 fi
 
 AM_CONDITIONAL(WITH_SNMP, test "${nut_with_snmp}" = "yes")
-
 NUT_REPORT_FEATURE([build SNMP drivers], [${nut_with_snmp}])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-usb
-dnl FIXME: to be simplified since we now only rely on libusb (no more hiddev!)
 
 dnl ${nut_with_usb}: any value except "yes" or "no" is treated as "auto". 
-
-dnl If user requested USB drivers, insist on building all of them
-if test "${nut_with_usb}" = "yes"; then
-   if test "${nut_have_libusb}" != "yes"; then
-      AC_MSG_ERROR([USB drivers requested, but libusb not found.])
-   fi
+if test "${nut_with_usb}" = "yes -a "${nut_have_libusb}" != "yes"; then
+   AC_MSG_ERROR(["USB drivers requested, but libusb not found."])
 fi
 
 if test "${nut_with_usb}" != "no"; then
-   nut_with_usb="yes"
-   if test "${nut_have_libusb}" = "yes"; then
-      nut_usb_msg="libusb-based drivers only"
-   else
-      nut_usb_msg="no"
-      nut_with_usb="no"
-   fi
-else
-   nut_usb_msg="no"
+   nut_with_usb="${nut_have_libusb}"
 fi
 
 AM_CONDITIONAL(WITH_USB, test "${nut_with_usb}" = "yes")
-AM_CONDITIONAL(HAVE_LIBUSB, test "${nut_have_libusb}" = "yes")
-
-NUT_REPORT_FEATURE([build USB drivers], [${nut_usb_msg}])
+NUT_REPORT_FEATURE([build USB drivers], [${nut_with_usb}])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-hal
