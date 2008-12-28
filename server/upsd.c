@@ -46,6 +46,8 @@
 
 #ifdef HAVE_WRAP
 #include <tcpd.h>
+int	allow_severity = LOG_INFO;
+int	deny_severity = LOG_WARNING;
 #endif	/* HAVE_WRAP */
 
 	/* externally-visible settings and pointers */
