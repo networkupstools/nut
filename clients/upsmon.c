@@ -27,7 +27,7 @@
 #include "upsmon.h"
 #include "parseconf.h"
 #include "timehead.h"
-#
+
 #ifdef HAVE_STDARG_H
 #include <stdarg.h>
 #endif
@@ -256,9 +256,6 @@ static int do_upsd_auth(utype_t *ups)
 		upslogx(LOG_ERR, "UPS [%s]: no username defined!", ups->sys);
 		return 0;
 	}
-
-	if (ups->pv == 0)	/* monitor only, no need to login */
-		return 1;
 
 	snprintf(buf, sizeof(buf), "USERNAME %s\n", ups->un);
 	if (upscli_sendline(&ups->conn, buf, strlen(buf)) < 0) {
