@@ -1,3 +1,10 @@
+Mon Dec 29 14:57:52 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/safenet.[ch]: add 'offdelay' and 'ondelay' parameters to allow
+   timed shutdowns
+ - man/safenet.8: manual update to include above changes and to cleanup the
+   formatting
+
 Sat Dec 27 16:28:48 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - drivers/tripplite_usb.c, man/tripplite_usb.8: Fix man page description (as

@@ -36,7 +36,7 @@
  * seconds delay before the UPS switches off. Value must be greater than or
  * equal to 1. Mapping of the numerals is 0=A, 1=B, 2=C, etc.
  */
-#define	SHUTDOWN_RETURN	"ZBASAABWLPGE\r"	/* shutdown in 1 second */
+#define	SHUTDOWN_RETURN	"ZBASAAAWLPGE\r"	/* shutdown in 1 second */
 
 /*
  * The following commands are "ZAFdddRrrrrO\r", where 'ddd' equals the number
@@ -44,8 +44,7 @@
  * minutes before it restarts. Both values must be greater than or equal to 1.
  * Mapping of the numerals is 0=A, 1=B, 2=C, etc.
  */
-#define	SHUTDOWN_REBOOT	"ZAFAABRAAABO\r"	/* shutdown in 1 second, return after 1 minute */
-#define	GRACEFUL_REBOOT	"ZAFACARAAABO\r"	/* shutdown in 20 seconds, return after 1 minute */
+#define	SHUTDOWN_REBOOT	"ZAFAAARAAAAO\r"	/* shutdown in 1 second, return after 1 minute */
 
 struct safenet {
 	char	onbattery;

@@ -11,14 +11,13 @@
  * - others using SafeNet software and serial interface
  *
  * Status:
- *  20070304/Revision 1.3 - Arjen de Korte <adkorte-guest@alioth.debian.org>
- *   - in battery test mode (CAL state) stop the test when the
- *     the low battery state is reached
  *  20081102/Revision 1.41 - Arjen de Korte <adkorte-guest@alioth.debian.org>
  *   - allow more time for reading reply to command
  *  20081106/Revision 1.5 - Arjen de Korte <adkorte-guest@alioth.debian.org>
  *   - changed communication with UPS
  *   - improved handling of battery & system test
+ *  20081228/Revision 1.6 - Arjen de Korte <adkorte-guest@alioth.debian.org>
+ *   - add ondelay and offdelay
  *
  * Copyright (C) 2003-2008  Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
@@ -42,7 +41,7 @@
 #include "safenet.h"
 
 #define DRIVER_NAME	"Generic SafeNet UPS driver"
-#define DRIVER_VERSION	"1.51"
+#define DRIVER_VERSION	"1.6"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -60,6 +59,9 @@ static union	{
 	char			reply[10];
 	struct safenet		status;
 } ups;
+
+static int ondelay = 1;		/* minutes */
+static int offdelay = 30;	/* seconds */
 
 static int safenet_command(const char *command)
 {
@@ -254,26 +256,35 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 
 	/*
-	 * Shutdown immediately and wait for the power to return
+	 * Shutdown and wait for the power to return
 	 */
 	if (!strcasecmp(cmdname, "shutdown.return")) {
-		safenet_command(SHUTDOWN_RETURN);
+		char	command[] = SHUTDOWN_RETURN;
+		
+		command[4] += ((offdelay % 1000) / 100);
+		command[5] += ((offdelay % 100) / 10);
+		command[6] +=  (offdelay % 10);
+
+		safenet_command(command);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	/*
-	 * Shutdown immediately and reboot after 1 minute
+	 * Shutdown and reboot
 	 */
 	if (!strcasecmp(cmdname, "shutdown.reboot")) {
-		safenet_command(SHUTDOWN_REBOOT);
-		return STAT_INSTCMD_HANDLED;
-	}
+		char	command[] = SHUTDOWN_REBOOT;
 
-	/*
-	 * Shutdown in 20 seconds and reboot after 1 minute
-	 */
-	if (!strcasecmp(cmdname, "shutdown.reboot.graceful")) {
-		safenet_command(GRACEFUL_REBOOT);
+		command[3] += ((offdelay % 1000) / 100);
+		command[4] += ((offdelay % 100) / 10);
+		command[5] +=  (offdelay % 10);
+
+		command[7] += ((ondelay % 10000) / 1000);
+		command[8] += ((ondelay % 1000) / 100);
+		command[9] += ((ondelay % 100) / 10);
+		command[10] += (ondelay % 10);
+
+		safenet_command(command);
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -319,6 +330,9 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("ups.model", "%s", ((v = getval("modelname")) != NULL) ? v : "unknown");
 	dstate_setinfo("ups.serial", "%s", ((v = getval("serialnumber")) != NULL) ? v : "unknown");
 
+	dstate_setinfo("ups.delay.start", "%d", 60 * ondelay);
+	dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
+
 	/*
 	 * These are the instant commands we support.
 	 */
@@ -333,7 +347,6 @@ void upsdrv_initinfo(void)
 	dstate_addcmd ("beeper.toggle");
 	dstate_addcmd ("shutdown.return");
 	dstate_addcmd ("shutdown.reboot");
-	dstate_addcmd ("shutdown.reboot.graceful");
 
 	upsh.instcmd = instcmd;
 }
@@ -431,9 +444,9 @@ void upsdrv_shutdown(void)
 	 * we need to check the status of the UPS here.
 	 */
 	if (ups.status.onbattery) {
-		safenet_command(SHUTDOWN_RETURN);
+		instcmd("shutdown.return", NULL);
 	} else {
-		safenet_command(SHUTDOWN_REBOOT);
+		instcmd("shutdown.reboot", NULL);
 	}
 }
 
@@ -446,11 +459,15 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "manufacturer", "manufacturer [unknown]");
 	addvar(VAR_VALUE, "modelname", "modelname [unknown]");
 	addvar(VAR_VALUE, "serialnumber", "serialnumber [unknown]");
+
+	addvar(VAR_VALUE, "ondelay", "Delay before UPS startup (minutes)");
+	addvar(VAR_VALUE, "offdelay", "Delay before UPS shutdown (seconds)");
 }
 
 void upsdrv_initups(void)
 {
-	struct termios		tio;
+	struct termios	tio;
+	const char	*val;
 
 	/*
 	 * Open and lock the serial port and set the speed to 1200 baud.
@@ -486,6 +503,24 @@ void upsdrv_initups(void)
 	 */
 	ser_set_dtr(upsfd, 1);
 	ser_set_rts(upsfd, 0);
+
+	val = getval("ondelay");
+	if (val) {
+		ondelay = strtol(val, NULL, 10);
+	}
+
+	if ((ondelay < 0) || (ondelay > 9999)) {
+		fatalx(EXIT_FAILURE, "Start delay '%d' out of range [0..9999]", ondelay);
+	}
+
+	val = getval("offdelay");
+	if (val) {
+		offdelay = strtol(val, NULL, 10);
+	}
+
+	if ((offdelay < 0) || (offdelay > 999)) {
+		fatalx(EXIT_FAILURE, "Shutdown delay '%d' out of range [0..999]", offdelay);
+	}
 }
 
 void upsdrv_cleanup(void)

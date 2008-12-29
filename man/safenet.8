@@ -1,4 +1,4 @@
-.TH SAFENET 8 "Thu Dec 28 2003" "" "Network UPS Tools (NUT)"
+.TH SAFENET 8 "Mon Dec 29 2008" "" "Network UPS Tools (NUT)"
 .SH NAME
 safenet \- Driver for SafeNet compatible UPS equipment
 .SH NOTE
@@ -25,30 +25,59 @@ Like manufacturer above. The default is \fIunknown\fR.
 .IP "serialnumber=\fIvalue\fR"
 Like manufacturer above. The default is \fIunknown\fR.
 
+.IP "ondelay=\fIvalue\fR"
+Time to wait before switching on the UPS (minutes). Defaults to 1 minute.
+
+.IP "offdelay=\fIvalue\fR"
+Time to wait before shutting down the UPS (seconds). Defaults to 30 seconds.
+
 .SH UPSCMD
+This driver supports some instant commands (see \fBupscmd\fR(8)):
 
-test.battery.start \(hy Start UPS self test
+.IP "test.battery.start"
+Start UPS self test
 
-test.battery.stop \(hy Cancel UPS self test
+.IP "test.battery.stop"
+Cancel UPS self test
 
-test.failure.start \(hy Start simulated power failure
+.IP "test.failure.start"
+Start simulated power failure
 
-test.failure.stop \(hy Cancel simulated power failure
+.IP "test.failure.stop"
+Cancel simulated power failure
 
-beeper.enable \(hy Enable the UPS beeper
+.IP "beeper.enable"
+Enable the UPS beeper
 
-beeper.mute \(hy Temporarily mute the UPS beeper
+.IP "beeper.mute"
+Temporarily mute the UPS beeper
 
-beeper.toggle \(hy Toggle the UPS beeper
+.IP "beeper.toggle"
+Toggle the UPS beeper
 
-shutdown.return \(hy Shut down in 1 second and wait for power to return
+.IP "shutdown.return"
+Turn off the load and wait for the power to return. Uses the timer
+defined by \fBoffdelay\fR.
 
-shutdown.reboot \(hy Shut down in 1 seconds and reboot after 1 minute
+.IP "shutdown.reboot"
+Turn off the load and return. Uses the timers defined by \fBoffdelay\fR
+and \fBondelay\fR.
 
-shutdown.reboot.graceful \(hy Shut down in 20 seconds and reboot after 1 minute
+.SH KNOWN PROBLEMS
+If you run the \fBshutdown.return\fR command with mains present, the output
+may stay on or switch off and not back on again. The \fBshutdown.reboot\fR
+command will unconditionally switch on the load again (with or without mains
+present).
+
+If the driver is called with the '\(hyk' option (or through \fBupsdrvctl
+shutdown\fR) it tries to detect which command should be used in an attempt
+to stay off until mains is present again or to cycle the output if the
+power returned in the mean time. This isn't bullet proof and you should be
+prepared that the power will either not be shutdown or that it doesn't
+return when the power comes back.
 
 .SH AUTHOR
-Arjen de Korte <arjen@de\(hykorte.org>
+Arjen de Korte <adkorte\(hyguest at alioth.debian.org>
 
 .SH SEE ALSO
 
