@@ -1,14 +1,16 @@
-.TH "BCMXCP" "8" "Thu Sep 29 2005" "" "Network UPS Tools (NUT)"
+.TH "BCMXCP" "8" "Wed Dec 31 2008" "" "Network UPS Tools (NUT)"
 .SH "NAME"
-bcmxcp \- Driver for UPS'es supporting the BCM/XCP protocol
+bcmxcp \- Driver for UPS'es supporting the serial BCM/XCP protocol
 .SH "NOTE"
 This man page only documents the hardware\(hyspecific features of the
 bcmxcp driver.  For information about the core driver, see
 \fBnutupsdrv\fR(8).
 
 .SH "SUPPORTED HARDWARE"
-This driver should recognize all BCM/XCP\-compatible UPS'es.  It has
-been developed and tested on Powerware PW5115 and PW9120 hardware. 
+This driver should recognize all serial BCM/XCP\-compatible UPS'es.  It has
+been developed and tested on Powerware PW5115 and PW9120 hardware. If your UPS
+has a USB connection, you may also consult the \fBbcmxcp_usb\fR(8) driver
+documentation.
 
 .SH "EXTRA ARGUMENTS"
 This driver supports the following optional settings in the    
@@ -55,6 +57,9 @@ Tore \[/O]rpetveit <tore@orpetveit.net>
 .SH "SEE ALSO"
 .SS The core driver:
 \fBnutupsdrv\fR(8)
+
+.SS The USB BCM/XCP driver:
+\fBbcmxcp_usb\fR(8)
 
 .SS Internet resources:
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
