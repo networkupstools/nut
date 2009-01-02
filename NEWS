@@ -21,6 +21,11 @@ Release notes for NUT 2.4.0 - what's new since 2.2.2:
    PRO and Imperial, PowerKinetics BlackOut Buster, UNITEK Alpha 500, WinPower
    CPM-800.
 
+ - NUT now embeds Python client support in through the PyNUTClient module and
+   the NUT-Monitor application. Both are from David Goncalves, and are still
+   available from http://www.lestat.st.
+   For more information, refer to scripts/python/client/README.
+
  - the dummy-ups driver now support a "repeater" mode. This allows it to act as
    a NUT client, and to forward data. This can be useful for supervision and
    load sharing purposes.

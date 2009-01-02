@@ -20,4 +20,4 @@ subdriver/path-to-subdriver.sh \
 Windows/halt.c \
 Windows/Makefile
 
-SUBDIRS = hotplug udev hal
+SUBDIRS = hal hotplug python udev

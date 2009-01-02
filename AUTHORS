@@ -39,6 +39,11 @@ W: http://cheetah.cwru.edu
 D: Added custom formatting to upslog
 D: Helped get apcsmart working with old SmartUPS models
 
+N: David Goncalves
+E: david@lestat.st
+W: http://www.lestat.st
+D: Python client suppor (PyNUTClient module and NUT-Monitor application)
+
 N: Bruno Hall
 D: Contributed UPS compatibility information
 

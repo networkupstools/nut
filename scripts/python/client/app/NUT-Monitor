@@ -1,0 +1,409 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+#   Copyright (C) 2008 David Goncalves <david@lestat.st>
+#
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+# 2008-02-01 David Goncalves
+#            A gui to monitor UPSes via NUT using PyNUT class.
+
+
+import gtk, gtk.glade, gobject, pango
+import sys, os, time
+import threading
+import PyNUT
+
+# Activate use of threadings
+gobject.threads_init()
+
+class gui :
+
+    __widgets       = {}
+    __callbacks     = {}
+    __ups_handler   = None
+    __ups_thread    = None
+    __ups_name      = ""
+    __ups_commands  = list()
+    __ups_connected = False
+
+    __version       = "1.0"
+    __release       = "2008-06-30"
+
+    def __init__( self ) :
+        if os.path.exists( "gui.glade" ) :
+            glade_file = "gui.glade"
+        else :
+            glade_file = "/usr/share/nut-monitor/gui.glade"
+
+        self.__widgets["interface"]                = gtk.glade.XML( glade_file )
+        self.__widgets["main_window"]              = self.__widgets["interface"].get_widget("window1")
+        self.__widgets["button_ups_refresh"]       = self.__widgets["interface"].get_widget("button1")
+        self.__widgets["button_ups_connect"]       = self.__widgets["interface"].get_widget("button2")
+        self.__widgets["button_ups_disconnect"]    = self.__widgets["interface"].get_widget("button4")
+        self.__widgets["button_ups_list"]          = self.__widgets["interface"].get_widget("combobox1")
+        self.__widgets["button_ups_command_list"]  = self.__widgets["interface"].get_widget("combobox3")
+        self.__widgets["button_ups_command_apply"] = self.__widgets["interface"].get_widget("button3")
+        self.__widgets["button_authentication"]    = self.__widgets["interface"].get_widget("checkbutton1")
+        self.__widgets["entry_login"]              = self.__widgets["interface"].get_widget("entry2")
+        self.__widgets["entry_password"]           = self.__widgets["interface"].get_widget("entry3")
+        self.__widgets["login_password_frame"]     = self.__widgets["interface"].get_widget("hbox2")
+        self.__widgets["entry_host"]               = self.__widgets["interface"].get_widget("entry1")
+        self.__widgets["entry_port"]               = self.__widgets["interface"].get_widget("spinbutton1")
+        self.__widgets["progress_battery_charge"]  = self.__widgets["interface"].get_widget("progressbar1")
+        self.__widgets["progress_ups_load"]        = self.__widgets["interface"].get_widget("progressbar2")
+        self.__widgets["label_battery_runtime"]    = self.__widgets["interface"].get_widget("label2")
+        self.__widgets["label_ups_infos_left"]     = self.__widgets["interface"].get_widget("label15")
+        self.__widgets["label_ups_infos_right"]    = self.__widgets["interface"].get_widget("label16")
+        self.__widgets["status_bar"]               = self.__widgets["interface"].get_widget("statusbar1")
+        self.__widgets["ups_status_frame"]         = self.__widgets["interface"].get_widget("frame1")
+        self.__widgets["ups_hostport_table"]       = self.__widgets["interface"].get_widget("table1")
+
+        self.__widgets["main_window"].show()
+
+        # Define the callbacks
+        self.__callbacks = { "on_window1_destroy"           : self.quit,
+                             "on_imagemenuitem5_activate"   : self.quit,
+                             "on_imagemenuitem2_activate"   : self.about,
+                             "on_entry1_changed"            : self.__host_changed,
+                             "on_entry2_changed"            : self.__login_pass_changed,
+                             "on_entry3_changed"            : self.__login_pass_changed,
+                             "on_button1_clicked"           : self.__gui_refresh_ups_list,
+                             "on_button2_clicked"           : self.__connect_to_ups,
+                             "on_button3_clicked"           : self.__apply_ups_command,
+                             "on_button4_clicked"           : self.__disconnect_from_ups,
+                             "on_checkbutton1_toggled"      : self.__use_authentication_changed
+                           }
+
+        # Removes the dummy entry in the combobox
+        self.__widgets["button_ups_list"].remove_text( 0 )
+        self.__widgets["button_ups_command_list"].remove_text( 0 )
+
+        # Connect the callbacks
+        self.__widgets["interface"].signal_autoconnect( self.__callbacks )
+
+    def run( self ) :
+        gtk.main()
+
+    def about( self, widget=None ) :
+        dial = self.__widgets["interface"].get_widget( "aboutdialog1" )
+        dial.run()
+        dial.destroy()
+
+    def quit( self, widget=None ) :
+        try :
+            if self.__ups_thread.isAlive() :
+                self.__ups_thread.stop_thread()
+                self.__ups_thread.join()
+        except :
+            pass
+
+        gtk.main_quit()
+
+    def refresh_gui( self ) :
+        while gtk.events_pending() :
+            gtk.main_iteration( False )
+        return( True )
+
+    # If host string is modified, check if there is a value to activate the "Refresh" button.
+    def __host_changed( self, widget=None ) :
+        value = widget.get_text()
+        if value != "" :
+            self.__widgets["button_ups_refresh"].set_sensitive( True )
+            self.__widgets["button_authentication"].set_sensitive( True )
+            if self.__widgets["button_authentication"].toggled() :
+                self.__widgets["login_password_frame"].set_sensitive( True )
+
+            if self.__widgets["button_ups_list"].get_active() != -1 :
+                self.__widgets["button_ups_connect"].set_sensitive( True )
+
+        else :
+            self.__widgets["button_ups_refresh"].set_sensitive( False )
+            self.__widgets["button_ups_connect"].set_sensitive( False )
+            self.__widgets["button_authentication"].set_sensitive( False )
+            self.__widgets["login_password_frame"].set_sensitive( False )
+
+
+    def __use_authentication_changed( self, widget=None ) :
+        if widget.get_active() :
+            self.__widgets["login_password_frame"].set_sensitive( True )
+            # Clear UPS List
+            while self.__widgets["button_ups_list"].get_active() != -1 :
+                self.__widgets["button_ups_list"].remove_text( 0 )
+                self.__widgets["button_ups_list"].set_active( 0 )
+
+            self.__widgets["button_ups_connect"].set_sensitive( False )
+            if ( self.__widgets["entry_login"].get_text() == "" ) or ( self.__widgets["entry_password"].get_text() == "" ) :
+                self.__widgets["button_ups_refresh"].set_sensitive( False )
+            else :
+                self.__widgets["button_ups_refresh"].set_sensitive( True )
+        else :
+            self.__widgets["login_password_frame"].set_sensitive( False )
+            self.__widgets["button_ups_refresh"].set_sensitive( True )
+
+    def __login_pass_changed( self, widget=None ) :
+        # Get the values for login/pass fields in order to check that there is something typed
+        self.__host_changed( self.__widgets["entry_host"] )
+
+    def __gui_refresh_ups_list( self, widget=None ) :
+        host = self.__widgets["entry_host"].get_text()
+        port = int( self.__widgets["entry_port"].get_value() )
+
+        try :
+            # If the authentication is active, try to log into the UPS using login/password
+            if self.__widgets["button_authentication"].get_active() :
+                login    = self.__widgets["entry_login"].get_text()
+                password = self.__widgets["entry_password"].get_text()
+            else :
+                login    = None
+                password = None
+
+            self.__ups_handler = PyNUT.PyNUT( host=host, port=port, login=login, password=password )
+            result = self.__ups_handler.GetUPSList()
+
+            # Clear UPS List
+            while self.__widgets["button_ups_list"].get_active() != -1 :
+                self.__widgets["button_ups_list"].remove_text( 0 )
+                self.__widgets["button_ups_list"].set_active( 0 )
+
+            if len( result.keys() ) > 0 :
+                for current_ups in result.keys() :
+                    self.__widgets["button_ups_list"].append_text( current_ups )
+
+                self.__widgets["button_ups_list"].set_active( 0 )
+                self.__widgets["button_ups_refresh"].set_sensitive( False )
+                self.__widgets["button_ups_connect"].set_sensitive( True )
+                self.__widgets["button_authentication"].set_sensitive( False )
+                self.__widgets["login_password_frame"].set_sensitive( False )
+
+        except :
+            self.status_message( "%s : %s" % ( sys.exc_info()[0], sys.exc_info()[1] ) )
+
+    def __gui_refresh_ups_commands( self, widget=None ) :
+        # Clear the command list
+        while self.__widgets["button_ups_command_list"].get_active() != -1 :
+            self.__widgets["button_ups_command_list"].remove_text( 0 )
+            self.__widgets["button_ups_command_list"].set_active( 0 )
+
+        self.__ups_commands = list()
+
+        try :
+            commands = self.__ups_handler.GetUPSCommands( self.__ups_name )
+            self.__ups_commands = commands.keys()
+            self.__ups_commands.sort()
+
+            for desc in self.__ups_commands :
+                self.__widgets["button_ups_command_list"].append_text( commands[desc] )
+
+            self.__widgets["button_ups_command_list"].set_active( 0 )
+            self.__widgets["button_ups_command_apply"].set_sensitive( True )
+        except :
+            self.__widgets["button_ups_command_apply"].set_sensitive( False )
+
+
+
+    def __disconnect_from_ups( self, widget=None ) :
+        if self.__ups_thread.isAlive() :
+            self.__ups_thread.stop_thread()
+            self.__ups_thread.join()
+
+    def __apply_ups_command( self, widget=None ) :
+        id = self.__widgets["button_ups_command_list"].get_active()
+
+        # Display a confirmation dialog
+        dial = gtk.MessageDialog( parent=self.__widgets["main_window"],
+                                  flags=gtk.DIALOG_MODAL,
+                                  type=gtk.MESSAGE_INFO,
+                                  buttons=gtk.BUTTONS_YES_NO,
+                                  message_format=None )
+
+        dial.set_markup( "<span size=\"x-large\"><b>Action confirmation</b></span>" )
+        msg  = "Are you sur that you want to perform a <span foreground=\"#900000\"><b>%s</b></span> on <span foreground=\"#009000\"><b>%s</b></span> ?\n" % ( self.__ups_commands[id], self.__ups_name )
+        dial.format_secondary_markup( msg )
+
+        resp = dial.run()
+        dial.destroy()
+
+        if resp == gtk.RESPONSE_YES :
+            try :
+                self.__ups_handler.RunUPSCommand( self.__ups_name, self.__ups_commands[id] )
+            except :
+                self.error_message( "<span size=\"x-large\"><b>Send command failed</b></span>", "Something went wrong while sending command to server.\n\n<span foreground=\"#900000\">%s</span>" % sys.exc_info()[1] )
+
+
+    # When the 'connect' button is clicked...
+    def __connect_to_ups( self, widget=None ) :
+        # Get the selected UPS name
+        self.__ups_name = self.__widgets["button_ups_list"].get_active_text()
+
+        self.__ups_thread = ups_updater( self )
+        self.__ups_thread.start()
+
+
+    def error_message( self, message1 = "", message2 = "" ) :
+        dial = gtk.MessageDialog( parent=self.__widgets["main_window"], flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING,
+                                  buttons=gtk.BUTTONS_CLOSE, message_format=None )
+        dial.set_markup( message1 )
+        dial.format_secondary_markup( message2 )
+        dial.run()
+        dial.destroy()
+
+    def status_message( self, message = "" ) :
+        context_id = self.__widgets["status_bar"].get_context_id("Infos")
+        message_id = self.__widgets["status_bar"].push( context_id, message )
+        self.refresh_gui()
+
+
+class ups_updater( threading.Thread ) :
+
+    __parent_class = None
+    __stop_thread  = False
+
+    __ups_status_mapper = { "OL"     : "<span color=\"#009000\">Online</span>",
+                            "OB"     : "<span color=\"#900000\">Running on batteries</span>",
+                            "LB"     : "<span color=\"#BB0000\"><b>Low batteries</b></span>",
+                            "RB"     : "<span color=\"#FF0000\"><b>Replace batteries !</b></span>",
+                            "BYPASS" : "<span color=\"#BB0000\">Running bypass</span> <i>(no battery protection)</i>",
+                            "CAL"    : "Performing runtime calibration",
+                            "CAL OB" : "Performing runtime calibration",
+                            "OFF"    : "<span color=\"#000090\">Offline</span> <i>(not providing power to the load)</i>",
+                            "OVER"   : "<span color=\"#BB0000\">Overloaded !</span> <i>(there is too much load for UPS)</i>",
+                            "TRIM"   : "Triming <i>(UPS is triming incoming voltage)</i>",
+                            "BOOST"  : "Boost <i>(UPS is boosting incoming voltage)</i>"
+                          }
+
+    def __init__( self, parent_class ) :
+        threading.Thread.__init__( self )
+        self.__parent_class = parent_class
+
+    def run( self ) :
+        self.__parent_class.status_message( "Connecting to %s" % self.__parent_class._gui__ups_name )
+        self.__parent_class._gui__gui_refresh_ups_commands()
+
+        while not self.__stop_thread :
+            vars = {}
+
+            try :
+                vars = self.__parent_class._gui__ups_handler.GetUPSVars( self.__parent_class._gui__ups_name )
+                self.__parent_class.status_message( "Connected to %s" % self.__parent_class._gui__ups_name )
+                self.__parent_class._gui__widgets["ups_status_frame"].set_sensitive( True )
+                self.__parent_class._gui__widgets["ups_hostport_table"].set_sensitive( False )
+                self.__parent_class._gui__widgets["button_ups_connect"].hide()
+                self.__parent_class._gui__widgets["button_ups_disconnect"].show()
+                self.__parent_class._gui__widgets["button_authentication"].set_sensitive( False )
+                self.__parent_class._gui__widgets["login_password_frame"].set_sensitive( False )
+
+
+                # Update the battery charge progress bar
+                if not vars.has_key( "battery.charge" ) :
+                    self.__parent_class._gui__widgets["progress_battery_charge"].set_fraction( 0.0  )
+                    self.__parent_class._gui__widgets["progress_battery_charge"].set_text( "Not available" )
+                else :
+                    charge = vars.get( "battery.charge", "0" )
+                    self.__parent_class._gui__widgets["progress_battery_charge"].set_fraction( float( charge ) / 100.0  )
+                    self.__parent_class._gui__widgets["progress_battery_charge"].set_text( "%s %%" % int( float( charge ) ) )
+
+                # Update the UPS load progress bar
+                if not vars.has_key( "ups.load" ) :
+                    self.__parent_class._gui__widgets["progress_ups_load"].set_fraction( 0.0  )
+                    self.__parent_class._gui__widgets["progress_ups_load"].set_text( "Not available" )
+                else :
+                    load = vars.get( "ups.load", "0" )
+                    self.__parent_class._gui__widgets["progress_ups_load"].set_fraction( float( load ) / 100.0  )
+                    self.__parent_class._gui__widgets["progress_ups_load"].set_text( "%s %%" % int( float( load ) ) )
+
+                # Update the UPS remaining battery time
+                if not vars.has_key( "battery.runtime" ) :
+                    self.__parent_class._gui__widgets["label_battery_runtime"].set_text( "Not available" )
+                else :
+                    runtime = int( float( vars.get( "battery.runtime", "0" ) ) )
+                    H       = runtime / 3600
+                    M       = ( runtime - ( H * 3600 ) ) / 60
+                    S       = runtime - ( H * 3600 ) - ( M * 60 )
+
+                    if H > 0 :
+                        string = "%s hour(s) %s minutes %s seconds" % ( H, M, S )
+                    elif ( H == 0 ) and ( M > 0 ) :
+                        string = "%s minutes %s seconds" % ( M, S )
+                    else :
+                        string = "%s seconds" % S
+
+                    self.__parent_class._gui__widgets["label_battery_runtime"].set_text( string )
+
+                text_left  = ""
+                text_right = ""
+
+                # Update UPS informations fields
+                if vars.has_key("ups.status") :
+                    text_left  += "<b>UPS Status :</b>\n\n"
+                    text_right += "%s\n\n" % self.__ups_status_mapper[ vars["ups.status"] ]
+
+                text_left += "<b>UPS Model :</b>\n"
+
+                if vars.has_key("ups.mfr") :
+                    text_right += "%s " % vars.get( "ups.mfr", "" )
+
+                if vars.has_key("ups.model") :
+                    text_right += "%s\n" % vars.get( "ups.model", "" )
+
+                if vars.has_key("ups.serial") :
+                    text_left  += "<b>S/N :</b>\n"
+                    text_right += "%s\n" % vars.get( "ups.serial", "" )
+
+                if vars.has_key("ups.id") :
+                    text_left  += "<b>Identifier :</b>\n"
+                    text_right += "%s\n" % vars.get( "ups.id", "" )
+
+                if vars.has_key("ups.temperature") :
+                    text_left  += "<b>Temperature :</b>\n"
+                    text_right += "%s\n" % int( float( vars.get( "ups.temperature", 0 ) ) )
+
+                if vars.has_key("battery.voltage") :
+                    text_left  += "<b>Battery voltage :</b>\n"
+                    text_right += "%sv\n" % vars.get( "battery.voltage", "0" )
+
+                self.__parent_class._gui__widgets["label_ups_infos_left"].set_markup( text_left[:-1] )
+                self.__parent_class._gui__widgets["label_ups_infos_right"].set_markup( text_right[:-1] )
+
+            except :
+                self.__parent_class.status_message( repr(sys.exc_info()[1]) )
+                self.__parent_class._gui__widgets["ups_status_frame"].set_sensitive( False )
+
+            time.sleep( 1 )
+
+        # The thread stops...
+        self.__parent_class._gui__widgets["ups_status_frame"].set_sensitive( False )
+        self.__parent_class._gui__widgets["ups_hostport_table"].set_sensitive( True )
+        self.__parent_class._gui__widgets["button_ups_disconnect"].hide()
+        self.__parent_class._gui__widgets["button_ups_connect"].show()
+        self.__parent_class.status_message( "Disconnected from %s" % self.__parent_class._gui__ups_name )
+
+        # Clear all data fields
+        self.__parent_class._gui__widgets["label_ups_infos_right"].set_markup( "" )
+        self.__parent_class._gui__widgets["label_battery_runtime"].set_text( "" )
+        self.__parent_class._gui__widgets["progress_battery_charge"].set_fraction( 0.0  )
+        self.__parent_class._gui__widgets["progress_ups_load"].set_fraction( 0.0  )
+        self.__parent_class._gui__widgets["progress_battery_charge"].set_text( "0 %" )
+        self.__parent_class._gui__widgets["progress_ups_load"].set_text( "0 %"  )
+
+
+    def stop_thread( self ) :
+        self.__stop_thread = True
+
+
+if __name__ == "__main__" :
+
+    app = gui()
+    app.run()

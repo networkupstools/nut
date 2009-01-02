@@ -16,6 +16,9 @@ Changes from 2.2.2 to 2.4.0:
    their "UPSCONN" client structure to "UPSCONN_t".
  - The upsd server will now disconnect clients that remain silent for more than
    60 seconds.
+ - The files under scripts/python/client are distributed under GPL 3+, whereas
+   the rest of the files are distributed under GPL 2+. Refer to COPYING for more
+   information.
 
 ---------------------------------------------------------------------------
 Changes from 2.2.1 to 2.2.2:

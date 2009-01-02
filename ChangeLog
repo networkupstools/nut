@@ -1,3 +1,18 @@
+Fri Jan  2 22:05:32 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+
+ * Integrate the NUT client Python module and application from David Goncalves:
+   - scripts/python/client/app/*: integrate the NUT-Monitor Python application, 
+   - scripts/python/client/module/*: integrate the PyNUTClient Python module,
+   - scripts/python/client/README: add some documentation,
+   - scripts/python/Makefile.am: add the distribution rule,
+   - configure.in: also output scripts/python/Makefile, 
+   - COPYING: modified to reflect the GPL 2+ and GPL 3+ (python/client/*) files, 
+   - LICENSE-GPL2, LICENSE-GPL3: distribute the most recent version of the GNU
+     GENERAL PUBLIC LICENSE,
+   - UPGRADING: mention the licensing difference,
+   - NEWS: mention the integrated NUT client Python support,
+   - AUTHORS: mention David's work.
+
 Fri Jan  2 21:29:20 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - man/blazer.8: small wording and punctuation changes,

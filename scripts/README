@@ -1,3 +1,10 @@
-These directories hold example startup and shutdown scripts for various
-operating systems and distributions.  They have all been contributed by 
-users of the software.
+These directories hold various scripts:
+- example startup and shutdown scripts for various operating systems and
+distributions,
+- hotplug and udev integration for on the fly privileges settings (Linux only),
+- Hardware Abstraction Layer script, for declaring and binding NUT addons to
+specific USB devices,
+- Python Client module and application.
+
+They have either been contributed by users of the software, or by the NUT Team
+itself.

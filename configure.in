@@ -834,6 +834,7 @@ AC_OUTPUT([
  scripts/hal/ups-nut-device.fdi
  scripts/hotplug/Makefile
  scripts/hotplug/libhidups
+ scripts/python/Makefile
  scripts/udev/Makefile
  scripts/udev/nut-usbups.rules
  scripts/Makefile
