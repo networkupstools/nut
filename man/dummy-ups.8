@@ -15,15 +15,15 @@ Its behavior depends on the running mode:
 
 looks like a standard UPS driver to \fBupsd\fR(8) and 
 allows you to set any value for testing purposes.  It is interactive,
-through upsrw and upscmd commands or equivalent graphical tool. It
-can be configured, launched and used as any other real driver.
-This mode is mostly useful for testing purposes.
+controllable through the \fBupsrw\fR(1) and \fBupscmd\fR(1) commands, or an
+equivalent graphical tool. It can be configured, launched and used as any other
+real driver.  This mode is mostly useful for testing purposes.
 
 .IP "Repeater mode"
 
 acts as a NUT client, simply forwarding data. This can be useful for supervision
 purposes. This can also allow some load sharing between several UPS instances,
-using a point to point communication with the UPS.
+using a point\(hyto\(hypoint communication with the UPS.
 
 .SH ARGUMENTS
 The port specification depends on the running mode, and allows the automatic
@@ -89,15 +89,17 @@ which allows to build a virtual device, composed of several other devices
 (either UPS, PDUs).
 
 .SH BUGS
-Instant commands are not yet supported, and data need name / value checking
-enforcement, as well as boundaries or enumeration definition.
+Instant commands are not yet supported in Dummy Mode, and data need name /
+value checking enforcement, as well as boundaries or enumeration definition.
 
 .SH AUTHOR
 Arnaud Quette
 
 .SH SEE ALSO
 
-\fBups.conf\fR(5)
+\fBupscmd\fR(1),
+\fBupsrw\fR(1),
+\fBups.conf\fR(5),
 \fBnutupsdrv\fR(8)
 
 .SS Internet resources:

@@ -1,6 +1,6 @@
 .TH BLAZER 8 "Fri Nov 14 2008" "" "Network UPS Tools (NUT)" 
 .SH NAME  
-blazer \- Driver for Megatec/Q1 protocol serial/USB based UPS equipment
+blazer_ser, blazer_usb \- Driver for Megatec/Q1 protocol serial/USB based UPS equipment
 .SH NOTE
 This man page only documents the hardware\(hyspecific features of the
 blazer driver. For information about the core driver, see
@@ -11,7 +11,7 @@ blazer driver. For information about the core driver, see
 The blazer driver is known to work with various UPSes from Blazer, Energy
 Sistem, Fenton Technologies, Mustek and many others. The NUT compatibility
 table lists all the known supported models. Keep in mind, however, that
-other models not listed there may also be supported but haven't been tested.
+other models not listed there may also be supported, but haven't been tested.
 
 All devices with a serial interface (use the \fBblazer_ser\fR driver) and
 many with a USB interface (use the \fBblazer_usb\fR driver) are supported.
@@ -154,7 +154,7 @@ Perform a (10 second) battery test.
 
 .IP "test.battery.start \fIvalue\fR"
 
-Perform a battery test for the duration of num seconds (truncated to units of
+Perform a battery test for the duration of \fInum\fR seconds (truncated to units of
 60 seconds).
 
 .IP "test.battery.stop"
@@ -176,9 +176,9 @@ systems.
 There are ways to get a fairly accurate reading without disconnecting the load but
 these invariably don't use the battery voltage, but instead keep track on how much
 (and how fast) current is going in- and out of the battery. By putting these in a
-formula known as the Peukert equation you'll be able to get a fairly accurate measure
+formula known as the Peukert equation, you'll be able to get a fairly accurate measure
 on the state of charge. Unfortunately, your UPS doesn't report all the parameters that
-go into this equation, so we're stuck with the below (unreliable) guesstimate.
+go into this equation, so we're stuck with the following (unreliable) guesstimate:
 .nf
 
                      battery.voltage - battery.voltage.low
@@ -186,7 +186,7 @@ battery.charge =  ------------------------------------------ x 100 %
                   battery.voltage.high - battery.voltage.low
 
 .fi
-This is better than nothing (but not much). If this calculation is giving you incorrect
+This is better than nothing (but not by much). If this calculation is giving you incorrect
 readings, you are the one that put in the values in \fBups.conf\fR(5), so don't complain
 with the author. If you need something better, buy a UPS that reports \fBbattery.charge\fR
 all by itself without the help of a NUT driver.

@@ -1,4 +1,4 @@
-.TH NUTUPSDRV 8 "Fri Feb 01 2008" "" "Network UPS Tools (NUT)" 
+.TH NUTUPSDRV 8 "Wed Dec 31 2008" "" "Network UPS Tools (NUT)" 
 .SH NAME  
 nutupsdrv \- generic manual for unified NUT drivers
 .SH SYNOPSIS
@@ -49,9 +49,9 @@ autoconfigure this driver using the \fIid\fR section of \fBups.conf\fR(5).
 Raise the debugging level.  Use this multiple times to see more details.
 Running a driver in debug mode will prevent it from backgrounding after
 startup.  It will keep on logging information to the console until it
-receives a SIGTERM signal.
+receives a SIGINT (usually Ctrl-C) or SIGTERM signal.
 
-Which level of debugging is needed depends both on the driver and the
+The level of debugging needed depends both on the driver and the
 problem you're trying to diagnose.  Therefore, first explain the problem you
 have with a driver to a developer/maintainer, before sending them debugging
 output.  More often than not, if you just pick a level, the output may be
@@ -65,11 +65,11 @@ print only version information, then exit
 
 .IP \-L
 print parseable list of driver variables. Mostly useful for configuration
-wizard and alike.
+wizard programs.
 
 .IP \-k
 ("kill" power) Force shutdown mode.  The UPS will power off the
-attached load if possible.
+attached load, if possible.
 
 You should use \fBupsdrvctl shutdown\fR whenever possible instead of
 calling this directly.
@@ -134,17 +134,47 @@ information.
 \fBupsdrvctl\fR(8)
 
 .SS Drivers:
-\fBapcsmart\fR(8), \fBbcmxcp\fR(8), \fBbcmxcp_usb\fR(8),
-\fBbelkin\fR(8), \fBbelkinunv\fR(8), \fBbestfcom\fR(8),
-\fBbestuferrups\fR(8), \fBbestups\fR(8),
-\fBcyberpower\fR(8), \fBdummy-ups\fR(8), \fBetapro\fR(8),
-\fBeverups\fR(8), \fBgamatronic\fR(8), \fBgenericups\fR(8),
-\fBisbmex\fR(8), \fBliebert\fR(8), \fBmasterguard\fR(8),
-\fBmegatec\fR(8), \fBmegatec_usb\fR(8), \fBmetasys\fR(8), \fBmge\(hyshut\fR(8),
-\fBmge\(hyutalk\fR(8), \fBmge-xml\fR(8), \fBnitram\fR(8), \fBoneac\fR(8),
-\fBoptiups\fR(8), \fBpowercom\fR(8), \fBpowerman-pdu\fR(8), \fBpowerpanel\fR(8), \fBrhino\fR(8),
-\fBsafenet\fR(8), \fBsnmp\(hyups\fR(8), \fBsolis\fR(8), \fBtripplite\fR(8),
-\fBtripplitesu\fR(8), \fBtripplite_usb\fR(8), \fBusbhid-ups\fR(8), \fBupscode2\fR(8),
+\fBapcsmart\fR(8),
+\fBbcmxcp\fR(8),
+\fBbcmxcp_usb\fR(8),
+\fBbelkin\fR(8),
+\fBbelkinunv\fR(8),
+\fBbestfcom\fR(8),
+\fBbestuferrups\fR(8),
+\fBbestups\fR(8),
+\fBblazer\fR(8),
+\fBcyberpower\fR(8),
+\fBdummy\(hyups\fR(8),
+\fBetapro\fR(8),
+\fBeverups\fR(8),
+\fBgamatronic\fR(8),
+\fBgenericups\fR(8),
+\fBisbmex\fR(8),
+\fBliebert\fR(8),
+\fBmasterguard\fR(8),
+\fBmegatec\fR(8),
+\fBmegatec_usb\fR(8),
+\fBmetasys\fR(8),
+\fBmge\(hyshut\fR(8),
+\fBmge\(hyutalk\fR(8),
+\fBmge\(hyxml\fR(8),
+\fBnewmge\(hyshut\fR(8),
+\fBnitram\fR(8),
+\fBoneac\fR(8),
+\fBoptiups\fR(8),
+\fBpowercom\fR(8),
+\fBpowerman\(hypdu\fR(8),
+\fBpowerpanel\fR(8),
+\fBrhino\fR(8),
+\fBrichcomm_usb\fR(8),
+\fBsafenet\fR(8),
+\fBsnmp\(hyups\fR(8),
+\fBsolis\fR(8),
+\fBtripplite\fR(8),
+\fBtripplitesu\fR(8),
+\fBtripplite_usb\fR(8),
+\fBusbhid\(hyups\fR(8),
+\fBupscode2\fR(8),
 \fBvictronups\fR(8)
 
 .SS Internet resources:
