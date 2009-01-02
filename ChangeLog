@@ -1,3 +1,19 @@
+Fri Jan  2 21:29:20 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - man/blazer.8: small wording and punctuation changes,
+ - man/dummy-ups.8: fix wording of sections written prior to repeater mode.
+ - man/nutupsdrv.8: update driver list,
+
+Wed Dec 31 22:32:35 UTC 2008 / Charles Lepple <clepple@gmail.com>
+
+ - man/bcmxcp.8, man/bcmxcp_usb.8: mention man/bcmxcp_usb.8 in man/bcmxcp.8, and
+   reword some sentences.
+
+Wed Dec 31 10:00:38 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/tripplite-hid.c: add another TrippLite SmartOnline SU1500RTXL2UA
+   USB ID.
+
 Mon Dec 29 14:57:52 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/safenet.[ch]: add 'offdelay' and 'ondelay' parameters to allow
