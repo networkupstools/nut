@@ -18,7 +18,7 @@ This driver supports the following optional settings in the
 
 .IP "shutdown_delay=\fIdelay\fR"
 The number of seconds that the UPS should wait between receiving the 
-shutdown command (OB LB) and actually shutting off.
+shutdown command (upsdrvctl shutdown) and actually shutting off.
 
 .IP "baud_rate=\fIrate\fR"
 Communication speed for the UPS. If this is set to 9600, it try to connect
@@ -27,7 +27,7 @@ It start at 1200 and up to 19200. If it succeed it tell you the speed it
 connect with. If not included in the config it default's to baudhunting.
  
 .SH "DEFAULT VALUES FOR THE EXTRA ARGUMENTS"
-.IP "shutdown_delay = \fI180\fR"
+.IP "shutdown_delay = \fI120\fR"
 .IP "baud_rate = \fInone\fR"
 .SH "INSTANT COMMANDS"
 This driver supports the following Instant Commands:
@@ -41,12 +41,16 @@ Turn off the load and remain off.
 .IP "test.battery.start"
 Start a battery test.
 
-.SH "TODO LIST"
-.IP "Report UPS alarm status"
-BCM/XCP supports reporting a wide range of UPS alarm conditions.
+.IP "outlet.n.shutdown.return"
+Turn off the load on outlet "n" and return when power is back.
+ ( n is the outlet number reported by the upsc command ) 
 
+.SH "TODO LIST"
 .IP "Report UPS statistics informations"
 BCM/XCP supports reporting of UPS statistics data.
+
+.IP "Change settings"
+Access the config register to change settings.
 
 .SH "BUGS"
 None known.
