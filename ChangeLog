@@ -1,4 +1,4 @@
-Tue Jan  6 13:55:30 UTC 2009
+Tue Jan  6 13:55:30 UTC 2009 / Charles Lepple <clepple@gmail.com>
 
  - m4/nut_check_os.m4: change dist_get_flavor to os_get_name.
  - ChangeLog: update year to 2009 for some commits.
