@@ -127,7 +127,7 @@ AC_DEFUN([NUT_CHECK_OS],
 	fi
 	# FIXME
 	if test -z "$dist_cv_build_flavor" ; then
-	    dist_cv_build_flavor=$(dist_get_flavor "$(${CC-cc} $CFLAGS -v 2>&1 | grep 'gcc version')")
+	    dist_cv_build_flavor=$(os_get_name "$(${CC-cc} $CFLAGS -v 2>&1 | grep 'gcc version')")
 	fi
 
 	# save the result

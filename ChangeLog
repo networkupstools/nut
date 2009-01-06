@@ -1,9 +1,14 @@
+Tue Jan  6 13:55:30 UTC 2009
+
+ - m4/nut_check_os.m4: change dist_get_flavor to os_get_name.
+ - ChangeLog: update year to 2009 for some commits.
+
 Sat Jan  3 00:35:10 UTC 2009 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
  - man/bcmxcp.8: Changed some info that was wrong in the man page.
    And added info about outlet control.
 
-Fri Jan  2 22:05:32 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
+Fri Jan  2 22:05:32 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
 
  * Integrate the NUT client Python module and application from David Goncalves:
    - scripts/python/client/app/*: integrate the NUT-Monitor Python application, 
@@ -18,7 +23,7 @@ Fri Jan  2 22:05:32 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
    - NEWS: mention the integrated NUT client Python support,
    - AUTHORS: mention David's work.
 
-Fri Jan  2 21:29:20 UTC 2008 / Charles Lepple <clepple@gmail.com>
+Fri Jan  2 21:29:20 UTC 2009 / Charles Lepple <clepple@gmail.com>
 
  - man/blazer.8: small wording and punctuation changes,
  - man/dummy-ups.8: fix wording of sections written prior to repeater mode.
