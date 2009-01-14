@@ -1,4 +1,13 @@
-Wed Jan  7 21:55:47 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
+Wed Jan 14 21:59:47 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
+
+ * Eaton update:
+   - drivers/{mge-shut.c,mge-shut.h,mge-hid.c}, data/driver.list:
+     - add more models, like Nova AVR 625 and 1250, and renamed models,
+     - if a model name can't be matched, concatenate iProduct and iModel. The
+       next step is to only manage exceptions since the above rule is now the
+       standard.
+     
+Wed Jan 14 21:55:47 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
 
  * Rework the NUT Python support tree:
    - scripts/python/module: moved a level up since PyNUT will also provide a

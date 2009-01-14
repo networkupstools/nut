@@ -28,7 +28,7 @@
 #include "main.h"		/* for getval() */
 #include "common.h"
 
-#define MGE_HID_VERSION		"MGE HID 1.11"
+#define MGE_HID_VERSION		"MGE HID 1.12"
 
 #ifndef SHUT_MODE
 #include "usb-common.h"
@@ -310,6 +310,10 @@ typedef struct {
 	const char	*name;
 } models_name_t;
 
+/* FIXME: Only manage exception to the following rule:
+ * name = <iProduct> <iModel>
+ * ex: iProduct=EX and iModel=700 gives "EX 700"
+ */
 static models_name_t mge_model_names [] =
 {
 	/* Ellipse models */
@@ -331,7 +335,7 @@ static models_name_t mge_model_names [] =
 	{ "ELLIPSE", "1000", MGE_DEFAULT, "Ellipse 1000" },
 	{ "ELLIPSE", "1500", MGE_DEFAULT, "Ellipse 1500" },
 
-	/* Ellipse "MAX" */
+	/* Ellipse "MAX" (TBR) */
 	{ "Ellipse MAX", "600", MGE_DEFAULT, "Ellipse MAX 600" },
 	{ "Ellipse MAX", "850", MGE_DEFAULT, "Ellipse MAX 850" },
 	{ "Ellipse MAX", "1100", MGE_DEFAULT, "Ellipse MAX 1100" },
@@ -342,7 +346,7 @@ static models_name_t mge_model_names [] =
 	{ "PROTECTIONCENTER", "500", MGE_DEFAULT, "Protection Center 500" },
 	{ "PROTECTIONCENTER", "675", MGE_DEFAULT, "Protection Center 675" },
 
-	/* Protection Station */
+	/* Protection Station (TBR) */
 	{ "Protection Station", "500", MGE_DEFAULT, "Protection Station 500" },
 	{ "Protection Station", "650", MGE_DEFAULT, "Protection Station 650" },
 	{ "Protection Station", "800", MGE_DEFAULT, "Protection Station 800" },
@@ -356,7 +360,7 @@ static models_name_t mge_model_names [] =
 	{ "Evolution", "3000", MGE_DEFAULT, "Pulsar Evolution 3000" },
 	{ "Evolution", "3000XL", MGE_DEFAULT, "Pulsar Evolution 3000 XL" },
 
-	/* Newer Evolution models */
+	/* Newer Evolution models (TBR) */
 	{ "Evolution", "650", MGE_EVOLUTION_650, "Evolution 650" },
 	{ "Evolution", "850", MGE_EVOLUTION_850, "Evolution 850" },
 	{ "Evolution", "1150", MGE_EVOLUTION_1150, "Evolution 1150" },
@@ -371,21 +375,33 @@ static models_name_t mge_model_names [] =
 	{ "PULSAR M", "2200", MGE_PULSAR_M_2200, "Pulsar M 2200" },
 	{ "PULSAR M", "3000", MGE_PULSAR_M_3000, "Pulsar M 3000" },
 	{ "PULSAR M", "3000 XL", MGE_PULSAR_M_3000_XL, "Pulsar M 3000 XL" },
+	/* Eaton'ified names (TBR) */
+	{ "EX", "2200", MGE_PULSAR_M_2200, "EX 2200" },
+	{ "EX", "3000", MGE_PULSAR_M_3000, "EX 3000" },
+	{ "EX", "3000 XL", MGE_PULSAR_M_3000, "EX 3000 XL" },
 
-	/* Pulsar models */
+	/* Pulsar models (TBR) */
 	{ "Pulsar", "700", MGE_DEFAULT, "Pulsar 700" },
 	{ "Pulsar", "1000", MGE_DEFAULT, "Pulsar 1000" },
 	{ "Pulsar", "1500", MGE_DEFAULT, "Pulsar 1500" },
 	{ "Pulsar", "1000 RT2U", MGE_DEFAULT, "Pulsar 1000 RT2U" },
 	{ "Pulsar", "1500 RT2U", MGE_DEFAULT, "Pulsar 1500 RT2U" },
-
+	/* Eaton'ified names (TBR) */
+	{ "EX", "700", MGE_DEFAULT, "EX 700" },
+	{ "EX", "1000", MGE_DEFAULT, "EX 1000" },
+	{ "EX", "1500", MGE_DEFAULT, "EX 1500" },
+	{ "EX", "1000 RT2U", MGE_DEFAULT, "EX 1000 RT2U" },
+	{ "EX", "1500 RT2U", MGE_DEFAULT, "EX 1500 RT2U" },
+	
 	/* Pulsar MX models */
 	{ "PULSAR", "MX4000", MGE_DEFAULT, "Pulsar MX 4000 RT" },
 	{ "PULSAR", "MX5000", MGE_DEFAULT, "Pulsar MX 5000 RT" },
 
-	/* NOVA models */	
+	/* NOVA models */
 	{ "NOVA AVR", "600", MGE_DEFAULT, "NOVA 600 AVR" },
+	{ "NOVA AVR", "625", MGE_DEFAULT, "Nova AVR 625" },
 	{ "NOVA AVR", "1100", MGE_DEFAULT, "NOVA 1100 AVR" },
+	{ "NOVA AVR", "1250", MGE_DEFAULT, "Nova AVR 1250" },
 
 	/* EXtreme C (EMEA) */
 	{ "EXtreme", "700C", MGE_DEFAULT, "Pulsar EXtreme 700C" },
@@ -418,10 +434,8 @@ static models_name_t mge_model_names [] =
 	{ "GALAXY", "3000_20", MGE_DEFAULT, "Galaxy 3000 20 kVA" },
 	{ "GALAXY", "3000_30", MGE_DEFAULT, "Galaxy 3000 30 kVA" },
 
-	/* FIXME: To be completed (Comet, Galaxy, Esprit, ...) */
-
 	/* end of structure. */
-	{ NULL, NULL, MGE_DEFAULT, "Generic MGE HID model" }
+	{ NULL, NULL, MGE_DEFAULT, NULL }
 };
 
 
@@ -638,7 +652,8 @@ static const char *get_model_name(const char *iProduct, const char *iModel)
 			continue;
 		}
 
-		upsdebugx(2, "Found %s\n", model->name);
+		if (model->name != NULL)
+			upsdebugx(2, "Found %s\n", model->name);
 		break;
 	}
 
@@ -648,7 +663,7 @@ static const char *get_model_name(const char *iProduct, const char *iModel)
 }
 
 static char *mge_format_model(HIDDevice_t *hd) {
-	char	*product;
+	char	*product, *tmpmodel;
 	char	model[64];
 	double	value;
 
@@ -666,7 +681,10 @@ static char *mge_format_model(HIDDevice_t *hd) {
 		return product;
 	}
 
-	snprintf(model, sizeof(model), "%s", get_model_name(product, model));
+	if ( (tmpmodel = get_model_name(product, model) != NULL)
+		snprintf(model, sizeof(model), "%s", tmpmodel);
+	else
+		snprintf(model, sizeof(model), "%s %s", product, model);
 
 	free(hd->Product);
 	hd->Product = strdup(model);

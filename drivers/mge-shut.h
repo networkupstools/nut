@@ -210,18 +210,30 @@ models_name_t models_names [] =
 	{ "PULSAR M", "2200", "Pulsar M 2200" },
 	{ "PULSAR M", "3000", "Pulsar M 3000" },
 	{ "PULSAR M", "3000 XL", "Pulsar M 3000 XL" },
+	/* Eaton'ified names */
+	{ "EX", "2200", "EX 2200" },
+	{ "EX", "3000", "EX 3000" },
+	{ "EX", "3000 XL", "EX 3000 XL" },
 	/* Pulsar models */
 	{ "Pulsar", "700", "Pulsar 700" },
 	{ "Pulsar", "1000", "Pulsar 1000" },
 	{ "Pulsar", "1500", "Pulsar 1500" },
 	{ "Pulsar", "1000 RT2U", "Pulsar 1000 RT2U" },
 	{ "Pulsar", "1500 RT2U", "Pulsar 1500 RT2U" },
+	/* Eaton'ified names */
+	{ "EX", "700", "EX 700" },
+	{ "EX", "1000", "EX 1000" },
+	{ "EX", "1500", "EX 1500" },
+	{ "EX", "1000 RT2U", "EX 1000 RT2U" },
+	{ "EX", "1500 RT2U", "EX 1500 RT2U" },
 	/* Pulsar MX models */
 	{ "PULSAR", "MX4000", "Pulsar MX 4000 RT" },
 	{ "PULSAR", "MX5000", "Pulsar MX 5000 RT" },
 	/* NOVA models */	
 	{ "NOVA AVR", "600", "NOVA 600 AVR" },
+	{ "NOVA AVR", "625", "Nova AVR 625" },
 	{ "NOVA AVR", "1100", "NOVA 1100 AVR" },
+	{ "NOVA AVR", "1250", "Nova AVR 1250" },
 	/* EXtreme C (EMEA) */
 	{ "EXtreme", "700C", "Pulsar EXtreme 700C" },
 	{ "EXtreme", "1000C", "Pulsar EXtreme 1000C" },

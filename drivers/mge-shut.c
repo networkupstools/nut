@@ -37,7 +37,7 @@
 /* --------------------------------------------------------------- */
 
 #define DRIVER_NAME	"MGE UPS SYSTEMS/SHUT driver"
-#define DRIVER_VERSION	"0.67"
+#define DRIVER_VERSION	"0.68"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
