@@ -1,5 +1,9 @@
 Wed Jan 14 21:45:10 UTC 2009 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
+  - drivers/bcmxcp.c: Add ups.power value.
+
+Wed Jan 14 21:45:10 UTC 2009 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+
   - drivers/bcmxcp.c: Changed status info to include OL with BYPASS, BOOST, TRIM.
     Add some more meters like power and current.nominal (max).
 

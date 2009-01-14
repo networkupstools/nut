@@ -280,6 +280,7 @@ void init_meter_map()
 	bcmxcp_meter_map[5].nut_entity = "input.L3-L1.voltage";
 	bcmxcp_meter_map[19].nut_entity = "input.L2.current";
 	bcmxcp_meter_map[20].nut_entity = "input.L3.current";
+	bcmxcp_meter_map[23].nut_entity = "ups.power";
 
 if (nphases == 1) {
 	bcmxcp_meter_map[18].nut_entity = "input.current";
