@@ -21,8 +21,8 @@ Release notes for NUT 2.4.0 - what's new since 2.2.2:
    PRO and Imperial, PowerKinetics BlackOut Buster, UNITEK Alpha 500, WinPower
    CPM-800.
 
- - NUT now embeds Python client support in through the PyNUTClient module and
-   the NUT-Monitor application. Both are from David Goncalves, and are still
+ - NUT now embeds Python client support through the PyNUTClient module and the
+   NUT-Monitor application. Both are from David Goncalves, and are still
    available from http://www.lestat.st.
    For more information, refer to scripts/python/client/README.
 

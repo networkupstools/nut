@@ -1,3 +1,15 @@
+Wed Jan  7 21:55:47 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
+
+ * Rework the NUT Python support tree:
+   - scripts/python/module: moved a level up since PyNUT will also provide a
+     configuration class in the future,
+   - scripts/python/module/PyNUT.py: revert the name from PyNUTClient to PyNUT,
+   - scripts/python/module/test_nutclient.py: fix the import name to PyNUT,
+   - scripts/python/app: moved a level up,
+   - scripts/python/README: some update and completion,
+   - scripts/python/Makefile.am: update for the reworked tree,
+   - AUTHORS, COPYING, NEWS: update the PyNUT name and fix typo.
+
 Tue Jan  6 13:55:30 UTC 2009 / Charles Lepple <clepple@gmail.com>
 
  - m4/nut_check_os.m4: change dist_get_flavor to os_get_name.
