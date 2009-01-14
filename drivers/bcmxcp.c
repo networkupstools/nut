@@ -285,12 +285,16 @@ if (nphases == 1) {
 	bcmxcp_meter_map[18].nut_entity = "input.current";
 	bcmxcp_meter_map[56].nut_entity = "input.voltage";
 	bcmxcp_meter_map[65].nut_entity = "output.current";
+	bcmxcp_meter_map[68].nut_entity = "output.current.nominal";
 	bcmxcp_meter_map[78].nut_entity = "output.voltage";
+	bcmxcp_meter_map[82].nut_entity = "ups.realpower";
 }else{
 	bcmxcp_meter_map[18].nut_entity = "input.L1.current";
 	bcmxcp_meter_map[56].nut_entity = "input.L1-N.voltage";
 	bcmxcp_meter_map[65].nut_entity = "output.L1.current";
+	bcmxcp_meter_map[68].nut_entity = "output.L1.current.nominal";
 	bcmxcp_meter_map[78].nut_entity = "output.L1-N.voltage";
+	bcmxcp_meter_map[82].nut_entity = "ups.L1-N.realpower";
 }
 	bcmxcp_meter_map[27].nut_entity = "output.frequency";
 	bcmxcp_meter_map[28].nut_entity = "input.frequency";
@@ -298,15 +302,21 @@ if (nphases == 1) {
 	bcmxcp_meter_map[33].nut_entity = "battery.voltage";
 	bcmxcp_meter_map[34].nut_entity = "battery.charge";
 	bcmxcp_meter_map[35].nut_entity = "battery.runtime";
+	bcmxcp_meter_map[43].nut_entity = "battery.charge.low";
 	bcmxcp_meter_map[57].nut_entity = "input.L2-N.voltage";
 	bcmxcp_meter_map[58].nut_entity = "input.L3-N.voltage";
 	bcmxcp_meter_map[62].nut_entity = "ambient.temperature";
 	bcmxcp_meter_map[63].nut_entity = "ups.temperature";
 	bcmxcp_meter_map[66].nut_entity = "output.L2.current";
 	bcmxcp_meter_map[67].nut_entity = "output.L3.current";
+	bcmxcp_meter_map[69].nut_entity = "output.L2.current.nominal";
+	bcmxcp_meter_map[70].nut_entity = "output.L3.current.nominal";
 	bcmxcp_meter_map[77].nut_entity = "battery.temperature";
 	bcmxcp_meter_map[79].nut_entity = "output.L2-N.voltage";
 	bcmxcp_meter_map[80].nut_entity = "output.L3-N.voltage";
+	bcmxcp_meter_map[83].nut_entity = "ups.L2-N.realpower";
+	bcmxcp_meter_map[84].nut_entity = "ups.L3-N.realpower";
+	bcmxcp_meter_map[85].nut_entity = "ups.realpower.nominal";
 }
 
 void init_alarm_map()
@@ -1196,16 +1206,20 @@ void upsdrv_updateinfo(void)
 					status_set("OB");
 				break;
 			case 0xe0: /* Overload */
+				status_set("OL");
 				status_set("OVER");
 				break;
 			case 0x63: /* Trim */
+				status_set("OL");
 				status_set("TRIM");
 				break;
 			case 0x62:
 			case 0x61: /* Boost */
+				status_set("OL");
 				status_set("BOOST");
 				break;
 			case 0x60: /* Bypass */
+				status_set("OL");
 				status_set("BYPASS");
 				break;
 			case 0x10: /* Mostly off */

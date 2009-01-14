@@ -1,3 +1,8 @@
+Wed Jan 14 21:45:10 UTC 2009 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+
+  - drivers/bcmxcp.c: Changed status info to include OL with BYPASS, BOOST, TRIM.
+    Add some more meters like power and current.nominal (max).
+
 Wed Jan 14 22:22:51 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
 
  - tools/Makefile.am: fix the name of the "dist-hook" rule, which triggers the
