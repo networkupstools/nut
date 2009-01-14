@@ -1,4 +1,8 @@
-Wed Jan 14 21:45:10 UTC 2009 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+Wed Jan 14 23:43:00 UTC 2009 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+
+  - drivers/bcmxcp,bcmxcp_usb: Change driver verion to 0.19.
+
+Wed Jan 14 23:35:10 UTC 2009 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
   - drivers/bcmxcp.c: Add ups.power value.
 
