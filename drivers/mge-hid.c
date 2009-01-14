@@ -681,7 +681,7 @@ static char *mge_format_model(HIDDevice_t *hd) {
 		return product;
 	}
 
-	if ( (tmpmodel = get_model_name(product, model) != NULL)
+	if ( (tmpmodel = get_model_name(product, model)) != NULL)
 		snprintf(model, sizeof(model), "%s", tmpmodel);
 	else
 		snprintf(model, sizeof(model), "%s %s", product, model);
