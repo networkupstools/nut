@@ -307,7 +307,7 @@ typedef struct {
 	const char	*iProduct;
 	const char	*iModel;
 	models_type_t	type;	/* enumerated model type */
-	const char	*name;		/* optional (defaults to "<iProduct> <iModel>" if NULL)
+	const char	*name;		/* optional (defaults to "<iProduct> <iModel>" if NULL) */
 } models_name_t;
 
 /*
