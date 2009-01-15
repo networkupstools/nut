@@ -1,3 +1,6 @@
+
+EXTRA_DIST = nut-usbinfo.pl
+
 # only call the USB info script upon "make dist", and if Perl is present
 dist-hook:
 	@if test -x /usr/bin/perl; then \
