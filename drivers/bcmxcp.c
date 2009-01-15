@@ -118,7 +118,7 @@ TODO List:
 #include "bcmxcp.h"
 
 #define DRIVER_NAME	"BCMXCP UPS driver"
-#define DRIVER_VERSION	"0.19"
+#define DRIVER_VERSION	"0.20"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -1056,6 +1056,12 @@ void upsdrv_initinfo(void)
 	res = command_read_sequence(PW_LIMIT_BLOCK_REQ, answer);
 	if (res <= 0)
 		fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
+
+	/* Nominal input voltage */
+	voltage = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_NOMINAL_INPUT_VOLTAGE));
+
+	if (voltage != 0)
+		dstate_setinfo("input.voltage.nominal", "%d", voltage);
 
 	/* Low battery warning */
 	bcmxcp_status.lowbatt = answer[BCMXCP_EXT_LIMITS_BLOCK_LOW_BATT_WARNING] * 60;

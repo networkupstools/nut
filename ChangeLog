@@ -1,3 +1,7 @@
+Tue Jan 15 00:15:23 UTC 2009 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+
+  - drivers/bcmxcp,bcmxcp_usb: Add input.power.nominal, Change driver verion to 0.20.
+
 Wed Jan 14 23:43:00 UTC 2009 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
   - drivers/bcmxcp,bcmxcp_usb: Change driver verion to 0.19.
