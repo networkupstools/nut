@@ -5,7 +5,7 @@ EXTRA_DIST = nut-usbinfo.pl
 dist-hook:
 	@if test -x /usr/bin/perl; then \
 		echo "Regenerating the USB files for udev, hotplug and HAL."; \
-		./nut-usbinfo.pl; \
+		$(distdir)/nut-usbinfo.pl; \
 	else \
 		echo "----------------------------------------------------------------------"; \
 		echo "Warning: Perl is not available."; \
