@@ -335,23 +335,23 @@ static models_name_t mge_model_names [] =
 	{ "ELLIPSE", "750", MGE_DEFAULT, "Ellipse 750" },
 	{ "ELLIPSE", "1000", MGE_DEFAULT, "Ellipse 1000" },
 	{ "ELLIPSE", "1500", MGE_DEFAULT, "Ellipse 1500" },
-/*
+
 	/* Ellipse "MAX" (TBR) */
-	{ "Ellipse MAX", "600", MGE_DEFAULT, NULL },
-	{ "Ellipse MAX", "850", MGE_DEFAULT, NULL },
-	{ "Ellipse MAX", "1100", MGE_DEFAULT, NULL },
-	{ "Ellipse MAX", "1500", MGE_DEFAULT, NULL },
- */
+/*	{ "Ellipse MAX", "600", MGE_DEFAULT, NULL }, */
+/*	{ "Ellipse MAX", "850", MGE_DEFAULT, NULL }, */
+/*	{ "Ellipse MAX", "1100", MGE_DEFAULT, NULL }, */
+/*	{ "Ellipse MAX", "1500", MGE_DEFAULT, NULL }, */
+
 	/* Protection Center */
 	{ "PROTECTIONCENTER", "420", MGE_DEFAULT, "Protection Center 420" },
 	{ "PROTECTIONCENTER", "500", MGE_DEFAULT, "Protection Center 500" },
 	{ "PROTECTIONCENTER", "675", MGE_DEFAULT, "Protection Center 675" },
-/*
+
 	/* Protection Station (TBR) */
-	{ "Protection Station", "500", MGE_DEFAULT, NULL },
-	{ "Protection Station", "650", MGE_DEFAULT, NULL },
-	{ "Protection Station", "800", MGE_DEFAULT, NULL },
- */
+/*	{ "Protection Station", "500", MGE_DEFAULT, NULL }, */
+/*	{ "Protection Station", "650", MGE_DEFAULT, NULL }, */
+/*	{ "Protection Station", "800", MGE_DEFAULT, NULL }, */
+
 	/* Evolution models */
 	{ "Evolution", "500", MGE_DEFAULT, "Pulsar Evolution 500" },
 	{ "Evolution", "800", MGE_DEFAULT, "Pulsar Evolution 800" },
@@ -380,20 +380,20 @@ static models_name_t mge_model_names [] =
 	{ "EX", "2200", MGE_PULSAR_M_2200, NULL },
 	{ "EX", "3000", MGE_PULSAR_M_3000, NULL },
 	{ "EX", "3000 XL", MGE_PULSAR_M_3000, NULL },
-/*
+
 	/* Pulsar models (TBR) */
-	{ "Pulsar", "700", MGE_DEFAULT, NULL },
-	{ "Pulsar", "1000", MGE_DEFAULT, NULL },
-	{ "Pulsar", "1500", MGE_DEFAULT, NULL },
-	{ "Pulsar", "1000 RT2U", MGE_DEFAULT, NULL },
-	{ "Pulsar", "1500 RT2U", MGE_DEFAULT, NULL },
+/*	{ "Pulsar", "700", MGE_DEFAULT, NULL }, */
+/*	{ "Pulsar", "1000", MGE_DEFAULT, NULL }, */
+/*	{ "Pulsar", "1500", MGE_DEFAULT, NULL }, */
+/*	{ "Pulsar", "1000 RT2U", MGE_DEFAULT, NULL }, */
+/*	{ "Pulsar", "1500 RT2U", MGE_DEFAULT, NULL }, */
 	/* Eaton'ified names (TBR) */
-	{ "EX", "700", MGE_DEFAULT, NULL },
-	{ "EX", "1000", MGE_DEFAULT, NULL },
-	{ "EX", "1500", MGE_DEFAULT, NULL },
-	{ "EX", "1000 RT2U", MGE_DEFAULT, NULL },
-	{ "EX", "1500 RT2U", MGE_DEFAULT, NULL },
- */
+/*	{ "EX", "700", MGE_DEFAULT, NULL }, */
+/*	{ "EX", "1000", MGE_DEFAULT, NULL }, */
+/*	{ "EX", "1500", MGE_DEFAULT, NULL }, */
+/*	{ "EX", "1000 RT2U", MGE_DEFAULT, NULL }, */
+/*	{ "EX", "1500 RT2U", MGE_DEFAULT, NULL }, */
+
 	/* Pulsar MX models */
 	{ "PULSAR", "MX4000", MGE_DEFAULT, "Pulsar MX 4000 RT" },
 	{ "PULSAR", "MX5000", MGE_DEFAULT, "Pulsar MX 5000 RT" },
