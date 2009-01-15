@@ -48,6 +48,8 @@ SYSFS{idVendor}=="0592", SYSFS{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_GR
 SYSFS{idVendor}=="05b8", SYSFS{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  Belkin F6C1200-UNV  - megatec_usb
 SYSFS{idVendor}=="0665", SYSFS{idProduct}=="5161", MODE="664", GROUP="@RUN_AS_GROUP@"
+
+#  Phoenixtec Power Co., Ltd 
 #  various models  - bcmxcp_usb
 SYSFS{idVendor}=="06da", SYSFS{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  Mustek Powermust  - megatec_usb
@@ -78,6 +80,8 @@ SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="2007", MODE="664", GROUP="@RUN_AS_GR
 SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="3012", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  e.g. ?  - usbhid-ups
 SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="3014", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. TrippLite SmartOnline SU1500RTXL2UA (older unit?)  - usbhid-ups
+SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="4001", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  e.g. TrippLite SmartOnline SU6000RT4U?  - usbhid-ups
 SYSFS{idVendor}=="09ae", SYSFS{idProduct}=="4002", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  e.g. TrippLite SmartOnline SU1500RTXL2ua  - usbhid-ups
