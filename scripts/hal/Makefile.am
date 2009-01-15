@@ -7,6 +7,6 @@ endif
 20-ups-nut-device.fdi: ups-nut-device.fdi
 	cp $< $@
 
-MOSTLYCLEANFILES = 20-ups-nut-device.fdi
+MOSTLYCLEANFILES = 20-ups-nut-device.fdi ups-nut-device.fdi.in
 
 EXTRA_DIST = ups-nut-device.fdi.in

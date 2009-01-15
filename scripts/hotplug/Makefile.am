@@ -6,3 +6,4 @@ if WITH_HOTPLUG
 endif
 
 EXTRA_DIST = README
+MOSTLYCLEANFILES = libhid.usermap
