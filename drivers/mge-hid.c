@@ -306,13 +306,14 @@ static usage_tables_t mge_utab[] = {
 typedef struct {
 	const char	*iProduct;
 	const char	*iModel;
-	models_type_t	type;		/* Enumerated model type */
-	const char	*name;
+	models_type_t	type;	/* enumerated model type */
+	const char	*name;		/* optional (defaults to "<iProduct> <iModel>" if NULL)
 } models_name_t;
 
-/* FIXME: Only manage exception to the following rule:
- * name = <iProduct> <iModel>
- * ex: iProduct=EX and iModel=700 gives "EX 700"
+/*
+ * Do not remove models from this list, but instead comment them
+ * out if not needed. This allows us to quickly add overrides for
+ * specific models only, should this be needed.
  */
 static models_name_t mge_model_names [] =
 {
@@ -334,23 +335,23 @@ static models_name_t mge_model_names [] =
 	{ "ELLIPSE", "750", MGE_DEFAULT, "Ellipse 750" },
 	{ "ELLIPSE", "1000", MGE_DEFAULT, "Ellipse 1000" },
 	{ "ELLIPSE", "1500", MGE_DEFAULT, "Ellipse 1500" },
-
+/*
 	/* Ellipse "MAX" (TBR) */
-	{ "Ellipse MAX", "600", MGE_DEFAULT, "Ellipse MAX 600" },
-	{ "Ellipse MAX", "850", MGE_DEFAULT, "Ellipse MAX 850" },
-	{ "Ellipse MAX", "1100", MGE_DEFAULT, "Ellipse MAX 1100" },
-	{ "Ellipse MAX", "1500", MGE_DEFAULT, "Ellipse MAX 1500" },
-
+	{ "Ellipse MAX", "600", MGE_DEFAULT, NULL },
+	{ "Ellipse MAX", "850", MGE_DEFAULT, NULL },
+	{ "Ellipse MAX", "1100", MGE_DEFAULT, NULL },
+	{ "Ellipse MAX", "1500", MGE_DEFAULT, NULL },
+ */
 	/* Protection Center */
 	{ "PROTECTIONCENTER", "420", MGE_DEFAULT, "Protection Center 420" },
 	{ "PROTECTIONCENTER", "500", MGE_DEFAULT, "Protection Center 500" },
 	{ "PROTECTIONCENTER", "675", MGE_DEFAULT, "Protection Center 675" },
-
+/*
 	/* Protection Station (TBR) */
-	{ "Protection Station", "500", MGE_DEFAULT, "Protection Station 500" },
-	{ "Protection Station", "650", MGE_DEFAULT, "Protection Station 650" },
-	{ "Protection Station", "800", MGE_DEFAULT, "Protection Station 800" },
-
+	{ "Protection Station", "500", MGE_DEFAULT, NULL },
+	{ "Protection Station", "650", MGE_DEFAULT, NULL },
+	{ "Protection Station", "800", MGE_DEFAULT, NULL },
+ */
 	/* Evolution models */
 	{ "Evolution", "500", MGE_DEFAULT, "Pulsar Evolution 500" },
 	{ "Evolution", "800", MGE_DEFAULT, "Pulsar Evolution 800" },
@@ -360,48 +361,49 @@ static models_name_t mge_model_names [] =
 	{ "Evolution", "3000", MGE_DEFAULT, "Pulsar Evolution 3000" },
 	{ "Evolution", "3000XL", MGE_DEFAULT, "Pulsar Evolution 3000 XL" },
 
-	/* Newer Evolution models (TBR) */
-	{ "Evolution", "650", MGE_EVOLUTION_650, "Evolution 650" },
-	{ "Evolution", "850", MGE_EVOLUTION_850, "Evolution 850" },
-	{ "Evolution", "1150", MGE_EVOLUTION_1150, "Evolution 1150" },
-	{ "Evolution", "S 1250", MGE_EVOLUTION_S_1250, "Evolution S 1250" },
-	{ "Evolution", "1550", MGE_EVOLUTION_1550, "Evolution 1550" },
-	{ "Evolution", "S 1750", MGE_EVOLUTION_S_1750, "Evolution S 1750" },
-	{ "Evolution", "2000", MGE_EVOLUTION_2000, "Evolution 2000" },
-	{ "Evolution", "S 2500", MGE_EVOLUTION_S_2500, "Evolution S 2500" },
-	{ "Evolution", "S 3000", MGE_EVOLUTION_S_3000, "Evolution S 3000" },
+	/* Newer Evolution models */
+	{ "Evolution", "650", MGE_EVOLUTION_650, NULL },
+	{ "Evolution", "850", MGE_EVOLUTION_850, NULL },
+	{ "Evolution", "1150", MGE_EVOLUTION_1150, NULL },
+	{ "Evolution", "S 1250", MGE_EVOLUTION_S_1250, NULL },
+	{ "Evolution", "1550", MGE_EVOLUTION_1550, NULL },
+	{ "Evolution", "S 1750", MGE_EVOLUTION_S_1750, NULL },
+	{ "Evolution", "2000", MGE_EVOLUTION_2000, NULL },
+	{ "Evolution", "S 2500", MGE_EVOLUTION_S_2500, NULL },
+	{ "Evolution", "S 3000", MGE_EVOLUTION_S_3000, NULL },
 
 	/* Pulsar M models */
-	{ "PULSAR M", "2200", MGE_PULSAR_M_2200, "Pulsar M 2200" },
-	{ "PULSAR M", "3000", MGE_PULSAR_M_3000, "Pulsar M 3000" },
-	{ "PULSAR M", "3000 XL", MGE_PULSAR_M_3000_XL, "Pulsar M 3000 XL" },
-	/* Eaton'ified names (TBR) */
-	{ "EX", "2200", MGE_PULSAR_M_2200, "EX 2200" },
-	{ "EX", "3000", MGE_PULSAR_M_3000, "EX 3000" },
-	{ "EX", "3000 XL", MGE_PULSAR_M_3000, "EX 3000 XL" },
-
+	{ "PULSAR M", "2200", MGE_PULSAR_M_2200, NULL },
+	{ "PULSAR M", "3000", MGE_PULSAR_M_3000, NULL },
+	{ "PULSAR M", "3000 XL", MGE_PULSAR_M_3000_XL, NULL },
+	/* Eaton'ified names */
+	{ "EX", "2200", MGE_PULSAR_M_2200, NULL },
+	{ "EX", "3000", MGE_PULSAR_M_3000, NULL },
+	{ "EX", "3000 XL", MGE_PULSAR_M_3000, NULL },
+/*
 	/* Pulsar models (TBR) */
-	{ "Pulsar", "700", MGE_DEFAULT, "Pulsar 700" },
-	{ "Pulsar", "1000", MGE_DEFAULT, "Pulsar 1000" },
-	{ "Pulsar", "1500", MGE_DEFAULT, "Pulsar 1500" },
-	{ "Pulsar", "1000 RT2U", MGE_DEFAULT, "Pulsar 1000 RT2U" },
-	{ "Pulsar", "1500 RT2U", MGE_DEFAULT, "Pulsar 1500 RT2U" },
+	{ "Pulsar", "700", MGE_DEFAULT, NULL },
+	{ "Pulsar", "1000", MGE_DEFAULT, NULL },
+	{ "Pulsar", "1500", MGE_DEFAULT, NULL },
+	{ "Pulsar", "1000 RT2U", MGE_DEFAULT, NULL },
+	{ "Pulsar", "1500 RT2U", MGE_DEFAULT, NULL },
 	/* Eaton'ified names (TBR) */
-	{ "EX", "700", MGE_DEFAULT, "EX 700" },
-	{ "EX", "1000", MGE_DEFAULT, "EX 1000" },
-	{ "EX", "1500", MGE_DEFAULT, "EX 1500" },
-	{ "EX", "1000 RT2U", MGE_DEFAULT, "EX 1000 RT2U" },
-	{ "EX", "1500 RT2U", MGE_DEFAULT, "EX 1500 RT2U" },
-	
+	{ "EX", "700", MGE_DEFAULT, NULL },
+	{ "EX", "1000", MGE_DEFAULT, NULL },
+	{ "EX", "1500", MGE_DEFAULT, NULL },
+	{ "EX", "1000 RT2U", MGE_DEFAULT, NULL },
+	{ "EX", "1500 RT2U", MGE_DEFAULT, NULL },
+ */
 	/* Pulsar MX models */
 	{ "PULSAR", "MX4000", MGE_DEFAULT, "Pulsar MX 4000 RT" },
 	{ "PULSAR", "MX5000", MGE_DEFAULT, "Pulsar MX 5000 RT" },
 
 	/* NOVA models */
-	{ "NOVA AVR", "600", MGE_DEFAULT, "NOVA 600 AVR" },
-	{ "NOVA AVR", "625", MGE_DEFAULT, "Nova AVR 625" },
-	{ "NOVA AVR", "1100", MGE_DEFAULT, "NOVA 1100 AVR" },
-	{ "NOVA AVR", "1250", MGE_DEFAULT, "Nova AVR 1250" },
+	{ "NOVA AVR", "500", MGE_DEFAULT, "Nova 500 AVR" },
+	{ "NOVA AVR", "600", MGE_DEFAULT, "Nova 600 AVR" },
+	{ "NOVA AVR", "625", MGE_DEFAULT, "Nova 625 AVR" },
+	{ "NOVA AVR", "1100", MGE_DEFAULT, "Nova 1100 AVR" },
+	{ "NOVA AVR", "1250", MGE_DEFAULT, "Nova 1250 AVR" },
 
 	/* EXtreme C (EMEA) */
 	{ "EXtreme", "700C", MGE_DEFAULT, "Pulsar EXtreme 700C" },
@@ -435,7 +437,7 @@ static models_name_t mge_model_names [] =
 	{ "GALAXY", "3000_30", MGE_DEFAULT, "Galaxy 3000 30 kVA" },
 
 	/* end of structure. */
-	{ NULL, NULL, MGE_DEFAULT, NULL }
+	{ NULL }
 };
 
 
@@ -630,17 +632,21 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.2.load.on", 0, 0, "UPS.OutletSystem.Outlet.[3].DelayBeforeStartup", NULL, "0", HU_TYPE_CMD, NULL },
 
 	/* end of structure. */
-	{ NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
+	{ NULL }
 };
 
-/* All the logic for finely formatting the MGE model name */
-static const char *get_model_name(const char *iProduct, const char *iModel)
+/*
+ * All the logic for finely formatting the MGE model name and device
+ * type matching (used for device specific values or corrections).
+ * Returns pointer to (dynamically allocated) model name.
+ */
+static char *get_model_name(const char *iProduct, const char *iModel)
 {
 	models_name_t	*model = NULL;
 
 	upsdebugx(2, "get_model_name(%s, %s)\n", iProduct, iModel);
 
-	/* Search for formatting rules */
+	/* Search for device type and formatting rules */
 	for (model = mge_model_names; model->iProduct; model++) {
 		upsdebugx(2, "comparing with: %s", model->name);
 
@@ -652,19 +658,26 @@ static const char *get_model_name(const char *iProduct, const char *iModel)
 			continue;
 		}
 
-		if (model->name != NULL)
-			upsdebugx(2, "Found %s\n", model->name);
+		mge_type = model->type;
 		break;
 	}
 
-	mge_type = model->type;		/* enumerated model type */
+	if (!model->name) {
+		/*
+		 * Model not found or NULL (use default) so construct
+		 * model name by concatenation of iProduct and iModel
+		 */
+		char	buf[SMALLBUF];
+		snprintf(buf, sizeof(buf), "%s %s", iProduct, iModel);
+		return strdup(buf);
+	}
 
-	return model->name;
+	return strdup(model->name);
 }
 
 static char *mge_format_model(HIDDevice_t *hd) {
-	char	*product, *tmpmodel;
-	char	model[64];
+	char	*product;
+	char	model[SMALLBUF];
 	double	value;
 
 	/* Get iProduct and iModel strings */
@@ -681,13 +694,9 @@ static char *mge_format_model(HIDDevice_t *hd) {
 		return product;
 	}
 
-	if ( (tmpmodel = get_model_name(product, model)) != NULL)
-		snprintf(model, sizeof(model), "%s", tmpmodel);
-	else
-		snprintf(model, sizeof(model), "%s %s", product, model);
-
 	free(hd->Product);
-	hd->Product = strdup(model);
+	hd->Product = get_model_name(product, model);
+
 	return hd->Product;
 }
 
