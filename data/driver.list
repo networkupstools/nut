@@ -144,6 +144,8 @@
 
 "Digital Loggers"	"LPC, EPCR2, DIN"	"8 outlets"	"powerman-pdu (experimental)"
 
+"Digitus"	"DN-170020"		""	"megatec"
+
 "Dynamix"	"UPS1700D"		""	"megatec"
 "Dynamix"	"UPS-650VA"		""	"megatec ignoreoff"
 
