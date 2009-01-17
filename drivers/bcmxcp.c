@@ -118,7 +118,7 @@ TODO List:
 #include "bcmxcp.h"
 
 #define DRIVER_NAME	"BCMXCP UPS driver"
-#define DRIVER_VERSION	"0.20"
+#define DRIVER_VERSION	"0.21"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -138,6 +138,8 @@ static long int get_long(const unsigned char*);
 static float get_float(const unsigned char *data);
 static void init_meter_map(void);
 static void init_alarm_map(void);
+static void init_config(void);
+static void init_limit(void);
 static void init_ups_meter_map(const unsigned char *map, unsigned char len);
 static void init_ups_alarm_map(const unsigned char *map, unsigned char len);
 static void decode_meter_map_entry(const unsigned char *entry, const unsigned char format, char* value);
@@ -150,7 +152,7 @@ char *ABMStatus[4] = {"Charging", "Discharging", "Floating", "Resting"};
 unsigned char AUTHOR[4] = {0xCF, 0x69, 0xE8, 0xD5};		/* Autorisation	command	*/
 int nphases = 0;
 int outlet_block_len = 0;
-char *cpu_name[] = {"Cont:", "Inve:", "Rect:", "Netw:", "Disp:"};
+char *cpu_name[5] = {"Cont:", "Inve:", "Rect:", "Netw:", "Disp:"};
 
 /* get_word funktion from nut driver metasys.c */
 int get_word(const unsigned char *buffer)	/* return an integer reading a word in the supplied buffer */
@@ -875,13 +877,141 @@ int init_outlet(unsigned char len)
 
 }
 
+void init_config(void)
+{
+	unsigned char answer[256];
+	int voltage = 0, res, len;
+	char sValue[17];
+
+	res = command_read_sequence(PW_CONFIG_BLOC_REQ, answer);
+	if (res <= 0)
+		fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
+
+	/* Get validation mask for status bitmap */
+	bcmxcp_status.topology_mask = answer[BCMXCP_CONFIG_BLOCK_HW_MODULES_INSTALLED_BYTE3];
+
+	/* Nominal output voltage of ups */
+	voltage = get_word((answer + BCMXCP_CONFIG_BLOCK_NOMINAL_OUTPUT_VOLTAGE));
+	
+	if (voltage != 0)
+		dstate_setinfo("output.voltage.nominal", "%d", voltage);
+
+	/* UPS serial number */
+	sValue[16] = 0;
+	
+	snprintf(sValue, 16, "%s", answer + BCMXCP_CONFIG_BLOCK_SERIAL_NUMBER);
+	len = 0;
+
+	for (len = 0; len < 16; len++) {
+		if (sValue[len] == 0x20) {
+			sValue[len] = 0;
+			break;
+		}
+	}
+	
+	dstate_setinfo("ups.serial", "%s", sValue);
+	
+}
+
+void init_limit(void)
+{
+	unsigned char answer[256];
+	int value = 0, res, fnom;
+	char *horn_stat[3] = {"disabled", "enabled", "muted"};
+
+	res = command_read_sequence(PW_LIMIT_BLOCK_REQ, answer);
+	if (res <= 0) {
+		fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
+	}
+
+	/* Nominal input voltage */
+	value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_NOMINAL_INPUT_VOLTAGE));
+
+	if (value != 0) {
+		dstate_setinfo("input.voltage.nominal", "%d", value);
+	}
+
+	/* Nominal input frequency */
+	value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_NOMINAL_INPUT_FREQ));
+
+	if (value != 0) {
+		fnom = value;
+		dstate_setinfo("input.frequency.nominal", "%d", value);
+	}
+
+	/* Input frequency deviation */
+	value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_FREQ_DEV_LIMIT));
+
+	if (value != 0) {
+		value /= 100;
+		dstate_setinfo("input.frequency.low", "%d", fnom - value);
+		dstate_setinfo("input.frequency.high", "%d", fnom + value);
+	}
+
+	/* Bypass Voltage Low Deviation Limit / Transfer to Boost Voltage */
+	value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_VOLTAGE_LOW_DEV_LIMIT));
+
+	if (value != 0) {
+		dstate_setinfo("input.transfer.boost.high", "%d", value);
+	}
+
+	/* Bypass Voltage High Deviation Limit / Transfer to Buck Voltage */
+	value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_VOLTAGE_HIGE_DEV_LIMIT));
+
+	if (value != 0) {
+		dstate_setinfo("input.transfer.trim.low", "%d", value);
+	}
+
+	/* Low battery warning */
+	bcmxcp_status.lowbatt = answer[BCMXCP_EXT_LIMITS_BLOCK_LOW_BATT_WARNING] * 60;
+
+	/* Check if we should warn the user that her shutdown delay is to long? */
+	if (bcmxcp_status.shutdowndelay > bcmxcp_status.lowbatt)
+		upslogx(LOG_WARNING, "Shutdown delay longer than battery capacity when Low Battery warning is given. (max %d seconds)", bcmxcp_status.lowbatt);
+
+	/* Horn Status: */
+	value = answer[BCMXCP_EXT_LIMITS_BLOCK_HORN_STATUS];
+
+	if (value >= 0 && value <= 2) {
+		dstate_setinfo("ups.beeper.status", "%s", horn_stat[value]);
+	}
+
+	/* Minimum Supported Input Voltage */
+	value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_MIN_INPUT_VOLTAGE));
+
+	if (value != 0) {
+		dstate_setinfo("input.transfer.low", "%d", value);
+	}
+
+	/* Maximum Supported Input Voltage */
+	value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_MAX_INPUT_VOLTAGE));
+
+	if (value != 0) {
+		dstate_setinfo("input.transfer.high", "%d", value);
+	}
+
+	/* Ambient Temperature Lower Alarm Limit  */
+	value = answer[BCMXCP_EXT_LIMITS_BLOCK_AMBIENT_TEMP_LOW];
+
+	if (value != 0) {
+		dstate_setinfo("ambient.temperature.low", "%d", value);
+	}
+
+	/* AAmbient Temperature Upper Alarm Limit  */
+	value = answer[BCMXCP_EXT_LIMITS_BLOCK_AMBIENT_TEMP_HIGE];
+
+	if (value != 0) {
+		dstate_setinfo("ambient.temperature.high", "%d", value);
+	}
+}
+
 void upsdrv_initinfo(void)
 {
 	unsigned char answer[256];
-	char *pTmp, sValue[17];
+	char *pTmp;
 	char outlet_name[27];
 	int iRating = 0, iIndex = 0, res, len;
-	int voltage = 0, ncpu = 0, buf;
+	int ncpu = 0, buf;
 	int conf_block_len = 0, alarm_block_len = 0, cmd_list_len = 0;
 
 	/* Init BCM/XCP alarm descriptions */
@@ -1024,51 +1154,10 @@ void upsdrv_initinfo(void)
 	}
 
 	/* Get information on UPS configuration */
-	res = command_read_sequence(PW_CONFIG_BLOC_REQ, answer);
-	if (res <= 0)
-		fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
+	init_config();
 
-	/* Get validation mask for status bitmap */
-	bcmxcp_status.topology_mask = answer[BCMXCP_CONFIG_BLOCK_HW_MODULES_INSTALLED_BYTE3];
-
-	/* Nominal output voltage of ups */
-	voltage = get_word((answer + BCMXCP_CONFIG_BLOCK_NOMINAL_OUTPUT_VOLTAGE));
-	
-	if (voltage != 0)
-		dstate_setinfo("output.voltage.nominal", "%d", voltage);
-
-	/* UPS serial number */
-	sValue[16] = 0;
-	
-	snprintf(sValue, 16, "%s", answer + BCMXCP_CONFIG_BLOCK_SERIAL_NUMBER);
-	len = 0;
-
-	for (len = 0; len < 16; len++) {
-		if (sValue[len] == 0x20) {
-			sValue[len] = 0;
-			break;
-		}
-	}
-	
-	dstate_setinfo("ups.serial", "%s", sValue);
-	
 	/* Get information on UPS extended limits */
-	res = command_read_sequence(PW_LIMIT_BLOCK_REQ, answer);
-	if (res <= 0)
-		fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
-
-	/* Nominal input voltage */
-	voltage = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_NOMINAL_INPUT_VOLTAGE));
-
-	if (voltage != 0)
-		dstate_setinfo("input.voltage.nominal", "%d", voltage);
-
-	/* Low battery warning */
-	bcmxcp_status.lowbatt = answer[BCMXCP_EXT_LIMITS_BLOCK_LOW_BATT_WARNING] * 60;
-
-	/* Check if we should warn the user that her shutdown delay is to long? */
-	if (bcmxcp_status.shutdowndelay > bcmxcp_status.lowbatt)
-		upslogx(LOG_WARNING, "Shutdown delay longer than battery capacity when Low Battery warning is given. (max %d seconds)", bcmxcp_status.lowbatt);
+	init_limit();
 	
 	/* Add instant commands */
 	dstate_addcmd("shutdown.return");

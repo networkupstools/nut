@@ -1,10 +1,17 @@
+Sat Jan 17 23:05:22 UTC 2009 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+
+  - drivers/bcmxcp,bcmxcp_usb: Add readings from extended limit block, like max min
+    voltage for transfer to trim/boost and to battery. Moved this code into separated
+    functions. Also corrected power to voltage in the previous change, and some spelling.
+    Change driver version to 0.21.
+
 Tue Jan 15 00:15:23 UTC 2009 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
-  - drivers/bcmxcp,bcmxcp_usb: Add input.power.nominal, Change driver verion to 0.20.
+  - drivers/bcmxcp,bcmxcp_usb: Add input.voltage.nominal, Change driver version to 0.20.
 
 Wed Jan 14 23:43:00 UTC 2009 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
-  - drivers/bcmxcp,bcmxcp_usb: Change driver verion to 0.19.
+  - drivers/bcmxcp,bcmxcp_usb: Change driver version to 0.19.
 
 Wed Jan 14 23:35:10 UTC 2009 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
