@@ -97,9 +97,6 @@
 "Best Power"	"Micro-Ferrups"		""	"bestuferrups"
 "Best Power"	"Fortress/Ferrups"	"f-command support"	"bestfcom"
 
-"Centralion"	"Blazer"		""	"megatec"
-"Centralion"	"Micro Master"		""	"megatec"
-
 "Chloride"	"Desk Power 650"	"serial port"	"megatec"
 
 "Cito Power"	"CPG-SR1000"		""	"megatec"
@@ -637,7 +634,7 @@
 "Various"	"(various)"	"SEC protocol"		"gamatronic"
 "Various"	"(various)"	"Generic RUPS model"	"genericups upstype=4"
 "Various"	"(various)"	"Generic RUPS 2000 (Megatec M2501 cable)"	"genericups upstype=21"
-"Various"	"(various)"	"Megatec protocol"	"megatec"
+"Various"	"(various)"	"Q1 / Megatec protocol"	"megatec"
 "Various"	"(various)"	"PhoenixTec protocol"	"bestups"
 "Various"	"(various)"	"SNMP - RFC 1628"	"snmp-ups (experimental)"
 "Various"	"(various)"	"Safenet software"	"safenet"
