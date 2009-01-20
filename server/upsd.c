@@ -578,17 +578,15 @@ static void client_readline(ctype_t *client)
 	}
 
 	if (ret < 0) {
-		switch(errno)
-		{
-		case EINTR:
-		case EAGAIN:
-			return;
+		upsdebug_with_errno(2, "Disconnect %s (read failure)", client->addr);
+		client_disconnect(client);
+		return;
+	}
 
-		default:
-			upslogx(LOG_INFO, "Host %s disconnected (read failure)", client->addr);
-			client_disconnect(client);
-			return;
-		}
+	if (ret == 0) {
+		upsdebugx(2, "Disconnect %s (no data available)", client->addr);
+		client_disconnect(client);
+		return;
 	}
 
 	/* fragment handling code */
@@ -830,7 +828,7 @@ static void mainloop(void)
 
 	for (i = 0; i < nfds; i++) {
 
-		if (fds[i].revents & POLLHUP) {
+		if (fds[i].revents & (POLLHUP|POLLERR|POLLNVAL)) {
 
 			switch(handler[i].type)
 			{
