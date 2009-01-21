@@ -20,9 +20,18 @@
 #ifndef SSL_H_SEEN
 #define SSL_H_SEEN 1
 
-	extern	char	*certfile;
+#ifdef HAVE_SSL
+#include <openssl/err.h>
+#include <openssl/ssl.h>
+#endif
+
+#include "ctype.h"
+
+extern char	*certfile;
 
 void ssl_init(void);
+void ssl_finish(ctype_t *client);
+
 int ssl_read(ctype_t *client, char *buf, size_t buflen);
 int ssl_write(ctype_t *client, const char *buf, size_t buflen);
 

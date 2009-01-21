@@ -28,14 +28,12 @@
 #include <sys/socket.h>
 
 #include "upsd.h"
-#include "ctype.h"
 #include "neterr.h"
-
 #include "ssl.h"
 
-	char	*certfile = NULL;
+char	*certfile = NULL;
 
-static	int	ssl_initialized = 0;
+static int	ssl_initialized = 0;
 
 #ifndef HAVE_SSL
 
@@ -63,16 +61,16 @@ void ssl_init(void)
 	ssl_initialized = 0;	/* keep gcc quiet */
 }
 
+void ssl_finish(ctype_t *client)
+{
+	if (client->ssl) {
+		upslogx(LOG_ERR, "ssl_finish found active SSL connection but SSL wasn't compiled in");
+	}
+}
+
 #else
 
-#ifdef HAVE_SSL
-#include <openssl/err.h>
-#include <openssl/ssl.h>
-#endif
-
-#include "ssl.h"
-
-static	SSL_CTX *ssl_ctx = NULL;
+static SSL_CTX	*ssl_ctx = NULL;
 
 static void ssl_debug(void)
 {
@@ -97,8 +95,9 @@ void net_starttls(ctype_t *client, int numarg, const char **arg)
 		return;
 	}
 
-	if (!sendback(client, "OK STARTTLS\n"))
+	if (!sendback(client, "OK STARTTLS\n")) {
 		return;
+	}
 
 	client->ssl = SSL_new(ssl_ctx);
 
@@ -116,8 +115,9 @@ void net_starttls(ctype_t *client, int numarg, const char **arg)
 
 void ssl_init(void)
 {
-	if (!certfile)
+	if (!certfile) {
 		return;
+	}
 
 	check_perms(certfile);
 
@@ -125,8 +125,9 @@ void ssl_init(void)
 	SSL_load_error_strings();
 	OpenSSL_add_ssl_algorithms();
 
-	if ((ssl_ctx = SSL_CTX_new(TLSv1_server_method())) == NULL)
+	if ((ssl_ctx = SSL_CTX_new(TLSv1_server_method())) == NULL) {
 		fatal_with_errno(EXIT_FAILURE, "SSL_CTX_new");
+	}
 
 	if (SSL_CTX_use_RSAPrivateKey_file(ssl_ctx, certfile, SSL_FILETYPE_PEM) != 1) {
 		ssl_debug();
@@ -146,8 +147,9 @@ void ssl_init(void)
 
 	SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_NONE, NULL);
 
-	if (SSL_CTX_set_cipher_list(ssl_ctx, "HIGH:@STRENGTH") != 1)
+	if (SSL_CTX_set_cipher_list(ssl_ctx, "HIGH:@STRENGTH") != 1) {
 		fatalx(EXIT_FAILURE, "SSL_CTX_set_cipher_list");
+	}
 
 	ssl_initialized = 1;
 }
@@ -158,28 +160,27 @@ static int ssl_error(SSL *ssl, int ret)
 
 	e = SSL_get_error(ssl, ret);
 
-	switch (e) {
-		case SSL_ERROR_WANT_READ:
-			upsdebugx(1, "ssl_error() ret=%d SSL_ERROR_WANT_READ",
-				ret);
-			break;
+	switch (e)
+	{
+	case SSL_ERROR_WANT_READ:
+		upsdebugx(1, "ssl_error() ret=%d SSL_ERROR_WANT_READ", ret);
+		break;
 
-		case SSL_ERROR_WANT_WRITE:
-			upsdebugx(1, "ssl_error() ret=%d SSL_ERROR_WANT_WRITE",
-				ret);
-			break;
+	case SSL_ERROR_WANT_WRITE:
+		upsdebugx(1, "ssl_error() ret=%d SSL_ERROR_WANT_WRITE", ret);
+		break;
 
-		case SSL_ERROR_SYSCALL:
-			if (ret == 0 && ERR_peek_error() == 0)
-				upsdebugx(1, "ssl_error() EOF from client");
-			else
-				upsdebugx(1, "ssl_error() ret=%d SSL_ERROR_SYSCALL", 
-					ret);
-			break;
+	case SSL_ERROR_SYSCALL:
+		if (ret == 0 && ERR_peek_error() == 0) {
+			upsdebugx(1, "ssl_error() EOF from client");
+		} else {
+			upsdebugx(1, "ssl_error() ret=%d SSL_ERROR_SYSCALL", ret);
+		}
+		break;
 
-		default:
-			upsdebugx(1, "ssl_error() ret=%d SSL_ERROR %d", ret, e);
-			ssl_debug();
+	default:
+		upsdebugx(1, "ssl_error() ret=%d SSL_ERROR %d", ret, e);
+		ssl_debug();
 	}
 
 	return -1;
@@ -191,21 +192,19 @@ static int ssl_accept(ctype_t *client)
 
 	ret = SSL_accept(client->ssl);
 
-	switch (ret) {
-		case 1:
-			client->ssl_connected = 1;
-			upsdebugx(3, "SSL connected");
-			return 0;
+	switch (ret)
+	{
+	case 1:
+		client->ssl_connected = 1;
+		upsdebugx(3, "SSL connected");
+		return 0;
 		
-		case 0:
-		case -1:
-			return ssl_error(client->ssl, ret);
-		
-		default:
-			upslog_with_errno(LOG_ERR, "Unknown return value from SSL_accept");
+	case 0:
+	case -1:
+		return ssl_error(client->ssl, ret);
 	}
-
-	/* NOTREACHED */
+	
+	upslog_with_errno(LOG_ERR, "Unknown return value from SSL_accept");
 	return -1;
 }
 
@@ -237,6 +236,13 @@ int ssl_write(ctype_t *client, const char *buf, size_t buflen)
 	upsdebugx(5, "ssl_write ret=%d", ret);
 
 	return ret;
+}
+
+void ssl_finish(ctype_t *client)
+{
+	if (client->ssl) {
+		SSL_free(client->ssl);
+	}
 }
 
 #endif	/* HAVE_SSL */

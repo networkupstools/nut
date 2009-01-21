@@ -31,11 +31,6 @@
 #include <netdb.h>
 #include <poll.h>
 
-#ifdef HAVE_SSL
-#include <openssl/err.h>
-#include <openssl/ssl.h>
-#endif
-
 #include "user.h"
 #include "ctype.h"
 #include "stype.h"
@@ -342,11 +337,7 @@ static void client_disconnect(ctype_t *client)
 		declogins(client->loginups);
 	}
 
-#ifdef HAVE_SSL
-	if (client->ssl) {
-		SSL_free(client->ssl);
-	}
-#endif
+	ssl_finish(client);
 
 	pconf_finish(&client->ctx);
 
