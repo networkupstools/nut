@@ -1,4 +1,4 @@
-Wed Jan 21 11:46:34 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+Wed Jan 21 11:46:34 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  * NUT Python support udpate:
    - scripts/python/*: fix the missing PyNUTClient name update
