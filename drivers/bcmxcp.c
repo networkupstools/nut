@@ -916,7 +916,7 @@ void init_config(void)
 void init_limit(void)
 {
 	unsigned char answer[256];
-	int value = 0, res, fnom;
+	int value, res;
 	char *horn_stat[3] = {"disabled", "enabled", "muted"};
 
 	res = command_read_sequence(PW_LIMIT_BLOCK_REQ, answer);
@@ -935,17 +935,17 @@ void init_limit(void)
 	value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_NOMINAL_INPUT_FREQ));
 
 	if (value != 0) {
-		fnom = value;
+		int	fnom = value;
 		dstate_setinfo("input.frequency.nominal", "%d", value);
-	}
 
-	/* Input frequency deviation */
-	value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_FREQ_DEV_LIMIT));
+		/* Input frequency deviation */
+		value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_FREQ_DEV_LIMIT));
 
-	if (value != 0) {
-		value /= 100;
-		dstate_setinfo("input.frequency.low", "%d", fnom - value);
-		dstate_setinfo("input.frequency.high", "%d", fnom + value);
+		if (value != 0) {
+			value /= 100;
+			dstate_setinfo("input.frequency.low", "%d", fnom - value);
+			dstate_setinfo("input.frequency.high", "%d", fnom + value);
+		}
 	}
 
 	/* Bypass Voltage Low Deviation Limit / Transfer to Boost Voltage */
