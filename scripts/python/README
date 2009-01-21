@@ -11,7 +11,10 @@ upsd data server in a simple way, without having to know the NUT protocol.
 To import it on Python programs you have to use the following (case sensitive) :
 'import PyNUT'
 
-To install the PyNUT class on Debian/Ubuntu, copy it to:
+This module provides a 'PyNUTClient' class that can be used to connect and get
+data from an upsd data server.
+
+To install the PyNUT module on Debian/Ubuntu, copy it to:
 /usr/share/python-support/python-pynut/
 
 This directory also contains test_nutclient.py, which is a PyNUT test program.

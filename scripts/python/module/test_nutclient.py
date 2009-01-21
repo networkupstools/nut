@@ -8,9 +8,9 @@ import sys
 
 if __name__ == "__main__" :
 
-    print( "PyNUT test..." )
-    nut    = PyNUT.PyNUT( debug=True )
-    #nut    = PyNUT.PyNUT( login="upsadmin", password="upsadmin", debug=True )
+    print( "PyNUTClient test..." )
+    nut    = PyNUT.PyNUTClient( debug=True )
+    #nut    = PyNUT.PyNUTClient( login="upsadmin", password="upsadmin", debug=True )
 
     print( 80*"-" + "\nTesting 'GetUPSList' :")
     result = nut.GetUPSList( )

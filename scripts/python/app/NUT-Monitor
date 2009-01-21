@@ -170,7 +170,7 @@ class gui :
                 login    = None
                 password = None
 
-            self.__ups_handler = PyNUT.PyNUT( host=host, port=port, login=login, password=password )
+            self.__ups_handler = PyNUT.PyNUTClient( host=host, port=port, login=login, password=password )
             result = self.__ups_handler.GetUPSList()
 
             # Clear UPS List

@@ -1,3 +1,10 @@
+Wed Jan 21 11:46:34 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ * NUT Python support udpate:
+   - scripts/python/*: fix the missing PyNUTClient name update
+   - scripts/python/README: some more completion
+   (thanks to David Goncalves for the patch)
+
 Sat Jan 17 23:05:22 UTC 2009 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
   - drivers/bcmxcp,bcmxcp_usb: Add readings from extended limit block, like max min

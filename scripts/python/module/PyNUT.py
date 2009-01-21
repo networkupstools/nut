@@ -24,7 +24,7 @@
 
 import telnetlib
 
-class PyNUT :
+class PyNUTClient :
     """ Abstraction class to access NUT (Network UPS Tools) server """
 
     __debug       = None   # Set class to debug mode (prints everything useful for debuging...)
