@@ -32,7 +32,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"GE/IMV/Victron UPS driver"
-#define DRIVER_VERSION	"0.19"
+#define DRIVER_VERSION	"0.20"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -238,7 +238,7 @@ void upsdrv_updateinfo(void)
 {
 	int flags; 
 	char temp[ LENGTH_TEMP ]; 
-	char test_result[ 255 ];
+	char test_result[ LENGTH_TEMP ];
 	int runtime_sec = -1;
 
         if (start_is_datastale)
@@ -523,13 +523,16 @@ void upsdrv_initups(void)
 	ser_set_speed(upsfd, device_path, B1200);
 
 
-	if ((usd = getval("usd"))) sdwdelay=atoi(usd);
-      
-	model_name = getval("modelname"); /* kdyz modelname nebylo zadano je vraceno NULL*/ 
+	if ((usd = getval("usd"))) {
+		sdwdelay=atoi(usd);
+		upsdebugx(1, "(-x) Delay before shutdown %i",sdwdelay);
+	}
 
-	upsdebugx(1, "(-x) Delay before shutdown %i",sdwdelay);
-	upsdebugx(1, "(-x) UPS Name %s",model_name);
-    
+	if ((model_name = getval("modelname"))) {
+		/* kdyz modelname nebylo zadano je vraceno NULL*/ 
+		upsdebugx(1, "(-x) UPS Name %s",model_name);
+	}
+
 	/* inicializace a synchronizace UPS */
 
 	ser_send_char(upsfd, ENDCHAR);
