@@ -90,13 +90,8 @@ static int execute_and_retrieve_query(char *query, char *reply)
 	ret = usb_control_msg(udev, STATUS_REQUESTTYPE, REQUEST_VALUE,
 		MESSAGE_VALUE, INDEX_VALUE, query, QUERY_PACKETSIZE, 1000);
 
-	if (ret < 0) {
-		upsdebug_with_errno(3, "send");
-		return ret;
-	}
-
-	if (ret == 0) {
-		upsdebugx(3, "send: timeout");
+	if (ret <= 0) {
+		upsdebugx(3, "send: %s", ret ? usb_strerror() : "timeout");
 		return ret;
 	}
 
@@ -104,13 +99,8 @@ static int execute_and_retrieve_query(char *query, char *reply)
 
 	ret = usb_interrupt_read(udev, REPLY_REQUESTTYPE, reply, REPLY_PACKETSIZE, 1000);
 
-	if (ret < 0) {
-		upsdebug_with_errno(3, "read");
-		return ret;
-	}
-
-	if (ret == 0) {
-		upsdebugx(3, "read: timeout");
+	if (ret <= 0) {
+		upsdebugx(3, "read: %s", ret ? usb_strerror() : "timeout");
 		return ret;
 	}
 
