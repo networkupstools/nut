@@ -1,5 +1,15 @@
 Tue Jan 27 08:28:22 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
+ - scripts/udev/Makefile.am: use a dash to separate the name of the udev rule,
+   not an underscore (patch from Scott James Remnant, Ubuntu).
+ - scripts/udev/README: update
+ - configure.in: guess the udev rules installation directory, since older were
+   in /etc/udev and newer are /lib/udev
+ - UPGRADING: mention the above change.
+ - NEWS: some more completion
+
+Tue Jan 27 08:28:22 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
  - drivers/libusb.c, drivers/richcomm_usb.c: broaden the libusb_close() call to all
    non Linux, since it has been confirmed to be needed on FreeBSD too (thanks to
    Daniel O'Connor) ; also bump the respective version

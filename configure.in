@@ -46,9 +46,12 @@ hotplugdir='/etc/hotplug'
 if test ! -d "${hotplugdir}"; then
    hotplugdir=''
 fi
-udevdir='/etc/udev'
+udevdir='/lib/udev'
 if test ! -d "${udevdir}"; then
-   udevdir=''
+   udevdir='/etc/udev'
+   if test ! -d "${udevdir}"; then
+      udevdir=''
+   fi
 fi
 
 RUN_AS_USER="nobody"
@@ -723,7 +726,7 @@ AM_CONDITIONAL(WITH_HOTPLUG, test -n "${hotplugdir}")
 
 AC_MSG_CHECKING(whether to install udev rules)
 AC_ARG_WITH(udev-dir,
- AC_HELP_STRING([--with-udev-dir=PATH], [where to install udev rules (/etc/udev)]),
+ AC_HELP_STRING([--with-udev-dir=PATH], [where to install udev rules (/lib/udev or /etc/udev)]),
  [
     case "${withval}" in
         yes)

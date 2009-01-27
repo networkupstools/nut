@@ -19,6 +19,8 @@ Changes from 2.2.2 to 2.4.0:
  - The files under scripts/python/client are distributed under GPL 3+, whereas
    the rest of the files are distributed under GPL 2+. Refer to COPYING for more
    information.
+ - The generated udev rules file has been renamed with dash only, no underscore
+   anymore (ie 52-nut-usbups.rules instead of 52_nut-usbups.rules)
 
 ---------------------------------------------------------------------------
 Changes from 2.2.1 to 2.2.2:

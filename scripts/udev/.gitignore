@@ -3,3 +3,5 @@ nut-usbups.rules
 Makefile.in
 Makefile
 
+
+52-nut-usbups.rules

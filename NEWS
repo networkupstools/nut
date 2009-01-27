@@ -21,11 +21,10 @@ Release notes for NUT 2.4.0 - what's new since 2.2.2:
    and Imperial, PowerKinetics BlackOut Buster, Sweex 1000 USB, UNITEK Alpha
    500, WinPower CPM-800.
 
-
  - NUT now embeds Python client support through the PyNUTClient module and the
    NUT-Monitor application. Both are from David Goncalves, and are still
    available from http://www.lestat.st.
-   For more information, refer to scripts/python/client/README.
+   For more information, refer to scripts/python/README.
 
  - the dummy-ups driver now support a "repeater" mode. This allows it to act as
    a NUT client, and to forward data. This can be useful for supervision and
@@ -33,7 +32,7 @@ Release notes for NUT 2.4.0 - what's new since 2.2.2:
 
  - tcp-wrappers support has been added to the upsd server, to grant users access
    by source IP for commands that require to be logged into the server. This
-   replaces the previous internal implementation.
+   replaces the previous internal implementation (ACL in upsd.conf).
 
  - the nut.conf file has been introduced to standardize startup configuration
    across the various systems.
