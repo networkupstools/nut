@@ -27,7 +27,7 @@
 #include "blazer.h"
 
 #define DRIVER_NAME	"Megatec/Q1 protocol USB driver"
-#define DRIVER_VERSION	"0.02"
+#define DRIVER_VERSION	"0.03"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -63,13 +63,8 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 		ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
 			0x09, 0x200, 0, &tmp[i], 8, 1000);
 
-		if (ret < 0) {
-			upsdebug_with_errno(3, "send");
-			return ret;
-		}
-
-		if (ret == 0) {
-			upsdebugx(3, "send: timeout");
+		if (ret <= 0) {
+			upsdebugx(3, "send: %s", ret ? usb_strerror() : "timeout");
 			return ret;
 		}
 	}
@@ -84,13 +79,8 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
 		ret = usb_interrupt_read(udev, 0x81, &buf[i], 8, 1000);
 
-		if (ret < 0) {
-			upsdebug_with_errno(3, "read");
-			return ret;
-		}
-
-		if (ret == 0) {
-			upsdebugx(3, "read: timeout");
+		if (ret <= 0) {
+			upsdebugx(3, "read: %s", ret ? usb_strerror() : "timeout");
 			return ret;
 		}
 	}
@@ -135,18 +125,13 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 		}
 
 		for (retry = 0; retry < 10; retry++) {
-			int	res;
+			int	ret;
 
-			res = usb_get_string_simple(udev, command[i].index, buf, buflen);
+			ret = usb_get_string_simple(udev, command[i].index, buf, buflen);
 
-			if (res < 0) {
-				upsdebug_with_errno(3, "read");
-				return res;
-			}
-
-			if (res == 0) {
-				upsdebugx(3, "read: timeout");
-				return res;
+			if (ret <= 0) {
+				upsdebugx(3, "read: %s", ret ? usb_strerror() : "timeout");
+				return ret;
 			}
 
 			/* "UPS No Ack" has a special meaning */
@@ -157,7 +142,7 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 			/* Replace the first byte of what we received with the correct one */
 			buf[0] = command[i].prefix;
 
-			return res;
+			return ret;
 		}
 
 		upsdebugx(3, "read: %.*s", strcspn(buf, "\r"), buf);
@@ -245,26 +230,24 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 		return ret;
 	}
 
-	upsdebug_with_errno(2, "%s", __func__);
-
-	switch (errno)
+	switch (ret)
 	{
-	case EBUSY:
+	case -EBUSY:
 		fatal_with_errno(EXIT_FAILURE, "Got disconnected by another driver");
 
-	case EPERM:
+	case -EPERM:
 		fatal_with_errno(EXIT_FAILURE, "Permissions problem");
 
-	case EPIPE:
+	case -EPIPE:
 		if (!usb_clear_halt(udev, 0x81)) {
 			/* stall condition cleared */
 			break;
 		}
-	case ENODEV:
-	case EACCES:
-	case EIO:
-	case ENOENT:
-	case ETIMEDOUT:
+	case -ENODEV:
+	case -EACCES:
+	case -EIO:
+	case -ENOENT:
+	case -ETIMEDOUT:
 	default:
 		/* Uh oh, got to reconnect! */
 		usb->close(udev);
