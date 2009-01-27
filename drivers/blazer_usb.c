@@ -81,7 +81,7 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 
 		if (ret <= 0) {
 			upsdebugx(3, "read: %s", ret ? usb_strerror() : "timeout");
-			return ret;
+			return 0;
 		}
 	}
 

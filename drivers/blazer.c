@@ -384,13 +384,16 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 
 		snprintf(buf, sizeof(buf), "%s", instcmd[i].ups);
 
-		if (blazer_command(buf, buf, sizeof(buf)) == 0) {
-			upslogx(LOG_INFO, "instcmd: command [%s] handled", cmdname);
-			return STAT_INSTCMD_HANDLED;
+		/*
+		 * If a command is invalid, it will be echoed back
+		 */
+		if (blazer_command(buf, buf, sizeof(buf)) > 0) {
+			upslogx(LOG_ERR, "instcmd: command [%s] failed", cmdname);
+			return STAT_INSTCMD_FAILED;
 		}
 
-		upslogx(LOG_ERR, "instcmd: command [%s] failed", cmdname);
-		return STAT_INSTCMD_FAILED;
+		upslogx(LOG_INFO, "instcmd: command [%s] handled", cmdname);
+		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
@@ -418,14 +421,16 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_UNKNOWN;
 	}
 
-	if (blazer_command(buf, buf, sizeof(buf)) == 0) {
-		upslogx(LOG_INFO, "instcmd: command [%s] handled", cmdname);
-		return STAT_INSTCMD_HANDLED;
+	/*
+	 * If a command is invalid, it will be echoed back
+	 */
+	if (blazer_command(buf, buf, sizeof(buf)) > 0) {
+		upslogx(LOG_ERR, "instcmd: command [%s] failed", cmdname);
+		return STAT_INSTCMD_FAILED;
 	}
 
-	upslogx(LOG_ERR, "instcmd: command [%s] failed", cmdname);
-	return STAT_INSTCMD_FAILED;
-
+	upslogx(LOG_INFO, "instcmd: command [%s] handled", cmdname);
+	return STAT_INSTCMD_HANDLED;
 }
 
 
@@ -590,12 +595,18 @@ void upsdrv_shutdown(void)
 {
 	int	retry;
 
-	for (retry = 0; retry < MAXTRIES; retry++) {
+	for (retry = 1; retry <= MAXTRIES; retry++) {
 
-		if (blazer_instcmd("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
-			return;
+		if (blazer_instcmd("shutdown.stop", NULL) != STAT_INSTCMD_HANDLED) {
+			continue;
 		}
-	}
 
-	upsdebugx(2, "Shutdown failed after %d retries!", retry);
+		if (blazer_instcmd("shutdown.return", NULL) != STAT_INSTCMD_HANDLED) {
+			continue;
+		}
+
+		fatalx(EXIT_SUCCESS, "Shutting down in %d seconds", offdelay);
+	}
+ 
+	fatalx(EXIT_FAILURE, "Shutdown failed!");
 }
