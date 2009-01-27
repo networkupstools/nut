@@ -318,16 +318,16 @@ static int blazer_vendor(const char *cmd)
 {
 	const struct {
 		const char	*var;
-		const char	*def;
+		const int	len;
 	} information[] = {
-		{ "ups.mfg",      "[generic]" },
-		{ "ups.model",    "[megatec]" },
-		{ "ups.firmware", "[unknown]" },
+		{ "ups.mfg",      15 },
+		{ "ups.model",    10 },
+		{ "ups.firmware", 10 },
 		{ NULL }
 	};
 
-	char	buf[SMALLBUF], *val, *last = NULL;
-	int	i;
+	char	buf[SMALLBUF];
+	int	i, index;
 
 	/*
 	 * > [I\r]
@@ -345,9 +345,12 @@ static int blazer_vendor(const char *cmd)
 		return -1;
 	}
 
-	for (i = 0, val = strtok_r(buf+1, " ", &last); information[i].var; i++, val = strtok_r(NULL, " \r\n", &last)) {
+	for (i = 0, index = 1; information[i].var; i++, index += information.len+1) {
+		char	val[SMALLBUF];
 
-		dstate_setinfo(information[i].var, "%s", val ? val : information[i].def);
+		snprintf(val, sizeof(val), "%.*s", information[i].len, &buf[index]);
+
+		dstate_setinfo(information[i].var, "%s", rtrim(val, ' '));
 	}
 
 	return 0;
