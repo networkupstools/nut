@@ -38,7 +38,7 @@
 #define USB_TIMEOUT 4000
 
 #define USB_DRIVER_NAME		"USB communication driver"
-#define USB_DRIVER_VERSION	"0.30"
+#define USB_DRIVER_VERSION	"0.31"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -112,7 +112,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 	usb_find_busses();
 	usb_find_devices();
 
-#ifdef SUN_LIBUSB
+#ifndef __linux__ /* SUN_LIBUSB (confirmed to work on Solaris and FreeBSD) */
 	/* Causes a double free corruption in linux if device is detached! */
 	libusb_close(*udevp);
 #endif

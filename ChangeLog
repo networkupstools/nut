@@ -1,3 +1,9 @@
+Tue Jan 27 08:28:22 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - drivers/libusb.c, drivers/richcomm_usb.c: broaden the libusb_close() call to all
+   non Linux, since it has been confirmed to be needed on FreeBSD too (thanks to
+   Daniel O'Connor) ; also bump the respective version
+
 2.4.0-pre2
 
 Wed Jan 21 12:03:25 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
