@@ -345,7 +345,7 @@ static int blazer_vendor(const char *cmd)
 		return -1;
 	}
 
-	for (i = 0, index = 1; information[i].var; i++, index += information[i].len+1) {
+	for (i = 0, index = 1; information[i].var; index += information[i++].len+1) {
 		char	val[SMALLBUF];
 
 		snprintf(val, sizeof(val), "%.*s", information[i].len, &buf[index]);
