@@ -37,6 +37,9 @@ Release notes for NUT 2.4.0 - what's new since 2.2.2:
  - the nut.conf file has been introduced to standardize startup configuration
    across the various systems.
 
+ - NUT now ships a bash completion function for 'upsc' command
+   (scripts/misc/nut.bash_completion). Simply copy it to /etc/bash_completion.d
+ 
  - many internal changes to improve maintenability, while lowering the
    maintenance cost (thus allowing developers to focus on what matters: the
    code!). Examples of this are:

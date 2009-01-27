@@ -1,3 +1,7 @@
+Tue Jan 27 13:27:51 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - UPGRADING: mention Charles' bash completion routine for upsc.
+
 Tue Jan 27 08:28:22 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - scripts/udev/Makefile.am: use a dash to separate the name of the udev rule,
