@@ -53,13 +53,8 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 
 	ret = ser_send(upsfd, "%s", cmd);
 
-	if (ret < 0) {
-		upsdebug_with_errno(3, "send");
-		return ret;
-	}
-
-	if (ret == 0) {
-		upsdebug_with_errno(3, "send: timeout");
+	if (ret <= 0) {
+		upsdebugx(3, "send: %s", ret ? strerror(errno) : "timeout");
 		return ret;
 	}
 
@@ -67,14 +62,9 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 
 	ret = ser_get_buf(upsfd, buf, buflen, SER_WAIT_SEC, 0);
 
-	if (ret < 0) {
-		upsdebug_with_errno(3, "read");
-		return -1;
-	}
-
-	if (ret == 0) {
-		upsdebugx(3, "read: timeout");
-		return -1;
+	if (ret <= 0) {
+		upsdebugx(3, "read: %s", ret ? strerror(errno) : "timeout");
+		return ret;
 	}
 
 	upsdebugx(3, "read: %.*s", strcspn(buf, "\r"), buf);
