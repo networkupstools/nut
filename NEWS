@@ -13,13 +13,13 @@ Release notes for NUT 2.4.0 - what's new since 2.2.2:
  - support for new devices: the various PDUs cited above, Chloride Desk Power
    650, Cyber Power Systems Value 400E/600E/800E (USB models), Delta GES602N,
    Digitus DN-170020, the whole Eaton ranges (mostly composed of MGE Office
-   Protection Systems and Powerware units), Forza Power Technologies SL-1001, HP
-   PowerTrust 2997A, HP R/T 2200 G2, Infosec XP 1000 and XP 500, Ippon Back
-   Power Pro (serial and USB), Kebo 1200D/D Series, Liebert PowerSure Personal
-   XT, MGE Office Protection Systems Protection Station, Neus 400va and 600va,
-   Phasak 400VA and 600VA, Plexus 500VA, Powercom Black Knight PRO / King PRO
-   and Imperial, PowerKinetics BlackOut Buster, Sweex 1000 USB, UNITEK Alpha
-   500, WinPower CPM-800.
+   Protection Systems and Powerware units) including BladeUPS, Forza Power
+   Technologies SL-1001, HP PowerTrust 2997A, HP R/T 2200 G2, Infosec XP 1000
+   and XP 500, Ippon Back Power Pro (serial and USB), Kebo 1200D/D Series,
+   Liebert PowerSure Personal XT, MGE Office Protection Systems Protection
+   Station, Neus 400va and 600va, Phasak 400VA and 600VA, Plexus 500VA, Powercom
+   Black Knight PRO / King PRO and Imperial, PowerKinetics BlackOut Buster,
+   Sweex 1000 USB, UNITEK Alpha 500, WinPower CPM-800.
 
  - NUT now embeds Python client support through the PyNUTClient module and the
    NUT-Monitor application. Both are from David Goncalves, and are still

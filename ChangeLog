@@ -1,3 +1,7 @@
+Tue Jan 27 14:50:54 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - data/driver.list, NEWS: mention Eaton (and Powerware) BladeUPS
+
 Tue Jan 27 13:27:51 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - UPGRADING: mention Charles' bash completion routine for upsc.

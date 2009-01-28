@@ -171,6 +171,7 @@
 "Eaton"	"EX RT 3:1 5/7/11 kVA"	""	"mge-shut or newmge-shut"
 "Eaton"	"EX RT (XML/HTTP)"	"NMC Transverse card (ref 66074)"	"netxml-ups (experimental)"
 "Eaton"	"EX RT (SNMP)"	"NMC Transverse card (ref 66074)"	"snmp-ups (experimental)"
+"Eaton"	"BladeUPS (SNMP)"	"ConnectUPS Web/SNMP Card"	"snmp-ups (experimental)"
 "Eaton"	"various models (XML/HTTP mode)"			"NMC Minislot (Ref 66102)"	"netxml-ups (experimental)"
 "Eaton"	"various models (SNMP mode)"			"NMC Minislot (Ref 66102)"	"snmp-ups (experimental)"
 "Eaton"	"various models (XML/HTTP mode)"			"SNMP/Web Minislot card (ref 66244)"	"netxml-ups (experimental)"
@@ -543,6 +544,7 @@
 "Powerware"	"9120"	""	"upscode2"
 "Powerware"	"9150"	""	"upscode2"
 "Powerware"	"9305"	""	"upscode2"
+"Powerware"	"BladeUPS (SNMP)"	"ConnectUPS Web/SNMP Card"	"snmp-ups (experimental)"
 "Powerware"	"(various)"	"ConnectUPS Web/SNMP card"	"snmp-ups (experimental)"
 
 "Powerwell"	"PM525A/-625A/-800A/-1000A/-1250A"	""	"safenet"
