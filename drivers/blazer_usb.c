@@ -79,8 +79,12 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
 		ret = usb_interrupt_read(udev, 0x81, &buf[i], 8, 1000);
 
+		/*
+		 * Any errors here mean that we are unable to read a reply (which
+		 * will happen after successfully writing a command to the UPS)
+		 */
 		if (ret <= 0) {
-			upsdebugx(3, "read: %s", ret ? usb_strerror() : "timeout");
+			upsdebugx(3, "read: timeout");
 			return 0;
 		}
 	}
