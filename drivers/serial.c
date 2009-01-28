@@ -439,13 +439,6 @@ void ser_comm_fail(const char *fmt, ...)
 		((comm_failures % SER_ERR_LIMIT) != 0))
 		return;
 
-	/* generic message if the caller hasn't elaborated */
-	if (!fmt) {
-		upslogx(LOG_WARNING, "Communications with UPS lost"
-			" - check cabling");
-		return;
-	}
-
 	va_start(ap, fmt);
 	ret = vsnprintf(why, sizeof(why), fmt, ap);
 	va_end(ap);
