@@ -188,7 +188,7 @@ static int read_buf(char *buf, size_t buflen)
 		POLL_ALERT, alert_handler, SER_WAIT_SEC, SER_WAIT_USEC);
 
 	if (ret < 1) {
-		ser_comm_fail(NULL);
+		ser_comm_fail("%s", ret ? strerror(errno) : "timeout");
 		return ret;
 	}
 
@@ -265,7 +265,7 @@ static int query_ups(const char *var, int first)
 		SER_WAIT_USEC);
 
 	if ((ret < 1) && (first == 0)) {
-		ser_comm_fail(NULL);
+		ser_comm_fail("%s", ret ? strerror(errno) : "timeout");
 		return 0;
 	}
 
@@ -1280,7 +1280,7 @@ void upsdrv_updateinfo(void)
 
 	/* try to wake up a dead ups once in awhile */
 	if ((dstate_is_stale()) && (!smartmode())) {
-		ser_comm_fail(NULL);
+		ser_comm_fail("Communications with UPS lost - check cabling");
 
 		/* reset this so a full update runs when the UPS returns */
 		last_full = 0;

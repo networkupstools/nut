@@ -339,7 +339,7 @@ void upsdrv_updateinfo(void)
 		SER_WAIT_SEC, SER_WAIT_USEC);
 
 	if (ret < 1) {
-		ser_comm_fail(NULL);
+		ser_comm_fail("Poll failed: %s", ret ? strerror(errno) : "timeout");
 		dstate_datastale();
 		return;
 	}
