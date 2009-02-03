@@ -867,18 +867,21 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	if (can_upsd && can_uppc) {
-		upslogx(LOG_EMERG, "Emergency shutdown");
-		upscsend("UPSD");	/* Set shutdown delay */
-		upscsend("1");		/* 1 second (lowest possible. 0 returns current.*/
+	if (upsc_commandlist()) {
+		if (!can_upsd || !can_uppc) {
+			fatalx(LOG_EMERG, "Shutdown called, but UPS does not support it");
+		}
+	} else {
+		upslogx(LOG_EMERG, "Can't determine if shutdown is supported, attempting anyway");
+	}
 
-		upslogx(LOG_EMERG, "Shutting down...");
-		upscsend("UPPC");	/* Powercycle UPS */
-		upscsend("IJHLDMGCIU"); /* security code */
-	}
-	else {
-		upslogx(LOG_EMERG, "Shutdown called, but UPS does not support it");
-	}
+	upslogx(LOG_EMERG, "Emergency shutdown");
+	upscsend("UPSD");	/* Set shutdown delay */
+	upscsend("1");		/* 1 second (lowest possible. 0 returns current.*/
+
+	upslogx(LOG_EMERG, "Shutting down...");
+	upscsend("UPPC");	/* Powercycle UPS */
+	upscsend("IJHLDMGCIU"); /* security code */
 }
 
 
