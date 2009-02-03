@@ -216,7 +216,7 @@ static void do_var(const char *arg)
 	if (!upsname) {
 		snprintfcat(logbuffer, sizeof(logbuffer), "INVALID");
 		return;
-	} 
+	}
 
 	getvar(arg);
 }
@@ -491,12 +491,17 @@ int main(int argc, char **argv)
 		}
 
 		/* reconnect if necessary */
-		if (upscli_fd(&ups) == -1) {
-			upscli_disconnect(&ups);
+		if (upscli_fd(&ups) < 0) {
 			upscli_connect(&ups, hostname, port, 0);
 		}
 
 		run_flist();
+
+		/* don't keep connection open if we don't intend to use it shortly */
+		if (interval > 30) {
+			upscli_disconnect(&ups);
+		}
+
 		sleep(interval);
 	}
 
