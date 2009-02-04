@@ -34,7 +34,6 @@
 #include "serial.h"
 #include <sys/ioctl.h>
 #include "timehead.h"
-#include <time.h>
 
 
 #define MAX_START_DELAY    999999
