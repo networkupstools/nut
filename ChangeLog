@@ -1,3 +1,9 @@
+Wed Feb 04 15:01:20 UTC 2009 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+
+ - Added mocrodowell.c/h into drivers/. add man/microdowell.8. Adjusted
+   drivers/Makefile.am and man/makefile.am. Adjusted the code for 2.4.0
+   in the microdowell.c.
+
 Wed Jan 28 10:18:41 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
  
  - configure.in: 2.4.0

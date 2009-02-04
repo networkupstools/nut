@@ -35,7 +35,7 @@ endif
 SERIAL_DRIVERLIST = apcsmart bcmxcp belkin belkinunv bestfcom	\
  bestuferrups bestups cyberpower dummy-ups etapro everups 	\
  gamatronic genericups isbmex liebert masterguard megatec metasys 	\
- mge-shut mge-utalk newmge-shut oneac optiups powercom rhino 	\
+ mge-shut mge-utalk microdowell newmge-shut oneac optiups powercom rhino 	\
  safenet skel solis tripplite tripplitesu upscode2 victronups powerpanel \
  blazer_ser
 SNMP_DRIVERLIST = snmp-ups
@@ -109,6 +109,7 @@ megatec_SOURCES = megatec.c
 metasys_SOURCES = metasys.c
 mge_shut_SOURCES = mge-shut.c hidparser.c 
 mge_utalk_SOURCES = mge-utalk.c
+microdowell_SOURCES = microdowell.c
 oneac_SOURCES = oneac.c
 optiups_SOURCES = optiups.c
 powercom_SOURCES = powercom.c
@@ -210,7 +211,7 @@ dist_noinst_HEADERS = apccmib.h apc-hid.h apcsmart.h bcmxcp.h bcmxcp_io.h belkin
  belkin-hid.h blazer.h cps-hid.h dstate.h dstate-hal.h dummy-ups.h eaton-aphel-mib.h	\
  explore-hid.h gamatronic.h genericups.h hidparser.h hidtypes.h ietfmib.h libhid.h	\
  libshut.h libusb.h liebert-hid.h main.h main-hal.h megatec.h mge-hid.h mgemib.h	\
- mge-shut.h mge-utalk.h mge-xml.h netvisionmib.h netxml-ups.h nut_usb.h oneac.h		\
+ mge-shut.h mge-utalk.h mge-xml.h microdowell.h netvisionmib.h netxml-ups.h nut_usb.h oneac.h	\
  powercom.h powerpanel.h powerp-bin.h powerp-txt.h pwmib.h raritan-mib.h	\
  safenet.h serial.h snmp-ups.h solis.h tripplite.h tripplite-hid.h upshandler.h		\
  usb-common.h usbhid-ups.h

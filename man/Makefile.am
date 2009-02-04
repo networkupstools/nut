@@ -41,6 +41,7 @@ SERIAL_PAGES = \
 	mge-shut.8	\
 	mge-utalk.8	\
 	oneac.8		\
+	microdowell.8	\
 	optiups.8	\
 	powercom.8 	\
 	powerpanel.8	\
