@@ -544,8 +544,8 @@ void upsdrv_updateinfo(void)
 		/* store last UPS status */
 		ups.StatusUPS = (int)p[0] | ((int)p[1]<<8) | ((int)p[2]<<16) | ((int)p[3]<<24) ;
 		ups.ShortStatus = (int)p[0] | ((int)p[1]<<8) ;
-		dstate_setinfo("ups.StatusUPS", "%08lX", ups.StatusUPS) ;
-		dstate_setinfo("ups.ShortStatus", "%04X", ups.ShortStatus) ;
+		upsdebugx(1, "ups.StatusUPS: %08lX", ups.StatusUPS);
+		upsdebugx(1, "ups.ShortStatus: %04X", ups.ShortStatus);
 			
 		/* on battery? */
 		if (p[0] & 0x01)
