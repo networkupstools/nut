@@ -4,7 +4,7 @@
  * A document describing the protocol implemented by this driver can be
  * found online at "http://www.networkupstools.org/protocols/megatec.html".
  *
- * Copyright (C) 2008 - Arjen de Korte <adkorte-guest@alioth.debian.org>
+ * Copyright (C) 2008,2009 - Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,10 +24,24 @@
 #include "main.h"
 #include "blazer.h"
 
+#include <math.h>
+
 static int	ondelay = 3;	/* minutes */
 static int	offdelay = 30;	/* seconds */
 
 static int	proto;
+
+static struct {
+	double	nominal;
+	double	estimate;
+	double	exponent;
+	long	recharge;
+} runtime = { -1, 0, 0, 43200 };
+
+static struct {
+	double	idle;
+	double	effective;
+} load = { 0.05, 1 };
 
 /*
  * This little structure defines the various flavors of the Megatec protocol.
@@ -50,44 +64,20 @@ static const struct {
 
 
 /*
- * Do whatever we think is needed when we read a battery voltage from the UPS.
- * Basically all it does now, is guestimating the battery charge, but this
- * could be extended.
+ * Do whatever we think is needed when we read the load from the UPS.
  */
-static double blazer_battery(const char *ptr, char **endptr)
+static double blazer_load(const char *ptr, char **endptr)
 {
-	double		bv, bl = -1, bh = -1;
-	const char	*val;
+	double	val = strtod(ptr, endptr);
+	
+	load.effective = pow(val / 100, runtime.exponent);
 
-	bv = strtod(ptr, endptr);
-
-	val = dstate_getinfo("battery.packs");
-	if (val) {
-		bv *= strtod(val, NULL);
+	if (load.effective < load.idle) {
+		load.effective = load.idle;
 	}
 
-	val = dstate_getinfo("battery.voltage.high");
-	if (val) {
-		bh = strtod(val, NULL);
-	}
-
-	val = dstate_getinfo("battery.voltage.low");
-	if (val) {
-		bl = strtod(val, NULL);
-	}
-
-	/*
-	 * If "battery.voltage.(low|high)" are both set, guesstimate "battery.charge".
-	 */
-	if ((bl > 0) && (bh > bl)) {
-		double	bc = 100 * (bv - bl) / (bh - bl);
-
-		dstate_setinfo("battery.charge", "%.0f", (bc < 0) ? 0 : (bc > 100) ? 100 : bc);
-	}
-
-	return bv;
+	return val;
 }
-
 
 /*
  * The battery voltage will quickly return to at least the nominal value after
@@ -128,14 +118,6 @@ static double blazer_packs(const char *ptr, char **endptr)
 		break;
 	}
 
-#ifdef TESTING
-	/*
-	 * NOTE: don't do this automatically, leave this up to the user to decide!
-	 */
-	dstate_setinfo("battery.voltage.high", "%.2f", 1.15 * bn);
-	dstate_setinfo("battery.voltage.low",  "%.2f", 0.85 * bn);
-#endif
-
 	return bn;
 }
 
@@ -150,12 +132,15 @@ static int blazer_status(const char *cmd)
 		{ "input.voltage", "%.1f", strtod },
 		{ "input.voltage.fault", "%.1f", strtod },
 		{ "output.voltage", "%.1f", strtod },
-		{ "ups.load", "%.0f", strtod },
+		{ "ups.load", "%.0f", blazer_load },
 		{ "input.frequency", "%.1f", strtod },
-		{ "battery.voltage", "%.2f", blazer_battery },
+		{ "battery.voltage", "%.2f", strtod },
 		{ "ups.temperature", "%.1f", strtod },
 		{ NULL }
 	};
+
+	static time_t	lastpoll = 0;
+	time_t	now = time(NULL);
 
 	char	buf[SMALLBUF], *val, *last = NULL;
 	int	i;
@@ -257,6 +242,25 @@ static int blazer_status(const char *cmd)
 	alarm_commit();
 
 	status_commit();
+
+	if (runtime.nominal > 0) {
+		if (val[0] == '1') {	/* OB */
+			runtime.estimate -= load.effective * difftime(now, lastpoll);
+			if (runtime.estimate < 0) {
+				runtime.estimate = 0;
+			}
+		} else {	/* OL */
+			runtime.estimate += runtime.nominal * difftime(now, lastpoll) / runtime.recharge;
+			if (runtime.estimate > runtime.nominal) {
+				runtime.estimate = runtime.nominal;
+			}
+		}
+
+		dstate_setinfo("battery.charge", "%.1f", 100 * runtime.estimate / runtime.nominal);
+		dstate_setinfo("battery.runtime", "%.0f", runtime.estimate / load.effective);
+	}
+
+	lastpoll = now;
 
 	return 0;
 }
@@ -439,6 +443,10 @@ void blazer_makevartable(void)
 	addvar(VAR_VALUE, "ondelay", "Delay before UPS startup (minutes)");
 	addvar(VAR_VALUE, "offdelay", "Delay before UPS shutdown (seconds)");
 
+	addvar(VAR_VALUE, "runtimecal", "Parameters used for runtime calculation");
+	addvar(VAR_VALUE, "chargetime", "Nominal charge time for UPS battery");
+	addvar(VAR_VALUE, "idleload", "Minimum load to be used for runtime calculation");
+
 	addvar(VAR_FLAG, "norating", "Skip reading rating information from UPS");
 	addvar(VAR_FLAG, "novendor", "Skip reading vendor information from UPS");
 }
@@ -471,6 +479,85 @@ void blazer_initups(void)
 		offdelay -= (offdelay % 6);
 	} else {
 		offdelay -= (offdelay % 60);
+	}
+}
+
+
+static void blazer_initbattery(void)
+{
+	const char	*val;
+
+	val = getval("runtimecal");
+	if (val) {
+		int	rh, lh, rl, ll;
+
+		if (sscanf(val, "%d,%d,%d,%d", &rh, &lh, &rl, &ll) < 4) {
+			fatalx(EXIT_FAILURE, "Insufficient parameters for runtimecal");
+		}
+
+		if ((rl < rh) || (rh <= 0)) {
+			fatalx(EXIT_FAILURE, "Parameter out of range (runtime)");
+		}
+
+		if ((lh > 100) || (ll > lh) || (ll <= 0)) {
+			fatalx(EXIT_FAILURE, "Parameter out of range (load)");
+		}
+
+		runtime.exponent = log((double)rl / rh) / log((double)lh / ll);
+		upsdebugx(2, "runtime.exponent : %.3f", runtime.exponent);
+
+		runtime.nominal = rh * pow(lh/100, runtime.exponent);
+		upsdebugx(2, "runtime.nominal  : %.1f", runtime.nominal); 
+
+	} else {
+
+		if (dstate_delinfo("battery.charge") == 1) {
+			upslogx(LOG_WARNING, "Battery charge preset removed");
+		}
+
+		upslogx(LOG_INFO, "Battery charge and runtime will not be calculated (runtimecal not set)");
+		return;
+	}
+
+	val = dstate_getinfo("battery.charge");
+	if (val) {
+		int	charge = strtol(val, NULL, 10);
+
+		if ((charge < 0) || (charge > 100)) {
+			fatalx(EXIT_FAILURE, "Initial battery charge out of range [0..100]");
+		}
+
+		runtime.estimate = runtime.nominal * charge / 100;
+		upsdebugx(2, "runtime.estimate : %.1f", runtime.estimate); 
+
+	} else {
+		upslogx(LOG_INFO, "No initial battery charge specified, using built in default [battery empty]");
+	}
+
+	val = getval("chargetime");
+	if (val) {
+		runtime.recharge = strtol(val, NULL, 10);
+
+		if (runtime.recharge <= 0) {
+			fatalx(EXIT_FAILURE, "Charge time out of range [1..s]");
+		}
+
+		upsdebugx(2, "runtime.recharge : %ld", runtime.recharge); 
+	} else {
+		upslogx(LOG_INFO, "No charge time specified, using built in default [%ld seconds]", runtime.recharge);
+	}
+
+	val = getval("idleload");
+	if (val) {
+		load.idle = strtod(val, NULL) / 100;
+
+		if ((load.idle <= 0) || (load.idle > 1)) {
+			fatalx(EXIT_FAILURE, "Idle load out of range [0..100]");
+		}
+
+		upsdebugx(2, "load.idle        : %.3f", load.idle); 
+	} else {
+		upslogx(LOG_INFO, "No idle load specified, using built in default [%.1f %%]", 100 * load.idle);
 	}
 }
 
@@ -547,6 +634,8 @@ void blazer_initinfo(void)
 		}
 	}
 
+	blazer_initbattery();
+
 	dstate_setinfo("ups.delay.start", "%d", 60 * ondelay);
 	dstate_setinfo("ups.delay.shutdown", "%d", offdelay);
 
@@ -607,6 +696,6 @@ void upsdrv_shutdown(void)
 
 		fatalx(EXIT_SUCCESS, "Shutting down in %d seconds", offdelay);
 	}
- 
+
 	fatalx(EXIT_FAILURE, "Shutdown failed!");
 }
