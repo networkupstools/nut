@@ -58,7 +58,8 @@ ENT_STRUCT ups ;
 int instcmd(const char *cmdname, const char *extra);
 int setvar(const char *varname, const char *val);
 
-
+/* he knew... macros should evaluate their arguments only once */
+#define CLAMP(x, min, max) (((x) < (min)) ? (min) : (((x) > (max)) ? (max) : (x)))
 
 static int CheckDataChecksum(unsigned char *Buff, int Len)
 {
@@ -625,7 +626,7 @@ void upsdrv_updateinfo(void)
 		p += 3 ;	/* 'p' points to received data */
 		
 		dstate_setinfo("ups.power", "%d", (p[4]*256 + p[5])) ;
-		dstate_setinfo("ups.realpower", "%d", (int)((float)(p[4]*256 + p[5]) * 0.6)) ;
+		dstate_setinfo("ups.realpower", "%d", (int)((float)(p[4]*256 + p[5]) * 0.6)) ; /* Not measured (calculated) */
 		dstate_setinfo("battery.charge", "%d", (int)p[0]) ;
 		dstate_setinfo("ups.load", "%d", (int)p[6]) ;
 		upsdebugx(3, "get 'Get Batt+Load Status': %s", PrintErr(ups.ErrCode));
@@ -781,9 +782,6 @@ int setvar(const char *varname, const char *val)
 {
 	int delay;
 
-/* he knew... macros should evaluate their arguments only once */
-#define CLAMP(x, min, max) (((x) < (min)) ? (min) : (((x) > (max)) ? (max) : (x)))
-	
 	if (sscanf(val, "%d", &delay) != 1)
 		{
 		return STAT_SET_UNKNOWN;
@@ -816,6 +814,21 @@ int setvar(const char *varname, const char *val)
 
 void upsdrv_initinfo(void)
 {
+	/* Get vars from ups.conf */
+	if (getval("ups.delay.shutdown")) {
+		ups.ShutdownDelay = CLAMP(atoi(getval("ups.delay.shutdown")), 0, MAX_SHUTDOWN_DELAY);
+	}
+	else {
+		ups.ShutdownDelay = 120;	/* Shutdown delay in seconds */
+	}
+
+	if (getval("ups.delay.start")) {
+		ups.WakeUpDelay = CLAMP(atoi(getval("ups.delay.start")), 0, MAX_START_DELAY);
+	}
+	else {
+		ups.WakeUpDelay = 10;	/* WakeUp delay in seconds */
+	}
+
 	if (detect_hardware() == -1)
 		{
 		fatalx(EXIT_FAILURE,
@@ -844,10 +857,7 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION) ;
 
-	/* Register the available variables.
-	   set the default values for the shutdown delay */
-	ups.ShutdownDelay = 120 ;	/* Shutdown delay in seconds */
-	ups.WakeUpDelay = 10 ;		/* WakeUp delay in seconds */
+	/* Register the available variables. */
 	dstate_setinfo("ups.delay.start", "%d", ups.WakeUpDelay);
 	dstate_setflags("ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING);
 	dstate_setaux("ups.delay.start", MAX_START_DELAY_LEN);
@@ -895,13 +905,12 @@ void upsdrv_shutdown(void)
 		/* store last UPS status */
 		ups.StatusUPS = (int)p[0] | ((int)p[1]<<8) | ((int)p[2]<<16) | ((int)p[3]<<24) ;
 		ups.ShortStatus = (int)p[0] | ((int)p[1]<<8) ;
-		dstate_setinfo("ups.StatusUPS", "%08lX", ups.StatusUPS) ;
-		dstate_setinfo("ups.ShortStatus", "%04X", ups.ShortStatus) ;
+		upsdebugx(1, "ups.StatusUPS: %08lX", ups.StatusUPS);
+		upsdebugx(1, "ups.ShortStatus: %04X", ups.ShortStatus);
 			
 		/* on battery? */
 		if (p[0] & 0x01)
 			BatteryFlag = 1 ;	/* YES */
-		dstate_setinfo("ups.time", "%02d:%02d:%02d", p[6], p[7], p[8]) ;
 		upsdebugx(3, "get 'Get Status': %s", PrintErr(ups.ErrCode));
 		}
 	else
@@ -960,22 +969,16 @@ void upsdrv_makevartable(void)
 
 void upsdrv_initups(void)
 {
-	int dtr_bit = TIOCM_DTR;
-	int rts_bit = TIOCM_RTS;
-	
 	upsfd = ser_open(device_path) ;
-
-	/* need to clear RTS and DTR: otherwise with default cable, communication will be problematic
-	   It is the same as removing pin7 from cable (pin 7 is needed for Plug&Play compatibility) */
-	ioctl(upsfd, TIOCMBIC, &rts_bit);
-	ioctl(upsfd, TIOCMBIC, &dtr_bit);
 
 	ser_set_speed(upsfd, device_path, B19200) ;
 
-	usleep(10000) ; /* small delay (1/100 s)) */
-	ups.ShutdownDelay = 120 ;	/* Shutdown delay in seconds */
-	ups.WakeUpDelay = 10 ;		/* WakeUp delay in seconds */
+	/* need to clear RTS and DTR: otherwise with default cable, communication will be problematic
+	   It is the same as removing pin7 from cable (pin 7 is needed for Plug&Play compatibility) */
+	ser_set_dtr(upsfd, 0);
+	ser_set_rts(upsfd, 0);
 
+	usleep(10000) ; /* small delay (1/100 s)) */
 }
 
 void upsdrv_cleanup(void)
