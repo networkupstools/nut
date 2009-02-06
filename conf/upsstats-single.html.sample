@@ -11,35 +11,34 @@
 	See upsstats.html(5) for more information on template files.
 -->
 
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
-	"http://www.w3.org/TR/REC-html40/loose.dtd">
-
-<HTML>
-
 <!-- change this to TEMPF if you don't like Celsius. -->
 
 @TEMPC@
 @UPSSTATSPATH upsstats.cgi@
 @UPSIMAGEPATH upsimage.cgi@
 
-<HEAD>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+	"http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+
+<head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 @REFRESH@
-<TITLE>
+<title>
 @HOSTDESC@
 : 
 @VAR ups.model@
 on
 @HOST@
-</TITLE>
+</title>
 <!-- LINK REL="stylesheet" TYPE="text/css" HREF="http://localhost/nut/nut.css" / -->
-</HEAD>
-<BODY BGCOLOR="#808080" TEXT="#00FC00" LINK="#0000EE" VLINK="#551A8B">
+</head>
+<body BGCOLOR="#808080" TEXT="#00FC00" LINK="#0000EE" VLINK="#551A8B">
 
-<TABLE BORDER="1" ALIGN="CENTER" CELLSPACING="0" CELLPADDING="10" BGCOLOR="#000000">
+<table BORDER="1" ALIGN="CENTER" CELLSPACING="0" CELLPADDING="10" BGCOLOR="#000000">
 
-<TR>
-<TH COLSPAN="20">
+<tr>
+<th COLSPAN="20">
 Network UPS Tools upsstats
 @VERSION@
 -
@@ -48,64 +47,64 @@ Network UPS Tools upsstats
 @VAR ups.model@
 on
 @HOST@
-</TH>
-</TR>
+</th>
+</tr>
 
-<TR>
-<TH>
+<tr>
+<th>
 @DATE %a %b %d %X %Z %Y@
-</TH>
+</th>
 
-<TH>Battery</TH>
-<TH>Input</TH>
-<TH>Output</TH>
-<TH>Load</TH>
-</TR>
+<th>Battery</th>
+<th>Input</th>
+<th>Output</th>
+<th>Load</th>
+</tr>
 
-<TR>
+<tr>
 
-<TD BGCOLOR="#000000" VALIGN="TOP">
+<td BGCOLOR="#000000" VALIGN="TOP">
 
-<TABLE BORDER="0">	<!-- table 2 -->
+<table BORDER="0">	<!-- table 2 -->
 
-<TR>
-<TH ALIGN="RIGHT">UPS Model:</TH>
-<TD>
+<tr>
+<th ALIGN="RIGHT">UPS Model:</th>
+<td>
 @VAR ups.model@
-</TD>
-</TR>
+</td>
+</tr>
 
-<TR>
-<TH ALIGN="RIGHT">Status:</TH>
-<TD>
+<tr>
+<th ALIGN="RIGHT">Status:</th>
+<td>
 @STATUS@
 @ENDIF@
-</TD>
-</TR>
+</td>
+</tr>
 
 @IFSUPP battery.runtime@
-<TR>
-<TH ALIGN="RIGHT">Runtime:</TH>
-<TD>
+<tr>
+<th ALIGN="RIGHT">Runtime:</th>
+<td>
 @RUNTIME@
-</TD>
-</TR>
+</td>
+</tr>
 @ENDIF@
 
 @IFSUPP ups.temperature@
-<TR>
-<TH ALIGN="RIGHT">UPS temp:</TH>
-<TD>
+<tr>
+<th ALIGN="RIGHT">UPS temp:</th>
+<td>
 @UPSTEMP@
 @DEGREES@
-</TD>
-</TR>
+</td>
+</tr>
 @ENDIF@
 
 @IFSUPP battery.voltage@
-<TR>
-<TH ALIGN="RIGHT">Battery: </TH>
-<TD>
+<tr>
+<th ALIGN="RIGHT">Battery: </th>
+<td>
 @VAR battery.voltage@
 V
 @IFSUPP battery.current@
@@ -114,242 +113,242 @@ V
 A
 @ENDIF@
 
-<TR>
-<TH VALIGN="TOP" ALIGN="RIGHT">Input: </TH>
-<TD>
+<tr>
+<th VALIGN="TOP" ALIGN="RIGHT">Input: </th>
+<td>
 
 @IFSUPP input.L2-L3.voltage@
 @VAR input.L1-L2.voltage@
-V<BR>
+V<br>
 @VAR input.L2-L3.voltage@
-V<BR>
+V<br>
 @VAR input.L3-L1.voltage@
-V<BR>
-</TD>
-</TR>
+V<br>
+</td>
+</tr>
 @ELSE@
 @IFSUPP input.L2-N.voltage@
 @VAR input.L1-N.voltage@
-V<BR>
+V<br>
 @VAR input.L2-N.voltage@
-V<BR>
+V<br>
 @VAR input.L3-N.voltage@
-V<BR>
-</TD>
-</TR>
+V<br>
+</td>
+</tr>
 @ELSE@
 @IFSUPP input.voltage@
 @VAR input.voltage@
  V
-</TD>
-</TR>
+</td>
+</tr>
 @ENDIF@
 
 @IFSUPP input.L2.current@
-<TR>
-<TH>
-<TD>
+<tr>
+<th>
+<td>
 @VAR input.L1.current@
-A<BR>
+A<br>
 @VAR input.L2.current@
-A<BR>
+A<br>
 @VAR input.L3.current@
-A<BR>
-</TD>
-</TR>
+A<br>
+</td>
+</tr>
 @ELSE@
 @IFSUPP input.current@
-<TR>
-<TH>
-<TD>
+<tr>
+<th>
+<td>
 @VAR input.current@
 A
-</TD>
-</TR>
+</td>
+</tr>
 @ENDIF@
 
 @IFSUPP input.frequency@
-<TR>
-<TH>
-<TD>
+<tr>
+<th>
+<td>
 @VAR input.frequency@
  Hz
-</TD>
-</TR>
+</td>
+</tr>
 @ENDIF@
 
-<TR>
-<TH VALIGN="TOP" ALIGN="RIGHT">Output: </TH>
-<TD>
+<tr>
+<th VALIGN="TOP" ALIGN="RIGHT">Output: </th>
+<td>
 
 @IFSUPP output.L2-L3.voltage@
 @VAR output.L1-L2.voltage@
-V<BR>
+V<br>
 @VAR output.L2-L3.voltage@
-V<BR>
+V<br>
 @VAR output.L3-L1.voltage@
-V<BR>
-</TD>
-</TR>
+V<br>
+</td>
+</tr>
 @ELSE@
 @IFSUPP output.L2-N.voltage@
 @VAR output.L1-N.voltage@
-V<BR>
+V<br>
 @VAR output.L2-N.voltage@
-V<BR>
+V<br>
 @VAR output.L3-N.voltage@
-V<BR>
-</TD>
-</TR>
+V<br>
+</td>
+</tr>
 @ELSE@
 @IFSUPP output.voltage@
 @VAR output.voltage@
  V
-</TD>
-</TR>
+</td>
+</tr>
 @ENDIF@
 
 @IFSUPP output.L2.current@
-<TR>
-<TH>
-<TD>
+<tr>
+<th>
+<td>
 @VAR output.L1.current@
-A<BR>
+A<br>
 @VAR output.L2.current@
-A<BR>
+A<br>
 @VAR output.L3.current@
-A<BR>
-</TD>
-</TR>
+A<br>
+</td>
+</tr>
 @ELSE@
 @IFSUPP output.current@
-<TR>
-<TH>
-<TD>
+<tr>
+<th>
+<td>
 @VAR output.current@
 A
-</TD>
-</TR>
+</td>
+</tr>
 @ENDIF@
 
 @IFSUPP output.frequency@
-<TR>
-<TH>
-<TD>
+<tr>
+<th>
+<td>
 @VAR output.frequency@
  Hz
-</TD>
-</TR>
+</td>
+</tr>
 @ENDIF@
 
-</TABLE>		<!-- table 2 -->
-</TD>
+</table>		<!-- table 2 -->
+</td>
 
-<TD ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
-<TABLE BORDER="0">
-<TR><TD ALIGN="CENTER">
-Charge:<BR>
+<td ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
+<table BORDER="0">
+<tr><td ALIGN="CENTER">
+Charge:<br>
 @IMG battery.charge width=90@
 @IFSUPP battery.voltage@
-<TD ALIGN="CENTER">
-Voltage:<BR>
+<td ALIGN="CENTER">
+Voltage:<br>
 @IMG battery.voltage width=90@
 @ENDIF@
-</TABLE>
-</TD>
+</table>
+</td>
 
-<TD ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
+<td ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
 @IFSUPP input.L2-L3.voltage@
-<TABLE BORDER="0"><TR><TD ALIGN="CENTER">
-L1-L2<BR>
+<table BORDER="0"><tr><td ALIGN="CENTER">
+L1-L2<br>
 @IMG input.L1-L2.voltage width=68@
-<TD ALIGN="CENTER">
-L2-L3<BR>
+<td ALIGN="CENTER">
+L2-L3<br>
 @IMG input.L2-L3.voltage width=68@
-<TD ALIGN="CENTER">
-L3-L1<BR>
+<td ALIGN="CENTER">
+L3-L1<br>
 @IMG input.L3-L1.voltage width=68@
-</TABLE>
+</table>
 @ELSE@
 @IFSUPP input.L2-N.voltage@
-<TABLE BORDER="0"><TR><TD ALIGN="CENTER">
-L1-N<BR>
+<table BORDER="0"><tr><td ALIGN="CENTER">
+L1-N<br>
 @IMG input.L1-N.voltage width=68@
-<TD ALIGN="CENTER">
-L2-N<BR>
+<td ALIGN="CENTER">
+L2-N<br>
 @IMG input.L2-N.voltage width=68@
-<TD ALIGN="CENTER">
-L3-N<BR>
+<td ALIGN="CENTER">
+L3-N<br>
 @IMG input.L3-N.voltage width=68@
-</TABLE>
+</table>
 @ELSE@
 @IMG input.voltage@
 @ENDIF@
-</TD>
+</td>
 
-<TD ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
+<td ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
 @IFSUPP output.L2-L3.voltage@
-<TABLE BORDER="0"><TR><TD ALIGN="CENTER">
-L1-L2<BR>
+<table BORDER="0"><tr><td ALIGN="CENTER">
+L1-L2<br>
 @IMG output.L1-L2.voltage width=68@
-<TD ALIGN="CENTER">
-L2-L3<BR>
+<td ALIGN="CENTER">
+L2-L3<br>
 @IMG output.L2-L3.voltage width=68@
-<TD ALIGN="CENTER">
-L3-L1<BR>
+<td ALIGN="CENTER">
+L3-L1<br>
 @IMG output.L3-L1.voltage width=68@
-</TABLE>
+</table>
 @ELSE@
 @IFSUPP output.L2-N.voltage@
-<TABLE BORDER="0"><TR><TD ALIGN="CENTER">
-L1-N<BR>
+<table BORDER="0"><tr><td ALIGN="CENTER">
+L1-N<br>
 @IMG output.L1-N.voltage width=68@
-<TD ALIGN="CENTER">
-L2-N<BR>
+<td ALIGN="CENTER">
+L2-N<br>
 @IMG output.L2-N.voltage width=68@
-<TD ALIGN="CENTER">
-L3-N<BR>
+<td ALIGN="CENTER">
+L3-N<br>
 @IMG output.L3-N.voltage width=68@
-</TABLE>
+</table>
 @ELSE@
 @IMG output.voltage@
 @ENDIF@
-</TD>
+</td>
 
-<TD ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
+<td ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
 @IFSUPP output.L2.power.percent@
-<TABLE BORDER="0"><TR><TD ALIGN="CENTER">
-L1<BR>
+<table BORDER="0"><tr><td ALIGN="CENTER">
+L1<br>
 @IMG output.L1.power.percent width=68@
-<TD ALIGN="CENTER">
-L2<BR>
+<td ALIGN="CENTER">
+L2<br>
 @IMG output.L2.power.percent width=68@
-<TD ALIGN="CENTER">
-L3<BR>
+<td ALIGN="CENTER">
+L3<br>
 @IMG output.L3.power.percent width=68@
-</TABLE>
+</table>
 @ELSE@
 @IFSUPP output.L2.realpower.percent@
-<TABLE BORDER="0"><TR><TD ALIGN="CENTER">
-L1<BR>
+<table BORDER="0"><tr><td ALIGN="CENTER">
+L1<br>
 @IMG output.L1.realpower.percent width=68@
-<TD ALIGN="CENTER">
-L2<BR>
+<td ALIGN="CENTER">
+L2<br>
 @IMG output.L2.realpower.percent width=68@
-<TD ALIGN="CENTER">
-L3<BR>
+<td ALIGN="CENTER">
+L3<br>
 @IMG output.L3.realpower.percent width=68@
-</TABLE>
+</table>
 @ELSE@
 @IMG ups.load@
 @ENDIF@
-</TD>
-</TR>
+</td>
+</tr>
 
-</TABLE>
+</table>
 <a href="http://validator.w3.org/check?uri=referer"><img style="float:right"
         src="http://www.w3.org/Icons/valid-html40"
         alt="Valid HTML 4.0 Transitional" height="31" width="88"></a>
 
-</BODY>
-</HTML>
+</body>
+</html>
