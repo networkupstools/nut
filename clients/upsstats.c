@@ -401,20 +401,26 @@ static void ups_connect(void)
 
 static void do_hostlink(void)
 {
-	if (!currups)
+	if (!currups) {
 		return;
+	}
 
-	printf("<a href=\"%s?host=%s\">%s</a>\n",
-		upsstatpath, currups->sys, currups->desc);
+	printf("<a href=\"%s?host=%s", upsstatpath, currups->sys);
+
+	if (refreshdelay > 0) {
+		printf("&amp;refresh=%d", refreshdelay);
+	}
+
+	printf("\">%s</a>\n", currups->desc);
 }
 
 static void do_treelink(void)
 {
-	if (!currups)
+	if (!currups) {
 		return;
+	}
 
-	printf("<a href=\"%s?host=%s&amp;treemode\">All data</a>\n",
-		upsstatpath, currups->sys);
+	printf("<a href=\"%s?host=%s&amp;treemode\">All data</a>\n", upsstatpath, currups->sys);
 }
 
 /* see if the UPS supports this variable - skip to the next ENDIF if not */
@@ -635,9 +641,9 @@ static void print_line_remainder(const char *buf)
  */
 static int parse_line(const char *buf)
 {
-	static	char	*cmd = NULL;
-	static	char	*startptr = NULL;
-	static	char	*endptr = NULL;
+	char	cmd[SMALLBUF];
+	char	*startptr = NULL;
+	char	*endptr = NULL;
 
 	/* deal with extremely short lines as a special case */
 	if (strlen(buf) < 3) {
@@ -649,15 +655,24 @@ static int parse_line(const char *buf)
 	}
 
 	/* deal with inline commands, like <td BGCOLOR="@STATUSCOLOR@"> */
-	if (buf[0] != '@') {
-
+	if (buf[0] == '@') {
+		if (buf[strlen(buf) - 1] != '@')
+			return 0;
+		
+		snprintf(cmd, sizeof(cmd), "%s", &buf[1]);
+		
+		/* strip off final @ */
+		cmd[strlen(cmd) - 1] = '\0';
+	} else {
 		/* if skipping a section, act like we parsed the line */
 		if (skip_clause || skip_block)
 			return 1;
 		
 		/* otherwise check for inline command (like STATUSCOLOR) */
-		if ( (startptr = strchr(buf, '@')) != NULL) {
-
+		if ( (startptr = strchr(buf, '@')) == NULL) {
+			/* pass it through for normal printing */
+			return 0;
+		} else {
 			/* strip off and skip initial @ */
 			startptr[0] = '\0';
 			startptr++;
@@ -672,22 +687,8 @@ static int parse_line(const char *buf)
 			endptr[0] = '\0';
 			endptr++;
 
-			free(cmd);
-			cmd = xstrdup(startptr);
+			snprintf(cmd, sizeof(cmd), "%s", startptr);
 		}
-		else
-			/* else pass it through for normal printing */
-			return 0;
-	}
-	else {
-		if (buf[strlen(buf) - 1] != '@')
-			return 0;
-
-		free(cmd);
-		cmd = xstrdup(&buf[1]);
-
-		/* strip off final @ */
-		cmd[strlen(cmd) - 1] = '\0';
 	}
 
 	/* ending an if block? */
@@ -704,7 +705,7 @@ static int parse_line(const char *buf)
 
 	/* Toggle state when we run across ELSE */
 	if(!strcmp(cmd, "ELSE")) {
-		if(skip_clause) {
+		if (skip_clause) {
 			skip_clause = 0;
 		}
 		else {
@@ -898,7 +899,6 @@ static void display_template(const char *tfn)
 
 static void display_tree(int verbose)
 {
-	int	ret;
 	unsigned int	numq, numa;
 	const	char	*query[4];
 	char	**answer;
@@ -906,7 +906,6 @@ static void display_tree(int verbose)
 	if (!upsname) {
 		if (verbose)
 			printf("[No UPS name specified]\n");
-
 		return;
 	}
 
@@ -914,20 +913,23 @@ static void display_tree(int verbose)
 	query[1] = upsname;
 	numq = 2;
 
-	ret = upscli_list_start(&ups, numq, query);
-
-	if (ret < 0) {
+	if (upscli_list_start(&ups, numq, query) < 0) {
 		if (verbose)
 			report_error();
 		return;
 	}
 
-	ret = upscli_list_next(&ups, numq, query, &numa, &answer);
-
 	printf("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\"\n");
 	printf("	\"http://www.w3.org/TR/REC-html40/loose.dtd\">\n");
 	printf("<HTML>\n");
-	printf("<HEAD><TITLE>upsstat: data tree of %s</TITLE></HEAD>\n", currups->desc);
+	printf("<HEAD>\n");
+
+	if (refreshdelay > 0) {
+		printf("<META HTTP-EQUIV=\"Refresh\" CONTENT=\"%d\">\n", refreshdelay);
+	}
+	
+	printf("<TITLE>upsstat: data tree of %s</TITLE>\n", currups->desc);
+	printf("</HEAD>\n");
 
 	printf("<BODY BGCOLOR=\"#FFFFFF\" TEXT=\"#000000\" LINK=\"#0000EE\" VLINK=\"#551A8B\">\n"); 
 
@@ -943,7 +945,7 @@ static void display_tree(int verbose)
 
 	printf("<TR><TH COLSPAN=3 BGCOLOR=\"#60B0B0\"></TH></TR>\n");
 
-	while (ret == 1) {
+	while (upscli_list_next(&ups, numq, query, &numa, &answer) == 1) {
 
 		/* VAR <upsname> <varname> <val> */
 		if (numa < 4) {
@@ -960,8 +962,6 @@ static void display_tree(int verbose)
 		printf("<TD>%s<br></TD>\n", answer[3]);
 
 		printf("</TR>\n");
-
-		ret = upscli_list_next(&ups, numq, query, &numa, &answer);
 	}
 
 	printf("</TABLE>\n");
