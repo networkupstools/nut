@@ -676,12 +676,12 @@ static char *get_model_name(const char *iProduct, const char *iModel)
 }
 
 static char *mge_format_model(HIDDevice_t *hd) {
-	char	*product;
+	char	product[SMALLBUF];
 	char	model[SMALLBUF];
 	double	value;
 
 	/* Get iProduct and iModel strings */
-	product = hd->Product ? hd->Product : "unknown";
+	snprintf(product, sizeof(product), "%s", hd->Product ? hd->Product : "unknown");
 
 	HIDGetItemString(udev, "UPS.PowerSummary.iModel", model, sizeof(model), mge_utab);
 
@@ -690,12 +690,10 @@ static char *mge_format_model(HIDDevice_t *hd) {
 		snprintf(model, sizeof(model), "%i", (int)value);
 	}
 
-	if (strlen(model) < 1) {
-		return product;
+	if (strlen(model) > 0) {
+		free(hd->Product);
+		hd->Product = get_model_name(product, model);
 	}
-
-	free(hd->Product);
-	hd->Product = get_model_name(product, model);
 
 	return hd->Product;
 }
