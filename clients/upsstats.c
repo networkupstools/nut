@@ -30,24 +30,23 @@
 #define MAX_CGI_STRLEN 128
 #define MAX_PARSE_ARGS 16
 
-static	char	*monhost = NULL;
-static	int	use_celsius = 1, refreshdelay = -1, treemode = 0;
+static char	*monhost = NULL;
+static int	use_celsius = 1, refreshdelay = -1, treemode = 0;
 
 	/* from cgilib's checkhost() */
-static	char	*monhostdesc = NULL;
+static char	*monhostdesc = NULL;
 
-static	int	port;
-static	char	*upsname, *hostname;
-static	char	*upsimgpath="upsimage.cgi", *upsstatpath="upsstats.cgi";
-static	UPSCONN_t	ups;
+static int	port;
+static char	*upsname, *hostname;
+static char	*upsimgpath="upsimage.cgi", *upsstatpath="upsstats.cgi";
+static UPSCONN_t	ups;
 
-static	FILE	*tf;
-static	long	forofs = 0;
+static FILE	*tf;
+static long	forofs = 0;
 
-static	ulist_t	*ulhead = NULL, *currups = NULL;
+static ulist_t	*ulhead = NULL, *currups = NULL;
 
-static	int	skip_clause = 0, skip_block = 0;
-
+static int	skip_clause = 0, skip_block = 0;
 
 void parsearg(char *var, char *value)
 {
@@ -99,7 +98,7 @@ static int check_ups_fd(int do_report)
 
 	/* must be OK */
 	return 1;
-}	
+}
 
 static int get_var(const char *var, char *buf, size_t buflen, int verbose)
 {
@@ -150,7 +149,7 @@ static void parse_var(const char *var)
 	if (!get_var(var, answer, sizeof(answer), 1))
 		return;
 
-	printf("%s\n", answer);
+	printf("%s", answer);
 }
 
 static void do_status(void)
@@ -201,7 +200,7 @@ static int do_date(const char *buf)
 
 	time(&tod);
 	if (strftime(datebuf, sizeof(datebuf), buf, localtime(&tod))) {
-		printf("%s\n", datebuf);
+		printf("%s", datebuf);
 		return 1;
 	}
 
@@ -221,8 +220,7 @@ static int get_img_val(const char *var, const char *desc, const char *imgargs)
 	if ((imgargs) && (strlen(imgargs) > 0))
 		printf("&amp;%s", imgargs);
 
-	printf("\" ALT=\"%s: %s\">\n",
-		desc, answer);
+	printf("\" ALT=\"%s: %s\">", desc, answer);
 
 	return 1;
 }
@@ -387,14 +385,12 @@ static void ups_connect(void)
 
 	if (upscli_splitname(currups->sys, &upsname, &hostname, &port) != 0) {
 		printf("Unusable UPS definition [%s]\n", currups->sys);
-		fprintf(stderr, "Unusable UPS definition [%s]\n", 
-			currups->sys);
+		fprintf(stderr, "Unusable UPS definition [%s]\n", currups->sys);
 		exit(EXIT_FAILURE);
 	}
 
 	if (upscli_connect(&ups, hostname, port, 0) < 0)
-		fprintf(stderr, "UPS [%s]: can't connect to server: %s\n",
-			currups->sys, upscli_strerror(&ups));
+		fprintf(stderr, "UPS [%s]: can't connect to server: %s\n", currups->sys, upscli_strerror(&ups));
 
 	lastups = currups;
 }
@@ -411,7 +407,7 @@ static void do_hostlink(void)
 		printf("&amp;refresh=%d", refreshdelay);
 	}
 
-	printf("\">%s</a>\n", currups->desc);
+	printf("\">%s</a>", currups->desc);
 }
 
 static void do_treelink(void)
@@ -420,7 +416,7 @@ static void do_treelink(void)
 		return;
 	}
 
-	printf("<a href=\"%s?host=%s&amp;treemode\">All data</a>\n", upsstatpath, currups->sys);
+	printf("<a href=\"%s?host=%s&amp;treemode\">All data</a>", upsstatpath, currups->sys);
 }
 
 /* see if the UPS supports this variable - skip to the next ENDIF if not */
@@ -567,12 +563,12 @@ static void do_temp(const char *var)
 		return;
 
 	if (use_celsius) {
-		printf("%s\n", tempc);
+		printf("%s", tempc);
 		return;
 	}
 
 	tempf = (strtod(tempc, (char **) NULL) * 1.8) + 32;
-	printf("%.1f\n", tempf);
+	printf("%.1f", tempf);
 }
 
 static void do_degrees(void)
@@ -580,9 +576,9 @@ static void do_degrees(void)
 	printf("&deg;");
 
 	if (use_celsius)
-		printf("C\n");
+		printf("C");
 	else
-		printf("F\n");
+		printf("F");
 }
 
 /* plug in the right color string (like #FF0000) for the UPS status */
@@ -629,68 +625,8 @@ static void do_statuscolor(void)
 	}
 }
 
-/* print the remainder of inline commands */
-static void print_line_remainder(const char *buf)
+static int do_command(char *cmd)
 {
-	if (buf != NULL)
-		printf("%s", &buf[0]);
-}
-
-/* look for lines with @ containing valid commands
- * Note: a line can only contain 1 variable
- */
-static int parse_line(const char *buf)
-{
-	char	cmd[SMALLBUF];
-	char	*startptr = NULL;
-	char	*endptr = NULL;
-
-	/* deal with extremely short lines as a special case */
-	if (strlen(buf) < 3) {
-
-		if (skip_clause || skip_block)
-			return 1;
-
-		return 0;
-	}
-
-	/* deal with inline commands, like <td BGCOLOR="@STATUSCOLOR@"> */
-	if (buf[0] == '@') {
-		if (buf[strlen(buf) - 1] != '@')
-			return 0;
-		
-		snprintf(cmd, sizeof(cmd), "%s", &buf[1]);
-		
-		/* strip off final @ */
-		cmd[strlen(cmd) - 1] = '\0';
-	} else {
-		/* if skipping a section, act like we parsed the line */
-		if (skip_clause || skip_block)
-			return 1;
-		
-		/* otherwise check for inline command (like STATUSCOLOR) */
-		if ( (startptr = strchr(buf, '@')) == NULL) {
-			/* pass it through for normal printing */
-			return 0;
-		} else {
-			/* strip off and skip initial @ */
-			startptr[0] = '\0';
-			startptr++;
-
-			/* print the heading data */
-			printf("%s", &buf[0]);
-
-			if ( (endptr = strchr(startptr, '@')) == NULL)
-				return 0;
-
-			/* strip off and skip final @ */
-			endptr[0] = '\0';
-			endptr++;
-
-			snprintf(cmd, sizeof(cmd), "%s", startptr);
-		}
-	}
-
 	/* ending an if block? */
 	if (!strcmp(cmd, "ENDIF")) {
 		skip_clause = 0;
@@ -704,19 +640,19 @@ static int parse_line(const char *buf)
 	}
 
 	/* Toggle state when we run across ELSE */
-	if(!strcmp(cmd, "ELSE")) {
+	if (!strcmp(cmd, "ELSE")) {
 		if (skip_clause) {
 			skip_clause = 0;
-		}
-		else {
+		} else {
 			skip_block = 1;
 		}
 		return 1;
 	}
 
 	/* don't do any commands if skipping a section */
-	if (skip_clause == 1)
+	if (skip_clause == 1) {
 		return 1;
+	}
 
 	if (!strncmp(cmd, "VAR ", 4)) {
 		parse_var(&cmd[4]);
@@ -724,12 +660,12 @@ static int parse_line(const char *buf)
 	}
 
 	if (!strcmp(cmd, "HOST")) {
-		printf("%s\n", currups->sys);
+		printf("%s", currups->sys);
 		return 1;
 	}
 
 	if (!strcmp(cmd, "HOSTDESC")) {
-		printf("%s\n", currups->desc);
+		printf("%s", currups->desc);
 		return 1;
 	}
 
@@ -745,38 +681,36 @@ static int parse_line(const char *buf)
 
 	if (!strcmp(cmd, "STATUSCOLOR")) {
 		do_statuscolor();
-		print_line_remainder(endptr);
 		return 1;
 	}
 
 	if (!strcmp(cmd, "TEMPF")) {
 		use_celsius = 0;
-		print_line_remainder(endptr);
 		return 1;
 	}
 
 	if (!strcmp(cmd, "TEMPC")) {
 		use_celsius = 1;
-		print_line_remainder(endptr);
 		return 1;
 	}
 
-	if (!strncmp(cmd, "DATE ", 5))
+	if (!strncmp(cmd, "DATE ", 5)) {
 		return do_date(&cmd[5]);
+	}
 
-	if (!strncmp(cmd, "IMG ", 4))
+	if (!strncmp(cmd, "IMG ", 4)) {
 		return do_img(&cmd[4]);
+	}
 
 	if (!strcmp(cmd, "VERSION")) {
-		printf("%s\n", UPS_VERSION);
+		printf("%s", UPS_VERSION);
 		return 1;
 	}
 
 	if (!strcmp(cmd, "REFRESH")) {
-		if (refreshdelay > 0)
-			printf("<META HTTP-EQUIV=\"Refresh\" CONTENT=\"%d\">\n", 
-				refreshdelay);
-
+		if (refreshdelay > 0) {
+			printf("<META HTTP-EQUIV=\"Refresh\" CONTENT=\"%d\">", refreshdelay);
+		}
 		return 1;
 	}
 
@@ -791,9 +725,10 @@ static int parse_line(const char *buf)
 	if (!strcmp(cmd, "ENDFOR")) {
 
 		/* if not in a for, ignore this */
-		if (forofs == 0)
+		if (forofs == 0) {
 			return 1;
-			
+		}
+
 		currups = currups->next;
 
 		if (currups) {
@@ -802,17 +737,15 @@ static int parse_line(const char *buf)
 		}
 
 		return 1;
-	}		
+	}
 
 	if (!strcmp(cmd, "HOSTLINK")) {
 		do_hostlink();
-		print_line_remainder(endptr);
 		return 1;
 	}
 
 	if (!strcmp(cmd, "TREELINK")) {
 		do_treelink();
-		print_line_remainder(endptr);
 		return 1;
 	}
 
@@ -823,25 +756,21 @@ static int parse_line(const char *buf)
 
 	if (!strcmp(cmd, "UPSTEMP")) {
 		do_temp("ups.temperature");
-		print_line_remainder(endptr);
 		return 1;
 	}
 
 	if (!strcmp(cmd, "BATTTEMP")) {
 		do_temp("battery.temperature");
-		print_line_remainder(endptr);
 		return 1;
 	}
 
 	if (!strcmp(cmd, "AMBTEMP")) {
 		do_temp("ambient.temperature");
-		print_line_remainder(endptr);
 		return 1;
 	}
 
 	if (!strcmp(cmd, "DEGREES")) {
 		do_degrees();
-		print_line_remainder(endptr);
 		return 1;
 	}
 
@@ -849,25 +778,59 @@ static int parse_line(const char *buf)
 		do_ifeq(&cmd[5]);
 		return 1;
 	}
-		
+
 	if (!strncmp(cmd, "IFBETWEEN ", 10)) {
 		do_ifbetween(&cmd[10]);
 		return 1;
 	}
 
-	if(!strncmp(cmd, "UPSSTATSPATH ", 13)) {
+	if (!strncmp(cmd, "UPSSTATSPATH ", 13)) {
 		do_upsstatpath(&cmd[13]);
-		print_line_remainder(endptr);
 		return 1;
 	}
-		
-	if(!strncmp(cmd, "UPSIMAGEPATH ", 13)) {
+
+	if (!strncmp(cmd, "UPSIMAGEPATH ", 13)) {
 		do_upsimgpath(&cmd[13]);
-		print_line_remainder(endptr);
 		return 1;
 	}
-		
+
 	return 0;
+}
+
+static void parse_line(const char *buf)
+{
+	char	cmd[SMALLBUF];
+	int	i, len, do_cmd = 0;
+
+	for (i = 0; buf[i]; i += len) {
+
+		len = strcspn(&buf[i], "@");
+
+		if (len == 0) {
+			if (do_cmd) {
+				do_command(cmd);
+				do_cmd = 0;
+			} else {
+				cmd[0] = '\0';
+				do_cmd = 1;
+			}
+			i++;	/* skip over the '@' character */
+			continue;
+		}
+
+		if (do_cmd) {
+			snprintf(cmd, sizeof(cmd), "%.*s", len, &buf[i]);
+			continue;
+		}
+
+		if (skip_clause || skip_block) {
+			/* ignore this */
+			continue;
+		}
+
+		/* pass it trough */
+		printf("%.*s", len, &buf[i]);
+	}
 }
 
 static void display_template(const char *tfn)
@@ -879,8 +842,7 @@ static void display_template(const char *tfn)
 	tf = fopen(fn, "r");
 
 	if (!tf) {
-		fprintf(stderr, "upsstats: Can't open %s: %s\n", 
-			fn, strerror(errno));
+		fprintf(stderr, "upsstats: Can't open %s: %s\n", fn, strerror(errno));
 
 		printf("Error: can't open template file (%s)\n", tfn);
 
@@ -888,10 +850,7 @@ static void display_template(const char *tfn)
 	}
 
 	while (fgets(buf, sizeof(buf), tf)) {
-		buf[strlen(buf) - 1] = '\0';
-
-		if (!parse_line(buf))
-			printf("%s\n", buf);
+		parse_line(buf);
 	}
 
 	fclose(tf);
