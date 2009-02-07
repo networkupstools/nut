@@ -245,16 +245,19 @@ A
 </td>
 
 <td ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
-<table BORDER="0">
-<tr><td ALIGN="CENTER">
-Charge:<br>
-@IMG battery.charge width=90@
+@IFSUPP battery.charge@
 @IFSUPP battery.voltage@
+<table BORDER="0"><tr><td ALIGN="CENTER">
+@IMG battery.charge width=90@
 <td ALIGN="CENTER">
-Voltage:<br>
 @IMG battery.voltage width=90@
-@ENDIF@
 </table>
+@ELSE@
+@IFSUPP battery.charge@
+@IMG battery.charge@
+@ELSE@
+@IMG battery.voltage@
+@ENDIF@
 </td>
 
 <td ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
