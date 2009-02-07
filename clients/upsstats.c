@@ -922,14 +922,7 @@ static void display_tree(int verbose)
 	printf("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\"\n");
 	printf("	\"http://www.w3.org/TR/REC-html40/loose.dtd\">\n");
 	printf("<HTML>\n");
-	printf("<HEAD>\n");
-
-	if (refreshdelay > 0) {
-		printf("<META HTTP-EQUIV=\"Refresh\" CONTENT=\"%d\">\n", refreshdelay);
-	}
-	
-	printf("<TITLE>upsstat: data tree of %s</TITLE>\n", currups->desc);
-	printf("</HEAD>\n");
+	printf("<HEAD><TITLE>upsstat: data tree of %s</TITLE></HEAD>\n", currups->desc);
 
 	printf("<BODY BGCOLOR=\"#FFFFFF\" TEXT=\"#000000\" LINK=\"#0000EE\" VLINK=\"#551A8B\">\n"); 
 
