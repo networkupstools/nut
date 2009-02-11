@@ -1,3 +1,7 @@
+Wed Feb 11 10:43:10 UTC 2009 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+
+  - data/driver.list: Updated list with ups supported by microdowell driver.
+
 Thu Feb 05 22:16:10 UTC 2009 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
   - drivers/microdowell.c: Cleaned some of the code. Fixed reading of ups.conf variables.
