@@ -6,4 +6,6 @@ if WITH_HOTPLUG
 endif
 
 EXTRA_DIST = README
-MOSTLYCLEANFILES = libhid.usermap
+DISTCLEANFILES = libhidups
+# we should never remove this one, apart from a distclean-check
+#MAINTAINERCLEANFILES = libhid.usermap

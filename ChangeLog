@@ -1,10 +1,16 @@
+Thu Feb 12 13:23:41 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - scripts/udev/Makefile.am, scripts/hal/Makefile.am, scripts/hotplug/Makefile.am,
+   Makefile.am: fix the autotools issue with the clean/distclean target removing
+   the USB helper files.
+   
 Wed Feb 11 10:43:10 UTC 2009 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
-  - data/driver.list: Updated list with ups supported by microdowell driver.
+ - data/driver.list: Updated list with ups supported by microdowell driver.
 
 Thu Feb 05 22:16:10 UTC 2009 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
-  - drivers/microdowell.c: Cleaned some of the code. Fixed reading of ups.conf variables.
+ - drivers/microdowell.c: Cleaned some of the code. Fixed reading of ups.conf variables.
 
 Wed Feb 04 15:01:20 UTC 2009 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 

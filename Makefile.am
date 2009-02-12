@@ -26,6 +26,10 @@ DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
 distcheck-light:
 	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_FLAGS)" distcheck
 
+# workaround the dist generated files that are also part of the distribution
+distcleancheck_listfiles = \
+	find -type f -exec sh -c 'test -f $(srcdir)/{} || echo {}' ';'
+
 # ----------------------------------------------------------------------
 # targets from old build system (pre-automake).
 # supported for a period of time for backward "compatibility".
