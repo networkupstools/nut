@@ -161,7 +161,7 @@ static void do_status(void)
 		return;
 	}
 
-	for (ptr = strtok_r(status, " \n", &last), ptr, ptr = strtok_r(NULL, " \n", &last)) {
+	for (ptr = strtok_r(status, " \n", &last); ptr != NULL; ptr = strtok_r(NULL, " \n", &last)) {
 
 		/* expand from table in status.h */
 		for (i = 0; stattab[i].name != NULL; i++) {
