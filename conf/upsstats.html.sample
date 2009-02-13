@@ -29,6 +29,7 @@ Network UPS Tools upsstats
 : UPS Status
 </title>
 <!-- link rel="stylesheet" type="text/css" href="nut.css" / -->
+@REFRESH@
 </head>
 <body BGCOLOR="#FFFFFF" TEXT="#000000" LINK="#0000EE" VLINK="#551A8B">
 
