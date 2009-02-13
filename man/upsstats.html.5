@@ -10,9 +10,12 @@ status elements on the fly.
 
 .SH FORMATTING
 
-All commands must be alone on a line, and start and end with @.  A line
-that has any extra characters before or after the @ will be passed 
-through unchanged.
+Commands can be placed anywhere on a line, but must start and end with @.
+Any extra characters before or after the commands will be passed through
+unchanged.  It is allowed to use more than one command on a single line,
+as long as each command has its own start and end character.  If you need
+to use the @ sign, use &#64; to prevent it from being treated as a start
+character.
 
 .SH BLOCK CONTROL
 
