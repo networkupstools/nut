@@ -155,26 +155,24 @@ static void parse_var(const char *var)
 static void do_status(void)
 {
 	int	i;
-	char	status[SMALLBUF], *sp, *ptr;
+	char	status[SMALLBUF], *ptr, *last = NULL;
 
-	if (!get_var("ups.status", status, sizeof(status), 1))
+	if (!get_var("ups.status", status, sizeof(status), 1)) {
 		return;
+	}
 
-	sp = status;
-
-	while (sp) {
-		ptr = strchr(sp, ' ');
-		if (ptr)
-			*ptr++ = '\0';
+	for (ptr = strtok_r(status, " \n", &last), ptr, ptr = strtok_r(NULL, " \n", &last)) {
 
 		/* expand from table in status.h */
-		for (i = 0; stattab[i].name != NULL; i++)
-			if (!strcmp(stattab[i].name, sp))
-				printf("%s", stattab[i].desc);
+		for (i = 0; stattab[i].name != NULL; i++) {
 
-		sp = ptr;
+			if (!strcasecmp(ptr, stattab[i].name)) {
+				printf("%s<br>", stattab[i].desc);
+			}
+		}
 	}
 }
+
 static void do_runtime(void)
 {
 	int 	total, hours, minutes, seconds;
