@@ -1,5 +1,5 @@
-.TH BLAZER 8 "Fri Nov 14 2008" "" "Network UPS Tools (NUT)" 
-.SH NAME  
+.TH BLAZER 8 "Mon Feb 16 2009" "" "Network UPS Tools (NUT)"
+.SH NAME
 blazer_ser, blazer_usb \- Driver for Megatec/Q1 protocol serial/USB based UPS equipment
 .SH NOTE
 This man page only documents the hardware\(hyspecific features of the
@@ -70,6 +70,33 @@ Setting this flag will make the driver skip this step.
 Some UPSes will lock up if you attempt to read vendor information from them.
 Setting this flag will make the driver skip this step.
 
+.IP "runtimecal = \fIvalue,value,value,value\fR"
+
+Parameter used in the (optional) runtime estimation. This takes two runtimes
+at different loads. Typically, this uses the runtime at full load and the
+runtime at half load. For instance, if your UPS has a rated runtime of 240
+seconds at full load and 720 seconds at half load, you would enter
+
+    \fBruntimecal = 270,100,720,50\fR
+
+The first load should always be higher than the second. If you have values
+available for loads other than 100 and 50 % respectively, you can use those
+too, but keep them spaced apart as far as reasonably possible. Just don't
+get too close to no load (prediction of runtime depends more on idle load for
+the battery then).
+
+.IP "chargetime = \fIvalue\fR"
+
+The time needed to fully recharge the battery after being fully discharged. If
+not specified, the driver defaults to 43200 seconds (12 hours). Only used if
+\fBruntimecal\fR is also specified.
+
+.IP "idleload= \fIvalue\fR"
+
+Minimum battery load used by the driver to estimate the runtime. If not
+specified, the driver defaults to 10 %. Only used if \fBruntimecal\fR is also
+specified.
+
 .SH SERIAL INTERFACE ONLY
 
 .IP "cablepower = \fIstring\fR"
@@ -81,11 +108,11 @@ clear DTR and RTS (\fInone\fR) improves this situation.
 
 .SH USB INTERFACE ONLY
 
-.IP "vendorid=\fIregex\fR"
-.IP "productid=\fIregex\fR"
-.IP "vendor=\fIregex\fR"
-.IP "product=\fIregex\fR"
-.IP "serial=\fIregex\fR"
+.IP "vendorid = \fIregex\fR"
+.IP "productid = \fIregex\fR"
+.IP "vendor = \fIregex\fR"
+.IP "product = \fIregex\fR"
+.IP "serial = \fIregex\fR"
 
 Select a specific UPS, in case there is more than one connected via
 USB. Each option specifies an extended regular expression (see
@@ -94,7 +121,7 @@ string (minus any surrounding whitespace), or the whole 4-digit
 hexadecimal code for vendorid and productid. Try \fB-DD\fR for
 finding out the strings to match.
 
-Examples: 
+Examples:
 
     \fB-x vendor="Foo.Corporation.*"\fR
 
@@ -102,13 +129,13 @@ Examples:
 
     \fB-x product=".*(Smart|Back)-?UPS.*"\fR
 
-.IP "bus=\fIregex\fR"
+.IP "bus = \fIregex\fR"
 
 Select a UPS on a specific USB bus or group of busses. The argument is
 a regular expression that must match the bus name where the UPS is
-connected (e.g. bus="002", bus="00[2-3]"). 
+connected (e.g. bus="002", bus="00[2-3]").
 
-.IP "subdriver=\fIstring\fR"
+.IP "subdriver = \fIstring\fR"
 
 Select a serial-over-USB subdriver to use. You have a choice between \fIphoenix\fR
 and \fIkrauler\fR. When using this option, it is mandatory to also specify the
@@ -164,21 +191,16 @@ Stop a running battery test (not available on some hardware.)
 .SH BATTERY CHARGE
 
 Due to popular demand, this driver will report a guesstimated \fBbattery.charge\fR
-if you specify both \fBbattery.voltage.high\fR and \fBbattery.voltage.low\fR in
-\fBups.conf\fR(5).
+and optionally \fBbattery.runtime\fR, provided you specified a couple of the \fBEXTRA
+PARAMETERS\fR listed above.
 
-Before we start, it is impossible to determine state of charge in a UPS battery by
-looking at the battery voltage alone. You'd have to disconnect the load, let the
+If you specify both \fBbattery.voltage.high\fR and \fBbattery.voltage.low\fR in
+\fBups.conf\fR(5), but don't enter \fBruntimecal\fR, it will guesstimate the state
+of charge by looking at the battery voltage alone. This is not reliable under load,
+as this only gives reasonably accurate readings if you disconnect the load, let the
 battery rest for a couple of minutes and then measure the open cell voltage. This
 just isn't practical if the power went out and the UPS is providing power for your
 systems.
-
-There are ways to get a fairly accurate reading without disconnecting the load but
-these invariably don't use the battery voltage, but instead keep track on how much
-(and how fast) current is going in- and out of the battery. By putting these in a
-formula known as the Peukert equation, you'll be able to get a fairly accurate measure
-on the state of charge. Unfortunately, your UPS doesn't report all the parameters that
-go into this equation, so we're stuck with the following (unreliable) guesstimate:
 .nf
 
                      battery.voltage - battery.voltage.low
@@ -186,10 +208,26 @@ battery.charge =  ------------------------------------------ x 100 %
                   battery.voltage.high - battery.voltage.low
 
 .fi
-This is better than nothing (but not by much). If this calculation is giving you incorrect
-readings, you are the one that put in the values in \fBups.conf\fR(5), so don't complain
-with the author. If you need something better, buy a UPS that reports \fBbattery.charge\fR
-all by itself without the help of a NUT driver.
+There is a way to get better readings without disconnecting the load but this
+requires to keep track on how much (and how fast) current is going in- and out of
+the battery. If you specified the \fBruntimecal\fR, the driver will attempt to do
+this. Note however, that this heavily relies on the values you enter and that the
+UPS must be able to report the load as well. There are quite a couple of devices
+that report a 0 % (or any other fixed value) at all times, in which case this
+obviously doesn't work.
+
+The driver also has no way of determining the degradation of the battery capacity
+over time, so if you'll have to deal with this yourself (by adjusting the values
+in \fBruntimecal\fR. Also note that the driver guesses the initial state of charge
+based on the battery voltage, so this may be less than 100 %, even when you are
+certain that they are full. There is just no way to reliably measure this between
+0 and 100 % full charge.
+
+This is better than nothing (but not by much). If any of the above calculations is
+giving you incorrect readings, you are the one that put in the values in
+\fBups.conf\fR(5), so don't complain with the author. If you need something better,
+buy a UPS that reports \fBbattery.charge\fR and \fBbattery.runtime\fR all by itself
+without the help of a NUT driver.
 
 .SH KNOWN PROBLEMS
 
@@ -206,7 +244,7 @@ Some models report a bogus value for the beeper status (will always be \fIenable
 or \fIdisabled\fR). So, the \fBbeeper.toggle\fR command may appear to have no effect
 in the status reported by the driver when, in fact, it is working fine.
 
-The temperature value is known to be bogus in some models.
+The temperature and load value is known to be bogus in some models.
 
 .SH AUTHORS
 
