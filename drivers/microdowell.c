@@ -94,7 +94,7 @@ static char *ErrMessages[] = {
 /*  0 */   "errorcode NOT DEFINED",   /* default error message */
 /*  1 */   "I2C bus busy (e2prom)",
 /*  2 */   "Command received: checksum not valid",
-/*  3 */   "Command received: unrecognized command", 
+/*  3 */   "Command received: unrecognized command",
 /*  4 */   "WRITE: eeprom address not multiple of 8",
 /*  5 */   "READ: eeprom address (added with size) out of bound ",
 /*  6 */   "error writing e2prom address",
@@ -122,7 +122,7 @@ const char *PrintErr(int ErrCode)
 	/* The default 'msgIndex' is 0 (error code not defined) */
 	switch (ErrCode) {
 		case ERR_NO_ERROR			: msgIndex = 19 ; break ;
-		
+
 		case ERR_I2C_BUSY       : msgIndex =  1 ; break ;
 		case ERR_CMD_CHECKSUM   : msgIndex =  2 ; break ;
 		case ERR_CMD_UNRECOG    : msgIndex =  3 ; break ;
@@ -232,7 +232,7 @@ unsigned char * CmdSerial(unsigned char *OutBuffer, int Len, unsigned char *RetB
 
    SendCmdToSerial(OutBuffer, Len) ;
 	usleep(10000) ; // small delay (1/100 s))
-	
+
 	// get chars until timeout
 	BuffLen = 0 ;
 	while (ser_get_char(upsfd, TmpBuff, 0, 10000) == 1)
@@ -248,10 +248,10 @@ unsigned char * CmdSerial(unsigned char *OutBuffer, int Len, unsigned char *RetB
 		{
 		ErrCode = CheckDataChecksum(InpBuff, BuffLen) ;
 		/* upsdebugx(4, "ErrCode = %d / Len = %d", ErrCode, BuffLen); */
-		
+
 		if (!ErrCode)
 			{
-			/* FramePointer to valid data! */ 
+			/* FramePointer to valid data! */
 			p = InpBuff + ups.FramePointer ;
 			/* p now point to valid data.
 			 check if it is a error code. */
@@ -339,7 +339,7 @@ static int detect_hardware(void)
 		return -1;
 		}
 
-	
+
 	/* Get Production date & FW info */
 	OutBuff[0] = CMD_GET_EEP_BLOCK ;		/* get EEPROM data */
 	OutBuff[1] = EEP_PROD_DATE ;			/* Production date + HW version */
@@ -367,7 +367,7 @@ static int detect_hardware(void)
 		upslogx(LOG_ERR, "Unable to read Production date [%s]", PrintErr(ups.ErrCode));
 		return -1;
 		}
-	
+
 
 	/* Get Battery substitution date */
 	OutBuff[0] = CMD_GET_EEP_BLOCK ;		/* get EEPROM data */
@@ -385,7 +385,7 @@ static int detect_hardware(void)
 		upslogx(LOG_ERR, "Unable to read Battery Subst. Dates [%s]", PrintErr(ups.ErrCode));
 		return -1;
 		}
-	
+
 	/* Get working time (battery+normal)) */
 	OutBuff[0] = CMD_GET_EEP_BLOCK ;		/* get EEPROM data */
 	OutBuff[1] = EEP_MIN_VBATT ;			/* working time */
@@ -402,7 +402,7 @@ static int detect_hardware(void)
 		upslogx(LOG_ERR, "Unable to read UPS life info [%s]", PrintErr(ups.ErrCode));
 		return -1;
 		}
-	
+
 
 	/* Get the THRESHOLD table (0) */
 	OutBuff[0] = CMD_GET_EEP_BLOCK ;		/* get EEPROM data */
@@ -420,7 +420,7 @@ static int detect_hardware(void)
 		upslogx(LOG_ERR, "Unable to read Thresholds table 0 [%s]", PrintErr(ups.ErrCode));
 		return -1;
 		}
-	
+
 	/* Get the THRESHOLD table (1) */
 	OutBuff[0] = CMD_GET_EEP_BLOCK ;		/* get EEPROM data */
 	OutBuff[1] = EEP_THRESHOLD_1 ;		/* Thresholds table 0 */
@@ -454,8 +454,8 @@ static int detect_hardware(void)
 		upslogx(LOG_ERR, "Unable to read Thresholds table 2 [%s]", PrintErr(ups.ErrCode));
 		return -1;
 		}
-	
-	
+
+
 	/* Get Option Bytes */
 	OutBuff[0] = CMD_GET_EEP_BLOCK ;			/* get EEPROM data */
 	OutBuff[1] = EEP_OPT_BYTE_BLK ;		/* Option Bytes */
@@ -474,8 +474,8 @@ static int detect_hardware(void)
 		upslogx(LOG_ERR, "Unable to read Option Bytes [%s]", PrintErr(ups.ErrCode));
 		return -1;
 		}
-	
-	
+
+
 
 	/* Get UPS sensitivity (fault points) */
 	OutBuff[0] = CMD_GET_EEP_BLOCK ;		/* get EEPROM data */
@@ -503,7 +503,7 @@ static int detect_hardware(void)
 	/* Set internal UPS clock */
 	time(&lTime) ;
 	Time = localtime(&lTime) ;
-	
+
 	OutBuff[0] = CMD_SET_TIMER ;	/* set UPS internal timer */
 	OutBuff[1] = (Time->tm_wday+6) % 7 ;	/* week day (0=monday) */
 	OutBuff[2] = Time->tm_hour ;	/* hours */
@@ -533,7 +533,7 @@ void upsdrv_updateinfo(void)
 	unsigned char InpBuff[260] ;
 	unsigned char *p ;
 	/* int i ; */
-	
+
 	OutBuff[0] = CMD_GET_STATUS ;   /* get UPS status */
 	if ((p = CmdSerial(OutBuff, LEN_GET_STATUS, InpBuff)) != NULL)
 		{
@@ -546,15 +546,15 @@ void upsdrv_updateinfo(void)
 		ups.ShortStatus = (int)p[0] | ((int)p[1]<<8) ;
 		upsdebugx(1, "ups.StatusUPS: %08lX", ups.StatusUPS);
 		upsdebugx(1, "ups.ShortStatus: %04X", ups.ShortStatus);
-			
+
 		/* on battery? */
 		if (p[0] & 0x01)
 			status_set("OB");	/* YES */
-			
+
 		/* LOW battery? */
 		if (p[0] & 0x02)
 			status_set("LB");	/* YES */
-			
+
 		/* online? */
 		if (p[0] & 0x08)
 			status_set("OL");	/* YES */
@@ -574,7 +574,7 @@ void upsdrv_updateinfo(void)
 		/* AVR on (buck)? */
 		if (p[4] & 0x08)
 			status_set("TRIM");	/* YES */
-		
+
 		dstate_setinfo("ups.time", "%02d:%02d:%02d", p[6], p[7], p[8]) ;
 		upsdebugx(3, "get 'Get Status': %s", PrintErr(ups.ErrCode));
 		}
@@ -592,7 +592,7 @@ void upsdrv_updateinfo(void)
 	if ((p = CmdSerial(OutBuff, LEN_GET_MEASURES, InpBuff)) != NULL)
 		{
 		p += 3 ;	/* 'p' points to received data */
-		
+
 		dstate_setinfo("input.voltage", "%d", (int)((float)(p[2]*256 + p[3]) / 36.4)) ;
 		if (ups.ge_2kVA)
 			{
@@ -606,7 +606,7 @@ void upsdrv_updateinfo(void)
 			dstate_setinfo("output.current", "%1.f", ((float)(p[8]*256 + p[9]) / 1350.0)) ;
 			dstate_setinfo("battery.voltage", "%.1f", ((float) (p[4]*256 + p[5])) / 585.0) ;
 			}
-			
+
 		dstate_setinfo("ups.temperature", "%d", (int)(((float)(p[10]*256 + p[11])-202.97) / 1.424051)) ;
 		upsdebugx(3, "get 'Get Measures': %s", PrintErr(ups.ErrCode));
 		}
@@ -624,9 +624,9 @@ void upsdrv_updateinfo(void)
 	if ((p = CmdSerial(OutBuff, LEN_GET_BAT_LD, InpBuff)) != NULL)
 		{
 		p += 3 ;	/* 'p' points to received data */
-		
+
 		dstate_setinfo("ups.power", "%d", (p[4]*256 + p[5])) ;
-		dstate_setinfo("ups.realpower", "%d", (int)((float)(p[4]*256 + p[5]) * 0.6)) ; /* Not measured (calculated) */
+		/* dstate_setinfo("ups.realpower", "%d", (int)((float)(p[4]*256 + p[5]) * 0.6)) ; */
 		dstate_setinfo("battery.charge", "%d", (int)p[0]) ;
 		dstate_setinfo("ups.load", "%d", (int)p[6]) ;
 		upsdebugx(3, "get 'Get Batt+Load Status': %s", PrintErr(ups.ErrCode));
@@ -641,7 +641,7 @@ void upsdrv_updateinfo(void)
 
 	status_commit();
 	dstate_dataok();
-	
+
 	poll_interval = 2;
 }
 
@@ -657,10 +657,10 @@ int instcmd(const char *cmdname, const char *extra)
 	unsigned char InpBuff[260] ;
 	unsigned char *p ;
 	/* int i ; */
-	
+
 	upsdebugx(1, "instcmd(%s, %s)", cmdname, extra);
 
-	
+
 	if (strcasecmp(cmdname, "load.on") == 0)
 		{
 		OutBuff[0] = CMD_SD_ONESHOT ;   /* turn ON the outputs */
@@ -718,7 +718,7 @@ int instcmd(const char *cmdname, const char *extra)
 			OutBuff[2] = 0x02 ;		/* Battery shutdown */
 		else
 			OutBuff[2] = 0x01 ;		/* Online shutdown */
-		
+
 		if (ups.ShutdownDelay < 6)
 			ups.ShutdownDelay = 6 ;
 
@@ -742,7 +742,7 @@ int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 		}
 
-	
+
 	if (strcasecmp(cmdname, "shutdown.stayoff") == 0)
 		{
 		OutBuff[0] = CMD_SD_ONESHOT ;   /* turn ON the outputs */
@@ -751,7 +751,7 @@ int instcmd(const char *cmdname, const char *extra)
 			OutBuff[2] = 0x02 ;		/* Battery shutdown */
 		else
 			OutBuff[2] = 0x01 ;		/* Online shutdown */
-		
+
 		if (ups.ShutdownDelay < 6)
 			ups.ShutdownDelay = 6 ;
 
@@ -774,7 +774,7 @@ int instcmd(const char *cmdname, const char *extra)
 			}
 		return STAT_INSTCMD_HANDLED;
 		}
-	
+
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -786,7 +786,7 @@ int setvar(const char *varname, const char *val)
 		{
 		return STAT_SET_UNKNOWN;
 		}
-	
+
 	if (strcasecmp(varname, "ups.delay.start") == 0)
 		{
 		delay = CLAMP(delay, 0, MAX_START_DELAY);
@@ -834,7 +834,7 @@ void upsdrv_initinfo(void)
 		fatalx(EXIT_FAILURE,
 		       "Unable to detect a Microdowell's  Enterprise UPS on port %s\nCheck the cable, port name and try again", device_path);
 		}
-	
+
 	/* I set the correspondig UPS variables
 	   They were read in 'detect_hardware()'
 	   some other variables were set in 'detect_hardware()' */
@@ -878,7 +878,7 @@ void upsdrv_initinfo(void)
 	dstate_addcmd("shutdown.stop");
 	dstate_addcmd("beeper.toggle");
 	*/
-	
+
 	/* set handlers */
 	upsh.instcmd = instcmd ;
 	upsh.setvar = setvar;
@@ -907,7 +907,7 @@ void upsdrv_shutdown(void)
 		ups.ShortStatus = (int)p[0] | ((int)p[1]<<8) ;
 		upsdebugx(1, "ups.StatusUPS: %08lX", ups.StatusUPS);
 		upsdebugx(1, "ups.ShortStatus: %04X", ups.ShortStatus);
-			
+
 		/* on battery? */
 		if (p[0] & 0x01)
 			BatteryFlag = 1 ;	/* YES */
@@ -918,7 +918,7 @@ void upsdrv_shutdown(void)
 		upsdebugx(1, "get 'Get Status': %s", PrintErr(ups.ErrCode));
 		/* upslogx(LOG_ERR, "get 'Get Status': %s", PrintErr(ups.ErrCode)); */
 		}
-	
+
 
 	/* Send SHUTDOWN command */
 	OutBuff[0] = CMD_SD_ONESHOT ;	/* Send SHUTDOWN command */
@@ -929,7 +929,7 @@ void upsdrv_shutdown(void)
 		OutBuff[2] = 0x02 ;	/* Type of shutdown (BATTERY MODE) */
 	else
 		OutBuff[2] = 0x01 ;	/* Type of shutdown (ONLINE) */
-	
+
 	if (ups.ShutdownDelay < 6)
 		ups.ShutdownDelay = 6 ;
 
@@ -938,7 +938,7 @@ void upsdrv_shutdown(void)
 	OutBuff[5] = (ups.WakeUpDelay >> 16) & 0xFF ;	/* WUDELAY (MSB)	Wakeup value (seconds) */
 	OutBuff[6] = (ups.WakeUpDelay >> 8) & 0xFF ;		/* WUDELAY (...) */
 	OutBuff[7] = (ups.WakeUpDelay & 0xFF ) ;			/* WUDELAY (LSB) */
-	
+
 	if ((p = CmdSerial(OutBuff, LEN_SD_ONESHOT, InpBuff)) != NULL)
 		{
 		upsdebugx(2, "Shutdown command(TYPE=%02x, SD=%u, WU=%u): %s", OutBuff[2], ups.ShutdownDelay, ups.WakeUpDelay, PrintErr(ups.ErrCode));
@@ -963,7 +963,7 @@ void upsdrv_makevartable(void)
 	/* addvar(VAR_FLAG, "xyzzy", "Enable xyzzy mode"); */
 
 	/* allow '-x foo=<some value>' */
-	addvar(VAR_VALUE, "ups.delay.shutdown", "Override shutdown delay (120s)"); 
+	addvar(VAR_VALUE, "ups.delay.shutdown", "Override shutdown delay (120s)");
 	addvar(VAR_VALUE, "ups.delay.start", "Override restart delay (10s)");
 }
 
