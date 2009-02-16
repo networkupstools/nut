@@ -24,13 +24,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 @REFRESH@
-<title>
-@HOSTDESC@
-: 
-@VAR ups.model@
-on
-@HOST@
-</title>
+<title>@HOSTDESC@ : @VAR ups.model@ on @HOST@</title>
 <!-- LINK REL="stylesheet" TYPE="text/css" HREF="http://localhost/nut/nut.css" / -->
 </head>
 <body BGCOLOR="#808080" TEXT="#00FC00" LINK="#0000EE" VLINK="#551A8B">
@@ -38,23 +32,11 @@ on
 <table BORDER="1" ALIGN="CENTER" CELLSPACING="0" CELLPADDING="10" BGCOLOR="#000000">
 
 <tr>
-<th COLSPAN="20">
-Network UPS Tools upsstats
-@VERSION@
--
-@HOSTDESC@
--
-@VAR ups.model@
-on
-@HOST@
-</th>
+<th COLSPAN="20">Network UPS Tools upsstats @VERSION@ - @HOSTDESC@ - @VAR ups.model@ on @HOST@</th>
 </tr>
 
 <tr>
-<th>
-@DATE %a %b %d %X %Z %Y@
-</th>
-
+<th>@DATE %a %b %d %X %Z %Y@</th>
 <th>Battery</th>
 <th>Input</th>
 <th>Output</th>
@@ -69,77 +51,55 @@ on
 
 <tr>
 <th ALIGN="RIGHT">UPS Model:</th>
-<td>
-@VAR ups.model@
-</td>
+<td>@VAR ups.model@</td>
 </tr>
 
 <tr>
 <th ALIGN="RIGHT">Status:</th>
-<td>
-@STATUS@
-@ENDIF@
-</td>
+<td>@STATUS@</td>
 </tr>
 
 @IFSUPP battery.runtime@
 <tr>
 <th ALIGN="RIGHT">Runtime:</th>
-<td>
-@RUNTIME@
-</td>
+<td>@RUNTIME@</td>
 </tr>
 @ENDIF@
 
 @IFSUPP ups.temperature@
 <tr>
 <th ALIGN="RIGHT">UPS temp:</th>
-<td>
-@UPSTEMP@
-@DEGREES@
-</td>
+<td>@UPSTEMP@ @DEGREES@</td>
 </tr>
 @ENDIF@
 
 @IFSUPP battery.voltage@
 <tr>
 <th ALIGN="RIGHT">Battery: </th>
-<td>
-@VAR battery.voltage@
-V
-@IFSUPP battery.current@
-, 
-@VAR battery.current@
-A
+<td>@VAR battery.voltage@ V@IFSUPP battery.current@, @VAR battery.current@ A</td>
 @ENDIF@
 
 <tr>
 <th VALIGN="TOP" ALIGN="RIGHT">Input: </th>
+
 <td>
 
 @IFSUPP input.L2-L3.voltage@
-@VAR input.L1-L2.voltage@
-V<br>
-@VAR input.L2-L3.voltage@
-V<br>
-@VAR input.L3-L1.voltage@
-V<br>
+@VAR input.L1-L2.voltage@ V<br>
+@VAR input.L2-L3.voltage@ V<br>
+@VAR input.L3-L1.voltage@ V<br>
 </td>
 </tr>
 @ELSE@
 @IFSUPP input.L2-N.voltage@
-@VAR input.L1-N.voltage@
-V<br>
-@VAR input.L2-N.voltage@
-V<br>
-@VAR input.L3-N.voltage@
-V<br>
+@VAR input.L1-N.voltage@ V<br>
+@VAR input.L2-N.voltage@ V<br>
+@VAR input.L3-N.voltage@ V<br>
 </td>
 </tr>
 @ELSE@
 @IFSUPP input.voltage@
-@VAR input.voltage@
- V
+@VAR input.voltage@ V<br>
 </td>
 </tr>
 @ENDIF@
@@ -148,12 +108,9 @@ V<br>
 <tr>
 <th>
 <td>
-@VAR input.L1.current@
-A<br>
-@VAR input.L2.current@
-A<br>
-@VAR input.L3.current@
-A<br>
+@VAR input.L1.current@ A<br>
+@VAR input.L2.current@ A<br>
+@VAR input.L3.current@ A<br>
 </td>
 </tr>
 @ELSE@
@@ -161,8 +118,7 @@ A<br>
 <tr>
 <th>
 <td>
-@VAR input.current@
-A
+@VAR input.current@ A
 </td>
 </tr>
 @ENDIF@
@@ -171,8 +127,7 @@ A
 <tr>
 <th>
 <td>
-@VAR input.frequency@
- Hz
+@VAR input.frequency@ Hz
 </td>
 </tr>
 @ENDIF@
@@ -182,28 +137,21 @@ A
 <td>
 
 @IFSUPP output.L2-L3.voltage@
-@VAR output.L1-L2.voltage@
-V<br>
-@VAR output.L2-L3.voltage@
-V<br>
-@VAR output.L3-L1.voltage@
-V<br>
+@VAR output.L1-L2.voltage@ V<br>
+@VAR output.L2-L3.voltage@ V<br>
+@VAR output.L3-L1.voltage@ V<br>
 </td>
 </tr>
 @ELSE@
 @IFSUPP output.L2-N.voltage@
-@VAR output.L1-N.voltage@
-V<br>
-@VAR output.L2-N.voltage@
-V<br>
-@VAR output.L3-N.voltage@
-V<br>
+@VAR output.L1-N.voltage@ V<br>
+@VAR output.L2-N.voltage@ V<br>
+@VAR output.L3-N.voltage@ V<br>
 </td>
 </tr>
 @ELSE@
 @IFSUPP output.voltage@
-@VAR output.voltage@
- V
+@VAR output.voltage@  V
 </td>
 </tr>
 @ENDIF@
@@ -212,12 +160,9 @@ V<br>
 <tr>
 <th>
 <td>
-@VAR output.L1.current@
-A<br>
-@VAR output.L2.current@
-A<br>
-@VAR output.L3.current@
-A<br>
+@VAR output.L1.current@ A<br>
+@VAR output.L2.current@ A<br>
+@VAR output.L3.current@ A<br>
 </td>
 </tr>
 @ELSE@
@@ -225,8 +170,7 @@ A<br>
 <tr>
 <th>
 <td>
-@VAR output.current@
-A
+@VAR output.current@ A
 </td>
 </tr>
 @ENDIF@
@@ -235,8 +179,7 @@ A
 <tr>
 <th>
 <td>
-@VAR output.frequency@
- Hz
+@VAR output.frequency@ Hz
 </td>
 </tr>
 @ENDIF@
@@ -245,107 +188,71 @@ A
 </td>
 
 <td ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
+<table BORDER="0"><tr>
 @IFSUPP battery.charge@
 @IFSUPP battery.voltage@
-<table BORDER="0"><tr><td ALIGN="CENTER">
-@IMG battery.charge width=90@
-<td ALIGN="CENTER">
-@IMG battery.voltage width=90@
-</table>
+<td ALIGN="CENTER">Charge<br>@IMG battery.charge width=90@</td>
+<td ALIGN="CENTER">Voltage<br>@IMG battery.voltage width=90@</td>
 @ELSE@
 @IFSUPP battery.charge@
-@IMG battery.charge@
+<td ALIGN="CENTER">Charge<br>@IMG battery.charge@</td>
 @ELSE@
-@IMG battery.voltage@
+<td ALIGN="CENTER">Voltage<br>@IMG battery.voltage@</td>
 @ENDIF@
+</tr></table>
 </td>
 
 <td ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
+<table BORDER="0"><tr>
 @IFSUPP input.L2-L3.voltage@
-<table BORDER="0"><tr><td ALIGN="CENTER">
-L1-L2<br>
-@IMG input.L1-L2.voltage width=68@
-<td ALIGN="CENTER">
-L2-L3<br>
-@IMG input.L2-L3.voltage width=68@
-<td ALIGN="CENTER">
-L3-L1<br>
-@IMG input.L3-L1.voltage width=68@
-</table>
+<td ALIGN="CENTER">L1-L2<br>@IMG input.L1-L2.voltage width=68@</td>
+<td ALIGN="CENTER">L2-L3<br>@IMG input.L2-L3.voltage width=68@</td>
+<td ALIGN="CENTER">L3-L1<br>@IMG input.L3-L1.voltage width=68@</td>
 @ELSE@
 @IFSUPP input.L2-N.voltage@
-<table BORDER="0"><tr><td ALIGN="CENTER">
-L1-N<br>
-@IMG input.L1-N.voltage width=68@
-<td ALIGN="CENTER">
-L2-N<br>
-@IMG input.L2-N.voltage width=68@
-<td ALIGN="CENTER">
-L3-N<br>
-@IMG input.L3-N.voltage width=68@
-</table>
+<td ALIGN="CENTER">L1-N<br>@IMG input.L1-N.voltage width=68@</td>
+<td ALIGN="CENTER">L2-N<br>@IMG input.L2-N.voltage width=68@</td>
+<td ALIGN="CENTER">L3-N<br>@IMG input.L3-N.voltage width=68@</td>
 @ELSE@
-@IMG input.voltage@
+<td ALIGN="CENTER"><br>@IMG input.voltage@</td>
 @ENDIF@
+</tr></table>
 </td>
 
 <td ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
+<table BORDER="0"><tr>
 @IFSUPP output.L2-L3.voltage@
-<table BORDER="0"><tr><td ALIGN="CENTER">
-L1-L2<br>
-@IMG output.L1-L2.voltage width=68@
-<td ALIGN="CENTER">
-L2-L3<br>
-@IMG output.L2-L3.voltage width=68@
-<td ALIGN="CENTER">
-L3-L1<br>
-@IMG output.L3-L1.voltage width=68@
-</table>
+<td ALIGN="CENTER">L1-L2<br>@IMG output.L1-L2.voltage width=68@</td>
+<td ALIGN="CENTER">L2-L3<br>@IMG output.L2-L3.voltage width=68@</td>
+<td ALIGN="CENTER">L3-L1<br>@IMG output.L3-L1.voltage width=68@</td>
 @ELSE@
 @IFSUPP output.L2-N.voltage@
-<table BORDER="0"><tr><td ALIGN="CENTER">
-L1-N<br>
-@IMG output.L1-N.voltage width=68@
-<td ALIGN="CENTER">
-L2-N<br>
-@IMG output.L2-N.voltage width=68@
-<td ALIGN="CENTER">
-L3-N<br>
-@IMG output.L3-N.voltage width=68@
-</table>
+<td ALIGN="CENTER">L1-N<br>@IMG output.L1-N.voltage width=68@</td>
+<td ALIGN="CENTER">L2-N<br>@IMG output.L2-N.voltage width=68@</td>
+<td ALIGN="CENTER">L3-N<br>@IMG output.L3-N.voltage width=68@</td>
 @ELSE@
-@IMG output.voltage@
+<td ALIGN="CENTER"><br>@IMG output.voltage@</td>
 @ENDIF@
+</tr></table>
 </td>
 
 <td ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
+<table BORDER="0"><tr>
 @IFSUPP output.L2.power.percent@
-<table BORDER="0"><tr><td ALIGN="CENTER">
-L1<br>
-@IMG output.L1.power.percent width=68@
-<td ALIGN="CENTER">
-L2<br>
-@IMG output.L2.power.percent width=68@
-<td ALIGN="CENTER">
-L3<br>
-@IMG output.L3.power.percent width=68@
-</table>
+<td ALIGN="CENTER">L1<br>@IMG output.L1.power.percent width=68@</td>
+<td ALIGN="CENTER">L2<br>@IMG output.L2.power.percent width=68@</td>
+<td ALIGN="CENTER">L3<br>@IMG output.L3.power.percent width=68@</td>
 @ELSE@
 @IFSUPP output.L2.realpower.percent@
-<table BORDER="0"><tr><td ALIGN="CENTER">
-L1<br>
-@IMG output.L1.realpower.percent width=68@
-<td ALIGN="CENTER">
-L2<br>
-@IMG output.L2.realpower.percent width=68@
-<td ALIGN="CENTER">
-L3<br>
-@IMG output.L3.realpower.percent width=68@
-</table>
+<td ALIGN="CENTER">L1<br>@IMG output.L1.realpower.percent width=68@</td>
+<td ALIGN="CENTER">L2<br>@IMG output.L2.realpower.percent width=68@</td>
+<td ALIGN="CENTER">L3<br>@IMG output.L3.realpower.percent width=68@</td>
 @ELSE@
-@IMG ups.load@
+<td ALIGN="CENTER"><br>@IMG ups.load@</td>
 @ENDIF@
+</tr></table>
 </td>
+
 </tr>
 
 </table>
