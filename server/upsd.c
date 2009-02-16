@@ -328,7 +328,7 @@ static void client_disconnect(ctype_t *client)
 		return;
 	}
 
-	upslogx(LOG_DEBUG, "Disconnect from %s", client->addr);
+	upsdebugx(2, "Disconnect from %s", client->addr);
 
 	shutdown(client->sock_fd, 2);
 	close(client->sock_fd);
@@ -553,7 +553,7 @@ static void client_connect(stype_t *server)
 
 	lastclient = client;
  */
-	upslogx(LOG_DEBUG, "Connect from %s", client->addr);
+	upsdebugx(2, "Connect from %s", client->addr);
 }
 
 /* read tcp messages and handle them */
