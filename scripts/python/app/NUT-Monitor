@@ -20,6 +20,9 @@
 # 2008-02-01 David Goncalves
 #            A gui to monitor UPSes via NUT using PyNUT class.
 
+# 2009-02-12 David Goncalves
+#            Modified the status report method to allow 'composite' UPS status
+#            ( OL + TRIM, OL + OFF, etc... )
 
 import gtk, gtk.glade, gobject, pango
 import sys, os, time
@@ -39,8 +42,8 @@ class gui :
     __ups_commands  = list()
     __ups_connected = False
 
-    __version       = "1.0"
-    __release       = "2008-06-30"
+    __version       = "1.1"
+    __release       = "2009-02-12"
 
     def __init__( self ) :
         if os.path.exists( "gui.glade" ) :
@@ -271,14 +274,11 @@ class ups_updater( threading.Thread ) :
     __parent_class = None
     __stop_thread  = False
 
-    __ups_status_mapper = { "OL"     : "<span color=\"#009000\">Online</span>",
-                            "OB"     : "<span color=\"#900000\">Running on batteries</span>",
-                            "LB"     : "<span color=\"#BB0000\"><b>Low batteries</b></span>",
+    __ups_status_mapper = { "LB"     : "<span color=\"#BB0000\"><b>Low batteries</b></span>",
                             "RB"     : "<span color=\"#FF0000\"><b>Replace batteries !</b></span>",
                             "BYPASS" : "<span color=\"#BB0000\">Running bypass</span> <i>(no battery protection)</i>",
                             "CAL"    : "Performing runtime calibration",
-                            "CAL OB" : "Performing runtime calibration",
-                            "OFF"    : "<span color=\"#000090\">Offline</span> <i>(not providing power to the load)</i>",
+                            "OFF"    : "<span color=\"#000090\">output offline</span> <i>(not providing power to the load)</i>",
                             "OVER"   : "<span color=\"#BB0000\">Overloaded !</span> <i>(there is too much load for UPS)</i>",
                             "TRIM"   : "Triming <i>(UPS is triming incoming voltage)</i>",
                             "BOOST"  : "Boost <i>(UPS is boosting incoming voltage)</i>"
@@ -348,7 +348,21 @@ class ups_updater( threading.Thread ) :
                 # Update UPS informations fields
                 if vars.has_key("ups.status") :
                     text_left  += "<b>UPS Status :</b>\n\n"
-                    text_right += "%s\n\n" % self.__ups_status_mapper[ vars["ups.status"] ]
+
+                    if vars["ups.status"].find( "OL" ) != -1 :
+                        # UPS is online
+                        text_right += "<span color=\"#009000\">Online</span>"
+
+                    if vars["ups.status"].find( "OB" ) != -1 :
+                        # UPS is on batteries
+                        text_right += "<span color=\"#900000\">On batteries</span>"
+
+                    # Check for additionnal informations
+                    for k,v in self.__ups_status_mapper.iteritems() :
+                        if vars["ups.status"].find(k) != -1 :
+                            text_right += " - %s" % v
+
+                    text_right += "\n\n"
 
                 text_left += "<b>UPS Model :</b>\n"
 

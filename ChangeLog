@@ -1,3 +1,9 @@
+Mon Feb 16 16:13:47 UTC 2009 / David Goncalves <david@lestat.st>
+
+ - scripts/python/app/NUT-Monitor: Changed version from 1.0 to 1.1. Changed
+   the way NUT-Monitor deals with 'ups.status' var to better handle composite
+   status (OL + TRIM, OL + CHRG, ...)
+
 Thu Feb 12 13:23:41 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - scripts/udev/Makefile.am, scripts/hal/Makefile.am, scripts/hotplug/Makefile.am,
@@ -14,9 +20,11 @@ Thu Feb 05 22:16:10 UTC 2009 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
 Wed Feb 04 15:01:20 UTC 2009 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
- - Added mocrodowell.c/h into drivers/. add man/microdowell.8. Adjusted
+ - Added microdowell.c/h into drivers/. add man/microdowell.8. Adjusted
    drivers/Makefile.am and man/makefile.am. Adjusted the code for 2.4.0
    in the microdowell.c.
+
+2.4.0
 
 Wed Jan 28 10:18:41 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
  
