@@ -3,6 +3,11 @@ of this software.  When upgrading from an older version, be sure to
 check this file to see if you need to make changes to your system.
 
 ---------------------------------------------------------------------------
+Changes from 2.4.0 to 2.4.1:
+
+ - nothing that affects upgraded systems.
+
+---------------------------------------------------------------------------
 Changes from 2.2.2 to 2.4.0:
 
  - The nut.conf file has been introduced to standardize startup configuration

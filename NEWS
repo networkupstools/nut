@@ -1,6 +1,22 @@
 If you're upgrading from an earlier version, see the UPGRADING file.
 
 ---------------------------------------------------------------------------
+Release notes for NUT 2.4.1 - what's new since 2.4.0:
+
+ - the microdowell driver has appeared to support various MicroDowell Enterprise
+   units (see the "new devices" list below).
+
+ - support for new devices: MicroDowell Enterprise B8, B10, N8, N11, N15, N20,
+   N22, N30, N40, N50, N60 and HiBox ST.
+
+ - NUT-Monitor now better handles the ups.status field, and has switched to
+   version 1.1.
+
+ - the situation of the build toolchain has been fixed, with regard to the
+   "make clean" target and the wrongly removed generated USB files. This brokes
+   further configure call. 
+
+---------------------------------------------------------------------------
 Release notes for NUT 2.4.0 - what's new since 2.2.2:
 
  - preliminary support for Power Distribution Units (PDUs): NUT now support

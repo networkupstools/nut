@@ -1,3 +1,9 @@
+2.4.1
+
+Mon Feb 16 17:41:32 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - configure.in: 2.4.1
+
 Mon Feb 16 16:13:47 UTC 2009 / David Goncalves <david@lestat.st>
 
  - scripts/python/app/NUT-Monitor: Changed version from 1.0 to 1.1. Changed
