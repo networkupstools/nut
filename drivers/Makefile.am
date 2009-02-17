@@ -37,7 +37,7 @@ SERIAL_DRIVERLIST = apcsmart bcmxcp belkin belkinunv bestfcom	\
  gamatronic genericups isbmex liebert masterguard megatec metasys 	\
  mge-shut mge-utalk microdowell newmge-shut oneac optiups powercom rhino 	\
  safenet skel solis tripplite tripplitesu upscode2 victronups powerpanel \
- blazer_ser
+ blazer_ser virtual
 SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb megatec_usb \
  blazer_usb richcomm_usb
@@ -138,6 +138,8 @@ if WITH_SSL
   dummy_ups_CFLAGS += $(LIBSSL_CFLAGS)
   dummy_ups_LDADD += $(LIBSSL_LDFLAGS)
 endif
+
+virtual_SOURCES = virtual.c
 
 # sample skeleton driver
 
