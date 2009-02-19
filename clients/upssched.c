@@ -17,12 +17,12 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-/* design notes for the curious: 
+/* design notes for the curious:
  *
  * 1. we get called with a upsname and notifytype from upsmon
  * 2. the config file is searched for an AT condition that matches
  * 3. the conditions on any matching lines are parsed
- * 
+ *
  * starting a timer: the timer is added to the daemon's timer queue
  * cancelling a timer: the timer is removed from that queue
  * execute a command: the command is passed straight to the cmdscript
@@ -36,7 +36,7 @@
  * timers can be cancelled at any time before they trigger
  *
  * the daemon will shut down automatically when no more timers are active
- * 
+ *
  */
 
 #include "common.h"
@@ -61,8 +61,6 @@ typedef struct {
 	char	*cmdscript = NULL, *pipefn = NULL, *lockfn = NULL;
 	int	verbose = 0;		/* use for debugging */
 
-	struct  sigaction sa;
-	sigset_t nut_upssched_sigmask;
 
 	/* ups name and notify type (string) as received from upsmon */
 	const	char	*upsname, *notify_type;
@@ -384,12 +382,12 @@ static void conn_add(int sockfd)
 		upslog_with_errno(LOG_ERR, "fcntl set O_NDELAY on unix fd failed");
 		close(acc);
 		return;
-	}	
+	}
 
 	tmp = last = connhead;
 
 	while (tmp) {
-		last = tmp;	
+		last = tmp;
 		tmp = tmp->next;
 	}
 
@@ -583,7 +581,7 @@ static void start_daemon(int lockfd)
 				tmp = tmpnext;
 			}
 		}
- 
+
 		checktimers();
 	}
 }
@@ -595,7 +593,7 @@ static int try_connect(void)
 	int	pipefd, ret;
 	struct	sockaddr_un saddr;
 
-	memset(&sa, '\0', sizeof(saddr));
+	memset(&saddr, '\0', sizeof(saddr));
 	saddr.sun_family = AF_UNIX;
 	snprintf(saddr.sun_path, sizeof(saddr.sun_path), "%s", pipefn);
 
@@ -609,7 +607,7 @@ static int try_connect(void)
 	if (ret != -1)
 		return pipefd;
 
-	return -1;	
+	return -1;
 }
 
 static int get_lock(const char *fn)
@@ -668,6 +666,9 @@ static void read_timeout(int sig)
 
 static void setup_sigalrm(void)
 {
+	struct  sigaction sa;
+	sigset_t nut_upssched_sigmask;
+
 	sigemptyset(&nut_upssched_sigmask);
 	sa.sa_mask = nut_upssched_sigmask;
 	sa.sa_flags = 0;
@@ -743,17 +744,17 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 			return;		/* success */
 
 		upslogx(LOG_ERR, "read confirmation got [%s]", buf);
-	
+
 		/* try again ... */
 	}
 
 	fatalx(EXIT_FAILURE, "Unable to connect to daemon and unable to start daemon");
 }
 
-static void parse_at(const char *ntype, const char *un, const char *cmd, 
+static void parse_at(const char *ntype, const char *un, const char *cmd,
 		const char *ca1, const char *ca2)
 {
-	/* complain both ways in case we don't have a tty */	
+	/* complain both ways in case we don't have a tty */
 
 	if (!cmdscript) {
 		printf("CMDSCRIPT must be set before any ATs in the config file!\n");
@@ -797,7 +798,7 @@ static void parse_at(const char *ntype, const char *un, const char *cmd,
 			return;
 		}
 
-		if (verbose)	
+		if (verbose)
 			upslogx(LOG_INFO, "Executing command: %s", ca1);
 
 		exec_cmd(ca1);
@@ -882,11 +883,11 @@ static void checkconf(void)
 			unsigned int	i;
 			char	errmsg[SMALLBUF];
 
-			snprintf(errmsg, sizeof(errmsg), 
+			snprintf(errmsg, sizeof(errmsg),
 				"upssched.conf: invalid directive");
 
 			for (i = 0; i < ctx.numargs; i++)
-				snprintfcat(errmsg, sizeof(errmsg), " %s", 
+				snprintfcat(errmsg, sizeof(errmsg), " %s",
 					ctx.arglist[i]);
 
 			upslogx(LOG_WARNING, "%s", errmsg);
@@ -902,7 +903,7 @@ int main(int argc, char **argv)
 
 	/* normally we don't have stderr, so get this going to syslog early */
 	openlog("upssched", LOG_PID, LOG_DAEMON);
-	syslogbit_set();	
+	syslogbit_set();
 
 	upsname = getenv("UPSNAME");
 	notify_type = getenv("NOTIFYTYPE");
