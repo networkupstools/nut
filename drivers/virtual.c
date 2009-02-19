@@ -47,14 +47,16 @@ static struct {
 
 static struct {
 	struct {
+		double	act;
 		double	low;
 	} charge;
 	struct {
+		double	act;
 		double	low;
 	} runtime;
-} battery = { { 0 }, { 0 } };
+} battery = { { 0, 0 }, { 0, 0 } };
 
-static int	dumpdone = 0, online = 1;
+static int	dumpdone = 0, online = 1, outlet = 1;
 static int	offdelay = 120, ondelay = 30;
 
 static PCONF_CTX_t	sock_ctx;
@@ -109,6 +111,8 @@ static int parse_args(int numargs, char **arg)
 	if (!strcasecmp(arg[0], "SETINFO")) {
 
 		if (!strncasecmp(arg[1], "driver.", 7) ||
+				!strcasecmp(arg[1], "battery.charge.low") ||
+				!strcasecmp(arg[1], "battery.runtime.low") ||
 				!strncasecmp(arg[1], "ups.delay.", 10) ||
 				!strncasecmp(arg[1], "ups.timer.", 10)) {
 			/* don't pass on upstream driver settings */
@@ -126,17 +130,20 @@ static int parse_args(int numargs, char **arg)
 			}
 		}
 
-		if (!online && (ups.timer.start < 0)) {
+		if (!strcasecmp(arg[1], "battery.charge")) {
+			battery.charge.act = strtod(arg[2], NULL);
 
-			if (!strcasecmp(arg[1], "battery.charge") && (strtod(arg[2], NULL) <= battery.charge.low)) {
-				upslogx(LOG_INFO, "Battery charge low");
-				instcmd("shutdown.return", NULL);
-			}
+			dstate_setinfo("battery.charge.low", "%g", battery.charge.low);
+			dstate_setflags("battery.charge.low", ST_FLAG_RW | ST_FLAG_STRING);
+			dstate_setaux("battery.charge.low", 3);
+		}
 
-			if (!strcasecmp(arg[1], "battery.runtime") && (strtod(arg[2], NULL) <= battery.runtime.low)) {
-				upslogx(LOG_INFO, "Battery runtime low");
-				instcmd("shutdown.return", NULL);
-			}
+		if (!strcasecmp(arg[1], "battery.runtime")) {
+			battery.runtime.act = strtod(arg[2], NULL);
+
+			dstate_setinfo("battery.runtime.low", "%g", battery.runtime.low);
+			dstate_setflags("battery.runtime.low", ST_FLAG_RW | ST_FLAG_STRING);
+			dstate_setaux("battery.runtime.low", 4);
 		}
 
 		dstate_setinfo(arg[1], arg[2]);
@@ -344,17 +351,20 @@ static int sstate_dead(int maxage)
 static int instcmd(const char *cmdname, const char *extra)
 {
 	const char	*val;
-	int	do_shutdown = 1;
 
 	val = dstate_getinfo(getval("load.status"));
 	if (val) {
 		if (!strcasecmp(val, "off") || !strcasecmp(val, "no")) {
-			do_shutdown = 0;
+			outlet = 0;
+		}
+
+		if (!strcasecmp(val, "on") || !strcasecmp(val, "yes")) {
+			outlet = 1;
 		}
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
-		if (do_shutdown && (ups.timer.shutdown < 0)) {
+		if (outlet && (ups.timer.shutdown < 0)) {
 			ups.timer.shutdown = offdelay;
 			dstate_setinfo("ups.status", "FSD %s", ups.status);
 		}
@@ -363,7 +373,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
-		if (do_shutdown && (ups.timer.shutdown < 0)) {
+		if (outlet && (ups.timer.shutdown < 0)) {
 			ups.timer.shutdown = offdelay;
 			dstate_setinfo("ups.status", "FSD %s", ups.status);
 		}
@@ -373,6 +383,25 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
 	return STAT_INSTCMD_UNKNOWN;
+}
+
+
+static int setvar(const char *varname, const char *val)
+{
+	if (!strcasecmp(varname, "battery.charge.low")) {
+		battery.charge.low = strtod(val, NULL);
+		dstate_setinfo("battery.charge.low", "%g", battery.charge.low);
+		return STAT_SET_HANDLED;
+	}
+
+	if (!strcasecmp(varname, "battery.runtime.low")) {
+		battery.runtime.low = strtod(val, NULL);
+		dstate_setinfo("battery.runtime.low", "%g", battery.runtime.low);
+		return STAT_SET_HANDLED;
+	}
+
+	upslogx(LOG_NOTICE, "setvar: unknown variable [%s]", varname);
+	return STAT_SET_UNKNOWN;
 }
 
 
@@ -395,12 +424,12 @@ void upsdrv_initinfo(void)
 		ondelay = strtol(val, NULL, 10);
 	}
 
-	val = dstate_getinfo("battery.charge.low");
+	val = getval("mincharge");
 	if (val) {
 		battery.charge.low = strtod(val, NULL);
 	}
 
-	val = dstate_getinfo("battery.runtime.low");
+	val = getval("minruntime");
 	if (val) {
 		battery.runtime.low = strtod(val, NULL);
 	}
@@ -412,6 +441,7 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("ups.timer.start", "%d", ups.timer.start);
 
 	upsh.instcmd = instcmd;
+	upsh.setvar = setvar;
 }
 
 
@@ -438,6 +468,7 @@ void upsdrv_updateinfo(void)
 			const char	*val;
 
 			ups.timer.shutdown = -1;
+			outlet = 0;
 
 			val = getval("load.off");
 			if (val) {
@@ -459,7 +490,7 @@ void upsdrv_updateinfo(void)
 			const char	*val;
 
 			ups.timer.start = -1;
-			dstate_setinfo("ups.status", "%s", ups.status);
+			outlet = 1;
 
 			val = getval("load.on");
 			if (val) {
@@ -467,6 +498,18 @@ void upsdrv_updateinfo(void)
 				snprintf(buf, sizeof(buf), "INSTCMD %s\n", val);
 				sstate_sendline(buf);
 			}
+
+			dstate_setinfo("ups.status", "%s", ups.status);
+		}
+
+	} else if (!online && outlet) {
+
+		if (battery.charge.act < battery.charge.low) {
+			upslogx(LOG_INFO, "Battery charge low");
+			instcmd("shutdown.return", NULL);
+		} else if (battery.runtime.act < battery.runtime.low) {
+			upslogx(LOG_INFO, "Battery runtime low");
+			instcmd("shutdown.return", NULL);
 		}
 	}
 
@@ -492,6 +535,9 @@ void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE, "offdelay", "Delay before outlet shutdown (seconds)");
 	addvar(VAR_VALUE, "ondelay", "Delay before outlet startup (seconds)");
+
+	addvar(VAR_VALUE, "mincharge", "Remaining battery level when UPS switches to LB (percent)");
+	addvar(VAR_VALUE, "minruntime", "Remaining battery runtime when UPS switches to LB (seconds)");
 
 	addvar(VAR_VALUE, "load.off", "Command to switch off outlet");
 	addvar(VAR_VALUE, "load.on", "Command to switch on outlet");
