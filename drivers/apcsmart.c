@@ -24,7 +24,7 @@
 #include "apcsmart.h"
 
 #define DRIVER_NAME	"APC Smart protocol driver"
-#define DRIVER_VERSION	"2.00"
+#define DRIVER_VERSION	"2.01"
 
 static upsdrv_info_t table_info = {
 	"APC command table",
@@ -565,7 +565,8 @@ static int firmware_table_lookup(void)
 				!strcmp(buf, "6TI") || /* (APC600.) */
 				!strcmp(buf, "6QI") || /* (APC600.) */
 				!strcmp(buf, "0ZI") || /* (APC Matrix 3000, vintage 10/99.) */
-				!strcmp(buf, "5UI")) { /* (APC Matrix 5000, vintage 10/93.) */
+				!strcmp(buf, "5UI") || /* (APC Matrix 5000, vintage 10/93.) */
+				!strcmp(buf, "5ZM")) { /* (APC Matrix 5000, vintage 12/00.) */
 			upsdebugx(1, "Found Smart-UPS");
 			dstate_setinfo("ups.model", "Smart-UPS");
 		}

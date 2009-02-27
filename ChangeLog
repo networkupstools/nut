@@ -1,3 +1,8 @@
+Fri Feb 27 09:07:05 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - drivers/apcsmart.[ch]: add APC Matrix 5000, vintage 12/00
+   (patch from Jarett Stevens)
+
 Tue Feb 17 22:00:01 UTC 2009 / Arnaud Quette <aquette@debian.org>
 
  - drivers/Makefile.am: Fix snmp-ups overlinking with lcrypto.

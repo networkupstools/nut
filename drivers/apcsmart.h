@@ -267,6 +267,7 @@ struct {
 	/* APC Matrix */
 	{ "0ZI",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz/<>", 0 },
 	{ "5UI",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz/<>", 0 },
+	{ "5ZM",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz/<>", 0 },
 
 	{ NULL,		NULL,			0 },
 };
