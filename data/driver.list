@@ -226,6 +226,7 @@
 "HP"	"R3000 XR"	""	"bcmxcp"
 "HP"	"R5500 XR"	""	"bcmxcp"
 "HP"	"R/T 2200 G2"	""	"usbhid-ups"
+"HP"	"T750 INTL"	""	"usbhid-ups"
 "HP"	"HP3488 Switch/Control Unit"	""	"powerman-pdu (experimental)"
 
 "IBM"	"Blade Center Management Module"	"15 outlets"	"powerman-pdu (experimental)"

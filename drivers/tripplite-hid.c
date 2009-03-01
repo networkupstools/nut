@@ -84,6 +84,8 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 
 	/* HP R/T 2200 INTL (like SMART2200RMXL2U) */
 	{ USB_DEVICE(HP_VENDORID, 0x1f0a), battery_scale_1dot0 },
+	/* HP T750 INTL */
+	{ USB_DEVICE(HP_VENDORID, 0x1f0a), battery_scale_1dot0 },
 	
 	/* Terminating entry */
 	{ -1, -1, NULL }

@@ -1,3 +1,8 @@
+Sun Mar 01 19:51:54 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - data/driver.list, drivers/tripplite-hid.c: add HP T750 INTL
+   (reported by KP Kirchdoerfer)
+
 Fri Feb 27 09:33:27 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - data/driver.list: add Mustek PowerMust 424 / 636 / 848 (USB) compatibility
