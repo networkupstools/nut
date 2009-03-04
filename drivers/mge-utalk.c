@@ -629,7 +629,7 @@ static void enable_ups_comm(void)
 	char buf[8];
 	
 	/* only enable communication if needed! */
-	if ( mge_command(buf, 8, "Si") == -1)
+	if ( mge_command(buf, 8, "Si") <= 0)
 	{
 		mge_command(NULL, 0, "Z");   /* send Z twice --- speeds up re-connect */
 		mge_command(NULL, 0, "Z");

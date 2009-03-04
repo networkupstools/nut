@@ -1,3 +1,8 @@
+Wed Mar 04 19:37:12 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - drivers/mge-utalk.c: fix enable_ups_comm()
+   (patch from Hans-Werner Paulsen)
+   
 Sun Mar 01 19:51:54 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
 
  - data/driver.list, drivers/tripplite-hid.c: add HP T750 INTL
