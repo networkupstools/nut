@@ -33,27 +33,28 @@
 /* previously: #define ERROR(x) if(x) __asm { int 3 }; */
 #define ERROR(x)
 
-static const char ItemSize[4] = { 0, 1, 2, 4 };
+static const uint8_t ItemSize[4] = { 0, 1, 2, 4 };
 
 /*
  * HIDParser struct
  * -------------------------------------------------------------------------- */
 typedef struct {
-	unsigned char	*ReportDesc;			/* Report Descriptor		*/
-	u_short		ReportDescSize;			/* Size of Report Descriptor	*/
-	u_short		Pos;				/* Store current pos in descriptor	*/
-	unsigned char	Item;				/* Store current Item		*/
+	const unsigned char	*ReportDesc;		/* Report Descriptor		*/
+	int			ReportDescSize;		/* Size of Report Descriptor	*/
+
+	uint16_t	Pos;				/* Store current pos in descriptor	*/
+	uint8_t		Item;				/* Store current Item		*/
 	long		Value;				/* Store current Value		*/
 
 	HIDData_t	Data;				/* Store current environment	*/
 
-	unsigned char	OffsetTab[MAX_REPORT][4];	/* Store ID, Type, offset & timestamp of report */
-	unsigned char	ReportCount;			/* Store Report Count		*/
-	unsigned char	Count;				/* Store local report count	*/
+	uint8_t		OffsetTab[MAX_REPORT][4];	/* Store ID, Type, offset & timestamp of report */
+	uint8_t		ReportCount;			/* Store Report Count		*/
+	uint8_t		Count;				/* Store local report count	*/
 
-	u_short		UPage;				/* Global UPage			*/
+	uint16_t	UPage;				/* Global UPage			*/
 	HIDNode_t	UsageTab[USAGE_TAB_SIZE];	/* Usage stack			*/
-	unsigned char	UsageSize;			/* Design number of usage used	*/
+	uint8_t		UsageSize;			/* Design number of usage used	*/
 } HIDParser_t;
 
 /* return 1 + the position of the leftmost "1" bit of an int, or 0 if
@@ -96,7 +97,7 @@ static void ResetLocalState(HIDParser_t* pParser)
  * Return pointer on current offset value for Report designed by 
  * ReportID/ReportType
  * -------------------------------------------------------------------------- */
-static unsigned char *GetReportOffset(HIDParser_t* pParser, const unsigned char ReportID, const unsigned char ReportType)
+static uint8_t *GetReportOffset(HIDParser_t* pParser, const uint8_t ReportID, const uint8_t ReportType)
 {
 	int	Pos;
 
@@ -123,10 +124,10 @@ static unsigned char *GetReportOffset(HIDParser_t* pParser, const unsigned char 
 }
 
 /*
- * FormatValue(long Value, unsigned char Size)
+ * FormatValue(long Value, uint8_t Size)
  * Format Value to fit with long format with respect of negative values
  * -------------------------------------------------------------------------- */
-static long FormatValue(long Value, unsigned char Size)
+static long FormatValue(long Value, uint8_t Size)
 {
 	switch(Size)
 	{
@@ -181,7 +182,7 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 		{
 		case ITEM_UPAGE:
 			/* Copy UPage in Usage stack */
-			pParser->UPage=(u_short)pParser->Value;
+			pParser->UPage=(uint16_t)pParser->Value;
 			break;
 
 		case ITEM_USAGE:
@@ -265,13 +266,13 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 			}
 			
 			/* Copy data type */
-			pParser->Data.Type = (unsigned char)(pParser->Item & ITEM_MASK);
+			pParser->Data.Type = (uint8_t)(pParser->Item & ITEM_MASK);
 			
 			/* Copy data attribute */
-			pParser->Data.Attribute = (unsigned char)pParser->Value;
+			pParser->Data.Attribute = (uint8_t)pParser->Value;
 			
 			/* Store offset */
-			pParser->Data.Offset = *GetReportOffset(pParser, pParser->Data.ReportID, (unsigned char)(pParser->Item & ITEM_MASK));
+			pParser->Data.Offset = *GetReportOffset(pParser, pParser->Data.ReportID, (uint8_t)(pParser->Item & ITEM_MASK));
 			
 			/* Get Object in pData */
 			/* -------------------------------------------------------------------------- */
@@ -279,7 +280,7 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 			/* -------------------------------------------------------------------------- */
 			
 			/* Increment Report Offset */
-			*GetReportOffset(pParser, pParser->Data.ReportID, (unsigned char)(pParser->Item & ITEM_MASK)) += pParser->Data.Size;
+			*GetReportOffset(pParser, pParser->Data.ReportID, (uint8_t)(pParser->Item & ITEM_MASK)) += pParser->Data.Size;
 			
 			/* Remove path last node */
 			pParser->Data.Path.Size--;
@@ -293,19 +294,19 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 			break;
 			
 		case ITEM_REP_ID :
-			pParser->Data.ReportID = (unsigned char)pParser->Value;
+			pParser->Data.ReportID = (uint8_t)pParser->Value;
 			break;
 			
 		case ITEM_REP_SIZE :
-			pParser->Data.Size = (unsigned char)pParser->Value;
+			pParser->Data.Size = (uint8_t)pParser->Value;
 			break;
 			
 		case ITEM_REP_COUNT :
-			pParser->ReportCount = (unsigned char)pParser->Value;
+			pParser->ReportCount = (uint8_t)pParser->Value;
 			break;
 			
 		case ITEM_UNIT_EXP :
-			pParser->Data.UnitExp = (char)pParser->Value;
+			pParser->Data.UnitExp = (int8_t)pParser->Value;
 			if (pParser->Data.UnitExp > 7) {
 				pParser->Data.UnitExp |= 0xF0;
 			}
@@ -335,7 +336,7 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 			
 		case ITEM_LONG :
 			/* can't handle long items, but should at least skip them */
-			pParser->Pos += (unsigned char)(pParser->Value & 0xff);
+			pParser->Pos += (uint8_t)(pParser->Value & 0xff);
 			break;
 		}
 	} /* while ((Found < 0) && (pParser->Pos < pParser->ReportDescSize)) */
@@ -369,7 +370,7 @@ int FindObject(HIDDesc_t *pDesc, HIDData_t *pData)
  * FindObject_with_Path
  * Get pData item with given Path and Type. Return NULL if not found.
  * -------------------------------------------------------------------------- */
-HIDData_t *FindObject_with_Path(HIDDesc_t *pDesc, HIDPath_t *Path, unsigned char Type)
+HIDData_t *FindObject_with_Path(HIDDesc_t *pDesc, HIDPath_t *Path, uint8_t Type)
 {
 	int	i;
 
@@ -395,7 +396,7 @@ HIDData_t *FindObject_with_Path(HIDDesc_t *pDesc, HIDPath_t *Path, unsigned char
  * Get pData item with given ReportID, Offset, and Type. Return NULL
  * if not found.
  * -------------------------------------------------------------------------- */
-HIDData_t *FindObject_with_ID(HIDDesc_t *pDesc, unsigned char ReportID, unsigned char Offset, unsigned char Type)
+HIDData_t *FindObject_with_ID(HIDDesc_t *pDesc, uint8_t ReportID, uint8_t Offset, uint8_t Type)
 {
 	int	i;
 
@@ -545,7 +546,7 @@ void SetValue(const HIDData_t *pData, unsigned char *Buf, long Value)
    Output: parsed data structure. Returns allocated HIDDesc structure
    on success, NULL on failure with errno set. Note: the value
    returned by this function must be freed with Free_ReportDesc(). */
-HIDDesc_t *Parse_ReportDesc(unsigned char *ReportDesc, int n)
+HIDDesc_t *Parse_ReportDesc(const unsigned char *ReportDesc, const int n)
 {
 	int		ret;
 	HIDDesc_t	*pDesc;

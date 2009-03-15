@@ -101,7 +101,7 @@ typedef uint32_t HIDNode_t;
  * Describe a HID Path
  * -------------------------------------------------------------------------- */
 typedef struct {
-	u_char		Size;				/* HID Path size			*/
+	uint8_t		Size;				/* HID Path size			*/
 	HIDNode_t	Node[PATH_SIZE];		/* HID Path				*/
 } HIDPath_t;
 
@@ -113,22 +113,22 @@ typedef struct {
 typedef struct {
 	HIDPath_t	Path;				/* HID Path				*/
 
-	u_char		ReportID;			/* Report ID				*/
-	u_char		Offset;				/* Offset of data in report	*/
-	u_char		Size;				/* Size of data in bit		*/
+	uint8_t		ReportID;			/* Report ID				*/
+	uint8_t		Offset;				/* Offset of data in report	*/
+	uint8_t		Size;				/* Size of data in bit		*/
 
-	u_char		Type;				/* Type : FEATURE / INPUT / OUTPUT */
-	u_char		Attribute;			/* Report field attribute		*/
+	uint8_t		Type;				/* Type : FEATURE / INPUT / OUTPUT */
+	uint8_t		Attribute;			/* Report field attribute		*/
 
 	long		Unit;				/* HID Unit				*/
-	char		UnitExp;			/* Unit exponent			*/
+	int8_t		UnitExp;			/* Unit exponent			*/
 
 	long		LogMin;				/* Logical Min			*/
 	long		LogMax;				/* Logical Max			*/
 	long		PhyMin;				/* Physical Min			*/
 	long		PhyMax;				/* Physical Max			*/
-	long		have_PhyMin;			/* Physical Min defined?		*/
-	long		have_PhyMax;			/* Physical Max defined?		*/
+	int8_t		have_PhyMin;			/* Physical Min defined?		*/
+	int8_t		have_PhyMax;			/* Physical Max defined?		*/
 } HIDData_t;
 
 /*

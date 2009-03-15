@@ -53,8 +53,8 @@ static const char *hid_lookup_path(const HIDNode_t usage, usage_tables_t *utab);
 static long hid_lookup_usage(const char *name, usage_tables_t *utab);
 static int string_to_path(const char *string, HIDPath_t *path, usage_tables_t *utab);
 static int path_to_string(char *string, size_t size, const HIDPath_t *path, usage_tables_t *utab);
-static long get_unit_expo(const long UnitType);
-static double exponent(double a, int b);
+static int8_t get_unit_expo(const long UnitType);
+static double exponent(double a, int8_t b);
 
 /* ---------------------------------------------------------------------- */
 /* report buffering system */
@@ -240,8 +240,10 @@ static int file_report_buffer(reportbuf_t *rbuf, unsigned char *buf, int buflen)
 
 /* Units and exponents table (HID PDC, 3.2.3) */
 #define NB_HID_UNITS 10
-static const long HIDUnits[NB_HID_UNITS][2]=
-{
+static struct {
+	const long	Type;
+	const int8_t	Expo;
+} HIDUnits[NB_HID_UNITS] = {
 	{ 0x00000000, 0 },	/* None */
 	{ 0x00F0D121, 7 },	/* Voltage */
 	{ 0x00100001, 0 },	/* Ampere */
@@ -360,7 +362,7 @@ int HIDGetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double *Value, in
 	*Value = logical_to_physical(hiddata, hValue);
 	
 	/* Process exponents and units */
-	*Value *= (double)exponent(10, (int)hiddata->UnitExp - get_unit_expo(hiddata->Unit));
+	*Value *= (double)exponent(10, hiddata->UnitExp - get_unit_expo(hiddata->Unit));
 
 	return 1;
 }
@@ -417,7 +419,7 @@ int HIDSetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double Value)
 	}
 
 	/* Process exponents and units */
-	Value /= exponent(10, (int)hiddata->UnitExp - get_unit_expo(hiddata->Unit));
+	Value /= exponent(10, hiddata->UnitExp - get_unit_expo(hiddata->Unit));
 	
 	/* Convert Physical Min, Max and Value into Logical */
 	hValue = physical_to_logical(hiddata, Value);
@@ -571,25 +573,24 @@ static long physical_to_logical(HIDData_t *Data, double physical)
 	return logical;
 }
 
-static long get_unit_expo(const long UnitType)
+static int8_t get_unit_expo(const long UnitType)
 {
 	int i;
 	
-	for (i=0; i < NB_HID_UNITS; i++)
-	{
-		if (HIDUnits[i][0] == UnitType)
-		{
-			upsdebugx(5, "get_unit_expo: %08x found %ld", (unsigned int)UnitType, HIDUnits[i][1]);
-			return HIDUnits[i][1];
+	for (i=0; i < NB_HID_UNITS; i++) {
+
+		if (HIDUnits[i].Type == UnitType) {
+			upsdebugx(5, "get_unit_expo: %08x found %d", (unsigned int)UnitType, HIDUnits[i].Expo);
+			return HIDUnits[i].Expo;
 		}
 	}
 
 	upsdebugx(5, "get_unit_expo: %08x not found!", (unsigned int)UnitType);
-	return -1;
+	return 0;
 }
 
 /* exponent function: return a^b */
-static double exponent(double a, int b)
+static double exponent(double a, int8_t b)
 {
 	if (b>0)
 		return (a * exponent(a, --b));		/* a * a ... */

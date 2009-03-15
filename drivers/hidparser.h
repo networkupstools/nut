@@ -35,7 +35,7 @@ extern "C" {
 /*
  * Parse_ReportDesc
  * -------------------------------------------------------------------------- */
-HIDDesc_t *Parse_ReportDesc(u_char *ReportDesc, int n);
+HIDDesc_t *Parse_ReportDesc(const unsigned char *ReportDesc, const int n);
 
 /*
  * Free_ReportDesc
@@ -45,21 +45,21 @@ void Free_ReportDesc(HIDDesc_t *pDesc);
 /*
  * FindObject
  * -------------------------------------------------------------------------- */
-int FindObject(HIDDesc_t *pDesc, HIDData_t* pData);
+int FindObject(HIDDesc_t *pDesc, HIDData_t *pData);
 
-HIDData_t *FindObject_with_Path(HIDDesc_t *pDesc, HIDPath_t *Path, u_char Type);
+HIDData_t *FindObject_with_Path(HIDDesc_t *pDesc, HIDPath_t *Path, uint8_t Type);
 
-HIDData_t *FindObject_with_ID(HIDDesc_t *pDesc, u_char ReportID, u_char Offset, u_char Type);
+HIDData_t *FindObject_with_ID(HIDDesc_t *pDesc, uint8_t ReportID, uint8_t Offset, uint8_t Type);
 
 /*
  * GetValue
  * -------------------------------------------------------------------------- */
-void GetValue(const u_char* Buf, HIDData_t* pData, long *pValue);
+void GetValue(const unsigned char *Buf, HIDData_t *pData, long *pValue);
 
 /*
  * SetValue
  * -------------------------------------------------------------------------- */
-void SetValue(const HIDData_t* pData, u_char* Buf, long Value);
+void SetValue(const HIDData_t *pData, unsigned char *Buf, long Value);
 
 
 #ifdef __cplusplus
