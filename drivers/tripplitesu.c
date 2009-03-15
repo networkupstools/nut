@@ -227,7 +227,7 @@ static int do_command(char type, const char *command, const char *parameters, ch
 		*response = '\0';
 	}
 
-	snprintf(buffer, sizeof(buffer), "~00%c%03d%s%s", type, strlen(command) + strlen(parameters), command, parameters);
+	snprintf(buffer, sizeof(buffer), "~00%c%03d%s%s", type, (int)(strlen(command) + strlen(parameters)), command, parameters);
 
 	ret = ser_send_pace(upsfd, 10000, "%s", buffer);
 	if (ret <= 0) {

@@ -1,6 +1,6 @@
 /* belkin.c - model specific routines for Belkin Smart-UPS units.
 
-   Copyright (C) 2000 Marcus Müller <marcus@ebootis.de>
+   Copyright (C) 2000 Marcus Mï¿½ller <marcus@ebootis.de>
 
    based on:
 
@@ -34,14 +34,14 @@
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
 	DRIVER_VERSION,
-	"Marcus Müller <marcus@ebootis.de>",
+	"Marcus Mï¿½ller <marcus@ebootis.de>",
 	DRV_STABLE,
 	{ NULL }
 };
 
 static void send_belkin_command(char cmd, const char *subcmd, const char *data)
 {
-	ser_send(upsfd, "~00%c%03d%s%s", cmd, strlen(data) + 3, subcmd, data);
+	ser_send(upsfd, "~00%c%03d%s%s", cmd, (int)strlen(data) + 3, subcmd, data);
 }
 
 static int init_communication(void)

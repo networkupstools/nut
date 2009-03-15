@@ -888,13 +888,13 @@ static int mge_xml_cdata_cb(void *userdata, int state, const char *cdata, size_t
 		return 0;
 	}
 
-	upsdebugx(3, "%s: cdata [%.*s] (state = %d)\n", __func__, len, cdata, state);
+	upsdebugx(3, "%s: cdata [%.*s] (state = %d)\n", __func__, (int)len, cdata, state);
 
 	switch(state)
 	{
 	case SU_OBJECT:
 	case GO_OBJECT:
-		snprintf(val, sizeof(val), "%.*s", len, cdata);
+		snprintf(val, sizeof(val), "%.*s", (int)len, cdata);
 		break;
 	}
 
