@@ -262,7 +262,7 @@ void upsdrv_updateinfo(void)
 
 		char date[9], time[9], tmp[32];
 
-		upsdebugx(3, "f response: %d %s", strlen(fstring), fstring);
+		upsdebugx(3, "f response: %d %s", (int)strlen(fstring), fstring);
 
 		date[0]='\0';
 		time[0]='\0';
@@ -416,7 +416,7 @@ void upsdrv_updateinfo(void)
 
 	} else {
 
-		upsdebugx(1, "failed f response. strlen: %d", strlen(fstring));
+		upsdebugx(1, "failed f response. strlen: %d", (int)strlen(fstring));
 		dstate_datastale();
 
 	} /* if (execute("f\r", fstring, sizeof(fstring)) >= 80) */
@@ -664,7 +664,7 @@ void upsdrv_init_fc(const char *fcstring)
 {
 	char tmp[256];
 
-	upsdebugx(3, "fc response: %d %s", strlen(fcstring), fcstring);
+	upsdebugx(3, "fc response: %d %s", (int)strlen(fcstring), fcstring);
 
 	/* Obtain Model */
 	if (memcmp(fcstring, "$", 1)) {

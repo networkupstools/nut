@@ -297,13 +297,13 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 				goto next_device;
 			}
 			if (rdlen1 >= 0 && rdlen2 >= 0 && rdlen1 != rdlen2) {
-				upsdebugx(2, "Warning: two different HID descriptors retrieved (Reportlen = %u vs. %u)", rdlen1, rdlen2);
+				upsdebugx(2, "Warning: two different HID descriptors retrieved (Reportlen = %d vs. %d)", rdlen1, rdlen2);
 			}
 
 			upsdebugx(2, "HID descriptor length %d", rdlen);
 
 			if (rdlen > (int)sizeof(rdbuf)) {
-				upsdebugx(2, "HID descriptor too long %d (max %d)", rdlen, sizeof(rdbuf));
+				upsdebugx(2, "HID descriptor too long %d (max %d)", rdlen, (int)sizeof(rdbuf));
 				goto next_device;
 			}
 
@@ -329,7 +329,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 				goto next_device;
 			}
 
-			upsdebugx(2, "Report descriptor retrieved (Reportlen = %u)", rdlen);
+			upsdebugx(2, "Report descriptor retrieved (Reportlen = %d)", rdlen);
 			upsdebugx(2, "Found HID device");
 			fflush(stdout);
 
@@ -390,7 +390,7 @@ static int libusb_get_string(usb_dev_handle *udev, int StringIdx, char *buf, siz
 
 	ret = usb_get_string_simple(udev, StringIdx, buf, buflen);
 	if (ret > 0) {
-		upsdebugx(5, "-> String: %s (len = %i/%i)", buf, ret, buflen);
+		upsdebugx(5, "-> String: %s (len = %d/%d)", buf, ret, (int)buflen);
 	} else {
 		upsdebugx(2, "- Unable to fetch string %d", StringIdx);
 	}

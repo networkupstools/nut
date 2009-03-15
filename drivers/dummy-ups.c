@@ -378,7 +378,7 @@ static int parse_data_file(int upsfd)
 		if ((ptr = strchr(ctx.arglist[0], ':')) != NULL)
 			*ptr = '\0';
 
-		upsdebugx(2, "parse_data_file: variable \"%s\" with %d args", ctx.arglist[0], ctx.numargs);
+		upsdebugx(2, "parse_data_file: variable \"%s\" with %d args", ctx.arglist[0], (int)ctx.numargs);
 
 		/* skip the driver.* collection data */
 		if (!strncmp(ctx.arglist[0], "driver.", 7)) {

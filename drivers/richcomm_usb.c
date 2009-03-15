@@ -151,7 +151,7 @@ static void usb_comm_fail(const char *fmt, ...)
 	va_end(ap);
 
 	if ((ret < 1) || (ret >= (int) sizeof(why))) {
-		upslogx(LOG_WARNING, "usb_comm_fail: vsnprintf needed more than %d bytes", sizeof(why));
+		upslogx(LOG_WARNING, "usb_comm_fail: vsnprintf needed more than %d bytes", (int)sizeof(why));
 	}
 
 	upslogx(LOG_WARNING, "Communications with UPS lost: %s", why);

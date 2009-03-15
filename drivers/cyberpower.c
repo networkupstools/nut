@@ -216,7 +216,7 @@ static int confirm_write(const unsigned char *buf, size_t buflen)
 
 	if ((ret < 1) || (ret < ((int) buflen - 1))) {
 		upsdebugx(1, "confirm_write: ret=%d, needed %d",
-			ret, buflen - 1);
+			ret, (int)buflen - 1);
 		return 0;
 	}
 

@@ -426,7 +426,7 @@ int libshut_open(int *upsfd, SHUTDevice_t *curDevice, char *device_path,
 	rdlen = desc->wDescriptorLength;
 
 	if (rdlen > (int)sizeof(rdbuf)) {
-		upsdebugx(2, "HID descriptor too long %d (max %d)", rdlen, sizeof(rdbuf));
+		upsdebugx(2, "HID descriptor too long %d (max %d)", rdlen, (int)sizeof(rdbuf));
 		return -1;
 	}
 
@@ -529,7 +529,7 @@ int libshut_get_string(int upsfd, int StringIdx, char *buf, size_t buflen)
 
 	ret = shut_get_string_simple(upsfd, StringIdx, buf, buflen);
 	if (ret > 0)
-		upsdebugx(2, "-> String: %s (len = %i/%i)", buf, ret, buflen);
+		upsdebugx(2, "-> String: %s (len = %i/%i)", buf, ret, (int)buflen);
 	else
 		upsdebugx(2, "- Unable to fetch buf");
 

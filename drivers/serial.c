@@ -245,7 +245,7 @@ static int send_formatted(int fd, const char *fmt, va_list va, unsigned long d_u
 	ret = vsnprintf(buf, sizeof(buf), fmt, va);
 
 	if (ret >= (int)sizeof(buf)) {
-		upslogx(LOG_WARNING, "vsnprintf needed more than %d bytes", sizeof(buf));
+		upslogx(LOG_WARNING, "vsnprintf needed more than %d bytes", (int)sizeof(buf));
 	}
 
 	return ser_send_buf_pace(fd, d_usec, buf, strlen(buf));
@@ -445,7 +445,7 @@ void ser_comm_fail(const char *fmt, ...)
 
 	if ((ret < 1) || (ret >= (int) sizeof(why)))
 		upslogx(LOG_WARNING, "ser_comm_fail: vsnprintf needed "
-			"more than %d bytes", sizeof(why));
+			"more than %d bytes", (int)sizeof(why));
 
 	upslogx(LOG_WARNING, "Communications with UPS lost: %s", why);
 }

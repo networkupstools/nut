@@ -184,7 +184,7 @@ static void send_to_all(const char *fmt, ...)
 		ret = write(conn->fd, buf, strlen(buf));
 
 		if (ret != (int)strlen(buf)) {
-			upsdebugx(2, "write %d bytes to socket %d failed", strlen(buf), conn->fd);
+			upsdebugx(2, "write %d bytes to socket %d failed", (int)strlen(buf), conn->fd);
 			sock_disconnect(conn);
 		}
 	}
@@ -210,7 +210,7 @@ static int send_to_one(struct conn_t *conn, const char *fmt, ...)
 	ret = write(conn->fd, buf, strlen(buf));
 
 	if (ret != (int)strlen(buf)) {
-		upsdebugx(2, "write %d bytes to socket %d failed", strlen(buf), conn->fd);
+		upsdebugx(2, "write %d bytes to socket %d failed", (int)strlen(buf), conn->fd);
 		sock_disconnect(conn);
 		return 0;	/* failed */
 	}
@@ -449,7 +449,7 @@ static void sock_read(struct conn_t *conn)
 				upslogx(LOG_INFO, "Unknown command on socket: ");
 
 				for (arg = 0; arg < conn->ctx.numargs; arg++) {
-					upslogx(LOG_INFO, "arg %d: %s", arg, conn->ctx.arglist[arg]);
+					upslogx(LOG_INFO, "arg %d: %s", (int)arg, conn->ctx.arglist[arg]);
 				}
 			}
 			continue;
