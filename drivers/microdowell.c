@@ -289,7 +289,7 @@ static int detect_hardware(void)
 	unsigned char *p ;
 	int i, retries ;
 	struct tm *Time ;
-	long lTime ;
+	time_t lTime ;
 
 	ups.ge_2kVA = 0 ;
 
