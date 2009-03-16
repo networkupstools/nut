@@ -1,6 +1,6 @@
 /* belkin.c - model specific routines for Belkin Smart-UPS units.
 
-   Copyright (C) 2000 Marcus M�ller <marcus@ebootis.de>
+   Copyright (C) 2000 Marcus Müller <marcus@ebootis.de>
 
    based on:
 
