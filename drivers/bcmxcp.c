@@ -118,7 +118,7 @@ TODO List:
 #include "bcmxcp.h"
 
 #define DRIVER_NAME	"BCMXCP UPS driver"
-#define DRIVER_VERSION	"0.21"
+#define DRIVER_VERSION	"0.22"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -554,7 +554,20 @@ void init_alarm_map()
 	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_OVER_TEMP].alarm_desc = "RECTIFIER_OVER_TEMP";
 	bcmxcp_alarm_map[BCMXCP_ALARM_CONFIG_ERROR].alarm_desc = "CONFIG_ERROR"; 
 	bcmxcp_alarm_map[BCMXCP_ALARM_REDUNDANCY_LOSS_DUE_TO_OVERLOAD].alarm_desc = "REDUNDANCY_LOSS_DUE_TO_OVERLOAD";
-	bcmxcp_alarm_map[BCMXCP_ALARM_ON_ALTERNATE_AC_SOURCE].alarm_desc = "ON_ALTERNATE_AC_SOURCE"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_ON_ALTERNATE_AC_SOURCE].alarm_desc = "ON_ALTERNATE_AC_SOURCE";
+	bcmxcp_alarm_map[BCMXCP_ALARM_IN_HIGH_EFFICIENCY_MODE].alarm_desc = "IN_HIGH_EFFICIENCY_MODE";
+	bcmxcp_alarm_map[BCMXCP_ALARM_SYSTEM_NOTICE_ACTIVE].alarm_desc = "SYSTEM_NOTICE_ACTIVE";
+	bcmxcp_alarm_map[BCMXCP_ALARM_SYSTEM_ALARM_ACTIVE].alarm_desc = "SYSTEM_ALARM_ACTIVE";
+	bcmxcp_alarm_map[BCMXCP_ALARM_ALTERNATE_POWER_SOURCE_NOT_AVAILABLE].alarm_desc = "ALTERNATE_POWER_SOURCE_NOT_AVAILABLE";
+	bcmxcp_alarm_map[BCMXCP_ALARM_CURRENT_BALANCE_FAILURE].alarm_desc = "CURRENT_BALANCE_FAILURE";
+	bcmxcp_alarm_map[BCMXCP_ALARM_CHECK_AIR_FILTER].alarm_desc = "CHECK_AIR_FILTER";
+	bcmxcp_alarm_map[BCMXCP_ALARM_SUBSYSTEM_NOTICE_ACTIVE].alarm_desc = "SUBSYSTEM_NOTICE_ACTIVE";
+	bcmxcp_alarm_map[BCMXCP_ALARM_SUBSYSTEM_ALARM_ACTIVE].alarm_desc = "SUBSYSTEM_ALARM_ACTIVE";
+	bcmxcp_alarm_map[BCMXCP_ALARM_CHARGER_ON_COMMAND].alarm_desc = "CHARGER_ON_COMMAND";
+	bcmxcp_alarm_map[BCMXCP_ALARM_CHARGER_OFF_COMMAND].alarm_desc = "CHARGER_OFF_COMMAND";
+	bcmxcp_alarm_map[BCMXCP_ALARM_UPS_NORMAL].alarm_desc = "UPS_NORMAL";
+	bcmxcp_alarm_map[BCMXCP_ALARM_EXTERNAL_COMMUNICATION_FAILURE].alarm_desc = "EXTERNAL_COMMUNICATION_FAILURE";
+ 
 }
 
 void init_ups_meter_map(const unsigned char *map, unsigned char len)
