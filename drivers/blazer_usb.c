@@ -369,6 +369,7 @@ void upsdrv_initups(void)
 		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[ret]);
 	}
 
+
 	/* link the matchers */
 	regex_matcher->next = &device_matcher;
 
@@ -394,6 +395,9 @@ void upsdrv_initups(void)
 
 	/* link the matchers */
 	reopen_matcher->next = regex_matcher;
+
+	dstate_setinfo("ups.vendorid", "%04x", usbdevice.VendorID);
+	dstate_setinfo("ups.productid", "%04x", usbdevice.ProductID);
 #endif
 	blazer_initups();
 }
@@ -402,9 +406,6 @@ void upsdrv_initups(void)
 void upsdrv_initinfo(void)
 {
 	blazer_initinfo();
-
-	dstate_setinfo("ups.vendorid", "%04x", usbdevice.VendorID);
-	dstate_setinfo("ups.productid", "%04x", usbdevice.ProductID);
 }
 
 
