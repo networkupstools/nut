@@ -11,7 +11,7 @@
 #define ERR_MSG_TOO_SHORT     -998  // messaggio troppo breve: non arriva sino al Checksum
 #define ERR_MSG_CHECKSUM      -997  // checksum non valido
 #define ERR_COM_TIMEOUT       -996  // timeout in lettura
-#define ERR_CLR_RX_BUFF			-900  // bisogna cancellare il buffer (non e` un errore!)
+#define ERR_CLR_RX_BUFF			-900  // bisogna cancellare il buffer (non è un errore!)
 #define COMMAND_NOT_VALID     -50   // comando non valido
 #define PARAMETER_NOT_VALID   -51   // parametro non valido
 #define ERR_UPS_NOT_FOUND     -10   // non trovo un UPS
@@ -216,22 +216,22 @@
 #define	BIT_BATTERY_END   		0x0400	// Event 33 - the UPS went in battery END
 #define	BIT_EVENT_0					0x1000	// evento ??
 #define	BIT_EVENT_1					0x2000	// evento ??
-#define	BIT_FIRST_TIME				0x4000	// se � la prima volta che chiamo la funzione
+#define	BIT_FIRST_TIME				0x4000	// se è la prima volta che chiamo la funzione
 #define	BIT_POLL_RESTART			0x8000	// se riesco ad identificare l'UPS dopo lo scollegamento, reinvio i dati
 
 
 
 typedef struct
    {
-   int Port ;       // porta a cui e` collegato l' UPS:
+   int Port ;       // porta a cui è collegato l' UPS:
                      //    0 = USB
                      //    n = COMn
-   char Opened ;    // BOOL flag che identifica se la porta e` aperta
+   char Opened ;    // BOOL flag che identifica se la porta è aperta
    int ErrCode ;		// ultimo codice di errore in fase di lettura
    int ErrCount ; 	// conteggio degli errori
    unsigned char PollFlag ;	// identifica se posso accedere all'UPS
    									// 0x01: se TRUE, polling abilitato
-   									// 0x02: se TRUE, la routine di polling dati � attiva: devo attendere
+   									// 0x02: se TRUE, la routine di polling dati è attiva: devo attendere
    									// 0x04: se TRUE, bisogna rileggere la configurazione del gruppo
    //------------------------------------------------------------------------
    unsigned long Counter ;    // contatore: viene incrementato ad ogni nuovo POLL
@@ -314,7 +314,7 @@ typedef struct
 
 	unsigned char BattLowPerc ; // percentuale carica batteria quando va in BLOW
    unsigned long Rtime     ; // numero di minuti di accensione dell'UPS
-   unsigned long RtimeBatt ; // numero di secondi*2 in modalit� batteria dall'accensione
+   unsigned long RtimeBatt ; // numero di secondi*2 in modalità batteria dall'accensione
    //------------------------------------------------------------------------
 	unsigned int ShutdownDelay ;	// Shutdown delay in seconds
 	unsigned int WakeUpDelay ;		// WakeUp delay in seconds

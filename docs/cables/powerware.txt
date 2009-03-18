@@ -4,7 +4,7 @@ Date: 22 July 2005
 Auth: various
                                                                                 
 1) Powerware 3115 factory cable
-From Peter Åstrand <altic@lysator.liu.se>
+From Peter Ã…strand <altic@lysator.liu.se>
 
 UPS         PC  9 pin connector
 5 --------- 1

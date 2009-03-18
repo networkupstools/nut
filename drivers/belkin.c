@@ -34,7 +34,7 @@
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
 	DRIVER_VERSION,
-	"Marcus M�ller <marcus@ebootis.de>",
+	"Marcus Müller <marcus@ebootis.de>",
 	DRV_STABLE,
 	{ NULL }
 };
