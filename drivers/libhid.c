@@ -53,7 +53,7 @@ static const char *hid_lookup_path(const HIDNode_t usage, usage_tables_t *utab);
 static long hid_lookup_usage(const char *name, usage_tables_t *utab);
 static int string_to_path(const char *string, HIDPath_t *path, usage_tables_t *utab);
 static int path_to_string(char *string, size_t size, const HIDPath_t *path, usage_tables_t *utab);
-static int8_t get_unit_expo(const long UnitType);
+static int8_t get_unit_expo(const HIDData_t *hiddata);
 static double exponent(double a, int8_t b);
 
 /* ---------------------------------------------------------------------- */
@@ -362,7 +362,7 @@ int HIDGetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double *Value, in
 	*Value = logical_to_physical(hiddata, hValue);
 	
 	/* Process exponents and units */
-	*Value *= (double)exponent(10, hiddata->UnitExp - get_unit_expo(hiddata->Unit));
+	*Value *= exponent(10, get_unit_expo(hiddata));
 
 	return 1;
 }
@@ -419,7 +419,7 @@ int HIDSetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double Value)
 	}
 
 	/* Process exponents and units */
-	Value /= exponent(10, hiddata->UnitExp - get_unit_expo(hiddata->Unit));
+	Value /= exponent(10, get_unit_expo(hiddata));
 	
 	/* Convert Physical Min, Max and Value into Logical */
 	hValue = physical_to_logical(hiddata, Value);
@@ -573,20 +573,23 @@ static long physical_to_logical(HIDData_t *Data, double physical)
 	return logical;
 }
 
-static int8_t get_unit_expo(const long UnitType)
+static int8_t get_unit_expo(const HIDData_t *hiddata)
 {
-	int i;
-	
-	for (i=0; i < NB_HID_UNITS; i++) {
+	int	i;
+	int8_t	unit_expo = hiddata->UnitExp;
 
-		if (HIDUnits[i].Type == UnitType) {
-			upsdebugx(5, "get_unit_expo: %08x found %d", (unsigned int)UnitType, HIDUnits[i].Expo);
-			return HIDUnits[i].Expo;
+	upsdebugx(5, "Unit = %08x, UnitExp = %d\n", (uint32_t)(hiddata->Unit), hiddata->UnitExp);
+
+	for (i = 0; i < NB_HID_UNITS; i++) {
+
+		if (HIDUnits[i].Type == hiddata->Unit) {
+			unit_expo -= HIDUnits[i].Expo;
+			break;
 		}
 	}
 
-	upsdebugx(5, "get_unit_expo: %08x not found!", (unsigned int)UnitType);
-	return 0;
+	upsdebugx(5, "Unit Exponent = %d\n", unit_expo);
+	return unit_expo;
 }
 
 /* exponent function: return a^b */
