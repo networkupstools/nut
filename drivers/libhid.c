@@ -578,7 +578,7 @@ static int8_t get_unit_expo(const HIDData_t *hiddata)
 	int	i;
 	int8_t	unit_expo = hiddata->UnitExp;
 
-	upsdebugx(5, "Unit = %08x, UnitExp = %d\n", (uint32_t)(hiddata->Unit), hiddata->UnitExp);
+	upsdebugx(5, "Unit = %08x, UnitExp = %d", (uint32_t)(hiddata->Unit), hiddata->UnitExp);
 
 	for (i = 0; i < NB_HID_UNITS; i++) {
 
@@ -588,7 +588,7 @@ static int8_t get_unit_expo(const HIDData_t *hiddata)
 		}
 	}
 
-	upsdebugx(5, "Unit Exponent = %d\n", unit_expo);
+	upsdebugx(5, "Exponent = %d", unit_expo);
 	return unit_expo;
 }
 
