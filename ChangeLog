@@ -1,3 +1,7 @@
+Sun Mar 22 01:13:18 UTC 2009 / Alexander I. Gordeev <lasaine@lvk.cs.msu.su>
+
+ - drivers/blazer_usb.c: read data from device until timeout.
+
 Mon Mar 16 22:10:30 UTC 2009 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
  - drivers/bcmxcp.[ch]: Extend alarm map to fix debug crash on PW9130. Driver version 0.22.
