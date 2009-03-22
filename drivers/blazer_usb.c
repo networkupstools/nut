@@ -47,7 +47,7 @@ static USBDeviceMatcher_t	*regex_matcher = NULL;
 static int (*subdriver_command)(const char *cmd, char *buf, size_t buflen) = NULL;
 
 
-static int phoenix_command(const char *cmd, char *buf, size_t buflen)
+static int cypress_command(const char *cmd, char *buf, size_t buflen)
 {
 	char	tmp[SMALLBUF];
 	int	ret;
@@ -86,6 +86,54 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 		if (ret <= 0) {
 			upsdebugx(3, "read: timeout");
 			return 0;
+		}
+	}
+
+	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+	return i;
+}
+
+
+static int phoenix_command(const char *cmd, char *buf, size_t buflen)
+{
+	char	tmp[SMALLBUF];
+	int	ret;
+	size_t	i;
+
+	memset(tmp, 0, sizeof(tmp));
+	snprintf(tmp, sizeof(tmp), "%s", cmd);
+
+	for (i = 0; i < strlen(tmp); i += ret) {
+
+		/* Write data in 8-byte chunks */
+		/* ret = usb->set_report(udev, 0, (unsigned char *)&tmp[i], 8); */
+		ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+			0x09, 0x200, 0, &tmp[i], 8, 1000);
+
+		if (ret <= 0) {
+			upsdebugx(3, "send: %s", ret ? usb_strerror() : "timeout");
+			return ret;
+		}
+	}
+
+	upsdebugx(3, "send: %.*s", (int)strcspn(tmp, "\r"), tmp);
+
+	memset(buf, 0, buflen);
+
+	for (i = 0; i <= buflen-8; i += ret) {
+
+		/* Read data in 8-byte chunks */
+		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
+		ret = usb_interrupt_read(udev, 0x81, &buf[i], 8, 1000);
+
+		/*
+		 * Devices that are supported by this subdriver require that we read data
+		 * from them until a timeout is received (in order to flush buffers?) This
+		 * is OK, since the main driver core will check for the length of the data
+		 * anyway
+		 */
+		if (ret <= 0) {
+			break;
 		}
 	}
 
@@ -159,6 +207,13 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 }
 
 
+static void *cypress_subdriver(void)
+{
+	subdriver_command = &cypress_command;
+	return NULL;
+}
+
+
 static void *phoenix_subdriver(void)
 {
 	subdriver_command = &phoenix_command;
@@ -174,12 +229,12 @@ static void *krauler_subdriver(void)
 
 
 static usb_device_id_t blazer_usb_id[] = {
-	{ USB_DEVICE(0x05b8, 0x0000), &phoenix_subdriver },	/* Agiler UPS */
+	{ USB_DEVICE(0x05b8, 0x0000), &cypress_subdriver },	/* Agiler UPS */
 	{ USB_DEVICE(0x0001, 0x0000), &krauler_subdriver },	/* Krauler UP-M500VA */
 	{ USB_DEVICE(0xffff, 0x0000), &krauler_subdriver },	/* Ablerex 625L USB */
-	{ USB_DEVICE(0x0665, 0x5161), &phoenix_subdriver },	/* Belkin F6C1200-UNV */
+	{ USB_DEVICE(0x0665, 0x5161), &cypress_subdriver },	/* Belkin F6C1200-UNV */
 	{ USB_DEVICE(0x06da, 0x0003), &phoenix_subdriver },	/* Mustek Powermust */
-	{ USB_DEVICE(0x0f03, 0x0001), &phoenix_subdriver },	/* Unitek Alpha 1200Sx */
+	{ USB_DEVICE(0x0f03, 0x0001), &cypress_subdriver },	/* Unitek Alpha 1200Sx */
 	/* end of list */
 	{-1, -1, NULL}
 };
@@ -251,11 +306,13 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 	case -EACCES:
 	case -EIO:
 	case -ENOENT:
-	case -ETIMEDOUT:
-	default:
 		/* Uh oh, got to reconnect! */
 		usb->close(udev);
 		udev = NULL;
+		break;
+
+	case -ETIMEDOUT:
+	default:
 		break;
 	}
 
@@ -318,6 +375,7 @@ void upsdrv_initups(void)
 		const char	*name;
 		int		(*command)(const char *cmd, char *buf, size_t buflen);
 	} subdriver[] = {
+		{ "cypress", &cypress_command },
 		{ "phoenix", &phoenix_command },
 		{ "krauler", &krauler_command },
 		{ NULL }
