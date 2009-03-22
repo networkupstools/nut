@@ -6,7 +6,7 @@ Wed Mar 04 19:37:12 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
 
  - drivers/mge-utalk.c: fix enable_ups_comm()
    (patch from Hans-Werner Paulsen)
-   
+
 Sun Mar 01 19:51:54 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
 
  - data/driver.list, drivers/tripplite-hid.c: add HP T750 INTL
@@ -44,7 +44,7 @@ Thu Feb 12 13:23:41 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
  - scripts/udev/Makefile.am, scripts/hal/Makefile.am, scripts/hotplug/Makefile.am,
    Makefile.am: fix the autotools issue with the clean/distclean target removing
    the USB helper files.
-   
+
 Wed Feb 11 10:43:10 UTC 2009 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
  - data/driver.list: Updated list with ups supported by microdowell driver.
@@ -62,7 +62,7 @@ Wed Feb 04 15:01:20 UTC 2009 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 2.4.0
 
 Wed Jan 28 10:18:41 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
- 
+
  - configure.in: 2.4.0
 
 Tue Jan 27 14:50:54 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
@@ -94,7 +94,7 @@ Tue Jan 27 08:28:22 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 Wed Jan 21 12:03:25 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - configure.in: 2.4.0-pre2
- 
+
 Wed Jan 21 11:59:52 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - NEWS: last completion
@@ -143,7 +143,7 @@ Wed Jan 14 21:59:47 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
      - if a model name can't be matched, concatenate iProduct and iModel. The
        next step is to only manage exceptions since the above rule is now the
        standard.
-     
+
 Wed Jan 14 21:55:47 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
 
  * Rework the NUT Python support tree:
@@ -224,12 +224,12 @@ Wed Dec 24 14:32:42 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 Wed Dec 24 14:13:52 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - NEWS, README, UPGRADING: first update round for 2.4.0.
- 
+
 Wed Dec 24 13:47:21 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - drivers/bcmxcp.c: remove the experimental tag, to the profit of stable, as
    per the maintainer comment (Kjell Claesson), and bump the driver release. 
- 
+
 Wed Dec 24 13:26:31 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - man/powerman-pdu.8: add a configuration example to illustrate the use of
@@ -332,7 +332,7 @@ Mon Dec 15 13:14:32 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
  - docs/upsd.users.sample, docs/upsmon.conf.sample: make the base configuration
    examples more coherent accross the various files, and more easy to use for
    the predominant use case (simple configuration)
-    
+
 Mon Dec 15 10:07:55 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - Add tcp-wrappers support to the upsd server. This will restore the
@@ -515,7 +515,7 @@ Sat Nov 15 22:24:16 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
    - scripts/hal/ups-nut-device.fdi.in, scripts/hotplug/libhid.usermap,
      scripts/udev/nut-usbups.rules.in: regenerate using "make dist"
    - doc/new-drivers.txt: document these USB helpers.
-      
+
 Tue Nov 11 20:25:12 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/apcsmart.[ch]: Improve support for some vintage Matrix-UPS
@@ -746,7 +746,7 @@ Thu Jul  3 12:49:01 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - data/driver: add Cyber Power Systems Value range (400E, 600E and 800E)
    (reported by Thomas Backman)
-   
+
 Tue Jul  1 12:33:43 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - man/al175.8: fix a manpage error
@@ -858,7 +858,7 @@ Wed May  7 11:01:06 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
      packaging/debian/changelog [r1457]
    - NEWS, UPGRADING: backport of the Testing versions
    - ChangeLog: trimmed everything previous to 2.2.0
- 
+
 Tue May  6 03:20:07 UTC 2008 / Charles Lepple <clepple@gmail.com>
 
  - m4/nut_check_libhal.m4: fix printing of default Callout directory.
@@ -881,7 +881,7 @@ Wed Apr 30 15:14:34 UTC 2008 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - m4/nut_check_libhal.m4: fix the HAL addon install path on SuSE x86_64
    (from Stanislav Brabec, SuSE)
-   
+
 Wed Apr 30 08:40:55 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - packaging/mandriva: remove generated nut.spec file
@@ -1647,7 +1647,7 @@ Fri Feb  1 19:27:43 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  - man/dummy-ups.8: remove the reference to direct driver launching and
    make some other update. [Alioth Bug #310543]
-   
+
 Fri Feb  1 15:22:04 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  - include/common.h: move the config.h include before timehead.h so
@@ -1697,7 +1697,7 @@ Mon Jan 28 09:25:12 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
    - complete the manual page (dummy-ups.8),
    - fix a typo error in the sample .dev file,
    - bump the driver version to 0.04.
- 
+
 Mon Jan 28 07:36:41 UTC 2008 / Arjen de Korte <arjen@de-korte.org>
 
  - clients/upsclient.c: Don't clear the magic number after disconnecting
@@ -1807,7 +1807,7 @@ Mon Jan 14 20:49:48 UTC 2008 / Peter Selinger <selinger@users.sourceforge.net>
 
  - upsdrvctl: pass "-u" flag to the driver also in shutdown mode. Print
    actual command line when debugging.
-	
+
 Wed Jan 10 14:37:34 UTC 2008 / Arnaud Quette <aquette.dev@gmail.com>
 
  * mge-xml: new experimental driver for MGE (Office Protection Systems
@@ -2804,7 +2804,7 @@ Sun Aug 12 02:34:19 UTC 2007 / Peter Selinger <selinger@users.sourceforge.net>
 
  * drivers/tripplite_usb.c: removed an unused variable
  * drivers/usbhid-ups.c: fixed a potential segfault
-	
+
 Sat Aug 11 19:03:15 UTC 2007 / Arjen de Korte <arjen@de-korte.org>
 
  * docs/new-drivers.txt:
