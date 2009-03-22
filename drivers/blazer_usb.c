@@ -73,14 +73,19 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 
 	memset(buf, 0, buflen);
 
-	for (i = 0; (i <= buflen-8); i += ret) {
+	for (i = 0; (i <= buflen-8) && (strchr(buf, '\r') == NULL); i += ret) {
 
-		/* Read data in 8-byte chunks until timeout */
+		/* Read data in 8-byte chunks */
 		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
 		ret = usb_interrupt_read(udev, 0x81, &buf[i], 8, 1000);
+
+		/*
+		 * Any errors here mean that we are unable to read a reply (which
+		 * will happen after successfully writing a command to the UPS)
+		 */
 		if (ret <= 0) {
-			upsdebugx(4, "read: timeout");
-			break;
+			upsdebugx(3, "read: timeout");
+			return 0;
 		}
 	}
 
