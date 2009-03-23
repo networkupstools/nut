@@ -178,6 +178,7 @@
 "Eaton"	"various models (SNMP mode)"			"SNMP/Web Minislot card (ref 66244)"	"snmp-ups (experimental)"
 "Eaton"	"Powerware ePDU Managed"			""	"snmp-ups (experimental)"
 "Eaton"	"Powerware ePDU Monitored"			""	"snmp-ups (experimental)"
+"Eaton"	"Powerware 9130"	""	"bcmxcp or usbhid-ups"
 
 "Effekta"	"MI/MT/MH"	"2502 cable"	"megatec"
 "Effekta"	"RM2000MH"	""	"megatec"
