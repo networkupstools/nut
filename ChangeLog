@@ -1,3 +1,8 @@
+Mon Mar 23 21:05:20 UTC 2009 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
+
+ - data/driver.list, removed usbhid-ups from Eaton Powerware 9130 compatibility
+   until confirmed.
+
 Mon Mar 23 17:34:10 UTC 2009 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
  - data/driver.list, add Eaton Powerware 9130 compatibility with bcmxcp and usbhid-ups.
