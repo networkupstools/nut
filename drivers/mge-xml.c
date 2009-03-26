@@ -658,13 +658,9 @@ static xml_info_t mge_xml2nut[] = {
 	{ "ambient.humidity", 0, 0, "Environment.Humidity", 0, 0, NULL },
 	{ "ambient.humidity.high", 0, 0, "Environment.Humidity.HighThreshold", 0, 0, NULL },
 	{ "ambient.humidity.low", 0, 0, "Environment.Humidity.LowThreshold", 0, 0, NULL },
-	{ "ambient.humidity.maximum", 0, 0, "Environment.PresentStatus.HighHumidity", 0, 0, NULL },
-	{ "ambient.humidity.minimum", 0, 0, "Environment.PresentStatus.LowHumidity", 0, 0, NULL },
 	{ "ambient.temperature", 0, 0, "Environment.Temperature", 0, 0, NULL },
 	{ "ambient.temperature.high", 0, 0, "Environment.Temperature.HighThreshold", 0, 0, NULL },
 	{ "ambient.temperature.low", 0, 0, "Environment.Temperature.LowThreshold", 0, 0, NULL },
-	{ "ambient.temperature.maximum", 0, 0, "Environment.PresentStatus.HighTemperature", 0, 0, NULL },
-	{ "ambient.temperature.minimum", 0, 0, "Environment.PresentStatus.LowTemperature", 0, 0, NULL },
 
 	/* Outlet page (using MGE UPS SYSTEMS - PowerShare technology) */
 	{ "outlet.id", 0, 0, "UPS.OutletSystem.Outlet[1].OutletID", 0, 0, NULL },
