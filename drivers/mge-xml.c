@@ -1,7 +1,7 @@
-/* mge-xml.c		Model specific routines for MGE XML protocol UPSes 
+/* mge-xml.c	Model specific routines for MGE XML protocol UPSes 
 
    Copyright (C)
-	2008		Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2008-2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -30,9 +30,9 @@
 #include "netxml-ups.h"
 #include "mge-xml.h"
 
-#define MGE_XML_VERSION		"MGEXML/0.12"
+#define MGE_XML_VERSION		"MGEXML/0.20"
 #define MGE_XML_INITUPS		"/"
-#define MGE_XML_INITINFO	"/mgeups/product.xml"
+#define MGE_XML_INITINFO	"/mgeups/product.xml /product.xml"
 
 static char	mge_scratch_buf[256];
 
@@ -764,8 +764,8 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 			int	i;
 			for (i = 0; atts[i] && atts[i+1]; i += 2) {
 				if (!strcasecmp(atts[i], "url")) {
-					free(mge_xml_subdriver.getobject);
-					mge_xml_subdriver.getobject = strdup(url_convert(atts[i+1]));
+					free(mge_xml_subdriver.summary);
+					mge_xml_subdriver.summary = strdup(url_convert(atts[i+1]));
 				}
 			}
 			state = PI_XML_SUMMARY_PAGE;
@@ -875,7 +875,7 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 		break;
 	}
 
-	upsdebugx(3, "%s: name <%s> (parent = %d, state = %d)\n", __func__, name, parent, state);
+	upsdebugx(3, "%s: name <%s> (parent = %d, state = %d)", __func__, name, parent, state);
 	return state;
 }
 
@@ -884,11 +884,11 @@ static int mge_xml_cdata_cb(void *userdata, int state, const char *cdata, size_t
 {
 	/* skip empty lines */
 	if ((len == 1) && (cdata[0] == '\n')) {
-		upsdebugx(3, "%s: cdata ignored (state = %d)\n", __func__, state);
+		upsdebugx(3, "%s: cdata ignored (state = %d)", __func__, state);
 		return 0;
 	}
 
-	upsdebugx(3, "%s: cdata [%.*s] (state = %d)\n", __func__, (int)len, cdata, state);
+	upsdebugx(3, "%s: cdata [%.*s] (state = %d)", __func__, (int)len, cdata, state);
 
 	switch(state)
 	{
@@ -909,11 +909,11 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 
 	/* ignore objects for which no value was set */
 	if (strlen(val) == 0) {
-		upsdebugx(3, "%s: name ignored, no value set (state = %d)\n", __func__, state);
+		upsdebugx(3, "%s: name ignored, no value set (state = %d)", __func__, state);
 		return 0;
 	}
 
-	upsdebugx(3, "%s: name </%s> (state = %d)\n", __func__, name, state);
+	upsdebugx(3, "%s: name </%s> (state = %d)", __func__, name, state);
 
 	switch(state)
 	{
@@ -963,6 +963,7 @@ subdriver_t mge_xml_subdriver = {
 	MGE_XML_VERSION,
 	MGE_XML_INITUPS,
 	MGE_XML_INITINFO,
+	NULL,
 	NULL,
 	NULL,
 	mge_xml_startelm_cb,

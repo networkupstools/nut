@@ -51,10 +51,6 @@ upsdrv_info_t	upsdrv_info = {
 
 #define MAXRETRIES	5
 
-#ifdef DEBUG
-#define difftimeval(x,y)	((double)y.tv_sec-x.tv_sec+((double)(y.tv_usec-x.tv_usec)/1000000))
-#endif
-
 /* Global vars */
 uint32_t		ups_status = 0;
 static int		timeout = 5;
@@ -67,6 +63,7 @@ static void netxml_alarm_set(void);
 static void netxml_status_set(void);
 static int netxml_authenticate(void *userdata, const char *realm, int attempt, char *username, char *password);
 static int netxml_dispatch_request(ne_request *request, ne_xml_parser *parser);
+static int netxml_get_page(const char *page);
 
 #ifndef HAVE_LIBNEON_SET_CONNECT_TIMEOUT
 static void netxml_alarm_handler(int sig)
@@ -77,86 +74,54 @@ static void netxml_alarm_handler(int sig)
 
 void upsdrv_initinfo(void)
 {
-	int		ret;
-	ne_request	*request;
-	ne_xml_parser	*parser;
+	char	*page, *last = NULL;
+	char	buf[SMALLBUF];
+	
+	snprintf(buf, sizeof(buf), "%s", subdriver->initinfo);
 
-	if (strlen(subdriver->initinfo) < 1) {
-		fatalx(EXIT_FAILURE, "%s: failure to read initinfo element", __func__);
+	for (page = strtok_r(buf, " ", &last); page != NULL; page = strtok_r(NULL, " ", &last)) {
+
+		if (netxml_get_page(page) != NE_OK) {
+			continue;
+		}
+
+		if (!subdriver->summary) {
+			fatalx(EXIT_FAILURE, "%s: XML summary page not found", __func__);
+		}
+
+		if (!subdriver->getobject) {
+			fatalx(EXIT_FAILURE, "%s: XML getobject page not found", __func__);
+		}
+
+		if (!subdriver->setobject) {
+			upslogx(LOG_NOTICE, "%s: XML setobject page not found", __func__);
+		}
+
+		dstate_setinfo("driver.version.internal", "%s", subdriver->version);
+
+		/* upsh.instcmd = instcmd; */
+		/* upsh.setvar = setvar; */
+
+		return;
 	}
 
-	upsdebugx(3, "ne_request_create(session, \"GET\", \"%s\");", subdriver->initinfo);
-
-	request = ne_request_create(session, "GET", subdriver->initinfo);
-
-	parser = ne_xml_create();
-
-	ne_xml_push_handler(parser, subdriver->startelm_cb, subdriver->cdata_cb, subdriver->endelm_cb, NULL);
-
-	ret = netxml_dispatch_request(request, parser);
-
-	ne_xml_destroy(parser);
-	ne_request_destroy(request);
-
-	if (ret != NE_OK) {
-		fatalx(EXIT_FAILURE, "%s: communication failure [%s]", __func__, ne_get_error(session));
-	}
-
-	if (!subdriver->getobject) {
-		fatalx(EXIT_FAILURE, "%s: found no way to get variables", __func__);
-	}
-
-	if (!subdriver->setobject) {
-		upsdebugx(2, "%s: found no way to set variables", __func__);
-	}
-
-	dstate_setinfo("driver.version.internal", "%s", subdriver->version);
-
-	/* upsh.instcmd = instcmd; */
-	/* upsh.setvar = setvar; */
+	fatalx(EXIT_FAILURE, "%s: communication failure [%s]", __func__, ne_get_error(session));
 }
 
 void upsdrv_updateinfo(void)
 {
-	static int	retries = 0;
+	static int	retries = 0, count = 0;
 	int		ret;
-	ne_request	*request;
-	ne_xml_parser	*parser;
-#ifdef DEBUG
-	struct timeval	start, stop;
-#endif
 
-	if (strlen(subdriver->getobject) < 1) {
-		fatalx(EXIT_FAILURE, "%s: failure to read getobject element", __func__);
+	ret = netxml_get_page(subdriver->summary);
+
+	if (!(count++ % 10) && (ret == NE_OK)) {
+		ret = netxml_get_page(subdriver->getobject);
 	}
 
-	upsdebugx(3, "ne_request_create(session, \"GET\", \"%s\");", subdriver->getobject);
-
-	request = ne_request_create(session, "GET", subdriver->getobject);
-
-	parser = ne_xml_create();
-
-	ne_xml_push_handler(parser, subdriver->startelm_cb, subdriver->cdata_cb, subdriver->endelm_cb, NULL);
-
-#ifdef DEBUG
-	gettimeofday(&start, NULL);
-#endif
-	ret = netxml_dispatch_request(request, parser);
-#ifdef DEBUG
-	gettimeofday(&stop, NULL);
-
-	upsdebugx(1, "dispatch request (%.3f seconds)", difftimeval(start, stop));
-#endif
-
-	ne_xml_destroy(parser);
-	ne_request_destroy(request);
-
 	if (ret != NE_OK) {
-#ifdef DEBUG
-		upslogx(LOG_ERR, "%s (%.3f seconds)", ne_get_error(session), difftimeval(start, stop));
-#else
 		upsdebugx(1, "%s (%d from %d)", ne_get_error(session), retries, MAXRETRIES);
-#endif
+
 		if (retries < MAXRETRIES) {
 			retries++;
 		} else {
@@ -206,7 +171,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "%s: unknown command [%s]", __func__, cmdname);
 	return STAT_INSTCMD_UNKNOWN;
 }
 */
@@ -219,7 +184,7 @@ static int setvar(const char *varname, const char *val)
 		return STAT_SET_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "setvar: unknown variable [%s]", varname);
+	upslogx(LOG_NOTICE, "%s: unknown variable [%s]", __func__, varname);
 	return STAT_SET_UNKNOWN;
 }
 */
@@ -348,6 +313,35 @@ void upsdrv_cleanup(void)
 /**********************************************************************
  * Support functions
  *********************************************************************/
+
+static int netxml_get_page(const char *page)
+{
+	int		ret;
+	ne_request	*request;
+	ne_xml_parser	*parser;
+
+	upsdebugx(3, "%s: %s", __func__, page);
+
+	if (strlen(page) < 1) {
+		ne_set_error(session, "Attempt to read from NULL page");
+		return NE_ERROR;
+	}
+
+	request = ne_request_create(session, "GET", page);
+
+	parser = ne_xml_create();
+
+	ne_xml_push_handler(parser, subdriver->startelm_cb, subdriver->cdata_cb, subdriver->endelm_cb, NULL);
+
+	ret = netxml_dispatch_request(request, parser);
+
+	ne_xml_destroy(parser);
+	ne_request_destroy(request);
+
+	upsdebugx(3, "%s: %s", __func__, ne_get_error(session));
+
+	return ret;
+}
 
 static int netxml_dispatch_request(ne_request *request, ne_xml_parser *parser)
 {

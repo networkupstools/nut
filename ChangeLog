@@ -1,3 +1,10 @@
+Thu Mar 26 20:04:53 UTC 2009 / Arjen de Korte <arjen@de-korte.org>
+
+  * drivers/netxml.[ch], drivers/mge-xml.c:
+    - Allow multiple entry points for the initial XML page that is loaded 
+    - Use different XML pages for quick and full status updates (the latter
+      is only polled once every 10 times)
+    
 Mon Mar 23 17:34:10 UTC 2009 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
  - data/driver.list, add Eaton Powerware 9130 compatibility with bcmxcp and usbhid-ups.

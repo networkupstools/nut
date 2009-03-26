@@ -27,6 +27,7 @@ struct subdriver_s {
 	const char	*version;		/* name of this subdriver */
 	char		*initups;
 	char		*initinfo;
+	char		*summary;		/* used for quick updates */
 	char		*getobject;
 	char		*setobject;
 	int		(*startelm_cb)(void *userdata, int parent, const char *nspace, const char *name, const char **atts);
