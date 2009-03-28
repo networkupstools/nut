@@ -890,7 +890,7 @@ static int mge_xml_cdata_cb(void *userdata, int state, const char *cdata, size_t
 	{
 	case SU_OBJECT:
 	case GO_OBJECT:
-		snprintf(val, sizeof(val), "%.*s", (int)len, cdata);
+		snprintfcat(val, sizeof(val), "%.*s", (int)len, cdata);
 		break;
 	}
 
