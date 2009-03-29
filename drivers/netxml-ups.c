@@ -113,9 +113,9 @@ void upsdrv_updateinfo(void)
 	static int	retries = 0, count = 0;
 	int		ret;
 
-	ret = netxml_get_page(subdriver->summary);
-
-	if (!(count++ % 10) && (ret == NE_OK)) {
+	if (count++ % 10) {
+		ret = netxml_get_page(subdriver->summary);
+	} else {
 		ret = netxml_get_page(subdriver->getobject);
 	}
 
