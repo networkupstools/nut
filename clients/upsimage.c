@@ -16,7 +16,7 @@
      20020928 - Simon Rozman
        - added imgvar table to hold description, how to draw each UPS variable supported
        - added support for ACFREQ, OUT_FREQ and UPSTEMP
-	       
+       
    Copyrights:
      (C) 1998  Russell Kroll <rkroll@exploits.org>
      (C) 2002  Simon Rozman <simon@rozman.net>
@@ -204,8 +204,8 @@ static void drawscale(
 	for (level = lvlhi; level >= lvllo; level -= step) {
 		if (level % step10 == 0) {
 			y = scale_height * (lvlhi - level) / range;
-			snprintf(lbltxt, sizeof(lbltxt), "%u", level);
-			gdImageString(im, gdFontMediumBold, width - 20, y, 
+			snprintf(lbltxt, sizeof(lbltxt), "%d", level);
+			gdImageString(im, gdFontMediumBold, width - strlen(lbltxt)*gdFontMediumBold->w, y,
 				(unsigned char *) lbltxt, scale_num_color);
 		}
 	}
@@ -421,7 +421,11 @@ static void draw_utility(double var, int min, int nom, int max,
 static void draw_battpct(double var, int min, int nom, int max, 
 		int deviation, const char *format)
 {
-	drawbar(0, 100, 1, 10, 20, 0, 50, -1, -1, 80, 100, var, format);
+	if (min < 0) {
+		min = 50;
+	}
+
+	drawbar(0, 100, 2, 10, 20, 0, min, -1, -1, 80, 100, var, format);
 }
 
 /* draws battery.voltage bar style indicator */
@@ -477,6 +481,16 @@ static void draw_upsload(double var, int min, int nom, int max,
 	drawbar(0, 125, 5, 5, 25, 100, 125, -1, -1, 0, 50, var, format);
 }
 
+/* draws temperature bar style indicator */
+static void draw_temperature(double var, int min, int nom, int max,
+		int deviation, const char *format)
+{
+	int	hi = get_imgarg("tempmax");
+	int	lo = get_imgarg("tempmin");
+
+	drawbar(lo, hi, 1, 5, 10, lo, min, max, hi, -1, -1, var, format);
+}
+			  
 static int get_var(const char *var, char *buf, size_t buflen)
 {
 	int	ret;
@@ -633,16 +647,27 @@ struct imgvar_t imgvar[] = {
 		"input.transfer.high", 0, 
 		"%.1f VAC", draw_utility				},
 
-	{ "battery.charge", NULL, NULL, NULL, 0,
+	{ "battery.charge", "battery.charge.low", NULL, NULL, 0,
 		"%.1f %%",	draw_battpct				},
 
-	{ "battery.voltage", "battery.voltage.minimum", "battery.voltage.nominal",
-		"battery.voltage.maximum", 0,
+	{ "battery.voltage", "battery.voltage.low", "battery.voltage.nominal",
+		"battery.voltage.high", 0,
 		"%.1f VDC",	draw_battvolt				},
 
-	{ "ups.temperature", "ups.temperature.minimum", NULL,
-		"ups.temperature.maximum", 10,
-		"%.1f C",	drawgeneralbar				},
+	/* We use 'high' ASCII for the degrees symbol, since the gdImageString()
+	 * function doesn't understand UTF-8 or HTML escape sequences. :-( */
+	{ "ups.temperature", "ups.temperature.low", NULL,
+		"ups.temperature.high", 0,
+		"%.1f \260C",	draw_temperature			},
+
+	/* Same here. */
+	{ "ambient.temperature", "ambient.temperature.low", NULL,
+		"ambient.temperature.high", 0,
+		"%.1f \260C",	draw_temperature			},
+
+	{ "ambient.humidity", "ambient.humidity.low", NULL,
+		"ambient.humidity.high", 0,
+		"%.1f %%",	drawgeneralbar				},
 
 	{ "input.frequency", NULL, "input.frequency.nominal", NULL, 2,
 		"%.1f Hz",	drawgeneralbar				},
@@ -669,31 +694,31 @@ struct imgvar_t imgvar[] = {
 		"%.1f %%",	draw_upsload				},
 
 	{ "output.voltage", "input.transfer.low", "output.voltage.nominal",
-	       	"input.transfer.high", 0, 
+		"input.transfer.high", 0,
 		"%.1f VAC",	draw_utility				},
 
 	{ "output.L1-N.voltage", "input.transfer.low",
-	       	"output.voltage.nominal", "input.transfer.high", 0, 
+	 	"output.voltage.nominal", "input.transfer.high", 0,
 		"%.1f VAC",	draw_utility				},
 
 	{ "output.L2-N.voltage", "input.transfer.low",
-	       	"output.voltage.nominal", "input.transfer.high", 0, 
+	 	"output.voltage.nominal", "input.transfer.high", 0,
 		"%.1f VAC",	draw_utility				},
 
 	{ "output.L3-N.voltage", "input.transfer.low",
-	       	"output.voltage.nominal", "input.transfer.high", 0, 
+	 	"output.voltage.nominal", "input.transfer.high", 0,
 		"%.1f VAC",	draw_utility				},
 
 	{ "output.L1-L2.voltage", "input.transfer.low",
-	       	"output.voltage.nominal", "input.transfer.high", 0, 
+	 	"output.voltage.nominal", "input.transfer.high", 0,
 		"%.1f VAC",	draw_utility				},
 
 	{ "output.L2-L3.voltage", "input.transfer.low",
-	       	"output.voltage.nominal", "input.transfer.high", 0, 
+	 	"output.voltage.nominal", "input.transfer.high", 0,
 		"%.1f VAC",	draw_utility				},
 
 	{ "output.L3-L1.voltage", "input.transfer.low",
-	       	"output.voltage.nominal", "input.transfer.high", 0, 
+	 	"output.voltage.nominal", "input.transfer.high", 0,
 		"%.1f VAC",	draw_utility				},
 
 	{ "output.frequency", NULL, "output.frequency.nominal", NULL, 2,

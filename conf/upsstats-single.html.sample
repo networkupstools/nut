@@ -37,6 +37,12 @@
 
 <tr>
 <th>@DATE %a %b %d %X %Z %Y@</th>
+@IFSUPP ambient.temperature@
+<th>Ambient</th>
+@ELSE@
+@IFSUPP ambient.humidity@
+<th>Ambient</th>
+@ENDIF@
 <th>Battery</th>
 <th>Input</th>
 <th>Output</th>
@@ -186,6 +192,30 @@
 
 </table>		<!-- table 2 -->
 </td>
+
+@IFSUPP ambient.temperature@
+@IFSUPP ambient.humidity@
+<td ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
+<table BORDER="0"><tr>
+<td ALIGN="CENTER">Temperature<br>@IMG ambient.temperature tempmin=0 tempmax=50 width=90@</td>
+<td ALIGN="CENTER">Humidity<br>@IMG ambient.humidity width=90@</td>
+</tr></table>
+</td>
+@ELSE@
+@IFSUPP ambient.temperature@
+<td ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
+<table BORDER="0"><tr>
+<td ALIGN="CENTER">Temperature<br>@IMG ambient.temperature tempmin=0 tempmax=50@</td>
+</tr></table>
+</td>
+@ELSE@
+@IFSUPP ambient.humidity@
+<td ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
+<table BORDER="0"><tr>
+<td ALIGN="CENTER">Humidity<br>@IMG ambient.humidity@</td>
+</tr></table>
+</td>
+@ENDIF@
 
 <td ALIGN="CENTER" VALIGN="TOP" BGCOLOR="#000000">
 <table BORDER="0"><tr>

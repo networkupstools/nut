@@ -302,10 +302,10 @@ static int do_img(char *buf)
 	}
 
 	if (!strcmp(type, "battery.voltage"))
-		return get_img_val("battery.voltage", "Battery voltage", imgargs);
+		return get_img_val(type, "Battery voltage", imgargs);
 
 	if (!strcmp(type, "battery.charge"))
-		return get_img_val("battery.charge", "Battery charge", imgargs);
+		return get_img_val(type, "Battery charge", imgargs);
 
 	if (!strcmp(type, "output.voltage")
 			|| !strcmp(type, "output.L1-N.voltage") 
@@ -328,10 +328,19 @@ static int do_img(char *buf)
 	}
 
 	if (!strcmp(type, "input.frequency"))
-		return get_img_val("input.frequency", "Input frequency", imgargs);
+		return get_img_val(type, "Input frequency", imgargs);
 
 	if (!strcmp(type, "output.frequency"))
-		return get_img_val("output.frequency", "Output frequency", imgargs);
+		return get_img_val(type, "Output frequency", imgargs);
+
+	if (!strcmp(type, "ups.temperature"))
+		return get_img_val(type, "UPS temperature", imgargs);
+
+	if (!strcmp(type, "ambient.temperature"))
+		return get_img_val(type, "Ambient temperature", imgargs);
+
+	if (!strcmp(type, "ambient.humidity"))
+		return get_img_val(type, "Ambient humidity", imgargs);
 
 	return 0;
 }

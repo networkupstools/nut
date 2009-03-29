@@ -1,9 +1,21 @@
+Sun Mar 29 20:21:19 UTC 2009 / Arjen de Korte <arjen@de-korte.org>
+
+ * clients/upsimage.c, clients/upsstats.c:
+   - Add ups.temperature, ambient.temperature and ambient.humidity (sorry folks,
+     Celsius only for now).
+   - The graph for the battery.charge now honors battery.charge.low for the red zone.
+   - The number of minor dashes for the battery.charge is reduced.
+   - Value on the scales is now right aligned. Display of negative values is corrected.
+ * conf/upsstats-single.html.sample:
+   - If ambient.(temperature|humidity) is supported, an 'Ambient' column is added to
+     display the bars for them.
+
 Thu Mar 26 20:04:53 UTC 2009 / Arjen de Korte <arjen@de-korte.org>
 
-  * drivers/netxml.[ch], drivers/mge-xml.c:
-    - Allow multiple entry points for the initial XML page that is loaded 
-    - Use different XML pages for quick and full status updates (the latter
-      is only polled once every 10 times)
+ * drivers/netxml.[ch], drivers/mge-xml.c:
+   - Allow multiple entry points for the initial XML page that is loaded
+   - Use different XML pages for quick and full status updates (the latter
+     is only polled once every 10 times)
     
 Mon Mar 23 17:34:10 UTC 2009 / Kjell Claesson <kjell.claesson@epost.tidanet.se>
 
