@@ -34,6 +34,9 @@
 #define MGE_XML_INITUPS		"/"
 #define MGE_XML_INITINFO	"/mgeups/product.xml /product.xml"
 
+#define ST_FLAG_RW		0x0001
+#define ST_FLAG_STATIC		0x0002
+
 static char	mge_scratch_buf[256];
 
 static char	var[128];
@@ -497,8 +500,6 @@ static char *mge_test_result_info(const char *val)
 	return NULL;
 }
 
-#define ST_FLAG_RW	0
-
 static xml_info_t mge_xml2nut[] = {
 	/* Special case: boolean values that are mapped to ups.status and ups.alarm */
 	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", 0, 0, online_info },
@@ -536,27 +537,27 @@ static xml_info_t mge_xml2nut[] = {
 	{ "battery.capacity", 0, 0, "UPS.BatterySystem.Battery.DesignCapacity", 0, 0, mge_battery_capacity }, /* conversion needed from As to Ah */
 	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", 0, 0, NULL },
 	{ "battery.temperature", 0, 0, "UPS.BatterySystem.Battery.Temperature", 0, 0, NULL },
-	{ "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", 0, 0, NULL },
-	{ "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistery", 0, 0, NULL }, /* [sic] */
+	{ "battery.type", ST_FLAG_STATIC, 0, "UPS.PowerSummary.iDeviceChemistry", 0, 0, NULL },
+	{ "battery.type", ST_FLAG_STATIC, 0, "UPS.PowerSummary.iDeviceChemistery", 0, 0, NULL }, /* [sic] */
 	{ "battery.voltage", 0, 0, "UPS.PowerSummary.Voltage", 0, 0, NULL },
-	{ "battery.voltage.nominal", 0, 0, "UPS.BatterySystem.ConfigVoltage", 0, 0, NULL },
-	{ "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", 0, 0, NULL }, /* mge_battery_voltage_nominal */
+	{ "battery.voltage.nominal", ST_FLAG_STATIC, 0, "UPS.BatterySystem.ConfigVoltage", 0, 0, NULL },
+	{ "battery.voltage.nominal", ST_FLAG_STATIC, 0, "UPS.PowerSummary.ConfigVoltage", 0, 0, NULL }, /* mge_battery_voltage_nominal */
 	{ "battery.current", 0, 0, "UPS.PowerSummary.Current", 0, 0, NULL },
 	{ "battery.protection", ST_FLAG_RW, 5, "UPS.BatterySystem.Battery.DeepDischargeProtection", 0, 0, yes_no_info },
 	{ "battery.energysave", ST_FLAG_RW, 5, "UPS.PowerConverter.Input[3].EnergySaving", 0, 0, yes_no_info },
 
 	/* UPS page */
-	{ "ups.mfr", 0, 0, "UPS.PowerSummary.iManufacturer", 0, 0, NULL },
-	{ "ups.model", 0, 0, "UPS.PowerSummary.iProduct", 0, 0, NULL },
-	{ "ups.model.aux", 0, 0, "UPS.PowerSummary.iModel", 0, 0, NULL },
-	{ "ups.model", 0, 0, "System.Description", 0, 0, NULL },
+	{ "ups.mfr", ST_FLAG_STATIC, 0, "UPS.PowerSummary.iManufacturer", 0, 0, NULL },
+	{ "ups.model", ST_FLAG_STATIC, 0, "System.Description", 0, 0, NULL },
+	{ "ups.model", ST_FLAG_STATIC, 0, "UPS.PowerSummary.iProduct", 0, 0, NULL },
+	{ "ups.model.aux", ST_FLAG_STATIC, 0, "UPS.PowerSummary.iModel", 0, 0, NULL },
 	{ "ups.time", 0, 0, "System.LastAcquisition", 0, 0, split_date_time },
 	/* -> XML variable System.Location [Computer Room] doesn't map to any NUT variable */
 	/* -> XML variable System.Contact [Computer Room Manager] doesn't map to any NUT variable */
 	/* -> XML variable UPS.PowerSummary.iProduct [Evolution] doesn't map to any NUT variable */
 	/* -> XML variable UPS.PowerSummary.iModel [650] doesn't map to any NUT variable */
-	{ "ups.serial", 0, 0, "UPS.PowerSummary.iSerialNumber", 0, 0, NULL },
-	{ "ups.firmware", 0, 0, "UPS.PowerSummary.iVersion", 0, 0, NULL },
+	{ "ups.serial", ST_FLAG_STATIC, 0, "UPS.PowerSummary.iSerialNumber", 0, 0, NULL },
+	{ "ups.firmware", ST_FLAG_STATIC, 0, "UPS.PowerSummary.iVersion", 0, 0, NULL },
 	{ "ups.load", 0, 0, "UPS.PowerSummary.PercentLoad", 0, 0, NULL },
 	{ "ups.load.high", ST_FLAG_RW, 5, "UPS.Flow[4].ConfigPercentLoad", 0, 0, NULL },
 	{ "ups.timer.start", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", 0, 0, NULL},
@@ -571,16 +572,16 @@ static xml_info_t mge_xml2nut[] = {
 	{ "ups.L1.power", 0, 0, "UPS.PowerConverter.Output.Phase[1].ApparentPower", 0, 0, ignore_if_zero },
 	{ "ups.L2.power", 0, 0, "UPS.PowerConverter.Output.Phase[2].ApparentPower", 0, 0, ignore_if_zero },
 	{ "ups.L3.power", 0, 0, "UPS.PowerConverter.Output.Phase[3].ApparentPower", 0, 0, ignore_if_zero },
-	{ "ups.power.nominal", 0, 0, "UPS.Flow[4].ConfigApparentPower", 0, 0, NULL },
+	{ "ups.power.nominal", ST_FLAG_STATIC, 0, "UPS.Flow[4].ConfigApparentPower", 0, 0, NULL },
 	{ "ups.realpower", 0, 0, "UPS.PowerConverter.Output.ActivePower", 0, 0, NULL },
 	{ "ups.L1.realpower", 0, 0, "UPS.PowerConverter.Output.Phase[1].ActivePower", 0, 0, ignore_if_zero },
 	{ "ups.L2.realpower", 0, 0, "UPS.PowerConverter.Output.Phase[2].ActivePower", 0, 0, ignore_if_zero },
 	{ "ups.L3.realpower", 0, 0, "UPS.PowerConverter.Output.Phase[3].ActivePower", 0, 0, ignore_if_zero },
-	{ "ups.realpower.nominal", 0, 0, "UPS.Flow[4].ConfigActivePower", 0, 0, NULL },
+	{ "ups.realpower.nominal", ST_FLAG_STATIC, 0, "UPS.Flow[4].ConfigActivePower", 0, 0, NULL },
 	{ "ups.start.auto", ST_FLAG_RW, 5, "UPS.PowerConverter.Input[1].AutomaticRestart", 0, 0, yes_no_info },
 	{ "ups.start.battery", ST_FLAG_RW, 5, "UPS.PowerConverter.Input[3].StartOnBattery", 0, 0, yes_no_info },
 	{ "ups.start.reboot", ST_FLAG_RW, 5, "UPS.PowerConverter.Output.ForcedReboot", 0, 0, yes_no_info },
-	{ "ups.type", 0, 0, "UPS.PowerConverter.ConverterType", 0, 0, mge_upstype_conversion },
+	{ "ups.type", ST_FLAG_STATIC, 0, "UPS.PowerConverter.ConverterType", 0, 0, mge_upstype_conversion },
 
 	/* Input page */
 	{ "input.voltage", 0, 0, "UPS.PowerConverter.Input[1].Voltage", 0, 0, NULL },
@@ -914,8 +915,6 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 	switch(state)
 	{
 	case PRODUCT_INFO:
-		dstate_setinfo("ups.mfr", "MGE UPS SYSTEMS");
-
 		/* Some devices also return the serial number here */
 		value = strstr(val, " (SN ");
 		if (value) {
@@ -934,6 +933,10 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 			}
 
 			upsdebugx(3, "-> XML variable %s [%s] maps to NUT variable %s", var, val, info->nutname);
+
+			if ((info->nutflags & ST_FLAG_STATIC) && dstate_getinfo(info->nutname)) {
+				return 0;
+			}
 
 			if (info->convert) {
 				value = info->convert(val);
