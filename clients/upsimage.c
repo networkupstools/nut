@@ -491,6 +491,13 @@ static void draw_temperature(double var, int min, int nom, int max,
 	drawbar(lo, hi, 1, 5, 10, lo, min, max, hi, -1, -1, var, format);
 }
 			  
+/* draws humidity bar style indicator */
+static void draw_humidity(double var, int min, int nom, int max,
+		int deviation, const char *format)
+{
+	drawbar(0, 100, 2, 10, 20, 0, min, max, 100, -1, -1, var, format);
+}
+			  
 static int get_var(const char *var, char *buf, size_t buflen)
 {
 	int	ret;
@@ -667,7 +674,7 @@ struct imgvar_t imgvar[] = {
 
 	{ "ambient.humidity", "ambient.humidity.low", NULL,
 		"ambient.humidity.high", 0,
-		"%.1f %%",	drawgeneralbar				},
+		"%.1f %%",	draw_humidity				},
 
 	{ "input.frequency", NULL, "input.frequency.nominal", NULL, 2,
 		"%.1f Hz",	drawgeneralbar				},
