@@ -37,6 +37,8 @@
 #define ST_FLAG_RW		0x0001
 #define ST_FLAG_STATIC		0x0002
 
+static int	mge_ambient_value = 0;
+
 static char	mge_scratch_buf[256];
 
 static char	var[128];
@@ -500,6 +502,17 @@ static char *mge_test_result_info(const char *val)
 	return NULL;
 }
 
+static char *mge_ambient_info(const char *val)
+{
+	switch (mge_ambient_value)
+	{
+	case 1:
+		return val;
+	default:
+		return NULL;
+	}
+}
+
 static xml_info_t mge_xml2nut[] = {
 	/* Special case: boolean values that are mapped to ups.status and ups.alarm */
 	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", 0, 0, online_info },
@@ -659,9 +672,13 @@ static xml_info_t mge_xml2nut[] = {
 	{ "ambient.humidity", 0, 0, "Environment.Humidity", 0, 0, NULL },
 	{ "ambient.humidity.high", 0, 0, "Environment.Humidity.HighThreshold", 0, 0, NULL },
 	{ "ambient.humidity.low", 0, 0, "Environment.Humidity.LowThreshold", 0, 0, NULL },
+	{ "ambient.humidity.maximum", 0, 0, "Environment.PresentStatus.HighHumidity", 0, 0, mge_ambient_info },
+	{ "ambient.humidity.minimum", 0, 0, "Environment.PresentStatus.LowHumidity", 0, 0, mge_ambient_info },
 	{ "ambient.temperature", 0, 0, "Environment.Temperature", 0, 0, NULL },
 	{ "ambient.temperature.high", 0, 0, "Environment.Temperature.HighThreshold", 0, 0, NULL },
 	{ "ambient.temperature.low", 0, 0, "Environment.Temperature.LowThreshold", 0, 0, NULL },
+	{ "ambient.temperature.maximum", 0, 0, "Environment.PresentStatus.HighTemperature", 0, 0, mge_ambient_info },
+	{ "ambient.temperature.minimum", 0, 0, "Environment.PresentStatus.LowTemperature", 0, 0, mge_ambient_info },
 
 	/* Outlet page (using MGE UPS SYSTEMS - PowerShare technology) */
 	{ "outlet.id", 0, 0, "UPS.OutletSystem.Outlet[1].OutletID", 0, 0, NULL },
@@ -709,6 +726,9 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 					snprintf(val, sizeof(val), "%s", atts[i+1]);
 				} else {
 					snprintfcat(val, sizeof(val), "/%s", atts[i+1]);
+				}
+				if (!strcasecmp(atts[i], "type") && !strcasecmp(atts[i+1], "Transverse")) {
+					mge_ambient_value = 1;
 				}
 			}
 			state = PRODUCT_INFO;
