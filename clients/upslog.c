@@ -484,6 +484,17 @@ int main(int argc, char **argv)
 	compile_format();
 
 	while (exit_flag == 0) {
+		time(&now);
+
+		if (nextpoll > now) {
+			/* there is still time left, so sleep it off */
+			sleep(difftime(nextpoll, now));
+			nextpoll += interval;
+		} else {
+			/* we spent more time in polling than the interval allows */
+			nextpoll = now + interval;
+		}
+
 		if (reopen_flag) {
 			upslogx(LOG_INFO, "Signal %d: reopening log file", 
 				reopen_flag);
@@ -501,17 +512,6 @@ int main(int argc, char **argv)
 		/* don't keep connection open if we don't intend to use it shortly */
 		if (interval > 30) {
 			upscli_disconnect(&ups);
-		}
-
-		time(&now);
-
-		if (nextpoll > now) {
-			/* there is still time left, so sleep it off */
-			sleep(difftime(nextpoll, now));
-			nextpoll += interval;
-		} else {
-			/* we spent more time in polling than the interval allows */
-			nextpoll = now + interval;
 		}
 	}
 
