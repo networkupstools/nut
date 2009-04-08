@@ -369,6 +369,7 @@ int main(int argc, char **argv)
 {
 	int	interval = 30, i;
 	char	*prog = NULL;
+	time_t	now, nextpoll = 0;
 	const	char	*user = NULL;
 	struct	passwd	*new_uid = NULL;
 
@@ -502,7 +503,16 @@ int main(int argc, char **argv)
 			upscli_disconnect(&ups);
 		}
 
-		sleep(interval);
+		time(&now);
+
+		if (nextpoll > now) {
+			/* there is still time left, so sleep it off */
+			sleep(difftime(nextpoll, now));
+			nextpoll += interval;
+		} else {
+			/* we spent more time in polling than the interval allows */
+			nextpoll = now + interval;
+		}
 	}
 
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
