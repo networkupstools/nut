@@ -1,3 +1,8 @@
+Fri Apr 17 13:26:21 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - data/driver.list: add UPSonic DS-800 compatibility with megatec_usb
+   (reported by Nick Jenkins)
+
 Sun Mar 29 20:59:09 UTC 2009 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/netxml.c: Either do a quick poll or a complete poll (not both).

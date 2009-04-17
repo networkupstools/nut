@@ -647,6 +647,7 @@
 "UPSonic"	"LAN Saver 600"		""	"genericups upstype=0"
 "UPSonic"	"Power Guardian"	""	"genericups upstype=7"
 "UPSonic"	"PrOffice 650"		"USB"	"megatec_usb"
+"UPSonic"	"DS-800"		"USB"	"megatec_usb"
 
 "Various"	"(various)"	"SEC protocol"		"gamatronic"
 "Various"	"(various)"	"Generic RUPS model"	"genericups upstype=4"
