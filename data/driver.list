@@ -54,6 +54,9 @@
 
 "Aphel"	"PDU"	"no report, but various models should be supported"	"snmp-ups (experimental)"
 
+"Appolo"	"1000A"	""	"genericups upstype=4"
+"Appolo"	"1000F"	""	"genericups upstype=4"
+
 "Appro"	"SWPDU"	"48 outlets"	"powerman-pdu (experimental)"
 
 "Atlantis Land"	"A03-P826"	""	"megatec"

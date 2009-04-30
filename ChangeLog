@@ -1,3 +1,8 @@
+Thu Apr 30 21:20:42 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - data/driver.list: add Appolo 1000A and 1000F compatibility with genericups
+   upstype=4 (reported by mvochin)
+
 Thu Apr 23 12:46:12 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - man/snmp-ups.8: remove the EXPERIMENTAL section to the profit of a LIMITATION
