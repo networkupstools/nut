@@ -1,4 +1,4 @@
-.TH snmp\-ups 8 "Wed Nov 26 2008" "" "Network UPS Tools (NUT)"
+.TH snmp\-ups 8 "Thu Apr 23 2009" "" "Network UPS Tools (NUT)"
 .SH NAME
 snmp\(hyups \- Multi\(hyMIB Driver for SNMP UPS equipment
 .SH NOTE
@@ -55,13 +55,11 @@ equipment which has strangeness in the three\(hyphase power reporting.
 You will need to install the Net\(hySNMP package from 
 http://www.net\(hysnmp.org/ before building this driver.
 
-.SH EXPERIMENTAL DRIVER
-This driver has been tagged experimental, even if it has been reported
-to be stable. Thus it may not be suitable for production systems and it is
-only built if the Net SNMP development files are present on the system.
-This is mainly due to the fact that there is still
-no proper upsdrv_shutdown() function implemented. There probably never
-will be one, since at the time this script should run (near the end of
+.SH LIMITATION
+.SS Shutdown
+
+This driver does not provide a proper upsdrv_shutdown() function. There probably
+never will be one, since at the time this script should run (near the end of
 the system halt script), there will be no network capabilities anymore.
 Probably the only way to shutdown an SNMP UPS is by sending it a shutdown
 with delay command through \fBupscmd\fR(8) and hope for the best that the
