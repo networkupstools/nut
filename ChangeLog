@@ -6,7 +6,7 @@ Mon May 04 08:11:01 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
 Thu Apr 30 21:20:42 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
 
- - data/driver.list: add Appolo 1000A and 1000F compatibility with genericups
+ - data/driver.list: add Appollo 1000A and 1000F compatibility with genericups
    upstype=4 (reported by mvochin)
 
 Thu Apr 23 12:46:12 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
