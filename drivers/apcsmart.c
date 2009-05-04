@@ -24,7 +24,7 @@
 #include "apcsmart.h"
 
 #define DRIVER_NAME	"APC Smart protocol driver"
-#define DRIVER_VERSION	"2.01"
+#define DRIVER_VERSION	"2.02"
 
 static upsdrv_info_t table_info = {
 	"APC command table",
@@ -561,6 +561,7 @@ static int firmware_table_lookup(void)
 		/* found one, force the model information */
 		if (!strcmp(buf, "6QD") || /* (APC600.) */
 				!strcmp(buf, "8QD") || /* (SmartUPS 1250, vintage 07/94.) */
+				!strcmp(buf, "7TD") || /* (SmartUPS 900, vintage 11/94.) */
 				!strcmp(buf, "8TI") || /* (SmartUPS 1250, vintage 08/24/95.) */
 				!strcmp(buf, "6TI") || /* (APC600.) */
 				!strcmp(buf, "6QI") || /* (APC600.) */

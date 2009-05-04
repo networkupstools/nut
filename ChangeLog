@@ -1,3 +1,9 @@
+Mon May 04 08:11:01 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - drivers/apcsmart.[ch]: add support for older SmartUPS, which do not respond
+   to the ^Z, a or b commands (used to inquire the supported data)
+   (patch from Thomas Juerges)
+
 Thu Apr 30 21:20:42 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
 
  - data/driver.list: add Appolo 1000A and 1000F compatibility with genericups
