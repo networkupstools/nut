@@ -109,6 +109,7 @@ static void help(const char *prog)
 	printf("		- Use -f \"<format>\" so your shell doesn't break it up.\n");
 	printf("  -i <interval>	- Time between updates, in seconds\n");
 	printf("  -l <logfile>	- Log file name, or - for stdout\n");
+	printf("  -p <pidbase>  - Base name for PID file (defaults to \"upslog\")\n");
 	printf("  -s <ups>	- Monitor UPS <ups> - <upsname>@<host>[:<port>]\n");
 	printf("        	- Example: -s myups@server\n");
 	printf("  -u <user>	- Switch to <user> if started as root\n");
@@ -372,6 +373,7 @@ int main(int argc, char **argv)
 	time_t	now, nextpoll = 0;
 	const	char	*user = NULL;
 	struct	passwd	*new_uid = NULL;
+	const   char    *pidfilebase = "upslog";
 
 	logformat = DEFAULT_LOGFORMAT;
 	user = RUN_AS_USER;
@@ -380,7 +382,7 @@ int main(int argc, char **argv)
 
 	prog = argv[0];
 
-	while ((i = getopt(argc, argv, "+hs:l:i:f:u:V")) != -1) {
+	 while ((i = getopt(argc, argv, "+hs:l:i:f:u:Vp:")) != -1) {
 		switch(i) {
 			case 'h':
 				help(prog);
@@ -408,6 +410,10 @@ int main(int argc, char **argv)
 
 			case 'V':
 				exit(EXIT_SUCCESS);
+
+			case 'p':
+				pidfilebase = optarg;
+				break;
 		}
 	}
 
@@ -477,7 +483,7 @@ int main(int argc, char **argv)
 
 	setup_signals();
 
-	writepid("upslog");
+	writepid(pidfilebase);
 
 	become_user(new_uid);
 
