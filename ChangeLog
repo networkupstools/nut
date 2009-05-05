@@ -1,3 +1,9 @@
+Tue May 05 13:26:21 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - drivers/apcsmart.h: add support for older SmartUPS 600 responding to other
+   D codes (D7, D8 and D9)
+   (patch from Konstantin 'Kastus' Shchuka)
+
 Tue May 05 02:01:13 UTC 2009 / Charles Lepple <clepple@gmail.com>
 
  - drivers/tripplite_usb.c, man/tripplite_usb.8, data/driver.list: update list

@@ -24,7 +24,7 @@
 #include "apcsmart.h"
 
 #define DRIVER_NAME	"APC Smart protocol driver"
-#define DRIVER_VERSION	"2.02"
+#define DRIVER_VERSION	"2.03"
 
 static upsdrv_info_t table_info = {
 	"APC command table",

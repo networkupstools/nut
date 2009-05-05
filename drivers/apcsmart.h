@@ -23,7 +23,7 @@
 #include "serial.h"
 #include "timehead.h"
 
-#define APC_TABLE_VERSION	"version 2.0"
+#define APC_TABLE_VERSION	"version 2.1"
 
 /* Basic UPS reply line structure */
 #define ENDCHAR 10		/* APC ends responses with LF */
@@ -258,6 +258,9 @@ struct {
 	/* CS 350 */
 	{ "5.4.D",	"\1ABPQRSUYbdfgjmnx9",	0 },
 	/* Smart-UPS 600 */
+	{ "D9",     "789ABCEFGKLMNOPQRSUVWXYZ", 0 },
+	{ "D8",     "789ABCEFGKLMNOPQRSUVWXYZ", 0 },
+	{ "D7",     "789ABCEFGKLMNOPQRSUVWXYZ", 0 },
 	{ "D6",     "789ABCEFGKLMNOPQRSUVWXYZ", 0 },
 	{ "D5",     "789ABCEFGKLMNOPQRSUVWXYZ", 0 },
 	{ "D4",     "789ABCEFGKLMNOPQRSUVWXYZ", 0 },
