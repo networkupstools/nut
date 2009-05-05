@@ -158,9 +158,13 @@ This driver has been tested with the following models:
 
 =over
 
+=item * INTERNETOFFICE700
+
 =item * OMNISV1000
 
 =item * OMNISV1500XL (some warnings)
+
+=item * SMART700USB
 
 =item * SMART1500RM2U
 
@@ -271,14 +275,16 @@ SMART1500RM2U units, you would have to find which USB bus number each unit is
 on (via C<lsusb>), which may result in ambiguities if the available USB ports
 are on the same bus.
 
-Some of the SMART*2U models seem to have an ID number that could be used in a
-future version of this driver to monitor multiple similar UPSes.
+Some of the SMART*2U models have an ID number, but because this ID is not
+exposed as a USB string descriptor, there is no easy way to use this ID to
+distinguish between multiple UPS units on a single machine.
 
 =head1 AUTHORS
 
-Charles Lepple E<lt>clepple+nut@ghz.ccE<gt>, based on the tripplite driver by
+Charles Lepple E<lt>clepple+nut@gmail.com<gt>, based on the tripplite driver by
 Rickard E. (Rik) Faith E<lt>faith@alephnull.comE<gt> and Nicholas Kain
-E<lt>nicholas@kain.usE<gt>.
+E<lt>nicholas@kain.usE<gt>. Please do not email the authors directly - use the
+nut-upsdev mailing list.
 
 A Tripp Lite OMNIVS1000 was graciously donated to the NUT project by:
 
