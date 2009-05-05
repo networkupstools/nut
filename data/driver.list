@@ -54,8 +54,8 @@
 
 "Aphel"	"PDU"	"no report, but various models should be supported"	"snmp-ups (experimental)"
 
-"Appollo"	"1000A"	""	"genericups upstype=4"
-"Appollo"	"1000F"	""	"genericups upstype=4"
+"Apollo"	"1000A"	""	"genericups upstype=4"
+"Apollo"	"1000F"	""	"genericups upstype=4"
 
 "Appro"	"SWPDU"	"48 outlets"	"powerman-pdu (experimental)"
 
