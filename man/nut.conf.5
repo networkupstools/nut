@@ -1,0 +1,91 @@
+.TH NUT.CONF 5 "Sun May 10 2009" "" "Network UPS Tools (NUT)"
+.SH NAME
+nut.conf \- UPS definitions for Network UPS Tools
+
+.SH DESCRIPTION
+
+This file attempts to standardize the various files being found
+in different installations, like /etc/default/nut on Debian based
+systems and /etc/sysconfig/nut on RedHat based systems.
+
+Distribution's init script should source this file in order to
+determine which component(s) has to be started.
+
+Blank lines are ignored. Lines with a hash ('#') character at the
+1st position of the line are ignored too.  They can be used to add
+comments.
+
+.SH DIRECTIVES
+
+.IP MODE
+Required.  Recognized values are none, standalone, netserver and
+netclient.  Defaults to none.
+
+none: Indicates that NUT should not get started automatically,
+possibly because it is not configured or that an Integrated Power
+Management or some external system, is used to startup the NUT
+components.
+
+standalone: Addresses a local only configuration, with 1 UPS
+protecting the local system.  This implies to start the 3 NUT
+layers (driver, upsd and upsmon), with the related configuration
+files.  This mode can also address UPS redundancy.
+
+netserver: Like the standalone configuration, but also need some
+more ACLs and possibly a specific LISTEN directive in upsd.conf.
+Since this MODE is open to the network, a special care should be
+applied to security concerns.
+
+netclient: When only upsmon is required, possibly because
+there are other hosts that are more closely attached to the UPS,
+the MODE should be set to netclient.
+
+.IP UPSD_OPTIONS
+Optional.  Set upsd specific options. See \fBupsd\fR(8) for more
+details.  It is ignored when MODE above indicates that no upsd
+should be running.
+
+.IP UPSMON_OPTIONS
+Optional.  Set upsmon specific options. See \fBupsmon\fR(8) for
+more details.  It is ignored when MODE above indicates that no
+upsmon should be running.
+
+.IP POWEROFF_WAIT
+Optional.  At the end of an emergency system halt, the upsmon master
+will signal the UPS to switch off.  This may fail for a number of
+reasons.  Most notably is the case that mains power returns during
+the shutdown process.  See the section "Power races" in
+/usr/share/doc/nut/docs/shutdown.txt.gz.  The system will wait this
+long for the UPS to cut power, and then reboot.  It should be long
+enough to exhaust the batteries, in case line power continues to be
+unavailable.  On the other hand, it should not be so long that the
+system remains offline for an unreasonable amount of time if line
+power has returned.  See \fBsleep\fR(1) for compatible time syntax.
+If you specify the time in seconds, use the "s" suffix.
+
+WARNING: this workaround might be dangerous under some circumstances.
+Please read http://bugs.debian.org/358696 for more details.
+
+.SH EXAMPLE
+
+# /etc/nut/nut.conf.  See nut.conf(5)
+
+MODE = none
+
+UPSD_OPTIONS = ""
+
+UPSMON_OPTIONS = ""
+
+# POWEROFF_WAIT = 15m
+
+.SH INTEGRATION
+
+An init script, such as /etc/init.d/nut, is expected to source this
+file in order to determine which component(s) has to be started.
+
+.SH SEE ALSO
+\fBups.conf\fR(5), \fBupsd.conf\fR(5), \fBupsd.users\fR(5),
+\fBupsmon.conf\fR(5)
+
+.SS Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

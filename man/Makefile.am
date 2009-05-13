@@ -11,8 +11,8 @@ if !WITH_PKG_CONFIG
 endif
 endif
 
-CONF_PAGES = ups.conf.5 upssched.conf.5 upsd.conf.5 upsmon.conf.5	\
- upsd.users.5
+CONF_PAGES = nut.conf.5 ups.conf.5 upssched.conf.5 upsd.conf.5	\
+ upsmon.conf.5 upsd.users.5
 CLIENT_PAGES = upsc.8 upsrw.8 upscmd.8 upslog.8 upssched.8	\
  upsmon.8 upsd.8 nutupsdrv.8 upsdrvctl.8
 
