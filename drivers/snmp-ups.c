@@ -8,7 +8,8 @@
  *  			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *  			Niels Baggesen <niels@baggesen.net>
  *
- *  Sponsored by MGE UPS SYSTEMS <http://opensource.mgeups.com/>
+ *  Sponsored by Eaton <http://www.eaton.com>
+ *   and originally by MGE UPS SYSTEMS <http://www.mgeups.com/>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -35,9 +36,7 @@
 /* include all known mib2nut lookup tables */
 #include "apccmib.h"
 #include "eaton-aphel-mib.h"
-#if 0
 #include "raritan-mib.h"
-#endif
 #include "ietfmib.h"
 #include "mgemib.h"
 #include "netvisionmib.h"
@@ -58,10 +57,8 @@ mib2nut_info_t mib2nut[] = {
 		APHEL1_OID_MODEL_NAME, eaton_aphel_genesisII_mib },
 	{ "aphel_revelation", EATON_APHEL_MIB_VERSION, "",
 		APHEL2_OID_MODEL_NAME, eaton_aphel_revelation_mib },
-#if 0
 	{ "raritan", RARITAN_MIB_VERSION, "",
 		RARITAN_OID_MODEL_NAME, raritan_mib },
-#endif
 	{ NULL }
 };
 
@@ -73,7 +70,7 @@ const char *mibname;
 const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.45"
+#define DRIVER_VERSION		"0.46"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -204,6 +201,8 @@ void upsdrv_initups(void)
 
 	/* init SNMP library, etc... */
 	nut_snmp_init(progname, device_path, version, community);
+
+	/* FIXME: first test if the device is reachable to avoid timeouts! */
 
 	/* Load the SNMP to NUT translation data */
 	load_mib2nut(mibs);
