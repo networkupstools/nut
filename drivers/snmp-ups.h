@@ -37,6 +37,11 @@ for each OID request we made), instead of sending many small packets
 - externalize mib2nut data in .m2n files and load at driver startup using parseconf()...
 - ... and use Net-SNMP lookup mecanism for OIDs (use string path, not numeric)
 - adjust information logging.
+ 
+- move to numeric OIDs
+- move mib2nut into c files (à la usbhid-ups)?
+- add a claim function and move to usbhid-ups style
+- rework the flagging system
 */
 
 #include <unistd.h>
@@ -76,7 +81,7 @@ typedef int bool_t;
 
 /* for lookup between OID values and INFO_ value */
 typedef struct {
-	int oid_value;		/* OID value */
+	int oid_value;			/* OID value */
 	const char *info_value;	/* INFO_* value */
 } info_lkp_t;
 
@@ -88,26 +93,31 @@ typedef struct {
 typedef struct {
 	const char   *info_type;	/* INFO_ or CMD_ element */
 	int           info_flags;	/* flags to set in addinfo */
-	float         info_len;		/* length of strings if STR, */
-					/* cmd value if CMD, multiplier otherwise. */
-	const char   *OID;		/* SNMP OID or NULL */
-	const char   *dfl;		/* default value */
+	float         info_len;		/* length of strings if STR,
+								 * cmd value if CMD, multiplier otherwise. */
+	const char   *OID;			/* SNMP OID or NULL */
+	const char   *dfl;			/* default value */
 	unsigned long flags;		/* my flags */
 	info_lkp_t   *oid2info;		/* lookup table between OID and NUT values */
-	int          *setvar;           /* variable to set for SU_FLAG_SETINT */
+	int          *setvar;		/* variable to set for SU_FLAG_SETINT */
 } snmp_info_t;
 
-#define SU_FLAG_OK		(1 << 0)	/* show element to upsd. */
+#define SU_FLAG_OK			(1 << 0)	/* show element to upsd. */
 #define SU_FLAG_STATIC		(1 << 1)	/* retrieve info only once. */
-#define SU_FLAG_ABSENT		(1 << 2)	/* data is absent in the device, */
-						/* use default value. */
+#define SU_FLAG_ABSENT		(1 << 2)	/* data is absent in the device,
+										 * use default value. */
 #define SU_FLAG_STALE		(1 << 3)	/* data stale, don't try too often. */
 #define SU_FLAG_NEGINVALID	(1 << 4)	/* Invalid if negative value */
 #define SU_FLAG_UNIQUE		(1 << 5)	/* There can be only be one
-						 * provider of this info,
-						 * disable the other providers
-						 */
+						 				 * provider of this info,
+						 				 * disable the other providers */
 #define SU_FLAG_SETINT		(1 << 6)	/* save value */
+#define SU_OUTLET			(1 << 7)	/* outlet template definition */
+/* Notes on outlet templates usage:
+ * - outlet.count MUST exist and MUST be declared before any outlet template
+ * - the first outlet template MUST NOT be a server side variable (ie MUST have
+ *   a valid OID) in order to detect the base SNMP index (0 or 1)
+ */
 
 /* status string components */
 #define SU_STATUS_PWR		(0 << 8)	/* indicates power status element */
@@ -122,20 +132,22 @@ typedef struct {
 #define SU_INPHASES		(0x3 << 12)
 #define SU_INPUT_1		(1 << 12)	/* only if 1 input phase */
 #define SU_INPUT_3		(1 << 13)	/* only if 3 input phases */
-#define SU_OUTPHASES		(0x3 << 14)
+#define SU_OUTPHASES	(0x3 << 14)
 #define SU_OUTPUT_1		(1 << 14)	/* only if 1 output phase */
 #define SU_OUTPUT_3		(1 << 15)	/* only if 3 output phases */
+/* FIXME: use input.phases and output.phases to replace this */
+
 
 /* hints for su_ups_set, applicable only to rw vars */
-#define SU_TYPE_INT		(0 << 16)	/* cast to int when setting value */
-#define SU_TYPE_STRING		(1 << 16)	/* cast to string */
+#define SU_TYPE_INT			(0 << 16)	/* cast to int when setting value */
+#define SU_TYPE_STRING		(1 << 16)	/* cast to string. FIXME: redundant with ST_FLAG_STRING */
 #define SU_TYPE_TIME		(2 << 16)	/* cast to int */
-#define SU_TYPE_CMD		(3 << 16)	/* instant command */
-#define SU_TYPE(t)		((t)->flags & (7 << 16))
+#define SU_TYPE_CMD			(3 << 16)	/* instant command */
+#define SU_TYPE(t)			((t)->flags & (7 << 16))
 
 #define SU_VAR_COMMUNITY	"community"
 #define SU_VAR_VERSION		"snmp_version"
-#define SU_VAR_MIBS		"mibs"
+#define SU_VAR_MIBS			"mibs"
 #define SU_VAR_SDTYPE		"sdtype"
 #define SU_VAR_POLLFREQ		"pollfreq"
 
@@ -145,6 +157,7 @@ typedef struct {
 
 #define SU_STALE_RETRY	10	/* retry to retrieve stale element */
 				/* after this number of iterations. */
+				/* FIXME: this is for *all* elements */
 /* modes to snmp_ups_walk. */
 #define SU_WALKMODE_INIT	0
 #define SU_WALKMODE_UPDATE	1
@@ -182,7 +195,7 @@ void su_cleanup(void);
 void su_init_instcmds(void);
 void su_setuphandlers(void); /* need to deal with external function ptr */
 static void disable_transfer_oids(void);
-void su_setinfo(const char *type, const char *value, int flags, int auxdata);
+void su_setinfo(snmp_info_t *su_info_p, const char *value);
 void su_status_set(snmp_info_t *, long value);
 snmp_info_t *su_find_info(const char *type);
 bool_t snmp_ups_walk(int mode);
