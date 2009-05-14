@@ -1,7 +1,11 @@
+Thu May 14 14:44:22 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - docs/configure.txt: a bit of completion and standardisation.
+
 Thu May 14 14:23:41 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - drivers/snmp-ups.[ch]: add a template mechanism for outlets declaration, and
-   the needed helpers.
+   the needed helpers. Also disable temporarily the Raritan MIB.
 
 Wed May 13 13:54:32 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 

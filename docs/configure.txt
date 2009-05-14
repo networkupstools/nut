@@ -75,13 +75,19 @@ Contents:
    drivers, the CGI programs and HTML files, and the upsclient
    library).
 
-  --with-ssl
+  --with-ssl (default: auto-detect)
 
-   Enable SSL development code (default: auto-detect)
+   Enable SSL development code. Read docs/ssl.txt for instructions on
+   SSL support.
 
-  --with-ipv6
+  --with-wrap (default: auto-detect)
 
-   Enable IPv6 support (default: auto-detect)
+   Enable libwrap (tcp-wrappers) support. Refer to upsd man page for
+   more information.
+
+  --with-ipv6 (default: auto-detect)
+
+   Enable IPv6 support.
 
   --with-hal (default: no)
 
