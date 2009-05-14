@@ -1,3 +1,7 @@
+Thu May 14 19:19:52 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - drivers/eaton-aphel-mib.h: use the outlets template mechanism.
+
 Thu May 14 14:44:22 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - docs/configure.txt: a bit of completion and standardisation.

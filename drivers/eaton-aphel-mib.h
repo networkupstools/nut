@@ -23,11 +23,11 @@
  *
  */
 
-#define EATON_APHEL_MIB_VERSION	"0.3"
+#define EATON_APHEL_MIB_VERSION	"0.4"
 
 /* APHEL-GENESIS-II-MIB (monitored ePDU)
  * *************************************
- * we should also be able to support this one using netxml-ups
+ * Note: we should also be able to support this one using netxml-ups!
  */
 
 #define APHEL1_OID_MIB						".1.3.6.1.4.1.17373"
@@ -63,6 +63,7 @@ snmp_info_t eaton_aphel_genesisII_mib[] = {
 		0, NULL, NULL },
 
 	/* Outlet page */
+	/* we can't use template since there is no counterpart to outlet.count */
 	{ "outlet.1.current", 0, 0.001, APHEL1_OID_OUTLET_CURRENT ".1.0", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
 	{ "outlet.2.current", 0, 0.001, APHEL1_OID_OUTLET_CURRENT ".2.0", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
 	{ "outlet.3.current", 0, 0.001, APHEL1_OID_OUTLET_CURRENT ".3.0", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
@@ -78,7 +79,7 @@ snmp_info_t eaton_aphel_genesisII_mib[] = {
 
 
 /* APHEL PDU-MIB - Revelation MIB (Managed ePDU)
- * ***************************************** */
+ * ********************************************* */
 
 #define AR_BASE_OID					".1.3.6.1.4.1.534.6.6.6"
 
@@ -122,7 +123,7 @@ info_lkp_t outlet_status_info[] = {
 #define AR_OID_OUTLET_APPARENTPOWER		AR_BASE_OID ".1.2.2.1.8"
 #define AR_OID_OUTLET_POWERFACTOR		AR_BASE_OID ".1.2.2.1.9"
 
-/* Snmp2NUT lookup table for Revelation and Raritan MIBs */
+/* Snmp2NUT lookup table for Eaton Revelation MIB */
 snmp_info_t eaton_aphel_revelation_mib[] = {
 	/* Device page */
 	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON | Powerware",
@@ -161,58 +162,21 @@ snmp_info_t eaton_aphel_revelation_mib[] = {
 	{ "outlet.realpower", 0, 1.0, AR_OID_UNIT_ACTIVEPOWER ".0", NULL, 0, NULL, NULL },
 	{ "outlet.power", 0, 1.0, AR_OID_UNIT_APPARENTPOWER ".0", NULL, 0, NULL, NULL },
 
-	/* outlet #1 */
-	{ "outlet.1.id", 0, 1, NULL, "1", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
-	{ "outlet.1.switchable", 0, 1, AR_OID_OUTLET_INDEX ".0", "yes", SU_FLAG_STATIC, NULL, NULL },
-	{ "outlet.1.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, AR_OID_OUTLET_NAME ".0", NULL, 0, NULL, NULL },
-	{ "outlet.1.status", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_OUTLET_STATUS ".0", NULL, 0, &outlet_status_info[0], NULL },
-	{ "outlet.1.current", 0, 0.001, AR_OID_OUTLET_CURRENT ".0", NULL, 0, NULL, NULL },
-	{ "outlet.1.current.maximum", 0, 0.001, AR_OID_OUTLET_MAXCURRENT ".0", NULL, 0, NULL, NULL },
-	{ "outlet.1.realpower", 0, 1.0, AR_OID_OUTLET_ACTIVEPOWER ".0", NULL, 0, NULL, NULL },
-	{ "outlet.1.voltage", 0, 1.0, AR_OID_OUTLET_VOLTAGE ".0", NULL, 0, NULL, NULL },
-	{ "outlet.1.powerfactor", 0, 0.01, AR_OID_OUTLET_POWERFACTOR ".0", NULL, 0, NULL, NULL },
-	{ "outlet.1.power", 0, 1.0, AR_OID_OUTLET_APPARENTPOWER ".0", NULL, 0, NULL, NULL },
-	
-	/* outlet #2 */
-	{ "outlet.2.id", 0, 1, NULL, "2", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
-	{ "outlet.2.switchable", 0, 1, AR_OID_OUTLET_INDEX ".1", "yes", SU_FLAG_STATIC, NULL, NULL },
-	{ "outlet.2.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, AR_OID_OUTLET_NAME ".1", NULL, 0, NULL, NULL },
-	{ "outlet.2.status", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_OUTLET_STATUS ".1", NULL, 0, &outlet_status_info[0], NULL },
-	{ "outlet.2.current", 0, 0.001, AR_OID_OUTLET_CURRENT ".1", NULL, 0, NULL, NULL },
-	{ "outlet.2.current.maximum", 0, 0.001, AR_OID_OUTLET_MAXCURRENT ".1", NULL, 0, NULL, NULL },
-	{ "outlet.2.realpower", 0, 1.0, AR_OID_OUTLET_ACTIVEPOWER ".1", NULL, 0, NULL, NULL },
-	{ "outlet.2.voltage", 0, 1.0, AR_OID_OUTLET_VOLTAGE ".1", NULL, 0, NULL, NULL },
-	{ "outlet.2.powerfactor", 0, 0.01, AR_OID_OUTLET_POWERFACTOR ".1", NULL, 0, NULL, NULL },
-	{ "outlet.2.power", 0, 1.0, AR_OID_OUTLET_APPARENTPOWER ".1", NULL, 0, NULL, NULL },
-	
-	/* outlet #3 */
-	{ "outlet.3.id", 0, 1, NULL, "3", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
-	{ "outlet.3.switchable", 0, 1, AR_OID_OUTLET_INDEX ".2", "yes", SU_FLAG_STATIC, NULL, NULL },
-	{ "outlet.3.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, AR_OID_OUTLET_NAME ".2", NULL, 0, NULL, NULL },
-	{ "outlet.3.status", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_OUTLET_STATUS ".2", NULL, 0, &outlet_status_info[0], NULL },
-	{ "outlet.3.current", 0, 0.001, AR_OID_OUTLET_CURRENT ".2", NULL, 0, NULL, NULL },
-	{ "outlet.3.current.maximum", 0, 0.001, AR_OID_OUTLET_MAXCURRENT ".2", NULL, 0, NULL, NULL },
-	{ "outlet.3.realpower", 0, 1.0, AR_OID_OUTLET_ACTIVEPOWER ".2", NULL, 0, NULL, NULL },
-	{ "outlet.3.voltage", 0, 1.0, AR_OID_OUTLET_VOLTAGE ".2", NULL, 0, NULL, NULL },
-	{ "outlet.3.powerfactor", 0, 0.01, AR_OID_OUTLET_POWERFACTOR ".2", NULL, 0, NULL, NULL },
-	{ "outlet.3.power", 0, 1.0, AR_OID_OUTLET_APPARENTPOWER ".2", NULL, 0, NULL, NULL },
-
-	/* outlet #4 */
-	{ "outlet.4.id", 0, 1, NULL, "2", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
-	{ "outlet.4.switchable", 0, 1, AR_OID_OUTLET_INDEX ".3", "yes", SU_FLAG_STATIC, NULL, NULL },
-	{ "outlet.4.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, AR_OID_OUTLET_NAME ".3", NULL, 0, NULL, NULL },
-	{ "outlet.4.status", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_OUTLET_STATUS ".3", NULL, 0, &outlet_status_info[0], NULL },
-	{ "outlet.4.current", 0, 0.001, AR_OID_OUTLET_CURRENT ".3", NULL, 0, NULL, NULL },
-	{ "outlet.4.current.maximum", 0, 0.001, AR_OID_OUTLET_MAXCURRENT ".3", NULL, 0, NULL, NULL },
-	{ "outlet.4.realpower", 0, 1.0, AR_OID_OUTLET_ACTIVEPOWER ".3", NULL, 0, NULL, NULL },
-	{ "outlet.4.voltage", 0, 1.0, AR_OID_OUTLET_VOLTAGE ".3", NULL, 0, NULL, NULL },
-	{ "outlet.4.powerfactor", 0, 0.01, AR_OID_OUTLET_POWERFACTOR ".3", NULL, 0, NULL, NULL },
-	{ "outlet.4.power", 0, 1.0, AR_OID_OUTLET_APPARENTPOWER ".3", NULL, 0, NULL, NULL },
-
+	/* outlet template definition
+	 * Caution: the index of the data start at 0, while the name is +1
+	 * ie outlet.1 => <OID>.0 */
+	{ "outlet.%i.switchable", 0, 1, AR_OID_OUTLET_INDEX ".%i", "yes", SU_FLAG_STATIC | SU_OUTLET, NULL, NULL },
+	{ "outlet.%i.id", 0, 1, NULL, "%i", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK | SU_OUTLET, NULL, NULL },
+	{ "outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, AR_OID_OUTLET_NAME ".%i", NULL, SU_OUTLET, NULL, NULL },
+	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_OUTLET_STATUS ".%i", NULL, SU_FLAG_OK | SU_OUTLET, &outlet_status_info[0], NULL },
+	{ "outlet.%i.current", 0, 0.001, AR_OID_OUTLET_CURRENT ".%i", NULL, SU_OUTLET, NULL, NULL },
+	{ "outlet.%i.current.maximum", 0, 0.001, AR_OID_OUTLET_MAXCURRENT ".%i", NULL, SU_OUTLET, NULL, NULL },
+	{ "outlet.%i.realpower", 0, 1.0, AR_OID_OUTLET_ACTIVEPOWER ".%i", NULL, SU_OUTLET, NULL, NULL },
+	{ "outlet.%i.voltage", 0, 1.0, AR_OID_OUTLET_VOLTAGE ".%i", NULL, SU_OUTLET, NULL, NULL },
+	{ "outlet.%i.powerfactor", 0, 0.01, AR_OID_OUTLET_POWERFACTOR ".%i", NULL, SU_OUTLET, NULL, NULL },
+	{ "outlet.%i.power", 0, 1.0, AR_OID_OUTLET_APPARENTPOWER ".%i", NULL, SU_OUTLET, NULL, NULL },
 
 	/* FIXME:
-	 * - support for subsequent outlets...
-	 * can be up to 20 (infinite when daisy chained!)
 	 * - delay for startup/shutdown sequence
 	 * - support for Ambient page
 		temperatureSensorCount" src="snmp:$sysoid.2.1.0
@@ -221,23 +185,14 @@ snmp_info_t eaton_aphel_revelation_mib[] = {
 	 */
 
 	/* instant commands. */
-	/* Note that load.cycle might be replaced by shutdown.reboot */
+	/* Note that load.cycle might be replaced by / mapped on shutdown.reboot */
 	/* no counterpart found!	
 	{ "outlet.load.off", 0, DO_OFF, AR_OID_OUTLET_STATUS ".0", NULL, SU_TYPE_CMD, NULL, NULL },
 	{ "outlet.load.on", 0, DO_ON, AR_OID_OUTLET_STATUS ".0", NULL, SU_TYPE_CMD, NULL, NULL },
 	{ "outlet.load.cycle", 0, DO_CYCLE, AR_OID_OUTLET_STATUS ".0", NULL, SU_TYPE_CMD, NULL, NULL }, */
-	{ "outlet.1.load.off", 0, DO_OFF, AR_OID_OUTLET_STATUS ".0", NULL, SU_TYPE_CMD, NULL, NULL },
-	{ "outlet.1.load.on", 0, DO_ON, AR_OID_OUTLET_STATUS ".0", NULL, SU_TYPE_CMD, NULL, NULL },
-	{ "outlet.1.load.cycle", 0, DO_CYCLE, AR_OID_OUTLET_STATUS ".0", NULL, SU_TYPE_CMD, NULL, NULL },
-	{ "outlet.2.load.off", 0, DO_OFF, AR_OID_OUTLET_STATUS ".1", NULL, SU_TYPE_CMD, NULL, NULL },
-	{ "outlet.2.load.on", 0, DO_ON, AR_OID_OUTLET_STATUS ".1", NULL, SU_TYPE_CMD, NULL, NULL },
-	{ "outlet.2.load.cycle", 0, DO_CYCLE, AR_OID_OUTLET_STATUS ".1", NULL, SU_TYPE_CMD, NULL, NULL },
-	{ "outlet.3.load.off", 0, DO_OFF, AR_OID_OUTLET_STATUS ".2", NULL, SU_TYPE_CMD, NULL, NULL },
-	{ "outlet.3.load.on", 0, DO_ON, AR_OID_OUTLET_STATUS ".2", NULL, SU_TYPE_CMD, NULL, NULL },
-	{ "outlet.3.load.cycle", 0, DO_CYCLE, AR_OID_OUTLET_STATUS ".2", NULL, SU_TYPE_CMD, NULL, NULL },
-	{ "outlet.4.load.off", 0, DO_OFF, AR_OID_OUTLET_STATUS ".3", NULL, SU_TYPE_CMD, NULL, NULL },
-	{ "outlet.4.load.on", 0, DO_ON, AR_OID_OUTLET_STATUS ".3", NULL, SU_TYPE_CMD, NULL, NULL },
-	{ "outlet.4.load.cycle", 0, DO_CYCLE, AR_OID_OUTLET_STATUS ".3", NULL, SU_TYPE_CMD, NULL, NULL },
+	{ "outlet.%i.load.off", 0, DO_OFF, AR_OID_OUTLET_STATUS ".%i", NULL, SU_TYPE_CMD | SU_OUTLET, NULL, NULL },
+	{ "outlet.%i.load.on", 0, DO_ON, AR_OID_OUTLET_STATUS ".%i", NULL, SU_TYPE_CMD | SU_OUTLET, NULL, NULL },
+	{ "outlet.%i.load.cycle", 0, DO_CYCLE, AR_OID_OUTLET_STATUS ".%i", NULL, SU_TYPE_CMD | SU_OUTLET, NULL, NULL },
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL, NULL }
