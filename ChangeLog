@@ -1,8 +1,17 @@
+Thu May 14 19:19:52 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - drivers/baytechmib.h: add native NUT support for Baytech SNMP PDUs (RPCs),
+ - drivers/snmp-ups.c: enable Baytech MIB,
+ - drivers/Makefile.am: add the new MIB file,
+ - data/driver.list: add the supported PDUs from BayTech,
+ - man/snmp-ups.8: document the new MIB and devices.
+   (patch from Scott Burns, Opengear)
+
 Thu May 14 21:06:11 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
 
  - drivers/raritan-mib.h: use the outlets template mechanism and remove all
-   the OIDs defines for a better readability.
- - drivers/snmp-ups.c: enable Raritan MIB back
+   the OIDs defines for a better readability
+ - drivers/snmp-ups.c: enable Raritan MIB back.
  
 Thu May 14 19:19:52 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
 

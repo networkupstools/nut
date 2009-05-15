@@ -1,4 +1,4 @@
-.TH snmp\-ups 8 "Thu Apr 23 2009" "" "Network UPS Tools (NUT)"
+.TH snmp\-ups 8 "Fri May 15 2009" "" "Network UPS Tools (NUT)"
 .SH NAME
 snmp\(hyups \- Multi\(hyMIB Driver for SNMP UPS equipment
 .SH NOTE
@@ -24,6 +24,8 @@ Eaton Powerware ePDU Monitored
 Eaton Powerware ePDU Managed
 .IP "raritan:"
 Various Raritan PDUs
+.IP "baytech:"
+Various BayTech PDUs
 
 .SH EXTRA ARGUMENTS
 
@@ -31,8 +33,8 @@ This driver supports the following optional settings in the
 \fBups.conf\fR(5):
 
 .IP "mibs=\fIname\fR"
-Set MIB compliance (default=auto, allowed ietf,mge,apcc,netvision,pw,aphel_genesisII,aphel_revelation, raritan).
-With auto the driver will try a select set of objets untill it finds one
+Set MIB compliance (default=auto, allowed entries: refer to the above SUPPORTED HARDWARE).
+With auto the driver will try a select set of objets until it finds one
 that the device responds to.
 
 .IP "community=\fIname\fR"
@@ -84,8 +86,11 @@ The hostname of the UPS is specified with the "port" value in
 .fi
 
 .SH AUTHORS
-.SS Sponsored by MGE UPS SYSTEMS <http://opensource.mgeups.com/>
 Arnaud Quette, Dmitry Frolov
+
+Sponsored by Eaton <http://www.eaton.com>
+and originally by MGE UPS SYSTEMS <http://www.mgeups.com/>
+
 
 .SH SEE ALSO
 

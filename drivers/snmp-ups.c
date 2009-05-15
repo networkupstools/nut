@@ -41,6 +41,8 @@
 #include "mgemib.h"
 #include "netvisionmib.h"
 #include "pwmib.h"
+#include "baytechmib.h"
+
 
 mib2nut_info_t mib2nut[] = {
 	{ "apcc", APCC_MIB_VERSION, APCC_OID_POWER_STATUS,
@@ -59,6 +61,9 @@ mib2nut_info_t mib2nut[] = {
 		APHEL2_OID_MODEL_NAME, eaton_aphel_revelation_mib },
 	{ "raritan", RARITAN_MIB_VERSION, "",
 		RARITAN_OID_MODEL_NAME, raritan_mib },
+	{ "baytech", BAYTECH_MIB_VERSION, "",
+		BAYTECH_OID_MODEL_NAME, baytech_mib },
+	/* end of structure. */
 	{ NULL }
 };
 
@@ -70,7 +75,7 @@ const char *mibname;
 const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.46"
+#define DRIVER_VERSION		"0.47"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {

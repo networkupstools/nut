@@ -64,6 +64,7 @@
 "Baytech"	"RPC3"	"8 outlets"	"powerman-pdu (experimental)"
 "Baytech"	"RPC3-20NC"	"8 outlets"	"powerman-pdu (experimental)"
 "Baytech"	"RPC28-30NC"	"20 outlets"	"powerman-pdu (experimental)"
+"Baytech"	"various RPC"	""	"snmp-ups"
 
 "Belkin"	"Active Battery Backup BU30 series"	"USB"	"megatec_usb"
 "Belkin"	"Home Office F6H350-SER"	""	"genericups upstype=7"
