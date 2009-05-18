@@ -422,7 +422,7 @@ int main(int argc, char **argv)
 		UPS_VERSION);
 
 	prog = argv[0];
-	while ((i = getopt(argc, argv, "+htu:r:DV")) != -1) {
+	while ((i = getopt(argc, argv, "+htu:r:DTV")) != -1) {
 		switch(i) {
 			case 'r':
 				pt_root = optarg;
@@ -441,6 +441,10 @@ int main(int argc, char **argv)
 
 			case 'D':
 				nut_debug_level++;
+				break;
+
+			case 'T':
+				use_timestamp = 1;
 				break;
 
 			case 'h':

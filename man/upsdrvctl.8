@@ -1,4 +1,4 @@
-.TH UPSDRVCTL 8 "Sat Jan 31 2004" "" "Network UPS Tools (NUT)"
+.TH UPSDRVCTL 8 "Mon May 18 2009" "" "Network UPS Tools (NUT)"
 .SH NAME
 upsdrvctl \- UPS driver controller
 .SH SYNOPSIS
@@ -45,6 +45,11 @@ This may be set in ups.conf with "user" in the global section.
 
 .IP "\-D"
 Raise the debug level.  Use this multiple times for additional details.
+
+.IP \-T
+Enable timestamp on output. This is mostly useful when used in conjunction with
+the above debug mode, and will enable timestamp on each debug line to give some
+visibility on execution timeframe.
 
 .SH COMMANDS
 

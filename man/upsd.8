@@ -1,4 +1,4 @@
-.TH UPSD 8 "Mon Jan 22 2007" "" "Network UPS Tools (NUT)" 
+.TH UPSD 8 "Mon May 18 2009" "" "Network UPS Tools (NUT)"
 .SH NAME
 upsd \- UPS information server
 .SH SYNOPSIS
@@ -39,6 +39,11 @@ are:
 
 .IP "\-D"
 Raise the debug level.  Use this multiple times for additional details.
+
+.IP \-T
+Enable timestamp on output. This is mostly useful when used in conjunction with
+the above debug mode, and will enable timestamp on each debug line to give some
+visibility on execution timeframe.
 
 .IP "\-h"
 Display the help text.

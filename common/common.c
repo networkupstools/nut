@@ -33,6 +33,7 @@
 const char *UPS_VERSION = NUT_VERSION_MACRO;
 
 	int	nut_debug_level = 0;
+	int use_timestamp = 0;	/* add timestamp on output messages */
 	static	int	upslog_flags = UPSLOG_STDERR;
 
 static void xbit_set(int *val, int flag)
@@ -274,8 +275,21 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 {
 	int	ret;
 	char	buf[LARGEBUF];
+	size_t tslen = 0;
+	time_t now;
 
-	ret = vsnprintf(buf, sizeof(buf), fmt, va);
+	/* add timestamp to the log output? */
+	if (use_timestamp) {
+		now = time(NULL);
+		ret = strftime(buf, sizeof(buf), "%H:%M:%S: ", localtime(&now));
+
+		if (ret == 0)
+			syslog(LOG_WARNING, "vupslog: strftime needed more than %d bytes",
+			LARGEBUF);
+
+		tslen = ret;
+	}
+	ret = vsnprintf(buf + tslen, sizeof(buf) - tslen, fmt, va);
 
 	if ((ret < 0) || (ret >= (int) sizeof(buf)))
 		syslog(LOG_WARNING, "vupslog: vsnprintf needed more than %d bytes",

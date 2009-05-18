@@ -1,4 +1,4 @@
-.TH NUTUPSDRV 8 "Wed Dec 31 2008" "" "Network UPS Tools (NUT)" 
+.TH NUTUPSDRV 8 "Mon May 18 2009" "" "Network UPS Tools (NUT)"
 .SH NAME  
 nutupsdrv \- generic manual for unified NUT drivers
 .SH SYNOPSIS
@@ -56,6 +56,11 @@ problem you're trying to diagnose.  Therefore, first explain the problem you
 have with a driver to a developer/maintainer, before sending them debugging
 output.  More often than not, if you just pick a level, the output may be
 either too limited or too verbose to be of any use.
+
+.IP \-T
+Enable timestamp on output. This is mostly useful when used in conjunction with
+the above debug mode, and will enable timestamp on each debug line to give some
+visibility on execution timeframe.
 
 .IP "\-i \fIinterval\fR"
 Set the poll interval for the device

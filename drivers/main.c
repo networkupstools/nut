@@ -483,7 +483,7 @@ int main(int argc, char **argv)
 	/* build the driver's extra (-x) variable table */
 	upsdrv_makevartable();
 
-	while ((i = getopt(argc, argv, "+a:kDhx:Lr:u:Vi:")) != -1) {
+	while ((i = getopt(argc, argv, "+a:kDThx:Lr:u:Vi:")) != -1) {
 		switch (i) {
 			case 'a':
 				upsname = optarg;
@@ -496,6 +496,9 @@ int main(int argc, char **argv)
 				break;
 			case 'D':
 				nut_debug_level++;
+				break;
+			case 'T':
+				use_timestamp = 1;
 				break;
 			case 'i':
 				poll_interval = atoi(optarg);

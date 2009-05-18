@@ -1,3 +1,13 @@
+Mon May 18 11:48:31 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ * Enable timestamp on output messages (format "%H:%M:%S: msg")
+   - common/common.c, include/common.h: modify vupslog() to allow optional
+     appending of a timestamp on debug output,
+   - clients/upsmon.c, drivers/main.c, drivers/upsdrvctl.c, server/upsd.c:
+     enable timestamping using the "-T" option,
+   - man/upsmon.8, man/nutupsdrv.8, man/upsdrvctl.8, man/upsd.8: document the
+     timestamp option.
+
 Thu May 14 19:19:52 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
 
  - drivers/baytechmib.h: add native NUT support for Baytech SNMP PDUs (RPCs),
