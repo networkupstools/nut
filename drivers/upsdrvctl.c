@@ -422,7 +422,7 @@ int main(int argc, char **argv)
 		UPS_VERSION);
 
 	prog = argv[0];
-	while ((i = getopt(argc, argv, "+htu:r:DTV")) != -1) {
+	while ((i = getopt(argc, argv, "+htu:r:DV")) != -1) {
 		switch(i) {
 			case 'r':
 				pt_root = optarg;
@@ -441,10 +441,6 @@ int main(int argc, char **argv)
 
 			case 'D':
 				nut_debug_level++;
-				break;
-
-			case 'T':
-				use_timestamp = 1;
 				break;
 
 			case 'h':
@@ -466,6 +462,15 @@ int main(int argc, char **argv)
 		if (nut_debug_level < 2)
 			nut_debug_level = 2;
 	}
+
+	upsdebugx(2, "\n"
+		   "If you're not a NUT core developer, chances are that you're told to enable debugging\n"
+		   "to see why a driver isn't working for you. We're sorry for the confusion, but this is\n"
+		   "the 'upsdrvctl' wrapper, not the driver you're interested in.\n\n"
+		   "Below you'll find one or more lines starting with 'exec:' followed by an absolute\n"
+		   "path to the driver binary and some command line option. This is what the driver\n"
+		   "starts and you need to copy and paste that line and append the debug flags to that\n"
+		   "line (less the 'exec:' prefix).\n");
 
 	if (!strcmp(argv[0], "start"))
 		command = &start_driver;

@@ -1,3 +1,12 @@
+Mon May 25 19:53:02 UTC 2009 / Arjen de Korte <arjen@de-korte.org>
+
+ * Enable timestamp on debug messages by default
+   - common/common.c: prepend elapsed number of seconds and microseconds
+     since start of program for upsdebug() messages,
+   - drivers/upsdrvctl.c: inform people that adding debug flags to upsdrvctl
+     is not the way to debug a driver,     
+   - revert remainder of previous patch
+   
 Mon May 18 11:48:31 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  * Enable timestamp on output messages (format "%H:%M:%S: msg")

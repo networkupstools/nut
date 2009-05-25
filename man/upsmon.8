@@ -1,4 +1,4 @@
-.TH UPSMON 8 "Mon May 18 2009" "" "Network UPS Tools (NUT)"
+.TH UPSMON 8 "Mon Jan 22 2007" "" "Network UPS Tools (NUT)" 
 .SH NAME
 upsmon \- UPS monitor and shutdown controller
 .SH SYNOPSIS
@@ -40,11 +40,6 @@ reload \(hy reread \fBupsmon.conf\fR(5) configuration file.  See
 Raise the debugging level.  upsmon will run in the foreground and prints
 information on stdout about the monitoring process.  Use this multiple
 times for more details.
-
-.IP \-T
-Enable timestamp on output. This is mostly useful when used in conjunction with
-the above debug mode, and will enable timestamp on each debug line to give some
-visibility on execution timeframe.
 
 .IP \-K
 Test for the shutdown flag.  If it exists and contains the magic string

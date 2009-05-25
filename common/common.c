@@ -33,7 +33,6 @@
 const char *UPS_VERSION = NUT_VERSION_MACRO;
 
 	int	nut_debug_level = 0;
-	int use_timestamp = 0;	/* add timestamp on output messages */
 	static	int	upslog_flags = UPSLOG_STDERR;
 
 static void xbit_set(int *val, int flag)
@@ -275,21 +274,8 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 {
 	int	ret;
 	char	buf[LARGEBUF];
-	size_t tslen = 0;
-	time_t now;
 
-	/* add timestamp to the log output? */
-	if (use_timestamp) {
-		now = time(NULL);
-		ret = strftime(buf, sizeof(buf), "%H:%M:%S: ", localtime(&now));
-
-		if (ret == 0)
-			syslog(LOG_WARNING, "vupslog: strftime needed more than %d bytes",
-			LARGEBUF);
-
-		tslen = ret;
-	}
-	ret = vsnprintf(buf + tslen, sizeof(buf) - tslen, fmt, va);
+	ret = vsnprintf(buf, sizeof(buf), fmt, va);
 
 	if ((ret < 0) || (ret >= (int) sizeof(buf)))
 		syslog(LOG_WARNING, "vupslog: vsnprintf needed more than %d bytes",
@@ -297,6 +283,27 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 
 	if (use_strerror)
 		snprintfcat(buf, sizeof(buf), ": %s", strerror(errno));
+
+	if (nut_debug_level > 0) {
+		static struct timeval	start = { 0 };
+		struct timeval		now;
+	
+		gettimeofday(&now, NULL);
+	
+		if (start.tv_sec == 0) {
+			start = now;
+		}
+	
+		if (start.tv_usec > now.tv_usec) {
+			now.tv_usec += 1000000;
+			now.tv_sec -= 1;
+		}
+	
+		now.tv_usec -= start.tv_usec;
+		now.tv_sec -= start.tv_sec;
+	
+		fprintf(stderr, "%4ld.%06ld\t", now.tv_sec, now.tv_usec);
+	}
 
 	if (xbit_test(upslog_flags, UPSLOG_STDERR))
 		fprintf(stderr, "%s\n", buf);

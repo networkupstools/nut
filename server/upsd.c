@@ -957,7 +957,7 @@ int main(int argc, char **argv)
 
 	printf("Network UPS Tools upsd %s\n", UPS_VERSION);
 
-	while ((i = getopt(argc, argv, "+h46p:r:i:fu:Vc:DT")) != -1) {
+	while ((i = getopt(argc, argv, "+h46p:r:i:fu:Vc:D")) != -1) {
 		switch (i) {
 			case 'h':
 				help(progname);
@@ -991,10 +991,6 @@ int main(int argc, char **argv)
 
 			case 'D':
 				nut_debug_level++;
-				break;
-
-			case 'T':
-				use_timestamp = 1;
 				break;
 
 #ifdef	HAVE_IPV6

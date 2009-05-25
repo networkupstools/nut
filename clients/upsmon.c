@@ -1936,7 +1936,7 @@ int main(int argc, char *argv[])
 
 	printf("Network UPS Tools upsmon %s\n", UPS_VERSION);
 
-	while ((i = getopt(argc, argv, "+DThic:f:pu:VK46")) != -1) {
+	while ((i = getopt(argc, argv, "+Dhic:f:pu:VK46")) != -1) {
 		switch (i) {
 			case 'c':
 				if (!strncmp(optarg, "fsd", strlen(optarg)))
@@ -1952,9 +1952,6 @@ int main(int argc, char *argv[])
 				break;
 			case 'D':
 				debuglevel++;
-				break;
-			case 'T':
-				use_timestamp = 1;
 				break;
 			case 'f':
 				configfile = xstrdup(optarg);
