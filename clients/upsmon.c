@@ -69,7 +69,7 @@ static	char	*certpath = NULL;
 static	int	certverify = 0;		/* don't verify by default */
 static	int	forcessl = 0;		/* don't require ssl by default */
 
-static	int	debuglevel = 0, userfsd = 0, use_pipe = 1, pipefd[2];
+static	int	userfsd = 0, use_pipe = 1, pipefd[2];
 
 static	utype_t	*firstups = NULL;
 
@@ -86,22 +86,6 @@ static	sigset_t nut_upsmon_sigmask;
 #else
 #define	shutdown_how 2
 #endif
-
-static void debug(const char *format, ...)
-{
-#ifdef HAVE_STDARG_H
-	va_list	args;
-
-	if (debuglevel < 1)
-		return;
-
-	va_start(args, format);
-	vprintf(format, args);
-	va_end(args);
-#endif
-
-	return;
-}	
 
 static void setflag(int *val, int flag)
 {
@@ -191,7 +175,7 @@ static void do_notify(const utype_t *ups, int ntype)
 
 	for (i = 0; notifylist[i].name != NULL; i++) {
 		if (notifylist[i].type == ntype) {
-			debug("do_notify: ntype 0x%04x (%s)\n", ntype, 
+			upsdebugx(2, "%s: ntype 0x%04x (%s)", __func__, ntype, 
 				notifylist[i].name);
 			snprintf(msg, sizeof(msg), notifylist[i].msg, 
 				ups ? ups->sys : "");
@@ -322,7 +306,7 @@ static int do_upsd_auth(utype_t *ups)
 	}
 
 	/* finally - everything is OK */
-	debug("Logged into UPS %s\n", ups->sys);
+	upsdebugx(1, "Logged into UPS %s", ups->sys);
 	setflag(&ups->status, ST_LOGIN);
 
 	/* now see if we also need to test master permissions */
@@ -379,7 +363,7 @@ static void ups_is_gone(utype_t *ups)
 static void ups_on_batt(utype_t *ups)
 {
 	if (flag_isset(ups->status, ST_ONBATT)) { 	/* no change */
-		debug("ups_on_batt(%s) (no change)\n", ups->sys);
+		upsdebugx(4, "%s: %s (no change)", __func__, ups->sys);
 		return;
 	}
 
@@ -387,7 +371,7 @@ static void ups_on_batt(utype_t *ups)
 
 	ups->linestate = 0;	
 
-	debug("ups_on_batt(%s) (first time)\n", ups->sys);
+	upsdebugx(3, "%s: %s (first time)", __func__, ups->sys);
 
 	/* must have changed from OL to OB, so notify */
 
@@ -399,13 +383,13 @@ static void ups_on_batt(utype_t *ups)
 static void ups_on_line(utype_t *ups)
 {
 	if (flag_isset(ups->status, ST_ONLINE)) { 	/* no change */
-		debug("ups_on_line(%s) (no change)\n", ups->sys);
+		upsdebugx(4, "%s: %s (no change)", __func__, ups->sys);
 		return;
 	}
 
 	sleepval = pollfreq;
 
-	debug("ups_on_line(%s) (first time)\n", ups->sys);
+	upsdebugx(3, "%s: %s (first time)", __func__, ups->sys);
 
 	/* ignore the first OL at startup, otherwise send the notifier */
 	if (ups->linestate != -1)
@@ -465,7 +449,7 @@ static void doshutdown(void)
 		ret = system(shutdowncmd);
 
 		if (ret != 0)
-			upslogx(LOG_ERR, "Unable to call shutdown command: %s\n",
+			upslogx(LOG_ERR, "Unable to call shutdown command: %s",
 				shutdowncmd);
 	}
 
@@ -485,7 +469,7 @@ static void setfsd(utype_t *ups)
 		return;
 	}
 
-	debug("Setting FSD on UPS %s\n", ups->sys);
+	upsdebugx(2, "Setting FSD on UPS %s", ups->sys);
 
 	snprintf(buf, sizeof(buf), "FSD %s\n", ups->upsname);
 
@@ -557,7 +541,7 @@ static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize)
 		return -1;
 	}
 
-	debug("get_var: %s / %s\n", ups->sys, var);
+	upsdebugx(3, "%s: %s / %s", __func__, ups->sys, var);
 
 	ret = upscli_get(&ups->conn, numq, query, &numa, &answer);
 
@@ -577,7 +561,7 @@ static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize)
 
 	if (numa < numq) {
 		upslogx(LOG_ERR, "%s: Error: insufficient data "
-			"(got %d args, need at least %d)\n", 
+			"(got %d args, need at least %d)", 
 			var, numa, numq);
 		return -1;
 	}
@@ -637,7 +621,7 @@ static void forceshutdown(void)
 	utype_t	*ups;
 	int	isamaster = 0;
 
-	debug("Shutting down any UPSes in MASTER mode...\n");
+	upsdebugx(1, "Shutting down any UPSes in MASTER mode...");
 
 	/* set FSD on any "master" UPS entries (forced shutdown in progress) */
 	for (ups = firstups; ups != NULL; ups = ups->next)
@@ -651,7 +635,7 @@ static void forceshutdown(void)
 		doshutdown();
 
 	/* must be the master now */
-	debug("This system is a master... waiting for slave logout...\n");
+	upsdebugx(1, "This system is a master... waiting for slave logout...");
 
 	/* wait up to HOSTSYNC seconds for slaves to logout */
 	slavesync();
@@ -709,7 +693,7 @@ static void recalc(void)
 		/* promote dead UPSes that were last known OB to OB+LB */
 		if ((now - ups->lastpoll) > deadtime)
 			if (flag_isset(ups->status, ST_ONBATT)) {
-				debug ("Promoting dead UPS: %s\n", ups->sys);
+				upsdebugx(1, "Promoting dead UPS: %s", ups->sys);
 				setflag(&ups->status, ST_LOWBATT);
 			}
 
@@ -720,15 +704,15 @@ static void recalc(void)
 
 		/* crit = (FSD) || (OB & LB) > HOSTSYNC seconds */
 		if (is_ups_critical(ups))
-			debug("Critical UPS: %s\n", ups->sys);
+			upsdebugx(1, "Critical UPS: %s", ups->sys);
 		else
 			val_ol += ups->pv;
 
 		ups = ups->next;
 	}
 
-	/* debug("Current power value: %d\n", val_ol);
-	debug("Minimum power value: %d\n", minsupplies); */
+	/* upsdebugx(3, "Current power value: %d", val_ol);
+	upsdebugx(3, "Minimum power value: %d", minsupplies); */
 
 	if (val_ol < minsupplies)
 		forceshutdown();
@@ -737,11 +721,11 @@ static void recalc(void)
 static void ups_low_batt(utype_t *ups)
 {
 	if (flag_isset(ups->status, ST_LOWBATT)) { 	/* no change */
-		debug("ups_low_batt(%s) (no change)\n", ups->sys);
+		upsdebugx(4, "%s: %s (no change)", __func__, ups->sys);
 		return;
 	}
 
-	debug("ups_low_batt(%s) (first time)\n", ups->sys);
+	upsdebugx(3, "%s: %s (first time)", __func__, ups->sys);
 
 	/* must have changed from !LB to LB, so notify */
 
@@ -764,11 +748,11 @@ static void upsreplbatt(utype_t *ups)
 static void ups_fsd(utype_t *ups)
 {
 	if (flag_isset(ups->status, ST_FSD)) {		/* no change */
-		debug("ups_fsd(%s) (no change)\n", ups->sys);
+		upsdebugx(4, "%s: %s (no change)", __func__, ups->sys);
 		return;
 	}
 
-	debug("ups_fsd(%s) (first time)\n", ups->sys);
+	upsdebugx(3, "%s: %s (first time)", __func__, ups->sys);
 
 	/* must have changed from !FSD to FSD, so notify */
 
@@ -779,7 +763,7 @@ static void ups_fsd(utype_t *ups)
 /* cleanly close the connection to a given UPS */
 static void drop_connection(utype_t *ups)
 {
-	debug("Dropping connection to UPS [%s]\n", ups->sys);
+	upsdebugx(2, "Dropping connection to UPS [%s]", ups->sys);
 
 	ups->commstate = 0;
 	ups->linestate = 0;
@@ -821,7 +805,7 @@ static void redefine_ups(utype_t *ups, int pv, const char *un,
 			 */
 
 			if (!flag_isset(ups->status, ST_LOGIN)) {
-				upslogx(LOG_INFO, "UPS [%s]: retrying connection\n",
+				upslogx(LOG_INFO, "UPS [%s]: retrying connection",
 					ups->sys);	
 
 				drop_connection(ups);
@@ -842,7 +826,7 @@ static void redefine_ups(utype_t *ups, int pv, const char *un,
 			/* possibly force reconnection - see above */
 
 			if (!flag_isset(ups->status, ST_LOGIN)) {
-				upslogx(LOG_INFO, "UPS [%s]: retrying connection\n",
+				upslogx(LOG_INFO, "UPS [%s]: retrying connection",
 					ups->sys);	
 
 				drop_connection(ups);
@@ -865,7 +849,7 @@ static void redefine_ups(utype_t *ups, int pv, const char *un,
 		/* possibly force reconnection - see above */
 
 		if (!flag_isset(ups->status, ST_LOGIN)) {
-			upslogx(LOG_INFO, "UPS [%s]: retrying connection\n",
+			upslogx(LOG_INFO, "UPS [%s]: retrying connection",
 				ups->sys);
 
 			drop_connection(ups);
@@ -1001,7 +985,7 @@ static void set_notifymsg(const char *name, const char *msg)
 		}
 	}
 
-	upslogx(LOG_WARNING, "'%s' is not a valid notify event name\n", name);
+	upslogx(LOG_WARNING, "'%s' is not a valid notify event name", name);
 }
 
 static void set_notifyflag(const char *ntype, char *flags)
@@ -1020,7 +1004,7 @@ static void set_notifyflag(const char *ntype, char *flags)
 	}
 
 	if (pos == -1) {
-		upslogx(LOG_WARNING, "Warning: invalid notify type [%s]\n", ntype);
+		upslogx(LOG_WARNING, "Warning: invalid notify type [%s]", ntype);
 		return;
 	}
 
@@ -1050,7 +1034,7 @@ static void set_notifyflag(const char *ntype, char *flags)
 		if (newflag)
 			notifylist[pos].flags |= newflag;
 		else
-			upslogx(LOG_WARNING, "Invalid notify flag: [%s]\n", ptr);
+			upslogx(LOG_WARNING, "Invalid notify flag: [%s]", ptr);
 
 		ptr = tmp;
 	}
@@ -1104,7 +1088,7 @@ static int parse_conf_arg(int numargs, char **arg)
 		powerdownflag = xstrdup(arg[1]);
 
 		if (!reload_flag)
-			upslogx(LOG_INFO, "Using power down flag file %s\n",
+			upslogx(LOG_INFO, "Using power down flag file %s",
 				arg[1]);
 
 		return 1;
@@ -1285,7 +1269,7 @@ static void loadconfig(void)
 /* SIGPIPE handler */
 static void sigpipe(int sig)
 {
-	debug("SIGPIPE: dazed and confused, but continuing...\n");
+	upsdebugx(1, "SIGPIPE: dazed and confused, but continuing...");
 }
 
 /* SIGQUIT, SIGTERM handler */
@@ -1441,7 +1425,7 @@ static int try_connect(utype_t *ups)
 {
 	int	flags = 0, ret;
 
-	debug("Trying to connect to UPS [%s]\n", ups->sys);
+	upsdebugx(1, "Trying to connect to UPS [%s]", ups->sys);
 
 	clearflag(&ups->status, ST_CONNECTED);
 
@@ -1498,7 +1482,7 @@ static void parse_status(utype_t *ups, char *status)
 
 	clear_alarm();
 
-	debug("     status: [%s]\n", status);
+	upsdebugx(2, "%s: [%s]", __func__, status);
 
 	/* empty response is the same as a dead ups */
 	if (!strcmp(status, "")) {
@@ -1522,7 +1506,7 @@ static void parse_status(utype_t *ups, char *status)
 		if (ptr)
 			*ptr++ = '\0';
 
-		debug("    parsing: [%s]: ", statword);
+		upsdebugx(3, "parsing: [%s]", statword);
 
 		if (!strcasecmp(statword, "OL"))
 			ups_on_line(ups);
@@ -1541,8 +1525,6 @@ static void parse_status(utype_t *ups, char *status)
 
 		statword = ptr;
 	} 
-
-	debug("\n");
 }
 
 /* see what the status of the UPS is and handle any changes */
@@ -1556,9 +1538,9 @@ static void pollups(utype_t *ups)
 			return;
 
 	if (upscli_ssl(&ups->conn) == 1)
-		debug("polling ups: %s [SSL]\n", ups->sys);
+		upsdebugx(2, "%s: %s [SSL]", __func__, ups->sys);
 	else
-		debug("polling ups: %s\n", ups->sys);
+		upsdebugx(2, "%s: %s", __func__, ups->sys);
 
 	set_alarm();
 
@@ -1666,7 +1648,7 @@ static int check_pdflag(void)
 
 	if (ret == 0) {
 		/* not there - this is not a shutdown event */
-		printf("Power down flag is not set\n");
+		upslogx(LOG_ERR, "Power down flag is not set");
 		return EXIT_FAILURE;
 	}
 
@@ -1677,7 +1659,7 @@ static int check_pdflag(void)
 	}
 
 	/* only thing left - must be time for a shutdown */
-	printf("Power down flag is set\n");
+	upslogx(LOG_INFO, "Power down flag is set");
 	return EXIT_SUCCESS;
 }
 
@@ -1743,7 +1725,7 @@ static void runparent(int fd)
 	ret = system(shutdowncmd);
 
 	if (ret != 0)
-		upslogx(LOG_ERR, "parent: Unable to call shutdown command: %s\n",
+		upslogx(LOG_ERR, "parent: Unable to call shutdown command: %s",
 			shutdowncmd);
 
 	close(fd);
@@ -1799,7 +1781,7 @@ static void delete_ups(utype_t *target)
 
 	while (ptr) {
 		if (ptr == target) {
-			upslogx(LOG_NOTICE, "No longer monitoring UPS [%s]\n",
+			upslogx(LOG_NOTICE, "No longer monitoring UPS [%s]",
 				target->sys);
 
 			/* disconnect cleanly */
@@ -1823,7 +1805,7 @@ static void delete_ups(utype_t *target)
 	}
 
 	/* shouldn't happen */
-	upslogx(LOG_ERR, "delete_ups: UPS not found\n");
+	upslogx(LOG_ERR, "delete_ups: UPS not found");
 }	
 
 /* see if we can open a file */
@@ -1951,7 +1933,7 @@ int main(int argc, char *argv[])
 					help(argv[0]);
 				break;
 			case 'D':
-				debuglevel++;
+				nut_debug_level++;
 				break;
 			case 'f':
 				configfile = xstrdup(optarg);
@@ -2026,9 +2008,12 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	if (debuglevel < 1)
+	if (nut_debug_level < 1) {
 		background();
-
+	} else {
+		upsdebugx(1, "debug level is '%d'", nut_debug_level);
+	}
+	
 	/* === root parent and unprivileged child split here === */
 
 	/* only do the pipe stuff if the user hasn't disabled it */

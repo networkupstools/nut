@@ -1,3 +1,8 @@
+Wed May 27 20:35:41 UTC 2009 / Arjen de Korte <arjen@de-korte.org>
+
+ - clients/upsmon.c: multilevel debug information (similar to other NUT
+   binaries)
+
 Mon May 25 19:53:02 UTC 2009 / Arjen de Korte <arjen@de-korte.org>
 
  * Enable timestamp on debug messages by default
