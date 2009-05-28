@@ -21,7 +21,7 @@
 # LISTEN <address> [<port>]
 # LISTEN 127.0.0.1 3493
 #
-# This defaults to the global IPv4 listening address and port 3493. You
+# This defaults to the localhost listening address and port 3493.  You
 # may specify each interface you want upsd to listen on for connections,
 # optionally with a port number.
 #
@@ -34,8 +34,8 @@
 
 # =======================================================================
 # MAXCONN <connections>
-# MAXCONN 1024
 #
-# This defaults to 1024 connections. Each UPS, each LISTEN address and each
-# client count as one connection. If the server runs out of connections, it
-# will no longer accept new incoming client connections.
+# This defaults to maximum number allowed on your system.  Each UPS, each
+# LISTEN address and each client count as one connection.  If the server
+# runs out of connections, it will no longer accept new incoming client
+# connections.  Only set this if you know exactly what you're doing.

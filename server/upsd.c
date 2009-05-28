@@ -52,8 +52,8 @@ int	deny_severity = LOG_WARNING;
 	/* default 15 seconds before data is marked stale */
 	int	maxage = 15;
 
-	/* default FD_SETSIZE connections allowed */
-	int	maxconn = FD_SETSIZE;
+	/* preloaded to {OPEN_MAX} in main, can be overridden via upsd.conf */
+	int	maxconn = 0;
 
 	/* preloaded to STATEPATH in main, can be overridden via upsd.conf */
 	char	*statepath = NULL;
@@ -712,7 +712,10 @@ void poll_reload(void)
 	ret = sysconf(_SC_OPEN_MAX);
 
 	if (ret < maxconn) {
-		fatalx(EXIT_FAILURE, "Maximum number of connections limited to %d [requested %d]", ret, maxconn);
+		fatalx(EXIT_FAILURE,
+			"Your system limits the maximum number of connections to %d\n"
+			"but you requested %d. The server won't start until this\n"
+			"problem is resolved.\n", ret, maxconn);
 	}
 
 	fds = xrealloc(fds, maxconn * sizeof(*fds));
@@ -1036,6 +1039,9 @@ int main(int argc, char **argv)
 	if (chroot_path) {
 		chroot_start(chroot_path);
 	}
+
+	/* default to system limit (may be overridden in upsd.conf */
+	maxconn = sysconf(_SC_OPEN_MAX);
 
 	/* handle upsd.conf */
 	load_upsdconf(0);	/* 0 = initial */
