@@ -571,6 +571,12 @@ static int firmware_table_lookup(void)
 			upsdebugx(2, "Matched - cmdchars: %s",
 				compat_tab[i].cmdchars);
 
+			if (strspn(compat_tab[i].firmware, "05")) {
+				dstate_setinfo("ups.model", "Matrix-UPS");
+			else {
+				dstate_setinfo("ups.model", "Smart-UPS");
+			}
+
 			/* matched - run the cmdchars from the table */
 			for (j = 0; j < strlen(compat_tab[i].cmdchars); j++)
 				protocol_verify(compat_tab[i].cmdchars[j]);
