@@ -573,7 +573,7 @@ static int firmware_table_lookup(void)
 
 			if (strspn(compat_tab[i].firmware, "05")) {
 				dstate_setinfo("ups.model", "Matrix-UPS");
-			else {
+			} else {
 				dstate_setinfo("ups.model", "Smart-UPS");
 			}
 
