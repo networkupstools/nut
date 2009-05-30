@@ -102,6 +102,7 @@ static unsigned char *checksum = NULL;
 static int pollfreq = DEFAULT_POLLFREQ;
 static int ups_status = 0;
 static bool_t data_has_changed = FALSE; /* for SEMI_STATIC data polling */
+static bool_t use_interrupt_pipe = TRUE;
 static time_t lastpoll; /* Timestamp the last polling */
 hid_dev_handle_t udev;
 
@@ -716,6 +717,9 @@ void upsdrv_makevartable(void)
 	snprintf(temp, sizeof(temp), "Set polling frequency, in seconds, to reduce data flow (default=%d)",
 		DEFAULT_POLLFREQ);
 	addvar(VAR_VALUE, HU_VAR_POLLFREQ, temp);
+	
+	addvar(VAR_FLAG, "pollonly", "Don't use interrupt pipe, only use polling");
+	
 #ifndef SHUT_MODE
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
 	addvar(VAR_VALUE, "vendor", "Regular expression to match UPS Manufacturer string");
@@ -769,10 +773,14 @@ void upsdrv_updateinfo(void)
 	interval();
 #endif
 	/* Get HID notifications on Interrupt pipe first */
-	evtCount = HIDGetEvents(udev, event, MAX_EVENT_NUM);
-
-	upsdebugx(1, "Got %i HID objects...", evtCount);
-
+	if (use_interrupt_pipe == TRUE) {
+		evtCount = HIDGetEvents(udev, event, MAX_EVENT_NUM);
+		upsdebugx(1, "Got %i HID objects...", (evtCount >= 0) ? evtCount : 0);
+	} else {
+		evtCount = 0;
+		upsdebugx(1, "Not using interrupt pipe...");
+	}
+	
 	/* Process pending events (HID notifications on Interrupt pipe) */
 	for (i = 0; i < evtCount; i++) {
 
@@ -854,6 +862,11 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("driver.parameter.pollfreq", "%d", pollfreq);
 
+	/* ignore (broken) interrupt pipe */
+	if (testvar("pollonly")) {
+		use_interrupt_pipe = FALSE;
+	}
+	
 	time(&lastpoll);
 
 	/* install handlers */
@@ -885,7 +898,7 @@ void upsdrv_initups(void)
 	if (testvar("explore") && getval("vendorid")==NULL) {
 		fatalx(EXIT_FAILURE, "must specify \"vendorid\" when using \"explore\"");
 	}
-
+	
 	/* process the UPS selection options */
 	regex_array[0] = getval("vendorid");
 	regex_array[1] = getval("productid");
@@ -967,7 +980,6 @@ void upsdrv_initups(void)
 		dstate_addcmd("shutdown.return");
 		dstate_addcmd("shutdown.stayoff");
 	}
-
 }
 
 void upsdrv_cleanup(void)
