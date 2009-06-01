@@ -1350,6 +1350,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		case -ENODEV:
 		case -EACCES:
 		case -EIO:
+		case -ENXIO:
 		case -ENOENT:
 			/* Uh oh, got to reconnect! */
 			hd = NULL;
