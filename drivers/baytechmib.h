@@ -20,8 +20,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  */
-#define BAYTECH_MIB_VERSION	"4014"
-/* FIXME: what about 4031? */
+#define BAYTECH_MIB_VERSION	"4031"
 
 /* Baytech MIB */
 #define BAYTECH_OID_MIB			".1.3.6.1.4.1.4779"
@@ -61,22 +60,16 @@ snmp_info_t baytech_mib[] = {
 	{ "outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, NULL, "All outlets", 
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	{ "outlet.count", 0, 1, ".1.3.6.1.4.1.4779.1.3.5.2.1.15.1", "0", 0, NULL },
-	/* FIXME: why these are not registered since the OIDs exists?
-	 * also check the multiplier!
 	{ "outlet.current", 0, 0.1, ".1.3.6.1.4.1.4779.1.3.5.5.1.6.2.1", NULL, 0, NULL, NULL },
-	{ "outlet.voltage", 0, 0.1, ".1.3.6.1.4.1.4779.1.3.5.5.1.8.2.1", NULL, 0, NULL, NULL }, */
+	{ "outlet.voltage", 0, 0.1, ".1.3.6.1.4.1.4779.1.3.5.5.1.8.2.1", NULL, 0, NULL, NULL },
 
 	/* outlet template definition */
 	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.4779.1.3.5.3.1.3.1.%i", NULL, SU_OUTLET, &outlet_status_info[0], NULL },
 	{ "outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.4779.1.3.5.3.1.4.1.%i", NULL, SU_OUTLET, NULL, NULL },
-	/* FIXME: there was probably a bug here (extraneous dot in the define).
-	 * I've also added a default value */
 	{ "outlet.%i.id", 0, 1, ".1.3.6.1.4.1.4779.1.3.5.6.1.3.2.1.%i", "%i", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_OUTLET | SU_FLAG_OK, NULL, NULL },
 	{ "outlet.%i.switchable", 0, 1, ".1.3.6.1.4.1.4779.1.3.5.3.1.1.1.%i", "yes", SU_FLAG_STATIC | SU_OUTLET, NULL, NULL },
 
 	/* instant commands. */
-	/* FIXME isn't there a ".0" that switches *all* the outlets?
-	 * check Eaton Revelation for an example */
 	{ "outlet.%i.load.off", 0, 0, ".1.3.6.1.4.1.4779.1.3.5.3.1.3.1.%i", NULL, SU_TYPE_CMD | SU_OUTLET, NULL, NULL },
 	{ "outlet.%i.load.on", 0, 1, ".1.3.6.1.4.1.4779.1.3.5.3.1.3.1.%i", NULL, SU_TYPE_CMD | SU_OUTLET, NULL, NULL },
 

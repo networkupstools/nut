@@ -1,3 +1,8 @@
+Tue June 30 13:28:42 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - drivers/baytechmib.h: add outlet.{current,voltage} and fix some
+   comments (from Scott Burns, Opengear)
+
 Wed May 27 20:35:41 UTC 2009 / Arjen de Korte <arjen@de-korte.org>
 
  - clients/upsmon.c: multilevel debug information (similar to other NUT
