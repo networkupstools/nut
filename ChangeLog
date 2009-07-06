@@ -1,4 +1,9 @@
-Tue June 30 13:28:42 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
+Mon Jul  6 09:28:10 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - drivers/tripplite.c: fix the reading with some SmartUPS models
+   (patch from Robert Waldie, Opengear)
+
+Tue Jun 30 13:28:42 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - drivers/baytechmib.h: add outlet.{current,voltage} and fix some
    comments (from Scott Burns, Opengear)

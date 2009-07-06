@@ -184,7 +184,7 @@ static void get_letter_cmd(char *str, char *buf, size_t len)
 
 	for (tries = 0; tries < MAXTRIES; ++tries) {
 		ret = send_cmd(str, buf, len);
-		if ((ret > 0) && isdigit((unsigned char)buf[0]))
+		if ((ret > 0) && isalnum((unsigned char)buf[0]))
 			return;
 	}
 	fatalx(EXIT_FAILURE, "\nFailed to find UPS - giving up...");
