@@ -583,6 +583,10 @@ int main(int argc, char **argv)
 	if (do_forceshutdown)
 		forceshutdown();
 
+	/* note: device.type is set early to be overriden by the driver
+	 * when its a pdu! */
+	dstate_setinfo("device.type", "ups");
+
 	/* get the base data established before allowing connections */
 	upsdrv_initinfo();
 	upsdrv_updateinfo();
@@ -598,6 +602,14 @@ int main(int argc, char **argv)
 	/* The poll_interval may have been changed from the default */
 	dstate_setinfo("driver.parameter.pollinterval", "%d", poll_interval);
 
+	/* remap the device.* info from ups.* for the transition period */
+	if (dstate_getinfo("ups.mfr") != NULL)
+		dstate_setinfo("device.mfr", "%s", dstate_getinfo("ups.mfr"));
+	if (dstate_getinfo("ups.model") != NULL)
+		dstate_setinfo("device.model", "%s", dstate_getinfo("ups.model"));
+	if (dstate_getinfo("ups.serial") != NULL)
+		dstate_setinfo("device.serial", "%s", dstate_getinfo("ups.serial"));
+	
 	if (nut_debug_level == 0) {
 		background();
 		writepid(pidfn);

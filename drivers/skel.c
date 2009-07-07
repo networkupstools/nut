@@ -1,6 +1,16 @@
 /*
 	anything commented is optional
 	anything else is mandatory
+	 
+	for more information, refer to:
+	* docs/developers.txt
+	* docs/new-drivers.txt
+	* docs/new-names.txt
+	
+	and possibly also to:
+	* docs/hid-subdrivers.txt for USB/HID devices
+	* or docs/snmp-subdrivers.txt for SNMP devices
+	* or docs/megatec.txt for Megatec / Q1 devices
 */
 
 #include "main.h"
@@ -26,8 +36,12 @@ void upsdrv_initinfo(void)
 {
 	/* try to detect the UPS here - call fatal_with_errno(EXIT_FAILURE, ) if it fails */
 
-	/* dstate_setinfo("ups.mfr", "skel driver"); */
+	/* dstate_setinfo("ups.mfr", "skel manufacturer"); */
 	/* dstate_setinfo("ups.model", "longrun 15000"); */
+	/* note: for a transition period, these data are redundant! */
+	/* dstate_setinfo("device.mfr", "skel manufacturer"); */
+	/* dstate_setinfo("device.model", "longrun 15000"); */
+
 
 	/* upsh.instcmd = instcmd; */
 }

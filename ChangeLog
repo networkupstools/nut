@@ -1,3 +1,12 @@
+Tue Jul  7 11:06:32 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ * device collection completion, for the transition period
+   - drivers/main.c: remap device.{mfr,model,serial} from the ups.*
+     equivalent, and preset device.type to ups so that it only has to be
+     overriden if necessary.
+   - drivers/skel.c: some update for the device collection
+   - docs/new-names.txt: add the device collection description
+
 Mon Jul  6 09:28:10 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - drivers/tripplite.c: fix the reading with some SmartUPS models
