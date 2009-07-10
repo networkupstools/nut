@@ -52,7 +52,8 @@ SERIAL_PAGES = \
 	tripplite.8	\
 	tripplitesu.8	\
 	upscode2.8	\
-	victronups.8
+	victronups.8 \
+	virtual.8
 
 SNMP_PAGES = snmp-ups.8
 
