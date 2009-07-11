@@ -28,7 +28,7 @@ distcheck-light:
 
 # workaround the dist generated files that are also part of the distribution
 distcleancheck_listfiles = \
-	find -type f -exec sh -c 'test -f $(srcdir)/{} || echo {}' ';'
+	find . -type f -exec sh -c 'test -f $(srcdir)/{} || echo {}' ';'
 
 # ----------------------------------------------------------------------
 # targets from old build system (pre-automake).

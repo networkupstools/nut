@@ -1,3 +1,7 @@
+Sat Jul 11 15:58:16 UTC 2009 / Charles Lepple <clepple@gmail.com>
+
+ * Makefile.am: Add "." to "find" command
+
 Sat Jul 11 14:25:00 UTC 2009 / Charles Lepple <clepple@gmail.com>
 
  * drivers/nut_usb.c: Add usb_strerror() to USB error messages.
