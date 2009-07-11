@@ -145,13 +145,13 @@ usb_dev_handle *nutusb_open(const char *port)
 
 	if (usb_set_configuration(dev_h, 1) < 0)
 	{
-		upslogx(LOG_ERR, "Can't set POWERWARE USB configuration");
+		upslogx(LOG_ERR, "Can't set POWERWARE USB configuration: %s", usb_strerror());
 		goto errout;
 	}
 
 	if (usb_claim_interface(dev_h, 0) < 0)
 	{
-		upslogx(LOG_ERR, "Can't claim POWERWARE USB interface");
+		upslogx(LOG_ERR, "Can't claim POWERWARE USB interface: %s", usb_strerror());
   	        goto errout;
 	}
 	else
@@ -159,13 +159,13 @@ usb_dev_handle *nutusb_open(const char *port)
 
 	if (usb_set_altinterface(dev_h, 0) < 0)
 	{
-		upslogx(LOG_ERR, "Can't set POWERWARE USB alternate interface");
+		upslogx(LOG_ERR, "Can't set POWERWARE USB alternate interface: %s", usb_strerror());
   	        goto errout;
 	}
 
 	if (usb_clear_halt(dev_h, 0x81) < 0)
 	{
-		upslogx(LOG_ERR, "Can't reset POWERWARE USB endpoint");
+		upslogx(LOG_ERR, "Can't reset POWERWARE USB endpoint: %s", usb_strerror());
 		goto errout;
 	}
     

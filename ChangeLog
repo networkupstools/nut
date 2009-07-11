@@ -1,3 +1,7 @@
+Sat Jul 11 14:25:00 UTC 2009 / Charles Lepple <clepple@gmail.com>
+
+ * drivers/nut_usb.c: Add usb_strerror() to USB error messages.
+
 Tue Jul  7 11:06:32 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  * device collection completion, for the transition period
