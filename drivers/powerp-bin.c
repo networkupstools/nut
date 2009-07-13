@@ -443,12 +443,7 @@ static int powpan_updateinfo()
 		dstate_setinfo("ups.load", "%d", status.o_load);
 		dstate_setinfo("battery.charge", "%d", status.b_chrg);
 		dstate_setinfo("ups.temperature", "%d", status.u_temp);
-		/*
-		 * The following is just a wild guess. With a nominal input
-		 * frequency of 60 Hz, the PR2200 shows a value of 150 (decimal).
-		 * No idea what it means though, since we got only one reading.
-		 */
-		dstate_setinfo("input.frequency", "%.1f", (float)status.i_freq / 2.5);
+		dstate_setinfo("input.frequency", "%.1f", 45.0 + (float)status.i_freq / 10.0);
 		break;
 	}
 
