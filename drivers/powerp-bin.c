@@ -358,6 +358,17 @@ static void powpan_initinfo()
 		}
 	}
 
+	/*
+	 * FIXME: The following commands need to be reverse engineered. It
+	 * looks like they are used in detecting the UPS model. To rule out
+	 * any incompatibilities, only use them when running in debug mode.
+	 */
+	if (nut_debug_level > 2) {
+		powpan_command("R\x29\r", 3);
+		powpan_command("R\x2B\r", 3);
+		powpan_command("R\x3D\r", 3);
+	}
+		
 	dstate_addcmd("shutdown.stayoff");
 	dstate_addcmd("shutdown.reboot");
 }
