@@ -84,7 +84,7 @@ static int cypress_command(const char *cmd, char *buf, size_t buflen)
 		 * will happen after successfully writing a command to the UPS)
 		 */
 		if (ret <= 0) {
-			upsdebugx(3, "read: timeout");
+			upsdebugx(3, "read: %s", ret ? usb_strerror() : "timeout");
 			return 0;
 		}
 	}
@@ -133,6 +133,7 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 		 * anyway
 		 */
 		if (ret <= 0) {
+			upsdebugx(4, "read: %s", ret ? usb_strerror() : "timeout");
 			break;
 		}
 	}
