@@ -1,5 +1,5 @@
 /*
-* virtual.c: UPS driver clone
+* clone.c: UPS driver clone
 *
 * Copyright (C) 2009 - Arjen de Korte <adkorte-guest@alioth.debian.org>
 *
@@ -25,8 +25,8 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
-#define DRIVER_NAME	"Virtual UPS driver"
-#define DRIVER_VERSION	"0.01"
+#define DRIVER_NAME	"Clone UPS driver"
+#define DRIVER_VERSION	"0.02"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {

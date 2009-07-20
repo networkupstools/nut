@@ -1,10 +1,10 @@
-.TH VIRTUAL 8 "Wed Jul 8 2009" "" "Network UPS Tools (NUT)"
+.TH CLONE 8 "Mon Jul 20 2009" "" "Network UPS Tools (NUT)"
 .SH NAME
-virtual \- UPS driver clone
+clone \- UPS driver clone
 
 .SH NOTE
 This man page only documents the specific features of the
-virtual driver.  For information about the core driver, see
+clone driver.  For information about the core driver, see
 \fBnutupsdrv\fR(8).
 
 .SH DESCRIPTION
@@ -29,7 +29,7 @@ powered by an outlet is a one way street (see \fBIMPORTANT\fR).
 
 .IP "load.status=\fIvalue\fR"
 Recommended.  Set the variable on the 'real' UPS driver that will be used
-to indicate the outlet status (ie on/off).  If not specified, the virtual
+to indicate the outlet status (ie on/off).  If not specified, the clone
 driver will attempt to keep track of the outlet status, but this is less
 reliable.
 
@@ -43,11 +43,11 @@ Set the timer (in seconds) for the outlet to switch on in case the power
 returns after the oulet has been switched off.  Defaults to 30 seconds.
 
 .IP "mincharge=\fIvalue\fR"
-Set the remaining battery level when the virtual UPS switches to LB
+Set the remaining battery level when the clone UPS switches to LB
 (percent).
 
 .IP "minruntime=\fIvalue\fR"
-Set the remaining battery runtime when the virtual UPS switches to LB
+Set the remaining battery runtime when the clone UPS switches to LB
 (seconds).
 
 .SH IMPLEMENTATION
@@ -61,8 +61,8 @@ socket that the 'real' UPS driver is using. For example:
 .fi
 
 .nf
-[virtual-outlet-1]
-   driver = virtual
+[clone-outlet-1]
+   driver = clone
    port = usbhid-ups-realups
    load.on = outlet.1.load.on
    load.off = outlet.1.load.off
@@ -77,20 +77,20 @@ it is OK to initiate the shutdown sequence, the server will latch the FSD
 status and it will not be possible to restart the systems connected without
 restarting the upsd server.
 
-This will be a problem if the power returns after the virtual UPS initiated
+This will be a problem if the power returns after the clone UPS initiated
 the shutdown sequence on it's outlet, but returns before the real UPS begins
-shutting down. The solution is in the virtual driver, that will insert the
+shutting down. The solution is in the clone driver, that will insert the
 FSD flag if needed without the help of a upsmon master.
 
 .SH CAVEATS
-The virtual UPS will follow the status on the real UPS driver.  You can only
-make the virtual UPS shutdown earlier than the real UPS driver, not later.
-If the real UPS driver initiates a shutdown, the virtual UPS driver will
+The clone UPS will follow the status on the real UPS driver.  You can only
+make the clone UPS shutdown earlier than the real UPS driver, not later.
+If the real UPS driver initiates a shutdown, the clone UPS driver will
 immediately follow.
 
 Be aware that the commands to shutdown/restart an outlet on the real UPS
 drivers are not affected, so if you tell the real UPS driver to shutdown
-the outlet of the virtual UPS driver, your clients will lose power without
+the outlet of the clone UPS driver, your clients will lose power without
 warning.
 
 .SH AUTHOR

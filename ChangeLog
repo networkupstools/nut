@@ -1,3 +1,8 @@
+Mon Jul 20 19:20:35 UTC 2009 / Arjen de Korte <arjen@de-korte.org>
+
+ - Renamed 'virtual' to 'clone' driver, to resolve a conflict with the
+   Postfix virtual domain mail delivery agent man pages
+
 Sat Jul 11 15:58:16 UTC 2009 / Charles Lepple <clepple@gmail.com>
 
  * Makefile.am: Add "." to "find" command
