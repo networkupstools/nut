@@ -4,7 +4,7 @@
  *
  * Copyright (C)
  *	2007        Doug Reynolds <mav@wastegate.net>
- *	2007-2008   Arjen de Korte <adkorte-guest@alioth.debian.org>
+ *	2007-2009   Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,8 +49,8 @@ typedef struct {
 } status_t;
 
 typedef struct {
-	char	*val;
-	char	command;
+	const char	*val;
+	const char	command;
 } valtab_t;
 
 static enum {
@@ -60,8 +60,8 @@ static enum {
 
 static unsigned char	powpan_answer[SMALLBUF];
 
-/* default */
-static const valtab_t	tran_high[] = {
+/* PR series */
+static const valtab_t	tran_high_pr[] = {
 	{ "138", -9 }, { "139", -8 }, { "140", -7 }, { "141", -6 }, { "142", -5 },
 	{ "143", -4 }, { "144", -3 }, { "145", -2 }, { "146", -1 }, { "147",  0 },
 	{ NULL }
@@ -74,8 +74,8 @@ static const valtab_t	tran_high_op[] = {
 	{ "150", +5 }, { NULL }
 };
 
-/* default */
-static const valtab_t	tran_low[] = {
+/* PR series */
+static const valtab_t	tran_low_pr[] = {
 	{ "88",  0 }, { "89", +1 }, { "90", +2 }, { "91", +3 }, { "92", +4 },
 	{ "93", +5 }, { "94", +6 }, { "95", +7 }, { "96", +8 }, { "97", +9 },
 	{ NULL }
@@ -88,8 +88,8 @@ static const valtab_t	tran_low_op[] = {
 	{ "95", +5 }, { NULL }
 };
 
-/* default */
-static const valtab_t	batt_low[] = {
+/* PR series */
+static const valtab_t	batt_low_pr[] = {
 	{ "25", -6 }, { "30", -5 }, { "35", -3 }, { "40", -1 }, { "45",  0 },
 	{ "50", +2 }, { "55", +4 }, { "60", +6 }, { NULL }
 };
@@ -102,15 +102,15 @@ static const valtab_t	batt_low_op[] = {
 	{ "40", +7 }, { NULL }
 };
 
-/* default */
-static const valtab_t	out_volt[] = {
+/* PR series */
+static const valtab_t	out_volt_pr[] = {
 	{ "110", -10 }, { "120",  0 }, { "130", +10 }, { NULL }
 };
 
 /* OP series */
 static const valtab_t	out_volt_op[] = {
-	{ "110", -10 }, { "115", -5 }, { "120",  0 }, { "124", +4 }, { "128", +8 },
-	{ "130", +10 }, { NULL }
+	{ "110", -2 }, { "115", -1 }, { "120",  0 }, { "124", +1 }, { "128", +2 },
+	{ "130", +3 }, { NULL }
 };
 
 static const valtab_t 	yes_no_info[] = {
@@ -119,33 +119,23 @@ static const valtab_t 	yes_no_info[] = {
 };
 
 static const struct {
-	char	*var;
-	char	*get;
-	char	*set;
-	const valtab_t	*map;
-} vartab[][6] = {
-	{
-		/* default */
-		{ "input.transfer.high", "R\002\r", "Q\002%c\r", tran_high },
-		{ "input.transfer.low", "R\004\r", "Q\004%c\r", tran_low },
-		{ "battery.charge.low", "R\010\r", "Q\010%c\r", batt_low },
-		{ "output.voltage.nominal", "R\030\r", "Q\030%c\r", out_volt },
-		{ "ups.start.battery", "R\017\r", "Q\017%c\r", yes_no_info },
-		{ NULL }
-	}, {
-		/* OP series */
-		{ "input.transfer.high", "R\002\r", "Q\002%c\r", tran_high_op },
-		{ "input.transfer.low", "R\004\r", "Q\004%c\r", tran_low_op },
-		{ "battery.charge.low", "R\010\r", "Q\010%c\r", batt_low_op },
-		{ "output.voltage.nominal", "R\030\r", "Q\030%c\r", out_volt_op },
-		{ NULL }
-	}	
+	const char	*var;
+	const char	*get;
+	const char	*set;
+	const valtab_t	*map[2];
+} vartab[] = {
+	{ "input.transfer.high", "R\x02\r", "Q\x02%c\r", { tran_high_pr, tran_high_op } },
+	{ "input.transfer.low", "R\x04\r", "Q\x04%c\r", { tran_low_pr, tran_low_op } },
+	{ "battery.charge.low", "R\x08\r", "Q\x08%c\r", { batt_low_pr, batt_low_op } },
+	{ "ups.start.battery", "R\x0F\r", "Q\x0F%c\r", { yes_no_info, yes_no_info } },
+	{ "output.voltage.nominal", "R\x18\r", "Q\x18%c\r", { out_volt_pr, out_volt_op } },
+	{ NULL }
 };
 
 static const struct {
-	char	*cmd;
-	char	*command;
-	int	len;
+	const char	*cmd;
+	const char	*command;
+	const int	len;
 } cmdtab[] = {
 	{ "test.battery.start.quick", "T\230\r", 3 },		/* 20 seconds test */
 	{ "test.battery.stop", "CT\r", 3 },
@@ -161,25 +151,35 @@ static const struct {
 /* map UPS data to (approximated) input/output voltage */
 static int op_volt(unsigned char in)
 {
-	if (in < 27) {
+	if (in < 26) {
 		return 0;
 	}
 
 	return (((float)in * 200 / 230) + 6);
 }
 
+/* map UPS data to (approximated) load */
+static int op_load(unsigned char in)
+{
+	if (in > 108) {
+		return 200;
+	}
+
+	return (in * 200) / 108;
+}
+
 /* map UPS data to (approximated) charge percentage */
 static int op_chrg(unsigned char in)
 {
-	if (in > 185) {
+	if (in > 197) {
 		return 100;
 	}
 
-	if (in < 160) {
+	if (in < 151) {
 		return 0;
 	}
 
-	return pow((float)(in - 160)/2.56, 2);
+	return ((in - 151) * 100) / 46;
 }
 
 /* map UPS data to (approximated) temperature */
@@ -263,9 +263,9 @@ static int powpan_setvar(const char *varname, const char *val)
 	char	command[SMALLBUF];
 	int 	i, j;
 
-	for (i = 0;  vartab[type][i].var != NULL; i++) {
+	for (i = 0;  vartab[i].var != NULL; i++) {
 
-		if (strcasecmp(varname, vartab[type][i].var)) {
+		if (strcasecmp(varname, vartab[i].var)) {
 			continue;
 		}
 
@@ -274,14 +274,14 @@ static int powpan_setvar(const char *varname, const char *val)
 			return STAT_SET_HANDLED;
 		}
 
-		for (j = 0; vartab[type][i].map[j].val != NULL; j++) {
+		for (j = 0; vartab[i].map[type][j].val != NULL; j++) {
 
-			if (strcasecmp(val, vartab[type][i].map[j].val)) {
+			if (strcasecmp(val, vartab[i].map[type][j].val)) {
 				continue;
 			}
 
-			snprintf(command, sizeof(command), vartab[type][i].set,
-				vartab[type][i].map[j].command);
+			snprintf(command, sizeof(command), vartab[i].set,
+				vartab[i].map[type][j].command);
 
 			if ((powpan_command(command, 4) == 3) && (!memcmp(powpan_answer, command, 3))) {
 				dstate_setinfo(varname, "%s", val);
@@ -329,32 +329,32 @@ static void powpan_initinfo()
 		dstate_addcmd(cmdtab[i].cmd);
 	}
 
-	for (i = 0; vartab[type][i].var != NULL; i++) {
+	for (i = 0; vartab[i].var != NULL; i++) {
 		
-		if (powpan_command(vartab[type][i].get, 3) < 2) {
+		if (powpan_command(vartab[i].get, 3) < 2) {
 			continue;
 		}
 
-		for (j = 0; vartab[type][i].map[j].val != NULL; j++) {
+		for (j = 0; vartab[i].map[type][j].val != NULL; j++) {
 
-			if (vartab[type][i].map[j].command != powpan_answer[1]) {
+			if (vartab[i].map[type][j].command != powpan_answer[1]) {
 				continue;
 			}
 
-			dstate_setinfo(vartab[type][i].var, "%s", vartab[type][i].map[j].val);
+			dstate_setinfo(vartab[i].var, "%s", vartab[i].map[type][j].val);
 			break;
 		}
 	
-		if (dstate_getinfo(vartab[type][i].var) == NULL) {
+		if (dstate_getinfo(vartab[i].var) == NULL) {
 			upslogx(LOG_WARNING, "warning: [%d] unknown value for [%s]!",
-				powpan_answer[1], vartab[type][i].var);
+				powpan_answer[1], vartab[i].var);
 			continue;
 		}
 
-		dstate_setflags(vartab[type][i].var, ST_FLAG_RW);
+		dstate_setflags(vartab[i].var, ST_FLAG_RW);
 
-		for (j = 0; vartab[type][i].map[j].val != 0; j++) {
-			dstate_addenum(vartab[type][i].var, "%s", vartab[type][i].map[j].val);
+		for (j = 0; vartab[i].map[type][j].val != NULL; j++) {
+			dstate_addenum(vartab[i].var, "%s", vartab[i].map[type][j].val);
 		}
 	}
 
@@ -441,8 +441,12 @@ static int powpan_updateinfo()
 	{
 	case OP:
 		dstate_setinfo("input.voltage", "%d", op_volt(status.i_volt));
-		dstate_setinfo("output.voltage", "%d", op_volt(status.o_volt));
-		dstate_setinfo("ups.load", "%d", status.o_load * 2);
+		if (status.flags[0] & 0x84) {
+			dstate_setinfo("output.voltage", "%s", dstate_getinfo("output.voltage.nominal"));
+		} else {
+			dstate_setinfo("output.voltage", "%d", op_volt(status.i_volt));
+		}
+		dstate_setinfo("ups.load", "%d", op_load(status.o_load));
 		dstate_setinfo("battery.charge", "%d", op_chrg(status.b_chrg));
 		dstate_setinfo("ups.temperature", "%.1f", op_temp(status.u_temp));
 		dstate_setinfo("input.frequency", "%.1f", op_freq(status.i_freq));
@@ -450,11 +454,15 @@ static int powpan_updateinfo()
 
 	default:
 		dstate_setinfo("input.voltage", "%d", status.i_volt);
-		dstate_setinfo("output.voltage", "%d", status.o_volt);
+		if (status.flags[0] & 0x84) {
+			dstate_setinfo("output.voltage", "%s", dstate_getinfo("output.voltage.nominal"));
+		} else {
+			dstate_setinfo("output.voltage", "%d", status.o_volt);
+		}
 		dstate_setinfo("ups.load", "%d", status.o_load);
 		dstate_setinfo("battery.charge", "%d", status.b_chrg);
 		dstate_setinfo("ups.temperature", "%d", status.u_temp);
-		dstate_setinfo("input.frequency", "%.1f", 45.0 + (float)status.i_freq / 10.0);
+		dstate_setinfo("input.frequency", "%.1f", (status.i_freq == 0) ? 0.0 : 45.0 + (float)status.i_freq / 10.0);
 		break;
 	}
 
