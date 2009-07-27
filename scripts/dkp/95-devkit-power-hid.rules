@@ -12,13 +12,13 @@ KERNEL!="hiddev*", GOTO="dkp_hid_end"
 # if an interface, ignore
 ENV{DEVTYPE}=="usb_interface", GOTO="dkp_hid_end"
 
-ATTRS{idVendor}=="0x03f0", ENV{DKP_VENDOR}="Hewlett Packard"
-ATTRS{idVendor}=="0x0463", ENV{DKP_VENDOR}="Eaton"
-ATTRS{idVendor}=="0x050d", ENV{DKP_VENDOR}="Belkin"
-ATTRS{idVendor}=="0x051d", ENV{DKP_VENDOR}="APC"
-ATTRS{idVendor}=="0x06da", ENV{DKP_VENDOR}="Liebert"
-ATTRS{idVendor}=="0x0764", ENV{DKP_VENDOR}="Cyber Power Systems"
-ATTRS{idVendor}=="0x09ae", ENV{DKP_VENDOR}="TrippLite"
+ATTRS{idVendor}=="03f0", ENV{DKP_VENDOR}="Hewlett Packard"
+ATTRS{idVendor}=="0463", ENV{DKP_VENDOR}="Eaton"
+ATTRS{idVendor}=="050d", ENV{DKP_VENDOR}="Belkin"
+ATTRS{idVendor}=="051d", ENV{DKP_VENDOR}="APC"
+ATTRS{idVendor}=="06da", ENV{DKP_VENDOR}="Liebert"
+ATTRS{idVendor}=="0764", ENV{DKP_VENDOR}="Cyber Power Systems"
+ATTRS{idVendor}=="09ae", ENV{DKP_VENDOR}="TrippLite"
 
 # Hewlett Packard
 ATTRS{idVendor}=="03f0", ATTRS{idProduct}=="1f06", ENV{DKP_BATTERY_TYPE}="ups"

@@ -1,3 +1,8 @@
+Mon Jul 27 22:00:00 UTC 2009 / Arnaud Quette <arnaud.quette@free.fr>
+
+ - tools/nut-usbinfo.pl, scripts/dkp/95-devkit-power-hid.rules: remove
+   the 0x prefix from the VendorIDs
+
 Mon Jul 27 11:21:21 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - tools/nut-usbinfo.pl, scripts/dkp/95-devkit-power-hid.rules: generate

@@ -147,7 +147,7 @@ sub gen_usb_files
 					if ($vendorName{$vendorId}) {
 						$tmpOutputDKp = $tmpOutputDKp."\n# ".$vendorName{$vendorId}."\n";
 					}
-					print $outputDKp "ATTRS{idVendor}==\"".$vendorId."\", ENV{DKP_VENDOR}=\"".$vendorName{$vendorId}."\"\n";
+					print $outputDKp "ATTRS{idVendor}==\"".removeHexPrefix($vendorId)."\", ENV{DKP_VENDOR}=\"".$vendorName{$vendorId}."\"\n";
 					$dkpMfrHeaderDone = 1;
 				}
 				$tmpOutputDKp = $tmpOutputDKp."ATTRS{idVendor}==\"".removeHexPrefix($vendorId);
