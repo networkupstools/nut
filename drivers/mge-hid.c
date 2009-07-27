@@ -33,7 +33,8 @@
 #ifndef SHUT_MODE
 #include "usb-common.h"
 
-/* MGE Office Protection Systems, prev. MGE UPS Systems */
+/* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
+/* Eaton */
 #define MGE_VENDORID		0x0463
 
 /* USB IDs device table */
