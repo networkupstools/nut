@@ -1,3 +1,9 @@
+Mon Jul 27 11:21:21 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - tools/nut-usbinfo.pl, scripts/dkp/95-devkit-power-hid.rules: generate
+   the DeviceKit-power rule file, so that it can be maintained up to
+   date from the NUT source.
+ 
 Mon Jul 20 19:20:35 UTC 2009 / Arjen de Korte <arjen@de-korte.org>
 
  - Renamed 'virtual' to 'clone' driver, to resolve a conflict with the

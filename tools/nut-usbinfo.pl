@@ -33,8 +33,15 @@ my $outputHAL="../scripts/hal/ups-nut-device.fdi.in";
 # Hotplug output file
 my $outputHotplug="../scripts/hotplug/libhid.usermap";
 
-# output file udev
+# udev output file
 my $outputUdev="../scripts/udev/nut-usbups.rules.in";
+
+# DeviceKit-power output file
+my $outputDKp="../scripts/dkp/95-devkit-power-hid.rules";
+# tmp output, to allow generating the ENV{DKP_VENDOR} header list
+my $tmpOutputDKp;
+# mfr header flag
+my $dkpMfrHeaderDone = 0;
 
 # array of products indexed by vendorID 
 my %vendor;
@@ -78,6 +85,15 @@ sub gen_usb_files
 	print $outUdev 'BUS!="usb", GOTO="nut-usbups_rules_end"'."\n\n";
 	print $outUdev 'LABEL="nut-usbups_rules_real"'."\n";
 
+	# DeviceKit-power file header
+	open my $outputDKp, ">$outputDKp" || die "error $outputDKp : $!";
+	print $outputDKp '##############################################################################################################'."\n";
+	print $outputDKp '# Uninterruptible Power Supplies with USB HID interfaces'."\n#\n";
+	print $outputDKp '# to keep up to date, monitor: http://svn.debian.org/wsvn/nut/trunk/scripts/dkp/95-devkit-power-hid.rules'."\n\n";
+	print $outputDKp '# only support USB, else ignore'."\n".'SUBSYSTEM!="usb", GOTO="dkp_hid_end"'."\n\n";
+	print $outputDKp '# if usbraw device, ignore'."\n".'KERNEL!="hiddev*", GOTO="dkp_hid_end"'."\n\n";
+	print $outputDKp '# if an interface, ignore'."\n".'ENV{DEVTYPE}=="usb_interface", GOTO="dkp_hid_end"'."\n\n";
+
 	# generate the file in alphabetical order (first for VendorID, then for ProductID)
 	foreach my $vendorId (sort { lc $a cmp lc $b } keys  %vendorName)
 	{
@@ -96,6 +112,9 @@ sub gen_usb_files
 		if ($vendorName{$vendorId}) {
 			print $outUdev "\n# ".$vendorName{$vendorId}."\n";
 		}
+
+		# DeviceKit-power vendor header flag
+		$dkpMfrHeaderDone = 0;
 
 		foreach my $productId (sort { lc $a cmp lc $b } keys %{$vendor{$vendorId}})
 		{
@@ -118,6 +137,23 @@ sub gen_usb_files
 			print $outUdev "SYSFS{idVendor}==\"".removeHexPrefix($vendorId);
 			print $outUdev "\", SYSFS{idProduct}==\"".removeHexPrefix($productId)."\",";
 			print $outUdev ' MODE="664", GROUP="@RUN_AS_GROUP@"'."\n";
+			
+			# DeviceKit-power device entry (only for USB/HID devices!)
+			if ($vendor{$vendorId}{$productId}{"driver"} eq "usbhid-ups")
+			{
+				if ($dkpMfrHeaderDone == 0)
+				{
+					# DeviceKit-power vendor header
+					if ($vendorName{$vendorId}) {
+						$tmpOutputDKp = $tmpOutputDKp."\n# ".$vendorName{$vendorId}."\n";
+					}
+					print $outputDKp "ATTRS{idVendor}==\"".$vendorId."\", ENV{DKP_VENDOR}=\"".$vendorName{$vendorId}."\"\n";
+					$dkpMfrHeaderDone = 1;
+				}
+				$tmpOutputDKp = $tmpOutputDKp."ATTRS{idVendor}==\"".removeHexPrefix($vendorId);
+				$tmpOutputDKp = $tmpOutputDKp."\", ATTRS{idProduct}==\"".removeHexPrefix($productId)."\",";
+				$tmpOutputDKp = $tmpOutputDKp.' ENV{DKP_BATTERY_TYPE}="ups"'."\n";
+			}
 		}
 		# HAL vendor footer
 		print $outHAL "      </match>\n";
@@ -126,9 +162,15 @@ sub gen_usb_files
 	print $outHAL "    </match>\n";
 	print $outHAL "  </device>\n";
 	print $outHAL "</deviceinfo>\n";
-	
+
 	# Udev footer
 	print $outUdev "\n".'LABEL="nut-usbups_rules_end"'."\n";
+
+	# DeviceKit-power...
+	# ...flush device table
+	print $outputDKp $tmpOutputDKp;
+	# ...and print footer
+	print $outputDKp "\n".'LABEL="dkp_hid_end"'."\n";
 }
 
 sub find_usbdevs
@@ -188,7 +230,7 @@ sub find_usbdevs
 			}
 			
 			# store date (to be optimized)
-			$vendorName{$VendorID}=$VendorName;
+			$vendorName{$VendorID}=trim($VendorName);
 			$vendor{$VendorID}{$ProductID}{"comment"}=$lastComment;
 			# process the driver name
 			my $driver=$nameFile;
