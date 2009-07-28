@@ -507,7 +507,7 @@ static char *mge_ambient_info(const char *val)
 	switch (mge_ambient_value)
 	{
 	case 1:
-		return val;
+		return (char *)val;
 	default:
 		return NULL;
 	}
