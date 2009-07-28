@@ -215,7 +215,7 @@ dist_noinst_HEADERS = apccmib.h apc-hid.h apcsmart.h baytechmib.h bcmxcp.h	\
  mge-xml.h microdowell.h netvisionmib.h netxml-ups.h nut_usb.h oneac.h		\
  powercom.h powerpanel.h powerp-bin.h powerp-txt.h pwmib.h raritan-mib.h	\
  safenet.h serial.h snmp-ups.h solis.h tripplite.h tripplite-hid.h 			\
- tripplitemib.h upshandler.h usb-common.h usbhid-ups.h
+ upshandler.h usb-common.h usbhid-ups.h
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,
