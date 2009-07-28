@@ -139,7 +139,7 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 	}
 
 	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
-	return (i > 0) ? i : ret;
+	return (i > 0) ? (int)i : ret;
 }
 
 
