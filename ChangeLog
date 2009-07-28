@@ -1,3 +1,11 @@
+Tue Jul 28 11:47:11 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - docs/build-doc.sh, docs/packaging.{txt,html}, docs/icons/*: some
+   testing around the NUT Packager Guide to validate the general
+   approach of the new documentation. The shell script is there to track
+   the command line used to generate the HTML output, and the generated
+   HTML file to show the result.
+   
 Mon Jul 20 19:20:35 UTC 2009 / Arjen de Korte <arjen@de-korte.org>
 
  - Renamed 'virtual' to 'clone' driver, to resolve a conflict with the

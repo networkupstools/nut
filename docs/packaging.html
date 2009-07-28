@@ -1,0 +1,1220 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.2.7" />
+<style type="text/css">
+/* Debug borders */
+p, li, dt, dd, div, pre, h1, h2, h3, h4, h5, h6 {
+/*
+  border: 1px solid red;
+*/
+}
+
+body {
+  margin: 1em 5% 1em 5%;
+}
+
+a {
+  color: blue;
+  text-decoration: underline;
+}
+a:visited {
+  color: fuchsia;
+}
+
+em {
+  font-style: italic;
+  color: navy;
+}
+
+strong {
+  font-weight: bold;
+  color: #083194;
+}
+
+tt {
+  color: navy;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #527bbd;
+  font-family: sans-serif;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+h1, h2, h3 {
+  border-bottom: 2px solid silver;
+}
+h2 {
+  padding-top: 0.5em;
+}
+h3 {
+  float: left;
+}
+h3 + * {
+  clear: left;
+}
+
+div.sectionbody {
+  font-family: serif;
+  margin-left: 0;
+}
+
+hr {
+  border: 1px solid silver;
+}
+
+p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+ul, ol, li > p {
+  margin-top: 0;
+}
+
+pre {
+  padding: 0;
+  margin: 0;
+}
+
+span#author {
+  color: #527bbd;
+  font-family: sans-serif;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+span#email {
+}
+span#revision {
+  font-family: sans-serif;
+}
+
+div#footer {
+  font-family: sans-serif;
+  font-size: small;
+  border-top: 2px solid silver;
+  padding-top: 0.5em;
+  margin-top: 4.0em;
+}
+div#footer-text {
+  float: left;
+  padding-bottom: 0.5em;
+}
+div#footer-badges {
+  float: right;
+  padding-bottom: 0.5em;
+}
+
+div#preamble,
+div.tableblock, div.imageblock, div.exampleblock, div.verseblock,
+div.quoteblock, div.literalblock, div.listingblock, div.sidebarblock,
+div.admonitionblock {
+  margin-right: 10%;
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+div.admonitionblock {
+  margin-top: 2.5em;
+  margin-bottom: 2.5em;
+}
+
+div.content { /* Block element content. */
+  padding: 0;
+}
+
+/* Block element titles. */
+div.title, caption.title {
+  color: #527bbd;
+  font-family: sans-serif;
+  font-weight: bold;
+  text-align: left;
+  margin-top: 1.0em;
+  margin-bottom: 0.5em;
+}
+div.title + * {
+  margin-top: 0;
+}
+
+td div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content + div.title {
+  margin-top: 0.0em;
+}
+
+div.sidebarblock > div.content {
+  background: #ffffee;
+  border: 1px solid silver;
+  padding: 0.5em;
+}
+
+div.listingblock {
+  margin-right: 0%;
+}
+div.listingblock > div.content {
+  border: 1px solid silver;
+  background: #f4f4f4;
+  padding: 0.5em;
+}
+
+div.quoteblock {
+  padding-left: 2.0em;
+}
+div.quoteblock > div.attribution {
+  padding-top: 0.5em;
+  text-align: right;
+}
+
+div.verseblock {
+  padding-left: 2.0em;
+}
+div.verseblock > div.content {
+  white-space: pre;
+}
+div.verseblock > div.attribution {
+  padding-top: 0.75em;
+  text-align: left;
+}
+/* DEPRECATED: Pre version 8.2.7 verse style literal block. */
+div.verseblock + div.attribution {
+  text-align: left;
+}
+
+div.admonitionblock .icon {
+  vertical-align: top;
+  font-size: 1.1em;
+  font-weight: bold;
+  text-decoration: underline;
+  color: #527bbd;
+  padding-right: 0.5em;
+}
+div.admonitionblock td.content {
+  padding-left: 0.5em;
+  border-left: 2px solid silver;
+}
+
+div.exampleblock > div.content {
+  border-left: 2px solid silver;
+  padding: 0.5em;
+}
+
+div.imageblock div.content { padding-left: 0; }
+div.imageblock img { border: 1px solid silver; }
+span.image img { border-style: none; }
+
+dl {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+dt {
+  margin-top: 0.5em;
+  margin-bottom: 0;
+  font-style: normal;
+}
+dd > *:first-child {
+  margin-top: 0.1em;
+}
+
+ul, ol {
+    list-style-position: outside;
+}
+div.olist > ol {
+  list-style-type: decimal;
+}
+div.olist2 > ol {
+  list-style-type: lower-alpha;
+}
+
+div.tableblock > table {
+  border: 3px solid #527bbd;
+}
+thead {
+  font-family: sans-serif;
+  font-weight: bold;
+}
+tfoot {
+  font-weight: bold;
+}
+
+div.hlist {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+div.hlist td {
+  padding-bottom: 15px;
+}
+td.hlist1 {
+  vertical-align: top;
+  font-style: normal;
+  padding-right: 0.8em;
+}
+td.hlist2 {
+  vertical-align: top;
+}
+
+@media print {
+  div#footer-badges { display: none; }
+}
+
+div#toctitle {
+  color: #527bbd;
+  font-family: sans-serif;
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-top: 1.0em;
+  margin-bottom: 0.1em;
+}
+
+div.toclevel1, div.toclevel2, div.toclevel3, div.toclevel4 {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+div.toclevel2 {
+  margin-left: 2em;
+  font-size: 0.9em;
+}
+div.toclevel3 {
+  margin-left: 4em;
+  font-size: 0.9em;
+}
+div.toclevel4 {
+  margin-left: 6em;
+  font-size: 0.9em;
+}
+/* Workarounds for IE6's broken and incomplete CSS2. */
+
+div.sidebar-content {
+  background: #ffffee;
+  border: 1px solid silver;
+  padding: 0.5em;
+}
+div.sidebar-title, div.image-title {
+  color: #527bbd;
+  font-family: sans-serif;
+  font-weight: bold;
+  margin-top: 0.0em;
+  margin-bottom: 0.5em;
+}
+
+div.listingblock div.content {
+  border: 1px solid silver;
+  background: #f4f4f4;
+  padding: 0.5em;
+}
+
+div.quoteblock-attribution {
+  padding-top: 0.5em;
+  text-align: right;
+}
+
+div.verseblock-content {
+  white-space: pre;
+}
+div.verseblock-attribution {
+  padding-top: 0.75em;
+  text-align: left;
+}
+
+div.exampleblock-content {
+  border-left: 2px solid silver;
+  padding-left: 0.5em;
+}
+
+/* IE6 sets dynamically generated links as visited. */
+div#toc a:visited { color: blue; }
+
+/* Because IE6 child selector is broken. */
+div.olist2 ol {
+  list-style-type: lower-alpha;
+}
+div.olist2 div.olist ol {
+  list-style-type: decimal;
+}
+</style>
+<script type="text/javascript">
+/*<![CDATA[*/
+window.onload = function(){generateToc(2)}
+/* Author: Mihai Bazon, September 2002
+ * http://students.infoiasi.ro/~mishoo
+ *
+ * Table Of Content generator
+ * Version: 0.4
+ *
+ * Feel free to use this script under the terms of the GNU General Public
+ * License, as long as you do not remove or alter this notice.
+ */
+
+ /* modified by Troy D. Hanson, September 2006. License: GPL */
+ /* modified by Stuart Rackham, October 2006. License: GPL */
+
+function getText(el) {
+  var text = "";
+  for (var i = el.firstChild; i != null; i = i.nextSibling) {
+    if (i.nodeType == 3 /* Node.TEXT_NODE */) // IE doesn't speak constants.
+      text += i.data;
+    else if (i.firstChild != null)
+      text += getText(i);
+  }
+  return text;
+}
+
+function TocEntry(el, text, toclevel) {
+  this.element = el;
+  this.text = text;
+  this.toclevel = toclevel;
+}
+
+function tocEntries(el, toclevels) {
+  var result = new Array;
+  var re = new RegExp('[hH]([2-'+(toclevels+1)+'])');
+  // Function that scans the DOM tree for header elements (the DOM2
+  // nodeIterator API would be a better technique but not supported by all
+  // browsers).
+  var iterate = function (el) {
+    for (var i = el.firstChild; i != null; i = i.nextSibling) {
+      if (i.nodeType == 1 /* Node.ELEMENT_NODE */) {
+        var mo = re.exec(i.tagName)
+        if (mo)
+          result[result.length] = new TocEntry(i, getText(i), mo[1]-1);
+        iterate(i);
+      }
+    }
+  }
+  iterate(el);
+  return result;
+}
+
+// This function does the work. toclevels = 1..4.
+function generateToc(toclevels) {
+  var toc = document.getElementById("toc");
+  var entries = tocEntries(document.getElementsByTagName("body")[0], toclevels);
+  for (var i = 0; i < entries.length; ++i) {
+    var entry = entries[i];
+    if (entry.element.id == "")
+      entry.element.id = "toc" + i;
+    var a = document.createElement("a");
+    a.href = "#" + entry.element.id;
+    a.appendChild(document.createTextNode(entry.text));
+    var div = document.createElement("div");
+    div.appendChild(a);
+    div.className = "toclevel" + entry.toclevel;
+    toc.appendChild(div);
+  }
+  if (entries.length == 0)
+    document.getElementById("header").removeChild(toc);
+}
+/*]]>*/
+</script>
+<title>Network UPS Tools Packager Guide</title>
+</head>
+<body>
+<div id="header">
+<h1>Network UPS Tools Packager Guide</h1>
+<span id="author">Arnaud Quette</span><br />
+<span id="email"><tt>&lt;<a href="mailto:arnaud.quette@free.fr">arnaud.quette@free.fr</a>&gt;</tt></span><br />
+<div id="toc">
+  <div id="toctitle">Table of Contents</div>
+  <noscript><p><b>JavaScript must be enabled in your browser to display the table of contents.</b></p></noscript>
+</div>
+</div>
+<div id="preamble">
+<div class="sectionbody">
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="./icons/warning.png" alt="Warning" />
+</td>
+<td class="content">this is a Work In Progress document.</td>
+</tr></table>
+</div>
+</div>
+</div>
+<h2 id="_abstract">1. Abstract</h2>
+<div class="sectionbody">
+<div class="para"><p>The aim of this document is to describe the best way to package the
+Network UPS Tools, and the best practices across the various packaging
+implementation of NUT.</p></div>
+<div class="para"><p>So as to these can be spread on all supported platforms as a standard,
+and as a foundation block to build upon.</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><tt>*sandbox*
+that have been done to help those improving, and give advice on what's
+the best way to package NUT for the remaining "not yet packaged"
+platform (Sun, Aix, Mac, ...). The ultimate aim is to have NUT
+well packaged (all NUT features available) on all supported
+platforms.</tt></pre>
+</div></div>
+</div>
+<h2 id="_introduction">2. Introduction</h2>
+<div class="sectionbody">
+<div class="para"><p>Packaging is a final aim for a software. It ease and complete the
+software integration into an OS, and allows users to have an easy
+software installation and support out of the box.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="./icons/note.png" alt="Note" />
+</td>
+<td class="content">making NUT packaging more uniform should help its support and
+maintenance accross the supported OS.</td>
+</tr></table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre><tt>*sandbox*
+This document assumes that you have read the other NUT document such
+as INSTALL, FAQ, shutdown.txt, ...
+
+Facts about NUT packaging
+=========================
+
+NUT has so much evolved those two last years (with USB and SNMP
+support, the premices of libraries, ...) that the simple
+"1, 2 or 3  package(s)" approach is no more suitable.
+
+This fact has reached a high level since NUT 1.4. Actually,
+doing this would result in either being forced to install hosts
+of unneeded dependencies (net-snmp, gd, ... as seen on SuSE),
+to have a partially broken package [1] or not being able to
+use all NUT features [2].
+
+Let's now have an overview on how NUT is currently packaged:
+
+        1) Debian:
+        http://packages.qa.debian.org/n/nut.html
+                nut, nut-dev, nut-usb, nut-snmp, nut-cgi, nut-doc
+
+        2) Mandriva
+        http://cvs.mandriva.com/cgi-bin/cvsweb.cgi/SPECS/nut/
+                nut-server
+                nut
+                nut-cgi
+
+        3) SuSE / Novell
+                nut
+
+        4) RedHat
+
+        5) PLD
+        http://cvs.pld-linux.org/cgi-bin/cvsweb/SPECS/nut.spec
+
+        ... (FreeBSD, Gentoo Linux, IRIX, NetBSD, OpenBSD)
+
+This shows how much the packages name split is now scattered.
+The result is:
+- that a user of several systems will be lost, and will
+waste time
+- there is a big waste of energy
+- this makes things hard to create standard configuration
+wizards
+
+[1] NUT build on Debian GNU/Linux m68k and Hurd was once
+broken due to hiddev dependencies, and usb support still
+included in the core package.
+
+[2]
+- snmp-ups driver is not available under Mandrake GNU/Linux,
+but its man is present. See
+http://rpms.mandrakeclub.com/rpms/mandrake/9.1/i586/Mandrake/RPMS/nut-server-1.2.1-4mdk.i586.html
+- secured ssh network mode not available (due to deps and/or non free)
+- some systems don't provide libupsclient lib/header/.pc so as to
+client application (such as wmnut) can't be built
+- the logger function is not (well) used, same goes for the syslog (triple
+redundancy in Mandriva)
+- the solution is partial in every system: lost of tests
+case / feedback could be shared
+...</tt></pre>
+</div></div>
+</div>
+<h2 id="_packagers_involved">3. Packagers involved</h2>
+<div class="sectionbody">
+<div class="para"><p>The following packagers are working on this subject:</p></div>
+<div class="ilist"><ul>
+<li>
+<p>
+Debian (and derivatives): Arnaud Quette &lt;<a href="mailto:aquette@debian.org">aquette@debian.org</a>&gt;
+</p>
+</li>
+<li>
+<p>
+SuSE/Novell:  Stanislav Brabec &lt;<a href="mailto:sbrabec@suse.cz">sbrabec@suse.cz</a>&gt;
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="./icons/note.png" alt="Note" />
+</td>
+<td class="content">the people below should be contacted to (re)launch discussions!</td>
+</tr></table>
+</div>
+<div class="para"><p>The following packagers should be interested in working on this subject:</p></div>
+<div class="ilist"><ul>
+<li>
+<p>
+FreeBSD: Thierry Thomas? &lt;&gt;
+</p>
+</li>
+<li>
+<p>
+Mandriva: Oden Erikson? &lt;&gt;
+</p>
+</li>
+<li>
+<p>
+RedHat / Fedora Core: &lt;&gt;
+</p>
+</li>
+<li>
+<p>
+Gentoo: &lt;&gt;
+</p>
+</li>
+<li>
+<p>
+NetBSD: &lt;&gt;
+</p>
+</li>
+<li>
+<p>
+OpenBSD: &lt;&gt;
+</p>
+</li>
+<li>
+<p>
+PLD: Andrzej Zawadzki &lt;<a href="mailto:zawadaa@wp.pl">zawadaa@wp.pl</a>&gt;
+</p>
+</li>
+<li>
+<p>
+E-Smith: Charlie Brady &lt;<a href="mailto:charlieb-nut-upsdev@e-smith.com">charlieb-nut-upsdev@e-smith.com</a>&gt;
+</p>
+</li>
+<li>
+<p>
+Windows: check with WinNUT author?!
+</p>
+</li>
+<li>
+<p>
+MacOS: &lt;&gt; &#8658; Charles Lepple? &lt;&gt;
+</p>
+</li>
+<li>
+<p>
+HP-UX: &lt;&gt;
+</p>
+</li>
+<li>
+<p>
+IBM AIX: &lt;&gt;
+</p>
+</li>
+<li>
+<p>
+Solaris: &lt;&gt;
+</p>
+</li>
+</ul></div>
+</div>
+<h2 id="_possible_use_cases">4. Possible use cases</h2>
+<div class="sectionbody">
+<div class="ilist"><ul>
+<li>
+<p>
+standalone (1 system + 1-n UPS)
+</p>
+</li>
+<li>
+<p>
+network server (same as standalone, but serving data to network clients)
+</p>
+</li>
+<li>
+<p>
+network monitoring client
+</p>
+</li>
+<li>
+<p>
+network supervision client
+</p>
+</li>
+</ul></div>
+<div class="para"><p>TO BE COMPLETED&#8230;</p></div>
+</div>
+<h2 id="_optimised_packaging_proposal">5. Optimised packaging proposal</h2>
+<div class="sectionbody">
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="./icons/note.png" alt="Note" />
+</td>
+<td class="content">The below proposed packages split is subject to discussion.</td>
+</tr></table>
+</div>
+<div class="para"><p>The aim of this is to:</p></div>
+<div class="ilist"><ul>
+<li>
+<p>
+rationalise split according to the above use cases,
+</p>
+</li>
+<li>
+<p>
+share ressources (descriptions, i18n, &#8230;)
+</p>
+</li>
+<li>
+<p>
+find the best compromise between available features and dependencies,
+</p>
+</li>
+<li>
+<p>
+standardize nut packages name,
+</p>
+</li>
+<li>
+<p>
+create the foundation for the upcoming and underway improvements,
+</p>
+</li>
+<li>
+<p>
+improve nut integration
+</p>
+</li>
+<li>
+<p>
+ease and improve user experience.
+</p>
+</li>
+</ul></div>
+<div class="para"><p>This standard was created by:</p></div>
+<div class="ilist"><ul>
+<li>
+<p>
+capitalizing the experience of existing packages,
+</p>
+</li>
+<li>
+<p>
+using and improving the use of all nut features
+</p>
+</li>
+<li>
+<p>
+considering upcoming nut changes and improvements
+</p>
+</li>
+<li>
+<p>
+working closer with packagers.
+</p>
+</li>
+</ul></div>
+<h3 id="_overview_of_the_package_tree">5.1. Overview of the package tree</h3><div style="clear:left"></div>
+<div class="para"><p>FIXME: make a dependency graph</p></div>
+<div class="ilist"><ul>
+<li>
+<p>
+<a href="#pkg-nut">nut</a>
+</p>
+</li>
+<li>
+<p>
+<a href="#pkg-libupsclient1">libupsclient1</a>
+</p>
+</li>
+<li>
+<p>
+<a href="#pkg-libupsclient1-dev">libupsclient1-dev</a>
+</p>
+</li>
+<li>
+<p>
+<a href="#pkg-nut-cgi">nut-cgi</a>
+</p>
+</li>
+<li>
+<p>
+<a href="#pkg-nut-hal-drivers">nut-hal-drivers</a>
+</p>
+</li>
+<li>
+<p>
+<a href="#pkg-nut-powerman-pdu">nut-powerman-pdu</a>
+</p>
+</li>
+<li>
+<p>
+<a href="#pkg-nut-snmp">nut-snmp</a>
+</p>
+</li>
+<li>
+<p>
+<a href="#pkg-nut-xml">nut-xml</a>
+</p>
+</li>
+<li>
+<p>
+<a href="#pkg-nut-clients">nut-clients</a>
+</p>
+</li>
+<li>
+<p>
+<a href="#pkg-python-pynut">python-pynut</a>
+</p>
+</li>
+<li>
+<p>
+<a href="#pkg-python-nut-gui">python-nut-gui</a> (or nut-control-center or Ultimate NUT Tool&#8230;)
+</p>
+</li>
+<li>
+<p>
+<a href="#pkg-nut-doc">nut-doc</a>
+</p>
+</li>
+</ul></div>
+<h3 id="_detailed_view_of_the_package_tree">5.2. Detailed view of the package tree</h3><div style="clear:left"></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="./icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="olist"><ol>
+<li>
+<p>
+The <strong>Desc</strong> field represent the package's description, as exposed by
+the packaging system. Each package's description is composed of a
+paragraph common to all NUT packages, and a part that is specific to the
+package. The common part (further referenced by <strong>COMMON DESC</strong>) is:
+</p>
+</li>
+</ol></div>
+<div class="quoteblock">
+<div class="quoteblock-content">
+<div class="literalblock">
+<div class="content">
+<pre><tt>Network UPS Tools (NUT) is a client/server monitoring system that allows computers to share
+uninterruptible power supply (UPS) and power distribution unit (PDU)
+hardware. Clients access the hardware through the server, and are notified
+whenever the power status changes.</tt></pre>
+</div></div>
+</div>
+<div class="quoteblock-attribution">
+</div></div>
+<div class="olist"><ol>
+<li>
+<p>
+The <strong>Files</strong> field lists the content of the package.
+</p>
+</li>
+<li>
+<p>
+The mentioned <strong>Size</strong> is a rough estimation of packaged and installed
+size. This may varies across the systems and architecture, and is based
+upon the Debian x86 packages.
+</p>
+</li>
+<li>
+<p>
+The <strong>Deps</strong> field lists the dependencies of the packages. The exact
+name may vary across the various systems.
+</p>
+</li>
+<li>
+<p>
+The <strong>Comment</strong> field is used to place comment for points subject to
+discussion.
+</p>
+</li>
+</ol></div>
+</td>
+</tr></table>
+</div>
+<h4 id="pkg-nut">5.2.1. nut</h4>
+<div class="ilist"><ul>
+<li>
+<p>
+Desc:
+</p>
+</li>
+<li>
+<p>
+Files: dummy/serial/USB drivers <tt> upsd </tt> upslog
+</p>
+</li>
+<li>
+<p>
+Size:
+</p>
+</li>
+<li>
+<p>
+Deps:
+</p>
+</li>
+</ul></div>
+<h4 id="pkg-libupsclient1">5.2.2. libupsclient1</h4>
+<div class="ilist"><ul>
+<li>
+<p>
+Desc:
+</p>
+</li>
+<li>
+<p>
+Files:
+</p>
+</li>
+<li>
+<p>
+Size:
+</p>
+</li>
+<li>
+<p>
+Deps:
+</p>
+</li>
+</ul></div>
+<h4 id="pkg-libupsclient1-dev">5.2.3. libupsclient1-dev</h4>
+<div class="ilist"><ul>
+<li>
+<p>
+Desc:
+</p>
+</li>
+<li>
+<p>
+Files:
+</p>
+</li>
+<li>
+<p>
+Size:
+</p>
+</li>
+<li>
+<p>
+Deps:
+</p>
+</li>
+</ul></div>
+<h4 id="pkg-nut-cgi">5.2.4. nut-cgi</h4>
+<div class="ilist"><ul>
+<li>
+<p>
+Desc:
+</p>
+</li>
+<li>
+<p>
+Files:
+</p>
+</li>
+<li>
+<p>
+Size:
+</p>
+</li>
+<li>
+<p>
+Deps:
+</p>
+</li>
+</ul></div>
+<h4 id="pkg-nut-hal-drivers">5.2.5. nut-hal-drivers</h4>
+<div class="ilist"><ul>
+<li>
+<p>
+Desc:
+</p>
+</li>
+<li>
+<p>
+Files:
+</p>
+</li>
+<li>
+<p>
+Size:
+</p>
+</li>
+<li>
+<p>
+Deps:
+</p>
+</li>
+</ul></div>
+<h4 id="pkg-nut-powerman-pdu">5.2.6. nut-powerman-pdu</h4>
+<div class="ilist"><ul>
+<li>
+<p>
+Desc:
+</p>
+</li>
+<li>
+<p>
+Files:
+</p>
+</li>
+<li>
+<p>
+Size:
+</p>
+</li>
+<li>
+<p>
+Deps:
+</p>
+</li>
+</ul></div>
+<h4 id="pkg-nut-snmp">5.2.7. nut-snmp</h4>
+<div class="ilist"><ul>
+<li>
+<p>
+Desc:
+</p>
+</li>
+<li>
+<p>
+Files:
+</p>
+</li>
+<li>
+<p>
+Size:
+</p>
+</li>
+<li>
+<p>
+Deps:
+</p>
+</li>
+</ul></div>
+<h4 id="pkg-nut-xml">5.2.8. nut-xml</h4>
+<div class="ilist"><ul>
+<li>
+<p>
+Desc:
+</p>
+</li>
+<li>
+<p>
+Files:
+</p>
+</li>
+<li>
+<p>
+Size:
+</p>
+</li>
+<li>
+<p>
+Deps:
+</p>
+</li>
+</ul></div>
+<h4 id="pkg-nut-clients">5.2.9. nut-clients</h4>
+<div class="ilist"><ul>
+<li>
+<p>
+Desc:
+</p>
+</li>
+<li>
+<p>
+Files:
+</p>
+</li>
+<li>
+<p>
+Size:
+</p>
+</li>
+<li>
+<p>
+Deps:
+</p>
+</li>
+</ul></div>
+<h4 id="pkg-python-pynut">5.2.10. python-pynut</h4>
+<div class="ilist"><ul>
+<li>
+<p>
+Desc:
+</p>
+</li>
+<li>
+<p>
+Files:
+</p>
+</li>
+<li>
+<p>
+Size:
+</p>
+</li>
+<li>
+<p>
+Deps:
+</p>
+</li>
+</ul></div>
+<h4 id="pkg-python-nut-gui">5.2.11. python-nut-gui</h4>
+<div class="para"><p>(or nut-control-center or Ultimate NUT Tool&#8230;)</p></div>
+<div class="ilist"><ul>
+<li>
+<p>
+Desc:
+</p>
+</li>
+<li>
+<p>
+Files:
+</p>
+</li>
+<li>
+<p>
+Size:
+</p>
+</li>
+<li>
+<p>
+Deps:
+</p>
+</li>
+</ul></div>
+<h4 id="pkg-doc">5.2.12. nut-doc</h4>
+<div class="ilist"><ul>
+<li>
+<p>
+Desc:
+</p>
+</li>
+<li>
+<p>
+Files:
+</p>
+</li>
+<li>
+<p>
+Size:
+</p>
+</li>
+<li>
+<p>
+Deps:
+</p>
+</li>
+</ul></div>
+<div class="listingblock">
+<div class="content">
+<pre><tt>*sandbox*
+nut-server
+^^^^^^^^^^
+                        Desc:
+                        Files: dummy/serial/USB drivers + upsd + upslog
+                        Size:
+                        Deps: nut-client, libusb, libc/ld
+
+                B) nut-snmp
+
+                        Desc:
+                        Files: SNMP driver [/ manager ]
+                        Deps: nut-server, net-snmp, libc/ld
+
+                C) nut-client
+
+                        Desc: don't force to have the server part/deps if not needed
+                        Files: upsmon, upsc, upscmd, upsrw + driver.list [+nut-dev (lib, .h, .pc, man]
+                        Deps: libc/ld
+
+                E) nut-cgi
+
+                        Deps:
+                        Files: snmp-ups and powernet + manpages
+
+                F) nut-doc:
+
+                        Deps:
+                        Files: dummycons + manpage
+
+                G) nut-dev:
+
+                        Deps:
+                        Files: upsmon, upsc, upscmd, upsrw
+
+
+
+Note: "nut" can be a meta package
+
+This kind of tree obviously need modification on the conf/make
+files of NUT to allow build/install in a separate way.
+
+
+...
+TO BE CONTINUED
+...
+
+Configuration option
+^^^^^^^^^^^^^^^^^^^^
+name= "ups" or "nut"
+./configure \
+            --prefix=/ \
+            --sysconfdir=/etc/$name \
+            --mandir=/usr/share/man \
+            --libdir=/usr/lib \
+            --includedir=/usr/include \
+            --datadir=/usr/share/$name \
+            --with-statepath=/var/run/nut \
+            --with-altpidpath=/var/run/nut \
+            --with-drvpath=/lib/nut \
+            --with-cgipath=/usr/lib/cgi-bin/$name \
+html-path
+            --with-pidpath=/var/run/$name \
+            --with-user=$name \
+            --with-cgi \
+            --without-ssl
+...</tt></pre>
+</div></div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2009-07-28 13:43:31 CEST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:none; width:88px; height:31px;"
+       src="http://www.w3.org/Icons/valid-xhtml11"
+       alt="Valid XHTML 1.1!" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/check/referer">
+  <img style="border:none; width:88px; height:31px;"
+       src="http://jigsaw.w3.org/css-validator/images/vcss"
+       alt="Valid CSS!" />
+</a>
+<a href="http://www.mozilla.org/products/firefox/">
+  <img style="border:none; width:110px; height:32px;"
+       src="http://www.spreadfirefox.com/community/images/affiliates/Buttons/110x32/safer.gif"
+       alt="Get Firefox!" />
+</a>
+</div>
+</div>
+</body>
+</html>
