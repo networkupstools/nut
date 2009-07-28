@@ -1,6 +1,3 @@
-# nothing to build here, but still need a Makefile to define which
-# files to distribute
-
 EXTRA_DIST = acpi.txt big-servers.txt chroot.txt		\
  commands.txt config-files.txt configure.txt contact-closure.txt	\
  data-room.txt design.txt developers.txt FAQ hid-subdrivers.txt		\
@@ -11,3 +8,16 @@ EXTRA_DIST = acpi.txt big-servers.txt chroot.txt		\
  cables/apc.txt cables/ge-imv-victron.txt cables/imv.txt		\
  cables/mgeups.txt cables/powerware.txt cables/repotec.txt		\
  cables/sms.txt
+
+if MANUALUPDATE
+
+CONVERTED_TO_ASCIIDOC = asciidoc.html
+
+html:	$(CONVERTED_TO_ASCIIDOC)
+
+SUFFIXES = .txt .html
+
+.txt.html:
+	$(ASCIIDOC) -a toc -a icons -a numbered -o $@ $^
+	
+endif

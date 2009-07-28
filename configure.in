@@ -763,6 +763,9 @@ if test "${nut_cv_have_longlong}" = "yes"; then
     AC_DEFINE(HAVE_LONG_LONG, 1, [long long support for snprintf])
 fi
 
+AC_PATH_PROGS([ASCIIDOC], [asciidoc], [none])
+AM_CONDITIONAL([MANUALUPDATE], [test "x$ASCIIDOC" != "xnone"])
+
 dnl expand ${sysconfdir} and write it out
 conftemp="${sysconfdir}"
 eval conftemp=\"${conftemp}\"
