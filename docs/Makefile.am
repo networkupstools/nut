@@ -11,13 +11,17 @@ EXTRA_DIST = acpi.txt big-servers.txt chroot.txt		\
 
 if MANUALUPDATE
 
-CONVERTED_TO_ASCIIDOC = asciidoc.html
+CONVERTED_TO_ASCIIDOC = asciidoc.html packaging.html
 
 html:	$(CONVERTED_TO_ASCIIDOC)
 
 SUFFIXES = .txt .html
 
 .txt.html:
-	$(ASCIIDOC) -a toc -a icons -a numbered -o $@ $^
+	$(ASCIIDOC) --unsafe --backend=xhtml11 \
+		--attribute icons \
+		--attribute iconsdir=$(srcdir)/icons \
+		--attribute=badges \
+		-a toc -a numbered -o $@ $^
 	
 endif
