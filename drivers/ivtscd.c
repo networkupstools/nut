@@ -52,7 +52,8 @@ static struct {
 static int ivt_status()
 {
 	char	reply[SMALLBUF];
-	int	ret, i, j = 0;
+	int	ret;
+	size_t	i, j = 0;
 
 	/*
 	 * send: F\r\n
@@ -88,16 +89,16 @@ static int ivt_status()
 
 	upsdebugx(3, "read: %.*s", (int)strcspn(reply, "\r"), reply);
 
-	for (i = 0; i <= strlen(buffer); i++) {
-		switch(buffer[i])
+	for (i = 0; i <= strlen(reply); i++) {
+		switch(reply[i])
 		{
 		case ',':	/* convert ',' to '.' */
-			buffer[j++] = '.';
+			reply[j++] = '.';
 			break;
 		case ' ':	/* skip over white space */
 			break;
 		default:	/* leave the rest as is */
-			buffer[j++] = buffer[i];
+			reply[j++] = reply[i];
 			break;
 		}
 	}
