@@ -34,7 +34,7 @@ SERIAL_DRIVERLIST = apcsmart bcmxcp belkin belkinunv bestfcom	\
  gamatronic genericups isbmex liebert masterguard megatec metasys 	\
  mge-shut mge-utalk microdowell newmge-shut oneac optiups powercom rhino 	\
  safenet skel solis tripplite tripplitesu upscode2 victronups powerpanel \
- blazer_ser clone
+ blazer_ser clone ivtscd
 SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb megatec_usb \
  blazer_usb richcomm_usb
@@ -101,6 +101,7 @@ gamatronic_SOURCES = gamatronic.c
 genericups_SOURCES = genericups.c
 isbmex_SOURCES = isbmex.c
 isbmex_LDADD = $(LDADD) -lm
+ivtscd_SOURCES = ivtscd.c
 liebert_SOURCES = liebert.c
 masterguard_SOURCES = masterguard.c
 megatec_SOURCES = megatec.c
