@@ -1,3 +1,16 @@
+Wed Jul 29 11:27:52 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ * AsciiDoc preliminary work on the website:
+   - docs/website.txt, docs/news.txt: first attempt to formalize the
+     website specific content,
+   - docs/*.css, docs/*.conf: add a basic set of CSS and layout
+     configuration for the website,
+   - docs/images/*: add some images for the web content. These may be
+     re aranged later, when the consolidation of the source tree will be
+	 done (for the documentation and CGI pages),
+   - docs/website.html: sample generated homepage,
+   - docs/build-website: testing shell script to generate the website.
+
 Tue Jul 28 11:47:11 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - docs/build-doc.sh, docs/packaging.{txt,html}, docs/icons/*: some

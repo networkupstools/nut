@@ -29,8 +29,8 @@ Packaging is a final aim for a software. It ease and complete the
 software integration into an OS, and allows users to have an easy
 software installation and support out of the box.
 
-NOTE: making NUT packaging more uniform should help its support and
-maintenance accross the supported OS.
+NOTE: making NUT packaging more uniform should help its documentation,
+support and maintenance accross the supported OS.
 
 ------------------------------------------------------------------------
 *sandbox*
@@ -120,12 +120,12 @@ The following packagers should be interested in working on this subject:
 - OpenBSD: <>
 - PLD: Andrzej Zawadzki <zawadaa@wp.pl>
 - E-Smith: Charlie Brady <charlieb-nut-upsdev@e-smith.com>
+- openSolaris: <> 
 
 - Windows: check with WinNUT author?!
 - MacOS: <> => Charles Lepple? <>
 - HP-UX: <>
 - IBM AIX: <>
-- Solaris: <> 
 
 
 
