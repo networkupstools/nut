@@ -52,8 +52,12 @@ static struct {
 static int ivt_status()
 {
 	char	reply[SMALLBUF];
-	int	ret;
+	int	ret, i, j = 0;
 
+	/*
+	 * send: F\r\n
+	 * read: R:12,57;- 1,1;20;12,57;13,18;- 2,1; 1,5;\r\n
+	 */
 	ser_flush_io(upsfd);
 
 	ret = ser_send(upsfd, "F\r\n");
@@ -83,6 +87,20 @@ static int ivt_status()
 	}
 
 	upsdebugx(3, "read: %.*s", (int)strcspn(reply, "\r"), reply);
+
+	for (i = 0; i <= strlen(buffer); i++) {
+		switch(buffer[i])
+		{
+		case ',':	/* convert ',' to '.' */
+			buffer[j++] = '.';
+			break;
+		case ' ':	/* skip over white space */
+			break;
+		default:	/* leave the rest as is */
+			buffer[j++] = buffer[i];
+			break;
+		}
+	}
 
 	return sscanf(reply, "R:%f;%f;%f;%f;%f;%f;%f;", &battery.voltage.act, &battery.current.act, &battery.temperature,
 					&battery.voltage.min, &battery.voltage.max, &battery.current.min, &battery.current.max);
