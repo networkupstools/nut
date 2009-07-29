@@ -47,6 +47,8 @@ static usb_device_id_t belkin_usb_device_table[] = {
 	{ USB_DEVICE(BELKIN_VENDORID, 0x0912), NULL },
 	/* F6C550-AVR */
 	{ USB_DEVICE(BELKIN_VENDORID, 0x0551), NULL },
+	/* F6C1250-TW-RK */
+	{ USB_DEVICE(BELKIN_VENDORID, 0x0750), NULL },
 	/* F6C1500-TW-RK */
 	{ USB_DEVICE(BELKIN_VENDORID, 0x0751), NULL },
 	/* F6H375-USB */
