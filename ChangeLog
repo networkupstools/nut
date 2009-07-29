@@ -1,3 +1,8 @@
+Wed Jul 29 01:37:06 UTC 2009 / Charles Lepple <clepple@gmail.com>
+
+ - data/driver.list: Add "CP 1500C" to compatibility list for usbhid-ups
+   (reported by Svein Skogen)
+
 Mon Jul 27 22:00:00 UTC 2009 / Arnaud Quette <arnaud.quette@free.fr>
 
  - tools/nut-usbinfo.pl, scripts/dkp/95-devkit-power-hid.rules: remove
