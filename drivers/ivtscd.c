@@ -58,9 +58,9 @@ static int ivt_status()
 	ser_flush_io(upsfd);
 
 	/*
-	 * send: F\r\n
+	 * send: F\n
 	 */
-	ret = ser_send(upsfd, "F\r\n");
+	ret = ser_send(upsfd, "F\n");
 
 	if (ret < 0) {
 		upsdebug_with_errno(3, "send");
@@ -75,7 +75,7 @@ static int ivt_status()
 	upsdebugx(3, "send: F");
 
 	/*
-	 * read: R:12,57;- 1,1;20;12,57;13,18;- 2,1; 1,5;\r\n
+	 * read: R:12,57;- 1,1;20;12,57;13,18;- 2,1; 1,5;\n
 	 */
 	do {
 		ret = ser_get_buf(upsfd, reply, sizeof(reply), 1, 0);
@@ -90,7 +90,7 @@ static int ivt_status()
 			return -1;
 		}
 
-		upsdebugx(3, "read: %.*s", (int)strcspn(reply, "\r"), reply);
+		upsdebugx(3, "read: %.*s", (int)strcspn(reply, "\r\n"), reply);
 		upsdebug_hex(4, "  \\_", reply, ret);
 
 	} while (ret < 10);	/* skip over empty lines */
@@ -109,14 +109,17 @@ static int ivt_status()
 		}
 	}
 
-	return sscanf(reply, "R:%f;%f;%f;%f;%f;%f;%f;", &battery.voltage.act, &battery.current.act, &battery.temperature,
+	ret = sscanf(reply, "R:%f;%f;%f;%f;%f;%f;%f;", &battery.voltage.act, &battery.current.act, &battery.temperature,
 					&battery.voltage.min, &battery.voltage.max, &battery.current.min, &battery.current.max);
+
+	upsdebugx(3, "Parsed %d parameters from reply", ret);
+	return ret;
 }
 
 static int instcmd(const char *cmdname, const char *extra)
 {
 	if (!strcasecmp(cmdname, "reset.input.minmax")) {
-		ser_send(upsfd, "L\r\n");
+		ser_send(upsfd, "L\n");
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -146,9 +149,9 @@ void upsdrv_updateinfo(void)
 	dstate_setinfo("battery.voltage.minimum", "%.2f", battery.voltage.min);
 	dstate_setinfo("battery.voltage.maximum", "%.2f", battery.voltage.max);
 
-	dstate_setinfo("battery.current", "%.2f", battery.current.act);
-	dstate_setinfo("battery.current.minimum", "%.2f", battery.current.min);
-	dstate_setinfo("battery.current.maximum", "%.2f", battery.current.max);
+	dstate_setinfo("battery.current", "%.1f", battery.current.act);
+	dstate_setinfo("battery.current.minimum", "%.1f", battery.current.min);
+	dstate_setinfo("battery.current.maximum", "%.1f", battery.current.max);
 
 	dstate_setinfo("battery.temperature", "%.0f", battery.temperature);
 
@@ -209,9 +212,12 @@ void upsdrv_initups(void)
 	 * Use canonical mode input processing (to read reply line)
 	 */
 	tio.c_lflag |= ICANON;	/* Canonical input (erase and kill processing) */
+	tio.c_iflag |= ICRNL;	/* Map CR to NL on input */
+	tio.c_iflag |= IGNBRK;	/* Ignore break condition */
+	tio.c_oflag |= ONLCR;	/* Map NL to CR-NL on output */
 
 	tio.c_cc[VEOF] = _POSIX_VDISABLE;
-	tio.c_cc[VEOL] = '\r';
+	tio.c_cc[VEOL] = _POSIX_VDISABLE;
 	tio.c_cc[VERASE] = _POSIX_VDISABLE;
 	tio.c_cc[VINTR]  = _POSIX_VDISABLE;
 	tio.c_cc[VKILL]  = _POSIX_VDISABLE;
