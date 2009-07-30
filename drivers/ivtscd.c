@@ -1,5 +1,5 @@
 /*
- * ivt.c - model specific routines for the IVT Solar Controller driver
+ * ivtscd.c - model specific routines for the IVT Solar Controller driver
  *
  * Copyright (C) 2009  Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
@@ -55,12 +55,11 @@ static int ivt_status()
 	int	ret;
 	size_t	i, j = 0;
 
-	/*
-	 * send: F\r\n
-	 * read: R:12,57;- 1,1;20;12,57;13,18;- 2,1; 1,5;\r\n
-	 */
 	ser_flush_io(upsfd);
 
+	/*
+	 * send: F\r\n
+	 */
 	ret = ser_send(upsfd, "F\r\n");
 
 	if (ret < 0) {
@@ -75,20 +74,27 @@ static int ivt_status()
 
 	upsdebugx(3, "send: F");
 
-	ret = ser_get_buf(upsfd, reply, sizeof(reply), 1, 0);
+	/*
+	 * read: R:12,57;- 1,1;20;12,57;13,18;- 2,1; 1,5;\r\n
+	 */
+	do {
+		ret = ser_get_buf(upsfd, reply, sizeof(reply), 1, 0);
 
-	if (ret < 0) {
-		upsdebug_with_errno(3, "read");
-		return -1;
-	}
+		if (ret < 0) {
+			upsdebug_with_errno(3, "read");
+			return -1;
+		}
 
-	if (ret == 0) {
-		upsdebugx(3, "read: timeout");
-		return -1;
-	}
+		if (ret == 0) {
+			upsdebugx(3, "read: timeout");
+			return -1;
+		}
 
-	upsdebugx(3, "read: %.*s", (int)strcspn(reply, "\r"), reply);
+		upsdebugx(3, "read: %.*s", (int)strcspn(reply, "\r"), reply);
+		upsdebug_hex(4, "  \\_", reply, ret);
 
+	} while (ret < 10);	/* skip over empty lines */
+	
 	for (i = 0; i <= strlen(reply); i++) {
 		switch(reply[i])
 		{
