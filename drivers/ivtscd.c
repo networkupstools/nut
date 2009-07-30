@@ -133,6 +133,8 @@ void upsdrv_initinfo(void)
 		fatal_with_errno(EXIT_FAILURE, "IVT Solar Controller not detected");
 	}
 
+	sleep(2);	/* allow the SCD some time to rest */
+
 	dstate_addcmd("reset.input.minmax");
 
 	upsh.instcmd = instcmd;
