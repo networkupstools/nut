@@ -48,19 +48,18 @@ static struct {
 	} current;
 	float	temperature;
 } battery;
-	
+
 static int ivt_status()
 {
 	char	reply[SMALLBUF];
-	int	ret;
-	size_t	i, j = 0;
+	int	ret, i, j = 0;
 
 	ser_flush_io(upsfd);
 
 	/*
 	 * send: F\n
 	 */
-	ret = ser_send(upsfd, "F\n");
+	ret = ser_send(upsfd, "F");
 
 	if (ret < 0) {
 		upsdebug_with_errno(3, "send");
@@ -73,41 +72,42 @@ static int ivt_status()
 	}
 
 	upsdebugx(3, "send: F");
-
+	sleep(1);	/* allow controller some time to digest this */
+	
 	/*
 	 * read: R:12,57;- 1,1;20;12,57;13,18;- 2,1; 1,5;\n
 	 */
-	do {
-		ret = ser_get_buf(upsfd, reply, sizeof(reply), 1, 0);
+	ret = ser_get_buf(upsfd, reply, sizeof(reply), 1, 0);
 
-		if (ret < 0) {
-			upsdebug_with_errno(3, "read");
-			return -1;
-		}
+	if (ret < 0) {
+		upsdebug_with_errno(3, "read");
+		return -1;
+	}
 
-		if (ret == 0) {
-			upsdebugx(3, "read: timeout");
-			return -1;
-		}
+	if (ret == 0) {
+		upsdebugx(3, "read: timeout");
+		return -1;
+	}
 
-		upsdebugx(3, "read: %.*s", (int)strcspn(reply, "\r\n"), reply);
-		upsdebug_hex(4, "  \\_", reply, ret);
+	upsdebugx(3, "read: %.*s", (int)strcspn(reply, "\r\n"), reply);
+	upsdebug_hex(4, "  \\_", reply, ret);
 
-	} while (ret < 10);	/* skip over empty lines */
-	
-	for (i = 0; i <= strlen(reply); i++) {
+	for (i = 0; i < ret; i++) {
 		switch(reply[i])
 		{
 		case ',':	/* convert ',' to '.' */
 			reply[j++] = '.';
 			break;
 		case ' ':	/* skip over white space */
+		case '\0':	/* skip over null characters */
 			break;
 		default:	/* leave the rest as is */
 			reply[j++] = reply[i];
 			break;
 		}
 	}
+
+	reply[j++] = '\0';
 
 	ret = sscanf(reply, "R:%f;%f;%f;%f;%f;%f;%f;", &battery.voltage.act, &battery.current.act, &battery.temperature,
 					&battery.voltage.min, &battery.voltage.max, &battery.current.min, &battery.current.max);
@@ -119,7 +119,7 @@ static int ivt_status()
 static int instcmd(const char *cmdname, const char *extra)
 {
 	if (!strcasecmp(cmdname, "reset.input.minmax")) {
-		ser_send(upsfd, "L\n");
+		ser_send(upsfd, "L");
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -132,8 +132,6 @@ void upsdrv_initinfo(void)
 	if (ivt_status() < 7) {
 		fatal_with_errno(EXIT_FAILURE, "IVT Solar Controller not detected");
 	}
-
-	sleep(2);	/* allow the SCD some time to rest */
 
 	dstate_addcmd("reset.input.minmax");
 
