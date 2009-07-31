@@ -11,7 +11,7 @@ EXTRA_DIST = acpi.txt big-servers.txt chroot.txt		\
 
 if MANUALUPDATE
 
-CONVERTED_TO_ASCIIDOC = asciidoc.html packaging.html
+CONVERTED_TO_ASCIIDOC = asciidoc.html packager-guide.html developer-guide.html
 
 html:	$(CONVERTED_TO_ASCIIDOC)
 
