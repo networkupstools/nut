@@ -9,6 +9,5 @@
 
 ASCIIDOC_HTML="asciidoc --unsafe --backend=xhtml11 --attribute icons --attribute iconsdir=./icons --attribute=badges -a toc -a numbered"
 
-$ASCIIDOC_HTML -o html/packaging.html packaging.txt
-
-#$ASCIIDOC_HTML -a toc -a numbered userguide.txt
+$ASCIIDOC_HTML packager-guide.txt
+$ASCIIDOC_HTML -a toc -a numbered developer-guide.txt

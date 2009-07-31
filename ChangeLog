@@ -1,6 +1,14 @@
+Fri Jul 31 22:09:41 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - docs/developer-guide.{txt,html}: first attempt to formalize the NUT Developer
+   Guide,
+ - docs/packager-guide.{txt,html}: renamed from packaging.{txt,html} for more
+   consistency,
+ - docs/build-doc.sh: updated according to the above changes.
+
 Wed Jul 29 11:27:52 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
- * AsciiDoc preliminary work on the website:
+ * AsciiDoc preliminary work on the website: 
    - docs/website.txt, docs/news.txt: first attempt to formalize the
      website specific content,
    - docs/*.css, docs/*.conf: add a basic set of CSS and layout

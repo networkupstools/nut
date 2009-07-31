@@ -1,0 +1,123 @@
+Network UPS Tools Developer Guide
+=================================
+Charles Lepple <clepple@gmail.com>
+
+image::images/nut-banner.png[Network UPS Tools logo]
+
+WARNING: this is a Work In Progress document.
+
+Introduction
+------------
+
+...
+
+Design
+------
+
+include design.txt
+
+Information for developers
+--------------------------
+
+include developers.txt
+
+Commands sent to the UPS drivers
+--------------------------------
+
+include commands.txt
+
+Creating a new driver to support another UPS
+---------------------------------------------
+
+include new-drivers.txt
+
+*Comment*
+start by an intro on generic drivers?
+
+- extending drivers
+- Basic serial
+- USB
+- SNMP
+- ... fenton, megatec=> blazer, ...
+
+add sub notes on(?):
+- outlet collection implementation
+- ...whatever more has to be known
+
+New command and variable naming scheme
+--------------------------------------
+
+include new-names.txt
+
+Comment: this file should be renamed. it's not new anymore!
+
+Creating new client
+-------------------
+
+*Comment* this content is to be created from scratch.
+
+Intro idea: "NUT provides bindings, for several common languages, that are
+presented below. If none suits you, you can implement one easily using the 
+'Network protocol information'. This approach has been used to create the
+Python PyNUT module and the Nagios check_ups plugin, which can serve as a
+reference."
+
+C / C++
+~~~~~~~
+
+Client access library
+^^^^^^^^^^^^^^^^^^^^^
+man/upsclient.3
+
+Configuration helpers
+^^^^^^^^^^^^^^^^^^^^^
+
+NUT provides helper scripts to ease the configuration step of your program, by
+detecting...
+
+libupsclient-config.1
++ pkg-config
+
+Python
+~~~~~~
+
+...
+Comment: content from scripts/python/README
++ point scripts/python/module/test_nutclient.py
+
+Perl
+~~~~
+
+Comment: The binding has to be tested and probably updated before we can
+document it!
+The content of this § is to be ripped from the http://search.cpan.org/dist/ups-nut/[UPS::Nut] module README:
+
+
+Network protocol information
+----------------------------
+
+include protocol.txt
+
+Ideas for future expansion and features (and improvement?)
+----------------------------------------------------------
+
+include ideas.txt
+
+*Comments*
+
+- check to refresh and integrate the https://alioth.debian.org/pm/?group_id=30602[tasks] list
+and https://alioth.debian.org/tracker/?atid=411545&group_id=30602&func=browse[feature requests] list from Alioth
+- add "Generic ?Ascii? driver": I've got to think more about that, but the recent
+solar panel driver, and the powerman internal approach of a generic engine with
+a scripting interface is a cool idea.
+Ref http://powerman.svn.sourceforge.net/viewvc/powerman/trunk/etc/apcpdu.dev?revision=969&view=markup
+- integrate the (future) new powerman LUA engine (maybe/mustbe used for the driver above?)
+for native PDU support
+- see how we can help and collaborate with DeviceKit-power
+
+
+
+Driver/server socket protocol
+-----------------------------
+
+include sock-protocol.txt
