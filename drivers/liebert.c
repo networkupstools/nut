@@ -176,6 +176,11 @@ void upsdrv_initups(void)
 {
 	upsfd = ser_open(device_path);
 
+	/* Speed should not matter (see comments in upsdrv_updateinfo),
+	 * but set it relatively low in case there are problems with higher
+	 * speeds. */
+	ser_set_speed(upsfd, device_path, B9600);
+
 	/* raise RTS */
 	ser_set_rts(upsfd, 1);
 }

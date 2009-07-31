@@ -1,4 +1,4 @@
-.TH LIEBERT 8 "Wed Feb 18 2004" "" "Network UPS Tools (NUT)"
+.TH LIEBERT 8 "Wed Jul 28 2009" "" "Network UPS Tools (NUT)"
 .SH NAME
 liebert \- Driver for Liebert contact\(hyclosure UPS equipment
 .SH NOTE
@@ -27,6 +27,11 @@ UPS for it to work.
 There is no way for this driver to detect the hardware or cable.  It
 will start up successfully even if no UPS is present.  This is a
 fundamental limitation of any contact\(hyclosure driver.
+
+Since the TX and RX signals are only used to detect loopback (when the
+contacts close), the baud rate should not matter. However, it is hardcoded to
+9600 baud to prevent problems with noise if the port defaults to a higher baud
+rate.
 
 .SH SEE ALSO
 
