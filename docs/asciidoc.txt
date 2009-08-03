@@ -8,7 +8,7 @@ This is a test.
 Intro
 -----
 
-See http://www.methods.co.nz/asciidoc/asciidoc/[The AsciiDoc Manual] for more information.
+See http://www.methods.co.nz/asciidoc/[The AsciiDoc Manual] for more information.
 
 Works in Progress
 -----------------
