@@ -21,8 +21,9 @@ maintenance and diagnostics.
 The layering
 ~~~~~~~~~~~~
 
+--------------------------------------
   CLIENTS: upsmon, upsc, upsrw, upsstats, upsset, etc. (via upsclient)
-  
+
            < network: TCP sockets, typically on port 3493 >
 
    SERVER: upsd
@@ -34,6 +35,7 @@ The layering
            < serial communications, SNMP, USB, etc. >
 
 EQUIPMENT: Smart-UPS 700, Fenton PowerPal 660, etc. (actual UPS hardware)
+--------------------------------------
 
 How information gets around
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -74,7 +76,7 @@ immediately.  When a request for data arrives from a CLIENT, the SERVER
 looks through the internal storage for that UPS and returns the
 requested data if it is available.
 
-The format for requests from the CLIENT is documented in protocol.txt.
+The format for requests from the CLIENT is documented in the <<protocol,TCP protocol>> section
 
 Instant commands
 ~~~~~~~~~~~~~~~~
@@ -687,6 +689,7 @@ document it!
 The content of this § is to be ripped from the http://search.cpan.org/dist/ups-nut/[UPS::Nut] module README:
 
 
+[[protocol]]
 Network protocol information
 ----------------------------
 
