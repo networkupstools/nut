@@ -129,6 +129,7 @@
 "Cyber Power Systems"	"1200AVR"	""	"powerpanel"
 "Cyber Power Systems"	"1500AVR-HO"	""	"powerpanel"
 "Cyber Power Systems"	"PR2200"	""	"powerpanel"
+"Cyber Power Systems"	"PR3000E"	""	"powerpanel (experimental)"
 "Cyber Power Systems"	"685AVR"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"800AVR"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"AE550"		"USB"	"usbhid-ups"
