@@ -1,0 +1,130 @@
+Client projects
+---------------
+
+There are many programs which support monitoring UPS hardware via NUT.
+
+These links lead offsite.  If you know of a project which should be listed, please send in the URL.
+
+Graphical desktop clients
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- link:http://sourceforge.net/projects/gknut/[GKrellM NUT]
+
+ Simple UPS monitoring plugin for GKrellM. Uses NUT (Network UPS Tools) for UPS connection.
+
+- link:http://www.knut.noveradsl.cz/knutclient/[KNutClient]
+
+ KNutClient is visual client for UPS system NUT
+
+- link:http://www.lestat.st/informatique/projets/nut-monitor-en[NUT-Monitor]
+
+ NUT-Monitor is a graphical application to monitor and manage UPSes connected to
+ a NUT server. This application is written in Python and PyGTK and uses the PyNUT class.
+
+- link:http://download.mgeops.com/explore/eng/ptp/ptp_sol.htm?sol=PSP[Eaton - Personal Solution Pac]
+
+ NUT configuration and monitoring software for Eaton (previously MGE Office Protection Systems) units.
+
+- link:http://www.amautacorp.com/staff/Rudd-O/ups-monitor/[UPS Monitor]
+
+ Multi-threaded python/GTK2 graphical monitoring application.
+
+- link:http://sourceforge.net/projects/winnutclient[Windows NUT client]
+
+ Windows NUT client is a partial port of KNutClient to Windows using
+ [http://www.autoitscript.com AUTOIT] scripting language. 
+
+- link:http://csociety.ecn.purdue.edu/~delpha/winnut/[WinNUT]
+
+ WinNUT is a partial port of the Network UPS Tools (NUT) to Windows.
+
+- link:http://wmnut.mgeops.org/[WMNUT]
+
+ WMNut is a program to monitor multiple UPSs statistics through the NUT (Network UPS Tools) framework on Linux and other systems. 
+
+Network Management Systems integration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- link:http://bigsister.graeff.com/[Big Sister system and network monitor]
+
+ The "nut" module monitors uninterruptible power supplies under control of the
+ NUT (Network UPS Tools) free software suite.
+ It sends alerts on power breakages, overload and battery problems. The longterm
+ graphing may point you to battery aging problems.
+
+- link:http://cacti.net[Cacti monitoring tool]
+
+ There are three different scripts to add NUT support to Cacti:
+ 
+ * link:http://forums.cacti.net/about19250.html[PHP script]
+ * link:http://forums.cacti.net/about14475.html[Ruby script]
+ * link:http://forums.cacti.net/about9729.html[shell script]
+
+- link:http://collectd.org[collectd]
+
+ collectd, the system statistics collection daemon, features a NUT plugin to collect statistics from UPSes. 
+
+- link:http://monami.sourceforge.net[MonAMI NUT plugin]
+
+ A plugin to return UPS status to the MonAMI universal sensor framework. 
+
+- link:http://munin.projects.linpro.no[Munin NUT plugin]
+
+ A link:http://muninexchange.projects.linpro.no/?search&cid=0&pid=136&phid=279[NUT plugin] is available.
+
+- link:http://www.nagios.org/[Nagios] (link:http://sourceforge.net/projects/nagiosplug/[check_ups])
+
+ A plugin to return UPS status to the Nagios monitoring system.
+
+Configuration GUIs
+------------------
+
+- link:http://www.knut.noveradsl.cz/knutsetting/index.html[KNutSetting]
+
+ KNutSetting is a visual KDE tool for configuring NUT - Network UPS Tools.
+
+Other software projects
+-----------------------
+
+- link:http://www.the-mcdonalds.org/Nut-Graph/[Nut-Graph]
+
+ PHP4 / GD / MySQL / jpgraph package to visualize logged UPS status data.
+
+- link:http://www.lestat.st/informatique/projets/pynut-en[PyNUT]
+
+ PyNUT is an abstraction class written in Python to access NUT (Network UPS
+ Tools) server and execute commands without needing to know the communication protocol.
+
+- link:http://bugs.debian.org/343530[RRDtool logging support]
+
+ This patch adds link:http://oss.oetiker.ch/rrdtool[RRDtool] logging support to NUT.
+
+- link:http://home.tele2.fr/elrik/[ups_control]
+
+ A developing python wrapper to upsc which can generate mails and shutdown the machine.
+
+- link:http://search.cpan.org/search?dist=ups-nut[UPS::Nut]
+
+ A perl module to talk to a UPS via NUT (Network UPS Tools) upsd 
+
+
+Hardware projects involving NUT
+-------------------------------
+
+- link:http://www.opengear.com/UPS.html[OpenGear] (there is also a link:http://www.opengear.com/Videos/Network-UPS-Tools/Network-UPS-Tools.html[video presentation])
+- Synology
+- Alcatel Lucent IPBX
+- link:http://www.readynas.com/?page_id=92[Netgear ReadyNAS]
+
+ The RAIDiator firmware for the ReadyNAS product line includes NUT to either monitor a local USB UPS, or to connect as a slave to a NUT server.
+
+- link:http://www.webbastards.com/projects/[lcd-nut]
+ 
+ A Project to display the status of a UPS on computer through one of the many cheap LCD matrix displays available on the market.
+
+Updates
+-------
+
+Client authors: send updates on your releases to the NUT users mailing list.
+
+We will also put a link to you in the news section of the top page when things change.

@@ -1,0 +1,92 @@
+Source code
+-----------
+
+You should always use PGP/GPG to verify the signatures before using any source code.
+
+You can use the <<verifySourceSig,following procedure>> to do so.
+
+Stable tree: 2.4
+~~~~~~~~~~~~~~~~
+
+link:http://www.networkupstools.org/source/2.4/nut-2.4.1.tar.gz[nut-2.4.1.tar.gz]
+link:http://www.networkupstools.org/source/2.4/nut-2.4.1.tar.gz.sig[signature]
+link:http://www.networkupstools.org/source/2.4/new-2.4.1.txt[release notes]
+link:http://www.networkupstools.org/source/2.4/ChangeLog[ChangeLog]
+
+You can also browse the link:http://www.networkupstools.org/source/2.4/[stable source directory].
+
+Testing: 2.6-pre
+~~~~~~~~~~~~~~~~
+
+There is currently no testing release
+
+Development tree: 2.5
+~~~~~~~~~~~~~~~~~~~~~
+
+The development tree is available through a Subversion repository hosted on the
+link:http://alioth.debian.org/[Debian Alioth server].
+
+To retrieve the current development tree, use the following command:
+
+	$ svn co svn://svn.debian.org/nut/trunk
+
+To generate the build scripts, you must then call:
+
+	$ autoreconf --install
+
+You can also browse the code with link:http://svn.debian.org/wsvn/nut/trunk/?rev=0&sc=0[WebSvn].
+
+Or through the link:http://boxster.ghz.cc/projects/nut[Trac mirror], kindly hosted and maintained by Charles Lepple.
+
+Older versions
+~~~~~~~~~~~~~~
+
+link:http://www.networkupstools.org/source/[Browse source directory]
+
+
+[[verifySourceSig]]
+How to verify the NUT source code signature
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In order to verify the NUT source code signature, apply the following procedure:
+
+- Retrieve the link:http://www.networkupstools.org/download.html[NUT source code] (nut-X.Y.Z.tar.gz) and the matching signature (nut-X.Y.Z.tar.gz.sig)
+- Retrieve the link:http://www.networkupstools.org/source/nut-key.gpg[NUT maintainer's signature]:
+
+	$ gpg --fetch-keys http://www.networkupstools.org/source/nut-key.gpg
+
+- Launch the GPG checking using the following command:
+
+	$ gpg --verify nut-X.Y.Z.tar.gz.sig
+
+- You should see a message mentioning a "Good signature", like:
+
+	gpg: Signature made Thu Jul  5 16:15:05 2007 CEST using DSA key ID 204DDF1B
+	gpg: Good signature from "Arnaud Quette ..."
+	...
+
+Packages
+--------
+
+Note: The only official releases from this project are source code.
+
+NUT is already available in the following systems:
+
+- Linux: 
+link:http://packages.debian.org/nut[Debian], 
+link:http://packages.gentoo.org/package/sys-power/nut[Gentoo Linux],
+Mandriva,
+Red Hat / Fedora,
+link:http://software.opensuse.org/search[Novell Suse / openSUSE],
+link:http://packages.ubuntu.com/nut[Ubuntu].
+
+- BSD systems:
+link:http://www.FreeBSD.org/cgi/ports.cgi?query=^nut-&amp;stype=name[FreeBSD],
+link:ftp://ftp.netbsd.org/pub/NetBSD/packages/pkgsrc/sysutils/ups-nut/README.html[NetBSD],
+link:http://www.openbsd.org/cgi-bin/cvsweb/ports/sysutils/nut/[OpenBSD].
+
+- Other systems:
+Mac OS X
+
+Note: you should also refer to the link?[Package installation instructions] of
+the NUT User Manual.

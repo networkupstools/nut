@@ -1,36 +1,31 @@
-Desc: Frequently Asked Questions
-File: FAQ
-Date: 20 January 2006
+NUT Frequently Asked Questions
+==============================
+
+////////////////////////////////////////////////////////////////////////////////
 Auth: Russell Kroll <rkroll@exploits.org>
       Arnaud Quette <aquette.dev@gmail.com>
+////////////////////////////////////////////////////////////////////////////////
  
------------------------------------------------------------------------------
+== I just upgraded, and ...
+You have read UPGRADING in the base directory of the distribution,
+right?  If not, go read it now, then come back to this file if your
+question wasn't answered in there.
 
- Q: I just upgraded, and ...
+== upsstats says "Error: can't open template file (upsstats.html)".
+Go into your configuration path (/usr/local/ups/etc by default) and
+copy the sample template files over to their real names.  The sample
+template files are installed with 'make install-cgi-conf' and can 
+also be found inside the source distribution in the conf directory. 
 
- A: You have read UPGRADING in the base directory of the distribution,
-    right?  If not, go read it now, then come back to this file if your
-    question wasn't answered in there.
+////////////////////////////////////////////////////////////////////////////////
 
------------------------------------------------------------------------------
-
- Q: upsstats says "Error: can't open template file (upsstats.html)".
-    How do I fix this?
-
- A: Go into your configuration path (/usr/local/ups/etc by default) and
-    copy the sample template files over to their real names.  The sample
-    template files are installed with 'make install-cgi-conf' and can 
-    also be found inside the source distribution in the conf directory. 
-
------------------------------------------------------------------------------
-
- Q: upsmon fails the login and says "username required" now.
+== upsmon fails the login and says "username required" now.
 
  A: Go read the UPGRADING file again.
 
 -----------------------------------------------------------------------------
 
- Q: My 1.4 CGI programs won't talk to my 2.0 upsd.  What should I do?
+== My 1.4 CGI programs won't talk to my 2.0 upsd.  What should I do?
 
  A: Upgrade the CGI programs to 2.0.  While 1.4 was intended as a 
     compatibility tree that used the new protocol by default, the CGI
@@ -39,7 +34,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: I just upgraded from 1.2 and upsmon now fails to start, saying
+== I just upgraded from 1.2 and upsmon now fails to start, saying
     "Fatal error: insufficient power configured!".  Why?
 
  A: You didn't read the top of the error, where upsmon says that it 
@@ -51,9 +46,8 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: My UPS driver now says it's "broken", and won't start.  What now?
-
- Q: My favorite UPS driver disappeared after an upgrade.  What now?
+== My UPS driver now says it's "broken", and won't start.  What now?
+My favorite UPS driver disappeared after an upgrade.  What now?
 
  A: Drivers are occasionally removed from the tree if they are no longer
     receiving maintenance, or sometimes renamed to better reflect their
@@ -74,7 +68,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: I just upgraded and now I can't talk to older versions.
+== I just upgraded and now I can't talk to older versions.
 
  A: Version 2.0 can't communicate with anything before 1.4 due to the
     protocol changes.  Version 1.4 can communicate with both 2.0 and
@@ -83,7 +77,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: My UPS driver program won't work.  I'm starting it as root, and root
+== My UPS driver program won't work.  I'm starting it as root, and root
     owns the device, so what's the problem?
 
  A: The drivers drop root privileges long before the serial port is
@@ -121,7 +115,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: upsc, upsstats, and the other clients say "access denied".  The
+== upsc, upsstats, and the other clients say "access denied".  The
     serial port permissions are fine, so what gives? 
 
  A: In this case, "access denied" means the access to upsd, not the
@@ -158,7 +152,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: I have an APC Smart-UPS connected with a grey APC cable and it won't
+== I have an APC Smart-UPS connected with a grey APC cable and it won't
     work.  The Back-UPS type in the genericups driver works but then I 
     don't get to use all the nifty features in there.  Why doesn't the 
     right driver work?
@@ -208,7 +202,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: Why does configure fail to find gd?
+== Why does configure fail to find gd?
 
  A: Recent versions of gd should be detected automatically through the
     gdlib-config script.  Note that gd 2.0.5 through 2.0.7 have an
@@ -226,14 +220,14 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: Why PNG?  You used to generate GIF bars with upsimage back in 1998
+== Why PNG?  You used to generate GIF bars with upsimage back in 1998
     or 1999...
 
  A: http://www.burnallgifs.org/
 
 -----------------------------------------------------------------------------
 
- Q: Why doesn't upsd implement the functionality of upsmon?  I have to
+== Why doesn't upsd implement the functionality of upsmon?  I have to
     run THREE programs to monitor my UPS!
 
  A: I try to follow the "tool for the job" philosophy.  It may mean
@@ -265,7 +259,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: Why isn't upssched part of upsmon?
+== Why isn't upssched part of upsmon?
 
  A: Most users will never have any reason to use upssched.  It's
     complicated, and getting it right for your situation can be tricky.
@@ -274,7 +268,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: Why doesn't upsmon send a SIGPWR signal to init so it can deal with
+== Why doesn't upsmon send a SIGPWR signal to init so it can deal with
     power events?
 
  A: New versions of the init man page taken from the sysvinit package
@@ -292,7 +286,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: Why can't upsset read my upsset.passwd file?
+== Why can't upsset read my upsset.passwd file?
 
  A: You have an old version of upsset installed, since the current
     version doesn't use that file.  Install a new version and then try
@@ -303,7 +297,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: Why won't bestups talk to my Best Fortress UPS?
+== Why won't bestups talk to my Best Fortress UPS?
 
  A: There are at least two different protocols being used for hardware
     with very similar names.  The bestups driver tends to support the
@@ -316,7 +310,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: What's this about "data stale"?
+== What's this about "data stale"?
 
  A: It means your UPS driver hasn't updated things in a little while.
     upsd refuses to serve up data that isn't fresh, so you get the
@@ -345,7 +339,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: Why do the client programs say "Driver not connected" when I try
+== Why do the client programs say "Driver not connected" when I try
     to run them?
 
  A: This means that upsd can't connect to the driver for some reason.
@@ -361,7 +355,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: Everything works perfectly during the shutdown, and the UPS comes 
+== Everything works perfectly during the shutdown, and the UPS comes 
     back on, but my system stays off.  What's happening?
 
  A: Assuming you don't have the problem in the next question, then you
@@ -396,7 +390,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: My system has an ATX power supply.  It will power off just fine, but
+== My system has an ATX power supply.  It will power off just fine, but
     it doesn't turn back on.  What can I do to fix this?
 
  A: This depends on how clueful your motherboard manufacturer is, and
@@ -423,7 +417,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: My PowerMac G4 won't power back up by itself (into Linux) after the
+== My PowerMac G4 won't power back up by itself (into Linux) after the
     UPS shuts down.  What can I do about this?
 
  A: This is about the same situation as the ATX question above, only
@@ -467,7 +461,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: I want to keep the drivers and upsd in their own security domains.
+== I want to keep the drivers and upsd in their own security domains.
     How can this be accomplished?
 
  A: Using a few role accounts and a common group, you can limit access
@@ -525,7 +519,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: What's the point of that 'security domains' concept above?
+== What's the point of that 'security domains' concept above?
 
  A: The point is limiting your losses.  If someone should happen to
     break into upsd in that environment, they should only gain access
@@ -544,7 +538,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: How can I make upsmon shut down my system after some fixed interval?
+== How can I make upsmon shut down my system after some fixed interval?
 
  A: You probably don't want to do this, since it doesn't maximize your
     runtime on battery.  Assuming you have a good reason for it (see
@@ -553,7 +547,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: Why doesn't upsmon shut down my system?  I pulled the plug and nothing
+== Why doesn't upsmon shut down my system?  I pulled the plug and nothing
     happened.
 
  A: Wait.  upsmon doesn't consider a UPS to be critical until it's both
@@ -580,7 +574,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: The CGI programs report "access to that host is not authorized" - 
+== The CGI programs report "access to that host is not authorized" - 
     what's going on?
 
  A: Those programs need to see a host in your hosts.conf before they
@@ -600,7 +594,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: upsd is running, so why can't I connect to it?
+== upsd is running, so why can't I connect to it?
 
  A: Assuming you haven't changed the TCP port number on the command line
     or at compile-time, then you probably have some sort of firewall
@@ -610,9 +604,9 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: How do you make upsmon reload the config file?
+== How do you make upsmon reload the config file?
 
- Q: How do you make upsd reload the config file?
+== How do you make upsd reload the config file?
 
  A: Either find the pid of the background process and send it a SIGHUP,
     or just start it again with '-c reload'.
@@ -624,7 +618,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: I just bought a new WhizBang UPS that has a USB connector.  How do
+== I just bought a new WhizBang UPS that has a USB connector.  How do
     I monitor it?
 
  A: There are several driver to support USB models.
@@ -637,7 +631,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: What is this usbhid-ups (formerly newhidups) about?
+== What is this usbhid-ups (formerly newhidups) about?
 
  A: The basic USB UPS support was done until NUT 2.2 using hidups. To allow
     a wider support accross platforms for USB/HID compliant devices,
@@ -654,9 +648,9 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: Why doesn't my package work?
+== Why doesn't my package work?
 
- Q: I can't run this because there's no package for it.  Why isn't this
+== I can't run this because there's no package for it.  Why isn't this
     in a package yet?
 
  A: Sorry, can't help you there.  All official releases are source code
@@ -669,7 +663,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: Why are there two copies of upsmon running?
+== Why are there two copies of upsmon running?
 
  A: It's not really two complete copies if your OS forks efficiently.
 
@@ -686,7 +680,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: I have <some problem> with <some old version> ...
+== I have <some problem> with <some old version> ...
 
  A: Get the latest stable release, and see if it still happens.  If it
     goes away, it means someone else reported it and got it fixed a 
@@ -702,7 +696,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: Do you have to use a serial connection to monitor the UPS?
+== Do you have to use a serial connection to monitor the UPS?
     What about direct network connections (SNMP or otherwise)?
 
  A: No. NUT currently support USB communication through usbhid-ups,
@@ -715,7 +709,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: What happened to the patch I sent?
+== What happened to the patch I sent?
 
  A: If a release goes by and your patch hasn't been included, it was
     probably dropped.  There can be a lot of patches waiting for 
@@ -732,7 +726,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: I'm not much of a programmer.  How can I help?
+== I'm not much of a programmer.  How can I help?
 
  A: There's always work to be done outside of the realm of code bashing.
     Documentation might not always be so clear.  A user's perspective
@@ -747,10 +741,10 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: I replaced the battery in my APC Smart-UPS and now it thinks the 
-    battery is low all the time.  How do you fix this?
+== I replaced the battery in my APC Smart-UPS and now it thinks the 
+battery is low all the time.  How do you fix this?
 
- Q: My APC UPS keeps reporting "OL LB", even after it's been charging
+== My APC UPS keeps reporting "OL LB", even after it's been charging
     for many hours.  What can I do about this?
 
  A: This happened to me, and some other people too.  The combination of
@@ -786,7 +780,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: multimon.cgi seems to be stuck at an old version, even though I
+== multimon.cgi seems to be stuck at an old version, even though I
     just installed a new one.
 
  A: multimon was removed during the 1.1 development cycle.  upsstats
@@ -795,7 +789,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: OK, I switched to upsstats.  Now it's giving me Celsius.  I like
+== OK, I switched to upsstats.  Now it's giving me Celsius.  I like
     Fahrenheit.  Where's the config file to switch it back?
 
  A: Temperature scales are handled by the template files, so edit your
@@ -803,7 +797,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: Why is the mailing list ignoring me?
+== Why is the mailing list ignoring me?
 
  A: You probably asked a question that's answered in this FAQ or
     somewhere else in the documentation and nobody wants to quote it
@@ -818,7 +812,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: I found some information about another kind of UPS protocol you
+== I found some information about another kind of UPS protocol you
     don't support yet, but I don't know what to do with it.  Can you
     help?
 
@@ -828,7 +822,7 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: How can you answer questions to situations that nobody's encountered
+== How can you answer questions to situations that nobody's encountered
     yet?  Isn't this a frequently asked questions file?
 
  A: Magic.
@@ -839,3 +833,4 @@ Auth: Russell Kroll <rkroll@exploits.org>
     list when it finally does get released.  
 
 -----------------------------------------------------------------------------
+////////////////////////////////////////////////////////////////////////////////

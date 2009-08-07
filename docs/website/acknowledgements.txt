@@ -1,0 +1,128 @@
+
+WARNING: this is a Work In Progress document.
+
+Our Sponsor: Eaton
+------------------
+
+Through its acquisition of MGE Office Protection Systems (a carve out of
+the MGE UPS SYSTEMS small systems, up to 10 KVA), Eaton has been sponsoring
+NUT, and more generally the Free/Libre Opensource Software Community
+since around 2002.
+
+This sponsoring includes the following (incomplete) list of actions:
+
+- providing extensive technical documents (Eaton protocols library),
+- providing tens of units to developers of NUT and related projects,
+along with people like Linus Torvalds, Eric S. Raymond, Greg Kroah Hartmann,
+David Zeuthen, Richard Hughes and many others,
+- hosting the networkupstools.org,
+- sponsoring and later hiring Arnaud Quette to officially support all his efforts
+around NUT and FLOSS,
+- providing artwork, like the new logo and icon, and the features illustrations,
+- lobbying for NUT in general.
+
+For more detailed information on Eaton's Opensource commitment, please refer to
+link:http://opensource.eaton.com[Eaton Opensource website].
+
+
+////////////////////////////////////////////////////////////////////////////////
+Sandbox
+-------
+
+*Comment*: this need some refreshing and consolidation...
+
+The NUT Team
+------------
+
+Russell Kroll
+
+- Arnaud
+- Arjen & Charles
+- Kjell
+
+Carlos
+
+Contributors (people and companies)
+-----------------------------------
+
+MGE UPS SYSTEMS provided extensive technical documents for their UPS product
+line, along with many units for development of NUT-related projects. The
+company also sponsored and later hired Arnaud Quette to further officially
+support these efforts. 
+
+Several drivers such as mge-utalk, mge-shut, snmp-ups, hidups, and usbhid-ups
+are the result of this collaboration, in addition to the WMNut, MGE HID Parser
+the libhid projects, .... The features page has improved artwork thanks to Luc
+and Arnaud of MGE. Other client projects such as KNutClient and ups-monitor
+have also received assistance. 
+
+The master NUT site and several related projects are hosted on MGE's equipment
+at no cost to the project.
+
+More information on their open source support can be found on their web site:
+http://opensource.mgeups.com/contrib.htm 
+
+Fenton Technologies contributed a PowerPal 660 to the project.  Their open 
+stance and quick responses to technical inquiries are appreciated for 
+making the development of the fentonups driver possible.
+
+Bo Kersey of VirCIO (http://www.vircio.com) provided a Best Power 
+Fortress 750 to facilitate the bestups driver.  
+
+Invensys Energy Systems provided the SOLA/Best "Phoenixtec" protocol
+document currently residing at the following URL:
+
+	http://random.networkupstools.org/protocols/sola.html
+
+PowerKinetics technical support provided documentation on their MiniCOL
+protocol, which is archived in the NUT protocol library online:
+
+	http://random.networkupstools.org/protocols/minicol/
+
+Cyber Power Systems contributed a 700AVR model for testing and driver
+development.
+
+Liebert Corporation supplied serial test boxes and a UPStation GXT2  
+with the Web/SNMP card for development of the liebert driver and
+expansion of the existing snmp-ups driver.
+
+Acknowledgements
+----------------
+This project is the result of years of work by many individuals and companies. Many of them are listed within the source code, CREDITS file, release notes, and mailing list archives, but some prefer to be anonymous. This software would not be possible without their help.
+Development contributions
+Many people have written or tweaked the software; the drivers, clients, server and documentation have all received valuable attention from numerous sources. The CREDITS file is not linked here because it contains several tasty e-mail addresses that spam harvesters would love to have. To see this file, grab a tarball and look inside.
+
+Pavel Korensky's original apcd provided the inspiration for pursuing APC's smart protocol in 1996.
+
+Fenton Technologies contributed a PowerPal 660 to the development process for the fentonups driver and provided the official Megatec protocol and official specifications on various Fenton models. Trivia note: they also did the first public demo of NUT at Comdex in 1999.
+
+Bo Kirsey of VirCIO contributed a Best Power Fortress 750 for the development of the bestups driver.
+
+Invensys Energy Systems (Best Power/SOLA) provided the PhoenixTec protocol specification for their equipment.
+
+PowerKinetics technical support provided documentation on their MiniCOL protocol.
+
+Eric Lawson provided scans of the OneAC protocol.
+
+John Marley used OCR software to transform the SEC protocol scans into a HTML document, since it's hard to grep a bitmap.
+
+Chris McKinnon scanned and converted the Fortress protocol documentation.
+
+Cyber Power Systems contributed a 700AVR model for testing and driver development.
+
+MGE 	MGE UPS SYSTEMS provided extensive technical documents for their UPS product line, along with many units for development of NUT-related projects. The company also sponsored and later hired Arnaud Quette to further officially support these efforts.
+
+Several drivers such as mge-utalk, mge-shut, snmp-ups, hidups, and newhidups are the result of this collaboration, in addition to the WMNut, HID Parser and libhid projects. The features page has improved artwork thanks to Luc and Arnaud of MGE. Other client projects such as KNutClient have also received assistance.
+
+The original EU mirror and several related projects are hosted on MGE's equipment at no cost to the project. More information on their open source support can be found on their web site.
+Liebert Corporation supplied serial test boxes and a UPStation GXT2 with the Web/SNMP card for development of the liebert driver and expansion of the existing snmp-ups driver.
+
+Tank provided documentation on the Belkin/Delta protocol.
+
+Potrans provided a Fenton PowerPal 600 (P series) for development of the safenet driver.
+Other entries
+If a company or individual isn't listed here, then I probably don't have enough information about the situation. Developers are requested to report vendor contributions to me so this list may reflect their help. If I've left you out, send me some mail.
+Notes on logos
+Any company logos displayed here are present as a gesture of appreciation for contributions and development towards the project. Small logos that are simple may be added at the discretion of the coordinator. 
+
+////////////////////////////////////////////////////////////////////////////////

@@ -1,0 +1,42 @@
+Hardware compatibility list
+---------------------------
+
+*FIXME* add combo boxes for
+
+- Support level + explanations
+
+	and / or
+
+- driver status + explanations
+
+	and / or
+
+- Manufacturer
+
+	and / or
+
+- Model
+
+	and / or
+
+- Communication port (serial, USB, network)
+
+Comments: 
+
+- add legend
+- default to show all
+
+.This list applies to version $VERSION.
+[width="95%",cols=">s,^m,e",options="header,footer"]
+|================================================
+|Manufacturer|Model |NUT driver and paramaters
+|1       |Item 1  |Item 1
+|2       |Item 2  |Item 2
+|3       |Item 3  |Item 3
+|4       |Item 4  |Item 4
+|footer 1|footer 2|footer 3
+|==========================
+
+////////////////////////////////////////////////////////////////////////////////
+||<#959595:20%> '''Manufacturer''' ||<#959595:50%> '''Model''' ||<#959595:30%> '''NUT driver''' ||
+////////////////////////////////////////////////////////////////////////////////
