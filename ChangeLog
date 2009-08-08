@@ -1,3 +1,8 @@
+Sat Aug  8 18:22:01 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - docs/FAQ: switch to the AsciiDoc format,
+ - docs/website/support.txt: add the URL of the FAQ,
+
 Fri Aug  7 12:57:22 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  * AsciiDoc work on the website (2nd step): 

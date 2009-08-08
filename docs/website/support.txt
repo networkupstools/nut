@@ -3,7 +3,7 @@ There are various ways to obtain support for NUT.
 Documentation
 -------------
 
-- First, be sure to read the NUT FAQ. The most common problems are already
+- First, be sure to read the link:FAQ.html[FAQ]. The most common problems are already
 addressed there.
 
 - Else, you can read the NUT User Manual. It also covers many areas about installing,
