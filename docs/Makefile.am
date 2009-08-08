@@ -13,7 +13,8 @@ if MANUALUPDATE
 
 CONVERTED_TO_ASCIIDOC = asciidoc.html packager-guide.html developer-guide.html
 
-html:	$(CONVERTED_TO_ASCIIDOC)
+html:	website/build-website.sh $(CONVERTED_TO_ASCIIDOC)
+	$<
 
 SUFFIXES = .txt .html
 
