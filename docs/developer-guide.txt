@@ -1180,7 +1180,8 @@ Drivers which use USB functions should include usb-common.h and use these:
  
    You should us the usb_device_id structure, and the USB_DEVICE macro to
    declare the supported devices. This allows the automatic extraction of
-   USB information, to generate the HAL, Hotplug and udev support files.
+   USB information, to generate the HAL, Hotplug, udev and DeviceKit-power
+   support files.
 
    For example:
    /* SomeVendor name */
@@ -1206,15 +1207,15 @@ Call this in your device opening / matching function. Pass your usb_device_id
 structure, and a set of VendorID / DeviceID.
 
 This function returns one of the following value: 
-NOT_SUPPORTED (0), POSSIBLY_SUPPORTED (1) or SUPPORTED (2) 
-POSSIBLY_SUPPORTED is returned when the VendorID is matched, but the DeviceID
-is unknown.
+
+- NOT_SUPPORTED (0),
+- POSSIBLY_SUPPORTED (1,  returned when the VendorID is matched, but the DeviceID is unknown),
+- or SUPPORTED (2).
 
 For implementation examples, refer to the various USB drivers, and search for
 the above patterns.
 
-
-This set of USB helpers is due to expand is the near future...
+NOTE: This set of USB helpers is due to expand is the near future...
 
 Variable names
 ~~~~~~~~~~~~~~
