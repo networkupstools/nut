@@ -1,3 +1,8 @@
+Sun Aug  9 15:43:21 UTC 2009 / Arnaud Quette <arnaud.quette@free.fr>
+
+ - data/drivers.list: add Inform Informer Compact 1000VA
+   (reported by Mutlu Tunç)
+
 Fri Jul 31 03:07:27 UTC 2009 / Charles Lepple <clepple@gmail.com>
 
  - drivers/liebert.c: Hard-code the baud rate to 9600 to prevent problems with

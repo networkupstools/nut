@@ -164,7 +164,7 @@
 "Eaton"	"EX 2200/3000/3000 XL VA"	"USB port"	"usbhid-ups"
 "Eaton"	"EX 1000 RT2U / 1500 RT2U"	"USB port"	"usbhid-ups"
 "Eaton"	"MX 5/8/10/15/20 kVA"	"USB port"	"usbhid-ups"
-"Eaton"	"Nova AVR 625/1250"		"USB"	"usbhid-ups
+"Eaton"	"Nova AVR 625/1250"		"USB"	"usbhid-ups"
 "Eaton"	"Ellipse ASR USBS 600/750/1000/1500 VA"		"Serial cable"	"mge-shut or newmge-shut"
 "Eaton"	"Ellipse MAX USBS 600/850/1100/1500 VA"		"Serial cable"	"mge-shut or newmge-shut"
 "Eaton"	"Evolution 650/850/1150/1550/2000 VA"	"Serial port"	"mge-shut or newmge-shut"
@@ -244,6 +244,7 @@
 
 "Inform"	"GUARD"	"Line Interactive AP model"	"powercom"
 "Inform"	"Guard S 1500AP" ""	"megatec"
+"Inform"	"Informer Compact 1000VA" ""	"megatec"
 
 "Infosec"	"iPEL 350"	""	"megatec"
 "Infosec"	"iPEL 500"	""	"megatec"
