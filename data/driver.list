@@ -182,8 +182,8 @@
 "Eaton"	"various models (SNMP mode)"			"NMC Minislot (Ref 66102)"	"snmp-ups (experimental)"
 "Eaton"	"various models (XML/HTTP mode)"			"SNMP/Web Minislot card (ref 66244)"	"netxml-ups (experimental)"
 "Eaton"	"various models (SNMP mode)"			"SNMP/Web Minislot card (ref 66244)"	"snmp-ups (experimental)"
-"Eaton"	"Powerware ePDU Managed"			""	"snmp-ups (experimental)"
-"Eaton"	"Powerware ePDU Monitored"			""	"snmp-ups (experimental)"
+"Eaton"	"ePDU Managed"			""	"snmp-ups (experimental)"
+"Eaton"	"ePDU Monitored"			""	"snmp-ups or netxml-ups"
 "Eaton"	"Powerware 9130"	""	"bcmxcp or usbhid-ups"
 
 "Effekta"	"MI/MT/MH"	"2502 cable"	"megatec"

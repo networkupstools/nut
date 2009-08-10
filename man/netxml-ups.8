@@ -1,22 +1,24 @@
-.TH netxml\-ups 8 "Fri Apr 04 2008" "" "Network UPS Tools (NUT)" 
+.TH netxml\-ups 8 "Mon Aug 10 2009" "" "Network UPS Tools (NUT)" 
 .SH NAME  
-netxml\(hyups \- Driver for MGE Network Management Card / Proxy (XML/HTTP
-Protocol) equipment
+netxml\(hyups \- Driver for Eaton /MGE Network Management Card / Proxy
+(XML/HTTP Protocol) equipment
 .SH NOTE
 This man page only documents the hardware\(hyspecific features of the
 netxml\(hyups driver.  For information about the core driver, see  
 \fBnutupsdrv\fR(8).
 
 .SH SUPPORTED HARDWARE
-netxml\(hyups support all recent MGE models which use a Network Management Card
-or Proxy (MGE XML/HTTP protocol based). This applies to both MGE Office Protection
-Systems and to MGE UPS SYSTEMS. Supported card and proxy models are:
+netxml\(hyups support all recent Eaton / MGE models which use a Network
+Management Card or Proxy (MGE XML/HTTP protocol based). This applies to both
+Eaton (previously MGE Office Protection Systems) and to MGE UPS SYSTEMS.
+Supported card and proxy models are:
 
     NMC Minislot (Ref 66102, firmware EA or newer),
     SNMP/Web Minislot card (Ref 66244)
     NMC Transverse (Ref 66074),
     NMC & Modbus/JBus (Ref 66103),
-    Network Management Proxy. 
+    Network Management Proxy,
+    ePDU Monitored (newer version). 
 
 Older models, such as SNMP card (Ref 66062 and Ref 66045), use the SNMP
 protocol and should use the snmp\(hyups driver with the "mibs=mge" parameter.

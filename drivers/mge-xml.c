@@ -1,7 +1,8 @@
-/* mge-xml.c	Model specific routines for MGE XML protocol UPSes 
+/* mge-xml.c	Model specific routines for Eaton / MGE XML protocol UPSes 
 
    Copyright (C)
 	2008-2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2009	    Arnaud Quette <ArnaudQuette@Eaton.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -30,9 +31,9 @@
 #include "netxml-ups.h"
 #include "mge-xml.h"
 
-#define MGE_XML_VERSION		"MGEXML/0.20"
+#define MGE_XML_VERSION		"MGEXML/0.21"
 #define MGE_XML_INITUPS		"/"
-#define MGE_XML_INITINFO	"/mgeups/product.xml /product.xml"
+#define MGE_XML_INITINFO	"/mgeups/product.xml /product.xml /ws/product.xml"
 
 #define ST_FLAG_RW		0x0001
 #define ST_FLAG_STATIC		0x0002
@@ -706,6 +707,28 @@ static xml_info_t mge_xml2nut[] = {
 	{ "outlet.2.delay.start", ST_FLAG_RW, 5, "UPS.OutletSystem.Outlet[3].StartupTimer", 0, 0, NULL },
 	/* -> XML variable System.Outlet[3].ShutdownDuration [120] doesn't map to any NUT variable */
 
+	/* For newer ePDU Monitored */
+	{ "outlet.1.desc", ST_FLAG_RW, 20, "PDU.OutletSystem.Outlet[1].iName", 0, 0, NULL },
+	{ "outlet.1.current", 0, 0, "PDU.OutletSystem.Outlet[1].Current", 0, 0, convert_deci },
+	/* FIXME: also map these?
+	 * "PDU.OutletSystem.Outlet[1].CurrentLimit" => settable, triggers CurrentTooHigh
+	 * "PDU.OutletSystem.Outlet[1].PresentStatus.CurrentTooHigh" (0/1)
+	 */
+	{ "outlet.2.desc", ST_FLAG_RW, 20, "PDU.OutletSystem.Outlet[2].iName", 0, 0, NULL },
+	{ "outlet.2.current", 0, 0, "PDU.OutletSystem.Outlet[2].Current", 0, 0, convert_deci },
+	{ "outlet.3.desc", ST_FLAG_RW, 20, "PDU.OutletSystem.Outlet[3].iName", 0, 0, NULL },
+	{ "outlet.3.current", 0, 0, "PDU.OutletSystem.Outlet[3].Current", 0, 0, convert_deci },
+	{ "outlet.4.desc", ST_FLAG_RW, 20, "PDU.OutletSystem.Outlet[2].iName", 0, 0, NULL },
+	{ "outlet.4.current", 0, 0, "PDU.OutletSystem.Outlet[2].Current", 0, 0, convert_deci },
+	{ "outlet.5.desc", ST_FLAG_RW, 20, "PDU.OutletSystem.Outlet[3].iName", 0, 0, NULL },
+	{ "outlet.5.current", 0, 0, "PDU.OutletSystem.Outlet[3].Current", 0, 0, convert_deci },
+	{ "outlet.6.desc", ST_FLAG_RW, 20, "PDU.OutletSystem.Outlet[2].iName", 0, 0, NULL },
+	{ "outlet.6.current", 0, 0, "PDU.OutletSystem.Outlet[2].Current", 0, 0, convert_deci },
+	{ "outlet.7.desc", ST_FLAG_RW, 20, "PDU.OutletSystem.Outlet[3].iName", 0, 0, NULL },
+	{ "outlet.7.current", 0, 0, "PDU.OutletSystem.Outlet[3].Current", 0, 0, convert_deci },
+	{ "outlet.8.desc", ST_FLAG_RW, 20, "PDU.OutletSystem.Outlet[2].iName", 0, 0, NULL },
+	{ "outlet.8.current", 0, 0, "PDU.OutletSystem.Outlet[2].Current", 0, 0, convert_deci },
+
 	{ NULL, 0, 0, NULL, 0, 0, NULL }
 };
 
@@ -720,6 +743,7 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 		if (!strcasecmp(name, "PRODUCT_INFO")) {
 			/* name="Network Management Card" type="Mosaic M" version="BA" */
 			/* name="Network Management Card" type="Transverse" version="GB (SN 49EH29101)" */
+			/* name="Monitored ePDU" type="Monitored ePDU" version="Version Upgrade" */
 			int	i;
 			for (i = 0; atts[i] && atts[i+1]; i += 2) {
 				if (i == 0) {
@@ -727,8 +751,12 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 				} else {
 					snprintfcat(val, sizeof(val), "/%s", atts[i+1]);
 				}
-				if (!strcasecmp(atts[i], "type") && !strcasecmp(atts[i+1], "Transverse")) {
-					mge_ambient_value = 1;
+				if (!strcasecmp(atts[i], "type")) {
+					if (!strcasecmp(atts[i+1], "Transverse")) {
+						mge_ambient_value = 1;
+					} else if (strstr(atts[i+1], "ePDU")) {
+						dstate_setinfo("device.type", "pdu");
+					}
 				}
 			}
 			state = PRODUCT_INFO;
@@ -764,7 +792,8 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 			break;
 		}
 
-		if (!strcasecmp(name, "UPS_DATA")) {
+		if ( (!strcasecmp(name, "UPS_DATA")) 
+			|| (!strcasecmp(name, "DEV_DATA")) ) {
 			state = PI_UPS_DATA;
 			break;
 		}
@@ -777,7 +806,7 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 			break;
 		}
 		if (!strcasecmp(name, "XML_SUMMARY_PAGE")) {
-			/* url="upsprop.xml" */
+			/* url="upsprop.xml" or url="ws/summary.xml" */
 			int	i;
 			for (i = 0; atts[i] && atts[i+1]; i += 2) {
 				if (!strcasecmp(atts[i], "url")) {

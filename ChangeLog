@@ -1,3 +1,9 @@
+Mon Aug 10 12:18:42 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - drivers/mge-xml.c: add support for newer Eaton ePDU monitored
+ - man/netxml-ups.8: add a reference to Eaton ePDU monitored
+ - data/drivers.list: update the Eaton ePDU monitored to include netxml-ups
+
 Sun Aug  9 15:43:21 UTC 2009 / Arnaud Quette <arnaud.quette@free.fr>
 
  - data/drivers.list: add Inform Informer Compact 1000VA
