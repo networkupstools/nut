@@ -830,6 +830,7 @@ AC_OUTPUT([
  data/html/Makefile
  data/Makefile
  docs/Makefile
+ docs/website/Makefile
  drivers/Makefile
  include/Makefile
  lib/libupsclient-config

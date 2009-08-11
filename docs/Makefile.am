@@ -13,8 +13,9 @@ if MANUALUPDATE
 
 CONVERTED_TO_ASCIIDOC = asciidoc.html packager-guide.html developer-guide.html
 
-html:	website/build-website.sh $(CONVERTED_TO_ASCIIDOC)
-	cd $(srcdir)/website && sh -x ./build-website.sh
+html:	$(CONVERTED_TO_ASCIIDOC)
+
+SUBDIRS = website
 
 SUFFIXES = .txt .html
 
