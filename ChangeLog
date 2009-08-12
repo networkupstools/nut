@@ -1,3 +1,8 @@
+Wed Aug 12 13:45:52 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - docs/user-manual.txt: first attempt to formalize the NUT User Manual,
+ - docs/build-doc.sh, docs/asciidoc.txt: include user-manual.txt.
+
 Sat Aug  8 18:30:42 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
 
  - docs/developers.txt: some updates on USB. 
@@ -5,7 +10,7 @@ Sat Aug  8 18:30:42 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
 Sat Aug  8 18:22:01 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
 
  - docs/FAQ: switch to the AsciiDoc format,
- - docs/website/support.txt: add the URL of the FAQ,
+ - docs/website/support.txt: add the URL of the FAQ.
 
 Fri Aug  7 12:57:22 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 

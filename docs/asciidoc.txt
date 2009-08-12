@@ -15,5 +15,6 @@ Works in Progress
 
 - This file
 - link:website/index.html[The NUT Website]
-- link:developer-guide.html[The NUT Developer Manual]
-- link:packager-guide.html[The NUT Packager Manual]
+- link:user-manual.html[The NUT User Manual]
+- link:developer-guide.html[The NUT Developer Guide]
+- link:packager-guide.html[The NUT Packager Guide]

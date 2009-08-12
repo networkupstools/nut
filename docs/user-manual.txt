@@ -1,0 +1,206 @@
+Network UPS Tools User Manual
+=============================
+Arnaud Quette <arnaud.quette@free.fr>
+
+image::images/nut-banner.png[Network UPS Tools logo]
+
+WARNING: this is a Work In Progress document.
+
+Introduction
+------------
+
+This document intend to describe how to install software support for your Power
+Devices (UPS, PDU, ...), using the Network UPS Tools.
+
+It's not intended to present what an UPS or a PDU is, nor the different
+technologies that exist.
+
+For such information, have a look at the *FIXME General Info Appendix*
+
+*FIXME* reuse the website intro...
+ 
+If you wish to discover how everything came together, have a look at the
+<<Project_History,Project History>>.
+
+
+Overview
+--------
+
+rework and include README 
+------------------------------------------------------------------------
+*sandbox*
+
+Network UPS Tools is a collection of programs which provide a common interface
+for monitoring and administering UPS hardware. NUT comes in two flavors:
+
+- the "classic"
+- and the "HAL enabled" one.
+...
+------------------------------------------------------------------------
+
+Features
+~~~~~~~~
+
+*FIXME: rewrite from the FEATURE appendix
+
+Compatibility information
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Hardware
+^^^^^^^^
+
+The current list of hardware supported by NUT can be viewed <<HCL,here>>.
+
+*FIXME*: should we also link to the development tree?
+
+Operating systems
+^^^^^^^^^^^^^^^^^
+
+This software has been reported to run on Linux distributions, the BSDs, Apple's OS X, Solaris, IRIX, HP/UX, Tru64 Unix, and AIX. Windows users may be able to build it directly with Cygwin. There is also a port of the client-side monitoring to Windows called WinNUT.
+
+Your system will probably run it too. You just need a good C compiler and
+possibly some more packages to gain access to the serial ports.
+Other features, such as USB / SNMP / whatever, will also need extra software
+installed.
+
+Success reports are welcomed to keep this list accurate. 
+
+
+QuickStart Guide
+----------------
+
+QuickStart information are available in the link:INSTALL.html[INSTALL] document.
+
+Installation instructions
+-------------------------
+
+Installing from source
+~~~~~~~~~~~~~~~~~~~~~~
+
+Configure options
+^^^^^^^^^^^^^^^^^
+
+include configure.txt[]
+
+Integrated Power Management support
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*FIXME*: ...integration with FreeDesktop HAL - Hardware Abstraction Layer (nut-hal.txt)
+
+Installing from packages
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+*FIXME*
+
+Upgrading notes
+~~~~~~~~~~~~~~~
+include UPGRADING[]
+
+Configuration notes
+-------------------
+
+Details about the configuration files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+include config-files.txt[]
+
+Configuring automatic UPS shutdowns
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+include shutdown.txt[]
+
+Typical setups for big servers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+include big-servers.txt[]
+
+Typical setups for data rooms
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+include data-room.txt[]
+
+Advanced usage notes
+--------------------
+
+How to use upssched
+~~~~~~~~~~~~~~~~~~~
+
+include upssched.txt[]
+
+Using upsmon and your pager together
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+include pager.txt[]
+
+Using upsmon to make On Screen Display (OSD) notification
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*FIXME* to be removed or reworked with pager and more?
+
+include osd-notify.txt[]
+
+NUT Powersaving features and using outlet collection
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+include powersaving.txt[]
+
+Securisation notes
+------------------
+
+Configuring SSL
+~~~~~~~~~~~~~~~
+
+include ssl.txt[]
+
+chrooting and other forms of paranoia
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+include chroot.txt[]
+
+*FIXME* where can we put the below content?
+
+Contact closure hardware
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+include contact-closure.txt[]
+
+Information about SNMP and Network UPS Tools
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+include snmp.txt[]
+
+
+Appendix A: Glossary
+--------------------
+[glossary]
+UPS::
+	Uninterruptible Power Supply.
+PDU::
+	Power Distributions Unit.
+
+Appendix B: Frequently Asked Questions
+--------------------------------------
+include FAQ[]
+
+Appendix C: Acknowledgements / Contributions
+--------------------------------------------
+include acknowledgements.txt[Acknowledgements / Contributions]
+
+[[Project_History]]
+Appendix D: Project history
+---------------------------
+
+include history.txt[]
+
+[[HCL]]
+Appendix E: Hardware Compatibility List
+---------------------------------------
+
+include hcl-stable.txt[]
+
+
+------------------------------------------------------------------------
+*sandbox*
+
+include or reference Project Quality Assurance
+------------------------------------------------------------------------
