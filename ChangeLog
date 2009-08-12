@@ -1,3 +1,8 @@
+Wed Aug 12 13:42:21 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - data/drivers.list: also list Inform Informer Compact 1000VA with blazer_ser
+   (reported by Mutlu Tunç)
+
 Mon Aug 10 12:18:42 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - drivers/mge-xml.c: add support for newer Eaton ePDU monitored
