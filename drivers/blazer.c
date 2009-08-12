@@ -342,7 +342,7 @@ static int blazer_vendor(const char *cmd)
 		const char	*var;
 		const int	len;
 	} information[] = {
-		{ "ups.mfg",      15 },
+		{ "ups.mfr",      15 },
 		{ "ups.model",    10 },
 		{ "ups.firmware", 10 },
 		{ NULL }
