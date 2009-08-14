@@ -28,6 +28,8 @@ SUFFIXES = .txt .html
 .txt.html:
 	$(ASCIIDOC) --unsafe --backend=xhtml11 \
 		--attribute icons \
+		--attribute localdate=`TZ=UTC date +%Y-%m-%d` \
+		--attribute localtime=`TZ=UTC date +%H:%M:%S` \
 		--attribute iconsdir=$(srcdir)/icons \
 		--attribute=badges \
 		-a toc -a numbered -o $@ $^
