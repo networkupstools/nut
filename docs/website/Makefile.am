@@ -35,4 +35,7 @@ FAQ.html: ../FAQ
 .txt.html:
 	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ $^
 	
-endif
+else !MANUALUPDATE
+html: html-recursive
+	@echo "Not building website since 'asciidoc' was not found."
+endif !MANUALUPDATE

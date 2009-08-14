@@ -34,4 +34,7 @@ SUFFIXES = .txt .html
 		--attribute=badges \
 		-a toc -a numbered -o $@ $^
 	
-endif
+else !MANUALUPDATE
+html:	html-recursive
+	@echo "Not building HTML documentation since 'asciidoc' was not found."
+endif !MANUALUPDATE
