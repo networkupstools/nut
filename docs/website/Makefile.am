@@ -16,6 +16,9 @@ LAYOUT=web-layout
 
 html:	$(WEBSITE_FILES)
 
+clean-local:
+	rm -f $(WEBSITE_FILES)
+
 SUFFIXES = .txt .html
 
 index.html: website.txt
