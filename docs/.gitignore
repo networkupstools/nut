@@ -1,2 +1,6 @@
 Makefile
 Makefile.in
+user-manual.html
+asciidoc.html
+developer-guide.html
+packager-guide.html
