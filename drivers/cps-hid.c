@@ -30,7 +30,7 @@
 #include "common.h"
 #include "usb-common.h"
 
-#define CPS_HID_VERSION      "CyberPower HID 0.2"
+#define CPS_HID_VERSION      "CyberPower HID 0.3"
 
 /* Cyber Power Systems */
 #define CPS_VENDORID 0x0764
@@ -54,6 +54,8 @@ static usb_device_id_t cps_usb_device_table[] = {
 	{ USB_DEVICE(CPS_VENDORID, 0x0005), NULL },
 	/* Dynex DX-800U? */
 	{ USB_DEVICE(CPS_VENDORID, 0x0501), &cps_battery_scale },
+	/* OR2200LCDRM2U */
+	{ USB_DEVICE(CPS_VENDORID, 0x0601), NULL },
 
 	/* Terminating entry */
 	{ -1, -1, NULL }

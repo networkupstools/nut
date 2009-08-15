@@ -1,7 +1,11 @@
+Sat Aug 15 17:42:49 UTC 2009 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/cps-hid.c, data/driver.list: Add CyberPower OR2200 to usbhid-ups
+   (reported by James Erickson)
+
 Wed Aug 12 13:42:21 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - data/drivers.list: also list Inform Informer Compact 1000VA with blazer_ser
-   (reported by Mutlu Tunç)
 
 Mon Aug 10 12:18:42 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
