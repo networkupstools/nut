@@ -1,12 +1,14 @@
 if MANUALUPDATE
 
 WEBSITE_FILES = index.html download.html projects.html stable-hcl.html \
-	documentation.html support.html acknowledgements.html features.html FAQ.html 
+	documentation.html support.html acknowledgements.html features.html FAQ.html \
+	user-manual.html ups-protocols.html
 
 ASCIIDOC_PARAMS = --unsafe --backend=xhtml11 \
     --conf-file=$(LAYOUT).conf \
     --attribute icons \
-    --attribute iconsdir=$(srcdir)/icons \
+    --attribute iconsdir=$(srcdir)/images \
+    --attribute scriptsdir=$(srcdir)/scripts \
     --attribute=badges \
     --attribute=revision=$(PACKAGE_VERSION) \
     --attribute localdate=`TZ=UTC date +%Y-%m-%d` \
@@ -31,6 +33,12 @@ features.html: ../features.txt
 
 FAQ.html: ../FAQ
 	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc $^
+
+user-manual.html: ../user-manual.txt
+	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc -a numbered $^
+
+stable-hcl.html: stable-hcl.txt
+	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a hcl $^
 
 .txt.html:
 	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ $^

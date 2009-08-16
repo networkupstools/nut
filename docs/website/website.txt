@@ -15,6 +15,10 @@ with the support of our sponsor http://www.eaton.com[Eaton].
 WARNING: this website is under construction. Some pieces are still lacking, but
 you can check the link:http://old.networkupstools.org[old website].
 
+////////////////////////////////////////////////////////////////////////////////
+*FIXME* replace the WARNING by a shiny presentation picture
+////////////////////////////////////////////////////////////////////////////////
+
 News
 ----
 include::news.txt[]

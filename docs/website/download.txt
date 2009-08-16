@@ -23,6 +23,9 @@ There is currently no testing release
 Development tree: 2.5
 ~~~~~~~~~~~~~~~~~~~~~
 
+Code repository
+^^^^^^^^^^^^^^^
+
 The development tree is available through a Subversion repository hosted on the
 link:http://alioth.debian.org/[Debian Alioth server].
 
@@ -34,9 +37,19 @@ To generate the build scripts, you must then call:
 
 	$ autoreconf --install
 
+Browse code
+^^^^^^^^^^^
+
 You can also browse the code with link:http://svn.debian.org/wsvn/nut/trunk/?rev=0&sc=0[WebSvn].
 
-Or through the link:http://boxster.ghz.cc/projects/nut[Trac mirror], kindly hosted and maintained by Charles Lepple.
+Or through the link:http://boxster.ghz.cc/projects/nut[Trac mirror],
+kindly hosted and maintained by Charles Lepple.
+
+Snapshots
+^^^^^^^^^
+
+Latest code is also available: link:http://boxster.ghz.cc/projects/nut[snapshots on the Buildbot].
+Look for the *[tarball]* links.
 
 Older versions
 ~~~~~~~~~~~~~~

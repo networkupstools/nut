@@ -108,3 +108,31 @@ h1 {
   #layout-menu-box { display: none; }
   #layout-content-box { margin-top: 0; margin-left: 0; }
 }
+
+
+#ups_list
+{
+  margin: 20px 0 0 0; width: 100%;
+  border-collapse: collapse;
+}
+#ups_list td { border: 1px solid silver; }
+#ups_list thead { font-weight: bold; background: #bbb; }
+#ups_list tbody tr:nth-child(odd) { background: #eee; }
+#ups_list tbody tr:nth-child(even) { background: #ddd; }
+.filter { min-width: 100px; }
+
+td#manufacturer-col { width: 20%; }
+td#model-col { width: 50%; }
+td#driver-col { width: 30%; }
+
+.blue { background-color: #4edfef; }
+.green { background-color: #b1fea7; }
+.yellow { background-color: #fdf88e; }
+.orange { background-color: #fccb81; }
+.red { background-color: #fc8181; }
+
+.hidden { display: none; }
+
+#filters-set { margin: 0; display: none; border: 1px solid silver; }
+#filters-set legend { font-weight: bold; }
+#filters-set td { border: 0; }

@@ -3,17 +3,18 @@ NUT Official documentation
 
 User documentation
 ~~~~~~~~~~~~~~~~~~
+
 - link:FAQ.html[FAQ]
-- link:readme.html[QuickStart]
-- link:[NUT User Manual]
-- link:[Cables information]
+- link:readme.html[Quick Start Information]
+- link:user-manual.html[NUT User Manual]
+- link:cables.html[Cables information]
 
 Developer documentation
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-- link:[NUT Developer Guide]
-- link:[NUT Packager Guide]
-- link:UPS[protocols]
+- link:developer-guide.html[NUT Developer Guide]
+- link:packager-guide.html[NUT Packager Guide]
+- link:ups-protocols.html[UPS protocols library]
 
 Offsite links
 -------------

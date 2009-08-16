@@ -2,140 +2,180 @@ Features
 ========
 
 This list may lag behind the current code.
+
 Features frequently appear during the development cycles, so be sure to look at
 the change logs to see the latest additions.
+
+////////////////////////////////////////////////////////////////////////////////
+*FIXME* statement that NUT is *the* de facto standard on Opensource system.
+all Linux distributors have standardized the Power Devices support using NUT.
+More and more appliances manufacturers are bundling NUT...
+=> add an Appendix NUT Device Integration in the User Manual
+////////////////////////////////////////////////////////////////////////////////
 
 Multiple manufacturer support
 -----------------------------
 
-- Monitors many UPS models from more than 100 manufacturers with a unified interface.
--  
- Various communication types are supported: serial, USB, SNMP and other network protocols (MGE XML/HTTP) with the same common interface.
+- Monitors many UPS, PDU and SCD models from more than 100 manufacturers with a
+unified interface.
 
-=== Multiple architecture support ===
+- Various communication types are supported with the same common interface:
+	* serial,
+	* USB,
+	* network (SNMP, Eaton / MGE XML/HTTP).
 
- * Cross-platform - different flavors of Unix can be managed together with a common set of tools, even crossing architectures.
+Multiple architecture support
+-----------------------------
 
- * Win32 platforms can also monitor Unix-hosted hardware with WinNUT. 
+- Cross-platform - different flavors of Unix can be managed together with a
+common set of tools, even crossing architectures.
 
-=== Layered and modular design with multiple processes ===
+- Win32 platforms can also monitor Unix-hosted hardware with WinNUT. 
 
- * Three layers: drivers, server, clients.
+Layered and modular design with multiple processes
+--------------------------------------------------
 
- * Drivers run on the same host as the server, and clients communicate with the server over the network.
+- Three layers: drivers, server, clients.
 
- * This means clients can monitor any UPS anywhere as long as there is a network path between them. Be sure to plug your network's physical hardware (switches, hubs, routers, bridges, ...) into the UPS!
+- Drivers run on the same host as the server, and clients communicate with the
+server over the network.
 
- * This has also allowed us to create easily the Power Management integration.
+- This means clients can monitor any UPS anywhere as long as there is a network
+path between them.
+
+WARNING: Be sure to plug your network's physical hardware (switches, hubs,
+routers, bridges, ...) into the UPS!
+
+
+////////////////////////////////////////////////////////////////////////////////
+*FIXME* to be removed?
+
+- This has also allowed us to create easily the Power Management integration.
 
 === Power Management integration ===
 
- * Thanks to its modular design, NUT can feed data to the FreeDesktop Hardware Abstraction Layer (HAL).[[BR]]
+- Thanks to its modular design, NUT can feed data to the FreeDesktop Hardware Abstraction Layer (HAL).[[BR]]
  This allow a seemless integration of USB UPSs, at a small cost (around 200 Kb), reusing the standard Power Management GUIs and providing to users a full Plug & Play system.
 
- * The added bonus is that this is the best Power Management existing, surpassing the one that exist on Windows and Mac OS, both in terms of devices supported and of features.
+- The added bonus is that this is the best Power Management existing, surpassing the one that exist on Windows and Mac OS, both in terms of devices supported and of features.
+////////////////////////////////////////////////////////////////////////////////
 
-=== Multiple UPS support - Hot swap/high availability power supplies ===
+Redundancy support - Hot swap/high availability power supplies
+--------------------------------------------------------------
 
- * upsmon can handle high-end servers which receive power from multiple UPSes simultaneously.
+- upsmon can handle high-end servers which receive power from multiple UPSes simultaneously.
 
- * upsmon won't initiate a shutdown until the total power situation across all source UPSes becomes critical (on battery and low battery).
+- upsmon won't initiate a shutdown until the total power situation across all source UPSes becomes critical (on battery and low battery).
 
- * You can lose a UPS completely as long as you still have at least the minimum number of sources available. The minimum value is configurable. 
+- You can lose a UPS completely as long as you still have at least the minimum number of sources available. The minimum value is configurable. 
 
-=== Security and access control ===
+Security and access control
+---------------------------
 
- * Manager functions are granted with per-user granularity. The admin can have full powers, while the admin's helper can only do specific non-destructive tasks such as a battery test.
+- Manager functions are granted with per-user granularity. The admin can have full powers, while the admin's helper can only do specific non-destructive tasks such as a battery test.
 
- * The drivers, server, and monitoring client (upsmon) can all run as separate user IDs if this is desired for privilege separation.
+- The drivers, server, and monitoring client (upsmon) can all run as separate user IDs if this is desired for privilege separation.
 
- * Only one tiny part of one program has root powers.
-
+- Only one tiny part of one program has root powers.
   upsmon starts as root and forks an unprivileged process which does the actual monitoring over the network.[[BR]]
   They remain connected over a pipe. When a shutdown is necessary, a single character is sent to the privileged process.[[BR]]
-   It then calls the predefined shutdown command. In any other case, the privileged process exits.[[BR]]
-   This was inspired by the auth mechanism in Solar Designer's excellent popa3d.
+  It then calls the predefined shutdown command. In any other case, the privileged process exits.[[BR]]
+  This was inspired by the auth mechanism in Solar Designer's excellent popa3d.
 
- * The drivers and network server may be run in a chroot jail for further security benefits. This is supported directly in the current stable version (1.4) and beyond with the chroot= configuration directive. 
+- The drivers and network server may be run in a chroot jail for further security benefits. This is supported directly in the current stable version (1.4) and beyond with the chroot= configuration directive. 
 
- * IP-based access control now relies on the local firewall.
+- IP-based access control relies on the local firewall and link:http://en.wikipedia.org/wiki/TCP_Wrapper[TCP Wrapper].
 
-=== One UPS, many clients ===
+Web-based monitoring
+--------------------
 
- * Multiple systems may monitor a single UPS using only their network connections - no special "UPS sharing" hardware is required.
+- Comes stock with CGI-based web interface tools for UPS monitoring and management, including graphical status displays.
 
- * "Slave and master" monitoring design synchronizes shutdowns so that slaves can bring down their operating systems cleanly before the master switches off the power. 
+- Custom status web pages may be generated with the CGI programs, since they use templates to create the pages. This allows you to have status pages which fit the look and feel of the rest of your site. 
 
-=== Many UPSes, many clients ===
+Free software
+-------------
 
- * Each upsd process can serve status data for multiple UPSes to many clients.
+- That's free beer and free speech. Licensed under the GNU General Public License version 2.
 
- * Each upsmon process can monitor multiple UPSes for status data. 
+- Know your systems - all source code is available for inspection, so there are no mysteries or secrets in your critical monitoring tools. 
 
-=== Web-based monitoring ===
+UPS management and control
+--------------------------
 
- * Comes stock with CGI-based web interface tools for UPS monitoring and management, including graphical status displays.
+- Writable variables may be edited on higher end equipment for local customizations
 
- * Custom status web pages may be generated with the CGI programs, since they use templates to create the pages. This allows you to have status pages which fit the look and feel of the rest of your site. 
+- Status monitoring can generate notifications (email/pager/SMS/...) on alert conditions
 
-=== Free software ===
+- Alert notices may be dampened to only trigger after a condition persists. This avoids the usual pager meltdown when something happens and no delay is used.
 
- * That's free beer and free speech. Licensed under the GNU General Public License version 2.
+- Maintenance actions such as battery runtime calibration are available where supported by the UPS hardware.
 
- * Know your systems - all source code is available for inspection, so there are no mysteries or secrets in your critical monitoring tools. 
+- Power statistics can be logged in custom formats for later retrieval and analysis
 
-=== UPS management and control ===
+- All drivers are started and stopped with one common program. Starting one is as easy as starting ten: 'upsdrvctl start'.
 
- * Writable variables may be edited on higher end equipment like APC's Smart/Matrix-UPS models for local customizations
+- Shutdowns and other procedures may be tested without stressing actual UPS hardware by simulating status values with the dummy-ups pseudo-driver. Anything which can happen in a driver can be replicated with dummy-ups. 
 
- * Status monitoring can generate pager/SMS notifications on alert conditions
-
- * Alert notices may be dampened to only trigger after a condition persists. This avoids the usual pager meltdown when something happens and no delay is used.
-
- * Maintenance actions such as battery runtime calibration are available where supported by the UPS hardware.
-
- * Power statistics can be logged in custom formats for later retrieval and analysis
-
- * All drivers are started and stopped with one common program. Starting one is as easy as starting ten: 'upsdrvctl start'.
-
- * Shutdowns and other procedures may be tested without stressing actual UPS hardware by simulating status values with the dummy-ups pseudo-driver. Anything which can happen in a driver can be replicated with dummy-ups. 
-
-=== Monitoring diagrams ===
+Monitoring diagrams
+-------------------
 
 These are the most common situations for monitoring UPS hardware. Other ways are possible, but they are mostly variants on these four.
 
 Note that these examples show serial communications for simplicity, but USB or SNMP or any other monitoring is also possible.
 
-==== "Simple" configuration ====
+"Simple" configuration
+~~~~~~~~~~~~~~~~~~~~~~
 
-attachment:simple.png
+image:images/simple.png[]
 
-One UPS, one computer. This is the configuration that most users will use. You need at least a driver, upsd, and upsmon running.
+One UPS, one computer. This is also known as "Standalone" configuration.
 
-==== "Advanced" configuration ====
+This is the configuration that most users will use. You need at least a driver, upsd, and upsmon running.
 
-attachment:advanced.png
+"Advanced" configuration
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+image:images/advanced.png[]
 
 One UPS, multiple computers. Only one of them can actually talk to the UPS directly. That's where the network comes in. The Master system runs the driver, upsd, and upsmon in master mode. The Slave systems only run upsmon in slave mode.
 
 This is useful when you have a very large UPS that's capable of running multiple systems simultaneously. There is no longer the need to buy a bunch of individual UPSes or "sharing" hardware, since this software will handle the sharing for you.
 
-==== "Big Box" configuration ====
+////////////////////////////////////////////////////////////////////////////////
+=== One UPS, many clients ===
 
-attachment:bigbox.png
+- Multiple systems may monitor a single UPS using only their network connections - no special "UPS sharing" hardware is required.
+
+- "Slave and master" monitoring design synchronizes shutdowns so that slaves can bring down their operating systems cleanly before the master switches off the power. 
+
+=== Many UPSes, many clients ===
+
+- Each upsd process can serve status data for multiple UPSes to many clients.
+
+- Each upsmon process can monitor multiple UPSes for status data. 
+
+////////////////////////////////////////////////////////////////////////////////
+
+"Big Box" configuration
+~~~~~~~~~~~~~~~~~~~~~~~
+
+image:images/bigbox.png[]
 
 Some systems have multiple power supplies and cords. You typically find this on high-end servers that allow hot-swap and other fun features. In this case, you run multiple drivers (one per UPS), a single upsd, and a single upsmon (as master for both UPS 1 and UPS 2)
 
 This software understands that some of these servers can also run with some of the supplies gone. For this reason, every UPS is assigned a "power value" - the quantity of power supplies that it feeds on a system. The total available "power value" is compared to the minimum that is required for that hardware. For example, if you have 3 power supplies and 3 UPSes, but only 2 supplies must be running at any given moment, the minimum would be 2. This means that you can safely lose any one UPS and the software will handle it properly by remaining online.
 
-==== "Bizarre" configuration ====
+"Bizarre" configuration
+~~~~~~~~~~~~~~~~~~~~~~~
 
-attachment:bizarre.png
+image:images/bizarre.png[]
 
 You can even have a UPS that has the serial port connected to a system that it's not feeding. Sometimes a PC will be close to a UPS that needs to be monitored, so it's drafted to supply a serial port for the purpose. This PC may in fact be getting power from some other UPS. This is not a problem.
 
 The first system ("mixed") is a Master for UPS 1, but is only monitoring UPS 2. The other systems are Slaves of UPS 2.
 
-=== Image credits ===
+Image credits
+-------------
 
-Thanks to Luc Descotils and Arnaud Quette at MGE for providing shiny cleaned-up graphics.
+Thanks to Luc Descotils and Arnaud Quette at Eaton for providing shiny cleaned-up graphics.

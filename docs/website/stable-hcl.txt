@@ -1,42 +1,102 @@
 Hardware compatibility list
 ---------------------------
 
-*FIXME* add combo boxes for
+NOTE: Before you buy, take a look at the link:acknowledgements.html[Acknowledgements]
+for information about which drivers are developed with the support of the manufacturer. 
 
-- Support level + explanations
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      <fieldset id="filters-set">
+        <legend>Filters</legend>
+        <table>
+          <tbody>
+            <tr>
+              <td>
+                <label for="support-level">Support Level</label>
+              </td>
+              <td>
+                <select id="support-level" class="filter">
+                  <option value="-1">----</option>
+                </select>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <label for="manufacturer">Manufacturer</label>
+              </td>
+              <td>
+                <select id="manufacturer" class="filter">
+                  <option value="-1">----</option>
+                </select>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <label for="model">Model</label>
+              </td>
+              <td>
+                <select id="model" class="filter">
+                  <option value="-1">----</option>
+                </select>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <label for="connection">Connection</label>
+              </td>
+              <td>
+                <select id="connection" class="filter">
+                  <option value="-1">----</option>
+                </select>
+              </td>
+            </tr>
+            <tr>
+              <td colspan="2"><input type="button" value="Reset" onclick="NUT.resetCombos.call(NUT);" /></td>
+            </tr>
+          </tbody>
+        </table>
+      </fieldset>
+      
+      <table id="ups_list">
+        <thead>
+          <tr>
+            <td id="manufacturer-col">Manufacturer</td><td id="model-col">Model</td><td id="driver-col">Driver</td>
+          </tr>
+        </thead>
+        <tbody id="ups_list_body">
+        </tbody>
+      </table>
 
-	and / or
+<noscript><p><b>FIXME: include a static table</b></p></noscript>
 
-- driver status + explanations
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-	and / or
 
-- Manufacturer
+If your UPS isn't listed
+------------------------
 
-	and / or
+First, if there are other models by the same manufacturer, try their drivers.
+You may find that it "just works" or mostly works.
 
-- Model
+In either case, send in a report so this list and the driver can be improved.
 
-	and / or
+Next, if you don't find any match, there are a few drivers that have a good
+chance of working on random hardware. These are indicated in the *Various*
+entries above.
 
-- Communication port (serial, USB, network)
+After doing that, if those aren't working, you might try running other ones
+from the set to see if anything works. Sometimes you get lucky. Finally, if
+absolutely nothing works and your cabling is OK, try contacting the list and
+we will see what we can do for you.
 
-Comments: 
+In general, if a driver does not exist, that's due to the lack of overlap
+between the set of developers and the set of owners of that hardware.
 
-- add legend
-- default to show all
+The way to fix it is to turn a developer into an owner or an owner into a developer.
 
-.This list applies to version $VERSION.
-[width="95%",cols=">s,^m,e",options="header,footer"]
-|================================================
-|Manufacturer|Model |NUT driver and paramaters
-|1       |Item 1  |Item 1
-|2       |Item 2  |Item 2
-|3       |Item 3  |Item 3
-|4       |Item 4  |Item 4
-|footer 1|footer 2|footer 3
-|==========================
+Omissions or errors
+~~~~~~~~~~~~~~~~~~~
 
-////////////////////////////////////////////////////////////////////////////////
-||<#959595:20%> '''Manufacturer''' ||<#959595:50%> '''Model''' ||<#959595:30%> '''NUT driver''' ||
-////////////////////////////////////////////////////////////////////////////////
+There is a lot of UPS hardware for sale, and it's possible that we have missed
+listing some that are supported.
+
+Please report any omissions so that this list can be as accurate as possible. 

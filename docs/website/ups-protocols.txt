@@ -1,0 +1,90 @@
+
+WARNING: this is a Work In Progress document.
+
+For the time being, you should refer to the link:http://old.networkupstools.org/protocols/[old NUT website library]. 
+
+UPS Protocols
+-------------
+
+All protocol information on this site is provided in the hope that it will be
+useful.
+
+Some are officialy provided by the manufacturers, while others are the result of
+reverse engineering work.
+
+However, UPS hardware is plentiful and varied. Test your software thoroughly, as
+these documents may not always reflect the reality within your equipment!
+
+APC
+~~~
+
+- link:ups-protocols/apcsmart.html[APC's smart protocol] - unofficial decoding work
+
+Belkin
+~~~~~~
+
+- link:ups-protocols/belkinsmart.html[Belkin's smart protocol] - unofficial decoding work on the Regulator Pro
+
+- link:ups-protocols/belkinuniversal.html[Belkin Universal UPS] - courtesy of Peter Selinger
+
+Eaton
+~~~~~
+
+- Eaton Protocols Library - all official Eaton documents are here, including Powerware, MGE, ...
+
+- Best Fortress protocol - for LI 520, 720, 1020, and 1420 models
+
+- SOLA/Best Power protocol (Phoenixtec) - courtesy of Invensys Energy Systems
+
+MicroDowell
+~~~~~~~~~~~
+
+- MicroDowell UPS Serial Protocol v3.3.1 (PDF, 225KB)
+
+MGE
+~~~
+
+- MGE Protocols Library - all official MGE documents are here
+
+ONEAC
+~~~~~
+
+- ONEAC serial information - two scans
+
+Opti-UPS
+~~~~~~~~
+
+- Opti-UPS protocol - more guesswork
+
+PowerKinetics
+~~~~~~~~~~~~~
+
+- PowerKinetics MiniCOL protocol - courtesy of PowerKinetics technical support
+
+Standard protocols
+~~~~~~~~~~~~~~~~~~
+
+SEC 
+^^^
+- link:ups-protocols/sec.html[SEC protocol] - superset of the US9003, below
+
+- link:ups-protocols/sec-standard.html[SEC standard UPS Communication interface] - 15 scanned pages
+
+- link:us9003.html[US9003 UPS Communication Interface] 
+
+SNMP
+^^^^
+
+- link:ups-protocols/snmp.html: SNMP] protocols
+
+USB/HID Power Devices Class
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- link:http://www.usb.org/developers/devclass_docs/pdcv10.pdf[USB Usage Tables for HID Power Devices] (offsite PDF, 351K)
+
+
+Various
+~~~~~~~
+
+- link:ups-protocols/megatec.html[Megatec] UPS Protocol
+

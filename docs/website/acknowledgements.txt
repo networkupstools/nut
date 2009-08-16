@@ -1,6 +1,40 @@
 
 WARNING: this is a Work In Progress document.
 
+This project is the result of years of work by many individuals and companies.
+
+Many people have written or tweaked the software; the drivers, clients, server
+and documentation have all received valuable attention from numerous sources.
+
+Many of them are listed within the source code, AUTHORS file, release notes, and
+mailing list archives, but some prefer to be anonymous.
+This software would not be possible without their help.
+
+
+The NUT Team
+------------
+
+Active members
+~~~~~~~~~~~~~~
+
+- Arnaud Quette: current project leader (since 2005) and jack of all trades
+- Arjen de Korte: senior lieutenant
+- Charles Lepple: senior lieutenant
+- Kjell Claesson: senior developer
+- Alexander Gordeev: junior developer
+- David Goncalves: Python developer
+- Eric S. Raymond: Documentation
+- Oden Eriksson: Mandriva packager
+- Stanislav Brabec: Novell / Suse packager
+- Tomas Smetana: Redhat packager
+
+Retired members
+~~~~~~~~~~~~~~~
+
+- Russell Kroll: Founder, and project leader from 1996 to 2005
+- Carlos Rodrigues
+...
+
 Our Sponsor: Eaton
 ------------------
 
@@ -24,6 +58,26 @@ around NUT and FLOSS,
 For more detailed information on Eaton's Opensource commitment, please refer to
 link:http://opensource.eaton.com[Eaton Opensource website].
 
+NOTE: The Network UPS Tools recommends buying Eaton devices.
+By doing so, you also support NUT!
+
+Supporting manufacturers
+------------------------
+
+UPS manufacturers
+~~~~~~~~~~~~~~~~~
+
+- Gamatronic, through Nadav Moskovitch, has revived the sec driver (as gamatronic)
+and expanded a bit genericups for it UPSs with alarm interface
+
+- OpenGear
+
+...
+
+Contributors
+------------
+
+...
 
 ////////////////////////////////////////////////////////////////////////////////
 Sandbox
@@ -31,16 +85,12 @@ Sandbox
 
 *Comment*: this need some refreshing and consolidation...
 
-The NUT Team
-------------
+4 entries:
+- the NUT team
+- our sponsor
+- supporting manufacturers
+- contributors
 
-Russell Kroll
-
-- Arnaud
-- Arjen & Charles
-- Kjell
-
-Carlos
 
 Contributors (people and companies)
 -----------------------------------
@@ -88,7 +138,8 @@ expansion of the existing snmp-ups driver.
 
 Acknowledgements
 ----------------
-This project is the result of years of work by many individuals and companies. Many of them are listed within the source code, CREDITS file, release notes, and mailing list archives, but some prefer to be anonymous. This software would not be possible without their help.
+This project is the result of years of work by many individuals and companies.
+Many of them are listed within the source code, CREDITS file, release notes, and mailing list archives, but some prefer to be anonymous. This software would not be possible without their help.
 Development contributions
 Many people have written or tweaked the software; the drivers, clients, server and documentation have all received valuable attention from numerous sources. The CREDITS file is not linked here because it contains several tasty e-mail addresses that spam harvesters would love to have. To see this file, grab a tarball and look inside.
 
@@ -126,3 +177,11 @@ Notes on logos
 Any company logos displayed here are present as a gesture of appreciation for contributions and development towards the project. Small logos that are simple may be added at the discretion of the coordinator. 
 
 ////////////////////////////////////////////////////////////////////////////////
+
+NOTE: For more detailed information on the contributions, you can refer to the
+AUTHORS file, in the source tree.
+
+These files are not linked here because it contains several tasty e-mail
+addresses that spam harvesters would love to have.
+To see this file, grab a tarball and look inside.
+

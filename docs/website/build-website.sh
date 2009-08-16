@@ -27,4 +27,8 @@ $ASCIIDOC_HTML -o output/documentation.html documentation.txt
 $ASCIIDOC_HTML -o output/support.html support.txt
 $ASCIIDOC_HTML -o output/acknowledgements.html acknowledgements.txt
 $ASCIIDOC_HTML -o output/features.html ../features.txt
-$ASCIIDOC_HTML -o output/FAQ.html -a toc ../FAQ
+$ASCIIDOC_HTML -o output/FAQ.html -a toc -a numbered ../FAQ
+$ASCIIDOC_HTML -o output/ups-protocols.html -a toc ups-protocols.txt
+
+
+$ASCIIDOC_HTML -o output/upgrading.html ../../UPGRADING
