@@ -1,3 +1,8 @@
+Mon Aug 17 19:52:31 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - docs/website/images/: Website specific resources. Redundancies and
+   optimization will be addressed later.
+
 Sun Aug 16 12:17:31 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
 
  * AsciiDoc work on the website (3nd step): 
