@@ -1,3 +1,26 @@
+Sun Aug 16 12:17:31 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
+
+ * AsciiDoc work on the website (3nd step): 
+   - README, docs/features.txt, : switch to AsciiDoc, and start trimming or
+     rewriting the content,
+   - docs/acknowledgements: some completion,
+   - docs/website/download.txt: split "Development tree" into sub sections, and
+     mention the snapshots availability through the BuildBot,
+   - docs/website/projects.txt: rework the format for better output,
+   - docs/website/documentation.txt: fix the links,
+   - docs/website/{build-website,Makefile.am}: integrate new files (user-manual
+     and ups-protocols)
+   - docs/website/scripts/: move all .js scripts there,
+   - docs/website/scripts/{*jquery.js, upsdata.js}: base scripts for the new
+     dynamic Hardware Compatibility List,
+   - docs/website/stable-hcl.txt: new dynamic Hardware Compatibility List
+     (thanks to Sebastien Volle from Eaton)
+   - docs/website/ups-protocols.txt: create the new entry point for the UPS
+     Protocols Library,
+   - docs/website/web-layout.conf: some cleanup and completion for the HCL and
+     Google Analytics,
+   - docs/website/web-layout.css: some completion for the HCL,
+
 Wed Aug 12 13:45:52 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - docs/user-manual.txt: first attempt to formalize the NUT User Manual,
