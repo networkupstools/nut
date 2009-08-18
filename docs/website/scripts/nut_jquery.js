@@ -59,10 +59,8 @@ var NUT =
    */
   init: function()
   {
-    // Display filters fieldset hidden by default for user-agents not using javascript
-    $("#filters-set").show();
-     
     this.initFilters();
+    this.sortUPSData(UPSData);
     this.buildUPSList(UPSData);
     this.buildFilters(UPSData);
   },
@@ -71,6 +69,9 @@ var NUT =
    */
   initFilters: function()
   {
+    // Display filters fieldset hidden by default for user-agents not using javascript
+    $("#filters-set").show();
+    
     this.filters =
     {
       "support-level": { index: 0, field: $("#support-level") },
@@ -78,6 +79,26 @@ var NUT =
       "model": { index: 2, field: $("#model") },
       "connection": { index: 4, field: $("#connection") }
     }
+  },
+  
+  /**
+   * Sorts table data by manufacturer and driver
+   * @param {Object} data
+   */
+  sortUPSData: function(data)
+  {
+    // Sort by manufacturer and driver
+    data.sort(function(a,b)
+    {
+      var mI = NUT.fields.indexOf("manufacturer"), mD = NUT.fields.indexOf("driver");
+      var toLower = function(ar)
+      {
+        ar.forEach(function(i, index) { if(typeof i == "string") ar[index] = i.toLowerCase() });
+        return ar;
+      }
+      a = toLower(a.slice()), b = toLower(b.slice());
+      return a[mI] == b[mI] ? a[mD] > b[mD] : a[mI] > b[mI];
+    });
   },
   /**
    * Builds UPS list from provided data
@@ -98,8 +119,15 @@ var NUT =
     
     // Build rows
     var cellHistory = [], rows = [];
+    var rowHistory = data[0][0];
+    var classes = ["even", "odd"], manufIndex = this.fields.indexOf("manufacturer"), currentClass = 0;
     data.forEach(function(upsRow, rowIndex)
     {
+      if(upsRow[manufIndex] != rowHistory)
+      {
+        currentClass = Number(!currentClass);
+        rowHistory = upsRow[manufIndex];
+      } 
       var cells = [];
       // Build cells
       this.columns.forEach(function(column, colIndex)
@@ -119,7 +147,7 @@ var NUT =
           {
             cell = {html: cellContent, rowSpan: 1, cls: this.supportLevelClasses[upsRow[this.fields.indexOf("support_level")]]};
           }
-          else cell = {html: cellContent, rowSpan: 1, cls: ""}
+          else cell = {html: cellContent, rowSpan: 1, cls: classes[currentClass] }
           
           cells.push(cell);
           cellHistory[colIndex] = cell;

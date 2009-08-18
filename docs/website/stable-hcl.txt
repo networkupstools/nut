@@ -1,73 +1,75 @@
 Hardware compatibility list
 ---------------------------
 
+WARNING: this is a Work In Progress document.
+The "support level" data are purely arbitrary (mostly randomized) while
+waiting for the final version!
+
 NOTE: Before you buy, take a look at the link:acknowledgements.html[Acknowledgements]
 for information about which drivers are developed with the support of the manufacturer. 
 
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-      <fieldset id="filters-set">
-        <legend>Filters</legend>
-        <table>
-          <tbody>
-            <tr>
-              <td>
-                <label for="support-level">Support Level</label>
-              </td>
-              <td>
-                <select id="support-level" class="filter">
-                  <option value="-1">----</option>
-                </select>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <label for="manufacturer">Manufacturer</label>
-              </td>
-              <td>
-                <select id="manufacturer" class="filter">
-                  <option value="-1">----</option>
-                </select>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <label for="model">Model</label>
-              </td>
-              <td>
-                <select id="model" class="filter">
-                  <option value="-1">----</option>
-                </select>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <label for="connection">Connection</label>
-              </td>
-              <td>
-                <select id="connection" class="filter">
-                  <option value="-1">----</option>
-                </select>
-              </td>
-            </tr>
-            <tr>
-              <td colspan="2"><input type="button" value="Reset" onclick="NUT.resetCombos.call(NUT);" /></td>
-            </tr>
-          </tbody>
-        </table>
-      </fieldset>
-      
-      <table id="ups_list">
-        <thead>
-          <tr>
-            <td id="manufacturer-col">Manufacturer</td><td id="model-col">Model</td><td id="driver-col">Driver</td>
-          </tr>
-        </thead>
-        <tbody id="ups_list_body">
-        </tbody>
-      </table>
+<fieldset id="filters-set">
+  <legend>Filters</legend>
+  <table>
+    <tbody>
+      <tr>
+        <td>
+          <label for="support-level">Support Level</label>
+        </td>
+        <td>
+          <select id="support-level" class="filter">
+            <option value="-1">----</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <label for="manufacturer">Manufacturer</label>
+        </td>
+        <td>
+          <select id="manufacturer" class="filter">
+            <option value="-1">----</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <label for="model">Model</label>
+        </td>
+        <td>
+          <select id="model" class="filter">
+            <option value="-1">----</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <label for="connection">Connection</label>
+        </td>
+        <td>
+          <select id="connection" class="filter">
+            <option value="-1">----</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="2"><input type="button" value="Reset" onclick="NUT.resetCombos.call(NUT);" /></td>
+      </tr>
+    </tbody>
+  </table>
+</fieldset>
 
-<noscript><p><b>FIXME: include a static table</b></p></noscript>
-
+<table id="ups_list">
+  <thead>
+    <tr>
+      <td id="manufacturer-col">Manufacturer</td><td id="model-col">Model</td><td id="driver-col">Driver</td>
+    </tr>
+  </thead>
+  <tbody id="ups_list_body">
+    <!-- FIXME: include static table body here for browser with jscript disabled -->
+  </tbody>
+</table>
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
