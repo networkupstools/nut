@@ -30,7 +30,7 @@ if WITH_LIBPOWERMAN
 endif
 
 SERIAL_DRIVERLIST = apcsmart bcmxcp belkin belkinunv bestfcom	\
- bestuferrups bestups cyberpower dummy-ups etapro everups 	\
+ bestfortress bestuferrups bestups cyberpower dummy-ups etapro everups 	\
  gamatronic genericups isbmex liebert masterguard megatec metasys 	\
  mge-shut mge-utalk microdowell newmge-shut oneac optiups powercom rhino 	\
  safenet skel solis tripplite tripplitesu upscode2 victronups powerpanel \

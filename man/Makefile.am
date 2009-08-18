@@ -24,6 +24,7 @@ SERIAL_PAGES = \
 	bcmxcp.8 	\
 	belkin.8 	\
 	belkinunv.8	\
+	bestfortress.8	\
 	bestuferrups.8	\
 	bestups.8 	\
 	bestfcom.8	\

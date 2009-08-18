@@ -1,3 +1,8 @@
+Tue Aug 18 01:22:14 UTC 2009 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/bestfortress.c, man/bestfortress.8, data/driver.list: Resurrect the
+   bestfortress driver (submitted by Stuart D. Gathman)
+
 Sat Aug 15 17:42:49 UTC 2009 / Charles Lepple <clepple@gmail.com>
 
  - drivers/cps-hid.c, data/driver.list: Add CyberPower OR2200 to usbhid-ups

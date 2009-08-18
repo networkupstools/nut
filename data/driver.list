@@ -92,6 +92,7 @@
 "Belkin"	"Universal UPS F6H500ukUNV"	"serial port"	"megatec"
 "Belkin"	"Universal UPS F6H650ukUNV"	"serial port"	"megatec"
 
+"Best Power"	"Fortress (old)"	""	"bestfortress"
 "Best Power"	"Fortress (newer)"	""	"bestups"
 "Best Power"	"Fortress Telecom"	""	"bestups"
 "Best Power"	"Axxium Rackmount"	""	"bestups"
