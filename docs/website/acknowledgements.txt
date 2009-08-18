@@ -32,7 +32,16 @@ Retired members
 ~~~~~~~~~~~~~~~
 
 - Russell Kroll: Founder, and project leader from 1996 to 2005
-- Carlos Rodrigues
+- Peter Selinger: senior lieutenant
+- Carlos Rodrigues:
+- Niels Baggesen:
+- Niklas Edmundsson: ...
+- Martin Loyer: ...
+- Jonathan Dion: ...
+- Doug Reynolds: ...
+- Jon Gough: ...
+- LALLEMENT Dominique: Consultant (chairman of the USB/HID PDC Forum)
+- Julius Malkiewicz: junior developer
 ...
 
 Our Sponsor: Eaton
@@ -70,8 +79,14 @@ UPS manufacturers
 - Gamatronic, through Nadav Moskovitch, has revived the sec driver (as gamatronic)
 and expanded a bit genericups for it UPSs with alarm interface
 
-- OpenGear
+- microdowell 
+http://www.microdowell.com/fra/download.html
 
+
+Appliances manufacturers
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+- OpenGear
 ...
 
 Contributors
