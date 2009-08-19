@@ -29,6 +29,9 @@
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <netinet/in.h>
 
 #ifdef HAVE_UU_LOCK
 #include <libutil.h>
@@ -128,8 +131,37 @@ int ser_open_nf(const char *port)
 
 {
 	int	fd;
+	char	*path =0;
+	char	*p =0;
 
-	fd = open(port, O_RDWR | O_NOCTTY | O_EXCL | O_NONBLOCK);
+	path = alloca(strlen(port) + 1);
+	if (path != 0) {
+		strcpy(path,port);
+		p = strchr(path,':');
+	}
+	if (p != 0 && p != path) {	/* open network port */
+		int netport = 0;
+		struct sockaddr_in saddr;
+		struct hostent *blob = 0;
+		*p++ = 0;
+		netport = atoi(p);
+		fd = socket(AF_INET, SOCK_STREAM, 0);
+		if (fd < 0)
+			ser_open_error("socket");
+		blob = gethostbyname(path);
+		if (blob == 0)
+			ser_open_error(path);
+		memcpy(&saddr.sin_addr,blob->h_addr,sizeof saddr.sin_addr);
+		saddr.sin_port = htons(netport);
+		saddr.sin_family = AF_INET;
+		if (connect(fd,(struct sockaddr *)&saddr,sizeof saddr)
+			|| fcntl(fd,F_SETFL,O_NONBLOCK)) {
+			close(fd);
+			fd = -1;
+		}
+        }
+        else
+		fd = open(port, O_RDWR | O_NOCTTY | O_EXCL | O_NONBLOCK);
 
 	if (fd < 0) {
 		return -1;
@@ -156,9 +188,9 @@ int ser_set_speed_nf(int fd, const char *port, speed_t speed)
 {
 	struct	termios	tio;
 
-	if (tcgetattr(fd, &tio) != 0) {
+	if (!isatty(fd)) return 0;
+	if (tcgetattr(fd, &tio) != 0)
 		return -1;
-	}
 
 	tio.c_cflag = CS8 | CLOCAL | CREAD;
 	tio.c_iflag = IGNPAR;
