@@ -251,7 +251,7 @@ void upsdrv_updateinfo(void)
 		dstate_datastale();
 		return;
 	}
-	//upslogx(LOG_INFO, "updateinfo: %s", p);
+	/* upslogx(LOG_INFO, "updateinfo: %s", p); */
 
 	setinfo_int ("input.voltage", p+24,4);
 	setinfo_int ("output.voltage", p+28,4);
