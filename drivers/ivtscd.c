@@ -212,7 +212,7 @@ void upsdrv_initups(void)
 	 * Use canonical mode input processing (to read reply line)
 	 */
 	tio.c_lflag |= ICANON;	/* Canonical input (erase and kill processing) */
-	tio.c_iflag |= ICRNL;	/* Map CR to NL on input */
+	tio.c_iflag |= IGNCR;	/* Ignore CR */
 	tio.c_iflag |= IGNBRK;	/* Ignore break condition */
 	tio.c_oflag |= ONLCR;	/* Map NL to CR-NL on output */
 
