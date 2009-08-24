@@ -4,7 +4,7 @@
  * A document describing the protocol implemented by this driver can be
  * found online at "http://www.networkupstools.org/protocols/megatec.html".
  *
- * Copyright (C) 2008 - Arjen de Korte <adkorte-guest@alioth.debian.org>
+ * Copyright (C) 2003-2009  Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -100,6 +100,24 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 	int	ret;
 	size_t	i;
 
+	for (i = 0; i < 10; i++) {
+
+		/* Read data in 8-byte chunks */
+		/* ret = usb->get_interrupt(udev, (unsigned char *)tmp, 8, 1000); */
+		ret = usb_interrupt_read(udev, 0x81, tmp, 8, 1000);
+
+		/*
+		 * This USB to serial implementation is crappy. In order to read correct
+		 * replies we need to flush the output buffers of the converter until we
+		 * get no more data (ie, it times out).
+		 */
+		if (ret < 1) {
+			break;
+		}
+
+		upsdebug_hex(4, "dump", tmp, ret);
+	}
+
 	memset(tmp, 0, sizeof(tmp));
 	snprintf(tmp, sizeof(tmp), "%s", cmd);
 
@@ -120,26 +138,24 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 
 	memset(buf, 0, buflen);
 
-	for (i = 0; i <= buflen-8; i += ret) {
+	for (i = 0; (i <= buflen-8) && (strchr(buf, '\r') == NULL); i += ret) {
 
 		/* Read data in 8-byte chunks */
 		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
 		ret = usb_interrupt_read(udev, 0x81, &buf[i], 8, 1000);
 
 		/*
-		 * Devices that are supported by this subdriver require that we read data
-		 * from them until a timeout is received (in order to flush buffers?) This
-		 * is OK, since the main driver core will check for the length of the data
-		 * anyway
+		 * Any errors here mean that we are unable to read a reply (which
+		 * will happen after successfully writing a command to the UPS)
 		 */
 		if (ret <= 0) {
-			upsdebugx(4, "read: %s", ret ? usb_strerror() : "timeout");
-			break;
+			upsdebugx(3, "read: %s", ret ? usb_strerror() : "timeout");
+			return ret;
 		}
 	}
 
 	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
-	return (i > 0) ? (int)i : ret;
+	return i;
 }
 
 
