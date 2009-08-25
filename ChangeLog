@@ -1,3 +1,9 @@
+Tue Aug 25 20:40:28 UTC 2009 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/usbhid-ups.[ch]: remove delayed matching which wasn't really
+   useful, since it requires claiming the device, breaking any existing
+   bindings in the process (should also fix Alioth bug #311869)
+
 Tue Aug 18 01:22:14 UTC 2009 / Charles Lepple <clepple@gmail.com>
 
  - drivers/bestfortress.c, man/bestfortress.8, data/driver.list: Resurrect the

@@ -150,9 +150,6 @@ USBHID_UPS_SUBDRIVERS = apc-hid.c belkin-hid.c cps-hid.c explore-hid.c \
 usbhid_ups_SOURCES = usbhid-ups.c libhid.c libusb.c hidparser.c	\
  usb-common.c $(USBHID_UPS_SUBDRIVERS)
 usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
-if WITH_SSL
-  usbhid_ups_LDADD += $(LIBSSL_LDFLAGS)
-endif
 
 tripplite_usb_SOURCES = tripplite_usb.c libusb.c usb-common.c
 tripplite_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS) -lm
@@ -183,7 +180,7 @@ snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LDFLAGS)
 # HAL
 hald_addon_usbhid_ups_SOURCES = usbhid-ups.c libhid.c libusb.c hidparser.c	\
  $(USBHID_UPS_SUBDRIVERS)
-hald_addon_usbhid_ups_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS) $(LIBSSL_LDFLAGS)
+hald_addon_usbhid_ups_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS)
 
 hald_addon_tripplite_usb_SOURCES = tripplite_usb.c libusb.c
 hald_addon_tripplite_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS) -lm

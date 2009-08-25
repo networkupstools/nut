@@ -177,18 +177,4 @@ int setvar(const char *varname, const char *val);
 
 void possibly_supported(const char *mfr, HIDDevice_t *hd);
 
-/* --------------------------------------------------------------- */
-/*      Lookup table to translate keywords to enumerated values    */
-/* --------------------------------------------------------------- */
-
-#ifndef SHUT_MODE
-typedef enum {
-	NORMAL = 0,
-	CHECKSUM,
-	DELAYED
-} matching_t;
-
-extern matching_t	matching;	/* maybe useful for subdrivers? */
-#endif /* SHUT_MODE */
-
 #endif /* USBHID_UPS_H */
