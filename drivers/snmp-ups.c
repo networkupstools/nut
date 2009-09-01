@@ -53,8 +53,6 @@ mib2nut_info_t mib2nut[] = {
 		NETVISION_OID_UPSIDENTMODEL, netvision_mib },
 	{ "pw", PW_MIB_VERSION, "",
 		PW_OID_MODEL_NAME, pw_mib },
-	{ "ietf", IETF_MIB_VERSION, IETF_OID_POWER_STATUS,
-		IETF_OID_MFR_NAME, ietf_mib },
 	{ "aphel_genesisII", EATON_APHEL_MIB_VERSION, "",
 		APHEL1_OID_MODEL_NAME, eaton_aphel_genesisII_mib },
 	{ "aphel_revelation", EATON_APHEL_MIB_VERSION, "",
@@ -63,6 +61,13 @@ mib2nut_info_t mib2nut[] = {
 		RARITAN_OID_MODEL_NAME, raritan_mib },
 	{ "baytech", BAYTECH_MIB_VERSION, "",
 		BAYTECH_OID_MODEL_NAME, baytech_mib },
+	/*
+	 * Prepend vendor specific MIB mappings before IETF, so that
+	 * if a device supports both IETF and vendor specific MIB,
+	 * the vendor specific one takes precedence (when mib=auto)
+	 */
+	{ "ietf", IETF_MIB_VERSION, IETF_OID_POWER_STATUS,
+		IETF_OID_MFR_NAME, ietf_mib },
 	/* end of structure. */
 	{ NULL }
 };
