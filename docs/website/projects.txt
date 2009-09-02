@@ -1,6 +1,3 @@
-
-WARNING: this is a Work In Progress document.
-
 Related projects
 ----------------
 
@@ -126,7 +123,9 @@ link:http://bugs.debian.org/343530[RRDtool logging support]
 
 This patch adds link:http://oss.oetiker.ch/rrdtool[RRDtool] logging support to NUT.
 
+////////////////////////////////////////////////////////////////////////////////
 *FIXME* RRD note through collectd from Charles
+////////////////////////////////////////////////////////////////////////////////
 
 link:http://home.tele2.fr/elrik/[ups_control]
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -136,7 +135,7 @@ A developing python wrapper to upsc which can generate mails and shutdown the ma
 link:http://search.cpan.org/search?dist=ups-nut[UPS::Nut]
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A perl module to talk to a UPS via NUT (Network UPS Tools) upsd 
+A perl module to talk to a UPS via NUT (Network UPS Tools) upsd.
 
 
 Hardware projects involving NUT
@@ -145,15 +144,22 @@ Hardware projects involving NUT
 link:http://www.opengear.com/UPS.html[OpenGear]
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-there is also a link:http://www.opengear.com/Videos/Network-UPS-Tools/Network-UPS-Tools.html[video presentation] of the NUT integration.
+Opengear provides an advanced NUT integration into many models.
+There is also a link:http://www.opengear.com/Videos/Network-UPS-Tools/Network-UPS-Tools.html[video presentation] of the NUT integration.
+
+For more information on Opengear's contributions to NUT, have a look at the
+link:acknowledgements.html[acknowledgements information].
 
 Synology
 ^^^^^^^^
 
+Synology has worked closely with Arnaud to integrate support for USB UPS in all DSX09 models.
+
 Alcatel Lucent IPBX
 ^^^^^^^^^^^^^^^^^^^
 
-*FIXME* to be completed
+Alcatel has been working for years with us (Patrick Agrain and Arnaud) to improve
+NUT integration into some of their IPBX.
 
 link:http://www.readynas.com/?page_id=92[Netgear ReadyNAS]
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -161,7 +167,10 @@ link:http://www.readynas.com/?page_id=92[Netgear ReadyNAS]
 The RAIDiator firmware for the ReadyNAS product line includes NUT to either
 monitor a local USB UPS, or to connect as a slave to a NUT server.
 
-*FIXME* complete with link:http://test.networkupstools.org/About/DeviceIntegration/ReadyNas[the wiki article]
+////////////////////////////////////////////////////////////////////////////////
+*FIXME*
+complete with link:http://test.networkupstools.org/About/DeviceIntegration/ReadyNas[the wiki article]
+////////////////////////////////////////////////////////////////////////////////
 
 link:http://www.webbastards.com/projects/[lcd-nut]
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

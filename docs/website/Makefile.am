@@ -2,7 +2,7 @@ if MANUALUPDATE
 
 WEBSITE_FILES = index.html download.html projects.html stable-hcl.html \
 	documentation.html support.html acknowledgements.html features.html FAQ.html \
-	user-manual.html ups-protocols.html
+	user-manual.html packager-guide.html developer-guide.html ups-protocols.html
 
 ASCIIDOC_PARAMS = --unsafe --backend=xhtml11 \
     --conf-file=$(LAYOUT).conf \
@@ -35,6 +35,12 @@ FAQ.html: ../FAQ
 	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc $^
 
 user-manual.html: ../user-manual.txt
+	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc -a numbered $^
+
+packager-guide.html: ../packager-guide.txt
+	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc -a numbered $^
+
+developer-guide.html: ../developer-guide.txt
 	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc -a numbered $^
 
 stable-hcl.html: stable-hcl.txt

@@ -81,7 +81,7 @@ In order to verify the NUT source code signature, apply the following procedure:
 Packages
 --------
 
-Note: The only official releases from this project are source code.
+NOTE: The only official releases from this project are source code.
 
 NUT is already available in the following systems:
 
@@ -101,5 +101,9 @@ link:http://www.openbsd.org/cgi-bin/cvsweb/ports/sysutils/nut/[OpenBSD].
 - Other systems:
 Mac OS X
 
-Note: you should also refer to the link?[Package installation instructions] of
+////////////////////////////////////////////////////////////////////////////////
+*FIXME*
+NOTE: you should also refer to the link?[Package installation instructions] of
 the NUT User Manual.
+
+////////////////////////////////////////////////////////////////////////////////

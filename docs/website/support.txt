@@ -6,8 +6,8 @@ Documentation
 - First, be sure to read the link:FAQ.html[FAQ]. The most common problems are already
 addressed there.
 
-- Else, you can read the NUT User Manual. It also covers many areas about installing,
-configuring and using NUT.
+- Else, you can read the link:user-manual.html[NUT User Manual].
+It also covers many areas about installing, configuring and using NUT.
 The specific steps on system integration are also discussed.
 
 Mailing lists
@@ -31,16 +31,30 @@ FIXME: make this conditional and add alternative for ... PDF ...
 </form>
 ++++++++++++++++++++++++++++++++++++++
 
-Finally, you can subscribe to a NUT mailing list to:
 
-- request help: link:http://lists.alioth.debian.org/mailman/listinfo/nut-upsuser[NUT Users]
+Finally, you can *subscribe* to a NUT mailing list to:
 
-	In this case, be sure to read the section link?[How to request support]
+Request help
+~~~~~~~~~~~~
 
-- post a patch, ask a development question, ...: link:http://lists.alioth.debian.org/mailman/listinfo/nut-upsdev[NUT Developers]
+Use the link:http://lists.alioth.debian.org/mailman/listinfo/nut-upsuser[NUT Users]
+mailing list.
 
- Refer to the [Developer Guide] for more information.
+In this case, be sure to read the section
+link:user-manual.html#Support_Request[How to request support].
 
-- discuss packaging and related topics: link: http://lists.alioth.debian.org/mailman/listinfo/nut-packaging[NUT Packagers]
+Post a patch, ask a development question, ...
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
- Refer to the [Packager Guide] for more information.
+Use the link:http://lists.alioth.debian.org/mailman/listinfo/nut-upsdev[NUT Developers]
+mailing list.
+
+Refer to the link:developer-guide.html[NUT Developer Guide] for more information.
+
+Discuss packaging and related topics
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Use the link:http://lists.alioth.debian.org/mailman/listinfo/nut-packaging[NUT Packagers]
+mailing list.
+
+Refer to the link:packager-guide.html[NUT Packager Guide] for more information.

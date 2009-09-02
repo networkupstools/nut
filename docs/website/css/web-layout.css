@@ -62,16 +62,10 @@ h1 {
   margin-bottom: 10px;
   color:#0067CD;
   font-weight:bold;
-/*  margin-left:15px;
-  text-align:center; */
 }
 
 #sponsor span { margin-left: 10px; }
-
-#sponsor a {
-  color: #F4F4F4;
-  border: 0;
-}
+#sponsor img { border: 0; }
 
 #layout-menu {
   height: 100%;
@@ -81,7 +75,7 @@ h1 {
   font-family: sans-serif;
   font-weight: bold;
   list-style: none;
-  list-style-image: url(images/blue-arrow.png)
+  list-style-image: url(../images/blue-arrow.png)
 }
 #layout-menu li { margin-left: 10px; }
 #layout-menu a {

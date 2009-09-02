@@ -1,3 +1,18 @@
+Wed Sep  2 09:54:22 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ * AsciiDoc work on the website (4th step): 
+   - docs/website/css/: move all CSS files here,
+   - docs/website/css/ie6-overrides.css, docs/website/web-layout.conf, 
+     docs/website/scripts/nut_jquery.js: add IE6 compatibility
+     (thanks to Sebastien Volle from Eaton),
+   - docs/website/Makefile.am: integrate the Developer and Packager Guides into
+     the website,
+   - docs/website/build-website.sh: removed since it's not useful anymore,
+   - docs/website/{acknowledgements,download,projects,support}: minor update and
+     completion
+   - docs/features.txt: rework the format for inclusion in both the website and
+     the User Manual.
+
 Mon Aug 17 19:52:31 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
 
  - docs/website/images/: Website specific resources. Redundancies and
@@ -5,7 +20,7 @@ Mon Aug 17 19:52:31 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
 
 Sun Aug 16 12:17:31 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
 
- * AsciiDoc work on the website (3nd step): 
+ * AsciiDoc work on the website (3rd step): 
    - README, docs/features.txt, : switch to AsciiDoc, and start trimming or
      rewriting the content,
    - docs/acknowledgements: some completion,

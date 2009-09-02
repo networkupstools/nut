@@ -59,6 +59,8 @@ var NUT =
    */
   init: function()
   {
+    if(NUT.isIE6) this.initIE6();
+    
     this.initFilters();
     this.sortUPSData(UPSData);
     this.buildUPSList(UPSData);
@@ -82,22 +84,63 @@ var NUT =
   },
   
   /**
+   * Initialize hacks for Internet Explorer 6
+   */
+  initIE6: function()
+  {
+    this.filterPNG();
+    this.addIE6Warning();
+  },
+  
+  /**
+   * Displays a message inviting the user to upgrade
+   */
+  addIE6Warning: function()
+  {
+    $("#header").after(
+      "<!--[if lte IE 6]>" +
+      "<p style=\"color: red; font-weight: bold;\">Your browser is causing web developers a lot of headaches. Please upgrade." +
+      "<![endif]-->"
+    );
+  },
+  
+  /**
+   * Adds transparency to png images ( /!\ does not work for background images)
+   */
+  filterPNG: function()
+  {
+    if(!NUT.isIE6) return;
+    
+    var imgs = $("img");
+    for(var i = 0; i < imgs.length; i++)
+    {
+      var img = imgs[i];
+      if(img.src.match(/\.png$/i))
+      {
+        $(img).replaceWith(
+          "<div style=\"width:" + img.clientWidth + "px;height:" + img.clientHeight + "px;filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(src='" + img.src + "', sizingMethod='crop');\"></div>"
+        );
+      }
+    }
+  },
+  
+  /**
    * Sorts table data by manufacturer and driver
    * @param {Object} data
    */
   sortUPSData: function(data)
   {
-    // Sort by manufacturer and driver
+    var mI = NUT.fields.indexOf("manufacturer"), dI = NUT.fields.indexOf("driver");
     data.sort(function(a,b)
     {
-      var mI = NUT.fields.indexOf("manufacturer"), mD = NUT.fields.indexOf("driver");
       var toLower = function(ar)
       {
-        ar.forEach(function(i, index) { if(typeof i == "string") ar[index] = i.toLowerCase() });
-        return ar;
+        var res = ar.slice();
+        res.forEach(function(i, index) { if(typeof i == "string") res[index] = i.toLowerCase() });
+        return res;
       }
-      a = toLower(a.slice()), b = toLower(b.slice());
-      return a[mI] == b[mI] ? a[mD] > b[mD] : a[mI] > b[mI];
+      var c = toLower(a), d = toLower(b);
+      return c[mI] == d[mI] ? c[dI] > d[dI] : c[mI] > d[mI];
     });
   },
   /**
@@ -116,6 +159,9 @@ var NUT =
     }
     
     list.empty();
+    
+    // Bailout if no data
+    if(!data || data.length == 0) return;
     
     // Build rows
     var cellHistory = [], rows = [];
@@ -273,8 +319,36 @@ var NUT =
   }
 }
 
+if(typeof Array.prototype.indexOf != "function")
+{
+  Array.prototype.indexOf = function(elt)
+  {
+    var i = 0;
+    while(i < this.length)
+    {
+      if(this[i] == elt) return i;
+      i++;
+    }
+    return -1;
+  }
+}
+if(typeof Array.prototype.forEach != "function")
+{
+  Array.prototype.forEach = function(cb, scope)
+  {
+    var i = 0;
+    while(i < this.length)
+    {
+      cb.call(scope || this, this[i], i, this);
+      i++;
+    }
+  }
+}
+
 // Global initialization
 $(function()
 {
+  var ua = navigator.userAgent.toLowerCase();
+  NUT.isIE6 = !/opera/.test(ua) && /msie/.test(ua) && !/msie 7/.test(ua) && !/msie 8/.test(ua);
   NUT.init.call(NUT);
 });

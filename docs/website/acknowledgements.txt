@@ -77,20 +77,21 @@ UPS manufacturers
 ~~~~~~~~~~~~~~~~~
 
 - Gamatronic, through Nadav Moskovitch, has revived the sec driver (as gamatronic)
-and expanded a bit genericups for it UPSs with alarm interface
+and expanded a bit genericups for its UPSs with alarm interface.
 
-- microdowell 
-http://www.microdowell.com/fra/download.html
-
+- microdowell proposes NUT as an alternative to its software for
+link:http://www.microdowell.com/fra/download.html[Linux / Unix].
+...
 
 Appliances manufacturers
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 - OpenGear
-...
+- Synology
+- ...
 
-Contributors
-------------
+Other contributors
+------------------
 
 ...
 
