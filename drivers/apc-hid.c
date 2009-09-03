@@ -89,7 +89,6 @@ static info_lkp_t apcstatusflag_info[] = {
 
 /* Reason of the last battery transfer (from apcupsd) */
 static info_lkp_t apc_linefailcause_info[] = {
-	{ 0, "none", NULL },		/* No transfers have ocurred */
 	{ 1, "input voltage out of range (under)", NULL },	/* Low line voltage */
 	{ 2, "input voltage out of range (over)", NULL },	/* High line voltage */
 	{ 3, "ripple", NULL },		/* Ripple */
@@ -104,6 +103,7 @@ static info_lkp_t apc_linefailcause_info[] = {
 	{ 11, "self test", NULL },	/* Test usage invoked */
 	{ 12, "self test", NULL },	/* Front button initiated self test */
 	{ 13, "self test", NULL },	/* 2 week self test */
+	{ 0, "none", NULL },		/* No transfers have ocurred */
 	{ 0, NULL, NULL }
 };
 
@@ -271,7 +271,7 @@ static hid_info_t apc_hid2nut[] = {
   { "input.voltage.nominal", 0, 0, "UPS.Input.ConfigVoltage", NULL, "%.0f", 0, NULL },
   { "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.LowVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
   { "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.HighVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
-  { "input.transfer.reason", ST_FLAG_STRING, 64, "UPS.Input.APCLineFailCause", NULL, "%s", 0, apc_linefailcause_info },
+  { "input.transfer.reason", 0, 0, "UPS.Input.APCLineFailCause", NULL, "%s", 0, apc_linefailcause_info },
   { "input.sensitivity", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.APCSensitivity", NULL, "%s", HU_FLAG_SEMI_STATIC, apc_sensitivity_info },
 
   /* Output page */
