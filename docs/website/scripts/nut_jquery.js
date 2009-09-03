@@ -89,21 +89,8 @@ var NUT =
   initIE6: function()
   {
     this.filterPNG();
-    this.addIE6Warning();
   },
-  
-  /**
-   * Displays a message inviting the user to upgrade
-   */
-  addIE6Warning: function()
-  {
-    $("#header").after(
-      "<!--[if lte IE 6]>" +
-      "<p style=\"color: red; font-weight: bold;\">Your browser is causing web developers a lot of headaches. Please upgrade." +
-      "<![endif]-->"
-    );
-  },
-  
+
   /**
    * Adds transparency to png images ( /!\ does not work for background images)
    */
