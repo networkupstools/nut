@@ -1,11 +1,12 @@
 /*  apc-hid.c - data to monitor APC USB/HID devices with NUT
  *
  *  Copyright (C)  
- *	2003 - 2008	Arnaud Quette <arnaud.quette@free.fr>
+ *	2003 - 2009	Arnaud Quette <arnaud.quette@free.fr>
  *	2005		John Stamp <kinsayder@hotmail.com>
  *  2005        Peter Selinger <selinger@users.sourceforge.net>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
+ *   and Eaton <http://www.eaton.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -78,8 +79,7 @@ info_lkp_t apc_date_conversion[] = {
 	{ 0, NULL, apc_date_conversion_fun }
 };
 
-/* This was determined empirically from observing a BackUPS LS 500.
- */
+/* This was determined empirically from observing a BackUPS LS 500 */
 static info_lkp_t apcstatusflag_info[] = {
 	{ 8, "!off", NULL },  /* Normal operation */
 	{ 16, "!off", NULL }, /* This occurs briefly during power-on, and corresponds to status 'DISCHRG'. */
@@ -87,6 +87,33 @@ static info_lkp_t apcstatusflag_info[] = {
 	{ 0, NULL, NULL }
 };
 
+/* Reason of the last battery transfer (from apcupsd) */
+static info_lkp_t apc_linefailcause_info[] = {
+	{ 0, "none", NULL },		/* No transfers have ocurred */
+	{ 1, "input voltage out of range (under)", NULL },	/* Low line voltage */
+	{ 2, "input voltage out of range (over)", NULL },	/* High line voltage */
+	{ 3, "ripple", NULL },		/* Ripple */
+	{ 4, "input voltage out of range (under)", NULL },	/* notch, spike, or blackout */
+	{ 5, "self test", NULL },	/* Self Test or Discharge Calibration commanded
+								 * Test usage, front button, or 2 week self test */
+	{ 6, "forced", NULL },		/* DelayBeforeShutdown or APCDelayBeforeShutdown */
+	{ 7, "input frequency out of range", NULL },		/* Input frequency out of range */
+	{ 8, "input voltage out of range (under)", NULL },	/* Notch or blackout */
+	{ 9, "input voltage out of range (under)", NULL },	/* Spike or blackout */
+	{ 10, "forced", NULL },		/* Graceful shutdown by accessories */
+	{ 11, "self test", NULL },	/* Test usage invoked */
+	{ 12, "self test", NULL },	/* Front button initiated self test */
+	{ 13, "self test", NULL },	/* 2 week self test */
+	{ 0, NULL, NULL }
+};
+
+
+static info_lkp_t apc_sensitivity_info[] = {
+	{ 0, "low", NULL },
+	{ 1, "medium", NULL },
+	{ 2, "high", NULL },
+	{ 0, NULL, NULL }
+};
 
 /* --------------------------------------------------------------- */
 /*      Vendor-specific usage table */
@@ -101,16 +128,35 @@ static usage_lkp_t apc_usage_lkp[] = {
 	{ "APCBattReplaceDate",		0xff860016 },
 	{ "APCBattCapBeforeStartup",	0xff860019 }, /* FIXME: exploit */
 	{ "APC_UPS_FirmwareRevision",	0xff860042 },
+	{ "APCLineFailCause",	0xff860052 },
 	{ "APCStatusFlag",		0xff860060 },
+	{ "APCSensitivity",		0xff860061 },
+	/* usage seen in dumps but unknown:
+	 * - ff860027, ff860028 
+	 * Path: UPS.ff860027, Type: Feature, ReportID: 0x3e, Offset: 0,
+	 * 	Size: 32, Value:0.000000
+	 */
 	{ "APCPanelTest",		0xff860072 }, /* FIXME: exploit */
 	{ "APCShutdownAfterDelay",	0xff860076 }, /* FIXME: exploit */
 	{ "APC_USB_FirmwareRevision",	0xff860079 }, /* FIXME: exploit */
 	{ "APCDelayBeforeReboot",	0xff86007c },
 	{ "APCDelayBeforeShutdown",	0xff86007d },
 	{ "APCDelayBeforeStartup",	0xff86007e }, /* FIXME: exploit */
+	/* usage seen in dumps but unknown:
+	 * - ff860080
+	 * Path: UPS.PresentStatus.ff860080, Type: Input, ReportID: 0x33,
+	 * 	Offset: 12, Size: 1, Value: 0.000000
+	 * - ff86001a
+	 * Path: UPS.Battery.ff86001a, Type: Input, ReportID: 0x1b,
+	 * 	Offset: 0, Size: 8, Value: 3.000000
+	 * - ff86001b
+	 * Path: UPS.Battery.ff86001b, Type: Input, ReportID: 0x1c,
+	 * 	Offset: 0, Size: 8, Value: 0.000000
+	 */
 
-	/* FIXME: what is BUP? To what vendor do these Usages belong?
-	 They seem to be here by mistake. -PS */
+	/* Note (Arnaud): BUP stands for BackUPS Pro
+	 * This is a HID uncompliant special (manufacturer) collection
+	 * FIXME: these need to be used... */
 	{ "BUPHibernate",		0x00850058 }, /* FIXME: exploit */
 	{ "BUPBattCapBeforeStartup",	0x00860012 }, /* FIXME: exploit */
 	{ "BUPDelayBeforeStartup",	0x00860076 }, /* FIXME: exploit */
@@ -120,7 +166,7 @@ static usage_lkp_t apc_usage_lkp[] = {
 };
 
 /*
- * USB USAGE NOTES for APC (from Russell Kroll in the old hidups
+ * USB USAGE NOTES for APC (from Russell Kroll in the old hidups)
  *
  * FIXME: read 0xff86.... instead of 0x(00)86....?
  *
@@ -225,6 +271,8 @@ static hid_info_t apc_hid2nut[] = {
   { "input.voltage.nominal", 0, 0, "UPS.Input.ConfigVoltage", NULL, "%.0f", 0, NULL },
   { "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.LowVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
   { "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.HighVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+  { "input.transfer.reason", ST_FLAG_STRING, 64, "UPS.Input.APCLineFailCause", NULL, "%s", 0, apc_linefailcause_info },
+  { "input.sensitivity", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.APCSensitivity", NULL, "%s", HU_FLAG_SEMI_STATIC, apc_sensitivity_info },
 
   /* Output page */
   { "output.voltage", 0, 0, "UPS.Output.Voltage", NULL, "%.1f", 0, NULL },

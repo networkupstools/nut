@@ -1,3 +1,9 @@
+Thu Sep  3 11:49:12 UTC 2009 / Arnaud Quette <arnaud.quette@free.fr>
+
+ - drivers/apc-hid.c: add input.transfer.reason and input.sensitivity, along
+   with some more reverse engineered information.
+   (reported by Markus Wildi)
+
 Wed Sep  2 19:52:21 UTC 2009 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/ietfmib.h,drivers/mgemib.h: Indexes start at 1 (not 0).
