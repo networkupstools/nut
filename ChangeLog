@@ -1,3 +1,8 @@
+Fri Sep  4 08:12:52 UTC 2009 / Arnaud Quette <arnaud.quette@free.fr>
+
+ - drivers/apc-hid.c: fix input.transfer.reason support by using the standard
+   BOOL lookup mechanism (thanks Arjen), and bump the subdriver version to 0.94.
+
 Thu Sep  3 11:49:12 UTC 2009 / Arnaud Quette <arnaud.quette@free.fr>
 
  - drivers/apc-hid.c: add input.transfer.reason and input.sensitivity, along

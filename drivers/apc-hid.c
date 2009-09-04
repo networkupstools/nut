@@ -32,7 +32,7 @@
 #include "common.h"
 #include "usb-common.h"
 
-#define APC_HID_VERSION "APC HID 0.93"
+#define APC_HID_VERSION "APC HID 0.94"
 
 /* APC */
 #define APC_VENDORID 0x051d
@@ -88,25 +88,34 @@ static info_lkp_t apcstatusflag_info[] = {
 };
 
 /* Reason of the last battery transfer (from apcupsd) */
-static info_lkp_t apc_linefailcause_info[] = {
-	{ 1, "input voltage out of range (under)", NULL },	/* Low line voltage */
-	{ 2, "input voltage out of range (over)", NULL },	/* High line voltage */
+static info_lkp_t apc_linefailcause_vrange_info[] = {
+	{ 1, "vrange", NULL },	/* Low line voltage */
+	{ 2, "vrange", NULL },	/* High line voltage */
+	{ 4, "vrange", NULL },	/* notch, spike, or blackout */
+	{ 8, "vrange", NULL },	/* Notch or blackout */
+	{ 9, "vrange", NULL },	/* Spike or blackout */
+	{ 0, "!vrange", NULL },		/* No transfers have ocurred */
+	{ 0, NULL, NULL }
+};
+
+static info_lkp_t apc_linefailcause_frange_info[] = {
+	{ 7, "frange", NULL },		/* Input frequency out of range */
+	{ 0, "!frange", NULL },		/* No transfers have ocurred */
+	{ 0, NULL, NULL }
+};
+
+#if 0
+/* these input.transfer.reason can't be mapped at the moment... */
 	{ 3, "ripple", NULL },		/* Ripple */
-	{ 4, "input voltage out of range (under)", NULL },	/* notch, spike, or blackout */
 	{ 5, "self test", NULL },	/* Self Test or Discharge Calibration commanded
 								 * Test usage, front button, or 2 week self test */
 	{ 6, "forced", NULL },		/* DelayBeforeShutdown or APCDelayBeforeShutdown */
-	{ 7, "input frequency out of range", NULL },		/* Input frequency out of range */
-	{ 8, "input voltage out of range (under)", NULL },	/* Notch or blackout */
-	{ 9, "input voltage out of range (under)", NULL },	/* Spike or blackout */
 	{ 10, "forced", NULL },		/* Graceful shutdown by accessories */
 	{ 11, "self test", NULL },	/* Test usage invoked */
 	{ 12, "self test", NULL },	/* Front button initiated self test */
 	{ 13, "self test", NULL },	/* 2 week self test */
-	{ 0, "none", NULL },		/* No transfers have ocurred */
 	{ 0, NULL, NULL }
-};
-
+#endif
 
 static info_lkp_t apc_sensitivity_info[] = {
 	{ 0, "low", NULL },
@@ -266,12 +275,16 @@ static hid_info_t apc_hid2nut[] = {
   { "BOOL", 0, 0, "UPS.PowerSummary.ShutdownImminent", NULL, NULL, 0, shutdownimm_info },
   { "BOOL", 0, 0, "UPS.PowerSummary.APCStatusFlag", NULL, NULL, HU_FLAG_QUICK_POLL, apcstatusflag_info }, /* APC Back-UPS LS 500 */
 
+  /* we map 2 times "input.transfer.reason" to be able to clear
+   * both vrange (voltage) and frange (frequency) */
+  { "BOOL", 0, 0, "UPS.Input.APCLineFailCause", NULL, NULL, 0, apc_linefailcause_vrange_info },
+  { "BOOL", 0, 0, "UPS.Input.APCLineFailCause", NULL, NULL, 0, apc_linefailcause_frange_info },
+
   /* Input page */
   { "input.voltage", 0, 0, "UPS.Input.Voltage", NULL, "%.1f", 0, NULL },
   { "input.voltage.nominal", 0, 0, "UPS.Input.ConfigVoltage", NULL, "%.0f", 0, NULL },
   { "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.LowVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
   { "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.HighVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
-  { "input.transfer.reason", 0, 0, "UPS.Input.APCLineFailCause", NULL, "%s", 0, apc_linefailcause_info },
   { "input.sensitivity", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.APCSensitivity", NULL, "%s", HU_FLAG_SEMI_STATIC, apc_sensitivity_info },
 
   /* Output page */
