@@ -4,7 +4,8 @@ distributions,
 - hotplug and udev integration for on the fly privileges settings (Linux only),
 - Hardware Abstraction Layer script, for declaring and binding NUT addons to
 specific USB devices,
-- Python Client module and application.
+- Python Client module and application,
+- Perl client module.
 
 They have either been contributed by users of the software, or by the NUT Team
 itself.

@@ -6,3 +6,7 @@
  The files in the scripts/python/ directory are released under GNU General
  Public License (GPL) version 3, or (at your option) any later version. See
  "LICENSE.GPL3" in the root of this distribution.
+
+ The Perl client module (scripts/perl/Nut.pm) is released under the same
+ license as Perl itself. That is to say either GPL version 1 or (at your option)
+ any later version, or the "Artistic License".
