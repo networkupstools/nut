@@ -2,8 +2,8 @@ Welcome
 -------
 
 The primary goal of the Network UPS Tools (NUT) project is to provide 
-support for Power Devices, such as Uninterruptible Power Supplies, Power
-Distributions Units and Solar Controlers.
+support for power devices such as Uninterruptible Power Supplies, Power
+Distributions Units, and Solar Controllers.
 
 NUT provides many link:features.html[features], with a uniform control and management interface.
 

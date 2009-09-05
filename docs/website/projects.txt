@@ -3,7 +3,7 @@ Related projects
 
 There are many programs and devices that integrate NUT support.
 
-This page tries to track these down.
+This page tries to track them.
 
 Graphical desktop clients
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -16,15 +16,15 @@ Simple UPS monitoring plugin for GKrellM. Uses NUT (Network UPS Tools) for UPS c
 link:http://www.knut.noveradsl.cz/knutclient/[KNutClient]
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-KNutClient is visual client for UPS system NUT
+KNutClient is a visual client for NUT.
 
 link:http://www.lestat.st/informatique/projets/nut-monitor-en[NUT-Monitor]
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 NUT-Monitor is a graphical application to monitor and manage UPSes connected to
-a NUT server. This application is written in Python and PyGTK and uses the PyNUT class.
+a NUT server. This application is written in Python and PyGTK, and uses the <<PyNUT,PyNUT>> class.
 
-NOTE: NUT-Monitor is now part of NUT, since version NUT 2.4.1.
+NOTE: NUT-Monitor is part of NUT since version NUT 2.4.1.
 It will further evolve toward the NUT Control Center.
 
 link:http://download.mgeops.com/explore/eng/ptp/ptp_sol.htm?sol=PSP[Eaton - Personal Solution Pac]
@@ -46,7 +46,7 @@ link:http://www.autoitscript.com[AUTOIT] scripting language.
 link:http://csociety.ecn.purdue.edu/~delpha/winnut/[WinNUT]
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-WinNUT is a partial port of the Network UPS Tools (NUT) to Windows.
+WinNUT is a partial port of the client side of Network UPS Tools (NUT) to Windows.
 
 link:http://wmnut.mgeops.org/[WMNUT]
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -62,7 +62,7 @@ link:http://bigsister.graeff.com/[Big Sister system and network monitor]
 
 The "nut" module monitors uninterruptible power supplies under control of the
 NUT (Network UPS Tools) free software suite.
-It sends alerts on power breakages, overload and battery problems. The longterm
+It sends alerts on power outages, overload and battery problems. The longterm
 graphing may point you to battery aging problems.
 
 link:http://cacti.net[Cacti monitoring tool]
@@ -77,7 +77,7 @@ There are three different scripts that add NUT support to Cacti:
 link:http://collectd.org[collectd]
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-collectd, the system statistics collection daemon, features a NUT plugin to
+The `collectd` system statistics collection daemon features a NUT plugin to
 collect statistics from UPSes. 
 
 link:http://monami.sourceforge.net[MonAMI NUT plugin]
@@ -112,6 +112,7 @@ link:http://www.the-mcdonalds.org/Nut-Graph/[Nut-Graph]
 
 PHP4 / GD / MySQL / jpgraph package to visualize logged UPS status data.
 
+[[PyNUT]]
 link:http://www.lestat.st/informatique/projets/pynut-en[PyNUT]
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -130,12 +131,12 @@ This patch adds link:http://oss.oetiker.ch/rrdtool[RRDtool] logging support to N
 link:http://home.tele2.fr/elrik/[ups_control]
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A developing python wrapper to upsc which can generate mails and shutdown the machine.
+A developing Python wrapper to upsc which can generate mails and shutdown the machine.
 
 link:http://search.cpan.org/search?dist=ups-nut[UPS::Nut]
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A perl module to talk to a UPS via NUT (Network UPS Tools) upsd.
+A Perl module to talk to an UPS via NUT (Network UPS Tools) upsd.
 
 
 Hardware projects involving NUT
