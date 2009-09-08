@@ -59,8 +59,6 @@ var NUT =
    */
   init: function()
   {
-    if(NUT.isIE6) this.initIE6();
-    
     this.initFilters();
     this.sortUPSData(UPSData);
     this.buildUPSList(UPSData);
@@ -84,31 +82,15 @@ var NUT =
   },
   
   /**
-   * Initialize hacks for Internet Explorer 6
+   * Displays a message inviting the user to upgrade
    */
-  initIE6: function()
+  addIE6Warning: function()
   {
-    this.filterPNG();
-  },
-
-  /**
-   * Adds transparency to png images ( /!\ does not work for background images)
-   */
-  filterPNG: function()
-  {
-    if(!NUT.isIE6) return;
-    
-    var imgs = $("img");
-    for(var i = 0; i < imgs.length; i++)
-    {
-      var img = imgs[i];
-      if(img.src.match(/\.png$/i))
-      {
-        $(img).replaceWith(
-          "<div style=\"width:" + img.clientWidth + "px;height:" + img.clientHeight + "px;filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(src='" + img.src + "', sizingMethod='crop');\"></div>"
-        );
-      }
-    }
+    $("#header").after(
+      "<!--[if lte IE 6]>" +
+      "<p style=\"color: red; font-weight: bold;\">Your browser is causing web developers a lot of headaches. Please upgrade." +
+      "<![endif]-->"
+    );
   },
   
   /**
@@ -335,7 +317,5 @@ if(typeof Array.prototype.forEach != "function")
 // Global initialization
 $(function()
 {
-  var ua = navigator.userAgent.toLowerCase();
-  NUT.isIE6 = !/opera/.test(ua) && /msie/.test(ua) && !/msie 7/.test(ua) && !/msie 8/.test(ua);
   NUT.init.call(NUT);
 });

@@ -1,3 +1,5 @@
+html, body { overflow: visible; }
+
 #layout-menu-box {
   float: left;
   width: 207px;
@@ -11,6 +13,7 @@
 
 #sponsor {
   font-size: small;
+  margin-top: 100px;
   margin-bottom: 10px;
   color:#0067CD;
   font-weight:bold;
@@ -19,5 +22,6 @@
 #layout-content-box {
   float: right;
   margin: 0;
+  top: 0;
   background-color: white;
 }

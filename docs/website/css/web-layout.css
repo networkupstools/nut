@@ -1,3 +1,5 @@
+html, body { overflow: hidden; height: 100%; }
+
 body {
   margin: 0;
   font-size: 0.9em;
@@ -26,9 +28,10 @@ body {
 
 #layout-content-box {
   position: relative;
-  margin-top: 110px;
+  top: 110px;
   margin-left: 210px;
   background-color: white;
+  overflow-y: auto;
 }
 
 h1 {
