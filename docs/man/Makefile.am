@@ -2,7 +2,9 @@ all: html
 
 if MANUALUPDATE
 
-CONVERTED_TO_ASCIIDOC = tripplite_usb.8.html	upsc.8.html
+CONVERTED_TO_ASCIIDOC = tripplite_usb.8.html \
+	ups.conf.5.html \
+	upsc.8.html
 
 html:	$(CONVERTED_TO_ASCIIDOC)
 
