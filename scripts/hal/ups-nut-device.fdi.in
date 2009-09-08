@@ -14,6 +14,13 @@
 
       <!--  Hewlett Packard  -->
       <match key="usb_device.vendor_id" int="0x03f0">
+        <!--  HP T750 INTL  -->
+        <match key="usb_device.product_id" int="0x1f06">
+          <append key="info.category" type="string">battery</append>
+          <merge key="info.capabilities" type="strlist">battery</merge>
+          <merge key="info.addons" type="strlist">hald-addon-usbhid-ups</merge>
+          <merge key="battery.type" type="string">ups</merge>
+        </match>
         <!--  HP R/T 2200 INTL (like SMART2200RMXL2U)  -->
         <match key="usb_device.product_id" int="0x1f0a">
           <append key="info.category" type="string">battery</append>

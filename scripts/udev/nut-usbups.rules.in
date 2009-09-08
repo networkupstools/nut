@@ -10,6 +10,8 @@ LABEL="nut-usbups_rules_real"
 SYSFS{idVendor}=="0001", SYSFS{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 #  Hewlett Packard 
+#  HP T750 INTL  - usbhid-ups
+SYSFS{idVendor}=="03f0", SYSFS{idProduct}=="1f06", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  HP R/T 2200 INTL (like SMART2200RMXL2U)  - usbhid-ups
 SYSFS{idVendor}=="03f0", SYSFS{idProduct}=="1f0a", MODE="664", GROUP="@RUN_AS_GROUP@"
 
