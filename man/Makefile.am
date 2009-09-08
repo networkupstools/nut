@@ -36,6 +36,7 @@ SERIAL_PAGES = \
 	gamatronic.8	\
 	genericups.8	\
 	isbmex.8	\
+	ivtscd.8	\
 	liebert.8	\
 	masterguard.8	\
 	metasys.8	\

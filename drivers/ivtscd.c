@@ -22,7 +22,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"IVT Solar Controller driver"
-#define DRIVER_VERSION	"0.01"
+#define DRIVER_VERSION	"0.02"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -132,6 +132,11 @@ void upsdrv_initinfo(void)
 	if (ivt_status() < 7) {
 		fatal_with_errno(EXIT_FAILURE, "IVT Solar Controller not detected");
 	}
+
+	/* set the device general information */
+	dstate_setinfo("device.mfr", "IVT");
+	dstate_setinfo("device.model", "Solar Controller Device");
+	dstate_setinfo("device.type", "scd");
 
 	dstate_addcmd("reset.input.minmax");
 

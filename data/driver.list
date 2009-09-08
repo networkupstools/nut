@@ -262,6 +262,8 @@
 "Ippon"		"Back Power Pro"	""	"megatec"
 "Ippon"		"Back Power Pro 700"	"USB"	"megatec_usb"
 
+"IVT"	"SCD series"	""	"ivtscd"
+
 "Jageson Technology"	"Jasuny USPS"	""	"genericups upstype=4"
 
 "Kebo"	"1200D/D Series"	""	"megatec"
