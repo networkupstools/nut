@@ -21,7 +21,7 @@ html:	$(CONVERTED_TO_ASCIIDOC) html-recursive
 clean-local:
 	rm -f $(CONVERTED_TO_ASCIIDOC)
 
-SUBDIRS = website
+SUBDIRS = website man
 
 SUFFIXES = .txt .html
 
