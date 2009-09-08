@@ -1,0 +1,148 @@
+TRIPPLITE_USB(8)
+================
+
+
+NAME
+----
+tripplite_usb - Driver for older Tripp Lite USB UPSes (not PDC HID)
+
+SYNOPSIS
+--------
+*tripplite_usb* -h
+
+*tripplite_usb* -a 'UPS_NAME' ['OPTIONS']
+
+SUPPORTED HARDWARE
+------------------
+This driver should work with older Tripp Lite UPSes which are detected as USB
+HID-class devices, but are not true HID Power-Device Class devices.  So far,
+the devices supported by tripplite_usb have product ID 0001, and the newer
+units (such as those with "LCD" in the model name) with product ID 2001 require
+the usbhid-ups(8) driver instead.  Please report success or failure to the
+nut-upsuser mailing list.  A key piece of information is the protocol number,
+returned in `ups.debug.0`.  Also, be sure to turn on debugging ('-DDD') for
+more informative log messages.  If your Tripp Lite UPS uses a serial port, you
+may wish to investigate the tripplite(8) or tripplite_su(8) driver.
+
+This driver has been tested with the following models:
+
+ * INTERNETOFFICE700
+ * OMNIVS1000
+ * OMNIVS1500XL (some warnings)
+ * SMART700USB
+ * SMART1500RM2U
+ * SMART2200RMXL2U
+ * SMART3000RM2U
+
+If you have used Tripp Lite's PowerAlert software to connect to your UPS, there
+is a good chance that tripplite_usb(8) will work if it uses one of the
+following protocols:
+
+ * Protocol 0004
+ * Protocol 1001
+ * Protocol 2001
+ * Protocol 3003
+
+EXTRA ARGUMENTS
+---------------
+
+This driver supports the following optional setting in the ups.conf(5) file
+(or with '-x' on the command line):
+
+*offdelay*::
+
+This setting controls the delay between receiving the "kill" command ('-k')
+and actually cutting power to the computer.
+
+*bus*::
+
+This regular expression is used to match the USB bus (as seen in
+`/proc/bus/usb/devices` or lsusb(8); including leading zeroes).
+
+*product*::
+
+A regular expression to match the product string for the UPS.  This would be
+useful if you have two different Tripp Lite UPS models connected to the
+system, and you want to be sure that you shut them down in the correct order.
+
+NOTE: This regex is matched against the full USB product string as seen in
+lsusb(8). The `ups.model` in the upsc(1) output only lists the name after
+`TRIPP LITE`, so to match a SMART2200RMXL2U, you could use the regex
+`.*SMART2200.*`.
+
+*productid*::
+
+The productid is a regular expression which matches the UPS PID as four
+hexadecimal digits.  So far, the only devices that work with this driver have
+PID `0001`.
+
+*serial*::
+
+It does not appear that these particular Tripp Lite UPSes use the `iSerial`
+descriptor field to return a serial number.  However, in case your unit does,
+you may specify it here.
+
+For more information on regular expressions, see regex(7)
+
+RUNTIME VARIABLES
+-----------------
+
+*ups.delay.shutdown*::
+
+This variable is the same as the 'offdelay' setting, but it can be changed at
+runtime by upsrw(8).
+
+*ups.id*::
+
+Some SMARTPRO models feature an ID that can be set and retrieved. If your UPS
+supports this feature, this variable will be listed in the output of upsrw(8).
+
+*outlet.1.switch*::
+
+Some Tripp Lite units have a switchable outlet (usually outlet #1) which can be
+turned on and off by writing '1' or '0', respectively, to `outlet.1.switch`.
+If your unit has multiple switchable outlets, substitute the outlet number for
+'1' in the variable name. Be sure to test this first - there is no other way to
+be certain that the number used by the driver matches the label on the unit.
+
+KNOWN ISSUES AND BUGS
+---------------------
+
+The driver was not developed with any official documentation from Tripp Lite,
+so certain events may confuse the driver. If you observe any strange behavior,
+please re-run the driver with `-DDD` to increase the verbosity.
+
+So far, the Tripp Lite UPSes do not seem to have any serial number or other
+unique identifier accessible through USB. Thus, when monitoring several Tripp
+Lite USB UPSes, you should use either the 'bus' or 'product' configuration
+options to uniquely specify which UPS a given driver instance should control.
+
+For instance, you can easily monitor an OMNIVS1000 and a SMART1500RM2U at the
+same time, since they have different USB Product ID strings. If you have two
+SMART1500RM2U units, you would have to find which USB bus number each unit is
+on (via lsusb(8)), which may result in ambiguities if the available USB ports
+are on the same bus.
+
+Some of the SMART*2U models have an ID number, but because this ID is not
+exposed as a USB string descriptor, there is no easy way to use this ID to
+distinguish between multiple UPS units on a single machine.
+
+AUTHOR
+------
+Written by Charles Lepple, based on the tripplite(8) driver by Rickard E. (Rik)
+Faith and Nicholas Kain. Please do not email the authors directly - use the
+nut-upsdev mailing list.
+
+A Tripp Lite OMNIVS1000 was graciously donated to the NUT project by Bradley Feldman
+<http://www.bradleyloritheo.com>
+
+SEE ALSO
+--------
+
+nutupsdrv(8), regex(7), lsusb(8), usbhid-ups(8)
+
+INTERNET RESOURCES
+------------------
+
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
