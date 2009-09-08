@@ -1,6 +1,8 @@
-all: html
-
 if MANUALUPDATE
+
+EXTRA_DIST = tripplite_usb.8.txt \
+	ups.conf.5.txt \
+	upsc.8.txt
 
 CONVERTED_TO_ASCIIDOC = tripplite_usb.8.html \
 	ups.conf.5.html \
