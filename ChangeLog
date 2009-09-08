@@ -1,3 +1,8 @@
+Tue Sep  8 18:57:51 UTC 2009 / Arjen de Korte <arjen@de-korte.org>
+
+ - m4/nut_check_libnetsnmp.m4: check for presence of header files to see
+   if development files are installed
+
 Tue Sep  8 09:39:24 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - drivers/ivtscd.c: complete general information (device.{mfr,model,type}),
