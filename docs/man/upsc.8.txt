@@ -29,7 +29,7 @@ OPTIONS
 *-L* 'host'::
 
   As above, list all UPS names configured at 'host', including their description
-  provided by the remote upsd(8) from upsc.conf(5). The hostname defaults to
+  provided by the remote upsd(8) from ups.conf(5). The hostname defaults to
   "localhost".  You may optionally add a colon and a port number to override the
   default port.
 
