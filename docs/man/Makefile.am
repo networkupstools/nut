@@ -2,11 +2,13 @@ if MANUALUPDATE
 
 EXTRA_DIST = tripplite_usb.8.txt \
 	ups.conf.5.txt \
-	upsc.8.txt
+	upsc.8.txt \
+	upscmd.8.txt
 
 CONVERTED_TO_ASCIIDOC = tripplite_usb.8.html \
 	ups.conf.5.html \
-	upsc.8.html
+	upsc.8.html \
+	upscmd.8.html
 
 html:	$(CONVERTED_TO_ASCIIDOC)
 
