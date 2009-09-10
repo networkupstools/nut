@@ -82,18 +82,6 @@ var NUT =
   },
   
   /**
-   * Displays a message inviting the user to upgrade
-   */
-  addIE6Warning: function()
-  {
-    $("#header").after(
-      "<!--[if lte IE 6]>" +
-      "<p style=\"color: red; font-weight: bold;\">Your browser is causing web developers a lot of headaches. Please upgrade." +
-      "<![endif]-->"
-    );
-  },
-  
-  /**
    * Sorts table data by manufacturer and driver
    * @param {Object} data
    */
