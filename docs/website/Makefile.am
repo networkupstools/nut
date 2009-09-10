@@ -20,34 +20,36 @@ LAYOUT=web-layout
 
 html:	$(WEBSITE_FILES)
 
+$(WEBSITE_FILES): $(LAYOUT).conf
+
 clean-local:
 	rm -f $(WEBSITE_FILES)
 
 SUFFIXES = .txt .html
 
 index.html: website.txt
-	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a index-only $^
+	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a index-only $<
 
 features.html: ../features.txt
-	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ $^
+	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ $<
 
 FAQ.html: ../FAQ
-	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc $^
+	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc $<
 
 user-manual.html: ../user-manual.txt
-	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc -a numbered $^
+	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc -a numbered $<
 
 packager-guide.html: ../packager-guide.txt
-	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc -a numbered $^
+	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc -a numbered $<
 
 developer-guide.html: ../developer-guide.txt
-	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc -a numbered $^
+	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc -a numbered $<
 
 stable-hcl.html: stable-hcl.txt
-	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a hcl $^
+	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a hcl $<
 
 .txt.html:
-	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ $^
+	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ $<
 	
 else !MANUALUPDATE
 html: html-recursive

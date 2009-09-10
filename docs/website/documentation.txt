@@ -1,22 +1,22 @@
-NUT Official documentation
---------------------------
+NUT Official Documentation
+==========================
 
-User documentation
-~~~~~~~~~~~~~~~~~~
+User Documentation
+------------------
 
 - link:FAQ.html[FAQ]
 - link:readme.html[Quick Start Information]
 - link:user-manual.html[NUT User Manual]
 - link:cables.html[Cables information]
 
-Developer documentation
-~~~~~~~~~~~~~~~~~~~~~~~
+Developer Documentation
+-----------------------
 
 - link:developer-guide.html[NUT Developer Guide]
 - link:packager-guide.html[NUT Packager Guide]
 - link:ups-protocols.html[UPS protocols library]
 
-Offsite links
+Offsite Links
 -------------
 
 These are general information about UPS and PDU.
