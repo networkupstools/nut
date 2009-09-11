@@ -37,7 +37,7 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 	AC_MSG_RESULT([${LDFLAGS}])
    fi
 
-   AC_MSG_CHECKING([for Net-SNMP headers])
+   AC_MSG_CHECKING(for Net-SNMP headers)
    AC_TRY_CPP([#include <net-snmp/net-snmp-config.h>],
 			[AC_MSG_RESULT(yes)
 			],
