@@ -19,7 +19,7 @@ man8_MANS = tripplite_usb.8 upsc.8 upscmd.8
 html:	$(CONVERTED_TO_ASCIIDOC)
 
 clean-local:
-	rm -f $(CONVERTED_TO_ASCIIDOC)
+	rm -f $(CONVERTED_TO_ASCIIDOC) $(MANS) *.xml
 
 SUFFIXES = .txt .html .1 .3 .5 .8
 
@@ -29,7 +29,7 @@ SUFFIXES = .txt .html .1 .3 .5 .8
 		--attribute localtime=`TZ=UTC date +%H:%M:%S` \
 		-o $@ $<
 
-A2X_MANPAGE_OPTS = -f manpage
+A2X_MANPAGE_OPTS = --destination-dir=. -f manpage
 
 .txt.1:
 	$(A2X) $(A2X_MANPAGE_OPTS) $<

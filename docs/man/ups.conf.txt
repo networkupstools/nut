@@ -8,8 +8,8 @@ ups.conf - UPS definitions for Network UPS Tools
 DESCRIPTION
 -----------
 
-This file is read by the driver controller upsdrvctl(8), the UPS drivers
-that use the common core (see nutupsdrv(8)), and upsd(8).  The file begins with
+This file is read by the driver controller linknut:upsdrvctl[8], the UPS drivers
+that use the common core (see linknut:nutupsdrvr[8], and linknut:upsd[8].  The file begins with
 global directives, and then each UPS has a section which contains a number of
 directives that set parameters for that UPS.
 
@@ -35,7 +35,7 @@ hardware-specific part of the driver:
 		sdtype = 2
 		desc = "Database server UPS"
 
-In this case, the apcsmart(8) driver will receive variables called
+In this case, the linknut:apcsmart[8] driver will receive variables called
 "cable" and "sdtype" which have special meanings.  See the man pages of
 your driver(s) to learn which variables are supported and what they do.
 
@@ -76,7 +76,7 @@ UPS FIELDS
 
 Required.  This specifies which program will be monitoring this UPS.  You
 need to specify the one that is compatible with your hardware.  See
-nutupsdrv(8) for more information on drivers in general and pointers to the
+linknut:nutupsdrv[8] for more information on drivers in general and pointers to the
 man pages of specific drivers.
 
 *port*::
@@ -136,7 +136,7 @@ from upsc(8) or similar as "snoopy@doghouse".
 
 SEE ALSO
 --------
-upsd(8), nutupsdrv(8), upsdrvctl(8)
+linknut:upsd[8], linknut:nutupsdrv[8], linknut:upsdrvctl[8]
 
 INTERNET RESOURCES
 ------------------

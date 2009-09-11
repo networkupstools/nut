@@ -75,7 +75,7 @@ DIAGNOSTICS
 upsc will either print a list of UPS names, a list of all supported variables
 and their values on the UPS, or an error message.  If you receive an error,
 make sure you have specified a valid UPS on the command line, that
-upsd(8) is really running on the other host and that no firewalls are
+linknut:upsd[8] is really running on the other host and that no firewalls are
 blocking you.
 
 HISTORY
@@ -88,7 +88,7 @@ only talks TCP.  This is why 'upsct' no longer exists.
 SEE ALSO
 --------
 
-upsd(8)
+linknut:upsd[8]
 
 INTERNET RESOURCES
 ------------------

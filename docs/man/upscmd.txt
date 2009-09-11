@@ -60,7 +60,7 @@ password are not required for read-only mode.
 DANGEROUS COMMANDS
 ------------------
 
-Some drivers like apcsmart(8) have built-in paranoia for the
+Some drivers like linknut:apcsmart[8] have built-in paranoia for the
 dangerous commands like `load.off`.  To make them actually turn off the
 load, you will have to send the command twice within a short window.
 That is, you will have to send it once, then send it again after 3
@@ -73,7 +73,7 @@ DIAGNOSTICS
 -----------
 
 upscmd won't work unless you provide a valid username and password.  If
-you get "access denied" errors, make sure that your upsd.users(5) has
+you get "access denied" errors, make sure that your linknut:upsd.users[5] has
 an entry for you, and that the username you are using has permissions to
 SET variables.
 
@@ -89,7 +89,7 @@ It involves magic cookies.
 
 SEE ALSO
 --------
-upsd(8), upsrw(8)
+linknut:upsd[8], linknut:upsrw[8]
 
 INTERNET RESOURCES
 ------------------
