@@ -1,29 +1,47 @@
 if MANUALUPDATE
 
-EXTRA_DIST = nut.conf.5.txt \
-	tripplite_usb.8.txt \
-	ups.conf.5.txt \
-	upsc.8.txt \
-	upscmd.8.txt
+EXTRA_DIST = nut.conf.txt \
+	tripplite_usb.txt \
+	ups.conf.txt \
+	upsc.txt \
+	upscmd.txt
 
-CONVERTED_TO_ASCIIDOC = nut.conf.5.html \
-	tripplite_usb.8.html \
-	ups.conf.5.html \
-	upsc.8.html \
-	upscmd.8.html
+CONVERTED_TO_ASCIIDOC = nut.conf.html \
+	tripplite_usb.html \
+	ups.conf.html \
+	upsc.html \
+	upscmd.html
+
+# http://www.gnu.org/software/hello/manual/automake/Man-pages.html
+man5_MANS = nut.conf.5 ups.conf.5
+man8_MANS = tripplite_usb.8 upsc.8 upscmd.8
 
 html:	$(CONVERTED_TO_ASCIIDOC)
 
 clean-local:
 	rm -f $(CONVERTED_TO_ASCIIDOC)
 
-SUFFIXES = .txt .html
+SUFFIXES = .txt .html .1 .3 .5 .8
 
 .txt.html:
 	$(ASCIIDOC) --backend=xhtml11 \
 		--attribute localdate=`TZ=UTC date +%Y-%m-%d` \
 		--attribute localtime=`TZ=UTC date +%H:%M:%S` \
-		-o $@ $^
+		-o $@ $<
+
+A2X_MANPAGE_OPTS = -f manpage
+
+.txt.1:
+	$(A2X) $(A2X_MANPAGE_OPTS) $<
+	
+.txt.3:
+	$(A2X) $(A2X_MANPAGE_OPTS) $<
+	
+.txt.5:
+	$(A2X) $(A2X_MANPAGE_OPTS) $<
+	
+.txt.8:
+	$(A2X) $(A2X_MANPAGE_OPTS) $<
 	
 else !MANUALUPDATE
 html:	html-recursive

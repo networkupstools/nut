@@ -3,8 +3,6 @@ Using AsciiDoc in NUT
 Charles Lepple <clepple@gmail.com>
 :Author Initials: CFL
 
-This is a test.
-
 Intro
 -----
 
@@ -13,8 +11,13 @@ See http://www.methods.co.nz/asciidoc/[The AsciiDoc Manual] for more information
 Works in Progress
 -----------------
 
-- This file
 - link:website/index.html[The NUT Website]
 - link:user-manual.html[The NUT User Manual]
 - link:developer-guide.html[The NUT Developer Guide]
 - link:packager-guide.html[The NUT Packager Guide]
+- Man pages:
+  * link:man/nut.conf.html[nut.conf(5)]
+  * link:man/ups.conf.html[ups.conf(5)]
+  * link:man/tripplite_usb.html[tripplite_usb(8)]
+  * link:man/upsc.html[upsc(8)]
+  * link:man/upscmd.html[upscmd(8)]
