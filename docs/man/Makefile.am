@@ -4,18 +4,20 @@ CONVERTED_TO_ASCIIDOC = nut.conf.html \
 	tripplite_usb.html \
 	ups.conf.html \
 	upsc.html \
-	upscmd.html
+	upscmd.html \
+	usbhid-ups.html
 
 EXTRA_DIST = nut.conf.txt \
 	tripplite_usb.txt \
 	ups.conf.txt \
 	upsc.txt \
 	upscmd.txt \
+	usbhid-ups.txt \
 	$(CONVERTED_TO_ASCIIDOC)
 
 # http://www.gnu.org/software/hello/manual/automake/Man-pages.html
 man5_MANS = nut.conf.5 ups.conf.5
-man8_MANS = tripplite_usb.8 upsc.8 upscmd.8
+man8_MANS = tripplite_usb.8 upsc.8 upscmd.8 usbhid-ups.8
 
 html:	$(CONVERTED_TO_ASCIIDOC)
 
