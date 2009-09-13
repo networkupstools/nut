@@ -18,11 +18,12 @@ This driver should work with older Tripp Lite UPSes which are detected as USB
 HID-class devices, but are not true HID Power-Device Class devices.  So far,
 the devices supported by tripplite_usb have product ID 0001, and the newer
 units (such as those with "LCD" in the model name) with product ID 2001 require
-the linknut:usbhid-ups[8] driver instead.  Please report success or failure to the
-nut-upsuser mailing list.  A key piece of information is the protocol number,
-returned in `ups.debug.0`.  Also, be sure to turn on debugging ('-DDD') for
-more informative log messages.  If your Tripp Lite UPS uses a serial port, you
-may wish to investigate the linknut:tripplite[8] or linknut:tripplite_su[8] driver.
+the linknut:usbhid-ups[8] driver instead.  Please report success or failure to
+the nut-upsuser mailing list.  A key piece of information is the protocol
+number, returned in `ups.debug.0`.  Also, be sure to turn on debugging ('-DDD')
+for more informative log messages.  If your Tripp Lite UPS uses a serial port,
+you may wish to investigate the linknut:tripplite[8] or linknut:tripplite_su[8]
+driver.
 
 This driver has been tested with the following models:
 
@@ -46,8 +47,8 @@ following protocols:
 EXTRA ARGUMENTS
 ---------------
 
-This driver supports the following optional setting in the linknut:ups.conf[5] file
-(or with '-x' on the command line):
+This driver supports the following optional settings in the linknut:ups.conf[5]
+file (or with '-x' on the command line):
 
 *offdelay*::
 
@@ -100,7 +101,8 @@ supports this feature, this variable will be listed in the output of linknut:ups
 *outlet.1.switch*::
 
 Some Tripp Lite units have a switchable outlet (usually outlet #1) which can be
-turned on and off by writing '1' or '0', respectively, to `outlet.1.switch`.
+turned on and off by writing '1' or '0', respectively, to `outlet.1.switch`
+with linknut:upsrw[8].
 If your unit has multiple switchable outlets, substitute the outlet number for
 '1' in the variable name. Be sure to test this first - there is no other way to
 be certain that the number used by the driver matches the label on the unit.
@@ -112,10 +114,11 @@ The driver was not developed with any official documentation from Tripp Lite,
 so certain events may confuse the driver. If you observe any strange behavior,
 please re-run the driver with `-DDD` to increase the verbosity.
 
-So far, the Tripp Lite UPSes do not seem to have any serial number or other
-unique identifier accessible through USB. Thus, when monitoring several Tripp
-Lite USB UPSes, you should use either the 'bus' or 'product' configuration
-options to uniquely specify which UPS a given driver instance should control.
+So far, the Tripp Lite UPSes do not seem to have a serial number or other
+globally unique identifier accessible through USB. Thus, when monitoring
+several Tripp Lite USB UPSes, you should use either the 'bus' or 'product'
+configuration options to uniquely specify which UPS a given driver instance
+should control.
 
 For instance, you can easily monitor an OMNIVS1000 and a SMART1500RM2U at the
 same time, since they have different USB Product ID strings. If you have two
@@ -125,7 +128,8 @@ are on the same bus.
 
 Some of the SMART*2U models have an ID number, but because this ID is not
 exposed as a USB string descriptor, there is no easy way to use this ID to
-distinguish between multiple UPS units on a single machine.
+distinguish between multiple UPS units on a single machine. The UPS would need
+to be claimed by the driver in order to read this ID.
 
 AUTHOR
 ------
@@ -133,8 +137,8 @@ Written by Charles Lepple, based on the linknut:tripplite[8] driver by Rickard E
 Faith and Nicholas Kain. Please do not email the authors directly - use the
 nut-upsdev mailing list.
 
-A Tripp Lite OMNIVS1000 was graciously donated to the NUT project by Bradley Feldman
-<http://www.bradleyloritheo.com>
+A Tripp Lite OMNIVS1000 was graciously donated to the NUT project by Bradley
+Feldman (http://www.bradleyloritheo.com)
 
 SEE ALSO
 --------
