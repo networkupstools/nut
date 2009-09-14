@@ -154,7 +154,9 @@ link:acknowledgements.html[acknowledgements information].
 Synology
 ^^^^^^^^
 
-Synology has worked closely with Arnaud to integrate support for USB UPS in all DSX09 models.
+link:http://www.synology.com[Synology] has worked closely with Arnaud to integrate 
+link:http://www.synology.com/enu/products/features/power.php[UPS support] on all
+its devices.
 
 Alcatel Lucent IPBX
 ^^^^^^^^^^^^^^^^^^^
