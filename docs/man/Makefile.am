@@ -1,13 +1,15 @@
 if MANUALUPDATE
 
-CONVERTED_TO_ASCIIDOC = nut.conf.html \
+CONVERTED_TO_ASCIIDOC = index.html \
+	nut.conf.html \
 	tripplite_usb.html \
 	ups.conf.html \
 	upsc.html \
 	upscmd.html \
 	usbhid-ups.html
 
-EXTRA_DIST = nut.conf.txt \
+EXTRA_DIST = index.txt \
+	nut.conf.txt \
 	tripplite_usb.txt \
 	ups.conf.txt \
 	upsc.txt \
