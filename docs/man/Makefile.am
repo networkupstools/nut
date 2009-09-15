@@ -2,6 +2,7 @@ if MANUALUPDATE
 
 CONVERTED_TO_ASCIIDOC = index.html \
 	nut.conf.html \
+	nutupsdrv.html \
 	tripplite_usb.html \
 	ups.conf.html \
 	upsc.html \
@@ -10,6 +11,7 @@ CONVERTED_TO_ASCIIDOC = index.html \
 
 EXTRA_DIST = index.txt \
 	nut.conf.txt \
+	nutupsdrv.txt \
 	tripplite_usb.txt \
 	ups.conf.txt \
 	upsc.txt \
@@ -19,7 +21,11 @@ EXTRA_DIST = index.txt \
 
 # http://www.gnu.org/software/hello/manual/automake/Man-pages.html
 man5_MANS = nut.conf.5 ups.conf.5
-man8_MANS = tripplite_usb.8 upsc.8 upscmd.8 usbhid-ups.8
+man8_MANS = nutupsdrv.8 \
+	tripplite_usb.8 \
+	upsc.8 \
+	upscmd.8 \
+	usbhid-ups.8
 
 html:	$(CONVERTED_TO_ASCIIDOC)
 
