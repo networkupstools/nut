@@ -1,7 +1,7 @@
 NUT manual pages
 ================
 
-[User_man]
+[[User_man]]
 User manual pages
 -----------------
 
@@ -91,7 +91,7 @@ Drivers
 - upscode2.8
 - victronups.8
 
-[Developer_man]
+[[Developer_man]]
 Developer manual pages
 ----------------------
 
