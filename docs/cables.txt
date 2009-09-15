@@ -1,0 +1,105 @@
+Cables
+======
+
+APC
+---
+
+940-0024C clone
+~~~~~~~~~~~~~~~
+
+*From D. Stimits*
+
+image::cables/940-0024C.jpg[APCC 940-0024C clone diagram]
+
+NOTE: The original 940-0024C diagram was contributed by Steve Draper.
+
+940-0024C clone for Macs
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+*From Miguel Howard*
+
+image::cables/mac-940-0024C.png[APCC 940-0024C clone cable for Macs]
+
+Belkin
+------
+
+OmniGuard F6C***-RKM
+~~~~~~~~~~~~~~~~~~~~
+
+*From "Daniel"*
+
+A straight-through RS-232 cable (with pins 2-7 connected through) should work
+with the following models:
+
+- F6C110-RKM-2U
+- F6C150-RKM-2U
+- F6C230-RKM-2U
+- F6C320-RKM-3U 
+
+image::cables/belkin-f6cx-rkm-xu-cable.jpg[Belkin OmniGuard F6C***-RKM cable]
+
+Eaton
+-----
+
+Documents in this section are provided courtesy of Eaton. 
+
+MGE Office Protection Systems
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The two first cables also applies to MGE UPS SYSTEMS.
+
+DB9-DB9 cable (ref 66049)
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This is the standard serial cable, used on most units.
+
+image::cables/mge-66049.png[DB9-DB9 cable]
+
+DB9-RJ45 cable
+^^^^^^^^^^^^^^
+
+This cable is used on the more recent models, including Ellipse MAX, Protection
+Station, ...
+
+image::cables/mge-db9-rj45.jpg[DB9-RJ45 cable]
+
+DB9-RJ12 cable
+^^^^^^^^^^^^^^
+
+This cable is used on some older Ellipse models.
+
+image::cables/mge-db9-rj12.jpg[DB9-RJ12 cable]
+
+Powerware LanSafe
+~~~~~~~~~~~~~~~~~
+
+image::cables/Lansafecable.jpg[Powerware LanSafe cable]
+
+SOLA-330
+~~~~~~~~
+
+Just uses a normal serial cable, with pin 1-1 through to 9-9.
+
+image::cables/SOLA-330.png[SOLA-330 cable]
+
+////////////////////////////////////////////////////////////////////////////////
+- Fenton is dead and the link is unreachable
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+FIXME: we should extract the important bits from this doc (PDF, ~120 Kb!)
+
+HP / Compaq
+-----------
+link:cables/compaq.pdf[Compaq/HP serial cables for older UPSes] (Compaq, via Kjell Claesson)
+////////////////////////////////////////////////////////////////////////////////
+
+Tripp-Lite
+----------
+
+*From Tripp-Lite, via Bryan Kolodziej*
+
+This cable (black 73-0844 cable) is used on various models, using the "Lan 2.2 interface"
+and the genericups driver (upstype=5).
+
+image::cables/73-0724.png[73-0724 cable]
