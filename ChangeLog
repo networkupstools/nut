@@ -1,3 +1,8 @@
+Tue Sep 15 09:06:32 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - data/driver.list: add an entry for Eaton E Series DX UPS (1-20 kVA) with
+   mge-utalk.
+
 Tue Sep 15 08:16:32 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - data/driver.list: add an entry for Eaton E Series NV UPS (400-2000 VA) with

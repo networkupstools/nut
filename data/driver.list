@@ -168,6 +168,7 @@
 "Eaton"	"MX 5/8/10/15/20 kVA"	"USB port"	"usbhid-ups"
 "Eaton"	"Nova AVR 625/1250"		"USB"	"usbhid-ups"
 "Eaton"	"E Series NV UPS 400-2000 VA"	""	"megatec_usb"
+"Eaton"	"E Series DX UPS 1-20 kVA"	""	"mge-utalk"
 "Eaton"	"Ellipse ASR USBS 600/750/1000/1500 VA"		"Serial cable"	"mge-shut or newmge-shut"
 "Eaton"	"Ellipse MAX USBS 600/850/1100/1500 VA"		"Serial cable"	"mge-shut or newmge-shut"
 "Eaton"	"Evolution 650/850/1150/1550/2000 VA"	"Serial port"	"mge-shut or newmge-shut"
