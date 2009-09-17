@@ -44,6 +44,11 @@ following protocols:
  * Protocol 2001
  * Protocol 3003
 
+On the other hand, if the web page for your UPS on the Tripp-Lite website says
+"HID-compliant USB port also enables direct integration with built-in power
+management and auto-shutdown features of Windows and MAC OS X", then you should
+use the linknut:usbhid-ups[8] driver instead.
+
 EXTRA ARGUMENTS
 ---------------
 
