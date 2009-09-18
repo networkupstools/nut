@@ -8,10 +8,10 @@ User manual pages
 Configuration files
 ~~~~~~~~~~~~~~~~~~~
 
-- link:nut.conf.html[nut.conf(5)]
-- link:ups.conf.html[ups.conf(5)]
-- upsd.conf.5
-- upsd.users.5
+- linknut:nut.conf[5]
+- linknut:ups.conf[5]
+- linknut:upsd.conf[5]
+- linknut:upsd.users[5]
 - upsmon.conf.5
 - upssched.conf.5
 
