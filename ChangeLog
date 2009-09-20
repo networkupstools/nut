@@ -1,3 +1,9 @@
+Sun Sep 20 19:06:34 UTC 2009 / Arjen de Korte <arjen@de-korte.org>
+
+ - drivers/tripplite-hid.c: fix broken matcher function that would
+   unconditionally reject possibly supported devices, even when the
+   productid option was supplied.
+
 Tue Sep 15 09:06:32 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - data/driver.list: add an entry for Eaton E Series DX UPS (1-20 kVA) with
