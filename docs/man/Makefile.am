@@ -21,7 +21,8 @@ EXTRA_DIST = index.txt \
 	upsc.txt \
 	upscmd.txt \
 	usbhid-ups.txt \
-	$(CONVERTED_TO_ASCIIDOC)
+	$(CONVERTED_TO_ASCIIDOC) \
+	$(MANS)
 
 # http://www.gnu.org/software/hello/manual/automake/Man-pages.html
 man5_MANS = \
