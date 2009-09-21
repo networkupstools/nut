@@ -5,9 +5,10 @@ User Documentation
 ------------------
 
 - link:FAQ.html[FAQ]
-- link:readme.html[Quick Start Information]
+- link:install.html[Quick Start Information]
 - link:user-manual.html[NUT User Manual]
 - link:cables.html[Cables information]
+- link:man/index.html#User_man[User manual pages]
 
 Developer Documentation
 -----------------------
@@ -15,6 +16,7 @@ Developer Documentation
 - link:developer-guide.html[NUT Developer Guide]
 - link:packager-guide.html[NUT Packager Guide]
 - link:ups-protocols.html[UPS protocols library]
+- link:man/index.html#Developer_man[Developer manual pages]
 
 Offsite Links
 -------------

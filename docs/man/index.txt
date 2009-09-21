@@ -44,6 +44,7 @@ CGI programs
 - upsset.cgi.8
 - upsstats.cgi.8
 
+[[Drivers]]
 Drivers
 ~~~~~~~
 

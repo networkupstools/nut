@@ -14,7 +14,8 @@ if MANUALUPDATE
 CONVERTED_TO_ASCIIDOC = asciidoc.html \
 	user-manual.html \
 	packager-guide.html \
-	developer-guide.html
+	developer-guide.html \
+	install.html
 
 html:	$(CONVERTED_TO_ASCIIDOC) html-recursive
 
@@ -24,6 +25,15 @@ clean-local:
 SUBDIRS = website man
 
 SUFFIXES = .txt .html
+
+install.html: ../INSTALL
+	$(ASCIIDOC) --unsafe --backend=xhtml11 \
+		--attribute icons \
+		--attribute localdate=`TZ=UTC date +%Y-%m-%d` \
+		--attribute localtime=`TZ=UTC date +%H:%M:%S` \
+		--attribute iconsdir=$(srcdir)/icons \
+		--attribute=badges \
+		-a toc -a numbered -o $@ $^
 
 .txt.html:
 	$(ASCIIDOC) --unsafe --backend=xhtml11 \

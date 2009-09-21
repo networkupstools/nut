@@ -1,498 +1,564 @@
-Network UPS Tools: INSTALL
+Quick Start Instructions
+========================
 
-These are the essential steps for compiling and installing this
-software, including configuring safe shutdowns when the UPS battery
-runs out of power.
+////////////////////////////////////////////////////////////////////////////////
+*FIXME* use Charles' linkto for manpages and references
+////////////////////////////////////////////////////////////////////////////////
+
+These are the essential steps for compiling and installing this software,
+including configuring safe shutdowns when the UPS battery runs out of power.
 
 There are many programs and other features in this package.  You should
-check out the README file and other accompanying documentation to see
-how it all works.
+check out the link:user-manual.html[User Manual] and other accompanying
+documentation to see how it all works.
 
-The paths shown below are the default values you get by just calling
-configure by itself.  If you have used --prefix or similar, things will
-be different.  Also, if you didn't install this program from source
-yourself, the paths will probably have a number of differences.
+The NUT link:packager-guide.html[Packager Guide], which presents the best
+practices for installing and integrating NUT, is also a good reading.
 
-Note: by default, your system probably won't find the man pages, since
-they install to /usr/local/ups/man.  You can fix this by editing your
-MANPATH, or just do this:
+[NOTE]
+.Keep in mind that...
+================================================================================
+
+- the paths shown below are the default values you get by just calling
+configure by itself.  If you have used --prefix or similar, things will be
+different.  Also, if you didn't install this program from source yourself, the
+paths will probably have a number of differences.
+
+- by default, your system probably won't find the man pages, since they
+install to /usr/local/ups/man.  You can fix this by editing your MANPATH, or
+just do this:
 
 	man -M /usr/local/ups/man <man page>
 
-	man -M /usr/local/ups/man upsd.conf
+- if your favorite system offers up to date binary packages, you should always
+prefer these over a source installation. Along with the known advantages of such
+systems for installation, upgrade and removal, there are many integration issues
+that have been addressed.
 
-Also, if your favorite system offers up to date binary packages,
-always prefer these over a source installation. Along with the known
-advantages of such systems for installation, upgrade and removal, there
-are many integration issues that have been addressed.
-
-============================================================================
-============================================================================
-============================================================================
-
-  Prepare your system
-  ===================
-
- 1. Create at least one user and a group for running this software. You
-    might call them "ups" and "nut".  The exact names aren't important as
-    long as you are consistent.
-
-    The process for doing this varies from one system to the next, and
-    explaining how to add users is beyond the scope of this document.
-
-    For the purposes of this document, the user name and group name 
-    will be "ups" and "nut" respectively.
-
-    Be sure the new user is a member of the new group!  If you forget to
-    do this, you will have problems later on when you try to start upsd.
-
-============================================================================
-============================================================================
-============================================================================
-
-  Build and install
-  =================
+================================================================================
 
 
- 1. Configure the source tree for your system.  Add the --with-user and
-    --with-group switch to set the user name and group that you created
-    above.
+Prepare your system
+-------------------
+
+User creation
+~~~~~~~~~~~~~
+
+Create at least one user and a group for running this software. You
+might call them "ups" and "nut".  The exact names aren't important as
+long as you are consistent.
+
+The process for doing this varies from one system to the next, and
+explaining how to add users is beyond the scope of this document.
+
+For the purposes of this document, the user name and group name 
+will be "ups" and "nut" respectively.
+
+Be sure the new user is a member of the new group!  If you forget to
+do this, you will have problems later on when you try to start upsd.
+
+
+Build and install
+-----------------
+
+[[Configuration]]
+Configuration
+~~~~~~~~~~~~~
+
+Configure the source tree for your system.  Add the --with-user and
+--with-group switch to set the user name and group that you created
+above.
 
 	./configure --with-user=ups --with-group=nut
 
-    If you need any other switches for configure, add them here.  For
-    example:
+If you need any other switches for configure, add them here.  For example:
 
-    * to build and install USB drivers, add --with-usb (note that you
-      need to install libusb development package or files).
+* to build and install USB drivers, add --with-usb (note that you
+  need to install libusb development package or files).
 
-    * to build and install SNMP drivers, add --with-snmp (note that
-      you need to install libsnmp development package or files).
+* to build and install SNMP drivers, add --with-snmp (note that
+  you need to install libsnmp development package or files).
 
-    * to build and install CGI scripts, add --with-cgi. 
+* to build and install CGI scripts, add --with-cgi. 
 
-    * to build and install NUT development files (needed to compile
-      WMNut and MGE PSP), add --with-lib.
+See docs/configure.txt or "./configure --help" for the available
+options.
 
-    * to build and install HAL support, add --with-hal.
+If you alter paths with additional switches, be sure to use those
+new paths while reading the rest of the steps.    
 
-    See docs/configure.txt or "./configure --help" for the available
-    options.
+Reference: link:user-manual.html#Configure[docs/configure.txt]
 
-    If you alter paths with additional switches, be sure to use those
-    new paths while reading the rest of the steps.    
 
-    *** Reference: docs/configure.txt
-
----------------------------------------------------------------------------
-
- 2. Build the programs.
+Build the programs
+~~~~~~~~~~~~~~~~~~
 
 	make
 
-    This will build the NUT client and server programs and the
-    selected drivers. It will also build any other features that were
-    selected during configuration in step 1. above. 
+This will build the NUT client and server programs and the
+selected drivers. It will also build any other features that were
+selected during <<Configuration,configuration>> step above. 
 
----------------------------------------------------------------------------
 
- 3. Gain privileges for installing software if necessary.
+Installation
+~~~~~~~~~~~~
+
+[NOTE]
+=====================================================================
+
+you should now gain privileges for installing software if necessary:
 
 	su
 
----------------------------------------------------------------------------
+=====================================================================
 
-
- 4. Install the files to a system level directory.
+Install the files to a system level directory:
 
 	make install
 
-    This will install the compiled programs and man pages, as well as
-    some data files required by NUT. Any optional features selected
-    during configuration will also be installed.
+This will install the compiled programs and man pages, as well as
+some data files required by NUT. Any optional features selected
+during configuration will also be installed.
 
-    This will also install sample versions of the NUT configuration
-    files. Sample files are installed with names like ups.conf.sample
-    so they will not overwrite any existing real config files you may
-    have created.
+This will also install sample versions of the NUT configuration
+files. Sample files are installed with names like ups.conf.sample
+so they will not overwrite any existing real config files you may
+have created.
 
-    If you are packaging this software, then you will probably want to
-    use the DESTDIR variable to redirect the build into another place,
-    i.e.:
+If you are packaging this software, then you will probably want to
+use the DESTDIR variable to redirect the build into another place,
+i.e.:
 
 	make DESTDIR=/tmp/package install
 	make DESTDIR=/tmp/package install-conf
 
----------------------------------------------------------------------------
+[[StatePath]]
+State path creation
+~~~~~~~~~~~~~~~~~~~
 
- 5. Create the state path directory for the driver(s) and server to use
-    for storing UPS status data and other auxiliary files, and make it
-    owned by the user you created.
+Create the state path directory for the driver(s) and server to use
+for storing UPS status data and other auxiliary files, and make it
+owned by the user you created.
 
 	mkdir -p /var/state/ups
 	chmod 0770 /var/state/ups
 	chown root:nut /var/state/ups
 
----------------------------------------------------------------------------
+[[Ownership]]
+Ownership and permissions
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
- 6. Set ownership data and permissions on your serial or USB ports
-    that go to your UPS hardware.  Be sure to limit access to just
-    the user you created earlier.
+Set ownership data and permissions on your serial or USB ports
+that go to your UPS hardware.  Be sure to limit access to just
+the user you created earlier.
 
-    These examples assume the second serial port (ttyS1) on a typical
-    Slackware system.  On FreeBSD, that would be cuaa1.  Serial ports
-    vary greatly, so yours may be called something else.
+These examples assume the second serial port (ttyS1) on a typical
+Slackware system.  On FreeBSD, that would be cuaa1.  Serial ports
+vary greatly, so yours may be called something else.
 
 	chmod 0660 /dev/ttyS1
 	chown root:nut /dev/ttyS1
 
-    The setup for USB ports is slightly more complicated. Device files
-    for USB devices, such as /proc/bus/usb/002/001, are usually
-    created "on the fly" when a device is plugged in, and disappear
-    when the device is disconnected.  Moreover, the names of these
-    device files can change randomly. To set up the correct
-    permissions for the USB device, you may need to set up (operating
-    system dependent) hotplugging scripts.  Sample scripts and
-    information are provided in the scripts/hotplug and
-    scripts/udev directories. For most users, the hotplugging scripts
-    will be installed automatically by "make install". 
+The setup for USB ports is slightly more complicated. Device files
+for USB devices, such as /proc/bus/usb/002/001, are usually
+created "on the fly" when a device is plugged in, and disappear
+when the device is disconnected.  Moreover, the names of these
+device files can change randomly. To set up the correct
+permissions for the USB device, you may need to set up (operating
+system dependent) hotplugging scripts.  Sample scripts and
+information are provided in the scripts/hotplug and
+scripts/udev directories. For most users, the hotplugging scripts
+will be installed automatically by "make install". 
 
-    (If you want to try if a driver works without setting up
-    hotplugging, you can add the "-u root" option to upsd, upsmon, and
-    drivers; this should allow you to follow the below
-    instructions. However, don't forget to set up the correct
-    permissions later!).
+(If you want to try if a driver works without setting up
+hotplugging, you can add the "-u root" option to upsd, upsmon, and
+drivers; this should allow you to follow the below
+instructions. However, don't forget to set up the correct
+permissions later!).
 
-    NOTE: if you are using something like devfs or udev, make sure
-    these permissions stay set across a reboot.  If they revert to the
-    old values, your drivers may fail to start.
+NOTE: if you are using something like devfs or udev, make sure
+these permissions stay set across a reboot.  If they revert to the
+old values, your drivers may fail to start.
 
----------------------------------------------------------------------------
 
- 7. Create one section per UPS in /usr/local/ups/etc/ups.conf
+[[Driver_configuration]]
+Driver configuration
+~~~~~~~~~~~~~~~~~~~~
 
-    To find out which driver to use, check the "HARDWARE SUPPORT TABLE"
-    in the README file, or data/driver.list.
+Create one section per UPS in /usr/local/ups/etc/ups.conf
 
-    Once you have picked a driver, create a section for your UPS in
-    ups.conf.  You must supply values for "driver" and "port".
+To find out which driver to use, check the "HARDWARE SUPPORT TABLE"
+in the README file, or data/driver.list.
 
-    Some drivers may require other flags or settings.  The "desc" value
-    is optional, but is recommended to provide a better description of
-    what your UPS is supporting.
+Once you have picked a driver, create a section for your UPS in
+ups.conf.  You must supply values for "driver" and "port".
 
-    A typical UPS without any extra settings looks like this:
+Some drivers may require other flags or settings.  The "desc" value
+is optional, but is recommended to provide a better description of
+what your UPS is supporting.
+
+A typical UPS without any extra settings looks like this:
 
 	[myupsname]
 		driver = mydriver
 		port = /dev/ttyS1
 		desc = "Workstation"
 
-    NOTE: usbhid-ups is a special case and ignores the "port" value.
-    You must still set this value, but it does not matter what you set
-    it to; you can set "port" to "auto" if you like. If you only own
-    one local UBS UPS, the driver will find it automatically. If you
-    own more than one UBS UPS, refer to the usbhid-ups(8) man page for
-    more information.
+NOTE: usbhid-ups is a special case and ignores the "port" value.
+You must still set this value, but it does not matter what you set
+it to; you can set "port" to "auto" if you like. If you only own
+one local UBS UPS, the driver will find it automatically. If you
+own more than one UBS UPS, refer to the usbhid-ups(8) man page for
+more information.
 
-    *** References: man pages: ups.conf(5), nutupsdrv(8), plus
-                    whatever driver(s) you intend to use.
+References: link:man/ups.conf.html[ups.conf(5)], link:man/nutupsdrv.html[nutupsdrv(8)],
+plus whatever link:man/index.html#Drivers[driver(s)] you intend to use.
 
----------------------------------------------------------------------------
+[[Starting_drivers]]
+Starting the driver(s)
+~~~~~~~~~~~~~~~~~~~~~~
 
- 8. Start the driver(s) for your hardware.
+Start the driver(s) for your hardware:
 
 	/usr/local/ups/bin/upsdrvctl start
 
-    Make sure the driver doesn't report any errors.  It should show a
-    few details about the hardware and then enter the background.  You
-    should get back to the command prompt a few seconds later.  For
-    reference, a successful start of the belkin driver looks like this:
+Make sure the driver doesn't report any errors.  It should show a
+few details about the hardware and then enter the background.  You
+should get back to the command prompt a few seconds later.  For
+reference, a successful start of the belkin driver looks like this:
 
 	# /usr/local/ups/bin/upsdrvctl start
-	Network UPS Tools - UPS driver controller 1.5.12
-	Network UPS Tools - Belkin Smart protocol driver 0.21 (1.5.12)
-	Detected F6C525-SER on /dev/cuaa0
-	#
+	Network UPS Tools - Generic HID driver 0.34 (2.4.1)
+	USB communication driver 0.31
+	Using subdriver: MGE HID 1.12
+	Detected EATON - Ellipse MAX 1100 [ADKK22008]
 
-    If the driver doesn't start cleanly, make sure you have picked the
-    right one for your hardware.  You might need to try other drivers
-    by changing the "driver=" value in ups.conf.
+If the driver doesn't start cleanly, make sure you have picked the
+right one for your hardware.  You might need to try other drivers
+by changing the "driver=" value in ups.conf.
 
-    Be sure to check the driver's man page to see if it needs any extra
-    settings in ups.conf to detect your hardware.
+Be sure to check the driver's man page to see if it needs any extra
+settings in ups.conf to detect your hardware.
 
-    If it says "can't bind /var/state/ups/..." or similar, then your
-    state path probably isn't writable by the driver.  Check the
-    permissions and mode on that directory (step 5).
+If it says "can't bind /var/state/ups/..." or similar, then your
+state path probably isn't writable by the driver.  Check the
+<<StatePath,permissions and mode on that directory>>.
 
-    After making changes, try step 6 again.
+After making changes, try the <<Ownership, Ownership and permissions>> step again.
 
-    *** References: man pages: nutupsdrv(8), upsdrvctl(8)
+References: man pages: link:man/nutupsdrv.html[nutupsdrv(8)], link:man/upsdrvctl.html[upsdrvctl(8)]
 
----------------------------------------------------------------------------
 
- 9. Configure upsd, which serves data from the drivers to the clients.
+Data server configuration (upsd)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    First, edit upsd.conf to allow access to your client systems. By
-    default, upsd will only listen to localhost port 3493/tcp. If you want
-    to connect to it from other machines, you must specify each interface you
-    want upsd to listen on for connections, optionally with a port number.
+Configure upsd, which serves data from the drivers to the clients.
+
+First, edit upsd.conf to allow access to your client systems. By
+default, upsd will only listen to localhost port 3493/tcp. If you want
+to connect to it from other machines, you must specify each interface you
+want upsd to listen on for connections, optionally with a port number.
 
 	LISTEN 127.0.0.1 3493
 	LISTEN ::1 3493
 
-    Note: if you run a firewall of some sort, you may have to add rules
-    to allow these incoming connections.
+NOTE: if you run a firewall of some sort, you may have to add rules
+to allow these incoming connections.
 
-    Next, create upsd.users.  For now, this can be an empty file.
-    You can come back and add more to it later when it's time to 
-    configure upsmon or run one of the management tools.
+////////////////////////////////////////////////////////////////////////////////
+*FIXME* add a note on TCP wrappers!
+////////////////////////////////////////////////////////////////////////////////
 
-    Do not make either file world-readable, since they both hold
-    access control data and passwords.  They just need to be readable by
-    the user you created in the preparation process.
+Next, create upsd.users.  For now, this can be an empty file.
+You can come back and add more to it later when it's time to 
+configure upsmon or run one of the management tools.
 
-    The suggested configuration is to chown it to root, chgrp it to the
-    group you created, then make it readable by the group.
+Do not make either file world-readable, since they both hold
+access control data and passwords.  They just need to be readable by
+the user you created in the preparation process.
+
+The suggested configuration is to chown it to root, chgrp it to the
+group you created, then make it readable by the group.
 
 	chown root:nut upsd.conf upsd.users
 	chmod 0640 upsd.conf upsd.users
 
-    *** References: man pages: upsd.conf(5), upsd.users(5), upsd(8)
+References: man pages: link:man/upsd.conf.html[upsd.conf(5)],
+link:man/upsd.users.html[upsd.users(5)],
+link:man/upsd.html[upsd(8)]
 
----------------------------------------------------------------------------
+[[Starting_upsd]]
+Starting the data server
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-10. Start the network server.
+Start the network data server:
 
 	/usr/local/ups/sbin/upsd
 
-    Make sure it is able to connect to the driver(s) on your system.
-    A successful run looks like this:
+Make sure it is able to connect to the driver(s) on your system.
+A successful run looks like this:
 
 	# /usr/local/ups/sbin/upsd
-	Network UPS Tools upsd 1.5.12
-	Connected to UPS [belkin]: belkin-cuaa0
-	Synchronizing...done
-	# 
+	Network UPS Tools upsd 2.4.1
+	listening on 127.0.0.1 port 3493
+	listening on ::1 port 3493
+	Connected to UPS [eaton]: usbhid-ups-eaton
 
-    upsd prints dots while it waits for the driver to respond.  Your
-    system may print more or less depending on how many drivers you
-    have and how fast they are.
+upsd prints dots while it waits for the driver to respond.  Your
+system may print more or less depending on how many drivers you
+have and how fast they are.
 
-    NOTE: if upsd says that it can't connect to a UPS or that the data
-    is stale, then your ups.conf is not configured correctly, or you
-    have a driver that isn't working properly.  You must fix this before
-    going on to the next step.
+NOTE: if upsd says that it can't connect to a UPS or that the data
+is stale, then your ups.conf is not configured correctly, or you
+have a driver that isn't working properly.  You must fix this before
+going on to the next step.
 
-    *** Reference: man page: upsd(8)
+Reference: man page: link:man/upsd.html[upsd(8)]
 
----------------------------------------------------------------------------
+Check the UPS data
+~~~~~~~~~~~~~~~~~~
 
-11. Make sure that the UPS is providing good status data.
+Status data
+^^^^^^^^^^^
+
+Make sure that the UPS is providing good status data.
 
 	/usr/local/ups/bin/upsc myupsname@localhost ups.status
 
-    You should see just one line in response:
+You should see just one line in response:
 
 	OL
 
-    OL means your system is running on line power.  If it says something
-    else (like OB - on battery, or LB - low battery), your driver was 
-    probably misconfigured in step 7.  If you reconfigure the driver,
-    use 'upsdrvctl stop' to stop it, then start it again in step 8.
+OL means your system is running on line power.  If it says something
+else (like OB - on battery, or LB - low battery), your driver was 
+probably misconfigured during the <<Driver_configuration, Driver configuration>>
+step.  If you reconfigure the driver, use 'upsdrvctl stop' to stop it, then
+start it again as shown in the <<Starting_drivers, Starting driver(s)>> step.
 
-    *** Reference: man page: upsc(8)
+Reference: man page: link:man/upsc.html[upsc(8)]
 
----------------------------------------------------------------------------
 
-12. Look at all of the status data which is being monitored.
+All data
+^^^^^^^^
+
+Look at all of the status data which is being monitored.
 
 	/usr/local/ups/bin/upsc myupsname@localhost
 
-    What happens now depends on the kind of UPS and driver you have.
-    In the list, you should see ups.status with the same value you got
-    above.  A sample run on a MGE UPS SYSTEMS Ellipse ASR 600 looks
-    like this:
+What happens now depends on the kind of UPS and driver you have.
+In the list, you should see ups.status with the same value you got
+above.  A sample run on an Eaton Ellipse MAX 1100 looks like this:
 
-	battery.charge: 82
-	battery.charge.low: 30
-	battery.runtime: 1563
+	battery.charge: 100
+	battery.charge.low: 20
+	battery.runtime: 2525
+	battery.type: PbAc
+	device.mfr: EATON
+	device.model: Ellipse MAX 1100
+	device.serial: ADKK22008
+	device.type: ups
 	driver.name: usbhid-ups
+	driver.parameter.pollfreq: 30
+	driver.parameter.pollinterval: 2
 	driver.parameter.port: auto
-	driver.version: 2.0.3
-	driver.version.data: MGE HID 0.8
-	driver.version.internal: 0.28
-	input.transfer.high: 264.0
-	input.transfer.low: 184.0
-	outlet.desc: Main Outlet
-	outlet.id: 1
-	outlet.switchable: 0
+	driver.version: 2.4.1-1988:1990M
+	driver.version.data: MGE HID 1.12
+	driver.version.internal: 0.34
+	input.sensitivity: normal
+	input.transfer.boost.low: 185
+	input.transfer.high: 285
+	input.transfer.low: 165
+	input.transfer.trim.high: 265
+	input.voltage.extended: no
 	outlet.1.desc: PowerShare Outlet 1
 	outlet.1.id: 2
-	outlet.1.switch: 0
-	outlet.1.switchable: 0
+	outlet.1.status: on
+	outlet.1.switchable: no
+	outlet.desc: Main Outlet
+	outlet.id: 1
+	outlet.switchable: no
+	output.frequency.nominal: 50
 	output.voltage: 230.0
-	ups.delay.shutdown: -1
-	ups.delay.start: -10
+	output.voltage.nominal: 230
+	ups.beeper.status: enabled
+	ups.delay.shutdown: 20
+	ups.delay.start: 30
+	ups.firmware: 5102AH
 	ups.load: 0
-	ups.mfr: MGE UPS SYSTEMS
-	ups.model: Ellipse 600
-	ups.power.nominal: 600
-	ups.serial: AP8F15005
-	ups.status: OB DISCHRG
+	ups.mfr: EATON
+	ups.model: Ellipse MAX 1100
+	ups.power.nominal: 1100
+	ups.productid: ffff
+	ups.serial: ADKK22008
+	ups.status: OL CHRG
+	ups.timer.shutdown: -1
+	ups.timer.start: -1
+	ups.vendorid: 0463
 
-    *** Reference: man page: upsc(8)
+Reference: man page: link:man/upsc.html[upsc(8)]
 
----------------------------------------------------------------------------
+Startup scripts
+~~~~~~~~~~~~~~~
 
-13. Edit your startup scripts.
+Edit your startup scripts, and make sure upsdrvctl and upsd are run every time
+your system starts.
 
-    Make sure upsdrvctl and upsd are run every time your system starts.
 
-============================================================================
-============================================================================
-============================================================================
-
-  Configuring shutdowns for low battery events
-  --------------------------------------------
+Configuring shutdowns for low battery events
+--------------------------------------------
 
 The whole point of UPS software is to bring down the OS cleanly when you
 run out of battery power.  Everything else is just eye candy.  To make 
 sure your system shuts down properly, you will need to perform some
 additional configuration and run upsmon.  Here are the basics:
 
----------------------------------------------------------------------------
+[[NUT_user_creation]]
+NUT user creation
+~~~~~~~~~~~~~~~~~
 
- 1. Create a upsd user for upsmon to use while monitoring this UPS.
+Create a upsd user for upsmon to use while monitoring this UPS.
 
-    Edit upsd.users and create a new section.  upsmon will connect
-    to upsd and use this user name (in brackets) and password to
-    authenticate.  This example is for a user called "monuser":
+Edit upsd.users and create a new section.  upsmon will connect
+to upsd and use this user name (in brackets) and password to
+authenticate.  This example is for a user called "monuser":
 
 	[monuser]
 		password = mypass
-		upsmon master		# or upsmon slave
+		upsmon master
+		# or upsmon slave
 
-    *** References: man pages: upsd(8), upsd.users(5)
+References: link:man/upsd.html[upsd(8)], link:man/upsd.users.html[upsd.users(5)]
 
----------------------------------------------------------------------------
+Reloading the data server
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
- 2. Reload upsd.  Depending on your configuration, you may be able to 
-    do this without stopping upsd:
+Reload upsd.  Depending on your configuration, you may be able to 
+do this without stopping upsd:
 
 	/usr/local/ups/sbin/upsd -c reload
 
-    If that doesn't work (check the syslog), just restart it:
+If that doesn't work (check the syslog), just restart it:
 
 	/usr/local/ups/sbin/upsd -c stop
 	/usr/local/ups/sbin/upsd 
 
-    Later: if you want to make reloading work, see the entry in the FAQ
-    about starting upsd as a different user.
+NOTE: if you want to make reloading work later, see the entry in the
+link:faq.html[FAQ] about starting upsd as a different user.
 
----------------------------------------------------------------------------
+Power Off flag file
+~~~~~~~~~~~~~~~~~~~
 
- 3. Set the POWERDOWNFLAG location for upsmon.
+Set the POWERDOWNFLAG location for upsmon.
 
-    In upsmon.conf, add a POWERDOWNFLAG directive with a filename.
-    upsmon will create this file when the UPS needs to be powered off
-    during a power failure when low battery is reached.
+In upsmon.conf, add a POWERDOWNFLAG directive with a filename.
+upsmon will create this file when the UPS needs to be powered off
+during a power failure when low battery is reached.
 
-    We will test for the presence of this file in a later step.
+We will test for the presence of this file in a later step.
 
 	POWERDOWNFLAG /etc/killpower
 
-    *** References: man pages: upsmon(8), upsmon.conf(5)
+References: man pages: link:man/upsmon.html[upsmon(8)],
+link:man/upsmon.conf.html[upsmon.conf(5)]
 
----------------------------------------------------------------------------
+Securing upsmon.conf
+~~~~~~~~~~~~~~~~~~~~
 
- 4. Secure upsmon.conf.
-
-    The recommended setting is to have it owned by root:nut, then
-    make it readable by the group and not world.  This file contains
-    passwords that could be used by an attacker to start a shutdown,
-    so keep it secure.
+The recommended setting is to have it owned by root:nut, then make it readable
+by the group and not world.  This file contains passwords that could be used by
+an attacker to start a shutdown, so keep it secure.
 
 	chown root:nut upsmon.conf
 	chmod 0640 upsmon.conf
 
-    This step has been placed early in the process so you secure this
-    file before adding sensitive data in the next step.
+This step has been placed early in the process so you secure this file before
+adding sensitive data in the next step.
 
----------------------------------------------------------------------------
 
- 5. Create a MONITOR directive for upsmon
+Create a MONITOR directive for upsmon
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    Edit upsmon.conf and create a MONITOR line with the UPS definition
-    (<upsname>@<hostname>), username and password from step 2, and
-    the master or slave setting.
+Edit upsmon.conf and create a MONITOR line with the UPS definition 
+(<upsname>@<hostname>), username and password from the <<NUT_user_creation, NUT user creation>>
+step, and the master or slave setting.
 
-    If it's the master (i.e., it's connected to this UPS directly):
+If it's the master (i.e., it's connected to this UPS directly):
 
 	MONITOR myupsname@mybox 1 monuser mypass master
 
-    If it's just monitoring this UPS over the network, and some other
-    system is the master:
+If it's just monitoring this UPS over the network, and some other system is the
+master:
 
 	MONITOR myupsname@mybox 1 monuser mypass slave
 
-    The number "1" here is the power value.  This should always be set
-    to 1 unless you have a very special (read: expensive) system with
-    redundant power supplies.  See big-servers.txt and data-room.txt.
+The number "1" here is the power value.  This should always be set to 1 unless
+you have a very special (read: expensive) system with redundant power supplies.
+In such cases, refer to the User Manual:
 
-    *** References: man pages: upsmon(8), upsmon.conf(5)
+- link:user-manual.html#BigServers[typical setups for big servers],
+- link:user-manual.html#DataRoom[typical setups for data rooms].
 
----------------------------------------------------------------------------
+References: link:man/upsmon.html[upsmon(8)],
+link:man/upsmon.conf.html[upsmon.conf(5)]
 
- 6. Define a SHUTDOWNCMD for upsmon.
+Define a SHUTDOWNCMD for upsmon
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    Still in upsmon.conf, add a directive that tells upsmon how to
-    shut down your system.  This example seems to work on most systems:
+Still in upsmon.conf, add a directive that tells upsmon how to shut down your
+system.  This example seems to work on most systems:
 
 	SHUTDOWNCMD "/sbin/shutdown -h +0"
 
-    Notice the presence of "quotes" here to keep it together.
+Notice the presence of "quotes" here to keep it together.
 
-    If your system has special needs, you may want to set this to
-    a script which does local shutdown tasks before calling init.
+If your system has special needs, you may want to set this to a script which
+does local shutdown tasks before calling init.
 
----------------------------------------------------------------------------
 
- 7. Start upsmon.
+Start upsmon
+~~~~~~~~~~~~
 
 	/usr/local/ups/sbin/upsmon
 
-    If it complains about something, then check your configuration.
+If it complains about something, then check your configuration.
 
----------------------------------------------------------------------------
+Checking upsmon
+~~~~~~~~~~~~~~~
 
- 8. Look for messages in the syslog to indicate success.  It should look
-    something like this:
+Look for messages in the syslog to indicate success.  It should look something
+like this:
 
 	May 29 01:11:27 mybox upsmon[102]: Startup successful
 	May 29 01:11:28 mybox upsd[100]: Client monuser@192.168.50.1
 	logged into UPS [myupsname]
 
-    Any errors seen here are probably due to an error in the config
-    files of either upsmon or upsd.  You should fix them before
-    continuing.
+Any errors seen here are probably due to an error in the config files of either
+upsmon or upsd.  You should fix them before continuing.
 
----------------------------------------------------------------------------
 
- 9. Edit your startup scripts: add upsmon
+Startup scripts
+~~~~~~~~~~~~~~~
 
-    Make sure upsmon starts when your system comes up.  Do it after
-    upsdrvctl and upsd, or it will complain about not being able to
-    contact the server.
+Edit your startup scripts, and add upsmon.
 
----------------------------------------------------------------------------
+Make sure upsmon starts when your system comes up.  Do it after upsdrvctl and
+upsd, or it will complain about not being able to contact the server.
 
-10. Edit your shutdown scripts: add upsdrvctl shutdown
+////////////////////////////////////////////////////////////////////////////////
+*FIXME* point sample scripts in scripts/...
+////////////////////////////////////////////////////////////////////////////////
 
-    You should configure your system to power down the UPS after the
-    filesystems are remounted read-only.  Have it look for the presence
-    of the POWERDOWNFLAG (from upsmon.conf), using this as an example:
+
+Shutdown scripts
+~~~~~~~~~~~~~~~~
+
+Edit your shutdown scripts, and add 'upsdrvctl shutdown'.
+
+You should configure your system to power down the UPS after the filesystems are
+remounted read-only.  Have it look for the presence of the POWERDOWNFLAG (from
+upsmon.conf), using this as an example:
+
+--------------------------------------------------------------------------------
 
 	if (test -f /etc/killpower)
 	then
@@ -506,17 +572,27 @@ additional configuration and run upsmon.  Here are the basics:
 		# *** see the section on power races in shutdown.txt! ***
 	fi
 
-    Be careful: that upsdrvctl command will probably power off your
-    machine.  Don't use it unless your system is ready to be halted by
-    force.  If you run RAID, be sure the arrays are ready to lose power.
-    Your kernel's power-off routines may not execute.
+--------------------------------------------------------------------------------
 
-    Make sure that the filesystem(s) holding your UPS drivers and
-    configuration details are still mounted when that part of the script
-    is run.  You need upsdrvctl, ups.conf, and any drivers for the
-    hardware on your system.
+[WARNING]
+================================================================================
+- Be careful that upsdrvctl command will probably power off your machine.
+Don't use it unless your system is ready to be halted by force. If you run RAID,
+be sure the arrays are ready to lose power. Your kernel's power-off routines may
+not execute.
 
----------------------------------------------------------------------------
+- Make sure that the filesystem(s) holding your UPS drivers and configuration
+details are still mounted (possibly in read-only mode) when that part of the
+script is run.  You need upsdrvctl, ups.conf, and any drivers for the hardware
+on your system, along with the according library (like libusb for the USB
+drivers).
+================================================================================
 
+More information can be found in the link:user-manual.html[NUT User Manual], and
+the various link:man/index.html[user manual pages].
+
+////////////////////////////////////////////////////////////////////////////////
+*sandbox*
 More information can be found in the README file, the shutdown.txt document, 
 the upsmon(8) man page and the upsmon.conf(5) man page.
+////////////////////////////////////////////////////////////////////////////////

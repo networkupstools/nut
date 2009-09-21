@@ -1,3 +1,9 @@
+Mon Sep 21 09:46:42 UTC 2009 / Arnaud Quette <aquette.dev@gmail.com>
+
+ - INSTALL, docs/Makefile.am, docs/website/Makefile.am: switch to AsciiDoc,
+   and name INSTALL as the "Quick Start Instructions".
+   Also includes various minor updates to the User Manual and Packager Guide.
+
 Tue Sep  8 13:55:54 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  * AsciiDoc work on the website (5th step):

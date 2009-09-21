@@ -184,7 +184,7 @@ Detailed view of the package tree
 
 [NOTE]
 ========================================================================
-. The *Desc* field represent the package's description, as exposed by
+- The *Desc* field represent the package's description, as exposed by
 the packaging system. Each package's description is composed of a
 paragraph common to all NUT packages, and a part that is specific to the
 package. The common part (further referenced by *COMMON DESC*) is:
@@ -194,13 +194,13 @@ ________________________________________________________________________
  hardware. Clients access the hardware through the server, and are notified
  whenever the power status changes.
 ________________________________________________________________________
-. The *Files* field lists the content of the package.
-. The mentioned *Size* is a rough estimation of packaged and installed
+- The *Files* field lists the content of the package.
+- The mentioned *Size* is a rough estimation of packaged and installed
 size. This may varies across the systems and architecture, and is based
 upon the Debian x86 packages.
-. The *Deps* field lists the dependencies of the packages. The exact
+- The *Deps* field lists the dependencies of the packages. The exact
 name may vary across the various systems.
-. The *Comment* field is used to place comment for points subject to
+- The *Comment* field is used to place comment for points subject to
 discussion.
 ========================================================================
 

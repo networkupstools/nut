@@ -1,10 +1,12 @@
 Features
 --------
 
-This list may lag behind the current code.
+NUT provides many features, and is always improving.
+Thus this list may lag behind the current code.
 
 Features frequently appear during the development cycles, so be sure to look at
-the change logs to see the latest additions.
+the link:http://www.networkupstools.org/download.html[release notes and change logs]
+to see the latest additions.
 
 ////////////////////////////////////////////////////////////////////////////////
 *FIXME* statement that NUT is *the* de facto standard on Opensource system.
@@ -13,8 +15,8 @@ More and more appliances manufacturers are bundling NUT...
 => add an Appendix NUT Device Integration in the User Manual
 ////////////////////////////////////////////////////////////////////////////////
 
-Multiple manufacturer support
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Multiple manufacturer and device support
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Monitors many UPS, PDU and SCD models from more than 100 manufacturers with a
 unified interface (link:stable-hcl.html[Hardware Compatibility List]).
@@ -157,7 +159,7 @@ NOTE: these examples show serial communications for simplicity, but USB or SNMP
 or any other monitoring is also possible.
 
 "Simple" configuration
-~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^
 
 image:images/simple.png[]
 
@@ -167,7 +169,7 @@ This is the configuration that most users will use. You need at least a driver,
 upsd, and upsmon running.
 
 "Advanced" configuration
-~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 image:images/advanced.png[]
 
@@ -180,6 +182,7 @@ systems simultaneously. There is no longer the need to buy a bunch of individual
 UPSes or "sharing" hardware, since this software will handle the sharing for you.
 
 ////////////////////////////////////////////////////////////////////////////////
+*FIXME* remainder
 === One UPS, many clients ===
 
 - Multiple systems may monitor a single UPS using only their network connections - no special "UPS sharing" hardware is required.
@@ -195,7 +198,7 @@ UPSes or "sharing" hardware, since this software will handle the sharing for you
 ////////////////////////////////////////////////////////////////////////////////
 
 "Big Box" configuration
-~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^
 
 image:images/bigbox.png[]
 
@@ -214,7 +217,7 @@ This means that you can safely lose any one UPS and the software will handle it
 properly by remaining online.
 
 "Bizarre" configuration
-~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^
 
 image:images/bizarre.png[]
 
