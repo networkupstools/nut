@@ -643,6 +643,7 @@
 "Tripp-Lite"	"1500 LCD"	"USB"   "usbhid-ups"
 "Tripp-Lite"	"AVR550U"	"USB"   "usbhid-ups"
 "Tripp-Lite"	"AVR750U"	"USB"	"usbhid-ups"
+"Tripp-Lite"	"ECO550UPS"	"USB"	"usbhid-ups"
 "Tripp-Lite"	"SmartOnline SU1500RTXL2ua"	"USB"	"usbhid-ups"
 "Tripp-Lite"	"smart2200RMXL2U"	"USB, newer models"	"usbhid-ups"
 

@@ -3,7 +3,7 @@
  *  Copyright (C)  
  *	2003 - 2005 Arnaud Quette <arnaud.quette@free.fr>
  *	2005 - 2006 Peter Selinger <selinger@users.sourceforge.net>
- *	2008        Arjen de Korte <adkorte-guest@alioth.debian.org>
+ *	2008 - 2009 Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
  *
@@ -67,6 +67,8 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x1003), battery_scale_0dot1 },
 	/* e.g. TrippLite AVR750U */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x1007), battery_scale_0dot1 },
+	/* e.g. TrippLite ECO550UPS */
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x1008), battery_scale_0dot1 },
 	/* e.g. TrippLite OMNI1000LCD */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x2005), battery_scale_0dot1 },
 	/* e.g. TrippLite OMNI900LCD */
