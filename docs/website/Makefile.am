@@ -32,10 +32,13 @@ index.html: website.txt
 	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a index-only $<
 
 features.html: ../features.txt
-	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ $<
+	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a website $<
+
+cables.html: ../cables.txt
+	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc -a website $<
 
 FAQ.html: ../FAQ
-	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc $<
+	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc -a numbered $<
 
 user-manual.html: ../user-manual.txt
 	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc -a numbered $<
@@ -45,9 +48,6 @@ packager-guide.html: ../packager-guide.txt
 
 developer-guide.html: ../developer-guide.txt
 	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc -a numbered $<
-
-cables.html: ../cables.txt
-	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc $<
 
 man-index.html: ../man/index.txt
 	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc $<

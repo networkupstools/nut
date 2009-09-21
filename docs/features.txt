@@ -1,5 +1,7 @@
+ifdef::website[]
 Features
---------
+========
+endif::website[]
 
 NUT provides many features, and is always improving.
 Thus this list may lag behind the current code.
@@ -16,7 +18,7 @@ More and more appliances manufacturers are bundling NUT...
 ////////////////////////////////////////////////////////////////////////////////
 
 Multiple manufacturer and device support
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------
 
 - Monitors many UPS, PDU and SCD models from more than 100 manufacturers with a
 unified interface (link:stable-hcl.html[Hardware Compatibility List]).
@@ -27,7 +29,7 @@ unified interface (link:stable-hcl.html[Hardware Compatibility List]).
 	* network (SNMP, Eaton / MGE XML/HTTP).
 
 Multiple architecture support
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------
 
 - Cross-platform - different flavors of Unix can be managed together with a
 common set of tools, even crossing architectures.
@@ -44,7 +46,7 @@ Other features, such as USB / SNMP / whatever, will also need extra software
 installed.
 
 Layered and modular design with multiple processes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------------------
 
 - Three layers: drivers, server, clients.
 
@@ -72,7 +74,7 @@ routers, bridges, ...) into the UPS!
 ////////////////////////////////////////////////////////////////////////////////
 
 Redundancy support - Hot swap/high availability power supplies
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------------------------------
 
 - upsmon can handle high-end servers which receive power from multiple UPSes
 simultaneously.
@@ -84,7 +86,7 @@ source UPSes becomes critical (on battery and low battery).
 number of sources available. The minimum value is configurable. 
 
 Security and access control
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------
 
 - Manager functions are granted with per-user granularity. The admin can have
 full powers, while the admin's helper can only do specific non-destructive tasks
@@ -109,7 +111,7 @@ the 'chroot=' configuration directive.
 link:http://en.wikipedia.org/wiki/TCP_Wrapper[TCP Wrapper].
 
 Web-based monitoring
-~~~~~~~~~~~~~~~~~~~~
+--------------------
 
 - Comes stock with CGI-based web interface tools for UPS monitoring and
 management, including graphical status displays.
@@ -119,7 +121,7 @@ templates to create the pages. This allows you to have status pages which fit
 the look and feel of the rest of your site. 
 
 Free software
-~~~~~~~~~~~~~
+-------------
 
 - That's free beer and free speech. Licensed under the GNU General Public
 License version 2 or later.
@@ -128,7 +130,7 @@ License version 2 or later.
 no mysteries or secrets in your critical monitoring tools. 
 
 UPS management and control
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------
 
 - Writable variables may be edited on higher end equipment for local customizations
 
@@ -150,7 +152,7 @@ hardware by simulating status values with the dummy-ups pseudo-driver. Anything
 which can happen in a driver can be replicated with dummy-ups. 
 
 Monitoring diagrams
-~~~~~~~~~~~~~~~~~~~
+-------------------
 
 These are the most common situations for monitoring UPS hardware. Other ways are
 possible, but they are mostly variants on these four.
@@ -159,7 +161,7 @@ NOTE: these examples show serial communications for simplicity, but USB or SNMP
 or any other monitoring is also possible.
 
 "Simple" configuration
-^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~
 
 image:images/simple.png[]
 
@@ -169,7 +171,7 @@ This is the configuration that most users will use. You need at least a driver,
 upsd, and upsmon running.
 
 "Advanced" configuration
-^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 image:images/advanced.png[]
 
@@ -198,7 +200,7 @@ UPSes or "sharing" hardware, since this software will handle the sharing for you
 ////////////////////////////////////////////////////////////////////////////////
 
 "Big Box" configuration
-^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~
 
 image:images/bigbox.png[]
 
@@ -217,7 +219,7 @@ This means that you can safely lose any one UPS and the software will handle it
 properly by remaining online.
 
 "Bizarre" configuration
-^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~
 
 image:images/bizarre.png[]
 
@@ -230,7 +232,7 @@ The first system ("mixed") is a Master for UPS 1, but is only monitoring UPS 2.
 The other systems are Slaves of UPS 2.
 
 Image credits
-~~~~~~~~~~~~~
+-------------
 
 Thanks to Luc Descotils and Arnaud Quette at Eaton for providing shiny
 cleaned-up graphics.

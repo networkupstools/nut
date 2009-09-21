@@ -1,5 +1,7 @@
+ifdef::website[]
 Cables
 ======
+endif::website[]
 
 APC
 ---

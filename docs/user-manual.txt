@@ -1,5 +1,8 @@
+:titles.underlines: "__","==","--","~~","^^"
+
 Network UPS Tools User Manual
-=============================
+_____________________________
+
 Arnaud Quette <arnaud.quette@free.fr>
 
 image::images/nut-banner.png[Network UPS Tools logo]
@@ -7,7 +10,7 @@ image::images/nut-banner.png[Network UPS Tools logo]
 WARNING: this is a Work In Progress document.
 
 Introduction
-------------
+============
 
 The primary goal of the Network UPS Tools (NUT) project is to provide  support
 for Power Devices, such as Uninterruptible Power Supplies, Power Distributions
@@ -35,7 +38,7 @@ If you wish to discover how everything came together, have a look at the
 
 
 Overview
---------
+========
 
 rework and include README 
 
@@ -52,21 +55,23 @@ for monitoring and administering UPS hardware. NUT comes in two flavors:
 
 ...
 
-[[Features]]
-include::features.txt[]
+Features
+--------
+
+NUT provides many features. A complete list is available in the <<Features, Features list>>.
 
 Compatibility information
-~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------
 
 Hardware
-^^^^^^^^
+~~~~~~~~
 
 The current list of hardware supported by NUT can be viewed <<HCL,here>>.
 
 *FIXME*: should we also link to the development tree?
 
 Operating systems
-^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~
 
 This software has been reported to run on Linux distributions, the BSDs, Apple's OS X, Solaris, IRIX, HP/UX, Tru64 Unix, and AIX. Windows users may be able to build it directly with Cygwin. There is also a port of the client-side monitoring to Windows called WinNUT.
 
@@ -79,102 +84,105 @@ Success reports are welcomed to keep this list accurate.
 
 
 Quick Start Instructions
-------------------------
+========================
 
 QuickStart information are available as a link:install.html[separate document].
 
 Installation instructions
--------------------------
+=========================
 
 Installing from source
-~~~~~~~~~~~~~~~~~~~~~~
+----------------------
 
+[[Configure_options]]
 Configure options
-^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~
 
 include configure.txt[]
 
 Integrated Power Management support
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *FIXME*: ...integration with FreeDesktop HAL - Hardware Abstraction Layer (nut-hal.txt)
 
 Installing from packages
-~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------
 
 *FIXME*
 
 Upgrading notes
-~~~~~~~~~~~~~~~
+---------------
+
 include UPGRADING[]
 
 Configuration notes
--------------------
+===================
 
 Details about the configuration files
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------
 
 include config-files.txt[]
 
 Configuring automatic UPS shutdowns
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------------
 
 include shutdown.txt[]
 
 [[BigServers]]
 Typical setups for big servers
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------
 
 include big-servers.txt[]
 
 [[DataRoom]]
 Typical setups for data rooms
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------
 
 include data-room.txt[]
 
 Advanced usage notes
---------------------
+====================
 
 How to use upssched
-~~~~~~~~~~~~~~~~~~~
+-------------------
 
 include upssched.txt[]
 
 Using upsmon and your pager together
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------
 
 include pager.txt[]
 
 Using upsmon to make On Screen Display (OSD) notification
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------------------------------
 
 *FIXME* to be removed or reworked with pager and more?
 
 include osd-notify.txt[]
 
 NUT Powersaving features and using outlet collection
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------------
 
 include powersaving.txt[]
 
 Securisation notes
-------------------
+==================
 
 Configuring SSL
-~~~~~~~~~~~~~~~
+---------------
 
 include ssl.txt[]
 
 chrooting and other forms of paranoia
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------
 
 include chroot.txt[]
 
+////////////////////////////////////////////////////////////////////////////////
 *FIXME* where can we put the below content?
 
 Contact closure hardware
-~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------
 
 *FIXME* move to developer-guide?
 
@@ -183,15 +191,17 @@ source distribution that contains information on this kind of hardware
 and details on adding additional types to the genericups driver.
 
 include contact-closure.txt[]
+////////////////////////////////////////////////////////////////////////////////
 
 Information about SNMP and Network UPS Tools
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------------
 
 include snmp.txt[]
 
 
 Appendix A: Glossary
---------------------
+====================
+
 [glossary]
 UPS::
 	Uninterruptible Power Supply.
@@ -202,29 +212,31 @@ SCD::
 
 [[FAQ]]
 Appendix B: Frequently Asked Questions
---------------------------------------
+======================================
+
 include FAQ[]
 
 [[Acknowledgements]]
 Appendix C: Acknowledgements / Contributions
---------------------------------------------
+============================================
+
 include acknowledgements.txt[Acknowledgements / Contributions]
 
 [[Project_History]]
 Appendix D: Project history
----------------------------
+===========================
 
 include history.txt[]
 
 [[HCL]]
 Appendix E: Hardware Compatibility List
----------------------------------------
+=======================================
 
 include hcl-stable.txt[]
 
 [[General_Info]]
 Appendix F: General Information on Power Devices
-------------------------------------------------
+================================================
 
 - link:http://tldp.org/HOWTO/UPS-HOWTO/[UPS HOWTO] (The Linux Documentation Project)
 - link:http://en.wikipedia.org/wiki/Uninterruptible_power_supply[UPS on Wikipedia]
@@ -233,15 +245,22 @@ Appendix F: General Information on Power Devices
 
 [[Support_Request]]
 Appendix G: How to request support
-----------------------------------
+==================================
 
 *FIXME* content to be written
 
 [[Cables_information]]
 Appendix H: Cables information
-------------------------------
+==============================
 
 include::cables.txt[]
+
+
+[[Features]]
+Appendix I: Features
+====================
+
+include::features.txt[]
 
 ////////////////////////////////////////////////////////////////////////////////
 Comment: point to the website/documentation?
