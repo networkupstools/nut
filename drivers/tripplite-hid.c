@@ -308,6 +308,9 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ "shutdown.stop", 0, 0, "UPS.OutletSystem.Outlet.DelayBeforeShutdown", NULL, "-1", HU_TYPE_CMD, NULL },
 	{ "shutdown.reboot", 0, 0, "UPS.OutletSystem.Outlet.DelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL },
 
+	/*  NOTE: the ECO550UPS doesn't support DelayBeforeStartup, so we use the watchdog to trigger a reboot */
+	{ "shutdown.reboot", 0, 0, "UPS.OutletSystem.Outlet.TLWatchdog", NULL, "10", HU_TYPE_CMD, NULL },
+	
 	/* WARNING: if this timer expires, the UPS will reboot! Defaults to 60 seconds */
 	{ "reset.watchdog", 0, 0, "UPS.OutletSystem.Outlet.TLWatchdog", NULL, "60", HU_TYPE_CMD, NULL },
 
