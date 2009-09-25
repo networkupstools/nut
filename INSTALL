@@ -1,4 +1,4 @@
-Quick Start Instructions
+Quick Start instructions
 ========================
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -87,7 +87,8 @@ options.
 If you alter paths with additional switches, be sure to use those
 new paths while reading the rest of the steps.    
 
-Reference: link:user-manual.html#Configure[docs/configure.txt]
+Reference: link:user-manual.html#Configure_options[Configure options] from the
+User Manual.
 
 
 Build the programs
