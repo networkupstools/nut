@@ -3,7 +3,7 @@ if MANUALUPDATE
 WEBSITE_FILES = index.html download.html projects.html stable-hcl.html \
 	documentation.html support.html acknowledgements.html features.html FAQ.html \
 	user-manual.html packager-guide.html developer-guide.html ups-protocols.html \
-	cables.html man-index.html install.html
+	cables.html man-index.html install.html nut-qa.html
 
 ASCIIDOC_PARAMS = --unsafe --backend=xhtml11 \
     --conf-file=$(LAYOUT).conf \
@@ -54,6 +54,9 @@ man-index.html: ../man/index.txt
 
 install.html: ../../INSTALL
 	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc -a numbered $<
+
+nut-qa.html: ../nut-qa.txt
+	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ $<
 
 stable-hcl.html: stable-hcl.txt
 	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a hcl $<
