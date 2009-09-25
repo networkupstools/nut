@@ -1,3 +1,6 @@
+Download
+========
+
 Source code
 -----------
 
@@ -37,6 +40,9 @@ To generate the build scripts, you must then call:
 
 	$ autoreconf --install
 
+Then refer to the link:install.html[Quick Start instructions] and the
+link:user-manual.html[NUT User Manual] for more information.
+ 
 Browse code
 ^^^^^^^^^^^
 
