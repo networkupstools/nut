@@ -22,7 +22,7 @@ Configuration files
 Daemons
 ~~~~~~~
 
-- upsd
+- linknut:upsd[8]
 - upsmon
 - upssched.8
 - upslog.8

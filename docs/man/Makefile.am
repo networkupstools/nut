@@ -6,6 +6,7 @@ CONVERTED_TO_ASCIIDOC = index.html \
 	tripplite_usb.html \
 	ups.conf.html \
 	upsc.html \
+	upsd.html \
 	upsd.conf.html \
 	upsd.users.html \
 	upscmd.html \
@@ -19,6 +20,7 @@ EXTRA_DIST = index.txt \
 	upsd.conf.txt \
 	upsd.users.txt \
 	upsc.txt \
+	upsd.txt \
 	upscmd.txt \
 	usbhid-ups.txt \
 	$(CONVERTED_TO_ASCIIDOC) \
@@ -34,6 +36,7 @@ man5_MANS = \
 man8_MANS = nutupsdrv.8 \
 	tripplite_usb.8 \
 	upsc.8 \
+	upsd.8 \
 	upscmd.8 \
 	usbhid-ups.8
 
@@ -52,7 +55,7 @@ SUFFIXES = .txt .html .1 .3 .5 .8
 
 ### The --destination-dir flag doesn't seem to affect the intermediate .xml file.
 ### Hence, the copying dance below.
-A2X_MANPAGE_OPTS = -f manpage
+A2X_MANPAGE_OPTS = -f manpage --attribute nutversion="@PACKAGE_VERSION@"
 
 # .txt.1:
 # 	$(A2X) $(A2X_MANPAGE_OPTS) $<
