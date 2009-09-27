@@ -23,7 +23,7 @@ Daemons
 ~~~~~~~
 
 - linknut:upsd[8]
-- upsmon
+- linknut:upsmon[8]
 - upssched.8
 - upslog.8
 

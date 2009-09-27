@@ -6,10 +6,11 @@ CONVERTED_TO_ASCIIDOC = index.html \
 	tripplite_usb.html \
 	ups.conf.html \
 	upsc.html \
+	upscmd.html \
 	upsd.html \
 	upsd.conf.html \
 	upsd.users.html \
-	upscmd.html \
+	upsmon.html \
 	usbhid-ups.html
 
 EXTRA_DIST = index.txt \
@@ -17,11 +18,12 @@ EXTRA_DIST = index.txt \
 	nutupsdrv.txt \
 	tripplite_usb.txt \
 	ups.conf.txt \
+	upsc.txt \
+	upscmd.txt \
 	upsd.conf.txt \
 	upsd.users.txt \
-	upsc.txt \
 	upsd.txt \
-	upscmd.txt \
+	upsmon.txt \
 	usbhid-ups.txt \
 	$(CONVERTED_TO_ASCIIDOC) \
 	$(MANS)
@@ -38,6 +40,7 @@ man8_MANS = nutupsdrv.8 \
 	upsc.8 \
 	upsd.8 \
 	upscmd.8 \
+	upsmon.8 \
 	usbhid-ups.8
 
 html:	$(CONVERTED_TO_ASCIIDOC)
