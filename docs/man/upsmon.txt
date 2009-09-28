@@ -151,7 +151,7 @@ NOTIFY COMMAND
 In linknut:upsmon.conf[5], you can configure a program called the NOTIFYCMD
 that will handle events that occur.  
 
-+NOTIFYCMD "'path to program'"+
++NOTIFYCMD+ "'path to program'"
 
 +NOTIFYCMD "/usr/local/bin/notifyme"+
 
@@ -172,7 +172,7 @@ By default, all notify events (see above) generate a global message
 (wall) to all users, plus they are logged via the syslog.  You can change
 this with the NOTIFYFLAG directive in the configuration file:
 
-+NOTIFYFLAG 'notifytype' 'flags'+
++NOTIFYFLAG+ 'notifytype' 'flags'
 
 Examples:
 
@@ -188,7 +188,7 @@ The flags that can be set on a given notify event are:
 Write this message to the syslog.
 
 *WALL*::
-Send this message to all users on the system via *wall*(8).
+Send this message to all users on the system via *wall*(1).
 
 *EXEC*::
 Execute the NOTIFYCMD.
@@ -205,7 +205,7 @@ NOTIFY MESSAGES
 upsmon comes with default messages for each of the NOTIFY events.  These
 can be changed with the NOTIFYMSG directive.
 
-+NOTIFYMSG 'type' "'message'"+
++NOTIFYMSG+ 'type' "'message'"
 
 Examples:
 
@@ -229,7 +229,7 @@ put into "forced shutdown" mode, it no longer contributes.
 A "power value" on a MONITOR line in the config file is the number of
 power supplies that the UPS runs on the current system.  
 
-+MONITOR 'upsname' 'powervalue' 'username' 'password' 'type'+
++MONITOR+ 'upsname' 'powervalue' 'username' 'password' 'type'
 
 Normally, you only have one power supply, so it will be set to 1.  
 
@@ -254,7 +254,7 @@ to shut down for its own reasons.
 The "minimum power value" is the number of power supplies that must be
 receiving power in order to keep the computer running.  
 
-+MINSUPPLIES 'value'+
++MINSUPPLIES+ 'value'
 
 Typical PCs only have 1, so most users will leave this at the default. 
 

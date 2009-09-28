@@ -12,7 +12,7 @@ Configuration files
 - linknut:ups.conf[5]
 - linknut:upsd.conf[5]
 - linknut:upsd.users[5]
-- upsmon.conf.5
+- linknut:upsmon.conf[5]
 - upssched.conf.5
 
 - hosts.conf.5
