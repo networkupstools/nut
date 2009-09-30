@@ -13,7 +13,7 @@ Configuration files
 - linknut:upsd.conf[5]
 - linknut:upsd.users[5]
 - linknut:upsmon.conf[5]
-- upssched.conf.5
+- linknut:upssched.conf[5]
 
 - hosts.conf.5
 - upsset.conf.5
@@ -24,7 +24,7 @@ Daemons
 
 - linknut:upsd[8]
 - linknut:upsmon[8]
-- upssched.8
+- linknut:upssched[8]
 - upslog.8
 
 - upsdrvctl.8 (here or with the drivers?)
