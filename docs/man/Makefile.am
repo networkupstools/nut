@@ -12,13 +12,16 @@ CONVERTED_TO_ASCIIDOC = \
 	upsd.html \
 	upsd.conf.html \
 	upsd.users.html \
+	upsimage.cgi.html \
 	upslog.html \
 	upsmon.html \
 	upsmon.conf.html \
 	upsrw.html \
 	upssched.html \
 	upssched.conf.html \
+	upsset.cgi.html \
 	upsset.conf.html \
+	upsstats.cgi.html \
 	upsstats.html.html \
 	usbhid-ups.html
 
@@ -34,13 +37,16 @@ EXTRA_DIST = \
 	upsd.conf.txt \
 	upsd.users.txt \
 	upsd.txt \
+	upsimage.cgi.txt \
 	upslog.txt \
 	upsmon.txt \
 	upsmon.conf.txt \
 	upsrw.txt \
 	upssched.txt \
 	upssched.conf.txt \
+	upsset.cgi.txt \
 	upsset.conf.txt \
+	upsstats.cgi.txt \
 	upsstats.html.txt \
 	usbhid-ups.txt \
 	$(CONVERTED_TO_ASCIIDOC) \
@@ -64,9 +70,12 @@ man8_MANS = nutupsdrv.8 \
 	upsd.8 \
 	upslog.8 \
 	upscmd.8 \
+	upsimage.cgi.8 \
 	upsmon.8 \
 	upsrw.8 \
 	upssched.8 \
+	upsset.cgi.8 \
+	upsstats.cgi.8 \
 	usbhid-ups.8
 
 html:	$(CONVERTED_TO_ASCIIDOC)

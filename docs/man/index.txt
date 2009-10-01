@@ -40,9 +40,9 @@ Clients commands
 CGI programs
 ~~~~~~~~~~~~
 
-- upsimage.cgi.8
-- upsset.cgi.8
-- upsstats.cgi.8
+- linknut:upsimage.cgi[8]
+- linknut:upsset.cgi[8]
+- linknut:upsstats.cgi[8]
 
 [[Drivers]]
 Drivers
