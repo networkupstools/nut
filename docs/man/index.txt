@@ -25,7 +25,7 @@ Daemons
 - linknut:upsd[8]
 - linknut:upsmon[8]
 - linknut:upssched[8]
-- upslog.8
+- linknut:upslog[8]
 
 - upsdrvctl.8 (here or with the drivers?)
 

@@ -10,6 +10,7 @@ CONVERTED_TO_ASCIIDOC = index.html \
 	upsd.html \
 	upsd.conf.html \
 	upsd.users.html \
+	upslog.html \
 	upsmon.html \
 	upsmon.conf.html \
 	upssched.html \
@@ -26,6 +27,7 @@ EXTRA_DIST = index.txt \
 	upsd.conf.txt \
 	upsd.users.txt \
 	upsd.txt \
+	upslog.txt \
 	upsmon.txt \
 	upsmon.conf.txt \
 	upssched.txt \
@@ -47,6 +49,7 @@ man8_MANS = nutupsdrv.8 \
 	tripplite_usb.8 \
 	upsc.8 \
 	upsd.8 \
+	upslog.8 \
 	upscmd.8 \
 	upsmon.8 \
 	upssched.8 \
