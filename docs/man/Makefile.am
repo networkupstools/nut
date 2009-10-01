@@ -1,6 +1,8 @@
 if MANUALUPDATE
 
-CONVERTED_TO_ASCIIDOC = index.html \
+CONVERTED_TO_ASCIIDOC = \
+	hosts.conf.html \
+	index.html \
 	nut.conf.html \
 	nutupsdrv.html \
 	tripplite_usb.html \
@@ -16,9 +18,13 @@ CONVERTED_TO_ASCIIDOC = index.html \
 	upsrw.html \
 	upssched.html \
 	upssched.conf.html \
+	upsset.conf.html \
+	upsstats.html.html \
 	usbhid-ups.html
 
-EXTRA_DIST = index.txt \
+EXTRA_DIST = \
+	hosts.conf.txt \
+	index.txt \
 	nut.conf.txt \
 	nutupsdrv.txt \
 	tripplite_usb.txt \
@@ -34,18 +40,23 @@ EXTRA_DIST = index.txt \
 	upsrw.txt \
 	upssched.txt \
 	upssched.conf.txt \
+	upsset.conf.txt \
+	upsstats.html.txt \
 	usbhid-ups.txt \
 	$(CONVERTED_TO_ASCIIDOC) \
 	$(MANS)
 
 # http://www.gnu.org/software/hello/manual/automake/Man-pages.html
 man5_MANS = \
+	hosts.conf.5 \
 	nut.conf.5 \
 	ups.conf.5 \
 	upsd.conf.5 \
 	upsd.users.5 \
 	upsmon.conf.5 \
-	upssched.conf.5
+	upssched.conf.5 \
+	upsset.conf.5 \
+	upsstats.html.5
 
 man8_MANS = nutupsdrv.8 \
 	tripplite_usb.8 \

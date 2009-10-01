@@ -15,9 +15,9 @@ Configuration files
 - linknut:upsmon.conf[5]
 - linknut:upssched.conf[5]
 
-- hosts.conf.5
-- upsset.conf.5
-- upsstats.html.5
+- linknut:hosts.conf[5]
+- linknut:upsset.conf[5]
+- linknut:upsstats.html[5]
 
 Daemons
 ~~~~~~~
