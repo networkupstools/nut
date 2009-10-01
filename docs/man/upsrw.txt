@@ -1,0 +1,96 @@
+UPSRW(8)
+========
+
+NAME
+----
+
+upsrw - UPS variable administration tool
+
+SYNOPSIS
+--------
+
+*upsrw* 'ups'
+
+*upsrw* -h
+
+*upsrw* -s 'variable' [-u 'username'] [-p 'password'] 'ups'
+
+DESCRIPTION
+-----------
+
+*upsrw* allows you to view and change the read/write variables inside your UPS.
+It sends commands via the server linknut:upsd[8] to your driver, which
+configures the hardware for you.
+
+The list of variables that allow you to change their values is based on
+the capabilities of your UPS equipment.  Not all models support this
+feature.  Typically, cheaper hardware does not support any of them.
+Run upsrw with a UPS identifier to see what will work for you.
+
+OPTIONS
+-------
+
+*-h*::
+Display the help message.
+
+*-s* 'variable'::
+Specify the variable to be changed inside the UPS.  For unattended
+mode such as in shell scripts, use the format VAR=VALUE to specify both
+the variable and the value, for example:
+
+ -s input.transfer.high=129
++
+Without this argument, upsrw will just display the list of the variables
+and their possible values.
++
+Some variables are strings, and can be set to any value within the
+length limit.  Others are enumerated types and can only be set to one of
+those values.  Refer to the list to know what's available in your
+hardware.
+
+*-u* 'username'::
+Set the NUT username for the connection to the server.  This is optional,
+and you will be prompted for this when using the -s option if you don't
+specify -u on the command line. NUT usernames are defined in
+linknut:upsd.users[5], and are not linked to system usernames.
+
+*-p* 'password'::
+Set the password to authenticate to the server.  This is also optional
+like -u, and you will be prompted for it if necessary.  
+
+'ups'::
+View or change the settings on this UPS.  The format for this option is
+`upsname[@hostname[:port]]`.  The default hostname is "localhost".
+
+UNATTENDED MODE
+---------------
+
+If you run this program inside a shell script or similar to set
+variables, you will need to specify all of the information on the
+command line.  This means using `-s VAR=VALUE`, `-u` and `-p`.  Otherwise it
+will put up a prompt and your program will hang.
+
+This is not necessary when displaying the list, as the username and
+password are not required for read-only mode.
+
+DIAGNOSTICS
+-----------
+
+*upsrw* can't set variables on your UPS unless you provide a valid
+username and password.  If you get "access denied" errors, make sure
+that your linknut:upsd.users[5] has an entry for you, and that the
+username you are using has permissions to SET variables.
+
+HISTORY
+-------
+
+This program used to be called upsct2, which was ambiguous and
+confusing.
+
+SEE ALSO
+--------
+linknut:upsd[8], linknut:upscmd[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

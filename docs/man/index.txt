@@ -32,9 +32,9 @@ Daemons
 Clients commands
 ~~~~~~~~~~~~~~~~
 
-- link:upsc.html[upsc(8)]
-- link:upscmd.html[upscmd(8)]
-- upsrw.8
+- linknut:upsc[8]
+- linknut:upscmd[8]
+- linknut:upsrw[8]
 
 
 CGI programs
