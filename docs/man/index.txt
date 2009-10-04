@@ -48,8 +48,8 @@ CGI programs
 Drivers
 ~~~~~~~
 
-- apcsmart.8
-- bcmxcp.8
+- linknut:apcsmart[8]
+- linknut:bcmxcp[8]
 - bcmxcp_usb.8
 - belkin.8
 - belkinunv.8

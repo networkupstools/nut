@@ -1,0 +1,107 @@
+BCMXCP_USB(8)
+=============
+
+NAME
+----
+bcmxcp - Experimental driver for UPSes supporting the BCM/XCP protocol over USB
+
+NOTE
+----
+This man page only documents the hardware-specific features of the
+bcmxcp_usb driver.  For information about the core driver, see
+linknut:nutupsdrv[8].
+This driver is a variant of the serial driver bcmxcp and uses the same core code.
+
+SUPPORTED HARDWARE
+------------------
+This driver should recognize all BCM/XCP-compatible UPSes that are connected
+via USB.  It has been developed and tested on Powerware PW3501 hardware. It also has
+been tested on PW5110 hardware.
+
+EXTRA ARGUMENTS
+---------------
+
+This driver supports the following optional settings in the    
+linknut:ups.conf[5].
+
+*shutdown_delay=*'delay'::
+The number of seconds that the UPS should wait between receiving the 
+shutdown command and actually shutting off.
+
+DEFAULT VALUES FOR THE EXTRA ARGUMENTS
+--------------------------------------
+*shutdown_delay =*'120'
+
+INSTANT COMMANDS
+----------------
+This driver supports the following Instant Commands:
+
+*shutdown.return*::
+Turn off the load and return when power is back. 
+
+*shutdown.stayoff*::
+Turn off the load and remain off.
+
+*test.battery.start*::
+Start a battery test.
+
+TODO LIST
+---------
+
+*Report UPS alarm status*::
+BCM/XCP supports reporting a wide range of UPS alarm conditions.
+
+*Report UPS statistics informations*::
+BCM/XCP supports reporting of UPS statistics data.
+
+EXPERIMENTAL DRIVER
+-------------------
+This driver has been tagged experimental, even if it has been reported
+to be stable. Thus it is not suitable for production systems and it is
+not built by default. This is mainly due to the fact that it is a
+new driver.
+
+INSTALLATION
+------------
+This driver is not built by default.  You can build it by using
+"configure --with-usb=yes". Note that it will also install other USB
+drivers.
+
+You also need to install manually the hotplug files (libhidups and
+libhid.usermap), generally in etc/hotplug/usb/, to address the
+permission settings problem. Lastly note that the libhidups file
+must have execution flag set (ie using chmod +x ...).
+
+IMPLEMENTATION
+--------------
+bcmxcp_usb only supports 1 UPS at this time. You can put the
+"auto" value for port in `ups.conf`, i.e.:
+
+	[pw3105]
+		driver = bcmxcp_usb
+		port = auto
+
+KNOWN ISSUES AND BUGS
+---------------------
+"Got EPERM: Operation not permitted upon driver startup"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You have forgotten to install the hotplug files, as explained
+in the INSTALLATION section above. Don't forget to restart
+hotplug so that it applies these changes.
+
+AUTHOR
+------
+Tore Ørpetveit <tore@orpetveit.net>,
+Wolfgang Ocker <weo@weo1.de>
+
+SEE ALSO
+--------
+
+The core driver:
+~~~~~~~~~~~~~~~~
+linknut:nutupsdrv[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

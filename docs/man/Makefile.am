@@ -1,6 +1,9 @@
 if MANUALUPDATE
 
 CONVERTED_TO_ASCIIDOC = \
+	apcsmart.html \
+	bcmxcp.html \
+	bcmxcp_usb.html \
 	hosts.conf.html \
 	index.html \
 	nut.conf.html \
@@ -26,6 +29,9 @@ CONVERTED_TO_ASCIIDOC = \
 	usbhid-ups.html
 
 EXTRA_DIST = \
+	apcsmart.txt \
+	bcmxcp.txt \
+	bcmxcp_usb.txt \
 	hosts.conf.txt \
 	index.txt \
 	nut.conf.txt \
@@ -64,7 +70,11 @@ man5_MANS = \
 	upsset.conf.5 \
 	upsstats.html.5
 
-man8_MANS = nutupsdrv.8 \
+man8_MANS = \
+	apcsmart.8 \
+	bcmxcp.8 \
+	bcmxcp_usb.8 \
+	nutupsdrv.8 \
 	tripplite_usb.8 \
 	upsc.8 \
 	upsd.8 \
