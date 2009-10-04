@@ -3,7 +3,7 @@ BCMXCP_USB(8)
 
 NAME
 ----
-bcmxcp - Experimental driver for UPSes supporting the BCM/XCP protocol over USB
+bcmxcp_usb - Experimental driver for UPSes supporting the BCM/XCP protocol over USB
 
 NOTE
 ----
