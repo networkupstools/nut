@@ -1,3 +1,11 @@
+Mon Oct  5 20:02:42 UTC 2009 / Arnaud Quette <arnaud.quette@free.fr>
+
+ - drivers/nut_usb.c: remove the calls to usb_set_configuration() and
+   usb_set_altinterface(), which were not needed and caused troubles
+   with some Eaton / Powerware models. Also add some older HP T500 / T750 which
+   seem to be supported,
+ - data/driver.list: add entries for the above.
+
 Mon Sep 21 08:30:18 UTC 2009 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/tripplite-hid.c: add ECO550UPS to list of supported devices.

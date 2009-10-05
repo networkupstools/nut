@@ -39,6 +39,9 @@ static	unsigned int	comm_failures = 0;
 /* Phoenixtec Power Co., Ltd */
 #define PHOENIXTEC	0x06da
 
+/* Hewlett Packard */
+#define HP_VENDORID	0x03f0
+
 /* usb_set_descriptor() for Powerware devices */
 static int usb_set_powerware(usb_dev_handle *udev, unsigned char type, unsigned char index, void *buf, int size)
 {
@@ -68,6 +71,11 @@ static usb_device_id_t pw_usb_device_table[] = {
 
 	/* various models */
 	{ USB_DEVICE(PHOENIXTEC, 0x0002), &phoenixtec_ups },
+
+	/* T500 */
+	{ USB_DEVICE(HP_VENDORID, 0x1f01), &phoenixtec_ups },
+	/* T750 */
+	{ USB_DEVICE(HP_VENDORID, 0x1f02), &phoenixtec_ups },
 	
 	/* Terminating entry */
 	{ -1, -1, NULL }
@@ -75,7 +83,7 @@ static usb_device_id_t pw_usb_device_table[] = {
 
 static void nutusb_open_error(const char *port)
 {
-	printf("Unable to find POWERWARE UPS device on USB bus \n\n");
+	printf("Unable to find POWERWARE UPS device on USB bus (%s)\n\n", port);
 
 	printf("Things to try:\n\n");
 	printf(" - Connect UPS device to USB bus\n\n");
@@ -121,13 +129,13 @@ usb_dev_handle *nutusb_open(const char *port)
 		/* Initialize Libusb */
 		usb_init();
 		libusb_init = 1;
+		usb_find_busses();
+		usb_find_devices();
 	}
 
 	for (retry = 0; dev_h == NULL && retry < 32; retry++)
 	{
 		struct timespec t = {5, 0};
-		usb_find_busses();
-		usb_find_devices();
 
 		dev_h = open_powerware_usb();
 		if (!dev_h) {
@@ -142,33 +150,22 @@ usb_dev_handle *nutusb_open(const char *port)
 		upslogx(LOG_ERR, "Can't open POWERWARE USB device");
 		goto errout;
 	}
-
-	if (usb_set_configuration(dev_h, 1) < 0)
-	{
-		upslogx(LOG_ERR, "Can't set POWERWARE USB configuration: %s", usb_strerror());
-		goto errout;
-	}
+	else
+		upsdebugx(1, "device %s opened successfully", usb_device(dev_h)->filename);
 
 	if (usb_claim_interface(dev_h, 0) < 0)
 	{
 		upslogx(LOG_ERR, "Can't claim POWERWARE USB interface: %s", usb_strerror());
-  	        goto errout;
+		goto errout;
 	}
 	else
 		dev_claimed = 1;
-
-	if (usb_set_altinterface(dev_h, 0) < 0)
-	{
-		upslogx(LOG_ERR, "Can't set POWERWARE USB alternate interface: %s", usb_strerror());
-  	        goto errout;
-	}
 
 	if (usb_clear_halt(dev_h, 0x81) < 0)
 	{
 		upslogx(LOG_ERR, "Can't reset POWERWARE USB endpoint: %s", usb_strerror());
 		goto errout;
 	}
-    
 	return dev_h;
 
 errout:
