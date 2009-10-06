@@ -1,3 +1,7 @@
+Tue Oct  6 19:16:08 UTC 2009 / Arjen de Korte <arjen@de-korte.org>
+
+ - MAINTAINERS: Remove entry for Peter Selinger (by request)
+ 
 Tue Oct  6 12:13:01 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
 
  - drivers/mge-shut.c: actually apply the low battery level if provided (either

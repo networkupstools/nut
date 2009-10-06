@@ -43,15 +43,11 @@ S: Maintained or Supported: dummy-ups, usbhid-ups, mge-shut, newmge-shut
 
 P: Arjen de Korte
 M: arjen@de-korte.org
-S: Maintained: safenet, genericups, powerpanel, netxml-ups
+S: Maintained: safenet, genericups, powerpanel, netxml-ups, usbhid-ups
 
 P: Fabio Di Niro
 M: blaxwan@users.sourceforge.net
 S: Maintained: metasys
-
-P: Peter Selinger
-M: selinger@users.sourceforge.net
-S: Maintained: usbhid-ups belkinunv
 
 Packaging
 =========
