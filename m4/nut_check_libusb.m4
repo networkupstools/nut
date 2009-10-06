@@ -12,9 +12,6 @@ if test -z "${nut_have_libusb_seen}"; then
    CFLAGS_ORIG="${CFLAGS}"
    LDFLAGS_ORIG="${LDFLAGS}"
 
-   dnl innocent until proven guilty
-   nut_have_libusb=yes
-
    dnl Check for libusb libs and flags
    AC_MSG_CHECKING(for libusb cflags)
    CFLAGS=`libusb-config --cflags 2>/dev/null`
@@ -24,6 +21,7 @@ if test -z "${nut_have_libusb_seen}"; then
 	nut_have_libusb=no
    else
 	AC_MSG_RESULT(${CFLAGS})
+	nut_have_libusb=yes
    fi
 
    AC_MSG_CHECKING(for libusb libs)

@@ -6,59 +6,38 @@ dnl do the checking only once.
 AC_DEFUN([NUT_CHECK_LIBSSL], 
 [
 if test -z "${nut_have_libssl_seen}"; then
-   nut_have_libssl_seen=yes
+	nut_have_libssl_seen=yes
 
-   AC_MSG_CHECKING(for SSL library availability)
+	dnl save CFLAGS and LDFLAGS
+	CFLAGS_ORIG="${CFLAGS}"
+	LDFLAGS_ORIG="${LDFLAGS}"
 
-   dnl save CFLAGS and LDFLAGS
-   CFLAGS_ORIG="${CFLAGS}"
-   LDFLAGS_ORIG="${LDFLAGS}"
+	AC_MSG_CHECKING(for openssl cflags via pkg-config)
+	CFLAGS=`pkg-config --silence-errors --cflags openssl`
+	if (test "$?" != "0"); then
+		AC_MSG_RESULT(not found)
+		nut_have_libssl=no
+	else
+		AC_MSG_RESULT(${CFLAGS})
+		nut_have_libssl=yes
+	fi
+		
+	AC_MSG_CHECKING(for openssl ldflags via pkg-config)
+	LDFLAGS=`pkg-config --silence-errors --libs openssl`
+	if (test "$?" != "0"); then
+		AC_MSG_RESULT(not found)
+		nut_have_libssl=no
+	else
+		AC_MSG_RESULT(${LDFLAGS})
+	fi
 
-   CFLAGS=""
-   LDFLAGS="-lssl -lcrypto"
-
-   AC_TRY_LINK([#include <openssl/ssl.h>], [SSL_library_init()], 
-	       nut_have_libssl=yes, 
-	       nut_have_libssl=no)
-
-   if test "${nut_have_libssl}" != "yes"; then
-      CFLAGS="-I/usr/kerberos/include"
-      LDFLAGS="-lssl -lcrypto"
-
-      AC_TRY_LINK([#include <openssl/ssl.h>], [SSL_library_init], 
-                   nut_have_libssl=yes, 
-		   nut_have_libssl=no)
-   fi
-
-   if test "${nut_have_libssl}" != "yes"; then
-      CFLAGS="-I/usr/local/ssl/include"
-      LDFLAGS="-L/usr/local/ssl/lib -lssl -lcrypto"
-
-      AC_TRY_LINK([#include <openssl/ssl.h>], [SSL_library_init], 
-                  nut_have_libssl=yes, 
-		  nut_have_libssl=no)
-   fi
-
-   if test "${nut_have_libssl}" != "yes"; then
-      CFLAGS="-I/usr/local/ssl/include -I/usr/kerberos/include"
-      LDFLAGS="-L/usr/local/ssl/lib -lssl -lcrypto"
-
-      AC_TRY_LINK([#include <openssl/ssl.h>], [SSL_library_init], 
-                   nut_have_libssl=yes, 
-		   nut_have_libssl=no)
-   fi
-
-   if test "${nut_have_libssl}" = "yes"; then
-	LIBSSL_CFLAGS="${CFLAGS}"
-	LIBSSL_LDFLAGS="${LDFLAGS}"
-   fi
-
-   dnl restore original CFLAGS and LDFLAGS
-   CFLAGS="${CFLAGS_ORIG}"
-   LDFLAGS="${LDFLAGS_ORIG}"
-
-   AC_MSG_RESULT([${nut_have_libssl}])
-
+	if test "${nut_have_libssl}" = "yes"; then
+		LIBSSL_CFLAGS="${CFLAGS}"
+		LIBSSL_LDFLAGS="${LDFLAGS}"
+	fi
+	
+	dnl restore original CFLAGS and LDFLAGS
+	CFLAGS="${CFLAGS_ORIG}"
+	LDFLAGS="${LDFLAGS_ORIG}"
 fi
 ])
-
