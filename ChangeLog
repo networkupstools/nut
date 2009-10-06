@@ -1,3 +1,10 @@
+Tue Oct  6 12:13:01 UTC 2009 / Arnaud Quette <ArnaudQuette@Eaton.com>
+
+ - drivers/mge-shut.c: actually apply the low battery level if provided (either
+   through "-x lowbatt" or ups.conf). Also change the driver reported name from
+   "MGE UPS SYSTEMS" to "Eaton".
+   (reported by Daniel O'Connor)
+
 Mon Oct  5 20:02:42 UTC 2009 / Arnaud Quette <arnaud.quette@free.fr>
 
  - drivers/nut_usb.c: remove the calls to usb_set_configuration() and

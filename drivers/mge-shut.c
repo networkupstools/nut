@@ -36,8 +36,8 @@
 /*                  Define "technical" constants                   */
 /* --------------------------------------------------------------- */
 
-#define DRIVER_NAME	"MGE UPS SYSTEMS/SHUT driver"
-#define DRIVER_VERSION	"0.68"
+#define DRIVER_NAME	"Eaton / SHUT driver"
+#define DRIVER_VERSION	"0.69"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -52,7 +52,7 @@ upsdrv_info_t upsdrv_info = {
 
 /* global variables */
 int commstatus = 0;
-int lowbatt = DEFAULT_LOWBATT;
+int lowbatt = -1;
 int ondelay = DEFAULT_ONDELAY;
 int offdelay = DEFAULT_OFFDELAY;
 int notification = DEFAULT_NOTIFICATION;
@@ -172,7 +172,11 @@ void upsdrv_initinfo (void)
 	/* install handlers */
 	upsh.setvar = hid_set_value; /* setvar; */
 	upsh.instcmd = instcmd;
-	
+
+	/* check if low battery level has been given to set it */
+	if (lowbatt != -1) {
+		hid_set_value("battery.charge.low", getval ("lowbatt"));
+	}
 }
 
 /* --------------------------------------------------------------- */
