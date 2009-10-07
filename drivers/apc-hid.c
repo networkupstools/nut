@@ -3,7 +3,8 @@
  *  Copyright (C)  
  *	2003 - 2009	Arnaud Quette <arnaud.quette@free.fr>
  *	2005		John Stamp <kinsayder@hotmail.com>
- *  2005        Peter Selinger <selinger@users.sourceforge.net>
+ *	2005		Peter Selinger <selinger@users.sourceforge.net>
+ *	2009		Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
  *   and Eaton <http://www.eaton.com>
@@ -32,7 +33,7 @@
 #include "common.h"
 #include "usb-common.h"
 
-#define APC_HID_VERSION "APC HID 0.94"
+#define APC_HID_VERSION "APC HID 0.95"
 
 /* APC */
 #define APC_VENDORID 0x051d
@@ -304,8 +305,11 @@ static hid_info_t apc_hid2nut[] = {
    * ie: test.battery.start quick
    */
   { "test.battery.start.quick", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "1", HU_TYPE_CMD, NULL },
+  { "test.battery.start.quick", 0, 0, "UPS.Battery.Test", NULL, "1", HU_TYPE_CMD, NULL },	/* Back-UPS RS (experimental) */
   { "test.battery.start.deep", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "2", HU_TYPE_CMD, NULL },
+  { "test.battery.start.deep", 0, 0, "UPS.Battery.Test", NULL, "2", HU_TYPE_CMD, NULL },	/* Back-UPS RS (experimental) */
   { "test.battery.stop", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "3", HU_TYPE_CMD, NULL },
+  { "test.battery.stop", 0, 0, "UPS.Battery.Test", NULL, "3", HU_TYPE_CMD, NULL },	/* Back-UPS RS (experimental) */
   { "test.panel.start", 0, 0, "UPS.APCPanelTest", NULL, "1", HU_TYPE_CMD, NULL },
   { "test.panel.stop", 0, 0, "UPS.APCPanelTest", NULL, "0", HU_TYPE_CMD, NULL },
   { "test.panel.start", 0, 0, "UPS.PowerSummary.APCPanelTest", NULL, "1", HU_TYPE_CMD, NULL }, /* Back-UPS 500 */
