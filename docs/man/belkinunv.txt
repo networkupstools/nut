@@ -45,7 +45,7 @@ This is meant to be used in a shutdown script as follows: during a
 shutdown, after all filesystems have been remounted read-only, and
 just before the system would normally be halted: check /etc/killpower
 (or similar) to see if this shutdown was caused by linknut:upsmon[8],
-and if yes, call `belkinunv -x wait`. If AC power comes back on,
+and if yes, call *belkinunv -x wait*. If AC power comes back on,
 *belkinunv* exits, and things should be arranged so that the
 system reboots in this case. If AC power does not come back on, the
 UPS will eventually run out of batteries, kill the computer's power
@@ -62,8 +62,8 @@ startup script, before any filesystems are mounted read/write, and before any
 filesystem checks are performed.
 
 Several other *-x* options are provided to fine-tune this
-behavior. See the <<OPTIONS,options>> below for detailed descriptions.  See the
-<<EXAMPLES,examples>>
+behavior. See the <<_options,options>> below for detailed descriptions.  See the
+<<_examples,examples>>
 below for examples of how to use *belkinunv* in shutdown and
 startup scripts.
 
@@ -81,7 +81,7 @@ percent. Then, and only then, *belkinunv* exits. In addition,
 while *belkinunv* runs in this mode, it displays a status line
 with information on the UPS status and battery level. This is intended
 for use in the computer's shutdown and startup scripts, as described
-under <<SOFT SHUTDOWN WORKAROUND,Soft Shutdown Workaround>> above.
+under <<_soft_shutdown_workaround,Soft Shutdown Workaround>> above.
 
 *-x nohang*::
 This option only has an effect when used in conjunction with the *-x wait*
@@ -179,7 +179,7 @@ UPS models support the "disabled" state.
 e.g. 800 for an 800VA system
 
 *ups.status*::
-a list of flags; see the <<STATUS FLAGS,status flags>> below.
+a list of flags; see the <<_status_flags,status flags>> below.
 
 *ups.temperature*::
 not supported by all hardware.
@@ -315,9 +315,9 @@ diagnostics are the same as for all NUT drivers, see
 linknut:nutupsdrv[8].
 
 When used with the *-x wait* option, the exit status is normally
-0. If the *-x nohang* option has also been specified, an exit
-status of 1 indicates that communication with the UPS was lost. If the
-*-x flash* option has been specified, an exit status of 2
+*0*. If the *-x nohang* option has also been specified, an exit
+status of *1* indicates that communication with the UPS was lost. If the
+*-x flash* option has been specified, an exit status of *2*
 indicates that the timed shutdown has failed.
 
 EXTRA ARGUMENTS
@@ -328,17 +328,15 @@ This driver does not support any extra settings in linknut:ups.conf[5].
 SEE ALSO
 --------
 
-The documentation for the protocol used by this UPS:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-belkin-universal-ups.html
-
 The core driver:
 ~~~~~~~~~~~~~~~~
 linknut:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+ - The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+ - The documentation for the protocol used by this UPS:
+link:http://www.mscs.dal.ca/~selinger/ups/belkin-universal-ups.html[belkin-universal-ups.html]
 
 AUTHOR
 ------
