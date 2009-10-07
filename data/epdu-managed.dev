@@ -1,0 +1,66 @@
+device.mfr: EATON | Powerware
+device.model: DBQ10634/5
+device.serial: ADO6750531
+device.type: pdu
+driver.name: snmp-ups
+driver.parameter.pollinterval: 2
+driver.parameter.port: somewhere.org
+driver.version: 2.3.0-1540MS
+driver.version.internal: 0.44 (mib: aphel_revelation 0.2)
+outlet.1.current: 0.00
+outlet.1.current.maximum: 0.00
+outlet.1.desc: Outlet 1
+outlet.1.id: 1
+outlet.1.power: 0.00
+outlet.1.powerfactor: 0.05
+outlet.1.realpower: 0.00
+outlet.1.status: on
+outlet.1.switchable: 0.00
+outlet.1.voltage: 247.00
+outlet.2.current: 0.00
+outlet.2.current.maximum: 0.16
+outlet.2.desc: Outlet 2
+outlet.2.id: 2
+outlet.2.power: 0.00
+outlet.2.powerfactor: 0.01
+outlet.2.realpower: 0.00
+outlet.2.status: on
+outlet.2.switchable: 1.00
+outlet.2.voltage: 247.00
+outlet.3.current: 0.00
+outlet.3.current.maximum: 0.16
+outlet.3.desc: Outlet 3
+outlet.3.id: 3
+outlet.3.power: 0.00
+outlet.3.powerfactor: 0.13
+outlet.3.realpower: 0.00
+outlet.3.status: on
+outlet.3.switchable: 2.00
+outlet.3.voltage: 247.00
+outlet.4.current: 0.19
+outlet.4.current.maximum: 0.56
+outlet.4.desc: Outlet 4
+outlet.4.id: 2
+outlet.4.power: 46.00
+outlet.4.powerfactor: 0.60
+outlet.4.realpower: 28.00
+outlet.4.status: on
+outlet.4.switchable: 3.00
+outlet.4.voltage: 247.00
+outlet.count: 4.00
+outlet.current: 0.19
+outlet.desc: All outlets
+outlet.id: 0
+outlet.power: 46.00
+outlet.realpower: 28.00
+outlet.voltage: 247.00
+ups.firmware: 01.01.00
+ups.id: my_device234
+ups.macaddr: 
+ups.mfr: EATON | Powerware
+ups.model: DBQ10634/5
+ups.serial: ADO6750531
+ups.status: 
+ups.temperature: 49.00
+device.type: pdu
+

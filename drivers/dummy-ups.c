@@ -1,7 +1,7 @@
 /* dummy-ups.c - NUT testing driver and repeater
 
    Copyright (C)
-       2005 - 2008  Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
+       2005 - 2009  Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,11 +20,13 @@
 
 /* TODO list:
  * - separate the code between dummy and repeater/meta
- * - for repeater/meta: add support for instant commands and setvar
- * - variable/value enforcement using cmdvartab for testing
- *   the variable existance
- * - allow variable creation on the fly (using upsrw)
- * - poll the "port" file for change
+ * - for repeater/meta:
+ *   * add support for instant commands and setvar
+ * - for dummy:
+ *   * variable/value enforcement using cmdvartab for testing
+ *     the variable existance, and possible values
+ *   * allow variable creation on the fly (using upsrw)
+ *   * poll the "port" file for change
  */
 
 #include <netdb.h>
@@ -38,7 +40,7 @@
 #include "dummy-ups.h"
 
 #define DRIVER_NAME	"Dummy UPS driver"
-#define DRIVER_VERSION	"0.05"
+#define DRIVER_VERSION	"0.10"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -56,9 +58,14 @@ upsdrv_info_t upsdrv_info = {
 
 int mode=MODE_UNKNOWN;
 
+/* parseconf context, for dummy mode using a file */
+PCONF_CTX_t	*ctx=NULL;
+time_t		next_update = -1;
+
 #define MAX_STRING_SIZE	128
 
 static int setvar(const char *varname, const char *val);
+static int instcmd(const char *cmdname, const char *extra);
 static int parse_data_file(int upsfd);
 static dummy_info_t *find_info(const char *varname);
 static int is_valid_data(const char* varname);
@@ -66,14 +73,15 @@ static int is_valid_value(const char* varname, const char *value);
 /* libupsclient update */
 static int upsclient_update_vars(void);
 
+/* connection information */
 static char		*client_upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
+int	port;
 
 /* Driver functions */
 
 void upsdrv_initinfo(void)
 {
-	int	port;
 	dummy_info_t *item;
 
 	switch (mode) {
@@ -127,6 +135,9 @@ void upsdrv_initinfo(void)
 			fatalx(EXIT_FAILURE, "no suitable definition found!");
 			break;
 	}
+	upsh.instcmd = instcmd;
+
+	dstate_addcmd("load.off");
 }
 
 void upsdrv_updateinfo(void)
@@ -137,16 +148,24 @@ void upsdrv_updateinfo(void)
 
 	switch (mode) {
 		case MODE_DUMMY:
-			/* simply avoid driver staleness */
-			status_init();
-			status_set(dstate_getinfo("ups.status"));
-			status_commit();
-			dstate_dataok();
+			/* Now get user's defined variables */
+			if (parse_data_file(upsfd) >= 0)
+				dstate_dataok();
 			break;
 		case MODE_META:
 		case MODE_REPEATER:
-			if (upsclient_update_vars())
+			if (upsclient_update_vars() > 0)
 				dstate_dataok();
+			else {
+				/* try to reconnect */
+				upscli_disconnect(ups);
+				if (upscli_connect(ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
+					upsdebugx(1, "Error reconnecting: %s", upscli_strerror(ups));
+				}
+				else {
+					upsdebugx(1, "Reconnected");
+				}
+			}
 			break;
 	}
 }
@@ -156,31 +175,24 @@ void upsdrv_shutdown(void)
 	fatalx(EXIT_FAILURE, "shutdown not supported");
 }
 
-/*
 static int instcmd(const char *cmdname, const char *extra)
-{
+{	
+/*
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
 		ser_send_buf(upsfd, ...);
 		return STAT_INSTCMD_HANDLED;
 	}
-
+*/
 	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
 	return STAT_INSTCMD_UNKNOWN;
 }
-*/
 
 void upsdrv_help(void)
 {
 }
 
-/* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {
-	/* allow '-x xyzzy' */
-	/* addvar(VAR_FLAG, "xyzzy", "Enable xyzzy mode"); */
-
-	/* allow '-x foo=<some value>' */
-	/* addvar(VAR_VALUE, "foo", "Override foo setting"); */
 }
 
 void upsdrv_initups(void)
@@ -204,6 +216,11 @@ void upsdrv_cleanup(void)
 	if ( (mode == MODE_META) || (mode == MODE_REPEATER) ) {
 		if (ups) {
 			upscli_disconnect(ups);
+		}
+
+		if (ctx) {
+			pconf_finish(ctx);
+			free(ctx);
 		}
 
 		free(client_upsname);
@@ -272,7 +289,7 @@ static int upsclient_update_vars(void)
 	ret = upscli_list_start(ups, numq, query);
 
 	if (ret < 0) {
-
+		upsdebugx(1, "Error: %s (%i)", upscli_strerror(ups), upscli_upserror(ups));
 		return ret;
 	}
 
@@ -280,11 +297,15 @@ static int upsclient_update_vars(void)
 
 		/* VAR <upsname> <varname> <val> */
 		if (numa < 4) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %d args, need at least 4)", numa);
+			upsdebugx(1, "Error: insufficient data (got %d args, need at least 4)", numa);
 		}
+
+		upsdebugx(5, "Received: %s %s %s %s",
+				answer[0], answer[1], answer[2], answer[3]);
+
 		/* do not override the driver collection */
 		if (strncmp(answer[2], "driver.", 7))
-			dstate_setinfo(answer[2], "%s", answer[3]);
+			setvar(answer[2], answer[3]);
 	}
 	return 1;
 }
@@ -345,44 +366,79 @@ static void upsconf_err(const char *errmsg)
 	upslogx(LOG_ERR, "Fatal error in parseconf(ups.conf): %s", errmsg);
 }
 
+/* for dummy mode
+ * parse the definition file and process its content
+ */ 
 static int parse_data_file(int upsfd)
 {
-	PCONF_CTX_t	ctx;
 	char	fn[SMALLBUF];
 	char	*ptr, *var_value;
 	int		value_args = 0, counter;
+	time_t	now;
 
-	if (device_path[0] == '/')
-		snprintf(fn, sizeof(fn), "%s", device_path);
-	else
-		snprintf(fn, sizeof(fn), "%s/%s", confpath(), device_path);
+	time(&now);
 
-	pconf_init(&ctx, upsconf_err);
+	upsdebugx(1, "entering parse_data_file()");
 
-	if (!pconf_file_begin(&ctx, fn))
-		fatalx(EXIT_FAILURE, "Can't open dummy-ups definition file %s: %s",
-			fn, ctx.errmsg);
+	if (now < next_update) {
+		upsdebugx(1, "leaving (paused)...");
+		return 1;
+	}
+	
+	/* initialise everything, to loop back at the beginning of the file */
+	if (ctx == NULL) {
 
-	while (pconf_file_next(&ctx)) {
-		if (pconf_parse_error(&ctx)) {
+		ctx = (PCONF_CTX_t *)xmalloc(sizeof(PCONF_CTX_t));
+
+		if (device_path[0] == '/')
+			snprintf(fn, sizeof(fn), "%s", device_path);
+		else
+			snprintf(fn, sizeof(fn), "%s/%s", confpath(), device_path);
+
+		pconf_init(ctx, upsconf_err);
+
+		if (!pconf_file_begin(ctx, fn))
+			fatalx(EXIT_FAILURE, "Can't open dummy-ups definition file %s: %s",
+				fn, ctx->errmsg);
+	}
+
+	/* reset the next call time, so that we can loop back on the file
+	 * if there is no blocking action (ie TIMER) until the end of the file */
+	next_update = -1;
+	
+	/* now start or continue parsing... */
+	while (pconf_file_next(ctx)) {
+
+		if (pconf_parse_error(ctx)) {
 			upsdebugx(2, "Parse error: %s:%d: %s",
-				fn, ctx.linenum, ctx.errmsg);
+				fn, ctx->linenum, ctx->errmsg);
 			continue;
 		}
 
 		/* Check if we have something to process */
-		if (ctx.numargs < 1)
+		if (ctx->numargs < 1)
 			continue;
 
+		/* process actions (only "TIMER" ATM) */
+		if (!strncmp(ctx->arglist[0], "TIMER", 5)) {
+			/* TIMER <seconds> will wait "seconds" before
+			 * continuing the parsing */
+			int delay = atoi (ctx->arglist[1]);
+			time(&next_update);
+			next_update += delay;
+			upsdebugx(1, "suspending execution for %i seconds...", delay);
+			break;
+		}
+
 		/* Remove the ":" after the variable name */
-		if ((ptr = strchr(ctx.arglist[0], ':')) != NULL)
+		if ((ptr = strchr(ctx->arglist[0], ':')) != NULL)
 			*ptr = '\0';
 
-		upsdebugx(2, "parse_data_file: variable \"%s\" with %d args", ctx.arglist[0], (int)ctx.numargs);
+		upsdebugx(3, "parse_data_file: variable \"%s\" with %d args", ctx->arglist[0], (int)ctx->numargs);
 
 		/* skip the driver.* collection data */
-		if (!strncmp(ctx.arglist[0], "driver.", 7)) {
-			upsdebugx(2, "parse_data_file: skipping %s", ctx.arglist[0]);
+		if (!strncmp(ctx->arglist[0], "driver.", 7)) {
+			upsdebugx(2, "parse_data_file: skipping %s", ctx->arglist[0]);
 			continue;
 		}
 
@@ -393,22 +449,36 @@ static int parse_data_file(int upsfd)
 			else int/float values need to be check against bound/enum
 		*/
 		var_value = (char*) xmalloc(MAX_STRING_SIZE);
-		for (counter = 1, value_args = ctx.numargs ; counter < value_args ; counter++) {
+		for (counter = 1, value_args = ctx->numargs ; counter < value_args ; counter++) {
 			if (counter != 1) /* don't append the first space separator */
 				strncat(var_value, " ", MAX_STRING_SIZE);
-			strncat(var_value, ctx.arglist[counter], MAX_STRING_SIZE);
+			strncat(var_value, ctx->arglist[counter], MAX_STRING_SIZE);
 		}
 
-		if (setvar(ctx.arglist[0], var_value) == STAT_SET_UNKNOWN)
-			upsdebugx(2, "parse_data_file: can't add \"%s\" with value \"%s\"\nError: %s",
-				ctx.arglist[0], var_value, ctx.errmsg);
-		else
-			upsdebugx(2, "parse_data_file: added \"%s\" with value \"%s\"",
-				ctx.arglist[0], var_value);
+		/* special handler for status */
+		if (!strncmp( ctx->arglist[0], "ups.status", 10)) {
+			status_init();
+			setvar(ctx->arglist[0], var_value);
+			status_commit();
+		}
+		else {
+			
+			if (setvar(ctx->arglist[0], var_value) == STAT_SET_UNKNOWN) {
+				upsdebugx(2, "parse_data_file: can't add \"%s\" with value \"%s\"\nError: %s",
+					ctx->arglist[0], var_value, ctx->errmsg);
+			}
+			else { 
+				upsdebugx(3, "parse_data_file: added \"%s\" with value \"%s\"",
+					ctx->arglist[0], var_value);
+			}
+		}
 	}
 
-	/* cleanup now, since parseconf is not useful anymore! */
-	pconf_finish(&ctx);
-
+	/* cleanup parseconf if there is no pending action */
+	if (next_update == -1) {
+		pconf_finish(ctx);
+		free(ctx);
+		ctx=NULL;
+	}
 	return 1;
 }

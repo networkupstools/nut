@@ -1,3 +1,19 @@
+Wed Oct  7 17:53:42 UTC 2009 / Arnaud Quette <arnaud.quette@free.fr>
+
+ * drivers/dummy-ups.c: dummy-ups general improvements
+   - dummy mode now loop on reading the .dev file, instead of reading it once.
+     Interacting through this method is also possible, by changing the .dev file
+	 content on the fly, 
+   - dummy mode now support actions (TIMER only ATM) in the .dev file. This
+     allows to have an automated scripting sequence (see data/evolution.dev and
+     dummy-ups manpage for examples),
+   - repeater mode now check the upsd connection, and reconnect if needed,
+     (reported by Gabor Kiss)
+   - cleanup the inline TODO list,
+   - bump the driver version to 0.10.
+ * man/dummy-ups.8: update according to the above changes.
+ * data/epdu-managed.dev: new dummy-ups definition file.
+
 Wed Oct  7 14:05:35 UTC 2009 / Arjen de Korte <arjen@de-korte.org>
 
  - drivers/snmp-ups.c: remove suspicious code for shutdown.* commands

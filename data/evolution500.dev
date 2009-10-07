@@ -46,3 +46,8 @@ ups.serial: AV2G3300L
 ups.status: OL CHRG
 ups.test.interval: 604800
 ups.test.result: Done and passed
+TIMER 300
+ups.status: OB DISCHRG
+TIMER 300
+ups.status: OB LB DISCHRG
+TIMER 60

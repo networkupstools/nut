@@ -1,6 +1,7 @@
-/* dummy-ups.h - new testing driver
+/* dummy-ups.h - NUT testing driver and repeater
 
-   Copyright (C) 2005  Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
+   Copyright (C)
+       2005 - 2009  Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
