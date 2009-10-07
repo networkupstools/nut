@@ -1,0 +1,49 @@
+BELKIN(8)
+=========
+
+NAME
+----
+  
+belkin - Driver for Belkin serial UPS equipment
+
+NOTE
+----
+
+This man page only documents the hardware-specific features of the
+belkin driver.  For information about the core driver, see  
+linknut:nutupsdrv[8].
+
+SUPPORTED HARDWARE
+------------------
+The *belkin* driver is known to support the Regulator Pro 525 (F6C525-SER).
+Other similar models such as the 425 and 625 should also work.
+
+The Trust UPS and older Belkin units are not supported.
+
+EXTRA ARGUMENTS
+---------------
+
+This driver does not support any extra settings in the    
+linknut:ups.conf[5].
+
+BUGS
+----
+
+There are dragons lurking within the protocol to this UPS.  I have one
+that essentially behaves like a glorified power strip due to some
+invasive probing on my part.  Don't mess with it directly.
+
+NOTE: the driver doesn't go anywhere near these character sequences,
+so it won't zap your UPS.  I only mention this here as yet another
+reminder of the perils of closed hardware.
+
+SEE ALSO
+--------
+
+The core driver:
+~~~~~~~~~~~~~~~~
+linknut:nutupsdrv[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

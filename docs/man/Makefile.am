@@ -4,6 +4,8 @@ CONVERTED_TO_ASCIIDOC = \
 	apcsmart.html \
 	bcmxcp.html \
 	bcmxcp_usb.html \
+	belkin.html \
+	belkinunv.html \
 	hosts.conf.html \
 	index.html \
 	nut.conf.html \
@@ -32,6 +34,8 @@ EXTRA_DIST = \
 	apcsmart.txt \
 	bcmxcp.txt \
 	bcmxcp_usb.txt \
+	belkin.txt \
+	belkinunv.txt \
 	hosts.conf.txt \
 	index.txt \
 	nut.conf.txt \
@@ -74,6 +78,8 @@ man8_MANS = \
 	apcsmart.8 \
 	bcmxcp.8 \
 	bcmxcp_usb.8 \
+	belkin.8 \
+	belkinunv.8 \
 	nutupsdrv.8 \
 	tripplite_usb.8 \
 	upsc.8 \
