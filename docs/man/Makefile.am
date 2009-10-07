@@ -6,6 +6,9 @@ CONVERTED_TO_ASCIIDOC = \
 	bcmxcp_usb.html \
 	belkin.html \
 	belkinunv.html \
+	bestfcom.html \
+	bestuferrups.html \
+	bestups.html \
 	hosts.conf.html \
 	index.html \
 	nut.conf.html \
@@ -36,6 +39,9 @@ EXTRA_DIST = \
 	bcmxcp_usb.txt \
 	belkin.txt \
 	belkinunv.txt \
+	bestfcom.txt \
+	bestuferrups.txt \
+	bestups.txt \
 	hosts.conf.txt \
 	index.txt \
 	nut.conf.txt \
@@ -74,12 +80,16 @@ man5_MANS = \
 	upsset.conf.5 \
 	upsstats.html.5
 
+# TODO: pull in bestfortress from trunk
 man8_MANS = \
 	apcsmart.8 \
 	bcmxcp.8 \
 	bcmxcp_usb.8 \
 	belkin.8 \
 	belkinunv.8 \
+	bestfcom.8 \
+	bestuferrups.8 \
+	bestups.8 \
 	nutupsdrv.8 \
 	tripplite_usb.8 \
 	upsc.8 \

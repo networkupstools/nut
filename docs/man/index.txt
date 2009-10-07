@@ -53,9 +53,9 @@ Drivers
 - linknut:bcmxcp_usb[8]
 - linknut:belkin[8]
 - linknut:belkinunv[8]
-- bestfcom.8
-- bestuferrups.8
-- bestups.8
+- linknut:bestfcom[8]
+- linknut:bestuferrups[8]
+- linknut:bestups[8]
 - blazer.8
 - clone.8
 - cyberpower.8
