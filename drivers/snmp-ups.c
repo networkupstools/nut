@@ -3,10 +3,11 @@
  *  Based on NetSNMP API (Simple Network Management Protocol V1-2)
  *
  *  Copyright (C) 
- *   2002-2008  Arnaud Quette <arnaud.quette@free.fr>
- *   2002-2006	Dmitry Frolov <frolov@riss-telecom.ru>
- *  			J.W. Hoogervorst <jeroen@hoogervorst.net>
- *  			Niels Baggesen <niels@baggesen.net>
+ *	2002 - 2008	Arnaud Quette <arnaud.quette@free.fr>
+ *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
+ *			J.W. Hoogervorst <jeroen@hoogervorst.net>
+ *			Niels Baggesen <niels@baggesen.net>
+ *	2009		Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
  *  Sponsored by Eaton <http://www.eaton.com>
  *   and originally by MGE UPS SYSTEMS <http://www.mgeups.com/>
@@ -1240,24 +1241,6 @@ int su_instcmd(const char *cmdname, const char *extradata)
 			free_info(su_info_p);
 
 		return STAT_INSTCMD_UNKNOWN;
-	}
-
-	if (extradata) {
-		int	ret = STAT_SET_INVALID;
-
-		if (strcasecmp(cmdname, "shutdown.return")) {
-			ret = su_setvar("ups.delay.start", extradata);
-		}
-		if (strcasecmp(cmdname, "shutdown.stayoff")) {
-			ret = su_setvar("ups.delay.shutdown", extradata);
-		}
-		if (strcasecmp(cmdname, "shutdown.reboot")) {
-			ret = su_setvar("ups.delay.reboot", extradata);
-		}
-
-		if (ret == STAT_SET_HANDLED) {
-			extradata = NULL;
-		}
 	}
 
 	/* set value. */
