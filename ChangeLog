@@ -1,3 +1,11 @@
+Thu Oct  8 19:38:03 UTC 2009 / Arjen de Korte <arjen@de-korte.org>
+
+ - m4/nut_check_libneon.m4,nut_check_libusb.m4: changes in autoconf magic to
+   detect optional functions (without making assumptions on where they are
+   located)
+ - configure.in: update for the above
+ - drivers/libusb.c,netxml-ups.c,richcomm_usb.c: update for the above
+ 
 Wed Oct  7 17:53:42 UTC 2009 / Arnaud Quette <arnaud.quette@free.fr>
 
  * drivers/dummy-ups.c: dummy-ups general improvements
