@@ -322,7 +322,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 					upsdebugx(4, "USB device [%04x:%04x] opened", device->VendorID, device->ProductID);
 					return ret;
 				}
-#if LIBUSB_HAS_DETACH_KRNL_DRV
+#ifdef HAVE_USB_DETACH_KERNEL_DRIVER_NP
 				/* this method requires at least libusb 0.1.8:
 				 * it force device claiming by unbinding
 				 * attached driver... From libhid */

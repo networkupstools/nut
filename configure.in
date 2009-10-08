@@ -208,13 +208,6 @@ NUT_CHECK_LIBPOWERMAN
 dnl ----------------------------------------------------------------------
 dnl additional USB-related checks
 
-dnl Check for libusb "force driver unbind" availability
-dnl Need at least libusb 0.1.8
-AC_CHECK_LIB(usb, usb_detach_kernel_driver_np, [
-  AC_DEFINE(LIBUSB_HAS_DETACH_KRNL_DRV, 1,
-    [Define to 1 if libusb supports `usb_detach_kernel_driver_np' function.])
-], [], [${LIBUSB_LDFLAGS}])
-
 dnl Solaris 10/11 USB handling (need librt and libusb runtime path)
 case ${target_os} in
    solaris2.1* )

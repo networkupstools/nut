@@ -34,6 +34,9 @@ if test -z "${nut_have_libusb_seen}"; then
 	AC_MSG_RESULT(${LDFLAGS})
    fi
 
+   dnl Check for libusb "force driver unbind" availability
+   AC_CHECK_FUNCS(usb_detach_kernel_driver_np)
+
    if test "${nut_have_libusb}" = "yes"; then
 	LIBUSB_CFLAGS="${CFLAGS}"
 	LIBUSB_LDFLAGS="${LDFLAGS}"

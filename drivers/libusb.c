@@ -28,7 +28,7 @@
  *
  * -------------------------------------------------------------------------- */
 
-#include "config.h" /* for LIBUSB_HAS_DETACH_KRNL_DRV flag */
+#include "config.h" /* for HAVE_USB_DETACH_KERNEL_DRIVER_NP flag */
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
 #include "usb-common.h"
 #include "libusb.h"
@@ -87,7 +87,7 @@ static inline int matches(USBDeviceMatcher_t *matcher, USBDevice_t *device) {
 static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDeviceMatcher_t *matcher,
 	int (*callback)(usb_dev_handle *udev, USBDevice_t *hd, unsigned char *rdbuf, int rdlen))
 {
-#if LIBUSB_HAS_DETACH_KRNL_DRV
+#ifdef HAVE_USB_DETACH_KERNEL_DRIVER_NP
 	int retries;
 #endif
 	int rdlen1, rdlen2; /* report descriptor length, method 1+2 */
@@ -197,7 +197,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 			
 			/* Now we have matched the device we wanted. Claim it. */
 
-#if LIBUSB_HAS_DETACH_KRNL_DRV
+#ifdef HAVE_USB_DETACH_KERNEL_DRIVER_NP
 			/* this method requires at least libusb 0.1.8:
 			 * it force device claiming by unbinding
 			 * attached driver... From libhid */

@@ -12,9 +12,6 @@ if test -z "${nut_have_neon_seen}"; then
    CFLAGS_ORIG="${CFLAGS}"
    LDFLAGS_ORIG="${LDFLAGS}"
 
-   dnl innocent until proven guilty
-   nut_have_neon=yes
-
    dnl See which version of the neon library (if any) is installed
    AC_MSG_CHECKING(for libneon version via pkg-config (0.25.0 minimum required))
    NEON_VERSION=`pkg-config --silence-errors --modversion neon`
@@ -26,17 +23,7 @@ if test -z "${nut_have_neon_seen}"; then
    else
       AC_MSG_RESULT(${NEON_VERSION} found)
       AC_DEFINE_UNQUOTED(LIBNEON_VERSION, "${NEON_VERSION}", [Define version of the neon library])
-
-      dnl We need at least 0.27.0 if we want to use ne_set_connect_timeout()
-      AC_MSG_CHECKING(for libneon has ne_set_connect_timeout())
-      NEON_MIN_VERSION=`pkg-config --silence-errors --atleast-version=0.27.0 neon`
-      if (test "$?" != "0")
-      then
-         AC_MSG_RESULT(not found)
-      else
-         AC_MSG_RESULT(found)
-         AC_DEFINE(HAVE_LIBNEON_SET_CONNECT_TIMEOUT, 1, [Define if neon >= 0.27.0])
-      fi
+      nut_have_neon=yes
    fi
 
    dnl Check for neon libs and flags
@@ -60,6 +47,9 @@ if test -z "${nut_have_neon_seen}"; then
       AC_MSG_RESULT(${LDFLAGS})
    fi
 
+   dnl Check for timeouts in library
+   AC_CHECK_FUNCS(ne_set_connect_timeout)
+   
    if test "${nut_have_neon}" = "yes"; then
       LIBNEON_CFLAGS="${CFLAGS}"
       LIBNEON_LDFLAGS="${LDFLAGS}"

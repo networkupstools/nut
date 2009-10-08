@@ -65,7 +65,7 @@ static int netxml_authenticate(void *userdata, const char *realm, int attempt, c
 static int netxml_dispatch_request(ne_request *request, ne_xml_parser *parser);
 static int netxml_get_page(const char *page);
 
-#ifndef HAVE_LIBNEON_SET_CONNECT_TIMEOUT
+#ifndef HAVE_NE_SET_CONNECT_TIMEOUT
 static void netxml_alarm_handler(int sig)
 {
 	/* don't do anything here, just return */
@@ -211,7 +211,7 @@ void upsdrv_initups(void)
 	char	*val;
 	FILE	*fp;
 
-#ifndef HAVE_LIBNEON_SET_CONNECT_TIMEOUT
+#ifndef HAVE_NE_SET_CONNECT_TIMEOUT
 	struct sigaction	sa;
 
 	sigemptyset(&sa.sa_mask);
@@ -256,7 +256,7 @@ void upsdrv_initups(void)
 	session = ne_session_create(uri.scheme, uri.host, uri.port);
 
 	/* timeout if we can't (re)connect to the UPS */
-#ifdef HAVE_LIBNEON_SET_CONNECT_TIMEOUT
+#ifdef HAVE_NE_SET_CONNECT_TIMEOUT
 	ne_set_connect_timeout(session, timeout);
 #endif
 
@@ -347,7 +347,7 @@ static int netxml_dispatch_request(ne_request *request, ne_xml_parser *parser)
 {
 	int ret;
 
-#ifdef HAVE_LIBNEON_SET_CONNECT_TIMEOUT
+#ifdef HAVE_NE_SET_CONNECT_TIMEOUT
 	/*
 	 * Starting with neon-0.27.0 the ne_xml_dispatch_request() function will check
 	 * for a valid XML content-type (following RFC 3023 rules) in the header.
