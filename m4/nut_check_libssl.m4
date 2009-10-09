@@ -12,6 +12,16 @@ if test -z "${nut_have_libssl_seen}"; then
 	CFLAGS_ORIG="${CFLAGS}"
 	LDFLAGS_ORIG="${LDFLAGS}"
 
+	AC_MSG_CHECKING(for openssl version via pkg-config)
+	OPENSSL_VERSION=`pkg-config --silence-errors --version openssl`
+	if (test "$?" != "0"); then
+		nut_have_libssl=no
+	else
+		nut_have_libssl=yes
+	fi
+
+	AC_MSG_RESULT(${OPENSSL_VERSION} found)
+
 	AC_MSG_CHECKING(for openssl cflags via pkg-config)
 	CFLAGS=`pkg-config --silence-errors --cflags openssl`
 	if (test "$?" != "0"); then
@@ -19,9 +29,8 @@ if test -z "${nut_have_libssl_seen}"; then
 		nut_have_libssl=no
 	else
 		AC_MSG_RESULT(${CFLAGS})
-		nut_have_libssl=yes
 	fi
-		
+
 	AC_MSG_CHECKING(for openssl ldflags via pkg-config)
 	LDFLAGS=`pkg-config --silence-errors --libs openssl`
 	if (test "$?" != "0"); then
@@ -35,7 +44,7 @@ if test -z "${nut_have_libssl_seen}"; then
 		LIBSSL_CFLAGS="${CFLAGS}"
 		LIBSSL_LDFLAGS="${LDFLAGS}"
 	fi
-	
+
 	dnl restore original CFLAGS and LDFLAGS
 	CFLAGS="${CFLAGS_ORIG}"
 	LDFLAGS="${LDFLAGS_ORIG}"

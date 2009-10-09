@@ -1,3 +1,8 @@
+Fri Oct  9 11:26:49 UTC 2009 / Arjen de Korte <arjen@de-korte.org>
+
+- m4/nut_check_libssl.m4,nut_check_libusb.m4: show version information during
+  configuration
+
 Thu Oct  8 19:38:03 UTC 2009 / Arjen de Korte <arjen@de-korte.org>
 
  - m4/nut_check_libneon.m4,nut_check_libusb.m4: changes in autoconf magic to

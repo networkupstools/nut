@@ -12,7 +12,16 @@ if test -z "${nut_have_libusb_seen}"; then
    CFLAGS_ORIG="${CFLAGS}"
    LDFLAGS_ORIG="${LDFLAGS}"
 
-   dnl Check for libusb libs and flags
+   AC_MSG_CHECKING(for libusb version)
+   LIBUSB_VERSION=`libusb-config --version 2>/dev/null`
+   if (test "$?" != "0"); then  
+	nut_have_libusb=no
+   else
+	nut_have_libusb=yes
+   fi
+
+   AC_MSG_RESULT(${LIBUSB_VERSION} found)
+
    AC_MSG_CHECKING(for libusb cflags)
    CFLAGS=`libusb-config --cflags 2>/dev/null`
    if (test "$?" != "0")
@@ -21,7 +30,6 @@ if test -z "${nut_have_libusb_seen}"; then
 	nut_have_libusb=no
    else
 	AC_MSG_RESULT(${CFLAGS})
-	nut_have_libusb=yes
    fi
 
    AC_MSG_CHECKING(for libusb libs)
