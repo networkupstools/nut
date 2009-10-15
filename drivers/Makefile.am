@@ -136,7 +136,7 @@ if WITH_SSL
   dummy_ups_LDADD += $(LIBSSL_LDFLAGS)
 endif
 
-virtual_SOURCES = virtual.c
+clone_SOURCES = clone.c
 
 # sample skeleton driver
 
