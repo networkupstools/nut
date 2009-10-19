@@ -1,5 +1,5 @@
 EXTRA_DIST = acpi.txt big-servers.txt chroot.txt		\
- commands.txt config-files.txt configure.txt contact-closure.txt	\
+ commands.txt configure.txt contact-closure.txt	\
  data-room.txt design.txt developers.txt FAQ hid-subdrivers.txt		\
  ideas.txt macros.txt megatec.txt new-drivers.txt new-names.txt \
  nut-hal.txt osd-notify.txt	\
