@@ -30,7 +30,7 @@ if WITH_LIBPOWERMAN
 endif
 
 SERIAL_DRIVERLIST = apcsmart bcmxcp belkin belkinunv bestfcom	\
- bestfortress bestuferrups bestups cyberpower dummy-ups etapro everups 	\
+ bestfortress bestuferrups bestups dummy-ups etapro everups 	\
  gamatronic genericups isbmex liebert masterguard megatec metasys 	\
  mge-shut mge-utalk microdowell newmge-shut oneac optiups powercom rhino 	\
  safenet skel solis tripplite tripplitesu upscode2 victronups powerpanel \
@@ -94,7 +94,6 @@ bestuferrups_SOURCES = bestuferrups.c
 bestups_SOURCES = bestups.c
 blazer_ser_SOURCES = blazer.c blazer_ser.c
 blazer_ser_LDADD = $(LDADD) -lm
-cyberpower_SOURCES = cyberpower.c
 etapro_SOURCES = etapro.c
 everups_SOURCES = everups.c
 gamatronic_SOURCES = gamatronic.c

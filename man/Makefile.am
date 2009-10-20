@@ -29,7 +29,6 @@ SERIAL_PAGES = \
 	bestups.8 	\
 	bestfcom.8	\
 	blazer.8	\
-	cyberpower.8	\
 	dummy-ups.8	\
 	etapro.8	\
 	everups.8	\
