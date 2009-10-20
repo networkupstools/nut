@@ -34,15 +34,15 @@
 # Duplicate text in the last field will be cooked out during the conversion
 # to HTML with ROWSPAN magic.  They must be an exact match for this to work.
 
-"Ablerex"	"ups"	"2"	"MS-RT"	""	"megatec"
-"Ablerex"	"ups"	"2"	"625L"	"USB"	"megatec_usb"
-"Ablerex"	"ups"	"2"	"Hope Office 400/600"	""	"megatec"
+"Ablerex"	"ups"	"2"	"MS-RT"	""	"megatec or blazer_ser"
+"Ablerex"	"ups"	"2"	"625L"	"USB"	"megatec_usb or blazer_usb"
+"Ablerex"	"ups"	"2"	"Hope Office 400/600"	""	"megatec or blazer_ser"
 
-"ActivePower"	"ups"	"2"	"400VA"	""	"megatec"
-"ActivePower"	"ups"	"2"	"1400VA"	""	"megatec"
-"ActivePower"	"ups"	"2"	"2000VA"	""	"megatec"
+"ActivePower"	"ups"	"2"	"400VA"	""	"megatec or blazer_ser"
+"ActivePower"	"ups"	"2"	"1400VA"	""	"megatec or blazer_ser"
+"ActivePower"	"ups"	"2"	"2000VA"	""	"megatec or blazer_ser"
 
-"Advice"	"ups"	"2"	"TopGuard 2000"	""	"megatec"
+"Advice"	"ups"	"2"	"TopGuard 2000"	""	"megatec or blazer_ser"
 
 "AEC"	"ups"	"1"	"MiniGuard UPS 700"		"Megatec M2501 cable"	"genericups upstype=21"
 
@@ -74,19 +74,19 @@
 
 "Appro"	"pdu"	"1"	"SWPDU"	"48 outlets"	"powerman-pdu (experimental)"
 
-"Atlantis Land"	"ups"	"2"	"A03-P826"	""	"megatec"
+"Atlantis Land"	"ups"	"2"	"A03-P826"	""	"megatec or blazer_ser"
 
 "Baytech"	"pdu"	"1"	"RPC3"	"8 outlets"	"powerman-pdu (experimental)"
 "Baytech"	"pdu"	"1"	"RPC3-20NC"	"8 outlets"	"powerman-pdu (experimental)"
 "Baytech"	"pdu"	"1"	"RPC28-30NC"	"20 outlets"	"powerman-pdu (experimental)"
 "Baytech"	"pdu"	"3"	"various RPC"	""	"snmp-ups"
 
-"Belkin"	"ups"	"2"	"Active Battery Backup BU30 series"	"USB"	"megatec_usb"
+"Belkin"	"ups"	"2"	"Active Battery Backup BU30 series"	"USB"	"megatec_usb or blazer_usb"
 "Belkin"	"ups"	"1"	"Home Office F6H350-SER"	""	"genericups upstype=7"
 "Belkin"	"ups"	"1"	"Home Office F6H500-SER"	""	"genericups upstype=7"
 "Belkin"	"ups"	"1"	"Home Office F6H650-SER"	""	"genericups upstype=7"
 "Belkin"	"ups"	"2"	"F6H375-USB"	"USB (<= 2005 models, vendor id: 050d)"	"usbhid-ups"
-"Belkin"	"ups"	"2"	"F6H375-USB"	"USB (2007 models, vendor id: 0665)"	"megatec_usb"
+"Belkin"	"ups"	"2"	"F6H375-USB"	"USB (2007 models, vendor id: 0665)"	"megatec_usb or blazer_usb"
 "Belkin"	"ups"	"2"	"Office Series F6C550-AVR"	"USB"	"usbhid-ups"
 "Belkin"	"ups"	"2"	"Regulator Pro"	"F6C525-SER, F6C625-SER"	"belkin"
 "Belkin"	"ups"	"1"	"Resource"	""		"genericups upstype=4"
@@ -99,13 +99,13 @@
 "Belkin"	"ups"	"2"	"Universal UPS F6C800-UNV"	"USB"	"usbhid-ups"
 "Belkin"	"ups"	"1"	"Universal UPS F6C1100-UNV"	"serial port (<= 2005 models)"	"belkinunv"
 "Belkin"	"ups"	"2"	"Universal UPS F6C1100-UNV"	"USB (<= 2005 models, vendor id: 050d)"	"usbhid-ups"
-"Belkin"	"ups"	"2"	"Universal UPS F6C1100-UNV"	"USB (2007 models, vendor id: 0665)"	"megatec_usb"
+"Belkin"	"ups"	"2"	"Universal UPS F6C1100-UNV"	"USB (2007 models, vendor id: 0665)"	"megatec_usb or blazer_usb"
 "Belkin"	"ups"	"2"	"Universal UPS F6C1200-UNV"	"USB (<= 2005 models, vendor id: 050d)"	"usbhid-ups"
-"Belkin"	"ups"	"2"	"Universal UPS F6C1200-UNV"	"USB (2007 models, vendor id: 0665)"	"megatec_usb"
-"Belkin"	"ups"	"2"	"Universal UPS F6H350deUNV"	"serial port"	"megatec"
-"Belkin"	"ups"	"2"	"Universal UPS F6H350ukUNV"	"serial port"	"megatec"
-"Belkin"	"ups"	"2"	"Universal UPS F6H500ukUNV"	"serial port"	"megatec"
-"Belkin"	"ups"	"2"	"Universal UPS F6H650ukUNV"	"serial port"	"megatec"
+"Belkin"	"ups"	"2"	"Universal UPS F6C1200-UNV"	"USB (2007 models, vendor id: 0665)"	"megatec_usb or blazer_usb"
+"Belkin"	"ups"	"2"	"Universal UPS F6H350deUNV"	"serial port"	"megatec or blazer_ser"
+"Belkin"	"ups"	"2"	"Universal UPS F6H350ukUNV"	"serial port"	"megatec or blazer_ser"
+"Belkin"	"ups"	"2"	"Universal UPS F6H500ukUNV"	"serial port"	"megatec or blazer_ser"
+"Belkin"	"ups"	"2"	"Universal UPS F6H650ukUNV"	"serial port"	"megatec or blazer_ser"
 
 "Best Power"	"ups"	"1"	"Fortress (older)"	""	"bestfortress"
 "Best Power"	"ups"	"1"	"Fortress (newer)"	""	"bestups"
@@ -117,9 +117,9 @@
 "Best Power"	"ups"	"1"	"Micro-Ferrups"		""	"bestuferrups"
 "Best Power"	"ups"	"1"	"Fortress/Ferrups"	"f-command support"	"bestfcom"
 
-"Chloride"	"ups"	"2"	"Desk Power 650"	"serial port"	"megatec"
+"Chloride"	"ups"	"2"	"Desk Power 650"	"serial port"	"megatec or blazer_ser"
 
-"Cito Power"	"ups"	"2"	"CPG-SR1000"		""	"megatec"
+"Cito Power"	"ups"	"2"	"CPG-SR1000"		""	"megatec or blazer_ser"
 
 "Clary"	"ups"	"4"		"ST-800"		""	"gamatronic"
 
@@ -128,15 +128,15 @@
 "Compaq"	"ups"	"4"	"R3000 XR"	""	"bcmxcp"
 "Compaq"	"ups"	"4"	"R5500 XR"	""	"bcmxcp"
 
-"Cyber Power Systems"	"ups"	"1"	"320AVR"	""	"powerpanel or cyberpower"
-"Cyber Power Systems"	"ups"	"1"	"500AVR"	""	"powerpanel or cyberpower"
-"Cyber Power Systems"	"ups"	"1"	"650AVR"	""	"powerpanel or cyberpower"
-"Cyber Power Systems"	"ups"	"1"	"700AVR"	""	"powerpanel or cyberpower"
-"Cyber Power Systems"	"ups"	"1"	"800AVR"	""	"powerpanel or cyberpower"
-"Cyber Power Systems"	"ups"	"1"	"850AVR"	""	"powerpanel or cyberpower"
-"Cyber Power Systems"	"ups"	"1"	"900AVR"	""	"powerpanel or cyberpower"
-"Cyber Power Systems"	"ups"	"1"	"1250AVR"	""	"powerpanel or cyberpower"
-"Cyber Power Systems"	"ups"	"1"	"1500AVR"	""	"powerpanel or cyberpower"
+"Cyber Power Systems"	"ups"	"1"	"320AVR"	""	"powerpanel"
+"Cyber Power Systems"	"ups"	"1"	"500AVR"	""	"powerpanel"
+"Cyber Power Systems"	"ups"	"1"	"650AVR"	""	"powerpanel"
+"Cyber Power Systems"	"ups"	"1"	"700AVR"	""	"powerpanel"
+"Cyber Power Systems"	"ups"	"1"	"800AVR"	""	"powerpanel"
+"Cyber Power Systems"	"ups"	"1"	"850AVR"	""	"powerpanel"
+"Cyber Power Systems"	"ups"	"1"	"900AVR"	""	"powerpanel"
+"Cyber Power Systems"	"ups"	"1"	"1250AVR"	""	"powerpanel"
+"Cyber Power Systems"	"ups"	"1"	"1500AVR"	""	"powerpanel"
 "Cyber Power Systems"	"ups"	"1"	"Power99"	""	"genericups upstype=7"
 "Cyber Power Systems"	"ups"	"1"	"550SL"	""	"genericups upstype=7"
 "Cyber Power Systems"	"ups"	"1"	"725SL"	""	"genericups upstype=7"
@@ -164,10 +164,10 @@
 
 "Digital Loggers"	"pdu"	"1"	"LPC, EPCR2, DIN"	"8 outlets"	"powerman-pdu (experimental)"
 
-"Digitus"	"ups"	"2"	"DN-170020"		""	"megatec"
+"Digitus"	"ups"	"2"	"DN-170020"		""	"megatec or blazer_ser"
 
-"Dynamix"	"ups"	"2"	"UPS1700D"	""	"megatec"
-"Dynamix"	"ups"	"2"	"UPS-650VA"	""	"megatec ignoreoff"
+"Dynamix"	"ups"	"2"	"UPS1700D"	""	"megatec or blazer_ser"
+"Dynamix"	"ups"	"2"	"UPS-650VA"	""	"megatec ignoreoff or blazer_ser"
 
 "Dynex"	"ups"	"1"	"975AVR"	""	"genericups upstype=7"
 "Dynex"	"ups"	"2"	"DX-800U"		"USB"	"usbhid-ups"
@@ -194,7 +194,7 @@
 "Eaton"	"ups"	"5"	"EX RT 3:1 5/7/11 kVA"	""	"mge-shut or newmge-shut"
 "Eaton"	"ups"	"5"	"EX RT (XML/HTTP)"	"NMC Transverse card (ref 66074)"	"netxml-ups (experimental)"
 "Eaton"	"ups"	"5"	"EX RT (SNMP)"	"NMC Transverse card (ref 66074)"	"snmp-ups (experimental)"
-"Eaton"	"ups"	"5"	"E Series NV UPS 400-2000 VA"	""	"megatec_usb"
+"Eaton"	"ups"	"5"	"E Series NV UPS 400-2000 VA"	""	"megatec_usb or blazer_usb"
 "Eaton"	"ups"	"5"	"E Series DX UPS 1-20 kVA"	""	"mge-utalk"
 "Eaton"	"ups"	"5"	"BladeUPS (SNMP)"	"ConnectUPS Web/SNMP Card"	"snmp-ups (experimental)"
 "Eaton"	"ups"	"5"	"various models (XML/HTTP mode)"			"NMC Minislot (Ref 66102)"	"netxml-ups (experimental)"
@@ -205,10 +205,10 @@
 "Eaton"	"pdu"	"5"	"ePDU Monitored"			""	"snmp-ups or netxml-ups"
 "Eaton"	"ups"	"5"	"Powerware 9130"	""	"bcmxcp or usbhid-ups"
 
-"Effekta"	"ups"	"2"	"MI/MT/MH"	"2502 cable"	"megatec"
-"Effekta"	"ups"	"2"	"RM2000MH"	""	"megatec"
+"Effekta"	"ups"	"2"	"MI/MT/MH"	"2502 cable"	"megatec or blazer_ser"
+"Effekta"	"ups"	"2"	"RM2000MH"	""	"megatec or blazer_ser"
 
-"Energy Sistem"	"ups"	"2"	"(various)"	""	"megatec"
+"Energy Sistem"	"ups"	"2"	"(various)"	""	"megatec or blazer_ser"
 
 "ETA"	"ups"	"1"		"mini+UPS"	"WinNT/Upsoft cable"	"genericups upstype=7"
 "ETA"	"ups"	"1"		"mini+UPS PRO"	"UPS Explorer cable"	"etapro"
@@ -221,9 +221,9 @@
 "Exide"	"ups"	"1"		"NetUPS SE"	""	"genericups upstype=15"
 
 "Fenton Technologies"	"ups"	"1"	"PowerPal"	"P-series"	"safenet"
-"Fenton Technologies"	"ups"	"5"	"PowerPal"	"L-series"	"megatec"
-"Fenton Technologies"	"ups"	"5"	"PowerOn"		""	"megatec"
-"Fenton Technologies"	"ups"	"5"	"PowerPure"		""	"megatec"
+"Fenton Technologies"	"ups"	"5"	"PowerPal"	"L-series"	"megatec or blazer_ser"
+"Fenton Technologies"	"ups"	"5"	"PowerOn"		""	"megatec or blazer_ser"
+"Fenton Technologies"	"ups"	"5"	"PowerPure"		""	"megatec or blazer_ser"
 
 "Fairstone"	"ups"	"1"	"L525/L625/L750"	""	"safenet"
 
@@ -235,10 +235,10 @@
 "Fiskars"	"ups"	"4"	"PowerServer 30"	""	"upscode2"
 "Fiskars"	"ups"	"4"	"9200"	"UPS Information Unit"	"upscode2"
 
-"Forza Power Technologies"	"ups"	"2"	"SL-1001"	"USB"	"megatec_usb"
+"Forza Power Technologies"	"ups"	"2"	"SL-1001"	"USB"	"megatec_usb or blazer_usb"
 
 "Gamatronic"	"ups"	"5"	"All models with alarm interface"	""	"genericups upstype=22"
-"Gamatronic"	"ups"	"2"	"G-SmartCompact 2000"	""	"megatec"
+"Gamatronic"	"ups"	"2"	"G-SmartCompact 2000"	""	"megatec or blazer_ser"
 "Gamatronic"	"ups"	"5"	"MP110/210"	""	"gamatronic"
 "Gamatronic"	"ups"	"5"	"MS-T"		""	"gamatronic"
 "Gamatronic"	"ups"	"5"	"MS"		""	"gamatronic"
@@ -249,8 +249,8 @@
 "Gemini"	"ups"	"1"	"UPS625/UPS1000"	""	"safenet"
 
 "HP"	"ups"	"1"	"PowerTrust 2997A"	"HP 5061-2575 cable"	"apcsmart"
-"HP"	"ups"	"5"	"R3000 XR"	""	"bcmxcp"
-"HP"	"ups"	"5"	"R5500 XR"	""	"bcmxcp"
+"HP"	"ups"	"4"	"R3000 XR"	""	"bcmxcp"
+"HP"	"ups"	"4"	"R5500 XR"	""	"bcmxcp"
 "HP"	"ups"	"2"	"R/T 2200 G2"	""	"usbhid-ups"
 "HP"	"ups"	"2"	"T500"	"older models"	"bcmxcp_usb"
 "HP"	"ups"	"2"	"T750 INTL"	""	"usbhid-ups"
@@ -261,38 +261,38 @@
 
 "ICS"	"pdu"	"1"	"8064 Ethernet Relay Interface"	"16 outlets"	"powerman-pdu (experimental)"
 
-"INELT"	"ups"	"2"		"Monolith 1000LT"	""	"megatec"
+"INELT"	"ups"	"2"		"Monolith 1000LT"	""	"megatec or blazer_ser"
 
 "Inform"	"ups"	"1"	"GUARD"	"Line Interactive AP model"	"powercom"
-"Inform"	"ups"	"2"	"Guard S 1500AP" ""	"megatec"
+"Inform"	"ups"	"2"	"Guard S 1500AP" ""	"megatec or blazer_ser"
 "Inform"	"ups"	"2"	"Informer Compact 1000VA" ""	"megatec or blazer_ser"
 
-"Infosec"	"ups"	"2"	"iPEL 350"	""	"megatec"
-"Infosec"	"ups"	"2"	"iPEL 500"	""	"megatec"
-"Infosec"	"ups"	"2"	"iPEL 750"	""	"megatec"
-"Infosec"	"ups"	"2"	"iPEL 1000"	""	"megatec"
-"Infosec"	"ups"	"2"	"500XP"	""	"megatec"
-"Infosec"	"ups"	"2"	"XP 500"	"USB"	"megatec_usb"
-"Infosec"	"ups"	"2"	"XP 1000"	""	"megatec"
+"Infosec"	"ups"	"2"	"iPEL 350"	""	"megatec or blazer_ser"
+"Infosec"	"ups"	"2"	"iPEL 500"	""	"megatec or blazer_ser"
+"Infosec"	"ups"	"2"	"iPEL 750"	""	"megatec or blazer_ser"
+"Infosec"	"ups"	"2"	"iPEL 1000"	""	"megatec or blazer_ser"
+"Infosec"	"ups"	"2"	"500XP"	""	"megatec or blazer_ser"
+"Infosec"	"ups"	"2"	"XP 500"	"USB"	"megatec_usb or blazer_usb"
+"Infosec"	"ups"	"2"	"XP 1000"	""	"megatec or blazer_ser"
 
 "IPMI"	"pdu"	"1"	""	""		"powerman-pdu (experimental)"
 
-"Ippon"	"ups"	"2"	"(various)"		""	"megatec"
-"Ippon"	"ups"	"2"	"Back Power Pro"	""	"megatec"
-"Ippon"	"ups"	"2"	"Back Power Pro 700"	"USB"	"megatec_usb"
+"Ippon"	"ups"	"2"	"(various)"		""	"megatec or blazer_ser"
+"Ippon"	"ups"	"2"	"Back Power Pro"	""	"megatec or blazer_ser"
+"Ippon"	"ups"	"2"	"Back Power Pro 700"	"USB"	"megatec_usb or blazer_usb"
 
 "IVT"	"scd"	"1"	"SCD series"	""	"ivtscd"
 
 "Jageson Technology"	"ups"	"1"	"Jasuny USPS"	""	"genericups upstype=4"
 
-"Kebo"	"ups"	"2"	"1200D/D Series"	""	"megatec"
+"Kebo"	"ups"	"2"	"1200D/D Series"	""	"megatec or blazer_ser"
 
-"Krauler"	"ups"	"2"	"UP-D1200VA"	"USB"	"megatec_usb ignoreoff"
-"Krauler"	"ups"	"2"	"UP-M500VA"	"USB"	"megatec_usb"
+"Krauler"	"ups"	"2"	"UP-D1200VA"	"USB"	"megatec_usb ignoreoff or blazer_usb"
+"Krauler"	"ups"	"2"	"UP-M500VA"	"USB"	"megatec_usb or blazer_usb"
 
-"Lestar"	"ups"	"2"	"MD-800E"	""	"megatec"
+"Lestar"	"ups"	"2"	"MD-800E"	""	"megatec or blazer_ser"
 
-"Liebert"	"ups"	"2"	"ITON 600VA"	""	"megatec"
+"Liebert"	"ups"	"2"	"ITON 600VA"	""	"megatec or blazer_ser"
 "Liebert"	"ups"	"5"	"UPStation GXT2"	"contact-closure cable"	"liebert" 
 "Liebert"	"ups"	"2"	"PowerSure Personal XT"		"USB"	"usbhid-ups"
 
@@ -300,9 +300,9 @@
 
 "Masterguard"	"ups"	"1"	"(various)"	""	"masterguard"
 
-"Maxxtro"	"ups"	"2"	"UPS 600 VA"	"serial port"	"megatec"
+"Maxxtro"	"ups"	"2"	"UPS 600 VA"	"serial port"	"megatec or blazer_ser"
 
-"Mecer"	"ups"	"2"	"ME-2000"		""	"megatec"
+"Mecer"	"ups"	"2"	"ME-2000"		""	"megatec or blazer_ser"
 
 "Meta System"	"ups"	"1"	"HF Line"	"1..4 boards"	"metasys"
 "Meta System"	"ups"	"1"	"HF Line \/2"	"5..8 boards"	"metasys"
@@ -498,17 +498,17 @@
 "Microsol"	"ups"	"5"	"Rhino 10.0"	"10000VA"	"rhino"
 "Microsol"	"ups"	"5"	"Rhino 20.0"	"20000VA"	"rhino"
 
-"Mustek"	"ups"	"2"	"Powermust"	"400VA Plus"	"megatec"
-"Mustek"	"ups"	"2"	"Powermust"	"600VA Plus"	"megatec"
-"Mustek"	"ups"	"2"	"Powermust"	"800VA Pro"	"megatec"
-"Mustek"	"ups"	"2"	"Powermust"	"1000VA Plus"	"megatec"
-"Mustek"	"ups"	"2"	"Powermust"	"1400VA Plus"	"megatec"
-"Mustek"	"ups"	"2"	"Powermust"	"2000VA USB"	"megatec"
-"Mustek"	"ups"	"2"	"Powermust Office 650"	"USB"	"megatec_usb"
+"Mustek"	"ups"	"2"	"Powermust"	"400VA Plus"	"megatec or blazer_ser"
+"Mustek"	"ups"	"2"	"Powermust"	"600VA Plus"	"megatec or blazer_ser"
+"Mustek"	"ups"	"2"	"Powermust"	"800VA Pro"	"megatec or blazer_ser"
+"Mustek"	"ups"	"2"	"Powermust"	"1000VA Plus"	"megatec or blazer_ser"
+"Mustek"	"ups"	"2"	"Powermust"	"1400VA Plus"	"megatec or blazer_ser"
+"Mustek"	"ups"	"2"	"Powermust"	"2000VA USB"	"megatec or blazer_ser"
+"Mustek"	"ups"	"2"	"Powermust Office 650"	"USB"	"megatec_usb or blazer_usb"
 "Mustek"	"ups"	"2"	"PowerMust 424 / 636 / 848"	"USB"	"blazer_usb"
-"Mustek"	"ups"	"2"	"Various"	""	"megatec"
+"Mustek"	"ups"	"2"	"Various"	""	"megatec or blazer_ser"
 
-"Neus"	"ups"	"2"	"400va / 600va"	""	"megatec"
+"Neus"	"ups"	"2"	"400va / 600va"	""	"megatec or blazer_ser"
 
 "Nitram"	"ups"	"1"	"Elite 500"	""	"genericups upstype=8"
 "Nitram"	"ups"	"1"	"Elite 2002"	""	"genericups upstype=16"
@@ -535,42 +535,42 @@
 "Online"	"ups"	"1"	"P-Series"	""	"genericups upstype=14"
 "Online"	"ups"	"1"	"Zinto D"	""	"optiups"
 
-"OnLite"	"ups"	"2"	"AQUA"	"50"	"megatec"
+"OnLite"	"ups"	"2"	"AQUA"	"50"	"megatec or blazer_ser"
 
 "Opti-UPS"	"ups"	"1"	"PowerES"	"420E"	"optiups"
 
-"Orvaldi Power Protection"	"ups"	"2"	"various"	"not 400 or 600"	"megatec"
+"Orvaldi Power Protection"	"ups"	"2"	"various"	"not 400 or 600"	"megatec or blazer_ser"
 
-"Phasak"	"ups"	"2"	"400VA / 600VA"	""	"megatec"
+"Phasak"	"ups"	"2"	"400VA / 600VA"	""	"megatec or blazer_ser"
 
-"Plexus"	"ups"	"2"	"500VA"		"USB"	"megatec_usb ignoreoff"
-"Plexus"	"ups"	"2"	"1000VA Pro"	"USB"	"megatec_usb ignoreoff"
+"Plexus"	"ups"	"2"	"500VA"		"USB"	"megatec_usb ignoreoff or blazer_usb"
+"Plexus"	"ups"	"2"	"1000VA Pro"	"USB"	"megatec_usb ignoreoff or blazer_usb"
 
-"Powercom"	"ups"	"2"	"SMK"	""	"megatec"
-"Powercom"	"ups"	"2"	"SXL"	""	"megatec"
-"Powercom"	"ups"	"2"	"ULT"	""	"megatec"
+"Powercom"	"ups"	"2"	"SMK"	""	"megatec or blazer_ser"
+"Powercom"	"ups"	"2"	"SXL"	""	"megatec or blazer_ser"
+"Powercom"	"ups"	"2"	"ULT"	""	"megatec or blazer_ser"
 "Powercom"	"ups"	"1"	"Trust 425/625"	""	"powercom"
 "Powercom"	"ups"	"1"	"Advice Partner/King Pr750"	""	"powercom"
 "Powercom"	"ups"	"1"	"Black Knight PRO"	""	"powercom"
 "Powercom"	"ups"	"1"	"King PRO"	""	"powercom"
 "Powercom"	"ups"	"1"	"Imperial"	""	"powercom"
-"Powercom"	"ups"	"2"	"Vanguard 6000"	""	"megatec"
+"Powercom"	"ups"	"2"	"Vanguard 6000"	""	"megatec or blazer_ser"
 
-"PowerGuard"	"ups"	"2"	"PG-600"	""	"megatec"
+"PowerGuard"	"ups"	"2"	"PG-600"	""	"megatec or blazer_ser"
 
 "PowerKinetics"	"ups"	"1"	"9001"	""	"genericups upstype=17"
-"PowerKinetics"	"ups"	"2"	"BlackOut Buster"		""	"megatec"
+"PowerKinetics"	"ups"	"2"	"BlackOut Buster"		""	"megatec or blazer_ser"
 
-"PowerMan"	"ups"	"2"	"RealSmart 800"	""	"megatec"
-"PowerMan"	"ups"	"2"	"RealSmart 1000"	""	"megatec"
+"PowerMan"	"ups"	"2"	"RealSmart 800"	""	"megatec or blazer_ser"
+"PowerMan"	"ups"	"2"	"RealSmart 1000"	""	"megatec or blazer_ser"
 "PowerMan"	"ups"	"1"	"BackPro"	""	"genericups upstype=4"
 
 "PowerTech"	"ups"	"1"	"Comp1000"	"DTR cable power"	"genericups upstype=3"
-"PowerTech"	"ups"	"2"	"SMK-800"	""	"megatec"
+"PowerTech"	"ups"	"2"	"SMK-800"	""	"megatec or blazer_ser"
 
-"PowerWalker"	"ups"	"2"	"Line-Interactive VI 1000"	""	"megatec"
-"PowerWalker"	"ups"	"2"	"Line-Interactive VI 400/800"	""	"megatec"
-"PowerWalker"	"ups"	"2"	"Line-Interactive VI 600"	""	"megatec battvolts=9:13"
+"PowerWalker"	"ups"	"2"	"Line-Interactive VI 1000"	""	"megatec or blazer_ser"
+"PowerWalker"	"ups"	"2"	"Line-Interactive VI 400/800"	""	"megatec or blazer_ser"
+"PowerWalker"	"ups"	"2"	"Line-Interactive VI 600"	""	"megatec battvolts=9:13 or blazer_ser"
 
 "Powerware"	"ups"	"4"	"3110"		""	"genericups upstype=7"
 "Powerware"	"ups"	"4"	"3115"		""	"genericups upstype=11"
@@ -606,46 +606,46 @@
 
 "SmartLabs"	"pdu"	"1"	"2412S Power Line Modem"	"for X10/Insteon"	"powerman-pdu (experimental)"
 
-"SMS (Brazil)"	"ups"	"2"	"Manager III"	""	"megatec"
+"SMS (Brazil)"	"ups"	"2"	"Manager III"	""	"megatec or blazer_ser"
 
 "SOLA"	"ups"	"1"	"305"	"cable INT-0025C"	"genericups upstype=7"
 "SOLA"	"ups"	"1"	"325"	""	"bestups"
 "SOLA"	"ups"	"1"	"520"	""	"bestups"
 "SOLA"	"ups"	"1"	"610"	"use ID= in ups.conf"	"bestups"
 "SOLA"	"ups"	"1"	"620"	""	"bestups"
-"SOLA"	"ups"	"4"	"330"	""	"megatec"
+"SOLA"	"ups"	"4"	"330"	""	"megatec or blazer_ser"
 
 "SOLA/BASIC Mexico"	"ups"	"1"	"various"	"ISBMEX protocol"	"isbmex"
 
-"Socomec"	"ups"	"2"	"NeTYS-PE 600VA"	"megatec"
+"Socomec"	"ups"	"2"	"NeTYS-PE 600VA"	"megatec or blazer_ser"
 "Socomec Sicon"	"ups"	"1"	"Egys"	"420 VA"	"powercom"  
 "Socomec Sicon"	"ups"	"3"	"Netvision"	"UPS equipped with Netvision WEB/SNMP card/external box"	"snmp-ups (experimental)" 
 
 "Soltec"	"ups"	"1"	"Winmate 525/625/800/1000"	""	"safenet"
 
-"Soyntec"	"ups"	"2"	"Sekury C 500"	""	"megatec"	
-"Soyntec"	"ups"	"2"	"Sekury C 800"	""	"megatec"	
+"Soyntec"	"ups"	"2"	"Sekury C 500"	""	"megatec or blazer_ser"	
+"Soyntec"	"ups"	"2"	"Sekury C 800"	""	"megatec or blazer_ser"	
 
-"SquareOne Power"	"ups"	"2"	"QP1000"	""	"megatec"
+"SquareOne Power"	"ups"	"2"	"QP1000"	""	"megatec or blazer_ser"
 
 "Sun"	"pdu"	"1"	"ILOM Management Module"	"1 outlet"	"powerman-pdu (experimental)"
 
-"SuperPower"	"ups"	"2"	"HP360, Hope-550"	""	"megatec"
+"SuperPower"	"ups"	"2"	"HP360, Hope-550"	""	"megatec or blazer_ser"
 
-"SVEN"	"ups"	"2"	"Power Pro+ series"	"USB"	"megatec_usb"
-"SVEN"	"ups"	"2"	"Power Smart RM 2000"	"USB"	"megatec_usb"
+"SVEN"	"ups"	"2"	"Power Pro+ series"	"USB"	"megatec_usb or blazer_usb"
+"SVEN"	"ups"	"2"	"Power Smart RM 2000"	"USB"	"megatec_usb or blazer_usb"
 
 "Sweex"	"ups"	"1"	"500/1000"	"smart - shipped with SafeNet"	"safenet"
 "Sweex"	"ups"	"1"	"500/1000"	""	"genericups upstype=7"
 "Sweex"	"ups"	"1"	"1000"	"USB"	"richcomm_usb"
-"Sweex"	"ups"	"2"	"(various)"	""	"megatec"
+"Sweex"	"ups"	"2"	"(various)"	""	"megatec or blazer_ser"
 
-"Sysgration"	"ups"	"2"	"UPGUARDS Pro650"	""	"megatec"
+"Sysgration"	"ups"	"2"	"UPGUARDS Pro650"	""	"megatec or blazer_ser"
 
-"Tecnoware"	"ups"	"2"	"Easy Power 1200"	""	"megatec"
+"Tecnoware"	"ups"	"2"	"Easy Power 1200"	""	"megatec or blazer_ser"
 
 "Tripp-Lite"	"ups"	"1"	"INTERNETOFFICE700"	"USB"	"tripplite_usb"
-"Tripp-Lite"	"ups"	"1"	"OMNIVS1000"	"USB"	"tripplite_usb"
+"Tripp-Lite"	"ups"	"2"	"OMNIVS1000"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"ups"	"1"	"OMNIVS1500XL"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"ups"	"1"	"SMART700USB"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"ups"	"1"	"SMART1500RM2U"	"USB"	"tripplite_usb"
@@ -664,28 +664,28 @@
 "Tripp-Lite"	"ups"	"2"	"SmartOnline SU1500RTXL2ua"	"USB"	"usbhid-ups"
 "Tripp-Lite"	"ups"	"2"	"smart2200RMXL2U"	"USB, newer models"	"usbhid-ups"
 
-"Trust"	"ups"	"2"	"UPS 1000 Management PW-4105"	""	"megatec"
-"Trust"	"ups"	"2"	"UPS 1200VA Management PW-4120M"	""	"megatec"
-"Trust"	"ups"	"2"	"UPS 1300VA Management PW-4130M"	""	"megatec"
+"Trust"	"ups"	"2"	"UPS 1000 Management PW-4105"	""	"megatec or blazer_ser"
+"Trust"	"ups"	"2"	"UPS 1200VA Management PW-4120M"	""	"megatec or blazer_ser"
+"Trust"	"ups"	"2"	"UPS 1300VA Management PW-4130M"	""	"megatec or blazer_ser"
 
-"UNITEK"	"ups"	"2"	"ALPHA 500 IC"	""	"megatec dtr=0 rts=1"
-"UNITEK"	"ups"	"2"	"Alpha 1000is"	""	"megatec"
-"UNITEK"	"ups"	"2"	"Alpha 500"	""	"megatec"
-"UNITEK"	"ups"	"2"	"Alpha 500 ipE"	""	"megatec"
-"UNITEK"	"ups"	"2"	"Alpha 2600"	""	"megatec"
-"UNITEK"	"ups"	"2"	"Alpha 1200Sx"	"USB"	"megatec_usb"
-"UNITEK"	"ups"	"2"	"Alpha 1250xD"	"USB"	"megatec_usb"
+"UNITEK"	"ups"	"2"	"ALPHA 500 IC"	""	"megatec dtr=0 rts=1 or blazer_ser"
+"UNITEK"	"ups"	"2"	"Alpha 1000is"	""	"megatec or blazer_ser"
+"UNITEK"	"ups"	"2"	"Alpha 500"	""	"megatec or blazer_ser"
+"UNITEK"	"ups"	"2"	"Alpha 500 ipE"	""	"megatec or blazer_ser"
+"UNITEK"	"ups"	"2"	"Alpha 2600"	""	"megatec or blazer_ser"
+"UNITEK"	"ups"	"2"	"Alpha 1200Sx"	"USB"	"megatec_usb or blazer_usb"
+"UNITEK"	"ups"	"2"	"Alpha 1250xD"	"USB"	"megatec_usb or blazer_usb"
 
-"UPSonic"	"ups"	"2"	"CXR1000"	""	"megatec"
+"UPSonic"	"ups"	"2"	"CXR1000"	""	"megatec or blazer_ser"
 "UPSonic"	"ups"	"1"	"LAN Saver 600"	""	"genericups upstype=0"
 "UPSonic"	"ups"	"1"	"Power Guardian"	""	"genericups upstype=7"
-"UPSonic"	"ups"	"2"	"PrOffice 650"	"USB"	"megatec_usb"
-"UPSonic"	"ups"	"2"	"DS-800"	"USB"	"megatec_usb"
+"UPSonic"	"ups"	"2"	"PrOffice 650"	"USB"	"megatec_usb or blazer_usb"
+"UPSonic"	"ups"	"2"	"DS-800"	"USB"	"megatec_usb or blazer_usb"
 
 "Various"	"ups"	"4"	"(various)"	"SEC protocol"		"gamatronic"
 "Various"	"ups"	"1"	"(various)"	"Generic RUPS model"	"genericups upstype=4"
 "Various"	"ups"	"1"	"(various)"	"Generic RUPS 2000 (Megatec M2501 cable)"	"genericups upstype=21"
-"Various"	"ups"	"2"	"(various)"	"Q1 / Megatec protocol"	"megatec"
+"Various"	"ups"	"2"	"(various)"	"Q1 / Megatec protocol"	"megatec or blazer_ser"
 "Various"	"ups"	"2"	"(various)"	"PhoenixTec protocol"	"bestups"
 "Various"	"ups"	"3"	"(various)"	"SNMP - RFC 1628"	"snmp-ups (experimental)"
 "Various"	"ups"	"1"	"(various)"	"Safenet software"	"safenet"
@@ -695,7 +695,7 @@
 
 "Viewsonic"	"ups"	"1"	"PowerES"	"420E"	"optiups"
 
-"WinPower"	"ups"	"2"	"CPM-800"	""	"megatec"
+"WinPower"	"ups"	"2"	"CPM-800"	""	"megatec or blazer_ser"
 
 "WTI"	"pdu"	"1"	"RPS-10"	"10 outlets"	"powerman-pdu (experimental)"
 "WTI"	"pdu"	"1"	"NPS"	"8 outlets"	"powerman-pdu (experimental)"
