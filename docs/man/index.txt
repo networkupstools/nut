@@ -68,7 +68,7 @@ Drivers
 - liebert.8
 - masterguard.8
 - megatec.8
-- megatec_usb.8
+- linknut:megatec_usb[8]
 - metasys.8
 - mge-shut.8
 - mge-utalk.8
@@ -87,8 +87,8 @@ Drivers
 - solis.8
 - tripplite.8
 - tripplitesu.8
-- link:tripplite_usb.html[tripplite_usb(8)]
-- link:usbhid-ups.html[usbhid-ups(8)]
+- linknut:tripplite_usb[8]
+- linknut:usbhid-ups[8]
 - upscode2.8
 - victronups.8
 
