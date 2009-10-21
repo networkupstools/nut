@@ -78,7 +78,6 @@ upsdrv_info_t upsdrv_info = {
 #define SD_STAYOFF	1
 
 int sdtype = SD_RETURN;
-static unsigned int pollinterval;
 static time_t lastpoll; /* Timestamp the last polling */
 
 /* --------------------------------------------------------------- */
@@ -149,11 +148,6 @@ void upsdrv_initups(void)
 	if (testvar ("oldmac"))
 		RTS = ~TIOCM_RTS;
 	
-	if (dstate_getinfo ("driver.parameter.pollinterval") != NULL)
-		pollinterval = atoi (dstate_getinfo ("driver.parameter.pollinterval"));
-	else
-		pollinterval = 2;
-
 	/* Init serial line */
 	ioctl(upsfd, TIOCMBIC, &RTS);
 	enable_ups_comm();
@@ -391,7 +385,7 @@ void upsdrv_updateinfo(void)
 	}
 
 	/* Don't overload old units (at startup) */
-	if ( (unsigned int)time(NULL) <= (unsigned int)(lastpoll + pollinterval) )
+	if ( (unsigned int)time(NULL) <= (unsigned int)(lastpoll + poll_interval) )
 		return;
 
 	/* update all other ok variables */
