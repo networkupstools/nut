@@ -18,7 +18,8 @@ and model.
 
 At the present time, usbhid-ups supports:
 
-    all MGE UPS SYSTEMS USB models,
+    the newer Eaton USB models,
+    all MGE USB models,
     some APC models,
     some Belkin models,
     some Cyber Power Systems models.
@@ -134,6 +135,19 @@ by setting some combination of the "vendor", "product", "serial",
 .fi
 
 .SH KNOWN ISSUES AND BUGS
+.SS "Repetitive timeout and staleness"
+
+Some models tends to be unresponsive with the default polling frequency.
+The result is that your system log will have lots of messages like:
+.nf
+	usb 2-1: control timeout on ep0in
+	usb 2-1: usbfs: USBDEVFS_CONTROL failed cmd usbhid-ups rqt 128 rq 6 len 256
+	ret -110
+.fi
+
+In this case, simply modify the general parameter "pollinterval" to a higher
+value (like 10 for 10 seconds). This should solve the issue.
+
 .SS "Got EPERM: Operation not permitted upon driver startup"
 
 You have forgotten to install the hotplug files, as explained
