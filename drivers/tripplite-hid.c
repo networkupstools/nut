@@ -142,7 +142,7 @@ static void *tripplite_battvolt_fun(double *value, char *string)
 	/* check the conversion way */
 	/* HID to NUT */
 	if (string == NULL) {
-		snprintf(buf, sizeof(buf), "%.1f", battery_scale * value);
+		snprintf(buf, sizeof(buf), "%.1f", battery_scale * (*value));
 		return buf;
 	}
 	/* no NUT to HID conversion needed */
