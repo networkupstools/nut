@@ -1,11 +1,11 @@
 /* usbhid-ups.h - Driver for serial/USB HID UPS units
  *
  * Copyright (C)
- *  2003-2005 Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
+ *  2003-2009 Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
  *  2005-2006 Peter Selinger <selinger@users.sourceforge.net>
  *  2007      Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
- * This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
+ * This program was sponsored by MGE UPS SYSTEMS, and now Eaton
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -60,13 +60,13 @@ extern hid_dev_handle_t	udev;
 typedef struct {
 	long	hid_value;	/* HID value */
 	char	*nut_value;	/* NUT value */
-	char	*(*fun)(double value); /* special case: if fun!=NULL, then
-				     ignore hid_value and nut_value,
-				     and use the conversion function
-				     instead. This is used for more
-				     complex formatting such as
-				     dates. Fun is expected to return
-				     a statically allocated string. */
+	/* special case: if fun!=NULL, then ignore hid_value and nut_value, and use
+	 * the conversion function instead. This is used for more complex formatting
+	 * such as dates. Fun is expected to return a statically allocated string or
+	 * double pointer (depending on the conversion way) or NULL.
+	 * the conversion way depends on the parameter set (value or string).
+	 * the other parameter pointer MUST be NULL... */
+	void	*(*fun)(double *value, char *string);
 } info_lkp_t;
 
 /* declarations of public lookup tables */
@@ -128,6 +128,8 @@ typedef struct {
 	char	*dfl;			/* if HU_FLAG_ABSENT: default value ; format otherwise */
 	unsigned long hidflags;		/* driver's own flags */
 	info_lkp_t *hid2info;		/* lookup table between HID and NUT values */
+								/* if HU_FLAG_ENUM is set, hid2info is also used
+								 * as enumerated values (dstate_addenum()) */
 
 /*	char *info_HID_format;	*//* FFE: HID format for complex values */
 /*	interpreter interpret;	*//* FFE: interpreter fct, NULL if not needed  */
@@ -141,6 +143,7 @@ typedef struct {
 							/* use default value. */
 #define HU_FLAG_QUICK_POLL		16		/* Mandatory vars	*/
 #define HU_FLAG_STALE			32		/* data stale, don't try too often. */
+#define HU_FLAG_ENUM			128		/* enum values exist */
 
 /* hints for su_ups_set, applicable only to rw vars */
 #define HU_TYPE_CMD				64		/* instant command */

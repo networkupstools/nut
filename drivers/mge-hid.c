@@ -1,6 +1,6 @@
 /*  mge-hid.c - data to monitor MGE UPS SYSTEMS HID (USB and serial) devices
  *
- *  Copyright (C) 2003 - 2008
+ *  Copyright (C) 2003 - 2009
  *  			Arnaud Quette <arnaud.quette@mgeups.fr>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
@@ -28,7 +28,7 @@
 #include "main.h"		/* for getval() */
 #include "common.h"
 
-#define MGE_HID_VERSION		"MGE HID 1.12"
+#define MGE_HID_VERSION		"MGE HID 1.15"
 
 #ifndef SHUT_MODE
 #include "usb-common.h"
@@ -67,30 +67,131 @@ typedef enum {
 } models_type_t;
 
 static models_type_t	mge_type = MGE_DEFAULT;
-static char		mge_scratch_buf[16];
+static char			mge_scratch_buf[20];
+static double		mge_scratch_value;
+static struct tm	mge_tm;
+
+/* The HID path 'UPS.PowerSummary.Time' reports Unix time (ie the number of
+ * seconds since 1970-01-01 00:00:00. This has to be split between ups.date and
+ * ups.time */
+static void *mge_date_conversion_fun(double *value, char *string)
+{
+	time_t sec;
+	
+	/* Sanity check */
+	if ((string == NULL) && (value == NULL))
+		return NULL;
+
+	/* check the conversion way */
+	/* HID to NUT */
+	if (string == NULL) {
+		sec = (time_t)*value;
+
+		if (strftime(mge_scratch_buf, 11, "%Y/%m/%d", localtime(&sec)) == 10) {
+			return mge_scratch_buf;
+		}
+		else {
+			upsdebugx(3, "mge_date_conversion_fun(): can't compute date %f", *value);
+		}
+	}
+	/* NUT to HID */
+	/* Conversion back retrieve ups.time to build the full unix time */
+	if (value == NULL) {
+		/* get time from the UPS */
+		if (dstate_getinfo("ups.time") != NULL) {
+			/* build a full date + time string */
+			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s %s",
+				string, dstate_getinfo("ups.time"));
+			strptime(mge_scratch_buf, "%Y/%m/%d %H:%M:%S", &mge_tm);
+			sec = mktime(&mge_tm);
+			struct timeval now;
+			gettimeofday(&now, NULL);
+			mge_scratch_value = (double)sec;
+			return &mge_scratch_value;
+		}
+	}
+	return NULL;
+}
+
+static info_lkp_t mge_date_conversion[] = {
+	{ 0, NULL, mge_date_conversion_fun }
+};
+
+static void *mge_time_conversion_fun(double *value, char *string)
+{
+	time_t sec;
+
+	/* Sanity check */
+	if ((string == NULL) && (value == NULL))
+		return NULL;
+
+	/* check the conversion way */
+	/* HID to NUT */
+	if (string == NULL) {
+		sec = (time_t)*value;
+
+		if (strftime(mge_scratch_buf, 9, "%H:%M:%S", localtime(&sec)) == 8) {
+			return mge_scratch_buf;
+		}
+		else {
+			upsdebugx(3, "mge_time_conversion_fun(): can't compute time %f", *value);
+		}
+	}
+	/* NUT to HID */
+	/* Conversion back retrieve ups.date to build the full unix time */
+	if (value == NULL) {
+		/* get date from the UPS */
+		if (dstate_getinfo("ups.date") != NULL) {
+			/* build a full date + time string */
+			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s %s",
+				dstate_getinfo("ups.date"), string);
+			strptime(mge_scratch_buf, "%Y/%m/%d %H:%M:%S", &mge_tm);
+			sec = mktime(&mge_tm);
+			struct timeval now;
+			gettimeofday(&now, NULL);
+			mge_scratch_value = (double)sec;
+			return &mge_scratch_value;
+		}
+	}
+	return NULL;
+}
+
+static info_lkp_t mge_time_conversion[] = {
+	{ 0, NULL, mge_time_conversion_fun }
+};
+
 
 /* The HID path 'UPS.PowerSummary.ConfigVoltage' only reports
    'battery.voltage.nominal' for specific UPS series. Ignore
    the value for other series (default behavior). */
-static char *mge_battery_voltage_nominal_fun(double value)
+static void *mge_battery_voltage_nominal_fun(double *value, char *string)
 {
-	switch (mge_type & 0xFF00)	/* Ignore model byte */
-	{
-	case MGE_EVOLUTION:
-		if (mge_type == MGE_EVOLUTION_650) {
-			value = 12.0;
-		}
-		break;
-
-	case MGE_PULSAR_M:
-		break;
-
-	default:
+	/* Sanity check */
+	if ((string == NULL) && (value == NULL))
 		return NULL;
-	}
 
-	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.0f", value);
-	return mge_scratch_buf;
+	/* check the conversion way */
+	/* HID to NUT */
+	if (string == NULL) {
+		switch (mge_type & 0xFF00)	/* Ignore model byte */
+		{
+		case MGE_EVOLUTION:
+			if (mge_type == MGE_EVOLUTION_650) {
+				*value = 12.0;
+			}
+			break;
+
+		case MGE_PULSAR_M:
+			break;
+
+		default:
+			return NULL;
+		}
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.0f", *value);
+		return mge_scratch_buf;
+	}
+	/* no NUT to HID conversion needed */
+	return NULL;
 }
 
 static info_lkp_t mge_battery_voltage_nominal[] = {
@@ -100,40 +201,69 @@ static info_lkp_t mge_battery_voltage_nominal[] = {
 /* The HID path 'UPS.PowerSummary.Voltage' only reports
    'battery.voltage' for specific UPS series. Ignore the
    value for other series (default behavior). */
-static char *mge_battery_voltage_fun(double value)
+static void *mge_battery_voltage_fun(double *value, char *string)
 {
-	switch (mge_type & 0xFF00)	/* Ignore model byte */
-	{
-	case MGE_EVOLUTION:
-	case MGE_PULSAR_M:
-		break;
-
-	default:
+	/* Sanity check */
+	if ((string == NULL) && (value == NULL))
 		return NULL;
-	}
 
-	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.1f", value);
-	return mge_scratch_buf;
+	/* check the conversion way */
+	/* HID to NUT */
+	if (string == NULL) {
+		switch (mge_type & 0xFF00)	/* Ignore model byte */
+		{
+		case MGE_EVOLUTION:
+		case MGE_PULSAR_M:
+			break;
+
+		default:
+			return NULL;
+		}
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.1f", *value);
+		return mge_scratch_buf;
+	}
+	/* no NUT to HID conversion needed */
+	return NULL;
 }
 
 static info_lkp_t mge_battery_voltage[] = {
 	{ 0, NULL, mge_battery_voltage_fun }
 };
 
-static char *mge_powerfactor_conversion_fun(double value)
+static void *mge_powerfactor_conversion_fun(double *value, char *string)
 {
-	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.2f", value / 100);
-	return mge_scratch_buf;
+	/* Sanity check */
+	if ((string == NULL) && (value == NULL))
+		return NULL;
+
+	/* check the conversion way */
+	/* HID to NUT */
+	if (string == NULL) {
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.2f", *value / 100);
+		return mge_scratch_buf;
+	}
+	/* no NUT to HID conversion needed */
+	return NULL;
 }
 
 static info_lkp_t mge_powerfactor_conversion[] = {
 	{ 0, NULL, mge_powerfactor_conversion_fun }
 };
 
-static char *mge_battery_capacity_fun(double value)
+static void *mge_battery_capacity_fun(double *value, char *string)
 {
-	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.2f", value / 3600);
-	return mge_scratch_buf;
+	/* Sanity check */
+	if ((string == NULL) && (value == NULL))
+		return NULL;
+
+	/* check the conversion way */
+	/* HID to NUT */
+	if (string == NULL) {
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.2f", *value / 3600);
+		return mge_scratch_buf;
+	}
+	/* no NUT to HID conversion needed */
+	return NULL;
 }
 
 static info_lkp_t mge_battery_capacity[] = {
@@ -161,11 +291,110 @@ static info_lkp_t mge_emergency_stop[] = {
 	{ 0, NULL, NULL }
 };
 
-/* FIXME: limit to ups.model ~= Protection Station... */
+/* allow limiting to ups.model ~= Protection Station */
+static void *eaton_check_pegasus_fun(double *value, char *string)
+{
+	/* Sanity check */
+	if ((string == NULL) && (value == NULL))
+		return NULL;
+
+	/* check the conversion way */
+	/* HID to NUT */
+	if (string == NULL) {
+		if (!strncmp("Protection Station", dstate_getinfo("ups.model"), 18)) {
+			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.0f", *value);
+			return mge_scratch_buf;
+		}
+	}
+	/* no NUT to HID conversion needed */
+	return NULL;
+}
+
 static info_lkp_t pegasus_threshold_info[] = {
-	{ 10, "10", NULL },
-	{ 25, "25", NULL },
-	{ 60, "60", NULL },
+	{ 10, "10", eaton_check_pegasus_fun },
+	{ 25, "25", eaton_check_pegasus_fun },
+	{ 60, "60", eaton_check_pegasus_fun },
+	{ 0, NULL, NULL }
+};
+
+/* Limit nominal output voltage according to HV or LV models */
+static void *eaton_check_voltage_fun(double *value, char *string)
+{
+	upsdebugx(3, "entering eaton_check_voltage_fun()");
+
+	/* Sanity check */
+	if ((string == NULL) && (value == NULL))
+		return NULL;
+
+	/* check the conversion way */
+	/* HID to NUT */
+	if (string == NULL) {
+		/* If output.voltage.nominal is not yet set, it's that we are asking
+		 * to set the initial value */
+		int cur_voltage = *value;
+
+		/* Possible values depends on the current one */
+		if (dstate_getinfo("output.voltage.nominal") != NULL)
+			cur_voltage = atoi(dstate_getinfo("output.voltage.nominal"));
+
+		upsdebugx(3, "eaton_check_voltage_fun: cur_voltage = %i", cur_voltage);
+
+		switch (cur_voltage)
+		{
+			/* LV models */
+			case 100:
+			case 110:
+				if ((*value == 100) || (*value == 110)) {
+					snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.0f", *value);
+					return mge_scratch_buf;
+				}
+				break;
+			/* HV models */
+			/* 208V */
+			case 200:
+			case 208:
+				if ((*value == 200) || (*value == 208)) {
+					snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.0f", *value);
+					return mge_scratch_buf;
+				}
+				break;
+			/* HV models */
+			/* 230V */
+			case 220:
+			case 230:
+			case 240:
+				if ((*value == 220) || (*value == 230) || (*value == 240)) {
+					snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.0f", *value);
+					return mge_scratch_buf;
+				}
+				break;
+			/* FIXME: default ? autosensing (value?)! */
+		}
+	}
+	/* no NUT to HID conversion needed */
+	return NULL;
+}
+
+static info_lkp_t nominal_output_voltage_info[] = {
+	/* HV models */
+	/* 208V */
+	{ 200, "200", eaton_check_voltage_fun },
+	{ 208, "208", eaton_check_voltage_fun },
+	/* 230V */
+	{ 220, "220", eaton_check_voltage_fun },
+	{ 230, "230", eaton_check_voltage_fun },
+	{ 240, "240", eaton_check_voltage_fun },
+	/* LV models */
+	{ 100, "100", eaton_check_voltage_fun },
+	{ 110, "110", eaton_check_voltage_fun },
+	{ 120, "120", eaton_check_voltage_fun },
+	{ 127, "127", eaton_check_voltage_fun },
+
+/* FIXME ?????? LI Models 500W module will NOT support autosensing as an option
+ * for HV models due to transformer ratio differences but they will support it
+ * for LV models. */
+/*	{ ?, "autosensing", eaton_check_voltage_fun }, */
+
 	{ 0, NULL, NULL }
 };
 
@@ -178,7 +407,10 @@ static usage_lkp_t mge_usage_lkp[] = {
 	{ "Undefined",				0xffff0000 },
 	{ "STS",				0xffff0001 },
 	{ "Environment",			0xffff0002 },
-	/* 0xffff0003-0xffff000f	=>	Reserved */
+	{ "Statistic",			0xffff0003 },
+	{ "StatisticSystem",		0xffff0004 },
+	
+	/* 0xffff0005-0xffff000f	=>	Reserved */
 	{ "Phase",				0xffff0010 },
 	{ "PhaseID",				0xffff0011 },
 	{ "Chopper",				0xffff0012 },
@@ -207,7 +439,9 @@ static usage_lkp_t mge_usage_lkp[] = {
 	{ "RedundancyLevel",			0xffff0029 },
 	{ "RedundancyLost",			0xffff002a },
 	{ "NotificationStatus",			0xffff002b },
-	/* 0xffff002c-0xffff003f	=>	Reserved */
+	{ "ProtectionLost",			0xffff002c },
+	{ "ConfigurationFailure",			0xffff002d },
+	/* 0xffff002e-0xffff003f	=>	Reserved */
 	{ "SwitchType",				0xffff0040 },
 	{ "ConverterType",			0xffff0041 },
 	{ "FrequencyConverterMode",		0xffff0042 },
@@ -265,7 +499,13 @@ static usage_lkp_t mge_usage_lkp[] = {
 	{ "DCBusUnbalanced", 			0xffff0076 },
 	{ "FanFailure", 			0xffff0077 },
 	{ "WiringFault", 			0xffff0078 },
-	/* 0xffff0079-0xffff007f	=>	Reserved */
+	{ "Floating", 			0xffff0079 },
+	{ "OverCurrent", 			0xffff007a },
+	{ "RemainingActivePower", 			0xffff007b },
+	{ "Energy", 			0xffff007c },
+	{ "Threshold", 			0xffff007d },
+	{ "OverThreshold", 			0xffff007e },
+	/* 0xffff007f	=>	Reserved */
 	{ "Sensor",				0xffff0080 },
 	{ "LowHumidity",			0xffff0081 },
 	{ "HighHumidity",			0xffff0082 },
@@ -282,12 +522,25 @@ static usage_lkp_t mge_usage_lkp[] = {
 	{ "Time",				0xffff0097 },
 	{ "Code",				0xffff0098 },
 	{ "DataValid",				0xffff0099 },
-	/* 0xffff009a-0xffff00df	=>	Reserved */
+	{ "ToggleTimer",				0xffff009a },
+	/* 0xffff009b-0xffff009f	=>	Reserved */
+	{ "PDU",				0xffff00a0 },
+	{ "Breaker",				0xffff00a1 },
+	{ "BreakerID",				0xffff00a2 },
+	{ "OverVoltage",				0xffff00a3 },
+	{ "Tripped",				0xffff00a4 },
+	{ "OverEnergy",				0xffff00a5 },
+	{ "OverHumidity",				0xffff00a6 },
+	{ "LCDControl",				0xffff00a6 },
+	/* 0xffff00a8-0xffff00df	=>	Reserved */
 	{ "COPIBridge",				0xffff00e0 },
 	/* 0xffff00e1-0xffff00ef	=>	Reserved */
 	{ "iModel",				0xffff00f0 },
 	{ "iVersion",				0xffff00f1 },
-	/* 0xffff00f2-0xffff00ff	=>	Reserved */
+	{ "iTechnicalLevel",		0xffff00f2 },
+	{ "iPartNumber",			0xffff00f3 },
+	{ "iReferenceNumber",		0xffff00f4 },
+	/* 0xffff00f5-0xffff00ff	=>	Reserved */
 
 	/* end of table */
 	{ NULL, 0 }
@@ -490,6 +743,9 @@ static hid_info_t mge_hid2nut[] =
 	{ "ups.start.auto", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Input.[1].AutomaticRestart", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
 	{ "ups.start.battery", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Input.[3].StartOnBattery", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
 	{ "ups.start.reboot", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.ForcedReboot", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
+	/* FIXME: the 2 below should be ST_FLAG_RW */
+	{ "ups.date", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.Time", NULL, "%s", 0, mge_date_conversion },
+	{ "ups.time", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.Time", NULL, "%s", 0, mge_time_conversion },
 	{ "ups.type", 0, 0, "UPS.PowerConverter.ConverterType", NULL, "%s", HU_FLAG_STATIC, mge_upstype_conversion },
 
 	/* Special case: boolean values that are mapped to ups.status and ups.alarm */
@@ -572,14 +828,15 @@ static hid_info_t mge_hid2nut[] =
 	{ "output.L3-N.voltage", 0, 0, "UPS.PowerConverter.Output.Phase.[3].Voltage", NULL, "%.1f", 0, NULL },
 	{ "output.L1-L2.voltage", 0, 0, "UPS.PowerConverter.Output.Phase.[12].Voltage", NULL, "%.1f", 0, NULL },
 	{ "output.L2-L3.voltage", 0, 0, "UPS.PowerConverter.Output.Phase.[23].Voltage", NULL, "%.1f", 0, NULL },
-	{ "output.L3-L1.voltage", 0, 0, "UPS.PowerConverter.Output.Phase.[31].Voltage", NULL, "%.1f", 0, NULL },
-	{ "output.voltage.nominal", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.Flow.[4].ConfigVoltage", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "output.L3-L1.voltage", 0, 0, "UPS.PowerConverter.Output.Phase.[31].Voltage", NULL, "%.1f", 0, NULL }, 
+	{ "output.voltage.nominal", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.Flow.[4].ConfigVoltage", NULL, "%.0f", HU_FLAG_SEMI_STATIC | HU_FLAG_ENUM, nominal_output_voltage_info },
 	{ "output.current", 0, 0, "UPS.PowerConverter.Output.Current", NULL, "%.2f", 0, NULL },
 	{ "output.L1.current", 0, 0, "UPS.PowerConverter.Output.Phase.[1].Current", NULL, "%.1f", 0, NULL },
 	{ "output.L2.current", 0, 0, "UPS.PowerConverter.Output.Phase.[2].Current", NULL, "%.1f", 0, NULL },
 	{ "output.L3.current", 0, 0, "UPS.PowerConverter.Output.Phase.[3].Current", NULL, "%.1f", 0, NULL },
 	{ "output.current.nominal", 0, 0, "UPS.Flow.[4].ConfigCurrent", NULL, "%.2f", 0, NULL },
 	{ "output.frequency", 0, 0, "UPS.PowerConverter.Output.Frequency", NULL, "%.1f", 0, NULL },
+	/* FIXME: can be RW (50/60) (or on .nominal)? */
 	{ "output.frequency.nominal", 0, 0, "UPS.Flow.[4].ConfigFrequency", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 	{ "output.powerfactor", 0, 0, "UPS.PowerConverter.Output.PowerFactor", NULL, "%s", 0, mge_powerfactor_conversion },
 
@@ -587,10 +844,10 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.id", 0, 0, "UPS.OutletSystem.Outlet.[1].OutletID", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 	{ "outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[1].OutletID", NULL, "Main Outlet", HU_FLAG_ABSENT, NULL },
 	{ "outlet.switchable", 0, 0, "UPS.OutletSystem.Outlet.[1].PresentStatus.Switchable", NULL, "%s", HU_FLAG_STATIC, yes_no_info },
-	/* The line below is the power consumption threshold on the master outlet
-	 * used as criteria to manage the slave outlets. Values: 10, 25 or 60 VA.
-	 * The default value is 25. */
-	{ "outlet.power", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet.[1].ConfigApparentPower", NULL, "%s", HU_FLAG_SEMI_STATIC, pegasus_threshold_info },
+	/* On Protection Station, the line below is the power consumption threshold
+	 * on the master outlet used to automatically power off the slave outlets.
+	 * Values: 10, 25 (default) or 60 VA. */
+	{ "outlet.power", ST_FLAG_RW | ST_FLAG_STRING, 6, "UPS.OutletSystem.Outlet.[1].ConfigApparentPower", NULL, "%s", HU_FLAG_SEMI_STATIC | HU_FLAG_ENUM, pegasus_threshold_info },
 	{ "outlet.1.id", 0, 0, "UPS.OutletSystem.Outlet.[2].OutletID", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 	{ "outlet.1.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[2].OutletID", NULL, "PowerShare Outlet 1", HU_FLAG_ABSENT, NULL },
 	{ "outlet.1.switchable", 0, 0, "UPS.OutletSystem.Outlet.[2].PresentStatus.Switchable", NULL, "%s", HU_FLAG_STATIC, yes_no_info },
@@ -700,7 +957,7 @@ static char *mge_format_model(HIDDevice_t *hd) {
 }
 
 static char *mge_format_mfr(HIDDevice_t *hd) {
-	return hd->Vendor ? hd->Vendor : "MGE UPS SYSTEMS";
+	return hd->Vendor ? hd->Vendor : "Eaton";
 }
 
 static char *mge_format_serial(HIDDevice_t *hd) {

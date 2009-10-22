@@ -84,7 +84,7 @@ extern "C" {
 
 #define ITEM_MASK			0xFC
 
-/* Attribut Flags */
+/* Attribute Flags */
 #define ATTR_DATA_CST			0x01
 #define ATTR_NVOL_VOL			0x80
 

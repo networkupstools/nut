@@ -6,7 +6,7 @@
  *   2005-2006 Peter Selinger <selinger@users.sourceforge.net>
  *   2007      Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
- * This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
+ * This program was sponsored by MGE UPS SYSTEMS, and now Eaton
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ * 
+ * TODO list:
+ * - set ST_FLAG_RW according to HIDData_t->Attribute (ATTR_DATA_CST-ATTR_NVOL_VOL)
  */
 
 #define DRIVER_NAME	"Generic HID driver"
@@ -397,22 +400,32 @@ info_lkp_t on_off_info[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *date_conversion_fun(double value)
+static void *date_conversion_fun(double *value, char *string)
 {
 	static char buf[20];
 	int year, month, day;
 
-	if ((long)value == 0) {
-		return "not set";
+	/* Sanity check */
+	if ((string == NULL) && (value == NULL))
+		return NULL;
+
+	/* check the conversion way */
+	/* HID to NUT */
+	if (string == NULL) {
+		if ((long)*value == 0) {
+			snprintf(buf, sizeof(buf), "not set");
+			return buf;
+		}
+
+		year = 1980 + ((long)*value >> 9); /* negative value represents pre-1980 date */ 
+		month = ((long)*value >> 5) & 0x0f;
+		day = (long)*value & 0x1f;
+
+		snprintf(buf, sizeof(buf), "%04d/%02d/%02d", year, month, day);
+		return buf;
 	}
-
-	year = 1980 + ((long)value >> 9); /* negative value represents pre-1980 date */ 
-	month = ((long)value >> 5) & 0x0f;
-	day = (long)value & 0x1f;
-
-	snprintf(buf, sizeof(buf), "%04d/%02d/%02d", year, month, day);
-
-	return buf;
+	/* no NUT to HID conversion needed */
+	return NULL;
 }
 
 info_lkp_t date_conversion[] = {
@@ -421,13 +434,22 @@ info_lkp_t date_conversion[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *hex_conversion_fun(double value)
+static void *hex_conversion_fun(double *value, char *string)
 {
 	static char buf[20];
-	
-	snprintf(buf, sizeof(buf), "%08lx", (long)value);
 
-	return buf;
+	/* Sanity check */
+	if ((string == NULL) && (value == NULL))
+		return NULL;
+
+	/* check the conversion way */
+	/* HID to NUT */
+	if (string == NULL) {
+		snprintf(buf, sizeof(buf), "%08lx", (long)*value);
+		return buf;
+	}
+	/* no NUT to HID conversion needed */
+	return NULL;
 }
 
 info_lkp_t hex_conversion[] = {
@@ -436,11 +458,24 @@ info_lkp_t hex_conversion[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *stringid_conversion_fun(double value)
+static void *stringid_conversion_fun(double *value, char *string)
 {
 	static char buf[20];
 
-	return HIDGetIndexString(udev, (int)value, buf, sizeof(buf));
+	/* Sanity check */
+	if ((string == NULL) && (value == NULL))
+		return NULL;
+
+	/* check the conversion way */
+	/* HID to NUT */
+	if (string == NULL) {
+		HIDGetIndexString(udev, (int)*value, buf, sizeof(buf));
+		if (buf[0] != '\0') {
+			return buf;
+		}
+	}
+	/* no NUT to HID conversion needed */
+	return NULL;
 }
 
 info_lkp_t stringid_conversion[] = {
@@ -449,13 +484,22 @@ info_lkp_t stringid_conversion[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *divide_by_10_conversion_fun(double value)
+static void *divide_by_10_conversion_fun(double *value, char *string)
 {
 	static char buf[20];
-	
-	snprintf(buf, sizeof(buf), "%0.1f", value * 0.1);
 
-	return buf;
+	/* Sanity check */
+	if ((string == NULL) && (value == NULL))
+		return NULL;
+
+	/* check the conversion way */
+	/* HID to NUT */
+	if (string == NULL) {
+		snprintf(buf, sizeof(buf), "%0.1f", *value * 0.1);
+		return buf;
+	}
+	/* no NUT to HID conversion needed */
+	return NULL;
 }
 
 info_lkp_t divide_by_10_conversion[] = {
@@ -464,13 +508,22 @@ info_lkp_t divide_by_10_conversion[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *kelvin_celsius_conversion_fun(double value)
+static void *kelvin_celsius_conversion_fun(double *value, char *string)
 {
 	static char buf[20];
 	
-	snprintf(buf, sizeof(buf), "%.1f", value - 273.15);
+	/* Sanity check */
+	if ((string == NULL) && (value == NULL))
+		return NULL;
 
-	return buf;
+	/* check the conversion way */
+	/* HID to NUT */
+	if (string == NULL) {
+		snprintf(buf, sizeof(buf), "%.1f", *value - 273.15);
+		return buf;
+	}
+	/* no NUT to HID conversion needed */
+	return NULL;
 }
 
 info_lkp_t kelvin_celsius_conversion[] = {
@@ -564,13 +617,13 @@ int instcmd(const char *cmdname, const char *extradata)
 		}
 
 		upsdebugx(2, "instcmd: info element unavailable %s\n", cmdname);
-		return STAT_INSTCMD_UNKNOWN;
+		return STAT_INSTCMD_INVALID;
 	}
 
 	/* Check if the item is an instant command */
 	if (!hidups_item->hidflags & HU_TYPE_CMD) {
 		upsdebugx(2, "instcmd: %s is not an instant command\n", cmdname);
-		return STAT_INSTCMD_UNKNOWN;
+		return STAT_INSTCMD_INVALID;
 	}
 	
 	/* If extradata is empty, use the default value from the HID-to-NUT table */
@@ -592,7 +645,7 @@ int instcmd(const char *cmdname, const char *extradata)
 	}
 	
 	upsdebugx(3, "instcmd: FAILED\n"); /* TODO: HANDLED but FAILED, not UNKNOWN! */
-	return STAT_INSTCMD_UNKNOWN;
+	return STAT_INSTCMD_FAILED;
 }
 
 /* set r/w variable to a value. */
@@ -624,7 +677,7 @@ int setvar(const char *varname, const char *val)
 		return STAT_SET_HANDLED;
 	}
 
-	/* SHUT_FLAG_ABSENT is the only case of HID Path == NULL */
+	/* HU_FLAG_ABSENT is the only case of HID Path == NULL */
 	if (hidups_item->hidpath == NULL) {
 		upsdebugx(2, "setvar: ID Path is NULL for %s\n", varname);
 		return STAT_SET_UNKNOWN;
@@ -905,8 +958,10 @@ void upsdrv_initups(void)
 
 	hd = &curDevice;
 
-	upsdebugx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown",
-		hd->Product ? hd->Product : "unknown");
+	printf("Detected %s - %s [%s] on %s\n",
+		dstate_getinfo("ups.mfr") ? dstate_getinfo("ups.mfr") : "unknown",
+		dstate_getinfo("ups.model") ? dstate_getinfo("ups.model") : "unknown",
+		dstate_getinfo("ups.serial"), curDevice.Bus /*udev->filename / device_path*/);
 
 	if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
 		fatalx(EXIT_FAILURE, "Can't initialize data from HID UPS");
@@ -1110,8 +1165,9 @@ static double interval(void)
 static bool_t hid_ups_walk(walkmode_t mode)
 {
 	hid_info_t	*item;
+	info_lkp_t	*info_lkp;
 	double		value;
-	int		retcode;
+	int			retcode;
 
 	/* 3 modes: HU_WALKMODE_INIT, HU_WALKMODE_QUICK_UPDATE and HU_WALKMODE_FULL_UPDATE */
 	
@@ -1238,15 +1294,31 @@ static bool_t hid_ups_walk(walkmode_t mode)
 
 		if (mode == HU_WALKMODE_INIT) {
 
+			/* FIXME: If ST_FLAG_RW, check if the data is really setable! */
+			/* Now, apply flags */
 			dstate_setflags(item->info_type, item->info_flags);
 
 			/* Set max length for strings */
 			if (item->info_flags & ST_FLAG_STRING) {
 				dstate_setaux(item->info_type, item->info_len);
 			}
+
+			/* Set enumerated values, only if the data has ST_FLAG_RW */
+			if ((item->hidflags & HU_FLAG_ENUM) && (item->info_flags & ST_FLAG_RW)) {
+				upsdebugx(4, "Processing enumerated values for %s", item->info_type);
+				/* Loop on all existing values */
+				for (info_lkp = item->hid2info; info_lkp != NULL
+					&& info_lkp->nut_value != NULL; info_lkp++) {
+					/* Ask using hu_find_infoval() to check if data is valid */
+					 if (hu_find_infoval(info_lkp, info_lkp->hid_value) != NULL) {
+						upsdebugx(4, "addenum(%s)\n", info_lkp->nut_value);
+						dstate_addenum(item->info_type, "%s",
+							hu_find_infoval(info_lkp, info_lkp->hid_value));
+					}
+				}
+			}
 		}
 	}
-
 	return TRUE;
 }
 
@@ -1376,7 +1448,7 @@ static hid_info_t *find_nut_info(const char *varname)
 			return hidups_item;
 	}
 
-	upsdebugx(2, "find_nut_info: unknown info type: %s\n", varname);
+	upsdebugx(2, "find_nut_info: unknown info type: %s", varname);
 	return NULL;
 }
 
@@ -1405,13 +1477,26 @@ static hid_info_t *find_hid_info(const HIDData_t *hiddata)
 static long hu_find_valinfo(info_lkp_t *hid2info, const char* value)
 {
 	info_lkp_t *info_lkp;
-	
+	double *formated_value = NULL;
+
+	/* if a conversion function is defined,
+	 * use 'value' as argument for it */
+	if (hid2info->fun != NULL) {
+		if ((formated_value = hid2info->fun(NULL, (char*)value)) != NULL) {
+			upsdebugx(5, "hu_find_infoval: found %g (value: %s)\n",
+				*formated_value, value);
+			return *formated_value;
+		}
+		else
+			return -1;
+	}
+
 	for (info_lkp = hid2info; info_lkp->nut_value != NULL; info_lkp++) {
 
 		if (!(strcmp(info_lkp->nut_value, value))) {
-			upsdebugx(5, "hu_find_valinfo: found %s (value: %ld)\n",
+			upsdebugx(5, "hu_find_valinfo: found %s (value: %ld)",
 				info_lkp->nut_value, info_lkp->hid_value);
-	
+
 			return info_lkp->hid_value;
 		}
 	}
@@ -1423,14 +1508,14 @@ static long hu_find_valinfo(info_lkp_t *hid2info, const char* value)
 static char *hu_find_infoval(info_lkp_t *hid2info, const double value)
 {
 	info_lkp_t *info_lkp;
-	char *nut_value;
+	char *nut_value = NULL;
 
-	upsdebugx(5, "hu_find_infoval: searching for value = %g\n", value);
+	upsdebugx(5, "hu_find_infoval: searching for value = %g", value);
 
 	/* if a conversion function is defined,
 	 * use 'value' as argument for it */
 	if (hid2info->fun != NULL) {
-		nut_value = hid2info->fun(value);
+		nut_value = hid2info->fun((double*)&value, NULL);
 		upsdebugx(5, "hu_find_infoval: found %s (value: %g)\n", nut_value, value);
 		return nut_value;
 	}
@@ -1473,7 +1558,7 @@ static int ups_infoval_set(hid_info_t *item, double value)
 			return 0;
 		}
 
-		dstate_setinfo(item->info_type, item->dfl, nutvalue);
+		dstate_setinfo(item->info_type, "%s", nutvalue);
 	} else {
 		dstate_setinfo(item->info_type, item->dfl, value);
 	}

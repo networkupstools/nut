@@ -265,6 +265,10 @@ static struct {
 void HIDDumpTree(hid_dev_handle_t udev, usage_tables_t *utab)
 {
 	int	i;
+#ifndef SHUT_MODE
+	/* extract the VendorId for further testing */
+	int vendorID = usb_device((struct usb_dev_handle *)udev)->descriptor.idVendor;
+#endif
 
 	/* Do not go further if we already know nothing will be displayed.
 	 * Some reports take a while before they timeout, so if these are
@@ -279,6 +283,19 @@ void HIDDumpTree(hid_dev_handle_t udev, usage_tables_t *utab)
 	{
 		double		value;
 		HIDData_t	*pData = &pDesc->item[i];
+
+		/* skip reports 254/255 for Eaton / MGE due to special handling needs */
+#ifdef SHUT_MODE
+		if ((pData->ReportID == 254) || (pData->ReportID == 255)) {
+			continue;
+		}
+#else
+		if (vendorID == 0x0463) {
+			if ((pData->ReportID == 254) || (pData->ReportID == 255)) {
+				continue;
+			}
+		}
+#endif
 
 		/* Get data value */
 		if (HIDGetDataValue(udev, pData, &value, MAX_TS) == 1) {

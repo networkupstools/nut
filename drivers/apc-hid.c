@@ -49,31 +49,41 @@ static usb_device_id_t apc_usb_device_table[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *apc_date_conversion_fun(double value)
+static void *apc_date_conversion_fun(double *value, char *string)
 {
 	static char buf[20];
 	int year, month, day;
+	
+	/* Sanity check */
+	if ((string == NULL) && (value == NULL))
+		return NULL;
 
-	if ((long)value == 0) {
-		return "not set";
+	/* check the conversion way */
+	/* HID to NUT */
+	if (string == NULL) {
+		if ((long)value == 0) {
+			return "not set";
+		}
+
+		/* APC apparently uses a hexadecimal-as-decimal format, e.g.,
+		0x102202 = October 22, 2002 */
+		year = ((long)value & 0xf) + 10 * (((long)value>>4) & 0xf);
+		month = (((long)value>>16) & 0xf) + 10 * (((long)value>>20) & 0xf);
+		day = (((long)value>>8) & 0xf) + 10 * (((long)value>>12) & 0xf);
+
+		/* Y2K conversion - hope that this format will be retired before 2070 :) */
+		if (year >= 70) {
+			year += 1900;
+		} else {
+			year += 2000;
+		}
+
+		snprintf(buf, sizeof(buf), "%04d/%02d/%02d", year, month, day);
+
+		return buf;
 	}
-
-	/* APC apparently uses a hexadecimal-as-decimal format, e.g.,
-	0x102202 = October 22, 2002 */
-	year = ((long)value & 0xf) + 10 * (((long)value>>4) & 0xf);
-	month = (((long)value>>16) & 0xf) + 10 * (((long)value>>20) & 0xf);
-	day = (((long)value>>8) & 0xf) + 10 * (((long)value>>12) & 0xf);
-
-	/* Y2K conversion - hope that this format will be retired before 2070 :) */
-	if (year >= 70) {
-		year += 1900;
-	} else {
-		year += 2000;
-	}
-
-	snprintf(buf, sizeof(buf), "%04d/%02d/%02d", year, month, day);
-
-	return buf;
+	/* no NUT to HID conversion needed */
+	return NULL;
 }
 
 info_lkp_t apc_date_conversion[] = {
@@ -268,14 +278,12 @@ static hid_info_t apc_hid2nut[] = {
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL, NULL, 0, replacebatt_info },
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.RemainingTimeLimitExpired", NULL, NULL, 0, timelimitexpired_info },
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.BatteryPresent", NULL, NULL, 0, nobattery_info },
-
   { "BOOL", 0, 0, "UPS.PowerSummary.Charging", NULL, NULL, HU_FLAG_QUICK_POLL, charging_info }, /* Back-UPS 500 */
   { "BOOL", 0, 0, "UPS.PowerSummary.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, discharging_info }, /* Back-UPS 500 */
   { "BOOL", 0, 0, "UPS.PowerSummary.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, online_info }, /* Back-UPS 500 */
   { "BOOL", 0, 0, "UPS.PowerSummary.BelowRemainingCapacityLimit", NULL, NULL, HU_FLAG_QUICK_POLL, lowbatt_info }, /* Back-UPS 500 */
   { "BOOL", 0, 0, "UPS.PowerSummary.ShutdownImminent", NULL, NULL, 0, shutdownimm_info },
   { "BOOL", 0, 0, "UPS.PowerSummary.APCStatusFlag", NULL, NULL, HU_FLAG_QUICK_POLL, apcstatusflag_info }, /* APC Back-UPS LS 500 */
-
   /* we map 2 times "input.transfer.reason" to be able to clear
    * both vrange (voltage) and frange (frequency) */
   { "BOOL", 0, 0, "UPS.Input.APCLineFailCause", NULL, NULL, 0, apc_linefailcause_vrange_info },

@@ -24,6 +24,7 @@
 /* TODO list
  * - cleanup, cleanup, cleanup
  * - manage interrupt and complete libshut_get_interrupt / shut_control_msg routing
+ * - baudrate negotiation
  * - complete shut_strerror
  * - validate / complete commands and data table in mge-hid from mge-shut
  */

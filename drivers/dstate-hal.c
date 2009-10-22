@@ -382,6 +382,12 @@ int dstate_setinfo(const char *var, const char *fmt, ...)
 	return ret;
 }
 
+
+int dstate_addenum(const char *var, const char *fmt, ...)
+{
+	return 0;
+}
+	
 int dstate_delinfo(const char *var)
 {
 	return 0;
