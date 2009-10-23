@@ -13,8 +13,8 @@ This man page only documents the hardware-specific features of the
 usbhid-ups driver.  For information about the core driver, see
 linknut:nutupsdrv[8].
 
-This driver replaces the legacy 'hidups' driver, which only supported
-Linux systems, and was formerly called 'newhidups'.
+This driver, formerly called 'newhidups', replaces the legacy 'hidups' driver,
+which only supported Linux systems.
 
 SUPPORTED HARDWARE
 ------------------
