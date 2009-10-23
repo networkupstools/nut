@@ -95,34 +95,24 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static void *tripplite_chemistry_fun(double *value, char *string)
+static char *tripplite_chemistry_fun(double value)
 {
 	static char	buf[20];
 	const char	*model;
 
-	/* Sanity check */
-	if ((string == NULL) && (value == NULL))
-		return NULL;
+	model = dstate_getinfo("ups.productid");
 
-	/* check the conversion way */
-	/* HID to NUT */
-	if (string == NULL) {
-		model = dstate_getinfo("ups.productid");
-
-		/* Workaround for AVR 550U firmware bug */
-		if (!strcmp(model, "1003")) {
-			return "unknown";
-		}
-
-		/* Workaround for OMNI1000LCD firmware bug */
-		if (!strcmp(model, "2005")) {
-			return "unknown";
-		}
-
-		return HIDGetIndexString(udev, (int)value, buf, sizeof(buf));
+	/* Workaround for AVR 550U firmware bug */
+	if (!strcmp(model, "1003")) {
+		return "unknown";
 	}
-	/* no NUT to HID conversion needed */
-	return NULL;
+
+	/* Workaround for OMNI1000LCD firmware bug */
+	if (!strcmp(model, "2005")) {
+		return "unknown";
+	}
+
+	return HIDGetIndexString(udev, (int)value, buf, sizeof(buf));
 }
 
 static info_lkp_t tripplite_chemistry[] = {
@@ -131,22 +121,13 @@ static info_lkp_t tripplite_chemistry[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static void *tripplite_battvolt_fun(double *value, char *string)
+static char *tripplite_battvolt_fun(double value)
 {
 	static char	buf[8];
 
-	/* Sanity check */
-	if ((string == NULL) && (value == NULL))
-		return NULL;
+	snprintf(buf, sizeof(buf), "%.1f", battery_scale * value);
 
-	/* check the conversion way */
-	/* HID to NUT */
-	if (string == NULL) {
-		snprintf(buf, sizeof(buf), "%.1f", battery_scale * (*value));
-		return buf;
-	}
-	/* no NUT to HID conversion needed */
-	return NULL;
+	return buf;
 }
 
 static info_lkp_t tripplite_battvolt[] = {

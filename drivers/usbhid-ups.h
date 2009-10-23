@@ -3,7 +3,7 @@
  * Copyright (C)
  *  2003-2009 Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
  *  2005-2006 Peter Selinger <selinger@users.sourceforge.net>
- *  2007      Arjen de Korte <adkorte-guest@alioth.debian.org>
+ *  2007-2009 Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
  * This program was sponsored by MGE UPS SYSTEMS, and now Eaton
  *
@@ -60,13 +60,8 @@ extern hid_dev_handle_t	udev;
 typedef struct {
 	long	hid_value;	/* HID value */
 	char	*nut_value;	/* NUT value */
-	/* special case: if fun!=NULL, then ignore hid_value and nut_value, and use
-	 * the conversion function instead. This is used for more complex formatting
-	 * such as dates. Fun is expected to return a statically allocated string or
-	 * double pointer (depending on the conversion way) or NULL.
-	 * the conversion way depends on the parameter set (value or string).
-	 * the other parameter pointer MUST be NULL... */
-	void	*(*fun)(double *value, char *string);
+	char	*(*fun)(double hid_value);	/* optional HID to NUT mapping */
+	double	(*nuf)(const char *nut_value);		/* optional NUT to HID mapping */
 } info_lkp_t;
 
 /* declarations of public lookup tables */

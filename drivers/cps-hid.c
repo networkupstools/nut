@@ -63,22 +63,13 @@ static usb_device_id_t cps_usb_device_table[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static void *cps_battvolt_fun(double *value, char *string)
+static char *cps_battvolt_fun(double value)
 {
 	static char	buf[8];
 
-	/* Sanity check */
-	if ((string == NULL) && (value == NULL))
-		return NULL;
+	snprintf(buf, sizeof(buf), "%.1f", battery_scale * value);
 
-	/* check the conversion way */
-	/* HID to NUT */
-	if (string == NULL) {
-		snprintf(buf, sizeof(buf), "%.1f", battery_scale * (*value));
-		return buf;
-	}
-	/* no NUT to HID conversion needed */
-	return NULL;
+	return buf;
 }
 
 static info_lkp_t cps_battvolt[] = {

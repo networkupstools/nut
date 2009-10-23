@@ -64,82 +64,53 @@ static usb_device_id_t belkin_usb_device_table[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static void *belkin_firmware_conversion_fun(double *value, char *string)
+static char *belkin_firmware_conversion_fun(double value)
 {
 	static char buf[20];
 
-	/* Sanity check */
-	if ((string == NULL) && (value == NULL))
-		return NULL;
-
-	/* check the conversion way */
-	/* HID to NUT */
-	if (string == NULL) {
-		snprintf(buf, sizeof(buf), "%ld", (long)*value >> 4);
-		return buf;
-	}
-	/* no NUT to HID conversion needed */
-	return NULL;
+	snprintf(buf, sizeof(buf), "%ld", (long)value >> 4);
+	
+	return buf;
 }
 
 static info_lkp_t belkin_firmware_conversion[] = {
 	{ 0, NULL, belkin_firmware_conversion_fun }
 };
 
-static void *belkin_upstype_conversion_fun(double *value, char *string)
+static char *belkin_upstype_conversion_fun(double value)
 {
-	/* Sanity check */
-	if ((string == NULL) && (value == NULL))
-		return NULL;
-
-	/* check the conversion way */
-	/* HID to NUT */
-	if (string == NULL) {
-		switch ((long)*value & 0x0f)
-		{
-		case 1:
-			return "offline";
-		case 2:
-			return "line-interactive";
-		case 3:
-			return "simple online";
-		case 4: 
-			return "simple offline";
-		case 5:
-			return "simple line-interactive";
-		default:
-			return "online";
-		}
+	switch ((long)value & 0x0f)
+	{
+	case 1:
+		return "offline";
+	case 2:
+		return "line-interactive";
+	case 3:
+		return "simple online";
+	case 4: 
+		return "simple offline";
+	case 5:
+		return "simple line-interactive";
+	default:
+		return "online";
 	}
-	/* no NUT to HID conversion needed */
-	return NULL;
 }
 
 static info_lkp_t belkin_upstype_conversion[] = {
 	{ 0, NULL, belkin_upstype_conversion_fun }
 };
 
-static void *belkin_sensitivity_conversion_fun(double *value, char *string)
+static char *belkin_sensitivity_conversion_fun(double value)
 {
-	/* Sanity check */
-	if ((string == NULL) && (value == NULL))
-		return NULL;
-
-	/* check the conversion way */
-	/* HID to NUT */
-	if (string == NULL) {
-		switch ((long)*value)
-		{
-		case 1:
-			return "reduced";
-		case 2:
-			return "low";
-		default:
-			return "normal";
-		}
+	switch ((long)value)
+	{
+	case 1:
+		return "reduced";
+	case 2:
+		return "low";
+	default:
+		return "normal";
 	}
-	/* no NUT to HID conversion needed */
-	return NULL;
 }
 
 static info_lkp_t belkin_sensitivity_conversion[] = {
@@ -156,184 +127,104 @@ static info_lkp_t belkin_test_info[] = {
 	{ 0, NULL, NULL }
 };
 
-static void *belkin_overload_conversion_fun(double *value, char *string)
+static char *belkin_overload_conversion_fun(double value)
 {
-	/* Sanity check */
-	if ((string == NULL) && (value == NULL))
-		return NULL;
-
-	/* check the conversion way */
-	/* HID to NUT */
-	if (string == NULL) {
-		if ((long)*value & 0x0010) {
-			return "overload";
-		} else {
-			return "!overload";
-		}
-	}
-	/* no NUT to HID conversion needed */
-	return NULL;
+	if ((long)value & 0x0010) {
+		return "overload";
+	} else {
+		return "!overload";
+	}		
 }
 
 static info_lkp_t belkin_overload_conversion[] = {
 	{ 0, NULL, belkin_overload_conversion_fun }
 };
 
-static void *belkin_overheat_conversion_fun(double *value, char *string)
+static char *belkin_overheat_conversion_fun(double value)
 {
-	/* Sanity check */
-	if ((string == NULL) && (value == NULL))
-		return NULL;
-
-	/* check the conversion way */
-	/* HID to NUT */
-	if (string == NULL) {
-		if ((long)*value & 0x0040) {
-			return "overheat";
-		} else {
-			return "!overheat";
-		}
+	if ((long)value & 0x0040) {
+		return "overheat";
+	} else {
+		return "!overheat";
 	}
-	/* no NUT to HID conversion needed */
-	return NULL;
 }
 
 static info_lkp_t belkin_overheat_conversion[] = {
 	{ 0, NULL, belkin_overheat_conversion_fun }
 };
 
-static void *belkin_commfault_conversion_fun(double *value, char *string)
+static char *belkin_commfault_conversion_fun(double value)
 {
-	/* Sanity check */
-	if ((string == NULL) && (value == NULL))
-		return NULL;
-
-	/* check the conversion way */
-	/* HID to NUT */
-	if (string == NULL) {
-		if ((long)*value & 0x0080) {
-			return "commfault";
-		} else {
-			return "!commfault";
-		}
+	if ((long)value & 0x0080) {
+		return "commfault";
+	} else {
+		return "!commfault";
 	}
-	/* no NUT to HID conversion needed */
-	return NULL;
 }
 
 static info_lkp_t belkin_commfault_conversion[] = {
 	{ 0, NULL, belkin_commfault_conversion_fun }
 };
 
-static void *belkin_awaitingpower_conversion_fun(double *value, char *string)
+static char *belkin_awaitingpower_conversion_fun(double value)
 {
-	/* Sanity check */
-	if ((string == NULL) && (value == NULL))
-		return NULL;
-
-	/* check the conversion way */
-	/* HID to NUT */
-	if (string == NULL) {
-		if ((long)*value & 0x2000) {
-			return "awaitingpower";
-		} else {
-			return "!awaitingpower";
-		}
+	if ((long)value & 0x2000) {
+		return "awaitingpower";
+	} else {
+		return "!awaitingpower";
 	}
-	/* no NUT to HID conversion needed */
-	return NULL;
 }
 
 static info_lkp_t belkin_awaitingpower_conversion[] = {
 	{ 0, NULL, belkin_awaitingpower_conversion_fun }
 };
 
-static void *belkin_online_conversion_fun(double *value, char *string)
+static char *belkin_online_conversion_fun(double value)
 {
-	/* Sanity check */
-	if ((string == NULL) && (value == NULL))
-		return NULL;
-
-	/* check the conversion way */
-	/* HID to NUT */
-	if (string == NULL) {
-		if ((long)*value & 0x0001) {
-			return "!online";
-		} else {
-			return "online";
-		}
-	}
-	/* no NUT to HID conversion needed */
-	return NULL;
+	if ((long)value & 0x0001) {
+		return "!online";
+	} else {
+		return "online";
+	}		
 }
 
 static info_lkp_t belkin_online_conversion[] = {
 	{ 0, NULL, belkin_online_conversion_fun }
 };
 
-static void *belkin_lowbatt_conversion_fun(double *value, char *string)
+static char *belkin_lowbatt_conversion_fun(double value)
 {
-	/* Sanity check */
-	if ((string == NULL) && (value == NULL))
-		return NULL;
-
-	/* check the conversion way */
-	/* HID to NUT */
-	if (string == NULL) {
-		if ((long)*value & 0x0004) {
-			return "lowbatt";
-		} else {
-			return "!lowbatt";
-		}
+	if ((long)value & 0x0004) {
+		return "lowbatt";
+	} else {
+		return "!lowbatt";
 	}
-	/* no NUT to HID conversion needed */
-	return NULL;
 }
 
 static info_lkp_t belkin_lowbatt_conversion[] = {
 	{ 0, NULL, belkin_lowbatt_conversion_fun }
 };
 
-static void *belkin_depleted_conversion_fun(double *value, char *string)
+static char *belkin_depleted_conversion_fun(double value)
 {
-	/* Sanity check */
-	if ((string == NULL) && (value == NULL))
-		return NULL;
-
-	/* check the conversion way */
-	/* HID to NUT */
-	if (string == NULL) {
-		if ((long)*value & 0x0040) {
-			return "depleted";
-		} else {
-			return "!depleted";
-		}
+	if ((long)value & 0x0040) {
+		return "depleted";
+	} else {
+		return "!depleted";
 	}
-	/* no NUT to HID conversion needed */
-	return NULL;
 }
 
 static info_lkp_t belkin_depleted_conversion[] = {
 	{ 0, NULL, belkin_depleted_conversion_fun }
 };
 
-static void *belkin_replacebatt_conversion_fun(double *value, char *string)
+static char *belkin_replacebatt_conversion_fun(double value)
 {
-	/* Sanity check */
-	if ((string == NULL) && (value == NULL))
-		return NULL;
-
-	/* check the conversion way */
-	/* HID to NUT */
-	if (string == NULL) {
-		if ((long)*value & 0x0080) {
-			return "replacebatt";
-		} else {
-			return "!replacebatt";
-		}		
-	}
-	/* no NUT to HID conversion needed */
-	return NULL;
+	if ((long)value & 0x0080) {
+		return "replacebatt";
+	} else {
+		return "!replacebatt";
+	}		
 }
 
 static info_lkp_t belkin_replacebatt_conversion[] = {

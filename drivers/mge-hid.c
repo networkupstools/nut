@@ -63,135 +63,86 @@ typedef enum {
 	MGE_PULSAR_M = 0x200,		/* MGE Pulsar M series */
 		MGE_PULSAR_M_2200,
 		MGE_PULSAR_M_3000,
-		MGE_PULSAR_M_3000_XL
+		MGE_PULSAR_M_3000_XL,
+	MGE_PEGASUS = 0x400
 } models_type_t;
 
 static models_type_t	mge_type = MGE_DEFAULT;
-static char			mge_scratch_buf[20];
-static double		mge_scratch_value;
-static struct tm	mge_tm;
+static char		mge_scratch_buf[20];
 
 /* The HID path 'UPS.PowerSummary.Time' reports Unix time (ie the number of
  * seconds since 1970-01-01 00:00:00. This has to be split between ups.date and
  * ups.time */
-static void *mge_date_conversion_fun(double *value, char *string)
+static char *mge_date_conversion_fun(double value)
 {
-	time_t sec;
-	
-	/* Sanity check */
-	if ((string == NULL) && (value == NULL))
-		return NULL;
+	time_t	sec = value;
 
-	/* check the conversion way */
-	/* HID to NUT */
-	if (string == NULL) {
-		sec = (time_t)*value;
+	if (strftime(mge_scratch_buf, sizeof(mge_scratch_buf), "%Y/%m/%d", localtime(&sec)) == 10) {
+		return mge_scratch_buf;
+	}
 
-		if (strftime(mge_scratch_buf, 11, "%Y/%m/%d", localtime(&sec)) == 10) {
-			return mge_scratch_buf;
-		}
-		else {
-			upsdebugx(3, "mge_date_conversion_fun(): can't compute date %f", *value);
-		}
-	}
-	/* NUT to HID */
-	/* Conversion back retrieve ups.time to build the full unix time */
-	if (value == NULL) {
-		/* get time from the UPS */
-		if (dstate_getinfo("ups.time") != NULL) {
-			/* build a full date + time string */
-			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s %s",
-				string, dstate_getinfo("ups.time"));
-			strptime(mge_scratch_buf, "%Y/%m/%d %H:%M:%S", &mge_tm);
-			sec = mktime(&mge_tm);
-			struct timeval now;
-			gettimeofday(&now, NULL);
-			mge_scratch_value = (double)sec;
-			return &mge_scratch_value;
-		}
-	}
+	upsdebugx(3, "%s: can't compute date %g", __func__, value);
 	return NULL;
+}
+
+static char *mge_time_conversion_fun(double value)
+{
+	time_t sec = value;
+
+	if (strftime(mge_scratch_buf, sizeof(mge_scratch_buf), "%H:%M:%S", localtime(&sec)) == 8) {
+		return mge_scratch_buf;
+	}
+
+	upsdebugx(3, "%s: can't compute time %g", __func__, value);
+	return NULL;
+}
+
+/* Conversion back retrieve ups.time and ups.date to build the full unix time */
+static double mge_time_date_conversion_nuf(const char *value)
+{
+	struct tm	mge_tm;
+
+	/* build a full date + time string */
+	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s %s", dstate_getinfo("ups.date"), dstate_getinfo("ups.time"));
+
+	if (strptime(mge_scratch_buf, "%Y/%m/%d %H:%M:%S", &mge_tm) != NULL) {
+		return mktime(&mge_tm);
+	}
+
+	upsdebugx(3, "%s: can't compute date/time %s", __func__, value);
+	return 0;
 }
 
 static info_lkp_t mge_date_conversion[] = {
-	{ 0, NULL, mge_date_conversion_fun }
+	{ 0, NULL, mge_date_conversion_fun, mge_time_date_conversion_nuf }
 };
-
-static void *mge_time_conversion_fun(double *value, char *string)
-{
-	time_t sec;
-
-	/* Sanity check */
-	if ((string == NULL) && (value == NULL))
-		return NULL;
-
-	/* check the conversion way */
-	/* HID to NUT */
-	if (string == NULL) {
-		sec = (time_t)*value;
-
-		if (strftime(mge_scratch_buf, 9, "%H:%M:%S", localtime(&sec)) == 8) {
-			return mge_scratch_buf;
-		}
-		else {
-			upsdebugx(3, "mge_time_conversion_fun(): can't compute time %f", *value);
-		}
-	}
-	/* NUT to HID */
-	/* Conversion back retrieve ups.date to build the full unix time */
-	if (value == NULL) {
-		/* get date from the UPS */
-		if (dstate_getinfo("ups.date") != NULL) {
-			/* build a full date + time string */
-			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s %s",
-				dstate_getinfo("ups.date"), string);
-			strptime(mge_scratch_buf, "%Y/%m/%d %H:%M:%S", &mge_tm);
-			sec = mktime(&mge_tm);
-			struct timeval now;
-			gettimeofday(&now, NULL);
-			mge_scratch_value = (double)sec;
-			return &mge_scratch_value;
-		}
-	}
-	return NULL;
-}
 
 static info_lkp_t mge_time_conversion[] = {
-	{ 0, NULL, mge_time_conversion_fun }
+	{ 0, NULL, mge_time_conversion_fun, mge_time_date_conversion_nuf }
 };
-
 
 /* The HID path 'UPS.PowerSummary.ConfigVoltage' only reports
    'battery.voltage.nominal' for specific UPS series. Ignore
    the value for other series (default behavior). */
-static void *mge_battery_voltage_nominal_fun(double *value, char *string)
+static char *mge_battery_voltage_nominal_fun(double value)
 {
-	/* Sanity check */
-	if ((string == NULL) && (value == NULL))
-		return NULL;
-
-	/* check the conversion way */
-	/* HID to NUT */
-	if (string == NULL) {
-		switch (mge_type & 0xFF00)	/* Ignore model byte */
-		{
-		case MGE_EVOLUTION:
-			if (mge_type == MGE_EVOLUTION_650) {
-				*value = 12.0;
-			}
-			break;
-
-		case MGE_PULSAR_M:
-			break;
-
-		default:
-			return NULL;
+	switch (mge_type & 0xFF00)	/* Ignore model byte */
+	{
+	case MGE_EVOLUTION:
+		if (mge_type == MGE_EVOLUTION_650) {
+			value = 12.0;
 		}
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.0f", *value);
-		return mge_scratch_buf;
+		break;
+
+	case MGE_PULSAR_M:
+		break;
+
+	default:
+		return NULL;
 	}
-	/* no NUT to HID conversion needed */
-	return NULL;
+
+	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.0f", value);
+	return mge_scratch_buf;
 }
 
 static info_lkp_t mge_battery_voltage_nominal[] = {
@@ -201,69 +152,40 @@ static info_lkp_t mge_battery_voltage_nominal[] = {
 /* The HID path 'UPS.PowerSummary.Voltage' only reports
    'battery.voltage' for specific UPS series. Ignore the
    value for other series (default behavior). */
-static void *mge_battery_voltage_fun(double *value, char *string)
+static char *mge_battery_voltage_fun(double value)
 {
-	/* Sanity check */
-	if ((string == NULL) && (value == NULL))
+	switch (mge_type & 0xFF00)	/* Ignore model byte */
+	{
+	case MGE_EVOLUTION:
+	case MGE_PULSAR_M:
+		break;
+
+	default:
 		return NULL;
-
-	/* check the conversion way */
-	/* HID to NUT */
-	if (string == NULL) {
-		switch (mge_type & 0xFF00)	/* Ignore model byte */
-		{
-		case MGE_EVOLUTION:
-		case MGE_PULSAR_M:
-			break;
-
-		default:
-			return NULL;
-		}
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.1f", *value);
-		return mge_scratch_buf;
 	}
-	/* no NUT to HID conversion needed */
-	return NULL;
+
+	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.1f", value);
+	return mge_scratch_buf;
 }
 
 static info_lkp_t mge_battery_voltage[] = {
 	{ 0, NULL, mge_battery_voltage_fun }
 };
 
-static void *mge_powerfactor_conversion_fun(double *value, char *string)
+static char *mge_powerfactor_conversion_fun(double value)
 {
-	/* Sanity check */
-	if ((string == NULL) && (value == NULL))
-		return NULL;
-
-	/* check the conversion way */
-	/* HID to NUT */
-	if (string == NULL) {
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.2f", *value / 100);
-		return mge_scratch_buf;
-	}
-	/* no NUT to HID conversion needed */
-	return NULL;
+	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.2f", value / 100);
+	return mge_scratch_buf;
 }
 
 static info_lkp_t mge_powerfactor_conversion[] = {
 	{ 0, NULL, mge_powerfactor_conversion_fun }
 };
 
-static void *mge_battery_capacity_fun(double *value, char *string)
+static char *mge_battery_capacity_fun(double value)
 {
-	/* Sanity check */
-	if ((string == NULL) && (value == NULL))
-		return NULL;
-
-	/* check the conversion way */
-	/* HID to NUT */
-	if (string == NULL) {
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.2f", *value / 3600);
-		return mge_scratch_buf;
-	}
-	/* no NUT to HID conversion needed */
-	return NULL;
+	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.2f", value / 3600);
+	return mge_scratch_buf;
 }
 
 static info_lkp_t mge_battery_capacity[] = {
@@ -292,22 +214,19 @@ static info_lkp_t mge_emergency_stop[] = {
 };
 
 /* allow limiting to ups.model ~= Protection Station */
-static void *eaton_check_pegasus_fun(double *value, char *string)
+static char *eaton_check_pegasus_fun(double value)
 {
-	/* Sanity check */
-	if ((string == NULL) && (value == NULL))
-		return NULL;
+	switch (mge_type & 0xFF00)	/* Ignore model byte */
+	{
+	case MGE_PEGASUS:
+		break;
 
-	/* check the conversion way */
-	/* HID to NUT */
-	if (string == NULL) {
-		if (!strncmp("Protection Station", dstate_getinfo("ups.model"), 18)) {
-			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.0f", *value);
-			return mge_scratch_buf;
-		}
+	default:
+		return NULL;
 	}
-	/* no NUT to HID conversion needed */
-	return NULL;
+
+	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.0f", value);
+	return mge_scratch_buf;
 }
 
 static info_lkp_t pegasus_threshold_info[] = {
@@ -318,83 +237,86 @@ static info_lkp_t pegasus_threshold_info[] = {
 };
 
 /* Limit nominal output voltage according to HV or LV models */
-static void *eaton_check_voltage_fun(double *value, char *string)
+static char *nominal_output_voltage_fun(double value)
 {
-	upsdebugx(3, "entering eaton_check_voltage_fun()");
-
-	/* Sanity check */
-	if ((string == NULL) && (value == NULL))
-		return NULL;
-
-	/* check the conversion way */
-	/* HID to NUT */
-	if (string == NULL) {
-		/* If output.voltage.nominal is not yet set, it's that we are asking
-		 * to set the initial value */
-		int cur_voltage = *value;
-
-		/* Possible values depends on the current one */
-		if (dstate_getinfo("output.voltage.nominal") != NULL)
-			cur_voltage = atoi(dstate_getinfo("output.voltage.nominal"));
-
-		upsdebugx(3, "eaton_check_voltage_fun: cur_voltage = %i", cur_voltage);
-
-		switch (cur_voltage)
-		{
-			/* LV models */
-			case 100:
-			case 110:
-				if ((*value == 100) || (*value == 110)) {
-					snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.0f", *value);
-					return mge_scratch_buf;
-				}
-				break;
-			/* HV models */
-			/* 208V */
-			case 200:
-			case 208:
-				if ((*value == 200) || (*value == 208)) {
-					snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.0f", *value);
-					return mge_scratch_buf;
-				}
-				break;
-			/* HV models */
-			/* 230V */
-			case 220:
-			case 230:
-			case 240:
-				if ((*value == 220) || (*value == 230) || (*value == 240)) {
-					snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.0f", *value);
-					return mge_scratch_buf;
-				}
-				break;
-			/* FIXME: default ? autosensing (value?)! */
-		}
+	static long	nominal = -1;
+	
+	if (nominal < 0) {
+		nominal = value;
 	}
-	/* no NUT to HID conversion needed */
-	return NULL;
+	
+	switch ((long)nominal)
+	{
+	/* LV models */
+	case 100:
+	case 110:
+	case 120:
+	case 127:
+		switch ((long)value)
+		{
+		case 100:
+		case 110:
+		case 120:
+		case 127:
+			break;
+		default:
+			return NULL;
+		}
+		break;
+
+	/* HV models */
+	/* 208V */
+	case 200:
+	case 208:
+		switch ((long)value)
+		{
+		case 200:
+		case 208:
+			break;
+		default:
+			return NULL;
+		}
+		break;
+
+	/* HV models */
+	/* 230V */
+	case 220:
+	case 230:
+	case 240:
+		switch ((long)value)
+		{
+		case 220:
+		case 230:
+		case 240:
+			break;
+		default:
+			return NULL;
+		}
+		break;
+
+	default:
+		upsdebugx(3, "%s: can't autodetect settable voltages from %g", __func__, value);
+	}
+
+	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.0f", value);
+	return mge_scratch_buf;
 }
 
 static info_lkp_t nominal_output_voltage_info[] = {
 	/* HV models */
 	/* 208V */
-	{ 200, "200", eaton_check_voltage_fun },
-	{ 208, "208", eaton_check_voltage_fun },
+	{ 200, "200", nominal_output_voltage_fun },
+	{ 208, "208", nominal_output_voltage_fun },
+	/* HV models */
 	/* 230V */
-	{ 220, "220", eaton_check_voltage_fun },
-	{ 230, "230", eaton_check_voltage_fun },
-	{ 240, "240", eaton_check_voltage_fun },
+	{ 220, "220", nominal_output_voltage_fun },
+	{ 230, "230", nominal_output_voltage_fun },
+	{ 240, "240", nominal_output_voltage_fun },
 	/* LV models */
-	{ 100, "100", eaton_check_voltage_fun },
-	{ 110, "110", eaton_check_voltage_fun },
-	{ 120, "120", eaton_check_voltage_fun },
-	{ 127, "127", eaton_check_voltage_fun },
-
-/* FIXME ?????? LI Models 500W module will NOT support autosensing as an option
- * for HV models due to transformer ratio differences but they will support it
- * for LV models. */
-/*	{ ?, "autosensing", eaton_check_voltage_fun }, */
-
+	{ 100, "100", nominal_output_voltage_fun },
+	{ 110, "110", nominal_output_voltage_fun },
+	{ 120, "120", nominal_output_voltage_fun },
+	{ 127, "127", nominal_output_voltage_fun },
 	{ 0, NULL, NULL }
 };
 
@@ -409,7 +331,6 @@ static usage_lkp_t mge_usage_lkp[] = {
 	{ "Environment",			0xffff0002 },
 	{ "Statistic",			0xffff0003 },
 	{ "StatisticSystem",		0xffff0004 },
-	
 	/* 0xffff0005-0xffff000f	=>	Reserved */
 	{ "Phase",				0xffff0010 },
 	{ "PhaseID",				0xffff0011 },
@@ -601,10 +522,10 @@ static models_name_t mge_model_names [] =
 	{ "PROTECTIONCENTER", "500", MGE_DEFAULT, "Protection Center 500" },
 	{ "PROTECTIONCENTER", "675", MGE_DEFAULT, "Protection Center 675" },
 
-	/* Protection Station (TBR) */
-/*	{ "Protection Station", "500", MGE_DEFAULT, NULL }, */
-/*	{ "Protection Station", "650", MGE_DEFAULT, NULL }, */
-/*	{ "Protection Station", "800", MGE_DEFAULT, NULL }, */
+	/* Protection Station */
+	{ "Protection Station", "500", MGE_PEGASUS, NULL },
+	{ "Protection Station", "650", MGE_PEGASUS, NULL },
+	{ "Protection Station", "800", MGE_PEGASUS, NULL },
 
 	/* Evolution models */
 	{ "Evolution", "500", MGE_DEFAULT, "Pulsar Evolution 500" },
@@ -828,7 +749,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "output.L3-N.voltage", 0, 0, "UPS.PowerConverter.Output.Phase.[3].Voltage", NULL, "%.1f", 0, NULL },
 	{ "output.L1-L2.voltage", 0, 0, "UPS.PowerConverter.Output.Phase.[12].Voltage", NULL, "%.1f", 0, NULL },
 	{ "output.L2-L3.voltage", 0, 0, "UPS.PowerConverter.Output.Phase.[23].Voltage", NULL, "%.1f", 0, NULL },
-	{ "output.L3-L1.voltage", 0, 0, "UPS.PowerConverter.Output.Phase.[31].Voltage", NULL, "%.1f", 0, NULL }, 
+	{ "output.L3-L1.voltage", 0, 0, "UPS.PowerConverter.Output.Phase.[31].Voltage", NULL, "%.1f", 0, NULL },
 	{ "output.voltage.nominal", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.Flow.[4].ConfigVoltage", NULL, "%.0f", HU_FLAG_SEMI_STATIC | HU_FLAG_ENUM, nominal_output_voltage_info },
 	{ "output.current", 0, 0, "UPS.PowerConverter.Output.Current", NULL, "%.2f", 0, NULL },
 	{ "output.L1.current", 0, 0, "UPS.PowerConverter.Output.Phase.[1].Current", NULL, "%.1f", 0, NULL },
@@ -979,7 +900,7 @@ static int mge_claim(HIDDevice_t *hd) {
 			if (getval("productid")) {
 				return 1;
 			}
-			possibly_supported("MGE", hd);
+			possibly_supported("Eaton / MGE", hd);
 			return 0;
 
 		case SUPPORTED:
