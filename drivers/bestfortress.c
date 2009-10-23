@@ -170,7 +170,7 @@ static int upssend(const char *fmt,...) {
 
 	if ((ret < 1) || (ret >= (int) sizeof(buf)))
 		upslogx(LOG_WARNING, "ser_send_pace: vsnprintf needed more "
-				"than %d bytes", sizeof(buf));
+				"than %d bytes", (int)sizeof(buf));
 	for (p = buf; *p; p++) {
 		if (write(upsfd, p, 1) != 1)
 			return -1;
