@@ -11,6 +11,7 @@ CONVERTED_TO_ASCIIDOC = \
 	bestups.html \
 	blazer.html \
 	clone.html \
+	dummy-ups.html \
 	hosts.conf.html \
 	index.html \
 	megatec_usb.html \
@@ -47,6 +48,7 @@ EXTRA_DIST = \
 	bestups.txt \
 	blazer.txt \
 	clone.txt \
+	dummy-ups.txt \
 	hosts.conf.txt \
 	index.txt \
 	megatec_usb.txt \
@@ -98,6 +100,7 @@ man8_MANS = \
 	bestups.8 \
 	blazer.8 \
 	clone.8 \
+	dummy-ups.8 \
 	megatec_usb.8 \
 	nutupsdrv.8 \
 	tripplite_usb.8 \

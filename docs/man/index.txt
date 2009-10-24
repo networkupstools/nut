@@ -58,7 +58,7 @@ Drivers
 - linknut:bestups[8]
 - linknut:blazer[8]
 - linknut:clone[8]
-- dummy-ups.8
+- linknut:dummy-ups[8]
 - etapro.8
 - everups.8
 - gamatronic.8
