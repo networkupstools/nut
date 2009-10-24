@@ -56,7 +56,7 @@ Drivers
 - linknut:bestfcom[8]
 - linknut:bestuferrups[8]
 - linknut:bestups[8]
-- blazer.8
+- linknut:blazer[8]
 - clone.8
 - dummy-ups.8
 - etapro.8

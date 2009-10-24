@@ -9,6 +9,7 @@ CONVERTED_TO_ASCIIDOC = \
 	bestfcom.html \
 	bestuferrups.html \
 	bestups.html \
+	blazer.html \
 	hosts.conf.html \
 	index.html \
 	megatec_usb.html \
@@ -43,6 +44,7 @@ EXTRA_DIST = \
 	bestfcom.txt \
 	bestuferrups.txt \
 	bestups.txt \
+	blazer.txt \
 	hosts.conf.txt \
 	index.txt \
 	megatec_usb.txt \
@@ -92,6 +94,7 @@ man8_MANS = \
 	bestfcom.8 \
 	bestuferrups.8 \
 	bestups.8 \
+	blazer.8 \
 	megatec_usb.8 \
 	nutupsdrv.8 \
 	tripplite_usb.8 \
