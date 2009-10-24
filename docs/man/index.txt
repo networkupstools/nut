@@ -57,7 +57,7 @@ Drivers
 - linknut:bestuferrups[8]
 - linknut:bestups[8]
 - linknut:blazer[8]
-- clone.8
+- linknut:clone[8]
 - dummy-ups.8
 - etapro.8
 - everups.8
