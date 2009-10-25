@@ -33,10 +33,11 @@ Repeater Mode
 for supervision purposes. This can also allow some load sharing between several
 UPS instances, using a point-to-point communication with the UPS.
 
-ARGUMENTS
----------
-The port specification depends on the running mode, and allows the automatic
-guessing of it.
+IMPLEMENTATION
+--------------
+
+The port specification depends on the running mode, and allows the driver to
+select the right mode.
 
 Dummy Mode
 ~~~~~~~~~~
@@ -44,6 +45,13 @@ Dummy Mode
 Port is a definition file name for *dummy-ups*. This can either
 be an absolute or a relative path name. In the latter case the NUT
 sysconfig directory (ie /etc/nut, /usr/local/ups/etc, ...) is prepended.
+
+For instance:
+
+    [dummy]
+		driver = dummy-ups
+		port = evolution500.dev
+		desc = "dummy-ups in dummy mode"
 
 This file is generally named "something.dev". It contains a list of all
 valid data and associated values, and has the same format as an linknut:upsc[8]
@@ -79,21 +87,12 @@ Port is the name of a remote UPS, using the NUT form, ie:
 
 	<upsname>[@<hostname>[:<port>]]
 
-IMPLEMENTATION
---------------
-You will need add to at least one entry in linknut:ups.conf[5] like:
-
-    [dummy]
-	driver = dummy-ups
-	port = evolution500.dev
-	desc = "dummy-ups in dummy mode"
+For instance:
 
     [repeater]
-	driver = dummy-ups
-	port = ups@hostname
-	desc = "dummy-ups in repeater mode"
-
-You can declare as many entries, and so run multiple instances, as you need.
+		driver = dummy-ups
+		port = ups@hostname
+		desc = "dummy-ups in repeater mode"
 
 INTERACTION
 -----------
