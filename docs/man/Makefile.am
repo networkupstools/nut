@@ -19,6 +19,7 @@ CONVERTED_TO_ASCIIDOC = \
 	megatec_usb.html \
 	nut.conf.html \
 	nutupsdrv.html \
+	powerman-pdu.html \
 	tripplite_usb.html \
 	ups.conf.html \
 	upsc.html \
@@ -58,6 +59,7 @@ EXTRA_DIST = \
 	megatec_usb.txt \
 	nut.conf.txt \
 	nutupsdrv.txt \
+	powerman-pdu.txt \
 	tripplite_usb.txt \
 	ups.conf.txt \
 	upsc.txt \
@@ -109,6 +111,7 @@ man8_MANS = \
 	everups.8 \
 	megatec_usb.8 \
 	nutupsdrv.8 \
+	powerman-pdu.8 \
 	tripplite_usb.8 \
 	upsc.8 \
 	upsd.8 \

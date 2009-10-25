@@ -1,0 +1,82 @@
+POWERMAN-PDU(8) 
+===============
+
+NAME
+----
+
+powerman-pdu - Driver for Powerman PDU
+
+NOTE
+----
+
+This man page only documents the hardware-specific features of the
+powerman-pdu driver.  For information about the core driver, see
+linknut:nutupsdrv[8].
+
+SUPPORTED HARDWARE
+------------------
+
+This driver supports a wide range of PDUs through the Powerman project.
+
+This includes various models from APC, Baytech, Cyclades, but also support
+IPMI and various blade management modules from HP, IBM and Sun.
+
+EXTRA ARGUMENTS
+---------------
+
+This driver doesn't support any optional setting.
+
+INSTALLATION
+------------
+
+This driver is not built by default.  You can build it by using
+"configure --with-powerman=yes".
+
+UPS COMMANDS
+------------
+The following instant commands (see linknut:upscmd[8]) are available for each
+outlet of the PDU, with *X* standing for the outlet number:
+
+*outlet.X.load.on*::
+
+Power on the outlet.
+
+*outlet.X.load.off*::
+
+Power off the outlet.
+
+*outlet.X.load.cycle*::
+
+Cycle the outlet (power off then power on, possibly with a delay).
+
+IMPLEMENTATION
+--------------
+The hostname of the Powerman server is specified using the "port" value in
+*ups.conf*, i.e.:
+
+	[pdu]
+		driver = powerman-pdu
+		port = host.example.com:port
+
+The port used to reach powermand is optional if the default port is used.
+
+KNOWN ISSUES
+------------
+In current NUT version (2.4.1), ups.status is still exposed, with the value
+"WAIT". Some other values from the
+ups collection are also exposed.
+
+AUTHOR
+------
+Arnaud Quette <arnaud.quette@gmail.com>
+
+SEE ALSO
+--------
+The core driver:
+~~~~~~~~~~~~~~~~
+linknut:nutupsdrv[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The PowerMan home page: http://powerman.sourceforge.net/

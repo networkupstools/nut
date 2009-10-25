@@ -77,7 +77,7 @@ Drivers
 - oneac.8
 - optiups.8
 - powercom.8
-- powerman-pdu.8
+- linknut:powerman-pdu[8]
 - powerpanel.8
 - rhino.8
 - richcomm_usb.8
