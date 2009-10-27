@@ -545,9 +545,9 @@ static xml_info_t mge_xml2nut[] = {
 
 	/* Battery page */
 	{ "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", 0, 0, NULL },
-	{ "battery.charge.low", ST_FLAG_RW, 5, "UPS.PowerSummary.RemainingCapacityLimitSetting", 0, 0, NULL },
+	{ "battery.charge.low", 0, 0, "UPS.PowerSummary.RemainingCapacityLimitSetting", 0, 0, NULL },
 	{ "battery.charge.low", 0, 0, "UPS.PowerSummary.RemainingCapacityLimit", 0, 0, NULL }, /* Read only */
-	{ "battery.charge.restart", ST_FLAG_RW, 3, "UPS.PowerSummary.RestartLevel", 0, 0, NULL },
+	{ "battery.charge.restart", 0, 0, "UPS.PowerSummary.RestartLevel", 0, 0, NULL },
 	{ "battery.capacity", 0, 0, "UPS.BatterySystem.Battery.DesignCapacity", 0, 0, mge_battery_capacity }, /* conversion needed from As to Ah */
 	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", 0, 0, NULL },
 	{ "battery.temperature", 0, 0, "UPS.BatterySystem.Battery.Temperature", 0, 0, NULL },
@@ -557,8 +557,8 @@ static xml_info_t mge_xml2nut[] = {
 	{ "battery.voltage.nominal", ST_FLAG_STATIC, 0, "UPS.BatterySystem.ConfigVoltage", 0, 0, NULL },
 	{ "battery.voltage.nominal", ST_FLAG_STATIC, 0, "UPS.PowerSummary.ConfigVoltage", 0, 0, NULL }, /* mge_battery_voltage_nominal */
 	{ "battery.current", 0, 0, "UPS.PowerSummary.Current", 0, 0, NULL },
-	{ "battery.protection", ST_FLAG_RW, 5, "UPS.BatterySystem.Battery.DeepDischargeProtection", 0, 0, yes_no_info },
-	{ "battery.energysave", ST_FLAG_RW, 5, "UPS.PowerConverter.Input[3].EnergySaving", 0, 0, yes_no_info },
+	{ "battery.protection", 0, 0, "UPS.BatterySystem.Battery.DeepDischargeProtection", 0, 0, yes_no_info },
+	{ "battery.energysave", 0, 0, "UPS.PowerConverter.Input[3].EnergySaving", 0, 0, yes_no_info },
 
 	/* UPS page */
 	{ "ups.mfr", ST_FLAG_STATIC, 0, "UPS.PowerSummary.iManufacturer", 0, 0, NULL },
@@ -573,12 +573,13 @@ static xml_info_t mge_xml2nut[] = {
 	{ "ups.serial", ST_FLAG_STATIC, 0, "UPS.PowerSummary.iSerialNumber", 0, 0, NULL },
 	{ "ups.firmware", ST_FLAG_STATIC, 0, "UPS.PowerSummary.iVersion", 0, 0, NULL },
 	{ "ups.load", 0, 0, "UPS.PowerSummary.PercentLoad", 0, 0, NULL },
-	{ "ups.load.high", ST_FLAG_RW, 5, "UPS.Flow[4].ConfigPercentLoad", 0, 0, NULL },
+	{ "ups.load.high", 0, 0, "UPS.Flow[4].ConfigPercentLoad", 0, 0, NULL },
+	{ "ups.delay.shutdown", 0, 0, "System.ShutdownDuration", 0, 0, NULL },
 	{ "ups.timer.start", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", 0, 0, NULL},
 	{ "ups.timer.shutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", 0, 0, NULL },
-	{ "ups.timer.reboot", 0, 0, "UPS.PowerSummary.DelayBeforeReboot", 0, 0, NULL},
+	{ "ups.timer.reboot", 0, 0, "UPS.PowerSummary.DelayBeforeReboot", 0, 0, NULL },
 	{ "ups.test.result", 0, 0, "UPS.BatterySystem.Battery.Test", 0, 0, mge_test_result_info },
-	{ "ups.test.interval", ST_FLAG_RW, 8, "UPS.BatterySystem.Battery.TestPeriod", 0, 0, NULL },
+	{ "ups.test.interval", 0, 0, "UPS.BatterySystem.Battery.TestPeriod", 0, 0, NULL },
 	{ "ups.beeper.status", 0 ,0, "UPS.BatterySystem.Battery.AudibleAlarmControl", 0, 0, mge_beeper_info },
 	{ "ups.beeper.status", 0 ,0, "UPS.PowerSummary.AudibleAlarmControl", 0, 0, mge_beeper_info },
 	{ "ups.temperature", 0, 0, "UPS.PowerSummary.Temperature", 0, 0, NULL },
@@ -592,9 +593,9 @@ static xml_info_t mge_xml2nut[] = {
 	{ "ups.L2.realpower", 0, 0, "UPS.PowerConverter.Output.Phase[2].ActivePower", 0, 0, ignore_if_zero },
 	{ "ups.L3.realpower", 0, 0, "UPS.PowerConverter.Output.Phase[3].ActivePower", 0, 0, ignore_if_zero },
 	{ "ups.realpower.nominal", ST_FLAG_STATIC, 0, "UPS.Flow[4].ConfigActivePower", 0, 0, NULL },
-	{ "ups.start.auto", ST_FLAG_RW, 5, "UPS.PowerConverter.Input[1].AutomaticRestart", 0, 0, yes_no_info },
-	{ "ups.start.battery", ST_FLAG_RW, 5, "UPS.PowerConverter.Input[3].StartOnBattery", 0, 0, yes_no_info },
-	{ "ups.start.reboot", ST_FLAG_RW, 5, "UPS.PowerConverter.Output.ForcedReboot", 0, 0, yes_no_info },
+	{ "ups.start.auto", 0, 0, "UPS.PowerConverter.Input[1].AutomaticRestart", 0, 0, yes_no_info },
+	{ "ups.start.battery", 0, 0, "UPS.PowerConverter.Input[3].StartOnBattery", 0, 0, yes_no_info },
+	{ "ups.start.reboot", 0, 0, "UPS.PowerConverter.Output.ForcedReboot", 0, 0, yes_no_info },
 	{ "ups.type", ST_FLAG_STATIC, 0, "UPS.PowerConverter.ConverterType", 0, 0, mge_upstype_conversion },
 
 	/* Input page */
@@ -616,17 +617,17 @@ static xml_info_t mge_xml2nut[] = {
 	{ "input.current.nominal", 0, 0, "UPS.Flow[1].ConfigCurrent", 0, 0, NULL },
 	{ "input.frequency", 0, 0, "UPS.PowerConverter.Input[1].Frequency", 0, 0, NULL },
 	{ "input.frequency.nominal", 0, 0, "UPS.Flow[1].ConfigFrequency", 0, 0, NULL },
-	{ "input.voltage.extended", ST_FLAG_RW, 5, "UPS.PowerConverter.Output.ExtendedVoltageMode", 0, 0, yes_no_info },
-	{ "input.frequency.extended", ST_FLAG_RW, 5, "UPS.PowerConverter.Output.ExtendedFrequencyMode", 0, 0, yes_no_info },
+	{ "input.voltage.extended", 0, 0, "UPS.PowerConverter.Output.ExtendedVoltageMode", 0, 0, yes_no_info },
+	{ "input.frequency.extended", 0, 0, "UPS.PowerConverter.Output.ExtendedFrequencyMode", 0, 0, yes_no_info },
 	/* same as "input.transfer.boost.low" */
-	{ "input.transfer.low", ST_FLAG_RW, 5, "UPS.PowerConverter.Output.LowVoltageTransfer", 0, 0, NULL },
-	{ "input.transfer.boost.low", ST_FLAG_RW, 5, "UPS.PowerConverter.Output.LowVoltageBoostTransfer", 0, 0, NULL },
-	{ "input.transfer.boost.high", ST_FLAG_RW, 5, "UPS.PowerConverter.Output.HighVoltageBoostTransfer", 0, 0, NULL },
-	{ "input.transfer.trim.low", ST_FLAG_RW, 5, "UPS.PowerConverter.Output.LowVoltageBuckTransfer", 0, 0, NULL },
+	{ "input.transfer.low", 0, 0, "UPS.PowerConverter.Output.LowVoltageTransfer", 0, 0, NULL },
+	{ "input.transfer.boost.low", 0, 0, "UPS.PowerConverter.Output.LowVoltageBoostTransfer", 0, 0, NULL },
+	{ "input.transfer.boost.high", 0, 0, "UPS.PowerConverter.Output.HighVoltageBoostTransfer", 0, 0, NULL },
+	{ "input.transfer.trim.low", 0, 0, "UPS.PowerConverter.Output.LowVoltageBuckTransfer", 0, 0, NULL },
 	/* same as "input.transfer.trim.high" */
-	{ "input.transfer.high", ST_FLAG_RW, 5, "UPS.PowerConverter.Output.HighVoltageTransfer", 0, 0, NULL },
-	{ "input.transfer.trim.high", ST_FLAG_RW, 5, "UPS.PowerConverter.Output.HighVoltageBuckTransfer", 0, 0, NULL },
-	{ "input.sensitivity", ST_FLAG_RW, 10, "UPS.PowerConverter.Output.SensitivityMode", 0, 0, mge_sensitivity_info },
+	{ "input.transfer.high", 0, 0, "UPS.PowerConverter.Output.HighVoltageTransfer", 0, 0, NULL },
+	{ "input.transfer.trim.high", 0, 0, "UPS.PowerConverter.Output.HighVoltageBuckTransfer", 0, 0, NULL },
+	{ "input.sensitivity", 0, 0, "UPS.PowerConverter.Output.SensitivityMode", 0, 0, mge_sensitivity_info },
 
 	/* Bypass page */
 	{ "input.bypass.voltage", 0, 0, "UPS.PowerConverter.Input[2].Voltage", 0, 0, NULL },
@@ -659,7 +660,7 @@ static xml_info_t mge_xml2nut[] = {
 	{ "output.L1-L2.voltage", 0, 0, "UPS.PowerConverter.Output.Phase[11].Voltage", 0, 0, ignore_if_zero },
 	{ "output.L2-L3.voltage", 0, 0, "UPS.PowerConverter.Output.Phase[22].Voltage", 0, 0, ignore_if_zero },
 	{ "output.L3-L1.voltage", 0, 0, "UPS.PowerConverter.Output.Phase[33].Voltage", 0, 0, ignore_if_zero },
-	{ "output.voltage.nominal", ST_FLAG_RW, 5, "UPS.Flow[4].ConfigVoltage", 0, 0, NULL },
+	{ "output.voltage.nominal", 0, 0, "UPS.Flow[4].ConfigVoltage", 0, 0, NULL },
 	{ "output.current", 0, 0, "UPS.PowerConverter.Output.Current", 0, 0, NULL },
 	{ "output.L1.current", 0, 0, "UPS.PowerConverter.Output.Phase[1].Current", 0, 0, convert_deci },
 	{ "output.L2.current", 0, 0, "UPS.PowerConverter.Output.Phase[2].Current", 0, 0, convert_deci },
@@ -683,50 +684,49 @@ static xml_info_t mge_xml2nut[] = {
 
 	/* Outlet page (using MGE UPS SYSTEMS - PowerShare technology) */
 	{ "outlet.id", 0, 0, "UPS.OutletSystem.Outlet[1].OutletID", 0, 0, NULL },
-	{ "outlet.desc", ST_FLAG_RW, 20, "UPS.OutletSystem.Outlet[1].iName", 0, 0, NULL },
+	{ "outlet.desc", 0, 0, "UPS.OutletSystem.Outlet[1].iName", 0, 0, NULL },
 	{ "outlet.switchable", 0, 0, "UPS.OutletSystem.Outlet[1].PresentStatus.Switchable", 0, 0, yes_no_info },
-	/* -> XML variable System.ShutdownDuration [120] doesn't map to any NUT variable */
 
 	{ "outlet.1.id", 0, 0, "UPS.OutletSystem.Outlet[2].OutletID", 0, 0, NULL },
-	{ "outlet.1.desc", ST_FLAG_RW, 20, "UPS.OutletSystem.Outlet[2].iName", 0, 0, NULL },
+	{ "outlet.1.desc", 0, 0, "UPS.OutletSystem.Outlet[2].iName", 0, 0, NULL },
 	{ "outlet.1.switchable", 0, 0, "UPS.OutletSystem.Outlet[2].PresentStatus.Switchable", 0, 0, yes_no_info },
 	{ "outlet.1.status", 0, 0, "UPS.OutletSystem.Outlet[2].PresentStatus.SwitchOnOff", 0, 0, on_off_info },
 	/* For low end models, with 1 non backup'ed outlet */
 	{ "outlet.1.status", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", 0, 0, NULL }, /* on_off_info */
-	{ "outlet.1.autoswitch.charge.low", ST_FLAG_RW, 3, "UPS.OutletSystem.Outlet[2].RemainingCapacityLimit", 0, 0, NULL },
-	{ "outlet.1.delay.shutdown", ST_FLAG_RW, 5, "UPS.OutletSystem.Outlet[2].ShutdownTimer", 0, 0, NULL },
-	{ "outlet.1.delay.start", ST_FLAG_RW, 5, "UPS.OutletSystem.Outlet[2].StartupTimer", 0, 0, NULL },
-	/* -> XML variable System.Outlet[2].ShutdownDuration [120] doesn't map to any NUT variable */
+	{ "outlet.1.battery.charge.low", 0, 0, "UPS.OutletSystem.Outlet[2].RemainingCapacityLimit", 0, 0, NULL },
+	{ "outlet.1.timer.shutdown", 0, 0, "UPS.OutletSystem.Outlet[2].ShutdownTimer", 0, 0, NULL },
+	{ "outlet.1.delay.start", 0, 0, "UPS.OutletSystem.Outlet[2].StartupTimer", 0, 0, NULL },
+	{ "outlet.1.delay.shutdown", 0, 0, "System.Outlet[2].ShutdownDuration", 0, 0, NULL },
 
 	{ "outlet.2.id", 0, 0, "UPS.OutletSystem.Outlet[3].OutletID", 0, 0, NULL },
-	{ "outlet.2.desc", ST_FLAG_RW, 20, "UPS.OutletSystem.Outlet[3].iName", 0, 0, NULL },
+	{ "outlet.2.desc", 0, 0, "UPS.OutletSystem.Outlet[3].iName", 0, 0, NULL },
 	{ "outlet.2.switchable", 0, 0, "UPS.OutletSystem.Outlet[3].PresentStatus.Switchable", 0, 0, yes_no_info },
 	{ "outlet.2.status", 0, 0, "UPS.OutletSystem.Outlet[3].PresentStatus.SwitchOnOff", 0, 0, on_off_info },
-	{ "outlet.2.autoswitch.charge.low", ST_FLAG_RW, 3, "UPS.OutletSystem.Outlet[3].RemainingCapacityLimit", 0, 0, NULL },
-	{ "outlet.2.delay.shutdown", ST_FLAG_RW, 5, "UPS.OutletSystem.Outlet[3].ShutdownTimer", 0, 0, NULL },
-	{ "outlet.2.delay.start", ST_FLAG_RW, 5, "UPS.OutletSystem.Outlet[3].StartupTimer", 0, 0, NULL },
-	/* -> XML variable System.Outlet[3].ShutdownDuration [120] doesn't map to any NUT variable */
+	{ "outlet.2.battery.charge.low", 0, 0, "UPS.OutletSystem.Outlet[3].RemainingCapacityLimit", 0, 0, NULL },
+	{ "outlet.2.timer.shutdown", 0, 0, "UPS.OutletSystem.Outlet[3].ShutdownTimer", 0, 0, NULL },
+	{ "outlet.2.delay.start", 0, 0, "UPS.OutletSystem.Outlet[3].StartupTimer", 0, 0, NULL },
+	{ "outlet.2.delay.shutdown", 0, 0, "System.Outlet[3].ShutdownDuration", 0, 0, NULL },
 
 	/* For newer ePDU Monitored */
-	{ "outlet.1.desc", ST_FLAG_RW, 20, "PDU.OutletSystem.Outlet[1].iName", 0, 0, NULL },
+	{ "outlet.1.desc", 0, 0, "PDU.OutletSystem.Outlet[1].iName", 0, 0, NULL },
 	{ "outlet.1.current", 0, 0, "PDU.OutletSystem.Outlet[1].Current", 0, 0, convert_deci },
 	/* FIXME: also map these?
 	 * "PDU.OutletSystem.Outlet[1].CurrentLimit" => settable, triggers CurrentTooHigh
 	 * "PDU.OutletSystem.Outlet[1].PresentStatus.CurrentTooHigh" (0/1)
 	 */
-	{ "outlet.2.desc", ST_FLAG_RW, 20, "PDU.OutletSystem.Outlet[2].iName", 0, 0, NULL },
+	{ "outlet.2.desc", 0, 0, "PDU.OutletSystem.Outlet[2].iName", 0, 0, NULL },
 	{ "outlet.2.current", 0, 0, "PDU.OutletSystem.Outlet[2].Current", 0, 0, convert_deci },
-	{ "outlet.3.desc", ST_FLAG_RW, 20, "PDU.OutletSystem.Outlet[3].iName", 0, 0, NULL },
+	{ "outlet.3.desc", 0, 0, "PDU.OutletSystem.Outlet[3].iName", 0, 0, NULL },
 	{ "outlet.3.current", 0, 0, "PDU.OutletSystem.Outlet[3].Current", 0, 0, convert_deci },
-	{ "outlet.4.desc", ST_FLAG_RW, 20, "PDU.OutletSystem.Outlet[2].iName", 0, 0, NULL },
+	{ "outlet.4.desc", 0, 0, "PDU.OutletSystem.Outlet[2].iName", 0, 0, NULL },
 	{ "outlet.4.current", 0, 0, "PDU.OutletSystem.Outlet[2].Current", 0, 0, convert_deci },
-	{ "outlet.5.desc", ST_FLAG_RW, 20, "PDU.OutletSystem.Outlet[3].iName", 0, 0, NULL },
+	{ "outlet.5.desc", 0, 0, "PDU.OutletSystem.Outlet[3].iName", 0, 0, NULL },
 	{ "outlet.5.current", 0, 0, "PDU.OutletSystem.Outlet[3].Current", 0, 0, convert_deci },
-	{ "outlet.6.desc", ST_FLAG_RW, 20, "PDU.OutletSystem.Outlet[2].iName", 0, 0, NULL },
+	{ "outlet.6.desc", 0, 0, "PDU.OutletSystem.Outlet[2].iName", 0, 0, NULL },
 	{ "outlet.6.current", 0, 0, "PDU.OutletSystem.Outlet[2].Current", 0, 0, convert_deci },
-	{ "outlet.7.desc", ST_FLAG_RW, 20, "PDU.OutletSystem.Outlet[3].iName", 0, 0, NULL },
+	{ "outlet.7.desc", 0, 0, "PDU.OutletSystem.Outlet[3].iName", 0, 0, NULL },
 	{ "outlet.7.current", 0, 0, "PDU.OutletSystem.Outlet[3].Current", 0, 0, convert_deci },
-	{ "outlet.8.desc", ST_FLAG_RW, 20, "PDU.OutletSystem.Outlet[2].iName", 0, 0, NULL },
+	{ "outlet.8.desc", 0, 0, "PDU.OutletSystem.Outlet[2].iName", 0, 0, NULL },
 	{ "outlet.8.current", 0, 0, "PDU.OutletSystem.Outlet[2].Current", 0, 0, convert_deci },
 
 	{ NULL, 0, 0, NULL, 0, 0, NULL }
