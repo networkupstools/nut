@@ -1255,7 +1255,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 			}
 
 			/* Loop on all existing values */
-			for (info_lkp = item->hid2info; info_lkp != NULL; info_lkp++) {
+			for (info_lkp = item->hid2info; info_lkp->nut_value != NULL; info_lkp++) {
 				/* Check if this value is supported */
 				if (hu_find_infoval(item->hid2info, info_lkp->hid_value) != NULL) {
 					dstate_addenum(item->info_type, "%s", info_lkp->nut_value);
@@ -1449,10 +1449,7 @@ static char *hu_find_infoval(info_lkp_t *hid2info, const double value)
 
 	/* if a conversion function is defined, use 'value' as argument for it */
 	if (hid2info->fun != NULL) {
-		char	*nut_value;
-		nut_value = hid2info->fun(value);
-		upsdebugx(5, "hu_find_infoval: found %s (value: %g)", nut_value, value);
-		return nut_value;
+		return hid2info->fun(value);
 	}
 
 	/* use 'value' as an index for a lookup in an array */
@@ -1492,7 +1489,7 @@ static int ups_infoval_set(hid_info_t *item, double value)
 			return 0;
 		}
 
-		dstate_setinfo(item->info_type, item->dfl, nutvalue);
+		dstate_setinfo(item->info_type, "%s", nutvalue);
 	} else {
 		dstate_setinfo(item->info_type, item->dfl, value);
 	}
