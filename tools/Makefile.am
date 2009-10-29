@@ -1,5 +1,5 @@
 
-EXTRA_DIST = nut-usbinfo.pl
+EXTRA_DIST = nut-usbinfo.pl nut-hclinfo.pl
 
 # only call the USB info script upon "make dist", and if Perl is present
 dist-hook:
