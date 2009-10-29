@@ -1,14 +1,10 @@
-html, body { overflow: hidden; height: 100%; }
-
 body {
   margin: 0;
   font-size: 0.9em;
+  background-color: #f4f4f4;
 }
 
 #layout-banner-box {
-  position: fixed;
-  top: 0px;
-  left: 0px;
   width: 100%;
   height: 110px;
   z-index: 2;
@@ -16,20 +12,13 @@ body {
 }
 
 #layout-menu-box {
-  position: fixed;
-  left: 0px;
-  top: 110px;
-  width: 207px;
+  float: left;
   height: 100%;
   z-index: 1;
-  background-color: #f4f4f4;
-  border-right: 3px solid #eeeeee;
 }
 
 #layout-content-box {
-  position: relative;
-  top: 110px;
-  margin-left: 210px;
+  border-left: 3px solid #eeeeee;
   background-color: white;
   overflow-y: auto;
 }
@@ -59,9 +48,9 @@ h1 {
 }
 
 #sponsor {
-  bottom:0;
+  clear: both;
   font-size: small;
-  position: fixed;
+  margin-top: 50px;
   margin-bottom: 10px;
   color:#0067CD;
   font-weight:bold;
@@ -71,9 +60,9 @@ h1 {
 #sponsor img { border: 0; }
 
 #layout-menu {
-  height: 100%;
   padding-top: 0.8em;
   padding-left: 20px;
+  margin-left: 0;
   font-size: 1.0em;
   font-family: sans-serif;
   font-weight: bold;
@@ -126,14 +115,17 @@ td#manufacturer-col { width: 20%; }
 td#model-col { width: 50%; }
 td#driver-col { width: 30%; }
 
-.blue { background-color: #4edfef; }
+.blue { background-color: #cfd9fe; }
 .green { background-color: #b1fea7; }
 .yellow { background-color: #fdf88e; }
 .orange { background-color: #fccb81; }
-.red { background-color: #fc8181; }
+.red { background-color: #ffa4a4; }
 
 .hidden { display: none; }
 
-#filters-set { margin: 0; display: none; border: 1px solid silver; }
+#filters-set, #filters-set fieldset { display: none; border: 1px solid silver; padding: 10px; }
 #filters-set legend { font-weight: bold; }
 #filters-set td { border: 0; }
+#filters-set fieldset { display: block; }
+#support-level-legend { float: right; margin-right: 10px; padding: 10px; }
+.support-level-descr { margin-left: 20px; float: right; }

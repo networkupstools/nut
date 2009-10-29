@@ -6,8 +6,9 @@ var NUT =
   
   fields:
   [
-    "support_level",
     "manufacturer",
+    "device-type",
+    "support-level",
     "model",
     "comment",
     "driver"
@@ -25,7 +26,7 @@ var NUT =
   // UPS filter renderers by data column index
   filterRenderers:
   {
-    "support_level": function(value)
+    "support-level": function(value)
     {
       var result = [];
       for(var i = 0; i < value; i++) result.push("*");
@@ -36,6 +37,17 @@ var NUT =
       if(value.match(/bcmxcp_usb|blazer_usb|megatec_usb|richcomm_usb|tripplite_usb|usbhid-ups/)) return "USB";
       if(value.match(/snmp-ups|netxml-ups/)) return "Network";
       return "Serial";
+    },
+    "device-type": function(value)
+    {
+      var map = 
+      {
+        "pdu": "Power Distribution Unit",
+        "ups": "Uninterruptible Power Supply",
+        "scd": "Solar Controller Device"
+      }
+      
+      return map[value];
     }
   },
   
@@ -52,7 +64,15 @@ var NUT =
     return value;
   },
   
-  supportLevelClasses: ["", "red", "orange", "yellow", "green", "blue"],
+  supportLevelClasses:
+  {
+    0: "",
+    1: "red",
+    2: "orange",
+    3: "yellow",
+    4: "blue",
+    5: "green"
+  },
   
   /**
    * Initialization method
@@ -74,10 +94,11 @@ var NUT =
     
     this.filters =
     {
-      "support-level": { index: 0, field: $("#support-level") },
-      "manufacturer": { index: 1, field: $("#manufacturer") },
-      "model": { index: 2, field: $("#model") },
-      "connection": { index: 4, field: $("#connection") }
+      "support-level": { index: NUT.fields.indexOf("support-level"), field: $("#support-level") },
+      "device-type": { index: NUT.fields.indexOf("device-type"), field: $("#device-type") },
+      "manufacturer": { index: NUT.fields.indexOf("manufacturer"), field: $("#manufacturer") },
+      "model": { index: NUT.fields.indexOf("model"), field: $("#model") },
+      "driver": { index: NUT.fields.indexOf("driver"), field: $("#connection") }
     }
   },
   
@@ -148,7 +169,7 @@ var NUT =
           var cell = "";
           if(column.indexOf("driver") != -1)
           {
-            cell = {html: cellContent, rowSpan: 1, cls: this.supportLevelClasses[upsRow[this.fields.indexOf("support_level")]]};
+            cell = {html: cellContent, rowSpan: 1, cls: this.supportLevelClasses[upsRow[this.fields.indexOf("support-level") || ""]]};
           }
           else cell = {html: cellContent, rowSpan: 1, cls: classes[currentClass] }
           
@@ -210,8 +231,6 @@ var NUT =
       var option = $(document.createElement("option"));
       option.val(value);
       option.text(value);
-      if(filter.field.id == "support_level");
-        option.attr("class", this.supportLevelClasses[value]);
       combo.append(option);
     }, this);
     combo.val(oldValue);
@@ -258,7 +277,7 @@ var NUT =
     
     // Rebuild UPS list and combos according to filtered data
     NUT.buildUPSList(filteredRows);
-    ["manufacturer", "model", "connection"].forEach(function(id)
+    ["manufacturer", "model", "driver"].forEach(function(id)
     {
       if(this.id != id) NUT.populateCombo(filteredRows, NUT.filters[id]);
     }, this);

@@ -11,6 +11,16 @@ for information about which drivers are developed with the support of the manufa
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 <fieldset id="filters-set">
   <legend>Filters</legend>
+  <fieldset id="support-level-legend">
+    <legend>Support level legend</legend>
+    <ul style="list-style: none; padding: 0;">
+      <li><span class="red">*</span><span class="support-level-descr">protocol based on reverse engineering</span></li>
+      <li><span class="orange">**</span><span class="support-level-descr">based on fragments of publicly available protocol</span></li>
+      <li><span class="yellow">***</span><span class="support-level-descr">based on publicly available protocol</span></li>
+      <li><span class="blue">****</span><span class="support-level-descr">vendor provided protocol</span></li>
+      <li><span class="green">*****</span><span class="support-level-descr">vendor provided protocol and hardware</span></li>
+    </ul>
+  </fieldset>
   <table>
     <tbody>
       <tr>
@@ -19,6 +29,16 @@ for information about which drivers are developed with the support of the manufa
         </td>
         <td>
           <select id="support-level" class="filter">
+            <option value="-1">----</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <label for="device-type">Device type</label>
+        </td>
+        <td>
+          <select id="device-type" class="filter">
             <option value="-1">----</option>
           </select>
         </td>
@@ -67,11 +87,10 @@ for information about which drivers are developed with the support of the manufa
     </tr>
   </thead>
   <tbody id="ups_list_body">
-    <!-- FIXME: include static table body here for browser with jscript disabled -->
+      <!-- FIXME: include static table body here for browser with jscript disabled -->
   </tbody>
 </table>
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
 
 If your UPS isn't listed
 ------------------------
