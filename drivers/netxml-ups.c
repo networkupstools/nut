@@ -1,7 +1,7 @@
 /* netxml-ups.c	Driver routines for network XML UPS units 
 
    Copyright (C)
-	2008		Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2008-2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -83,18 +83,6 @@ void upsdrv_initinfo(void)
 
 		if (netxml_get_page(page) != NE_OK) {
 			continue;
-		}
-
-		if (!subdriver->summary) {
-			fatalx(EXIT_FAILURE, "%s: XML summary page not found", __func__);
-		}
-
-		if (!subdriver->getobject) {
-			fatalx(EXIT_FAILURE, "%s: XML getobject page not found", __func__);
-		}
-
-		if (!subdriver->setobject) {
-			upslogx(LOG_NOTICE, "%s: XML setobject page not found", __func__);
 		}
 
 		dstate_setinfo("driver.version.internal", "%s", subdriver->version);

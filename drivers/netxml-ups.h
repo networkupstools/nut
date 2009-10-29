@@ -1,7 +1,7 @@
 /* netxml-ups.h	Driver data/defines for network XML UPS units 
 
    Copyright (C)
-	2008		Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2008-2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -27,6 +27,8 @@ struct subdriver_s {
 	const char	*version;		/* name of this subdriver */
 	char		*initups;
 	char		*initinfo;
+	char		*configure;		/* central configuration */
+	char		*subscribe;		/* alarm subscriptions */
 	char		*summary;		/* used for quick updates */
 	char		*getobject;
 	char		*setobject;

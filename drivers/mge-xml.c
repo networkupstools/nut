@@ -2,7 +2,7 @@
 
    Copyright (C)
 	2008-2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
-	2009	    Arnaud Quette <ArnaudQuette@Eaton.com>
+	2009		Arnaud Quette <ArnaudQuette@Eaton.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -819,6 +819,13 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 		}
 		if (!strcasecmp(name, "CENTRAL_CFG")) {
 			/* url="config.xml" */
+			int	i;
+			for (i = 0; atts[i] && atts[i+1]; i += 2) {
+				if (!strcasecmp(atts[i], "url")) {
+					free(mge_xml_subdriver.configure);
+					mge_xml_subdriver.configure = strdup(url_convert(atts[i+1]));
+				}
+			}
 			state = PI_CENTRAL_CFG;
 			break;
 		}
@@ -832,6 +839,13 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 	case PI_ALARMS:
 		if (!strcasecmp(name, "SUBSCRIPTION")) {
 			/* url="subscribe.cgi" security="basic" */
+			int	i;
+			for (i = 0; atts[i] && atts[i+1]; i += 2) {
+				if (!strcasecmp(atts[i], "url")) {
+					free(mge_xml_subdriver.subscribe);
+					mge_xml_subdriver.subscribe = strdup(url_convert(atts[i+1]));
+				}
+			}
 			state = PI_SUBSCRIPTION;
 			break;
 		}
@@ -1011,6 +1025,8 @@ subdriver_t mge_xml_subdriver = {
 	MGE_XML_VERSION,
 	MGE_XML_INITUPS,
 	MGE_XML_INITINFO,
+	NULL,
+	NULL,
 	NULL,
 	NULL,
 	NULL,
