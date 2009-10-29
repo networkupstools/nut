@@ -146,7 +146,7 @@ static int parse_args(int numargs, char **arg)
 			dstate_setaux("battery.runtime.low", 4);
 		}
 
-		dstate_setinfo(arg[1], arg[2]);
+		dstate_setinfo(arg[1], "%s", arg[2]);
 		return 1;
 	}
 
