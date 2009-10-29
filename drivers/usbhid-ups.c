@@ -1255,7 +1255,8 @@ static bool_t hid_ups_walk(walkmode_t mode)
 			}
 
 			/* Loop on all existing values */
-			for (info_lkp = item->hid2info; info_lkp->nut_value != NULL; info_lkp++) {
+			for (info_lkp = item->hid2info; info_lkp != NULL
+				&& info_lkp->nut_value != NULL; info_lkp++) {
 				/* Check if this value is supported */
 				if (hu_find_infoval(item->hid2info, info_lkp->hid_value) != NULL) {
 					dstate_addenum(item->info_type, "%s", info_lkp->nut_value);
