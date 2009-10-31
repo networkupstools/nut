@@ -110,6 +110,9 @@ the 'chroot=' configuration directive.
 - IP-based access control relies on the local firewall and
 link:http://en.wikipedia.org/wiki/TCP_Wrapper[TCP Wrapper].
 
+- SSL is available as a build option ("--with-ssl").
+It encrypts sessions with upsd and can also be used to authenticate servers.
+
 Web-based monitoring
 --------------------
 
