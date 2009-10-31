@@ -50,7 +50,7 @@ find(\&find_usbdevs,$scanPath);
 sub gen_usb_files
 {
 	# HAL file header
-	open my $outHAL, ">$outHAL" || die "error $outHAL : $!";
+	open my $outHAL, ">$outputHAL" || die "error $outHAL : $!";
 	print $outHAL '<?xml version="1.0" encoding="ISO-8859-1"?> <!-- -*- SGML -*- -->'."\n";
 	print $outHAL '<deviceinfo version="0.2">'."\n";
 	print $outHAL '  <device>'."\n";
