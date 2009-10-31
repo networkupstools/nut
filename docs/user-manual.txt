@@ -150,7 +150,7 @@ FreeBSD
 Upgrading notes
 ---------------
 
-include UPGRADING[]
+include::../UPGRADING[]
 
 Configuration notes
 ===================
