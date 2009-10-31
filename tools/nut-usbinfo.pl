@@ -1,8 +1,7 @@
 #!/usr/bin/perl
 #   Current Version : 1.0
-#   Copyright (C) 2008
-#            Arnaud Quette <arnaud.quette@gmail.com>
-#            dloic (loic.dardant AT gmail DOT com)
+#   Copyright (C) 2008 - dloic (loic.dardant AT gmail DOT com)
+#   Copyright (C) 2008/2009 - Arnaud Quette <arnaud.quette@gmail.com>
 #
 #	Based on the usbdevice.pl script, made for the Ubuntu Media Center
 #   for the final use of the LIRC project.
@@ -51,7 +50,7 @@ find(\&find_usbdevs,$scanPath);
 sub gen_usb_files
 {
 	# HAL file header
-	open my $outHAL, ">$outputHAL" || die "error $outputHAL : $!";
+	open my $outHAL, ">$outHAL" || die "error $outHAL : $!";
 	print $outHAL '<?xml version="1.0" encoding="ISO-8859-1"?> <!-- -*- SGML -*- -->'."\n";
 	print $outHAL '<deviceinfo version="0.2">'."\n";
 	print $outHAL '  <device>'."\n";
