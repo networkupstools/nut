@@ -27,6 +27,7 @@ CONVERTED_TO_ASCIIDOC = \
 	upsd.html \
 	upsd.conf.html \
 	upsd.users.html \
+	upsdrvctl.html \
 	upsimage.cgi.html \
 	upslog.html \
 	upsmon.html \
@@ -67,6 +68,7 @@ EXTRA_DIST = \
 	upsd.conf.txt \
 	upsd.users.txt \
 	upsd.txt \
+	upsdrvctl.txt \
 	upsimage.cgi.txt \
 	upslog.txt \
 	upsmon.txt \
@@ -117,6 +119,7 @@ man8_MANS = \
 	upsd.8 \
 	upslog.8 \
 	upscmd.8 \
+	upsdrvctl.8 \
 	upsimage.cgi.8 \
 	upsmon.8 \
 	upsrw.8 \
