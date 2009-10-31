@@ -201,7 +201,7 @@ For example, it is available on Debian systems as:
 
 For another take on this list, try the web page: 
 
-	http://www.networkupstools.org/stable-hcl.html
+	link:http://www.networkupstools.org/stable-hcl.html[http://www.networkupstools.org/stable-hcl.html]
 
 If your driver has vanished, see the link:FAQ.html[FAQ] and
 link:user-manual.html#_upgrading_notes[Upgrading notes].
