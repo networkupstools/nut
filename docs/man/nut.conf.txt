@@ -10,7 +10,7 @@ DESCRIPTION
 
 This file attempts to standardize the various files being found
 in different installations, like /etc/default/nut on Debian based
-systems and /etc/sysconfig/nut on RedHat based systems.
+systems and /etc/sysconfig/ups on RedHat based systems.
 
 Distribution's init script should source this file in order to
 determine which components have to be started.
