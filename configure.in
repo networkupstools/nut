@@ -771,6 +771,13 @@ eval conftemp=\"${conftemp}\"
 AC_DEFINE_UNQUOTED(DATADIR, "${conftemp}",
 			[Default path for data files])
 
+dnl same for bindir
+conftemp="${bindir}"
+eval conftemp=\"${conftemp}\"
+eval conftemp=\"${conftemp}\"
+AC_DEFINE_UNQUOTED(BINDIR, "${conftemp}",
+			[Default path for user executables])
+
 AC_SUBST(OS_NAME)
 AC_SUBST(LIBSSL_CFLAGS)
 AC_SUBST(LIBSSL_LDFLAGS)
@@ -800,6 +807,7 @@ AC_SUBST(NETLIBS)
 AC_SUBST(SERLIBS)
 AC_SUBST(STATEPATH)
 AC_SUBST(CONFPATH)
+AC_SUBST(BINDIR)
 AC_SUBST(RUN_AS_USER)
 AC_SUBST(RUN_AS_GROUP)
 AC_SUBST(SUN_LIBUSB)
