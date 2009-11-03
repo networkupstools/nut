@@ -134,8 +134,8 @@ sub gen_usb_files
 
 			# udev device entry
 			print $outUdev "# ".$vendor{$vendorId}{$productId}{"comment"}.' - '.$vendor{$vendorId}{$productId}{"driver"}."\n";
-			print $outUdev "SYSFS{idVendor}==\"".removeHexPrefix($vendorId);
-			print $outUdev "\", SYSFS{idProduct}==\"".removeHexPrefix($productId)."\",";
+			print $outUdev "ATTR{idVendor}==\"".removeHexPrefix($vendorId);
+			print $outUdev "\", ATTR{idProduct}==\"".removeHexPrefix($productId)."\",";
 			print $outUdev ' MODE="664", GROUP="@RUN_AS_GROUP@"'."\n";
 			
 			# DeviceKit-power device entry (only for USB/HID devices!)
