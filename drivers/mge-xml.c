@@ -86,8 +86,10 @@ typedef enum {
 	/* /GET_OBJECT */
 
 	SET_OBJECT = 400,	/* "/setvalue.cgi" */
-		SO_OBJECT
+		SO_OBJECT,
 	/* /SET_OBJECT */
+
+	ALARM = 500
 
 } mge_xml_state_t;
 
@@ -550,6 +552,7 @@ static xml_info_t mge_xml2nut[] = {
 	{ "battery.charge.restart", 0, 0, "UPS.PowerSummary.RestartLevel", 0, 0, NULL },
 	{ "battery.capacity", 0, 0, "UPS.BatterySystem.Battery.DesignCapacity", 0, 0, mge_battery_capacity }, /* conversion needed from As to Ah */
 	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", 0, 0, NULL },
+	{ "battery.runtime.low", 0, 0, "System.RunTimeToEmptyLimit", 0, 0, NULL },
 	{ "battery.temperature", 0, 0, "UPS.BatterySystem.Battery.Temperature", 0, 0, NULL },
 	{ "battery.type", ST_FLAG_STATIC, 0, "UPS.PowerSummary.iDeviceChemistry", 0, 0, NULL },
 	{ "battery.type", ST_FLAG_STATIC, 0, "UPS.PowerSummary.iDeviceChemistery", 0, 0, NULL }, /* [sic] */
@@ -694,8 +697,10 @@ static xml_info_t mge_xml2nut[] = {
 	/* For low end models, with 1 non backup'ed outlet */
 	{ "outlet.1.status", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", 0, 0, NULL }, /* on_off_info */
 	{ "outlet.1.battery.charge.low", 0, 0, "UPS.OutletSystem.Outlet[2].RemainingCapacityLimit", 0, 0, NULL },
-	{ "outlet.1.timer.shutdown", 0, 0, "UPS.OutletSystem.Outlet[2].ShutdownTimer", 0, 0, NULL },
+	{ "outlet.1.timer.start", 0, 0, "UPS.OutletSystem.Outlet[2].DelayBeforeStartup", 0, 0, NULL },
+	{ "outlet.1.timer.shutdown", 0, 0, "UPS.OutletSystem.Outlet[2].DelayBeforeShutdown", 0, 0, NULL },
 	{ "outlet.1.delay.start", 0, 0, "UPS.OutletSystem.Outlet[2].StartupTimer", 0, 0, NULL },
+	/* { "outlet.1.delay.shutdown", 0, 0, "UPS.OutletSystem.Outlet[2].ShutdownTimer", 0, 0, NULL }, */
 	{ "outlet.1.delay.shutdown", 0, 0, "System.Outlet[2].ShutdownDuration", 0, 0, NULL },
 
 	{ "outlet.2.id", 0, 0, "UPS.OutletSystem.Outlet[3].OutletID", 0, 0, NULL },
@@ -703,8 +708,10 @@ static xml_info_t mge_xml2nut[] = {
 	{ "outlet.2.switchable", 0, 0, "UPS.OutletSystem.Outlet[3].PresentStatus.Switchable", 0, 0, yes_no_info },
 	{ "outlet.2.status", 0, 0, "UPS.OutletSystem.Outlet[3].PresentStatus.SwitchOnOff", 0, 0, on_off_info },
 	{ "outlet.2.battery.charge.low", 0, 0, "UPS.OutletSystem.Outlet[3].RemainingCapacityLimit", 0, 0, NULL },
-	{ "outlet.2.timer.shutdown", 0, 0, "UPS.OutletSystem.Outlet[3].ShutdownTimer", 0, 0, NULL },
+	{ "outlet.2.timer.start", 0, 0, "UPS.OutletSystem.Outlet[3].DelayBeforeStartup", 0, 0, NULL },
+	{ "outlet.2.timer.shutdown", 0, 0, "UPS.OutletSystem.Outlet[3].DelayBeforeShutdown", 0, 0, NULL },
 	{ "outlet.2.delay.start", 0, 0, "UPS.OutletSystem.Outlet[3].StartupTimer", 0, 0, NULL },
+	/* { "outlet.2.delay.shutdown", 0, 0, "UPS.OutletSystem.Outlet[3].ShutdownTimer", 0, 0, NULL }, */
 	{ "outlet.2.delay.shutdown", 0, 0, "System.Outlet[3].ShutdownDuration", 0, 0, NULL },
 
 	/* For newer ePDU Monitored */
@@ -772,6 +779,20 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 		}
 		if (!strcasecmp(name, "SET_OBJECT")) {
 			state = SET_OBJECT;
+			break;
+		}
+		if (!strcasecmp(name, "ALARM")) {
+			int	i;
+			var[0] = val[0] = '\0';
+			for (i = 0; atts[i] && atts[i+1]; i += 2) {
+				if (!strcasecmp(atts[i], "object")) {
+					snprintf(var, sizeof(var), "%s", atts[i+1]);
+				}
+				if (!strcasecmp(atts[i], "value")) {
+					snprintf(val, sizeof(var), "%s", atts[i+1]);
+				}
+			}
+			state = ALARM;
 			break;
 		}
 		break;
@@ -952,6 +973,10 @@ static int mge_xml_cdata_cb(void *userdata, int state, const char *cdata, size_t
 
 	switch(state)
 	{
+	case ALARM:
+		upsdebugx(2, "ALARM %.*s", (int)len, cdata);
+		break;
+
 	case SU_OBJECT:
 	case GO_OBJECT:
 		snprintfcat(val, sizeof(val), "%.*s", (int)len, cdata);
@@ -969,7 +994,7 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 
 	/* ignore objects for which no value was set */
 	if (strlen(val) == 0) {
-		upsdebugx(3, "%s: name ignored, no value set (state = %d)", __func__, state);
+		upsdebugx(3, "%s: name </%s> ignored, no value set (state = %d)", __func__, name, state);
 		return 0;
 	}
 
@@ -988,6 +1013,7 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 		dstate_setinfo("ups.firmware.aux", "%s", val);
 		break;
 
+	case ALARM:
 	case SU_OBJECT:
 	case GO_OBJECT:
 		for (info = mge_xml2nut; info->xmlname != NULL; info++) {
