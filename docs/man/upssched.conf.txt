@@ -97,6 +97,9 @@ If any UPS (*) reverts to utility power, then execute
 Note that any AT that matches both the 'notifytype' and the
 'upsname' for the current event will be used.
 
+For a complete list of 'notifytype' possible values, refer to the section
+NOTIFYMSG type in linknut:upssched[8].
+
 SEE ALSO
 --------
 
