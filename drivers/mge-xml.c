@@ -89,7 +89,13 @@ typedef enum {
 		SO_OBJECT,
 	/* /SET_OBJECT */
 
-	ALARM = 500
+	ALARM = 500,
+	
+	XML_CLIENT = 600,
+		XC_GENERAL = 610,
+			XC_STARTUP,
+			XC_SHUTDOWN,
+			XC_BROADCAST
 
 } mge_xml_state_t;
 
@@ -795,6 +801,10 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 			state = ALARM;
 			break;
 		}
+		if (!strcasecmp(name, "XML-CLIENT")) {
+			state = XML_CLIENT;
+			break;
+		}
 		break;
 
 	case PRODUCT_INFO:
@@ -954,6 +964,38 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 			break;
 		}
 		break;
+
+	case XML_CLIENT:
+		if (!strcasecmp(name, "GENERAL")) {
+			state = XC_GENERAL;
+			break;
+		}
+		
+	case XC_GENERAL:
+		if (!strcasecmp(name, "STARTUP")) {
+			/* config="CENTRALIZED" */
+			state = XC_STARTUP;
+			break;
+		}
+		if (!strcasecmp(name, "SHUTDOWN")) {
+			/* shutdownTimer="NONE" shutdownDuration="150" */
+			int	i;
+			for (i = 0; atts[i] && atts[i+1]; i += 2) {
+				if (!strcasecmp(atts[i], "shutdownTimer")) {
+					dstate_setinfo("driver.timer.shutdown", "%s", atts[i+1]);
+				}
+				if (!strcasecmp(atts[i], "shutdownDuration")) {
+					dstate_setinfo("driver.delay.shutdown", "%s", atts[i+1]);
+				}
+			}
+			state = XC_SHUTDOWN;
+			break;
+		}
+		if (!strcasecmp(name, "BROADCAST")) {
+			/* admins="ON" users="ON" */
+			state = XC_BROADCAST;
+			break;
+		}
 	}
 
 	upsdebugx(3, "%s: name <%s> (parent = %d, state = %d)", __func__, name, parent, state);
