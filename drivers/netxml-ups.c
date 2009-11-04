@@ -365,7 +365,9 @@ static int netxml_alarm_subscribe(const char *page)
 
 	sock = ne_sock_create();
 
+#ifdef HAVE_NE_SOCK_CONNECT_TIMEOUT
 	ne_sock_connect_timeout(sock, timeout);
+#endif
 	ne_sock_read_timeout(sock, 1);
 
 	netxml_get_page(subdriver->configure);
@@ -387,7 +389,9 @@ static int netxml_alarm_subscribe(const char *page)
 	/* now send subscription message setting all the proper flags */
 	request = ne_request_create(session, "POST", page);
 	ne_add_request_header(request, "Content-Type", "text/html");
+#ifdef HAVE_NE_SET_REQUEST_FLAG
 	ne_set_request_flag(request, NE_REQFLAG_IDEMPOTENT, 0);
+#endif
 	ne_set_request_body_buffer(request, buf, strlen(buf));
 
 	/* as the NMC reply is not xml standard compliant let's parse it this way */
@@ -397,7 +401,6 @@ static int netxml_alarm_subscribe(const char *page)
 		if (ret != NE_OK) {
 			break;
 		}
-
 		ret = ne_read_response_block(request, buf, sizeof buf);
 
 		if (ret == NE_OK) {
@@ -432,7 +435,14 @@ static int netxml_alarm_subscribe(const char *page)
 
 		upsdebugx(3, "%s: connecting to host %s port %d", __func__, ne_iaddr_print(ai, buf, sizeof(buf)), port);
 
-		if (ne_sock_connect(sock, ai, port) != 0) {
+#ifndef HAVE_NE_SOCK_CONNECT_TIMEOUT
+		alarm(timeout+1);
+#endif
+		ret = ne_sock_connect(sock, ai, port);
+#ifndef HAVE_NE_SOCK_CONNECT_TIMEOUT
+		alarm(0);
+#endif
+		if (ret != 0) {
 			upsdebugx(2, "%s: %s", __func__, ne_sock_error(sock));
 			continue;
 		}

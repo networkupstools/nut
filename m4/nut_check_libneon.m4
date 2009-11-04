@@ -49,6 +49,8 @@ if test -z "${nut_have_neon_seen}"; then
 
    dnl Check for timeouts in library
    AC_CHECK_FUNCS(ne_set_connect_timeout)
+   AC_CHECK_FUNCS(ne_sock_connect_timeout)
+   AC_CHECK_FUNCS(ne_set_request_flag)
    
    if test "${nut_have_neon}" = "yes"; then
       LIBNEON_CFLAGS="${CFLAGS}"
