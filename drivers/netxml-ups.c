@@ -25,17 +25,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <ne_request.h>
 #include <ne_basic.h>
 #include <ne_props.h>
 #include <ne_uri.h>
+#include <ne_xml.h>
 #include <ne_xmlreq.h>
 #include <ne_ssl.h>
 #include <ne_auth.h>
+#include <ne_socket.h>
 
-#define DRIVER_NAME	"network XML UPS driver"
-#define DRIVER_VERSION	"0.21"
+#define DRIVER_NAME	"network XML UPS"
+#define DRIVER_VERSION	"0.30"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -49,13 +52,12 @@ upsdrv_info_t	upsdrv_info = {
  * "built with neon library %s" LIBNEON_VERSION 
  * subdrivers (limited to MGE only ATM) */
 
-#define MAXRETRIES	5
-
 /* Global vars */
 uint32_t		ups_status = 0;
 static int		timeout = 5;
 static subdriver_t	*subdriver = &mge_xml_subdriver;
 static ne_session	*session = NULL;
+static ne_socket	*sock = NULL;
 static ne_uri		uri;
 
 /* Support functions */
@@ -64,6 +66,8 @@ static void netxml_status_set(void);
 static int netxml_authenticate(void *userdata, const char *realm, int attempt, char *username, char *password);
 static int netxml_dispatch_request(ne_request *request, ne_xml_parser *parser);
 static int netxml_get_page(const char *page);
+
+static int netxml_alarm_subscribe(const char *page);
 
 #ifndef HAVE_NE_SET_CONNECT_TIMEOUT
 static void netxml_alarm_handler(int sig)
@@ -87,9 +91,7 @@ void upsdrv_initinfo(void)
 
 		dstate_setinfo("driver.version.internal", "%s", subdriver->version);
 
-		/* upsh.instcmd = instcmd; */
-		/* upsh.setvar = setvar; */
-
+		netxml_alarm_subscribe(subdriver->subscribe);
 		return;
 	}
 
@@ -98,26 +100,35 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
-	static int	retries = 0, count = 0;
+	static unsigned int	retries = 0;
 	int		ret;
+	char	buf[LARGEBUF];
 
-	if (count++ % 10) {
-		ret = netxml_get_page(subdriver->summary);
+	ret = ne_sock_read(sock, buf, sizeof(buf));
+
+	if (ret > 0) {
+		/* alarm message received */
+		ne_xml_parser	*parser = ne_xml_create();
+		upsdebugx(2, "%s: ne_sock_read() => %s", __func__, buf);
+		ne_xml_push_handler(parser, subdriver->startelm_cb, subdriver->cdata_cb, subdriver->endelm_cb, NULL);
+		ne_xml_parse(parser, buf, strlen(buf));
+		ne_xml_destroy(parser);
+		/* get additional data as well */
+		netxml_get_page(subdriver->summary);
+	} else if ((ret != NE_SOCK_CLOSED) && (retries < (180 / poll_interval))) {
+		/* timeout or unspecified error on socket read */
+		upsdebugx(2, "%s: ne_sock_read() => %d", __func__, ret);
+		retries++;
 	} else {
-		ret = netxml_get_page(subdriver->getobject);
-	}
-
-	if (ret != NE_OK) {
-		upsdebugx(1, "%s (%d from %d)", ne_get_error(session), retries, MAXRETRIES);
-
-		if (retries < MAXRETRIES) {
-			retries++;
-		} else {
-			dstate_datastale();
-		}
-
+		/* connection closed or no alarms received for more than 180 seconds */
+		upsdebugx(2, "%s: ne_sock_read() => %d", __func__, ret);
+		netxml_alarm_subscribe(subdriver->subscribe);
+		retries = 0;
+		dstate_datastale();
 		return;
 	}
+
+	netxml_get_page(subdriver->getobject);
 
 	retries = 0;
 
@@ -186,7 +197,7 @@ void upsdrv_makevartable(void)
 {
 	char	buf[SMALLBUF];
 
-	snprintf(buf, sizeof(buf), "network timeout (default %d seconds)", timeout);
+	snprintf(buf, sizeof(buf), "network timeout (default: %d seconds)", timeout);
 	addvar(VAR_VALUE, "timeout", buf);
 
 	addvar(VAR_VALUE | VAR_SENSITIVE, "login", "login value for authenticated mode");
@@ -210,13 +221,16 @@ void upsdrv_initups(void)
 #endif
 	/* allow override of default network timeout value */
 	val = getval("timeout");
-
 	if (val) {
 		timeout = atoi(val);
 
 		if (timeout < 1) {
 			fatalx(EXIT_FAILURE, "timeout must be greater than 0");
 		}
+	}
+
+	if (nut_debug_level > 5) {
+		ne_debug_init(stderr, NE_DBG_HTTP | NE_DBG_HTTPBODY);
 	}
 
 	if (ne_sock_init()) {
@@ -242,7 +256,7 @@ void upsdrv_initups(void)
 	upsdebugx(1, "using %s://%s port %d", uri.scheme, uri.host, uri.port);
 
 	session = ne_session_create(uri.scheme, uri.host, uri.port);
-
+	
 	/* timeout if we can't (re)connect to the UPS */
 #ifdef HAVE_NE_SET_CONNECT_TIMEOUT
 	ne_set_connect_timeout(session, timeout);
@@ -288,8 +302,15 @@ void upsdrv_initups(void)
 
 void upsdrv_cleanup(void)
 {
+	free(subdriver->configure);
+	free(subdriver->subscribe);
+	free(subdriver->summary);
 	free(subdriver->getobject);
 	free(subdriver->setobject);
+
+	if (sock) {
+		ne_sock_close(sock);
+	}
 
 	if (session) {
 		ne_session_destroy(session);
@@ -308,12 +329,7 @@ static int netxml_get_page(const char *page)
 	ne_request	*request;
 	ne_xml_parser	*parser;
 
-	upsdebugx(3, "%s: %s", __func__, page);
-
-	if (strlen(page) < 1) {
-		ne_set_error(session, "Attempt to read from NULL page");
-		return NE_ERROR;
-	}
+	upsdebugx(2, "%s: %s", __func__, page);
 
 	request = ne_request_create(session, "GET", page);
 
@@ -323,12 +339,137 @@ static int netxml_get_page(const char *page)
 
 	ret = netxml_dispatch_request(request, parser);
 
+	if (ret) {
+		upsdebugx(2, "%s: %s", __func__, ne_get_error(session));
+	}
+
 	ne_xml_destroy(parser);
 	ne_request_destroy(request);
 
-	upsdebugx(3, "%s: %s", __func__, ne_get_error(session));
-
 	return ret;
+}
+
+static int netxml_alarm_subscribe(const char *page)
+{
+	int	ret, port, secret;
+	char	buf[LARGEBUF];
+	ne_request	*request;
+	ne_sock_addr	*addr;
+	const ne_inet_addr	*ai;
+
+	upsdebugx(2, "%s: %s", __func__, page);
+
+	if (sock) {
+		ne_sock_close(sock);
+	}
+
+	sock = ne_sock_create();
+
+	ne_sock_connect_timeout(sock, timeout);
+	ne_sock_read_timeout(sock, 1);
+
+	netxml_get_page(subdriver->configure);
+
+	snprintf(buf, sizeof(buf),		"<?xml version='1.0'?>\n");
+	snprintfcat(buf, sizeof(buf),	"<Subscribe>\n");
+	snprintfcat(buf, sizeof(buf),		"<Class>%s v%s</Class>\n", progname, DRIVER_VERSION);
+	snprintfcat(buf, sizeof(buf),		"<Type>connected socket</Type>\n");
+/*	snprintfcat(buf, sizeof(buf),		"<HostName>client hostname</HostName>\n"); */
+	snprintfcat(buf, sizeof(buf),		"<XMLClientParameters>\n");
+	snprintfcat(buf, sizeof(buf),			"<ShutdownDuration>%s</ShutdownDuration>\n", dstate_getinfo("driver.delay.shutdown"));
+	snprintfcat(buf, sizeof(buf),			"<ShutdownTimer>%s</ShutdownTimer>\n", dstate_getinfo("driver.timer.shutdown"));
+	snprintfcat(buf, sizeof(buf),			"<AutoConfig>CENTRALIZED</AutoConfig>\n");
+	snprintfcat(buf, sizeof(buf),			"<OutletGroup>1</OutletGroup>\n");	/* main outlet */
+	snprintfcat(buf, sizeof(buf),		"</XMLClientParameters>\n");
+/*	snprintfcat(buf, sizeof(buf),		"<Warning>NUT driver</Warning>\n"); */
+	snprintfcat(buf, sizeof(buf),	"</Subscribe>\n");
+
+	/* now send subscription message setting all the proper flags */
+	request = ne_request_create(session, "POST", page);
+	ne_add_request_header(request, "Content-Type", "text/html");
+	ne_set_request_flag(request, NE_REQFLAG_IDEMPOTENT, 0);
+	ne_set_request_body_buffer(request, buf, strlen(buf));
+
+	/* as the NMC reply is not xml standard compliant let's parse it this way */
+	do {
+		ret = ne_begin_request(request);
+
+		if (ret != NE_OK) {
+			break;
+		}
+
+		ret = ne_read_response_block(request, buf, sizeof buf);
+
+		if (ret == NE_OK) {
+			ret = ne_end_request(request);
+		}
+
+	} while (ret == NE_RETRY);
+
+	ne_request_destroy(request);
+
+	upsdebugx(2, "%s: %s", __func__, buf);
+
+	ret = sscanf (buf, "<?xml version=\"1.0\"?>\r<Subscription>DONE</Subscription>\r<Port>%5u</Port>\r<Secret>%7u</Secret>", &port, &secret);
+	if (ret < 2) {
+		return NE_RETRY;
+	}
+
+	/* Resolve the given hostname.  'flags' must be zero.  Hex
+	* string IPv6 addresses (e.g. `::1') may be enclosed in brackets
+	* (e.g. `[::1]'). */
+	addr = ne_addr_resolve(uri.host, 0);
+
+	/* Returns zero if name resolution was successful, non-zero on
+	* error. */
+	if (ne_addr_result(addr) != 0) {
+		upsdebugx(2, "%s: name resolution failure on %s: %s", __func__, uri.host, ne_addr_error(addr, buf, sizeof(buf)));
+		ne_addr_destroy(addr);
+		return NE_RETRY;
+	}
+
+	for (ai = ne_addr_first(addr); ai != NULL; ai = ne_addr_next(addr)) {
+
+		upsdebugx(3, "%s: connecting to host %s port %d", __func__, ne_iaddr_print(ai, buf, sizeof(buf)), port);
+
+		if (ne_sock_connect(sock, ai, port) != 0) {
+			upsdebugx(2, "%s: %s", __func__, ne_sock_error(sock));
+			continue;
+		}
+
+		snprintf(buf, sizeof(buf), "<Subscription Identification=\"%u\"></Subscription>\n", secret);
+
+		ret = ne_sock_fullwrite(sock, buf, strlen(buf));
+
+		upsdebugx(3, "%s: send \"%s\"", __func__, (ret == 0) ? buf : ne_sock_error(sock));
+
+		if (ret != 0) {
+			continue;
+		}
+
+		ret = ne_sock_read(sock, buf, sizeof(buf));
+
+		upsdebugx(3, "%s: read \"%s\"", __func__, (ret > 0) ? buf : ne_sock_error(sock));
+
+		if (ret < 1) {
+			continue;
+		}
+
+		if (!strcasecmp(buf, "<Subscription Answer=\"ok\"></Subscription>")) {
+			upsdebugx(2, "%s: subscription accepted on fd %d", __func__, ne_sock_fd(sock));
+			break;
+		}
+	}
+
+	ne_addr_destroy(addr);
+
+	if (ai == NULL) {
+		extrafd = -1;
+		return NE_RETRY;
+	}
+
+	extrafd = ne_sock_fd(sock);
+	return NE_OK;
 }
 
 static int netxml_dispatch_request(ne_request *request, ne_xml_parser *parser)
