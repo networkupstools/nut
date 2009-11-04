@@ -36,8 +36,8 @@ protecting the local system.  This implies to start the 3 NUT
 layers (driver, upsd and upsmon), with the related configuration
 files.  This mode can also address UPS redundancy.
 
-netserver;; Like the standalone configuration, but also need some
-more ACLs and possibly a specific LISTEN directive in upsd.conf.
+netserver;; Like the standalone configuration, but also possibly
+need one or more specific LISTEN directive(s) in upsd.conf.
 Since this MODE is open to the network, a special care should be
 applied to security concerns.
 
