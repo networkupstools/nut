@@ -46,7 +46,7 @@ CGI programs
 Drivers
 ~~~~~~~
 
-- upsdrvctl.8 (here or with the drivers?)
+- linknut:upsdrvctl[8]
 
 - linknut:apcsmart[8]
 - linknut:bcmxcp[8]
