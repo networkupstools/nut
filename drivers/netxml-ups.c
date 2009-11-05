@@ -611,7 +611,7 @@ static void netxml_status_set(void)
 	if (STATUS_BIT(CHRG)) {
 		status_set("CHRG");		/* charging */
 	}
-	if (STATUS_BIT(LOWBATT) || STATUS_BIT(SHUTDOWNIMM)) {
+	if (STATUS_BIT(LOWBATT)) {
 		status_set("LB");		/* low battery */
 	}
 	if (STATUS_BIT(OVERLOAD)) {
@@ -631,5 +631,9 @@ static void netxml_status_set(void)
 	}
 	if (STATUS_BIT(OFF)) {
 		status_set("OFF");		/* ups is off */
+	}
+
+	if (STATUS_BIT(SHUTDOWNIMM)) {
+		status_set("FSD");		/* shutdown imminent */
 	}
 }
