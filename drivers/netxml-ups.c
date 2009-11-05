@@ -69,7 +69,9 @@ static int netxml_get_page(const char *page);
 
 static int netxml_alarm_subscribe(const char *page);
 
-#ifndef HAVE_NE_SET_CONNECT_TIMEOUT
+#if HAVE_NE_SET_CONNECT_TIMEOUT && HAVE_NE_SOCK_CONNECT_TIMEOUT
+	/* we don't need to use alarm() */
+#else
 static void netxml_alarm_handler(int sig)
 {
 	/* don't do anything here, just return */
@@ -210,7 +212,9 @@ void upsdrv_initups(void)
 	char	*val;
 	FILE	*fp;
 
-#ifndef HAVE_NE_SET_CONNECT_TIMEOUT
+#if HAVE_NE_SET_CONNECT_TIMEOUT && HAVE_NE_SOCK_CONNECT_TIMEOUT
+	/* we don't need to use alarm() */
+#else
 	struct sigaction	sa;
 
 	sigemptyset(&sa.sa_mask);
@@ -396,8 +400,14 @@ static int netxml_alarm_subscribe(const char *page)
 
 	/* as the NMC reply is not xml standard compliant let's parse it this way */
 	do {
+#ifndef HAVE_NE_SOCK_CONNECT_TIMEOUT
+		alarm(timeout+1);
+#endif
 		ret = ne_begin_request(request);
 
+#ifndef HAVE_NE_SOCK_CONNECT_TIMEOUT
+		alarm(0);
+#endif
 		if (ret != NE_OK) {
 			break;
 		}
@@ -439,6 +449,7 @@ static int netxml_alarm_subscribe(const char *page)
 		alarm(timeout+1);
 #endif
 		ret = ne_sock_connect(sock, ai, port);
+
 #ifndef HAVE_NE_SOCK_CONNECT_TIMEOUT
 		alarm(0);
 #endif
@@ -486,7 +497,6 @@ static int netxml_dispatch_request(ne_request *request, ne_xml_parser *parser)
 {
 	int ret;
 
-#ifdef HAVE_NE_SET_CONNECT_TIMEOUT
 	/*
 	 * Starting with neon-0.27.0 the ne_xml_dispatch_request() function will check
 	 * for a valid XML content-type (following RFC 3023 rules) in the header.
@@ -494,8 +504,14 @@ static int netxml_dispatch_request(ne_request *request, ne_xml_parser *parser)
 	 * we can't use this anymore and we'll have to roll our own here.
 	 */
 	do {
+#ifndef HAVE_NE_SET_CONNECT_TIMEOUT
+		alarm(timeout+1);
+#endif
 		ret = ne_begin_request(request);
 
+#ifndef HAVE_NE_SET_CONNECT_TIMEOUT
+		alarm(0);
+#endif
 		if (ret != NE_OK) {
 			break;
 		}
@@ -507,20 +523,6 @@ static int netxml_dispatch_request(ne_request *request, ne_xml_parser *parser)
 		}
 
 	} while (ret == NE_RETRY);
-
-#else
-	/*
-	 * Up to neon-0.27.0 this library would connect() in blocking mode. We
-	 * don't want that, so we interrupt it with an alarm if it takes longer
-	 * than we think is reasonable so that we don't have to wait until it
-	 * finally times out (which may take several minutes).
-	 */
-	alarm(timeout+1);
-
-	ret = ne_xml_dispatch_request(request, parser);
-
- 	alarm(0);
-#endif
 
 	return ret;
 }
