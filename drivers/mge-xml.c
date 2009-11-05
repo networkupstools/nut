@@ -522,6 +522,19 @@ static char *mge_ambient_info(const char *val)
 	}
 }
 
+static char *mge_timer_shutdown(const char *val)
+{
+	const char	*delay = dstate_getinfo("ups.delay.shutdown");
+
+	if ((delay) && (atoi(val) > -1) && (atoi(val) < atoi(delay))) {
+		STATUS_SET(SHUTDOWNIMM);
+	} else {
+		STATUS_CLR(SHUTDOWNIMM);
+	}
+
+	return val;
+}
+
 static xml_info_t mge_xml2nut[] = {
 	/* Special case: boolean values that are mapped to ups.status and ups.alarm */
 	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", 0, 0, online_info },
@@ -549,7 +562,7 @@ static xml_info_t mge_xml2nut[] = {
 	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.InternalFailure", 0, 0, internalfailure_info },
 	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.CommunicationLost", 0, 0, commfault_info },
 	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.OverTemperature", 0, 0, overheat_info },
-	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.ShutdownImminent", 0, 0, shutdownimm_info },
+	/* { NULL, 0, 0, "UPS.PowerSummary.PresentStatus.ShutdownImminent", 0, 0, shutdownimm_info }, */
 
 	/* Battery page */
 	{ "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", 0, 0, NULL },
@@ -585,7 +598,7 @@ static xml_info_t mge_xml2nut[] = {
 	{ "ups.load.high", 0, 0, "UPS.Flow[4].ConfigPercentLoad", 0, 0, NULL },
 	{ "ups.delay.shutdown", 0, 0, "System.ShutdownDuration", 0, 0, NULL },
 	{ "ups.timer.start", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", 0, 0, NULL},
-	{ "ups.timer.shutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", 0, 0, NULL },
+	{ "ups.timer.shutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", 0, 0, mge_timer_shutdown },
 	{ "ups.timer.reboot", 0, 0, "UPS.PowerSummary.DelayBeforeReboot", 0, 0, NULL },
 	{ "ups.test.result", 0, 0, "UPS.BatterySystem.Battery.Test", 0, 0, mge_test_result_info },
 	{ "ups.test.interval", 0, 0, "UPS.BatterySystem.Battery.TestPeriod", 0, 0, NULL },
