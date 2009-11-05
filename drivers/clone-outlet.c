@@ -44,7 +44,8 @@ static struct {
 	struct {
 		char	*shutdown;
 	} timer;
-} prefix = { { NULL }, { NULL } };
+	char	*status;
+} prefix = { { NULL }, { NULL }, NULL };
 
 static struct {
 	struct {
@@ -53,14 +54,12 @@ static struct {
 	struct {
 		long	shutdown;
 	} timer;
-} outlet = { { -1 }, { -1 } };
+	int	status;
+} outlet = { { -1 }, { -1 }, 1 };
 
 static struct {
-	struct {
-		long	shutdown;
-	} timer;
 	char	status[LARGEBUF];
-} ups = { { -1 }, "WAIT" };
+} ups = { "WAIT" };
 
 static int	dumpdone = 0;
 
@@ -124,8 +123,8 @@ static int parse_args(int numargs, char **arg)
 			outlet.timer.shutdown = strtol(arg[2], NULL, 10);
 		}
 
-		if (!strcasecmp(arg[1], "ups.timer.shutdown")) {
-			ups.timer.shutdown = strtol(arg[2], NULL, 10);
+		if (!strcasecmp(arg[1], prefix.status)) {
+			outlet.status = strcasecmp(arg[2], "off");
 		}
 
 		if (!strcasecmp(arg[1], "ups.status")) {
@@ -353,15 +352,14 @@ void upsdrv_updateinfo(void)
 		return;
 	}
 
-	if ((outlet.timer.shutdown > -1) && (outlet.timer.shutdown <= outlet.delay.shutdown)) {
-		upsdebugx(2, "FSD flag set (%s: -1 < [%ld] <= %ld)", prefix.timer.shutdown, outlet.timer.shutdown, outlet.delay.shutdown);
-		dstate_setinfo("ups.status", "FSD %s", ups.status);
+	if (outlet.status == 0) {
+		upsdebugx(2, "OFF flag set (%d: switched off)", prefix.status);
+		dstate_setinfo("ups.status", "%s OFF", ups.status);
 		return;
-
 	}
 
-	if ((ups.timer.shutdown > -1) && (ups.timer.shutdown <= outlet.delay.shutdown)) {
-		upsdebugx(2, "FSD flag set (ups.timer.shutdown: -1 < [%ld] <= %ld)", ups.timer.shutdown, outlet.delay.shutdown);
+	if ((outlet.timer.shutdown > -1) && (outlet.timer.shutdown <= outlet.delay.shutdown)) {
+		upsdebugx(2, "FSD flag set (%s: -1 < [%ld] <= %ld)", prefix.timer.shutdown, outlet.timer.shutdown, outlet.delay.shutdown);
 		dstate_setinfo("ups.status", "FSD %s", ups.status);
 		return;
 	}
@@ -403,6 +401,9 @@ void upsdrv_initups(void)
 	snprintf(buf, sizeof(buf), "%s.timer.shutdown", val);
 	prefix.timer.shutdown = xstrdup(buf);
 
+	snprintf(buf, sizeof(buf), "%s.status", val);
+	prefix.status = xstrdup(buf);
+
 	extrafd = upsfd = sstate_connect();
 }
 
@@ -411,6 +412,7 @@ void upsdrv_cleanup(void)
 {
 	free(prefix.delay.shutdown);
 	free(prefix.timer.shutdown);
+	free(prefix.status);
 
 	sstate_disconnect();
 }
