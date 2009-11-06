@@ -1038,7 +1038,7 @@ static int mge_xml_cdata_cb(void *userdata, int state, const char *cdata, size_t
 	switch(state)
 	{
 	case ALARM:
-		upsdebugx(2, "ALARM %.*s (%d non-whitespace)", (int)len, cdata, (int)strcspn(cdata, " \n\t"));
+		upsdebugx(2, "ALARM%.*s", (int)len, cdata);
 		break;
 
 	case SU_OBJECT:
