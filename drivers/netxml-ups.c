@@ -115,8 +115,6 @@ void upsdrv_updateinfo(void)
 		ne_xml_push_handler(parser, subdriver->startelm_cb, subdriver->cdata_cb, subdriver->endelm_cb, NULL);
 		ne_xml_parse(parser, buf, strlen(buf));
 		ne_xml_destroy(parser);
-		/* get additional data as well */
-		netxml_get_page(subdriver->summary);
 	} else if ((ret != NE_SOCK_CLOSED) && (retries < (180 / poll_interval))) {
 		/* timeout or unspecified error on socket read */
 		upsdebugx(2, "%s: ne_sock_read() => %d", __func__, ret);
@@ -130,6 +128,8 @@ void upsdrv_updateinfo(void)
 		return;
 	}
 
+	/* get additional data as well */
+	netxml_get_page(subdriver->summary);
 	netxml_get_page(subdriver->getobject);
 
 	retries = 0;
@@ -411,6 +411,7 @@ static int netxml_alarm_subscribe(const char *page)
 		if (ret != NE_OK) {
 			break;
 		}
+
 		ret = ne_read_response_block(request, buf, sizeof buf);
 
 		if (ret == NE_OK) {
@@ -421,10 +422,9 @@ static int netxml_alarm_subscribe(const char *page)
 
 	ne_request_destroy(request);
 
-	upsdebugx(2, "%s: %s", __func__, buf);
-
-	ret = sscanf (buf, "<?xml version=\"1.0\"?>\r<Subscription>DONE</Subscription>\r<Port>%5u</Port>\r<Secret>%7u</Secret>", &port, &secret);
+	ret = sscanf(buf, "<?xml version=\"1.0\"?>\r<Subscription>DONE</Subscription>\r<Port>%5u</Port>\r<Secret>%7u</Secret>", &port, &secret);
 	if (ret < 2) {
+		upsdebugx(2, "%s: parsing initial subscription failed\n%s", __func__, buf);
 		return NE_RETRY;
 	}
 
@@ -443,7 +443,7 @@ static int netxml_alarm_subscribe(const char *page)
 
 	for (ai = ne_addr_first(addr); ai != NULL; ai = ne_addr_next(addr)) {
 
-		upsdebugx(3, "%s: connecting to host %s port %d", __func__, ne_iaddr_print(ai, buf, sizeof(buf)), port);
+		upsdebugx(2, "%s: connecting to host %s port %d", __func__, ne_iaddr_print(ai, buf, sizeof(buf)), port);
 
 #ifndef HAVE_NE_SOCK_CONNECT_TIMEOUT
 		alarm(timeout+1);
@@ -453,31 +453,9 @@ static int netxml_alarm_subscribe(const char *page)
 #ifndef HAVE_NE_SOCK_CONNECT_TIMEOUT
 		alarm(0);
 #endif
-		if (ret != 0) {
-			upsdebugx(2, "%s: %s", __func__, ne_sock_error(sock));
-			continue;
-		}
-
-		snprintf(buf, sizeof(buf), "<Subscription Identification=\"%u\"></Subscription>\n", secret);
-
-		ret = ne_sock_fullwrite(sock, buf, strlen(buf));
-
-		upsdebugx(3, "%s: send \"%s\"", __func__, (ret == 0) ? buf : ne_sock_error(sock));
-
-		if (ret != 0) {
-			continue;
-		}
-
-		ret = ne_sock_read(sock, buf, sizeof(buf));
-
-		upsdebugx(3, "%s: read \"%s\"", __func__, (ret > 0) ? buf : ne_sock_error(sock));
-
-		if (ret < 1) {
-			continue;
-		}
-
-		if (!strcasecmp(buf, "<Subscription Answer=\"ok\"></Subscription>")) {
-			upsdebugx(2, "%s: subscription accepted on fd %d", __func__, ne_sock_fd(sock));
+		if (ret == NE_OK) {
+			upsdebugx(2, "%s: connection to %s open on fd %d", __func__, uri.host, ne_sock_fd(sock));
+			extrafd = ne_sock_fd(sock);
 			break;
 		}
 	}
@@ -485,11 +463,32 @@ static int netxml_alarm_subscribe(const char *page)
 	ne_addr_destroy(addr);
 
 	if (ai == NULL) {
+		upsdebugx(2, "%s: failed to create listening socket", __func__);
 		extrafd = -1;
 		return NE_RETRY;
 	}
 
-	extrafd = ne_sock_fd(sock);
+	snprintf(buf, sizeof(buf), "<Subscription Identification=\"%u\"></Subscription>\n", secret);
+	ret = ne_sock_fullwrite(sock, buf, strlen(buf));
+
+	if (ret != NE_OK) {
+		upsdebugx(2, "%s: send failed: %s", __func__, ne_sock_error(sock));
+		return NE_RETRY;
+	}
+
+	ret = ne_sock_read(sock, buf, sizeof(buf));
+
+	if (ret < 1) {
+		upsdebugx(2, "%s: read failed: %s", __func__, ne_sock_error(sock));
+		return NE_RETRY;
+	}
+
+	if (strcasecmp(buf, "<Subscription Answer=\"ok\"></Subscription>")) {
+		upsdebugx(2, "%s: subscription rejected", __func__);
+		return NE_RETRY;
+	}
+
+	upsdebugx(2, "%s: subscription accepted", __func__);
 	return NE_OK;
 }
 
