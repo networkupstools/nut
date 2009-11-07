@@ -392,10 +392,6 @@ static int netxml_alarm_subscribe(const char *page)
 
 	/* now send subscription message setting all the proper flags */
 	request = ne_request_create(session, "POST", page);
-	ne_add_request_header(request, "Content-Type", "text/html");
-#ifdef HAVE_NE_SET_REQUEST_FLAG
-	ne_set_request_flag(request, NE_REQFLAG_IDEMPOTENT, 0);
-#endif
 	ne_set_request_body_buffer(request, buf, strlen(buf));
 
 	/* as the NMC reply is not xml standard compliant let's parse it this way */
