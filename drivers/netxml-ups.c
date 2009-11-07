@@ -115,6 +115,7 @@ void upsdrv_updateinfo(void)
 		ne_xml_push_handler(parser, subdriver->startelm_cb, subdriver->cdata_cb, subdriver->endelm_cb, NULL);
 		ne_xml_parse(parser, buf, strlen(buf));
 		ne_xml_destroy(parser);
+		retries = 0;
 	} else if ((ret != NE_SOCK_CLOSED) && (retries < (180 / poll_interval))) {
 		/* timeout or unspecified error on socket read */
 		upsdebugx(2, "%s: ne_sock_read() => %d", __func__, ret);
@@ -131,8 +132,6 @@ void upsdrv_updateinfo(void)
 	/* get additional data as well */
 	netxml_get_page(subdriver->summary);
 	netxml_get_page(subdriver->getobject);
-
-	retries = 0;
 
 	status_init();
 
