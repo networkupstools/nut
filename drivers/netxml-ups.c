@@ -93,7 +93,10 @@ void upsdrv_initinfo(void)
 
 		dstate_setinfo("driver.version.internal", "%s", subdriver->version);
 
-		netxml_alarm_subscribe(subdriver->subscribe);
+		if (netxml_alarm_subscribe(subdriver->subscribe) == NE_OK) {
+			extrafd = ne_sock_fd(sock);
+		}
+
 		return;
 	}
 
@@ -102,31 +105,33 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
-	static unsigned int	retries = 0;
 	int		ret;
 	char	buf[LARGEBUF];
 
 	ret = ne_sock_read(sock, buf, sizeof(buf));
 
+	if ((ret < 0) && (ret != NE_SOCK_TIMEOUT)) {
+		/* connection closed or unknown error */
+		upsdebugx(2, "%s: ne_sock_read(%d) => %s", __func__, ret, ne_sock_error(sock));
+		ne_sock_close(sock);
+
+		if (netxml_alarm_subscribe(subdriver->subscribe) == NE_OK) {
+			extrafd = ne_sock_fd(sock);
+			return;
+		}
+
+		dstate_datastale();
+		extrafd = -1;
+		return;
+	}
+
 	if (ret > 0) {
 		/* alarm message received */
 		ne_xml_parser	*parser = ne_xml_create();
-		upsdebugx(2, "%s: ne_sock_read() => %s", __func__, buf);
+		upsdebugx(2, "%s: ne_sock_read(%d bytes) => %s", __func__, ret, buf);
 		ne_xml_push_handler(parser, subdriver->startelm_cb, subdriver->cdata_cb, subdriver->endelm_cb, NULL);
 		ne_xml_parse(parser, buf, strlen(buf));
 		ne_xml_destroy(parser);
-		retries = 0;
-	} else if ((ret != NE_SOCK_CLOSED) && (retries < (180 / poll_interval))) {
-		/* timeout or unspecified error on socket read */
-		upsdebugx(2, "%s: ne_sock_read() => %d", __func__, ret);
-		retries++;
-	} else {
-		/* connection closed or no alarms received for more than 180 seconds */
-		upsdebugx(2, "%s: ne_sock_read() => %d", __func__, ret);
-		netxml_alarm_subscribe(subdriver->subscribe);
-		retries = 0;
-		dstate_datastale();
-		return;
 	}
 
 	/* get additional data as well */
@@ -354,17 +359,13 @@ static int netxml_get_page(const char *page)
 
 static int netxml_alarm_subscribe(const char *page)
 {
-	int	ret, port, secret;
-	char	buf[LARGEBUF];
+	int	ret, port = -1, secret = -1;
+	char	buf[LARGEBUF], *s;
 	ne_request	*request;
 	ne_sock_addr	*addr;
 	const ne_inet_addr	*ai;
 
 	upsdebugx(2, "%s: %s", __func__, page);
-
-	if (sock) {
-		ne_sock_close(sock);
-	}
 
 	sock = ne_sock_create();
 
@@ -395,6 +396,8 @@ static int netxml_alarm_subscribe(const char *page)
 
 	/* as the NMC reply is not xml standard compliant let's parse it this way */
 	do {
+		memset(buf, 0, sizeof(buf));
+
 #ifndef HAVE_NE_SOCK_CONNECT_TIMEOUT
 		alarm(timeout+1);
 #endif
@@ -417,9 +420,22 @@ static int netxml_alarm_subscribe(const char *page)
 
 	ne_request_destroy(request);
 
-	ret = sscanf(buf, "<?xml version=\"1.0\"?>\r<Subscription>DONE</Subscription>\r<Port>%5u</Port>\r<Secret>%7u</Secret>", &port, &secret);
-	if (ret < 2) {
-		upsdebugx(2, "%s: parsing initial subscription failed\n%s", __func__, buf);
+	/* due to different formats used by the various NMCs, we need to\
+	   break up the reply in lines and parse each one separately */
+	for (s = strtok(buf, "\r\n"); s != NULL; s = strtok(NULL, "\r\n")) {
+		upsdebugx(2, "%s: parsing %s", __func__, s);
+
+		if (!strncasecmp(s, "<Port>", 6) && (sscanf(s+6, "%u", &port) != 1)) {
+			return NE_RETRY;
+		}
+
+		if (!strncasecmp(s, "<Secret>", 8) && (sscanf(s+8, "%u", &secret) != 1)) {
+			return NE_RETRY;
+		}
+	}
+
+	if ((port == -1) || (secret == -1)) {
+		upsdebugx(2, "%s: parsing initial subcription failed", __func__);
 		return NE_RETRY;
 	}
 
@@ -450,7 +466,6 @@ static int netxml_alarm_subscribe(const char *page)
 #endif
 		if (ret == NE_OK) {
 			upsdebugx(2, "%s: connection to %s open on fd %d", __func__, uri.host, ne_sock_fd(sock));
-			extrafd = ne_sock_fd(sock);
 			break;
 		}
 	}
@@ -459,7 +474,6 @@ static int netxml_alarm_subscribe(const char *page)
 
 	if (ai == NULL) {
 		upsdebugx(2, "%s: failed to create listening socket", __func__);
-		extrafd = -1;
 		return NE_RETRY;
 	}
 
