@@ -418,7 +418,7 @@ static const char *split_date_time(const char *val)
 	char	*last = NULL;
 
 	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", val);
-	dstate_setinfo("ups.date", "%s", strtok_r(mge_scratch_buf, " ", &last));
+	dstate_setinfo("ups.date", "%s", strtok_r(mge_scratch_buf, " -", &last));
 
 	return strtok_r(NULL, " ", &last);
 }
@@ -818,6 +818,9 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 				}
 				if (!strcasecmp(atts[i], "value")) {
 					snprintf(val, sizeof(var), "%s", atts[i+1]);
+				}
+				if (!strcasecmp(atts[i], "date")) {
+					dstate_setinfo("ups.time", "%s", split_date_time(atts[i+1]));
 				}
 			}
 			state = ALARM;
