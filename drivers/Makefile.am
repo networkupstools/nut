@@ -155,7 +155,7 @@ usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 tripplite_usb_SOURCES = tripplite_usb.c libusb.c usb-common.c
 tripplite_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS) -lm
 
-bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c nut_usb.c usb-common.c
+bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c usb-common.c
 bcmxcp_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 
 megatec_usb_SOURCES = megatec.c megatec_usb.c libusb.c usb-common.c
@@ -186,7 +186,7 @@ hald_addon_usbhid_ups_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LD
 hald_addon_tripplite_usb_SOURCES = tripplite_usb.c libusb.c
 hald_addon_tripplite_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS) -lm
 
-hald_addon_bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c nut_usb.c
+hald_addon_bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c
 hald_addon_bcmxcp_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS)
 
 hald_addon_megatec_usb_SOURCES = megatec.c megatec_usb.c libusb.c
@@ -211,7 +211,7 @@ dist_noinst_HEADERS = apccmib.h apc-hid.h apcsmart.h baytechmib.h bcmxcp.h	\
  dummy-ups.h eaton-aphel-mib.h explore-hid.h gamatronic.h genericups.h		\
  hidparser.h hidtypes.h ietfmib.h libhid.h libshut.h libusb.h liebert-hid.h	\
  main.h main-hal.h megatec.h mge-hid.h mgemib.h mge-shut.h mge-utalk.h		\
- mge-xml.h microdowell.h netvisionmib.h netxml-ups.h nut_usb.h oneac.h		\
+ mge-xml.h microdowell.h netvisionmib.h netxml-ups.h oneac.h		\
  powercom.h powerpanel.h powerp-bin.h powerp-txt.h pwmib.h raritan-mib.h	\
  safenet.h serial.h snmp-ups.h solis.h tripplite.h tripplite-hid.h 			\
  upshandler.h usb-common.h usbhid-ups.h

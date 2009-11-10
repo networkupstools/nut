@@ -237,10 +237,10 @@ sub find_usbdevs
 			if($nameFile=~/(.+)-hid\.c/) {
 				$driver="usbhid-ups";
 			}
-			elsif ($nameFile eq "nut_usb.c") {
+			# FIXME: make a generic matching rule *.c => *
+			elsif ($nameFile eq "bcmxcp_usb.c") {
 				$driver="bcmxcp_usb";
 			}
-			# FIXME: make a common matching rule *.c => *
 			elsif ($nameFile eq "tripplite_usb.c") {
 				$driver="tripplite_usb";
 			}
