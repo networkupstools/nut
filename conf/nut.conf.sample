@@ -7,7 +7,7 @@
 # configuration files must be modified.
 #
 # This file try to standardize the various files being found in the field, like
-# /etc/default/nut on Debian based systems, /etc/sysconfig/nut on RedHat based
+# /etc/default/nut on Debian based systems, /etc/sysconfig/ups on RedHat based
 # systems, ... Distribution's init script should source this file to see which
 # component(s) has to be started.
 #
