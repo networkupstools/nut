@@ -246,19 +246,24 @@ float get_float(const unsigned char *data)
 	return 0;
 }
 
-
+/* lightweight function to calculate the 8-bit
+ * two's complement checksum of buf, using XCP data length (including header)
+ * the result must be 0 for the sequence data to be valid */
 int checksum_test(const unsigned char *buf)
 {
-	unsigned char c;
-	int i;
+	unsigned char checksum = 0;
+	int i, length;
 
-	c = 0;
-	for(i = 0; i < 5 + buf[2]; i++)
-		c += buf[i];
+	/* buf[2] is the length of the XCP frame ; add 5 for the header */
+	length = (int)(buf[2]) + 5;
 
-	return c == 0;
+	for (i = 0; i < length; i++) {
+		checksum += buf[i];
+	}
+	/* Compute the 8-bit, Two's Complement checksum now and return it */
+	checksum = ((0x100 - checksum) & 0xFF);
+	return (checksum == 0);
 }
-
 
 unsigned char calc_checksum(const unsigned char *buf)
 {
