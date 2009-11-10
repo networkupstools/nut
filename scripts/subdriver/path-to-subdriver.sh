@@ -128,8 +128,9 @@ cat > "$HFILE" <<EOF
 /* ${HFILE} - subdriver to monitor ${DRIVER} USB/HID devices with NUT
  *
  *  Copyright (C)
- *  2003 - 2005 Arnaud Quette <arnaud.quette@free.fr>
- *  2005 - 2006 Peter Selinger <selinger@users.sourceforge.net>
+ *  2003 - 2009	Arnaud Quette <ArnaudQuette@Eaton.com>
+ *  2005 - 2006	Peter Selinger <selinger@users.sourceforge.net>
+ *  2008 - 2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -144,7 +145,6 @@ cat > "$HFILE" <<EOF
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- *
  */
 
 #ifndef ${UDRIVER}_HID_H
@@ -163,8 +163,9 @@ cat > "$CFILE" <<EOF
 /* ${CFILE} - subdriver to monitor ${DRIVER} USB/HID devices with NUT
  *
  *  Copyright (C)
- *  2003 - 2005 Arnaud Quette <arnaud.quette@free.fr>
- *  2005 - 2006 Peter Selinger <selinger@users.sourceforge.net>         
+ *  2003 - 2009	Arnaud Quette <ArnaudQuette@Eaton.com>
+ *  2005 - 2006	Peter Selinger <selinger@users.sourceforge.net>
+ *  2008 - 2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
  *  Note: this subdriver was initially generated as a "stub" by the
  *  path-to-subdriver script. It must be customized.
@@ -182,18 +183,30 @@ cat > "$CFILE" <<EOF
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- *
  */
 
 #include "usbhid-ups.h"
 #include "${HFILE}"
-#include "extstate.h" /* for ST_FLAG_STRING */
-#include "main.h"     /* for getval() */
+#include "extstate.h"	/* for ST_FLAG_STRING */
+#include "main.h"	/* for getval() */
 #include "common.h"
+#include "usb-common.h"
 
-#define ${UDRIVER}_HID_VERSION      "${DRIVER} HID 0.1"
+#define ${UDRIVER}_HID_VERSION	"${DRIVER} HID 0.1"
+/* FIXME: experimental flag to be put in upsdrv_info */
 
-#define ${UDRIVER}_VENDORID 0x${VENDORID}
+/* ${DRIVER} */
+#define ${UDRIVER}_VENDORID	0x${VENDORID}
+
+/* USB IDs device table */
+static usb_device_id_t ${LDRIVER}_usb_device_table[] = {
+	/* ${DRIVER} */
+	{ USB_DEVICE(${UDRIVER}_VENDORID, 0x${PRODUCTID}), NULL },
+
+	/* Terminating entry */
+	{ -1, -1, NULL }
+};
+
 
 /* --------------------------------------------------------------- */
 /*      Vendor-specific usage table */
@@ -206,7 +219,7 @@ EOF
 cat "$SUBST" | sed 's/\(.*\) \(.*\)/\t{ "\2",\t0x\1 },/' >> "$CFILE"
 
 cat >> "$CFILE" <<EOF
-	{  NULL, 0x0 }
+	{  NULL, 0 }
 };
 
 static usage_tables_t ${LDRIVER}_utab[] = {
@@ -250,22 +263,25 @@ static char *${LDRIVER}_format_serial(HIDDevice_t *hd) {
 
 /* this function allows the subdriver to "claim" a device: return 1 if
  * the device is supported by this subdriver, else 0. */
-static int ${LDRIVER}_claim(HIDDevice_t *hd) {
-	if (hd->VendorID != ${UDRIVER}_VENDORID) {
-		return 0;
-	}
-	switch (hd->ProductID) {
+static int ${LDRIVER}_claim(HIDDevice_t *hd)
+{
+	int status = is_usb_device_supported(${LDRIVER}_usb_device_table, hd->VendorID, hd->ProductID);
 
-	/* accept any known UPS - add devices here as needed */
-	case 0x${PRODUCTID}:
-		return 1;
-
-	/* by default, reject, unless the productid option is given */
-	default:
+	switch (status)
+	{
+	case POSSIBLY_SUPPORTED:
+		/* by default, reject, unless the productid option is given */
 		if (getval("productid")) {
 			return 1;
 		}
 		possibly_supported("${DRIVER}", hd);
+		return 0;
+
+	case SUPPORTED:
+		return 1;
+
+	case NOT_SUPPORTED:
+	default:
 		return 0;
 	}
 }
@@ -291,5 +307,3 @@ Do not forget to:
 * add ${LDRIVER}-hid.h to dist_noinst_HEADERS in drivers/Makefile.am
 * "autoreconf" from the top level directory
 EOF
-
-
