@@ -43,6 +43,7 @@
 	#include "belkin-hid.h"
 	#include "cps-hid.h"
 	#include "liebert-hid.h"
+	#include "powercom-hid.h"
 	#include "tripplite-hid.h"
 #endif
 
@@ -57,6 +58,7 @@ static subdriver_t *subdriver_list[] = {
 	&belkin_subdriver,
 	&cps_subdriver,
 	&liebert_subdriver,
+	&powercom_subdriver,
 	&tripplite_subdriver,
 #endif
 	NULL

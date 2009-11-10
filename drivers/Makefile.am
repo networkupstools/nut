@@ -147,7 +147,7 @@ skel_LDADD = $(LDADD_DRIVERS)
 
 # USB
 USBHID_UPS_SUBDRIVERS = apc-hid.c belkin-hid.c cps-hid.c explore-hid.c \
- liebert-hid.c mge-hid.c tripplite-hid.c
+ liebert-hid.c mge-hid.c powercom-hid.c tripplite-hid.c
 usbhid_ups_SOURCES = usbhid-ups.c libhid.c libusb.c hidparser.c	\
  usb-common.c $(USBHID_UPS_SUBDRIVERS)
 usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
@@ -214,7 +214,7 @@ dist_noinst_HEADERS = apccmib.h apc-hid.h apcsmart.h baytechmib.h bcmxcp.h	\
  mge-xml.h microdowell.h netvisionmib.h netxml-ups.h oneac.h		\
  powercom.h powerpanel.h powerp-bin.h powerp-txt.h pwmib.h raritan-mib.h	\
  safenet.h serial.h snmp-ups.h solis.h tripplite.h tripplite-hid.h 			\
- upshandler.h usb-common.h usbhid-ups.h
+ upshandler.h usb-common.h usbhid-ups.h powercom-hid.h
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,
