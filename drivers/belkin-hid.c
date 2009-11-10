@@ -33,7 +33,10 @@
 #define BELKIN_HID_VERSION      "Belkin HID 0.12"
 
 /* Belkin */
-#define BELKIN_VENDORID 0x050d
+#define BELKIN_VENDORID	0x050d
+
+/* Liebert */
+#define LIEBERT_VENDORID	0x10af
 
 /* USB IDs device table */
 static usb_device_id_t belkin_usb_device_table[] = {
@@ -55,7 +58,10 @@ static usb_device_id_t belkin_usb_device_table[] = {
 	{ USB_DEVICE(BELKIN_VENDORID, 0x0375), NULL },
 	/* F6C1100-UNV, F6C1200-UNV */
 	{ USB_DEVICE(BELKIN_VENDORID, 0x1100), NULL },
-	
+
+	/* Liebert PowerSure PSA UPS */
+	{ USB_DEVICE(LIEBERT_VENDORID, 0x0001), NULL },
+
 	/* Terminating entry */
 	{ -1, -1, NULL }
 };
@@ -69,7 +75,7 @@ static char *belkin_firmware_conversion_fun(double value)
 	static char buf[20];
 
 	snprintf(buf, sizeof(buf), "%ld", (long)value >> 4);
-	
+
 	return buf;
 }
 
@@ -133,7 +139,7 @@ static char *belkin_overload_conversion_fun(double value)
 		return "overload";
 	} else {
 		return "!overload";
-	}		
+	}
 }
 
 static info_lkp_t belkin_overload_conversion[] = {
@@ -185,7 +191,7 @@ static char *belkin_online_conversion_fun(double value)
 		return "!online";
 	} else {
 		return "online";
-	}		
+	}
 }
 
 static info_lkp_t belkin_online_conversion[] = {
@@ -224,7 +230,7 @@ static char *belkin_replacebatt_conversion_fun(double value)
 		return "replacebatt";
 	} else {
 		return "!replacebatt";
-	}		
+	}
 }
 
 static info_lkp_t belkin_replacebatt_conversion[] = {
@@ -424,14 +430,17 @@ static char *belkin_format_serial(HIDDevice_t *hd) {
 
 /* this function allows the subdriver to "claim" a device: return 1 if
  * the device is supported by this subdriver, else 0. */
-static int belkin_claim(HIDDevice_t *hd) {
+static int belkin_claim(HIDDevice_t *hd)
+{
+	int status = is_usb_device_supported(belkin_usb_device_table, hd->VendorID, hd->ProductID);
 
-	int status = is_usb_device_supported(belkin_usb_device_table, hd->VendorID,
-								 hd->ProductID);
+	switch (status)
+	{
+	case POSSIBLY_SUPPORTED:
 
-	switch (status) {
-
-		case POSSIBLY_SUPPORTED:
+		switch (hd->VendorID)
+		{
+		case BELKIN_VENDORID:
 			/* reject any known non-UPS */
 			if (hd->ProductID == 0x0218)  /* F5U218-MOB 4-Port USB Hub */
 				return 0;
@@ -443,12 +452,22 @@ static int belkin_claim(HIDDevice_t *hd) {
 			possibly_supported("Belkin", hd);
 			return 0;
 
-		case SUPPORTED:
-			return 1;
-
-		case NOT_SUPPORTED:
-		default:
+		case LIEBERT_VENDORID:
+			/* by default, reject, unless the productid option is given */
+			if (getval("productid")) {
+				return 1;
+			}
+			possibly_supported("Liebert", hd);
 			return 0;
+		}
+		return 0;
+
+	case SUPPORTED:
+		return 1;
+
+	case NOT_SUPPORTED:
+	default:
+		return 0;
 	}
 }
 
