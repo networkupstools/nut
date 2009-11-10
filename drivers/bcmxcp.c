@@ -105,20 +105,22 @@ TODO List:
 		settings or turn the outlet on or off with a delay (0 - 32767 seconds)
 
 
-	Rewrite some parts of the driver, to minimise code duplication. (Like the inst commands) 
+	Rewrite some parts of the driver, to minimise code duplication. (Like the instant commands) 
 
+	Implement support for Password Authorization (XCP spec, §4.3.2)
+	
+	Implement support for settable variables (upsh.setvar)
 */
 
 
 #include "main.h"
-
 #include <math.h>		/* For ldexp() */
 #include <float.h> 		/*for FLT_MAX */
 #include "bcmxcp_io.h"
 #include "bcmxcp.h"
 
 #define DRIVER_NAME	"BCMXCP UPS driver"
-#define DRIVER_VERSION	"0.22"
+#define DRIVER_VERSION	"0.23"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -138,6 +140,7 @@ static long int get_long(const unsigned char*);
 static float get_float(const unsigned char *data);
 static void init_meter_map(void);
 static void init_alarm_map(void);
+static void init_command_map(void);
 static void init_config(void);
 static void init_limit(void);
 static void init_ups_meter_map(const unsigned char *map, unsigned char len);
@@ -149,12 +152,13 @@ static int instcmd(const char *cmdname, const char *extra);
 
 char *FreqTol[3] = {"+/-2%", "+/-5%", "+/-7"};
 char *ABMStatus[4] = {"Charging", "Discharging", "Floating", "Resting"};
-unsigned char AUTHOR[4] = {0xCF, 0x69, 0xE8, 0xD5};		/* Autorisation	command	*/
+/* Standard Authorization Block	*/
+unsigned char AUTHOR[4] = {0xCF, 0x69, 0xE8, 0xD5};
 int nphases = 0;
 int outlet_block_len = 0;
 char *cpu_name[5] = {"Cont:", "Inve:", "Rect:", "Netw:", "Disp:"};
 
-/* get_word funktion from nut driver metasys.c */
+/* get_word function from nut driver metasys.c */
 int get_word(const unsigned char *buffer)	/* return an integer reading a word in the supplied buffer */
 {
 	unsigned char a, b;
@@ -570,6 +574,23 @@ void init_alarm_map()
  
 }
 
+/* Get information on UPS commands */
+void init_command_map()
+{
+	unsigned char answer[PW_ANSWER_MAX_SIZE];
+	int res;
+	
+	upsdebugx(1, "entering init_command_map()");
+
+	res = command_read_sequence(PW_COMMAND_LIST_REQ, answer);
+	if (res <= 0)
+		upsdebugx(2, "No command list block.");
+	else
+		upsdebugx(2, "Command list block supported.");
+
+	/* FIXME: to be completed */
+}
+
 void init_ups_meter_map(const unsigned char *map, unsigned char len)
 {
 	unsigned int iIndex, iOffset = 0;
@@ -855,6 +876,8 @@ int init_outlet(unsigned char len)
 	res = command_read_sequence(PW_OUT_MON_BLOCK_REQ, answer);
 	if (res <= 0)
 		fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
+else
+	upsdebugx(1, "init_outlet(%i), res=%i", len, res);
 
 	num_outlet = answer[iIndex++];
 	upsdebugx(2, "Number of outlets: %d\n", num_outlet); 
@@ -892,7 +915,7 @@ int init_outlet(unsigned char len)
 
 void init_config(void)
 {
-	unsigned char answer[256];
+	unsigned char answer[PW_ANSWER_MAX_SIZE];
 	int voltage = 0, res, len;
 	char sValue[17];
 
@@ -928,7 +951,7 @@ void init_config(void)
 
 void init_limit(void)
 {
-	unsigned char answer[256];
+	unsigned char answer[PW_ANSWER_MAX_SIZE];
 	int value, res;
 	char *horn_stat[3] = {"disabled", "enabled", "muted"};
 
@@ -1020,9 +1043,10 @@ void init_limit(void)
 
 void upsdrv_initinfo(void)
 {
-	unsigned char answer[256];
+	unsigned char answer[PW_ANSWER_MAX_SIZE];
 	char *pTmp;
 	char outlet_name[27];
+	char power_rating[10];
 	int iRating = 0, iIndex = 0, res, len;
 	int ncpu = 0, buf;
 	int conf_block_len = 0, alarm_block_len = 0, cmd_list_len = 0;
@@ -1089,19 +1113,26 @@ void upsdrv_initinfo(void)
 
 	/* Skip	UPS' phase angle, as NUT do not care */
 	iIndex += 1;
-	
+
+	/* set manufacturer name */
+	dstate_setinfo("ups.mfr", "Eaton");
+
 	/* Get length of UPS description */
 	len = answer[iIndex++];
 
-	/* Make a temporary buffer and store model description and VA rating in it */
-	pTmp = xmalloc(len+10);
+	/* Extract and reformat the model string */
+	pTmp = xmalloc(len+15);
 	snprintf(pTmp, len + 1, "%s", answer + iIndex);
 	pTmp[len+1] = 0;
 	iIndex += len;
-
-	/* Make a nice model string and tell NUT about it */
-	snprintfcat(pTmp, len+10, " %dVA", iRating);
-	dstate_setinfo("ups.model", "%s", pTmp);
+	/* power rating in the model name is in the form "<rating>i"
+	 * ie "1500i", "500i", ...
+	 * some models already includes it, so check to avoid duplication */	
+	sprintf(power_rating, "%ii", iRating);
+	if (strstr(pTmp, power_rating) == NULL) {
+		snprintfcat(pTmp, len+10, " %s", power_rating);
+	}
+	dstate_setinfo("ups.model", "%s", rtrim(pTmp, ' '));
 	free(pTmp);
 
 	/* Get meter map info from ups, and init our map */
@@ -1118,7 +1149,7 @@ void upsdrv_initinfo(void)
 
 	/* Then the Config_block_length */
 	conf_block_len = get_word(answer+iIndex);
-	upsdebugx(2, "Lengt of Config_block: %d\n", conf_block_len);
+	upsdebugx(2, "Length of Config_block: %d\n", conf_block_len);
 	iIndex += 2;
 
 	/* Next is statistics map */
@@ -1141,22 +1172,22 @@ void upsdrv_initinfo(void)
 
 	/* Size of command list block */
 	cmd_list_len = get_word(answer+iIndex);
-	upsdebugx(2, "Lengt of command list: %d\n", cmd_list_len);
+	upsdebugx(2, "Length of command list: %d\n", cmd_list_len);
 	iIndex += 2;
 
 	/* Size of outlet monitoring block */
 	outlet_block_len = get_word(answer+iIndex);
-	upsdebugx(2, "Lengt of outlet_block: %d\n", outlet_block_len);
+	upsdebugx(2, "Length of outlet_block: %d\n", outlet_block_len);
 	iIndex += 2;
 
 	/* Size of the alarm block */
 	alarm_block_len = get_word(answer+iIndex);
-	upsdebugx(2, "Lengt of alarm_block: %d\n", alarm_block_len);
+	upsdebugx(2, "Length of alarm_block: %d\n", alarm_block_len);
 	/* End of UPS ID block request */
 
 	/* Due to a bug in PW5115 firmware, we need to use blocklength > 8.
-	The protocol state that outlet block is only implemented if ther is
-	at least 2 outlet block. 5115 has only one outlet, but has outlet block. */ 
+	The protocol state that outlet block is only implemented if there is
+	at least 2 outlet block. 5115 has only one outlet, but has outlet block! */ 
 	if (outlet_block_len > 8) {
 		len = init_outlet(outlet_block_len);
 
@@ -1172,7 +1203,10 @@ void upsdrv_initinfo(void)
 	/* Get information on UPS extended limits */
 	init_limit();
 	
-	/* Add instant commands */
+	/* Get information on UPS commands */
+	init_command_map();
+
+	/* FIXME: leave up to init_command_map() to add instant commands? */
 	dstate_addcmd("shutdown.return");
 	dstate_addcmd("shutdown.stayoff");
 	dstate_addcmd("test.battery.start");
@@ -1184,7 +1218,7 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
-	unsigned char answer[256]; 
+	unsigned char answer[PW_ANSWER_MAX_SIZE]; 
 	char sValue[128];
 	int iIndex, res; 
 	float output, max_output, fValue = 0.0f;
@@ -1242,7 +1276,7 @@ void upsdrv_updateinfo(void)
 	}
 
 	/* Due to a bug in PW5115 firmware, we need to use blocklength > 8.
-	The protocol state that outlet block is only implemented if ther is
+	The protocol state that outlet block is only implemented if there is
 	at least 2 outlet block. 5115 has only one outlet, but has outlet block. */ 
 	if (outlet_block_len > 8) {
 		init_outlet(outlet_block_len);
@@ -1387,7 +1421,7 @@ void upsdrv_shutdown(void)
 	
 	sec = (256 * (unsigned char)answer[3]) + (unsigned char)answer[2];
 	
-	/* NOTE: get the respons, and return info code located as first data byte after 4 header bytes.
+	/* NOTE: get the response, and return info code located as first data byte after 4 header bytes.
 		Is implemented in answers to command packet's.
 	0x31 Accepted
 	0x32 not implemented
@@ -1405,7 +1439,7 @@ void upsdrv_shutdown(void)
 			break;
 			}
 		case 0x33: {
-			fatalx(EXIT_FAILURE, "shutdown disbled by front panel");
+			fatalx(EXIT_FAILURE, "shutdown disabled by front panel");
 			break;
 			}
 		case 0x36: {
@@ -1425,8 +1459,9 @@ static int instcmd(const char *cmdname, const char *extra)
 	unsigned char answer[5], cbuf[6];
 
 	int res, sec;
-	
-	
+
+	upsdebugx(1, "entering instcmd(%s)", cmdname);
+
 	/* ojw0000 outlet power cycle for PW5125 and perhaps others */
 	if (!strcasecmp(cmdname, "outlet.1.shutdown.return")
 		|| !strcasecmp(cmdname, "outlet.2.shutdown.return")
@@ -1477,6 +1512,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	} /* ojw0000 end outlet power cycle */
 
+	/* FIXME: call upsdrv_shutdown() or use the present one! */
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		send_write_command(AUTHOR, 4);
 	
@@ -1484,7 +1520,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	
 		cbuf[0] = PW_LOAD_OFF_RESTART;
 		cbuf[1] = (unsigned char)(bcmxcp_status.shutdowndelay & 0x00ff);	/* "delay" sec delay for shutdown, */
-		cbuf[2] = (unsigned char)(bcmxcp_status.shutdowndelay >> 8);		/* hige byte sec. From ups.conf. */
+		cbuf[2] = (unsigned char)(bcmxcp_status.shutdowndelay >> 8);		/* high byte sec. From ups.conf. */
 	
 		res = command_write_sequence(cbuf, 3, answer);
 		if (res <= 0) {
@@ -1503,7 +1539,7 @@ static int instcmd(const char *cmdname, const char *extra)
 				break;
 				}
 			case 0x33: {
-				upslogx(LOG_NOTICE, "[%s] disbled by front panel", cmdname);
+				upslogx(LOG_NOTICE, "[%s] disabled by front panel", cmdname);
 				return STAT_INSTCMD_UNKNOWN;
 				break;
 				}
@@ -1583,7 +1619,7 @@ static int instcmd(const char *cmdname, const char *extra)
 				break;
 				}
 			case 0x33: {
-				upslogx(LOG_NOTICE, "[%s] disbled by front panel", cmdname);
+				upslogx(LOG_NOTICE, "[%s] disabled by front panel", cmdname);
 				return STAT_INSTCMD_UNKNOWN;
 				break;
 				}

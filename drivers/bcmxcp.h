@@ -10,6 +10,10 @@
 #define PW_MAX_TRY 3 /* How many times we try to send data. */
 
 #define PW_COMMAND_START_BYTE (unsigned char)0xAB
+#define PW_LAST_SEQ	(unsigned char)0x80	/* bit flag to indicate final sequence */
+#define PW_SEQ_MASK	(unsigned char)0x7F	/* bit mask to extract just the sequence # */
+
+#define PW_ANSWER_MAX_SIZE	256
 
 /* No	Autorisation required	*/ 
 #define PW_ID_BLOCK_REQ 	(unsigned char)0x31 /* Model name, ... length 1 */
@@ -20,7 +24,7 @@
 #define PW_BAT_TEST_REQ		(unsigned char)0x3B /* Charging, floating, ... length 1 */
 #define PW_LIMIT_BLOCK_REQ	(unsigned char)0x3C /* Configuration (Bypass thresholds,...).	length 1 */
 #define PW_TEST_RESULT_REQ	(unsigned char)0x3F /* ??. length 1 */
-#define PW_COMMAND_LIST_REQ	(unsigned char)0x40 /* ??. length 1 */
+#define PW_COMMAND_LIST_REQ	(unsigned char)0x40 /* Available commands. length 1 */
 #define PW_OUT_MON_BLOCK_REQ	(unsigned char)0x41 /* Outlet monitor request length 1 */
 #define PW_COM_CAP_REQ		(unsigned char)0x42 /* Request communication capabilities. length 2	*/
 #define PW_UPS_TOP_DATA_REQ	(unsigned char)0x43 /* Requsest ups topology data requset. length 1	*/
