@@ -85,17 +85,17 @@ void free_report_buffer(reportbuf_t *rbuf)
    with free_report_buffer(). */
 reportbuf_t *new_report_buffer(HIDDesc_t *pDesc)
 {
-	HIDData_t *pData;
-	reportbuf_t *rbuf;
-	int    i, id;
- 
+	HIDData_t	*pData;
+	reportbuf_t	*rbuf;
+	int		i, id;
+
 	if (!pDesc)
 		return NULL;
- 
+
 	rbuf = calloc(1, sizeof(*rbuf));
-        if (!rbuf) {
-               return NULL;
- 	}
+	if (!rbuf) {
+		return NULL;
+	}
 
 	/* now go through all items that are part of this report */
 	for (i=0; i<pDesc->nitems; i++) {
@@ -107,7 +107,7 @@ reportbuf_t *new_report_buffer(HIDDesc_t *pDesc)
 		/* skip reports that already have been allocated */
 		if (rbuf->data[id])
 			continue;
- 
+
 		/* first byte holds id */
 		rbuf->len[id] = pDesc->replen[id] + 1;
 
@@ -119,7 +119,7 @@ reportbuf_t *new_report_buffer(HIDDesc_t *pDesc)
 		rbuf->data[id] = calloc(rbuf->len[id], sizeof(*(rbuf->data[id])));
 		if (rbuf->data[id])
 			continue;
- 
+
 		/* on failure, give up what we got so far */
 		free_report_buffer(rbuf);
 		return NULL;
@@ -141,6 +141,7 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 {
 	int	id = pData->ReportID;
 	int	r;
+	unsigned char	buf[SMALLBUF];
 
 	if (rbuf->ts[id] + age > time(NULL)) {
 		/* buffered report is still good; nothing to do */
@@ -148,14 +149,19 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 		return 0;
 	}
 
-	r = comm_driver->get_report(udev, id, rbuf->data[id], rbuf->len[id]);
+	r = comm_driver->get_report(udev, id, buf, sizeof(buf));
 	if (r <= 0) {
 		return -1;
 	}
 
-	if (rbuf->len[id] > r) {
-		upsdebugx(4, "refresh_report_buffer: expected %d bytes, but got only %d", rbuf->len[id], r);
+	if (rbuf->len[id] != r) {
+		upsdebugx(2, "%s: expected %d bytes, but got %d instead", __func__, rbuf->len[id], r);
+		upsdebug_hex(3, "Report[err]", buf, r);
+		errno = ERANGE;
+		return -1;
 	}
+
+	memcpy(rbuf->data[id], buf, rbuf->len[id]);
 
 	/* have valid report */
 	time(&rbuf->ts[id]);
@@ -214,16 +220,12 @@ static int set_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t
 static int file_report_buffer(reportbuf_t *rbuf, unsigned char *buf, int buflen)
 {
 	int id = buf[0];
-	
-	if (rbuf->len[id] < buflen) {
-		upsdebugx(1, "file_report_buffer: expected %d bytes, but got %d!", rbuf->len[id], buflen);
+
+	if (rbuf->len[id] != buflen) {
+		upsdebugx(2, "%s: expected %d bytes, but got %d instead", __func__, rbuf->len[id], buflen);
 		upsdebug_hex(3, "Report[err]", buf, buflen);
 		errno = ERANGE;
 		return -1;
-	}
-
-	if (buflen < rbuf->len[id]) {
-		upsdebugx(4, "file_report_buffer: expected %d bytes, but got only %d", rbuf->len[id], buflen);
 	}
 
 	memcpy(rbuf->data[id], buf, rbuf->len[id]);
@@ -429,8 +431,8 @@ int HIDSetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double Value)
 	}
 
 	/* Test if Item is settable */
-        /* FIXME: not constant == volatile, but
-        * it doesn't imply that it's RW! */
+	/* FIXME: not constant == volatile, but
+	* it doesn't imply that it's RW! */
 	if (hiddata->Attribute == ATTR_DATA_CST) {
 		return 0;
 	}
@@ -469,14 +471,14 @@ bool_t HIDSetItemValue(hid_dev_handle_t udev, const char *hidpath, double Value,
  */
 int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventsize)
 {
-	unsigned char	buf[128];
+	unsigned char	buf[SMALLBUF];
 	int		itemCount = 0;
 	int		buflen, r, i;
 	HIDData_t	*pData;
 
 	/* needs libusb-0.1.8 to work => use ifdef and autoconf */
-	if ((buflen = comm_driver->get_interrupt(udev, buf, sizeof(buf), 250)) <= 0) {
-
+	buflen = comm_driver->get_interrupt(udev, buf, sizeof(buf), 250);
+	if (buflen <= 0) {
 		return buflen;	/* propagate "error" or "no event" code */
 	}
 
@@ -815,7 +817,7 @@ usage_lkp_t hid_usage_lkp[] = {
 	{  "VoltageOutOfRange",			0x00840063 },
 	{  "FrequencyOutOfRange",		0x00840064 },
 	{  "Overload",				0x00840065 }, 
-        /* Note: the correct spelling is "Overload", not "OverLoad",
+	/* Note: the correct spelling is "Overload", not "OverLoad",
 	 * according to the official specification, "Universal Serial
 	 * Bus Usage Tables for HID Power Devices", Release 1.0,
 	 * November 1, 1997 */
