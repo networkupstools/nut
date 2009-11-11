@@ -38,7 +38,7 @@
 
 /* USB IDs device table */
 static usb_device_id_t powercom_usb_device_table[] = {
-	/* PowerCOM IMP – IMPERIAL Series */
+	/* PowerCOM IMP - IMPERIAL Series */
 	{ USB_DEVICE(POWERCOM_VENDORID, 0x00a2), NULL },
 	/* PowerCOM SKP - Smart KING Pro (all Smart series) */
 	{ USB_DEVICE(POWERCOM_VENDORID, 0x00a3), NULL },
@@ -46,7 +46,7 @@ static usb_device_id_t powercom_usb_device_table[] = {
 	{ USB_DEVICE(POWERCOM_VENDORID, 0x00a4), NULL },
 	/* PowerCOM VGD - Vanguard */
 	{ USB_DEVICE(POWERCOM_VENDORID, 0x00a5), NULL },
-	/* PowerCOM BNT – Black Knight Pro */
+	/* PowerCOM BNT - Black Knight Pro */
 	{ USB_DEVICE(POWERCOM_VENDORID, 0x00a6), NULL },
 
 	/* Terminating entry */

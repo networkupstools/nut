@@ -54,7 +54,7 @@ upsdrv_info_t	upsdrv_info = {
 
 /* Global vars */
 uint32_t		ups_status = 0;
-static int		timeout = 5;
+static int		timeout = 5, outlet = 1;
 static subdriver_t	*subdriver = &mge_xml_subdriver;
 static ne_session	*session = NULL;
 static ne_socket	*sock = NULL;
@@ -105,7 +105,7 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
-	int		ret;
+	int	ret;
 	char	buf[LARGEBUF];
 
 	ret = ne_sock_read(sock, buf, sizeof(buf));
@@ -134,9 +134,11 @@ void upsdrv_updateinfo(void)
 		ne_xml_destroy(parser);
 	}
 
-	/* get additional data as well */
-	netxml_get_page(subdriver->summary);
-	netxml_get_page(subdriver->getobject);
+	if (!getval("outlet")) {
+		/* get additional data as well */
+		netxml_get_page(subdriver->summary);
+		netxml_get_page(subdriver->getobject);
+	}
 
 	status_init();
 
@@ -206,6 +208,9 @@ void upsdrv_makevartable(void)
 	snprintf(buf, sizeof(buf), "network timeout (default: %d seconds)", timeout);
 	addvar(VAR_VALUE, "timeout", buf);
 
+	snprintf(buf, sizeof(buf), "NSM subscription outlet (default: %d)", outlet);
+	addvar(VAR_VALUE, "outlet", buf);
+
 	addvar(VAR_VALUE | VAR_SENSITIVE, "login", "login value for authenticated mode");
 	addvar(VAR_VALUE | VAR_SENSITIVE, "password", "password value for authenticated mode");
 }
@@ -235,6 +240,23 @@ void upsdrv_initups(void)
 		if (timeout < 1) {
 			fatalx(EXIT_FAILURE, "timeout must be greater than 0");
 		}
+	}
+
+	/* NSM subscription mode */
+	val = getval("outlet");
+	if (val) {
+		if (!strcasecmp(val, "main")) {
+			outlet = 1;
+		} else {
+			outlet = atoi(val) + 1;
+		}
+
+		if (outlet < 1) {
+			fatalx(EXIT_FAILURE, "outlet must be greater than 0");
+		}
+
+		/* default status after startup */
+		STATUS_SET(ONLINE);
 	}
 
 	if (nut_debug_level > 5) {
@@ -384,8 +406,8 @@ static int netxml_alarm_subscribe(const char *page)
 	snprintfcat(buf, sizeof(buf),		"<XMLClientParameters>\n");
 	snprintfcat(buf, sizeof(buf),			"<ShutdownDuration>%s</ShutdownDuration>\n", dstate_getinfo("driver.delay.shutdown"));
 	snprintfcat(buf, sizeof(buf),			"<ShutdownTimer>%s</ShutdownTimer>\n", dstate_getinfo("driver.timer.shutdown"));
-	snprintfcat(buf, sizeof(buf),			"<AutoConfig>CENTRALIZED</AutoConfig>\n");
-	snprintfcat(buf, sizeof(buf),			"<OutletGroup>1</OutletGroup>\n");	/* main outlet */
+	snprintfcat(buf, sizeof(buf),			"<AutoConfig>LOCAL</AutoConfig>\n");
+	snprintfcat(buf, sizeof(buf),			"<OutletGroup>%d</OutletGroup>\n", outlet);
 	snprintfcat(buf, sizeof(buf),		"</XMLClientParameters>\n");
 /*	snprintfcat(buf, sizeof(buf),		"<Warning>NUT driver</Warning>\n"); */
 	snprintfcat(buf, sizeof(buf),	"</Subscribe>\n");
@@ -645,3 +667,4 @@ static void netxml_status_set(void)
 		status_set("FSD");		/* shutdown imminent */
 	}
 }
+
