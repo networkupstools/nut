@@ -24,7 +24,7 @@
 #include "genericups.h"
 
 #define DRIVER_NAME	"Generic contact-closure UPS driver"
-#define DRIVER_VERSION	"1.35"
+#define DRIVER_VERSION	"1.36"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -38,19 +38,19 @@ upsdrv_info_t upsdrv_info = {
 	static	int	upstype = -1;
 
 static void parse_output_signals(const char *value, int *line)
-{ 
+{
 	/* parse signals the serial port can output */
- 
+
 	*line = 0;
- 
+
 	if (strstr(value, "DTR") && !strstr(value, "-DTR")) {
 		*line |= TIOCM_DTR;
- 	}
+	}
 
 	if (strstr(value, "RTS") && !strstr(value, "-RTS")) {
 		*line |= TIOCM_RTS;
 	}
- 
+
 	if (strstr(value, "ST")) {
 		*line |= TIOCM_ST;
 	}
@@ -66,22 +66,26 @@ static void parse_output_signals(const char *value, int *line)
 	if (strstr(value, "RNG")) {
 		fatalx(EXIT_FAILURE, "Can't override output with RNG (not an output)");
 	}
-} 
- 
+
+	if (strstr(value, "DSR")) {
+		fatalx(EXIT_FAILURE, "Can't override output with DSR (not an output)");
+	}
+}
+
 static void parse_input_signals(const char *value, int *line, int *val)
-{ 
+{
 	/* parse signals the serial port can input */
- 
+
 	*line = 0;
 	*val = 0;
- 
+
 	if (strstr(value, "CTS")) {
 		*line |= TIOCM_CTS;
 
 		if (!strstr(value, "-CTS")) {
 			*val |= TIOCM_CTS;
 		}
- 	}
+	}
 
 	if (strstr(value, "DCD")) {
 		*line |= TIOCM_CD;
@@ -89,13 +93,21 @@ static void parse_input_signals(const char *value, int *line, int *val)
 		if (!strstr(value, "-DCD")) {
 			*val |= TIOCM_CD;
 		}
- 	}
+	}
 
 	if (strstr(value, "RNG")) {
 		*line |= TIOCM_RNG;
 
 		if (!strstr(value, "-RNG")) {
 			*val |= TIOCM_RNG;
+		}
+	}
+
+	if (strstr(value, "DSR")) {
+		*line |= TIOCM_DSR;
+
+		if (!strstr(value, "-DSR")) {
+			*val |= TIOCM_DSR;
 		}
 	}
 
@@ -311,3 +323,4 @@ void upsdrv_cleanup(void)
 {
 	ser_close(upsfd, device_path);
 }
+
