@@ -157,8 +157,6 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 	if (rbuf->len[id] != r) {
 		upsdebugx(2, "%s: expected %d bytes, but got %d instead", __func__, rbuf->len[id], r);
 		upsdebug_hex(3, "Report[err]", buf, r);
-		errno = ERANGE;
-		return -1;
 	}
 
 	memcpy(rbuf->data[id], buf, rbuf->len[id]);
@@ -224,8 +222,6 @@ static int file_report_buffer(reportbuf_t *rbuf, unsigned char *buf, int buflen)
 	if (rbuf->len[id] != buflen) {
 		upsdebugx(2, "%s: expected %d bytes, but got %d instead", __func__, rbuf->len[id], buflen);
 		upsdebug_hex(3, "Report[err]", buf, buflen);
-		errno = ERANGE;
-		return -1;
 	}
 
 	memcpy(rbuf->data[id], buf, rbuf->len[id]);
