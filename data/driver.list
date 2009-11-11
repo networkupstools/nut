@@ -280,6 +280,7 @@
 "Liebert"	"ITON 600VA"	""	"megatec"
 "Liebert"	"UPStation GXT2"	"contact-closure cable"	"liebert" 
 "Liebert"	"PowerSure Personal XT"		"USB"	"usbhid-ups"
+"Liebert"	"PowerSure PSA"		"USB"	"usbhid-ups"
 
 "LNXI"	"Icebox"	"10 outlets"	"powerman-pdu (experimental)"
 
