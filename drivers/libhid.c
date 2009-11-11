@@ -642,17 +642,17 @@ static int string_to_path(const char *string, HIDPath_t *path, usage_tables_t *u
 			continue;
 		}
 
-		/* indexed collection */
-		if (strlen(token) == strspn(token, "[1234567890]"))
-		{
-			path->Node[i++] = 0x00ff0000 + atoi(token+1);
-			continue;
-		}
-
 		/* translate unnamed path components such as "ff860024" */
 		if (strlen(token) == strspn(token, "1234567890abcdefABCDEF"))
 		{
 			path->Node[i++] = strtol(token, NULL, 16);
+			continue;
+		}
+
+		/* indexed collection */
+		if (strlen(token) == strspn(token, "[1234567890]"))
+		{
+			path->Node[i++] = 0x00ff0000 + atoi(token+1);
 			continue;
 		}
 
