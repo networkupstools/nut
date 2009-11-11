@@ -353,7 +353,7 @@ void upsdrv_updateinfo(void)
 	}
 
 	if (outlet.status == 0) {
-		upsdebugx(2, "OFF flag set (%d: switched off)", prefix.status);
+		upsdebugx(2, "OFF flag set (%s: switched off)", prefix.status);
 		dstate_setinfo("ups.status", "%s OFF", ups.status);
 		return;
 	}
