@@ -154,17 +154,18 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 		return -1;
 	}
 
+	/* broken report descriptors are common, so store whatever we can */
+	memcpy(rbuf->data[id], buf, rbuf->len[id]);
+
 	if (rbuf->len[id] != r) {
 		upsdebugx(2, "%s: expected %d bytes, but got %d instead", __func__, rbuf->len[id], r);
 		upsdebug_hex(3, "Report[err]", buf, r);
+	} else {
+		upsdebug_hex(3, "Report[get]", rbuf->data[id], rbuf->len[id]);
 	}
 
-	memcpy(rbuf->data[id], buf, rbuf->len[id]);
-
-	/* have valid report */
+	/* have (valid) report */
 	time(&rbuf->ts[id]);
-
-	upsdebug_hex(3, "Report[get]", rbuf->data[id], rbuf->len[id]);
 
 	return 0;
 }
@@ -203,10 +204,10 @@ static int set_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t
 		return -1;
 	}
 
+	upsdebug_hex(3, "Report[set]", rbuf->data[id], rbuf->len[id]);
+
 	/* expire report */
 	rbuf->ts[id] = 0;
-
-	upsdebug_hex(3, "Report[set]", rbuf->data[id], rbuf->len[id]);
 
 	return 0;
 }
@@ -219,17 +220,18 @@ static int file_report_buffer(reportbuf_t *rbuf, unsigned char *buf, int buflen)
 {
 	int id = buf[0];
 
+	/* broken report descriptors are common, so store whatever we can */
+	memcpy(rbuf->data[id], buf, rbuf->len[id]);
+
 	if (rbuf->len[id] != buflen) {
 		upsdebugx(2, "%s: expected %d bytes, but got %d instead", __func__, rbuf->len[id], buflen);
 		upsdebug_hex(3, "Report[err]", buf, buflen);
+	} else {
+		upsdebug_hex(3, "Report[int]", rbuf->data[id], rbuf->len[id]);
 	}
 
-	memcpy(rbuf->data[id], buf, rbuf->len[id]);
-
-	/* have valid (?) report */
-	time(&(rbuf->ts[id]));
-
-	upsdebug_hex(3, "Report[int]", rbuf->data[id], rbuf->len[id]);
+	/* have (valid) report */
+	time(&rbuf->ts[id]);
 
 	return 0;
 }
