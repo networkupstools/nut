@@ -143,7 +143,9 @@ by setting some combination of the "vendor", "product", "serial",
 
 KNOWN ISSUES AND BUGS
 ---------------------
-"Repetitive timeout and staleness"::
+
+Repetitive timeout and staleness
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Some models tends to be unresponsive with the default polling frequency.
 The result is that your system log will have lots of messages like:
@@ -155,20 +157,22 @@ The result is that your system log will have lots of messages like:
 In this case, simply modify the general parameter "pollinterval" to a higher
 value (like 10 for 10 seconds). This should solve the issue.
 
-"Got EPERM: Operation not permitted upon driver startup"::
+Got EPERM: Operation not permitted upon driver startup
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You have forgotten to install the hotplug files, as explained
 in the INSTALLATION section above. Don't forget to restart
 hotplug so that it applies these changes.
 
-"Unattended shutdowns"::
+Unattended shutdowns
+~~~~~~~~~~~~~~~~~~~~
 
 The hardware which was used for development of this driver is almost
-certainly different from what you have and not all manufacturers follow
+certainly different from what you have, and not all manufacturers follow
 the USB HID Power Device Class specifications to the letter. You don't
 want to find out that yours has issues here when a power failure hits
 your server room and you're not around to manually restart your servers.
-+
+
 If you rely on the UPS to shutdown your systems in case of mains failure
 and to restart them when the power returns, you *must* test this. You
 can do so by running 'upsmon -c fsd'. With the mains present, this should
@@ -179,15 +183,16 @@ again.
 
 AUTHORS
 -------
-Sponsored by MGE UPS SYSTEMS <http://opensource.mgeups.com/>
+Sponsored by MGE UPS SYSTEMS <http://opensource.mgeups.com/>;
 Arnaud Quette, Peter Selinger, Arjen de Korte
 
 SEE ALSO
 --------
 
-The core driver:
+The core driver
+~~~~~~~~~~~~~~~~
 linknut:nutupsdrv[8]
 
-INTERNET RESOURCES
-------------------
+Internet resources
+~~~~~~~~~~~~~~~~~~
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
