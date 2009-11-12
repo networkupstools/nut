@@ -61,7 +61,7 @@ Drivers
 - linknut:dummy-ups[8]
 - linknut:etapro[8]
 - linknut:everups[8]
-- gamatronic.8
+- linknut:gamatronic[8]
 - genericups.8
 - isbmex.8
 - liebert.8
