@@ -15,6 +15,7 @@ CONVERTED_TO_ASCIIDOC = \
 	etapro.html \
 	everups.html \
 	gamatronic.html \
+	genericups.html \
 	hosts.conf.html \
 	index.html \
 	megatec_usb.html \
@@ -57,6 +58,7 @@ EXTRA_DIST = \
 	etapro.txt \
 	everups.txt \
 	gamatronic.txt \
+	genericups.txt \
 	hosts.conf.txt \
 	index.txt \
 	megatec_usb.txt \
@@ -114,6 +116,7 @@ man8_MANS = \
 	etapro.8 \
 	everups.8 \
 	gamatronic.8 \
+	genericups.8 \
 	megatec_usb.8 \
 	nutupsdrv.8 \
 	powerman-pdu.8 \
