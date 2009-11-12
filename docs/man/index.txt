@@ -63,9 +63,9 @@ Drivers
 - linknut:everups[8]
 - linknut:gamatronic[8]
 - linknut:genericups[8]
-- isbmex.8
-- liebert.8
-- masterguard.8
+- linknut:isbmex[8]
+- linknut:liebert[8]
+- linknut:masterguard[8]
 - megatec.8
 - linknut:megatec_usb[8]
 - metasys.8

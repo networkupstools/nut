@@ -18,6 +18,9 @@ CONVERTED_TO_ASCIIDOC = \
 	genericups.html \
 	hosts.conf.html \
 	index.html \
+	isbmex.html \
+	liebert.html \
+	masterguard.html \
 	megatec_usb.html \
 	nut.conf.html \
 	nutupsdrv.html \
@@ -61,6 +64,9 @@ EXTRA_DIST = \
 	genericups.txt \
 	hosts.conf.txt \
 	index.txt \
+	isbmex.txt \
+	liebert.txt \
+	masterguard.txt \
 	megatec_usb.txt \
 	nut.conf.txt \
 	nutupsdrv.txt \
@@ -117,6 +123,9 @@ man8_MANS = \
 	everups.8 \
 	gamatronic.8 \
 	genericups.8 \
+	isbmex.8 \
+	liebert.8 \
+	masterguard.8 \
 	megatec_usb.8 \
 	nutupsdrv.8 \
 	powerman-pdu.8 \
