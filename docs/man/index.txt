@@ -66,7 +66,7 @@ Drivers
 - linknut:isbmex[8]
 - linknut:liebert[8]
 - linknut:masterguard[8]
-- megatec.8
+- linknut:megatec[8]
 - linknut:megatec_usb[8]
 - metasys.8
 - mge-shut.8

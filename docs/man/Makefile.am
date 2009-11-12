@@ -21,6 +21,7 @@ CONVERTED_TO_ASCIIDOC = \
 	isbmex.html \
 	liebert.html \
 	masterguard.html \
+	megatec.html \
 	megatec_usb.html \
 	nut.conf.html \
 	nutupsdrv.html \
@@ -67,6 +68,7 @@ EXTRA_DIST = \
 	isbmex.txt \
 	liebert.txt \
 	masterguard.txt \
+	megatec.txt \
 	megatec_usb.txt \
 	nut.conf.txt \
 	nutupsdrv.txt \
@@ -126,6 +128,7 @@ man8_MANS = \
 	isbmex.8 \
 	liebert.8 \
 	masterguard.8 \
+	megatec.8 \
 	megatec_usb.8 \
 	nutupsdrv.8 \
 	powerman-pdu.8 \
