@@ -11,7 +11,7 @@ NOTE
 
 This man page only documents the hardware-specific features of the
 megatec_usb driver. For information about the core driver, see
-linknut:nutups-drv[8].
+linknut:nutupsdrv[8].
 
 *Note.* This driver is experimental at the moment. It is currently being
 worked on and may change over time. However, it is stable in execution
