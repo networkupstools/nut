@@ -1,3 +1,7 @@
+Mon Nov 16 01:57:23 UTC 2009 / Charles Lepple <clepple@gmail.com>
+
+ - drivers/tripplite_usb.c: fix copy-n-paste error in load.on instcmd.
+
 Fri Oct  9 11:26:49 UTC 2009 / Arjen de Korte <arjen@de-korte.org>
 
 - m4/nut_check_libssl.m4,nut_check_libusb.m4: show version information during

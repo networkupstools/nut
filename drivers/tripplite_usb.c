@@ -860,7 +860,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		return control_outlet(0, 0) ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_UNKNOWN;
 	}
 	if (!strcasecmp(cmdname, "load.on")) {
-		return control_outlet(0, 0) ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_UNKNOWN;
+		return control_outlet(0, 1) ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_UNKNOWN;
 	}
 	/* code for individual outlets is in setvar() */
 #if 0
