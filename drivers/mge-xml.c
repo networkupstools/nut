@@ -103,7 +103,7 @@ typedef struct {
 	const char	*nutname;	/* NUT variable name */
 	uint32_t nutflags;	/* NUT flags (to set in addinfo) */
 	size_t	nutlen;		/* length of the NUT string */
-	const char	*xmlname;	/* XML varianle name */
+	const char	*xmlname;	/* XML variable name */
 	uint32_t xmlflags;	/* XML flags (to be used to determine what kind of variable this is */
 	size_t	xmllen;		/* length of the XML string */
 	const char	*(*convert)(const char *value);	/* conversion function from XML<->NUT value (returns
