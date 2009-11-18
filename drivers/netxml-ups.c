@@ -55,6 +55,7 @@ upsdrv_info_t	upsdrv_info = {
 /* Global vars */
 uint32_t		ups_status = 0;
 static int		timeout = 5;
+static time_t		lastheard = 0;
 static subdriver_t	*subdriver = &mge_xml_subdriver;
 static ne_session	*session = NULL;
 static ne_socket	*sock = NULL;
@@ -95,6 +96,7 @@ void upsdrv_initinfo(void)
 
 		if (testvar("subscribe") && (netxml_alarm_subscribe(subdriver->subscribe) == NE_OK)) {
 			extrafd = ne_sock_fd(sock);
+			time(&lastheard);
 		}
 
 		return;
@@ -117,28 +119,38 @@ void upsdrv_updateinfo(void)
 
 		ret = ne_sock_read(sock, buf, sizeof(buf));
 
-		if ((ret < 0) && (ret != NE_SOCK_TIMEOUT)) {
+		if (ret > 0) {
+			/* alarm message received */
+
+			ne_xml_parser	*parser = ne_xml_create();
+			upsdebugx(2, "%s: ne_sock_read(%d bytes) => %s", __func__, ret, buf);
+			ne_xml_push_handler(parser, subdriver->startelm_cb, subdriver->cdata_cb, subdriver->endelm_cb, NULL);
+			ne_xml_parse(parser, buf, strlen(buf));
+			ne_xml_destroy(parser);
+			time(&lastheard);
+
+		} else if ((ret == NE_SOCK_TIMEOUT) && (difftime(time(NULL), lastheard) < 180)) {
+			/* timed out */
+
+			upsdebugx(2, "%s: ne_sock_read(timeout)", __func__);
+
+		} else {
 			/* connection closed or unknown error */
+
+			upslogx(LOG_ERR, "NSM connection with '%s' lost", uri.host);
+
 			upsdebugx(2, "%s: ne_sock_read(%d) => %s", __func__, ret, ne_sock_error(sock));
 			ne_sock_close(sock);
 
 			if (netxml_alarm_subscribe(subdriver->subscribe) == NE_OK) {
 				extrafd = ne_sock_fd(sock);
+				time(&lastheard);
 				return;
 			}
 
 			dstate_datastale();
 			extrafd = -1;
 			return;
-		}
-
-		if (ret > 0) {
-			/* alarm message received */
-			ne_xml_parser	*parser = ne_xml_create();
-			upsdebugx(2, "%s: ne_sock_read(%d bytes) => %s", __func__, ret, buf);
-			ne_xml_push_handler(parser, subdriver->startelm_cb, subdriver->cdata_cb, subdriver->endelm_cb, NULL);
-			ne_xml_parse(parser, buf, strlen(buf));
-			ne_xml_destroy(parser);
 		}
 	}
 
@@ -391,6 +403,12 @@ static int netxml_alarm_subscribe(const char *page)
 
 	sock = ne_sock_create();
 
+	if (gethostname(buf, sizeof(buf)) == 0) {
+		dstate_setinfo("driver.hostname", "%s", buf);
+	} else {
+		dstate_setinfo("driver.hostname", "<unknown>");
+	}
+
 #ifdef HAVE_NE_SOCK_CONNECT_TIMEOUT
 	ne_sock_connect_timeout(sock, timeout);
 #endif
@@ -398,11 +416,11 @@ static int netxml_alarm_subscribe(const char *page)
 
 	netxml_get_page(subdriver->configure);
 
-	snprintf(buf, sizeof(buf),		"<?xml version=\"1.0\">\n");
+	snprintf(buf, sizeof(buf),	"<?xml version=\"1.0\">\n");
 	snprintfcat(buf, sizeof(buf),	"<Subscribe>\n");
 	snprintfcat(buf, sizeof(buf),		"<Class>%s v%s</Class>\n", progname, DRIVER_VERSION);
 	snprintfcat(buf, sizeof(buf),		"<Type>connected socket</Type>\n");
-/*	snprintfcat(buf, sizeof(buf),		"<HostName>client hostname</HostName>\n"); */
+	snprintfcat(buf, sizeof(buf),		"<HostName>%s</HostName>\n", dstate_getinfo("driver.hostname"));
 	snprintfcat(buf, sizeof(buf),		"<XMLClientParameters>\n");
 	snprintfcat(buf, sizeof(buf),			"<ShutdownDuration>%s</ShutdownDuration>\n", dstate_getinfo("driver.delay.shutdown"));
 	snprintfcat(buf, sizeof(buf),			"<ShutdownTimer>%s</ShutdownTimer>\n", dstate_getinfo("driver.timer.shutdown"));
@@ -418,8 +436,6 @@ static int netxml_alarm_subscribe(const char *page)
 
 	/* as the NMC reply is not xml standard compliant let's parse it this way */
 	do {
-		memset(buf, 0, sizeof(buf));
-
 #ifndef HAVE_NE_SOCK_CONNECT_TIMEOUT
 		alarm(timeout+1);
 #endif
@@ -519,7 +535,7 @@ static int netxml_alarm_subscribe(const char *page)
 		return NE_RETRY;
 	}
 
-	upsdebugx(2, "%s: subscription accepted", __func__);
+	upslogx(LOG_INFO, "NSM connection to '%s' established", uri.host);
 	return NE_OK;
 }
 
