@@ -866,24 +866,26 @@ static char *mge_format_model(HIDDevice_t *hd) {
 	char	model[SMALLBUF];
 	double	value;
 
-	/* Dell has already a fully format name in iProduct */
-	if (hd->VendorID != DELL_VENDORID) {
-		
-		/* Get iProduct and iModel strings */
-		snprintf(product, sizeof(product), "%s", hd->Product ? hd->Product : "unknown");
-
-		HIDGetItemString(udev, "UPS.PowerSummary.iModel", model, sizeof(model), mge_utab);
-
-		/* Fallback to ConfigApparentPower */
-		if ((strlen(model) < 1) && (HIDGetItemValue(udev, "UPS.Flow.[4].ConfigApparentPower", &value, mge_utab) == 1 )) {
-			snprintf(model, sizeof(model), "%i", (int)value);
-		}
-
-		if (strlen(model) > 0) {
-			free(hd->Product);
-			hd->Product = get_model_name(product, model);
-		}
+	/* Dell has already a fully formatted name in iProduct */
+	if (hd->VendorID == DELL_VENDORID) {
+		return hd->Product;
 	}
+
+	/* Get iProduct and iModel strings */
+	snprintf(product, sizeof(product), "%s", hd->Product ? hd->Product : "unknown");
+
+	HIDGetItemString(udev, "UPS.PowerSummary.iModel", model, sizeof(model), mge_utab);
+
+	/* Fallback to ConfigApparentPower */
+	if ((strlen(model) < 1) && (HIDGetItemValue(udev, "UPS.Flow.[4].ConfigApparentPower", &value, mge_utab) == 1 )) {
+		snprintf(model, sizeof(model), "%i", (int)value);
+	}
+
+	if (strlen(model) > 0) {
+		free(hd->Product);
+		hd->Product = get_model_name(product, model);
+	}
+
 	return hd->Product;
 }
 
