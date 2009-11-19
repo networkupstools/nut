@@ -143,6 +143,17 @@
 "Cyclades"	"PM8"	"8 outlets"	"powerman-pdu (experimental)"
 "Cyclades"	"PM10"	"10 outlets"	"powerman-pdu (experimental)"
 
+"Dell"	"Dell UPS Tower 500W LV / HV"	"USB port"	"usbhid-ups"
+"Dell"	"Dell UPS Rack/Tower 1000W LV / HV"	"USB port"	"usbhid-ups"
+"Dell"	"Dell UPS Rack/Tower 1500W LV"	"USB port"	"usbhid-ups"
+"Dell"	"Dell UPS Rack/Tower 1920W LV / HV"	"USB port"	"usbhid-ups"
+"Dell"	"Dell UPS Rack/Tower 2300W LV"	"USB port"	"usbhid-ups"
+"Dell"	"Dell UPS Rack/Tower 2700W LV / HV"	"USB port"	"usbhid-ups"
+"Dell"	"Dell UPS Short Depth Rack 2700W High Efficiency Online LV / HV"	"USB port"	"usbhid-ups"
+"Dell"	"Dell UPS Rack 3750W High Efficiency Online HV"	"USB port"	"usbhid-ups"
+"Dell"	"Dell UPS Rack 4200W High Efficiency Online HV"	"USB port"	"usbhid-ups"
+"Dell"	"Dell UPS Rack 5600W HV"	"USB port"	"usbhid-ups"
+
 "Delta"	"GES602N"	""	"belkin"
 
 "Deltec"	"PowerRite Pro II"	""	"genericups upstype=15"

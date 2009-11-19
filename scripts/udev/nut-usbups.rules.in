@@ -102,8 +102,24 @@ ATTR{idVendor}=="09ae", ATTR{idProduct}=="4001", MODE="664", GROUP="@RUN_AS_GROU
 ATTR{idVendor}=="09ae", ATTR{idProduct}=="4002", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  e.g. TrippLite SmartOnline SU1500RTXL2ua  - usbhid-ups
 ATTR{idVendor}=="09ae", ATTR{idProduct}=="4003", MODE="664", GROUP="@RUN_AS_GROUP@"
+
+# PowerCOM
+#  PowerCOM IMP - IMPERIAL Series  - usbhid-ups
+ATTR{idVendor}=="0d9f", ATTR{idProduct}=="00a2", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  PowerCOM SKP - Smart KING Pro (all Smart series)  - usbhid-ups
+ATTR{idVendor}=="0d9f", ATTR{idProduct}=="00a3", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  PowerCOM WOW  - usbhid-ups
+ATTR{idVendor}=="0d9f", ATTR{idProduct}=="00a4", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  PowerCOM VGD - Vanguard  - usbhid-ups
+ATTR{idVendor}=="0d9f", ATTR{idProduct}=="00a5", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  PowerCOM BNT - Black Knight Pro  - usbhid-ups
+ATTR{idVendor}=="0d9f", ATTR{idProduct}=="00a6", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  Unitek Alpha 1200Sx  - blazer_usb
 ATTR{idVendor}=="0f03", ATTR{idProduct}=="0001", MODE="664", GROUP="@RUN_AS_GROUP@"
+
+# Liebert
+#  Liebert PowerSure PSA UPS  - usbhid-ups
+ATTR{idVendor}=="10af", ATTR{idProduct}=="0001", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  Ablerex 625L USB  - blazer_usb
 ATTR{idVendor}=="ffff", ATTR{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_GROUP@"
 

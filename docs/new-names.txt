@@ -27,17 +27,17 @@ device: General unit information
        during a transition period. The ups.* data will then be removed.
 
    +-------------------------------------------------------------------------+
-   |         Name          |         Description          |  Typical value   |
-   |-----------------------+------------------------------+------------------|
-   | device.model          | Device model                 | BladeUPS         |
-   |-----------------------+------------------------------+------------------|
-   | device.mfr            | Device manufacturer          | Eaton            |
-   |-----------------------+------------------------------+------------------|
-   | device.serial         | Device serial number (opaque | WS9643050926     |
-   |                       | string)                      |                  |
-   |-----------------------+------------------------------+------------------|
-   | device.type           | Device type (ups, pdu)       | ups              |
-   +-----------------------+------------------------------+------------------+
+   |         Name          |         Description       |  Typical value      |
+   |-----------------------+---------------------------+---------------------|
+   | device.model          | Device model              | BladeUPS            |
+   |-----------------------+---------------------------+---------------------|
+   | device.mfr            | Device manufacturer       | Eaton               |
+   |-----------------------+---------------------------+---------------------|
+   | device.serial         | Device serial number      | WS9643050926        |
+   |                       | (opaque string)           |                     |
+   |-----------------------+---------------------------+---------------------|
+   | device.type           | Device type (ups, pdu)    | ups                 |
+   +-------------------------------------------------------------------------+
 
 ups: General unit information
 
@@ -366,6 +366,9 @@ battery: Any battery details
    | battery.voltage.nominal | Nominal battery voltage (V)  | 024           |
    |-------------------------+------------------------------+---------------|
    | battery.runtime         | Battery runtime (seconds)    | 1080          |
+   |-------------------------+------------------------------+---------------|
+   | battery.runtime.elapsed | Elapsed battery runtime      | 60            |
+   |                         | (seconds)                    |               |
    |-------------------------+------------------------------+---------------|
    |                         | Remaining battery runtime    |               |
    | battery.runtime.low     | when UPS switches to LB      | 180           |

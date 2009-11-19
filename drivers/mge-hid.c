@@ -28,21 +28,27 @@
 #include "main.h"		/* for getval() */
 #include "common.h"
 
-#define MGE_HID_VERSION		"MGE HID 1.15"
-
-#ifndef SHUT_MODE
-#include "usb-common.h"
+#define MGE_HID_VERSION		"MGE HID 1.16"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
 #define MGE_VENDORID		0x0463
+
+/* Dell */
+#define DELL_VENDORID		0x047c
+
+#ifndef SHUT_MODE
+#include "usb-common.h"
 
 /* USB IDs device table */
 static usb_device_id_t mge_usb_device_table[] = {
 	/* various models */
 	{ USB_DEVICE(MGE_VENDORID, 0x0001), NULL },
 	{ USB_DEVICE(MGE_VENDORID, 0xffff), NULL },
-	
+
+	/* various models */
+	{ USB_DEVICE(DELL_VENDORID, 0xffff), NULL },
+
 	/* Terminating entry */
 	{ -1, -1, NULL }
 };
@@ -629,6 +635,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "battery.charge.restart", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.PowerSummary.RestartLevel", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "battery.capacity", 0, 0, "UPS.BatterySystem.Battery.DesignCapacity", NULL, "%s", HU_FLAG_STATIC, mge_battery_capacity },	/* conversion needed from As to Ah */
 	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", 0, NULL },
+	{ "battery.runtime.elapsed", 0, 0, "UPS.StatisticSystem.Input.[1].Statistic.[1].Time", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL },
 	{ "battery.temperature", 0, 0, "UPS.BatterySystem.Battery.Temperature", NULL, "%.1f", 0, NULL },
 	{ "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
 	{ "battery.voltage", 0, 0, "UPS.BatterySystem.Voltage", NULL, "%.1f", 0, NULL },
@@ -859,21 +866,24 @@ static char *mge_format_model(HIDDevice_t *hd) {
 	char	model[SMALLBUF];
 	double	value;
 
-	/* Get iProduct and iModel strings */
-	snprintf(product, sizeof(product), "%s", hd->Product ? hd->Product : "unknown");
+	/* Dell has already a fully format name in iProduct */
+	if (hd->VendorID != DELL_VENDORID) {
+		
+		/* Get iProduct and iModel strings */
+		snprintf(product, sizeof(product), "%s", hd->Product ? hd->Product : "unknown");
 
-	HIDGetItemString(udev, "UPS.PowerSummary.iModel", model, sizeof(model), mge_utab);
+		HIDGetItemString(udev, "UPS.PowerSummary.iModel", model, sizeof(model), mge_utab);
 
-	/* Fallback to ConfigApparentPower */
-	if ((strlen(model) < 1) && (HIDGetItemValue(udev, "UPS.Flow.[4].ConfigApparentPower", &value, mge_utab) == 1 )) {
-		snprintf(model, sizeof(model), "%i", (int)value);
+		/* Fallback to ConfigApparentPower */
+		if ((strlen(model) < 1) && (HIDGetItemValue(udev, "UPS.Flow.[4].ConfigApparentPower", &value, mge_utab) == 1 )) {
+			snprintf(model, sizeof(model), "%i", (int)value);
+		}
+
+		if (strlen(model) > 0) {
+			free(hd->Product);
+			hd->Product = get_model_name(product, model);
+		}
 	}
-
-	if (strlen(model) > 0) {
-		free(hd->Product);
-		hd->Product = get_model_name(product, model);
-	}
-
 	return hd->Product;
 }
 
