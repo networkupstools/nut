@@ -1,26 +1,16 @@
-.TH mge\-shut 8 "Fri Dec 16 2005" "" "Network UPS Tools (NUT)" 
+.TH mge\-shut 8 "Thu Nov 19 2009" "" "Network UPS Tools (NUT)" 
 .SH NAME  
-mge\(hyshut \- Driver for MGE UPS serial SHUT Protocol UPS equipment
+mge\(hyshut, newmge\(hyshut \- Driver for SHUT Protocol UPS equipment
 .SH NOTE
 This man page only documents the hardware\(hyspecific features of the
 mge\(hyshut driver.  For information about the core driver, see  
 \fBnutupsdrv\fR(8).
 
 .SH SUPPORTED HARDWARE
-mge\(hyshut support all recent MGE UPS models which use the SHUT (Serial HID
-UPS Transfer) protocol at 2400 bps. Supported models are:
+mge\(hyshut support all recent Eaton, MGE and Dell UPS models which use the SHUT
+(Serial HID UPS Transfer) protocol.
 
-    Pulsar Ellipse S,
-    Pulsar Ellipse USBS
-    Pulsar Ellipse Premium S,
-    Pulsar Ellipse Premium USBS
-    Pulsar EXtreme C,
-    Pulsar Esprit,
-    Pulsar Evolution,
-    NOVA AVR (Serial),
-    Galaxy 3000 / PW (with RS232 HID COM ports card, ref 66066). 
-
-Older models, such as Pulsar ESV+, Pulsar EX and Pulsar ES+, use the U\(hyTalk
+Older MGE models, such as Pulsar ESV+, Pulsar EX and Pulsar ES+, use the U\(hyTalk
 protocol and should use the mge\(hyutalk driver.
 
 .SH EXTRA ARGUMENTS

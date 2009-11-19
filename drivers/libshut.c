@@ -1,9 +1,9 @@
 /*!
  * @file libshut.c
- * @brief HID Library - Serial SHUT communication sub driver
+ * @brief HID Library - SHUT communication sub driver
  *
  * @author Copyright (C)
- *  2006 - 2007 Arnaud Quette <aquette.dev@gmail.com>
+ *  2006 - 2009 Arnaud Quette <aquette.dev@gmail.com>
  *
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License as published by
@@ -40,8 +40,8 @@
 #include "libshut.h"
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
 
-#define SHUT_DRIVER_NAME	"MGE SHUT communication driver"
-#define SHUT_DRIVER_VERSION	"0.81"
+#define SHUT_DRIVER_NAME	"SHUT communication driver"
+#define SHUT_DRIVER_VERSION	"0.82"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -53,6 +53,7 @@ upsdrv_info_t comm_upsdrv_info = {
 };
 
 #define MAX_TRY 4
+#define MAX_STRING_SIZE 128
 
 /*!
  * HID descriptor, completed with desc{type,len}
@@ -188,8 +189,6 @@ int libshut_get_report(int upsfd, int ReportId,
 int shut_set_report(int upsfd, int id, unsigned char *pkt, int reportlen);
 int libshut_get_interrupt(int upsfd, unsigned char *buf,
 			  int bufsize, int timeout);
-int shut_control_msg(int upsfd, int requesttype, int request,
-		     int value, int index, unsigned char *bytes, int size, int timeout);
 void libshut_close(int upsfd);
 
 /* FIXME */
@@ -269,7 +268,6 @@ int shut_interrupt_read(int upsfd, int ep, unsigned char *bytes,
 int shut_control_msg(int upsfd, int requesttype, int request, int value,
 		     int index, unsigned char *bytes, int size, int timeout);
 
-
 /* Data portability */
 /* realign packet data according to Endianess */
 #define BYTESWAP(in) (((in & 0xFF) << 8) + ((in & 0xFF00) >> 8))
@@ -295,7 +293,7 @@ int libshut_open(int *upsfd, SHUTDevice_t *curDevice, char *device_path,
 {
 	int ret, res; 
 	unsigned char buf[20];
-	char string[256];
+	char string[MAX_STRING_SIZE];
 	struct my_hid_descriptor *desc;
 	struct device_descriptor_s *dev_descriptor;
 	
@@ -362,15 +360,22 @@ int libshut_open(int *upsfd, SHUTDevice_t *curDevice, char *device_path,
 
 	curDevice->VendorID = dev_descriptor->idVendor;
 	curDevice->ProductID = dev_descriptor->idProduct;
-	curDevice->Vendor = strdup("MGE UPS SYSTEMS");
 	curDevice->Bus = strdup("serial");
+	curDevice->Vendor = strdup("Eaton");
+	if (dev_descriptor->iManufacturer) {
+		ret = shut_get_string_simple(*upsfd, dev_descriptor->iManufacturer,
+			string, MAX_STRING_SIZE);
+		if (ret > 0) {
+			curDevice->Vendor = strdup(string);
+		}
+	}
 
+	/* ensure iProduct retrieval */
 	if (dev_descriptor->iProduct) {
-		ret = shut_get_string_simple(*upsfd, dev_descriptor->iProduct, string, 0x25);
+		ret = shut_get_string_simple(*upsfd, dev_descriptor->iProduct, string, MAX_STRING_SIZE);
 	} else {
 		ret = 0;
 	}
-
 	if (ret > 0) {
 		curDevice->Product = strdup(string);
 	} else {
@@ -773,7 +778,7 @@ int shut_get_string_simple(int upsfd, int index,
 	int ret, si, di;
 	
 	ret = shut_control_msg(upsfd, USB_ENDPOINT_IN, USB_REQ_GET_DESCRIPTOR,
-			(USB_DT_STRING << 8) + index, 0x0, tbuf, buflen, 1000);
+			(USB_DT_STRING << 8) + index, 0x0, tbuf, buflen, SHUT_TIMEOUT);
 	if (ret < 0)
 		return ret;
 
@@ -783,7 +788,7 @@ int shut_get_string_simple(int upsfd, int index,
 	if (tbuf[0] > ret)
 		return -EFBIG;
 
-	/* skip the zero'ed high bytes */
+	/* skip the UTF8 zero'ed high bytes */
 	for (di = 0, si = 2; si < tbuf[0]; si += 2)
 	{
 		if (di >= (int)(buflen - 1))
@@ -822,7 +827,7 @@ int shut_get_descriptor(int upsfd, unsigned char type,
 	upsdebugx (2, "entering shut_get_descriptor(n %02x, %i)", type, size);
 
 	return shut_control_msg(upsfd, USB_ENDPOINT_IN+(type>=USB_DT_HID?1:0),
-				 USB_REQ_GET_DESCRIPTOR, (type << 8) + index, 0, buf, size, 1000);
+				 USB_REQ_GET_DESCRIPTOR, (type << 8) + index, 0, buf, size, SHUT_TIMEOUT);
 }
 
 /* Take care of a SHUT transfer (sending and receiving data) */
