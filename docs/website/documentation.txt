@@ -5,7 +5,6 @@ User Documentation
 ------------------
 
 - link:FAQ.html[FAQ]
-- link:install.html[Quick Start instructions]
 - link:user-manual.html[NUT User Manual]
 - link:cables.html[Cables information]
 - link:man/index.html#User_man[User manual pages]

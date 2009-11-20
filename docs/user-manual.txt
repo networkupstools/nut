@@ -3,14 +3,14 @@
 Network UPS Tools User Manual
 _____________________________
 
-Arnaud Quette <arnaud.quette@free.fr>
 
 ////////////////////////////////////////////////////////////////////////////////
+Arnaud Quette <arnaud.quette@free.fr>
 Auth: Russell Kroll <rkroll@exploits.org>
 Auth: Peter Selinger <selinger@sourceforge.net>
-////////////////////////////////////////////////////////////////////////////////
 
 image::images/nut-banner.png[Network UPS Tools logo]
+////////////////////////////////////////////////////////////////////////////////
 
 WARNING: this is a Work In Progress document.
 
@@ -27,14 +27,16 @@ interface.
 More than 100 different manufacturers, and several thousands models are
 <<HCL,compatible>>.
 
-This software is the combined effort of many <<Acknowledgements,individuals and companies>>, along
-with the support of our sponsor http://www.eaton.com[Eaton].
+This software is the combined effort of many
+<<Acknowledgements,individuals and companies>>, along with the support of our
+sponsor http://www.eaton.com[Eaton].
 
-This document intend to describe how to install software support for your Power
-Devices (UPS, PDU, ...), and how to use the Network UPS Tools.
+This document intend to describe how to install software support for your
+<<General_Info, Power Devices>> (UPS, PDU, ...), and how to use the Network UPS
+Tools.
 
-It is not intended to present what are Power Devices, nor the different
-technologies that exist.
+It is not intended to present what are <<General_Info, Power Devices>>, nor the
+different technologies that exist.
 
 For such information, have a look at the <<General_Info,General Information>>.
 
@@ -42,17 +44,15 @@ If you wish to discover how everything came together, have a look at the
 <<Project_History,Project History>>.
 
 
-////////////////////////////////////////////////////////////////////////////////
-Overview
-========
-////////////////////////////////////////////////////////////////////////////////
+[[Overview]]
 
 include::../README[]
 
-Features
---------
 
-NUT provides many features. A complete list is available in the <<Features, Features list>>.
+[[Features]]
+
+include::features.txt[]
+
 
 Compatibility information
 -------------------------
@@ -60,14 +60,29 @@ Compatibility information
 Hardware
 ~~~~~~~~
 
+
 The current list of hardware supported by NUT can be viewed <<HCL,here>>.
 
+////////////////////////////////////////////////////////////////////////////////
 *FIXME*: should we also link to the development tree?
+////////////////////////////////////////////////////////////////////////////////
 
 Operating systems
 ~~~~~~~~~~~~~~~~~
 
-This software has been reported to run on Linux distributions, the BSDs, Apple's OS X, Solaris, IRIX, HP/UX, Tru64 Unix, and AIX. Windows users may be able to build it directly with Cygwin. There is also a port of the client-side monitoring to Windows called WinNUT.
+This software has been reported to run on:
+
+- Linux distributions,
+- the BSDs,
+- Apple's OS X,
+- Sun Solaris,
+- SGI IRIX,
+- HP/UX,
+- Tru64 Unix,
+- AIX.
+
+There is also a port of the client-side monitoring to Windows called WinNUT.
+Windows users may be able to build it directly with Cygwin.
 
 Your system will probably run it too. You just need a good C compiler and
 possibly some more packages to gain access to the serial ports.
@@ -77,26 +92,10 @@ installed.
 Success reports are welcomed to keep this list accurate. 
 
 
-Quick Start Instructions
-========================
+[[Installation instructions]]
 
-QuickStart information are available as a link:install.html[separate document].
+include::../INSTALL[]
 
-Installation instructions
-=========================
-
-Installing from source
-----------------------
-
-NUT use the GNU Autotools system.
-
-This means that the standard "./configure ; make ; make install" applies.
-
-[[Configure_options]]
-Configure options
-~~~~~~~~~~~~~~~~~
-
-include::configure.txt[]
 
 Integrated Power Management support
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -104,124 +103,10 @@ Integrated Power Management support
 ...integration with FreeDesktop HAL - Hardware Abstraction Layer (nut-hal.txt)
 *FIXME*: declare obsolete
  
-Installing from packages
-------------------------
 
-This chapter describes the specific installation steps when using binary packages
-that exist on various major systems.
+[[Configuration_notes]]
 
-Debian / Ubuntu
-~~~~~~~~~~~~~~~
-
-Install the 'nut' package, and optionaly the following:
-
-- 'nut-cgi', if you need the CGI (HTML) option,
-- 'nut-snmp', if you need the snmp-ups driver,
-- 'nut-xml', for the netxml-ups driver,
-- 'nut-powerman-pdu', to control the PowerMan daemon (PDU management)
-////////////////////////////////////////////////////////////////////////////////
-- nut-hal-drivers
-////////////////////////////////////////////////////////////////////////////////
-
-using apt-get, aptitude, Synaptic, ...
-
-nut.conf must be edited to be able to invoke /etc/init.d/nut
-
-NOTE: Ubuntu users can simply click on the below icon to install NUT.
-
-++++++++++++++++++++++++++++++++++++++
-<a href="apt://nut"><img src="images/apt.png" alt="" /></a>
-++++++++++++++++++++++++++++++++++++++
-
-Mandriva
-~~~~~~~~
-
-Suse / Opensuse
-~~~~~~~~~~~~~~~
-
-RedHat
-~~~~~~
-
-FreeBSD
-~~~~~~~
-
-*FIXME* with the users writeups from website/documentation.txt
-
-Upgrading notes
----------------
-
-include::../UPGRADING[]
-
-Configuration notes
-===================
-
-Details about the configuration files
--------------------------------------
-
-Generalities
-~~~~~~~~~~~~
-
-All configuration files within this package are parsed with a common
-state machine, which means they all can use a number of extras described
-in this file.
-
-First, most of the programs use an uppercase word to declare a
-configuration directive.  This may be something like MONITOR, NOTIFYCMD,
-or ACCESS.  The case does matter here.  "monitor" won't be recognized.
-
-Next, the parser does not care about whitespace between words.  If you
-like to indent things with tabs or spaces, feel free to do it here.  
-
-If you need to set a value to something containing spaces, it has to be
-contained within "quotes" to keep the parser from splitting up the line.
-That is, you want to use something like this:
-
-	SHUTDOWNCMD "/sbin/shutdown -h +0"
-
-Without the quotes, it would only see the first word on the line.
-
-OK, so let's say you really need to embed that kind of quote within your
-configuration directive for some reason.  You can do that too.
-
-	NOTIFYCMD "/bin/notifyme -foo -bar \"hi there\" -baz"
-
-In other words, \ can be used to escape the ".
-
-Finally, for the situation where you need to put the \ character into your
-string, you just escape it.
-
-	NOTIFYCMD "/bin/notifyme c:\\dos\\style\\path"
-
-The \ can actually be used to escape any character, but you only really
-need it for \, ", and # as they have special meanings to the parser.
-
-# is the comment character.  Anything after an unescaped # is ignored.
-
-Something like this...
-
-	identity = my#1ups
-
-... will actually turn into "identity = my", since the # stops the 
-parsing. If you really need to have a # in your configuration, then
-escape it.
-
-	identity = my\#1ups
-
-Much better.
-
-Line spanning
-~~~~~~~~~~~~~
-
-You can put a backslash at the end of the line to join it to the next
-one.  This creates one virtual line that is composed of more than one
-physical line.
-
-Also, if you leave the "" quote container open before a newline, it will
-keep scanning until it reaches another one.  If you see bizarre behavior
-in your configuration files, check for an unintentional instance of
-quotes spanning multiple lines.
-
-
+include::config-notes.txt[]
 
 
 Configuring automatic UPS shutdowns
@@ -349,7 +234,8 @@ Appendix F: General Information on Power Devices
 Appendix G: How to request support
 ==================================
 
-*FIXME* content to be written
+*FIXME* use website/support.txt for the content and merge with "UM 2.12. Support / Help / etc."
+
 
 [[Cables_information]]
 Appendix H: Cables information
@@ -358,11 +244,18 @@ Appendix H: Cables information
 include::cables.txt[]
 
 
-[[Features]]
-Appendix I: Features
-====================
+[[Configure_options]]
+Appendix J: Configure options
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-include::features.txt[]
+include::configure.txt[]
+
+
+[[Upgrading_notes]]
+Appendix K: Upgrading notes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+include::../UPGRADING[]
 
 ////////////////////////////////////////////////////////////////////////////////
 Comment: point to the website/documentation?

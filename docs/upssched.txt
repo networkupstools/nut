@@ -118,8 +118,10 @@ shell script writing to deal with that input.
 		onbattwarn)
 			echo "The UPS has been on battery for awhile" \
 			| mail -s"UPS monitor" bofh@pager.example.com
+			;;
 		ups-back-on-power)
 			/bin/rm -f /some/path/ups-on-battery
+			;;
 		*)
 			logger -t upssched-cmd "Unrecognized command: $1"
 			;;

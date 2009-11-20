@@ -87,7 +87,12 @@ the process.
 
 
 ////////////////////////////////////////////////////////////////////////////////
-FIXME: only enabled in txt version
+Configuring and using
+---------------------
+
+... config-notes.txt
+
++ FIXME: adapt the belwo text dep. on txt/html version
 ////////////////////////////////////////////////////////////////////////////////
 
 Documentation
@@ -187,21 +192,17 @@ that UPS:
 		port = auto
 		serial = 1234567890
 
-Hardware Support Table
-~~~~~~~~~~~~~~~~~~~~~~
+Hardware Compatibility List
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The NUT Hardware support table is available in the source directory:
-
-	nut-X.Y.Z/data/driver.list
-
-This one should also be distributed with your favorite packages.
+The <<HCL,Hardware Compatibility List>> is available in the source directory
+('nut-X.Y.Z/data/driver.list'), and is generally distributed with packages.
 For example, it is available on Debian systems as:
 
 	/usr/share/nut/driver.list
 
-For another take on this list, try the web page: 
+This table is also available link:http://www.networkupstools.org/stable-hcl.html[online].
 
-	link:http://www.networkupstools.org/stable-hcl.html[http://www.networkupstools.org/stable-hcl.html]
 
 If your driver has vanished, see the link:FAQ.html[FAQ] and
 link:user-manual.html#_upgrading_notes[Upgrading notes].
@@ -548,7 +549,7 @@ Hacking / Development Info
 Additional documentation can be found in:
 
 - the link:developer-guide.html[Developer Guide],
-- and the link:packager-guide.html[Packager Guide].
+- the link:packager-guide.html[Packager Guide].
 
 *FIXME* To be reworked using website/documentation.txt
 

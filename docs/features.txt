@@ -1,7 +1,5 @@
-ifdef::website[]
 Features
 ========
-endif::website[]
 
 NUT provides many features, and is always improving.
 Thus this list may lag behind the current code.
