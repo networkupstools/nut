@@ -55,7 +55,7 @@ WMNut is a program to monitor multiple UPSs statistics through the NUT (Network
 UPS Tools) framework on Linux and other systems. 
 
 Network Management Systems integration
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------
 
 link:http://bigsister.graeff.com/[Big Sister system and network monitor]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
