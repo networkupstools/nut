@@ -23,8 +23,13 @@ CONVERTED_TO_ASCIIDOC = \
 	masterguard.html \
 	megatec.html \
 	megatec_usb.html \
+	metasys.html \
+	microdowell.html \
 	nut.conf.html \
 	nutupsdrv.html \
+	oneac.html \
+	optiups.html \
+	powercom.html \
 	powerman-pdu.html \
 	tripplite_usb.html \
 	ups.conf.html \
@@ -70,8 +75,13 @@ EXTRA_DIST = \
 	masterguard.txt \
 	megatec.txt \
 	megatec_usb.txt \
+	metasys.txt \
+	microdowell.txt \
 	nut.conf.txt \
 	nutupsdrv.txt \
+	oneac.txt \
+	optiups.txt \
+	powercom.txt \
 	powerman-pdu.txt \
 	tripplite_usb.txt \
 	ups.conf.txt \
@@ -130,7 +140,12 @@ man8_MANS = \
 	masterguard.8 \
 	megatec.8 \
 	megatec_usb.8 \
+	metasys.8 \
+	microdowell.8 \
 	nutupsdrv.8 \
+	oneac.8 \
+	optiups.8 \
+	powercom.8 \
 	powerman-pdu.8 \
 	tripplite_usb.8 \
 	upsc.8 \
