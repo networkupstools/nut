@@ -4,7 +4,7 @@ MGE-SHUT(8)
 NAME
 ----
 
-mge-shut, newmge-shut - Driver for SHUT Protocol UPS equipment
+mge-shut - Driver for SHUT Protocol UPS equipment
 
 NOTE
 ----
