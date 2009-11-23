@@ -24,6 +24,7 @@ CONVERTED_TO_ASCIIDOC = \
 	megatec.html \
 	megatec_usb.html \
 	metasys.html \
+	mge-shut.html \
 	microdowell.html \
 	nut.conf.html \
 	nutupsdrv.html \
@@ -76,6 +77,7 @@ EXTRA_DIST = \
 	megatec.txt \
 	megatec_usb.txt \
 	metasys.txt \
+	mge-shut.txt \
 	microdowell.txt \
 	nut.conf.txt \
 	nutupsdrv.txt \
@@ -141,6 +143,7 @@ man8_MANS = \
 	megatec.8 \
 	megatec_usb.8 \
 	metasys.8 \
+	mge-shut.8 \
 	microdowell.8 \
 	nutupsdrv.8 \
 	oneac.8 \
