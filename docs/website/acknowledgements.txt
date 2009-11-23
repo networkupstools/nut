@@ -28,7 +28,7 @@ Active members
 - Eric S. Raymond: Documentation consultant
 - Oden Eriksson: Mandriva packager
 - Stanislav Brabec: Novell / Suse packager
-- Tomas Smetana: Redhat packager
+- Michal Hlavinka: Redhat packager
 
 Retired members
 ~~~~~~~~~~~~~~~
@@ -43,9 +43,11 @@ drivers for Megatec / Q1 protocol
 - Jonathan Dion: MGE internship (summer 2006), who has worked on configuration
 - Doug Reynolds: has worked on CyberPower support (powerpanel driver)
 - Jon Gough: has worked on porting the megatec driver to USB (megatec_usb) 
-- LALLEMENT Dominique: Consultant (chairman of the USB/HID PDC Forum)
+- Dominique Lallement: Consultant (chairman of the USB/HID PDC Forum)
 - Julius Malkiewicz: junior developer
+- Tomas Smetana: former Redhat packager (2007-2008)
 
+[[Eaton]]
 Our Sponsor: Eaton
 ------------------
 
@@ -78,6 +80,9 @@ Supporting manufacturers
 UPS manufacturers
 ~~~~~~~~~~~~~~~~~
 
+- link:http://www.eaton.com[Eaton], our sponsor, as presented in the
+<<Eaton,above section>>.
+
 - link:http://www.gamatronic.com[Gamatronic], through Nadav Moskovitch, has
 revived the 'sec' driver (as gamatronic), and expanded a bit genericups for its
 UPSs with alarm interface.
@@ -86,6 +91,10 @@ UPSs with alarm interface.
 created the 'microdowell' driver to support the Enterprise Nxx/Bxx serial devices.
 They also proposes NUT as an alternative to its software for
 link:http://www.microdowell.com/fra/download.html[Linux / Unix].
+
+- link:http://pcmups.com.tw[Powercom], through Alexey Morozov, has provided
+link:ups-protocol.html[extensive information] on its USB/HID devices, along
+with development units.
 
 Appliances manufacturers
 ~~~~~~~~~~~~~~~~~~~~~~~~
