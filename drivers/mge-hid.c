@@ -28,7 +28,7 @@
 #include "main.h"		/* for getval() */
 #include "common.h"
 
-#define MGE_HID_VERSION		"MGE HID 1.16"
+#define MGE_HID_VERSION		"MGE HID 1.17"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -108,10 +108,19 @@ static double mge_time_date_conversion_nuf(const char *value)
 {
 	struct tm	mge_tm;
 
-	/* build a full date + time string */
-	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s %s", dstate_getinfo("ups.date"), dstate_getinfo("ups.time"));
+	/* guess the input value */
+	if (strchr(value, ':') != NULL) {
+		/* build a full date + value (time) string */
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s %s", dstate_getinfo("ups.date"), value);
+	}
+	else {
+		/* build a full value (date) + time string */
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s %s", value, dstate_getinfo("ups.time"));
+	}
 
 	if (strptime(mge_scratch_buf, "%Y/%m/%d %H:%M:%S", &mge_tm) != NULL) {
+		/* Ignore DST offset */
+		mge_tm.tm_isdst = 0;
 		return mktime(&mge_tm);
 	}
 
