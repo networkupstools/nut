@@ -1,7 +1,7 @@
 if MANUALUPDATE
 
 WEBSITE_FILES = index.html download.html projects.html stable-hcl.html \
-	documentation.html support.html acknowledgements.html features.html FAQ.html \
+	documentation.html support.html features.html FAQ.html \
 	user-manual.html packager-guide.html developer-guide.html ups-protocols.html \
 	cables.html man-index.html nut-qa.html
 
@@ -30,6 +30,9 @@ SUFFIXES = .txt .html
 
 index.html: website.txt
 	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a index-only $<
+
+acknowledgements.html: ../acknowledgements.txt
+	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a website $<
 
 features.html: ../features.txt
 	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ $<

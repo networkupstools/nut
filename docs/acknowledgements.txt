@@ -1,7 +1,7 @@
+ifdef::website[]
 Acknowledgements
 ================
-
-WARNING: this is a Work In Progress document.
+endif::website[]
 
 This project is the result of years of work by many individuals and companies.
 

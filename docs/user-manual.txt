@@ -207,7 +207,7 @@ include FAQ[]
 Appendix C: Acknowledgements / Contributions
 ============================================
 
-include acknowledgements.txt[Acknowledgements / Contributions]
+include::acknowledgements.txt[Acknowledgements / Contributions]
 
 [[Project_History]]
 Appendix D: Project history
