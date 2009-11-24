@@ -127,5 +127,9 @@ td#driver-col { width: 30%; }
 #filters-set legend { font-weight: bold; }
 #filters-set td { border: 0; }
 #filters-set fieldset { display: block; }
-#support-level-legend { float: right; margin-right: 10px; padding: 10px; }
-.support-level-descr { margin-left: 20px; float: right; }
+
+#support-level-legend { width: 31.25em; float: right; margin-right: 10px; padding: 10px; }
+#support-level-legend dt { margin: 0; padding: 0; width: 15%; float: left; }
+#support-level-legend dd { margin: 0; padding: 0; width: 85%; float: left; }
+
+/*.support-level-descr { margin-left: 20px; float: right; }*/
