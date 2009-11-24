@@ -103,20 +103,13 @@ static char *mge_time_conversion_fun(double value)
 	return NULL;
 }
 
-/* Conversion back retrieve ups.time and ups.date to build the full unix time */
-static double mge_time_date_conversion_nuf(const char *value)
+/* Conversion back retrieve ups.time to build the full unix time */
+static double mge_date_conversion_nuf(const char *value)
 {
 	struct tm	mge_tm;
 
-	/* guess the input value */
-	if (strchr(value, ':') != NULL) {
-		/* build a full date + value (time) string */
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s %s", dstate_getinfo("ups.date"), value);
-	}
-	else {
-		/* build a full value (date) + time string */
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s %s", value, dstate_getinfo("ups.time"));
-	}
+	/* build a full value (date) + time string */
+	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s %s", value, dstate_getinfo("ups.time"));
 
 	if (strptime(mge_scratch_buf, "%Y/%m/%d %H:%M:%S", &mge_tm) != NULL) {
 		/* Ignore DST offset */
@@ -124,16 +117,34 @@ static double mge_time_date_conversion_nuf(const char *value)
 		return mktime(&mge_tm);
 	}
 
-	upsdebugx(3, "%s: can't compute date/time %s", __func__, value);
+	upsdebugx(3, "%s: can't compute date %s", __func__, value);
+	return 0;
+}
+
+/* Conversion back retrieve ups.date to build the full unix time */
+static double mge_time_conversion_nuf(const char *value)
+{
+	struct tm	mge_tm;
+
+	/* build a full date + value (time) string */
+	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s %s", dstate_getinfo("ups.date"), value);
+
+	if (strptime(mge_scratch_buf, "%Y/%m/%d %H:%M:%S", &mge_tm) != NULL) {
+		/* Ignore DST offset */
+		mge_tm.tm_isdst = 0;
+		return mktime(&mge_tm);
+	}
+
+	upsdebugx(3, "%s: can't compute time %s", __func__, value);
 	return 0;
 }
 
 static info_lkp_t mge_date_conversion[] = {
-	{ 0, NULL, mge_date_conversion_fun, mge_time_date_conversion_nuf }
+	{ 0, NULL, mge_date_conversion_fun, mge_date_conversion_nuf }
 };
 
 static info_lkp_t mge_time_conversion[] = {
-	{ 0, NULL, mge_time_conversion_fun, mge_time_date_conversion_nuf }
+	{ 0, NULL, mge_time_conversion_fun, mge_time_conversion_nuf }
 };
 
 /* The HID path 'UPS.PowerSummary.ConfigVoltage' only reports
