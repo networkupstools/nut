@@ -10,7 +10,7 @@ NOTE
 ----
 
 This man page only documents the hardware-specific features of the
-usbhid-ups driver.  For information about the core driver, see
+mge-shut and newmge-shut drivers.  For information about the core driver, see
 linknut:nutupsdrv[8].
 
 SUPPORTED HARDWARE
