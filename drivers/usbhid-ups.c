@@ -1202,15 +1202,15 @@ static bool_t hid_ups_walk(walkmode_t mode)
 
 		switch (retcode)
 		{
-		case -EBUSY:
+		case -EBUSY:		/* Device or resource busy */
 			upslog_with_errno(LOG_DEBUG, "Got disconnected by another driver");
-		case -EPERM:
-		case -EPIPE:
-		case -ENODEV:
-		case -EACCES:
-		case -EIO:
-		case -ENXIO:
-		case -ENOENT:
+		case -EPERM:		/* Operation not permitted */
+		case -EPIPE:		/* Broken pipe */
+		case -ENODEV:		/* No such device */
+		case -EACCES:		/* Permission denied */
+		case -EIO:		/* I/O error */
+		case -ENXIO:		/* No such device or address */
+		case -ENOENT:		/* No such file or directory */
 			/* Uh oh, got to reconnect! */
 			hd = NULL;
 			return FALSE;
@@ -1221,6 +1221,9 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		case 0:
 			continue;
 
+		case -ETIMEDOUT:	/* Connection timed out */
+		case -EOVERFLOW:	/* Value too large for defined data type */
+		case -EPROTO:		/* Protocol error */
 		default:
 			/* Don't know what happened, try again later... */
 			upsdebug_with_errno(2, "HIDGetDataValue");
