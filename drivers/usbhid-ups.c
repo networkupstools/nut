@@ -573,7 +573,7 @@ int instcmd(const char *cmdname, const char *extradata)
 	}
 
 	/* Check if the item is an instant command */
-	if (!hidups_item->hidflags & HU_TYPE_CMD) {
+	if (!(hidups_item->hidflags & HU_TYPE_CMD)) {
 		upsdebugx(2, "instcmd: %s is not an instant command\n", cmdname);
 		return STAT_INSTCMD_INVALID;
 	}
@@ -617,7 +617,7 @@ int setvar(const char *varname, const char *val)
 	}
 
 	/* Checking item writability and HID Path */
-	if (!hidups_item->info_flags & ST_FLAG_RW) {
+	if (!(hidups_item->info_flags & ST_FLAG_RW)) {
 		upsdebugx(2, "setvar: not writable %s\n", varname);
 		return STAT_SET_UNKNOWN;
 	}
