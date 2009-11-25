@@ -192,12 +192,6 @@ void SendCmdToSerial(unsigned char *Buff, int Len)
    int i, ret ;
    unsigned char Tmp[20], Xor ;
 
-   /* If for some reason I send a GREATER number of parameters, I shorten it.
-      This in order to avoid a reset of the module.
-      Otherwise the UPS would return an error code. */
-   if (Tmp[1] > 16)
-   	Tmp[1] = 16 ;
-
    Tmp[0] = STX_CHAR ;
    Xor = Tmp[1] = (unsigned char) (Len & 0x1f) ;
    for (i=0 ; i < Tmp[1] ; i++)
