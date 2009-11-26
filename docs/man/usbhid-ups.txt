@@ -79,6 +79,10 @@ This mechanism allow to avoid or reduce staleness message, due to the UPS
 being temporarily overloaded with too much polling requests.
 The default value is 30 (in seconds).
 
+*pollonly*::
+If this flag is set, the driver will ignore interrupts it receives from the
+UPS (not recommended, but needed if these reports are broken on your UPS).
+
 *vendor*='regex'::
 *product*='regex'::
 *serial*='regex'::
