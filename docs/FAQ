@@ -755,3 +755,23 @@ It's both that and a frequently *anticipated* questions file, too.
 
 The idea is to write it up in here so that nobody asks the mailing
 list when it finally does get released.  
+
+== My UPS powers up immediately after a power failure instead of waiting for the batteries to recharge!
+
+You can rig up a little hack to handle this issue in software.
+
+Essentially, you need to test for the POWERDOWNFLAG in your *startup* scripts
+while the filesystems are still read-only.  If it's there, you know your last
+shutdown was caused by a power failure and the UPS battery is probably still
+quite weak.
+
+In this situation, your best bet is to sleep it off.  Pausing in your startup
+script to let the batteries recharge with the filesystems in a safe state is
+recommended.  This way, if the power goes out again, you won't face a situation
+where there's not enough battery capacity left for upsmon to do its thing.
+
+Exactly how long to wait is a function of your UPS hardware, and will require
+careful testing.
+
+If this is too evil for you, buy another kind of UPS that will either wait for a
+minimum amount of charge, a minimum amount of time, or both.
