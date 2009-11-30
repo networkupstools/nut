@@ -34,6 +34,7 @@
 #include "libhid.h"
 
 extern hid_dev_handle_t	udev;
+extern bool_t	 	use_interrupt_pipe;	/* Set to FALSE if interrupt reports should not be used */
 
 /* Driver's parameters */
 #define HU_VAR_ONDELAY		"ondelay"

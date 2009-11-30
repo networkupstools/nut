@@ -101,7 +101,7 @@ static HIDDeviceMatcher_t *regex_matcher = NULL;
 static int pollfreq = DEFAULT_POLLFREQ;
 static int ups_status = 0;
 static bool_t data_has_changed = FALSE; /* for SEMI_STATIC data polling */
-static bool_t use_interrupt_pipe = TRUE;
+bool_t use_interrupt_pipe = TRUE;
 static time_t lastpoll; /* Timestamp the last polling */
 hid_dev_handle_t udev;
 
@@ -765,12 +765,7 @@ void upsdrv_updateinfo(void)
 	/* Process pending events (HID notifications on Interrupt pipe) */
 	for (i = 0; i < evtCount; i++) {
 
-		/* Many UPSes have broken input reports, so we only use the
-		   corresponding feature reports. By setting the age to zero
-		   for the first value we retrieve, we make sure that the
-		   contents of the report buffer are considered stale and we
-		   poll for fresh data. */
-		if (HIDGetDataValue(udev, event[i], &value, (i > 0) ? poll_interval : 0) != 1)
+		if (HIDGetDataValue(udev, event[i], &value, poll_interval) != 1)
 			continue;
 
 		if (nut_debug_level >= 2) {
