@@ -1,4 +1,4 @@
-.TH UPSD 8 "Mon Jan 22 2007" "" "Network UPS Tools (NUT)" 
+.TH UPSD 8 "Mon Nov 30 2009" "" "Network UPS Tools (NUT)" 
 .SH NAME
 upsd \- UPS information server
 .SH SYNOPSIS
@@ -99,8 +99,22 @@ USB cabling, or inspect the network path in the case of a SNMP UPS.
 If the server is build with tcp-wrappers support enabled, it will check if
 the NUT username is allowed to connect from the client address through the
 \fB/etc/hosts.allow\fR and \fB/etc/hosts.deny\fR files. Note that this will
-only be done for commands that require to be logged into the server. Further
-details are described in \fBhosts_access\fR(5).
+only be done for commands that require to be logged into the server.
+
+.IP
+.nf
+	hosts.allow:
+	------------
+	upsd : admin@127.0.0.1/32
+	upsd : monslave@127.0.0.1/32 monslave@192.168.1.0/24
+
+	hosts.deny:
+	-----------
+	upsd : ALL
+.fi
+.LP
+
+Further details are described in \fBhosts_access\fR(5).
 
 .SH FILES
 

@@ -1,4 +1,4 @@
-.TH UPSD.CONF 5 "Mon Jan 22 2007" "" "Network UPS Tools (NUT)"
+.TH UPSD.CONF 5 "Mon Nov 30 2009" "" "Network UPS Tools (NUT)"
 .SH NAME
 upsd.conf \- Configuration for Network UPS Tools upsd
 
@@ -52,6 +52,13 @@ compiled in).
 
 This parameter will only be read at startup.  You'll need to restart
 (rather than reload) upsd to apply any changes made here.
+
+.SH UPGRADING FROM OLDER VERSIONS
+
+The ACL/ACCEPT/REJECT mechanism that existed in versions before
+nut-2.4.0 has been removed. You'll want to use the LISTEN directive
+to limit the addresses the server listens at on multihomed systems.
+If this is not fine grained enough, use a firewall.
 
 .SH SEE ALSO
 \fBupsd\fR(8), \fBnutupsdrv\fR(8), \fBupsd.users\fR(5)

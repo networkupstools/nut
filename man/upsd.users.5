@@ -1,4 +1,4 @@
-.TH UPSD.USERS 5 "Mon Jul 14 2003" "" "Network UPS Tools (NUT)"
+.TH UPSD.USERS 5 "Mon Nov 30 2009" "" "Network UPS Tools (NUT)"
 .SH NAME
 upsd.users \- Administrative user definitions for NUT upsd
 
@@ -73,6 +73,12 @@ Do not attempt to assign actions to upsmon by hand, as you may miss
 something important.  This method of designating a "upsmon user" was
 created so internal capabilities could be changed later on without
 breaking existing installations.
+
+.SH UPGRADING FROM OLDER VERSIONS
+
+The \fIallowfrom\fR mechanism that existed in versions before nut-2.4.0
+has been replaced by tcp-wrappers. Further details are described in
+\fBupsd\fR(8).
 
 .SH SEE ALSO
 
