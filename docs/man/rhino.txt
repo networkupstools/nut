@@ -1,0 +1,59 @@
+RHINO(8)
+========
+
+NAME
+----
+rhino - Driver for Brazilian Microsol RHINO UPS equipment
+
+NOTE
+----
+This man page only documents the hardware-specific features of the
+rhino driver.  For information about the core driver, see
+linknut:nutupsdrv[8].
+
+SUPPORTED HARDWARE
+------------------
+This driver has been tested with :
+  
+ * Rhino   6000 VA
+ * Rhino   7500 VA
+ * Rhino  10000 VA
+ * Rhino  20000 VA
+
+All Rhino models are sinusoidal on-line.
+
+EXTRA ARGUMENTS
+---------------
+
+This driver support the following extra optional settings in
+linknut:ups.conf[5]:
+
+*battext = n* - (default = 0, no extra battery, where n = Ampere*hour )
+
+COMMANDS
+--------
+
+ * load.on  - Turn on the load immediately
+
+ * load.off - Turn off the load immediately
+
+ * bypass.start - Put the UPS in bypass mode
+
+ * bypass.stop  - Put the UPS out of bypass mode
+
+ * shutdown.stayoff - Shut down in 3 minutes and do not return
+
+AUTHOR
+------
+Silvino B. Magalhães <sbm2yk@gmail.com>
+
+SEE ALSO
+--------
+
+The core driver:
+~~~~~~~~~~~~~~~~
+linknut:nutupsdrv[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

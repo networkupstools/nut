@@ -78,8 +78,8 @@ Drivers
 - linknut:optiups[8]
 - linknut:powercom[8]
 - linknut:powerman-pdu[8]
-- powerpanel.8
-- rhino.8
+- linknut:powerpanel[8]
+- linknut:rhino[8]
 - richcomm_usb.8
 - safenet.8
 - snmp-ups.8
