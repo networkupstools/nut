@@ -109,23 +109,6 @@ Integrated Power Management support
 include::config-notes.txt[]
 
 
-Configuring automatic UPS shutdowns
------------------------------------
-
-include shutdown.txt[]
-
-[[BigServers]]
-Typical setups for big servers
-------------------------------
-
-include big-servers.txt[]
-
-[[DataRoom]]
-Typical setups for data rooms
------------------------------
-
-include data-room.txt[]
-
 Advanced usage notes
 ====================
 
