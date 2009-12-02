@@ -284,13 +284,13 @@ void HIDDumpTree(hid_dev_handle_t udev, usage_tables_t *utab)
 		double		value;
 		HIDData_t	*pData = &pDesc->item[i];
 
-		/* skip reports 254/255 for Eaton / MGE due to special handling needs */
+		/* skip reports 254/255 for Eaton / MGE / Dell due to special handling needs */
 #ifdef SHUT_MODE
 		if ((pData->ReportID == 254) || (pData->ReportID == 255)) {
 			continue;
 		}
 #else
-		if (vendorID == 0x0463) {
+		if ((vendorID == 0x0463) || (vendorID == 0x047c)) {
 			if ((pData->ReportID == 254) || (pData->ReportID == 255)) {
 				continue;
 			}
