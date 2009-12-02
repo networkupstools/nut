@@ -92,7 +92,7 @@ installed.
 Success reports are welcomed to keep this list accurate. 
 
 
-[[Installation instructions]]
+[[Installation_instructions]]
 
 include::../INSTALL[]
 
