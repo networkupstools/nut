@@ -70,7 +70,7 @@ Drivers
 - linknut:megatec_usb[8]
 - linknut:metasys[8]
 - linknut:mge-shut[8]
-- mge-utalk.8
+- linknut:mge-utalk[8]
 - linknut:microdowell[8]
 - netxml-ups.8
 - linknut:nutupsdrv[8]

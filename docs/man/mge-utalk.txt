@@ -1,0 +1,98 @@
+MGE-UTALK(8) 
+============
+
+NAME
+----
+
+mge-utalk - Driver for MGE UPS SYSTEMS UTalk protocol equipment
+
+SYNOPSIS
+--------
+
+*mge-utalk* -h
+
+*mge-utalk* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
+mge-utalk driver.  For information about the core driver, see  
+linknut:nutupsdrv[8].
+
+SUPPORTED HARDWARE
+------------------
+
+mge-utalk supports the following legacy units, using the MGE UTalk protocol:
+
+    Pulsar ESV+,
+    Pulsar ES+,
+    Pulsar EL,
+    Pulsar EX,
+    Pulsar EXtreme,
+    Comet EXtreme,
+    Comet (Utalk Serial Card, ref 66060),
+    Galaxy (Utalk Serial Card, ref 66060).
+
+This driver also support some newer models with backward UTalk compatibility,
+such as Pulsar Evolution and Pulsar EXtreme C. As these models also support
+the SHUT protocol, prefer mge-shut for serial communication, or use the USB
+port, if available, with the usbhid-ups driver.
+
+EXTRA ARGUMENTS
+---------------
+
+This driver supports the following optional settings in the linknut:ups.conf[5]:
+
+*lowbatt*='num'::
+Set the low battery warning threshold at which shutdown is initiated by
+linknut:upsmon[8].
++
+The factory default value is 30 (in percent), and can be settable depending on
+the exact model.
+
+*offdelay*='num'::
+Set the timer before the UPS is turned off after the kill power command is
+sent (via the *-k* switch).
++
+The default value is 20 (in seconds).
+
+*ondelay*='num'::
+Set the delay before the UPS is turned on, after the power returns.
++
+The default value is 1 (in minutes).
+
+*oldmac*::
+Set this flag if you are running Linux on an Oldworld Macintosh box
+(all beige Apple Macintosh). This might also be needed for other
+OSs (like *BSD) running on PowerMac.
+
+KNOWN ISSUES
+------------
+
+Repetitive timeout and staleness
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Older models, such as ES/ESV ones, might report repetitive "data stale" errors.
+This is due to the fact that these models don't support too much polling.
+To solve this problem, add "pollinterval=20" in ups.conf, and change the value
+of MAXAGE to 25 in upsd.conf, and DEADTIME to 25 in upsmon.conf.
+
+AUTHOR
+------
+
+Hans Ekkehard Plesser
+Arnaud Quette
+Martin Loyer
+Patrick Agrain
+Nicholas Reilly
+Dave Abbott
+Marek Kralewski
+
+SEE ALSO
+--------
+
+The core driver
+~~~~~~~~~~~~~~~~
+linknut:nutupsdrv[8]
+
+Internet resources
+~~~~~~~~~~~~~~~~~~
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
