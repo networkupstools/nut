@@ -13,7 +13,7 @@ if test -z "${nut_have_libssl_seen}"; then
 	LDFLAGS_ORIG="${LDFLAGS}"
 
 	AC_MSG_CHECKING(for openssl version via pkg-config)
-	OPENSSL_VERSION=`pkg-config --silence-errors --version openssl`
+	OPENSSL_VERSION=`pkg-config --silence-errors --modversion openssl`
 	if (test "$?" != "0"); then
 		nut_have_libssl=no
 	else
