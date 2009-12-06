@@ -1,6 +1,6 @@
 EXTRA_DIST = acpi.txt acknowledgements.txt big-servers.txt chroot.txt		\
  commands.txt configure.txt config-notes.txt contact-closure.txt	\
- data-room.txt design.txt developers.txt FAQ hid-subdrivers.txt		\
+ data-room.txt design.txt developers.txt FAQ.txt hid-subdrivers.txt		\
  ideas.txt macros.txt megatec.txt new-drivers.txt new-names.txt \
  nut-hal.txt osd-notify.txt	\
  pager.txt powersaving.txt protocol.txt shutdown.txt snmp.txt	\
@@ -15,7 +15,8 @@ CONVERTED_TO_ASCIIDOC = asciidoc.html \
 	user-manual.html \
 	packager-guide.html \
 	developer-guide.html \
-	install.html
+	install.html \
+	FAQ.html
 
 html:	$(CONVERTED_TO_ASCIIDOC) html-recursive
 

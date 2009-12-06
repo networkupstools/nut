@@ -184,7 +184,7 @@ SCD::
 Appendix B: Frequently Asked Questions
 ======================================
 
-include FAQ[]
+include FAQ.txt[]
 
 [[Acknowledgements]]
 Appendix C: Acknowledgements / Contributions

@@ -417,7 +417,7 @@ If that doesn't work (check the syslog), just restart it:
 	/usr/local/ups/sbin/upsd 
 
 NOTE: if you want to make reloading work later, see the entry in the
-link:faq.html[FAQ] about starting upsd as a different user.
+link:FAQ.html[FAQ] about starting upsd as a different user.
 
 Power Off flag file
 ^^^^^^^^^^^^^^^^^^^

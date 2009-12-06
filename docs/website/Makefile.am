@@ -40,7 +40,7 @@ features.html: ../features.txt
 cables.html: ../cables.txt
 	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc -a website $<
 
-FAQ.html: ../FAQ
+FAQ.html: ../FAQ.txt
 	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc -a numbered $<
 
 user-manual.html: ../user-manual.txt
