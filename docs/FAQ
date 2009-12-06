@@ -16,26 +16,11 @@ question wasn't answered in there.
 == upsstats says "Error: can't open template file (upsstats.html)".
 Go into your configuration path (/usr/local/ups/etc by default) and
 copy the sample template files over to their real names.  The sample
-template files are installed with 'make install-cgi-conf' and can 
+template files are installed with 'make install' and can 
 also be found inside the source distribution in the conf directory. 
 
 == upsmon fails the login and says "username required" now.
 Go read the link:UPGRADING[UPGRADING] file again.
-
-== My 1.4 CGI programs won't talk to my 2.0 upsd.  What should I do?
-Upgrade the CGI programs to 2.0.  While 1.4 was intended as a 
-compatibility tree that used the new protocol by default, the CGI
-programs were not upgraded at the same time.  The 1.4 versions
-still use the old REQ protocol, and your 2.0 upsd expects GET.
-
-== I just upgraded from 1.2 and upsmon now fails to start, saying
-"Fatal error: insufficient power configured!".  Why?
-You didn't read the top of the error, where upsmon says that it 
-ignored the invalid MONITOR line because UPS directives now require
-a UPS name.  It also means you didn't see the same warning in 
-UPGRADING.
-
-At least you saw this in the FAQ before asking the list.
 
 == My UPS driver now says it's "broken", and won't start.  What now?
 Or a variation like...
@@ -58,12 +43,6 @@ To get a driver back into current releases, you need to convert it
 yourself or get someone to do it for you.  This is not difficult.
 The hardest part of any driver is decoding the protocol, and that's
 already been done in the old version.
-
-== I just upgraded and now I can't talk to older versions.
-Version 2.0 can't communicate with anything before 1.4 due to the
-protocol changes.  Version 1.4 can communicate with both 2.0 and
-most older versions since it was a transitional release and has
-compatibility code for both protocols.
 
 == My UPS driver program won't work.  I'm starting it as root, and root owns the device, so what's the problem?
 
@@ -104,8 +83,10 @@ ups.conf.  Just define it before any of your [sections]:
 		driver = mge-shut
 		port = /dev/ttyS0
 
-== upsc, upsstats, and the other clients say "access denied".  The
-serial port permissions are fine, so what gives? 
+////////////////////////////////////////////////////////////////////////////////
+FIXME: replace reference to ACLs.
+////////////////////////////////////////////////////////////////////////////////
+== upsc, upsstats, and the other clients say "access denied".  The serial port permissions are fine, so what gives? 
 
 In this case, "access denied" means the access to upsd, not the
 serial port.  You're being denied since the system has not been
@@ -139,10 +120,10 @@ After editing the upsd config files, you can do 'upsd -c reload'
 or kill -HUP <pid of upsd> to make it reload the configuration
 without restarting the process.
 
-== I have an APC Smart-UPS connected with a grey APC cable and it won't
-work.  The Back-UPS type in the genericups driver works but then I 
-don't get to use all the nifty features in there.  Why doesn't the 
-right driver work?
+== I have an APC Smart-UPS connected with a grey APC serial cable and it won't work. 
+
+The Back-UPS type in the genericups driver works but then I don't get to use
+all the nifty features in there.  Why doesn't the right driver work?
 
 The problem lies in your choice of cable.  APC's grey cables
 generally only do "dumb" signalling - very basic yes/no info about
@@ -167,9 +148,7 @@ these come with the UPS and are black.  If your smart cable has
 wandered off, one can be built rather easily with some connectors and
 cable - there's no fancy wiring or resistors.
 
-	See this URL for a handy diagram:
-
-	http://random.networkupstools.org/cables/940-0024C.jpg
+See this URL for a handy diagram: http://www.networkupstools.org/cables/940-0024C.jpg
 
 There is also a text version of that diagram in the docs/cables
 directory of the NUT source distribution.  Either one should allow
@@ -186,25 +165,6 @@ serial port.  Merely having it start up is not necessarily an
 indication of success.  You should start it and then check the
 status with upsc or similar to be sure that it's reading the
 hardware properly.
-
-== Why does configure fail to find gd?
-
-Recent versions of gd should be detected automatically through the
-gdlib-config script.  Note that gd 2.0.5 through 2.0.7 have an
-unusable script, so upgrade to the newest version if you have one
-of those installed.
-
-If you're stuck with an older version of gd, you can use it if you
-specify the flags manually.  Look in gd's Makefile for "LIBS=", 
-then use that value when you call configure:
-
-	./configure --with-gd-libs="<whatever>" --with-cgi
-
-If you don't have gd's Makefile available for some reason, you're
-in for a lot of trial and error.  
-
-== Why PNG?  You used to generate GIF bars with upsimage back in 1998 or 1999...
-http://www.burnallgifs.org/
 
 == Why doesn't upsd implement the functionality of upsmon?  I have to run THREE programs to monitor my UPS!
 
@@ -246,8 +206,7 @@ complicated, and getting it right for your situation can be tricky.
 Having it live in a separate program saves resources and lets most
 people avoid it completely.
 
-== Why doesn't upsmon send a SIGPWR signal to init so it can deal with
-power events?
+== Why doesn't upsmon send a SIGPWR signal to init so it can deal with power events?
 
 *Answer 1*
 
@@ -265,15 +224,6 @@ init running.
 So, to be compatible, upsmon just invokes a shell command.  If you
 want to use init's SIGPWR stuff, just put the right "kill" line in
 a shell script and make upsmon call it.  Everyone wins.
-
-== Why can't upsset read my upsset.passwd file?
-
-You have an old version of upsset installed, since the current
-version doesn't use that file.  Install a new version and then try
-it again.
-
-Be sure to secure your CGI directory as instructed in the
-upsset.conf.
 
 == Why won't bestups talk to my Best Fortress UPS?
 
@@ -326,7 +276,7 @@ Note: if you jumped in with both feet and didn't follow the INSTALL
 document, you probably started upsd by itself.  You have to run
 'upsdrvctl start' to start the drivers after configuring ups.conf.
 
-== Everything works perfectly during the shutdown, and the UPS comes  back on, but my system stays off.  What's happening?
+== Everything works perfectly during the shutdown, and the UPS comes back on, but my system stays off.  What's happening?
 
 Assuming you don't have the problem in the next question, then you
 probably have an ATX motherboard, have APM or ACPI enabled in your
@@ -478,7 +428,7 @@ boot.
 If you like this, you'll probably also find the chroot process to
 be useful and interesting.  See chroot.txt for more details.
 
-== What's the point of that 'security domains' concept above?
+== What's the point of that "security domains" concept above?
 
 The point is limiting your losses.  If someone should happen to
 break into upsd in that environment, they should only gain access
@@ -499,8 +449,13 @@ using this technique.
 
 You probably don't want to do this, since it doesn't maximize your
 runtime on battery.  Assuming you have a good reason for it (see
-the next entry), then look at upssched.txt or the upssched man
+the next entry), then look at upssched.txt or the upssched(8) man
 page for some ideas.
+
+/////////////////////////////////////////////////////////////////
+TODO: figure out how to link to the upssched man page above.
+/////////////////////////////////////////////////////////////////
+
 
 == Why doesn't upsmon shut down my system?  I pulled the plug and nothing happened.
 
@@ -713,13 +668,7 @@ values and behavior, as it was when it was new.
 
 Thanks to Matthew Dharm for helping us nail down this procedure.
 
-== multimon.cgi seems to be stuck at an old version, even though I just installed a new one.
-
-multimon was removed during the 1.1 development cycle.  upsstats
-now does everything it used to do, and then some.  You should just
-delete those files and start using upsstats directly.
-
-== OK, I switched to upsstats. Now it's giving me Celsius. I like Fahrenheit. Where's the config file to switch it back?
+== upsstats returns temperatures in Celsius. I like Fahrenheit. Where's the config file to switch it back?
 
 Temperature scales are handled by the template files, so edit your
 upsstats.html and change it from TEMPC to TEMPF.
