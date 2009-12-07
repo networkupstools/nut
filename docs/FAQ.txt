@@ -206,6 +206,8 @@ complicated, and getting it right for your situation can be tricky.
 Having it live in a separate program saves resources and lets most
 people avoid it completely.
 
+It is also coherent with the answer to the previous question.
+
 == Why doesn't upsmon send a SIGPWR signal to init so it can deal with power events?
 
 *Answer 1*
@@ -573,7 +575,7 @@ upsmon.
 
 If this really bothers you and you like running lots of code as
 root, start upsmon with -p and it will go back to being one big
-process.  This is not recommended, so don't blame me if something
+process.  This is not recommended, so don't blame us if something
 bad happens in this mode.
 
 == I have <some problem> with <some old version> ...
@@ -724,3 +726,36 @@ careful testing.
 
 If this is too evil for you, buy another kind of UPS that will either wait for a
 minimum amount of charge, a minimum amount of time, or both.
+
+== I'm facing a power race
+Or a variation like...
+
+== The power came back during the shutdown, but before the UPS power off. Now the UPS does not reboot, and my computer stays off. How can I fix that?
+
+There is a situation where the power may return during the shutdown process.
+This is known as a race.  Here's how we handle it.
+
+"Smart" UPSes typically handle this by using a command that forces the UPS to
+power the load off and back on.  This way, you are assured that the systems will
+restart even if the power returns at the worst possible moment.
+
+Contact closure units (ala genericups), on the other hand, have the potential
+for a race when feeding multiple systems.  This is due to the design of most
+contact closure UPSes.  Typically, the "kill power" line only functions when
+running on battery.  As a result, if the line power returns during the shutdown
+process, there is no way to power down the load.
+
+The workaround is to force your systems to reboot after some interval. This way,
+they won't be stuck in the halted state with the UPS running on line power.
+
+Implement this by modifying your shutdown script like this:
+
+	if (test -f /etc/killpower)
+	then
+		/usr/local/ups/bin/upsdrvctl shutdown
+
+		sleep 120
+
+		# uh oh, we never got shut down! (power race?)
+		reboot
+	fi
