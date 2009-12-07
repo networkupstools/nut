@@ -515,15 +515,17 @@ Startup scripts
 
 NOTE: This step is not need if you installed from packages.
 
-Edit your startup scripts, and add upsmon.
+Edit your startup scripts, and add  call to 'upsmon'.
 
 Make sure upsmon starts when your system comes up.  Do it after upsdrvctl and
 upsd, or it will complain about not being able to contact the server.
 
+You may delete the POWERDOWNFLAG in the startup scripts, but it is not
+necessary.  upsmon will clear that file for you when it starts.
+
 ////////////////////////////////////////////////////////////////////////////////
 *FIXME*
-- point sample scripts in scripts/...
-- merge with shutdown.txt
+- point sample scripts in scripts/ or the NPS...
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -536,7 +538,7 @@ Edit your shutdown scripts, and add 'upsdrvctl shutdown'.
 
 You should configure your system to power down the UPS after the filesystems are
 remounted read-only.  Have it look for the presence of the POWERDOWNFLAG (from
-upsmon.conf), using this as an example:
+link:man/upsmon.conf.html[upsmon.conf(5)]), using this as an example:
 
 --------------------------------------------------------------------------------
 
@@ -549,7 +551,7 @@ upsmon.conf), using this as an example:
 
 		# uh oh... the UPS power-off failed
 		# you probably want to reboot here so you don't get stuck!
-		# *** see the section on power races below! ***
+		# *** see also the section on power races in the FAQ! ***
 	fi
 
 --------------------------------------------------------------------------------
@@ -566,16 +568,21 @@ point.  Otherwise it won't be able to figure out what to do.
 ================================================================================
 
 
-
 Testing shutdowns
 ^^^^^^^^^^^^^^^^^
 
-To see how upsdrvctl will behave without actually turning off power, use
-the -t argument:
+UPS equipment varies from manufacturer to manufacturer and even within
+model lines.  You should test the shutdown sequence on your systems before
+leaving them unattended.  A successful sequence is one where the OS halts
+before the battery runs out, and the system restarts when power returns.
+
+The first step is to see how upsdrvctl will behave without actually turning off
+power. To do so, use the '-t' argument:
 
 	/usr/local/ups/bin/upsdrvctl -t shutdown
 
 It will display the sequence without actually calling the drivers.
+
 
 You can finally test a forced shutdown sequence (FSD) using:
 
@@ -584,6 +591,17 @@ You can finally test a forced shutdown sequence (FSD) using:
 This will execute a full shutdown sequence, as presented in
 <<Shutdown_design,Shutdown design>>, starting from the 3rd step.
 
+If everything works correctly, the computer will be forcibly powered off,
+may remain off for a few seconds to a few minutes (depending on the
+driver and UPS type), then will power on again.
+
+If your UPS just sits there and never resets the load, you are vulnerable
+to a power race and should add the "reboot after timeout" hack at the very least.
+
+////////////////////////////////////////////////////////////////////////////////
+FIXME: linkto
+////////////////////////////////////////////////////////////////////////////////
+Also refer to the section on power races in the link:FAQ.html[FAQ].
 
 
 RAID warning
@@ -611,8 +629,43 @@ pending writes.  Make sure your filesystems are remounted read-only and you shou
 ////////////////////////////////////////////////////////////////////////////////
 
 
+Multiple UPS shutdowns
+======================
+
+If you have multiple UPSes connected to your system, chances are that you
+need to shut them down in a specific order.  The goal is to shut down
+everything but the one keeping upsmon alive at first, then you do that one
+last.
+
+To set the order in which your UPSes receive the shutdown commands, define
+the "sdorder" value in your ups.conf.
+
+	[bigone]
+		driver = usbhid-ups
+		port = auto
+		sdorder = 2
+
+	[littleguy]
+		driver = mge-shut
+		port = /dev/ttyS0
+		sdorder = 1
+
+	[misc]
+		driver = megatec
+		port = /dev/ttyS1
+		sdorder = 0
+
+The order runs from 0 to the highest number available.  So, for this
+configuration, the order of shutdowns would be misc, littleguy, and then
+bigone.
+
+NOTE: If you have a UPS that shouldn't be shutdown when running "upsdrvctl
+shutdown", set the sdorder to -1.
+
+
+
 ////////////////////////////////////////////////////////////////////////////////
-FIXME: update and complete with the remaindr of
+FIXME: update and complete with the remainder of
 include shutdown.txt[]
 ////////////////////////////////////////////////////////////////////////////////
 
