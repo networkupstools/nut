@@ -42,6 +42,9 @@ that have been addressed.
 
 ================================================================================
 
+////////////////////////////////////////////////////////////////////////////////
+FIXME: include download.txt
+////////////////////////////////////////////////////////////////////////////////
 
 Prepare your system
 ~~~~~~~~~~~~~~~~~~~~
@@ -217,6 +220,8 @@ package, and optionaly the following:
 - 'nut-snmp', if you need the snmp-ups driver,
 - 'nut-xml', for the netxml-ups driver,
 - 'nut-powerman-pdu', to control the PowerMan daemon (PDU management)
+- 'nut-dev', if you need the development files.
+
 ////////////////////////////////////////////////////////////////////////////////
 - nut-client
 - nut-hal-drivers
@@ -233,9 +238,18 @@ Mandriva
 ~~~~~~~~
 
 NOTE: NUT is packaged and well maintained in these systems.
-The official Red Hat packager is part of the NUT Team.
+The official Mandriva packager is part of the NUT Team.
 
-FIXME
+Using your prefered method (urpmi, RPMdrake, ...), install one of the two below
+packages:
+
+- 'nut-server' if you have a 'standalone' or 'netserver' installation,
+- 'nut' if you have a 'netclient' installation.
+
+Optionaly, you can also install the following:
+
+- 'nut-cgi', if you need the CGI (HTML) option,
+- 'nut-devel', if you need the development files.
 
 
 [[Suse]]
@@ -263,30 +277,57 @@ Red Hat, Fedora and CentOS
 NOTE: NUT is packaged and well maintained in these systems.
 The official Red Hat packager is part of the NUT Team.
 
-FIXME
+Using your prefered method (yum, Add/Remove Software, ...), install one of the
+two below packages:
+
+- 'nut' if you have a 'standalone' or 'netserver' installation,
+- 'nut-client' if you have a 'netclient' installation.
+
+Optionaly, you can also install the following:
+
+- 'nut-cgi', if you need the CGI (HTML) option,
+- 'nut-xml', if you need the netxml-ups driver,
+- 'nut-devel', if you need the development files.
 
 
+[[FreeBSD]]
 FreeBSD
 ~~~~~~~
 
-*FIXME* with the users writeups from website/documentation.txt
+You can either install NUT as a binary package or as a port.
 
+Binary package
+^^^^^^^^^^^^^^
+
+To install the main component, use the following command:
+
+	# pkg_add -r nut
+
+Port
+^^^^
+
+The port is located under /usr/ports/sysutils/nut. 
+To install it, use the following command:
+
+	# cd /usr/ports/sysutils/nut/ && make install clean
+
+You have to define WITH_NUT_CGI to build the optional CGI scripts.
+
+Optionaly, you can also install the following ports:
+
+- sysutils/nut-snmp, for the SNMP driver,
+- sysutils/nut-usb, for the USB drivers,
+- sysutils/nut-libupsclient, for the upsclient library.
 
 
 You are now ready to configure NUT, and start testing and using it.
 
-You can jump directly to FIXME Configuration_notes
-
-
-
-FIXME: move to config-notes.txt
-- UM Configuration notes
-
-
+You can jump directly to the
+link:user-manual.html#Configuration_notes[NUT configuration].
 
 
 ////////////////////////////////////////////////////////////////////////////////
-*sandbox*
+FIXME
 More information can be found in the README file, the shutdown.txt document, 
 the upsmon(8) man page and the upsmon.conf(5) man page.
 ////////////////////////////////////////////////////////////////////////////////
