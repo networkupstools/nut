@@ -1,7 +1,7 @@
 /*  mge-hid.c - data to monitor MGE UPS SYSTEMS HID (USB and serial) devices
  *
  *  Copyright (C) 2003 - 2009
- *  			Arnaud Quette <arnaud.quette@mgeups.fr>
+ *  			Arnaud Quette <arnaud.quette@free.fr>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
  *
@@ -28,7 +28,7 @@
 #include "main.h"		/* for getval() */
 #include "common.h"
 
-#define MGE_HID_VERSION		"MGE HID 1.17"
+#define MGE_HID_VERSION		"MGE HID 1.18"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -239,6 +239,36 @@ static info_lkp_t mge_emergency_stop[] = {
 	{ 0, NULL, NULL }
 };
 
+static info_lkp_t mge_wiring_fault[] = {
+	{ 1, "Wiring fault!", NULL },
+	{ 0, NULL, NULL }
+};
+
+static info_lkp_t mge_config_failure[] = {
+	{ 1, "Fatal EEPROM fault!", NULL },
+	{ 0, NULL, NULL }
+};
+
+static info_lkp_t mge_inverter_volthi[] = {
+	{ 1, "Inverter AC voltage too high!", NULL },
+	{ 0, NULL, NULL }
+};
+
+static info_lkp_t mge_inverter_voltlo[] = {
+	{ 1, "Inverter AC voltage too low!", NULL },
+	{ 0, NULL, NULL }
+};
+
+static info_lkp_t mge_short_circuit[] = {
+	{ 1, "Output short circuit!", NULL },
+	{ 0, NULL, NULL }
+};
+
+info_lkp_t mge_onbatt_info[] = {
+	{ 1, "!online", NULL },
+	{ 0, "online", NULL },
+	{ 0, NULL, NULL }
+};
 /* allow limiting to ups.model ~= Protection Station */
 static char *eaton_check_pegasus_fun(double value)
 {
@@ -698,31 +728,49 @@ static hid_info_t mge_hid2nut[] =
 
 	/* Special case: boolean values that are mapped to ups.status and ups.alarm */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, online_info },
+	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[3].PresentStatus.Used", NULL, NULL, 0, mge_onbatt_info },
+	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.Used", NULL, NULL, 0, online_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, discharging_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Charging", NULL, NULL, HU_FLAG_QUICK_POLL, charging_info },
+	/* FIXME: on Dell, the above requires an "AND" with "UPS.BatterySystem.Charger.Mode = 1" */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL, NULL, HU_FLAG_QUICK_POLL, lowbatt_info },
+	/* Output overload, Level 1 (FIXME: add the level?) */
+	{ "BOOL", 0, 0, "UPS.PowerConverter.Output.Overload.[1].PresentStatus.OverThreshold", NULL, NULL, 0, overload_info },
+	/* Output overload, Level 2 (FIXME: add the level?) */
+	{ "BOOL", 0, 0, "UPS.PowerConverter.Output.Overload.[2].PresentStatus.OverThreshold", NULL, NULL, 0, overload_info },
+	/* Output overload, Level 3 (FIXME: add the level?) */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Overload", NULL, NULL, 0, overload_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL, NULL, 0, replacebatt_info },
+	/* FIXME: on Dell, the above requires an "AND" with "UPS.BatterySystem.Battery.Test = 3 " */
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.Buck", NULL, NULL, 0, trim_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.Boost", NULL, NULL, 0, boost_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.VoltageOutOfRange", NULL, NULL, 0, vrange_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.FrequencyOutOfRange", NULL, NULL, 0, frange_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Good", NULL, NULL, 0, off_info },
-	/* { "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.Used", NULL, NULL, 0, online_info }, */
+	{ "BOOL", 0, 0, "UPS.BatterySystem.Charger.PresentStatus.Used", NULL, NULL, 0, off_info },
+	/* FIXME: on Dell, the above requires an "AND" with "UPS.BatterySystem.Charger.Mode = 4 (ABM Resting)" */
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[2].PresentStatus.Used", NULL, NULL, 0, bypass_auto_info }, /* Automatic bypass */
-	/* { "BOOL", 0, 0, "UPS.PowerConverter.Input.[3].PresentStatus.Used", NULL, NULL, 0, onbatt_info }, */
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[4].PresentStatus.Used", NULL, NULL, 0, bypass_manual_info }, /* Manual bypass */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.FanFailure", NULL, NULL, 0, fanfail_info },
 	{ "BOOL", 0, 0, "UPS.BatterySystem.Battery.PresentStatus.Present", NULL, NULL, 0, nobattery_info },
 	{ "BOOL", 0, 0, "UPS.BatterySystem.Charger.PresentStatus.InternalFailure", NULL, NULL, 0, chargerfail_info },
 	{ "BOOL", 0, 0, "UPS.BatterySystem.Charger.PresentStatus.VoltageTooHigh", NULL, NULL, 0, battvolthi_info },
+	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.VoltageTooHigh", NULL, NULL, 0, battvolthi_info },
+	/* Battery DC voltage too high! */
+	{ "BOOL", 0, 0, "UPS.BatterySystem.Battery.PresentStatus.VoltageTooHigh", NULL, NULL, 0, battvolthi_info },
 	{ "BOOL", 0, 0, "UPS.BatterySystem.Charger.PresentStatus.VoltageTooLow", NULL, NULL, 0, battvoltlo_info },
+	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.VoltageTooLow", NULL, NULL, 0, battvoltlo_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.InternalFailure", NULL, NULL, 0, commfault_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.OverTemperature", NULL, NULL, 0, overheat_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ShutdownImminent", NULL, NULL, 0, shutdownimm_info },
 
 	/* Vendor specific ups.alarm */
 	{ "ups.alarm", 0, 0, "UPS.PowerSummary.PresentStatus.EmergencyStop", NULL, NULL, 0, mge_emergency_stop },
+	{ "ups.alarm", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.WiringFault", NULL, NULL, 0, mge_wiring_fault },
+	{ "ups.alarm", 0, 0, "UPS.PowerSummary.PresentStatus.ConfigurationFailure", NULL, NULL, 0, mge_config_failure },
+	{ "ups.alarm", 0, 0, "UPS.PowerConverter.Inverter.PresentStatus.VoltageTooHigh", NULL, NULL, 0, mge_inverter_volthi },
+	{ "ups.alarm", 0, 0, "UPS.PowerConverter.Inverter.PresentStatus.VoltageTooLow", NULL, NULL, 0, mge_inverter_voltlo },
+	{ "ups.alarm", 0, 0, "UPS.PowerConverter.Output.PresentStatus.ShortCircuit", NULL, NULL, 0, mge_short_circuit },
 
 	/* Input page */
 	{ "input.voltage", 0, 0, "UPS.PowerConverter.Input.[1].Voltage", NULL, "%.1f", 0, NULL },
