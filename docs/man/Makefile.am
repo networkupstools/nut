@@ -35,6 +35,8 @@ CONVERTED_TO_ASCIIDOC = \
 	powerman-pdu.html \
 	powerpanel.html \
 	rhino.html \
+	richcomm_usb.html \
+	safenet.html \
 	tripplite_usb.html \
 	ups.conf.html \
 	upsc.html \
@@ -91,6 +93,8 @@ EXTRA_DIST = \
 	powerman-pdu.txt \
 	powerpanel.txt \
 	rhino.txt \
+	richcomm_usb.txt \
+	safenet.txt \
 	tripplite_usb.txt \
 	ups.conf.txt \
 	upsc.txt \
@@ -159,6 +163,8 @@ man8_MANS = \
 	powerman-pdu.8 \
 	powerpanel.8 \
 	rhino.8 \
+	richcomm_usb.8 \
+	safenet.8 \
 	tripplite_usb.8 \
 	upsc.8 \
 	upsd.8 \

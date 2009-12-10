@@ -80,8 +80,8 @@ Drivers
 - linknut:powerman-pdu[8]
 - linknut:powerpanel[8]
 - linknut:rhino[8]
-- richcomm_usb.8
-- safenet.8
+- linknut:richcomm_usb[8]
+- linknut:safenet[8]
 - snmp-ups.8
 - solis.8
 - tripplite.8

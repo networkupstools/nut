@@ -1,0 +1,101 @@
+SAFENET(8)
+==========
+
+NAME
+----
+safenet - Driver for SafeNet compatible UPS equipment
+
+NOTE
+----
+This man page only documents the hardware-specific features of the
+safenet driver.  For information about the core driver, see
+linknut:nutupsdrv[8].
+
+SUPPORTED HARDWARE
+------------------
+This driver supports UPS equipment which can be controlled via
+SafeNet v1.0 for Windows (serial interface only).
+
+EXTRA ARGUMENTS
+---------------
+This driver supports the following optional settings in the
+linknut:ups.conf[5] file:
+
+*manufacturer=*'value'::
+Autodetection of this parameter is not possible yet (and it probably
+never will be). Therefore, this user-defined string accepts any name. The
+default is 'unknown'.
+
+*modelname=*'value'::
+Like manufacturer above. The default is 'unknown'.
+
+*serialnumber=*'value'::
+Like manufacturer above. The default is 'unknown'.
+
+*ondelay=*'value'::
+Time to wait before switching on the UPS (minutes). Defaults to 1 minute.
+
+*offdelay=*'value'::
+Time to wait before shutting down the UPS (seconds). Defaults to 30 seconds.
+
+UPSCMD
+------
+This driver supports some instant commands (see linknut:upscmd[8]):
+
+*test.battery.start*::
+Start UPS self test
+
+*test.battery.stop*::
+Cancel UPS self test
+
+*test.failure.start*::
+Start simulated power failure
+
+*test.failure.stop*::
+Cancel simulated power failure
+
+*beeper.enable*::
+Enable the UPS beeper
+
+*beeper.mute*::
+Temporarily mute the UPS beeper
+
+*beeper.toggle*::
+Toggle the UPS beeper
+
+*shutdown.return*::
+Turn off the load and wait for the power to return. Uses the timer
+defined by *offdelay*.
+
+*shutdown.reboot*::
+Turn off the load and return. Uses the timers defined by *offdelay*
+and *ondelay*.
+
+KNOWN PROBLEMS
+--------------
+If you run the *shutdown.return* command with mains present, the output
+may stay on or switch off and not back on again. The *shutdown.reboot*
+command will unconditionally switch on the load again (with or without mains
+present).
+
+If the driver is called with the '-k' option (or through *upsdrvctl
+shutdown*) it tries to detect which command should be used in an attempt
+to stay off until mains is present again or to cycle the output if the
+power returned in the mean time. This isn't bullet-proof, and you should be
+prepared that the power will either not be shutdown, or that it doesn't
+return when the power comes back.
+
+AUTHOR
+------
+Arjen de Korte <adkorte-guest at alioth.debian.org>
+
+SEE ALSO
+--------
+
+The core driver:
+~~~~~~~~~~~~~~~~
+linknut:nutupsdrv[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
