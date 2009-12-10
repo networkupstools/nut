@@ -10,7 +10,7 @@
  *     Marek Kralewski <marek@mercy49.de>
  *
  *  This driver is a collaborative effort by the above people,
- *  Sponsored by MGE UPS SYSTEMS <http://opensource.mgeups.com/>
+ *  Sponsored by MGE UPS SYSTEMS
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,6 +26,30 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
+ */
+
+/*
+ * IMPLEMENTATION DETAILS
+ * 
+ * Not all UTalk models provide all possible information, settings and commands.
+ * mge-utalk checks on startup which variables and commands are available from
+ * the UPS, and re-reads these regularly. Thus, startup is a bit slow, but this
+ * should not matter much.
+ * 
+ * mge-utalk.h defines a struct array that tells the driver how to read
+ * variables from the UPS and publish them as NUT data.
+ * 
+ * "ups.status" variable is not included in this array, since it contains
+ * information that requires several calls to the UPS and more advanced analysis
+ * of the reponses. The function get_ups_status does this job.
+ * 
+ * Note that MGE enumerates the status "bits" from right to left,
+ * i.e., if buf[] contains the reponse to command "Ss" (read system status),
+ * then buf[0] contains "bit" Ss.1.7 (General alarm), while buf[7] contains
+ * "bit" Ss.1.0 (Load unprotected). 
+ * 
+ * enable_ups_comm() is called before each attempt to read/write data
+ * from/to the UPS to re synchronise the communication.
  */
 
 #include <ctype.h>
