@@ -16,9 +16,16 @@ if test -z "${nut_have_libwrap_seen}"; then
    LIBS=""
 
    AC_CHECK_HEADER(tcpd.h, [], nut_have_libwrap=no)
-   AC_CHECK_LIB(wrap, request_init, [], nut_have_libwrap=no)
    AC_SEARCH_LIBS(yp_get_default_domain, nsl, [], nut_have_libwrap=no)
 
+   dnl The line below doesn't work on Solaris 10.
+   dnl AC_SEARCH_LIBS(request_init, wrap, [], nut_have_libwrap=no)
+   LIBS="${LIBS} -lwrap"
+   AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#include <tcpd.h>
+int allow_severity = 0, deny_severity = 0;
+	]], [[ request_init(0); ]])], [], nut_have_libwrap=no)
+ 
    if test "${nut_have_libwrap}" = "yes"; then
 	LIBWRAP_CFLAGS=""
 	LIBWRAP_LDFLAGS="${LIBS}"
