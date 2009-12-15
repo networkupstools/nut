@@ -38,12 +38,8 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
    fi
 
    AC_MSG_CHECKING(for Net-SNMP headers)
-   AC_TRY_CPP([#include <net-snmp/net-snmp-config.h>],
-			[AC_MSG_RESULT(yes)
-			],
-			[AC_MSG_RESULT(no)
-			nut_have_libnetsnmp=no])
-			
+   AC_CHECK_HEADER(net-snmp/net-snmp-config.h, [], nut_have_libnetsnmp=no)
+
    if test "${nut_have_libnetsnmp}" = "yes"; then
 	LIBNETSNMP_CFLAGS="${CFLAGS}"
 	LIBNETSNMP_LDFLAGS="${LDFLAGS}"
