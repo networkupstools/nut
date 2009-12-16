@@ -7,48 +7,42 @@ dnl once.
 AC_DEFUN([NUT_CHECK_LIBNETSNMP], 
 [
 if test -z "${nut_have_libnetsnmp_seen}"; then
-   nut_have_libnetsnmp_seen=yes
+	nut_have_libnetsnmp_seen=yes
 
-   dnl save CFLAGS and LDFLAGS
-   CFLAGS_ORIG="${CFLAGS}"
-   LDFLAGS_ORIG="${LDFLAGS}"
+	dnl save CFLAGS and LDFLAGS
+	CFLAGS_ORIG="${CFLAGS}"
+	LDFLAGS_ORIG="${LDFLAGS}"
+   
+	AC_MSG_CHECKING(for Net-SNMP cflags)
+	CFLAGS=`net-snmp-config --cflags 2>/dev/null`
 
-   dnl innocent until proven guilty
-   nut_have_libnetsnmp=yes
-   AC_MSG_CHECKING(for Net-SNMP cflags)
-   CFLAGS=`net-snmp-config --cflags 2>/dev/null`
+	if (test "$?" != "0"); then
+		AC_MSG_RESULT([not found])
+		nut_have_libnetsnmp=no
+	else
+		AC_MSG_RESULT([${CFLAGS}])
+		nut_have_libnetsnmp=yes
+	fi
 
-   if (test "$?" != "0")
-   then
-	AC_MSG_RESULT([not found])
-	nut_have_libnetsnmp=no
-   else
-	AC_MSG_RESULT([${CFLAGS}])
-   fi
+	AC_MSG_CHECKING(for Net-SNMP libs)
+	LDFLAGS=`net-snmp-config --libs 2>/dev/null`
 
-   AC_MSG_CHECKING(for Net-SNMP libs)
-   LDFLAGS=`net-snmp-config --libs 2>/dev/null`
+	if (test "$?" != "0"); then
+		AC_MSG_RESULT([not found])
+		nut_have_libnetsnmp=no
+	else
+		AC_MSG_RESULT([${LDFLAGS}])
+	fi
 
-   if (test "$?" != "0")
-   then
-	AC_MSG_RESULT([not found])
-	nut_have_libnetsnmp=no
-   else
-	AC_MSG_RESULT([${LDFLAGS}])
-   fi
+	AC_CHECK_HEADER(net-snmp/net-snmp-config.h, [], [nut_have_libnetsnmp=no])
 
-   AC_MSG_CHECKING(for Net-SNMP headers)
-   AC_CHECK_HEADER(net-snmp/net-snmp-config.h, [], nut_have_libnetsnmp=no)
+	if test "${nut_have_libnetsnmp}" = "yes"; then
+		LIBNETSNMP_CFLAGS="${CFLAGS}"
+		LIBNETSNMP_LDFLAGS="${LDFLAGS}"
+	fi
 
-   if test "${nut_have_libnetsnmp}" = "yes"; then
-	LIBNETSNMP_CFLAGS="${CFLAGS}"
-	LIBNETSNMP_LDFLAGS="${LDFLAGS}"
-   fi
-
-   dnl restore original CFLAGS and LDFLAGS
-   CFLAGS="${CFLAGS_ORIG}"
-   LDFLAGS="${LDFLAGS_ORIG}"
-
+	dnl restore original CFLAGS and LDFLAGS
+	CFLAGS="${CFLAGS_ORIG}"
+	LDFLAGS="${LDFLAGS_ORIG}"
 fi
 ])
-
