@@ -70,7 +70,7 @@ if test -z "${nut_have_libgd_seen}"; then
 	AC_MSG_RESULT([${LDFLAGS}])
 
 	dnl check if gd is usable
-	AC_CHECK_HEADER(gd.h, [nut_have_libgd=yes], [nut_have_libgd=no])
+	AC_CHECK_HEADERS(gd.h gdfontmb.h, [nut_have_libgd=yes], [nut_have_libgd=no])
 	AC_CHECK_FUNCS(gdImagePng, [], [nut_have_libgd=no])
 
 	if test "${nut_have_libgd}" = "yes"; then
