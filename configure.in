@@ -240,10 +240,6 @@ if test "${nut_with_ssl}" != "no"; then
    nut_with_ssl="${nut_have_libssl}"
 fi
 
-if test "${nut_with_ssl}" = "yes"; then
-   AC_DEFINE(HAVE_SSL, 1, [Define to enable SSL development code])
-fi
-
 AM_CONDITIONAL(WITH_SSL, test "${nut_with_ssl}" = "yes")
 NUT_REPORT_FEATURE([enable SSL development code], [${nut_with_ssl}])
 
@@ -264,10 +260,6 @@ fi
 
 if test "${nut_with_wrap}" != "no"; then
    nut_with_wrap="${nut_have_libwrap}"
-fi
-
-if test "${nut_with_wrap}" = "yes"; then
-   AC_DEFINE(HAVE_WRAP, 1, [Define to enable libwrap support])
 fi
 
 AM_CONDITIONAL(WITH_WRAP, test "${nut_with_wrap}" = "yes")
@@ -292,9 +284,6 @@ if test "${nut_with_ipv6}" != "no"; then
    nut_with_ipv6="${nut_have_ipv6}"
 fi
 
-if test "${nut_with_ipv6}" = "yes"; then
-   AC_DEFINE(HAVE_IPV6, 1, [Define to enable IPv6 support])
-fi
 NUT_REPORT_FEATURE([enable IPv6 support], [${nut_with_ipv6}])
 
 dnl ----------------------------------------------------------------------

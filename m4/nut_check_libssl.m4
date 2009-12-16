@@ -41,6 +41,7 @@ if test -z "${nut_have_libssl_seen}"; then
 	fi
 
 	if test "${nut_have_libssl}" = "yes"; then
+		AC_DEFINE(HAVE_SSL, 1, [Define to enable SSL development code])
 		LIBSSL_CFLAGS="${CFLAGS}"
 		LIBSSL_LDFLAGS="${LDFLAGS}"
 	fi
