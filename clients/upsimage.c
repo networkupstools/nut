@@ -41,7 +41,7 @@
 #include "cgilib.h"
 #include <stdlib.h>
 
-#ifdef HAVE_GD_H
+#ifdef HAVE_LIBGD
 #include <gd.h>
 #include <gdfontmb.h>
 #else
