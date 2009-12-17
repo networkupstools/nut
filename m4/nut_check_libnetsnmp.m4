@@ -9,7 +9,8 @@ AC_DEFUN([NUT_CHECK_LIBNETSNMP],
 if test -z "${nut_have_libnetsnmp_seen}"; then
 	nut_have_libnetsnmp_seen=yes
 
-	dnl save CFLAGS and LDFLAGS
+	dnl save CPPFLAGS, CFLAGS and LDFLAGS
+	CPPFLAGS_ORIG="${CPPFLAGS}"
 	CFLAGS_ORIG="${CFLAGS}"
 	LDFLAGS_ORIG="${LDFLAGS}"
    
@@ -34,14 +35,16 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 		AC_MSG_RESULT([${LDFLAGS}])
 	fi
 
-	AC_CHECK_HEADER(net-snmp/net-snmp-config.h, [], [nut_have_libnetsnmp=no])
+	CPPFLAGS="${CFLAGS}"
+	AC_CHECK_HEADERS(net-snmp/net-snmp-config.h, [], [nut_have_libnetsnmp=no])
 
 	if test "${nut_have_libnetsnmp}" = "yes"; then
 		LIBNETSNMP_CFLAGS="${CFLAGS}"
 		LIBNETSNMP_LDFLAGS="${LDFLAGS}"
 	fi
 
-	dnl restore original CFLAGS and LDFLAGS
+	dnl restore original CPPFLAGS, CFLAGS and LDFLAGS
+	CPPFLAGS="${CPPFLAGS_ORIG}"
 	CFLAGS="${CFLAGS_ORIG}"
 	LDFLAGS="${LDFLAGS_ORIG}"
 fi
