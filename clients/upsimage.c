@@ -40,13 +40,8 @@
 #include "upsclient.h"
 #include "cgilib.h"
 #include <stdlib.h>
-
-#ifdef HAVE_LIBGD
 #include <gd.h>
 #include <gdfontmb.h>
-#else
-#error "You need gd to build this!  http://www.boutell.com/gd/"
-#endif
 
 #include "upsimagearg.h"
 
