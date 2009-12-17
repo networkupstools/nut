@@ -871,7 +871,7 @@ void init_ups_alarm_map(const unsigned char *map, unsigned char len)
 
 int init_outlet(unsigned char len)
 {
-	unsigned char answer[len];
+	unsigned char answer[PW_ANSWER_MAX_SIZE];
 	int iIndex = 0, res, num;
 	int num_outlet, size_outlet;
 	int outlet_num, outlet_state;
