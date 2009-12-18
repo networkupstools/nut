@@ -12,7 +12,7 @@ if test -z "${nut_have_libwrap_seen}"; then
 	LIBS_ORIG="${LIBS}"
 	LIBS=""
 
-	AC_CHECK_HEADERS(tcpd.h, [nut_have_libwrap=yes], [nut_have_libwrap=no])
+	AC_CHECK_HEADERS(tcpd.h, [nut_have_libwrap=yes], [nut_have_libwrap=no], [AC_INCLUDES_DEFAULT])
 	AC_SEARCH_LIBS(yp_get_default_domain, nsl, [], [nut_have_libwrap=no])
 
 	dnl The line below doesn't work on Solaris 10.
