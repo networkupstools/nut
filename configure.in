@@ -78,10 +78,13 @@ AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
 AC_CHECK_FUNCS(on_exit)
 
-dnl the following may add stuff to LIBOBJS
-AC_CHECK_FUNCS(vsnprintf snprintf, ,
-	[AC_LIBOBJ(snprintf)]
-)
+dnl the following may add stuff to LIBOBJS (is this still needed?)
+AC_CHECK_FUNCS(vsnprintf snprintf, [], [
+	AC_LIBOBJ(snprintf)
+	AC_TYPE_LONG_DOUBLE
+	AC_TYPE_LONG_LONG_INT
+])
+
 AC_REPLACE_FUNCS(setenv inet_aton strerror atexit)
 
 dnl
@@ -710,16 +713,6 @@ else
 fi
 AM_CONDITIONAL(WITH_UDEV, test -n "${udevdir}")
 
-dnl 'long long' check - this gets used down in snprintf.o
-dnl
-AC_CACHE_CHECK([for long long],nut_cv_have_longlong,[
-AC_TRY_RUN([#include <stdio.h>
-main() { long long x = 1000000; x *= x; exit(((x/1000000) == 1000000)? 0: 1); }],
-nut_cv_have_longlong=yes,nut_cv_have_longlong=no,nut_cv_have_longlong=cross)])
-if test "${nut_cv_have_longlong}" = "yes"; then
-    AC_DEFINE(HAVE_LONG_LONG, 1, [long long support for snprintf])
-fi
-
 dnl expand ${sysconfdir} and write it out
 conftemp="${sysconfdir}"
 eval conftemp=\"${conftemp}\"
@@ -812,4 +805,3 @@ AC_OUTPUT([
 ])
 
 NUT_PRINT_FEATURE_REPORT
-
