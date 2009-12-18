@@ -71,7 +71,7 @@ if test -z "${nut_have_libgd_seen}"; then
 
 	dnl check if gd is usable
 	AC_CHECK_HEADERS(gd.h gdfontmb.h, [nut_have_libgd=yes], [nut_have_libgd=no], [AC_INCLUDES_DEFAULT])
-	AC_CHECK_FUNCS(gdImagePng, [], [nut_have_libgd=no])
+	AC_SEARCH_LIBS(gdImagePng, gd, [], [nut_have_libgd=no])
 
 	if test "${nut_have_libgd}" = "yes"; then
 		AC_DEFINE(HAVE_LIBGD, 1, [Define if you have Boutell's libgd installed])
