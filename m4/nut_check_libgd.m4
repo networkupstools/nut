@@ -9,6 +9,7 @@ if test -z "${nut_have_libgd_seen}"; then
 	nut_have_libgd_seen=yes
 
 	CFLAGS_ORIG="${CFLAGS}"
+	CPPFLAGS_ORIG="${CPPFLAGS}"
 	LDFLAGS_ORIG="${LDFLAGS}"
 
 	AC_MSG_CHECKING(for gd version via gdlib-config)
@@ -70,6 +71,7 @@ if test -z "${nut_have_libgd_seen}"; then
 	AC_MSG_RESULT([${LDFLAGS}])
 
 	dnl check if gd is usable
+	CPPFLAGS="${CFLAGS}"
 	AC_CHECK_HEADERS(gd.h gdfontmb.h, [nut_have_libgd=yes], [nut_have_libgd=no])
 	AC_CHECK_FUNCS(gdImagePng, [], [nut_have_libgd=no])
 
@@ -81,6 +83,7 @@ if test -z "${nut_have_libgd_seen}"; then
 
 	dnl put back the original versions
 	CFLAGS="${CFLAGS_ORIG}"
+	CPPFLAGS="${CPPFLAGS_ORIG}"
 	LDFLAGS="${LDFLAGS_ORIG}"
 fi
 ])
