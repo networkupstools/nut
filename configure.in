@@ -99,56 +99,30 @@ AC_C_BIGENDIAN
 
 dnl optind handling:
 dnl need to check if unistd.h is enough, else try getopt.h, else need decls
-AC_MSG_CHECKING(for getopt declarations)
-AC_TRY_COMPILE(
-  [#include <unistd.h>],
-  [int i = optind;],
-  nut_getopt_decl_in_unistd=yes,
-  nut_getopt_decl_in_unistd=no)
-if test "${nut_getopt_decl_in_unistd}" = "yes"; then
-  AC_MSG_RESULT(in unistd.h)
-else
-  AC_CHECK_HEADER(getopt.h, [have_getopt_h=yes], [have_getopt_h=])
-  if test "${have_getopt_h}" = "yes"; then
-    AC_DEFINE(NEED_GETOPT_H, 1,
-		[Define if getopt.h is needed])
-    AC_MSG_RESULT(using getopt.h)
-  else
-    AC_DEFINE(NEED_GETOPT_DECLS, 1, 
-		[Define to use explicit getopt declarations])
-    AC_MSG_RESULT(using explicit getopt declarations)
-  fi
-fi
+AC_CHECK_DECLS(optind, [], [
+	AC_CHECK_HEADERS(getopt.h, [
+		AC_DEFINE(NEED_GETOPT_H, 1, [Define if getopt.h is needed])
+	], [
+		AC_DEFINE(NEED_GETOPT_DECLS, 1, [Define to use explicit getopt declarations])
+	], [AC_INCLUDES_DEFAULT])
+], [#include <unistd.h>])
 
 dnl FreeBSD serial locking compatibility - look for uu_lock in libutil.h
+AC_CHECK_DECLS(uu_lock, [
+	AC_DEFINE(HAVE_UU_LOCK, 1, [Use uu_lock for locking (FreeBSD)])  
+	SERLIBS="-lutil"
+	dnl put in some better defaults for FreeBSD
+	RUN_AS_USER="uucp"
+], [
+	SERLIBS=""
+], [#include <libutil.h>])	
 
-AC_MSG_CHECKING(whether to use uu_lock)
-AC_EGREP_HEADER(uu_lock, libutil.h, [
-		AC_MSG_RESULT(yes)
-		SERLIBS="-lutil"
-		AC_DEFINE(HAVE_UU_LOCK, 1, 
-			[Use uu_lock for locking (FreeBSD)])  
-
-		dnl put in some better defaults for FreeBSD
-		RUN_AS_USER="uucp"
-],[
-		AC_MSG_RESULT(no)
-		SERLIBS=""
-])	
-
-dnl Solaris compatibility - check for -lnsl and -lsocket if connect() is gone
-
-AC_CHECK_FUNCS(connect)
-
-if ( test "${ac_cv_func_connect}" = "no" ); then
-	AC_CHECK_LIB(nsl, gethostbyname)
-	AC_CHECK_LIB(socket, connect)
-fi
-
-AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h sys/termios.h)
+dnl Solaris compatibility - check for -lnsl and -lsocket
+AC_SEARCH_LIBS(gethostbyname, nsl)
+AC_SEARCH_LIBS(connect, socket)
 
 AC_HEADER_TIME
-AC_CHECK_HEADERS(sys/time.h)
+AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h sys/termios.h sys/time.h, [], [], [AC_INCLUDES_DEFAULT])
 
 dnl ----------------------------------------------------------------------
 dnl Check for types and define possible replacements
@@ -211,7 +185,7 @@ dnl Solaris 10/11 USB handling (need librt and libusb runtime path)
 case ${target_os} in
    solaris2.1* )
       echo Checking for Solaris 10 / 11 specific configuration for usb drivers
-      AC_SEARCH_LIBS(nanosleep,rt)
+      AC_SEARCH_LIBS(nanosleep, rt)
       LIBUSB_LDFLAGS="-R/usr/sfw/lib ${LIBUSB_LDFLAGS}"
       dnl FIXME: Sun's libusb doesn't support timeout (so blocks notification)
       dnl and need to call libusb close upon reconnexion
