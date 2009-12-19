@@ -1,4 +1,6 @@
-##### http://autoconf-archive.cryp.to/ax_create_stdint_h.html
+# ===========================================================================
+#       http://www.nongnu.org/autoconf-archive/ax_create_stdint_h.html
+# ===========================================================================
 #
 # SYNOPSIS
 #
@@ -7,81 +9,70 @@
 # DESCRIPTION
 #
 #   the "ISO C9X: 7.18 Integer types <stdint.h>" section requires the
-#   existence of an include file <stdint.h> that defines a set of
-#   typedefs, especially uint8_t,int32_t,uintptr_t. Many older
-#   installations will not provide this file, but some will have the
-#   very same definitions in <inttypes.h>. In other enviroments we can
-#   use the inet-types in <sys/types.h> which would define the typedefs
-#   int8_t and u_int8_t respectivly.
+#   existence of an include file <stdint.h> that defines a set of typedefs,
+#   especially uint8_t,int32_t,uintptr_t. Many older installations will not
+#   provide this file, but some will have the very same definitions in
+#   <inttypes.h>. In other enviroments we can use the inet-types in
+#   <sys/types.h> which would define the typedefs int8_t and u_int8_t
+#   respectivly.
 #
-#   This macros will create a local "_stdint.h" or the headerfile given
-#   as an argument. In many cases that file will just "#include
-#   <stdint.h>" or "#include <inttypes.h>", while in other environments
-#   it will provide the set of basic 'stdint's definitions/typedefs:
+#   This macros will create a local "_stdint.h" or the headerfile given as
+#   an argument. In many cases that file will just "#include <stdint.h>" or
+#   "#include <inttypes.h>", while in other environments it will provide the
+#   set of basic 'stdint's definitions/typedefs:
 #
 #     int8_t,uint8_t,int16_t,uint16_t,int32_t,uint32_t,intptr_t,uintptr_t
 #     int_least32_t.. int_fast32_t.. intmax_t
 #
-#   which may or may not rely on the definitions of other files, or
-#   using the AC_CHECK_SIZEOF macro to determine the actual sizeof each
-#   type.
+#   which may or may not rely on the definitions of other files, or using
+#   the AC_CHECK_SIZEOF macro to determine the actual sizeof each type.
 #
-#   if your header files require the stdint-types you will want to
-#   create an installable file mylib-int.h that all your other
-#   installable header may include. So if you have a library package
-#   named "mylib", just use
+#   if your header files require the stdint-types you will want to create an
+#   installable file mylib-int.h that all your other installable header may
+#   include. So if you have a library package named "mylib", just use
 #
 #        AX_CREATE_STDINT_H(mylib-int.h)
 #
-#   in configure.ac and go to install that very header file in
-#   Makefile.am along with the other headers (mylib.h) - and the
-#   mylib-specific headers can simply use "#include <mylib-int.h>" to
-#   obtain the stdint-types.
+#   in configure.ac and go to install that very header file in Makefile.am
+#   along with the other headers (mylib.h) - and the mylib-specific headers
+#   can simply use "#include <mylib-int.h>" to obtain the stdint-types.
 #
-#   Remember, if the system already had a valid <stdint.h>, the
-#   generated file will include it directly. No need for fuzzy
-#   HAVE_STDINT_H things... (oops, GCC 4.2.x has deliberatly disabled
-#   its stdint.h for non-c99 compilation and the c99-mode is not the
-#   default. Therefore this macro will not use the compiler's stdint.h
-#   - please complain to the GCC developers).
+#   Remember, if the system already had a valid <stdint.h>, the generated
+#   file will include it directly. No need for fuzzy HAVE_STDINT_H things...
+#   (oops, GCC 4.2.x has deliberatly disabled its stdint.h for non-c99
+#   compilation and the c99-mode is not the default. Therefore this macro
+#   will not use the compiler's stdint.h - please complain to the GCC
+#   developers).
 #
-# LAST MODIFICATION
+# LICENSE
 #
-#   2007-06-27
+#   Copyright (c) 2008 Guido U. Draheim <guidod@gmx.de>
 #
-# COPYLEFT
-#
-#   Copyright (c) 2007 Guido U. Draheim <guidod@gmx.de>
-#
-#   This program is free software; you can redistribute it and/or
-#   modify it under the terms of the GNU General Public License as
-#   published by the Free Software Foundation; either version 2 of the
-#   License, or (at your option) any later version.
+#   This program is free software; you can redistribute it and/or modify it
+#   under the terms of the GNU General Public License as published by the
+#   Free Software Foundation; either version 2 of the License, or (at your
+#   option) any later version.
 #
 #   This program is distributed in the hope that it will be useful, but
 #   WITHOUT ANY WARRANTY; without even the implied warranty of
-#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-#   General Public License for more details.
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+#   Public License for more details.
 #
-#   You should have received a copy of the GNU General Public License
-#   along with this program; if not, write to the Free Software
-#   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
-#   02111-1307, USA.
+#   You should have received a copy of the GNU General Public License along
+#   with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-#   As a special exception, the respective Autoconf Macro's copyright
-#   owner gives unlimited permission to copy, distribute and modify the
-#   configure scripts that are the output of Autoconf when processing
-#   the Macro. You need not follow the terms of the GNU General Public
-#   License when using or distributing such scripts, even though
-#   portions of the text of the Macro appear in them. The GNU General
-#   Public License (GPL) does govern all other use of the material that
-#   constitutes the Autoconf Macro.
+#   As a special exception, the respective Autoconf Macro's copyright owner
+#   gives unlimited permission to copy, distribute and modify the configure
+#   scripts that are the output of Autoconf when processing the Macro. You
+#   need not follow the terms of the GNU General Public License when using
+#   or distributing such scripts, even though portions of the text of the
+#   Macro appear in them. The GNU General Public License (GPL) does govern
+#   all other use of the material that constitutes the Autoconf Macro.
 #
-#   This special exception to the GPL applies to versions of the
-#   Autoconf Macro released by the Autoconf Macro Archive. When you
-#   make and distribute a modified version of the Autoconf Macro, you
-#   may extend this special exception to the GPL to apply to your
-#   modified version as well.
+#   This special exception to the GPL applies to versions of the Autoconf
+#   Macro released by the Autoconf Archive. When you make and distribute a
+#   modified version of the Autoconf Macro, you may extend this special
+#   exception to the GPL to apply to your modified version as well.
 
 AC_DEFUN([AX_CHECK_DATA_MODEL],[
    AC_CHECK_SIZEOF(char)
