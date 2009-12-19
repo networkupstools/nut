@@ -10,6 +10,7 @@ if test -z "${nut_have_libgd_seen}"; then
 
 	CFLAGS_ORIG="${CFLAGS}"
 	LDFLAGS_ORIG="${LDFLAGS}"
+	LIBS_ORIG="${LIBS}"
 
 	AC_MSG_CHECKING(for gd version via gdlib-config)
 
@@ -19,6 +20,7 @@ if test -z "${nut_have_libgd_seen}"; then
 
 	CFLAGS=""
 	LDFLAGS="-L/usr/X11R6/lib -lgd -lpng -lz -ljpeg -lfreetype -lm -lXpm -lX11"
+	LIBS=""
 
 	GD_VERSION=`gdlib-config --version 2>/dev/null`
 	if (test "$?" != "0"); then
@@ -76,11 +78,12 @@ if test -z "${nut_have_libgd_seen}"; then
 	if test "${nut_have_libgd}" = "yes"; then
 		AC_DEFINE(HAVE_LIBGD, 1, [Define if you have Boutell's libgd installed])
 		LIBGD_CFLAGS="${CFLAGS}"
-		LIBGD_LDFLAGS="${LDFLAGS}"
+		LIBGD_LDFLAGS="${LDFLAGS} ${LIBS}"
 	fi
 
 	dnl put back the original versions
 	CFLAGS="${CFLAGS_ORIG}"
 	LDFLAGS="${LDFLAGS_ORIG}"
+	LIBS="${LIBS_ORIG}"
 fi
 ])
