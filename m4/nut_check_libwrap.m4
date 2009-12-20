@@ -17,12 +17,25 @@ if test -z "${nut_have_libwrap_seen}"; then
 
 	dnl The line below doesn't work on Solaris 10.
 	dnl AC_SEARCH_LIBS(request_init, wrap, [], [nut_have_libwrap=no])
-	LIBS="${LIBS} -lwrap"
+	AC_MSG_CHECKING(for library containing request_init)
 	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <tcpd.h>
 int allow_severity = 0, deny_severity = 0;
-	]], [[ request_init(0); ]])], [], [nut_have_libwrap=no])
- 
+	]], [[ request_init(0); ]])], [
+		AC_MSG_RESULT(none required)
+	], [
+		LIBS="${LIBS} -lwrap"
+		AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#include <tcpd.h>
+int allow_severity = 0, deny_severity = 0;
+		]], [[ request_init(0); ]])], [
+			AC_MSG_RESULT(-lwrap)
+		], [
+			AC_MSG_RESULT(no)
+			nut_have_libwrap=no
+		])
+	])
+
 	if test "${nut_have_libwrap}" = "yes"; then
 		AC_DEFINE(HAVE_WRAP, 1, [Define to enable libwrap support])
 		LIBWRAP_CFLAGS=""
