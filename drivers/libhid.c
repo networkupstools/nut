@@ -482,7 +482,7 @@ int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventsize)
 
 	r = file_report_buffer(reportbuf, buf, buflen);
 	if (r < 0) {
-		upsdebug_with_errno(1, "HIDGetEvents: failed to buffer report");
+		upsdebug_with_errno(1, "%s: failed to buffer report", __func__);
 		return -errno;
 	}
 
@@ -501,11 +501,15 @@ int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventsize)
 
 		/* maximum number of events reached? */
 		if (itemCount >= eventsize) {
-			upsdebugx(1, "HIDGetEvents: too many events (truncated)");
+			upsdebugx(1, "%s: too many events (truncated)", __func__);
 			break;
 		}
 
 		event[itemCount++] = pData;
+	}
+
+	if (itemCount == 0) {
+		upsdebugx(1, "%s: unexpected input report (ignored)", __func__);
 	}
 
 	return itemCount;
