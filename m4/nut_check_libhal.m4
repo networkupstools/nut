@@ -103,7 +103,7 @@ if test -z "${nut_have_libhal_seen}"; then
 			AC_MSG_RESULT(${HAL_FDI_PATH})
 		else
 			# FIXME
-			HAL_FDI_PATH=""
+			HAL_FDI_PATH="/dev/null"
 			AC_MSG_RESULT(not found)
 		fi
 	fi
