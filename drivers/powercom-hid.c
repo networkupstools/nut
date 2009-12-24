@@ -53,7 +53,6 @@ static usb_device_id_t powercom_usb_device_table[] = {
 	{ -1, -1, NULL }
 };
 
-
 /* --------------------------------------------------------------- */
 /*      Vendor-specific usage table */
 /* --------------------------------------------------------------- */
@@ -77,79 +76,95 @@ static usage_tables_t powercom_utab[] = {
 /* --------------------------------------------------------------- */
 
 static hid_info_t powercom_hid2nut[] = {
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, NULL, 0, online_info },
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.BatteryPresent", NULL, NULL, 0, nobattery_info },
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL, NULL, 0, lowbatt_info },
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Charging", NULL, NULL, 0, charging_info },
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.CommunicationLost", NULL, NULL, 0, commfault_info },
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Discharging", NULL, NULL, 0, discharging_info },
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL, NULL, 0, replacebatt_info },
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Overload", NULL, NULL, 0, overload_info },
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.RemainingTimeLimitExpired", NULL, NULL, 0, timelimitexpired_info },
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ShutdownImminent", NULL, NULL, 0, shutdownimm_info },
+/*	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.POWERCOM3", NULL, "%.0f", 0, NULL }, */
+/*	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ShutdownRequested", NULL, "%.0f", 0, NULL }, */
+/*	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.VoltageNotRegulated", NULL, "%.0f", 0, NULL }, */
+	{ "BOOL", 0, 0, "UPS.PresentStatus.ACPresent", NULL, NULL, 0, online_info },
+	{ "BOOL", 0, 0, "UPS.PresentStatus.BatteryPresent", NULL, NULL, 0, nobattery_info },
+	{ "BOOL", 0, 0, "UPS.PresentStatus.BelowRemainingCapacityLimit", NULL, NULL, 0, lowbatt_info },
+	{ "BOOL", 0, 0, "UPS.PresentStatus.Boost", NULL, NULL, 0, boost_info },
+	{ "BOOL", 0, 0, "UPS.PresentStatus.Buck", NULL, NULL, 0, trim_info },
+	{ "BOOL", 0, 0, "UPS.PresentStatus.Charging", NULL, NULL, 0, charging_info },
+	{ "BOOL", 0, 0, "UPS.PresentStatus.CommunicationLost", NULL, NULL, 0, commfault_info },
+	{ "BOOL", 0, 0, "UPS.PresentStatus.Discharging", NULL, NULL, 0, discharging_info },
+	{ "BOOL", 0, 0, "UPS.PresentStatus.NeedReplacement", NULL, NULL, 0, replacebatt_info },
+	{ "BOOL", 0, 0, "UPS.PresentStatus.Overload", NULL, NULL, 0, overload_info },
+	{ "BOOL", 0, 0, "UPS.PresentStatus.RemainingTimeLimitExpired", NULL, NULL, 0, timelimitexpired_info },
+	{ "BOOL", 0, 0, "UPS.PresentStatus.ShutdownImminent", NULL, NULL, 0, shutdownimm_info },
+/*	{ "BOOL", 0, 0, "UPS.PresentStatus.POWERCOM3", NULL, "%.0f", 0, NULL }, */
+/*	{ "BOOL", 0, 0, "UPS.PresentStatus.ShutdownRequested", NULL, "%.0f", 0, NULL }, */
+/*	{ "BOOL", 0, 0, "UPS.PresentStatus.Tested", NULL, "%.0f", 0, NULL }, */
+/*	{ "BOOL", 0, 0, "UPS.PresentStatus.VoltageNotRegulated", NULL, "%.0f", 0, NULL }, */
 
-  { "unmapped.ups.audiblealarmcontrol", 0, 0, "UPS.AudibleAlarmControl", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.battery.configvoltage", 0, 0, "UPS.Battery.ConfigVoltage", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.battery.delaybeforestartup", 0, 0, "UPS.Battery.DelayBeforeStartup", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.battery.initialized", 0, 0, "UPS.Battery.Initialized", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.battery.manufacturerdate", 0, 0, "UPS.Battery.ManufacturerDate", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.battery.remainingcapacity", 0, 0, "UPS.Battery.RemainingCapacity", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.battery.test", 0, 0, "UPS.Battery.Test", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.battery.voltage", 0, 0, "UPS.Battery.Voltage", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.iname", 0, 0, "UPS.iName", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.input.configvoltage", 0, 0, "UPS.Input.ConfigVoltage", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.input.frequency", 0, 0, "UPS.Input.Frequency", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.input.voltage", 0, 0, "UPS.Input.Voltage", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.output.configvoltage", 0, 0, "UPS.Output.ConfigVoltage", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.output.delaybeforeshutdown", 0, 0, "UPS.Output.DelayBeforeShutdown", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.output.delaybeforestartup", 0, 0, "UPS.Output.DelayBeforeStartup", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.output.frequency", 0, 0, "UPS.Output.Frequency", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.output.percentload", 0, 0, "UPS.Output.PercentLoad", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.output.voltage", 0, 0, "UPS.Output.Voltage", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powercom1", 0, 0, "UPS.POWERCOM1", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powercom2", 0, 0, "UPS.POWERCOM2", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.audiblealarmcontrol", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.capacitymode", 0, 0, "UPS.PowerSummary.CapacityMode", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.configvoltage", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.delaybeforeshutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.delaybeforestartup", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.designcapacity", 0, 0, "UPS.PowerSummary.DesignCapacity", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.fullchargecapacity", 0, 0, "UPS.PowerSummary.FullChargeCapacity", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.idevicechemistry", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.imanufacturer", 0, 0, "UPS.PowerSummary.iManufacturer", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.ioeminformation", 0, 0, "UPS.PowerSummary.iOEMInformation", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.iproduct", 0, 0, "UPS.PowerSummary.iProduct", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.iserialnumber", 0, 0, "UPS.PowerSummary.iSerialNumber", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.manufacturerdate", 0, 0, "UPS.PowerSummary.ManufacturerDate", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.presentstatus.acpresent", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.presentstatus.batterypresent", 0, 0, "UPS.PowerSummary.PresentStatus.BatteryPresent", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.presentstatus.belowremainingcapacitylimit", 0, 0, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.presentstatus.charging", 0, 0, "UPS.PowerSummary.PresentStatus.Charging", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.presentstatus.communicationlost", 0, 0, "UPS.PowerSummary.PresentStatus.CommunicationLost", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.presentstatus.discharging", 0, 0, "UPS.PowerSummary.PresentStatus.Discharging", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.presentstatus.needreplacement", 0, 0, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.presentstatus.overload", 0, 0, "UPS.PowerSummary.PresentStatus.Overload", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.presentstatus.powercom3", 0, 0, "UPS.PowerSummary.PresentStatus.POWERCOM3", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.presentstatus.remainingtimelimitexpired", 0, 0, "UPS.PowerSummary.PresentStatus.RemainingTimeLimitExpired", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.presentstatus.shutdownimminent", 0, 0, "UPS.PowerSummary.PresentStatus.ShutdownImminent", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.presentstatus.shutdownrequested", 0, 0, "UPS.PowerSummary.PresentStatus.ShutdownRequested", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.presentstatus.voltagenotregulated", 0, 0, "UPS.PowerSummary.PresentStatus.VoltageNotRegulated", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.rechargeable", 0, 0, "UPS.PowerSummary.Rechargeable", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.remainingcapacity", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.remainingcapacitylimit", 0, 0, "UPS.PowerSummary.RemainingCapacityLimit", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.runtimetoempty", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.warningcapacitylimit", 0, 0, "UPS.PowerSummary.WarningCapacityLimit", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.presentstatus.acpresent", 0, 0, "UPS.PresentStatus.ACPresent", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.presentstatus.batterypresent", 0, 0, "UPS.PresentStatus.BatteryPresent", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.presentstatus.belowremainingcapacitylimit", 0, 0, "UPS.PresentStatus.BelowRemainingCapacityLimit", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.presentstatus.boost", 0, 0, "UPS.PresentStatus.Boost", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.presentstatus.buck", 0, 0, "UPS.PresentStatus.Buck", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.presentstatus.charging", 0, 0, "UPS.PresentStatus.Charging", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.presentstatus.communicationlost", 0, 0, "UPS.PresentStatus.CommunicationLost", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.presentstatus.discharging", 0, 0, "UPS.PresentStatus.Discharging", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.presentstatus.needreplacement", 0, 0, "UPS.PresentStatus.NeedReplacement", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.presentstatus.overload", 0, 0, "UPS.PresentStatus.Overload", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.presentstatus.powercom3", 0, 0, "UPS.PresentStatus.POWERCOM3", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.presentstatus.remainingtimelimitexpired", 0, 0, "UPS.PresentStatus.RemainingTimeLimitExpired", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.presentstatus.shutdownimminent", 0, 0, "UPS.PresentStatus.ShutdownImminent", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.presentstatus.shutdownrequested", 0, 0, "UPS.PresentStatus.ShutdownRequested", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.presentstatus.tested", 0, 0, "UPS.PresentStatus.Tested", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.presentstatus.voltagenotregulated", 0, 0, "UPS.PresentStatus.VoltageNotRegulated", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.shutdownimminent", 0, 0, "UPS.ShutdownImminent", NULL, "%.0f", 0, NULL },
+/*
+ * According to the HID PDC specifications, the below values should report the battery voltage. But in
+ * the Black Knight 500AP these seem to report output.voltage(.nominal) instead, so we don't use them. 
+ *	{ "battery.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, "%.2f", 0, NULL },
+ *	{ "battery.voltage", 0, 0, "UPS.Battery.Voltage", NULL, "%.2f", 0, NULL },
+ *	{ "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%.0f", HU_FLAG_STATIC, NULL },
+ *	{ "battery.voltage.nominal", 0, 0, "UPS.Battery.ConfigVoltage", NULL, "%.0f", HU_FLAG_STATIC, NULL },
+ */
+	{ "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", 0, NULL },
+	{ "battery.charge", 0, 0, "UPS.Battery.RemainingCapacity", NULL, "%.0f", 0, NULL },
+	{ "battery.charge.low", 0, 0, "UPS.PowerSummary.RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "battery.charge.warning", 0, 0, "UPS.PowerSummary.WarningCapacityLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", 0, NULL },
+	{ "battery.date", 0, 0, "UPS.Battery.ManufacturerDate", NULL, "%s", HU_FLAG_STATIC, date_conversion },
+	{ "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
+	{ "unmapped.ups.battery.delaybeforestartup", 0, 0, "UPS.Battery.DelayBeforeStartup", NULL, "%.0f", 0, NULL },
+	{ "unmapped.ups.battery.initialized", 0, 0, "UPS.Battery.Initialized", NULL, "%.0f", 0, NULL },
 
-  /* end of structure. */
-  { NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
+	{ "ups.beeper.status", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", HU_FLAG_SEMI_STATIC, beeper_info },
+	{ "ups.beeper.status", 0, 0, "UPS.AudibleAlarmControl", NULL, "%s", HU_FLAG_SEMI_STATIC, beeper_info },
+	{ "ups.load", 0, 0, "UPS.Output.PercentLoad", NULL, "%.0f", 0, NULL },
+	{ "ups.date", 0, 0, "UPS.PowerSummary.ManufacturerDate", NULL, "%s", HU_FLAG_STATIC, date_conversion },
+	{ "ups.test.result", 0, 0, "UPS.Battery.Test", NULL, "%s", HU_FLAG_SEMI_STATIC, test_read_info },
+/*	{ "unmapped.ups.powersummary.imanufacturer", 0, 0, "UPS.PowerSummary.iManufacturer", NULL, "%s", HU_FLAG_STATIC, stringid_conversion }, */
+/*	{ "unmapped.ups.powersummary.iproduct", 0, 0, "UPS.PowerSummary.iProduct", NULL, "%s", HU_FLAG_STATIC, stringid_conversion }, */
+/*	{ "unmapped.ups.powersummary.iserialnumber", 0, 0, "UPS.PowerSummary.iSerialNumber", NULL, "%s", HU_FLAG_STATIC, stringid_conversion }, */
+	{ "unmapped.ups.iname", 0, 0, "UPS.iName", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
+	{ "unmapped.ups.powersummary.ioeminformation", 0, 0, "UPS.PowerSummary.iOEMInformation", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
+	{ "ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.DelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_FLAG_ABSENT, NULL},
+	{ "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_FLAG_ABSENT, NULL},
+	{ "ups.timer.start", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
+	{ "ups.timer.shutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
+
+	{ "input.voltage", 0, 0, "UPS.Input.Voltage", NULL, "%.1f", 0, NULL },
+	{ "input.voltage.nominal", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.Input.ConfigVoltage", NULL, "%.0f", HU_FLAG_STATIC, NULL },
+	{ "input.frequency", 0, 0, "UPS.Input.Frequency", NULL, "%.1f", 0, NULL },
+
+	{ "output.voltage", 0, 0, "UPS.Output.Voltage", NULL, "%.1f", 0, NULL },
+	{ "output.voltage.nominal", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.Output.ConfigVoltage", NULL, "%.0f", HU_FLAG_STATIC, NULL },
+	{ "output.frequency", 0, 0, "UPS.Output.Frequency", NULL, "%.0f", 0, NULL },
+
+/*	{ "unmapped.ups.powercom1", 0, 0, "UPS.POWERCOM1", NULL, "%.0f", 0, NULL }, broken pipe */
+/*	{ "unmapped.ups.powercom2", 0, 0, "UPS.POWERCOM2", NULL, "%.0f", 0, NULL }, broken pipe */
+	{ "unmapped.ups.powersummary.rechargeable", 0, 0, "UPS.PowerSummary.Rechargeable", NULL, "%.0f", 0, NULL },
+	{ "unmapped.ups.shutdownimminent", 0, 0, "UPS.ShutdownImminent", NULL, "%.0f", 0, NULL },
+
+	/* instcmds */
+	{ "test.battery.start.quick", 0, 0, "UPS.Battery.Test", NULL, "1", HU_TYPE_CMD, NULL },
+	{ "test.battery.start.deep", 0, 0, "UPS.Battery.Test", NULL, "2", HU_TYPE_CMD, NULL },
+	{ "test.battery.stop", 0, 0, "UPS.Battery.Test", NULL, "3", HU_TYPE_CMD, NULL },
+	{ "load.off.delay", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_TYPE_CMD, NULL },
+	{ "load.on.delay", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_TYPE_CMD, NULL },
+	{ "shutdown.stop", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "0", HU_TYPE_CMD, NULL },
+	{ "beeper.disable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "1", HU_TYPE_CMD, NULL },
+	{ "beeper.enable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },
+	{ "beeper.mute", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "3", HU_TYPE_CMD, NULL },
+
+	/* end of structure. */
+	{ NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
 };
 
 static char *powercom_format_model(HIDDevice_t *hd) {
