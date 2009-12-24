@@ -108,7 +108,7 @@ AC_CHECK_DECLS(optind, [], [
 	], [
 		AC_DEFINE(NEED_GETOPT_DECLS, 1, [Define to use explicit getopt declarations])
 	], [AC_INCLUDES_DEFAULT])
-], [#include <unistd.h>])
+], [AC_INCLUDES_DEFAULT])
 
 dnl FreeBSD serial locking compatibility - look for uu_lock in libutil.h
 AC_CHECK_DECLS(uu_lock, [
@@ -118,7 +118,10 @@ AC_CHECK_DECLS(uu_lock, [
 	RUN_AS_USER="uucp"
 ], [
 	SERLIBS=""
-], [#include <libutil.h>])	
+], [
+AC_INCLUDES_DEFAULT
+#include <libutil.h>
+])	
 
 dnl Solaris compatibility - check for -lnsl and -lsocket
 AC_SEARCH_LIBS(gethostbyname, nsl)
