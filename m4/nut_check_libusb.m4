@@ -45,7 +45,7 @@ if test -z "${nut_have_libusb_seen}"; then
 		CFLAGS=""
 		LDFLAGS="-lusb"
 
-		AC_CHECK_HEADERS(libusb.h, [nut_have_libusb=yes], [nut_have_libusb=no], [AC_INCLUDES_DEFAULT])
+		AC_CHECK_HEADERS(usb.h, [nut_have_libusb=yes], [nut_have_libusb=no], [AC_INCLUDES_DEFAULT])
 		AC_CHECK_FUNCS(usb_init, [], [nut_have_libusb=no])
 	fi
 
