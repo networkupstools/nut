@@ -119,7 +119,7 @@ AC_CHECK_DECLS(uu_lock, [
 ], [
 	SERLIBS=""
 ], [
-AC_INCLUDES_DEFAULT
+#include <sys/types.h>
 #include <libutil.h>
 ])	
 
