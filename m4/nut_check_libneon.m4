@@ -43,10 +43,9 @@ if test -z "${nut_have_neon_seen}"; then
 		AC_MSG_RESULT(${LDFLAGS})
 	fi
 
-	dnl Check for connect timeout support in library (optional)
-	AC_CHECK_FUNCS(ne_set_connect_timeout ne_sock_connect_timeout)
-
 	if test "${nut_have_neon}" = "yes"; then
+		dnl Check for connect timeout support in library (optional)
+		AC_CHECK_FUNCS(ne_set_connect_timeout ne_sock_connect_timeout)
 		LIBNEON_CFLAGS="${CFLAGS}"
 		LIBNEON_LDFLAGS="${LDFLAGS}"
 	fi
