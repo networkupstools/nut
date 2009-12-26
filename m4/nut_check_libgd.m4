@@ -12,16 +12,14 @@ if test -z "${nut_have_libgd_seen}"; then
 	LDFLAGS_ORIG="${LDFLAGS}"
 	LIBS_ORIG="${LIBS}"
 
-	AC_MSG_CHECKING(for gd version via gdlib-config)
-
 	dnl Initial defaults. These are only used if gdlib-config is
 	dnl unusable and the user fails to pass better values in --with
 	dnl arguments
-
 	CFLAGS=""
-	LDFLAGS="-L/usr/X11R6/lib -lgd -lpng -lz -ljpeg -lfreetype -lm -lXpm -lX11"
-	LIBS=""
+	LDFLAGS="-L/usr/X11R6/lib"
+	LIBS="-lgd -lpng -lz -ljpeg -lfreetype -lm -lXpm -lX11"
 
+	AC_MSG_CHECKING(for gd version via gdlib-config)
 	GD_VERSION=`gdlib-config --version 2>/dev/null`
 	if (test "$?" != "0"); then
 		GD_VERSION="unknown"
@@ -39,37 +37,23 @@ if test -z "${nut_have_libgd_seen}"; then
 		;;
 	*)
 		CFLAGS="`gdlib-config --includes`"
-		LDFLAGS="`gdlib-config --ldflags` `gdlib-config --libs`"
+		LDFLAGS="`gdlib-config --ldflags`"
+		LIBS="`gdlib-config --libs`"
 		;;
 	esac
 
 	dnl Now allow overriding gd settings if the user knows best
-
 	AC_MSG_CHECKING(for gd include flags)
-	AC_ARG_WITH(gd-includes,
-	AC_HELP_STRING([--with-gd-includes=FLAGS], [include flags for the gd library]), [
-	case "${withval}" in
-	yes|no)
-		;;
-	*)
-		CFLAGS="${withval}"
-		;;
-	esac
-	])
+	AC_ARG_WITH(gd-includes, [
+		AC_HELP_STRING([--with-gd-includes=CFLAGS], [include flags for the gd library])
+	], [CFLAGS="${withval}"], [])
 	AC_MSG_RESULT([${CFLAGS}])
 
 	AC_MSG_CHECKING(for gd library flags)
-	AC_ARG_WITH(gd-libs,
-	AC_HELP_STRING([--with-gd-libs=FLAGS], [linker flags for the gd library]), [
-	case "${withval}" in
-	yes|no)
-		;;
-	*)
-		LDFLAGS="${withval}"
-		;;
-	esac
-	])
-	AC_MSG_RESULT([${LDFLAGS}])
+	AC_ARG_WITH(gd-libs, [
+		AC_HELP_STRING([--with-gd-libs=LDFLAGS], [linker flags for the gd library])
+	], [LDFLAGS="${withval}" LIBS=""], [])
+	AC_MSG_RESULT([${LDFLAGS} ${LIBS}])
 
 	dnl check if gd is usable
 	AC_CHECK_HEADERS(gd.h gdfontmb.h, [nut_have_libgd=yes], [nut_have_libgd=no], [AC_INCLUDES_DEFAULT])
