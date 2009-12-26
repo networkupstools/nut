@@ -82,6 +82,10 @@ if test -z "${nut_have_libhal_seen}"; then
 			# For RedHat
 			HAL_CALLOUTS_PATH="${libexecdir}"
 			AC_MSG_RESULT(${HAL_CALLOUTS_PATH})
+		elif (test -d "/usr/lib/hal"); then
+			# For OpenSUSE
+			HAL_CALLOUTS_PATH="${libdir}/hal"
+			AC_MSG_RESULT(${HAL_CALLOUTS_PATH})
 		else
 			# FIXME
 			HAL_CALLOUTS_PATH="${libdir}/hal"
@@ -97,7 +101,7 @@ if test -z "${nut_have_libhal_seen}"; then
 		AC_MSG_RESULT(${HAL_FDI_PATH})
 	else
 		# fallback to detecting the right path
-		if (test -d "${datarootdir}/hal/fdi/information/20thirdparty"); then
+		if (test -d "/usr/share/hal/fdi/information/20thirdparty" -o -d "/usr/local/share/hal/fdi/information/20thirdparty"); then
 			# seems supported everywhere
 			HAL_FDI_PATH="${datarootdir}/hal/fdi/information/20thirdparty"
 			AC_MSG_RESULT(${HAL_FDI_PATH})
