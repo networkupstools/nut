@@ -4,8 +4,9 @@ if WITH_HAL
  halfdi_DATA = 20-ups-nut-device.fdi
 endif
 
+# FIXME: should be able to use $< here.
 20-ups-nut-device.fdi: ups-nut-device.fdi
-	cp $< $@
+	cp ups-nut-device.fdi $@
 
 EXTRA_DIST = ups-nut-device.fdi.in
 
