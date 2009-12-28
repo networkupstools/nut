@@ -38,6 +38,7 @@ CONVERTED_TO_ASCIIDOC = \
 	richcomm_usb.html \
 	safenet.html \
 	snmp-ups.html \
+	solis.html \
 	tripplite_usb.html \
 	ups.conf.html \
 	upsc.html \
@@ -97,6 +98,7 @@ EXTRA_DIST = \
 	richcomm_usb.txt \
 	safenet.txt \
 	snmp-ups.txt \
+	solis.txt \
 	tripplite_usb.txt \
 	ups.conf.txt \
 	upsc.txt \
@@ -168,6 +170,7 @@ man8_MANS = \
 	richcomm_usb.8 \
 	safenet.8 \
 	snmp-ups.8 \
+	solis.8 \
 	tripplite_usb.8 \
 	upsc.8 \
 	upsd.8 \

@@ -83,7 +83,7 @@ Drivers
 - linknut:richcomm_usb[8]
 - linknut:safenet[8]
 - linknut:snmp-ups[8]
-- solis.8
+- linknut:solis[8]
 - tripplite.8
 - tripplitesu.8
 - linknut:tripplite_usb[8]
