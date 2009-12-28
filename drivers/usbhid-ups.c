@@ -918,9 +918,6 @@ void upsdrv_initups(void)
 		if (val) {
 			dstate_setinfo("ups.delay.start", "%ld", strtol(val, NULL, 10));
 		}
-
-		/* Adds default with a delay value of '0' (= immediate) */
-		dstate_addcmd("load.on");
 	}
 
 	if (dstate_getinfo("ups.delay.shutdown")) {
@@ -929,12 +926,19 @@ void upsdrv_initups(void)
 		if (val) {
 			dstate_setinfo("ups.delay.shutdown", "%ld", strtol(val, NULL, 10));
 		}
+	}
 
+	if (find_nut_info("load.off.delay")) {
 		/* Adds default with a delay value of '0' (= immediate) */
 		dstate_addcmd("load.off");
 	}
 
-	if (dstate_getinfo("ups.delay.start") && dstate_getinfo("ups.delay.shutdown")) {
+	if (find_nut_info("load.on.delay")) {
+		/* Adds default with a delay value of '0' (= immediate) */
+		dstate_addcmd("load.on");
+	}
+
+	if (find_nut_info("load.off.delay") && find_nut_info("load.on.delay")) {
 		/* Add composite instcmds (require setting multiple HID values) */
 		dstate_addcmd("shutdown.return");
 		dstate_addcmd("shutdown.stayoff");
