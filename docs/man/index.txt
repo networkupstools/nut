@@ -54,6 +54,7 @@ Drivers
 - linknut:belkin[8]
 - linknut:belkinunv[8]
 - linknut:bestfcom[8]
+- linknut:bestfortress[8]
 - linknut:bestuferrups[8]
 - linknut:bestups[8]
 - linknut:blazer[8]

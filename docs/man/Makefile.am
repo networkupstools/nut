@@ -7,6 +7,7 @@ CONVERTED_TO_ASCIIDOC = \
 	belkin.html \
 	belkinunv.html \
 	bestfcom.html \
+	bestfortress.html \
 	bestuferrups.html \
 	bestups.html \
 	blazer.html \
@@ -72,6 +73,7 @@ EXTRA_DIST = \
 	belkin.txt \
 	belkinunv.txt \
 	bestfcom.txt \
+	bestfortress.txt \
 	bestuferrups.txt \
 	bestups.txt \
 	blazer.txt \
@@ -144,7 +146,6 @@ man5_MANS = \
 	upsset.conf.5 \
 	upsstats.html.5
 
-# TODO: pull in bestfortress from trunk
 man8_MANS = \
 	apcsmart.8 \
 	bcmxcp.8 \
@@ -152,6 +153,7 @@ man8_MANS = \
 	belkin.8 \
 	belkinunv.8 \
 	bestfcom.8 \
+	bestfortress.8 \
 	bestuferrups.8 \
 	bestups.8 \
 	blazer.8 \
