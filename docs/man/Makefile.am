@@ -27,6 +27,7 @@ CONVERTED_TO_ASCIIDOC = \
 	mge-shut.html \
 	mge-utalk.html \
 	microdowell.html \
+	netxml-ups.html \
 	nut.conf.html \
 	nutupsdrv.html \
 	oneac.html \
@@ -91,6 +92,7 @@ EXTRA_DIST = \
 	mge-shut.txt \
 	mge-utalk.txt \
 	microdowell.txt \
+	netxml-ups.txt \
 	nut.conf.txt \
 	nutupsdrv.txt \
 	oneac.txt \
@@ -168,6 +170,7 @@ man8_MANS = \
 	mge-shut.8 \
 	mge-utalk.8 \
 	microdowell.8 \
+	netxml-ups.8 \
 	nutupsdrv.8 \
 	oneac.8 \
 	optiups.8 \

@@ -72,7 +72,7 @@ Drivers
 - linknut:mge-shut[8]
 - linknut:mge-utalk[8]
 - linknut:microdowell[8]
-- netxml-ups.8
+- linknut:netxml-ups[8]
 - linknut:nutupsdrv[8]
 - linknut:oneac[8]
 - linknut:optiups[8]
