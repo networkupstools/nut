@@ -89,7 +89,7 @@ Drivers
 - linknut:tripplite_usb[8]
 - linknut:usbhid-ups[8]
 - linknut:upscode2[8]
-- victronups.8
+- linknut:victronups[8]
 
 [[Developer_man]]
 Developer manual pages

@@ -61,7 +61,8 @@ CONVERTED_TO_ASCIIDOC = \
 	upsset.conf.html \
 	upsstats.cgi.html \
 	upsstats.html.html \
-	usbhid-ups.html
+	usbhid-ups.html \
+	victronups.html
 
 EXTRA_DIST = \
 	apcsmart.txt \
@@ -125,6 +126,7 @@ EXTRA_DIST = \
 	upsstats.cgi.txt \
 	upsstats.html.txt \
 	usbhid-ups.txt \
+	victronups.txt \
 	$(CONVERTED_TO_ASCIIDOC) \
 	$(MANS)
 
@@ -192,7 +194,8 @@ man8_MANS = \
 	upssched.8 \
 	upsset.cgi.8 \
 	upsstats.cgi.8 \
-	usbhid-ups.8
+	usbhid-ups.8 \
+	victronups.8
 
 html:	$(CONVERTED_TO_ASCIIDOC)
 
