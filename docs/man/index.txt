@@ -82,7 +82,7 @@ Drivers
 - linknut:rhino[8]
 - linknut:richcomm_usb[8]
 - linknut:safenet[8]
-- snmp-ups.8
+- linknut:snmp-ups[8]
 - solis.8
 - tripplite.8
 - tripplitesu.8

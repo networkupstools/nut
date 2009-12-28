@@ -37,6 +37,7 @@ CONVERTED_TO_ASCIIDOC = \
 	rhino.html \
 	richcomm_usb.html \
 	safenet.html \
+	snmp-ups.html \
 	tripplite_usb.html \
 	ups.conf.html \
 	upsc.html \
@@ -95,6 +96,7 @@ EXTRA_DIST = \
 	rhino.txt \
 	richcomm_usb.txt \
 	safenet.txt \
+	snmp-ups.txt \
 	tripplite_usb.txt \
 	ups.conf.txt \
 	upsc.txt \
@@ -165,6 +167,7 @@ man8_MANS = \
 	rhino.8 \
 	richcomm_usb.8 \
 	safenet.8 \
+	snmp-ups.8 \
 	tripplite_usb.8 \
 	upsc.8 \
 	upsd.8 \

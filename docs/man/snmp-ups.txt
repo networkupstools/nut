@@ -1,0 +1,129 @@
+snmp-ups(8)
+===========
+
+NAME
+----
+
+snmp-ups - Multi-MIB Driver for SNMP UPS equipment
+
+NOTE
+----
+This man page only documents the hardware-specific features of the
+snmp-ups driver.  For information about the core driver, see
+linknut:nutupsdrv[8].
+
+SUPPORTED HARDWARE
+------------------
+
+The snmp-ups driver automatically detects and supports a wide range of devices by loading various MIBS:
+*ietf*::
+UPS that is RFC 1628 (UPS MIB) compliant, e.g. MGE UPS SYSTEMS, Liebert, perhaps others (default)
+
+*mge*::
+MGE UPS SYSTEMS and MGE Office Protection Systems devices with SNMP cards (ref 66062, 66045, 66074 and 66244)
+
+*apcc*::
+APC AP9606 APC Web/SNMP management card, perhaps others
+
+*netvision*::
+Socomec Sicon UPS with Netvision Web/SNMP management card/external box
+
+*pw*::
+Powerware devices with ConnectUPS SNMP cards
+
+*aphel_genesisII*::
+Eaton Powerware ePDU Monitored
+
+*aphel_revelation*::
+Eaton Powerware ePDU Managed
+
+*raritan*::
+Various Raritan PDUs
+
+*baytech*::
+Various BayTech PDUs
+
+EXTRA ARGUMENTS
+---------------
+
+This driver supports the following optional settings in the
+linknut:ups.conf[5]:
+
+*mibs*='name'::
+Set MIB compliance (default=auto, allowed entries: refer to the above SUPPORTED HARDWARE).
+With "auto", the driver will try a select set of SNMP objects until it finds
+one that the device responds to.
+
+*community*='name'::
+Set community name (default = public).
+Note that you require a RW community name to change UPS settings (as for a powerdown).
+
+*snmp_version*='version'::
+Set SNMP version (default = v1, the other allowed value is v2c)
+
+*pollfreq*='value'::
+Set polling frequency in seconds, to reduce network flow (default=30)
+
+*notransferoids*::
+Disable the monitoring of the low and high voltage transfer OIDs in
+the hardware.  This will remove input.transfer.low and input.transfer.high
+from the list of variables.  This should only be used on APCC Symmetra
+equipment which has strangeness in the three-phase power reporting.
+
+REQUIREMENTS
+------------
+You will need to install the Net-SNMP package from 
+http://www.net-snmp.org/ before building this driver.
+
+LIMITATION
+----------
+Shutdown
+~~~~~~~~
+
+This driver does not provide a proper upsdrv_shutdown() function. There probably
+never will be one, since at the time this script should run (near the end of
+the system halt script), there will be no network capabilities anymore.
+Probably the only way to shutdown an SNMP UPS is by sending it a shutdown
+with delay command through linknut:upscmd[8] and hope for the best that the
+system will have finished shutting down before the power is cut.
+
+INSTALLATION
+------------
+This driver is only built if the Net-SNMP development files are present on the system.
+You can also force it to be built by using "configure --with-snmp=yes" before calling make.
+
+IMPLEMENTATION
+--------------
+The hostname of the UPS is specified with the "port" value in
+`ups.conf`, i.e.:
+
+	[snmp]
+		driver = snmp-ups
+		port = snmp-ups.example.com
+		community = public
+		snmp_version = v1
+		mibs = ietf
+		pollfreq = 15
+
+AUTHORS
+-------
+Arnaud Quette, Dmitry Frolov
+
+Sponsored by Eaton <http://www.eaton.com>
+and originally by MGE UPS SYSTEMS <http://www.mgeups.com/>
+
+
+SEE ALSO
+--------
+
+The core driver:
+~~~~~~~~~~~~~~~~
+linknut:nutupsdrv[8]
+
+NUT SNMP Protocols Library
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+Available at: http://www.networkupstools.org/protocols/snmp/
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
