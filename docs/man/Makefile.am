@@ -42,6 +42,7 @@ CONVERTED_TO_ASCIIDOC = \
 	tripplite.html \
 	tripplitesu.html \
 	tripplite_usb.html \
+	upscode2.html \
 	ups.conf.html \
 	upsc.html \
 	upscmd.html \
@@ -104,6 +105,7 @@ EXTRA_DIST = \
 	tripplite.txt \
 	tripplitesu.txt \
 	tripplite_usb.txt \
+	upscode2.txt \
 	ups.conf.txt \
 	upsc.txt \
 	upscmd.txt \
@@ -178,6 +180,7 @@ man8_MANS = \
 	tripplite.8 \
 	tripplitesu.8 \
 	tripplite_usb.8 \
+	upscode2.8 \
 	upsc.8 \
 	upsd.8 \
 	upslog.8 \
