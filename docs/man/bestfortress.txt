@@ -26,7 +26,7 @@ linknut:ups.conf[5]:
 Set the speed of the serial connection - 1200, 2400, 4800 or 9600.
 
 *max_load*='VA'::
-Set the value of the *ups.load* variable.
+Set the full-scale value of the *ups.load* variable.
 
 AUTHOR
 ------
