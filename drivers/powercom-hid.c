@@ -53,6 +53,68 @@ static usb_device_id_t powercom_usb_device_table[] = {
 	{ -1, -1, NULL }
 };
 
+static char powercom_scratch_buf[32];
+
+static char *powercom_startup(double value)
+{
+	uint16_t	i = value;
+
+	snprintf(powercom_scratch_buf, sizeof(powercom_scratch_buf), "%d", 60 * ((i << 8) + (i >> 8)));
+	upsdebugx(3, "%s: value = %.0f, buf = %s", __func__, value, powercom_scratch_buf);
+
+	return powercom_scratch_buf;
+}
+
+static info_lkp_t powercom_startup_info[] = {
+	{ 0, NULL, powercom_startup }
+};
+
+static char *powercom_shutdown(double value)
+{
+	uint16_t	i = value;
+
+	snprintf(powercom_scratch_buf, sizeof(powercom_scratch_buf), "%d", 60 * (i & 0x00FF) + (i >> 8));
+	upsdebugx(3, "%s: value = %.0f, buf = %s", __func__, value, powercom_scratch_buf);
+
+	return powercom_scratch_buf;
+}
+
+static info_lkp_t powercom_shutdown_info[] = {
+	{ 0, NULL, powercom_shutdown }
+};
+
+static double powercom_shutdown_return(const char *value)
+{
+	uint16_t	val, command;
+
+	val = atoi(value);
+	command = ((val % 60) << 8) + (val / 60);
+	command |= 0x4000;	/* AC RESTART NORMAL ENABLE */
+	upsdebugx(3, "%s: value = %s, command = %04X", __func__, value, command);
+
+	return command;
+}
+
+static info_lkp_t powercom_shutdown_return_info[] = {
+	{ 0, NULL, NULL, powercom_shutdown_return }
+};
+
+static double powercom_shutdown_stayoff(const char *value)
+{
+	uint16_t	val, command;
+
+	val = atoi(value);
+	command = ((val % 60) << 8) + (val / 60);
+	command |= 0x8000;	/* AC RESTART NORMAL DISABLE */
+	upsdebugx(3, "%s: value = %s, command = %04X", __func__, value, command);
+
+	return command;
+}
+
+static info_lkp_t powercom_shutdown_stayoff_info[] = {
+	{ 0, NULL, NULL, powercom_shutdown_stayoff }
+};
+
 /* --------------------------------------------------------------- */
 /*      Vendor-specific usage table */
 /* --------------------------------------------------------------- */
@@ -107,8 +169,8 @@ static hid_info_t powercom_hid2nut[] = {
 /*	{ "BOOL", 0, 0, "UPS.PresentStatus.VoltageNotRegulated", NULL, "%.0f", 0, NULL }, */
 
 /*
- * According to the HID PDC specifications, the below values should report the battery voltage. But in
- * the Black Knight 500AP these seem to report output.voltage(.nominal) instead, so we don't use them. 
+ * According to the HID PDC specifications, the below values should report battery.voltage(.nominal)
+ * PowerCOM duplicates the output.voltage(.nominal) here, so we ignore them
  *	{ "battery.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, "%.2f", 0, NULL },
  *	{ "battery.voltage", 0, 0, "UPS.Battery.Voltage", NULL, "%.2f", 0, NULL },
  *	{ "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%.0f", HU_FLAG_STATIC, NULL },
@@ -116,52 +178,68 @@ static hid_info_t powercom_hid2nut[] = {
  */
 	{ "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", 0, NULL },
 	{ "battery.charge", 0, 0, "UPS.Battery.RemainingCapacity", NULL, "%.0f", 0, NULL },
-	{ "battery.charge.low", 0, 0, "UPS.PowerSummary.RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
-	{ "battery.charge.warning", 0, 0, "UPS.PowerSummary.WarningCapacityLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "battery.charge.low", 0, 0, "UPS.PowerSummary.RemainingCapacityLimit", NULL, "%.0f", 0, NULL },
+	{ "battery.charge.warning", 0, 0, "UPS.PowerSummary.WarningCapacityLimit", NULL, "%.0f", 0, NULL },
 	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", 0, NULL },
 	{ "battery.date", 0, 0, "UPS.Battery.ManufacturerDate", NULL, "%s", HU_FLAG_STATIC, date_conversion },
 	{ "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
-	{ "unmapped.ups.battery.delaybeforestartup", 0, 0, "UPS.Battery.DelayBeforeStartup", NULL, "%.0f", 0, NULL },
-	{ "unmapped.ups.battery.initialized", 0, 0, "UPS.Battery.Initialized", NULL, "%.0f", 0, NULL },
+/*	{ "unmapped.ups.battery.delaybeforestartup", 0, 0, "UPS.Battery.DelayBeforeStartup", NULL, "%.0f", 0, NULL }, */
+/*	{ "unmapped.ups.battery.initialized", 0, 0, "UPS.Battery.Initialized", NULL, "%.0f", 0, NULL }, */
 
-	{ "ups.beeper.status", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", HU_FLAG_SEMI_STATIC, beeper_info },
-	{ "ups.beeper.status", 0, 0, "UPS.AudibleAlarmControl", NULL, "%s", HU_FLAG_SEMI_STATIC, beeper_info },
+	{ "ups.beeper.status", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", 0, beeper_info },
+	{ "ups.beeper.status", 0, 0, "UPS.AudibleAlarmControl", NULL, "%s", 0, beeper_info },
 	{ "ups.load", 0, 0, "UPS.Output.PercentLoad", NULL, "%.0f", 0, NULL },
 	{ "ups.date", 0, 0, "UPS.PowerSummary.ManufacturerDate", NULL, "%s", HU_FLAG_STATIC, date_conversion },
-	{ "ups.test.result", 0, 0, "UPS.Battery.Test", NULL, "%s", HU_FLAG_SEMI_STATIC, test_read_info },
+	{ "ups.test.result", 0, 0, "UPS.Battery.Test", NULL, "%s", 0, test_read_info },
 /*	{ "unmapped.ups.powersummary.imanufacturer", 0, 0, "UPS.PowerSummary.iManufacturer", NULL, "%s", HU_FLAG_STATIC, stringid_conversion }, */
 /*	{ "unmapped.ups.powersummary.iproduct", 0, 0, "UPS.PowerSummary.iProduct", NULL, "%s", HU_FLAG_STATIC, stringid_conversion }, */
 /*	{ "unmapped.ups.powersummary.iserialnumber", 0, 0, "UPS.PowerSummary.iSerialNumber", NULL, "%s", HU_FLAG_STATIC, stringid_conversion }, */
-	{ "unmapped.ups.iname", 0, 0, "UPS.iName", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
-	{ "unmapped.ups.powersummary.ioeminformation", 0, 0, "UPS.PowerSummary.iOEMInformation", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
-	{ "ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.DelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_FLAG_ABSENT, NULL},
-	{ "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_FLAG_ABSENT, NULL},
-	{ "ups.timer.start", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
-	{ "ups.timer.shutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
+/*	{ "unmapped.ups.iname", 0, 0, "UPS.iName", NULL, "%s", HU_FLAG_STATIC, stringid_conversion }, */
+/*	{ "unmapped.ups.powersummary.ioeminformation", 0, 0, "UPS.PowerSummary.iOEMInformation", NULL, "%s", HU_FLAG_STATIC, stringid_conversion }, */
+
+/* The implementation of the HID path UPS.PowerSummary.DelayBeforeStartup is unconventional:
+ * Read:
+ *	Byte 7, byte 8 (min)
+ * Write:
+ *	Command 4, high byte min, low byte min
+ */
+	{ "ups.delay.start", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_FLAG_ABSENT, NULL },
+	{ "ups.timer.start", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, "%.0f", 0, powercom_startup_info },
+
+/* The implementation of the HID path UPS.PowerSummary.DelayBeforeShutdown is unconventional:
+ * Read:
+ *	Byte 13, Byte 14 (min, sec)
+ * Write:
+ *	If Byte(sec), bit7=0 and bit6=0 Then
+ *		If Byte 9, bit0=1 Then command 185, 188, min, sec (OL -> shutdown.return)
+ *		If Byte 9, bit0=0 Then command 186, 188, min, sec (OB -> shutdown.stayoff)
+ *	If Byte(sec), bit7=0 and bit6=1 
+ *		Then command 185, 188, min, sec (shutdown.return)
+ *	If Byte(sec), bit7=1 and bit6=0 Then
+ *		Then command 186, 188, min, sec (shutdown.stayoff)
+ *	If Byte(sec), bit7=1 and bit6=1 Then
+ *		No actions
+ */
+	{ "ups.delay.shutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_FLAG_ABSENT, NULL },
+	{ "ups.timer.shutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_QUICK_POLL, powercom_shutdown_info },
 
 	{ "input.voltage", 0, 0, "UPS.Input.Voltage", NULL, "%.1f", 0, NULL },
-	{ "input.voltage.nominal", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.Input.ConfigVoltage", NULL, "%.0f", HU_FLAG_STATIC, NULL },
+	{ "input.voltage.nominal", 0, 0, "UPS.Input.ConfigVoltage", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 	{ "input.frequency", 0, 0, "UPS.Input.Frequency", NULL, "%.1f", 0, NULL },
 
 	{ "output.voltage", 0, 0, "UPS.Output.Voltage", NULL, "%.1f", 0, NULL },
-	{ "output.voltage.nominal", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.Output.ConfigVoltage", NULL, "%.0f", HU_FLAG_STATIC, NULL },
-	{ "output.frequency", 0, 0, "UPS.Output.Frequency", NULL, "%.0f", 0, NULL },
+	{ "output.voltage.nominal", 0, 0, "UPS.Output.ConfigVoltage", NULL, "%.0f", HU_FLAG_STATIC, NULL },
+	{ "output.frequency", 0, 0, "UPS.Output.Frequency", NULL, "%.1f", 0, NULL },
 
 /*	{ "unmapped.ups.powercom1", 0, 0, "UPS.POWERCOM1", NULL, "%.0f", 0, NULL }, broken pipe */
 /*	{ "unmapped.ups.powercom2", 0, 0, "UPS.POWERCOM2", NULL, "%.0f", 0, NULL }, broken pipe */
-	{ "unmapped.ups.powersummary.rechargeable", 0, 0, "UPS.PowerSummary.Rechargeable", NULL, "%.0f", 0, NULL },
-	{ "unmapped.ups.shutdownimminent", 0, 0, "UPS.ShutdownImminent", NULL, "%.0f", 0, NULL },
+/* 	{ "unmapped.ups.powersummary.rechargeable", 0, 0, "UPS.PowerSummary.Rechargeable", NULL, "%.0f", 0, NULL }, */
+/*	{ "unmapped.ups.shutdownimminent", 0, 0, "UPS.ShutdownImminent", NULL, "%.0f", 0, NULL }, */
 
 	/* instcmds */
 	{ "test.battery.start.quick", 0, 0, "UPS.Battery.Test", NULL, "1", HU_TYPE_CMD, NULL },
-	{ "test.battery.start.deep", 0, 0, "UPS.Battery.Test", NULL, "2", HU_TYPE_CMD, NULL },
-	{ "test.battery.stop", 0, 0, "UPS.Battery.Test", NULL, "3", HU_TYPE_CMD, NULL },
-	{ "load.off.delay", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_TYPE_CMD, NULL },
-	{ "load.on.delay", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_TYPE_CMD, NULL },
-	{ "shutdown.stop", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "0", HU_TYPE_CMD, NULL },
-	{ "beeper.disable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "1", HU_TYPE_CMD, NULL },
-	{ "beeper.enable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },
-	{ "beeper.mute", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "3", HU_TYPE_CMD, NULL },
+	{ "shutdown.return", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_TYPE_CMD, powercom_shutdown_return_info },
+	{ "shutdown.stayoff", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_TYPE_CMD, powercom_shutdown_stayoff_info },
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
