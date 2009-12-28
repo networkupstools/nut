@@ -148,7 +148,18 @@ Feldman (http://www.bradleyloritheo.com)
 SEE ALSO
 --------
 
-linknut:nutupsdrv[8], regex(7), lsusb(8), linknut:usbhid-ups[8]
+The core driver:
+~~~~~~~~~~~~~~~~
+linknut:nutupsdrv[8]
+
+Other drivers for Tripp-Lite hardware:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+linknut:tripplite[8], linknut:tripplitesu[8], linknut:usbhid-ups[8]
+
+Other tools:
+~~~~~~~~~~~~
+regex(7), lsusb(8)
+
 
 INTERNET RESOURCES
 ------------------

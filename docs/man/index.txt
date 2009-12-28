@@ -84,8 +84,8 @@ Drivers
 - linknut:safenet[8]
 - linknut:snmp-ups[8]
 - linknut:solis[8]
-- tripplite.8
-- tripplitesu.8
+- linknut:tripplite[8]
+- linknut:tripplitesu[8]
 - linknut:tripplite_usb[8]
 - linknut:usbhid-ups[8]
 - upscode2.8
