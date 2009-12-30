@@ -405,12 +405,7 @@ static int libusb_get_interrupt(usb_dev_handle *udev, unsigned char *buf, int bu
 	if (!udev) {
 		return -1;
 	}
-#ifdef SUN_LIBUSB
-/*
-	usleep(timeout * 1000);
- */
-	return 0;
-#else
+
 	/* FIXME: hardcoded interrupt EP => need to get EP descr for IF descr */
 	ret = usb_interrupt_read(udev, 0x81, (char *)buf, bufsize, timeout);
 	if (ret > 0) {
