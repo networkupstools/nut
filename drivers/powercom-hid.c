@@ -85,9 +85,10 @@ static info_lkp_t powercom_shutdown_info[] = {
 
 static double powercom_shutdown_return(const char *value)
 {
+	const char	*s = dstate_getinfo("ups.delay.shutdown");
 	uint16_t	val, command;
 
-	val = atoi(value);
+	val = atoi(s ? s : value);
 	command = ((val % 60) << 8) + (val / 60);
 	command |= 0x4000;	/* AC RESTART NORMAL ENABLE */
 	upsdebugx(3, "%s: value = %s, command = %04X", __func__, value, command);
@@ -101,9 +102,10 @@ static info_lkp_t powercom_shutdown_return_info[] = {
 
 static double powercom_shutdown_stayoff(const char *value)
 {
+	const char	*s = dstate_getinfo("ups.delay.shutdown");
 	uint16_t	val, command;
 
-	val = atoi(value);
+	val = atoi(s ? s : value);
 	command = ((val % 60) << 8) + (val / 60);
 	command |= 0x8000;	/* AC RESTART NORMAL DISABLE */
 	upsdebugx(3, "%s: value = %s, command = %04X", __func__, value, command);
@@ -203,8 +205,8 @@ static hid_info_t powercom_hid2nut[] = {
  * Write:
  *	Command 4, high byte min, low byte min
  */
-	{ "ups.delay.start", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_FLAG_ABSENT, NULL },
-	{ "ups.timer.start", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, "%.0f", 0, powercom_startup_info },
+/*	{ "ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerSummary.DelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_FLAG_ABSENT, NULL }, */
+/*	{ "ups.timer.start", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, "%.0f", 0, powercom_startup_info }, */
 
 /* The implementation of the HID path UPS.PowerSummary.DelayBeforeShutdown is unconventional:
  * Read:
@@ -220,7 +222,7 @@ static hid_info_t powercom_hid2nut[] = {
  *	If Byte(sec), bit7=1 and bit6=1 Then
  *		No actions
  */
-	{ "ups.delay.shutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_FLAG_ABSENT, NULL },
+	{ "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_FLAG_ABSENT, NULL },
 	{ "ups.timer.shutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_QUICK_POLL, powercom_shutdown_info },
 
 	{ "input.voltage", 0, 0, "UPS.Input.Voltage", NULL, "%.1f", 0, NULL },
