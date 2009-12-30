@@ -414,7 +414,6 @@ static int libusb_get_interrupt(usb_dev_handle *udev, unsigned char *buf, int bu
 		upsdebugx(6, " none (%i)", ret);
 	}
 	return ret;
-#endif
 }
 
 static void libusb_close(usb_dev_handle *udev)
