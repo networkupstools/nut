@@ -21,11 +21,11 @@ if test -z "${nut_have_libgd_seen}"; then
 
 	AC_MSG_CHECKING(for gd version via gdlib-config)
 	GD_VERSION=`gdlib-config --version 2>/dev/null`
-	if (test "$?" != "0"); then
-		GD_VERSION="unknown"
-		AC_MSG_RESULT(not found)
-	else
+	if test "$?" = "0"; then
 		AC_MSG_RESULT(${GD_VERSION})
+	else
+		AC_MSG_RESULT(not found)
+		GD_VERSION="unknown"
 	fi
 
 	case "${GD_VERSION}" in
