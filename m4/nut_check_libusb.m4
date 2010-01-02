@@ -36,7 +36,7 @@ if test -z "${nut_have_libusb_seen}"; then
 			nut_have_libusb=no
 		fi
 	else
-		AC_MSG_RESULT(${LIBUSB_VERSION} found)
+		AC_MSG_RESULT(not found)
 		nut_have_libusb=no
 	fi
 
@@ -58,7 +58,7 @@ if test -z "${nut_have_libusb_seen}"; then
 
 			AC_MSG_CHECKING(for libusb ldflags via libusb-config)
 			LDFLAGS=`libusb-config --libs 2>/dev/null`
-			if test "$?" == "0"; then
+			if test "$?" = "0"; then
 				AC_MSG_RESULT(${LDFLAGS})
 			else
 				AC_MSG_RESULT(not found)
