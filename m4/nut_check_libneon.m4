@@ -15,32 +15,35 @@ if test -z "${nut_have_neon_seen}"; then
 	dnl See which version of the neon library (if any) is installed
 	AC_MSG_CHECKING(for libneon version via pkg-config (0.25.0 minimum required))
 	NEON_VERSION=`pkg-config --silence-errors --modversion neon`
-	NEON_MIN_VERSION=`pkg-config --silence-errors --atleast-version=0.25.0 neon`
-	if (test "$?" != "0"); then
-		AC_MSG_RESULT(${NEON_VERSION} found)
-		nut_have_neon=no
-	else
-		AC_MSG_RESULT(${NEON_VERSION} found)
-		AC_DEFINE_UNQUOTED(LIBNEON_VERSION, "${NEON_VERSION}", [Define version of the neon library])
-		nut_have_neon=yes
-	fi
+	if test "$?" = "0"; then
+		if pkg-config --atleast-version=0.25.0 neon; then
+			AC_MSG_RESULT(${NEON_VERSION} found)
+			nut_have_neon=yes
 
-	AC_MSG_CHECKING(for libneon cflags via pkg-config)
-	CFLAGS=`pkg-config --silence-errors --cflags neon`
-	if (test "$?" != "0"); then
+			AC_MSG_CHECKING(for libneon cflags via pkg-config)
+			CFLAGS=`pkg-config --silence-errors --cflags neon`
+			if test "$?" = "0"; then
+				AC_MSG_RESULT(${CFLAGS})
+			else
+				AC_MSG_RESULT(not found)
+				nut_have_neon=no
+			fi
+
+			AC_MSG_CHECKING(for libneon ldflags via pkg-config)
+			LDFLAGS=`pkg-config --silence-errors --libs neon`
+			if test "$?" = "0"; then
+				AC_MSG_RESULT(${LDFLAGS})
+			else
+				AC_MSG_RESULT(not found)
+				nut_have_neon=no
+			fi
+		else
+			AC_MSG_RESULT(${NEON_VERSION} is too old)
+			nut_have_neon=no
+		fi
+	else
 		AC_MSG_RESULT(not found)
 		nut_have_neon=no
-	else
-		AC_MSG_RESULT(${CFLAGS})
-	fi
-
-	AC_MSG_CHECKING(for libneon ldflags via pkg-config)
-	LDFLAGS=`pkg-config --silence-errors --libs neon`
-	if (test "$?" != "0"); then
-		AC_MSG_RESULT(not found)
-		nut_have_neon=no
-	else
-		AC_MSG_RESULT(${LDFLAGS})
 	fi
 
 	if test "${nut_have_neon}" = "yes"; then
@@ -55,4 +58,3 @@ if test -z "${nut_have_neon_seen}"; then
 	LDFLAGS="${LDFLAGS_ORIG}"
 fi
 ])
-
