@@ -97,7 +97,7 @@ Developer manual pages
 ----------------------
 
 - linknut:libupsclient-config[1]
-- skel.8
+- linknut:skel[8]
 
 - upsclient.3
 - upscli_connect.3
