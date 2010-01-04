@@ -135,8 +135,8 @@ NUT Powersaving features and using outlet collection
 include powersaving.txt[]
 
 [[NUT_Security]]
-Securisation notes
-==================
+Notes on Securing NUT
+=====================
 
 Configuring SSL
 ---------------
