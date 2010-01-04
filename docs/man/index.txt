@@ -99,7 +99,7 @@ Developer manual pages
 - linknut:libupsclient-config[1]
 - linknut:skel[8]
 
-- upsclient.3
+- linknut:upsclient[3]
 - upscli_connect.3
 - upscli_disconnect.3
 - upscli_fd.3

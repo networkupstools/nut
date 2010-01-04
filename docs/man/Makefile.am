@@ -50,6 +50,7 @@ CONVERTED_TO_ASCIIDOC = \
 	ups.conf.html \
 	upsc.html \
 	upscmd.html \
+	upsclient.html \
 	upsd.html \
 	upsd.conf.html \
 	upsd.users.html \
@@ -118,6 +119,7 @@ EXTRA_DIST = \
 	ups.conf.txt \
 	upsc.txt \
 	upscmd.txt \
+	upsclient.txt \
 	upsd.conf.txt \
 	upsd.users.txt \
 	upsd.txt \
@@ -141,6 +143,9 @@ EXTRA_DIST = \
 # http://www.gnu.org/software/hello/manual/automake/Man-pages.html
 man1_MANS = \
 	libupsclient-config.1
+
+man3_MANS = \
+	upsclient.3
 
 man5_MANS = \
 	hosts.conf.5 \
