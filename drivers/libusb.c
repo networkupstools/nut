@@ -370,7 +370,7 @@ static int libusb_get_report(usb_dev_handle *udev, int ReportId, unsigned char *
 	if (ret == -ETIMEDOUT) {
 		upsdebugx(2, "%s: Connection timed out", __func__);
 	} else if (ret < 0) {
-		upslogx(LOG_DEBUG, "%s: %s", __func__, usb_strerr());
+		upslogx(LOG_DEBUG, "%s: %s", __func__, usb_strerror());
 	}
 
 	return ret;
@@ -393,7 +393,7 @@ static int libusb_set_report(usb_dev_handle *udev, int ReportId, unsigned char *
 	if (ret == -ETIMEDOUT) {
 		upsdebugx(2, "%s: Connection timed out", __func__);
 	} else if (ret < 0) {
-		upslogx(LOG_DEBUG, "%s: %s", __func__, usb_strerr());
+		upslogx(LOG_DEBUG, "%s: %s", __func__, usb_strerror());
 	}
 
 	return ret;
@@ -412,7 +412,7 @@ static int libusb_get_string(usb_dev_handle *udev, int StringIdx, char *buf, siz
 	if (ret == -ETIMEDOUT) {
 		upsdebugx(2, "%s: Connection timed out", __func__);
 	} else if (ret < 0) {
-		upslogx(LOG_DEBUG, "%s: %s", __func__, usb_strerr());
+		upslogx(LOG_DEBUG, "%s: %s", __func__, usb_strerror());
 	}
 
 	return ret;
@@ -432,7 +432,7 @@ static int libusb_get_interrupt(usb_dev_handle *udev, unsigned char *buf, int bu
 	if (ret == -ETIMEDOUT) {
 		upsdebugx(2, "%s: Connection timed out", __func__);
 	} else if (ret < 0) {
-		upslogx(LOG_DEBUG, "%s: %s", __func__, usb_strerr());
+		upslogx(LOG_DEBUG, "%s: %s", __func__, usb_strerror());
 	}
 
 	return ret;
