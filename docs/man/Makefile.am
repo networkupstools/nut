@@ -51,6 +51,8 @@ CONVERTED_TO_ASCIIDOC = \
 	upsc.html \
 	upscmd.html \
 	upsclient.html \
+	upscli_connect.html \
+	upscli_disconnect.html \
 	upsd.html \
 	upsd.conf.html \
 	upsd.users.html \
@@ -120,6 +122,8 @@ EXTRA_DIST = \
 	upsc.txt \
 	upscmd.txt \
 	upsclient.txt \
+	upscli_connect.txt \
+	upscli_disconnect.txt \
 	upsd.conf.txt \
 	upsd.users.txt \
 	upsd.txt \
@@ -145,7 +149,9 @@ man1_MANS = \
 	libupsclient-config.1
 
 man3_MANS = \
-	upsclient.3
+	upsclient.3 \
+	upscli_connect.3 \
+	upscli_disconnect.3
 
 man5_MANS = \
 	hosts.conf.5 \
