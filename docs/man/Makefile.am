@@ -20,6 +20,7 @@ CONVERTED_TO_ASCIIDOC = \
 	hosts.conf.html \
 	index.html \
 	isbmex.html \
+	libupsclient-config.html \
 	liebert.html \
 	masterguard.html \
 	megatec.html \
@@ -86,6 +87,7 @@ EXTRA_DIST = \
 	hosts.conf.txt \
 	index.txt \
 	isbmex.txt \
+	libupsclient-config.txt \
 	liebert.txt \
 	masterguard.txt \
 	megatec.txt \
@@ -135,6 +137,9 @@ EXTRA_DIST = \
 	$(MANS)
 
 # http://www.gnu.org/software/hello/manual/automake/Man-pages.html
+man1_MANS = \
+	libupsclient-config.1
+
 man5_MANS = \
 	hosts.conf.5 \
 	nut.conf.5 \
@@ -219,11 +224,13 @@ SUFFIXES = .txt .html .1 .3 .5 .8
 ### Hence, the copying dance below.
 A2X_MANPAGE_OPTS = -f manpage --attribute nutversion="@PACKAGE_VERSION@"
 
-# .txt.1:
-# 	$(A2X) $(A2X_MANPAGE_OPTS) $<
-# 	
-# .txt.3:
-# 	$(A2X) $(A2X_MANPAGE_OPTS) $<
+.txt.1:
+	test -f `basename $<` || cp -p $< .
+	$(A2X) $(A2X_MANPAGE_OPTS) `basename $<`
+	
+.txt.3:
+	test -f `basename $<` || cp -p $< .
+	$(A2X) $(A2X_MANPAGE_OPTS) `basename $<`
 	
 .txt.5:
 	test -f `basename $<` || cp -p $< .

@@ -96,7 +96,7 @@ Drivers
 Developer manual pages
 ----------------------
 
-- libupsclient-config.1
+- linknut:libupsclient-config[1]
 - skel.8
 
 - upsclient.3
