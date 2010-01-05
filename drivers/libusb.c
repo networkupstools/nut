@@ -448,6 +448,11 @@ static int libusb_get_interrupt(usb_dev_handle *udev, unsigned char *buf, int bu
 	/* FIXME: hardcoded interrupt EP => need to get EP descr for IF descr */
 	ret = usb_interrupt_read(udev, 0x81, (char *)buf, bufsize, timeout);
 
+	/* Clear stall condition */
+	if (ret == -EPIPE) {
+		ret = usb_clear_halt(udev, 0x81);
+	}
+
 	return libusb_strerror(ret, __func__);
 }
 
