@@ -363,9 +363,10 @@ static int libusb_strerror(const int ret, const char *desc)
 	case -EPERM:	/* Operation not permitted */
 	case -ENODEV:	/* No such device */
 	case -EACCES:	/* Permission denied */
-	case -EIO:		/* I/O error */
+	case -EIO:	/* I/O error */
 	case -ENXIO:	/* No such device or address */
 	case -ENOENT:	/* No such file or directory */
+	case -EPIPE:	/* Broken pipe */
 		upslogx(LOG_DEBUG, "%s: %s", desc, usb_strerror());
 		return ret;
 
@@ -375,7 +376,6 @@ static int libusb_strerror(const int ret, const char *desc)
 
 	case -EOVERFLOW:	/* Value too large for defined data type */
 	case -EPROTO:	/* Protocol error */
-	case -EPIPE:	/* Broken pipe */
 	default:
 		upsdebugx(2, "%s: %s", desc, usb_strerror());
 		break;
@@ -404,6 +404,11 @@ static int libusb_get_report(usb_dev_handle *udev, int ReportId, unsigned char *
 		ReportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
 		0, raw_buf, ReportSize, USB_TIMEOUT);
 
+	/* Ignore "protocol stall" (for unsupported request) on control endpoint */
+	if (ret == -EPIPE) {
+		return 0;
+	}
+
 	return libusb_strerror(ret, __func__);
 }
 
@@ -420,6 +425,11 @@ static int libusb_set_report(usb_dev_handle *udev, int ReportId, unsigned char *
 		0x09, /* HID_REPORT_SET = 0x09*/
 		ReportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
 		0, raw_buf, ReportSize, USB_TIMEOUT);
+
+	/* Ignore "protocol stall" (for unsupported request) on control endpoint */
+	if (ret == -EPIPE) {
+		return 0;
+	}
 
 	return libusb_strerror(ret, __func__);
 }
