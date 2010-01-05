@@ -1,5 +1,5 @@
 /* usbhid-ups.c - Driver for USB and serial (MGE SHUT) HID UPS units
- * 
+ *
  * Copyright (C)
  *   2003-2009 Arnaud Quette <arnaud.quette@gmail.com>
  *   2005      John Stamp <kinsayder@hotmail.com>
@@ -10,18 +10,18 @@
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or 
+ * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- * 
+ *
  * TODO list:
  * - set ST_FLAG_RW according to HIDData_t->Attribute (ATTR_DATA_CST-ATTR_NVOL_VOL)
  */
@@ -218,7 +218,7 @@ static status_lkp_t status_info[] = {
    variable ups_status. Interpretation happens in ups_status_set,
    where they are converted to standard NUT status strings. Notice
    that the below conversions do not yield standard NUT status
-   strings; this in indicated being in lower-case characters. 
+   strings; this in indicated being in lower-case characters.
 
    The reason to separate the collection of information from its
    interpretation is that not each report received from the UPS may
@@ -415,7 +415,7 @@ static char *date_conversion_fun(double value)
 		return "not set";
 	}
 
-	year = 1980 + ((long)value >> 9); /* negative value represents pre-1980 date */ 
+	year = 1980 + ((long)value >> 9); /* negative value represents pre-1980 date */
 	month = ((long)value >> 5) & 0x0f;
 	day = (long)value & 0x1f;
 
@@ -433,7 +433,7 @@ info_lkp_t date_conversion[] = {
 static char *hex_conversion_fun(double value)
 {
 	static char buf[20];
-	
+
 	snprintf(buf, sizeof(buf), "%08lx", (long)value);
 
 	return buf;
@@ -461,7 +461,7 @@ info_lkp_t stringid_conversion[] = {
 static char *divide_by_10_conversion_fun(double value)
 {
 	static char buf[20];
-	
+
 	snprintf(buf, sizeof(buf), "%0.1f", value * 0.1);
 
 	return buf;
@@ -476,7 +476,7 @@ info_lkp_t divide_by_10_conversion[] = {
 static char *kelvin_celsius_conversion_fun(double value)
 {
 	static char buf[20];
-	
+
 	snprintf(buf, sizeof(buf), "%.1f", value - 273.15);
 
 	return buf;
@@ -536,7 +536,7 @@ int instcmd(const char *cmdname, const char *extradata)
 
 	upsdebugx(1, "instcmd(%s, %s)", cmdname, extradata ? extradata : "[NULL]");
 
-	/* Retrieve and check netvar & item_path */	
+	/* Retrieve and check netvar & item_path */
 	hidups_item = find_nut_info(cmdname);
 
 	/* Check for fallback if not found */
@@ -581,7 +581,7 @@ int instcmd(const char *cmdname, const char *extradata)
 		upsdebugx(2, "instcmd: %s is not an instant command\n", cmdname);
 		return STAT_INSTCMD_INVALID;
 	}
-	
+
 	/* If extradata is empty, use the default value from the HID-to-NUT table */
 	val = extradata ? extradata : hidups_item->dfl;
 
@@ -599,7 +599,7 @@ int instcmd(const char *cmdname, const char *extradata)
 		data_has_changed = TRUE;
 		return STAT_INSTCMD_HANDLED;
 	}
-	
+
 	upsdebugx(3, "instcmd: FAILED\n"); /* TODO: HANDLED but FAILED, not UNKNOWN! */
 	return STAT_INSTCMD_FAILED;
 }
@@ -612,9 +612,9 @@ int setvar(const char *varname, const char *val)
 
 	upsdebugx(1, "setvar(%s, %s)", varname, val);
 
-	/* retrieve and check netvar & item_path */	
+	/* retrieve and check netvar & item_path */
 	hidups_item = find_nut_info(varname);
-	
+
 	if (hidups_item == NULL) {
 		upsdebugx(2, "setvar: info element unavailable %s\n", varname);
 		return STAT_SET_UNKNOWN;
@@ -661,7 +661,7 @@ int setvar(const char *varname, const char *val)
 void upsdrv_shutdown(void)
 {
 	upsdebugx(1, "upsdrv_shutdown...");
-	
+
 	/* Try to shutdown with delay */
 	if (instcmd("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
 		/* Shutdown successful */
@@ -688,24 +688,24 @@ void upsdrv_help(void)
 	/* FIXME: to be completed */
 }
 
-void upsdrv_makevartable(void) 
+void upsdrv_makevartable(void)
 {
 	char temp [MAX_STRING_SIZE];
-	
+
 	upsdebugx(1, "upsdrv_makevartable...");
 
 	snprintf(temp, sizeof(temp), "Set shutdown delay, in seconds (default=%s)", DEFAULT_OFFDELAY);
 	addvar(VAR_VALUE, HU_VAR_OFFDELAY, temp);
-	
+
 	snprintf(temp, sizeof(temp), "Set startup delay, in seconds (default=%s)", DEFAULT_ONDELAY);
 	addvar(VAR_VALUE, HU_VAR_ONDELAY, temp);
-	
+
 	snprintf(temp, sizeof(temp), "Set polling frequency, in seconds, to reduce data flow (default=%d)",
 		DEFAULT_POLLFREQ);
 	addvar(VAR_VALUE, HU_VAR_POLLFREQ, temp);
-	
+
 	addvar(VAR_FLAG, "pollonly", "Don't use interrupt pipe, only use polling");
-	
+
 #ifndef SHUT_MODE
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
 	addvar(VAR_VALUE, "vendor", "Regular expression to match UPS Manufacturer string");
@@ -720,7 +720,7 @@ void upsdrv_makevartable(void)
 
 #define	MAX_EVENT_NUM	32
 
-void upsdrv_updateinfo(void) 
+void upsdrv_updateinfo(void)
 {
 	hid_info_t	*item;
 	HIDData_t	*event[MAX_EVENT_NUM];
@@ -765,7 +765,7 @@ void upsdrv_updateinfo(void)
 		evtCount = 0;
 		upsdebugx(1, "Not using interrupt pipe...");
 	}
-	
+
 	/* Process pending events (HID notifications on Interrupt pipe) */
 	for (i = 0; i < evtCount; i++) {
 
@@ -846,7 +846,7 @@ void upsdrv_initinfo(void)
 	if (testvar("pollonly")) {
 		use_interrupt_pipe = FALSE;
 	}
-	
+
 	time(&lastpoll);
 
 	/* install handlers */
@@ -877,7 +877,7 @@ void upsdrv_initups(void)
 	if (testvar("explore") && getval("vendorid")==NULL) {
 		fatalx(EXIT_FAILURE, "must specify \"vendorid\" when using \"explore\"");
 	}
-	
+
 	/* process the UPS selection options */
 	regex_array[0] = getval("vendorid");
 	regex_array[1] = getval("productid");
@@ -1122,7 +1122,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 	int		retcode;
 
 	/* 3 modes: HU_WALKMODE_INIT, HU_WALKMODE_QUICK_UPDATE and HU_WALKMODE_FULL_UPDATE */
-	
+
 	/* Device data walk ----------------------------- */
 	for (item = subdriver->hid2nut; item->info_type != NULL; item++) {
 
@@ -1183,8 +1183,8 @@ static bool_t hid_ups_walk(walkmode_t mode)
 			/* Quick update only deals with status and alarms! */
 			if (!(item->hidflags & HU_FLAG_QUICK_POLL))
 				continue;
-			
-			break; 
+
+			break;
 
 		case HU_WALKMODE_FULL_UPDATE:
 			/* These don't need polling after initinfo() */
@@ -1195,8 +1195,8 @@ static bool_t hid_ups_walk(walkmode_t mode)
 			if ( (item->hidflags & HU_FLAG_SEMI_STATIC) && (data_has_changed == FALSE) )
 				continue;
 
-			break; 
-		
+			break;
+
 		default:
 			fatalx(EXIT_FAILURE, "hid_ups_walk: unknown update mode!");
 		}
@@ -1206,7 +1206,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		switch (retcode)
 		{
 		case -EBUSY:		/* Device or resource busy */
-			upslog_with_errno(LOG_DEBUG, "Got disconnected by another driver");
+			upslog_with_errno(LOG_CRIT, "Got disconnected by another driver");
 		case -EPERM:		/* Operation not permitted */
 		case -EPIPE:		/* Broken pipe */
 		case -ENODEV:		/* No such device */
@@ -1229,7 +1229,6 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		case -EPROTO:		/* Protocol error */
 		default:
 			/* Don't know what happened, try again later... */
-			upsdebug_with_errno(2, "HIDGetDataValue");
 			continue;
 		}
 
@@ -1412,13 +1411,13 @@ static hid_info_t *find_nut_info(const char *varname)
 static hid_info_t *find_hid_info(const HIDData_t *hiddata)
 {
 	hid_info_t *hidups_item;
-	
+
 	for (hidups_item = subdriver->hid2nut; hidups_item->info_type != NULL ; hidups_item++) {
 
 		/* Skip server side vars */
 		if (hidups_item->hidflags & HU_FLAG_ABSENT)
 			continue;
-	
+
 		if (hidups_item->hiddata == hiddata)
 			return hidups_item;
 	}

@@ -96,8 +96,8 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 	struct usb_bus *bus;
 	usb_dev_handle *udev;
 	struct usb_interface_descriptor *iface;
-	
-	int ret, res; 
+
+	int ret, res;
 	unsigned char buf[20];
 	unsigned char *p;
 	char string[256];
@@ -121,7 +121,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 		for (dev = bus->devices; dev; dev = dev->next) {
 			upsdebugx(2, "Checking device (%04X/%04X) (%s/%s)", dev->descriptor.idVendor,
 				dev->descriptor.idProduct, bus->dirname, dev->filename);
-			
+
 			/* supported vendors are now checked by the
 			   supplied matcher */
 
@@ -147,7 +147,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 			curDevice->VendorID = dev->descriptor.idVendor;
 			curDevice->ProductID = dev->descriptor.idProduct;
 			curDevice->Bus = strdup(bus->dirname);
-			
+
 			if (dev->descriptor.iManufacturer) {
 				ret = usb_get_string_simple(udev, dev->descriptor.iManufacturer,
 					string, sizeof(string));
@@ -194,7 +194,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 				}
 			}
 			upsdebugx(2, "Device matches");
-			
+
 			/* Now we have matched the device we wanted. Claim it. */
 
 #ifdef HAVE_USB_DETACH_KERNEL_DRIVER_NP
@@ -203,9 +203,9 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 			 * attached driver... From libhid */
 			retries = 3;
 			while (usb_claim_interface(udev, 0) < 0) {
-				
+
 				upsdebugx(2, "failed to claim USB device: %s", usb_strerror());
-				
+
 				if (usb_detach_kernel_driver_np(udev, 0) < 0) {
 					upsdebugx(2, "failed to detach kernel driver from USB device: %s", usb_strerror());
 				} else {
@@ -223,10 +223,10 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 				fatalx(EXIT_FAILURE, "Can't claim USB device [%04x:%04x]: %s", curDevice->VendorID, curDevice->ProductID, usb_strerror());
 			}
 #endif
-			
+
 			/* set default interface */
 			usb_set_altinterface(udev, 0);
-			
+
 			if (!callback) {
 				return 1;
 			}
@@ -235,7 +235,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 				upsdebugx(2, "  Couldn't retrieve descriptors");
 				goto next_device;
 			}
-			
+
 			rdlen1 = -1;
 			rdlen2 = -1;
 
@@ -245,7 +245,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 			/* res = usb_get_descriptor(udev, USB_DT_HID, 0, buf, 0x9); */
 			res = usb_control_msg(udev, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
 					      (USB_DT_HID << 8) + 0, 0, buf, 0x9, USB_TIMEOUT);
-			
+
 			if (res < 0) {
 				upsdebugx(2, "Unable to get HID descriptor (%s)", usb_strerror());
 			} else if (res < 9) {
@@ -255,7 +255,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 				upsdebug_hex(3, "HID descriptor, method 1", buf, 9);
 
 				rdlen1 = buf[7] | (buf[8] << 8);
-			}			
+			}
 
 			if (rdlen1 < -1) {
 				upsdebugx(2, "Warning: HID descriptor, method 1 failed");
@@ -267,7 +267,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 
 			/* Note: on some broken UPS's (e.g. Tripp Lite Smart1000LCD),
 				only this second method gives the correct result */
-			
+
 			/* for now, we always assume configuration 0, interface 0,
 			   altsetting 0, as above. */
 			iface = &dev->config[0].interface[0].altsetting[0];
@@ -347,7 +347,44 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 	return -1;
 }
 
-/* return the report of ID=type in report 
+/*
+ * Error handler for usb_get/set_* functions. Return value > 0 success,
+ * 0 temporary failure (ignored), < 0 permanent failure (reconnect)
+ */
+static int libusb_strerror(const int ret, const char *desc)
+{
+	if (ret > 0) {
+		return ret;
+	}
+
+	switch(ret)
+	{
+	case -EBUSY:	/* Device or resource busy */
+	case -EPERM:	/* Operation not permitted */
+	case -ENODEV:	/* No such device */
+	case -EACCES:	/* Permission denied */
+	case -EIO:		/* I/O error */
+	case -ENXIO:	/* No such device or address */
+	case -ENOENT:	/* No such file or directory */
+		upslogx(LOG_DEBUG, "%s: %s", desc, usb_strerror());
+		return ret;
+
+	case -ETIMEDOUT:	/* Connection timed out */
+		upsdebugx(2, "%s: Connection timed out", desc);
+		break;
+
+	case -EOVERFLOW:	/* Value too large for defined data type */
+	case -EPROTO:	/* Protocol error */
+	case -EPIPE:	/* Broken pipe */
+	default:
+		upsdebugx(2, "%s: %s", desc, usb_strerror());
+		break;
+	}
+
+	return 0;
+}
+
+/* return the report of ID=type in report
  * return -1 on failure, report length on success
  */
 
@@ -367,13 +404,7 @@ static int libusb_get_report(usb_dev_handle *udev, int ReportId, unsigned char *
 		ReportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
 		0, raw_buf, ReportSize, USB_TIMEOUT);
 
-	if (ret == -ETIMEDOUT) {
-		upsdebugx(2, "%s: Connection timed out", __func__);
-	} else if (ret < 0) {
-		upslogx(LOG_DEBUG, "%s: %s", __func__, usb_strerror());
-	}
-
-	return ret;
+	return libusb_strerror(ret, __func__);
 }
 
 static int libusb_set_report(usb_dev_handle *udev, int ReportId, unsigned char *raw_buf, int ReportSize )
@@ -390,13 +421,7 @@ static int libusb_set_report(usb_dev_handle *udev, int ReportId, unsigned char *
 		ReportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
 		0, raw_buf, ReportSize, USB_TIMEOUT);
 
-	if (ret == -ETIMEDOUT) {
-		upsdebugx(2, "%s: Connection timed out", __func__);
-	} else if (ret < 0) {
-		upslogx(LOG_DEBUG, "%s: %s", __func__, usb_strerror());
-	}
-
-	return ret;
+	return libusb_strerror(ret, __func__);
 }
 
 static int libusb_get_string(usb_dev_handle *udev, int StringIdx, char *buf, size_t buflen)
@@ -409,13 +434,7 @@ static int libusb_get_string(usb_dev_handle *udev, int StringIdx, char *buf, siz
 
 	ret = usb_get_string_simple(udev, StringIdx, buf, buflen);
 
-	if (ret == -ETIMEDOUT) {
-		upsdebugx(2, "%s: Connection timed out", __func__);
-	} else if (ret < 0) {
-		upslogx(LOG_DEBUG, "%s: %s", __func__, usb_strerror());
-	}
-
-	return ret;
+	return libusb_strerror(ret, __func__);
 }
 
 static int libusb_get_interrupt(usb_dev_handle *udev, unsigned char *buf, int bufsize, int timeout)
@@ -429,13 +448,7 @@ static int libusb_get_interrupt(usb_dev_handle *udev, unsigned char *buf, int bu
 	/* FIXME: hardcoded interrupt EP => need to get EP descr for IF descr */
 	ret = usb_interrupt_read(udev, 0x81, (char *)buf, bufsize, timeout);
 
-	if (ret == -ETIMEDOUT) {
-		upsdebugx(2, "%s: Connection timed out", __func__);
-	} else if (ret < 0) {
-		upslogx(LOG_DEBUG, "%s: %s", __func__, usb_strerror());
-	}
-
-	return ret;
+	return libusb_strerror(ret, __func__);
 }
 
 static void libusb_close(usb_dev_handle *udev)
