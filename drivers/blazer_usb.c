@@ -111,7 +111,16 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 		 * replies we need to flush the output buffers of the converter until we
 		 * get no more data (ie, it times out).
 		 */
-		if (ret < 1) {
+		switch (ret)
+		{
+		case -EPIPE:		/* Broken pipe */
+			usb_clear_halt(udev, 0x81);
+		case -ETIMEDOUT:	/* Connection timed out */
+			break;
+		}
+
+		if (ret < 0) {
+			upsdebugx(3, "flush", usb_strerror());
 			break;
 		}
 
@@ -185,7 +194,7 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 	int	i;
 
 	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
-	
+
 	for (i = 0; command[i].str; i++) {
 		int	retry;
 
@@ -450,7 +459,7 @@ void upsdrv_initups(void)
 
 	ret = usb->open(&udev, &usbdevice, regex_matcher, NULL);
 	if (ret < 0) {
-		fatalx(EXIT_FAILURE, 
+		fatalx(EXIT_FAILURE,
 			"No supported devices found. Please check your device availability with 'lsusb'\n"
 			"and make sure you have an up-to-date version of NUT. If this does not help,\n"
 			"try running the driver with at least 'subdriver', 'vendorid' and 'productid'\n"
