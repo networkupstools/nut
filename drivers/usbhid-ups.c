@@ -1208,7 +1208,6 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		case -EBUSY:		/* Device or resource busy */
 			upslog_with_errno(LOG_CRIT, "Got disconnected by another driver");
 		case -EPERM:		/* Operation not permitted */
-		case -EPIPE:		/* Broken pipe */
 		case -ENODEV:		/* No such device */
 		case -EACCES:		/* Permission denied */
 		case -EIO:		/* I/O error */
@@ -1228,6 +1227,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		case -ETIMEDOUT:	/* Connection timed out */
 		case -EOVERFLOW:	/* Value too large for defined data type */
 		case -EPROTO:		/* Protocol error */
+		case -EPIPE:		/* Broken pipe */
 		default:
 			/* Don't know what happened, try again later... */
 			continue;
