@@ -349,7 +349,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 
 /*
  * Error handler for usb_get/set_* functions. Return value > 0 success,
- * 0 temporary failure (ignored), < 0 permanent failure (reconnect)
+ * 0 unknown or temporary failure (ignored), < 0 permanent failure (reconnect)
  */
 static int libusb_strerror(const int ret, const char *desc)
 {
@@ -367,21 +367,23 @@ static int libusb_strerror(const int ret, const char *desc)
 	case -ENXIO:	/* No such device or address */
 	case -ENOENT:	/* No such file or directory */
 	case -EPIPE:	/* Broken pipe */
+	case -ENOSYS:	/* Function not implemented */
 		upslogx(LOG_DEBUG, "%s: %s", desc, usb_strerror());
 		return ret;
 
 	case -ETIMEDOUT:	/* Connection timed out */
 		upsdebugx(2, "%s: Connection timed out", desc);
-		break;
+		return 0;
 
 	case -EOVERFLOW:	/* Value too large for defined data type */
 	case -EPROTO:	/* Protocol error */
-	default:
 		upsdebugx(2, "%s: %s", desc, usb_strerror());
-		break;
-	}
+		return 0;
 
-	return 0;
+	default:	/* Undetermined, log only */
+		upslogx(LOG_DEBUG, "%s: %s", desc, usb_strerror());
+		return 0;
+	}
 }
 
 /* return the report of ID=type in report

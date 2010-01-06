@@ -1213,7 +1213,6 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		case -EIO:		/* I/O error */
 		case -ENXIO:		/* No such device or address */
 		case -ENOENT:		/* No such file or directory */
-		case -ENOSYS:		/* Function not implemented */
 			/* Uh oh, got to reconnect! */
 			hd = NULL;
 			return FALSE;
