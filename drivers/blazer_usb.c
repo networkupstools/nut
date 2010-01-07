@@ -100,7 +100,7 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 	int	ret;
 	size_t	i;
 
-	for (i = 0; i < 10; i++) {
+	for (i = 0; i < 8; i++) {
 
 		/* Read data in 8-byte chunks */
 		/* ret = usb->get_interrupt(udev, (unsigned char *)tmp, 8, 1000); */
@@ -120,7 +120,7 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 		}
 
 		if (ret < 0) {
-			upsdebugx(3, "flush", usb_strerror());
+			upsdebugx(3, "flush: %s", usb_strerror());
 			break;
 		}
 
