@@ -168,6 +168,47 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 }
 
 
+static int ippon_command(const char *cmd, char *buf, size_t buflen)
+{
+	char	tmp[64];
+	int	ret;
+	size_t	i;
+
+	snprintf(tmp, sizeof(tmp), "%s", cmd);
+
+	for (i = 0; i < strlen(tmp); i += ret) {
+
+		/* Write data in 8-byte chunks */
+		ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+			0x09, 0x2, 0, &tmp[i], 8, 1000);
+
+		if (ret <= 0) {
+			upsdebugx(3, "send: %s", (ret != -ETIMEDOUT) ? usb_strerror() : "Connection timed out");
+			return ret;
+		}
+	}
+
+	upsdebugx(3, "send: %.*s", (int)strcspn(tmp, "\r"), tmp);
+
+	/* Read all 64 bytes of the reply in one large chunk */
+	ret = usb_interrupt_read(udev, 0x81, tmp, sizeof(tmp), 1000);
+
+	/*
+	 * Any errors here mean that we are unable to read a reply (which
+	 * will happen after successfully writing a command to the UPS)
+	 */
+	if (ret <= 0) {
+		upsdebugx(3, "read: %s", (ret != -ETIMEDOUT) ? usb_strerror() : "Connection timed out");
+		return ret;
+	}
+
+	snprintf(buf, sizeof(buf), "%.*s", ret, tmp);
+
+	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+	return ret;
+}
+
+
 static int krauler_command(const char *cmd, char *buf, size_t buflen)
 {
 	/*
@@ -403,6 +444,7 @@ void upsdrv_initups(void)
 	} subdriver[] = {
 		{ "cypress", &cypress_command },
 		{ "phoenix", &phoenix_command },
+		{ "ippon", &ippon_command },
 		{ "krauler", &krauler_command },
 		{ NULL }
 	};
