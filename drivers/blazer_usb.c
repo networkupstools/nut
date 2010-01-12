@@ -202,7 +202,7 @@ static int ippon_command(const char *cmd, char *buf, size_t buflen)
 		return ret;
 	}
 
-	snprintf(buf, sizeof(buf), "%.*s", ret, tmp);
+	snprintf(buf, buflen, "%.*s", ret, tmp);
 
 	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
 	return ret;
