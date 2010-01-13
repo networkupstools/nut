@@ -366,13 +366,12 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 
 	case -EPIPE:		/* Broken pipe */
 		if (usb_clear_halt(udev, 0x81) == 0) {
-			/* stall condition cleared */
+			upsdebugx(1, "Stall condition cleared");
 			break;
 		}
 	case ETIME:		/* Timer expired */
 		if (usb_reset(udev) == 0) {
-			/* device reset handled */
-			break;
+			upsdebugx(1, "Device reset handled");
 		}
 	case -ENODEV:		/* No such device */
 	case -EACCES:		/* Permission denied */
