@@ -358,27 +358,35 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 
 	switch (ret)
 	{
-	case -EBUSY:
+	case -EBUSY:		/* Device or resource busy */
 		fatal_with_errno(EXIT_FAILURE, "Got disconnected by another driver");
 
-	case -EPERM:
+	case -EPERM:		/* Operation not permitted */
 		fatal_with_errno(EXIT_FAILURE, "Permissions problem");
 
-	case -EPIPE:
-		if (!usb_clear_halt(udev, 0x81)) {
+	case -EPIPE:		/* Broken pipe */
+		if (usb_clear_halt(udev, 0x81) == 0) {
 			/* stall condition cleared */
 			break;
 		}
-	case -ENODEV:
-	case -EACCES:
-	case -EIO:
-	case -ENOENT:
+	case ETIME:		/* Timer expired */
+		if (usb_reset(udev) == 0) {
+			/* device reset handled */
+			break;
+		}
+	case -ENODEV:		/* No such device */
+	case -EACCES:		/* Permission denied */
+	case -EIO:		/* I/O error */
+	case -ENXIO:		/* No such device or address */
+	case -ENOENT:		/* No such file or directory */
 		/* Uh oh, got to reconnect! */
 		usb->close(udev);
 		udev = NULL;
 		break;
 
-	case -ETIMEDOUT:
+	case -ETIMEDOUT:	/* Connection timed out */
+	case -EOVERFLOW:	/* Value too large for defined data type */
+	case -EPROTO:		/* Protocol error */
 	default:
 		break;
 	}
