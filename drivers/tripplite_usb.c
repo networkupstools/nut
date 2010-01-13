@@ -975,14 +975,17 @@ void upsdrv_initinfo(void)
 	unsigned int proto_number = 0;
 
 	/* Reset watchdog: */
-	ret = send_cmd(w_msg, sizeof(w_msg), w_value, sizeof(w_value)-1);
-	if(ret <= 0) {
-		if(ret == -EPIPE) {
-			fatalx(EXIT_FAILURE, "Could not reset watchdog. Please check and"
-				"see if usbhid-ups(8) works with this UPS.");
-		} else {
-			upslogx(3, "Could not reset watchdog. Please send model "
-				"information to nut-upsdev mailing list");
+	/* Watchdog not supported on TRIPP_LITE_SMARTPRO models */
+	if(tl_model != TRIPP_LITE_SMARTPRO ) {
+		ret = send_cmd(w_msg, sizeof(w_msg), w_value, sizeof(w_value)-1);
+		if(ret <= 0) {
+			if(ret == -EPIPE) {
+				fatalx(EXIT_FAILURE, "Could not reset watchdog. Please check and"
+						"see if usbhid-ups(8) works with this UPS.");
+			} else {
+				upslogx(3, "Could not reset watchdog. Please send model "
+						"information to nut-upsdev mailing list");
+			}
 		}
 	}
 
