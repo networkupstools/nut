@@ -90,7 +90,7 @@ Basic configuration
 This chapter describe the base configuration to establish communication with the
 device.
 
-This will be sufficient for PDU. But for UPS (and possibly SCD), you need to
+This will be sufficient for PDU. But for UPS and SCD, you will also need to
 configure <<UPS_shutdown,automatic shutdowns for low battery events>>.
 
 [[Driver_configuration]]
@@ -629,8 +629,114 @@ pending writes.  Make sure your filesystems are remounted read-only and you shou
 ////////////////////////////////////////////////////////////////////////////////
 
 
-Multiple UPS shutdowns
-======================
+[[DataRoom]]
+Typical setups for enterprise networks and data rooms
+-----------------------------------------------------
+
+The split nature of this UPS monitoring software allows a wide variety of
+power connections.  This chapter will help you identify how things should
+be configured using some general descriptions.
+
+There are two main elements:
+
+1. There's a UPS attached to a communication (serial, USB or network) port on
+this system.
+2. This system depends on a UPS for power.
+
+You can play "mix and match" with those two to arrive at these descriptions
+for individual hosts:
+
+A: 1 but not 2
+B: 2 but not 1
+C: 1 and 2
+
+A small to medium sized data room usually has one C and a bunch of Bs.
+This means that there's a system (type C) hooked to the UPS which depends
+on it for power.  There are also some other systems in there (type B) 
+which depend on that same UPS for power, but aren't directly connected to
+it.
+
+Larger data rooms or those with multiple UPSes may have several "clusters"
+of the "single C, many Bs" depending on how it's all wired.
+
+Finally, there's a special case.  Type A systems are connected to a UPS's
+serial port, but don't depend on it for power.  This usually happens when
+a UPS is physically close to a box and can reach the serial port, but 
+the wiring is such that it doesn't actually feed it.
+
+Once you identify a system's type, use this list to decide which of the
+programs need to be run for monitoring:
+
+A: driver and upsd
+B: upsmon (as slave)
+C: driver, upsd, and upsmon (as master)
+
+To further complicate things, you can have a system that is hooked to
+multiple UPSes, but only depends on one for power.  This particular
+situation makes it an "A" relative to one UPS, and a "C" relative to the
+other.  The software can handle this - you just have to tell it what to do.
+
+NOTE: NUT can also serve as a data proxy to increase the number of clients, or
+share the communication load between several upsd instances.
+
+If you are running large server-class systems that have more than one
+power feed, see big-servers.txt for information on how to handle it
+properly.
+
+[[BigServers]]
+Typical setups for big servers with UPS redundancy
+--------------------------------------------------
+
+By using multiple MONITOR statements in upsmon.conf, you can configure an
+environment where a large machine with redundant power monitors multiple
+separate UPSes.
+
+Example configuration
+~~~~~~~~~~~~~~~~~~~~~
+
+For the examples in this section, we will use a server with four power supplies
+installed.
+
+Two UPS, 'Alpha' and 'Beta', are each driving two of the power supplies.
+This means that either 'Alpha' *or* 'Beta' can totally shut down and the
+server will be able to keep running.
+
+The upsmon.conf configuration that reflect this is the following:
+
+	MONITOR ups-alpha@myhost 2 monuser mypass master
+	MONITOR ups-beta@myhost 2 monuser mypass master
+	MINSUPPLIES 2
+
+With that configuration, upsmon will only shut down when both UPS reaches
+a critical (on battery + low battery) condition, since 'Alpha' and 'Beta'
+provide the same power value.
+
+As an added bonus, this means you can move a running server from one UPS
+to another (for maintenance purpose for example) without bringing it down since
+the minimum power will be provided at all times.
+
+The MINSUPPLIES line tells upsmon that we need at least 2 power supplies
+to be receiving power from a good UPS (on line or on battery, just not
+on battery and low battery).
+
+NOTE: we could have used a 'Power Value' of 1 for both UPS, and MINSUPPLIES
+set to 1 too. These values are purely arbitrary, so you are free to use your
+own rules. Here, we have linked these values to the number of power supplies
+that each UPS is feeding (2).
+
+
+////////////////////////////////////////////////////////////////////////////////
+FIXME:
+add references to other equipments, such as transfer switches
+and paralell / serial UPS configuration
+
+http://www.articlesbase.com/electronics-articles/parallel-ups-configurations-572451.html
+http://en.wikipedia.org/wiki/Transfer_switch
+////////////////////////////////////////////////////////////////////////////////
+
+
+Multiple UPS shutdowns ordering
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you have multiple UPSes connected to your system, chances are that you
 need to shut them down in a specific order.  The goal is to shut down
@@ -638,7 +744,7 @@ everything but the one keeping upsmon alive at first, then you do that one
 last.
 
 To set the order in which your UPSes receive the shutdown commands, define
-the "sdorder" value in your ups.conf.
+the 'sdorder' value in your ups.conf.
 
 	[bigone]
 		driver = usbhid-ups
@@ -656,30 +762,23 @@ the "sdorder" value in your ups.conf.
 		sdorder = 0
 
 The order runs from 0 to the highest number available.  So, for this
-configuration, the order of shutdowns would be misc, littleguy, and then
-bigone.
+configuration, the order of shutdowns would be 'misc', 'littleguy', and then
+'bigone'.
 
-NOTE: If you have a UPS that shouldn't be shutdown when running "upsdrvctl
-shutdown", set the sdorder to -1.
+NOTE: If you have a UPS that shouldn't be shutdown when running 'upsdrvctl
+shutdown', set the *sdorder* to *-1*.
 
 
+Other redundancy configurations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-////////////////////////////////////////////////////////////////////////////////
-FIXME: update and complete with the remainder of
-include shutdown.txt[]
-////////////////////////////////////////////////////////////////////////////////
+There are a lot of ways to handle redundancy and they all come down to how many
+power supplies, power cords and independent UPS connections you have.  A
+system with a 1:1 cord:supply ratio has more wires stuffed behind it, but
+it's much easier to move things around since any given UPS drives a smaller
+percentage of the overall power.
 
-[[BigServers]]
-Typical setups for big servers
-------------------------------
 
-include big-servers.txt[]
-
-[[DataRoom]]
-Typical setups for data rooms
------------------------------
-
-include data-room.txt[]
 
 
 More information can be found in the link:user-manual.html[NUT User Manual], and
