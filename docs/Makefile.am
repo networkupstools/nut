@@ -1,4 +1,4 @@
-EXTRA_DIST = acpi.txt acknowledgements.txt chroot.txt		\
+EXTRA_DIST = acknowledgements.txt chroot.txt		\
  commands.txt configure.txt config-notes.txt contact-closure.txt	\
  design.txt developers.txt FAQ.txt hid-subdrivers.txt		\
  ideas.txt macros.txt megatec.txt new-drivers.txt new-names.txt \
