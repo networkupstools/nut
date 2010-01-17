@@ -148,7 +148,7 @@ connected (e.g. bus="002", bus="00[2-3]").
 *subdriver =* 'string'::
 
 Select a serial-over-USB subdriver to use. You have a choice between *phoenix*,
-*cypress*, and *krauler*. When using this option, it is mandatory to also
+*ippon*, *cypress*, and *krauler*. When using this option, it is mandatory to also
 specify the *vendorid* and *productid*.
 
 UPS COMMANDS
@@ -223,12 +223,12 @@ requires to keep track on how much (and how fast) current is going in- and out o
 the battery. If you specified the *runtimecal*, the driver will attempt to do
 this. Note however, that this heavily relies on the values you enter and that the
 UPS must be able to report the load as well. There are quite a couple of devices
-that report a 0 % (or any other fixed value) at all times, in which case this
+that report 0 % (or any other fixed value) at all times, in which case this
 obviously doesn't work.
 
 The driver also has no way of determining the degradation of the battery capacity
-over time, so if you'll have to deal with this yourself (by adjusting the values
-in *runtimecal*. Also note that the driver guesses the initial state of charge
+over time, so you'll have to deal with this yourself (by adjusting the values
+in *runtimecal*). Also note that the driver guesses the initial state of charge
 based on the battery voltage, so this may be less than 100 %, even when you are
 certain that they are full. There is just no way to reliably measure this between
 0 and 100 % full charge.
