@@ -974,6 +974,23 @@ void upsdrv_initinfo(void)
 	int  va, ret;
 	unsigned int proto_number = 0;
 
+	/* Read protocol: */
+	ret = send_cmd(proto_msg, sizeof(proto_msg), proto_value, sizeof(proto_value)-1);
+	if(ret <= 0) {
+		fatalx(EXIT_FAILURE, "Error reading protocol");
+	}
+
+	proto_number = ((unsigned)(proto_value[1]) << 8) 
+			          | (unsigned)(proto_value[2]);
+	tl_model = decode_protocol(proto_number);
+
+	if(tl_model == TRIPP_LITE_UNKNOWN)
+		dstate_setinfo("ups.debug.0", "%s", hexascdump(proto_value+1, 7));
+
+	dstate_setinfo("ups.firmware.aux", "protocol %04x", proto_number);
+
+	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
+
 	/* Reset watchdog: */
 	/* Watchdog not supported on TRIPP_LITE_SMARTPRO models */
 	if(tl_model != TRIPP_LITE_SMARTPRO ) {
@@ -988,22 +1005,6 @@ void upsdrv_initinfo(void)
 			}
 		}
 	}
-
-	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
-
-	ret = send_cmd(proto_msg, sizeof(proto_msg), proto_value, sizeof(proto_value)-1);
-	if(ret <= 0) {
-		fatalx(EXIT_FAILURE, "Error reading protocol");
-	}
-
-	proto_number = ((unsigned)(proto_value[1]) << 8) 
-			          | (unsigned)(proto_value[2]);
-	tl_model = decode_protocol(proto_number);
-
-	if(tl_model == TRIPP_LITE_UNKNOWN)
-		dstate_setinfo("ups.debug.0", "%s", hexascdump(proto_value+1, 7));
-
-	dstate_setinfo("ups.firmware.aux", "protocol %04x", proto_number);
 
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
