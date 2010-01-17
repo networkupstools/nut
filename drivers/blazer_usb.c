@@ -369,7 +369,9 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 			upsdebugx(1, "Stall condition cleared");
 			break;
 		}
-	case ETIME:		/* Timer expired */
+#ifdef ETIME
+	case -ETIME:		/* Timer expired */
+#endif
 		if (usb_reset(udev) == 0) {
 			upsdebugx(1, "Device reset handled");
 		}
