@@ -102,7 +102,7 @@ Developer manual pages
 - linknut:upsclient[3]
 - linknut:upscli_connect[3]
 - linknut:upscli_disconnect[3]
-- upscli_fd.3
+- linknut:upscli_fd[3]
 - upscli_get.3
 - upscli_list_next.3
 - upscli_list_start.3
