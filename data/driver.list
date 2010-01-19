@@ -299,7 +299,8 @@
 "Lestar"	"MD-800E"	""	"megatec"
 
 "Liebert"	"ITON 600VA"	""	"megatec"
-"Liebert"	"UPStation GXT2"	"contact-closure cable"	"liebert" 
+"Liebert"	"UPStation GXT2"	"contact-closure cable"	"liebert"
+"Liebert"	"GXT2-3000RT230"	""	"liebertgxt2 (experimental)"
 "Liebert"	"PowerSure Personal XT"		"USB"	"usbhid-ups"
 "Liebert"	"PowerSure PSA"		"USB"	"usbhid-ups"
 
@@ -633,13 +634,13 @@
 "SOLA/BASIC Mexico"	"various"	"ISBMEX protocol"	"isbmex"
 
 "Socomec"	"NeTYS-PE 600VA"	"megatec"
-"Socomec Sicon"	"Egys"	"420 VA"	"powercom"  
-"Socomec Sicon"	"Netvision"	"UPS equipped with Netvision WEB/SNMP card/external box"	"snmp-ups (experimental)" 
+"Socomec Sicon"	"Egys"	"420 VA"	"powercom"
+"Socomec Sicon"	"Netvision"	"UPS equipped with Netvision WEB/SNMP card/external box"	"snmp-ups (experimental)"
 
 "Soltec"	"Winmate 525/625/800/1000"	""	"safenet"
 
-"Soyntec"	"Sekury C 500"		""	"megatec"	
-"Soyntec"	"Sekury C 800"		""	"megatec"	
+"Soyntec"	"Sekury C 500"		""	"megatec"
+"Soyntec"	"Sekury C 800"		""	"megatec"
 
 "SquareOne Power"	"QP1000"		""	"megatec"
 

@@ -31,7 +31,7 @@ endif
 
 SERIAL_DRIVERLIST = apcsmart bcmxcp belkin belkinunv bestfcom	\
  bestfortress bestuferrups bestups dummy-ups etapro everups 	\
- gamatronic genericups isbmex liebert masterguard megatec metasys 	\
+ gamatronic genericups isbmex liebert liebertgxt2 masterguard megatec metasys	\
  mge-shut mge-utalk microdowell newmge-shut oneac optiups powercom rhino 	\
  safenet skel solis tripplite tripplitesu upscode2 victronups powerpanel \
  blazer_ser clone clone-outlet ivtscd
@@ -102,10 +102,11 @@ isbmex_SOURCES = isbmex.c
 isbmex_LDADD = $(LDADD) -lm
 ivtscd_SOURCES = ivtscd.c
 liebert_SOURCES = liebert.c
+liebertgxt2_SOURCES = liebertgxt2.c
 masterguard_SOURCES = masterguard.c
 megatec_SOURCES = megatec.c
 metasys_SOURCES = metasys.c
-mge_shut_SOURCES = mge-shut.c hidparser.c 
+mge_shut_SOURCES = mge-shut.c hidparser.c
 mge_utalk_SOURCES = mge-utalk.c
 microdowell_SOURCES = microdowell.c
 oneac_SOURCES = oneac.c
@@ -130,7 +131,7 @@ victronups_SOURCES = victronups.c
 # dummy
 dummy_ups_SOURCES = dummy-ups.c
 dummy_ups_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/clients
-dummy_ups_LDADD = $(LDADD_DRIVERS) ../clients/libupsclient.la 
+dummy_ups_LDADD = $(LDADD_DRIVERS) ../clients/libupsclient.la
 if WITH_SSL
   dummy_ups_CFLAGS += $(LIBSSL_CFLAGS)
   dummy_ups_LDADD += $(LIBSSL_LDFLAGS)
@@ -224,7 +225,7 @@ libdummy_a_SOURCES = main.c dstate.c serial.c
 # the nuthalmain library combines the code for main-hal.c and
 # dstate-hal.c. It is necessary for Automake-technical reasons,
 # because per-object CFLAGS can only be specified for libraries, not
-# for object files. This library is used during the build process, 
+# for object files. This library is used during the build process,
 # and is not meant to be installed.
 
 EXTRA_LIBRARIES += libnuthalmain.a
