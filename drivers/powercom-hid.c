@@ -5,9 +5,6 @@
  *  2005 - 2006	Peter Selinger <selinger@users.sourceforge.net>
  *  2008 - 2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
- *  Note: this subdriver was initially generated as a "stub" by the
- *  path-to-subdriver script. It must be customized.
- *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -30,7 +27,7 @@
 #include "common.h"
 #include "usb-common.h"
 
-#define POWERCOM_HID_VERSION	"PowerCOM HID 0.1"
+#define POWERCOM_HID_VERSION	"PowerCOM HID 0.2"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* PowerCOM */
@@ -55,21 +52,33 @@ static usb_device_id_t powercom_usb_device_table[] = {
 
 static char powercom_scratch_buf[32];
 
-static char *powercom_startup(double value)
+static char *powercom_startup_fun(double value)
 {
 	uint16_t	i = value;
 
-	snprintf(powercom_scratch_buf, sizeof(powercom_scratch_buf), "%d", 60 * ((i << 8) + (i >> 8)));
+	snprintf(powercom_scratch_buf, sizeof(powercom_scratch_buf), "%d", 60 * (((i & 0x00FF) << 8) + (i >> 8)));
 	upsdebugx(3, "%s: value = %.0f, buf = %s", __func__, value, powercom_scratch_buf);
 
 	return powercom_scratch_buf;
 }
 
+static double powercom_startup_nuf(const char *value)
+{
+	const char	*s = dstate_getinfo("ups.delay.start");
+	uint16_t	val, command;
+
+	val = atoi(s ? s : value) / 60;
+	command = ((val << 8) + (val >> 8));
+	upsdebugx(3, "%s: value = %s, command = %04X", __func__, value, command);
+
+	return command;
+}
+
 static info_lkp_t powercom_startup_info[] = {
-	{ 0, NULL, powercom_startup }
+	{ 0, NULL, powercom_startup_fun, powercom_startup_nuf }
 };
 
-static char *powercom_shutdown(double value)
+static char *powercom_shutdown_fun(double value)
 {
 	uint16_t	i = value;
 
@@ -79,11 +88,7 @@ static char *powercom_shutdown(double value)
 	return powercom_scratch_buf;
 }
 
-static info_lkp_t powercom_shutdown_info[] = {
-	{ 0, NULL, powercom_shutdown }
-};
-
-static double powercom_shutdown_return(const char *value)
+static double powercom_shutdown_nuf(const char *value)
 {
 	const char	*s = dstate_getinfo("ups.delay.shutdown");
 	uint16_t	val, command;
@@ -96,11 +101,11 @@ static double powercom_shutdown_return(const char *value)
 	return command;
 }
 
-static info_lkp_t powercom_shutdown_return_info[] = {
-	{ 0, NULL, NULL, powercom_shutdown_return }
+static info_lkp_t powercom_shutdown_info[] = {
+	{ 0, NULL, powercom_shutdown_fun, powercom_shutdown_nuf }
 };
 
-static double powercom_shutdown_stayoff(const char *value)
+static double powercom_stayoff_nuf(const char *value)
 {
 	const char	*s = dstate_getinfo("ups.delay.shutdown");
 	uint16_t	val, command;
@@ -113,12 +118,18 @@ static double powercom_shutdown_stayoff(const char *value)
 	return command;
 }
 
-static info_lkp_t powercom_shutdown_stayoff_info[] = {
-	{ 0, NULL, NULL, powercom_shutdown_stayoff }
+static info_lkp_t powercom_stayoff_info[] = {
+	{ 0, NULL, NULL, powercom_stayoff_nuf }
+};
+
+static info_lkp_t powercom_beeper_info[] = {
+	{ 1, "enabled", NULL },
+	{ 2, "disabled", NULL },	/* muted? */
+	{ 0, NULL, NULL }
 };
 
 /* --------------------------------------------------------------- */
-/*      Vendor-specific usage table */
+/* Vendor-specific usage table */
 /* --------------------------------------------------------------- */
 
 /* POWERCOM usage table */
@@ -188,8 +199,8 @@ static hid_info_t powercom_hid2nut[] = {
 /*	{ "unmapped.ups.battery.delaybeforestartup", 0, 0, "UPS.Battery.DelayBeforeStartup", NULL, "%.0f", 0, NULL }, */
 /*	{ "unmapped.ups.battery.initialized", 0, 0, "UPS.Battery.Initialized", NULL, "%.0f", 0, NULL }, */
 
-	{ "ups.beeper.status", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", 0, beeper_info },
-	{ "ups.beeper.status", 0, 0, "UPS.AudibleAlarmControl", NULL, "%s", 0, beeper_info },
+	{ "ups.beeper.status", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", 0, powercom_beeper_info },
+	{ "ups.beeper.status", 0, 0, "UPS.AudibleAlarmControl", NULL, "%s", 0, powercom_beeper_info },
 	{ "ups.load", 0, 0, "UPS.Output.PercentLoad", NULL, "%.0f", 0, NULL },
 	{ "ups.date", 0, 0, "UPS.PowerSummary.ManufacturerDate", NULL, "%s", HU_FLAG_STATIC, date_conversion },
 	{ "ups.test.result", 0, 0, "UPS.Battery.Test", NULL, "%s", 0, test_read_info },
@@ -205,8 +216,8 @@ static hid_info_t powercom_hid2nut[] = {
  * Write:
  *	Command 4, high byte min, low byte min
  */
-/*	{ "ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerSummary.DelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_FLAG_ABSENT, NULL }, */
-/*	{ "ups.timer.start", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, "%.0f", 0, powercom_startup_info }, */
+	{ "ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerSummary.DelayBeforeStartup", NULL, "60", HU_FLAG_ABSENT, NULL },
+	{ "ups.timer.start", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, "%.0f", 0, powercom_startup_info },
 
 /* The implementation of the HID path UPS.PowerSummary.DelayBeforeShutdown is unconventional:
  * Read:
@@ -215,7 +226,7 @@ static hid_info_t powercom_hid2nut[] = {
  *	If Byte(sec), bit7=0 and bit6=0 Then
  *		If Byte 9, bit0=1 Then command 185, 188, min, sec (OL -> shutdown.return)
  *		If Byte 9, bit0=0 Then command 186, 188, min, sec (OB -> shutdown.stayoff)
- *	If Byte(sec), bit7=0 and bit6=1 
+ *	If Byte(sec), bit7=0 and bit6=1
  *		Then command 185, 188, min, sec (shutdown.return)
  *	If Byte(sec), bit7=1 and bit6=0 Then
  *		Then command 186, 188, min, sec (shutdown.stayoff)
@@ -239,12 +250,11 @@ static hid_info_t powercom_hid2nut[] = {
 /*	{ "unmapped.ups.shutdownimminent", 0, 0, "UPS.ShutdownImminent", NULL, "%.0f", 0, NULL }, */
 
 	/* instcmds */
-	{ "beeper.disable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "1", HU_TYPE_CMD, NULL },
-	{ "beeper.enable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },
-	{ "beeper.mute", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "3", HU_TYPE_CMD, NULL },
+	{ "beeper.toggle", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "1", HU_TYPE_CMD, NULL },
 	{ "test.battery.start.quick", 0, 0, "UPS.Battery.Test", NULL, "1", HU_TYPE_CMD, NULL },
-	{ "shutdown.return", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_TYPE_CMD, powercom_shutdown_return_info },
-	{ "shutdown.stayoff", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_TYPE_CMD, powercom_shutdown_stayoff_info },
+	{ "load.on.delay", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_TYPE_CMD, powercom_startup_info },
+	{ "shutdown.return", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_TYPE_CMD, powercom_shutdown_info },
+	{ "shutdown.stayoff", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_TYPE_CMD, powercom_stayoff_info },
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
