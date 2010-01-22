@@ -105,8 +105,8 @@ Developer manual pages
 - linknut:upscli_disconnect[3]
 - linknut:upscli_fd[3]
 - linknut:upscli_get[3]
-- upscli_list_next.3
-- upscli_list_start.3
+- linknut:upscli_list_next[3]
+- linknut:upscli_list_start[3]
 - upscli_readline.3
 - upscli_sendline.3
 - upscli_splitaddr.3
