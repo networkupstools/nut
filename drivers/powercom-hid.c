@@ -67,7 +67,7 @@ static double powercom_startup_nuf(const char *value)
 	const char	*s = dstate_getinfo("ups.delay.start");
 	uint16_t	val, command;
 
-	val = atoi(s ? s : value) / 60;
+	val = atoi(value ? value : s) / 60;
 	command = ((val << 8) + (val >> 8));
 	upsdebugx(3, "%s: value = %s, command = %04X", __func__, value, command);
 
@@ -93,7 +93,7 @@ static double powercom_shutdown_nuf(const char *value)
 	const char	*s = dstate_getinfo("ups.delay.shutdown");
 	uint16_t	val, command;
 
-	val = atoi(s ? s : value);
+	val = atoi(value ? value : s);
 	command = ((val % 60) << 8) + (val / 60);
 	command |= 0x4000;	/* AC RESTART NORMAL ENABLE */
 	upsdebugx(3, "%s: value = %s, command = %04X", __func__, value, command);
@@ -110,7 +110,7 @@ static double powercom_stayoff_nuf(const char *value)
 	const char	*s = dstate_getinfo("ups.delay.shutdown");
 	uint16_t	val, command;
 
-	val = atoi(s ? s : value);
+	val = atoi(value ? value : s);
 	command = ((val % 60) << 8) + (val / 60);
 	command |= 0x8000;	/* AC RESTART NORMAL DISABLE */
 	upsdebugx(3, "%s: value = %s, command = %04X", __func__, value, command);
@@ -252,9 +252,9 @@ static hid_info_t powercom_hid2nut[] = {
 	/* instcmds */
 	{ "beeper.toggle", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "1", HU_TYPE_CMD, NULL },
 	{ "test.battery.start.quick", 0, 0, "UPS.Battery.Test", NULL, "1", HU_TYPE_CMD, NULL },
-	{ "load.on.delay", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_TYPE_CMD, powercom_startup_info },
-	{ "shutdown.return", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_TYPE_CMD, powercom_shutdown_info },
-	{ "shutdown.stayoff", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_TYPE_CMD, powercom_stayoff_info },
+	{ "load.on.delay", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, NULL, HU_TYPE_CMD, powercom_startup_info },
+	{ "shutdown.return", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, NULL, HU_TYPE_CMD, powercom_shutdown_info },
+	{ "shutdown.stayoff", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, NULL, HU_TYPE_CMD, powercom_stayoff_info },
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
