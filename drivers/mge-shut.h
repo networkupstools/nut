@@ -1,5 +1,5 @@
 /*  mge-shut.h - monitor MGE UPS for NUT with SHUT protocol
- * 
+ *
  *  Copyright (C) 2002 - 2005
  *     Arnaud Quette <arnaud.quette@free.fr> & <arnaud.quette@mgeups.com>
  *     Philippe Marzouk <philm@users.sourceforge.net>
@@ -31,7 +31,7 @@
 #define DEFAULT_LOWBATT		30	/* low battery level, in %          */
 #define DEFAULT_ONDELAY		3	/* delay between return of utility power
 					   and powering up of load, in 10 seconds units */
-#define DEFAULT_OFFDELAY	20	/* delay befor power off, in seconds */ 
+#define DEFAULT_OFFDELAY	20	/* delay befor power off, in seconds */
 #define OFF_NOTIFICATION	1	/* notification off */
 
 #define LIGHT_NOTIFICATION	2	/* light notification */
@@ -229,7 +229,7 @@ models_name_t models_names [] =
 	/* Pulsar MX models */
 	{ "PULSAR", "MX4000", "Pulsar MX 4000 RT" },
 	{ "PULSAR", "MX5000", "Pulsar MX 5000 RT" },
-	/* NOVA models */	
+	/* NOVA models */
 	{ "NOVA AVR", "600", "NOVA 600 AVR" },
 	{ "NOVA AVR", "625", "Nova AVR 625" },
 	{ "NOVA AVR", "1100", "NOVA 1100 AVR" },
@@ -342,7 +342,7 @@ info_lkp_t test_read_info[] = {
 typedef struct {
   const char	*type;		/* INFO_* element                        */
   int			flags;		/* INFO-element flags to set in addinfo  */
-  int			length;		/* INFO-element length of strings        */  
+  int			length;		/* INFO-element length of strings        */
   const char	*item_path;	/* HID object (fully qualified string path) */
   const char	fmt[6];		/* printf format string for INFO entry   */
   const char	*dfl;		/* default value */
@@ -351,7 +351,7 @@ typedef struct {
 } mge_info_item_t;
 
 /* Array containing information to translate between UTalk and NUT info
- * NOTE: 
+ * NOTE:
  *	- Array is terminated by element with type NULL.
  *	- Essential INFO items (ups.{mfr, model, firmware, status} are
  *		handled separately.
@@ -370,11 +370,11 @@ static mge_info_item_t mge_info[] = {
 	/* UPS page */
 	{ "ups.mfr", ST_FLAG_STRING, 20, NULL, "%s", "MGE UPS SYSTEMS", SHUT_FLAG_ABSENT | SHUT_FLAG_OK, NULL },
 	{ "ups.load", 0, 0, "UPS.PowerSummary.PercentLoad", "%i", NULL, SHUT_FLAG_OK, NULL },
-	{ "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerSummary.DelayBeforeShutdown",
+	{ "ups.timer.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerSummary.DelayBeforeShutdown",
 	  "%ld", NULL, SHUT_FLAG_OK | SHUT_FLAG_DELAY, NULL },
-	{ "ups.delay.reboot", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerSummary.DelayBeforeReboot",
+	{ "ups.timer.reboot", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerSummary.DelayBeforeReboot",
 	  "%ld", NULL, SHUT_FLAG_OK | SHUT_FLAG_DELAY, NULL },
-	{ "ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerSummary.DelayBeforeStartup",
+	{ "ups.timer.start", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerSummary.DelayBeforeStartup",
 	  "%ld", NULL, SHUT_FLAG_OK | SHUT_FLAG_DELAY, NULL },
 	/* FIXME: miss ups.power */
 	{ "ups.power.nominal", ST_FLAG_STRING, 5, "UPS.Flow.[4].ConfigApparentPower",
@@ -388,7 +388,7 @@ static mge_info_item_t mge_info[] = {
 	{ "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", "%i", NULL, SHUT_FLAG_OK, NULL },
 	{ "output.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", "%i", NULL, SHUT_FLAG_OK, NULL },
 	{ "output.current", 0, 0, "UPS.PowerSummary.Output.Current", "%i", NULL, SHUT_FLAG_OK, NULL },
-    { "output.frequency", 0, 0, "UPS.PowerConverter.Output.Frequency", "%i", NULL, SHUT_FLAG_OK, NULL },
+	{ "output.frequency", 0, 0, "UPS.PowerConverter.Output.Frequency", "%i", NULL, SHUT_FLAG_OK, NULL },
 
 	/* Outlet page (using MGE UPS SYSTEMS - PowerShare technology) */
 	/* TODO: add an iterative semantic [%x] to factorise outlets */
@@ -397,7 +397,7 @@ static mge_info_item_t mge_info[] = {
 	  "%s", "Main Outlet", SHUT_FLAG_ABSENT | SHUT_FLAG_OK, NULL },
 	{ "outlet.switchable", 0, 0, "UPS.OutletSystem.Outlet.[1].PresentStatus.Switchable",
 	  "%i", NULL, SHUT_FLAG_OK, NULL },
-	{ "outlet.1.id", 0, 0, "UPS.OutletSystem.Outlet.[2].OutletID", "%i", NULL, SHUT_FLAG_OK, NULL },	
+	{ "outlet.1.id", 0, 0, "UPS.OutletSystem.Outlet.[2].OutletID", "%i", NULL, SHUT_FLAG_OK, NULL },
 	{ "outlet.1.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[2].OutletID",
 	  "%s", "PowerShare Outlet 1", SHUT_FLAG_ABSENT | SHUT_FLAG_OK, NULL },
 	{ "outlet.1.switchable", 0, 0, "UPS.OutletSystem.Outlet.[2].PresentStatus.Switchable",
@@ -409,7 +409,7 @@ static mge_info_item_t mge_info[] = {
 	{ "outlet.1.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5,
 	  "UPS.OutletSystem.Outlet.[2].DelayBeforeShutdown", "%i", NULL, SHUT_FLAG_OK, NULL },
 	{ "outlet.1.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[2].DelayBeforeStartup", "%i", NULL, SHUT_FLAG_OK, NULL },
-	{ "outlet.2.id", 0, 0, "UPS.OutletSystem.Outlet.[3].OutletID", "%i", NULL, SHUT_FLAG_OK, NULL },	
+	{ "outlet.2.id", 0, 0, "UPS.OutletSystem.Outlet.[3].OutletID", "%i", NULL, SHUT_FLAG_OK, NULL },
 	{ "outlet.2.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[3].OutletID",
 	  "%s", "PowerShare Outlet 2", SHUT_FLAG_ABSENT | SHUT_FLAG_OK, NULL },
 	{ "outlet.2.switchable", 0, 0, "UPS.OutletSystem.Outlet.[3].PresentStatus.Switchable",
@@ -428,7 +428,7 @@ static mge_info_item_t mge_info[] = {
 	{ "input.frequency", 0, 0, "UPS.PowerConverter.Input.[1].Frequency", "%i", NULL, SHUT_FLAG_OK, NULL },
 
 	/* terminating element */
-	{ NULL, 0, 0, "\0", "\0", NULL, 0, NULL } 
+	{ NULL, 0, 0, "\0", "\0", NULL, 0, NULL }
 };
 
 /* temporary usage code lookup */
@@ -444,7 +444,7 @@ static usage_lkp_t usage_lkp[] = {
 	{  "UPS", 0x00840004 },
 	{  "BatterySystem", 0x00840010 },
 	{  "Battery", 0x00840012 },
-	{  "BatteryID", 0x00840013 },	
+	{  "BatteryID", 0x00840013 },
 	{  "PowerConverter", 0x00840016 },
 	{  "OutletSystem", 0x00840018 },
 	{  "Input", 0x0084001a },
@@ -461,15 +461,15 @@ static usage_lkp_t usage_lkp[] = {
 	{  "ConfigFrequency", 0x00840042 },
 	{  "ConfigApparentPower", 0x00840043 },
 	{  "LowVoltageTransfer", 0x00840053 },
-	{  "HighVoltageTransfer", 0x00840054 },	
-	{  "DelayBeforeReboot", 0x00840055 },	
+	{  "HighVoltageTransfer", 0x00840054 },
+	{  "DelayBeforeReboot", 0x00840055 },
 	{  "DelayBeforeStartup", 0x00840056 },
 	{  "DelayBeforeShutdown", 0x00840057 },
 	{  "Test", 0x00840058 },
 	{  "Good", 0x00840061 },
 	{  "Overload", 0x00840065 }, /* sic */
-	{  "SwitchOn/Off", 0x0084006b },	
-	{  "Switchable", 0x0084006c },	
+	{  "SwitchOn/Off", 0x0084006b },
+	{  "Switchable", 0x0084006c },
 	{  "Used", 0x0084006d },
 	{  "Flow", 0x0084001e },
 	/* Battery System Page */
@@ -485,7 +485,7 @@ static usage_lkp_t usage_lkp[] = {
 	{  "iModel", 0xffff00f0 },
 	{  "RemainingCapacityLimitSetting", 0xffff004d },
 	{  "TestPeriod", 0xffff0001 },
-	
+
 	{  "\0", 0x0 }
 };
 
