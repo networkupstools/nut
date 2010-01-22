@@ -22,6 +22,7 @@ CONVERTED_TO_ASCIIDOC = \
 	isbmex.html \
 	libupsclient-config.html \
 	liebert.html \
+	liebertgxt2.html \
 	masterguard.html \
 	megatec.html \
 	megatec_usb.html \
@@ -95,6 +96,7 @@ EXTRA_DIST = \
 	isbmex.txt \
 	libupsclient-config.txt \
 	liebert.txt \
+	liebertgxt2.txt \
 	masterguard.txt \
 	megatec.txt \
 	megatec_usb.txt \
@@ -189,6 +191,7 @@ man8_MANS = \
 	genericups.8 \
 	isbmex.8 \
 	liebert.8 \
+	liebertgxt2.8 \
 	masterguard.8 \
 	megatec.8 \
 	megatec_usb.8 \

@@ -66,6 +66,7 @@ Drivers
 - linknut:genericups[8]
 - linknut:isbmex[8]
 - linknut:liebert[8]
+- linknut:liebertgxt2[8]
 - linknut:masterguard[8]
 - linknut:megatec[8]
 - linknut:megatec_usb[8]
