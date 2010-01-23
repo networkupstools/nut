@@ -1,6 +1,6 @@
 /*  tripplite-hid.c - data to monitor Tripp Lite USB/HID devices with NUT
  *
- *  Copyright (C)  
+ *  Copyright (C)
  *	2003 - 2005 Arnaud Quette <arnaud.quette@free.fr>
  *	2005 - 2006 Peter Selinger <selinger@users.sourceforge.net>
  *	2008 - 2009 Arjen de Korte <adkorte-guest@alioth.debian.org>
@@ -27,8 +27,6 @@
 #include "usbhid-ups.h"
 #include "tripplite-hid.h"
 #include "main.h"
-#include "extstate.h" /* for ST_FLAG_STRING */
-#include "common.h"
 #include "usb-common.h"
 
 #define TRIPPLITE_HID_VERSION "TrippLite HID 0.4"
@@ -56,7 +54,7 @@ static void *battery_scale_0dot1()
 }
 
 /* TrippLite */
-#define TRIPPLITE_VENDORID 0x09ae 
+#define TRIPPLITE_VENDORID 0x09ae
 
 /* Hewlett Packard */
 #define HP_VENDORID 0x03f0
@@ -88,7 +86,7 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 	{ USB_DEVICE(HP_VENDORID, 0x1f0a), battery_scale_1dot0 },
 	/* HP T750 INTL */
 	{ USB_DEVICE(HP_VENDORID, 0x1f06), battery_scale_1dot0 },
-	
+
 	/* Terminating entry */
 	{ -1, -1, NULL }
 };
@@ -140,7 +138,7 @@ static info_lkp_t tripplite_battvolt[] = {
 
 /* TRIPPLITE usage table */
 static usage_lkp_t tripplite_usage_lkp[] = {
-	/* currently unknown: 
+	/* currently unknown:
 	   ffff0010, 00ff0001, ffff007d, ffff00c0, ffff00c1, ffff00c2,
 	   ffff00c3, ffff00c4, ffff00c5, ffff00d2, ffff0091, ffff00c7 */
 
@@ -244,7 +242,7 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ "ups.watchdog.status", 0, 0, "UPS.OutletSystem.Outlet.TLWatchdog", NULL, "%.0f", 0, NULL },
 
 	/* Special case: ups.status */
-	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.InternalFailure", NULL, NULL, 0, commfault_info }, 
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.InternalFailure", NULL, NULL, 0, commfault_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ShutdownImminent", NULL, NULL, 0, shutdownimm_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, online_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL, NULL, HU_FLAG_QUICK_POLL, lowbatt_info },
@@ -284,7 +282,7 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ "input.frequency", 0, 0, "UPS.PowerConverter.Input.Frequency", NULL, "%.1f", 0, NULL },
 	{ "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.LowVoltageTransfer", NULL, "%.1f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.transfer.low.max", 0, 0, "UPS.PowerConverter.Output.TLLowVoltageTransferMax", NULL, "%.0f", HU_FLAG_STATIC, NULL },
-	{ "input.transfer.low.min", 0, 0, "UPS.PowerConverter.Output.TLLowVoltageTransferMin", NULL, "%.0f", HU_FLAG_STATIC, NULL }, 
+	{ "input.transfer.low.min", 0, 0, "UPS.PowerConverter.Output.TLLowVoltageTransferMin", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 	{ "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.HighVoltageTransfer", NULL, "%.1f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.transfer.high.max", 0, 0, "UPS.PowerConverter.Output.TLHighVoltageTransferMax", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 	{ "input.transfer.high.min", 0, 0, "UPS.PowerConverter.Output.TLHighVoltageTransferMin", NULL, "%.0f", HU_FLAG_STATIC, NULL },
@@ -301,7 +299,7 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ "test.battery.start.quick", 0, 0, "UPS.BatterySystem.Test", NULL, "1", HU_TYPE_CMD, NULL }, /* reported to work on OMNI1000 */
 	{ "test.battery.start.deep", 0, 0, "UPS.BatterySystem.Test", NULL, "2", HU_TYPE_CMD, NULL }, /* reported not to work */
 	{ "test.battery.stop", 0, 0, "UPS.BatterySystem.Test", NULL, "3", HU_TYPE_CMD, NULL }, /* reported not to work */
-	
+
 	{ "load.off.delay", 0, 0, "UPS.OutletSystem.Outlet.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_TYPE_CMD, NULL },
 	{ "load.on.delay", 0, 0, "UPS.OutletSystem.Outlet.DelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_TYPE_CMD, NULL },
 
@@ -310,7 +308,7 @@ static hid_info_t tripplite_hid2nut[] = {
 
 	/*  NOTE: the ECO550UPS doesn't support DelayBeforeStartup, so we use the watchdog to trigger a reboot */
 	{ "shutdown.reboot", 0, 0, "UPS.OutletSystem.Outlet.TLWatchdog", NULL, "10", HU_TYPE_CMD, NULL },
-	
+
 	/* WARNING: if this timer expires, the UPS will reboot! Defaults to 60 seconds */
 	{ "reset.watchdog", 0, 0, "UPS.OutletSystem.Outlet.TLWatchdog", NULL, "60", HU_TYPE_CMD, NULL },
 
@@ -319,7 +317,7 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ "beeper.disable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "1", HU_TYPE_CMD, NULL },
 	{ "beeper.enable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },
 	{ "beeper.mute", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "3", HU_TYPE_CMD, NULL },
-	
+
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
 };
@@ -355,7 +353,7 @@ static int tripplite_claim(HIDDevice_t *hd) {
 		 */
 		case HP_VENDORID:
 			return 0;
-	
+
 		case TRIPPLITE_VENDORID:
 			/* reject known non-HID devices */
 			/* not all Tripp Lite products are HID, some are "serial over USB". */

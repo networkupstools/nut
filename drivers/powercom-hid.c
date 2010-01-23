@@ -22,9 +22,7 @@
 
 #include "usbhid-ups.h"
 #include "powercom-hid.h"
-#include "extstate.h"	/* for ST_FLAG_STRING */
 #include "main.h"	/* for getval() */
-#include "common.h"
 #include "usb-common.h"
 
 #define POWERCOM_HID_VERSION	"PowerCOM HID 0.2"

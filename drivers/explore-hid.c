@@ -23,9 +23,6 @@
 
 #include "usbhid-ups.h"
 #include "explore-hid.h"
-#include "extstate.h" /* for ST_FLAG_STRING */
-#include "dstate.h"   /* for STAT_INSTCMD_HANDLED */
-#include "common.h"
 #include "main.h"
 
 #define EXPLORE_HID_VERSION	"EXPLORE HID 0.1"

@@ -25,9 +25,7 @@
 #define _XOPEN_SOURCE		/* needed by glibc2 for strptime() prototype */
 #include "usbhid-ups.h"
 #include "mge-hid.h"
-#include "extstate.h"	/* for ST_FLAG_STRING */
 #include "main.h"		/* for getval() */
-#include "common.h"
 
 #define MGE_HID_VERSION		"MGE HID 1.18"
 

@@ -2,7 +2,7 @@
  *
  *  Copyright (C)
  *  2003 - 2008 Arnaud Quette <arnaud.quette@free.fr>
- *  2005 - 2006 Peter Selinger <selinger@users.sourceforge.net>         
+ *  2005 - 2006 Peter Selinger <selinger@users.sourceforge.net>
  *  2007        Charles Lepple <clepple@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -23,9 +23,7 @@
 
 #include "usbhid-ups.h"
 #include "liebert-hid.h"
-#include "extstate.h" /* for ST_FLAG_STRING */
 #include "main.h"     /* for getval() */
-#include "common.h"
 #include "usb-common.h"
 
 #define LIEBERT_HID_VERSION     "Liebert HID 0.3"
@@ -38,7 +36,7 @@
 static usb_device_id_t liebert_usb_device_table[] = {
 	/* various models */
 	{ USB_DEVICE(LIEBERT_VENDORID, 0xffff), NULL },
-	
+
 	/* Terminating entry */
 	{ -1, -1, NULL }
 };

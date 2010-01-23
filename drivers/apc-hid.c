@@ -1,6 +1,6 @@
 /*  apc-hid.c - data to monitor APC USB/HID devices with NUT
  *
- *  Copyright (C)  
+ *  Copyright (C)
  *	2003 - 2009	Arnaud Quette <arnaud.quette@free.fr>
  *	2005		John Stamp <kinsayder@hotmail.com>
  *	2005		Peter Selinger <selinger@users.sourceforge.net>
@@ -28,9 +28,7 @@
 
 #include "usbhid-ups.h"
 #include "apc-hid.h"
-#include "extstate.h" /* for ST_FLAG_STRING */
 #include "main.h"     /* for getval() */
-#include "common.h"
 #include "usb-common.h"
 
 #define APC_HID_VERSION "APC HID 0.95"
@@ -42,7 +40,7 @@
 static usb_device_id_t apc_usb_device_table[] = {
 	/* various models */
 	{ USB_DEVICE(APC_VENDORID, 0x0002), NULL },
-	
+
 	/* Terminating entry */
 	{ -1, -1, NULL }
 };
@@ -142,7 +140,7 @@ static usage_lkp_t apc_usage_lkp[] = {
 	{ "APCStatusFlag",		0xff860060 },
 	{ "APCSensitivity",		0xff860061 },
 	/* usage seen in dumps but unknown:
-	 * - ff860027, ff860028 
+	 * - ff860027, ff860028
 	 * Path: UPS.ff860027, Type: Feature, ReportID: 0x3e, Offset: 0,
 	 * 	Size: 32, Value:0.000000
 	 */
@@ -180,32 +178,32 @@ static usage_lkp_t apc_usage_lkp[] = {
  *
  * FIXME: read 0xff86.... instead of 0x(00)86....?
  *
- *  0x860013 == 44200155090 - capability again                   
- *           == locale 4, 4 choices, 2 bytes, 00, 15, 50, 90     
- *           == minimum charge to return online                  
+ *  0x860013 == 44200155090 - capability again
+ *           == locale 4, 4 choices, 2 bytes, 00, 15, 50, 90
+ *           == minimum charge to return online
  *
- *  0x860060 == "441HMLL" - looks like a 'capability' string     
- *           == locale 4, 4 choices, 1 byte each                 
- *           == line sensitivity (high, medium, low, low)        
- *  NOTE! the above does not seem to correspond to my info 
+ *  0x860060 == "441HMLL" - looks like a 'capability' string
+ *           == locale 4, 4 choices, 1 byte each
+ *           == line sensitivity (high, medium, low, low)
+ *  NOTE! the above does not seem to correspond to my info
  *
- *  0x860062 == D43133136127130                                  
- *           == locale D, 4 choices, 3 bytes, 133, 136, 127, 130 
- *           == high transfer voltage                            
+ *  0x860062 == D43133136127130
+ *           == locale D, 4 choices, 3 bytes, 133, 136, 127, 130
+ *           == high transfer voltage
  *
- *  0x860064 == D43103100097106                                  
- *           == locale D, 4 choices, 3 bytes, 103, 100, 097, 106 
- *           == low transfer voltage                             
+ *  0x860064 == D43103100097106
+ *           == locale D, 4 choices, 3 bytes, 103, 100, 097, 106
+ *           == low transfer voltage
  *
- *  0x860066 == 441HMLL (see 860060)                                   
+ *  0x860066 == 441HMLL (see 860060)
  *
- *  0x860074 == 4410TLN                                          
- *           == locale 4, 4 choices, 1 byte, 0, T, L, N          
- *           == alarm setting (5s, 30s, low battery, none)       
+ *  0x860074 == 4410TLN
+ *           == locale 4, 4 choices, 1 byte, 0, T, L, N
+ *           == alarm setting (5s, 30s, low battery, none)
  *
- *  0x860077 == 443060180300600                                  
- *           == locale 4, 4 choices, 3 bytes, 060,180,300,600    
- *           == wake-up delay (after power returns)              
+ *  0x860077 == 443060180300600
+ *           == locale 4, 4 choices, 3 bytes, 060,180,300,600
+ *           == wake-up delay (after power returns)
  */
 
 static usage_tables_t apc_utab[] = {

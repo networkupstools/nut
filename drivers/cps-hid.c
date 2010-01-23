@@ -2,7 +2,7 @@
  *
  *  Copyright (C)
  *  2003 - 2008 Arnaud Quette <arnaud.quette@free.fr>
- *  2005 - 2006 Peter Selinger <selinger@users.sourceforge.net>         
+ *  2005 - 2006 Peter Selinger <selinger@users.sourceforge.net>
  *
  *  Note: this subdriver was initially generated as a "stub" by the
  *  path-to-subdriver script. It must be customized.
@@ -25,9 +25,7 @@
 
 #include "usbhid-ups.h"
 #include "cps-hid.h"
-#include "extstate.h" /* for ST_FLAG_STRING */
 #include "main.h"     /* for getval() */
-#include "common.h"
 #include "usb-common.h"
 
 #define CPS_HID_VERSION      "CyberPower HID 0.3"

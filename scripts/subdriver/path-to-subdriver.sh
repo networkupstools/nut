@@ -6,7 +6,7 @@
 # drivers/usbhid-ups -DD -u root -x generic -x vendorid=XXXX auto
 #
 # Usage: cat debuginfo | path-to-subdriver.sh
-# 
+#
 # See also: docs/hid-subdrivers.txt
 
 usage() {
@@ -187,9 +187,7 @@ cat > "$CFILE" <<EOF
 
 #include "usbhid-ups.h"
 #include "${HFILE}"
-#include "extstate.h"	/* for ST_FLAG_STRING */
 #include "main.h"	/* for getval() */
-#include "common.h"
 #include "usb-common.h"
 
 #define ${UDRIVER}_HID_VERSION	"${DRIVER} HID 0.1"
@@ -298,10 +296,10 @@ subdriver_t ${LDRIVER}_subdriver = {
 EOF
 
 cat <<EOF
-Done. 
+Done.
 
 Do not forget to:
-* add #include "${HFILE}" to usbhid-ups.c, 
+* add #include "${HFILE}" to usbhid-ups.c,
 * add &${LDRIVER}_subdriver to usbhid-ups.c:subdriver_list,
 * add ${LDRIVER}-hid.c to USBHID_UPS_SUBDRIVERS in drivers/Makefile.am
 * add ${LDRIVER}-hid.h to dist_noinst_HEADERS in drivers/Makefile.am

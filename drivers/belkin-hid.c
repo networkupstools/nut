@@ -1,6 +1,6 @@
 /*  belkin-hid.h - data to monitor Belkin UPS Systems USB/HID devices with NUT
  *
- *  Copyright (C)  
+ *  Copyright (C)
  *	2003 - 2008	Arnaud Quette <arnaud.quette@free.fr>
  *  2005        Peter Selinger <selinger@users.sourceforge.net>
  *
@@ -25,9 +25,7 @@
 
 #include "usbhid-ups.h"
 #include "belkin-hid.h"
-#include "extstate.h" /* for ST_FLAG_STRING */
 #include "main.h"     /* for getval() */
-#include "common.h"
 #include "usb-common.h"
 
 #define BELKIN_HID_VERSION      "Belkin HID 0.12"
@@ -93,7 +91,7 @@ static char *belkin_upstype_conversion_fun(double value)
 		return "line-interactive";
 	case 3:
 		return "simple online";
-	case 4: 
+	case 4:
 		return "simple offline";
 	case 5:
 		return "simple line-interactive";
@@ -267,7 +265,7 @@ static usage_lkp_t belkin_usage_lkp[] = {
 	{ "BELKINDelayBeforeShutdown",		0x00860057 }, /* R/W (seconds) */
 	{ "BELKINTest",				0x00860058 }, /* R/W: write: 0=no test, 1=quick test, 2=deep test, 3=abort test. Read: 0=no test, 1=passed, 2=warning, 3=error, 4=abort, 5=in progress */
 	{ "BELKINAudibleAlarmControl",		0x0086005a }, /* R/W: 1=disabled, 2=enabled, 3=muted */
-	
+
 	{ "BELKINDevice",			0x00860029 },
 	{ "BELKINVoltageSensitivity",		0x00860074 }, /* R/W: 0=normal, 1=reduced, 2=low */
 	{ "BELKINModelString",			0x00860075 },
@@ -380,7 +378,7 @@ static hid_info_t belkin_hid2nut[] = {
      principle. Hopefully other Belkin models will be better
      designed. Fixme: fill in the appropriate instant commands.  For a
      more detailed description of the problem and a possible (but not
-     yet implemented) workaround, see the belkinunv(8) man page. 
+     yet implemented) workaround, see the belkinunv(8) man page.
      -PS 2005/08/28 */
 
   /* end of structure. */
