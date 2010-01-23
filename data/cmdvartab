@@ -1,8 +1,8 @@
 # Network UPS Tools: variable and command descriptions
-# 
+#
 # This file is optional.  You may delete it to save resources, but
 # clients will receive "Unavailable" for any description requests.
-# 
+#
 # *** NOTE *** : When updating this file, also update docs/new-names.txt
 
 VARDESC ups.alarm "UPS alarms"
@@ -24,6 +24,9 @@ VARDESC ups.id "UPS system identifier"
 VARDESC ups.delay.start "Interval to wait before (re)starting the load (seconds)"
 VARDESC ups.delay.reboot "Interval to wait before rebooting the UPS (seconds)"
 VARDESC ups.delay.shutdown "Interval to wait after shutdown with delay command (seconds)"
+VARDESC ups.timer.start "Time before the load will be started (seconds)"
+VARDESC ups.timer.reboot "Time before the load will be rebooted (seconds)"
+VARDESC ups.timer.shutdown "Time before the load will be shutdown (seconds)"
 VARDESC ups.test.interval "Interval between self tests (seconds)"
 VARDESC ups.test.result "Results of last self test"
 VARDESC ups.display.language "Language to use on front panel"
