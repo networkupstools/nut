@@ -22,7 +22,9 @@
  *
  */
 
-#define _XOPEN_SOURCE		/* needed by glibc2 for strptime() prototype */
+#ifndef __USE_XOPEN
+#define __USE_XOPEN		/* needed by glibc2 for strptime() prototype */
+#endif
 #include "usbhid-ups.h"
 #include "mge-hid.h"
 #include "main.h"		/* for getval() */
