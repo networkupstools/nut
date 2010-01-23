@@ -22,6 +22,7 @@
  *
  */
 
+#include <features.h>
 #if __GLIBC__ >= 2
 #define _GNU_SOURCE		/* needed by glibc2 for strptime() prototype */
 #endif
