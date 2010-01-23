@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef __USE_XOPEN
-#define __USE_XOPEN		/* needed by glibc2 for strptime() prototype */
+#if __GLIBC__ >= 2
+#define _GNU_SOURCE		/* needed by glibc2 for strptime() prototype */
 #endif
 #include "usbhid-ups.h"
 #include "mge-hid.h"
