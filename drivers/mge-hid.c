@@ -22,6 +22,7 @@
  *
  */
 
+#define _XOPEN_SOURCE		/* needed by glibc2 for strptime() prototype */
 #include "usbhid-ups.h"
 #include "mge-hid.h"
 #include "extstate.h"	/* for ST_FLAG_STRING */
@@ -296,11 +297,11 @@ static info_lkp_t pegasus_threshold_info[] = {
 static char *nominal_output_voltage_fun(double value)
 {
 	static long	nominal = -1;
-	
+
 	if (nominal < 0) {
 		nominal = value;
 	}
-	
+
 	switch ((long)nominal)
 	{
 	/* LV models */
