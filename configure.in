@@ -24,6 +24,9 @@ dnl # reason is that the SVN revision should be computed at compile time,
 dnl # not configure time.
 dnl AC_DEFINE_UNQUOTED(UPS_VERSION, "${PACKAGE_VERSION}", [NUT version])
 
+dnl Enable SUSv2 compliance
+AC_DEFINE(_XOPEN_SOURCE, 500)
+
 dnl Fix this early so we can expand with eval later
 test "${prefix}" = "NONE" && prefix="${ac_default_prefix}"
 test "${exec_prefix}" = "NONE" && exec_prefix='${prefix}'
@@ -88,12 +91,12 @@ AC_CHECK_FUNCS(vsnprintf snprintf, [], [
 AC_REPLACE_FUNCS(setenv inet_aton strerror atexit)
 
 dnl
-dnl Only use these when compiling with gcc 
+dnl Only use these when compiling with gcc
 dnl
 if ( test "${GCC}" = "yes" )
 then
   CFLAGS="${CFLAGS} -Wall -Wsign-compare"
-fi  
+fi
 
 dnl Endianness handling, using default behavior
 dnl eg defines WORDS_BIGENDIAN if BigEnd,
@@ -112,7 +115,7 @@ AC_CHECK_DECLS(optind, [], [
 
 dnl FreeBSD serial locking compatibility - look for uu_lock in libutil.h
 AC_CHECK_DECLS(uu_lock, [
-	AC_DEFINE(HAVE_UU_LOCK, 1, [Use uu_lock for locking (FreeBSD)])  
+	AC_DEFINE(HAVE_UU_LOCK, 1, [Use uu_lock for locking (FreeBSD)])
 	SERLIBS="-lutil"
 	dnl put in some better defaults for FreeBSD
 	RUN_AS_USER="uucp"
@@ -121,7 +124,7 @@ AC_CHECK_DECLS(uu_lock, [
 ], [
 #include <sys/types.h>
 #include <libutil.h>
-])	
+])
 
 dnl Solaris compatibility - check for -lnsl and -lsocket
 AC_SEARCH_LIBS(gethostbyname, nsl)
@@ -152,7 +155,7 @@ AC_HELP_STRING([--with-all], [enable serial, usb, snmp, hal, cgi, dev, neonxml, 
 		if test -z "${with_hal}"; then with_hal="${withval}"; fi
 		if test -z "${with_neonxml}"; then with_neonxml="${withval}"; fi
 		if test -z "${with_powerman}"; then with_powerman="${withval}"; fi
-		AC_MSG_RESULT("${withval}")		
+		AC_MSG_RESULT("${withval}")
 	else
 		AC_MSG_RESULT(not given)
 	fi
@@ -160,7 +163,7 @@ AC_HELP_STRING([--with-all], [enable serial, usb, snmp, hal, cgi, dev, neonxml, 
 ])
 
 dnl ----------------------------------------------------------------------
-dnl declare a number of --with-FEATURE options. Do this early, so that 
+dnl declare a number of --with-FEATURE options. Do this early, so that
 dnl they are listed near the top by "./configure --help"
 
 NUT_ARG_WITH([serial], [build and install serial drivers], [yes])
@@ -205,7 +208,7 @@ dnl Check for --with-ssl
 
 NUT_ARG_WITH([ssl], [enable SSL development code], [auto])
 
-dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto". 
+dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_ssl}" != "no"; then
    dnl check for libssl compiler flags
    NUT_CHECK_LIBSSL
@@ -245,11 +248,11 @@ AM_CONDITIONAL(WITH_WRAP, test "${nut_with_wrap}" = "yes")
 NUT_REPORT_FEATURE([enable libwrap (tcp-wrappers) support], [${nut_with_wrap}])
 
 dnl ----------------------------------------------------------------------
-dnl check whether to compile IPv6 features 
+dnl check whether to compile IPv6 features
 
 NUT_ARG_WITH([ipv6], [enable IPv6 support], [auto])
 
-dnl ${nut_with_ipv6}: any value except "yes" or "no" is treated as "auto". 
+dnl ${nut_with_ipv6}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_ipv6}" != "no"; then
    dnl check for IPv6 prerequisites
    NUT_CHECK_IPV6
@@ -305,7 +308,7 @@ AC_PROG_LIBTOOL
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-serial
 
-dnl ${nut_with_serial}: any value except "yes" or "no" is treated as "auto". 
+dnl ${nut_with_serial}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_serial}" != "no"; then
   nut_with_serial="yes"
 fi
@@ -315,7 +318,7 @@ NUT_REPORT_FEATURE([build serial drivers], [${nut_with_serial}])
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-snmp
 
-dnl ${nut_with_snmp}: any value except "yes" or "no" is treated as "auto". 
+dnl ${nut_with_snmp}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_snmp}" = "yes" -a "${nut_have_libnetsnmp}" != "yes"; then
    AC_MSG_ERROR(["Net-SNMP libraries not found, required for SNMP drivers"])
 fi
@@ -330,7 +333,7 @@ NUT_REPORT_FEATURE([build SNMP drivers], [${nut_with_snmp}])
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-usb
 
-dnl ${nut_with_usb}: any value except "yes" or "no" is treated as "auto". 
+dnl ${nut_with_usb}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_usb}" = "yes" -a "${nut_have_libusb}" != "yes"; then
    AC_MSG_ERROR(["USB drivers requested, but libusb not found."])
 fi
@@ -345,7 +348,7 @@ NUT_REPORT_FEATURE([build USB drivers], [${nut_with_usb}])
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-hal
 
-dnl ${nut_with_hal}: any value except "yes" or "no" is treated as "auto". 
+dnl ${nut_with_hal}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_hal}" = "yes" -a "${nut_have_libhal}" != "yes"; then
    AC_MSG_ERROR(["libhal not found, required for HAL support"])
 fi
@@ -368,7 +371,7 @@ NUT_REPORT_FEATURE([enable HAL support], [${nut_with_hal}])
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-neonxml
 
-dnl ${nut_with_neonxml}: any value except "yes" or "no" is treated as "auto". 
+dnl ${nut_with_neonxml}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_neonxml}" = "yes" -a "${nut_have_neon}" != "yes"; then
    AC_MSG_ERROR(["neon libraries not found, required for neon based XML/HTTP driver"])
 fi
@@ -384,7 +387,7 @@ dnl ----------------------------------------------------------------------
 
 dnl checks related to --with-powerman
 
-dnl ${nut_with_powerman}: any value except "yes" or "no" is treated as "auto". 
+dnl ${nut_with_powerman}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_powerman}" = "yes" -a "${nut_have_libpowerman}" != "yes"; then
    AC_MSG_ERROR(["Powerman client libraries not found, required for Powerman PDU client driver"])
 fi
