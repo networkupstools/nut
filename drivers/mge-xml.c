@@ -1,4 +1,4 @@
-/* mge-xml.c	Model specific routines for Eaton / MGE XML protocol UPSes 
+/* mge-xml.c	Model specific routines for Eaton / MGE XML protocol UPSes
 
    Copyright (C)
 	2008-2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
@@ -90,7 +90,7 @@ typedef enum {
 	/* /SET_OBJECT */
 
 	ALARM = 500,
-	
+
 	XML_CLIENT = 600,
 		XC_GENERAL = 610,
 			XC_STARTUP,
@@ -255,7 +255,7 @@ static const char *fanfail_info(const char *val)
 
 	return NULL;
 }
-
+/*
 static const char *shutdownimm_info(const char *val)
 {
 	if (val[0] == '1') {
@@ -266,7 +266,7 @@ static const char *shutdownimm_info(const char *val)
 
 	return NULL;
 }
-
+ */
 static const char *overheat_info(const char *val)
 {
 	if (val[0] == '1') {
@@ -848,7 +848,7 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 			break;
 		}
 
-		if ( (!strcasecmp(name, "UPS_DATA")) 
+		if ( (!strcasecmp(name, "UPS_DATA"))
 			|| (!strcasecmp(name, "DEV_DATA")) ) {
 			state = PI_UPS_DATA;
 			break;
@@ -971,7 +971,7 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 			break;
 		}
 		break;
-			
+
 	case GET_OBJECT:
 		if (!strcasecmp(name, "OBJECT")) {
 			/* name="System.RunTimeToEmptyLimit" unit="s" access="RW" */
@@ -995,7 +995,7 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 			state = XC_GENERAL;
 			break;
 		}
-		
+
 	case XC_GENERAL:
 		if (!strcasecmp(name, "STARTUP")) {
 			/* config="CENTRALIZED" */
@@ -1099,7 +1099,7 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 		upsdebugx(3, "-> XML variable %s [%s] doesn't map to any NUT variable", var, val);
 		break;
 	}
-	
+
 	return 0;
 }
 
