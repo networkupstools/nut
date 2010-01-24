@@ -22,7 +22,9 @@
  *
  */
 
-#define _XOPEN_SOURCE 500	/* needed for strptime() on early glibc2 (500 = Single Unix compliance) */
+#ifdef __linux__
+#define _XOPEN_SOURCE	500	/* needed for strptime() on early glibc2 (500 = Single Unix compliance) */
+#endif
 #include "usbhid-ups.h"
 #include "mge-hid.h"
 #include "main.h"		/* for getval() */
