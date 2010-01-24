@@ -25,7 +25,7 @@ dnl # not configure time.
 dnl AC_DEFINE_UNQUOTED(UPS_VERSION, "${PACKAGE_VERSION}", [NUT version])
 
 dnl Enable SUSv2 compliance
-AC_DEFINE(_XOPEN_SOURCE, 500)
+dnl AC_DEFINE(_XOPEN_SOURCE, 500)
 
 dnl Fix this early so we can expand with eval later
 test "${prefix}" = "NONE" && prefix="${ac_default_prefix}"
