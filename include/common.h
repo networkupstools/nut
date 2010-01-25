@@ -20,6 +20,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h"		/* must be the first header */
 
 /* Need this on AIX when using xlc to get alloca */
 #ifdef _AIX
@@ -39,7 +40,6 @@
 #include <unistd.h>
 #include <assert.h>
 
-#include "config.h"
 #include "timehead.h"
 #include "attribute.h"
 #include "proto.h"
@@ -58,7 +58,7 @@ struct passwd *get_user_pwent(const char *name);
 /* change to the user defined in the struct */
 void become_user(struct passwd *pw);
 
-/* drop down into a directory and throw away pointers to the old path */ 
+/* drop down into a directory and throw away pointers to the old path */
 void chroot_start(const char *path);
 
 /* write a pid file - <name> is a full pathname *or* just the program name */
@@ -97,7 +97,7 @@ void upsdebug_with_errno(int level, const char *fmt, ...)
 void upsdebugx(int level, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
 void upsdebug_hex(int level, const char *msg, const void *buf, int len);
-		
+
 void fatal_with_errno(int status, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3))) __attribute__((noreturn));
 void fatalx(int status, const char *fmt, ...)
@@ -126,7 +126,7 @@ int select_write(const int fd, const void *buf, const size_t buflen, const long 
 #else
 #ifdef NEED_GETOPT_DECLS
 extern char *optarg;
-extern int optind; 
+extern int optind;
 #endif /* NEED_GETOPT_DECLS */
 #endif /* HAVE_GETOPT_H */
 

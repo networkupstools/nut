@@ -20,9 +20,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include "main.h"	/* for getval() */
 #include "usbhid-ups.h"
 #include "powercom-hid.h"
-#include "main.h"	/* for getval() */
 #include "usb-common.h"
 
 #define POWERCOM_HID_VERSION	"PowerCOM HID 0.2"

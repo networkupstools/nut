@@ -23,9 +23,9 @@
  *
  */
 
+#include "main.h"     /* for getval() */
 #include "usbhid-ups.h"
 #include "belkin-hid.h"
-#include "main.h"     /* for getval() */
 #include "usb-common.h"
 
 #define BELKIN_HID_VERSION      "Belkin HID 0.12"

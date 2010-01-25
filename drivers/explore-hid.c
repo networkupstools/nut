@@ -21,9 +21,9 @@
  *
  */
 
+#include "main.h"
 #include "usbhid-ups.h"
 #include "explore-hid.h"
-#include "main.h"
 
 #define EXPLORE_HID_VERSION	"EXPLORE HID 0.1"
 

@@ -24,9 +24,9 @@
  *
  */
 
+#include "main.h"
 #include "usbhid-ups.h"
 #include "tripplite-hid.h"
-#include "main.h"
 #include "usb-common.h"
 
 #define TRIPPLITE_HID_VERSION "TrippLite HID 0.4"

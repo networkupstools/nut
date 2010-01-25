@@ -26,9 +26,9 @@
  *
  */
 
+#include "main.h"     /* for getval() */
 #include "usbhid-ups.h"
 #include "apc-hid.h"
-#include "main.h"     /* for getval() */
 #include "usb-common.h"
 
 #define APC_HID_VERSION "APC HID 0.95"

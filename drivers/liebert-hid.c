@@ -21,9 +21,9 @@
  *
  */
 
+#include "main.h"     /* for getval() */
 #include "usbhid-ups.h"
 #include "liebert-hid.h"
-#include "main.h"     /* for getval() */
 #include "usb-common.h"
 
 #define LIEBERT_HID_VERSION     "Liebert HID 0.3"

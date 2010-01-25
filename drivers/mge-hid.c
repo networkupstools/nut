@@ -22,9 +22,9 @@
  *
  */
 
+#include "main.h"		/* for getval() */
 #include "usbhid-ups.h"
 #include "mge-hid.h"
-#include "main.h"		/* for getval() */
 
 #define MGE_HID_VERSION		"MGE HID 1.18"
 

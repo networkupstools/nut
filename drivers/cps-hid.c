@@ -23,9 +23,9 @@
  *
  */
 
+#include "main.h"     /* for getval() */
 #include "usbhid-ups.h"
 #include "cps-hid.h"
-#include "main.h"     /* for getval() */
 #include "usb-common.h"
 
 #define CPS_HID_VERSION      "CyberPower HID 0.3"
