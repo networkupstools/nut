@@ -64,8 +64,7 @@ upsdrv_info_t upsdrv_info = {
 #define Q1_CMD_REPLY_LEN 46
 #define I_CMD_REPLY_LEN  38
 
-#define IDENT_MAXTRIES   5
-#define IDENT_MINSUCCESS 3
+#define IDENT_MAXTRIES   3
 
 #define READ_TIMEOUT 2       /* timeout on read (seconds) */
 #define READ_PACE    300000  /* interval to wait between sending a command and reading the response (usec) */
@@ -514,7 +513,6 @@ static int run_query(QueryValues_t *values)
 void upsdrv_initinfo(void)
 {
 	int i;
-	int success = 0;
 	FirmwareValues_t values;
 	QueryValues_t status;
 	UPSInfo_t info;
@@ -538,26 +536,19 @@ void upsdrv_initinfo(void)
 	 * UPS detection sequence.
 	 */
 	upsdebugx(1, "Starting UPS detection process...");
-	
+
 	/* Some models seem to need this. We'll just discard the ouput for now... */
 	get_ups_info(&info);
 
-	/* Check for a compatible UPS and for a reliable connection... */
+	/* Check for a compatible UPS... */
 	for (i = 0; i < IDENT_MAXTRIES; i++) {
 		if (check_ups(&status) == 0) {
-			success++;
+			break;
 		}
 	}
 
-	upsdebugx(1, "%d out of %d detection attempts failed (minimum failures: %d).",
-	          IDENT_MAXTRIES - success, IDENT_MAXTRIES, IDENT_MAXTRIES - IDENT_MINSUCCESS);
-
-	if (success < IDENT_MINSUCCESS) {
-		if (success > 0) {
-			fatalx(EXIT_FAILURE, "The UPS is supported, but the connection is too unreliable. Try checking the cable for defects.");
-		} else {
-			fatalx(EXIT_FAILURE, "Megatec protocol UPS not detected.");
-		}
+	if (i == IDENT_MAXTRIES) {
+		fatalx(EXIT_FAILURE, "Megatec protocol UPS not detected.");
 	}
 
 	dstate_setinfo("ups.type", status.flags[FL_UPS_TYPE] == '1' ? "standby" : "online");
@@ -692,7 +683,7 @@ void upsdrv_updateinfo(void)
 		 * that the UPS is just taking a nap. ;)
 		 */
 		poll_fail++;
-		upsdebugx(2, "Poll failure [%d].", poll_fail);		
+		upsdebugx(2, "Poll failure [%d].", poll_fail);
 		ser_comm_fail("No status from UPS.");
 
 		if (poll_fail >= MAX_POLL_FAILURES) {
