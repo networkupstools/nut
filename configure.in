@@ -80,7 +80,13 @@ AC_CHECK_FUNCS(flock lockf fcvt fcvtl)
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
 AC_CHECK_FUNCS(on_exit)
-AC_CHECK_FUNCS(strptime)
+
+dnl check if strptime function is declared
+AC_CHECK_DECLS(strptime, [
+	AC_CHECK_FUNCS(strptime)
+], [], [
+#include <time.h>
+])
 
 dnl the following may add stuff to LIBOBJS (is this still needed?)
 AC_CHECK_FUNCS(vsnprintf snprintf, [], [
