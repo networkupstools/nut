@@ -299,10 +299,7 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 			now.tv_sec -= 1;
 		}
 	
-		now.tv_usec -= start.tv_usec;
-		now.tv_sec -= start.tv_sec;
-	
-		fprintf(stderr, "%4ld.%06ld\t", now.tv_sec, now.tv_usec);
+		fprintf(stderr, "%4.0f.%06ld\t", difftime(now.tv_sec, start.tv_sec), now.tv_usec - start.tv_usec);
 	}
 
 	if (xbit_test(upslog_flags, UPSLOG_STDERR))
