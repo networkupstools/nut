@@ -22,9 +22,6 @@
  *
  */
 
-#ifdef __linux__
-#define _XOPEN_SOURCE	600	/* needed for strptime() on early glibc2 (600 = POSIX 2001 / SUSv3 / C99 compliance) */
-#endif
 #include "usbhid-ups.h"
 #include "mge-hid.h"
 #include "main.h"		/* for getval() */
@@ -104,6 +101,7 @@ static char *mge_time_conversion_fun(double value)
 	return NULL;
 }
 
+#ifdef HAVE_STRPTIME
 /* Conversion back retrieve ups.time to build the full unix time */
 static double mge_date_conversion_nuf(const char *value)
 {
@@ -147,6 +145,15 @@ static info_lkp_t mge_date_conversion[] = {
 static info_lkp_t mge_time_conversion[] = {
 	{ 0, NULL, mge_time_conversion_fun, mge_time_conversion_nuf }
 };
+#else
+static info_lkp_t mge_date_conversion[] = {
+	{ 0, NULL, mge_date_conversion_fun, NULL }
+};
+
+static info_lkp_t mge_time_conversion[] = {
+	{ 0, NULL, mge_time_conversion_fun, NULL }
+};
+#endif /* HAVE_STRPTIME */
 
 /* The HID path 'UPS.PowerSummary.ConfigVoltage' only reports
    'battery.voltage.nominal' for specific UPS series. Ignore
@@ -722,9 +729,13 @@ static hid_info_t mge_hid2nut[] =
 	{ "ups.start.auto", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Input.[1].AutomaticRestart", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
 	{ "ups.start.battery", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Input.[3].StartOnBattery", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
 	{ "ups.start.reboot", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.ForcedReboot", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
-	/* FIXME: the 2 below should be ST_FLAG_RW */
+#ifdef HAVE_STRPTIME
 	{ "ups.date", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.Time", NULL, "%s", 0, mge_date_conversion },
 	{ "ups.time", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.Time", NULL, "%s", 0, mge_time_conversion },
+#else
+	{ "ups.date", 0, 0, "UPS.PowerSummary.Time", NULL, "%s", 0, mge_date_conversion },
+	{ "ups.time", 0, 0, "UPS.PowerSummary.Time", NULL, "%s", 0, mge_time_conversion },
+#endif /* HAVE_STRPTIME */
 	{ "ups.type", 0, 0, "UPS.PowerConverter.ConverterType", NULL, "%s", HU_FLAG_STATIC, mge_upstype_conversion },
 
 	/* Special case: boolean values that are mapped to ups.status and ups.alarm */
