@@ -74,7 +74,7 @@ if test -z "${nut_have_libhal_seen}"; then
 		dnl the device match key changed with HAL 0.5.11
 		AC_MSG_CHECKING(for hal-${HAL_VERSION} device match key)
 		HAL_DEVICE_MATCH_KEY=`pkg-config --silence-errors --atleast-version=0.5.11 hal`
-		if [ "$?" != "0" ]; then
+		if test "$?" != "0"; then
 			HAL_DEVICE_MATCH_KEY="info.bus"
 		else
 			HAL_DEVICE_MATCH_KEY="info.subsystem"
@@ -87,7 +87,7 @@ if test -z "${nut_have_libhal_seen}"; then
 		dnl - addon install path: $libdir/hal
 		AC_MSG_CHECKING(for libhal Callouts path)
 		HAL_CALLOUTS_PATH=`pkg-config --silence-errors --variable=libexecdir hal`
-		if [ -n "$HAL_CALLOUTS_PATH" ]; then
+		if test -n "$HAL_CALLOUTS_PATH"; then
 			AC_MSG_RESULT(${HAL_CALLOUTS_PATH})
 		else
 			# fallback to detecting the right path
@@ -113,7 +113,7 @@ if test -z "${nut_have_libhal_seen}"; then
 		dnl - fdi install path: $datarootdir/hal/fdi/information/20thirdparty
 		AC_MSG_CHECKING(for libhal Device Information path)
 		HAL_FDI_PATH=`pkg-config --silence-errors --variable=hal_fdidir hal`
-		if [ -n "$HAL_FDI_PATH" ]; then
+		if test -n "$HAL_FDI_PATH"; then
 			HAL_FDI_PATH="${HAL_FDI_PATH}/information/20thirdparty"
 			AC_MSG_RESULT(${HAL_FDI_PATH})
 		else
