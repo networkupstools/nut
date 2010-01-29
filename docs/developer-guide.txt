@@ -1555,20 +1555,20 @@ output: Outgoing power/inverter information
    | output.current.nominal        | Nominal output current (A)     | 5.0   |
    +------------------------------------------------------------------------+
 
-Three-phase additions:
-~~~~~~~~~~~~~~~~~~~~~~
+Three-phase additions
+~~~~~~~~~~~~~~~~~~~~~
 
 The additions for three-phase measurements would produce a very long table
 due to all the combinations that are possible, so these additions are
 broken down to their base components.
 
-PHASE COUNT DETERMINATION:
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-input.phases (3 for 3phase, absent or 1 for 1phase)
+Phase Count Determination
+~~~~~~~~~~~~~~~~~~~~~~~~~
+input.phases (3 for three-phase, absent or 1 for 1phase)
 output.phases (as for input.phases)
 
-DOMAINs:
-~~~~~~~~
+DOMAINs
+~~~~~~~
 Any input or output is considered a valid DOMAIN.
 
 input (should really be called input.mains, but keep this for compat)
@@ -1580,27 +1580,27 @@ output.bypass
 output.inverter
 output.servicebypass
 
-SPECIFICATION (SPEC):
-~~~~~~~~~~~~~~~~~~~~~
+Specification (SPEC)
+~~~~~~~~~~~~~~~~~~~~
 
 Voltage, current, frequency, etc are considered to be a specification of
 the measurement.
 
 With this notation, the old 1phase naming scheme becomes DOMAIN.SPEC
-Example: input.current
+Example: `input.current`
 
-CONTEXT:
-~~~~~~~~
+CONTEXT
+~~~~~~~
 
-When in 3phase mode we need some way to specify the target for most
-measurements in more detail, we call this the CONTEXT.
+When in three-phase mode, we need some way to specify the target for most
+measurements in more detail. We call this the CONTEXT.
 
 With this notation, the naming scheme becomes DOMAIN.CONTEXT.SPEC when
-in 3phase mode.
-Example: input.L1.current
+in three-phase mode.
+Example: `input.L1.current`
 
-Valid CONTEXTs:
-~~~~~~~~~~~~~~~
+Valid CONTEXTs
+~~~~~~~~~~~~~~
 
  L1-L2  \
  L2-L3   \
@@ -1614,54 +1614,57 @@ Valid CONTEXTs:
  L3  /
  N  - for current measurement
 
-Valid SPECs:
-~~~~~~~~~~~~
+Valid SPECs
+~~~~~~~~~~~
 
 Valid with/without context (ie. per phase or aggregated/averaged)
-current         Current (A)
-current.maximum Maximum seen current (A)
-current.minimum Minimum seen current (A)
-peakcurrent     Peak current
-voltage         Voltage (V)
-voltage.nominal Nominal voltage (V)
-voltage.maximum Maximum seen voltage (V)
-voltage.minimum Minimum seen voltage (V)
-power           Apparent power (VA)
-power.maximum   Maximum seen apparent power (VA)
-power.minimum   Maximum seen apparent power (VA)
-power.percent   Percentage of apparent power related to maximum load
-power.maximum.percent   Max seen percentage of apparent power
-power.minimum.percent   Min seen percentage of apparent power
-realpower       Real power (W)
-powerfactor     Power Factor (dimensionless value between 0.00 and 1.00)
+
+ current         Current (A)
+ current.maximum Maximum seen current (A)
+ current.minimum Minimum seen current (A)
+ peakcurrent     Peak current
+ voltage         Voltage (V)
+ voltage.nominal Nominal voltage (V)
+ voltage.maximum Maximum seen voltage (V)
+ voltage.minimum Minimum seen voltage (V)
+ power           Apparent power (VA)
+ power.maximum   Maximum seen apparent power (VA)
+ power.minimum   Maximum seen apparent power (VA)
+ power.percent   Percentage of apparent power related to maximum load
+ power.maximum.percent   Max seen percentage of apparent power
+ power.minimum.percent   Min seen percentage of apparent power
+ realpower       Real power (W)
+ powerfactor     Power Factor (dimensionless value between 0.00 and 1.00)
 
 Valid without context (ie. aggregation of all phases):
-frequency       Frequency (Hz)
-frequency.nominal Nominal frequency (Hz)
 
-EXAMPLES:
-~~~~~~~~~
+ frequency       Frequency (Hz)
+ frequency.nominal Nominal frequency (Hz)
+
+EXAMPLES
+~~~~~~~~
 
 Partial Three phase - Three phase example:
-input.phases: 3
-input.frequency: 50.0
-input.L1.current: 133.0
-input.bypass.L1-L2.voltage: 398.3
-output.phases: 3
-output.L1.power: 35700
-output.powerfactor: 0.82
+
+ input.phases: 3
+ input.frequency: 50.0
+ input.L1.current: 133.0
+ input.bypass.L1-L2.voltage: 398.3
+ output.phases: 3
+ output.L1.power: 35700
+ output.powerfactor: 0.82
 
 Partial Three phase - One phase example:
-input.phases: 3
-input.L2.current: 48.2
-input.N.current: 3.4
-input.L3-L1.voltage: 405.4
-input.frequency: 50.1
-output.phases: 1
-output.current: 244.2
-output.voltage: 120
-output.frequency.nominal: 60.0
 
+ input.phases: 3
+ input.L2.current: 48.2
+ input.N.current: 3.4
+ input.L3-L1.voltage: 405.4
+ input.frequency: 50.1
+ output.phases: 1
+ output.current: 244.2
+ output.voltage: 120
+ output.frequency.nominal: 60.0
 
 battery: Any battery details
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
