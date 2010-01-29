@@ -5,9 +5,10 @@ _____________________________
 
 
 ////////////////////////////////////////////////////////////////////////////////
-Arnaud Quette <arnaud.quette@free.fr>
-Auth: Russell Kroll <rkroll@exploits.org>
-Auth: Peter Selinger <selinger@sourceforge.net>
+Authors:
+	Russell Kroll <rkroll@exploits.org>
+	Arnaud Quette <arnaud.quette@free.fr>
+	?Charles and Arjen
 
 image::images/nut-banner.png[Network UPS Tools logo]
 ////////////////////////////////////////////////////////////////////////////////
@@ -19,7 +20,7 @@ Introduction
 
 The primary goal of the Network UPS Tools (NUT) project is to provide  support
 for Power Devices, such as Uninterruptible Power Supplies, Power Distributions
-Units and Solar Controlers.
+Units and Solar Controllers.
 
 NUT provides many <<Features,features>>, with a uniform control and management
 interface.
@@ -51,6 +52,10 @@ include::../README[]
 
 [[Features]]
 
+////////////////////////////////////////////////////////////////////////////////
+*FIXME*: move from website/ to docs/
+////////////////////////////////////////////////////////////////////////////////
+
 include::features.txt[]
 
 
@@ -59,7 +64,6 @@ Compatibility information
 
 Hardware
 ~~~~~~~~
-
 
 The current list of hardware supported by NUT can be viewed <<HCL,here>>.
 
@@ -91,17 +95,23 @@ installed.
 
 Success reports are welcomed to keep this list accurate. 
 
+////////////////////////////////////////////////////////////////////////////////
+FIXME: include download.txt
+////////////////////////////////////////////////////////////////////////////////
+
 
 [[Installation_instructions]]
 
 include::../INSTALL[]
 
 
+////////////////////////////////////////////////////////////////////////////////
+FIXME: to be removed and declared obsolete
 Integrated Power Management support
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ...integration with FreeDesktop HAL - Hardware Abstraction Layer (nut-hal.txt)
-*FIXME*: declare obsolete
+////////////////////////////////////////////////////////////////////////////////
  
 
 [[Configuration_notes]]
@@ -109,14 +119,13 @@ Integrated Power Management support
 include::config-notes.txt[]
 
 
-Advanced usage notes
-====================
-
-How to use upssched
--------------------
+[[Advanced_usage_scheduling_notes]]
 
 include upssched.txt[]
 
+
+////////////////////////////////////////////////////////////////////////////////
+*FIXME* to be removed or reworked with pager and more?
 Using upsmon and your pager together
 ------------------------------------
 
@@ -125,18 +134,50 @@ include pager.txt[]
 Using upsmon to make On Screen Display (OSD) notification
 ---------------------------------------------------------
 
-*FIXME* to be removed or reworked with pager and more?
-
 include osd-notify.txt[]
 
-NUT Powersaving features and using outlet collection
-----------------------------------------------------
+////////////////////////////////////////////////////////////////////////////////
 
-include powersaving.txt[]
+
+NUT outlets management and PDU notes
+====================================
+
+To be completed
+
+////////////////////////////////////////////////////////////////////////////////
+FIXME: move powersaving.txt content to nut-outlets.txt, and generalize to UPS
+and PDU outlet management
+
+include nut-outlets.txt[]
+////////////////////////////////////////////////////////////////////////////////
+
+NUT and virtualization (VMWare, Xen, ...)
+=========================================
+
+To be completed
+
+////////////////////////////////////////////////////////////////////////////////
+FIXME:
+VMWare
+~~~~~~
+
+http://communities.vmware.com/docs/DOC-9531
+http://lists.alioth.debian.org/pipermail/nut-upsdev/2009-December/004321.html
+
+Xen
+~~~
+?
+////////////////////////////////////////////////////////////////////////////////
+
 
 [[NUT_Security]]
 Notes on Securing NUT
 =====================
+
+////////////////////////////////////////////////////////////////////////////////
+FIXME: intro on privileges (NUT users, system users), firewall and TCP wrappers
+=> security.txt
+////////////////////////////////////////////////////////////////////////////////
 
 Configuring SSL
 ---------------
@@ -149,7 +190,7 @@ chrooting and other forms of paranoia
 include chroot.txt[]
 
 ////////////////////////////////////////////////////////////////////////////////
-*FIXME* where can we put the below content?
+FIXME: where / how can we put the below content?
 
 Contact closure hardware
 ------------------------
@@ -161,30 +202,34 @@ source distribution that contains information on this kind of hardware
 and details on adding additional types to the genericups driver.
 
 include contact-closure.txt[]
-////////////////////////////////////////////////////////////////////////////////
 
 Information about SNMP and Network UPS Tools
 --------------------------------------------
 
 include snmp.txt[]
 
+////////////////////////////////////////////////////////////////////////////////
+
+
 
 Appendix A: Glossary
 ====================
 
 [glossary]
-UPS::
-	Uninterruptible Power Supply.
+NUT::
+	Network UPS Tools.
 PDU::
 	Power Distributions Unit.
 SCD::
 	Solar Controller Device.
+UPS::
+	Uninterruptible Power Supply.
 
 [[FAQ]]
 Appendix B: Frequently Asked Questions
 ======================================
 
-include FAQ.txt[]
+include FAQ.txt[Frequently Asked Questions]
 
 [[Acknowledgements]]
 Appendix C: Acknowledgements / Contributions
