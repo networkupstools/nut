@@ -451,7 +451,7 @@ using this technique.
 
 You probably don't want to do this, since it doesn't maximize your
 runtime on battery.  Assuming you have a good reason for it (see
-the next entry), then look at upssched.txt or the upssched(8) man
+the next entry), then look at scheduling.txt or the upssched(8) man
 page for some ideas.
 
 /////////////////////////////////////////////////////////////////

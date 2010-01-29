@@ -121,7 +121,7 @@ include::config-notes.txt[]
 
 [[Advanced_usage_scheduling_notes]]
 
-include upssched.txt[]
+include::scheduling.txt[]
 
 
 ////////////////////////////////////////////////////////////////////////////////

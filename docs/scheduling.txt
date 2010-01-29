@@ -1,7 +1,103 @@
+Advanced usage and scheduling notes
+===================================
+
+////////////////////////////////////////////////////////////////////////////////
 Desc: How to use upssched
 File: upssched.txt
 Date: 01 October 2005
 Auth: Russell Kroll <rkroll@exploits.org>
+////////////////////////////////////////////////////////////////////////////////
+
+upsmon can call out to a helper script or program when the device changes
+state.  The example upsmon.conf has a full list of which state changes
+are available - ONLINE, ONBATT, LOWBATT, and more.
+
+There are two options, that will be presented in details:
+
+- the simple approach: create your own helper, and manage all events and actions
+yourself,
+- the advanced approach: use the NUT provided helper, called 'upssched'.
+
+
+The simple approach, using your own script
+------------------------------------------
+
+How it works relative to upsmon
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Your command will be called with the full text of the message as one argument.
+
+For the default values, refer to the sample upsmon.conf file.
+
+The environment string NOTIFYTYPE will contain the type string of whatever
+caused this event to happen - ONLINE, ONBATT, LOWBATT, ...
+
+Making this some sort of shell script might be a good idea, but the helper can
+be in any programming or scripting language.
+
+NOTE: Remember that your helper must be *executable*. If you are using a script,
+make sure the execution flags are set.
+
+For more information, refer to link:man/upsmon.html[upsmon(8)] and
+link:man/upsmon.conf.html[upsmon.conf(5)] manual pages.
+
+Setting up everything
+~~~~~~~~~~~~~~~~~~~~~
+
+- Set EXEC flags on various things in link:man/upsmon.conf.html[upsmon.conf(5)]:
++
+	NOTIFYFLAG ONBATT EXEC
+	NOTIFYFLAG ONLINE EXEC
++
+If you want other things like WALL or SYSLOG to happen, just add them:
++
+	NOTIFYFLAG ONBATT EXEC+WALL+SYSLOG
++
+You get the idea.
+
+- Tell upsmon where your script is
+
+	NOTIFYCMD /path/to/my/script
+
+- Make a simple script like this at that location:   
+
+	#! /bin/bash
+	echo "$*" | sendmail -F"ups@mybox" bofh@pager.example.com
+
+- Restart upsmon, pull the plug, and see what happens.
+
+That approach is bare-bones, but you should get the text content of the
+alert in the body of the message, since upsmon passes the alert text
+(from NOTIFYMSG) as an argument.
+
+Using more advanced features
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Your helper script will be run with a few environment variables set.  
+
+- UPSNAME: the name of the system that generated the change.
++
+This will be one of your identifiers from the MONITOR lines in upsmon.conf.
+
+- NOTIFYTYPE: this will be ONLINE, ONBATT, or whatever event took place which
+made upsmon call your script.
+
+You can use these to do different things based on which system has
+changed state.  You could have it only send pages for an important
+system while totally ignoring a known trouble spot, for example.
+
+Suppressing notify storms
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+upsmon will call your script every time an event happens that has the EXEC flag
+set.  This means a quick power failure that lasts mere seconds might generate a
+notification storm.  To suppress this sort of annoyance, use upssched as your
+NOTIFYCMD program, and configure it to call your command after a timer has
+elapsed.
+
+
+The advanced approach, using upssched
+-------------------------------------
 
 upssched is a helper for upsmon that will invoke commands for you at some
 interval relative to a UPS event.  It can be used to send pages, mail out
@@ -10,11 +106,11 @@ notices about things, or even shut down the box early.
 There will be examples scattered throughout.  Change them to suit your
 pathnames, UPS locations, and so forth.
 
-How it works relative to upsmon
-===============================
+How upssched works relative to upsmon
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When an event occurs, upsmon will call whatever you specify as a NOTIFYCMD
-in your upsmon.conf, if you also enable the EXEC in your NOTIFYFLAGS.  In
+When an event occurs, upsmon will call whatever you specify as a 'NOTIFYCMD'
+in your upsmon.conf, if you also enable the 'EXEC' in your 'NOTIFYFLAGS'.  In
 this case, we want upsmon to call upssched as the notifier, since it will
 be doing all the work for us.  So, in the upsmon.conf:
 
@@ -26,12 +122,13 @@ in the upsmon.conf we set the flags:
 	NOTIFYFLAG ONLINE SYSLOG+EXEC
 	NOTIFYFLAG ONBATT SYSLOG+WALL+EXEC
 	NOTIFYFLAG LOWBATT SYSLOG+WALL+EXEC
+	... and so on.
 
-... and so on.  For the purposes of this document I will only use those
-three, but you can set the flags for any of the valid notify types.
+For the purposes of this document I will only use those three, but you can set
+the flags for any of the valid notify types.
 
 Setting up your upssched.conf
-=============================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Once upsmon has been configured with the NOTIFYCMD and EXEC flags, you're
 ready to deal with the upssched.conf details.  In this file, you specify
@@ -54,7 +151,7 @@ for additional information and advice about these variables.
 Now you can tell your CMDSCRIPT what to do when it is called by upsmon.
 
 The big picture
----------------
+^^^^^^^^^^^^^^^
 
 The design in a nutshell is:
 
@@ -65,7 +162,7 @@ initiating an early shutdown with 'upsmon -c fsd', sending a page by
 calling sendmail, or opening a subspace channel to V'ger.
 
 Establishing timers
--------------------
+^^^^^^^^^^^^^^^^^^^
 
 Let's say that you want to receive a page when any UPS has been running on
 battery for 30 seconds.  Create a handler that starts a 30 second timer
@@ -83,7 +180,7 @@ So, let's tell upssched that.
 	AT ONLINE * CANCEL-TIMER onbattwarn
 
 Executing commands immediately
-------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 As an example, consider the scenario where a UPS goes onto battery power.
 However, the users are not informed until 60 seconds later - using a timer as
@@ -104,7 +201,7 @@ will signal upssched. Upssched will see the above command and simply pass
 immediately, there are no timers involved.
 
 Writing the command script handler
-----------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 OK, now that upssched knows how the timers are supposed to work, let's
 give it something to do when one actually triggers.  The name of the
@@ -132,16 +229,14 @@ the presence of a given trigger.  With multiple ATs creating various timer
 names, you will need to test for each possibility and handle it according
 to your desires.
 
-Other possibilities
-===================
+NOTE: You can invoke just about anything from inside the CMDSCRIPT.  It doesn't
+need to be a shell script, either - that's just an example.  If you want to
+write a program that will parse argv[1] and deal with the  possibilities, that
+will work too.
 
-You can invoke just about anything from inside the CMDSCRIPT.  It doesn't
-need to be a shell script, either - that's just an example.  If you want
-to write a program that will parse argv[1] and deal with the 
-possibilities, that will work too.
 
 Early Shutdowns
-===============
+~~~~~~~~~~~~~~~
 
 One thing that gets requested a lot is early shutdowns in upsmon.  With
 upssched, you can now have this functionality.  Just set a timer for some
@@ -160,8 +255,13 @@ from the CMDSCRIPT, since there's no synchronization with the slave
 systems hooked to the same UPS.  FSD is the master's way of saying
 "we're shutting down *now* like it or not, so you'd better get ready".
 
+
+////////////////////////////////////////////////////////////////////////////////
+FIXME: add base scriplets in scripts/upssched/, and point these
+////////////////////////////////////////////////////////////////////////////////
+
 Background
-==========
+~~~~~~~~~~
 
 This program was written primarily to fulfill the requests of users for
 the early shutdown scenario.  The "outboard" design of the program
