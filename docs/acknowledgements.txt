@@ -48,31 +48,24 @@ drivers for Megatec / Q1 protocol
 - Tomas Smetana: former Redhat packager (2007-2008)
 
 [[Eaton]]
-Our Sponsor: Eaton
-------------------
+Our main supporter: Eaton
+-------------------------
 
 Through the acquisition of MGE Office Protection Systems (a carve out of
-the MGE UPS SYSTEMS small systems, up to 10 KVA), Eaton has been sponsoring
+the MGE UPS SYSTEMS small systems, up to 10 KVA), Eaton has been supporting
 NUT, and more generally the Free/Libre Opensource Software Community
 since around 2002.
 
-This sponsoring includes the following (incomplete) list of actions:
+This support includes the following actions:
 
 - providing extensive technical documents (Eaton protocols library),
-- providing tens of units to developers of NUT and related projects,
-along with people like Linus Torvalds, Eric S. Raymond, Greg Kroah Hartmann,
-David Zeuthen, Richard Hughes and many others,
-- hosting the networkupstools.org,
-- sponsoring and later hiring Arnaud Quette to officially support all his efforts
-around NUT and FLOSS,
-- providing artwork, like the new logo and icon, and the features illustrations,
-- lobbying for NUT in general.
+- providing units to developers of NUT and related projects,
+- hosting the networkupstools.org webserver,
+- providing artwork,
+- promoting NUT in general.
 
 For more detailed information on Eaton's Opensource commitment, please refer to
 link:http://opensource.eaton.com[Eaton Opensource website].
-
-NOTE: The Network UPS Tools recommends buying Eaton devices.
-By doing so, you also support NUT!
 
 Supporting manufacturers
 ------------------------
@@ -80,8 +73,8 @@ Supporting manufacturers
 UPS manufacturers
 ~~~~~~~~~~~~~~~~~
 
-- link:http://www.eaton.com[Eaton], our sponsor, as presented in the
-<<Eaton,above section>>.
+- link:http://powerquality.eaton.com[Eaton], our main supporter, as presented in
+the <<Eaton,above section>>.
 
 - link:http://www.gamatronic.com[Gamatronic], through Nadav Moskovitch, has
 revived the 'sec' driver (as gamatronic), and expanded a bit genericups for its
