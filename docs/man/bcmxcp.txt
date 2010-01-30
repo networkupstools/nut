@@ -10,19 +10,19 @@ NOTE
 ----
 This man page only documents the hardware-specific features of the
 bcmxcp driver.  For information about the core driver, see
-linknut:nutupsdrv[8].
+linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
 This driver should recognize all serial BCM/XCP-compatible UPSes.  It has
 been developed and tested on Powerware PW5115 and PW9120 hardware. If your UPS
-has a USB connection, you may also consult the linknut:bcmxcp_usb[8] driver
+has a USB connection, you may also consult the linkman:bcmxcp_usb[8] driver
 documentation.
 
 EXTRA ARGUMENTS
 ---------------
 This driver supports the following optional settings in the    
-linknut:ups.conf[5].
+linkman:ups.conf[5].
 
 *shutdown_delay=*'delay'::
 The number of seconds that the UPS should wait between receiving the 
@@ -77,11 +77,11 @@ SEE ALSO
 --------
 The core driver:
 ~~~~~~~~~~~~~~~~
-linknut:nutupsdrv[8]
+linkman:nutupsdrv[8]
 
 The USB BCM/XCP driver:
 ~~~~~~~~~~~~~~~~~~~~~~~
-linknut:bcmxcp_usb[8]
+linkman:bcmxcp_usb[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

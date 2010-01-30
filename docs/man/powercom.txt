@@ -10,7 +10,7 @@ NOTE
 ----
 This man page only documents the hardware-specific features of the
 powercom driver.  For information about the core driver, see
-linknut:nutupsdrv[8].
+linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
@@ -21,7 +21,7 @@ Others using the same protocol may also work.
 EXTRA ARGUMENTS
 ---------------
 This driver supports the following optional settings in the 
-linknut:ups.conf[5] file:
+linkman:ups.conf[5] file:
 
 *linevoltage*='value'::
 An integer specifying the mains voltage. It can't be auto detected. 
@@ -198,7 +198,7 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
-linknut:nutupsdrv[8]
+linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

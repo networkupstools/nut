@@ -9,8 +9,8 @@ upssched.conf - Configuration for upssched timer program
 DESCRIPTION
 -----------
 
-This file controls the operations of linknut:upssched[8], the timer-based
-helper program for linknut:upsmon[8].
+This file controls the operations of linkman:upssched[8], the timer-based
+helper program for linkman:upsmon[8].
 
 CONFIGURATION DIRECTIVES
 ------------------------
@@ -31,8 +31,8 @@ upssched sets on this file *are not enough* to keep you safe.  If
 your OS ignores the permissions on a FIFO, then you MUST put this in a
 protected directory!
 
-NOTE: by default, linknut:upsmon[8] will run upssched as whatever user
-you have defined with RUN_AS_USER in linknut:upsmon.conf[8].  Make sure
+NOTE: by default, linkman:upsmon[8] will run upssched as whatever user
+you have defined with RUN_AS_USER in linkman:upsmon.conf[8].  Make sure
 that user can create files and write to files in the path you use for
 PIPEFN and LOCKFN.
 
@@ -98,12 +98,12 @@ Note that any AT that matches both the 'notifytype' and the
 'upsname' for the current event will be used.
 
 For a complete list of 'notifytype' possible values, refer to the section
-NOTIFYMSG type in linknut:upssched[8].
+NOTIFYMSG type in linkman:upssched[8].
 
 SEE ALSO
 --------
 
-linknut:upssched[8], linknut:upsmon[8]
+linkman:upssched[8], linkman:upsmon[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

@@ -18,11 +18,11 @@ This driver should work with older Tripp Lite UPSes which are detected as USB
 HID-class devices, but are not true HID Power-Device Class devices.  So far,
 the devices supported by tripplite_usb have product ID 0001, and the newer
 units (such as those with "LCD" in the model name) with product ID 2001 require
-the linknut:usbhid-ups[8] driver instead.  Please report success or failure to
+the linkman:usbhid-ups[8] driver instead.  Please report success or failure to
 the nut-upsuser mailing list.  A key piece of information is the protocol
 number, returned in `ups.debug.0`.  Also, be sure to turn on debugging ('-DDD')
 for more informative log messages.  If your Tripp Lite UPS uses a serial port,
-you may wish to investigate the linknut:tripplite[8] or linknut:tripplite_su[8]
+you may wish to investigate the linkman:tripplite[8] or linkman:tripplite_su[8]
 driver.
 
 This driver has been tested with the following models:
@@ -47,12 +47,12 @@ following protocols:
 On the other hand, if the web page for your UPS on the Tripp-Lite website says
 "HID-compliant USB port also enables direct integration with built-in power
 management and auto-shutdown features of Windows and MAC OS X", then you should
-use the linknut:usbhid-ups[8] driver instead.
+use the linkman:usbhid-ups[8] driver instead.
 
 EXTRA ARGUMENTS
 ---------------
 
-This driver supports the following optional settings in the linknut:ups.conf[5]
+This driver supports the following optional settings in the linkman:ups.conf[5]
 file (or with '-x' on the command line):
 
 *offdelay*::
@@ -72,7 +72,7 @@ useful if you have two different Tripp Lite UPS models connected to the
 system, and you want to be sure that you shut them down in the correct order.
 
 NOTE: This regex is matched against the full USB product string as seen in
-lsusb(8). The `ups.model` in the linknut:upsc[1] output only lists the name after
+lsusb(8). The `ups.model` in the linkman:upsc[1] output only lists the name after
 `TRIPP LITE`, so to match a SMART2200RMXL2U, you could use the regex
 `.*SMART2200.*`.
 
@@ -96,18 +96,18 @@ RUNTIME VARIABLES
 *ups.delay.shutdown*::
 
 This variable is the same as the 'offdelay' setting, but it can be changed at
-runtime by linknut:upsrw[8].
+runtime by linkman:upsrw[8].
 
 *ups.id*::
 
 Some SMARTPRO models feature an ID that can be set and retrieved. If your UPS
-supports this feature, this variable will be listed in the output of linknut:upsrw[8].
+supports this feature, this variable will be listed in the output of linkman:upsrw[8].
 
 *outlet.1.switch*::
 
 Some Tripp Lite units have a switchable outlet (usually outlet #1) which can be
 turned on and off by writing '1' or '0', respectively, to `outlet.1.switch`
-with linknut:upsrw[8].
+with linkman:upsrw[8].
 If your unit has multiple switchable outlets, substitute the outlet number for
 '1' in the variable name. Be sure to test this first - there is no other way to
 be certain that the number used by the driver matches the label on the unit.
@@ -138,7 +138,7 @@ to be claimed by the driver in order to read this ID.
 
 AUTHOR
 ------
-Written by Charles Lepple, based on the linknut:tripplite[8] driver by Rickard E. (Rik)
+Written by Charles Lepple, based on the linkman:tripplite[8] driver by Rickard E. (Rik)
 Faith and Nicholas Kain. Please do not email the authors directly - use the
 nut-upsdev mailing list.
 
@@ -150,11 +150,11 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
-linknut:nutupsdrv[8]
+linkman:nutupsdrv[8]
 
 Other drivers for Tripp-Lite hardware:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-linknut:tripplite[8], linknut:tripplitesu[8], linknut:usbhid-ups[8]
+linkman:tripplite[8], linkman:tripplitesu[8], linkman:usbhid-ups[8]
 
 Other tools:
 ~~~~~~~~~~~~

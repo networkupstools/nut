@@ -9,7 +9,7 @@ NOTE
 ----
 This man page only documents the specific features of the
 dummy-ups driver.  For information about the core driver, see
-linknut:nutupsdrv[8].
+linkman:nutupsdrv[8].
 
 DESCRIPTION
 -----------
@@ -19,9 +19,9 @@ Its behavior depends on the running mode:
 Dummy Mode
 ~~~~~~~~~~
 
-*dummy-ups* looks like a standard UPS driver to linknut:upsd[8] and 
+*dummy-ups* looks like a standard UPS driver to linkman:upsd[8] and 
 allows to change any value for testing purposes.  It is both interactive,
-controllable through the linknut:upsrw[1] and linknut:upscmd[1] commands (or
+controllable through the linkman:upsrw[1] and linkman:upscmd[1] commands (or
 equivalent graphical tool), and batchable through script files. It can be
 configured, launched and used as any other real driver.  This mode is mostly
 useful for development and testing purposes.
@@ -54,7 +54,7 @@ For instance:
 		desc = "dummy-ups in dummy mode"
 
 This file is generally named "something.dev". It contains a list of all
-valid data and associated values, and has the same format as an linknut:upsc[8]
+valid data and associated values, and has the same format as an linkman:upsc[8]
 dump (<varname>: <value>). So you can easilly create definition
 files from an existing UPS using "upsc > file.dev".
 It can also be empty, in which case only a basic set of data is available:
@@ -100,7 +100,7 @@ INTERACTION
 Once the driver is loaded in dummy mode, you can change any variables, except
 those of the driver.* and server.* collections.
 You can do this by either editing the definition file, or use the
-linknut:upsrw[1] and linknut:upscmd[1] commands.
+linkman:upsrw[1] and linkman:upscmd[1] commands.
 
 In repeater mode, the driver acts according to the capabilities of the UPS, and
 so support the same instant commands and settable values.
@@ -133,10 +133,10 @@ Arnaud Quette
 SEE ALSO
 --------
 
-linknut:upscmd[1],
-linknut:upsrw[1],
-linknut:ups.conf[5],
-linknut:nutupsdrv[8]
+linkman:upscmd[1],
+linkman:upsrw[1],
+linkman:ups.conf[5],
+linkman:nutupsdrv[8]
 
 Internet Resources:
 ~~~~~~~~~~~~~~~~~~~

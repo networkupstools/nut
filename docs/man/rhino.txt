@@ -9,7 +9,7 @@ NOTE
 ----
 This man page only documents the hardware-specific features of the
 rhino driver.  For information about the core driver, see
-linknut:nutupsdrv[8].
+linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
@@ -26,7 +26,7 @@ EXTRA ARGUMENTS
 ---------------
 
 This driver support the following extra optional settings in
-linknut:ups.conf[5]:
+linkman:ups.conf[5]:
 
 *battext = n* - (default = 0, no extra battery, where n = Ampere*hour )
 
@@ -52,7 +52,7 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
-linknut:nutupsdrv[8]
+linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

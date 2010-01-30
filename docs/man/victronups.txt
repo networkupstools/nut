@@ -9,7 +9,7 @@ NOTE
 ----
 This man page only documents the hardware-specific features of the the
 victronups driver.  For information about the core driver, see  
-linknut:nutupsdrv[8].
+linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
@@ -30,7 +30,7 @@ docs/cables/victron.txt
 EXTRA ARGUMENTS
 ---------------
 This driver supports the following optional setting in the
-linknut:ups.conf[5]:
+linkman:ups.conf[5]:
 
 *modelname*='name'::
 Set model name
@@ -53,7 +53,7 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
-linknut:nutupsdrv[8]
+linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

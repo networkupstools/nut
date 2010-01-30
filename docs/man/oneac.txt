@@ -11,7 +11,7 @@ NOTE
 
 This man page only documents the hardware-specific features of the
 oneac driver.  For information about the core driver, see
-linknut:nutupsdrv[8].
+linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
@@ -22,7 +22,7 @@ Interface card, use the genericups driver.
 EXTRA ARGUMENTS
 ---------------
 This driver supports the following optional settings in the
-linknut:ups.conf[5] file:
+linkman:ups.conf[5] file:
 
 *testtime*='num'::
 Change battery test time from the 2 minute default.
@@ -55,7 +55,7 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
-linknut:nutupsdrv[8]
+linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

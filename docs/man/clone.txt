@@ -9,7 +9,7 @@ NOTE
 ----
 This man page only documents the specific features of the
 clone driver.  For information about the core driver, see
-linknut:nutupsdrv[8].
+linkman:nutupsdrv[8].
 
 DESCRIPTION
 -----------
@@ -58,7 +58,7 @@ Set the remaining battery runtime when the clone UPS switches to LB
 
 IMPLEMENTATION
 --------------
-The port specification in the linknut:ups.conf[5] reference the driver
+The port specification in the linkman:ups.conf[5] reference the driver
 socket that the "real" UPS driver is using. For example:
 
   [realups]
@@ -105,10 +105,10 @@ Arjen de Korte <adkorte-guest@alioth.debian.org>
 SEE ALSO
 --------
 
-linknut:upscmd[1],
-linknut:upsrw[1],
-linknut:ups.conf[5],
-linknut:nutupsdrv[8]
+linkman:upscmd[1],
+linkman:upsrw[1],
+linkman:ups.conf[5],
+linkman:nutupsdrv[8]
 
 Internet Resources:
 ~~~~~~~~~~~~~~~~~~~

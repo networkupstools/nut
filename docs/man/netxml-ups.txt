@@ -10,7 +10,7 @@ NOTE
 ----
 This man page only documents the hardware-specific features of the
 netxml-ups driver.  For information about the core driver, see  
-linknut:nutupsdrv[8].
+linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
@@ -27,20 +27,20 @@ Supported card and proxy models are:
  * ePDU Monitored (newer version). 
 
 Older models, such as SNMP card (Ref 66062 and Ref 66045), use the SNMP
-protocol and should use the linknut:snmp-ups[8] driver with the "mibs=mge"
+protocol and should use the linkman:snmp-ups[8] driver with the "mibs=mge"
 parameter.
 
 EXTRA ARGUMENTS
 ---------------
 This driver supports the following optional settings in the 
-linknut:ups.conf[5]:
+linkman:ups.conf[5]:
 
 *timeout*='value'::
 The timeout for connecting to and reading from the UPS. Defaults to 5 seconds.
 Don't change this value unless you know exactly what you're doing.
 
 This value *must never* be higher than half the MAXAGE value specified in
-linknut:upsd.conf[5], otherwise you run the risk that linknut:upsd[8] declares
+linkman:upsd.conf[5], otherwise you run the risk that linkman:upsd[8] declares
 the driver stale while it is waiting for a connection to timeout.
 
 *login*='value'::
@@ -66,8 +66,8 @@ If the port is equal to the default for the method specified (80 for http,
 443 for https) it may be omitted.
 
 In order not to overload older NMCs by polling them too frequently, it is
-recommended to increase the "pollinterval" (see linknut:nutupsdrv[8]) and
-linknut:ups.conf[5]) to at least 5 seconds.
+recommended to increase the "pollinterval" (see linkman:nutupsdrv[8]) and
+linkman:ups.conf[5]) to at least 5 seconds.
 
 KNOWN ISSUES
 ------------
@@ -86,7 +86,7 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
-linknut:nutupsdrv[8]
+linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

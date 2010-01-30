@@ -11,7 +11,7 @@ NOTE
 
 This man page only documents the hardware-specific features of the
 metasys driver.  For information about the core driver, see  
-linknut:nutupsdrv[8].
+linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
@@ -37,7 +37,7 @@ pins 2, 3, and 5 (on DB9 connector) connected.
 
 EXTRA ARGUMENTS
 ---------------
-This driver supports no extra arguments from linknut:ups.conf[5].
+This driver supports no extra arguments from linkman:ups.conf[5].
 
 BUGS
 ----
@@ -56,7 +56,7 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
-linknut:nutupsdrv[8]
+linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

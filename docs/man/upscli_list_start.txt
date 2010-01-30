@@ -18,9 +18,9 @@ DESCRIPTION
 The *upscli_list_start()* function takes the pointer 'ups' to a
 `UPSCONN` state structure, and the pointer 'query' to an array of
 'numq' query elements.  It builds a properly-formatted request from
-those elements and transmits it to linknut:upsd[8].
+those elements and transmits it to linkman:upsd[8].
 
-Upon success, the caller must call linknut:upscli_list_next[3] to retrieve
+Upon success, the caller must call linkman:upscli_list_next[3] to retrieve
 the elements of the list.  Failure to retrieve the list will most likely
 result in the client getting out of sync with the server due to buffered
 data.
@@ -58,11 +58,11 @@ are handled for you inside this function.
 ERROR CHECKING
 --------------
 
-This function checks the response from linknut:upsd[8] against your query.
+This function checks the response from linkman:upsd[8] against your query.
 If it is not starting a list, or is starting the wrong type of list, it
 will return an error code.
 
-When this happens, linknut:upscli_upserror[3] will return
+When this happens, linkman:upscli_upserror[3] will return
 `UPSCLI_ERR_PROTOCOL`.
 
 RETURN VALUE
@@ -73,8 +73,8 @@ error occurs.
 SEE ALSO
 --------
 
-linknut:upscli_fd[3], linknut:upscli_get[3],
-linknut:upscli_readline[3], linknut:upscli_sendline[3],
-linknut:upscli_ssl[3],
-linknut:upscli_strerror[3], linknut:upscli_upserror[3]
+linkman:upscli_fd[3], linkman:upscli_get[3],
+linkman:upscli_readline[3], linkman:upscli_sendline[3],
+linkman:upscli_ssl[3],
+linkman:upscli_strerror[3], linkman:upscli_upserror[3]
 

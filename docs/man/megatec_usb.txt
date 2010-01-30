@@ -11,7 +11,7 @@ NOTE
 
 This man page only documents the hardware-specific features of the
 megatec_usb driver. For information about the core driver, see
-linknut:nutupsdrv[8].
+linkman:nutupsdrv[8].
 
 *Note.* This driver is experimental at the moment. It is currently being
 worked on and may change over time. However, it is stable in execution
@@ -26,7 +26,7 @@ Krauler, Agiler, and Upsonic (Ablerex interface). Others that use the
 Megatec protocol may work, but haven't been tested.
 
 This driver supports the USB versions of UPSs, if you have only serial
-interface then use the straight linknut:megatec[8] driver.
+interface then use the straight linkman:megatec[8] driver.
 
 If you find that this driver does not work, and you are sure that your
 hardware speaks megatec protocol, then you can easily extend this
@@ -38,9 +38,9 @@ how to extend this driver.
 EXTENSIONS TO MEGATEC
 ---------------------
 
-This driver extends the standard linknut:megatec[8] driver to work with certain
+This driver extends the standard linkman:megatec[8] driver to work with certain
 UPSes that have a USB interface. These devices do not obey the normal
-rules for HID USB devices and therefore the linknut:newhidups[8] driver will
+rules for HID USB devices and therefore the linkman:newhidups[8] driver will
 not work for them.
 
 This driver takes the standard serial interface and passes this over
@@ -82,7 +82,7 @@ EXTRA ARGUMENTS
 *productid*='regex'::
 	Select a specific UPS, in case there is more than one connected
 	via USB. Each option specifies an extended regular expression
-	(see linknut:regex[7]) that must match the UPS's entire vendor/product/serial
+	(see linkman:regex[7]) that must match the UPS's entire vendor/product/serial
 	string (minus any surrounding whitespace), or the whole 4-digit
 	hexadecimal code for vendorid and productid. Try *-DD* for finding out
 	the strings to match.
@@ -105,7 +105,7 @@ EXTRA ARGUMENTS
 UPS COMMANDS
 ------------
 
-This driver supports some extra commands (see linknut:upscmd[8]):
+This driver supports some extra commands (see linkman:upscmd[8]):
 
 *beeper.toggle*::
 	Toggle the UPS beeper. (Not available on some hardware.)
@@ -148,7 +148,7 @@ USER VARIABLES
 --------------
 
 The behavior of the driver can be controlled by some user definable
-variables (see linknut:upsrw[8]):
+variables (see linkman:upsrw[8]):
 
 *ups.delay.shutdown*::
 	Interval to wait after shutdown with delay command (seconds)
@@ -190,7 +190,7 @@ Jon Gough <jon.gough at eclipsesystems.com.au>
 SEE ALSO
 --------
 
-linknut:megatec[8], linknut:nutupsdrv[8], linknut:upsc[8], linknut:upscmd[8], linknut:upsrw[8]
+linkman:megatec[8], linkman:nutupsdrv[8], linkman:upsc[8], linkman:upscmd[8], linkman:upsrw[8]
 
 INTERNET RESOURCES
 ------------------

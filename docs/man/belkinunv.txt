@@ -10,7 +10,7 @@ NOTE
 ----
 This man page only documents the hardware-specific features of the
 belkin driver.  For information about the core driver, see  
-linknut:nutupsdrv[8].
+linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
@@ -22,8 +22,8 @@ communication, not USB.
 The Trust UPS and older Belkin units are not supported by this driver,
 and neither are the Belkin Home Office models (F6H500-SER and so
 forth). However, some Belkin models, such as the Regulator Pro, are
-supported by the linknut:belkin[8] driver, and the Home Office models
-are supported using the linknut:genericups[8] driver with
+supported by the linkman:belkin[8] driver, and the Home Office models
+are supported using the linkman:genericups[8] driver with
 `upstype=7`.
 
 SOFT SHUTDOWN WORKAROUND
@@ -44,7 +44,7 @@ to return, and then exits with status 0.
 This is meant to be used in a shutdown script as follows: during a
 shutdown, after all filesystems have been remounted read-only, and
 just before the system would normally be halted: check /etc/killpower
-(or similar) to see if this shutdown was caused by linknut:upsmon[8],
+(or similar) to see if this shutdown was caused by linkman:upsmon[8],
 and if yes, call *belkinunv -x wait*. If AC power comes back on,
 *belkinunv* exits, and things should be arranged so that the
 system reboots in this case. If AC power does not come back on, the
@@ -69,7 +69,7 @@ startup scripts.
 
 OPTIONS
 -------
-See also linknut:nutupsdrv[8] for generic options. Never use the
+See also linkman:nutupsdrv[8] for generic options. Never use the
 *-k* option with this driver; it does not work properly.
 
 *-x wait*[='level']::
@@ -312,7 +312,7 @@ EXIT STATUS
 
 When used normally, *belkinunv* forks into the background and its
 diagnostics are the same as for all NUT drivers, see
-linknut:nutupsdrv[8].
+linkman:nutupsdrv[8].
 
 When used with the *-x wait* option, the exit status is normally
 *0*. If the *-x nohang* option has also been specified, an exit
@@ -323,14 +323,14 @@ indicates that the timed shutdown has failed.
 EXTRA ARGUMENTS
 ---------------
 
-This driver does not support any extra settings in linknut:ups.conf[5].
+This driver does not support any extra settings in linkman:ups.conf[5].
 
 SEE ALSO
 --------
 
 The core driver:
 ~~~~~~~~~~~~~~~~
-linknut:nutupsdrv[8]
+linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

@@ -9,7 +9,7 @@ NOTE
 ----
 This man page only documents the hardware-specific features of the
 megatec driver. For information about the core driver, see  
-linknut:nutupsdrv[8].
+linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
@@ -25,12 +25,12 @@ serial interface to the UPS serial port using a USB-to-serial converter should
 work, provided the converter is supported by your operating system.
 
 If your model has a USB port, you may be interested in the
-linknut:megatec_usb[8] driver.
+linkman:megatec_usb[8] driver.
 
 EXTRA ARGUMENTS
 ---------------
 
-This driver supports some extra parameters (see linknut:ups.conf[5]):
+This driver supports some extra parameters (see linkman:ups.conf[5]):
 
 *mfr=*'string'::
 
@@ -87,7 +87,7 @@ state, either '0' or '1'. See also *dtr*.
 
 *ignoreoff*::
 
-Optional.  This option should be used if linknut:upsc[8] shows the UPS status
+Optional.  This option should be used if linkman:upsc[8] shows the UPS status
 as OFF when it's clearly on. This will force the driver to ignore the OFF
 status altogether.
 
@@ -101,7 +101,7 @@ or too short.
 UPS COMMANDS
 ------------
 
-This driver supports some instant commands (see linknut:upscmd[8]):
+This driver supports some instant commands (see linkman:upscmd[8]):
 
 beeper.toggle::
 Toggle the UPS beeper. (Not available on some hardware.)
@@ -178,7 +178,7 @@ Carlos Rodrigues <carlos.efr at mail.telepac.pt>
 SEE ALSO
 --------
 
-linknut:nutupsdrv[8], linknut:upsc[8], linknut:upscmd[8], linknut:upsrw[8]
+linkman:nutupsdrv[8], linkman:upsc[8], linkman:upscmd[8], linkman:upsrw[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

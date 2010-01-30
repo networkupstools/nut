@@ -15,7 +15,7 @@ SYNOPSIS
 
 NOTE: This man page only documents the hardware-specific features of the
 powerman-pdu driver.  For information about the core driver, see
-linknut:nutupsdrv[8].
+linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
@@ -38,7 +38,7 @@ This driver is not built by default.  You can build it by using
 
 UPS COMMANDS
 ------------
-The following instant commands (see linknut:upscmd[8]) are available for each
+The following instant commands (see linkman:upscmd[8]) are available for each
 outlet of the PDU, with *X* standing for the outlet number:
 
 *outlet.X.load.on*::
@@ -78,7 +78,7 @@ SEE ALSO
 --------
 The core driver:
 ~~~~~~~~~~~~~~~~
-linknut:nutupsdrv[8]
+linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

@@ -11,7 +11,7 @@ NOTE
 
 This man page only documents the hardware-specific features of the
 bestups driver.  For information about the core driver, see  
-linknut:nutupsdrv[8].
+linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
@@ -29,7 +29,7 @@ EXTRA ARGUMENTS
 ---------------
 
 This driver supports the following optional settings in the
-linknut:ups.conf[5]:
+linkman:ups.conf[5]:
 
 *nombattvolt=*'num'::
 
@@ -49,7 +49,7 @@ report only a fraction of the total battery voltage.
 +
 For example, the SOLA 610 700VA UPS (with a 24V battery) reports the
 single cell voltage (about 2.27V when fully charged). In this particular
-case you can set `battvoltmult = 12` in linknut:ups.conf[8] to fix this.
+case you can set `battvoltmult = 12` in linkman:ups.conf[8] to fix this.
 
 *ID=*'string'::
 
@@ -99,7 +99,7 @@ Finally, some models give one value for the battery's nominal voltage and
 yet actually have a nominal voltage slightly below that.  This leads to
 things such as the perpetual 98.7% charge on the author's Fortress 750,
 even when it's been charging for weeks.  You can use `nombattvolt=` in 
-linknut:ups.conf[8] to fix this.
+linkman:ups.conf[8] to fix this.
 
 AUTHOR
 ------
@@ -110,7 +110,7 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
-linknut:nutupsdrv[8]
+linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

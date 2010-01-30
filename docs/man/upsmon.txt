@@ -24,7 +24,7 @@ can call out to other helper programs for notification purposes during
 power events.
 
 upsmon can monitor multiple systems using a single process.  Every UPS
-that is defined in the linknut:upsmon.conf[5] configuration file is assigned
+that is defined in the linkman:upsmon.conf[5] configuration file is assigned
 a power value and a type (slave or master).  
 
 OPTIONS
@@ -41,7 +41,7 @@ commands are:
 
 *stop*;; stop monitoring and exit
 
-*reload*;; reread linknut:upsmon.conf[5] configuration file.  See
+*reload*;; reread linkman:upsmon.conf[5] configuration file.  See
 "reloading nuances" below if this doesn't work.
 
 *-D*::
@@ -55,7 +55,7 @@ from upsmon, then upsmon will exit with `EXIT_SUCCESS`.  Any other condition
 will make upsmon exit with `EXIT_FAILURE`.  
 +
 You can test for a successful exit from `upsmon -K` in your shutdown
-scripts to know when to call linknut:upsdrvctl[8] to shut down the UPS.
+scripts to know when to call linkman:upsdrvctl[8] to shut down the UPS.
 
 *-p*::
 Run privileged all the time.  Normally upsmon will split into two
@@ -75,18 +75,18 @@ The default user is set at configure time with 'configure
 will probably have a specific 'nut' user for this task.  If your
 notification scripts need to run as a specific user, set it here.
 +
-You can also set this in the linknut:upsmon.conf[5] file with the
+You can also set this in the linkman:upsmon.conf[5] file with the
 RUN_AS_USER directive.
 
 UPS DEFINITIONS
 ---------------
 
-In the linknut:upsmon.conf[5], you must specify at least one UPS that will
+In the linkman:upsmon.conf[5], you must specify at least one UPS that will
 be monitored.  Use the MONITOR directive.
 
 	MONITOR 'system' 'powervalue' 'username' 'password' 'type'
 
-The 'system' refers to a linknut:upsd[8] server, in the form
+The 'system' refers to a linkman:upsd[8] server, in the form
 +upsname[@hostname[:port]]+.  The default hostname is "localhost".  Some
 examples follow:
 
@@ -94,13 +94,13 @@ examples follow:
 This is the normal form.
 
  - "fenton@bigbox:5678" is a UPS called "fenton" on a system called 
-"bigbox" which runs linknut:upsd[8] on port "5678".
+"bigbox" which runs linkman:upsd[8] on port "5678".
 
 The 'powervalue' refers to how many power supplies on this system are
 being driven this UPS.  This is typically set to 1, but see the section
 on power values below.
 
-The 'username' is a section in your linknut:upsd.users[5] file.
+The 'username' is a section in your linkman:upsd.users[5] file.
 Whatever password you set in that section must match the 'password'
 set in this file.  
 
@@ -148,7 +148,7 @@ The UPS can't be contacted for monitoring.
 NOTIFY COMMAND
 --------------
 
-In linknut:upsmon.conf[5], you can configure a program called the NOTIFYCMD
+In linkman:upsmon.conf[5], you can configure a program called the NOTIFYCMD
 that will handle events that occur.  
 
 +NOTIFYCMD+ "'path to program'"
@@ -274,7 +274,7 @@ down the entire system while still working properly for smaller systems.
 UPS TYPES
 ---------
 
-*upsmon* and linknut:upsd[8] don't always run on the same system.  When they
+*upsmon* and linkman:upsd[8] don't always run on the same system.  When they
 do, any UPSes that are directly attached to the upsmon host should be
 monitored in "master" mode.  This makes upsmon take charge of that
 equipment, and it will wait for slaves to disconnect before shutting
@@ -286,12 +286,12 @@ When upsmon runs as a slave, it is relying on the distant system to tell
 it about the state of the UPS.  When that UPS goes critical (on battery
 and low battery), it immediately invokes the local shutdown command.  This
 needs to happen quickly.  Once it disconnects from the distant
-linknut:upsd[8] server, the master upsmon will start its own shutdown
+linkman:upsd[8] server, the master upsmon will start its own shutdown
 process.  Your slaves must all shut down before the master turns off the
 power or filesystem damage may result.
 
 upsmon deals with slaves that get wedged, hang, or otherwise fail to 
-disconnect from linknut:upsd[8] in a timely manner with the HOSTSYNC
+disconnect from linkman:upsd[8] in a timely manner with the HOSTSYNC
 timer.  During a shutdown situation, the master upsmon will give up after
 this interval and it will shut down anyway.  This keeps the master from
 sitting there forever (which would endanger that host) if a slave should
@@ -307,7 +307,7 @@ TIMED SHUTDOWNS
 
 For those rare situations where the shutdown process can't be completed
 between the time that low battery is signalled and the UPS actually powers
-off the load, use the linknut:upssched[8] helper program.  You can use it
+off the load, use the linkman:upssched[8] helper program.  You can use it
 along with upsmon to schedule a shutdown based on the "on battery" event.
 upssched can then come back to upsmon to initiate the shutdown once it has
 run on battery too long.
@@ -374,14 +374,14 @@ on the master.
 You can manually invoke this mode on the master upsmon by starting another
 copy with `-c fsd`.  This is useful when you want to initiate a shutdown
 before the critical stage through some external means, such as
-linknut:upssched[8].
+linkman:upssched[8].
 
 DEAD UPSES
 ----------
 
-In the event that upsmon can't reach linknut:upsd[8], it declares that UPS
+In the event that upsmon can't reach linkman:upsd[8], it declares that UPS
 "dead" after some interval controlled by DEADTIME in the
-linknut:upsmon.conf[5].  If this happens while that UPS was last known to be
+linkman:upsmon.conf[5].  If this happens while that UPS was last known to be
 on battery, it is assumed to have gone critical and no longer contributes
 to the overall power value.
 
@@ -394,7 +394,7 @@ RELOADING NUANCES
 
 upsmon usually gives up root powers for the process that does most of
 the work, including handling signals like SIGHUP to reload the configuration
-file.  This means your linknut:upsmon.conf[8] file must be readable by
+file.  This means your linkman:upsmon.conf[8] file must be readable by
 the non-root account that upsmon switches to.
 
 If you want reloads to work, upsmon must run as some user that has
@@ -402,7 +402,7 @@ permissions to read the configuration file.  I recommend making a new
 user just for this purpose, as making the file readable by "nobody"
 (the default user) would be a bad idea.
 
-See the RUN_AS_USER section in linknut:upsmon.conf[8] for more on this topic.
+See the RUN_AS_USER section in linkman:upsmon.conf[8] for more on this topic.
 
 Additionally, you can't change the SHUTDOWNCMD or POWERDOWNFLAG
 definitions with a reload due to the split-process model.  If you change
@@ -426,23 +426,23 @@ equipment, and it beats crawling under a desk to find the plug.
 FILES
 -----
 
-linknut:upsmon.conf[5]
+linkman:upsmon.conf[5]
 
 SEE ALSO
 --------
 
 Server:
 ~~~~~~~
-linknut:upsd[8]
+linkman:upsd[8]
 
 Clients:
 ~~~~~~~~
-linknut:upsc[8], linknut:upscmd[8],
-linknut:upsrw[8], linknut:upsmon[8]
+linkman:upsc[8], linkman:upscmd[8],
+linkman:upsrw[8], linkman:upsmon[8]
 
 CGI programs:
 ~~~~~~~~~~~~~
-linknut:upsset.cgi[8], linknut:upsstats.cgi[8], linknut:upsimage.cgi[8]
+linkman:upsset.cgi[8], linkman:upsstats.cgi[8], linkman:upsimage.cgi[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

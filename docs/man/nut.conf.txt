@@ -46,12 +46,12 @@ there are other hosts that are more closely attached to the UPS,
 the MODE should be set to netclient.
 
 *UPSD_OPTIONS*::
-Optional.  Set upsd specific options. See linknut:upsd[8] for more
+Optional.  Set upsd specific options. See linkman:upsd[8] for more
 details.  It is ignored when 'MODE' above indicates that no upsd
 should be running.
 
 *UPSMON_OPTIONS*::
-Optional.  Set upsmon specific options. See linknut:upsmon[8] for
+Optional.  Set upsmon specific options. See linkman:upsmon[8] for
 more details.  It is ignored when 'MODE' above indicates that no
 upsmon should be running.
 
@@ -93,8 +93,8 @@ file in order to determine which component(s) has to be started.
 SEE ALSO
 --------
 
-linknut:ups.conf[5], linknut:upsd.conf[5], linknut:upsd.users[5],
-linknut:upsmon.conf[5]
+linkman:ups.conf[5], linkman:upsd.conf[5], linkman:upsd.users[5],
+linkman:upsmon.conf[5]
 
 INTERNET RESOURCES
 ------------------

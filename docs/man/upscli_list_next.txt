@@ -22,7 +22,7 @@ The *upscli_list_next()* function takes the pointer 'ups' to a
 'numq' query elements.  It performs a read from the network and
 expects to find either another list item or the end of a list.
 
-You must call linknut:upscli_list_start[3] before calling this function.
+You must call linkman:upscli_list_start[3] before calling this function.
 
 This function will return 1 and set values in 'numa' and
 'answer' if a list item is received.  If the list is done, it will
@@ -35,24 +35,24 @@ QUERY FORMATTING
 ----------------
 
 You may not change the values of 'numq' or 'query' between the
-call to linknut:upscli_list_start[3] and the first call to this function.
+call to linkman:upscli_list_start[3] and the first call to this function.
 You also may not change the values between calls to this function.
 
 ANSWER FORMATTING
 -----------------
 
 The contents of 'numa' and 'answer' work just like a call to
-linknut:upscli_get[3].  The values returned by linknut:upsd[8] are identical to
+linkman:upscli_get[3].  The values returned by linkman:upsd[8] are identical to
 a single item request, so this is not surprising.
 
 ERROR CHECKING
 --------------
 
-This function checks the response from linknut:upsd[8] against your query.
+This function checks the response from linkman:upsd[8] against your query.
 If the response is not part of the list you have requested, it will
 return an error code.
 
-When this happens, linknut:upscli_upserror[3] will return
+When this happens, linkman:upscli_upserror[3] will return
 `UPSCLI_ERR_PROTOCOL`.
 
 RETURN VALUE
@@ -66,5 +66,5 @@ its first call in that case.
 
 SEE ALSO
 --------
-linknut:upscli_list_start[3],
-linknut:upscli_strerror[3], linknut:upscli_upserror[3]
+linkman:upscli_list_start[3],
+linkman:upscli_strerror[3], linkman:upscli_upserror[3]

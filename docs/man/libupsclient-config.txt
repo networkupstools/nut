@@ -38,7 +38,7 @@ This manual page was written by Arnaud Quette <aquette.dev@gmail.com>.
 SEE ALSO
 --------
 
-linknut:upsclient[3]
+linkman:upsclient[3]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

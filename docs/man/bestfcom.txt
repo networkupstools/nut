@@ -10,7 +10,7 @@ NOTE
 ----
 This man page only documents the hardware-specific features of the
 bestfcom driver.  For information about the core driver, see
-linknut:nutupsdrv[8].
+linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
@@ -21,7 +21,7 @@ EXTRA ARGUMENTS
 ---------------
 
 This driver does not support any extra settings in the    
-linknut:ups.conf[5].
+linkman:ups.conf[5].
 
 AUTHORS
 -------
@@ -38,7 +38,7 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
-linknut:nutupsdrv[8]
+linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

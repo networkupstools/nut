@@ -9,7 +9,7 @@ upsstats.html - HTML template for Network UPS Tools upsstats
 DESCRIPTION
 -----------
 
-This file is used by linknut:upsstats.cgi[8] to generate status pages.
+This file is used by linkman:upsstats.cgi[8] to generate status pages.
 Certain commands are recognized, and will be replaced with various
 status elements on the fly.
 
@@ -34,7 +34,7 @@ BLOCK CONTROL - ITERATION
 
 *@FOREACHUPS@*::
 Starts a block that will be repeated for each MONITOR directive in the
-linknut:hosts.conf[5].  This is how you can generate pages that monitor
+linkman:hosts.conf[5].  This is how you can generate pages that monitor
 all of your systems simultaneously.
 
 *@ENDFOR@*::
@@ -101,14 +101,14 @@ the current temperature scale.
 Insert the designation of the host being monitored, like `myups@localhost`.
 
 *@HOSTDESC@*::
-Insert the hout's description from linknut:hosts.conf[5].
+Insert the hout's description from linkman:hosts.conf[5].
 
 *@HOSTLINK@*::
 Insert a link to upsstats.cgi with the "host" variable set to the
 current UPS.  This is only useful within a FOREACHUPS block.
 
 *@IMG* 'varname' ['extra']*@*::
-Insert an IMG SRC to linknut:upsimage.cgi[8] for one of these
+Insert an IMG SRC to linkman:upsimage.cgi[8] for one of these
 status variables:
 
 	battery.charge;; Battery charge - a percentage
@@ -221,14 +221,14 @@ Insert the version number of the software.
 OTHER TEMPLATES
 ---------------
 
-linknut:upsstats.cgi[8] will also open a file called `upsstats-single.html`
+linkman:upsstats.cgi[8] will also open a file called `upsstats-single.html`
 if you call it with "host=" set in the URL.  That file uses the same
 rules and techniques documented here.
 
 SEE ALSO
 --------
 
-linknut:upsstats.cgi[8], linknut:upsimage.cgi[8]
+linkman:upsstats.cgi[8], linkman:upsimage.cgi[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

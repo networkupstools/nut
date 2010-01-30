@@ -58,7 +58,7 @@ This parameter will only be read at startup.  You'll need to restart
 SEE ALSO
 --------
 
-linknut:upsd[8], linknut:nutupsdrv[8], linknut:upsd.users[5]
+linkman:upsd[8], linkman:nutupsdrv[8], linkman:upsd.users[5]
 
 INTERNET RESOURCES
 ------------------

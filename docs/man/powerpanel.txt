@@ -10,7 +10,7 @@ NOTE
 ----
 This man page only documents the hardware-specific features of the
 powerpanel driver.  For information about the core driver, see
-linknut:nutupsdrv[8].
+linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
@@ -20,7 +20,7 @@ autodetect which protocol is used.
 
 EXTRA ARGUMENTS
 ---------------
-This driver supports the following optional settings in linknut:ups.conf[5]:
+This driver supports the following optional settings in linkman:ups.conf[5]:
 
 *protocol=*['text,binary']::
 Override the default autodetection of the protocol.
@@ -48,7 +48,7 @@ seconds will be truncated to 6 seconds intervals, values above 60 seconds to
 VARIABLES
 ---------
 Depending on the type of your UPS unit, some of the following variables may
-be changed with linknut:upsrw[8]. If the driver can't read a variable from the
+be changed with linkman:upsrw[8]. If the driver can't read a variable from the
 UPS, it will not be made available.
 
 *input.transfer.high*::
@@ -131,7 +131,7 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
-linknut:nutupsdrv[8]
+linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

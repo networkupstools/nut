@@ -10,7 +10,7 @@ NOTE
 ----
 This man page only documents the hardware-specific features of the
 snmp-ups driver.  For information about the core driver, see
-linknut:nutupsdrv[8].
+linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
@@ -47,7 +47,7 @@ EXTRA ARGUMENTS
 ---------------
 
 This driver supports the following optional settings in the
-linknut:ups.conf[5]:
+linkman:ups.conf[5]:
 
 *mibs*='name'::
 Set MIB compliance (default=auto, allowed entries: refer to the above SUPPORTED HARDWARE).
@@ -84,7 +84,7 @@ This driver does not provide a proper upsdrv_shutdown() function. There probably
 never will be one, since at the time this script should run (near the end of
 the system halt script), there will be no network capabilities anymore.
 Probably the only way to shutdown an SNMP UPS is by sending it a shutdown
-with delay command through linknut:upscmd[8] and hope for the best that the
+with delay command through linkman:upscmd[8] and hope for the best that the
 system will have finished shutting down before the power is cut.
 
 INSTALLATION
@@ -118,7 +118,7 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
-linknut:nutupsdrv[8]
+linkman:nutupsdrv[8]
 
 NUT SNMP Protocols Library
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

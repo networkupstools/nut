@@ -27,7 +27,7 @@ make any use out of the drivers and clients.
 
 Controls in the configuration files allow you to limit access to the
 server, but you should also use a firewall for extra protection.  Client
-processes such as linknut:upsmon[8] trust *upsd* for status information about
+processes such as linkman:upsmon[8] trust *upsd* for status information about
 the UPS hardware, so keep it secure.
 
 OPTIONS
@@ -52,8 +52,8 @@ and before parsing any configuration files with this option set.  You
 can use this to create a "jail" for greater security.
 +
 You must coordinate this with your drivers, as upsd must be able to find
-the state path within 'directory'.  See linknut:upsdrvctl[8] and
-linknut:nutupsdrv[8].
+the state path within 'directory'.  See linkman:upsdrvctl[8] and
+linkman:nutupsdrv[8].
 
 *-u* 'user'::
 Switch to user 'user' after startup if started as root.  This
@@ -91,7 +91,7 @@ provided to the clients.
 If upsd complains about staleness when you start it, then either your
 driver or configuration files are probably broken.  Be sure that the
 driver is actually running, and that the UPS definition in
-linknut:ups.conf[5] is correct.  Also make sure that you start your
+linkman:ups.conf[5] is correct.  Also make sure that you start your
 driver(s) before starting upsd.
 
 Data can also be marked stale if the driver can no longer communicate
@@ -111,10 +111,10 @@ details are described in *hosts_access*(5).
 FILES
 -----
 
-The general upsd configuration file is linknut:upsd.conf[5].  The
+The general upsd configuration file is linkman:upsd.conf[5].  The
 administrative functions like SET and INSTCMD for users are defined and
-controlled in linknut:upsd.users[5].  UPS definitions are found in
-linknut:ups.conf[5].
+controlled in linkman:upsd.users[5].  UPS definitions are found in
+linkman:ups.conf[5].
 
 ENVIRONMENT VARIABLES
 ---------------------
@@ -126,31 +126,31 @@ ENVIRONMENT VARIABLES
 *NUT_STATEPATH* is the path name of the directory in which 
 *upsd* keeps state information.  If this variable is not set,
 *upsd* uses a built-in default, which is often `/var/state/ups`.
-The *STATEPATH* directive in linknut:upsd.conf[5] overrides this variable.
+The *STATEPATH* directive in linkman:upsd.conf[5] overrides this variable.
 
 SEE ALSO
 --------
 
 Clients:
 ~~~~~~~~
-linknut:upsc[8], linknut:upscmd[8],
-linknut:upsrw[8], linknut:upslog[8], linknut:upsmon[8]
+linkman:upsc[8], linkman:upscmd[8],
+linkman:upsrw[8], linkman:upslog[8], linkman:upsmon[8]
 
 CGI programs:
 ~~~~~~~~~~~~~
-linknut:upsset.cgi[8], linknut:upsstats.cgi[8], linknut:upsimage.cgi[8]
+linkman:upsset.cgi[8], linkman:upsstats.cgi[8], linkman:upsimage.cgi[8]
 
 Drivers:
 ~~~~~~~~
-linknut:nutupsdrv[8],
-linknut:apcsmart[8], linknut:belkin[8], linknut:belkinunv[8],
-linknut:bestuferrups[8], linknut:bestups[8],
-linknut:cyberpower[8], linknut:energizerups[8], linknut:etapro[8],
-linknut:everups[8], linknut:genericups[8],
-linknut:isbmex[8], linknut:liebert[8], linknut:masterguard[8],
-linknut:mge-shut[8], linknut:mge-utalk[8], linknut:oneac[8],
-linknut:powercom[8], linknut:safenet[8], linknut:snmp-ups[8],
-linknut:tripplite[8], linknut:tripplitesu[8], linknut:victronups[8], 
+linkman:nutupsdrv[8],
+linkman:apcsmart[8], linkman:belkin[8], linkman:belkinunv[8],
+linkman:bestuferrups[8], linkman:bestups[8],
+linkman:cyberpower[8], linkman:energizerups[8], linkman:etapro[8],
+linkman:everups[8], linkman:genericups[8],
+linkman:isbmex[8], linkman:liebert[8], linkman:masterguard[8],
+linkman:mge-shut[8], linkman:mge-utalk[8], linkman:oneac[8],
+linkman:powercom[8], linkman:safenet[8], linkman:snmp-ups[8],
+linkman:tripplite[8], linkman:tripplitesu[8], linkman:victronups[8], 
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

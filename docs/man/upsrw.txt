@@ -19,7 +19,7 @@ DESCRIPTION
 -----------
 
 *upsrw* allows you to view and change the read/write variables inside your UPS.
-It sends commands via the server linknut:upsd[8] to your driver, which
+It sends commands via the server linkman:upsd[8] to your driver, which
 configures the hardware for you.
 
 The list of variables that allow you to change their values is based on
@@ -52,7 +52,7 @@ hardware.
 Set the NUT username for the connection to the server.  This is optional,
 and you will be prompted for this when using the -s option if you don't
 specify -u on the command line. NUT usernames are defined in
-linknut:upsd.users[5], and are not linked to system usernames.
+linkman:upsd.users[5], and are not linked to system usernames.
 
 *-p* 'password'::
 Set the password to authenticate to the server.  This is also optional
@@ -78,7 +78,7 @@ DIAGNOSTICS
 
 *upsrw* can't set variables on your UPS unless you provide a valid
 username and password.  If you get "access denied" errors, make sure
-that your linknut:upsd.users[5] has an entry for you, and that the
+that your linkman:upsd.users[5] has an entry for you, and that the
 username you are using has permissions to SET variables.
 
 HISTORY
@@ -89,7 +89,7 @@ confusing.
 
 SEE ALSO
 --------
-linknut:upsd[8], linknut:upscmd[8]
+linkman:upsd[8], linkman:upscmd[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

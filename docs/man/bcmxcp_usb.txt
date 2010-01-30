@@ -9,7 +9,7 @@ NOTE
 ----
 This man page only documents the hardware-specific features of the
 bcmxcp_usb driver.  For information about the core driver, see
-linknut:nutupsdrv[8].
+linkman:nutupsdrv[8].
 This driver is a variant of the serial driver bcmxcp and uses the same core code.
 
 SUPPORTED HARDWARE
@@ -22,7 +22,7 @@ EXTRA ARGUMENTS
 ---------------
 
 This driver supports the following optional settings in the    
-linknut:ups.conf[5].
+linkman:ups.conf[5].
 
 *shutdown_delay=*'delay'::
 The number of seconds that the UPS should wait between receiving the 
@@ -100,7 +100,7 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
-linknut:nutupsdrv[8]
+linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

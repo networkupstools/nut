@@ -10,13 +10,13 @@ NOTE
 ----
 This man page only documents the hardware-specific features of the
 liebertgxt2 driver.  For information about the core driver, see  
-linknut:nutupsdrv[8].
+linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
 *liebertgxt2* is experimental and will recognize only those models known to
 work. The driver will report the model it finds and abort if it is unknown.
-`modelname=` in linknut:ups.conf[5] can be used to force the driver to accept
+`modelname=` in linkman:ups.conf[5] can be used to force the driver to accept
 the model as supported. 
 
 The driver is incomplete but supports the numerious information fields and
@@ -34,7 +34,7 @@ EXTRA ARGUMENTS
 ---------------
 
 This driver supports the following optional settings in the
-linknut:ups.conf[5]:
+linkman:ups.conf[5]:
 
 *modelname=*'model'::
 Force the model name of 'model' to be a supported model, giving you the chance
@@ -54,7 +54,7 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
-linknut:nutupsdrv[8]
+linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

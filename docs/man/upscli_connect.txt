@@ -27,7 +27,7 @@ it is able to establish a SSL connection with the server.  Possible
 reasons for failure include no SSL support on the server, and if
 *upsclient* itself hasn't been compiled with SSL support.
 
-You must call linknut:upscli_disconnect[3] when finished with a
+You must call linkman:upscli_disconnect[3] when finished with a
 connection, or your program will slowly leak memory and file
 descriptors.
 
@@ -39,7 +39,7 @@ returns 0 on success, or -1 if an error occurs.
 
 SEE ALSO
 --------
-linknut:upscli_disconnect[3], linknut:upscli_fd[3], 
-linknut:upscli_splitaddr[3], linknut:upscli_splitname[3], 
-linknut:upscli_ssl[3], linknut:upscli_strerror[3], 
-linknut:upscli_upserror[3]
+linkman:upscli_disconnect[3], linkman:upscli_fd[3], 
+linkman:upscli_splitaddr[3], linkman:upscli_splitname[3], 
+linkman:upscli_ssl[3], linkman:upscli_strerror[3], 
+linkman:upscli_upserror[3]

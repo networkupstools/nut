@@ -20,7 +20,7 @@ The *upscli_fd()* function takes the pointer 'ups' to a
 `UPSCONN` state structure and returns the value of the file descriptor
 for that connection, if any.
 
-This may be useful for determining if the connection to linknut:upsd[8]
+This may be useful for determining if the connection to linkman:upsd[8]
 has been lost.
 
 RETURN VALUE
@@ -32,4 +32,4 @@ may be any non-negative number.  It returns -1 if an error occurs.
 SEE ALSO
 --------
 
-linknut:upscli_connect[3], linknut:upscli_strerror[3], linknut:upscli_upserror[3]
+linkman:upscli_connect[3], linkman:upscli_strerror[3], linkman:upscli_upserror[3]

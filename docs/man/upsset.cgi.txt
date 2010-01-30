@@ -38,7 +38,7 @@ If your UPS doesn't support any read/write variables, there will be
 nothing to do on this page.
 
 Setting values in read/write variables can also be done from the command 
-line with linknut:upsrw[8].
+line with linkman:upsrw[8].
 
 INSTANT COMMANDS
 ----------------
@@ -65,13 +65,13 @@ you do it too quickly or slowly, you have to wait at least 3 seconds
 but not 15 seconds again.
 
 You can also invoke instant commands from the command line with
-linknut:upscmd[8].
+linkman:upscmd[8].
 
 ACCESS CONTROL
 --------------
 
-upsset will only talk to linknut:upsd[8] servers that have been defined
-in your linknut:hosts.conf[8].  If it complains about "Access to that host
+upsset will only talk to linkman:upsd[8] servers that have been defined
+in your linkman:hosts.conf[8].  If it complains about "Access to that host
 is not authorized", check your hosts.conf first.
 
 SECURITY
@@ -79,7 +79,7 @@ SECURITY
 
 upsset will not run until you convince it that your CGI directory has
 been secured.  This is due to the possibility of someone using upsset
-to try password combinations against your linknut:upsd[8] server.
+to try password combinations against your linkman:upsd[8] server.
 
 See the example `upsset.conf` file for more information on how you do this.
 The short explanation is--if you can't lock it down, don't try to run it.
@@ -87,7 +87,7 @@ The short explanation is--if you can't lock it down, don't try to run it.
 FILES
 -----
 
-linknut:hosts.conf[5], linknut:upsset.conf[5]
+linkman:hosts.conf[5], linkman:upsset.conf[5]
 
 SEE ALSO
 --------

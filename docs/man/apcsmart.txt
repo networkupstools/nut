@@ -15,7 +15,7 @@ SYNOPSIS
 
 NOTE: This man page only documents the hardware-specific features of the
 apcsmart driver.  For information about the core driver, see  
-linknut:nutupsdrv[8].
+linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
@@ -46,7 +46,7 @@ EXTRA ARGUMENTS
 ---------------
 
 This driver supports the following optional settings in the
-linknut:ups.conf[5]:
+linkman:ups.conf[5]:
 
 *cable=940-0095B*::
 Configure the serial port for the APC 940-0095B dual-mode cable.
@@ -94,7 +94,7 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
-linknut:nutupsdrv[8]
+linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

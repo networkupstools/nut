@@ -9,7 +9,7 @@ solution
 NOTE
 ----
 This man page only documents the specific features of the richcomm_usb 
-driver.  For information about the core driver, see linknut:nutupsdrv[8].
+driver.  For information about the core driver, see linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
@@ -17,13 +17,13 @@ The Richcomm dry-contact to USB solution is a generic interface that is
 used to upgrade an existing (RS-232) contact closure UPS interface to USB.
 As such, all the limitations of the underlying contact closure interface
 apply.  This means that you will only get the essentials in ups.status: OL,
-OB, and LB.  See also linknut:genericups[8].
+OB, and LB.  See also linkman:genericups[8].
 
 BUGS
 ----
 Most contact-closure UPSes will not power down the load if the line power 
-is present.  This can create a race when using slave linknut:upsmon[8] 
-systems.  See the linknut:upsmon[8] man page for more information.
+is present.  This can create a race when using slave linkman:upsmon[8] 
+systems.  See the linkman:upsmon[8] man page for more information.
 
 The solution to both of these problems is to upgrade to a smart protocol 
 UPS of some kind that allows detection and proper load cycling on command.
@@ -39,11 +39,11 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
-linknut:nutupsdrv[8]
+linkman:nutupsdrv[8]
 
 The generic serial driver:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-linknut:genericups[8]
+linkman:genericups[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

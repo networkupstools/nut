@@ -8,7 +8,7 @@ genericups - Driver for contact-closure UPS equipment
 NOTE
 ----
 This man page only documents the specific features of the genericups 
-driver.  For information about the core driver, see linknut:nutupsdrv[8].
+driver.  For information about the core driver, see linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
@@ -27,7 +27,7 @@ information on what is known to work with a given UPS type.
 
 EXTRA ARGUMENTS
 ---------------
-This driver supports the following settings in the linknut:ups.conf[5]:
+This driver supports the following settings in the linkman:ups.conf[5]:
 
 upstype='type'::
 
@@ -70,7 +70,7 @@ CUSTOM CONFIGURATIONS
 ---------------------
 
 You may override the values for CP, OL, LB, and SD by defining them in
-the linknut:ups.conf[5] after the upstype setting.
+the linkman:ups.conf[5] after the upstype setting.
 
 For example, to set the cable power to DTR and the low battery value to
 DCD, it would look like this:
@@ -226,7 +226,7 @@ RUPS cable seems to be especially popular in the "power strip" variety of
 UPS found in office supply stores.  If your UPS works with an entry in the
 table above, but the model or manufacturer information don't match,
 don't despair.  You can fix that easily by using the mfr and model 
-variables documented above in your linknut:ups.conf[5].
+variables documented above in your linkman:ups.conf[5].
 
 TESTING COMPATIBILITY
 ---------------------
@@ -363,8 +363,8 @@ that if the connection between the UPS and computer is interrupted, you
 may not be able to sense this in software.
 
 Most contact-closure UPSes will not power down the load if the line power 
-is present.  This can create a race when using slave linknut:upsmon[8] 
-systems.  See the linknut:upsmon[8] man page for more information.
+is present.  This can create a race when using slave linkman:upsmon[8] 
+systems.  See the linkman:upsmon[8] man page for more information.
 
 The solution to both of these problems is to upgrade to a smart protocol 
 UPS of some kind that allows detection and proper load cycling on command.
@@ -374,7 +374,7 @@ SEE ALSO
 
 The core driver
 ~~~~~~~~~~~~~~~
-linknut:nutupsdrv[8]
+linkman:nutupsdrv[8]
 
 Internet resources
 ~~~~~~~~~~~~~~~~~~

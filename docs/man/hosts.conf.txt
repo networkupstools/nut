@@ -9,8 +9,8 @@ hosts.conf - Access control for Network UPS Tools CGI programs
 DESCRIPTION
 -----------
 
-The CGI programs (linknut:upsset.cgi[8], linknut:upsstats.cgi[8],
-linknut:upsimage.cgi[8]) use this file to determine if they are allowed to
+The CGI programs (linkman:upsset.cgi[8], linkman:upsstats.cgi[8],
+linkman:upsimage.cgi[8]) use this file to determine if they are allowed to
 talk to a host.  This keeps random visitors from using your web server
 to annoy others by creating outgoing connections.
 
@@ -32,7 +32,7 @@ be wrapped with quotes as shown above.  The default hostname is
 SEE ALSO
 --------
 
-linknut:upsset.cgi[8], linknut:upsstats.cgi[8], linknut:upsimage.cgi[8]
+linkman:upsset.cgi[8], linkman:upsstats.cgi[8], linkman:upsimage.cgi[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

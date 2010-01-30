@@ -9,7 +9,7 @@ upsmon.conf - Configuration for Network UPS Tools upsmon
 DESCRIPTION
 -----------
 
-This file's primary job is to define the systems that linknut:upsmon[8]
+This file's primary job is to define the systems that linkman:upsmon[8]
 will monitor and to tell it how to shut down the system when necessary.
 It will contain passwords, so keep it secure.  Ideally, only the upsmon
 process should be able to read it.
@@ -94,7 +94,7 @@ circuits for this to make sense!  See big-servers.txt in the docs
 subdirectory for more information and ideas on how to use this
 feature.
 +
-Also see the section on "power values" in linknut:upsmon[8].
+Also see the section on "power values" in linkman:upsmon[8].
 
 *MONITOR* 'system' 'powervalue' 'username' 'password' 'type'::
 
@@ -114,7 +114,7 @@ The default hostname is "localhost".  Some examples:
  - "su700@mybox" means a UPS called "su700" on a system called "mybox".
 This is the normal form.
  - "fenton@bigbox:5678" is a UPS called "fenton" on a system called
-"bigbox" which runs linknut:upsd[8] on port "5678".
+"bigbox" which runs linkman:upsd[8] on port "5678".
 
 'powervalue' is an integer representing the number of power supplies
 that the UPS feeds on this system.  Most normal computers have one power
@@ -127,7 +127,7 @@ want to have upsmon do notifications about status changes on a UPS
 without shutting down when it goes critical.
 
 The 'username' and 'password' on this line must match an entry 
-in that system's linknut:upsd.users[5].  If your username is "monmaster"
+in that system's linkman:upsd.users[5].  If your username is "monmaster"
 and your password is "blah", the MONITOR line might look like this:
 
 +MONITOR myups@bigserver 1 monmaster blah master+
@@ -138,8 +138,8 @@ Meanwhile, the `upsd.users` on `bigserver` would look like this:
 		password  = blah
 		upsmon master #  (or slave)
 
-The 'type' refers to the relationship with linknut:upsd[8].  It can
-be either "master" or "slave".  See linknut:upsmon[8] for more information
+The 'type' refers to the relationship with linkman:upsd[8].  It can
+be either "master" or "slave".  See linkman:upsmon[8] for more information
 on the meaning of these modes.  The mode you pick here also goes in
 the `upsd.users` file, as seen in the example above.
 
@@ -158,7 +158,7 @@ This command is called with the full text of the message as one
 argument.  The environment string NOTIFYTYPE will contain the type
 string of whatever caused this event to happen.
 +
-If you need to use linknut:upssched[8], then you must make it your
+If you need to use linkman:upssched[8], then you must make it your
 NOTIFYCMD by listing it here.
 +
 Note that this is only called for NOTIFY events that have EXEC set with
@@ -238,7 +238,7 @@ If you use IGNORE, don't use any other flags on the same line.
 
 *POLLFREQ* 'seconds'::
 
-Normally upsmon polls the linknut:upsd[8] server every 5 seconds.  If this
+Normally upsmon polls the linkman:upsd[8] server every 5 seconds.  If this
 is flooding your network with activity, you can make it higher.  You can
 also make it lower to get faster updates in some cases.
 +
@@ -324,7 +324,7 @@ together, i.e.:
 
 SEE ALSO
 --------
-linknut:upsmon[8], linknut:upsd[8], linknut:nutupsdrv[8].
+linkman:upsmon[8], linkman:upsd[8], linkman:nutupsdrv[8].
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

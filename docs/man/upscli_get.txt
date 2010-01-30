@@ -18,7 +18,7 @@ DESCRIPTION
 The *upscli_get()* function takes the pointer 'ups' to a
 `UPSCONN` state structure, and the pointer 'query' to an array of
 'numq' query elements.  It builds a properly-formatted request from
-those elements and transmits it to linknut:upsd[8].
+those elements and transmits it to linkman:upsd[8].
 
 Upon success, the response will be split into separate components.  A
 pointer to those components will be returned in 'answer'.  The
@@ -68,12 +68,12 @@ Notice that the value which you seek typically starts at answer[numq].
 ERROR CHECKING
 --------------
 This function will check your query against the response from
-linknut:upsd[8].  For example, if you send "VAR" "su700" "ups.status", it
+linkman:upsd[8].  For example, if you send "VAR" "su700" "ups.status", it
 will expect to see those at the beginning of the response. 
 
 If the results from *upsd* do not pass this case-insensitive test
 against your request, this function will return an error.   When this
-happens, linknut:upscli_upserror[3] will return 'UPSCLI_ERR_PROTOCOL'.
+happens, linkman:upscli_upserror[3] will return 'UPSCLI_ERR_PROTOCOL'.
 
 ANSWER ARRAY LIFETIME
 ---------------------
@@ -88,7 +88,7 @@ which were returned by the most recent call.  You also must not attempt
 to use more than 'numa' elements in 'answer'.  Such behavior is
 undefined, and may yield bogus data or a crash.
 
-The array will be deleted after calling linknut:upscli_disconnect[3].  Any 
+The array will be deleted after calling linkman:upscli_disconnect[3].  Any 
 access after that point is also undefined.
 
 RETURN VALUE
@@ -98,5 +98,5 @@ error occurs.
 
 SEE ALSO
 --------
-linknut:upscli_list_start[3], linknut:upscli_list_next[3],
-linknut:upscli_strerror[3], linknut:upscli_upserror[3]
+linkman:upscli_list_start[3], linkman:upscli_list_next[3],
+linkman:upscli_strerror[3], linkman:upscli_upserror[3]

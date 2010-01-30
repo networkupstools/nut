@@ -39,7 +39,7 @@ Enable testing mode.  This also enables debug mode.  Testing mode makes
 upsdrvctl display the actions it would execute without actually doing them.
 Use this to test out your configuration without actually doing anything
 to your UPS drivers.  This may be helpful when defining the 'sdorder'
-directive in your linknut:ups.conf[5].
+directive in your linkman:ups.conf[5].
 
 *-u* 'username'::
 If starting a driver, this value will direct it to *setuid*(2) to
@@ -58,7 +58,7 @@ COMMANDS
 --------
 
 upsdrvctl supports three commands - start, stop and shutdown.  They take
-an optional argument which is a UPS name from linknut:ups.conf[5].
+an optional argument which is a UPS name from linkman:ups.conf[5].
 Without that argument, they operate on every UPS that is currently
 configured.
 
@@ -70,7 +70,7 @@ Stop the UPS driver(s).
 
 *shutdown*::
 Command the UPS driver(s) to run their shutdown sequence.  Drivers are
-stopped according to their sdorder value - see linknut:ups.conf[5].
+stopped according to their sdorder value - see linkman:ups.conf[5].
 
 WARNING: this will probably power off your computers, so don't
 play around with this option.  Only use it when your systems are prepared
@@ -94,7 +94,7 @@ background.
 
 SEE ALSO
 --------
-linknut:nutupsdrv[8], linknut:upsd[8], linknut:ups.conf[5]
+linkman:nutupsdrv[8], linkman:upsd[8], linkman:ups.conf[5]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

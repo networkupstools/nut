@@ -9,20 +9,20 @@ upsset.conf - Configuration for Network UPS Tools upsset.cgi
 DESCRIPTION
 -----------
 
-This file only does one job--it lets you convince linknut:upsset.cgi[8]
+This file only does one job--it lets you convince linkman:upsset.cgi[8]
 that your system's CGI directory is secure.  The program will not run
 until this file has been properly defined.
 
 SECURITY REQUIREMENTS
 ---------------------
 
-linknut:upsset.cgi[8] allows you to try login name and password combinations.
+linkman:upsset.cgi[8] allows you to try login name and password combinations.
 There is no rate limiting, as the program shuts down between every request.
 Such is the nature of CGI programs.
 
-Normally, attackers would not be able to access your linknut:upsd[8] server
+Normally, attackers would not be able to access your linkman:upsd[8] server
 directly as it would be protected by the LISTEN directives in
-your linknut:upsd.conf[5] file, tcp-wrappers (if available when NUT was built),
+your linkman:upsd.conf[5] file, tcp-wrappers (if available when NUT was built),
 and hopefully local firewall settings in your OS.
 
 *upsset* runs on your web server, so upsd will see it as a connection from
@@ -55,7 +55,7 @@ web server, don't blame me.
 
 SEE ALSO
 --------
-linknut:upsset.cgi[8]
+linkman:upsset.cgi[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
