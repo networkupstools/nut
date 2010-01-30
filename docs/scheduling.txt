@@ -209,6 +209,8 @@ example timer is onbattwarn, so that's the argument that will be passed
 into your CMDSCRIPT when it triggers.  This means we need to do some
 shell script writing to deal with that input.
 
+--------------------------------------------------------------------------------
+
 	#! /bin/sh
 
 	case $1 in
@@ -223,6 +225,8 @@ shell script writing to deal with that input.
 			logger -t upssched-cmd "Unrecognized command: $1"
 			;;
 	esac
+
+--------------------------------------------------------------------------------
 
 This is a very simple script example, but it shows how you can test for
 the presence of a given trigger.  With multiple ATs creating various timer
