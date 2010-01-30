@@ -78,12 +78,12 @@ of MAXAGE to 25 in upsd.conf, and DEADTIME to 25 in upsmon.conf.
 AUTHOR
 ------
 
-Hans Ekkehard Plesser
-Arnaud Quette
-Martin Loyer
-Patrick Agrain
-Nicholas Reilly
-Dave Abbott
+Hans Ekkehard Plesser,
+Arnaud Quette,
+Martin Loyer,
+Patrick Agrain,
+Nicholas Reilly,
+Dave Abbott,
 Marek Kralewski
 
 SEE ALSO
