@@ -8,7 +8,7 @@
    Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
    Copyright (C) 2001  Rickard E. (Rik) Faith <faith@alephnull.com>
    Copyright (C) 2004  Nicholas J. Kain <nicholas@kain.us>
-   Copyright (C) 2005-2010  Charles Lepple <clepple+nut@gmail.com>
+   Copyright (C) 2005-2008  Charles Lepple <clepple+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -320,7 +320,7 @@ The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 #include "usb-common.h"
 
 #define DRIVER_NAME		"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.21"
+#define DRIVER_VERSION	"0.20"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -375,7 +375,6 @@ static enum tl_model_t {
 	TRIPP_LITE_OMNIVS,
 	TRIPP_LITE_OMNIVS_2001,
 	TRIPP_LITE_SMARTPRO,
-	TRIPP_LITE_SMART_BIN,
 	TRIPP_LITE_SMART_0004
 } tl_model = TRIPP_LITE_UNKNOWN;
 
@@ -542,9 +541,6 @@ enum tl_model_t decode_protocol(unsigned int proto)
 		case 0x3003:
 			upslogx(3, "Using SMARTPRO protocol (%x)", proto);
 			return TRIPP_LITE_SMARTPRO;
-		case 0x3004:
-			upslogx(3, "Using binary SMART protocol (%x)", proto);
-			return TRIPP_LITE_SMART_BIN;
 		default:
 			printf("Unknown protocol (%x)", proto);
 			break;
@@ -560,10 +556,6 @@ void decode_v(const unsigned char *value)
 
  	ivn = value[1];
 	lb = value[4];
-
-	if((ivn <= '0') && (tl_model == TRIPP_LITE_SMART_BIN)) {
-		ivn += '0';
-	}
 
 	switch(ivn) {
 		case '0': input_voltage_nominal = 
@@ -588,18 +580,13 @@ void decode_v(const unsigned char *value)
 	}
 
 	battery_voltage_nominal = bv * 6;
-	upsdebugx(1, "Detected nominal battery voltage: %d (0x%x)", battery_voltage_nominal);
 		
-	if( lb <= 9 ) {
-		switchable_load_banks = lb;
+	if( (lb >= '0') && (lb <= '9') ) {
+		switchable_load_banks = lb - '0';
 	} else {
-		if( (lb >= '0') && (lb <= '9') ) {
-			switchable_load_banks = lb - '0';
-		} else {
-			if( lb != 'X' ) {
-				upslogx(2, "Unknown number of switchable load banks: 0x%02x",
-						(unsigned int)lb);
-			}
+		if( lb != 'X' ) {
+			upslogx(2, "Unknown number of switchable load banks: 0x%02x",
+					(unsigned int)lb);
 		}
 	}
 }
@@ -835,7 +822,6 @@ static int control_outlet(int outlet_id, int state)
 	switch(tl_model) {
 		case TRIPP_LITE_SMARTPRO:   /* tested */
 		case TRIPP_LITE_SMART_0004: /* untested */
-		case TRIPP_LITE_SMART_BIN: /* untested */
 			snprintf(k_cmd, sizeof(k_cmd)-1, "N%02X", 5);
 			ret = send_cmd((unsigned char *)k_cmd, strlen(k_cmd) + 1, (unsigned char *)buf, sizeof buf);
 			snprintf(k_cmd, sizeof(k_cmd)-1, "K%d%d", outlet_id, state & 1);
