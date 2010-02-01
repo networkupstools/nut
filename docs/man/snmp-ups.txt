@@ -43,6 +43,9 @@ Various Raritan PDUs
 *baytech*::
 Various BayTech PDUs
 
+*cpqpower*::
+HP/Compaq AF401A management card, perhaps others
+
 EXTRA ARGUMENTS
 ---------------
 
@@ -72,7 +75,7 @@ equipment which has strangeness in the three-phase power reporting.
 
 REQUIREMENTS
 ------------
-You will need to install the Net-SNMP package from 
+You will need to install the Net-SNMP package from
 http://www.net-snmp.org/ before building this driver.
 
 LIMITATION
