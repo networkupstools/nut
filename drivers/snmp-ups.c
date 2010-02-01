@@ -2,7 +2,7 @@
  *
  *  Based on NetSNMP API (Simple Network Management Protocol V1-2)
  *
- *  Copyright (C) 
+ *  Copyright (C)
  *	2002 - 2008	Arnaud Quette <arnaud.quette@free.fr>
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
@@ -43,6 +43,7 @@
 #include "netvisionmib.h"
 #include "pwmib.h"
 #include "baytechmib.h"
+#include "cpqpowermib.h"
 
 
 mib2nut_info_t mib2nut[] = {
@@ -62,6 +63,8 @@ mib2nut_info_t mib2nut[] = {
 		RARITAN_OID_MODEL_NAME, raritan_mib },
 	{ "baytech", BAYTECH_MIB_VERSION, "",
 		BAYTECH_OID_MODEL_NAME, baytech_mib },
+	{ "cpqpower", CPQPOWER_MIB_VERSION, "",
+		CPQPOWER_OID_MFR_NAME, cpqpower_mib },
 	/*
 	 * Prepend vendor specific MIB mappings before IETF, so that
 	 * if a device supports both IETF and vendor specific MIB,
@@ -118,7 +121,7 @@ void upsdrv_initinfo(void)
 
 	/* add instant commands to the info database.
 	 * outlet commands are processed during initial walk */
-	for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++)			
+	for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++)
 	{
 		su_info_p->flags |= SU_FLAG_OK;
 		if ((SU_TYPE(su_info_p) == SU_TYPE_CMD)
@@ -132,7 +135,7 @@ void upsdrv_initinfo(void)
 	/* initialize all other INFO_ fields from list */
 	if (snmp_ups_walk(SU_WALKMODE_INIT))
 		dstate_dataok();
-	else		
+	else
 		dstate_datastale();
 
 	/* setup handlers for instcmd and setvar functions */
@@ -143,7 +146,7 @@ void upsdrv_initinfo(void)
 void upsdrv_updateinfo(void)
 {
 	upsdebugx(1,"SNMP UPS driver : entering upsdrv_updateinfo()");
-	
+
 	/* only update every pollfreq */
 	if (time(NULL) > (lastpoll + pollfreq)) {
 
@@ -152,8 +155,8 @@ void upsdrv_updateinfo(void)
 		/* update all dynamic info fields */
 		if (snmp_ups_walk(SU_WALKMODE_UPDATE))
 			dstate_dataok();
-		else		
-			dstate_datastale();	
+		else
+			dstate_datastale();
 
 		status_commit();
 
@@ -186,7 +189,7 @@ void upsdrv_makevartable(void)
 	upsdebugx(1, "entering upsdrv_makevartable()");
 
 	addvar(VAR_VALUE, SU_VAR_MIBS,
-	    "Set MIB compliance (default=ietf, allowed mge,apcc,netvision,pw)");
+	    "Set MIB compliance (default=ietf, allowed mge,apcc,netvision,pw,cpqpower)");
 	addvar(VAR_VALUE | VAR_SENSITIVE, SU_VAR_COMMUNITY,
 	    "Set community name (default=public)");
 	addvar(VAR_VALUE, SU_VAR_VERSION,
@@ -205,7 +208,7 @@ void upsdrv_initups(void)
 	const char *community, *version, *mibs;
 
 	upsdebugx(1, "SNMP UPS driver : entering upsdrv_initups()");
-	
+
 	community = testvar(SU_VAR_COMMUNITY) ? getval(SU_VAR_COMMUNITY) : "public";
 	version = testvar(SU_VAR_VERSION) ? getval(SU_VAR_VERSION) : "v1";
 	mibs = testvar(SU_VAR_MIBS) ? getval(SU_VAR_MIBS) : "auto";
@@ -223,7 +226,7 @@ void upsdrv_initups(void)
 		pollfreq = atoi(getval(SU_VAR_POLLFREQ));
 	else
 		pollfreq = DEFAULT_POLLFREQ;
-	
+
   	/* Get UPS Model node to see if there's a MIB */
 	su_info_p = su_find_info("ups.model");
 	status = nut_snmp_get_str(su_info_p->OID, model, sizeof(model), NULL);
@@ -247,7 +250,7 @@ void upsdrv_cleanup(void)
 
 void nut_snmp_init(const char *type, const char *hostname, const char *version,
 		const char *community)
-{  
+{
 	upsdebugx(2, "SNMP UPS driver : entering nut_snmp_init(%s, %s, %s, %s)",
 		type, hostname, version, community);
 
@@ -304,10 +307,10 @@ struct snmp_pdu *nut_snmp_get(const char *OID)
 	}
 
 	pdu = snmp_pdu_create(SNMP_MSG_GET);
-	
+
 	if (pdu == NULL)
 		fatalx(EXIT_FAILURE, "Not enough memory");
-	
+
 	snmp_add_null_var(pdu, name, name_len);
 
 	status = snmp_synch_response(g_snmp_sess_p, pdu, &response);
@@ -331,7 +334,7 @@ struct snmp_pdu *nut_snmp_get(const char *OID)
 				upsname?upsname:device_name);
 
 		if ((numerr < SU_ERR_LIMIT) || ((numerr % SU_ERR_RATE) == 0))
-			nut_snmp_perror(g_snmp_sess_p, status, response, 
+			nut_snmp_perror(g_snmp_sess_p, status, response,
 				"nut_snmp_get: %s", OID);
 
 		snmp_free_pdu(response);
@@ -347,7 +350,7 @@ bool_t nut_snmp_get_str(const char *OID, char *buf, size_t buf_len, info_lkp_t *
 {
 	size_t len = 0;
 	struct snmp_pdu *pdu;
-	
+
 	/* zero out buffer. */
 	memset(buf, 0, buf_len);
 
@@ -446,9 +449,9 @@ bool_t nut_snmp_set(const char *OID, char type, const char *value)
 	struct snmp_pdu *pdu, *response = NULL;
 	oid name[MAX_OID_LEN];
 	size_t name_len = MAX_OID_LEN;
-	
+
 	upsdebugx(1, "entering nut_snmp_set (%s, %c, %s)", OID, type, value);
-	
+
 	if (!snmp_parse_oid(OID, name, &name_len)) {
 		upslogx(LOG_ERR, "[%s] nut_snmp_set: %s: %s",
 			upsname?upsname:device_name, OID, snmp_api_errstring(snmp_errno));
@@ -462,7 +465,7 @@ bool_t nut_snmp_set(const char *OID, char type, const char *value)
 	if (snmp_add_var(pdu, name, name_len, type, value)) {
 		upslogx(LOG_ERR, "[%s] nut_snmp_set: %s: %s",
 			upsname?upsname:device_name, OID, snmp_api_errstring(snmp_errno));
-		
+
 		return FALSE;
 	}
 
@@ -585,7 +588,7 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 }
 
 void su_status_set(snmp_info_t *su_info_p, long value)
-{	
+{
 	const char *info_value = NULL;
 
 	upsdebugx(2, "SNMP UPS driver : entering su_status_set()");
@@ -609,7 +612,7 @@ snmp_info_t *su_find_info(const char *type)
 			upsdebugx(3, "su_find_info: \"%s\" found", type);
 			return su_info_p;
 		}
-		
+
 	upsdebugx(3, "su_find_info: unknown info type (%s)", type);
 	return NULL;
 }
@@ -671,11 +674,11 @@ long su_find_valinfo(info_lkp_t *oid2info, char* value)
 
 	for (info_lkp = oid2info; (info_lkp != NULL) &&
 		(strcmp(info_lkp->info_value, "NULL")); info_lkp++) {
-			
+
 		if (!(strcmp(info_lkp->info_value, value))) {
 			upsdebugx(1, "su_find_valinfo: found %s (value: %s)",
 					info_lkp->info_value, value);
-			
+
 			return info_lkp->oid_value;
 		}
 	}
@@ -687,14 +690,14 @@ long su_find_valinfo(info_lkp_t *oid2info, char* value)
 const char *su_find_infoval(info_lkp_t *oid2info, long value)
 {
 	info_lkp_t *info_lkp;
-		
+
 	for (info_lkp = oid2info; (info_lkp != NULL) &&
 		(strcmp(info_lkp->info_value, "NULL")); info_lkp++) {
-			
+
 		if (info_lkp->oid_value == value) {
 			upsdebugx(1, "su_find_infoval: found %s (value: %ld)",
 					info_lkp->info_value, value);
-			
+
 			return info_lkp->info_value;
 		}
 	}
@@ -765,7 +768,7 @@ void free_info(snmp_info_t *su_info_p)
 int base_snmp_outlet_index(const char *OID_template)
 {
 	int base_index = outlet_index_base;
-	
+
 	if (outlet_index_base == -1)
 	{
 		/* not initialised yet */
@@ -783,7 +786,7 @@ int base_snmp_outlet_index(const char *OID_template)
 
 /* return the NUT offset (increment) based on outlet_index_base
  * ie (outlet_index_base == 0) => increment +1
- *    (outlet_index_base == 1) => increment +0 */ 
+ *    (outlet_index_base == 1) => increment +0 */
 int base_nut_outlet_offset()
 {
 	return (outlet_index_base==0)?1:0;
@@ -798,7 +801,7 @@ bool_t get_and_process_data(int mode, snmp_info_t *su_info_p)
 
 	/* ok, update this element. */
 	status = su_ups_get(su_info_p);
-	
+
 	/* set stale flag if data is stale, clear if not. */
 	if (status == TRUE) {
 		if (su_info_p->flags & SU_FLAG_STALE) {
@@ -834,7 +837,7 @@ bool_t snmp_ups_walk(int mode)
 	static unsigned long iterations = 0;
 	snmp_info_t *su_info_p;
 	bool_t status = FALSE;
-	
+
 	for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++) {
 
 		/* Check if we are asked to stop (reactivity++) */
@@ -850,9 +853,9 @@ bool_t snmp_ups_walk(int mode)
 		/* skip elements we shouldn't show */
 		if (!(su_info_p->flags & SU_FLAG_OK))
 			continue;
-		
+
 		/* skip static elements in update mode */
-		if (mode == SU_WALKMODE_UPDATE && 
+		if (mode == SU_WALKMODE_UPDATE &&
 				su_info_p->flags & SU_FLAG_STATIC)
 			continue;
 
@@ -938,7 +941,7 @@ bool_t snmp_ups_walk(int mode)
 				continue;
 			}
 			outlet_count = atoi(dstate_getinfo("outlet.count"));
-			
+
 			/* general init of data using the template */
 			instantiate_info(su_info_p, &cur_info_p);
 
@@ -966,7 +969,7 @@ bool_t snmp_ups_walk(int mode)
 					}
 					else /* get and process this data */
 						status = get_and_process_data(mode, &cur_info_p);
-				} else { 
+				} else {
 					/* server side (ABSENT) data */
 					su_setinfo(&cur_info_p, NULL);
 				}
@@ -987,8 +990,8 @@ bool_t snmp_ups_walk(int mode)
 	}	/* for (su_info_p... */
 
 	iterations++;
-	
-	return status;	
+
+	return status;
 }
 
 bool_t su_ups_get(snmp_info_t *su_info_p)
@@ -998,7 +1001,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	long value;
 
 	upsdebugx(2, "su_ups_get: %s %s", su_info_p->info_type, su_info_p->OID);
-	
+
 	if (!strcasecmp(su_info_p->info_type, "ups.status")) {
 
 		status = nut_snmp_get_int(su_info_p->OID, &value);
@@ -1043,7 +1046,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 		su_setinfo(su_info_p, buf);
 
 		return TRUE;
-	}			
+	}
 
 	if (su_info_p->info_flags == 0) {
 		status = nut_snmp_get_int(su_info_p->OID, &value);
@@ -1065,7 +1068,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	} else {
 		status = nut_snmp_get_str(su_info_p->OID, buf, sizeof(buf), su_info_p->oid2info);
 	}
-		
+
 	if (status == TRUE) {
 		su_setinfo(su_info_p, buf);
 		upsdebugx(2, "=> value: %s", buf);
@@ -1128,14 +1131,14 @@ int su_setvar(const char *varname, const char *val)
 			sprintf((char *)su_info_p->OID, tmp_info_p->OID,
 				outlet_number - base_nut_outlet_offset());
 		}
-		/* else, don't return STAT_SET_INVALID since we can be setting 
+		/* else, don't return STAT_SET_INVALID since we can be setting
 		 * a server side variable! */
 
 		/* adapt info_type */
 		if (su_info_p->info_type != NULL)
 			sprintf((char *)su_info_p->info_type, "%s", varname);
 	}
-		
+
 	if (!su_info_p || !su_info_p->info_type || !(su_info_p->flags & SU_FLAG_OK)) {
 		upsdebugx(2, "su_setvar: info element unavailable %s", varname);
 
@@ -1256,7 +1259,7 @@ int su_instcmd(const char *cmdname, const char *extradata)
 		retval = STAT_INSTCMD_HANDLED;
 		upsdebugx(1, "su_instcmd: successfully sent command %s", cmdname);
 	}
-	
+
 	if (!strncmp(cmdname, "outlet", 6))
 		free_info(su_info_p);
 
@@ -1295,7 +1298,7 @@ void su_shutdown_ups(void)
 			su_ups_instcmd(CMD_SOFTDOWN, 0, 0);
 		su_ups_instcmd(CMD_SDRET, 0, 0);
 		break;
-*/	
+*/
 	default:
 		/* if on battery... */
 /*		if (pwr_status == su_find_valinfo(info_lkp_t *oid2info, "OB")) {
@@ -1317,7 +1320,7 @@ void su_shutdown_ups(void)
 static int parse_mibconf_args(int numargs, char **arg)
 {
 	bool_t ret;
-	
+
 	/* everything below here uses up through arg[1] */
 	if (numargs < 6)
 		return 0;
@@ -1332,7 +1335,7 @@ static int parse_mibconf_args(int numargs, char **arg)
 		} else {
 			ret = nut_snmp_set_int(arg[3], strtol(arg[4], NULL, 0));
 		}
-	
+
 		if (ret == FALSE)
 			upslogx(LOG_ERR, "su_setvar: cannot set value %s for %s", arg[4], arg[3]);
 		else
@@ -1358,7 +1361,7 @@ void read_mibconf(char *mib)
 	PCONF_CTX_t	ctx;
 
 	upsdebugx(2, "SNMP UPS driver : entering read_mibconf(%s)", mib);
-	
+
 	snprintf(fn, sizeof(fn), "%s/snmp/%s.conf", CONFPATH, mib);
 
 	pconf_init(&ctx, mibconf_err);
@@ -1380,15 +1383,15 @@ void read_mibconf(char *mib)
 			unsigned int	i;
 			char	errmsg[SMALLBUF];
 
-			snprintf(errmsg, sizeof(errmsg), 
+			snprintf(errmsg, sizeof(errmsg),
 				"mib.conf: invalid directive");
 
 			for (i = 0; i < ctx.numargs; i++)
-				snprintfcat(errmsg, sizeof(errmsg), " %s", 
+				snprintfcat(errmsg, sizeof(errmsg), " %s",
 					ctx.arglist[i]);
 
 			upslogx(LOG_WARNING, "%s", errmsg);
 		}
 	}
-	pconf_finish(&ctx);		
+	pconf_finish(&ctx);
 }
