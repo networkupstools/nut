@@ -496,7 +496,7 @@ char *strerror(int errnum)
     }
 
     /* Fallback: just print the error number */
-    sprintf(buf, "Error %d", errnum);
+    snprintf(buf, sizeof(buf), "Error %d", errnum);
     return buf;
 }
 

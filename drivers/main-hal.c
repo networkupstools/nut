@@ -37,10 +37,10 @@
 	extern LibHalContext *halctx;
 	extern char *udi;
 
-	/* data which may be useful to the drivers */	
+	/* data which may be useful to the drivers */
 	int	upsfd = -1;
 	char	*device_path = NULL;
-	const	char	*progname = NULL, *upsname = NULL, 
+	const	char	*progname = NULL, *upsname = NULL,
 			*device_name = NULL;
 
 	/* may be set by the driver to wake up while in dstate_poll_fds */
@@ -158,7 +158,7 @@ static void exit_cleanup(int sig)
 
 	dstate_free();
 	vartab_free();
-	
+
 	/* break the main loop */
 	g_main_loop_quit(gmain);
 }
@@ -209,7 +209,7 @@ int main(int argc, char **argv)
 	 * Leave other methods registration to driver core calls to
 	 * dstate_addcmd(), at initinfo() time
 	 */
-	sprintf(dbus_methods_introspection, "%s",
+	snprintf(dbus_methods_introspection, 1024, "%s",
 		"    <method name=\"Shutdown\">\n"
 /*		"      <arg name=\"shutdown_type\" direction=\"in\" type=\"s\"/>\n" */
 		"      <arg name=\"return_code\" direction=\"out\" type=\"i\"/>\n"
@@ -233,7 +233,7 @@ int main(int argc, char **argv)
 		fatalx(EXIT_FAILURE, "Error in context creation: %s\n", dbus_error.message);
 		dbus_error_free (&dbus_error);
 	}
-	
+
 	if ((dbus_connection = libhal_ctx_get_dbus_connection(halctx)) == NULL) {
 		fprintf(stderr, "Error: can't get DBus connection.\n");
 		exit(EXIT_FAILURE);
@@ -246,7 +246,7 @@ int main(int argc, char **argv)
 	 */
 	/* FIXME: the naming should be abstracted to os.device_file! */
 	device_path = xstrdup("auto");
-	
+
 	/* FIXME: bridge debug/warning on HAL equivalent (need them
 	 * to externalize these in a lib... */
 	hal_debug_level = getenv ("NUT_HAL_DEBUG");
@@ -292,7 +292,7 @@ int main(int argc, char **argv)
 	dstate_init(NULL, NULL);
 
 	/* Commit DBus methods */
-	if (!libhal_device_claim_interface(halctx, udi, DBUS_INTERFACE, 
+	if (!libhal_device_claim_interface(halctx, udi, DBUS_INTERFACE,
 		dbus_methods_introspection,	&dbus_error)) {
 			fprintf(stderr, "Cannot claim interface: %s\n", dbus_error.message);
 	}
@@ -386,7 +386,7 @@ gboolean dbus_init_local(void)
 }
 
 #ifdef HAVE_POLKIT
-/** 
+/**
  * dbus_is_privileged:
  * @connection:		connection to D-Bus
  * @message:		Message
@@ -394,9 +394,9 @@ gboolean dbus_init_local(void)
  *
  * Returns: 		TRUE if the caller is privileged
  *
- * checks if caller of message possesses the CPUFREQ_POLKIT_PRIVILGE 
+ * checks if caller of message possesses the CPUFREQ_POLKIT_PRIVILGE
  */
-static gboolean 
+static gboolean
 dbus_is_privileged (DBusConnection *connection, DBusMessage *message, DBusError *error)
 {
         gboolean ret;
@@ -407,7 +407,7 @@ dbus_is_privileged (DBusConnection *connection, DBusMessage *message, DBusError 
         polkit_result = NULL;
 /* FIXME: CPUFREQ_POLKIT_PRIVILEGE, CPUFREQ_ERROR_GENERAL */
         invoked_by_syscon_name = dbus_message_get_sender (message);
-        
+
         polkit_result = libhal_device_is_caller_privileged (halctx,
                                                             udi,
                                                             CPUFREQ_POLKIT_PRIVILEGE,
@@ -420,7 +420,7 @@ dbus_is_privileged (DBusConnection *connection, DBusMessage *message, DBusError 
         else {
 			if (strcmp (polkit_result, "yes") != 0) {
 
-				dbus_raise_error (connection, message, 
+				dbus_raise_error (connection, message,
 									  "org.freedesktop.Hal.Device.PermissionDeniedByPolicy",
 									  "%s %s <-- (action, result)",
 									  CPUFREQ_POLKIT_PRIVILEGE, polkit_result);
@@ -435,7 +435,7 @@ dbus_is_privileged (DBusConnection *connection, DBusMessage *message, DBusError 
 }
 #endif
 
-/** 
+/**
  * dbus_send_reply:
  * @connection:		connection to D-Bus
  * @message:		Message
@@ -444,7 +444,7 @@ dbus_is_privileged (DBusConnection *connection, DBusMessage *message, DBusError 
  *
  * Returns: 		TRUE/FALSE
  *
- * sends a reply to message with the given data and its dbus_type 
+ * sends a reply to message with the given data and its dbus_type
  */
 static gboolean dbus_send_reply(DBusConnection *connection, DBusMessage *message,
 				int dbus_type, void *data)
@@ -465,11 +465,11 @@ static gboolean dbus_send_reply(DBusConnection *connection, DBusMessage *message
 	}
 	dbus_connection_flush(connection);
 	dbus_message_unref(reply);
-	
+
 	return TRUE;
 }
 
-/** 
+/**
  * dbus_get_argument:
  * @connection:		connection to D-Bus
  * @message:		Message
@@ -495,14 +495,14 @@ static gboolean dbus_get_argument(DBusConnection *connection, DBusMessage *messa
 	return TRUE;
 }
 
-/** 
+/**
  * dbus_filter_function:
  * @connection:		connection to D-Bus
  * @message:		message
  * @user_data:  pointer to the data
  *
  * Returns: 		the result
- * 
+ *
  * @raises UnknownMethod
  *
  * D-Bus filter function
@@ -534,7 +534,7 @@ DBusHandlerResult dbus_filter_function(DBusConnection *connection,
 #endif
 
 		if (dbus_message_is_method_call(message, DBUS_INTERFACE, "Shutdown")) {
-			
+
 	 		fprintf(stdout, "executing Shutdown\n");
 			upsdrv_shutdown();
 			dbus_send_reply(connection, message, DBUS_TYPE_INVALID, NULL);
@@ -549,7 +549,7 @@ DBusHandlerResult dbus_filter_function(DBusConnection *connection,
 				return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 			}
 	 		fprintf(stdout, "Received argument: %s\n", (b_enable==TRUE)?"true":"false");
-			
+
 			if (b_enable==TRUE) {
 				if (upsh.instcmd("beeper.enable", NULL) != STAT_INSTCMD_HANDLED) {
 					dbus_send_reply(connection, message, DBUS_TYPE_INT32, &retcode);

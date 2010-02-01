@@ -53,7 +53,6 @@ static int instcmd(const char *cmdname, const char *extra)
 	char *cmdsuffix = NULL;
 	char *cmdindex = NULL;
 	char *outletname = NULL;
-	char *outletprop=xstrdup("outlet.65536.desc");
 
 	upsdebugx(1, "entering instcmd (%s)", cmdname);
 
@@ -67,25 +66,25 @@ static int instcmd(const char *cmdname, const char *extra)
 	if ( (cmdindex = strchr(cmdname, '.')) == NULL )
 		return STAT_INSTCMD_UNKNOWN;
 	else {
+		char	buf[32];
 		cmdindex++;
-		sprintf(outletprop, "outlet.%i.desc", atoi(cmdindex));
-		outletname = (char *)dstate_getinfo(outletprop);
-		free(outletprop);
+		snprintf(buf, sizeof(buf), "outlet.%i.desc", atoi(cmdindex));
+		outletname = (char *)dstate_getinfo(buf);
 	}
 
-	/* Power on the outlet */		
+	/* Power on the outlet */
 	if (!strcasecmp(cmdsuffix, "on")) {
 		rv = pm_node_on(pm, outletname);
 		return (rv==PM_ESUCCESS)?STAT_INSTCMD_HANDLED:STAT_SET_INVALID;
 	}
 
-	/* Power off the outlet */		
+	/* Power off the outlet */
 	if (!strcasecmp(cmdsuffix, "off")) {
 		rv = pm_node_off(pm, outletname);
 		return (rv==PM_ESUCCESS)?STAT_INSTCMD_HANDLED:STAT_SET_INVALID;
 	}
 
-	/* Cycle the outlet */		
+	/* Cycle the outlet */
 	if (!strcasecmp(cmdsuffix, "cycle")) {
 		rv = pm_node_cycle(pm, outletname);
 		return (rv==PM_ESUCCESS)?STAT_INSTCMD_HANDLED:STAT_SET_INVALID;
@@ -205,7 +204,7 @@ static int reconnect_ups(void)
 	}
 }
 
-/* 
+/*
  * powerman support functions
  ****************************/
 
@@ -222,10 +221,10 @@ static pm_err_t query_one(pm_handle_t pm, char *s, int outletnum)
 
 		upsdebugx(3, "updating status");
 
-		sprintf(outlet_prop, "outlet.%i.status", outletnum);
-		dstate_setinfo(outlet_prop, "%s", ns == PM_ON ? "on" : 
+		snprintf(outlet_prop, sizeof(outlet_prop), "outlet.%i.status", outletnum);
+		dstate_setinfo(outlet_prop, "%s", ns == PM_ON ? "on" :
 						ns == PM_OFF ? "off" : "unknown");
-		dstate_dataok();		
+		dstate_dataok();
 	}
 	return rv;
 }
@@ -254,22 +253,22 @@ static pm_err_t query_all(pm_handle_t pm, int mode)
 			/* set the initial generic properties (ie except status)
 			 * but only if the status query succeeded */
 			if (mode == WALKMODE_INIT) {
-				sprintf(outlet_prop, "outlet.%i.id", outletnum);
-				dstate_setinfo(outlet_prop, "%i", outletnum); 
+				snprintf(outlet_prop, sizeof(outlet_prop), "outlet.%i.id", outletnum);
+				dstate_setinfo(outlet_prop, "%i", outletnum);
 
-				sprintf(outlet_prop, "outlet.%i.desc", outletnum);
-				dstate_setinfo(outlet_prop, "%s", s); 
+				snprintf(outlet_prop, sizeof(outlet_prop), "outlet.%i.desc", outletnum);
+				dstate_setinfo(outlet_prop, "%s", s);
 
 				/* we assume it's always true! */
-				sprintf(outlet_prop, "outlet.%i.switchable", outletnum);
+				snprintf(outlet_prop, sizeof(outlet_prop), "outlet.%i.switchable", outletnum);
 				dstate_setinfo(outlet_prop, "yes");
 
 				/* add instant commands */
-				sprintf(outlet_prop, "outlet.%i.load.on", outletnum);
+				snprintf(outlet_prop, sizeof(outlet_prop), "outlet.%i.load.on", outletnum);
 				dstate_addcmd(outlet_prop);
-				sprintf(outlet_prop, "outlet.%i.load.off", outletnum);
+				snprintf(outlet_prop, sizeof(outlet_prop), "outlet.%i.load.off", outletnum);
 				dstate_addcmd(outlet_prop);
-				sprintf(outlet_prop, "outlet.%i.load.cycle", outletnum);
+				snprintf(outlet_prop, sizeof(outlet_prop), "outlet.%i.load.cycle", outletnum);
 				dstate_addcmd(outlet_prop);
 			}
 		}

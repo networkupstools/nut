@@ -16,9 +16,9 @@
  It influenced the layout of this driver.
 
  Modified for USB by Wolfgang Ocker <weo@weo1.de>
- 
+
  ojw0000 2007Apr5 Oliver Wilcock - modified to control individual load segments (outlet.2.shutdown.return) on Powerware PW5125.
- 
+
 This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation; either version 2 of the License, or
@@ -41,9 +41,9 @@ TODO List:
 		Give information if config block is
 		present, and how long it is, if it exist.
 		If config block exist, read the config block and setup
-		the possible config commands, and parse the 
+		the possible config commands, and parse the
 		'Length of the Extended Limits Configuration Block' for
-		extended configuration commands 
+		extended configuration commands
 
 		Statistic map Size: (Low priority)
 		May be used to se if there is a Statistic Map.
@@ -93,7 +93,7 @@ TODO List:
 			2 = Waiting to communicate with a UPS
 			3 = Communication established with a UPS
 			4 = Waiting to communicate with software or adapter
-			5 = Communication established software (e.g., LanSafe) 
+			5 = Communication established software (e.g., LanSafe)
 				or adapter (e.g., ConnectUPS)
 			6 = Communicating with a Display Device
 			7 = Multi-drop Serial channel
@@ -105,10 +105,10 @@ TODO List:
 		settings or turn the outlet on or off with a delay (0 - 32767 seconds)
 
 
-	Rewrite some parts of the driver, to minimise code duplication. (Like the instant commands) 
+	Rewrite some parts of the driver, to minimise code duplication. (Like the instant commands)
 
 	Implement support for Password Authorization (XCP spec, §4.3.2)
-	
+
 	Implement support for settable variables (upsh.setvar)
 */
 
@@ -202,24 +202,24 @@ float get_float(const unsigned char *data)
 	e = (src & 0x7F800000UL) >> 23;
 	f = (src & 0x007FFFFFUL);
 
-	if (e == 255 && f != 0)	
+	if (e == 255 && f != 0)
 	{
 		/* NaN (Not a Number) */
 		return FLT_MAX;
 	}
-	
+
 	if (e == 255 && f == 0 && s == 1)
 	{
 		/* Negative infinity */
 		return -FLT_MAX;
 	}
-	 
+
 	if (e == 255 && f == 0 && s == 0)
 	{
 		/* Positive infinity */
 		return FLT_MAX;
 	}
-	
+
 	if (e > 0 && e < 255)
 	{
 		/* Normal number */
@@ -234,7 +234,7 @@ float get_float(const unsigned char *data)
 		if (s) f = -f;
 		return ldexp(f, -149);
 	}
-	 
+
 	if (e == 0 && f == 0 && (s == 1 || s == 0))
 	{
 		/* Zero */
@@ -335,233 +335,233 @@ void init_alarm_map()
 {
 	/* Clean entire map */
 	memset(&bcmxcp_alarm_map, 0, sizeof(BCMXCP_ALARM_MAP_ENTRY_t) * BCMXCP_ALARM_MAP_MAX);
-	
+
 	/* Set all alarm descriptions	*/
-	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_AC_OVER_VOLTAGE].alarm_desc = "INVERTER_AC_OVER_VOLTAGE"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_AC_OVER_VOLTAGE].alarm_desc = "INVERTER_AC_OVER_VOLTAGE";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_AC_UNDER_VOLTAGE].alarm_desc = "INVERTER_AC_UNDER_VOLTAGE";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_OVER_OR_UNDER_FREQ].alarm_desc = "INVERTER_OVER_OR_UNDER_FREQ";
-	bcmxcp_alarm_map[BCMXCP_ALARM_BYPASS_AC_OVER_VOLTAGE].alarm_desc = "BYPASS_AC_OVER_VOLTAGE"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_BYPASS_AC_OVER_VOLTAGE].alarm_desc = "BYPASS_AC_OVER_VOLTAGE";
 	bcmxcp_alarm_map[BCMXCP_ALARM_BYPASS_AC_UNDER_VOLTAGE].alarm_desc = "BYPASS_AC_UNDER_VOLTAGE";
 	bcmxcp_alarm_map[BCMXCP_ALARM_BYPASS_OVER_OR_UNDER_FREQ].alarm_desc = "BYPASS_OVER_OR_UNDER_FREQ";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INPUT_AC_OVER_VOLTAGE].alarm_desc = "INPUT_AC_OVER_VOLTAGE";
-	bcmxcp_alarm_map[BCMXCP_ALARM_INPUT_AC_UNDER_VOLTAGE].alarm_desc = "INPUT_AC_UNDER_VOLTAGE"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_INPUT_UNDER_OR_OVER_FREQ].alarm_desc = "INPUT_UNDER_OR_OVER_FREQ"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_INPUT_AC_UNDER_VOLTAGE].alarm_desc = "INPUT_AC_UNDER_VOLTAGE";
+	bcmxcp_alarm_map[BCMXCP_ALARM_INPUT_UNDER_OR_OVER_FREQ].alarm_desc = "INPUT_UNDER_OR_OVER_FREQ";
 	bcmxcp_alarm_map[BCMXCP_ALARM_OUTPUT_OVER_VOLTAGE].alarm_desc = "OUTPUT_OVER_VOLTAGE";
-	bcmxcp_alarm_map[BCMXCP_ALARM_OUTPUT_UNDER_VOLTAGE].alarm_desc = "OUTPUT_UNDER_VOLTAGE"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_OUTPUT_UNDER_VOLTAGE].alarm_desc = "OUTPUT_UNDER_VOLTAGE";
 	bcmxcp_alarm_map[BCMXCP_ALARM_OUTPUT_UNDER_OR_OVER_FREQ].alarm_desc = "OUTPUT_UNDER_OR_OVER_FREQ";
-	bcmxcp_alarm_map[BCMXCP_ALARM_REMOTE_EMERGENCY_PWR_OFF].alarm_desc = "REMOTE_EMERGENCY_PWR_OFF"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_REMOTE_EMERGENCY_PWR_OFF].alarm_desc = "REMOTE_EMERGENCY_PWR_OFF";
 	bcmxcp_alarm_map[BCMXCP_ALARM_REMOTE_GO_TO_BYPASS].alarm_desc = "REMOTE_GO_TO_BYPASS";
-	bcmxcp_alarm_map[BCMXCP_ALARM_BUILDING_ALARM_6].alarm_desc = "BUILDING_ALARM_6"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_BUILDING_ALARM_5].alarm_desc = "BUILDING_ALARM_5"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_BUILDING_ALARM_4].alarm_desc = "BUILDING_ALARM_4"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_BUILDING_ALARM_3].alarm_desc = "BUILDING_ALARM_3"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_BUILDING_ALARM_2].alarm_desc = "BUILDING_ALARM_2"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_BUILDING_ALARM_1].alarm_desc = "BUILDING_ALARM_1"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_BUILDING_ALARM_6].alarm_desc = "BUILDING_ALARM_6";
+	bcmxcp_alarm_map[BCMXCP_ALARM_BUILDING_ALARM_5].alarm_desc = "BUILDING_ALARM_5";
+	bcmxcp_alarm_map[BCMXCP_ALARM_BUILDING_ALARM_4].alarm_desc = "BUILDING_ALARM_4";
+	bcmxcp_alarm_map[BCMXCP_ALARM_BUILDING_ALARM_3].alarm_desc = "BUILDING_ALARM_3";
+	bcmxcp_alarm_map[BCMXCP_ALARM_BUILDING_ALARM_2].alarm_desc = "BUILDING_ALARM_2";
+	bcmxcp_alarm_map[BCMXCP_ALARM_BUILDING_ALARM_1].alarm_desc = "BUILDING_ALARM_1";
 	bcmxcp_alarm_map[BCMXCP_ALARM_STATIC_SWITCH_OVER_TEMP].alarm_desc = "STATIC_SWITCH_OVER_TEMP";
 	bcmxcp_alarm_map[BCMXCP_ALARM_CHARGER_OVER_TEMP].alarm_desc = "CHARGER_OVER_TEMP";
-	bcmxcp_alarm_map[BCMXCP_ALARM_CHARGER_LOGIC_PWR_FAIL].alarm_desc = "CHARGER_LOGIC_PWR_FAIL"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_CHARGER_LOGIC_PWR_FAIL].alarm_desc = "CHARGER_LOGIC_PWR_FAIL";
 	bcmxcp_alarm_map[BCMXCP_ALARM_CHARGER_OVER_VOLTAGE_OR_CURRENT].alarm_desc = "CHARGER_OVER_VOLTAGE_OR_CURRENT";
-	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_OVER_TEMP].alarm_desc = "INVERTER_OVER_TEMP"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_OVER_TEMP].alarm_desc = "INVERTER_OVER_TEMP";
 	bcmxcp_alarm_map[BCMXCP_ALARM_OUTPUT_OVERLOAD].alarm_desc = "OUTPUT_OVERLOAD";
-	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_INPUT_OVER_CURRENT].alarm_desc = "RECTIFIER_INPUT_OVER_CURRENT"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_OUTPUT_OVER_CURRENT].alarm_desc = "INVERTER_OUTPUT_OVER_CURRENT"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_DC_LINK_OVER_VOLTAGE].alarm_desc = "DC_LINK_OVER_VOLTAGE"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_INPUT_OVER_CURRENT].alarm_desc = "RECTIFIER_INPUT_OVER_CURRENT";
+	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_OUTPUT_OVER_CURRENT].alarm_desc = "INVERTER_OUTPUT_OVER_CURRENT";
+	bcmxcp_alarm_map[BCMXCP_ALARM_DC_LINK_OVER_VOLTAGE].alarm_desc = "DC_LINK_OVER_VOLTAGE";
 	bcmxcp_alarm_map[BCMXCP_ALARM_DC_LINK_UNDER_VOLTAGE].alarm_desc = "DC_LINK_UNDER_VOLTAGE";
-	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_FAILED].alarm_desc = "RECTIFIER_FAILED"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_FAULT].alarm_desc = "INVERTER_FAULT"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_BATTERY_CONNECTOR_FAIL].alarm_desc = "BATTERY_CONNECTOR_FAIL"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_FAILED].alarm_desc = "RECTIFIER_FAILED";
+	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_FAULT].alarm_desc = "INVERTER_FAULT";
+	bcmxcp_alarm_map[BCMXCP_ALARM_BATTERY_CONNECTOR_FAIL].alarm_desc = "BATTERY_CONNECTOR_FAIL";
 	bcmxcp_alarm_map[BCMXCP_ALARM_BYPASS_BREAKER_FAIL].alarm_desc = "BYPASS_BREAKER_FAIL";
-	bcmxcp_alarm_map[BCMXCP_ALARM_CHARGER_FAIL].alarm_desc = "CHARGER_FAIL"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_RAMP_UP_FAILED].alarm_desc = "RAMP_UP_FAILED"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_STATIC_SWITCH_FAILED].alarm_desc = "STATIC_SWITCH_FAILED"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_ANALOG_AD_REF_FAIL].alarm_desc = "ANALOG_AD_REF_FAIL"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_CHARGER_FAIL].alarm_desc = "CHARGER_FAIL";
+	bcmxcp_alarm_map[BCMXCP_ALARM_RAMP_UP_FAILED].alarm_desc = "RAMP_UP_FAILED";
+	bcmxcp_alarm_map[BCMXCP_ALARM_STATIC_SWITCH_FAILED].alarm_desc = "STATIC_SWITCH_FAILED";
+	bcmxcp_alarm_map[BCMXCP_ALARM_ANALOG_AD_REF_FAIL].alarm_desc = "ANALOG_AD_REF_FAIL";
 	bcmxcp_alarm_map[BCMXCP_ALARM_BYPASS_UNCALIBRATED].alarm_desc = "BYPASS_UNCALIBRATED";
-	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_UNCALIBRATED].alarm_desc = "RECTIFIER_UNCALIBRATED"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_UNCALIBRATED].alarm_desc = "RECTIFIER_UNCALIBRATED";
 	bcmxcp_alarm_map[BCMXCP_ALARM_OUTPUT_UNCALIBRATED].alarm_desc = "OUTPUT_UNCALIBRATED";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_UNCALIBRATED].alarm_desc = "INVERTER_UNCALIBRATED";
-	bcmxcp_alarm_map[BCMXCP_ALARM_DC_VOLT_UNCALIBRATED].alarm_desc = "DC_VOLT_UNCALIBRATED"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_DC_VOLT_UNCALIBRATED].alarm_desc = "DC_VOLT_UNCALIBRATED";
 	bcmxcp_alarm_map[BCMXCP_ALARM_OUTPUT_CURRENT_UNCALIBRATED].alarm_desc = "OUTPUT_CURRENT_UNCALIBRATED";
-	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_CURRENT_UNCALIBRATED].alarm_desc = "RECTIFIER_CURRENT_UNCALIBRATED"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_BATTERY_CURRENT_UNCALIBRATED].alarm_desc = "BATTERY_CURRENT_UNCALIBRATED"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_CURRENT_UNCALIBRATED].alarm_desc = "RECTIFIER_CURRENT_UNCALIBRATED";
+	bcmxcp_alarm_map[BCMXCP_ALARM_BATTERY_CURRENT_UNCALIBRATED].alarm_desc = "BATTERY_CURRENT_UNCALIBRATED";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_ON_OFF_STAT_FAIL].alarm_desc = "INVERTER_ON_OFF_STAT_FAIL";
 	bcmxcp_alarm_map[BCMXCP_ALARM_BATTERY_CURRENT_LIMIT].alarm_desc = "BATTERY_CURRENT_LIMIT";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_STARTUP_FAIL].alarm_desc = "INVERTER_STARTUP_FAIL";
 	bcmxcp_alarm_map[BCMXCP_ALARM_ANALOG_BOARD_AD_STAT_FAIL].alarm_desc = "ANALOG_BOARD_AD_STAT_FAIL";
 	bcmxcp_alarm_map[BCMXCP_ALARM_OUTPUT_CURRENT_OVER_100].alarm_desc = "OUTPUT_CURRENT_OVER_100";
-	bcmxcp_alarm_map[BCMXCP_ALARM_BATTERY_GROUND_FAULT].alarm_desc = "BATTERY_GROUND_FAULT"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_WAITING_FOR_CHARGER_SYNC].alarm_desc = "WAITING_FOR_CHARGER_SYNC"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_BATTERY_GROUND_FAULT].alarm_desc = "BATTERY_GROUND_FAULT";
+	bcmxcp_alarm_map[BCMXCP_ALARM_WAITING_FOR_CHARGER_SYNC].alarm_desc = "WAITING_FOR_CHARGER_SYNC";
 	bcmxcp_alarm_map[BCMXCP_ALARM_NV_RAM_FAIL].alarm_desc = "NV_RAM_FAIL";
 	bcmxcp_alarm_map[BCMXCP_ALARM_ANALOG_BOARD_AD_TIMEOUT].alarm_desc = "ANALOG_BOARD_AD_TIMEOUT";
 	bcmxcp_alarm_map[BCMXCP_ALARM_SHUTDOWN_IMMINENT].alarm_desc = "SHUTDOWN_IMMINENT";
 	bcmxcp_alarm_map[BCMXCP_ALARM_BATTERY_LOW].alarm_desc = "BATTERY_LOW";
-	bcmxcp_alarm_map[BCMXCP_ALARM_UTILITY_FAIL].alarm_desc = "UTILITY_FAIL"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_OUTPUT_SHORT_CIRCUIT].alarm_desc = "OUTPUT_SHORT_CIRCUIT"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_UTILITY_FAIL].alarm_desc = "UTILITY_FAIL";
+	bcmxcp_alarm_map[BCMXCP_ALARM_OUTPUT_SHORT_CIRCUIT].alarm_desc = "OUTPUT_SHORT_CIRCUIT";
 	bcmxcp_alarm_map[BCMXCP_ALARM_UTILITY_NOT_PRESENT].alarm_desc = "UTILITY_NOT_PRESENT";
-	bcmxcp_alarm_map[BCMXCP_ALARM_FULL_TIME_CHARGING].alarm_desc = "FULL_TIME_CHARGING"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_FULL_TIME_CHARGING].alarm_desc = "FULL_TIME_CHARGING";
 	bcmxcp_alarm_map[BCMXCP_ALARM_FAST_BYPASS_COMMAND].alarm_desc = "FAST_BYPASS_COMMAND";
-	bcmxcp_alarm_map[BCMXCP_ALARM_AD_ERROR].alarm_desc = "AD_ERROR"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_AD_ERROR].alarm_desc = "AD_ERROR";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INTERNAL_COM_FAIL].alarm_desc = "INTERNAL_COM_FAIL";
 	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_SELFTEST_FAIL].alarm_desc = "RECTIFIER_SELFTEST_FAIL";
 	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_EEPROM_FAIL].alarm_desc = "RECTIFIER_EEPROM_FAIL";
-	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_EPROM_FAIL].alarm_desc = "RECTIFIER_EPROM_FAIL"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_EPROM_FAIL].alarm_desc = "RECTIFIER_EPROM_FAIL";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INPUT_LINE_VOLTAGE_LOSS].alarm_desc = "INPUT_LINE_VOLTAGE_LOSS";
 	bcmxcp_alarm_map[BCMXCP_ALARM_BATTERY_DC_OVER_VOLTAGE].alarm_desc = "BATTERY_DC_OVER_VOLTAGE";
-	bcmxcp_alarm_map[BCMXCP_ALARM_POWER_SUPPLY_OVER_TEMP].alarm_desc = "POWER_SUPPLY_OVER_TEMP"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_POWER_SUPPLY_OVER_TEMP].alarm_desc = "POWER_SUPPLY_OVER_TEMP";
 	bcmxcp_alarm_map[BCMXCP_ALARM_POWER_SUPPLY_FAIL].alarm_desc = "POWER_SUPPLY_FAIL";
-	bcmxcp_alarm_map[BCMXCP_ALARM_POWER_SUPPLY_5V_FAIL].alarm_desc = "POWER_SUPPLY_5V_FAIL"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_POWER_SUPPLY_5V_FAIL].alarm_desc = "POWER_SUPPLY_5V_FAIL";
 	bcmxcp_alarm_map[BCMXCP_ALARM_POWER_SUPPLY_12V_FAIL].alarm_desc = "POWER_SUPPLY_12V_FAIL";
-	bcmxcp_alarm_map[BCMXCP_ALARM_HEATSINK_OVER_TEMP].alarm_desc = "HEATSINK_OVER_TEMP"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_HEATSINK_OVER_TEMP].alarm_desc = "HEATSINK_OVER_TEMP";
 	bcmxcp_alarm_map[BCMXCP_ALARM_HEATSINK_TEMP_SENSOR_FAIL].alarm_desc = "HEATSINK_TEMP_SENSOR_FAIL";
-	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_CURRENT_OVER_125].alarm_desc = "RECTIFIER_CURRENT_OVER_125"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_FAULT_INTERRUPT_FAIL].alarm_desc = "RECTIFIER_FAULT_INTERRUPT_FAIL"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_POWER_CAPASITOR_FAIL].alarm_desc = "RECTIFIER_POWER_CAPASITOR_FAIL"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_PROGRAM_STACK_ERROR].alarm_desc = "INVERTER_PROGRAM_STACK_ERROR"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_BOARD_SELFTEST_FAIL].alarm_desc = "INVERTER_BOARD_SELFTEST_FAIL"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_CURRENT_OVER_125].alarm_desc = "RECTIFIER_CURRENT_OVER_125";
+	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_FAULT_INTERRUPT_FAIL].alarm_desc = "RECTIFIER_FAULT_INTERRUPT_FAIL";
+	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_POWER_CAPASITOR_FAIL].alarm_desc = "RECTIFIER_POWER_CAPASITOR_FAIL";
+	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_PROGRAM_STACK_ERROR].alarm_desc = "INVERTER_PROGRAM_STACK_ERROR";
+	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_BOARD_SELFTEST_FAIL].alarm_desc = "INVERTER_BOARD_SELFTEST_FAIL";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_AD_SELFTEST_FAIL].alarm_desc = "INVERTER_AD_SELFTEST_FAIL";
-	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_RAM_SELFTEST_FAIL].alarm_desc = "INVERTER_RAM_SELFTEST_FAIL"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_RAM_SELFTEST_FAIL].alarm_desc = "INVERTER_RAM_SELFTEST_FAIL";
 	bcmxcp_alarm_map[BCMXCP_ALARM_NV_MEMORY_CHECKSUM_FAIL].alarm_desc = "NV_MEMORY_CHECKSUM_FAIL";
 	bcmxcp_alarm_map[BCMXCP_ALARM_PROGRAM_CHECKSUM_FAIL].alarm_desc = "PROGRAM_CHECKSUM_FAIL";
-	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_CPU_SELFTEST_FAIL].alarm_desc = "INVERTER_CPU_SELFTEST_FAIL"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_NETWORK_NOT_RESPONDING].alarm_desc = "NETWORK_NOT_RESPONDING"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_CPU_SELFTEST_FAIL].alarm_desc = "INVERTER_CPU_SELFTEST_FAIL";
+	bcmxcp_alarm_map[BCMXCP_ALARM_NETWORK_NOT_RESPONDING].alarm_desc = "NETWORK_NOT_RESPONDING";
 	bcmxcp_alarm_map[BCMXCP_ALARM_FRONT_PANEL_SELFTEST_FAIL].alarm_desc = "FRONT_PANEL_SELFTEST_FAIL";
-	bcmxcp_alarm_map[BCMXCP_ALARM_NODE_EEPROM_VERIFICATION_ERROR].alarm_desc = "NODE_EEPROM_VERIFICATION_ERROR"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_NODE_EEPROM_VERIFICATION_ERROR].alarm_desc = "NODE_EEPROM_VERIFICATION_ERROR";
 	bcmxcp_alarm_map[BCMXCP_ALARM_OUTPUT_AC_OVER_VOLT_TEST_FAIL].alarm_desc = "OUTPUT_AC_OVER_VOLT_TEST_FAIL";
-	bcmxcp_alarm_map[BCMXCP_ALARM_OUTPUT_DC_OVER_VOLTAGE].alarm_desc = "OUTPUT_DC_OVER_VOLTAGE"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_INPUT_PHASE_ROTATION_ERROR].alarm_desc = "INPUT_PHASE_ROTATION_ERROR"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_RAMP_UP_TEST_FAILED].alarm_desc = "INVERTER_RAMP_UP_TEST_FAILED"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_OFF_COMMAND].alarm_desc = "INVERTER_OFF_COMMAND"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_OUTPUT_DC_OVER_VOLTAGE].alarm_desc = "OUTPUT_DC_OVER_VOLTAGE";
+	bcmxcp_alarm_map[BCMXCP_ALARM_INPUT_PHASE_ROTATION_ERROR].alarm_desc = "INPUT_PHASE_ROTATION_ERROR";
+	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_RAMP_UP_TEST_FAILED].alarm_desc = "INVERTER_RAMP_UP_TEST_FAILED";
+	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_OFF_COMMAND].alarm_desc = "INVERTER_OFF_COMMAND";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_ON_COMMAND].alarm_desc = "INVERTER_ON_COMMAND";
 	bcmxcp_alarm_map[BCMXCP_ALARM_TO_BYPASS_COMMAND].alarm_desc = "TO_BYPASS_COMMAND";
 	bcmxcp_alarm_map[BCMXCP_ALARM_FROM_BYPASS_COMMAND].alarm_desc = "FROM_BYPASS_COMMAND";
 	bcmxcp_alarm_map[BCMXCP_ALARM_AUTO_MODE_COMMAND].alarm_desc = "AUTO_MODE_COMMAND";
-	bcmxcp_alarm_map[BCMXCP_ALARM_EMERGENCY_SHUTDOWN_COMMAND].alarm_desc = "EMERGENCY_SHUTDOWN_COMMAND"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_EMERGENCY_SHUTDOWN_COMMAND].alarm_desc = "EMERGENCY_SHUTDOWN_COMMAND";
 	bcmxcp_alarm_map[BCMXCP_ALARM_SETUP_SWITCH_OPEN].alarm_desc = "SETUP_SWITCH_OPEN";
-	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_OVER_VOLT_INT].alarm_desc = "INVERTER_OVER_VOLT_INT"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_OVER_VOLT_INT].alarm_desc = "INVERTER_OVER_VOLT_INT";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_UNDER_VOLT_INT].alarm_desc = "INVERTER_UNDER_VOLT_INT";
-	bcmxcp_alarm_map[BCMXCP_ALARM_ABSOLUTE_DCOV_ACOV].alarm_desc = "ABSOLUTE_DCOV_ACOV"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_ABSOLUTE_DCOV_ACOV].alarm_desc = "ABSOLUTE_DCOV_ACOV";
 	bcmxcp_alarm_map[BCMXCP_ALARM_PHASE_A_CURRENT_LIMIT].alarm_desc = "PHASE_A_CURRENT_LIMIT";
 	bcmxcp_alarm_map[BCMXCP_ALARM_PHASE_B_CURRENT_LIMIT].alarm_desc = "PHASE_B_CURRENT_LIMIT";
 	bcmxcp_alarm_map[BCMXCP_ALARM_PHASE_C_CURRENT_LIMIT].alarm_desc = "PHASE_C_CURRENT_LIMIT";
-	bcmxcp_alarm_map[BCMXCP_ALARM_BYPASS_NOT_AVAILABLE].alarm_desc = "BYPASS_NOT_AVAILABLE"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_BREAKER_OPEN].alarm_desc = "RECTIFIER_BREAKER_OPEN"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_BATTERY_CONTACTOR_OPEN].alarm_desc = "BATTERY_CONTACTOR_OPEN"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_BYPASS_NOT_AVAILABLE].alarm_desc = "BYPASS_NOT_AVAILABLE";
+	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_BREAKER_OPEN].alarm_desc = "RECTIFIER_BREAKER_OPEN";
+	bcmxcp_alarm_map[BCMXCP_ALARM_BATTERY_CONTACTOR_OPEN].alarm_desc = "BATTERY_CONTACTOR_OPEN";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_CONTACTOR_OPEN].alarm_desc = "INVERTER_CONTACTOR_OPEN";
 	bcmxcp_alarm_map[BCMXCP_ALARM_BYPASS_BREAKER_OPEN].alarm_desc = "BYPASS_BREAKER_OPEN";
-	bcmxcp_alarm_map[BCMXCP_ALARM_INV_BOARD_ACOV_INT_TEST_FAIL].alarm_desc = "INV_BOARD_ACOV_INT_TEST_FAIL"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_INV_BOARD_ACOV_INT_TEST_FAIL].alarm_desc = "INV_BOARD_ACOV_INT_TEST_FAIL";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_OVER_TEMP_TRIP].alarm_desc = "INVERTER_OVER_TEMP_TRIP";
-	bcmxcp_alarm_map[BCMXCP_ALARM_INV_BOARD_ACUV_INT_TEST_FAIL].alarm_desc = "INV_BOARD_ACUV_INT_TEST_FAIL"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_INV_BOARD_ACUV_INT_TEST_FAIL].alarm_desc = "INV_BOARD_ACUV_INT_TEST_FAIL";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_VOLTAGE_FEEDBACK_ERROR].alarm_desc = "INVERTER_VOLTAGE_FEEDBACK_ERROR";
-	bcmxcp_alarm_map[BCMXCP_ALARM_DC_UNDER_VOLTAGE_TIMEOUT].alarm_desc = "DC_UNDER_VOLTAGE_TIMEOUT"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_AC_UNDER_VOLTAGE_TIMEOUT].alarm_desc = "AC_UNDER_VOLTAGE_TIMEOUT"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_DC_UNDER_VOLTAGE_TIMEOUT].alarm_desc = "DC_UNDER_VOLTAGE_TIMEOUT";
+	bcmxcp_alarm_map[BCMXCP_ALARM_AC_UNDER_VOLTAGE_TIMEOUT].alarm_desc = "AC_UNDER_VOLTAGE_TIMEOUT";
 	bcmxcp_alarm_map[BCMXCP_ALARM_DC_UNDER_VOLTAGE_WHILE_CHARGE].alarm_desc = "DC_UNDER_VOLTAGE_WHILE_CHARGE";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_VOLTAGE_BIAS_ERROR].alarm_desc = "INVERTER_VOLTAGE_BIAS_ERROR";
-	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_PHASE_ROTATION].alarm_desc = "RECTIFIER_PHASE_ROTATION"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_BYPASS_PHASER_ROTATION].alarm_desc = "BYPASS_PHASER_ROTATION"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_PHASE_ROTATION].alarm_desc = "RECTIFIER_PHASE_ROTATION";
+	bcmxcp_alarm_map[BCMXCP_ALARM_BYPASS_PHASER_ROTATION].alarm_desc = "BYPASS_PHASER_ROTATION";
 	bcmxcp_alarm_map[BCMXCP_ALARM_SYSTEM_INTERFACE_BOARD_FAIL].alarm_desc = "SYSTEM_INTERFACE_BOARD_FAIL";
 	bcmxcp_alarm_map[BCMXCP_ALARM_PARALLEL_BOARD_FAIL].alarm_desc = "PARALLEL_BOARD_FAIL";
 	bcmxcp_alarm_map[BCMXCP_ALARM_LOST_LOAD_SHARING_PHASE_A].alarm_desc = "LOST_LOAD_SHARING_PHASE_A";
 	bcmxcp_alarm_map[BCMXCP_ALARM_LOST_LOAD_SHARING_PHASE_B].alarm_desc = "LOST_LOAD_SHARING_PHASE_B";
 	bcmxcp_alarm_map[BCMXCP_ALARM_LOST_LOAD_SHARING_PHASE_C].alarm_desc = "LOST_LOAD_SHARING_PHASE_C";
 	bcmxcp_alarm_map[BCMXCP_ALARM_DC_OVER_VOLTAGE_TIMEOUT].alarm_desc = "DC_OVER_VOLTAGE_TIMEOUT";
-	bcmxcp_alarm_map[BCMXCP_ALARM_BATTERY_TOTALLY_DISCHARGED].alarm_desc = "BATTERY_TOTALLY_DISCHARGED"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_BATTERY_TOTALLY_DISCHARGED].alarm_desc = "BATTERY_TOTALLY_DISCHARGED";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_PHASE_BIAS_ERROR].alarm_desc = "INVERTER_PHASE_BIAS_ERROR";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_VOLTAGE_BIAS_ERROR_2].alarm_desc = "INVERTER_VOLTAGE_BIAS_ERROR_2";
-	bcmxcp_alarm_map[BCMXCP_ALARM_DC_LINK_BLEED_COMPLETE].alarm_desc = "DC_LINK_BLEED_COMPLETE"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_DC_LINK_BLEED_COMPLETE].alarm_desc = "DC_LINK_BLEED_COMPLETE";
 	bcmxcp_alarm_map[BCMXCP_ALARM_LARGE_CHARGER_INPUT_CURRENT].alarm_desc = "LARGE_CHARGER_INPUT_CURRENT";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INV_VOLT_TOO_LOW_FOR_RAMP_LEVEL].alarm_desc = "INV_VOLT_TOO_LOW_FOR_RAMP_LEVEL";
-	bcmxcp_alarm_map[BCMXCP_ALARM_LOSS_OF_REDUNDANCY].alarm_desc = "LOSS_OF_REDUNDANCY"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_LOSS_OF_SYNC_BUS].alarm_desc = "LOSS_OF_SYNC_BUS"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_BREAKER_SHUNT_TRIP].alarm_desc = "RECTIFIER_BREAKER_SHUNT_TRIP"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_LOSS_OF_CHARGER_SYNC].alarm_desc = "LOSS_OF_CHARGER_SYNC"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_LOSS_OF_REDUNDANCY].alarm_desc = "LOSS_OF_REDUNDANCY";
+	bcmxcp_alarm_map[BCMXCP_ALARM_LOSS_OF_SYNC_BUS].alarm_desc = "LOSS_OF_SYNC_BUS";
+	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_BREAKER_SHUNT_TRIP].alarm_desc = "RECTIFIER_BREAKER_SHUNT_TRIP";
+	bcmxcp_alarm_map[BCMXCP_ALARM_LOSS_OF_CHARGER_SYNC].alarm_desc = "LOSS_OF_CHARGER_SYNC";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_LOW_LEVEL_TEST_TIMEOUT].alarm_desc = "INVERTER_LOW_LEVEL_TEST_TIMEOUT";
 	bcmxcp_alarm_map[BCMXCP_ALARM_OUTPUT_BREAKER_OPEN].alarm_desc = "OUTPUT_BREAKER_OPEN";
-	bcmxcp_alarm_map[BCMXCP_ALARM_CONTROL_POWER_ON].alarm_desc = "CONTROL_POWER_ON"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_CONTROL_POWER_ON].alarm_desc = "CONTROL_POWER_ON";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_ON].alarm_desc = "INVERTER_ON";
-	bcmxcp_alarm_map[BCMXCP_ALARM_CHARGER_ON].alarm_desc = "CHARGER_ON"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_CHARGER_ON].alarm_desc = "CHARGER_ON";
 	bcmxcp_alarm_map[BCMXCP_ALARM_BYPASS_ON].alarm_desc = "BYPASS_ON";
 	bcmxcp_alarm_map[BCMXCP_ALARM_BYPASS_POWER_LOSS].alarm_desc = "BYPASS_POWER_LOSS";
-	bcmxcp_alarm_map[BCMXCP_ALARM_ON_MANUAL_BYPASS].alarm_desc = "ON_MANUAL_BYPASS"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_BYPASS_MANUAL_TURN_OFF].alarm_desc = "BYPASS_MANUAL_TURN_OFF"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_BLEEDING_DC_LINK_VOLT].alarm_desc = "INVERTER_BLEEDING_DC_LINK_VOLT"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_ON_MANUAL_BYPASS].alarm_desc = "ON_MANUAL_BYPASS";
+	bcmxcp_alarm_map[BCMXCP_ALARM_BYPASS_MANUAL_TURN_OFF].alarm_desc = "BYPASS_MANUAL_TURN_OFF";
+	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_BLEEDING_DC_LINK_VOLT].alarm_desc = "INVERTER_BLEEDING_DC_LINK_VOLT";
 	bcmxcp_alarm_map[BCMXCP_ALARM_CPU_ISR_ERROR].alarm_desc = "CPU_ISR_ERROR";
-	bcmxcp_alarm_map[BCMXCP_ALARM_SYSTEM_ISR_RESTART].alarm_desc = "SYSTEM_ISR_RESTART"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_SYSTEM_ISR_RESTART].alarm_desc = "SYSTEM_ISR_RESTART";
 	bcmxcp_alarm_map[BCMXCP_ALARM_PARALLEL_DC].alarm_desc = "PARALLEL_DC";
 	bcmxcp_alarm_map[BCMXCP_ALARM_BATTERY_NEEDS_SERVICE].alarm_desc = "BATTERY_NEEDS_SERVICE";
-	bcmxcp_alarm_map[BCMXCP_ALARM_BATTERY_CHARGING].alarm_desc = "BATTERY_CHARGING"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_BATTERY_CHARGING].alarm_desc = "BATTERY_CHARGING";
 	bcmxcp_alarm_map[BCMXCP_ALARM_BATTERY_NOT_CHARGED].alarm_desc = "BATTERY_NOT_CHARGED";
 	bcmxcp_alarm_map[BCMXCP_ALARM_DISABLED_BATTERY_TIME].alarm_desc = "DISABLED_BATTERY_TIME";
-	bcmxcp_alarm_map[BCMXCP_ALARM_SERIES_7000_ENABLE].alarm_desc = "SERIES_7000_ENABLE"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_OTHER_UPS_ON].alarm_desc = "OTHER_UPS_ON"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_SERIES_7000_ENABLE].alarm_desc = "SERIES_7000_ENABLE";
+	bcmxcp_alarm_map[BCMXCP_ALARM_OTHER_UPS_ON].alarm_desc = "OTHER_UPS_ON";
 	bcmxcp_alarm_map[BCMXCP_ALARM_PARALLEL_INVERTER].alarm_desc = "PARALLEL_INVERTER";
 	bcmxcp_alarm_map[BCMXCP_ALARM_UPS_IN_PARALLEL].alarm_desc = "UPS_IN_PARALLEL";
 	bcmxcp_alarm_map[BCMXCP_ALARM_OUTPUT_BREAKER_REALY_FAIL].alarm_desc = "OUTPUT_BREAKER_REALY_FAIL";
 	bcmxcp_alarm_map[BCMXCP_ALARM_CONTROL_POWER_OFF].alarm_desc = "CONTROL_POWER_OFF";
-	bcmxcp_alarm_map[BCMXCP_ALARM_LEVEL_2_OVERLOAD_PHASE_A].alarm_desc = "LEVEL_2_OVERLOAD_PHASE_A"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_LEVEL_2_OVERLOAD_PHASE_B].alarm_desc = "LEVEL_2_OVERLOAD_PHASE_B"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_LEVEL_2_OVERLOAD_PHASE_C].alarm_desc = "LEVEL_2_OVERLOAD_PHASE_C"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_LEVEL_3_OVERLOAD_PHASE_A].alarm_desc = "LEVEL_3_OVERLOAD_PHASE_A"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_LEVEL_3_OVERLOAD_PHASE_B].alarm_desc = "LEVEL_3_OVERLOAD_PHASE_B"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_LEVEL_3_OVERLOAD_PHASE_C].alarm_desc = "LEVEL_3_OVERLOAD_PHASE_C"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_LEVEL_4_OVERLOAD_PHASE_A].alarm_desc = "LEVEL_4_OVERLOAD_PHASE_A"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_LEVEL_4_OVERLOAD_PHASE_B].alarm_desc = "LEVEL_4_OVERLOAD_PHASE_B"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_LEVEL_4_OVERLOAD_PHASE_C].alarm_desc = "LEVEL_4_OVERLOAD_PHASE_C"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_UPS_ON_BATTERY].alarm_desc = "UPS_ON_BATTERY"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_LEVEL_2_OVERLOAD_PHASE_A].alarm_desc = "LEVEL_2_OVERLOAD_PHASE_A";
+	bcmxcp_alarm_map[BCMXCP_ALARM_LEVEL_2_OVERLOAD_PHASE_B].alarm_desc = "LEVEL_2_OVERLOAD_PHASE_B";
+	bcmxcp_alarm_map[BCMXCP_ALARM_LEVEL_2_OVERLOAD_PHASE_C].alarm_desc = "LEVEL_2_OVERLOAD_PHASE_C";
+	bcmxcp_alarm_map[BCMXCP_ALARM_LEVEL_3_OVERLOAD_PHASE_A].alarm_desc = "LEVEL_3_OVERLOAD_PHASE_A";
+	bcmxcp_alarm_map[BCMXCP_ALARM_LEVEL_3_OVERLOAD_PHASE_B].alarm_desc = "LEVEL_3_OVERLOAD_PHASE_B";
+	bcmxcp_alarm_map[BCMXCP_ALARM_LEVEL_3_OVERLOAD_PHASE_C].alarm_desc = "LEVEL_3_OVERLOAD_PHASE_C";
+	bcmxcp_alarm_map[BCMXCP_ALARM_LEVEL_4_OVERLOAD_PHASE_A].alarm_desc = "LEVEL_4_OVERLOAD_PHASE_A";
+	bcmxcp_alarm_map[BCMXCP_ALARM_LEVEL_4_OVERLOAD_PHASE_B].alarm_desc = "LEVEL_4_OVERLOAD_PHASE_B";
+	bcmxcp_alarm_map[BCMXCP_ALARM_LEVEL_4_OVERLOAD_PHASE_C].alarm_desc = "LEVEL_4_OVERLOAD_PHASE_C";
+	bcmxcp_alarm_map[BCMXCP_ALARM_UPS_ON_BATTERY].alarm_desc = "UPS_ON_BATTERY";
 	bcmxcp_alarm_map[BCMXCP_ALARM_UPS_ON_BYPASS].alarm_desc = "UPS_ON_BYPASS";
 	bcmxcp_alarm_map[BCMXCP_ALARM_LOAD_DUMPED].alarm_desc = "LOAD_DUMPED";
-	bcmxcp_alarm_map[BCMXCP_ALARM_LOAD_ON_INVERTER].alarm_desc = "LOAD_ON_INVERTER"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_UPS_ON_COMMAND].alarm_desc = "UPS_ON_COMMAND"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_LOAD_ON_INVERTER].alarm_desc = "LOAD_ON_INVERTER";
+	bcmxcp_alarm_map[BCMXCP_ALARM_UPS_ON_COMMAND].alarm_desc = "UPS_ON_COMMAND";
 	bcmxcp_alarm_map[BCMXCP_ALARM_UPS_OFF_COMMAND].alarm_desc = "UPS_OFF_COMMAND";
-	bcmxcp_alarm_map[BCMXCP_ALARM_LOW_BATTERY_SHUTDOWN].alarm_desc = "LOW_BATTERY_SHUTDOWN"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_LOW_BATTERY_SHUTDOWN].alarm_desc = "LOW_BATTERY_SHUTDOWN";
 	bcmxcp_alarm_map[BCMXCP_ALARM_AUTO_ON_ENABLED].alarm_desc = "AUTO_ON_ENABLED";
 	bcmxcp_alarm_map[BCMXCP_ALARM_SOFTWARE_INCOMPABILITY_DETECTED].alarm_desc = "SOFTWARE_INCOMPABILITY_DETECTED";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_TEMP_SENSOR_FAILED].alarm_desc = "INVERTER_TEMP_SENSOR_FAILED";
-	bcmxcp_alarm_map[BCMXCP_ALARM_DC_START_OCCURED].alarm_desc = "DC_START_OCCURED"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_DC_START_OCCURED].alarm_desc = "DC_START_OCCURED";
 	bcmxcp_alarm_map[BCMXCP_ALARM_IN_PARALLEL_OPERATION].alarm_desc = "IN_PARALLEL_OPERATION";
 	bcmxcp_alarm_map[BCMXCP_ALARM_SYNCING_TO_BYPASS].alarm_desc = "SYNCING_TO_BYPASS";
-	bcmxcp_alarm_map[BCMXCP_ALARM_RAMPING_UPS_UP].alarm_desc = "RAMPING_UPS_UP"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_RAMPING_UPS_UP].alarm_desc = "RAMPING_UPS_UP";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_ON_DELAY].alarm_desc = "INVERTER_ON_DELAY";
-	bcmxcp_alarm_map[BCMXCP_ALARM_CHARGER_ON_DELAY].alarm_desc = "CHARGER_ON_DELAY"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_WAITING_FOR_UTIL_INPUT].alarm_desc = "WAITING_FOR_UTIL_INPUT"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_CLOSE_BYPASS_BREAKER].alarm_desc = "CLOSE_BYPASS_BREAKER"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_TEMPORARY_BYPASS_OPERATION].alarm_desc = "TEMPORARY_BYPASS_OPERATION"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_CHARGER_ON_DELAY].alarm_desc = "CHARGER_ON_DELAY";
+	bcmxcp_alarm_map[BCMXCP_ALARM_WAITING_FOR_UTIL_INPUT].alarm_desc = "WAITING_FOR_UTIL_INPUT";
+	bcmxcp_alarm_map[BCMXCP_ALARM_CLOSE_BYPASS_BREAKER].alarm_desc = "CLOSE_BYPASS_BREAKER";
+	bcmxcp_alarm_map[BCMXCP_ALARM_TEMPORARY_BYPASS_OPERATION].alarm_desc = "TEMPORARY_BYPASS_OPERATION";
 	bcmxcp_alarm_map[BCMXCP_ALARM_SYNCING_TO_OUTPUT].alarm_desc = "SYNCING_TO_OUTPUT";
-	bcmxcp_alarm_map[BCMXCP_ALARM_BYPASS_FAILURE].alarm_desc = "BYPASS_FAILURE"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_BYPASS_FAILURE].alarm_desc = "BYPASS_FAILURE";
 	bcmxcp_alarm_map[BCMXCP_ALARM_AUTO_OFF_COMMAND_EXECUTED].alarm_desc = "AUTO_OFF_COMMAND_EXECUTED";
-	bcmxcp_alarm_map[BCMXCP_ALARM_AUTO_ON_COMMAND_EXECUTED].alarm_desc = "AUTO_ON_COMMAND_EXECUTED"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_AUTO_ON_COMMAND_EXECUTED].alarm_desc = "AUTO_ON_COMMAND_EXECUTED";
 	bcmxcp_alarm_map[BCMXCP_ALARM_BATTERY_TEST_FAILED].alarm_desc = "BATTERY_TEST_FAILED";
 	bcmxcp_alarm_map[BCMXCP_ALARM_FUSE_FAIL].alarm_desc = "FUSE_FAIL";
-	bcmxcp_alarm_map[BCMXCP_ALARM_FAN_FAIL].alarm_desc = "FAN_FAIL"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_FAN_FAIL].alarm_desc = "FAN_FAIL";
 	bcmxcp_alarm_map[BCMXCP_ALARM_SITE_WIRING_FAULT].alarm_desc = "SITE_WIRING_FAULT";
 	bcmxcp_alarm_map[BCMXCP_ALARM_BACKFEED_CONTACTOR_FAIL].alarm_desc = "BACKFEED_CONTACTOR_FAIL";
 	bcmxcp_alarm_map[BCMXCP_ALARM_ON_BUCK].alarm_desc = "ON_BUCK";
-	bcmxcp_alarm_map[BCMXCP_ALARM_ON_BOOST].alarm_desc = "ON_BOOST"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_ON_BOOST].alarm_desc = "ON_BOOST";
 	bcmxcp_alarm_map[BCMXCP_ALARM_ON_DOUBLE_BOOST].alarm_desc = "ON_DOUBLE_BOOST";
-	bcmxcp_alarm_map[BCMXCP_ALARM_BATTERIES_DISCONNECTED].alarm_desc = "BATTERIES_DISCONNECTED"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_BATTERIES_DISCONNECTED].alarm_desc = "BATTERIES_DISCONNECTED";
 	bcmxcp_alarm_map[BCMXCP_ALARM_UPS_CABINET_OVER_TEMP].alarm_desc = "UPS_CABINET_OVER_TEMP";
 	bcmxcp_alarm_map[BCMXCP_ALARM_TRANSFORMER_OVER_TEMP].alarm_desc = "TRANSFORMER_OVER_TEMP";
-	bcmxcp_alarm_map[BCMXCP_ALARM_AMBIENT_UNDER_TEMP].alarm_desc = "AMBIENT_UNDER_TEMP"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_AMBIENT_UNDER_TEMP].alarm_desc = "AMBIENT_UNDER_TEMP";
 	bcmxcp_alarm_map[BCMXCP_ALARM_AMBIENT_OVER_TEMP].alarm_desc = "AMBIENT_OVER_TEMP";
 	bcmxcp_alarm_map[BCMXCP_ALARM_CABINET_DOOR_OPEN].alarm_desc = "CABINET_DOOR_OPEN";
-	bcmxcp_alarm_map[BCMXCP_ALARM_CABINET_DOOR_OPEN_VOLT_PRESENT].alarm_desc = "CABINET_DOOR_OPEN_VOLT_PRESENT"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_CABINET_DOOR_OPEN_VOLT_PRESENT].alarm_desc = "CABINET_DOOR_OPEN_VOLT_PRESENT";
 	bcmxcp_alarm_map[BCMXCP_ALARM_AUTO_SHUTDOWN_PENDING].alarm_desc = "AUTO_SHUTDOWN_PENDING";
 	bcmxcp_alarm_map[BCMXCP_ALARM_TAP_SWITCHING_REALY_PENDING].alarm_desc = "TAP_SWITCHING_REALY_PENDING";
-	bcmxcp_alarm_map[BCMXCP_ALARM_UNABLE_TO_CHARGE_BATTERIES].alarm_desc = "UNABLE_TO_CHARGE_BATTERIES"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_UNABLE_TO_CHARGE_BATTERIES].alarm_desc = "UNABLE_TO_CHARGE_BATTERIES";
 	bcmxcp_alarm_map[BCMXCP_ALARM_STARTUP_FAILURE_CHECK_EPO].alarm_desc = "STARTUP_FAILURE_CHECK_EPO";
 	bcmxcp_alarm_map[BCMXCP_ALARM_AUTOMATIC_STARTUP_PENDING].alarm_desc = "AUTOMATIC_STARTUP_PENDING";
-	bcmxcp_alarm_map[BCMXCP_ALARM_MODEM_FAILED].alarm_desc = "MODEM_FAILED"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_MODEM_FAILED].alarm_desc = "MODEM_FAILED";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INCOMING_MODEM_CALL_STARTED].alarm_desc = "INCOMING_MODEM_CALL_STARTED";
 	bcmxcp_alarm_map[BCMXCP_ALARM_OUTGOING_MODEM_CALL_STARTED].alarm_desc = "OUTGOING_MODEM_CALL_STARTED";
-	bcmxcp_alarm_map[BCMXCP_ALARM_MODEM_CONNECTION_ESTABLISHED].alarm_desc = "MODEM_CONNECTION_ESTABLISHED"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_MODEM_CALL_COMPLETED_SUCCESS].alarm_desc = "MODEM_CALL_COMPLETED_SUCCESS"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_MODEM_CONNECTION_ESTABLISHED].alarm_desc = "MODEM_CONNECTION_ESTABLISHED";
+	bcmxcp_alarm_map[BCMXCP_ALARM_MODEM_CALL_COMPLETED_SUCCESS].alarm_desc = "MODEM_CALL_COMPLETED_SUCCESS";
 	bcmxcp_alarm_map[BCMXCP_ALARM_MODEM_CALL_COMPLETED_FAIL].alarm_desc = "MODEM_CALL_COMPLETED_FAIL";
-	bcmxcp_alarm_map[BCMXCP_ALARM_INPUT_BREAKER_FAIL].alarm_desc = "INPUT_BREAKER_FAIL"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_INPUT_BREAKER_FAIL].alarm_desc = "INPUT_BREAKER_FAIL";
 	bcmxcp_alarm_map[BCMXCP_ALARM_SYSINIT_IN_PROGRESS].alarm_desc = "SYSINIT_IN_PROGRESS";
-	bcmxcp_alarm_map[BCMXCP_ALARM_AUTOCALIBRATION_FAIL].alarm_desc = "AUTOCALIBRATION_FAIL"; 
-	bcmxcp_alarm_map[BCMXCP_ALARM_SELECTIVE_TRIP_OF_MODULE].alarm_desc = "SELECTIVE_TRIP_OF_MODULE"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_AUTOCALIBRATION_FAIL].alarm_desc = "AUTOCALIBRATION_FAIL";
+	bcmxcp_alarm_map[BCMXCP_ALARM_SELECTIVE_TRIP_OF_MODULE].alarm_desc = "SELECTIVE_TRIP_OF_MODULE";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_OUTPUT_FAILURE].alarm_desc = "INVERTER_OUTPUT_FAILURE";
 	bcmxcp_alarm_map[BCMXCP_ALARM_ABNORMAL_OUTPUT_VOLT_AT_STARTUP].alarm_desc = "ABNORMAL_OUTPUT_VOLT_AT_STARTUP";
 	bcmxcp_alarm_map[BCMXCP_ALARM_RECTIFIER_OVER_TEMP].alarm_desc = "RECTIFIER_OVER_TEMP";
-	bcmxcp_alarm_map[BCMXCP_ALARM_CONFIG_ERROR].alarm_desc = "CONFIG_ERROR"; 
+	bcmxcp_alarm_map[BCMXCP_ALARM_CONFIG_ERROR].alarm_desc = "CONFIG_ERROR";
 	bcmxcp_alarm_map[BCMXCP_ALARM_REDUNDANCY_LOSS_DUE_TO_OVERLOAD].alarm_desc = "REDUNDANCY_LOSS_DUE_TO_OVERLOAD";
 	bcmxcp_alarm_map[BCMXCP_ALARM_ON_ALTERNATE_AC_SOURCE].alarm_desc = "ON_ALTERNATE_AC_SOURCE";
 	bcmxcp_alarm_map[BCMXCP_ALARM_IN_HIGH_EFFICIENCY_MODE].alarm_desc = "IN_HIGH_EFFICIENCY_MODE";
@@ -576,7 +576,7 @@ void init_alarm_map()
 	bcmxcp_alarm_map[BCMXCP_ALARM_CHARGER_OFF_COMMAND].alarm_desc = "CHARGER_OFF_COMMAND";
 	bcmxcp_alarm_map[BCMXCP_ALARM_UPS_NORMAL].alarm_desc = "UPS_NORMAL";
 	bcmxcp_alarm_map[BCMXCP_ALARM_EXTERNAL_COMMUNICATION_FAILURE].alarm_desc = "EXTERNAL_COMMUNICATION_FAILURE";
- 
+
 }
 
 /* Get information on UPS commands */
@@ -584,7 +584,7 @@ void init_command_map()
 {
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
 	int res;
-	
+
 	upsdebugx(1, "entering init_command_map()");
 
 	res = command_read_sequence(PW_COMMAND_LIST_REQ, answer);
@@ -599,10 +599,10 @@ void init_command_map()
 void init_ups_meter_map(const unsigned char *map, unsigned char len)
 {
 	unsigned int iIndex, iOffset = 0;
-	
+
 	/* In case of debug - make explanation of values */
 	upsdebugx(2, "Index\tOffset\tFormat\tNUT\n");
-	
+
 	/* Loop thru map */
 	for (iIndex = 0; iIndex < len && iIndex < BCMXCP_METER_MAP_MAX; iIndex++)
 	{
@@ -635,7 +635,7 @@ void decode_meter_map_entry(const unsigned char *entry, const unsigned char form
 	*value = '\0';
 	if (entry == (unsigned char *)NULL || format == 0x00)
 		return;
-	
+
 	/* Get data based on format */
 	if (format == 0xf0) {
 		/* Long integer */
@@ -699,13 +699,13 @@ void init_ups_alarm_map(const unsigned char *map, unsigned char len)
 {
 	unsigned int iIndex = 0, iOffset = 0;
 	int alarm = 0;
-	
+
 	/* In case of debug - make explanation of values */
 	upsdebugx(2, "Index\tAlarm\tSupported\n");
 
 	/* Loop thru map */
 	for (iIndex = 0; iIndex < len && iIndex < BCMXCP_ALARM_MAP_MAX / 8; iIndex++)
-	{ 
+	{
 		/* Bit 0 */
 		iOffset = iIndex * 8;
 		if (map[iIndex] & 0x01)
@@ -885,10 +885,10 @@ else
 	upsdebugx(1, "init_outlet(%i), res=%i", len, res);
 
 	num_outlet = answer[iIndex++];
-	upsdebugx(2, "Number of outlets: %d\n", num_outlet); 
+	upsdebugx(2, "Number of outlets: %d\n", num_outlet);
 
 	size_outlet = answer[iIndex++];
-	upsdebugx(2, "Number of bytes: %d\n", size_outlet); 
+	upsdebugx(2, "Number of bytes: %d\n", size_outlet);
 
 	for(num = 1 ; num <= num_outlet ; num++) {
 		outlet_num = answer[iIndex++];
@@ -912,7 +912,7 @@ else
 		upsdebugx(2, "Auto delay on: %d\n", auto_dly_on);
 		snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.delay.start", num);
 		dstate_setinfo(outlet_name, "%d", auto_dly_on);
-	}	
+	}
 
 	return num_outlet;
 
@@ -933,13 +933,13 @@ void init_config(void)
 
 	/* Nominal output voltage of ups */
 	voltage = get_word((answer + BCMXCP_CONFIG_BLOCK_NOMINAL_OUTPUT_VOLTAGE));
-	
+
 	if (voltage != 0)
 		dstate_setinfo("output.voltage.nominal", "%d", voltage);
 
 	/* UPS serial number */
 	sValue[16] = 0;
-	
+
 	snprintf(sValue, 16, "%s", answer + BCMXCP_CONFIG_BLOCK_SERIAL_NUMBER);
 	len = 0;
 
@@ -949,9 +949,9 @@ void init_config(void)
 			break;
 		}
 	}
-	
+
 	dstate_setinfo("ups.serial", "%s", sValue);
-	
+
 }
 
 void init_limit(void)
@@ -1064,7 +1064,7 @@ void upsdrv_initinfo(void)
 		bcmxcp_status.shutdowndelay = atoi(getval("shutdown_delay"));
 	else
 		bcmxcp_status.shutdowndelay = 120;
-		
+
 	/* Get information on UPS from UPS ID block */
 	res = command_read_sequence(PW_ID_BLOCK_REQ, answer);
 	if (res <= 0)
@@ -1132,8 +1132,8 @@ void upsdrv_initinfo(void)
 	iIndex += len;
 	/* power rating in the model name is in the form "<rating>i"
 	 * ie "1500i", "500i", ...
-	 * some models already includes it, so check to avoid duplication */	
-	sprintf(power_rating, "%ii", iRating);
+	 * some models already includes it, so check to avoid duplication */
+	snprintf(power_rating, sizeof(power_rating), "%ii", iRating);
 	if (strstr(pTmp, power_rating) == NULL) {
 		snprintfcat(pTmp, len+10, " %s", power_rating);
 	}
@@ -1142,13 +1142,13 @@ void upsdrv_initinfo(void)
 
 	/* Get meter map info from ups, and init our map */
 	len = answer[iIndex++];
-	upsdebugx(2, "Length of meter map: %d\n", len); 
+	upsdebugx(2, "Length of meter map: %d\n", len);
 	init_ups_meter_map(answer+iIndex, len);
 	iIndex += len;
 
 	/* Next is alarm map */
 	len = answer[iIndex++];
-	upsdebugx(2, "Length of alarm map: %d\n", len); 
+	upsdebugx(2, "Length of alarm map: %d\n", len);
 	init_ups_alarm_map(answer+iIndex, len);
 	iIndex += len;
 
@@ -1159,7 +1159,7 @@ void upsdrv_initinfo(void)
 
 	/* Next is statistics map */
 	len = answer[iIndex++];
-	upsdebugx(2, "Length of statistics map: %d\n", len); 
+	upsdebugx(2, "Length of statistics map: %d\n", len);
 	/* init_statistics_map(answer+iIndex, len); */
 	iIndex += len;
 
@@ -1192,7 +1192,7 @@ void upsdrv_initinfo(void)
 
 	/* Due to a bug in PW5115 firmware, we need to use blocklength > 8.
 	The protocol state that outlet block is only implemented if there is
-	at least 2 outlet block. 5115 has only one outlet, but has outlet block! */ 
+	at least 2 outlet block. 5115 has only one outlet, but has outlet block! */
 	if (outlet_block_len > 8) {
 		len = init_outlet(outlet_block_len);
 
@@ -1207,7 +1207,7 @@ void upsdrv_initinfo(void)
 
 	/* Get information on UPS extended limits */
 	init_limit();
-	
+
 	/* Get information on UPS commands */
 	init_command_map();
 
@@ -1223,14 +1223,14 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
-	unsigned char answer[PW_ANSWER_MAX_SIZE]; 
+	unsigned char answer[PW_ANSWER_MAX_SIZE];
 	char sValue[128];
-	int iIndex, res; 
+	int iIndex, res;
 	float output, max_output, fValue = 0.0f;
 
 	/* Get info from UPS */
 	res = command_read_sequence(PW_METER_BLOCK_REQ, answer);
-	
+
 	if (res <= 0){
 		upslogx(LOG_ERR, "Short read from UPS");
 		dstate_datastale();
@@ -1258,7 +1258,7 @@ void upsdrv_updateinfo(void)
 		decode_meter_map_entry(answer + bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_BAR_CHART].meter_block_index,
 					 bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_BAR_CHART].format, sValue);
 		max_output = atof(sValue);
-		
+
 		fValue = 0.0;
 		if (max_output > 0.0)
 			fValue = 100 * (output / max_output);
@@ -1273,7 +1273,7 @@ void upsdrv_updateinfo(void)
 		decode_meter_map_entry(answer + bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURR_PHASE_A_BAR_CHART].meter_block_index,
 					 bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURR_PHASE_A_BAR_CHART].format, sValue);
 		max_output = atof(sValue);
-		
+
 		fValue = 0.0;
 		if (max_output > 0.0)
 			fValue = 100 * (output / max_output);
@@ -1282,7 +1282,7 @@ void upsdrv_updateinfo(void)
 
 	/* Due to a bug in PW5115 firmware, we need to use blocklength > 8.
 	The protocol state that outlet block is only implemented if there is
-	at least 2 outlet block. 5115 has only one outlet, but has outlet block. */ 
+	at least 2 outlet block. 5115 has only one outlet, but has outlet block. */
 	if (outlet_block_len > 8) {
 		init_outlet(outlet_block_len);
 	}
@@ -1344,7 +1344,7 @@ void upsdrv_updateinfo(void)
 
 		/* Set status */
 		status_init();
-	
+
 		switch (status) {
 			case 0x50: /* On line, everything is fine */
 				status_set("OL");
@@ -1389,7 +1389,7 @@ void upsdrv_updateinfo(void)
 			status_set("LB");
 
 		status_commit();
-	} 
+	}
 
 	dstate_dataok();
 }
@@ -1398,7 +1398,7 @@ void upsdrv_shutdown(void)
 {
 	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
 	unsigned char answer[5], cbuf[3];
-	
+
 	int res, sec;
 
 	/* Get vars from ups.conf */
@@ -1410,22 +1410,22 @@ void upsdrv_shutdown(void)
 	/* maybe try to detect the UPS here, but try a shutdown	even if
 		 it doesn't respond at first if possible */
 	send_write_command(AUTHOR, 4);
-	
+
 	sleep(1);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
 
 	cbuf[0] = PW_LOAD_OFF_RESTART;
 	cbuf[1] = (unsigned char)(bcmxcp_status.shutdowndelay & 0x00ff);	/* "delay" sec delay for shutdown, */
 	cbuf[2] = (unsigned char)(bcmxcp_status.shutdowndelay >> 8);		/* hige byte sec. From ups.conf. */
-	
+
 	res = command_write_sequence(cbuf, 3, answer);
 	if (res <= 0) {
 		upslogx(LOG_ERR, "Short read from UPS");
 		dstate_datastale();
 		return;
 	}
-	
+
 	sec = (256 * (unsigned char)answer[3]) + (unsigned char)answer[2];
-	
+
 	/* NOTE: get the response, and return info code located as first data byte after 4 header bytes.
 		Is implemented in answers to command packet's.
 	0x31 Accepted
@@ -1437,7 +1437,7 @@ void upsdrv_shutdown(void)
 	0x37 Accepted with parameter adjusted
 	*/
 	switch ((unsigned char) answer[0]) {
-	
+
 		case 0x31: {
 			upsdrv_comm_good();
 			upslogx(LOG_NOTICE,"Going down in %d sec", sec);
@@ -1488,11 +1488,11 @@ static int instcmd(const char *cmdname, const char *extra)
 			dstate_datastale();
 			return -1;
 		}
-	
+
 		sec = (256 * (unsigned char)answer[3]) + (unsigned char)answer[2];
-	
+
 		switch ((unsigned char) answer[0]) {
-	
+
 			case 0x31: {
 				upslogx(LOG_NOTICE,"Going down in %d sec", sec);
 				return STAT_INSTCMD_HANDLED;
@@ -1520,24 +1520,24 @@ static int instcmd(const char *cmdname, const char *extra)
 	/* FIXME: call upsdrv_shutdown() or use the present one! */
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		send_write_command(AUTHOR, 4);
-	
+
 		sleep(1);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
-	
+
 		cbuf[0] = PW_LOAD_OFF_RESTART;
 		cbuf[1] = (unsigned char)(bcmxcp_status.shutdowndelay & 0x00ff);	/* "delay" sec delay for shutdown, */
 		cbuf[2] = (unsigned char)(bcmxcp_status.shutdowndelay >> 8);		/* high byte sec. From ups.conf. */
-	
+
 		res = command_write_sequence(cbuf, 3, answer);
 		if (res <= 0) {
 			upslogx(LOG_ERR, "Short read from UPS");
 			dstate_datastale();
 			return -1;
 		}
-	
+
 		sec = (256 * (unsigned char)answer[3]) + (unsigned char)answer[2];
-	
+
 		switch ((unsigned char) answer[0]) {
-	
+
 			case 0x31: {
 				upslogx(LOG_NOTICE,"Going down in %d sec", sec);
 				return STAT_INSTCMD_HANDLED;
@@ -1564,18 +1564,18 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
 		send_write_command(AUTHOR, 4);
-	
+
 		sleep(1);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
-	
+
 		res = command_read_sequence(PW_UPS_OFF, answer);
 		if (res <= 0) {
 			upslogx(LOG_ERR, "Short read from UPS");
 			dstate_datastale();
 			return -1;
 		}
-	
+
 		switch ((unsigned char) answer[0]) {
-	
+
 			case 0x31: {
 				upslogx(LOG_NOTICE,"[%s] Going down NOW", cmdname);
 				return STAT_INSTCMD_HANDLED;
@@ -1602,22 +1602,22 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "test.battery.start")) {
 		send_write_command(AUTHOR, 4);
-	
+
 		sleep(1);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
-	
+
 		cbuf[0] = PW_INIT_BAT_TEST;
 		cbuf[1] = 0x0A;			/* 10 sec start delay for test.*/
 		cbuf[2] = 0x1E;			/* 30 sec test duration.*/
-		
+
 		res = command_write_sequence(cbuf, 3, answer);
 		if (res <= 0) {
 			upslogx(LOG_ERR, "Short read from UPS");
 			dstate_datastale();
 			return -1;
 		}
-	
+
 		switch ((unsigned char) answer[0]) {
-	
+
 			case 0x31: {
 				upslogx(LOG_NOTICE,"[%s] Testing now", cmdname);
 				return STAT_INSTCMD_HANDLED;
@@ -1644,9 +1644,9 @@ static int instcmd(const char *cmdname, const char *extra)
 			 answer from the test.
 			 Or return, as we may lose line power
 			 and need to do a shutdown.*/
-		
+
 	}
-	
+
 	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
 	return STAT_INSTCMD_UNKNOWN;
 }

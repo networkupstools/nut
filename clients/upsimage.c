@@ -16,7 +16,7 @@
      20020928 - Simon Rozman
        - added imgvar table to hold description, how to draw each UPS variable supported
        - added support for ACFREQ, OUT_FREQ and UPSTEMP
-       
+
    Copyrights:
      (C) 1998  Russell Kroll <rkroll@exploits.org>
      (C) 2002  Simon Rozman <simon@rozman.net>
@@ -58,10 +58,10 @@ static	UPSCONN_t	ups;
 #define BLUE(x)		(x & 0xff)
 
 
-void parsearg(char *var, char *value) 
+void parsearg(char *var, char *value)
 {
 	int	i, v;
-	
+
 	/* avoid bogus junk from evil people */
 	if ((strlen(var) > MAX_CGI_STRLEN) || (strlen(value) > MAX_CGI_STRLEN))
 		return;
@@ -85,7 +85,7 @@ void parsearg(char *var, char *value)
 				v = strtoul(value + 2, (char **)NULL, 16);
 			else
 				v = atoi(value);
-				
+
 			/* avoid false numbers from bad people */
 			if (v < imgarg[i].min)
 				imgarg[i].val = imgarg[i].min;
@@ -108,7 +108,7 @@ static int get_imgarg(const char *name)
 			return imgarg[i].val;
 
 	return -1;
-}	
+}
 
 /* write the HTML header then have gd dump the image */
 static void drawimage(gdImagePtr im)
@@ -139,14 +139,14 @@ static void drawscale(
 	int redlo2, int redhi2,			/* second red zone start and end */
 	int grnlo, int grnhi)			/* green zone start and end */
 {
-	int	col1, col2, back_color, scale_num_color, ok_zone_maj_color, 
-		ok_zone_min_color, neutral_zone_maj_color, 
-		neutral_zone_min_color, warn_zone_maj_color, 
+	int	col1, col2, back_color, scale_num_color, ok_zone_maj_color,
+		ok_zone_min_color, neutral_zone_maj_color,
+		neutral_zone_min_color, warn_zone_maj_color,
 		warn_zone_min_color;
 	char		lbltxt[SMALLBUF];
 	int		y, level, range;
 	int		width, height, scale_height;
-	
+
 	back_color		= color_alloc(im, get_imgarg("back_col"));
 	scale_num_color		= color_alloc(im, get_imgarg("scale_num_col"));
 	ok_zone_maj_color	= color_alloc(im, get_imgarg("ok_zone_maj_col"));
@@ -155,7 +155,7 @@ static void drawscale(
 	neutral_zone_min_color	= color_alloc(im, get_imgarg("neutral_zone_min_col"));
 	warn_zone_maj_color	= color_alloc(im, get_imgarg("warn_zone_maj_col"));
 	warn_zone_min_color	= color_alloc(im, get_imgarg("warn_zone_min_col"));
-	
+
 	width = get_imgarg("width");
 	height = get_imgarg("height");
 	scale_height = get_imgarg("scale_height");
@@ -163,13 +163,13 @@ static void drawscale(
 	/* start out with a background color and make it transparent */
 	gdImageFilledRectangle(im, 0, 0, width, height, back_color);
 	gdImageColorTransparent(im, back_color);
-	
+
 	range = lvlhi - lvllo;
 
 	/* draw scale to correspond with the values */
 	for (level = lvlhi; level >= lvllo; level -= step) {
 		/* select dash RGB color according to the level */
-		if (((redlo1 <= level) && (level <=redhi1)) || 
+		if (((redlo1 <= level) && (level <=redhi1)) ||
 			((redlo2 <= level) && (level <=redhi2))) {
 			col1 = warn_zone_maj_color;
 			col2 = warn_zone_min_color;
@@ -183,8 +183,8 @@ static void drawscale(
 
 		/* calculate integer value for y */
 		y = scale_height * (lvlhi - level) / range;
-		
-		/* draw major, semimajor or minor dash accordingly */		
+
+		/* draw major, semimajor or minor dash accordingly */
 		if (level % step10 == 0) {
 			gdImageLine(im, 0, y, width, y, col1);
 		} else {
@@ -195,7 +195,7 @@ static void drawscale(
 		}
 	}
 
-	/* put the values on the scale */	
+	/* put the values on the scale */
 	for (level = lvlhi; level >= lvllo; level -= step) {
 		if (level % step10 == 0) {
 			y = scale_height * (lvlhi - level) / range;
@@ -214,7 +214,7 @@ static void drawbar(
 	int redlo2, int redhi2,			/* second red zone start and end */
 	int grnlo, int grnhi,			/* green zone start and end */
 	double value, 				/* UPS variable value to draw */
-	const char *format			/* sprintf style format to be used when rendering summary text */
+	const char *format			/* printf style format to be used when rendering summary text */
 )
 {
 	gdImagePtr	im;
@@ -232,9 +232,9 @@ static void drawbar(
 	im = gdImageCreate(width, height);
 
 	/* draw the scale */
-	drawscale(im, lvllo, lvlhi, step, step5, step10, redlo1, redhi1, 
+	drawscale(im, lvllo, lvlhi, step, step5, step10, redlo1, redhi1,
 		redlo2, redhi2, grnlo, grnhi);
-	
+
 	/* allocate colors for the bar and summary text */
 	bar_color	= color_alloc(im, get_imgarg("bar_col"));
 	summary_color	= color_alloc(im, get_imgarg("summary_col"));
@@ -253,14 +253,14 @@ static void drawbar(
 		bar_y = scale_height;
 
 	/* draw it */
-	gdImageFilledRectangle(im, 25, bar_y, width - 25, scale_height, 
+	gdImageFilledRectangle(im, 25, bar_y, width - 25, scale_height,
 		bar_color);
 
 	/* stick the text version of the value at the bottom center */
 	snprintf(text, sizeof(text), format, value);
-	gdImageString(im, gdFontMediumBold, 
-		(width - strlen(text)*gdFontMediumBold->w)/2, 
-		height - gdFontMediumBold->h, 
+	gdImageString(im, gdFontMediumBold,
+		(width - strlen(text)*gdFontMediumBold->w)/2,
+		height - gdFontMediumBold->h,
 		(unsigned char *) text, summary_color);
 
 	drawimage(im);
@@ -287,19 +287,19 @@ static void noimage(const char *fmt, ...)
 	im = gdImageCreate(width, height);
 	back_color = color_alloc(im, get_imgarg("back_col"));
 	summary_color = color_alloc(im, get_imgarg("summary_col"));
-	
+
 	gdImageFilledRectangle(im, 0, 0, width, height, back_color);
 	gdImageColorTransparent(im, back_color);
-	
+
 	if (width > height)
-		gdImageString(im, gdFontMediumBold, 
-			(width - strlen(msg)*gdFontMediumBold->w)/2, 
-			(height - gdFontMediumBold->h)/2, 
+		gdImageString(im, gdFontMediumBold,
+			(width - strlen(msg)*gdFontMediumBold->w)/2,
+			(height - gdFontMediumBold->h)/2,
 			(unsigned char *) msg, 	summary_color);
 	else
-		gdImageStringUp(im, gdFontMediumBold, 
-			(width - gdFontMediumBold->h)/2, 
-			(height + strlen(msg)*gdFontMediumBold->w)/2, 
+		gdImageStringUp(im, gdFontMediumBold,
+			(width - gdFontMediumBold->h)/2,
+			(height + strlen(msg)*gdFontMediumBold->w)/2,
 			(unsigned char *) msg, summary_color);
 
 	drawimage(im);
@@ -307,11 +307,11 @@ static void noimage(const char *fmt, ...)
 	/* NOTREACHED */
 }
 
-/* draws bar indicator when minimum, nominal or maximum values for the given 
+/* draws bar indicator when minimum, nominal or maximum values for the given
    UPS variable can be determined.
    deviation < 0 means that values below nom should be grey instead of
    green */
-static void drawgeneralbar(double var, int min, int nom, int max, 
+static void drawgeneralbar(double var, int min, int nom, int max,
 		int deviation, 	const char *format)
 {
 	int	hi, lo, step1, step5, step10, graybelownom=0;
@@ -320,23 +320,23 @@ static void drawgeneralbar(double var, int min, int nom, int max,
 		deviation=-deviation;
 		graybelownom=1;
 	}
-	
+
 	if ((nom == -1) && ((min == -1) || (max == -1)))
 		noimage("Can't determine range");
-	
+
 	/* if min, max and nom are mixed up, arrange them appropriately */
 	if (nom != -1) {
 		if (min == -1)
 			min = nom - 3*deviation;
 
-		if (max == -1) 
+		if (max == -1)
 			max = nom + 3*deviation;
 	} else {
-		/* if nominal value isn't available, assume, it's the 
+		/* if nominal value isn't available, assume, it's the
 		   average between min and max */
 		nom = (min + max) / 2;
 	}
-	
+
 	/* draw scale in the background */
 	if ((max - min) <= 50) {
 		/* the scale is sparse enough to draw finer scale */
@@ -352,17 +352,17 @@ static void drawgeneralbar(double var, int min, int nom, int max,
 		step5 = 20;
 		step10 = 40;
 	}
-	
+
 	/* round min and max points to get high and low numbers for graph */
 	lo = ((min - deviation) / step10) * step10;
 	hi = ((max + deviation + step10/2) / step10) * step10;
-	
+
 	if(!graybelownom) {
-		drawbar(lo, hi, step1, step5, step10, max, hi, lo, min, 
+		drawbar(lo, hi, step1, step5, step10, max, hi, lo, min,
 				nom - deviation, nom + deviation, var, format);
 	}
 	else {
-		drawbar(lo, hi, step1, step5, step10, 0, min, max, hi, 
+		drawbar(lo, hi, step1, step5, step10, 0, min, max, hi,
 				nom, max, var, format);
 	}
 
@@ -370,7 +370,7 @@ static void drawgeneralbar(double var, int min, int nom, int max,
 }
 
 /* draws input and output voltage bar style indicators */
-static void draw_utility(double var, int min, int nom, int max, 
+static void draw_utility(double var, int min, int nom, int max,
 		int deviation, const char *format)
 {
 	/* hack: deal with hardware that doesn't have known transfer points */
@@ -400,20 +400,20 @@ static void draw_utility(double var, int min, int nom, int max,
 	}
 
 	/* symmetrical around nom */
-	if (max == -1) 
+	if (max == -1)
 		max = nom+(nom-min);
 
 	/* Acceptable range of voltage is 85%-110% of nominal voltage
 	 * in EU at least. Be conservative and say +-10% */
 	deviation = nom*0.1;
-	
+
 	drawgeneralbar(var, min, nom, max, deviation, format);
 
 	/* NOTREACHED */
 }
 
 /* draws battery.percent bar style indicator */
-static void draw_battpct(double var, int min, int nom, int max, 
+static void draw_battpct(double var, int min, int nom, int max,
 		int deviation, const char *format)
 {
 	if (min < 0) {
@@ -424,7 +424,7 @@ static void draw_battpct(double var, int min, int nom, int max,
 }
 
 /* draws battery.voltage bar style indicator */
-static void draw_battvolt(double var, int min, int nom, int max, 
+static void draw_battvolt(double var, int min, int nom, int max,
 		int deviation, const char *format)
 {
 	if(nom == -1) {
@@ -470,7 +470,7 @@ static void draw_battvolt(double var, int min, int nom, int max,
 }
 
 /* draws ups.load bar style indicator */
-static void draw_upsload(double var, int min, int nom, int max, 
+static void draw_upsload(double var, int min, int nom, int max,
 		int deviation, const char *format)
 {
 	drawbar(0, 125, 5, 5, 25, 100, 125, -1, -1, 0, 50, var, format);
@@ -485,14 +485,14 @@ static void draw_temperature(double var, int min, int nom, int max,
 
 	drawbar(lo, hi, 1, 5, 10, lo, min, max, hi, -1, -1, var, format);
 }
-			  
+
 /* draws humidity bar style indicator */
 static void draw_humidity(double var, int min, int nom, int max,
 		int deviation, const char *format)
 {
 	drawbar(0, 100, 2, 10, 20, 0, min, max, 100, -1, -1, var, format);
 }
-			  
+
 static int get_var(const char *var, char *buf, size_t buflen)
 {
 	int	ret;
@@ -525,7 +525,7 @@ int main(int argc, char **argv)
 	double	var = 0;
 
 	extractcgiargs();
-	
+
 	/* no 'host=' or 'display=' given */
 	if ((!monhost) || (!cmd))
 		noimage("No host or display");
@@ -541,40 +541,40 @@ int main(int argc, char **argv)
 	}
 
 	if (upscli_connect(&ups, hostname, port, 0) < 0) {
-		noimage("Can't connect to server:\n%s\n", 
+		noimage("Can't connect to server:\n%s\n",
 			upscli_strerror(&ups));
 		exit(EXIT_FAILURE);
 	}
-	
+
 	for (i = 0; imgvar[i].name; i++)
 		if (!strcmp(cmd, imgvar[i].name)) {
 
-			/* sanity check whether we have draw function 
+			/* sanity check whether we have draw function
 			   registered with this variable */
 			if (!imgvar[i].drawfunc) {
 				noimage("Draw function N/A");
 				exit(EXIT_FAILURE);
 			}
-			
+
 			/* get the variable value */
 			if (get_var(imgvar[i].name, str, sizeof(str)) == 1) {
 				var = strtod(str, NULL);
 			} else {
 				/* no value, no fun */
-				snprintf(str, sizeof(str), "%s N/A", 
+				snprintf(str, sizeof(str), "%s N/A",
 					imgvar[i].name);
 				noimage(str);
 				exit(EXIT_FAILURE);
 			}
-			
-			/* when getting minimum, nominal and maximum values, 
-			   we first look if the marginal value is supported 
-			   by the UPS driver, if not, we look it up in the 
+
+			/* when getting minimum, nominal and maximum values,
+			   we first look if the marginal value is supported
+			   by the UPS driver, if not, we look it up in the
 			   imgarg table under the SAME name */
-	
+
 			/* get the minimum value */
 			if (imgvar[i].minimum) {
-				if (get_var(imgvar[i].minimum, str, 
+				if (get_var(imgvar[i].minimum, str,
 					sizeof(str)) == 1) {
 					min = atoi(str);
 				} else {
@@ -584,10 +584,10 @@ int main(int argc, char **argv)
 			} else {
 				min = -1;
 			}
-	
+
 			/* get the nominal value */
 			if (imgvar[i].nominal) {
-				if (get_var(imgvar[i].nominal, str, 
+				if (get_var(imgvar[i].nominal, str,
 					sizeof(str)) == 1) {
 					nom = atoi(str);
 				} else {
@@ -597,7 +597,7 @@ int main(int argc, char **argv)
 			} else {
 				nom = -1;
 			}
-	
+
 			/* get the maximum value */
 			if (imgvar[i].maximum) {
 				if (get_var(imgvar[i].maximum, str,
@@ -611,10 +611,10 @@ int main(int argc, char **argv)
 				max = -1;
 			}
 
-			imgvar[i].drawfunc(var, min, nom, max, 
+			imgvar[i].drawfunc(var, min, nom, max,
 				imgvar[i].deviation, imgvar[i].format);
 			exit(EXIT_SUCCESS);
-		} 
+		}
 
 	noimage("Unknown display");
 	exit(EXIT_FAILURE);
@@ -622,31 +622,31 @@ int main(int argc, char **argv)
 
 struct imgvar_t imgvar[] = {
 	{ "input.voltage", "input.transfer.low", "input.voltage.nominal",
-		"input.transfer.high", 0, 
+		"input.transfer.high", 0,
 		"%.1f VAC", draw_utility				},
 
 	{ "input.L1-N.voltage", "input.transfer.low", "input.voltage.nominal",
-		"input.transfer.high", 0, 
+		"input.transfer.high", 0,
 		"%.1f VAC", draw_utility				},
 
 	{ "input.L2-N.voltage", "input.transfer.low", "input.voltage.nominal",
-		"input.transfer.high", 0, 
+		"input.transfer.high", 0,
 		"%.1f VAC", draw_utility				},
 
 	{ "input.L3-N.voltage", "input.transfer.low", "input.voltage.nominal",
-		"input.transfer.high", 0, 
+		"input.transfer.high", 0,
 		"%.1f VAC", draw_utility				},
 
 	{ "input.L1-L2.voltage", "input.transfer.low", "input.voltage.nominal",
-		"input.transfer.high", 0, 
+		"input.transfer.high", 0,
 		"%.1f VAC", draw_utility				},
 
 	{ "input.L2-L3.voltage", "input.transfer.low", "input.voltage.nominal",
-		"input.transfer.high", 0, 
+		"input.transfer.high", 0,
 		"%.1f VAC", draw_utility				},
 
 	{ "input.L3-L1.voltage", "input.transfer.low", "input.voltage.nominal",
-		"input.transfer.high", 0, 
+		"input.transfer.high", 0,
 		"%.1f VAC", draw_utility				},
 
 	{ "battery.charge", "battery.charge.low", NULL, NULL, 0,
@@ -726,6 +726,6 @@ struct imgvar_t imgvar[] = {
 	{ "output.frequency", NULL, "output.frequency.nominal", NULL, 2,
 		"%.1f Hz",	drawgeneralbar				},
 
-	{ NULL,		NULL,		NULL,		NULL,		0,	
+	{ NULL,		NULL,		NULL,		NULL,		0,
 		NULL,		NULL }
 };
