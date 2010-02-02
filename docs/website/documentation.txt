@@ -4,7 +4,7 @@ NUT Official Documentation
 User Documentation
 ------------------
 
-- link:FAQ.html[FAQ]
+- link:FAQ.html[FAQ - Frequently Asked Questions]
 - link:user-manual.html[NUT User Manual]
 - link:cables.html[Cables information]
 - link:man/index.html#User_man[User manual pages]
