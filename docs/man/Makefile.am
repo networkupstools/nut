@@ -58,6 +58,8 @@ CONVERTED_TO_ASCIIDOC = \
 	upscli_get.html \
 	upscli_list_next.html \
 	upscli_list_start.html \
+	upscli_readline.html \
+	upscli_sendline.html \
 	upsd.html \
 	upsd.conf.html \
 	upsd.users.html \
@@ -134,6 +136,8 @@ EXTRA_DIST = \
 	upscli_get.txt \
 	upscli_list_next.txt \
 	upscli_list_start.txt \
+	upscli_readline.txt \
+	upscli_sendline.txt \
 	upsd.conf.txt \
 	upsd.users.txt \
 	upsd.txt \
@@ -165,7 +169,9 @@ man3_MANS = \
 	upscli_fd.3 \
 	upscli_get.3 \
 	upscli_list_next.3 \
-	upscli_list_start.3
+	upscli_list_start.3 \
+	upscli_readline.3 \
+	upscli_sendline.3
 
 man5_MANS = \
 	hosts.conf.5 \

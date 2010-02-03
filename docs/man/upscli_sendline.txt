@@ -1,0 +1,39 @@
+UPSCLI_SENDLINE(3)
+==================
+
+NAME
+----
+
+upscli_sendline - send a single command to a UPS
+
+SYNOPSIS
+--------
+
+
+ #include <upsclient.h>
+
+ int upscli_sendline(UPSCONN *ups, const char *buf, size_t buflen);
+
+DESCRIPTION
+-----------
+
+The *upscli_sendline()* function takes the pointer 'ups' to a
+`UPSCONN` state structure and transmits a buffer 'buf' of size
+'buflen' to the server. 
+
+The data in 'buf' must be a fully formatted protocol command as no
+parsing of the buffer occurs within this function.
+
+RETURN VALUE
+------------
+
+The *upscli_sendline()* function returns 0 on success, or -1 if an
+error occurs.
+
+SEE ALSO
+--------
+
+linkman:upscli_fd[3], linkman:upscli_get[3],
+linkman:upscli_readline[3], linkman:upscli_sendline[3],
+linkman:upscli_ssl[3],
+linkman:upscli_strerror[3], linkman:upscli_upserror[3]
