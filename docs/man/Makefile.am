@@ -64,6 +64,7 @@ CONVERTED_TO_ASCIIDOC = \
 	upscli_splitname.html \
 	upscli_ssl.html \
 	upscli_strerror.html \
+	upscli_upserror.html \
 	upsd.html \
 	upsd.conf.html \
 	upsd.users.html \
@@ -146,6 +147,7 @@ EXTRA_DIST = \
 	upscli_splitname.txt \
 	upscli_ssl.txt \
 	upscli_strerror.txt \
+	upscli_upserror.txt \
 	upsd.conf.txt \
 	upsd.users.txt \
 	upsd.txt \
@@ -183,7 +185,8 @@ man3_MANS = \
 	upscli_splitaddr.3 \
 	upscli_splitname.3 \
 	upscli_ssl.3 \
-	upscli_strerror.3
+	upscli_strerror.3 \
+	upscli_upserror.3
 
 man5_MANS = \
 	hosts.conf.5 \
