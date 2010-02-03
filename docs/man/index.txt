@@ -111,7 +111,7 @@ Developer manual pages
 - linkman:upscli_sendline[3]
 - linkman:upscli_splitaddr[3]
 - linkman:upscli_splitname[3]
-- upscli_ssl.3
+- linkman:upscli_ssl[3]
 - upscli_strerror.3
 - upscli_upserror.3
 
