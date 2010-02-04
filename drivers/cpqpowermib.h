@@ -72,13 +72,22 @@ info_lkp_t cpqpower_pwr_info[] = {
 	{ 1, ""       /* other */ },
 	{ 2, "OFF"    /* none */ },
 	{ 3, "OL"     /* normal */ },
-	{ 4, "BYPASS" /* bypass */ },
+	{ 4, "OL BYPASS" /* bypass */ },
 	{ 5, "OB"     /* battery */ },
-	{ 6, "BOOST"  /* booster */ },
-	{ 7, "TRIM"   /* reducer */ },
+	{ 6, "OL BOOST"  /* booster */ },
+	{ 7, "OL TRIM"   /* reducer */ },
 	{ 8, "PCAP"   /* parallelCapacity */ },
 	{ 9, "PRED"   /* parallelRedundant */ },
 	{ 10, "HIEFF" /* HighEfficiencyMode */ },
+	{ 0, "NULL" }
+} ;
+
+info_lkp_t cpqpower_battery_abm_status[] = {
+	{ 1, "CHRG" },
+	{ 2, "DISCHRG" },
+/*	{ 3, "Floating" }, */
+/*	{ 4, "Resting" }, */
+/*	{ 5, "Unknown" }, */
 	{ 0, "NULL" }
 } ;
 
@@ -217,6 +226,7 @@ snmp_info_t cpqpower_mib[] = {
 	{ "ups.L3.realpower", 0, 0.1, CPQPOWER_OID_OUT_POWER ".3", "", SU_OUTPUT_3, NULL },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_POWER_STATUS, "OFF", SU_STATUS_PWR, &cpqpower_pwr_info[0] },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_BATT_CHARGE, "", SU_STATUS_BATT, &cpqpower_batt_info[0] },
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_BATT_STATUS, "", 0, &cpqpower_battery_abm_status[0] },
 
 	/* Ambient page */
 	{ "ambient.temperature", 0, 1.0, CPQPOWER_OID_AMBIENT_TEMP, "", 0, NULL },
