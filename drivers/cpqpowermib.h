@@ -31,6 +31,7 @@
 
 /* SNMP OIDs set */
 #define CPQPOWER_OID_UPS_MIB          "1.3.6.1.4.1.232.165.3"
+
 #define CPQPOWER_OID_MFR_NAME         CPQPOWER_OID_UPS_MIB ".1.1.0"	/* UPS-MIB::upsIdentManufacturer */
 #define CPQPOWER_OID_MODEL_NAME       CPQPOWER_OID_UPS_MIB ".1.2.0"	/* UPS-MIB::upsIdentModel */
 #define CPQPOWER_OID_FIRMREV          CPQPOWER_OID_UPS_MIB ".1.3.0"	/* UPS-MIB::upsIdentUPSSoftwareVersion */
@@ -66,6 +67,18 @@
 
 #define CPQPOWER_OID_UPS_TEST_BATT    CPQPOWER_OID_UPS_MIB ".7.1.0"     /* UPS-MIB::upsTestBattery */
 #define CPQPOWER_OID_UPS_TEST_RES     CPQPOWER_OID_UPS_MIB ".7.2.0"     /* UPS-MIB::upsTestBatteryStatus */
+#define CPQPOWER_OID_ALARM_OB         CPQPOWER_OID_UPS_MIB ".7.3.0"     /* UPS-MIB::upsOnBattery */
+#define CPQPOWER_OID_ALARM_LB         CPQPOWER_OID_UPS_MIB ".7.4.0"     /* UPS-MIB::upsLowBattery */
+
+info_lkp_t cpqpower_alarm_ob[] = {
+	{ 1, "OB" },
+	{ 0, "NULL" }
+} ;
+
+info_lkp_t cpqpower_alarm_lb[] = {
+	{ 1, "LB" },
+	{ 0, "NULL" }
+} ;
 
 /* Defines for CPQPOWER_OID_POWER_STATUS (1) */
 info_lkp_t cpqpower_pwr_info[] = {
@@ -76,11 +89,25 @@ info_lkp_t cpqpower_pwr_info[] = {
 	{ 5, "OB"     /* battery */ },
 	{ 6, "OL BOOST"  /* booster */ },
 	{ 7, "OL TRIM"   /* reducer */ },
-	{ 8, "PCAP"   /* parallelCapacity */ },
-	{ 9, "PRED"   /* parallelRedundant */ },
-	{ 10, "HIEFF" /* HighEfficiencyMode */ },
+	{ 8, "OL"   /* parallelCapacity */ },
+	{ 9, "OL"   /* parallelRedundant */ },
+	{ 10, "OL" /* HighEfficiencyMode */ },
 	{ 0, "NULL" }
 } ;
+
+info_lkp_t cpqpower_mode_info[] = {
+	{ 1, ""  },
+	{ 2, ""  },
+	{ 3, "normal" },
+	{ 4, "" },
+	{ 5, "" },
+	{ 6, "" },
+	{ 7, "" },
+	{ 8, "parallel capacity" },
+	{ 9, "parallel redundancy" },
+	{10, "high efficiency" },
+	{ 0, "NULL" }
+};
 
 info_lkp_t cpqpower_battery_abm_status[] = {
 	{ 1, "CHRG" },
@@ -89,110 +116,6 @@ info_lkp_t cpqpower_battery_abm_status[] = {
 /*	{ 4, "Resting" }, */
 /*	{ 5, "Unknown" }, */
 	{ 0, "NULL" }
-} ;
-
-/* Defines for CPQPOWER_OID_BATT_STATUS (2) */
-info_lkp_t cpqpower_batt_info[] = {
-	{ 100, ""   /* batteryNormal */ },
-	{ 99, ""   /* batteryNormal */ },
-	{ 98, ""   /* batteryNormal */ },
-	{ 97, ""   /* batteryNormal */ },
-	{ 96, ""   /* batteryNormal */ },
-	{ 95, ""   /* batteryNormal */ },
-	{ 94, ""   /* batteryNormal */ },
-	{ 93, ""   /* batteryNormal */ },
-	{ 92, ""   /* batteryNormal */ },
-	{ 91, ""   /* batteryNormal */ },
-	{ 90, ""   /* batteryNormal */ },
-	{ 89, ""   /* batteryNormal */ },
-	{ 88, ""   /* batteryNormal */ },
-	{ 87, ""   /* batteryNormal */ },
-	{ 86, ""   /* batteryNormal */ },
-	{ 85, ""   /* batteryNormal */ },
-	{ 84, ""   /* batteryNormal */ },
-	{ 83, ""   /* batteryNormal */ },
-	{ 82, ""   /* batteryNormal */ },
-	{ 81, ""   /* batteryNormal */ },
-	{ 80, ""   /* batteryNormal */ },
-	{ 79, ""   /* batteryNormal */ },
-	{ 78, ""   /* batteryNormal */ },
-	{ 77, ""   /* batteryNormal */ },
-	{ 76, ""   /* batteryNormal */ },
-	{ 75, ""   /* batteryNormal */ },
-	{ 74, ""   /* batteryNormal */ },
-	{ 73, ""   /* batteryNormal */ },
-	{ 72, ""   /* batteryNormal */ },
-	{ 71, ""   /* batteryNormal */ },
-	{ 70, ""   /* batteryNormal */ },
-	{ 69, ""   /* batteryNormal */ },
-	{ 68, ""   /* batteryNormal */ },
-	{ 67, ""   /* batteryNormal */ },
-	{ 66, ""   /* batteryNormal */ },
-	{ 65, ""   /* batteryNormal */ },
-	{ 64, ""   /* batteryNormal */ },
-	{ 63, ""   /* batteryNormal */ },
-	{ 62, ""   /* batteryNormal */ },
-	{ 61, ""   /* batteryNormal */ },
-	{ 60, ""   /* batteryNormal */ },
-	{ 59, ""   /* batteryNormal */ },
-	{ 58, ""   /* batteryNormal */ },
-	{ 57, ""   /* batteryNormal */ },
-	{ 56, ""   /* batteryNormal */ },
-	{ 55, ""   /* batteryNormal */ },
-	{ 54, ""   /* batteryNormal */ },
-	{ 53, ""   /* batteryNormal */ },
-	{ 52, ""   /* batteryNormal */ },
-	{ 51, ""   /* batteryNormal */ },
-	{ 50, ""   /* batteryNormal */ },
-	{ 49, ""   /* batteryNormal */ },
-	{ 48, ""   /* batteryNormal */ },
-	{ 47, ""   /* batteryNormal */ },
-	{ 46, ""   /* batteryNormal */ },
-	{ 45, ""   /* batteryNormal */ },
-	{ 44, ""   /* batteryNormal */ },
-	{ 43, ""   /* batteryNormal */ },
-	{ 42, ""   /* batteryNormal */ },
-	{ 41, ""   /* batteryNormal */ },
-	{ 40, ""   /* batteryNormal */ },
-	{ 39, ""   /* batteryNormal */ },
-	{ 38, ""   /* batteryNormal */ },
-	{ 37, ""   /* batteryNormal */ },
-	{ 36, ""   /* batteryNormal */ },
-	{ 35, ""   /* batteryNormal */ },
-	{ 34, ""   /* batteryNormal */ },
-	{ 33, ""   /* batteryNormal */ },
-	{ 32, ""   /* batteryNormal */ },
-	{ 31, ""   /* batteryNormal */ },
-	{ 30, ""   /* batteryNormal */ },
-	{ 29, ""   /* batteryNormal */ },
-	{ 28, ""   /* batteryNormal */ },
-	{ 27, ""   /* batteryNormal */ },
-	{ 26, ""   /* batteryNormal */ },
-	{ 25, ""   /* batteryNormal */ },
-	{ 24, ""   /* batteryNormal */ },
-	{ 23, ""   /* batteryNormal */ },
-	{ 22, ""   /* batteryNormal */ },
-	{ 21, ""   /* batteryNormal */ },
-	{ 20, "LB" /* batteryLow */ },
-	{ 19, "LB" /* batteryLow */ },
-	{ 18, "LB" /* batteryLow */ },
-	{ 17, "LB" /* batteryLow */ },
-	{ 16, "LB" /* batteryLow */ },
-	{ 15, "LB" /* batteryLow */ },
-	{ 14, "LB" /* batteryLow */ },
-	{ 13, "LB" /* batteryLow */ },
-	{ 12, "LB" /* batteryLow */ },
-	{ 11, "LB" /* batteryLow */ },
-	{ 10, "LB" /* batteryLow */ },
-	{ 9, "LB" /* batteryLow */ },
-	{ 8, "LB" /* batteryLow */ },
-	{ 7, "LB" /* batteryLow */ },
-	{ 6, "LB" /* batteryLow */ },
-	{ 5, "LB" /* batteryLow */ },
-	{ 4, "LB" /* batteryLow */ },
-	{ 3, "LB" /* batteryLow */ },
-	{ 2, "LB" /* batteryLow */ },
-	{ 1, "LB" /* batteryLow */ },
 } ;
 
 /* Defines for CPQPOWER_OID_TEST_RES */
@@ -224,9 +147,12 @@ snmp_info_t cpqpower_mib[] = {
 	{ "ups.L1.realpower", 0, 0.1, CPQPOWER_OID_OUT_POWER ".1", "", SU_OUTPUT_3, NULL },
 	{ "ups.L2.realpower", 0, 0.1, CPQPOWER_OID_OUT_POWER ".2", "", SU_OUTPUT_3, NULL },
 	{ "ups.L3.realpower", 0, 0.1, CPQPOWER_OID_OUT_POWER ".3", "", SU_OUTPUT_3, NULL },
-	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_POWER_STATUS, "OFF", SU_STATUS_PWR, &cpqpower_pwr_info[0] },
-	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_BATT_CHARGE, "", SU_STATUS_BATT, &cpqpower_batt_info[0] },
-	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_BATT_STATUS, "", 0, &cpqpower_battery_abm_status[0] },
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_POWER_STATUS, "OFF", SU_STATUS_PWR, cpqpower_pwr_info },
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_BATT_STATUS, "", SU_STATUS_PWR, cpqpower_battery_abm_status },
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_ALARM_OB, "", SU_STATUS_BATT, cpqpower_alarm_ob },
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_ALARM_LB, "", SU_STATUS_BATT, cpqpower_alarm_lb },
+/*	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_BATT_STATUS, "", SU_STATUS_BATT, ietf_batt_info }, */
+	{ "ups.type", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_POWER_STATUS, "", SU_STATUS_PWR, cpqpower_mode_info },
 
 	/* Ambient page */
 	{ "ambient.temperature", 0, 1.0, CPQPOWER_OID_AMBIENT_TEMP, "", 0, NULL },
