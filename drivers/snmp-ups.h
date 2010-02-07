@@ -2,7 +2,7 @@
  *
  *  Based on NET-SNMP API (Simple Network Management Protocol V1-2)
  *
- *  Copyright (C) 
+ *  Copyright (C)
  *   2002-2008  Arnaud Quette <arnaud.quette@free.fr>
  *   2002-2006	Dmitry Frolov <frolov@riss-telecom.ru>
   *  			J.W. Hoogervorst <jeroen@hoogervorst.net>
@@ -37,12 +37,15 @@ for each OID request we made), instead of sending many small packets
 - externalize mib2nut data in .m2n files and load at driver startup using parseconf()...
 - ... and use Net-SNMP lookup mecanism for OIDs (use string path, not numeric)
 - adjust information logging.
- 
+
 - move to numeric OIDs
 - move mib2nut into c files (à la usbhid-ups)?
 - add a claim function and move to usbhid-ups style
 - rework the flagging system
 */
+
+#ifndef SNMP_UPS_H
+#define SNMP_UPS_H
 
 #include <unistd.h>
 #include <stdio.h>
@@ -70,13 +73,13 @@ typedef int bool_t;
 #endif
 
 /* Common SNMP data and lookup definitions */
-/* special functions to interpret items: 
-   take UPS answer, return string to set in INFO, max len  
-   
+/* special functions to interpret items:
+   take UPS answer, return string to set in INFO, max len
+
    NOTE: FFE means For Future Extensions
-   
+
    */
-   
+
 /* typedef void (*interpreter)(char *, char *, int); */
 
 /* for lookup between OID values and INFO_ value */
@@ -88,7 +91,7 @@ typedef struct {
 /* Structure containing info about one item that can be requested
    from UPS and set in INFO.  If no interpreter functions is defined,
    use sprintf with given format string.  If unit is not NONE, values
-   are converted according to the multiplier table  
+   are converted according to the multiplier table
 */
 typedef struct {
 	const char   *info_type;	/* INFO_ or CMD_ element */
@@ -172,7 +175,7 @@ typedef struct {
 	const char *oid_pwr_status;
 	const char *oid_auto_check;
 	snmp_info_t *snmp_info; /* pointer to the good Snmp2Nut lookup data */
-	
+
 } mib2nut_info_t;
 
 /* Common SNMP functions */
@@ -189,12 +192,11 @@ bool_t nut_snmp_set_int(const char *OID, long value);
 void nut_snmp_perror(struct snmp_session *sess,  int status,
 	struct snmp_pdu *response, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 4, 5)));
-		
+
 void su_startup(void);
 void su_cleanup(void);
 void su_init_instcmds(void);
 void su_setuphandlers(void); /* need to deal with external function ptr */
-static void disable_transfer_oids(void);
 void su_setinfo(snmp_info_t *su_info_p, const char *value);
 void su_status_set(snmp_info_t *, long value);
 snmp_info_t *su_find_info(const char *type);
@@ -202,7 +204,7 @@ bool_t snmp_ups_walk(int mode);
 bool_t su_ups_get(snmp_info_t *su_info_p);
 
 bool_t load_mib2nut(const char *mib);
-	
+
 const char *su_find_infoval(info_lkp_t *oid2info, long value);
 long su_find_valinfo(info_lkp_t *oid2info, char* value);
 
@@ -217,3 +219,6 @@ const char *OID_pwr_status;
 int g_pwr_battery;
 int pollfreq; /* polling frequency */
 int input_phases, output_phases;
+
+#endif /* SNMP_UPS_H */
+

@@ -1,6 +1,6 @@
-/*  ietfmib.h - data to monitor SNMP UPS (RFC 1628 compliant) with NUT
+/*  ietf-mib.c - data to monitor SNMP UPS (RFC 1628 compliant) with NUT
  *
- *  Copyright (C) 2002-2006 
+ *  Copyright (C) 2002-2006
  *  			Arnaud Quette <arnaud.quette@free.fr>
  *  			Niels Baggesen <niels@baggesen.net>
  *
@@ -22,6 +22,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  */
+
+#include "ietf-mib.h"
 
 #define IETF_MIB_VERSION	"1.3"
 
@@ -71,28 +73,30 @@
 #define IETF_OID_CONF_RUNTIME_LOW "1.3.6.1.2.1.33.1.9.7.0"	/* UPS-MIB::upsConfigLowBattTime.0 */
 
 /* Defines for IETF_OID_POWER_STATUS (1) */
-info_lkp_t ietf_pwr_info[] = {
+static info_lkp_t ietf_pwr_info[] = {
 	{ 1, ""       /* other */ },
 	{ 2, "OFF"    /* none */ },
 	{ 3, "OL"     /* normal */ },
-	{ 4, "BYPASS" /* bypass */ },
+	{ 4, "OL BYPASS" /* bypass */ },
 	{ 5, "OB"     /* battery */ },
-	{ 6, "BOOST"  /* booster */ },
-	{ 7, "TRIM"   /* reducer */ },
+	{ 6, "OL BOOST"  /* booster */ },
+	{ 7, "OL TRIM"   /* reducer */ },
 	{ 0, "NULL" }
 } ;
 
 /* Defines for IETF_OID_BATT_STATUS (2) */
-info_lkp_t ietf_batt_info[] = {
+static info_lkp_t ietf_batt_info[] = {
 	{ 1, ""   /* unknown */ },
 	{ 2, ""   /* batteryNormal */},
 	{ 3, "LB" /* batteryLow */ },
 	{ 4, "LB" /* batteryDepleted */ },
+	{ 5, ""   /* unknown */ },
+	{ 6, "RB"   /* batteryError */},
 	{ 0, "NULL" }
 } ;
 
 /* Defines for IETF_OID_TEST_RES */
-info_lkp_t ietf_test_res_info[] = {
+static info_lkp_t ietf_test_res_info[] = {
 	{ 1, "Done and passed" },
 	{ 2, "Done and warning" },
 	{ 3, "Done and error" },
@@ -106,15 +110,14 @@ info_lkp_t ietf_test_res_info[] = {
 #define IETF_OFF_DO		0
 
 #define IETF_OID_ALARM_OB "1.3.6.1.2.1.33.1.6.3.2"	/* UPS-MIB::upsAlarmOnBattery */
+#define IETF_OID_ALARM_LB "1.3.6.1.2.1.33.1.6.3.3"	/* UPS-MIB::upsAlarmLowBattery */
 
-info_lkp_t ietf_alarm_ob[] = {
+static info_lkp_t ietf_alarm_ob[] = {
 	{ 1, "OB" },
 	{ 0, "NULL" }
 } ;
-		
-#define IETF_OID_ALARM_LB "1.3.6.1.2.1.33.1.6.3.3"	/* UPS-MIB::upsAlarmLowBattery */
 
-info_lkp_t ietf_alarm_lb[] = {
+static info_lkp_t ietf_alarm_lb[] = {
 	{ 1, "LB" },
 	{ 0, "NULL" }
 } ;
@@ -122,13 +125,12 @@ info_lkp_t ietf_alarm_lb[] = {
 /* Missing data
    CAL   - UPS is performing calibration
    OVER  - UPS is overloaded
-   RB    - UPS battery needs to be replaced
    FSD   - UPS is in forced shutdown state (slaves take note)
 */
 
 /* Snmp2NUT lookup table */
 
-snmp_info_t ietf_mib[] = {
+static snmp_info_t ietf_mib[] = {
 	/* UPS page */
 	/* info_type, info_flags, info_len, OID, dfl, flags, oid2info, setvar */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_MFR_NAME, "Generic",
@@ -144,9 +146,15 @@ snmp_info_t ietf_mib[] = {
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_POWER_STATUS, "OFF",
 		SU_STATUS_PWR, &ietf_pwr_info[0] },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_BATT_STATUS, "",
+		SU_STATUS_BATT, &ietf_alarm_ob[0] },
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_BATT_STATUS, "",
+		SU_STATUS_BATT, &ietf_alarm_lb[0] },
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_BATT_STATUS, "",
 		SU_STATUS_BATT, &ietf_batt_info[0] },
 	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_TEST_RESDET, "",
 		0, NULL },
+	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_TEST_RES, "",
+		0, ietf_test_res_info },
 
 	/* Battery page */
 	{ "battery.charge", 0, 1.0, IETF_OID_BATT_CHARGE, "",
@@ -246,3 +254,5 @@ snmp_info_t ietf_mib[] = {
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
+
+mib2nut_info_t	ietf = { "ietf", IETF_MIB_VERSION, IETF_OID_POWER_STATUS, IETF_OID_MFR_NAME, ietf_mib };

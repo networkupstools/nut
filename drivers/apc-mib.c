@@ -1,6 +1,6 @@
-/*  apccmib.h - data to monitor APC SNMP devices (Powernet MIB) with NUT
+/*  apc-mib.c - data to monitor APC SNMP devices (Powernet MIB) with NUT
  *
- *  Copyright (C) 2002-2003 
+ *  Copyright (C) 2002-2003
  *  			Dmitry Frolov <frolov@riss-telecom.ru>
  *  			Arnaud Quette <arnaud.quette@free.fr>
  *
@@ -23,13 +23,15 @@
  *
  */
 
+#include "apc-mib.h"
+
 #define APCC_MIB_VERSION	"1.1"
 
 /* info elements */
 
 #define APCC_OID_BATT_STATUS	".1.3.6.1.4.1.318.1.1.1.2.1.1.0"
 /* Defines for APCC_OID_BATT_STATUS */
-info_lkp_t apcc_batt_info[] = {
+static info_lkp_t apcc_batt_info[] = {
 	{ 1, "" },	/* unknown */
 	{ 2, "" },	/* batteryNormal */
 	{ 3, "LB" },	/* batteryLow */
@@ -38,7 +40,7 @@ info_lkp_t apcc_batt_info[] = {
 
 #define APCC_OID_POWER_STATUS	".1.3.6.1.4.1.318.1.1.1.4.1.1.0"
 /* Defines for APCC_OID_POWER_STATUS */
-info_lkp_t apcc_pwr_info[] = {
+static info_lkp_t apcc_pwr_info[] = {
     { 1, "" },          /* unknown  */
     { 2, "OL" },        /* onLine */
     { 3, "OB" },        /* onBattery */
@@ -55,7 +57,7 @@ info_lkp_t apcc_pwr_info[] = {
 } ;
 
 #define APCC_OID_CAL_RESULTS	".1.3.6.1.4.1.318.1.1.1.7.2.6.0"
-info_lkp_t apcc_cal_info[] = {
+static info_lkp_t apcc_cal_info[] = {
     { 1, "" },          /* Calibration Successful */
     { 2, "" },          /* Calibration not done, battery capacity below 100% */
     { 3, "CAL" },       /* Calibration in progress */
@@ -63,14 +65,14 @@ info_lkp_t apcc_cal_info[] = {
 };
 
 #define APCC_OID_NEEDREPLBATT	".1.3.6.1.4.1.318.1.1.1.2.2.4.0"
-info_lkp_t apcc_battrepl_info[] = {
+static info_lkp_t apcc_battrepl_info[] = {
     { 1, "" },          /* No battery needs replacing */
     { 2, "RB" },        /* Batteries need to be replaced */
     { 0, "NULL" }
 };
 
 #define APCC_OID_TESTDIAGRESULTS ".1.3.6.1.4.1.318.1.1.1.7.2.3.0"
-info_lkp_t apcc_testdiag_results[] = {
+static info_lkp_t apcc_testdiag_results[] = {
     { 1, "Ok" },
     { 2, "Failed" },
     { 3, "InvalidTest" },
@@ -79,7 +81,7 @@ info_lkp_t apcc_testdiag_results[] = {
 };
 
 #define APCC_OID_SENSITIVITY ".1.3.6.1.4.1.318.1.1.1.5.2.7.0"
-info_lkp_t apcc_sensitivity_modes[] = {
+static info_lkp_t apcc_sensitivity_modes[] = {
     { 1, "auto" },
     { 2, "low" },
     { 3, "medium" },
@@ -102,7 +104,7 @@ info_lkp_t apcc_sensitivity_modes[] = {
 
 
 
-snmp_info_t apcc_mib[] = {
+static snmp_info_t apcc_mib[] = {
 
 	/* info elements. */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "APC",
@@ -221,7 +223,7 @@ snmp_info_t apcc_mib[] = {
 	{ "shutdown.stayoff", 0, 3, ".1.3.6.1.4.1.318.1.1.1.6.2.1.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
 
 /*	{ CMD_SDRET, 0, APCC_REBOOT_GRACEFUL, APCC_OID_REBOOT, "", SU_TYPE_CMD | SU_FLAG_OK, NULL }, */
-	
+
 	{ "shutdown.return", 0, 2, ".1.3.6.1.4.1.318.1.1.1.6.1.1.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
 	{ "test.failure.start", 0, 2, ".1.3.6.1.4.1.318.1.1.1.6.2.4.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
 	{ "test.panel.start", 0, 2, ".1.3.6.1.4.1.318.1.1.1.6.2.5.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
@@ -235,6 +237,8 @@ snmp_info_t apcc_mib[] = {
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
+
+mib2nut_info_t	apc = { "apcc", APCC_MIB_VERSION, APCC_OID_POWER_STATUS, ".1.3.6.1.4.1.318.1.1.1.1.1.1.0", apcc_mib };
 
 /*
 vim:ts=4:sw=4:et:

@@ -1,4 +1,4 @@
-/*  netvisionmib.h - data to monitor Socomec Sicon UPS equipped 
+/*  netvision-mib.c - data to monitor Socomec Sicon UPS equipped
  *  with Netvision WEB/SNMP card/external box with NUT
  *
  *  Copyright (C) 2004
@@ -21,6 +21,8 @@
  *
  */
 
+#include "netvision-mib.h"
+
 #define NETVISION_MIB_VERSION			"0.1"
 
 /* SNMP OIDs set */
@@ -32,12 +34,13 @@
 
 /* UPS Battery */
 #define NETVISION_OID_BATTERYSTATUS		".1.3.6.1.4.1.4555.1.1.1.1.2.1.0"
-info_lkp_t netvision_batt_info[] = {
-	{ 2, "OL" }, /* battery normal */
+static info_lkp_t netvision_batt_info[] = {
+	{ 2, "" }, /* battery normal */
 	{ 3, "LB" }, /* battery low */
 	{ 4, "LB" }, /* battery depleted */
-	{ 5, "OB" }, /* battery discharging */
-	{ 6, "RB" }  /* battery failure */
+	{ 5, "" }, /* battery discharging */
+	{ 6, "RB" },  /* battery failure */
+	{ 0, "NULL" }
 };
 
 #define NETVISION_OID_SECONDSONBATTERY		".1.3.6.1.4.1.4555.1.1.1.1.2.2.0"
@@ -48,8 +51,8 @@ info_lkp_t netvision_batt_info[] = {
 #define NETVISION_OID_INPUT_NUM_LINES		".1.3.6.1.4.1.4555.1.1.1.1.3.1.0" /* 1phase or 3phase UPS input */
 #define NETVISION_OID_OUTPUT_NUM_LINES		".1.3.6.1.4.1.4555.1.1.1.1.4.3.0" /* 1phase or 3phase UPS output */
 
-/* 
-	three phase ups provide input/output/load for each phase 
+/*
+	three phase ups provide input/output/load for each phase
 	in case of one-phase output, only _P1 should be used
 */
 
@@ -69,20 +72,21 @@ info_lkp_t netvision_batt_info[] = {
 #define NETVISION_OID_IN_VOLTAGE_P3	".1.3.6.1.4.1.4555.1.1.1.1.3.3.1.5.3"
 
 #define NETVISION_OID_OUTPUT_SOURCE	".1.3.6.1.4.1.4555.1.1.1.1.4.1.0"
-info_lkp_t netvision_output_info[] = {
+
+static info_lkp_t netvision_output_info[] = {
 	{ 1, "NULL" },   /* output source other   */
 	{ 2, "NULL" },   /* output source none    */
 	{ 3, "OL" },     /* output source normal  */
-	{ 4, "BYPASS" }, /* output source bypass  */
+	{ 4, "OL BYPASS" }, /* output source bypass  */
 	{ 5, "OB" },     /* output source battery */
-	{ 6, "BOOST" },  /* output source booster */
-	{ 7, "TRIM" },   /* output source reducer */
+	{ 6, "OL BOOST" },  /* output source booster */
+	{ 7, "OL TRIM" },   /* output source reducer */
 	{ 8, "NULL" },   /* output source standby */
 	{ 9, "NULL" },   /* output source ecomode */
 };
 
 /* Snmp2NUT lookup table */
-snmp_info_t netvision_mib[] = {
+static snmp_info_t netvision_mib[] = {
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NETVISION_OID_UPSIDENTAGENTSWVERSION, "SOCOMEC SICON UPS",
 		SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, NETVISION_OID_UPSIDENTMODEL,
@@ -93,20 +97,24 @@ snmp_info_t netvision_mib[] = {
 		SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, NETVISION_OID_BATTERYSTATUS, "",
 		SU_FLAG_OK | SU_STATUS_BATT, &netvision_batt_info[0] },
-	
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, NETVISION_OID_BATTERYSTATUS, "",
+		SU_FLAG_OK | SU_STATUS_PWR, &netvision_output_info[0] },
+
 	/* ups load */
 	{ "ups.load", 0, 1, NETVISION_OID_OUT_LOAD_PCT_P1, 0, SU_FLAG_OK, NULL },
-	
+
 	/*ups input,output voltage, output frquency phase 1 */
 	{ "input.voltage", 0, 0.1, NETVISION_OID_IN_VOLTAGE_P1, 0, SU_FLAG_OK, NULL },
 	{ "output.voltage", 0, 0.1, NETVISION_OID_OUT_VOLTAGE_P1, 0, SU_FLAG_OK, NULL },
 	{ "output.current", 0, 0.1, NETVISION_OID_OUT_CURRENT_P1, 0, SU_FLAG_OK, NULL },
-	
+
 	/* battery info */
 	{ "battery.charge", 0, 1, NETVISION_OID_BATT_CHARGE, "", SU_FLAG_OK, NULL },
 	{ "battery.voltage", 0, 0.1, NETVISION_OID_BATT_VOLTS, "", SU_FLAG_OK, NULL },
 	{ "battery.runtime", 0, 60, NETVISION_OID_BATT_RUNTIME_REMAINING, "", SU_FLAG_OK, NULL },
-	
+
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
+
+mib2nut_info_t	netvision = { "netvision", NETVISION_MIB_VERSION, "", NETVISION_OID_UPSIDENTMODEL, netvision_mib };

@@ -1,4 +1,4 @@
-/*  baytech-mib.h - data to monitor BayTech PDUs
+/*  baytech-mib.c - data to monitor BayTech PDUs
  *
  *  Copyright (C) 2009
  *  			Opengear <support@opengear.com>
@@ -20,14 +20,25 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  */
+
+#include "baytech-mib.h"
+
 #define BAYTECH_MIB_VERSION	"4031"
 
 /* Baytech MIB */
 #define BAYTECH_OID_MIB			".1.3.6.1.4.1.4779"
 #define BAYTECH_OID_MODEL_NAME	".1.3.6.1.4.1.4779.1.3.5.2.1.24.1"
 
+static info_lkp_t outlet_status_info[] = {
+	{ -1, "error" },
+	{ 0, "off" },
+	{ 1, "on" },
+	{ 2, "cycling" }, /* transitional status */
+	{ 0, NULL }
+};
+
 /* Snmp2NUT lookup table for BayTech MIBs */
-snmp_info_t baytech_mib[] = {
+static snmp_info_t baytech_mib[] = {
 	/* Device page */
 	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "BayTech",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
@@ -57,7 +68,7 @@ snmp_info_t baytech_mib[] = {
 
 	/* Outlet page */
 	{ "outlet.id", 0, 1, NULL, "0", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-	{ "outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, NULL, "All outlets", 
+	{ "outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, NULL, "All outlets",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	{ "outlet.count", 0, 1, ".1.3.6.1.4.1.4779.1.3.5.2.1.15.1", "0", 0, NULL },
 	{ "outlet.current", 0, 0.1, ".1.3.6.1.4.1.4779.1.3.5.5.1.6.2.1", NULL, 0, NULL, NULL },
@@ -76,3 +87,5 @@ snmp_info_t baytech_mib[] = {
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL, NULL }
 };
+
+mib2nut_info_t	baytech = { "baytech", BAYTECH_MIB_VERSION, "", BAYTECH_OID_MODEL_NAME, baytech_mib };

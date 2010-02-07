@@ -1,4 +1,4 @@
-/*  pwmib.h - data to monitor Powerware UPS with NUT
+/*  powerware-mib.c - data to monitor Powerware UPS with NUT
  *  (using MIBs described in stdupsv1.mib and Xups.mib)
  *
  *  Copyright (C) 2005-2006
@@ -21,6 +21,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  */
+
+#include "powerware-mib.h"
 
 #define PW_MIB_VERSION "0.6.1"
 
@@ -73,20 +75,27 @@
 
 #define PW_OID_ALARMS		"1.3.6.1.4.1.534.1.7.1"		/* XUPS-MIB::xupsAlarms */
 #define PW_OID_ALARM_OB		"1.3.6.1.4.1.534.1.7.3"		/* XUPS-MIB::xupsOnBattery */
-
-info_lkp_t pw_alarm_ob[] = {
-	{ 1, "OB" },
-	{ 0, "NULL" }
-} ;
-
 #define PW_OID_ALARM_LB		"1.3.6.1.4.1.534.1.7.4"		/* XUPS-MIB::xupsLowBattery */
 
-info_lkp_t pw_alarm_lb[] = {
-	{ 1, "LB" },
+#define IETF_OID_AGENTREV	"1.3.6.1.2.1.33.1.1.4.0"	/* UPS-MIB::upsIdentAgentSoftwareVersion.0 */
+#define IETF_OID_IDENT		"1.3.6.1.2.1.33.1.1.5.0"	/* UPS-MIB::upsIdentName.0 */
+#define IETF_OID_CONF_OUT_VA	"1.3.6.1.2.1.33.1.9.5.0"	/* UPS-MIB::upsConfigOutputVA.0 */
+#define IETF_OID_CONF_RUNTIME_LOW	"1.3.6.1.2.1.33.1.9.7.0"	/* UPS-MIB::upsConfigLowBattTime.0 */
+#define IETF_OID_LOAD_LEVEL	"1.3.6.1.2.1.33.1.4.4.1.5"	/* UPS-MIB::upsOutputPercentLoad */
+
+static info_lkp_t pw_alarm_ob[] = {
+	{ 1, "OB" },
+	{ 2, "" },
 	{ 0, "NULL" }
 } ;
 
-info_lkp_t pw_pwr_info[] = {
+static info_lkp_t pw_alarm_lb[] = {
+	{ 1, "LB" },
+	{ 2, "" },
+	{ 0, "NULL" }
+} ;
+
+static info_lkp_t pw_pwr_info[] = {
 	{ 1, ""		/* other */ },
 	{ 2, "OFF"       /* none */ },
 	{ 3, "OL"        /* normal */ },
@@ -100,7 +109,7 @@ info_lkp_t pw_pwr_info[] = {
 	{ 0, "NULL" }
 };
 
-info_lkp_t pw_mode_info[] = {
+static info_lkp_t pw_mode_info[] = {
 	{ 1, ""  },
 	{ 2, ""  },
 	{ 3, "normal" },
@@ -114,20 +123,29 @@ info_lkp_t pw_mode_info[] = {
 	{ 0, "NULL" }
 };
 
-info_lkp_t pw_batt_info[] = {
-	{ 1, "Battery Charging" }, 
-	{ 2, "Battery Discharging" },
+static info_lkp_t pw_battery_abm_status[] = {
+	{ 1, "CHRG" },
+	{ 2, "DISCHRG" },
+/*	{ 3, "Floating" }, */
+/*	{ 4, "Resting" }, */
+/*	{ 5, "Unknown" }, */
+	{ 0, "NULL" }
+} ;
+
+static info_lkp_t pw_batt_info[] = {
+	{ 1, "" },
+	{ 2, "" },
 	{ 3, "Battery Floating" },	/* battery floating  - can we put that stuff somewhere so one actually access that information? */
-	{ 4, "Battery Resting" },	/* battery resting   - could come handy if support asks what 
+	{ 4, "Battery Resting" },	/* battery resting   - could come handy if support asks what
 			   state the batteries are in... pw_batt_info doesn't get used */
 	{ 5, "unknown" },	/* unknown */
 	{ 0, "NULL" }
 };
 
-info_lkp_t pw_batt_test_info[] = {
+static info_lkp_t pw_batt_test_info[] = {
 	{ 1, "" },			/* unknown */
 	{ 2, "Done and passed" },
-	{ 3, "Done and error" }, 
+	{ 3, "Done and error" },
 	{ 4, "In progress" },
 	{ 5, "Not supported" },
 	{ 6, "Inhibited" },
@@ -138,7 +156,7 @@ info_lkp_t pw_batt_test_info[] = {
 
 /* Snmp2NUT lookup table */
 
-snmp_info_t pw_mib[] = {
+static snmp_info_t pw_mib[] = {
 	/* UPS page */
 	/* info_type, info_flags, info_len, OID, dfl, flags, oid2info, setvar */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_MFR_NAME, "",
@@ -157,8 +175,12 @@ snmp_info_t pw_mib[] = {
 		0, NULL },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_POWER_STATUS, "OFF",
 		SU_STATUS_PWR, &pw_pwr_info[0] },
-	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_BATT_STATUS, "",
-		SU_STATUS_BATT, &ietf_batt_info[0] },
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_ALARM_OB, "",
+		SU_STATUS_BATT, &pw_alarm_ob[0] },
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_ALARM_LB, "",
+		SU_STATUS_BATT, &pw_alarm_lb[0] },
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_BATT_STATUS, "",
+		SU_STATUS_BATT, &pw_battery_abm_status[0] },
 	{ "ups.type", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_POWER_STATUS, "",
 		SU_FLAG_STATIC | SU_FLAG_OK, &pw_mode_info[0] },
 	{ "ups.realpower.nominal", 0, 1.0, PW_OID_CONF_POWER, "",
@@ -290,3 +312,5 @@ snmp_info_t pw_mib[] = {
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 } ;
+
+mib2nut_info_t	powerware = { "pw", PW_MIB_VERSION, "", PW_OID_MODEL_NAME, pw_mib };

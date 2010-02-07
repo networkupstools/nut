@@ -7,7 +7,7 @@
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
- *	2009		Arjen de Korte <adkorte-guest@alioth.debian.org>
+ *	2009 - 2010	Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
  *  Sponsored by Eaton <http://www.eaton.com>
  *   and originally by MGE UPS SYSTEMS <http://www.mgeups.com/>
@@ -35,45 +35,34 @@
 #include "parseconf.h"
 
 /* include all known mib2nut lookup tables */
-#include "apccmib.h"
-#include "eaton-aphel-mib.h"
+#include "apc-mib.h"
+#include "mge-mib.h"
+#include "netvision-mib.h"
+#include "powerware-mib.h"
+#include "eaton-mib.h"
 #include "raritan-mib.h"
-#include "ietfmib.h"
-#include "mgemib.h"
-#include "netvisionmib.h"
-#include "pwmib.h"
-#include "baytechmib.h"
-#include "cpqpowermib.h"
+#include "baytech-mib.h"
+#include "compaq-mib.h"
+#include "ietf-mib.h"
 
-
-mib2nut_info_t mib2nut[] = {
-	{ "apcc", APCC_MIB_VERSION, APCC_OID_POWER_STATUS,
-		".1.3.6.1.4.1.318.1.1.1.1.1.1.0", apcc_mib },
-	{ "mge", MGE_MIB_VERSION, "",
-		MGE_OID_MODEL_NAME, mge_mib },
-	{ "netvision", NETVISION_MIB_VERSION, "",
-		NETVISION_OID_UPSIDENTMODEL, netvision_mib },
-	{ "pw", PW_MIB_VERSION, "",
-		PW_OID_MODEL_NAME, pw_mib },
-	{ "aphel_genesisII", EATON_APHEL_MIB_VERSION, "",
-		APHEL1_OID_MODEL_NAME, eaton_aphel_genesisII_mib },
-	{ "aphel_revelation", EATON_APHEL_MIB_VERSION, "",
-		APHEL2_OID_MODEL_NAME, eaton_aphel_revelation_mib },
-	{ "raritan", RARITAN_MIB_VERSION, "",
-		RARITAN_OID_MODEL_NAME, raritan_mib },
-	{ "baytech", BAYTECH_MIB_VERSION, "",
-		BAYTECH_OID_MODEL_NAME, baytech_mib },
-	{ "cpqpower", CPQPOWER_MIB_VERSION, "",
-		CPQPOWER_OID_MFR_NAME, cpqpower_mib },
+static mib2nut_info_t *mib2nut[] = {
+	&apc,
+	&mge,
+	&netvision,
+	&powerware,
+	&aphel_genesisII,
+	&aphel_revelation,
+	&raritan,
+	&baytech,
+	&compaq,
 	/*
 	 * Prepend vendor specific MIB mappings before IETF, so that
 	 * if a device supports both IETF and vendor specific MIB,
 	 * the vendor specific one takes precedence (when mib=auto)
 	 */
-	{ "ietf", IETF_MIB_VERSION, IETF_OID_POWER_STATUS,
-		IETF_OID_MFR_NAME, ietf_mib },
+	&ietf,
 	/* end of structure. */
-	{ NULL }
+	NULL
 };
 
 /* pointer to the Snmp2Nut lookup table */
@@ -82,6 +71,8 @@ mib2nut_info_t *mib2nut_info;
 snmp_info_t *snmp_info;
 const char *mibname;
 const char *mibvers;
+
+static void disable_transfer_oids(void);
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
 #define DRIVER_VERSION		"0.47"
@@ -93,7 +84,8 @@ upsdrv_info_t	upsdrv_info = {
 	"Arnaud Quette <arnaud.quette@free.fr>\n" \
 	"Dmitry Frolov <frolov@riss-telecom.ru>\n" \
 	"J.W. Hoogervorst <jeroen@hoogervorst.net>\n" \
-	"Niels Baggesen <niels@baggesen.net>",
+	"Niels Baggesen <niels@baggesen.net>\n" \
+	"Arjen de Korte <adkorte-guest@alioth.debian.org>",
 	DRV_STABLE,
 	{ NULL }
 };
@@ -620,8 +612,8 @@ snmp_info_t *su_find_info(const char *type)
 /* Load the right snmp_info_t structure matching mib parameter */
 bool_t load_mib2nut(const char *mib)
 {
-	bool_t ret = FALSE;
-	mib2nut_info_t *mp = mib2nut;
+	int	i;
+	char	buf[LARGEBUF];
 
 	upsdebugx(2, "SNMP UPS driver : entering load_mib2nut(%s)", mib);
 
@@ -632,39 +624,27 @@ bool_t load_mib2nut(const char *mib)
 	 * APHEL-GENESIS-II-MIB => .iso.org.dod.internet.private.enterprises.17373
 	 * APHEL Revelation MIB => .iso.org.dod.internet.private.enterprises.534.6.6.6
 	 */
-
-	while (mp->mib_name) {
-		if (strcmp(mib, mp->mib_name) == 0)
-			break;
-		else if (strcmp(mib, "auto") == 0) {
-			int status;
-			char buf[1024];
-			upsdebugx(1, "load_mib2nut: trying %s mib", mp->mib_name);
-			status = nut_snmp_get_str(mp->oid_auto_check,
-						buf, sizeof buf, NULL);
-			if (status) {
-				ret = TRUE;
-				break;
-			}
+	for (i = 0; mib2nut[i] != NULL; i++) {
+		if (strcmp(mib, "auto") && strcmp(mib, mib2nut[i]->mib_name)) {
+			continue;
 		}
-		mp++;
-	}
-	if (mp->mib_name) {
-		snmp_info = mp->snmp_info;
-		OID_pwr_status = mp->oid_pwr_status;
-		mibname = mp->mib_name;
-		mibvers = mp->mib_version;
+		upsdebugx(1, "load_mib2nut: trying %s mib", mib2nut[i]->mib_name);
+		if (!nut_snmp_get_str(mib2nut[i]->oid_auto_check, buf, sizeof(buf), NULL)) {
+			continue;
+		}
+		snmp_info = mib2nut[i]->snmp_info;
+		OID_pwr_status = mib2nut[i]->oid_pwr_status;
+		mibname = mib2nut[i]->mib_name;
+		mibvers = mib2nut[i]->mib_version;
 		upsdebugx(1, "load_mib2nut: using %s mib", mibname);
+		return TRUE;
 	}
-	else {
-		/* Did we find something or is it really an unknown mib */
-		/* we assume (ret == FALSE) */
-		if (strcmp(mib, "auto") != 0)
-			fatalx(EXIT_FAILURE, "Unknown mibs value: %s", mib);
-		else
-			fatalx(EXIT_FAILURE, "No supported device detected");
+	/* Did we find something or is it really an unknown mib */
+	if (strcmp(mib, "auto") != 0) {
+		fatalx(EXIT_FAILURE, "Unknown mibs value: %s", mib);
+	} else {
+		fatalx(EXIT_FAILURE, "No supported device detected");
 	}
-	return ret;
 }
 
 /* find the OID value matching that INFO_* value */

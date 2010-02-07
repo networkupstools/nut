@@ -1,4 +1,4 @@
-/*  raritan-mib.h - data to monitor Raritan PDUs (Basic and Complex)
+/*  raritan-mib.c - data to monitor Raritan PDUs (Basic and Complex)
  *
  *  Copyright (C) 2008
  *  			Arnaud Quette <ArnaudQuette@Eaton.com>
@@ -23,15 +23,29 @@
  *
  */
 
+#include "raritan-pdu-mib.h"
+
 #define RARITAN_MIB_VERSION	"0.4"
 
-/* Raritan MIB 
+/* Raritan MIB
  * this one uses the Revelation MIB, with a different entry point */
 #define	RARITAN_BASE_OID					".1.3.6.1.4.1.13742"
 #define RARITAN_OID_MODEL_NAME				".1.3.6.1.4.1.13742.1.1.12.0"
 
+#define DO_OFF		0
+#define DO_ON		1
+#define DO_CYCLE	2
+
+static info_lkp_t outlet_status_info[] = {
+	{ -1, "error" },
+	{ 0, "off" },
+	{ 1, "on" },
+	{ 2, "cycling" }, /* transitional status */
+	{ 0, NULL }
+};
+
 /* Snmp2NUT lookup table for Raritan MIB */
-snmp_info_t raritan_mib[] = {
+static snmp_info_t raritan_mib[] = {
 	/* Device page */
 	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "Raritan",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
@@ -61,7 +75,7 @@ snmp_info_t raritan_mib[] = {
 
 	/* Outlet page */
 	{ "outlet.id", 0, 1, NULL, "0", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-	{ "outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, NULL, "All outlets", 
+	{ "outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, NULL, "All outlets",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	{ "outlet.count", 0, 1, ".1.3.6.1.4.1.13742.1.2.1.0", "0", 0, NULL },
 	{ "outlet.current", 0, 0.001, ".1.3.6.1.4.1.13742.1.3.1.1" ".0", NULL, 0, NULL, NULL },
@@ -93,7 +107,7 @@ snmp_info_t raritan_mib[] = {
 
 	/* instant commands. */
 	/* Note that load.cycle might be replaced by / mapped on shutdown.reboot */
-	/* no counterpart found!	
+	/* no counterpart found!
 	{ "outlet.load.off", 0, DO_OFF, ".1.3.6.1.4.1.13742.1.2.2.1.3.0", NULL, SU_TYPE_CMD, NULL, NULL },
 	{ "outlet.load.on", 0, DO_ON, ".1.3.6.1.4.1.13742.1.2.2.1.3.0", NULL, SU_TYPE_CMD, NULL, NULL },
 	{ "outlet.load.cycle", 0, DO_CYCLE, ".1.3.6.1.4.1.13742.1.2.2.1.3.0", NULL, SU_TYPE_CMD, NULL, NULL }, */
@@ -104,3 +118,5 @@ snmp_info_t raritan_mib[] = {
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL, NULL }
 };
+
+mib2nut_info_t	raritan = { "raritan", RARITAN_MIB_VERSION, "", RARITAN_OID_MODEL_NAME, raritan_mib };

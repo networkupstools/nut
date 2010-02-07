@@ -1,4 +1,4 @@
-/*  eaton-aphel-mib.h - data to monitor Eaton Aphel PDUs (Basic and Complex)
+/*  eaton-mib.c - data to monitor Eaton Aphel PDUs (Basic and Complex)
  *
  *  Copyright (C) 2008
  *  			Arnaud Quette <ArnaudQuette@Eaton.com>
@@ -23,6 +23,8 @@
  *
  */
 
+#include "eaton-mib.h"
+
 #define EATON_APHEL_MIB_VERSION	"0.4"
 
 /* APHEL-GENESIS-II-MIB (monitored ePDU)
@@ -39,7 +41,7 @@
 #define APHEL1_OID_OUTLET_CURRENT			".1.3.6.1.4.1.17373.3.2"
 
 /* Snmp2NUT lookup table for GenesisII MIB */
-snmp_info_t eaton_aphel_genesisII_mib[] = {
+static snmp_info_t eaton_aphel_genesisII_mib[] = {
 	/* Device page */
 	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON | Powerware",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
@@ -83,7 +85,7 @@ snmp_info_t eaton_aphel_genesisII_mib[] = {
 
 #define AR_BASE_OID					".1.3.6.1.4.1.534.6.6.6"
 
-#define APHEL2_OID_MODEL_NAME				AR_OID_MODEL_NAME 
+#define APHEL2_OID_MODEL_NAME				AR_OID_MODEL_NAME
 
 /* Common Aphel / Raritan declaration */
 
@@ -103,7 +105,7 @@ snmp_info_t eaton_aphel_genesisII_mib[] = {
 #define AR_OID_OUTLET_NAME				AR_BASE_OID ".1.2.2.1.2"
 #define AR_OID_OUTLET_STATUS			AR_BASE_OID ".1.2.2.1.3"
 
-info_lkp_t outlet_status_info[] = {
+static info_lkp_t outlet_status_info[] = {
 	{ -1, "error" },
 	{ 0, "off" },
 	{ 1, "on" },
@@ -124,7 +126,7 @@ info_lkp_t outlet_status_info[] = {
 #define AR_OID_OUTLET_POWERFACTOR		AR_BASE_OID ".1.2.2.1.9"
 
 /* Snmp2NUT lookup table for Eaton Revelation MIB */
-snmp_info_t eaton_aphel_revelation_mib[] = {
+static snmp_info_t eaton_aphel_revelation_mib[] = {
 	/* Device page */
 	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON | Powerware",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
@@ -134,7 +136,7 @@ snmp_info_t eaton_aphel_revelation_mib[] = {
 		SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
 	{ "device.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
-	
+
 	/* UPS page */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON | Powerware",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
@@ -154,7 +156,7 @@ snmp_info_t eaton_aphel_revelation_mib[] = {
 
 	/* Outlet page */
 	{ "outlet.id", 0, 1, NULL, "0", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-	{ "outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, NULL, "All outlets", 
+	{ "outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, NULL, "All outlets",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	{ "outlet.count", 0, 1, AR_OID_OUTLET_COUNT, "0", 0, NULL },
 	{ "outlet.current", 0, 0.001, AR_OID_UNIT_CURRENT ".0", NULL, 0, NULL, NULL },
@@ -186,7 +188,7 @@ snmp_info_t eaton_aphel_revelation_mib[] = {
 
 	/* instant commands. */
 	/* Note that load.cycle might be replaced by / mapped on shutdown.reboot */
-	/* no counterpart found!	
+	/* no counterpart found!
 	{ "outlet.load.off", 0, DO_OFF, AR_OID_OUTLET_STATUS ".0", NULL, SU_TYPE_CMD, NULL, NULL },
 	{ "outlet.load.on", 0, DO_ON, AR_OID_OUTLET_STATUS ".0", NULL, SU_TYPE_CMD, NULL, NULL },
 	{ "outlet.load.cycle", 0, DO_CYCLE, AR_OID_OUTLET_STATUS ".0", NULL, SU_TYPE_CMD, NULL, NULL }, */
@@ -197,3 +199,6 @@ snmp_info_t eaton_aphel_revelation_mib[] = {
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL, NULL }
 };
+
+mib2nut_info_t	aphel_genesisII = { "aphel_genesisII", EATON_APHEL_MIB_VERSION, "", APHEL1_OID_MODEL_NAME, eaton_aphel_genesisII_mib };
+mib2nut_info_t	aphel_revelation = { "aphel_revelation", EATON_APHEL_MIB_VERSION, "", APHEL2_OID_MODEL_NAME, eaton_aphel_revelation_mib };

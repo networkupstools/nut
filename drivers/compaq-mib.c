@@ -1,4 +1,4 @@
-/*  cpqpowermib.h - data to monitor SNMP UPS with NUT
+/*  compaq-mib.c - data to monitor SNMP UPS with NUT
  *
  *  Copyright (C) 2002-2006
  *  			Arnaud Quette <arnaud.quette@free.fr>
@@ -26,6 +26,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  */
+
+#include "compaq-mib.h"
 
 #define CPQPOWER_MIB_VERSION	"1.0"
 
@@ -70,18 +72,18 @@
 #define CPQPOWER_OID_ALARM_OB         CPQPOWER_OID_UPS_MIB ".7.3.0"     /* UPS-MIB::upsOnBattery */
 #define CPQPOWER_OID_ALARM_LB         CPQPOWER_OID_UPS_MIB ".7.4.0"     /* UPS-MIB::upsLowBattery */
 
-info_lkp_t cpqpower_alarm_ob[] = {
+static info_lkp_t cpqpower_alarm_ob[] = {
 	{ 1, "OB" },
 	{ 0, "NULL" }
 } ;
 
-info_lkp_t cpqpower_alarm_lb[] = {
+static info_lkp_t cpqpower_alarm_lb[] = {
 	{ 1, "LB" },
 	{ 0, "NULL" }
 } ;
 
 /* Defines for CPQPOWER_OID_POWER_STATUS (1) */
-info_lkp_t cpqpower_pwr_info[] = {
+static info_lkp_t cpqpower_pwr_info[] = {
 	{ 1, ""       /* other */ },
 	{ 2, "OFF"    /* none */ },
 	{ 3, "OL"     /* normal */ },
@@ -95,7 +97,7 @@ info_lkp_t cpqpower_pwr_info[] = {
 	{ 0, "NULL" }
 } ;
 
-info_lkp_t cpqpower_mode_info[] = {
+static info_lkp_t cpqpower_mode_info[] = {
 	{ 1, ""  },
 	{ 2, ""  },
 	{ 3, "normal" },
@@ -109,7 +111,7 @@ info_lkp_t cpqpower_mode_info[] = {
 	{ 0, "NULL" }
 };
 
-info_lkp_t cpqpower_battery_abm_status[] = {
+static info_lkp_t cpqpower_battery_abm_status[] = {
 	{ 1, "CHRG" },
 	{ 2, "DISCHRG" },
 /*	{ 3, "Floating" }, */
@@ -118,8 +120,8 @@ info_lkp_t cpqpower_battery_abm_status[] = {
 	{ 0, "NULL" }
 } ;
 
-/* Defines for CPQPOWER_OID_TEST_RES */
-info_lkp_t cpqpower_test_res_info[] = {
+/* Defines for CPQPOWER_OID_UPS_TEST_RES */
+static info_lkp_t cpqpower_test_res_info[] = {
 	{ 1, "Unknown" },
 	{ 2, "Done and passed" },
 	{ 3, "Done and error" },
@@ -135,7 +137,7 @@ info_lkp_t cpqpower_test_res_info[] = {
 
 /* Snmp2NUT lookup table */
 
-snmp_info_t cpqpower_mib[] = {
+static snmp_info_t cpqpower_mib[] = {
 	/* UPS page */
 	/* info_type, info_flags, info_len, OID, dfl, flags, oid2info, setvar */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_MFR_NAME, "HP/Compaq", SU_FLAG_STATIC, NULL },
@@ -153,6 +155,7 @@ snmp_info_t cpqpower_mib[] = {
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_ALARM_LB, "", SU_STATUS_BATT, cpqpower_alarm_lb },
 /*	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_BATT_STATUS, "", SU_STATUS_BATT, ietf_batt_info }, */
 	{ "ups.type", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_POWER_STATUS, "", SU_STATUS_PWR, cpqpower_mode_info },
+	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_UPS_TEST_RES, "", 0, cpqpower_test_res_info },
 
 	/* Ambient page */
 	{ "ambient.temperature", 0, 1.0, CPQPOWER_OID_AMBIENT_TEMP, "", 0, NULL },
@@ -201,3 +204,5 @@ snmp_info_t cpqpower_mib[] = {
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
+
+mib2nut_info_t	compaq = { "cpqpower", CPQPOWER_MIB_VERSION, "", CPQPOWER_OID_MFR_NAME, cpqpower_mib };

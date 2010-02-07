@@ -1,6 +1,6 @@
-/*  mgemib.h - data to monitor MGE UPS SYSTEMS SNMP devices with NUT
+/*  mge-mib.c - data to monitor MGE UPS SYSTEMS SNMP devices with NUT
  *
- *  Copyright (C) 2002-2003 
+ *  Copyright (C) 2002-2003
  *  			Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
  *  			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *
@@ -23,6 +23,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  */
+
+#include "mge-mib.h"
 
 #define MGE_MIB_VERSION	"0.4"
 
@@ -73,14 +75,13 @@ static info_lkp_t mge_overload_info[] = {
 /* TODO: PowerShare (per plug .1, .2, .3) and deals with delays */
 
 /* Snmp2NUT lookup table */
-snmp_info_t mge_mib[] = {
+static snmp_info_t mge_mib[] = {
 
 	/* UPS page */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "MGE UPS SYSTEMS", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, MGE_BASE_OID ".1.1.0", "Generic SNMP UPS", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "ups.serial", ST_FLAG_STRING, SU_INFOSIZE, MGE_BASE_OID ".1.7.0", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "ups.firmware.aux", ST_FLAG_STRING, SU_INFOSIZE, MGE_BASE_OID ".12.12.0", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
-	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_POWER_STATUS, "OFF", SU_FLAG_OK | SU_STATUS_PWR, ietf_pwr_info },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, MGE_BASE_OID ".5.14.0", "", SU_FLAG_OK | SU_STATUS_BATT, mge_lowbatt_info },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, MGE_BASE_OID ".7.3.0", "", SU_FLAG_OK | SU_STATUS_BATT, mge_onbatt_info },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, MGE_BASE_OID ".7.4.0", "", SU_FLAG_OK | SU_STATUS_BATT, mge_bypass_info },
@@ -93,7 +94,7 @@ snmp_info_t mge_mib[] = {
 	{ "ups.L3.load", 0, 1, MGE_BASE_OID ".7.2.1.4.3", "", SU_OUTPUT_3, NULL },
 /*	{ "ups.delay.shutdown", ST_FLAG_STRING | ST_FLAG_RW, 3, MGE_OID_GRACEDELAY, "", SU_FLAG_OK, NULL }, */
 
-	/* Input page */	
+	/* Input page */
 	{ "input.phases", 0, 1.0, MGE_BASE_OID ".6.1.0", "", SU_FLAG_SETINT, NULL, &input_phases },
 	{ "input.voltage", 0, 0.1, MGE_BASE_OID ".6.2.1.2.1", "", SU_INPUT_1, NULL },
 	{ "input.L1-N.voltage", 0, 0.1, MGE_BASE_OID ".6.2.1.2.1", "", SU_INPUT_3, NULL },
@@ -134,7 +135,7 @@ snmp_info_t mge_mib[] = {
 	/* Battery page */
 	{ "battery.charge", 0, 1, MGE_BASE_OID ".5.2.0", "", SU_FLAG_OK, NULL },
 	{ "battery.runtime", 0, 1, MGE_BASE_OID ".5.1.0", "", SU_FLAG_OK, NULL },
-	{ "battery.charge.low", ST_FLAG_STRING | ST_FLAG_RW, 2, MGE_BASE_OID ".4.8.0", "", SU_TYPE_INT | SU_FLAG_OK, NULL },	
+	{ "battery.charge.low", ST_FLAG_STRING | ST_FLAG_RW, 2, MGE_BASE_OID ".4.8.0", "", SU_TYPE_INT | SU_FLAG_OK, NULL },
 	{ "battery.voltage", 0, 0.1, MGE_BASE_OID ".5.5.0", "", SU_FLAG_OK, NULL },
 
 	/* Ambient page: Environment Sensor (ref 66 846) */
@@ -154,3 +155,5 @@ snmp_info_t mge_mib[] = {
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
+
+mib2nut_info_t	mge = { "mge", MGE_MIB_VERSION, "", MGE_OID_MODEL_NAME, mge_mib };
