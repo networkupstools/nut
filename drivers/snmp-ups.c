@@ -40,7 +40,7 @@
 #include "netvision-mib.h"
 #include "powerware-mib.h"
 #include "eaton-mib.h"
-#include "raritan-mib.h"
+#include "raritan-pdu-mib.h"
 #include "baytech-mib.h"
 #include "compaq-mib.h"
 #include "ietf-mib.h"
