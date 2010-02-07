@@ -98,6 +98,7 @@
 #define APC_F_SECONDS	0x100000 /* Time in seconds */
 #define APC_F_MINUTES	0x110000 /* Time in minutes */
 #define APC_F_HOURS	0x120000 /* Time in hours */
+#define APC_F_REASON	0x130000 /* Reason of transfer */
 #define APC_F_LEAVE	0	/* Just pass this through */
 
 struct apc_vartab_t {
@@ -143,7 +144,7 @@ struct apc_vartab_t {
 	{ "input.transfer.high",
 				APC_F_VOLT,		'u' },
 	{ "input.transfer.reason", 
-				APC_POLL,		'G' },
+				APC_POLL|APC_F_REASON,	'G' },
 
 	{ "input.voltage.maximum",
 				APC_POLL|APC_F_VOLT,	'M' },

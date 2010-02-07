@@ -106,6 +106,17 @@ static char *convert_data(struct apc_vartab_t *cmd_entry, char *upsval)
 			snprintf(tmp, sizeof(tmp), "%d", tval);
 			return tmp;
 
+		case APC_F_REASON:
+			switch (upsval[0]) {
+				case 'R': return "unacceptable utility voltage rate of change";
+				case 'H': return "high utility voltage";
+				case 'L': return "low utility voltage";
+				case 'T': return "line voltage notch or spike";
+				case 'O': return "no transfers yet since turnon";
+				case 'S': return "simulated power failure or UPS test";
+				default: return upsval;
+			}
+
 		default:
 			upslogx(LOG_NOTICE, "Unable to handle conversion of %s",
 				cmd_entry->name);
