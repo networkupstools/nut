@@ -139,7 +139,14 @@ connected (e.g. bus="002", bus="00[2-3]").
 
 Select a serial-over-USB subdriver to use. You have a choice between \fIphoenix\fR
 \fIippon\fR, \fIcypress\fR and \fIkrauler\fR. When using this option, it is mandatory to also
-specify the vendorid and productid.
+specify the vendorid and productid. Note that since nut-2.4.2 the \fIippon\fR subdriver is used
+where previously the \fIphoenix\fR was selected. If this doesn't work for you, add the
+following to the \fBups.conf\fR(5) entry for your UPS:
+.nf
+    vendorid  = 06da
+    productid = 0003
+    subdriver = phoenix
+.fi
 
 .SH UPS COMMANDS
 
