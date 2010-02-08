@@ -9,6 +9,9 @@ Changes from 2.4.1 to 2.4.2:
    changed. If you use such a device and it is no longer working with this
    driver, override the 'subdriver' default in 'ups.conf' (see man 8 blazer).
 
+ - NUT ACL mechanism has been replaced in 2.4.0 by tcp-wrappers. This
+   information was missing below, so a double note has been added.
+
 ---------------------------------------------------------------------------
 Changes from 2.4.0 to 2.4.1:
 
@@ -33,6 +36,10 @@ Changes from 2.2.2 to 2.4.0:
    information.
  - The generated udev rules file has been renamed with dash only, no underscore
    anymore (ie 52-nut-usbups.rules instead of 52_nut-usbups.rules)
+ - (Note: this has been missed at release time): The NUT internal network access
+   control (ACL using ACCEPT / REJECT in upsd.conf) has been replaced by
+   tcp-wrappers. This can also be complemented by the LISTEN directive.
+   Refer to upsd.conf manual page for more information. 
 
 ---------------------------------------------------------------------------
 Changes from 2.2.1 to 2.2.2:
