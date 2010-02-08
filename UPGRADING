@@ -8,9 +8,9 @@ Changes from 2.4.1 to 2.4.2:
  - The default subdriver for the blazer_usb driver USB id 06da:0003 has
    changed. If you use such a device and it is no longer working with this
    driver, override the 'subdriver' default in 'ups.conf' (see man 8 blazer).
-
- - NUT ACL mechanism has been replaced in 2.4.0 by tcp-wrappers. This
-   information was missing below, so a double note has been added.
+ - NUT ACL and the allowfrom mechanism has been replaced in 2.4.0 by the LISTEN
+   directive and tcp-wrappers respectively. This information was missing
+   below, so a double note has been added.
 
 ---------------------------------------------------------------------------
 Changes from 2.4.0 to 2.4.1:
@@ -38,8 +38,8 @@ Changes from 2.2.2 to 2.4.0:
    anymore (ie 52-nut-usbups.rules instead of 52_nut-usbups.rules)
  - (Note: this has been missed at release time): The NUT internal network access
    control (ACL using ACCEPT / REJECT in upsd.conf) has been replaced by
-   tcp-wrappers. This can also be complemented by the LISTEN directive.
-   Refer to upsd.conf manual page for more information. 
+   the LISTEN directive. This can also be complemented by tcp-wrappers.
+   Refer to upsd and upsd.conf manual pages for more information.
 
 ---------------------------------------------------------------------------
 Changes from 2.2.1 to 2.2.2:
