@@ -10,7 +10,7 @@ helper program for \fBupsmon\fR(8).
 .SH CONFIGURATION DIRECTIVES
 
 .IP "CMDSCRIPT \fIscriptname\fR"
-Required.  This must be above any AT lines.  This script is used to 
+Required.  This must be above any AT lines.  This script is used to
 invoke commands when your timers are triggered.  It receives a single
 argument which is the name of the timer that caused it to trigger.
 
@@ -38,7 +38,7 @@ to make you visit this portion of the documentation and think about how
 your system works before potentially opening a security hole.
 
 .IP "LOCKFN \fIfilename\fR"
-Required.  upssched attempts to create this file in order to avoid a 
+Required.  upssched attempts to create this file in order to avoid a
 race condition when two events are dispatched from upsmon at nearly
 the same time.  This file will only exist briefly.  It must not be
 created by any other process.
@@ -66,7 +66,7 @@ START\-TIMER \fItimername\fR \fIinterval\fR
 Example:
 .IP
 .nf
-	Start a timer that'll execute when any UPS (*) has been 
+	Start a timer that'll execute when any UPS (*) has been
 	gone for 10 seconds
 
 	AT COMMBAD * START\-TIMER upsgone 10
@@ -77,7 +77,7 @@ Example:
 CANCEL\-TIMER \fItimername\fR [cmd]
 .IP
 .nf
-	Cancel a running timer called <timername>, if possible. 
+	Cancel a running timer called <timername>, if possible.
         If the timer has passed then pass the optional argument
         <cmd> to CMDSCRIPT.
 .fi
@@ -87,7 +87,7 @@ CANCEL\-TIMER \fItimername\fR [cmd]
 Example:
 .IP
 .nf
-	If a specific UPS (myups@localhost) comes back online, then 
+	If a specific UPS (myups@localhost) comes back online, then
 	stop the timer before it triggers
 
 	AT COMMOK myups@localhost CANCEL\-TIMER upsgone
@@ -118,7 +118,7 @@ Note that any AT that matches both the \fInotifytype\fR and the
 \fIupsname\fR for the current event will be used.
 
 For a complete list of \fInotifytype\fR possible values, refer to the section
-NOTIFYMSG type in \fBupssched\fR(8).
+NOTIFY EVENTS in \fBupsmon\fR(8).
 
 .SH SEE ALSO
 \fBupssched\fR(8), \fBupsmon\fR(8)
