@@ -20,7 +20,7 @@
 #include "main.h"
 #include "dstate.h"
 
-	/* data which may be useful to the drivers */	
+	/* data which may be useful to the drivers */
 	int		upsfd = -1;
 	char		*device_path = NULL;
 	const char	*progname = NULL, *upsname = NULL, *device_name = NULL;
@@ -107,7 +107,7 @@ static void help_msg(void)
 
 		while (tmp) {
 			if (tmp->vartype == VAR_VALUE)
-				printf("%40s : -x %s=<value>\n", 
+				printf("%40s : -x %s=<value>\n",
 					tmp->desc, tmp->var);
 			else
 				printf("%40s : -x %s\n", tmp->desc, tmp->var);
@@ -244,7 +244,7 @@ void addvar(int vartype, const char *name, const char *desc)
 		last->next = tmp;
 	else
 		vartab_h = tmp;
-}	
+}
 
 /* handle -x / ups.conf config details that are for this part of the code */
 static int main_arg(char *var, char *val)
@@ -554,7 +554,7 @@ int main(int argc, char **argv)
 	upsdebugx(1, "debug level is '%d'", nut_debug_level);
 
 	new_uid = get_user_pwent(user);
-	
+
 	if (chroot_path)
 		chroot_start(chroot_path);
 
@@ -587,17 +587,17 @@ int main(int argc, char **argv)
 	 * when its a pdu! */
 	dstate_setinfo("device.type", "ups");
 
+	/* publish the top-level data: version number, driver name */
+	dstate_setinfo("driver.version", "%s", UPS_VERSION);
+	dstate_setinfo("driver.version.internal", "%s", upsdrv_info.version);
+	dstate_setinfo("driver.name", "%s", progname);
+
 	/* get the base data established before allowing connections */
 	upsdrv_initinfo();
 	upsdrv_updateinfo();
 
 	/* now we can start servicing requests */
 	dstate_init(progname, upsname);
-
-	/* publish the top-level data: version number, driver name */
-	dstate_setinfo("driver.version", "%s", UPS_VERSION);
-	dstate_setinfo("driver.version.internal", "%s", upsdrv_info.version);
-	dstate_setinfo("driver.name", "%s", progname);
 
 	/* The poll_interval may have been changed from the default */
 	dstate_setinfo("driver.parameter.pollinterval", "%d", poll_interval);
@@ -609,7 +609,7 @@ int main(int argc, char **argv)
 		dstate_setinfo("device.model", "%s", dstate_getinfo("ups.model"));
 	if (dstate_getinfo("ups.serial") != NULL)
 		dstate_setinfo("device.serial", "%s", dstate_getinfo("ups.serial"));
-	
+
 	if (nut_debug_level == 0) {
 		background();
 		writepid(pidfn);
@@ -618,7 +618,7 @@ int main(int argc, char **argv)
 	while (!exit_flag) {
 
 		struct timeval	timeout;
-	
+
 		gettimeofday(&timeout, NULL);
 		timeout.tv_sec += poll_interval;
 
