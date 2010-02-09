@@ -51,6 +51,12 @@ void net_login(ctype_t *client, int numarg, const char **arg)
 		return;
 	}
 
+	/* make sure this is a valid user */
+	if (!user_checkaction(client->username, client->password, "LOGIN")) {
+		send_err(client, NUT_ERR_ACCESS_DENIED);
+		return;
+	}
+
 	ups->numlogins++;
 	client->loginups = xstrdup(ups->name);
 
@@ -85,7 +91,7 @@ void net_master(ctype_t *client, int numarg, const char **arg)
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
 		return;
 	}
-	
+
 	ups = get_ups_ptr(arg[0]);
 
 	if (!ups) {
@@ -97,7 +103,7 @@ void net_master(ctype_t *client, int numarg, const char **arg)
 	if (!user_checkaction(client->username, client->password, "MASTER")) {
 		send_err(client, NUT_ERR_ACCESS_DENIED);
 		return;
-	}		
+	}
 
 	/* this is just an access level check */
 	sendback(client, "OK MASTER-GRANTED\n");
@@ -110,7 +116,7 @@ void net_username(ctype_t *client, int numarg, const char **arg)
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
 		return;
 	}
-	
+
 	if (client->username != NULL) {
 		upslogx(LOG_INFO, "Client %s@%s tried to set a username twice",
 			client->username, client->addr);
