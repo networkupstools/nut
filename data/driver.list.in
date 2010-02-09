@@ -298,9 +298,16 @@
 
 "IPMI"	"pdu"	"1"	""	""	"powerman-pdu (experimental)"
 
-"Ippon"	"ups"	"2"	"(various)"	""	"megatec or blazer_ser"
-"Ippon"	"ups"	"2"	"Back Power Pro"	""	"megatec or blazer_ser"
-"Ippon"	"ups"	"2"	"Back Power Pro 700"	"USB"	"megatec_usb or blazer_usb"
+"Ippon"	"ups"	"2"	"Back Power Pro 400/500/600/700/800"	""	"blazer_ser or megatec"
+"Ippon"	"ups"	"2"	"Back Power Pro 400/500/600/700/800"	"USB"	"blazer_usb (experimental)"
+"Ippon"	"ups"	"2"	"Back Comfo Pro 600/800"	""	"blazer_ser or megatec"
+"Ippon"	"ups"	"2"	"Back Comfo Pro 600/800"	"USB"	"blazer_usb (experimental)"
+"Ippon"	"ups"	"2"	"Smart Power Pro 1000/1400/2000"	""	"blazer_ser or megatec"
+"Ippon"	"ups"	"2"	"Smart Power Pro 1000/1400/2000"	"USB"	"blazer_usb (experimental)"
+"Ippon"	"ups"	"2"	"Smart Winner 750/1000/1500/2000/3000"	""	"blazer_ser or megatec"
+"Ippon"	"ups"	"2"	"Smart Winner 750/1000/1500/2000/3000"	"USB"	"blazer_usb (experimental)"
+"Ippon"	"ups"	"2"	"(various)"	""	"blazer_ser or megatec"
+"Ippon"	"ups"	"2"	"(various)"	"USB"	"blazer_usb"
 
 "IVT"	"scd"	"1"	"SCD series"	""	"ivtscd"
 
