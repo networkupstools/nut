@@ -1,3 +1,577 @@
+2010-02-10  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2331] drivers/genericups.c: Fix typo in previous commit
+	* [r2330] drivers/genericups.c: Don't hang up on last close
+	  (initial state of HUPCL is implementation dependent)
+	  [http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=327072]
+
+2010-02-09  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2329] drivers/main.c: Some drivers set
+	  'driver.version.internal' in upsdrv_initinfo() so we should set
+	  the generic message before running that
+	* [r2327] man/upssched.conf.5: Fix wrong reference
+	  [http://lists.alioth.debian.org/pipermail/nut-upsdev/2010-February/004532.html]
+	* [r2326] server/netuser.c: Check if user is allowed to login
+	  before accepting connection
+	  
+	  [http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=544390]
+
+2010-02-08  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2324] UPGRADING: The tcp-wrappers support is optional in
+	  addition to the LISTEN directive (not the other way around)
+
+2010-02-08  Arnaud Quette <arnaud.quette@free.fr>
+
+	* [r2323] UPGRADING: Add a double explicit note about the ACL
+	  mechanism removal in 2.4.0.
+	  (reported on Debian by Anthony DeRobertis, Bug #526811)
+
+2010-02-08  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2322] data/driver.list: Added lots of Ippon devices that were
+	  mentioned on the mailinglists (serial devices will undoubtly
+	  work, USB support still experimental)
+
+2010-02-07  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2321] UPGRADING, drivers/blazer_usb.c, man/blazer.8: Use
+	  'ippon' subdriver for devices with USB id 06da:0003 (old
+	  'phoenix' subdriver still available)
+	* [r2320] drivers/raritan-mib.h, drivers/snmp-ups.c: Fix wrong name
+	* [r2319] drivers/raritan-mib.h: Add missing file in previous
+	  commit
+	* [r2318] drivers, drivers/Makefile.am, drivers/apc-mib.c,
+	  drivers/apc-mib.h, drivers/apccmib.h, drivers/baytech-mib.c,
+	  drivers/baytech-mib.h, drivers/baytechmib.h,
+	  drivers/compaq-mib.c, drivers/compaq-mib.h,
+	  drivers/cpqpowermib.h, drivers/eaton-aphel-mib.h,
+	  drivers/eaton-mib.c, drivers/eaton-mib.h, drivers/ietf-mib.c,
+	  drivers/ietf-mib.h, drivers/ietfmib.h, drivers/mge-mib.c,
+	  drivers/mge-mib.h, drivers/mgemib.h, drivers/netvision-mib.c,
+	  drivers/netvision-mib.h, drivers/netvisionmib.h,
+	  drivers/powerware-mib.c, drivers/powerware-mib.h,
+	  drivers/pwmib.h, drivers/raritan-mib.h,
+	  drivers/raritan-pdu-mib.c, drivers/raritan-pdu-mib.h,
+	  drivers/snmp-ups.c, drivers/snmp-ups.h: Extract subdriver info
+	  from main driver body into separate modules. This prevents
+	  namespace conflicts and ensures that changes in one subdriver
+	  don't lead to surprise changes in others.
+	  
+	  It also allows to use a single mapping file to be used in several
+	  subdrivers by specifying a different entry point (which doesn't
+	  work if everything is in one module).
+
+2010-02-07  Charles Lepple <clepple@gmail.com>
+
+	* [r2317] drivers/apcsmart.c, drivers/apcsmart.h: apcsmart: Add
+	  input.transfer.reason
+	  
+	  Contributed by Michael Haardt:
+	  http://article.gmane.org/gmane.comp.monitoring.nut.devel/4498
+
+2010-02-05  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2316] drivers/cpqpowermib.h: Could this be a Powerware OEM
+	  device?
+
+2010-02-04  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2315] drivers/cpqpowermib.h: Based on patch from Philip Ward
+	  [http://lists.alioth.debian.org/pipermail/nut-upsdev/2010-February/004509.html]
+
+2010-02-01  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2305] clients/upsimage.c, common/strerror.c, drivers/bcmxcp.c,
+	  drivers/main-hal.c, drivers/powerman-pdu.c: Prefer snprintf over
+	  sprintf to prevent overflowing buffers (also removes trailing
+	  whitespace)
+	* [r2303] drivers/Makefile.am, drivers/cpqpowermib.h,
+	  drivers/snmp-ups.c, man/snmp-ups.8:
+
+2010-01-31  Charles Lepple <clepple@gmail.com>
+
+	* [r2297] drivers/tripplite_usb.c: Revert trunk commit r2294, which
+	  was meant for a branch.
+	* [r2296] drivers/clone-outlet.c: clone-outlet.c: remove executable
+	  bit
+	* [r2294] drivers/tripplite_usb.c: tripplite_usb: initial changes
+	  to test protocol 3004
+
+2010-01-30  Arnaud Quette <arnaud.quette@free.fr>
+
+	* [r2286] tools/Makefile.am, tools/device-recorder.sh: Create a
+	  script to record device running sequence and dump it in a .seq
+	  format.
+	  The .seq file can then be used by dummy-ups to replay the
+	  sequence.
+
+2010-01-28  Charles Lepple <clepple@gmail.com>
+
+	* [r2282] m4/nut_report_feature.m4: Another attempt to fix the
+	  feature report on OS X.
+
+2010-01-27  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2281] m4/nut_report_feature.m4: Attempt to get rid of spurious
+	  '-n' on MacOSX-10.5 BuildBot
+	* [r2280] m4/nut_check_libhal.m4: Prefer to use 'test' over '[ ]'
+	  (on many shells, this first a built-in function while the second
+	  is a symbolic link to 'test')
+
+2010-01-27  Charles Lepple <clepple@gmail.com>
+
+	* [r2279] m4/nut_check_libhal.m4: Remove fallback HAL information
+	  path, and remove extra parentheses.
+
+2010-01-25  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2278] drivers/megatec.c: Don't check reliability of connection
+	  at driver startup. This confuses users and really serves no
+	  purpose for normal use. In case the connection is unreliable, it
+	  should ultimately be the decision of the user whether or not it
+	  is acceptable (not the driver).
+	* [r2277] drivers/apc-hid.c, drivers/belkin-hid.c,
+	  drivers/cps-hid.c, drivers/explore-hid.c, drivers/liebert-hid.c,
+	  drivers/mge-hid.c, drivers/powercom-hid.c,
+	  drivers/tripplite-hid.c, include/common.h: The "config.h" header
+	  should be the first included, since it contains the _GNU_SOURCE
+	  declaration (enables Posix extensions to C)
+	* [r2276] configure.in: Add AC_USE_SYSTEM_EXTENSIONS to use
+	  features of Posix that are extensions to C (requires Autoconf
+	  2.60 or better)
+	* [r2275] common/common.c: Fix compiler warning on MacOSX-10.5
+	* [r2274] common/common.c: Fix compiler warning on FreeBSD
+	* [r2273] configure.in:
+	* [r2272] configure.in, drivers/mge-hid.c: Check for presence of
+	  strptime() before using it
+
+2010-01-24  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2271] configure.in, drivers/mge-hid.c: The previous patch was a
+	  resounding failure (reverting back to setting _XOPEN_SOURCE in
+	  one specific source file instead)
+	* [r2270] configure.in: Request SUSv2 compliance for all sources
+	  (experimental)
+	* [r2269] drivers/mge-hid.c: _XOPEN_SOURCE seems to break on
+	  FreeBSD
+	* [r2268] drivers/mge-xml.c: Fix compiler warning
+
+2010-01-24  Charles Lepple <clepple@gmail.com>
+
+	* [r2267] drivers/mge-hid.c: Define _XOPEN_SOURCE=500 for
+	  strptime() prototype in glibc2
+
+2010-01-24  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2266] drivers/mge-hid.c: Removing stuff that was added to fix
+	  strptime on Debian Etch (incompatible with FreeBSD)
+
+2010-01-23  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2265] drivers/mge-hid.c: Fourth attempt of fixing strptime()
+	  declaration missing on Debian
+	* [r2264] drivers/mge-hid.c: Third attempt of fixing strptime()
+	  declaration missing on Debian
+	* [r2263] drivers/mge-hid.c: Second attempt of fixing strptime()
+	  declaration missing on Debian
+	* [r2262] drivers/apc-hid.c, drivers/belkin-hid.c,
+	  drivers/cps-hid.c, drivers/explore-hid.c, drivers/liebert-hid.c,
+	  drivers/mge-hid.c, drivers/powercom-hid.c,
+	  drivers/tripplite-hid.c, scripts/subdriver/path-to-subdriver.sh:
+	  Remove redundant #include's (are being dealt with by main.h)
+	* [r2261] data/cmdvartab: Add descriptions for
+	  'ups.timer.(start|reboot|shutdown)' variables
+	* [r2260] drivers/mge-hid.c: Need to define _XOPEN_SOURCE for
+	  strptime() prototype in glibc2
+
+2010-01-22  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2257] drivers/mge-shut.c, drivers/mge-shut.h: Change naming of
+	  ups.delay.* variables to ups.timer.*, since writing these values
+	  immediately starts the countdown (and not when a shutdown command
+	  is issued)
+	* [r2256] drivers/powercom-hid.c: Fallback to stored value of
+	  'ups.delay.(start|shutdown)' only if no parameter is given (to
+	  fix 'load.on' command)
+
+2010-01-21  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2255] drivers/powercom-hid.c: Fix beeper.status and add
+	  load.on.delay command (to allow starting up with delay when UPS
+	  is shutdown)
+
+2010-01-19  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2254] data/driver.list, drivers, drivers/Makefile.am,
+	  drivers/liebertgxt2.c, man/Makefile.am, man/liebertgxt2.8: Based
+	  on the patch from the below message (needs to be tested)
+	  
+	  http://lists.alioth.debian.org/pipermail/nut-upsdev/2010-January/004391.html
+	* [r2253] drivers/powercom-hid.c: Add
+	  'beeper.(enable|disable|mute)' instcmd's
+
+2010-01-17  Charles Lepple <clepple@gmail.com>
+
+	* [r2250] drivers/tripplite_usb.c: tripplite_usb: Detect protocol
+	  before using tl_model
+	  
+	  Reported by Chase Wallis.
+
+2010-01-17  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2248] man/blazer.8: Add 'ippon' subdriver to man page
+	* [r2247] drivers/blazer_usb.c: ETIME is not defined on FreeBSD, so
+	  make this test conditional (also fixes wrong sign)
+
+2010-01-13  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2244] drivers/blazer_usb.c: Close device handle after
+	  usb_reset() is called and reconnect
+	* [r2243] drivers/blazer_usb.c: Attempt to clear stalled devices by
+	  sending them an usb_reset() command
+
+2010-01-13  Charles Lepple <clepple@gmail.com>
+
+	* [r2242] drivers/tripplite_usb.c: tripplite_usb: don't reset
+	  watchdog on SMARTPRO models
+	  
+	  Patch by Chase Wallis:
+	  http://article.gmane.org/gmane.comp.monitoring.nut.devel/4376
+
+2010-01-12  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2241] drivers/blazer_usb.c: Fix bug in ippon subdriver
+
+2010-01-07  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2240] drivers/blazer_usb.c: Fix minor bug in debug code
+	* [r2239] drivers/blazer_usb.c: Add experimental 'ippon' subdriver
+	  to communicate with UPS devices of the same name
+
+2010-01-06  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2238] drivers/blazer_usb.c: Clear potential stall condition
+	  while flushing interrupt pipe
+	* [r2237] drivers/libusb.c, drivers/usbhid-ups.c: Reconnect if
+	  usb_clear_halt() is not implemented (older libusb on *BSD
+	  systems) so that we don't get stuck with a stalled interrupt
+	  endpoint (correction of 2235)
+	* [r2236] drivers/usbhid-ups.c: EPIPE should not result in
+	  reconnecting since we're reading from a control endpoint here,
+	  not an interrupt endpoint (where this would be an appropriate
+	  action after attempting to fix the stall condition through
+	  usb_clear_halt() first)
+	* [r2235] drivers/usbhid-ups.c: Reconnect if usb_clear_halt() is
+	  not implemented (older libusb on *BSD systems) so that we don't
+	  get stuck with a stalled interrupt endpoint
+
+2010-01-05  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2234] drivers/libusb.c: Don't ignore persistent "Broken pipe"
+	  on stalled interrupt endpoint (only ignore them on control
+	  endpoints)
+	* [r2233] drivers/libusb.c: Clear stall condition on interrupt
+	  endpoint if needed (since we no longer reconnect, this may be
+	  needed)
+	* [r2232] drivers/libusb.c, drivers/usbhid-ups.c: Change libusb.c
+	  error handling. Most important (functional) change is that
+	  "Broken pipe" is no longer considered a reason to reconnect
+	  (fixes MGE/Eaton Ellipse series UPS stability problems).
+
+2010-01-04  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2231] drivers/libusb.c: Fix previous patch
+	* [r2230] drivers/libusb.c: Log message to syslog when
+	  usb_get/set_* operation fails (except timeouts) at LOG_DEBUG to
+	  make sure we have something to work with for debugging frequent
+	  disconnects
+
+2010-01-02  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2224] m4/nut_check_libneon.m4: Fix output when library is not
+	  installed
+	* [r2223] m4/nut_check_libhal.m4: Don't wast effort trying to
+	  detect HAL stuff if we already know it is not available
+	* [r2222] m4/nut_check_libgd.m4: Remove braces around test
+	  conditions
+	* [r2221] m4/nut_check_libpowerman.m4, m4/nut_check_libssl.m4:
+	  Remove braces around test conditions
+	* [r2220] m4/nut_check_libusb.m4: Fix one "==" that was left behind
+	  (and slightly improve message when pkg-config is not available)
+
+2010-01-01  Charles Lepple <clepple@gmail.com>
+
+	* [r2219] m4/nut_check_libusb.m4: Remove extra parentheses from
+	  libusb test.
+	  
+	  Also change '==' to '=' for string equality test.
+
+2009-12-31  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2218] m4/nut_check_libusb.m4: Add pkg-config as method to
+	  retrieve CFLAGS and LDFLAGS (but fall back to libusb-config)
+
+2009-12-30  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2217] drivers/libusb.c: Fix previous patch (failed to remove
+	  closing #endif statement)
+	* [r2216] drivers/libusb.c, drivers/usbhid-ups.c: Enable the use of
+	  the interrupt pipe on Solaris (for drivers that require this),
+	  but disable it on the usbhid-ups driver (for which it is
+	  optional).
+	* [r2215] drivers/powercom-hid.c: Honor 'offdelay' configuration
+	  parameter and allow changing the 'ups.delay.shutdown' variable at
+	  runtime
+
+2009-12-28  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2214] data/driver.list: Add new PowerCOM devices with HID PDC
+	  interface to list of supported models
+	* [r2213] drivers/powercom-hid.c: The PowerCOM subdriver has now
+	  reached a state where it is useable. Commands have been tested on
+	  a BNT-500AP.
+	* [r2212] drivers/usbhid-ups.c: The composite commands
+	  'shutdown.return' and 'shutdown.stayoff' require 'load.on.delay'
+	  and 'load.off.delay' (not 'ups.delay.start' and
+	  'ups.delay.shutdown').
+
+2009-12-27  Charles Lepple <clepple@gmail.com>
+
+	* [r2203] scripts/hal/Makefile.am: Hard-code source file in
+	  scripts/hal
+
+2009-12-26  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2202] m4/nut_check_libhal.m4: Revert previous patch that breaks
+	  on OpenSUSE (and add HAL_CALLOUTS_PATH instead of relying on the
+	  default)
+	* [r2201] m4/nut_check_libhal.m4: Use ${datarootdir} instead of
+	  /usr/share or /usr/local/share (we check for the presence of a
+	  subdirectory, so the chance of a false positive is low)
+	* [r2200] m4/nut_check_libneon.m4: Only check for optional
+	  functions if we know library is available
+	* [r2199] m4/nut_check_libgd.m4: Simplify the --with-gd-includes
+	  and --with-gd-libs processing
+
+2009-12-25  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2198] configure.in: FreeBSD requires both <sys/types.h> and
+	  <libutil.h> so explicitly use only these two headers to check for
+	  availability of uu_lock
+	* [r2197] m4/nut_check_libusb.m4: Check for presence of 'usb.h'
+	  (not 'libusb.h', which is what we use internally)
+
+2009-12-24  Charles Lepple <clepple@gmail.com>
+
+	* [r2196] m4/nut_check_libhal.m4: Test for FDI files in /usr/local
+	  as well as /usr
+	  
+	  This should fix HAL-enabled builds on FreeBSD.
+
+2009-12-24  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2195] m4/nut_check_libhal.m4: If we can't detect the
+	  HAL_FDI_PATH automatically, set it to /dev/null and emit warning
+	* [r2194] m4/nut_check_libusb.m4: Fix missing default -lusb library
+	  and improve comments during detection
+	* [r2193] m4/nut_check_libusb.m4: Work around missing libusb-config
+	  on FreeBSD 8 by falling back to defaults for CFLAGS and LDFLAGS
+	* [r2192] configure.in: Try to workaround some FreeBSD bugs
+	* [r2191] drivers/powercom-hid.c: Updated HID to NUT mappings (work
+	  in progress and still quite broken, do not run on production
+	  systems!)
+
+2009-12-22  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2190] drivers/libhid.c: Add debug information for input reports
+	  that are not in the report descriptor
+
+2009-12-21  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2189] drivers/libhid.c: Use hexadecimal report numbers in debug
+	  messages (to be consistent throughout the code)
+
+2009-12-20  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2188] m4/nut_check_libwrap.m4: Small improvement to better
+	  mimic the behavior of AC_SEARCH_LIBS (by checking if we need to
+	  add -lwrap before adding it to LIBS)
+
+2009-12-19  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2187] m4/ax_create_stdint_h.m4: Update location of Autoconf
+	  Archive in header (so that we can check for modifications)
+	* [r2186] m4/nut_check_libgd.m4: AC_SEARCH_LIBS puts the result in
+	  LIB, so we need to add that to the LIBGD_LDFLAGS (otherwise, this
+	  will be part of the global LIBS that are used)
+
+2009-12-18  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2185] m4/nut_check_libgd.m4: Apparently, gdlib-config sometimes
+	  fails to mention '-lgd' when asked for the LDFLAGS, so we need to
+	  test once again if we need to include this library.
+	* [r2184] common/snprintf.c, configure.in: Instead of trying to
+	  figure out if 'long long' is supported through AC_TRY_RUN
+	  (obsolete), use AC_TYPE_LONG_LONG_INT (and AC_TYPE_LONG_DOUBLE).
+	  Since this is only used by common/snprintf.c, only do this if
+	  snprintf isn't a build-in function (which means probably never).
+	* [r2183] configure.in: Don't run preprocessor tests on
+	  AC_CHECK_HEADERS (so CPPFLAGS is no longer needed). Replace shell
+	  scripting by autoconf macros.
+	* [r2182] m4/nut_check_libgd.m4, m4/nut_check_libnetsnmp.m4,
+	  m4/nut_check_libwrap.m4: Don't run preprocessor tests on
+	  AC_CHECK_HEADERS (so CPPFLAGS is no longer needed).
+	* [r2181] m4/nut_check_libhal.m4: Don't run preprocessor tests on
+	  AC_CHECK_HEADERS (so CPPFLAGS is no longer needed). Reformatted
+	  macro (no functional changes).
+	* [r2180] m4/nut_check_libwrap.m4: Prefer AC_CHECK_HEADERS over
+	  AC_CHECK_HEADER
+	* [r2179] m4/nut_check_libgd.m4: Set CPPFLAGS in case autoconf only
+	  runs the preprocessor for AC_CHECK_HEADERS (which doesn't use
+	  CFLAGS)
+
+2009-12-17  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2178] m4/nut_check_libnetsnmp.m4: Set CPPFLAGS in case autoconf
+	  only runs the preprocessor (which doesn't use CFLAGS)
+	* [r2177] m4/nut_check_libneon.m4: Cleanup autoconf macro
+	* [r2176] clients/upsimage.c: Remove redundant test (this is
+	  already handled by autoconf)
+	* [r2175] Makefile.am:
+	* [r2174] configure.in: Keep defaults and checks together
+	* [r2173] drivers/bcmxcp.c: Automatic variables must have a length
+	  that can be computed at compile time rather than runtime. GCC
+	  will happily accept this C++ construction here, but this is not
+	  C.
+	  
+	  Follow the same principle as used elsewhere in the code, by hard
+	  coding this to PW_ANSWER_MAX_SIZE, the maximum size of replies we
+	  expect.
+
+2009-12-16  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2172] m4/nut_check_libgd.m4: Check for all GD specific header
+	  files while we're at it
+	* [r2171] clients/upsimage.c: The HAVE_GD_H should not be used
+	  here, it is better to check for HAVE_LIBGD since that one is only
+	  set if both the header file and the gd library are found (and not
+	  just the first).
+	* [r2170] m4/nut_check_libnetsnmp.m4: Cleanup autoconf macro
+	* [r2169] m4/nut_check_libgd.m4: Cleanup GD autoconf stuff (also
+	  fixes double -lgd linker flag)
+	* [r2168] configure.in, m4/nut_check_ipv6.m4,
+	  m4/nut_check_libssl.m4, m4/nut_check_libwrap.m4: Cleanup some
+	  autoconf macros
+
+2009-12-15  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2167] m4/nut_check_libnetsnmp.m4: Use AC_CHECK_HEADER to check
+	  for required headers.
+	* [r2166] m4/nut_check_libwrap.m4: Fix autoconf magic for Solaris.
+	  Apparently, allow/deny_severity are not defined as weak symbols,
+	  so autoconf fails with undefined symbols when checking for the
+	  library through AC_SEARCH_LIBS.
+
+2009-12-15  Charles Lepple <clepple@gmail.com>
+
+	* [r2165] include/common.h: Fix __attribute__ in common.h
+	  
+	  Patch provided by Tim Rice <tim@multitalents.net>
+	  http://lists.alioth.debian.org/pipermail/nut-upsdev/2009-December/004288.html
+
+2009-12-10  Arnaud Quette <arnaud.quette@free.fr>
+
+	* [r2163] drivers/mge-utalk.c: complete r2151 with the
+	  implementation details that were removed from the new mge-utalk
+	  man page.
+
+2009-12-09  Arnaud Quette <arnaud.quette@free.fr>
+
+	* [r2161] drivers/mge-hid.c: complete alarms and status handling
+	  for Eaton / MGE / Dell.
+
+2009-12-04  Arnaud Quette <arnaud.quette@free.fr>
+
+	* [r2153] m4/nut_check_libssl.m4: fix a wrong pkg-config call
+	  parameter, that resulted in using pkg-config's own version
+	  instead of OpenSSL's one.
+
+2009-12-02  Arnaud Quette <arnaud.quette@free.fr>
+
+	* [r2148] drivers/libhid.c: skip reports 254/255 for Eaton / MGE /
+	  Dell due to special handling needs
+
+2009-11-30  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2145] man/upsd.8, man/upsd.conf.5, man/upsd.users.5: Add
+	  upgrading notes for versions earlier than nut-2.4.0
+	* [r2143] drivers/usbhid-ups.c, drivers/usbhid-ups.h: Use contents
+	  of interrupt report. In case these are broken, set 'pollonly'
+	  flag in ups.conf or use_interrupt_pipe = FALSE in subdriver (when
+	  device matches!)
+
+2009-11-26  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2141] man/usbhid-ups.8: Document the 'pollonly' flag
+
+2009-11-25  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2140] drivers/microdowell.c: Fix compiler warning (dead code,
+	  no functional change)
+	* [r2139] drivers/usbhid-ups.c: Fix compiler warning
+	* [r2138] drivers/usbhid-ups.c: Add some USB error codes observed
+	  in the field for possible future handling (and the comments from
+	  the headerfiles where these are defined)
+
+2009-11-24  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2133] drivers/mge-hid.c: We already know if the value to the
+	  reverse conversion functions should be a time or date value, so
+	  there is no need to guess it.
+
+2009-11-23  Arnaud Quette <arnaud.quette@free.fr>
+
+	* [r2128] drivers/mge-hid.c: - fix mge_time_date_conversion_nuf()
+	  to actually use the input value
+	  - force ignoring the DST offset for the output value
+
+2009-11-19  Arnaud Quette <arnaud.quette@free.fr>
+
+	* [r2122] data/driver.list, drivers/libshut.c, man/mge-shut.8: Add
+	  serial / SHUT support for the new Dell UPS range
+	  - list all models in driver.list using newmge-shut,
+	  - add "battery.runtime.elapsed" support,
+	  - update mge-shut manual page and add an alias for newmge-shut.
+
+2009-11-19  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2121] drivers/mge-hid.c: Prefer to use non-negated logic when
+	  possible (also minimizes changes)
+
+2009-11-19  Arnaud Quette <arnaud.quette@free.fr>
+
+	* [r2119] data/driver.list, docs/new-names.txt, drivers/mge-hid.c,
+	  man/usbhid-ups.8, scripts/dkp/95-devkit-power-hid.rules,
+	  scripts/hal/ups-nut-device.fdi.in,
+	  scripts/hotplug/libhid.usermap, scripts/udev/nut-usbups.rules.in:
+	  Add USB support for the new Dell UPS range
+	  - list all models in driver.list,
+	  - add "battery.runtime.elapsed" in mge-hid.c and NUT namespace,
+	  - adapt ups.model formating to Dell rules,
+	  - update USB helper files,
+	  - update usbhid-ups manual page.
+
+2009-11-18  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2118] drivers/netxml-ups.c: Re-subscribe to NMC when it doesn't
+	  send us alarm messages anymore
+
+2009-11-18  Arnaud Quette <arnaud.quette@free.fr>
+
+	* [r2117] drivers/mge-xml.c: minor typo fix on comment
+
 Mon Nov 16 01:57:23 UTC 2009 / Charles Lepple <clepple@gmail.com>
 
  - drivers/tripplite_usb.c: fix copy-n-paste error in load.on instcmd.
