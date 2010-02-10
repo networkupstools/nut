@@ -292,11 +292,23 @@ void upsdrv_makevartable(void)
 
 void upsdrv_initups(void)
 {
+	struct termios	tio;
 	char	*v;
 
 	set_ups_type();
 
 	upsfd = ser_open(device_path);
+
+	if (tcgetattr(upsfd, &tio)) {
+		fatal_with_errno(EXIT_FAILURE, "tcgetattr");
+	}
+
+	/* don't hang up on last close */
+	tio.c_cflag ~= HUPCL;
+
+	if (tcsetattr(upsfd, TCSANOW, &tio)) {
+		fatal_with_errno(EXIT_FAILURE, "tcsetattr");
+	}
 
 	/*
 	 See if the user wants to override the output signal definitions
