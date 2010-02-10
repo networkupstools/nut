@@ -304,7 +304,7 @@ void upsdrv_initups(void)
 	}
 
 	/* don't hang up on last close */
-	tio.c_cflag ~= HUPCL;
+	tio.c_cflag &= ~HUPCL;
 
 	if (tcsetattr(upsfd, TCSANOW, &tio)) {
 		fatal_with_errno(EXIT_FAILURE, "tcsetattr");
