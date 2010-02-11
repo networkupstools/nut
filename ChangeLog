@@ -1,3 +1,27 @@
+2010-02-11  Arnaud Quette <arnaud.quette@free.fr>
+
+	* [r2337] NEWS: Complete news information for the 2.4.2 release.
+
+2010-02-11  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2336] (numerous files) No functional changes (properties only)
+	* [r2335] AUTHORS: No functional changes (properties only)
+
+2010-02-10  Arnaud Quette <arnaud.quette@free.fr>
+
+	* [r2334] ChangeLog: Trimmed 2.4.0 entries.
+
+2010-02-10  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2333] m4/nut_check_ipv6.m4: Check for presence of structures
+	  required for IPv6 support in the header files that are defined by
+	  POSIX (don't rely on the netdb.h header to include them)
+
+2010-02-10  Charles Lepple <clepple@gmail.com>
+
+	* [r2332] ChangeLog: Generate ChangeLog entries from SVN r2331 back
+	  through r2117.
+
 2010-02-10  Arjen de Korte <adkorte-guest@alioth.debian.org>
 
 	* [r2331] drivers/genericups.c: Fix typo in previous commit
