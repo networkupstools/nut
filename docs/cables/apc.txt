@@ -1,29 +1,233 @@
-Desc: APC UPS cable - 940-0024C
+Desc: APC UPS cables
 File: apc.txt
-Date: 28 December 2003
-Auth: Russell Kroll <rkroll@exploits.org>
+Date: 12 Februari 2010
+Auth: Arjen de Korte <adkorte-guest@alioth.debian.org
 
-This is an ASCII version of a drawing sent to me many years ago by 
-Steve Draper.  His original scan was used to create this diagram:
+http://lists.alioth.debian.org/pipermail/nut-upsuser/2005-August/000118.html
 
-Now for the ASCII version of it:
++-----------------------------------------------------------------+
+|                                                                 |
+|  Black APC 940-0024C Smart Signalling UPS Cable Wiring Diagram  |
+|  This information is verified and tested to be 100% correct.    |
+|                                                                 |
++-----------------------------------------------------------------+
+|                                                                 |
+|       DB9M(UPS)            2m Cable          DB9F(Computer)     |
+|       ---------            --------          --------------     |
+|                                                                 |
+|         (SHELL)<---------+----//----+----------------<(SHELL)   |
+|                          |          |                           |
+|                          -          -                           |
+|                         | |        | |                          |
+|       CHASSIS 9<--------------//---------------------<5 SG      |
+|                         | |        | |                          |
+|           TXD 2<--------------//---------------------<2 RXD     |
+|                         | |        | |                          |
+|           RXD 1<--------------//---------------------<3 TXD     |
+|                         | |        | |                          |
+|                          -          -             +--<1 DCD     |
+|                                                   |             |
+|                                                   +--<4 DTR     |
+|    NOTES:                                                       |
+|    Cable type is shielded 28AWG.                  +--<7 RTS     |
+|    The DB shells are connected                    |             |
+|    to each other via the shield.                  +--<8 CTS     |
+|                                                                 |
++-----------------------------------------------------------------+
+|                                                                 |
+|    Operation:     The UPS communicates with the Computer via    |
+|    ordinary RS-232 serial protocol at 2400-8N1 with software    |
+|    flow control. Jumpered pins in the DB9F connector are for    |
+|    automatic or PNP cable identification by UPS software.       |
+|                                                                 |
++-----------------------------------------------------------------+
+|                                                                 |
+|                           Male (pins)        Female (holes)     |
+|   DB9 RS-232  PC                                                |
+|   type connector          1         5         5         1       |
+|  ----------------       _______________     _______________     |
+|  Pinout numbering       \  . . . . .  /     \  o o o o o  /     |
+|  looking into the        \  . . . .  /       \  o o o o  /      |
+|  end of the cable         -----------         -----------       |
+|                             6     9             9     6         |
+|                                                                 |
+|  NOTE: Solder a wire to the metal shell for use as a FRAME-GND  |
+|                                                                 |
++-----------------------------------------------------------------+
 
-M-DB9                               M - UPS        F - PC
-         1       5
-       _____________                1 ----\        1 --\    DCD
-       \ o o o o o /                2 ------------ 2   |    RxD
-        \ o o o o /                 3     \------- 3   |    TxD
-         ~~~~~~~~~                  4              4 --/    DTR
-          6     9                   5     /------- 5        GND
-                                    6     |        6        DSR
-F-DB9                               7     |        7 --\    RTS
-         5       1                  8     |        8 --/    CTS
-       _____________                9 ----/        9        RNG
-       \ o o o o o /
-        \ o o o o /
-         ~~~~~~~~~
-          9     6
 
-The loopback pins (back to the computer) are provided for Powerchute's sake.
-The NUT driver (apcsmart) doesn't need them and will work with just the
-two data lines and GND connected.
+
++-----------------------------------------------------------------+
+|                                                                 |
+|  Gray APC 940-0020B Simple Signalling UPS Cable Wiring Diagram  |
+|  This information is verified and tested to be 100% correct.    |
+|                                                                 |
++-----------------------------------------------------------------+
+|                                                                 |
+|      DB9M(UPS)          2m Cable             DB9F(Computer)     |
+|      ---------          --------             --------------     |
+|                                                                 |
+|        (SHELL)<-------+----//----+-------------------<(SHELL)   |
+|                       |          |                              |
+|      CHASSIS 9<--+    -          -                              |
+|                  |   | |        | |                             |
+|       COMMON 4<--+---------//------------------------<5 SG      |
+|                      | |        | |                             |
+|   POWER-FAIL 2<------------//------------------------<8 CTS     |
+|                      | |        | |                             |
+|     SHUTDOWN 1<------------//------------------------<4 DTR     |
+|                      | |        | |                             |
+|  BATTERY-LOW 5<------------//--------47K--+--47K--+--<7 RTS     |
+|                      | |        | |       |       |             |
+|                       -          -        |    E  |             |
+|    NOTES:                                 |B  |<--+             |
+|    RTS must be held at +V SPACE.          +---|                 |
+|    TXD must be held at -V MARK.       2N3906  |---+--<1 DCD     |
+|    All resistors are 5% 1/8W CF.               C  |             |
+|    Cable type is shielded 28AWG.                 4K7            |
+|    The DB shells are connected                    |             |
+|    to each other via the shield.                  +--<3 TXD     |
+|                                                                 |
++-----------------------------------------------------------------+
+|                                                                 |
+|    Operation:   The UPS communicates with the Computer via      |
+|    the RS-232 handshaking lines only, and does not use any      |
+|    serial protocol. Upon power fail, the UPS forces CTS to      |
+|    -V MARK. When the battery is low, the UPS forces DCD to      |
+|    +V SPACE via the transistor. When the Computer forces a      |
+|    +V SPACE on DTR, the UPS will shut down and turn off.        |
+|    Presence of the cable can be sensed by signaling on TXD      |
+|    while monitoring DCD.                                        |
+|                                                                 |
++-----------------------------------------------------------------+
+|                                                                 |
+|                           Male (pins)        Female (holes)     |
+|   DB9 RS-232  PC                                                |
+|   type connector          1         5         5         1       |
+|  ----------------       _______________     _______________     |
+|  Pinout numbering       \  . . . . .  /     \  o o o o o  /     |
+|  looking into the        \  . . . .  /       \  o o o o  /      |
+|  end of the cable         -----------         -----------       |
+|                             6     9             9     6         |
+|                                                                 |
+|  NOTE: Solder a wire to the metal shell for use as a FRAME-GND  |
+|                                                                 |
++-----------------------------------------------------------------+
+
+
+
++-----------------------------------------------------------------+
+|                                                                 |
+|  Gray APC 940-0095A Smart Signalling UPS Cable Wiring Diagram   |
+|  This information is verified and tested to be 100% correct.    |
+|                                                                 |
++-----------------------------------------------------------------+
+|                                                                 |
+|      DB9M(UPS)          2m Cable              DB9F(Computer)    |
+|      ---------          --------              --------------    |
+|                                                                 |
+|        (SHELL)<-------+----//----+--------------------<(SHELL)  |
+|                       |          |                              |
+|      CHASSIS 9<--+    -          -                              |
+|                  |   | |        | |                             |
+|       COMMON 4<--+---------//-------------------------<5 SG     |
+|                      | |        | |                             |
+|  BATTERY-LOW 5<------------//--------47K--+--47K--+---<4 DTR    |
+|                      | |        | |       |       |             |
+|                                           |       +---<6 DSR    |
+|                      | |        | |       |    E  |             |
+|   NOTES:                                  |B  |<--+---<8 CTS    |
+|   DTR must be held at +V SPACE. | |       +---|                 |
+|   TXD must be held at -V MARK.         2N3906 |---+---<1 DCD    |
+|   All resistors are 5% 1/8W CF. | |            C  |             |
+|   Cable type is shielded 28AWG.                  4K7            |
+|   The DB shells are connected   | |               |             |
+|   to each other via the shield.        +----4K7---+---<3 TXD    |
+|                      | |        | |    |                        |
+|                                        |                        |
+|                      | |        | |    |   1N4148               |
+|     SHUTDOWN 1<------------//----------+----|<|-------<7 RTS    |
+|                      | |        | |        K   A                |
+|   POWER-FAIL 2<------------//---------------------+---<2 RXD    |
+|                      | |        | |               |             |
+|                       -          -                +---<9 RI     |
+|                                                                 |
++-----------------------------------------------------------------+
+|                                                                 |
+|    Operation:   The UPS can communicate with the Computer       |
+|    solely via the RS-232 handshaking lines, or via RS-232       |
+|    serial protocol at 2400-8N1 with software flow control.      |
+|    Upon power fail, the UPS forces RI to -V MARK. When the      |
+|    battery is low, the UPS forces DCD to +V SPACE via the       |
+|    transistor. When the Computer forces a +V SPACE on RTS,      |
+|    the UPS will shut down and turn off. Jumpered pins in        |
+|    the DB9F connector allow for automatic automatic or PNP      |
+|    cable identification by UPS software.                        |
+|                                                                 |
++-----------------------------------------------------------------+
+|                                                                 |
+|                           Male (pins)        Female (holes)     |
+|   DB9 RS-232  PC                                                |
+|   type connector          1         5         5         1       |
+|  ----------------       _______________     _______________     |
+|  Pinout numbering       \  . . . . .  /     \  o o o o o  /     |
+|  looking into the        \  . . . .  /       \  o o o o  /      |
+|  end of the cable         -----------         -----------       |
+|                             6     9             9     6         |
+|                                                                 |
+|  NOTE: Solder a wire to the metal shell for use as a FRAME-GND  |
+|                                                                 |
++-----------------------------------------------------------------+
+
+
+
++-----------------------------------------------------------------+
+|                                                                 |
+|  Universal APC serial extension cable for use in conjunction    |
+|  with an APC UPS cable. This cable is verified to work.         |
+|                                                                 |
++-----------------------------------------------------------------+
+|                                                                 |
+|  DB9M to UPS cable     Shielded Cable       DB9F to Computer    |
+|  -----------------     --- 28AWG ----       ----------------    |
+|                                                                 |
+|    (SHELL)<----+-------------//-------------+----<(SHELL)       |
+|                |                            |                   |
+|                -                            -                   |
+|               | |                          | |                  |
+|          1<------------------//------------------<1 DCD         |
+|               | |                          | |                  |
+|          2<------------------//------------------<2 RXD         |
+|               | |                          | |                  |
+|          3<------------------//------------------<3 TXD         |
+|               | |                          | |                  |
+|          4<------------------//------------------<4 DTR         |
+|               | |                          | |                  |
+|          5<------------------//------------------<5 SG          |
+|               | |                          | |                  |
+|          6<------------------//------------------<6 DSR         |
+|               | |                          | |                  |
+|          7<------------------//------------------<7 RTS         |
+|               | |                          | |                  |
+|          8<------------------//------------------<8 CTS         |
+|               | |                          | |                  |
+|          9<------------------//------------------<9 RI          |
+|               | |                          | |                  |
+|                -                            -                   |
+| NOTE: The DB shells are connected to each other via the shield. |
+|                                                                 |
++-----------------------------------------------------------------+
+|                                                                 |
+|                           Male (pins)        Female (holes)     |
+|   DB9 RS-232  PC                                                |
+|   type connector          1         5         5         1       |
+|  ----------------       _______________     _______________     |
+|  Pinout numbering       \  . . . . .  /     \  o o o o o  /     |
+|  looking into the        \  . . . .  /       \  o o o o  /      |
+|  end of the cable         -----------         -----------       |
+|                             6     9             9     6         |
+|                                                                 |
+|  NOTE: Solder a wire to the metal shell for use as a FRAME-GND  |
+|                                                                 |
++-----------------------------------------------------------------+
+
