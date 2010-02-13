@@ -4,7 +4,7 @@ dnl LIBNETSNMP_LDFLAGS. On failure, set nut_have_libnetsnmp="no".
 dnl This macro can be run multiple times, but will do the checking only
 dnl once.
 
-AC_DEFUN([NUT_CHECK_LIBNETSNMP], 
+AC_DEFUN([NUT_CHECK_LIBNETSNMP],
 [
 if test -z "${nut_have_libnetsnmp_seen}"; then
 	nut_have_libnetsnmp_seen=yes
@@ -12,7 +12,7 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 	dnl save CFLAGS and LDFLAGS
 	CFLAGS_ORIG="${CFLAGS}"
 	LDFLAGS_ORIG="${LDFLAGS}"
-   
+
 	AC_MSG_CHECKING(for Net-SNMP cflags)
 	CFLAGS=`net-snmp-config --cflags 2>/dev/null`
 	if (test "$?" != "0"); then
@@ -32,7 +32,11 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 		AC_MSG_RESULT([${LDFLAGS}])
 	fi
 
-	AC_CHECK_HEADERS(net-snmp/net-snmp-config.h, [], [nut_have_libnetsnmp=no], [AC_INCLUDES_DEFAULT])
+	dnl Check if the Net-SNMP library found is usable
+	if test "${nut_have_libnetsnmp}" = "yes"; then
+		AC_CHECK_HEADERS(net-snmp/net-snmp-config.h, [], [nut_have_libnetsnmp=no], [AC_INCLUDES_DEFAULT])
+		AC_CHECK_FUNCS(init_snmp, [], [nut_have_libnetsnmp=no])
+	fi
 
 	if test "${nut_have_libnetsnmp}" = "yes"; then
 		LIBNETSNMP_CFLAGS="${CFLAGS}"
