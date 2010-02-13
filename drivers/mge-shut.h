@@ -434,7 +434,7 @@ static mge_info_item_t mge_info[] = {
 /* temporary usage code lookup */
 typedef struct {
 	const char *usage_name;
-	int usage_code;
+	const uint32_t usage_code;
 } usage_lkp_t;
 
 /* FIXME: share this data structure with libhid.c */
