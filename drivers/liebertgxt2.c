@@ -37,7 +37,7 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
-static const char
+static const unsigned char
 	/* Bit field information provided by Spiros Ioannou */
 	/* Ordered on MSB to LSB. Shown as DESCRIPTION (bit number), starting at 0. */
 	cmd_bitfield1[]		= { 1,148,2,1,1,153 },	/* INPUT_OVERVOLTAGE, BATTERY_TEST_STATE, OVERTEMP_WARNING, INRUSH_LIMIT_ON, UTILITY_STATE, ON_INVERTER, DC_DC_CONVERTER_STATE, PFC_ON */
@@ -59,7 +59,7 @@ static char cksum(const char *buf, const size_t len)
 	return sum;
 }
 
-static int do_command(const char *command, char *reply)
+static int do_command(const unsigned char *command, char *reply)
 {
 	int	ret;
 
@@ -114,7 +114,7 @@ void upsdrv_initinfo(void)
 		snprintf(command, sizeof(command), "\x01\x88\x02\x01%c", i+4);
 		command[5] = cksum(command, 5);
 
-		ret = do_command(command, reply);
+		ret = do_command((unsigned char *)command, reply);
 		if (ret < 8) {
 			fatalx(EXIT_FAILURE, "GTX2 capable UPS not detected");
 		}
@@ -136,7 +136,7 @@ void upsdrv_initinfo(void)
 void upsdrv_updateinfo(void)
 {
 	struct {
-		const char	cmd[6];
+		const unsigned char	cmd[6];
 		const char	*var;
 		const char	*fmt;
 		const double	mult;
