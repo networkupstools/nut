@@ -307,3 +307,12 @@ Contents:
    or higher installed properly.  The gdlib-config script will be 
    detected and used by default in that situation.
 
+--with-ssl-includes="-I/foo/bar"
+
+   If your system doesn't have pkg-config and support for openssl isn't
+   found, you must specify the compiler flags that are needed.
+
+ --with-ssl-libs="-L/foo/bar -labcd -lxyz"
+
+   If your system doesn't have pkg-config and support for openssl isn't
+   found, you must specify the linker flags that are needed.

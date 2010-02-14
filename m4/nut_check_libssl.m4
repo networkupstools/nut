@@ -16,29 +16,30 @@ if test -z "${nut_have_libssl_seen}"; then
 	OPENSSL_VERSION=`pkg-config --silence-errors --modversion openssl`
 	if test "$?" = "0"; then
 		AC_MSG_RESULT(${OPENSSL_VERSION} found)
-		nut_have_libssl=yes
-
-		AC_MSG_CHECKING(for openssl cflags via pkg-config)
-		CFLAGS=`pkg-config --silence-errors --cflags openssl`
-		if test "$?" = "0"; then
-			AC_MSG_RESULT(${CFLAGS})
-		else
-			AC_MSG_RESULT(not found)
-			nut_have_libssl=no
-		fi
-
-		AC_MSG_CHECKING(for openssl ldflags via pkg-config)
-		LDFLAGS=`pkg-config --silence-errors --libs openssl`
-		if test "$?" = "0"; then
-			AC_MSG_RESULT(${LDFLAGS})
-		else
-			AC_MSG_RESULT(not found)
-			nut_have_libssl=no
-		fi
+		CFLAGS="`pkg-config --silence-errors --cflags openssl`"
+		LDFLAGS="`pkg-config --silence-errors --libs openssl`"
 	else
 		AC_MSG_RESULT(not found)
-		nut_have_libssl=no
+		CFLAGS=""
+		LDFLAGS="-lssl -lcrypto"
 	fi
+
+	dnl allow overriding openssl settings if the user knows best
+	AC_MSG_CHECKING(for openssl cflags)
+	AC_ARG_WITH(ssl-includes, [
+		AC_HELP_STRING([--with-ssl-includes=CFLAGS], [include flags for the OpenSSL library])
+	], [CFLAGS="${withval}"], [])
+	AC_MSG_RESULT([${CFLAGS}])
+
+	AC_MSG_CHECKING(for openssl ldflags)
+	AC_ARG_WITH(ssl-libs, [
+		AC_HELP_STRING([--with-ssl-libs=LDFLAGS], [linker flags for the OpenSSL library])
+	], [LDFLAGS="${withval}"], [])
+	AC_MSG_RESULT([${LDFLAGS}])
+
+	dnl check if openssl is usable
+	AC_CHECK_HEADERS(openssl/ssl.h, [nut_have_libssl=yes], [nut_have_libssl=no], [AC_INCLUDES_DEFAULT])
+	AC_CHECK_FUNCS(SSL_library_init, [], [nut_have_libssl=no])
 
 	if test "${nut_have_libssl}" = "yes"; then
 		AC_DEFINE(HAVE_SSL, 1, [Define to enable SSL development code])
