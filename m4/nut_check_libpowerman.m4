@@ -1,9 +1,9 @@
 dnl Check for LIBPOWERMAN compiler flags. On success, set nut_have_libpowerman="yes"
 dnl and set LIBPOWERMAN_CFLAGS and LIBPOWERMAN_LDFLAGS. On failure, set
 dnl nut_have_libpowerman="no". This macro can be run multiple times, but will
-dnl do the checking only once. 
+dnl do the checking only once.
 
-AC_DEFUN([NUT_CHECK_LIBPOWERMAN], 
+AC_DEFUN([NUT_CHECK_LIBPOWERMAN],
 [
 if test -z "${nut_have_libpowerman_seen}"; then
 	nut_have_libpowerman_seen=yes
@@ -12,24 +12,21 @@ if test -z "${nut_have_libpowerman_seen}"; then
 	CFLAGS_ORIG="${CFLAGS}"
 	LDFLAGS_ORIG="${LDFLAGS}"
 
-	AC_MSG_CHECKING(for libpowerman cflags via pkg-config)
-	CFLAGS=`pkg-config --cflags libpowerman 2>/dev/null`
-	if test "$?" = "0"; then
-		AC_MSG_RESULT(${CFLAGS})
-		nut_have_libpowerman=yes
-	else
-		AC_MSG_RESULT(not found)
-		nut_have_libpowerman=no
-	fi
+	AC_MSG_CHECKING(for libpowerman cflags)
+	AC_ARG_WITH(powerman-includes, [
+		AC_HELP_STRING([--with-powerman-includes=CFLAGS], [include flags for the libpowerman library])
+	], [CFLAGS="${withval}"], [CFLAGS="`pkg-config --silence-errors --cflags libpowerman`"])
+	AC_MSG_RESULT([${CFLAGS}])
 
-	AC_MSG_CHECKING(for libpowerman libs via pkg-config)
-	LDFLAGS=`pkg-config --libs libpowerman 2>/dev/null`
-	if test "$?" = "0"; then
-		AC_MSG_RESULT(${LDFLAGS})
-	else
-		AC_MSG_RESULT(not found)
-		nut_have_libpowerman=no
-	fi
+	AC_MSG_CHECKING(for libpowerman libs)
+	AC_ARG_WITH(powerman-libs, [
+		AC_HELP_STRING([--with-powerman-libs=LDFLAGS], [linker flags for the libpowerman library])
+	], [LDFLAGS="${withval}"], [LDFLAGS="`pkg-config --silence-errors --libs libpowerman`"])
+	AC_MSG_RESULT([${LDFLAGS}])
+
+	dnl check if libpowerman is usable
+	AC_CHECK_HEADERS(libpowerman.h, [nut_have_libpowerman=yes], [nut_have_libpowerman=no], [AC_INCLUDES_DEFAULT])
+	AC_CHECK_FUNCS(pm_connect, [], [nut_have_libpowerman=no])
 
 	if test "${nut_have_libpowerman}" = "yes"; then
 		LIBPOWERMAN_CFLAGS="${CFLAGS}"

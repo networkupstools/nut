@@ -144,7 +144,7 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-AC_HELP_STRING([--with-all], [enable serial, usb, snmp, hal, cgi, dev, neonxml, powerman]),
+AC_HELP_STRING([--with-all], [enable serial, usb, snmp, hal, cgi, dev, neon, powerman]),
 [	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
 		dnl this is what the user expects from --without-all
@@ -154,7 +154,7 @@ AC_HELP_STRING([--with-all], [enable serial, usb, snmp, hal, cgi, dev, neonxml, 
 		if test -z "${with_snmp}"; then with_snmp="${withval}"; fi
 		if test -z "${with_usb}"; then with_usb="${withval}"; fi
 		if test -z "${with_hal}"; then with_hal="${withval}"; fi
-		if test -z "${with_neonxml}"; then with_neonxml="${withval}"; fi
+		if test -z "${with_neon}"; then with_neon="${withval}"; fi
 		if test -z "${with_powerman}"; then with_powerman="${withval}"; fi
 		AC_MSG_RESULT("${withval}")
 	else
@@ -167,25 +167,17 @@ dnl ----------------------------------------------------------------------
 dnl declare a number of --with-FEATURE options. Do this early, so that
 dnl they are listed near the top by "./configure --help"
 
+NUT_ARG_WITH([dev], [build and install the development files], [no])
 NUT_ARG_WITH([serial], [build and install serial drivers], [yes])
 NUT_ARG_WITH([usb], [build and install USB drivers], [auto])
-NUT_ARG_WITH([snmp], [build and install SNMP drivers], [auto])
-NUT_ARG_WITH([hal], [build and install HAL support], [no])
-NUT_ARG_WITH([dev], [build and install the development files], [no])
-NUT_ARG_WITH([neonxml], [build and install neon based XML/HTTP driver], [auto])
-NUT_ARG_WITH([powerman], [build and install Powerman PDU client driver], [auto])
-
-dnl ----------------------------------------------------------------------
-dnl Check for presence and compiler flags of various libraries
-
-dnl These checks are performed unconditionally, even if the corresponding
-dnl --with-* options are not given. This is because we cannot predict
-dnl what will be in the --with-drivers argument.
-
-NUT_CHECK_LIBNETSNMP
 NUT_CHECK_LIBUSB
+NUT_ARG_WITH([hal], [build and install HAL support], [no])
 NUT_CHECK_LIBHAL
+NUT_ARG_WITH([snmp], [build and install SNMP drivers], [auto])
+NUT_CHECK_LIBNETSNMP
+NUT_ARG_WITH([neon], [build and install neon based XML/HTTP driver], [auto])
 NUT_CHECK_LIBNEON
+NUT_ARG_WITH([powerman], [build and install Powerman PDU client driver], [auto])
 NUT_CHECK_LIBPOWERMAN
 
 dnl ----------------------------------------------------------------------
@@ -370,19 +362,19 @@ AM_CONDITIONAL(WITH_HAL, test "${nut_with_hal}" = "yes")
 NUT_REPORT_FEATURE([enable HAL support], [${nut_with_hal}])
 
 dnl ----------------------------------------------------------------------
-dnl checks related to --with-neonxml
+dnl checks related to --with-neon
 
-dnl ${nut_with_neonxml}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_neonxml}" = "yes" -a "${nut_have_neon}" != "yes"; then
+dnl ${nut_with_neon}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_neon}" = "yes" -a "${nut_have_neon}" != "yes"; then
    AC_MSG_ERROR(["neon libraries not found, required for neon based XML/HTTP driver"])
 fi
 
-if test "${nut_with_neonxml}" != "no"; then
-   nut_with_neonxml="${nut_have_neon}"
+if test "${nut_with_neon}" != "no"; then
+   nut_with_neon="${nut_have_neon}"
 fi
 
-AM_CONDITIONAL(WITH_NEONXML, test "${nut_with_neonxml}" = "yes")
-NUT_REPORT_FEATURE([build neon based XML driver], [${nut_with_neonxml}])
+AM_CONDITIONAL(WITH_NEONXML, test "${nut_with_neon}" = "yes")
+NUT_REPORT_FEATURE([build neon based XML driver], [${nut_with_neon}])
 
 dnl ----------------------------------------------------------------------
 

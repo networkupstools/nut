@@ -18,9 +18,9 @@
  *
  */
 
-#include <stdlib.h>
 #include "main.h"
-#include "libpowerman.h"
+
+#include <libpowerman.h>
 
 #define DRIVER_NAME	"Powerman PDU client driver"
 #define DRIVER_VERSION	"0.11"

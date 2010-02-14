@@ -16,35 +16,26 @@ if test -z "${nut_have_neon_seen}"; then
 	AC_MSG_CHECKING(for libneon version via pkg-config (0.25.0 minimum required))
 	NEON_VERSION=`pkg-config --silence-errors --modversion neon`
 	if test "$?" = "0"; then
-		if pkg-config --atleast-version=0.25.0 neon; then
-			AC_MSG_RESULT(${NEON_VERSION} found)
-			nut_have_neon=yes
-
-			AC_MSG_CHECKING(for libneon cflags via pkg-config)
-			CFLAGS=`pkg-config --silence-errors --cflags neon`
-			if test "$?" = "0"; then
-				AC_MSG_RESULT(${CFLAGS})
-			else
-				AC_MSG_RESULT(not found)
-				nut_have_neon=no
-			fi
-
-			AC_MSG_CHECKING(for libneon ldflags via pkg-config)
-			LDFLAGS=`pkg-config --silence-errors --libs neon`
-			if test "$?" = "0"; then
-				AC_MSG_RESULT(${LDFLAGS})
-			else
-				AC_MSG_RESULT(not found)
-				nut_have_neon=no
-			fi
-		else
-			AC_MSG_RESULT(${NEON_VERSION} is too old)
-			nut_have_neon=no
-		fi
+		AC_MSG_RESULT(${NEON_VERSION} found)
 	else
 		AC_MSG_RESULT(not found)
-		nut_have_neon=no
 	fi
+
+	AC_MSG_CHECKING(for libneon cflags)
+	AC_ARG_WITH(neon-includes, [
+		AC_HELP_STRING([--with-neon-includes=CFLAGS], [include flags for the neon library])
+	], [CFLAGS="${withval}"], [CFLAGS="`pkg-config --silence-errors --cflags neon`"])
+	AC_MSG_RESULT([${CFLAGS}])
+
+	AC_MSG_CHECKING(for libneon ldflags)
+	AC_ARG_WITH(neon-libs, [
+		AC_HELP_STRING([--with-neon-libs=LDFLAGS], [linker flags for the neon library])
+	], [LDFLAGS="${withval}"], [LDFLAGS="`pkg-config --silence-errors --libs neon`"])
+	AC_MSG_RESULT([${LDFLAGS}])
+
+	dnl check if neon is usable
+	AC_CHECK_HEADERS(ne_xmlreq.h, [nut_have_neon=yes], [nut_have_neon=no], [AC_INCLUDES_DEFAULT])
+	AC_CHECK_FUNCS(ne_xml_dispatch_request, [], [nut_have_neon=no])
 
 	if test "${nut_have_neon}" = "yes"; then
 		dnl Check for connect timeout support in library (optional)

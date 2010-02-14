@@ -1,9 +1,9 @@
 dnl Check for LIBUSB compiler flags. On success, set nut_have_libusb="yes"
 dnl and set LIBUSB_CFLAGS and LIBUSB_LDFLAGS. On failure, set
 dnl nut_have_libusb="no". This macro can be run multiple times, but will
-dnl do the checking only once. 
+dnl do the checking only once.
 
-AC_DEFUN([NUT_CHECK_LIBUSB], 
+AC_DEFUN([NUT_CHECK_LIBUSB],
 [
 if test -z "${nut_have_libusb_seen}"; then
 	nut_have_libusb_seen=yes
@@ -16,68 +16,37 @@ if test -z "${nut_have_libusb_seen}"; then
 	LIBUSB_VERSION=`pkg-config --silence-errors --modversion libusb`
 	if test "$?" = "0"; then
 		AC_MSG_RESULT(${LIBUSB_VERSION} found)
-		nut_have_libusb=yes
-
-		AC_MSG_CHECKING(for libusb cflags via pkg-config)
-		CFLAGS=`pkg-config --silence-errors --cflags libusb`
-		if test "$?" = "0"; then
-			AC_MSG_RESULT(${CFLAGS})
-		else
-			AC_MSG_RESULT(not found)
-			nut_have_libusb=no
-		fi
-
-		AC_MSG_CHECKING(for libusb ldflags via pkg-config)
-		LDFLAGS=`pkg-config --silence-errors --libs libusb`
-		if test "$?" = "0"; then
-			AC_MSG_RESULT(${LDFLAGS})
-		else
-			AC_MSG_RESULT(not found)
-			nut_have_libusb=no
-		fi
+		CFLAGS="`pkg-config --silence-errors --cflags libusb`"
+		LDFLAGS="`pkg-config --silence-errors --libs libusb`"
 	else
-		AC_MSG_RESULT(not found)
-		nut_have_libusb=no
-	fi
-
-	if test "${nut_have_libusb}" != "yes"; then
-		AC_MSG_CHECKING(for libusb version via libusb-config)
+		AC_MSG_CHECKING(via libusb-config)
 		LIBUSB_VERSION=`libusb-config --version 2>/dev/null`
 		if test "$?" = "0"; then
 			AC_MSG_RESULT(${LIBUSB_VERSION} found)
-			nut_have_libusb=yes
-
-			AC_MSG_CHECKING(for libusb cflags via libusb-config)
-			CFLAGS=`libusb-config --cflags 2>/dev/null`
-			if test "$?" = "0"; then
-				AC_MSG_RESULT(${CFLAGS})
-			else
-				AC_MSG_RESULT(not found)
-				nut_have_libusb=no
-			fi
-
-			AC_MSG_CHECKING(for libusb ldflags via libusb-config)
-			LDFLAGS=`libusb-config --libs 2>/dev/null`
-			if test "$?" = "0"; then
-				AC_MSG_RESULT(${LDFLAGS})
-			else
-				AC_MSG_RESULT(not found)
-				nut_have_libusb=no
-			fi
+			CFLAGS="`libusb-config --cflags 2>/dev/null`"
+			LDFLAGS="`libusb-config --libs 2>/dev/null`"
 		else
 			AC_MSG_RESULT(not found)
-			nut_have_libusb=no
+			CFLAGS=""
+			LDFLAGS="-lusb"
 		fi
 	fi
 
-	if test "${nut_have_libusb}" != "yes"; then
-		dnl try again using defaults
-		CFLAGS=""
-		LDFLAGS="-lusb"
+	AC_MSG_CHECKING(for libusb cflags)
+	AC_ARG_WITH(usb-includes, [
+		AC_HELP_STRING([--with-usb-includes=CFLAGS], [include flags for the libusb library])
+	], [CFLAGS="${withval}"], [])
+	AC_MSG_RESULT([${CFLAGS}])
 
-		AC_CHECK_HEADERS(usb.h, [nut_have_libusb=yes], [nut_have_libusb=no], [AC_INCLUDES_DEFAULT])
-		AC_CHECK_FUNCS(usb_init, [], [nut_have_libusb=no])
-	fi
+	AC_MSG_CHECKING(for libusb ldflags)
+	AC_ARG_WITH(usb-libs, [
+		AC_HELP_STRING([--with-usb-libs=LDFLAGS], [linker flags for the libusb library])
+	], [LDFLAGS="${withval}"], [])
+	AC_MSG_RESULT([${LDFLAGS}])
+
+	dnl check if libusb is usable
+	AC_CHECK_HEADERS(usb.h, [nut_have_libusb=yes], [nut_have_libusb=no], [AC_INCLUDES_DEFAULT])
+	AC_CHECK_FUNCS(usb_init, [], [nut_have_libusb=no])
 
 	if test "${nut_have_libusb}" = "yes"; then
 		dnl Check for libusb "force driver unbind" availability
