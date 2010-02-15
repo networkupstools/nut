@@ -30,8 +30,8 @@
  */
 
 /* NUT SNMP common functions */
-#include "snmp-ups.h"
 #include "main.h"
+#include "snmp-ups.h"
 #include "parseconf.h"
 
 /* include all known mib2nut lookup tables */

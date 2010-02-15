@@ -47,21 +47,33 @@ for each OID request we made), instead of sending many small packets
 #ifndef SNMP_UPS_H
 #define SNMP_UPS_H
 
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <net-snmp/net-snmp-config.h>
 /* workaround for buggy Net-SNMP config */
+#ifdef PACKAGE_BUGREPORT
 #undef PACKAGE_BUGREPORT
-#undef PACKAGE_NAME
-#undef PACKAGE_VERSION
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-#undef HAVE_DMALLOC_H
-#include <net-snmp/net-snmp-includes.h>
+#endif
 
-#include "attribute.h"
+#ifdef PACKAGE_NAME
+#undef PACKAGE_NAME
+#endif
+
+#ifdef PACKAGE_VERSION
+#undef PACKAGE_VERSION
+#endif
+
+#ifdef PACKAGE_STRING
+#undef PACKAGE_STRING
+#endif
+
+#ifdef PACKAGE_TARNAME
+#undef PACKAGE_TARNAME
+#endif
+
+#ifdef HAVE_DMALLOC_H
+#undef HAVE_DMALLOC_H
+#endif
+
+#include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-includes.h>
 
 #define DEFAULT_POLLFREQ	30		/* in seconds */
 
