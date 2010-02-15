@@ -100,16 +100,12 @@ static void lock_set(int fd, const char *port)
 		fatalx(EXIT_FAILURE, "Can't uu_lock %s: %s", xbasename(port), 
 			uu_lockerr(ret));
 
-	return;
-
 #elif defined(HAVE_FLOCK)
 
 	ret = flock(fd, LOCK_EX | LOCK_NB);
 
 	if (ret != 0)
 		fatalx(EXIT_FAILURE, "%s is locked by another process", port);
-
-	return;
 
 #elif defined(HAVE_LOCKF)
 
@@ -120,11 +116,11 @@ static void lock_set(int fd, const char *port)
 	if (ret != 0)
 		fatalx(EXIT_FAILURE, "%s is locked by another process", port);
 
-	return;
-
-#endif
+#else
 
 	upslog_with_errno(LOG_WARNING, "Warning: no locking method is available");
+
+#endif
 }
 
 int ser_open(const char *port)

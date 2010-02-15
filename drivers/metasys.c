@@ -225,8 +225,8 @@ int command_read_sequence(unsigned char command, unsigned char *data) {
 	}
 	if ((data[0] != command) || (retry == 5)) {
 		ser_comm_fail("Error executing command %d\n", command);
-		return -1;
 		dstate_datastale();
+		return -1;
 	}
 	ser_comm_good();
 	return bytes_read;
