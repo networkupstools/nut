@@ -40,6 +40,7 @@
 #include "main.h"
 #include "serial.h"
 #include "timehead.h"
+#include "nut_stdint.h"
 
 #include <math.h>
 
@@ -57,7 +58,7 @@ upsdrv_info_t	upsdrv_info = {
 	{ NULL }
 };
 
-#define ENDCHAR		'\n'	
+#define ENDCHAR		'\n'
 
 /* default values */
 #define OUT_PACE_USEC	200
@@ -131,7 +132,9 @@ static int
 	full_update_timer = FULL_UPDATE_TIMER,
 	use_crlf = 0,
 	use_pre_lf = 0,
-	buffer_empty = 0,
+	buffer_empty = 0;
+
+static uint32_t
 	status = UPSC_STAT_NOTINIT;
 
 static time_t
@@ -158,7 +161,7 @@ static float
 	static float batthist[NUM_BATTHIST];
 	static int numbatthist=0, lastbatthist=0;
 
-static int 
+static int
 	inited_phaseinfo = 0,
 	num_inphases = 1,
 	num_outphases = 1;
@@ -557,7 +560,7 @@ void upsdrv_initinfo(void)
 
 
 /* Change a variable name in a table */
-static void change_name(simple_t *sp, 
+static void change_name(simple_t *sp,
 		const char *oldname, const char *newname)
 {
 	while(sp->code) {
@@ -857,9 +860,9 @@ void upsdrv_updateinfo(void)
 
 	if (!(status & UPSC_STAT_ONBATT))
 		status |= UPSC_STAT_ONLINE;
-	
+
 	upsc_setstatus(status);
-	
+
 	dstate_dataok();
 	ser_comm_good();
 }
@@ -955,7 +958,7 @@ void upsdrv_cleanup(void)
 	ser_close(upsfd, device_path);
 }
 
-   
+
 /*
  * Generate status string from bitfield
  */
@@ -989,7 +992,7 @@ static void upsc_setstatus(unsigned int status)
 		status_set("OFF");
 	if (status & UPSC_STAT_BYPASS)
 		status_set("BYPASS");
- 
+
 	status_commit();
 }
 
@@ -1397,7 +1400,7 @@ static float batt_charge_pct(void)
 			chg=0;
 		}
 		else {
-			chg = (batt_volt - batt_volt_low) / 
+			chg = (batt_volt - batt_volt_low) /
 				(batt_volt_high - batt_volt_low);
 			chg*=100;
 		}
