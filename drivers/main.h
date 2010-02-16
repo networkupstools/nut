@@ -59,7 +59,7 @@ struct upsdrv_info_s {
 	const char	*version;	/* driver version */
 	const char	*authors;	/* authors name */
 	const int	status;		/* driver development status */
-	struct upsdrv_info_s	*subdrv_info[];	/* sub driver information */
+	struct upsdrv_info_s	*subdrv_info[2];	/* sub driver information */
 };
 
 typedef struct upsdrv_info_s	upsdrv_info_t;
