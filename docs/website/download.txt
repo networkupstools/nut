@@ -1,12 +1,17 @@
-Download
-========
+Download information
+====================
+
+This section presents the different methods to download NUT.
 
 Source code
 -----------
 
+[NOTE]
+================================================================================
 You should always use PGP/GPG to verify the signatures before using any source code.
 
 You can use the <<verifySourceSig,following procedure>> to do so.
+================================================================================
 
 Stable tree: 2.4
 ~~~~~~~~~~~~~~~~
@@ -18,10 +23,13 @@ link:http://www.networkupstools.org/source/2.4/ChangeLog[ChangeLog]
 
 You can also browse the link:http://www.networkupstools.org/source/2.4/[stable source directory].
 
-Testing: 2.6-pre
+
+Testing: 2.4.2-pre
 ~~~~~~~~~~~~~~~~
 
-There is currently no testing release
+There is currently a testing phase for the upcoming 2.4.2 release.
+
+To test it, get the latest <<Snapshots,snapshot>>.
 
 Development tree: 2.5
 ~~~~~~~~~~~~~~~~~~~~~
@@ -51,11 +59,12 @@ You can also browse the code with link:http://svn.debian.org/wsvn/nut/trunk/?rev
 Or through the link:http://boxster.ghz.cc/projects/nut[Trac mirror],
 kindly hosted and maintained by Charles Lepple.
 
+[[Snapshots]]
 Snapshots
 ^^^^^^^^^
 
-Latest code is also available: link:http://boxster.ghz.cc/projects/nut[snapshots on the Buildbot].
-Look for the *[tarball]* links.
+Fresh code snapshots are available: link:http://buildbot.networkupstools.org/public/nut/waterfall?branch=trunk&builder=Debian-etch-x86&reload=none[snapshots on the Buildbot].
+Look for the latest *[tarball]* link.
 
 Older versions
 ~~~~~~~~~~~~~~
@@ -109,6 +118,8 @@ Mac OS X
 
 ////////////////////////////////////////////////////////////////////////////////
 *FIXME*
+add fink info for Mac OS X
+
 NOTE: you should also refer to the link?[Package installation instructions] of
 the NUT User Manual.
 
