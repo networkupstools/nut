@@ -68,17 +68,17 @@ upsdrv_info_t	upsdrv_info = {
 #define UPSC_BUFLEN	256  /* Size of response buffers from UPS */
 
 /* Status messages from UPS */
-#define UPSC_STAT_ONLINE       (1<<0)
-#define UPSC_STAT_ONBATT       (1<<1)
-#define UPSC_STAT_LOBATT       (1<<2)
-#define UPSC_STAT_REPLACEBATT  (1<<3)
-#define UPSC_STAT_BOOST        (1<<4)
-#define UPSC_STAT_TRIM         (1<<5)
-#define UPSC_STAT_OVERLOAD     (1<<6)
-#define UPSC_STAT_CALIBRATION  (1<<7)
-#define UPSC_STAT_OFF          (1<<8)
-#define UPSC_STAT_BYPASS       (1<<9)
-#define UPSC_STAT_NOTINIT      (1<<31)
+#define UPSC_STAT_ONLINE       (1UL << 0)
+#define UPSC_STAT_ONBATT       (1UL << 1)
+#define UPSC_STAT_LOBATT       (1UL << 2)
+#define UPSC_STAT_REPLACEBATT  (1UL << 3)
+#define UPSC_STAT_BOOST        (1UL << 4)
+#define UPSC_STAT_TRIM         (1UL << 5)
+#define UPSC_STAT_OVERLOAD     (1UL << 6)
+#define UPSC_STAT_CALIBRATION  (1UL << 7)
+#define UPSC_STAT_OFF          (1UL << 8)
+#define UPSC_STAT_BYPASS       (1UL << 9)
+#define UPSC_STAT_NOTINIT      (1UL << 31)
 
 
 typedef enum {
