@@ -70,7 +70,6 @@
 #
 #	[monmaster]
 #		password  = blah
-#		allowfrom = 	(whatever applies to this host)
 #		upsmon master 	(or slave)
 # 
 # "master" means this system will shutdown last, allowing the slaves

@@ -121,40 +121,21 @@ Auth: Russell Kroll <rkroll@exploits.org>
 
 -----------------------------------------------------------------------------
 
- Q: upsc, upsstats, and the other clients say "access denied".  The
-    serial port permissions are fine, so what gives? 
+ Q: upsc, upsstats, and the other clients say "access denied".  The device
+    communication port (serial, USB or network) permissions are fine, so what
+    gives? 
 
- A: In this case, "access denied" means the access to upsd, not the
-    serial port.  You're being denied since the system has not been
+ A: In this case, "access denied" means the access to upsd, not the device
+    communication port.  You're being denied since the system has no
     permission to speak to upsd according to the access controls.
 
-    The fix is to edit the upsd.conf to allow those hosts to do what
-    they need.  Create ACL lines to match the hosts or networks, then
-    use those ACL names on ACCEPT lines.
+    There can be various reasons. To fix it, check:
+    - the LISTEN directive in upsd.conf. It should allow your local or remote
+      access method,
+    - your firewall rules. Port 3493/tcp must be opened to incoming connexions,
+    - your tcp-wrappers configuration (hosts.allow and hosts.deny).
 
-	ACL mybox 10.2.1.3/32
-	ACCEPT mybox
-
-    If upsmon is complaining, make sure you have defined a user for it
-    in upsd.users.  This needs to be the same user name and password
-    which is on the MONITOR line in upsmon.conf.
-
-	[username]
-		allowfrom = mybox
-		password = mypass
-		upsmon master		# or upsmon slave
-
-    If the program asks for a username and password (upsrw, upscmd,
-    upsset.cgi) and gives this error, then make sure your account is
-    properly defined in upsd.users.
-
-	[username]
-		allowfrom = mybox
-		password = mypass
-
-    After editing the upsd config files, you can do 'upsd -c reload'
-    or kill -HUP <pid of upsd> to make it reload the configuration
-    without restarting the process.
+    Refer to the upsd(8) and upsd.conf(5) manpages for more information.
 
 -----------------------------------------------------------------------------
 

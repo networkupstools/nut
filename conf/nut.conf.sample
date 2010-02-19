@@ -19,7 +19,8 @@
 #   upsd and upsmon) and the matching configuration files. This mode can also
 #   address UPS redundancy.
 # - netserver: same as for the standalone configuration, but also need
-#   some more ACLs and possibly a specific LISTEN directive in upsd.conf.
+#   some more network access controls (firewall, tcp-wrappers) and possibly a
+#   specific LISTEN directive in upsd.conf.
 #   Since this MODE is opened to the network, a special care should be applied
 #   to security concerns.
 # - netclient: this mode only requires upsmon.
