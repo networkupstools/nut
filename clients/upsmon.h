@@ -86,7 +86,7 @@ struct {
 	int	type;
 	const	char	*name;
 	char	*msg;		/* NULL until overridden */
-	comst char	*stockmsg;
+	const char	*stockmsg;
 	int	flags;
 }	notifylist[] =
 {
