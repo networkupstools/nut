@@ -177,7 +177,7 @@ static void do_notify(const utype_t *ups, int ntype)
 		if (notifylist[i].type == ntype) {
 			upsdebugx(2, "%s: ntype 0x%04x (%s)", __func__, ntype, 
 				notifylist[i].name);
-			snprintf(msg, sizeof(msg), notifylist[i].msg, 
+			snprintf(msg, sizeof(msg), notifylist[i].msg ? notifylist[i].msg : notifylist[i].stockmsg, 
 				ups ? ups->sys : "");
 			notify(msg, notifylist[i].flags, notifylist[i].name, 
 				upsname);
@@ -975,11 +975,7 @@ static void set_notifymsg(const char *name, const char *msg)
 
 	for (i = 0; notifylist[i].name != NULL; i++) {
 		if (!strcasecmp(notifylist[i].name, name)) {
-
-			/* only free if it's not the stock msg */
-			if (notifylist[i].msg != notifylist[i].stockmsg)
-				free(notifylist[i].msg);
-
+			free(notifylist[i].msg);
 			notifylist[i].msg = xstrdup(msg);
 			return;
 		}
@@ -1310,9 +1306,9 @@ static void upsmon_cleanup(void)
 	free(notifycmd);
 	free(powerdownflag);
 
-	for (i = 0; notifylist[i].name != NULL; i++)
-		if (notifylist[i].msg != notifylist[i].stockmsg)
-			free(notifylist[i].msg);
+	for (i = 0; notifylist[i].name != NULL; i++) {
+		free(notifylist[i].msg);
+	}
 }
 
 static void user_fsd(int sig)
@@ -1686,17 +1682,6 @@ static void help(const char *progname)
 	exit(EXIT_SUCCESS);
 }
 
-/* set all the notify values to a default */
-static void initnotify(void)
-{
-	int	i;
-
-	for (i = 0; notifylist[i].name != NULL; i++) {
-		notifylist[i].flags = NOTIFY_SYSLOG | NOTIFY_WALL;
-		notifylist[i].msg = notifylist[i].stockmsg;
-	}
-}
-
 static void runparent(int fd)
 {
 	int	ret;
@@ -1976,8 +1961,6 @@ int main(int argc, char *argv[])
 	argv += optind;
 
 	openlog("upsmon", LOG_PID, LOG_FACILITY);
-
-	initnotify();
 
 	/* if no configuration file was specified on the command line, use default */
 	if (!configfile) {

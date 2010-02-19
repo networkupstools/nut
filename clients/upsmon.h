@@ -85,21 +85,21 @@ typedef struct {
 struct {
 	int	type;
 	const	char	*name;
-	char	*msg;		/* points at stockmsg until overridden */
-	char	*stockmsg;
+	char	*msg;		/* NULL until overridden */
+	comst char	*stockmsg;
 	int	flags;
 }	notifylist[] =
 {
-	{ NOTIFY_ONLINE,   "ONLINE",   NULL, "UPS %s on line power", 0 },
-	{ NOTIFY_ONBATT,   "ONBATT",   NULL, "UPS %s on battery", 0 },
-	{ NOTIFY_LOWBATT,  "LOWBATT",  NULL, "UPS %s battery is low", 0 },
-	{ NOTIFY_FSD,	   "FSD",      NULL, "UPS %s: forced shutdown in progress", 0 },
-	{ NOTIFY_COMMOK,   "COMMOK",   NULL, "Communications with UPS %s established", 0 },
-	{ NOTIFY_COMMBAD,  "COMMBAD",  NULL, "Communications with UPS %s lost", 0 },
-	{ NOTIFY_SHUTDOWN, "SHUTDOWN", NULL, "Auto logout and shutdown proceeding", 0},
-	{ NOTIFY_REPLBATT, "REPLBATT", NULL, "UPS %s battery needs to be replaced", 0 },
-	{ NOTIFY_NOCOMM,   "NOCOMM",   NULL, "UPS %s is unavailable", 0 },
-	{ NOTIFY_NOPARENT, "NOPARENT", NULL, "upsmon parent process died - shutdown impossible", 0 },
+	{ NOTIFY_ONLINE,   "ONLINE",   NULL, "UPS %s on line power", NOTIFY_SYSLOG | NOTIFY_WALL },
+	{ NOTIFY_ONBATT,   "ONBATT",   NULL, "UPS %s on battery", NOTIFY_SYSLOG | NOTIFY_WALL },
+	{ NOTIFY_LOWBATT,  "LOWBATT",  NULL, "UPS %s battery is low", NOTIFY_SYSLOG | NOTIFY_WALL },
+	{ NOTIFY_FSD,	   "FSD",      NULL, "UPS %s: forced shutdown in progress", NOTIFY_SYSLOG | NOTIFY_WALL },
+	{ NOTIFY_COMMOK,   "COMMOK",   NULL, "Communications with UPS %s established", NOTIFY_SYSLOG | NOTIFY_WALL },
+	{ NOTIFY_COMMBAD,  "COMMBAD",  NULL, "Communications with UPS %s lost", NOTIFY_SYSLOG | NOTIFY_WALL },
+	{ NOTIFY_SHUTDOWN, "SHUTDOWN", NULL, "Auto logout and shutdown proceeding", NOTIFY_SYSLOG | NOTIFY_WALL },
+	{ NOTIFY_REPLBATT, "REPLBATT", NULL, "UPS %s battery needs to be replaced", NOTIFY_SYSLOG | NOTIFY_WALL },
+	{ NOTIFY_NOCOMM,   "NOCOMM",   NULL, "UPS %s is unavailable", NOTIFY_SYSLOG | NOTIFY_WALL },
+	{ NOTIFY_NOPARENT, "NOPARENT", NULL, "upsmon parent process died - shutdown impossible", NOTIFY_SYSLOG | NOTIFY_WALL },
 	{ 0, NULL, NULL, NULL, 0 }
 };
 
