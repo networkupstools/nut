@@ -257,6 +257,7 @@
 "HP"	"PowerTrust 2997A"	"HP 5061-2575 cable"	"apcsmart"
 "HP"	"R3000 XR"	""	"bcmxcp"
 "HP"	"R5500 XR"	""	"bcmxcp"
+"HP"	"R1500 G2"	""	"bcmxcp"
 "HP"	"R/T 2200 G2"	""	"usbhid-ups"
 "HP"	"T500"	"older models"	"bcmxcp_usb"
 "HP"	"T750 INTL"	""	"usbhid-ups"

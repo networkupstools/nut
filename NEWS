@@ -32,12 +32,13 @@ Release notes for NUT 2.4.2 - what's new since 2.4.1:
  - support for new devices: Apollo 1000A and 1000F; various Baytech RPC; old
    Best Power Fortress; Cyber Power Systems PR3000E, CP 1500C and OR2200LCDRM2U;
    all the new Dell UPS range (serial, USB and network); Eaton E Series NV and
-   DX UPS, and Powerware 9130; older HP T500 and T750, newer T750 INTL; Inform
-   Informer Compact 1000VA; many serial and USB devices from Ippon, like Back
-   Comfo Pro, Smart Power Pro and Smart Winner; IVT SCD series; Liebert
-   GXT2-3000RT230 and PowerSure PSA; Mustek PowerMust 424 / 636 / 848 USB;
-   all new PowerCOM USB devices with HID PDC interface; Tripp-Lite
-   INTERNETOFFICE700, SMART700USB and ECO550UPS; UPSonic DS-800 (USB).
+   DX UPS, and Powerware 9130; older HP T500 and T750, newer T750 INTL (USB) and
+   R1500 G2 (serial); Inform Informer Compact 1000VA; many serial and USB
+   devices from Ippon, like Back Comfo Pro, Smart Power Pro and Smart Winner;
+   IVT SCD series; Liebert GXT2-3000RT230 and PowerSure PSA; Mustek PowerMust
+   424 / 636 / 848 USB; all new PowerCOM USB devices with HID PDC interface;
+   Tripp-Lite INTERNETOFFICE700, SMART700USB and ECO550UPS; UPSonic DS-800
+   (USB).
 
 ---------------------------------------------------------------------------
 Release notes for NUT 2.4.1 - what's new since 2.4.0:
