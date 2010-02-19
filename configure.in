@@ -125,6 +125,14 @@ AC_CHECK_DECLS(uu_lock, [
 #include <libutil.h>
 ])
 
+AC_CHECK_DECLS(__func__, [], [
+	AC_CHECK_DECLS(__FUNCTION__, [
+		AC_DEFINE(__func__, __FUNCTION__, [Replace missing __func__ declaration])
+	], [
+		AC_DEFINE(__func__, __LINE__, [Replace missing  __func__ declaration])
+	], [AC_INCLUDES_DEFAULT])
+], [AC_INCLUDES_DEFAULT])
+	      
 dnl Solaris compatibility - check for -lnsl and -lsocket
 AC_SEARCH_LIBS(gethostbyname, nsl)
 AC_SEARCH_LIBS(connect, socket)
