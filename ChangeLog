@@ -1,3 +1,95 @@
+2.4.2
+
+2010-02-19  Arnaud Quette <arnaud.quette@free.fr>
+
+	* [r2363] ChangeLog, configure.in: Final update for 2.4.2 release
+
+2010-02-19  Arnaud Quette <arnaud.quette@free.fr>
+
+	* [r2362] NEWS, data/driver.list: Add HP R1500 G2 to compatibility
+	  list for bcmxcp
+	  (reported by Stephan Schupfer)
+
+2010-02-19  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2361] clients/upsmon.h: Fixed typo
+	* [r2360] clients/upsmon.c, clients/upsmon.h: You can't compare
+	  strings with '!=' in C, so the logic to determine if the stock
+	  message was overridden was flawed (causing problems with
+	  (de)allocation of memory)
+
+2010-02-19  Arnaud Quette <arnaud.quette@free.fr>
+
+	* [r2357] conf/nut.conf.sample, conf/upsmon.conf.sample, docs/FAQ,
+	  man/upsmon.conf.5: Remove remaining references to ACL /
+	  allowfrom.
+
+2010-02-19  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2355] configure.in: Replace __func__ on pre-C99 compilers with
+	  __FUNCTION__ (may be available on older GNU C compilers) or
+	  __LINE__ (which is always available)
+
+2010-02-16  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2353] drivers/main.h: Static initialization of flexible array
+	  members is non-portable (GNU C extension), so don't use a
+	  flexible array member here
+	* [r2352] configure.in: Check if the C compiler supports flexible
+	  array members and/or variable-length arrays
+	* [r2350] drivers/upscode2.c: Don't use signed constants in a
+	  bitfield
+
+2010-02-15  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2349] drivers/main.h: Fix missing semi-colon
+	* [r2348] drivers/main.h: Attempt to fix compiler warning on
+	  Solaris (although I have my doubts about the portability of array
+	  declarations within structures)
+	* [r2347] drivers/snmp-ups.c, drivers/snmp-ups.h: Fix for buggy
+	  Net-SNMP config should be before including headers, since our
+	  autoconf generated header is the first to be included (so the
+	  conflict is caused by subsequently including the Net-SNMP
+	  headers)
+	* [r2346] drivers/apcsmart.c, drivers/metasys.c, drivers/serial.c:
+	  Fix unreachable code warnings
+	* [r2345] drivers/upscode2.c: An (int) is only guaranteed to be at
+	  least 16-bit while we need 32-bit here (so it's better to use a
+	  fixed width integer)
+
+2010-02-14  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2344] configure.in, docs/configure.txt, drivers/powerman-pdu.c,
+	  m4/nut_check_libneon.m4, m4/nut_check_libnetsnmp.m4,
+	  m4/nut_check_libpowerman.m4, m4/nut_check_libusb.m4: Allow to
+	  override CFLAGS and LDFLAGS detected by the *.m4 macros in case
+	  pkg-config is not available
+	* [r2343] docs/configure.txt, m4/nut_check_libssl.m4: Allow cflags
+	  and ldflags overrides for openssl (may be useful/needed if
+	  pkg-config is not available)
+
+2010-02-13  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2342] drivers/liebertgxt2.c: Use (unsigned char) instead of
+	  (char) in command definitions (to prevent overflow warnings
+	  definitions)
+	* [r2341] drivers/mge-shut.h: The usage code must be at least a
+	  32-bit integer (and 'int' is only guaranteed to be at least
+	  16-bit).
+	* [r2340] m4/nut_check_libnetsnmp.m4: Check if Net-SNMP library is
+	  usable
+
+2010-02-12  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2339] docs/cables/apc.txt: APC cable diagrams as reported on
+	  the mailinglist
+	  [http://lists.alioth.debian.org/pipermail/nut-upsuser/2005-August/000118.html]
+
+2010-02-11  Charles Lepple <clepple@gmail.com>
+
+	* [r2338] ChangeLog: Generate ChangeLog entries from r2337 through
+	  r2331.
+
 2010-02-11  Arnaud Quette <arnaud.quette@free.fr>
 
 	* [r2337] NEWS: Complete news information for the 2.4.2 release.
