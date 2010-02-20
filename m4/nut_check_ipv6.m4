@@ -20,7 +20,7 @@ if test -z "${nut_check_ipv6_seen}"; then
 	AC_CHECK_TYPES([struct sockaddr_in6, struct in6_addr],
 		[], [nut_have_ipv6=no], [#include <netinet/in.h>])
 
-	if test "${nut_with_ipv6}" = "yes"; then
+	if test "${nut_have_ipv6}" = "yes"; then
 		AC_DEFINE(HAVE_IPV6, 1, [Define to enable IPv6 support])
 	fi
 fi
