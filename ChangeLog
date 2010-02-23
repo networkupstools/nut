@@ -1,3 +1,15 @@
+2.4.3
+
+2010-02-23  Arnaud Quette <arnaud.quette@free.fr>
+
+	* [r2366] ChangeLog, configure.in, NEWS, UPGRADING: Final update for
+	  2.4.3 release
+
+2010-02-20  Arjen de Korte <adkorte-guest@alioth.debian.org>
+
+	* [r2365] m4/nut_check_ipv6.m4: Fix broken logic to enable IPv6
+	  support
+
 2.4.2
 
 2010-02-19  Arnaud Quette <arnaud.quette@free.fr>
