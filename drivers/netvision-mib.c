@@ -38,7 +38,7 @@ static info_lkp_t netvision_batt_info[] = {
 	{ 2, "" }, /* battery normal */
 	{ 3, "LB" }, /* battery low */
 	{ 4, "LB" }, /* battery depleted */
-	{ 5, "" }, /* battery discharging */
+	{ 5, "DISCHRG" }, /* battery discharging */
 	{ 6, "RB" },  /* battery failure */
 	{ 0, "NULL" }
 };
@@ -74,15 +74,16 @@ static info_lkp_t netvision_batt_info[] = {
 #define NETVISION_OID_OUTPUT_SOURCE	".1.3.6.1.4.1.4555.1.1.1.1.4.1.0"
 
 static info_lkp_t netvision_output_info[] = {
-	{ 1, "NULL" },   /* output source other   */
-	{ 2, "NULL" },   /* output source none    */
+	{ 1, "" },   /* output source other   */
+	{ 2, "" },   /* output source none    */
 	{ 3, "OL" },     /* output source normal  */
 	{ 4, "OL BYPASS" }, /* output source bypass  */
 	{ 5, "OB" },     /* output source battery */
 	{ 6, "OL BOOST" },  /* output source booster */
 	{ 7, "OL TRIM" },   /* output source reducer */
-	{ 8, "NULL" },   /* output source standby */
-	{ 9, "NULL" },   /* output source ecomode */
+	{ 8, "" },   /* output source standby */
+	{ 9, "" },   /* output source ecomode */
+	{ 0, "NULL" }
 };
 
 /* Snmp2NUT lookup table */
@@ -97,7 +98,7 @@ static snmp_info_t netvision_mib[] = {
 		SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, NETVISION_OID_BATTERYSTATUS, "",
 		SU_FLAG_OK | SU_STATUS_BATT, &netvision_batt_info[0] },
-	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, NETVISION_OID_BATTERYSTATUS, "",
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, NETVISION_OID_OUTPUT_SOURCE, "",
 		SU_FLAG_OK | SU_STATUS_PWR, &netvision_output_info[0] },
 
 	/* ups load */
