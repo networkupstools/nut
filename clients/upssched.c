@@ -899,10 +899,12 @@ static void checkconf(void)
 
 int main(int argc, char **argv)
 {
+	const char	*prog = xbasename(argv[0]);
+
 	verbose = 1;		/* TODO: remove when done testing */
 
 	/* normally we don't have stderr, so get this going to syslog early */
-	openlog("upssched", LOG_PID, LOG_DAEMON);
+	open_syslog(prog);
 	syslogbit_set();
 
 	upsname = getenv("UPSNAME");

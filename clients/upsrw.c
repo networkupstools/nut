@@ -33,7 +33,7 @@ struct list_t {
 
 static void usage(const char *prog)
 {
-	printf("Network UPS Tools upsrw %s\n\n", UPS_VERSION);
+	printf("Network UPS Tools %s %s\n\n", prog, UPS_VERSION);
 	printf("usage: %s [-h]\n", prog);
 	printf("       %s [-s <variable>] [-u <username>] [-p <password>] <ups>\n\n", prog);
 	printf("Demo program to set variables within UPS hardware.\n");
@@ -445,12 +445,12 @@ static int print_rwlist(UPSCONN_t *ups, const char *upsname)
 int main(int argc, char **argv)
 {
 	int	i, port, ret;
-	char	*upsname, *hostname, *setvar, *prog;
+	char	*upsname, *hostname, *setvar;
+	const char	*prog = xbasename(argv[0]);
 	char	*password = NULL, *username = NULL;
 	UPSCONN_t	ups;
 
 	setvar = username = NULL;
-	prog = argv[0];
 
 	while ((i = getopt(argc, argv, "+s:p:u:V")) != -1) {
 		switch (i) {
@@ -464,7 +464,7 @@ int main(int argc, char **argv)
 			username = optarg;
 			break;
 		case 'V':
-			printf("Network UPS Tools upsrw %s\n", UPS_VERSION);
+			printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
 			exit(EXIT_SUCCESS);
 		default:
 			usage(prog);

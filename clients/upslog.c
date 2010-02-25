@@ -109,7 +109,7 @@ static void help(const char *prog)
 	printf("		- Use -f \"<format>\" so your shell doesn't break it up.\n");
 	printf("  -i <interval>	- Time between updates, in seconds\n");
 	printf("  -l <logfile>	- Log file name, or - for stdout\n");
-	printf("  -p <pidbase>  - Base name for PID file (defaults to \"upslog\")\n");
+	printf("  -p <pidbase>  - Base name for PID file (defaults to \"%s\")\n", prog);
 	printf("  -s <ups>	- Monitor UPS <ups> - <upsname>@<host>[:<port>]\n");
 	printf("        	- Example: -s myups@server\n");
 	printf("  -u <user>	- Switch to <user> if started as root\n");
@@ -369,18 +369,16 @@ static void run_flist(void)
 int main(int argc, char **argv)
 {
 	int	interval = 30, i;
-	char	*prog = NULL;
+	const char	*prog = xbasename(argv[0]);
 	time_t	now, nextpoll = 0;
-	const	char	*user = NULL;
-	struct	passwd	*new_uid = NULL;
-	const   char    *pidfilebase = "upslog";
+	const char	*user = NULL;
+	struct passwd	*new_uid = NULL;
+	const char	*pidfilebase = prog;
 
 	logformat = DEFAULT_LOGFORMAT;
 	user = RUN_AS_USER;
 
-	printf("Network UPS Tools upslog %s\n", UPS_VERSION);
-
-	prog = argv[0];
+	printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
 
 	 while ((i = getopt(argc, argv, "+hs:l:i:f:u:Vp:")) != -1) {
 		switch(i) {
@@ -476,7 +474,7 @@ int main(int argc, char **argv)
 	/* now drop root if we have it */
 	new_uid = get_user_pwent(user);
 
-	openlog("upslog", LOG_PID, LOG_FACILITY); 
+	open_syslog(prog); 
 
 	if (logfile != stdout)
 		background();

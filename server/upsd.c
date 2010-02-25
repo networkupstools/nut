@@ -943,22 +943,19 @@ int main(int argc, char **argv)
 {
 	int	i, cmd = 0;
 	char	*chroot_path = NULL;
-	const char	*user = NULL;
+	const char	*user = RUN_AS_USER;
 	struct passwd	*new_uid = NULL;
 
 	progname = xbasename(argv[0]);
-
-	/* pick up a default from configure --with-user */
-	user = RUN_AS_USER;
 
 	/* yes, xstrdup - the conf handlers call free on this later */
 	statepath = xstrdup(dflt_statepath());
 	datapath = xstrdup(DATADIR);
 
 	/* set up some things for later */
-	snprintf(pidfn, sizeof(pidfn), "%s/upsd.pid", altpidpath());
+	snprintf(pidfn, sizeof(pidfn), "%s/%s.pid", altpidpath(), progname);
 
-	printf("Network UPS Tools upsd %s\n", UPS_VERSION);
+	printf("Network UPS Tools %s %s\n", progname, UPS_VERSION);
 
 	while ((i = getopt(argc, argv, "+h46p:r:i:fu:Vc:D")) != -1) {
 		switch (i) {
@@ -997,11 +994,11 @@ int main(int argc, char **argv)
 				break;
 
 #ifdef	HAVE_IPV6
-		  case '4':
+			case '4':
 				opt_af = AF_INET;
 				break;
 
-		  case '6':
+			case '6':
 				opt_af = AF_INET6;
 				break;
 #endif
@@ -1028,7 +1025,7 @@ int main(int argc, char **argv)
 
 	setup_signals();
 
-	open_syslog("upsd");
+	open_syslog(progname);
 
 	/* send logging to the syslog pre-background for later use */
 	syslogbit_set();
@@ -1089,3 +1086,4 @@ int main(int argc, char **argv)
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
 	return EXIT_SUCCESS;
 }
+

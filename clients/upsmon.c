@@ -1718,16 +1718,9 @@ static void runparent(int fd)
 }
 
 /* fire up the split parent/child scheme */
-static void start_pipe(const char *user)
+static void start_pipe(void)
 {
 	int	ret;
-	struct	passwd	*new_uid = NULL;
-
-	/* default user = the --with-user value from configure */
-	if (user)
-		new_uid = get_user_pwent(user);
-	else
-		new_uid = get_user_pwent(RUN_AS_USER);
 
 	ret = pipe(pipefd);
 
@@ -1748,11 +1741,6 @@ static void start_pipe(const char *user)
 	}
 
 	close(pipefd[0]);
-
-	/* write the pid file now, as we will soon lose root */
-	writepid("upsmon");
-
-	become_user(new_uid);
 }
 
 static void delete_ups(utype_t *target)
@@ -1897,11 +1885,17 @@ static void check_parent(void)
 
 int main(int argc, char *argv[])  
 {
-	int	i, cmd, checking_flag = 0;
+	const char	*prog = xbasename(argv[0]);
+	int	i, cmd = 0, checking_flag = 0;
 
-	cmd = 0;
+	printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
 
-	printf("Network UPS Tools upsmon %s\n", UPS_VERSION);
+	/* if no configuration file is specified on the command line, use default */
+	configfile = xmalloc(SMALLBUF);
+	snprintf(configfile, SMALLBUF, "%s/upsmon.conf", confpath());
+	configfile = xrealloc(configfile, strlen(configfile) + 1);
+
+	run_as_user = xstrdup(RUN_AS_USER);
 
 	while ((i = getopt(argc, argv, "+Dhic:f:pu:VK46")) != -1) {
 		switch (i) {
@@ -1921,6 +1915,7 @@ int main(int argc, char *argv[])
 				nut_debug_level++;
 				break;
 			case 'f':
+				free(configfile);
 				configfile = xstrdup(optarg);
 				break;
 			case 'h':
@@ -1933,6 +1928,7 @@ int main(int argc, char *argv[])
 				use_pipe = 0;
 				break;
 			case 'u':
+				free(run_as_user);
 				run_as_user = xstrdup(optarg);
 				break;
 			case 'V':
@@ -1953,21 +1949,14 @@ int main(int argc, char *argv[])
 	}
 
 	if (cmd) {
-		sendsignal("upsmon", cmd);
+		sendsignal(prog, cmd);
 		exit(EXIT_SUCCESS);
 	}
 
 	argc -= optind;
 	argv += optind;
 
-	openlog("upsmon", LOG_PID, LOG_FACILITY);
-
-	/* if no configuration file was specified on the command line, use default */
-	if (!configfile) {
-		configfile = xmalloc(SMALLBUF);
-		snprintf(configfile, SMALLBUF, "%s/upsmon.conf", confpath());
-		configfile = xrealloc(configfile, strlen(configfile) + 1);
-	}
+	open_syslog(prog);
 
 	loadconfig();
 
@@ -1997,14 +1986,21 @@ int main(int argc, char *argv[])
 		upsdebugx(1, "debug level is '%d'", nut_debug_level);
 	}
 	
-	/* === root parent and unprivileged child split here === */
-
 	/* only do the pipe stuff if the user hasn't disabled it */
-	if (use_pipe)
-		start_pipe(run_as_user);
-	else {
+	if (use_pipe) {
+		struct passwd	*new_uid = get_user_pwent(run_as_user);
+
+		/* === root parent and unprivileged child split here === */
+		start_pipe();
+
+		/* write the pid file now, as we will soon lose root */
+		writepid(prog);
+
+		become_user(new_uid);
+	} else {
 		upslogx(LOG_INFO, "Warning: running as one big root process by request (upsmon -p)");
-		writepid("upsmon");
+		
+		writepid(prog);
 	}
 
 	/* prep our signal handlers */
@@ -2012,7 +2008,7 @@ int main(int argc, char *argv[])
 
 	/* reopen the log for the child process */
 	closelog();
-	openlog("upsmon", LOG_PID, LOG_FACILITY);
+	open_syslog(prog);
 
 	while (exit_flag == 0) {
 		utype_t	*ups;
