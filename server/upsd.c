@@ -879,6 +879,7 @@ static void help(const char *progname)
 	printf("  -D		raise debugging level\n");
 	printf("  -h		display this help\n");
 	printf("  -r <dir>	chroots to <dir>\n");
+	printf("  -q		raise log level threshold\n");
 	printf("  -u <user>	switch to <user> (if started as root)\n");
 	printf("  -V		display the version of this software\n");
 #ifdef	HAVE_IPV6
@@ -957,7 +958,7 @@ int main(int argc, char **argv)
 
 	printf("Network UPS Tools %s %s\n", progname, UPS_VERSION);
 
-	while ((i = getopt(argc, argv, "+h46p:r:i:fu:Vc:D")) != -1) {
+	while ((i = getopt(argc, argv, "+h46p:qr:i:fu:Vc:D")) != -1) {
 		switch (i) {
 			case 'h':
 				help(progname);
@@ -967,6 +968,9 @@ int main(int argc, char **argv)
 				fatalx(EXIT_FAILURE, "Specifying a listening addresses with '-i <address>' and '-p <port>'\n"
 					"is deprecated. Use 'LISTEN <address> [<port>]' in 'upsd.conf' instead.\n"
 					"See 'man 8 upsd.conf' for more information.");
+			case 'q':
+				nut_log_level++;
+				break;
 			case 'r':
 				chroot_path = optarg;
 				break;
@@ -974,7 +978,6 @@ int main(int argc, char **argv)
 				user = optarg;
 				break;
 			case 'V':
-
 				/* do nothing - we already printed the banner */
 				exit(EXIT_SUCCESS);
 

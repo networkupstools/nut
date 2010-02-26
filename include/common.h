@@ -104,6 +104,7 @@ void fatalx(int status, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3))) __attribute__((noreturn));
 
 extern int nut_debug_level;
+extern int nut_log_level;
 
 void *xmalloc(size_t size);
 void *xcalloc(size_t number, size_t size);

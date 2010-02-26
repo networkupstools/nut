@@ -92,6 +92,7 @@ static void help_msg(void)
 	printf("  -V             - print version, then exit\n");
 	printf("  -L             - print parseable list of driver variables\n");
 	printf("  -D             - raise debugging level\n");
+	printf("  -q             - raise log level threshold\n");
 	printf("  -h             - display this help\n");
 	printf("  -k             - force shutdown\n");
 	printf("  -i <int>       - poll interval\n");
@@ -483,7 +484,7 @@ int main(int argc, char **argv)
 	/* build the driver's extra (-x) variable table */
 	upsdrv_makevartable();
 
-	while ((i = getopt(argc, argv, "+a:kDhx:Lr:u:Vi:")) != -1) {
+	while ((i = getopt(argc, argv, "+a:kDhx:Lqr:u:Vi:")) != -1) {
 		switch (i) {
 			case 'a':
 				upsname = optarg;
@@ -507,6 +508,9 @@ int main(int argc, char **argv)
 			case 'L':
 				listxarg();
 				exit(EXIT_SUCCESS);
+			case 'q':
+				nut_log_level++;
+				break;
 			case 'r':
 				chroot_path = xstrdup(optarg);
 				break;
