@@ -45,14 +45,33 @@ if test -z "${nut_have_libgd_seen}"; then
 	dnl Now allow overriding gd settings if the user knows best
 	AC_MSG_CHECKING(for gd include flags)
 	AC_ARG_WITH(gd-includes, [
-		AC_HELP_STRING([--with-gd-includes=CFLAGS], [include flags for the gd library])
-	], [CFLAGS="${withval}"], [])
+		AS_HELP_STRING([--with-gd-includes=CFLAGS], [include flags for the gd library])
+	], [
+		case "${withval}" in
+		yes|no)
+			AC_MSG_ERROR(invalid option --with(out)-gd-includes - see docs/configure.txt)
+			;;
+		*)
+			CFLAGS="${withval}"
+			;;
+		esac
+	], [])
 	AC_MSG_RESULT([${CFLAGS}])
 
 	AC_MSG_CHECKING(for gd library flags)
 	AC_ARG_WITH(gd-libs, [
-		AC_HELP_STRING([--with-gd-libs=LDFLAGS], [linker flags for the gd library])
-	], [LDFLAGS="${withval}" LIBS=""], [])
+		AS_HELP_STRING([--with-gd-libs=LDFLAGS], [linker flags for the gd library])
+	], [
+		case "${withval}" in
+		yes|no)
+			AC_MSG_ERROR(invalid option --with(out)-gd-libs - see docs/configure.txt)
+			;;
+		*)
+			LDFLAGS="${withval}"
+			LIBS=""
+			;;
+		esac
+	], [])
 	AC_MSG_RESULT([${LDFLAGS} ${LIBS}])
 
 	dnl check if gd is usable

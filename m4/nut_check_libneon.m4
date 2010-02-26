@@ -23,14 +23,32 @@ if test -z "${nut_have_neon_seen}"; then
 
 	AC_MSG_CHECKING(for libneon cflags)
 	AC_ARG_WITH(neon-includes, [
-		AC_HELP_STRING([--with-neon-includes=CFLAGS], [include flags for the neon library])
-	], [CFLAGS="${withval}"], [CFLAGS="`pkg-config --silence-errors --cflags neon`"])
+		AS_HELP_STRING([--with-neon-includes=CFLAGS], [include flags for the neon library])
+	], [
+		case "${withval}" in
+		yes|no)
+			AC_MSG_ERROR(invalid option --with(out)-neon-includes - see docs/configure.txt)
+			;;
+		*)
+			CFLAGS="${withval}"
+			;;
+		esac
+	], [CFLAGS="`pkg-config --silence-errors --cflags neon`"])
 	AC_MSG_RESULT([${CFLAGS}])
 
 	AC_MSG_CHECKING(for libneon ldflags)
 	AC_ARG_WITH(neon-libs, [
-		AC_HELP_STRING([--with-neon-libs=LDFLAGS], [linker flags for the neon library])
-	], [LDFLAGS="${withval}"], [LDFLAGS="`pkg-config --silence-errors --libs neon`"])
+		AS_HELP_STRING([--with-neon-libs=LDFLAGS], [linker flags for the neon library])
+	], [
+		case "${withval}" in
+		yes|no)
+			AC_MSG_ERROR(invalid option --with(out)-neon-libs - see docs/configure.txt)
+			;;
+		*)
+			LDFLAGS="${withval}"
+			;;
+		esac
+	], [LDFLAGS="`pkg-config --silence-errors --libs neon`"])
 	AC_MSG_RESULT([${LDFLAGS}])
 
 	dnl check if neon is usable

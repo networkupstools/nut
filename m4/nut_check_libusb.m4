@@ -34,14 +34,32 @@ if test -z "${nut_have_libusb_seen}"; then
 
 	AC_MSG_CHECKING(for libusb cflags)
 	AC_ARG_WITH(usb-includes, [
-		AC_HELP_STRING([--with-usb-includes=CFLAGS], [include flags for the libusb library])
-	], [CFLAGS="${withval}"], [])
+		AS_HELP_STRING([--with-usb-includes=CFLAGS], [include flags for the libusb library])
+	], [
+		case "${withval}" in
+		yes|no)
+			AC_MSG_ERROR(invalid option --with(out)-usb-includes - see docs/configure.txt)
+			;;
+		*)
+			CFLAGS="${withval}"
+			;;
+		esac
+	], [])
 	AC_MSG_RESULT([${CFLAGS}])
 
 	AC_MSG_CHECKING(for libusb ldflags)
 	AC_ARG_WITH(usb-libs, [
-		AC_HELP_STRING([--with-usb-libs=LDFLAGS], [linker flags for the libusb library])
-	], [LDFLAGS="${withval}"], [])
+		AS_HELP_STRING([--with-usb-libs=LDFLAGS], [linker flags for the libusb library])
+	], [
+		case "${withval}" in
+		yes|no)
+			AC_MSG_ERROR(invalid option --with(out)-usb-libs - see docs/configure.txt)
+			;;
+		*)
+			LDFLAGS="${withval}"
+			;;
+		esac
+	], [])
 	AC_MSG_RESULT([${LDFLAGS}])
 
 	dnl check if libusb is usable

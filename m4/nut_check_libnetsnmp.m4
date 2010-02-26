@@ -24,14 +24,32 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 
 	AC_MSG_CHECKING(for Net-SNMP cflags)
 	AC_ARG_WITH(snmp-includes, [
-		AC_HELP_STRING([--with-snmp-includes=CFLAGS], [include flags for the Net-SNMP library])
-	], [CFLAGS="${withval}"], [CFLAGS="`net-snmp-config --cflags 2>/dev/null`"])
+		AS_HELP_STRING([--with-snmp-includes=CFLAGS], [include flags for the Net-SNMP library])
+	], [
+		case "${withval}" in
+		yes|no)
+			AC_MSG_ERROR(invalid option --with(out)-snmp-includes - see docs/configure.txt)
+			;;
+		*)
+			CFLAGS="${withval}"
+			;;
+		esac
+	], [CFLAGS="`net-snmp-config --cflags 2>/dev/null`"])
 	AC_MSG_RESULT([${CFLAGS}])
 
 	AC_MSG_CHECKING(for Net-SNMP libs)
 	AC_ARG_WITH(snmp-libs, [
-		AC_HELP_STRING([--with-snmp-libs=LDFLAGS], [linker flags for the Net-SNMP library])
-	], [LDFLAGS="${withval}"], [LDFLAGS="`net-snmp-config --libs 2>/dev/null`"])
+		AS_HELP_STRING([--with-snmp-libs=LDFLAGS], [linker flags for the Net-SNMP library])
+	], [
+		case "${withval}" in
+		yes|no)
+			AC_MSG_ERROR(invalid option --with(out)-snmp-libs - see docs/configure.txt)
+			;;
+		*)
+			LDFLAGS="${withval}"
+			;;
+		esac
+	], [LDFLAGS="`net-snmp-config --libs 2>/dev/null`"])
 	AC_MSG_RESULT([${LDFLAGS}])
 
 	dnl Check if the Net-SNMP library is usable
