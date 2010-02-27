@@ -37,7 +37,7 @@ if test -z "${nut_have_libhal_seen}"; then
 	], [
 		dnl also get cflags from glib-2.0 to workaround a bug in dbus-glib
 		CFLAGS="`pkg-config --silence-errors --cflags hal dbus-glib-1`"
-		if test "$?" != "0"; then
+		if test -z "$CFLAGS"; then
 			CFLAGS="-DDBUS_API_SUBJECT_TO_CHANGE -I/usr/include/hal -I/usr/include/dbus-1.0 -I/usr/lib/dbus-1.0/include"
 		fi
 	])
@@ -58,7 +58,7 @@ if test -z "${nut_have_libhal_seen}"; then
 	], [
 		dnl also get libs from glib-2.0 to workaround a bug in dbus-glib
 		LDFLAGS="`pkg-config --silence-errors --libs hal dbus-glib-1`"
-		if test "$?" != "0"; then
+		if test -z "$LDFLAGS"; then
 			LDFLAGS="-lhal -ldbus-1 -lpthread"
 		fi
 	])
@@ -79,7 +79,7 @@ if test -z "${nut_have_libhal_seen}"; then
 	], [
 		dnl this will only work as of HAL 0.5.9
 		HAL_USER="`pkg-config --silence-errors --variable=haluser hal`"
-		if test "$?" != "0"; then
+		if test -z "$HAL_USER"; then
 			HAL_USER="haldaemon"
 		fi
 	])
@@ -124,7 +124,7 @@ if test -z "${nut_have_libhal_seen}"; then
 		dnl Determine installation path for callouts
 		dnl As per HAL spec, §5 Callouts addon install path: $libdir/hal
 		HAL_CALLOUTS_PATH="`pkg-config --silence-errors --variable=libexecdir hal`"
-		if test "$?" != "0"; then
+		if test -z "$HAL_CALLOUTS_PATH"; then
 			HAL_CALLOUTS_PATH="${libdir}/hal"
 		fi
 	])
@@ -147,7 +147,7 @@ if test -z "${nut_have_libhal_seen}"; then
 		dnl As per HAL spec, §2 Device Information Files
 		dnl fdi install path: $datarootdir/hal/fdi/information/20thirdparty
 		HAL_FDI_PATH="`pkg-config --silence-errors --variable=hal_fdidir hal`"
-		if test "$?" != "0"; then
+		if test -z "$HAL_FDI_PATH"; then
 			HAL_FDI_PATH="${datarootdir}/hal/fdi/information/20thirdparty"
 		fi
 	])
