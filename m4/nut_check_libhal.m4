@@ -13,114 +13,153 @@ if test -z "${nut_have_libhal_seen}"; then
 	LDFLAGS_ORIG="${LDFLAGS}"
 
 	AC_MSG_CHECKING(for libhal version via pkg-config (0.5.8 minimum required))
-	HAL_VERSION=`pkg-config --silence-errors --modversion hal`
-	if test "$?" = "0"; then     
-		if pkg-config --atleast-version=0.5.8 hal; then
-			AC_MSG_RESULT(${HAL_VERSION} found)
-			nut_have_libhal=yes
-
-			dnl also get cflags from glib-2.0 to workaround a bug in dbus-glib
-			AC_MSG_CHECKING(for libhal cflags via pkg-config)
-			CFLAGS=`pkg-config --silence-errors --cflags hal dbus-glib-1`
-			if test "$?" = "0"; then
-				AC_MSG_RESULT(${CFLAGS})
-			else
-				AC_MSG_RESULT(not found)
-				nut_have_libhal=no
-			fi
-
-			dnl also get libs from glib-2.0 to workaround a bug in dbus-glib
-			AC_MSG_CHECKING(for libhal ldflags via pkg-config)
-			LDFLAGS=`pkg-config --silence-errors --libs hal dbus-glib-1`
-			if test "$?" = "0"; then
-				AC_MSG_RESULT(${LDFLAGS})
-			else
-				AC_MSG_RESULT(not found)
-				nut_have_libhal=no
-			fi
-		else
-			AC_MSG_RESULT(${HAL_VERSION} is too old)
-			nut_have_libhal=no
-		fi
-	else
+	HAL_VERSION="`pkg-config --silence-errors --modversion hal`"
+	if test "$?" != "0"; then
 		AC_MSG_RESULT(not found)
-		nut_have_libhal=check
+	elif pkg-config --silence-errors --atleast-version=0.5.8 hal; then
+ 		AC_MSG_RESULT(${HAL_VERSION})
+	else
+		AC_MSG_WARN(${HAL_VERSION} is too old)
 	fi
 
-	dnl try again using defaults if pkg-config is not available
-	if test "${nut_have_libhal}" = "check"; then
-		CFLAGS="-DDBUS_API_SUBJECT_TO_CHANGE -I/usr/include/hal -I/usr/include/dbus-1.0 -I/usr/lib/dbus-1.0/include"
-		LDFLAGS="-lhal -ldbus-1 -lpthread"
-
-		AC_CHECK_HEADERS(libhal.h, [nut_have_libhal=yes], [nut_have_libhal=no], [AC_INCLUDES_DEFAULT])
-		AC_CHECK_FUNCS(libhal_device_new_changeset, [], [nut_have_libhal=no])
-	fi
-
-	if test "${nut_have_libhal}" = "yes"; then
-		LIBHAL_CFLAGS="${CFLAGS}"
-		LIBHAL_LDFLAGS="${LDFLAGS}"
-
-		dnl this will only work as of HAL 0.5.9
-		AC_MSG_CHECKING(for libhal user via pkg-config)
-		HAL_USER=`pkg-config --silence-errors --variable=haluser hal`
-		if test -n "$HAL_USER"; then
-			AC_MSG_RESULT(${HAL_USER})
-		else
-			HAL_USER="haldaemon"
-			AC_MSG_RESULT(using default (${HAL_USER}))
-		fi
-		AC_DEFINE_UNQUOTED(HAL_USER, "${HAL_USER}", [HAL user])
-
-		dnl the device match key changed with HAL 0.5.11
-		AC_MSG_CHECKING(for hal-${HAL_VERSION} device match key)
-		HAL_DEVICE_MATCH_KEY=`pkg-config --silence-errors --atleast-version=0.5.11 hal`
+	AC_MSG_CHECKING(for libhal cflags)
+	AC_ARG_WITH(hal-includes, [
+		AS_HELP_STRING([--with-hal-includes=CFLAGS], [include flags for the HAL library])
+	], [
+		case "${withval}" in
+		yes|no)
+			AC_MSG_ERROR(invalid option --with(out)-hal-includes - see docs/configure.txt)
+			;;
+		*)
+			CFLAGS="${withval}"
+			;;
+		esac
+	], [
+		dnl also get cflags from glib-2.0 to workaround a bug in dbus-glib
+		CFLAGS="`pkg-config --silence-errors --cflags hal dbus-glib-1`"
 		if test "$?" != "0"; then
+			CFLAGS="-DDBUS_API_SUBJECT_TO_CHANGE -I/usr/include/hal -I/usr/include/dbus-1.0 -I/usr/lib/dbus-1.0/include"
+		fi
+	])
+	AC_MSG_RESULT([${CFLAGS}])
+
+	AC_MSG_CHECKING(for libhal ldflags)
+	AC_ARG_WITH(hal-libs, [
+		AS_HELP_STRING([--with-hal-libs=LDFLAGS], [linker flags for the HAL library])
+	], [
+		case "${withval}" in
+		yes|no)
+			AC_MSG_ERROR(invalid option --with(out)-hal-libs - see docs/configure.txt)
+			;;
+		*)
+			LDFLAGS="${withval}"
+			;;
+		esac
+	], [
+		dnl also get libs from glib-2.0 to workaround a bug in dbus-glib
+		LDFLAGS="`pkg-config --silence-errors --libs hal dbus-glib-1`"
+		if test "$?" != "0"; then
+			LDFLAGS="-lhal -ldbus-1 -lpthread"
+		fi
+	])
+	AC_MSG_RESULT([${LDFLAGS}])
+
+	AC_MSG_CHECKING(for libhal user)
+	AC_ARG_WITH(hal-user, [
+		AS_HELP_STRING([--with-hal-user=USER], [addons run as user])
+	], [
+		case "${withval}" in
+		yes|no)
+			AC_MSG_ERROR(invalid option --with(out)-hal-user - see docs/configure.txt)
+			;;
+		*)
+			HAL_USER="${withval}"
+			;;
+		esac
+	], [
+		dnl this will only work as of HAL 0.5.9
+		HAL_USER="`pkg-config --silence-errors --variable=haluser hal`"
+		if test "$?" != "0"; then
+			HAL_USER="haldaemon"
+		fi
+	])
+	AC_MSG_RESULT(${HAL_USER})
+	AC_DEFINE_UNQUOTED(HAL_USER, "${HAL_USER}", [addons run as user])
+
+	AC_MSG_CHECKING(for libhal device match key)
+	AC_ARG_WITH(hal-device-match-key, [
+		AS_HELP_STRING([--with-hal-device-match-key=KEY], [device match key])
+	], [
+		case "${withval}" in
+		yes|no)
+			AC_MSG_ERROR(invalid option --with(out)-hal-device-match-key - see docs/configure.txt)
+			;;
+		*)
+			HAL_DEVICE_MATCH_KEY="${withval}"
+			;;
+		esac
+	], [
+		dnl the device match key changed with HAL 0.5.11
+		if pkg-config --silence-errors --atleast-version=0.5.11 hal; then
 			HAL_DEVICE_MATCH_KEY="info.bus"
 		else
 			HAL_DEVICE_MATCH_KEY="info.subsystem"
 		fi
-		AC_MSG_RESULT(${HAL_DEVICE_MATCH_KEY})
-		AC_DEFINE_UNQUOTED(HAL_DEVICE_MATCH_KEY, "${HAL_DEVICE_MATCH_KEY}", [HAL device match key])
+	])
+	AC_MSG_RESULT(${HAL_DEVICE_MATCH_KEY})
 
-		dnl Determine installation paths for callout and .fdi
-		dnl As per HAL spec, §5 Callouts and §2 Device Information Files
-		dnl - addon install path: $libdir/hal
-		AC_MSG_CHECKING(for libhal Callouts path)
-		HAL_CALLOUTS_PATH=`pkg-config --silence-errors --variable=libexecdir hal`
-		if test -n "$HAL_CALLOUTS_PATH"; then
-			AC_MSG_RESULT(${HAL_CALLOUTS_PATH})
-		else
-			# fallback to detecting the right path
-			if (test -d "${libdir}/hal"); then
-				# For Debian
-				HAL_CALLOUTS_PATH="${libdir}/hal"
-				AC_MSG_RESULT(${HAL_CALLOUTS_PATH})
-			elif (test -d "/usr/libexec"); then
-				# For RedHat
-				HAL_CALLOUTS_PATH="${libexecdir}"
-				AC_MSG_RESULT(${HAL_CALLOUTS_PATH})
-			elif (test -d "/usr/lib/hal"); then
-				# For OpenSUSE
-				HAL_CALLOUTS_PATH="${libdir}/hal"
-				AC_MSG_RESULT(${HAL_CALLOUTS_PATH})
-			else
-				# FIXME
-				HAL_CALLOUTS_PATH="${libdir}/hal"
-				AC_MSG_RESULT(using default (${HAL_CALLOUTS_PATH}))
-			fi
+	AC_MSG_CHECKING(for libhal Callouts path)
+	AC_ARG_WITH(hal-callouts-path, [
+		AS_HELP_STRING([--with-hal-callouts-path=PATH], [installation path for callouts])
+	], [
+		case "${withval}" in
+		yes|no)
+			AC_MSG_ERROR(invalid option --with(out)-hal-callouts-path - see docs/configure.txt)
+			;;
+		*)
+			HAL_CALLOUTS_PATH="${withval}"
+			;;
+		esac
+	], [
+		dnl Determine installation path for callouts
+		dnl As per HAL spec, §5 Callouts addon install path: $libdir/hal
+		HAL_CALLOUTS_PATH="`pkg-config --silence-errors --variable=libexecdir hal`"
+		if test "$?" != "0"; then
+			HAL_CALLOUTS_PATH="${libdir}/hal"
 		fi
+	])
+	AC_MSG_RESULT(${HAL_CALLOUTS_PATH})
 
-		dnl - fdi install path: $datarootdir/hal/fdi/information/20thirdparty
-		AC_MSG_CHECKING(for libhal Device Information path)
-		HAL_FDI_PATH=`pkg-config --silence-errors --variable=hal_fdidir hal`
-		if test -n "$HAL_FDI_PATH"; then
-			HAL_FDI_PATH="${HAL_FDI_PATH}/information/20thirdparty"
-			AC_MSG_RESULT(${HAL_FDI_PATH})
-		else
-			# seems supported everywhere
+	AC_MSG_CHECKING(for libhal Device Information path)
+	AC_ARG_WITH(hal-fdi-path, [
+		AS_HELP_STRING([--with-hal-fdi-path=PATH], [installation path for device information files])
+	], [
+		case "${withval}" in
+		yes|no)
+			AC_MSG_ERROR(invalid option --with(out)-hal-fdi-path - see docs/configure.txt)
+			;;
+		*)
+			HAL_FDI_PATH="${withval}"
+			;;
+		esac
+	], [
+		dnl Determine installation path for .fdi
+		dnl As per HAL spec, §2 Device Information Files
+		dnl fdi install path: $datarootdir/hal/fdi/information/20thirdparty
+		HAL_FDI_PATH="`pkg-config --silence-errors --variable=hal_fdidir hal`"
+		if test "$?" != "0"; then
 			HAL_FDI_PATH="${datarootdir}/hal/fdi/information/20thirdparty"
-			AC_MSG_RESULT(${HAL_FDI_PATH})
 		fi
+	])
+	AC_MSG_RESULT(${HAL_FDI_PATH})
+
+	dnl check if HAL is usable
+	AC_CHECK_HEADERS(libhal.h, [nut_have_libhal=yes], [nut_have_libhal=no], [AC_INCLUDES_DEFAULT])
+	AC_CHECK_FUNCS(libhal_device_new_changeset, [], [nut_have_libhal=no])
+
+	if test "${nut_have_libhal}" = "yes"; then
+		LIBHAL_CFLAGS="${CFLAGS}"
+		LIBHAL_LDFLAGS="${LDFLAGS}"
 	fi
 
 	CFLAGS="${CFLAGS_ORIG}"
