@@ -16,16 +16,15 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 	dnl See which version of the Net-SNMP library (if any) is installed
 	AC_MSG_CHECKING(for Net-SNMP version via net-snmp-config)
 	SNMP_VERSION=`net-snmp-config --version 2>/dev/null`
-	if test -n "${SNMP_VERSION}"; then
-		AC_MSG_RESULT(${SNMP_VERSION} found)
-	else
-		AC_MSG_RESULT(not found)
+	if test "$?" != "0" -o -z "${SNMP_VERSION}"; then
+		SNMP_VERSION="none"
 	fi
+	AC_MSG_RESULT(${SNMP_VERSION} found)
 
 	AC_MSG_CHECKING(for Net-SNMP cflags)
-	AC_ARG_WITH(snmp-includes, [
-		AS_HELP_STRING([--with-snmp-includes=CFLAGS], [include flags for the Net-SNMP library])
-	], [
+	AC_ARG_WITH(snmp-includes,
+		AS_HELP_STRING([[[[--with-snmp-includes=CFLAGS]]]], [include flags for the Net-SNMP library]),
+	[
 		case "${withval}" in
 		yes|no)
 			AC_MSG_ERROR(invalid option --with(out)-snmp-includes - see docs/configure.txt)
@@ -38,9 +37,9 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 	AC_MSG_RESULT([${CFLAGS}])
 
 	AC_MSG_CHECKING(for Net-SNMP libs)
-	AC_ARG_WITH(snmp-libs, [
-		AS_HELP_STRING([--with-snmp-libs=LDFLAGS], [linker flags for the Net-SNMP library])
-	], [
+	AC_ARG_WITH(snmp-libs,
+		AS_HELP_STRING([[[[--with-snmp-libs=LDFLAGS]]]], [linker flags for the Net-SNMP library]),
+	[
 		case "${withval}" in
 		yes|no)
 			AC_MSG_ERROR(invalid option --with(out)-snmp-libs - see docs/configure.txt)

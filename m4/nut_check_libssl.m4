@@ -14,21 +14,21 @@ if test -z "${nut_have_libssl_seen}"; then
 
 	AC_MSG_CHECKING(for openssl version via pkg-config)
 	OPENSSL_VERSION="`pkg-config --silence-errors --modversion openssl 2>/dev/null`"
-	if test -n "${OPENSSL_VERSION}"; then
-		AC_MSG_RESULT(${OPENSSL_VERSION} found)
+	if test "$?" = "0" -a -n "${OPENSSL_VERSION}"; then
 		CFLAGS="`pkg-config --silence-errors --cflags openssl 2>/dev/null`"
 		LDFLAGS="`pkg-config --silence-errors --libs openssl 2>/dev/null`"
 	else
-		AC_MSG_RESULT(not found)
+		OPENSSL_VERSION="none"
 		CFLAGS=""
 		LDFLAGS="-lssl -lcrypto"
 	fi
+	AC_MSG_RESULT(${OPENSSL_VERSION} found)
 
 	dnl allow overriding openssl settings if the user knows best
 	AC_MSG_CHECKING(for openssl cflags)
-	AC_ARG_WITH(ssl-includes, [
-		AS_HELP_STRING([--with-ssl-includes=CFLAGS], [include flags for the OpenSSL library])
-	], [
+	AC_ARG_WITH(ssl-includes,
+		AS_HELP_STRING([[[[--with-ssl-includes=CFLAGS]]]], [include flags for the OpenSSL library]),
+	[
 		case "${withval}" in
 		yes|no)
 			AC_MSG_ERROR(invalid option --with(out)-ssl-includes - see docs/configure.txt)
@@ -41,9 +41,9 @@ if test -z "${nut_have_libssl_seen}"; then
 	AC_MSG_RESULT([${CFLAGS}])
 
 	AC_MSG_CHECKING(for openssl ldflags)
-	AC_ARG_WITH(ssl-libs, [
-		AS_HELP_STRING([--with-ssl-libs=LDFLAGS], [linker flags for the OpenSSL library])
-	], [
+	AC_ARG_WITH(ssl-libs,
+		AS_HELP_STRING([[[[--with-ssl-libs=LDFLAGS]]]], [linker flags for the OpenSSL library]),
+	[
 		case "${withval}" in
 		yes|no)
 			AC_MSG_ERROR(invalid option --with(out)-ssl-libs - see docs/configure.txt)

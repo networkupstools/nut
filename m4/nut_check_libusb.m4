@@ -14,28 +14,27 @@ if test -z "${nut_have_libusb_seen}"; then
 
 	AC_MSG_CHECKING(for libusb version via pkg-config)
 	LIBUSB_VERSION="`pkg-config --silence-errors --modversion libusb 2>/dev/null`"
-	if test -n "${LIBUSB_VERSION}"; then
-		AC_MSG_RESULT(${LIBUSB_VERSION} found)
+	if test "$?" = "0" -a -n "${LIBUSB_VERSION}"; then
 		CFLAGS="`pkg-config --silence-errors --cflags libusb 2>/dev/null`"
 		LDFLAGS="`pkg-config --silence-errors --libs libusb 2>/dev/null`"
 	else
 		AC_MSG_CHECKING(via libusb-config)
 		LIBUSB_VERSION="`libusb-config --version 2>/dev/null`"
-		if test -n "${LIBUSB_VERSION}"; then
-			AC_MSG_RESULT(${LIBUSB_VERSION} found)
+		if test "$?" = "0" -a -n "${LIBUSB_VERSION}"; then
 			CFLAGS="`libusb-config --cflags 2>/dev/null`"
 			LDFLAGS="`libusb-config --libs 2>/dev/null`"
 		else
-			AC_MSG_RESULT(not found)
+			LIBUSB_VERSION="none"
 			CFLAGS=""
 			LDFLAGS="-lusb"
 		fi
 	fi
+	AC_MSG_RESULT(${LIBUSB_VERSION} found)
 
 	AC_MSG_CHECKING(for libusb cflags)
-	AC_ARG_WITH(usb-includes, [
-		AS_HELP_STRING([--with-usb-includes=CFLAGS], [include flags for the libusb library])
-	], [
+	AC_ARG_WITH(usb-includes,
+		AS_HELP_STRING([[[[--with-usb-includes=CFLAGS]]]], [include flags for the libusb library]),
+	[
 		case "${withval}" in
 		yes|no)
 			AC_MSG_ERROR(invalid option --with(out)-usb-includes - see docs/configure.txt)
@@ -48,9 +47,9 @@ if test -z "${nut_have_libusb_seen}"; then
 	AC_MSG_RESULT([${CFLAGS}])
 
 	AC_MSG_CHECKING(for libusb ldflags)
-	AC_ARG_WITH(usb-libs, [
-		AS_HELP_STRING([--with-usb-libs=LDFLAGS], [linker flags for the libusb library])
-	], [
+	AC_ARG_WITH(usb-libs,
+		AS_HELP_STRING([[[[--with-usb-libs=LDFLAGS]]]], [linker flags for the libusb library]),
+	[
 		case "${withval}" in
 		yes|no)
 			AC_MSG_ERROR(invalid option --with(out)-usb-libs - see docs/configure.txt)

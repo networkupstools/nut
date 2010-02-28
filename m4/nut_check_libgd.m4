@@ -21,15 +21,13 @@ if test -z "${nut_have_libgd_seen}"; then
 
 	AC_MSG_CHECKING(for gd version via gdlib-config)
 	GD_VERSION=`gdlib-config --version 2>/dev/null`
-	if test -n "${GD_VERSION}"; then
-		AC_MSG_RESULT(${GD_VERSION} found)
-	else
-		AC_MSG_RESULT(not found)
-		GD_VERSION="unknown"
+	if test "$?" != "0" -o -z "${GD_VERSION}"; then
+		GD_VERSION="none"
 	fi
+	AC_MSG_RESULT(${GD_VERSION} found)
 
 	case "${GD_VERSION}" in
-	unknown)
+	none)
 		;;
 	2.0.5 | 2.0.6 | 2.0.7)
 		AC_MSG_WARN([[gd ${GD_VERSION} detected, unable to use gdlib-config script]])
@@ -44,9 +42,9 @@ if test -z "${nut_have_libgd_seen}"; then
 
 	dnl Now allow overriding gd settings if the user knows best
 	AC_MSG_CHECKING(for gd include flags)
-	AC_ARG_WITH(gd-includes, [
-		AS_HELP_STRING([--with-gd-includes=CFLAGS], [include flags for the gd library])
-	], [
+	AC_ARG_WITH(gd-includes,
+		AS_HELP_STRING([[[[--with-gd-includes=CFLAGS]]]], [include flags for the gd library]),
+	[
 		case "${withval}" in
 		yes|no)
 			AC_MSG_ERROR(invalid option --with(out)-gd-includes - see docs/configure.txt)
@@ -59,9 +57,9 @@ if test -z "${nut_have_libgd_seen}"; then
 	AC_MSG_RESULT([${CFLAGS}])
 
 	AC_MSG_CHECKING(for gd library flags)
-	AC_ARG_WITH(gd-libs, [
-		AS_HELP_STRING([--with-gd-libs=LDFLAGS], [linker flags for the gd library])
-	], [
+	AC_ARG_WITH(gd-libs,
+		AS_HELP_STRING([[[[--with-gd-libs=LDFLAGS]]]], [linker flags for the gd library]),
+	[
 		case "${withval}" in
 		yes|no)
 			AC_MSG_ERROR(invalid option --with(out)-gd-libs - see docs/configure.txt)

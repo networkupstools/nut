@@ -13,9 +13,9 @@ if test -z "${nut_have_libpowerman_seen}"; then
 	LDFLAGS_ORIG="${LDFLAGS}"
 
 	AC_MSG_CHECKING(for libpowerman cflags)
-	AC_ARG_WITH(powerman-includes, [
-		AS_HELP_STRING([--with-powerman-includes=CFLAGS], [include flags for the libpowerman library])
-	], [
+	AC_ARG_WITH(powerman-includes,
+		AS_HELP_STRING([[[[--with-powerman-includes=CFLAGS]]]], [include flags for the libpowerman library]),
+	[
 		case "${withval}" in
 		yes|no)
 			AC_MSG_ERROR(invalid option --with(out)-powerman-includes - see docs/configure.txt)
@@ -28,9 +28,9 @@ if test -z "${nut_have_libpowerman_seen}"; then
 	AC_MSG_RESULT([${CFLAGS}])
 
 	AC_MSG_CHECKING(for libpowerman libs)
-	AC_ARG_WITH(powerman-libs, [
-		AS_HELP_STRING([--with-powerman-libs=LDFLAGS], [linker flags for the libpowerman library])
-	], [
+	AC_ARG_WITH(powerman-libs,
+		AS_HELP_STRING([[[[--with-powerman-libs=LDFLAGS]]]], [linker flags for the libpowerman library]),
+	[
 		case "${withval}" in
 		yes|no)
 			AC_MSG_ERROR(invalid option --with(out)-powerman-libs - see docs/configure.txt)
