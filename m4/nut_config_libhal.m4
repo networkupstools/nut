@@ -5,7 +5,7 @@ dnl will do the checking only once.
 
 AC_DEFUN([NUT_CONFIG_LIBHAL],
 [
-if test -z "${nut_have_config_libhal_seen}" -a "${nut_have_libhal}" = "yest"; then
+if test -z "${nut_have_config_libhal_seen}" -a "${nut_have_libhal}" = "yes"; then
 	nut_have_config_libhal_seen=yes
 
 	AC_REQUIRE([NUT_CHECK_LIBHAL])
