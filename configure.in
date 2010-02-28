@@ -601,7 +601,7 @@ AC_MSG_RESULT(${LOGFACILITY})
 
 AC_MSG_CHECKING(which drivers to build)
 AC_ARG_WITH(drivers,
-	AS_HELP_STRING([@<:@--with-drivers=driver@<:@,driver...@:>@@:>@], [Only use specific drivers (all)]),
+	AS_HELP_STRING([[[[--with-drivers=driver@<:@,driver...@:>@]]]], [Only use specific drivers (all)]),
 [
 	case "${withval}" in
 	yes|no)
