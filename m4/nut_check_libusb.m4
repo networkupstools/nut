@@ -33,7 +33,7 @@ if test -z "${nut_have_libusb_seen}"; then
 
 	AC_MSG_CHECKING(for libusb cflags)
 	AC_ARG_WITH(usb-includes,
-		AS_HELP_STRING([@<:@--with-usb-includes=CFLAGS@:>@], [include flags for the libusb library]),
+		AS_HELP_STRING([[[[--with-usb-includes=CFLAGS]]]], [include flags for the libusb library]),
 	[
 		case "${withval}" in
 		yes|no)
@@ -48,7 +48,7 @@ if test -z "${nut_have_libusb_seen}"; then
 
 	AC_MSG_CHECKING(for libusb ldflags)
 	AC_ARG_WITH(usb-libs,
-		AS_HELP_STRING([@<:@--with-usb-libs=LDFLAGS@:>@], [linker flags for the libusb library]),
+		AS_HELP_STRING([[[[--with-usb-libs=LDFLAGS]]]], [linker flags for the libusb library]),
 	[
 		case "${withval}" in
 		yes|no)

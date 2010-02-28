@@ -12,7 +12,7 @@ if test -z "${nut_have_config_libhal_seen}" -a "${nut_have_libhal}" = "yes"; the
 
 	AC_MSG_CHECKING(for libhal user)
 	AC_ARG_WITH(hal-user,
-		AS_HELP_STRING([@<:@--with-hal-user=USER@:>@], [addons run as user]),
+		AS_HELP_STRING([[[[--with-hal-user=USER]]]], [addons run as user]),
 	[
 		case "${withval}" in
 		yes|no)
@@ -34,7 +34,7 @@ if test -z "${nut_have_config_libhal_seen}" -a "${nut_have_libhal}" = "yes"; the
 
 	AC_MSG_CHECKING(for libhal device match key)
 	AC_ARG_WITH(hal-device-match-key,
-		AS_HELP_STRING([@<:@--with-hal-device-match-key=KEY@:>@], [device match key]),
+		AS_HELP_STRING([[[[--with-hal-device-match-key=KEY]]]], [device match key]),
 	[
 		case "${withval}" in
 		yes|no)
@@ -56,7 +56,7 @@ if test -z "${nut_have_config_libhal_seen}" -a "${nut_have_libhal}" = "yes"; the
 
 	AC_MSG_CHECKING(for libhal Callouts path)
 	AC_ARG_WITH(hal-callouts-path,
-		AS_HELP_STRING([@<:@--with-hal-callouts-path=PATH@:>@], [installation path for callouts]),
+		AS_HELP_STRING([[[[--with-hal-callouts-path=PATH]]]], [installation path for callouts]),
 	[
 		case "${withval}" in
 		yes|no)
@@ -78,7 +78,7 @@ if test -z "${nut_have_config_libhal_seen}" -a "${nut_have_libhal}" = "yes"; the
 
 	AC_MSG_CHECKING(for libhal Device Information path)
 	AC_ARG_WITH(hal-fdi-path,
-		AS_HELP_STRING([@<:@--with-hal-fdi-path=PATH@:>@], [installation path for device information files]),
+		AS_HELP_STRING([[[[--with-hal-fdi-path=PATH]]]], [installation path for device information files]),
 	[
 		case "${withval}" in
 		yes|no)

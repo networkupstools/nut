@@ -27,7 +27,7 @@ if test -z "${nut_have_libssl_seen}"; then
 	dnl allow overriding openssl settings if the user knows best
 	AC_MSG_CHECKING(for openssl cflags)
 	AC_ARG_WITH(ssl-includes,
-		AS_HELP_STRING([@<:@--with-ssl-includes=CFLAGS@:>@], [include flags for the OpenSSL library]),
+		AS_HELP_STRING([[[[--with-ssl-includes=CFLAGS]]]], [include flags for the OpenSSL library]),
 	[
 		case "${withval}" in
 		yes|no)
@@ -42,7 +42,7 @@ if test -z "${nut_have_libssl_seen}"; then
 
 	AC_MSG_CHECKING(for openssl ldflags)
 	AC_ARG_WITH(ssl-libs,
-		AS_HELP_STRING([@<:@--with-ssl-libs=LDFLAGS@:>@], [linker flags for the OpenSSL library]),
+		AS_HELP_STRING([[[[--with-ssl-libs=LDFLAGS]]]], [linker flags for the OpenSSL library]),
 	[
 		case "${withval}" in
 		yes|no)
