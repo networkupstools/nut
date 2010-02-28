@@ -24,8 +24,8 @@ if test -z "${nut_have_config_libhal_seen}" -a "${nut_have_libhal}" = "yes"; the
 		esac
 	], [
 		dnl this will only work as of HAL 0.5.9
-		HAL_USER="`pkg-config --silence-errors --variable=haluser hal`"
-		if test -z "$HAL_USER"; then
+		HAL_USER="`pkg-config --silence-errors --variable=haluser hal 2>/dev/null`"
+		if test -z "${HAL_USER}"; then
 			HAL_USER="haldaemon"
 		fi
 	])
@@ -46,7 +46,7 @@ if test -z "${nut_have_config_libhal_seen}" -a "${nut_have_libhal}" = "yes"; the
 		esac
 	], [
 		dnl the device match key changed with HAL 0.5.11
-		if pkg-config --silence-errors --atleast-version=0.5.11 hal; then
+		if pkg-config --silence-errors --atleast-version=0.5.11 hal 2>/dev/null; then
 			HAL_DEVICE_MATCH_KEY="info.bus"
 		else
 			HAL_DEVICE_MATCH_KEY="info.subsystem"
@@ -69,8 +69,8 @@ if test -z "${nut_have_config_libhal_seen}" -a "${nut_have_libhal}" = "yes"; the
 	], [
 		dnl Determine installation path for callouts
 		dnl As per HAL spec, §5 Callouts addon install path: $libdir/hal
-		HAL_CALLOUTS_PATH="`pkg-config --silence-errors --variable=libexecdir hal`"
-		if test -z "$HAL_CALLOUTS_PATH"; then
+		HAL_CALLOUTS_PATH="`pkg-config --silence-errors --variable=libexecdir hal 2>/dev/null`"
+		if test -z "${HAL_CALLOUTS_PATH}"; then
 			HAL_CALLOUTS_PATH="${libdir}/hal"
 		fi
 	])
@@ -92,8 +92,8 @@ if test -z "${nut_have_config_libhal_seen}" -a "${nut_have_libhal}" = "yes"; the
 		dnl Determine installation path for .fdi
 		dnl As per HAL spec, §2 Device Information Files
 		dnl fdi install path: $datarootdir/hal/fdi/information/20thirdparty
-		HAL_FDI_PATH="`pkg-config --silence-errors --variable=hal_fdidir hal`"
-		if test -z "$HAL_FDI_PATH"; then
+		HAL_FDI_PATH="`pkg-config --silence-errors --variable=hal_fdidir hal 2>/dev/null`"
+		if test -z "${HAL_FDI_PATH}"; then
 			HAL_FDI_PATH="${datarootdir}/hal/fdi/information/20thirdparty"
 		fi
 	])

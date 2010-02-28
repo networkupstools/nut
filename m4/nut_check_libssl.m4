@@ -13,11 +13,11 @@ if test -z "${nut_have_libssl_seen}"; then
 	LDFLAGS_ORIG="${LDFLAGS}"
 
 	AC_MSG_CHECKING(for openssl version via pkg-config)
-	OPENSSL_VERSION=`pkg-config --silence-errors --modversion openssl`
-	if test "$?" = "0"; then
+	OPENSSL_VERSION="`pkg-config --silence-errors --modversion openssl 2>/dev/null`"
+	if test -n "${OPENSSL_VERSION}"; then
 		AC_MSG_RESULT(${OPENSSL_VERSION} found)
-		CFLAGS="`pkg-config --silence-errors --cflags openssl`"
-		LDFLAGS="`pkg-config --silence-errors --libs openssl`"
+		CFLAGS="`pkg-config --silence-errors --cflags openssl 2>/dev/null`"
+		LDFLAGS="`pkg-config --silence-errors --libs openssl 2>/dev/null`"
 	else
 		AC_MSG_RESULT(not found)
 		CFLAGS=""

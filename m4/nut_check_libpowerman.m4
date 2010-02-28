@@ -24,7 +24,7 @@ if test -z "${nut_have_libpowerman_seen}"; then
 			CFLAGS="${withval}"
 			;;
 		esac
-	], [CFLAGS="`pkg-config --silence-errors --cflags libpowerman`"])
+	], [CFLAGS="`pkg-config --silence-errors --cflags libpowerman 2>/dev/null`"])
 	AC_MSG_RESULT([${CFLAGS}])
 
 	AC_MSG_CHECKING(for libpowerman libs)
@@ -39,7 +39,7 @@ if test -z "${nut_have_libpowerman_seen}"; then
 			LDFLAGS="${withval}"
 			;;
 		esac
-	], [LDFLAGS="`pkg-config --silence-errors --libs libpowerman`"])
+	], [LDFLAGS="`pkg-config --silence-errors --libs libpowerman 2>/dev/null`"])
 	AC_MSG_RESULT([${LDFLAGS}])
 
 	dnl check if libpowerman is usable

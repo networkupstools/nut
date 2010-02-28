@@ -16,7 +16,7 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 	dnl See which version of the Net-SNMP library (if any) is installed
 	AC_MSG_CHECKING(for Net-SNMP version via net-snmp-config)
 	SNMP_VERSION=`net-snmp-config --version 2>/dev/null`
-	if test "$?" = "0"; then
+	if test -n "${SNMP_VERSION}"; then
 		AC_MSG_RESULT(${SNMP_VERSION} found)
 	else
 		AC_MSG_RESULT(not found)

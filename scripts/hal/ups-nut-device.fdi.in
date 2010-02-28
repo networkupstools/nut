@@ -7,7 +7,7 @@
         <match key="usb_device.product_id" int="0x0000">
           <append key="info.category" type="string">battery</append>
           <merge key="info.capabilities" type="strlist">battery</merge>
-          <merge key="info.addons" type="strlist">hald-addon-blazer_usb</merge>
+          <merge key="info.addons" type="strlist">hald-addon-megatec_usb</merge>
           <merge key="battery.type" type="string">ups</merge>
         </match>
       </match>
@@ -166,7 +166,7 @@
         <match key="usb_device.product_id" int="0x0000">
           <append key="info.category" type="string">battery</append>
           <merge key="info.capabilities" type="strlist">battery</merge>
-          <merge key="info.addons" type="strlist">hald-addon-blazer_usb</merge>
+          <merge key="info.addons" type="strlist">hald-addon-megatec_usb</merge>
           <merge key="battery.type" type="string">ups</merge>
         </match>
       </match>
@@ -175,7 +175,7 @@
         <match key="usb_device.product_id" int="0x5161">
           <append key="info.category" type="string">battery</append>
           <merge key="info.capabilities" type="strlist">battery</merge>
-          <merge key="info.addons" type="strlist">hald-addon-blazer_usb</merge>
+          <merge key="info.addons" type="strlist">hald-addon-megatec_usb</merge>
           <merge key="battery.type" type="string">ups</merge>
         </match>
       </match>
@@ -193,7 +193,7 @@
         <match key="usb_device.product_id" int="0x0003">
           <append key="info.category" type="string">battery</append>
           <merge key="info.capabilities" type="strlist">battery</merge>
-          <merge key="info.addons" type="strlist">hald-addon-blazer_usb</merge>
+          <merge key="info.addons" type="strlist">hald-addon-megatec_usb</merge>
           <merge key="battery.type" type="string">ups</merge>
         </match>
         <!--  various models  -->
@@ -363,7 +363,7 @@
         <match key="usb_device.product_id" int="0x0001">
           <append key="info.category" type="string">battery</append>
           <merge key="info.capabilities" type="strlist">battery</merge>
-          <merge key="info.addons" type="strlist">hald-addon-blazer_usb</merge>
+          <merge key="info.addons" type="strlist">hald-addon-megatec_usb</merge>
           <merge key="battery.type" type="string">ups</merge>
         </match>
       </match>
@@ -383,7 +383,7 @@
         <match key="usb_device.product_id" int="0x0000">
           <append key="info.category" type="string">battery</append>
           <merge key="info.capabilities" type="strlist">battery</merge>
-          <merge key="info.addons" type="strlist">hald-addon-blazer_usb</merge>
+          <merge key="info.addons" type="strlist">hald-addon-megatec_usb</merge>
           <merge key="battery.type" type="string">ups</merge>
         </match>
       </match>

@@ -21,8 +21,8 @@ if test -z "${nut_have_libgd_seen}"; then
 
 	AC_MSG_CHECKING(for gd version via gdlib-config)
 	GD_VERSION=`gdlib-config --version 2>/dev/null`
-	if test "$?" = "0"; then
-		AC_MSG_RESULT(${GD_VERSION})
+	if test -n "${GD_VERSION}"; then
+		AC_MSG_RESULT(${GD_VERSION} found)
 	else
 		AC_MSG_RESULT(not found)
 		GD_VERSION="unknown"
@@ -36,9 +36,9 @@ if test -z "${nut_have_libgd_seen}"; then
 		AC_MSG_WARN([[If gd detection fails, upgrade gd or use --with-gd-includes and --with-gd-libs]])
 		;;
 	*)
-		CFLAGS="`gdlib-config --includes`"
-		LDFLAGS="`gdlib-config --ldflags`"
-		LIBS="`gdlib-config --libs`"
+		CFLAGS="`gdlib-config --includes 2>/dev/null`"
+		LDFLAGS="`gdlib-config --ldflags 2>/dev/null`"
+		LIBS="`gdlib-config --libs 2>/dev/null`"
 		;;
 	esac
 

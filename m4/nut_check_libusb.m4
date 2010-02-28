@@ -13,15 +13,15 @@ if test -z "${nut_have_libusb_seen}"; then
 	LDFLAGS_ORIG="${LDFLAGS}"
 
 	AC_MSG_CHECKING(for libusb version via pkg-config)
-	LIBUSB_VERSION=`pkg-config --silence-errors --modversion libusb`
-	if test "$?" = "0"; then
+	LIBUSB_VERSION="`pkg-config --silence-errors --modversion libusb 2>/dev/null`"
+	if test -n "${LIBUSB_VERSION}"; then
 		AC_MSG_RESULT(${LIBUSB_VERSION} found)
-		CFLAGS="`pkg-config --silence-errors --cflags libusb`"
-		LDFLAGS="`pkg-config --silence-errors --libs libusb`"
+		CFLAGS="`pkg-config --silence-errors --cflags libusb 2>/dev/null`"
+		LDFLAGS="`pkg-config --silence-errors --libs libusb 2>/dev/null`"
 	else
 		AC_MSG_CHECKING(via libusb-config)
-		LIBUSB_VERSION=`libusb-config --version 2>/dev/null`
-		if test "$?" = "0"; then
+		LIBUSB_VERSION="`libusb-config --version 2>/dev/null`"
+		if test -n "${LIBUSB_VERSION}"; then
 			AC_MSG_RESULT(${LIBUSB_VERSION} found)
 			CFLAGS="`libusb-config --cflags 2>/dev/null`"
 			LDFLAGS="`libusb-config --libs 2>/dev/null`"

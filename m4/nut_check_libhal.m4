@@ -13,11 +13,11 @@ if test -z "${nut_have_libhal_seen}"; then
 	LDFLAGS_ORIG="${LDFLAGS}"
 
 	AC_MSG_CHECKING(for libhal version via pkg-config (0.5.8 minimum required))
-	HAL_VERSION="`pkg-config --silence-errors --modversion hal`"
-	if test "$?" != "0"; then
+	HAL_VERSION="`pkg-config --silence-errors --modversion hal 2>/dev/null`"
+	if test -z "${HAL_VERSION}"; then
 		AC_MSG_RESULT(not found)
-	elif pkg-config --silence-errors --atleast-version=0.5.8 hal; then
- 		AC_MSG_RESULT(${HAL_VERSION})
+	elif pkg-config --silence-errors --atleast-version=0.5.8 hal 2>/dev/null; then
+ 		AC_MSG_RESULT(${HAL_VERSION} found)
 	else
 		AC_MSG_WARN(${HAL_VERSION} is too old)
 	fi
@@ -36,8 +36,8 @@ if test -z "${nut_have_libhal_seen}"; then
 		esac
 	], [
 		dnl also get cflags from glib-2.0 to workaround a bug in dbus-glib
-		CFLAGS="`pkg-config --silence-errors --cflags hal dbus-glib-1`"
-		if test -z "$CFLAGS"; then
+		CFLAGS="`pkg-config --silence-errors --cflags hal dbus-glib-1 2>/dev/null`"
+		if test -z "${CFLAGS}"; then
 			CFLAGS="-DDBUS_API_SUBJECT_TO_CHANGE -I/usr/include/hal -I/usr/include/dbus-1.0 -I/usr/lib/dbus-1.0/include"
 		fi
 	])
@@ -57,8 +57,8 @@ if test -z "${nut_have_libhal_seen}"; then
 		esac
 	], [
 		dnl also get libs from glib-2.0 to workaround a bug in dbus-glib
-		LDFLAGS="`pkg-config --silence-errors --libs hal dbus-glib-1`"
-		if test -z "$LDFLAGS"; then
+		LDFLAGS="`pkg-config --silence-errors --libs hal dbus-glib-1 2>/dev/null`"
+		if test -z "${LDFLAGS}"; then
 			LDFLAGS="-lhal -ldbus-1 -lpthread"
 		fi
 	])
@@ -78,7 +78,7 @@ if test -z "${nut_have_libhal_seen}"; then
 
 	dnl - test for g_timeout_add_seconds availability
 	AC_MSG_CHECKING([if GLib is version 2.14.0 or newer])
-	if pkg-config --silence-errors --atleast-version=2.14.0 glib-2.0; then
+	if pkg-config --silence-errors --atleast-version=2.14.0 glib-2.0 2>/dev/null; then
 		AC_DEFINE(HAVE_GLIB_2_14, 1, [Define to 1 if GLib is version 2.14 or newer])
 		AC_MSG_RESULT(yes)
 	else
