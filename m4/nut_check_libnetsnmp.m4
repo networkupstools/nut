@@ -23,7 +23,7 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 
 	AC_MSG_CHECKING(for Net-SNMP cflags)
 	AC_ARG_WITH(snmp-includes,
-		AS_HELP_STRING([[[[--with-snmp-includes=CFLAGS]]]], [include flags for the Net-SNMP library]),
+		AS_HELP_STRING([@<:@--with-snmp-includes=CFLAGS@:>@], [include flags for the Net-SNMP library]),
 	[
 		case "${withval}" in
 		yes|no)
@@ -38,7 +38,7 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 
 	AC_MSG_CHECKING(for Net-SNMP libs)
 	AC_ARG_WITH(snmp-libs,
-		AS_HELP_STRING([[[[--with-snmp-libs=LDFLAGS]]]], [linker flags for the Net-SNMP library]),
+		AS_HELP_STRING([@<:@--with-snmp-libs=LDFLAGS@:>@], [linker flags for the Net-SNMP library]),
 	[
 		case "${withval}" in
 		yes|no)

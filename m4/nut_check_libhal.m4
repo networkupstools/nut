@@ -24,7 +24,7 @@ if test -z "${nut_have_libhal_seen}"; then
 
 	AC_MSG_CHECKING(for libhal cflags)
 	AC_ARG_WITH(hal-includes,
-		AS_HELP_STRING([[[[--with-hal-includes=CFLAGS]]]], [include flags for the HAL library]),
+		AS_HELP_STRING([@<:@--with-hal-includes=CFLAGS@:>@], [include flags for the HAL library]),
 	[
 		case "${withval}" in
 		yes|no)
@@ -45,7 +45,7 @@ if test -z "${nut_have_libhal_seen}"; then
 
 	AC_MSG_CHECKING(for libhal ldflags)
 	AC_ARG_WITH(hal-libs,
-		AS_HELP_STRING([[[[--with-hal-libs=LDFLAGS]]]], [linker flags for the HAL library]),
+		AS_HELP_STRING([@<:@--with-hal-libs=LDFLAGS@:>@], [linker flags for the HAL library]),
 	[
 		case "${withval}" in
 		yes|no)
