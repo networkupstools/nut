@@ -180,6 +180,7 @@ NUT_ARG_WITH([usb], [build and install USB drivers], [auto])
 NUT_CHECK_LIBUSB
 NUT_ARG_WITH([hal], [build and install HAL support], [no])
 NUT_CHECK_LIBHAL
+NUT_CONFIG_LIBHAL
 NUT_ARG_WITH([snmp], [build and install SNMP drivers], [auto])
 NUT_CHECK_LIBNETSNMP
 NUT_ARG_WITH([neon], [build and install neon based XML/HTTP driver], [auto])
