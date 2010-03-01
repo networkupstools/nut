@@ -13,17 +13,14 @@ AC_CONFIG_HEADER(include/config.h)
 AC_PREFIX_DEFAULT(/usr/local/ups)
 AM_INIT_AUTOMAKE
 
-dnl Require Autoconf 2.60 or better and enable features of Posix that are extensions to C
-AC_PREREQ([2.60])
-AC_USE_SYSTEM_EXTENSIONS
-
-dnl for diagnostic reasons we like to know which version of m4 is used
-AC_MSG_CHECKING(for m4 version)
-MFOUR_VERSION="`m4 --version 2>/dev/null`"
-if test "$?" != "0" -o -z "${MFOUR_VERSION}"; then
-	MFOUR_VERSION="none"
-fi
-AC_MSG_RESULT(${MFOUR_VERSION} found)
+dnl we need Autoconf 2.60 or better to enable features of Posix that are extensions to C
+AC_MSG_CHECKING(for autoconf macro to enable system extensions)
+m4_version_prereq(2.60, [
+	AC_MSG_RESULT(yes)
+	AC_USE_SYSTEM_EXTENSIONS
+], [
+	AC_MSG_RESULT(no)
+])
 
 dnl Use "./configure --enable-maintainer-mode" to keep Makefile.in and Makefile
 dnl in sync after SVN updates.
@@ -607,11 +604,14 @@ AC_ARG_WITH(logfacility,
 AC_DEFINE_UNQUOTED(LOG_FACILITY, ${LOGFACILITY}, [Desired syslog facility - see syslog(3)])
 AC_MSG_RESULT(${LOGFACILITY})
 
+dnl Autoconf versions before 2.62 don't allow consecutive quadrigraphs,
+dnl so the help string depends on the version used
 AC_MSG_CHECKING(which drivers to build)
 AC_ARG_WITH(drivers,
-	dnl Some older versions of autoconf (?) don't seem allow two consecutive '@:>@'
-	dnl quadrigraphs, so attempt this construction with an empty '@&t@' in between
-	AS_HELP_STRING([@<:@--with-drivers=driver@<:@,driver...@:>@@&t@@:>@], [Only use specific drivers (all)]),
+	AS_HELP_STRING([m4_version_prereq(2.62,
+		[@<:@--with-drivers=driver@<:@,driver@:>@@:>@],
+		[[[[--with-drivers=driver@<:@,driver@:>@]]]])],
+	[Only use specific drivers (all)]),
 [
 	case "${withval}" in
 	yes|no)
