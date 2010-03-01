@@ -17,6 +17,14 @@ dnl Require Autoconf 2.60 or better and enable features of Posix that are extens
 AC_PREREQ([2.60])
 AC_USE_SYSTEM_EXTENSIONS
 
+dnl for diagnostic reasons we like to know which version of m4 is used
+AC_MSG_CHECKING(for m4 version)
+MFOUR_VERSION="`m4 --version 2>/dev/null`"
+if test "$?" != "0" -o -z "${MFOUR_VERSION}"; then
+	MFOUR_VERSION="none"
+fi
+AC_MSG_RESULT(${MFOUR_VERSION} found)
+
 dnl Use "./configure --enable-maintainer-mode" to keep Makefile.in and Makefile
 dnl in sync after SVN updates.
 AM_MAINTAINER_MODE
@@ -601,7 +609,9 @@ AC_MSG_RESULT(${LOGFACILITY})
 
 AC_MSG_CHECKING(which drivers to build)
 AC_ARG_WITH(drivers,
-	AS_HELP_STRING([@<:@--with-drivers=driver@<:@,driver...@:>@ @:>@], [Only use specific drivers (all)]),
+	dnl Some older versions of autoconf (?) don't seem allow two consecutive '@:>@'
+	dnl quadrigraphs, so attempt this construction with an empty '@&t@' in between
+	AS_HELP_STRING([@<:@--with-drivers=driver@<:@,driver...@:>@@&t@@:>@], [Only use specific drivers (all)]),
 [
 	case "${withval}" in
 	yes|no)
