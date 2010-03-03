@@ -1102,38 +1102,34 @@ static int upsc_commandlist(void)
 			can_upsd = 1;
 		else if (strcmp(buf, "UPPC") == 0)
 			can_uppc = 1;
-		cp = commands;
-		while (cp->cmd) {
+
+		for (cp = commands; cp->cmd; cp++) {
 			if (cp->upsc && strcmp(cp->upsc, buf) == 0) {
 				upsdebugx(1, "instcmd: %s %s", cp->cmd, cp->upsc);
 				dstate_addcmd(cp->cmd);
 				cp->enabled = 1;
-				break;
+	            break;
 			}
-			cp++;
 		}
-		cp = variables;
-		while (cp->cmd) {
+
+		for (cp = variables; cp->cmd; cp++) {
 			if (cp->upsc && strcmp(cp->upsc, buf) == 0) {
 				upsdebugx(1, "setvar: %s %s", cp->cmd, cp->upsc);
 				cp->enabled = 1;
 				break;
 			}
-			cp++;
 		}
 
 		if (strcmp(buf, "UPCL") == 0)
 			break;
 	}
 
-	cp = variables;
-	while (cp->cmd) {
+	for (cp = variables; cp->cmd; cp++) {
 		if (cp->enabled) {
-			upsc_getvalue(cp->upsc, "0", cp->upsp, cp->cmd, NULL);
+			upsc_getvalue(cp->upsc, "0000", cp->upsp, cp->cmd, NULL);
 			dstate_setflags(cp->cmd, ST_FLAG_RW | ST_FLAG_STRING);
 			dstate_setaux(cp->cmd, 7);
 		}
-		cp++;
 	}
 
 	return 1;
