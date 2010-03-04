@@ -557,7 +557,7 @@ void upsdrv_initinfo(void)
 
 	/* make sure we have some sensible defaults */
 	setvar("ups.delay.shutdown", "10");
-	setvar("ups.delay.reboot", "120");
+	setvar("ups.delay.reboot", "60");
 
 	upsh.instcmd = instcmd;
 	upsh.setvar = setvar;
@@ -878,9 +878,9 @@ void upsdrv_shutdown(void)
 	upslogx(LOG_EMERG, "Shutting down...");
 
 	/* send shutdown command twice, just to be sure */
-	instcmd("shutdown.return", NULL);
+	instcmd("shutdown.reboot", NULL);
 	sleep(1);
-	instcmd("shutdown.return", NULL);
+	instcmd("shutdown.reboot", NULL);
 	sleep(1);
 }
 
