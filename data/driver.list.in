@@ -615,6 +615,7 @@
 "Powerware"	"ups"	"4"	"3115"	""	"genericups upstype=11"
 "Powerware"	"ups"	"4"	"5119, 5125"	""	"genericups upstype=15"
 "Powerware"	"ups"	"4"	"5119 RM"	""	"genericups upstype=20"
+"Powerware"	"ups"	"5"	"5119 RM"	""	"upscode2"
 "Powerware"	"ups"	"5"	"PW3105"	""	"bcmxcp_usb"
 "Powerware"	"ups"	"5"	"PW5110"	""	"bcmxcp_usb"
 "Powerware"	"ups"	"5"	"PW5115"	"Serial port"	"bcmxcp"
