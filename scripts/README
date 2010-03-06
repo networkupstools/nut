@@ -5,7 +5,8 @@ distributions,
 - Hardware Abstraction Layer script, for declaring and binding NUT addons to
 specific USB devices,
 - Python Client module and application,
-- Perl client module.
+- Perl client module,
+- Augeas support lenses and modules for NUT.
 
 They have either been contributed by users of the software, or by the NUT Team
 itself.
