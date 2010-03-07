@@ -10,7 +10,7 @@ Data cable 1 for UPS:
 Driver: victronups (newvictronups)
 
 
-UPS         PC  9 pin [2~connector
+UPS         PC  9 pin connector
 1 --------- 3
 2 --------- 2
 5 --------- 5 GND
