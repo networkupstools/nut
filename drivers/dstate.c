@@ -35,9 +35,9 @@
 	static int	sockfd = -1, stale = 1, alarm_active = 0;
 	static char	*sockfn = NULL;
 	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[ST_MAX_VALUE_LEN];
-	static struct st_tree_t	*dtree_root = NULL;
-	static struct conn_t	*connhead = NULL;
-	static struct cmdlist_t *cmdhead = NULL;
+	static st_tree_t	*dtree_root = NULL;
+	static conn_t	*connhead = NULL;
+	static cmdlist_t *cmdhead = NULL;
 
 	struct ups_handler	upsh;
 
@@ -139,7 +139,7 @@ static int sock_open(const char *fn)
 	return fd;
 }
 
-static void sock_disconnect(struct conn_t *conn)
+static void sock_disconnect(conn_t *conn)
 {
 	close(conn->fd);
 
@@ -165,7 +165,7 @@ static void send_to_all(const char *fmt, ...)
 	int	ret;
 	char	buf[ST_SOCK_BUF_LEN];
 	va_list	ap;
-	struct conn_t	*conn, *cnext;
+	conn_t	*conn, *cnext;
 
 	va_start(ap, fmt);
 	ret = vsnprintf(buf, sizeof(buf), fmt, ap);
@@ -190,7 +190,7 @@ static void send_to_all(const char *fmt, ...)
 	}
 }
 
-static int send_to_one(struct conn_t *conn, const char *fmt, ...)
+static int send_to_one(conn_t *conn, const char *fmt, ...)
 {
 	int	ret;
 	va_list	ap;
@@ -221,7 +221,7 @@ static int send_to_one(struct conn_t *conn, const char *fmt, ...)
 static void sock_connect(int sock)
 {
 	int	fd, ret;
-	struct conn_t	*conn;
+	conn_t	*conn;
 	struct sockaddr_un sa;
 	socklen_t	salen;
 
@@ -266,10 +266,10 @@ static void sock_connect(int sock)
 	upsdebugx(3, "new connection on fd %d", fd);
 }
 
-static int st_tree_dump_conn(struct st_tree_t *node, struct conn_t *conn)
+static int st_tree_dump_conn(st_tree_t *node, conn_t *conn)
 {
 	int	ret;
-	struct enum_t	*etmp;
+	enum_t	*etmp;
 
 	if (!node) {
 		return 1;	/* not an error */
@@ -325,9 +325,9 @@ static int st_tree_dump_conn(struct st_tree_t *node, struct conn_t *conn)
 	return 1;	/* everything's OK here ... */
 }
 
-static int cmd_dump_conn(struct conn_t *conn)
+static int cmd_dump_conn(conn_t *conn)
 {
-	struct cmdlist_t	*cmd;
+	cmdlist_t	*cmd;
 
 	for (cmd = cmdhead; cmd; cmd = cmd->next) {
 		if (!send_to_one(conn, "ADDCMD %s\n", cmd->name)) {
@@ -338,7 +338,7 @@ static int cmd_dump_conn(struct conn_t *conn)
 	return 1;
 }
 
-static int sock_arg(struct conn_t *conn, int numarg, char **arg)
+static int sock_arg(conn_t *conn, int numarg, char **arg)
 {
 	if (numarg < 1) {
 		return 0;
@@ -415,7 +415,7 @@ static int sock_arg(struct conn_t *conn, int numarg, char **arg)
 	return 0;
 }
 
-static void sock_read(struct conn_t *conn)
+static void sock_read(conn_t *conn)
 {
 	int	i, ret;
 	char	buf[SMALLBUF];
@@ -463,7 +463,7 @@ static void sock_read(struct conn_t *conn)
 
 static void sock_close(void)
 {
-	struct conn_t	*conn, *cnext;
+	conn_t	*conn, *cnext;
 
 	if (sockfd != -1) {
 		close(sockfd);
@@ -511,7 +511,7 @@ int dstate_poll_fds(struct timeval timeout, int extrafd)
 	int	ret, maxfd, overrun = 0;
 	fd_set	rfds;
 	struct timeval	now;
-	struct conn_t	*conn, *cnext;
+	conn_t	*conn, *cnext;
 
 	FD_ZERO(&rfds);
 	FD_SET(sockfd, &rfds);
@@ -632,7 +632,7 @@ int dstate_addenum(const char *var, const char *fmt, ...)
 
 void dstate_setflags(const char *var, int flags)
 {
-	struct st_tree_t	*sttmp;
+	st_tree_t	*sttmp;
 	char	flist[SMALLBUF];
 
 	/* find the dtree node for var */
@@ -666,7 +666,7 @@ void dstate_setflags(const char *var, int flags)
 
 void dstate_setaux(const char *var, int aux)
 {
-	struct st_tree_t	*sttmp;
+	st_tree_t	*sttmp;
 
 	/* find the dtree node for var */
 	sttmp = state_tree_find(dtree_root, var);
@@ -756,12 +756,12 @@ void dstate_free(void)
 	sock_close();
 }
 
-const struct st_tree_t *dstate_getroot(void)
+const st_tree_t *dstate_getroot(void)
 {
 	return dtree_root;
 }
 
-const struct cmdlist_t *dstate_getcmdlist(void)
+const cmdlist_t *dstate_getcmdlist(void)
 {
 	return cmdhead;
 }

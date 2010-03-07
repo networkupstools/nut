@@ -120,7 +120,7 @@ static void get_type(ctype_t *client, const char *upsname, const char *var)
 {
 	char	buf[SMALLBUF];
 	const	upstype_t	*ups;
-	const	struct	st_tree_t	*node;
+	const	st_tree_t	*node;
 
 	ups = get_ups_ptr(upsname);
 

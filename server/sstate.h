@@ -19,6 +19,10 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifndef SSTATE_H_SEEN
+#define SSTATE_H_SEEN
+
+#include "state.h"
 #include "upstype.h"
 
 #define SS_CONNFAIL_INT 300	/* complain about a dead driver every 5 mins */
@@ -30,8 +34,8 @@ void sstate_readline(upstype_t *ups);
 const char *sstate_getinfo(const upstype_t *ups, const char *var);
 int sstate_getflags(const upstype_t *ups, const char *var);
 int sstate_getaux(const upstype_t *ups, const char *var);
-const struct enum_t *sstate_getenumlist(const upstype_t *ups, const char *var);
-const struct cmdlist_t *sstate_getcmdlist(const upstype_t *ups);
+const enum_t *sstate_getenumlist(const upstype_t *ups, const char *var);
+const cmdlist_t *sstate_getcmdlist(const upstype_t *ups);
 void sstate_makeinfolist(const upstype_t *ups, char *buf, size_t bufsize);
 void sstate_makerwlist(const upstype_t *ups, char *buf, size_t bufsize);
 void sstate_makeinstcmdlist_t(const upstype_t *ups, char *buf, size_t bufsize);
@@ -39,5 +43,6 @@ int sstate_dead(upstype_t *ups, int maxage);
 void sstate_infofree(upstype_t *ups);
 void sstate_cmdfree(upstype_t *ups);
 int sstate_sendline(upstype_t *ups, const char *buf);
-const struct st_tree_t *sstate_getnode(const upstype_t *ups, const char *varname);
+const st_tree_t *sstate_getnode(const upstype_t *ups, const char *varname);
 
+#endif /* SSTATE_H_SEEN */

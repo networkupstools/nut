@@ -38,8 +38,8 @@ typedef struct upstype_s {
 	time_t			last_ping;
 	time_t			last_connfail;
 	PCONF_CTX_t		sock_ctx;
-	struct st_tree_t	*inforoot;
-	struct cmdlist_t	*cmdlist;
+	struct st_tree_s	*inforoot;
+	struct cmdlist_s	*cmdlist;
 
 	int	numlogins;
 	int	fsd;		/* forced shutdown in effect? */

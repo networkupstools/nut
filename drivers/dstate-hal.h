@@ -20,6 +20,7 @@
 #ifndef DSTATE_HAL_H_SEEN
 #define DSTATE_HAL_H_SEEN 1
 
+#include "state.h"
 #include "attribute.h"
 
 /*#include "parseconf.h"*/
@@ -67,8 +68,8 @@ int dstate_delinfo(const char *var);
 int dstate_delenum(const char *var, const char *val);
 int dstate_delcmd(const char *cmd);
 void dstate_free(void);
-const struct st_tree_t *dstate_getroot(void);
-const struct cmdlist_t *dstate_getcmdlist(void);
+const st_tree_t *dstate_getroot(void);
+const cmdlist_t *dstate_getcmdlist(void);
 
 void dstate_dataok(void);
 void dstate_datastale(void);

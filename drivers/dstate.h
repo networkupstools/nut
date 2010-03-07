@@ -20,6 +20,7 @@
 #ifndef DSTATE_H_SEEN
 #define DSTATE_H_SEEN 1
 
+#include "state.h"
 #include "attribute.h"
 
 #include "parseconf.h"
@@ -29,12 +30,12 @@
 #define DS_MAX_READ 256		/* don't read forever from upsd */
 
 /* track client connections */
-struct conn_t {
+typedef struct conn_s {
 	int     fd;
 	PCONF_CTX_t	ctx;
-	struct conn_t	*prev;
-	struct conn_t	*next;
-};
+	struct conn_s	*prev;
+	struct conn_s	*next;
+} conn_t;
 
 	extern	struct	ups_handler	upsh;
 
@@ -52,8 +53,8 @@ int dstate_delinfo(const char *var);
 int dstate_delenum(const char *var, const char *val);
 int dstate_delcmd(const char *cmd);
 void dstate_free(void);
-const struct st_tree_t *dstate_getroot(void);
-const struct cmdlist_t *dstate_getcmdlist(void);
+const st_tree_t *dstate_getroot(void);
+const cmdlist_t *dstate_getcmdlist(void);
 
 void dstate_dataok(void);
 void dstate_datastale(void);

@@ -32,7 +32,7 @@ static void set_var(ctype_t *client, const char *upsname, const char *var,
 {
 	upstype_t	*ups;
 	const	char	*val;
-	const	struct  enum_t  *etmp;
+	const	enum_t  *etmp;
 	char	cmd[SMALLBUF], esc[SMALLBUF];
 
 	ups = get_ups_ptr(upsname);
