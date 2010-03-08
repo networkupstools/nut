@@ -27,7 +27,9 @@
 
 
 #ifdef __cplusplus
+/* *INDENT-OFF* */
 extern "C" {
+/* *INDENT-ON* */
 #endif /* __cplusplus */
 
 #include "hidtypes.h"
@@ -63,7 +65,9 @@ void SetValue(const HIDData_t *pData, unsigned char *Buf, long Value);
 
 
 #ifdef __cplusplus
+/* *INDENT-OFF* */
 } /* extern "C" */
+/* *INDENT-ON* */
 #endif /* __cplusplus */
 
 #endif

@@ -26,7 +26,9 @@
 #endif
 
 #ifdef __cplusplus
+/* *INDENT-OFF* */
 extern "C" {
+/* *INDENT-ON* */
 #endif
 
 #define UPSCLI_ERRBUF_LEN	256
@@ -160,7 +162,8 @@ int upscli_ssl(UPSCONN_t *ups);
 #endif
 
 #ifdef __cplusplus
+/* *INDENT-OFF* */
 }
+/* *INDENT-ON* */
 #endif
-
 #endif	/* UPSCLIENT_H_SEEN */
