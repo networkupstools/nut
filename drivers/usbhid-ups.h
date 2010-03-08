@@ -158,7 +158,7 @@ typedef struct {
  * particular manufacturer (e.g. MGE, APC, Belkin), or a particular
  * range of models. */
 
-struct subdriver_s {
+typedef struct {
 	char *name;                  /* name of this subdriver */
 	int (*claim)(HIDDevice_t *hd); /* return 1 if device covered by
 				      * this subdriver */
@@ -167,8 +167,7 @@ struct subdriver_s {
 	char *(*format_model)(HIDDevice_t *hd);  /* driver-specific methods */
 	char *(*format_mfr)(HIDDevice_t *hd);    /* for preparing human-    */
 	char *(*format_serial)(HIDDevice_t *hd); /* readable information    */
-};
-typedef struct subdriver_s subdriver_t;
+} subdriver_t;
 
 /* the following functions are exported for the benefit of subdrivers */
 int instcmd(const char *cmdname, const char *extradata);

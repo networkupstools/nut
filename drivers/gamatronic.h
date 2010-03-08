@@ -64,7 +64,7 @@
 #define FLAG_POLL 0 /* For commands that polled normaly */
 #define FLAG_POLLONCE 1 /* For commands that only polled once */
 /* Some baud rates for setup_serial() */
-struct baud_rate_t {
+struct {
     int rate;
     int name;
 } baud_rates[] = {
@@ -80,7 +80,7 @@ struct baud_rate_t {
 
 /* macro for checking whether a variable is supported */
 
-struct sec_varlist_t {
+struct {
     char *setcmd;	/* INFO_x define from shared.h */
     char *name;		/* Human readable text (also in shared-tables.h) */
     int  unit;		/* Variable should be divided by this */
@@ -191,7 +191,7 @@ struct sec_varlist_t {
 #define SEC_POLL		1
 #define SEC_POLLONCE  		0
 
-struct sec_querylist_t {
+struct {
     char *command;	/* sec command */
     int  varnum[SEC_MAXFIELDS];	/* sec variable number for each field */
     int  pollflag;

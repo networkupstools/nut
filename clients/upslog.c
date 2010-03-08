@@ -47,7 +47,7 @@
 	static	sigset_t	nut_upslog_sigmask;
 	static	char	logbuffer[LARGEBUF], *logformat;
 
-	static	struct	flist_t	*fhead = NULL;
+	static	flist_t	*fhead = NULL;
 
 #define DEFAULT_LOGFORMAT "%TIME @Y@m@d @H@M@S% %VAR battery.charge% " \
 		"%VAR input.voltage% %VAR ups.load% [%VAR ups.status%] " \
@@ -238,7 +238,7 @@ static void print_literal(const char *arg)
 /* register another parsing function to be called later */
 static void add_call(void (*fptr)(const char *arg), const char *arg)
 {
-	struct	flist_t	*tmp, *last;
+	flist_t	*tmp, *last;
 
 	tmp = last = fhead;
 
@@ -247,7 +247,7 @@ static void add_call(void (*fptr)(const char *arg), const char *arg)
 		tmp = tmp->next;
 	}
 
-	tmp = xmalloc(sizeof(struct flist_t));
+	tmp = xmalloc(sizeof(flist_t));
 
 	tmp->fptr = fptr;
 
@@ -343,7 +343,7 @@ static void compile_format(void)
 /* go through the list of functions and call them in order */
 static void run_flist(void)
 {
-	struct	flist_t	*tmp;
+	flist_t	*tmp;
 
 	tmp = fhead;
 

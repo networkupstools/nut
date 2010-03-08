@@ -48,7 +48,7 @@ upsdrv_info_t upsdrv_info = {
 
 	static	int	ups_status = 0, quirk_capability_overflow = 0;
 
-static struct apc_vartab_t *vartab_lookup_char(char cmdchar)
+static apc_vartab_t *vartab_lookup_char(char cmdchar)
 {
 	int	i;
 
@@ -59,7 +59,7 @@ static struct apc_vartab_t *vartab_lookup_char(char cmdchar)
 	return NULL;
 }
 
-static struct apc_vartab_t *vartab_lookup_name(const char *var)
+static apc_vartab_t *vartab_lookup_name(const char *var)
 {
 	int	i;
 
@@ -73,7 +73,7 @@ static struct apc_vartab_t *vartab_lookup_name(const char *var)
 /* FUTURE: change to use function pointers */
 
 /* convert APC formatting to NUT formatting */
-static char *convert_data(struct apc_vartab_t *cmd_entry, char *upsval)
+static char *convert_data(apc_vartab_t *cmd_entry, char *upsval)
 {
 	static	char tmp[128];
 	int	tval;
@@ -202,7 +202,7 @@ static int read_buf(char *buf, size_t buflen)
 	return ret;
 }
 
-static int poll_data(struct apc_vartab_t *vt)
+static int poll_data(apc_vartab_t *vt)
 {
 	int	ret;
 	char	tmp[SMALLBUF];
@@ -242,7 +242,7 @@ static int query_ups(const char *var, int first)
 {
 	int	ret;
 	char	temp[256], *ptr;
-	struct	apc_vartab_t *vt;
+	apc_vartab_t *vt;
 
 	vt = vartab_lookup_name(var);
 
@@ -293,7 +293,7 @@ static void do_capabilities(void)
 	const	char	*ptr, *entptr;
 	char	upsloc, temp[512], cmd, loc, etmp[16], *endtemp;
 	int	nument, entlen, i, matrix, ret;
-	struct	apc_vartab_t *vt;
+	apc_vartab_t *vt;
 
 	upsdebugx(1, "APC - About to get capabilities string");
 	/* If we can do caps, then we need the Firmware revision which has
@@ -914,7 +914,7 @@ static void update_info_all(void)
 	upsdebugx(3, "update_info_all: done");
 }
 
-static int setvar_enum(struct apc_vartab_t *vt, const char *val)
+static int setvar_enum(apc_vartab_t *vt, const char *val)
 {
 	int	i, ret;
 	char	orig[256], temp[256], *ptr;
@@ -1006,7 +1006,7 @@ static int setvar_enum(struct apc_vartab_t *vt, const char *val)
 	return STAT_SET_HANDLED;
 }
 
-static int setvar_string(struct apc_vartab_t *vt, const char *val)
+static int setvar_string(apc_vartab_t *vt, const char *val)
 {
 	unsigned int	i;
 	int	ret;
@@ -1088,7 +1088,7 @@ static int setvar_string(struct apc_vartab_t *vt, const char *val)
 
 static int setvar(const char *varname, const char *val)
 {
-	struct	apc_vartab_t	*vt;
+	apc_vartab_t	*vt;
 
 	vt = vartab_lookup_name(varname);
 
@@ -1111,7 +1111,7 @@ static int setvar(const char *varname, const char *val)
 }
 
 /* actually send the instcmd's char to the ups */
-static int do_cmd(struct apc_cmdtab_t *ct)
+static int do_cmd(apc_cmdtab_t *ct)
 {
 	int	ret;
 	char	buf[SMALLBUF];
@@ -1152,7 +1152,7 @@ static int do_cmd(struct apc_cmdtab_t *ct)
 }
 
 /* some commands must be repeated in a window to execute */
-static int instcmd_chktime(struct apc_cmdtab_t *ct)
+static int instcmd_chktime(apc_cmdtab_t *ct)
 {
 	double	elapsed;
 	time_t	now;
@@ -1176,7 +1176,7 @@ static int instcmd_chktime(struct apc_cmdtab_t *ct)
 static int instcmd(const char *cmdname, const char *extra)
 {
 	int	i;
-	struct	apc_cmdtab_t	*ct;
+	apc_cmdtab_t	*ct;
 
 	ct = NULL;
 

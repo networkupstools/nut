@@ -620,7 +620,7 @@ int main(int argc, char **argv)
 	exit(EXIT_FAILURE);
 }
 
-struct imgvar_t imgvar[] = {
+imgvar_t imgvar[] = {
 	{ "input.voltage", "input.transfer.low", "input.voltage.nominal",
 		"input.transfer.high", 0,
 		"%.1f VAC", draw_utility				},

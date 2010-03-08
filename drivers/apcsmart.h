@@ -101,12 +101,13 @@
 #define APC_F_REASON	0x130000 /* Reason of transfer */
 #define APC_F_LEAVE	0	/* Just pass this through */
 
-struct apc_vartab_t {
+typedef struct {
 	const	char	*name;		/* the variable name */
 	unsigned int	flags;	 	/* various flags		*/
 	char		cmd;		/* command character */
+} apc_vartab_t;
 
-} apc_vartab[] = {
+apc_vartab_t	apc_vartab[] = {
 
 	{ "ups.firmware",  	0,			'b' },
 	{ "ups.firmware.aux",	0,			'v' },
@@ -213,11 +214,13 @@ struct apc_vartab_t {
 #define APC_CMD_ON		0x0E		/* ^N */
 #define APC_CMD_BYPTOGGLE	'^'
 
-struct apc_cmdtab_t {
+typedef struct {
 	const	char	*name;
 	int	flags;
 	char	cmd;
-} apc_cmdtab[] =
+} apc_cmdtab_t;
+
+apc_cmdtab_t	apc_cmdtab[] =
 {
 	{ "load.off",		APC_NASTY|APC_REPEAT,	APC_CMD_OFF       },
 	{ "load.on",		APC_REPEAT,		APC_CMD_ON        },
@@ -250,8 +253,7 @@ struct {
 	const	char	*firmware;
 	const	char	*cmdchars;
 	int	flags;
-} compat_tab[] =
-{
+} compat_tab[] = {
 	/* APC Matrix */
 	{ "0ZI",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz/<>", 0 },
 	{ "5UI",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz/<>", 0 },
