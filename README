@@ -260,35 +260,26 @@ In the layered scheme of NUT software, it is a client.  It has this
 separate section in the documentation since it is so important.
 
 You configure it by telling it about UPSes that you want to monitor in
-upsmon.conf.  Each UPS can be defined as one of three possible types:
+upsmon.conf.  Each UPS can be defined as one of two possible types:
 
 - Master
 
 	This UPS supplies power to the system running upsmon, and
 	this system is also responsible for shutting it down when
-	the battery is depleted.  This occurs after any slave systems
-	have disconnected safely.
+	the battery is depleted.
 
 	If your UPS is plugged directly into a system's serial port,
 	the upsmon on that system should define that UPS as a master.
 
 - Slave
 
-	This UPS supplies power to the system running upsmon, but 
-	this system can't shut it down directly.  This system will
-	shut down the operating system before the master turns off the
-	power.
+	This UPS may supply power to the system running upsmon, but 
+	this system can't shut it down directly.
 
 	Use this mode when you run multiple computers on the same UPS.
 	Obviously, only one can be connected to the serial port on the
 	UPS, and that system is the master.  Everything else is a
 	slave.
-   
-- Monitor-only
-
-	This UPS will still generate notifications about status
-	changes (on battery, on line, etc.) but no shutdowns of the
-	local system result from critical situations on that UPS.
 
 For a typical home user, there's one computer connected to one UPS.
 That means you run a driver, upsd, and upsmon in master mode.
