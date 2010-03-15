@@ -30,6 +30,12 @@ distcheck-light:
 distcleancheck_listfiles = \
 	find . -type f -exec sh -c 'test -f $(srcdir)/{} || echo {}' ';'
 
+# Automatically generate the ChangeLog from SVN logs:
+MAINTAINERCLEAN_FILES = ChangeLog
+ChangeLog: tools/svn2cl.authors
+	svn2cl --group-by-day --include-rev --authors=$< --revision 'HEAD:r2332' --output=$@ || \
+		echo "svn2cl failed to generate the ChangeLog. See http://trac.networkupstools.org/projects/nut/timeline" > $@
+
 # ----------------------------------------------------------------------
 # targets from old build system (pre-automake).
 # supported for a period of time for backward "compatibility".
