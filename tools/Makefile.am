@@ -1,5 +1,5 @@
 
-EXTRA_DIST = nut-usbinfo.pl device-recorder.sh
+EXTRA_DIST = nut-usbinfo.pl device-recorder.sh svn2cl.authors
 
 # only call the USB info script upon "make dist", and if Perl is present
 dist-hook:
