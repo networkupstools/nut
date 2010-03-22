@@ -87,6 +87,7 @@ upsdrvctl_LDADD = $(LDADD_COMMON)
 # serial drivers: all of them use standard LDADD and CFLAGS
 apcsmart_SOURCES = apcsmart.c
 bcmxcp_SOURCES = bcmxcp.c bcmxcp_ser.c
+bcmxcp_LDADD = $(LDADD) -lm
 belkin_SOURCES = belkin.c
 belkinunv_SOURCES = belkinunv.c
 bestfcom_SOURCES = bestfcom.c
