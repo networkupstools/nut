@@ -33,7 +33,7 @@ distcleancheck_listfiles = \
 # Automatically generate the ChangeLog from SVN logs:
 MAINTAINERCLEAN_FILES = ChangeLog
 ChangeLog: tools/svn2cl.authors
-	svn2cl --group-by-day --include-rev --authors=$< --revision 'HEAD:r2332' --output=$@
+	svn2cl --group-by-day --include-rev --authors=$< --revision 'HEAD:2332' --output=$@
 
 # ----------------------------------------------------------------------
 # targets from old build system (pre-automake).
