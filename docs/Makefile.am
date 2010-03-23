@@ -3,7 +3,7 @@ EXTRA_DIST = acknowledgements.txt chroot.txt		\
  design.txt developers.txt FAQ.txt hid-subdrivers.txt		\
  ideas.txt macros.txt megatec.txt new-drivers.txt new-names.txt \
  nut-hal.txt	\
- powersaving.txt protocol.txt snmp.txt	\
+ outlets.txt protocol.txt snmp.txt	\
  sock-protocol.txt ssl.txt scheduling.txt cables/apc-rs500-serial.txt	\
  cables/apc.txt cables/ge-imv-victron.txt cables/imv.txt		\
  cables/mgeups.txt cables/powerware.txt cables/repotec.txt		\

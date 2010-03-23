@@ -96,7 +96,10 @@ installed.
 Success reports are welcomed to keep this list accurate. 
 
 ////////////////////////////////////////////////////////////////////////////////
-FIXME: include download.txt
+
+[[Download_instructions]]
+
+FIXME: include::download.txt
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -124,32 +127,19 @@ include::config-notes.txt[]
 include::scheduling.txt[]
 
 
+[[Outlets_PDU_notes]]
+
+include::outlets.txt[]
+
+
 ////////////////////////////////////////////////////////////////////////////////
-*FIXME* to be removed or reworked with pager and more?
-Using upsmon and your pager together
-------------------------------------
+[[NUT_Security]]
 
-include pager.txt[]
-
-Using upsmon to make On Screen Display (OSD) notification
----------------------------------------------------------
-
-include osd-notify.txt[]
-
+include security.txt
 ////////////////////////////////////////////////////////////////////////////////
 
 
-NUT outlets management and PDU notes
-====================================
-
-To be completed
-
-////////////////////////////////////////////////////////////////////////////////
-FIXME: move powersaving.txt content to nut-outlets.txt, and generalize to UPS
-and PDU outlet management
-
-include nut-outlets.txt[]
-////////////////////////////////////////////////////////////////////////////////
+[[Virtualization]]
 
 NUT and virtualization (VMWare, Xen, ...)
 =========================================
@@ -169,25 +159,6 @@ Xen
 ?
 ////////////////////////////////////////////////////////////////////////////////
 
-
-[[NUT_Security]]
-Notes on Securing NUT
-=====================
-
-////////////////////////////////////////////////////////////////////////////////
-FIXME: intro on privileges (NUT users, system users), firewall and TCP wrappers
-=> security.txt
-////////////////////////////////////////////////////////////////////////////////
-
-Configuring SSL
----------------
-
-include ssl.txt[]
-
-chrooting and other forms of paranoia
--------------------------------------
-
-include chroot.txt[]
 
 ////////////////////////////////////////////////////////////////////////////////
 FIXME: where / how can we put the below content?
