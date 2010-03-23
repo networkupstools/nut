@@ -1,8 +1,9 @@
 # Network UPS Tools: drivers
 
-# by default, link programs in this directory with libcommon.a
+# by default, link programs in this directory with libcommon.la
+# (libtool version of the static lib, in order to access LTLIBOBJS)
 #FIXME: SERLIBS is only useful for LDADD_DRIVERS_SERIAL not for LDADD_COMMON
-LDADD_COMMON = ../common/libcommon.a ../common/libparseconf.la
+LDADD_COMMON = ../common/libcommon.la ../common/libparseconf.la
 LDADD_DRIVERS = $(LDADD_COMMON) main.o dstate.o
 LDADD_HAL_DRIVERS = $(LDADD_COMMON) libnuthalmain.a
 LDADD_DRIVERS_SERIAL = $(LDADD_DRIVERS) $(SERLIBS) serial.o

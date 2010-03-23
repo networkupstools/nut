@@ -10,7 +10,7 @@ endif
 if WITH_SSL
   AM_CFLAGS += $(LIBSSL_CFLAGS)
 endif
-LDADD = ../common/libcommon.a ../common/libparseconf.la $(NETLIBS)
+LDADD = ../common/libcommon.la ../common/libparseconf.la $(NETLIBS)
 if WITH_WRAP
    LDADD += $(LIBWRAP_LDFLAGS)
 endif
