@@ -279,6 +279,12 @@ static int powercom_claim(HIDDevice_t *hd)
 	switch (status)
 	{
 	case POSSIBLY_SUPPORTED:
+		if (hd->ProductID == 0x0002) {
+			upsdebugx(0,
+				"This Powercom device (%04x/%04x) is not supported by usbhid-ups.\n"
+				"Please use the 'powercom' driver instead.\n", hd->VendorID, hd->ProductID);
+			return 0;
+		}
 		/* by default, reject, unless the productid option is given */
 		if (getval("productid")) {
 			return 1;
