@@ -3,7 +3,7 @@
 ACTION!="add", GOTO="nut-usbups_rules_end"
 SUBSYSTEM=="usb_device", GOTO="nut-usbups_rules_real"
 SUBSYSTEM=="usb", GOTO="nut-usbups_rules_real"
-BUS!="usb", GOTO="nut-usbups_rules_end"
+SUBSYSTEMS!="usb", GOTO="nut-usbups_rules_end"
 
 LABEL="nut-usbups_rules_real"
 #  Krauler UP-M500VA  - megatec_usb
