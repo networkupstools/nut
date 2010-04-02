@@ -171,9 +171,9 @@ void upsdrv_updateinfo(void)
 			continue;
 		}
 
-		val = (unsigned char)reply[6];
+		val = (unsigned char)reply[5];
 		val <<= 8;
-		val += (unsigned char)reply[5];
+		val += (unsigned char)reply[6];
 
 		dstate_setinfo(vartab[i].var, vartab[i].fmt, val * vartab[i].mult);
 	}
