@@ -1,10 +1,3 @@
-- February 17, 2009: 2.4.1 released
-- January 28, 2009: 2.4.0 released 
-- January 21, 2009: 2.4.0-pre2 released
-- December 24, 2008: 2.4.0-pre1 released
-- July 7, 2008: Client activity: new client NUT-Monitor
-- June 27, 2008: Client activity: new Python class PyNUT
-- June 19, 2008: Client activity: KNutClient 0.9.4
-- May 7, 2008: 2.2.2 released
-- April 25, 2008: 2.2.2-pre3 released
-- April 15, 2008: 2.2.2-pre2 released
+- March 22, 2010: KNutClient 1.0
+- February 23, 2010: 2.4.3 released
+- February 19, 2010: 2.4.2 released 
