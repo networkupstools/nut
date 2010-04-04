@@ -76,7 +76,8 @@ immediately.  When a request for data arrives from a CLIENT, the SERVER
 looks through the internal storage for that UPS and returns the
 requested data if it is available.
 
-The format for requests from the CLIENT is documented in the <<protocol,TCP protocol>> section
+The format for requests from the CLIENT is documented in the <<protocol,TCP protocol>>
+section.
 
 Instant commands
 ~~~~~~~~~~~~~~~~
@@ -206,8 +207,8 @@ lag from the status updates.  Unfortunately, it didn't have any locking
 originally, and the possibility for corruption due to races existed.
 
 mmap() support was added at some point after that, and became the
-default.  The drivers and upsd would mmap() the file into memory and
-read or write from it.  Locking was done using the state file as the
+default for a while.  The drivers and upsd would mmap() the file into memory
+and read or write from it.  Locking was done using the state file as the
 token, so contention problems were avoided.  This method was relatively
 quick, but it involved at least 3 copies of the data (driver, disk/mmap,
 server) and a whole lot of locking and unlocking.  It could occasionally
@@ -233,7 +234,7 @@ Information for developers
 --------------------------
 
 This section is intended to explain some of the more useful things
-within the tree and provide a standard for working on the code.
+within the tree, and provide a standard for working on the code.
 
 General stuff - common subdirectory
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -315,13 +316,13 @@ will get the right headers on every system.
 UPS drivers - main.c
 ~~~~~~~~~~~~~~~~~~~~
 
-The UPS drivers use main.c as their core.  The only exception is
-dummycons, which only looks like a driver by using the same dstate
-function calls.
+The UPS drivers use main.c as their core.  The only exceptions are the
+HAL-based drivers, which use the same dstate function calls while integrating
+with the DBUS event loop.
 
 To write a new driver, you create a file with a series of support
 functions that will be called by main.  These all have names that start
-with "upsdrv_", and they will be called at different times by main
+with `upsdrv_`, and they will be called at different times by main
 depending on what needs to happen.
 
 See the <<new-drivers,driver documentation>> for information on writing drivers, and also refer
@@ -356,7 +357,7 @@ function do_stuff(void)
 
 While this will compile and run on these newer versions, it will fail
 miserably for anyone on an older system.  That means you must not use
-it.  gcc only warns about this with -pedantic.
+it.  gcc only warns about this with `-pedantic`.
 
 Coding style
 ~~~~~~~~~~~~
@@ -387,7 +388,7 @@ We don't really care for pretentiousVariableNamingSchemes.  If your function or
 variable names start pushing important code off the right margin of the screen,
 expect them to meet the byte chainsaw sooner or later.
 
-All types defined with typedef should end in "_t", because this is
+All types defined with `typedef` should end in "_t", because this is
 easier to read, and it enables tools (such as indent and emacs) to
 display the source code correctly.
 
@@ -523,7 +524,7 @@ in the vicinity gets a visit.
 Memory leak checking
 ^^^^^^^^^^^^^^^^^^^^
 
-I can't say enough good things about valgrind.  If you do anything with
+We can't say enough good things about valgrind.  If you do anything with
 dynamic memory in your code, you need to use this.  Just compile with -g
 and start the program inside valgrind.  Run it through the suspected
 area and then exit cleanly.  valgrind will tell you if you've done
