@@ -535,29 +535,25 @@ http://valgrind.kde.org/[]
 Conclusion
 ^^^^^^^^^^
 
-The summary: please be kind to my eyes.  There's a lot of stuff in here.
+The summary: please be kind to the developers' eyes.  There's a lot of stuff in here.
 
 Submitting patches
 ~~~~~~~~~~~~~~~~~~
 
-Patches that arrive in unified format (diff -u) as plain text with no
-HTML, no attachments and a brief summary at the top are the easiest to
-handle. They show the context, explain what's going on, and get saved as
-one message.  Everything stays together until it's time to merge.
+Patches that arrive in unified format (diff -u) as plain text attachments with
+no HTML and a brief summary at the top are the easiest to handle.
 
-Patches that arrive as attachments have to be moved around as separate
-files - the body of the message is one, and the patch is in another.
-This is not my preferred mode of operation.
+If a patch is sent to the nut-upsdev mailing list, it stands a better chance of
+being seen immediately. However, it is likely to be dropped if any issues
+cannot be resolved quickly. If your code might not work for others, or if it is
+a large change, your best bet is to submit a ticket on Alioth:
 
-When sending patches to the lists, be sure to add me as an explicit
-recipient to make sure it is considered for merging.  A patch which only
-goes to a list is generally treated as a RFC and is relatively low
-priority.
+https://alioth.debian.org/tracker/?atid=411544&group_id=30602&func=browse
 
-If your mailer is brain dead and rewrites tabs into spaces, wraps your
-patch body, or anything else like that, just attach the patch.  I'd
-rather deal with an attachment instead of a patch that has tab damage,
-rewrapped lines, or worse.
+This allows us to track the patches over a longer period of time, and it is
+less likely that a patch will fall through the cracks. Posting a reminder to
+the developers (via the nut-upsdev list) about a patch on the tracker is fair
+game.
 
 Patch cohesion
 ~~~~~~~~~~~~~~
@@ -567,9 +563,9 @@ message, and it should all touch similar things.  If you have to edit 6
 files to add support for neutrino detection in UPS hardware, that's
 fine.
 
-However, sending one huge patch that does massive separate changes
-all over the tree is not recommended.  That kind of patch has to be
-split up and evaluated separately, assuming I care enough to do that
+However, sending one huge patch that does massive separate changes all over
+the tree is not recommended.  That kind of patch has to be split up and
+evaluated separately, assuming the core developers care enough to do that
 instead of just dropping it.
 
 If you have to make big changes in lots of places, send multiple
@@ -587,6 +583,23 @@ source code for your driver.  Otherwise, I will be forced to write a
 skeletal man page that will probably miss many of the finer points of
 the driver and hardware.
 
+Source code management
+~~~~~~~~~~~~~~~~~~~~~~
+
+We currently use a Subversion (SVN) repository hosted at Alioth to track
+changes to the NUT source code. To obtain permission to commit to the SVN
+repository, you must be prepared to spend a fair amount of time contributing to
+the NUT codebase. For occasional contributions over time, you may wish to
+investigate one of the <<_distributed_scm_systems,distributed SCM tools>>
+listed below.
+
+Anonymous SVN checkouts are possible:
+
+   svn co svn://svn.debian.org/nut/trunk nut-svn-readonly
+
+If you change a file in the SVN working copy, you can use `svn diff` to
+generate a patch to send to the nut-upsdev mailing list.
+
 Repository etiquette and quality assurance
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -596,25 +609,66 @@ code if possible. If you need to commit incremental changes that leave
 the system in a broken state, please do so in a separate branch and
 merge the changes back to the trunk once they are complete.
 
-Before committing, please remember to:
+Before committing, please remember to run "make distcheck-light". This checks
+that the Makefiles are not broken, that all the relevant files are distributed,
+and that there are no compilation or installation errors.
 
-* update the ChangeLog, if appropriate. Dates are listed in UTC 
-  ("date --utc" or "env TZ=UTC date").
-
-* run "make distcheck-light". This checks that the Makefiles are not
-  broken, that all the relevant files are distributed, and that there
-  are no compilation or installation errors.
-
-Running "make distcheck-light" is especially important if you have
-added or removed files, or updated configure.in or some Makefile.am.
-Remember: simply adding a file to SVN does not mean it will be
-distributed. To distribute a file, you must update the corresponding
-Makefile.am.
+Running "make distcheck-light" is especially important if you have added or
+removed files, or updated configure.in or some Makefile.am.  Remember: simply
+adding a file to SVN does not mean it will be distributed. To distribute a
+file, you must update the corresponding Makefile.am.
 
 There is also "make distcheck", which runs an even stricter set of
 tests, but will not work unless you have all the optional libraries
 and features installed.
 
+Distributed SCM systems
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Git and Mercurial (Hg) are two popular distributed SCM tools which provide a
+bridge to a SVN repository. This makes it possible for a new developer to stay
+synchronized with the latest changes to NUT, while keeping a local version
+history of their changes before they are merged by the core NUT developers.
+
+A complete introduction to either Git or Mercurial is beyond the scope of this
+document, but many others have written excellent tutorials on both the DSCM
+tools, and their SVN interfaces.
+
+Git and SVN
+^^^^^^^^^^^
+
+The `git svn` tool synchronizes a Git repository with a SVN repository:
+
+http://www.kernel.org/pub/software/scm/git/docs/git-svn.html
+
+In many cases, NUT developers will not need access to the entire repository
+history - a snapshot starting at the most recent revision will work nicely:
+
+   git svn clone --revision HEAD svn://svn.debian.org/nut/trunk nut-git
+
+From the resulting nut-git directory, you may use all of the Git commands to
+record your changes, and even create new branches for working on different
+aspects of the code.
+
+You are encouraged to use `git rebase` to separate your changes into
+<<_patch_cohesion,logical changes>>.
+
+From there, you can generate patches for the Tracker, or the nut-upsdev list.
+
+If you are new to Git, but are familiar with SVN, the following may be of use:
+
+http://git-scm.com/course/svn.html
+
+Mercurial and SVN
+^^^^^^^^^^^^^^^^^
+
+Synchronizing a Mercurial repository against the NUT SVN repository should be
+similar in spirit to the Git method discussed above.. This wiki page discusses
+your options:
+
+http://mercurial.selenic.com/wiki/WorkingWithSubversion
+
+We would welcome any feedback about this process on the nut-upsdev mailing list.
 
 [[commands]]
 Commands sent to the UPS drivers
