@@ -2,7 +2,7 @@ Network UPS Tools Quality Assurance
 ===================================
 
 Recognizing the critical nature of NUT, the NUT Quality Assurance (NQA) effort
-has been established to improve NUT where necessary, and maintain software
+has been established to improve NUT where necessary, and to maintain software
 quality as high as it should be.
 
 NQA is present in many aspects and areas of NUT.
@@ -47,8 +47,8 @@ NUT's quality is constently monitored using many tools, like:
 track development and ease regression fixes. Any modification on the NUT source
 trees are reported on the link:http://lists.alioth.debian.org/mailman/listinfo/nut-commits[NUT Commits]
 mailing list.
-- link:http://buildbot.ghz.cc/public/nut/[buildbot] to automate the compile/test
-cycle. Any failure is catched early and reported through the
+- link:http://buildbot.networkupstools.org/public/nut/[Buildbot] to automate the compile/test
+cycle. Any build failure is caught early and reported through the
 link:http://lists.alioth.debian.org/mailman/listinfo/nut-commits[NUT Commits]
 mailing list.
 - a project portal with trackers for bugs, feature request, patchs
