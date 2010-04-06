@@ -23,7 +23,7 @@
 #include "timehead.h"
 
 #define DRIVER_NAME	"Liebert GXT2 serial UPS driver"
-#define DRIVER_VERSION	"0.01"
+#define DRIVER_VERSION	"0.02"
 
 static int instcmd(const char *cmdname, const char *extra);
 static int setvar(const char *varname, const char *val);
@@ -40,7 +40,7 @@ upsdrv_info_t upsdrv_info = {
 static const unsigned char
 	/* Bit field information provided by Spiros Ioannou */
 	/* Ordered on MSB to LSB. Shown as DESCRIPTION (bit number), starting at 0. */
-	cmd_bitfield1[]		= { 1,148,2,1,1,153 },	/* INPUT_OVERVOLTAGE, BATTERY_TEST_STATE, OVERTEMP_WARNING, INRUSH_LIMIT_ON, UTILITY_STATE, ON_INVERTER, DC_DC_CONVERTER_STATE, PFC_ON */
+	cmd_bitfield1[]		= { 1,148,2,1,1,153 },	/* ON_BATTERY(8), INPUT_OVERVOLTAGE(7), BATTERY_TEST_STATE(6), OVERTEMP_WARNING(5), INRUSH_LIMIT_ON(4), UTILITY_STATE(3), ON_INVERTER(2), DC_DC_CONVERTER_STATE(1), PFC_ON(0) */
 	cmd_bitfield2[]		= { 1,148,2,1,2,154 },	/* BUCK_ON (9), DIAG_LINK_SET(7), BOOST_ON(6), REPLACE_BATTERY(5), BATTERY_LIFE_ENHANCER_ON(4), BATTERY_CHARGED (1), ON_BYPASS (0) */
 	cmd_bitfield3[]		= { 1,148,2,1,3,155 },	/* CHECK_AIR_FILTER (10), BAD_BYPASS_PWR (8), OUTPUT_OVERVOLTAGE (7), OUTPUT_UNDERVOLTAGE (6), LOW_BATTERY (5), CHARGER_FAIL (3), SHUTDOWN_PENDING (2), BAD_INPUT_FREQ (1), UPS_OVERLOAD (0) */
 	cmd_bitfield7[]		= { 1,148,2,1,7,159 },	/* AMBIENT_OVERTEMP (2) */
@@ -187,7 +187,7 @@ void upsdrv_updateinfo(void)
 		return;
 	}
 
-	if (reply[6] & (1<<0)) {	/* ON_BATTERY */
+	if (reply[5] & (1<<0)) {	/* ON_BATTERY */
 		status_set("OB");
 	} else {
 		status_set("OL");
@@ -200,23 +200,23 @@ void upsdrv_updateinfo(void)
 		return;
 	}
 
-	if (reply[5] & (1<<0)) {	/* ON_BYPASS */
+	if (reply[6] & (1<<0)) {	/* ON_BYPASS */
 		status_set("BYPASS");
 	}
 
-	if (reply[5] & (1<<5)) {	/* REPLACE_BATTERY */
+	if (reply[6] & (1<<5)) {	/* REPLACE_BATTERY */
 		status_set("RB");
 	}
 
-	if (!(reply[5] & (1<<1))) {	/* not BATTERY_CHARGED */
+	if (!(reply[6] & (1<<1))) {	/* not BATTERY_CHARGED */
 		status_set("CHRG");
 	}
 
-	if (reply[5] & (1<<6)) {	/* BOOST_ON */
+	if (reply[6] & (1<<6)) {	/* BOOST_ON */
 		status_set("BOOST");
 	}
 
-	if (reply[6] & (1<<1)) {	/* BUCK_ON */
+	if (reply[5] & (1<<1)) {	/* BUCK_ON */
 		status_set("TRIM");
 	}
 
@@ -227,11 +227,11 @@ void upsdrv_updateinfo(void)
 		return;
 	}
 
-	if (reply[5] & (1<<0) ) {	/* UPS_OVERLOAD */
+	if (reply[6] & (1<<0) ) {	/* UPS_OVERLOAD */
 		status_set("OVER");
 	}
 
-	if (reply[5] & (1<<5) ) {	/* LOW_BATTERY */
+	if (reply[6] & (1<<5) ) {	/* LOW_BATTERY */
 		status_set("LB");
 	}
 
