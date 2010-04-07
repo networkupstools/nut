@@ -4,6 +4,7 @@ distributions,
 - hotplug and udev integration for on the fly privileges settings (Linux only),
 - Hardware Abstraction Layer script, for declaring and binding NUT addons to
 specific USB devices,
+- UPower (previously DeviceKit-power) rules file,
 - Python Client module and application,
 - Perl client module.
 
