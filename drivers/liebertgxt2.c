@@ -166,6 +166,7 @@ void upsdrv_updateinfo(void)
 		{ { 0 }, NULL, NULL, 0 }
 	};
 
+	const char	*val;
 	char	reply[8];
 	int	ret, i;
 
@@ -197,6 +198,16 @@ void upsdrv_updateinfo(void)
 		status_set("OB");
 	} else {
 		status_set("OL");
+	}
+
+	val = dstate_getinfo("battery.current");
+	if (val) {
+		if (atof(val) > 0.05) {
+			status_set("CHRG");
+		}
+		if (atof(val) < -0.05) {
+			status_set("DISCHRG");
+		}
 	}
 
 	ret = do_command(cmd_bitfield2, reply);
