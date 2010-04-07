@@ -96,9 +96,9 @@ void upsdrv_initinfo(void)
 		const char	*var;
 	} vartab[] = {
 		{ "ups.model" },
+		{ "ups.firmware" },
 		{ "ups.serial" },
 		{ "ups.mfr.date" },
-		{ "ups.firmware" },
 		{ NULL }
 	};
 
@@ -116,7 +116,7 @@ void upsdrv_initinfo(void)
 
 		ret = do_command((unsigned char *)command, reply);
 		if (ret < 8) {
-			fatalx(EXIT_FAILURE, "GTX2 capable UPS not detected");
+			break;
 		}
 
 		buf[i<<1] = reply[6];
@@ -129,8 +129,12 @@ void upsdrv_initinfo(void)
 		dstate_setinfo(vartab[i].var, "%s", s);
 	}
 
+	if (i == 0) {
+		fatalx(EXIT_FAILURE, "GTX2 capable UPS not detected");
+	}
+
 	upsh.instcmd = instcmd;
-       	upsh.setvar = setvar;
+	upsh.setvar = setvar;
 }
 
 void upsdrv_updateinfo(void)
