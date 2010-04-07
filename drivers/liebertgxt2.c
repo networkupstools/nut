@@ -21,6 +21,7 @@
 #include "main.h"
 #include "serial.h"
 #include "timehead.h"
+#include "nut-stdint.h"
 
 #define DRIVER_NAME	"Liebert GXT2 serial UPS driver"
 #define DRIVER_VERSION	"0.02"
@@ -148,6 +149,7 @@ void upsdrv_updateinfo(void)
 		{ { 1,149,2,1,4,157 },	"battery.charge", "%.0f", 1.0 },
 		{ { 1,149,2,1,1,154 },	"battery.runtime", "%.0f", 60 },
 		{ { 1,149,2,1,2,155 },	"battery.voltage", "%.1f", 0.1 },
+		{ { 1,149,2,1,3,156 },	"battery.current", "%.2f", 0.01 },
 		{ { 1,161,2,1,13,178 },	"battery.voltage.nominal", "%.1f", 0.1 },
 		{ { 1,149,2,1,7,160 },	"ups.load", "%.0f", 1.0 },
 		{ { 1,149,2,1,6,159 },	"ups.power", "%.0f", 1.0 },
@@ -168,7 +170,7 @@ void upsdrv_updateinfo(void)
 	int	ret, i;
 
 	for (i = 0; vartab[i].var; i++) {
-		int	val;
+		int16_t	val;
 
 		ret = do_command(vartab[i].cmd, reply);
 		if (ret < 8) {
@@ -210,10 +212,6 @@ void upsdrv_updateinfo(void)
 
 	if (reply[6] & (1<<5)) {	/* REPLACE_BATTERY */
 		status_set("RB");
-	}
-
-	if (!(reply[6] & (1<<1))) {	/* not BATTERY_CHARGED */
-		status_set("CHRG");
 	}
 
 	if (reply[6] & (1<<6)) {	/* BOOST_ON */
