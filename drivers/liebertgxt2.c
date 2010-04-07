@@ -21,7 +21,7 @@
 #include "main.h"
 #include "serial.h"
 #include "timehead.h"
-#include "nut-stdint.h"
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"Liebert GXT2 serial UPS driver"
 #define DRIVER_VERSION	"0.02"
