@@ -291,12 +291,39 @@ void upsdrv_help(void)
 /* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {
+	addvar (VAR_VALUE, "baudrate", "serial line speed");
 }
 
 void upsdrv_initups(void)
 {
+	const char *val = getval("baudrate");
+	speed_t baudrate = B2400;
+
+	if (val) {
+		switch (atoi(val))
+		{
+		case 1200:
+			baudrate = B1200;
+			break;
+		case 2400:
+			baudrate = B2400;
+			break;
+		case 4800:
+			baudrate = B4800;
+			break;
+		case 9600:
+			baudrate = B9600;
+			break;
+		case 19200:
+			baudrate = B19200;
+			break;
+		default:
+			fatalx(EXIT_FAILURE, "Baudrate [%s] unsupported", val);
+		}
+	}
+
 	upsfd = ser_open(device_path);
-	ser_set_speed(upsfd, device_path, B2400);
+	ser_set_speed(upsfd, device_path, baudrate);
 }
 
 void upsdrv_cleanup(void)

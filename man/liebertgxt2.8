@@ -1,4 +1,4 @@
-.TH liebertgxt2 8 "Tue Nov 03 2009" "" "Network UPS Tools (NUT)" 
+.TH liebertgxt2 8 "Fri Apr 09 2010" "" "Network UPS Tools (NUT)"
 .SH NAME  
 liebertgxt2 \- Driver for Liebert GXT2 UPS, using the ESP2 serial protocol
 .SH NOTE
@@ -7,27 +7,16 @@ liebertgxt2 driver.  For information about the core driver, see
 \fBnutupsdrv\fR(8).
 
 .SH SUPPORTED HARDWARE
-liebertgxt2 is experimental and will recognize only those models known to work. The driver will report the model it finds and abort if it is unknown. modelname= in ups.conf can be used to force the driver to accept the model as supported. 
-
-The driver is incomplete but supports the numerious information fields and fields necessary to make the driver useful. Potentially useful features that aren't supported are shutdown and battery test - or any command that instructs the UPS to take some action. 
-
-.SH CABLING
-
-This driver expects to see 2400 baud serial data at the TX/RX pins. This driver was tested with an original cable.
+This is an experimental driver.  You have been warned.
 
 .SH EXTRA ARGUMENTS
-This driver supports the following optional settings in the
-\fBups.conf\fR(5):
+This driver supports the following optional settings in \fBups.conf\fR(5):
 
-.IP "modelname=\fImodel\fR"
-Force the model name of \fImodel\fR to be a supported model, giving you the chance to try this driver with your Liebert UPS.
-
-.SH BUGS
-Action commands are not supported, that includes battery test and shutdown.
+.IP "baudrate=\fInum\fR"
+Set the speed of the serial connection - 1200, 2400 (default), 4800, 9600 or 19200.
 
 .SH AUTHOR
-Richard Gregory <r.gregory liv ac uk>. With additional information from
-Spiros Ioannou.
+Richard Gregory <R.Gregory at liverpool.ac.uk>, Arjen de Korte <adkorte\(hyguest at alioth.debian.org>
 
 .SH SEE ALSO
 
@@ -36,5 +25,3 @@ Spiros Ioannou.
 
 .SS Internet resources:
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
-
-Partial description of the ESP2 protocol: http://www.csc.liv.ac.uk/~greg/projects/liebertserial/
