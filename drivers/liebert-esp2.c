@@ -1,4 +1,4 @@
-/* liebertgxt2.c - driver for Liebert GXT2, using the ESP2 protocol
+/* liebert-esp2.c - driver for Liebert UPS, using the ESP-II protocol
  *
  *  Copyright (C)
  *  2009	Richard Gregory <r.gregory liverpool ac uk>
@@ -23,7 +23,7 @@
 #include "timehead.h"
 #include "nut_stdint.h"
 
-#define DRIVER_NAME	"Liebert GXT2 serial UPS driver"
+#define DRIVER_NAME	"Liebert ESP-II serial UPS driver"
 #define DRIVER_VERSION	"0.02"
 
 static int instcmd(const char *cmdname, const char *extra);

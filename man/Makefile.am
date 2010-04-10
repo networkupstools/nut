@@ -37,7 +37,7 @@ SERIAL_PAGES = \
 	isbmex.8	\
 	ivtscd.8	\
 	liebert.8	\
-	liebertgxt2.8	\
+	liebert-esp2.8	\
 	masterguard.8	\
 	metasys.8	\
 	mge-shut.8	\

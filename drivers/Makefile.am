@@ -32,7 +32,7 @@ endif
 
 SERIAL_DRIVERLIST = apcsmart bcmxcp belkin belkinunv bestfcom	\
  bestfortress bestuferrups bestups dummy-ups etapro everups 	\
- gamatronic genericups isbmex liebert liebertgxt2 masterguard megatec metasys	\
+ gamatronic genericups isbmex liebert liebert-esp2 masterguard megatec metasys	\
  mge-shut mge-utalk microdowell newmge-shut oneac optiups powercom rhino 	\
  safenet skel solis tripplite tripplitesu upscode2 victronups powerpanel \
  blazer_ser clone clone-outlet ivtscd
