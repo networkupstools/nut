@@ -95,16 +95,17 @@ void upsdrv_initinfo(void)
 {
 	struct {
 		const char	*var;
+		const int	len;
 	} vartab[] = {
-		{ "ups.model" },
-		{ "ups.firmware" },
-		{ "ups.serial" },
-		{ "ups.mfr.date" },
+		{ "ups.model", 15 },
+		{ "ups.firmware", 8 },
+		{ "ups.serial", 10 },
+		{ "ups.mfr.date", 4 },
 		{ NULL }
 	};
 
-	char	buf[LARGEBUF], *s;
-	int	i;
+	char	buf[LARGEBUF];
+	int	i, index;
 
 	dstate_setinfo("ups.mfr", "%s", "Liebert");
 
@@ -116,22 +117,27 @@ void upsdrv_initinfo(void)
 		command[5] = cksum(command, 5);
 
 		ret = do_command((unsigned char *)command, reply);
-		if (ret < 8) {
-			break;
+		if (ret == 8) {
+			buf[i<<1] = reply[6];
+			buf[(i<<1)+1] = reply[5];
+		} else {
+			buf[i<<1] = '\0';
+			buf[(i<<1)+1] = '\0';
 		}
-
-		buf[i<<1] = reply[6];
-		buf[(i<<1)+1] = reply[5];
 	}
 
 	buf[i<<1] = 0;
 
-	for (s = strtok(buf, " "), i = 0; s && vartab[i].var; s = strtok(NULL, " "), i++) {
-		dstate_setinfo(vartab[i].var, "%s", s);
+	if (strlen(buf) == 0) {
+		fatalx(EXIT_FAILURE, "ESP-II capable UPS not detected");
 	}
 
-	if (i == 0) {
-		fatalx(EXIT_FAILURE, "GTX2 capable UPS not detected");
+	for (index = 0, i = 0; vartab[i].var; index += vartab[i].len, i++) {
+		char	val[SMALLBUF];
+
+		snprintf(val, sizeof(val), "%.*s", vartab[i].len, &buf[index]);
+
+		dstate_setinfo(vartab[i].var, "%s", rtrim(val, ' '));
 	}
 
 	upsh.instcmd = instcmd;
@@ -150,6 +156,7 @@ void upsdrv_updateinfo(void)
 		{ { 1,149,2,1,1,154 },	"battery.runtime", "%.0f", 60 },
 		{ { 1,149,2,1,2,155 },	"battery.voltage", "%.1f", 0.1 },
 		{ { 1,149,2,1,3,156 },	"battery.current", "%.2f", 0.01 },
+		{ { 1,149,2,1,12,165 },	"battery.temperature", "%.1f", 0.1 },
 		{ { 1,161,2,1,13,178 },	"battery.voltage.nominal", "%.1f", 0.1 },
 		{ { 1,149,2,1,7,160 },	"ups.load", "%.0f", 1.0 },
 		{ { 1,149,2,1,6,159 },	"ups.power", "%.0f", 1.0 },
