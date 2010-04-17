@@ -651,8 +651,48 @@ From the resulting nut-git directory, you may use all of the Git commands to
 record your changes, and even create new branches for working on different
 aspects of the code.
 
-You are encouraged to use `git rebase` to separate your changes into
-<<_patch_cohesion,logical changes>>.
+Git offers a little more flexibility than the `svn update` command. You may
+fetch other developers' changes from SVN into your repository, but hold off on
+actually combining them with your branch until you have compared the two
+branches (for instance, with `gitk --all`).
+
+To import the new SVN revisions, simply run the following command from any
+directory under your Git checkout (`nut-git` in the example above). Note that
+this only changes the history stored in your repository - it does not touch
+your checked-out files.
+
+   git svn fetch
+
+Initially, the Git `master` branch tracks the SVN `trunk`. The `git svn`
+command updates the `remotes/trunk` reference every time you run `git svn
+fetch`, but it does not adjust the `master` branch automatically. To update
+your master branch with new SVN revisions, you can run the following commands:
+
+   git checkout master
+   git svn fetch   # (optional; this gets commits other than on your current branch)
+   git svn rebase
+
+You may create as many branches as you like in your local Git repository. When
+using `git svn`, the preferred way to combine your changes with SVN changes is
+to use `git rebase` on your local branch. This re-applies your branch's changes
+to the new SVN changes, much as though your branch were a series of patches.
+
+   git checkout master
+   git branch my-new-feature
+   git checkout my-new-feature
+
+   # Hack away
+
+   git add changed-file.c
+   git commit
+
+   # Someone committed something to SVN. Fetch it.
+
+   git svn fetch
+   git rebase remotes/trunk
+
+You are encouraged to use `git rebase -i` on your private Git branches to
+separate your changes into <<_patch_cohesion,logical changes>>.
 
 From there, you can generate patches for the Tracker, or the nut-upsdev list.
 
