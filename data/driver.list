@@ -258,6 +258,8 @@
 
 "Forza Power Technologies"	"ups"	"2"	"SL-1001"	"USB"	"megatec_usb or blazer_usb"
 
+"FSP"	"ups"	"2"	"EP650"	"USB"	"blazer_usb"
+
 "Gamatronic"	"ups"	"5"	"All models with alarm interface"	""	"genericups upstype=22"
 "Gamatronic"	"ups"	"2"	"G-SmartCompact 2000"	""	"megatec or blazer_ser"
 "Gamatronic"	"ups"	"5"	"MP110/210"	""	"gamatronic"
@@ -276,6 +278,7 @@
 "HP"	"ups"	"2"	"T500"	"older models"	"bcmxcp_usb"
 "HP"	"ups"	"2"	"T750 INTL"	""	"usbhid-ups"
 "HP"	"ups"	"2"	"T750"	"older models"	"bcmxcp_usb"
+"HP"	"ups"	"2"	"T1000 INTL"	""	"usbhid-ups"
 "HP"	"pdu"	"1"	"HP3488 Switch/Control Unit"	""	"powerman-pdu (experimental)"
 
 "IBM"	"pdu"	"1"	"Blade Center Management Module"	"15 outlets"	"powerman-pdu (experimental)"
