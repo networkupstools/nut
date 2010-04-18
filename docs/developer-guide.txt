@@ -1905,7 +1905,7 @@ outlet: Smart outlet management (smart on/off switch, ...)
    |                                | between 0 and 1)        |             |
    |--------------------------------+-------------------------+-------------|
    |                                | Crest Factor            |             |
-   | outlet.n.powerfactor           | (dimensionless, equal   | 1.41        |
+   | outlet.n.crestfactor           | (dimensionless, equal   | 1.41        |
    |                                | to or greater than 1)   |             |
    |--------------------------------+-------------------------+-------------|
    | outlet.n.power                 | Apparent power (VA)     | 46          |
