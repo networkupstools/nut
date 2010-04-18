@@ -349,11 +349,16 @@ static int tripplite_claim(HIDDevice_t *hd) {
 
 		switch (hd->VendorID)
 		{
-		/*
-		 * this vendor makes lots of USB devices that are
-		 * not a UPS, so don't use possibly_supported here
-		 */
 		case HP_VENDORID:
+			/* by default, reject, unless the productid option is given */
+			if (getval("productid")) {
+				return 1;
+			}
+
+			/*
+			 * this vendor makes lots of USB devices that are
+			 * not a UPS, so don't use possibly_supported here
+			 */
 			return 0;
 
 		case TRIPPLITE_VENDORID:
