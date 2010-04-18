@@ -311,6 +311,7 @@ power.maximum.percent   Max seen percentage of apparent power
 power.minimum.percent   Min seen percentage of apparent power
 realpower       Real power (W)
 powerfactor     Power Factor (dimensionless value between 0.00 and 1.00)
+crestfactor     Crest Factor (dimensionless, equal to or greater than 1.00)
 
 Valid without context (ie. aggregation of all phases):
 frequency       Frequency (Hz)
@@ -477,6 +478,10 @@ outlet: Smart outlet management (smart on/off switch, ...)
    |                                | Power Factor            |             |
    | outlet.n.powerfactor           | (dimensionless value    | 0.85        |
    |                                | between 0 and 1)        |             |
+   |--------------------------------+-------------------------+-------------|
+   |                                | Crest Factor            |             |
+   | outlet.n.crestfactor           | (dimensionless, equal   | 1.41        |
+   |                                | to or greater than 1)   |             |
    |--------------------------------+-------------------------+-------------|
    | outlet.n.power                 | Apparent power (VA)     | 46          |
    +------------------------------------------------------------------------+
