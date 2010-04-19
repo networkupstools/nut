@@ -3,7 +3,7 @@
  *  Based on NET-SNMP API (Simple Network Management Protocol V1-2)
  *
  *  Copyright (C)
- *   2002-2008  Arnaud Quette <arnaud.quette@free.fr>
+ *   2002-2010  Arnaud Quette <arnaud.quette@free.fr>
  *   2002-2006	Dmitry Frolov <frolov@riss-telecom.ru>
   *  			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *  			Niels Baggesen <niels@baggesen.net>
@@ -35,12 +35,11 @@ for each OID request we made), instead of sending many small packets
 - add support for registration and traps (manager mode),
 - complete mib2nut data (add all OID translation to NUT)
 - externalize mib2nut data in .m2n files and load at driver startup using parseconf()...
-- ... and use Net-SNMP lookup mecanism for OIDs (use string path, not numeric)
 - adjust information logging.
 
-- move to numeric OIDs
+- move numeric OIDs into th mib2nut tables and remove defines
 - move mib2nut into c files (à la usbhid-ups)?
-- add a claim function and move to usbhid-ups style
+- add a claim function and move to usbhid-ups style for specific processing
 - rework the flagging system
 */
 

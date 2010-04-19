@@ -3,7 +3,7 @@
  *  Based on NetSNMP API (Simple Network Management Protocol V1-2)
  *
  *  Copyright (C)
- *	2002 - 2008	Arnaud Quette <arnaud.quette@free.fr>
+ *	2002 - 2010	Arnaud Quette <arnaud.quette@free.fr>
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
@@ -43,6 +43,7 @@
 #include "raritan-pdu-mib.h"
 #include "baytech-mib.h"
 #include "compaq-mib.h"
+#include "bestpower-mib.h"
 #include "ietf-mib.h"
 
 static mib2nut_info_t *mib2nut[] = {
@@ -55,6 +56,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&raritan,
 	&baytech,
 	&compaq,
+	&bestpower,
 	/*
 	 * Prepend vendor specific MIB mappings before IETF, so that
 	 * if a device supports both IETF and vendor specific MIB,

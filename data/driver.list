@@ -211,6 +211,7 @@
 "Eaton"	"ePDU Monitored"			""	"snmp-ups or netxml-ups"
 "Eaton"	"Powerware 9130"	""	"bcmxcp or usbhid-ups"
 "Eaton"	"9395"	"Serial port"	"bcmxcp"
+"Eaton"	"Best Ferrups"	"older ConnectUPS"	"snmp-ups"
 
 "Effekta"	"MI/MT/MH"	"2502 cable"	"megatec"
 "Effekta"	"RM2000MH"	""	"megatec"

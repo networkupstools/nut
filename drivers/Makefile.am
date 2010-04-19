@@ -179,7 +179,8 @@ newmge_shut_LDADD = $(LDADD)
 
 # SNMP
 snmp_ups_SOURCES = snmp-ups.c apc-mib.c baytech-mib.c compaq-mib.c eaton-mib.c \
- ietf-mib.c mge-mib.c netvision-mib.c powerware-mib.c raritan-pdu-mib.c
+ ietf-mib.c mge-mib.c netvision-mib.c powerware-mib.c raritan-pdu-mib.c \
+ bestpower-mib.c
 snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LDFLAGS)
 
 # HAL
@@ -211,8 +212,8 @@ powerman_pdu_LDADD = $(LDADD) $(LIBPOWERMAN_LDFLAGS)
 # distributed by "make dist".
 
 dist_noinst_HEADERS = apc-mib.h apc-hid.h apcsmart.h baytech-mib.h bcmxcp.h	\
- bcmxcp_io.h belkin.h belkin-hid.h blazer.h cps-hid.h dstate.h dstate-hal.h	\
- dummy-ups.h eaton-mib.h explore-hid.h gamatronic.h genericups.h		\
+ bcmxcp_io.h belkin.h belkin-hid.h bestpower-mib.h blazer.h cps-hid.h dstate.h \
+ dstate-hal.h dummy-ups.h eaton-mib.h explore-hid.h gamatronic.h genericups.h	\
  hidparser.h hidtypes.h ietf-mib.h libhid.h libshut.h libusb.h liebert-hid.h	\
  main.h main-hal.h megatec.h mge-hid.h mge-mib.h mge-shut.h mge-utalk.h		\
  mge-xml.h microdowell.h netvision-mib.h netxml-ups.h oneac.h		\
