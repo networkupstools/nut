@@ -120,7 +120,7 @@ TODO List:
 #include "bcmxcp.h"
 
 #define DRIVER_NAME	"BCMXCP UPS driver"
-#define DRIVER_VERSION	"0.23"
+#define DRIVER_VERSION	"0.24"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -921,7 +921,7 @@ else
 void init_config(void)
 {
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
-	int voltage = 0, res, len;
+	int voltage = 0, frequency = 0, res, len;
 	char sValue[17];
 
 	res = command_read_sequence(PW_CONFIG_BLOC_REQ, answer);
@@ -951,6 +951,11 @@ void init_config(void)
 	}
 
 	dstate_setinfo("ups.serial", "%s", sValue);
+
+	/* Nominal Output Frequency */
+	frequency = get_word((answer+BCMXCP_CONFIG_BLOCK_NOMINAL_OUTPUT_FREQ));
+	if (frequency != 0)
+		dstate_setinfo("output.frequency.nominal", "%d", frequency);
 
 }
 
