@@ -226,6 +226,7 @@
 "Eaton"	"pdu"	"5"	"ePDU Monitored"	""	"snmp-ups or netxml-ups"
 "Eaton"	"ups"	"5"	"Powerware 9130"	""	"bcmxcp or usbhid-ups"
 "Eaton"	"ups"	"5"	"9395"	"Serial port"	"bcmxcp"
+"Eaton"	"ups"	"5"	"Best Ferrups"	"older ConnectUPS"	"snmp-ups"
 
 "Effekta"	"ups"	"2"	"MI/MT/MH"	"2502 cable"	"megatec or blazer_ser"
 "Effekta"	"ups"	"2"	"RM2000MH"	""	"megatec or blazer_ser"
@@ -259,6 +260,8 @@
 
 "Forza Power Technologies"	"ups"	"2"	"SL-1001"	"USB"	"megatec_usb or blazer_usb"
 
+"FSP"	"ups"	"2"	"EP650"	"USB"	"blazer_usb"
+
 "Gamatronic"	"ups"	"5"	"All models with alarm interface"	""	"genericups upstype=22"
 "Gamatronic"	"ups"	"2"	"G-SmartCompact 2000"	""	"megatec or blazer_ser"
 "Gamatronic"	"ups"	"5"	"MP110/210"	""	"gamatronic"
@@ -278,6 +281,7 @@
 "HP"	"ups"	"2"	"T500"	"older models"	"bcmxcp_usb"
 "HP"	"ups"	"2"	"T750 INTL"	""	"usbhid-ups"
 "HP"	"ups"	"2"	"T750"	"older models"	"bcmxcp_usb"
+"HP"	"ups"	"2"	"T1000 INTL"	""	"usbhid-ups"
 "HP"	"pdu"	"1"	"HP3488 Switch/Control Unit"	""	"powerman-pdu (experimental)"
 
 "IBM"	"pdu"	"1"	"Blade Center Management Module"	"15 outlets"	"powerman-pdu (experimental)"
@@ -586,7 +590,7 @@
 "Powercom"	"ups"	"4"	"Advice Partner/King Pr750"	""	"powercom"
 "Powercom"	"ups"	"4"	"Black Knight PRO"	""	"powercom"
 "Powercom"	"ups"	"5"	"Black Knight PRO"	"USB (2009 models, product id: 00a6)"	"usbhid-ups (experimental)"
-"Powercom"	"ups"	"4"	"Smart KING Pro (all Smart series)"	"powercom"
+"Powercom"	"ups"	"4"	"Smart KING Pro (all Smart series)"	""	"powercom"
 "Powercom"	"ups"	"5"	"Smart KING Pro (all Smart series)"	"USB (2009 models, product id: 00a3)"	"usbhid-ups (experimental)"
 "Powercom"	"ups"	"4"	"Imperial"	""	"powercom"
 "Powercom"	"ups"	"5"	"Imperial"	"USB (2009 models, product id: 00a2)"	"usbhid-ups (experimental)"
