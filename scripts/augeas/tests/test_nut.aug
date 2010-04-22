@@ -59,7 +59,7 @@ let upsmon_conf = "
 MONITOR testups@localhost 1 monuser upsmon master
 
 MINSUPPLIES 1
-SHUTDOWNCMD \"/sbin/shutdown -h +0\"
+SHUTDOWNCMD /sbin/shutdown -h +0
 POLLFREQ 5
 POLLFREQALERT 5
 HOSTSYNC 30
@@ -82,7 +82,7 @@ test NutUpsmonConf.upsmon_lns get upsmon_conf =
 		{ "type"       = "master"           } }
 	{ }
 	{ "MINSUPPLIES"   = "1"  }
-	{ "SHUTDOWNCMD"   = "\"/sbin/shutdown -h +0\"" }
+	{ "SHUTDOWNCMD"   = "/sbin/shutdown -h +0" }
 	{ "POLLFREQ"      = "5"  }
 	{ "POLLFREQALERT" = "5"  }
 	{ "HOSTSYNC"      = "30" }

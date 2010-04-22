@@ -1,11 +1,9 @@
 (*
-Module: Nut
- Parses blah blah
+Module: NutUpsmonConf
+ Parses /etc/nut/upsmon.conf
 
 Author: Raphael Pinson <raphink@gmail.com>
-
-About: Reference
- This lens tries to keep as close as possible to `blah blah` where possible.
+	Frederic Bohe  <fredericbohe@eaton.com>
 
 About: License
   This file is licensed under the GPL.
@@ -13,11 +11,11 @@ About: License
 About: Lens Usage
   Sample usage of this lens in augtool
 
-    * Get the identifier of the devices with a "Clone" option:
-      > match "/files/etc/X11/xorg.conf/Device[Option = 'Clone']/Identifier"
+    * Print all notification messages
+      > print /files/etc/nut/upsmon.conf/NOTIFYMSG
 
 About: Configuration files
-  This lens applies to blah blah. See <filter>.
+  This lens applies to /etc/nut/upsmon.conf. See <filter>.
 *)
 
 module NutUpsmonConf =
@@ -29,16 +27,13 @@ module NutUpsmonConf =
  *************************************************************************)
 
 (* general *)
+let del_spc  = Util.del_opt_ws ""
 let sep_spc  = Util.del_ws_spc
 let eol      = Util.eol
-let ip       = /[0-9A-Za-z\.:]+/
 let num      = /[0-9]+/
 let word     = /[^"#; \t\n]+/
 let empty    = Util.empty
 let comment  = Util.comment
-(* let netblock = /[0-9A-Za-z\.:\/]+/ *)
-let netblock = word
-let path     = word
 let quoted_string = del "\"" "\"" . store /[^"\n]+/ . del "\"" "\""
 
 (* UPS identifier
@@ -53,12 +48,7 @@ let identifier = [ label "upsname" . store /[^ \t\n@]+/ ]
                    . ( ( Util.del_str "@" . hostname )
                      | ( Util.del_str "@" . hostname
                          . Util.del_str ":" . port ) )?
-(* Variable: quoted_word *)
-let word_space  = /"[^"\n]+"/
-let quoted_word = /"[^" \t\n]+"/
 
-(* Variable: word_all *)
-let word_all = word_space | word | quoted_word
 
 let upsmon_num_re = "DEADTIME"
                   | "FINALDELAY"
@@ -69,19 +59,19 @@ let upsmon_num_re = "DEADTIME"
                   | "POLLFREQALERT"
                   | "RBWARNTIME"
 
-let upsmon_num    = [ key upsmon_num_re . sep_spc . store num . eol ]
+let upsmon_num    = [ del_spc . key upsmon_num_re . sep_spc . store num . eol ]
 
+let upsmon_word   = [ del_spc . key "RUN_AS_USER" . sep_spc . store word . eol ]
 
-(* upsmon_word includes commands, paths, users *)
-let upsmon_word_re = "NOTIFYCMD"
+let upsmon_file_re = "NOTIFYCMD"
                   | "POWERDOWNFLAG"
-                  | "RUN_AS_USER"
                   | "SHUTDOWNCMD"
 
-let upsmon_word   = [ key upsmon_word_re . sep_spc . store word_all . eol ]
+let sto_to_comment = IniFile.sto_to_comment
+let upsmon_file   = [ del_spc . key upsmon_file_re . sto_to_comment . eol ]
 
 (* MONITOR system powervalue username password type *)
-let upsmon_monitor = [ key "MONITOR" . sep_spc
+let upsmon_monitor = [ del_spc . key "MONITOR" . sep_spc
                          . [ label "system"     . identifier ] . sep_spc
                          . [ label "powervalue" . store num  ] . sep_spc
                          . [ label "username"   . store word ] . sep_spc
@@ -99,7 +89,7 @@ let upsmon_notify_type = "ONLINE"
 			| "NOCOMM"
 			| "NOPARENT"
 
-let upsmon_notify = [ key "NOTIFYMSG" . sep_spc
+let upsmon_notify = [ del_spc . key "NOTIFYMSG" . sep_spc
                          . [ label "type" . store upsmon_notify_type . sep_spc ]
                          . [ label "message" . quoted_string ] . eol ]
 
@@ -115,11 +105,11 @@ let plus =  [ del /\+*/ "" ]
 let record = [ seq "record" . plus . store flags ]
 
 let upsmon_notify_flag = [ counter "record"
-			. key "NOTIFYFLAG" . sep_spc
+			. del_spc . key "NOTIFYFLAG" . sep_spc
 			. [ label "type" . store upsmon_notify_type . sep_spc ]
 			. record+ . eol ]
 
-let upsmon_record = upsmon_num|upsmon_word|upsmon_monitor|upsmon_notify|upsmon_notify_flag
+let upsmon_record = upsmon_num|upsmon_word|upsmon_file|upsmon_monitor|upsmon_notify|upsmon_notify_flag
 
 let upsmon_lns    = (upsmon_record|comment|empty)*
 
