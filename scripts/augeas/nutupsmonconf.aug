@@ -67,8 +67,11 @@ let upsmon_file_re = "NOTIFYCMD"
                   | "POWERDOWNFLAG"
                   | "SHUTDOWNCMD"
 
-let sto_to_comment = IniFile.sto_to_comment
-let upsmon_file   = [ del_spc . key upsmon_file_re . sto_to_comment . eol ]
+let sto_to_eol = IniFile.sto_to_eol
+(* here we should support both quoted and not quotted
+ * string but I can't manage to find the right way of doing this
+ *)
+let upsmon_file   = [ del_spc . key upsmon_file_re . sto_to_eol . eol ]
 
 (* MONITOR system powervalue username password type *)
 let upsmon_monitor = [ del_spc . key "MONITOR" . sep_spc
