@@ -1,11 +1,9 @@
 (*
-Module: Nut
- Parses blah blah
+Module: NutUpssetConf
+ Parses /etc/nut/upsset.conf
 
 Author: Raphael Pinson <raphink@gmail.com>
-
-About: Reference
- This lens tries to keep as close as possible to `blah blah` where possible.
+	Frederic Bohe  <fredericbohe@eaton.com>
 
 About: License
   This file is licensed under the GPL.
@@ -13,11 +11,11 @@ About: License
 About: Lens Usage
   Sample usage of this lens in augtool
 
-    * Get the identifier of the devices with a "Clone" option:
-      > match "/files/etc/X11/xorg.conf/Device[Option = 'Clone']/Identifier"
+    * Print the string declaring secured cgi directory:
+      > print /files/etc/nut/upsset.conf/auth
 
 About: Configuration files
-  This lens applies to blah blah. See <filter>.
+  This lens applies to /etc/nut/upsset.conf. See <filter>.
 *)
 
 module NutUpssetConf =
