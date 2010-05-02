@@ -66,6 +66,7 @@ if test -z "${nut_have_libhal_seen}"; then
 
 	dnl check if HAL is usable
 	AC_CHECK_HEADERS(libhal.h, [nut_have_libhal=yes], [nut_have_libhal=no], [AC_INCLUDES_DEFAULT])
+	AC_CHECK_HEADERS(glib.h dbus/dbus-glib.h, [], [nut_have_libhal=no], [AC_INCLUDES_DEFAULT])
 	AC_CHECK_FUNCS(libhal_device_new_changeset, [], [nut_have_libhal=no])
 
 	if test "${nut_have_libhal}" = "yes"; then
