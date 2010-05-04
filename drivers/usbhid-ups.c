@@ -27,7 +27,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION		"0.34"
+#define DRIVER_VERSION		"0.35"
 
 #include "main.h"
 #include "libhid.h"
@@ -382,6 +382,7 @@ info_lkp_t test_read_info[] = {
 	{ 4, "Aborted", NULL },
 	{ 5, "In progress", NULL },
 	{ 6, "No test initiated", NULL },
+	{ 7, "Test scheduled", NULL },
 	{ 0, NULL, NULL }
 };
 
