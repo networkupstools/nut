@@ -70,20 +70,12 @@ if test -z "${nut_have_libhal_seen}"; then
 	AC_CHECK_FUNCS(libhal_device_new_changeset, [], [nut_have_libhal=no])
 
 	if test "${nut_have_libhal}" = "yes"; then
+		AC_CHECK_FUNCS(g_timeout_add_seconds)
 		LIBHAL_CFLAGS="${CFLAGS}"
 		LIBHAL_LDFLAGS="${LDFLAGS}"
 	fi
 
 	CFLAGS="${CFLAGS_ORIG}"
 	LDFLAGS="${LDFLAGS_ORIG}"
-
-	dnl - test for g_timeout_add_seconds availability
-	AC_MSG_CHECKING([if GLib is version 2.14.0 or newer])
-	if pkg-config --silence-errors --atleast-version=2.14.0 glib-2.0 2>/dev/null; then
-		AC_DEFINE(HAVE_GLIB_2_14, 1, [Define to 1 if GLib is version 2.14 or newer])
-		AC_MSG_RESULT(yes)
-	else
-		AC_MSG_RESULT(no)
-	fi
 fi
 ])
