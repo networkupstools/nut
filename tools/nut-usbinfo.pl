@@ -82,7 +82,7 @@ sub gen_usb_files
 	print $outUdev 'ACTION!="add", GOTO="nut-usbups_rules_end"'."\n";
 	print $outUdev 'SUBSYSTEM=="usb_device", GOTO="nut-usbups_rules_real"'."\n";
 	print $outUdev 'SUBSYSTEM=="usb", GOTO="nut-usbups_rules_real"'."\n";
-	print $outUdev 'BUS!="usb", GOTO="nut-usbups_rules_end"'."\n\n";
+	print $outUdev 'SUBSYSTEM!="usb", GOTO="nut-usbups_rules_end"'."\n\n";
 	print $outUdev 'LABEL="nut-usbups_rules_real"'."\n";
 
 	# DeviceKit-power file header
