@@ -111,8 +111,6 @@ static double mge_date_conversion_nuf(const char *value)
 	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s %s", value, dstate_getinfo("ups.time"));
 
 	if (strptime(mge_scratch_buf, "%Y/%m/%d %H:%M:%S", &mge_tm) != NULL) {
-		/* Ignore DST offset */
-		mge_tm.tm_isdst = 0;
 		return mktime(&mge_tm);
 	}
 
@@ -129,8 +127,6 @@ static double mge_time_conversion_nuf(const char *value)
 	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s %s", dstate_getinfo("ups.date"), value);
 
 	if (strptime(mge_scratch_buf, "%Y/%m/%d %H:%M:%S", &mge_tm) != NULL) {
-		/* Ignore DST offset */
-		mge_tm.tm_isdst = 0;
 		return mktime(&mge_tm);
 	}
 
