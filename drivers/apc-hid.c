@@ -36,10 +36,22 @@
 /* APC */
 #define APC_VENDORID 0x051d
 
+/* Don't use interrupt pipe on 5G models (used by proprietary protocol) */
+static void *disable_interrupt_pipe()
+{
+	if (use_interrupt_pipe == TRUE) {
+		upslogx(LOG_INFO, "interrupt pipe disabled (add 'pollonly' flag to 'ups.conf' to get rid of this message)");
+		use_interrupt_pipe= FALSE;
+	}
+	return NULL;
+}
+
 /* USB IDs device table */
 static usb_device_id_t apc_usb_device_table[] = {
 	/* various models */
 	{ USB_DEVICE(APC_VENDORID, 0x0002), NULL },
+	/* various 5G models */
+	{ USB_DEVICE(APC_VENDORID, 0x0003), disable_interrupt_pipe },
 
 	/* Terminating entry */
 	{ -1, -1, NULL }
