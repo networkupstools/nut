@@ -13,7 +13,7 @@ link:http://sourceforge.net/projects/gknut/[GKrellM NUT]
 
 Simple UPS monitoring plugin for GKrellM. Uses NUT (Network UPS Tools) for UPS connection.
 
-link:http://www.knut.noveradsl.cz/knutclient/[KNutClient]
+link:http://knut.prynych.cz[KNutClient]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 KNutClient is a visual client for NUT.
@@ -172,7 +172,9 @@ monitor a local USB UPS, or to connect as a slave to a NUT server.
 
 ////////////////////////////////////////////////////////////////////////////////
 *FIXME*
-complete with link:http://test.networkupstools.org/About/DeviceIntegration/ReadyNas[the wiki article]
+- consider Buffalo NAS
+http://buffalo.nas-central.org/wiki/Install_a_UPS_%28nut%29
+
 ////////////////////////////////////////////////////////////////////////////////
 
 link:http://www.webbastards.com/projects/[lcd-nut]
