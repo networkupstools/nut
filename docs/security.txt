@@ -1,0 +1,146 @@
+Notes on securing NUT
+=====================
+
+The NUT Team is very inclined in providing the highest security level to its
+users.
+
+Many internal and external mechanisms exist to secure NUT. And several steps are
+needed to ensure that your NUT setup meet your security requirements.
+
+This chapter will present you these mechanisms, by increasing order of security
+level. This means that the more security you need, the more mechanisms you will
+have to apply.
+
+////////////////////////////////////////////////////////////////////////////////
+FIXME:
+reference security related QA topics 
+////////////////////////////////////////////////////////////////////////////////
+
+
+System level privileges and ownership
+-------------------------------------
+
+All configuration files should be protected, so that the world can't read it.
+Use the following commands to accomplish this:
+
+	chown root:nut /etc/nut/*
+	chmod 640 /etc/nut/*
+
+
+Finally, the link:user-manual.html#StatePath[state path] directory, which
+holds the communication between the driver(s) and upsd, should also be secured.
+
+	chown root:nut /var/state/ups
+	chmod 0770 /var/state/ups
+
+
+NUT level users privileges
+--------------------------
+
+Administrative commands such as setting variables and the instant commands
+are powerful, and access to them needs to be restricted.
+
+NUT provides an internal mechanism to do so, through
+link:man/upsd.users.html[upsd.users(5)].
+
+This file defines who may access instant commands and settings, and what
+is available.
+
+During the initial 
+link:user-manual.html#NUT_user_creation[NUT user creation], we have created a
+monitoring user for upsmon.
+
+You can also create an 'administrator' user with full power using:
+
+	[administrator]
+		password = mypass
+		actions = set
+		instcmds = all
+
+For more information on how to restrict actions and instant commands, refer
+to link:man/upsd.users.html[upsd.users(5)] manual page.
+
+NOTE: NUT administrative user definitions should be used in conjunction with
+<<TCP_Wrappers,TCP Wrappers>>.
+
+
+Network access control
+----------------------
+
+If you are not using NUT on a standalone setup, you will need to enforce
+network access to upsd.
+
+There are various ways to do so.
+
+NUT LISTEN directive
+~~~~~~~~~~~~~~~~~~~~
+
+link:man/upsd.conf.html[upsd.conf(5)].
+
+LISTEN interface port
+
+  Bind  a  listening  port  to  the  interface specified by its Internet address.
+  This may be useful on hosts with multiple interfaces.  You
+  should not rely exclusively on this for security, as it can be subverted on many systems.
+
+  Listen on TCP port port instead of the default value which was compiled into the code.  This overrides any value  you  may  have  set  with
+  'configure --with-port'.  If you don't change it with configure or this value, upsd will listen on port 3493 for this interface.
+
+  Multiple LISTEN addresses may be specified.  The default is to bind to 127.0.0.1 if no LISTEN addresses are specified (and ::1 if IPv6 sup‐
+  port is compiled in).
+
+	   LISTEN 127.0.0.1
+	   LISTEN 192.168.50.1
+	   LISTEN ::1
+	   LISTEN 2001:0db8:1234:08d3:1319:8a2e:0370:7344
+
+This parameter will only be read at startup.  You'll need to restart (rather than reload) upsd to apply any changes made here.
+
+
+Firewall
+~~~~~~~~
+
+NUT has its own official IANA port: 3493/tcp.
+
+You should use this to restrict network access.
+
+
+[[TCP_Wrappers]]
+TCP Wrappers
+~~~~~~~~~~~~
+
+If the server is build with tcp-wrappers support enabled, it will check if the
+NUT username is allowed to connect from the client address through the
+'/etc/hosts.allow' and '/etc/hosts.deny' files.
+
+NOTE: this will only be done for commands that require to be logged into the
+server.
+
+hosts.allow:
+
+	ups : admin@127.0.0.1/32
+	ups : monslave@127.0.0.1/32 monslave@192.168.1.0/24
+
+hosts.deny:
+
+	upsd : ALL
+
+Further details are described in hosts_access(5).
+
+
+Configuring SSL
+---------------
+
+include ssl.txt[]
+
+////////////////////////////////////////////////////////////////////////////////
+FIXME: note on the planned NSS port?
+////////////////////////////////////////////////////////////////////////////////
+
+
+chrooting and other forms of paranoia
+-------------------------------------
+
+include chroot.txt[]
+
+
