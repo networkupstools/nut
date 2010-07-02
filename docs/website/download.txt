@@ -118,7 +118,10 @@ Mac OS X
 
 ////////////////////////////////////////////////////////////////////////////////
 *FIXME*
-add fink info for Mac OS X
+add fink / MacPort info for Mac OS X
+http://pdb.finkproject.org/pdb/package.php/nut
+http://trac.macports.org/browser/trunk/dports/sysutils/nut/Portfile
+
 
 NOTE: you should also refer to the link?[Package installation instructions] of
 the NUT User Manual.
