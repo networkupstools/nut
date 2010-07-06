@@ -42,9 +42,6 @@ that have been addressed.
 
 ================================================================================
 
-////////////////////////////////////////////////////////////////////////////////
-FIXME: include download.txt
-////////////////////////////////////////////////////////////////////////////////
 
 Prepare your system
 ~~~~~~~~~~~~~~~~~~~~
@@ -197,7 +194,9 @@ old values, your drivers may fail to start.
 
 You are now ready to configure NUT, and start testing and using it.
 
-You can jump directly to FIXME Configuration_notes
+You can jump directly to the
+link:user-manual.html#Configuration_notes[NUT configuration].
+
 
 [[Installing_packages]]
 Installing from packages

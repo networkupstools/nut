@@ -1,6 +1,6 @@
 EXTRA_DIST = acknowledgements.txt chroot.txt		\
  commands.txt configure.txt config-notes.txt contact-closure.txt	\
- design.txt developers.txt FAQ.txt hid-subdrivers.txt		\
+ design.txt developers.txt download.txt FAQ.txt hid-subdrivers.txt		\
  ideas.txt macros.txt megatec.txt new-drivers.txt new-names.txt \
  nut-hal.txt	\
  outlets.txt protocol.txt security.txt snmp.txt 	\
