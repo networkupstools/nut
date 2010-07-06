@@ -64,7 +64,6 @@ current, power and voltage.
 Some more advanced devices also provide control through the 'load.off',
 'load.on' and 'load.cycle' commands.
 
-
 Outlets on UPS
 --------------
 
@@ -93,8 +92,8 @@ NOTE: If you need the scheduling function and your device doesn't support
 it, you can still use
 link:user-manual.html#Advanced_usage_scheduling_notes[NUT scheduling features].
 
-WARNING:don't plug the UPS's communication cable (USB or network) on a managed outlet.
-Otherwise, all computers will be stopped as soon as the communicati 
+WARNING: don't plug the UPS's communication cable (USB or network) on a managed outlet.
+Otherwise, all computers will be stopped as soon as the communication is lost.
 
 Other type of devices
 ---------------------
