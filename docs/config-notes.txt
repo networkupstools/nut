@@ -120,12 +120,12 @@ A typical device without any extra settings looks like this:
 FIXME: broaden to all USB drivers
 ////////////////////////////////////////////////////////////////////////////////
 
-NOTE: usbhid-ups is a special case and ignores the "port" value.
+NOTE: usbhid-ups is a special case and ignores the 'port' value.
 You must still set this value, but it does not matter what you set
-it to; you can set "port" to "auto" if you like. If you only own
+it to; you can set 'port' to *auto* if you like. If you only own
 one local UBS UPS, the driver will find it automatically. If you
-own more than one UBS UPS, refer to the usbhid-ups(8) man page for
-more information.
+own more than one UBS UPS, refer to the link:man/usbhid-ups.html[usbhid-ups(8)]
+manual page for more information.
 
 References: link:man/ups.conf.html[ups.conf(5)], link:man/nutupsdrv.html[nutupsdrv(8)],
 plus whatever link:man/index.html#Drivers[driver(s)] you intend to use.
@@ -646,9 +646,9 @@ this system.
 You can play "mix and match" with those two to arrive at these descriptions
 for individual hosts:
 
-A: 1 but not 2
-B: 2 but not 1
-C: 1 and 2
+- A: 1 but not 2
+- B: 2 but not 1
+- C: 1 and 2
 
 A small to medium sized data room usually has one C and a bunch of Bs.
 This means that there's a system (type C) hooked to the UPS which depends
@@ -667,9 +667,9 @@ the wiring is such that it doesn't actually feed it.
 Once you identify a system's type, use this list to decide which of the
 programs need to be run for monitoring:
 
-A: driver and upsd
-B: upsmon (as slave)
-C: driver, upsd, and upsmon (as master)
+- A: driver and upsd
+- B: upsmon (as slave)
+- C: driver, upsd, and upsmon (as master)
 
 To further complicate things, you can have a system that is hooked to
 multiple UPSes, but only depends on one for power.  This particular
@@ -728,7 +728,7 @@ that each UPS is feeding (2).
 ////////////////////////////////////////////////////////////////////////////////
 FIXME:
 add references to other equipments, such as transfer switches
-and paralell / serial UPS configuration
+and parallel / serial UPS configuration
 
 http://www.articlesbase.com/electronics-articles/parallel-ups-configurations-572451.html
 http://en.wikipedia.org/wiki/Transfer_switch
