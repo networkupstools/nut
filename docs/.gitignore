@@ -3,6 +3,7 @@ Makefile.in
 user-manual.html
 asciidoc.html
 developer-guide.html
+download.html
 packager-guide.html
 cables.html
 readme.html
