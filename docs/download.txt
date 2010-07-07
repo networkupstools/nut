@@ -16,18 +16,18 @@ You can use the <<verifySourceSig,following procedure>> to do so.
 Stable tree: 2.4
 ~~~~~~~~~~~~~~~~
 
-link:http://www.networkupstools.org/source/2.4/nut-2.4.1.tar.gz[nut-2.4.1.tar.gz]
-link:http://www.networkupstools.org/source/2.4/nut-2.4.1.tar.gz.sig[signature]
-link:http://www.networkupstools.org/source/2.4/new-2.4.1.txt[release notes]
+link:http://www.networkupstools.org/source/2.4/nut-2.4.3.tar.gz[nut-2.4.3.tar.gz]
+link:http://www.networkupstools.org/source/2.4/nut-2.4.3.tar.gz.sig[signature]
+link:http://www.networkupstools.org/source/2.4/new-2.4.3.txt[release notes]
 link:http://www.networkupstools.org/source/2.4/ChangeLog[ChangeLog]
 
 You can also browse the link:http://www.networkupstools.org/source/2.4/[stable source directory].
 
 
-Testing: 2.4.2-pre
+Testing: 2.4.x-pre
 ~~~~~~~~~~~~~~~~
 
-There is currently a testing phase for the upcoming 2.4.2 release.
+There is currently a testing phase for the upcoming 2.4.x release.
 
 To test it, get the latest <<Snapshots,snapshot>>.
 
@@ -113,15 +113,12 @@ link:http://www.FreeBSD.org/cgi/ports.cgi?query=^nut-&amp;stype=name[FreeBSD],
 link:ftp://ftp.netbsd.org/pub/NetBSD/packages/pkgsrc/sysutils/ups-nut/README.html[NetBSD],
 link:http://www.openbsd.org/cgi-bin/cvsweb/ports/sysutils/nut/[OpenBSD].
 
-- Other systems:
-Mac OS X
+- Mac OS X:
+link:http://pdb.finkproject.org/pdb/package.php/nut[Fink],
+link:http://trac.macports.org/browser/trunk/dports/sysutils/nut/Portfile[MacPorts]
 
 ////////////////////////////////////////////////////////////////////////////////
 *FIXME*
-add fink / MacPort info for Mac OS X
-http://pdb.finkproject.org/pdb/package.php/nut
-http://trac.macports.org/browser/trunk/dports/sysutils/nut/Portfile
-
 
 NOTE: you should also refer to the link?[Package installation instructions] of
 the NUT User Manual.

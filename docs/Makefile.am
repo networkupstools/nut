@@ -15,6 +15,7 @@ CONVERTED_TO_ASCIIDOC = asciidoc.html \
 	user-manual.html \
 	packager-guide.html \
 	developer-guide.html \
+	download.html \
 	install.html \
 	FAQ.html
 
