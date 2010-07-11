@@ -28,7 +28,7 @@ clean-local:
 
 SUFFIXES = .txt .html
 
-index.html: website.txt
+index.html: website.txt news.txt
 	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a index-only $<
 
 acknowledgements.html: ../acknowledgements.txt

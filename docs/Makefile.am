@@ -45,6 +45,9 @@ install.html: ../INSTALL
 		--attribute iconsdir=$(srcdir)/icons \
 		--attribute=badges \
 		-a toc -a numbered -o $@ $^
+
+### TODO: automatic dependency generation
+user-manual.html: ../README features.txt download.txt ../INSTALL config-notes.txt scheduling.txt outlets.txt security.txt acknowledgements.txt cables.txt configure.txt ../UPGRADING
 	
 else !MANUALUPDATE
 html:	html-recursive
