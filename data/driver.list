@@ -675,7 +675,8 @@
 "Tecnoware"	"Easy Power 1200"	""	"megatec"
 
 "Tripp-Lite"	"INTERNETOFFICE700"	"USB"	"tripplite_usb"
-"Tripp-Lite"	"OMNIVS1000"	"USB"	"tripplite_usb"
+"Tripp-Lite"	"OMNIVS1000"	"USB (product ID: 0001)"	"tripplite_usb"
+"Tripp-Lite"	"OmniVS1000"	"USB (product ID: 1007)"	"usbhid-ups"
 "Tripp-Lite"	"OMNIVS1500XL"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"SMART700USB"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"SMART1500RM2U"	"USB"	"tripplite_usb"
