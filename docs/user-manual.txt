@@ -18,12 +18,12 @@ WARNING: this is a Work In Progress document.
 Introduction
 ============
 
-The primary goal of the Network UPS Tools (NUT) project is to provide  support
-for Power Devices, such as Uninterruptible Power Supplies, Power Distributions
+The primary goal of the Network UPS Tools (NUT) project is to provide support
+for Power Devices, such as Uninterruptible Power Supplies, Power Distribution
 Units and Solar Controllers.
 
-NUT provides many <<Features,features>>, with a uniform control and management
-interface.
+NUT provides many control and monitoring <<Features,features>>, with a uniform
+control and management interface.
 
 More than 100 different manufacturers, and several thousands models are
 <<HCL,compatible>>.
@@ -34,12 +34,9 @@ sponsor http://www.eaton.com[Eaton].
 
 This document intend to describe how to install software support for your
 <<General_Info, Power Devices>> (UPS, PDU, ...), and how to use the Network UPS
-Tools.
-
-It is not intended to present what are <<General_Info, Power Devices>>, nor the
-different technologies that exist.
-
-For such information, have a look at the <<General_Info,General Information>>.
+Tools. It is not intended to explain what <<General_Info, Power Devices>> are,
+nor distinguish the different technologies that exist.  For such information,
+have a look at the <<General_Info,General Information>>.
 
 If you wish to discover how everything came together, have a look at the
 <<Project_History,Project History>>.
@@ -101,7 +98,7 @@ Success reports are welcomed to keep this list accurate.
 include::download.txt[]
 
 
-[[Installation_instructions]]
+[[_installation_instructions]]
 
 include::../INSTALL[]
 
@@ -186,7 +183,7 @@ Appendix A: Glossary
 NUT::
 	Network UPS Tools.
 PDU::
-	Power Distributions Unit.
+	Power Distribution Unit.
 SCD::
 	Solar Controller Device.
 UPS::
