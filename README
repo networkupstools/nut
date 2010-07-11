@@ -31,18 +31,18 @@ answers queries from the clients.  upsd contains a number of access
 control features to limit the abilities of the clients.  Only authorized
 hosts may monitor or control your hardware if you wish.  Since the
 notion of monitoring over the network is built into the software, you
-can hang many systems off one large UPS and they will all shut down
-together. You can also use NUT to power on, off or cycle your data centers
-nodes, individually or globally through PDUs outlets.
+can hang many systems off one large UPS, and they will all shut down
+together. You can also use NUT to power on, off or cycle your data center
+nodes, individually or globally through PDU outlets.
 
-Clients such as upsmon check on the status of the hardware and do things
+Clients such as `upsmon` check on the status of the hardware and do things
 when necessary.  The most important task is shutting down the operating
 system cleanly before the UPS runs out of power.  Other programs are
 also provided to log information regularly, monitor status through your
 web browser, and more.
 
 ////////////////////////////////////////////////////////////////////////////////
-FIXME: TBR
+FIXME: to be removed
 
 The "HAL enabled" flavor
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -57,7 +57,7 @@ Using this approach, you don't have to configure NUT files, nor to
 manually start components, nor to install a specific NUT client.
 
 Upon plugging your USB UPS, the right driver will be automatically
-launched, and the according Power Manager GUI will pop up.
+launched, and the corresponding Power Manager GUI will pop up.
 
 Note that this feature is still beta and incomplete. But it
 represents a major evolution, and a huge user experience improvement!
@@ -116,7 +116,7 @@ sparky on the `upsd` server running on the local machine, you'd do this:
 
 	/usr/local/ups/bin/upsc sparky@localhost
 
-The default port number is 3493.  You can change this with 
+The default port number is 3493.  You can change this with
 "configure --with-port" at compile-time.  To make a client talk to upsd
 on a specific port, add it after the hostname with a colon, like this:
 
@@ -137,7 +137,7 @@ Manifest
 
 This package is broken down into several categories:
 
-- *drivers*	- These programs talk directly to your UPS hardware. 
+- *drivers*	- These programs talk directly to your UPS hardware.
 - *server*	- upsd serves data from the drivers to the network.
 - *clients*	- They talk to upsd and do things with the status data.
 - *cgi-bin*	- Special class of clients that you can use with your web server.
@@ -173,7 +173,7 @@ However, you can also just start or stop one by adding its name:
 	/usr/local/ups/bin/upsdrvctl start sparky
 	/usr/local/ups/bin/upsdrvctl stop sparky
 
-To get the driver name for your device, refer to the below section
+To find the driver name for your device, refer to the section below
 called "HARDWARE SUPPORT TABLE".
 
 Extra Settings
@@ -212,21 +212,25 @@ Generic Device Drivers
 
 *FIXME* To be reworked
 
-NUT provides several generic drivers, that support many different models.
+NUT provides several generic drivers that support a variety of very similar models.
 
-- The `genericups` driver will support many serial models that use the same
-basic principle to communicate with the computer.  This is known as "contact
+- The `genericups` driver supports many serial models that use the same basic
+principle to communicate with the computer.  This is known as "contact
 closure", and basically involves raising or lowering signals to indicate
 power status.
-
++
 This type of UPS tends to be cheaper, and only provides the very simplest
 data about power and battery status.  Advanced features like battery
 charge readings and such require a "smart" UPS and a driver which
 supports it.
-
++
 See the genericups(8) man page for more information.
 
-- The `usbhid-ups` driver...
+- The `usbhid-ups` driver attempts to communicate with USB HID Power Device
+Class (PDC) UPSes. These units generally implement the same basic protocol,
+with minor variations in the exact set of supported attributes. This driver
+also applies several correction factors when the UPS firmware reports values
+with incorrect scale factors.
 
 - The `blazer_usb` and `megatec_usb`...
 
@@ -265,7 +269,7 @@ PDU management
 Network Server
 --------------
 
-`upsd` is responsible for passing data from the drivers to the client 
+`upsd` is responsible for passing data from the drivers to the client
 programs via the network.  It should be run immediately after `upsdrvctl`
 in your system's startup scripts.
 
@@ -288,18 +292,21 @@ upsmon.conf.  Each UPS can be defined as one of three possible types:
 Master
 ~~~~~~
 
-This UPS supplies power to the system running upsmon, and
+This UPS supplies power to the system running `upsmon`, and
 this system is also responsible for shutting it down when
 the battery is depleted.  This occurs after any slave systems
 have disconnected safely.
 
-If your UPS is plugged directly into a system's serial port,
-the upsmon on that system should define that UPS as a master.
+If your UPS is plugged directly into a system's serial port, the `upsmon`
+process on that system should define that UPS as a master.
+
+For a typical home user, there's one computer connected to one UPS.
+That means you run a driver, `upsd`, and `upsmon` in master mode.
 
 Slave
 ~~~~~
 
-This UPS supplies power to the system running upsmon, but 
+This UPS supplies power to the system running `upsmon`, but
 this system can't shut it down directly.  This system will
 shut down the operating system before the master turns off the
 power.
@@ -308,17 +315,13 @@ Use this mode when you run multiple computers on the same UPS.
 Obviously, only one can be connected to the serial port on the
 UPS, and that system is the master.  Everything else is a
 slave.
-   
+
 Monitor-only
 ~~~~~~~~~~~~
 
 This UPS will still generate notifications about status
-changes (on battery, on line, etc.) but no shutdowns of the
+changes (on battery, on line, etc.), but no shutdowns of the
 local system result from critical situations on that UPS.
-
-
-For a typical home user, there's one computer connected to one UPS.
-That means you run a driver, upsd, and upsmon in master mode.
 
 Additional Information
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -331,7 +334,7 @@ More information on configuring upsmon can be found in these places:
 
  - link:user-manual.html#_configuring_automatic_ups_shutdowns[Configuring automatic UPS shutdowns] chapter
 
- - The stock upsmon.conf that comes with the package
+ - The stock `upsmon.conf` that comes with the package
 
 
 Clients
@@ -347,25 +350,24 @@ For more details on specific programs, refer to their man pages.
 upsc
 ~~~~
 
-upsc is a simple client that will display the values of variables known
-to upsd and your UPS drivers.  It will list every variable by default,
-or just one if you specify an additional argument.  This can be useful 
-in shell scripts for monitoring something without writing your own 
+`upsc` is a simple client that will display the values of variables known
+to `upsd` and your UPS drivers.  It will list every variable by default,
+or just one if you specify an additional argument.  This can be useful
+in shell scripts for monitoring something without writing your own
 network code.
 
-upsc is a quick way to find out if your driver(s) and upsd are working
-together properly.  Just run upsc <ups> to see what's going on, i.e.:
+`upsc` is a quick way to find out if your driver(s) and upsd are working
+together properly.  Just run `upsc <ups>` to see what's going on, i.e.:
 
 	morbo:~$ upsc sparky@localhost
 	ambient.humidity: 035.6
 	ambient.humidity.alarm.maximum: NO,NO
 	ambient.humidity.alarm.minimum: NO,NO
 	ambient.temperature: 25.14
+	...
 
-	[ and so on ]
-
-If you are interested in writing a simple client that monitors upsd,
-the source code for upsc is a good way to learn about using the 
+If you are interested in writing a simple client that monitors `upsd`,
+the source code for `upsc` is a good way to learn about using the
 upsclient functions.
 
 See the upsc(8) man page for more information.
@@ -373,16 +375,16 @@ See the upsc(8) man page for more information.
 upslog
 ~~~~~~
 
-upslog will write status information from upsd to a file at set
+`upslog` will write status information from `upsd` to a file at set
 intervals.  You can use this to generate graphs or reports with other
-programs such as gnuplot.
+programs such as `gnuplot`.
 
 upsrw
 ~~~~~
 
-upsrw allows you to display and change the read/write variables in your
+`upsrw` allows you to display and change the read/write variables in your
 UPS hardware.  Not all devices or drivers implement this, so this may
-not have any effect on your system.  
+not have any effect on your system.
 
 A driver that supports read/write variables will give results like this:
 
@@ -405,8 +407,8 @@ On the other hand, one that doesn't support them won't print anything:
 
 	( nothing )
 
-upsrw requires administrator powers to change settings in the hardware.
-Refer to upsd.users(5) for information on defining users in upsd.
+`upsrw` requires administrator powers to change settings in the hardware.
+Refer to upsd.users(5) for information on defining users in `upsd`.
 
 upscmd
 ~~~~~~
@@ -425,11 +427,10 @@ Use the -l command to list them, like this:
 	test.panel.start - Start testing the UPS panel
 	calibrate.start - Start run time calibration
 	calibrate.stop - Stop run time calibration
+	...
 
-	[ snip ]
-
-upscmd requires administrator powers to start instant commands.
-To define users and passwords in upsd, see upsd.users(5).
+`upscmd` requires administrator powers to start instant commands.
+To define users and passwords in `upsd`, see upsd.users(5).
 
 ////////////////////////////////////////////////////////////////////////////////
 FIXME
@@ -452,15 +453,15 @@ allow you to see UPS status and perform certain administrative commands
 from any web browser.  Javascript and cookies are not required.
 
 These programs are not installed or compiled by default.  To compile
-and install them, first run 'configure --with-cgi', then do 'make' and
-'make install'.  If you receive errors about "gd" during configure, go
+and install them, first run `configure --with-cgi`, then do `make` and
+`make install`.  If you receive errors about "gd" during configure, go
 get it and install it before continuing.
 
 You can get the source here:
 
 	http://www.libgd.org/
 
-In the event that you need libpng or zlib in order to compile gd, 
+In the event that you need libpng or zlib in order to compile gd,
 they can be found at these URLs:
 
 	http://www.libpng.org/pub/png/pngcode.html
@@ -481,12 +482,12 @@ authorized", you're probably missing an entry in your hosts.conf.
 upsstats
 ~~~~~~~~
 
-upsstats generates web pages from HTML templates, and plugs in status
+`upsstats` generates web pages from HTML templates, and plugs in status
 information in the right places.  It looks like a distant relative of
 APC's old Powerchute interface.  You can use it to monitor several
 systems or just focus on one.
 
-It also can generate IMG references to upsimage.
+It also can generate IMG references to `upsimage`.
 
 upsimage
 ~~~~~~~~
@@ -497,17 +498,17 @@ utility or outgoing voltage, battery charge percent, or load percent.
 upsset
 ~~~~~~
 
-upsset provides several useful administration functions through a web
-interface.  You can use upsset to kick off instant commands on your UPS
+`upsset` provides several useful administration functions through a web
+interface.  You can use `upsset` to kick off instant commands on your UPS
 hardware like running a battery test.  You can also use it to change
 variables in your UPS that accept user-specified values.
 
-Essentially, upsset provides the functions of upsrw and upscmd, but
+Essentially, `upsset` provides the functions of `upsrw` and `upscmd`, but
 with a happy pointy-clicky interface.
 
-upsset will not run until you convince it that you have secured your
+`upsset` will not run until you convince it that you have secured your
 system.  You *must* secure your CGI path so that random interlopers
-can't run this program remotely.  See the upsset.conf file.  Once you
+can't run this program remotely.  See the `upsset.conf` file.  Once you
 have secured the directory, you can enable this program in that
 configuration file.  It is not active by default.
 
@@ -537,7 +538,7 @@ Try running some searches against the archives.  Many times, problems have
 already been answered by someone else. Currently, there is no internal
 search engine, so you will have to try with a search engine like Google.
 
-There is more documentation in the docs/ directory within the source 
+There is more documentation in the docs/ directory within the source
 tree.  Be sure to read through the files in there (especially the
 FAQ) before mailing the list for help.  Many times the questions have
 already been answered in the files which are right in front of you.
