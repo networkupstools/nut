@@ -49,10 +49,6 @@ include::../README[]
 
 [[Features]]
 
-////////////////////////////////////////////////////////////////////////////////
-*FIXME*: move from website/ to docs/
-////////////////////////////////////////////////////////////////////////////////
-
 include::features.txt[]
 
 
@@ -63,10 +59,6 @@ Hardware
 ~~~~~~~~
 
 The current list of hardware supported by NUT can be viewed <<HCL,here>>.
-
-////////////////////////////////////////////////////////////////////////////////
-*FIXME*: should we also link to the development tree?
-////////////////////////////////////////////////////////////////////////////////
 
 Operating systems
 ~~~~~~~~~~~~~~~~~
@@ -211,6 +203,10 @@ include history.txt[]
 Appendix E: Hardware Compatibility List
 =======================================
 
+////////////////////////////////////////////////////////////////////////////////
+*FIXME*: should we also link to the development tree?
+////////////////////////////////////////////////////////////////////////////////
+
 include hcl-stable.txt[]
 
 [[General_Info]]
@@ -223,10 +219,10 @@ Appendix F: General Information on Power Devices
 - link:http://www.pcguide.com/ref/power/ext/ups/over.htm[UPS on The PC Guide]
 
 [[Support_Request]]
-Appendix G: How to request support
-==================================
+Appendix G: Support instructions
+================================
 
-*FIXME* use website/support.txt for the content and merge with "UM 2.12. Support / Help / etc."
+include::support.txt[]
 
 
 [[Cables_information]]

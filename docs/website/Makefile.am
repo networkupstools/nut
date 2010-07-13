@@ -1,7 +1,7 @@
 if MANUALUPDATE
 
 WEBSITE_FILES = index.html projects.html stable-hcl.html \
-	documentation.html support.html acknowledgements.html features.html FAQ.html \
+	documentation.html acknowledgements.html features.html FAQ.html \
 	user-manual.html packager-guide.html developer-guide.html ups-protocols.html \
 	cables.html man-index.html nut-qa.html
 
@@ -44,6 +44,9 @@ download.html: ../download.txt
 	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc -a website $<
 
 FAQ.html: ../FAQ.txt
+	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc -a numbered $<
+
+support.html: ../support.txt
 	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc -a numbered $<
 
 user-manual.html: ../user-manual.txt

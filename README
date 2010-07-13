@@ -516,32 +516,8 @@ configuration file.  It is not active by default.
 Support / Help / etc.
 ---------------------
 
-*FIXME* To be reworked using website/support.txt
-
-The main URL:
-
-	http://www.networkupstools.org/
-
-There is also a mailing list for general queries and discussion about
-this software called nut-upsuser.  It typically moves around 50-100 messages
-per month at the time of this writing.  To join, go to the below address and
-subscribe to the desired list.
-
-Finally, there is a developer list called nut-upsdev.  This is not
-an install help list, and any such mails probably will be ignored.
-
-The mailing lists are archived on the web:
-
-	http://alioth.debian.org/mail/?group_id=30602
-
-Try running some searches against the archives.  Many times, problems have
-already been answered by someone else. Currently, there is no internal
-search engine, so you will have to try with a search engine like Google.
-
-There is more documentation in the docs/ directory within the source
-tree.  Be sure to read through the files in there (especially the
-FAQ) before mailing the list for help.  Many times the questions have
-already been answered in the files which are right in front of you.
+If you are in need of help, refer to the
+link:user-manual.html#Support_Request[Support instructions] in the user manual.
 
 
 Hacking / Development Info
@@ -552,7 +528,9 @@ Additional documentation can be found in:
 - the link:developer-guide.html[Developer Guide],
 - the link:packager-guide.html[Packager Guide].
 
+////////////////////////////////////////////////////////////////////////////////
 *FIXME* To be reworked using website/documentation.txt
+////////////////////////////////////////////////////////////////////////////////
 
 Acknowledgements / Contributions
 --------------------------------
