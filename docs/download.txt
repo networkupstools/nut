@@ -27,9 +27,14 @@ You can also browse the link:http://www.networkupstools.org/source/2.4/[stable s
 Testing: 2.4.x-pre
 ~~~~~~~~~~~~~~~~
 
+There is currently no testing release.
+
+////////////////////////////////////////////////////////////////////////////////
 There is currently a testing phase for the upcoming 2.4.x release.
 
-To test it, get the latest <<Snapshots,snapshot>>.
+To try it, get the latest <<Snapshots,snapshot>>.
+////////////////////////////////////////////////////////////////////////////////
+
 
 Development tree: 2.5
 ~~~~~~~~~~~~~~~~~~~~~
@@ -93,8 +98,8 @@ In order to verify the NUT source code signature, apply the following procedure:
 	gpg: Good signature from "Arnaud Quette ..."
 	...
 
-Packages
---------
+Binary packages
+---------------
 
 NOTE: The only official releases from this project are source code.
 
@@ -117,10 +122,5 @@ link:http://www.openbsd.org/cgi-bin/cvsweb/ports/sysutils/nut/[OpenBSD].
 link:http://pdb.finkproject.org/pdb/package.php/nut[Fink],
 link:http://trac.macports.org/browser/trunk/dports/sysutils/nut/Portfile[MacPorts]
 
-////////////////////////////////////////////////////////////////////////////////
-*FIXME*
-
-NOTE: you should also refer to the link?[Package installation instructions] of
-the NUT User Manual.
-
-////////////////////////////////////////////////////////////////////////////////
+- Windows (client side only):
+link:http://csociety.ecn.purdue.edu/~delpha/winnut/[WinNUT]
