@@ -3,7 +3,7 @@ if MANUALUPDATE
 WEBSITE_FILES = index.html projects.html stable-hcl.html \
 	documentation.html acknowledgements.html features.html FAQ.html \
 	user-manual.html packager-guide.html developer-guide.html ups-protocols.html \
-	cables.html man-index.html nut-qa.html
+	cables.html man-index.html nut-qa.html download.html support.html
 
 ASCIIDOC_PARAMS = --unsafe --backend=xhtml11 \
     --conf-file=$(LAYOUT).conf \
