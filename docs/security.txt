@@ -1,11 +1,11 @@
 Notes on securing NUT
 =====================
 
-The NUT Team is very inclined in providing the highest security level to its
+The NUT Team is very interested in providing the highest security level to its
 users.
 
 Many internal and external mechanisms exist to secure NUT. And several steps are
-needed to ensure that your NUT setup meet your security requirements.
+needed to ensure that your NUT setup meets your security requirements.
 
 This chapter will present you these mechanisms, by increasing order of security
 level. This means that the more security you need, the more mechanisms you will
@@ -20,7 +20,7 @@ reference security related QA topics
 System level privileges and ownership
 -------------------------------------
 
-All configuration files should be protected, so that the world can't read it.
+All configuration files should be protected so that the world can't read them.
 Use the following commands to accomplish this:
 
 	chown root:nut /etc/nut/*
@@ -34,8 +34,8 @@ holds the communication between the driver(s) and upsd, should also be secured.
 	chmod 0770 /var/state/ups
 
 
-NUT level users privileges
---------------------------
+NUT level user privileges
+-------------------------
 
 Administrative commands such as setting variables and the instant commands
 are powerful, and access to them needs to be restricted.
@@ -77,30 +77,38 @@ NUT LISTEN directive
 
 link:man/upsd.conf.html[upsd.conf(5)].
 
-LISTEN interface port
+   LISTEN interface port
 
-  Bind  a  listening  port  to  the  interface specified by its Internet address.
-  This may be useful on hosts with multiple interfaces.  You
-  should not rely exclusively on this for security, as it can be subverted on many systems.
+Bind a listening port to the interface specified by its Internet address.  This
+may be useful on hosts with multiple interfaces.  You should not rely
+exclusively on this for security, as it can be subverted on many systems.
 
-  Listen on TCP port port instead of the default value which was compiled into the code.  This overrides any value  you  may  have  set  with
-  'configure --with-port'.  If you don't change it with configure or this value, upsd will listen on port 3493 for this interface.
+Listen on TCP port `port` instead of the default value which was compiled into
+the code.  This overrides any value  you  may  have  set  with `configure
+--with-port`.  If you don't change it with configure or this value, `upsd` will
+listen on port 3493 for this interface.
 
-  Multiple LISTEN addresses may be specified.  The default is to bind to 127.0.0.1 if no LISTEN addresses are specified (and ::1 if IPv6 sup‐
-  port is compiled in).
+Multiple LISTEN addresses may be specified.  The default is to bind to
+127.0.0.1 if no LISTEN addresses are specified (and ::1 if IPv6 support is
+compiled in).
 
 	   LISTEN 127.0.0.1
 	   LISTEN 192.168.50.1
 	   LISTEN ::1
 	   LISTEN 2001:0db8:1234:08d3:1319:8a2e:0370:7344
 
-This parameter will only be read at startup.  You'll need to restart (rather than reload) upsd to apply any changes made here.
+This parameter will only be read at startup.  You'll need to restart (rather
+than reload) `upsd` to apply any changes made here.
 
 
 Firewall
 ~~~~~~~~
 
 NUT has its own official IANA port: 3493/tcp.
+
+The `upsmon` process on slave systems (as well as `upsc`) connects to the
+`upsd` process on the master system via this TCP port. The `upsd` process does
+not connect out.
 
 You should use this to restrict network access.
 
@@ -113,15 +121,15 @@ If the server is build with tcp-wrappers support enabled, it will check if the
 NUT username is allowed to connect from the client address through the
 '/etc/hosts.allow' and '/etc/hosts.deny' files.
 
-NOTE: this will only be done for commands that require to be logged into the
-server.
+NOTE: this will only be done for commands that require the user to be logged
+into the server.
 
-hosts.allow:
+`hosts.allow`:
 
 	ups : admin@127.0.0.1/32
 	ups : monslave@127.0.0.1/32 monslave@192.168.1.0/24
 
-hosts.deny:
+`hosts.deny`:
 
 	upsd : ALL
 
