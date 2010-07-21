@@ -14,23 +14,23 @@ implementation of NUT.
 So as to these can be spread on all supported platforms as a standard,
 and as a foundation block to build upon.
 
-------------------------------------------------------------------------
+///////////////////////////////////////////////////////////////////////
 *sandbox*
 that have been done to help those improving, and give advice on what's
 the best way to package NUT for the remaining "not yet packaged"
 platform (Sun, Aix, Mac, ...). The ultimate aim is to have NUT
 well packaged (all NUT features available) on all supported
 platforms.
-------------------------------------------------------------------------
+///////////////////////////////////////////////////////////////////////
 
 Introduction
 ------------
-Packaging is a final aim for a software. It ease and complete the
+Packaging is a final aim for software. It eases and completes the
 software integration into an OS, and allows users to have an easy
 software installation and support out of the box.
 
 NOTE: making NUT packaging more uniform should help its documentation,
-support and maintenance accross the supported OS.
+support and maintenance accross the supported OSes.
 
 ------------------------------------------------------------------------
 *sandbox*
