@@ -81,7 +81,7 @@ Upgrading
 ---------
 
 When upgrading from an older version, always check the
-link:user-manual.html#_upgrading_notes[Upgrading notes] to see what may have
+link:user-manual.html#Upgrading_notes[Upgrading notes] to see what may have
 changed.  Compatibility issues and other changes will be listed there to ease
 the process.
 
@@ -205,7 +205,7 @@ This table is also available link:http://www.networkupstools.org/stable-hcl.html
 
 
 If your driver has vanished, see the link:FAQ.html[FAQ] and
-link:user-manual.html#_upgrading_notes[Upgrading notes].
+link:user-manual.html#Upgrading_notes[Upgrading notes].
 
 Generic Device Drivers
 ~~~~~~~~~~~~~~~~~~~~~~

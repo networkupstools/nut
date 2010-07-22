@@ -1,5 +1,7 @@
+ifdef::txt[]
 Upgrading notes
 ===============
+endif::txt[]
 
 This file lists changes that affect users who installed older versions 
 of this software.  When upgrading from an older version, be sure to
