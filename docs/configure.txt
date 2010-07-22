@@ -1,30 +1,20 @@
+ifdef::website[]
+Configure options
+=================
+endif::website[]
 
 There are a few options that can be given to configure to tweak compiles. 
 See also "./configure --help" for a current and complete listing.
 
 ////////////////////////////////////////////////////////////////////////////////
-Desc: Configure options
-File: configure.txt
-Date: 24 December 2008
-Auth: Russell Kroll <rkroll@exploits.org>
-Auth: Peter Selinger <selinger@sourceforge.net>
-Auth: Arnaud Quette <aquette.dev@gmail.com>
+Authors:
+Russell Kroll <rkroll@exploits.org>
+Peter Selinger <selinger@sourceforge.net>
+Arnaud Quette <aquette.dev@gmail.com>
 ////////////////////////////////////////////////////////////////////////////////
 
-////////////////////////////////////////////////////////////////////////////////
-Contents:
-=========
-
-1. Driver selection
-2. Optional features
-3. Other configuration options
-4. Installation directories
-5. Directories used by NUT at run-time
-6. Things the compiler might need to find
-////////////////////////////////////////////////////////////////////////////////
-
-1. Driver selection
-^^^^^^^^^^^^^^^^^^^
+Driver selection
+----------------
 
 	--with-serial
 
@@ -61,8 +51,8 @@ configure with a different list. To make it build all of the
 drivers from scratch again, run 'make clean' before starting.
 
 
-2. Optional features
-^^^^^^^^^^^^^^^^^^^^
+Optional features
+-----------------
 
 	--with-cgi (default: no)
 
@@ -110,8 +100,8 @@ This allows to interact with the Powerman daemon, and the numerous
 Power Distribution Units (PDU) supported by the project.
 
  
-3. Other configuration options
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Other configuration options
+---------------------------
 
 	--with-port=PORT
 
@@ -134,7 +124,7 @@ programs, including upsdrvctl (and all drivers by extension), upsd,
 and upsmon.  The "user" directive in ups.conf overrides this at run
 time for the drivers.
 
-Note: upsmon does not totally drop root because it may need to
+NOTE: upsmon does not totally drop root because it may need to
 initiate a shutdown.  There is always at least a stub process
 remaining with root powers.  The network code runs in another
 (separate) process as the new user.
@@ -162,8 +152,8 @@ page for openlog to get some idea of what's available on your system.
 Default is LOG_DAEMON.
 
 
-4. Installation directories
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Installation directories
+------------------------
 
 	--prefix=PATH
 
@@ -276,8 +266,8 @@ override this option.
 Use --without-udev-dir to disable this feature altogether. 
 
 
-5. Directories used by NUT at run-time
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Directories used by NUT at run-time
+-----------------------------------
 
 	--with-pidpath=PATH
 
@@ -300,8 +290,8 @@ The NUT_STATEPATH environment variable overrides this at run time.
 Default is /var/state/ups.
 
 
-6. Things the compiler might need to find
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Things the compiler might need to find
+--------------------------------------
 
 	--with-gd-includes="-I/foo/bar"
 
