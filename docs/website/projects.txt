@@ -14,7 +14,7 @@ link:http://sourceforge.net/projects/gknut/[GKrellM NUT]
 Simple UPS monitoring plugin for GKrellM. Uses NUT (Network UPS Tools) for UPS connection.
 
 link:http://knut.prynych.cz[KNutClient]
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 KNutClient is a visual client for NUT.
 
@@ -54,8 +54,8 @@ link:http://wmnut.mgeops.org/[WMNUT]
 WMNut is a program to monitor multiple UPSs statistics through the NUT (Network
 UPS Tools) framework on Linux and other systems. 
 
-Network Management Systems integration
---------------------------------------
+Network Management Systems (NMS) integration
+--------------------------------------------
 
 link:http://bigsister.graeff.com/[Big Sister system and network monitor]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -80,6 +80,11 @@ link:http://collectd.org[collectd]
 The `collectd` system statistics collection daemon features a NUT plugin to
 collect statistics from UPSes. 
 
+link:http://xymon.sourceforge.net/[Hobbit (Xymon) monitor]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A link:http://www.revpol.com/xymon_nut_scripts[NUT plugin] is available.
+
 link:http://monami.sourceforge.net[MonAMI NUT plugin]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -90,8 +95,8 @@ link:http://munin.projects.linpro.no[Munin NUT plugin]
 
 A link:http://muninexchange.projects.linpro.no/?search&cid=0&pid=136&phid=279[NUT plugin] is available.
 
-link:http://www.nagios.org/[Nagios]
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+link:http://www.nagios.org/[Nagios plugin]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The link:http://sourceforge.net/projects/nagiosplug/[check_ups] plugin returns
 UPS status to the Nagios monitoring system using NUT.
