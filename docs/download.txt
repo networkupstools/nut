@@ -24,8 +24,8 @@ link:http://www.networkupstools.org/source/2.4/ChangeLog[ChangeLog]
 You can also browse the link:http://www.networkupstools.org/source/2.4/[stable source directory].
 
 
-Testing: 2.4.x-pre
-~~~~~~~~~~~~~~~~
+Testing tree: 2.4.x-pre
+~~~~~~~~~~~~~~~~~~~~~~~
 
 There is currently no testing release.
 
