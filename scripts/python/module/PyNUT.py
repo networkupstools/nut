@@ -17,10 +17,17 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # 2008-01-14 David Goncalves
-#            PyNUT is an abstraction class to access NUT (Network UPS Tools) server.
+#            PyNUT is an abstraction class to acces NUT (Network UPS Tools) server.
 #
 # 2008-06-09 David Goncalves
 #            Added 'GetRWVars' and 'SetRWVar' commands.
+#
+# 2009-02-19 David Goncalves
+#            Changed class PyNUT to PyNUTClient
+#
+# 2010-07-23 David Goncalves - Version 1.2
+#            Changed GetRWVars function that fails is the UPS is not
+#            providing such vars.
 
 import telnetlib
 
@@ -35,8 +42,8 @@ class PyNUTClient :
     __timeout     = None
     __srv_handler = None
 
-    __version     = "1.0"
-    __release     = "2008-06-09"
+    __version     = "1.2"
+    __release     = "2010-07-23"
 
 
     def __init__( self, host="127.0.0.1", port=3493, login=None, password=None, debug=False, timeout=5 ) :
@@ -200,10 +207,14 @@ The result is presented as a dictionnary containing 'key->val' pairs
         end_offset = 0 - ( len( "END LIST RW %s\n" % ups ) + 1 )
         rw_vars    = {}
 
-        for current in result[:end_offset].split( "\n" ) :
-            var  = current[ offset: ].split( '"' )[0].replace( " ", "" )
-            data = current[ offset: ].split( '"' )[1]
-            rw_vars[ var ] = data
+        try :
+            for current in result[:end_offset].split( "\n" ) :
+                var  = current[ offset: ].split( '"' )[0].replace( " ", "" )
+                data = current[ offset: ].split( '"' )[1]
+                rw_vars[ var ] = data
+
+        except :
+            pass
 
         return( rw_vars )
 
