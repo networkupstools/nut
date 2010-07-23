@@ -1,3 +1,6 @@
-- March 22, 2010: KNutClient 1.0
+- July 22, 2010: new client link:http://www.revpol.com/xymon_nut_scripts[Hobbit (Xymon) monitor plugin]
+- July 2, 2010: link:http://knut.prynych.cz[KNutClient] 1.0.3 and link update
+- May 12, 2010: link:http://www.lestat.st/informatique/projets/nut-monitor-en[NUT-Monitor] 1.2 released
+- March 22, 2010: link:http://knut.prynych.cz[KNutClient] 1.0
 - February 23, 2010: 2.4.3 released
 - February 19, 2010: 2.4.2 released 
