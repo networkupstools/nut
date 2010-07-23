@@ -76,20 +76,15 @@ for information about which drivers are developed with the support of the manufa
   </table>
 </fieldset>
 
-<table id="ups_list">
-  <thead>
-    <tr>
-      <td id="manufacturer-col">Manufacturer</td><td id="model-col">Model</td><td id="driver-col">Driver</td>
-    </tr>
-  </thead>
-  <tbody id="ups_list_body">
-	<!-- FIXME: include static table body here for browser with jscript disabled -->
-  </tbody>
-</table>
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-If your device isn't listed
----------------------------
+include::ups-html.txt[]
+
+[NOTE]
+================================================================================
+
+
+*If your device isn't listed*
 
 First, if there are other models by the same manufacturer, try their drivers.
 You may find that it "just works" or mostly works.
@@ -111,10 +106,19 @@ between the set of developers and the set of owners of that hardware.
 The way to fix it is to turn a developer into an owner or an owner into a
 developer.
 
-Omissions or errors
-~~~~~~~~~~~~~~~~~~~
+*Omissions or errors*
 
 There is a lot of UPS hardware for sale, and it's possible that we have missed
 listing some that are supported.
 
 Please report any omissions so that this list can be as accurate as possible. 
+
+
+================================================================================
+
+////////////////////////////////////////////////////////////////////////////////
+FIXME:
+- point and complete the "user manual -> support" section for success report
+link:user-manual.html#Support_Request[Support instructions] in the user manual.
+- document direct link with filters
+////////////////////////////////////////////////////////////////////////////////

@@ -127,6 +127,7 @@ td#driver-col { width: 30%; }
 #filters-set legend { font-weight: bold; }
 #filters-set td { border: 0; }
 #filters-set fieldset { display: block; }
+#filters-set select { max-width: 200px }
 
 #support-level-legend { width: 31.25em; float: right; margin-right: 10px; padding: 10px; }
 #support-level-legend dt { margin: 0; padding: 0; width: 15%; float: left; }

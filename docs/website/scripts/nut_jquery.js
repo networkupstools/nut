@@ -18,11 +18,37 @@ var NUT =
   [
     ["manufacturer"],
     ["model","comment"],
-    ["driver"]
+    ["driver"],
+    ["support-level"],
   ],
   
   tableCache: false,
-  
+
+  // Parse GET parameters from window url and return them as a hash
+  // The call format is:
+  // stable-hcl.html?filter=<filter name>&value=<filter value>
+  // Examples:
+  // stable-hcl.html?filter=manufacturer&value=Eaton
+  // stable-hcl.html?filter=support-level&value=5
+  parseGetParameters: function()
+  {
+    var url = window.location.href;
+    url = url.replace(/#$/, "");
+    var fieldPos = url.indexOf("?");
+    var get = {};
+    if(fieldPos > -1)
+    {
+      var fileName = url.substring(0, fieldPos);
+      var getList = url.substring(fieldPos + 1).split("&");
+      for(var i = 0; i<getList.length; i++)
+      {
+        var getField = getList[i].split("=");
+        get[unescape(getField[0])] = unescape(getField[1]);
+      }
+    }
+    return get;
+  },
+ 
   // UPS filter renderers by data column index
   filterRenderers:
   {
@@ -83,6 +109,17 @@ var NUT =
     this.sortUPSData(UPSData);
     this.buildUPSList(UPSData);
     this.buildFilters(UPSData);
+    
+    var get = this.parseGetParameters();
+    if(get["filter"] && get["value"])
+    {
+      var filter = $("#"+get["filter"]);
+      if(filter)
+      {
+        filter.val(get["value"]);
+        this.doFilter();
+      }
+    }
   },
   /**
    * Initialize filter filters references
@@ -129,6 +166,9 @@ var NUT =
   {
     var list = $(this.listBodyID);
     
+    // Initialize table cache
+    if(!this.tableCache) this.tableCache = list.html();
+    
     // If we're rebuilding the original table, just use the one in cache
     if(data == UPSData && this.tableCache)
     {
@@ -173,6 +213,8 @@ var NUT =
           }
           else cell = {html: cellContent, rowSpan: 1, cls: classes[currentClass] }
           
+          if(column.indexOf("support-level") != -1) cell.cls += " hidden";
+          
           cells.push(cell);
           cellHistory[colIndex] = cell;
         }
@@ -190,8 +232,6 @@ var NUT =
       rows[index] = "<tr>" + r.join("") + "</tr>";
     });
     list.html(rows.join(""));
-    
-    if(data == UPSData && !this.tableCache) this.tableCache = list.html();
   },
   /**
    * Initialize filters event listeners
@@ -258,7 +298,13 @@ var NUT =
       tmpData.forEach(function(row, rowIndex)
       {
         var field = row[index];
-        if(NUT.renderFilter(index, field) != value) data.splice(data.indexOf(row), 1);
+        
+        //TODO: neatly factor filter handlers 
+        if(NUT.fields[index] == "support-level")
+        {
+          if(NUT.renderFilter(index, field).length < value.length) data.splice(data.indexOf(row), 1);
+        }
+        else if(NUT.renderFilter(index, field) != value) data.splice(data.indexOf(row), 1);
       }, this);
       return data;
     }
