@@ -17,7 +17,7 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # 2008-01-14 David Goncalves
-#            PyNUT is an abstraction class to acces NUT (Network UPS Tools) server.
+#            PyNUT is an abstraction class to access NUT (Network UPS Tools) server.
 #
 # 2008-06-09 David Goncalves
 #            Added 'GetRWVars' and 'SetRWVar' commands.
