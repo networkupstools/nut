@@ -1,7 +1,7 @@
 # Network UPS Tools: data/html
 
 EXTRA_DIST = README \
-			 app/gui.glade \
+			 app/gui-1.2.glade \
 			 app/NUT-Monitor \
 			 app/nut-monitor.desktop \
 			 app/nut-monitor.png \
