@@ -6,6 +6,11 @@ EXTRA_DIST = README \
 			 app/nut-monitor.desktop \
 			 app/nut-monitor.png \
 			 app/README \
+			 app/pixmaps/var-rw.png \
+			 app/pixmaps/on_line.png \
+			 app/pixmaps/warning.png \
+			 app/pixmaps/on_battery.png \
+			 app/pixmaps/var-ro.png \
 			 module/PyNUT.py \
 			 module/test_nutclient.py
 
