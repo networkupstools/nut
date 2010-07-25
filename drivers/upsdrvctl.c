@@ -123,7 +123,7 @@ static void stop_driver(const ups_t *ups)
 {
 	char	pidfn[SMALLBUF];
 	int	ret;
-	struct	stat	fs;
+	struct stat	fs;
 
 	upsdebugx(1, "Stopping UPS: %s", ups->upsname);
 
@@ -131,7 +131,7 @@ static void stop_driver(const ups_t *ups)
 		ups->driver, ups->upsname);
 	ret = stat(pidfn, &fs);
 
-	if (ret != 0) {
+	if ((ret != 0) && (ups->port != NULL)) {
 		snprintf(pidfn, sizeof(pidfn), "%s/%s-%s.pid", altpidpath(),
 			ups->driver, xbasename(ups->port));
 		ret = stat(pidfn, &fs);
