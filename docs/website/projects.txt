@@ -80,7 +80,7 @@ link:http://collectd.org[collectd]
 The `collectd` system statistics collection daemon features a NUT plugin to
 collect statistics from UPSes. 
 
-link:http://xymon.sourceforge.net/[Hobbit (Xymon) monitor]
+link:http://xymon.sourceforge.net/[Xymon (Hobbit) monitor]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A link:http://www.revpol.com/xymon_nut_scripts[NUT plugin] is available.
