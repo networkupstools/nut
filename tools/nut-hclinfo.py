@@ -37,6 +37,9 @@ rawHCL="../data/driver.list";
 webJsonHCL = "../docs/website/scripts/ups_data.js";
 webStaticHCL = "../docs/website/ups-html.txt";
 
+class WrongFieldNumberException(Exception):
+    pass
+
 def buildData(deviceDataFile):
     """
     Read and parse data file under provided path.
@@ -44,6 +47,7 @@ def buildData(deviceDataFile):
     """
 
     deviceData = []
+    numFields = 6 # Manufacturer, type, support level, model comment, driver
     
     try:
         file = open(deviceDataFile, "r")
@@ -51,7 +55,7 @@ def buildData(deviceDataFile):
         print "Cannot open", deviceDataFile
         exit(1)
            
-    for line in file:
+    for line in file:     
         # Ignore empty lines or comments
         if re.match(r"^$|^\s*#", line):
             continue
@@ -61,13 +65,19 @@ def buildData(deviceDataFile):
         
         # Replace all tabs by commas
         line = re.sub(r"\t", ",", line)
+
+        # Remove trailing comma
+        line = re.sub(r",$", "", line)
         
-        # Remove double-quotes delimiters
-        line = re.sub(r"^\"|\"$", "", line)
-        line = re.sub(r"\",\"", ",", line)
+        # Split fields and append result to device data list
+        # We suppose there are no double-quotes in fields
+        row = re.findall(r'"([^"]*)",?', line)
         
-        
-        deviceData.append(line.split(","))
+        if len(row) != numFields:
+            print "Warning: Unexpected number of fields in line: %s" % row
+            print "\tLine will be skipped."
+        else:
+            deviceData.append(re.findall(r'"([^"]*)",?', line))
     
     return deviceData
 

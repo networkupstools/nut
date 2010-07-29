@@ -177,20 +177,20 @@
     </tr>
     <tr>
       <td rowspan="1" class="even">F6H375-USB<br/>USB (</td>
-      <td rowspan="1" class="orange"> vendor id: 050d)</td>
+      <td rowspan="1" class="orange">usbhid-ups</td>
       <td rowspan="4" class="hidden">2</td>
     </tr>
     <tr>
-      <td rowspan="1" class="even">F6H375-USB<br/>USB (2007 models</td>
-      <td rowspan="1" class="orange"> vendor id: 0665)</td>
+      <td rowspan="1" class="even">F6H375-USB<br/>USB (2007 models, vendor id: 0665)</td>
+      <td rowspan="1" class="orange">megatec_usb or blazer_usb</td>
     </tr>
     <tr>
       <td rowspan="1" class="even">Office Series F6C550-AVR<br/>USB</td>
       <td rowspan="1" class="orange">usbhid-ups</td>
     </tr>
     <tr>
-      <td rowspan="1" class="even">Regulator Pro<br/>F6C525-SER</td>
-      <td rowspan="1" class="orange"> F6C625-SER</td>
+      <td rowspan="1" class="even">Regulator Pro<br/>F6C525-SER, F6C625-SER</td>
+      <td rowspan="1" class="orange">belkin</td>
     </tr>
     <tr>
       <td rowspan="1" class="even">Resource<br/></td>
@@ -236,20 +236,20 @@
     </tr>
     <tr>
       <td rowspan="1" class="even">Universal UPS F6C1100-UNV<br/>USB (</td>
-      <td rowspan="1" class="orange"> vendor id: 050d)</td>
+      <td rowspan="1" class="orange">usbhid-ups</td>
       <td rowspan="8" class="hidden">2</td>
     </tr>
     <tr>
-      <td rowspan="1" class="even">Universal UPS F6C1100-UNV<br/>USB (2007 models</td>
-      <td rowspan="1" class="orange"> vendor id: 0665)</td>
+      <td rowspan="1" class="even">Universal UPS F6C1100-UNV<br/>USB (2007 models, vendor id: 0665)</td>
+      <td rowspan="1" class="orange">megatec_usb or blazer_usb</td>
     </tr>
     <tr>
       <td rowspan="1" class="even">Universal UPS F6C1200-UNV<br/>USB (</td>
-      <td rowspan="1" class="orange"> vendor id: 050d)</td>
+      <td rowspan="1" class="orange">usbhid-ups</td>
     </tr>
     <tr>
-      <td rowspan="1" class="even">Universal UPS F6C1200-UNV<br/>USB (2007 models</td>
-      <td rowspan="1" class="orange"> vendor id: 0665)</td>
+      <td rowspan="1" class="even">Universal UPS F6C1200-UNV<br/>USB (2007 models, vendor id: 0665)</td>
+      <td rowspan="1" class="orange">megatec_usb or blazer_usb</td>
     </tr>
     <tr>
       <td rowspan="1" class="even">Universal UPS F6H350deUNV<br/>serial port</td>
@@ -477,11 +477,12 @@
       <td rowspan="1" class="green">newmge-shut</td>
     </tr>
     <tr>
-      <td rowspan="2" class="even">Short Depth Rack 2700W Online LV / HV<br/>High Efficiency</td>
-      <td rowspan="1" class="green"> USB port</td>
+      <td rowspan="1" class="even">Short Depth Rack 2700W Online LV / HV<br/>High Efficiency, USB port</td>
+      <td rowspan="1" class="green">usbhid-ups</td>
     </tr>
     <tr>
-      <td rowspan="1" class="green"> Serial port</td>
+      <td rowspan="1" class="even">Short Depth Rack 2700W Online LV / HV<br/>High Efficiency, Serial port</td>
+      <td rowspan="1" class="green">newmge-shut</td>
     </tr>
     <tr>
       <td rowspan="1" class="even">Rack 3750W High Efficiency Online HV<br/>USB port</td>
@@ -520,8 +521,8 @@
     </tr>
     <tr>
       <td rowspan="1" class="odd">Digital Loggers</td>
-      <td rowspan="1" class="odd">LPC<br/> EPCR2</td>
-      <td rowspan="1" class="red"> DIN</td>
+      <td rowspan="1" class="odd">LPC, EPCR2, DIN<br/>8 outlets</td>
+      <td rowspan="1" class="red">powerman-pdu (experimental)</td>
     </tr>
     <tr>
       <td rowspan="1" class="even">Digitus</td>
@@ -1787,8 +1788,8 @@
       <td rowspan="1" class="even">Black Knight PRO<br/></td>
     </tr>
     <tr>
-      <td rowspan="1" class="even">Black Knight PRO<br/>USB (2009 models</td>
-      <td rowspan="1" class="green"> product id: 00a6)</td>
+      <td rowspan="1" class="even">Black Knight PRO<br/>USB (2009 models, product id: 00a6)</td>
+      <td rowspan="1" class="green">usbhid-ups (experimental)</td>
       <td rowspan="1" class="hidden">5</td>
     </tr>
     <tr>
@@ -1797,8 +1798,8 @@
       <td rowspan="1" class="hidden">4</td>
     </tr>
     <tr>
-      <td rowspan="1" class="even">Smart KING Pro (all Smart series)<br/>USB (2009 models</td>
-      <td rowspan="1" class="green"> product id: 00a3)</td>
+      <td rowspan="1" class="even">Smart KING Pro (all Smart series)<br/>USB (2009 models, product id: 00a3)</td>
+      <td rowspan="1" class="green">usbhid-ups (experimental)</td>
       <td rowspan="1" class="hidden">5</td>
     </tr>
     <tr>
@@ -1807,8 +1808,8 @@
       <td rowspan="1" class="hidden">4</td>
     </tr>
     <tr>
-      <td rowspan="1" class="even">Imperial<br/>USB (2009 models</td>
-      <td rowspan="1" class="green"> product id: 00a2)</td>
+      <td rowspan="1" class="even">Imperial<br/>USB (2009 models, product id: 00a2)</td>
+      <td rowspan="1" class="green">usbhid-ups (experimental)</td>
       <td rowspan="1" class="hidden">5</td>
     </tr>
     <tr>
@@ -1817,28 +1818,28 @@
       <td rowspan="1" class="hidden">4</td>
     </tr>
     <tr>
-      <td rowspan="1" class="even">Vanguard<br/>USB (2009 models</td>
-      <td rowspan="1" class="green"> product id: 00a5)</td>
+      <td rowspan="1" class="even">Vanguard<br/>USB (2009 models, product id: 00a5)</td>
+      <td rowspan="1" class="green">usbhid-ups (experimental)</td>
       <td rowspan="1" class="hidden">5</td>
     </tr>
     <tr>
       <td rowspan="1" class="even">WOW<br/>USB (</td>
-      <td rowspan="1" class="blue"> product id: 0002)</td>
+      <td rowspan="1" class="blue">powercom (requires 'usbserial' kernel module)</td>
       <td rowspan="1" class="hidden">4</td>
     </tr>
     <tr>
-      <td rowspan="1" class="even">WOW<br/>USB (2009 models</td>
-      <td rowspan="1" class="green"> product id: 00a4)</td>
+      <td rowspan="1" class="even">WOW<br/>USB (2009 models, product id: 00a4)</td>
+      <td rowspan="1" class="green">usbhid-ups (experimental)</td>
       <td rowspan="1" class="hidden">5</td>
     </tr>
     <tr>
       <td rowspan="1" class="even">(various)<br/>USB (</td>
-      <td rowspan="1" class="blue"> product id: 0002)</td>
+      <td rowspan="1" class="blue">powercom (requires 'usbserial' kernel module)</td>
       <td rowspan="1" class="hidden">4</td>
     </tr>
     <tr>
-      <td rowspan="1" class="even">(various)<br/>USB (2009 models</td>
-      <td rowspan="1" class="green"> product id: 00a?)</td>
+      <td rowspan="1" class="even">(various)<br/>USB (2009 models, product id: 00a?)</td>
+      <td rowspan="1" class="green">usbhid-ups (experimental)</td>
       <td rowspan="1" class="hidden">5</td>
     </tr>
     <tr>
@@ -1902,8 +1903,8 @@
       <td rowspan="1" class="blue">genericups upstype=11</td>
     </tr>
     <tr>
-      <td rowspan="1" class="even">5119<br/> 5125</td>
-      <td rowspan="1" class="blue"/>
+      <td rowspan="1" class="even">5119, 5125<br/></td>
+      <td rowspan="1" class="blue">genericups upstype=15</td>
     </tr>
     <tr>
       <td rowspan="2" class="even">5119 RM<br/></td>
@@ -1979,15 +1980,15 @@
     </tr>
     <tr>
       <td rowspan="3" class="odd">Raritan</td>
-      <td rowspan="1" class="odd">Intelligent PDU - Dominion PX<br/>no report</td>
-      <td rowspan="3" class="yellow"> but should be supported</td>
+      <td rowspan="1" class="odd">Intelligent PDU - Dominion PX<br/>no report, but should be supported</td>
+      <td rowspan="3" class="yellow">snmp-ups (experimental)</td>
       <td rowspan="3" class="hidden">3</td>
     </tr>
     <tr>
-      <td rowspan="1" class="odd">Metered PDU - Raritan PM<br/>no report</td>
+      <td rowspan="1" class="odd">Metered PDU - Raritan PM<br/>no report, but should be supported</td>
     </tr>
     <tr>
-      <td rowspan="1" class="odd">Switched PDU - Raritan RPC<br/>no report</td>
+      <td rowspan="1" class="odd">Switched PDU - Raritan RPC<br/>no report, but should be supported</td>
     </tr>
     <tr>
       <td rowspan="3" class="even">Repotec</td>
@@ -2087,8 +2088,8 @@
     </tr>
     <tr>
       <td rowspan="1" class="odd">SuperPower</td>
-      <td rowspan="1" class="odd">HP360<br/> Hope-550</td>
-      <td rowspan="1" class="orange"/>
+      <td rowspan="1" class="odd">HP360, Hope-550<br/></td>
+      <td rowspan="1" class="orange">megatec or blazer_ser</td>
       <td rowspan="3" class="hidden">2</td>
     </tr>
     <tr>
@@ -2150,8 +2151,8 @@
       <td rowspan="1" class="even">SMART550USB<br/>USB</td>
     </tr>
     <tr>
-      <td rowspan="1" class="even">SMART2200RMXL2U<br/>USB</td>
-      <td rowspan="1" class="red"> older models</td>
+      <td rowspan="1" class="even">SMART2200RMXL2U<br/>USB, older models</td>
+      <td rowspan="1" class="red">tripplite_usb (experimental)</td>
     </tr>
     <tr>
       <td rowspan="1" class="even">SmartUPS<br/></td>
@@ -2167,7 +2168,7 @@
     </tr>
     <tr>
       <td rowspan="1" class="even">OMNI1000LCD<br/>USB</td>
-      <td rowspan="8" class="orange">usbhid-ups</td>
+      <td rowspan="9" class="orange">usbhid-ups</td>
       <td rowspan="20" class="hidden">2</td>
     </tr>
     <tr>
@@ -2192,8 +2193,7 @@
       <td rowspan="1" class="even">SmartOnline SU1500RTXL2ua<br/>USB</td>
     </tr>
     <tr>
-      <td rowspan="1" class="even">smart2200RMXL2U<br/>USB</td>
-      <td rowspan="1" class="orange"> newer models</td>
+      <td rowspan="1" class="even">smart2200RMXL2U<br/>USB, newer models</td>
     </tr>
     <tr>
       <td rowspan="3" class="odd">Trust</td>
