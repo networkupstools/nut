@@ -4,6 +4,7 @@ var NUT =
   listID: "#ups_list",
   listBodyID: "#ups_list_body",
   
+  // Field names
   fields:
   [
     "manufacturer",
@@ -14,6 +15,7 @@ var NUT =
     "driver"
   ],
   
+  // Actual HTML table columns
   columns:
   [
     ["manufacturer"],
@@ -22,14 +24,35 @@ var NUT =
     ["support-level"],
   ],
   
+  // driver => connection type mappings
+  driverMap: function(driver)
+  {
+    if(driver.match(/bcmxcp_usb|blazer_usb|megatec_usb|richcomm_usb|tripplite_usb|usbhid-ups/))
+      return "USB";
+      
+    if(driver.match(/snmp-ups|netxml-ups/))
+      return "Network";
+     
+    return "Serial";
+  },
+  
+  // Support level => CSS class mappings
+  supportLevelClasses:
+  {
+    0: "",
+    1: "red",
+    2: "orange",
+    3: "yellow",
+    4: "blue",
+    5: "green"
+  },
+  
   tableCache: false,
 
   // Parse GET parameters from window url and return them as a hash
   // The call format is:
-  // stable-hcl.html?filter=<filter name>&value=<filter value>
-  // Examples:
-  // stable-hcl.html?filter=manufacturer&value=Eaton
-  // stable-hcl.html?filter=support-level&value=5
+  // stable-hcl.html?<filter name>=<filter value>
+  // Refer to docs/website/stable-hcl.txt for examples
   parseGetParameters: function()
   {
     var url = window.location.href;
@@ -60,9 +83,7 @@ var NUT =
     },
     "driver": function(value)
     {
-      if(value.match(/bcmxcp_usb|blazer_usb|megatec_usb|richcomm_usb|tripplite_usb|usbhid-ups/)) return "USB";
-      if(value.match(/snmp-ups|netxml-ups/)) return "Network";
-      return "Serial";
+      return this.driverMap(value);
     },
     "device-type": function(value)
     {
@@ -77,6 +98,23 @@ var NUT =
     }
   },
   
+  // Specific filter handlers
+  filterHandlers:
+  {
+    /**
+     * @param {string} value value to filter
+     * @param {array} row raw data fields
+     * @return {boolean} true if value passes the filter, false otherwise
+     */
+    "driver": function(value, row)
+    {
+      var driver = row[this.fields.indexOf("driver")];
+      if(this.driverMap(driver) == value) return true;
+      
+      return false;
+    }
+  },
+  
   /**
    * Returns rendered UPS data according to column index
    * @param {integer} index
@@ -84,20 +122,10 @@ var NUT =
    */
   renderFilter: function(index, value)
   {
-    var renderer = NUT.filterRenderers[this.fields[index]];
+    var renderer = this.filterRenderers[this.fields[index]];
     if(typeof renderer == "function")
       return renderer.call(this, value);
     return value;
-  },
-  
-  supportLevelClasses:
-  {
-    0: "",
-    1: "red",
-    2: "orange",
-    3: "yellow",
-    4: "blue",
-    5: "green"
   },
   
   /**
@@ -111,12 +139,12 @@ var NUT =
     this.buildFilters(UPSData);
     
     var get = this.parseGetParameters();
-    if(get["filter"] && get["value"])
+    for(var param in get)
     {
-      var filter = $("#"+get["filter"]);
+      var filter = $("#"+param);
       if(filter)
       {
-        filter.val(get["value"]);
+        filter.val(get[param]);
         this.doFilter();
       }
     }
@@ -131,11 +159,11 @@ var NUT =
     
     this.filters =
     {
-      "support-level": { index: NUT.fields.indexOf("support-level"), field: $("#support-level") },
-      "device-type": { index: NUT.fields.indexOf("device-type"), field: $("#device-type") },
-      "manufacturer": { index: NUT.fields.indexOf("manufacturer"), field: $("#manufacturer") },
-      "model": { index: NUT.fields.indexOf("model"), field: $("#model") },
-      "driver": { index: NUT.fields.indexOf("driver"), field: $("#connection") }
+      "support-level": { index: this.fields.indexOf("support-level"), field: $("#support-level") },
+      "device-type": { index: this.fields.indexOf("device-type"), field: $("#device-type") },
+      "manufacturer": { index: this.fields.indexOf("manufacturer"), field: $("#manufacturer") },
+      "model": { index: this.fields.indexOf("model"), field: $("#model") },
+      "driver": { index: this.fields.indexOf("driver"), field: $("#connection") }
     }
   },
   
@@ -145,7 +173,7 @@ var NUT =
    */
   sortUPSData: function(data)
   {
-    var mI = NUT.fields.indexOf("manufacturer"), dI = NUT.fields.indexOf("driver");
+    var mI = this.fields.indexOf("manufacturer"), dI = this.fields.indexOf("driver");
     data.sort(function(a,b)
     {
       var toLower = function(ar)
@@ -227,10 +255,11 @@ var NUT =
     {
       r.forEach(function(c, index)
       {
-        r[index] = "<td class='" + c.cls + "' rowspan='" + c.rowSpan + "'>" + c.html + "</td>";
+        r[index] = ["<td class='", c.cls, "' rowspan='", c.rowSpan, "'>", c.html, "</td>"].join("");
       });
-      rows[index] = "<tr>" + r.join("") + "</tr>";
+      rows[index] = ["<tr>", r.join(""), "</tr>"].join("");
     });
+    
     list.html(rows.join(""));
   },
   /**
@@ -239,9 +268,9 @@ var NUT =
    */
   buildFilters: function(data)
   {
-    for(var f in NUT.filters)
+    for(var f in this.filters)
     {
-      var filter = NUT.filters[f];
+      var filter = this.filters[f];
       this.populateCombo(data, filter);
       filter.field.change(this.doFilter);
       var op = $("#op-" + (filter.index));
@@ -257,22 +286,43 @@ var NUT =
   populateCombo: function(data, filter)
   {
     var values = [];
+    var valueDict = {};
+    
     var combo = filter.field;
-    data.forEach(function(row)
-    {
-      var value = NUT.renderFilter(filter.index, row[filter.index]);
-      if(value != "" && values.indexOf(value) < 0) values.push(value);
-    }, this);
-    values = values.sort();
     var oldValue = combo.val();
     combo.html("<option value='-1'>---</option>");
+    
+    // Special case for connection type
+    if(filter.field.attr("id") == "connection")
+    {
+      ["Serial", "USB", "Network"].forEach(function(type)
+      {
+        values.push([type, type]);
+      }, this);
+    }
+    else
+    {
+      data.forEach(function(row)
+      {
+        var value = row[filter.index];
+        if(value != "" && !valueDict[value])
+        {
+          values.push([value, this.renderFilter(filter.index, value)]);
+          valueDict[value] = true;
+        }
+      }, this);
+      
+      values = values.sort();
+    }
+    
     values.forEach(function(value)
     {
       var option = $(document.createElement("option"));
-      option.val(value);
-      option.text(value);
+      option.val(value[0]);
+      option.text(value[1]);
       combo.append(option);
     }, this);
+    
     combo.val(oldValue);
   },
   /**
@@ -287,9 +337,8 @@ var NUT =
      * Applies a single filter on provided UPS data set
      * @param {string} value
      * @param {integer} index
-     * @param {string} operator
      * @param {array} data
-     * @return {array} filtered data set
+     * @returns {array} filtered data set
      */
     var applyFilter = function(value, index, data)
     {
@@ -298,13 +347,15 @@ var NUT =
       tmpData.forEach(function(row, rowIndex)
       {
         var field = row[index];
-        
-        //TODO: neatly factor filter handlers 
-        if(NUT.fields[index] == "support-level")
+        var handler = this.filterHandlers[this.fields[index]];
+        if(handler)
         {
-          if(NUT.renderFilter(index, field).length < value.length) data.splice(data.indexOf(row), 1);
+          if(!handler.apply(this, [value, row]))
+          {
+            data.splice(data.indexOf(row), 1);
+          }
         }
-        else if(NUT.renderFilter(index, field) != value) data.splice(data.indexOf(row), 1);
+        else if(row[index] != value) data.splice(data.indexOf(row), 1);
       }, this);
       return data;
     }
@@ -317,7 +368,7 @@ var NUT =
       if(value != "-1") // Is filter active, i.e have the user picked a value in the filter combo
       {
         var opField = $("#op-" + filter.index);
-        filteredRows = applyFilter(value, filter.index, filteredRows);
+        filteredRows = applyFilter.apply(NUT, [value, filter.index, filteredRows]);
       }
     }
     
@@ -325,19 +376,19 @@ var NUT =
     NUT.buildUPSList(filteredRows);
     ["manufacturer", "model", "driver"].forEach(function(id)
     {
-      if(this.id != id) NUT.populateCombo(filteredRows, NUT.filters[id]);
-    }, this);
+      if(this.id != id) this.populateCombo(filteredRows, this.filters[id]);
+    }, NUT);
   },
   
   resetCombos: function()
   {
-    for(var f in NUT.filters)
+    for(var f in this.filters)
     {
-      var field = NUT.filters[f].field;
-      this.populateCombo(UPSData, NUT.filters[f]);
+      var field = this.filters[f].field;
+      this.populateCombo(UPSData, this.filters[f]);
       field.val("-1");
     }
-    NUT.buildUPSList(UPSData);
+    this.buildUPSList(UPSData);
   }
 }
 
@@ -358,12 +409,9 @@ if(typeof Array.prototype.forEach != "function")
 {
   Array.prototype.forEach = function(cb, scope)
   {
-    var i = 0;
-    while(i < this.length)
-    {
-      cb.call(scope || this, this[i], i, this);
-      i++;
-    }
+    for (var i = 0, n = this.length; i<n; i++)
+      if (i in this)
+        cb.call(scope, this[i], i, this);
   }
 }
 

@@ -113,6 +113,39 @@ listing some that are supported.
 
 Please report any omissions so that this list can be as accurate as possible. 
 
+*Pointing the present HCL*
+
+You can create direct link to the present HCL, speficying some filters within
+the URL. This allows to select devices that matches some specific criteria,
+like a connexion type, a manufacturer, ... All filters available on the page
+itself are also available for use in the URL.
+
+The form of the URL is the following:
+
+	http://www.networkupstools.org/stable-hcl.html?<filter-name>=<filter-value>
+
+.Possible values for <filter-name> and <filter-value>
+[cols="^,^",options="header"]
+|==========================================================================
+|       <filter-name>        | <filter-value>
+|       support-level        | a number from '1' to '5'
+.3+^.^| device-type          | 'ups' for uninterruptible power supply
+                             | 'pdu' for power distribution unit
+                             | 'scd' for solar controller device 
+|       manufacturer         | a manufacturer name from the selection list
+|       model                | a model name from the selection list
+.3+^.^| connection           | 'USB'
+                             | 'Serial'
+                             | 'Network'
+|==========================================================================
+
+You can finally combine multiple filters, using ampersand (*&*).
+
+For example, if you only want to select USB units from Eaton, use:
+
+	http://www.networkupstools.org/stable-hcl.html?manufacturer=Eaton&driver=USB
+
+
 
 ================================================================================
 
@@ -120,5 +153,4 @@ Please report any omissions so that this list can be as accurate as possible.
 FIXME:
 - point and complete the "user manual -> support" section for success report
 link:user-manual.html#Support_Request[Support instructions] in the user manual.
-- document direct link with filters
 ////////////////////////////////////////////////////////////////////////////////
