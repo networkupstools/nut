@@ -143,7 +143,7 @@ You can finally combine multiple filters, using ampersand (*&*).
 
 For example, if you only want to select USB units from Eaton, use:
 
-	http://www.networkupstools.org/stable-hcl.html?manufacturer=Eaton&driver=USB
+	http://www.networkupstools.org/stable-hcl.html?manufacturer=Eaton&connection=USB
 
 
 
