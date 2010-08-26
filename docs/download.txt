@@ -53,8 +53,7 @@ To generate the build scripts, you must then call:
 
 	$ autoreconf --install
 
-Then refer to the link:install.html[Quick Start instructions] and the
-link:user-manual.html[NUT User Manual] for more information.
+Then refer to the link:user-manual.html[NUT User Manual] for more information.
 
 NOTE: Users that needs the latest developments to support new devices *must*
 prefer to use <<Snapshots,snapshot>>. 
