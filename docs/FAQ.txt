@@ -1,5 +1,7 @@
+ifdef::website[]
 NUT Frequently Asked Questions
 ==============================
+endif::website[]
 
 ////////////////////////////////////////////////////////////////////////////////
 Auth: Russell Kroll <rkroll@exploits.org>
@@ -406,7 +408,7 @@ update your startup scripts so it uses this procedure on your next
 boot.
 
 If you like this, you'll probably also find the chroot process to
-be useful and interesting.  See chroot.txt for more details.
+be useful and interesting.  See security.txt for more details.
 
 == What's the point of that "security domains" concept above?
 
