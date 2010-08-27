@@ -73,8 +73,8 @@ library).
 
 	--with-ssl (default: auto-detect)
 
-Enable SSL development code. Read docs/ssl.txt for instructions on
-SSL support.
+Enable SSL development code. Read the section "Configuring SSL" in
+docs/security.txt for instructions on SSL support.
 
 	--with-wrap (default: auto-detect)
 

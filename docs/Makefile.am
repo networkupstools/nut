@@ -4,7 +4,7 @@ EXTRA_DIST = acknowledgements.txt		\
  ideas.txt macros.txt megatec.txt new-drivers.txt new-names.txt \
  nut-hal.txt support.txt	\
  outlets.txt protocol.txt security.txt snmp.txt 	\
- sock-protocol.txt ssl.txt scheduling.txt cables/apc-rs500-serial.txt	\
+ sock-protocol.txt scheduling.txt cables/apc-rs500-serial.txt	\
  cables/apc.txt cables/ge-imv-victron.txt cables/imv.txt		\
  cables/mgeups.txt cables/powerware.txt cables/repotec.txt		\
  cables/sms.txt
