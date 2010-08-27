@@ -1,5 +1,7 @@
+ifdef::website[]
 Project history
 ===============
+endif::website[]
 
 WARNING: this is a Work In Progress!
 

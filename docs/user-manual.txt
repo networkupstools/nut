@@ -2,16 +2,8 @@
 
 Network UPS Tools User Manual
 _____________________________
-
-
-////////////////////////////////////////////////////////////////////////////////
-Authors:
-	Russell Kroll <rkroll@exploits.org>
-	Arnaud Quette <arnaud.quette@free.fr>
-	?Charles and Arjen
-
-image::images/nut-banner.png[Network UPS Tools logo]
-////////////////////////////////////////////////////////////////////////////////
+:Author: Russell_Kroll_and_Arnaud_Quette
+:Author Initials: RK & AQ
 
 WARNING: this is a Work In Progress document.
 
@@ -29,8 +21,7 @@ More than 100 different manufacturers, and several thousands models are
 <<HCL,compatible>>.
 
 This software is the combined effort of many
-<<Acknowledgements,individuals and companies>>, along with the support of our
-sponsor http://www.eaton.com[Eaton].
+<<Acknowledgements,individuals and companies>>.
 
 This document intend to describe how to install software support for your
 <<General_Info, Power Devices>> (UPS, PDU, ...), and how to use the Network UPS
@@ -96,7 +87,7 @@ include::../INSTALL[]
 
 
 ////////////////////////////////////////////////////////////////////////////////
-FIXME: to be removed and declared obsolete
+FIXME: to be removed and declared obsolete?
 Integrated Power Management support
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -171,7 +162,10 @@ include snmp.txt[]
 Appendix A: Glossary
 ====================
 
-[glossary]
+This section document the various acronyms used throughout the present
+documentation.
+
+[template="glossary",id="terms"]
 NUT::
 	Network UPS Tools.
 PDU::
@@ -181,26 +175,21 @@ SCD::
 UPS::
 	Uninterruptible Power Supply.
 
-[[FAQ]]
-Appendix B: Frequently Asked Questions
-======================================
-
-include FAQ.txt[Frequently Asked Questions]
 
 [[Acknowledgements]]
-Appendix C: Acknowledgements / Contributions
+Appendix B: Acknowledgements / Contributions
 ============================================
 
 include::acknowledgements.txt[Acknowledgements / Contributions]
 
 [[Project_History]]
-Appendix D: Project history
+Appendix C: Project history
 ===========================
 
-include history.txt[]
+include::history.txt[]
 
 [[HCL]]
-Appendix E: Hardware Compatibility List
+Appendix D: Hardware Compatibility List
 =======================================
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -210,7 +199,7 @@ Appendix E: Hardware Compatibility List
 include hcl-stable.txt[]
 
 [[General_Info]]
-Appendix F: General Information on Power Devices
+Appendix E: General Information on Power Devices
 ================================================
 
 - link:http://tldp.org/HOWTO/UPS-HOWTO/[UPS HOWTO] (The Linux Documentation Project)
@@ -219,29 +208,29 @@ Appendix F: General Information on Power Devices
 - link:http://www.pcguide.com/ref/power/ext/ups/over.htm[UPS on The PC Guide]
 
 [[Support_Request]]
-Appendix G: Support instructions
+Appendix F: Support instructions
 ================================
 
 include::support.txt[]
 
 
 [[Cables_information]]
-Appendix H: Cables information
+Appendix G: Cables information
 ==============================
 
 include::cables.txt[]
 
 
 [[Configure_options]]
-Appendix J: Configure options
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Appendix H: Configure options
+=============================
 
 include::configure.txt[]
 
 
 [[Upgrading_notes]]
-Appendix K: Upgrading notes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Appendix I: Upgrading notes
+===========================
 
 include::../UPGRADING[]
 

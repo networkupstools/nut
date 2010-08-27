@@ -1,7 +1,7 @@
 EXTRA_DIST = acknowledgements.txt		\
  commands.txt configure.txt config-notes.txt contact-closure.txt	\
  design.txt developers.txt download.txt FAQ.txt hid-subdrivers.txt		\
- ideas.txt macros.txt megatec.txt new-drivers.txt new-names.txt \
+ history.txt ideas.txt macros.txt megatec.txt new-drivers.txt new-names.txt \
  nut-hal.txt support.txt	\
  outlets.txt protocol.txt security.txt snmp.txt 	\
  sock-protocol.txt scheduling.txt cables/apc-rs500-serial.txt	\
@@ -37,7 +37,7 @@ SUFFIXES = .txt .html
 		-a toc -a numbered -o $@ $<
 
 ### TODO: automatic dependency generation
-user-manual.html: ../README features.txt download.txt ../INSTALL config-notes.txt scheduling.txt outlets.txt security.txt acknowledgements.txt cables.txt configure.txt ../UPGRADING
+user-manual.html: ../README features.txt download.txt ../INSTALL config-notes.txt scheduling.txt outlets.txt security.txt acknowledgements.txt cables.txt configure.txt history.txt ../UPGRADING
 
 else !MANUALUPDATE
 html:	html-recursive
