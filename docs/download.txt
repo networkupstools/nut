@@ -55,8 +55,8 @@ To generate the build scripts, you must then call:
 
 Then refer to the link:user-manual.html[NUT User Manual] for more information.
 
-NOTE: Users that needs the latest developments to support new devices *must*
-prefer to use <<Snapshots,snapshot>>. 
+NOTE: Users that need the latest developments to support new devices *must*
+use <<Snapshots,snapshots>>. 
 
 Browse code
 ^^^^^^^^^^^
@@ -83,7 +83,7 @@ link:http://www.networkupstools.org/source/[Browse source directory]
 How to verify the NUT source code signature
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In order to verify the NUT source code signature, apply the following procedure:
+In order to verify the NUT source code signature for releases, perform the following steps:
 
 - Retrieve the link:http://www.networkupstools.org/download.html[NUT source code] (nut-X.Y.Z.tar.gz) and the matching signature (nut-X.Y.Z.tar.gz.sig)
 - Retrieve the link:http://www.networkupstools.org/source/nut-key.gpg[NUT maintainer's signature]:
