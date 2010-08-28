@@ -1,21 +1,26 @@
-EXTRA_DIST = acknowledgements.txt		\
- commands.txt configure.txt config-notes.txt contact-closure.txt	\
- design.txt developers.txt download.txt FAQ.txt hid-subdrivers.txt		\
- history.txt ideas.txt macros.txt megatec.txt new-drivers.txt new-names.txt \
- nut-hal.txt support.txt	\
- outlets.txt protocol.txt security.txt snmp.txt 	\
- sock-protocol.txt scheduling.txt cables/apc-rs500-serial.txt	\
+USER_MANUAL_DEPS =  acknowledgements.txt cables.txt config-notes.txt	\
+ configure.txt download.txt features.txt history.txt outlets.txt	\
+ scheduling.txt security.txt support.txt user-manual.txt
+
+DEVELOPER_GUIDE_DEPS = commands.txt design.txt developers.txt	\
+ hid-subdrivers.txt macros.txt new-drivers.txt new-names.txt \
+ protocol.txt sock-protocol.txt
+
+CABLES_DEPS = cables/apc-rs500-serial.txt	\
  cables/apc.txt cables/ge-imv-victron.txt cables/imv.txt		\
  cables/mgeups.txt cables/powerware.txt cables/repotec.txt		\
  cables/sms.txt
+
+EXTRA_DIST = $(USER_MANUAL_DEPS) $(DEVELOPER_GUIDE_DEPS) \
+ $(CABLES_DEPS) contact-closure.txt FAQ.txt ideas.txt \
+ megatec.txt nut-hal.txt snmp.txt
 
 if MANUALUPDATE
 
 CONVERTED_TO_ASCIIDOC = asciidoc.html \
 	user-manual.html \
-	packager-guide.html \
 	developer-guide.html \
-	download.html \
+	packager-guide.html \
 	FAQ.html
 
 html:	$(CONVERTED_TO_ASCIIDOC) html-recursive
@@ -37,7 +42,8 @@ SUFFIXES = .txt .html
 		-a toc -a numbered -o $@ $<
 
 ### TODO: automatic dependency generation
-user-manual.html: ../README features.txt download.txt ../INSTALL config-notes.txt scheduling.txt outlets.txt security.txt acknowledgements.txt cables.txt configure.txt history.txt ../UPGRADING
+user-manual.html: $(USER_MANUAL_DEPS) ../README ../INSTALL cables.txt ../UPGRADING
+developer-guide.html: $(DEVELOPER_GUIDE_DEPS)
 
 else !MANUALUPDATE
 html:	html-recursive

@@ -11,6 +11,7 @@ ASCIIDOC_PARAMS = --unsafe --backend=xhtml11 \
     --attribute iconsdir=$(srcdir)/images \
     --attribute scriptsdir=$(srcdir)/scripts \
     --attribute=badges \
+    --attribute=website \
     --attribute=revision=$(PACKAGE_VERSION) \
     --attribute localdate=`TZ=UTC date +%Y-%m-%d` \
     --attribute localtime=`TZ=UTC date +%H:%M:%S` \
@@ -32,22 +33,25 @@ index.html: website.txt news.txt
 	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a index-only $<
 
 acknowledgements.html: ../acknowledgements.txt
-	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a website $<
+	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ $<
 
 features.html: ../features.txt
 	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ $<
 
 cables.html: ../cables.txt
-	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc -a website $<
+	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc $<
 
 download.html: ../download.txt
-	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc -a website $<
+	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc $<
 
 FAQ.html: ../FAQ.txt
 	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc -a numbered $<
 
+projects.html: projects.txt
+	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc $<
+
 support.html: ../support.txt
-	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc -a numbered $<
+	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ $<
 
 user-manual.html: ../user-manual.txt
 	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc -a numbered $<
