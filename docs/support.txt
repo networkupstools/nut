@@ -1,3 +1,9 @@
+ifdef::website[]
+Support instructions
+====================
+endif::website[]
+
+
 There are various ways to obtain support for NUT.
 
 Documentation
@@ -9,6 +15,10 @@ addressed there.
 - Else, you can read the link:user-manual.html[NUT User Manual].
 It also covers many areas about installing, configuring and using NUT.
 The specific steps on system integration are also discussed.
+
+- Finally, link:man/index.html#User_man[User manual pages] will also
+complete the User Manual provided information. At least, read the manual
+page related to your driver(s).
 
 Mailing lists
 -------------

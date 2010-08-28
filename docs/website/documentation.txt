@@ -1,5 +1,5 @@
-NUT Official Documentation
-==========================
+Documentation
+=============
 
 User Documentation
 ------------------

@@ -1,5 +1,5 @@
 Hardware compatibility list
----------------------------
+===========================
 
 NOTE: Before you buy, take a look at the link:acknowledgements.html[Acknowledgements]
 for information about which drivers are developed with the support of the manufacturer. 

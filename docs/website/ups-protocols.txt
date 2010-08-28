@@ -1,7 +1,7 @@
 
-WARNING: this is a Work In Progress document.
-
-For the time being, you should refer to the link:http://old.networkupstools.org/protocols/[old NUT website library]. 
+WARNING: this is a Work In Progress document. For the time being, you
+should refer to the
+link:http://old.networkupstools.org/protocols/[old NUT website library]. 
 
 UPS Protocols
 -------------
