@@ -183,9 +183,9 @@ Some drivers may require additional settings to properly communicate
 with your hardware.  If it doesn't detect your UPS by default, check the
 driver's man page or help (-h) to see which options are available.
 
-For example, the apcsmart driver allows setting "cable" to "940-0095B".
-To use this feature, just add another line to your ups.conf section for
-that UPS:
+For example, the usbhid-ups driver allows you to use USB serial numbers to
+distingish between units via the "serial" configuration option.  To use this
+feature, just add another line to your ups.conf section for that UPS:
 
 	[sparky]
 		driver = usbhid-ups
