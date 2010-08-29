@@ -10,7 +10,7 @@ Source code
 ================================================================================
 You should always use PGP/GPG to verify the signatures before using any source code.
 
-You can use the <<verifySourceSig,following procedure>> to do so.
+You can use the link:user-manual.html#verifySourceSig[following procedure] to do so.
 ================================================================================
 
 Stable tree: 2.4
@@ -78,27 +78,6 @@ Older versions
 
 link:http://www.networkupstools.org/source/[Browse source directory]
 
-
-[[verifySourceSig]]
-How to verify the NUT source code signature
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-In order to verify the NUT source code signature for releases, perform the following steps:
-
-- Retrieve the link:http://www.networkupstools.org/download.html[NUT source code] (nut-X.Y.Z.tar.gz) and the matching signature (nut-X.Y.Z.tar.gz.sig)
-- Retrieve the link:http://www.networkupstools.org/source/nut-key.gpg[NUT maintainer's signature]:
-
-	$ gpg --fetch-keys http://www.networkupstools.org/source/nut-key.gpg
-
-- Launch the GPG checking using the following command:
-
-	$ gpg --verify nut-X.Y.Z.tar.gz.sig
-
-- You should see a message mentioning a "Good signature", like:
-
-	gpg: Signature made Thu Jul  5 16:15:05 2007 CEST using DSA key ID 204DDF1B
-	gpg: Good signature from "Arnaud Quette ..."
-	...
 
 Binary packages
 ---------------
