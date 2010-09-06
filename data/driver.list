@@ -267,6 +267,7 @@
 "HP"	"T750 INTL"	""	"usbhid-ups"
 "HP"	"T750"	"older models"	"bcmxcp_usb"
 "HP"	"T1000 INTL"	""	"usbhid-ups"
+"HP"	"T1500 INTL"	""	"usbhid-ups"
 "HP"	"HP3488 Switch/Control Unit"	""	"powerman-pdu (experimental)"
 
 "IBM"	"Blade Center Management Module"	"15 outlets"	"powerman-pdu (experimental)"
