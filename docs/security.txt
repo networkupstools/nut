@@ -260,6 +260,12 @@ Having it be owned by 'root' and readable by group 'nut' allows upsd
 to read the file without being able to change the contents.  This
 is done to minimize the impact if someone should break into upsd.
 
+Note on certification authorities (CAs) and signed keys
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There are probably other ways to handle this, involving keys which have
+been signed by a CA you recognize.  Contact your local SSL guru.
+
 Install the server-side certificate
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -374,12 +380,6 @@ It'll display a date like this:
 
 If that's after the current date, you need to generate another cert/key
 pair using the procedure above.
-
-CAs / signed keys
-~~~~~~~~~~~~~~~~~~
-
-There are probably other ways to handle this, involving keys which have
-been signed by a CA you recognize.  Contact your local SSL guru.
 
 Conclusion
 ~~~~~~~~~~
