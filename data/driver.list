@@ -316,7 +316,7 @@
 
 "Liebert"	"ITON 600VA"	""	"megatec"
 "Liebert"	"UPStation GXT2"	"contact-closure cable"	"liebert"
-"Liebert"	"GXT2-3000RT230"	""	"liebertgxt2 (experimental)"
+"Liebert"	"GXT2-3000RT230"	""	"liebert-esp2 (experimental)"
 "Liebert"	"PowerSure Personal XT"		"USB"	"usbhid-ups"
 "Liebert"	"PowerSure PSA"		"USB"	"usbhid-ups"
 
