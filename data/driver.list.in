@@ -284,6 +284,7 @@
 "HP"	"ups"	"2"	"T750 INTL"	""	"usbhid-ups"
 "HP"	"ups"	"2"	"T750"	"older models"	"bcmxcp_usb"
 "HP"	"ups"	"2"	"T1000 INTL"	""	"usbhid-ups"
+"HP"	"ups"	"2"	"T1500 INTL"	""	"usbhid-ups"
 "HP"	"pdu"	"1"	"HP3488 Switch/Control Unit"	""	"powerman-pdu (experimental)"
 
 "IBM"	"pdu"	"1"	"Blade Center Management Module"	"15 outlets"	"powerman-pdu (experimental)"
@@ -330,7 +331,7 @@
 
 "Liebert"	"ups"	"2"	"ITON 600VA"	""	"megatec or blazer_ser"
 "Liebert"	"ups"	"5"	"UPStation GXT2"	"contact-closure cable"	"liebert"
-"Liebert"	"ups"	"1"	"GXT2-3000RT230"	""	"liebertgxt2 (experimental)"
+"Liebert"	"ups"	"1"	"GXT2-3000RT230"	""	"liebert-esp2 (experimental)"
 "Liebert"	"ups"	"2"	"PowerSure Personal XT"	"USB"	"usbhid-ups"
 "Liebert"	"ups"	"2"	"PowerSure PSA"	"USB"	"usbhid-ups"
 
