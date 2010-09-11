@@ -910,7 +910,7 @@ running. Calling exit() or any of the fatal*() functions is specifically
 not allowed anymore.
 
 upsdrv_shutdown
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 
 Do whatever you can to make the UPS power off the load but also return
 after the power comes back on.  You may use a different command that
@@ -1036,14 +1036,14 @@ contact the UPS fail, you must call dstate_datastale() to inform the
 server and clients.
 
  - dstate_dataok() 
-
-   You must call this if polls are succeeding.  A good place to call this
-   is the bottom of upsdrv_updateinfo().
++
+You must call this if polls are succeeding.  A good place to call this
+is the bottom of upsdrv_updateinfo().
 
  - dstate_datastale()
-
-   You must call this if your status is unusable.  A good technique is
-   to call this before exiting prematurely from upsdrv_updateinfo().
++
+You must call this if your status is unusable.  A good technique is
+to call this before exiting prematurely from upsdrv_updateinfo().
 
 Don't hide calls to these functions deep inside helper functions.  It is
 very hard to find the origin of staleness warnings, if you call these from
@@ -1087,9 +1087,9 @@ cable power on the RS232 interface. Use state = 0 to set the line to 0
 and any other value to set it to 1.
 
 
- - int set_get_dsr(int fd)
+ - int ser_get_dsr(int fd)
  - int ser_get_cts(int fd)
- - int set_get_dcd(int fd)
+ - int ser_get_dcd(int fd)
 
 These functions read the state of the modem control lines. They will
 return 0 if the line is logic 0 and a non-zero value if the line is
@@ -1346,7 +1346,7 @@ Writable strings
 ~~~~~~~~~~~~~~~~
 
 Strings that may be changed by the client should have the ST_FLAG_STRING
-flag set, and a maximum length byte set in the auxdata.
+flag set, and a maximum length (in bytes) set in the auxdata.
 
 	dstate_setinfo("ups.id", "Big UPS");
 	dstate_setflags("ups.id", ST_FLAG_STRING | ST_FLAG_RW);
@@ -1370,7 +1370,7 @@ respond in some cases.  This means that your driver will call select()
 and read() numerous times if your UPS responds in bursts.  This also
 depends on how fast your system is.
 
-You should check your driver with strace or its equivalent on your
+You should check your driver with `strace` or its equivalent on your
 system.  If the driver is calling read() multiple times, consider adding
 a call to usleep before going into the ser_read_* call.  That will give
 it a chance to accumulate so you get the whole thing with one call to
@@ -1402,7 +1402,7 @@ that you no longer have to worry about the case that your UPS sends
 and "abcd\n" on consecutive reads, without risk of losing data (which
 is an often forgotten side effect of the ser_get_line* functions).
 
-Currently an example how this works can be found in the safenet and
+Currently, an example how this works can be found in the safenet and
 upscode2 drivers. The first uses a single "\r" as endchar, while the
 latter accepts either "\n", "\n\r" or "\r\n" as line termination. You
 can define other termination characters as well, but can't undefine
