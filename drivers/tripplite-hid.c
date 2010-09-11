@@ -71,6 +71,8 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x2005), battery_scale_0dot1 },
 	/* e.g. TrippLite OMNI900LCD */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x2007), battery_scale_0dot1 },
+	/* e.g. TrippLite Smart1000LCD */
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x2009), battery_scale_0dot1 },
 	/* e.g. TrippLite smart2200RMXL2U */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3012), battery_scale_1dot0 },
 	/* e.g. ? */
@@ -267,7 +269,8 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ "BOOL", 0, 0, "UPS.PowerConverter.PresentStatus.Buck", NULL, NULL, 0, trim_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.PresentStatus.Boost", NULL, NULL, 0, boost_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.PresentStatus.Overload", NULL, NULL, 0, overload_info },
-	{ "BOOL", 0, 0, "UPS.PowerConverter.PresentStatus.Used", NULL, NULL, 0, nobattery_info },
+	/* This is probably not the correct mapping for all models */
+	/* { "BOOL", 0, 0, "UPS.PowerConverter.PresentStatus.Used", NULL, NULL, 0, nobattery_info }, */
 	{ "BOOL", 0, 0, "UPS.PowerConverter.PresentStatus.OverTemperature", NULL, NULL, 0, overheat_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.PresentStatus.InternalFailure", NULL, NULL, 0, commfault_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.PresentStatus.AwaitingPower", NULL, NULL, 0, awaitingpower_info },
