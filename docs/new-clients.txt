@@ -1,0 +1,66 @@
+Creating new client
+===================
+
+////////////////////////////////////////////////////////////////////////////////
+FIXME: need completion
+////////////////////////////////////////////////////////////////////////////////
+
+NUT provides bindings, for several common languages, that are
+presented below. All these are released under the same license as
+NUT, that is to say the GNU General Public License.
+
+If none of these suits you for technical or legal reasons, you can
+implement one easily using the <<net-protocol,Network protocol information>>.
+
+This approach has been used to create the Python 'PyNUT' module, the
+Nagios 'check_ups' plugin and probably others, which can serve as a
+reference.
+
+C / C++
+-------
+
+Client access library
+~~~~~~~~~~~~~~~~~~~~~
+
+The upsclient library can be linked into other programs to give access
+to upsd and UPS status information. Both static and shared versions are provided.
+
+Clients like upsc are provided as examples of how to retrieve data using the
+upsclient functions.
+link:http://www.networkupstools.org/projects.html[Other programs] not included
+in this package may also use this library, such as wmnut.
+
+This library file and the associated header files are not installed by
+default.  You must './configure --with-lib' to enable building and
+installing these files. The libraries can then be build and installed
+with 'make' and 'make install' as usual. This must be done before
+building other (non-NUT) programs which depend on them.
+
+*FIXME* For more information, refer to link *man/upsclient.3*[the upsclient
+manual page], and the various upscli_*() functions documentation referenced in
+the same file.
+
+Configuration helpers
+~~~~~~~~~~~~~~~~~~~~~
+
+NUT provides helper scripts to ease the configuration step of your program, by
+detecting the right compilation and link flags:
+
+- one for platform providing pkg-config,
+- and the other (libupsclient-config) for platform not providing pkg-config.
+
+*FIXME* link to the manpages
+
+Python
+------
+
+...
+Comment: content from scripts/python/README
++ point scripts/python/module/test_nutclient.py
+
+Perl
+----
+
+Comment: The binding has to be tested and probably updated before we can
+document it!
+The content of this § is to be ripped from the http://search.cpan.org/dist/ups-nut/[UPS::Nut] module README:

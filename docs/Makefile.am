@@ -2,9 +2,9 @@ USER_MANUAL_DEPS =  acknowledgements.txt cables.txt config-notes.txt	\
  configure.txt download.txt features.txt history.txt outlets.txt	\
  scheduling.txt security.txt support.txt user-manual.txt
 
-DEVELOPER_GUIDE_DEPS = commands.txt design.txt developers.txt	\
- hid-subdrivers.txt macros.txt new-drivers.txt new-names.txt \
- protocol.txt sock-protocol.txt
+DEVELOPER_GUIDE_DEPS = design.txt developers.txt	\
+ developer-guide.txt hid-subdrivers.txt ideas.txt macros.txt \
+ new-drivers.txt new-names.txt protocol.txt sock-protocol.txt
 
 CABLES_DEPS = cables/apc-rs500-serial.txt	\
  cables/apc.txt cables/ge-imv-victron.txt cables/imv.txt		\
@@ -12,7 +12,7 @@ CABLES_DEPS = cables/apc-rs500-serial.txt	\
  cables/sms.txt
 
 EXTRA_DIST = $(USER_MANUAL_DEPS) $(DEVELOPER_GUIDE_DEPS) \
- $(CABLES_DEPS) contact-closure.txt FAQ.txt ideas.txt \
+ $(CABLES_DEPS) contact-closure.txt FAQ.txt \
  megatec.txt nut-hal.txt snmp.txt
 
 if MANUALUPDATE

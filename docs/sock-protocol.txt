@@ -1,9 +1,7 @@
-Desc: Driver/server socket protocol
-File: sock-protocol.txt
-Date: 1 May 2003
-Auth: Russell Kroll <rkroll@exploits.org>
+Driver/server socket protocol
+=============================
 
-Here's a brief explanation of the text-based protocol which is now used
+Here's a brief explanation of the text-based protocol which is used
 between the drivers and server.
 
 The drivers may send things on the socket at any time.  They will send
@@ -12,7 +10,7 @@ prompting from the server.  As a result, the server must always check on
 any driver sockets for activity.
 
 Formatting
-==========
+----------
 
 All parsing on either side of the socket is done by parseconf, so the
 same rules about escaping characters and "quoting multi-word elements"
@@ -23,55 +21,55 @@ The "" construct is used throughout to force a multi-word value to stay
 together on its way to the other end.
 
 Commands used by the drivers
-============================
+----------------------------
 
 SETINFO
--------
+~~~~~~~
 
- SETINFO <varname> "<value>"
+	SETINFO <varname> "<value>"
 
- SETINFO ups.status "OB LB"
+	SETINFO ups.status "OB LB"
 
 There is no "ADDINFO" - if a given variable does not exist, it is
 created upon receiving the first SETINFO command.
 
 DELINFO
--------
+~~~~~~~
 
- DELINFO <varname>
+	DELINFO <varname>
 
- DELINFO ups.temperature
+	DELINFO ups.temperature
 
 ADDENUM
--------
+~~~~~~~
 
- ADDENUM <varname> "<value>"
+	ADDENUM <varname> "<value>"
 
- ADDENUM input.transfer.low "95"
+	ADDENUM input.transfer.low "95"
 
 DELENUM
--------
+~~~~~~~
 
- DELENUM <varname> "<value>"
+	DELENUM <varname> "<value>"
 
- DELENUM input.transfer.low "98"
+	DELENUM input.transfer.low "98"
 
 SETAUX
-------
+~~~~~~
 
- SETAUX <varname> <numeric value>
+	SETAUX <varname> <numeric value>
 
- SETAUX ups.id 8
+	SETAUX ups.id 8
 
 This overrides any previous value.  The auxiliary value is presently
 used as a length byte for read-write variables that are strings.
 
 SETFLAGS
---------
+~~~~~~~~
 
- SETFLAGS <varname> <flag>...
+	SETFLAGS <varname> <flag>...
 
- SETFLAGS ups.id RW STRING
+	SETFLAGS ups.id RW STRING
 
 Note that this command takes a variable number of arguments, as multiple
 flags are supported.  Also note that they are not crammed together in
@@ -80,23 +78,23 @@ flags are supported.  Also note that they are not crammed together in
 This also replaces any previous flags for a given variable.
 
 ADDCMD
-------
+~~~~~~
 
- ADDCMD <cmdname>
+	ADDCMD <cmdname>
 
- ADDCMD load.off
+	ADDCMD load.off
 
 DELCMD
-------
+~~~~~~
 
- DELCMD <cmdname>
+	DELCMD <cmdname>
 
- DELCMD load.on
+	DELCMD load.on
 
 DUMPDONE
---------
+~~~~~~~~
 
- DUMPDONE
+	DUMPDONE
 
 This is only used to tell the server that every possible item has been
 transmitted in response to its DUMPALL request.  Once this has been
@@ -104,27 +102,27 @@ received by the server, it can be sure that it knows everything that the
 driver does.
 
 PONG
-----
+~~~~
 
- PONG
+	PONG
 
 This is sent in response to a PING from the server.  It is only used as
 a sanity check to make sure that the driver has not gotten stuck
 somewhere.
 
 DATAOK
-------
+~~~~~~
 
- DATAOK
+	DATAOK
 
 This means that the driver is able to communicate with the UPS, and the
 data should be treated as usable.  It is always sent at the end of the
 dump if the data is not stale.  It may also be sent at other times.
 
 DATASTALE
----------
+~~~~~~~~~
 
- DATASTALE
+	DATASTALE
 
 This is sent by the driver to inform any listeners that the data is no
 longer usable.  This usually means that the driver is unable to get any
@@ -135,12 +133,12 @@ This will be sent in the beginning of a dump if the data is stale, and
 may be repeated.  It is cleared by DATAOK.
 
 Commands sent by the server
-===========================
+---------------------------
 
 PING
-----
+~~~~
 
- PING
+	PING
 
 This is sent to check on the health of a driver.  The server should only
 send this when it hasn't heard anything valid from a driver recently.
@@ -152,23 +150,23 @@ most, it should be treated as dead/unavailable.  Data stored in the
 server must not be passed on to the clients when this happens.
 
 INSTCMD
--------
+~~~~~~~
 
- INSTCMD <cmdname>
+	INSTCMD <cmdname>
 
- INSTCMD panel.test.start
+	INSTCMD panel.test.start
 
 SET
----
+~~~
 
- SET <varname> "<value>"
+	SET <varname> "<value>"
 
- SET ups.id "Data room"
+	SET ups.id "Data room"
 
 DUMPALL
--------
+~~~~~~~
 
- DUMPALL
+	DUMPALL
 
 The server uses this to request a complete copy of everything the driver
 knows.  This is returned in the form of the same commands (SETINFO,
@@ -180,10 +178,10 @@ DUMPDONE.  That special response from the driver is sent once the entire
 set has been transmitted.
 
 Design notes
-============
+------------
 
 Requests
---------
+~~~~~~~~
 
 There is no way to request just one variable.  This was done on purpose
 to limit the complexity of the drivers.  Their job is to send out  
@@ -195,7 +193,7 @@ then only have handlers that remember values for the variables that
 matter.  Anything else should be ignored.
 
 Access/Security
----------------
+~~~~~~~~~~~~~~~
 
 There are no access controls in the drivers.  Anything that can connect
 to their sockets can make requests, including SET and INSTCMD if
@@ -205,7 +203,7 @@ sockets, then you must store them in a directory with suitable
 permissions to limit access.
 
 Command limitations
--------------------
+~~~~~~~~~~~~~~~~~~~
 
 As parseconf is used to handle decoding and chunking of the data, there
 are some limits on what may be used.  These default to 32 arguments of
@@ -217,7 +215,7 @@ necessary.  parseconf itself can handle vast numbers of arguments and
 characters, with some speed penalty as things get really big.
 
 Re-establishing communications
-------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If the server loses its connection to the driver and later reconnects,
 it must flush any local storage and start again with DUMPALL.  The
