@@ -4,7 +4,7 @@ USER_MANUAL_DEPS =  acknowledgements.txt cables.txt config-notes.txt	\
 
 DEVELOPER_GUIDE_DEPS = design.txt developers.txt	\
  developer-guide.txt hid-subdrivers.txt ideas.txt macros.txt \
- new-drivers.txt new-names.txt protocol.txt sock-protocol.txt
+ new-drivers.txt new-names.txt net-protocol.txt sock-protocol.txt
 
 CABLES_DEPS = cables/apc-rs500-serial.txt	\
  cables/apc.txt cables/ge-imv-victron.txt cables/imv.txt		\

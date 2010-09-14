@@ -2,7 +2,7 @@
 
 Network UPS Tools Developer Guide
 _________________________________
-:Author: Russell_Kroll_,_Arnaud_Quette,_Charles_Lepple_and_Peter_Selinger
+:Author: Russell_Kroll,_Arnaud_Quette,_Charles_Lepple_and_Peter_Selinger
 :Author Initials: RK, AQ, CL & PS
 
 WARNING: this is a Work In Progress document.
@@ -38,14 +38,12 @@ include::sock-protocol.txt[]
 include::new-clients.txt[]
 
 
-////////////////////////////////////////////////////////////////////////////////
-
 [[net-protocol]]
 
-include::sock-protocol.txt[]
+include::net-protocol.txt[]
 
-=> rename from protocol.txt
 
+////////////////////////////////////////////////////////////////////////////////
 
 [[new-names]]
 
@@ -54,7 +52,7 @@ include::new-names.txt[]
 
 [[roadmap]]
 
-include::roadmap.txt[]
+include roadmap.txt[]
 
 => rename from ideas.txt
 
