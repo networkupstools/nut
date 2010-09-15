@@ -37,6 +37,22 @@ rawHCL="../data/driver.list";
 webJsonHCL = "../docs/website/scripts/ups_data.js";
 webStaticHCL = "../docs/website/ups-html.txt";
 
+# from http://wiki.python.org/moin/EscapingHtml
+
+html_escape_table = {
+    "&": "&amp;",
+    '"': "&quot;",
+    "'": "&apos;",
+    ">": "&gt;",
+    "<": "&lt;",
+    }
+
+def html_escape(text):
+    """Produce entities within text."""
+    return "".join(html_escape_table.get(c,c) for c in text)
+
+# # #
+
 class WrongFieldNumberException(Exception):
     pass
 
@@ -175,7 +191,7 @@ def buildHTMLTable(deviceData):
             for field in column["fields"]:
                 fieldIndex = dataFields.index(field)
                 fieldContent = device[fieldIndex]
-                cellContent.append(fieldContent)
+                cellContent.append(html_escape(fieldContent))
             cellContent = "<br />".join(cellContent)
             
             try:
