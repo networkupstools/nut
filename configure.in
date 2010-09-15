@@ -830,6 +830,7 @@ AC_OUTPUT([
  data/html/header.html
  data/html/Makefile
  data/Makefile
+ data/driver.list
  docs/Makefile
  docs/man/Makefile
  docs/website/Makefile
