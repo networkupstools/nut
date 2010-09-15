@@ -29,7 +29,7 @@
 #include "tripplite-hid.h"
 #include "usb-common.h"
 
-#define TRIPPLITE_HID_VERSION "TrippLite HID 0.5"
+#define TRIPPLITE_HID_VERSION "TrippLite HID 0.6"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 
@@ -67,16 +67,34 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x1007), battery_scale_0dot1 },
 	/* e.g. TrippLite ECO550UPS */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x1008), battery_scale_0dot1 },
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x1009), battery_scale_0dot1 },
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x1010), battery_scale_0dot1 },
 	/* e.g. TrippLite OMNI1000LCD */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x2005), battery_scale_0dot1 },
 	/* e.g. TrippLite OMNI900LCD */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x2007), battery_scale_0dot1 },
+	/* e.g. ? */
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x2008), battery_scale_0dot1 },
 	/* e.g. TrippLite Smart1000LCD */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x2009), battery_scale_0dot1 },
+	/* e.g. ? */
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x2010), battery_scale_0dot1 },
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x2011), battery_scale_0dot1 },
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x2012), battery_scale_0dot1 },
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x2013), battery_scale_0dot1 },
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x2014), battery_scale_0dot1 },
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3008), battery_scale_1dot0 },
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3009), battery_scale_1dot0 },
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3010), battery_scale_1dot0 },
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3011), battery_scale_1dot0 },
 	/* e.g. TrippLite smart2200RMXL2U */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3012), battery_scale_1dot0 },
 	/* e.g. ? */
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3013), battery_scale_1dot0 },
+	/* e.g. ? */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3014), battery_scale_1dot0 },
+	/* e.g. ? */
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3015), battery_scale_1dot0 },
 	/* e.g. TrippLite SmartOnline SU1500RTXL2UA (older unit?) */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x4001), battery_scale_1dot0 },
 	/* e.g. TrippLite SmartOnline SU6000RT4U? */
@@ -85,6 +103,11 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x4003), battery_scale_1dot0 },
 	/* e.g. TrippLite SmartOnline SU1000XLA */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x4004), battery_scale_1dot0 },
+	/* e.g. ? */
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x4005), battery_scale_1dot0 },
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x4006), battery_scale_1dot0 },
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x4007), battery_scale_1dot0 },
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x4008), battery_scale_1dot0 },
 
 	/* HP T750 INTL */
 	{ USB_DEVICE(HP_VENDORID, 0x1f06), battery_scale_1dot0 },
@@ -94,6 +117,8 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 	{ USB_DEVICE(HP_VENDORID, 0x1f09), battery_scale_1dot0 },
 	/* HP R/T 2200 INTL (like SMART2200RMXL2U) */
 	{ USB_DEVICE(HP_VENDORID, 0x1f0a), battery_scale_1dot0 },
+	/* HP R1500 G2 INTL */
+	{ USB_DEVICE(HP_VENDORID, 0x1fe0), battery_scale_1dot0 },
 
 	/* Terminating entry */
 	{ -1, -1, NULL }
