@@ -176,7 +176,7 @@
       <td rowspan="1" class="even">Home Office F6H650-SER<br/></td>
     </tr>
     <tr>
-      <td rowspan="1" class="even">F6H375-USB<br/>USB (</td>
+      <td rowspan="1" class="even">F6H375-USB<br/>USB (&lt;= 2005 models, vendor id: 050d)</td>
       <td rowspan="1" class="orange">usbhid-ups</td>
       <td rowspan="4" class="hidden">2</td>
     </tr>
@@ -230,12 +230,12 @@
       <td rowspan="1" class="hidden">2</td>
     </tr>
     <tr>
-      <td rowspan="1" class="even">Universal UPS F6C1100-UNV<br/>serial port (</td>
+      <td rowspan="1" class="even">Universal UPS F6C1100-UNV<br/>serial port (&lt;= 2005 models)</td>
       <td rowspan="1" class="red">belkinunv</td>
       <td rowspan="1" class="hidden">1</td>
     </tr>
     <tr>
-      <td rowspan="1" class="even">Universal UPS F6C1100-UNV<br/>USB (</td>
+      <td rowspan="1" class="even">Universal UPS F6C1100-UNV<br/>USB (&lt;= 2005 models, vendor id: 050d)</td>
       <td rowspan="1" class="orange">usbhid-ups</td>
       <td rowspan="8" class="hidden">2</td>
     </tr>
@@ -244,7 +244,7 @@
       <td rowspan="1" class="orange">megatec_usb or blazer_usb</td>
     </tr>
     <tr>
-      <td rowspan="1" class="even">Universal UPS F6C1200-UNV<br/>USB (</td>
+      <td rowspan="1" class="even">Universal UPS F6C1200-UNV<br/>USB (&lt;= 2005 models, vendor id: 050d)</td>
       <td rowspan="1" class="orange">usbhid-ups</td>
     </tr>
     <tr>
@@ -550,9 +550,9 @@
       <td rowspan="1" class="hidden">2</td>
     </tr>
     <tr>
-      <td rowspan="34" class="odd">Eaton</td>
+      <td rowspan="36" class="odd">Eaton</td>
       <td rowspan="1" class="odd">Protection Station 500/650/800 VA<br/>USB</td>
-      <td rowspan="34" class="hidden">5</td>
+      <td rowspan="36" class="hidden">5</td>
     </tr>
     <tr>
       <td rowspan="1" class="odd">Ellipse ASR USBS 600/750/1000/1500 VA<br/>USB cable</td>
@@ -665,6 +665,14 @@
     </tr>
     <tr>
       <td rowspan="1" class="odd">Best Ferrups<br/>older ConnectUPS</td>
+      <td rowspan="1" class="green">snmp-ups</td>
+    </tr>
+    <tr>
+      <td rowspan="1" class="odd">ConnectUPS X / BD / E Slot<br/>Serial Pass-through mode</td>
+      <td rowspan="1" class="green">bcmxcp</td>
+    </tr>
+    <tr>
+      <td rowspan="1" class="odd">ConnectUPS X / BD / E Slot<br/>Network port</td>
       <td rowspan="1" class="green">snmp-ups</td>
     </tr>
     <tr>
@@ -803,7 +811,7 @@
       <td rowspan="2" class="hidden">1</td>
     </tr>
     <tr>
-      <td rowspan="10" class="odd">HP</td>
+      <td rowspan="11" class="odd">HP</td>
       <td rowspan="1" class="odd">PowerTrust 2997A<br/>HP 5061-2575 cable</td>
       <td rowspan="1" class="red">apcsmart</td>
     </tr>
@@ -817,7 +825,7 @@
     </tr>
     <tr>
       <td rowspan="1" class="odd">R1500 G2<br/></td>
-      <td rowspan="6" class="hidden">2</td>
+      <td rowspan="7" class="hidden">2</td>
     </tr>
     <tr>
       <td rowspan="1" class="odd">R/T 2200 G2<br/></td>
@@ -837,7 +845,10 @@
     </tr>
     <tr>
       <td rowspan="1" class="odd">T1000 INTL<br/></td>
-      <td rowspan="1" class="orange">usbhid-ups</td>
+      <td rowspan="2" class="orange">usbhid-ups</td>
+    </tr>
+    <tr>
+      <td rowspan="1" class="odd">T1500 INTL<br/></td>
     </tr>
     <tr>
       <td rowspan="1" class="odd">HP3488 Switch/Control Unit<br/></td>
@@ -988,7 +999,7 @@
     </tr>
     <tr>
       <td rowspan="1" class="even">GXT2-3000RT230<br/></td>
-      <td rowspan="1" class="red">liebertgxt2 (experimental)</td>
+      <td rowspan="1" class="red">liebert-esp2 (experimental)</td>
       <td rowspan="1" class="hidden">1</td>
     </tr>
     <tr>
@@ -1823,7 +1834,7 @@
       <td rowspan="1" class="hidden">5</td>
     </tr>
     <tr>
-      <td rowspan="1" class="even">WOW<br/>USB (</td>
+      <td rowspan="1" class="even">WOW<br/>USB (&lt;= 2009 models, product id: 0002)</td>
       <td rowspan="1" class="blue">powercom (requires 'usbserial' kernel module)</td>
       <td rowspan="1" class="hidden">4</td>
     </tr>
@@ -1833,7 +1844,7 @@
       <td rowspan="1" class="hidden">5</td>
     </tr>
     <tr>
-      <td rowspan="1" class="even">(various)<br/>USB (</td>
+      <td rowspan="1" class="even">(various)<br/>USB (&lt;= 2009 models, product id: 0002)</td>
       <td rowspan="1" class="blue">powercom (requires 'usbserial' kernel module)</td>
       <td rowspan="1" class="hidden">4</td>
     </tr>
