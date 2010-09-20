@@ -774,7 +774,7 @@ void upsdrv_updateinfo(void)
 			continue;
 
 		if (nut_debug_level >= 2) {
-			upsdebugx(2, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %f",
+			upsdebugx(2, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %g",
 				HIDGetDataItem(event[i], subdriver->utab),
 				HIDDataType(event[i]), event[i]->ReportID,
 				event[i]->Offset, event[i]->Size, value);
@@ -1233,7 +1233,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 			continue;
 		}
 
-		upsdebugx(2, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %f",
+		upsdebugx(2, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %g",
 			item->hidpath, HIDDataType(item->hiddata), item->hiddata->ReportID,
 			item->hiddata->Offset, item->hiddata->Size, value);
 
