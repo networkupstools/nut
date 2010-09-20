@@ -43,11 +43,15 @@ include::new-clients.txt[]
 include::net-protocol.txt[]
 
 
+[[nut-names]]
+
+include::nut-names.txt[]
+
 ////////////////////////////////////////////////////////////////////////////////
 
-[[new-names]]
+[[nut-macros]]
 
-include::new-names.txt[]
+include macros.txt
 
 
 [[roadmap]]
