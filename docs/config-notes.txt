@@ -311,7 +311,8 @@ above.  A sample run on a UPS (Eaton Ellipse MAX 1100) looks like this:
 	ups.timer.start: -1
 	ups.vendorid: 0463
 
-Reference: man page: link:man/upsc.html[upsc(8)]
+Reference: man page: link:man/upsc.html[upsc(8)],
+<<nut-names,NUT command and variable naming scheme>>
 
 Startup scripts
 ~~~~~~~~~~~~~~~

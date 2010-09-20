@@ -44,7 +44,7 @@ Next, outlets index starts from *1*. Index '0' is implicitly reserved to
 the 'main outlet'. So the first outlet is 'outlet.1.*'.
 
 For a complete list of outlet data and commands, refer to the
-link:new-names.txt[NUT command and variable naming scheme].
+link:nut-names.txt[NUT command and variable naming scheme].
 
 ////////////////////////////////////////////////////////////////////////////////
 FIXME:

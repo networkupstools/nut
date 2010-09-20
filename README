@@ -224,7 +224,7 @@ data about power and battery status.  Advanced features like battery
 charge readings and such require a "smart" UPS and a driver which
 supports it.
 +
-See the genericups(8) man page for more information.
+See the link:man/genericups.html[genericups(8)] man page for more information.
 
 - The `usbhid-ups` driver attempts to communicate with USB HID Power Device
 Class (PDC) UPSes. These units generally implement the same basic protocol,
@@ -254,9 +254,10 @@ to die.  Don't power off your computers unless they're ready for it:
 FIXME:  shutdown.txt
 ////////////////////////////////////////////////////////////////////////////////
 
-You should read the link:user-manual.html#_configuring_automatic_ups_shutdowns[Configuring automatic UPS shutdowns]
-chapter to learn more about when to use this feature.  If called at the wrong time,
-you may cause data loss by turning off a system with a filesystem
+You should read the
+link:user-manual.html#UPS_shutdown[Configuring automatic UPS shutdowns]
+chapter to learn more about when to use this feature.  If called at the wrong
+time, you may cause data loss by turning off a system with a filesystem
 mounted read-write.
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -328,13 +329,10 @@ Additional Information
 
 More information on configuring upsmon can be found in these places:
 
- - The man page - upsmon(8)
-
- - link:user-manual.html#BigServers[Typical setups for big servers]
-
- - link:user-manual.html#_configuring_automatic_ups_shutdowns[Configuring automatic UPS shutdowns] chapter
-
- - The stock `upsmon.conf` that comes with the package
+- The man page - link:man/upsmon.html[upsmon(8)]
+- link:user-manual.html#BigServers[Typical setups for big servers]
+- link:user-manual.html#UPS_shutdown[Configuring automatic UPS shutdowns] chapter
+- The stock `upsmon.conf` that comes with the package
 
 
 Clients
@@ -370,7 +368,8 @@ If you are interested in writing a simple client that monitors `upsd`,
 the source code for `upsc` is a good way to learn about using the
 upsclient functions.
 
-See the upsc(8) man page for more information.
+See the link:man/upsc.html[upsc(8)] man page and
+<<nut-names,NUT command and variable naming scheme>> for more information.
 
 upslog
 ~~~~~~
@@ -408,7 +407,8 @@ On the other hand, one that doesn't support them won't print anything:
 	( nothing )
 
 `upsrw` requires administrator powers to change settings in the hardware.
-Refer to upsd.users(5) for information on defining users in `upsd`.
+Refer to link:man/upsd.users.html[upsd.users(5)] for information on defining
+users in `upsd`.
 
 upscmd
 ~~~~~~
@@ -430,7 +430,8 @@ Use the -l command to list them, like this:
 	...
 
 `upscmd` requires administrator powers to start instant commands.
-To define users and passwords in `upsd`, see upsd.users(5).
+To define users and passwords in `upsd`, see
+link:man/upsd.users.html[upsd.users(5)].
 
 ////////////////////////////////////////////////////////////////////////////////
 FIXME
