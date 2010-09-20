@@ -182,11 +182,13 @@ Appendix B: Acknowledgements / Contributions
 
 include::acknowledgements.txt[Acknowledgements / Contributions]
 
-[[Project_History]]
-Appendix C: Project history
-===========================
 
-include::history.txt[]
+[[nut-names]]
+Appendix C: NUT command and variable naming scheme
+==================================================
+
+include::nut-names.txt[]
+
 
 [[HCL]]
 Appendix D: Hardware Compatibility List
@@ -234,6 +236,13 @@ Appendix I: Upgrading notes
 
 include::../UPGRADING[]
 
+
+[[Project_History]]
+Appendix J: Project history
+===========================
+
+include::history.txt[]
+
 ////////////////////////////////////////////////////////////////////////////////
 Comment: point to the website/documentation?
 
@@ -248,8 +257,8 @@ Comment: point to the website/documentation?
 The version numbers work like this: if the middle number is odd, it's a
 development tree, otherwise it is the stable tree.
 
-The past stable trees were 1.0, 1.2, 1.4 and 2.0, with the latest stable tree
-designated 2.2.  The development trees were 1.1, 1.3, 1.5 and 2.1.
+The past stable trees were 1.0, 1.2, 1.4, 2.0 and 2.2, with the latest stable
+tree designated 2.4.  The development trees were 1.1, 1.3, 1.5 and 2.1.
 
 The jump to 2.2 is mostly due to the large changes to the features list.
 There have also been a number of architectural changes which may not be

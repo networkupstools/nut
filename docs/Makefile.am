@@ -1,17 +1,19 @@
+SHARED_DEPS =  nut-names.txt
+
 USER_MANUAL_DEPS =  acknowledgements.txt cables.txt config-notes.txt	\
  configure.txt download.txt features.txt history.txt outlets.txt	\
  scheduling.txt security.txt support.txt user-manual.txt
 
 DEVELOPER_GUIDE_DEPS = design.txt developers.txt	\
  developer-guide.txt hid-subdrivers.txt ideas.txt macros.txt \
- new-drivers.txt nut-names.txt net-protocol.txt sock-protocol.txt
+ new-drivers.txt net-protocol.txt sock-protocol.txt
 
 CABLES_DEPS = cables/apc-rs500-serial.txt	\
  cables/apc.txt cables/ge-imv-victron.txt cables/imv.txt		\
  cables/mgeups.txt cables/powerware.txt cables/repotec.txt		\
  cables/sms.txt
 
-EXTRA_DIST = $(USER_MANUAL_DEPS) $(DEVELOPER_GUIDE_DEPS) \
+EXTRA_DIST = $(SHARED_DEPS) $(USER_MANUAL_DEPS) $(DEVELOPER_GUIDE_DEPS) \
  $(CABLES_DEPS) contact-closure.txt FAQ.txt \
  megatec.txt nut-hal.txt snmp.txt
 
@@ -39,11 +41,12 @@ SUFFIXES = .txt .html
 		--attribute localtime=`TZ=UTC date +%H:%M:%S` \
 		--attribute iconsdir=$(srcdir)/icons \
 		--attribute=badges \
+		--attribute=external_title \
 		-a toc -a numbered -o $@ $<
 
 ### TODO: automatic dependency generation
-user-manual.html: $(USER_MANUAL_DEPS) ../README ../INSTALL cables.txt ../UPGRADING
-developer-guide.html: $(DEVELOPER_GUIDE_DEPS)
+user-manual.html: $(USER_MANUAL_DEPS)  $(SHARED_DEPS) ../README ../INSTALL cables.txt ../UPGRADING
+developer-guide.html: $(DEVELOPER_GUIDE_DEPS)  $(SHARED_DEPS)
 
 else !MANUALUPDATE
 html:	html-recursive

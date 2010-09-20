@@ -1,5 +1,7 @@
+ifndef::external_title[]
 NUT command and variable naming scheme
 ======================================
+endif::external_title[]
 
 ////////////////////////////////////////////////////////////////////////////////
 FIXME: do we really need that note considering the worflow?

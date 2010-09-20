@@ -44,6 +44,8 @@ include::net-protocol.txt[]
 
 
 [[nut-names]]
+Appendix A: NUT command and variable naming scheme
+==================================================
 
 include::nut-names.txt[]
 
