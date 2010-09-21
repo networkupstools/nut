@@ -5,7 +5,7 @@ USER_MANUAL_DEPS =  acknowledgements.txt cables.txt config-notes.txt	\
  scheduling.txt security.txt support.txt user-manual.txt
 
 DEVELOPER_GUIDE_DEPS = design.txt developers.txt	\
- developer-guide.txt hid-subdrivers.txt ideas.txt macros.txt \
+ developer-guide.txt hid-subdrivers.txt macros.txt \
  new-drivers.txt net-protocol.txt sock-protocol.txt
 
 CABLES_DEPS = cables/apc-rs500-serial.txt	\
@@ -45,7 +45,9 @@ SUFFIXES = .txt .html
 		-a toc -a numbered -o $@ $<
 
 ### TODO: automatic dependency generation
-user-manual.html: $(USER_MANUAL_DEPS)  $(SHARED_DEPS) ../README ../INSTALL cables.txt ../UPGRADING
+user-manual.html: $(USER_MANUAL_DEPS)  $(SHARED_DEPS) ../README \
+	../INSTALL cables.txt ../UPGRADING ../TODO
+
 developer-guide.html: $(DEVELOPER_GUIDE_DEPS)  $(SHARED_DEPS)
 
 else !MANUALUPDATE

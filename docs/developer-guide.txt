@@ -10,7 +10,12 @@ WARNING: this is a Work In Progress document.
 Introduction
 ============
 
-...
+NUT is both a powerful toolkit and framework that provides support for Power
+Devices, such as Uninterruptible Power Supplies, Power Distribution Units
+and Solar Controllers.
+
+This document intend to describe how NUT is designed, and the way to
+develop new device drivers and client applications.
 
 
 [[design]]
@@ -43,35 +48,23 @@ include::new-clients.txt[]
 include::net-protocol.txt[]
 
 
+NUT core development and maintenance
+====================================
+
+This section is intended to people who want to develop new core features,
+or to do some maintenance.
+
+
+include::macros.txt[]
+
+
+[[roadmap]]
+
+include::../TODO[]
+
+
 [[nut-names]]
 Appendix A: NUT command and variable naming scheme
 ==================================================
 
 include::nut-names.txt[]
-
-////////////////////////////////////////////////////////////////////////////////
-
-[[nut-macros]]
-
-include macros.txt
-
-
-[[roadmap]]
-
-include roadmap.txt[]
-
-=> rename from ideas.txt
-
-*Comments*
-
-- check to refresh and integrate the https://alioth.debian.org/pm/?group_id=30602[tasks] list
-and https://alioth.debian.org/tracker/?atid=411545&group_id=30602&func=browse[feature requests] list from Alioth
-- add "Generic ?Ascii? driver": I've got to think more about that, but the recent
-solar panel driver, and the powerman internal approach of a generic engine with
-a scripting interface is a cool idea.
-Ref http://powerman.svn.sourceforge.net/viewvc/powerman/trunk/etc/apcpdu.dev?revision=969&view=markup
-- integrate the (future) new powerman LUA engine (maybe/mustbe used for the driver above?)
-for native PDU support
-- see how we can help and collaborate with DeviceKit-power
-
-////////////////////////////////////////////////////////////////////////////////
