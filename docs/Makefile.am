@@ -1,8 +1,8 @@
 SHARED_DEPS =  nut-names.txt
 
 USER_MANUAL_DEPS =  acknowledgements.txt cables.txt config-notes.txt	\
- configure.txt download.txt features.txt history.txt outlets.txt	\
- scheduling.txt security.txt support.txt user-manual.txt
+ configure.txt download.txt documentation.txt features.txt history.txt	\
+ outlets.txt scheduling.txt security.txt support.txt user-manual.txt
 
 DEVELOPER_GUIDE_DEPS = design.txt developers.txt	\
  developer-guide.txt hid-subdrivers.txt macros.txt \

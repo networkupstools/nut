@@ -1,18 +1,6 @@
 Network UPS Tools Overview
 ===========================
 
-////////////////////////////////////////////////////////////////////////////////
-FIXME: TBR
-:Info: Program support page: <http://www.networkupstools.org/>
-:Author: Arnaud Quette <aquette.dev@gmail.com>
-Auth: Russell Kroll <rkroll@exploits.org>
-
-
-:Copyright: Released under the GNU GPL - see COPYING for details.
-
-Mailing list details: http://alioth.debian.org/mail/?group_id=30602
-////////////////////////////////////////////////////////////////////////////////
-
 Description
 -----------
 
@@ -67,12 +55,9 @@ For more information, refer to INSTALL and docs/nut-hal.txt.
 
 Installing
 ----------
-////////////////////////////////////////////////////////////////////////////////
-FIXME: function linknuthtml
-////////////////////////////////////////////////////////////////////////////////
 
 If you are installing these programs for the first time, go read the
-link:user-manual.html#_installation_instructions[Installation instructions]
+link:user-manual.html#_installation_instructions[installation instructions]
 to find out how to do that.  This document contains more information on what all
 of this stuff does.
 
@@ -81,19 +66,17 @@ Upgrading
 ---------
 
 When upgrading from an older version, always check the
-link:user-manual.html#Upgrading_notes[Upgrading notes] to see what may have
+link:user-manual.html#Upgrading_notes[upgrading notes] to see what may have
 changed.  Compatibility issues and other changes will be listed there to ease
 the process.
 
 
-////////////////////////////////////////////////////////////////////////////////
 Configuring and using
 ---------------------
 
-... config-notes.txt
+Once NUT is installed, refer to the
+link:user-manual.htmlConfiguration_notes[configuration notes] for directions.
 
-+ FIXME: adapt the belwo text dep. on txt/html version
-////////////////////////////////////////////////////////////////////////////////
 
 Documentation
 -------------
@@ -210,8 +193,6 @@ link:user-manual.html#Upgrading_notes[Upgrading notes].
 Generic Device Drivers
 ~~~~~~~~~~~~~~~~~~~~~~
 
-*FIXME* To be reworked
-
 NUT provides several generic drivers that support a variety of very similar models.
 
 - The `genericups` driver supports many serial models that use the same basic
@@ -231,12 +212,27 @@ Class (PDC) UPSes. These units generally implement the same basic protocol,
 with minor variations in the exact set of supported attributes. This driver
 also applies several correction factors when the UPS firmware reports values
 with incorrect scale factors.
++
+See the link:man/usbhid-ups.html[usbhid-ups(8)] man page for more information.
 
-- The `blazer_usb` and `megatec_usb`...
+- The `blazer_ser` and `blazer_usb` drivers supports the Megatec / Q1
+protocol that is used in many brands (Blazer, Energy Sistem, Fenton
+Technologies, Mustek and many others).
++
+See the link:man/blazer.html[blazer(8)] man page for more information.
 
-- The `snmp-ups` driver...
+- The `snmp-ups` driver handles various SNMP enabled devices, from many
+different manufacturers. In SNMP terms, `snmp-ups` is a manager, that
+monitors SNMP agents.
++
+See the link:man/snmp-ups.html[snmp-ups(8)] man page for more information.
 
-- The `powerman-pdu`
+- The `powerman-pdu` is a bridge to the PowerMan daemon, thus handling all
+PowerMan supported devices. The PowerMan project supports several serial
+and networked PDU, along with Blade and IPMI enabled servers.
++
+See the link:man/powerman-pdu.html[powerman-pdu(8)] man page for more
+information.
 
 
 UPS Shutdowns
@@ -250,22 +246,20 @@ to die.  Don't power off your computers unless they're ready for it:
 	/usr/local/ups/bin/upsdrvctl shutdown
 	/usr/local/ups/bin/upsdrvctl shutdown sparky
 
-////////////////////////////////////////////////////////////////////////////////
-FIXME:  shutdown.txt
-////////////////////////////////////////////////////////////////////////////////
-
 You should read the
 link:user-manual.html#UPS_shutdown[Configuring automatic UPS shutdowns]
 chapter to learn more about when to use this feature.  If called at the wrong
 time, you may cause data loss by turning off a system with a filesystem
 mounted read-write.
 
-////////////////////////////////////////////////////////////////////////////////
-FIXME:
-PDU management
-~~~~~~~~~~~~~~
-...
-////////////////////////////////////////////////////////////////////////////////
+Power distribution unit management
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+NUT also provides an advanced support for power distribution units.
+
+You should read the
+link:user-manual.html#Outlets_PDU_notes[Configuring automatic UPS shutdowns]
+chapter to learn more about when to use this feature. 
 
 Network Server
 --------------
@@ -529,11 +523,10 @@ Additional documentation can be found in:
 - the link:developer-guide.html[Developer Guide],
 - the link:packager-guide.html[Packager Guide].
 
-////////////////////////////////////////////////////////////////////////////////
-*FIXME* To be reworked using website/documentation.txt
-////////////////////////////////////////////////////////////////////////////////
 
 Acknowledgements / Contributions
 --------------------------------
 
-*FIXME* use website/acknowledgements.txt
+The many people who have participated in creating and improving NUT are
+listed in the user manual
+link:user-manual.html#Acknowledgements[acknowledgements appendix].

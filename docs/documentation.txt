@@ -1,5 +1,7 @@
+ifdef::website[]
 Documentation
 =============
+endif::website[]
 
 User Documentation
 ------------------
@@ -21,6 +23,7 @@ Developer Documentation
 Offsite Links
 -------------
 
+[[general_powerdev_info]]
 These are general information about UPS and PDU.
 
 - link:http://tldp.org/HOWTO/UPS-HOWTO/[UPS HOWTO] (The Linux Documentation Project)

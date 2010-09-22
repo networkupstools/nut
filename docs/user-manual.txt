@@ -24,10 +24,10 @@ This software is the combined effort of many
 <<Acknowledgements,individuals and companies>>.
 
 This document intend to describe how to install software support for your
-<<General_Info, Power Devices>> (UPS, PDU, ...), and how to use the Network UPS
-Tools. It is not intended to explain what <<General_Info, Power Devices>> are,
-nor distinguish the different technologies that exist.  For such information,
-have a look at the <<General_Info,General Information>>.
+<<general_powerdev_info, Power Devices>> (UPS, PDU, ...), and how to use the
+NUT project. It is not intended to explain what are, nor distinguish the
+different technologies that exist.  For such information, have a look at the
+<<general_powerdev_info,General Power Devices Information>>.
 
 If you wish to discover how everything came together, have a look at the
 <<Project_History,Project History>>.
@@ -200,14 +200,11 @@ Appendix D: Hardware Compatibility List
 
 include hcl-stable.txt[]
 
-[[General_Info]]
-Appendix E: General Information on Power Devices
-================================================
+Appendix E: Documentation
+=========================
 
-- link:http://tldp.org/HOWTO/UPS-HOWTO/[UPS HOWTO] (The Linux Documentation Project)
-- link:http://en.wikipedia.org/wiki/Uninterruptible_power_supply[UPS on Wikipedia]
-- link:http://en.wikipedia.org/wiki/Power_distribution_unit[PDU on Wikipedia]
-- link:http://www.pcguide.com/ref/power/ext/ups/over.htm[UPS on The PC Guide]
+include::documentation.txt[]
+
 
 [[Support_Request]]
 Appendix F: Support instructions

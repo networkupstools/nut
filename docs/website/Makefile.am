@@ -44,6 +44,9 @@ cables.html: ../cables.txt
 download.html: ../download.txt
 	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc $<
 
+documentation.html: ../documentation.txt
+	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ $<
+
 FAQ.html: ../FAQ.txt
 	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc -a numbered $<
 
