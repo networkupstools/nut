@@ -73,10 +73,34 @@ the hardware.  This will remove input.transfer.low and input.transfer.high
 from the list of variables.  This should only be used on APCC Symmetra
 equipment which has strangeness in the three-phase power reporting.
 
+*secLevel*='value'::
+Set the securityLevel used for SNMPv3 messages (default=noAuthNoPriv,
+allowed: authNoPriv,authPriv)
+
+*secName*='value'::
+Set the securityName used for authenticated SNMPv3 messages (no default)
+
+*authPassword*='value'::
+Set the authentication pass phrase used for authenticated SNMPv3 messages
+(no default)
+
+*privPassword*='value'::
+Set the privacy pass phrase used for encrypted SNMPv3 messages (no default)
+
+*authProtocol*='value'::
+Set the authentication protocol (MD5 or SHA) used for authenticated SNMPv3
+messages (default=MD5)
+
+*privProtocol*='value'::
+Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages
+(default=DES)
+
 REQUIREMENTS
 ------------
 You will need to install the Net-SNMP package from
 http://www.net-snmp.org/ before building this driver.
+
+SNMP v3 also requires OpenSSL support from http://www.openssl.org.
 
 LIMITATION
 ----------
@@ -100,13 +124,24 @@ IMPLEMENTATION
 The hostname of the UPS is specified with the "port" value in
 `ups.conf`, i.e.:
 
-	[snmp]
+	[snmpv1]
 		driver = snmp-ups
 		port = snmp-ups.example.com
 		community = public
 		snmp_version = v1
 		mibs = ietf
 		pollfreq = 15
+		desc = "Example SNMP v1 device"
+
+	[snmpv3]
+		driver = snmp-ups
+		port = 166.99.224.132
+		mibs = mge
+		secLevel = authPriv
+		secName = mysecurityname
+		authPassword = myauthenticationpassphrase
+		privPassword = myprivatepassphrase
+		desc = "Example SNMP v3 device, with the highest security level"
 
 AUTHORS
 -------
