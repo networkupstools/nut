@@ -1,13 +1,6 @@
 NUT outlets management and PDU notes
 ====================================
 
-////////////////////////////////////////////////////////////////////////////////
-Desc: NUT Powersaving features and using outlet collection
-File: powersaving.txt
-Date: 14 June 2003
-Auth: Arnaud Quette <arnaud.quette@free.fr>
-////////////////////////////////////////////////////////////////////////////////
-
 NUT supports advanced outlets management for any kind of device that proposes
 it. This chapter introduces how to manage outlets in general, and how to take
 advantage of the provided features.
@@ -44,13 +37,10 @@ Next, outlets index starts from *1*. Index '0' is implicitly reserved to
 the 'main outlet'. So the first outlet is 'outlet.1.*'.
 
 For a complete list of outlet data and commands, refer to the
-link:nut-names.txt[NUT command and variable naming scheme].
+link:link:user-manual.html#nut-names[NUT command and variable naming scheme].
 
-////////////////////////////////////////////////////////////////////////////////
-FIXME:
-- should reference dev-guide -> Outlet section
-- reference some devices dump (like data/epdu-managed.dev) 
-////////////////////////////////////////////////////////////////////////////////
+An example upsc output (data/epdu-managed.dev) is available in the source
+archive.
 
 NOTE: The variables supported depend on the exact device type. 
 
