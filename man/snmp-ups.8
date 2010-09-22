@@ -1,4 +1,4 @@
-.TH snmp\-ups 8 "Fri May 15 2009" "" "Network UPS Tools (NUT)"
+.TH snmp\-ups 8 "Wed Sep 22 2010" "" "Network UPS Tools (NUT)"
 .SH NAME
 snmp\(hyups \- Multi\(hyMIB Driver for SNMP UPS equipment
 .SH NOTE
@@ -55,9 +55,29 @@ the hardware.  This will remove input.transfer.low and input.transfer.high
 from the list of variables.  This should only be used on APCC Symmetra
 equipment which has strangeness in the three\(hyphase power reporting.
 
+.IP "secLevel=\fIvalue\fR"
+Set the securityLevel used for SNMPv3 messages (default=noAuthNoPriv, allowed: authNoPriv,authPriv)
+
+.IP "secName=\fIvalue\fR"
+Set the securityName used for authenticated SNMPv3 messages (no default)
+
+.IP "authPassword=\fIvalue\fR"
+Set the authentication pass phrase used for authenticated SNMPv3 messages (no default)
+
+.IP "privPassword=\fIvalue\fR"
+Set  the privacy pass phrase used for encrypted SNMPv3 messages (no default)
+
+.IP "authProtocol=\fIvalue\fR"
+Set the authentication protocol (MD5 or SHA) used for authenticated SNMPv3 messages (default=MD5)
+
+.IP "privProtocol=\fIvalue\fR"
+Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages (default=DES)
+
 .SH REQUIREMENTS
 You will need to install the Net\(hySNMP package from
-http://www.net\(hysnmp.org/ before building this driver.
+http://www.net\(hysnmp.org before building this driver.
+
+SNMP v3 also requires OpenSSL support from http://www.openssl.org.
 
 .SH LIMITATION
 .SS Shutdown
@@ -78,13 +98,26 @@ The hostname of the UPS is specified with the "port" value in
 \fBups.conf\fR, i.e.:
 
 .nf
-	[snmp]
+	[snmpv1]
 		driver = snmp\-ups
 		port = snmp\-ups.example.com
 		community = public
 		snmp_version = v1
 		mibs = ietf
 		pollfreq = 15
+		desc = "Example SNMP v1 device"
+.fi
+
+.nf
+	[snmpv3]
+		driver = snmp-ups
+		port = 166.99.224.132
+		mibs = mge
+		secLevel = authPriv
+		secName = mysecurityname
+		authPassword = myauthenticationpassphrase
+		privPassword = myprivatepassphrase
+		desc = "Example SNMP v3 device, with the highest security level"
 .fi
 
 .SH AUTHORS

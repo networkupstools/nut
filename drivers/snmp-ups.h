@@ -46,7 +46,8 @@ for each OID request we made), instead of sending many small packets
 #ifndef SNMP_UPS_H
 #define SNMP_UPS_H
 
-/* workaround for buggy Net-SNMP config */
+/* FIXME: still needed?
+ * workaround for buggy Net-SNMP config */
 #ifdef PACKAGE_BUGREPORT
 #undef PACKAGE_BUGREPORT
 #endif
@@ -162,8 +163,16 @@ typedef struct {
 #define SU_VAR_COMMUNITY	"community"
 #define SU_VAR_VERSION		"snmp_version"
 #define SU_VAR_MIBS			"mibs"
-#define SU_VAR_SDTYPE		"sdtype"
 #define SU_VAR_POLLFREQ		"pollfreq"
+#define SU_VAR_SDTYPE		"sdtype"
+/* SNMP v3 related parameters */
+#define SU_VAR_SECLEVEL		"secLevel"
+#define SU_VAR_SECNAME		"secName"
+#define SU_VAR_AUTHPASSWD	"authPassword"
+#define SU_VAR_PRIVPASSWD	"privPassword"
+#define SU_VAR_AUTHPROT		"authProtocol"
+#define SU_VAR_PRIVPROT		"privProtocol"
+
 
 #define SU_INFOSIZE		128
 #define SU_BUFSIZE		32
@@ -190,8 +199,7 @@ typedef struct {
 } mib2nut_info_t;
 
 /* Common SNMP functions */
-void nut_snmp_init(const char *type, const char *host, const char *version,
-		const char *community);
+void nut_snmp_init(const char *type, const char *hostname);
 void nut_snmp_cleanup(void);
 struct snmp_pdu *nut_snmp_get(const char *OID);
 bool_t nut_snmp_get_str(const char *OID, char *buf, size_t buf_len,
