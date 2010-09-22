@@ -27,10 +27,9 @@ If you have still not found a solution, you should search the lists before
 posting a question.
 
 Someone may have already solved the problem:
-////////////////////////////////////////////////////////////////////////////////
-Comment: the below is an HTML only passthrough block
-FIXME: make this conditional and add alternative for ... PDF ...
-////////////////////////////////////////////////////////////////////////////////
+
+ifdef::backend-xhtml11[]
+
 ++++++++++++++++++++++++++++++++++++++
 <form action="http://www.google.com/search" method="get">
   <input maxlength="2048" name="as_q" size="25" type="text">
@@ -41,6 +40,13 @@ FIXME: make this conditional and add alternative for ... PDF ...
 </form>
 ++++++++++++++++++++++++++++++++++++++
 
+endif::backend-xhtml11[]
+
+ifndef::backend-xhtml11[]
+
+link:http://www.google.com/search?as_q=&as_oq=nut-upsuser+nut-upsdev&domains=lists.alioth.debian.org&sitesearch=lists.alioth.debian.org&btnG=Search+NUT+lists[search on the NUT lists using Google]
+
+endif::backend-xhtml11[]
 
 Finally, you can *subscribe* to a NUT mailing list to:
 
