@@ -36,9 +36,10 @@ installing these files. The libraries can then be build and installed
 with 'make' and 'make install' as usual. This must be done before
 building other (non-NUT) programs which depend on them.
 
-*FIXME* For more information, refer to link *man/upsclient.3*[the upsclient
-manual page], and the various upscli_*() functions documentation referenced in
-the same file.
+For more information, refer to the link:man/upsclient.html[upsclient(3)],
+manual page and the various
+link:man/index.html#Developer_man[upscli_*(3)] functions documentation
+referenced in the same file.
 
 Configuration helpers
 ~~~~~~~~~~~~~~~~~~~~~
@@ -49,18 +50,18 @@ detecting the right compilation and link flags:
 - one for platform providing pkg-config,
 - and the other (libupsclient-config) for platform not providing pkg-config.
 
-*FIXME* link to the manpages
+Reference: man page: link:man/libupsclient-config.html[libupsclient-config(1)]
 
 Python
 ------
 
 ...
 Comment: content from scripts/python/README
-+ point scripts/python/module/test_nutclient.py
++ complete with code samples based on scripts/python/module/test_nutclient.py
+
 
 Perl
 ----
 
-Comment: The binding has to be tested and probably updated before we can
-document it!
-The content of this § is to be ripped from the http://search.cpan.org/dist/ups-nut/[UPS::Nut] module README:
+Comment: This binding has recently been updated and integrated into nut.
+scripts/perl/Nut.pm contains doc that can be ripped off or auto extracted.
