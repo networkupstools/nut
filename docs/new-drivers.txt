@@ -1,8 +1,15 @@
-How to make a new driver to support another UPS
+Creating a new driver to support another device
 ===============================================
 
-Creating a new driver to support another device
------------------------------------------------
+This chapter will present the process to create a new driver to support
+another device.
+
+Since NUT already supports all major power devices protocols, through
+several generic drivers (genericups, usbhid-ups, snmp-ups, blazer_*), new
+driver creation has become rare.
+
+So most of the time, it will be limited to completing a generic driver.
+
 
 ////////////////////////////////////////////////////////////////////////////////
 FIXME:
@@ -43,12 +50,7 @@ usbhid-ups driver, which is easier than writing an entire new driver.
 
 Similarly, if your UPS connects to your computer via an SNMP network
 card, you can probably add support for your device by writing a new
-subdriver to the existing snmp-ups driver, which is easier than writing
-an entire new driver.
-
-////////////////////////////////////////////////////////////////////////////////
-FIXME: create snmp-subdrivers.txt
-////////////////////////////////////////////////////////////////////////////////
+subdriver to the existing snmp-ups driver.
 
 Overall concept
 ---------------
@@ -229,8 +231,8 @@ Possible values for status_set:
 	BOOST   - UPS is boosting incoming voltage
 
 Anything else will not be recognized by the usual clients.  Coordinate
-with the nut-upsdev list before creating something new, since there will be duplication
-and ugliness otherwise.
+with the nut-upsdev list before creating something new, since there will be
+duplication and ugliness otherwise.
 
 NOTE: upsd injects "FSD" by itself following that command by a master
 upsmon process.  Drivers must not set that value.
@@ -541,8 +543,8 @@ anything, but that is a privilege and not a right.  Imagine the mess
 that would happen if every developer decided on their own way to
 represent a common status element.
 
-Check the <<new-names,Command Names>> section first to find the closest fit.
-If nothing matches, contact the upsdev list or mail me directly, and we'll
+Check the <<nut-names,NUT command and variable naming scheme>> section first to
+find the closest fit. If nothing matches, contact the upsdev list, and we'll
 figure it out.
 
 Patches which introduce unlisted names may be modified or dropped.
@@ -701,5 +703,5 @@ include::hid-subdrivers.txt[]
 FIXME
 [[snmp-subdrivers]]
 
-include::snmp-subdrivers.txt[]
+include snmp-subdrivers.txt[]
 ////////////////////////////////////////////////////////////////////////////////
