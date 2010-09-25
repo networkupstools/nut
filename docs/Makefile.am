@@ -15,7 +15,7 @@ CABLES_DEPS = cables/apc-rs500-serial.txt	\
 
 EXTRA_DIST = $(SHARED_DEPS) $(USER_MANUAL_DEPS) $(DEVELOPER_GUIDE_DEPS) \
  $(CABLES_DEPS) contact-closure.txt FAQ.txt \
- megatec.txt nut-hal.txt snmp.txt
+ nut-hal.txt snmp.txt
 
 if MANUALUPDATE
 
