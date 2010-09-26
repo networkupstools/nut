@@ -87,10 +87,11 @@ NOTE: The only official releases from this project are source code.
 NUT is already available in the following systems:
 
 - Linux: 
-link:http://packages.debian.org/nut[Debian], 
+link:http://aur.archlinux.org/packages.php?ID=5379[Arch Linux],
+link:http://packages.debian.org/nut[Debian],
 link:http://packages.gentoo.org/package/sys-power/nut[Gentoo Linux],
 Mandriva,
-Red Hat / Fedora,
+link:https://admin.fedoraproject.org/pkgdb/acls/name/nut[Red Hat / Fedora],
 link:http://software.opensuse.org/search[Novell Suse / openSUSE],
 link:http://packages.ubuntu.com/nut[Ubuntu].
 
