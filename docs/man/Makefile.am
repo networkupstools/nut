@@ -1,5 +1,3 @@
-if MANUALUPDATE
-
 CONVERTED_TO_ASCIIDOC = \
 	apcsmart.html \
 	bcmxcp.html \
@@ -257,6 +255,10 @@ man8_MANS = \
 	usbhid-ups.8 \
 	victronups.8
 
+# dist-hook: $(MANS)
+
+all: $(MANS)
+
 html:	$(CONVERTED_TO_ASCIIDOC)
 
 clean-local:
@@ -289,8 +291,3 @@ A2X_MANPAGE_OPTS = -f manpage --attribute nutversion="@PACKAGE_VERSION@"
 .txt.8:
 	test -f `basename $<` || cp -p $< .
 	$(A2X) $(A2X_MANPAGE_OPTS) `basename $<`
-	
-else !MANUALUPDATE
-html:	html-recursive
-	@echo "Not building HTML documentation since 'asciidoc' was not found."
-endif !MANUALUPDATE

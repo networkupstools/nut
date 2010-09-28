@@ -160,16 +160,16 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-AC_HELP_STRING([--with-all], [enable serial, usb, snmp, hal, cgi, dev, neonxml, powerman]),
+AC_HELP_STRING([--with-all], [enable serial, usb, snmp, neonxml, powerman, hal, cgi, dev]),
 [	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
 		dnl this is what the user expects from --without-all
+		if test -z "${with_serial}"; then with_serial="${withval}"; fi
+		if test -z "${with_usb}"; then with_usb="${withval}"; fi
+		if test -z "${with_snmp}"; then with_snmp="${withval}"; fi
+		if test -z "${with_hal}"; then with_hal="${withval}"; fi
 		if test -z "${with_cgi}"; then with_cgi="${withval}"; fi
 		if test -z "${with_dev}"; then with_dev="${withval}"; fi
-		if test -z "${with_serial}"; then with_serial="${withval}"; fi
-		if test -z "${with_snmp}"; then with_snmp="${withval}"; fi
-		if test -z "${with_usb}"; then with_usb="${withval}"; fi
-		if test -z "${with_hal}"; then with_hal="${withval}"; fi
 		if test -z "${with_neonxml}"; then with_neonxml="${withval}"; fi
 		if test -z "${with_powerman}"; then with_powerman="${withval}"; fi
 		AC_MSG_RESULT("${withval}")		
@@ -191,6 +191,7 @@ NUT_ARG_WITH([cgi], [build and install the CGI programs], [no])
 NUT_ARG_WITH([dev], [build and install the development files], [no])
 NUT_ARG_WITH([neonxml], [build and install neon based XML/HTTP driver], [auto])
 NUT_ARG_WITH([powerman], [build and install Powerman PDU client driver], [auto])
+NUT_ARG_WITH([doc], [build and install documentation], [no])
 
 dnl ----------------------------------------------------------------------
 dnl Check for presence and compiler flags of various libraries
@@ -212,7 +213,7 @@ dnl Check for libusb "force driver unbind" availability
 dnl Need at least libusb 0.1.8
 AC_CHECK_LIB(usb, usb_detach_kernel_driver_np, [
   AC_DEFINE(LIBUSB_HAS_DETACH_KRNL_DRV, 1,
-    [Define to 1 if libusb supports `usb_detach_kernel_driver_np' function.])
+    [Define to 1 if libusb supports 'usb_detach_kernel_driver_np' function.])
 ], [], [${LIBUSB_LDFLAGS}])
 
 dnl Solaris 10/11 USB handling (need librt and libusb runtime path)
@@ -434,6 +435,44 @@ AM_CONDITIONAL(WITH_LIBPOWERMAN, test "${nut_with_powerman}" = "yes")
 NUT_REPORT_FEATURE([build Powerman PDU client driver], [${nut_with_powerman}])
 
 dnl ----------------------------------------------------------------------
+dnl check whether to build documentation, and which format 
+
+dnl check for Asciidoc presence
+AC_PATH_PROGS([ASCIIDOC], [asciidoc], [none])
+AC_PATH_PROGS([A2X], [a2x], [none])
+
+dnl ${nut_with_doc}: any value except "no" and "auto" is treated as a target
+dnl list. "auto" tries to build all targets.
+dnl allowed values "html-single" "html-chunked" "pdf". 
+if test "${nut_with_doc}" != "no"; then
+	if test "x$ASCIIDOC" != "xnone" -a "x$A2X" != "xnone"; then
+		nut_have_asciidoc="yes"
+		if test "${nut_with_doc}" = "auto"; then
+			DOC_BUILD_LIST="html-single html-chunked pdf"
+		else
+			DOC_BUILD_LIST=`echo ${nut_with_doc} | sed "s/,/ /g"`
+		fi
+		dnl substitute value for cosmetic reason
+		nut_with_doc="yes"
+	else
+		if test "${nut_with_doc}" != "auto"; then
+			AC_MSG_ERROR(["Asciidoc is required for documentation support and missing"])
+		else
+			nut_with_doc="no"
+		fi
+	fi
+fi
+
+dnl FIXME: Transitional compatibility target
+AM_CONDITIONAL([MANUALUPDATE], [test "${nut_have_asciidoc}" = "yes"])
+
+NUT_REPORT_FEATURE([build and install documentation], [${nut_with_doc}])
+if test "${nut_with_doc}" = "yes"; then
+   NUT_REPORT([only build specific documentation format], [${DOC_BUILD_LIST}])
+fi
+
+dnl ----------------------------------------------------------------------
+
 
 AC_MSG_CHECKING(state path)
 AC_ARG_WITH(statepath,
@@ -763,10 +802,6 @@ if test "${nut_cv_have_longlong}" = "yes"; then
     AC_DEFINE(HAVE_LONG_LONG, 1, [long long support for snprintf])
 fi
 
-AC_PATH_PROGS([ASCIIDOC], [asciidoc], [none])
-AM_CONDITIONAL([MANUALUPDATE], [test "x$ASCIIDOC" != "xnone"])
-AC_PATH_PROGS([A2X], [a2x], [none])
-
 dnl expand ${sysconfdir} and write it out
 conftemp="${sysconfdir}"
 eval conftemp=\"${conftemp}\"
@@ -795,6 +830,7 @@ AC_SUBST(LIBNEON_CFLAGS)
 AC_SUBST(LIBNEON_LDFLAGS)
 AC_SUBST(LIBPOWERMAN_CFLAGS)
 AC_SUBST(LIBPOWERMAN_LDFLAGS)
+AC_SUBST(DOC_BUILD_LIST)
 AC_SUBST(LIBWRAP_CFLAGS)
 AC_SUBST(LIBWRAP_LDFLAGS)
 AC_SUBST(HAL_USER)

@@ -1,4 +1,5 @@
-if MANUALUPDATE
+EXTRA_DIST = news.txt projects.txt stable-hcl.txt website.txt \
+	 ups-html.txt ups-protocols.txt
 
 WEBSITE_FILES = index.html projects.html stable-hcl.html \
 	documentation.html acknowledgements.html features.html FAQ.html \
@@ -20,7 +21,12 @@ ASCIIDOC_PARAMS = --unsafe --backend=xhtml11 \
 # CSS based simulated frames layout.
 LAYOUT=web-layout
 
-html:	$(WEBSITE_FILES)
+all:
+
+# transitional target!
+html: website
+
+website:	$(WEBSITE_FILES)
 
 $(WEBSITE_FILES): $(LAYOUT).conf
 
@@ -76,8 +82,3 @@ stable-hcl.html: stable-hcl.txt
 
 .txt.html:
 	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ $<
-	
-else !MANUALUPDATE
-html: html-recursive
-	@echo "Not building website since 'asciidoc' was not found."
-endif !MANUALUPDATE

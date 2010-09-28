@@ -16,8 +16,9 @@ EXTRA_DIST = MAINTAINERS UPGRADING
 # need to give hotplug-dir and udev-dir, so that staged install does
 # not fail.
 
-DISTCHECK_FLAGS = --with-all --with-ssl --with-ipv6
-DISTCHECK_LIGHT_FLAGS = --with-all=auto --with-ssl=auto --with-ipv6=auto
+DISTCHECK_FLAGS = --with-all --with-ssl --with-ipv6 --with-doc=auto
+DISTCHECK_LIGHT_FLAGS = --with-all=auto --with-ssl=auto \
+	--with-ipv6=auto --without-doc
 
 DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
  --with-hotplug-dir='$${prefix}/etc/hotplug'		\
