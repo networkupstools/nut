@@ -48,6 +48,49 @@ include::new-clients.txt[]
 include::net-protocol.txt[]
 
 
+[[dev-tools]]
+
+NUT developers tools
+====================
+
+NUT provides several tools for clients and core developers, and QA people.
+
+Device simulation
+-----------------
+
+The dummy-ups driver propose a simulation mode, also known as 'Dummy Mode'.
+This mode allows to simulate any kind of devices, even non existing ones.
+
+Using this method, you can either replay a real life sequence,
+<<dev-recording,recorded from an actual device>>, or directly interact
+through upsrw by editing the configuration.
+
+For more information, refer to link:man/dummy-ups.html[dummy-ups(8)]
+manual page. 
+
+
+[[dev-recording]]
+
+Device recording
+----------------
+
+To complete dummy-ups, NUT offers a device recorder script called
+'device-recorder.sh' and located in the 'tools/' directory of the
+NUT source tree.
+
+This script uses 'upsc' to record device information, and stores
+these in a differential fashion every 5 seconds (by default).
+
+Its usage is the following:
+
+	Usage: dummy-recorder.sh <device-name> [output-file] [interval]
+
+For example, to record information from the device 'myups' every 10 seconds:
+
+	tools/device-recorder.sh myups@localhost myups.seq 10
+
+
+
 NUT core development and maintenance
 ====================================
 
