@@ -257,7 +257,9 @@ man8_MANS = \
 
 # dist-hook: $(MANS)
 
-all: $(MANS)
+all:
+
+man: $(MANS)
 
 html:	$(CONVERTED_TO_ASCIIDOC)
 
