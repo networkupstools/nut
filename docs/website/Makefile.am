@@ -9,7 +9,13 @@ IMAGE_FILES = images/advanced.png \
 	images/eaton-logo.png \
 	images/note.png \
 	images/simple.png \
-	images/warning.png
+	images/warning.png \
+	css/ie-overrides.css \
+	css/web-layout.css \
+	css/xhtml11-quirks.css \
+	css/xhtml11.css \
+	faviconut.ico \
+	faviconut.png
 
 SCRIPT_FILES = scripts/filter_png.js \
 	scripts/jquery.js \
@@ -22,8 +28,8 @@ WEBSITE_FILES = index.html projects.html stable-hcl.html \
 	user-manual.html packager-guide.html developer-guide.html ups-protocols.html \
 	cables.html man-index.html nut-qa.html download.html support.html
 
-ASCIIDOC_PARAMS = --unsafe --backend=xhtml11 \
-    --conf-file=$(LAYOUT).conf \
+ASCIIDOC_PARAMS = --backend=xhtml11 \
+    --conf-file=$(srcdir)/$(LAYOUT).conf \
     --attribute icons \
     --attribute iconsdir=$(srcdir)/images \
     --attribute scriptsdir=$(srcdir)/scripts \

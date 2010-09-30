@@ -1,5 +1,9 @@
 SHARED_DEPS = nut-names.txt
 
+IMAGE_FILES = images/eaton-logo.png \
+	icons/note.png \
+	icons/warning.png
+
 USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt	\
  configure.txt download.txt documentation.txt features.txt history.txt	\
  outlets.txt scheduling.txt security.txt support.txt user-manual.txt
@@ -15,7 +19,8 @@ CABLES_DEPS = cables/apc-rs500-serial.txt	\
 
 EXTRA_DIST = $(SHARED_DEPS) $(USER_MANUAL_DEPS) $(DEVELOPER_GUIDE_DEPS) \
  $(CABLES_DEPS) contact-closure.txt FAQ.txt \
- nut-hal.txt snmp.txt packager-guide.txt
+ nut-hal.txt nut-qa.txt packager-guide.txt suspend-to-disk.txt snmp.txt \
+ $(IMAGE_FILES)
 
 CONVERTED_TO_ASCIIDOC_HTML = user-manual.html \
 	developer-guide.html \
@@ -47,7 +52,7 @@ SUBDIRS = website man
 SUFFIXES = .txt .html .pdf
 
 .txt.html:
-	$(ASCIIDOC) --unsafe --backend=xhtml11 \
+	$(ASCIIDOC) --backend=xhtml11 \
 		--attribute icons \
 		--attribute localdate=`TZ=UTC date +%Y-%m-%d` \
 		--attribute localtime=`TZ=UTC date +%H:%M:%S` \
@@ -64,7 +69,7 @@ html-chunked-build: user-manual.txt developer-guide.txt
 		--attribute iconsdir=$(srcdir)/icons \
 		--attribute=badges \
 		--attribute=external_title \
-		-a toc -a numbered $<
+		-a toc -a numbered --destination-dir=. $<
 
 .txt.pdf:
 	$(A2X) --format=pdf \
@@ -74,9 +79,9 @@ html-chunked-build: user-manual.txt developer-guide.txt
 		--attribute iconsdir=$(srcdir)/icons \
 		--attribute=badges \
 		--attribute=external_title \
-		-a toc -a numbered $<
+		-a toc -a numbered --destination-dir=. $<
 
-.PHONY: html html-single html-chuncked pdf
+.PHONY: html html-single html-chunked-build pdf
 
 ### TODO: automatic dependency generation
 FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS)  $(SHARED_DEPS) ../README \
