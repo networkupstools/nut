@@ -1,5 +1,21 @@
 EXTRA_DIST = news.txt projects.txt stable-hcl.txt website.txt \
-	 ups-html.txt ups-protocols.txt
+	 ups-html.txt ups-protocols.txt $(LAYOUT).conf $(SCRIPTS) $(IMAGES)
+
+IMAGES = images/advanced.png \
+	images/asciidoc.png \
+	images/bigbox.png \
+	images/bizarre.png \
+	images/blue-arrow.png \
+	images/eaton-logo.png \
+	images/note.png \
+	images/simple.png \
+	images/warning.png
+
+SCRIPTS = scripts/filter_png.js \
+	scripts/jquery.js \
+	scripts/nut_jquery.js \
+	scripts/toc.js \
+	scripts/ups_data.js
 
 WEBSITE_FILES = index.html projects.html stable-hcl.html \
 	documentation.html acknowledgements.html features.html FAQ.html \
