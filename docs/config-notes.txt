@@ -10,12 +10,8 @@ package.  You should check out the link:user-manual.html#Overview[NUT Overview]
 and other accompanying documentation to see how it all works.
 
 ////////////////////////////////////////////////////////////////////////////////
-FIXME: add a section for
-NUT Control Center - NCC
-------------------------
-
+FIXME (POST): add a section for NUT Control Center - NCC
 ////////////////////////////////////////////////////////////////////////////////
-
 
 
 Details about the configuration files
@@ -87,11 +83,13 @@ quotes spanning multiple lines.
 Basic configuration
 -------------------
 
-This chapter describe the base configuration to establish communication with the
-device.
+This chapter describe the base configuration to establish communication with
+the device.
 
 This will be sufficient for PDU. But for UPS and SCD, you will also need to
 configure <<UPS_shutdown,automatic shutdowns for low battery events>>.
+
+image:images/simple.png[]
 
 [[Driver_configuration]]
 Driver configuration
@@ -116,19 +114,22 @@ A typical device without any extra settings looks like this:
 		port = /dev/ttyS1
 		desc = "Workstation"
 
-////////////////////////////////////////////////////////////////////////////////
-FIXME: broaden to all USB drivers
-////////////////////////////////////////////////////////////////////////////////
-
-NOTE: usbhid-ups is a special case and ignores the 'port' value.
+NOTE: USB drivers (usbhid-ups, bcmxcp_usb, tripplite_usb, blazer_usb and
+richcomm_usb) are special cases and ignore the 'port' value.
 You must still set this value, but it does not matter what you set
-it to; you can set 'port' to *auto* if you like. If you only own
-one local UBS UPS, the driver will find it automatically. If you
-own more than one UBS UPS, refer to the link:man/usbhid-ups.html[usbhid-ups(8)]
-manual page for more information.
+it to; a common and good practice is to set 'port' to *auto*, but you can
+put whatever you like. If you only own one UBS UPS, the driver will
+find it automatically. If you own more than one, refer to the driver's
+manual page for more information on matching a specific device.
 
-References: link:man/ups.conf.html[ups.conf(5)], link:man/nutupsdrv.html[nutupsdrv(8)],
-plus whatever link:man/index.html#Drivers[driver(s)] you intend to use.
+References: link:man/ups.conf.html[ups.conf(5)],
+link:man/nutupsdrv.html[nutupsdrv(8)],
+link:man/bcmxcp_usb.html[bcmxcp_usb(8)],
+link:man/blazer.html[blazer_usb(8)],
+link:man/richcomm_usb.html[richcomm_usb(8)],
+link:man/tripplite_usb.html[tripplite_usb(8)],
+link:man/usbhid-ups.html[usbhid-ups(8)]
+
 
 [[Starting_drivers]]
 Starting the driver(s)
@@ -149,7 +150,7 @@ reference, a successful start of the belkin driver looks like this:
 	Using subdriver: MGE HID 1.12
 	Detected EATON - Ellipse MAX 1100 [ADKK22008]
 
-If the driver doesn't start cleanly, make sure you have picked the
+bIf the driver doesn't start cleanly, make sure you have picked the
 right one for your hardware.  You might need to try other drivers
 by changing the "driver=" value in ups.conf.
 
@@ -178,12 +179,9 @@ want upsd to listen on for connections, optionally with a port number.
 	LISTEN 127.0.0.1 3493
 	LISTEN ::1 3493
 
-NOTE: if you run a firewall of some sort, you may have to add rules
-to allow these incoming connections.
-
-////////////////////////////////////////////////////////////////////////////////
-*FIXME* add a note on TCP wrappers and SSL
-////////////////////////////////////////////////////////////////////////////////
+NOTE: Refer to the NUT user manual
+link:user-manual.html#NUT_Security[security chapter] for information on
+how to access and secure upsd clients connections.
 
 Next, create upsd.users.  For now, this can be an empty file.
 You can come back and add more to it later when it's time to 
@@ -518,17 +516,15 @@ NOTE: This step is not need if you installed from packages.
 
 Edit your startup scripts, and add a call to `upsmon`.
 
-Make sure `upsmon` starts when your system comes up.  Do it after `upsdrvctl` and
-`upsd`, or it will complain about not being able to contact the server.
+Make sure `upsmon` starts when your system comes up.  Do it after `upsdrvctl`
+and `upsd`, or it will complain about not being able to contact the server.
 
 You may delete the POWERDOWNFLAG in the startup scripts, but it is not
 necessary. `upsmon` will clear that file for you when it starts.
 
-////////////////////////////////////////////////////////////////////////////////
-*FIXME*
-- point sample scripts in scripts/ or the NPS...
-////////////////////////////////////////////////////////////////////////////////
-
+NOTE: Init script examples are provide in the 'scripts' directory of
+the NUT source tree, and in the various
+link:user-manual.html#_binary_packages[packages] that exist.
 
 Shutdown scripts
 ^^^^^^^^^^^^^^^^
@@ -593,18 +589,48 @@ You can finally test a forced shutdown sequence (FSD) using:
 This will execute a full shutdown sequence, as presented in
 <<Shutdown_design,Shutdown design>>, starting from the 3rd step.
 
-If everything works correctly, the computer will be forcibly powered off,
-may remain off for a few seconds to a few minutes (depending on the
-driver and UPS type), then will power on again.
+If everything works correctly, the computer will be forcibly powered
+off, may remain off for a few seconds to a few minutes (depending on
+the driver and UPS type), then will power on again.
 
 If your UPS just sits there and never resets the load, you are vulnerable
-to a power race and should add the "reboot after timeout" hack at the very least.
+to a power race and should add the "reboot after timeout" hack at the very
+least.
 
-////////////////////////////////////////////////////////////////////////////////
-FIXME: linkto
-////////////////////////////////////////////////////////////////////////////////
 Also refer to the section on power races in the link:FAQ.html[FAQ].
 
+Using suspend to disk
+~~~~~~~~~~~~~~~~~~~~~
+
+Support for suspend to RAM and suspend to disk has been available in
+the Linux kernel for a while now. For obvious reasons, suspending to
+RAM isn't particularly useful when the UPS battery is getting low,
+but suspend to disk may be an interesting concept.
+
+This approach minimizes the amount of disruption which would be caused
+by an extended outage.  The UPS goes on battery, then reaches low
+battery, and the system takes a snapshot of itself and halts.  Then it
+is turned off and waits for the power to return.
+
+Once the power is back, the system reboots, pulls the snapshot back in,
+and keeps going from there.  If the user happened to be away when it
+happened, they may return and have no idea that their system actually
+shut down completely in the middle.
+
+In order for this to work, you need to shutdown NUT (UPS driver, upsd
+server and upsmon client) in the suspend script and start them again in
+the resume script.  Don't try to keep them running.  The upsd server
+will latch the FSD state (so it won't be useable after resuming) and so
+will the upsmon client.  Some drivers may work after resuming, but many
+don't and some UPS'es will require re-initialization, so it's best not
+to keep this running either.
+
+After stopping driver, server and client you'll have to send the UPS
+the command to shutdown only if the POWERDOWNFLAG is present.  Note
+that most likely you'll have to allow for a grace period after sending 
+'upsdrvctl shutdown' since the system will still have to take a
+snapshot of itself after that.  Not all drivers support this, so before
+going down this road, make sure that the one you're using does.
 
 RAID warning
 ~~~~~~~~~~~~
@@ -617,18 +643,16 @@ The kernel may not ever run its final shutdown procedure, so you must take care
 of all array shutdowns in userspace before upsdrvctl runs.
 
 If you use software RAID (md) on Linux, get mdadm and try using
-'mdadm --readonly' to put your arrays in a safe state. This has to happen after
-your shutdown scripts have remounted the filesystems.
+'mdadm --readonly' to put your arrays in a safe state. This has to
+happen after your shutdown scripts have remounted the filesystems.
 
-On hardware RAID or other kernels, you have to do some detective work. It may be
-necessary to contact the vendor or the author of your driver to find out how to
-put the array in a state where a power loss won't leave it "dirty".
+On hardware RAID or other kernels, you have to do some detective work. It may
+be necessary to contact the vendor or the author of your driver to find out
+how to put the array in a state where a power loss won't leave it "dirty".
 
-////////////////////////////////////////////////////////////////////////////////
-FIXME: update and complete...
-My understanding is that 3ware devices on Linux will be fine unless there are
-pending writes.  Make sure your filesystems are remounted read-only and you should be covered.
-////////////////////////////////////////////////////////////////////////////////
+Our understanding is that most if not all RAID devices on Linux will be fine
+unless there are pending writes.  Make sure your filesystems are remounted
+read-only and you should be covered.
 
 
 [[DataRoom]]
@@ -678,11 +702,10 @@ multiple UPSes, but only depends on one for power.  This particular
 situation makes it an "A" relative to one UPS, and a "C" relative to the
 other.  The software can handle this - you just have to tell it what to do.
 
-//////////////////////////////////////////////////////////////////////////
-FIXME: explain proxy concept
-//////////////////////////////////////////////////////////////////////////
-NOTE: NUT can also serve as a data proxy to increase the number of clients, or
-share the communication load between several upsd instances.
+NOTE: NUT can also serve as a data proxy to increase the number of clients,
+or share the communication load between several upsd instances.
+
+image:images/advanced.png[]
 
 If you are running large server-class systems that have more than one
 power feed, see the next section for information on how to handle it
@@ -695,6 +718,8 @@ Typical setups for big servers with UPS redundancy
 By using multiple MONITOR statements in upsmon.conf, you can configure an
 environment where a large machine with redundant power monitors multiple
 separate UPSes.
+
+image:images/bigbox.png[]
 
 Example configuration
 ~~~~~~~~~~~~~~~~~~~~~
@@ -731,7 +756,7 @@ that each UPS is feeding (2).
 
 
 ////////////////////////////////////////////////////////////////////////////////
-FIXME:
+FIXME (POST):
 add references to other equipments, such as transfer switches
 and parallel / serial UPS configuration
 

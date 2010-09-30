@@ -19,7 +19,7 @@ CABLES_DEPS = cables/apc-rs500-serial.txt	\
 
 EXTRA_DIST = $(SHARED_DEPS) $(USER_MANUAL_DEPS) $(DEVELOPER_GUIDE_DEPS) \
  $(CABLES_DEPS) contact-closure.txt FAQ.txt \
- nut-hal.txt nut-qa.txt packager-guide.txt suspend-to-disk.txt snmp.txt \
+ nut-hal.txt nut-qa.txt packager-guide.txt snmp.txt \
  $(IMAGE_FILES)
 
 CONVERTED_TO_ASCIIDOC_HTML = user-manual.html \
