@@ -18,7 +18,7 @@ EXTRA_DIST = MAINTAINERS UPGRADING
 
 DISTCHECK_FLAGS = --with-all --with-ssl --with-ipv6 --with-doc=auto
 DISTCHECK_LIGHT_FLAGS = --with-all=auto --with-ssl=auto \
-	--with-ipv6=auto --without-doc
+	--with-ipv6=auto --with-doc=auto
 
 DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
  --with-hotplug-dir='$${prefix}/etc/hotplug'		\
