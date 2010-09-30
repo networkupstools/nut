@@ -1,7 +1,7 @@
 EXTRA_DIST = news.txt projects.txt stable-hcl.txt website.txt \
-	 ups-html.txt ups-protocols.txt $(LAYOUT).conf $(SCRIPTS) $(IMAGES)
+	 ups-html.txt ups-protocols.txt $(LAYOUT).conf $(SCRIPT_FILES) $(IMAGE_FILES)
 
-IMAGES = images/advanced.png \
+IMAGE_FILES = images/advanced.png \
 	images/asciidoc.png \
 	images/bigbox.png \
 	images/bizarre.png \
@@ -11,7 +11,7 @@ IMAGES = images/advanced.png \
 	images/simple.png \
 	images/warning.png
 
-SCRIPTS = scripts/filter_png.js \
+SCRIPT_FILES = scripts/filter_png.js \
 	scripts/jquery.js \
 	scripts/nut_jquery.js \
 	scripts/toc.js \
