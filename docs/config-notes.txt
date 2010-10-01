@@ -142,7 +142,7 @@ Start the driver(s) for your hardware:
 Make sure the driver doesn't report any errors.  It should show a
 few details about the hardware and then enter the background.  You
 should get back to the command prompt a few seconds later.  For
-reference, a successful start of the belkin driver looks like this:
+reference, a successful start of the `usbhid-ups` driver looks like this:
 
 	# /usr/local/ups/bin/upsdrvctl start
 	Network UPS Tools - Generic HID driver 0.34 (2.4.1)
@@ -150,7 +150,7 @@ reference, a successful start of the belkin driver looks like this:
 	Using subdriver: MGE HID 1.12
 	Detected EATON - Ellipse MAX 1100 [ADKK22008]
 
-bIf the driver doesn't start cleanly, make sure you have picked the
+If the driver doesn't start cleanly, make sure you have picked the
 right one for your hardware.  You might need to try other drivers
 by changing the "driver=" value in ups.conf.
 
