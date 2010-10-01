@@ -49,6 +49,9 @@ html-chunked: html-chunked-build html-recursive
 clean-local:
 	rm -rf *.pdf *.html *.chunked docbook-xsl.css
 
+# This CSS file is an artifact of a2x (seen with 8.6.1):
+CLEANFILES = docbook-xsl.css
+
 SUBDIRS = website man
 SUFFIXES = .txt .html .pdf
 
