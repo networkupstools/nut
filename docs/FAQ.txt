@@ -1,13 +1,8 @@
-ifdef::website[]
+ifndef::external_title[]
 NUT Frequently Asked Questions
 ==============================
-endif::website[]
+endif::external_title[]
 
-////////////////////////////////////////////////////////////////////////////////
-Auth: Russell Kroll <rkroll@exploits.org>
-      Arnaud Quette <aquette.dev@gmail.com>
-////////////////////////////////////////////////////////////////////////////////
- 
 == I just upgraded, and ...
 You have read link:UPGRADING[UPGRADING] in the base directory of the distribution,
 right?
@@ -15,16 +10,16 @@ right?
 If not, go read it now, then come back to this file if your
 question wasn't answered in there.
 
-== upsstats says "Error: can't open template file (upsstats.html)".
+== upsstats says 'Error: can't open template file (upsstats.html)'.
 Go into your configuration path (/usr/local/ups/etc by default) and
 copy the sample template files over to their real names.  The sample
 template files are installed with 'make install' and can 
 also be found inside the source distribution in the conf directory. 
 
-== upsmon fails the login and says "username required" now.
+== upsmon fails the login and says 'username required' now.
 Go read the link:UPGRADING[UPGRADING] file again.
 
-== My UPS driver now says it's "broken", and won't start.  What now?
+== My UPS driver now says it's 'broken', and won't start.  What now?
 Or a variation like...
 
 == My favorite UPS driver disappeared after an upgrade.  What now?
@@ -85,7 +80,7 @@ ups.conf.  Just define it before any of your [sections]:
 		driver = mge-shut
 		port = /dev/ttyS0
 
-== upsc, upsstats, and the other clients say "access denied".  The device communication port (serial, USB or network) permissions are fine, so what gives? 
+== upsc, upsstats, and the other clients say 'access denied'.  The device communication port (serial, USB or network) permissions are fine, so what gives? 
 
 In this case, "access denied" means the access to upsd, not the device
 communication port.  You're being denied since the system has no
@@ -218,7 +213,7 @@ bestfortress which supported the older Best hardware.  See the
 earlier entries about updating old drivers which have been removed
 from the tree.
 
-== What's this about "data stale"?
+== What's this about 'data stale'?
 
 It means your UPS driver hasn't updated things in a little while.
 upsd refuses to serve up data that isn't fresh, so you get the
@@ -245,7 +240,7 @@ can happen with MGE Ellipse equipment - see the mge-shut man page.
 In such cases, you can raise the value of MAXAGE to avoid these
 warnings; try a value like 25 or 30.
 
-== Why do the client programs say "Driver not connected" when I try to run them?
+== Why do the client programs say 'Driver not connected' when I try to run them?
 
 This means that upsd can't connect to the driver for some reason.
 Your ups.conf entry might be wrong, or the driver might not be 
@@ -410,7 +405,7 @@ boot.
 If you like this, you'll probably also find the chroot process to
 be useful and interesting.  See security.txt for more details.
 
-== What's the point of that "security domains" concept above?
+== What's the point of that 'security domains' concept above?
 
 The point is limiting your losses.  If someone should happen to
 break into upsd in that environment, they should only gain access
@@ -463,7 +458,7 @@ service by bringing down the box.
 See upssched.txt for information on how you can shutdown early if
 this is what you really want to do.
 
-== The CGI programs report "access to that host is not authorized" -  what's going on?
+== The CGI programs report 'access to that host is not authorized' -  what's going on?
 
 Those programs need to see a host in your hosts.conf before they
 will attempt communications.  This keeps people from feeding it
@@ -558,7 +553,7 @@ root, start upsmon with -p and it will go back to being one big
 process.  This is not recommended, so don't blame us if something
 bad happens in this mode.
 
-== I have <some problem> with <some old version> ...
+== I have 'some problem' with 'some old version' ...
 
 Get the latest stable release, and see if it still happens.  If it
 goes away, it means someone else reported it and got it fixed a 
@@ -617,7 +612,7 @@ has already handled it successfully.
 
 Or a variation like...
  
-== My APC UPS keeps reporting "OL LB", even after it's been charging for many hours.  What can I do about this?
+== My APC UPS keeps reporting 'OL LB', even after it's been charging for many hours.  What can I do about this?
 
 This happened to me, and some other people too.  The combination of
 our experiences should prove useful to you.
