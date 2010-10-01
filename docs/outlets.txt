@@ -8,15 +8,16 @@ advantage of the provided features.
 Introduction
 ------------
 
-Outlets are the core of Power Distribution Units. They allow to put on, off or
-cycle the load on each outlet.
+Outlets are the core of Power Distribution Units. They allow you to turn on,
+turn off or cycle the load on each outlet.
 
-Some UPS also provide manageable outlets (Eaton, MGE, Powerware, Tripplite, ...)
-that help saving power in various ways, and managing loads more smartly.
+Some UPS models also provide manageable outlets (Eaton, MGE, Powerware,
+Tripplite, ...) that help save power in various ways, and manage loads more
+intelligently.
 
-Finally, some devices can be managed in a PDU-like way. Consider blade
-systems: blade chassis can be controlled remotely to put on, off or cycle
-the blade servers.
+Finally, some devices can be managed in a PDU-like way. Consider blade systems:
+the blade chassis can be controlled remotely to turn on, turn off or
+cycle the power on individual blade servers.
 
 NUT allows you to control all these devices!
 
@@ -66,7 +67,7 @@ This also allows the same remote electrical management of devices provided
 by PDUs, which can be very interesting in Data Centers.
 
 For example, on small setup, you can plug printers, USB devices, hubs, (...)
-on managed outlets. Depending on your UPS's capabilities, you will be able to
+into managed outlets. Depending on your UPS's capabilities, you will be able to
 turn off those loads:
 
 - after some minutes of back-up time using 'outlet.n.delay.start',
@@ -88,11 +89,11 @@ Otherwise, all computers will be stopped as soon as the communication is lost.
 Other type of devices
 ---------------------
 
-As told in Introduction, some other devices can be considered and managed like
-PDUs. This is the case of most blade systems, where the blade chassis offers
+As mentioned in the introduction, some other devices can be considered and managed like
+PDUs. This is the case in most blade systems, where the blade chassis offers
 power management services.
 
-This way, you can control remotely each blade server as if it was a PDU
+This way, you can control remotely each blade server as if it were a PDU
 outlet.
 
 This category of devices is generally called Remote Power Controls - RPC in NUT.
