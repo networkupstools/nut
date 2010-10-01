@@ -19,7 +19,7 @@ Its behavior depends on the running mode:
 Dummy Mode
 ~~~~~~~~~~
 
-*dummy-ups* looks like a standard UPS driver to linkman:upsd[8] and 
+*dummy-ups* looks like a standard device driver to linkman:upsd[8] and 
 allows to change any value for testing purposes.  It is both interactive,
 controllable through the linkman:upsrw[1] and linkman:upscmd[1] commands (or
 equivalent graphical tool), and batchable through script files. It can be
@@ -63,8 +63,9 @@ device.*, driver.*, ups.mfr, ups.model, ups.status
 Samples definition files are available in the "data" directory of the nut source
 tree, and generally in the sysconfig directory of your system distribution.
 
-Since *dummy-ups* will loop on reading this file, you can dynamically modify it to
-interact with the driver.
+Since *dummy-ups* will loop on reading this file, you can dynamically modify
+it to interact with the driver. This will avoid message spam into your
+system log files, if you are using NUT default configuration.
 
 You can also use the "TIMER <seconds>" instruction to create scheduled events
 sequences. For example, the following sequence will loop on switching ups.status
