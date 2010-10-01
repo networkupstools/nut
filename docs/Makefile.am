@@ -63,7 +63,7 @@ SUFFIXES = .txt .html .pdf
 		-a toc -a numbered -o $@ $<
 
 html-chunked-build: user-manual.txt developer-guide.txt
-	$(A2X) --format=chunked \
+	$(A2X) -v --format=chunked \
 		--attribute icons \
 		--attribute localdate=`TZ=UTC date +%Y-%m-%d` \
 		--attribute localtime=`TZ=UTC date +%H:%M:%S` \
@@ -73,7 +73,7 @@ html-chunked-build: user-manual.txt developer-guide.txt
 		-a toc -a numbered --destination-dir=. $<
 
 .txt.pdf:
-	$(A2X) --format=pdf \
+	$(A2X) -v --format=pdf \
 		--attribute icons \
 		--attribute localdate=`TZ=UTC date +%Y-%m-%d` \
 		--attribute localtime=`TZ=UTC date +%H:%M:%S` \
