@@ -51,8 +51,9 @@ SUBDIRS = website man
 
 SUFFIXES = .txt .html .pdf
 
+# Add --unsafe to allow includes on older versions of asciidoc ( < 8.5.3 ):
 .txt.html:
-	$(ASCIIDOC) --backend=xhtml11 \
+	$(ASCIIDOC) --unsafe --backend=xhtml11 \
 		--attribute icons \
 		--attribute localdate=`TZ=UTC date +%Y-%m-%d` \
 		--attribute localtime=`TZ=UTC date +%H:%M:%S` \

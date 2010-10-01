@@ -28,7 +28,8 @@ WEBSITE_FILES = index.html projects.html stable-hcl.html \
 	user-manual.html packager-guide.html developer-guide.html ups-protocols.html \
 	cables.html man-index.html nut-qa.html download.html support.html
 
-ASCIIDOC_PARAMS = --backend=xhtml11 \
+# Add --unsafe to allow includes on older versions of asciidoc ( < 8.5.3 ):
+ASCIIDOC_PARAMS = --unsafe --backend=xhtml11 \
     --conf-file=$(srcdir)/$(LAYOUT).conf \
     --attribute icons \
     --attribute iconsdir=$(srcdir)/images \
