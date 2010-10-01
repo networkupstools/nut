@@ -1,7 +1,7 @@
-ifdef::website[]
+ifndef::external_title[]
 Acknowledgements
 ================
-endif::website[]
+endif::external_title[]
 
 This project is the result of years of work by many individuals and companies.
 
