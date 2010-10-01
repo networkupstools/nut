@@ -86,7 +86,7 @@ support.html: ../support.txt
 	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ $<
 
 user-manual.html: ../user-manual.txt
-	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc -a numbered -a website! $<
+	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc -a numbered -a external_title! $<
 
 packager-guide.html: ../packager-guide.txt
 	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a toc -a numbered $<
