@@ -44,8 +44,10 @@ pdf: $(CONVERTED_TO_ASCIIDOC_PDF)
 html-single: $(CONVERTED_TO_ASCIIDOC_HTML) html-recursive
 html-chunked: html-chunked-build html-recursive
 
+# FIXME: docbook-xsl.css presence is a bug either due to the
+# copy dance or to a2x itself
 clean-local:
-	rm -rf *.pdf *.html *.chunked
+	rm -rf *.pdf *.html *.chunked docbook-xsl.css
 
 SUBDIRS = website man
 SUFFIXES = .txt .html .pdf
