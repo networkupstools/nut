@@ -1,5 +1,5 @@
-Network UPS Tools Packager Guide
-================================
+NUT Packager and Integrators Guide
+==================================
 Arnaud Quette <arnaud.quette@free.fr>
 
 WARNING: this is a Work In Progress document.
@@ -54,7 +54,7 @@ Let's now have an overview on how NUT is currently packaged:
 
 	1) Debian:
 	http://packages.qa.debian.org/n/nut.html
-		nut, nut-dev, nut-usb, nut-snmp, nut-cgi, nut-doc
+		nut, nut-dev, nut-usb, nut-snmp, nut-xml, nut-cgi, nut-doc [, nut-hal-drivers]
 
 	2) Mandriva
 	http://cvs.mandriva.com/cgi-bin/cvsweb.cgi/SPECS/nut/
@@ -159,7 +159,7 @@ This standard was created by:
 - capitalizing the experience of existing packages,
 - using and improving the use of all nut features
 - considering upcoming nut changes and improvements
-- working closer with packagers.
+- working closely with packagers.
 
 Overview of the package tree
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -228,6 +228,8 @@ libupsclient1-dev
 - Size: 
 - Deps:
 
+NOTE: the "-dev" suffix is to be replaced by "-devel" on RPM based platforms.
+
 [[pkg-nut-cgi]]
 nut-cgi
 ^^^^^^^
@@ -294,7 +296,7 @@ python-nut-gui
 - Size: 
 - Deps:
 
-[[pkg-doc]]
+[[pkg-nut-doc]]
 nut-doc
 ^^^^^^^
 - Desc:
