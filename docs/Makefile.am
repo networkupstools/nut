@@ -48,39 +48,24 @@ clean-local:
 	rm -rf *.pdf *.html *.chunked
 
 SUBDIRS = website man
-
 SUFFIXES = .txt .html .pdf
 
-# Add --unsafe to allow includes on older versions of asciidoc ( < 8.5.3 ):
+A2X_COMMON_OPTS = -v --attribute icons \
+    --attribute localdate=`TZ=UTC date +%Y-%m-%d` \
+    --attribute localtime=`TZ=UTC date +%H:%M:%S` \
+    --attribute iconsdir=$(srcdir)/icons \
+    --attribute=badges \
+    --attribute=external_title \
+    -a toc -a numbered --destination-dir=.
+
 .txt.html:
-	$(ASCIIDOC) --unsafe --backend=xhtml11 \
-		--attribute icons \
-		--attribute localdate=`TZ=UTC date +%Y-%m-%d` \
-		--attribute localtime=`TZ=UTC date +%H:%M:%S` \
-		--attribute iconsdir=$(srcdir)/icons \
-		--attribute=badges \
-		--attribute=external_title \
-		-a toc -a numbered -o $@ $<
+	$(A2X) $(A2X_COMMON_OPTS) --format=xhtml $<
 
 html-chunked-build: user-manual.txt developer-guide.txt
-	$(A2X) -v --format=chunked \
-		--attribute icons \
-		--attribute localdate=`TZ=UTC date +%Y-%m-%d` \
-		--attribute localtime=`TZ=UTC date +%H:%M:%S` \
-		--attribute iconsdir=$(srcdir)/icons \
-		--attribute=badges \
-		--attribute=external_title \
-		-a toc -a numbered --destination-dir=. $<
+	$(A2X) $(A2X_COMMON_OPTS) --format=chunked $<
 
 .txt.pdf:
-	$(A2X) -v --format=pdf \
-		--attribute icons \
-		--attribute localdate=`TZ=UTC date +%Y-%m-%d` \
-		--attribute localtime=`TZ=UTC date +%H:%M:%S` \
-		--attribute iconsdir=$(srcdir)/icons \
-		--attribute=badges \
-		--attribute=external_title \
-		-a toc -a numbered --destination-dir=. $<
+	$(A2X) $(A2X_COMMON_OPTS) --format=pdf $<
 
 .PHONY: html html-single html-chunked-build pdf
 
