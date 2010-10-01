@@ -440,6 +440,8 @@ dnl check whether to build documentation, and which format
 dnl check for Asciidoc presence
 AC_PATH_PROGS([ASCIIDOC], [asciidoc], [none])
 AC_PATH_PROGS([A2X], [a2x], [none])
+AC_PATH_PROGS([DBLATEX], [dblatex], [none])
+dnl FIXME check for xsltproc, etc for chunked HTML and man pages
 
 dnl ${nut_with_doc}: any value except "no" and "auto" is treated as a target
 dnl list. "auto" tries to build all targets.
@@ -448,7 +450,10 @@ if test "${nut_with_doc}" != "no"; then
 	if test "x$ASCIIDOC" != "xnone" -a "x$A2X" != "xnone"; then
 		nut_have_asciidoc="yes"
 		if test "${nut_with_doc}" = "auto"; then
-			DOC_BUILD_LIST="html-single html-chunked pdf"
+			DOC_BUILD_LIST="html-single html-chunked"
+			if test "${DBLATEX}" != "none"; then
+				DOC_BUILD_LIST="$DOC_BUILD_LIST pdf"
+			fi
 		else
 			DOC_BUILD_LIST=`echo ${nut_with_doc} | sed "s/,/ /g"`
 		fi
