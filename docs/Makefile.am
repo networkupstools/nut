@@ -62,7 +62,10 @@ SUFFIXES = .txt .html .pdf
 		--attribute=external_title \
 		-a toc -a numbered -o $@ $<
 
+### The --destination-dir flag doesn't seem to affect the intermediate .xml file.
+### Hence, the copying dance below.
 html-chunked-build: user-manual.txt developer-guide.txt
+	test -f `basename $<` || cp -p $< .
 	$(A2X) --format=chunked \
 		--attribute icons \
 		--attribute localdate=`TZ=UTC date +%Y-%m-%d` \
@@ -70,9 +73,10 @@ html-chunked-build: user-manual.txt developer-guide.txt
 		--attribute iconsdir=$(srcdir)/icons \
 		--attribute=badges \
 		--attribute=external_title \
-		-a toc -a numbered --destination-dir=. $<
+		-a toc -a numbered --destination-dir=. `basename $<`
 
 .txt.pdf:
+	test -f `basename $<` || cp -p $< .
 	$(A2X) --format=pdf \
 		--attribute icons \
 		--attribute localdate=`TZ=UTC date +%Y-%m-%d` \
@@ -80,7 +84,7 @@ html-chunked-build: user-manual.txt developer-guide.txt
 		--attribute iconsdir=$(srcdir)/icons \
 		--attribute=badges \
 		--attribute=external_title \
-		-a toc -a numbered --destination-dir=. $<
+		-a toc -a numbered --destination-dir=. `basename $<`
 
 .PHONY: html html-single html-chunked-build pdf
 
