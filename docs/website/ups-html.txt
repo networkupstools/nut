@@ -550,9 +550,9 @@
       <td rowspan="1" class="hidden">2</td>
     </tr>
     <tr>
-      <td rowspan="36" class="odd">Eaton</td>
+      <td rowspan="37" class="odd">Eaton</td>
       <td rowspan="1" class="odd">Protection Station 500/650/800 VA<br/>USB</td>
-      <td rowspan="36" class="hidden">5</td>
+      <td rowspan="37" class="hidden">5</td>
     </tr>
     <tr>
       <td rowspan="1" class="odd">Ellipse ASR USBS 600/750/1000/1500 VA<br/>USB cable</td>
@@ -658,6 +658,10 @@
     <tr>
       <td rowspan="1" class="odd">Powerware 9130<br/></td>
       <td rowspan="1" class="green">bcmxcp or usbhid-ups</td>
+    </tr>
+    <tr>
+      <td rowspan="1" class="odd">Powerware 5130<br/></td>
+      <td rowspan="1" class="green">usbhid-ups</td>
     </tr>
     <tr>
       <td rowspan="1" class="odd">9395<br/>Serial port</td>
