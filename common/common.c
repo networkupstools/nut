@@ -38,12 +38,12 @@ const char *UPS_VERSION = NUT_VERSION_MACRO;
 
 static void xbit_set(int *val, int flag)
 {
-	*val = (*val |= flag);
+	*val |= flag;
 }
 
 static void xbit_clear(int *val, int flag)
 {
-	*val = (*val ^= (*val & flag));
+	*val ^= (*val & flag);
 }
 
 static int xbit_test(int val, int flag)

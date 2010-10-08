@@ -89,12 +89,12 @@ static	sigset_t nut_upsmon_sigmask;
 
 static void setflag(int *val, int flag)
 {
-	*val = (*val |= flag);
+	*val |= flag;
 }
 
 static void clearflag(int *val, int flag)  
 {
-	*val = (*val ^= (*val & flag));
+	*val ^= (*val & flag);
 }
 
 static int flag_isset(int num, int flag)
