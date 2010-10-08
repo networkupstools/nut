@@ -1049,6 +1049,9 @@ int main(int argc, char **argv)
 	/* start server */
 	server_load();
 
+	/* initialize SSL before we drop privileges (we may not be able to read the keyfile as non-root) */
+	ssl_init();
+
 	become_user(new_uid);
 
 	if (chdir(statepath)) {
@@ -1066,8 +1069,6 @@ int main(int argc, char **argv)
 	if (num_ups == 0) {
 		fatalx(EXIT_FAILURE, "Fatal error: at least one UPS must be defined in ups.conf");
 	}
-
-	ssl_init();
 
 	/* try to bring in the var/cmd descriptions */
 	desc_load();
