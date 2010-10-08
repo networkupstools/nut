@@ -50,7 +50,7 @@ static usb_device_id_t powercom_usb_device_table[] = {
 
 static char powercom_scratch_buf[32];
 
-static char *powercom_startup_fun(double value)
+static const char *powercom_startup_fun(double value)
 {
 	uint16_t	i = value;
 
@@ -60,7 +60,7 @@ static char *powercom_startup_fun(double value)
 	return powercom_scratch_buf;
 }
 
-static double powercom_startup_nuf(const char *value)
+static const double powercom_startup_nuf(const char *value)
 {
 	const char	*s = dstate_getinfo("ups.delay.start");
 	uint16_t	val, command;
@@ -76,7 +76,7 @@ static info_lkp_t powercom_startup_info[] = {
 	{ 0, NULL, powercom_startup_fun, powercom_startup_nuf }
 };
 
-static char *powercom_shutdown_fun(double value)
+static const char *powercom_shutdown_fun(double value)
 {
 	uint16_t	i = value;
 
@@ -86,7 +86,7 @@ static char *powercom_shutdown_fun(double value)
 	return powercom_scratch_buf;
 }
 
-static double powercom_shutdown_nuf(const char *value)
+static const double powercom_shutdown_nuf(const char *value)
 {
 	const char	*s = dstate_getinfo("ups.delay.shutdown");
 	uint16_t	val, command;
@@ -103,7 +103,7 @@ static info_lkp_t powercom_shutdown_info[] = {
 	{ 0, NULL, powercom_shutdown_fun, powercom_shutdown_nuf }
 };
 
-static double powercom_stayoff_nuf(const char *value)
+static const double powercom_stayoff_nuf(const char *value)
 {
 	const char	*s = dstate_getinfo("ups.delay.shutdown");
 	uint16_t	val, command;
@@ -258,15 +258,15 @@ static hid_info_t powercom_hid2nut[] = {
 	{ NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
 };
 
-static char *powercom_format_model(HIDDevice_t *hd) {
+static const char *powercom_format_model(HIDDevice_t *hd) {
 	return hd->Product;
 }
 
-static char *powercom_format_mfr(HIDDevice_t *hd) {
+static const char *powercom_format_mfr(HIDDevice_t *hd) {
 	return hd->Vendor ? hd->Vendor : "PowerCOM";
 }
 
-static char *powercom_format_serial(HIDDevice_t *hd) {
+static const char *powercom_format_serial(HIDDevice_t *hd) {
 	return hd->Serial;
 }
 

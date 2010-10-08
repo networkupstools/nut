@@ -41,13 +41,13 @@
 static double	battery_scale = 1.0;
 
 /* Specific handlers for USB device matching */
-static void *battery_scale_1dot0()
+static void *battery_scale_1dot0(void)
 {
 	/* FIXME: we could remove this one since it's the default! */
 	battery_scale = 1.0;
 	return NULL;
 }
-static void *battery_scale_0dot1()
+static void *battery_scale_0dot1(void)
 {
 	battery_scale = 0.1;
 	return NULL;
@@ -126,7 +126,7 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *tripplite_chemistry_fun(double value)
+static const char *tripplite_chemistry_fun(double value)
 {
 	static char	buf[20];
 	const char	*model;
@@ -152,7 +152,7 @@ static info_lkp_t tripplite_chemistry[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *tripplite_battvolt_fun(double value)
+static const char *tripplite_battvolt_fun(double value)
 {
 	static char	buf[8];
 
@@ -356,15 +356,15 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
 };
 
-static char *tripplite_format_model(HIDDevice_t *hd) {
+static const char *tripplite_format_model(HIDDevice_t *hd) {
 	return hd->Product;
 }
 
-static char *tripplite_format_mfr(HIDDevice_t *hd) {
+static const char *tripplite_format_mfr(HIDDevice_t *hd) {
 	return hd->Vendor;
 }
 
-static char *tripplite_format_serial(HIDDevice_t *hd) {
+static const char *tripplite_format_serial(HIDDevice_t *hd) {
 	return hd->Serial;
 }
 

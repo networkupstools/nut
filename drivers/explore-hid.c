@@ -42,15 +42,15 @@ static hid_info_t explore_hid2nut[] =
   { NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
 };
 
-static char *explore_format_model(HIDDevice_t *hd) {
+static const char *explore_format_model(HIDDevice_t *hd) {
 	return hd->Product;
 }
 
-static char *explore_format_mfr(HIDDevice_t *hd) {
+static const char *explore_format_mfr(HIDDevice_t *hd) {
 	return hd->Vendor;
 }
 
-static char *explore_format_serial(HIDDevice_t *hd) {
+static const char *explore_format_serial(HIDDevice_t *hd) {
 	return hd->Serial;
 }
 

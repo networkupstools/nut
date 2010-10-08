@@ -247,15 +247,15 @@ cat >> "$CFILE" <<EOF
   { NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
 };
 
-static char *${LDRIVER}_format_model(HIDDevice_t *hd) {
+static const char *${LDRIVER}_format_model(HIDDevice_t *hd) {
 	return hd->Product;
 }
 
-static char *${LDRIVER}_format_mfr(HIDDevice_t *hd) {
+static const char *${LDRIVER}_format_mfr(HIDDevice_t *hd) {
 	return hd->Vendor ? hd->Vendor : "${DRIVER}";
 }
 
-static char *${LDRIVER}_format_serial(HIDDevice_t *hd) {
+static const char *${LDRIVER}_format_serial(HIDDevice_t *hd) {
 	return hd->Serial;
 }
 

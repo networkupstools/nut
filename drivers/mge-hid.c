@@ -77,7 +77,7 @@ static char		mge_scratch_buf[20];
 /* The HID path 'UPS.PowerSummary.Time' reports Unix time (ie the number of
  * seconds since 1970-01-01 00:00:00. This has to be split between ups.date and
  * ups.time */
-static char *mge_date_conversion_fun(double value)
+static const char *mge_date_conversion_fun(double value)
 {
 	time_t	sec = value;
 
@@ -89,7 +89,7 @@ static char *mge_date_conversion_fun(double value)
 	return NULL;
 }
 
-static char *mge_time_conversion_fun(double value)
+static const char *mge_time_conversion_fun(double value)
 {
 	time_t sec = value;
 
@@ -103,7 +103,7 @@ static char *mge_time_conversion_fun(double value)
 
 #ifdef HAVE_STRPTIME
 /* Conversion back retrieve ups.time to build the full unix time */
-static double mge_date_conversion_nuf(const char *value)
+static const double mge_date_conversion_nuf(const char *value)
 {
 	struct tm	mge_tm;
 
@@ -119,7 +119,7 @@ static double mge_date_conversion_nuf(const char *value)
 }
 
 /* Conversion back retrieve ups.date to build the full unix time */
-static double mge_time_conversion_nuf(const char *value)
+static const double mge_time_conversion_nuf(const char *value)
 {
 	struct tm	mge_tm;
 
@@ -154,7 +154,7 @@ static info_lkp_t mge_time_conversion[] = {
 /* The HID path 'UPS.PowerSummary.ConfigVoltage' only reports
    'battery.voltage.nominal' for specific UPS series. Ignore
    the value for other series (default behavior). */
-static char *mge_battery_voltage_nominal_fun(double value)
+static const char *mge_battery_voltage_nominal_fun(double value)
 {
 	switch (mge_type & 0xFF00)	/* Ignore model byte */
 	{
@@ -182,7 +182,7 @@ static info_lkp_t mge_battery_voltage_nominal[] = {
 /* The HID path 'UPS.PowerSummary.Voltage' only reports
    'battery.voltage' for specific UPS series. Ignore the
    value for other series (default behavior). */
-static char *mge_battery_voltage_fun(double value)
+static const char *mge_battery_voltage_fun(double value)
 {
 	switch (mge_type & 0xFF00)	/* Ignore model byte */
 	{
@@ -202,7 +202,7 @@ static info_lkp_t mge_battery_voltage[] = {
 	{ 0, NULL, mge_battery_voltage_fun }
 };
 
-static char *mge_powerfactor_conversion_fun(double value)
+static const char *mge_powerfactor_conversion_fun(double value)
 {
 	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.2f", value / 100);
 	return mge_scratch_buf;
@@ -212,7 +212,7 @@ static info_lkp_t mge_powerfactor_conversion[] = {
 	{ 0, NULL, mge_powerfactor_conversion_fun }
 };
 
-static char *mge_battery_capacity_fun(double value)
+static const char *mge_battery_capacity_fun(double value)
 {
 	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.2f", value / 3600);
 	return mge_scratch_buf;
@@ -274,7 +274,7 @@ info_lkp_t mge_onbatt_info[] = {
 	{ 0, NULL, NULL }
 };
 /* allow limiting to ups.model ~= Protection Station */
-static char *eaton_check_pegasus_fun(double value)
+static const char *eaton_check_pegasus_fun(double value)
 {
 	switch (mge_type & 0xFF00)	/* Ignore model byte */
 	{
@@ -297,7 +297,7 @@ static info_lkp_t pegasus_threshold_info[] = {
 };
 
 /* Limit nominal output voltage according to HV or LV models */
-static char *nominal_output_voltage_fun(double value)
+static const char *nominal_output_voltage_fun(double value)
 {
 	static long	nominal = -1;
 
@@ -965,11 +965,11 @@ static char *mge_format_model(HIDDevice_t *hd) {
 	return hd->Product;
 }
 
-static char *mge_format_mfr(HIDDevice_t *hd) {
+static const char *mge_format_mfr(HIDDevice_t *hd) {
 	return hd->Vendor ? hd->Vendor : "Eaton";
 }
 
-static char *mge_format_serial(HIDDevice_t *hd) {
+static const char *mge_format_serial(HIDDevice_t *hd) {
 	return hd->Serial;
 }
 

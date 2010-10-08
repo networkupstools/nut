@@ -61,7 +61,7 @@ static usb_device_id_t cps_usb_device_table[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *cps_battvolt_fun(double value)
+static const char *cps_battvolt_fun(double value)
 {
 	static char	buf[8];
 
@@ -161,15 +161,15 @@ static hid_info_t cps_hid2nut[] = {
   { NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
 };
 
-static char *cps_format_model(HIDDevice_t *hd) {
+static const char *cps_format_model(HIDDevice_t *hd) {
 	return hd->Product;
 }
 
-static char *cps_format_mfr(HIDDevice_t *hd) {
+static const char *cps_format_mfr(HIDDevice_t *hd) {
 	return hd->Vendor ? hd->Vendor : "CPS";
 }
 
-static char *cps_format_serial(HIDDevice_t *hd) {
+static const char *cps_format_serial(HIDDevice_t *hd) {
 	return hd->Serial;
 }
 
