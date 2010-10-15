@@ -293,6 +293,7 @@
 "ICS"	"pdu"	"1"	"8064 Ethernet Relay Interface"	"16 outlets"	"powerman-pdu (experimental)"
 
 "INELT"	"ups"	"2"	"Monolith 1000LT"	""	"megatec or blazer_ser"
+"INELT"	"ups"	"2"	"Monolith 3000RT"	""	"blazer_ser"
 
 "Inform"	"ups"	"1"	"GUARD"	"Line Interactive AP model"	"powercom"
 "Inform"	"ups"	"2"	"Guard S 1500AP"	""	"megatec or blazer_ser"
