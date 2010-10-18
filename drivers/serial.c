@@ -23,12 +23,14 @@
 #include "main.h"
 #include "attribute.h"
 
+#ifndef WIN32
 #include <grp.h>
 #include <pwd.h>
+#include <sys/ioctl.h>
+#endif
 #include <ctype.h>
 #include <sys/file.h>
 #include <sys/types.h>
-#include <sys/ioctl.h>
 #include <unistd.h>
 
 #ifdef HAVE_UU_LOCK
@@ -45,8 +47,10 @@ static void ser_open_error(const char *port)
 static void ser_open_error(const char *port)
 {
 	struct	stat	fs;
+#ifndef WIN32
 	struct	passwd	*user;
 	struct	group	*group;
+#endif
 
 	printf("\n");
 
@@ -60,6 +64,7 @@ static void ser_open_error(const char *port)
 		fatalx(EXIT_FAILURE, "Fatal error: unusable configuration");
 	}
 
+#ifndef WIN32
 	user = getpwuid(getuid());
 
 	if (user)
@@ -77,7 +82,7 @@ static void ser_open_error(const char *port)
 	if (group)
 		printf("Serial port group: %s (%d)\n",
 			group->gr_name, (int) fs.st_gid);
-
+#endif
 	printf("     Mode of port: %04o\n\n", (int) fs.st_mode & 07777);
 
 	printf("Things to try:\n\n");
@@ -129,6 +134,7 @@ static void lock_set(int fd, const char *port)
 #endif
 }
 
+#ifndef WIN32
 /* Non fatal version of ser_open */
 int ser_open_nf(const char *port)
 {
@@ -157,6 +163,31 @@ int ser_open(const char *port)
 	return res;
 }
 
+#else
+HANDLE ser_open_nf(const char *port)
+{
+	HANDLE	fd;
+	fd = CreateFileA(port, GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_FLAG_WRITE_THROUGH, 0);
+
+	if (fd == INVALID_HANDLE_VALUE)
+		return INVALID_HANDLE_VALUE;
+
+	return fd;
+}
+
+HANDLE ser_open(const char *port)
+{
+	HANDLE	fd;
+	fd = ser_open_nf(port);
+
+	if (fd == INVALID_HANDLE_VALUE)
+		ser_open_error(port);
+
+	return fd;
+}
+#endif
+
+#ifndef WIN32
 int ser_set_speed_nf(int fd, const char *port, speed_t speed)
 {
 	struct	termios	tio;
@@ -185,8 +216,32 @@ int ser_set_speed_nf(int fd, const char *port, speed_t speed)
 
 	return 0;
 }
+#else
+int ser_set_speed_nf(HANDLE fd, const char *port, speed_t speed)
+{
+	COMMTIMEOUTS TOut;
+	DCB dcb;
 
+	GetCommTimeouts(fd,&TOut);
+	TOut.ReadIntervalTimeout = 0xffffffff;
+	TOut.ReadTotalTimeoutConstant = 0;
+	SetCommTimeouts(fd,&TOut);
+
+	GetCommState(fd, &dcb);
+	dcb.fOutxCtsFlow = FALSE;
+	dcb.fOutxDsrFlow = FALSE;
+	dcb.fRtsControl = RTS_CONTROL_DISABLE;
+	dcb.BaudRate = speed;
+
+	return SetCommState(fd,&dcb);
+}
+#endif
+
+#ifndef WIN32
 int ser_set_speed(int fd, const char *port, speed_t speed)
+#else
+int ser_set_speed(HANDLE fd, const char *port, speed_t speed)
+#endif
 {
 	int res;
 
@@ -198,6 +253,7 @@ int ser_set_speed(int fd, const char *port, speed_t speed)
 	return 0;
 }
 
+#ifndef WIN32
 static int ser_set_control(int fd, int line, int state)
 {
 	if (state) {
@@ -216,7 +272,29 @@ int ser_set_rts(int fd, int state)
 {
 	return ser_set_control(fd, TIOCM_RTS, state);
 }
+#else
+int ser_set_dtr(HANDLE fd, int state)
+{
+	DCB dcb;
 
+	GetCommState(fd, &dcb);
+	dcb.fDtrControl = state;
+
+	return SetCommState(fd,&dcb);
+}
+
+int ser_set_rts(HANDLE fd, int state)
+{
+	DCB dcb;
+
+	GetCommState(fd, &dcb);
+	dcb.fRtsControl = state;
+
+	return SetCommState(fd,&dcb);
+}
+#endif
+
+#ifndef WIN32
 static int ser_get_control(int fd, int line)
 {
 	int	flags;
@@ -240,12 +318,44 @@ int ser_get_dcd(int fd)
 {
 	return ser_get_control(fd, TIOCM_CD);
 }
+#else
+int ser_get_dsr(HANDLE fd)
+{
+	DCB dcb;
 
+	GetCommState(fd, &dcb);
+	return dcb.fOutxDsrFlow;
+}
+
+int ser_get_cts(HANDLE fd)
+{
+	DCB dcb;
+
+	GetCommState(fd, &dcb);
+	return dcb.fOutxCtsFlow;
+}
+
+int ser_get_dcd(HANDLE fd)
+{
+	/*FIXME*/
+	return 0;
+}
+
+#endif
+
+#ifndef WIN32
 int ser_flush_io(int fd)
 {
 	return tcflush(fd, TCIOFLUSH);
 }
+#else
+int ser_flush_io(HANDLE fd)
+{
+	return FlushFileBuffers(fd);
+}
+#endif
 
+#ifndef WIN32
 int ser_close(int fd, const char *port)
 {
 	if (fd < 0)
@@ -261,6 +371,18 @@ int ser_close(int fd, const char *port)
 
 	return 0;
 }
+#else
+int ser_close(HANDLE fd, const char *port)
+{
+	if (fd == INVALID_HANDLE_VALUE)
+		fatal_with_errno(EXIT_FAILURE, "ser_close: programming error: fd=%d port=%s", fd, port);
+
+	if (CloseHandle(fd) != 0)
+		return -1;
+
+	return 0;
+}
+#endif
 
 ssize_t ser_send_char(int fd, unsigned char ch)
 {
@@ -353,6 +475,7 @@ ssize_t ser_send_buf(int fd, const void *buf, size_t buflen)
 	return ser_send_buf_pace(fd, 0, buf, buflen);
 }
 
+#ifndef WIN32
 /* send buflen bytes from buf with d_usec delay after each char */
 ssize_t ser_send_buf_pace(int fd, useconds_t d_usec, const void *buf,
 	size_t buflen)
@@ -375,6 +498,28 @@ ssize_t ser_send_buf_pace(int fd, useconds_t d_usec, const void *buf,
 
 	return sent;
 }
+#else
+/* send buflen bytes from buf with d_usec delay after each char */
+int ser_send_buf_pace(HANDLE fd, unsigned long d_usec, const void *buf,
+	size_t buflen)
+{
+	int	ret;
+	DWORD	sent = 0;
+	DWORD	sent_OK;
+
+	for (sent_OK = 0; sent_OK < buflen; sent_OK += sent) {
+		ret = WriteFile(fd, &((char *)buf)[sent_OK], (d_usec == 0) ? (buflen - sent_OK) : 1, &sent, NULL);
+
+		if (ret == 0 ) {
+			return ret;
+		}
+
+		usleep(d_usec);
+	}
+
+	return sent;
+}
+#endif
 
 ssize_t ser_get_char(int fd, void *ch, time_t d_sec, useconds_t d_usec)
 {

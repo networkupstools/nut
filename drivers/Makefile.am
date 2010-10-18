@@ -167,6 +167,7 @@ riello_ser_LDADD = $(LDADD) -lm
 dummy_ups_SOURCES = dummy-ups.c
 dummy_ups_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/clients
 dummy_ups_LDADD = $(LDADD_DRIVERS) $(top_builddir)/clients/libupsclient.la
+dummy_ups_LDADD += /c/MinGW/lib/libws2_32.a
 if WITH_SSL
   dummy_ups_CFLAGS += $(LIBSSL_CFLAGS)
   dummy_ups_LDADD += $(LIBSSL_LIBS)

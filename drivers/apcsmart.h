@@ -70,6 +70,10 @@
  * we have to ignore this character explicitly
  */
 
+#ifndef WIN32
+#include <sys/ioctl.h>
+#endif
+
 /* Basic UPS reply line structure */
 #define ENDCHAR 10		/* APC ends responses with LF (and CR, but it's IGNCRed) */
 

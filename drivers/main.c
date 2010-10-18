@@ -33,12 +33,20 @@
 #include <sys/stat.h>
 
 /* data which may be useful to the drivers */
-int		upsfd = -1;
+#ifndef WIN32
+	int		upsfd = -1;
+#else
+	HANDLE		upsfd = INVALID_HANDLE_VALUE;
+#endif
 char		*device_path = NULL;
 const char	*progname = NULL, *upsname = NULL, *device_name = NULL;
 
 /* may be set by the driver to wake up while in dstate_poll_fds */
-int	extrafd = -1;
+#ifndef WIN32
+	int	extrafd = -1;
+#else
+	HANDLE		extrafd = INVALID_HANDLE_VALUE;
+#endif
 
 /* for ser_open */
 int	do_lock_port = 1;
@@ -648,6 +656,7 @@ static void set_exit_flag(int sig)
 
 static void setup_signals(void)
 {
+#ifndef WIN32 // FIXME
 	struct sigaction	sa;
 
 	sigemptyset(&sa.sa_mask);
@@ -668,6 +677,7 @@ static void setup_signals(void)
 #endif
 	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGPIPE, &sa, NULL);
+#endif
 }
 
 int main(int argc, char **argv)
@@ -685,6 +695,14 @@ int main(int argc, char **argv)
 	group = xstrdup(RUN_AS_GROUP);	/* xstrdup: this gets freed at exit */
 
 	progname = xbasename(argv[0]);
+#ifdef WIN32
+	// remove trailing .exe
+	if(strcasecmp( strrchr(progname,'.'), ".exe") == 0 ) {
+		progname = strdup(progname);
+		char * t = strrchr(progname,'.');
+		*t = 0;
+	}
+#endif
 	open_syslog(progname);
 
 	upsdrv_banner();
@@ -857,6 +875,7 @@ int main(int argc, char **argv)
 	/* Only switch to statepath if we're not powering off
 	 * or not just dumping data (for discovery) */
 	/* This avoids case where ie /var is unmounted already */
+#ifndef WIN32
 	if ((!do_forceshutdown) && (!dump_data) && (chdir(dflt_statepath())))
 		fatal_with_errno(EXIT_FAILURE, "Can't chdir to %s", dflt_statepath());
 
@@ -896,6 +915,8 @@ int main(int argc, char **argv)
 			writepid(pidfn);	/* before backgrounding */
 		}
 	}
+#endif
+	setup_signals();
 
 	/* clear out callback handler data */
 	memset(&upsh, '\0', sizeof(upsh));

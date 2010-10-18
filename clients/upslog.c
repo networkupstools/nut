@@ -40,6 +40,12 @@
 #include "nut_stdint.h"
 #include "upslog.h"
 
+#ifdef WIN32
+#undef DATADIR
+#include <winsock2.h>
+#define sleep(n) Sleep(1000 * n)
+#endif
+
 	static	int	reopen_flag = 0, exit_flag = 0;
 	static	uint16_t	port;
 	static	char	*upsname, *hostname;
@@ -89,6 +95,7 @@ static void set_print_now_flag(int sig)
 /* handlers: reload on HUP, exit on INT/QUIT/TERM */
 static void setup_signals(void)
 {
+#ifndef WIN32
 	struct	sigaction	sa;
 
 	sigemptyset(&nut_upslog_sigmask);
@@ -110,6 +117,7 @@ static void setup_signals(void)
 	sa.sa_handler = set_print_now_flag;
 	if (sigaction(SIGUSR1, &sa, NULL) < 0)
 		fatal_with_errno(EXIT_FAILURE, "Can't install SIGUSR1 handler");
+#endif
 }
 
 static void help(const char *prog)

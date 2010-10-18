@@ -30,6 +30,7 @@
 #include "netcmds.h"
 #include "upsconf.h"
 
+#ifndef WIN32
 #include <sys/un.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -39,6 +40,14 @@
 #endif
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
+/* #include <poll.h> */
+#else
+#undef DATADIR
+#include <winsock2.h>
+#include <ws2tcpip.h>
+/* This override network system calls to adapt to Windows specificity */
+#define W32_NETWORK_CALL_OVERRIDE
+#include "wincompat.h"
 #endif
 
 #include "user.h"
@@ -103,7 +112,6 @@ typedef struct {
 	void		*data;
 } handler_t;
 
-
 /* Commands and settings status tracking */
 
 /* general enable/disable status info for commands and settings
@@ -124,9 +132,12 @@ typedef struct tracking_s {
 
 static tracking_t	*tracking_list = NULL;
 
-
+#ifndef WIN32
 	/* pollfd  */
 static struct pollfd	*fds = NULL;
+#else
+static HANDLE		*fds = NULL;
+#endif
 static handler_t	*handler = NULL;
 
 	/* pid file */
@@ -224,6 +235,80 @@ void listen_add(const char *addr, const char *port)
 /* create a listening socket for tcp connections */
 static void setuptcp(stype_t *server)
 {
+#ifdef WIN32
+        WSADATA WSAdata;
+        WSAStartup(2,&WSAdata);
+	atexit(WSACleanup);
+#endif
+
+#ifndef WIN32
+	host = gethostbyname(server->addr);
+
+	if (!host) {
+		struct  in_addr	listenaddr;
+
+		if (!inet_aton(server->addr, &listenaddr)) {
+			fatal_with_errno(EXIT_FAILURE, "inet_aton");
+		}
+
+		host = gethostbyaddr(&listenaddr, sizeof(listenaddr), AF_INET);
+
+		if (!host) {
+			fatal_with_errno(EXIT_FAILURE, "gethostbyaddr");
+		}
+	}
+#else
+	unsigned long numeric_addr;
+	numeric_addr = inet_addr(server->addr);
+	if ( numeric_addr == INADDR_NONE ) {
+		fatal_with_errno(EXIT_FAILURE, "inet_addr");
+	}
+	sockin.sin_addr.s_addr = numeric_addr;
+
+#endif
+	if ((server->sock_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+		fatal_with_errno(EXIT_FAILURE, "socket");
+	}
+
+	res = setsockopt(server->sock_fd, SOL_SOCKET, SO_REUSEADDR, (void *) &one, sizeof(one));
+
+	if (res != 0) {
+		fatal_with_errno(EXIT_FAILURE, "setsockopt(SO_REUSEADDR)");
+	}
+
+	memset(&sockin, '\0', sizeof(sockin));
+	sockin.sin_family = AF_INET;
+	sockin.sin_port = htons(atoi(server->port));
+
+	memcpy(&sockin.sin_addr, host->h_addr, host->h_length);
+
+	if (bind(server->sock_fd, (struct sockaddr *) &sockin, sizeof(sockin)) == -1) {
+		fatal_with_errno(EXIT_FAILURE, "Can't bind TCP port %s", server->port);
+	}
+
+#ifndef WIN32
+	if ((res = fcntl(server->sock_fd, F_GETFL, 0)) == -1) {
+		fatal_with_errno(EXIT_FAILURE, "fcntl(get)");
+	}
+
+	if (fcntl(server->sock_fd, F_SETFL, res | O_NDELAY) == -1) {
+		fatal_with_errno(EXIT_FAILURE, "fcntl(set)");
+	}
+#else
+	server->Event = CreateEvent(NULL, /*Security,*/
+				FALSE, /*auo-reset */
+				FALSE, /*initial state*/
+				NULL); /* no name */
+
+	/* Associate socket event to the socket via its Event object */
+	WSAEventSelect( server->sock_fd, server->Event, FD_ACCEPT );
+	//WSAEventSelect( server->sock_fd, server->Event, FD_ACCEPT | FD_CLOSE);
+#endif
+
+	if (listen(server->sock_fd, 16)) {
+		fatal_with_errno(EXIT_FAILURE, "listen");
+	}
+#else
 	struct addrinfo		hints, *res, *ai;
 	int	v = 0, one = 1;
 
@@ -684,9 +769,17 @@ static void driver_free(void)
 
 		unext = ups->next;
 
+#ifndef WIN32
 		if (ups->sock_fd != -1) {
 			close(ups->sock_fd);
 		}
+#else
+		if (ups->sock_fd != INVALID_HANDLE_VALUE) {
+			DisconnectNamedPipe(ups->sock_fd);
+			CloseHandle(ups->sock_fd);
+			ups->sock_fd = INVALID_HANDLE_VALUE;
+		}
+#endif
 
 		sstate_infofree(ups);
 		sstate_cmdfree(ups);
@@ -728,6 +821,7 @@ static void upsd_cleanup(void)
 
 static void poll_reload(void)
 {
+#ifndef WIN32
 	long	ret;
 
 	ret = sysconf(_SC_OPEN_MAX);
@@ -756,6 +850,10 @@ static void poll_reload(void)
 	/* The checks above effectively limit that maxconn is in size_t range */
 	fds = xrealloc(fds, (size_t)maxconn * sizeof(*fds));
 	handler = xrealloc(handler, (size_t)maxconn * sizeof(*handler));
+#else
+	fds = xrealloc(fds, (size_t)MAXIMUM_WAIT_OBJECTS * sizeof(*fds));
+	handler = xrealloc(handler, (size_t)MAXIMUM_WAIT_OBJECTS * sizeof(*handler));
+#endif
 }
 
 /* instant command and setvar status tracking */
@@ -974,8 +1072,12 @@ int nut_uuid_v4(char *uuid_str)
 /* service requests and check on new data */
 static void mainloop(void)
 {
+#ifndef WIN32
 	int	ret;
 	nfds_t	i, nfds = 0;
+#else
+	DWORD	ret;
+#endif
 
 	upstype_t	*ups;
 	nut_ctype_t		*client, *cnext;
@@ -993,6 +1095,7 @@ static void mainloop(void)
 	/* cleanup instcmd/setvar status tracking entries if needed */
 	tracking_cleanup();
 
+#ifndef WIN32
 	/* scan through driver sockets */
 	for (ups = firstups; ups && (nfds < maxconn); ups = ups->next) {
 
@@ -1175,6 +1278,107 @@ static void mainloop(void)
 			continue;
 		}
 	}
+#else
+	/* scan through driver sockets */
+	for (ups = firstups; ups && (nfds < maxconn); ups = ups->next) {
+
+		/* see if we need to (re)connect to the socket */
+		if (ups->sock_fd == INVALID_HANDLE_VALUE) {
+			ups->sock_fd = sstate_connect(ups);
+			continue;
+		}
+
+		/* throw some warnings if it's not feeding us data any more */
+		if (sstate_dead(ups, maxage)) {
+			ups_data_stale(ups);
+		} else {
+			ups_data_ok(ups);
+		}
+
+		if( ups->sock_fd != INVALID_HANDLE_VALUE) {
+			//fds[nfds] = ups->sock_fd;
+			fds[nfds] = ups->read_overlapped.hEvent;
+
+			handler[nfds].type = DRIVER;
+			handler[nfds].data = ups;
+
+			nfds++;
+		}
+	}
+
+	/* scan through client sockets */
+	for (client = firstclient; client; client = cnext) {
+
+		cnext = client->next;
+
+		if (difftime(now, client->last_heard) > 60) {
+			/* shed clients after 1 minute of inactivity */
+			client_disconnect(client);
+			continue;
+		}
+
+		if (nfds >= maxconn) {
+			/* ignore clients that we are unable to handle */
+			continue;
+		}
+
+		fds[nfds] = (HANDLE)client->sock_fd;
+
+		handler[nfds].type = CLIENT;
+		handler[nfds].data = client;
+
+		nfds++;
+	}
+
+	/* scan through server sockets */
+	for (server = firstaddr; server && (nfds < maxconn); server = server->next) {
+
+		if (server->sock_fd < 0) {
+			continue;
+		}
+
+		fds[nfds] = (HANDLE)server->Event;
+
+		handler[nfds].type = SERVER;
+		handler[nfds].data = server;
+
+		nfds++;
+	}
+
+	upsdebugx(2, "%s: wait for %d filedescriptors", __func__, nfds);
+
+	ret = WaitForMultipleObjects(nfds,fds,FALSE,2000);
+
+	printf("WaitForMultipleObjects return %d\n",ret);
+
+	if (ret == WAIT_TIMEOUT) {
+		upsdebugx(2, "%s: no data available", __func__);
+		return;
+	}
+
+	if (ret == WAIT_FAILED) {
+		DWORD err = GetLastError();
+		err =err; /* remove compile time warning */
+		upslog_with_errno(LOG_ERR, "%s", __func__);
+		return;
+	}
+
+	switch(handler[ret].type) {
+		case DRIVER:
+			sstate_readline((upstype_t *)handler[ret].data);
+			break;
+		case CLIENT:
+			client_readline((ctype_t *)handler[ret].data);
+			break;
+		case SERVER:
+			client_connect((stype_t *)handler[ret].data);
+			break;
+		default:
+			upsdebugx(2, "%s: <unknown> has data available", __func__);
+			break;
+	}
+
+#endif
 }
 
 static void help(const char *arg_progname)
@@ -1219,6 +1423,7 @@ static void set_exit_flag(int sig)
 
 static void setup_signals(void)
 {
+#ifndef WIN32
 	struct sigaction	sa;
 
 	sigemptyset(&sa.sa_mask);
@@ -1245,10 +1450,12 @@ static void setup_signals(void)
 	/* handle reloading */
 	sa.sa_handler = set_reload_flag;
 	sigaction(SIGHUP, &sa, NULL);
+#endif
 }
 
 void check_perms(const char *fn)
 {
+#ifndef WIN32
 	int	ret;
 	struct stat	st;
 
@@ -1262,6 +1469,7 @@ void check_perms(const char *fn)
 	if (st.st_mode & (S_IROTH | S_IXOTH)) {
 		upslogx(LOG_WARNING, "%s is world readable", fn);
 	}
+#endif
 }
 
 int main(int argc, char **argv)
@@ -1276,7 +1484,11 @@ int main(int argc, char **argv)
 
 	/* yes, xstrdup - the conf handlers call free on this later */
 	statepath = xstrdup(dflt_statepath());
+#ifndef WIN32
 	datapath = xstrdup(DATADIR);
+#else
+	datapath = xstrdup("c:");
+#endif
 
 	/* set up some things for later */
 	snprintf(pidfn, sizeof(pidfn), "%s/%s.pid", altpidpath(), progname);
@@ -1309,7 +1521,7 @@ int main(int argc, char **argv)
 			case 'V':
 				/* do nothing - we already printed the banner */
 				exit(EXIT_SUCCESS);
-
+#ifndef WIN32
 			case 'c':
 				if (!strncmp(optarg, "reload", strlen(optarg)))
 					cmd = SIGCMD_RELOAD;
@@ -1320,6 +1532,7 @@ int main(int argc, char **argv)
 				if (cmd == 0)
 					help(progname);
 				break;
+#endif
 
 			case 'P':
 				if ((oldpid = parsepid(optarg)) < 0)
@@ -1424,9 +1637,13 @@ int main(int argc, char **argv)
 		chroot_start(chroot_path);
 	}
 
+#ifndef WIN32
 	/* default to system limit (may be overridden in upsd.conf) */
 	/* FIXME: Check for overflows (and int size of nfds_t vs. long) - see get_max_pid_t() for example */
 	maxconn = (nfds_t)sysconf(_SC_OPEN_MAX);
+#else
+	maxconn = 64;  /*FIXME : silly value just to compile */
+#endif
 
 	/* handle upsd.conf */
 	load_upsdconf(0);	/* 0 = initial */
@@ -1465,10 +1682,11 @@ int main(int argc, char **argv)
 	server_load();
 
 	become_user(new_uid);
-
+#ifndef WIN32
 	if (chdir(statepath)) {
 		fatal_with_errno(EXIT_FAILURE, "Can't chdir to %s", statepath);
 	}
+#endif
 
 	/* check statepath perms */
 	check_perms(statepath);
@@ -1517,4 +1735,3 @@ int main(int argc, char **argv)
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
 	return EXIT_SUCCESS;
 }
-

@@ -31,9 +31,12 @@
 
 #include "config.h" /* must be the first header */
 
+#ifndef WIN32
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#endif
+
 #include <sys/stat.h>
 #include <string.h>
 

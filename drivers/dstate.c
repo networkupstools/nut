@@ -23,12 +23,18 @@
 #include "config.h" /* must be the first header */
 
 #include <stdio.h>
+#ifndef WIN32
 #include <stdarg.h>
 #include <sys/stat.h>
 #include <pwd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#else
+#include <windows.h> 
+#include <stdio.h> 
+#include <strings.h> 
+#endif
 
 #include "common.h"
 #include "dstate.h"
@@ -37,8 +43,14 @@
 #include "attribute.h"
 #include "nut_stdint.h"
 
+#ifndef WIN32
 	static int	sockfd = -1, stale = 1, alarm_active = 0, ignorelb = 0;
 	static char	*sockfn = NULL;
+#else
+	static HANDLE sockfd = INVALID_HANDLE_VALUE; 
+	static int stale = 1, alarm_active = 0; ignorelb = 0;
+	static OVERLAPPED connect_overlapped;
+#endif
 	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[ST_MAX_VALUE_LEN];
 	static st_tree_t	*dtree_root = NULL;
 	static conn_t	*connhead = NULL;
@@ -52,6 +64,8 @@ static void sock_fail(const char *fn)
 
 static void sock_fail(const char *fn)
 {
+#ifndef WIN32
+/*FIXME*/
 	int	sockerr;
 	struct passwd	*user;
 
@@ -99,11 +113,12 @@ static void sock_fail(const char *fn)
 	 * there - that wasn't so bad.  every helpful line of code here
 	 * prevents one more "help me" mail to the list a year from now
 	 */
-
+#endif
 	printf("\n");
 	fatalx(EXIT_FAILURE, "Exiting.");
 }
 
+#ifndef WIN32
 static int sock_open(const char *fn)
 {
 	int	ret, fd;
@@ -145,13 +160,62 @@ static int sock_open(const char *fn)
 	if (ret < 0) {
 		fatal_with_errno(EXIT_FAILURE, "listen(%d, %d) failed", fd, DS_LISTEN_BACKLOG);
 	}
+#else
+static void sock_connect(HANDLE sock);
+static HANDLE sock_open(const char *fn)
+{
+	HANDLE fd;
+
+	fd = CreateNamedPipe( 
+			fn,			// pipe name 
+			PIPE_ACCESS_DUPLEX |  // read/write access 
+			FILE_FLAG_OVERLAPPED, // async IO
+			PIPE_TYPE_BYTE |	 
+			PIPE_READMODE_BYTE |	 
+			PIPE_WAIT,		 
+			PIPE_UNLIMITED_INSTANCES, // max. instances  
+			ST_SOCK_BUF_LEN,	// output buffer size 
+			ST_SOCK_BUF_LEN,	// input buffer size 
+			0,			// client time-out 
+			NULL);			// FIXME: default security attribute 
+
+	if (fd == INVALID_HANDLE_VALUE) {
+		fatal_with_errno(EXIT_FAILURE, "Can't create a state socket (windows named pipe)");
+	}
+
+	/* Prepare an async wait on a connection on the pipe */
+	memset(&connect_overlapped,0,sizeof(connect_overlapped));
+	connect_overlapped.hEvent = CreateEvent(NULL, /*Security*/
+			FALSE, /* auto-reset*/
+			FALSE, /* inital state = non signaled*/
+			NULL /* no name*/);
+	if(connect_overlapped.hEvent == NULL ) {
+		printf("CreateEvent failed.\n");
+		fatal_with_errno(EXIT_FAILURE, "Can't create event");
+	}
+
+	BOOL ret;
+	ResetEvent(connect_overlapped.hEvent);
+	ret = ConnectNamedPipe(fd,&connect_overlapped);
+
+#endif
+
 
 	return fd;
 }
 
 static void sock_disconnect(conn_t *conn)
 {
+#ifndef WIN32
 	close(conn->fd);
+#else
+	/* FIXME not sure if this is the right way to close a connection */
+	DisconnectNamedPipe(conn->fd);
+	if( conn->read_overlapped.hEvent != INVALID_HANDLE_VALUE) {
+		CloseHandle(conn->read_overlapped.hEvent);
+		conn->read_overlapped.hEvent = INVALID_HANDLE_VALUE;
+	}
+#endif
 
 	pconf_finish(&conn->ctx);
 
@@ -212,13 +276,30 @@ static void send_to_all(const char *fmt, ...)
 	for (conn = connhead; conn; conn = cnext) {
 		cnext = conn->next;
 
+#ifndef WIN32
 		ret = write(conn->fd, buf, buflen);
+#else
+		DWORD bytesWritten = 0;
+		BOOL  result = FALSE;
+
+		result = WriteFile (conn->fd, buf, buflen, &bytesWritten, NULL);
+		if( result == 0 ) {
+			printf("Write failed, disconnecting\n");
+			sock_disconnect(conn);
+			return;
+		}
+		else  {
+			//printf("Write %d bytes successfully\n",(int)bytesWritten);
+			ret = (ssize_t)bytesWritten;
+		}
+#endif
 
 		if ((ret < 1) || (ret != (ssize_t)buflen)) {
 			upsdebugx(0, "WARNING: %s: write %zd bytes to "
 				"socket %d failed (ret=%zd), disconnecting: %s",
 				__func__, buflen, conn->fd, ret, strerror(errno));
 			upsdebugx(6, "failed write: %s", buf);
+
 			sock_disconnect(conn);
 
 			/* TOTHINK: Maybe fallback elsewhere in other cases? */
@@ -245,6 +326,10 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	va_list	ap;
 	char	buf[ST_SOCK_BUF_LEN];
 	size_t	buflen;
+#ifdef WIN32
+	DWORD bytesWritten = 0;
+	BOOL  result = FALSE;
+#endif
 
 	va_start(ap, fmt);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
@@ -283,7 +368,18 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 		__func__, buflen, conn->fd, buf);
 */
 
+#ifndef WIN32
 	ret = write(conn->fd, buf, buflen);
+#else
+	result = WriteFile (conn->fd, buf, buflen, &bytesWritten, NULL);
+	if( result == 0 ) {
+		printf("Write failed\n");
+		ret = 0;
+	}
+	else  {
+		ret = (ssize_t)bytesWritten;
+	}
+#endif
 
 	if (ret < 0) {
 		/* Hacky bugfix: throttle down for upsd to read that */
@@ -328,10 +424,18 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	return 1;	/* OK */
 }
 
+#ifndef WIN32
 static void sock_connect(int sock)
+#else
+static void sock_connect(HANDLE sock)
+#endif
 {
-	int	fd, ret;
 	conn_t	*conn;
+
+#ifndef WIN32
+	int	ret;
+	int fd;
+
 	struct sockaddr_un sa;
 #if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED)
 	int	salen;
@@ -388,6 +492,41 @@ static void sock_connect(int sock)
 	connhead = conn;
 
 	upsdebugx(3, "new connection on fd %d", fd);
+#else
+	conn = xcalloc(1, sizeof(*conn));
+	conn->fd = sock;
+
+	/* Start a read operation so we could wait on the event associated to this IO */
+	memset(&conn->read_overlapped,0,sizeof(conn->read_overlapped));
+	memset(conn->buf,0,sizeof(conn->buf));
+	conn->read_overlapped.hEvent = CreateEvent(NULL, /*Security*/
+			FALSE, /* auto-reset*/
+			FALSE, /* inital state = non signaled*/
+			NULL /* no name*/);
+	if(conn->read_overlapped.hEvent == NULL ) {
+		printf("CreateEvent failed.\n");
+		fatal_with_errno(EXIT_FAILURE, "Can't create event");
+	}
+
+	ReadFile (conn->fd,conn->buf,sizeof(conn->buf)-1,&(conn->bytesRead),&(conn->read_overlapped)); /* -1 to be sure to have a trailling 0 */
+
+	/* Prepare an async wait on a connection on the pipe */
+	BOOL ret;
+	ret = ConnectNamedPipe(sockfd,&connect_overlapped);
+
+
+	pconf_init(&conn->ctx, NULL);
+
+	if (connhead) {
+		conn->next = connhead;
+		connhead->prev = conn;
+	}
+
+	connhead = conn;
+
+	upsdebugx(3, "new connection on fd %d", (int)sock);
+#endif
+
 }
 
 static int st_tree_dump_conn(st_tree_t *node, conn_t *conn)
@@ -605,6 +744,8 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 static void sock_read(conn_t *conn)
 {
 	ssize_t	ret, i;
+
+#ifndef WIN32
 	char	buf[SMALLBUF];
 
 	ret = read(conn->fd, buf, sizeof(buf));
@@ -621,6 +762,18 @@ static void sock_read(conn_t *conn)
 			return;
 		}
 	}
+#else
+	char *buf = conn->buf;
+	DWORD bytesRead;
+	BOOL res;
+	res = GetOverlappedResult(conn->fd, &conn->read_overlapped, &bytesRead, FALSE);
+	if( res == 0 ) {
+		upslogx(LOG_INFO, "Read error : %d",(int)GetLastError());
+		sock_disconnect(conn);
+		return;
+	}
+	ret = bytesRead;
+#endif
 
 	for (i = 0; i < ret; i++) {
 
@@ -646,12 +799,18 @@ static void sock_read(conn_t *conn)
 			return;
 		}
 	}
+
+#ifdef WIN32
+	/* Restart async read */
+	memset(conn->buf,0,sizeof(conn->buf));
+	ReadFile(conn->fd,conn->buf,sizeof(conn->buf)-1,&(conn->bytesRead),&(conn->read_overlapped)); /* -1 to be sure to have a trailling 0 */
+#endif
 }
 
 static void sock_close(void)
 {
 	conn_t	*conn, *cnext;
-
+#ifndef WIN32
 	if (sockfd != -1) {
 		close(sockfd);
 		sockfd = -1;
@@ -662,6 +821,15 @@ static void sock_close(void)
 			sockfn = NULL;
 		}
 	}
+
+#else
+	if (sockfd != INVALID_HANDLE_VALUE) {
+		FlushFileBuffers(sockfd);
+		CloseHandle(sockfd);
+		sockfd = INVALID_HANDLE_VALUE;
+		printf("sock_close Close %d\n",(int)sockfd);
+	}
+#endif
 
 	for (conn = connhead; conn; conn = cnext) {
 		cnext = conn->next;
@@ -678,6 +846,7 @@ char * dstate_init(const char *prog, const char *devname)
 {
 	char	sockname[SMALLBUF];
 
+#ifndef WIN32
 	/* do this here for now */
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
 # pragma GCC diagnostic push
@@ -693,6 +862,14 @@ char * dstate_init(const char *prog, const char *devname)
 	} else {
 		snprintf(sockname, sizeof(sockname), "%s/%s", dflt_statepath(), prog);
 	}
+#else
+	/* FIXME: use dflt_statepath() instead of hardcoded value ?*/
+	if (port) {
+		snprintf(sockname, sizeof(sockname), "\\\\.\\pipe\\%s-%s", prog, port);
+	} else {
+		snprintf(sockname, sizeof(sockname), "\\\\.\\pipe\\%s", prog);
+	}
+#endif
 
 	sockfd = sock_open(sockname);
 
@@ -702,6 +879,7 @@ char * dstate_init(const char *prog, const char *devname)
 	return xstrdup(sockname);
 }
 
+#ifndef WIN32
 /* returns 1 if timeout expired or data is available on UPS fd, 0 otherwise */
 int dstate_poll_fds(struct timeval timeout, int extrafd)
 {
@@ -788,6 +966,96 @@ int dstate_poll_fds(struct timeval timeout, int extrafd)
 
 	return overrun;
 }
+#else
+/* returns 1 if timeout expired or data is available on UPS fd, 0 otherwise */
+int dstate_poll_fds(struct timeval timeout, HANDLE extrafd)
+{
+	DWORD	ret;
+	int	maxfd = 0, overrun = 0;
+	HANDLE	rfds[32];
+	struct conn_t	*conn;
+        struct timeval  now;
+
+/*
+	if (extrafd != -1) {
+		rfds[maxfd] = extrafd;
+		maxfd++;
+	}
+*/
+
+	gettimeofday(&now, NULL);
+
+	/* number of microseconds should always be positive */
+	if (timeout.tv_usec < now.tv_usec) {
+		timeout.tv_sec -= 1;
+		timeout.tv_usec += 1000000;
+	}
+
+	if (timeout.tv_sec < now.tv_sec) {
+		timeout.tv_sec = 0;
+		timeout.tv_usec = 0;
+		overrun = 1;	/* no time left */
+	} else {
+		timeout.tv_sec -= now.tv_sec;
+		timeout.tv_usec -= now.tv_usec;
+	}
+
+/* Wait on the read IO of each connections */
+	for (conn = connhead; conn; conn = conn->next) {
+		rfds[maxfd] = conn->read_overlapped.hEvent;
+		maxfd++;
+	}
+/* Add the connect event */
+	rfds[maxfd] = connect_overlapped.hEvent;
+	maxfd++;
+
+	ret = WaitForMultipleObjects( 
+				maxfd,	// number of objects in array
+				rfds,	// array of objects
+				FALSE,	// FIXME: ?wait for any object?
+				timeout.tv_sec); // five-second wait
+
+	if (ret == WAIT_TIMEOUT) {
+		return 1;	/* timer expired */
+	}
+
+	if (ret == WAIT_FAILED) {
+		printf("waitfor failed\n");
+		return overrun;
+	}
+
+	/* Retrieve the signaled connection */
+	for(conn = connhead; conn != NULL; conn = conn->next) {
+		if( conn->read_overlapped.hEvent == rfds[ret-WAIT_OBJECT_0]) {
+			break;
+		}
+	}
+
+/* take care of the signaled object */
+	if (rfds[ret] == connect_overlapped.hEvent) {
+		printf("Connection detected\n");
+		sock_connect(sockfd);
+	}
+	else {
+		if( conn != NULL) {
+			printf("Pending read on %d\n",(int)rfds[ret-WAIT_OBJECT_0]);
+			sock_read(conn);
+		}
+	}
+		
+	/* tell the caller if that fd woke up */
+/*
+	if ((extrafd != -1) && (ret == extrafd)) {
+		return 1;
+	}
+*/
+	return overrun;
+}
+#endif
+
+/******************************************************************
+ * COMMON
+ ******************************************************************/
 
 int dstate_setinfo(const char *var, const char *fmt, ...)
 {

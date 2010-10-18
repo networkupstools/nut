@@ -35,6 +35,11 @@
 #include "mge-xml.h"
 #include "main.h" /* for testvar() */
 
+#ifdef WIN32
+// strtok for win32 is re-entrant
+#define strtok_r(a,b,c) strtok(a,b)
+#endif //WIN32
+
 #define MGE_XML_VERSION		"MGEXML/0.36"
 
 #define MGE_XML_INITUPS		"/"

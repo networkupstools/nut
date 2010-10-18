@@ -30,6 +30,9 @@
 
 #include "config.h" /* for HAVE_USB_DETACH_KERNEL_DRIVER_NP flag */
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
+#ifdef WIN32
+#undef DATADIR
+#endif
 #include "usb-common.h"
 #include "nut_libusb.h"
 
@@ -192,6 +195,10 @@ static int libusb_open(usb_dev_handle **udevp,
 	usb_init();
 	usb_find_busses();
 	usb_find_devices();
+#ifdef WIN32
+	struct usb_bus *busses;
+	busses = usb_get_busses();
+#endif
 
 #ifndef __linux__ /* SUN_LIBUSB (confirmed to work on Solaris and FreeBSD) */
 	/* Causes a double free corruption in linux if device is detached! */
@@ -350,6 +357,9 @@ static int libusb_open(usb_dev_handle **udevp,
 			 * it force device claiming by unbinding
 			 * attached driver... From libhid */
 			retries = MAX_RETRY;
+#ifdef WIN32
+			usb_set_configuration(udev, 1);
+#endif
 			while (usb_claim_interface(udev, usb_subdriver.hid_rep_index) < 0) {
 
 				upsdebugx(2, "failed to claim USB device: %s",
@@ -589,16 +599,18 @@ static int libusb_strerror(const int ret, const char *desc)
 		upslogx(LOG_DEBUG, "%s: %s", desc, usb_strerror());
 		return ret;
 
+#ifndef WIN32
 	case -ETIMEDOUT:	/* Connection timed out */
 		upsdebugx(2, "%s: Connection timed out", desc);
 		return 0;
 
 	case -EOVERFLOW:	/* Value too large for defined data type */
-#ifdef EPROTO
+# ifdef EPROTO
 	case -EPROTO:	/* Protocol error */
-#endif
+# endif
 		upsdebugx(2, "%s: %s", desc, usb_strerror());
 		return 0;
+#endif	/* WIN32 */
 
 	default:	/* Undetermined, log only */
 		upslogx(LOG_DEBUG, "%s: %s", desc, usb_strerror());

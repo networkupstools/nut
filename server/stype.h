@@ -21,7 +21,9 @@
 #ifndef NUT_STYPE_H_SEEN
 #define NUT_STYPE_H_SEEN 1
 
+#ifndef WIN32
 #include <netdb.h>
+#endif
 
 #ifndef NI_MAXHOST
 #define NI_MAXHOST      1025
@@ -41,6 +43,9 @@ typedef struct stype_s {
 	char	*addr;
 	char	*port;
 	int	sock_fd;
+#ifdef WIN32
+	HANDLE  Event;
+#endif
 	struct stype_s	*next;
 } stype_t;
 

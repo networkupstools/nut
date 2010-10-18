@@ -26,8 +26,12 @@
 #include <stdarg.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#ifndef WIN32
 #include <sys/socket.h>
 #include <sys/un.h>
+#else
+#include <winsock2.h>
+#endif
 
 #include "common.h"
 #include "state.h"

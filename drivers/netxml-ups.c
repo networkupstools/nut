@@ -47,6 +47,13 @@
 /** *_OBJECT query multi-part body boundary */
 #define FORM_POST_BOUNDARY "NUT-NETXML-UPS-OBJECTS"
 
+#ifdef WIN32 // FIXME ?? skip alarm handling
+#define HAVE_NE_SET_CONNECT_TIMEOUT  1
+#define HAVE_NE_SOCK_CONNECT_TIMEOUT 1
+//strtok for win32 is re-entrant 
+#define strtok_r(a,b,c) strtok(a,b)
+#endif
+
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
 	DRIVER_NAME,
@@ -621,7 +628,11 @@ void upsdrv_initups(void)
 
 	/* if debug level is set, direct output to stderr */
 	if (!nut_debug_level) {
+#ifndef WIN32
 		fp = fopen("/dev/null", "w");
+#else
+		fp = fopen("nul", "w");
+#endif
 	} else {
 		fp = stderr;
 	}

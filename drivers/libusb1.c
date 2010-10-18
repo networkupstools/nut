@@ -28,6 +28,9 @@
 
 #include "config.h" /* for HAVE_LIBUSB_DETACH_KERNEL_DRIVER flag */
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
+#ifdef WIN32
+#undef DATADIR
+#endif
 #include "usb-common.h"
 #include "nut_libusb.h"
 #include "nut_stdint.h"
@@ -169,6 +172,14 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		libusb_exit(NULL);
 		fatal_with_errno(EXIT_FAILURE, "Failed to init libusb 1.0");
 	}
+
+/* TODO: Find a place for this, from Windows branch made for libusb0.c */
+/*
+#ifdef WIN32
+	struct usb_bus *busses;
+	busses = usb_get_busses();
+#endif
+ */
 
 #ifndef __linux__ /* SUN_LIBUSB (confirmed to work on Solaris and FreeBSD) */
 	/* Causes a double free corruption in linux if device is detached! */
@@ -367,6 +378,10 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		/* Then, try the explicit detach method.
 		 * This function is available on FreeBSD 10.1-10.3 */
 		retries = MAX_RETRY;
+#ifdef WIN32
+		/* TODO: Align with libusb1 - initially from Windows branch made against libusb0 */
+		libusb_set_configuration(udev, 1);
+#endif
 		while ((ret = libusb_claim_interface(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS) {
 			upsdebugx(2, "failed to claim USB device: %s",
 				libusb_strerror((enum libusb_error)ret));
@@ -645,17 +660,19 @@ static int nut_libusb_strerror(const int ret, const char *desc)
 		upslogx(LOG_DEBUG, "%s: %s", desc, libusb_strerror((enum libusb_error)ret));
 		return ret;
 
+#ifndef WIN32
 	case LIBUSB_ERROR_TIMEOUT:	 /** Operation timed out */
 		upsdebugx(2, "%s: Connection timed out", desc);
 		return 0;
 
 	case LIBUSB_ERROR_OVERFLOW:	 /** Overflow */
-#ifdef EPROTO
+# ifdef EPROTO
 /* FIXME: not sure how to map this one! */
 	case -EPROTO:	/* Protocol error */
-#endif
+# endif
 		upsdebugx(2, "%s: %s", desc, libusb_strerror((enum libusb_error)ret));
 		return 0;
+#endi/* WIN32 */
 
 	case LIBUSB_ERROR_OTHER:     /** Other error */
 	default:                     /** Undetermined, log only */

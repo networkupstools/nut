@@ -22,11 +22,16 @@
 #include "common.h"
 #include "nut_platform.h"
 
+#ifndef WIN32
 #include <pwd.h>
 #include <netdb.h>
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#else
+#undef DATADIR
+#include <winsock2.h>
+#endif
 
 #include "nut_stdint.h"
 #include "upsclient.h"
@@ -353,6 +358,7 @@ int main(int argc, char **argv)
 		fatalx(EXIT_FAILURE, "Error: old command names are not supported");
 	}
 
+#ifndef WIN32
 	if (!have_un) {
 		struct passwd	*pw;
 
@@ -440,6 +446,7 @@ int main(int argc, char **argv)
 			fatalx(EXIT_FAILURE, "Enabling command status tracking failed. upsd answered: %s", buf);
 		}
 	}
+#endif	/* WIN32 */
 
 	do_cmd(&argv[1], argc - 1);
 

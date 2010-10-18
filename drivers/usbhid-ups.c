@@ -177,7 +177,6 @@ static double interval(void);
 HIDDesc_t	*pDesc = NULL;		/* parsed Report Descriptor */
 reportbuf_t	*reportbuf = NULL;	/* buffer for most recent reports */
 
-
 /* --------------------------------------------------------------- */
 /* Struct & data for boolean processing                            */
 /* --------------------------------------------------------------- */
@@ -1502,10 +1501,12 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		case 0:
 			continue;
 
+#ifndef WIN32
 		case ERROR_TIMEOUT:   /* Connection timed out */
 		case ERROR_OVERFLOW:  /* Value too large for defined data type */
-#if EPROTO && WITH_LIBUSB_0_1
+# if EPROTO && WITH_LIBUSB_0_1
 		case -EPROTO:		/* Protocol error */
+# endif
 #endif
 		case ERROR_PIPE:      /* Broken pipe */
 		default:

@@ -22,10 +22,15 @@
 #include "common.h"
 #include "nut_platform.h"
 
+#ifndef WIN32
 #include <pwd.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#else
+#undef DATADIR
+#include <winsock2.h>
+#endif
 
 #include "nut_stdint.h"
 #include "upsclient.h"
@@ -188,6 +193,7 @@ static void do_setvar(const char *varname, char *uin, const char *pass)
 	char	newval[SMALLBUF], temp[SMALLBUF * 2], user[SMALLBUF], *ptr;
 	struct passwd	*pw;
 
+#ifndef WIN32
 	if (uin) {
 		snprintf(user, sizeof(user), "%s", uin);
 	} else {
@@ -225,6 +231,7 @@ static void do_setvar(const char *varname, char *uin, const char *pass)
 			fatal_with_errno(EXIT_FAILURE, "getpass failed");
 		}
 	}
+#endif
 
 	/* Check if varname is in VAR=VALUE form */
 	if ((ptr = strchr(varname, '=')) != NULL) {

@@ -50,7 +50,12 @@
 #include <string.h>	/* for strdup() and many others */
 #endif
 
+#ifndef WIN32
 #include <syslog.h>
+#else
+#undef DATADIR
+#include <windows.h>
+#endif
 #include <unistd.h>
 #include <assert.h>
 
@@ -205,7 +210,12 @@ void *xcalloc(size_t number, size_t size);
 void *xrealloc(void *ptr, size_t size);
 char *xstrdup(const char *string);
 
+#ifndef WIN32
 ssize_t select_read(const int fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec);
+#else
+ssize_t select_read(const HANDLE fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec);
+/*int select_read(const HANDLE fd, void *buf, const size_t buflen, const long d_sec, const long d_usec);*/
+#endif
 ssize_t select_write(const int fd, const void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec);
 
 char * get_libname(const char* base_libname);
@@ -244,6 +254,18 @@ extern int optind;
 /* *INDENT-OFF* */
 }
 /* *INDENT-ON* */
+
+#ifdef WIN32
+/*FIXME*/
+#define LOG_ERR (0)
+#define LOG_INFO (1)
+#define LOG_DEBUG (2)
+#define LOG_NOTICE (3)
+#define LOG_ALERT (4)
+#define LOG_WARNING (5)
+#define LOG_CRIT (5)
+#define LOG_PID (6)
+#define LOG_DAEMON (7)
 #endif
 
 #endif /* NUT_COMMON_H_SEEN */
