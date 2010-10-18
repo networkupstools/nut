@@ -29,7 +29,9 @@
 
 
 #include "main.h"
+#ifndef WIN32 /* FIXME removing serial reference just during the USB compilation phase, need to be reactivated when serial will be ported to WIN32. there is several occurence of this FIXME in this file*/
 #include "serial.h"
+#endif
 #include "megatec.h"
 
 #include <stdio.h>
@@ -310,6 +312,7 @@ static int get_ups_info(UPSInfo_t *info)
 	int ret;
 
 	upsdebugx(2, "Asking for UPS information [I]...");
+#ifndef WIN32 /*FIXME*/
 	ser_flush_io(upsfd);
 	ser_send_pace(upsfd, send_pace, "I%c", ENDCHAR);
 	usleep(READ_PACE);
@@ -319,6 +322,7 @@ static int get_ups_info(UPSInfo_t *info)
 	 */
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
 
+#endif
 	if (ret < 0) {
 		upsdebug_with_errno(2, "I => FAILED");
 
@@ -372,6 +376,7 @@ static int get_firmware_values(FirmwareValues_t *values)
 	int ret;
 
 	upsdebugx(2, "Asking for UPS power ratings [F]...");
+#ifndef WIN32 /*FIXME*/
 	ser_flush_io(upsfd);
 	ser_send_pace(upsfd, send_pace, "F%c", ENDCHAR);
 	usleep(READ_PACE);
@@ -380,6 +385,7 @@ static int get_firmware_values(FirmwareValues_t *values)
 	 * Expected reply: "#MMM.M QQQ SS.SS RR.R<cr>"
 	 */
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
+#endif
 
 	if (ret < 0) {
 		upsdebug_with_errno(2, "F => FAILED");
@@ -437,6 +443,7 @@ static int run_query(QueryValues_t *values)
 	int ret;
 
 	upsdebugx(2, "Asking for UPS status [Q1]...");
+#ifndef WIN32 /*FIXME*/
 	ser_flush_io(upsfd);
 	ser_send_pace(upsfd, send_pace, "Q1%c", ENDCHAR);
 	usleep(READ_PACE);
@@ -445,6 +452,7 @@ static int run_query(QueryValues_t *values)
 	 * Expected reply: "(MMM.M NNN.N PPP.P QQQ RR.R S.SS TT.T b7b6b5b4b3b2b1b0<cr>"
 	 */
 	ret = ser_get_line(upsfd, buffer, RECV_BUFFER_LEN, ENDCHAR, IGNCHARS, READ_TIMEOUT, 0);
+#endif
 
 	if (ret < 0) {
 		upsdebug_with_errno(2, "Q1 => FAILED");
@@ -554,7 +562,9 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("ups.type", status.flags[FL_UPS_TYPE] == '1' ? "standby" : "online");
 
 	upsdebugx(1, "Cancelling any pending shutdown or battery test.");
+#ifndef WIN32 /*FIXME*/
 	ser_send_pace(upsfd, send_pace, "C%c", ENDCHAR);
+#endif
 
 	/*
 	 * Try to identify the UPS.
@@ -684,7 +694,9 @@ void upsdrv_updateinfo(void)
 		 */
 		poll_fail++;
 		upsdebugx(2, "Poll failure [%d].", poll_fail);
+#ifndef WIN32 /*FIXME */
 		ser_comm_fail("No status from UPS.");
+#endif
 
 		if (poll_fail >= MAX_POLL_FAILURES) {
 			upsdebugx(2, "Too many poll failures, data is stale.");
@@ -695,7 +707,9 @@ void upsdrv_updateinfo(void)
 	}
 
 	poll_fail = 0;
+#ifndef WIN32 /*FIXME*/
 	ser_comm_good();
+#endif
 
 	dstate_setinfo("input.voltage", "%.1f", query.ivolt);
 	dstate_setinfo("input.voltage.fault", "%.1f", query.fvolt);
@@ -795,14 +809,16 @@ void upsdrv_shutdown(void)
 	int r_wait = getval("ondelay") ? CLAMP(atoi(getval("ondelay")), 0, MAX_START_DELAY) : start_delay;
 
 	upslogx(LOG_INFO, "Shutting down UPS.");
-
+#ifndef WIN32 /*FIXME*/
 	ser_send_pace(upsfd, send_pace, "C%c", ENDCHAR);
 	ser_send_pace(upsfd, send_pace, "S%02dR%04d%c", s_wait, r_wait, ENDCHAR);
+#endif
 }
 
 
 int instcmd(const char *cmdname, const char *extra)
 {
+#ifndef WIN32
 	char buffer[RECV_BUFFER_LEN];
 
 	/*
@@ -959,7 +975,7 @@ int instcmd(const char *cmdname, const char *extra)
 	}
 
 	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
-
+#endif
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -996,6 +1012,7 @@ void upsdrv_makevartable(void)
 
 void upsdrv_initups(void)
 {
+#ifndef WIN32 /*FIXME*/
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
 
@@ -1023,13 +1040,16 @@ void upsdrv_initups(void)
 
 	ser_set_dtr(upsfd, state_dtr);
 	ser_set_rts(upsfd, state_rts);
+#endif
 }
 
 
 void upsdrv_cleanup(void)
 {
+#ifndef WIN32
 	ser_set_dtr(upsfd, 0);
 	ser_close(upsfd, device_path);
+#endif
 }
 
 

@@ -30,7 +30,14 @@ typedef struct upstype_s {
 	char			*fn;
 	char			*desc;
 
+#ifndef WIN32
 	int			sock_fd;
+#else
+	HANDLE			sock_fd;
+	char 			buf[SMALLBUF];
+	OVERLAPPED		read_overlapped;
+	DWORD			bytesRead;
+#endif
 	int			stale;
 	int			dumpdone;
 	int			data_ok;

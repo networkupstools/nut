@@ -19,10 +19,15 @@
 
 #include "common.h"
 
+#ifndef WIN32
 #include <pwd.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#else
+#undef DATADIR
+#include <winsock2.h>
+#endif
 
 #include "upsclient.h"
 
@@ -98,6 +103,7 @@ static int do_setvar(UPSCONN_t *ups, const char *varname, char *uin,
 	char	newval[SMALLBUF], temp[SMALLBUF], user[SMALLBUF], *ptr;
 	struct	passwd	*pw;
 
+#ifndef WIN32
 	if (uin) {
 		snprintf(user, sizeof(user), "%s", uin);
 	} else {
@@ -136,6 +142,7 @@ static int do_setvar(UPSCONN_t *ups, const char *varname, char *uin,
 			return EXIT_FAILURE;
 		}
 	}
+#endif
 
 	/* Check if varname is in VAR=VALUE form */
 	if ((ptr = strchr(varname, '=')) != NULL) {

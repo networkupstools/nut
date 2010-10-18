@@ -633,7 +633,11 @@ int serial_read (int read_timeout, u_char *readbuf)
  **********************************************************************/
 int serial_send (u_char *buf, int len)
 {
+#ifndef WIN32
 	tcflush (upsfd, TCIFLUSH);
+#else
+	FlushFileBuffers(upsfd);
+#endif
 	upsdebug_hex (3, "sent", (u_char *)buf, len);
 	return write (upsfd, buf, len);
 }

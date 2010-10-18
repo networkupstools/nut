@@ -386,13 +386,19 @@ usb_dev_handle *nutusb_open(const char *port)
 
 	for (retry = 0; dev_h == NULL && retry < 32; retry++)
 	{
+#ifndef WIN32
 		struct timespec t = {5, 0};
+#endif
 
 		dev_h = open_powerware_usb();
 		if (!dev_h) {
 			upslogx(LOG_WARNING, "Can't open POWERWARE USB device, retrying ...");
+#ifndef WIN32
 			if (nanosleep(&t, NULL) < 0 && errno == EINTR)
 				break;
+#else /*FIXME*/
+			Sleep(5000);
+#endif
 		}
 	}
 	
@@ -403,6 +409,15 @@ usb_dev_handle *nutusb_open(const char *port)
 	}
 	else
 		upsdebugx(1, "device %s opened successfully", usb_device(dev_h)->filename);
+
+#ifdef WIN32
+	if (usb_set_configuration(dev_h, 0) < 0)
+	{
+		upslogx(LOG_ERR, "Can't set POWERWARE USB configuration: %s", usb_strerror());
+		goto errout;
+
+	}
+#endif
 
 	if (usb_claim_interface(dev_h, 0) < 0)
 	{

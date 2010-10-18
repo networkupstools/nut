@@ -30,6 +30,9 @@
 
 #include "config.h" /* for HAVE_USB_DETACH_KERNEL_DRIVER_NP flag */
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
+#ifdef WIN32
+#undef DATADIR
+#endif
 #include "usb-common.h"
 #include "libusb.h"
 
@@ -111,6 +114,10 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 	usb_init();
 	usb_find_busses();
 	usb_find_devices();
+#ifdef WIN32
+	struct usb_bus *busses;
+	busses = usb_get_busses();
+#endif
 
 #ifndef __linux__ /* SUN_LIBUSB (confirmed to work on Solaris and FreeBSD) */
 	/* Causes a double free corruption in linux if device is detached! */
@@ -219,6 +226,9 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 				fatalx(EXIT_FAILURE, "Can't claim USB device [%04x:%04x]: %s", curDevice->VendorID, curDevice->ProductID, usb_strerror());
 			}
 #else
+#ifdef WIN32
+			usb_set_configuration(udev,1);
+#endif
 			if (usb_claim_interface(udev, 0) < 0) {
 				fatalx(EXIT_FAILURE, "Can't claim USB device [%04x:%04x]: %s", curDevice->VendorID, curDevice->ProductID, usb_strerror());
 			}
@@ -370,7 +380,7 @@ static int libusb_strerror(const int ret, const char *desc)
 	case -ENOSYS:	/* Function not implemented */
 		upslogx(LOG_DEBUG, "%s: %s", desc, usb_strerror());
 		return ret;
-
+#ifndef WIN32
 	case -ETIMEDOUT:	/* Connection timed out */
 		upsdebugx(2, "%s: Connection timed out", desc);
 		return 0;
@@ -379,6 +389,7 @@ static int libusb_strerror(const int ret, const char *desc)
 	case -EPROTO:	/* Protocol error */
 		upsdebugx(2, "%s: %s", desc, usb_strerror());
 		return 0;
+#endif
 
 	default:	/* Undetermined, log only */
 		upslogx(LOG_DEBUG, "%s: %s", desc, usb_strerror());

@@ -18,9 +18,14 @@
 */
 
 #include <sys/types.h>
+#ifndef WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#else
+#undef DATADIR
+#include <winsock2.h>
+#endif
 
 #include "common.h"
 #include "parseconf.h"

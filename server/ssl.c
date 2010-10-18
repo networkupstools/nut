@@ -24,8 +24,13 @@
 */
 
 #include <sys/types.h>
+#ifndef WIN32
 #include <netinet/in.h>
 #include <sys/socket.h>
+#else
+#undef DATADIR
+#include <winsock2.h>
+#endif
 
 #include "upsd.h"
 #include "neterr.h"

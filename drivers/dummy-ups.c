@@ -29,9 +29,12 @@
  *   * poll the "port" file for change
  */
 
+#ifndef WIN32
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#endif
+
 #include <string.h>
 
 #include "main.h"

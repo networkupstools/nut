@@ -10,7 +10,7 @@ endif
 if WITH_SSL
   AM_CFLAGS += $(LIBSSL_CFLAGS)
 endif
-LDADD = ../common/libcommon.la ../common/libparseconf.la $(NETLIBS)
+LDADD = ../common/libcommon.la ../common/libparseconf.la /c/MinGW/lib/libws2_32.a $(NETLIBS)
 if WITH_WRAP
    LDADD += $(LIBWRAP_LDFLAGS)
 endif
@@ -23,6 +23,7 @@ EXTRA_PROGRAMS = sockdebug
 
 upsd_SOURCES = upsd.c user.c conf.c ssl.c sstate.c desc.c		\
  netget.c netmisc.c netlist.c netuser.c netset.c netinstcmd.c		\
+ wincompat.c wincompat.h		\
  conf.h ctype.h desc.h netcmds.h neterr.h netget.h netinstcmd.h		\
  netlist.h netmisc.h netset.h netuser.h ssl.h sstate.h stype.h upsd.h   \
  upstype.h user-data.h user.h

@@ -20,8 +20,14 @@
 #include "common.h"
 
 #include <sys/stat.h>
+#ifndef WIN32
 #include <sys/wait.h>
 #include <sys/socket.h>
+#else
+#undef DATADIR
+#include <winsock2.h>
+#define sleep(n) Sleep(1000 * n)
+#endif
 
 #include "upsclient.h"
 #include "upsmon.h"
@@ -77,9 +83,11 @@ static	utype_t	*firstups = NULL;
 static int 	opt_af = AF_UNSPEC;
 #endif
 
+#ifndef WIN32
 	/* signal handling things */
 static	struct sigaction sa;
 static	sigset_t nut_upsmon_sigmask;
+#endif
 
 #ifdef SHUT_RDWR
 #define	shutdown_how SHUT_RDWR
@@ -128,7 +136,7 @@ static void notify(const char *notice, int flags, const char *ntype,
 
 	if (flag_isset(flags, NOTIFY_SYSLOG))
 		upslogx(LOG_NOTICE, "%s", notice);
-
+#ifndef WIN32
 	/* fork here so upsmon doesn't get wedged if the notifier is slow */
 	ret = fork();
 
@@ -139,7 +147,7 @@ static void notify(const char *notice, int flags, const char *ntype,
 
 	if (ret != 0)	/* parent */
 		return;
-
+#endif
 	/* child continues and does all the work */
 
 	if (flag_isset(flags, NOTIFY_WALL))
@@ -440,9 +448,10 @@ static void doshutdown(void)
 		ret = write(pipefd[1], &ch, 1);
 	} else {
 		/* one process model = we do all the work here */
-
+#ifndef WIN32
 		if (geteuid() != 0)
 			upslogx(LOG_WARNING, "Not root, shutdown may fail");
+#endif
 
 		set_pdflag();
 
@@ -498,13 +507,17 @@ static void setfsd(utype_t *ups)
 
 static void set_alarm(void)
 {
+#ifndef WIN32
 	alarm(NET_TIMEOUT);
+#endif
 }
 
 static void clear_alarm(void)
 {
+#ifndef WIN32
 	signal(SIGALRM, SIG_IGN);
 	alarm(0);
+#endif
 }
 
 static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize)
@@ -1331,6 +1344,7 @@ static void read_timeout(int sig)
 /* install handlers for a few signals */
 static void setup_signals(void)
 {
+#ifndef WIN32
 	sigemptyset(&nut_upsmon_sigmask);
 	sa.sa_mask = nut_upsmon_sigmask;
 	sa.sa_flags = 0;
@@ -1355,6 +1369,7 @@ static void setup_signals(void)
 
 	sa.sa_handler = set_reload_flag;
 	sigaction(SIGCMD_RELOAD, &sa, NULL);
+#endif
 }
 
 /* remember the last time the ups was not critical (OB + LB) */
@@ -1687,10 +1702,12 @@ static void runparent(int fd)
 	int	ret;
 	char	ch;
 
+#ifndef WIN32
 	/* handling signals is the child's job */
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGUSR1, SIG_IGN);
 	signal(SIGUSR2, SIG_IGN);
+#endif
 
 	ret = read(fd, &ch, 1);
 
@@ -1720,6 +1737,7 @@ static void runparent(int fd)
 /* fire up the split parent/child scheme */
 static void start_pipe(void)
 {
+#ifndef WIN32
 	int	ret;
 
 	ret = pipe(pipefd);
@@ -1741,6 +1759,7 @@ static void start_pipe(void)
 	}
 
 	close(pipefd[0]);
+#endif
 }
 
 static void delete_ups(utype_t *target)
@@ -1899,6 +1918,7 @@ int main(int argc, char *argv[])
 
 	while ((i = getopt(argc, argv, "+Dhic:f:pu:VK46")) != -1) {
 		switch (i) {
+#ifndef WIN32
 			case 'c':
 				if (!strncmp(optarg, "fsd", strlen(optarg)))
 					cmd = SIGCMD_FSD;
@@ -1911,6 +1931,7 @@ int main(int argc, char *argv[])
 				if (cmd == 0)
 					help(argv[0]);
 				break;
+#endif
 			case 'D':
 				nut_debug_level++;
 				break;
@@ -2029,8 +2050,10 @@ int main(int argc, char *argv[])
 		if (use_pipe)
 			check_parent();
 
+#ifndef WIN32
 		/* reap children that have exited */
 		waitpid(-1, NULL, WNOHANG);
+#endif
 
 		sleep(sleepval);
 	}

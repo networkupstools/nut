@@ -6,10 +6,20 @@
 #include "dstate.h"
 #include "extstate.h"
 
+#ifdef WIN32
+#define sleep(a) Sleep(a*1000)
+#define strtok_r(a,b,c) strtok(a,b)
+#endif
+
 /* public functions & variables from main.c */
 extern const char	*progname, *upsname, *device_name;
 extern char		*device_path;
+#ifndef WIN32
 extern int		upsfd, extrafd, broken_driver, experimental_driver, do_lock_port, exit_flag;
+#else
+extern int		broken_driver, experimental_driver, do_lock_port, exit_flag;
+extern HANDLE		upsfd, extrafd;
+#endif
 extern unsigned int	poll_interval;
 
 /* functions & variables required in each driver */

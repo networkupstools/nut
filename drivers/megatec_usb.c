@@ -22,7 +22,12 @@
 #include "main.h"
 #include "megatec.h"
 #include "libusb.h"
+#ifndef WIN32 /*FIXME*/
 #include "serial.h"
+#else
+/*FIXME : is this define correct ?*/
+#define speed_t int
+#endif
 #include "usb-common.h"
 
 #include <stdio.h>
@@ -257,7 +262,9 @@ int ser_open(const char *port)
 	reopen_matcher->next = regex_matcher;
 
 	/* NOTE: This is here until ser_flush_io() is used in megatec.c */
+#ifndef WIN32 /*FIXME*/
 	ser_flush_io(0);
+#endif
 
 	return 0;
 }

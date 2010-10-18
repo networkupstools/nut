@@ -28,7 +28,11 @@
 #define SS_CONNFAIL_INT 300	/* complain about a dead driver every 5 mins */
 #define SS_MAX_READ 256		/* don't let drivers tie us up in read()     */
 
+#ifndef WIN32
 int sstate_connect(upstype_t *ups);
+#else
+HANDLE sstate_connect(upstype_t *ups);
+#endif
 void sstate_disconnect(upstype_t *ups);
 void sstate_readline(upstype_t *ups);
 const char *sstate_getinfo(const upstype_t *ups, const char *var);

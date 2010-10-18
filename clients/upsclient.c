@@ -22,14 +22,26 @@
 #include "config.h"	/* safe because it doesn't contain prototypes */
 
 #include <errno.h>
+#ifndef WIN32
 #include <netdb.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#ifndef WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#else
+#undef DATADIR
+#include <winsock2.h>
+#include <windows.h>
+#include <reason.h>
+/* This override network system calls to adapt to Windows specificity */
+#define W32_NETWORK_CALL_OVERRIDE
+#include "wincompat.h"
+#endif 
 
 #include "upsclient.h"
 #include "timehead.h"
@@ -42,6 +54,10 @@
 #define shutdown_how SHUT_RDWR
 #else
 #define shutdown_how 2
+#endif
+
+#ifdef WIN32
+#define strtok_r(a,b,c) strtok(a,b)
 #endif
 
 struct {
@@ -384,7 +400,7 @@ int upscli_sslcert(UPSCONN_t *ups, const char *file, const char *path, int verif
 
 int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 {
-	int	sock_fd;
+	int	sock_fd = 0;
 #ifndef	HAVE_IPV6
 	struct sockaddr_in	local, server;
 	struct hostent		*serv;
@@ -394,6 +410,11 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 	int			v;
 #endif
 
+#ifdef WIN32
+	WSADATA WSAdata;
+	WSAStartup(2,&WSAdata);
+	atexit(WSACleanup);
+#endif
 	if (!ups) {
 		return -1;
 	}
@@ -412,6 +433,7 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 	serv = gethostbyname(host);
 
 	if (!serv) {
+#ifndef WIN32
 		struct  in_addr	listenaddr;
 
 		if (!inet_aton(host, &listenaddr)) {
@@ -425,6 +447,17 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 			ups->upserror = UPSCLI_ERR_NOSUCHHOST;
 			return -1;
 		}
+#else
+		unsigned long numeric_addr;
+		numeric_addr = inet_addr(host);
+		if ( numeric_addr == INADDR_NONE ) {
+			ups->upserror = UPSCLI_ERR_NOSUCHHOST;
+			return -1;
+		}
+		server.sin_addr.s_addr = numeric_addr;
+			
+#endif
+
 	}
 
 	if ((sock_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {

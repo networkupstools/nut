@@ -22,7 +22,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#ifndef WIN32
 #include <sys/wait.h>
+#endif
 
 #include "config.h"
 #include "proto.h"
@@ -181,6 +183,7 @@ static void debugcmdline(int level, char *msg, char *cmd, char **argv) {
 
 static void forkexec(const char *prog, char **argv, const ups_t *ups)
 {
+#ifndef WIN32
 	int	ret;
 	pid_t	pid;
 
@@ -243,6 +246,7 @@ static void forkexec(const char *prog, char **argv, const ups_t *ups)
 
 	/* shouldn't get here */
 	fatal_with_errno(EXIT_FAILURE, "execv");
+#endif
 }
 
 static void start_driver(const ups_t *ups)
