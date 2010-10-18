@@ -20,11 +20,16 @@
 #include "common.h"
 #include "nut_platform.h"
 
+#ifndef WIN32
 #include <pwd.h>
 #include <netdb.h>
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#else
+#undef DATADIR
+#include <winsock2.h>
+#endif
 
 #include "upsclient.h"
 
@@ -243,7 +248,7 @@ int main(int argc, char **argv)
 	if (!strchr(argv[1], '.')) {
 		fatalx(EXIT_FAILURE, "Error: old command names are not supported");
 	}
-
+#ifndef WIN32
 	if (!have_un) {
 		struct passwd	*pw;
 
@@ -312,7 +317,7 @@ int main(int argc, char **argv)
 	if (upscli_readline(ups, buf, sizeof(buf)) < 0) {
 		fatalx(EXIT_FAILURE, "Set password failed: %s", upscli_strerror(ups));
 	}
-
+#endif
 	do_cmd(&argv[1], argc - 1);
 
 	exit(EXIT_SUCCESS);

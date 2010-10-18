@@ -152,7 +152,7 @@ typedef enum {
 	BYPASSAUTO,	/* on automatic bypass */
 	BYPASSMAN,	/* on manual/service bypass */
 	OFF,		/* ups is off */
-	CAL,		/* calibration */
+	CALIB,		/* calibration */
 	OVERHEAT,	/* overheat; Belkin, TrippLite */
 	COMMFAULT,	/* UPS fault; Belkin, TrippLite */
 	DEPLETED,	/* battery depleted; Belkin */
@@ -195,7 +195,7 @@ static status_lkp_t status_info[] = {
 	{ "bypassauto", STATUS(BYPASSAUTO) },
 	{ "bypassman", STATUS(BYPASSMAN) },
 	{ "off", STATUS(OFF) },
-	{ "cal", STATUS(CAL) },
+	{ "cal", STATUS(CALIB) },
 	{ "overheat", STATUS(OVERHEAT) },
 	{ "commfault", STATUS(COMMFAULT) },
 	{ "depleted", STATUS(DEPLETED) },
@@ -1267,9 +1267,11 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		case 0:
 			continue;
 
+#ifndef WIN32
 		case -ETIMEDOUT:	/* Connection timed out */
 		case -EOVERFLOW:	/* Value too large for defined data type */
 		case -EPROTO:		/* Protocol error */
+#endif
 		case -EPIPE:		/* Broken pipe */
 		default:
 			/* Don't know what happened, try again later... */
@@ -1424,7 +1426,7 @@ static void ups_status_set(void)
 	if (ups_status & STATUS(OFF)) {
 		status_set("OFF");		/* ups is off */
 	}
-	if (ups_status & STATUS(CAL)) {
+	if (ups_status & STATUS(CALIB)) {
 		status_set("CAL");		/* calibration */
 	}
 }

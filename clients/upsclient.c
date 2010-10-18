@@ -27,15 +27,27 @@
 #endif 
 
 #include <errno.h>
+#ifndef WIN32
 #include <netdb.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#ifndef WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
+#else
+#undef DATADIR
+#include <winsock2.h>
+#include <windows.h>
+#include <reason.h>
+/* This override network system calls to adapt to Windows specificity */
+#define W32_NETWORK_CALL_OVERRIDE
+#include "wincompat.h"
+#endif 
 
 #include "upsclient.h"
 #include "common.h"
@@ -58,6 +70,10 @@
 #define shutdown_how SHUT_RDWR
 #else
 #define shutdown_how 2
+#endif
+
+#ifdef WIN32
+#define strtok_r(a,b,c) strtok(a,b)
 #endif
 
 struct {
@@ -842,6 +858,11 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,stru
 	socklen_t		error_size;
 	long			fd_flags;
 
+#ifdef WIN32
+	WSADATA WSAdata;
+	WSAStartup(2,&WSAdata);
+	atexit(WSACleanup);
+#endif
 	if (!ups) {
 		return -1;
 	}
@@ -856,6 +877,73 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,stru
 		return -1;
 	}
 
+<<<<<<< HEAD
+=======
+#ifndef	HAVE_IPV6
+	serv = gethostbyname(host);
+
+	if (!serv) {
+#ifndef WIN32
+		struct  in_addr	listenaddr;
+
+		if (!inet_aton(host, &listenaddr)) {
+			ups->upserror = UPSCLI_ERR_NOSUCHHOST;
+			return -1;
+		}
+
+		serv = gethostbyaddr(&listenaddr, sizeof(listenaddr), AF_INET);
+
+		if (!serv) {
+			ups->upserror = UPSCLI_ERR_NOSUCHHOST;
+			return -1;
+		}
+#else
+		unsigned long numeric_addr;
+		numeric_addr = inet_addr(host);
+		if ( numeric_addr == INADDR_NONE ) {
+			ups->upserror = UPSCLI_ERR_NOSUCHHOST;
+			return -1;
+		}
+		server.sin_addr.s_addr = numeric_addr;
+			
+#endif
+
+	}
+
+	if ((sock_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+		ups->upserror = UPSCLI_ERR_SOCKFAILURE;
+		ups->syserrno = errno;
+		close(sock_fd);
+		return -1;
+	}
+
+	memset(&local, '\0', sizeof(local));
+	local.sin_family = AF_INET;
+	local.sin_port = htons(INADDR_ANY);
+
+	memset(&server, '\0', sizeof(server));
+	server.sin_family = AF_INET;
+	server.sin_port = htons(port);
+
+	memcpy(&server.sin_addr, serv->h_addr, serv->h_length);
+
+	if (bind(sock_fd, (struct sockaddr *) &local, sizeof(local)) < 0) {
+		ups->upserror = UPSCLI_ERR_BINDFAILURE;
+		ups->syserrno = errno;
+		close(sock_fd);
+		return -1;
+	}
+
+	if (connect(sock_fd, (struct sockaddr *) &server, sizeof(struct sockaddr_in)) < 0) {
+		ups->upserror = UPSCLI_ERR_CONNFAILURE;
+		ups->syserrno = errno;
+		close(sock_fd);
+		return -1;
+	}
+
+	ups->fd = sock_fd;
+#else
+>>>>>>> Initial commit (preliminary investigation)
 	snprintf(sport, sizeof(sport), "%hu", (unsigned short int)port);
 
 	memset(&hints, 0, sizeof(hints));

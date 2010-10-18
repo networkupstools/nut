@@ -20,9 +20,14 @@
 #include "common.h"
 
 #include <ctype.h>
+#ifndef WIN32
 #include <syslog.h>
 #include <pwd.h>
 #include <grp.h>
+#else
+#undef DATADIR
+#include <windows.h>
+#endif
 
 /* the reason we define UPS_VERSION as a static string, rather than a
 	macro, is to make dependency tracking easier (only common.o depends
@@ -61,6 +66,7 @@ void syslogbit_set(void)
 /* get the syslog ready for us */
 void open_syslog(const char *progname)
 {
+#ifndef WIN32
 	int	opt;
 
 	opt = LOG_PID;
@@ -109,11 +115,13 @@ void open_syslog(const char *progname)
 		break;
 #endif
 	}
+#endif //WIN32
 }
 
 /* close ttys and become a daemon */
 void background(void)
 {
+#ifndef WIN32
 	int	pid;
 
 	if ((pid = fork()) < 0)
@@ -144,13 +152,14 @@ void background(void)
 #ifdef HAVE_SETSID
 	setsid();		/* make a new session to dodge signals */
 #endif
-
+#endif
 	upslogx(LOG_INFO, "Startup successful");
 }
 
 /* do this here to keep pwd/grp stuff out of the main files */
 struct passwd *get_user_pwent(const char *name)
 {
+#ifndef WIN32
 	struct passwd *r;
 	errno = 0;
 	if ((r = getpwnam(name)))
@@ -163,13 +172,14 @@ struct passwd *get_user_pwent(const char *name)
 		fatalx(EXIT_FAILURE, "user %s not found", name);
 	else
 		fatal_with_errno(EXIT_FAILURE, "getpwnam(%s)", name);
-		
+#endif	
 	return NULL;  /* to make the compiler happy */
 }
 
 /* change to the user defined in the struct */
 void become_user(struct passwd *pw)
 {
+#ifndef WIN32
 	/* if we can't switch users, then don't even try */
 	if ((geteuid() != 0) && (getuid() != 0))
 		return;
@@ -186,6 +196,7 @@ void become_user(struct passwd *pw)
 
 	if (setuid(pw->pw_uid) == -1)
 		fatal_with_errno(EXIT_FAILURE, "setuid");
+#endif
 }
 
 /* drop down into a directory and throw away pointers to the old path */
@@ -193,10 +204,10 @@ void chroot_start(const char *path)
 {
 	if (chdir(path))
 		fatal_with_errno(EXIT_FAILURE, "chdir(%s)", path);
-
+#ifndef WIN32
 	if (chroot(path))
 		fatal_with_errno(EXIT_FAILURE, "chroot(%s)", path);
-
+#endif
 	if (chdir("/"))
 		fatal_with_errno(EXIT_FAILURE, "chdir(/)");
 
@@ -232,6 +243,7 @@ void writepid(const char *name)
 /* open pidfn, get the pid, then send it sig */
 int sendsignalfn(const char *pidfn, int sig)
 {
+#ifndef WIN32
 	char	buf[SMALLBUF];
 	FILE	*pidf;
 	int	pid, ret;
@@ -275,6 +287,7 @@ int sendsignalfn(const char *pidfn, int sig)
 	}
 
 	fclose(pidf);
+#endif
 	return 0;
 }
 
@@ -307,7 +320,16 @@ int sendsignal(const char *progname, int sig)
 
 const char *xbasename(const char *file)
 {
+#ifndef WIN32
 	const char *p = strrchr(file, '/');
+#else
+	const char *p = strrchr(file, '\\');
+	const char *r = strrchr(file, '/');
+	/* if not found, try '/' */
+	if( r > p ) {
+		p = r;
+	}
+#endif
 
 	if (p == NULL)
 		return file;
@@ -322,8 +344,13 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 	ret = vsnprintf(buf, sizeof(buf), fmt, va);
 
 	if ((ret < 0) || (ret >= (int) sizeof(buf)))
+#ifndef WIN32
 		syslog(LOG_WARNING, "vupslog: vsnprintf needed more than %d bytes",
 			LARGEBUF);
+#else
+		fprintf(stderr,"vupslog: vsnprintf needed more than %d bytes",LARGEBUF);
+#endif
+	
 
 	if (use_strerror)
 		snprintfcat(buf, sizeof(buf), ": %s", strerror(errno));
@@ -349,7 +376,11 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 	if (xbit_test(upslog_flags, UPSLOG_STDERR))
 		fprintf(stderr, "%s\n", buf);
 	if (xbit_test(upslog_flags, UPSLOG_SYSLOG))
+#ifndef WIN32
 		syslog(priority, "%s", buf);
+#else
+		fprintf(stderr, "%s\n", buf);
+#endif
 }
 
 /* Return the default path for the directory containing configuration files */
@@ -358,7 +389,12 @@ const char * confpath(void)
 	const char * path;
 
 	if ((path = getenv("NUT_CONFPATH")) == NULL)
+#ifndef WIN32
 		path = CONFPATH;
+#else
+/*FIXME*/
+		path = "./conf";
+#endif
 
 	return path;
 }
@@ -492,6 +528,7 @@ void *xmalloc(size_t size)
 
 	if (p == NULL)
 		fatal_with_errno(EXIT_FAILURE, "%s", oom_msg);
+	memset(p,0,size);
 	return p;
 }
 
@@ -501,6 +538,7 @@ void *xcalloc(size_t number, size_t size)
 
 	if (p == NULL)
 		fatal_with_errno(EXIT_FAILURE, "%s", oom_msg);
+	memset(p,0,size*number);
 	return p;
 }
 
@@ -555,6 +593,7 @@ char* ltrim(char *in, const char sep)
 /* Read up to buflen bytes from fd and return the number of bytes
    read. If no data is available within d_sec + d_usec, return 0.
    On error, a value < 0 is returned (errno indicates error). */
+#ifndef WIN32
 int select_read(const int fd, void *buf, const size_t buflen, const long d_sec, const long d_usec)
 {
 	int		ret;
@@ -575,12 +614,42 @@ int select_read(const int fd, void *buf, const size_t buflen, const long d_sec, 
 
 	return read(fd, buf, buflen);
 }
+#else
+int select_read(const HANDLE fd, void *buf, const size_t buflen, const long d_sec, const long d_usec)
+{
+/* This function is only called by serial drivers right now */
+	OVERLAPPED overlapped;
+	DWORD bytesread = 0;
+	DWORD ret;
+
+	memset(&overlapped,0,sizeof(OVERLAPPED));
+	overlapped.hEvent = CreateEvent(NULL,	/*security*/
+					FALSE,	/*auto-reset*/
+					FALSE,	/*initally non signaled*/
+					NULL );	/*no name*/
+	if(overlapped.hEvent == NULL ) {
+		return 0;
+	}
+	ReadFile(fd,buf,buflen,&bytesread,&overlapped);
+
+	ret = WaitForSingleObject(overlapped.hEvent, d_sec * 1000 + d_usec / 1000);
+	GetOverlappedResult(fd, &overlapped, &bytesread, FALSE);
+	CancelIo(overlapped.hEvent);
+	CloseHandle(overlapped.hEvent);
+	if( ret != WAIT_OBJECT_0 )  {
+		return 0;
+	}
+
+	return bytesread;
+}
+#endif
 
 /* Write up to buflen bytes to fd and return the number of bytes
    written. If no data is available within d_sec + d_usec, return 0.
    On error, a value < 0 is returned (errno indicates error). */
 int select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec)
 {
+#ifndef WIN32
 	int		ret;
 	fd_set		fds;
 	struct timeval	tv;
@@ -598,4 +667,7 @@ int select_write(const int fd, const void *buf, const size_t buflen, const long 
 	}
 
 	return write(fd, buf, buflen);
+#else
+	return 0;
+#endif
 }

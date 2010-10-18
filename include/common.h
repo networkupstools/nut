@@ -36,7 +36,12 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef WIN32
 #include <syslog.h>
+#else
+#undef DATADIR
+#include <windows.h>
+#endif
 #include <unistd.h>
 #include <assert.h>
 
@@ -120,7 +125,11 @@ char *xstrdup(const char *string);
 char *rtrim(char *in, const char sep);
 char* ltrim(char *in, const char sep);
 
+#ifndef WIN32
 int select_read(const int fd, void *buf, const size_t buflen, const long d_sec, const long d_usec);
+#else
+int select_read(const HANDLE fd, void *buf, const size_t buflen, const long d_sec, const long d_usec);
+#endif
 int select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec);
 
 /* Buffer sizes used for various functions */
@@ -154,6 +163,18 @@ extern int optind;
 /* *INDENT-OFF* */
 }
 /* *INDENT-ON* */
+
+#ifdef WIN32
+/*FIXME*/
+#define LOG_ERR (0)
+#define LOG_INFO (1)
+#define LOG_DEBUG (2)
+#define LOG_NOTICE (3)
+#define LOG_ALERT (4)
+#define LOG_WARNING (5)
+#define LOG_CRIT (5)
+#define LOG_PID (6)
+#define LOG_DAEMON (7)
 #endif
 
 #endif /* NUT_COMMON_H */

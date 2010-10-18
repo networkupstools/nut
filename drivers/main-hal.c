@@ -38,7 +38,11 @@
 	extern char *udi;
 
 	/* data which may be useful to the drivers */
+#ifndef WIN32
 	int	upsfd = -1;
+#else
+	HANDLE	upsfd = INVALID_HANDLE_VALUE;
+#endif
 	char	*device_path = NULL;
 	const	char	*progname = NULL, *upsname = NULL,
 			*device_name = NULL;

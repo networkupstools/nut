@@ -39,6 +39,12 @@
 #include "timehead.h"
 #include "upslog.h"
 
+#ifdef WIN32
+#undef DATADIR
+#include <winsock2.h>
+#define sleep(n) Sleep(1000 * n)
+#endif
+
 	static	int	port, reopen_flag = 0, exit_flag = 0;
 	static	char	*upsname, *hostname;
 	static	UPSCONN_t	ups;
@@ -80,6 +86,7 @@ static void set_exit_flag(int sig)
 /* handlers: reload on HUP, exit on INT/QUIT/TERM */
 static void setup_signals(void)
 {
+#ifndef WIN32
 	struct	sigaction	sa;
 
 	sigemptyset(&nut_upslog_sigmask);
@@ -97,6 +104,7 @@ static void setup_signals(void)
 		fatal_with_errno(EXIT_FAILURE, "Can't install SIGQUIT handler");
 	if (sigaction(SIGTERM, &sa, NULL) < 0)
 		fatal_with_errno(EXIT_FAILURE, "Can't install SIGTERM handler");
+#endif
 }
 
 static void help(const char *prog)

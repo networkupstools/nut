@@ -406,7 +406,8 @@ usb_dev_handle *nutusb_open(const char *port)
 	usb_find_busses();
 	usb_find_devices();
 
-	for (retry = 0; retry < MAX_TRY ; retry++)
+
+	for (retry = 0; dev_h == NULL && retry < 32; retry++)
 	{
 		dev_h = open_powerware_usb();
 		if (!dev_h) {
@@ -417,6 +418,13 @@ usb_dev_handle *nutusb_open(const char *port)
 			upsdebugx(1, "device %s opened successfully", usb_device(dev_h)->filename);
 			errout = 0;
 
+#ifdef WIN32
+			if (usb_set_configuration(dev_h, 0) < 0)
+			{
+				upsdebugx(1, "Can't set POWERWARE USB configuration: %s", usb_strerror());
+				errout = 1;
+			}
+#endif
 			if (usb_claim_interface(dev_h, 0) < 0)
 			{
 				upsdebugx(1, "Can't claim POWERWARE USB interface: %s", usb_strerror());

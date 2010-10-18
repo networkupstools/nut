@@ -18,6 +18,9 @@
 */
 
 #include "common.h"
+#ifdef WIN32
+#undef DATADIR
+#endif
 #include "usb-common.h"
 
 int is_usb_device_supported(usb_device_id_t *usb_device_id_list, USBDevice_t *device)
