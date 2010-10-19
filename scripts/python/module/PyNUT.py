@@ -105,7 +105,7 @@ if something goes wrong.
     def GetUPSList( self ) :
         """ Returns the list of available UPS from the NUT server
 
-The result is a dictionnary containing 'key->val' pairs of 'UPSName' and 'UPS Description'
+The result is a dictionary containing 'key->val' pairs of 'UPSName' and 'UPS Description'
         """
         if self.__debug :
             print( "[DEBUG] GetUPSList from server" )
@@ -128,7 +128,7 @@ The result is a dictionnary containing 'key->val' pairs of 'UPSName' and 'UPS De
     def GetUPSVars( self, ups="" ) :
         """ Get all available vars from the specified UPS
 
-The result is a dictionnary containing 'key->val' pairs of all
+The result is a dictionary containing 'key->val' pairs of all
 available vars.
         """
         if self.__debug :
@@ -192,7 +192,7 @@ of the command as value
     def GetRWVars( self,  ups="" ) :
         """ Get a list of all writable vars from the selected UPS
 
-The result is presented as a dictionnary containing 'key->val' pairs
+The result is presented as a dictionary containing 'key->val' pairs
         """
         if self.__debug :
             print( "[DEBUG] GetUPSVars from '%s'..." % ups )
