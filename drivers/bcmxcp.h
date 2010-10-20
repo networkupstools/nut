@@ -59,6 +59,7 @@
 #define BCMXCP_CONFIG_BLOCK_BATTERY_DATA_WORD2 		24 /* Per cell inverter shutdown voltage at full rated load. (volt/cell)* 100 */
 #define BCMXCP_CONFIG_BLOCK_BATTERY_DATA_WORD3 		26 /* LOW BYTE Number of battery strings. HIGH BYTE undefined at this time.*/
 #define BCMXCP_CONFIG_BLOCK_EXTENDED_BLOCK_LENGTH	47
+#define BCMXCP_CONFIG_BLOCK_PART_NUMBER			48
 #define BCMXCP_CONFIG_BLOCK_SERIAL_NUMBER		64
 
 /* Index for Extende Limits block offsets */
