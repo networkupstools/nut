@@ -37,6 +37,8 @@ device: General unit information
    |                       | (opaque string)           |                     |
    |-----------------------+---------------------------+---------------------|
    | device.type           | Device type (ups, pdu)    | ups                 |
+   |-----------------------+---------------------------+---------------------|
+   | device.part           | Device Part Number        | 05147365-5592       |
    +-------------------------------------------------------------------------+
 
 ups: General unit information
