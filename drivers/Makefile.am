@@ -149,7 +149,7 @@ voltronic_ser_LDADD = $(LDADD) -lm
 # dummy
 dummy_ups_SOURCES = dummy-ups.c
 dummy_ups_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/clients
-dummy_ups_LDADD = $(LDADD_DRIVERS) ../clients/libupsclient.la /c/MinGW/lib/libws2_32.a
+dummy_ups_LDADD = $(LDADD_DRIVERS) ../clients/libupsclient.la $(NETLIBS)
 if WITH_SSL
   dummy_ups_CFLAGS += $(LIBSSL_CFLAGS)
   dummy_ups_LDADD += $(LIBSSL_LIBS)
