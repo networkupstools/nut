@@ -100,15 +100,9 @@ static const char *inet_ntopW (struct sockaddr_storage *s)
 	switch (s->ss_family)
 	{
 	case AF_INET:
-	{
-		struct sockaddr_in *tmp = s;
-		return inet_ntop (AF_INET, &tmp->sin_addr, str, 16);
-	}
+		return inet_ntop (AF_INET, &(((struct sockaddr_in *)s)->sin_addr), str, 16);
 	case AF_INET6:
-	{
-		struct sockaddr_in6 *tmp = s;
-		return inet_ntop (AF_INET6, &tmp->sin6_addr, str, 40);
-	}
+		return inet_ntop (AF_INET6, &(((struct sockaddr_in6 *)s)->sin6_addr), str, 40);
 	default:
 		errno = EAFNOSUPPORT;
 		return NULL;
