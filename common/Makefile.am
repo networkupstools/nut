@@ -36,6 +36,8 @@ CLEANFILES = $(top_builddir)/common/common.c
 BUILT_SOURCES = common.c
 endif
 
+libcommon_la_SOURCES += wincompat.c $(top_srcdir)/include/wincompat.h
+
 # ensure inclusion of local implementation of missing systems functions
 # using LTLIBOBJS. Refer to configure.in/.ac -> AC_REPLACE_FUNCS
 libcommon_la_LIBADD = libparseconf.la @LTLIBOBJS@
