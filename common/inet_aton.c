@@ -2,9 +2,14 @@
 /* This works if inet_addr exists like it does in CYGWIN */
 #include <stddef.h>
 #include <sys/types.h>
+#ifndef WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#else
+#undef DATADIR
+#include <windows.h>
+#endif
 
 #ifndef INADDR_NONE
 #define INADDR_NONE ((unsigned long)-1)
