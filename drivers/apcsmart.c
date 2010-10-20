@@ -73,7 +73,7 @@ static apc_vartab_t *vartab_lookup_name(const char *var)
 /* FUTURE: change to use function pointers */
 
 /* convert APC formatting to NUT formatting */
-static char *convert_data(apc_vartab_t *cmd_entry, char *upsval)
+static const char *convert_data(apc_vartab_t *cmd_entry, char *upsval)
 {
 	static	char tmp[128];
 	int	tval;
@@ -241,7 +241,8 @@ static int poll_data(apc_vartab_t *vt)
 static int query_ups(const char *var, int first)
 {
 	int	ret;
-	char	temp[256], *ptr;
+	char	temp[256];
+	const char	*ptr;
 	apc_vartab_t *vt;
 
 	vt = vartab_lookup_name(var);
@@ -917,7 +918,8 @@ static void update_info_all(void)
 static int setvar_enum(apc_vartab_t *vt, const char *val)
 {
 	int	i, ret;
-	char	orig[256], temp[256], *ptr;
+	char	orig[256], temp[256];
+	const char	*ptr;
 
 	ret = ser_send_char(upsfd, vt->cmd);
 
