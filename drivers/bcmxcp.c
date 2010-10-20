@@ -120,7 +120,7 @@ TODO List:
 #include "bcmxcp.h"
 
 #define DRIVER_NAME	"BCMXCP UPS driver"
-#define DRIVER_VERSION	"0.24"
+#define DRIVER_VERSION	"0.25"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -171,7 +171,7 @@ int get_word(const unsigned char *buffer)	/* return an integer reading a word in
 	return result;
 }
 
-/* get_long funktion from nut driver metasys.c for meter readings*/
+/* get_long function from nut driver metasys.c for meter readings*/
 long int get_long(const unsigned char *buffer)	/* return a long integer reading 4 bytes in the supplied buffer.*/
 {
 	unsigned char a, b, c, d;
@@ -881,8 +881,8 @@ int init_outlet(unsigned char len)
 	res = command_read_sequence(PW_OUT_MON_BLOCK_REQ, answer);
 	if (res <= 0)
 		fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
-else
-	upsdebugx(1, "init_outlet(%i), res=%i", len, res);
+	else
+		upsdebugx(1, "init_outlet(%i), res=%i", len, res);
 
 	num_outlet = answer[iIndex++];
 	upsdebugx(2, "Number of outlets: %d\n", num_outlet);
@@ -923,6 +923,7 @@ void init_config(void)
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
 	int voltage = 0, frequency = 0, res, len;
 	char sValue[17];
+	char sPartNumber[17];
 
 	res = command_read_sequence(PW_CONFIG_BLOC_REQ, answer);
 	if (res <= 0)
@@ -956,6 +957,13 @@ void init_config(void)
 	frequency = get_word((answer+BCMXCP_CONFIG_BLOCK_NOMINAL_OUTPUT_FREQ));
 	if (frequency != 0)
 		dstate_setinfo("output.frequency.nominal", "%d", frequency);
+		
+	/*UPS Part Number*/
+	sPartNumber[16] = 0;
+
+	snprintf(sPartNumber, 16, "%s", answer + BCMXCP_CONFIG_BLOCK_PART_NUMBER);
+
+	dstate_setinfo("device.part", "%s", sPartNumber);
 
 }
 
