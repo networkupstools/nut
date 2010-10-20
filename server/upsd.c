@@ -1355,8 +1355,6 @@ static void mainloop(void)
 
 	ret = WaitForMultipleObjects(nfds,fds,FALSE,2000);
 
-	printf("WaitForMultipleObjects return %d\n",ret);
-
 	if (ret == WAIT_TIMEOUT) {
 		upsdebugx(2, "%s: no data available", __func__);
 		return;
