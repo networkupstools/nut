@@ -266,6 +266,8 @@ extern int optind;
 #define LOG_CRIT (5)
 #define LOG_PID (6)
 #define LOG_DAEMON (7)
+
+#define closelog()
 #endif
 
 #endif /* NUT_COMMON_H_SEEN */

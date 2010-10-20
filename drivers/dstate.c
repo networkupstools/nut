@@ -973,7 +973,7 @@ int dstate_poll_fds(struct timeval timeout, HANDLE extrafd)
 	DWORD	ret;
 	int	maxfd = 0, overrun = 0;
 	HANDLE	rfds[32];
-	struct conn_t	*conn;
+	conn_t	*conn;
         struct timeval  now;
 
 /*
