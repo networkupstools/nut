@@ -937,7 +937,7 @@ static char *get_model_name(const char *iProduct, const char *iModel)
 	return strdup(model->name);
 }
 
-static char *mge_format_model(HIDDevice_t *hd) {
+static const char *mge_format_model(HIDDevice_t *hd) {
 	char	product[SMALLBUF];
 	char	model[SMALLBUF];
 	double	value;
