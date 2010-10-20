@@ -752,7 +752,7 @@ dnl same for datadir
 conftemp="${datadir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-AC_DEFINE_UNQUOTED(DATADIR, "${conftemp}", [Default path for data files])
+AC_DEFINE_UNQUOTED(NUT_DATADIR, "${conftemp}", [Default path for data files])
 
 dnl same for bindir
 conftemp="${bindir}"

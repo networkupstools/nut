@@ -39,7 +39,6 @@
 #include "upslog.h"
 
 #ifdef WIN32
-#undef DATADIR
 #include <winsock2.h>
 #define sleep(n) Sleep(1000 * n)
 #endif

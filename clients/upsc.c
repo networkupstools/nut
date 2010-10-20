@@ -24,7 +24,6 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #else
-#undef DATADIR
 #include <winsock2.h>
 #endif
 

@@ -48,7 +48,6 @@
 #include <sys/un.h>
 #include <netinet/in.h>
 #else
-#undef DATADIR
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #endif
