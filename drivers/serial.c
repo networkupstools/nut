@@ -289,10 +289,11 @@ int ser_send_buf_pace(int fd, unsigned long d_usec, const void *buf,
 {
 	int	ret;
 	size_t	sent;
+	const char	*data = buf;
 
 	for (sent = 0; sent < buflen; sent += ret) {
 
-		ret = write(fd, &((char *)buf)[sent], (d_usec == 0) ? (buflen - sent) : 1);
+		ret = write(fd, &data[sent], (d_usec == 0) ? (buflen - sent) : 1);
 
 		if (ret < 1) {
 			return ret;
@@ -321,12 +322,13 @@ int ser_get_buf_len(int fd, void *buf, size_t buflen, long d_sec, long d_usec)
 {
 	int	ret;
 	size_t	recv;
+	char	*data = buf;
 
 	memset(buf, '\0', buflen);
 
 	for (recv = 0; recv < buflen; recv += ret) {
 
-		ret = select_read(fd, &((char *)buf)[recv], buflen - recv, d_sec, d_usec);
+		ret = select_read(fd, &data[recv], buflen - recv, d_sec, d_usec);
 
 		if (ret < 1) {
 			return ret;
@@ -344,6 +346,7 @@ int ser_get_line_alert(int fd, void *buf, size_t buflen, char endchar,
 {
 	int	i, ret;
 	char	tmp[64];
+	char	*data = buf;
 	size_t	count = 0, maxcount;
 
 	memset(buf, '\0', buflen);
@@ -373,7 +376,7 @@ int ser_get_line_alert(int fd, void *buf, size_t buflen, char endchar,
 				continue;
 			}
 
-			((char *)buf)[count++] = tmp[i];
+			data[count++] = tmp[i];
 		}
 	}
 
