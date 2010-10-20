@@ -383,12 +383,7 @@ const char * confpath(void)
 	const char * path;
 
 	if ((path = getenv("NUT_CONFPATH")) == NULL)
-#ifndef WIN32
 		path = CONFPATH;
-#else
-/*FIXME*/
-		path = "./conf";
-#endif
 
 	return path;
 }
