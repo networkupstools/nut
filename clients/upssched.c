@@ -50,7 +50,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #else
-#undef DATADIR
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #endif

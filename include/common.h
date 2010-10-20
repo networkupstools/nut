@@ -53,7 +53,6 @@
 #ifndef WIN32
 #include <syslog.h>
 #else
-#undef DATADIR
 #include <windows.h>
 #endif
 #include <unistd.h>

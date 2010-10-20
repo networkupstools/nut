@@ -29,7 +29,6 @@
 #include <dirent.h>
 #include <sys/un.h>
 #else
-#undef DATADIR
 #include <windows.h>
 #endif
 

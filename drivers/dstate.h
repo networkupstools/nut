@@ -25,7 +25,6 @@
 #include "timehead.h"
 
 #ifdef WIN32
-#undef DATADIR
 #include <windows.h>
 #endif
 

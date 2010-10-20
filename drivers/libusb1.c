@@ -28,9 +28,6 @@
 
 #include "config.h" /* for HAVE_LIBUSB_DETACH_KERNEL_DRIVER flag */
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
-#ifdef WIN32
-#undef DATADIR
-#endif
 #include "usb-common.h"
 #include "nut_libusb.h"
 #include "nut_stdint.h"

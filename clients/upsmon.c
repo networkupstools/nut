@@ -28,7 +28,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #else
-#undef DATADIR
 #include <winsock2.h>
 #define sleep(n) Sleep(1000 * n)
 #endif

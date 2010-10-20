@@ -42,7 +42,6 @@
 #include <signal.h>
 /* #include <poll.h> */
 #else
-#undef DATADIR
 #include <winsock2.h>
 #include <ws2tcpip.h>
 /* This override network system calls to adapt to Windows specificity */
@@ -87,7 +86,7 @@ nfds_t	maxconn = 0;
 /* preloaded to STATEPATH in main, can be overridden via upsd.conf */
 char	*statepath = NULL;
 
-/* preloaded to DATADIR in main, can be overridden via upsd.conf */
+/* preloaded to NUT_DATADIR in main, can be overridden via upsd.conf */
 char	*datapath = NULL;
 
 /* everything else */
@@ -1488,11 +1487,7 @@ int main(int argc, char **argv)
 
 	/* yes, xstrdup - the conf handlers call free on this later */
 	statepath = xstrdup(dflt_statepath());
-#ifndef WIN32
-	datapath = xstrdup(DATADIR);
-#else
-	datapath = xstrdup("c:");
-#endif
+	datapath = xstrdup(NUT_DATADIR);
 
 	/* set up some things for later */
 	snprintf(pidfn, sizeof(pidfn), "%s/%s.pid", altpidpath(), progname);

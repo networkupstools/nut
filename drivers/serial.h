@@ -52,7 +52,6 @@ int ser_flush_io(int fd);
 int ser_close(int fd, const char *port);
 
 #else
-#undef DATADIR
 #include <windows.h>
 HANDLE ser_open(const char *port);
 int ser_set_speed(HANDLE fd, const char *port, speed_t speed);

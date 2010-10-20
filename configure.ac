@@ -2375,9 +2375,8 @@ dnl same for datadir
 conftemp="${datadir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-DATADIR=${conftemp}
 NUT_DATADIR=${conftemp}
-AC_DEFINE_UNQUOTED(DATADIR, "${conftemp}", [Default path for data files])
+AC_DEFINE_UNQUOTED(NUT_DATADIR, "${conftemp}", [Default path for data files])
 
 dnl same for bindir
 conftemp="${bindir}"
@@ -2500,7 +2499,7 @@ AC_SUBST(STATEPATH)
 AC_SUBST(CONFPATH)
 AC_SUBST(BINDIR)
 AC_SUBST(LIBDIR)
-AC_SUBST(NUT_DATADIR, [`eval echo "${DATADIR}"`])
+AC_SUBST(NUT_DATADIR, [`eval echo "${NUT_DATADIR}"`])
 AC_SUBST(NUT_LIBEXECDIR, [`eval echo "${LIBEXECDIR}"`])
 AC_SUBST(DRVPATH)
 AC_SUBST(SBINDIR)
