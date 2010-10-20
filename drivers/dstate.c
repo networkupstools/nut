@@ -50,6 +50,7 @@
 	static HANDLE sockfd = INVALID_HANDLE_VALUE; 
 	static int stale = 1, alarm_active = 0; ignorelb = 0;
 	static OVERLAPPED connect_overlapped;
+	static char *pipename = NULL;
 #endif
 	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[ST_MAX_VALUE_LEN];
 	static st_tree_t	*dtree_root = NULL;
@@ -194,8 +195,8 @@ static HANDLE sock_open(const char *fn)
 		fatal_with_errno(EXIT_FAILURE, "Can't create event");
 	}
 
+	/* Wait for a connection */
 	BOOL ret;
-	ResetEvent(connect_overlapped.hEvent);
 	ret = ConnectNamedPipe(fd,&connect_overlapped);
 
 #endif
@@ -210,11 +211,11 @@ static void sock_disconnect(conn_t *conn)
 	close(conn->fd);
 #else
 	/* FIXME not sure if this is the right way to close a connection */
-	DisconnectNamedPipe(conn->fd);
 	if( conn->read_overlapped.hEvent != INVALID_HANDLE_VALUE) {
 		CloseHandle(conn->read_overlapped.hEvent);
 		conn->read_overlapped.hEvent = INVALID_HANDLE_VALUE;
 	}
+	DisconnectNamedPipe(conn->fd);
 #endif
 
 	pconf_finish(&conn->ctx);
@@ -284,12 +285,11 @@ static void send_to_all(const char *fmt, ...)
 
 		result = WriteFile (conn->fd, buf, buflen, &bytesWritten, NULL);
 		if( result == 0 ) {
-			printf("Write failed, disconnecting\n");
+			upsdebugx(2, "write failed on %d, disconnecting", (int)conn->fd);
 			sock_disconnect(conn);
-			return;
+			continue;
 		}
 		else  {
-			//printf("Write %d bytes successfully\n",(int)bytesWritten);
 			ret = (ssize_t)bytesWritten;
 		}
 #endif
@@ -493,10 +493,46 @@ static void sock_connect(HANDLE sock)
 
 	upsdebugx(3, "new connection on fd %d", fd);
 #else
+	/* We have detected a connection on the opened pipe. So we start by saving its handle  and cretae a new pipe for future connection */
 	conn = xcalloc(1, sizeof(*conn));
 	conn->fd = sock;
 
-	/* Start a read operation so we could wait on the event associated to this IO */
+	/* sockfd is the handle of the connection pending pipe */
+	sockfd = CreateNamedPipe( 
+			pipename,			// pipe name 
+			PIPE_ACCESS_DUPLEX |  // read/write access 
+			FILE_FLAG_OVERLAPPED, // async IO
+			PIPE_TYPE_BYTE |	 
+			PIPE_READMODE_BYTE |	 
+			PIPE_WAIT,		 
+			PIPE_UNLIMITED_INSTANCES, // max. instances  
+			ST_SOCK_BUF_LEN,	// output buffer size 
+			ST_SOCK_BUF_LEN,	// input buffer size 
+			0,			// client time-out 
+			NULL);			// FIXME: default security attribute 
+
+	if (sockfd == INVALID_HANDLE_VALUE) {
+		fatal_with_errno(EXIT_FAILURE, "Can't create a state socket (windows named pipe)");
+	}
+
+	/* Prepare a new async wait for a connection on the pipe */
+	CloseHandle(connect_overlapped.hEvent);
+	memset(&connect_overlapped,0,sizeof(connect_overlapped));
+	connect_overlapped.hEvent = CreateEvent(NULL, /*Security*/
+			FALSE, /* auto-reset*/
+			FALSE, /* inital state = non signaled*/
+			NULL /* no name*/);
+	if(connect_overlapped.hEvent == NULL ) {
+		printf("CreateEvent failed.\n");
+		fatal_with_errno(EXIT_FAILURE, "Can't create event");
+	}
+
+	/* Wait for a connection */
+	BOOL ret;
+	ret = ConnectNamedPipe(sockfd,&connect_overlapped);
+
+	/* A new pipe waiting for new client connection has been created. We could manage the current connection now */
+	/* Start a read operation on the newly connected pipe so we could wait on the event associated to this IO */
 	memset(&conn->read_overlapped,0,sizeof(conn->read_overlapped));
 	memset(conn->buf,0,sizeof(conn->buf));
 	conn->read_overlapped.hEvent = CreateEvent(NULL, /*Security*/
@@ -509,11 +545,6 @@ static void sock_connect(HANDLE sock)
 	}
 
 	ReadFile (conn->fd,conn->buf,sizeof(conn->buf)-1,&(conn->bytesRead),&(conn->read_overlapped)); /* -1 to be sure to have a trailling 0 */
-
-	/* Prepare an async wait on a connection on the pipe */
-	BOOL ret;
-	ret = ConnectNamedPipe(sockfd,&connect_overlapped);
-
 
 	pconf_init(&conn->ctx, NULL);
 
@@ -869,6 +900,7 @@ char * dstate_init(const char *prog, const char *devname)
 	} else {
 		snprintf(sockname, sizeof(sockname), "\\\\.\\pipe\\%s", prog);
 	}
+	pipename = strdup(sockname);
 #endif
 
 	sockfd = sock_open(sockname);
@@ -1005,14 +1037,14 @@ int dstate_poll_fds(struct timeval timeout, HANDLE extrafd)
 		rfds[maxfd] = conn->read_overlapped.hEvent;
 		maxfd++;
 	}
-/* Add the connect event */
+	/* Add the connect event */
 	rfds[maxfd] = connect_overlapped.hEvent;
 	maxfd++;
 
 	ret = WaitForMultipleObjects( 
 				maxfd,	// number of objects in array
 				rfds,	// array of objects
-				FALSE,	// FIXME: ?wait for any object?
+				FALSE,	// wait for any object
 				timeout.tv_sec); // five-second wait
 
 	if (ret == WAIT_TIMEOUT) {
@@ -1031,14 +1063,13 @@ int dstate_poll_fds(struct timeval timeout, HANDLE extrafd)
 		}
 	}
 
-/* take care of the signaled object */
+	/* the connection event handle has been signaled */
 	if (rfds[ret] == connect_overlapped.hEvent) {
-		printf("Connection detected\n");
 		sock_connect(sockfd);
 	}
+	/* one of the read event handle has been signaled */
 	else {
 		if( conn != NULL) {
-			printf("Pending read on %d\n",(int)rfds[ret-WAIT_OBJECT_0]);
 			sock_read(conn);
 		}
 	}
