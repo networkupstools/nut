@@ -208,7 +208,7 @@ static int powpan_setvar(const char *varname, const char *val)
 	return STAT_SET_UNKNOWN;
 }
 
-static void powpan_initinfo()
+static void powpan_initinfo(void)
 {
 	int	i;
 	char	*s;
@@ -410,7 +410,7 @@ static int powpan_status(status_t *status)
 	return 0;
 }
 
-static int powpan_updateinfo()
+static int powpan_updateinfo(void)
 {
 	status_t	status;
 
@@ -466,7 +466,7 @@ static int powpan_updateinfo()
 	return (status.flags[0] & 0x40) ? 1 : 0;
 }
 
-static int powpan_initups()
+static int powpan_initups(void)
 {
 	int	ret, i;
 

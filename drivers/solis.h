@@ -341,13 +341,13 @@ double Bat_LimInfRede, Bat_LimSupRede, Bat_LimInfInv, Bat_LimSupInv, Bat_VoltNom
 double AppPower, UtilPower, upscharge;
 int ChargePowerFactor, NominalPower, UpsPowerFactor;
 
-static void prnInfo();
+static void prnInfo(void);
 static int  IsToday( unsigned char, int );
 static void AutonomyCalc( int );
-static void ScanReceivePack();
+static void ScanReceivePack(void);
 static void CommReceive(const char*,  int );
-static void getbaseinfo();
-static void getupdateinfo();
+static void getbaseinfo(void);
+static void getupdateinfo(void);
 
 #endif /* INCLUDED_SOLIS_H */
 

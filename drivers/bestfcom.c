@@ -528,7 +528,7 @@ Version:  8.07
 Released: 08/01/1995
 */
 
-void upsdrv_init_nofc()
+void upsdrv_init_nofc(void)
 {
 	char tmp[256], rstring[1024];
 
@@ -734,7 +734,7 @@ void upsdrv_init_fc(const char *fcstring)
 	fc.valid = 1;
 }
 
-void upsdrv_initups ()
+void upsdrv_initups(void)
 {
 	char rstring[256];
 

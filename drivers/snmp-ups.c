@@ -869,7 +869,7 @@ int base_snmp_outlet_index(const char *OID_template)
 /* return the NUT offset (increment) based on outlet_index_base
  * ie (outlet_index_base == 0) => increment +1
  *    (outlet_index_base == 1) => increment +0 */
-int base_nut_outlet_offset()
+int base_nut_outlet_offset(void)
 {
 	return (outlet_index_base==0)?1:0;
 }

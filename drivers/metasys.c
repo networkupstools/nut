@@ -94,7 +94,7 @@ long int get_long(unsigned char *buffer) {	/* return a long integer reading 4 by
 	return result;
 }	
 	
-void send_zeros() {				/* send 100 times the value 0x00.....it seems to be used for resetting */
+void send_zeros(void) {				/* send 100 times the value 0x00.....it seems to be used for resetting */
 	unsigned char buf[100];				/* the ups serial port */
 	int i;
 	
