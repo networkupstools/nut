@@ -10,7 +10,7 @@ FORCE:
 noinst_LTLIBRARIES = libparseconf.la libcommon.la
 libparseconf_la_SOURCES =  parseconf.c
 
-libcommon_la_SOURCES = common.c state.c upsconf.c ../include/nut_version.h
+libcommon_la_SOURCES = common.c state.c upsconf.c ../include/nut_version.h wincompat.c ../include/wincompat.h
 # ensure inclusion of local implementation of missing systems functions
 # using LTLIBOBJS. Refer to configure.in -> AC_REPLACE_FUNCS
 libcommon_la_LIBADD = libparseconf.la @LTLIBOBJS@
