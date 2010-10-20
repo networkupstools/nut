@@ -138,6 +138,8 @@ VARDESC driver.name "Driver name"
 VARDESC driver.version "Driver version - NUT release"
 VARDESC driver.version.internal "Internal driver version"
 
+VARDESC device.part "Device Part Number"
+
 # FIXME: driver.parameter and driver.flag can have many possible members
 #
 # VARDESC driver.parameter.[[:alpha:]]+ "Driver parameter: <name>"
