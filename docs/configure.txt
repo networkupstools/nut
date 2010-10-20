@@ -92,10 +92,6 @@ Contents:
    Enable libwrap (tcp-wrappers) support. Refer to upsd man page for
    more information.
 
-  --with-ipv6 (default: auto-detect)
-
-   Enable IPv6 support.
-
   --with-hal (default: no)
 
     Build and install Hardware Abstraction Layer support.
