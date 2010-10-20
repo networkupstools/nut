@@ -146,7 +146,7 @@ static void sendping(upstype_t *ups)
 
 	result = WriteFile (ups->sock_fd,cmd,strlen(cmd),&bytesWritten,NULL);
 	if( result == 0 ) {
-		printf("Write failed\n");
+		/* Write failed */
 		ret = 0;
 	}
 	else  {
@@ -238,7 +238,6 @@ HANDLE sstate_connect(upstype_t *ups)
 
 	snprintf(pipename, sizeof(pipename), "\\\\.\\pipe\\%s", ups->fn);
 
-	printf("Test %s availability\n",pipename);
 	result = WaitNamedPipe(pipename,NMPWAIT_USE_DEFAULT_WAIT);
 
 	if( result == FALSE ) {
