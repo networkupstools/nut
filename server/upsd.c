@@ -197,8 +197,14 @@ static void setuptcp(stype_t *server)
 	atexit(WSACleanup);
 #endif
 
-#ifndef WIN32
+#ifndef	HAVE_IPV6
+	struct hostent		*host;
+	struct sockaddr_in	sockin;
+	int	res, one = 1;
+
+	memset(&sockin, '\0', sizeof(sockin));
 	host = gethostbyname(server->addr);
+#ifndef WIN32
 
 	if (!host) {
 		struct  in_addr	listenaddr;
@@ -232,7 +238,6 @@ static void setuptcp(stype_t *server)
 		fatal_with_errno(EXIT_FAILURE, "setsockopt(SO_REUSEADDR)");
 	}
 
-	memset(&sockin, '\0', sizeof(sockin));
 	sockin.sin_family = AF_INET;
 	sockin.sin_port = htons(atoi(server->port));
 
@@ -779,6 +784,7 @@ static void mainloop(void)
 	int	i, ret, nfds = 0;
 #else
 	DWORD	ret;
+	int 	nfds = 0;
 #endif
 
 	upstype_t	*ups;
