@@ -18,7 +18,6 @@
 */
 #ifdef WIN32
 #include "common.h"
-#undef DATADIR
 #include <winsock2.h>
 
 extern int errno;

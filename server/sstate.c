@@ -36,7 +36,6 @@
 #include <sys/socket.h>
 #include <sys/un.h> 
 #else
-#undef DATADIR
 #include <winsock2.h>
 #endif
 

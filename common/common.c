@@ -25,7 +25,6 @@
 #include <pwd.h>
 #include <grp.h>
 #else
-#undef DATADIR
 #include <windows.h>
 #endif
 

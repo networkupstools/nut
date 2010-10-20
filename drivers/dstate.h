@@ -23,7 +23,6 @@
 #define DSTATE_H_SEEN 1
 
 #ifdef WIN32
-#undef DATADIR
 #include <windows.h>
 #endif
 

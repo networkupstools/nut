@@ -40,7 +40,6 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #else
-#undef DATADIR
 #include <winsock2.h>
 #include <windows.h>
 #include <reason.h>
