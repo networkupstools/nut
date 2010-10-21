@@ -449,14 +449,20 @@ dnl allowed values "html-single" "html-chunked" "pdf".
 if test "${nut_with_doc}" != "no"; then
 	if test "x$ASCIIDOC" != "xnone" -a "x$A2X" != "xnone"; then
 		nut_have_asciidoc="yes"
-		if test "${nut_with_doc}" = "auto"; then
+		case "${nut_with_doc}" in
+		yes|auto)
 			DOC_BUILD_LIST="html-single html-chunked"
 			if test "${DBLATEX}" != "none"; then
 				DOC_BUILD_LIST="$DOC_BUILD_LIST pdf"
 			fi
-		else
+			;;
+		all)
+			DOC_BUILD_LIST="html-single html-chunked pdf"
+			;;
+		*)
 			DOC_BUILD_LIST=`echo ${nut_with_doc} | sed "s/,/ /g"`
-		fi
+			;;
+		esac
 		dnl substitute value for cosmetic reason
 		nut_with_doc="yes"
 	else
