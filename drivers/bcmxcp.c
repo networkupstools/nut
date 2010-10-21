@@ -959,9 +959,8 @@ void init_config(void)
 		dstate_setinfo("output.frequency.nominal", "%d", frequency);
 		
 	/*UPS Part Number*/
-	sPartNumber[16] = 0;
-
-	snprintf(sPartNumber, 16, "%s", answer + BCMXCP_CONFIG_BLOCK_PART_NUMBER);
+	
+	snprintf(sPartNumber, sizeof(sPartNumber) , "%s", answer + BCMXCP_CONFIG_BLOCK_PART_NUMBER);
 
 	dstate_setinfo("device.part", "%s", sPartNumber);
 
