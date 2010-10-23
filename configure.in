@@ -436,10 +436,27 @@ NUT_REPORT_FEATURE([build Powerman PDU client driver], [${nut_with_powerman}])
 
 dnl ----------------------------------------------------------------------
 dnl check whether to build documentation, and which format 
+dnl FIXME: to be put into m4/nut_check_asciidoc.m4
 
-dnl check for Asciidoc presence
+dnl check for Asciidoc presence and version
 AC_PATH_PROGS([ASCIIDOC], [asciidoc], [none])
+if test "x$ASCIIDOC" != "xnone" ; then
+	AC_MSG_CHECKING([for asciiDoc version])
+	ASCIIDOC_VERSION="`$ASCIIDOC --version 2>/dev/null`"
+	if test "$?" != "0" -o -z "${ASCIIDOC_VERSION}"; then
+		NEON_VERSION="none"
+	fi
+	AC_MSG_RESULT(${ASCIIDOC_VERSION} found)
+fi
 AC_PATH_PROGS([A2X], [a2x], [none])
+if test "x$A2X" != "xnone" ; then
+	AC_MSG_CHECKING([for a2x version])
+	A2X_VERSION="`$A2X --version 2>/dev/null`"
+	if test "$?" != "0" -o -z "${A2X_VERSION}"; then
+		NEON_VERSION="none"
+	fi
+	AC_MSG_RESULT(${A2X_VERSION} found)
+fi
 AC_PATH_PROGS([DBLATEX], [dblatex], [none])
 dnl FIXME check for xsltproc, etc for chunked HTML and man pages
 
