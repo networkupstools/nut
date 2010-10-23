@@ -270,13 +270,16 @@ endif !MANUALUPDATE
 all:
 
 man: $(MANS)
-html-man: $(CONVERTED_TO_ASCIIDOC)
+html-man: $(CONVERTED_TO_ASCIIDOC) man-index.html
+
+man-index.html: index.html
+	cp -f $< $@
 
 # FIXME: Transitional compatibility target
 html: html-man
 
 clean-local:
-	rm -f $(CONVERTED_TO_ASCIIDOC) $(MANS) *.xml
+	rm -f $(CONVERTED_TO_ASCIIDOC) $(MANS) *.xml man-index.html
 
 SUFFIXES = .txt .html .1 .3 .5 .8
 

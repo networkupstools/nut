@@ -31,6 +31,12 @@ distcheck-light:
 distcleancheck_listfiles = \
 	find . -type f -exec sh -c 'test -f $(srcdir)/{} || echo {}' ';'
 
+website:
+	cd docs;  $(MAKE) $(AM_MAKEFLAGS) website
+	cd docs/man;  $(MAKE) $(AM_MAKEFLAGS) html-man
+	cd tools;  $(MAKE) $(AM_MAKEFLAGS) website
+	cd docs/website;  $(MAKE) $(AM_MAKEFLAGS) website
+
 # ----------------------------------------------------------------------
 # targets from old build system (pre-automake).
 # supported for a period of time for backward "compatibility".

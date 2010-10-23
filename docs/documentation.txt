@@ -6,18 +6,18 @@ endif::website[]
 User Documentation
 ------------------
 
-- link:FAQ.html[FAQ - Frequently Asked Questions]
-- link:user-manual.html[NUT User Manual]
-- link:cables.html[Cables information]
-- link:man/index.html#User_man[User manual pages]
+- FAQ - Frequently Asked Questions (link:docs/FAQ.html[online]) (link:docs/FAQ.pdf[PDF])
+- NUT User Manual (link:docs/user-manual.chunked/index.html[online]) (link:docs/user-manual.pdf[PDF])
+- Cables information (link:cables.html[online]) (link:cables.pdf[PDF])
+- link:docs/man/index.html#User_man[User manual pages]
 
 Developer Documentation
 -----------------------
 
-- link:developer-guide.html[NUT Developer Guide]
-- link:packager-guide.html[NUT Packager Guide]
+- NUT Developer Guide (link:docs/developer-guide.chunked/index.html[online]) (link:docs/developer-guide.pdf[PDF])
+- NUT Packager Guide (link:docs/packager-guide.chunked/index.html[online]) (link:docs/packager-guide.pdf[PDF])
 - link:ups-protocols.html[UPS protocols library]
-- link:man/index.html#Developer_man[Developer manual pages]
+- link:docs/man/index.html#Developer_man[Developer manual pages]
 - link:nut-qa.html[NUT Quality Assurance]
 
 Offsite Links
@@ -33,6 +33,7 @@ These are general information about UPS and PDU.
 
 These are writeups by users of the software.
 
+- link:http://www.dimat.unina2.it/LCS/MonitoraggioUpsNutUbuntu10-eng.htm[Deploying NUT on an Ubuntu 10.04 cluster] '(Stefano Angelone)'   
 - link:http://blog.shadypixel.com/monitoring-a-ups-with-nut-on-debian-or-ubuntu-linux[Monitoring a UPS with nut on Debian or Ubuntu Linux] '(Avery Fay)'
 - link:http://linux.developpez.com/cours/upsusb/[Installation et gestion d'un UPS USB en réseau sous linux] '(Olivier Van Hoof, french)'
 - link:http://boxster.ghz.cc/projects/nut/wiki/NutOnMacOSX[Network UPS Tools (NUT) on Mac OS X (10.4.10)] '(Andy Poush)'
@@ -41,7 +42,9 @@ These are writeups by users of the software.
 - link:http://people.freebsd.org/~thierry/nut_FreeBSD_HowTo.txt[FreeBSD installation procedure] '(Thierry Thomas, from FreeBSD)'
 - link:http://www.usebox.net/jjm/ups-obsd/[Gestionando un SAI desde OpenBSD con NUT] '(Juan J. Martinez, spanish)'
 - link:http://forums.gentoo.org/viewtopic-p-2663684.html[HOWTO: MGE Ellipse 300 on gentoo] '(nielchiano)'
+////////////////////////////////////////////////////////////////////////////////
 - link:http://deschis.blogspot.com/2006/07/cum-se-configureaz-un-ups-apollo-seria.html[Cum se configurează un UPS Apollo seria 1000F pe Linux] '(deschis, Romanian)'
+////////////////////////////////////////////////////////////////////////////////
 
 News articles and Press releases
 --------------------------------

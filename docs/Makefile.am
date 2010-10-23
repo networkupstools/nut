@@ -22,37 +22,42 @@ EXTRA_DIST = $(SHARED_DEPS) $(USER_MANUAL_DEPS) $(DEVELOPER_GUIDE_DEPS) \
  nut-hal.txt nut-qa.txt packager-guide.txt snmp.txt \
  $(IMAGE_FILES)
 
-CONVERTED_TO_ASCIIDOC_HTML = user-manual.html \
+ASCIIDOC_HTML_SINGLE = user-manual.html \
 	developer-guide.html \
 	packager-guide.html \
 	FAQ.html
 
-CONVERTED_TO_ASCIIDOC_PDF = user-manual.pdf developer-guide.pdf
+ASCIIDOC_HTML_CHUNKED = user-manual.chunked \
+	developer-guide.chunked \
+	packager-guide.chunked \
+	FAQ.html
+
+ASCIIDOC_PDF = user-manual.pdf \
+	developer-guide.pdf \
+	packager-guide.pdf \
+	FAQ.pdf
+
+# Force build in ./ and man/ before website 
+SUBDIRS = . man website
+SUFFIXES = .txt .html .pdf
 
 all: doc
 
 doc: @DOC_BUILD_LIST@
 
-# this target is mostly for testing and QA purpose
-all-doc: html-single html-chunked pdf
-
-# FIXME: Transitional compatibility target
-html: html-single html-recursive
-
-pdf: $(CONVERTED_TO_ASCIIDOC_PDF)
+pdf: $(ASCIIDOC_PDF)
 # also build the HTML manpages with these targets
-html-single: $(CONVERTED_TO_ASCIIDOC_HTML) html-recursive
-html-chunked: html-chunked-build html-recursive
+html-single: $(ASCIIDOC_HTML_SINGLE)
+html-chunked: $(ASCIIDOC_HTML_CHUNKED)
 
-# FIXME: docbook-xsl.css presence is a bug either due to the
+website: html-chunked pdf
+
+# FIXME: docbook-xsl.css presence is probably a bug either due to the
 # copy dance or to a2x itself
 clean-local:
 	rm -rf *.pdf *.html *.chunked docbook-xsl.css
 
-SUBDIRS = website man
-SUFFIXES = .txt .html .pdf
-
-A2X_COMMON_OPTS = -v --attribute icons \
+A2X_COMMON_OPTS = --attribute icons \
     --attribute localdate=`TZ=UTC date +%Y-%m-%d` \
     --attribute localtime=`TZ=UTC date +%H:%M:%S` \
     --attribute iconsdir=$(srcdir)/icons \
@@ -63,13 +68,22 @@ A2X_COMMON_OPTS = -v --attribute icons \
 .txt.html:
 	$(A2X) $(A2X_COMMON_OPTS) --format=xhtml $<
 
-html-chunked-build: user-manual.txt developer-guide.txt
+user-manual.chunked: user-manual.txt
 	$(A2X) $(A2X_COMMON_OPTS) --format=chunked $<
+
+developer-guide.chunked: developer-guide.txt
+	$(A2X) $(A2X_COMMON_OPTS) --format=chunked $<
+
+.txt.chunked:
+	$(A2X) $(A2X_COMMON_OPTS) --format=chunked $<
+
+#html-chunked-build: user-manual.txt developer-guide.txt
+#	$(A2X) $(A2X_COMMON_OPTS) --format=chunked $<
 
 .txt.pdf:
 	$(A2X) $(A2X_COMMON_OPTS) --format=pdf $<
 
-.PHONY: html html-single html-chunked-build pdf
+.PHONY: html html-single html-chunked-build pdf website
 
 ### TODO: automatic dependency generation
 FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS)  $(SHARED_DEPS) ../README \
