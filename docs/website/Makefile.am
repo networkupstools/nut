@@ -1,41 +1,42 @@
+# FIXME: do we really have to distribute these many Kb too?
+# RCS should be enough, and website generation should use
+# source from subversion tags!
 EXTRA_DIST = news.txt projects.txt stable-hcl.txt website.txt \
-	 ups-html.txt ups-protocols.txt $(LAYOUT).conf $(SCRIPT_FILES) $(IMAGE_FILES)
+	ups-protocols.txt $(LAYOUT).conf $(SCRIPT_FILES) $(IMAGE_FILES)
 
-IMAGE_FILES = images/advanced.png \
-	images/asciidoc.png \
-	images/bigbox.png \
-	images/bizarre.png \
-	images/blue-arrow.png \
+IMAGE_FILES = images/asciidoc.png \
 	images/eaton-logo.png \
-	images/note.png \
-	images/simple.png \
-	images/warning.png \
+	images/blue-arrow.png \
 	css/ie-overrides.css \
 	css/web-layout.css \
 	css/xhtml11-quirks.css \
 	css/xhtml11.css \
 	faviconut.ico \
-	faviconut.png
+	faviconut.png \
+	images/simple.png \
+	images/advanced.png \
+	images/bigbox.png \
+	images/bizarre.png \
+	images/note.png \
+	images/warning.png
+# FIXME: the latter images should shared and be copied from ../images
 
 SCRIPT_FILES = scripts/filter_png.js \
 	scripts/jquery.js \
 	scripts/nut_jquery.js \
-	scripts/toc.js \
-	scripts/ups_data.js
+	scripts/toc.js
 
 WEBSITE_FILES = index.html projects.html stable-hcl.html \
 	documentation.html acknowledgements.html features.html \
 	ups-protocols.html \
 	cables.html nut-qa.html download.html support.html
-#user-manual.html packager-guide.html developer-guide.html
 
 WEBSITE_DEPS = ../user-manual.chunked ../packager-guide.chunked \
 	../FAQ.html ../developer-guide.chunked \
 	../user-manual.pdf \
 	../developer-guide.pdf \
 	../packager-guide.pdf \
-	../FAQ.pdf
-# FIXME: add html manpages
+	../FAQ.pdf ../man/man-index.html
 
 # CSS based simulated frames layout.
 LAYOUT = web-layout
@@ -58,7 +59,8 @@ all:
 $(WEBSITE_FILES): $(LAYOUT).conf
 OUTDIR = output
 
-website: $(WEBSITE_FILES) $(WEBSITE_DEPS) $(OUTDIR)
+website: $(WEBSITE_FILES) $(WEBSITE_DEPS) $(OUTDIR) $(SCRIPT_FILES) \
+	$(IMAGE_FILES) scripts/ups_data.js ups-html.txt
 
 .PHONY: website $(OUTDIR)
 
