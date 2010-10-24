@@ -81,6 +81,15 @@ CONVERTED_TO_ASCIIDOC = \
 	usbhid-ups.html \
 	victronups.html
 
+# FIXME: don't distribute these output yet, while waiting
+# for proper policies
+#	$(CONVERTED_TO_ASCIIDOC) \
+#	$(MANS)
+
+# dist-hook: $(MANS)
+
+if HAVE_ASCIIDOC
+
 EXTRA_DIST = \
 	apcsmart.txt \
 	bcmxcp.txt \
@@ -253,14 +262,6 @@ man8_MANS = \
 	usbhid-ups.8 \
 	victronups.8
 
-# FIXME: don't distribute these output yet, while waiting
-# for proper policies
-#	$(CONVERTED_TO_ASCIIDOC) \
-#	$(MANS)
-
-# dist-hook: $(MANS)
-
-if HAVE_ASCIIDOC
 man: $(MANS)
 html-man: $(CONVERTED_TO_ASCIIDOC) man-index.html
 else !HAVE_ASCIIDOC
