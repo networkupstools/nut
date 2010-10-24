@@ -164,13 +164,6 @@ EXTRA_DIST = \
 	usbhid-ups.txt \
 	victronups.txt
 
-# FIXME: don't distribute these output yet, while waiting
-# for proper policies
-#	$(CONVERTED_TO_ASCIIDOC) \
-#	$(MANS)
-
-if MANUALUPDATE
-
 # http://www.gnu.org/software/hello/manual/automake/Man-pages.html
 man1_MANS = \
 	libupsclient-config.1
@@ -260,23 +253,25 @@ man8_MANS = \
 	usbhid-ups.8 \
 	victronups.8
 
-else !MANUALUPDATE
-dummy:
-	@echo "Not building manual pages since 'asciidoc' was not found."
-endif !MANUALUPDATE
+# FIXME: don't distribute these output yet, while waiting
+# for proper policies
+#	$(CONVERTED_TO_ASCIIDOC) \
+#	$(MANS)
 
 # dist-hook: $(MANS)
 
-all:
-
+if HAVE_ASCIIDOC
 man: $(MANS)
 html-man: $(CONVERTED_TO_ASCIIDOC) man-index.html
+else !HAVE_ASCIIDOC
+man html-man:
+	@echo "Not building manual pages since 'asciidoc' was not found."
+endif !HAVE_ASCIIDOC
+
+all:
 
 man-index.html: index.html
 	cp -f $< $@
-
-# FIXME: Transitional compatibility target
-html: html-man
 
 clean-local:
 	rm -f $(CONVERTED_TO_ASCIIDOC) $(MANS) *.xml man-index.html

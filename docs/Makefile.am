@@ -50,7 +50,12 @@ pdf: $(ASCIIDOC_PDF)
 html-single: $(ASCIIDOC_HTML_SINGLE)
 html-chunked: $(ASCIIDOC_HTML_CHUNKED)
 
+if HAVE_ASCIIDOC
 website: html-chunked pdf
+else !HAVE_ASCIIDOC
+website:
+	@echo "Not building website documentation since 'asciidoc' was not found."
+endif !HAVE_ASCIIDOC
 
 # FIXME: docbook-xsl.css presence is probably a bug either due to the
 # copy dance or to a2x itself

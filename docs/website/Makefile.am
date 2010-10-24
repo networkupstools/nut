@@ -59,8 +59,14 @@ all:
 $(WEBSITE_FILES): $(LAYOUT).conf
 OUTDIR = output
 
+if HAVE_ASCIIDOC
 website: $(WEBSITE_FILES) $(WEBSITE_DEPS) $(OUTDIR) $(SCRIPT_FILES) \
 	$(IMAGE_FILES) scripts/ups_data.js ups-html.txt
+
+else !HAVE_ASCIIDOC
+website:
+	@echo "Not building website since 'asciidoc' was not found."
+endif !HAVE_ASCIIDOC
 
 .PHONY: website $(OUTDIR)
 

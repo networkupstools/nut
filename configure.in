@@ -439,26 +439,28 @@ dnl check whether to build documentation, and which format
 dnl FIXME: to be put into m4/nut_check_asciidoc.m4
 
 dnl check for Asciidoc presence and version
+dnl FIXME: require at least 8.6.3
 AC_PATH_PROGS([ASCIIDOC], [asciidoc], [none])
 if test "x$ASCIIDOC" != "xnone" ; then
 	AC_MSG_CHECKING([for asciiDoc version])
 	ASCIIDOC_VERSION="`$ASCIIDOC --version 2>/dev/null`"
 	if test "$?" != "0" -o -z "${ASCIIDOC_VERSION}"; then
-		NEON_VERSION="none"
+		ASCIIDOC_VERSION="none"
 	fi
 	AC_MSG_RESULT(${ASCIIDOC_VERSION} found)
 fi
 AC_PATH_PROGS([A2X], [a2x], [none])
+dnl FIXME: require at least 8.6.3
 if test "x$A2X" != "xnone" ; then
 	AC_MSG_CHECKING([for a2x version])
 	A2X_VERSION="`$A2X --version 2>/dev/null`"
 	if test "$?" != "0" -o -z "${A2X_VERSION}"; then
-		NEON_VERSION="none"
+		A2X_VERSION="none"
 	fi
 	AC_MSG_RESULT(${A2X_VERSION} found)
 fi
 AC_PATH_PROGS([DBLATEX], [dblatex], [none])
-dnl FIXME check for xsltproc, etc for chunked HTML and man pages
+dnl FIXME check for xsltproc, xmlllint, etc for chunked HTML and man pages
 
 dnl ${nut_with_doc}: any value except "no" and "auto" is treated as a target
 dnl list. "auto" tries to build all targets.
@@ -491,8 +493,7 @@ if test "${nut_with_doc}" != "no"; then
 	fi
 fi
 
-dnl FIXME: Transitional compatibility target
-AM_CONDITIONAL([MANUALUPDATE], [test "${nut_have_asciidoc}" = "yes"])
+AM_CONDITIONAL([HAVE_ASCIIDOC], [test "${nut_have_asciidoc}" = "yes"])
 
 NUT_REPORT_FEATURE([build and install documentation], [${nut_with_doc}])
 if test "${nut_with_doc}" = "yes"; then
