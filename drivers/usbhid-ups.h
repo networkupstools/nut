@@ -62,7 +62,7 @@ typedef struct {
 	const long	hid_value;	/* HID value */
 	const char	*nut_value;	/* NUT value */
 	const char	*(*fun)(double hid_value);	/* optional HID to NUT mapping */
-	const double	(*nuf)(const char *nut_value);		/* optional NUT to HID mapping */
+	double	(*nuf)(const char *nut_value);		/* optional NUT to HID mapping */
 } info_lkp_t;
 
 /* declarations of public lookup tables */

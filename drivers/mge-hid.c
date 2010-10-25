@@ -103,7 +103,7 @@ static const char *mge_time_conversion_fun(double value)
 
 #ifdef HAVE_STRPTIME
 /* Conversion back retrieve ups.time to build the full unix time */
-static const double mge_date_conversion_nuf(const char *value)
+static double mge_date_conversion_nuf(const char *value)
 {
 	struct tm	mge_tm;
 
@@ -119,7 +119,7 @@ static const double mge_date_conversion_nuf(const char *value)
 }
 
 /* Conversion back retrieve ups.date to build the full unix time */
-static const double mge_time_conversion_nuf(const char *value)
+static double mge_time_conversion_nuf(const char *value)
 {
 	struct tm	mge_tm;
 
