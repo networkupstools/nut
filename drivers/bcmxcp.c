@@ -150,13 +150,13 @@ static int init_outlet(unsigned char len);
 static int instcmd(const char *cmdname, const char *extra);
 
 
-char *FreqTol[3] = {"+/-2%", "+/-5%", "+/-7"};
-char *ABMStatus[4] = {"Charging", "Discharging", "Floating", "Resting"};
+const char *FreqTol[3] = {"+/-2%", "+/-5%", "+/-7"};
+const char *ABMStatus[4] = {"Charging", "Discharging", "Floating", "Resting"};
 /* Standard Authorization Block	*/
 unsigned char AUTHOR[4] = {0xCF, 0x69, 0xE8, 0xD5};
 int nphases = 0;
 int outlet_block_len = 0;
-char *cpu_name[5] = {"Cont:", "Inve:", "Rect:", "Netw:", "Disp:"};
+const char *cpu_name[5] = {"Cont:", "Inve:", "Rect:", "Netw:", "Disp:"};
 
 /* get_word function from nut driver metasys.c */
 int get_word(const unsigned char *buffer)	/* return an integer reading a word in the supplied buffer */
@@ -958,7 +958,7 @@ void init_limit(void)
 {
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
 	int value, res;
-	char *horn_stat[3] = {"disabled", "enabled", "muted"};
+	const char *horn_stat[3] = {"disabled", "enabled", "muted"};
 
 	res = command_read_sequence(PW_LIMIT_BLOCK_REQ, answer);
 	if (res <= 0) {
