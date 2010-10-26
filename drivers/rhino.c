@@ -550,7 +550,7 @@ static void getbaseinfo(void)
 	int  tam, i, j=0;
 	time_t *tmt;
 	struct tm *now;
-	char *Model;
+	const char *Model;
 
 	tmt  = ( time_t * ) malloc( sizeof( time_t ) );
 	time( tmt );
