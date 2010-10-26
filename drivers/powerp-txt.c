@@ -47,10 +47,10 @@ static int	offdelay = 60;	/* seconds */
 
 static char	powpan_answer[SMALLBUF];
 
-static const struct {
-	char	*var;
-	char	*get;
-	char	*set;
+static struct {
+	const char	*var;
+	const char	*get;
+	const char	*set;
 } vartab[] = {
 	{ "input.transfer.high", "P6\r", "C2:%03d\r" },
 	{ "input.transfer.low", "P7\r", "C3:%03d\r" },
@@ -58,9 +58,9 @@ static const struct {
 	{ NULL }
 };
 
-static const struct {
-	char	*cmd;
-	char	*command;
+static struct {
+	const char	*cmd;
+	const char	*command;
 } cmdtab[] = {
 	{ "test.battery.start.quick", "T\r" },
 	{ "test.battery.stop", "CT\r" },
