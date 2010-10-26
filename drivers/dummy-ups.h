@@ -36,7 +36,7 @@
 /* --------------------------------------------------------------- */
 
 typedef struct {
-	char	*status_str;	/* ups.status string */
+	const char	*status_str;	/* ups.status string */
 	int	status_value;	/* ups.status value */
 } status_lkp_t;
 
@@ -81,11 +81,11 @@ typedef struct {
 /* --------------------------------------------------------------- */
 
 typedef struct {
-	char	*info_type;	/* NUT variable name */
+	const char	*info_type;	/* NUT variable name */
 	int	info_flags;	/* NUT flags (to set in addinfo) */
 	float	info_len;	/* if ST_FLAG_STRING: length of the string */
 				/* if HU_TYPE_CMD: command value ; multiplier (or max len) otherwise */
-	char	*default_value;	/* if HU_FLAG_ABSENT: default value ; format otherwise */
+	const char	*default_value;	/* if HU_FLAG_ABSENT: default value ; format otherwise */
 	int	drv_flags;	/* */
 	char	**var_values;	/* all possible values for this variable (allows to check data...) */
 				/* FIXME: "void *" so we can have bound or enum */
