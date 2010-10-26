@@ -25,8 +25,8 @@
 
 typedef struct {
 	const char	*version;		/* name of this subdriver */
-	char		*initups;
-	char		*initinfo;
+	const char	*initups;
+	const char	*initinfo;
 	char		*configure;		/* central configuration */
 	char		*subscribe;		/* alarm subscriptions */
 	char		*summary;		/* used for quick updates */
