@@ -462,12 +462,16 @@ fi
 AC_PATH_PROGS([DBLATEX], [dblatex], [none])
 dnl FIXME check for xsltproc, xmlllint, etc for chunked HTML and man pages
 
+dnl Process this separately to ensure we have both asciidoc and a2x
+if test "x$ASCIIDOC" != "xnone" -a "x$A2X" != "xnone"; then
+	nut_have_asciidoc="yes"
+fi
+
 dnl ${nut_with_doc}: any value except "no" and "auto" is treated as a target
 dnl list. "auto" tries to build all targets.
 dnl allowed values "html-single" "html-chunked" "pdf". 
 if test "${nut_with_doc}" != "no"; then
 	if test "x$ASCIIDOC" != "xnone" -a "x$A2X" != "xnone"; then
-		nut_have_asciidoc="yes"
 		case "${nut_with_doc}" in
 		yes|auto)
 			DOC_BUILD_LIST="html-single html-chunked"
