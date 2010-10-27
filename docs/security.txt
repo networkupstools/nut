@@ -11,10 +11,9 @@ This chapter will present you these mechanisms, by increasing order of security
 level. This means that the more security you need, the more mechanisms you will
 have to apply.
 
-////////////////////////////////////////////////////////////////////////////////
-FIXME:
-reference security related QA topics 
-////////////////////////////////////////////////////////////////////////////////
+NOTE: you may want to have a look at NUT Quality Assurance, since some
+topics are related to NUT security and reliability.
+
 
 [[verifySourceSig]]
 How to verify the NUT source code signature
