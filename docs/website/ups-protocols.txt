@@ -56,6 +56,16 @@ Opti-UPS
 
 - Opti-UPS protocol - more guesswork
 
+Powercom
+~~~~~~~~
+
+All these document are officially provided by Powercom
+
+- link:ups-protocols/powercom/Software_USB_communication_controller_BNT_series.doc[USB information for BNT series]
+- link:ups-protocols/powercom/Software_USB_communication_controller_IMPERIAL_series_R21.doc[USB information for IMPERIAL series]
+- link:ups-protocols/powercom/Software_USB_communication_controller_SKP_series.doc[USB information for SKP series]
+- link:ups-protocols/powercom/Software_USB_communication_controller_WOW_series.doc[USB information for WOW series]
+
 PowerKinetics
 ~~~~~~~~~~~~~
 
@@ -75,7 +85,8 @@ SEC
 SNMP
 ^^^^
 
-- link:ups-protocols/snmp.html: SNMP] protocols
+- link:ups-protocols/snmp.html[SNMP]
+- link:http://powerquality.eaton.com/Support/Software-Drivers/Downloads/connectivity-firmware/bestpwr2.mib[Best Power MIB]
 
 USB/HID Power Devices Class
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
