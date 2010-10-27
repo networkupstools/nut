@@ -1,5 +1,5 @@
-Network UPS Tools Quality Assurance
-===================================
+NUT Quality Assurance
+=====================
 
 Recognizing the critical nature of NUT, the NUT Quality Assurance (NQA) effort
 has been established to improve NUT where necessary, and to maintain software
@@ -48,17 +48,22 @@ track development and ease regression fixes. Any modification on the NUT source
 trees are reported on the link:http://lists.alioth.debian.org/mailman/listinfo/nut-commits[NUT Commits]
 mailing list.
 - link:http://buildbot.networkupstools.org/public/nut/[Buildbot] to automate the compile/test
-cycle. Any build failure is caught early and reported through the
+cycle. Any build failure is caught early, reported through the
 link:http://lists.alioth.debian.org/mailman/listinfo/nut-commits[NUT Commits]
-mailing list.
+mailing list, and fixed quickly.
 - a project portal with trackers for bugs, feature request, patchs
 and tasks
 
 NUT QA also relies on external tools, like:
 
 ////////////////////////////////////////////////////////////////////////////////
-- the source code is also audited by the link:http://scan.coverity.com[Coverity Scan]
-project.
+FIXME (POST):
+- integrate static code analysis
+	- consider splint, Frama-C, BLAST and Clang, and choose one.
+	- integrate link:http://scan.coverity.com[Coverity Scan] program.
+	Note: request made by Arnaud to scan-admin@coverity.com on Sep 24 2009
+- point other distro BTS (use Launchpad as an aggregator?!)
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -86,7 +91,7 @@ ensure a maximum runtime security level.
 to protect NUT binaries.
 
 ////////////////////////////////////////////////////////////////////////////////
-*Sandbox*
+FIXME (POST):
 
 - write a code conformance checker (nut-lint)
 - write a § on driver maintainance status
