@@ -1,10 +1,6 @@
 Creating new client
 ===================
 
-////////////////////////////////////////////////////////////////////////////////
-FIXME: need completion
-////////////////////////////////////////////////////////////////////////////////
-
 NUT provides bindings for several common languages that are
 presented below. All these are released under the same license as
 NUT (the GNU General Public License).
