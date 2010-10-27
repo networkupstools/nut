@@ -260,25 +260,20 @@ find implementation flaws.  Functions that attempt to modify a constant
 or access something outside their scope will throw a warning or even
 fail to compile in some cases.  This is what we want.
 
-////////////////////////////////////////////////////////////////////////////////
-FIXME
+
 Spaghetti
 ~~~~~~~~~
 
-If you use a goto, expect us to drop it when my head stops spinning.
-It gives us flashbacks to the BASIC code I wrote on the 8 bit systems of
-the 80s.  I've tried to clean up my act, and you should make the effort
+If you use a goto, expect us to drop it when our head stops spinning.
+It gives us flashbacks to the very old code we wrote.
+We've tried to clean up our act, and you should make the effort
 as well.  
 
-I'm not making a blanket statement about gotos, since everything
+We're not making a blanket statement about gotos, since everything
 probably has at least one good use.  There are a few cases where a goto
 is more efficient than any other approach, but you probably won't
-encounter them in this software.
+encounter them very often in this software.
 
-Hint: there *was* a good use of a goto in upsd until the 1.3 series.  At
-this point we are back to zero gotos since that code was replaced by
-another technique that doesn't need it.
-////////////////////////////////////////////////////////////////////////////////
 
 Legacy code
 ~~~~~~~~~~~
@@ -343,30 +338,22 @@ instead of just dropping it.
 If you have to make big changes in lots of places, send multiple
 patches - one per item.
 
-Man pages
----------
+The completion touch: manual pages and device entry in HCL
+----------------------------------------------------------
 
 If you change something that involves an argument to a program or
 configuration file parsing, the man page is probably now out of date.
-If you don't update it, I have to, and I have enough to do as it is.
+If you don't update it, we have to, and we have enough to do as it is.
 
-If you write a new driver, send in the man page when you send me the
-source code for your driver.  Otherwise, I will be forced to write a
+If you write a new driver, send in the man page when you send us the
+source code for your driver.  Otherwise, we will be forced to write a
 skeletal man page that will probably miss many of the finer points of
 the driver and hardware.
 
-
-////////////////////////////////////////////////////////////////////////////////
-FIXME: same for HCL entries 
-////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-
-
+The same remark goes for device entries: if you add support for new models,
+remember to also complete the hardware compatibility list, present
+in data/driver.list.in. This will be used to generate both textual, static
+HTML and dynamic searchable HTML for the website.
 
 Source code management
 ----------------------
