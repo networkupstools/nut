@@ -4,7 +4,9 @@ NUT command and variable naming scheme
 endif::external_title[]
 
 ////////////////////////////////////////////////////////////////////////////////
-FIXME: do we really need that note considering the worflow?
+FIXME (POST): do we really need that note considering the worflow?
+We may otherwise consider some merge / consolidation / automatic generation
+of one or the other.
 NOTE: When updating this section, also update data/cmdvartab.
 ////////////////////////////////////////////////////////////////////////////////
 
