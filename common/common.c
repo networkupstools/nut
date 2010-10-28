@@ -203,7 +203,7 @@ void background(void)
 #ifdef HAVE_SETSID
 	setsid();		/* make a new session to dodge signals */
 #endif
-#else // WIN32
+#else /* WIN32 */
 	xbit_set(&upslog_flags, UPSLOG_SYSLOG);
 	xbit_clear(&upslog_flags, UPSLOG_STDERR);
 	upslogx(LOG_INFO, "Startup successful");
