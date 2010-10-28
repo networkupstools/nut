@@ -1,8 +1,9 @@
 SHARED_DEPS = nut-names.txt
 
 IMAGE_FILES = images/eaton-logo.png \
+	images/nut_layering.png \
 	icons/note.png \
-	icons/warning.png
+	icons/warning.png 
 
 USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt	\
  configure.txt download.txt documentation.txt features.txt history.txt	\

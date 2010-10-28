@@ -8,21 +8,8 @@ protocols for easier maintenance and diagnostics.
 The layering
 ------------
 
---------------------------------------------------------------------------------
-  CLIENTS: upsmon, upsc, upsrw, upsstats, upsset, etc. (via upsclient)
-  
-           < network: TCP sockets, typically on port 3493 >
+image:images/nut_layering.png[NUT layering]
 
-   SERVER: upsd
-
-           < Unix domain sockets with text-based messages >
-
-  DRIVERS: apcsmart, bestups, powercom, etc.
-
-           < serial communications, SNMP, USB, etc. >
-
-EQUIPMENT: Smart-UPS 700, Fenton PowerPal 660, etc. (actual UPS hardware)
---------------------------------------------------------------------------------
 
 How information gets around
 ---------------------------
