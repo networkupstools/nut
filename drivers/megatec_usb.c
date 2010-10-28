@@ -484,7 +484,11 @@ static int get_data_agiler_old(char *buffer, int buffer_size)
 
 static int set_data_agiler(const char *str)
 {
-	return usb->set_report(udev, 0, (unsigned char *)str, strlen(str));
+	char	buffer[SMALLBUF];
+
+	snprintf(buffer, sizeof(buffer), "%s", str);
+
+	return usb->set_report(udev, 0, (unsigned char *)buffer, strlen(buffer));
 }
 
 static int get_data_agiler(char *buffer, int buffer_size)
@@ -560,7 +564,7 @@ static int get_data_phoenix(char *buffer, int buffer_size)
 #define KRAULER_MAX_ATTEMPTS_I		15
 
 typedef struct {
-	char	*str;	/* Megatec command */
+	const char	*str;	/* Megatec command */
 	int	index;	/* Krauler string index for this command */
 	char	prefix;	/* character to replace the first byte in reply */
 	int	retry;	/* number of retries (1 is typically for instant commands) */
