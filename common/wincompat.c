@@ -71,15 +71,15 @@ void syslog(int priority, const char *fmt, ...)
 	EventSource = RegisterEventSource(NULL, EventLogName);
 
 	if( NULL != EventSource ) {
-		ReportEvent(	EventSource,		// event log handle
-				priority,		// event type
-				0,			// event category
-				SVC_ERROR,		// event identifier
-				NULL,			// no security identifier
-				2,			// size of string array
-				0,			// no binary data
-				strings,		// array of string
-				NULL);			// no binary data
+		ReportEvent(	EventSource,		/* event log handle */
+				priority,		/* event type */
+				0,			/* event category */
+				SVC_ERROR,		/* event identifier */
+				NULL,			/* no security identifier */
+				2,			/* size of string array */
+				0,			/* no binary data */
+				strings,		/* array of string */
+				NULL);			/* no binary data */
 
 		DeregisterEventSource(EventSource);
 
