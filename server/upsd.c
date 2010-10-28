@@ -38,6 +38,9 @@
 /* This override network system calls to adapt to Windows specificity */
 #define W32_NETWORK_CALL_OVERRIDE
 #include "wincompat.h"
+#include <getopt.h>
+static int install_flag = 0;
+static int noservice_flag = 0;
 #endif
 
 #include "user.h"
@@ -97,6 +100,9 @@ typedef struct {
 static struct pollfd	*fds = NULL;
 #else
 static HANDLE		*fds = NULL;
+static HANDLE		svc_stop = NULL;
+SERVICE_STATUS		SvcStatus;
+SERVICE_STATUS_HANDLE	SvcStatusHandle;
 #endif
 static handler_t	*handler = NULL;
 
@@ -193,7 +199,7 @@ static void setuptcp(stype_t *server)
 #ifdef WIN32
         WSADATA WSAdata;
         WSAStartup(2,&WSAdata);
-	atexit(WSACleanup);
+	atexit((void(*)(void))WSACleanup);
 #endif
 
 #ifndef	HAVE_IPV6
@@ -262,7 +268,6 @@ static void setuptcp(stype_t *server)
 
 	/* Associate socket event to the socket via its Event object */
 	WSAEventSelect( server->sock_fd, server->Event, FD_ACCEPT );
-	//WSAEventSelect( server->sock_fd, server->Event, FD_ACCEPT | FD_CLOSE);
 #endif
 
 	if (listen(server->sock_fd, 16)) {
@@ -776,6 +781,15 @@ void poll_reload(void)
 #endif
 }
 
+static void set_exit_flag(int sig)
+{
+	exit_flag = sig;
+}
+#ifdef WIN32
+void ReportSvcStatus(   DWORD CurrentState,
+                        DWORD Win32ExitCode,
+                        DWORD WaitHint);
+#endif
 /* service requests and check on new data */
 static void mainloop(void)
 {
@@ -942,7 +956,6 @@ static void mainloop(void)
 		}
 
 		if( ups->sock_fd != INVALID_HANDLE_VALUE) {
-			//fds[nfds] = ups->sock_fd;
 			fds[nfds] = ups->read_overlapped.hEvent;
 
 			handler[nfds].type = DRIVER;
@@ -991,6 +1004,12 @@ static void mainloop(void)
 		nfds++;
 	}
 
+	/* Add SCM event handler in service mode*/
+	if( !noservice_flag ) {
+		fds[nfds] = svc_stop;
+		nfds++;
+	}
+
 	upsdebugx(2, "%s: wait for %d filedescriptors", __func__, nfds);
 
 	ret = WaitForMultipleObjects(nfds,fds,FALSE,2000);
@@ -1007,21 +1026,26 @@ static void mainloop(void)
 		return;
 	}
 
-	switch(handler[ret].type) {
-		case DRIVER:
-			sstate_readline((upstype_t *)handler[ret].data);
-			break;
-		case CLIENT:
-			client_readline((ctype_t *)handler[ret].data);
-			break;
-		case SERVER:
-			client_connect((stype_t *)handler[ret].data);
-			break;
-		default:
-			upsdebugx(2, "%s: <unknown> has data available", __func__);
-			break;
+	if( !noservice_flag && fds[ret] == svc_stop ) {
+		ReportSvcStatus( SERVICE_STOPPED, NO_ERROR, 0);
+		set_exit_flag(1);
+	} 
+	else {
+		switch(handler[ret].type) {
+			case DRIVER:
+				sstate_readline((upstype_t *)handler[ret].data);
+				break;
+			case CLIENT:
+				client_readline((ctype_t *)handler[ret].data);
+				break;
+			case SERVER:
+				client_connect((stype_t *)handler[ret].data);
+				break;
+			default:
+				upsdebugx(2, "%s: <unknown> has data available", __func__);
+				break;
+		}
 	}
-
 #endif
 }
 
@@ -1043,19 +1067,22 @@ static void help(const char *progname)
 	printf("  -V		display the version of this software\n");
 	printf("  -4		IPv4 only\n");
 	printf("  -6		IPv6 only\n");
+#endif
+#ifdef WIN32
+	printf("  -I		Install service\n");
+	printf("  -N		Do not start as a service (for debug purpose)\n");
+#endif
 
 	exit(EXIT_SUCCESS);
 }
 
+#ifndef WIN32
 static void set_reload_flag(int sig)
 {
 	reload_flag = 1;
 }
+#endif
 
-static void set_exit_flag(int sig)
-{
-	exit_flag = sig;
-}
 
 static void setup_signals(void)
 {
@@ -1101,12 +1128,134 @@ void check_perms(const char *fn)
 #endif
 }
 
+#ifdef WIN32
+void SvcInstall()
+{
+	SC_HANDLE SCManager;
+	SC_HANDLE Service;
+	TCHAR Path[MAX_PATH];
+
+	if( !GetModuleFileName( NULL, Path, MAX_PATH ) ) {
+		printf("Cannot install service (%d)\n", GetLastError());
+		return;
+	}
+
+	SCManager = OpenSCManager(
+		NULL,			/* local computer */
+		NULL,			/* ServiceActive database */
+		SC_MANAGER_ALL_ACCESS);	/* full access rights */
+
+	if (NULL == SCManager) {
+		upslogx(LOG_ERR, "OpenSCManager failed (%d)\n", (int)GetLastError());
+		return;
+	}
+
+	Service = CreateService(
+		SCManager,			/* SCM database */
+		UPSD_SVCNAME,			/* name of service */
+		UPSD_SVCNAME,			/* service name to display */
+		SERVICE_ALL_ACCESS,		/* desired access */
+		SERVICE_WIN32_OWN_PROCESS,	/* service type */
+		SERVICE_DEMAND_START,		/* start type */
+		SERVICE_ERROR_NORMAL,		/* error control type */
+		Path,				/* path to service binary */
+		NULL,				/* no load ordering group */
+		NULL,				/* no tag identifier */
+		NULL,				/* no dependencies */
+		NULL,				/* LocalSystem account */
+		NULL);				/* no password */
+
+	if (Service == NULL) {
+		upslogx(LOG_ERR, "CreateService failed (%d)\n", (int)GetLastError());
+		CloseServiceHandle(SCManager);
+		return;
+	}
+	else {
+		upslogx(LOG_INFO, "Service installed successfully\n");
+	}
+
+	CloseServiceHandle(Service);
+	CloseServiceHandle(SCManager);
+		
+}
+
+void ReportSvcStatus( 	DWORD CurrentState,
+			DWORD Win32ExitCode,
+			DWORD WaitHint)
+{
+	static DWORD CheckPoint = 1;
+
+	SvcStatus.dwCurrentState = CurrentState;
+	SvcStatus.dwWin32ExitCode = Win32ExitCode;
+	SvcStatus.dwWaitHint = WaitHint;
+
+	if (CurrentState == SERVICE_START_PENDING)
+		SvcStatus.dwControlsAccepted = 0;
+	else SvcStatus.dwControlsAccepted = SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SHUTDOWN;
+
+	if ( (CurrentState == SERVICE_RUNNING) ||
+		(CurrentState == SERVICE_STOPPED) ) {
+		SvcStatus.dwCheckPoint = 0;
+	}
+	else {
+		SvcStatus.dwCheckPoint = CheckPoint++;
+	}
+
+	/* report the status of the service to the SCM */
+	SetServiceStatus( SvcStatusHandle, &SvcStatus );
+}
+
+void WINAPI SvcCtrlHandler( DWORD Ctrl )
+{
+	switch(Ctrl)
+	{
+		case SERVICE_CONTROL_STOP:
+		case SERVICE_CONTROL_SHUTDOWN:
+			ReportSvcStatus(SERVICE_STOP_PENDING, NO_ERROR, 0);
+
+			/* Signal the service to stop */
+			SetEvent(svc_stop);
+			ReportSvcStatus(SvcStatus.dwCurrentState, NO_ERROR, 0);
+
+			return;
+
+		case SERVICE_CONTROL_INTERROGATE:
+			break;
+
+		default:
+			break;
+	}
+}
+
+void WINAPI SvcMain( DWORD argc, LPTSTR *argv )
+#else /* NOT WIN32 */
 int main(int argc, char **argv)
+#endif
 {
 	int	i, cmd = 0;
 	char	*chroot_path = NULL;
 	const char	*user = RUN_AS_USER;
 	struct passwd	*new_uid = NULL;
+
+#ifdef WIN32
+	if( !noservice_flag) {
+		/* Register the handler function for the service */
+		SvcStatusHandle = RegisterServiceCtrlHandler(
+				UPSD_SVCNAME,
+				SvcCtrlHandler);
+
+		if( !SvcStatusHandle ) {
+			upslogx(LOG_ERR, "RegisterServiceCtrlHandler\n");
+			return;
+		}
+
+		SvcStatus.dwServiceType = SERVICE_WIN32_OWN_PROCESS;
+		SvcStatus.dwServiceSpecificExitCode = 0;
+
+		/* Report initial status to the SCM */
+		ReportSvcStatus( SERVICE_START_PENDING, NO_ERROR, 3000 );
+	}
+#endif
 
 	progname = xbasename(argv[0]);
 
@@ -1119,7 +1268,7 @@ int main(int argc, char **argv)
 
 	printf("Network UPS Tools %s %s\n", progname, UPS_VERSION);
 
-	while ((i = getopt(argc, argv, "+h46p:qr:i:fu:Vc:D")) != -1) {
+	while ((i = getopt(argc, argv, "+h46p:qr:i:fu:Vc:DNI")) != -1) {
 		switch (i) {
 			case 'h':
 				help(progname);
@@ -1163,6 +1312,11 @@ int main(int argc, char **argv)
 
 			case '6':
 				opt_af = AF_INET6;
+				break;
+#endif
+			case 'N':
+			case 'I':
+				/* nothing to do, already processed */
 				break;
 
 			default:
@@ -1256,6 +1410,23 @@ int main(int argc, char **argv)
 		memset(pidfn, 0, sizeof(pidfn));
 	}
 
+#ifdef WIN32
+	if( !noservice_flag) {
+		svc_stop = CreateEvent(
+				NULL,		/* default security attributes */
+				TRUE,		/* manual reset event */
+				FALSE,		/* not signaled */
+				NULL);		/*no name */
+
+		if( svc_stop == NULL ) {
+			ReportSvcStatus( SERVICE_STOPPED, NO_ERROR, 0);
+			return;
+		}
+
+		ReportSvcStatus( SERVICE_RUNNING, NO_ERROR, 0);
+	}
+#endif
+
 	while (!exit_flag) {
 		mainloop();
 	}
@@ -1263,6 +1434,55 @@ int main(int argc, char **argv)
 	ssl_cleanup();
 
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
+#ifndef WIN32
 	return EXIT_SUCCESS;
+#else
+	return;
+#endif
 }
 
+#ifdef WIN32
+
+int main(int argc, char **argv)
+{
+	int i;
+	while ((i = getopt(argc, argv, "+h46p:qr:i:fu:Vc:DNI")) != -1) {
+		switch (i) {
+			case 'N':
+				noservice_flag = 1;
+				break;
+			case 'I':
+				install_flag = 1;
+				break;
+			default:
+				break;
+		}
+	}
+
+	/* Set optind to 0 not 1 because we use GNU extension '+' in optstring */
+	optind = 0;
+
+	if( install_flag ) {
+		SvcInstall();
+		return EXIT_SUCCESS;
+	}
+	if( !noservice_flag ) {
+		SERVICE_TABLE_ENTRY DispatchTable[] =
+		{
+			{ UPSD_SVCNAME, (LPSERVICE_MAIN_FUNCTION) SvcMain },
+			{ NULL, NULL }
+		};
+
+		/* This call returns when the service has stopped */
+		if (!StartServiceCtrlDispatcher( DispatchTable ))
+		{
+			upslogx(LOG_ERR, "StartServiceCtrlDispatcher failed (%d): exiting, try -N to avoid starting as a service", (int)GetLastError());
+		}
+	}
+	else {
+		SvcMain(argc,argv);
+	}
+
+	return EXIT_SUCCESS;
+}
+#endif
