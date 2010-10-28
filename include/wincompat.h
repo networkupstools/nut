@@ -44,4 +44,5 @@ int sktread(int fh, char *buf, int size);
 int sktwrite(int fh, char *buf, int size);
 int sktclose(int fh);
 
+extern const char * EventLogName;
 #endif

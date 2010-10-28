@@ -19,9 +19,12 @@
 #ifdef WIN32
 #include "common.h"
 #include <winsock2.h>
+#include <windows.h>
+#include "winevent.h"
 
 extern int errno;
 
+const char * EventLogName = NULL;
 
 int sktconnect(int fh, struct sockaddr * name, int len)
 {
@@ -46,5 +49,40 @@ int sktclose(int fh)
 	int ret = closesocket((SOCKET)fh);
 	errno = WSAGetLastError();
 	return ret;
+}
+
+void syslog(int priority, const char *fmt, ...)
+{
+	LPCTSTR strings[2];
+	char buf[LARGEBUF];
+	va_list ap;
+	HANDLE EventSource;
+
+	if( EventLogName == NULL ) {
+		return;
+	}
+	va_start(ap,fmt);
+	vsnprintf(buf, sizeof(buf), fmt, ap);
+	va_end(ap);
+
+	strings[0] = buf;
+	strings[1] = EventLogName;
+
+	EventSource = RegisterEventSource(NULL, EventLogName);
+
+	if( NULL != EventSource ) {
+		ReportEvent(	EventSource,		// event log handle
+				priority,		// event type
+				0,			// event category
+				SVC_ERROR,		// event identifier
+				NULL,			// no security identifier
+				2,			// size of string array
+				0,			// no binary data
+				strings,		// array of string
+				NULL);			// no binary data
+
+		DeregisterEventSource(EventSource);
+
+	}
 }
 #endif
