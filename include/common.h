@@ -255,18 +255,18 @@ extern int optind;
 /* *INDENT-ON* */
 
 #ifdef WIN32
-/*FIXME*/
-#define LOG_ERR (0)
-#define LOG_INFO (1)
-#define LOG_DEBUG (2)
-#define LOG_NOTICE (3)
-#define LOG_ALERT (4)
-#define LOG_WARNING (5)
-#define LOG_CRIT (5)
-#define LOG_PID (6)
-#define LOG_DAEMON (7)
+/* FIXME : this might not be the optimal mapping between syslog ans ReportEvent*/
+#define LOG_ERR 	EVENTLOG_ERROR_TYPE
+#define LOG_INFO 	EVENTLOG_INFORMATION_TYPE
+#define LOG_DEBUG	EVENTLOG_WARNING_TYPE
+#define LOG_NOTICE	EVENTLOG_INFORMATION_TYPE
+#define LOG_ALERT	EVENTLOG_ERROR_TYPE
+#define LOG_WARNING	EVENTLOG_WARNING_TYPE
+#define LOG_CRIT	EVENTLOG_ERROR_TYPE
 
 #define closelog()
+
+#define  UPSD_SVCNAME TEXT("NUT data server")
 #endif
 
 #endif /* NUT_COMMON_H_SEEN */

@@ -30,6 +30,7 @@
 #include <sys/un.h>
 #else
 #include <windows.h>
+#include <wincompat.h>
 #endif
 
 /* the reason we define UPS_VERSION as a static string, rather than a
@@ -163,8 +164,9 @@ void open_syslog(const char *progname)
 		upslogx(LOG_INFO, "Changing log level threshold not possible");
 		break;
 #endif
-	}
-#endif //WIN32
+#else
+	EventLogName = progname;
+#endif
 }
 
 /* close ttys and become a daemon */
@@ -201,8 +203,11 @@ void background(void)
 #ifdef HAVE_SETSID
 	setsid();		/* make a new session to dodge signals */
 #endif
-#endif
+#else // WIN32
+	xbit_set(&upslog_flags, UPSLOG_SYSLOG);
+	xbit_clear(&upslog_flags, UPSLOG_STDERR);
 	upslogx(LOG_INFO, "Startup successful");
+#endif
 }
 
 /* do this here to keep pwd/grp stuff out of the main files */
@@ -519,12 +524,8 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 #endif
 
 	if ((ret < 0) || (ret >= (int) sizeof(buf)))
-#ifndef WIN32
 		syslog(LOG_WARNING, "vupslog: vsnprintf needed more than %d bytes",
 			LARGEBUF);
-#else
-		fprintf(stderr,"vupslog: vsnprintf needed more than %d bytes",LARGEBUF);
-#endif
 	
 
 	if (use_strerror)
@@ -551,11 +552,7 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 	if (xbit_test(upslog_flags, UPSLOG_STDERR))
 		fprintf(stderr, "%s\n", buf);
 	if (xbit_test(upslog_flags, UPSLOG_SYSLOG))
-#ifndef WIN32
 		syslog(priority, "%s", buf);
-#else
-		fprintf(stderr, "%s\n", buf);
-#endif
 }
 
 /* Return the default path for the directory containing configuration files */
