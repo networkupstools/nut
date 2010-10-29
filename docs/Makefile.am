@@ -9,7 +9,7 @@ USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt	\
  configure.txt download.txt documentation.txt features.txt history.txt	\
  outlets.txt scheduling.txt security.txt support.txt user-manual.txt
 
-DEVELOPER_GUIDE_DEPS = design.txt developers.txt	\
+DEVELOPER_GUIDE_DEPS = contact-closure.txt design.txt developers.txt	\
  developer-guide.txt hid-subdrivers.txt macros.txt \
  new-clients.txt new-drivers.txt net-protocol.txt sock-protocol.txt
 
@@ -19,8 +19,7 @@ CABLES_DEPS = cables/apc-rs500-serial.txt	\
  cables/sms.txt
 
 EXTRA_DIST = $(SHARED_DEPS) $(USER_MANUAL_DEPS) $(DEVELOPER_GUIDE_DEPS) \
- $(CABLES_DEPS) contact-closure.txt FAQ.txt \
- nut-hal.txt nut-qa.txt packager-guide.txt snmp.txt \
+ $(CABLES_DEPS) FAQ.txt nut-hal.txt nut-qa.txt packager-guide.txt snmp.txt \
  $(IMAGE_FILES)
 
 ASCIIDOC_HTML_SINGLE = user-manual.html \

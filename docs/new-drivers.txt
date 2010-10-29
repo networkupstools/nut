@@ -5,40 +5,19 @@ This chapter will present the process to create a new driver to support
 another device.
 
 Since NUT already supports all major power devices protocols, through
-several generic drivers (genericups, usbhid-ups, snmp-ups, blazer_*), new
-driver creation has become rare.
+several generic drivers (genericups, usbhid-ups, snmp-ups, blazer_*, ...),
+creation of new drivers has become rare.
 
-So most of the time, it will be limited to completing a generic driver.
-
-
-////////////////////////////////////////////////////////////////////////////////
-FIXME:
-this chapter need a to be reworked!
-start by an intro on generic drivers
-
-- extending drivers
-- Basic serial
-- USB
-- SNMP
-- ... fenton, megatec=> blazer, ...
-
-add notes on:
-
-- outlet collection implementation
-- ...whatever more has to be known
-////////////////////////////////////////////////////////////////////////////////
+So most of the time, it will be limited to completing one of these
+generic driver.
 
 Smart vs. Contact-closure
 -------------------------
 
-////////////////////////////////////////////////////////////////////////////////
-FIXME: add link to contact-closure.txt
-////////////////////////////////////////////////////////////////////////////////
-
 If your UPS only does contact closure readings, then go straight to the
-contact-closure.txt document for information on adding support.  It's a
-lot easier to add a few lines to a header file than it is to create a
-whole new driver.
+<<contact-closure, Contact closure hardware>> chapter for information on
+adding support.  It's a lot easier to add a few lines to a header file
+than it is to create a whole new driver.
 
 Serial vs. USB vs. SNMP and more
 --------------------------------
@@ -553,11 +532,6 @@ Patches which introduce unlisted names may be modified or dropped.
 Message passing support
 -----------------------
 
-////////////////////////////////////////////////////////////////////////////////
-Commands sent to the UPS drivers
---------------------------------
-////////////////////////////////////////////////////////////////////////////////
-
 upsd can call drivers to store values in read/write variables and to kick
 off instant commands.  This is how you register handlers for those events.
 
@@ -695,13 +669,11 @@ can define other termination characters as well, but can't undefine
 "\r" and "\n" (so if you need these as data, this is not for you).
 
 
+[[contact-closure]]
+
+include::contact-closure.txt[]
+
+
 [[hid-subdrivers]]
 
 include::hid-subdrivers.txt[]
-
-////////////////////////////////////////////////////////////////////////////////
-FIXME
-[[snmp-subdrivers]]
-
-include snmp-subdrivers.txt[]
-////////////////////////////////////////////////////////////////////////////////
