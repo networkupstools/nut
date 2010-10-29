@@ -809,7 +809,5 @@ it's much easier to move things around since any given UPS drives a smaller
 percentage of the overall power.
 
 
-
-
 More information can be found in the link:user-manual.html[NUT User Manual], and
 the various link:man/index.html[user manual pages].
