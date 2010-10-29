@@ -38,7 +38,6 @@
 #define W32_NETWORK_CALL_OVERRIDE
 #include "wincompat.h"
 #include <getopt.h>
-static int install_flag = 0;
 static int noservice_flag = 0;
 #endif
 
@@ -1127,7 +1126,7 @@ void check_perms(const char *fn)
 }
 
 #ifdef WIN32
-void SvcInstall()
+int SvcInstall()
 {
 	SC_HANDLE SCManager;
 	SC_HANDLE Service;
@@ -1135,7 +1134,7 @@ void SvcInstall()
 
 	if( !GetModuleFileName( NULL, Path, MAX_PATH ) ) {
 		printf("Cannot install service (%d)\n", GetLastError());
-		return;
+		return EXIT_FAILURE;
 	}
 
 	SCManager = OpenSCManager(
@@ -1145,7 +1144,7 @@ void SvcInstall()
 
 	if (NULL == SCManager) {
 		upslogx(LOG_ERR, "OpenSCManager failed (%d)\n", (int)GetLastError());
-		return;
+		return EXIT_FAILURE;
 	}
 
 	Service = CreateService(
@@ -1166,7 +1165,7 @@ void SvcInstall()
 	if (Service == NULL) {
 		upslogx(LOG_ERR, "CreateService failed (%d)\n", (int)GetLastError());
 		CloseServiceHandle(SCManager);
-		return;
+		return EXIT_FAILURE;
 	}
 	else {
 		upslogx(LOG_INFO, "Service installed successfully\n");
@@ -1174,7 +1173,47 @@ void SvcInstall()
 
 	CloseServiceHandle(Service);
 	CloseServiceHandle(SCManager);
-		
+	
+	return EXIT_SUCCESS;
+}
+
+int SvcUninstall()
+{
+	SC_HANDLE SCManager;
+	SC_HANDLE Service;
+
+	SCManager = OpenSCManager( 
+			NULL,                    /* local computer */
+			NULL,                    /* ServicesActive database */
+			SC_MANAGER_ALL_ACCESS);  /* full access rights */
+
+	if (NULL == SCManager) {
+		upslogx(LOG_ERR, "OpenSCManager failed (%d)\n", (int)GetLastError());
+		return EXIT_FAILURE;
+	}
+
+	Service = OpenService( 
+			SCManager,	/* SCM database */
+			UPSD_SVCNAME,	/* name of service */
+			DELETE);	/* need delete access */
+
+	if (Service == NULL) {
+		upslogx(LOG_ERR, "OpenService failed (%d)\n", (int)GetLastError());
+		CloseServiceHandle(SCManager);
+		return EXIT_FAILURE;
+	}
+
+	if (! DeleteService(Service) )  {
+		upslogx(LOG_ERR,"DeleteService failed (%d)\n", (int)GetLastError()); 
+	}
+	else {
+		upslogx(LOG_ERR,"Service deleted successfully\n"); 
+	}
+
+	CloseServiceHandle(Service); 
+	CloseServiceHandle(SCManager);
+
+	return EXIT_SUCCESS;
 }
 
 void ReportSvcStatus( 	DWORD CurrentState,
@@ -1266,7 +1305,7 @@ int main(int argc, char **argv)
 
 	printf("Network UPS Tools %s %s\n", progname, UPS_VERSION);
 
-	while ((i = getopt(argc, argv, "+h46p:qr:i:fu:Vc:DNI")) != -1) {
+	while ((i = getopt(argc, argv, "+h46p:qr:i:fu:Vc:DN")) != -1) {
 		switch (i) {
 			case 'h':
 				help(progname);
@@ -1434,14 +1473,15 @@ int main(int argc, char **argv)
 int main(int argc, char **argv)
 {
 	int i;
-	while ((i = getopt(argc, argv, "+h46p:qr:i:fu:Vc:DNI")) != -1) {
+	while ((i = getopt(argc, argv, "+h46p:qr:i:fu:Vc:DNIU")) != -1) {
 		switch (i) {
 			case 'N':
 				noservice_flag = 1;
 				break;
 			case 'I':
-				install_flag = 1;
-				break;
+				return SvcInstall();
+			case 'U':
+				return SvcUninstall();
 			default:
 				break;
 		}
@@ -1450,10 +1490,6 @@ int main(int argc, char **argv)
 	/* Set optind to 0 not 1 because we use GNU extension '+' in optstring */
 	optind = 0;
 
-	if( install_flag ) {
-		SvcInstall();
-		return EXIT_SUCCESS;
-	}
 	if( !noservice_flag ) {
 		SERVICE_TABLE_ENTRY DispatchTable[] =
 		{
