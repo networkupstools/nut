@@ -105,7 +105,7 @@ dnl Only use these when compiling with gcc
 dnl
 if ( test "${GCC}" = "yes" )
 then
-  CFLAGS="${CFLAGS} -Wall -Wsign-compare"
+  CFLAGS="${CFLAGS} -Wall -Wsign-compare -Wno-cast-qual"
 fi
 
 dnl optind handling:
