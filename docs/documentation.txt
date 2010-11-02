@@ -42,9 +42,8 @@ These are writeups by users of the software.
 - link:http://people.freebsd.org/~thierry/nut_FreeBSD_HowTo.txt[FreeBSD installation procedure] '(Thierry Thomas, from FreeBSD)'
 - link:http://www.usebox.net/jjm/ups-obsd/[Gestionando un SAI desde OpenBSD con NUT] '(Juan J. Martinez, spanish)'
 - link:http://forums.gentoo.org/viewtopic-p-2663684.html[HOWTO: MGE Ellipse 300 on gentoo] '(nielchiano)'
-////////////////////////////////////////////////////////////////////////////////
 - link:http://deschis.blogspot.com/2006/07/cum-se-configureaz-un-ups-apollo-seria.html[Cum se configurează un UPS Apollo seria 1000F pe Linux] '(deschis, Romanian)'
-////////////////////////////////////////////////////////////////////////////////
+- link:http://buffalo.nas-central.org/wiki/Install_a_UPS_%28nut%29[Install a UPS (nut) on a Buffalo NAS] '(various authors)'
 
 News articles and Press releases
 --------------------------------
