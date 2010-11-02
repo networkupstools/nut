@@ -33,7 +33,7 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 			CFLAGS="${withval}"
 			;;
 		esac
-	], [CFLAGS="`net-snmp-config --cflags 2>/dev/null`"])
+	], [CFLAGS="`net-snmp-config --base-cflags 2>/dev/null`"])
 	AC_MSG_RESULT([${CFLAGS}])
 
 	AC_MSG_CHECKING(for Net-SNMP libs)
