@@ -29,29 +29,6 @@ system cleanly before the UPS runs out of power.  Other programs are
 also provided to log information regularly, monitor status through your
 web browser, and more.
 
-////////////////////////////////////////////////////////////////////////////////
-FIXME: to be removed
-
-The "HAL enabled" flavor
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-This one is intended for use:
-
-- with supported USB UPS,
-- on HAL enabled systems (Linux, FreeBSD, Sun Solaris),
-- on HAL enabled desktops (Gnome and possibly KDE) 
-
-Using this approach, you don't have to configure NUT files, nor to
-manually start components, nor to install a specific NUT client.
-
-Upon plugging your USB UPS, the right driver will be automatically
-launched, and the corresponding Power Manager GUI will pop up.
-
-Note that this feature is still beta and incomplete. But it
-represents a major evolution, and a huge user experience improvement!
-
-For more information, refer to INSTALL and docs/nut-hal.txt.
-////////////////////////////////////////////////////////////////////////////////
 
 Installing
 ----------
@@ -124,10 +101,8 @@ This package is broken down into several categories:
 - *server*	- upsd serves data from the drivers to the network.
 - *clients*	- They talk to upsd and do things with the status data.
 - *cgi-bin*	- Special class of clients that you can use with your web server.
-////////////////////////////////////////////////////////////////////////////////
-- *...*		- FIXME
-////////////////////////////////////////////////////////////////////////////////
-
+- *scripts*	- Contains various scripts, like the Perl and Python binding,
+integration bits and applications. 
 
 Drivers
 -------
@@ -427,18 +402,6 @@ Use the -l command to list them, like this:
 To define users and passwords in `upsd`, see
 link:man/upsd.users.html[upsd.users(5)].
 
-////////////////////////////////////////////////////////////////////////////////
-FIXME
-
-NUT Control Center
-------------------
-...
-
-Third Party Programs
---------------------
-...
-
-////////////////////////////////////////////////////////////////////////////////
 
 CGI Programs
 ------------
