@@ -33,7 +33,7 @@
 #ifndef WIN32
 	int	extrafd = -1;
 #else
-	HANDLE		extrafd = INVALID_HANDLE_VALUE;
+	HANDLE			extrafd = INVALID_HANDLE_VALUE;
 #endif
 
 	/* for ser_open */
@@ -451,14 +451,17 @@ static void exit_cleanup(void)
 	vartab_free();
 }
 
+#ifndef WIN32
 static void set_exit_flag(int sig)
 {
 	exit_flag = sig;
 }
+#endif
 
+/*FIXME Check if we need equivalent of these signals in WIN32 ? */
 static void setup_signals(void)
 {
-#ifndef WIN32 // FIXME
+#ifndef WIN32
 	struct sigaction	sa;
 
 	sigemptyset(&sa.sa_mask);
@@ -475,7 +478,11 @@ static void setup_signals(void)
 #endif
 }
 
+#ifdef WIN32
+void WINAPI SvcMain( DWORD argc, LPTSTR *argv )
+#else /* NOT WIN32 */
 int main(int argc, char **argv)
+#endif
 {
 	struct	passwd	*new_uid = NULL;
 	int	i, do_forceshutdown = 0;
@@ -506,7 +513,7 @@ int main(int argc, char **argv)
 	/* build the driver's extra (-x) variable table */
 	upsdrv_makevartable();
 
-	while ((i = getopt(argc, argv, "+a:kDhx:Lqr:u:Vi:")) != -1) {
+	while ((i = getopt(argc, argv, "+a:kDhx:Lqr:u:Vi:N")) != -1) {
 		switch (i) {
 			case 'a':
 				upsname = optarg;
@@ -548,6 +555,11 @@ int main(int argc, char **argv)
 			case 'h':
 				help_msg();
 				exit(EXIT_SUCCESS);
+#ifdef WIN32
+			case 'N':
+				/* Nothing to do noservice_flag already processed */
+				break;
+#endif
 			default:
 				fatalx(EXIT_FAILURE,
 					"Error: unknown option -%c. Try -h for help.", i);
@@ -703,6 +715,21 @@ int main(int argc, char **argv)
 
 		upsdrv_updateinfo();
 
+#ifdef WIN32
+		if( !noservice_flag) {
+			svc_stop = CreateEvent(
+					NULL,	/* default security attributes */
+					TRUE,	/* manual reset event */
+					FALSE,	/* not signaled */
+					NULL);	/*no name */
+
+			if( svc_stop == NULL ) {
+				ReportSvcStatus( SERVICE_STOPPED, NO_ERROR, 0);
+				return;
+			}
+			ReportSvcStatus( SERVICE_RUNNING, NO_ERROR, 0);
+		}
+#endif
 		while (!dstate_poll_fds(timeout, extrafd) && !exit_flag) {
 			/* repeat until time is up or extrafd has data */
 		}
@@ -713,3 +740,57 @@ int main(int argc, char **argv)
 
 	exit(EXIT_SUCCESS);
 }
+
+#ifdef WIN32
+int main(int argc, char **argv)
+{
+	const char * drv_name = NULL;
+	int i;
+
+	drv_name = xbasename(argv[0]);
+	// remove trailing .exe
+	if(strcasecmp( strrchr(drv_name,'.'), ".exe") == 0 ) {
+		drv_name = strdup(drv_name);
+		char * t = strrchr(drv_name,'.');
+		*t = 0;
+	}
+
+	while ((i = getopt(argc, argv, "+a:kDhx:Lqr:u:Vi:NIU")) != -1) {
+		switch (i) {
+			case 'N':
+				noservice_flag = 1;
+				break;
+			case 'I':
+				return SvcInstall(drv_name);
+			case 'U':
+				return SvcUninstall(drv_name);
+			default:
+				break;
+		}
+	}
+
+	/* Set optind to 0 not 1 because we use GNU extension '+' in optstring */
+	optind = 0;
+
+	if( !noservice_flag ) {
+
+
+		SERVICE_TABLE_ENTRY DispatchTable[] =
+		{
+			{ (char *)drv_name, (LPSERVICE_MAIN_FUNCTION) SvcMain },
+			{ NULL, NULL }
+		};
+
+		/* This call returns when the service has stopped */
+		if (!StartServiceCtrlDispatcher( DispatchTable ))
+		{
+			upslogx(LOG_ERR, "StartServiceCtrlDispatcher failed (%d): exiting, try -N to avoid starting as a service", (int)GetLastError());
+		}
+	}
+	else {
+		SvcMain(argc,argv);
+	}
+
+	return EXIT_SUCCESS;
+}
+#endif
