@@ -48,7 +48,6 @@
 #define W32_NETWORK_CALL_OVERRIDE
 #include "wincompat.h"
 #include <getopt.h>
-static int noservice_flag = 0;
 #endif
 
 #include "user.h"
@@ -138,9 +137,6 @@ static tracking_t	*tracking_list = NULL;
 static struct pollfd	*fds = NULL;
 #else
 static HANDLE		*fds = NULL;
-static HANDLE		svc_stop = NULL;
-SERVICE_STATUS		SvcStatus;
-SERVICE_STATUS_HANDLE	SvcStatusHandle;
 #endif
 static handler_t	*handler = NULL;
 
@@ -1082,12 +1078,6 @@ static void set_exit_flag(int sig)
 	exit_flag = sig;
 }
 
-#ifdef WIN32
-void ReportSvcStatus(   DWORD CurrentState,
-                        DWORD Win32ExitCode,
-                        DWORD WaitHint);
-#endif
-
 /* service requests and check on new data */
 static void mainloop(void)
 {
@@ -1504,144 +1494,6 @@ void check_perms(const char *fn)
 }
 
 #ifdef WIN32
-int SvcInstall()
-{
-	SC_HANDLE SCManager;
-	SC_HANDLE Service;
-	TCHAR Path[MAX_PATH];
-
-	if( !GetModuleFileName( NULL, Path, MAX_PATH ) ) {
-		printf("Cannot install service (%d)\n", GetLastError());
-		return EXIT_FAILURE;
-	}
-
-	SCManager = OpenSCManager(
-		NULL,			/* local computer */
-		NULL,			/* ServiceActive database */
-		SC_MANAGER_ALL_ACCESS);	/* full access rights */
-
-	if (NULL == SCManager) {
-		upslogx(LOG_ERR, "OpenSCManager failed (%d)\n", (int)GetLastError());
-		return EXIT_FAILURE;
-	}
-
-	Service = CreateService(
-		SCManager,			/* SCM database */
-		UPSD_SVCNAME,			/* name of service */
-		UPSD_SVCNAME,			/* service name to display */
-		SERVICE_ALL_ACCESS,		/* desired access */
-		SERVICE_WIN32_OWN_PROCESS,	/* service type */
-		SERVICE_DEMAND_START,		/* start type */
-		SERVICE_ERROR_NORMAL,		/* error control type */
-		Path,				/* path to service binary */
-		NULL,				/* no load ordering group */
-		NULL,				/* no tag identifier */
-		NULL,				/* no dependencies */
-		NULL,				/* LocalSystem account */
-		NULL);				/* no password */
-
-	if (Service == NULL) {
-		upslogx(LOG_ERR, "CreateService failed (%d)\n", (int)GetLastError());
-		CloseServiceHandle(SCManager);
-		return EXIT_FAILURE;
-	}
-	else {
-		upslogx(LOG_INFO, "Service installed successfully\n");
-	}
-
-	CloseServiceHandle(Service);
-	CloseServiceHandle(SCManager);
-	
-	return EXIT_SUCCESS;
-}
-
-int SvcUninstall()
-{
-	SC_HANDLE SCManager;
-	SC_HANDLE Service;
-
-	SCManager = OpenSCManager( 
-			NULL,                    /* local computer */
-			NULL,                    /* ServicesActive database */
-			SC_MANAGER_ALL_ACCESS);  /* full access rights */
-
-	if (NULL == SCManager) {
-		upslogx(LOG_ERR, "OpenSCManager failed (%d)\n", (int)GetLastError());
-		return EXIT_FAILURE;
-	}
-
-	Service = OpenService( 
-			SCManager,	/* SCM database */
-			UPSD_SVCNAME,	/* name of service */
-			DELETE);	/* need delete access */
-
-	if (Service == NULL) {
-		upslogx(LOG_ERR, "OpenService failed (%d)\n", (int)GetLastError());
-		CloseServiceHandle(SCManager);
-		return EXIT_FAILURE;
-	}
-
-	if (! DeleteService(Service) )  {
-		upslogx(LOG_ERR,"DeleteService failed (%d)\n", (int)GetLastError()); 
-	}
-	else {
-		upslogx(LOG_ERR,"Service deleted successfully\n"); 
-	}
-
-	CloseServiceHandle(Service); 
-	CloseServiceHandle(SCManager);
-
-	return EXIT_SUCCESS;
-}
-
-void ReportSvcStatus( 	DWORD CurrentState,
-			DWORD Win32ExitCode,
-			DWORD WaitHint)
-{
-	static DWORD CheckPoint = 1;
-
-	SvcStatus.dwCurrentState = CurrentState;
-	SvcStatus.dwWin32ExitCode = Win32ExitCode;
-	SvcStatus.dwWaitHint = WaitHint;
-
-	if (CurrentState == SERVICE_START_PENDING)
-		SvcStatus.dwControlsAccepted = 0;
-	else SvcStatus.dwControlsAccepted = SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SHUTDOWN;
-
-	if ( (CurrentState == SERVICE_RUNNING) ||
-		(CurrentState == SERVICE_STOPPED) ) {
-		SvcStatus.dwCheckPoint = 0;
-	}
-	else {
-		SvcStatus.dwCheckPoint = CheckPoint++;
-	}
-
-	/* report the status of the service to the SCM */
-	SetServiceStatus( SvcStatusHandle, &SvcStatus );
-}
-
-void WINAPI SvcCtrlHandler( DWORD Ctrl )
-{
-	switch(Ctrl)
-	{
-		case SERVICE_CONTROL_STOP:
-		case SERVICE_CONTROL_SHUTDOWN:
-			ReportSvcStatus(SERVICE_STOP_PENDING, NO_ERROR, 0);
-
-			/* Signal the service to stop */
-			SetEvent(svc_stop);
-			ReportSvcStatus(SvcStatus.dwCurrentState, NO_ERROR, 0);
-
-			return;
-
-		case SERVICE_CONTROL_INTERROGATE:
-			break;
-
-		default:
-			break;
-	}
-}
-
 void WINAPI SvcMain( DWORD argc, LPTSTR *argv )
 #else /* NOT WIN32 */
 int main(int argc, char **argv)
@@ -1967,9 +1819,9 @@ int main(int argc, char **argv)
 				noservice_flag = 1;
 				break;
 			case 'I':
-				return SvcInstall();
+				return SvcInstall(UPSD_SVCNAME);
 			case 'U':
-				return SvcUninstall();
+				return SvcUninstall(UPSD_SVCNAME);
 			default:
 				break;
 		}
