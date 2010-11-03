@@ -42,10 +42,10 @@
 	static int	sockfd = -1, stale = 1, alarm_active = 0;
 	static char	*sockfn = NULL;
 #else
-	static HANDLE sockfd = INVALID_HANDLE_VALUE; 
-	static int stale = 1, alarm_active = 0;
+	static HANDLE 	sockfd = INVALID_HANDLE_VALUE; 
+	static int 	stale = 1, alarm_active = 0;
 	static OVERLAPPED connect_overlapped;
-	static char *pipename = NULL;
+	static char	*pipename = NULL;
 #endif
 	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[ST_MAX_VALUE_LEN];
 	static st_tree_t	*dtree_root = NULL;
@@ -264,7 +264,7 @@ static void send_to_all(const char *fmt, ...)
 
 #endif
 		if (ret != (int)strlen(buf)) {
-			upsdebugx(2, "write %d bytes to socket %d failed", (int)strlen(buf), conn->fd);
+			upsdebugx(2, "write %d bytes to socket %d failed", (int)strlen(buf), (int)conn->fd);
 			sock_disconnect(conn);
 		}
 	}
@@ -305,7 +305,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 #endif
 
 	if (ret != (int)strlen(buf)) {
-		upsdebugx(2, "write %d bytes to socket %d failed", (int)strlen(buf), conn->fd);
+		upsdebugx(2, "write %d bytes to socket %d failed", (int)strlen(buf), (int)conn->fd);
 		sock_disconnect(conn);
 		return 0;	/* failed */
 	}
@@ -710,7 +710,7 @@ void dstate_init(const char *prog, const char *port)
 
 	sockfd = sock_open(sockname);
 
-	upsdebugx(2, "dstate_init: sock %s open on fd %d", sockname, sockfd);
+	upsdebugx(2, "dstate_init: sock %s open on fd %d", sockname, (int)sockfd);
 }
 
 #ifndef WIN32
@@ -843,6 +843,12 @@ int dstate_poll_fds(struct timeval timeout, HANDLE extrafd)
 	rfds[maxfd] = connect_overlapped.hEvent;
 	maxfd++;
 
+	/* Add SCM event handler in service mode*/
+	if( !noservice_flag ) {
+		rfds[maxfd] = svc_stop;
+		maxfd++;
+	}
+
 	ret = WaitForMultipleObjects( 
 				maxfd,	// number of objects in array
 				rfds,	// array of objects
@@ -856,6 +862,12 @@ int dstate_poll_fds(struct timeval timeout, HANDLE extrafd)
 	if (ret == WAIT_FAILED) {
 		printf("waitfor failed\n");
 		return overrun;
+	}
+
+	/* Service stop requested */
+	if( !noservice_flag && rfds[ret] == svc_stop ) {
+		ReportSvcStatus( SERVICE_STOPPED, NO_ERROR, 0);
+		return -1;
 	}
 
 	/* Retrieve the signaled connection */
