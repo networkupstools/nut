@@ -286,6 +286,8 @@
 "HP"	"ups"	"2"	"T750"	"older models"	"bcmxcp_usb"
 "HP"	"ups"	"2"	"T1000 INTL"	""	"usbhid-ups"
 "HP"	"ups"	"2"	"T1500 INTL"	""	"usbhid-ups"
+"HP"	"ups"	"2"	"T750 G2"	""	"usbhid-ups"
+"HP"	"ups"	"2"	"R1500 G2 INTL"	""	"usbhid-ups"
 "HP"	"pdu"	"1"	"HP3488 Switch/Control Unit"	""	"powerman-pdu (experimental)"
 
 "IBM"	"pdu"	"1"	"Blade Center Management Module"	"15 outlets"	"powerman-pdu (experimental)"
@@ -621,6 +623,7 @@
 "PowerWalker"	"ups"	"2"	"Line-Interactive VI 1000"	""	"megatec or blazer_ser"
 "PowerWalker"	"ups"	"2"	"Line-Interactive VI 400/800"	""	"megatec or blazer_ser"
 "PowerWalker"	"ups"	"2"	"Line-Interactive VI 600"	""	"megatec battvolts=9:13 or blazer_ser"
+"PowerWalker"	"ups"	"2"	"Line-Interactive VI 1400"	""	"blazer_usb"
 
 "Powerware"	"ups"	"4"	"3110"	""	"genericups upstype=7"
 "Powerware"	"ups"	"4"	"3115"	""	"genericups upstype=11"
