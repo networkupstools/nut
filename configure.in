@@ -435,72 +435,43 @@ AM_CONDITIONAL(WITH_LIBPOWERMAN, test "${nut_with_powerman}" = "yes")
 NUT_REPORT_FEATURE([build Powerman PDU client driver], [${nut_with_powerman}])
 
 dnl ----------------------------------------------------------------------
-dnl check whether to build documentation, and which format 
-dnl FIXME: to be put into m4/nut_check_asciidoc.m4
 
-dnl check for Asciidoc presence and version
-dnl FIXME: require at least 8.6.3
-AC_PATH_PROGS([ASCIIDOC], [asciidoc], [none])
-if test "x$ASCIIDOC" != "xnone" ; then
-	AC_MSG_CHECKING([for asciiDoc version])
-	ASCIIDOC_VERSION="`$ASCIIDOC --version 2>/dev/null`"
-	if test "$?" != "0" -o -z "${ASCIIDOC_VERSION}"; then
-		ASCIIDOC_VERSION="none"
-	fi
-	AC_MSG_RESULT(${ASCIIDOC_VERSION} found)
-fi
-AC_PATH_PROGS([A2X], [a2x], [none])
-dnl FIXME: require at least 8.6.3
-if test "x$A2X" != "xnone" ; then
-	AC_MSG_CHECKING([for a2x version])
-	A2X_VERSION="`$A2X --version 2>/dev/null`"
-	if test "$?" != "0" -o -z "${A2X_VERSION}"; then
-		A2X_VERSION="none"
-	fi
-	AC_MSG_RESULT(${A2X_VERSION} found)
-fi
-dnl FIXME: require 0.2.5 min for "-s latex_style"
-AC_PATH_PROGS([DBLATEX], [dblatex], [none])
-dnl FIXME check for xsltproc, xmlllint, etc for chunked HTML and man pages
+dnl checks related to --with-doc
 
-dnl Process this separately to ensure we have both asciidoc and a2x
-if test "x$ASCIIDOC" != "xnone" -a "x$A2X" != "xnone"; then
-	nut_have_asciidoc="yes"
-fi
-
-dnl ${nut_with_doc}: any value except "no" and "auto" is treated as a target
-dnl list. "auto" tries to build all targets.
-dnl allowed values "html-single" "html-chunked" "pdf". 
+dnl ${nut_with_doc}: any value except "yes" or "no" is treated as a list of targets.
 if test "${nut_with_doc}" != "no"; then
-	if test "x$ASCIIDOC" != "xnone" -a "x$A2X" != "xnone"; then
-		case "${nut_with_doc}" in
-		yes|auto)
-			DOC_BUILD_LIST="html-single html-chunked"
-			if test "${DBLATEX}" != "none"; then
-				DOC_BUILD_LIST="$DOC_BUILD_LIST pdf"
-			fi
-			;;
-		all)
-			DOC_BUILD_LIST="html-single html-chunked pdf"
-			;;
-		*)
-			DOC_BUILD_LIST=`echo ${nut_with_doc} | sed "s/,/ /g"`
-			;;
-		esac
-		dnl substitute value for cosmetic reason
-		nut_with_doc="yes"
-	else
-		if test "${nut_with_doc}" != "auto"; then
-			AC_MSG_ERROR(["Asciidoc is required for documentation support and missing"])
-		else
-			nut_with_doc="no"
-		fi
-	fi
+	dnl check for AsciiDoc prerequisites
+	NUT_CHECK_ASCIIDOC
+fi
+
+dnl allowed values "html-single" "html-chunked" "pdf".
+case "${nut_with_doc}" in
+	no)
+		;;
+	yes|auto)
+		DOC_BUILD_LIST="html-single html-chunked"
+		dnl require 0.2.5 minimum for "-s latex_style"
+		AX_COMPARE_VERSION([${DBLATEX_VERSION}], [ge], [0.2.5], [DOC_BUILD_LIST="$DOC_BUILD_LIST pdf"])
+		;;
+	all)
+		DOC_BUILD_LIST="html-single html-chunked pdf"
+		;;
+	*)
+		DOC_BUILD_LIST=`echo ${nut_with_doc} | sed "s/,/ /g"`
+		;;
+esac
+
+if test "${nut_with_doc}" = "yes" -a "${nut_have_asciidoc}" != "yes"; then
+	AC_MSG_ERROR(["Asciidoc is required for documentation support and missing"])
+fi
+
+if test "${nut_with_doc}" != "no"; then
+	nut_with_doc="${nut_have_asciidoc}"
 fi
 
 AM_CONDITIONAL([HAVE_ASCIIDOC], [test "${nut_have_asciidoc}" = "yes"])
-
 NUT_REPORT_FEATURE([build and install documentation], [${nut_with_doc}])
+
 if test "${nut_with_doc}" = "yes"; then
    NUT_REPORT([only build specific documentation format], [${DOC_BUILD_LIST}])
 fi
