@@ -138,7 +138,7 @@ AC_CHECK_DECLS(__func__, [], [
 		AC_DEFINE(__func__, __LINE__, [Replace missing  __func__ declaration])
 	], [AC_INCLUDES_DEFAULT])
 ], [AC_INCLUDES_DEFAULT])
-	      
+
 dnl Solaris compatibility - check for -lnsl and -lsocket
 AC_SEARCH_LIBS(gethostbyname, nsl)
 AC_SEARCH_LIBS(connect, socket)
@@ -210,6 +210,10 @@ case ${target_os} in
       SUN_LIBUSB=1
       ;;
 esac
+
+dnl ----------------------------------------------------------------------
+dnl additional regex checks
+AC_SEARCH_LIBS([regcomp], [regex], [AC_SUBST([LIBREGEX],["-lregex"])])
 
 dnl ----------------------------------------------------------------------
 dnl Check for --with-ssl
