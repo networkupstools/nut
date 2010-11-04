@@ -459,6 +459,7 @@ if test "x$A2X" != "xnone" ; then
 	fi
 	AC_MSG_RESULT(${A2X_VERSION} found)
 fi
+dnl FIXME: require 0.2.5 min for "-s latex_style"
 AC_PATH_PROGS([DBLATEX], [dblatex], [none])
 dnl FIXME check for xsltproc, xmlllint, etc for chunked HTML and man pages
 
