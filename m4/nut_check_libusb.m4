@@ -14,8 +14,9 @@ if test -z "${nut_have_libusb_seen}"; then
 	nut_have_libusb_seen=yes
 	NUT_CHECK_PKGCONFIG
 
-	dnl save CFLAGS and LIBS
+	dnl save CFLAGS, LDFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"
+	LDFLAGS_ORIG="${LDFLAGS}"
 	LIBS_ORIG="${LIBS}"
 	CFLAGS=""
 	LIBS=""
@@ -150,6 +151,7 @@ if test -z "${nut_have_libusb_seen}"; then
 			AC_MSG_WARN([Defaulting libusb configuration])
 			LIBUSB_VERSION="none"
 			CFLAGS=""
+			LDFLAGS=""
 			LIBS="-lusb"
 		]
 	)
@@ -281,12 +283,16 @@ if test -z "${nut_have_libusb_seen}"; then
 				CFLAGS="${CFLAGS} -lpthread"
 				]
 		)
+
+		dnl # With USB we can match desired devices by regex;
+		dnl # and currently have no other use for the library:
+		AC_SEARCH_LIBS(regcomp, regex)
 	])
 	AC_LANG_POP([C])
 
 	AS_IF([test "${nut_have_libusb}" = "yes"], [
 		LIBUSB_CFLAGS="${CFLAGS}"
-		LIBUSB_LIBS="${LIBS}"
+		LIBUSB_LDFLAGS="${LDFLAGS} ${LIBS}"
 	], [
 		AS_CASE(["${nut_with_usb}"],
 			[no|auto], [],
@@ -330,6 +336,7 @@ if test -z "${nut_have_libusb_seen}"; then
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"
+	LDFLAGS="${LDFLAGS_ORIG}"
 	LIBS="${LIBS_ORIG}"
 fi
 ])
