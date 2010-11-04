@@ -1,13 +1,6 @@
 Advanced usage and scheduling notes
 ===================================
 
-////////////////////////////////////////////////////////////////////////////////
-Desc: How to use upssched
-File: upssched.txt
-Date: 01 October 2005
-Auth: Russell Kroll <rkroll@exploits.org>
-////////////////////////////////////////////////////////////////////////////////
-
 upsmon can call out to a helper script or program when the device changes
 state.  The example upsmon.conf has a full list of which state changes
 are available - ONLINE, ONBATT, LOWBATT, and more.
@@ -259,10 +252,6 @@ from the CMDSCRIPT, since there's no synchronization with the slave
 systems hooked to the same UPS.  FSD is the master's way of saying
 "we're shutting down *now* like it or not, so you'd better get ready".
 
-
-////////////////////////////////////////////////////////////////////////////////
-FIXME: add base scriplets in scripts/upssched/, and point these
-////////////////////////////////////////////////////////////////////////////////
 
 Background
 ~~~~~~~~~~
