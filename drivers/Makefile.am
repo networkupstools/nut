@@ -170,23 +170,23 @@ USBHID_UPS_SUBDRIVERS = apc-hid.c belkin-hid.c cps-hid.c explore-hid.c \
  openups-hid.c
 usbhid_ups_SOURCES = usbhid-ups.c libhid.c libusb.c hidparser.c	\
  usb-common.c $(USBHID_UPS_SUBDRIVERS)
-usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBREGEX)
+usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 
 tripplite_usb_SOURCES = tripplite_usb.c libusb.c usb-common.c
-tripplite_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBREGEX) -lm
+tripplite_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS) -lm
 
 bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c usb-common.c
-bcmxcp_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBREGEX)
+bcmxcp_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 
 megatec_usb_SOURCES = megatec.c megatec_usb.c libusb.c usb-common.c
 megatec_usb_CFLAGS = $(AM_CFLAGS) -DMEGATEC_SUBDRV
-megatec_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBREGEX)
+megatec_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 
 blazer_usb_SOURCES = blazer.c blazer_usb.c libusb.c usb-common.c
 blazer_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
 richcomm_usb_SOURCES = richcomm_usb.c usb-common.c
-richcomm_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBREGEX)
+richcomm_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
 
 riello_usb_SOURCES = riello.c riello_usb.c libusb.c usb-common.c
 riello_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
