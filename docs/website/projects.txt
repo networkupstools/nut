@@ -77,7 +77,8 @@ There are three different scripts that add NUT support to Cacti:
 link:http://collectd.org[collectd]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The `collectd` system statistics collection daemon features a NUT plugin to
+The `collectd` system statistics collection daemon features a
+link:http://collectd.org/wiki/index.php/Plugin:NUT[NUT plugin] to
 collect statistics from UPSes. 
 
 link:http://xymon.sourceforge.net/[Xymon (Hobbit) monitor]
@@ -129,10 +130,6 @@ link:http://bugs.debian.org/343530[RRDtool logging support]
 
 This patch adds link:http://oss.oetiker.ch/rrdtool[RRDtool] logging support to NUT.
 
-////////////////////////////////////////////////////////////////////////////////
-*FIXME* RRD note through collectd from Charles
-////////////////////////////////////////////////////////////////////////////////
-
 link:http://home.tele2.fr/elrik/[ups_control]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -174,13 +171,6 @@ link:http://www.readynas.com/?page_id=92[Netgear ReadyNAS]
 
 The RAIDiator firmware for the ReadyNAS product line includes NUT to either
 monitor a local USB UPS, or to connect as a slave to a NUT server.
-
-////////////////////////////////////////////////////////////////////////////////
-*FIXME*
-- consider Buffalo NAS
-http://buffalo.nas-central.org/wiki/Install_a_UPS_%28nut%29
-
-////////////////////////////////////////////////////////////////////////////////
 
 link:http://www.webbastards.com/projects/[lcd-nut]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
