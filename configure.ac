@@ -765,6 +765,12 @@ NUT_ARG_WITH([avahi], [build and install Avahi support], [auto])
 NUT_CHECK_LIBAVAHI
 
 dnl ----------------------------------------------------------------------
+dnl additional regex checks
+AC_SEARCH_LIBS([regcomp], [regex], [
+    AC_SUBST([LIBREGEX], ["-lregex"])
+])
+
+dnl ----------------------------------------------------------------------
 dnl checks related to --with-serial
 
 dnl ${nut_with_serial}: any value except "yes" or "no" is treated as "auto".
