@@ -63,7 +63,7 @@ This mode allows to simulate any kind of devices, even non existing ones.
 
 Using this method, you can either replay a real life sequence,
 <<dev-recording,recorded from an actual device>>, or directly interact
-through upsrw by editing the configuration.
+through upsrw or by editing the device file.
 
 For more information, refer to link:man/dummy-ups.html[dummy-ups(8)]
 manual page. 
@@ -74,7 +74,7 @@ manual page.
 Device recording
 ----------------
 
-To complete dummy-ups, NUT offers a device recorder script called
+To complete dummy-ups, NUT provides a device recorder script called
 'device-recorder.sh' and located in the 'tools/' directory of the
 NUT source tree.
 
