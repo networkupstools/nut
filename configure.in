@@ -191,7 +191,7 @@ AC_CHECK_DECLS(__func__, [], [
 		AC_DEFINE(__func__, __LINE__, [Replace missing  __func__ declaration])
 	], [AC_INCLUDES_DEFAULT])
 ], [AC_INCLUDES_DEFAULT])
-	      
+
 dnl Solaris compatibility - check for -lnsl and -lsocket
 AC_SEARCH_LIBS(gethostbyname, nsl)
 AC_SEARCH_LIBS(connect, socket)
@@ -292,6 +292,13 @@ dnl ${nut_with_serial}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_serial}" != "no"; then
   nut_with_serial="yes"
 fi
+
+dnl ----------------------------------------------------------------------
+dnl additional regex checks
+AC_SEARCH_LIBS([regcomp], [regex], [AC_SUBST([LIBREGEX],["-lregex"])])
+
+dnl ----------------------------------------------------------------------
+dnl Check for --with-ssl
 
 NUT_REPORT_FEATURE([build serial drivers], [${nut_with_serial}], [],
 					[WITH_SERIAL], [Define to enable serial support])
