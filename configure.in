@@ -473,7 +473,9 @@ AM_CONDITIONAL([HAVE_ASCIIDOC], [test "${nut_have_asciidoc}" = "yes"])
 NUT_REPORT_FEATURE([build and install documentation], [${nut_with_doc}])
 
 if test "${nut_with_doc}" = "yes"; then
-   NUT_REPORT([only build specific documentation format], [${DOC_BUILD_LIST}])
+	NUT_REPORT([only build specific documentation format], [${DOC_BUILD_LIST}])
+else
+	DOC_BUILD_LIST=""
 fi
 
 dnl ----------------------------------------------------------------------
