@@ -448,6 +448,7 @@ AC_SEARCH_LIBS([pthread_create], [pthread],
 dnl ----------------------------------------------------------------------
 dnl Check for types and define possible replacements
 NUT_TYPE_SOCKLEN_T
+NUT_CHECK_SOCKETLIB
 NUT_FUNC_GETNAMEINFO_ARGTYPES
 
 dnl ----------------------------------------------------------------------
@@ -2492,7 +2493,6 @@ AC_SUBST(LIBLTDL_LIBS)
 AC_SUBST(DRIVER_BUILD_LIST)
 AC_SUBST(DRIVER_MAN_LIST)
 AC_SUBST(DRIVER_INSTALL_TARGET)
-AC_SUBST(NETLIBS)
 AC_SUBST(SERLIBS)
 AC_SUBST(PIDPATH)
 AC_SUBST(STATEPATH)

@@ -13,9 +13,7 @@ $(top_builddir)/common/libparseconf.la: dummy
 	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # by default, link programs in this directory with libcommon.a
-LDADD = $(top_builddir)/common/libcommon.la libupsclient.la
-LDADD += /c/MinGW/lib/libws2_32.a
-LDADD += $(NETLIBS)
+LDADD = $(top_builddir)/common/libcommon.la libupsclient.la $(NETLIBS)
 if WITH_SSL
   LDADD += $(LIBSSL_LIBS)
 endif
@@ -53,9 +51,7 @@ upslog_SOURCES = upslog.c upsclient.h upslog.h
 upsmon_SOURCES = upsmon.c upsmon.h upsclient.h
 
 upssched_SOURCES = upssched.c upssched.h
-upssched_LDADD = $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la
-upssched_LDADD += /c/MinGW/lib/libws2_32.a
-upssched_LDADD += $(NETLIBS)
+upssched_LDADD = $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la $(NETLIBS)
 
 upsimage_cgi_SOURCES = upsimage.c upsclient.h upsimagearg.h cgilib.c cgilib.h
 upsimage_cgi_LDADD = $(LDADD) $(LIBGD_LDFLAGS)

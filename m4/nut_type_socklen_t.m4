@@ -115,6 +115,13 @@ AC_DEFUN([NUT_PREREQ_SYS_H_SOCKET],
     else
       HAVE_WS2TCPIP_H=0
     fi
+    AC_CHECK_HEADERS([winsock2.h])
+    if test "$ac_cv_header_winsock2_h" = yes; then
+      HAVE_WINSOCK2_H=1
+    else
+      HAVE_WINSOCK2_H=0
+    fi
+    AC_SUBST([HAVE_WINSOCK2_H])
   fi
   AC_SUBST([HAVE_SYS_SOCKET_H])
   AC_SUBST([HAVE_WS2TCPIP_H])
