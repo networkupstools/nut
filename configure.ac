@@ -417,10 +417,6 @@ AC_CHECK_DECLS(__func__, [], [
 	], [AC_INCLUDES_DEFAULT])
 ], [AC_INCLUDES_DEFAULT])
 
-dnl Solaris compatibility - check for -lnsl and -lsocket
-AC_SEARCH_LIBS(gethostbyname, nsl)
-AC_SEARCH_LIBS(connect, socket)
-
 dnl All current systems provide time.h; it need not be checked for.
 dnl Not all systems provide sys/time.h, but those that do, all allow
 dnl you to include it and time.h simultaneously.
@@ -2502,7 +2498,7 @@ AC_SUBST(LIBDIR)
 AC_SUBST(NUT_DATADIR, [`eval echo "${NUT_DATADIR}"`])
 AC_SUBST(NUT_LIBEXECDIR, [`eval echo "${LIBEXECDIR}"`])
 AC_SUBST(DRVPATH)
-AC_SUBST(SBINDIR)
+AC_SUBST(SBINDIR
 AC_SUBST(PORT)
 AC_SUBST(RUN_AS_USER)
 AC_SUBST(RUN_AS_GROUP)
