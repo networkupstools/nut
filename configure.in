@@ -192,14 +192,6 @@ AC_CHECK_DECLS(__func__, [], [
 	], [AC_INCLUDES_DEFAULT])
 ], [AC_INCLUDES_DEFAULT])
 	      
-dnl Solaris compatibility - check for -lnsl and -lsocket
-AC_SEARCH_LIBS(gethostbyname, nsl)
-AC_SEARCH_LIBS(connect, socket)
-
-dnl Solaris compatibility - check for -lnsl and -lsocket
-AC_SEARCH_LIBS(gethostbyname, nsl)
-AC_SEARCH_LIBS(connect, socket)
-
 AC_HEADER_TIME
 AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h sys/termios.h sys/time.h, [], [], [AC_INCLUDES_DEFAULT])
 
