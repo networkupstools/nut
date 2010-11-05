@@ -58,8 +58,6 @@ extern const char *UPS_VERSION;
 #ifdef WIN32
 extern int			noservice_flag;
 extern HANDLE			svc_stop;
-extern SERVICE_STATUS		SvcStatus;
-extern SERVICE_STATUS_HANDLE	SvcStatusHandle;
 #endif
 
 /* get the syslog ready for us */
@@ -141,6 +139,8 @@ int SvcInstall(const char *);
 int SvcUninstall(const char *);
 void ReportSvcStatus(DWORD,DWORD,DWORD);
 void WINAPI SvcCtrlHandler(DWORD);
+void SvcStart(char *);
+void SvcReady(void);
 #endif
 
 /* Buffer sizes used for various functions */

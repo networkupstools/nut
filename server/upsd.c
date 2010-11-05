@@ -1129,25 +1129,8 @@ int main(int argc, char **argv)
 	char	*chroot_path = NULL;
 	const char	*user = RUN_AS_USER;
 	struct passwd	*new_uid = NULL;
-
 #ifdef WIN32
-	if( !noservice_flag) {
-		/* Register the handler function for the service */
-		SvcStatusHandle = RegisterServiceCtrlHandler(
-				UPSD_SVCNAME,
-				SvcCtrlHandler);
-
-		if( !SvcStatusHandle ) {
-			upslogx(LOG_ERR, "RegisterServiceCtrlHandler\n");
-			return;
-		}
-
-		SvcStatus.dwServiceType = SERVICE_WIN32_OWN_PROCESS;
-		SvcStatus.dwServiceSpecificExitCode = 0;
-
-		/* Report initial status to the SCM */
-		ReportSvcStatus( SERVICE_START_PENDING, NO_ERROR, 3000 );
-	}
+	SvcStart(UPSD_SVCNAME);
 #endif
 
 	progname = xbasename(argv[0]);
@@ -1304,20 +1287,7 @@ int main(int argc, char **argv)
 	}
 
 #ifdef WIN32
-	if( !noservice_flag) {
-		svc_stop = CreateEvent(
-				NULL,		/* default security attributes */
-				TRUE,		/* manual reset event */
-				FALSE,		/* not signaled */
-				NULL);		/*no name */
-
-		if( svc_stop == NULL ) {
-			ReportSvcStatus( SERVICE_STOPPED, NO_ERROR, 0);
-			return;
-		}
-
-		ReportSvcStatus( SERVICE_RUNNING, NO_ERROR, 0);
-	}
+	SvcReady();
 #endif
 
 	while (!exit_flag) {
