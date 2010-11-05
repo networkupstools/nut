@@ -15,9 +15,7 @@ endif
 if WITH_SSL
   AM_CFLAGS += $(LIBSSL_CFLAGS)
 endif
-LDADD = $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la
-LDADD += /c/MinGW/lib/libws2_32.a
-LDADD += $(NETLIBS)
+LDADD = $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la $(NETLIBS)
 if WITH_WRAP
    LDADD += $(LIBWRAP_LIBS)
 endif
