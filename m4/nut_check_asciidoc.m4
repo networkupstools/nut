@@ -13,7 +13,7 @@ if test -z "${nut_have_asciidoc_seen}"; then
 		AC_MSG_CHECKING([for asciiDoc version (8.6.3 minimum required)])
 		ASCIIDOC_VERSION="`${ASCIIDOC} --version 2>/dev/null`"
 		dnl strip 'asciidoc ' from version string
-		ASCIIDOC_VERSION="${ASCIIDOC_VERSION#asciidoc\ }"
+		ASCIIDOC_VERSION="${ASCIIDOC_VERSION##* }"
 		AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [8.6.3], [
 			AC_MSG_RESULT(${ASCIIDOC_VERSION} found)
 			nut_have_asciidoc="yes"
@@ -28,7 +28,7 @@ if test -z "${nut_have_asciidoc_seen}"; then
 		AC_MSG_CHECKING([for a2x version (8.6.1 minimum required)])
 		A2X_VERSION="`${A2X} --version 2>/dev/null`"
 		dnl strip 'a2x ' from version string
-		A2X_VERSION="${A2X_VERSION#a2x\ }"
+		A2X_VERSION="${A2X_VERSION##* }"
 		AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [8.6.1], [
 			AC_MSG_RESULT(${A2X_VERSION} found)
 		], [
@@ -42,7 +42,7 @@ if test -z "${nut_have_asciidoc_seen}"; then
 		AC_MSG_CHECKING([for dblatex version])
 		DBLATEX_VERSION="`${DBLATEX} --version 2>/dev/null`"
 		dnl strip 'dblatex version ' from version string
-		DBLATEX_VERSION="${DBLATEX_VERSION#dblatex\ version\ }"
+		DBLATEX_VERSION="${DBLATEX_VERSION##* }"
 		AC_MSG_RESULT(${DBLATEX_VERSION} found)
 	fi
 
