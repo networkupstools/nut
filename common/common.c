@@ -92,10 +92,10 @@ pid_t get_max_pid_t()
 	static	int	upslog_flags = UPSLOG_STDERR;
 
 #ifdef WIN32
-	int			noservice_flag = 0;
-	HANDLE			svc_stop = NULL;
-	SERVICE_STATUS		SvcStatus;
-	SERVICE_STATUS_HANDLE	SvcStatusHandle;
+	int				noservice_flag = 0;
+	HANDLE				svc_stop = NULL;
+	static SERVICE_STATUS		SvcStatus;
+	static SERVICE_STATUS_HANDLE	SvcStatusHandle;
 #endif
 
 static void xbit_set(int *val, int flag)
@@ -1289,6 +1289,44 @@ void WINAPI SvcCtrlHandler( DWORD Ctrl )
 
 		default:
 			break;
+	}
+}
+
+void SvcStart(char * SvcName)
+{
+	if( !noservice_flag) {
+		/* Register the handler function for the service */
+		SvcStatusHandle = RegisterServiceCtrlHandler(
+				SvcName,
+				SvcCtrlHandler);
+
+		if( !SvcStatusHandle ) {
+			upslogx(LOG_ERR, "RegisterServiceCtrlHandler\n");
+			return;
+		}
+
+		SvcStatus.dwServiceType = SERVICE_WIN32_OWN_PROCESS;
+		SvcStatus.dwServiceSpecificExitCode = 0;
+
+		/* Report initial status to the SCM */
+		ReportSvcStatus( SERVICE_START_PENDING, NO_ERROR, 3000 );
+	}
+}
+
+void SvcReady(void)
+{
+	if( !noservice_flag) {
+		svc_stop = CreateEvent(
+				NULL,   /* default security attributes */
+				TRUE,   /* manual reset event */
+				FALSE,  /* not signaled */
+				NULL);  /*no name */
+
+		if( svc_stop == NULL ) {
+			ReportSvcStatus( SERVICE_STOPPED, NO_ERROR, 0);
+			return;
+		}
+		ReportSvcStatus( SERVICE_RUNNING, NO_ERROR, 0);
 	}
 }
 #endif

@@ -1063,9 +1063,9 @@ int dstate_poll_fds(struct timeval timeout, HANDLE extrafd)
 	}
 
 	/* Service stop requested */
-	if( !noservice_flag && rfds[ret] == svc_stop ) {
-		ReportSvcStatus( SERVICE_STOPPED, NO_ERROR, 0);
-		return -1;
+	if( !noservice_flag && (rfds[ret] == svc_stop) ) {
+			ReportSvcStatus( SERVICE_STOPPED, NO_ERROR, 0);
+			return 0;
 	}
 
 	/* Retrieve the signaled connection */

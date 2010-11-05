@@ -649,12 +649,10 @@ static void exit_cleanup(void)
 	vartab_free();
 }
 
-#ifndef WIN32
 static void set_exit_flag(int sig)
 {
 	exit_flag = sig;
 }
-#endif
 
 /*FIXME Check if we need equivalent of these signals in WIN32 ? */
 static void setup_signals(void)
@@ -702,16 +700,23 @@ int main(int argc, char **argv)
 	group = xstrdup(RUN_AS_GROUP);	/* xstrdup: this gets freed at exit */
 
 	progname = xbasename(argv[0]);
+
 #ifdef WIN32
-	// remove trailing .exe
-	if(strcasecmp( strrchr(progname,'.'), ".exe") == 0 ) {
-		progname = strdup(progname);
-		char * t = strrchr(progname,'.');
-		*t = 0;
+	/* remove trailing .exe */
+	char * name = strrchr(progname,'.');
+	if( name != NULL ) {
+		if(strcasecmp(name, ".exe") == 0 ) {
+			progname = strdup(progname);
+			char * t = strrchr(progname,'.');
+			*t = 0;
+		}
 	}
 #endif
 	open_syslog(progname);
 
+#ifdef WIN32
+	SvcStart(progname);
+#endif
 	upsdrv_banner();
 
 	if (upsdrv_info.status == DRV_EXPERIMENTAL) {
@@ -1089,6 +1094,10 @@ int main(int argc, char **argv)
 		writepid(pidfn);	/* PID changes when backgrounding */
 	}
 
+#ifdef WIN32
+	SvcReady();
+#endif
+
 	while (!exit_flag) {
 
 		struct timeval	timeout;
@@ -1097,22 +1106,6 @@ int main(int argc, char **argv)
 		timeout.tv_sec += poll_interval;
 
 		upsdrv_updateinfo();
-
-#ifdef WIN32
-		if( !noservice_flag) {
-			svc_stop = CreateEvent(
-					NULL,	/* default security attributes */
-					TRUE,	/* manual reset event */
-					FALSE,	/* not signaled */
-					NULL);	/*no name */
-
-			if( svc_stop == NULL ) {
-				ReportSvcStatus( SERVICE_STOPPED, NO_ERROR, 0);
-				return;
-			}
-			ReportSvcStatus( SERVICE_RUNNING, NO_ERROR, 0);
-		}
-#endif
 
 		/* Dump the data tree (in upsc-like format) to stdout and exit */
 		if (dump_data) {
@@ -1127,16 +1120,25 @@ int main(int argc, char **argv)
 		else {
 			while (!dstate_poll_fds(timeout, extrafd) && !exit_flag) {
 				/* repeat until time is up or extrafd has data */
+				if( WaitForSingleObject(svc_stop,0) == WAIT_OBJECT_0 ) {
+					set_exit_flag(1);
+				}
+			}
+
+			if( WaitForSingleObject(svc_stop,0) == WAIT_OBJECT_0 ) {
+				set_exit_flag(1);
 			}
 		}
 	}
 
 	/* if we get here, the exit flag was set by a signal handler */
 	/* however, avoid to "pollute" data dump output! */
+/* NOTE: Removed with Windows branch:
 	if (!dump_data)
 		upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
 
 	exit(EXIT_SUCCESS);
+*/
 }
 
 #ifdef WIN32
@@ -1146,11 +1148,14 @@ int main(int argc, char **argv)
 	int i;
 
 	drv_name = xbasename(argv[0]);
-	// remove trailing .exe
-	if(strcasecmp( strrchr(drv_name,'.'), ".exe") == 0 ) {
-		drv_name = strdup(drv_name);
-		char * t = strrchr(drv_name,'.');
-		*t = 0;
+	/* remove trailing .exe */
+	char * name = strrchr(drv_name,'.');
+	if( name != NULL ) {
+		if(strcasecmp(name, ".exe") == 0 ) {
+			drv_name = strdup(drv_name);
+			char * t = strrchr(drv_name,'.');
+			*t = 0;
+		}
 	}
 
 	/* NOTE: If updating this getopt line later, see also non-WINAPI main(),
