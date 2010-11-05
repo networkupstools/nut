@@ -9,10 +9,6 @@ There are many programs and link:user-manual.html#Features[features] in this
 package.  You should check out the link:user-manual.html#Overview[NUT Overview]
 and other accompanying documentation to see how it all works.
 
-////////////////////////////////////////////////////////////////////////////////
-FIXME (POST): add a section for NUT Control Center - NCC
-////////////////////////////////////////////////////////////////////////////////
-
 
 Details about the configuration files
 -------------------------------------
@@ -753,16 +749,6 @@ NOTE: we could have used a 'Power Value' of 1 for both UPS, and MINSUPPLIES
 set to 1 too. These values are purely arbitrary, so you are free to use your
 own rules. Here, we have linked these values to the number of power supplies
 that each UPS is feeding (2).
-
-
-////////////////////////////////////////////////////////////////////////////////
-FIXME (POST):
-add references to other equipments, such as transfer switches
-and parallel / serial UPS configuration
-
-http://www.articlesbase.com/electronics-articles/parallel-ups-configurations-572451.html
-http://en.wikipedia.org/wiki/Transfer_switch
-////////////////////////////////////////////////////////////////////////////////
 
 
 Multiple UPS shutdowns ordering
