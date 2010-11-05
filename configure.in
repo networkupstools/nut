@@ -444,38 +444,79 @@ if test "${nut_with_doc}" != "no"; then
 	NUT_CHECK_ASCIIDOC
 fi
 
-dnl allowed values "html-single" "html-chunked" "pdf".
 case "${nut_with_doc}" in
+	yes|all|auto)
+		nut_doc_build_list="html-single html-chunked pdf"
+		;;
 	no)
-		;;
-	yes|auto)
-		DOC_BUILD_LIST="html-single html-chunked"
-		dnl require 0.2.5 minimum for "-s latex_style"
-		AX_COMPARE_VERSION([${DBLATEX_VERSION}], [ge], [0.2.5], [DOC_BUILD_LIST="$DOC_BUILD_LIST pdf"])
-		;;
-	all)
-		DOC_BUILD_LIST="html-single html-chunked pdf"
+		nut_doc_build_list=""
 		;;
 	*)
-		DOC_BUILD_LIST=`echo ${nut_with_doc} | sed "s/,/ /g"`
+		nut_doc_build_list="`echo ${nut_with_doc} | sed 's/,/ /g'`"
 		;;
 esac
 
-if test "${nut_with_doc}" = "yes" -a "${nut_have_asciidoc}" != "yes"; then
-	AC_MSG_ERROR(["Asciidoc is required for documentation support and missing"])
-fi
+for nut_doc_build_target in ${nut_doc_build_list}; do
+	case "${nut_doc_build_target}" in
+	html-single)
+		AC_MSG_CHECKING([if asciidoc version can build ${nut_doc_build_target}])
+		AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [8.4.5], [
+			AC_MSG_RESULT(yes)
+			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target}"
+		], [
+			AC_MSG_RESULT(no)
+			DOC_NOBUILD_LIST="${DOC_NOBUILD_LIST} ${nut_doc_build_target}"
+		])
+		;;
 
-if test "${nut_with_doc}" != "no"; then
-	nut_with_doc="${nut_have_asciidoc}"
-fi
+	html-chunked)
+		AC_MSG_CHECKING([if a2x version can build ${nut_doc_build_target}])
+		AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [8.6.3], [
+			AC_MSG_RESULT(yes)
+			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target}"
+		], [
+			AC_MSG_RESULT(no)
+			DOC_NOBUILD_LIST="${DOC_NOBUILD_LIST} ${nut_doc_build_target}"
+		])
+		;;
 
-AM_CONDITIONAL([HAVE_ASCIIDOC], [test "${nut_have_asciidoc}" = "yes"])
+	pdf)
+		AC_MSG_CHECKING([if dblatex version can build ${nut_doc_build_target}])
+		AX_COMPARE_VERSION([${DBLATEX_VERSION}], [ge], [0.2.5], [
+			AC_MSG_RESULT(yes)
+			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target}"
+		], [
+			AC_MSG_RESULT(no)
+			DOC_NOBUILD_LIST="${DOC_NOBUILD_LIST} ${nut_doc_build_target}"
+		])
+		;;
+	esac
+done
+
+case "${nut_with_doc}" in
+auto)
+	if test -n "${DOC_BUILD_LIST}"; then
+		nut_with_doc="yes"
+	else
+		nut_with_doc="no"
+	fi
+	;;	
+no)
+	;;
+*)
+	if test -z "${DOC_NOBUILD_LIST}"; then
+		nut_with_doc="yes"
+	else
+		AC_MSG_ERROR(["Asciidoc is required for documentation support and missing"])
+	fi
+	;;
+esac
+
+AM_CONDITIONAL([HAVE_ASCIIDOC], [test -z "${DOC_BUILD_LIST}"])
 NUT_REPORT_FEATURE([build and install documentation], [${nut_with_doc}])
 
 if test "${nut_with_doc}" = "yes"; then
 	NUT_REPORT([only build specific documentation format], [${DOC_BUILD_LIST}])
-else
-	DOC_BUILD_LIST=""
 fi
 
 dnl ----------------------------------------------------------------------
