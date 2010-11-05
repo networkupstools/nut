@@ -196,6 +196,10 @@ dnl Solaris compatibility - check for -lnsl and -lsocket
 AC_SEARCH_LIBS(gethostbyname, nsl)
 AC_SEARCH_LIBS(connect, socket)
 
+dnl Solaris compatibility - check for -lnsl and -lsocket
+AC_SEARCH_LIBS(gethostbyname, nsl)
+AC_SEARCH_LIBS(connect, socket)
+
 AC_HEADER_TIME
 AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h sys/termios.h sys/time.h, [], [], [AC_INCLUDES_DEFAULT])
 
@@ -207,6 +211,7 @@ AC_SEARCH_LIBS([pthread_create], [pthread],
 dnl ----------------------------------------------------------------------
 dnl Check for types and define possible replacements
 NUT_TYPE_SOCKLEN_T
+NUT_CHECK_SOCKETLIB
 
 dnl ----------------------------------------------------------------------
 dnl check for --with-all (or --without-all, or --with-all=auto) flag
@@ -1163,7 +1168,6 @@ AC_SUBST(LIBHAL_LIBS)
 AC_SUBST(DRIVER_BUILD_LIST)
 AC_SUBST(DRIVER_MAN_LIST)
 AC_SUBST(DRIVER_INSTALL_TARGET)
-AC_SUBST(NETLIBS)
 AC_SUBST(SERLIBS)
 AC_SUBST(PIDPATH)
 AC_SUBST(STATEPATH)

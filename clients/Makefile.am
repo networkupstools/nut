@@ -1,7 +1,7 @@
 # Network UPS Tools: clients
 
 # by default, link programs in this directory with libcommon.a
-LDADD = ../common/libcommon.la libupsclient.la /c/MinGW/lib/libws2_32.a $(NETLIBS)
+LDADD = ../common/libcommon.la libupsclient.la $(NETLIBS)
 if WITH_SSL
   LDADD += $(LIBSSL_LIBS)
 endif
@@ -35,7 +35,7 @@ upslog_SOURCES = upslog.c upsclient.h upslog.h
 upsmon_SOURCES = upsmon.c upsmon.h upsclient.h
 
 upssched_SOURCES = upssched.c upssched.h
-upssched_LDADD = ../common/libcommon.la ../common/libparseconf.la /c/MinGW/lib/libws2_32.a $(NETLIBS)
+upssched_LDADD = ../common/libcommon.la ../common/libparseconf.la $(NETLIBS)
 
 upsimage_cgi_SOURCES = upsimage.c upsclient.h upsimagearg.h cgilib.c cgilib.h
 upsimage_cgi_LDADD = $(LDADD) $(LIBGD_LDFLAGS)
