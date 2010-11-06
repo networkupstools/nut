@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <glade-interface>
   <!-- interface-requires gtk+ 2.16 -->
   <!-- interface-naming-policy project-wide -->
@@ -10,7 +10,6 @@
     <child>
       <widget class="GtkVBox" id="vbox1">
         <property name="visible">True</property>
-        <property name="orientation">vertical</property>
         <child>
           <widget class="GtkMenuBar" id="menubar1">
             <property name="visible">True</property>
@@ -95,7 +94,6 @@
         <child>
           <widget class="GtkVBox" id="vbox2">
             <property name="visible">True</property>
-            <property name="orientation">vertical</property>
             <child>
               <widget class="GtkFrame" id="frame1">
                 <property name="visible">True</property>
@@ -108,11 +106,9 @@
                     <child>
                       <widget class="GtkVBox" id="vbox5">
                         <property name="visible">True</property>
-                        <property name="orientation">vertical</property>
                         <child>
                           <widget class="GtkVBox" id="vbox6">
                             <property name="visible">True</property>
-                            <property name="orientation">vertical</property>
                             <child>
                               <widget class="GtkTable" id="table1">
                                 <property name="visible">True</property>
@@ -132,7 +128,7 @@
                                   <widget class="GtkLabel" id="label3">
                                     <property name="visible">True</property>
                                     <property name="xalign">1</property>
-                                    <property name="label" translatable="yes">UPS : </property>
+                                    <property name="label" translatable="yes">Device : </property>
                                   </widget>
                                   <packing>
                                     <property name="top_attach">1</property>
@@ -144,7 +140,7 @@
                                   <widget class="GtkEntry" id="entry1">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
-                                    <property name="invisible_char">&#x25CF;</property>
+                                    <property name="invisible_char">●</property>
                                     <signal name="changed" handler="on_entry1_changed"/>
                                   </widget>
                                   <packing>
@@ -157,7 +153,7 @@
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="max_length">5</property>
-                                    <property name="invisible_char">&#x25CF;</property>
+                                    <property name="invisible_char">●</property>
                                     <property name="width_chars">5</property>
                                     <property name="adjustment">3493 0 65535 1 10 0</property>
                                     <property name="numeric">True</property>
@@ -239,7 +235,7 @@
                                   <widget class="GtkEntry" id="entry2">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
-                                    <property name="invisible_char">&#x25CF;</property>
+                                    <property name="invisible_char">●</property>
                                     <signal name="changed" handler="on_entry2_changed"/>
                                   </widget>
                                   <packing>
@@ -251,7 +247,7 @@
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="visibility">False</property>
-                                    <property name="invisible_char">&#x25CF;</property>
+                                    <property name="invisible_char">●</property>
                                     <signal name="changed" handler="on_entry3_changed"/>
                                   </widget>
                                   <packing>
@@ -342,7 +338,6 @@
                   <widget class="GtkVBox" id="vbox7">
                     <property name="visible">True</property>
                     <property name="border_width">2</property>
-                    <property name="orientation">vertical</property>
                     <child>
                       <widget class="GtkHBox" id="hbox3">
                         <property name="visible">True</property>
@@ -522,7 +517,7 @@
                             <property name="visible">True</property>
                             <property name="xalign">1</property>
                             <property name="xpad">2</property>
-                            <property name="label" translatable="yes">UPS commands :</property>
+                            <property name="label" translatable="yes">Device commands :</property>
                             <property name="use_markup">True</property>
                             <property name="justify">right</property>
                           </widget>
@@ -576,7 +571,7 @@
                   <widget class="GtkLabel" id="label7">
                     <property name="visible">True</property>
                     <property name="xpad">2</property>
-                    <property name="label" translatable="yes">UPS Status</property>
+                    <property name="label" translatable="yes">Device status</property>
                   </widget>
                   <packing>
                     <property name="tab_fill">False</property>
@@ -587,7 +582,6 @@
                   <widget class="GtkVBox" id="vbox8">
                     <property name="visible">True</property>
                     <property name="border_width">2</property>
-                    <property name="orientation">vertical</property>
                     <child>
                       <widget class="GtkFrame" id="frame6">
                         <property name="visible">True</property>
@@ -650,7 +644,7 @@
                 <child>
                   <widget class="GtkLabel" id="label8">
                     <property name="visible">True</property>
-                    <property name="label" translatable="yes">UPS Vars</property>
+                    <property name="label" translatable="yes">Device vars</property>
                   </widget>
                   <packing>
                     <property name="position">1</property>
@@ -686,11 +680,9 @@
     <property name="modal">True</property>
     <property name="window_position">center-always</property>
     <property name="type_hint">normal</property>
-    <property name="has_separator">False</property>
     <child internal-child="vbox">
       <widget class="GtkVBox" id="dialog-vbox1">
         <property name="visible">True</property>
-        <property name="orientation">vertical</property>
         <property name="spacing">2</property>
         <child>
           <widget class="GtkFrame" id="frame2">
@@ -707,7 +699,6 @@
                 <child>
                   <widget class="GtkVBox" id="vbox3">
                     <property name="visible">True</property>
-                    <property name="orientation">vertical</property>
                     <child>
                       <widget class="GtkLabel" id="label5">
                         <property name="visible">True</property>
@@ -725,7 +716,7 @@
                       <widget class="GtkEntry" id="entry4">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                        <property name="invisible_char">&#x25CF;</property>
+                        <property name="invisible_char">●</property>
                         <signal name="changed" handler="on_entry4_changed"/>
                       </widget>
                       <packing>
@@ -797,11 +788,9 @@
     <property name="modal">True</property>
     <property name="window_position">center-always</property>
     <property name="type_hint">normal</property>
-    <property name="has_separator">False</property>
     <child internal-child="vbox">
       <widget class="GtkVBox" id="dialog-vbox3">
         <property name="visible">True</property>
-        <property name="orientation">vertical</property>
         <property name="spacing">2</property>
         <child>
           <widget class="GtkFrame" id="frame3">
@@ -818,7 +807,6 @@
                 <child>
                   <widget class="GtkVBox" id="vbox4">
                     <property name="visible">True</property>
-                    <property name="orientation">vertical</property>
                     <child>
                       <widget class="GtkLabel" id="label6">
                         <property name="visible">True</property>
@@ -906,11 +894,9 @@ want to delete from list...
     <property name="modal">True</property>
     <property name="window_position">center-always</property>
     <property name="type_hint">normal</property>
-    <property name="has_separator">False</property>
     <child internal-child="vbox">
       <widget class="GtkVBox" id="dialog-vbox5">
         <property name="visible">True</property>
-        <property name="orientation">vertical</property>
         <property name="spacing">2</property>
         <child>
           <widget class="GtkFrame" id="frame7">
@@ -927,7 +913,6 @@ want to delete from list...
                 <child>
                   <widget class="GtkVBox" id="vbox9">
                     <property name="visible">True</property>
-                    <property name="orientation">vertical</property>
                     <child>
                       <widget class="GtkHBox" id="hbox6">
                         <property name="visible">True</property>
@@ -965,7 +950,7 @@ want to delete from list...
                       <widget class="GtkEntry" id="entry5">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                        <property name="invisible_char">&#x25CF;</property>
+                        <property name="invisible_char">●</property>
                       </widget>
                       <packing>
                         <property name="expand">False</property>
@@ -1035,11 +1020,10 @@ want to delete from list...
     <property name="modal">True</property>
     <property name="window_position">center-always</property>
     <property name="type_hint">normal</property>
-    <property name="has_separator">False</property>
     <property name="program_name">NUT-Monitor</property>
-    <property name="version">1.2</property>
+    <property name="version">1.3</property>
     <property name="copyright" translatable="yes">Copyright (c) 2010 David Goncalves</property>
-    <property name="comments" translatable="yes">GUI to manage UPS connected a NUT server.
+    <property name="comments" translatable="yes">GUI to manage devices connected a NUT server.
 
 For more information about NUT (Network UPS Tools)
 please visit the author's website.
@@ -1062,11 +1046,11 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</property>
-    <property name="authors">David Goncalves - &lt;david@lestat.st&gt;</property>
+    <property name="authors">David Goncalves &lt;david@lestat.st&gt;</property>
+    <property name="translator_credits">David Goncalves &lt;david@lestat.st&gt; - Français</property>
     <child internal-child="vbox">
       <widget class="GtkVBox" id="dialog-vbox6">
         <property name="visible">True</property>
-        <property name="orientation">vertical</property>
         <property name="spacing">2</property>
         <child>
           <placeholder/>
