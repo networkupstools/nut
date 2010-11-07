@@ -512,7 +512,7 @@ no)
 	;;
 esac
 
-AM_CONDITIONAL([HAVE_ASCIIDOC], [test -z "${DOC_BUILD_LIST}"])
+AM_CONDITIONAL([HAVE_ASCIIDOC], [test -n "${DOC_BUILD_LIST}"])
 NUT_REPORT_FEATURE([build and install documentation], [${nut_with_doc}])
 
 if test "${nut_with_doc}" = "yes"; then
