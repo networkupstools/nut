@@ -438,11 +438,10 @@ dnl ----------------------------------------------------------------------
 
 dnl checks related to --with-doc
 
-dnl ${nut_with_doc}: any value except "yes" or "no" is treated as a list of targets.
-if test "${nut_with_doc}" != "no"; then
-	dnl check for AsciiDoc prerequisites
-	NUT_CHECK_ASCIIDOC
-fi
+dnl Always check for AsciiDoc prerequisites, since even if --with-doc
+dnl is set to 'no', we may still want to build the website, or some
+dnl doc targets manually
+NUT_CHECK_ASCIIDOC
 
 case "${nut_with_doc}" in
 	yes|all|auto)
