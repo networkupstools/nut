@@ -57,10 +57,17 @@ website:
 	@echo "Not building website documentation since 'asciidoc' was not found."
 endif !HAVE_ASCIIDOC
 
-# FIXME: docbook-xsl.css presence is probably a bug either due to the
-# copy dance or to a2x itself
 clean-local:
 	rm -rf *.pdf *.html *.chunked docbook-xsl.css
+
+### TODO: automatic dependency generation
+FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS)  $(SHARED_DEPS) ../README \
+	../INSTALL cables.txt ../UPGRADING ../TODO
+FULL_DEVELOPER_GUIDE_DEPS = $(DEVELOPER_GUIDE_DEPS)  $(SHARED_DEPS)
+
+user-manual.html user-manual.chunked user-manual.pdf: $(FULL_USER_MANUAL_DEPS)
+developer-guide.html developer-guide.chunked developer-guide.pdf: $(FULL_DEVELOPER_GUIDE_DEPS)
+packager-guide.html packager-guide.chunked packager-guide.pdf: packager-guide.txt
 
 # Note: without the "-v", asciidoc (circa 8.6.2) sometimes hangs when
 # generating the chunked HTML:
@@ -75,29 +82,10 @@ A2X_COMMON_OPTS = -v --attribute icons \
 .txt.html:
 	$(A2X) $(A2X_COMMON_OPTS) --format=xhtml $<
 
-user-manual.chunked: user-manual.txt
-	$(A2X) $(A2X_COMMON_OPTS) --format=chunked $<
-
-developer-guide.chunked: developer-guide.txt
-	$(A2X) $(A2X_COMMON_OPTS) --format=chunked $<
-
 .txt.chunked:
 	$(A2X) $(A2X_COMMON_OPTS) --format=chunked $<
-
-#html-chunked-build: user-manual.txt developer-guide.txt
-#	$(A2X) $(A2X_COMMON_OPTS) --format=chunked $<
 
 .txt.pdf:
 	$(A2X) $(A2X_COMMON_OPTS) --format=pdf $<
 
-.PHONY: html html-single html-chunked-build pdf website
-
-### TODO: automatic dependency generation
-FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS)  $(SHARED_DEPS) ../README \
-	../INSTALL cables.txt ../UPGRADING ../TODO
-FULL_DEVELOPER_GUIDE_DEPS = $(DEVELOPER_GUIDE_DEPS)  $(SHARED_DEPS)
-
-user-manual.pdf: $(FULL_USER_MANUAL_DEPS)
-user-manual.html: $(FULL_USER_MANUAL_DEPS)
-developer-guide.html: $(FULL_DEVELOPER_GUIDE_DEPS)
-developer-guide.pdf: $(FULL_DEVELOPER_GUIDE_DEPS)
+.PHONY: html html-single pdf website
