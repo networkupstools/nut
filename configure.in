@@ -470,7 +470,7 @@ for nut_doc_build_target in ${nut_doc_build_list}; do
 
 	html-chunked)
 		AC_MSG_CHECKING([if a2x version can build ${nut_doc_build_target}])
-		AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [8.6.3], [
+		AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [8.6.1], [
 			AC_MSG_RESULT(yes)
 			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target}"
 		], [
