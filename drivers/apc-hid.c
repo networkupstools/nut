@@ -248,16 +248,25 @@ static hid_info_t apc_hid2nut[] = {
   /* UPS page */
   { "ups.load", 0, 0, "UPS.Output.PercentLoad", NULL, "%.1f", 0, NULL },
   { "ups.load", 0, 0, "UPS.PowerConverter.PercentLoad", NULL, "%.0f", 0, NULL },
+  /* USB HID PDC defaults */
   { "ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.DelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_FLAG_ABSENT, NULL},
-  { "ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.APCGeneralCollection.APCDelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_FLAG_ABSENT, NULL}, /* APC */
   { "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_FLAG_ABSENT, NULL},
-  { "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_FLAG_ABSENT, NULL}, /* APC */
   { "ups.timer.start", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
-  { "ups.timer.start", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeStartup", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL}, /* APC */
   { "ups.timer.shutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
-  { "ups.timer.shutdown", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL}, /* APC */
   { "ups.timer.reboot", 0, 0, "UPS.PowerSummary.DelayBeforeReboot", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
-  { "ups.timer.reboot", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeReboot", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL}, /* APC */
+  /* used by APC SmartUPS RM */
+  { "ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Output.DelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_FLAG_ABSENT, NULL},
+  { "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Output.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_FLAG_ABSENT, NULL},
+  { "ups.timer.start", 0, 0, "UPS.Output.DelayBeforeStartup", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
+  { "ups.timer.shutdown", 0, 0, "UPS.Output.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
+  { "ups.timer.reboot", 0, 0, "UPS.Output.DelayBeforeReboot", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
+  /* used by APC BackUPS ES */
+  { "ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.APCGeneralCollection.APCDelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_FLAG_ABSENT, NULL},
+  { "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_FLAG_ABSENT, NULL},
+  { "ups.timer.start", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeStartup", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
+  { "ups.timer.shutdown", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
+  { "ups.timer.reboot", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeReboot", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
+
   { "ups.test.result", 0, 0, "UPS.Battery.Test", NULL, "%s", 0, test_read_info },
   { "ups.beeper.status", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", 0, beeper_info },
   { "ups.mfr.date", 0, 0, "UPS.ManufacturerDate", NULL, "%s", 0, date_conversion },
@@ -325,11 +334,17 @@ static hid_info_t apc_hid2nut[] = {
   { "test.panel.start", 0, 0, "UPS.PowerSummary.APCPanelTest", NULL, "1", HU_TYPE_CMD, NULL }, /* Back-UPS 500 */
   { "test.panel.stop", 0, 0, "UPS.PowerSummary.APCPanelTest", NULL, "0", HU_TYPE_CMD, NULL }, /* Back-UPS 500 */
 
+  /* USB HID PDC defaults */
   { "load.off.delay", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_TYPE_CMD, NULL },
   { "load.on.delay", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_TYPE_CMD, NULL },
   { "shutdown.stop", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "-1", HU_TYPE_CMD, NULL },
   { "shutdown.reboot", 0, 0, "UPS.PowerSummary.DelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL },
-  /* APC Backups ES */
+  /* used by APC SmartUPS RM */
+  { "load.off.delay", 0, 0, "UPS.Output.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_TYPE_CMD, NULL },
+  { "load.on.delay", 0, 0, "UPS.Output.DelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_TYPE_CMD, NULL },
+  { "shutdown.stop", 0, 0, "UPS.Output.DelayBeforeShutdown", NULL, "-1", HU_TYPE_CMD, NULL },
+  { "shutdown.reboot", 0, 0, "UPS.Output.DelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL },
+  /* used by APC BackUPS ES */
   { "load.off.delay", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_TYPE_CMD, NULL },
   { "load.on.delay", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_TYPE_CMD, NULL },
   { "shutdown.stop", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, "-1", HU_TYPE_CMD, NULL },
