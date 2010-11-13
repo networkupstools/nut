@@ -36,6 +36,10 @@ ChangeLog: tools/svn2cl.authors
 	svn2cl --group-by-day --include-rev --authors=$< --revision 'HEAD:2332' --output=$@ || \
 		echo "svn2cl failed to generate the ChangeLog. See http://trac.networkupstools.org/projects/nut/timeline" > $@
 
+# Placeholder for AsciiDoc integration
+website:
+	@echo "Warning: not building website"
+
 # ----------------------------------------------------------------------
 # targets from old build system (pre-automake).
 # supported for a period of time for backward "compatibility".
