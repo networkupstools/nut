@@ -459,7 +459,7 @@ for nut_doc_build_target in ${nut_doc_build_list}; do
 	case "${nut_doc_build_target}" in
 	html-single)
 		AC_MSG_CHECKING([if asciidoc version can build ${nut_doc_build_target}])
-		AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [8.4.5], [
+		AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [8.6.3], [
 			AC_MSG_RESULT(yes)
 			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target}"
 		], [
@@ -470,7 +470,7 @@ for nut_doc_build_target in ${nut_doc_build_list}; do
 
 	html-chunked)
 		AC_MSG_CHECKING([if a2x version can build ${nut_doc_build_target}])
-		AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [8.6.1], [
+		AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [8.6.3], [
 			AC_MSG_RESULT(yes)
 			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target}"
 		], [
@@ -511,7 +511,24 @@ no)
 	;;
 esac
 
-AM_CONDITIONAL([HAVE_ASCIIDOC], [test -n "${DOC_BUILD_LIST}"])
+AC_MSG_CHECKING([if asciidoc version can build website (minimum required 8.6.3)])
+AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [8.6.3], [
+	AC_MSG_RESULT(yes)
+	nut_have_asciidoc="yes"
+], [
+	AC_MSG_RESULT(no)
+	nut_have_asciidoc="yes"
+])
+
+AC_MSG_CHECKING([if a2x version can build website (minimum required 8.6.3)])
+AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [8.6.3], [
+	AC_MSG_RESULT(yes)
+], [
+	AC_MSG_RESULT(no)
+	nut_have_asciidoc="yes"
+])
+
+AM_CONDITIONAL([HAVE_ASCIIDOC], [test "${nut_have_asciidoc}" = "yes"])
 NUT_REPORT_FEATURE([build and install documentation], [${nut_with_doc}])
 
 if test "${nut_with_doc}" = "yes"; then
