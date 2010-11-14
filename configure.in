@@ -517,7 +517,7 @@ AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [8.6.3], [
 	nut_have_asciidoc="yes"
 ], [
 	AC_MSG_RESULT(no)
-	nut_have_asciidoc="yes"
+	nut_have_asciidoc="no"
 ])
 
 AC_MSG_CHECKING([if a2x version can build website (minimum required 8.6.3)])
@@ -525,7 +525,7 @@ AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [8.6.3], [
 	AC_MSG_RESULT(yes)
 ], [
 	AC_MSG_RESULT(no)
-	nut_have_asciidoc="yes"
+	nut_have_asciidoc="no"
 ])
 
 AM_CONDITIONAL([HAVE_ASCIIDOC], [test "${nut_have_asciidoc}" = "yes"])
