@@ -1150,7 +1150,6 @@ int main(int argc, char **argv)
 			progname = strdup(drv_name);
 			char * t = strrchr(progname,'.');
 			*t = 0;
-			free(drv_name);
 		}
 	}
 	else {
@@ -1188,18 +1187,15 @@ int main(int argc, char **argv)
 			"Error: specifying '-a id' is now mandatory. Try -h for help.");
 	}
 
-	service_name = malloc(strlen(SERVICE_PREFIX) + +strlen(progname) + strlen(upsname) + 1);
-	strcpy(service_name,SERVICE_PREFIX);
-	strcat(service_name,progname);
-	strcat(service_name," - ");
-	strcat(service_name,upsname);
-
+	int size = strlen(SERVICE_PREFIX) + +strlen(progname) + strlen(upsname) + 1 + 3; /* +1 is terminal 0, +3 is " - "*/
+	service_name = xmalloc(size);
+	snprintf(service_name, size, "%s%s - %s", SERVICE_PREFIX,progname,upsname);
 
 	if( install_flag ) {
 		char * args;
-		args = malloc(strlen(upsname) + strlen(UPS_ARGS) + 1 );	
-		strcpy(args,UPS_ARGS);
-		strcat(args,upsname);
+		size = strlen(upsname) + strlen(UPS_ARGS) + 1 ;
+		args = xmalloc(size);	
+		snprintf(args,size, "%s%s", UPS_ARGS,upsname);
 		return SvcInstall(service_name,args);
 	}
 
