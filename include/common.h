@@ -224,7 +224,7 @@ ssize_t select_write(const int fd, const void *buf, const size_t buflen, const t
 char * get_libname(const char* base_libname);
 
 #ifdef WIN32
-int SvcInstall(const char *);
+int SvcInstall(const char *,const char *);
 int SvcUninstall(const char *);
 void ReportSvcStatus(DWORD,DWORD,DWORD);
 void WINAPI SvcCtrlHandler(DWORD);
@@ -279,7 +279,8 @@ extern int optind;
 
 #define closelog()
 
-#define  UPSD_SVCNAME TEXT("NUT data server")
+#define  UPSD_SVCNAME TEXT("NUT - data server")
+#define  SERVICE_PREFIX TEXT("NUT - ")
 #endif
 
 #endif /* NUT_COMMON_H_SEEN */

@@ -1790,7 +1790,7 @@ int main(int argc, char **argv)
 				noservice_flag = 1;
 				break;
 			case 'I':
-				return SvcInstall(UPSD_SVCNAME);
+				return SvcInstall(UPSD_SVCNAME,NULL);
 			case 'U':
 				return SvcUninstall(UPSD_SVCNAME);
 			default:

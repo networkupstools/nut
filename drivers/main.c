@@ -38,14 +38,17 @@
 #else
 	HANDLE		upsfd = INVALID_HANDLE_VALUE;
 #endif
+
 char		*device_path = NULL;
 const char	*progname = NULL, *upsname = NULL, *device_name = NULL;
+char		*service_name = NULL;
 
 /* may be set by the driver to wake up while in dstate_poll_fds */
 #ifndef WIN32
 	int	extrafd = -1;
 #else
 	HANDLE			extrafd = INVALID_HANDLE_VALUE;
+	#define		UPS_ARGS	"-a "
 #endif
 
 /* for ser_open */
@@ -701,21 +704,11 @@ int main(int argc, char **argv)
 
 	progname = xbasename(argv[0]);
 
-#ifdef WIN32
-	/* remove trailing .exe */
-	char * name = strrchr(progname,'.');
-	if( name != NULL ) {
-		if(strcasecmp(name, ".exe") == 0 ) {
-			progname = strdup(progname);
-			char * t = strrchr(progname,'.');
-			*t = 0;
-		}
-	}
-#endif
+#ifndef WIN32
 	open_syslog(progname);
-
-#ifdef WIN32
-	SvcStart(progname);
+#else
+	open_syslog(service_name);
+	SvcStart(service_name);
 #endif
 	upsdrv_banner();
 
@@ -1146,16 +1139,22 @@ int main(int argc, char **argv)
 {
 	const char * drv_name = NULL;
 	int i;
+	int install_flag =0;
+	int uninstall_flag =0;
 
 	drv_name = xbasename(argv[0]);
 	/* remove trailing .exe */
 	char * name = strrchr(drv_name,'.');
 	if( name != NULL ) {
 		if(strcasecmp(name, ".exe") == 0 ) {
-			drv_name = strdup(drv_name);
-			char * t = strrchr(drv_name,'.');
+			progname = strdup(drv_name);
+			char * t = strrchr(progname,'.');
 			*t = 0;
+			free(drv_name);
 		}
+	}
+	else {
+		progname = drv_name;
 	}
 
 	/* NOTE: If updating this getopt line later, see also non-WINAPI main(),
@@ -1166,12 +1165,46 @@ int main(int argc, char **argv)
 				noservice_flag = 1;
 				break;
 			case 'I':
-				return SvcInstall(drv_name);
+				install_flag = 1;
+				break;
 			case 'U':
-				return SvcUninstall(drv_name);
+				uninstall_flag = 1;
+				break;
+			case 'a':
+				upsname = optarg;
+
+				read_upsconf();
+
+				if (!upsname_found)
+					fatalx(EXIT_FAILURE, "Error: Section %s not found in ups.conf", optarg);
+				break;
 			default:
 				break;
 		}
+	}
+
+	if (!upsname_found) {
+		fatalx(EXIT_FAILURE,
+			"Error: specifying '-a id' is now mandatory. Try -h for help.");
+	}
+
+	service_name = malloc(strlen(SERVICE_PREFIX) + +strlen(progname) + strlen(upsname) + 1);
+	strcpy(service_name,SERVICE_PREFIX);
+	strcat(service_name,progname);
+	strcat(service_name," - ");
+	strcat(service_name,upsname);
+
+
+	if( install_flag ) {
+		char * args;
+		args = malloc(strlen(upsname) + strlen(UPS_ARGS) + 1 );	
+		strcpy(args,UPS_ARGS);
+		strcat(args,upsname);
+		return SvcInstall(service_name,args);
+	}
+
+	if( uninstall_flag ) {
+		return SvcUninstall(service_name);
 	}
 
 	/* Set optind to 0 not 1 because we use GNU extension '+' in optstring */
@@ -1180,7 +1213,7 @@ int main(int argc, char **argv)
 	if( !noservice_flag ) {
 		SERVICE_TABLE_ENTRY DispatchTable[] =
 		{
-			{ (char *)drv_name, (LPSERVICE_MAIN_FUNCTION) SvcMain },
+			{ service_name, (LPSERVICE_MAIN_FUNCTION) SvcMain },
 			{ NULL, NULL }
 		};
 

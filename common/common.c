@@ -1154,7 +1154,7 @@ char * get_libname(const char* base_libname)
 }
 
 #ifdef WIN32
-int SvcInstall(const char * SvcName)
+int SvcInstall(const char * SvcName, const char * args)
 {
 	SC_HANDLE SCManager;
 	SC_HANDLE Service;
@@ -1163,6 +1163,11 @@ int SvcInstall(const char * SvcName)
 	if( !GetModuleFileName( NULL, Path, MAX_PATH ) ) {
 		printf("Cannot install service (%d)\n", GetLastError());
 		return EXIT_FAILURE;
+	}
+
+	if( args != NULL ) {
+		strcat(Path," ");
+		strcat(Path,args);
 	}
 
 	SCManager = OpenSCManager(
