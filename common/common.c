@@ -660,8 +660,7 @@ int SvcInstall(const char * SvcName, const char * args)
         }
 
 	if( args != NULL ) {
-		strcat(Path," ");
-		strcat(Path,args);
+		snprintfcat(Path, sizeof(Path), " %s", args);
 	}
 
         SCManager = OpenSCManager(
