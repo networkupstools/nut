@@ -671,7 +671,7 @@ int select_write(const int fd, const void *buf, const size_t buflen, const long 
 }
 
 #ifdef WIN32
-int SvcInstall(const char * SvcName)
+int SvcInstall(const char * SvcName, const char * args)
 {
         SC_HANDLE SCManager;
         SC_HANDLE Service;
@@ -681,6 +681,11 @@ int SvcInstall(const char * SvcName)
                 printf("Cannot install service (%d)\n", GetLastError());
                 return EXIT_FAILURE;
         }
+
+	if( args != NULL ) {
+		strcat(Path," ");
+		strcat(Path,args);
+	}
 
         SCManager = OpenSCManager(
                 NULL,                   /* local computer */
