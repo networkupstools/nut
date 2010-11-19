@@ -42,7 +42,6 @@
 #else
 #include <winsock2.h>
 #include <windows.h>
-#include <reason.h>
 /* This override network system calls to adapt to Windows specificity */
 #define W32_NETWORK_CALL_OVERRIDE
 #include "wincompat.h"
