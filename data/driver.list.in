@@ -154,6 +154,8 @@
 "Cyber Power Systems"	"ups"	"2"	"Value 400E"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"2"	"Value 600E"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"2"	"Value 800E"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"ups"	"2"	"CP1350AVRLCD"	"USB"	"usbhid-ups"
+
 
 "Cyclades"	"pdu"	"1"	"PM8"	"8 outlets"	"powerman-pdu (experimental)"
 "Cyclades"	"pdu"	"1"	"PM10"	"10 outlets"	"powerman-pdu (experimental)"
