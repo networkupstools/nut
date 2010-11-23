@@ -1,7 +1,7 @@
 /* dummy-ups.h - NUT testing driver and repeater
 
    Copyright (C)
-       2005 - 2009  Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
+       2005 - 2010  Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
  * as the "port" parameter (only the file name, not the path).
  * The format of this file is the same as an upsc dump:
  * <varname>: <value>
+ * FIXME: use cmdvartab for conformance checking
  * ...
  * Once the driver is loaded:
  * - change the value by using upsrw
