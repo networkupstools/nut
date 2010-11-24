@@ -3,13 +3,6 @@ NUT command and variable naming scheme
 ======================================
 endif::external_title[]
 
-////////////////////////////////////////////////////////////////////////////////
-FIXME (POST): do we really need that note considering the worflow?
-We may otherwise consider some merge / consolidation / automatic generation
-of one or the other.
-NOTE: When updating this section, also update data/cmdvartab.
-////////////////////////////////////////////////////////////////////////////////
-
 This is a dump of the standard variables and command names used in NUT.
 Don't use a name with any of the dstate functions unless it exists here.
 
@@ -369,8 +362,7 @@ outlet: Smart outlet management
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 NOTE: *n* stands for the outlet index. For more information, refer to the
-link:user-manual.html#Outlets_PDU_notes[NUT outlets management and PDU notes]
-chapter of the user manual.
+NUT outlets management and PDU notes chapter of the user manual.
 
 [options="header"]
 |===============================================================================

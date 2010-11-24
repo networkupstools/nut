@@ -86,14 +86,14 @@ If you need any other switches for configure, add them here.  For example:
 
 * to build and install CGI scripts, add '--with-cgi'.
 
-See link:user-manual.html#Configure_options[Configure options] from the
-User Manual, docs/configure.txt or './configure --help' for all the available
+See <<Configure_options,Configure options>> from the User Manual,
+docs/configure.txt or './configure --help' for all the available
 options.
 
 If you alter paths with additional switches, be sure to use those
 new paths while reading the rest of the steps.    
 
-Reference: link:user-manual.html#Configure_options[Configure options] from the
+Reference: <<Configure_options,Configure options>> from the
 User Manual.
 
 
@@ -194,16 +194,15 @@ old values, your drivers may fail to start.
 
 You are now ready to configure NUT, and start testing and using it.
 
-You can jump directly to the
-link:user-manual.html#Configuration_notes[NUT configuration].
+You can jump directly to the <<Configuration_notes,NUT configuration>>.
 
 
 [[Installing_packages]]
 Installing from packages
 ------------------------
 
-This chapter describes the specific installation steps when using binary packages
-that exist on various major systems.
+This chapter describes the specific installation steps when using
+binary packages that exist on various major systems.
 
 [[Debian]]
 Debian, Ubuntu and other derivatives
@@ -212,8 +211,8 @@ Debian, Ubuntu and other derivatives
 NOTE: NUT is packaged and well maintained in these systems.
 The official Debian packager is part of the NUT Team.
 
-Using your prefered method (apt-get, aptitude, Synaptic, ...), install the 'nut'
-package, and optionaly the following:
+Using your prefered method (apt-get, aptitude, Synaptic, ...), install
+the 'nut' package, and optionaly the following:
 
 - 'nut-cgi', if you need the CGI (HTML) option,
 - 'nut-snmp', if you need the snmp-ups driver,
@@ -322,11 +321,4 @@ Optionaly, you can also install the following ports:
 You are now ready to configure NUT, and start testing and using it.
 
 You can jump directly to the
-link:user-manual.html#Configuration_notes[NUT configuration].
-
-
-////////////////////////////////////////////////////////////////////////////////
-FIXME
-More information can be found in the README file, the shutdown.txt document, 
-the upsmon(8) man page and the upsmon.conf(5) man page.
-////////////////////////////////////////////////////////////////////////////////
+<<Configuration_notes,NUT configuration>>.

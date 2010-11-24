@@ -12,7 +12,12 @@ Documentation
 - First, be sure to read the link:FAQ.html[FAQ]. The most common problems are already
 addressed there.
 
-- Else, you can read the link:user-manual.html[NUT User Manual].
+ifdef::website[]
+- Else, you can read the link:docs/user-manual.chunked/index.html[NUT User Manual].
+endif::website[]
+ifndef::website[]
+- Else, you can read the <<user-manual,NUT User Manual>>.
+endif::website[]
 It also covers many areas about installing, configuring and using NUT.
 The specific steps on system integration are also discussed.
 
@@ -77,8 +82,18 @@ Post a patch, ask a development question, ...
 Use the link:http://lists.alioth.debian.org/mailman/listinfo/nut-upsdev[NUT Developers]
 mailing list.
 
-Refer to the link:developer-guide.html[NUT Developer Guide] for more information,
-and link:developer-guide.html#_submitting_patches.
+Refer to the 
+ifdef::website[]
+link:docs/developer-guide.chunked/index.html[NUT Developer Guide]
+for more information, and the chapter on how to 
+link:docs/developer-guide.chunked/ar01s03.html#_submitting_patches[submit patches].
+endif::website[]
+ifndef::website[]
+link:developer-guide.chunked/index.html[NUT Developer Guide]
+for more information, and the chapter on how to 
+link:developer-guide.chunked/ar01s03.html#_submitting_patches[submit patches].
+endif::website[]
+
 
 Discuss packaging and related topics
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -86,4 +101,11 @@ Discuss packaging and related topics
 Use the link:http://lists.alioth.debian.org/mailman/listinfo/nut-packaging[NUT Packagers]
 mailing list.
 
-Refer to the link:packager-guide.html[NUT Packager Guide] for more information.
+Refer to the 
+ifdef::website[]
+link:docs/packager-guide.chunked/index.html[NUT Packager Guide]
+endif::website[]
+ifndef::website[]
+link:packager-guide.chunked/index.html[NUT Packager Guide]
+endif::website[]
+ for more information.

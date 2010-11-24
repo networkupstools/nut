@@ -47,8 +47,8 @@ Use the following commands to accomplish this:
 	chmod 640 /etc/nut/*
 
 
-Finally, the link:user-manual.html#StatePath[state path] directory, which
-holds the communication between the driver(s) and upsd, should also be secured.
+Finally, the <<StatePath,state path>> directory, which holds the
+communication between the driver(s) and upsd, should also be secured.
 
 	chown root:nut /var/state/ups
 	chmod 0770 /var/state/ups
@@ -67,7 +67,7 @@ This file defines who may access instant commands and settings, and what
 is available.
 
 During the initial 
-link:user-manual.html#NUT_user_creation[NUT user creation], we have created a
+<<NUT_user_creation,NUT user creation>>, we have created a
 monitoring user for upsmon.
 
 You can also create an 'administrator' user with full power using:

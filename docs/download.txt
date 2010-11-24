@@ -10,7 +10,14 @@ Source code
 ================================================================================
 You should always use PGP/GPG to verify the signatures before using any source code.
 
-You can use the link:user-manual.html#verifySourceSig[following procedure] to do so.
+You can use the 
+ifdef::website[]
+link:docs/user-manual.chunked/ar01s09.html#verifySourceSig[following procedure]
+endif::website[]
+ifndef::website[]
+- Else, you can read the <<verifySourceSig,following procedure>>.
+endif::website[]
+to do so.
 ================================================================================
 
 Stable tree: 2.4
@@ -53,8 +60,15 @@ To generate the build scripts, you must then call:
 
 	$ autoreconf --install
 
-Then refer to the link:user-manual.html[NUT User Manual] for more information.
-
+Then refer to the 
+ifdef::website[]
+link:docs/user-manual.chunked/index.html[NUT user manual]
+endif::website[]
+ifndef::website[]
+<<user-manual,NUT user manual>>
+endif::website[]
+ for more information.
+ 
 NOTE: Users that need the latest developments to support new devices *must*
 use <<Snapshots,snapshots>>. 
 

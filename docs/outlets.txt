@@ -38,7 +38,7 @@ Next, outlets index starts from *1*. Index '0' is implicitly reserved to
 the 'main outlet'. So the first outlet is 'outlet.1.*'.
 
 For a complete list of outlet data and commands, refer to the
-link:link:user-manual.html#nut-names[NUT command and variable naming scheme].
+<<nut-names,NUT command and variable naming scheme>>.
 
 An example upsc output (data/epdu-managed.dev) is available in the source
 archive.
@@ -81,7 +81,7 @@ instead of small devices.
 
 NOTE: If you need the scheduling function and your device doesn't support
 it, you can still use
-link:user-manual.html#Advanced_usage_scheduling_notes[NUT scheduling features].
+<<Advanced_usage_scheduling_notes,NUT scheduling features>>.
 
 WARNING: don't plug the UPS's communication cable (USB or network) on a managed outlet.
 Otherwise, all computers will be stopped as soon as the communication is lost.

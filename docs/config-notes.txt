@@ -5,8 +5,8 @@ This chapter describe most of the configuration and use aspects of NUT,
 including establishing communication with the device and configuring safe
 shutdowns when the UPS battery runs out of power.
 
-There are many programs and link:user-manual.html#Features[features] in this
-package.  You should check out the link:user-manual.html#Overview[NUT Overview]
+There are many programs and <<Features,features>> in this
+package.  You should check out the <<Overview,NUT Overview>>
 and other accompanying documentation to see how it all works.
 
 
@@ -175,9 +175,8 @@ want upsd to listen on for connections, optionally with a port number.
 	LISTEN 127.0.0.1 3493
 	LISTEN ::1 3493
 
-NOTE: Refer to the NUT user manual
-link:user-manual.html#NUT_Security[security chapter] for information on
-how to access and secure upsd clients connections.
+NOTE: Refer to the NUT user manual <<NUT_Security,security chapter>> for
+information on how to access and secure upsd clients connections.
 
 Next, create upsd.users.  For now, this can be an empty file.
 You can come back and add more to it later when it's time to 
@@ -464,8 +463,8 @@ The number "1" here is the power value.  This should always be set to 1 unless
 you have a very special (read: expensive) system with redundant power supplies.
 In such cases, refer to the User Manual:
 
-- link:user-manual.html#BigServers[typical setups for big servers],
-- link:user-manual.html#DataRoom[typical setups for data rooms].
+- <<BigServers,typical setups for big servers>>,
+- <<DataRoom,typical setups for data rooms>>.
 
 References: link:man/upsmon.html[upsmon(8)],
 link:man/upsmon.conf.html[upsmon.conf(5)]
@@ -519,8 +518,8 @@ You may delete the POWERDOWNFLAG in the startup scripts, but it is not
 necessary. `upsmon` will clear that file for you when it starts.
 
 NOTE: Init script examples are provide in the 'scripts' directory of
-the NUT source tree, and in the various
-link:user-manual.html#_binary_packages[packages] that exist.
+the NUT source tree, and in the various <<_binary_packages,packages>>
+that exist.
 
 Shutdown scripts
 ^^^^^^^^^^^^^^^^
@@ -794,6 +793,5 @@ system with a 1:1 cord:supply ratio has more wires stuffed behind it, but
 it's much easier to move things around since any given UPS drives a smaller
 percentage of the overall power.
 
-
-More information can be found in the link:user-manual.html[NUT User Manual], and
-the various link:man/index.html[user manual pages].
+More information can be found in the <<user-manual,NUT User Manual>>,
+and the various link:../man/index.html[user manual pages].
