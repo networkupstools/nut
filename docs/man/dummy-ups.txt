@@ -103,6 +103,11 @@ those of the driver.* and server.* collections.
 You can do this by either editing the definition file, or use the
 linkman:upsrw[1] and linkman:upscmd[1] commands.
 
+Note that in simulation mode, new variables can be added on the fly, by
+adding these to the definition file. Conversely, if you need to remove
+variable (such as transient ones, like ups.alarm), simply update these
+by setting an empty value. As a result, they will get removed from the data.
+
 In repeater mode, the driver acts according to the capabilities of the UPS, and
 so support the same instant commands and settable values.
 
