@@ -17,7 +17,8 @@ directory.
  - Macro: NUT_CHECK_LIBNEON
  - Macro: NUT_CHECK_LIBNETSNMP
  - Macro: NUT_CHECK_LIBPOWERMAN
- - Macro: NUT_CHECK_LIBSSL
+ - Macro: NUT_CHECK_LIBOPENSSL
+ - Macro: NUT_CHECK_LIBNSS
  - Macro: NUT_CHECK_LIBUSB
  - Macro: NUT_CHECK_LIBWRAP
    Determine the compiler flags for the corresponding library. On

@@ -83,9 +83,12 @@ Contents:
    library).
 
   --with-ssl (default: auto-detect)
+  --with-nss (default: auto-detect)
+  --with-openssl (default: auto-detect)
 
-   Enable SSL development code. Read docs/ssl.txt for instructions on
-   SSL support.
+   Enable SSL support, using either Mozilla NSS or OpenSSL.
+   If both are present, and nothing was specified, NSS support will
+   be prefered. Read docs/security.txt for instructions on SSL support.
 
   --with-wrap (default: auto-detect)
 

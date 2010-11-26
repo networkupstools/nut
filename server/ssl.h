@@ -20,7 +20,7 @@
 #ifndef SSL_H_SEEN
 #define SSL_H_SEEN 1
 
-#ifdef HAVE_SSL
+#ifdef WITH_SSL
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #endif
