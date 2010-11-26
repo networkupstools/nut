@@ -757,6 +757,12 @@ eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
 AC_DEFINE_UNQUOTED(BINDIR, "${conftemp}", [Default path for user executables])
 
+dnl same for sbindir
+conftemp="${sbindir}"
+eval conftemp=\"${conftemp}\"
+eval conftemp=\"${conftemp}\"
+AC_DEFINE_UNQUOTED(SBINDIR, "${conftemp}", [Default path for super user executables])
+
 AC_SUBST(OS_NAME)
 AC_SUBST(LIBSSL_CFLAGS)
 AC_SUBST(LIBSSL_LDFLAGS)
@@ -785,6 +791,7 @@ AC_SUBST(SERLIBS)
 AC_SUBST(STATEPATH)
 AC_SUBST(CONFPATH)
 AC_SUBST(BINDIR)
+AC_SUBST(SBINDIR)
 AC_SUBST(RUN_AS_USER)
 AC_SUBST(RUN_AS_GROUP)
 AC_SUBST(SUN_LIBUSB)
@@ -811,6 +818,7 @@ AC_OUTPUT([
  lib/libupsclient.pc
  lib/Makefile
  man/Makefile
+ scripts/Windows/Makefile
  scripts/hal/Makefile
  scripts/hal/ups-nut-device.fdi
  scripts/hotplug/Makefile
