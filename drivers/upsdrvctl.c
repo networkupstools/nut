@@ -281,6 +281,37 @@ static void forkexec(char *const argv[], const ups_t *ups)
 
 	/* shouldn't get here */
 	fatal_with_errno(EXIT_FAILURE, "execv");
+#else
+	BOOL	ret;
+	char	commandline[SMALLBUF];
+	STARTUPINFO StartupInfo;
+	PROCESS_INFORMATION ProcessInformation;
+	int 	i = 1;
+
+	memset(&StartupInfo,0,sizeof(STARTUPINFO));
+
+	/* the command line is made of the driver name followed by args */
+	snprintf(commandline,sizeof(commandline),"%s", ups->driver);
+	while( argv[i] != NULL ) {	
+		snprintfcat(commandline, sizeof(commandline), " %s", argv[i]);
+		i++;
+	}
+	ret = CreateProcess(
+			prog,
+			commandline,
+			NULL,
+			NULL,
+			FALSE,
+			CREATE_NEW_PROCESS_GROUP,
+			NULL,
+			NULL,
+			&StartupInfo,
+			&ProcessInformation
+			);
+
+	if( ret == 0 ) {
+		fatal_with_errno(EXIT_FAILURE, "execv");
+	}
 #endif
 }
 
@@ -294,7 +325,11 @@ static void start_driver(const ups_t *ups)
 
 	upsdebugx(1, "Starting UPS: %s", ups->upsname);
 
+#ifndef WIN32
 	snprintf(dfn, sizeof(dfn), "%s/%s", driverpath, ups->driver);
+#else
+	snprintf(dfn, sizeof(dfn), "%s/%s.exe", driverpath, ups->driver);
+#endif
 	ret = stat(dfn, &fs);
 
 	if (ret < 0)

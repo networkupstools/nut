@@ -41,14 +41,12 @@
 
 char		*device_path = NULL;
 const char	*progname = NULL, *upsname = NULL, *device_name = NULL;
-char		*service_name = NULL;
 
 /* may be set by the driver to wake up while in dstate_poll_fds */
 #ifndef WIN32
 	int	extrafd = -1;
 #else
 	HANDLE			extrafd = INVALID_HANDLE_VALUE;
-	#define		UPS_ARGS	"-a "
 #endif
 
 /* for ser_open */
@@ -657,7 +655,18 @@ static void set_exit_flag(int sig)
 	exit_flag = sig;
 }
 
-/*FIXME Check if we need equivalent of these signals in WIN32 ? */
+#ifdef WIN32
+BOOL WINAPI CtrlEvent( DWORD dwCtrlType )
+{
+	if( dwCtrlType == CTRL_BREAK_EVENT  || dwCtrlType == CTRL_C_EVENT ) {
+		set_exit_flag(1);
+		return TRUE;
+	}
+
+	return FALSE;
+}
+#endif
+
 static void setup_signals(void)
 {
 #ifndef WIN32
@@ -681,14 +690,12 @@ static void setup_signals(void)
 #endif
 	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGPIPE, &sa, NULL);
+#else
+	SetConsoleCtrlHandler(CtrlEvent,TRUE);
 #endif
 }
 
-#ifdef WIN32
-void WINAPI SvcMain( DWORD argc, LPTSTR *argv )
-#else /* NOT WIN32 */
 int main(int argc, char **argv)
-#endif
 {
 	struct	passwd	*new_uid = NULL;
 	int	i, do_forceshutdown = 0;
@@ -704,12 +711,25 @@ int main(int argc, char **argv)
 
 	progname = xbasename(argv[0]);
 
-#ifndef WIN32
-	open_syslog(progname);
-#else
-	open_syslog(service_name);
-	SvcStart(service_name);
+#ifdef WIN32
+	char * drv_name;
+	drv_name = xbasename(argv[0]);
+	/* remove trailing .exe */
+	char * name = strrchr(drv_name,'.');
+	if( name != NULL ) {
+		if(strcasecmp(name, ".exe") == 0 ) {
+			progname = strdup(drv_name);
+			char * t = strrchr(progname,'.');
+			*t = 0;
+		}
+	}
+	else {
+		progname = drv_name;
+	}
 #endif
+
+	open_syslog(progname);
+
 	upsdrv_banner();
 
 	if (upsdrv_info.status == DRV_EXPERIMENTAL) {
@@ -720,8 +740,7 @@ int main(int argc, char **argv)
 	/* build the driver's extra (-x) variable table */
 	upsdrv_makevartable();
 
-	/* NOTE: If updating this getopt line later, see also WIN32 main() below */
-	while ((i = getopt(argc, argv, "+a:s:kFBDd:hx:Lqr:u:g:Vi:N")) != -1) {
+	while ((i = getopt(argc, argv, "+a:s:kFBDd:hx:Lqr:u:g:Vi:")) != -1) {
 		switch (i) {
 			case 'a':
 				upsname = optarg;
@@ -812,14 +831,6 @@ int main(int argc, char **argv)
 			case 'h':
 				help_msg();
 				exit(EXIT_SUCCESS);
-
-#ifdef WIN32
-			case 'N':
-			case 'I':
-				/* nothing to do, already processed for Windows SvcMain() */
-				break;
-#endif
-
 			default:
 				fatalx(EXIT_FAILURE,
 					"Error: unknown option -%c. Try -h for help.", i);
@@ -1087,10 +1098,6 @@ int main(int argc, char **argv)
 		writepid(pidfn);	/* PID changes when backgrounding */
 	}
 
-#ifdef WIN32
-	SvcReady();
-#endif
-
 	while (!exit_flag) {
 
 		struct timeval	timeout;
@@ -1113,13 +1120,6 @@ int main(int argc, char **argv)
 		else {
 			while (!dstate_poll_fds(timeout, extrafd) && !exit_flag) {
 				/* repeat until time is up or extrafd has data */
-				if( WaitForSingleObject(svc_stop,0) == WAIT_OBJECT_0 ) {
-					set_exit_flag(1);
-				}
-			}
-
-			if( WaitForSingleObject(svc_stop,0) == WAIT_OBJECT_0 ) {
-				set_exit_flag(1);
 			}
 		}
 	}
@@ -1133,96 +1133,3 @@ int main(int argc, char **argv)
 	exit(EXIT_SUCCESS);
 */
 }
-
-#ifdef WIN32
-int main(int argc, char **argv)
-{
-	const char * drv_name = NULL;
-	int i;
-	int install_flag =0;
-	int uninstall_flag =0;
-
-	drv_name = xbasename(argv[0]);
-	/* remove trailing .exe */
-	char * name = strrchr(drv_name,'.');
-	if( name != NULL ) {
-		if(strcasecmp(name, ".exe") == 0 ) {
-			progname = strdup(drv_name);
-			char * t = strrchr(progname,'.');
-			*t = 0;
-		}
-	}
-	else {
-		progname = drv_name;
-	}
-
-	/* NOTE: If updating this getopt line later, see also non-WINAPI main(),
-	 * aka WIN32 SvcMain(), above */
-	while ((i = getopt(argc, argv, "+a:s:kFBDd:hx:Lqr:u:g:Vi:NIU")) != -1) {
-		switch (i) {
-			case 'N':
-				noservice_flag = 1;
-				break;
-			case 'I':
-				install_flag = 1;
-				break;
-			case 'U':
-				uninstall_flag = 1;
-				break;
-			case 'a':
-				upsname = optarg;
-
-				read_upsconf();
-
-				if (!upsname_found)
-					fatalx(EXIT_FAILURE, "Error: Section %s not found in ups.conf", optarg);
-				break;
-			default:
-				break;
-		}
-	}
-
-	if (!upsname_found) {
-		fatalx(EXIT_FAILURE,
-			"Error: specifying '-a id' is now mandatory. Try -h for help.");
-	}
-
-	int size = strlen(SERVICE_PREFIX) + +strlen(progname) + strlen(upsname) + 1 + 3; /* +1 is terminal 0, +3 is " - "*/
-	service_name = xmalloc(size);
-	snprintf(service_name, size, "%s%s - %s", SERVICE_PREFIX,progname,upsname);
-
-	if( install_flag ) {
-		char * args;
-		size = strlen(upsname) + strlen(UPS_ARGS) + 1 ;
-		args = xmalloc(size);	
-		snprintf(args,size, "%s%s", UPS_ARGS,upsname);
-		return SvcInstall(service_name,args);
-	}
-
-	if( uninstall_flag ) {
-		return SvcUninstall(service_name);
-	}
-
-	/* Set optind to 0 not 1 because we use GNU extension '+' in optstring */
-	optind = 0;
-
-	if( !noservice_flag ) {
-		SERVICE_TABLE_ENTRY DispatchTable[] =
-		{
-			{ service_name, (LPSERVICE_MAIN_FUNCTION) SvcMain },
-			{ NULL, NULL }
-		};
-
-		/* This call returns when the service has stopped */
-		if (!StartServiceCtrlDispatcher( DispatchTable ))
-		{
-			upslogx(LOG_ERR, "StartServiceCtrlDispatcher failed (%d): exiting, try -N to avoid starting as a service", (int)GetLastError());
-		}
-	}
-	else {
-		SvcMain(argc,argv);
-	}
-
-	return EXIT_SUCCESS;
-}
-#endif

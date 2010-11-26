@@ -523,7 +523,6 @@ static void sock_connect(HANDLE sock)
 			FALSE, /* inital state = non signaled*/
 			NULL /* no name*/);
 	if(connect_overlapped.hEvent == NULL ) {
-		printf("CreateEvent failed.\n");
 		fatal_with_errno(EXIT_FAILURE, "Can't create event");
 	}
 
@@ -540,11 +539,10 @@ static void sock_connect(HANDLE sock)
 			FALSE, /* inital state = non signaled*/
 			NULL /* no name*/);
 	if(conn->read_overlapped.hEvent == NULL ) {
-		printf("CreateEvent failed.\n");
 		fatal_with_errno(EXIT_FAILURE, "Can't create event");
 	}
 
-	ReadFile (conn->fd,conn->buf,sizeof(conn->buf)-1,&(conn->bytesRead),&(conn->read_overlapped)); /* -1 to be sure to have a trailling 0 */
+	ReadFile (conn->fd,conn->buf,sizeof(conn->buf)-1,NULL,&(conn->read_overlapped)); /* -1 to be sure to have a trailling 0 */
 
 	pconf_init(&conn->ctx, NULL);
 
@@ -834,7 +832,7 @@ static void sock_read(conn_t *conn)
 #ifdef WIN32
 	/* Restart async read */
 	memset(conn->buf,0,sizeof(conn->buf));
-	ReadFile(conn->fd,conn->buf,sizeof(conn->buf)-1,&(conn->bytesRead),&(conn->read_overlapped)); /* -1 to be sure to have a trailling 0 */
+	ReadFile(conn->fd,conn->buf,sizeof(conn->buf)-1,NULL,&(conn->read_overlapped)); /* -1 to be sure to have a trailling 0 */
 #endif
 }
 
@@ -1041,12 +1039,6 @@ int dstate_poll_fds(struct timeval timeout, HANDLE extrafd)
 	rfds[maxfd] = connect_overlapped.hEvent;
 	maxfd++;
 
-	/* Add SCM event handler in service mode*/
-	if( !noservice_flag ) {
-		rfds[maxfd] = svc_stop;
-		maxfd++;
-	}
-
 	ret = WaitForMultipleObjects( 
 				maxfd,	// number of objects in array
 				rfds,	// array of objects
@@ -1060,12 +1052,6 @@ int dstate_poll_fds(struct timeval timeout, HANDLE extrafd)
 	if (ret == WAIT_FAILED) {
 		printf("waitfor failed\n");
 		return overrun;
-	}
-
-	/* Service stop requested */
-	if( !noservice_flag && (rfds[ret] == svc_stop) ) {
-			ReportSvcStatus( SERVICE_STOPPED, NO_ERROR, 0);
-			return 0;
 	}
 
 	/* Retrieve the signaled connection */

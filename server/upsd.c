@@ -137,6 +137,7 @@ static tracking_t	*tracking_list = NULL;
 static struct pollfd	*fds = NULL;
 #else
 static HANDLE		*fds = NULL;
+static HANDLE		stop_event;
 #endif
 static handler_t	*handler = NULL;
 
@@ -1354,11 +1355,9 @@ static void mainloop(void)
 		nfds++;
 	}
 
-	/* Add SCM event handler in service mode*/
-	if( !noservice_flag ) {
-		fds[nfds] = svc_stop;
-		nfds++;
-	}
+	/* Add asynchronous exit request (CTRL+C) */
+	fds[nfds] = stop_event;
+	nfds++;
 
 	upsdebugx(2, "%s: wait for %d filedescriptors", __func__, nfds);
 
@@ -1376,25 +1375,23 @@ static void mainloop(void)
 		return;
 	}
 
-	if( !noservice_flag && fds[ret] == svc_stop ) {
-		ReportSvcStatus( SERVICE_STOPPED, NO_ERROR, 0);
-		set_exit_flag(1);
-	} 
-	else {
-		switch(handler[ret].type) {
-			case DRIVER:
-				sstate_readline((upstype_t *)handler[ret].data);
-				break;
-			case CLIENT:
-				client_readline((ctype_t *)handler[ret].data);
-				break;
-			case SERVER:
-				client_connect((stype_t *)handler[ret].data);
-				break;
-			default:
-				upsdebugx(2, "%s: <unknown> has data available", __func__);
-				break;
-		}
+	if( fds[ret] == stop_event ) {
+		return;
+	}
+
+	switch(handler[ret].type) {
+		case DRIVER:
+			sstate_readline((upstype_t *)handler[ret].data);
+			break;
+		case CLIENT:
+			client_readline((ctype_t *)handler[ret].data);
+			break;
+		case SERVER:
+			client_connect((stype_t *)handler[ret].data);
+			break;
+		default:
+			upsdebugx(2, "%s: <unknown> has data available", __func__);
+			break;
 	}
 #endif
 }
@@ -1425,11 +1422,6 @@ static void help(const char *arg_progname)
 	printf("  -4		IPv4 only\n");
 	printf("  -6		IPv6 only\n");
 #endif
-#ifdef WIN32
-	printf("  -I		Install service\n");
-	printf("  -N		Do not start as a service (for debug purpose)\n");
-#endif
-
 	exit(EXIT_SUCCESS);
 }
 
@@ -1441,6 +1433,22 @@ static void set_reload_flag(int sig)
 }
 #endif
 
+#ifdef WIN32
+BOOL WINAPI CtrlEvent( DWORD dwCtrlType )
+{
+printf("CtrlEvent %d\n",dwCtrlType);
+	if( dwCtrlType == CTRL_BREAK_EVENT  || dwCtrlType == CTRL_C_EVENT ) {
+printf("SetEvent\n");
+		set_exit_flag(1);
+		SetEvent(stop_event);
+		/* Wait for the mainloop to exit */
+		while(1) {};
+		return TRUE;
+	}
+
+	return FALSE;
+}
+#endif
 
 static void setup_signals(void)
 {
@@ -1471,6 +1479,12 @@ static void setup_signals(void)
 	/* handle reloading */
 	sa.sa_handler = set_reload_flag;
 	sigaction(SIGHUP, &sa, NULL);
+#else
+	stop_event = CreateEvent(NULL, /* security */
+				FALSE, /* auto-reset */
+				FALSE, /* initial test = non signaled */
+				NULL /*no name */);
+	SetConsoleCtrlHandler(CtrlEvent,TRUE);
 #endif
 }
 
@@ -1493,21 +1507,13 @@ void check_perms(const char *fn)
 #endif
 }
 
-#ifdef WIN32
-void WINAPI SvcMain( DWORD argc, LPTSTR *argv )
-#else /* NOT WIN32 */
 int main(int argc, char **argv)
-#endif
 {
 	int	i, cmd = 0, cmdret = 0, foreground = -1;
 	char	*chroot_path = NULL;
 	const char	*user = RUN_AS_USER;
 	struct passwd	*new_uid = NULL;
 	pid_t	oldpid = -1;
-
-#ifdef WIN32
-	SvcStart(UPSD_SVCNAME);
-#endif
 
 	progname = xbasename(argv[0]);
 
@@ -1520,8 +1526,7 @@ int main(int argc, char **argv)
 
 	printf("Network UPS Tools %s %s\n", progname, UPS_VERSION);
 
-	/* NOTE: If updating this getopt line later, see also WIN32 main() below */
-	while ((i = getopt(argc, argv, "+h46p:qr:i:fu:Vc:P:DFBNIU")) != -1) {
+	while ((i = getopt(argc, argv, "+h46p:qr:i:fu:Vc:P:DFB")) != -1) {
 		switch (i) {
 			case 'p':
 			case 'i':
@@ -1588,11 +1593,6 @@ int main(int argc, char **argv)
 				opt_af = AF_INET6;
 				break;
 #endif
-
-			case 'N':
-			case 'I':
-				/* nothing to do, already processed for Windows SvcMain() */
-				break;
 
 			case 'h':
 			default:
@@ -1758,10 +1758,6 @@ int main(int argc, char **argv)
 	/* initialize SSL (keyfile must be readable by nut user) */
 	ssl_init();
 
-#ifdef WIN32
-	SvcReady();
-#endif
-
 	while (!exit_flag) {
 		mainloop();
 	}
@@ -1769,55 +1765,5 @@ int main(int argc, char **argv)
 	ssl_cleanup();
 
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
-#ifndef WIN32
-	return EXIT_SUCCESS;
-#else
-	return;
-#endif
-}
-
-#ifdef WIN32
-
-int main(int argc, char **argv)
-{
-	int i;
-
-	/* NOTE: If updating this getopt line later, see also non-WINAPI main(),
-	 * aka WIN32 SvcMain(), above */
-	while ((i = getopt(argc, argv, "+h46p:qr:i:fu:Vc:P:DFBNIU")) != -1) {
-		switch (i) {
-			case 'N':
-				noservice_flag = 1;
-				break;
-			case 'I':
-				return SvcInstall(UPSD_SVCNAME,NULL);
-			case 'U':
-				return SvcUninstall(UPSD_SVCNAME);
-			default:
-				break;
-		}
-	}
-
-	/* Set optind to 0 not 1 because we use GNU extension '+' in optstring */
-	optind = 0;
-
-	if( !noservice_flag ) {
-		SERVICE_TABLE_ENTRY DispatchTable[] =
-		{
-			{ UPSD_SVCNAME, (LPSERVICE_MAIN_FUNCTION) SvcMain },
-			{ NULL, NULL }
-		};
-
-		/* This call returns when the service has stopped */
-		if (!StartServiceCtrlDispatcher( DispatchTable ))
-		{
-			upslogx(LOG_ERR, "StartServiceCtrlDispatcher failed (%d): exiting, try -N to avoid starting as a service", (int)GetLastError());
-		}
-	}
-	else {
-		SvcMain(argc,argv);
-	}
-
 	return EXIT_SUCCESS;
 }
-#endif

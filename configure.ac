@@ -2907,6 +2907,7 @@ AC_CONFIG_FILES([
  scripts/udev/nut-ipmipsu.rules
  scripts/ufw/Makefile
  scripts/ufw/nut.ufw.profile
+ scripts/Windows/Makefile
  scripts/Makefile
  server/Makefile
  tools/Makefile

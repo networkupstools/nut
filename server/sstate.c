@@ -304,7 +304,7 @@ HANDLE sstate_connect(upstype_t *ups)
 	}
 
 	/* Start a read IO so we could wait on the event associated with it */
-	ReadFile(fd,ups->buf,sizeof(ups->buf)-1,&(ups->bytesRead),&(ups->read_overlapped)); /*-1 to be sure to have a trailling 0 */
+	ReadFile(fd,ups->buf,sizeof(ups->buf)-1,NULL,&(ups->read_overlapped)); /*-1 to be sure to have a trailling 0 */
 #endif
 
 	pconf_init(&ups->sock_ctx, NULL);
@@ -410,7 +410,7 @@ void sstate_readline(upstype_t *ups)
 #ifdef WIN32
 	/* Restart async read */
 	memset(ups->buf,0,sizeof(ups->buf));
-	ReadFile( ups->sock_fd, ups->buf, sizeof(ups->buf)-1, &(ups->bytesRead), &(ups->read_overlapped)); /* -1 to be sure to have a trailing 0 */
+	ReadFile( ups->sock_fd, ups->buf, sizeof(ups->buf)-1,NULL, &(ups->read_overlapped)); /* -1 to be sure to have a trailing 0 */
 #endif
 }
 
