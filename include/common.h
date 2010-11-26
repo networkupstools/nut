@@ -55,10 +55,6 @@ extern "C" {
 #endif
 
 extern const char *UPS_VERSION;
-#ifdef WIN32
-extern int			noservice_flag;
-extern HANDLE			svc_stop;
-#endif
 
 /* get the syslog ready for us */
 void open_syslog(const char *progname);
@@ -134,14 +130,6 @@ int select_read(const int fd, void *buf, const size_t buflen, const long d_sec, 
 int select_read(const HANDLE fd, void *buf, const size_t buflen, const long d_sec, const long d_usec);
 #endif
 int select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec);
-#ifdef WIN32
-int SvcInstall(const char *,const char *);
-int SvcUninstall(const char *);
-void ReportSvcStatus(DWORD,DWORD,DWORD);
-void WINAPI SvcCtrlHandler(DWORD);
-void SvcStart(char *);
-void SvcReady(void);
-#endif
 
 /* Buffer sizes used for various functions */
 #define SMALLBUF	512
@@ -176,7 +164,7 @@ extern int optind;
 /* *INDENT-ON* */
 
 #ifdef WIN32
-/* FIXME : this might not be the optimal mapping between syslog ans ReportEvent*/
+/* FIXME : this might not be the optimal mapping between syslog and ReportEvent*/
 #define LOG_ERR 	EVENTLOG_ERROR_TYPE
 #define LOG_INFO 	EVENTLOG_INFORMATION_TYPE
 #define LOG_DEBUG	EVENTLOG_WARNING_TYPE
@@ -187,8 +175,8 @@ extern int optind;
 
 #define closelog()
 
-#define  UPSD_SVCNAME TEXT("NUT - data server")
-#define  SERVICE_PREFIX TEXT("NUT - ")
+#define SVCNAME TEXT("Network UPS Tools")
+#define EVENTLOG_PIPE_NAME TEXT("\\\\.\\pipe\\nut")
 #endif
 
 #endif /* NUT_COMMON_H */

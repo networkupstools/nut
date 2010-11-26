@@ -42,7 +42,6 @@ typedef struct upstype_s {
 	HANDLE			sock_fd;
 	char 			buf[SMALLBUF];
 	OVERLAPPED		read_overlapped;
-	DWORD			bytesRead;
 #endif
 	int			stale;
 	int			dumpdone;

@@ -20,7 +20,6 @@
 #include "common.h"
 #include <winsock2.h>
 #include <windows.h>
-#include "winevent.h"
 
 extern int errno;
 
@@ -51,38 +50,59 @@ int sktclose(int fh)
 	return ret;
 }
 
+/* syslog sends a message through a pipe to the wininit service. Which is
+in charge of adding an event in the Windows event logger.
+The message is made of 4 bytes containing the priority followed by an array
+of chars containing the message to display (no terminal 0 required here) */
 void syslog(int priority, const char *fmt, ...)
 {
-	LPCTSTR strings[2];
-	char buf[LARGEBUF];
+	char buf1[LARGEBUF];
+	char buf2[LARGEBUF];
 	va_list ap;
-	HANDLE EventSource;
+	HANDLE pipe;
+	BOOL result = FALSE;
+	DWORD bytesWritten = 0;
 
 	if( EventLogName == NULL ) {
 		return;
 	}
+
+	/* Format message */
 	va_start(ap,fmt);
-	vsnprintf(buf, sizeof(buf), fmt, ap);
+	vsnprintf(buf1, sizeof(buf1), fmt, ap);
 	va_end(ap);
 
-	strings[0] = buf;
-	strings[1] = EventLogName;
+	/* Add progname */
+	snprintf(buf2,sizeof(buf2),"%s - %s",EventLogName,buf1);
 
-	EventSource = RegisterEventSource(NULL, EventLogName);
+	/* Add priority to create the whole frame */
+	*((DWORD *)buf1) = (DWORD)priority;
+	memcpy(buf1+sizeof(DWORD),buf2,sizeof(buf2));
 
-	if( NULL != EventSource ) {
-		ReportEvent(	EventSource,		/* event log handle */
-				priority,		/* event type */
-				0,			/* event category */
-				SVC_ERROR,		/* event identifier */
-				NULL,			/* no security identifier */
-				2,			/* size of string array */
-				0,			/* no binary data */
-				strings,		/* array of string */
-				NULL);			/* no binary data */
+	pipe = CreateFile(
+			EVENTLOG_PIPE_NAME,	/* pipe name */
+			GENERIC_WRITE,
+			0,			/* no sharing */
+			NULL,			/* default security attributes FIXME */
+			OPEN_EXISTING,		/* opens existing pipe */
+			FILE_FLAG_OVERLAPPED,	/* enable async IO */
+			NULL);			/* no template file */
 
-		DeregisterEventSource(EventSource);
 
+	if (pipe == INVALID_HANDLE_VALUE) {
+		return;
 	}
+
+	result = WriteFile (pipe,buf1,strlen(buf2)+sizeof(DWORD),&bytesWritten,NULL);
+
+	/* testing result is useless. If we have an error and try to report it,
+	this will probably lead to a call to this function and an infinite 
+	loop */
+	/*
+	if (result == 0 || bytesWritten != strlen(buf2)+sizeof(DWORD) ) {
+	return;;
+	}
+	*/
+	CloseHandle(pipe);
 }
 #endif

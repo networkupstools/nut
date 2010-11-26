@@ -41,7 +41,6 @@ typedef struct conn_s {
 	HANDLE	fd;
 	char    buf[LARGEBUF];
 	OVERLAPPED read_overlapped;
-	DWORD	bytesRead;
 #else
 	int     fd;
 #endif
