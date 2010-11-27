@@ -2,6 +2,14 @@
 
 module Test_nut =
 
+let nut_conf  = "
+MODE=standalone
+"
+
+test NutNutConf.nut_lns get nut_conf = 
+	{ }
+	{ "MODE" = "standalone" }
+
 let ups_conf  = "
 [testups]
 	driver = dummy-ups
@@ -150,7 +158,7 @@ test NutUpsschedConf.upssched_lns get upssched_conf =
 
 let hosts_conf = "
 MONITOR myups@localhost \"Local UPS\"
- MONITOR su2200@10.64.1.1 \"Finance department\"
+MONITOR su2200@10.64.1.1 \"Finance department\"
 MONITOR matrix@shs-server.example.edu \"Sierra High School data room #1\"
 "
 
