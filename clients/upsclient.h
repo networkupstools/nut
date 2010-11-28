@@ -22,7 +22,7 @@
 
 /* Mozilla NSS */
 #ifdef WITH_NSS
-	#include <nss/nss.h>
+	#include <nss_compat_ossl/nss_compat_ossl.h>
 #endif
 
 /* OpenSSL */
@@ -55,13 +55,7 @@ typedef struct {
 
 	char	errbuf[UPSCLI_ERRBUF_LEN];
 
-#ifdef WITH_NSS
-	/* FIXME: here comes NSS struct pointer(s) equivalent to OpenSSL
-	 * SSL_CTX	*ssl_ctx;
-	 * SSL	*ssl; */
-#endif
-
-#ifdef HAVE_OPENSSL
+#ifdef WITH_SSL
 	SSL_CTX	*ssl_ctx;
 	SSL	*ssl;
 #endif

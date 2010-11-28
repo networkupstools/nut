@@ -22,9 +22,15 @@
 #ifndef CTYPE_H_SEEN
 #define CTYPE_H_SEEN 1
 
-#ifdef WITH_SSL
-#include <openssl/err.h>
-#include <openssl/ssl.h>
+/* Mozilla NSS */
+#ifdef WITH_NSS
+	#include <nss_compat_ossl/nss_compat_ossl.h>
+#endif
+
+/* OpenSSL */
+#ifdef WITH_OPENSSL
+	#include <openssl/err.h>
+	#include <openssl/ssl.h>
 #endif
 
 #include "parseconf.h"

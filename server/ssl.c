@@ -129,9 +129,9 @@ void ssl_init(void)
 		fatal_with_errno(EXIT_FAILURE, "SSL_CTX_new");
 	}
 
-	if (SSL_CTX_use_RSAPrivateKey_file(ssl_ctx, certfile, SSL_FILETYPE_PEM) != 1) {
+	if (SSL_CTX_use_PrivateKey_file(ssl_ctx, certfile, SSL_FILETYPE_PEM) != 1) {
 		ssl_debug();
-		upslogx(LOG_ERR, "SSL_CTX_use_RSAPrivateKey_file(%s) failed", certfile);
+		upslogx(LOG_ERR, "SSL_CTX_use_PrivateKey_file(%s) failed", certfile);
 		return;
 	}
 

@@ -20,11 +20,6 @@
 #ifndef SSL_H_SEEN
 #define SSL_H_SEEN 1
 
-#ifdef WITH_SSL
-#include <openssl/err.h>
-#include <openssl/ssl.h>
-#endif
-
 #include "ctype.h"
 
 extern char	*certfile;

@@ -11,16 +11,19 @@ if test -z "${nut_have_libnss_seen}"; then
 	dnl save CFLAGS and LDFLAGS
 	CFLAGS_ORIG="${CFLAGS}"
 	LDFLAGS_ORIG="${LDFLAGS}"
+	LIBS_ORIG="${LIBS}"
 
 	AC_MSG_CHECKING(for Mozilla NSS version via pkg-config)
 	NSS_VERSION="`pkg-config --silence-errors --modversion nss 2>/dev/null`"
 	if test "$?" = "0" -a -n "${NSS_VERSION}"; then
 		CFLAGS="`pkg-config --silence-errors --cflags nss 2>/dev/null`"
-		LDFLAGS="`pkg-config --silence-errors --libs nss 2>/dev/null`"
+		LDFLAGS=""
+		LIBS="`pkg-config --silence-errors --libs nss 2>/dev/null`"
 	else
 		NSS_VERSION="none"
 		CFLAGS=""
-		LDFLAGS="-lnss3 -lnssutil3 -lsmime3 -lssl3 -lplds4 -lplc4 -lnspr4"
+		LDFLAGS=""
+		LIBS="-lnss3 -lnssutil3 -lsmime3 -lssl3 -lplds4 -lplc4 -lnspr4"
 	fi
 	AC_MSG_RESULT(${NSS_VERSION} found)
 
@@ -56,20 +59,22 @@ if test -z "${nut_have_libnss_seen}"; then
 	AC_MSG_RESULT([${LDFLAGS}])
 
 	dnl check if NSS is usable
-	AC_CHECK_HEADERS(nss/nss.h, [nut_have_libnss=yes], [nut_have_libnss=no], [AC_INCLUDES_DEFAULT])
+	AC_CHECK_HEADERS(nss.h, [nut_have_libnss=yes], [nut_have_libnss=no], [AC_INCLUDES_DEFAULT])
 	AC_CHECK_FUNCS(NSS_Init, [], [nut_have_libnss=no])
-
+	AC_SEARCH_LIBS(SSL_library_init, nss_compat_ossl, [], [nut_have_libnss=no])
+	
 	if test "${nut_have_libnss}" = "yes"; then
 		nut_with_ssl="yes"
 		nut_ssl_lib="(Mozilla NSS)"
 		AC_DEFINE(WITH_SSL, 1, [Define to enable SSL support])
 		AC_DEFINE(WITH_NSS, 1, [Define to enable SSL support using Mozilla NSS])
 		LIBSSL_CFLAGS="${CFLAGS}"
-		LIBSSL_LDFLAGS="${LDFLAGS}"
+		LIBSSL_LDFLAGS="${LDFLAGS} ${LIBS}"
 	fi
 
 	dnl restore original CFLAGS and LDFLAGS
 	CFLAGS="${CFLAGS_ORIG}"
 	LDFLAGS="${LDFLAGS_ORIG}"
+	LIBS="${LIBS_ORIG}"
 fi
 ])
