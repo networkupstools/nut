@@ -1,4 +1,4 @@
-/* ssl.h - ssl support prototypes for upsd
+/* netssl.h - ssl support prototypes for upsd
 
    Copyright (C) 2002  Russell Kroll <rkroll@exploits.org>
 
@@ -17,8 +17,8 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#ifndef SSL_H_SEEN
-#define SSL_H_SEEN 1
+#ifndef NETSSL_H_SEEN
+#define NETSSL_H_SEEN 1
 
 #include "ctype.h"
 
@@ -32,4 +32,4 @@ int ssl_write(ctype_t *client, const char *buf, size_t buflen);
 
 void net_starttls(ctype_t *client, int numarg, const char **arg);
 
-#endif	/* SSL_H_SEEN */
+#endif	/* NETSSL_H_SEEN */
