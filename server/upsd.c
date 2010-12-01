@@ -413,6 +413,10 @@ static void client_disconnect(nut_ctype_t *client)
 	shutdown(client->sock_fd, 2);
 	close(client->sock_fd);
 
+#ifdef WIN32
+	CloseHandle(client->Event);
+#endif
+
 	if (client->loginups) {
 		declogins(client->loginups);
 	}
@@ -635,6 +639,16 @@ static void client_connect(stype_t *server)
 	client->addr = xstrdup(inet_ntopW(&csock));
 
 	client->tracking = 0;
+
+#ifdef WIN32
+	client->Event = CreateEvent(NULL, /*Security,*/
+				FALSE, /*auo-reset */
+				FALSE, /*initial state*/
+				NULL); /* no name */
+
+	/* Associate socket event to the socket via its Event object */
+	WSAEventSelect( client->sock_fd, client->Event, FD_READ );
+#endif
 
 	pconf_init(&client->ctx, NULL);
 
@@ -1332,7 +1346,7 @@ static void mainloop(void)
 			continue;
 		}
 
-		fds[nfds] = (HANDLE)client->sock_fd;
+		fds[nfds] = client->Event;
 
 		handler[nfds].type = CLIENT;
 		handler[nfds].data = client;
@@ -1347,7 +1361,7 @@ static void mainloop(void)
 			continue;
 		}
 
-		fds[nfds] = (HANDLE)server->Event;
+		fds[nfds] = server->Event;
 
 		handler[nfds].type = SERVER;
 		handler[nfds].data = server;
@@ -1436,9 +1450,7 @@ static void set_reload_flag(int sig)
 #ifdef WIN32
 BOOL WINAPI CtrlEvent( DWORD dwCtrlType )
 {
-printf("CtrlEvent %d\n",dwCtrlType);
 	if( dwCtrlType == CTRL_BREAK_EVENT  || dwCtrlType == CTRL_C_EVENT ) {
-printf("SetEvent\n");
 		set_exit_flag(1);
 		SetEvent(stop_event);
 		/* Wait for the mainloop to exit */
