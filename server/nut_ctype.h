@@ -60,6 +60,9 @@ typedef struct nut_ctype_s {
 	/* doubly linked list */
 	struct nut_ctype_s	*prev;
 	struct nut_ctype_s	*next;
+#ifdef WIN32
+	HANDLE Event;
+#endif
 } nut_ctype_t;
 
 #endif	/* NUT_CTYPE_H_SEEN */
