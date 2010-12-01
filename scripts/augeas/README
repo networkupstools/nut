@@ -4,7 +4,7 @@ NUT and Augeas: usage and integration notes
 Introduction
 ------------
 
-Configuration has long been one of the two main nut weaknesses. This is
+Configuration has long been one of the two main NUT weaknesses. This is
 mostly due to the framework nature of NUT, and its many components and
 features which makes NUT configuration a very complex task.
 
@@ -18,8 +18,9 @@ native formats and transforms them into a tree. Configuration changes are made
 by manipulating this tree and saving it back into native config files."
 
 In other words, Augeas is the dreamed Registry, with all pros (uniform interface
-and tools) but without the cons (mainly, the treat to FLOSS liberty on
-configuration files format, and its dubbed to fail standardisation).
+and tools) but without the cons (mainly, the treat to FLOSS, and more
+generally software, liberty on configuration files format, and its dubbed to
+fail standardisation).
 
 Requirements
 ------------
@@ -28,13 +29,16 @@ Augeas
 ~~~~~~
 
 Having Augeas (http://augeas.net) installed.
-You will need at least version 0.5.1 (prior versions may work too, reports are
-welcome).
+You will need at least version 0.5.1 (prior versions may work too, reports
+are welcome).
 
 On Debian and derivatives, do the following:
-	apt-get install augeas-lenses augeas-tools
+
+	$ apt-get install augeas-lenses augeas-tools
+
 And optionaly:
-	apt-get install libaugeas0 python-augeas
+
+	$ apt-get install libaugeas0 libaugeas-dev python-augeas 
 
 On RedHat and derivatives, you have to install the packages 'augeas' and
 'augeas-libs'.
@@ -45,7 +49,7 @@ NUT lenses and modules for Augeas
 These are the *.aug files in the present directory.
 
 You can either install the files to the right location on your system, or use
-these from the current directory. The latter is preferable for the moment.
+these from the current directory. The latter is preferable for the time being.
 
 
 Create a test sandbox
@@ -53,25 +57,48 @@ Create a test sandbox
 
 NOTE: for now, it's easier to include an existing /etc/nut/ directory.
 
-	export AUGEAS_ROOT=./augeas-sandbox
-	mkdir $AUGEAS_ROOT
-	sudo cp -pr /etc/nut $AUGEAS_ROOT
-	sudo chown -R $(id -nu):$(id -ng) $AUGEAS_ROOT
+	$ export AUGEAS_ROOT=./augeas-sandbox
+	$ mkdir $AUGEAS_ROOT
+	$ sudo cp -pr /etc/nut $AUGEAS_ROOT
+	$ sudo chown -R $(id -nu):$(id -ng) $AUGEAS_ROOT
 
 
-Start testing
--------------
+Start testing and using
+-----------------------
 
-	augtool -b
+Augeas provides many tools and
+link:http://augeas.net/download.html[languages bindings] (Python, Perl,
+Java, PHP, Ruby, ...), still with the same simple logic.
 
-You will enter the Augeas shell. From there, you can perform different actions
-like:
+This chapter will only illustrate some of these. Refer to the language
+binding's help for more information.
+
+Shell
+~~~~~
+
+Start an augeas shell using:
+
+	$ augtool -b
+
+From there, you can perform different actions like:
 
 - list existing nut related files:
+
 	augtool> ls /files/etc/nut/
+	nut.conf/ = (none)
 	upsd.users/ = (none)
+	upsmon.conf = (none)
 	ups.conf/ = (none)
 	upsd.conf/ = (none
++
+or using:
++
+	augtool> match /files/etc/nut/*
+	/files/etc/nut/nut.conf = (none)
+	/files/etc/nut/upsd.users = (none)
+	/files/etc/nut/upsmon.conf = (none)
+	/files/etc/nut/ups.conf = (none)
+	/files/etc/nut/upsd.conf = (none)
 
 NOTE: if you don't see anything, you may search for error messages by using:
 +
@@ -88,15 +115,86 @@ and
 
 - list the devices using the 'usbhid-ups' driver:
 
-	augtool> match /files/etc/nut/ups.conf/*/driver usbhid-ups
+	augtool> match /files/etc/nut/ups.conf/*/driver dummy-ups
 
+
+C
+~
+
+A library is available for C programs, along with pkg-config support.
+
+You can get the compilation and link flags using the following code
+in your configure script or Makefile:
+
+	CFLAGS="`pkg-config --silence-errors --cflags augeas`"
+	LDFLAGS="`pkg-config --silence-errors --libs augeas`"
+
+Here is an code sample using this library for NUT configuration:
+
+--------------------------------------------------------------------------------
+augeas *a = aug_init(NULL, NULL, AUG_NONE);
+ret = aug_match(a, "/files/etc/nut/*", &matches_p);
+ret = aug_set(a, "/files/etc/nut/ups.conf/augtest/driver", "dummy-ups");
+ret = aug_set(a, "/files/etc/nut/ups.conf/augtest/port", "auto");
+ret = aug_save(a);
+--------------------------------------------------------------------------------
+
+Python
+~~~~~~
+
+The `augeas` class abstracts access to the configuration files. 
+
+  $ python
+  Python 2.5.1 (r251:54863, Apr  8 2008, 01:19:33)
+  [GCC 4.3.0 20080404 (Red Hat 4.3.0-6)] on linux2
+  Type "help", "copyright", "credits" or "license" for more information.
+  >>> import augeas
+  >>> a = augeas.augeas()
+  >>> a.match("/files/etc/nut/*")
+  ['/files/etc/nut/upsd.users', '/files/etc/nut/upsmon.conf', '/files/etc/nut/ups.conf', '/files/etc/nut/upsd.conf']
+  >>> a.set("/files/etc/nut/ups.conf/augtest/driver", "dummy-ups")
+  True
+  >>> a.set("/files/etc/nut/ups.conf/augtest/port", "auto")
+  True
+  >>> a.save()
+  True
+  >>>
+
+  $ grep -A 2 augtest /etc/nut/ups.conf
+  [augtest]
+  driver=dummy-ups
+  port=auto
+
+
+Perl
+~~~~
+
+The Perl binding is available through CPAN and packages.
+
+  use Config::Augeas;
+
+  my $aug = Config::Augeas->new( root => $aug_root ) ;
+
+  my @a = $aug->match("/files/etc/nut/*") ;
+  my $nb = $aug->count_match("/files/etc/nut/*") ;
+
+  $aug->set("/files/etc/nut/ups.conf/augtest/driver", "dummy-ups") ;
+  $aug->set("/files/etc/nut/ups.conf/augtest/port", "auto") ;
+
+  $aug->save ;
+
+
+Test the conformity testing module
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Existing configuration files can be tested for conformity. To do so, use:
+ 
+	$ augparse -I ./ ./test_nut.aug
+
+
+References
+----------
 
 For more information, refer to Augeas documentation:
 - http://augeas.net/tour.html
 - http://augeas.net/docs/index.html
-
-
-test the conformity testing module
-----------------------------------
-$ augparse -I ./ ./test_nut.aug
-
