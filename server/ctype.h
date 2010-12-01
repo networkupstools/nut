@@ -50,6 +50,9 @@ typedef struct ctype_s {
 	/* doubly linked list */
 	struct ctype_s	*prev;
 	struct ctype_s	*next;
+#ifdef WIN32
+	HANDLE Event;
+#endif
 } ctype_t;
 
 #endif	/* CTYPE_H_SEEN */
