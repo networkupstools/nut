@@ -33,7 +33,7 @@ static void send_instcmd(ctype_t *client, const char *upsname,
 {
 	int	found;
 	upstype_t	*ups;
-	const	struct  cmdlist_t  *ctmp;
+	const	cmdlist_t  *ctmp;
 	char	sockcmd[SMALLBUF];
 
 	ups = get_ups_ptr(upsname);

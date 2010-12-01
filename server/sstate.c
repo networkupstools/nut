@@ -19,6 +19,13 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "common.h"
+
+#include "timehead.h"
+
+#include "sstate.h"
+#include "upstype.h"
+
 #include <fcntl.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -26,14 +33,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h> 
-
-#include "common.h"
-
-#include "timehead.h"
-
-#include "upstype.h"
-#include "sstate.h"
-#include "state.h"
 
 static int parse_args(upstype_t *ups, int numargs, char **arg)
 {
@@ -297,12 +296,12 @@ int sstate_getaux(const upstype_t *ups, const char *var)
 	return state_getaux(ups->inforoot, var);
 }	
 
-const struct enum_t *sstate_getenumlist(const upstype_t *ups, const char *var)
+const enum_t *sstate_getenumlist(const upstype_t *ups, const char *var)
 {
 	return state_getenumlist(ups->inforoot, var);
 }
 
-const struct cmdlist_t *sstate_getcmdlist(const upstype_t *ups)
+const cmdlist_t *sstate_getcmdlist(const upstype_t *ups)
 {
 	return ups->cmdlist;
 }
@@ -376,7 +375,7 @@ int sstate_sendline(upstype_t *ups, const char *buf)
 	return 0;	/* failed */
 }
 
-const struct st_tree_t *sstate_getnode(const upstype_t *ups, const char *varname)
+const st_tree_t *sstate_getnode(const upstype_t *ups, const char *varname)
 {
 	return state_tree_find(ups->inforoot, varname);
 }

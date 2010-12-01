@@ -211,6 +211,11 @@ static int blazer_status(const char *cmd)
 		dstate_setinfo(status[i].var, status[i].fmt, status[i].conv(val, NULL));
 	}
 
+	if (!val) {
+		upsdebugx(2, "%s: parsing failed", __func__);
+		return -1;
+	}
+
 	if (strspn(val, "01") != 8) {
 		upsdebugx(2, "Invalid status [%s]", val);
 		return -1;
@@ -517,11 +522,11 @@ static void blazer_initbattery(void)
 
 	val = getval("runtimecal");
 	if (val) {
-		int	rh, lh, rl, ll;
+		double	rh, lh, rl, ll;
 
 		time(&lastpoll);
 
-		if (sscanf(val, "%d,%d,%d,%d", &rh, &lh, &rl, &ll) < 4) {
+		if (sscanf(val, "%lf,%lf,%lf,%lf", &rh, &lh, &rl, &ll) < 4) {
 			fatalx(EXIT_FAILURE, "Insufficient parameters for runtimecal");
 		}
 
@@ -533,10 +538,10 @@ static void blazer_initbattery(void)
 			fatalx(EXIT_FAILURE, "Parameter out of range (load)");
 		}
 
-		batt.runt.exp = log((double)rl / rh) / log((double)lh / ll);
+		batt.runt.exp = log(rl / rh) / log(lh / ll);
 		upsdebugx(2, "battery runtime exponent : %.3f", batt.runt.exp);
 
-		batt.runt.nom = rh * pow(lh/100, batt.runt.exp);
+		batt.runt.nom = rh * pow(lh / 100, batt.runt.exp);
 		upsdebugx(2, "battery runtime nominal  : %.1f", batt.runt.nom);
 
 	} else {

@@ -1,0 +1,106 @@
+##############################################################################################################
+# Uninterruptible Power Supplies with USB HID interfaces
+#
+# to keep up to date, monitor: http://svn.debian.org/wsvn/nut/trunk/scripts/upower/95-upower-hid.rules
+
+# only support USB, else ignore
+SUBSYSTEM!="usb", GOTO="up_hid_end"
+
+# if usbraw device, ignore
+KERNEL!="hiddev*", GOTO="up_hid_end"
+
+# if an interface, ignore
+ENV{DEVTYPE}=="usb_interface", GOTO="up_hid_end"
+
+ATTRS{idVendor}=="03f0", ENV{UPOWER_VENDOR}="Hewlett Packard"
+ATTRS{idVendor}=="0463", ENV{UPOWER_VENDOR}="Eaton"
+ATTRS{idVendor}=="047c", ENV{UPOWER_VENDOR}="Dell"
+ATTRS{idVendor}=="050d", ENV{UPOWER_VENDOR}="Belkin"
+ATTRS{idVendor}=="051d", ENV{UPOWER_VENDOR}="APC"
+ATTRS{idVendor}=="06da", ENV{UPOWER_VENDOR}="Liebert"
+ATTRS{idVendor}=="0764", ENV{UPOWER_VENDOR}="Cyber Power Systems"
+ATTRS{idVendor}=="09ae", ENV{UPOWER_VENDOR}="TrippLite"
+ATTRS{idVendor}=="0d9f", ENV{UPOWER_VENDOR}="PowerCOM"
+ATTRS{idVendor}=="10af", ENV{UPOWER_VENDOR}="Liebert"
+
+# Hewlett Packard
+ATTRS{idVendor}=="03f0", ATTRS{idProduct}=="1f06", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="03f0", ATTRS{idProduct}=="1f08", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="03f0", ATTRS{idProduct}=="1f09", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="03f0", ATTRS{idProduct}=="1f0a", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="03f0", ATTRS{idProduct}=="1fe0", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="03f0", ATTRS{idProduct}=="1fe1", ENV{UPOWER_BATTERY_TYPE}="ups"
+
+# Eaton
+ATTRS{idVendor}=="0463", ATTRS{idProduct}=="0001", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="0463", ATTRS{idProduct}=="ffff", ENV{UPOWER_BATTERY_TYPE}="ups"
+
+# Dell
+ATTRS{idVendor}=="047c", ATTRS{idProduct}=="ffff", ENV{UPOWER_BATTERY_TYPE}="ups"
+
+# Belkin
+ATTRS{idVendor}=="050d", ATTRS{idProduct}=="0375", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="050d", ATTRS{idProduct}=="0551", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="050d", ATTRS{idProduct}=="0750", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="050d", ATTRS{idProduct}=="0751", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="050d", ATTRS{idProduct}=="0900", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="050d", ATTRS{idProduct}=="0910", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="050d", ATTRS{idProduct}=="0912", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="050d", ATTRS{idProduct}=="0980", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="050d", ATTRS{idProduct}=="1100", ENV{UPOWER_BATTERY_TYPE}="ups"
+
+# APC
+ATTRS{idVendor}=="051d", ATTRS{idProduct}=="0002", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="051d", ATTRS{idProduct}=="0003", ENV{UPOWER_BATTERY_TYPE}="ups"
+
+# Liebert
+ATTRS{idVendor}=="06da", ATTRS{idProduct}=="ffff", ENV{UPOWER_BATTERY_TYPE}="ups"
+
+# Cyber Power Systems
+ATTRS{idVendor}=="0764", ATTRS{idProduct}=="0005", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="0764", ATTRS{idProduct}=="0501", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="0764", ATTRS{idProduct}=="0601", ENV{UPOWER_BATTERY_TYPE}="ups"
+
+# TrippLite
+ATTRS{idVendor}=="09ae", ATTRS{idProduct}=="1003", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="09ae", ATTRS{idProduct}=="1007", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="09ae", ATTRS{idProduct}=="1008", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="09ae", ATTRS{idProduct}=="1009", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="09ae", ATTRS{idProduct}=="1010", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="09ae", ATTRS{idProduct}=="2005", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="09ae", ATTRS{idProduct}=="2007", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="09ae", ATTRS{idProduct}=="2008", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="09ae", ATTRS{idProduct}=="2009", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="09ae", ATTRS{idProduct}=="2010", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="09ae", ATTRS{idProduct}=="2011", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="09ae", ATTRS{idProduct}=="2012", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="09ae", ATTRS{idProduct}=="2013", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="09ae", ATTRS{idProduct}=="2014", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="09ae", ATTRS{idProduct}=="3008", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="09ae", ATTRS{idProduct}=="3009", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="09ae", ATTRS{idProduct}=="3010", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="09ae", ATTRS{idProduct}=="3011", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="09ae", ATTRS{idProduct}=="3012", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="09ae", ATTRS{idProduct}=="3013", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="09ae", ATTRS{idProduct}=="3014", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="09ae", ATTRS{idProduct}=="3015", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="09ae", ATTRS{idProduct}=="4001", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="09ae", ATTRS{idProduct}=="4002", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="09ae", ATTRS{idProduct}=="4003", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="09ae", ATTRS{idProduct}=="4004", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="09ae", ATTRS{idProduct}=="4005", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="09ae", ATTRS{idProduct}=="4006", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="09ae", ATTRS{idProduct}=="4007", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="09ae", ATTRS{idProduct}=="4008", ENV{UPOWER_BATTERY_TYPE}="ups"
+
+# PowerCOM
+ATTRS{idVendor}=="0d9f", ATTRS{idProduct}=="00a2", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="0d9f", ATTRS{idProduct}=="00a3", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="0d9f", ATTRS{idProduct}=="00a4", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="0d9f", ATTRS{idProduct}=="00a5", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="0d9f", ATTRS{idProduct}=="00a6", ENV{UPOWER_BATTERY_TYPE}="ups"
+
+# Liebert
+ATTRS{idVendor}=="10af", ATTRS{idProduct}=="0001", ENV{UPOWER_BATTERY_TYPE}="ups"
+
+LABEL="up_hid_end"

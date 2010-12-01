@@ -23,10 +23,10 @@
 
 #include "nut_stdint.h"
 
-struct subdriver_s {
+typedef struct {
 	const char	*version;		/* name of this subdriver */
-	char		*initups;
-	char		*initinfo;
+	const char	*initups;
+	const char	*initinfo;
 	char		*configure;		/* central configuration */
 	char		*subscribe;		/* alarm subscriptions */
 	char		*summary;		/* used for quick updates */
@@ -35,9 +35,7 @@ struct subdriver_s {
 	int		(*startelm_cb)(void *userdata, int parent, const char *nspace, const char *name, const char **atts);
 	int		(*cdata_cb)(void *userdata, int state, const char *cdata, size_t len);
 	int		(*endelm_cb)(void *userdata, int state, const char *nspace, const char *name);
-};
-
-typedef struct subdriver_s subdriver_t;
+} subdriver_t;
 
 /* ---------------------------------------------------------------------- */
 /* data for processing boolean values from UPS */

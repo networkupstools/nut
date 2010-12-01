@@ -130,7 +130,6 @@ static const char *info_variable_cmd(const char *type);
 static bool_t info_variable_ok(const char *type);
 static int  get_ups_status(void);
 static int mge_command(char *reply, int replylen, const char *fmt, ...);
-static void format_model_name(char *model);
 
 /* --------------------------------------------------------------- */
 /*                    UPS Driver Functions                         */
@@ -218,7 +217,7 @@ void upsdrv_initups(void)
 void upsdrv_initinfo(void)
 {
 	char buf[BUFFLEN];
-	char *model = NULL;
+	const char *model = NULL;
 	char *firmware = NULL;
 	char *p;
 	char *v = NULL;  /* for parsing Si output, get Version ID */
@@ -289,7 +288,7 @@ void upsdrv_initinfo(void)
 			  /* Parsing legacy model table in order to found it */
 			  for ( legacy_model = mge_model ; legacy_model->name != NULL ; legacy_model++ ) {
 				if(legacy_model->Data1 == si_data1 && legacy_model->Data2 == si_data2){
-				  model = (char *)legacy_model->name;
+				  model = legacy_model->name;
 				  upsdebugx(1, "initinfo: UPS model == >%s<", model);
 				  break;
 				}
@@ -302,8 +301,14 @@ void upsdrv_initinfo(void)
 		  }
 
 		if ( model ) {
-		  format_model_name(model);
-		  dstate_setinfo("ups.model", "%s", model);
+			upsdebugx(2, "Got model name: %s", model);
+
+			/* deal with truncated model names */
+			if (!strncmp(model, "Evolutio", 8)) {
+				dstate_setinfo("ups.model", "Evolution %i", atoi(strchr(model, ' ')));
+			} else {
+				dstate_setinfo("ups.model", "%s", model);
+			}
 		}
 
 		if ( firmware && strcmp(firmware, ""))
@@ -477,17 +482,6 @@ void upsdrv_help(void)
 
 /* --------------------------------------------------------------- */
 /*                      Internal Functions                         */
-/* --------------------------------------------------------------- */
-
-/* deal with truncated model names */
-void format_model_name(char *model)
-{
-	upsdebugx(2, "Got model name: %s", model);
-
-	if(!strncmp(model, "Evolutio", 8))
-		sprintf(model, "Evolution %i", atoi(strchr(model, ' ')));
-}
-
 /* --------------------------------------------------------------- */
 
 /* handler for commands to be sent to UPS */

@@ -26,7 +26,9 @@
 #define HIDTYPES_H
 
 #ifdef __cplusplus
+/* *INDENT-OFF* */
 extern "C" {
+/* *INDENT-ON* */
 #endif /* __cplusplus */
 
 #include <sys/types.h>
@@ -143,7 +145,9 @@ typedef struct {
 } HIDDesc_t;
 
 #ifdef __cplusplus
+/* *INDENT-OFF* */
 } /* extern "C" */
+/* *INDENT-ON* */
 #endif /* __cplusplus */
 
 #endif /* HIDTYPES_H */

@@ -68,7 +68,7 @@ static usb_device_id_t belkin_usb_device_table[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *belkin_firmware_conversion_fun(double value)
+static const char *belkin_firmware_conversion_fun(double value)
 {
 	static char buf[20];
 
@@ -81,7 +81,7 @@ static info_lkp_t belkin_firmware_conversion[] = {
 	{ 0, NULL, belkin_firmware_conversion_fun }
 };
 
-static char *belkin_upstype_conversion_fun(double value)
+static const char *belkin_upstype_conversion_fun(double value)
 {
 	switch ((long)value & 0x0f)
 	{
@@ -104,7 +104,7 @@ static info_lkp_t belkin_upstype_conversion[] = {
 	{ 0, NULL, belkin_upstype_conversion_fun }
 };
 
-static char *belkin_sensitivity_conversion_fun(double value)
+static const char *belkin_sensitivity_conversion_fun(double value)
 {
 	switch ((long)value)
 	{
@@ -131,7 +131,7 @@ static info_lkp_t belkin_test_info[] = {
 	{ 0, NULL, NULL }
 };
 
-static char *belkin_overload_conversion_fun(double value)
+static const char *belkin_overload_conversion_fun(double value)
 {
 	if ((long)value & 0x0010) {
 		return "overload";
@@ -144,7 +144,7 @@ static info_lkp_t belkin_overload_conversion[] = {
 	{ 0, NULL, belkin_overload_conversion_fun }
 };
 
-static char *belkin_overheat_conversion_fun(double value)
+static const char *belkin_overheat_conversion_fun(double value)
 {
 	if ((long)value & 0x0040) {
 		return "overheat";
@@ -157,7 +157,7 @@ static info_lkp_t belkin_overheat_conversion[] = {
 	{ 0, NULL, belkin_overheat_conversion_fun }
 };
 
-static char *belkin_commfault_conversion_fun(double value)
+static const char *belkin_commfault_conversion_fun(double value)
 {
 	if ((long)value & 0x0080) {
 		return "commfault";
@@ -170,7 +170,7 @@ static info_lkp_t belkin_commfault_conversion[] = {
 	{ 0, NULL, belkin_commfault_conversion_fun }
 };
 
-static char *belkin_awaitingpower_conversion_fun(double value)
+static const char *belkin_awaitingpower_conversion_fun(double value)
 {
 	if ((long)value & 0x2000) {
 		return "awaitingpower";
@@ -183,7 +183,7 @@ static info_lkp_t belkin_awaitingpower_conversion[] = {
 	{ 0, NULL, belkin_awaitingpower_conversion_fun }
 };
 
-static char *belkin_online_conversion_fun(double value)
+static const char *belkin_online_conversion_fun(double value)
 {
 	if ((long)value & 0x0001) {
 		return "!online";
@@ -196,7 +196,7 @@ static info_lkp_t belkin_online_conversion[] = {
 	{ 0, NULL, belkin_online_conversion_fun }
 };
 
-static char *belkin_lowbatt_conversion_fun(double value)
+static const char *belkin_lowbatt_conversion_fun(double value)
 {
 	if ((long)value & 0x0004) {
 		return "lowbatt";
@@ -209,7 +209,7 @@ static info_lkp_t belkin_lowbatt_conversion[] = {
 	{ 0, NULL, belkin_lowbatt_conversion_fun }
 };
 
-static char *belkin_depleted_conversion_fun(double value)
+static const char *belkin_depleted_conversion_fun(double value)
 {
 	if ((long)value & 0x0040) {
 		return "depleted";
@@ -222,7 +222,7 @@ static info_lkp_t belkin_depleted_conversion[] = {
 	{ 0, NULL, belkin_depleted_conversion_fun }
 };
 
-static char *belkin_replacebatt_conversion_fun(double value)
+static const char *belkin_replacebatt_conversion_fun(double value)
 {
 	if ((long)value & 0x0080) {
 		return "replacebatt";
@@ -385,7 +385,7 @@ static hid_info_t belkin_hid2nut[] = {
   { NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
 };
 
-static char *belkin_format_model(HIDDevice_t *hd) {
+static const char *belkin_format_model(HIDDevice_t *hd) {
 	if ((hd->Product) && (strlen(hd->Product) > 0)) {
 		return hd->Product;
 	}
@@ -393,8 +393,8 @@ static char *belkin_format_model(HIDDevice_t *hd) {
 	return "unknown";
 }
 
-static char *belkin_format_mfr(HIDDevice_t *hd) {
-	char *mfr;
+static const char *belkin_format_mfr(HIDDevice_t *hd) {
+	const char *mfr;
 	mfr = hd->Vendor ? hd->Vendor : "Belkin";
 	/* trim leading whitespace */
 	while (*mfr == ' ') {
@@ -406,7 +406,7 @@ static char *belkin_format_mfr(HIDDevice_t *hd) {
 	return mfr;
 }
 
-static char *belkin_format_serial(HIDDevice_t *hd) {
+static const char *belkin_format_serial(HIDDevice_t *hd) {
 	char serial[64];
 
 	if (hd->Serial) {

@@ -28,7 +28,7 @@
 
 	extern	upstype_t	*firstups;	/* for list_ups */
 
-static int tree_dump(struct st_tree_t *node, ctype_t *client, const char *ups, 
+static int tree_dump(st_tree_t *node, ctype_t *client, const char *ups,
 	int rw, int fsd)
 {
 	int	ret;
@@ -127,7 +127,7 @@ static void list_var(ctype_t *client, const char *upsname)
 static void list_cmd(ctype_t *client, const char *upsname)
 {
 	const   upstype_t *ups;
-	struct	cmdlist_t	*ctmp;
+	cmdlist_t	*ctmp;
 
 	ups = get_ups_ptr(upsname);
 
@@ -153,8 +153,8 @@ static void list_cmd(ctype_t *client, const char *upsname)
 static void list_enum(ctype_t *client, const char *upsname, const char *var)
 {
 	const   upstype_t *ups;
-	const	struct	st_tree_t	*node;
-	const	struct	enum_t	*etmp;
+	const	st_tree_t	*node;
+	const	enum_t	*etmp;
 
 	ups = get_ups_ptr(upsname);
 

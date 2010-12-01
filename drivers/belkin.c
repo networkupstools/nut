@@ -28,7 +28,7 @@
 #include "belkin.h"
 
 #define DRIVER_NAME	"Belkin Smart protocol driver"
-#define DRIVER_VERSION	"0.22"
+#define DRIVER_VERSION	"0.23"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -217,8 +217,13 @@ static int init_ups_data(void)
 
 	ser_flush_io(upsfd);
 
+	dstate_addcmd("beeper.disable");
+	dstate_addcmd("beeper.enable");
 	dstate_addcmd("load.off");
 	dstate_addcmd("load.on");
+	dstate_addcmd("test.battery.start.quick");
+	dstate_addcmd("test.battery.start.deep");
+	dstate_addcmd("test.battery.stop");
 	upsdrv_updateinfo();
 	return 0;
 }
@@ -283,6 +288,44 @@ void upsdrv_updateinfo(void)
 	get_belkin_field(temp, st, sizeof(st), 7);
 	val = atof(st);
 	dstate_setinfo("ups.load", "%03.0f", val);
+
+	send_belkin_command(STATUS, TEST_RESULT, "");
+	res = get_belkin_reply(temp);
+	if (res == -1)
+		return;
+
+	get_belkin_field(temp, st, sizeof(st), 1);
+	val = atof(st);
+	switch ((int)val) {
+		case 0:
+			dstate_setinfo("ups.test.result", "%s", "No test performed");
+			break;
+
+		case 1:
+			dstate_setinfo("ups.test.result", "%s", "Passed");
+			break;
+
+		case 2:
+			dstate_setinfo("ups.test.result", "%s", "In progress");
+			break;
+
+		case 3:
+		case 4:
+			dstate_setinfo("ups.test.result", "%s", "10s test failed");
+			break;
+
+		case 5:
+			dstate_setinfo("ups.test.result", "%s", "deep test failed");
+			break;
+
+		case 6:
+			dstate_setinfo("ups.test.result", "%s", "Aborted");
+			break;
+
+		default:
+			break;
+
+	}
 }
 
 static int get_belkin_reply(char *buf)
@@ -347,6 +390,28 @@ void upsdrv_shutdown(void)
 	send_belkin_command(CONTROL, "SDA", "5");
 }
 
+/* handle "beeper.disable" */
+static void do_beeper_off(void) {
+	int	res;
+	char	temp[SMALLBUF];
+	const char	*arg;
+
+	/* Compare the model name, as the BUZZER_OFF argument depends on it */
+	send_belkin_command(STATUS, MODEL, "");
+	res = get_belkin_reply(temp);
+	if (res == -1)
+		return;
+
+	if (!strcmp(temp, "F6C1400-EUR")) {
+		arg = BUZZER_OFF2;
+
+	} else {
+		arg = BUZZER_OFF0;
+
+	}
+	send_belkin_command(CONTROL,BUZZER,arg);
+}
+
 /* handle the "load.off" with some paranoia */
 static void do_off(void)
 {
@@ -375,6 +440,16 @@ static void do_off(void)
 
 static int instcmd(const char *cmdname, const char *extra)
 {
+	if (!strcasecmp(cmdname, "beeper.disable")) {
+		do_beeper_off();
+		return STAT_INSTCMD_HANDLED;
+	}
+
+	if (!strcasecmp(cmdname, "beeper.enable")) {
+		send_belkin_command(CONTROL,BUZZER,BUZZER_ON);
+		return STAT_INSTCMD_HANDLED;
+	}
+
 	if (!strcasecmp(cmdname, "load.off")) {
 		do_off();
 		return STAT_INSTCMD_HANDLED;
@@ -382,6 +457,21 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "load.on")) {
 		send_belkin_command(CONTROL,POWER_ON,"1;1");
+		return STAT_INSTCMD_HANDLED;
+	}
+
+	if (!strcasecmp(cmdname, "test.battery.start.quick")) {
+		send_belkin_command(CONTROL,TEST,TEST_10SEC);
+		return STAT_INSTCMD_HANDLED;
+	}
+
+	if (!strcasecmp(cmdname, "test.battery.start.deep")) {
+		send_belkin_command(CONTROL,TEST,TEST_DEEP);
+		return STAT_INSTCMD_HANDLED;
+	}
+
+	if (!strcasecmp(cmdname, "test.battery.stop")) {
+		send_belkin_command(CONTROL,TEST,TEST_CANCEL);
 		return STAT_INSTCMD_HANDLED;
 	}
 

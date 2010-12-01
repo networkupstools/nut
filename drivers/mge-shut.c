@@ -91,7 +91,7 @@ u_char 			raw_buf[4096];
 
 float expo(int a, int b);
 extern long FormatValue(long Value, u_char Size);
-static char *hu_find_infoval(info_lkp_t *hid2info, long value);
+static const char *hu_find_infoval(info_lkp_t *hid2info, long value);
 
 /* --------------------------------------------------------------- */
 /*                    UPS Driver Functions                         */
@@ -184,7 +184,7 @@ void upsdrv_initinfo (void)
 void upsdrv_updateinfo (void)
 {
 	mge_info_item_t *item;
-	char *nutvalue;
+	const char *nutvalue;
 
 	upsdebugx(2, "entering upsdrv_updateinfo()");
 
@@ -442,7 +442,7 @@ int shut_identify_ups ()
 {
 	char string[MAX_STRING];
 	char model[MAX_STRING];
-	char *finalname = NULL;
+	const char *finalname = NULL;
 	int retcode, tries=MAX_TRY;
 
 	if (commstatus == 0)
@@ -1308,7 +1308,7 @@ float expo(int a, int b)
 }
 
 /*  Format model names */
-char *get_model_name(char *iProduct, char *iModel)
+const char *get_model_name(char *iProduct, char *iModel)
 {
   models_name_t *model = NULL;
 
@@ -1434,7 +1434,7 @@ mge_info_item_t *shut_find_info(const char *varname)
 }
 
 /* find the NUT value matching that HID Item value */
-static char *hu_find_infoval(info_lkp_t *hid2info, long value)
+static const char *hu_find_infoval(info_lkp_t *hid2info, long value)
 {
   info_lkp_t *info_lkp;
 

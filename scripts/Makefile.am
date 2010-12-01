@@ -17,6 +17,7 @@ RedHat/upsmon \
 RedHat/upsmon.in \
 Solaris8/S99upsmon \
 subdriver/path-to-subdriver.sh \
+upower/95-upower-hid.rules \
 Windows/halt.c \
 Windows/Makefile
 

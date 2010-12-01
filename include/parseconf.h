@@ -21,7 +21,9 @@
 #define PARSECONF_H_SEEN 1
 
 #ifdef __cplusplus
+/* *INDENT-OFF* */
 extern "C" {
+/* *INDENT-ON* */
 #endif
 
 #define PCONF_CTX_t_MAGIC 0x00726630
@@ -69,7 +71,9 @@ char *pconf_encode(const char *src, char *dest, size_t destsize);
 int pconf_char(PCONF_CTX_t *ctx, char ch);
 
 #ifdef __cplusplus
+/* *INDENT-OFF* */
 }
+/* *INDENT-ON* */
 #endif
 
 #endif	/* PARSECONF_H_SEEN */

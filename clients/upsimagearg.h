@@ -44,7 +44,7 @@ struct {
 	{ NULL,				0, 0, 0 }
 };
 
-struct imgvar_t {
+typedef struct {
 	char	*name;		/* name of the UPS variable                 */
 	char	*minimum;	/* name of minimum value UPS variable
 				   or variable in imgarg table              */
@@ -55,6 +55,6 @@ struct imgvar_t {
 
 				/* pointer to drawing function              */
 	void	(*drawfunc)(double, int, int, int, int, const char*);	
-};
+} imgvar_t;
 
-extern struct imgvar_t imgvar[];
+extern imgvar_t imgvar[];

@@ -539,8 +539,7 @@ void upsdrv_initinfo(void)
 		upslogx(LOG_ERR, "No contact with UPS, delaying init.");
 		status = UPSC_STAT_NOTINIT;
 		return;
-	}
-	else {
+	} else {
 		status = 0;
 	}
 
@@ -549,10 +548,16 @@ void upsdrv_initinfo(void)
 		upsc_flush_input();
 		upscsend("UPDA");
 	}
-	if (can_upid)
+	if (can_upid) {
 		upsc_getvalue("UPID", NULL, "ACID", "ups.id", NULL);
-	if (can_uppm)
+	}
+	if (can_uppm) {
 		check_uppm();
+	}
+
+	/* make sure we have some sensible defaults */
+	setvar("ups.delay.shutdown", "10");
+	setvar("ups.delay.reboot", "60");
 
 	upsh.instcmd = instcmd;
 	upsh.setvar = setvar;
@@ -870,27 +875,19 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	if (upsc_commandlist()) {
-		if (!can_upsd || !can_uppc) {
-			fatalx(LOG_EMERG, "Shutdown called, but UPS does not support it");
-		}
-	} else {
-		upslogx(LOG_EMERG, "Can't determine if shutdown is supported, attempting anyway");
-	}
-
-	upslogx(LOG_EMERG, "Emergency shutdown");
-	upscsend("UPSD");	/* Set shutdown delay */
-	upscsend("1");		/* 1 second (lowest possible. 0 returns current.*/
-
 	upslogx(LOG_EMERG, "Shutting down...");
-	upscsend("UPPC");	/* Powercycle UPS */
-	upscsend("IJHLDMGCIU"); /* security code */
+
+	/* send shutdown command twice, just to be sure */
+	instcmd("shutdown.reboot", NULL);
+	sleep(1);
+	instcmd("shutdown.reboot", NULL);
+	sleep(1);
 }
 
 
 static int instcmd (const char *auxcmd, const char *data)
 {
-	cmd_t *cp = commands;
+	cmd_t *cp;
 
 	if (!strcasecmp(auxcmd, "beeper.off")) {
 		/* compatibility mode for old command */
@@ -907,17 +904,20 @@ static int instcmd (const char *auxcmd, const char *data)
 	}
 
 	upsdebugx(1, "Instcmd: %s %s", auxcmd, data ? data : "\"\"");
-	while (cp->cmd) {
-		if (strcmp(cp->cmd, auxcmd) == 0) {
-			upscsend(cp->upsc);
-			if (cp->upsp)
-				upscsend(cp->upsp);
-			else if (data)
-				upscsend(data);
-			return STAT_INSTCMD_HANDLED;
+
+	for (cp = commands; cp->cmd; cp++) {
+		if (strcasecmp(cp->cmd, auxcmd)) {
+			continue;
 		}
-		cp++;
+		upscsend(cp->upsc);
+		if (cp->upsp) {
+			upscsend(cp->upsp);
+		} else if (data) {
+			upscsend(data);
+		}
+		return STAT_INSTCMD_HANDLED;
 	}
+
 	upslogx(LOG_INFO, "instcmd: unknown command %s", auxcmd);
 	return STAT_INSTCMD_UNKNOWN;
 }
@@ -925,16 +925,18 @@ static int instcmd (const char *auxcmd, const char *data)
 
 static int setvar (const char *var, const char *data)
 {
-	cmd_t *cp = variables;
+	cmd_t *cp;
 
 	upsdebugx(1, "Setvar: %s %s", var, data);
-	while (cp->cmd) {
-		if (strcmp(cp->cmd, var) == 0) {
-			upsc_getvalue(cp->upsc, data, cp->upsp, cp->cmd, NULL);
-			return STAT_SET_HANDLED;
+
+	for (cp = variables; cp->cmd; cp++) {
+		if (strcasecmp(cp->cmd, var)) {
+			continue;
 		}
-		cp++;
+		upsc_getvalue(cp->upsc, data, cp->upsp, cp->cmd, NULL);
+		return STAT_SET_HANDLED;
 	}
+
 	upslogx(LOG_INFO, "Setvar: unsettable variable %s", var);
 	return STAT_SET_UNKNOWN;
 }
@@ -1100,38 +1102,34 @@ static int upsc_commandlist(void)
 			can_upsd = 1;
 		else if (strcmp(buf, "UPPC") == 0)
 			can_uppc = 1;
-		cp = commands;
-		while (cp->cmd) {
+
+		for (cp = commands; cp->cmd; cp++) {
 			if (cp->upsc && strcmp(cp->upsc, buf) == 0) {
 				upsdebugx(1, "instcmd: %s %s", cp->cmd, cp->upsc);
 				dstate_addcmd(cp->cmd);
 				cp->enabled = 1;
-				break;
+	            break;
 			}
-			cp++;
 		}
-		cp = variables;
-		while (cp->cmd) {
+
+		for (cp = variables; cp->cmd; cp++) {
 			if (cp->upsc && strcmp(cp->upsc, buf) == 0) {
 				upsdebugx(1, "setvar: %s %s", cp->cmd, cp->upsc);
 				cp->enabled = 1;
 				break;
 			}
-			cp++;
 		}
 
 		if (strcmp(buf, "UPCL") == 0)
 			break;
 	}
 
-	cp = variables;
-	while (cp->cmd) {
+	for (cp = variables; cp->cmd; cp++) {
 		if (cp->enabled) {
-			upsc_getvalue(cp->upsc, "0", cp->upsp, cp->cmd, NULL);
+			upsc_getvalue(cp->upsc, "0000", cp->upsp, cp->cmd, NULL);
 			dstate_setflags(cp->cmd, ST_FLAG_RW | ST_FLAG_STRING);
 			dstate_setaux(cp->cmd, 7);
 		}
-		cp++;
 	}
 
 	return 1;

@@ -156,9 +156,9 @@ typedef union device_desc_data_u {
 /*      Model Name formating entries                               */
 /* --------------------------------------------------------------- */
 typedef struct {
-  char	*iProduct;
-  char	*iModel;
-  char	*finalname;
+  const char	*iProduct;
+  const char	*iModel;
+  const char	*finalname;
 } models_name_t;
 
 models_name_t models_names [] =
@@ -269,7 +269,7 @@ models_name_t models_names [] =
 /* for lookup between HID values and NUT values*/
 typedef struct {
 	long	hid_value;	/* HID value */
-	char	*nut_value;	/* NUT value */
+	const char	*nut_value;	/* NUT value */
 } info_lkp_t;
 
 /* Actual value lookup tables => should be fine for all Mfrs (TODO: validate it!) */
@@ -344,7 +344,7 @@ typedef struct {
   int			flags;		/* INFO-element flags to set in addinfo  */
   int			length;		/* INFO-element length of strings        */
   const char	*item_path;	/* HID object (fully qualified string path) */
-  const char	fmt[6];		/* printf format string for INFO entry   */
+  const char	*fmt;		/* printf format string for INFO entry   */
   const char	*dfl;		/* default value */
   unsigned long	shut_flags;	/* specific SHUT flags */
   info_lkp_t	*hid2info;	/* lookup table between HID and NUT values */
@@ -506,7 +506,7 @@ int   shut_wait_ack (void);
 void  shut_ups_status(void);
 
 int    hid_init_device(void);
-char  *get_model_name(char *iProduct, char *iModel);
+const char  *get_model_name(char *iProduct, char *iModel);
 int    hid_lookup_usage(char *name);
 int    hid_get_value(const char *item_path);
 int    hid_set_value(const char *varname, const char *val);

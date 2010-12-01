@@ -90,7 +90,7 @@ static int CheckDataChecksum(unsigned char *Buff, int Len)
 }
 
 
-static char *ErrMessages[] = {
+static const char *ErrMessages[] = {
 /*  0 */   "errorcode NOT DEFINED",   /* default error message */
 /*  1 */   "I2C bus busy (e2prom)",
 /*  2 */   "Command received: checksum not valid",

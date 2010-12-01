@@ -128,11 +128,11 @@ static unsigned char EventosRede, EventosSaida, EventosBateria;
 // Grupo de Programação
 
 /* Methods */
-static void ScanReceivePack();
+static void ScanReceivePack(void);
 static int AutonomyCalc( int );
 static void CommReceive(const unsigned char*, int );
-static void getbaseinfo();
-static void getupdateinfo();
+static void getbaseinfo(void);
+static void getupdateinfo(void);
   
 static unsigned char RecPack[37];
 
@@ -550,7 +550,7 @@ static void getbaseinfo(void)
 	int  tam, i, j=0;
 	time_t *tmt;
 	struct tm *now;
-	char *Model;
+	const char *Model;
 
 	tmt  = ( time_t * ) malloc( sizeof( time_t ) );
 	time( tmt );

@@ -1,9 +1,10 @@
 Desc: Configure options
 File: configure.txt
-Date: 24 December 2008
+Date: 27 February 2010
 Auth: Russell Kroll <rkroll@exploits.org>
 Auth: Peter Selinger <selinger@sourceforge.net>
 Auth: Arnaud Quette <aquette.dev@gmail.com>
+Auth: Arjen de Korte <adkorte-guest@alioth.debian.org>
 
 There are a few options that can be given to configure to tweak compiles.
 See also "./configure --help" for a current and complete listing.
@@ -17,6 +18,7 @@ Contents:
 4. Installation directories
 5. Directories used by NUT at run-time
 6. Things the compiler might need to find
+7. HAL addons (deprecated)
 
 1. Driver selection:
 ====================
@@ -90,10 +92,6 @@ Contents:
    Enable libwrap (tcp-wrappers) support. Refer to upsd man page for
    more information.
 
-  --with-ipv6 (default: auto-detect)
-
-   Enable IPv6 support.
-
   --with-hal (default: no)
 
     Build and install Hardware Abstraction Layer support.
@@ -101,7 +99,7 @@ Contents:
     Gnome or KDE desktop, this will enable a full Plug & Play usage.
     See docs/nut-hal.txt for additional information on how to set up
     and use HAL support.
-
+    
   --with-powerman  (default: auto-detect)
 
     Build and install Powerman PDU client driver.
@@ -325,3 +323,19 @@ Contents:
    If your system doesn't have pkg-config and support for any of the
    above libraries isn't found (but you know it is installed), you must
    specify the linker flags that are needed.
+
+7. HAL addons (deprecated):
+===========================
+
+ --with-hal-includes="-DDBUS_API_SUBJECT_TO_CHANGE -I/usr/include/hal \
+		-I/usr/include/dbus-1.0 -I/usr/lib/dbus-1.0/include"
+ --with-hal-libs="-lhal -ldbus-1 -lpthread"
+ --with-hal-user="haldaemon"
+ --with-hal-device-match-key="info.bus"
+ --with-hal-callouts-path="${libdir}/hal"
+ --with-hal-fdi-path="${datarootdir}/hal/fdi/information/20thirdparty"
+
+   If system doesn't have pkg-config or it fails to provides hints for
+   some of the settings that are needed to set it up properly and the
+   build in defaults are not right, you can specify the right variables
+   here.

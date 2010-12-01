@@ -21,6 +21,13 @@
 #
 # 2008-06-09 David Goncalves
 #            Added 'GetRWVars' and 'SetRWVar' commands.
+#
+# 2009-02-19 David Goncalves
+#            Changed class PyNUT to PyNUTClient
+#
+# 2010-07-23 David Goncalves - Version 1.2
+#            Changed GetRWVars function that fails is the UPS is not
+#            providing such vars.
 
 import telnetlib
 
@@ -35,8 +42,8 @@ class PyNUTClient :
     __timeout     = None
     __srv_handler = None
 
-    __version     = "1.0"
-    __release     = "2008-06-09"
+    __version     = "1.2"
+    __release     = "2010-07-23"
 
 
     def __init__( self, host="127.0.0.1", port=3493, login=None, password=None, debug=False, timeout=5 ) :
@@ -98,7 +105,7 @@ if something goes wrong.
     def GetUPSList( self ) :
         """ Returns the list of available UPS from the NUT server
 
-The result is a dictionnary containing 'key->val' pairs of 'UPSName' and 'UPS Description'
+The result is a dictionary containing 'key->val' pairs of 'UPSName' and 'UPS Description'
         """
         if self.__debug :
             print( "[DEBUG] GetUPSList from server" )
@@ -121,7 +128,7 @@ The result is a dictionnary containing 'key->val' pairs of 'UPSName' and 'UPS De
     def GetUPSVars( self, ups="" ) :
         """ Get all available vars from the specified UPS
 
-The result is a dictionnary containing 'key->val' pairs of all
+The result is a dictionary containing 'key->val' pairs of all
 available vars.
         """
         if self.__debug :
@@ -185,7 +192,7 @@ of the command as value
     def GetRWVars( self,  ups="" ) :
         """ Get a list of all writable vars from the selected UPS
 
-The result is presented as a dictionnary containing 'key->val' pairs
+The result is presented as a dictionary containing 'key->val' pairs
         """
         if self.__debug :
             print( "[DEBUG] GetUPSVars from '%s'..." % ups )
@@ -200,10 +207,14 @@ The result is presented as a dictionnary containing 'key->val' pairs
         end_offset = 0 - ( len( "END LIST RW %s\n" % ups ) + 1 )
         rw_vars    = {}
 
-        for current in result[:end_offset].split( "\n" ) :
-            var  = current[ offset: ].split( '"' )[0].replace( " ", "" )
-            data = current[ offset: ].split( '"' )[1]
-            rw_vars[ var ] = data
+        try :
+            for current in result[:end_offset].split( "\n" ) :
+                var  = current[ offset: ].split( '"' )[0].replace( " ", "" )
+                data = current[ offset: ].split( '"' )[1]
+                rw_vars[ var ] = data
+
+        except :
+            pass
 
         return( rw_vars )
 

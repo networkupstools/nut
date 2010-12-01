@@ -16,8 +16,8 @@ EXTRA_DIST = MAINTAINERS UPGRADING
 # need to give hotplug-dir and udev-dir, so that staged install does
 # not fail.
 
-DISTCHECK_FLAGS = --with-all --with-ssl --with-ipv6
-DISTCHECK_LIGHT_FLAGS = --with-all=auto --with-ssl=auto --with-ipv6=auto
+DISTCHECK_FLAGS = --with-all --with-ssl
+DISTCHECK_LIGHT_FLAGS = --with-all=auto --with-ssl=auto
 
 DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
  --with-hotplug-dir='$${prefix}/etc/hotplug'		\
@@ -29,6 +29,16 @@ distcheck-light:
 # workaround the dist generated files that are also part of the distribution
 distcleancheck_listfiles = \
 	find . -type f -exec sh -c 'test -f $(srcdir)/{} || echo {}' ';'
+
+# Automatically generate the ChangeLog from SVN logs:
+MAINTAINERCLEAN_FILES = ChangeLog
+ChangeLog: tools/svn2cl.authors
+	svn2cl --group-by-day --include-rev --authors=$< --revision 'HEAD:2332' --output=$@ || \
+		echo "svn2cl failed to generate the ChangeLog. See http://trac.networkupstools.org/projects/nut/timeline" > $@
+
+# Placeholder for AsciiDoc integration
+website:
+	@echo "Warning: not building website"
 
 # ----------------------------------------------------------------------
 # targets from old build system (pre-automake).

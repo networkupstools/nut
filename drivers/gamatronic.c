@@ -117,7 +117,7 @@ int sec_cmd(const char mode, const char *command, char *msgbuf, int *buflen)
     return ret;
 }
 
-void addquery(char *cmd, int field, int varnum, int pollflag)
+void addquery(const char *cmd, int field, int varnum, int pollflag)
 {
     int q;
 
@@ -297,17 +297,20 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	int msg_len;
+	char msgbuf[SMALLBUF];
 
-  int msg_len;
+	msg_len = snprintf(msgbuf, sizeof(msgbuf), "-1");
+	sec_cmd(SEC_SETCMD, SEC_SHUTDOWN, msgbuf, &msg_len);
 
-   msg_len = 2;
-   sec_cmd (SEC_SETCMD,SEC_SHUTDOWN,"-1",&msg_len);
-   msg_len = 1 ;
-   sec_cmd (SEC_SETCMD,SEC_AUTORESTART,"1",&msg_len);    
-   msg_len = 1;
-   sec_cmd (SEC_SETCMD, SEC_SHUTTYPE,"2",&msg_len);
-   msg_len = 1;
-   sec_cmd (SEC_SETCMD,SEC_SHUTDOWN,"5",&msg_len);
+	msg_len = snprintf(msgbuf, sizeof(msgbuf), "1");
+	sec_cmd(SEC_SETCMD, SEC_AUTORESTART, msgbuf, &msg_len);
+
+	msg_len = snprintf(msgbuf, sizeof(msgbuf), "2");
+	sec_cmd(SEC_SETCMD, SEC_SHUTTYPE,msgbuf, &msg_len);
+
+	msg_len = snprintf(msgbuf, sizeof(msgbuf), "5");
+	sec_cmd(SEC_SETCMD, SEC_SHUTDOWN, msgbuf, &msg_len);
 }
 
 /*

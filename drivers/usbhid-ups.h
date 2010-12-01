@@ -59,9 +59,9 @@ extern bool_t	 	use_interrupt_pipe;	/* Set to FALSE if interrupt reports should 
 /* --------------------------------------------------------------- */
 
 typedef struct {
-	long	hid_value;	/* HID value */
-	char	*nut_value;	/* NUT value */
-	char	*(*fun)(double hid_value);	/* optional HID to NUT mapping */
+	const long	hid_value;	/* HID value */
+	const char	*nut_value;	/* NUT value */
+	const char	*(*fun)(double hid_value);	/* optional HID to NUT mapping */
 	double	(*nuf)(const char *nut_value);		/* optional NUT to HID mapping */
 } info_lkp_t;
 
@@ -115,13 +115,13 @@ extern info_lkp_t kelvin_celsius_conversion[];
 /* --------------------------------------------------------------- */
 
 typedef struct {
-	char	*info_type;		/* NUT variable name */
+	const char	*info_type;		/* NUT variable name */
 	int	info_flags;		/* NUT flags (to set in addinfo) */
 	int	info_len;		/* if ST_FLAG_STRING: length of the string */
 					/* if HU_TYPE_CMD: command value */
-	char	*hidpath;		/* Full HID Object path (or NULL for server side vars) */
+	const char	*hidpath;		/* Full HID Object path (or NULL for server side vars) */
 	HIDData_t *hiddata;		/* Full HID Object data (for caching purpose, filled at runtime) */
-	char	*dfl;			/* if HU_FLAG_ABSENT: default value ; format otherwise */
+	const char	*dfl;			/* if HU_FLAG_ABSENT: default value ; format otherwise */
 	unsigned long hidflags;		/* driver's own flags */
 	info_lkp_t *hid2info;		/* lookup table between HID and NUT values */
 								/* if HU_FLAG_ENUM is set, hid2info is also used
@@ -158,17 +158,16 @@ typedef struct {
  * particular manufacturer (e.g. MGE, APC, Belkin), or a particular
  * range of models. */
 
-struct subdriver_s {
-	char *name;                  /* name of this subdriver */
+typedef struct {
+	const char *name;                  /* name of this subdriver */
 	int (*claim)(HIDDevice_t *hd); /* return 1 if device covered by
 				      * this subdriver */
 	usage_tables_t *utab;        /* points to array of usage tables */
 	hid_info_t *hid2nut;         /* main table of vars and instcmds */
-	char *(*format_model)(HIDDevice_t *hd);  /* driver-specific methods */
-	char *(*format_mfr)(HIDDevice_t *hd);    /* for preparing human-    */
-	char *(*format_serial)(HIDDevice_t *hd); /* readable information    */
-};
-typedef struct subdriver_s subdriver_t;
+	const char *(*format_model)(HIDDevice_t *hd);  /* driver-specific methods */
+	const char *(*format_mfr)(HIDDevice_t *hd);    /* for preparing human-    */
+	const char *(*format_serial)(HIDDevice_t *hd); /* readable information    */
+} subdriver_t;
 
 /* the following functions are exported for the benefit of subdrivers */
 int instcmd(const char *cmdname, const char *extradata);

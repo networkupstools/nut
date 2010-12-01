@@ -27,7 +27,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION		"0.34"
+#define DRIVER_VERSION		"0.35"
 
 #include "main.h"
 #include "libhid.h"
@@ -112,9 +112,9 @@ hid_dev_handle_t udev;
 /* support functions */
 static hid_info_t *find_nut_info(const char *varname);
 static hid_info_t *find_hid_info(const HIDData_t *hiddata);
-static char *hu_find_infoval(info_lkp_t *hid2info, const double value);
+static const char *hu_find_infoval(info_lkp_t *hid2info, const double value);
 static long hu_find_valinfo(info_lkp_t *hid2info, const char* value);
-static void process_boolean_info(char *nutvalue);
+static void process_boolean_info(const char *nutvalue);
 static void ups_alarm_set(void);
 static void ups_status_set(void);
 static bool_t hid_ups_walk(walkmode_t mode);
@@ -172,8 +172,8 @@ typedef enum {
    collected from the hardware; not yet converted to official NUT
    status or alarms */
 typedef struct {
-	char	*status_str;	/* ups status string */
-	int	status_mask;	/* ups status mask */
+	const char	*status_str;	/* ups status string */
+	const int	status_mask;	/* ups status mask */
 } status_lkp_t;
 
 static status_lkp_t status_info[] = {
@@ -382,6 +382,7 @@ info_lkp_t test_read_info[] = {
 	{ 4, "Aborted", NULL },
 	{ 5, "In progress", NULL },
 	{ 6, "No test initiated", NULL },
+	{ 7, "Test scheduled", NULL },
 	{ 0, NULL, NULL }
 };
 
@@ -406,7 +407,7 @@ info_lkp_t on_off_info[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *date_conversion_fun(double value)
+static const char *date_conversion_fun(double value)
 {
 	static char buf[20];
 	int year, month, day;
@@ -430,7 +431,7 @@ info_lkp_t date_conversion[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *hex_conversion_fun(double value)
+static const char *hex_conversion_fun(double value)
 {
 	static char buf[20];
 
@@ -445,7 +446,7 @@ info_lkp_t hex_conversion[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *stringid_conversion_fun(double value)
+static const char *stringid_conversion_fun(double value)
 {
 	static char buf[20];
 
@@ -458,7 +459,7 @@ info_lkp_t stringid_conversion[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *divide_by_10_conversion_fun(double value)
+static const char *divide_by_10_conversion_fun(double value)
 {
 	static char buf[20];
 
@@ -473,7 +474,7 @@ info_lkp_t divide_by_10_conversion[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *kelvin_celsius_conversion_fun(double value)
+static const char *kelvin_celsius_conversion_fun(double value)
 {
 	static char buf[20];
 
@@ -773,7 +774,7 @@ void upsdrv_updateinfo(void)
 			continue;
 
 		if (nut_debug_level >= 2) {
-			upsdebugx(2, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %f",
+			upsdebugx(2, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %g",
 				HIDGetDataItem(event[i], subdriver->utab),
 				HIDDataType(event[i]), event[i]->ReportID,
 				event[i]->Offset, event[i]->Size, value);
@@ -984,7 +985,7 @@ void possibly_supported(const char *mfr, HIDDevice_t *hd)
 
 /* Update ups_status to remember this status item. Interpretation is
    done in ups_status_set(). */
-static void process_boolean_info(char *nutvalue)
+static void process_boolean_info(const char *nutvalue)
 {
 	status_lkp_t *status_item;
 	int clear = 0;
@@ -1016,7 +1017,7 @@ static void process_boolean_info(char *nutvalue)
 static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf, int rdlen)
 {
 	int i;
-	char *mfr = NULL, *model = NULL, *serial = NULL;
+	const char *mfr = NULL, *model = NULL, *serial = NULL;
 #ifndef SHUT_MODE
 	int ret;
 #endif
@@ -1232,7 +1233,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 			continue;
 		}
 
-		upsdebugx(2, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %f",
+		upsdebugx(2, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %g",
 			item->hidpath, HIDDataType(item->hiddata), item->hiddata->ReportID,
 			item->hiddata->Offset, item->hiddata->Size, value);
 
@@ -1451,7 +1452,7 @@ static long hu_find_valinfo(info_lkp_t *hid2info, const char* value)
 }
 
 /* find the NUT value matching that HID Item value */
-static char *hu_find_infoval(info_lkp_t *hid2info, const double value)
+static const char *hu_find_infoval(info_lkp_t *hid2info, const double value)
 {
 	info_lkp_t	*info_lkp;
 
@@ -1475,7 +1476,7 @@ static char *hu_find_infoval(info_lkp_t *hid2info, const double value)
 /* return -1 on failure, 0 for a status update and 1 in all other cases */
 static int ups_infoval_set(hid_info_t *item, double value)
 {
-	char	*nutvalue;
+	const char	*nutvalue;
 
 	/* need lookup'ed translation? */
 	if (item->hid2info != NULL){

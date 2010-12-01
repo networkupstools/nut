@@ -3,7 +3,7 @@
  *  Based on NET-SNMP API (Simple Network Management Protocol V1-2)
  *
  *  Copyright (C)
- *   2002-2008  Arnaud Quette <arnaud.quette@free.fr>
+ *   2002-2010  Arnaud Quette <arnaud.quette@free.fr>
  *   2002-2006	Dmitry Frolov <frolov@riss-telecom.ru>
   *  			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *  			Niels Baggesen <niels@baggesen.net>
@@ -35,19 +35,19 @@ for each OID request we made), instead of sending many small packets
 - add support for registration and traps (manager mode),
 - complete mib2nut data (add all OID translation to NUT)
 - externalize mib2nut data in .m2n files and load at driver startup using parseconf()...
-- ... and use Net-SNMP lookup mecanism for OIDs (use string path, not numeric)
 - adjust information logging.
 
-- move to numeric OIDs
+- move numeric OIDs into th mib2nut tables and remove defines
 - move mib2nut into c files (à la usbhid-ups)?
-- add a claim function and move to usbhid-ups style
+- add a claim function and move to usbhid-ups style for specific processing
 - rework the flagging system
 */
 
 #ifndef SNMP_UPS_H
 #define SNMP_UPS_H
 
-/* workaround for buggy Net-SNMP config */
+/* FIXME: still needed?
+ * workaround for buggy Net-SNMP config */
 #ifdef PACKAGE_BUGREPORT
 #undef PACKAGE_BUGREPORT
 #endif
@@ -163,8 +163,16 @@ typedef struct {
 #define SU_VAR_COMMUNITY	"community"
 #define SU_VAR_VERSION		"snmp_version"
 #define SU_VAR_MIBS			"mibs"
-#define SU_VAR_SDTYPE		"sdtype"
 #define SU_VAR_POLLFREQ		"pollfreq"
+#define SU_VAR_SDTYPE		"sdtype"
+/* SNMP v3 related parameters */
+#define SU_VAR_SECLEVEL		"secLevel"
+#define SU_VAR_SECNAME		"secName"
+#define SU_VAR_AUTHPASSWD	"authPassword"
+#define SU_VAR_PRIVPASSWD	"privPassword"
+#define SU_VAR_AUTHPROT		"authProtocol"
+#define SU_VAR_PRIVPROT		"privProtocol"
+
 
 #define SU_INFOSIZE		128
 #define SU_BUFSIZE		32
@@ -191,8 +199,7 @@ typedef struct {
 } mib2nut_info_t;
 
 /* Common SNMP functions */
-void nut_snmp_init(const char *type, const char *host, const char *version,
-		const char *community);
+void nut_snmp_init(const char *type, const char *hostname);
 void nut_snmp_cleanup(void);
 struct snmp_pdu *nut_snmp_get(const char *OID);
 bool_t nut_snmp_get_str(const char *OID, char *buf, size_t buf_len,

@@ -12,15 +12,15 @@
 #define ST_FLAG_IMMUTABLE	0x0004
 
 /* list of possible ENUM values */
-struct enum_t {
+typedef struct enum_s {
 	char    *val;
-	struct  enum_t  *next;
-};
+	struct enum_s	*next;
+} enum_t;
 
 /* list of instant commands */
-struct cmdlist_t {
+typedef struct cmdlist_s {
         char    *name;
-        struct  cmdlist_t       *next;
-};
+        struct cmdlist_s	*next;
+} cmdlist_t;
 
 #endif	/* EXTSTATE_H_SEEN */

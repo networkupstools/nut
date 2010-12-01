@@ -210,7 +210,7 @@ static int compile_regex(regex_t **compiled, char *regex, int cflags)
 static int match_regex(regex_t *preg, char *str)
 {
 	int	r;
-	size_t	len;
+	size_t	len = 0;
 	char	*string;
 	regmatch_t	match;
 
@@ -219,31 +219,28 @@ static int match_regex(regex_t *preg, char *str)
 	}
 
 	if (!str) {
-		str = "";
-	}
+		string = xstrdup("");
+	} else {
+		/* skip leading whitespace */
+		for (len = 0; len < strlen(str); len++) {
 
-	/* skip leading whitespace */
-	for (len = 0; len < strlen(str); len++) {
-
-		if (!strchr(" \t\n", str[len])) {
-			break;
+			if (!strchr(" \t\n", str[len])) {
+				break;
+			}
 		}
-	}
 
-	string = strdup(str+len);
-	if (!string) {
-		return -1;
-	}
+		string = xstrdup(str+len);
 
-	/* skip trailing whitespace */
-	for (len = strlen(string); len > 0; len--) {
+		/* skip trailing whitespace */
+		for (len = strlen(string); len > 0; len--) {
 
-		if (!strchr(" \t\n", string[len-1])) {
-			break;
+			if (!strchr(" \t\n", string[len-1])) {
+				break;
+			}
 		}
-	}
 
-	string[len] = '\0';
+		string[len] = '\0';
+	}
 
 	/* test the regular expression */
 	r = regexec(preg, string, 1, &match, 0);

@@ -29,14 +29,11 @@
 
 #define FLAG_USER	0x0001		/* username and password must be set */
 
-struct netcmds_t {
+struct {
 	const	char	*name;
 	void	(*func)(ctype_t *client, int numargs, const char **arg);
 	int	flags;
-};
-
-struct netcmds_t netcmds[] =
-{
+} netcmds[] = {
 	{ "VER",	net_ver,	0		},
 	{ "HELP",	net_help,	0		},
 	{ "STARTTLS",	net_starttls,	0		},

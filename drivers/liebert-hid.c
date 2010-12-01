@@ -92,15 +92,15 @@ static hid_info_t liebert_hid2nut[] = {
   { NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
 };
 
-static char *liebert_format_model(HIDDevice_t *hd) {
+static const char *liebert_format_model(HIDDevice_t *hd) {
 	return hd->Product;
 }
 
-static char *liebert_format_mfr(HIDDevice_t *hd) {
+static const char *liebert_format_mfr(HIDDevice_t *hd) {
 	return hd->Vendor ? hd->Vendor : "Liebert";
 }
 
-static char *liebert_format_serial(HIDDevice_t *hd) {
+static const char *liebert_format_serial(HIDDevice_t *hd) {
 	return hd->Serial;
 }
 

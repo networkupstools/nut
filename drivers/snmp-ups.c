@@ -3,7 +3,7 @@
  *  Based on NetSNMP API (Simple Network Management Protocol V1-2)
  *
  *  Copyright (C)
- *	2002 - 2008	Arnaud Quette <arnaud.quette@free.fr>
+ *	2002 - 2010	Arnaud Quette <arnaud.quette@free.fr>
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
@@ -43,6 +43,7 @@
 #include "raritan-pdu-mib.h"
 #include "baytech-mib.h"
 #include "compaq-mib.h"
+#include "bestpower-mib.h"
 #include "ietf-mib.h"
 
 static mib2nut_info_t *mib2nut[] = {
@@ -55,6 +56,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&raritan,
 	&baytech,
 	&compaq,
+	&bestpower,
 	/*
 	 * Prepend vendor specific MIB mappings before IETF, so that
 	 * if a device supports both IETF and vendor specific MIB,
@@ -75,7 +77,7 @@ const char *mibvers;
 static void disable_transfer_oids(void);
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.47"
+#define DRIVER_VERSION		"0.50"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -181,15 +183,27 @@ void upsdrv_makevartable(void)
 	upsdebugx(1, "entering upsdrv_makevartable()");
 
 	addvar(VAR_VALUE, SU_VAR_MIBS,
-	    "Set MIB compliance (default=ietf, allowed mge,apcc,netvision,pw,cpqpower)");
+		"Set MIB compliance (default=ietf, allowed: mge,apcc,netvision,pw,cpqpower,...)");
 	addvar(VAR_VALUE | VAR_SENSITIVE, SU_VAR_COMMUNITY,
-	    "Set community name (default=public)");
+		"Set community name (default=public)");
 	addvar(VAR_VALUE, SU_VAR_VERSION,
-	    "Set SNMP version (default=v1, allowed v2c)");
+		"Set SNMP version (default=v1, allowed v2c)");
 	addvar(VAR_VALUE, SU_VAR_POLLFREQ,
-	    "Set polling frequency in seconds, to reduce network flow (default=30)");
+		"Set polling frequency in seconds, to reduce network flow (default=30)");
 	addvar(VAR_FLAG, "notransferoids",
-	    "Disable transfer OIDs (use on APCC Symmetras)");
+		"Disable transfer OIDs (use on APCC Symmetras)");
+	addvar(VAR_VALUE, SU_VAR_SECLEVEL,
+		"Set the securityLevel used for SNMPv3 messages (default=noAuthNoPriv, allowed: authNoPriv,authPriv)");
+	addvar(VAR_VALUE | VAR_SENSITIVE, SU_VAR_SECNAME,
+		"Set the securityName used for authenticated SNMPv3 messages (no default)");
+	addvar(VAR_VALUE | VAR_SENSITIVE, SU_VAR_AUTHPASSWD,
+		"Set the authentication pass phrase used for authenticated SNMPv3 messages (no default)");
+	addvar(VAR_VALUE | VAR_SENSITIVE, SU_VAR_PRIVPASSWD,
+		"Set  the privacy pass phrase used for encrypted SNMPv3 messages (no default)");
+	addvar(VAR_VALUE, SU_VAR_AUTHPROT,
+		"Set the authentication protocol (MD5 or SHA) used for authenticated SNMPv3 messages (default=MD5)");
+	addvar(VAR_VALUE, SU_VAR_PRIVPROT,
+		"Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages (default=DES)");
 }
 
 void upsdrv_initups(void)
@@ -197,16 +211,15 @@ void upsdrv_initups(void)
 	snmp_info_t *su_info_p;
 	char model[SU_INFOSIZE];
 	bool_t status;
-	const char *community, *version, *mibs;
+	const char *mibs;
 
 	upsdebugx(1, "SNMP UPS driver : entering upsdrv_initups()");
 
-	community = testvar(SU_VAR_COMMUNITY) ? getval(SU_VAR_COMMUNITY) : "public";
-	version = testvar(SU_VAR_VERSION) ? getval(SU_VAR_VERSION) : "v1";
+	/* Retrieve user's parameters */
 	mibs = testvar(SU_VAR_MIBS) ? getval(SU_VAR_MIBS) : "auto";
 
 	/* init SNMP library, etc... */
-	nut_snmp_init(progname, device_path, version, community);
+	nut_snmp_init(progname, device_path);
 
 	/* FIXME: first test if the device is reachable to avoid timeouts! */
 
@@ -219,7 +232,7 @@ void upsdrv_initups(void)
 	else
 		pollfreq = DEFAULT_POLLFREQ;
 
-  	/* Get UPS Model node to see if there's a MIB */
+	/* Get UPS Model node to see if there's a MIB */
 	su_info_p = su_find_info("ups.model");
 	status = nut_snmp_get_str(su_info_p->OID, model, sizeof(model), NULL);
 
@@ -228,7 +241,7 @@ void upsdrv_initups(void)
 			 model, device_path, mibname, mibvers);
 	else
 		fatalx(EXIT_FAILURE, "%s MIB wasn't found on %s", mibs, g_snmp_sess.peername);
-		/* No supported device detected */
+		/* FIXME: "No supported device detected" */
 }
 
 void upsdrv_cleanup(void)
@@ -240,11 +253,13 @@ void upsdrv_cleanup(void)
  * SNMP functions.
  * ----------------------------------------------------------- */
 
-void nut_snmp_init(const char *type, const char *hostname, const char *version,
-		const char *community)
+void nut_snmp_init(const char *type, const char *hostname)
 {
-	upsdebugx(2, "SNMP UPS driver : entering nut_snmp_init(%s, %s, %s, %s)",
-		type, hostname, version, community);
+	const char *community, *version;
+	const char *secLevel = NULL, *authPassword, *privPassword;
+	const char *authProtocol, *privProtocol;
+
+	upsdebugx(2, "SNMP UPS driver : entering nut_snmp_init(%s)", type);
 
 	/* Initialize the SNMP library */
 	init_snmp(type);
@@ -253,17 +268,104 @@ void nut_snmp_init(const char *type, const char *hostname, const char *version,
 	snmp_sess_init(&g_snmp_sess);
 
 	g_snmp_sess.peername = xstrdup(hostname);
-	g_snmp_sess.community = (unsigned char *)xstrdup(community);
-	g_snmp_sess.community_len = strlen(community);
-	if (strcmp(version, "v1") == 0)
-		g_snmp_sess.version = SNMP_VERSION_1;
-	else if (strcmp(version, "v2c") == 0)
-		g_snmp_sess.version = SNMP_VERSION_2c;
+
+	/* Retrieve user parameters */
+	version = testvar(SU_VAR_VERSION) ? getval(SU_VAR_VERSION) : "v1";
+	
+	if ((strcmp(version, "v1") == 0) || (strcmp(version, "v2c") == 0)) {
+		g_snmp_sess.version = (strcmp(version, "v1") == 0) ? SNMP_VERSION_1 : SNMP_VERSION_2c;
+		community = testvar(SU_VAR_COMMUNITY) ? getval(SU_VAR_COMMUNITY) : "public";
+		g_snmp_sess.community = (unsigned char *)xstrdup(community);
+		g_snmp_sess.community_len = strlen(community);
+	}
+	else if (strcmp(version, "v3") == 0) {
+		/* SNMP v3 related init */
+		g_snmp_sess.version = SNMP_VERSION_3;
+
+		/* Security level */
+		if (testvar(SU_VAR_SECLEVEL)) {
+			secLevel = getval(SU_VAR_SECLEVEL);
+
+			if (strcmp(secLevel, "noAuthNoPriv") == 0)
+				g_snmp_sess.securityLevel = SNMP_SEC_LEVEL_NOAUTH;
+			else if (strcmp(secLevel, "authNoPriv") == 0)
+				g_snmp_sess.securityLevel = SNMP_SEC_LEVEL_AUTHNOPRIV;
+			else if (strcmp(secLevel, "authPriv") == 0)
+				g_snmp_sess.securityLevel = SNMP_SEC_LEVEL_AUTHPRIV;
+			else
+				fatalx(EXIT_FAILURE, "Bad SNMPv3 securityLevel: %s", secLevel);
+		}
+		else
+			g_snmp_sess.securityLevel = SNMP_SEC_LEVEL_NOAUTH;
+
+		/* Security name */
+		if (testvar(SU_VAR_SECNAME)) {
+			g_snmp_sess.securityName = xstrdup(getval(SU_VAR_SECNAME));
+			g_snmp_sess.securityNameLen = strlen(g_snmp_sess.securityName);
+		}
+		else
+			fatalx(EXIT_FAILURE, "securityName is required for SNMPv3");
+
+		/* Process mandatory fields, based on the security level */
+		authPassword = testvar(SU_VAR_AUTHPASSWD) ? getval(SU_VAR_AUTHPASSWD) : NULL;
+		privPassword = testvar(SU_VAR_PRIVPASSWD) ? getval(SU_VAR_PRIVPASSWD) : NULL;
+
+		switch (g_snmp_sess.securityLevel) {
+			case SNMP_SEC_LEVEL_AUTHNOPRIV:
+				if (authPassword == NULL)
+					fatalx(EXIT_FAILURE, "authPassword is required for SNMPv3 in %s mode", secLevel);
+			case SNMP_SEC_LEVEL_AUTHPRIV:
+				if ((authPassword == NULL) || (privPassword == NULL))
+					fatalx(EXIT_FAILURE, "authPassword and privPassword are required for SNMPv3 in %s mode", secLevel);
+			default:
+			case SNMP_SEC_LEVEL_NOAUTH:
+				/* nothing else needed */
+				break;
+		}
+
+		/* Process authentication protocol and key */
+		g_snmp_sess.securityAuthKeyLen = USM_AUTH_KU_LEN;
+		authProtocol = testvar(SU_VAR_AUTHPROT) ? getval(SU_VAR_AUTHPROT) : "MD5";
+
+		if (strcmp(authProtocol, "MD5") == 0) {
+			g_snmp_sess.securityAuthProto = usmHMACMD5AuthProtocol;
+			g_snmp_sess.securityAuthProtoLen = sizeof(usmHMACMD5AuthProtocol)/sizeof(oid);
+		}
+		else if (strcmp(authProtocol, "SHA") == 0) {
+			g_snmp_sess.securityAuthProto = usmHMACSHA1AuthProtocol;
+			g_snmp_sess.securityAuthProtoLen = sizeof(usmHMACSHA1AuthProtocol)/sizeof(oid);
+		}
+		else
+			fatalx(EXIT_FAILURE, "Bad SNMPv3 authProtocol: %s", authProtocol);
+
+		/* set the authentication key to a MD5/SHA1 hashed version of our
+		 * passphrase (must be at least 8 characters long) */
+		if (generate_Ku(g_snmp_sess.securityAuthProto,
+				g_snmp_sess.securityAuthProtoLen,
+				(u_char *) privPassword, strlen(privPassword),
+				g_snmp_sess.securityAuthKey,
+				&g_snmp_sess.securityAuthKeyLen) != SNMPERR_SUCCESS) {
+					fatalx(EXIT_FAILURE, "Error generating Ku from authentication pass phrase");
+		}
+
+		privProtocol = testvar(SU_VAR_PRIVPROT) ? getval(SU_VAR_PRIVPROT) : "DES";
+
+		if (strcmp(privProtocol, "DES") == 0) {
+			g_snmp_sess.securityPrivProto = usmDESPrivProtocol;
+			g_snmp_sess.securityPrivProtoLen =  sizeof(usmDESPrivProtocol)/sizeof(oid);
+		}
+		else if (strcmp(privProtocol, "AES") == 0) {
+			g_snmp_sess.securityPrivProto = usmAESPrivProtocol;
+			g_snmp_sess.securityPrivProtoLen =  sizeof(usmAESPrivProtocol)/sizeof(oid);
+		}
+		else
+			fatalx(EXIT_FAILURE, "Bad SNMPv3 authProtocol: %s", authProtocol);
+	}
 	else
 		fatalx(EXIT_FAILURE, "Bad SNMP version: %s", version);
 
 	/* Open the session */
-	SOCK_STARTUP; /* wrapper not needed on Unix! */
+	SOCK_STARTUP; /* MS Windows wrapper, not really needed on Unix! */
 	g_snmp_sess_p = snmp_open(&g_snmp_sess);	/* establish the session */
 	if (g_snmp_sess_p == NULL) {
 		nut_snmp_perror(&g_snmp_sess, 0, NULL, "nut_snmp_init: snmp_open");
@@ -767,7 +869,7 @@ int base_snmp_outlet_index(const char *OID_template)
 /* return the NUT offset (increment) based on outlet_index_base
  * ie (outlet_index_base == 0) => increment +1
  *    (outlet_index_base == 1) => increment +0 */
-int base_nut_outlet_offset()
+int base_nut_outlet_offset(void)
 {
 	return (outlet_index_base==0)?1:0;
 }

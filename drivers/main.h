@@ -33,16 +33,14 @@ char *getval(const char *var);
 int testvar(const char *var);
 
 /* extended variable table - used for -x defines/flags */
-struct vartab_s {
+typedef struct vartab_s {
 	int	vartype;	/* VAR_* value, below			 */
 	char	*var;		/* left side of =, or whole word if none */
 	char	*val;		/* right side of = 			 */
 	char	*desc;		/* 40 character description for -h text	 */
 	int	found;		/* set once encountered, for testvar()	 */
 	struct vartab_s	*next;
-};
-
-typedef struct vartab_s	vartab_t;
+} vartab_t;
 
 /* flags to define types in the vartab */
 
@@ -54,15 +52,13 @@ typedef struct vartab_s	vartab_t;
 void addvar(int vartype, const char *name, const char *desc);
 
 /* subdriver description structure */
-struct upsdrv_info_s {
+typedef struct upsdrv_info_s {
 	const char	*name;		/* driver full name, for banner printing, ... */ 
 	const char	*version;	/* driver version */
 	const char	*authors;	/* authors name */
 	const int	status;		/* driver development status */
 	struct upsdrv_info_s	*subdrv_info[2];	/* sub driver information */
-};
-
-typedef struct upsdrv_info_s	upsdrv_info_t;
+} upsdrv_info_t;
 
 /* flags to define the driver development status */
 #define DRV_BROKEN		0x0001	/* dito... */

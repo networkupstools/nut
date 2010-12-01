@@ -47,7 +47,7 @@
 	static	sigset_t	nut_upslog_sigmask;
 	static	char	logbuffer[LARGEBUF], *logformat;
 
-	static	struct	flist_t	*fhead = NULL;
+	static	flist_t	*fhead = NULL;
 
 #define DEFAULT_LOGFORMAT "%TIME @Y@m@d @H@M@S% %VAR battery.charge% " \
 		"%VAR input.voltage% %VAR ups.load% [%VAR ups.status%] " \
@@ -109,7 +109,7 @@ static void help(const char *prog)
 	printf("		- Use -f \"<format>\" so your shell doesn't break it up.\n");
 	printf("  -i <interval>	- Time between updates, in seconds\n");
 	printf("  -l <logfile>	- Log file name, or - for stdout\n");
-	printf("  -p <pidbase>  - Base name for PID file (defaults to \"upslog\")\n");
+	printf("  -p <pidbase>  - Base name for PID file (defaults to \"%s\")\n", prog);
 	printf("  -s <ups>	- Monitor UPS <ups> - <upsname>@<host>[:<port>]\n");
 	printf("        	- Example: -s myups@server\n");
 	printf("  -u <user>	- Switch to <user> if started as root\n");
@@ -238,7 +238,7 @@ static void print_literal(const char *arg)
 /* register another parsing function to be called later */
 static void add_call(void (*fptr)(const char *arg), const char *arg)
 {
-	struct	flist_t	*tmp, *last;
+	flist_t	*tmp, *last;
 
 	tmp = last = fhead;
 
@@ -247,7 +247,7 @@ static void add_call(void (*fptr)(const char *arg), const char *arg)
 		tmp = tmp->next;
 	}
 
-	tmp = xmalloc(sizeof(struct flist_t));
+	tmp = xmalloc(sizeof(flist_t));
 
 	tmp->fptr = fptr;
 
@@ -343,7 +343,7 @@ static void compile_format(void)
 /* go through the list of functions and call them in order */
 static void run_flist(void)
 {
-	struct	flist_t	*tmp;
+	flist_t	*tmp;
 
 	tmp = fhead;
 
@@ -369,18 +369,16 @@ static void run_flist(void)
 int main(int argc, char **argv)
 {
 	int	interval = 30, i;
-	char	*prog = NULL;
+	const char	*prog = xbasename(argv[0]);
 	time_t	now, nextpoll = 0;
-	const	char	*user = NULL;
-	struct	passwd	*new_uid = NULL;
-	const   char    *pidfilebase = "upslog";
+	const char	*user = NULL;
+	struct passwd	*new_uid = NULL;
+	const char	*pidfilebase = prog;
 
 	logformat = DEFAULT_LOGFORMAT;
 	user = RUN_AS_USER;
 
-	printf("Network UPS Tools upslog %s\n", UPS_VERSION);
-
-	prog = argv[0];
+	printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
 
 	 while ((i = getopt(argc, argv, "+hs:l:i:f:u:Vp:")) != -1) {
 		switch(i) {
@@ -476,7 +474,7 @@ int main(int argc, char **argv)
 	/* now drop root if we have it */
 	new_uid = get_user_pwent(user);
 
-	openlog("upslog", LOG_PID, LOG_FACILITY); 
+	open_syslog(prog); 
 
 	if (logfile != stdout)
 		background();

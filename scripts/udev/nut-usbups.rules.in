@@ -3,10 +3,10 @@
 ACTION!="add", GOTO="nut-usbups_rules_end"
 SUBSYSTEM=="usb_device", GOTO="nut-usbups_rules_real"
 SUBSYSTEM=="usb", GOTO="nut-usbups_rules_real"
-BUS!="usb", GOTO="nut-usbups_rules_end"
+SUBSYSTEMS!="usb", GOTO="nut-usbups_rules_end"
 
 LABEL="nut-usbups_rules_real"
-#  Krauler UP-M500VA  - blazer_usb
+#  Krauler UP-M500VA  - megatec_usb
 ATTR{idVendor}=="0001", ATTR{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 # Hewlett Packard
@@ -56,15 +56,15 @@ ATTR{idVendor}=="051d", ATTR{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_GROU
 # Powerware
 #  various models  - bcmxcp_usb
 ATTR{idVendor}=="0592", ATTR{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_GROUP@"
-#  Agiler UPS  - blazer_usb
+#  Agiler UPS  - megatec_usb
 ATTR{idVendor}=="05b8", ATTR{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_GROUP@"
-#  Belkin F6C1200-UNV  - blazer_usb
+#  Belkin F6C1200-UNV  - megatec_usb
 ATTR{idVendor}=="0665", ATTR{idProduct}=="5161", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 # Liebert
 #  various models  - bcmxcp_usb
 ATTR{idVendor}=="06da", ATTR{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_GROUP@"
-#  Mustek Powermust  - blazer_usb
+#  Mustek Powermust  - megatec_usb
 ATTR{idVendor}=="06da", ATTR{idProduct}=="0003", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  various models  - usbhid-ups
 ATTR{idVendor}=="06da", ATTR{idProduct}=="ffff", MODE="664", GROUP="@RUN_AS_GROUP@"
@@ -114,13 +114,13 @@ ATTR{idVendor}=="0d9f", ATTR{idProduct}=="00a4", MODE="664", GROUP="@RUN_AS_GROU
 ATTR{idVendor}=="0d9f", ATTR{idProduct}=="00a5", MODE="664", GROUP="@RUN_AS_GROUP@"
 #  PowerCOM BNT - Black Knight Pro  - usbhid-ups
 ATTR{idVendor}=="0d9f", ATTR{idProduct}=="00a6", MODE="664", GROUP="@RUN_AS_GROUP@"
-#  Unitek Alpha 1200Sx  - blazer_usb
+#  Unitek Alpha 1200Sx  - megatec_usb
 ATTR{idVendor}=="0f03", ATTR{idProduct}=="0001", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 # Liebert
 #  Liebert PowerSure PSA UPS  - usbhid-ups
 ATTR{idVendor}=="10af", ATTR{idProduct}=="0001", MODE="664", GROUP="@RUN_AS_GROUP@"
-#  Ablerex 625L USB  - blazer_usb
+#  Ablerex 625L USB  - megatec_usb
 ATTR{idVendor}=="ffff", ATTR{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_GROUP@"
 
 LABEL="nut-usbups_rules_end"

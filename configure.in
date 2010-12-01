@@ -13,9 +13,14 @@ AC_CONFIG_HEADER(include/config.h)
 AC_PREFIX_DEFAULT(/usr/local/ups)
 AM_INIT_AUTOMAKE
 
-dnl Require Autoconf 2.60 or better and enable features of Posix that are extensions to C
-AC_PREREQ([2.60])
-AC_USE_SYSTEM_EXTENSIONS
+dnl we need Autoconf 2.60 or better to enable features of Posix that are extensions to C
+AC_MSG_CHECKING(for autoconf macro to enable system extensions)
+m4_version_prereq(2.60, [
+	AC_MSG_RESULT(yes)
+	AC_USE_SYSTEM_EXTENSIONS
+], [
+	AC_MSG_RESULT(no)
+])
 
 dnl Use "./configure --enable-maintainer-mode" to keep Makefile.in and Makefile
 dnl in sync after SVN updates.
@@ -83,7 +88,8 @@ AC_C_VARARRAYS
 AC_CHECK_FUNCS(flock lockf fcvt fcvtl)
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
-AC_CHECK_FUNCS(on_exit strptime)
+AC_CHECK_FUNCS(on_exit strptime setlogmask)
+AC_CHECK_DECLS(LOG_UPTO, [], [], [#include <syslog.h>])
 
 dnl the following may add stuff to LIBOBJS (is this still needed?)
 AC_CHECK_FUNCS(vsnprintf snprintf, [], [
@@ -92,7 +98,7 @@ AC_CHECK_FUNCS(vsnprintf snprintf, [], [
 	AC_TYPE_LONG_LONG_INT
 ])
 
-AC_REPLACE_FUNCS(setenv inet_aton strerror atexit)
+AC_REPLACE_FUNCS(setenv strerror atexit)
 
 dnl
 dnl Only use these when compiling with gcc
@@ -149,9 +155,10 @@ dnl ----------------------------------------------------------------------
 dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
-AC_ARG_WITH(all,
-AC_HELP_STRING([--with-all], [enable serial, usb, snmp, hal, cgi, dev, neon, powerman]),
-[	if test -n "${withval}"; then
+AC_ARG_WITH(all, 
+	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, hal, cgi, dev, neon, powerman]),
+[
+	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
 		dnl this is what the user expects from --without-all
 		if test -z "${with_cgi}"; then with_cgi="${withval}"; fi
@@ -166,7 +173,8 @@ AC_HELP_STRING([--with-all], [enable serial, usb, snmp, hal, cgi, dev, neon, pow
 	else
 		AC_MSG_RESULT(not given)
 	fi
-], [		AC_MSG_RESULT(not given)
+], [
+	AC_MSG_RESULT(not given)
 ])
 
 dnl ----------------------------------------------------------------------
@@ -179,6 +187,7 @@ NUT_ARG_WITH([usb], [build and install USB drivers], [auto])
 NUT_CHECK_LIBUSB
 NUT_ARG_WITH([hal], [build and install HAL support], [no])
 NUT_CHECK_LIBHAL
+NUT_CONFIG_LIBHAL
 NUT_ARG_WITH([snmp], [build and install SNMP drivers], [auto])
 NUT_CHECK_LIBNETSNMP
 NUT_ARG_WITH([neon], [build and install neon based XML/HTTP driver], [auto])
@@ -245,27 +254,6 @@ fi
 
 AM_CONDITIONAL(WITH_WRAP, test "${nut_with_wrap}" = "yes")
 NUT_REPORT_FEATURE([enable libwrap (tcp-wrappers) support], [${nut_with_wrap}])
-
-dnl ----------------------------------------------------------------------
-dnl check whether to compile IPv6 features
-
-NUT_ARG_WITH([ipv6], [enable IPv6 support], [auto])
-
-dnl ${nut_with_ipv6}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_ipv6}" != "no"; then
-   dnl check for IPv6 prerequisites
-   NUT_CHECK_IPV6
-fi
-
-if test "${nut_with_ipv6}" = "yes" -a "${nut_have_ipv6}" != "yes"; then
-   AC_MSG_ERROR(["Some feature required for IPv6 support is missing"])
-fi
-
-if test "${nut_with_ipv6}" != "no"; then
-   nut_with_ipv6="${nut_have_ipv6}"
-fi
-
-NUT_REPORT_FEATURE([enable IPv6 support], [${nut_with_ipv6}])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-cgi
@@ -402,17 +390,18 @@ dnl ----------------------------------------------------------------------
 
 AC_MSG_CHECKING(state path)
 AC_ARG_WITH(statepath,
-AC_HELP_STRING([--with-statepath=PATH], [path for ups state files (/var/state/ups)]),
-[	case "${withval}" in
+	AS_HELP_STRING([--with-statepath=PATH], [path for ups state files (/var/state/ups)]),
+[
+	case "${withval}" in
 	yes|no)
+		AC_MSG_ERROR(invalid option --with(out)-statepath - see docs/configure.txt)
 		;;
 	*)
 		STATEPATH="${withval}"
 		;;
-	esac],
-)
-AC_DEFINE_UNQUOTED(STATEPATH, "${STATEPATH}",
-	[Path for UPS driver state files])
+	esac
+], [])
+AC_DEFINE_UNQUOTED(STATEPATH, "${STATEPATH}", [Path for UPS driver state files])
 AC_MSG_RESULT(${STATEPATH})
 
 dnl ---------------------------------------------------------------------
@@ -424,32 +413,35 @@ dnl
 
 AC_MSG_CHECKING(alt pid path)
 AC_ARG_WITH(altpidpath,
-AC_HELP_STRING([--with-altpidpath=PATH], [path for driver/upsd .pid files (<statepath>)]),
-[	case "${withval}" in
+	AS_HELP_STRING([--with-altpidpath=PATH], [path for driver/upsd .pid files (<statepath>)]),
+[
+	case "${withval}" in
 	yes|no)
-		ALTPIDPATH="${STATEPATH}"
+		AC_MSG_ERROR(invalid option --with(out)-altpidpath - see docs/configure.txt)
 		;;
 	*)
 		ALTPIDPATH="${withval}"
 		;;
-	esac],
+	esac
+], [
 	ALTPIDPATH="${STATEPATH}"
-)
-AC_DEFINE_UNQUOTED(ALTPIDPATH, "${ALTPIDPATH}",
-	[Path for pid files of drivers and upsd (usually STATEPATH)])
+])
+AC_DEFINE_UNQUOTED(ALTPIDPATH, "${ALTPIDPATH}", [Path for pid files of drivers and upsd (usually STATEPATH)])
 AC_MSG_RESULT(${ALTPIDPATH})
 
 AC_MSG_CHECKING(driver path)
 AC_ARG_WITH(drvpath,
-AC_HELP_STRING([--with-drvpath=PATH], [where to install ups drivers (EPREFIX/bin)]),
-[	case "${withval}" in
+	AS_HELP_STRING([--with-drvpath=PATH], [where to install ups drivers (EPREFIX/bin)]),
+[
+	case "${withval}" in
 	yes|no)
+		AC_MSG_ERROR(invalid option --with(out)-drvpath - see docs/configure.txt)
 		;;
 	*)
 		driverexecdir="${withval}"
 		;;
-	esac],
-)
+	esac
+], [])
 conftemp="${driverexecdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
@@ -458,15 +450,17 @@ AC_MSG_RESULT(${driverexecdir})
 
 AC_MSG_CHECKING(cgi path)
 AC_ARG_WITH(cgipath,
-AC_HELP_STRING([--with-cgipath=PATH], [where to install CGI programs (EPREFIX/cgi-bin)]),
-[	case "${withval}" in
+	AS_HELP_STRING([--with-cgipath=PATH], [where to install CGI programs (EPREFIX/cgi-bin)]),
+[
+	case "${withval}" in
 	yes|no)
+		AC_MSG_ERROR(invalid option --with(out)-cgipath - see docs/configure.txt)
 		;;
 	*)
 		cgiexecdir="${withval}"
 		;;
-	esac],
-)
+	esac
+], [])
 conftemp="${cgiexecdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
@@ -475,15 +469,17 @@ AC_MSG_RESULT(${cgiexecdir})
 
 AC_MSG_CHECKING(html path)
 AC_ARG_WITH(htmlpath,
-AC_HELP_STRING([--with-htmlpath=PATH], [where to install HTML files (PREFIX/html)]),
-[	case "${withval}" in
+	AS_HELP_STRING([--with-htmlpath=PATH], [where to install HTML files (PREFIX/html)]),
+[
+	case "${withval}" in
 	yes|no)
+		AC_MSG_ERROR(invalid option --with(out)-htmlpath - see docs/configure.txt)
 		;;
 	*)
 		htmldir="${withval}"
 		;;
-	esac],
-)
+	esac
+], [])
 conftemp="${htmldir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
@@ -492,229 +488,235 @@ AC_MSG_RESULT(${htmldir})
 
 AC_MSG_CHECKING(pidpath)
 AC_ARG_WITH(pidpath,
-AC_HELP_STRING([--with-pidpath=PATH], [path for .pid files (/var/run)]),
-[	case "${withval}" in
+	AS_HELP_STRING([--with-pidpath=PATH], [path for .pid files (/var/run)]),
+[
+	case "${withval}" in
 	yes|no)
+		AC_MSG_ERROR(invalid option --with(out)-pidpath - see docs/configure.txt)
 		;;
 	*)
 		PIDPATH="${withval}"
 		;;
-	esac],
-)
+	esac
+], [])
 AC_DEFINE_UNQUOTED(PIDPATH, "${PIDPATH}", [Path where the pid files should go])
 AC_MSG_RESULT(${PIDPATH})
 
 AC_MSG_CHECKING(network port number)
 AC_ARG_WITH(port,
-AC_HELP_STRING([--with-port=PORT], [port for network communications (3493)]),
-[	case "${withval}" in
+	AS_HELP_STRING([--with-port=PORT], [port for network communications (3493)]),
+[
+	case "${withval}" in
 	yes|no)
-		PORT="3493"
+		AC_MSG_ERROR(invalid option --with(out)-port - see docs/configure.txt)
 		;;
 	*)
 		PORT="${withval}"
 		;;
-	esac],
+	esac
+], [
 	PORT="3493"
-)
+])
 AC_DEFINE_UNQUOTED(PORT, ${PORT}, [Port for network communications])
 AC_MSG_RESULT(${PORT})
 
-nut_user_given=
 AC_MSG_CHECKING(user to run as)
 AC_ARG_WITH(user,
-AC_HELP_STRING([--with-user=username], [user for programs started as root (nobody)]),
-[	case "${withval}" in
+	AS_HELP_STRING([--with-user=username], [user for programs started as root (nobody)]),
+[
+	case "${withval}" in
 	yes|no)
+		AC_MSG_ERROR(invalid option --with(out)-user - see docs/configure.txt)
 		;;
 	*)
 		RUN_AS_USER="${withval}"
 		nut_user_given=yes
 		;;
-	esac],
-)
-AC_DEFINE_UNQUOTED(RUN_AS_USER, "${RUN_AS_USER}",
-	[User to switch to if started as root])
+	esac
+], [
+	nut_user_given=no
+])
+AC_DEFINE_UNQUOTED(RUN_AS_USER, "${RUN_AS_USER}", [User to switch to if started as root])
 AC_MSG_RESULT(${RUN_AS_USER})
 
-nut_group_given=
 AC_MSG_CHECKING(group membership of user to run as)
 AC_ARG_WITH(group,
-AC_HELP_STRING([--with-group=groupname], [group membership of user for programs started as root (nogroup)]),
-[	case "${withval}" in
+	AS_HELP_STRING([--with-group=groupname], [group membership of user for programs started as root (nogroup)]),
+[
+	case "${withval}" in
 	yes|no)
+		AC_MSG_ERROR(invalid option --with(out)-group - see docs/configure.txt)
 		;;
 	*)
 		RUN_AS_GROUP="${withval}"
 		nut_group_given=yes
 		;;
-	esac],
-)
-AC_DEFINE_UNQUOTED(RUN_AS_GROUP, "${RUN_AS_GROUP}",
-	[Group membership of user to switch to if started as root])
+	esac
+], [
+	nut_group_given=no
+])
+AC_DEFINE_UNQUOTED(RUN_AS_GROUP, "${RUN_AS_GROUP}", [Group membership of user to switch to if started as root])
 AC_MSG_RESULT(${RUN_AS_GROUP})
 
-dnl check that --with-user is given iff --with-group is given.
-if test -n "$nut_user_given" -a -z "$nut_group_given"; then
-   AC_MSG_ERROR(["If you specify --with-user, you also must specify --with-group"])
-elif test -z "$nut_user_given" -a -n "$nut_group_given"; then
-   AC_MSG_ERROR(["If you specify --with-group, you also must specify --with-user"])
+dnl check that --with-user is given if --with-group is given.
+if test "${nut_user_given}" = "yes" -a "${nut_group_given}" = "no"; then
+	AC_MSG_ERROR(["If you specify --with-user, you also must specify --with-group"])
+elif test "${nut_user_given}" = "no" -a "${nut_group_given}" = "yes"; then
+	AC_MSG_ERROR(["If you specify --with-group, you also must specify --with-user"])
 fi
 
 AC_MSG_CHECKING(facility for syslog)
 AC_ARG_WITH(logfacility,
-AC_HELP_STRING([--with-logfacility=FACILITY], [facility for log messages (LOG_DAEMON)]),
-[	case "${withval}" in
+	AS_HELP_STRING([--with-logfacility=FACILITY], [facility for log messages (LOG_DAEMON)]),
+[
+	case "${withval}" in
 	yes|no)
-		LOGFACILITY="LOG_DAEMON"
+		AC_MSG_ERROR(invalid option --with(out)-logfacility - see docs/configure.txt)
 		;;
 	*)
 		LOGFACILITY="${withval}"
 		;;
-	esac],
+	esac
+], [
 	LOGFACILITY="LOG_DAEMON"
-)
-AC_DEFINE_UNQUOTED(LOG_FACILITY, ${LOGFACILITY},
-	[Desired syslog facility - see syslog(3)])
+])
+AC_DEFINE_UNQUOTED(LOG_FACILITY, ${LOGFACILITY}, [Desired syslog facility - see syslog(3)])
 AC_MSG_RESULT(${LOGFACILITY})
 
+dnl Autoconf versions before 2.62 don't allow consecutive quadrigraphs,
+dnl so the help string depends on the version used
 AC_MSG_CHECKING(which drivers to build)
 AC_ARG_WITH(drivers,
-AC_HELP_STRING([[[[--with-drivers=driver@<:@,driver...@:>@]]]], [Only use specific drivers (all)]),
-[	case "${withval}" in
-	yes | no)
-		dnl ignore calls without any arguments
-		DRIVER_BUILD_LIST="all"
-		AC_MSG_RESULT(all available)
+	AS_HELP_STRING([m4_version_prereq(2.62,
+		[@<:@--with-drivers=driver@<:@,driver@:>@@:>@],
+		[[[[--with-drivers=driver@<:@,driver@:>@]]]])],
+	[Only use specific drivers (all)]),
+[
+	case "${withval}" in
+	yes|no)
+		AC_MSG_ERROR(invalid option --with(out)-drivers - see docs/configure.txt)
 		;;
 	*)
 		DRIVER_BUILD_LIST=`echo ${withval} | sed "s/,/ /g"`
 		AC_MSG_RESULT(${DRIVER_BUILD_LIST})
 		;;
 	esac
-],
-[
+], [
 	DRIVER_BUILD_LIST="all"
 	AC_MSG_RESULT(all available)
-]
-)
+])
 AM_CONDITIONAL(SOME_DRIVERS, test "${DRIVER_BUILD_LIST}" != "all")
 
 if test "${DRIVER_BUILD_LIST}" != "all"; then
-   NUT_REPORT([only build specific drivers], [${DRIVER_BUILD_LIST}])
+	NUT_REPORT([only build specific drivers], [${DRIVER_BUILD_LIST}])
 fi
 
 AC_MSG_CHECKING(which driver man pages to install)
 if test "${DRIVER_BUILD_LIST}" = "all"; then
-   DRIVER_MAN_LIST=all
-   AC_MSG_RESULT(all available)
+	DRIVER_MAN_LIST=all
+	AC_MSG_RESULT(all available)
 else
-   DRIVER_MAN_LIST=""
-   for i in ${DRIVER_BUILD_LIST}; do
-      if test -f ${srcdir}/man/$i.8; then
-         DRIVER_MAN_LIST="${DRIVER_MAN_LIST} $i.8"
-      fi
-   done
-   AC_MSG_RESULT(${DRIVER_MAN_LIST})
+	DRIVER_MAN_LIST=""
+	for i in ${DRIVER_BUILD_LIST}; do
+		if test -f ${srcdir}/man/$i.8; then
+			DRIVER_MAN_LIST="${DRIVER_MAN_LIST} $i.8"
+		fi
+	done
+	AC_MSG_RESULT(${DRIVER_MAN_LIST})
 fi
 
 AC_MSG_CHECKING(whether to strip debug symbols)
 AC_ARG_ENABLE(strip,
-[  --enable-strip		Strip debugging symbols from binaries	    [no]],
+	AS_HELP_STRING([--enable-strip], [Strip debugging symbols from binaries (no)]),
 [
 	case "${withval}" in
-		no)
-			AC_MSG_RESULT(no)
+	no)
+		AC_MSG_RESULT(no)
 		;;
-		*)
-			AC_MSG_RESULT(yes)
-			CFLAGS="${CFLAGS} -s"
+	*)
+		AC_MSG_RESULT(yes)
+		CFLAGS="${CFLAGS} -s"
 		;;
 	esac
-],
-[	AC_MSG_RESULT(no)
+], [
+	AC_MSG_RESULT(no)
 ])
-
 
 AC_MSG_CHECKING(whether to install pkg-config *.pc files)
 AC_ARG_WITH(pkgconfig-dir,
- AC_HELP_STRING([--with-pkgconfig-dir=PATH], [where to install pkg-config *.pc files (EPREFIX/lib/pkgconfig)]),
- [
-    case "${withval}" in
-        yes|auto)
-        ;;
-        no)
-            pkgconfigdir=""
-        ;;
-        *)
-            pkgconfigdir="${withval}"
-        ;;
-    esac
- ],
- )
-echo ${pkgconfigdir}
+	AS_HELP_STRING([--with-pkgconfig-dir=PATH], [where to install pkg-config *.pc files (EPREFIX/lib/pkgconfig)]),
+[
+	case "${withval}" in
+	yes|auto)
+		;;
+	no)
+		pkgconfigdir=""
+		;;
+	*)
+		pkgconfigdir="${withval}"
+		;;
+	esac
+], [])
 if test -n "${pkgconfigdir}"; then
-  AC_MSG_RESULT(using ${pkgconfigdir})
+	AC_MSG_RESULT(using ${pkgconfigdir})
 else
-  AC_MSG_RESULT(no)
+	AC_MSG_RESULT(no)
 fi
 AM_CONDITIONAL(WITH_PKG_CONFIG, test -n "${pkgconfigdir}")
 
 AC_MSG_CHECKING(whether to install hotplug rules)
 AC_ARG_WITH(hotplug-dir,
- AC_HELP_STRING([--with-hotplug-dir=PATH], [where to install hotplug rules (/etc/hotplug)]),
- [
-    case "${withval}" in
-        yes)
-            if test -z "${hotplugdir}"; then
-	       AC_MSG_RESULT(no)
-               AC_MSG_ERROR(["hotplug directory requested but not found])
-            fi
-        ;;
-        auto)
-        ;;
-        no)
-            hotplugdir=""
-        ;;
-        *)
-            hotplugdir="${withval}"
-        ;;
-    esac
- ],
- )
+	AS_HELP_STRING([--with-hotplug-dir=PATH], [where to install hotplug rules (/etc/hotplug)]),
+[
+	case "${withval}" in
+	yes)
+		if test -z "${hotplugdir}"; then
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR(["hotplug directory requested but not found])
+		fi
+		;;
+	auto)
+		;;
+	no)
+		hotplugdir=""
+		;;
+	*)
+		hotplugdir="${withval}"
+		;;
+	esac
+], [])
 if test -n "${hotplugdir}"; then
-  AC_MSG_RESULT(using ${hotplugdir})
+	AC_MSG_RESULT(using ${hotplugdir})
 else
-  AC_MSG_RESULT(no)
+	AC_MSG_RESULT(no)
 fi
 AM_CONDITIONAL(WITH_HOTPLUG, test -n "${hotplugdir}")
 
 AC_MSG_CHECKING(whether to install udev rules)
 AC_ARG_WITH(udev-dir,
- AC_HELP_STRING([--with-udev-dir=PATH], [where to install udev rules (/lib/udev or /etc/udev)]),
- [
-    case "${withval}" in
-        yes)
-            if test -z "${udevdir}"; then
-	       AC_MSG_RESULT(no)
-               AC_MSG_ERROR(["udev directory requested but not found])
-            fi
-        ;;
-        auto)
-        ;;
-        no)
-            udevdir=""
-        ;;
-        *)
-            udevdir="${withval}"
-        ;;
-    esac
- ],
- )
+	AS_HELP_STRING([--with-udev-dir=PATH], [where to install udev rules (/lib/udev or /etc/udev)]),
+[
+	case "${withval}" in
+	yes)
+		if test -z "${udevdir}"; then
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR(["udev directory requested but not found])
+		fi
+		;;
+	auto)
+		;;
+	no)
+		udevdir=""
+		;;
+	*)
+		udevdir="${withval}"
+		;;
+	esac
+], [])
 if test -n "${udevdir}"; then
-  AC_MSG_RESULT(using ${udevdir})
+	AC_MSG_RESULT(using ${udevdir})
 else
-  AC_MSG_RESULT(no)
+	AC_MSG_RESULT(no)
 fi
 AM_CONDITIONAL(WITH_UDEV, test -n "${udevdir}")
 
@@ -723,22 +725,19 @@ conftemp="${sysconfdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
 CONFPATH=${conftemp}
-AC_DEFINE_UNQUOTED(CONFPATH, "${conftemp}",
-			[Default path for configuration files])
+AC_DEFINE_UNQUOTED(CONFPATH, "${conftemp}", [Default path for configuration files])
 
 dnl same for datadir
 conftemp="${datadir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-AC_DEFINE_UNQUOTED(DATADIR, "${conftemp}",
-			[Default path for data files])
+AC_DEFINE_UNQUOTED(DATADIR, "${conftemp}", [Default path for data files])
 
 dnl same for bindir
 conftemp="${bindir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-AC_DEFINE_UNQUOTED(BINDIR, "${conftemp}",
-			[Default path for user executables])
+AC_DEFINE_UNQUOTED(BINDIR, "${conftemp}", [Default path for user executables])
 
 AC_SUBST(OS_NAME)
 AC_SUBST(LIBSSL_CFLAGS)
@@ -759,7 +758,6 @@ AC_SUBST(HAL_USER)
 AC_SUBST(HAL_DEVICE_MATCH_KEY)
 AC_SUBST(HAL_FDI_PATH)
 AC_SUBST(HAL_CALLOUTS_PATH)
-AC_SUBST(HAVE_GLIB_2_14)
 AC_SUBST(LIBHAL_CFLAGS)
 AC_SUBST(LIBHAL_LDFLAGS)
 AC_SUBST(DRIVER_BUILD_LIST)
@@ -801,7 +799,7 @@ AC_OUTPUT([
  scripts/hotplug/Makefile
  scripts/hotplug/libhidups
  scripts/python/Makefile
- scripts/udev/Makefile
+ scripts/udev/Makefile                                                   
  scripts/udev/nut-usbups.rules
  scripts/Makefile
  server/Makefile

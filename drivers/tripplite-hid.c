@@ -29,7 +29,7 @@
 #include "tripplite-hid.h"
 #include "usb-common.h"
 
-#define TRIPPLITE_HID_VERSION "TrippLite HID 0.4"
+#define TRIPPLITE_HID_VERSION "TrippLite HID 0.6"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 
@@ -41,13 +41,13 @@
 static double	battery_scale = 1.0;
 
 /* Specific handlers for USB device matching */
-static void *battery_scale_1dot0()
+static void *battery_scale_1dot0(void)
 {
 	/* FIXME: we could remove this one since it's the default! */
 	battery_scale = 1.0;
 	return NULL;
 }
-static void *battery_scale_0dot1()
+static void *battery_scale_0dot1(void)
 {
 	battery_scale = 0.1;
 	return NULL;
@@ -67,25 +67,60 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x1007), battery_scale_0dot1 },
 	/* e.g. TrippLite ECO550UPS */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x1008), battery_scale_0dot1 },
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x1009), battery_scale_0dot1 },
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x1010), battery_scale_0dot1 },
 	/* e.g. TrippLite OMNI1000LCD */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x2005), battery_scale_0dot1 },
 	/* e.g. TrippLite OMNI900LCD */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x2007), battery_scale_0dot1 },
+	/* e.g. ? */
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x2008), battery_scale_0dot1 },
+	/* e.g. TrippLite Smart1000LCD */
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x2009), battery_scale_0dot1 },
+	/* e.g. ? */
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x2010), battery_scale_0dot1 },
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x2011), battery_scale_0dot1 },
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x2012), battery_scale_0dot1 },
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x2013), battery_scale_0dot1 },
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x2014), battery_scale_0dot1 },
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3008), battery_scale_1dot0 },
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3009), battery_scale_1dot0 },
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3010), battery_scale_1dot0 },
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3011), battery_scale_1dot0 },
 	/* e.g. TrippLite smart2200RMXL2U */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3012), battery_scale_1dot0 },
 	/* e.g. ? */
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3013), battery_scale_1dot0 },
+	/* e.g. ? */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3014), battery_scale_1dot0 },
+	/* e.g. ? */
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3015), battery_scale_1dot0 },
 	/* e.g. TrippLite SmartOnline SU1500RTXL2UA (older unit?) */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x4001), battery_scale_1dot0 },
 	/* e.g. TrippLite SmartOnline SU6000RT4U? */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x4002), battery_scale_1dot0 },
 	/* e.g. TrippLite SmartOnline SU1500RTXL2ua */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x4003), battery_scale_1dot0 },
+	/* e.g. TrippLite SmartOnline SU1000XLA */
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x4004), battery_scale_1dot0 },
+	/* e.g. ? */
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x4005), battery_scale_1dot0 },
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x4006), battery_scale_1dot0 },
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x4007), battery_scale_1dot0 },
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x4008), battery_scale_1dot0 },
 
-	/* HP R/T 2200 INTL (like SMART2200RMXL2U) */
-	{ USB_DEVICE(HP_VENDORID, 0x1f0a), battery_scale_1dot0 },
 	/* HP T750 INTL */
 	{ USB_DEVICE(HP_VENDORID, 0x1f06), battery_scale_1dot0 },
+	/* HP T1000 INTL */
+	{ USB_DEVICE(HP_VENDORID, 0x1f08), battery_scale_1dot0 },
+	/* HP T1500 INTL */
+	{ USB_DEVICE(HP_VENDORID, 0x1f09), battery_scale_1dot0 },
+	/* HP R/T 2200 INTL (like SMART2200RMXL2U) */
+	{ USB_DEVICE(HP_VENDORID, 0x1f0a), battery_scale_1dot0 },
+	/* HP R1500 G2 INTL */
+	{ USB_DEVICE(HP_VENDORID, 0x1fe0), battery_scale_1dot0 },
+	/* HP T750 G2 */
+	{ USB_DEVICE(HP_VENDORID, 0x1fe1), battery_scale_1dot0 },
 
 	/* Terminating entry */
 	{ -1, -1, NULL }
@@ -93,7 +128,7 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *tripplite_chemistry_fun(double value)
+static const char *tripplite_chemistry_fun(double value)
 {
 	static char	buf[20];
 	const char	*model;
@@ -119,7 +154,7 @@ static info_lkp_t tripplite_chemistry[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *tripplite_battvolt_fun(double value)
+static const char *tripplite_battvolt_fun(double value)
 {
 	static char	buf[8];
 
@@ -261,7 +296,8 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ "BOOL", 0, 0, "UPS.PowerConverter.PresentStatus.Buck", NULL, NULL, 0, trim_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.PresentStatus.Boost", NULL, NULL, 0, boost_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.PresentStatus.Overload", NULL, NULL, 0, overload_info },
-	{ "BOOL", 0, 0, "UPS.PowerConverter.PresentStatus.Used", NULL, NULL, 0, nobattery_info },
+	/* This is probably not the correct mapping for all models */
+	/* { "BOOL", 0, 0, "UPS.PowerConverter.PresentStatus.Used", NULL, NULL, 0, nobattery_info }, */
 	{ "BOOL", 0, 0, "UPS.PowerConverter.PresentStatus.OverTemperature", NULL, NULL, 0, overheat_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.PresentStatus.InternalFailure", NULL, NULL, 0, commfault_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.PresentStatus.AwaitingPower", NULL, NULL, 0, awaitingpower_info },
@@ -322,15 +358,15 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
 };
 
-static char *tripplite_format_model(HIDDevice_t *hd) {
+static const char *tripplite_format_model(HIDDevice_t *hd) {
 	return hd->Product;
 }
 
-static char *tripplite_format_mfr(HIDDevice_t *hd) {
+static const char *tripplite_format_mfr(HIDDevice_t *hd) {
 	return hd->Vendor;
 }
 
-static char *tripplite_format_serial(HIDDevice_t *hd) {
+static const char *tripplite_format_serial(HIDDevice_t *hd) {
 	return hd->Serial;
 }
 
@@ -347,11 +383,16 @@ static int tripplite_claim(HIDDevice_t *hd) {
 
 		switch (hd->VendorID)
 		{
-		/*
-		 * this vendor makes lots of USB devices that are
-		 * not a UPS, so don't use possibly_supported here
-		 */
 		case HP_VENDORID:
+			/* by default, reject, unless the productid option is given */
+			if (getval("productid")) {
+				return 1;
+			}
+
+			/*
+			 * this vendor makes lots of USB devices that are
+			 * not a UPS, so don't use possibly_supported here
+			 */
 			return 0;
 
 		case TRIPPLITE_VENDORID:

@@ -122,7 +122,7 @@ static int safenet_command(const char *command)
 	return 0;
 }
 
-static void safenet_update()
+static void safenet_update(void)
 {
 	status_init();
 

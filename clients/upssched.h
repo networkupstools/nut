@@ -7,8 +7,8 @@
 #define SERIALIZE_WAIT 3
 
 /* track client connections */
-struct conn_t {
+typedef struct conn_s {
 	int     fd;
 	PCONF_CTX_t	ctx;
-	void    *next;
-};
+	struct conn_s	*next;
+} conn_t;

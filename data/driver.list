@@ -139,6 +139,8 @@
 "Cyber Power Systems"	"Value 400E"		"USB"	"usbhid-ups"
 "Cyber Power Systems"	"Value 600E"		"USB"	"usbhid-ups"
 "Cyber Power Systems"	"Value 800E"		"USB"	"usbhid-ups"
+"Cyber Power Systems"	"CP1350AVRLCD"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"CP1500AVRLCD"	"USB"	"usbhid-ups"
 
 "Cyclades"	"PM8"	"8 outlets"	"powerman-pdu (experimental)"
 "Cyclades"	"PM10"	"10 outlets"	"powerman-pdu (experimental)"
@@ -210,6 +212,10 @@
 "Eaton"	"ePDU Managed"			""	"snmp-ups (experimental)"
 "Eaton"	"ePDU Monitored"			""	"snmp-ups or netxml-ups"
 "Eaton"	"Powerware 9130"	""	"bcmxcp or usbhid-ups"
+"Eaton"	"9395"	"Serial port"	"bcmxcp"
+"Eaton"	"Best Ferrups"	"older ConnectUPS"	"snmp-ups"
+"Eaton"	"ConnectUPS X / BD / E Slot"	"Serial Pass-through mode"	"bcmxcp"
+"Eaton"	"ConnectUPS X / BD / E Slot"	"Network port"	"snmp-ups"
 
 "Effekta"	"MI/MT/MH"	"2502 cable"	"megatec"
 "Effekta"	"RM2000MH"	""	"megatec"
@@ -243,6 +249,8 @@
 
 "Forza Power Technologies"	"SL-1001"	"USB"	"megatec_usb"
 
+"FSP" "EP650"	"USB"	"blazer_usb"
+
 "Gamatronic"	"All models with alarm interface"	""	"genericups upstype=22"
 "Gamatronic"	"G-SmartCompact 2000"	""	"megatec"
 "Gamatronic"	"MP110/210"	""	"gamatronic"
@@ -262,6 +270,10 @@
 "HP"	"T500"	"older models"	"bcmxcp_usb"
 "HP"	"T750 INTL"	""	"usbhid-ups"
 "HP"	"T750"	"older models"	"bcmxcp_usb"
+"HP"	"T1000 INTL"	""	"usbhid-ups"
+"HP"	"T1500 INTL"	""	"usbhid-ups"
+"HP"	"T750 G2"	""	"usbhid-ups"
+"HP"	"R1500 G2 INTL"	""	"usbhid-ups"
 "HP"	"HP3488 Switch/Control Unit"	""	"powerman-pdu (experimental)"
 
 "IBM"	"Blade Center Management Module"	"15 outlets"	"powerman-pdu (experimental)"
@@ -308,7 +320,7 @@
 
 "Liebert"	"ITON 600VA"	""	"megatec"
 "Liebert"	"UPStation GXT2"	"contact-closure cable"	"liebert"
-"Liebert"	"GXT2-3000RT230"	""	"liebertgxt2 (experimental)"
+"Liebert"	"GXT2-3000RT230"	""	"liebert-esp2 (experimental)"
 "Liebert"	"PowerSure Personal XT"		"USB"	"usbhid-ups"
 "Liebert"	"PowerSure PSA"		"USB"	"usbhid-ups"
 
@@ -600,6 +612,7 @@
 "Powerware"	"3115"		""	"genericups upstype=11"
 "Powerware"	"5119, 5125"	""	"genericups upstype=15"
 "Powerware"	"5119 RM"	""	"genericups upstype=20"
+"Powerware"	"5119 RM"	""	"upscode2"
 "Powerware"	"PW3105"	""	"bcmxcp_usb"
 "Powerware"	"PW5110"	""	"bcmxcp_usb"
 "Powerware"	"PW5115"	"Serial port"	"bcmxcp"
@@ -669,7 +682,8 @@
 "Tecnoware"	"Easy Power 1200"	""	"megatec"
 
 "Tripp-Lite"	"INTERNETOFFICE700"	"USB"	"tripplite_usb"
-"Tripp-Lite"	"OMNIVS1000"	"USB"	"tripplite_usb"
+"Tripp-Lite"	"OMNIVS1000"	"USB (product ID: 0001)"	"tripplite_usb"
+"Tripp-Lite"	"OmniVS1000"	"USB (product ID: 1007)"	"usbhid-ups"
 "Tripp-Lite"	"OMNIVS1500XL"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"SMART700USB"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"SMART1500RM2U"	"USB"	"tripplite_usb"
@@ -681,12 +695,14 @@
 "Tripp-Lite"	"OMNI1000LCD"   "USB"   "usbhid-ups"
 "Tripp-Lite"	"OMNI900LCD"    "USB"   "usbhid-ups"
 "Tripp-Lite"	"OMNI650LCD"    "USB"   "usbhid-ups"
-"Tripp-Lite"	"1500 LCD"	"USB"   "usbhid-ups"
 "Tripp-Lite"	"AVR550U"	"USB"   "usbhid-ups"
 "Tripp-Lite"	"AVR750U"	"USB"	"usbhid-ups"
 "Tripp-Lite"	"ECO550UPS"	"USB"	"usbhid-ups"
+"Tripp-Lite"	"SmartOnline SU1000XLA"	"USB"	"usbhid-ups"
 "Tripp-Lite"	"SmartOnline SU1500RTXL2ua"	"USB"	"usbhid-ups"
-"Tripp-Lite"	"smart2200RMXL2U"	"USB, newer models"	"usbhid-ups"
+"Tripp-Lite"	"Smart1000LCD"	"USB"	"usbhid-ups"
+"Tripp-Lite"	"Smart1500LCD"	"USB"	"usbhid-ups"
+"Tripp-Lite"	"Smart2200RMXL2U"	"USB, newer models"	"usbhid-ups"
 
 "Trust"		"UPS 1000 Management PW-4105"	""	"megatec"
 "Trust"		"UPS 1200VA Management PW-4120M"	""	"megatec"

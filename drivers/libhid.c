@@ -141,7 +141,7 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 {
 	int	id = pData->ReportID;
 	int	r;
-	unsigned char	buf[SMALLBUF];
+	unsigned char	buf[8];	/* Maximum size for low-speed USB devices */
 
 	if (rbuf->ts[id] + age > time(NULL)) {
 		/* buffered report is still good; nothing to do */
@@ -299,7 +299,7 @@ void HIDDumpTree(hid_dev_handle_t udev, usage_tables_t *utab)
 
 		/* Get data value */
 		if (HIDGetDataValue(udev, pData, &value, MAX_TS) == 1) {
-			upsdebugx(1, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %f",
+			upsdebugx(1, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %g",
 				HIDGetDataItem(pData, utab), HIDDataType(pData), pData->ReportID, pData->Offset, pData->Size, value);
 			continue;
 		}
@@ -469,7 +469,7 @@ bool_t HIDSetItemValue(hid_dev_handle_t udev, const char *hidpath, double Value,
  */
 int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventsize)
 {
-	unsigned char	buf[SMALLBUF];
+	unsigned char	buf[8];	/* Maximum size for low-speed USB devices */
 	int		itemCount = 0;
 	int		buflen, r, i;
 	HIDData_t	*pData;

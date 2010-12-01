@@ -38,18 +38,18 @@ typedef struct {
 	void	*next;
 }	ups_t;
 
-static	ups_t	*upstable = NULL;
+static ups_t	*upstable = NULL;
 
-static	int	maxsdorder = 0, testmode = 0, exec_error = 0;
+static int	maxsdorder = 0, testmode = 0, exec_error = 0;
 
 	/* timer - keeps us from getting stuck if a driver hangs */
-static	int	maxstartdelay = 45;
+static int	maxstartdelay = 45;
 
 	/* Directory where driver executables live */
-static	char	*driverpath = NULL;
+static char	*driverpath = NULL;
 
 	/* passthrough to the drivers: chroot path and new user name */
-static	char	*pt_root = NULL, *pt_user = NULL;
+static char	*pt_root = NULL, *pt_user = NULL;
 
 void do_upsconf_args(char *upsname, char *var, char *val)
 {
@@ -123,7 +123,7 @@ static void stop_driver(const ups_t *ups)
 {
 	char	pidfn[SMALLBUF];
 	int	ret;
-	struct	stat	fs;
+	struct stat	fs;
 
 	upsdebugx(1, "Stopping UPS: %s", ups->upsname);
 
@@ -131,7 +131,7 @@ static void stop_driver(const ups_t *ups)
 		ups->driver, ups->upsname);
 	ret = stat(pidfn, &fs);
 
-	if (ret != 0) {
+	if ((ret != 0) && (ups->port != NULL)) {
 		snprintf(pidfn, sizeof(pidfn), "%s/%s-%s.pid", altpidpath(),
 			ups->driver, xbasename(ups->port));
 		ret = stat(pidfn, &fs);
@@ -164,22 +164,20 @@ static void waitpid_timeout(const int sig)
 }
 
 /* print out a command line at the given debug level. */
-static void debugcmdline(int level, char *msg, char *cmd, char **argv) {
-	char cmdline[200];
+static void debugcmdline(int level, const char *msg, char *const argv[])
+{
+	char	cmdline[LARGEBUF];
 
-	cmdline[0] = 0;
-	strncat(cmdline, msg, 200-strlen(cmdline));
-	strncat(cmdline, cmd, 200-strlen(cmdline));
-	argv++;  /* don't repeat command name */
+	snprintf(cmdline, sizeof(cmdline), "%s", msg);
+
 	while (*argv) {
-		strncat(cmdline, " ", 200-strlen(cmdline));
-		strncat(cmdline, *argv, 200-strlen(cmdline));
-		argv++;
+		snprintfcat(cmdline, sizeof(cmdline), " %s", *argv++);
 	}
+
 	upsdebugx(level, "%s", cmdline);
 }
 
-static void forkexec(const char *prog, char **argv, const ups_t *ups)
+static void forkexec(char *const argv[], const ups_t *ups)
 {
 	int	ret;
 	pid_t	pid;
@@ -239,7 +237,7 @@ static void forkexec(const char *prog, char **argv, const ups_t *ups)
 
 	/* child */
 
-	ret = execv(prog, argv);
+	ret = execv(argv[0], argv);
 
 	/* shouldn't get here */
 	fatal_with_errno(EXIT_FAILURE, "execv");
@@ -247,9 +245,10 @@ static void forkexec(const char *prog, char **argv, const ups_t *ups)
 
 static void start_driver(const ups_t *ups)
 {
-	char	dfn[SMALLBUF], *argv[8];
+	char	*argv[8];
+	char	dfn[SMALLBUF];
 	int	ret, arg = 0;
-	struct	stat	fs;
+	struct stat	fs;
 
 	upsdebugx(1, "Starting UPS: %s", ups->upsname);
 
@@ -260,29 +259,28 @@ static void start_driver(const ups_t *ups)
 		fatal_with_errno(EXIT_FAILURE, "Can't start %s", dfn);
 
 	argv[arg++] = dfn;
-	argv[arg++] = "-a";
+	argv[arg++] = (char *)"-a";		/* FIXME: cast away const */
 	argv[arg++] = ups->upsname;
 
 	/* stick on the chroot / user args if given to us */
 	if (pt_root) {
-		argv[arg++] = "-r";
+		argv[arg++] = (char *)"-r";	/* FIXME: cast away const */
 		argv[arg++] = pt_root;
 	}
 
 	if (pt_user) {
-		argv[arg++] = "-u";
+		argv[arg++] = (char *)"-u";	/* FIXME: cast away const */
 		argv[arg++] = pt_user;
 	}
 
 	/* tie it off */
 	argv[arg++] = NULL;
 
-	debugcmdline(2, "exec: ", dfn, argv);
+	debugcmdline(2, "exec: ", argv);
 
-	if (testmode)
-		return;
-
-	forkexec(dfn, argv, ups);
+	if (!testmode) {
+		forkexec(argv, ups);
+	}
 }
 
 static void help(const char *progname)
@@ -307,7 +305,8 @@ static void help(const char *progname)
 
 static void shutdown_driver(const ups_t *ups)
 {
-	char	*argv[7], dfn[SMALLBUF];
+	char	*argv[9];
+	char	dfn[SMALLBUF];
 	int	arg = 0;
 
 	upsdebugx(1, "Shutdown UPS: %s", ups->upsname);
@@ -315,29 +314,28 @@ static void shutdown_driver(const ups_t *ups)
 	snprintf(dfn, sizeof(dfn), "%s/%s", driverpath, ups->driver);
 
 	argv[arg++] = dfn;
-	argv[arg++] = "-a";
+	argv[arg++] = (char *)"-a";		/* FIXME: cast away const */
 	argv[arg++] = ups->upsname;
-	argv[arg++] = "-k";
+	argv[arg++] = (char *)"-k";		/* FIXME: cast away const */
 
 	/* stick on the chroot / user args if given to us */
 	if (pt_root) {
-		argv[arg++] = "-r";
+		argv[arg++] = (char *)"-r";	/* FIXME: cast away const */
 		argv[arg++] = pt_root;
 	}
 
 	if (pt_user) {
-		argv[arg++] = "-u";
+		argv[arg++] = (char *)"-u";	/* FIXME: cast away const */
 		argv[arg++] = pt_user;
 	}
 
 	argv[arg++] = NULL;
 
-	debugcmdline(2, "exec: ", dfn, argv);
+	debugcmdline(2, "exec: ", argv);
 
-	if (testmode)
-		return;
-
-	forkexec(dfn, argv, ups);
+	if (!testmode) {
+		forkexec(argv, ups);
+	}
 }
 
 static void send_one_driver(void (*command)(const ups_t *), const char *upsname)

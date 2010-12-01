@@ -1,8 +1,9 @@
 # Network UPS Tools: drivers
 
-# by default, link programs in this directory with libcommon.a
+# by default, link programs in this directory with libcommon.la
+# (libtool version of the static lib, in order to access LTLIBOBJS)
 #FIXME: SERLIBS is only useful for LDADD_DRIVERS_SERIAL not for LDADD_COMMON
-LDADD_COMMON = ../common/libcommon.a ../common/libparseconf.la
+LDADD_COMMON = ../common/libcommon.la ../common/libparseconf.la
 LDADD_DRIVERS = $(LDADD_COMMON) main.o dstate.o
 LDADD_HAL_DRIVERS = $(LDADD_COMMON) libnuthalmain.a
 LDADD_DRIVERS_SERIAL = $(LDADD_DRIVERS) $(SERLIBS) serial.o
@@ -31,7 +32,7 @@ endif
 
 SERIAL_DRIVERLIST = apcsmart bcmxcp belkin belkinunv bestfcom	\
  bestfortress bestuferrups bestups dummy-ups etapro everups 	\
- gamatronic genericups isbmex liebert liebertgxt2 masterguard megatec metasys	\
+ gamatronic genericups isbmex liebert liebert-esp2 masterguard megatec metasys	\
  mge-shut mge-utalk microdowell newmge-shut oneac optiups powercom rhino 	\
  safenet skel solis tripplite tripplitesu upscode2 victronups powerpanel \
  blazer_ser clone clone-outlet ivtscd
@@ -87,6 +88,7 @@ upsdrvctl_LDADD = $(LDADD_COMMON)
 # serial drivers: all of them use standard LDADD and CFLAGS
 apcsmart_SOURCES = apcsmart.c
 bcmxcp_SOURCES = bcmxcp.c bcmxcp_ser.c
+bcmxcp_LDADD = $(LDADD) -lm
 belkin_SOURCES = belkin.c
 belkinunv_SOURCES = belkinunv.c
 bestfcom_SOURCES = bestfcom.c
@@ -102,7 +104,7 @@ isbmex_SOURCES = isbmex.c
 isbmex_LDADD = $(LDADD) -lm
 ivtscd_SOURCES = ivtscd.c
 liebert_SOURCES = liebert.c
-liebertgxt2_SOURCES = liebertgxt2.c
+liebert_esp2_SOURCES = liebert-esp2.c
 masterguard_SOURCES = masterguard.c
 megatec_SOURCES = megatec.c
 metasys_SOURCES = metasys.c
@@ -177,7 +179,8 @@ newmge_shut_LDADD = $(LDADD)
 
 # SNMP
 snmp_ups_SOURCES = snmp-ups.c apc-mib.c baytech-mib.c compaq-mib.c eaton-mib.c \
- ietf-mib.c mge-mib.c netvision-mib.c powerware-mib.c raritan-pdu-mib.c
+ ietf-mib.c mge-mib.c netvision-mib.c powerware-mib.c raritan-pdu-mib.c \
+ bestpower-mib.c
 snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LDFLAGS)
 
 # HAL
@@ -209,8 +212,8 @@ powerman_pdu_LDADD = $(LDADD) $(LIBPOWERMAN_LDFLAGS)
 # distributed by "make dist".
 
 dist_noinst_HEADERS = apc-mib.h apc-hid.h apcsmart.h baytech-mib.h bcmxcp.h	\
- bcmxcp_io.h belkin.h belkin-hid.h blazer.h cps-hid.h dstate.h dstate-hal.h	\
- dummy-ups.h eaton-mib.h explore-hid.h gamatronic.h genericups.h		\
+ bcmxcp_io.h belkin.h belkin-hid.h bestpower-mib.h blazer.h cps-hid.h dstate.h \
+ dstate-hal.h dummy-ups.h eaton-mib.h explore-hid.h gamatronic.h genericups.h	\
  hidparser.h hidtypes.h ietf-mib.h libhid.h libshut.h libusb.h liebert-hid.h	\
  main.h main-hal.h megatec.h mge-hid.h mge-mib.h mge-shut.h mge-utalk.h		\
  mge-xml.h microdowell.h netvision-mib.h netxml-ups.h oneac.h		\

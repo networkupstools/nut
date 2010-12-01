@@ -17,11 +17,14 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifndef STATE_H_SEEN
+#define STATE_H_SEEN
+
 #include "extstate.h"
 
 #define ST_SOCK_BUF_LEN 512
 
-struct st_tree_t {
+typedef struct st_tree_s {
 	char	*var;
 	char	*val;			/* points to raw or safe */
 
@@ -34,24 +37,26 @@ struct st_tree_t {
 	int	flags;
 	int	aux;
 
-	struct	enum_t		*enum_list;
+	struct enum_s		*enum_list;
 
-	struct	st_tree_t	*left;
-	struct	st_tree_t	*right;
-};
+	struct st_tree_s	*left;
+	struct st_tree_s	*right;
+} st_tree_t;
 
-int state_setinfo(struct st_tree_t **nptr, const char *var, const char *val);
-int state_addenum(struct st_tree_t *root, const char *var, const char *val);
-int state_setaux(struct st_tree_t *root, const char *var, const char *auxs);
-const char *state_getinfo(struct st_tree_t *root, const char *var);
-int state_getflags(struct st_tree_t *root, const char *var);
-int state_getaux(struct st_tree_t *root, const char *var);
-const struct enum_t *state_getenumlist(struct st_tree_t *root, const char *var);
-void state_setflags(struct st_tree_t *root, const char *var, int numflags, char **flags);
-int state_addcmd(struct cmdlist_t **list, const char *cmd);
-void state_infofree(struct st_tree_t *node);
-void state_cmdfree(struct cmdlist_t *list);
-int state_delcmd(struct cmdlist_t **list, const char *cmd);
-int state_delinfo(struct st_tree_t **root, const char *var);
-int state_delenum(struct st_tree_t *root, const char *var, const char *val);
-struct st_tree_t *state_tree_find(struct st_tree_t *node, const char *var);
+int state_setinfo(st_tree_t **nptr, const char *var, const char *val);
+int state_addenum(st_tree_t *root, const char *var, const char *val);
+int state_setaux(st_tree_t *root, const char *var, const char *auxs);
+const char *state_getinfo(st_tree_t *root, const char *var);
+int state_getflags(st_tree_t *root, const char *var);
+int state_getaux(st_tree_t *root, const char *var);
+const enum_t *state_getenumlist(st_tree_t *root, const char *var);
+void state_setflags(st_tree_t *root, const char *var, int numflags, char **flags);
+int state_addcmd(cmdlist_t **list, const char *cmd);
+void state_infofree(st_tree_t *node);
+void state_cmdfree(cmdlist_t *list);
+int state_delcmd(cmdlist_t **list, const char *cmd);
+int state_delinfo(st_tree_t **root, const char *var);
+int state_delenum(st_tree_t *root, const char *var, const char *val);
+st_tree_t *state_tree_find(st_tree_t *node, const char *var);
+
+#endif /* STATE_H_SEEN */
