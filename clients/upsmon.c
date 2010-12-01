@@ -121,6 +121,7 @@ static int flag_isset(int num, int flag)
 
 static void wall(const char *text)
 {
+#ifndef WIN32
 	FILE	*wf;
 
 	wf = popen("wall", "w");
@@ -132,13 +133,57 @@ static void wall(const char *text)
 
 	fprintf(wf, "%s\n", text);
 	pclose(wf);
+#else
+	MessageBox(NULL,text,SVCNAME,MB_OK|MB_ICONEXCLAMATION|MB_SERVICE_NOTIFICATION);
+#endif
 }
+
+#ifdef WIN32
+typedef struct async_notify_s {
+	const char *notice;
+	int flags;
+	const char *ntype;
+	const char *upsname; } async_notify_t;
+
+static unsigned __stdcall async_notify(LPVOID param)
+{
+	char	exec[LARGEBUF];
+
+	/* the following code is a copy of the content of the NOT WIN32 part of 
+	"notify" function below */
+
+	async_notify_t *data = (async_notify_t *)param;
+
+	if (flag_isset(data->flags, NOTIFY_WALL))
+		wall(data->notice);
+
+	if (flag_isset(data->flags, NOTIFY_EXEC)) {
+		if (notifycmd != NULL) {
+			snprintf(exec, sizeof(exec), "%s \"%s\"", notifycmd, data->notice);
+
+			if (data->upsname)
+				setenv("UPSNAME", data->upsname, 1);
+			else
+				setenv("UPSNAME", "", 1);
+
+			setenv("NOTIFYTYPE", data->ntype, 1);
+			if (system(exec) == -1) {
+				upslog_with_errno(LOG_ERR, "%s", __func__);
+			}
+		}
+	}
+
+	return 1;
+}
+#endif
 
 static void notify(const char *notice, int flags, const char *ntype,
 			const char *upsname)
 {
+#ifndef WIN32
 	char	exec[LARGEBUF];
 	int	ret;
+#endif
 
 	if (flag_isset(flags, NOTIFY_IGNORE))
 		return;
@@ -156,7 +201,6 @@ static void notify(const char *notice, int flags, const char *ntype,
 
 	if (ret != 0)	/* parent */
 		return;
-#endif
 	/* child continues and does all the work */
 
 	if (flag_isset(flags, NOTIFY_WALL))
@@ -179,6 +223,23 @@ static void notify(const char *notice, int flags, const char *ntype,
 	}
 
 	exit(EXIT_SUCCESS);
+#else
+	async_notify_t data;
+
+	data.notice = notice;
+	data.flags = flags;
+	data.ntype = ntype;
+	data.upsname = upsname;
+
+	_beginthreadex(
+			NULL,	/* security FIXME */
+			0,	/* stack size */
+			async_notify,
+			(void *)&data,
+			0,	/* Creation flags */
+			NULL	/* thread id */
+		      );
+#endif
 }
 
 static void do_notify(const utype_t *ups, int ntype)
@@ -2112,6 +2173,23 @@ int main(int argc, char *argv[])
 	const char	*prog = xbasename(argv[0]);
 	int	i, cmd = 0, cmdret = -1, checking_flag = 0, foreground = -1;
 	pid_t	oldpid = -1;
+
+#ifdef WIN32
+	/* remove trailing .exe */
+	char * drv_name;
+	drv_name = (char *)xbasename(argv[0]);
+	char * name = strrchr(drv_name,'.');
+	if( name != NULL ) {
+		if(strcasecmp(name, ".exe") == 0 ) {
+			prog = strdup(drv_name);
+			char * t = strrchr(prog,'.');
+			*t = 0;
+		}
+	}
+	else {
+		prog = drv_name;
+	}
+#endif
 
 	printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
 
