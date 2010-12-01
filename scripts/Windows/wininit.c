@@ -267,7 +267,9 @@ static void run_upsmon()
 	char application[MAX_PATH];
 	char command[MAX_PATH];
 	snprintf(application,sizeof(application),"%s/upsmon.exe",SBINDIR);
-	snprintf(command,sizeof(command),"upsmon.exe");
+	/* FIXME "-p" is to prevent the fork of upsmon.
+	Maybe this will need more investigation to avoid security breach ?? */
+	snprintf(command,sizeof(command),"upsmon.exe -p");
 	upsmon_pid = create_process(application,command);
 }
 
