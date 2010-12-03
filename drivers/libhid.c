@@ -141,7 +141,7 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 {
 	int	id = pData->ReportID;
 	int	r;
-	unsigned char	buf[8];	/* Maximum size for low-speed USB devices */
+	unsigned char	buf[SMALLBUF];
 
 	if (rbuf->ts[id] + age > time(NULL)) {
 		/* buffered report is still good; nothing to do */
@@ -155,7 +155,7 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 	}
 
 	/* broken report descriptors are common, so store whatever we can */
-	memcpy(rbuf->data[id], buf, rbuf->len[id]);
+	memcpy(rbuf->data[id], buf, (r < rbuf->len[id]) ? r : rbuf->len[id]);
 
 	if (rbuf->len[id] != r) {
 		upsdebugx(2, "%s: expected %d bytes, but got %d instead", __func__, rbuf->len[id], r);
@@ -221,7 +221,7 @@ static int file_report_buffer(reportbuf_t *rbuf, unsigned char *buf, int buflen)
 	int id = buf[0];
 
 	/* broken report descriptors are common, so store whatever we can */
-	memcpy(rbuf->data[id], buf, rbuf->len[id]);
+	memcpy(rbuf->data[id], buf, (buflen < rbuf->len[id]) ? buflen : rbuf->len[id]);
 
 	if (rbuf->len[id] != buflen) {
 		upsdebugx(2, "%s: expected %d bytes, but got %d instead", __func__, rbuf->len[id], buflen);
@@ -469,7 +469,7 @@ bool_t HIDSetItemValue(hid_dev_handle_t udev, const char *hidpath, double Value,
  */
 int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventsize)
 {
-	unsigned char	buf[8];	/* Maximum size for low-speed USB devices */
+	unsigned char	buf[SMALLBUF];
 	int		itemCount = 0;
 	int		buflen, r, i;
 	HIDData_t	*pData;
