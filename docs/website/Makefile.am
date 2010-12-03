@@ -2,24 +2,25 @@
 # RCS should be enough, and website generation should use
 # source from subversion tags!
 EXTRA_DIST = news.txt projects.txt stable-hcl.txt website.txt \
-	ups-protocols.txt $(LAYOUT).conf $(SCRIPT_FILES) $(IMAGE_FILES)
+	ups-protocols.txt $(LAYOUT).conf $(SCRIPT_FILES) $(LAYOUT_FILES) \
+	$(FAVICON_FILES)
 
 IMAGE_FILES = images/asciidoc.png \
 	images/eaton-logo.png \
 	images/blue-arrow.png \
-	css/ie-overrides.css \
-	css/web-layout.css \
-	css/xhtml11-quirks.css \
-	css/xhtml11.css \
-	faviconut.ico \
-	faviconut.png \
 	images/simple.png \
 	images/advanced.png \
 	images/bigbox.png \
 	images/bizarre.png \
 	images/note.png \
 	images/warning.png
-# FIXME: the latter images should shared and be copied from ../images
+
+FAVICON_FILES = faviconut.ico faviconut.png
+
+LAYOUT_FILES = css/ie-overrides.css \
+	css/web-layout.css \
+	css/xhtml11-quirks.css \
+	css/xhtml11.css
 
 SCRIPT_FILES = scripts/filter_png.js \
 	scripts/jquery.js \
@@ -56,12 +57,20 @@ ASCIIDOC_PARAMS = --unsafe --backend=xhtml11 \
 
 all:
 
-$(WEBSITE_FILES): $(LAYOUT).conf
 OUTDIR = output
+$(WEBSITE_FILES): $(LAYOUT).conf
+
+images/:
+	$(MKDIR_P) images
+
+$(IMAGE_FILES): images/
+	cp -f ../$@ images/
+
 
 if HAVE_ASCIIDOC
-website: $(WEBSITE_FILES) $(WEBSITE_DEPS) $(OUTDIR) $(SCRIPT_FILES) \
-	$(IMAGE_FILES) scripts/ups_data.js ups-html.txt
+website: $(WEBSITE_FILES) $(WEBSITE_DEPS) $(IMAGE_FILES) $(SCRIPT_FILES) \
+	$(LAYOUT_FILES) scripts/ups_data.js ups-html.txt $(OUTDIR) \
+	$(FAVICON_FILES)
 
 else !HAVE_ASCIIDOC
 website:
@@ -79,7 +88,7 @@ $(OUTDIR):
 	cp -f ../man/*.html $(OUTDIR)/docs/man/
 
 clean-local:
-	rm -rf $(WEBSITE_FILES) $(OUTDIR)
+	rm -rf $(WEBSITE_FILES) $(OUTDIR) images/
 
 SUFFIXES = .txt .html
 

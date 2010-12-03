@@ -1,9 +1,15 @@
 SHARED_DEPS = nut-names.txt
 
-IMAGE_FILES = images/eaton-logo.png \
+IMAGE_FILES = images/asciidoc.png \
+	images/eaton-logo.png \
 	images/nut_layering.png \
-	icons/note.png \
-	icons/warning.png 
+	images/note.png \
+	images/warning.png \
+	images/blue-arrow.png \
+	images/simple.png \
+	images/advanced.png \
+	images/bigbox.png \
+	images/bizarre.png
 
 USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt	\
  configure.txt download.txt documentation.txt features.txt history.txt	\
@@ -74,7 +80,7 @@ packager-guide.html packager-guide.chunked packager-guide.pdf: packager-guide.tx
 A2X_COMMON_OPTS = -v --attribute icons \
     --attribute localdate=`TZ=UTC date +%Y-%m-%d` \
     --attribute localtime=`TZ=UTC date +%H:%M:%S` \
-    --attribute iconsdir=$(srcdir)/icons \
+    --attribute iconsdir=$(srcdir)/images \
     --attribute=badges \
     --attribute=external_title \
     -a toc -a numbered --destination-dir=.
