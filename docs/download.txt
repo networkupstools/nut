@@ -1,0 +1,123 @@
+Download information
+====================
+
+This section presents the different methods to download NUT.
+
+Source code
+-----------
+
+[NOTE]
+================================================================================
+You should always use PGP/GPG to verify the signatures before using any source code.
+
+You can use the 
+ifdef::website[]
+link:docs/user-manual.chunked/ar01s09.html#verifySourceSig[following procedure]
+endif::website[]
+ifndef::website[]
+- Else, you can read the <<verifySourceSig,following procedure>>.
+endif::website[]
+to do so.
+================================================================================
+
+Stable tree: 2.4
+~~~~~~~~~~~~~~~~
+
+link:http://www.networkupstools.org/source/2.4/nut-2.4.3.tar.gz[nut-2.4.3.tar.gz]
+link:http://www.networkupstools.org/source/2.4/nut-2.4.3.tar.gz.sig[signature]
+link:http://www.networkupstools.org/source/2.4/new-2.4.3.txt[release notes]
+link:http://www.networkupstools.org/source/2.4/ChangeLog[ChangeLog]
+
+You can also browse the link:http://www.networkupstools.org/source/2.4/[stable source directory].
+
+
+Testing tree: 2.4.x-pre
+~~~~~~~~~~~~~~~~~~~~~~~
+
+There is currently no testing release.
+
+////////////////////////////////////////////////////////////////////////////////
+There is currently a testing phase for the upcoming 2.6.0 release.
+
+To try it, get the latest <<Snapshots,snapshot>>.
+////////////////////////////////////////////////////////////////////////////////
+
+
+Development tree: 2.5
+~~~~~~~~~~~~~~~~~~~~~
+
+Code repository
+^^^^^^^^^^^^^^^
+
+The development tree is available through a Subversion repository hosted on the
+link:http://alioth.debian.org/[Debian Alioth server].
+
+To retrieve the current development tree, use the following command:
+
+	$ svn co svn://svn.debian.org/nut/trunk
+
+To generate the build scripts, you must then call:
+
+	$ autoreconf --install
+
+Then refer to the 
+ifdef::website[]
+link:docs/user-manual.chunked/index.html[NUT user manual]
+endif::website[]
+ifndef::website[]
+<<user-manual,NUT user manual>>
+endif::website[]
+ for more information.
+ 
+NOTE: Users that need the latest developments to support new devices *must*
+use <<Snapshots,snapshots>>. 
+
+Browse code
+^^^^^^^^^^^
+
+You can also browse the code with link:http://svn.debian.org/wsvn/nut/trunk/?rev=0&sc=0[WebSvn].
+
+Or through the link:http://boxster.ghz.cc/projects/nut[Trac mirror],
+kindly hosted and maintained by Charles Lepple.
+
+[[Snapshots]]
+Snapshots
+^^^^^^^^^
+
+The latest Subversion developments are available through link:http://buildbot.networkupstools.org/public/nut/waterfall?branch=trunk&builder=Debian-etch-x86&reload=none[snapshots on the Buildbot].
+Look for the latest *[tarball]* link on the top of the page.
+
+Older versions
+~~~~~~~~~~~~~~
+
+link:http://www.networkupstools.org/source/[Browse source directory]
+
+
+Binary packages
+---------------
+
+NOTE: The only official releases from this project are source code.
+
+NUT is already available in the following systems:
+
+- Linux: 
+link:http://aur.archlinux.org/packages.php?ID=5379[Arch Linux],
+link:http://packages.debian.org/nut[Debian],
+link:http://packages.gentoo.org/package/sys-power/nut[Gentoo Linux],
+Mandriva,
+link:https://admin.fedoraproject.org/pkgdb/acls/name/nut[Red Hat / Fedora],
+link:http://software.opensuse.org/search[Novell Suse / openSUSE],
+link:https://forum.openwrt.org/viewtopic.php?id=26269[OpenWrt]
+link:http://packages.ubuntu.com/nut[Ubuntu].
+
+- BSD systems:
+link:http://www.FreeBSD.org/cgi/ports.cgi?query=^nut-&amp;stype=name[FreeBSD],
+link:ftp://ftp.netbsd.org/pub/NetBSD/packages/pkgsrc/sysutils/ups-nut/README.html[NetBSD],
+link:http://www.openbsd.org/cgi-bin/cvsweb/ports/sysutils/nut/[OpenBSD].
+
+- Mac OS X:
+link:http://pdb.finkproject.org/pdb/package.php/nut[Fink],
+link:http://trac.macports.org/browser/trunk/dports/sysutils/nut/Portfile[MacPorts]
+
+- Windows (client side only):
+link:http://csociety.ecn.purdue.edu/~delpha/winnut/[WinNUT]

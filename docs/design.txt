@@ -1,34 +1,21 @@
-Desc: Network UPS Tools design document
-File: design.txt
-Date: 14 March 2004
-Auth: Russell Kroll <rkroll@exploits.org>
+NUT design document
+===================
 
 This software is designed around a layered scheme with drivers, a 
 server and clients.   These layers communicate with text-based
 protocols for easier maintenance and diagnostics.
 
 The layering
-============
+------------
 
-  CLIENTS: upsmon, upsc, upsrw, upsstats, upsset, etc. (via upsclient)
-  
-           < network: TCP sockets, typically on port 3493 >
+image:images/nut_layering.png[NUT layering]
 
-   SERVER: upsd
-
-           < Unix domain sockets with text-based messages >
-
-  DRIVERS: apcsmart, bestups, powercom, etc.
-
-           < serial communications, SNMP, USB, etc. >
-
-EQUIPMENT: Smart-UPS 700, Fenton PowerPal 660, etc. (actual UPS hardware)
 
 How information gets around
-===========================
+---------------------------
 
 From the equipment
-------------------
+~~~~~~~~~~~~~~~~~~
 
 DRIVERS talk to the EQUIPMENT and receive updates.  For most hardware this
 is polled (DRIVER asks EQUIPMENT about a variable), but forced updates are
@@ -36,7 +23,7 @@ also possible.  The exact method is not important, as it is abstracted
 by the driver.
 
 From the driver
----------------
+~~~~~~~~~~~~~~~
 
 The core of all DRIVERS maintains internal storage for every variable
 that is known along with the auxiliary data for those variables.  It 
@@ -55,7 +42,7 @@ It continues to listen on the socket for additional updates.
 This protocol is documented in sock-protocol.txt.
 
 From the server
----------------
+~~~~~~~~~~~~~~~
 
 The SERVER's internal storage maintains a complete copy of the data
 which is in the DRIVER, so it is capable of answering any request
@@ -66,7 +53,7 @@ requested data if it is available.
 The format for requests from the CLIENT is documented in protocol.txt.
 
 Instant commands
-================
+----------------
 
 Instant commands is the term given to a set of actions that result in
 something happening to the UPS.  Some of the common ones are
@@ -86,7 +73,7 @@ timing issues.  Remember that upsd services clients in a round-robin
 fashion, so all queries must be lightweight and speedy.
 
 Setting variables
-=================
+-----------------
 
 Some variables in the DRIVER or EQUIPMENT can be changed, and carry the
 FLAG_RW flag.  Upon receiving a SET command from the CLIENT, the SERVER
@@ -102,7 +89,7 @@ command's completion from the DRIVER.  This, too, is planned for a future
 release.
 
 Example data path
-=================
+-----------------
 
 Here's the path a piece of data might take through this architecture.
 The event is a UPS going on battery, and the final result is a pager
@@ -171,13 +158,12 @@ This scenario requires some configuration, obviously:
 
 	CMDSCRIPT /path/to/upssched-cmd
 
-8. upssched-cmd knows what to do with "upsonbatt" as its first argument
+9. upssched-cmd knows what to do with "upsonbatt" as its first argument
    (A quick case..esac construct, see the examples)
 
-==============================================================================
 
 History
-=======
+-------
 
 The oldest versions of this software (1998) had no separation between
 the driver and the network server and only supported the latest APC

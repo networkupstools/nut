@@ -1,0 +1,111 @@
+ifdef::website[]
+Support instructions
+====================
+endif::website[]
+
+
+There are various ways to obtain support for NUT.
+
+Documentation
+-------------
+
+- First, be sure to read the link:FAQ.html[FAQ]. The most common problems are already
+addressed there.
+
+ifdef::website[]
+- Else, you can read the link:docs/user-manual.chunked/index.html[NUT User Manual].
+endif::website[]
+ifndef::website[]
+- Else, you can read the <<user-manual,NUT User Manual>>.
+endif::website[]
+It also covers many areas about installing, configuring and using NUT.
+The specific steps on system integration are also discussed.
+
+- Finally, link:man/index.html#User_man[User manual pages] will also
+complete the User Manual provided information. At least, read the manual
+page related to your driver(s).
+
+Mailing lists
+-------------
+
+If you have still not found a solution, you should search the lists before
+posting a question.
+
+Someone may have already solved the problem:
+
+ifdef::backend-xhtml11[]
+
+++++++++++++++++++++++++++++++++++++++
+<form action="http://www.google.com/search" method="get">
+  <input maxlength="2048" name="as_q" size="25" type="text">
+  <input name="as_oq" type="hidden" value="nut-upsuser nut-upsdev">
+  <input name="domains" value="lists.alioth.debian.org" type="hidden">
+  <input name="sitesearch" value="lists.alioth.debian.org" type="hidden">
+  <input name="btnG" value="Search NUT lists" type="submit">
+</form>
+++++++++++++++++++++++++++++++++++++++
+
+endif::backend-xhtml11[]
+
+ifndef::backend-xhtml11[]
+
+link:http://www.google.com/search?as_q=&as_oq=nut-upsuser+nut-upsdev&domains=lists.alioth.debian.org&sitesearch=lists.alioth.debian.org&btnG=Search+NUT+lists[search on the NUT lists using Google]
+
+endif::backend-xhtml11[]
+
+Finally, you can *subscribe* to a NUT mailing list to:
+
+Request help
+~~~~~~~~~~~~
+
+Use the link:http://lists.alioth.debian.org/mailman/listinfo/nut-upsuser[NUT Users]
+mailing list.
+
+In this case, be sure to include the following information:
+
+- OS name and version,
+- exact NUT version,
+- NUT installation method: from source tarball, package or subversion,
+- exact device name and related information (manufacturing date, web pointers, ...),
+- complete problem description, with any relevant trace, like system log excerpt,
+and driver debug output. You can obtain this last using the following command,
+as root and after having stopped NUT:
+
+	/path/to/driver -DDDDD -a <upsname>
+
+If you don't include the above information in your help request, we will not be
+able to help you!
+
+Post a patch, ask a development question, ...
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Use the link:http://lists.alioth.debian.org/mailman/listinfo/nut-upsdev[NUT Developers]
+mailing list.
+
+Refer to the 
+ifdef::website[]
+link:docs/developer-guide.chunked/index.html[NUT Developer Guide]
+for more information, and the chapter on how to 
+link:docs/developer-guide.chunked/ar01s03.html#_submitting_patches[submit patches].
+endif::website[]
+ifndef::website[]
+link:developer-guide.chunked/index.html[NUT Developer Guide]
+for more information, and the chapter on how to 
+link:developer-guide.chunked/ar01s03.html#_submitting_patches[submit patches].
+endif::website[]
+
+
+Discuss packaging and related topics
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Use the link:http://lists.alioth.debian.org/mailman/listinfo/nut-packaging[NUT Packagers]
+mailing list.
+
+Refer to the 
+ifdef::website[]
+link:docs/packager-guide.chunked/index.html[NUT Packager Guide]
+endif::website[]
+ifndef::website[]
+link:packager-guide.chunked/index.html[NUT Packager Guide]
+endif::website[]
+ for more information.
