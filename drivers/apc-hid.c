@@ -4,7 +4,7 @@
  *	2003 - 2009	Arnaud Quette <arnaud.quette@free.fr>
  *	2005		John Stamp <kinsayder@hotmail.com>
  *	2005		Peter Selinger <selinger@users.sourceforge.net>
- *	2009		Arjen de Korte <adkorte-guest@alioth.debian.org>
+ *	2009 - 2010	Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
  *   and Eaton <http://www.eaton.com>
@@ -234,8 +234,11 @@ static hid_info_t apc_hid2nut[] = {
   { "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", 0, NULL },
   { "battery.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
   { "battery.charge.warning", 0, 0, "UPS.PowerSummary.WarningCapacityLimit", NULL, "%.0f", 0, NULL },
+  { "battery.runtime", 0, 0, "UPS.Battery.RunTimeToEmpty", NULL, "%.0f", 0, NULL },
   { "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", 0, NULL },
+  { "battery.runtime.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Battery.RemainingTimeLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
   { "battery.runtime.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.RemainingTimeLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+  { "battery.voltage",  0, 0, "UPS.Battery.Voltage", NULL, "%.1f", 0, NULL },
   { "battery.voltage",  0, 0, "UPS.PowerSummary.Voltage", NULL, "%.1f", 0, NULL },
   { "battery.voltage.nominal", 0, 0, "UPS.Battery.ConfigVoltage", NULL, "%.1f", 0, NULL },
   { "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%.1f", 0, NULL }, /* Back-UPS 500 */
@@ -271,7 +274,7 @@ static hid_info_t apc_hid2nut[] = {
   { "ups.beeper.status", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", 0, beeper_info },
   { "ups.mfr.date", 0, 0, "UPS.ManufacturerDate", NULL, "%s", 0, date_conversion },
   { "ups.mfr.date", 0, 0, "UPS.PowerSummary.ManufacturerDate", NULL, "%s", 0, date_conversion }, /* Back-UPS 500 */
-
+  { "ups.realpower.nominal", 0, 0, "UPS.PowerConverter.ConfigActivePower", NULL, "%.0f", 0, NULL },  
 
   /* the below one need to be discussed as we might need to complete
    * the ups.test sub collection
