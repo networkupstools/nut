@@ -16,7 +16,8 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
-
+/* TODO : port this to WIN32 */
+#ifndef WIN32
 struct {
 	const	char	*mfr;			/* value for INFO_MFR	*/
 	const	char	*model;			/* value for INFO_MODEL	*/
@@ -270,3 +271,4 @@ struct {
 	  0
 	}
 };
+#endif /* WIN32 */

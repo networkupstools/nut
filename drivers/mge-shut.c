@@ -546,6 +546,7 @@ int shut_wait_ack (void)
  *********************************************************************/
 static int char_read (char *bytes, int size, int read_timeout)
 {
+#ifndef WIN32
 	struct timeval serial_timeout;
 	fd_set readfs;
 	int readen = 0;
@@ -576,6 +577,26 @@ static int char_read (char *bytes, int size, int read_timeout)
 		return -1;
 	}
 	return readen;
+#else
+	DWORD ret;
+	BOOL res;
+	DWORD bytes_read;
+
+	COMMTIMEOUTS TOut;
+	GetCommTimeouts(upsfd,&TOut);
+	TOut.ReadIntervalTimeout = MAXDWORD;
+	TOut.ReadTotalTimeoutMultiplier = 0;
+	TOut.ReadTotalTimeoutConstant = read_timeout;
+	SetCommTimeouts(upsfd,&TOut);
+
+	res = ReadFile(upsfd,bytes,size,&bytes_read,NULL);
+/* FIXME don't know how to detect a timeout... */
+	if(res == FALSE ) {
+		return -1;
+	}
+
+	return bytes_read;
+#endif
 }
 
 /**********************************************************************
@@ -635,11 +656,24 @@ int serial_send (u_char *buf, int len)
 {
 #ifndef WIN32
 	tcflush (upsfd, TCIFLUSH);
-#else
-	FlushFileBuffers(upsfd);
-#endif
 	upsdebug_hex (3, "sent", (u_char *)buf, len);
 	return write (upsfd, buf, len);
+#else
+	DWORD ret;
+	BOOL res;
+	DWORD bytes_written;
+
+	FlushFileBuffers(upsfd);
+	upsdebug_hex (3, "sent", (u_char *)buf, len);
+
+	res = WriteFile(upsfd,buf,len,&bytes_written,NULL);
+
+	if(res == 0) {
+		return -1;
+	}
+
+	return bytes_written;
+#endif
 }
 
 /*
@@ -1141,9 +1175,9 @@ int hid_init_device()
 }
 
 /* translate HID string path to numeric path and return path depth */
-ushort lookup_path(const char *HIDpath, HIDData_t *data)
+unsigned short lookup_path(const char *HIDpath, HIDData_t *data)
 {
-	ushort i = 0, cond = 1;
+	unsigned short i = 0, cond = 1;
 	int cur_usage;
 	char buf[MAX_STRING];
 	char *start, *end;

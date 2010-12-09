@@ -172,7 +172,14 @@ static int upssend(const char *fmt,...) {
 		upslogx(LOG_WARNING, "ser_send_pace: vsnprintf needed more "
 				"than %d bytes", (int)sizeof(buf));
 	for (p = buf; *p; p++) {
+#ifndef WIN32
 		if (write(upsfd, p, 1) != 1)
+#else
+		DWORD bytes_written;
+		BOOL res;
+		res = WriteFile(upsfd, p, 1, &bytes_written,NULL);
+		if (res == 0 || bytes_written == 0)
+#endif
 			return -1;
 
 		if (d_usec)
