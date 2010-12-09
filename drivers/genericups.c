@@ -19,7 +19,9 @@
 
 #include "config.h" /* must be first */
 
+#ifndef WIN32
 #include <sys/ioctl.h>
+#endif
 
 #include "main.h"
 #include "serial.h"
@@ -38,6 +40,8 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
+/* TODO : port this to WIN32 */
+#ifndef WIN32
 	static	int	upstype = -1;
 
 static void parse_output_signals(const char *value, int *line)
@@ -436,3 +440,12 @@ void upsdrv_cleanup(void)
 	ser_close(upsfd, device_path);
 }
 
+#else /*WIN32 TODO just stubs for the moment, to be ported*/
+void upsdrv_makevartable(void) {};
+void upsdrv_shutdown(void) {};
+void upsdrv_help(void) {};
+void upsdrv_initups(void) {};
+void upsdrv_cleanup(void) {};
+void upsdrv_initinfo(void) {};
+void upsdrv_updateinfo(void) {};
+#endif

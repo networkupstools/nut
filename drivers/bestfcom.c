@@ -495,6 +495,7 @@ static void sync_serial(void) {
 	}
 }
 
+#ifndef WIN32
 /* Begin code stolen from bestups.c */
 static void setup_serial(void)
 {
@@ -523,6 +524,29 @@ static void setup_serial(void)
 
 	sync_serial();
 }
+#else
+/* same code as in bestuferrups.c */
+static void setup_serial(void)
+{
+	DCB dcb;
+
+	GetCommState(upsfd, &dcb);
+	dcb.fOutxCtsFlow = FALSE;
+	dcb.fOutxDsrFlow = FALSE;
+	dcb.fRtsControl = RTS_CONTROL_DISABLE;
+	dcb.ByteSize = 8;
+	dcb.Parity = NOPARITY;
+	dcb.StopBits = ONESTOPBIT;
+	dcb.BaudRate = B1200;
+	dcb.fOutX = TRUE;
+	dcb.fInX = TRUE;
+
+	SetCommState(upsfd,&dcb);
+
+	sync_serial();
+}
+/* end of same code as in bestuferrups.c */
+#endif
 
 /*
 These models don't support the formatconfig (fc) command so use

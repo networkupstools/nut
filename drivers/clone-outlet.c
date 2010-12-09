@@ -23,8 +23,10 @@
 #include "nut_stdint.h"
 
 #include <sys/types.h>
+#ifndef WIN32
 #include <sys/socket.h>
 #include <sys/un.h>
+#endif
 
 #define DRIVER_NAME	"clone outlet UPS Driver"
 #define DRIVER_VERSION	"0.02"
@@ -66,6 +68,11 @@ static int	dumpdone = 0;
 
 static PCONF_CTX_t	sock_ctx;
 static time_t	last_heard = 0, last_ping = 0, last_connfail = 0;
+
+#ifdef WIN32
+static char     	read_buf[SMALLBUF];
+static OVERLAPPED	read_overlapped;
+#endif
 
 static int parse_args(size_t numargs, char **arg)
 {
@@ -140,7 +147,7 @@ static int parse_args(size_t numargs, char **arg)
 	return 0;
 }
 
-
+#ifndef WIN32
 static int sstate_connect(void)
 {
 	ssize_t	ret;
@@ -218,30 +225,83 @@ static int sstate_connect(void)
 		return -1;
 	}
 
-	pconf_init(&sock_ctx, NULL);
+#else
+HANDLE sstate_connect(void)
+{
+	HANDLE fd;
+	char		pipename[SMALLBUF];
+	const char	*dumpcmd = "DUMPALL\n";
+	BOOL		result = FALSE;
 
-	time(&last_heard);
+	snprintf(pipename, sizeof(pipename), "\\\\.\\pipe\\%s/%s", dflt_statepath(), device_path);
 
-	dumpdone = 0;
+	result = WaitNamedPipe(pipename,NMPWAIT_USE_DEFAULT_WAIT);
 
-	/* set ups.status to "WAIT" while waiting for the driver response to dumpcmd */
-	dstate_setinfo("ups.status", "WAIT");
+	if( result == FALSE ) {
+		return INVALID_HANDLE_VALUE;
+	}
 
-	upslogx(LOG_INFO, "Connected to UPS [%s]", device_path);
-	return fd;
-}
+	fd = CreateFile(
+			pipename,	/* pipe name */
+			GENERIC_READ |	/* read and write access */
+			GENERIC_WRITE,
+			0,		/* no sharing */
+			NULL,		/* default security attributes FIXME */
+			OPEN_EXISTING,	/* opens existing pipe */
+			FILE_FLAG_OVERLAPPED,	/*  enable async IO */
+			NULL);		/* no template file */
+
+	if (fd == INVALID_HANDLE_VALUE) {
+		upslog_with_errno(LOG_ERR, "Can't connect to UPS [%s]", device_path);
+		return INVALID_HANDLE_VALUE;
+	}
+
+	/* get a dump started so we have a fresh set of data */
+	DWORD bytesWritten = 0;
+
+	result = WriteFile (fd,dumpcmd,strlen(dumpcmd),&bytesWritten,NULL);
+	if (result == 0 || bytesWritten != strlen(dumpcmd)) {
+		upslog_with_errno(LOG_ERR, "Initial write to UPS [%s] failed", device_path);
+		CloseHandle(fd);
+		return INVALID_HANDLE_VALUE;
+	}
+
+	/* Start a read IO so we could wait on the event associated with it */
+	ReadFile(fd,read_buf,sizeof(read_buf)-1,NULL,&(read_overlapped)); /*-1 to be sure to have a trailling 0 */
+#endif
+		pconf_init(&sock_ctx, NULL);
+
+		time(&last_heard);
+
+		dumpdone = 0;
+
+		/* set ups.status to "WAIT" while waiting for the driver response to dumpcmd */
+		dstate_setinfo("ups.status", "WAIT");
+
+		upslogx(LOG_INFO, "Connected to UPS [%s]", device_path);
+		return fd;
+	}
 
 
 static void sstate_disconnect(void)
 {
+#ifndef WIN32
 	if (upsfd < 0) {
+#else
+	if (upsfd == INVALID_HANDLE_VALUE) {
+#endif
 		return;
 	}
 
 	pconf_finish(&sock_ctx);
 
+#ifndef WIN32
 	close(upsfd);
 	upsfd = -1;
+#else
+	CloseHandle(upsfd);
+	upsfd = INVALID_HANDLE_VALUE;
+#endif
 }
 
 
@@ -249,11 +309,29 @@ static int sstate_sendline(const char *buf)
 {
 	ssize_t	ret;
 
+#ifndef WIN32
 	if (upsfd < 0) {
+#else
+	if (upsfd == INVALID_HANDLE_VALUE) {
+#endif
 		return -1;	/* failed */
 	}
 
+#ifndef WIN32
 	ret = write(upsfd, buf, strlen(buf));
+#else
+	DWORD bytesWritten = 0;
+	BOOL  result = FALSE;
+
+	result = WriteFile (upsfd,buf,strlen(buf),&bytesWritten,NULL);
+
+	if( result == 0 ) {
+		ret = 0;
+	}
+	else  {
+		ret = (int)bytesWritten;
+	}
+#endif
 
 	if (ret == (int)strlen(buf)) {
 		return 0;
@@ -268,6 +346,7 @@ static int sstate_readline(void)
 {
 	int	i;
 	ssize_t	ret;
+#ifndef WIN32
 	char	buf[SMALLBUF];
 
 	if (upsfd < 0) {
@@ -279,33 +358,42 @@ static int sstate_readline(void)
 	if (ret < 0) {
 		switch(errno)
 		{
-		case EINTR:
-		case EAGAIN:
-			return 0;
+			case EINTR:
+			case EAGAIN:
+				return 0;
 
-		default:
-			upslog_with_errno(LOG_WARNING, "Read from UPS [%s] failed", device_path);
-			return -1;
+			default:
+				upslog_with_errno(LOG_WARNING, "Read from UPS [%s] failed", device_path);
+				return -1;
 		}
 	}
+#else
+	if (upsfd == INVALID_HANDLE_VALUE) {
+		return -1;
+	}
+	char *buf = read_buf;
+	DWORD bytesRead;
+	GetOverlappedResult(upsfd, &read_overlapped, &bytesRead, FALSE);
+	ret = bytesRead;
+#endif
 
 	for (i = 0; i < ret; i++) {
 
 		switch (pconf_char(&sock_ctx, buf[i]))
 		{
-		case 1:
-			if (parse_args(sock_ctx.numargs, sock_ctx.arglist)) {
-				time(&last_heard);
-			}
-			continue;
+			case 1:
+				if (parse_args(sock_ctx.numargs, sock_ctx.arglist)) {
+					time(&last_heard);
+				}
+				continue;
 
-		case 0:
-			continue;	/* haven't gotten a line yet */
+			case 0:
+				continue;	/* haven't gotten a line yet */
 
-		default:
-			/* parse error */
-			upslogx(LOG_NOTICE, "Parse error on sock: %s", sock_ctx.errmsg);
-			return -1;
+			default:
+				/* parse error */
+				upslogx(LOG_NOTICE, "Parse error on sock: %s", sock_ctx.errmsg);
+				return -1;
 		}
 	}
 

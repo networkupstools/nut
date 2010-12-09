@@ -55,7 +55,9 @@
 #include "config.h" /* must be the first header */
 
 #include <ctype.h>
+#ifndef WIN32
 #include <sys/ioctl.h>
+#endif
 #include "timehead.h"
 #include "main.h"
 #include "serial.h"
@@ -165,17 +167,28 @@ void upsdrv_makevartable(void)
 void upsdrv_initups(void)
 {
 	char buf[BUFFLEN];
+#ifndef WIN32
 	int RTS = TIOCM_RTS;
+#endif
 
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
 
 	/* read command line/conf variable that affect comm. */
+#ifndef WIN32
 	if (testvar ("oldmac"))
 		RTS = ~TIOCM_RTS;
 
 	/* Init serial line */
 	ioctl(upsfd, TIOCMBIC, &RTS);
+#else
+	if (testvar ("oldmac")) {
+		EscapeCommFunction(upsfd,CLRRTS);
+	}
+	else {
+		EscapeCommFunction(upsfd,SETRTS);
+	}
+#endif
 	enable_ups_comm();
 
 	/* Try to set "Low Battery Level" (if supported and given) */
@@ -904,8 +917,12 @@ static ssize_t mge_command(char *reply, size_t replylen, const char *fmt, ...)
 	 * http://old.networkupstools.org/protocols/mge/9261zwfa.pdf § 6.1. Timings */
 	usleep(500000);
 
+#ifndef WIN32
 	/* flush received, unread data */
 	tcflush(upsfd, TCIFLUSH);
+#else
+	ser_flush_io(upsfd);
+#endif
 
 	/* send command */
 	for (p = command; *p; p++) {
@@ -914,8 +931,17 @@ static ssize_t mge_command(char *reply, size_t replylen, const char *fmt, ...)
 		else
 			upsdebugx(4, "mge_command: sending [%02X]", *p);
 
+#ifndef WIN32
 		if (write(upsfd, p, 1) != 1)
 			return -1;
+#else
+		DWORD bytes_written;
+		BOOL res;
+		res = WriteFile(upsfd, p, 1, &bytes_written,NULL);
+		if (res == 0 || bytes_written == 0) {
+			return -1;
+		}
+#endif
 
 		bytes_sent++;
 		usleep(MGE_CHAR_DELAY);
@@ -928,8 +954,17 @@ static ssize_t mge_command(char *reply, size_t replylen, const char *fmt, ...)
 		else
 			upsdebugx(4, "mge_command: sending [%02X]", *p);
 
+#ifndef WIN32
 		if (write(upsfd, p, 1) != 1)
 			return -1;
+#else
+		DWORD bytes_written;
+		BOOL res;
+		res = WriteFile(upsfd, p, 1, &bytes_written, NULL);
+		if (res == 0 || bytes_written == 0) {
+			return -1;
+		}
+#endif
 
 		bytes_sent++;
 		usleep(MGE_CHAR_DELAY);

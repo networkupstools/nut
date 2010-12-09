@@ -1013,31 +1013,29 @@ ssize_t select_read(const int fd, void *buf, const size_t buflen, const time_t d
 ssize_t select_read(const HANDLE fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec)
 /*int select_read(const HANDLE fd, void *buf, const size_t buflen, const long d_sec, const long d_usec)*/
 {
-/* This function is only called by serial drivers right now */
-	OVERLAPPED overlapped;
-/* TODO: Assert below that resulting values fit in ssize_t range */
-	DWORD bytesread = 0;
-	DWORD ret;
+	/* This function is only called by serial drivers right now */
+	/* TODO: Assert below that resulting values fit in ssize_t range */
+	DWORD bytes_read;
+	BOOL res;
+	DWORD timeout;
+	COMMTIMEOUTS TOut;
 
-	memset(&overlapped,0,sizeof(OVERLAPPED));
-	overlapped.hEvent = CreateEvent(NULL,	/*security*/
-					FALSE,	/*auto-reset*/
-					FALSE,	/*initally non signaled*/
-					NULL );	/*no name*/
-	if(overlapped.hEvent == NULL ) {
-		return 0;
-	}
-	ReadFile(fd,buf,buflen,NULL,&overlapped);
+	GetCommTimeouts(fd,&TOut);
 
-	ret = WaitForSingleObject(overlapped.hEvent, d_sec * 1000 + d_usec / 1000);
-	GetOverlappedResult(fd, &overlapped, &bytesread, FALSE);
-	CancelIo(overlapped.hEvent);
-	CloseHandle(overlapped.hEvent);
-	if( ret != WAIT_OBJECT_0 )  {
-		return 0;
+	timeout = d_sec * 1000 + d_usec / 1000 + ((d_usec % 1000)!=0)?1:0;
+
+	TOut.ReadIntervalTimeout = MAXDWORD;
+	TOut.ReadTotalTimeoutMultiplier = 0;
+	TOut.ReadTotalTimeoutConstant = timeout;
+	SetCommTimeouts(fd,&TOut);
+
+	res = ReadFile(fd,buf,buflen,&bytes_read,NULL);
+
+	if( res == 0 )  {
+		return -1;
 	}
 
-	return bytesread;
+	return bytes_read;
 }
 #endif
 

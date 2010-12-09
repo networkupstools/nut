@@ -463,7 +463,9 @@ void upsdrv_help(void)
 
 void upsdrv_initups(void)
 {
+#ifndef WIN32
 	struct termios tio;
+#endif
 	speed_t baud = B1200;
 	char *str;
 
@@ -494,6 +496,7 @@ void upsdrv_initups(void)
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, baud);
 
+#ifndef WIN32 /* TODO : correctly set line for WIN32 */	
 	if (tcgetattr(upsfd, &tio) != 0)
 		fatal_with_errno(EXIT_FAILURE, "tcgetattr(%s)", device_path);
 	tio.c_lflag = ICANON;
@@ -501,6 +504,7 @@ void upsdrv_initups(void)
 	tio.c_cc[VMIN] = 0;
 	tio.c_cc[VTIME] = 0;
 	tcsetattr(upsfd, TCSANOW, &tio);
+#endif
 
 	if ((str = getval("input_timeout")) != NULL) {
 		int temp = atoi(str);

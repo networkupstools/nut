@@ -263,6 +263,7 @@ extern int optind;
 #define LOG_ALERT	EVENTLOG_ERROR_TYPE
 #define LOG_WARNING	EVENTLOG_WARNING_TYPE
 #define LOG_CRIT	EVENTLOG_ERROR_TYPE
+#define LOG_EMERG	EVENTLOG_ERROR_TYPE
 
 #define closelog()
 

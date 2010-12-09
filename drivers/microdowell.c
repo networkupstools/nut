@@ -28,7 +28,9 @@
 
 #include "main.h"
 #include "serial.h"
+#ifndef WIN32
 #include <sys/ioctl.h>
+#endif
 #include "timehead.h"
 #include "nut_stdint.h"
 

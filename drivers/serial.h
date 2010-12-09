@@ -71,18 +71,36 @@ int ser_close(HANDLE fd, const char *port);
 
 #endif
 
+#ifndef WIN32
 ssize_t ser_send_char(int fd, unsigned char ch);
+#else
+ssize_t ser_send_char(HANDLE fd, unsigned char ch);
+#endif
 
 /* send the results of the format string with d_usec delay after each char */
+#ifndef WIN32
 ssize_t ser_send_pace(int fd, useconds_t d_usec, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 3, 4)));
+#else
+ssize_t ser_send_pace(HANDLE fd, useconds_t d_usec, const char *fmt, ...)
+	__attribute__ ((__format__ (__printf__, 3, 4)));
+#endif
 
 /* send the results of the format string with no delay */
+#ifndef WIN32
 ssize_t ser_send(int fd, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
+#else
+ssize_t ser_send(HANDLE fd, const char *fmt, ...)
+	__attribute__ ((__format__ (__printf__, 2, 3)));
+#endif
 
 /* send buflen bytes from buf with no delay */
+#ifndef WIN32
 ssize_t ser_send_buf(int fd, const void *buf, size_t buflen);
+#else
+ssize_t ser_send_buf(HANDLE fd, const void *buf, size_t buflen);
+#endif
 
 /* send buflen bytes from buf with d_usec delay after each char */
 #ifndef WIN32
@@ -93,24 +111,52 @@ int ser_send_buf_pace(HANDLE fd, useconds_t d_usec, const void *buf,
 	size_t buflen);
 #endif
 
+#ifndef WIN32
 ssize_t ser_get_char(int fd, void *ch, time_t d_sec, useconds_t d_usec);
+#else
+ssize_t ser_get_char(HANDLE fd, void *ch, time_t d_sec, useconds_t d_usec);
+#endif
 
+#ifndef WIN32
 ssize_t ser_get_buf(int fd, void *buf, size_t buflen, time_t d_sec, useconds_t d_usec);
+#else
+int ser_get_buf(HANDLE fd, void *buf, size_t buflen, long d_sec, long d_usec);
+ssize_t ser_get_buf(HANDLE fd, void *buf, size_t buflen, time_t d_sec, useconds_t d_usec);
+#endif
 
 /* keep reading until buflen bytes are received or a timeout occurs */
+#ifndef WIN32
 ssize_t ser_get_buf_len(int fd, void *buf, size_t buflen, time_t d_sec, useconds_t d_usec);
+#else
+ssize_t ser_get_buf_len(HANDLE fd, void *buf, size_t buflen, time_t d_sec, useconds_t d_usec);
+#endif
 
 /* reads a line up to <endchar>, discarding anything else that may follow,
    with callouts to the handler if anything matches the alertset */
+#ifndef WIN32
 ssize_t ser_get_line_alert(int fd, void *buf, size_t buflen, char endchar,
-	const char *ignset, const char *alertset, void handler (char ch), 
+	const char *ignset, const char *alertset, void handler (char ch),
 	time_t d_sec, useconds_t d_usec);
+#else
+ssize_t ser_get_line_alert(HANDLE fd, void *buf, size_t buflen, char endchar,
+	const char *ignset, const char *alertset, void handler (char ch),
+	time_t d_sec, useconds_t d_usec);
+#endif
 
 /* as above, only with no alertset handling (just a wrapper) */
+#ifndef WIN32
 ssize_t ser_get_line(int fd, void *buf, size_t buflen, char endchar,
 	const char *ignset, time_t d_sec, useconds_t d_usec);
+#else
+ssize_t ser_get_line(HANDLE fd, void *buf, size_t buflen, char endchar,
+	const char *ignset, time_t d_sec, useconds_t d_usec);
+#endif
 
+#ifndef WIN32
 ssize_t ser_flush_in(int fd, const char *ignset, int verbose);
+#else
+ssize_t ser_flush_in(HANDLE fd, const char *ignset, int verbose);
+#endif
 
 /* unified failure reporting: call these often */
 void ser_comm_fail(const char *fmt, ...)
