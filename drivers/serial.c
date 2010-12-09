@@ -161,7 +161,8 @@ int ser_open(const char *port)
 HANDLE ser_open_nf(const char *port)
 {
 	HANDLE	fd;
-	fd = CreateFileA(port, GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_FLAG_WRITE_THROUGH, 0);
+
+	fd = CreateFile(port, GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 
 	if (fd == INVALID_HANDLE_VALUE)
 		return INVALID_HANDLE_VALUE;
@@ -224,6 +225,9 @@ int ser_set_speed_nf(HANDLE fd, const char *port, speed_t speed)
 	dcb.fOutxCtsFlow = FALSE;
 	dcb.fOutxDsrFlow = FALSE;
 	dcb.fRtsControl = RTS_CONTROL_DISABLE;
+	dcb.ByteSize = 8;
+	dcb.Parity = NOPARITY;
+	dcb.StopBits = ONESTOPBIT;
 	dcb.BaudRate = speed;
 
 	return SetCommState(fd,&dcb);
@@ -344,7 +348,11 @@ int ser_flush_io(int fd)
 #else
 int ser_flush_io(HANDLE fd)
 {
-	return FlushFileBuffers(fd);
+	if ( FlushFileBuffers(fd) == 0 ) {
+		return -1;
+	}
+
+	return 0;
 }
 #endif
 
@@ -368,7 +376,7 @@ int ser_close(int fd, const char *port)
 int ser_close(HANDLE fd, const char *port)
 {
 	if (fd == INVALID_HANDLE_VALUE)
-		fatal_with_errno(EXIT_FAILURE, "ser_close: programming error: fd=%d port=%s", fd, port);
+		fatal_with_errno(EXIT_FAILURE, "ser_close: programming error: fd=%d port=%s", (int)fd, port);
 
 	if (CloseHandle(fd) != 0)
 		return -1;
@@ -377,12 +385,20 @@ int ser_close(HANDLE fd, const char *port)
 }
 #endif
 
+#ifndef WIN32
 int ser_send_char(int fd, unsigned char ch)
+#else
+int ser_send_char(HANDLE fd, unsigned char ch)
+#endif
 {
 	return ser_send_buf_pace(fd, 0, &ch, 1);
 }
 
+#ifndef WIN32
 static int send_formatted(int fd, const char *fmt, va_list va, unsigned long d_usec)
+#else
+static int send_formatted(HANDLE fd, const char *fmt, va_list va, unsigned long d_usec)
+#endif
 {
 	int	ret;
 	char	buf[LARGEBUF];
@@ -397,7 +413,11 @@ static int send_formatted(int fd, const char *fmt, va_list va, unsigned long d_u
 }
 
 /* send the results of the format string with d_usec delay after each char */
+#ifndef WIN32
 int ser_send_pace(int fd, unsigned long d_usec, const char *fmt, ...)
+#else
+int ser_send_pace(HANDLE fd, unsigned long d_usec, const char *fmt, ...)
+#endif
 {
 	int	ret;
 	va_list	ap;
@@ -412,7 +432,11 @@ int ser_send_pace(int fd, unsigned long d_usec, const char *fmt, ...)
 }
 
 /* send the results of the format string with no delay */
+#ifndef WIN32
 int ser_send(int fd, const char *fmt, ...)
+#else
+int ser_send(HANDLE fd, const char *fmt, ...)
+#endif
 {
 	int	ret;
 	va_list	ap;
@@ -427,7 +451,11 @@ int ser_send(int fd, const char *fmt, ...)
 }
 
 /* send buflen bytes from buf with no delay */
+#ifndef WIN32
 int ser_send_buf(int fd, const void *buf, size_t buflen)
+#else
+int ser_send_buf(HANDLE fd, const void *buf, size_t buflen)
+#endif
 {
 	return ser_send_buf_pace(fd, 0, buf, buflen);
 }
@@ -459,15 +487,15 @@ int ser_send_buf_pace(int fd, unsigned long d_usec, const void *buf,
 int ser_send_buf_pace(HANDLE fd, unsigned long d_usec, const void *buf,
 	size_t buflen)
 {
-	int	ret;
+	BOOL	res;
 	DWORD	sent = 0;
 	DWORD	sent_OK;
 
 	for (sent_OK = 0; sent_OK < buflen; sent_OK += sent) {
-		ret = WriteFile(fd, &((char *)buf)[sent_OK], (d_usec == 0) ? (buflen - sent_OK) : 1, &sent, NULL);
+		res = WriteFile(fd, &((char *)buf)[sent_OK], (d_usec == 0) ? (buflen - sent_OK) : 1, &sent, NULL);
 
-		if (ret == 0 ) {
-			return ret;
+		if( res == 0 ) {
+			return -1;
 		}
 
 		usleep(d_usec);
@@ -477,12 +505,20 @@ int ser_send_buf_pace(HANDLE fd, unsigned long d_usec, const void *buf,
 }
 #endif
 
+#ifndef WIN32
 int ser_get_char(int fd, void *ch, long d_sec, long d_usec)
+#else
+int ser_get_char(HANDLE fd, void *ch, long d_sec, long d_usec)
+#endif
 {
 	return select_read(fd, ch, 1, d_sec, d_usec);
 }
 
+#ifndef WIN32
 int ser_get_buf(int fd, void *buf, size_t buflen, long d_sec, long d_usec)
+#else
+int ser_get_buf(HANDLE fd, void *buf, size_t buflen, long d_sec, long d_usec)
+#endif
 {
 	memset(buf, '\0', buflen);
 
@@ -490,7 +526,11 @@ int ser_get_buf(int fd, void *buf, size_t buflen, long d_sec, long d_usec)
 }
 
 /* keep reading until buflen bytes are received or a timeout occurs */
+#ifndef WIN32
 int ser_get_buf_len(int fd, void *buf, size_t buflen, long d_sec, long d_usec)
+#else
+int ser_get_buf_len(HANDLE fd, void *buf, size_t buflen, long d_sec, long d_usec)
+#endif
 {
 	int	ret;
 	size_t	recv;
@@ -512,9 +552,15 @@ int ser_get_buf_len(int fd, void *buf, size_t buflen, long d_sec, long d_usec)
 
 /* reads a line up to <endchar>, discarding anything else that may follow,
    with callouts to the handler if anything matches the alertset */
+#ifndef WIN32
 int ser_get_line_alert(int fd, void *buf, size_t buflen, char endchar,
 	const char *ignset, const char *alertset, void handler(char ch), 
 	long d_sec, long d_usec)
+#else
+int ser_get_line_alert(HANDLE fd, void *buf, size_t buflen, char endchar,
+	const char *ignset, const char *alertset, void handler(char ch), 
+	long d_sec, long d_usec)
+#endif
 {
 	int	i, ret;
 	char	tmp[64];
@@ -556,14 +602,23 @@ int ser_get_line_alert(int fd, void *buf, size_t buflen, char endchar,
 }
 
 /* as above, only with no alertset handling (just a wrapper) */
+#ifndef WIN32
 int ser_get_line(int fd, void *buf, size_t buflen, char endchar,
 	const char *ignset, long d_sec, long d_usec)
+#else
+int ser_get_line(HANDLE fd, void *buf, size_t buflen, char endchar,
+	const char *ignset, long d_sec, long d_usec)
+#endif
 {
 	return ser_get_line_alert(fd, buf, buflen, endchar, ignset, "", NULL,
 		d_sec, d_usec);
 }
 
+#ifndef WIN32
 int ser_flush_in(int fd, const char *ignset, int verbose)
+#else
+int ser_flush_in(HANDLE fd, const char *ignset, int verbose)
+#endif
 {
 	int	ret, extra = 0;
 	char	ch;

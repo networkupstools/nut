@@ -309,6 +309,7 @@ static void dtr0rts1 (void)
 /* clear any flow control */
 static void no_flow_control (void)
 {
+#ifndef WIN32
 	struct termios tio;
 	
 	tcgetattr (upsfd, &tio);
@@ -321,6 +322,15 @@ static void no_flow_control (void)
 
 	/* disable any flow control */
 	tcsetattr(upsfd, TCSANOW, &tio);
+#else
+	DCB dcb;
+
+	GetCommState(upsfd, &dcb);
+	dcb.fOutX = TRUE;
+	dcb.fInX = TRUE;
+
+	SetCommState(upsfd,&dcb);
+#endif
 }
 
 /* sane check for returned buffer */
