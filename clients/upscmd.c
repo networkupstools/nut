@@ -398,7 +398,7 @@ int main(int argc, char **argv)
 
 		snprintf(password, sizeof(password), "%s", pwtmp);
 	}
-
+#endif	/* WIN32 */
 	snprintf(buf, sizeof(buf), "USERNAME %s\n", username);
 
 	if (upscli_sendline(ups, buf, strlen(buf)) < 0) {
@@ -445,7 +445,6 @@ int main(int argc, char **argv)
 			fatalx(EXIT_FAILURE, "Enabling command status tracking failed. upsd answered: %s", buf);
 		}
 	}
-#endif	/* WIN32 */
 
 	do_cmd(&argv[1], argc - 1);
 
