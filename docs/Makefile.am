@@ -24,9 +24,15 @@ CABLES_DEPS = cables/apc-rs500-serial.txt	\
  cables/mgeups.txt cables/powerware.txt cables/repotec.txt		\
  cables/sms.txt
 
+CABLES_IMAGES = images/cables/73-0724.png images/cables/940-0024C.jpg \
+ images/cables/belkin-f6cx-rkm-xu-cable.jpg images/cables/Lansafecable.jpg \
+ images/cables/mac-940-0024C.png images/cables/mge-66049.png \
+ images/cables/mge-db9-rj12.jpg images/cables/mge-db9-rj45.jpg \
+ images/cables/SOLA-330.png
+
 EXTRA_DIST = $(SHARED_DEPS) $(USER_MANUAL_DEPS) $(DEVELOPER_GUIDE_DEPS) \
  $(CABLES_DEPS) FAQ.txt nut-hal.txt nut-qa.txt packager-guide.txt snmp.txt \
- $(IMAGE_FILES)
+ $(IMAGE_FILES) $(CABLES_IMAGES)
 
 ASCIIDOC_HTML_SINGLE = user-manual.html \
 	developer-guide.html \

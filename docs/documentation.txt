@@ -6,19 +6,36 @@ endif::website[]
 User Documentation
 ------------------
 
+ifdef::website[]
 - FAQ - Frequently Asked Questions (link:docs/FAQ.html[online]) (link:docs/FAQ.pdf[PDF])
 - NUT User Manual (link:docs/user-manual.chunked/index.html[online]) (link:docs/user-manual.pdf[PDF])
 - Cables information (link:cables.html[online]) (link:cables.pdf[PDF])
 - link:docs/man/index.html#User_man[User manual pages]
+endif::website[]
+ifndef::website[]
+- link:../FAQ.html[FAQ - Frequently Asked Questions]
+- <<user-manual,NUT User Manual>>
+- <<Cables_information,Cables information>>
+- link:../man/index.html#User_man[User manual pages]
+endif::website[]
 
 Developer Documentation
 -----------------------
 
+ifdef::website[]
 - NUT Developer Guide (link:docs/developer-guide.chunked/index.html[online]) (link:docs/developer-guide.pdf[PDF])
 - NUT Packager Guide (link:docs/packager-guide.chunked/index.html[online]) (link:docs/packager-guide.pdf[PDF])
 - link:ups-protocols.html[UPS protocols library]
 - link:docs/man/index.html#Developer_man[Developer manual pages]
 - link:nut-qa.html[NUT Quality Assurance]
+endif::website[]
+ifndef::website[]
+- NUT Developer Guide (link:../developer-guide.chunked/index.html[online]) (link:../developer-guide.pdf[PDF])
+- NUT Packager Guide (link:../packager-guide.chunked/index.html[online]) (link:../packager-guide.pdf[PDF])
+- link:ups-protocols.html[UPS protocols library]
+- link:../man/index.html#Developer_man[Developer manual pages]
+- link:nut-qa.html[NUT Quality Assurance]
+endif::website[]
 
 Offsite Links
 -------------

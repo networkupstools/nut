@@ -11,7 +11,7 @@ APC
 
 *From D. Stimits*
 
-image::cables/940-0024C.jpg[APCC 940-0024C clone diagram]
+image::images/cables/940-0024C.jpg[APCC 940-0024C clone diagram]
 
 NOTE: The original 940-0024C diagram was contributed by Steve Draper.
 
@@ -20,7 +20,7 @@ NOTE: The original 940-0024C diagram was contributed by Steve Draper.
 
 *From Miguel Howard*
 
-image::cables/mac-940-0024C.png[APCC 940-0024C clone cable for Macs]
+image::images/cables/mac-940-0024C.png[APCC 940-0024C clone cable for Macs]
 
 Belkin
 ------
@@ -38,7 +38,7 @@ with the following models:
 - F6C230-RKM-2U
 - F6C320-RKM-3U 
 
-image::cables/belkin-f6cx-rkm-xu-cable.jpg[Belkin OmniGuard F6C***-RKM cable]
+image::images/cables/belkin-f6cx-rkm-xu-cable.jpg[Belkin OmniGuard F6C***-RKM cable]
 
 Eaton
 -----
@@ -55,7 +55,7 @@ DB9-DB9 cable (ref 66049)
 
 This is the standard serial cable, used on most units.
 
-image::cables/mge-66049.png[DB9-DB9 cable]
+image::images/cables/mge-66049.png[DB9-DB9 cable]
 
 DB9-RJ45 cable
 ^^^^^^^^^^^^^^
@@ -63,26 +63,26 @@ DB9-RJ45 cable
 This cable is used on the more recent models, including Ellipse MAX, Protection
 Station, ...
 
-image::cables/mge-db9-rj45.jpg[DB9-RJ45 cable]
+image::images/cables/mge-db9-rj45.jpg[DB9-RJ45 cable]
 
 DB9-RJ12 cable
 ^^^^^^^^^^^^^^
 
 This cable is used on some older Ellipse models.
 
-image::cables/mge-db9-rj12.jpg[DB9-RJ12 cable]
+image::images/cables/mge-db9-rj12.jpg[DB9-RJ12 cable]
 
 Powerware LanSafe
 ~~~~~~~~~~~~~~~~~
 
-image::cables/Lansafecable.jpg[Powerware LanSafe cable]
+image::images/cables/Lansafecable.jpg[Powerware LanSafe cable]
 
 SOLA-330
 ~~~~~~~~
 
 Just uses a normal serial cable, with pin 1-1 through to 9-9.
 
-image::cables/SOLA-330.png[SOLA-330 cable]
+image::images/cables/SOLA-330.png[SOLA-330 cable]
 
 
 HP - Compaq
@@ -98,12 +98,13 @@ R1500h, T2000, T2000j, T2400h, T2400h-NA, R3000 / R3000j, R3000h,
 R3000h-International, R3000h-NA, R6000h-NA, R6000i, R6000j. 
 
 UPS         PC  9 pin connector
-1 --------- 3
-2 --------- 2
-            4 -\
-4 --------- 5   |
-            6 -/
-6 --------- 7
+
+ 1 --------- 3
+ 2 --------- 2
+             4 -\
+ 4 --------- 5   |
+             6 -/
+ 6 --------- 7
 
 Contributed by Kjell Claesson and Arnaud Quette.
 
@@ -116,4 +117,4 @@ Tripp-Lite
 This cable (black 73-0844 cable) is used on various models, using the "Lan 2.2 interface"
 and the genericups driver (upstype=5).
 
-image::cables/73-0724.png[73-0724 cable]
+image::images/cables/73-0724.png[73-0724 cable]

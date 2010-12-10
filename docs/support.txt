@@ -9,7 +9,7 @@ There are various ways to obtain support for NUT.
 Documentation
 -------------
 
-- First, be sure to read the link:FAQ.html[FAQ]. The most common problems are already
+- First, be sure to read the link:docs/FAQ.html[FAQ]. The most common problems are already
 addressed there.
 
 ifdef::website[]
@@ -21,7 +21,7 @@ endif::website[]
 It also covers many areas about installing, configuring and using NUT.
 The specific steps on system integration are also discussed.
 
-- Finally, link:man/index.html#User_man[User manual pages] will also
+- Finally, link:docs/man/index.html#User_man[User manual pages] will also
 complete the User Manual provided information. At least, read the manual
 page related to your driver(s).
 
@@ -89,9 +89,9 @@ for more information, and the chapter on how to
 link:docs/developer-guide.chunked/ar01s03.html#_submitting_patches[submit patches].
 endif::website[]
 ifndef::website[]
-link:developer-guide.chunked/index.html[NUT Developer Guide]
+link:../developer-guide.chunked/index.html[NUT Developer Guide]
 for more information, and the chapter on how to 
-link:developer-guide.chunked/ar01s03.html#_submitting_patches[submit patches].
+link:../developer-guide.chunked/ar01s03.html#_submitting_patches[submit patches].
 endif::website[]
 
 
@@ -106,6 +106,6 @@ ifdef::website[]
 link:docs/packager-guide.chunked/index.html[NUT Packager Guide]
 endif::website[]
 ifndef::website[]
-link:packager-guide.chunked/index.html[NUT Packager Guide]
+link:../packager-guide.chunked/index.html[NUT Packager Guide]
 endif::website[]
  for more information.
