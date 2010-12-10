@@ -95,10 +95,10 @@ static void do_setvar(const char *varname, char *uin, const char *pass)
 	char	newval[SMALLBUF], temp[SMALLBUF], user[SMALLBUF], *ptr;
 	struct passwd	*pw;
 
-#ifndef WIN32
 	if (uin) {
 		snprintf(user, sizeof(user), "%s", uin);
 	} else {
+#ifndef WIN32
 		memset(user, '\0', sizeof(user));
 
 		pw = getpwuid(getuid());
@@ -132,8 +132,10 @@ static void do_setvar(const char *varname, char *uin, const char *pass)
 		if (!pass) {
 			fatal_with_errno(EXIT_FAILURE, "getpass failed");
 		}
-	}
+#else
+		fatalx(EXIT_FAILURE, "No username available");
 #endif
+	}
 
 	/* Check if varname is in VAR=VALUE form */
 	if ((ptr = strchr(varname, '=')) != NULL) {
