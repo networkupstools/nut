@@ -288,7 +288,7 @@ int main(int argc, char **argv)
 
 		snprintf(password, sizeof(password), "%s", pwtmp);
 	}
-
+#endif
 	snprintf(buf, sizeof(buf), "USERNAME %s\n", username);
 
 	if (upscli_sendline(ups, buf, strlen(buf)) < 0) {
@@ -316,7 +316,7 @@ int main(int argc, char **argv)
 	if (upscli_readline(ups, buf, sizeof(buf)) < 0) {
 		fatalx(EXIT_FAILURE, "Set password failed: %s", upscli_strerror(ups));
 	}
-#endif
+
 	do_cmd(&argv[1], argc - 1);
 
 	exit(EXIT_SUCCESS);
