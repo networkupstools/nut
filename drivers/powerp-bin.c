@@ -118,6 +118,24 @@ static const valtab_t 	yes_no_info[] = {
 	{ NULL }
 };
 
+/* Older models report the model in a numeric format 'rOnn' */
+static const struct {
+	const char	*val;
+	const char	*model;
+} modeltab[] = {
+	{ "rO10", "OP1000AVR" },
+	{ "rO27", "OP320AVR" },
+	{ "rO29", "OP500AVR" },
+	{ "rO31", "OP800AVR" },
+	{ "rO33", "OP850AVR" },
+	{ "rO37", "OP900AVR" },
+	{ "rO39", "OP650AVR" },
+	{ "rO41", "OP700AVR" },
+	{ "rO43", "OP1250AVR" },
+	{ "rO45", "OP1500AVR" },
+	{ NULL }
+};
+
 static const struct {
 	const char	*var;
 	const char	*get;
@@ -313,7 +331,18 @@ static void powpan_initinfo(void)
 	 * was used for autodetection of the UPS. No need to do it again.
 	 */
 	if ((s = strtok((char *)&powpan_answer[1], ".")) != NULL) {
-		dstate_setinfo("ups.model", "%s", rtrim(s, ' '));
+		for (i = 0; modeltab[i].val != NULL; i++) {
+			if (!strncmp(s, modeltab[i].val, strlen(modeltab[i].val))) {
+				break;
+			}
+		}
+		if (modeltab[i].model) {
+			/* model found in table */
+			dstate_setinfo("ups.model", "%s", modeltab[i].model);
+		} else {
+			/* report model value as is */
+			dstate_setinfo("ups.model", "%s", rtrim(s, ' '));
+		}
 	}
 	if ((s = strtok(NULL, ".")) != NULL) {
 		dstate_setinfo("input.voltage.nominal", "%d", (unsigned char)s[0]);
@@ -578,6 +607,11 @@ static int powpan_initups(void)
 
 		/* See if we need to use the 'old' protocol for the OP series */
 		if (!strncmp((char *)&powpan_answer[1], "OP", 2)) {
+			type = OP;
+		}
+
+		/* This is for an older model series, that reports the model numerically */
+		if (!strncmp((char *)&powpan_answer[1], "rO", 2)) {
 			type = OP;
 		}
 
