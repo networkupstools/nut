@@ -60,13 +60,13 @@ static int init_communication(void)
 		send_belkin_command(STATUS, MANUFACTURER, "");
 		res = get_belkin_reply(temp);
 
-		if ((res > 0) && !strcasecmp(temp, "BELKIN")) {
-			/* return the number of retries needed for initialization */
+		if (res > 0) {
+			/* return the number of retries needed before a valid reply is read (discard contents) */
 			return i;
 		}
 	}
 
-	/* failed reading manufacturer info */
+	/* no valid reply read */
 	return -1;
 }
 
