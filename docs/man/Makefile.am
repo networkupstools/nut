@@ -1,137 +1,105 @@
-CONVERTED_TO_ASCIIDOC = \
-	apcsmart.html \
-	bcmxcp.html \
-	bcmxcp_usb.html \
-	belkin.html \
-	belkinunv.html \
-	bestfcom.html \
-	bestfortress.html \
-	bestuferrups.html \
-	bestups.html \
-	blazer.html \
-	clone.html \
-	dummy-ups.html \
-	etapro.html \
-	everups.html \
-	gamatronic.html \
-	genericups.html \
-	hosts.conf.html \
-	index.html \
-	isbmex.html \
-	libupsclient-config.html \
-	liebert.html \
-	liebert-esp2.html \
-	masterguard.html \
-	megatec.html \
-	megatec_usb.html \
-	metasys.html \
-	mge-shut.html \
-	mge-utalk.html \
-	microdowell.html \
-	netxml-ups.html \
-	nut.conf.html \
-	nutupsdrv.html \
-	oneac.html \
-	optiups.html \
-	powercom.html \
-	powerman-pdu.html \
-	powerpanel.html \
-	rhino.html \
-	richcomm_usb.html \
-	safenet.html \
-	skel.html \
-	snmp-ups.html \
-	solis.html \
-	tripplite.html \
-	tripplitesu.html \
-	tripplite_usb.html \
-	upscode2.html \
-	ups.conf.html \
-	upsc.html \
-	upscmd.html \
-	upsclient.html \
-	upscli_connect.html \
-	upscli_disconnect.html \
-	upscli_fd.html \
-	upscli_get.html \
-	upscli_list_next.html \
-	upscli_list_start.html \
-	upscli_readline.html \
-	upscli_sendline.html \
-	upscli_splitaddr.html \
-	upscli_splitname.html \
-	upscli_ssl.html \
-	upscli_strerror.html \
-	upscli_upserror.html \
-	upsd.html \
-	upsd.conf.html \
-	upsd.users.html \
-	upsdrvctl.html \
-	upsimage.cgi.html \
-	upslog.html \
-	upsmon.html \
-	upsmon.conf.html \
-	upsrw.html \
-	upssched.html \
-	upssched.conf.html \
-	upsset.cgi.html \
-	upsset.conf.html \
-	upsstats.cgi.html \
-	upsstats.html.html \
-	usbhid-ups.html \
-	victronups.html
+# Network UPS Tools: man
+#
 
-EXTRA_DIST = \
-	apcsmart.txt \
-	bcmxcp.txt \
-	bcmxcp_usb.txt \
-	belkin.txt \
-	belkinunv.txt \
-	bestfcom.txt \
-	bestfortress.txt \
-	bestuferrups.txt \
-	bestups.txt \
-	blazer.txt \
-	clone.txt \
-	dummy-ups.txt \
-	etapro.txt \
-	everups.txt \
-	gamatronic.txt \
-	genericups.txt \
-	hosts.conf.txt \
-	index.txt \
-	isbmex.txt \
-	libupsclient-config.txt \
-	liebert.txt \
-	liebert-esp2.txt \
-	masterguard.txt \
-	megatec.txt \
-	megatec_usb.txt \
-	metasys.txt \
-	mge-shut.txt \
-	mge-utalk.txt \
-	microdowell.txt \
-	netxml-ups.txt \
+# Notes:
+# - sources (.txt) and groff formats are both distributed,
+# - only sources are versioned ; groff files are generated at worst
+#   during 'make dist'
+# - HTML files are built upon request, if AsciiDoc is available,
+# - groff update will only happen if AsciiDoc is available too,
+# - all this can probably (and hopefully) by improved, but I've not
+# found a way to do pattern replacement on the fly for target deps!
+# - Ref: http://www.gnu.org/software/hello/manual/automake/Man-pages.html
+
+# Base configuration and client manpages, always installed
+SRC_CONF_PAGES = \
 	nut.conf.txt \
-	nutupsdrv.txt \
-	oneac.txt \
-	optiups.txt \
-	powercom.txt \
-	powerman-pdu.txt \
-	powerpanel.txt \
-	rhino.txt \
-	richcomm_usb.txt \
-	safenet.txt \
-	skel.txt \
-	snmp-ups.txt \
-	solis.txt \
-	tripplite.txt \
-	tripplitesu.txt \
-	tripplite_usb.txt \
-	upscode2.txt \
 	ups.conf.txt \
+	upsd.conf.txt \
+	upsd.users.txt \
+	upsmon.conf.txt \
+	upssched.conf.txt
+
+man5_MANS = \
+	nut.conf.5 \
+	ups.conf.5 \
+	upsd.conf.5 \
+	upsd.users.5 \
+	upsmon.conf.5 \
+	upssched.conf.5
+
+HTML_CONF_MANS = \
+	nut.conf.txt \
+	ups.conf.txt \
+	upsd.conf.txt \
+	upsd.users.txt \
+	upsmon.conf.txt \
+	upssched.conf.txt
+
+SRC_CLIENT_PAGES = \
+	nutupsdrv.txt \
 	upsc.txt \
 	upscmd.txt \
+	upsd.txt \
+	upsdrvctl.txt \
+	upslog.txt \
+	upsmon.txt \
+	upsrw.txt \
+	upssched.txt
+
+man8_MANS = \
+	nutupsdrv.8 \
+	upsc.8 \
+	upscmd.8 \
+	upsd.8 \
+	upsdrvctl.8 \
+	upslog.8 \
+	upsmon.8 \
+	upsrw.8 \
+	upssched.8
+
+HTML_CLIENT_MANS = \
+	nutupsdrv.html \
+	upsc.html \
+	upscmd.html \
+	upsd.html \
+	upsdrvctl.html \
+	upslog.html \
+	upsmon.html \
+	upsrw.html \
+	upssched.html
+
+
+# CGI (--with-cgi) related manpages
+SRC_CGI_PAGES = hosts.conf.txt \
+	upsset.conf.txt \
+	upsstats.html.txt \
+	upsset.cgi.txt \
+	upsstats.cgi.txt \
+	upsimage.cgi.txt
+
+if WITH_CGI
+ man5_MANS += \
+	hosts.conf.5 \
+	upsset.conf.5 \
+	upsstats.html.5
+
+ man8_MANS += \
+	upsset.cgi.8 \
+	upsstats.cgi.8 \
+	upsimage.cgi.8
+endif
+
+HTML_CGI_MANS = hosts.conf.html \
+	upsset.conf.html \
+	upsstats.html.html \
+	upsset.cgi.html \
+	upsstats.cgi.html \
+	upsimage.cgi.html
+
+
+# Development (--with-dev) related manpages
+SRC_DEV_PAGES = \
 	upsclient.txt \
 	upscli_connect.txt \
 	upscli_disconnect.txt \
@@ -146,38 +114,11 @@ EXTRA_DIST = \
 	upscli_ssl.txt \
 	upscli_strerror.txt \
 	upscli_upserror.txt \
-	upsd.conf.txt \
-	upsd.users.txt \
-	upsd.txt \
-	upsdrvctl.txt \
-	upsimage.cgi.txt \
-	upslog.txt \
-	upsmon.txt \
-	upsmon.conf.txt \
-	upsrw.txt \
-	upssched.txt \
-	upssched.conf.txt \
-	upsset.cgi.txt \
-	upsset.conf.txt \
-	upsstats.cgi.txt \
-	upsstats.html.txt \
-	usbhid-ups.txt \
-	victronups.txt
+	libupsclient-config.txt \
+	skel.txt
 
-# FIXME: don't distribute these output yet, while waiting
-# for proper policies
-#	$(CONVERTED_TO_ASCIIDOC) \
-#	$(MANS)
-
-# dist-hook: $(MANS)
-
-if HAVE_ASCIIDOC
-
-# http://www.gnu.org/software/hello/manual/automake/Man-pages.html
-man1_MANS = \
-	libupsclient-config.1
-
-man3_MANS = \
+if WITH_DEV
+ man3_MANS = \
 	upsclient.3 \
 	upscli_connect.3 \
 	upscli_disconnect.3 \
@@ -193,91 +134,250 @@ man3_MANS = \
 	upscli_strerror.3 \
 	upscli_upserror.3
 
-man5_MANS = \
-	hosts.conf.5 \
-	nut.conf.5 \
-	ups.conf.5 \
-	upsd.conf.5 \
-	upsd.users.5 \
-	upsmon.conf.5 \
-	upssched.conf.5 \
-	upsset.conf.5 \
-	upsstats.html.5
+if !WITH_PKG_CONFIG
+ man1_MANS = \
+	libupsclient-config.1
+endif
+# WITH_DEV
+endif
 
-man8_MANS = \
-	apcsmart.8 \
-	bcmxcp.8 \
-	bcmxcp_usb.8 \
-	belkin.8 \
-	belkinunv.8 \
-	bestfcom.8 \
-	bestfortress.8 \
-	bestuferrups.8 \
-	bestups.8 \
-	blazer.8 \
+HTML_DEV_MANS = \
+	upsclient.html \
+	upscli_connect.html \
+	upscli_disconnect.html \
+	upscli_fd.html \
+	upscli_get.html \
+	upscli_list_next.html \
+	upscli_list_start.html \
+	upscli_readline.html \
+	upscli_sendline.html \
+	upscli_splitaddr.html \
+	upscli_splitname.html \
+	upscli_ssl.html \
+	upscli_strerror.html \
+	upscli_upserror.html \
+	libupsclient-config.html \
+	skel.html
+
+
+# Drivers related manpages
+
+# (--with-drivers=...)
+if SOME_DRIVERS
+ man8_MANS += $(DRIVER_MAN_LIST)
+
+else
+
+# (--with-serial)
+SRC_SERIAL_PAGES = \
+	apcsmart.txt	\
+	bcmxcp.txt 	\
+	belkin.txt 	\
+	belkinunv.txt	\
+	bestfortress.txt	\
+	bestuferrups.txt	\
+	bestups.txt 	\
+	bestfcom.txt	\
+	blazer.txt	\
+	clone.txt \
+	dummy-ups.txt	\
+	etapro.txt	\
+	everups.txt	\
+	gamatronic.txt	\
+	genericups.txt	\
+	isbmex.txt	\
+	ivtscd.txt	\
+	liebert.txt	\
+	liebert-esp2.txt	\
+	masterguard.txt	\
+	metasys.txt	\
+	mge-shut.txt	\
+	mge-utalk.txt	\
+	oneac.txt		\
+	microdowell.txt	\
+	optiups.txt	\
+	powercom.txt 	\
+	powerpanel.txt	\
+	megatec.txt	\
+	rhino.txt		\
+	safenet.txt	\
+	solis.txt		\
+	tripplite.txt	\
+	tripplitesu.txt	\
+	upscode2.txt	\
+	victronups.txt
+
+if WITH_SERIAL
+  man8_MANS +=  \
+	apcsmart.8	\
+	bcmxcp.8 	\
+	belkin.8 	\
+	belkinunv.8	\
+	bestfortress.8	\
+	bestuferrups.8	\
+	bestups.8 	\
+	bestfcom.8	\
+	blazer.8	\
 	clone.8 \
-	dummy-ups.8 \
-	etapro.8 \
-	everups.8 \
-	gamatronic.8 \
-	genericups.8 \
-	isbmex.8 \
-	liebert.8 \
-	liebert-esp2.8 \
-	masterguard.8 \
-	megatec.8 \
-	megatec_usb.8 \
-	metasys.8 \
-	mge-shut.8 \
-	mge-utalk.8 \
-	microdowell.8 \
-	netxml-ups.8 \
-	nutupsdrv.8 \
-	oneac.8 \
-	optiups.8 \
-	powercom.8 \
-	powerman-pdu.8 \
-	powerpanel.8 \
-	rhino.8 \
-	richcomm_usb.8 \
-	safenet.8 \
-	skel.8 \
-	snmp-ups.8 \
-	solis.8 \
-	tripplite.8 \
-	tripplitesu.8 \
-	tripplite_usb.8 \
-	upscode2.8 \
-	upsc.8 \
-	upsd.8 \
-	upslog.8 \
-	upscmd.8 \
-	upsdrvctl.8 \
-	upsimage.cgi.8 \
-	upsmon.8 \
-	upsrw.8 \
-	upssched.8 \
-	upsset.cgi.8 \
-	upsstats.cgi.8 \
-	usbhid-ups.8 \
+	dummy-ups.8	\
+	etapro.8	\
+	everups.8	\
+	gamatronic.8	\
+	genericups.8	\
+	isbmex.8	\
+	ivtscd.8	\
+	liebert.8	\
+	liebert-esp2.8	\
+	masterguard.8	\
+	metasys.8	\
+	mge-shut.8	\
+	mge-utalk.8	\
+	oneac.8		\
+	microdowell.8	\
+	optiups.8	\
+	powercom.8 	\
+	powerpanel.8	\
+	megatec.8	\
+	rhino.8		\
+	safenet.8	\
+	solis.8		\
+	tripplite.8	\
+	tripplitesu.8	\
+	upscode2.8	\
 	victronups.8
+endif
 
-man: $(MANS)
-html-man: $(CONVERTED_TO_ASCIIDOC) man-index.html
-else !HAVE_ASCIIDOC
-man html-man:
-	@echo "Not building manual pages since 'asciidoc' was not found."
-endif !HAVE_ASCIIDOC
+HTML_SERIAL_MANS = \
+	apcsmart.html	\
+	bcmxcp.html 	\
+	belkin.html 	\
+	belkinunv.html	\
+	bestfortress.html	\
+	bestuferrups.html	\
+	bestups.html 	\
+	bestfcom.html	\
+	blazer.html	\
+	clone.html \
+	dummy-ups.html	\
+	etapro.html	\
+	everups.html	\
+	gamatronic.html	\
+	genericups.html	\
+	isbmex.html	\
+	ivtscd.html	\
+	liebert.html	\
+	liebert-esp2.html	\
+	masterguard.html	\
+	metasys.html	\
+	mge-shut.html	\
+	mge-utalk.html	\
+	oneac.html		\
+	microdowell.html	\
+	optiups.html	\
+	powercom.html 	\
+	powerpanel.html	\
+	megatec.html	\
+	rhino.html		\
+	safenet.html	\
+	solis.html		\
+	tripplite.html	\
+	tripplitesu.html	\
+	upscode2.html	\
+	victronups.html
+
+# (--with-snmp)
+SRC_SNMP_PAGES = snmp-ups.txt
+
+if WITH_SNMP
+  man8_MANS += snmp-ups.8
+endif
+
+HTML_SNMP_MANS = snmp-ups.html
+
+# (--with-usb)
+SRC_USB_LIBUSB_PAGES = \
+	bcmxcp_usb.txt \
+	megatec_usb.txt \
+	richcomm_usb.txt \
+	tripplite_usb.txt \
+	usbhid-ups.txt
+
+if WITH_USB
+ man8_MANS += \
+	bcmxcp_usb.8 \
+	megatec_usb.8 \
+	richcomm_usb.8 \
+	tripplite_usb.8 \
+	usbhid-ups.8
+endif
+
+HTML_USB_LIBUSB_MANS = \
+	bcmxcp_usb.html \
+	megatec_usb.html \
+	richcomm_usb.html \
+	tripplite_usb.html \
+	usbhid-ups.html
+
+# (--with-neon)
+SRC_NETXML_PAGES = netxml-ups.txt
+
+if WITH_NEONXML
+   man8_MANS += netxml-ups.8
+endif
+
+HTML_NETXML_MANS = netxml-ups.html
+
+# (--with-powerman)
+SRC_POWERMAN_PAGES = powerman-pdu.txt
+
+if WITH_LIBPOWERMAN
+   man8_MANS += powerman-pdu.8
+endif
+
+HTML_POWERMAN_MANS = powerman-pdu.html
+
+# SOME_DRIVERS
+endif
+
+
+# distribute everything, even those not installed by default
+EXTRA_DIST = \
+	$(SRC_CONF_PAGES) \
+	$(SRC_CLIENT_PAGES) \
+	$(SRC_CGI_PAGES) \
+	$(SRC_DEV_PAGES) \
+	$(SRC_SERIAL_PAGES) \
+	$(SRC_SNMP_PAGES) \
+	$(SRC_USB_LIBUSB_PAGES) \
+	$(SRC_NETXML_PAGES) \
+	$(SRC_POWERMAN_PAGES)
+
+dist_man_MANS = $(man1_MANS) $(man3_MANS) $(man5_MANS) $(man8_MANS)
+
+HTML_MANS = \
+	$(HTML_CONF_MANS) \
+	$(HTML_CLIENT_MANS) \
+	$(HTML_CGI_MANS) \
+	$(HTML_DEV_MANS) \
+	$(HTML_SERIAL_MANS) \
+	$(HTML_SNMP_MANS) \
+	$(HTML_USB_LIBUSB_MANS) \
+	$(HTML_NETXML_MANS) \
+	$(HTML_POWERMAN_MANS)
 
 all:
 
 man-index.html: index.html
 	cp -f $< $@
 
+html-man: $(HTML_MANS) man-index.html
+
 clean-local:
 	rm -f $(CONVERTED_TO_ASCIIDOC) $(MANS) *.xml man-index.html
 
 SUFFIXES = .txt .html .1 .3 .5 .8
+
+if HAVE_ASCIIDOC
 
 .txt.html:
 	$(ASCIIDOC) --backend=xhtml11 \
@@ -292,15 +392,34 @@ A2X_MANPAGE_OPTS = -f manpage --attribute nutversion="@PACKAGE_VERSION@"
 .txt.1:
 	test -f `basename $<` || cp -p $< .
 	$(A2X) $(A2X_MANPAGE_OPTS) `basename $<`
-	
+
 .txt.3:
 	test -f `basename $<` || cp -p $< .
 	$(A2X) $(A2X_MANPAGE_OPTS) `basename $<`
-	
+
 .txt.5:
 	test -f `basename $<` || cp -p $< .
 	$(A2X) $(A2X_MANPAGE_OPTS) `basename $<`
-	
+
 .txt.8:
 	test -f `basename $<` || cp -p $< .
 	$(A2X) $(A2X_MANPAGE_OPTS) `basename $<`
+
+else !HAVE_ASCIIDOC
+
+.txt.html:
+	@echo "Not (re)building manual pages since 'asciidoc' was not found."
+
+.txt.1:
+	@echo "Not (re)building manual pages since 'asciidoc' was not found."
+
+.txt.3:
+	@echo "Not (re)building manual pages since 'asciidoc' was not found."
+
+.txt.5:
+	@echo "Not (re)building manual pages since 'asciidoc' was not found."
+
+.txt.8:
+	@echo "Not (re)building manual pages since 'asciidoc' was not found."
+
+endif !HAVE_ASCIIDOC

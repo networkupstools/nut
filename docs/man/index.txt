@@ -65,6 +65,7 @@ Drivers
 - linkman:gamatronic[8]
 - linkman:genericups[8]
 - linkman:isbmex[8]
+- linkman:ivtscd[8]
 - linkman:liebert[8]
 - linkman:liebert-esp2[8]
 - linkman:masterguard[8]

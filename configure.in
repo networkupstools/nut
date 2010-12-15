@@ -728,7 +728,7 @@ if test "${DRIVER_BUILD_LIST}" = "all"; then
 else
 	DRIVER_MAN_LIST=""
 	for i in ${DRIVER_BUILD_LIST}; do
-		if test -f ${srcdir}/man/$i.8; then
+		if test -f ${srcdir}/docs/man/$i.8; then
 			DRIVER_MAN_LIST="${DRIVER_MAN_LIST} $i.8"
 		fi
 	done
@@ -911,7 +911,6 @@ AC_OUTPUT([
  lib/libupsclient-config
  lib/libupsclient.pc
  lib/Makefile
- man/Makefile
  scripts/hal/Makefile
  scripts/hal/ups-nut-device.fdi
  scripts/hotplug/Makefile

@@ -5,7 +5,7 @@ ACLOCAL_AMFLAGS = -I m4
 
 # subdirectories to build and distribute. The order matters, as
 # several subdirectories depend on stuff in "common" being built first
-SUBDIRS = include common clients conf data docs drivers lib man	\
+SUBDIRS = include common clients conf data docs drivers lib	\
   tools scripts server
 
 EXTRA_DIST = MAINTAINERS UPGRADING
