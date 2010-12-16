@@ -516,7 +516,7 @@ AC_MSG_RESULT(${STATEPATH})
 
 dnl ---------------------------------------------------------------------
 dnl The 'alt pid path' is used by the drivers (via main.c) and upsd, since
-dnl ideally they do not run as root and won't be able to write to the usual
+dnl ideally they do not run as root and will not be able to write to the usual
 dnl /var/run path.  This defaults to the STATEPATH since they should be
 dnl able to write there.
 dnl
@@ -693,7 +693,7 @@ AC_ARG_WITH(logfacility,
 AC_DEFINE_UNQUOTED(LOG_FACILITY, ${LOGFACILITY}, [Desired syslog facility - see syslog(3)])
 AC_MSG_RESULT(${LOGFACILITY})
 
-dnl Autoconf versions before 2.62 don't allow consecutive quadrigraphs,
+dnl Autoconf versions before 2.62 do not allow consecutive quadrigraphs,
 dnl so the help string depends on the version used
 AC_MSG_CHECKING(which drivers to build)
 AC_ARG_WITH(drivers,
@@ -782,7 +782,7 @@ AC_ARG_WITH(hotplug-dir,
 	yes)
 		if test -z "${hotplugdir}"; then
 			AC_MSG_RESULT(no)
-			AC_MSG_ERROR(["hotplug directory requested but not found])
+			AC_MSG_ERROR(["hotplug directory requested but not found"])
 		fi
 		;;
 	auto)
@@ -810,7 +810,7 @@ AC_ARG_WITH(udev-dir,
 	yes)
 		if test -z "${udevdir}"; then
 			AC_MSG_RESULT(no)
-			AC_MSG_ERROR(["udev directory requested but not found])
+			AC_MSG_ERROR(["udev directory requested but not found"])
 		fi
 		;;
 	auto)
@@ -916,7 +916,7 @@ AC_OUTPUT([
  scripts/hotplug/Makefile
  scripts/hotplug/libhidups
  scripts/python/Makefile
- scripts/udev/Makefile                                                   
+ scripts/udev/Makefile
  scripts/udev/nut-usbups.rules
  scripts/Makefile
  server/Makefile
