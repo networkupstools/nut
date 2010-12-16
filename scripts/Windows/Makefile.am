@@ -9,6 +9,7 @@ FORCE:
 
 LDADD = ../../common/libcommon.la
 
-bin_PROGRAMS = nut
+bin_PROGRAMS = nut halt
 
 nut_SOURCES = wininit.c
+halt_SOURCES = halt.c
