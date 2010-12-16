@@ -18,7 +18,7 @@ link:http://knut.prynych.cz[KNutClient]
 
 KNutClient is a visual client for NUT.
 
-link:http://www.lestat.st/informatique/projets/nut-monitor-en[NUT-Monitor]
+link:http://www.lestat.st/en/informatique/projets/nut-monitor[NUT-Monitor]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 NUT-Monitor is a graphical application to monitor and manage UPSes connected to
