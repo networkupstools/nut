@@ -404,8 +404,15 @@ dnl doc targets manually
 NUT_CHECK_ASCIIDOC
 
 case "${nut_with_doc}" in
-	yes|all|auto)
+	yes|all)
 		nut_doc_build_list="html-single html-chunked pdf"
+		;;
+	auto)
+		if test "${nut_have_asciidoc}" = "yes"; then
+			nut_doc_build_list="html-single html-chunked pdf"
+		else
+			nut_doc_build_list=""
+		fi
 		;;
 	no)
 		nut_doc_build_list=""
