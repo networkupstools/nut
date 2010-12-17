@@ -20,13 +20,15 @@ SRC_CONF_PAGES = \
 	upsmon.conf.txt \
 	upssched.conf.txt
 
-man5_MANS = \
+MAN_CONF_PAGES = \
 	nut.conf.5 \
 	ups.conf.5 \
 	upsd.conf.5 \
 	upsd.users.5 \
 	upsmon.conf.5 \
 	upssched.conf.5
+
+man5_MANS = $(MAN_CONF_PAGES)
 
 HTML_CONF_MANS = \
 	nut.conf.txt \
@@ -47,7 +49,7 @@ SRC_CLIENT_PAGES = \
 	upsrw.txt \
 	upssched.txt
 
-man8_MANS = \
+MAN_CLIENT_PAGES = \
 	nutupsdrv.8 \
 	upsc.8 \
 	upscmd.8 \
@@ -57,6 +59,8 @@ man8_MANS = \
 	upsmon.8 \
 	upsrw.8 \
 	upssched.8
+
+man8_MANS = $(MAN_CLIENT_PAGES)
 
 HTML_CLIENT_MANS = \
 	nutupsdrv.html \
@@ -71,26 +75,32 @@ HTML_CLIENT_MANS = \
 
 
 # CGI (--with-cgi) related manpages
-SRC_CGI_PAGES = hosts.conf.txt \
+SRC_CGI_PAGES = \
+	hosts.conf.txt \
 	upsset.conf.txt \
 	upsstats.html.txt \
 	upsset.cgi.txt \
 	upsstats.cgi.txt \
 	upsimage.cgi.txt
 
-if WITH_CGI
- man5_MANS += \
+MAN5_CGI_PAGES = \
 	hosts.conf.5 \
 	upsset.conf.5 \
 	upsstats.html.5
 
- man8_MANS += \
+MAN8_CGI_PAGES = \
 	upsset.cgi.8 \
 	upsstats.cgi.8 \
 	upsimage.cgi.8
+
+if WITH_CGI
+ man5_MANS += $(MAN5_CGI_PAGES)
+
+ man8_MANS += $(MAN8_CGI_PAGES)
 endif
 
-HTML_CGI_MANS = hosts.conf.html \
+HTML_CGI_MANS = \
+	hosts.conf.html \
 	upsset.conf.html \
 	upsstats.html.html \
 	upsset.cgi.html \
@@ -117,8 +127,7 @@ SRC_DEV_PAGES = \
 	libupsclient-config.txt \
 	skel.txt
 
-if WITH_DEV
- man3_MANS = \
+MAN3_DEV_PAGES = \
 	upsclient.3 \
 	upscli_connect.3 \
 	upscli_disconnect.3 \
@@ -134,9 +143,14 @@ if WITH_DEV
 	upscli_strerror.3 \
 	upscli_upserror.3
 
-if !WITH_PKG_CONFIG
- man1_MANS = \
+MAN1_DEV_PAGES = \
 	libupsclient-config.1
+
+if WITH_DEV
+ man3_MANS = $(MAN3_DEV_PAGES)
+
+if !WITH_PKG_CONFIG
+ man1_MANS = $(MAN1_DEV_PAGES)
 endif
 # WITH_DEV
 endif
@@ -207,8 +221,7 @@ SRC_SERIAL_PAGES = \
 	upscode2.txt	\
 	victronups.txt
 
-if WITH_SERIAL
-  man8_MANS +=  \
+MAN_SERIAL_PAGES = \
 	apcsmart.8	\
 	bcmxcp.8 	\
 	belkin.8 	\
@@ -245,6 +258,9 @@ if WITH_SERIAL
 	tripplitesu.8	\
 	upscode2.8	\
 	victronups.8
+
+if WITH_SERIAL
+  man8_MANS +=  $(MAN_SERIAL_PAGES)
 endif
 
 HTML_SERIAL_MANS = \
@@ -287,9 +303,10 @@ HTML_SERIAL_MANS = \
 
 # (--with-snmp)
 SRC_SNMP_PAGES = snmp-ups.txt
+MAN_SNMP_PAGES = snmp-ups.8
 
 if WITH_SNMP
-  man8_MANS += snmp-ups.8
+  man8_MANS += $(MAN_SNMP_PAGES)
 endif
 
 HTML_SNMP_MANS = snmp-ups.html
@@ -302,13 +319,15 @@ SRC_USB_LIBUSB_PAGES = \
 	tripplite_usb.txt \
 	usbhid-ups.txt
 
-if WITH_USB
- man8_MANS += \
+MAN_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.8 \
 	megatec_usb.8 \
 	richcomm_usb.8 \
 	tripplite_usb.8 \
 	usbhid-ups.8
+
+if WITH_USB
+ man8_MANS += $(MAN_USB_LIBUSB_PAGES)
 endif
 
 HTML_USB_LIBUSB_MANS = \
@@ -320,18 +339,20 @@ HTML_USB_LIBUSB_MANS = \
 
 # (--with-neon)
 SRC_NETXML_PAGES = netxml-ups.txt
+MAN_NETXML_PAGES = netxml-ups.8
 
 if WITH_NEONXML
-   man8_MANS += netxml-ups.8
+   man8_MANS += $(MAN_NETXML_PAGES)
 endif
 
 HTML_NETXML_MANS = netxml-ups.html
 
 # (--with-powerman)
 SRC_POWERMAN_PAGES = powerman-pdu.txt
+MAN_POWERMAN_PAGES = powerman-pdu.8
 
 if WITH_LIBPOWERMAN
-   man8_MANS += powerman-pdu.8
+   man8_MANS += $(MAN_POWERMAN_PAGES)
 endif
 
 HTML_POWERMAN_MANS = powerman-pdu.html
@@ -339,6 +360,18 @@ HTML_POWERMAN_MANS = powerman-pdu.html
 # SOME_DRIVERS
 endif
 
+MAN_MANS = \
+	$(MAN_CONF_PAGES) \
+	$(MAN_CLIENT_PAGES) \
+	$(MAN5_CGI_PAGES) \
+	$(MAN8_CGI_PAGES) \
+	$(MAN1_DEV_PAGES) \
+	$(MAN3_DEV_PAGES) \
+	$(MAN_SERIAL_PAGES) \
+	$(MAN_SNMP_PAGES) \
+	$(MAN_USB_LIBUSB_PAGES) \
+	$(MAN_NETXML_PAGES) \
+	$(MAN_POWERMAN_PAGES)
 
 # distribute everything, even those not installed by default
 EXTRA_DIST = \
@@ -350,9 +383,8 @@ EXTRA_DIST = \
 	$(SRC_SNMP_PAGES) \
 	$(SRC_USB_LIBUSB_PAGES) \
 	$(SRC_NETXML_PAGES) \
-	$(SRC_POWERMAN_PAGES)
-
-dist_man_MANS = $(man1_MANS) $(man3_MANS) $(man5_MANS) $(man8_MANS)
+	$(SRC_POWERMAN_PAGES) \
+	$(MAN_MANS)
 
 HTML_MANS = \
 	$(HTML_CONF_MANS) \
@@ -408,18 +440,18 @@ A2X_MANPAGE_OPTS = -f manpage --attribute nutversion="@PACKAGE_VERSION@"
 else !HAVE_ASCIIDOC
 
 .txt.html:
-	@echo "Not (re)building manual pages since 'asciidoc' was not found."
+	@echo "Not (re)building $@ manual page, since 'asciidoc' was not found."
 
 .txt.1:
-	@echo "Not (re)building manual pages since 'asciidoc' was not found."
+	@echo "Using existing $@ manual page, since 'asciidoc' was not found."
 
 .txt.3:
-	@echo "Not (re)building manual pages since 'asciidoc' was not found."
+	@echo "Using existing $@ manual page, since 'asciidoc' was not found."
 
 .txt.5:
-	@echo "Not (re)building manual pages since 'asciidoc' was not found."
+	@echo "Using existing $@ manual page, since 'asciidoc' was not found."
 
 .txt.8:
-	@echo "Not (re)building manual pages since 'asciidoc' was not found."
+	@echo "Using existing $@ manual page, since 'asciidoc' was not found."
 
 endif !HAVE_ASCIIDOC
