@@ -1010,8 +1010,7 @@ ssize_t select_read(const int fd, void *buf, const size_t buflen, const time_t d
 	return read(fd, buf, buflen);
 }
 #else
-ssize_t select_read(const HANDLE fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec)
-/*int select_read(const HANDLE fd, void *buf, const size_t buflen, const long d_sec, const long d_usec)*/
+ssize_t select_read(const serial_handler_t fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec)
 {
 	/* This function is only called by serial drivers right now */
 	/* TODO: Assert below that resulting values fit in ssize_t range */
@@ -1020,16 +1019,16 @@ ssize_t select_read(const HANDLE fd, void *buf, const size_t buflen, const time_
 	DWORD timeout;
 	COMMTIMEOUTS TOut;
 
-	GetCommTimeouts(fd,&TOut);
+	GetCommTimeouts(fd->handle,&TOut);
 
 	timeout = (d_sec*1000) + ((d_usec+999)/1000);
 
 	TOut.ReadIntervalTimeout = MAXDWORD;
 	TOut.ReadTotalTimeoutMultiplier = 0;
 	TOut.ReadTotalTimeoutConstant = timeout;
-	SetCommTimeouts(fd,&TOut);
+	SetCommTimeouts(fd->handle,&TOut);
 
-	res = ReadFile(fd,buf,buflen,&bytes_read,NULL);
+	res = ReadFile(fd->handle,buf,buflen,&bytes_read,NULL);
 
 	if( res == 0 )  {
 		return -1;

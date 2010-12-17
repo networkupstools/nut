@@ -469,9 +469,7 @@ void upsdrv_makevartable(void)
 
 void upsdrv_initups(void)
 {
-#ifndef WIN32
 	struct termios	tio;
-#endif
 	const char	*val;
 
 	/*
@@ -480,7 +478,6 @@ void upsdrv_initups(void)
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B1200);
 
-#ifndef WIN32 /* TODO: correctly set the line in WIN32 */
 	if (tcgetattr(upsfd, &tio)) {
 		fatal_with_errno(EXIT_FAILURE, "tcgetattr");
 	}
@@ -503,7 +500,6 @@ void upsdrv_initups(void)
 	if (tcsetattr(upsfd, TCSANOW, &tio)) {
 		fatal_with_errno(EXIT_FAILURE, "tcsetattr");
 	}
-#endif
 
 	/*
 	 * Set DTR and clear RTS to provide power for the serial interface.

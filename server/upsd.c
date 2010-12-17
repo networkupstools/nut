@@ -47,6 +47,7 @@
 /* This override network system calls to adapt to Windows specificity */
 #define W32_NETWORK_CALL_OVERRIDE
 #include "wincompat.h"
+#undef W32_NETWORK_CALL_OVERRIDE
 #include <getopt.h>
 #endif
 

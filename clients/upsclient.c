@@ -46,7 +46,8 @@
 /* This override network system calls to adapt to Windows specificity */
 #define W32_NETWORK_CALL_OVERRIDE
 #include "wincompat.h"
-#endif 
+#undef W32_NETWORK_CALL_OVERRIDE
+#endif
 
 #include "common.h"
 #include "nut_stdint.h"
@@ -993,69 +994,6 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 		return -1;
 	}
 
-#ifndef	HAVE_IPV6
-	serv = gethostbyname(host);
-
-	if (!serv) {
-#ifndef WIN32
-		struct  in_addr	listenaddr;
-
-		if (!inet_aton(host, &listenaddr)) {
-			ups->upserror = UPSCLI_ERR_NOSUCHHOST;
-			return -1;
-		}
-
-		serv = gethostbyaddr(&listenaddr, sizeof(listenaddr), AF_INET);
-
-		if (!serv) {
-			ups->upserror = UPSCLI_ERR_NOSUCHHOST;
-			return -1;
-		}
-#else
-		unsigned long numeric_addr;
-		numeric_addr = inet_addr(host);
-		if ( numeric_addr == INADDR_NONE ) {
-			ups->upserror = UPSCLI_ERR_NOSUCHHOST;
-			return -1;
-		}
-		server.sin_addr.s_addr = numeric_addr;
-			
-#endif
-	}
-
-	if ((sock_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		ups->upserror = UPSCLI_ERR_SOCKFAILURE;
-		ups->syserrno = errno;
-		close(sock_fd);
-		return -1;
-	}
-
-	memset(&local, '\0', sizeof(local));
-	local.sin_family = AF_INET;
-	local.sin_port = htons(INADDR_ANY);
-
-	memset(&server, '\0', sizeof(server));
-	server.sin_family = AF_INET;
-	server.sin_port = htons(port);
-
-	memcpy(&server.sin_addr, serv->h_addr, serv->h_length);
-
-	if (bind(sock_fd, (struct sockaddr *) &local, sizeof(local)) < 0) {
-		ups->upserror = UPSCLI_ERR_BINDFAILURE;
-		ups->syserrno = errno;
-		close(sock_fd);
-		return -1;
-	}
-
-	if (connect(sock_fd, (struct sockaddr *) &server, sizeof(struct sockaddr_in)) < 0) {
-		ups->upserror = UPSCLI_ERR_CONNFAILURE;
-		ups->syserrno = errno;
-		close(sock_fd);
-		return -1;
-	}
-
-	ups->fd = sock_fd;
-#else
 	snprintf(sport, sizeof(sport), "%ju", (uintmax_t)port);
 
 	memset(&hints, 0, sizeof(hints));

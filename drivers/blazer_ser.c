@@ -140,8 +140,11 @@ void upsdrv_initups(void)
 
 =======
 #ifndef TESTING
+<<<<<<< HEAD
 #ifndef WIN32 /* TODO : Correctly set the port parameters for WIN32 */
 >>>>>>> caf5d58... More work on serial drivers.
+=======
+>>>>>>> 1c3900e... First implementation of termios functions
 	struct termios		tio;
 
 	/*
@@ -172,7 +175,6 @@ void upsdrv_initups(void)
 	if (tcsetattr(upsfd, TCSANOW, &tio)) {
 		fatal_with_errno(EXIT_FAILURE, "tcsetattr");
 	}
-#endif /* WIN32 */
 
 	val = getval("cablepower");
 	for (i = 0; val && cablepower[i].val; i++) {
