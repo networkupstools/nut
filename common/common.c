@@ -1022,7 +1022,7 @@ ssize_t select_read(const HANDLE fd, void *buf, const size_t buflen, const time_
 
 	GetCommTimeouts(fd,&TOut);
 
-	timeout = (d_sec*1000) + (d_usec/1000) + (((d_usec % 1000)!=0)?1:0);
+	timeout = (d_sec*1000) + ((d_usec+999)/1000);
 
 	TOut.ReadIntervalTimeout = MAXDWORD;
 	TOut.ReadTotalTimeoutMultiplier = 0;
