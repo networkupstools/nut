@@ -546,56 +546,46 @@ int shut_wait_ack (void)
  *********************************************************************/
 static int char_read (char *bytes, int size, int read_timeout)
 {
-#ifndef WIN32
 	struct timeval serial_timeout;
 	fd_set readfs;
-	int readen = 0;
+	int read = 0;
 	int rc = 0;
-
-	FD_ZERO (&readfs);
-	FD_SET (upsfd, &readfs);
+	int now;
 
 	serial_timeout.tv_usec = (read_timeout % 1000) * 1000;
 	serial_timeout.tv_sec = (read_timeout / 1000);
+
+#ifndef WIN32
+	FD_ZERO (&readfs);
+	FD_SET (upsfd, &readfs);
 
 	rc = select (upsfd + 1, &readfs, NULL, NULL, &serial_timeout);
 	if (0 == rc)
 		return -2;			/* timeout */
 
 	if (FD_ISSET (upsfd, &readfs)) {
-		int now = read (upsfd, bytes, size - readen);
+		now = read (upsfd, bytes, size - read);
 
 		if (now < 0) {
 			return -1;
 		}
 		else {
 			bytes += now;
-			readen += now;
+			read += now;
 		}
 	}
 	else {
 		return -1;
 	}
-	return readen;
 #else
-	DWORD ret;
-	BOOL res;
-	DWORD bytes_read;
-
-	COMMTIMEOUTS TOut;
-	GetCommTimeouts(upsfd,&TOut);
-	TOut.ReadIntervalTimeout = MAXDWORD;
-	TOut.ReadTotalTimeoutMultiplier = 0;
-	TOut.ReadTotalTimeoutConstant = read_timeout;
-	SetCommTimeouts(upsfd,&TOut);
-
-	res = ReadFile(upsfd,bytes,size,&bytes_read,NULL);
-/* FIXME don't know how to detect a timeout... */
-	if(res == FALSE ) {
+	now = select_read(upsfd,bytes,size - read, serial_timeout.tv_sec, serial_timeout.tv_usec);
+	if( now == -1 ) {
 		return -1;
 	}
+	bytes += now;
+	read += now;
 
-	return bytes_read;
+	return read;
 #endif
 }
 
@@ -654,26 +644,9 @@ int serial_read (int read_timeout, u_char *readbuf)
  **********************************************************************/
 int serial_send (u_char *buf, int len)
 {
-#ifndef WIN32
 	tcflush (upsfd, TCIFLUSH);
 	upsdebug_hex (3, "sent", (u_char *)buf, len);
 	return write (upsfd, buf, len);
-#else
-	DWORD ret;
-	BOOL res;
-	DWORD bytes_written;
-
-	FlushFileBuffers(upsfd);
-	upsdebug_hex (3, "sent", (u_char *)buf, len);
-
-	res = WriteFile(upsfd,buf,len,&bytes_written,NULL);
-
-	if(res == 0) {
-		return -1;
-	}
-
-	return bytes_written;
-#endif
 }
 
 /*

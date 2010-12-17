@@ -18,6 +18,7 @@
 */
 #ifdef WIN32
 #include "common.h"
+#include "wincompat.h"
 #include <winsock2.h>
 #include <windows.h>
 
@@ -51,9 +52,9 @@ int sktclose(int fh)
 }
 
 /* syslog sends a message through a pipe to the wininit service. Which is
-in charge of adding an event in the Windows event logger.
-The message is made of 4 bytes containing the priority followed by an array
-of chars containing the message to display (no terminal 0 required here) */
+   in charge of adding an event in the Windows event logger.
+   The message is made of 4 bytes containing the priority followed by an array
+   of chars containing the message to display (no terminal 0 required here) */
 void syslog(int priority, const char *fmt, ...)
 {
 	char buf1[LARGEBUF];
@@ -96,13 +97,820 @@ void syslog(int priority, const char *fmt, ...)
 	result = WriteFile (pipe,buf1,strlen(buf2)+sizeof(DWORD),&bytesWritten,NULL);
 
 	/* testing result is useless. If we have an error and try to report it,
-	this will probably lead to a call to this function and an infinite 
-	loop */
+	   this will probably lead to a call to this function and an infinite 
+	   loop */
 	/*
-	if (result == 0 || bytesWritten != strlen(buf2)+sizeof(DWORD) ) {
-	return;;
-	}
-	*/
+	   if (result == 0 || bytesWritten != strlen(buf2)+sizeof(DWORD) ) {
+	   return;;
+	   }
+	 */
 	CloseHandle(pipe);
+}
+
+/* Serial port wrapper inspired by : 
+http://serial-programming-in-win32-os.blogspot.com/2008/07/convert-linux-code-to-windows-serial.html */
+
+void overlapped_setup (serial_handler_t * sh)
+{
+	memset (&sh->io_status, 0, sizeof (sh->io_status));
+	sh->io_status.hEvent = CreateEvent (NULL, TRUE, FALSE, NULL);
+	sh->overlapped_armed = 0;
+}
+
+int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen)
+{
+	int tot;
+	DWORD n;
+	HANDLE w4;
+	DWORD minchars = sh->vmin_ ?: ulen;
+
+	w4 = sh->io_status.hEvent;
+
+	upslogx(LOG_DEBUG,"ulen %d, vmin_ %d, vtime_ %d, hEvent %p", ulen, sh->vmin_, sh->vtime_,sh->io_status.hEvent);
+	if (!sh->overlapped_armed)
+	{
+		SetCommMask (sh->handle, EV_RXCHAR);
+		ResetEvent (sh->io_status.hEvent);
+	}
+
+	for (n = 0, tot = 0; ulen; ulen -= n, ptr = (char *)ptr + n)
+	{
+		DWORD ev;
+		COMSTAT st;
+		DWORD inq = 1;
+
+		n = 0;
+
+		if (!sh->vtime_ && !sh->vmin_)
+			inq = ulen;
+		else if (sh->vtime_)
+		{
+			/* non-interruptible -- have to use kernel timeouts
+			   also note that this is not strictly correct.
+			   if vmin > ulen then things won't work right.
+			   sh->overlapped_armed = -1;
+			 */
+			inq = ulen;
+		}
+
+		if (!ClearCommError (sh->handle, &ev, &st))
+			goto err;
+		else if (ev)
+			upslogx(LOG_ERR,"error detected %x", (int)ev);
+		else if (st.cbInQue)
+			inq = st.cbInQue;
+		else if (!sh->overlapped_armed)
+		{
+			if ((size_t)tot >= minchars)
+				break;
+			else if (WaitCommEvent (sh->handle, &ev, &sh->io_status))
+			{
+				upslogx(LOG_DEBUG,"WaitCommEvent succeeded: ev %x", (int)ev);
+				if (!ev)
+					continue;
+			}
+			else if (GetLastError () != ERROR_IO_PENDING)
+				goto err;
+			else
+			{
+				sh->overlapped_armed = 1;
+				switch (WaitForSingleObject (w4,INFINITE))
+				{
+					case WAIT_OBJECT_0:
+						if (!GetOverlappedResult (sh->handle, &sh->io_status, &n, FALSE))
+							goto err;
+						upslogx(LOG_DEBUG,"n %d, ev %x", (int)n, (int)ev);
+						break;
+					default:
+						goto err;
+				}
+			}
+		}
+
+		sh->overlapped_armed = 0;
+		ResetEvent (sh->io_status.hEvent);
+		if (inq > ulen)
+			inq = ulen;
+		upslogx(LOG_DEBUG,"inq %d", (int)inq);
+		if (ReadFile (sh->handle, ptr, min (inq, ulen), &n, &sh->io_status))
+			/* Got something */;
+		else if (GetLastError () != ERROR_IO_PENDING)
+			goto err;
+		else if (!GetOverlappedResult (sh->handle, &sh->io_status, &n, TRUE))
+			goto err;
+
+		tot += n;
+		upslogx(LOG_DEBUG,"vtime_ %d, vmin_ %d, n %d, tot %d", sh->vtime_, sh->vmin_, (int)n, tot);
+		if (sh->vtime_ || !sh->vmin_ || !n)
+			break;
+		continue;
+
+err:
+		PurgeComm (sh->handle, PURGE_RXABORT);
+		upslogx(LOG_DEBUG,"err %d",(int)GetLastError());
+		if (GetLastError () == ERROR_OPERATION_ABORTED)
+			n = 0;
+		else
+		{
+			tot = -1;
+			break;
+		}
+	}
+
+	return tot;
+}
+
+/* Cover function to WriteFile to provide Posix interface and semantics
+   (as much as possible).  */
+int w32_serial_write (serial_handler_t * sh, const void *ptr, size_t len)
+{
+	DWORD bytes_written;
+	OVERLAPPED write_status;
+
+	memset (&write_status, 0, sizeof (write_status));
+	write_status.hEvent = CreateEvent (NULL, TRUE, FALSE, NULL);
+
+	for (;;)
+	{
+		if (WriteFile (sh->handle, ptr, len, &bytes_written, &write_status))
+			break;
+
+		switch (GetLastError ())
+		{
+			case ERROR_OPERATION_ABORTED:
+				continue;
+			case ERROR_IO_PENDING:
+				break;
+			default:
+				goto err;
+		}
+
+		if (!GetOverlappedResult (sh->handle, &write_status, &bytes_written, TRUE))
+			goto err;
+
+		break;
+	}
+
+	CloseHandle(write_status.hEvent);
+
+	return bytes_written;
+
+err:
+	CloseHandle(write_status.hEvent);
+	return -1;
+}
+
+serial_handler_t * w32_serial_open (const char *name, int flags)
+{
+	/* flags are currently ignored, it's here just to have the same
+	   interface as POSIX open */
+	COMMTIMEOUTS to;
+
+	upslogx(LOG_INFO,"serial_open (%s)",name);
+
+	serial_handler_t * sh;
+
+	sh = xmalloc(sizeof(serial_handler_t));
+	memset(sh,0,sizeof(serial_handler_t));
+
+	sh->handle = CreateFile(name,GENERIC_READ|GENERIC_WRITE,0,0,OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,0);
+
+	if(sh->handle == INVALID_HANDLE_VALUE) {
+		upslogx(LOG_ERR,"could not open %s",name);
+		return NULL;
+	}
+
+	SetCommMask (sh->handle, EV_RXCHAR);
+
+	overlapped_setup (sh);
+
+	memset (&to, 0, sizeof (to));
+	SetCommTimeouts (sh->handle, &to);
+
+	/* Reset serial port to known state of 9600-8-1-no flow control
+	   on open for better behavior under Win 95.
+	 */
+	DCB state;
+	GetCommState (sh->handle, &state);
+	upslogx (LOG_INFO,"setting initial state on %s",name);
+	state.BaudRate = CBR_9600;
+	state.ByteSize = 8;
+	state.StopBits = ONESTOPBIT;
+	state.Parity = NOPARITY; /* FIXME: correct default? */
+	state.fBinary = TRUE; /* binary xfer */
+	state.EofChar = 0; /* no end-of-data in binary mode */
+	state.fNull = FALSE; /* don't discard nulls in binary mode */
+	state.fParity = FALSE; /* ignore parity errors */
+	state.fErrorChar = FALSE;
+	state.fTXContinueOnXoff = TRUE; /* separate TX and RX flow control */
+	state.fOutX = FALSE; /* disable transmission flow control */
+	state.fInX = FALSE; /* disable reception flow control */
+	state.XonChar = 0x11;
+	state.XoffChar = 0x13;
+	state.fOutxDsrFlow = FALSE; /* disable DSR flow control */
+	state.fRtsControl = RTS_CONTROL_ENABLE; /* ignore lead control except
+						   DTR */
+	state.fOutxCtsFlow = FALSE; /* disable output flow control */
+	state.fDtrControl = DTR_CONTROL_ENABLE; /* assert DTR */
+	state.fDsrSensitivity = FALSE; /* don't assert DSR */
+	state.fAbortOnError = TRUE;
+	if (!SetCommState (sh->handle, &state))
+		upslogx (LOG_ERR,"couldn't set initial state for %s",name);
+
+	SetCommMask (sh->handle, EV_RXCHAR);
+	upslogx (LOG_INFO,"%p = serial_open (%s)",sh->handle,name);
+	return sh;
+}
+
+int w32_serial_close (serial_handler_t * sh)
+{
+	if( sh->io_status.hEvent != INVALID_HANDLE_VALUE ) {
+		CloseHandle (sh->io_status.hEvent);
+	}
+	if( sh->handle != INVALID_HANDLE_VALUE ) {
+		CloseHandle (sh->handle);
+	}
+	free(sh);
+
+	return 0;
+}
+
+/* tcsendbreak: POSIX 7.2.2.1 */
+/* Break for 250-500 milliseconds if duration == 0 */
+/* Otherwise, units for duration are undefined */
+int tcsendbreak (serial_handler_t * sh, int duration)
+{
+	unsigned int sleeptime = 300000;
+
+	if (duration > 0)
+		sleeptime *= duration;
+
+	if (SetCommBreak (sh->handle) == 0)
+		return -1;
+
+	/* FIXME: need to send zero bits during duration */
+	usleep (sleeptime);
+
+	if (ClearCommBreak (sh->handle) == 0)
+		return -1;
+
+	upslogx(LOG_DEBUG,"0 = tcsendbreak (%d)", duration);
+
+	return 0;
+}
+
+/* tcdrain: POSIX 7.2.2.1 */
+int tcdrain (serial_handler_t * sh)
+{
+	if (FlushFileBuffers (sh->handle) == 0)
+		return -1;
+
+	return 0;
+}
+
+/* tcflow: POSIX 7.2.2.1 */
+int tcflow (serial_handler_t * sh, int action)
+{
+	DWORD win32action = 0;
+	DCB dcb;
+	char xchar;
+
+	upslogx(LOG_DEBUG,"action %d", action);
+
+	switch (action)
+	{
+		case TCOOFF:
+			win32action = SETXOFF;
+			break;
+		case TCOON:
+			win32action = SETXON;
+			break;
+		case TCION:
+		case TCIOFF:
+			if (GetCommState (sh->handle, &dcb) == 0)
+				return -1;
+			if (action == TCION)
+				xchar = (dcb.XonChar ? dcb.XonChar : 0x11);
+			else
+				xchar = (dcb.XoffChar ? dcb.XoffChar : 0x13);
+			if (TransmitCommChar (sh->handle, xchar) == 0)
+				return -1;
+			return 0;
+			break;
+		default:
+			return -1;
+			break;
+	}
+
+	if (EscapeCommFunction (sh->handle, win32action) == 0)
+		return -1;
+
+	return 0;
+}
+
+/* tcflush: POSIX 7.2.2.1 */
+int tcflush (serial_handler_t * sh, int queue)
+{
+	int max;
+
+	if (queue == TCOFLUSH || queue == TCIOFLUSH)
+		PurgeComm (sh->handle, PURGE_TXABORT | PURGE_TXCLEAR);
+
+	if ((queue == TCIFLUSH) | (queue == TCIOFLUSH))
+		/* Input flushing by polling until nothing turns up
+		   (we stop after 1000 chars anyway) */
+		for (max = 1000; max > 0; max--)
+		{
+			DWORD ev;
+			COMSTAT st;
+			if (!PurgeComm (sh->handle, PURGE_RXABORT | PURGE_RXCLEAR))
+				break;
+			Sleep (100);
+			if (!ClearCommError (sh->handle, &ev, &st) || !st.cbInQue)
+				break;
+		}
+
+	return 0;
+}
+
+/* tcsetattr: POSIX 7.2.1.1 */
+int tcsetattr (serial_handler_t * sh, int action, const struct termios *t)
+{
+	/* Possible actions:
+TCSANOW:   immediately change attributes.
+TCSADRAIN: flush output, then change attributes.
+TCSAFLUSH: flush output and discard input, then change attributes.
+	 */
+
+	BOOL dropDTR = FALSE;
+	COMMTIMEOUTS to;
+	DCB ostate, state;
+	unsigned int ovtime = sh->vtime_, ovmin = sh->vmin_;
+
+	upslogx(LOG_DEBUG, "action %d", action);
+	if ((action == TCSADRAIN) || (action == TCSAFLUSH))
+	{
+		FlushFileBuffers (sh->handle);
+		upslogx(LOG_DEBUG,"flushed file buffers");
+	}
+	if (action == TCSAFLUSH)
+		PurgeComm (sh->handle, (PURGE_RXABORT | PURGE_RXCLEAR));
+
+	/* get default/last comm state */
+	if (!GetCommState (sh->handle, &ostate))
+		return -1;
+
+	state = ostate;
+
+	/* -------------- Set baud rate ------------------ */
+	/* FIXME: WIN32 also has 14400, 56000, 128000, and 256000.
+	   Unix also has 230400. */
+
+	switch (t->c_ospeed)
+	{
+		case B0: /* drop DTR */
+			dropDTR = TRUE;
+			state.BaudRate = 0;
+			break;
+		case B110:
+			state.BaudRate = CBR_110;
+			break;
+		case B300:
+			state.BaudRate = CBR_300;
+			break;
+		case B600:
+			state.BaudRate = CBR_600;
+			break;
+		case B1200:
+			state.BaudRate = CBR_1200;
+			break;
+		case B2400:
+			state.BaudRate = CBR_2400;
+			break;
+		case B4800:
+			state.BaudRate = CBR_4800;
+			break;
+		case B9600:
+			state.BaudRate = CBR_9600;
+			break;
+		case B19200:
+			state.BaudRate = CBR_19200;
+			break;
+		case B38400:
+			state.BaudRate = CBR_38400;
+			break;
+		case B57600:
+			state.BaudRate = CBR_57600;
+			break;
+		case B115200:
+			state.BaudRate = CBR_115200;
+			break;
+		default:
+			/* Unsupported baud rate! */
+			upslogx(LOG_ERR,"Invalid t->c_ospeed %d", t->c_ospeed);
+			return -1;
+	}
+
+	/* -------------- Set byte size ------------------ */
+
+	switch (t->c_cflag & CSIZE)
+	{
+		case CS5:
+			state.ByteSize = 5;
+			break;
+		case CS6:
+			state.ByteSize = 6;
+			break;
+		case CS7:
+			state.ByteSize = 7;
+			break;
+		case CS8:
+			state.ByteSize = 8;
+			break;
+		default:
+			/* Unsupported byte size! */
+			upslogx(LOG_ERR,"Invalid t->c_cflag byte size %d",
+					t->c_cflag & CSIZE);
+			return -1;
+	}
+
+	/* -------------- Set stop bits ------------------ */
+
+	if (t->c_cflag & CSTOPB)
+		state.StopBits = TWOSTOPBITS;
+	else
+		state.StopBits = ONESTOPBIT;
+
+	/* -------------- Set parity ------------------ */
+
+	if (t->c_cflag & PARENB)
+		state.Parity = (t->c_cflag & PARODD) ? ODDPARITY : EVENPARITY;
+	else
+		state.Parity = NOPARITY;
+
+	state.fBinary = TRUE;     /* Binary transfer */
+	state.EofChar = 0;     /* No end-of-data in binary mode */
+	state.fNull = FALSE;      /* Don't discard nulls in binary mode */
+
+	/* -------------- Parity errors ------------------ */
+	/* fParity combines the function of INPCK and NOT IGNPAR */
+
+	if ((t->c_iflag & INPCK) && !(t->c_iflag & IGNPAR))
+		state.fParity = TRUE;   /* detect parity errors */
+	else
+		state.fParity = FALSE;  /* ignore parity errors */
+
+	/* Only present in Win32, Unix has no equivalent */
+	state.fErrorChar = FALSE;
+	state.ErrorChar = 0;
+
+	/* -------------- Set software flow control ------------------ */
+	/* Set fTXContinueOnXoff to FALSE.  This prevents the triggering of a
+	   premature XON when the remote device interprets a received character
+	   as XON (same as IXANY on the remote side).  Otherwise, a TRUE
+	   value separates the TX and RX functions. */
+
+	state.fTXContinueOnXoff = TRUE;     /* separate TX and RX flow control */
+
+	/* Transmission flow control */
+	if (t->c_iflag & IXON)
+		state.fOutX = TRUE;   /* enable */
+	else
+		state.fOutX = FALSE;  /* disable */
+
+	/* Reception flow control */
+	if (t->c_iflag & IXOFF)
+		state.fInX = TRUE;    /* enable */
+	else
+		state.fInX = FALSE;   /* disable */
+
+	/* XoffLim and XonLim are left at default values */
+
+	state.XonChar = (t->c_cc[VSTART] ? t->c_cc[VSTART] : 0x11);
+	state.XoffChar = (t->c_cc[VSTOP] ? t->c_cc[VSTOP] : 0x13);
+
+	/* -------------- Set hardware flow control ------------------ */
+
+	/* Disable DSR flow control */
+	state.fOutxDsrFlow = FALSE;
+
+	/* Some old flavors of Unix automatically enabled hardware flow
+	   control when software flow control was not enabled.  Since newer
+	   Unices tend to require explicit setting of hardware flow-control,
+	   this is what we do. */
+
+	/* RTS/CTS flow control */
+	if (t->c_cflag & CRTSCTS)
+	{       /* enable */
+		state.fOutxCtsFlow = TRUE;
+		state.fRtsControl = RTS_CONTROL_HANDSHAKE;
+	}
+	else
+	{       /* disable */
+		state.fRtsControl = RTS_CONTROL_ENABLE;
+		state.fOutxCtsFlow = FALSE;
+	}
+
+	/*
+	   if (t->c_cflag & CRTSXOFF)
+	   state.fRtsControl = RTS_CONTROL_HANDSHAKE;
+	 */
+
+	/* -------------- DTR ------------------ */
+	/* Assert DTR on device open */
+
+	state.fDtrControl = DTR_CONTROL_ENABLE;
+
+	/* -------------- DSR ------------------ */
+	/* Assert DSR at the device? */
+
+	if (t->c_cflag & CLOCAL)
+		state.fDsrSensitivity = FALSE;  /* no */
+	else
+		state.fDsrSensitivity = TRUE;   /* yes */
+
+	/* -------------- Error handling ------------------ */
+	/* Since read/write operations terminate upon error, we
+	   will use ClearCommError() to resume. */
+
+	state.fAbortOnError = TRUE;
+
+	/* -------------- Set state and exit ------------------ */
+	if (memcmp (&ostate, &state, sizeof (state)) != 0)
+		SetCommState (sh->handle, &state);
+
+	sh->r_binary = ((t->c_iflag & IGNCR) ? 0 : 1);
+	sh->w_binary = ((t->c_oflag & ONLCR) ? 0 : 1);
+
+	if (dropDTR == TRUE)
+		EscapeCommFunction (sh->handle, CLRDTR);
+	else
+	{
+		/* FIXME: Sometimes when CLRDTR is set, setting
+		   state.fDtrControl = DTR_CONTROL_ENABLE will fail.  This
+		   is a problem since a program might want to change some
+		   parameters while DTR is still down. */
+
+		EscapeCommFunction (sh->handle, SETDTR);
+	}
+
+	/*
+	   The following documentation on was taken from "Linux Serial Programming
+	   HOWTO".  It explains how MIN (t->c_cc[VMIN] || vmin_) and TIME
+	   (t->c_cc[VTIME] || vtime_) is to be used.
+
+	   In non-canonical input processing mode, input is not assembled into
+	   lines and input processing (erase, kill, delete, etc.) does not
+	   occur. Two parameters control the behavior of this mode: c_cc[VTIME]
+	   sets the character timer, and c_cc[VMIN] sets the minimum number of
+	   characters to receive before satisfying the read.
+
+	   If MIN > 0 and TIME = 0, MIN sets the number of characters to receive
+	   before the read is satisfied. As TIME is zero, the timer is not used.
+
+	   If MIN = 0 and TIME > 0, TIME serves as a timeout value. The read will
+	   be satisfied if a single character is read, or TIME is exceeded (t =
+	   TIME *0.1 s). If TIME is exceeded, no character will be returned.
+
+	   If MIN > 0 and TIME > 0, TIME serves as an inter-character timer. The
+	   read will be satisfied if MIN characters are received, or the time
+	   between two characters exceeds TIME. The timer is restarted every time
+	   a character is received and only becomes active after the first
+	   character has been received.
+
+	   If MIN = 0 and TIME = 0, read will be satisfied immediately. The
+	   number of characters currently available, or the number of characters
+	   requested will be returned. According to Antonino (see contributions),
+	   you could issue a fcntl(fd, F_SETFL, FNDELAY); before reading to get
+	   the same result.
+	 */
+
+	if (t->c_lflag & ICANON)
+	{
+		sh->vmin_ = MAXDWORD;
+		sh->vtime_ = 0;
+	}
+	else
+	{
+		sh->vtime_ = t->c_cc[VTIME] * 100;
+		sh->vmin_ = t->c_cc[VMIN];
+	}
+
+	upslogx(LOG_DEBUG,"vtime %d, vmin %d\n", sh->vtime_, sh->vmin_);
+
+	if (ovmin == sh->vmin_ && ovtime == sh->vtime_)
+		return 0;
+
+	memset (&to, 0, sizeof (to));
+
+	if ((sh->vmin_ > 0) && (sh->vtime_ == 0))
+	{
+		/* Returns immediately with whatever is in buffer on a ReadFile();
+		   or blocks if nothing found.  We will keep calling ReadFile(); until
+		   vmin_ characters are read */
+		to.ReadIntervalTimeout = to.ReadTotalTimeoutMultiplier = MAXDWORD;
+		to.ReadTotalTimeoutConstant = MAXDWORD - 1;
+	}
+	else if ((sh->vmin_ == 0) && (sh->vtime_ > 0))
+	{
+		/* set timeoout constant appropriately and we will only try to
+		   read one character in ReadFile() */
+		to.ReadTotalTimeoutConstant = sh->vtime_;
+		to.ReadIntervalTimeout = to.ReadTotalTimeoutMultiplier = MAXDWORD;
+	}
+	else if ((sh->vmin_ > 0) && (sh->vtime_ > 0))
+	{
+		/* time applies to the interval time for this case */
+		to.ReadIntervalTimeout = sh->vtime_;
+	}
+	else if ((sh->vmin_ == 0) && (sh->vtime_ == 0))
+	{
+		/* returns immediately with whatever is in buffer as per
+		   Time-Outs docs in Win32 SDK API docs */
+		to.ReadIntervalTimeout = MAXDWORD;
+	}
+
+	upslogx(LOG_DEBUG,"ReadTotalTimeoutConstant %d, ReadIntervalTimeout %d, ReadTotalTimeoutMultiplier %d",
+			(int)to.ReadTotalTimeoutConstant, (int)to.ReadIntervalTimeout, (int)to.ReadTotalTimeoutMultiplier);
+	int res = SetCommTimeouts(sh->handle, &to);
+	if (!res)
+	{
+		upslogx(LOG_ERR,"SetCommTimeout failed");
+		return -1;
+	}
+
+	return 0;
+}
+
+/* tcgetattr: POSIX 7.2.1.1 */
+int tcgetattr (serial_handler_t * sh, struct termios *t)
+{
+	DCB state;
+
+	/* Get current Win32 comm state */
+	if (GetCommState (sh->handle, &state) == 0)
+		return -1;
+
+	/* for safety */
+	memset (t, 0, sizeof (*t));
+
+	/* -------------- Baud rate ------------------ */
+
+	switch (state.BaudRate)
+	{
+		case 0:
+			/* FIXME: need to drop DTR */
+			t->c_cflag = t->c_ospeed = t->c_ispeed = B0;
+			break;
+		case CBR_110:
+			t->c_cflag = t->c_ospeed = t->c_ispeed = B110;
+			break;
+		case CBR_300:
+			t->c_cflag = t->c_ospeed = t->c_ispeed = B300;
+			break;
+		case CBR_600:
+			t->c_cflag = t->c_ospeed = t->c_ispeed = B600;
+			break;
+		case CBR_1200:
+			t->c_cflag = t->c_ospeed = t->c_ispeed = B1200;
+			break;
+		case CBR_2400:
+			t->c_cflag = t->c_ospeed = t->c_ispeed = B2400;
+			break;
+		case CBR_4800:
+			t->c_cflag = t->c_ospeed = t->c_ispeed = B4800;
+			break;
+		case CBR_9600:
+			t->c_cflag = t->c_ospeed = t->c_ispeed = B9600;
+			break;
+		case CBR_19200:
+			t->c_cflag = t->c_ospeed = t->c_ispeed = B19200;
+			break;
+		case CBR_38400:
+			t->c_cflag = t->c_ospeed = t->c_ispeed = B38400;
+			break;
+		case CBR_57600:
+			t->c_cflag = t->c_ospeed = t->c_ispeed = B57600;
+			break;
+		case CBR_115200:
+			t->c_cflag = t->c_ospeed = t->c_ispeed = B115200;
+			break;
+		default:
+			/* Unsupported baud rate! */
+			upslogx(LOG_ERR,"Invalid baud rate %d", (int)state.BaudRate);
+			return -1;
+	}
+
+	/* -------------- Byte size ------------------ */
+
+	switch (state.ByteSize)
+	{
+		case 5:
+			t->c_cflag |= CS5;
+			break;
+		case 6:
+			t->c_cflag |= CS6;
+			break;
+		case 7:
+			t->c_cflag |= CS7;
+			break;
+		case 8:
+			t->c_cflag |= CS8;
+			break;
+		default:
+			/* Unsupported byte size! */
+			upslogx(LOG_ERR,"Invalid byte size %d", state.ByteSize);
+			return -1;
+	}
+
+	/* -------------- Stop bits ------------------ */
+
+	if (state.StopBits == TWOSTOPBITS)
+		t->c_cflag |= CSTOPB;
+
+	/* -------------- Parity ------------------ */
+
+	if (state.Parity == ODDPARITY)
+		t->c_cflag |= (PARENB | PARODD);
+	if (state.Parity == EVENPARITY)
+		t->c_cflag |= PARENB;
+
+	/* -------------- Parity errors ------------------ */
+
+	/* fParity combines the function of INPCK and NOT IGNPAR */
+	if (state.fParity == TRUE)
+		t->c_iflag |= INPCK;
+	else
+		t->c_iflag |= IGNPAR; /* not necessarily! */
+
+	/* -------------- Software flow control ------------------ */
+
+	/* transmission flow control */
+	if (state.fOutX)
+		t->c_iflag |= IXON;
+
+	/* reception flow control */
+	if (state.fInX)
+		t->c_iflag |= IXOFF;
+
+	t->c_cc[VSTART] = (state.XonChar ? state.XonChar : 0x11);
+	t->c_cc[VSTOP] = (state.XoffChar ? state.XoffChar : 0x13);
+
+	/* -------------- Hardware flow control ------------------ */
+	/* Some old flavors of Unix automatically enabled hardware flow
+	   control when software flow control was not enabled.  Since newer
+	   Unices tend to require explicit setting of hardware flow-control,
+	   this is what we do. */
+
+	/* Input flow-control */
+	if ((state.fRtsControl == RTS_CONTROL_HANDSHAKE) &&
+			(state.fOutxCtsFlow == TRUE))
+		t->c_cflag |= CRTSCTS;
+	/*
+	   if (state.fRtsControl == RTS_CONTROL_HANDSHAKE)
+	   t->c_cflag |= CRTSXOFF;
+	 */
+
+	/* -------------- CLOCAL --------------- */
+	/* DSR is only lead toggled only by CLOCAL.  Check it to see if
+	   CLOCAL was called. */
+	/* FIXME: If tcsetattr() hasn't been called previously, this may
+	   give a false CLOCAL. */
+
+	if (state.fDsrSensitivity == FALSE)
+		t->c_cflag |= CLOCAL;
+
+	/* FIXME: need to handle IGNCR */
+#if 0
+	if (!sh->r_binary ())
+		t->c_iflag |= IGNCR;
+#endif
+
+	if (!sh->w_binary)
+		t->c_oflag |= ONLCR;
+
+	upslogx (LOG_DEBUG,"vmin_ %d, vtime_ %d", sh->vmin_, sh->vtime_);
+	if (sh->vmin_ == MAXDWORD)
+	{
+		t->c_lflag |= ICANON;
+		t->c_cc[VTIME] = t->c_cc[VMIN] = 0;
+	}
+	else
+	{
+		t->c_cc[VTIME] = sh->vtime_ / 100;
+		t->c_cc[VMIN] = sh->vmin_;
+	}
+
+	return 0;
+}
+
+/* FIXME no difference between ispeed and ospeed */
+void cfsetispeed(struct termios * t, speed_t speed)
+{
+	t->c_ispeed = t->c_ospeed = speed;	
+}
+void cfsetospeed(struct termios * t, speed_t speed)
+{
+	t->c_ispeed = t->c_ospeed = speed;	
 }
 #endif

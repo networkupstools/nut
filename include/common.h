@@ -52,6 +52,18 @@
 /* *INDENT-OFF* */
 extern "C" {
 /* *INDENT-ON* */
+
+#ifdef WIN32
+typedef struct serial_handler_s {
+	HANDLE handle;
+	OVERLAPPED io_status;
+	int     overlapped_armed;
+
+	unsigned int vmin_;
+	unsigned int vtime_;
+	unsigned int r_binary;
+	unsigned int w_binary;
+} serial_handler_t;
 #endif
 
 extern const char *UPS_VERSION;
@@ -127,7 +139,7 @@ char* ltrim(char *in, const char sep);
 #ifndef WIN32
 int select_read(const int fd, void *buf, const size_t buflen, const long d_sec, const long d_usec);
 #else
-int select_read(const HANDLE fd, void *buf, const size_t buflen, const long d_sec, const long d_usec);
+int select_read(const serial_handler_t * fd, void *buf, const size_t buflen, const long d_sec, const long d_usec);
 #endif
 int select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec);
 
@@ -178,6 +190,7 @@ extern int optind;
 
 #define SVCNAME TEXT("Network UPS Tools")
 #define EVENTLOG_PIPE_NAME TEXT("\\\\.\\pipe\\nut")
-#endif
+
+#endif /* WIN32*/
 
 #endif /* NUT_COMMON_H */
