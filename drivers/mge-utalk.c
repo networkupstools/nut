@@ -883,12 +883,8 @@ static int mge_command(char *reply, int replylen, const char *fmt, ...)
 	/* Delay a bit to avoid overlap of a previous answer */
 	usleep(100000);
 
-#ifndef WIN32	
 	/* flush received, unread data */
 	tcflush(upsfd, TCIFLUSH);
-#else
-	ser_flush_io(upsfd);
-#endif
 	
 	/* send command */
 	for (p = command; *p; p++) {
@@ -897,17 +893,8 @@ static int mge_command(char *reply, int replylen, const char *fmt, ...)
 		else
 			upsdebugx(4, "mge_command: sending [%02X]", *p);
 
-#ifndef WIN32
 		if (write(upsfd, p, 1) != 1)
 			return -1;
-#else
-		DWORD bytes_written;
-		BOOL res;
-		res = WriteFile(upsfd, p, 1, &bytes_written,NULL);
-		if (res == 0 || bytes_written == 0) {
-			return -1;
-		}
-#endif
 
 		bytes_sent++;
 		usleep(MGE_CHAR_DELAY);
@@ -921,17 +908,8 @@ static int mge_command(char *reply, int replylen, const char *fmt, ...)
 			else
 				upsdebugx(4, "mge_command: sending [%02X]", *p);
 
-#ifndef WIN32
 			if (write(upsfd, p, 1) != 1)
 				return -1;
-#else
-			DWORD bytes_written;
-			BOOL res;
-			res = WriteFile(upsfd, p, 1, &bytes_written,NULL);
-			if (res == 0 || bytes_written == 0) {
-				return -1;
-			}
-#endif
 
 			bytes_sent++;
 			usleep(MGE_CHAR_DELAY);

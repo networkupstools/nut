@@ -39,6 +39,7 @@
 /* This override network system calls to adapt to Windows specificity */
 #define W32_NETWORK_CALL_OVERRIDE
 #include "wincompat.h"
+#undef W32_NETWORK_CALL_OVERRIDE
 #endif 
 
 #include "upsclient.h"
@@ -175,7 +176,7 @@ const char *upscli_strerror(UPSCONN_t *ups)
 /* Read up to buflen bytes from fd and return the number of bytes
    read. If no data is available within d_sec + d_usec, return 0.
    On error, a value < 0 is returned (errno indicates error). */
-static int select_read(const int fd, void *buf, const size_t buflen, const long d_sec, const long d_usec)
+static int _select_read(const int fd, void *buf, const size_t buflen, const long d_sec, const long d_usec)
 {
 	int		ret;
 	fd_set		fds;
@@ -213,7 +214,7 @@ static int net_read(UPSCONN_t *ups, char *buf, size_t buflen)
 	}
 #endif
 
-	ret = select_read(ups->fd, buf, buflen, 5, 0);
+	ret = _select_read(ups->fd, buf, buflen, 5, 0);
 
 	/* error reading data, server disconnected? */
 	if (ret < 0) {
@@ -232,7 +233,7 @@ static int net_read(UPSCONN_t *ups, char *buf, size_t buflen)
 /* Write up to buflen bytes to fd and return the number of bytes
    written. If no data is available within d_sec + d_usec, return 0.
    On error, a value < 0 is returned (errno indicates error). */
-static int select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec)
+static int _select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec)
 {
 	int		ret;
 	fd_set		fds;
@@ -270,7 +271,7 @@ static int net_write(UPSCONN_t *ups, const char *buf, size_t buflen)
 	}
 #endif
 
-	ret = select_write(ups->fd, buf, buflen, 0, 0);
+	ret = _select_write(ups->fd, buf, buflen, 0, 0);
 
 	/* error writing data, server disconnected? */
 	if (ret < 0) {
