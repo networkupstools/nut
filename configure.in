@@ -219,6 +219,78 @@ case ${target_os} in
       ;;
 esac
 
+
+dnl ----------------------------------------------------------------------
+dnl checks related to --with-serial
+
+dnl ${nut_with_serial}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_serial}" != "no"; then
+  nut_with_serial="yes"
+fi
+AM_CONDITIONAL(WITH_SERIAL, test "${nut_with_serial}" = "yes")
+NUT_REPORT_FEATURE([build serial drivers], [${nut_with_serial}])
+
+dnl ----------------------------------------------------------------------
+dnl checks related to --with-usb
+
+dnl ${nut_with_usb}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_usb}" = "yes" -a "${nut_have_libusb}" != "yes"; then
+   AC_MSG_ERROR(["USB drivers requested, but libusb not found."])
+fi
+
+if test "${nut_with_usb}" != "no"; then
+   nut_with_usb="${nut_have_libusb}"
+fi
+
+AM_CONDITIONAL(WITH_USB, test "${nut_with_usb}" = "yes")
+NUT_REPORT_FEATURE([build USB drivers], [${nut_with_usb}])
+
+dnl ----------------------------------------------------------------------
+dnl checks related to --with-snmp
+
+dnl ${nut_with_snmp}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_snmp}" = "yes" -a "${nut_have_libnetsnmp}" != "yes"; then
+   AC_MSG_ERROR(["Net-SNMP libraries not found, required for SNMP drivers"])
+fi
+
+if test "${nut_with_snmp}" != "no"; then
+   nut_with_snmp="${nut_have_libnetsnmp}"
+fi
+
+AM_CONDITIONAL(WITH_SNMP, test "${nut_with_snmp}" = "yes")
+NUT_REPORT_FEATURE([build SNMP drivers], [${nut_with_snmp}])
+
+dnl ----------------------------------------------------------------------
+dnl checks related to --with-neon
+
+dnl ${nut_with_neon}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_neon}" = "yes" -a "${nut_have_neon}" != "yes"; then
+   AC_MSG_ERROR(["neon libraries not found, required for neon based XML/HTTP driver"])
+fi
+
+if test "${nut_with_neon}" != "no"; then
+   nut_with_neon="${nut_have_neon}"
+fi
+
+AM_CONDITIONAL(WITH_NEONXML, test "${nut_with_neon}" = "yes")
+NUT_REPORT_FEATURE([build neon based XML driver], [${nut_with_neon}])
+
+dnl ----------------------------------------------------------------------
+
+dnl checks related to --with-powerman
+
+dnl ${nut_with_powerman}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_powerman}" = "yes" -a "${nut_have_libpowerman}" != "yes"; then
+   AC_MSG_ERROR(["Powerman client libraries not found, required for Powerman PDU client driver"])
+fi
+
+if test "${nut_with_powerman}" != "no"; then
+   nut_with_powerman="${nut_have_libpowerman}"
+fi
+
+AM_CONDITIONAL(WITH_LIBPOWERMAN, test "${nut_with_powerman}" = "yes")
+NUT_REPORT_FEATURE([build Powerman PDU client driver], [${nut_with_powerman}])
+
 dnl ----------------------------------------------------------------------
 dnl Check for --with-ssl
 
@@ -286,61 +358,6 @@ AM_CONDITIONAL(WITH_CGI, test "${nut_with_cgi}" = "yes")
 NUT_REPORT_FEATURE([build CGI programs], [${nut_with_cgi}])
 
 dnl ----------------------------------------------------------------------
-dnl checks related to --with-dev
-
-dnl ${nut_with_dev}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_dev}" != "no"; then
-  nut_with_dev="yes"
-else
-  AC_DISABLE_STATIC
-fi
-AM_CONDITIONAL(WITH_DEV, test "${nut_with_dev}" = "yes")
-NUT_REPORT_FEATURE([build and install the development files], [${nut_with_dev}])
-
-dnl We only init libtool there to allow AC_DISABLE_STATIC
-AC_PROG_LIBTOOL
-
-dnl ----------------------------------------------------------------------
-dnl checks related to --with-serial
-
-dnl ${nut_with_serial}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_serial}" != "no"; then
-  nut_with_serial="yes"
-fi
-AM_CONDITIONAL(WITH_SERIAL, test "${nut_with_serial}" = "yes")
-NUT_REPORT_FEATURE([build serial drivers], [${nut_with_serial}])
-
-dnl ----------------------------------------------------------------------
-dnl checks related to --with-snmp
-
-dnl ${nut_with_snmp}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_snmp}" = "yes" -a "${nut_have_libnetsnmp}" != "yes"; then
-   AC_MSG_ERROR(["Net-SNMP libraries not found, required for SNMP drivers"])
-fi
-
-if test "${nut_with_snmp}" != "no"; then
-   nut_with_snmp="${nut_have_libnetsnmp}"
-fi
-
-AM_CONDITIONAL(WITH_SNMP, test "${nut_with_snmp}" = "yes")
-NUT_REPORT_FEATURE([build SNMP drivers], [${nut_with_snmp}])
-
-dnl ----------------------------------------------------------------------
-dnl checks related to --with-usb
-
-dnl ${nut_with_usb}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_usb}" = "yes" -a "${nut_have_libusb}" != "yes"; then
-   AC_MSG_ERROR(["USB drivers requested, but libusb not found."])
-fi
-
-if test "${nut_with_usb}" != "no"; then
-   nut_with_usb="${nut_have_libusb}"
-fi
-
-AM_CONDITIONAL(WITH_USB, test "${nut_with_usb}" = "yes")
-NUT_REPORT_FEATURE([build USB drivers], [${nut_with_usb}])
-
-dnl ----------------------------------------------------------------------
 dnl checks related to --with-hal
 
 dnl ${nut_with_hal}: any value except "yes" or "no" is treated as "auto".
@@ -362,37 +379,6 @@ fi
 
 AM_CONDITIONAL(WITH_HAL, test "${nut_with_hal}" = "yes")
 NUT_REPORT_FEATURE([enable HAL support], [${nut_with_hal}])
-
-dnl ----------------------------------------------------------------------
-dnl checks related to --with-neon
-
-dnl ${nut_with_neon}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_neon}" = "yes" -a "${nut_have_neon}" != "yes"; then
-   AC_MSG_ERROR(["neon libraries not found, required for neon based XML/HTTP driver"])
-fi
-
-if test "${nut_with_neon}" != "no"; then
-   nut_with_neon="${nut_have_neon}"
-fi
-
-AM_CONDITIONAL(WITH_NEONXML, test "${nut_with_neon}" = "yes")
-NUT_REPORT_FEATURE([build neon based XML driver], [${nut_with_neon}])
-
-dnl ----------------------------------------------------------------------
-
-dnl checks related to --with-powerman
-
-dnl ${nut_with_powerman}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_powerman}" = "yes" -a "${nut_have_libpowerman}" != "yes"; then
-   AC_MSG_ERROR(["Powerman client libraries not found, required for Powerman PDU client driver"])
-fi
-
-if test "${nut_with_powerman}" != "no"; then
-   nut_with_powerman="${nut_have_libpowerman}"
-fi
-
-AM_CONDITIONAL(WITH_LIBPOWERMAN, test "${nut_with_powerman}" = "yes")
-NUT_REPORT_FEATURE([build Powerman PDU client driver], [${nut_with_powerman}])
 
 dnl ----------------------------------------------------------------------
 
@@ -494,6 +480,21 @@ NUT_REPORT_FEATURE([build and install documentation], [${nut_with_doc}])
 if test "${nut_with_doc}" = "yes"; then
 	NUT_REPORT([only build specific documentation format], [${DOC_BUILD_LIST}])
 fi
+
+dnl ----------------------------------------------------------------------
+dnl checks related to --with-dev
+
+dnl We only init libtool there to allow AC_DISABLE_STATIC
+AC_PROG_LIBTOOL
+
+dnl ${nut_with_dev}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_dev}" != "no"; then
+  nut_with_dev="yes"
+else
+  AC_DISABLE_STATIC
+fi
+AM_CONDITIONAL(WITH_DEV, test "${nut_with_dev}" = "yes")
+NUT_REPORT_FEATURE([build and install the development files], [${nut_with_dev}])
 
 dnl ----------------------------------------------------------------------
 
