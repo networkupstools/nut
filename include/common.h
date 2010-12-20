@@ -281,6 +281,8 @@ extern int optind;
 #define SVCNAME TEXT("Network UPS Tools")
 #define EVENTLOG_PIPE_NAME TEXT("\\\\.\\pipe\\nut")
 
+#define PATH_ETC	"\\..\\etc"
+#define PATH_VAR_RUN "\\..\\var\\run"
 #endif /* WIN32*/
 
 #endif /* NUT_COMMON_H_SEEN */

@@ -293,6 +293,26 @@ void chroot_start(const char *path)
 	upsdebugx(1, "chrooted into %s", path);
 }
 
+#ifdef WIN32
+/* In WIN32 all non binaries files (namely configuration and PID files)
+   are retrieved relative to the path of the binary itself.
+   So this function fill "dest" with the full path to "relative_path" 
+   depending on the .exe path */
+char * getfullpath(char * relative_path)
+{
+	char buf[SMALLBUF];
+	if ( GetModuleFileName(NULL,buf,SMALLBUF) == 0 ) {
+		return NULL;
+	}
+	else {
+		char * last_slash = strrchr(buf,'\\');
+		*last_slash = 0;
+		strncat(buf,relative_path,SMALLBUF);
+		return(xstrdup(buf));
+	}
+}
+#endif
+
 /* drop off a pidfile for this process */
 void writepid(const char *name)
 {
@@ -307,8 +327,21 @@ void writepid(const char *name)
 	if(name[1] == ':')
 #endif
 		snprintf(fn, sizeof(fn), "%s", name);
-	else
+	else {
+#ifndef WIN32
 		snprintf(fn, sizeof(fn), "%s/%s.pid", PIDPATH, name);
+#else
+		char * path;
+		path = getfullpath(PATH_VAR_RUN);
+		if( path == NULL ) {
+			snprintf(fn, sizeof(fn), "%s/%s.pid", PIDPATH, name);
+		}
+		else {
+			snprintf(fn, sizeof(fn), "%s/%s.pid", path, name);
+			free(path);
+		}
+#endif
+	}
 
 	mask = umask(022);
 	pidf = fopen(fn, "w");
@@ -498,7 +531,19 @@ int sendsignal(const char *progname, int sig)
 {
 	char	fn[SMALLBUF];
 
+#ifndef WIN32
 	snprintf(fn, sizeof(fn), "%s/%s.pid", PIDPATH, progname);
+#else
+	char * path;
+	path = getfullpath(PATH_VAR_RUN);
+	if( path == NULL ) {
+		snprintf(fn, sizeof(fn), "%s\\%s.pid", PIDPATH, progname);
+	}
+	else {
+		snprintf(fn, sizeof(fn), "%s\\%s.pid", path, progname);
+		free(path);
+	}
+#endif
 
 	return sendsignalfn(fn, sig);
 }
@@ -580,13 +625,23 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 		syslog(priority, "%s", buf);
 }
 
+
 /* Return the default path for the directory containing configuration files */
 const char * confpath(void)
 {
 	const char * path;
 
-	if ((path = getenv("NUT_CONFPATH")) == NULL)
+	if ((path = getenv("NUT_CONFPATH")) == NULL) {
+#ifndef WIN32
 		path = CONFPATH;
+#else
+		path = getfullpath(PATH_ETC);
+
+	if( path == NULL ) {
+		path = CONFPATH;
+	}
+#endif
+	}
 
 	return path;
 }
@@ -598,7 +653,13 @@ const char * dflt_statepath(void)
 
 	path = getenv("NUT_STATEPATH");
 	if ( (path == NULL) || (*path == '\0') )
-		path = STATEPATH;
+#ifdef WIN32
+		path = getfullpath(PATH_VAR_RUN);
+
+		if (path == NULL)
+#endif
+			path = STATEPATH;
+	}
 
 	return path;
 }
@@ -620,11 +681,15 @@ const char * altpidpath(void)
 	if ( (path != NULL) && (*path != '\0') )
 		return path;
 
-#ifdef ALTPIDPATH
+#ifndef WIN32
+# ifdef ALTPIDPATH
 	return ALTPIDPATH;
-#else
+# else
 /* We assume, here and elsewhere, that at least STATEPATH is always defined */
 	return STATEPATH;
+# endif
+#else /* WIN32 */
+	return dflt_statepath();
 #endif
 }
 
