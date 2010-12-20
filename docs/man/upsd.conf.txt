@@ -55,6 +55,13 @@ compiled in).
 This parameter will only be read at startup.  You'll need to restart
 (rather than reload) upsd to apply any changes made here.
 
+"MAXCONN 'connections'"::
+
+This defaults to maximum number allowed on your system.  Each UPS, each
+LISTEN address and each client count as one connection.  If the server
+runs out of connections, it will no longer accept new incoming client
+connections.  Only set this if you know exactly what you're doing.
+
 "CERTFILE 'certificate file'"::
 
 When compiled with SSL support, you can enter the certificate file here.
