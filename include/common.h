@@ -184,4 +184,8 @@ extern int optind;
 #define PATH_VAR_RUN "\\..\\var\\run"
 #endif /* WIN32*/
 
+#ifndef HAVE_USLEEP
+int __cdecl usleep(unsigned int useconds);
+#endif /* HAVE_USLEEP */
+
 #endif /* NUT_COMMON_H */
