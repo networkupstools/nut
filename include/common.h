@@ -55,7 +55,12 @@
 #else
 #include <windows.h>
 #endif
-#include <unistd.h>
+
+#include <unistd.h>	/* useconds_t */
+#ifndef HAVE_USECONDS_T
+# define useconds_t	unsigned long int
+#endif
+
 #include <assert.h>
 
 #include "timehead.h"
@@ -284,5 +289,13 @@ extern int optind;
 #define PATH_ETC	"\\..\\etc"
 #define PATH_VAR_RUN "\\..\\var\\run"
 #endif /* WIN32*/
+
+#ifndef HAVE_USLEEP
+/* int __cdecl usleep(unsigned int useconds); */
+/* Note: if we'd need to define an useconds_t for obscure systems,
+ * it should be an int capable of string 0..1000000 value range,
+ * so probably unsigned long int */
+int __cdecl usleep(useconds_t useconds);
+#endif /* HAVE_USLEEP */
 
 #endif /* NUT_COMMON_H_SEEN */

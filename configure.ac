@@ -305,13 +305,31 @@ AS_IF([test x"${ac_cv_func_strdup}" = xyes],
     [AC_MSG_WARN([Required C library routine strdup not found; try adding -D_POSIX_C_SOURCE=200112L])]
     )
 
+AC_CACHE_CHECK([for useconds_t],
+    [ac_cv_type_useconds_t],
+    [AC_COMPILE_IFELSE(
+        [AC_LANG_PROGRAM([[#include <unistd.h>
+        ]],
+            [[useconds_t us = 1000000;
+              unsigned long int l = 1000000;
+              if (l != (unsigned long int)us) return 1
+/* autoconf adds ";return 0;" */
+/* we hope the code above fails if type is not defined or range is not sufficient */
+]])],
+        [ac_cv_type_useconds_t=yes], [ac_cv_type_useconds_t=no]
+    )])
+AS_IF([test x"${ac_cv_type_useconds_t}" = xyes],
+    [AC_DEFINE([HAVE_USECONDS_T], 1, [defined if standard library has, and C standard allows, the useconds_t type])],
+    [AC_MSG_WARN([Required C library type useconds_t not found; try adding -D_POSIX_C_SOURCE=200112L])]
+    )
+
 AC_CACHE_CHECK([for usleep(us)],
     [ac_cv_func_usleep],
     [AC_COMPILE_IFELSE(
         [AC_LANG_PROGRAM([[#include <unistd.h>
         ]],
             [[useconds_t us = 1000;
-if (usleep(us) != 0) return 1 /* per doc, no erros are returned actually*/
+if (usleep(us) != 0) return 1 /* per doc, no errors are returned actually */
 /* autoconf adds ";return 0;" */
 ]])],
         [ac_cv_func_usleep=yes], [ac_cv_func_usleep=no]

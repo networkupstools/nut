@@ -26,6 +26,24 @@ extern int errno;
 
 const char * EventLogName = NULL;
 
+#ifndef HAVE_USLEEP
+/* Verbatim from
+http://cygwin.com/cgi-bin/cvsweb.cgi/~checkout~/src/winsup/mingw/mingwex/usleep.c?rev=1.2&cvsroot=src */
+/* int __cdecl usleep(unsigned int useconds) */
+int __cdecl usleep(useconds_t useconds)
+{
+	if(useconds == 0)
+		return 0;
+
+	if(useconds >= 1000000)
+		return EINVAL;
+
+	Sleep((useconds + 999) / 1000);
+
+	return 0;
+}
+#endif /* !HAVE_USLEEP */
+
 int sktconnect(int fh, struct sockaddr * name, int len)
 {
 	int ret = connect(fh,name,len);
