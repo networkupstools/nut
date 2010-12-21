@@ -31,12 +31,12 @@ MAN_CONF_PAGES = \
 man5_MANS = $(MAN_CONF_PAGES)
 
 HTML_CONF_MANS = \
-	nut.conf.txt \
-	ups.conf.txt \
-	upsd.conf.txt \
-	upsd.users.txt \
-	upsmon.conf.txt \
-	upssched.conf.txt
+	nut.conf.html \
+	ups.conf.html \
+	upsd.conf.html \
+	upsd.users.html \
+	upsmon.conf.html \
+	upssched.conf.html
 
 SRC_CLIENT_PAGES = \
 	nutupsdrv.txt \
@@ -374,6 +374,7 @@ MAN_MANS = \
 	$(MAN_POWERMAN_PAGES)
 
 # distribute everything, even those not installed by default
+# Note that 'dist' target requires AsciiDoc!
 EXTRA_DIST = \
 	$(SRC_CONF_PAGES) \
 	$(SRC_CLIENT_PAGES) \
@@ -404,8 +405,7 @@ man-index.html: index.html
 
 html-man: $(HTML_MANS) man-index.html
 
-clean-local:
-	rm -f $(CONVERTED_TO_ASCIIDOC) $(MANS) *.xml man-index.html
+CLEANFILES = *.xml *.html
 
 SUFFIXES = .txt .html .1 .3 .5 .8
 
