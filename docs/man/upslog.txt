@@ -1,0 +1,110 @@
+UPSLOG(8)
+=========
+
+NAME
+----
+
+upslog - UPS status logger
+
+SYNOPSIS
+--------
+
+*upslog -h*
+
+*upslog* ['OPTIONS']
+
+DESCRIPTION
+-----------
+
+*upslog* is a daemon that will poll a UPS at periodic intervals, fetch the
+variables that interest you, format them, and write them to a file.
+
+The default format string includes variables that are supported by many
+common UPS models.  See the description below to make your own.
+
+OPTIONS
+-------
+
+*-h*::
+Display the help message.
+
+*-f* 'format'::
+Monitor the UPS using this format string.  Be sure to enclose
+'format' in quotes so your shell doesn't split it up. Valid escapes
+within this string are:
+
+%%;; Insert a single "%"
+
+%TIME format%;; Insert the time with strftime formatting
+
+%ETIME%;; Insert the number of seconds, ala time_t.  This is now a 
+10 digit number.
+
+%HOST%;; insert the local hostname
+
+%UPSHOST%;; insert the host of the UPS being monitored
+
+%PID%;; insert the pid of upslog
+
+%VAR varname%;; insert the value of variable varname
+
+The default format string is:
+
+ %TIME @Y@m@d @H@M@S% %VAR battery.charge% %VAR input.voltage% 
+ %VAR ups.load% [%VAR ups.status%] %VAR ups.temperature% 
+ %VAR input.frequency%
+
+*-i* 'interval'::
+
+Wait this many seconds between polls.  This defaults to 30 seconds.
++
+If you require tighter timing, you should write your own logger using
+the linkman:upsclient[3] library.
+
+*-l* 'logfile'::
+
+Store the results in this file.
++
+You can use "-" for stdout, but upslog will remain in the foreground.
+
+*-s* 'ups'::
+Monitor this UPS.  The format for this option is  
++upsname[@hostname[:port]]+.  The default hostname is "localhost".
+
+*-u* 'username'::
+
+If started as root, upsmon will *setuid*(2) to the user id
+associated with 'username' for security.  
++
+If 'username' is not defined, it will use the value that was compiled into the
+program.  This defaults to "nobody", which is less than ideal.
+
+SERVICE DELAYS
+--------------
+
+The interval value is merely the number given to *sleep*(3) after running
+through the format string.  Therefore, a query will actually take slightly
+longer than the interval, depending on the speed of your system.
+
+LOG ROTATION
+------------
+
+*upslog* writes its PID to `upslog.pid`, and will reopen the log file if you
+send it a SIGHUP.  This allows it to keep running when the log is rotated
+by an external program.
+
+SEE ALSO
+--------
+
+Server:
+~~~~~~~
+linkman:upsd[8]
+
+Clients:
+~~~~~~~~
+linkman:upsc[8], linkman:upscmd[8],
+linkman:upsrw[8], linkman:upsmon[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

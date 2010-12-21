@@ -34,7 +34,7 @@
 #include "user.h"
 #include "ctype.h"
 #include "stype.h"
-#include "netssl.h"
+#include "ssl.h"
 #include "sstate.h"
 #include "desc.h"
 #include "neterr.h"
@@ -410,7 +410,8 @@ static void check_command(int cmdnum, ctype_t *client, int numarg,
 		}
 
 #ifdef HAVE_WRAP
-		request_init(&req, RQ_DAEMON, progname, RQ_CLIENT_ADDR, client->addr, RQ_USER, client->username, 0);
+		request_init(&req, RQ_DAEMON, progname, RQ_FILE, client->sock_fd, RQ_USER, client->username, 0);
+		fromhost(&req);
 
 		if (!hosts_access(&req)) {
 			/* tcp-wrappers says access should be denied */

@@ -1,0 +1,96 @@
+UPSC(8)
+=======
+
+
+NAME
+----
+upsc - example lightweight UPS client
+
+SYNOPSIS
+--------
+*upsc* -l | -L ['host']
+
+*upsc* 'ups' ['variable']
+
+DESCRIPTION
+-----------
+
+*upsc* is provided as a quick way to poll the status of a UPS server.  It can
+be used inside shell scripts and other programs that need UPS data but don't
+want to include the full interface.
+
+OPTIONS
+-------
+*-l* 'host'::
+
+  List all UPS names configured at 'host', one name per line. The hostname
+  defaults to "localhost".  You may optionally add a colon and a port number.
+
+*-L* 'host'::
+
+  As above, list all UPS names configured at 'host', including their description
+  provided by the remote upsd(8) from ups.conf(5). The hostname defaults to
+  "localhost".  You may optionally add a colon and a port number to override the
+  default port.
+
+'ups'::
+
+  Display the status of that UPS.  The format for this option is
+  'upsname[@hostname[:port]]'.  The default hostname is "localhost".
+
+'variable'::
+
+  Display the value of this variable only.  By default, upsc retrieves the list
+  of variables from the server and then displays the value for each.  This may
+  be useful in shell scripts to save an additional pipe into grep.
+
+EXAMPLES
+--------
+
+To list all variables on an UPS named "myups" on a host
+called "mybox", with upsd(8) running on port 1234:
+
+    $ upsc myups@mybox:1234
+    battery.charge: 100.0
+    battery.voltage: 13.9
+    battery.voltage.nominal: 13.6
+    . . .
+
+To list the UPSes configured on this system, along with their descriptions:
+
+    $ upsc -L
+    apc: Back-UPS 500
+    ppro2: Patriot Pro II
+
+To retrieve the status for all UPSes connected to mybox, using Bourne-shell
+syntax:
+
+    $ for UPS in `upsc -l mybox:1234`; do
+        upsc $UPS ups.status
+    done
+
+DIAGNOSTICS
+-----------
+
+upsc will either print a list of UPS names, a list of all supported variables
+and their values on the UPS, or an error message.  If you receive an error,
+make sure you have specified a valid UPS on the command line, that
+linkman:upsd[8] is really running on the other host and that no firewalls are
+blocking you.
+
+HISTORY
+-------
+
+Earlier versions of this program used the 'upsfetch' library and UDP sockets to
+talk to upsd.  This version of upsc uses the new 'upsclient' library, which
+only talks TCP.  This is why 'upsct' no longer exists.
+
+SEE ALSO
+--------
+
+linkman:upsd[8]
+
+INTERNET RESOURCES
+------------------
+
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

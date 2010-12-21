@@ -39,8 +39,8 @@
 #define POWER_CYCLE	"SDA"	/* shutdown, then restore */
 #define BUZZER "BUZ"
 #define BUZZER_ON "1"
-#define BUZZER_OFF0 "0" /* Switching the buzzer off can be either 0 or 2 */
-#define BUZZER_OFF2 "2" /* Seems to be used for F6c1400 */
+#define BUZZER_OFF0 "0"	/* Switching the buzzer off can be either 0 or 2 */
+#define BUZZER_OFF2 "2"	/* Seems to be used for F6c1400 */
 #define TEST "TST"
 #define TEST_10SEC "3"
 #define TEST_DEEP "4"
@@ -51,12 +51,10 @@
 
 #define LOW_BAT		20
 
+/* the maximum allowed number of missed replies */
+#define MAXTRIES	3
+
 /* dangerous instant commands must be reconfirmed within a 12 second window */
 #define CONFIRM_DANGEROUS_COMMANDS 1
 #define MINCMDTIME	3
 #define MAXCMDTIME	15
-
-static int init_communication (void);
-static int init_ups_data (void);
-static int get_belkin_reply (char*);
-static void set_serialDTR0RTS1(void);

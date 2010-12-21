@@ -1,0 +1,69 @@
+ifdef::website[]
+Documentation
+=============
+endif::website[]
+
+User Documentation
+------------------
+
+ifdef::website[]
+- FAQ - Frequently Asked Questions (link:docs/FAQ.html[online]) (link:docs/FAQ.pdf[PDF])
+- NUT User Manual (link:docs/user-manual.chunked/index.html[online]) (link:docs/user-manual.pdf[PDF])
+- Cables information (link:cables.html[online]) (link:cables.pdf[PDF])
+- link:docs/man/index.html#User_man[User manual pages]
+endif::website[]
+ifndef::website[]
+- link:../FAQ.html[FAQ - Frequently Asked Questions]
+- <<user-manual,NUT User Manual>>
+- <<Cables_information,Cables information>>
+- link:../man/index.html#User_man[User manual pages]
+endif::website[]
+
+Developer Documentation
+-----------------------
+
+ifdef::website[]
+- NUT Developer Guide (link:docs/developer-guide.chunked/index.html[online]) (link:docs/developer-guide.pdf[PDF])
+- NUT Packager Guide (link:docs/packager-guide.chunked/index.html[online]) (link:docs/packager-guide.pdf[PDF])
+- link:ups-protocols.html[UPS protocols library]
+- link:docs/man/index.html#Developer_man[Developer manual pages]
+- link:nut-qa.html[NUT Quality Assurance]
+endif::website[]
+ifndef::website[]
+- NUT Developer Guide (link:../developer-guide.chunked/index.html[online]) (link:../developer-guide.pdf[PDF])
+- NUT Packager Guide (link:../packager-guide.chunked/index.html[online]) (link:../packager-guide.pdf[PDF])
+- link:ups-protocols.html[UPS protocols library]
+- link:../man/index.html#Developer_man[Developer manual pages]
+- link:nut-qa.html[NUT Quality Assurance]
+endif::website[]
+
+Offsite Links
+-------------
+
+[[general_powerdev_info]]
+These are general information about UPS and PDU.
+
+- link:http://tldp.org/HOWTO/UPS-HOWTO/[UPS HOWTO] (The Linux Documentation Project)
+- link:http://en.wikipedia.org/wiki/Uninterruptible_power_supply[UPS on Wikipedia]
+- link:http://en.wikipedia.org/wiki/Power_distribution_unit[PDU on Wikipedia]
+- link:http://www.pcguide.com/ref/power/ext/ups/over.htm[UPS on The PC Guide]
+
+These are writeups by users of the software.
+
+- link:http://www.dimat.unina2.it/LCS/MonitoraggioUpsNutUbuntu10-eng.htm[Deploying NUT on an Ubuntu 10.04 cluster] '(Stefano Angelone)'   
+- link:http://blog.shadypixel.com/monitoring-a-ups-with-nut-on-debian-or-ubuntu-linux[Monitoring a UPS with nut on Debian or Ubuntu Linux] '(Avery Fay)'
+- link:http://linux.developpez.com/cours/upsusb/[Installation et gestion d'un UPS USB en réseau sous linux] '(Olivier Van Hoof, french)'
+- link:http://boxster.ghz.cc/projects/nut/wiki/NutOnMacOSX[Network UPS Tools (NUT) on Mac OS X (10.4.10)] '(Andy Poush)'
+- link:http://www.llondel.org/ups.shtml[Interfacing a Contact-Closure UPS to Mac OS X and Linux] '(David Hough)'
+- link:http://fedoranews.org/contributors/kazutoshi_morioka/nut/[How to use UPS with nut on RedHat / Fedora Core] '(Kazutoshi Morioka)'
+- link:http://people.freebsd.org/~thierry/nut_FreeBSD_HowTo.txt[FreeBSD installation procedure] '(Thierry Thomas, from FreeBSD)'
+- link:http://www.usebox.net/jjm/ups-obsd/[Gestionando un SAI desde OpenBSD con NUT] '(Juan J. Martinez, spanish)'
+- link:http://forums.gentoo.org/viewtopic-p-2663684.html[HOWTO: MGE Ellipse 300 on gentoo] '(nielchiano)'
+- link:http://deschis.blogspot.com/2006/07/cum-se-configureaz-un-ups-apollo-seria.html[Cum se configurează un UPS Apollo seria 1000F pe Linux] '(deschis, Romanian)'
+- link:http://buffalo.nas-central.org/wiki/Install_a_UPS_%28nut%29[Install a UPS (nut) on a Buffalo NAS] '(various authors)'
+
+News articles and Press releases
+--------------------------------
+
+- link:http://www.crn.com/white-box/199000818?pgno=1[Linux UPS Without Tears] '(A. Lizard)'
+- link:http://networking.earthweb.com/netsysm/article.php/10954_3295841_1[Graceful UPS shutdowns on Linux] '(Carla Schroder)'

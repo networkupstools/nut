@@ -1,0 +1,39 @@
+HOSTS.CONF(5)
+=============
+
+NAME
+----
+
+hosts.conf - Access control for Network UPS Tools CGI programs
+
+DESCRIPTION
+-----------
+
+The CGI programs (linkman:upsset.cgi[8], linkman:upsstats.cgi[8],
+linkman:upsimage.cgi[8]) use this file to determine if they are allowed to
+talk to a host.  This keeps random visitors from using your web server
+to annoy others by creating outgoing connections.
+
+DIRECTIVES
+----------
+
+*MONITOR* 'ups' 'description'::
+
+The 'ups' element is in the form `upsname[@hostname[:port]]`.
+To allow connections to a UPS called "snoopy" on a system called
+"doghouse" that runs upsd on port 7877, it would look like this:
+
+	MONITOR snoopy@doghouse:7877 "Joe Cool"
++
+The description must be one element, so if it has spaces, then it must
+be wrapped with quotes as shown above.  The default hostname is
+"localhost".
+
+SEE ALSO
+--------
+
+linkman:upsset.cgi[8], linkman:upsstats.cgi[8], linkman:upsimage.cgi[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

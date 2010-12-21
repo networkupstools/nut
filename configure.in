@@ -161,11 +161,9 @@ AC_ARG_WITH(all,
 	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
 		dnl this is what the user expects from --without-all
-		if test -z "${with_cgi}"; then with_cgi="${withval}"; fi
-		if test -z "${with_dev}"; then with_dev="${withval}"; fi
 		if test -z "${with_serial}"; then with_serial="${withval}"; fi
-		if test -z "${with_snmp}"; then with_snmp="${withval}"; fi
 		if test -z "${with_usb}"; then with_usb="${withval}"; fi
+		if test -z "${with_snmp}"; then with_snmp="${withval}"; fi
 		if test -z "${with_hal}"; then with_hal="${withval}"; fi
 		if test -z "${with_neon}"; then with_neon="${withval}"; fi
 		if test -z "${with_powerman}"; then with_powerman="${withval}"; fi
@@ -184,6 +182,16 @@ dnl they are listed near the top by "./configure --help"
 NUT_ARG_WITH([dev], [build and install the development files], [no])
 NUT_ARG_WITH([serial], [build and install serial drivers], [yes])
 NUT_ARG_WITH([usb], [build and install USB drivers], [auto])
+NUT_ARG_WITH([doc], [build and install documentation], [no])
+
+dnl ----------------------------------------------------------------------
+dnl Check for presence and compiler flags of various libraries
+
+dnl These checks are performed unconditionally, even if the corresponding
+dnl --with-* options are not given. This is because we cannot predict
+dnl what will be in the --with-drivers argument.
+
+NUT_CHECK_LIBNETSNMP
 NUT_CHECK_LIBUSB
 NUT_ARG_WITH([hal], [build and install HAL support], [no])
 NUT_CHECK_LIBHAL
@@ -211,48 +219,99 @@ case ${target_os} in
       ;;
 esac
 
+
 dnl ----------------------------------------------------------------------
-dnl Check for with-ssl, and --with-nss or --with-openssl
-dnl Only one can be enabled at a time, with a preference for OpenSSL
-dnl if both are available
+dnl checks related to --with-serial
 
-nut_ssl_lib=""
+dnl ${nut_with_serial}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_serial}" != "no"; then
+  nut_with_serial="yes"
+fi
+AM_CONDITIONAL(WITH_SERIAL, test "${nut_with_serial}" = "yes")
+NUT_REPORT_FEATURE([build serial drivers], [${nut_with_serial}])
 
-NUT_ARG_WITH([ssl], [enable SSL support (either NSS or OpenSSL)], [auto])
-NUT_ARG_WITH([nss], [enable SSL support using Mozilla NSS], [auto])
-NUT_ARG_WITH([openssl], [enable SSL support using OpenSSL], [auto])
+dnl ----------------------------------------------------------------------
+dnl checks related to --with-usb
 
-dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto". 
+dnl ${nut_with_usb}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_usb}" = "yes" -a "${nut_have_libusb}" != "yes"; then
+   AC_MSG_ERROR(["USB drivers requested, but libusb not found."])
+fi
+
+if test "${nut_with_usb}" != "no"; then
+   nut_with_usb="${nut_have_libusb}"
+fi
+
+AM_CONDITIONAL(WITH_USB, test "${nut_with_usb}" = "yes")
+NUT_REPORT_FEATURE([build USB drivers], [${nut_with_usb}])
+
+dnl ----------------------------------------------------------------------
+dnl checks related to --with-snmp
+
+dnl ${nut_with_snmp}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_snmp}" = "yes" -a "${nut_have_libnetsnmp}" != "yes"; then
+   AC_MSG_ERROR(["Net-SNMP libraries not found, required for SNMP drivers"])
+fi
+
+if test "${nut_with_snmp}" != "no"; then
+   nut_with_snmp="${nut_have_libnetsnmp}"
+fi
+
+AM_CONDITIONAL(WITH_SNMP, test "${nut_with_snmp}" = "yes")
+NUT_REPORT_FEATURE([build SNMP drivers], [${nut_with_snmp}])
+
+dnl ----------------------------------------------------------------------
+dnl checks related to --with-neon
+
+dnl ${nut_with_neon}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_neon}" = "yes" -a "${nut_have_neon}" != "yes"; then
+   AC_MSG_ERROR(["neon libraries not found, required for neon based XML/HTTP driver"])
+fi
+
+if test "${nut_with_neon}" != "no"; then
+   nut_with_neon="${nut_have_neon}"
+fi
+
+AM_CONDITIONAL(WITH_NEONXML, test "${nut_with_neon}" = "yes")
+NUT_REPORT_FEATURE([build neon based XML driver], [${nut_with_neon}])
+
+dnl ----------------------------------------------------------------------
+
+dnl checks related to --with-powerman
+
+dnl ${nut_with_powerman}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_powerman}" = "yes" -a "${nut_have_libpowerman}" != "yes"; then
+   AC_MSG_ERROR(["Powerman client libraries not found, required for Powerman PDU client driver"])
+fi
+
+if test "${nut_with_powerman}" != "no"; then
+   nut_with_powerman="${nut_have_libpowerman}"
+fi
+
+AM_CONDITIONAL(WITH_LIBPOWERMAN, test "${nut_with_powerman}" = "yes")
+NUT_REPORT_FEATURE([build Powerman PDU client driver], [${nut_with_powerman}])
+
+dnl ----------------------------------------------------------------------
+dnl Check for --with-ssl
+
+NUT_ARG_WITH([ssl], [enable SSL development code], [auto])
+
+dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_ssl}" != "no"; then
-   dnl check if either NSS or OpenSSL was explicitly requested
-   if test "${nut_with_nss}" = "yes"; then
-      NUT_CHECK_LIBNSS
-      if test "${nut_have_libnss}" != "yes"; then
-         AC_MSG_ERROR(["Mozilla NSS not found, required for SSL support"])
-      fi
-   elif test "${nut_with_openssl}" = "yes"; then
-      NUT_CHECK_LIBOPENSSL
-      if test "${nut_have_openssl}" != "yes"; then
-         AC_MSG_ERROR(["OpenSSL not found, required for SSL support"])
-      fi
-   else
-      dnl Prefer OpenSSL over NSS otherwise
-      NUT_CHECK_LIBOPENSSL
-      if test "${nut_have_openssl}" != "yes"; then
-         NUT_CHECK_LIBNSS
-         if test "${nut_have_libnss}" != "yes"; then
-            nut_with_ssl="no"
-            AC_MSG_ERROR(["Mozilla NSS and OpenSSL neither found, required for SSL support"])
-         fi
-      fi
-   fi
+   dnl check for libssl compiler flags
+   NUT_CHECK_LIBSSL
+fi
+
+if test "${nut_with_ssl}" = "yes" -a "${nut_have_libssl}" != "yes"; then
+   AC_MSG_ERROR(["OpenSSL not found, required for SSL support"])
+fi
+
+if test "${nut_with_ssl}" != "no"; then
+   nut_with_ssl="${nut_have_libssl}"
 fi
 
 AM_CONDITIONAL(WITH_SSL, test "${nut_with_ssl}" = "yes")
-AM_CONDITIONAL(WITH_NSS, test "${nut_with_nss}" = "yes")
-AM_CONDITIONAL(WITH_OPENSSL, test "${nut_with_openssl}" = "yes")
-
-NUT_REPORT_FEATURE([enable SSL support], [${nut_with_ssl} ${nut_ssl_lib}])
+NUT_REPORT_FEATURE([enable SSL development code], [${nut_with_ssl}])
 
 dnl ----------------------------------------------------------------------
 dnl Check for --with-wrap
@@ -299,61 +358,6 @@ AM_CONDITIONAL(WITH_CGI, test "${nut_with_cgi}" = "yes")
 NUT_REPORT_FEATURE([build CGI programs], [${nut_with_cgi}])
 
 dnl ----------------------------------------------------------------------
-dnl checks related to --with-dev
-
-dnl ${nut_with_dev}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_dev}" != "no"; then
-  nut_with_dev="yes"
-else
-  AC_DISABLE_STATIC
-fi
-AM_CONDITIONAL(WITH_DEV, test "${nut_with_dev}" = "yes")
-NUT_REPORT_FEATURE([build and install the development files], [${nut_with_dev}])
-
-dnl We only init libtool there to allow AC_DISABLE_STATIC
-AC_PROG_LIBTOOL
-
-dnl ----------------------------------------------------------------------
-dnl checks related to --with-serial
-
-dnl ${nut_with_serial}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_serial}" != "no"; then
-  nut_with_serial="yes"
-fi
-AM_CONDITIONAL(WITH_SERIAL, test "${nut_with_serial}" = "yes")
-NUT_REPORT_FEATURE([build serial drivers], [${nut_with_serial}])
-
-dnl ----------------------------------------------------------------------
-dnl checks related to --with-snmp
-
-dnl ${nut_with_snmp}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_snmp}" = "yes" -a "${nut_have_libnetsnmp}" != "yes"; then
-   AC_MSG_ERROR(["Net-SNMP libraries not found, required for SNMP drivers"])
-fi
-
-if test "${nut_with_snmp}" != "no"; then
-   nut_with_snmp="${nut_have_libnetsnmp}"
-fi
-
-AM_CONDITIONAL(WITH_SNMP, test "${nut_with_snmp}" = "yes")
-NUT_REPORT_FEATURE([build SNMP drivers], [${nut_with_snmp}])
-
-dnl ----------------------------------------------------------------------
-dnl checks related to --with-usb
-
-dnl ${nut_with_usb}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_usb}" = "yes" -a "${nut_have_libusb}" != "yes"; then
-   AC_MSG_ERROR(["USB drivers requested, but libusb not found."])
-fi
-
-if test "${nut_with_usb}" != "no"; then
-   nut_with_usb="${nut_have_libusb}"
-fi
-
-AM_CONDITIONAL(WITH_USB, test "${nut_with_usb}" = "yes")
-NUT_REPORT_FEATURE([build USB drivers], [${nut_with_usb}])
-
-dnl ----------------------------------------------------------------------
 dnl checks related to --with-hal
 
 dnl ${nut_with_hal}: any value except "yes" or "no" is treated as "auto".
@@ -377,37 +381,123 @@ AM_CONDITIONAL(WITH_HAL, test "${nut_with_hal}" = "yes")
 NUT_REPORT_FEATURE([enable HAL support], [${nut_with_hal}])
 
 dnl ----------------------------------------------------------------------
-dnl checks related to --with-neon
 
-dnl ${nut_with_neon}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_neon}" = "yes" -a "${nut_have_neon}" != "yes"; then
-   AC_MSG_ERROR(["neon libraries not found, required for neon based XML/HTTP driver"])
+dnl checks related to --with-doc
+
+dnl Always check for AsciiDoc prerequisites, since even if --with-doc
+dnl is set to 'no', we may still want to build the website, or some
+dnl doc targets manually
+NUT_CHECK_ASCIIDOC
+
+case "${nut_with_doc}" in
+	yes|all|auto)
+		nut_doc_build_list="html-single html-chunked pdf"
+		;;
+	no)
+		nut_doc_build_list=""
+		;;
+	*)
+		nut_doc_build_list="`echo ${nut_with_doc} | sed 's/,/ /g'`"
+		;;
+esac
+
+for nut_doc_build_target in ${nut_doc_build_list}; do
+	case "${nut_doc_build_target}" in
+	html-single)
+		AC_MSG_CHECKING([if asciidoc version can build ${nut_doc_build_target}])
+		AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [8.6.3], [
+			AC_MSG_RESULT(yes)
+			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target}"
+		], [
+			AC_MSG_RESULT(no)
+			DOC_NOBUILD_LIST="${DOC_NOBUILD_LIST} ${nut_doc_build_target}"
+		])
+		;;
+
+	html-chunked)
+		AC_MSG_CHECKING([if a2x version can build ${nut_doc_build_target}])
+		AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [8.6.3], [
+			AC_MSG_RESULT(yes)
+			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target}"
+		], [
+			AC_MSG_RESULT(no)
+			DOC_NOBUILD_LIST="${DOC_NOBUILD_LIST} ${nut_doc_build_target}"
+		])
+		;;
+
+	pdf)
+		AC_MSG_CHECKING([if dblatex version can build ${nut_doc_build_target}])
+		AX_COMPARE_VERSION([${DBLATEX_VERSION}], [ge], [0.2.5], [
+			AC_MSG_RESULT(yes)
+			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target}"
+		], [
+			AC_MSG_RESULT(no)
+			DOC_NOBUILD_LIST="${DOC_NOBUILD_LIST} ${nut_doc_build_target}"
+		])
+		;;
+	esac
+done
+
+case "${nut_with_doc}" in
+auto)
+	if test -n "${DOC_BUILD_LIST}"; then
+		nut_with_doc="yes"
+	else
+		nut_with_doc="no"
+	fi
+	;;	
+no)
+	;;
+*)
+	if test -z "${DOC_NOBUILD_LIST}"; then
+		nut_with_doc="yes"
+	else
+		AC_MSG_ERROR(["Asciidoc is required for documentation support and missing"])
+	fi
+	;;
+esac
+
+AC_MSG_CHECKING([if asciidoc version can build website (minimum required 8.6.3)])
+AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [8.6.3], [
+	AC_MSG_RESULT(yes)
+	nut_have_asciidoc="yes"
+], [
+	AC_MSG_RESULT(no)
+	nut_have_asciidoc="no"
+])
+
+AC_MSG_CHECKING([if a2x version can build website (minimum required 8.6.3)])
+AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [8.6.3], [
+	AC_MSG_RESULT(yes)
+], [
+	AC_MSG_RESULT(no)
+	nut_have_asciidoc="no"
+])
+
+AM_CONDITIONAL([HAVE_ASCIIDOC], [test "${nut_have_asciidoc}" = "yes"])
+NUT_REPORT_FEATURE([build and install documentation], [${nut_with_doc}])
+
+if test "${nut_with_doc}" = "yes"; then
+	NUT_REPORT([only build specific documentation format], [${DOC_BUILD_LIST}])
 fi
 
-if test "${nut_with_neon}" != "no"; then
-   nut_with_neon="${nut_have_neon}"
-fi
+dnl ----------------------------------------------------------------------
+dnl checks related to --with-dev
 
-AM_CONDITIONAL(WITH_NEONXML, test "${nut_with_neon}" = "yes")
-NUT_REPORT_FEATURE([build neon based XML driver], [${nut_with_neon}])
+dnl We only init libtool there to allow AC_DISABLE_STATIC
+AC_PROG_LIBTOOL
+
+dnl ${nut_with_dev}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_dev}" != "no"; then
+  nut_with_dev="yes"
+else
+  AC_DISABLE_STATIC
+fi
+AM_CONDITIONAL(WITH_DEV, test "${nut_with_dev}" = "yes")
+NUT_REPORT_FEATURE([build and install the development files], [${nut_with_dev}])
 
 dnl ----------------------------------------------------------------------
 
-dnl checks related to --with-powerman
-
-dnl ${nut_with_powerman}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_powerman}" = "yes" -a "${nut_have_libpowerman}" != "yes"; then
-   AC_MSG_ERROR(["Powerman client libraries not found, required for Powerman PDU client driver"])
-fi
-
-if test "${nut_with_powerman}" != "no"; then
-   nut_with_powerman="${nut_have_libpowerman}"
-fi
-
-AM_CONDITIONAL(WITH_LIBPOWERMAN, test "${nut_with_powerman}" = "yes")
-NUT_REPORT_FEATURE([build Powerman PDU client driver], [${nut_with_powerman}])
-
-dnl ----------------------------------------------------------------------
 
 AC_MSG_CHECKING(state path)
 AC_ARG_WITH(statepath,
@@ -427,7 +517,7 @@ AC_MSG_RESULT(${STATEPATH})
 
 dnl ---------------------------------------------------------------------
 dnl The 'alt pid path' is used by the drivers (via main.c) and upsd, since
-dnl ideally they do not run as root and won't be able to write to the usual
+dnl ideally they do not run as root and will not be able to write to the usual
 dnl /var/run path.  This defaults to the STATEPATH since they should be
 dnl able to write there.
 dnl
@@ -604,7 +694,7 @@ AC_ARG_WITH(logfacility,
 AC_DEFINE_UNQUOTED(LOG_FACILITY, ${LOGFACILITY}, [Desired syslog facility - see syslog(3)])
 AC_MSG_RESULT(${LOGFACILITY})
 
-dnl Autoconf versions before 2.62 don't allow consecutive quadrigraphs,
+dnl Autoconf versions before 2.62 do not allow consecutive quadrigraphs,
 dnl so the help string depends on the version used
 AC_MSG_CHECKING(which drivers to build)
 AC_ARG_WITH(drivers,
@@ -639,7 +729,7 @@ if test "${DRIVER_BUILD_LIST}" = "all"; then
 else
 	DRIVER_MAN_LIST=""
 	for i in ${DRIVER_BUILD_LIST}; do
-		if test -f ${srcdir}/man/$i.8; then
+		if test -f ${srcdir}/docs/man/$i.8; then
 			DRIVER_MAN_LIST="${DRIVER_MAN_LIST} $i.8"
 		fi
 	done
@@ -693,7 +783,7 @@ AC_ARG_WITH(hotplug-dir,
 	yes)
 		if test -z "${hotplugdir}"; then
 			AC_MSG_RESULT(no)
-			AC_MSG_ERROR(["hotplug directory requested but not found])
+			AC_MSG_ERROR(["hotplug directory requested but not found"])
 		fi
 		;;
 	auto)
@@ -721,7 +811,7 @@ AC_ARG_WITH(udev-dir,
 	yes)
 		if test -z "${udevdir}"; then
 			AC_MSG_RESULT(no)
-			AC_MSG_ERROR(["udev directory requested but not found])
+			AC_MSG_ERROR(["udev directory requested but not found"])
 		fi
 		;;
 	auto)
@@ -740,6 +830,10 @@ else
 	AC_MSG_RESULT(no)
 fi
 AM_CONDITIONAL(WITH_UDEV, test -n "${udevdir}")
+
+AC_PATH_PROGS([ASCIIDOC], [asciidoc], [none])
+AM_CONDITIONAL([MANUALUPDATE], [test "x$ASCIIDOC" != "xnone"])
+AC_PATH_PROGS([A2X], [a2x], [none])
 
 dnl expand ${sysconfdir} and write it out
 conftemp="${sysconfdir}"
@@ -773,6 +867,7 @@ AC_SUBST(LIBNEON_CFLAGS)
 AC_SUBST(LIBNEON_LDFLAGS)
 AC_SUBST(LIBPOWERMAN_CFLAGS)
 AC_SUBST(LIBPOWERMAN_LDFLAGS)
+AC_SUBST(DOC_BUILD_LIST)
 AC_SUBST(LIBWRAP_CFLAGS)
 AC_SUBST(LIBWRAP_LDFLAGS)
 AC_SUBST(HAL_USER)
@@ -808,19 +903,21 @@ AC_OUTPUT([
  data/html/header.html
  data/html/Makefile
  data/Makefile
+ data/driver.list
  docs/Makefile
+ docs/man/Makefile
+ docs/website/Makefile
  drivers/Makefile
  include/Makefile
  lib/libupsclient-config
  lib/libupsclient.pc
  lib/Makefile
- man/Makefile
  scripts/hal/Makefile
  scripts/hal/ups-nut-device.fdi
  scripts/hotplug/Makefile
  scripts/hotplug/libhidups
  scripts/python/Makefile
- scripts/udev/Makefile                                                   
+ scripts/udev/Makefile
  scripts/udev/nut-usbups.rules
  scripts/Makefile
  server/Makefile

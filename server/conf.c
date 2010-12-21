@@ -22,7 +22,7 @@
 #include "upsconf.h"
 #include "sstate.h"
 #include "user.h"
-#include "netssl.h"
+#include "ssl.h"
 
 	ups_t	*upstable = NULL;
 	int	num_ups = 0;

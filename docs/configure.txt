@@ -1,344 +1,344 @@
-Desc: Configure options
-File: configure.txt
-Date: 27 February 2010
-Auth: Russell Kroll <rkroll@exploits.org>
-Auth: Peter Selinger <selinger@sourceforge.net>
-Auth: Arnaud Quette <aquette.dev@gmail.com>
-Auth: Arjen de Korte <adkorte-guest@alioth.debian.org>
+ifdef::website[]
+Configure options
+=================
+endif::website[]
 
-There are a few options that can be given to configure to tweak compiles.
+There are a few options that can be given to configure to tweak compiles. 
 See also "./configure --help" for a current and complete listing.
 
-Contents:
-=========
+Driver selection
+----------------
 
-1. Driver selection
-2. Optional features
-3. Other configuration options
-4. Installation directories
-5. Directories used by NUT at run-time
-6. Things the compiler might need to find
-7. HAL addons (deprecated)
+	--with-serial
 
-1. Driver selection:
-====================
+Build and install the serial drivers (default: yes)
 
- --with-serial
+	--with-usb
 
-   Build and install the serial drivers (default: yes)
+Build and install the USB drivers (default: auto-detect)
+Note that you need to install the libusb development package or files.
 
- --with-usb
+	--with-snmp
 
-   Build and install the USB drivers (default: auto-detect)
-   Note that you need to install the libusb development package or files.
+Build and install the SNMP drivers (default: auto-detect)
+Note that you need to install libsnmp development package or files.
 
- --with-snmp
+	--with-neon
 
-   Build and install the SNMP drivers (default: auto-detect)
-   Note that you need to install libsnmp development package or files.
+Build and install the XML drivers (default: auto-detect)
+Note that you need to install neon development package or files.
 
- --with-neon
+	--with-drivers=<driver>,<driver>,...
 
-   Build and install the XML drivers (default: auto-detect)
-   Note that you need to install neon development package or files.
+Specify exactly which driver or drivers to build and install (this
+works for serial, usb, and snmp drivers, and overrides the
+preceding three options).
 
- --with-drivers=<driver>,<driver>,...
+As of the time of this writing (2010), there are 46 UPS drivers
+available.  Most users will only need one, a few will need two or
+three, and very few people will need all of them.
 
-   Specify exactly which driver or drivers to build and install (this
-   works for serial, usb, and snmp drivers, and overrides the
-   preceding three options).
-
-   As of the time of this writing (2006), there are 47 UPS drivers
-   available.  Most users will only need one, a few will need two or
-   three, and very few people will need all of them.
-
-   To save time during the compile and disk space later on, you can
-   use this option to just build and install a subset of the drivers.
-   To select apcsmart and usbhid-ups, you'd do this:
+To save time during the compile and disk space later on, you can
+use this option to just build and install a subset of the drivers.
+To select mge-shut and usbhid-ups, you'd do this:
 
 	--with-drivers=apcsmart,usbhid-ups
 
-   If you need to build more drivers later on, you will need to rerun
-   configure with a different list. To make it build all of the
-   drivers from scratch again, run 'make clean' before starting.
+If you need to build more drivers later on, you will need to rerun
+configure with a different list. To make it build all of the
+drivers from scratch again, run 'make clean' before starting.
 
-2. Optional features:
-=====================
+	--with-doc=<output-format(s)>  (default: no)
 
- --with-cgi (default: no)
+Build and install NUT documentation file(s).
+The possible values are "html-single" for single page HTML, "html-chunked"
+for multi pages HTML, "pdf" for a PDF file or "auto" to build all the
+previous documentation formats.
 
-   Build and install the optional CGI programs, HTML files, and sample
-   CGI configuration files. This is not enabled by default, as they
-   are only useful on web servers. See data/html/README for additional
-   information on how to set up CGI programs.
+This feature requires AsciiDoc (http://www.methods.co.nz/asciidoc).
 
- --with-lib (default: no)
 
-   Build and install the upsclient library and header files.
+Optional features
+-----------------
 
- --with-all (no default)
+	--with-cgi (default: no)
 
-   Build and install all of the above (the serial, USB, and SNMP
-   drivers, the CGI programs and HTML files, and the upsclient
-   library).
+Build and install the optional CGI programs, HTML files, and sample
+CGI configuration files. This is not enabled by default, as they
+are only useful on web servers. See data/html/README for additional
+information on how to set up CGI programs.
 
-  --with-ssl (default: auto-detect)
-  --with-nss (default: auto-detect)
-  --with-openssl (default: auto-detect)
+	--with-lib (default: no)
 
-   Enable SSL support, using either Mozilla NSS or OpenSSL.
-   If both are present, and nothing was specified, OpenSSL support will
-   be prefered. Read docs/security.txt for instructions on SSL support.
+Build and install the upsclient library and header files. 
 
-  --with-wrap (default: auto-detect)
+	--with-all (no default)
 
-   Enable libwrap (tcp-wrappers) support. Refer to upsd man page for
-   more information.
+Build and install all of the above (the serial, USB, and SNMP
+drivers, the CGI programs and HTML files, and the upsclient
+library).
 
-  --with-hal (default: no)
+	--with-ssl (default: auto-detect)
 
-    Build and install Hardware Abstraction Layer support.
-    If you own a USB unit, only protect your local system and run the
-    Gnome or KDE desktop, this will enable a full Plug & Play usage.
-    See docs/nut-hal.txt for additional information on how to set up
-    and use HAL support.
-    
-  --with-powerman  (default: auto-detect)
+Enable SSL development code. Read the section "Configuring SSL" in
+docs/security.txt for instructions on SSL support.
 
-    Build and install Powerman PDU client driver.
-    This allows to interact with the Powerman daemon, and the numerous
-    Power Distribution Units (PDU) supported by the project.
+	--with-wrap (default: auto-detect)
 
-3. Other configuration options:
-===============================
+Enable libwrap (tcp-wrappers) support. Refer to upsd man page for
+more information.
 
- --with-port=PORT
+	--with-ipv6 (default: auto-detect)
 
-   Change the TCP port used by the network code.  Default is 3493.
+Enable IPv6 support.
 
-   Ancient versions of upsd used port 3305.  NUT 2.0 and up use a
-   substantially different network protocol and are not able to
-   communicate with anything older than the 1.4 series.
+	--with-hal (default: no)
 
-   If you have to monitor a mixed environment, use the last 1.4 version,
-   as it contains compatibility code for both the old "REQ" and the new
-   "GET" versions of the protocol.
+Build and install Hardware Abstraction Layer support.
+If you own a USB unit, only protect your local system and run the
+Gnome or KDE desktop, this will enable a full Plug & Play usage.
+See docs/nut-hal.txt for additional information on how to set up
+and use HAL support.
+ 
+	--with-powerman  (default: auto-detect)
 
- --with-user=<username>
- --with-group=<groupname>
+Build and install Powerman PDU client driver.
+This allows to interact with the Powerman daemon, and the numerous
+Power Distribution Units (PDU) supported by the project.
 
-   Programs started as root will setuid() to <username> for somewhat
-   safer operation.  You can override this with -u <user> in several
-   programs, including upsdrvctl (and all drivers by extension), upsd,
-   and upsmon.  The "user" directive in ups.conf overrides this at run
-   time for the drivers.
 
-   Note: upsmon does not totally drop root because it may need to
-   initiate a shutdown.  There is always at least a stub process
-   remaining with root powers.  The network code runs in another
-   (separate) process as the new user.
+Other configuration options
+---------------------------
 
-   The <groupname> is used for the permissions of some files,
-   particularly the hotplugging rules for USB. The idea is that the
-   device files for any UPS devices should be readable and writable by
-   members of that group.
+	--with-port=PORT
 
-   The default value for both the username and groupname is "nobody".
-   This was done since it's slightly better than staying around as
-   root.  Running things as nobody is not a good idea, since it's a
-   hack for NFS access.  You should create at least one separate user
-   for this software.
+Change the TCP port used by the network code.  Default is 3493.
 
-   If you use one of the --with-user and --with-group options, then
-   you have to use the other one too.
+Ancient versions of upsd used port 3305.  NUT 2.0 and up use a
+substantially different network protocol and are not able to  
+communicate with anything older than the 1.4 series.
 
-   See the INSTALL document and the FAQ for more on this topic.
+If you have to monitor a mixed environment, use the last 1.4 version,
+as it contains compatibility code for both the old "REQ" and the new
+"GET" versions of the protocol.
 
- --with-logfacility=FACILITY
+	--with-user=<username>
+	--with-group=<groupname>
 
-   Change the facility used when writing to the log file.  Read the man
-   page for openlog to get some idea of what's available on your system.
-   Default is LOG_DAEMON.
+Programs started as root will setuid() to <username> for somewhat
+safer operation.  You can override this with -u <user> in several
+programs, including upsdrvctl (and all drivers by extension), upsd,
+and upsmon.  The "user" directive in ups.conf overrides this at run
+time for the drivers.
 
-4. Installation directories:
-============================
+NOTE: upsmon does not totally drop root because it may need to
+initiate a shutdown.  There is always at least a stub process
+remaining with root powers.  The network code runs in another
+(separate) process as the new user.
 
- --prefix=PATH
+The <groupname> is used for the permissions of some files,
+particularly the hotplugging rules for USB. The idea is that the
+device files for any UPS devices should be readable and writable by
+members of that group.
 
-   This is a fairly standard option with GNU autoconf, and it sets the
-   base path for most of the other install directories.  The default
-   is /usr/local/ups, which puts everything but the state sockets in one
-   easy place.
+The default value for both the username and groupname is "nobody".
+This was done since it's slightly better than staying around as
+root.  Running things as nobody is not a good idea, since it's a
+hack for NFS access.  You should create at least one separate user
+for this software.
 
-   If you like having things to be at more of a "system" level, setting
-   the prefix to /usr/local or even /usr might be better.
+If you use one of the --with-user and --with-group options, then
+you have to use the other one too. 
 
- --exec_prefix=PATH
+See the INSTALL document and the FAQ for more on this topic.
 
-   This sets the base path for architecture dependent files. By
-   default, it is the same as <prefix>.
+	--with-logfacility=FACILITY
 
- --sysconfdir=PATH
+Change the facility used when writing to the log file.  Read the man
+page for openlog to get some idea of what's available on your system.
+Default is LOG_DAEMON.
 
-   Changes the location where NUT's configuration files are stored.
-   By default this path is <prefix>/etc.  Setting this to /etc or
-   /etc/ups might be useful.
 
-   The NUT_CONFPATH environment variable overrides this at run time.
+Installation directories
+------------------------
 
- --bindir=PATH
- --sbindir=PATH
+	--prefix=PATH
 
-   Where executable files will be installed. Files that are normally
-   executed by root (upsd, upsmon, upssched) go to sbindir, all others
-   to bindir. The defaults are <exec_prefix>/bin and <exec_prefix>/sbin.
+This is a fairly standard option with GNU autoconf, and it sets the
+base path for most of the other install directories.  The default
+is /usr/local/ups, which puts everything but the state sockets in one
+easy place.
 
- --datadir=PATH
+If you like having things to be at more of a "system" level, setting
+the prefix to /usr/local or even /usr might be better.
 
-   Change the data directory, i.e., where architecture independent
-   read-only data is installed.  By default this is <prefix>/share,
-   i.e., /usr/local/ups/share.  At the moment, this directory only
-   holds two files - the optional cmdvartab and driver.list.
+	--exec_prefix=PATH
 
- --mandir=PATH
+This sets the base path for architecture dependent files. By
+default, it is the same as <prefix>.
 
-   Sets the base directories for the man pages.  The default is
-   <prefix>/man, i.e., /usr/local/ups/man.
+	--sysconfdir=PATH
 
- --includedir=PATH
+Changes the location where NUT's configuration files are stored.
+By default this path is <prefix>/etc.  Setting this to /etc or
+/etc/ups might be useful.
 
-   Sets the path for include files to be installed when --with-lib is
-   selected. For example, upsclient.h is installed here. The default
-   is <prefix>/include.
+The NUT_CONFPATH environment variable overrides this at run time.
 
- --libdir=PATH
+	--bindir=PATH
+	--sbindir=PATH
 
-   Sets the installation path for libraries.  This is just the
-   upsclient library for now.  The default is <exec_prefix>/lib.
+Where executable files will be installed. Files that are normally
+executed by root (upsd, upsmon, upssched) go to sbindir, all others
+to bindir. The defaults are <exec_prefix>/bin and <exec_prefix>/sbin.
 
- --with-drvpath=PATH
+	--datadir=PATH
 
-   The UPS drivers will be installed to this path.  By default they
-   install to "<exec_prefix>/bin", i.e., /usr/local/ups/bin.
+Change the data directory, i.e., where architecture independent
+read-only data is installed.  By default this is <prefix>/share,
+i.e., /usr/local/ups/share.  At the moment, this directory only
+holds two files - the optional cmdvartab and driver.list.
 
-   The "driverpath" global directive in the ups.conf file overrides this
-   at run time.
+	--mandir=PATH
 
- --with-cgipath=PATH
+Sets the base directories for the man pages.  The default is
+<prefix>/man, i.e., /usr/local/ups/man.
 
-   The CGI programs will be installed to this path.  By default, they
-   install to "<exec_prefix>/cgi-bin", which is usually /usr/local/ups/cgi-bin.
+	--includedir=PATH
 
-   If you set the prefix to something like /usr, you should set the
-   cgipath to something else, because /usr/cgi-bin is pretty ugly and
-   non-standard.
+Sets the path for include files to be installed when --with-lib is
+selected. For example, upsclient.h is installed here. The default
+is <prefix>/include.
 
-   The CGI programs are not built or installed by default.  Use
-   "./configure --with-cgi" to request that they are built and
-   installed.
+	--libdir=PATH
 
- --with-htmlpath=PATH
+Sets the installation path for libraries.  This is just the
+upsclient library for now.  The default is <exec_prefix>/lib.
 
-   HTML files will be installed to this path. By default, this is
-   "<prefix>/html". Note that HTML files are only installed if
-   --with-cgi is selected.
+	--with-drvpath=PATH
 
- --with-pkgconfig-dir=PATH
+The UPS drivers will be installed to this path.  By default they
+install to "<exec_prefix>/bin", i.e., /usr/local/ups/bin.
 
-   Where to install pkg-config *.pc files. This option only has an
-   effect if --with-lib is selected, and causes a pkg-config file to
-   be installed in the named location. The default is
-   <exec_prefix>/pkgconfig.
+The "driverpath" global directive in the ups.conf file overrides this
+at run time.
 
-   Use --without-pkgconfig-dir to disable this feature altogether.
+	--with-cgipath=PATH
 
- --with-hotplug-dir=PATH
+The CGI programs will be installed to this path.  By default, they
+install to "<exec_prefix>/cgi-bin", which is usually /usr/local/ups/cgi-bin.
 
-   Where to install Linux 2.4 hotplugging rules. The default is
-   /etc/hotplug, if that directory exists, and not to install it
-   otherwise. Note that this installation directory is not a
-   subdirectory of <prefix> by default. When installing NUT as a
-   non-root user, you may have to override this option.
+If you set the prefix to something like /usr, you should set the 
+cgipath to something else, because /usr/cgi-bin is pretty ugly and 
+non-standard.
 
-   Use --without-hotplug-dir to disable this feature altogether.
+The CGI programs are not built or installed by default.  Use
+"./configure --with-cgi" to request that they are built and
+installed.
 
- --with-udev-dir=PATH
+	--with-htmlpath=PATH
 
-   Where to install Linux 2.6 hotplugging rules, for kernels that have
-   the "udev" mechanism. The default is /etc/udev, if that directory
-   exists, and not to install it otherwise. Note that this
-   installation directory is not a subdirectory of <prefix> by
-   default. When installing NUT as a non-root user, you may have to
-   override this option.
+HTML files will be installed to this path. By default, this is
+"<prefix>/html". Note that HTML files are only installed if
+--with-cgi is selected.
 
-   Use --without-udev-dir to disable this feature altogether.
+	--with-pkgconfig-dir=PATH
 
-5. Directories used by NUT at run-time:
-=======================================
+Where to install pkg-config *.pc files. This option only has an
+effect if --with-lib is selected, and causes a pkg-config file to
+be installed in the named location. The default is
+<exec_prefix>/pkgconfig.
 
- --with-pidpath=PATH
+Use --without-pkgconfig-dir to disable this feature altogether. 
 
-   Changes the directory where pid files are stored.  By default this is
-   /var/run.  Certain programs like upsmon will leave files here.
+	--with-hotplug-dir=PATH
 
- --with-altpidpath=PATH
+Where to install Linux 2.4 hotplugging rules. The default is
+/etc/hotplug, if that directory exists, and not to install it
+otherwise. Note that this installation directory is not a
+subdirectory of <prefix> by default. When installing NUT as a
+non-root user, you may have to override this option.
 
-   Programs that normally don't have root powers, like the drivers and
-   upsd, write their pid files here.  By default this is whatever the
-   statepath is, as those programs should be able to write there.
+Use --without-hotplug-dir to disable this feature altogether. 
 
- --with-statepath=PATH
+	--with-udev-dir=PATH
 
-   Change the default location of the state sockets created by the
-   drivers.
+Where to install Linux 2.6 hotplugging rules, for kernels that have
+the "udev" mechanism. The default is /etc/udev, if that directory
+exists, and not to install it otherwise. Note that this
+installation directory is not a subdirectory of <prefix> by
+default. When installing NUT as a non-root user, you may have to
+override this option.
 
-   The NUT_STATEPATH environment variable overrides this at run time.
+Use --without-udev-dir to disable this feature altogether. 
 
-   Default is /var/state/ups.
 
-6. Things the compiler might need to find:
-==========================================
+Directories used by NUT at run-time
+-----------------------------------
 
- --with-gd-includes="-I/foo/bar"
+	--with-pidpath=PATH
 
-   If you installed gd in some place where your C preprocessor can't
-   find the header files, use this switch to add additional -I flags.
+Changes the directory where pid files are stored.  By default this is
+/var/run.  Certain programs like upsmon will leave files here.
 
- --with-gd-libs="-L/foo/bar -labcd -lxyz"
+	--with-altpidpath=PATH
 
-   If your copy of gd isn't linking properly, use this to give the
-   proper -L and -l flags to make it work.  See LIBS= in gd's Makefile.
+Programs that normally don't have root powers, like the drivers and
+upsd, write their pid files here.  By default this is whatever the
+statepath is, as those programs should be able to write there.
 
-   Note: the --with-gd switches are not necessary if you have gd 2.0.8
-   or higher installed properly.  The gdlib-config script will be
-   detected and used by default in that situation.
+	--with-statepath=PATH
 
- --with-ssl-includes, --with-usb-includes, --with-snmp-includes,
- --with-neon-includes, --with-powerman-includes="-I/foo/bar"
+Change the default location of the state sockets created by the
+drivers.
 
-   If your system doesn't have pkg-config and support for any of the
-   above libraries isn't found (but you know it is installed), you must
-   specify the compiler flags that are needed.
+The NUT_STATEPATH environment variable overrides this at run time.
 
- --with-ssl-libs, --with-usb-libs, --with-snmp-libs,
- --with-neon-libs, --with-powerman-libs="-L/foo/bar -labcd -lxyz"
+Default is /var/state/ups.
 
-   If your system doesn't have pkg-config and support for any of the
-   above libraries isn't found (but you know it is installed), you must
-   specify the linker flags that are needed.
 
-7. HAL addons (deprecated):
-===========================
+Things the compiler might need to find
+--------------------------------------
 
- --with-hal-includes="-DDBUS_API_SUBJECT_TO_CHANGE -I/usr/include/hal \
+	--with-gd-includes="-I/foo/bar"
+
+If you installed gd in some place where your C preprocessor can't
+find the header files, use this switch to add additional -I flags.
+
+	--with-gd-libs="-L/foo/bar -labcd -lxyz"
+
+If your copy of gd isn't linking properly, use this to give the
+proper -L and -l flags to make it work.  See LIBS= in gd's Makefile.
+
+NOTE: the --with-gd switches are not necessary if you have gd 2.0.8
+or higher installed properly.  The gdlib-config script will be 
+detected and used by default in that situation.
+
+	--with-ssl-includes, --with-usb-includes, --with-snmp-includes,
+	--with-neon-includes, --with-powerman-includes="-I/foo/bar"
+
+If your system doesn't have pkg-config and support for any of the above
+libraries isn't found (but you know it is installed), you must specify the
+compiler flags that are needed.
+
+	--with-ssl-libs, --with-usb-libs, --with-snmp-libs,
+	--with-neon-libs, --with-powerman-libs="-L/foo/bar -labcd -lxyz"
+
+If your system doesn't have pkg-config and support for any of the above
+libraries isn't found (but you know it is installed), you must specify the
+linker flags that are needed.
+
+HAL addons (deprecated)
+-----------------------
+
+	--with-hal-includes="-DDBUS_API_SUBJECT_TO_CHANGE -I/usr/include/hal \
 		-I/usr/include/dbus-1.0 -I/usr/lib/dbus-1.0/include"
- --with-hal-libs="-lhal -ldbus-1 -lpthread"
- --with-hal-user="haldaemon"
- --with-hal-device-match-key="info.bus"
- --with-hal-callouts-path="${libdir}/hal"
- --with-hal-fdi-path="${datarootdir}/hal/fdi/information/20thirdparty"
+	--with-hal-libs="-lhal -ldbus-1 -lpthread"
+	--with-hal-user="haldaemon"
+	--with-hal-device-match-key="info.bus"
+	--with-hal-callouts-path="${libdir}/hal"
+	--with-hal-fdi-path="${datarootdir}/hal/fdi/information/20thirdparty"
 
-   If system doesn't have pkg-config or it fails to provides hints for
-   some of the settings that are needed to set it up properly and the
-   build in defaults are not right, you can specify the right variables
-   here.
+If system doesn't have pkg-config or it fails to provides hints for some of the
+settings that are needed to set it up properly and the build in defaults are
+not right, you can specify the right variables here.

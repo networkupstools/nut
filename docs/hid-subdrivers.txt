@@ -1,10 +1,8 @@
-Desc: How to make a new subdriver to support another USB/HID UPS
-File: hid-subdrivers.txt
-Date: 08 January 2007
-Auth: Peter Selinger <selinger@users.sourceforge.net>
+How to make a new subdriver to support another USB/HID UPS
+----------------------------------------------------------
 
 Overall concept
-===============
+~~~~~~~~~~~~~~~
 
 USB (Universal Serial Port) devices can be divided into several
 different classes (audio, imaging, mass storage etc). Almost all UPS
@@ -15,7 +13,7 @@ for reading and writing information (such as x/y coordinates and
 button states, in case of a mouse, or voltages and status information,
 in case of a UPS).
 
-The Nut "usbhid-ups" driver is a meta-driver that handles all HID UPS
+The NUT "usbhid-ups" driver is a meta-driver that handles all HID UPS
 devices. It consists of a core driver that handles most of the work of
 talking to the USB hardware, and several sub-drivers to handle
 specific UPS manufacturers (MGE, APC, and Belkin are currently
@@ -31,7 +29,7 @@ add support for such a device, read new-drivers.txt and see the
 tripplite_usb driver for inspiration.
 
 HID Usage Tree
-==============
+~~~~~~~~~~~~~~
 
 From the point of view of writing a HID subdriver, a HID device
 consists of a bunch of variables.  Some variables (such as the current
@@ -44,14 +42,17 @@ for a typical APC device. Variable components are separated by ".".
 Typical values for each variable are also shown for illustrative
 purposes.
 
-UPS.Battery.Voltage            11.4 V
-UPS.Battery.ConfigVoltage      12 V
-UPS.Input.Voltage              117 V
-UPS.Input.ConfigVoltage        120 V
-UPS.AudibleAlarmControl        2 (=enabled)
-UPS.PresentStatus.Charging     1 (=yes)
-UPS.PresentStatus.Discharging  0 (=no)
-UPS.PresentStatus.ACPresent    1 (=yes)
+[width="35%"]
+|================================================
+|UPS.Battery.Voltage            |  11.4 V
+|UPS.Battery.ConfigVoltage      |  12 V
+|UPS.Input.Voltage              |  117 V
+|UPS.Input.ConfigVoltage        |  120 V
+|UPS.AudibleAlarmControl        |  2 (=enabled)
+|UPS.PresentStatus.Charging     |  1 (=yes)
+|UPS.PresentStatus.Discharging  |  0 (=no)
+|UPS.PresentStatus.ACPresent    |  1 (=yes)
+|================================================
 
 As you can see, variables that describe the battery status might be
 grouped together under "Battery", variables that describe the input
@@ -78,10 +79,11 @@ strings, but as numbers (called "usages" in HID terminology). These
 numbers are defined in the "HID Usage Tables", available from
 http://www.usb.org/developers/hidpage/.  The standard usages for UPS
 devices are defined in a document called "Usage Tables for HID Power
-Devices".
+Devices" (the Power Device Class [PDC] specification).
 
-For example,
+For example:
 
+--------------------------------------------------------------------------------
  0x00840010 = UPS
  0x00840012 = Battery
  0x00840030 = Voltage
@@ -89,25 +91,28 @@ For example,
  0x0084001a = Input
  0x0084005a = AudibleAlarmControl
  0x00840002 = PresentStatus
- 0x00850044 = Charging 
+ 0x00850044 = Charging
  0x00850045 = Discharging
  0x008500d0 = ACPresent
+--------------------------------------------------------------------------------
 
-Thus, the above usage tree is internally represented as
+Thus, the above usage tree is internally represented as:
 
-00840010.00840012.00840030
-00840010.00840012.00840040
-00840010.0084001a.00840030
-00840010.0084001a.00840040
-00840010.0084005a
-00840010.00840002.00850044
-00840010.00840002.00850045
-00840010.00840002.008500d0
+--------------------------------------------------------------------------------
+ 00840010.00840012.00840030
+ 00840010.00840012.00840040
+ 00840010.0084001a.00840030
+ 00840010.0084001a.00840040
+ 00840010.0084005a
+ 00840010.00840002.00850044
+ 00840010.00840002.00850045
+ 00840010.00840002.008500d0
+--------------------------------------------------------------------------------
 
 To make matters worse, most manufacturers define their own additional
 usages, even in cases where standard usages could have been used. for
-example Belkin defines 00860040 = ConfigVoltage (which is incidentally
-a violation of the USB specification, as 00860040 is reserved for
+example Belkin defines `00860040` = ConfigVoltage (which is incidentally
+a violation of the USB PDC specification, as `00860040` is reserved for
 future use).
 
 Thus, subdrivers generally need to provide: 
@@ -120,8 +125,9 @@ such as custom implementations of specific instant commands (load.off,
 shutdown.restart), and conversions of manufacturer specific data
 formats.
 
+
 Writing a subdriver
-===================
+~~~~~~~~~~~~~~~~~~~
 
 In preparation for writing a subdriver for a device that is currently
 unsupported, run usbhid-ups with the following command line:
@@ -143,7 +149,7 @@ CUSTOMIZATION below).
 
 Use the script as follows:
 
- scripts/subdriver/path-to-subdriver.sh < /tmp/info
+	scripts/subdriver/path-to-subdriver.sh < /tmp/info
 
 where /tmp/info is the file where you previously saved the debugging
 information.
@@ -168,16 +174,22 @@ attempts to monitor some UPS variables. To make this driver useful,
 you must examine the NUT variables of the form "unmapped.*" in the
 hid_info_t data structure, and map them to actual NUT variables and
 instant commands. There are currently no step-by-step instructions for
-how to do this. Please look at the files
+how to do this. Please look at the files to see how the currently implemented
+subdrivers are written.:
 
-mge-hid.c/h
-apc-hid.c/h
-belkin-hid.c/h
+- apc-hid.c/h
+- belkin-hid.c/h
+- cps-hid.c/h
+- explore-hid.c/h
+- libhid.c/h
+- liebert-hid.c/h
+- mge-hid.c/h
+- powercom-hid.c/h
+- tripplite-hid.c/h
 
-to see how the currently implemented subdrivers are written.
 
 Shutting down the UPS
-=====================
+~~~~~~~~~~~~~~~~~~~~~
 
 It is desireable to support shutting down the UPS. Usually (for
 devices that follow the HID Power Device Class specification), this
@@ -191,31 +203,31 @@ commands to the UPS in response to sending one NUT command to the
 driver, this is handled by the driver. In order to make this work,
 you need to define the following four NUT values:
 
-  ups.delay.start    (variable, R/W)
-  ups.delay.shutdown (variable, R/W)
-  load.off.delay     (command)
-  load.on.delay      (command)
+	ups.delay.start    (variable, R/W)
+	ups.delay.shutdown (variable, R/W)
+	load.off.delay     (command)
+	load.on.delay      (command)
 
 If the UPS supports it, the following variables can be used to show
 the countdown to start/shutdown:
 
-  ups.timer.start    (variable, R/O)
-  ups.timer.shutdown (variable, R/O)
+	ups.timer.start    (variable, R/O)
+	ups.timer.shutdown (variable, R/O)
 
-The 'load.on' and 'load.off' commands will be defined implicitly by
+The `load.on` and `load.off` commands will be defined implicitly by
 the driver (using a delay value of '0'). Define these commands
 yourself, if your UPS requires a different value to switch on/off
 the load without delay.
 
-Note that the driver expects the 'load.off.delay' and 'load.on.delay'
+Note that the driver expects the `load.off.delay` and `load.on.delay`
 to follow the HID Power Device Class specification, which means that
-the 'load.on.delay' command should NOT switch on the load in the
+the `load.on.delay` command should NOT switch on the load in the
 absence of mains power. If your UPS switches on the load regardless of
 the mains status, DO NOT define this command. You probably want to
-define the 'shutdown.return' and/or 'shutdown.stayoff' commands in
+define the `shutdown.return` and/or `shutdown.stayoff` commands in
 that case. Commands defined in the subdriver will take precedence over
 the ones that are composed in the driver.
 
 When running the driver with the '-k' flag, it will first attempt to
-send a 'shutdown.return' command and if that fails, will fallback to
-'shutdown.reboot'.
+send a `shutdown.return` command and if that fails, will fallback to
+`shutdown.reboot`.

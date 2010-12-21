@@ -64,7 +64,7 @@
 /* --------------------------------------------------------------- */
 
 #define DRIVER_NAME	"MGE UPS SYSTEMS/U-Talk driver"
-#define DRIVER_VERSION	"0.89"
+#define DRIVER_VERSION	"0.92"
 
 
 /* driver description structure */
@@ -223,11 +223,12 @@ void upsdrv_initinfo(void)
 	char *v = NULL;  /* for parsing Si output, get Version ID */
 	int  table;
 	int  tries;
-	int  status_ok;
+	int  status_ok = 0;
 	int  bytes_rcvd;
 	int  si_data1 = 0;
 	int  si_data2 = 0;
 	mge_info_item_t *item;
+	models_name_t *model_info;
 	mge_model_info_t *legacy_model;
 	char infostr[32];
 	int  chars_rcvd;
@@ -246,10 +247,10 @@ void upsdrv_initinfo(void)
 
 		if(bytes_rcvd > 0 && buf[0] != '?') {
 			dstate_setinfo("ups.id", "%s", buf); /* raw id */
-		
-			model = buf;
-			p = strrchr(buf, ' ');
 
+			model = buf;
+
+			p = strrchr(buf, ' ');
 			if ( p != NULL ) {
 				*p = '\0';
 				firmware = p+1;
@@ -257,6 +258,16 @@ void upsdrv_initinfo(void)
 
 			if( firmware && strlen(firmware) < 1 )
 				firmware = NULL;   /* no firmware information */
+
+			/* Parsing model names table */
+			for ( model_info = Si1_models_names ; model_info->basename != NULL ; model_info++ ) {
+				if(!strcasecmp(model_info->basename, model))
+				{
+					model = model_info->finalname;
+					upsdebugx(1, "initinfo: UPS model == >%s<", model);
+					break;
+				}
+			}
 		}
 		else
 		  {
@@ -285,12 +296,12 @@ void upsdrv_initinfo(void)
 				si_data2 = atoi(v);
 			  }
 
-			  /* Parsing legacy model table in order to found it */
-			  for ( legacy_model = mge_model ; legacy_model->name != NULL ; legacy_model++ ) {
-				if(legacy_model->Data1 == si_data1 && legacy_model->Data2 == si_data2){
-				  model = legacy_model->name;
-				  upsdebugx(1, "initinfo: UPS model == >%s<", model);
-				  break;
+				/* Parsing legacy model table in order to find it */
+				for ( legacy_model = mge_model ; legacy_model->name != NULL ; legacy_model++ ) {
+					if(legacy_model->Data1 == si_data1 && legacy_model->Data2 == si_data2){
+						model = legacy_model->name;
+						upsdebugx(1, "initinfo: UPS model == >%s<", model);
+						break;
 				}
 			  }
 
@@ -333,8 +344,8 @@ void upsdrv_initinfo(void)
 		 * information (OL, OB, LB); all else is added later by updateinfo */
 		status_ok = get_ups_status();
 	
-	} while ( (!status_ok) && (tries++ < MAXTRIES) && (exit_flag != 0) );
-  
+	} while ( (!status_ok) && (tries++ < MAXTRIES) && (exit_flag != 1) );
+
 	if ( tries == MAXTRIES && !status_ok )
 		fatalx(EXIT_FAILURE, "Could not get status from UPS.");
 
@@ -403,13 +414,15 @@ void upsdrv_updateinfo(void)
 
 	/* update status */
 	status_ok = get_ups_status();  /* only sys status is critical */
-	if ( !status_ok ) {
-		dstate_datastale();
+	if ( !status_ok )
+	{
 		upslogx(LOG_NOTICE, "updateinfo: Cannot update system status");
 		/* try to re enable communication */
 		disable_ups_comm();
 		enable_ups_comm();
-	} else {
+	}
+	else
+	{
 		dstate_dataok();
 	}
 
@@ -432,8 +445,8 @@ void upsdrv_updateinfo(void)
 				dstate_setinfo(item->type, "%s", infostr);
 				upsdebugx(2, "updateinfo: %s == >%s<", item->type, infostr);
 				dstate_dataok();
-			} else {
-			  dstate_datastale();
+			} else
+			{
 			  upslogx(LOG_NOTICE, "updateinfo: Cannot update %s", item->type);
 			  /* try to re enable communication */
 			  disable_ups_comm();

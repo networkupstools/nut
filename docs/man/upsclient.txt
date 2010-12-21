@@ -1,0 +1,64 @@
+UPSCLIENT(3)
+============
+
+NAME
+----
+
+upsclient - Network UPS Tools client access library
+
+DESCRIPTION
+-----------
+
+The Network UPS Tools (NUT) *upsclient* library provides a number of
+useful functions for programs to use when communicating with
+linkman:upsd[8].  Many of the low-level socket and protocol details are
+handled automatically when using this interface.
+
+State is maintained across calls in an opaque structure called `UPSCONN`.
+Callers are expected to create one per connection.  These will be
+provided to most of the *upsclient* functions.  The format of this
+structure is subject to change, and client programs must not reference
+elements within it directly.
+
+NETWORK FUNCTIONS
+-----------------
+
+To create a new connection, use linkman:upscli_connect[3].  This will also
+initialize the `UPSCONN` structure.  To verify that a connection has been
+established later, linkman:upscli_fd[3] can be used to return the
+file descriptor.  Clients wishing to check for the presence and
+operation of SSL on a connection may call linkman:upscli_ssl[3].
+
+The majority of clients will use linkman:upscli_get[3] to retrieve single
+items from the server.  To retrieve a list, use
+linkman:upscli_list_start[3] to get it started, then call
+linkman:upscli_list_next[3] for each element.
+
+Raw lines of text may be sent to linkman:upsd[8] with
+linkman:upscli_sendline[3].  Reading raw lines is possible with
+linkman:upscli_readline[3].  Client programs are expected to format these
+lines according to the protocol, as no checking will be performed before
+transmission.
+
+At the end of a connection, you must call linkman:upsclient_disconnect[3]
+to disconnect from *upsd* and release any dynamic memory associated
+with the `UPSCONN` structure.  Failure to call this function will result
+in memory and file descriptor leaks in your program.
+
+ERROR HANDLING
+--------------
+In the event of an error, linkman:upscli_strerror[3] will provide
+human-readable details on what happened.  linkman:upscli_upserror[3] may
+also be used to retrieve the error number.  These numbers are defined in
+*upsclient.h* as 'UPSCLI_ERR_*'.
+
+SEE ALSO
+--------
+linkman:libupsclient-config[1],
+linkman:upscli_connect[3], linkman:upscli_disconnect[3], linkman:upscli_fd[3],
+linkman:upscli_getvar[3], linkman:upscli_list_next[3], 
+linkman:upscli_list_start[3], linkman:upscli_readline[3], 
+linkman:upscli_sendline[3], 
+linkman:upscli_splitaddr[3], linkman:upscli_splitname[3], 
+linkman:upscli_ssl[3], linkman:upscli_strerror[3], 
+linkman:upscli_upserror[3]

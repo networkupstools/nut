@@ -1,0 +1,39 @@
+UPSCLI_READLINE(3)
+==================
+
+NAME
+----
+
+upscli_readline - read a single response from a UPS
+
+SYNOPSIS
+--------
+
+ #include <upsclient.h>
+
+ int upscli_readline(UPSCONN *ups, char *buf, size_t buflen);
+
+DESCRIPTION
+-----------
+The *upscli_readline()* function takes the pointer 'ups' to a
+`UPSCONN` state structure, receives a single line from the server, and
+copies up to 'buflen' bytes of the response into the buffer
+'buf'.
+
+Some parsing of the string occurs during reception.  In particular,
+ERR messages from linkman:upsd[8] are detected and will cause this
+function to return -1.
+
+RETURN VALUE
+------------
+
+The *upscli_readline()* function returns 0 on success, or -1 if an
+error occurs.
+
+SEE ALSO
+--------
+
+linkman:upscli_fd[3], linkman:upscli_get[3],
+linkman:upscli_readline[3], linkman:upscli_sendline[3],
+linkman:upscli_ssl[3],
+linkman:upscli_strerror[3], linkman:upscli_upserror[3]

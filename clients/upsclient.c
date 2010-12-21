@@ -96,7 +96,7 @@ struct {
 
 const char *upscli_strerror(UPSCONN_t *ups)
 {
-#ifdef WITH_SSL
+#ifdef HAVE_SSL
 	unsigned long	err;
 	char	sslbuf[UPSCLI_ERRBUF_LEN];
 #endif
@@ -125,7 +125,7 @@ const char *upscli_strerror(UPSCONN_t *ups)
 		return ups->errbuf;
 
 	case 2:		/* SSL error */
-#ifdef WITH_SSL
+#ifdef HAVE_SSL
 		err = ERR_get_error();
 		if (err) {
 			ERR_error_string(err, sslbuf);
@@ -140,7 +140,7 @@ const char *upscli_strerror(UPSCONN_t *ups)
 #else
 		snprintf(ups->errbuf, UPSCLI_ERRBUF_LEN, 
 			"SSL error, but SSL wasn't enabled at compile-time");
-#endif	/* WITH_SSL */
+#endif	/* HAVE_SSL */
 		return ups->errbuf;
 
 	case 3:		/* parsing (parseconf) error */
@@ -187,7 +187,7 @@ static int net_read(UPSCONN_t *ups, char *buf, size_t buflen)
 {
 	int	ret;
 
-#ifdef WITH_SSL
+#ifdef HAVE_SSL
 	if (ups->ssl) {
 		ret = SSL_read(ups->ssl, buf, buflen);
 
@@ -244,7 +244,7 @@ static int net_write(UPSCONN_t *ups, const char *buf, size_t buflen)
 {
 	int	ret;
 
-#ifdef WITH_SSL
+#ifdef HAVE_SSL
 	if (ups->ssl) {
 		ret = SSL_write(ups->ssl, buf, buflen);
 
@@ -273,7 +273,7 @@ static int net_write(UPSCONN_t *ups, const char *buf, size_t buflen)
 }
 
 /* stub first */
-#ifndef WITH_SSL
+#ifndef HAVE_SSL
 static int upscli_sslinit(UPSCONN_t *ups)
 {
 	return 0;	/* not supported */
@@ -298,6 +298,11 @@ int upscli_sslcert(UPSCONN_t *ups, const char *dir, const char *file, int verify
 
 static int upscli_sslinit(UPSCONN_t *ups)
 {
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+	const SSL_METHOD	*ssl_method;
+#else
+	SSL_METHOD	*ssl_method;
+#endif
 	char	buf[UPSCLI_NETBUF_LEN];
 
 	/* see if upsd even talks SSL/TLS */
@@ -317,10 +322,16 @@ static int upscli_sslinit(UPSCONN_t *ups)
 
 	/* upsd is happy, so let's crank up the client */
 
-	SSL_library_init();
 	SSL_load_error_strings();
+	SSL_library_init();
 
-	ups->ssl_ctx = SSL_CTX_new(TLSv1_client_method());
+	ssl_method = TLSv1_client_method();
+
+	if (!ssl_method) {
+		return 0;
+	}
+
+	ups->ssl_ctx = SSL_CTX_new(ssl_method);
 
 	if (!ups->ssl_ctx) {
 		return 0;
@@ -380,7 +391,7 @@ int upscli_sslcert(UPSCONN_t *ups, const char *file, const char *path, int verif
 	return 1;
 }
 
-#endif	/* WITH_SSL */
+#endif	/* HAVE_SSL */
 
 int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 {
@@ -986,7 +997,7 @@ int upscli_disconnect(UPSCONN_t *ups)
 
 	net_write(ups, "LOGOUT\n", 7);
 
-#ifdef WITH_SSL
+#ifdef HAVE_SSL
 	if (ups->ssl) {
 		SSL_shutdown(ups->ssl);
 		SSL_free(ups->ssl);
