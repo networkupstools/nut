@@ -15,23 +15,19 @@ winevent.rc winevent.h: winevent.mc
 winevent.o: winevent.rc winevent.h
 	$(WINDRES) winevent.rc winevent.o
 
-winevent.dll: winevent.o
-	$(DLLWRAP) --output-lib=libwinevent.a --dllname=winevent.dll --driver-name=gcc winevent.o
-
 bin_PROGRAMS = nut halt
 
-nut$(EXEEXT): winevent.dll
 nut_SOURCES = wininit.c
-nut_LDADD = ../../common/libcommon.la
+nut_LDADD = ../../common/libcommon.la winevent.o
 
 halt_SOURCES = halt.c
 
-CLEANFILES = winevent.rc winevent.o winevent.dll winevent.h
+CLEANFILES = winevent.rc winevent.o winevent.h
 
 else !HAVE_MINGW_RESGEN
 
 winevent.dll:
-	@echo "Not building MingW resources since the needed programs (windmc, windres, dllwrap) were not found."
+	@echo "Not building MingW resources since the needed programs (windmc, windres) were not found."
 
 endif !HAVE_MINGW_RESGEN
 

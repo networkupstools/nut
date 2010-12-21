@@ -1557,11 +1557,10 @@ NUT_REPORT_FEATURE([build and install the development files], [${nut_with_dev}],
 dnl ----------------------------------------------------------------------
 dnl checks related to MS Windows support (MingW)
 
-AC_PATH_PROGS([WINDMC], [windmc], [none])
-AC_PATH_PROGS([WINDRES], [windres], [none])
-AC_PATH_PROGS([DLLWRAP], [dllwrap], [none])
+AC_CHECK_TOOL([WINDMC], [windmc], [none])
+AC_CHECK_TOOL([WINDRES], [windres], [none])
 
-if test "x$WINDMC" != "xnone" -a "x$WINDRES" != "xnone" -a "x$DLLWRAP" != "xnone"; then
+if test "x$WINDMC" != "xnone" -a "x$WINDRES" != "xnone" ; then
 	nut_have_mingw_resgen="yes"
 fi
 
