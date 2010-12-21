@@ -15,6 +15,8 @@ winevent.rc winevent.h: winevent.mc
 winevent.o: winevent.rc winevent.h
 	$(WINDRES) winevent.rc winevent.o
 
+wininit.$(OBJEXT): winevent.h
+
 bin_PROGRAMS = nut halt
 
 nut_SOURCES = wininit.c
