@@ -27,7 +27,7 @@ var NUT =
   // driver => connection type mappings
   driverMap: function(driver)
   {
-    if(driver.match(/bcmxcp_usb|blazer_usb|megatec_usb|richcomm_usb|tripplite_usb|usbhid-ups/))
+    if(driver.match(/bcmxcp_usb|blazer_usb|richcomm_usb|tripplite_usb|usbhid-ups/))
       return "USB";
       
     if(driver.match(/snmp-ups|netxml-ups/))

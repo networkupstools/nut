@@ -21,7 +21,7 @@ You must define the 'driver' and 'port' elements for each entry.  Anything
 after that in a section is optional.  A simple example might look like this:
 
 	[myups]
-		driver = megatec
+		driver = blazer_ser
 		port = /dev/ttyS0
 		desc = "Web server UPS"
 

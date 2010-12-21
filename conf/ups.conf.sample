@@ -82,11 +82,11 @@
 # Examples
 # --------
 #
-# A simple example for a UPS called "powerpal" that uses the megatec
+# A simple example for a UPS called "powerpal" that uses the blazer_ser
 # driver on /dev/ttyS0 is:
 #
 # [powerpal]
-#	driver = megatec
+#	driver = blazer_ser
 #	port = /dev/ttyS0
 #	desc = "Web server"
 #

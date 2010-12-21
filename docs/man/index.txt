@@ -69,8 +69,6 @@ Drivers
 - linkman:liebert[8]
 - linkman:liebert-esp2[8]
 - linkman:masterguard[8]
-- linkman:megatec[8]
-- linkman:megatec_usb[8]
 - linkman:metasys[8]
 - linkman:mge-shut[8]
 - linkman:mge-utalk[8]

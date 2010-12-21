@@ -244,9 +244,6 @@ sub find_usbdevs
 			elsif ($nameFile eq "tripplite_usb.c") {
 				$driver="tripplite_usb";
 			}
-			elsif ($nameFile eq "megatec_usb.c") {
-				$driver="megatec_usb";
-			}
 			elsif ($nameFile eq "blazer_usb.c") {
 				$driver="blazer_usb";
 			}

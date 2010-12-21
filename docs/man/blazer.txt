@@ -4,7 +4,7 @@ BLAZER(8)
 NAME
 ----
 
-blazer - Driver for Megatec/Q1 protocol serial (blazer_ser) and USB based (blazer_usb) UPS equipment
+blazer - Driver for Megatec/Q1 protocol serial (blazer_ser) and USB (blazer_usb) based UPS equipment
 
 NOTE
 ----
@@ -239,6 +239,27 @@ linkman:ups.conf[5], so don't complain with the author. If you need something be
 buy a UPS that reports *battery.charge* and *battery.runtime* all by itself
 without the help of a NUT driver.
 
+NOTES FOR THE PREVIOUS USER OF MEGATEC DRIVERS
+----------------------------------------------
+
+The blazer drivers having replaced the megatec ones, some configuration
+changes may be required by users switching to blazer.
+
+Part of this, the following megatec options, in ups.conf, have to be changed:
+
+*battvolts*::
+
+You need to use 'default.battery.voltage.high' and 'default.battery.voltage.low'
+
+*dtr and rts*::
+
+You need to use 'cablepower'
+
+*ignoreoff*::
+
+This parameter can simply be discarded, since it was a wrong understanding
+of the specification.
+ 
 KNOWN PROBLEMS
 --------------
 

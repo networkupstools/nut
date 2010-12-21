@@ -212,7 +212,6 @@ SRC_SERIAL_PAGES = \
 	optiups.txt	\
 	powercom.txt 	\
 	powerpanel.txt	\
-	megatec.txt	\
 	rhino.txt		\
 	safenet.txt	\
 	solis.txt		\
@@ -250,7 +249,6 @@ MAN_SERIAL_PAGES = \
 	optiups.8	\
 	powercom.8 	\
 	powerpanel.8	\
-	megatec.8	\
 	rhino.8		\
 	safenet.8	\
 	solis.8		\
@@ -292,7 +290,6 @@ HTML_SERIAL_MANS = \
 	optiups.html	\
 	powercom.html 	\
 	powerpanel.html	\
-	megatec.html	\
 	rhino.html		\
 	safenet.html	\
 	solis.html		\
@@ -314,14 +311,12 @@ HTML_SNMP_MANS = snmp-ups.html
 # (--with-usb)
 SRC_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.txt \
-	megatec_usb.txt \
 	richcomm_usb.txt \
 	tripplite_usb.txt \
 	usbhid-ups.txt
 
 MAN_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.8 \
-	megatec_usb.8 \
 	richcomm_usb.8 \
 	tripplite_usb.8 \
 	usbhid-ups.8
@@ -332,7 +327,6 @@ endif
 
 HTML_USB_LIBUSB_MANS = \
 	bcmxcp_usb.html \
-	megatec_usb.html \
 	richcomm_usb.html \
 	tripplite_usb.html \
 	usbhid-ups.html
