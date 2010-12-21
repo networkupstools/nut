@@ -6,7 +6,7 @@ Introduction
 
 Configuration has long been one of the two main NUT weaknesses. This is
 mostly due to the framework nature of NUT, and its many components and
-features which makes NUT configuration a very complex task.
+features, which make NUT configuration a very complex task.
 
 In order to address this point, NUT now provides configuration tools and
 manipulation abstraction, to anybody who want to manipulate NUT configuration,
@@ -17,10 +17,10 @@ From Augeas homepage:
 native formats and transforms them into a tree. Configuration changes are made
 by manipulating this tree and saving it back into native config files."
 
-In other words, Augeas is the dreamed Registry, with all pros (uniform interface
-and tools) but without the cons (mainly, the treat to FLOSS, and more
-generally software, liberty on configuration files format, and its dubbed to
-fail standardisation).
+In other words, Augeas is the dreamed Registry, with all the advantages
+(such as a uniform interface and tools), and the added bonus of being
+free/libre open source software and letting liberty on configuration file
+format.
 
 Requirements
 ------------
