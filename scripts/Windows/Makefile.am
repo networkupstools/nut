@@ -24,10 +24,5 @@ halt_SOURCES = halt.c
 
 CLEANFILES = winevent.rc winevent.o winevent.h
 
-else !HAVE_MINGW_RESGEN
-
-winevent.dll:
-	@echo "Not building MingW resources since the needed programs (windmc, windres) were not found."
-
-endif !HAVE_MINGW_RESGEN
+endif HAVE_MINGW_RESGEN
 
