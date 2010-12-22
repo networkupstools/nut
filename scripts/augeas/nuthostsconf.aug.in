@@ -1,6 +1,6 @@
 (*
 Module: NutHostsConf
- Parses /etc/nut/hosts.conf
+ Parses @CONFPATH@/hosts.conf
 
 Author: Frederic Bohe  <fredericbohe@eaton.com>
 
@@ -11,10 +11,10 @@ About: Lens Usage
   Sample usage of this lens in augtool
 
     * Print all monitored upsd
-	> print /files/etc/nut/hosts.conf/MONITOR
+	> print /files@CONFPATH@/hosts.conf/MONITOR
 
 About: Configuration files
-  This lens applies to /etc/nut/hosts.conf. See <filter>.
+  This lens applies to @CONFPATH@/hosts.conf. See <filter>.
 *)
 
 module NutHostsConf =
@@ -39,7 +39,7 @@ let hosts_notify = [ del_spc . key "MONITOR" . sep_spc
 
 let hosts_lns    = (hosts_notify|comment|empty)*
 
-let hosts_filter = ( incl "/etc/nut/hosts.conf" )
+let hosts_filter = ( incl "@CONFPATH@/hosts.conf" )
                         . Util.stdexcl
 
 let hosts_xfm    = transform hosts_lns hosts_filter

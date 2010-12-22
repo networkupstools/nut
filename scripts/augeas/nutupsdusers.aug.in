@@ -1,9 +1,9 @@
 (*
 Module: NutUpsdUsers
- Parses /etc/nut/upsd.users
+ Parses @CONFPATH@/upsd.users
 
 Author: Raphael Pinson <raphink@gmail.com>
-	Frederic Bohe  <fredericbohe@eaton.com>
+        Frederic Bohe  <fredericbohe@eaton.com>
 
 About: License
   This file is licensed under the GPL.
@@ -12,10 +12,10 @@ About: Lens Usage
   Sample usage of this lens in augtool
 
     * Print all users granted to send commands to UPS
-      > /files/etc/nut/upsd.users/fred/actions/SET
+      > /files@CONFPATH@/upsd.users/fred/actions/SET
 
 About: Configuration files
-  This lens applies to /etc/nut/upsd.users. See <filter>.
+  This lens applies to @CONFPATH@/upsd.users. See <filter>.
 *)
 
 module NutUpsdUsers =
@@ -23,7 +23,6 @@ module NutUpsdUsers =
 
 (************************************************************************
  * Group:                 UPSD.USERS
- *  http://linux.die.net/man/5/upsd.users
  *************************************************************************)
 
 (* general *)
@@ -76,7 +75,7 @@ let upsd_users_record   = IniFile.record upsd_users_title (upsd_users_entry|upsd
 
 let upsd_users_lns      = IniFile.lns upsd_users_record upsd_users_comment
 
-let upsd_users_filter = ( incl "/etc/nut/upsd.users" )
+let upsd_users_filter = ( incl "@CONFPATH@/upsd.users" )
 			. Util.stdexcl
 
 let upsd_users_xfm = transform upsd_users_lns upsd_users_filter

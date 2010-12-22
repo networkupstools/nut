@@ -2,7 +2,7 @@
 
 module Test_nut =
 
-let nut_conf  = "
+let nut_conf = "
 MODE=standalone
 "
 
@@ -43,28 +43,46 @@ let upsd_users = "
 	[admin]
 		password = upsman
 		actions = SET FSD
-		instcmds=ALL
+		instcmds = ALL
 
-	[monuser]
-		password  = upsmon
+	[pfy]
+		password = duh
+		instcmds = test.panel.start
+		instcmds = test.panel.stop
+
+	[monmaster]
+		password = blah
 		upsmon master
+
+	[monslave]
+		password = abcd
+		upsmon slave
 "
 
 test NutUpsdUsers.upsd_users_lns get upsd_users = 
 	{ }
 	{ "admin"
-		{ "password"  = "upsman" }
-	{ "actions"
-		{ "SET" }
-		{ "FSD" } }
-	{ "instcmds" = "ALL" }
-	{ }  }
-	{ "monuser"
-		{ "password" = "upsmon" }
-	{ "upsmon" = "master" } }
+		{ "password" = "upsman" }
+		{ "actions"
+			{ "SET" }
+			{ "FSD" } }
+		{ "instcmds" = "ALL" }
+		{ }  }
+	{ "pfy"
+		{ "password" = "duh" }
+		{ "instcmds" = "test.panel.start" }
+		{ "instcmds" = "test.panel.stop" }
+		{ }  }
+	{ "monmaster"
+		{ "password" = "blah" }
+		{ "upsmon" = "master" }
+		{ }  }
+	{ "monslave"
+		{ "password" = "abcd" }
+		{ "upsmon" = "slave" } }
 
 let upsmon_conf = "
-MONITOR testups@localhost 1 monuser upsmon master
+MONITOR testups@localhost 1 monmaster blah master
 
 MINSUPPLIES 1
 SHUTDOWNCMD /sbin/shutdown -h +0
@@ -85,8 +103,8 @@ test NutUpsmonConf.upsmon_lns get upsmon_conf =
 		{ "upsname"  = "testups"    }
 		{ "hostname" = "localhost" } }
 		{ "powervalue" = "1"                }
-		{ "username"   = "monuser"          }
-		{ "password"   = "upsmon"           }
+		{ "username"   = "monmaster"          }
+		{ "password"   = "blah"           }
 		{ "type"       = "master"           } }
 	{ }
 	{ "MINSUPPLIES"   = "1"  }
@@ -99,15 +117,6 @@ test NutUpsmonConf.upsmon_lns get upsmon_conf =
 	{ "RBWARNTIME"    = "43200" }
 	{ "NOCOMMWARNTIME" = "300" }
 	{ "FINALDELAY"    = "5" }
-
-let nut_conf = "
- MODE = standalone
-"
-
-test NutNutConf.nut_lns get nut_conf = 
-	{ }
-	{ "MODE"      = "standalone" }
-
 
 let upsset_conf = "
  I_HAVE_SECURED_MY_CGI_DIRECTORY

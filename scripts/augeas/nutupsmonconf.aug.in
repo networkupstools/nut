@@ -1,9 +1,9 @@
 (*
 Module: NutUpsmonConf
- Parses /etc/nut/upsmon.conf
+ Parses @CONFPATH@/upsmon.conf
 
 Author: Raphael Pinson <raphink@gmail.com>
-	Frederic Bohe  <fredericbohe@eaton.com>
+        Frederic Bohe  <fredericbohe@eaton.com>
 
 About: License
   This file is licensed under the GPL.
@@ -12,10 +12,10 @@ About: Lens Usage
   Sample usage of this lens in augtool
 
     * Print all notification messages
-      > print /files/etc/nut/upsmon.conf/NOTIFYMSG
+      > print /files@CONFPATH@/upsmon.conf/NOTIFYMSG
 
 About: Configuration files
-  This lens applies to /etc/nut/upsmon.conf. See <filter>.
+  This lens applies to @CONFPATH@/upsmon.conf. See <filter>.
 *)
 
 module NutUpsmonConf =
@@ -116,7 +116,7 @@ let upsmon_record = upsmon_num|upsmon_word|upsmon_file|upsmon_monitor|upsmon_not
 
 let upsmon_lns    = (upsmon_record|comment|empty)*
 
-let upsmon_filter = ( incl "/etc/nut/upsmon.conf" )
+let upsmon_filter = ( incl "@CONFPATH@/upsmon.conf" )
 			. Util.stdexcl
 
 let upsmon_xfm    = transform upsmon_lns upsmon_filter

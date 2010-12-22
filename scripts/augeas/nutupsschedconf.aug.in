@@ -1,9 +1,9 @@
 (*
 Module: NutUpsSchedConf
- Parses upssched.conf
+ Parses @CONFPATH@/upssched.conf
 
 Author: Raphael Pinson <raphink@gmail.com>
-	Frederic Bohe  <fredericbohe@eaton.com>
+        Frederic Bohe  <fredericbohe@eaton.com>
 
 About: License
   This file is licensed under the GPL.
@@ -12,10 +12,10 @@ About: Lens Usage
   Sample usage of this lens in augtool
 
     * Print the command script:
-      > print /files/etc/nut/upssched.conf/CMDSCRIPT
+      > print /files@CONFPATH@/upssched.conf/CMDSCRIPT
 
 About: Configuration files
-  This lens applies to /etc/nut/upssched.conf. See <filter>.
+  This lens applies to @CONFPATH@/upssched.conf. See <filter>.
 *)
 
 module NutUpsschedConf =
@@ -69,7 +69,7 @@ let upssched_at   = [ key "AT" . sep_spc
 
 let upssched_lns    = (upssched_at|upssched_opt|comment|empty)*
 
-let upssched_filter = ( incl "/etc/nut/upssched.conf" )
+let upssched_filter = ( incl "@CONFPATH@/upssched.conf" )
 			. Util.stdexcl
 
 let upssched_xfm    = transform upssched_lns upssched_filter

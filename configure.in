@@ -794,6 +794,15 @@ AC_OUTPUT([
  lib/libupsclient.pc
  lib/Makefile
  man/Makefile
+ scripts/augeas/Makefile
+ scripts/augeas/nutnutconf.aug
+ scripts/augeas/nutupsconf.aug
+ scripts/augeas/nutupsdconf.aug
+ scripts/augeas/nutupsdusers.aug
+ scripts/augeas/nutupsmonconf.aug
+ scripts/augeas/nutupsschedconf.aug
+ scripts/augeas/nuthostsconf.aug
+ scripts/augeas/nutupssetconf.aug
  scripts/hal/Makefile
  scripts/hal/ups-nut-device.fdi
  scripts/hotplug/Makefile

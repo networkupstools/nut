@@ -1,6 +1,6 @@
 (*
 Module: NutNutConf
- Parses /etc/nut/nut.conf
+ Parses @CONFPATH@/nut.conf
 
 Author: Frederic Bohe  <fredericbohe@eaton.com>
 
@@ -11,10 +11,10 @@ About: Lens Usage
   Sample usage of this lens in augtool
 
     * Print NUT MODE start-up configuration:
-      > print /files/etc/nut/nut.conf/MODE
+      > print /files@CONFPATH@/nut.conf/MODE
 
 About: Configuration files
-  This lens applies to /etc/nut/nut.conf. See <filter>.
+  This lens applies to @CONFPATH@/nut.conf. See <filter>.
 *)
 
 module NutNutConf =
@@ -42,7 +42,7 @@ let nut_mode = [ sep_spc . key "MODE" . def_sep . sep_spc . store nut_possible_m
 
 let nut_lns  = (nut_mode|comment|empty)*
 
-let nut_filter = ( incl "/etc/nut/nut.conf" )
+let nut_filter = ( incl "@CONFPATH@/nut.conf" )
 			. Util.stdexcl
 
 let nut_xfm    = transform nut_lns nut_filter
