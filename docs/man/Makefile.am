@@ -31,12 +31,12 @@ MAN_CONF_PAGES = \
 man5_MANS = $(MAN_CONF_PAGES)
 
 HTML_CONF_MANS = \
-	nut.conf.txt \
-	ups.conf.txt \
-	upsd.conf.txt \
-	upsd.users.txt \
-	upsmon.conf.txt \
-	upssched.conf.txt
+	nut.conf.html \
+	ups.conf.html \
+	upsd.conf.html \
+	upsd.users.html \
+	upsmon.conf.html \
+	upssched.conf.html
 
 SRC_CLIENT_PAGES = \
 	nutupsdrv.txt \
@@ -212,7 +212,6 @@ SRC_SERIAL_PAGES = \
 	optiups.txt	\
 	powercom.txt 	\
 	powerpanel.txt	\
-	megatec.txt	\
 	rhino.txt		\
 	safenet.txt	\
 	solis.txt		\
@@ -250,7 +249,6 @@ MAN_SERIAL_PAGES = \
 	optiups.8	\
 	powercom.8 	\
 	powerpanel.8	\
-	megatec.8	\
 	rhino.8		\
 	safenet.8	\
 	solis.8		\
@@ -292,7 +290,6 @@ HTML_SERIAL_MANS = \
 	optiups.html	\
 	powercom.html 	\
 	powerpanel.html	\
-	megatec.html	\
 	rhino.html		\
 	safenet.html	\
 	solis.html		\
@@ -314,14 +311,12 @@ HTML_SNMP_MANS = snmp-ups.html
 # (--with-usb)
 SRC_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.txt \
-	megatec_usb.txt \
 	richcomm_usb.txt \
 	tripplite_usb.txt \
 	usbhid-ups.txt
 
 MAN_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.8 \
-	megatec_usb.8 \
 	richcomm_usb.8 \
 	tripplite_usb.8 \
 	usbhid-ups.8
@@ -332,7 +327,6 @@ endif
 
 HTML_USB_LIBUSB_MANS = \
 	bcmxcp_usb.html \
-	megatec_usb.html \
 	richcomm_usb.html \
 	tripplite_usb.html \
 	usbhid-ups.html
@@ -374,6 +368,7 @@ MAN_MANS = \
 	$(MAN_POWERMAN_PAGES)
 
 # distribute everything, even those not installed by default
+# Note that 'dist' target requires AsciiDoc!
 EXTRA_DIST = \
 	$(SRC_CONF_PAGES) \
 	$(SRC_CLIENT_PAGES) \
@@ -404,8 +399,7 @@ man-index.html: index.html
 
 html-man: $(HTML_MANS) man-index.html
 
-clean-local:
-	rm -f $(CONVERTED_TO_ASCIIDOC) $(MANS) *.xml man-index.html
+CLEANFILES = *.xml *.html
 
 SUFFIXES = .txt .html .1 .3 .5 .8
 

@@ -39,7 +39,7 @@ typedef struct conn_s {
 
 	extern	struct	ups_handler	upsh;
 
-void dstate_init(const char *prog, const char *port);
+void dstate_init(const char *prog, const char *devname);
 int dstate_poll_fds(struct timeval timeout, int extrafd);
 int dstate_setinfo(const char *var, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));

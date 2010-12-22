@@ -378,8 +378,8 @@ For my development system this yields the following /dev entries:
 
 	4 drwxrwx---   2 nutdev   nut          4096 Aug 20 18:37 .
 	4 drwxr-xr-x   4 root     root         4096 May 14 21:20 ..
-	4 srw-rw----   1 nutdev   nut             0 Sep  3 17:10 apcsmart-ttyS0
-	4 srw-rw----   1 nutdev   nut             0 Sep  3 17:10 megatec-ttyS1
+	4 srw-rw----   1 nutdev   nut             0 Sep  3 17:10 apcsmart-ups1
+	4 srw-rw----   1 nutdev   nut             0 Sep  3 17:10 blazer_ser-ups2
 
 You may have to remove old socket or state files first if you are
 changing to this security scheme from an older version.  The drivers
@@ -504,10 +504,9 @@ There are several driver to support USB models.
 - usbhid-ups supports various manufacturers complying to the HID standard,
 - tripplite_usb supports various Tripp-Lite units,
 - bcmxcp_usb supports various Powerware units,
-- megatec_usb and blazer_usb supports various manufacturers that use the
-Megatec / Q1 protocol.
+- blazer_usb supports various manufacturers that use the Megatec / Q1 protocol.
 
-Refer to the "driver-name" (8) manpage for more information.
+Refer to the 'driver-name' (8) manpage for more information.
 
 == What is this usbhid-ups (formerly newhidups) about?
 

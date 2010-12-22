@@ -35,8 +35,9 @@ Retired members
 
 - Russell Kroll: Founder, and project leader from 1996 to 2005
 - Peter Selinger: senior lieutenant
-- Carlos Rodrigues: author of the "megatec" driver, removing the numerous
-drivers for Megatec / Q1 protocol
+- Carlos Rodrigues: author of the "megatec" drivers, removing the numerous
+drivers for Megatec / Q1 protocol. These drivers have now been replaced by
+blazer_ser and blazer_usb
 - Niels Baggesen: ported and heavily extended upscode2 to NUT 2.0 driver model
 - Niklas Edmundsson: has worked on 3-phase support, and upscode2 updates
 - Martin Loyer: has worked a bit on mge-utalk

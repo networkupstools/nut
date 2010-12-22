@@ -1,0 +1,28 @@
+Trying to change property 'svn:ignore' from 'Makefile
+Makefile.in
+' to 'Makefile
+Makefile.in
+developer-guide.chunked
+packager-guide.chunked
+user-manual.chunked
+FAQ.html
+FAQ.pdf
+developer-guide.pdf
+docbook-xsl.css
+packager-guide.pdf
+user-manual.pdf
+',
+but the property has been locally changed from 'Makefile
+Makefile.in
+' to 'Makefile
+Makefile.in
+developer-guide.chunked
+packager-guide.chunked
+user-manual.chunked
+FAQ.html
+FAQ.pdf
+developer-guide.pdf
+docbook-xsl.css
+packager-guide.pdf
+user-manual.pdf
+'.

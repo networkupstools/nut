@@ -772,7 +772,7 @@ the 'sdorder' value in your ups.conf.
 		sdorder = 1
 
 	[misc]
-		driver = megatec
+		driver = blazer_ser
 		port = /dev/ttyS1
 		sdorder = 0
 
