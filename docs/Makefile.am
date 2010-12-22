@@ -1,4 +1,4 @@
-SHARED_DEPS = nut-names.txt
+SHARED_DEPS = nut-names.txt asciidoc.conf
 
 IMAGE_FILES = images/asciidoc.png \
 	images/eaton-logo.png \
@@ -79,7 +79,7 @@ FULL_DEVELOPER_GUIDE_DEPS = $(DEVELOPER_GUIDE_DEPS)  $(SHARED_DEPS)
 
 user-manual.html user-manual.chunked user-manual.pdf: $(FULL_USER_MANUAL_DEPS)
 developer-guide.html developer-guide.chunked developer-guide.pdf: $(FULL_DEVELOPER_GUIDE_DEPS)
-packager-guide.html packager-guide.chunked packager-guide.pdf: packager-guide.txt
+packager-guide.html packager-guide.chunked packager-guide.pdf: packager-guide.txt asciidoc.conf
 
 # Note: without the "-v", asciidoc (circa 8.6.2) sometimes hangs when
 # generating the chunked HTML:
@@ -92,12 +92,12 @@ A2X_COMMON_OPTS = -v --attribute icons \
     -a toc -a numbered --destination-dir=.
 
 .txt.html:
-	$(A2X) $(A2X_COMMON_OPTS) --format=xhtml $<
+	$(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml $<
 
 .txt.chunked:
-	$(A2X) $(A2X_COMMON_OPTS) --format=chunked $<
+	$(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked $<
 
 .txt.pdf:
-	$(A2X) $(A2X_COMMON_OPTS) --format=pdf $<
+	$(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf $<
 
 .PHONY: html html-single pdf website

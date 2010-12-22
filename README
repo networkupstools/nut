@@ -180,7 +180,7 @@ data about power and battery status.  Advanced features like battery
 charge readings and such require a "smart" UPS and a driver which
 supports it.
 +
-See the link:man/genericups.html[genericups(8)] man page for more information.
+See the linkman:genericups[8] man page for more information.
 
 - The `usbhid-ups` driver attempts to communicate with USB HID Power Device
 Class (PDC) UPSes. These units generally implement the same basic protocol,
@@ -188,25 +188,25 @@ with minor variations in the exact set of supported attributes. This driver
 also applies several correction factors when the UPS firmware reports values
 with incorrect scale factors.
 +
-See the link:man/usbhid-ups.html[usbhid-ups(8)] man page for more information.
+See the linkman:usbhid-ups[8] man page for more information.
 
 - The `blazer_ser` and `blazer_usb` drivers supports the Megatec / Q1
 protocol that is used in many brands (Blazer, Energy Sistem, Fenton
 Technologies, Mustek and many others).
 +
-See the link:man/blazer.html[blazer(8)] man page for more information.
+See the linkman:blazer[8] man page for more information.
 
 - The `snmp-ups` driver handles various SNMP enabled devices, from many
 different manufacturers. In SNMP terms, `snmp-ups` is a manager, that
 monitors SNMP agents.
 +
-See the link:man/snmp-ups.html[snmp-ups(8)] man page for more information.
+See the linkman:snmp-ups[8] man page for more information.
 
 - The `powerman-pdu` is a bridge to the PowerMan daemon, thus handling all
 PowerMan supported devices. The PowerMan project supports several serial
 and networked PDU, along with Blade and IPMI enabled servers.
 +
-See the link:man/powerman-pdu.html[powerman-pdu(8)] man page for more
+See the linkman:powerman-pdu[8] man page for more
 information.
 
 
@@ -288,7 +288,7 @@ Additional Information
 
 More information on configuring upsmon can be found in these places:
 
-- The link:man/upsmon.html[upsmon(8)] man page
+- The linkman:upsmon[8] man page
 - <<BigServers,Typical setups for big servers>>
 - <<UPS_shutdown,Configuring automatic UPS shutdowns>> chapter
 - The stock `upsmon.conf` that comes with the package
@@ -327,7 +327,7 @@ If you are interested in writing a simple client that monitors `upsd`,
 the source code for `upsc` is a good way to learn about using the
 upsclient functions.
 
-See the link:man/upsc.html[upsc(8)] man page and
+See the linkman:upsc[8] man page and
 <<nut-names,NUT command and variable naming scheme>> for more information.
 
 upslog
@@ -366,7 +366,7 @@ On the other hand, one that doesn't support them won't print anything:
 	( nothing )
 
 `upsrw` requires administrator powers to change settings in the hardware.
-Refer to link:man/upsd.users.html[upsd.users(5)] for information on defining
+Refer to linkman:upsd.users[5] for information on defining
 users in `upsd`.
 
 upscmd
@@ -390,7 +390,7 @@ Use the -l command to list them, like this:
 
 `upscmd` requires administrator powers to start instant commands.
 To define users and passwords in `upsd`, see
-link:man/upsd.users.html[upsd.users(5)].
+linkman:upsd.users[5].
 
 
 CGI Programs

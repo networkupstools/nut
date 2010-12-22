@@ -31,13 +31,13 @@ be in any programming or scripting language.
 NOTE: Remember that your helper must be *executable*. If you are using a script,
 make sure the execution flags are set.
 
-For more information, refer to link:man/upsmon.html[upsmon(8)] and
-link:man/upsmon.conf.html[upsmon.conf(5)] manual pages.
+For more information, refer to linkman:upsmon[8] and
+linkman:upsmon.conf[5] manual pages.
 
 Setting up everything
 ~~~~~~~~~~~~~~~~~~~~~
 
-- Set EXEC flags on various things in link:man/upsmon.conf.html[upsmon.conf(5)]:
+- Set EXEC flags on various things in linkman:upsmon.conf[5]:
 +
 	NOTIFYFLAG ONBATT EXEC
 	NOTIFYFLAG ONLINE EXEC

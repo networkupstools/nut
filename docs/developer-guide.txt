@@ -65,7 +65,7 @@ Using this method, you can either replay a real life sequence,
 <<dev-recording,recorded from an actual device>>, or directly interact
 through upsrw or by editing the device file.
 
-For more information, refer to link:man/dummy-ups.html[dummy-ups(8)]
+For more information, refer to linkman:dummy-ups[8]
 manual page. 
 
 

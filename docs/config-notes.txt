@@ -118,13 +118,13 @@ put whatever you like. If you only own one UBS UPS, the driver will
 find it automatically. If you own more than one, refer to the driver's
 manual page for more information on matching a specific device.
 
-References: link:man/ups.conf.html[ups.conf(5)],
-link:man/nutupsdrv.html[nutupsdrv(8)],
-link:man/bcmxcp_usb.html[bcmxcp_usb(8)],
-link:man/blazer.html[blazer_usb(8)],
-link:man/richcomm_usb.html[richcomm_usb(8)],
-link:man/tripplite_usb.html[tripplite_usb(8)],
-link:man/usbhid-ups.html[usbhid-ups(8)]
+References: linkman:ups.conf[5],
+linkman:nutupsdrv[8],
+linkman:bcmxcp_usb[8],
+linkman:blazer[8],
+linkman:richcomm_usb[8],
+linkman:tripplite_usb[8],
+linkman:usbhid-ups[8]
 
 
 [[Starting_drivers]]
@@ -159,7 +159,7 @@ state path probably isn't writable by the driver.  Check the
 
 After making changes, try the <<Ownership, Ownership and permissions>> step again.
 
-References: man pages: link:man/nutupsdrv.html[nutupsdrv(8)], link:man/upsdrvctl.html[upsdrvctl(8)]
+References: man pages: linkman:nutupsdrv[8], linkman:upsdrvctl[8]
 
 
 Data server configuration (upsd)
@@ -192,9 +192,9 @@ group you created, then make it readable by the group.
 	chown root:nut upsd.conf upsd.users
 	chmod 0640 upsd.conf upsd.users
 
-References: man pages: link:man/upsd.conf.html[upsd.conf(5)],
-link:man/upsd.users.html[upsd.users(5)],
-link:man/upsd.html[upsd(8)]
+References: man pages: linkman:upsd.conf[5],
+linkman:upsd.users[5],
+linkman:upsd[8]
 
 [[Starting_upsd]]
 Starting the data server
@@ -222,7 +222,7 @@ is stale, then your ups.conf is not configured correctly, or you
 have a driver that isn't working properly.  You must fix this before
 going on to the next step.
 
-Reference: man page: link:man/upsd.html[upsd(8)]
+Reference: man page: linkman:upsd[8]
 
 Check the UPS data
 ~~~~~~~~~~~~~~~~~~
@@ -244,7 +244,7 @@ probably misconfigured during the <<Driver_configuration, Driver configuration>>
 step.  If you reconfigure the driver, use 'upsdrvctl stop' to stop it, then
 start it again as shown in the <<Starting_drivers, Starting driver(s)>> step.
 
-Reference: man page: link:man/upsc.html[upsc(8)]
+Reference: man page: linkman:upsc[8]
 
 
 All data
@@ -304,7 +304,7 @@ above.  A sample run on a UPS (Eaton Ellipse MAX 1100) looks like this:
 	ups.timer.start: -1
 	ups.vendorid: 0463
 
-Reference: man page: link:man/upsc.html[upsc(8)],
+Reference: man page: linkman:upsc[8],
 <<nut-names,NUT command and variable naming scheme>>
 
 Startup scripts
@@ -395,7 +395,7 @@ authenticate.  This example is for a user called "monuser":
 		upsmon master
 		# or upsmon slave
 
-References: link:man/upsd.html[upsd(8)], link:man/upsd.users.html[upsd.users(5)]
+References: linkman:upsd[8], linkman:upsd.users[5]
 
 Reloading the data server
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -426,8 +426,8 @@ We will test for the presence of this file in a later step.
 
 	POWERDOWNFLAG /etc/killpower
 
-References: man pages: link:man/upsmon.html[upsmon(8)],
-link:man/upsmon.conf.html[upsmon.conf(5)]
+References: man pages: linkman:upsmon[8],
+linkman:upsmon.conf[5]
 
 Securing upsmon.conf
 ^^^^^^^^^^^^^^^^^^^^
@@ -466,8 +466,7 @@ In such cases, refer to the User Manual:
 - <<BigServers,typical setups for big servers>>,
 - <<DataRoom,typical setups for data rooms>>.
 
-References: link:man/upsmon.html[upsmon(8)],
-link:man/upsmon.conf.html[upsmon.conf(5)]
+References: linkman:upsmon[8], linkman:upsmon.conf[5]
 
 Define a SHUTDOWNCMD for upsmon
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -530,7 +529,7 @@ Edit your shutdown scripts, and add `upsdrvctl shutdown`.
 
 You should configure your system to power down the UPS after the filesystems are
 remounted read-only.  Have it look for the presence of the POWERDOWNFLAG (from
-link:man/upsmon.conf.html[upsmon.conf(5)]), using this as an example:
+linkman:upsmon.conf[5]), using this as an example:
 
 --------------------------------------------------------------------------------
 
@@ -794,4 +793,4 @@ it's much easier to move things around since any given UPS drives a smaller
 percentage of the overall power.
 
 More information can be found in the <<user-manual,NUT User Manual>>,
-and the various link:../man/index.html[user manual pages].
+and the various link:man/index.html[user manual pages].

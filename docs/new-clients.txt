@@ -32,7 +32,7 @@ installing these files. The libraries can then be built and installed
 with `make` and `make install` as usual. This must be done before
 building other (non-NUT) programs which depend on them.
 
-For more information, refer to the link:man/upsclient.html[upsclient(3)],
+For more information, refer to the linkman:upsclient[3],
 manual page and the various
 link:man/index.html#Developer_man[upscli_*(3)] functions documentation
 referenced in the same file.
@@ -56,7 +56,7 @@ If you don't have pkg-config, use this:
 
    libupsclient-config --cflags
 
-Reference: man page: link:man/libupsclient-config.html[libupsclient-config(1)]
+Reference: linkman:libupsclient-config[1]
 
 Python
 ------

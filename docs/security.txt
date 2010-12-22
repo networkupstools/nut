@@ -61,7 +61,7 @@ Administrative commands such as setting variables and the instant commands
 are powerful, and access to them needs to be restricted.
 
 NUT provides an internal mechanism to do so, through
-link:man/upsd.users.html[upsd.users(5)].
+linkman:upsd.users[5].
 
 This file defines who may access instant commands and settings, and what
 is available.
@@ -78,7 +78,7 @@ You can also create an 'administrator' user with full power using:
 		instcmds = all
 
 For more information on how to restrict actions and instant commands, refer
-to link:man/upsd.users.html[upsd.users(5)] manual page.
+to linkman:upsd.users[5] manual page.
 
 NOTE: NUT administrative user definitions should be used in conjunction with
 <<TCP_Wrappers,TCP Wrappers>>.
@@ -95,7 +95,7 @@ There are various ways to do so.
 NUT LISTEN directive
 ~~~~~~~~~~~~~~~~~~~~
 
-link:man/upsd.conf.html[upsd.conf(5)].
+linkman:upsd.conf[5].
 
    LISTEN interface port
 
