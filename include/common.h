@@ -286,8 +286,10 @@ extern int optind;
 #define SVCNAME TEXT("Network UPS Tools")
 #define EVENTLOG_PIPE_NAME TEXT("\\\\.\\pipe\\nut")
 
+char * getfullpath(char * relative_path);
 #define PATH_ETC	"\\..\\etc"
 #define PATH_VAR_RUN "\\..\\var\\run"
+#define PATH_SHARE "\\..\\share"
 #endif /* WIN32*/
 
 #ifndef HAVE_USLEEP

@@ -1532,7 +1532,11 @@ int main(int argc, char **argv)
 
 	/* yes, xstrdup - the conf handlers call free on this later */
 	statepath = xstrdup(dflt_statepath());
+#ifndef WIN32
 	datapath = xstrdup(NUT_DATADIR);
+#else
+	datapath = getfullpath(PATH_SHARE);
+#endif
 
 	/* set up some things for later */
 	snprintf(pidfn, sizeof(pidfn), "%s/%s.pid", altpidpath(), progname);
