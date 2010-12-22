@@ -1,4 +1,9 @@
-# dummy-ups example definition file ; generated with "upsc ups@host > evolution500.dev"
+# dummy-ups example power sequence file
+#
+# Base is the same as .dev files, generated using:
+#  $ upsc ups@host > evolution500.seq
+#
+# TIMER have then been added to generate power events.
 
 battery.charge: 90
 battery.charge.low: 30
