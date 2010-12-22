@@ -11,12 +11,12 @@ SYNOPSIS
 
  #include <upsclient.h>
 
- int upscli_readline(UPSCONN *ups, char *buf, size_t buflen);
+ int upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen);
 
 DESCRIPTION
 -----------
 The *upscli_readline()* function takes the pointer 'ups' to a
-`UPSCONN` state structure, receives a single line from the server, and
+`UPSCONN_t` state structure, receives a single line from the server, and
 copies up to 'buflen' bytes of the response into the buffer
 'buf'.
 

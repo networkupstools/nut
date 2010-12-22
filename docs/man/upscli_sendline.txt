@@ -12,13 +12,13 @@ SYNOPSIS
 
  #include <upsclient.h>
 
- int upscli_sendline(UPSCONN *ups, const char *buf, size_t buflen);
+ int upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen);
 
 DESCRIPTION
 -----------
 
 The *upscli_sendline()* function takes the pointer 'ups' to a
-`UPSCONN` state structure and transmits a buffer 'buf' of size
+`UPSCONN_t` state structure and transmits a buffer 'buf' of size
 'buflen' to the server. 
 
 The data in 'buf' must be a fully formatted protocol command as no

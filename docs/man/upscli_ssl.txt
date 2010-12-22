@@ -11,13 +11,13 @@ SYNOPSIS
 
  #include <upsclient.h>
 
- int upscli_ssl(UPSCONN *ups);
+ int upscli_ssl(UPSCONN_t *ups);
 
 DESCRIPTION
 -----------
 
 The *upscli_ssl*() function takes the pointer 'ups' to a
-`UPSCONN` state structure.  It only returns 1 if SSL support has been
+`UPSCONN_t` state structure.  It only returns 1 if SSL support has been
 compiled into the linkman:upsclient[3] library, and if it was successfully
 enabled for this connection.
 
