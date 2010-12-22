@@ -379,7 +379,8 @@ EXTRA_DIST = \
 	$(SRC_USB_LIBUSB_PAGES) \
 	$(SRC_NETXML_PAGES) \
 	$(SRC_POWERMAN_PAGES) \
-	$(MAN_MANS)
+	$(MAN_MANS) \
+	asciidoc.conf
 
 HTML_MANS = \
 	$(HTML_CONF_MANS) \
