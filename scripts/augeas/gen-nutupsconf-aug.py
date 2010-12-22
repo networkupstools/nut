@@ -18,6 +18,7 @@
 # This program extracts all drivers specific variables, declared
 # using 'addvar()' and output a complete ups.conf lens for Augeas
 
+import sys
 import re
 import glob
 import codecs
@@ -64,6 +65,11 @@ if __name__ == '__main__':
 	Exceptionlist = ['../../drivers/main.c', '../../drivers/skel.c']
 	outputFilename = 'nutupsconf.aug.in'
 	templateFilename = 'nutupsconf.aug.tpl'
+	dirPrefix = ''
+
+	if (len(sys.argv) == 2):
+		dirPrefix = sys.argv[1]
+		print dirPrefix
 
 	# 1/ Extract all specific drivers parameters, in a sorted list with unique entries
 	# 1.1/ List all drivers implementation files
@@ -102,7 +108,7 @@ if __name__ == '__main__':
 		specificVars += "                 | \"%s\"\n" %(name)
 
 	# 2/ Load the template lens
-	tplFd = codecs.open(templateFilename, encoding='utf-8')
+	tplFd = codecs.open(dirPrefix + templateFilename, encoding='utf-8')
 
 	# 2.1/ Search for the pattern to replace
 	outputText = tplFd.read()
