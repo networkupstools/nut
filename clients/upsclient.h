@@ -20,10 +20,13 @@
 #ifndef UPSCLIENT_H_SEEN
 #define UPSCLIENT_H_SEEN
 
-#ifdef HAVE_SSL
-#include <openssl/err.h>
-#include <openssl/ssl.h>
-#endif
+#ifdef WITH_OPENSSL
+    #include <openssl/err.h>
+    #include <openssl/ssl.h>
+#elif defined(WITH_NSS) /* WITH_OPENSSL */
+	#include <nss/nss.h>
+	#include <ssl.h>
+#endif  /* WITH_OPENSSL | WITH_NSS */
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */
@@ -49,13 +52,13 @@ typedef struct {
 
 	char	errbuf[UPSCLI_ERRBUF_LEN];
 
-#ifdef HAVE_SSL
-	SSL_CTX	*ssl_ctx;
+#ifdef WITH_OPENSSL
 	SSL	*ssl;
-#else
-	void	*ssl_ctx;
-	void	*ssl;
-#endif
+#elif defined(WITH_NSS) /* WITH_OPENSSL */
+	PRFileDesc *ssl;
+#else /* WITH_OPENSSL | WITH_NSS */
+	void *ssl;
+#endif /* WITH_OPENSSL | WITH_NSS */
 
 	char	readbuf[64];
 	size_t	readlen;
@@ -63,9 +66,18 @@ typedef struct {
 
 }	UPSCONN_t;
 
+typedef int (*upscli_get_password_cb)(const char* slot, const char* token, char * const buffer, const int size);
+
 const char *upscli_strerror(UPSCONN_t *ups);
 
+int upscli_init(int certverify, const char *certpath);
+int upscli_cleanup();
+
+void upscli_set_password_callback(upscli_get_password_cb passwdcb);
+
 int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags);
+
+void upscli_add_host_cert(const char* hostname, const char* certname, int certverify, int forcessl);
 
 /* --- functions that only use the new names --- */
 
@@ -85,8 +97,6 @@ int upscli_splitname(const char *buf, char **upsname, char **hostname,
 			int *port);
 
 int upscli_splitaddr(const char *buf, char **hostname, int *port);
-
-int upscli_sslcert(UPSCONN_t *ups, const char *file, const char *path, int verify);
 
 int upscli_disconnect(UPSCONN_t *ups);
 
@@ -154,10 +164,11 @@ int upscli_ssl(UPSCONN_t *ups);
 
 /* flags for use with upscli_connect */
 
-#define UPSCLI_CONN_TRYSSL	0x0001	/* try SSL, OK if not supported       */
-#define UPSCLI_CONN_REQSSL	0x0002	/* try SSL, fail if not supported     */
-#define UPSCLI_CONN_INET	0x0004	/* IPv4 only */
-#define UPSCLI_CONN_INET6	0x0008	/* IPv6 only */
+#define UPSCLI_CONN_TRYSSL		0x0001	/* try SSL, OK if not supported   */
+#define UPSCLI_CONN_REQSSL		0x0002	/* try SSL, fail if not supported */
+#define UPSCLI_CONN_INET		0x0004	/* IPv4 only */
+#define UPSCLI_CONN_INET6		0x0008	/* IPv6 only */
+#define UPSCLI_CONN_CERTVERIF	0x0010	/* Verify certificates for SSL	*/
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */

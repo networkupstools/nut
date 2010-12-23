@@ -22,9 +22,16 @@
 #ifndef CTYPE_H_SEEN
 #define CTYPE_H_SEEN 1
 
-#ifdef HAVE_SSL
-#include <openssl/err.h>
-#include <openssl/ssl.h>
+/* Mozilla NSS */
+#ifdef WITH_NSS
+	#include <nss/nss.h>
+	#include <ssl.h>
+#endif
+
+/* OpenSSL */
+#ifdef WITH_OPENSSL
+	#include <openssl/err.h>
+	#include <openssl/ssl.h>
 #endif
 
 #include "parseconf.h"
@@ -38,10 +45,12 @@ typedef struct ctype_s {
 	char	*password;
 	char	*username;
 
-#ifdef	HAVE_SSL
+#ifdef	WITH_OPENSSL
 	SSL	*ssl;
+#elif defined(WITH_NSS)
+	PRFileDesc	*ssl;
 #else
-	void	*ssl;
+	void *ssl;
 #endif
 	int	ssl_connected;
 
