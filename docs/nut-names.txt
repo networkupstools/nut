@@ -41,7 +41,7 @@ ups: General unit information
 [options="header"]
 |===============================================================================
 | Name                  | Description                  | Example value
-| ups.status            | UPS status                   | link:developer-guide.html#_status_data[OL]
+| ups.status            | UPS status                   | linkdoc:developer-guide[OL,_status_data]
 | ups.alarm             | UPS alarms                   | OVERHEAT
 | ups.time              | Internal UPS clock time
                           (opaque string)              | 12:34

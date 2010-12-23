@@ -65,7 +65,7 @@ ifdef::website[]
 link:docs/user-manual.chunked/index.html[NUT user manual]
 endif::website[]
 ifndef::website[]
-<<user-manual,NUT user manual>>
+linkdoc:user-manual[NUT user manual]
 endif::website[]
  for more information.
  

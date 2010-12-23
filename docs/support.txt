@@ -16,7 +16,7 @@ ifdef::website[]
 - Else, you can read the link:docs/user-manual.chunked/index.html[NUT User Manual].
 endif::website[]
 ifndef::website[]
-- Else, you can read the <<user-manual,NUT User Manual>>.
+- Else, you can read the linkdoc:user-manual[NUT user manual].
 endif::website[]
 It also covers many areas about installing, configuring and using NUT.
 The specific steps on system integration are also discussed.
@@ -89,7 +89,7 @@ for more information, and the chapter on how to
 link:docs/developer-guide.chunked/ar01s03.html#_submitting_patches[submit patches].
 endif::website[]
 ifndef::website[]
-link:../developer-guide.chunked/index.html[NUT Developer Guide]
+linkdoc:developer-guide[NUT Developer Guide]
 for more information, and the chapter on how to 
 link:../developer-guide.chunked/ar01s03.html#_submitting_patches[submit patches].
 endif::website[]
@@ -106,6 +106,6 @@ ifdef::website[]
 link:docs/packager-guide.chunked/index.html[NUT Packager Guide]
 endif::website[]
 ifndef::website[]
-link:../packager-guide.chunked/index.html[NUT Packager Guide]
+linkdoc:packager-guide[NUT Packager Guide]
 endif::website[]
  for more information.

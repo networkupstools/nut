@@ -540,8 +540,8 @@ Hacking / Development Info
 
 Additional documentation can be found in:
 
-- the link:developer-guide.html[Developer Guide],
-- the link:packager-guide.html[Packager Guide].
+- the linkdoc:developer-guide[Developer Guide],
+- the linkdoc:packager-guide[Packager Guide].
 
 
 Acknowledgements / Contributions

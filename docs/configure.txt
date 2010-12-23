@@ -55,7 +55,7 @@ The possible values are "html-single" for single page HTML, "html-chunked"
 for multi pages HTML, "pdf" for a PDF file or "auto" to build all the
 previous documentation formats.
 
-This feature requires AsciiDoc (http://www.methods.co.nz/asciidoc).
+This feature requires AsciiDoc 8.6.3 (http://www.methods.co.nz/asciidoc).
 
 
 Optional features

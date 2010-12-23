@@ -1,6 +1,5 @@
 :titles.underlines: "__","==","--","~~","^^"
 
-[[user-manual]]
 Network UPS Tools User Manual
 _____________________________
 :Author: Russell_Kroll,_Arnaud_Quette_and_Arjen_de_Korte

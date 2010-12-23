@@ -792,5 +792,5 @@ system with a 1:1 cord:supply ratio has more wires stuffed behind it, but
 it's much easier to move things around since any given UPS drives a smaller
 percentage of the overall power.
 
-More information can be found in the <<user-manual,NUT User Manual>>,
+More information can be found in the linkdoc:user-manual[NUT user manual],
 and the various link:man/index.html[user manual pages].
