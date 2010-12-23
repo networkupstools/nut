@@ -1,3 +1,4 @@
-libhidups
-Makefile.in
 Makefile
+Makefile.in
+libhid.usermap
+libhidups

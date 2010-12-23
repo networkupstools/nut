@@ -79,7 +79,7 @@ sub gen_usb_files
 	# Udev file header
 	open my $outUdev, ">$outputUdev" || die "error $outputUdev : $!";
 	print $outUdev '# This file is generated and installed by the Network UPS Tools package.'."\n\n";
-	print $outUdev 'ACTION!="add", GOTO="nut-usbups_rules_end"'."\n";
+	print $outUdev 'ACTION!="add|change", GOTO="nut-usbups_rules_end"'."\n";
 	print $outUdev 'SUBSYSTEM=="usb_device", GOTO="nut-usbups_rules_real"'."\n";
 	print $outUdev 'SUBSYSTEM=="usb", GOTO="nut-usbups_rules_real"'."\n";
 	print $outUdev 'SUBSYSTEM!="usb", GOTO="nut-usbups_rules_end"'."\n\n";
@@ -243,9 +243,6 @@ sub find_usbdevs
 			}
 			elsif ($nameFile eq "tripplite_usb.c") {
 				$driver="tripplite_usb";
-			}
-			elsif ($nameFile eq "megatec_usb.c") {
-				$driver="megatec_usb";
 			}
 			elsif ($nameFile eq "blazer_usb.c") {
 				$driver="blazer_usb";

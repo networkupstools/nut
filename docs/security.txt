@@ -1,0 +1,521 @@
+Notes on securing NUT
+=====================
+
+The NUT Team is very interested in providing the highest security level to its
+users.
+
+Many internal and external mechanisms exist to secure NUT. And several steps are
+needed to ensure that your NUT setup meets your security requirements.
+
+This chapter will present you these mechanisms, by increasing order of security
+level. This means that the more security you need, the more mechanisms you will
+have to apply.
+
+NOTE: you may want to have a look at NUT Quality Assurance, since some
+topics are related to NUT security and reliability.
+
+
+[[verifySourceSig]]
+How to verify the NUT source code signature
+-------------------------------------------
+
+In order to verify the NUT source code signature for releases, perform the following steps:
+
+- Retrieve the link:http://www.networkupstools.org/download.html[NUT source code] (nut-X.Y.Z.tar.gz) and the matching signature (nut-X.Y.Z.tar.gz.sig)
+- Retrieve the link:http://www.networkupstools.org/source/nut-key.gpg[NUT maintainer's signature]:
+
+	$ gpg --fetch-keys http://www.networkupstools.org/source/nut-key.gpg
+
+- Launch the GPG checking using the following command:
+
+	$ gpg --verify nut-X.Y.Z.tar.gz.sig
+
+- You should see a message mentioning a "Good signature", like:
+
+	gpg: Signature made Thu Jul  5 16:15:05 2007 CEST using DSA key ID 204DDF1B
+	gpg: Good signature from "Arnaud Quette ..."
+	...
+
+
+System level privileges and ownership
+-------------------------------------
+
+All configuration files should be protected so that the world can't read them.
+Use the following commands to accomplish this:
+
+	chown root:nut /etc/nut/*
+	chmod 640 /etc/nut/*
+
+
+Finally, the <<StatePath,state path>> directory, which holds the
+communication between the driver(s) and upsd, should also be secured.
+
+	chown root:nut /var/state/ups
+	chmod 0770 /var/state/ups
+
+
+NUT level user privileges
+-------------------------
+
+Administrative commands such as setting variables and the instant commands
+are powerful, and access to them needs to be restricted.
+
+NUT provides an internal mechanism to do so, through
+linkman:upsd.users[5].
+
+This file defines who may access instant commands and settings, and what
+is available.
+
+During the initial 
+<<NUT_user_creation,NUT user creation>>, we have created a
+monitoring user for upsmon.
+
+You can also create an 'administrator' user with full power using:
+
+	[administrator]
+		password = mypass
+		actions = set
+		instcmds = all
+
+For more information on how to restrict actions and instant commands, refer
+to linkman:upsd.users[5] manual page.
+
+NOTE: NUT administrative user definitions should be used in conjunction with
+<<TCP_Wrappers,TCP Wrappers>>.
+
+
+Network access control
+----------------------
+
+If you are not using NUT on a standalone setup, you will need to enforce
+network access to upsd.
+
+There are various ways to do so.
+
+NUT LISTEN directive
+~~~~~~~~~~~~~~~~~~~~
+
+linkman:upsd.conf[5].
+
+   LISTEN interface port
+
+Bind a listening port to the interface specified by its Internet address.  This
+may be useful on hosts with multiple interfaces.  You should not rely
+exclusively on this for security, as it can be subverted on many systems.
+
+Listen on TCP port `port` instead of the default value which was compiled into
+the code.  This overrides any value  you  may  have  set  with `configure
+--with-port`.  If you don't change it with configure or this value, `upsd` will
+listen on port 3493 for this interface.
+
+Multiple LISTEN addresses may be specified.  The default is to bind to
+127.0.0.1 if no LISTEN addresses are specified (and ::1 if IPv6 support is
+compiled in).
+
+	   LISTEN 127.0.0.1
+	   LISTEN 192.168.50.1
+	   LISTEN ::1
+	   LISTEN 2001:0db8:1234:08d3:1319:8a2e:0370:7344
+
+This parameter will only be read at startup.  You'll need to restart (rather
+than reload) `upsd` to apply any changes made here.
+
+
+Firewall
+~~~~~~~~
+
+NUT has its own official IANA port: 3493/tcp.
+
+The `upsmon` process on slave systems (as well as `upsc`) connects to the
+`upsd` process on the master system via this TCP port. The `upsd` process does
+not connect out.
+
+You should use this to restrict network access.
+
+
+[[TCP_Wrappers]]
+TCP Wrappers
+~~~~~~~~~~~~
+
+If the server is build with tcp-wrappers support enabled, it will check if the
+NUT username is allowed to connect from the client address through the
+'/etc/hosts.allow' and '/etc/hosts.deny' files.
+
+NOTE: this will only be done for commands that require the user to be logged
+into the server.
+
+`hosts.allow`:
+
+	ups : admin@127.0.0.1/32
+	ups : monslave@127.0.0.1/32 monslave@192.168.1.0/24
+
+`hosts.deny`:
+
+	upsd : ALL
+
+Further details are described in hosts_access(5).
+
+
+Configuring SSL
+---------------
+
+SSL is available as a build option ('--with-ssl').
+
+It encrypts sessions between upsd and clients, and can also be used to
+authenticate servers.
+
+This means that stealing port 3493 from upsd will no longer net you interesting
+passwords.
+
+Several things must happen before this will work, however. This chapter will
+present these steps.
+
+Install OpenSSL
+~~~~~~~~~~~~~~~
+
+Install link:http://www.openssl.org[OpenSSL] as usual, either from source
+or binary packages.
+
+Recompile and install NUT
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Recompile NUT from source, starting with 'configure --with-ssl'.
+
+Then install everything as usual.
+
+Create a certificate and key for upsd
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+openssl (the program) should be in your PATH, unless you installed it from
+source yourself, in which case it may be in /usr/local/ssl/bin.
+
+Use the following command to create the certificate:
+
+	openssl req -new -x509 -nodes -out upsd.crt -keyout upsd.key
+
+You can also put a '-days nnn' in there to set the expiration.  If
+you skip this, it may default to 30 days.  This is probably not what
+you want.    
+
+It will ask several questions.  What you put in there doesn't matter a whole
+lot, since nobody is going to see it for now.  Future versions of the
+clients may present data from it, so you might use this opportunity to
+identify each server somehow.
+
+Figure out the hash for the key
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Use the following command to determine the hash of the certificate:
+
+	openssl x509 -hash -noout -in upsd.crt
+
+You'll get back a single line with 8 hex characters.  This is the
+hash of the certificate, which is used for naming the client-side
+certificate.  For the purposes of this example the hash is *0123abcd*.
+
+Install the client-side certificate
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Use the following commands to install the client-side certificate:
+ 
+	mkdir <certpath>
+	chmod 0755 <certpath>
+	cp upsd.crt <certpath>/<hash>.0
+
+Example:
+
+	mkdir /usr/local/ups/etc/certs
+	chmod 0755 /usr/local/ups/etc/certs
+	cp upsd.crt /usr/local/ups/etc/certs/0123abcd.0
+
+If you already have a file with that name in there, increment the
+0 until you get a unique filename that works.
+
+If you have multiple client systems (like upsmon slaves), be sure
+to install this file on them as well.
+
+We recommend making a directory under your existing confpath to
+keep everything in the same place.  Remember the path you created,
+since you will need to put it in upsmon.conf later.  
+
+It must not be writable by unprivileged users, since someone could
+insert a new client certificate and fool upsmon into trusting a
+fake upsd.
+
+Create the combined file for upsd
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To do so, use the below commands:
+
+	cat upsd.crt upsd.key > upsd.pem
+	chown root:nut upsd.pem
+	chmod 0640 upsd.pem
+
+This file must be kept secure, since anyone possessing it could
+pretend to be upsd and harvest authentication data if they get a
+hold of port 3493.
+
+Having it be owned by 'root' and readable by group 'nut' allows upsd
+to read the file without being able to change the contents.  This
+is done to minimize the impact if someone should break into upsd.
+
+Note on certification authorities (CAs) and signed keys
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There are probably other ways to handle this, involving keys which have
+been signed by a CA you recognize.  Contact your local SSL guru.
+
+Install the server-side certificate
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Install the certificate with the following command:
+
+	mv upsd.pem <upsd certfile path>
+
+Example:
+
+	mv upsd.pem /usr/local/ups/etc/upsd.pem
+
+After that, edit your upsd.conf and tell it where to find it:
+
+	CERTFILE /usr/local/ups/etc/upsd.pem
+
+Clean up the temporary files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	rm -f upsd.crt upsd.key
+
+Restart upsd
+~~~~~~~~~~~~
+
+It should come back up without any complaints.  If it says something
+about keys or certificates, then you probably missed a step.
+
+If you run upsd as a separate user id (like nutsrv), make sure that
+user can read the upsd.pem file.
+
+Point upsmon at the certificates
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Edit your upsmon.conf, and tell it where the CERTPATH is:
+
+	CERTPATH <path>
+
+Example:
+
+	CERTPATH /usr/local/ups/etc/certs
+
+Recommended: make upsmon verify all connections with certificates
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Put this in upsmon.conf:
+
+	CERTVERIFY 1
+
+Without this, there is no guarantee that the upsd is the right host.
+Enabling this greatly reduces the risk of man in the middle attacks.
+
+This effectively forces the use of SSL, so don't use this unless
+all of your upsd hosts are ready for SSL and have their certificates
+in order.
+
+Recommended: force upsmon to use SSL
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Again in upsmon.conf:
+
+	FORCESSL 1
+
+If you don't use 'CERTVERIFY 1', then this will at least make sure
+that nobody can sniff your sessions without a large effort.  Setting
+this will make upsmon drop connections if the remote upsd doesn't
+support SSL, so don't use it unless all of them have it running.
+
+Restart upsmon
+~~~~~~~~~~~~~~
+
+You should see something like this in the syslog from upsd:
+
+	foo upsd[1234]: Client mon@localhost logged in to UPS [myups] (SSL)
+
+If upsd or upsmon give any error messages, or the (SSL) is missing,
+then something isn't right.
+
+If in doubt about upsmon, start it with -D so it will stay in 
+the foreground and print debug messages.  It should print something
+like this every couple of seconds:
+
+	polling ups: myups@localhost [SSL]
+
+Obviously, if the '[SSL]' isn't there, something's broken.
+
+Recommended: sniff the connection to see it for yourself
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Using tcpdump, Wireshark (Ethereal), or another network sniffer tool,
+tell it to monitor port 3493/tcp and see what happens.  You should only
+see 'STARTTLS' go out, 'OK STARTTLS' come back, and the rest will be
+certificate data and then seemingly random characters.
+
+If you see any plaintext besides that (USERNAME, PASSWORD, etc.)
+then something is not working.
+
+Potential problems
+~~~~~~~~~~~~~~~~~~
+
+If you specify a certificate expiration date, you will eventually 
+see things like this in your syslog:
+
+	Oct 29 07:27:25 rktoy upsmon[3789]: Poll UPS [for750@rktoy] failed - 
+	SSL error: error:14090086:SSL routines:SSL3_GET_SERVER_CERTIFICATE: certificate verify failed
+
+You can verify that it is expired by using openssl to display the date:
+
+	openssl x509 -enddate -noout -in <certfile>
+
+It'll display a date like this:
+
+	notAfter=Oct 28 20:05:32 2002 GMT
+
+If that's after the current date, you need to generate another cert/key
+pair using the procedure above.
+
+Conclusion
+~~~~~~~~~~
+
+SSL support should be considered stable but purposely underdocumented
+since various bits of the implementation or configuration may change in
+the future. In other words, if you use this and it stops working after
+an upgrade, come back to this file to find out what changed.
+
+This is why the other documentation doesn't mention any of these
+directives yet.  SSL support is a treat for those of you that RTFM.
+
+There are also potential licensing issues for people who ship binary
+packages since NUT is GPL and OpenSSL is not compatible with it.  You
+can still build and use it yourself, but you can't distribute the
+results of it.  Or maybe you can.  It depends on what you consider
+"essential system software", and some other legal junk that we're not
+going to touch.
+
+Other packages have solved this by explicitly stating that an exception
+has been granted.  That is (purposely) impossible here, since NUT is the
+combined effort of many people, and all of them would have to agree to a
+license change.  This is actually a feature, since it means nobody can
+unilaterally run off with the source - not even the NUT team.
+
+Note that the replacement of OpenSSL by Mozilla Network Security Services
+(NSS) is scheduled in the future, to avoid the above licensing issues.
+
+
+chrooting and other forms of paranoia
+-------------------------------------
+
+It has been possible to run the drivers and upsd in a chrooted jail for
+some time, but it involved a number of evil hacks.  From the 1.3 series,
+a much saner chroot behavior exists, using BIND 9 as an inspiration.
+
+The old way involved creating an entire tree, complete with libraries, a
+shell (!), and many auxiliary files.  This was hard to maintain and
+could have become an interesting playground for an intruder.  The new
+way is minimal, and leaves little in the way of usable materials within
+the jail.
+
+This document assumes that you already have created at least one user
+account for the software to use.  If you're still letting it fall back
+on "nobody", stop right here and go figure that out first.  It also
+assumes that you have everything else configured and running happily all
+by itself.
+
+Generalities
+~~~~~~~~~~~~
+
+Essentially, you need to create your configuration directory and state
+path in their own little world, plus a special device or two.
+
+For the purposes of this example, the chroot jail is /chroot/nut.  The
+programs have been built with the default prefix, so they are using
+/usr/local/ups.  First, create the confpath and bring over a few files.
+
+	mkdir -p /chroot/nut/usr/local/ups/etc
+	cd /chroot/nut/usr/local/ups/etc
+	cp -a /usr/local/ups/etc/upsd.users .
+	cp -a /usr/local/ups/etc/upsd.conf .
+	cp -a /usr/local/ups/etc/ups.conf .
+
+We're using 'cp -a' to maintain the permissions on those files.
+
+Now bring over your state path, maintaining the same permissions as
+before.
+
+	mkdir -p /chroot/nut/var/state
+	cp -a /var/state/ups /chroot/nut/var/state
+
+Next we must put /etc/localtime inside the jail, or you may get very  
+strange readings in your syslog.  You'll know you have this problem if
+upsd shows up as UTC in the syslog while the rest of the system doesn't.
+
+	mkdir -p /chroot/nut/etc
+	cp /etc/localtime /chroot/nut/etc
+
+Note that this is not "cp -a", since we want to copy the *content*, not
+the symlink that it may be on some systems.
+
+Finally, create a tiny bit of /dev so the programs can enter the
+background properly - they redirect fds into the bit bucket to make sure
+nothing else grabs 0-2.
+
+	mkdir -p /chroot/nut/dev
+	cp -a /dev/null /chroot/nut/dev
+
+Try to start your driver(s) and make sure everything fires up as before.
+
+	upsdrvctl -r /chroot/nut -u nutdev start
+
+Once your drivers are running properly, try starting upsd.
+
+	upsd -r /chroot/nut -u nutsrv
+
+Check your syslog.  If nothing is complaining, try running clients like
+upsc and upsmon.  If they seem happy, then you're done.
+
+symlinks
+~~~~~~~~
+
+After you do this, you will have two copies of many things, like the
+confpath and the state path.  I recommend deleting the 'real'
+/var/state/ups, replacing it with a symlink to
+/chroot/nut/var/state/ups.  That will let other programs reference the
+.pid files without a lot of hassle.
+
+You can also do this with your confpath and point /usr/local/ups/etc at
+/chroot/nut/usr/local/ups/etc unless you're worried about something
+hurting the files inside that directory.  In that case, you should
+maintain a 'master' copy and push it into the chroot path after
+making changes.
+
+upsdrvctl itself does not chroot, so the ups.conf still needs to be in
+the usual confpath.
+
+upsmon
+~~~~~~
+
+This has not yet been applied to upsmon, since it can be quite
+complicated when there are notifiers that need to be run.  One
+possibility would be for upsmon to have three instances:
+
+	- privileged root parent that listens for a shutdown command
+
+	- unprivileged child that listens for notify events
+
+	- unprivileged chrooted child that does network I/O
+
+This one is messy, and may not happen for some time, if ever.
+
+Config files
+~~~~~~~~~~~~
+
+You may now set chroot= and user= in the global section of ups.conf.
+
+upsd chroots before opening any config files, so there is no way to 
+add support for that in upsd.conf at the present time.

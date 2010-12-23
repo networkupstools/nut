@@ -1,0 +1,205 @@
+POWERCOM(8)
+===========
+
+NAME  
+----
+
+powercom - UPS driver for Powercom/Trust/Advice UPS equipment
+
+NOTE
+----
+This man page only documents the hardware-specific features of the
+powercom driver.  For information about the core driver, see
+linkman:nutupsdrv[8].
+
+SUPPORTED HARDWARE
+------------------
+This driver supports many similar kinds of UPS hardware.  The most common 
+ones are the Trust 425/625, Powercom, and Advice Partner/King PR750.  
+Others using the same protocol may also work.
+
+EXTRA ARGUMENTS
+---------------
+This driver supports the following optional settings in the 
+linkman:ups.conf[5] file:
+
+*linevoltage*='value'::
+An integer specifying the mains voltage. It can't be auto detected. 
+Acceptable values are in the range of 110--120 or 220--240. The default
+is '230'.
+
+*manufacturer*='name'::
+Specify the manufacturer name, which also can't be auto detected. This is 
+a user defined string, so any name is acceptable. The default is 
+'PowerCom'.
+
+*modelname*='name'::
+Specify the model name, which also can't be auto detected. This is a 
+user defined string, so any name is acceptable. The default is 
+'Unknown'.
+
+*serialnumber*='value'::
+Like modelname above, but for the serial number. The default is 
+'Unknown'.
+
+*type*='name'::
+The exact type of the communication protocol within the powercom family, 
+that will be used to communicate with the UPS. The type is named after 
+the first modelname that was coded with that protocol. The acceptable 
+names are 'KP625AP', 'Trust', 'Egys', 'KIN', 'BNT', 'IMP' and 'BNT-other'. The
+default is 'Trust'.
++
+'BNT-other' is a special type for BNT 100-120V models.
+For this type you can (I think must!) specify voltage, batteryPercentage, 
+loadPercentage and validationSequence.
+
+*numOfBytesFromUPS*='value'::
+The number of bytes in a UPS frame. The default is type-dependent and 
+is given below.
+
+*methodOfFlowControl*='name'::
+The method of serial communication flow control that is engaged by the 
+UPS. The default is type-dependent and is given below. Acceptable names 
+are 'dtr0rts1', 'dtr1' or 'no_flow_control'.
+
+*shutdownArguments*={{'minutes','seconds'},'whether_minutes_should_be_used'}::
+The minutes and seconds that the UPS should wait between receiving the 
+shutdown command and actually shutting off. The other argument should 
+be set to the character 'n' only when the minutes value should be 
+skipped and not sent to the UPS. The default is type-dependent and is 
+given below. The braces and commas are mandatory. Note that there should 
+be no whitespace characters.
+
+*voltage*={'coefficient1','coefficient2','coefficient3','coefficient4'}::
+(Only for types KP625AP, Trust, Egys, BNT-other.)
+A quad that is used convert the raw data to a human-readable voltage 
+reading. The default is type-dependent and is given below. Do note that 
+the braces and commas are mandatory, as well as the lack of whitespace
+characters.
+
+*frequency*={'coefficient1','coefficient2'}::
+(Only for types KP625AP, Trust, Egys.)
+A pair to convert the raw data to a human-readable frequency reading. The 
+default is type-dependent and is given below. Do note that the braces 
+and commas are mandatory as well, as the lack of whitespace characters.
+
+*batteryPercentage*={'coefficient1','coefficient2','coefficient3','coefficient4','coefficient5'}::
+(Only for KP625AP, Trust, Egys, BNT-other.)
+A 5 tuple to convert the raw data to a human-readable battery percentage 
+reading. The default is type-dependent and is given below. Do note that 
+the braces and commas are mandatory, as the lack of white space 
+characters.
+
+*loadPercentage*={'coefficient1','coefficient2','coefficient3','coefficient4'}::
+(Only for types KP625AP, Trust, Egys, BNT-other.)
+A quad to convert the raw data to human readable load percentage 
+reading. The default is type-dependent and is given below. Do note that 
+the braces and commas are mandatory, as the lack of white space 
+characters.
+
+*validationSequence*={{'index1','value1'},{'index2','value2'},{'index3','value3'}}::
+(Only for types KP625AP, Trust, Egys, BNT-other.)
+3 pairs to be used for validating the UPS by comparing bytes of the raw 
+data with constant values. The default is type-dependent and is given 
+below. The braces and commas are mandatory, as the lack of white space
+characters.
+
+DEFAULT VALUES FOR THE EXTRA ARGUMENTS
+--------------------------------------
+ linevoltage = 230
+ manufacturer = PowerCom
+ modelname = Unknown
+ serialnumber = Unknown
+ type = Trust
+
+The rest of the default values for the extra arguments are type-dependent:
+
+Trust
+~~~~~
+ numOfBytesFromUPS = 11
+ methodOfFlowControl = dtr0rts1
+ validationSequence = {{5,0},{7,0},{8,0}}
+ shutdownArguments = {{0,10},n}
+ frequency = {0.00020997,0.00020928}
+ loadPercentage = {6.1343,-0.3808,4.3110,0.1811}
+ batteryPercentage = {5.0000,0.3268,-825.00,4.5639,-835.82}
+ voltage = {1.9216,-0.0977,0.9545,0.0000}
+
+KP625AP
+~~~~~~~
+ numOfBytesFromUPS = 16
+ methodOfFlowControl = dtr0rts1
+ validationSequence = {{5,0x80},{7,0},{8,0}}
+ shutdownArguments = {{0,10},n}
+ frequency = {0.00020997,0.00020928}
+ loadPercentage = {6.1343,-0.3808,4.3110,0.1811}
+ batteryPercentage = {5.0000,0.3268,-825.00,4.5639,-835.82}
+ voltage = {1.9216,-0.0977,0.9545,0.0000}
+
+
+Egys
+~~~~
+
+ numOfBytesFromUPS = 16
+ methodOfFlowControl = no_flow_control
+ validationSequence = {{5,0x80},{7,0},{8,0}}
+ shutdownArguments = {{0,10},n}
+ frequency = {0.00020997,0.00020928}
+ loadPercentage = {6.1343,-0.3808,1.3333,0.6667}
+ batteryPercentage = {5.0000,0.3268,-825.00,2.2105,-355.37}
+ voltage = {1.9216,-0.0977,0.9545,0.0000}
+
+
+IMP
+~~~
+
+ numOfBytesFromUPS = 16
+ methodOfFlowControl = no_flow_control
+ validationSequence = {{5,0xFF},{7,0},{8,0}}
+ shutdownArguments = {{1,30},y}
+
+
+KIN
+~~~
+
+ numOfBytesFromUPS = 16
+ methodOfFlowControl = no_flow_control
+ validationSequence = {{11,0x4b},{8,0},{8,0}}
+ shutdownArguments = {{1,30},y}
+
+
+BNT
+~~~
+
+ numOfBytesFromUPS = 16
+ methodOfFlowControl = no_flow_control
+ validationSequence = {{11,0x42},{8,0},{8,0}}
+ shutdownArguments = {{1,30},y}
+
+
+BNT-other
+~~~~~~~~~
+
+ numOfBytesFromUPS = 16
+ methodOfFlowControl = no_flow_control
+ validationSequence = {{8,0},{8,0},{8,0}}
+ shutdownArguments = {{1,30},y}
+ loadPercentage = {1.4474,0.0,0.8594,0.0}
+ batteryPercentage = {5.0000,0.3268,-825.00,0.46511,0}
+ voltage = {1.9216,-0.0977,0.82857,0.0000}
+
+AUTHOR
+------
+Peter Bieringer <pb@bieringer.de>,
+Alexey Sidorov <alexsid@altlinux.org>
+
+SEE ALSO
+--------
+
+The core driver:
+~~~~~~~~~~~~~~~~
+linkman:nutupsdrv[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

@@ -1,0 +1,197 @@
+NUTUPSDRV(8)
+============
+
+NAME  
+----
+
+nutupsdrv - generic manual for unified NUT drivers
+
+SYNOPSIS
+--------
+
+*nutupsdrv* '-h'
+
+*nutupsdrv* [OPTIONS]
+
+DESCRIPTION
+-----------
+
+*nutupsdrv* is not actually a driver.  This is a combined man page for the
+shared code that is the core of many drivers within the Network UPS Tools
+package.
+
+For information on the specific drivers, see their individual man pages.
+
+UPS drivers provide a communication channel between the physical UPS
+hardware and the linkman:upsd[8] server.  The driver is responsible for
+translating the native protocol of the UPS to the common format used by
+the rest of this package.
+
+The core has two modes of operation which are determined by the
+command line switches.  In the normal mode, the driver will periodically
+poll the UPS for its state and parameters.  The results of this command
+is presented to upsd.  The driver will also handle setting variables and
+instant commands if available.
+
+The driver can also instruct the UPS to shut down the load, possibly
+after some delay.  This mode of operation is intended for cases when it is
+known that the UPS is running out of battery power and the systems
+attached must be turned off to ensure a proper reboot when power returns.
+
+NOTE: You probably don't want to use any of these options directly.  You
+should use linkman:upsdrvctl[8] to control your drivers, and
+linkman:ups.conf[5] to configure them.  The rest of this manual describes
+options and parameters that generally are not needed by normal users.
+
+OPTIONS
+-------
+*-h*::
+Display a help message without doing anything else.  This will also list
+possible values for '-x' in that driver, and other help text that the
+driver's author may have provided.
+
+*-a* 'id'::
+Autoconfigure this driver using the 'id' section of linkman:ups.conf[5].
+*This argument is mandatory when calling the driver directly.*
+
+*-D*::
+Raise the debugging level.  Use this multiple times to see more details.
+Running a driver in debug mode will prevent it from backgrounding after
+startup.  It will keep on logging information to the console until it
+receives a SIGINT (usually Ctrl-C) or SIGTERM signal.
++
+The level of debugging needed depends both on the driver and the
+problem you're trying to diagnose.  Therefore, first explain the problem you
+have with a driver to a developer/maintainer, before sending them debugging
+output.  More often than not, if you just pick a level, the output may be
+either too limited or too verbose to be of any use.
+
+*-i* 'interval'::
+Set the poll interval for the device.
+
+*-V*::
+Print only version information, then exit.
+
+*-L*::
+Print a parseable list of driver variables. Mostly useful for configuration
+wizard programs.
+
+*-k*::
+("Kill" power) Forced shutdown mode.  The UPS will power off the
+attached load, if possible.
++
+You should use +upsdrvctl shutdown+ whenever possible instead of
+calling this directly.
+
+*-r* 'directory'::
+The driver will chroot(2) to 'directory' during initialization.
+This can be useful when securing systems.
++
+In addition to the state path, many systems will require /dev/null to
+exist within 'directory' for this to work.  The serial ports are
+opened before the chroot call, so you do not need to create them inside
+the jail.  In fact, it is somewhat safer if you do not.
+
+*-u* 'username'::
+If started as root, the driver will setuid(2) to the user id
+associated with 'username'.  
++
+If you do not specify this value and start it as root, the driver will
+switch to the default value that was compiled into the code.  This is
+typically 'nobody', and is far from ideal.
+
+*-x* 'var'='val'::
+Define a variable called 'var' with the value of 'var' in the
+driver.  This varies from driver to driver - see the specific man pages
+for more information.  
++
+This is like setting 'var'='val' in linkman:ups.conf[5], but
+*-x* overrides any settings from that file.
+
+DIAGNOSTICS
+-----------
+
+Information about the startup process is printed to stdout.  Additional
+messages after that point are available in the syslog.  After linkman:upsd[8]
+starts, the UPS clients such as linkman:upsc[8] can be used to query the status
+of an UPS.
+
+PROGRAM CONTROL
+---------------
+
+You should always use linkman:upsdrvctl[8] to control the drivers.  While
+drivers can be started by hand for testing purposes, it is not recommended for
+production use.
+
+FILES
+-----
+ups.conf::
+Required configuration file.  This contains all details on which drivers
+to start and where the hardware is attached.
+
+BUGS
+----
+
+Some of the drivers may have bugs.  See their manuals for more
+information.
+
+SEE ALSO
+--------
+
+Server:
+linkman:upsd[8]
+
+Clients:
+linkman:upsc[8], linkman:upscmd[8],
+linkman:upsrw[8], linkman:upslog[8], linkman:upsmon[8]
+
+CGI programs:
+linkman:upsset.cgi[8], linkman:upsstats.cgi[8], linkman:upsimage.cgi[8]
+
+Driver control:
+linkman:upsdrvctl[8]
+
+Drivers:
+linkman:apcsmart[8],
+linkman:bcmxcp[8],
+linkman:bcmxcp_usb[8],
+linkman:belkin[8],
+linkman:belkinunv[8],
+linkman:bestfcom[8],
+linkman:bestuferrups[8],
+linkman:bestups[8],
+linkman:blazer[8],
+linkman:cyberpower[8],
+linkman:dummy-ups[8],
+linkman:etapro[8],
+linkman:everups[8],
+linkman:gamatronic[8],
+linkman:genericups[8],
+linkman:isbmex[8],
+linkman:liebert[8],
+linkman:masterguard[8],
+linkman:metasys[8],
+linkman:mge-shut[8],
+linkman:mge-utalk[8],
+linkman:mge-xml[8],
+linkman:newmge-shut[8],
+linkman:nitram[8],
+linkman:oneac[8],
+linkman:optiups[8],
+linkman:powercom[8],
+linkman:powerman-pdu[8],
+linkman:powerpanel[8],
+linkman:rhino[8],
+linkman:richcomm_usb[8],
+linkman:safenet[8],
+linkman:snmp-ups[8],
+linkman:solis[8],
+linkman:tripplite[8],
+linkman:tripplitesu[8],
+linkman:tripplite_usb[8],
+linkman:usbhid-ups[8],
+linkman:upscode2[8],
+linkman:victronups[8]
+
+Internet resources:
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

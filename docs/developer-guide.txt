@@ -1,0 +1,113 @@
+:titles.underlines: "__","==","--","~~","^^"
+
+Network UPS Tools Developer Guide
+_________________________________
+:Author: Russell_Kroll,_Arnaud_Quette,_Charles_Lepple_and_Peter_Selinger
+:Author Initials: RK, AQ, CL & PS
+
+WARNING: this is a Work In Progress document.
+
+Introduction
+============
+
+NUT is both a powerful toolkit and framework that provides support for Power
+Devices, such as Uninterruptible Power Supplies, Power Distribution Units
+and Solar Controllers.
+
+This document intend to describe how NUT is designed, and the way to
+develop new device drivers and client applications.
+
+
+[[design]]
+
+include::design.txt[]
+
+
+[[developers]]
+
+include::developers.txt[]
+
+
+[[new-drivers]]
+
+include::new-drivers.txt[]
+
+
+[[sock-protocol]]
+
+include::sock-protocol.txt[]
+
+
+[[new-clients]]
+
+include::new-clients.txt[]
+
+
+[[net-protocol]]
+
+include::net-protocol.txt[]
+
+
+[[dev-tools]]
+
+NUT developers tools
+====================
+
+NUT provides several tools for clients and core developers, and QA people.
+
+Device simulation
+-----------------
+
+The dummy-ups driver propose a simulation mode, also known as 'Dummy Mode'.
+This mode allows to simulate any kind of devices, even non existing ones.
+
+Using this method, you can either replay a real life sequence,
+<<dev-recording,recorded from an actual device>>, or directly interact
+through upsrw or by editing the device file.
+
+For more information, refer to linkman:dummy-ups[8]
+manual page. 
+
+
+[[dev-recording]]
+
+Device recording
+----------------
+
+To complete dummy-ups, NUT provides a device recorder script called
+'device-recorder.sh' and located in the 'tools/' directory of the
+NUT source tree.
+
+This script uses 'upsc' to record device information, and stores
+these in a differential fashion every 5 seconds (by default).
+
+Its usage is the following:
+
+	Usage: dummy-recorder.sh <device-name> [output-file] [interval]
+
+For example, to record information from the device 'myups' every 10 seconds:
+
+	tools/device-recorder.sh myups@localhost myups.seq 10
+
+
+
+NUT core development and maintenance
+====================================
+
+This section is intended to people who want to develop new core features,
+or to do some maintenance.
+
+
+include::macros.txt[]
+
+
+[[roadmap]]
+
+include::../TODO[]
+
+
+[[nut-names]]
+Appendix A: NUT command and variable naming scheme
+==================================================
+
+include::nut-names.txt[]

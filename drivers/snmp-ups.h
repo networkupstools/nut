@@ -143,22 +143,25 @@ typedef struct {
 #define SU_STATUS_INDEX(t)	(((t) >> 8) & 7)
 
 /* Phase specific data */
-#define SU_PHASES		(0xF << 12)
+#define SU_PHASES		(0x3F << 12)
 #define SU_INPHASES		(0x3 << 12)
 #define SU_INPUT_1		(1 << 12)	/* only if 1 input phase */
 #define SU_INPUT_3		(1 << 13)	/* only if 3 input phases */
 #define SU_OUTPHASES	(0x3 << 14)
 #define SU_OUTPUT_1		(1 << 14)	/* only if 1 output phase */
 #define SU_OUTPUT_3		(1 << 15)	/* only if 3 output phases */
+#define SU_BYPPHASES	(0x3 << 16)
+#define SU_BYPASS_1		(1 << 16)	/* only if 1 bypass phase */
+#define SU_BYPASS_3		(1 << 17)	/* only if 3 bypass phases */
 /* FIXME: use input.phases and output.phases to replace this */
 
 
 /* hints for su_ups_set, applicable only to rw vars */
-#define SU_TYPE_INT			(0 << 16)	/* cast to int when setting value */
-#define SU_TYPE_STRING		(1 << 16)	/* cast to string. FIXME: redundant with ST_FLAG_STRING */
-#define SU_TYPE_TIME		(2 << 16)	/* cast to int */
-#define SU_TYPE_CMD			(3 << 16)	/* instant command */
-#define SU_TYPE(t)			((t)->flags & (7 << 16))
+#define SU_TYPE_INT			(0 << 18)	/* cast to int when setting value */
+#define SU_TYPE_STRING		(1 << 18)	/* cast to string. FIXME: redundant with ST_FLAG_STRING */
+#define SU_TYPE_TIME		(2 << 18)	/* cast to int */
+#define SU_TYPE_CMD			(3 << 18)	/* instant command */
+#define SU_TYPE(t)			((t)->flags & (7 << 18))
 
 #define SU_VAR_COMMUNITY	"community"
 #define SU_VAR_VERSION		"snmp_version"
@@ -237,7 +240,7 @@ struct snmp_session g_snmp_sess, *g_snmp_sess_p;
 const char *OID_pwr_status;
 int g_pwr_battery;
 int pollfreq; /* polling frequency */
-int input_phases, output_phases;
+extern int input_phases, output_phases, bypass_phases;
 
 #endif /* SNMP_UPS_H */
 

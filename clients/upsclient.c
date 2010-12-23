@@ -298,6 +298,11 @@ int upscli_sslcert(UPSCONN_t *ups, const char *dir, const char *file, int verify
 
 static int upscli_sslinit(UPSCONN_t *ups)
 {
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+	const SSL_METHOD	*ssl_method;
+#else
+	SSL_METHOD	*ssl_method;
+#endif
 	char	buf[UPSCLI_NETBUF_LEN];
 
 	/* see if upsd even talks SSL/TLS */
@@ -317,10 +322,16 @@ static int upscli_sslinit(UPSCONN_t *ups)
 
 	/* upsd is happy, so let's crank up the client */
 
-	SSL_library_init();
 	SSL_load_error_strings();
+	SSL_library_init();
 
-	ups->ssl_ctx = SSL_CTX_new(TLSv1_client_method());
+	ssl_method = TLSv1_client_method();
+
+	if (!ssl_method) {
+		return 0;
+	}
+
+	ups->ssl_ctx = SSL_CTX_new(ssl_method);
 
 	if (!ups->ssl_ctx) {
 		return 0;
