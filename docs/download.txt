@@ -56,9 +56,9 @@ To retrieve the current development tree, use the following command:
 
 	$ svn co svn://svn.debian.org/nut/trunk
 
-To generate the build scripts, you must then call:
+To generate the build scripts, you must call, from the 'trunk' directory:
 
-	$ autoreconf --install
+	$ ./nut-autoreconf
 
 Then refer to the 
 ifdef::website[]
