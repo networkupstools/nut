@@ -34,13 +34,16 @@ You can also browse the link:http://www.networkupstools.org/source/2.4/[stable s
 Testing tree: 2.4.x-pre
 ~~~~~~~~~~~~~~~~~~~~~~~
 
+////////////////////////////////////////////////////////////////////////////////
 There is currently no testing release.
-
 ////////////////////////////////////////////////////////////////////////////////
-There is currently a testing phase for the upcoming 2.6.0 release.
 
-To try it, get the latest <<Snapshots,snapshot>>.
-////////////////////////////////////////////////////////////////////////////////
+There is currently a testing phase for the upcoming 2.6.0 release:
+
+link:http://www.networkupstools.org/source/2.6/testing/nut-2.6.0-pre1.tar.gz[nut-2.6.0-pre1.tar.gz]
+link:http://www.networkupstools.org/source/2.6/testing/nut-2.6.0-pre1.tar.gz.sig[signature]
+link:http://www.networkupstools.org/source/2.6/testing/new-2.6.0-pre1.txt[release notes]
+link:http://www.networkupstools.org/source/2.6/testing/ChangeLog[ChangeLog]
 
 
 Development tree: 2.5
