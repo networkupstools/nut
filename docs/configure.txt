@@ -53,7 +53,7 @@ drivers from scratch again, run 'make clean' before starting.
 Build and install NUT documentation file(s).
 The possible values are "html-single" for single page HTML, "html-chunked"
 for multi pages HTML, "pdf" for a PDF file or "auto" to build all the
-previous documentation formats.
+possible previous documentation formats.
 
 This feature requires AsciiDoc 8.6.3 (http://www.methods.co.nz/asciidoc).
 
