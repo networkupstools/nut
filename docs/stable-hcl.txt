@@ -1,9 +1,12 @@
+ifdef::website[]
 Hardware compatibility list
 ===========================
+endif::website[]
 
 NOTE: Before you buy, take a look at the link:acknowledgements.html[Acknowledgements]
 for information about which drivers are developed with the support of the manufacturer. 
 
+ifdef::website[]
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 <fieldset id="filters-set">
   <legend>Filters</legend>
@@ -79,6 +82,8 @@ for information about which drivers are developed with the support of the manufa
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 include::ups-html.txt[]
+
+endif::website[]
 
 [NOTE]
 ================================================================================

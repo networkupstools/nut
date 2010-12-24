@@ -141,7 +141,14 @@ include::nut-names.txt[]
 Appendix D: Hardware Compatibility List
 =======================================
 
-include hcl-stable.txt[]
+ifdef::website[]
+include::stable-hcl.txt[]
+endif::website[]
+
+ifndef::website[]
+Refer to the link:http://www.networkupstools.org/stable-hcl.html[online HCL].
+endif::website[]
+
 
 Appendix E: Documentation
 =========================
