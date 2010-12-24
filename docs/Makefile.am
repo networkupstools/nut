@@ -9,7 +9,8 @@ IMAGE_FILES = images/asciidoc.png \
 	images/simple.png \
 	images/advanced.png \
 	images/bigbox.png \
-	images/bizarre.png
+	images/bizarre.png \
+	images/old-cgi.png
 
 USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt	\
  configure.txt download.txt documentation.txt features.txt history.txt	\
