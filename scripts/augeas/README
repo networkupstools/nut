@@ -1,5 +1,5 @@
-NUT and Augeas: usage and integration notes
-===========================================
+NUT configuration management with Augeas
+========================================
 
 Introduction
 ------------
@@ -12,7 +12,8 @@ In order to address this point, NUT now provides configuration tools and
 manipulation abstraction, to anybody who want to manipulate NUT configuration,
 through Augeas lenses and modules.
 
-From Augeas homepage:
+From link:http://augeas.net[Augeas homepage]:
+
 "Augeas is a configuration editing tool. It parses configuration files in their
 native formats and transforms them into a tree. Configuration changes are made
 by manipulating this tree and saving it back into native config files."
@@ -25,14 +26,18 @@ format.
 Requirements
 ------------
 
+To be able to use Augeas with NUT, you will need to install Augeas,
+and also the NUT provided lenses, which describe NUT configuration
+files format.
+
 Augeas
 ~~~~~~
 
-Having Augeas (http://augeas.net) installed.
+Having link:http://augeas.net[Augeas] installed.
 You will need at least version 0.5.1 (prior versions may work too, reports
 are welcome).
 
-On Debian and derivatives, do the following:
+As an example, on Debian and derivatives, do the following:
 
 	$ apt-get install augeas-lenses augeas-tools
 
@@ -43,13 +48,17 @@ And optionaly:
 On RedHat and derivatives, you have to install the packages 'augeas' and
 'augeas-libs'.
 
+[[augeas_user]]
+
 NUT lenses and modules for Augeas
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 These are the *.aug files in the present directory.
 
-You can either install the files to the right location on your system, or use
-these from the current directory. The latter is preferable for the time being.
+You can either install the files to the right location on your system,
+generally in '/usr/share/augeas/lenses/', or use these from NUT
+source directory ('nut/scripts/augeas'). The latter is to be prefered for
+the time being.
 
 
 Create a test sandbox
@@ -71,7 +80,9 @@ link:http://augeas.net/download.html[languages bindings] (Python, Perl,
 Java, PHP, Ruby, ...), still with the same simple logic.
 
 This chapter will only illustrate some of these. Refer to the language
-binding's help for more information.
+binding's help and link:http://augeas.net/docs/index.html[Augeas documentation]
+for more information.
+
 
 Shell
 ~~~~~
@@ -79,6 +90,8 @@ Shell
 Start an augeas shell using:
 
 	$ augtool -b
+
+NOTE: if you have not installed NUT lenses, add '-I/path/to/nut/scripts/augeas'.
 
 From there, you can perform different actions like:
 
@@ -190,11 +203,3 @@ Test the conformity testing module
 Existing configuration files can be tested for conformity. To do so, use:
  
 	$ augparse -I ./ ./test_nut.aug
-
-
-References
-----------
-
-For more information, refer to Augeas documentation:
-- http://augeas.net/tour.html
-- http://augeas.net/docs/index.html

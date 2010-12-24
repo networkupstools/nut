@@ -38,6 +38,10 @@ include::new-drivers.txt[]
 include::sock-protocol.txt[]
 
 
+[[augeas]]
+
+include::../scripts/augeas/README[]
+
 [[new-clients]]
 
 include::new-clients.txt[]
