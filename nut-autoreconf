@@ -6,7 +6,7 @@
 # re-generate files needed by configure, and created otherwise at 'dist' time
 if [ ! -f scripts/augeas/nutupsconf.aug.in ]
 then
-	if test -x /usr/bin/python; then
+	if python -c pass; then
 		echo "Regenerating Augeas ups.conf lens..."
 		cd scripts/augeas && ./gen-nutupsconf-aug.py && cd ../..
 	else
@@ -19,7 +19,7 @@ fi
 
 if [ ! -f scripts/hal/ups-nut-device.fdi.in ] || [ ! -f scripts/udev/nut-usbups.rules.in ]
 then
-	if test -x /usr/bin/perl; then
+	if perl -e 1; then
 		echo "Regenerating the USB helper files..."
 		cd tools && ./nut-usbinfo.pl && cd ..
 	else 

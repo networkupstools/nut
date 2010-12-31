@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #   Copyright (C) 2010 - Arnaud Quette <arnaud.quette@gmail.com>
 #
 #   This program is free software; you can redistribute it and/or modify

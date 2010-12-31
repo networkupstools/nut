@@ -5,7 +5,7 @@ EXTRA_DIST = gen-nutupsconf-aug.py nutupsconf.aug.tpl \
 # only call the script to generate Augeas ups.conf lens upon "make dist",
 # and if Python is present
 dist-hook:
-	@if test -x /usr/bin/python; then \
+	@if python -c pass; then \
 		echo "Regenerating Augeas ups.conf lens."; \
 		$(distdir)/gen-nutupsconf-aug.py $(distdir)/; \
 	else \

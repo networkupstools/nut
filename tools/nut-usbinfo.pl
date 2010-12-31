@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #   Current Version : 1.0
 #   Copyright (C) 2008 - 2010
 #            Arnaud Quette <arnaud.quette@gmail.com>
