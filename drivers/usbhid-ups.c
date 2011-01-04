@@ -45,6 +45,7 @@
 	#include "liebert-hid.h"
 	#include "powercom-hid.h"
 	#include "tripplite-hid.h"
+	#include "idowell-hid.h"
 #endif
 
 /* master list of avaiable subdrivers */
@@ -60,6 +61,7 @@ static subdriver_t *subdriver_list[] = {
 	&liebert_subdriver,
 	&powercom_subdriver,
 	&tripplite_subdriver,
+	&idowell_subdriver,
 #endif
 	NULL
 };
