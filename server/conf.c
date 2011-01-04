@@ -177,13 +177,6 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 		certfile = xstrdup(arg[1]);
 		return 1;
 	}
-
-	/* CERTPASSWD <passwd> */
-	if (!strcmp(arg[0], "CERTPASSWD")) {
-		free(certpasswd);
-		certpasswd = xstrdup(arg[1]);
-		return 1;
-	}
 	
 	/* ACCEPT <aclname> [<aclname>...] */
 	if (!strcmp(arg[0], "ACCEPT")) {
@@ -213,6 +206,15 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 	/* ACL <aclname> <ip block> */
 	if (!strcmp(arg[0], "ACL")) {
 		upslogx(LOG_WARNING, "ACL in upsd.conf is no longer supported - switch to LISTEN");
+		return 1;
+	}
+
+	/* CERTIDENT <name> <passwd> */
+	if (!strcmp(arg[0], "CERTIDENT")) {
+		free(certname);
+		certname = xstrdup(arg[1]);
+		free(certpasswd);
+		certpasswd = xstrdup(arg[2]);
 		return 1;
 	}
 

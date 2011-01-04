@@ -23,6 +23,7 @@
 #include "ctype.h"
 
 extern char	*certfile;
+extern char	*certname;
 extern char	*certpasswd;
 extern int ssl_initialized;
 
