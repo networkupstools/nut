@@ -22,7 +22,7 @@ Release notes for NUT 2.6.0 - what's new since 2.4.3:
    HP T1000 INTL, HP T1500 INTL, HP T750 G2, HP R1500 G2 INTL;
    Tripp Lite SmartOnline SU1000XLA, Tripp Lite Smart1000LCD, and some
    more USB/HID devices IDs; CyberPower CP1500AVRLCD and CP1350AVRLCD;
-   PowerWalker Line-Interactive VI 1400.
+   PowerWalker Line-Interactive VI 1400 ; Rocketfish RF-1000VA / RF-1025VA.
 
  - usbhid-ups has better support for shutting down APC SmartUPS RM series,
    and finally fix the "buffer size" issue, which was breaking some
