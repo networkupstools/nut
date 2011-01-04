@@ -375,9 +375,17 @@ int upscli_cleanup()
 #endif /* WITH_OPENSSL */
 
 #ifdef WITH_NSS	
+	/* Called to force cache clearing to prevent NSS shutdown failures.
+	 * http://www.mozilla.org/projects/security/pki/nss/ref/ssl/sslfnc.html#1138601
+	 */
 	SSL_ClearSessionCache();
 	NSS_Shutdown();
 	PR_Cleanup();
+	/* Called to release memory arena used by NSS/NSPR.
+	 * Prevent to show all PL_ArenaAllocate mem alloc as leaks.
+	 * https://developer.mozilla.org/en/NSS_Memory_allocation
+	 */
+	PL_ArenaFinish();
 #endif /* WITH_NSS */
 	
 	upscli_initialized = 0;
@@ -894,7 +902,7 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 			ups->upserror = UPSCLI_ERR_SSLFAIL;
 			upscli_disconnect(ups);
 			return -1;
-		} else if (tryssl && res == -1) {
+		} else if (tryssl && ret == -1) {
 			upscli_disconnect(ups);
 			return -1;
 		}

@@ -1021,6 +1021,8 @@ int main(int argc, char **argv)
 		mainloop();
 	}
 
+	ssl_cleanup();
+
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
 	return EXIT_SUCCESS;
 }

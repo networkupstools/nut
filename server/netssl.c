@@ -37,6 +37,7 @@
 	#include <private/pprio.h>
 	#include <key.h>
 	#include <keyt.h>
+	#include <secerr.h>
 #endif /* WITH_NSS */
 
 
@@ -117,13 +118,22 @@ static void nss_error(const char* text)
 {
 	char buffer[SMALLBUF];
 	PRInt32 length;
-	length = PR_GetErrorText(buffer);
-	if (length > 0 && length < SMALLBUF) {
-		upsdebugx(1, "nss_error %ld in %s : %s", (long)PR_GetError(),
-				text, buffer);
-	}else{
-		upsdebugx(1, "nss_error %ld in %s\n", (long)PR_GetError(),
-				text, PR_GetErrorTextLength());
+	PRErrorCode code = PR_GetError();
+	
+	switch(code)
+	{
+	case SEC_ERROR_BAD_PASSWORD:
+		upslogx(LOG_ERR, "nss_error : The password entered is incorrect.");
+		break;
+	default:
+		length = PR_GetErrorText(buffer);
+		if (length > 0 && length < SMALLBUF) {
+			upsdebugx(1, "nss_error %ld in %s : %s", (long)code,
+					text, buffer);
+		}else{
+			upsdebugx(1, "nss_error %ld in %s\n", (long)code,
+					text);
+		}
 	}
 }
 
@@ -225,6 +235,10 @@ void ssl_init()
 	PK11_SetPasswordFunc(nss_password_callback);
 	
 	if (certfile)
+		/* Note: this call can generate memory leaks not resolvable
+		 * by any release function.
+		 * Probably NSS key module object allocation and
+		 * probably NSS key db object allocation too. */
 		status = NSS_Init(certfile);
 	else
 		status = NSS_NoDB_Init(NULL);
@@ -285,9 +299,13 @@ void ssl_cleanup(void)
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 	CERT_DestroyCertificate(cert);
     SECKEY_DestroyPrivateKey(privKey);
-	SSL_ClearSessionCache();
 	NSS_Shutdown();
 	PR_Cleanup();
+	/* Called to release memory arena used by NSS/NSPR.
+	 * Prevent to show all PL_ArenaAllocate mem alloc as leaks.
+	 * https://developer.mozilla.org/en/NSS_Memory_allocation
+	 */
+	PL_ArenaFinish();
 #else /* WITH_OPENSSL | WITH_NSS */
 	/* Do nothing */
 #endif /* WITH_OPENSSL | WITH_NSS */
@@ -419,6 +437,9 @@ void net_starttls(ctype_t *client, int numarg, const char **arg)
 		return;
 	}
 
+	/* Note: this call can generate memory leaks not resolvable
+	 * by any release function.
+	 * Probably SSL session key object allocation. */
 	status = SSL_ForceHandshake(client->ssl);
 	if (status != SECSuccess) {
 		nss_error("SSL_ForceHandshake");

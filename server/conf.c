@@ -22,7 +22,7 @@
 #include "upsconf.h"
 #include "sstate.h"
 #include "user.h"
-#include "ssl.h"
+#include "netssl.h"
 
 	ups_t	*upstable = NULL;
 	int	num_ups = 0;
@@ -178,6 +178,13 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 		return 1;
 	}
 
+	/* CERTPASSWD <passwd> */
+	if (!strcmp(arg[0], "CERTPASSWD")) {
+		free(certpasswd);
+		certpasswd = xstrdup(arg[1]);
+		return 1;
+	}
+	
 	/* ACCEPT <aclname> [<aclname>...] */
 	if (!strcmp(arg[0], "ACCEPT")) {
 		upslogx(LOG_WARNING, "ACCEPT in upsd.conf is no longer supported - switch to LISTEN");
