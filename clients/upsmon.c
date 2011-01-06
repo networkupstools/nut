@@ -66,6 +66,8 @@ static	char	*run_as_user = NULL;
 
 	/* SSL details - where to find certs, whether to use them */
 static	char	*certpath = NULL;
+static	char	*certname = NULL;
+static	char	*certpasswd = NULL;
 static	int	certverify = 0;		/* don't verify by default */
 static	int	forcessl = 0;		/* don't require ssl by default */
 
@@ -1185,6 +1187,15 @@ static int parse_conf_arg(int numargs, char **arg)
 		return 1;
 	}	
 
+	/* CERTIDENT <name> <passwd> */
+	if (!strcmp(arg[0], "CERTIDENT")) {
+		free(certname);
+		certname = xstrdup(arg[1]);
+		free(certpasswd);
+		certpasswd = xstrdup(arg[2]);
+		return 1;
+	}
+	
 	/* using up to arg[4] below */
 	if (numargs < 5)
 		return 0;
@@ -1375,13 +1386,6 @@ static void update_crittimer(utype_t *ups)
 	}
 
 	/* fallthrough: let the timer age */
-}
-
-/* Intend to get password. */
-static int get_password(const char* slot, const char* token, char * const buffer, const int size)
-{
-	upsdebugx(1, "Trying to password for token '%s' of slot '%s'", token, slot);
-	return 0;
 }
 
 /* handle connecting to upsd, plus get SSL going too if possible */
@@ -1978,10 +1982,9 @@ int main(int argc, char *argv[])
 		writepid(prog);
 	}
 	
-	if (upscli_init(certverify, certpath) < 0) {
+	if (upscli_init(certverify, certpath, certname, certpasswd) < 0) {
 		exit(EXIT_FAILURE);
 	}
-	upscli_set_password_callback(get_password);
 	
 	/* prep our signal handlers */
 	setup_signals();

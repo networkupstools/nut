@@ -25,7 +25,18 @@
 extern char	*certfile;
 extern char	*certname;
 extern char	*certpasswd;
+extern int certrequest;
 extern int ssl_initialized;
+
+
+/* List possible values for certrequested */
+/* No request */
+#define NETSSL_CERTREQ_NO		0
+/* Requested (cnx failed if no certificate) */
+#define NETSSL_CERTREQ_REQUEST	1
+/* Required (cnx failed if no certificate or invalid CA chain) */
+#define NETSSL_CERTREQ_REQUIRE	2
+
 
 void ssl_init(void);
 void ssl_cleanup(void);

@@ -116,13 +116,14 @@ typedef struct HOST_CERT_s {
 
 
 static int upscli_initialized = 0;
-static upscli_get_password_cb password_callback = NULL;
 
 #ifdef WITH_OPENSSL
 static SSL_CTX	*ssl_ctx;
 #elif defined(WITH_NSS) /* WITH_OPENSLL */
 static int verify_certificate = 1;
 static HOST_CERT_t *first_host_cert = NULL;
+static char* nsscertname = NULL;
+static char* nsscertpasswd = NULL;
 #endif /* WITH_OPENSSL | WITH_NSS */
 
 
@@ -178,18 +179,8 @@ static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry,
 {
 	upslogx(LOG_INFO, "nss_password_callback : slot=%s - token=%s - retry=%s\n",
 		PK11_GetSlotName(slot), PK11_GetTokenName(slot), retry?"YES":"NO");
-	
-	char buffer[128];
-	int res = 0;
-	
-	if (password_callback != NULL) {
-		res = password_callback(PK11_GetSlotName(slot), PK11_GetTokenName(slot), buffer, 128);
-		if (res>0) {
-			buffer[res] = 0;
-			return PL_strdup(buffer);
-		}
-	}
-	return 0;
+
+	return nsscertpasswd?PL_strdup(nsscertpasswd):NULL;
 }
 
 static void nss_error(const char* text)
@@ -198,30 +189,39 @@ static void nss_error(const char* text)
 	PRInt32 length;
 	length = PR_GetErrorText(buffer);
 	if (length > 0 && length < SMALLBUF) {
-		upsdebugx(1, "nss_error %ld in %s : %s", (long)PR_GetError(),
+		upslogx(1, "nss_error %ld in %s : %s", (long)PR_GetError(),
 				text, buffer);
 	}else{
-		upsdebugx(1, "nss_error %ld in %s\n", (long)PR_GetError(), text);
+		upslogx(1, "nss_error %ld in %s\n", (long)PR_GetError(), text);
 	}
 }
 
 static SECStatus AuthCertificate(CERTCertDBHandle *arg, PRFileDesc *fd,
 	PRBool checksig, PRBool isServer)
 {
-	upslogx(LOG_DEBUG, "AuthCertificate");
-	return SSL_AuthCertificate(arg, fd, checksig, isServer);
+	UPSCONN_t *ups   = (UPSCONN_t *)SSL_RevealPinArg(fd);
+	SECStatus status = SSL_AuthCertificate(arg, fd, checksig, isServer);
+	upslogx(LOG_DEBUG, "NSS AuthCertificate: "
+		"Intend to authenticate server %s (checksig=%s) : %s.",
+		ups?ups->host:"(unnamed)",
+		checksig?"TRUE":"FALSE",
+		status==SECSuccess?"SUCCESS":"FAILED");
+	return status;
 }
 
 static SECStatus AuthCertificateDontVerify(CERTCertDBHandle *arg, PRFileDesc *fd,
 	PRBool checksig, PRBool isServer)
 {
-	upslogx(LOG_DEBUG, "AuthCertificateDontVerify");
+	UPSCONN_t *ups   = (UPSCONN_t *)SSL_RevealPinArg(fd);
+	upslogx(LOG_DEBUG, "NSS AuthCertificateDontVerify: "
+		"Do not intend to authenticate server %s.",
+		ups?ups->host:"(unnamed)");
 	return SECSuccess;
 }
 
 static SECStatus BadCertHandler(UPSCONN_t *arg, PRFileDesc *fd)
 {
-	upslogx(LOG_DEBUG, "BadCertHandler : verify_certificate=%d\n", verify_certificate);
+	upslogx(LOG_DEBUG, "NSS BadCertHandler: verify_certificate=%d", verify_certificate);
 	/* BadCertHandler is called when the NSS certificate validation is failed.
 	 * If the certificate verification (user conf) is mandatory, reject authentication
 	 * else accept it.
@@ -232,18 +232,41 @@ static SECStatus BadCertHandler(UPSCONN_t *arg, PRFileDesc *fd)
 static SECStatus GetClientAuthData(UPSCONN_t *arg, PRFileDesc *fd,
 	CERTDistNames *caNames, CERTCertificate **pRetCert, SECKEYPrivateKey **pRetKey)
 {
-	upslogx(LOG_DEBUG, "GetClientAuthData");
-	return NSS_GetClientAuthData(arg, fd, caNames, pRetCert, pRetKey);
+	CERTCertificate *cert;
+	SECKEYPrivateKey *privKey;
+	SECStatus status = NSS_GetClientAuthData(arg, fd, caNames, pRetCert, pRetKey);
+	if (status == SECFailure && nsscertname != NULL) {
+		cert = PK11_FindCertFromNickname(nsscertname, NULL);
+		if(cert==NULL)	{
+			nss_error("NSS GetClientAuthData PK11_FindCertFromNickname\n");
+		}else{
+			privKey = PK11_FindKeyByAnyCert(cert, NULL);
+			if(privKey==NULL){
+				nss_error("NSS GetClientAuthData PK11_FindKeyByAnyCert\n");
+			}else{
+				*pRetCert = cert;
+				*pRetKey = privKey;
+				status = SECSuccess;
+			}
+		}	
+	}
+	
+	upslogx(LOG_DEBUG, "GetClientAuthData %d: pCert=%p - pKey=%p",
+		(int)status, *pRetCert, *pRetKey);
+	return status;
 }
 
 static void HandshakeCallback(PRFileDesc *fd, UPSCONN_t *client_data)
 {
-	upslogx(LOG_DEBUG, "HandshakeCallback");
+	upslogx(LOG_DEBUG, "NSS HandshakeCallback: "
+		"SSL handshake done successfully with server %s.",
+		client_data->host);
 }
 
 #endif /* WITH_OPENSSL | WITH_NSS */
 
-int upscli_init(int certverify, const char *certpath)
+int upscli_init(int certverify, const char *certpath, 
+					const char *certname, const char *certpasswd)
 {
 #ifdef WITH_OPENSSL
 	int ret, ssl_mode = SSL_VERIFY_NONE;
@@ -267,7 +290,7 @@ int upscli_init(int certverify, const char *certpath)
 		upslogx(LOG_ERR, "Can not initialize SSL context");
 		return -1;
 	}
-
+	
 	if (!certpath) {
 		if (certverify == 1) {
 			upslogx(LOG_ERR, "Can not verify certificate if any is specified");
@@ -290,7 +313,7 @@ int upscli_init(int certverify, const char *certpath)
 			return -1;
 		}
 
-		SSL_CTX_set_verify(ssl_ctx, ssl_mode, NULL);
+		SSL_CTX_set_verify(ssl_ctx, ssl_mode, NULL);		
 	}
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 	PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);
@@ -305,7 +328,7 @@ int upscli_init(int certverify, const char *certpath)
 		status = NSS_NoDB_Init(NULL);
 	}
 	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not initialize SSL context");
+		upslogx(LOG_ERR, "Can not initialize SSL context (%d)", (int)PR_GetError());
 		return -1;
 	}
 	
@@ -328,6 +351,8 @@ int upscli_init(int certverify, const char *certpath)
 		return -1;
 	}
 	
+	nsscertname = xstrdup(certname);
+	nsscertpasswd = xstrdup(certpasswd);
 	verify_certificate = certverify;
 #endif /* WITH_OPENSSL | WITH_NSS */
 	
@@ -390,11 +415,6 @@ int upscli_cleanup()
 	
 	upscli_initialized = 0;
 	return 1;
-}
-
-void upscli_set_password_callback(upscli_get_password_cb passwdcb)
-{
-	password_callback = passwdcb;
 }
 
 const char *upscli_strerror(UPSCONN_t *ups)
@@ -611,7 +631,7 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 	 */
 	if (upscli_initialized==0) {
 		upslogx(LOG_WARNING, "upscli not initialized, force initialisation with no SSL configuration");
-		upscli_init(0, NULL);
+		upscli_init(0, NULL, NULL, NULL);
 	}
 	
 	/* see if upsd even talks SSL/TLS */

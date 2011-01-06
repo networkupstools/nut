@@ -66,14 +66,10 @@ typedef struct {
 
 }	UPSCONN_t;
 
-typedef int (*upscli_get_password_cb)(const char* slot, const char* token, char * const buffer, const int size);
-
 const char *upscli_strerror(UPSCONN_t *ups);
 
-int upscli_init(int certverify, const char *certpath);
+int upscli_init(int certverify, const char *certpath, const char *certname, const char *certpasswd);
 int upscli_cleanup();
-
-void upscli_set_password_callback(upscli_get_password_cb passwdcb);
 
 int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags);
 

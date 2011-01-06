@@ -178,6 +178,22 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 		return 1;
 	}
 	
+	/* CERTREQUEST ("NO" | "REQUEST" | "REQUIRE") */
+	if (!strcmp(arg[0], "CERTREQUEST")) {
+		if (strcasecmp(arg[1], "REQUEST") == 0) {
+			certrequest = NETSSL_CERTREQ_REQUEST;
+		} else if (strcasecmp(arg[1], "REQUIRE") == 0) {
+			certrequest = NETSSL_CERTREQ_REQUIRE;
+		} else if (strcasecmp(arg[1], "NO") == 0) {
+			certrequest = NETSSL_CERTREQ_NO;
+		} else {
+			upslogx(LOG_WARNING, "CERTREQUEST in upsd.conf accept only values "
+				"\"REQUEST\", \"REQUIRE\" or \"NO\", assuming \"NO\"");
+			certrequest = NETSSL_CERTREQ_NO;
+		}
+		return 1;
+	}
+	
 	/* ACCEPT <aclname> [<aclname>...] */
 	if (!strcmp(arg[0], "ACCEPT")) {
 		upslogx(LOG_WARNING, "ACCEPT in upsd.conf is no longer supported - switch to LISTEN");
