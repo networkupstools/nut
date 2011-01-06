@@ -107,39 +107,21 @@ static SECKEYPrivateKey *privKey;
 static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry, 
 		void *arg)
 {
-	upslogx(LOG_INFO, "nss_password_callback : slot=%s - token=%s - retry=%s\n",
-		PK11_GetSlotName(slot), PK11_GetTokenName(slot), retry?"YES":"NO");
-	
-	if (certpasswd != NULL) {
-		return PL_strdup(certpasswd);
-	} else {
-		return NULL;
-	}
+	upslogx(LOG_INFO, "Intend to retrieve password for %s / %s: password %sconfigured",
+		PK11_GetSlotName(slot), PK11_GetTokenName(slot), certpasswd?"":"not ");
+	return certpasswd ? PL_strdup(certpasswd) : NULL;
 }
 
 static void nss_error(const char* text)
 {
 	char buffer[SMALLBUF];
-	PRInt32 length;
-	PRErrorCode code = PR_GetError();
-	
-	switch(code)
-	{
-	case SEC_ERROR_BAD_PASSWORD:
-		upslogx(LOG_ERR, "nss_error : The password entered is incorrect.");
-		break;
-	default:
-		length = PR_GetErrorText(buffer);
-		if (length > 0 && length < SMALLBUF) {
-			upsdebugx(1, "nss_error %ld in %s : %s", (long)code,
-					text, buffer);
-		}else{
-			upsdebugx(1, "nss_error %ld in %s\n", (long)code,
-					text);
-		}
+	PRInt32 length = PR_GetErrorText(buffer);
+	if (length > 0 && length < SMALLBUF) {
+		upsdebugx(1, "nss_error %ld in %s : %s", (long)PR_GetError(), text, buffer);
+	}else{
+		upsdebugx(1, "nss_error %ld in %s", (long)PR_GetError(), text);
 	}
 }
-
 
 static int ssl_error(PRFileDesc *ssl, int ret)
 {
@@ -151,6 +133,8 @@ static int ssl_error(PRFileDesc *ssl, int ret)
 	length = PR_GetErrorText(buffer);
 	if (length > 0 && length < 256) {
 		upsdebugx(1, "ssl_error() ret=%d %*s", e, length, buffer);
+	} else {
+		upsdebugx(1, "ssl_error() ret=%d", e);
 	}
 
 	return -1;
@@ -161,24 +145,26 @@ static SECStatus AuthCertificate(CERTCertDBHandle *arg, PRFileDesc *fd,
 {
 	ctype_t *client  = (ctype_t *)SSL_RevealPinArg(fd);
 	SECStatus status = SSL_AuthCertificate(arg, fd, checksig, isServer);
-	upslogx(LOG_DEBUG, "NSS AuthCertificate: "
-		"Intend to authenticate client %s (checksig=%s) : %s.",
+	upslogx(LOG_INFO, "Intend to authenticate client %s : %s.",
 		client?client->addr:"(unnamed)",
-		checksig?"TRUE":"FALSE",
 		status==SECSuccess?"SUCCESS":"FAILED");
 	return status;
 }
 
 static SECStatus BadCertHandler(ctype_t *arg, PRFileDesc *fd)
 {
-	upslogx(LOG_DEBUG, "NSS BadCertHandler");
+	upslogx(LOG_WARNING, "Certificate validation failed for %s",
+		(arg&&arg->addr)?arg->addr:"<unnamed>");
+	/* BadCertHandler is called when the NSS certificate validation is failed.
+	 * If the certificate verification (user conf) is mandatory, reject authentication
+	 * else accept it.
+	 */ 
 	return certrequest==NETSSL_CERTREQ_REQUIRE?SECFailure:SECSuccess;
 }
 
 static void HandshakeCallback(PRFileDesc *fd, ctype_t *client_data)
 {
-	upslogx(LOG_DEBUG, "NSS HandshakeCallback: "
-		"SSL handshake done successfully with client %s.",
+	upslogx(LOG_INFO, "SSL handshake done successfully with client %s",
 		client_data->addr);
 }
 
@@ -252,31 +238,36 @@ void ssl_init()
 	else
 		status = NSS_NoDB_Init(NULL);
 	if (status != SECSuccess) {
-		nss_error("NSS_Init(certfile)");
+		upslogx(LOG_ERR, "Can not initialize SSL context");
+		nss_error("upscli_init / NSS_[NoDB]_Init");	
 		return;
 	}
 	
 	status = NSS_SetDomesticPolicy();
 	if (status != SECSuccess) {
-		nss_error("NSS_SetDomesticPolicy");
+		upslogx(LOG_ERR, "Can not initialize SSL policy");
+		nss_error("upscli_init / NSS_SetDomesticPolicy");
 		return;
 	}
 
 	/* Default server cache config */
 	status = SSL_ConfigServerSessionIDCache(0, 0, 0, NULL);
 	if (status != SECSuccess) {
-		nss_error("SSL_ConfigServerSessionIDCache");
+		upslogx(LOG_ERR, "Can not initialize SSL server cache");
+		nss_error("upscli_init / SSL_ConfigServerSessionIDCache");
 		return;
 	}
 	
 	status = SSL_OptionSetDefault(SSL_ENABLE_SSL3, PR_TRUE);
 	if (status != SECSuccess) {
-		nss_error("SSL_OptionSetDefault(SSL_ENABLE_SSL3, PR_TRUE)");
+		upslogx(LOG_ERR, "Can not enable SSLv3");
+		nss_error("upscli_init / SSL_OptionSetDefault(SSL_ENABLE_SSL3)");
 		return;
 	}
 	status = SSL_OptionSetDefault(SSL_ENABLE_TLS, PR_TRUE);
 	if (status != SECSuccess) {
-		nss_error("SSL_OptionSetDefault(SSL_ENABLE_TLS, PR_TRUE)");
+		upslogx(LOG_ERR, "Can not enable TLSv1");
+		nss_error("upscli_init / SSL_OptionSetDefault(SSL_ENABLE_TLS)");
 		return;
 	}
 
@@ -284,7 +275,8 @@ void ssl_init()
 		certrequest == NETSSL_CERTREQ_REQUIRE ) {
 		status = SSL_OptionSetDefault(SSL_REQUEST_CERTIFICATE, PR_TRUE);
 		if (status != SECSuccess) {
-			nss_error("SSL_OptionSetDefault(SSL_REQUEST_CERTIFICATE, PR_TRUE)");
+			upslogx(LOG_ERR, "Can not enable certificate request");
+			nss_error("upscli_init / SSL_OptionSetDefault(SSL_REQUEST_CERTIFICATE)");
 			return;
 		}
 	}
@@ -292,20 +284,23 @@ void ssl_init()
 	if (certrequest == NETSSL_CERTREQ_REQUIRE ) {
 		status = SSL_OptionSetDefault(SSL_REQUIRE_CERTIFICATE, PR_TRUE);
 		if (status != SECSuccess) {
-			nss_error("SSL_OptionSetDefault(SSL_REQUIRE_CERTIFICATE, PR_TRUE)");
+			upslogx(LOG_ERR, "Can not enable certificate requirement");
+			nss_error("upscli_init / SSL_OptionSetDefault(SSL_REQUIRE_CERTIFICATE)");
 			return;
 		}
 	}
 	
 	cert = PK11_FindCertFromNickname(certname, NULL);
 	if(cert==NULL)	{
-		nss_error("PK11_FindCertFromNickname\n");
+		upslogx(LOG_ERR, "Can not find server certificate");
+		nss_error("upscli_init / PK11_FindCertFromNickname");
 		return;
 	}
 	
 	privKey = PK11_FindKeyByAnyCert(cert, NULL);
 	if(privKey==NULL){
-		nss_error("PK11_FindKeyByAnyCert\n");
+		upslogx(LOG_ERR, "Can not find private key associate to server certificate");
+		nss_error("upscli_init / PK11_FindKeyByAnyCert");
 		return;
 	}
 		
@@ -412,18 +407,21 @@ void net_starttls(ctype_t *client, int numarg, const char **arg)
 
 	socket = PR_ImportTCPSocket(client->sock_fd);
 	if (socket == NULL){
-		nss_error("PR_ImportTCPSocket");
+		upslogx(LOG_ERR, "Can not inialize SSL connexion");
+		nss_error("net_starttls / PR_ImportTCPSocket");
 		return;
 	}
 
 	client->ssl = SSL_ImportFD(NULL, socket);
 	if (client->ssl == NULL){
-		nss_error("SSL_ImportFD");
+		upslogx(LOG_ERR, "Can not inialize SSL connexion");
+		nss_error("net_starttls / SSL_ImportFD");
 		return;
 	}
 	
 	if (SSL_SetPKCS11PinArg(client->ssl, client) == -1){
-		nss_error("SSL_SetPKCS11PinArg");
+		upslogx(LOG_ERR, "Can not inialize SSL connexion");
+		nss_error("net_starttls / SSL_SetPKCS11PinArg");
 		return;
 	}
 	
@@ -432,31 +430,36 @@ void net_starttls(ctype_t *client, int numarg, const char **arg)
 	 */
 	status = SSL_AuthCertificateHook(client->ssl, (SSLAuthCertificate)AuthCertificate, CERT_GetDefaultCertDB());
 	if (status != SECSuccess) {
-		nss_error("SSL_AuthCertificateHook");
+		upslogx(LOG_ERR, "Can not inialize SSL connexion");
+		nss_error("net_starttls / SSL_AuthCertificateHook");
 		return;
 	}
 	
 	status = SSL_BadCertHook(client->ssl, (SSLBadCertHandler)BadCertHandler, client);
 	if (status != SECSuccess) {
-		nss_error("SSL_BadCertHook");
+		upslogx(LOG_ERR, "Can not inialize SSL connexion");
+		nss_error("net_starttls / SSL_BadCertHook");
 		return;
 	}
 	
 	status = SSL_HandshakeCallback(client->ssl, (SSLHandshakeCallback)HandshakeCallback, client);
 	if (status != SECSuccess) {
-		nss_error("SSL_HandshakeCallback");
+		upslogx(LOG_ERR, "Can not inialize SSL connexion");
+		nss_error("net_starttls / SSL_HandshakeCallback");
 		return;
 	}
 	
 	status = SSL_ConfigSecureServer(client->ssl, cert, privKey, NSS_FindCertKEAType(cert));
 	if (status != SECSuccess) {
-		nss_error("SSL_ConfigSecureServer");
+		upslogx(LOG_ERR, "Can not inialize SSL connexion");
+		nss_error("net_starttls / SSL_ConfigSecureServer");
 		return;
 	}
 
 	status = SSL_ResetHandshake(client->ssl, PR_TRUE);
 	if (status != SECSuccess) {
-		nss_error("SSL_ResetHandshake");
+		upslogx(LOG_ERR, "Can not inialize SSL connexion");
+		nss_error("net_starttls / SSL_ResetHandshake");
 		return;
 	}
 
@@ -470,7 +473,7 @@ void net_starttls(ctype_t *client, int numarg, const char **arg)
 			upslogx(LOG_WARNING, "Client %s do not provide certificate.",
 				client->addr);
 		} else {
-			nss_error("SSL_ForceHandshake");
+			nss_error("net_starttls / SSL_ForceHandshake");
 			/* TODO : Close the connexion. */
 			return;
 		}
