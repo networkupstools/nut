@@ -183,10 +183,10 @@ void upsdrv_initups(void)
 	ioctl(upsfd, TIOCMBIC, &RTS);
 #else
 	if (testvar ("oldmac")) {
-		EscapeCommFunction(upsfd,CLRRTS);
+		EscapeCommFunction(((serial_handler_t *)upsfd)->handle,CLRRTS);
 	}
 	else {
-		EscapeCommFunction(upsfd,SETRTS);
+		EscapeCommFunction(((serial_handler_t *)upsfd)->handle,SETRTS);
 	}
 #endif
 	enable_ups_comm();

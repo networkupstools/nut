@@ -135,34 +135,32 @@ void overlapped_setup (serial_handler_t * sh)
 	sh->overlapped_armed = 0;
 }
 
-int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen)
+int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen, DWORD timeout)
 {
 	int tot;
-	DWORD n;
+	DWORD num;
 	HANDLE w4;
 	DWORD minchars = sh->vmin_ ?: ulen;
 
 	w4 = sh->io_status.hEvent;
 
-	upslogx(LOG_DEBUG,"ulen %d, vmin_ %d, vtime_ %d, hEvent %p", ulen, sh->vmin_, sh->vtime_,sh->io_status.hEvent);
-	if (!sh->overlapped_armed)
-	{
+	upslogx(LOG_DEBUG,"w32_serial_read : ulen %d, vmin_ %d, vtime_ %d, hEvent %p", ulen, sh->vmin_, sh->vtime_,sh->io_status.hEvent);
+	if (!sh->overlapped_armed) {
 		SetCommMask (sh->handle, EV_RXCHAR);
 		ResetEvent (sh->io_status.hEvent);
 	}
 
-	for (n = 0, tot = 0; ulen; ulen -= n, ptr = (char *)ptr + n)
-	{
+	for (num = 0, tot = 0; ulen; ulen -= num, ptr = (char *)ptr + num) {
 		DWORD ev;
 		COMSTAT st;
 		DWORD inq = 1;
 
-		n = 0;
+		num = 0;
 
-		if (!sh->vtime_ && !sh->vmin_)
+		if (!sh->vtime_ && !sh->vmin_) {
 			inq = ulen;
-		else if (sh->vtime_)
-		{
+		}
+		else if (sh->vtime_) {
 			/* non-interruptible -- have to use kernel timeouts
 			   also note that this is not strictly correct.
 			   if vmin > ulen then things won't work right.
@@ -171,34 +169,41 @@ int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen)
 			inq = ulen;
 		}
 
-		if (!ClearCommError (sh->handle, &ev, &st))
+		if (!ClearCommError (sh->handle, &ev, &st)) {
 			goto err;
-		else if (ev)
-			upslogx(LOG_ERR,"error detected %x", (int)ev);
-		else if (st.cbInQue)
+		}
+		else if (ev) {
+			upslogx(LOG_ERR,"w32_serial_read : error detected %x", (int)ev);
+		}
+		else if (st.cbInQue) {
 			inq = st.cbInQue;
-		else if (!sh->overlapped_armed)
-		{
-			if ((size_t)tot >= minchars)
+		}
+		else if (!sh->overlapped_armed) {
+			if ((size_t)tot >= minchars) {
 				break;
-			else if (WaitCommEvent (sh->handle, &ev, &sh->io_status))
-			{
-				upslogx(LOG_DEBUG,"WaitCommEvent succeeded: ev %x", (int)ev);
+			}
+			else if (WaitCommEvent (sh->handle, &ev, &sh->io_status)) {
+				/* WaitCommEvent succeeded */
 				if (!ev)
 					continue;
 			}
-			else if (GetLastError () != ERROR_IO_PENDING)
+			else if (GetLastError () != ERROR_IO_PENDING) {
 				goto err;
-			else
-			{
+			}
+			else {
 				sh->overlapped_armed = 1;
-				switch (WaitForSingleObject (w4,INFINITE))
-				{
+				switch (WaitForSingleObject (w4,timeout)) {
 					case WAIT_OBJECT_0:
-						if (!GetOverlappedResult (sh->handle, &sh->io_status, &n, FALSE))
+						if (!GetOverlappedResult (sh->handle, &sh->io_status, &num, FALSE))
 							goto err;
-						upslogx(LOG_DEBUG,"n %d, ev %x", (int)n, (int)ev);
+						upslogx(LOG_DEBUG,"w32_serial_read : characters are available on input buffer");
 						break;
+					case WAIT_TIMEOUT:
+						CancelIo(sh->handle);
+						sh->overlapped_armed = 0;
+						ResetEvent (sh->io_status.hEvent);
+						upslogx(LOG_DEBUG,"w32_serial_read : timeout %d ms ellapsed", (int)timeout);
+						return 0;
 					default:
 						goto err;
 				}
@@ -207,27 +212,31 @@ int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen)
 
 		sh->overlapped_armed = 0;
 		ResetEvent (sh->io_status.hEvent);
-		if (inq > ulen)
+		if (inq > ulen) {
 			inq = ulen;
-		upslogx(LOG_DEBUG,"inq %d", (int)inq);
-		if (ReadFile (sh->handle, ptr, min (inq, ulen), &n, &sh->io_status))
+		}
+		upslogx(LOG_DEBUG,"w32_serial_read : Reading %d characters", (int)inq);
+		if (ReadFile (sh->handle, ptr, min (inq, ulen), &num, &sh->io_status)) {
 			/* Got something */;
-		else if (GetLastError () != ERROR_IO_PENDING)
+		}
+		else if (GetLastError () != ERROR_IO_PENDING) {
 			goto err;
-		else if (!GetOverlappedResult (sh->handle, &sh->io_status, &n, TRUE))
+		}
+		else if (!GetOverlappedResult (sh->handle, &sh->io_status, &num, TRUE)) {
 			goto err;
+		}
 
-		tot += n;
-		upslogx(LOG_DEBUG,"vtime_ %d, vmin_ %d, n %d, tot %d", sh->vtime_, sh->vmin_, (int)n, tot);
-		if (sh->vtime_ || !sh->vmin_ || !n)
+		tot += num;
+		upslogx(LOG_DEBUG,"w32_serial_read : total characters read = %d", tot);
+		if (sh->vtime_ || !sh->vmin_ || !num)
 			break;
 		continue;
 
 err:
 		PurgeComm (sh->handle, PURGE_RXABORT);
-		upslogx(LOG_DEBUG,"err %d",(int)GetLastError());
+		upslogx(LOG_DEBUG,"w32_serial_read : err %d",(int)GetLastError());
 		if (GetLastError () == ERROR_OPERATION_ABORTED)
-			n = 0;
+			num = 0;
 		else
 		{
 			tot = -1;
@@ -291,7 +300,7 @@ serial_handler_t * w32_serial_open (const char *name, int flags)
 	sh = xmalloc(sizeof(serial_handler_t));
 	memset(sh,0,sizeof(serial_handler_t));
 
-	sh->handle = CreateFile(name,GENERIC_READ|GENERIC_WRITE,0,0,OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,0);
+	sh->handle = CreateFile(name,GENERIC_READ|GENERIC_WRITE,0,0,OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,0);
 
 	if(sh->handle == INVALID_HANDLE_VALUE) {
 		upslogx(LOG_ERR,"could not open %s",name);

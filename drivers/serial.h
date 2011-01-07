@@ -114,7 +114,7 @@ void ser_comm_good(void);
 #ifdef WIN32
 #define open(a,b)	w32_serial_open(a,b)
 #define close(a)	w32_serial_close(a)
-#define read(a,b,c)	w32_serial_read(a,b,c)
+#define read(a,b,c)	w32_serial_read(a,b,c,INFINITE)
 #define write(a,b,c)	w32_serial_write(a,b,c)
 #endif
 
