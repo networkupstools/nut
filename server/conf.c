@@ -173,6 +173,14 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 
 	/* CERTFILE <dir> */
 	if (!strcmp(arg[0], "CERTFILE")) {
+		upslogx(LOG_WARNING, "CERTFILE in upsd.conf is deprecated - used but switch to CERTPATH");
+		free(certfile);
+		certfile = xstrdup(arg[1]);
+		return 1;
+	}
+
+	/* CERTPATH <dir> */
+	if (!strcmp(arg[0], "CERTPATH")) {
 		free(certfile);
 		certfile = xstrdup(arg[1]);
 		return 1;
