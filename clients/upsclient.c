@@ -978,7 +978,6 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 #ifdef WIN32
 	WSADATA WSAdata;
 	WSAStartup(2,&WSAdata);
-	atexit(WSACleanup);
 #endif
 	if (!ups) {
 		return -1;
@@ -1667,6 +1666,9 @@ int upscli_disconnect(UPSCONN_t *ups)
 	ups->host = NULL;
 
 	if (ups->fd < 0) {
+#ifdef WIN32
+		WSACleanup();
+#endif
 		return 0;
 	}
 
@@ -1690,6 +1692,10 @@ int upscli_disconnect(UPSCONN_t *ups)
 
 	close(ups->fd);
 	ups->fd = -1;
+
+#ifdef WIN32
+	WSACleanup();
+#endif
 
 	return 0;
 }
