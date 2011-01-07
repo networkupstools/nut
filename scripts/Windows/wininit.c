@@ -304,7 +304,7 @@ static int parse_nutconf(BOOL start_flag)
 			}
 			if( strstr(buf,"standalone") != NULL ||
 					strstr(buf,"netserver") != NULL ) {
-				if( start_flag == TRUE ) {
+				if( start_flag == NUT_START ) {
 					run_drivers();
 					run_upsd();
 					run_upsmon();
@@ -318,7 +318,7 @@ static int parse_nutconf(BOOL start_flag)
 				}
 			}
 			if( strstr(buf,"netclient") != NULL ) {
-				if( start_flag == TRUE ) {
+				if( start_flag == NUT_START ) {
 					run_upsmon();
 					return 1;
 				}
@@ -522,9 +522,9 @@ static void WINAPI SvcMain( DWORD argc, LPTSTR *argv )
 		SvcStart(SVCNAME);
 	}
 
-	/* A service has no console, so do has its child. */
+	/* A service has no console, so do has its children. */
 	/* So if we want to be able to send CTRL+BREAK signal we must */
-	/* create a console which will be inheritated by childs */
+	/* create a console which will be inheritated by children */
 	AllocConsole();
 
 	print_event(LOG_INFO,"Starting");
@@ -571,9 +571,8 @@ static void WINAPI SvcMain( DWORD argc, LPTSTR *argv )
 
 		if( handles[ret] == svc_stop && service_flag ) {
 			parse_nutconf(NUT_STOP);
-
 			if(service_flag) {
-				print_event(LOG_INFO, "exiting");
+				print_event(LOG_INFO, "Exiting");
 				ReportSvcStatus( SERVICE_STOPPED, NO_ERROR, 0);
 			}
 			return;
