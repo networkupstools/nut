@@ -692,27 +692,21 @@ int select_read(const int fd, void *buf, const size_t buflen, const long d_sec, 
 int select_read(const serial_handler_t * fd, void *buf, const size_t buflen, const long d_sec, const long d_usec)
 {
 	/* This function is only called by serial drivers right now */
-	DWORD bytes_read;
-	BOOL res;
+	int res;
 	DWORD timeout;
 	COMMTIMEOUTS TOut;
 
-	GetCommTimeouts(fd->handle,&TOut);
-
 	timeout = (d_sec*1000) + ((d_usec+999)/1000);
 
+	GetCommTimeouts(fd->handle,&TOut);
 	TOut.ReadIntervalTimeout = MAXDWORD;
 	TOut.ReadTotalTimeoutMultiplier = 0;
 	TOut.ReadTotalTimeoutConstant = timeout;
 	SetCommTimeouts(fd->handle,&TOut);
 
-	res = ReadFile(fd->handle,buf,buflen,&bytes_read,NULL);
+	res = w32_serial_read(fd,buf,buflen,timeout);
 
-	if( res == 0 )  {
-		return -1;
-	}
-
-	return bytes_read;
+	return res;
 }
 #endif
 

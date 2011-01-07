@@ -67,7 +67,7 @@ struct termios {
 serial_handler_t * w32_serial_open (const char *name, int flags);
 int w32_serial_close (serial_handler_t * sh);
 int w32_serial_write (serial_handler_t * sh, const void *ptr, size_t len);
-int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen);
+int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen, DWORD timeout);
 int tcgetattr (serial_handler_t * sh, struct termios *t);
 int tcsetattr (serial_handler_t * sh, int action, const struct termios *t);
 int tcflush (serial_handler_t * sh, int queue);
