@@ -322,6 +322,61 @@ together, i.e.:
 
 	SHUTDOWNCMD "/sbin/shutdown -h +0"
 
+*CERTPATH* 'certificate file or database'::
+
+When compiled with SSL support, you can enter the certificate path here.
++
+  With NSS:;;
+    Certificates are stored in a dedicated database (splitted in 3 files).
+    Specify the path of the database directory.
+  With OpenSSL:;;
+    The certificates must be in PEM format and must be sorted starting with
+    the subject's certificate (server certificate), followed by intermediate
+    CA certificates (if applicable_ and the highest level (root) CA. It should
+    end with the server key.
+
+*CERTIDENT* 'certificate name' 'database password'::
+
+When compiled with SSL support with NSS, you can specify the certificate
+name to retrieve from database to authenticate itself and the password
+required to access certificate related private key.
+
+*CERTHOST* 'hostname' 'certificate name' 'certverify' 'forcessl'::
+
+When compiled with SSL support with NSS, you can specify security directive
+for each server you can contact.
++
+Each entry maps server name with the expected certificate name and flags
+indicating if the server certificate is verified and if the connexion
+must be secure.
+
+*CERTVERIFY* '0 | 1'::
+
+When compiled with SSL support, make upsmon verify all connections with 
+certificates.
++
+Without this, there is no guarantee that the upsd is the right host.
+Enabling this greatly reduces the risk of man in the middle attacks.
+This effectively forces the use of SSL, so don't use this unless
+all of your upsd hosts are ready for SSL and have their certificates
+in order.
++
+When compiled with NSS support of SSL, can be overriden for host 
+specified with a CERTHOST directive.
+
+*FORCESSL* '0 | 1'::
+
+When compiled with SSL, specify than a secured connexion must be used
+to communicate with upsd.
++
+If you don't use 'CERTVERIFY 1', then this will at least make sure
+that nobody can sniff your sessions without a large effort. Setting
+this will make upsmon drop connections if the remote upsd doesn't
+support SSL, so don't use it unless all of them have it running.
++
+When compiled with NSS support of SSL, can be overriden for host 
+specified with a CERTHOST directive.
+
 SEE ALSO
 --------
 linkman:upsmon[8], linkman:upsd[8], linkman:nutupsdrv[8].
