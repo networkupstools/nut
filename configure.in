@@ -167,6 +167,8 @@ AC_ARG_WITH(all,
 		if test -z "${with_hal}"; then with_hal="${withval}"; fi
 		if test -z "${with_neon}"; then with_neon="${withval}"; fi
 		if test -z "${with_powerman}"; then with_powerman="${withval}"; fi
+		if test -z "${with_cgi}"; then with_cgi="${withval}"; fi
+		if test -z "${with_dev}"; then with_dev="${withval}"; fi
 		AC_MSG_RESULT("${withval}")
 	else
 		AC_MSG_RESULT(not given)
