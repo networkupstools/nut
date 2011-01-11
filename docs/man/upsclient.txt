@@ -20,6 +20,19 @@ provided to most of the *upsclient* functions.  The format of this
 structure is subject to change, and client programs must not reference
 elements within it directly.
 
+INITIALIZATION AND CLEANUP
+--------------------------
+
+Before creating any connection, and in general using any upscli function,
+you must call linkman:upscli_init[3] with proper parameters to initialize
+upscli module.
+
+To register specific host security policy, you must call 
+linkman:upscli_add_host_cert[3] before initialize connection to it.
+
+In the same way, just before exiting, and after all upscli usage, you must
+call linkman:upscli_cleanup[3] to flush cache files and perform other cleanup.
+
 NETWORK FUNCTIONS
 -----------------
 
@@ -55,6 +68,7 @@ also be used to retrieve the error number.  These numbers are defined in
 SEE ALSO
 --------
 linkman:libupsclient-config[1],
+linkman:upscli_init[3], linkman:upscli_cleanup[3], linkman:upscli_add_host_cert[3],
 linkman:upscli_connect[3], linkman:upscli_disconnect[3], linkman:upscli_fd[3],
 linkman:upscli_getvar[3], linkman:upscli_list_next[3], 
 linkman:upscli_list_start[3], linkman:upscli_readline[3], 
