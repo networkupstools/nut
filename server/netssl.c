@@ -271,6 +271,12 @@ void ssl_init()
 		return;
 	}
 
+	if (certrequest < NETSSL_CERTREQ_NO &&
+		certrequest > NETSSL_CERTREQ_REQUEST) {
+		upslogx(LOG_ERR, "Invalid certificate requirement");
+		return;
+	}
+
 	if (certrequest == NETSSL_CERTREQ_REQUEST || 
 		certrequest == NETSSL_CERTREQ_REQUIRE ) {
 		status = SSL_OptionSetDefault(SSL_REQUEST_CERTIFICATE, PR_TRUE);

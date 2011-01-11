@@ -62,33 +62,37 @@ LISTEN address and each client count as one connection.  If the server
 runs out of connections, it will no longer accept new incoming client
 connections.  Only set this if you know exactly what you're doing.
 
-"CERTPATH 'certificate file or database'"::
+"CERTFILE 'certificate file'"::
 
-When compiled with SSL support, you can enter the certificate path here.
-+
-  With NSS:;;
-    Certificates are stored in a dedicated database (splitted in 3 files).
-    Specify the path of the database directory.
-  With OpenSSL:;;
-    The certificates must be in PEM format and must be sorted starting with
-    the subject's certificate (server certificate), followed by intermediate
-    CA certificates (if applicable_ and the highest level (root) CA. It should
-    end with the server key.
+When compiled with SSL support with OpenSSL backend, you can enter the
+certificate file here.
+The certificates must be in PEM format and must be sorted starting with
+the subject's certificate (server certificate), followed by intermediate
+CA certificates (if applicable_ and the highest level (root) CA. It should
+end with the server key. See 'docs/security.txt' or the Security chapter of
+NUT user manual for more information on the SSL support in NUT.
+
+"CERTPATH 'certificate database'"::
+
+When compiled with SSL support with NSS backend, you can enter the
+certificate path here.
+Certificates are stored in a dedicated database (splitted in 3 files).
+Specify the path of the database directory.
     
 "CERTIDENT 'certificate name' 'database password'"::
 
-When compiled with SSL support with NSS, you can specify the certificate
-name to retrieve from database to authenticate itself and the password
-required to access certificate related private key.
+When compiled with SSL support with NSS backend, you can specify the
+certificate name to retrieve from database to authenticate itself and
+the password required to access certificate related private key.
 
 "CERTREQUEST 'certificate request level'"::
 
-When compiled with SSL support with NSS, you can specify if upsd 
-request or require client's' certificates or not.
+When compiled with SSL support with NSS backend, you can specify if upsd 
+requests or requires client's' certificates.
 Possible values are :
-- 'REQUIRE' to require to all clients a valid certificate
-- 'REQUEST' to require to all clients a certificate
-- 'NO' to not request to clients to provide any certificate
+- '0' to not request to clients to provide any certificate
+- '1' to require to all clients a certificate
+- '2' to require to all clients a valid certificate
 
 SEE ALSO
 --------

@@ -171,14 +171,14 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 		return 1;
 	}
 
+#ifdef WITH_OPENSSL
 	/* CERTFILE <dir> */
 	if (!strcmp(arg[0], "CERTFILE")) {
-		upslogx(LOG_WARNING, "CERTFILE in upsd.conf is deprecated - used but switch to CERTPATH");
 		free(certfile);
 		certfile = xstrdup(arg[1]);
 		return 1;
 	}
-
+#elif (defined WITH_NSS) /* WITH_OPENSSL */
 	/* CERTPATH <dir> */
 	if (!strcmp(arg[0], "CERTPATH")) {
 		free(certfile);
@@ -186,21 +186,12 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 		return 1;
 	}
 	
-	/* CERTREQUEST ("NO" | "REQUEST" | "REQUIRE") */
+	/* CERTREQUEST (0 | 1 | 2) */
 	if (!strcmp(arg[0], "CERTREQUEST")) {
-		if (strcasecmp(arg[1], "REQUEST") == 0) {
-			certrequest = NETSSL_CERTREQ_REQUEST;
-		} else if (strcasecmp(arg[1], "REQUIRE") == 0) {
-			certrequest = NETSSL_CERTREQ_REQUIRE;
-		} else if (strcasecmp(arg[1], "NO") == 0) {
-			certrequest = NETSSL_CERTREQ_NO;
-		} else {
-			upslogx(LOG_WARNING, "CERTREQUEST in upsd.conf accept only values "
-				"\"REQUEST\", \"REQUIRE\" or \"NO\", assuming \"NO\"");
-			certrequest = NETSSL_CERTREQ_NO;
-		}
+		certrequest = atoi(arg[1]);
 		return 1;
 	}
+#endif /* WITH_OPENSSL | WITH_NSS */
 	
 	/* ACCEPT <aclname> [<aclname>...] */
 	if (!strcmp(arg[0], "ACCEPT")) {
@@ -232,7 +223,8 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 		upslogx(LOG_WARNING, "ACL in upsd.conf is no longer supported - switch to LISTEN");
 		return 1;
 	}
-
+	
+#ifdef WITH_NSS
 	/* CERTIDENT <name> <passwd> */
 	if (!strcmp(arg[0], "CERTIDENT")) {
 		free(certname);
@@ -241,6 +233,7 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 		certpasswd = xstrdup(arg[2]);
 		return 1;
 	}
+#endif /* WITH_NSS */
 
 	/* not recognized */
 	return 0;
