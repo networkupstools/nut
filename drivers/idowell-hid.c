@@ -43,17 +43,6 @@ static usb_device_id_t idowell_usb_device_table[] = {
 	{ -1, -1, NULL }
 };
 
-static const char *idowell_battery_capacity_fun(double value)
-{
-	static char	buffer[20];
-	snprintf(buffer, sizeof(buffer), "%.2f", value / 3600);
-	return buffer;
-}
-
-static info_lkp_t idowell_battery_capacity[] = {
-	{ 0, NULL, idowell_battery_capacity_fun }
-};
-
 /* --------------------------------------------------------------- */
 /*      Vendor-specific usage table */
 /* --------------------------------------------------------------- */
@@ -101,7 +90,6 @@ static hid_info_t idowell_hid2nut[] = {
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ShutdownImminent", NULL, NULL, 0, shutdownimm_info },
 
 	/* battery page */
-	{ "battery.capacity", 0, 0, "UPS.PowerSummary.DesignCapacity", NULL, "%s", HU_FLAG_STATIC, idowell_battery_capacity },	/* conversion needed from As to Ah */
 	{ "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", 0, NULL },
 	{ "battery.charge.low", 0, 0, "UPS.PowerSummary.RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_STATIC , NULL }, /* Read only */
 	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", 0, NULL },
