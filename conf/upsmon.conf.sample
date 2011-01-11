@@ -299,8 +299,7 @@ NOCOMMWARNTIME 300
 FINALDELAY 5
 
 # --------------------------------------------------------------------------
-# CERTPATH - path to certificates (database directory or pem file)
-# CERTPATH <certificate file or directory>
+# CERTPATH - path to certificates (database directory or directory with CA's)
 #
 # When compiled with SSL support, you can enter the certificate path here.
 #
@@ -311,12 +310,12 @@ FINALDELAY 5
 # CERTPATH /usr/local/ups/etc/cert/upsmon
 #
 # With OpenSSL:
-# The certificates must be in PEM format and must be sorted starting with
-# the subject's certificate (server certificate), followed by intermediate
-# CA certificates (if applicable_ and the highest level (root) CA. It should
-# end with the server key.
+# Directory containing CA certificates in PEM format, used to verify
+# the server certificate presented by the upsd server. The files each
+# contain one CA certificate. The files are looked up by the CA subject
+# name hash value, which must hence be available.
 #
-# CERTPATH /usr/local/ups/etc/upsmon.pem
+# CERTPATH /usr/ssl/certs
 # 
 # See 'docs/security.txt' or the Security chapter of NUT user manual
 # for more information on the SSL support in NUT.
