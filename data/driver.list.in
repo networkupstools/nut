@@ -296,6 +296,8 @@
 
 "ICS"	"pdu"	"1"	"8064 Ethernet Relay Interface"	"16 outlets"	"powerman-pdu (experimental)"
 
+"iDowell"	"ups"	"2"	"iBox UPS"	""	"usbhid-ups"
+
 "INELT"	"ups"	"2"	"Monolith 1000LT"	""	"blazer_ser"
 "INELT"	"ups"	"2"	"Monolith 3000RT"	""	"blazer_ser"
 

@@ -19,7 +19,7 @@ Release notes for NUT 2.6.0 - what's new since 2.4.3:
  - support for new devices: APC 5G; Eaton PowerWare 5119 RM (smart mode using
    upscode2 driver), Eaton Best Ferrups (using older ConnectUPS card),
    Eaton 9395 (serial interface), Eaton ConnectUPS X / BD / E Slot;
-   HP T1000 INTL, HP T1500 INTL, HP T750 G2, HP R1500 G2 INTL;
+   HP T1000 INTL, HP T1500 INTL, HP T750 G2, HP R1500 G2 INTL; iDowell iBox UPS;
    Tripp Lite SmartOnline SU1000XLA, Tripp Lite Smart1000LCD, and some
    more USB/HID devices IDs; CyberPower CP1500AVRLCD and CP1350AVRLCD;
    PowerWalker Line-Interactive VI 1400 ; Rocketfish RF-1000VA / RF-1025VA.
