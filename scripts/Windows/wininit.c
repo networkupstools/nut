@@ -19,7 +19,6 @@
 */
 #ifdef WIN32
 
-#include <windows.h>
 #include "common.h"
 #include "config.h"
 #include "winevent.h"

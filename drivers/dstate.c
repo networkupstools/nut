@@ -29,7 +29,6 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #else
-#include <windows.h> 
 #include <stdio.h> 
 #include <strings.h> 
 #endif
@@ -712,8 +711,8 @@ void dstate_init(const char *prog, const char *devname)
 	}
 #else
 	/* FIXME: use dflt_statepath() instead of hardcoded value ?*/
-	if (port) {
-		snprintf(sockname, sizeof(sockname), "\\\\.\\pipe\\%s-%s", prog, port);
+	if (devname) {
+		snprintf(sockname, sizeof(sockname), "\\\\.\\pipe\\%s-%s", prog, devname);
 	} else {
 		snprintf(sockname, sizeof(sockname), "\\\\.\\pipe\\%s", prog);
 	}

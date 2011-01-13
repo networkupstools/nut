@@ -22,8 +22,6 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#else
-#include <winsock2.h>
 #endif
 
 #include "common.h"
