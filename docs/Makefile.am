@@ -85,8 +85,10 @@ developer-guide.html developer-guide.chunked developer-guide.pdf: $(FULL_DEVELOP
 packager-guide.html packager-guide.chunked packager-guide.pdf: packager-guide.txt asciidoc.conf
 
 # Note: without the "-v", asciidoc (circa 8.6.2) sometimes hangs when
-# generating the chunked HTML:
-A2X_COMMON_OPTS = -v --attribute icons \
+# generating the chunked HTML. In this case, export the environment
+# variable ASCIIDOC_VERBOSE to "-v", ie:
+#   $ ASCIIDOC_VERBOSE=-v make
+A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
     --attribute localdate=`TZ=UTC date +%Y-%m-%d` \
     --attribute localtime=`TZ=UTC date +%H:%M:%S` \
     --attribute iconsdir=$(srcdir)/images \
