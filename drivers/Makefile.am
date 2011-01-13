@@ -135,7 +135,7 @@ dummy_ups_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/clients
 dummy_ups_LDADD = $(LDADD_DRIVERS) ../clients/libupsclient.la
 if WITH_SSL
   dummy_ups_CFLAGS += $(LIBSSL_CFLAGS)
-  dummy_ups_LDADD += $(LIBSSL_LDFLAGS)
+  dummy_ups_LDADD += $(LIBSSL_LIBS)
 endif
 
 # Clone drivers
@@ -152,19 +152,19 @@ USBHID_UPS_SUBDRIVERS = apc-hid.c belkin-hid.c cps-hid.c explore-hid.c \
  liebert-hid.c mge-hid.c powercom-hid.c tripplite-hid.c idowell-hid.c
 usbhid_ups_SOURCES = usbhid-ups.c libhid.c libusb.c hidparser.c	\
  usb-common.c $(USBHID_UPS_SUBDRIVERS)
-usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
+usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
 
 tripplite_usb_SOURCES = tripplite_usb.c libusb.c usb-common.c
-tripplite_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS) -lm
+tripplite_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
 bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c usb-common.c
-bcmxcp_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
+bcmxcp_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
 
 blazer_usb_SOURCES = blazer.c blazer_usb.c libusb.c usb-common.c
-blazer_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS) -lm
+blazer_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
 richcomm_usb_SOURCES = richcomm_usb.c usb-common.c
-richcomm_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
+richcomm_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
 
 # HID-over-serial
 newmge_shut_SOURCES = usbhid-ups.c libshut.c libhid.c hidparser.c mge-hid.c
@@ -176,29 +176,29 @@ newmge_shut_LDADD = $(LDADD)
 snmp_ups_SOURCES = snmp-ups.c apc-mib.c baytech-mib.c compaq-mib.c eaton-mib.c \
  ietf-mib.c mge-mib.c netvision-mib.c powerware-mib.c raritan-pdu-mib.c \
  bestpower-mib.c
-snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LDFLAGS)
+snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS)
 
 # HAL
 hald_addon_usbhid_ups_SOURCES = usbhid-ups.c libhid.c libusb.c hidparser.c	\
  $(USBHID_UPS_SUBDRIVERS)
-hald_addon_usbhid_ups_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS)
+hald_addon_usbhid_ups_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS)
 
 hald_addon_tripplite_usb_SOURCES = tripplite_usb.c libusb.c
-hald_addon_tripplite_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS) -lm
+hald_addon_tripplite_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS) -lm
 
 hald_addon_bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c
-hald_addon_bcmxcp_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS)
+hald_addon_bcmxcp_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS)
 
 hald_addon_blazer_usb_SOURCES = blazer.c blazer_usb.c libusb.c
-hald_addon_blazer_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LDFLAGS) $(LIBHAL_LDFLAGS) -lm
+hald_addon_blazer_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS) -lm
 
 # NEON XML/HTTP
 netxml_ups_SOURCES = netxml-ups.c mge-xml.c
-netxml_ups_LDADD = $(LDADD_DRIVERS) $(LIBNEON_LDFLAGS)
+netxml_ups_LDADD = $(LDADD_DRIVERS) $(LIBNEON_LIBS)
 
 # Powerman
 powerman_pdu_SOURCES = powerman-pdu.c
-powerman_pdu_LDADD = $(LDADD) $(LIBPOWERMAN_LDFLAGS)
+powerman_pdu_LDADD = $(LDADD) $(LIBPOWERMAN_LIBS)
 
 # ----------------------------------------------------------------------
 # List of header files. The purpose of this list is not dependency
