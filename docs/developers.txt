@@ -564,3 +564,90 @@ If you are new to Git, but are familiar with SVN, the
 link:http://git-scm.com/course/svn.html[following link] may be of use.
 
 
+Distributed SCM systems
+-----------------------
+
+Git and Mercurial (Hg) are two popular distributed SCM tools which provide a
+bridge to a SVN repository. This makes it possible for a new developer to stay
+synchronized with the latest changes to NUT, while keeping a local version
+history of their changes before they are merged by the core NUT developers.
+
+A complete introduction to either Git or Mercurial is beyond the scope of this
+document, but many others have written excellent tutorials on both the DSCM
+tools, and their SVN interfaces.
+
+Git and SVN
+~~~~~~~~~~~
+
+The `git svn` tool synchronizes a Git repository with a
+link:http://www.kernel.org/pub/software/scm/git/docs/git-svn.html[SVN repository].
+
+In many cases, NUT developers will not need access to the entire repository
+history - a snapshot starting at the most recent revision will work nicely:
+
+	git svn clone --revision HEAD svn://svn.debian.org/nut/trunk nut-git
+
+From the resulting nut-git directory, you may use all of the Git commands to
+record your changes, and even create new branches for working on different
+aspects of the code.
+
+Git offers a little more flexibility than the `svn update` command. You may
+fetch other developers' changes from SVN into your repository, but hold off on
+actually combining them with your branch until you have compared the two
+branches (for instance, with `gitk --all`).
+
+To import the new SVN revisions, simply run the following command from any
+directory under your Git checkout (`nut-git` in the example above). Note that
+this only changes the history stored in your repository - it does not touch
+your checked-out files.
+
+	git svn fetch
+
+Initially, the Git `master` branch tracks the SVN `trunk`. The `git svn`
+command updates the `remotes/trunk` reference every time you run `git svn
+fetch`, but it does not adjust the `master` branch automatically. To update
+your master branch with new SVN revisions, you can run the following commands:
+
+	git checkout master
+	git svn fetch   # (optional; this gets commits other than on your current branch)
+	git svn rebase
+
+You may create as many branches as you like in your local Git repository. When
+using `git svn`, the preferred way to combine your changes with SVN changes is
+to use `git rebase` on your local branch. This re-applies your branch's changes
+to the new SVN changes, much as though your branch were a series of patches.
+
+--------------------------------------------------------------------------------
+	git checkout master
+	git branch my-new-feature
+	git checkout my-new-feature
+
+	# Hack away
+
+	git add changed-file.c
+	git commit
+
+	# Someone committed something to SVN. Fetch it.
+
+	git svn fetch
+	git rebase remotes/trunk
+--------------------------------------------------------------------------------
+
+You are encouraged to use `git rebase -i` on your private Git branches to
+separate your changes into <<_patch_cohesion,logical changes>>.
+
+From there, you can generate patches for the Tracker, or the nut-upsdev list.
+
+If you are new to Git, but are familiar with SVN, the
+link:http://git-scm.com/course/svn.html[following link] may be of use.
+
+
+Mercurial and SVN
+~~~~~~~~~~~~~~~~~
+
+Synchronizing a Mercurial repository against the NUT SVN repository should be
+similar in spirit to the Git method discussed above.
+link:http://mercurial.selenic.com/wiki/WorkingWithSubversion[This wiki page]
+discusses your options.
+
+We would welcome any feedback about this process on the nut-upsdev mailing list.
