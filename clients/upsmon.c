@@ -28,8 +28,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #else
-#include <winsock2.h>
-#define sleep(n) Sleep(1000 * n)
+#include <wincompat.h>
 #endif
 
 #include "nut_stdint.h"

@@ -17,10 +17,7 @@
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.              
 */
 #ifdef WIN32
-#include "common.h"
 #include "wincompat.h"
-#include <winsock2.h>
-#include <windows.h>
 
 extern int errno;
 
@@ -67,6 +64,20 @@ int sktclose(int fh)
 	int ret = closesocket((SOCKET)fh);
 	errno = WSAGetLastError();
 	return ret;
+}
+
+const char* inet_ntop(int af, const void* src, char* dst, int cnt){
+	struct sockaddr_in srcaddr;
+
+	memset(&srcaddr, 0, sizeof(struct sockaddr_in));
+	memcpy(&(srcaddr.sin_addr), src, sizeof(srcaddr.sin_addr));
+
+	srcaddr.sin_family = af;
+	if (WSAAddressToString((struct sockaddr*) &srcaddr, sizeof(struct sockaddr_in), 0, dst, (LPDWORD) &cnt) != 0) {
+		WSAGetLastError();
+		return NULL;
+	}
+	return dst;
 }
 
 /* syslog sends a message through a pipe to the wininit service. Which is

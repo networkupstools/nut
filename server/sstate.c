@@ -37,8 +37,6 @@
 #ifndef WIN32
 #include <sys/socket.h>
 #include <sys/un.h>
-#else
-#include <winsock2.h>
 #endif
 
 static int parse_args(upstype_t *ups, size_t numargs, char **arg)

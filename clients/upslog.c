@@ -41,8 +41,7 @@
 #include "upslog.h"
 
 #ifdef WIN32
-#include <winsock2.h>
-#define sleep(n) Sleep(1000 * n)
+#include "wincompat.h"
 #endif
 
 	static	int	reopen_flag = 0, exit_flag = 0;

@@ -48,8 +48,13 @@
  * Status lookup table type definition
  */
 typedef struct {
+<<<<<<< HEAD
 	const char  *status_str;    /* ups.status string */
 	int          status_value;  /* ups.status flag bit */
+=======
+	const char	*status_str;	/* ups.status string */
+	int	status_value;	/* ups.status value */
+>>>>>>> Merge from the trunk -> porting the IPv6 code to Windows
 } status_lkp_t;
 
 #define STATUS_CAL             (1 << 0)        /* calibration */

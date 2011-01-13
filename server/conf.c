@@ -84,14 +84,13 @@ static void ups_create(const char *fn, const char *name, const char *desc)
 		return;
 	}
 #endif
-
-	if (last == NULL)
-		firstups = temp;
-	else
-		last->next = temp;
-
 	temp->sock_fd = sstate_connect(temp);
 
+	/* preload this to the current time to avoid false staleness */
+	time(&temp->last_heard);
+
+	temp->next = firstups;
+	firstups = temp;
 	num_ups++;
 }
 

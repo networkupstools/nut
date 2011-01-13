@@ -297,7 +297,7 @@ static void forkexec(char *const argv[], const ups_t *ups)
 		i++;
 	}
 	ret = CreateProcess(
-			prog,
+			argv[0],
 			commandline,
 			NULL,
 			NULL,

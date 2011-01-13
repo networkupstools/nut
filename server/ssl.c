@@ -119,41 +119,51 @@ void net_starttls(ctype_t *client, int numarg, const char **arg)
 
 void ssl_init(void)
 {
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+	const SSL_METHOD	*ssl_method;
+#else
+	SSL_METHOD	*ssl_method;
+#endif
 	if (!certfile) {
 		return;
 	}
 
 	check_perms(certfile);
 
-	SSL_library_init();
 	SSL_load_error_strings();
-	OpenSSL_add_ssl_algorithms();
+	SSL_library_init();
 
-	if ((ssl_ctx = SSL_CTX_new(TLSv1_server_method())) == NULL) {
-		fatal_with_errno(EXIT_FAILURE, "SSL_CTX_new");
+	if ((ssl_method = TLSv1_server_method()) == NULL) {
+		ssl_debug();
+		fatalx(EXIT_FAILURE, "TLSv1_server_method failed");
 	}
 
-	if (SSL_CTX_use_RSAPrivateKey_file(ssl_ctx, certfile, SSL_FILETYPE_PEM) != 1) {
+	if ((ssl_ctx = SSL_CTX_new(ssl_method)) == NULL) {
 		ssl_debug();
-		upslogx(LOG_ERR, "SSL_CTX_use_RSAPrivateKey_file(%s) failed", certfile);
-		return;
+		fatalx(EXIT_FAILURE, "SSL_CTX_new failed");
 	}
 
 	if (SSL_CTX_use_certificate_chain_file(ssl_ctx, certfile) != 1) {
-		upslogx(LOG_ERR, "SSL_CTX_use_certificate_chain_file(%s) failed", certfile);
-		return;
+		ssl_debug();
+		fatalx(EXIT_FAILURE, "SSL_CTX_use_certificate_chain_file(%s) failed", certfile);
+	}
+
+	if (SSL_CTX_use_PrivateKey_file(ssl_ctx, certfile, SSL_FILETYPE_PEM) != 1) {
+		ssl_debug();
+		fatalx(EXIT_FAILURE, "SSL_CTX_use_PrivateKey_file(%s) failed", certfile);
 	}
 
 	if (SSL_CTX_check_private_key(ssl_ctx) != 1) {
-		upslogx(LOG_ERR, "SSL_CTX_check_private_key(%s) failed", certfile);
-		return;
+		ssl_debug();
+		fatalx(EXIT_FAILURE, "SSL_CTX_check_private_key(%s) failed", certfile);
+	}
+
+	if (SSL_CTX_set_cipher_list(ssl_ctx, "HIGH:@STRENGTH") != 1) {
+		ssl_debug();
+		fatalx(EXIT_FAILURE, "SSL_CTX_set_cipher_list failed");
 	}
 
 	SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_NONE, NULL);
-
-	if (SSL_CTX_set_cipher_list(ssl_ctx, "HIGH:@STRENGTH") != 1) {
-		fatalx(EXIT_FAILURE, "SSL_CTX_set_cipher_list");
-	}
 
 	ssl_initialized = 1;
 }

@@ -27,6 +27,10 @@
 
 #include "common.h"
 
+#define sleep(n) Sleep(1000 * n)
+
+/* Network compatibility */
+
 /* This is conditional because read/write are generic in unix, and this will make them network specific */
 #ifdef W32_NETWORK_CALL_OVERRIDE 
 #define close(h) sktclose(h)
@@ -44,9 +48,28 @@ int sktread(int fh, char *buf, int size);
 int sktwrite(int fh, char *buf, int size);
 int sktclose(int fh);
 
+const char* inet_ntop(int af, const void* src, char* dst, int cnt);
+
+/* from the MSDN getaddrinfo documentation : */
+#define EAI_AGAIN	WSATRY_AGAIN
+#define EAI_BADFLAGS	WSAEINVAL
+#define EAI_FAIL	WSANO_RECOVERY
+#define EAI_FAMILY	WSAEAFNOSUPPORT
+#define EAI_MEMORY	WSA_NOT_ENOUGH_MEMORY
+#define EAI_NONAME	WSAHOST_NOT_FOUND
+#define EAI_SERVICE	WSATYPE_NOT_FOUND
+#define EAI_SOCKTYPE	WSAESOCKTNOSUPPORT
+/* not from MS docs : */
+#define EAI_SYSTEM	WSANO_RECOVERY
+#define EAFNOSUPPORT	WSAEAFNOSUPPORT
+
+/* syslog compatibility */
+
 void syslog(int priority, const char *fmt, ...);
 
 extern const char * EventLogName;
+
+/* serial function compatibility */
 
 typedef unsigned char   cc_t;
 typedef unsigned int    speed_t;
