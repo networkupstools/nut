@@ -43,7 +43,7 @@ struct type {
 	unsigned char num_of_bytes_from_ups;
 	
 	struct method_of_flow_control {
-	    char *name;
+	    const char *name;
 	    void (*setup_flow_control)(void);
 	} flowControl;
 	

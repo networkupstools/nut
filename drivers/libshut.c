@@ -192,7 +192,7 @@ int libshut_get_interrupt(int upsfd, unsigned char *buf,
 void libshut_close(int upsfd);
 
 /* FIXME */
-char * shut_strerror() { return ""; }
+const char * shut_strerror(void) { return ""; }
 
 /*!
  * From SHUT specifications

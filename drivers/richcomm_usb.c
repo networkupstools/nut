@@ -157,7 +157,7 @@ static void usb_comm_fail(const char *fmt, ...)
 	upslogx(LOG_WARNING, "Communications with UPS lost: %s", why);
 }
 
-static void usb_comm_good()
+static void usb_comm_good(void)
 {
 	if (comm_failures == 0) {
 		return;

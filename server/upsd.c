@@ -32,7 +32,6 @@
 #include <netdb.h>
 #include <poll.h>
 #else
-#include <winsock2.h>
 #include <ws2tcpip.h>
 /* This override network system calls to adapt to Windows specificity */
 #define W32_NETWORK_CALL_OVERRIDE
@@ -80,9 +79,7 @@ static ctype_t	*firstclient = NULL;
 	/* default is to listen on all local interfaces */
 static stype_t	*firstaddr = NULL;
 
-#ifdef	HAVE_IPV6
 static int 	opt_af = AF_UNSPEC;
-#endif
 
 typedef enum {
 	DRIVER = 1,
@@ -110,7 +107,6 @@ static char	pidfn[SMALLBUF];
 	/* set by signal handlers */
 static int	reload_flag = 0, exit_flag = 0;
 
-#ifdef	HAVE_IPV6
 static const char *inet_ntopW (struct sockaddr_storage *s)
 {
 	static char str[40];
@@ -126,7 +122,6 @@ static const char *inet_ntopW (struct sockaddr_storage *s)
 		return NULL;
 	}
 }
-#endif
 
 /* return a pointer to the named ups if possible */
 upstype_t *get_ups_ptr(const char *name)
@@ -197,83 +192,10 @@ void listen_add(const char *addr, const char *port)
 static void setuptcp(stype_t *server)
 {
 #ifdef WIN32
-        WSADATA WSAdata;
-        WSAStartup(2,&WSAdata);
+	WSADATA WSAdata;
+	WSAStartup(2,&WSAdata);
 	atexit((void(*)(void))WSACleanup);
 #endif
-
-#ifndef	HAVE_IPV6
-	struct hostent		*host;
-	struct sockaddr_in	sockin;
-	int	res, one = 1;
-
-	memset(&sockin, '\0', sizeof(sockin));
-	host = gethostbyname(server->addr);
-#ifndef WIN32
-
-	if (!host) {
-		struct  in_addr	listenaddr;
-
-		if (!inet_aton(server->addr, &listenaddr)) {
-			fatal_with_errno(EXIT_FAILURE, "inet_aton");
-		}
-
-		host = gethostbyaddr(&listenaddr, sizeof(listenaddr), AF_INET);
-
-		if (!host) {
-			fatal_with_errno(EXIT_FAILURE, "gethostbyaddr");
-		}
-	}
-#else
-	unsigned long numeric_addr;
-	numeric_addr = inet_addr(server->addr);
-	if ( numeric_addr == INADDR_NONE ) {
-		fatal_with_errno(EXIT_FAILURE, "inet_addr");
-	}
-	sockin.sin_addr.s_addr = numeric_addr;
-
-#endif
-	if ((server->sock_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		fatal_with_errno(EXIT_FAILURE, "socket");
-	}
-
-	res = setsockopt(server->sock_fd, SOL_SOCKET, SO_REUSEADDR, (void *) &one, sizeof(one));
-
-	if (res != 0) {
-		fatal_with_errno(EXIT_FAILURE, "setsockopt(SO_REUSEADDR)");
-	}
-
-	sockin.sin_family = AF_INET;
-	sockin.sin_port = htons(atoi(server->port));
-
-	memcpy(&sockin.sin_addr, host->h_addr, host->h_length);
-
-	if (bind(server->sock_fd, (struct sockaddr *) &sockin, sizeof(sockin)) == -1) {
-		fatal_with_errno(EXIT_FAILURE, "Can't bind TCP port %s", server->port);
-	}
-
-#ifndef WIN32
-	if ((res = fcntl(server->sock_fd, F_GETFL, 0)) == -1) {
-		fatal_with_errno(EXIT_FAILURE, "fcntl(get)");
-	}
-
-	if (fcntl(server->sock_fd, F_SETFL, res | O_NDELAY) == -1) {
-		fatal_with_errno(EXIT_FAILURE, "fcntl(set)");
-	}
-#else
-	server->Event = CreateEvent(NULL, /*Security,*/
-				FALSE, /*auo-reset */
-				FALSE, /*initial state*/
-				NULL); /* no name */
-
-	/* Associate socket event to the socket via its Event object */
-	WSAEventSelect( server->sock_fd, server->Event, FD_ACCEPT );
-#endif
-
-	if (listen(server->sock_fd, 16)) {
-		fatal_with_errno(EXIT_FAILURE, "listen");
-	}
-#else
 	struct addrinfo		hints, *res, *ai;
 	int	v = 0, one = 1;
 
@@ -310,7 +232,7 @@ static void setuptcp(stype_t *server)
 			close(sock_fd);
 			continue;
 		}
-
+#ifndef WIN32
 		if ((v = fcntl(sock_fd, F_GETFL, 0)) == -1) {
 			fatal_with_errno(EXIT_FAILURE, "setuptcp: fcntl(get)");
 		}
@@ -318,7 +240,7 @@ static void setuptcp(stype_t *server)
 		if (fcntl(sock_fd, F_SETFL, v | O_NDELAY) == -1) {
 			fatal_with_errno(EXIT_FAILURE, "setuptcp: fcntl(set)");
 		}
-
+#endif
 		if (listen(sock_fd, 16) < 0) {
 			upsdebug_with_errno(3, "setuptcp: listen");
 			close(sock_fd);
@@ -329,8 +251,17 @@ static void setuptcp(stype_t *server)
 		break;
 	}
 
-	freeaddrinfo(res);
+#ifdef WIN32
+		server->Event = CreateEvent(NULL, /*Security,*/
+				FALSE, /*auo-reset */
+				FALSE, /*initial state*/
+				NULL); /* no name */
+
+		/* Associate socket event to the socket via its Event object */
+		WSAEventSelect( server->sock_fd, server->Event, FD_ACCEPT );
 #endif
+
+	freeaddrinfo(res);
 
 	/* don't fail silently */
 	if (server->sock_fd < 0) {
@@ -512,7 +443,8 @@ static void check_command(int cmdnum, ctype_t *client, int numarg,
 		}
 
 #ifdef HAVE_WRAP
-		request_init(&req, RQ_DAEMON, progname, RQ_CLIENT_ADDR, client->addr, RQ_USER, client->username, 0);
+		request_init(&req, RQ_DAEMON, progname, RQ_FILE, client->sock_fd, RQ_USER, client->username, 0);
+		fromhost(&req);
 
 		if (!hosts_access(&req)) {
 			/* tcp-wrappers says access should be denied */
@@ -552,11 +484,7 @@ static void parse_net(ctype_t *client)
 /* answer incoming tcp connections */
 static void client_connect(stype_t *server)
 {
-#ifndef	HAVE_IPV6
-	struct	sockaddr_in csock;
-#else
 	struct	sockaddr_storage csock;
-#endif
 	socklen_t	clen;
 	int		fd;
 	ctype_t		*client;
@@ -574,11 +502,7 @@ static void client_connect(stype_t *server)
 
 	time(&client->last_heard);
 
-#ifndef	HAVE_IPV6
-	client->addr = xstrdup(inet_ntoa(csock.sin_addr));
-#else
 	client->addr = xstrdup(inet_ntopW(&csock));
-#endif
 
 #ifdef WIN32
 	client->Event = CreateEvent(NULL, /*Security,*/
@@ -663,7 +587,6 @@ void server_load(void)
 
 	/* default behaviour if no LISTEN addres has been specified */
 	if (!firstaddr) {
-#ifdef	HAVE_IPV6
 		if (opt_af != AF_INET) {
 			listen_add("::1", string_const(PORT));
 		}
@@ -671,9 +594,6 @@ void server_load(void)
 		if (opt_af != AF_INET6) {
 			listen_add("127.0.0.1", string_const(PORT));
 		}
-#else
-		listen_add("127.0.0.1", string_const(PORT));
-#endif
 	}
 
 	for (server = firstaddr; server; server = server->next) {
@@ -1064,10 +984,8 @@ static void help(const char *progname)
 	printf("  -q		raise log level threshold\n");
 	printf("  -u <user>	switch to <user> (if started as root)\n");
 	printf("  -V		display the version of this software\n");
-#ifdef	HAVE_IPV6
 	printf("  -4		IPv4 only\n");
 	printf("  -6		IPv6 only\n");
-#endif
 	exit(EXIT_SUCCESS);
 }
 
@@ -1203,7 +1121,6 @@ int main(int argc, char **argv)
 				nut_debug_level++;
 				break;
 
-#ifdef	HAVE_IPV6
 			case '4':
 				opt_af = AF_INET;
 				break;
@@ -1211,7 +1128,6 @@ int main(int argc, char **argv)
 			case '6':
 				opt_af = AF_INET6;
 				break;
-#endif
 			default:
 				help(progname);
 				break;

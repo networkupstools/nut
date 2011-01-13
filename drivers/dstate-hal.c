@@ -95,8 +95,8 @@ static void* battery_type_handler(LibHalChangeSet *cs, char* battery_type);
 
 /* Structure to lookup between NUT and HAL data */
 typedef struct {
-	char	*nut_name;				/* NUT variable name */
-	char	*hal_name;				/* HAL variable name */
+	const char	*nut_name;				/* NUT variable name */
+	const char	*hal_name;				/* HAL variable name */
 	int		hal_type;				/* HAL variable type */
 	void    *(*fun)(LibHalChangeSet *cs, 
 					char *value);	/* conversion function. */

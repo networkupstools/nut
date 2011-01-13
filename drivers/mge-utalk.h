@@ -45,8 +45,8 @@
 /*      Model Name formating entries                               */
 /* --------------------------------------------------------------- */
 typedef struct {
-  char	*basename; /* as returned by Si 1 <data 2> */
-  char	*finalname;
+  const char	*basename; /* as returned by Si 1 <data 2> */
+  const char	*finalname;
 } models_name_t;
 
 models_name_t Si1_models_names [] =
@@ -189,8 +189,8 @@ typedef struct {
 	const char *type;          /* INFO_* element                        */
 	int   flags;               /* INFO-element flags to set in addinfo  */
 	int   length;              /* INFO-element length of strings        */  
-	const char  cmd[32];       /* UPS command string to requets element */
-	const char  fmt[32];       /* printf format string for INFO entry   */
+	const char  *cmd;          /* UPS command string to requets element */
+	const char  *fmt;          /* printf format string for INFO entry   */
 	units_t unit;              /* unit of measurement, or NONE          */
 	bool_t  ok;                /* flag indicating if item is available  */
 } mge_info_item_t;

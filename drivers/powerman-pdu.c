@@ -52,7 +52,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	pm_err_t rv = -1;
 	char *cmdsuffix = NULL;
 	char *cmdindex = NULL;
-	char *outletname = NULL;
+	char outletname[SMALLBUF];
 
 	upsdebugx(1, "entering instcmd (%s)", cmdname);
 
@@ -69,7 +69,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		char	buf[32];
 		cmdindex++;
 		snprintf(buf, sizeof(buf), "outlet.%i.desc", atoi(cmdindex));
-		outletname = (char *)dstate_getinfo(buf);
+		snprintf(outletname, sizeof(outletname), "%s", dstate_getinfo(buf));
 	}
 
 	/* Power on the outlet */

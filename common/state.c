@@ -26,8 +26,6 @@
 #ifndef WIN32
 #include <sys/socket.h>
 #include <sys/un.h>
-#else
-#include <winsock2.h>
 #endif
 
 #include "common.h"

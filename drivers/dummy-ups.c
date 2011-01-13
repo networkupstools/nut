@@ -43,7 +43,7 @@
 #include "dummy-ups.h"
 
 #define DRIVER_NAME	"Device simulation and repeater driver"
-#define DRIVER_VERSION	"0.11"
+#define DRIVER_VERSION	"0.12"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info =
@@ -84,7 +84,7 @@ static int upsclient_update_vars(void);
 /* connection information */
 static char		*client_upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
-int	port;
+static int	port;
 
 /* Driver functions */
 
@@ -232,7 +232,7 @@ void upsdrv_initups(void)
 	}
 	else
 	{
-		upsdebugx(1, "Dummy mode");
+		upsdebugx(1, "Dummy (simulation) mode");
 		mode = MODE_DUMMY;
 		dstate_setinfo("driver.parameter.mode", "dummy");
 	}
@@ -289,16 +289,25 @@ static int setvar(const char *varname, const char *val)
 		return STAT_SET_UNKNOWN;
 	}
 
-	dstate_setinfo(varname, "%s", val);
-
-	if ( (item = find_info(varname)) != NULL) {
-		dstate_setflags(item->info_type, item->info_flags);
-
-		/* Set max length for strings, if needed */
-		if (item->info_flags & ST_FLAG_STRING)
-			dstate_setaux(item->info_type, item->info_len);
+	/* If value is empty, remove the variable (FIXME: do we need
+	 * a magic word?) */
+	if (strlen(val) == 0)
+	{
+		dstate_delinfo(varname);
 	}
+	else
+	{
+		dstate_setinfo(varname, "%s", val);
 
+		if ( (item = find_info(varname)) != NULL)
+		{
+			dstate_setflags(item->info_type, item->info_flags);
+
+			/* Set max length for strings, if needed */
+			if (item->info_flags & ST_FLAG_STRING)
+				dstate_setaux(item->info_type, item->info_len);
+		}
+	}
 	return STAT_SET_HANDLED;
 }
 

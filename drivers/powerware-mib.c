@@ -201,7 +201,7 @@ static snmp_info_t pw_mib[] = {
 		0, NULL },
 	{ "battery.current", 0, 0.1, PW_OID_BATT_CURRENT, "",
 		0, NULL },
-	{ "battery.runtime.low", ST_FLAG_RW, 1.0, IETF_OID_CONF_RUNTIME_LOW, "",
+	{ "battery.runtime.low", 0, 60.0, IETF_OID_CONF_RUNTIME_LOW, "",
 		0, NULL },
 
 	/* Output page */

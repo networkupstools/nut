@@ -60,7 +60,7 @@ static const char *powercom_startup_fun(double value)
 	return powercom_scratch_buf;
 }
 
-static const double powercom_startup_nuf(const char *value)
+static double powercom_startup_nuf(const char *value)
 {
 	const char	*s = dstate_getinfo("ups.delay.start");
 	uint16_t	val, command;
@@ -86,7 +86,7 @@ static const char *powercom_shutdown_fun(double value)
 	return powercom_scratch_buf;
 }
 
-static const double powercom_shutdown_nuf(const char *value)
+static double powercom_shutdown_nuf(const char *value)
 {
 	const char	*s = dstate_getinfo("ups.delay.shutdown");
 	uint16_t	val, command;
@@ -103,7 +103,7 @@ static info_lkp_t powercom_shutdown_info[] = {
 	{ 0, NULL, powercom_shutdown_fun, powercom_shutdown_nuf }
 };
 
-static const double powercom_stayoff_nuf(const char *value)
+static double powercom_stayoff_nuf(const char *value)
 {
 	const char	*s = dstate_getinfo("ups.delay.shutdown");
 	uint16_t	val, command;

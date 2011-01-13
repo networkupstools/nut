@@ -11,7 +11,6 @@
 #ifndef WIN32
 #  include <termios.h>
 #else
-#include <windows.h>
 #include "common.h"
 #include "wincompat.h"
 #endif

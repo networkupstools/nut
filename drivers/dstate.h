@@ -20,10 +20,6 @@
 #ifndef DSTATE_H_SEEN
 #define DSTATE_H_SEEN 1
 
-#ifdef WIN32
-#include <windows.h>
-#endif
-
 #include "state.h"
 #include "attribute.h"
 
@@ -49,7 +45,7 @@ typedef struct conn_s {
 
 	extern	struct	ups_handler	upsh;
 
-void dstate_init(const char *prog, const char *port);
+void dstate_init(const char *prog, const char *devname);
 #ifndef WIN32
 int dstate_poll_fds(struct timeval timeout, int extrafd);
 #else

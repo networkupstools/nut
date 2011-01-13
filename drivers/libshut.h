@@ -54,8 +54,8 @@ typedef struct SHUTDevice_s {
  * shut_communication_subdriver_s: structure to describe the communication routines
  */
 typedef struct shut_communication_subdriver_s {
-	char *name;				/* name of this subdriver		*/
-	char *version;				/* version of this subdriver		*/
+	const char *name;				/* name of this subdriver		*/
+	const char *version;				/* version of this subdriver		*/
 	int (*open)(int *upsfd,			/* try to open the next available	*/
 		SHUTDevice_t *curDevice,	/* device matching USBDeviceMatcher_t	*/
 		char *device_path,

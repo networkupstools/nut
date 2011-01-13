@@ -81,10 +81,10 @@ struct {
 /* macro for checking whether a variable is supported */
 
 struct {
-    char *setcmd;	/* INFO_x define from shared.h */
-    char *name;		/* Human readable text (also in shared-tables.h) */
+    const char *setcmd;	/* INFO_x define from shared.h */
+    const char *name;		/* Human readable text (also in shared-tables.h) */
     int  unit;		/* Variable should be divided by this */
-    char *cmd;		/* Command to send to pool/set variable */
+    const char *cmd;		/* Command to send to pool/set variable */
     int  field;		/* Which returned field variable corresponsd to */
     int  size;		/* string length/integer max/enum count */
     int  poll;		/* poll flag */
@@ -192,7 +192,7 @@ struct {
 #define SEC_POLLONCE  		0
 
 struct {
-    char *command;	/* sec command */
+    const char *command;	/* sec command */
     int  varnum[SEC_MAXFIELDS];	/* sec variable number for each field */
     int  pollflag;
 } sec_querylist[SEC_QUERYLIST_LEN];

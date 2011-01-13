@@ -211,6 +211,11 @@ static int blazer_status(const char *cmd)
 		dstate_setinfo(status[i].var, status[i].fmt, status[i].conv(val, NULL));
 	}
 
+	if (!val) {
+		upsdebugx(2, "%s: parsing failed", __func__);
+		return -1;
+	}
+
 	if (strspn(val, "01") != 8) {
 		upsdebugx(2, "Invalid status [%s]", val);
 		return -1;

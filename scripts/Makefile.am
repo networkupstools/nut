@@ -19,4 +19,4 @@ Solaris8/S99upsmon \
 subdriver/path-to-subdriver.sh \
 upower/95-upower-hid.rules
 
-SUBDIRS = hal hotplug python udev Windows
+SUBDIRS = augeas hal hotplug python udev Windows

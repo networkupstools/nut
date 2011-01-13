@@ -24,8 +24,7 @@
 #include <sys/wait.h>
 #include <sys/socket.h>
 #else
-#include <winsock2.h>
-#define sleep(n) Sleep(1000 * n)
+#include <wincompat.h>
 #endif
 
 #include "upsclient.h"
@@ -78,9 +77,7 @@ static	int	userfsd = 0, use_pipe = 1, pipefd[2];
 
 static	utype_t	*firstups = NULL;
 
-#ifdef	HAVE_IPV6
 static int 	opt_af = AF_UNSPEC;
-#endif
 
 #ifndef WIN32
 	/* signal handling things */
@@ -1506,13 +1503,11 @@ static int try_connect(utype_t *ups)
 	else
 		flags |= UPSCLI_CONN_TRYSSL;
 
-#ifdef	HAVE_IPV6
 	if (opt_af == AF_INET)
 		flags |= UPSCLI_CONN_INET;
 
 	if (opt_af == AF_INET6)
 		flags |= UPSCLI_CONN_INET6;
-#endif
 
 	ret = upscli_connect(&ups->conn, ups->hostname, ups->port, flags);
 
@@ -1749,10 +1744,8 @@ static void help(const char *progname)
 	printf("  -K		checks POWERDOWNFLAG, sets exit code to 0 if set\n");
 	printf("  -p		always run privileged (disable privileged parent)\n");
 	printf("  -u <user>	run child as user <user> (ignored when using -p)\n");
-#ifdef	HAVE_IPV6
 	printf("  -4		IPv4 only\n");
 	printf("  -6		IPv6 only\n");
-#endif
 
 	exit(EXIT_SUCCESS);
 }
@@ -2033,14 +2026,12 @@ int main(int argc, char *argv[])
 			case 'V':
 				/* just show the banner */
 				exit(EXIT_SUCCESS);
-#ifdef	HAVE_IPV6
 			case '4':
 				opt_af = AF_INET;
 				break;
 			case '6':
 				opt_af = AF_INET6;
 				break;
-#endif
 			default:
 				help(argv[0]);
 				break;

@@ -28,7 +28,6 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #else
-#include <windows.h> 
 #include <stdio.h> 
 #include <strings.h> 
 #endif
@@ -683,7 +682,7 @@ static void sock_close(void)
 
 /* interface */
 
-void dstate_init(const char *prog, const char *port)
+void dstate_init(const char *prog, const char *devname)
 {
 	char	sockname[SMALLBUF];
 
@@ -691,15 +690,15 @@ void dstate_init(const char *prog, const char *port)
 	/* do this here for now */
 	signal(SIGPIPE, SIG_IGN);
 
-	if (port) {
-		snprintf(sockname, sizeof(sockname), "%s/%s-%s", dflt_statepath(), prog, port);
+	if (devname) {
+		snprintf(sockname, sizeof(sockname), "%s/%s-%s", dflt_statepath(), prog, devname);
 	} else {
 		snprintf(sockname, sizeof(sockname), "%s/%s", dflt_statepath(), prog);
 	}
 #else
 	/* FIXME: use dflt_statepath() instead of hardcoded value ?*/
-	if (port) {
-		snprintf(sockname, sizeof(sockname), "\\\\.\\pipe\\%s-%s", prog, port);
+	if (devname) {
+		snprintf(sockname, sizeof(sockname), "\\\\.\\pipe\\%s-%s", prog, devname);
 	} else {
 		snprintf(sockname, sizeof(sockname), "\\\\.\\pipe\\%s", prog);
 	}

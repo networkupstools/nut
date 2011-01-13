@@ -49,6 +49,14 @@
 #
 
 #
+# --- Configuring for a user who can execute tests only
+#
+#	[testuser]
+#		password  = pass
+#		instcmds  = test.battery.start
+#		instcmds  = test.battery.stop
+
+#
 # --- Configuring for upsmon
 #
 # To add a user for your upsmon, use this example:

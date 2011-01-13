@@ -25,8 +25,6 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
-#else
-#include <winsock2.h>
 #endif
 
 #include "upsclient.h"
@@ -156,6 +154,13 @@ static void do_cmd(char **argv, const int argc)
 	if (upscli_readline(ups, buf, sizeof(buf)) < 0) {
 		fatalx(EXIT_FAILURE, "Instant command failed: %s", upscli_strerror(ups));
 	}
+
+	/* FUTURE: status cookies will tie in here */
+	if (strncmp(buf, "OK", 2) != 0) {
+		fatalx(EXIT_FAILURE, "Unexpected response from upsd: %s", buf);
+	}
+
+	fprintf(stderr, "%s\n", buf);
 }
 
 static void clean_exit(void)

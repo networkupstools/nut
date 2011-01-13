@@ -1,0 +1,191 @@
+:titles.underlines: "__","==","--","~~","^^"
+
+Network UPS Tools User Manual
+_____________________________
+:Author: Russell_Kroll,_Arnaud_Quette_and_Arjen_de_Korte
+:Author Initials: RK, AQ & ADK
+
+WARNING: this is a Work In Progress document.
+
+Introduction
+============
+
+The primary goal of the Network UPS Tools (NUT) project is to provide support
+for Power Devices, such as Uninterruptible Power Supplies, Power Distribution
+Units and Solar Controllers.
+
+NUT provides many control and monitoring <<Features,features>>, with a uniform
+control and management interface.
+
+More than 100 different manufacturers, and several thousands models are
+<<HCL,compatible>>.
+
+This software is the combined effort of many
+<<Acknowledgements,individuals and companies>>.
+
+This document intend to describe how to install software support for your
+<<general_powerdev_info, Power Devices>> (UPS, PDU, ...), and how to use the
+NUT project. It is not intended to explain what are, nor distinguish the
+different technologies that exist.  For such information, have a look at the
+<<general_powerdev_info,General Power Devices Information>>.
+
+If you wish to discover how everything came together, have a look at the
+<<Project_History,Project History>>.
+
+
+[[Overview]]
+
+include::../README[]
+
+
+[[Features]]
+
+include::features.txt[]
+
+
+Compatibility information
+-------------------------
+
+Hardware
+~~~~~~~~
+
+The current list of hardware supported by NUT can be viewed <<HCL,here>>.
+
+Operating systems
+~~~~~~~~~~~~~~~~~
+
+This software has been reported to run on:
+
+- Linux distributions,
+- the BSDs,
+- Apple's OS X,
+- Sun Solaris,
+- SGI IRIX,
+- HP/UX,
+- Tru64 Unix,
+- AIX.
+
+There is also a port of the client-side monitoring to Windows called WinNUT.
+Windows users may be able to build it directly with Cygwin.
+
+Your system will probably run it too. You just need a good C compiler and
+possibly some more packages to gain access to the serial ports.
+Other features, such as USB / SNMP / whatever, will also need extra software
+installed.
+
+Success reports are welcomed to keep this list accurate. 
+
+
+[[Download_instructions]]
+
+include::download.txt[]
+
+
+[[_installation_instructions]]
+
+include::../INSTALL[]
+
+
+[[Configuration_notes]]
+
+include::config-notes.txt[]
+
+
+[[Advanced_usage_scheduling_notes]]
+
+include::scheduling.txt[]
+
+
+[[Outlets_PDU_notes]]
+
+include::outlets.txt[]
+
+
+[[NUT_Security]]
+
+include::security.txt[]
+
+
+Appendix A: Glossary
+====================
+
+This section document the various acronyms used throughout the present
+documentation.
+
+[template="glossary",id="terms"]
+NUT::
+	Network UPS Tools.
+PDU::
+	Power Distribution Unit.
+SCD::
+	Solar Controller Device.
+UPS::
+	Uninterruptible Power Supply.
+
+
+[[Acknowledgements]]
+Appendix B: Acknowledgements / Contributions
+============================================
+
+include::acknowledgements.txt[Acknowledgements / Contributions]
+
+
+[[nut-names]]
+Appendix C: NUT command and variable naming scheme
+==================================================
+
+include::nut-names.txt[]
+
+
+[[HCL]]
+Appendix D: Hardware Compatibility List
+=======================================
+
+ifdef::website[]
+include::stable-hcl.txt[]
+endif::website[]
+
+ifndef::website[]
+Refer to the link:http://www.networkupstools.org/stable-hcl.html[online HCL].
+endif::website[]
+
+
+Appendix E: Documentation
+=========================
+
+include::documentation.txt[]
+
+
+[[Support_Request]]
+Appendix F: Support instructions
+================================
+
+include::support.txt[]
+
+
+[[Cables_information]]
+Appendix G: Cables information
+==============================
+
+include::cables.txt[]
+
+
+[[Configure_options]]
+Appendix H: Configure options
+=============================
+
+include::configure.txt[]
+
+
+[[Upgrading_notes]]
+Appendix I: Upgrading notes
+===========================
+
+include::../UPGRADING[]
+
+
+[[Project_History]]
+Appendix J: Project history
+===========================
+
+include::history.txt[]

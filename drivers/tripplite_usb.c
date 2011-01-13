@@ -489,7 +489,7 @@ static int hex2d(const unsigned char *start, unsigned int len)
 	unsigned char buf[32];
 	buf[31] = '\0';
 
-	strncpy((char *)buf, (char *)start, (len < (sizeof buf) ? len : (sizeof buf - 1)));
+	strncpy((char *)buf, (const char *)start, (len < (sizeof buf) ? len : (sizeof buf - 1)));
 	if(len < sizeof(buf)) buf[len] = '\0';
 	return strtol((char *)buf, NULL, 16);
 }
@@ -722,7 +722,7 @@ void debug_message(const char *msg, int len)
 
 	snprintf(var_name, sizeof(var_name), "ups.debug.%c", *msg);
 
-	ret = send_cmd((unsigned char *)msg, len, tmp_value, sizeof(tmp_value));
+	ret = send_cmd((const unsigned char *)msg, len, tmp_value, sizeof(tmp_value));
 	if(ret <= 0) {
 		sprintf(err_msg, "Error reading '%c' value", *msg);
 		usb_comm_fail(ret, err_msg);
@@ -847,12 +847,12 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if(tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_SMART_0004) {
 		if (!strcasecmp(cmdname, "test.battery.start")) {
-			send_cmd((unsigned char *)"A", 2, buf, sizeof buf);
+			send_cmd((const unsigned char *)"A", 2, buf, sizeof buf);
 			return STAT_INSTCMD_HANDLED;
 		}
 
 		if(!strcasecmp(cmdname, "reset.input.minmax")) {
-			return (send_cmd((unsigned char *)"Z", 2, buf, sizeof buf) == 2) ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_UNKNOWN;
+			return (send_cmd((const unsigned char *)"Z", 2, buf, sizeof buf) == 2) ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_UNKNOWN;
 		}
 	}
 

@@ -119,6 +119,8 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 	{ USB_DEVICE(HP_VENDORID, 0x1f0a), battery_scale_1dot0 },
 	/* HP R1500 G2 INTL */
 	{ USB_DEVICE(HP_VENDORID, 0x1fe0), battery_scale_1dot0 },
+	/* HP T750 G2 */
+	{ USB_DEVICE(HP_VENDORID, 0x1fe1), battery_scale_1dot0 },
 
 	/* Terminating entry */
 	{ -1, -1, NULL }

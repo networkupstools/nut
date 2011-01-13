@@ -304,7 +304,7 @@ int command_write_sequence(unsigned char *command, int command_length, unsigned	
 }
 
 
-void upsdrv_comm_good()
+void upsdrv_comm_good(void)
 {
 	nutusb_comm_good();
 }
@@ -344,7 +344,7 @@ static void nutusb_open_error(const char *port)
 }
 
 /* FIXME: this part of the opening can go into common... */
-static usb_dev_handle *open_powerware_usb()
+static usb_dev_handle *open_powerware_usb(void)
 {
 	struct usb_bus *busses = usb_get_busses();  
 	struct usb_bus *bus;

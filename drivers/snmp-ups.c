@@ -67,6 +67,8 @@ static mib2nut_info_t *mib2nut[] = {
 	NULL
 };
 
+int input_phases, output_phases, bypass_phases;
+
 /* pointer to the Snmp2Nut lookup table */
 mib2nut_info_t *mib2nut_info;
 /* FIXME: to be trashed */
@@ -869,7 +871,7 @@ int base_snmp_outlet_index(const char *OID_template)
 /* return the NUT offset (increment) based on outlet_index_base
  * ie (outlet_index_base == 0) => increment +1
  *    (outlet_index_base == 1) => increment +0 */
-int base_nut_outlet_offset()
+int base_nut_outlet_offset(void)
 {
 	return (outlet_index_base==0)?1:0;
 }
@@ -962,50 +964,86 @@ bool_t snmp_ups_walk(int mode)
 			continue;
 
 		if (su_info_p->flags & SU_INPHASES) {
-			upsdebugx(1, "Check inphases");
-		    	if (input_phases == 0) continue;
-			upsdebugx(1, "inphases is set");
-			if (su_info_p->flags & SU_INPUT_1) {
-			    	if (input_phases == 1)
-					su_info_p->flags &= ~SU_INPHASES;
-				else {
-					upsdebugx(1, "inphases is not 1");
-				    	su_info_p->flags &= ~SU_FLAG_OK;
-					continue;
-				}
+			upsdebugx(1, "Check input_phases");
+			if (input_phases == 0) {
+				continue;
 			}
-			else if (su_info_p->flags & SU_INPUT_3) {
-			    	if (input_phases == 3)
+			if (su_info_p->flags & SU_INPUT_1) {
+				if (input_phases == 1) {
+					upsdebugx(1, "input_phases is 1");
 					su_info_p->flags &= ~SU_INPHASES;
-				else {
-					upsdebugx(1, "inphases is not 3");
-				    	su_info_p->flags &= ~SU_FLAG_OK;
+				} else {
+					upsdebugx(1, "input_phases is not 1");
+					su_info_p->flags &= ~SU_FLAG_OK;
 					continue;
 				}
+			} else if (su_info_p->flags & SU_INPUT_3) {
+			    if (input_phases == 3) {
+					upsdebugx(1, "input_phases is 3");
+					su_info_p->flags &= ~SU_INPHASES;
+				} else {
+					upsdebugx(1, "input_phases is not 3");
+					su_info_p->flags &= ~SU_FLAG_OK;
+					continue;
+				}
+			} else {
+				upsdebugx(1, "input_phases is %d", input_phases);
 			}
 		}
 
 		if (su_info_p->flags & SU_OUTPHASES) {
-			upsdebugx(1, "Check outphases");
-		    	if (output_phases == 0) continue;
-			upsdebugx(1, "outphases is set");
+			upsdebugx(1, "Check output_phases");
+			if (output_phases == 0) {
+				continue;
+			}
 			if (su_info_p->flags & SU_OUTPUT_1) {
-			    	if (output_phases == 1)
+				if (output_phases == 1) {
+					upsdebugx(1, "output_phases is 1");
 					su_info_p->flags &= ~SU_OUTPHASES;
-				else {
-					upsdebugx(1, "outphases is not 1");
+				} else {
+					upsdebugx(1, "output_phases is not 1");
 					su_info_p->flags &= ~SU_FLAG_OK;
 					continue;
 				}
-			}
-			else if (su_info_p->flags & SU_OUTPUT_3) {
-			    	if (output_phases == 3)
+			} else if (su_info_p->flags & SU_OUTPUT_3) {
+				if (output_phases == 3) {
+					upsdebugx(1, "output_phases is 3");
 					su_info_p->flags &= ~SU_OUTPHASES;
-				else {
-					upsdebugx(1, "outphases is not 3");
-				    	su_info_p->flags &= ~SU_FLAG_OK;
+				} else {
+					upsdebugx(1, "output_phases is not 3");
+					su_info_p->flags &= ~SU_FLAG_OK;
 					continue;
 				}
+			} else {
+				upsdebugx(1, "output_phases is %d", output_phases);
+			}
+		}
+
+		if (su_info_p->flags & SU_BYPPHASES) {
+			upsdebugx(1, "Check bypass_phases");
+			if (bypass_phases == 0) {
+				continue;
+			}
+			if (su_info_p->flags & SU_BYPASS_1) {
+				if (bypass_phases == 1) {
+					upsdebugx(1, "bypass_phases is 1");
+					su_info_p->flags &= ~SU_BYPPHASES;
+				} else {
+					upsdebugx(1, "bypass_phases is not 1");
+					su_info_p->flags &= ~SU_FLAG_OK;
+					continue;
+				}
+			} else if (su_info_p->flags & SU_BYPASS_3) {
+				if (input_phases == 3) {
+					upsdebugx(1, "bypass_phases is 3");
+					su_info_p->flags &= ~SU_BYPPHASES;
+				} else {
+					upsdebugx(1, "bypass_phases is not 3");
+					su_info_p->flags &= ~SU_FLAG_OK;
+					continue;
+				}
+			} else {
+				upsdebugx(1, "bypass_phases is %d", bypass_phases);
 			}
 		}
 

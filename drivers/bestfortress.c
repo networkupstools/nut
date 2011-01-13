@@ -148,7 +148,7 @@ static inline void setinfo_int_minutes (const char *key, const char * s, size_t 
 }
 
 /* set info to float value */
-static inline void setinfo_float (const char *key, char * fmt, const char * s, size_t len, double factor)
+static inline void setinfo_float (const char *key, const char * fmt, const char * s, size_t len, double factor)
 {
 	char buf[10];
 	if (len > sizeof(buf)) len = sizeof(buf)-1;
@@ -409,7 +409,7 @@ void upsdrv_makevartable(void)
 }
 
 struct {
-	char * val;
+	const char * val;
 	speed_t speed;
 } speed_table[] = {
 	{"1200", B1200},

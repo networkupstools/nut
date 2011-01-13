@@ -34,8 +34,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #else
-#include <winsock2.h>
-#include <windows.h>
 /* This override network system calls to adapt to Windows specificity */
 #define W32_NETWORK_CALL_OVERRIDE
 #include "wincompat.h"
@@ -313,6 +311,11 @@ int upscli_sslcert(UPSCONN_t *ups, const char *dir, const char *file, int verify
 
 static int upscli_sslinit(UPSCONN_t *ups)
 {
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+	const SSL_METHOD	*ssl_method;
+#else
+	SSL_METHOD	*ssl_method;
+#endif
 	char	buf[UPSCLI_NETBUF_LEN];
 
 	/* see if upsd even talks SSL/TLS */
@@ -332,10 +335,16 @@ static int upscli_sslinit(UPSCONN_t *ups)
 
 	/* upsd is happy, so let's crank up the client */
 
-	SSL_library_init();
 	SSL_load_error_strings();
+	SSL_library_init();
 
-	ups->ssl_ctx = SSL_CTX_new(TLSv1_client_method());
+	ssl_method = TLSv1_client_method();
+
+	if (!ssl_method) {
+		return 0;
+	}
+
+	ups->ssl_ctx = SSL_CTX_new(ssl_method);
 
 	if (!ups->ssl_ctx) {
 		return 0;
@@ -390,7 +399,7 @@ int upscli_sslcert(UPSCONN_t *ups, const char *file, const char *path, int verif
 		return -1;
 	}
 
-	SSL_set_verify(ups->ssl, ssl_mode, NULL);
+	SSL_CTX_set_verify(ups->ssl_ctx, ssl_mode, NULL);
 
 	return 1;
 }
@@ -400,14 +409,9 @@ int upscli_sslcert(UPSCONN_t *ups, const char *file, const char *path, int verif
 int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 {
 	int	sock_fd = 0;
-#ifndef	HAVE_IPV6
-	struct sockaddr_in	local, server;
-	struct hostent		*serv;
-#else
 	struct addrinfo	hints, *res, *ai;
 	char			sport[NI_MAXSERV];
 	int			v;
-#endif
 
 #ifdef WIN32
 	WSADATA WSAdata;
@@ -427,70 +431,6 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 		return -1;
 	}
 
-#ifndef	HAVE_IPV6
-	serv = gethostbyname(host);
-
-	if (!serv) {
-#ifndef WIN32
-		struct  in_addr	listenaddr;
-
-		if (!inet_aton(host, &listenaddr)) {
-			ups->upserror = UPSCLI_ERR_NOSUCHHOST;
-			return -1;
-		}
-
-		serv = gethostbyaddr(&listenaddr, sizeof(listenaddr), AF_INET);
-
-		if (!serv) {
-			ups->upserror = UPSCLI_ERR_NOSUCHHOST;
-			return -1;
-		}
-#else
-		unsigned long numeric_addr;
-		numeric_addr = inet_addr(host);
-		if ( numeric_addr == INADDR_NONE ) {
-			ups->upserror = UPSCLI_ERR_NOSUCHHOST;
-			return -1;
-		}
-		server.sin_addr.s_addr = numeric_addr;
-			
-#endif
-
-	}
-
-	if ((sock_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		ups->upserror = UPSCLI_ERR_SOCKFAILURE;
-		ups->syserrno = errno;
-		close(sock_fd);
-		return -1;
-	}
-
-	memset(&local, '\0', sizeof(local));
-	local.sin_family = AF_INET;
-	local.sin_port = htons(INADDR_ANY);
-
-	memset(&server, '\0', sizeof(server));
-	server.sin_family = AF_INET;
-	server.sin_port = htons(port);
-
-	memcpy(&server.sin_addr, serv->h_addr, serv->h_length);
-
-	if (bind(sock_fd, (struct sockaddr *) &local, sizeof(local)) < 0) {
-		ups->upserror = UPSCLI_ERR_BINDFAILURE;
-		ups->syserrno = errno;
-		close(sock_fd);
-		return -1;
-	}
-
-	if (connect(sock_fd, (struct sockaddr *) &server, sizeof(struct sockaddr_in)) < 0) {
-		ups->upserror = UPSCLI_ERR_CONNFAILURE;
-		ups->syserrno = errno;
-		close(sock_fd);
-		return -1;
-	}
-
-	ups->fd = sock_fd;
-#else
 	snprintf(sport, sizeof(sport), "%hu", (unsigned short int)port);
 
 	memset(&hints, 0, sizeof(hints));
@@ -535,7 +475,7 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 			{
 			case EAFNOSUPPORT:
 			case EINVAL:
-                                break;
+				break;
 			default:
 				ups->upserror = UPSCLI_ERR_SOCKFAILURE;
 				ups->syserrno = errno;
@@ -574,7 +514,7 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 	if (ups->fd < 0) {
 		return -1;
 	}
-#endif
+
 	pconf_init(&ups->pc_ctx, NULL);
 
 	ups->host = strdup(host);

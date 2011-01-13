@@ -1,0 +1,116 @@
+NUT manual pages
+================
+
+[[User_man]]
+User manual pages
+-----------------
+
+Configuration files
+~~~~~~~~~~~~~~~~~~~
+
+- linkman:nut.conf[5]
+- linkman:ups.conf[5]
+- linkman:upsd.conf[5]
+- linkman:upsd.users[5]
+- linkman:upsmon.conf[5]
+- linkman:upssched.conf[5]
+
+- linkman:hosts.conf[5]
+- linkman:upsset.conf[5]
+- linkman:upsstats.html[5]
+
+Daemons
+~~~~~~~
+
+- linkman:upsd[8]
+- linkman:upsmon[8]
+- linkman:upssched[8]
+- linkman:upslog[8]
+
+Clients commands
+~~~~~~~~~~~~~~~~
+
+- linkman:upsc[8]
+- linkman:upscmd[8]
+- linkman:upsrw[8]
+
+
+CGI programs
+~~~~~~~~~~~~
+
+- linkman:upsimage.cgi[8]
+- linkman:upsset.cgi[8]
+- linkman:upsstats.cgi[8]
+
+[[Drivers]]
+Drivers
+~~~~~~~
+
+- linkman:upsdrvctl[8]
+
+- linkman:apcsmart[8]
+- linkman:bcmxcp[8]
+- linkman:bcmxcp_usb[8]
+- linkman:belkin[8]
+- linkman:belkinunv[8]
+- linkman:bestfcom[8]
+- linkman:bestfortress[8]
+- linkman:bestuferrups[8]
+- linkman:bestups[8]
+- linkman:blazer[8]
+- linkman:clone[8]
+- linkman:dummy-ups[8]
+- linkman:etapro[8]
+- linkman:everups[8]
+- linkman:gamatronic[8]
+- linkman:genericups[8]
+- linkman:isbmex[8]
+- linkman:ivtscd[8]
+- linkman:liebert[8]
+- linkman:liebert-esp2[8]
+- linkman:masterguard[8]
+- linkman:metasys[8]
+- linkman:mge-shut[8]
+- linkman:mge-utalk[8]
+- linkman:microdowell[8]
+- linkman:netxml-ups[8]
+- linkman:nutupsdrv[8]
+- linkman:oneac[8]
+- linkman:optiups[8]
+- linkman:powercom[8]
+- linkman:powerman-pdu[8]
+- linkman:powerpanel[8]
+- linkman:rhino[8]
+- linkman:richcomm_usb[8]
+- linkman:safenet[8]
+- linkman:snmp-ups[8]
+- linkman:solis[8]
+- linkman:tripplite[8]
+- linkman:tripplitesu[8]
+- linkman:tripplite_usb[8]
+- linkman:usbhid-ups[8]
+- linkman:upscode2[8]
+- linkman:victronups[8]
+
+[[Developer_man]]
+Developer manual pages
+----------------------
+
+- linkman:libupsclient-config[1]
+- linkman:skel[8]
+
+- linkman:upsclient[3]
+- linkman:upscli_connect[3]
+- linkman:upscli_disconnect[3]
+- linkman:upscli_fd[3]
+- linkman:upscli_get[3]
+- linkman:upscli_list_next[3]
+- linkman:upscli_list_start[3]
+- linkman:upscli_readline[3]
+- linkman:upscli_sendline[3]
+- linkman:upscli_splitaddr[3]
+- linkman:upscli_splitname[3]
+- linkman:upscli_ssl[3]
+- linkman:upscli_strerror[3]
+- linkman:upscli_upserror[3]
+

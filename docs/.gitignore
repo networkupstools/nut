@@ -1,2 +1,12 @@
 Makefile
 Makefile.in
+developer-guide.chunked
+packager-guide.chunked
+user-manual.chunked
+FAQ.html
+FAQ.pdf
+developer-guide.pdf
+docbook-xsl.css
+packager-guide.pdf
+user-manual.pdf
+ups-html.txt
