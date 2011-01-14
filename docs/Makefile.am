@@ -34,7 +34,7 @@ CABLES_IMAGES = images/cables/73-0724.png images/cables/940-0024C.jpg \
 
 EXTRA_DIST = $(SHARED_DEPS) $(USER_MANUAL_DEPS) $(DEVELOPER_GUIDE_DEPS) \
  $(CABLES_DEPS) FAQ.txt nut-hal.txt nut-qa.txt packager-guide.txt snmp.txt \
- $(IMAGE_FILES) $(CABLES_IMAGES)
+ $(IMAGE_FILES) $(CABLES_IMAGES) docinfo.xml
 
 ASCIIDOC_HTML_SINGLE = user-manual.html \
 	developer-guide.html \
@@ -102,7 +102,7 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
 .txt.chunked:
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked $<
 
-.txt.pdf:
-	$(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf $<
+.txt.pdf: docinfo.xml
+	$(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 $<
 
 .PHONY: html html-single pdf website
