@@ -107,6 +107,10 @@ static SECKEYPrivateKey *privKey;
 static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry, 
 		void *arg)
 {
+	if (retry) {
+		/* Force not inted to retrieve password many times. */
+		return NULL;
+	}
 	upslogx(LOG_INFO, "Intend to retrieve password for %s / %s: password %sconfigured",
 		PK11_GetSlotName(slot), PK11_GetTokenName(slot), certpasswd?"":"not ");
 	return certpasswd ? PL_strdup(certpasswd) : NULL;
