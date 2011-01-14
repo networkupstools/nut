@@ -5,8 +5,6 @@ _____________________________
 :Author: Russell_Kroll,_Arnaud_Quette_and_Arjen_de_Korte
 :Author Initials: RK, AQ & ADK
 
-WARNING: this is a Work In Progress document.
-
 Introduction
 ============
 
