@@ -61,7 +61,7 @@ To retrieve the current development tree, use the following command:
 
 To generate the build scripts, you must call, from the 'trunk' directory:
 
-	$ ./nut-autoreconf
+	$ ./autogen.sh
 
 Then refer to the 
 ifdef::website[]
