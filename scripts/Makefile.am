@@ -8,6 +8,7 @@ HP-UX/nut-upsmon \
 HP-UX/nut-upsmon.sh \
 misc/nut.bash_completion \
 misc/osd-notify \
+perl/Nut.pm \
 RedHat/halt.patch \
 RedHat/README \
 RedHat/ups \
