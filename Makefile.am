@@ -8,7 +8,8 @@ ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = include common clients conf data docs drivers lib	\
   tools scripts server
 
-EXTRA_DIST = MAINTAINERS UPGRADING
+# COPYING is included automatically.
+EXTRA_DIST = LICENSE-GPL2 LICENSE-GPL3 MAINTAINERS UPGRADING
 
 # ----------------------------------------------------------------------
 # flags to pass to ./configure when calling "make distcheck" and "make
