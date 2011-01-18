@@ -362,6 +362,12 @@ int upscli_init(int certverify, const char *certpath,
 		nss_error("upscli_init / SSL_OptionSetDefault(SSL_ENABLE_TLS)");
 		return -1;
 	}
+	status = SSL_OptionSetDefault(SSL_V2_COMPATIBLE_HELLO, PR_FALSE);
+	if (status != SECSuccess) {
+		upslogx(LOG_ERR, "Can not disable SSLv2 hello compatibility");
+		nss_error("upscli_init / SSL_OptionSetDefault(SSL_V2_COMPATIBLE_HELLO)");
+		return -1;
+	}
 	if (certname) {
 		nsscertname = xstrdup(certname);
 	}
