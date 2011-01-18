@@ -41,11 +41,6 @@ const char *UPS_VERSION = NUT_VERSION_MACRO;
 	int	nut_log_level = 0;
 	static	int	upslog_flags = UPSLOG_STDERR;
 
-#ifdef WIN32
-const char * relative_conf_path = NULL;
-const char * relative_state_path = NULL;
-#endif
-
 static void xbit_set(int *val, int flag)
 {
 	*val |= flag;
@@ -446,51 +441,25 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 
 
 /* Return the default path for the directory containing configuration files */
-const char * confpath(void) 
+const char * confpath(void)
 {
-	const char * path;
-
-	if ((path = getenv("NUT_CONFPATH")) == NULL) {
 #ifndef WIN32
-		path = CONFPATH;
+	const char *path = getenv("NUT_CONFPATH");
 #else
-		if( relative_conf_path == NULL ) {
-			path = getfullpath(PATH_ETC);
-			if( path == NULL ) {
-				path = CONFPATH;
-			}
-		}
-		else {
-			path = relative_conf_path;
-		}
+	static const char *path = getfullpath(PATH_ETC);
 #endif
-	}
-
-	return path;
+	return (path != NULL) ? path : CONFPATH;
 }
 
 /* Return the default path for the directory containing state files */
-const char * dflt_statepath(void) 
+const char * dflt_statepath(void)
 {
-	const char * path;
-
-	if ((path = getenv("NUT_STATEPATH")) == NULL) {
 #ifndef WIN32
-		path = STATEPATH;
+	const char *path = getenv("NUT_STATEPATH");
 #else
-		if( relative_state_path == NULL ) {
-			path = getfullpath(PATH_VAR_RUN);
-			if( path == NULL ) {
-				path = STATEPATH;
-			}
-		}
-		else {
-			path = relative_state_path;
-		}
+	static const char *path = getfullpath(PATH_VAR_RUN);
 #endif
-	}
-
-	return path;
+	return (path != NULL) ? path : STATEPATH;
 }
 
 /* Return the alternate path for pid files */
