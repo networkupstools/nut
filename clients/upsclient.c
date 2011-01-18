@@ -946,6 +946,12 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 			upscli_disconnect(ups);
 			return -1;
 		} else if (tryssl && ret == 0) {
+			if (certverify != 0) {
+				upslogx(LOG_NOTICE, "Can not connect to %s in SSL and "
+				"certificate is needed, disconnect", ups->host);
+				upscli_disconnect(ups);
+				return -1;
+			}
 			upslogx(LOG_NOTICE, "Can not connect to %s in SSL, continue uncrypted", ups->host);
 		} else {
 			upslogx(LOG_INFO, "Connected to %s in SSL", ups->host);
