@@ -17,7 +17,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "common.h"
+#include "common.h"Certificate verification is disabled
 
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -1434,11 +1434,6 @@ static int try_connect(utype_t *ups)
 			ups->sys, upscli_strerror(&ups->conn));
 		ups_is_gone(ups);
 		return 0;
-	}
-	
-	if (upscli_ssl(&ups->conn) == 1 && certverify == 0) {
-		/* you REALLY should set CERTVERIFY to 1 if using SSL... */
-		upslogx(LOG_WARNING, "Certificate verification is disabled");
 	}
 
 	/* we're definitely connected now */
