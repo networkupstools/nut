@@ -48,7 +48,7 @@
 # runs out of connections, it will no longer accept new incoming client
 # connections.  Only set this if you know exactly what you're doing.
 
-=======================================================================
+# =======================================================================
 # CERTFILE <certificate file>
 # CERTFILE /usr/local/ups/etc/upsd.pem
 #
