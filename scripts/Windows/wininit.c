@@ -285,8 +285,11 @@ static int parse_nutconf(BOOL start_flag)
 	char	fn[SMALLBUF];
 	FILE	*nutf;
 	char	buf[SMALLBUF];
+	const char * conf_path;
 
-	snprintf(fn,sizeof(fn),"%s/nut.conf",CONFPATH);
+	conf_path = confpath();
+	snprintf(fn,sizeof(fn),"%s/nut.conf",conf_path);
+	free(conf_path);
 
 	nutf = fopen(fn, "r");
 	if(nutf == NULL) {
