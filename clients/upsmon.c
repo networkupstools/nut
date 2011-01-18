@@ -1423,6 +1423,10 @@ static int try_connect(utype_t *ups)
 		}
 	}
 
+	if (certverify == 1) {
+		flags |= UPSCLI_CONN_CERTVERIF;
+	}
+
 	ret = upscli_connect(&ups->conn, ups->hostname, ups->port, flags);
 
 	if (ret < 0) {
