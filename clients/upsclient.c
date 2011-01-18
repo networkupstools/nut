@@ -355,9 +355,12 @@ int upscli_init(int certverify, const char *certpath,
 		nss_error("upscli_init / SSL_OptionSetDefault(SSL_ENABLE_TLS)");
 		return -1;
 	}
-	
-	nsscertname = xstrdup(certname);
-	nsscertpasswd = xstrdup(certpasswd);
+	if (certname) {
+		nsscertname = xstrdup(certname);
+	}
+	if (certpasswd) {
+		nsscertpasswd = xstrdup(certpasswd);
+	}
 	verify_certificate = certverify;
 #endif /* WITH_OPENSSL | WITH_NSS */
 	
