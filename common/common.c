@@ -41,6 +41,11 @@ const char *UPS_VERSION = NUT_VERSION_MACRO;
 	int	nut_log_level = 0;
 	static	int	upslog_flags = UPSLOG_STDERR;
 
+#ifdef WIN32
+const char * relative_conf_path = NULL;
+const char * relative_state_path = NULL;
+#endif
+
 static void xbit_set(int *val, int flag)
 {
 	*val |= flag;
@@ -443,11 +448,15 @@ const char * confpath(void)
 #ifndef WIN32
 		path = CONFPATH;
 #else
-		path = getfullpath(PATH_ETC);
-
-	if( path == NULL ) {
-		path = CONFPATH;
-	}
+		if( relative_conf_path == NULL ) {
+			path = getfullpath(PATH_ETC);
+			if( path == NULL ) {
+				path = CONFPATH;
+			}
+		}
+		else {
+			path = relative_conf_path;
+		}
 #endif
 	}
 
@@ -463,11 +472,15 @@ const char * dflt_statepath(void)
 #ifndef WIN32
 		path = STATEPATH;
 #else
-		path = getfullpath(PATH_VAR_RUN);
-
-	if( path == NULL ) {
-		path = STATEPATH;
-	}
+		if( relative_state_path == NULL ) {
+			path = getfullpath(PATH_VAR_RUN);
+			if( path == NULL ) {
+				path = STATEPATH;
+			}
+		}
+		else {
+			path = relative_state_path;
+		}
 #endif
 	}
 
