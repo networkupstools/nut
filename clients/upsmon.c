@@ -17,7 +17,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "common.h"Certificate verification is disabled
+#include "common.h"
 
 #include <sys/stat.h>
 #include <sys/wait.h>

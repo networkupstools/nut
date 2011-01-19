@@ -424,6 +424,11 @@ a hard rule. The certificate can be named as usefull.
 upsd client authentication
 ++++++++++++++++++++++++++
 
+NOTE: This functionnality is disabled by default, to activate it, recompile
+nut with 'WITH_CLIENT_CERTIFICATE_VALIDATION' defined:
+
+	make CFLAGS="-DWITH_CLIENT_CERTIFICATE_VALIDATION" 
+
 UPSD can accept three levels of client authentication. Just specify it with
 the directive 'CERTREQUEST' with the corresponding value in the upsd.conf file.
 

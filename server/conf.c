@@ -185,12 +185,13 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 		certfile = xstrdup(arg[1]);
 		return 1;
 	}
-	
+#ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
 	/* CERTREQUEST (0 | 1 | 2) */
 	if (!strcmp(arg[0], "CERTREQUEST")) {
 		certrequest = atoi(arg[1]);
 		return 1;
 	}
+#endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
 #endif /* WITH_OPENSSL | WITH_NSS */
 	
 	/* ACCEPT <aclname> [<aclname>...] */

@@ -91,7 +91,8 @@
 # CERTREQUEST <certificate request level>
 # CERTREQUEST REQUIRE
 #
-# When compiled with SSL support with NSS backend,
+# When compiled with SSL support with NSS backend and client certificate
+# validation (disabled by default, see 'docs/security.txt'),
 # you can specify if upsd requests or requires client's' certificates.
 # Possible values are :
 #  - 0 to not request to clients to provide any certificate

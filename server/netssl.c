@@ -46,7 +46,9 @@ char	*certfile = NULL;
 char	*certname = NULL;
 char	*certpasswd = NULL;
 
+#ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
 int certrequest = 0;
+#endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
 int	ssl_initialized = 0;
 
 #ifdef WITH_SSL
@@ -159,11 +161,16 @@ static SECStatus BadCertHandler(ctype_t *arg, PRFileDesc *fd)
 {
 	upslogx(LOG_WARNING, "Certificate validation failed for %s",
 		(arg&&arg->addr)?arg->addr:"<unnamed>");
+#ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
 	/* BadCertHandler is called when the NSS certificate validation is failed.
 	 * If the certificate verification (user conf) is mandatory, reject authentication
 	 * else accept it.
 	 */ 
 	return certrequest==NETSSL_CERTREQ_REQUIRE?SECFailure:SECSuccess;
+#else /* WITH_CLIENT_CERTIFICATE_VALIDATION */
+	/* Always accept clients. */
+	return SECSuccess;
+#endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
 }
 
 static void HandshakeCallback(PRFileDesc *fd, ctype_t *client_data)
@@ -275,6 +282,7 @@ void ssl_init()
 		return;
 	}
 
+#ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
 	if (certrequest < NETSSL_CERTREQ_NO &&
 		certrequest > NETSSL_CERTREQ_REQUEST) {
 		upslogx(LOG_ERR, "Invalid certificate requirement");
@@ -299,6 +307,7 @@ void ssl_init()
 			return;
 		}
 	}
+#endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
 	
 	cert = PK11_FindCertFromNickname(certname, NULL);
 	if(cert==NULL)	{
