@@ -3,7 +3,7 @@ dnl | Network UPS Tools: configure.in                                  |
 dnl +------------------------------------------------------------------+
 
 dnl NUT version number is defined here and *only* here (no more include/version)
-AC_INIT(nut, 2.4.3)
+AC_INIT(nut, 2.6.0)
 AC_CONFIG_SRCDIR(server/upsd.c)
 AC_CONFIG_MACRO_DIR([m4])
 echo "Network UPS Tools version ${PACKAGE_VERSION}"
@@ -167,6 +167,8 @@ AC_ARG_WITH(all,
 		if test -z "${with_hal}"; then with_hal="${withval}"; fi
 		if test -z "${with_neon}"; then with_neon="${withval}"; fi
 		if test -z "${with_powerman}"; then with_powerman="${withval}"; fi
+		if test -z "${with_cgi}"; then with_cgi="${withval}"; fi
+		if test -z "${with_dev}"; then with_dev="${withval}"; fi
 		AC_MSG_RESULT("${withval}")
 	else
 		AC_MSG_RESULT(not given)
@@ -211,7 +213,7 @@ case ${target_os} in
    solaris2.1* )
       echo Checking for Solaris 10 / 11 specific configuration for usb drivers
       AC_SEARCH_LIBS(nanosleep, rt)
-      LIBUSB_LDFLAGS="-R/usr/sfw/lib ${LIBUSB_LDFLAGS}"
+      LIBUSB_LIBS="-R/usr/sfw/lib ${LIBUSB_LIBS}"
       dnl FIXME: Sun's libusb doesn't support timeout (so blocks notification)
       dnl and need to call libusb close upon reconnexion
       AC_DEFINE(SUN_LIBUSB, 1, [Define to 1 for Sun version of the libusb.])
@@ -877,26 +879,26 @@ AC_DEFINE_UNQUOTED(BINDIR, "${conftemp}", [Default path for user executables])
 
 AC_SUBST(OS_NAME)
 AC_SUBST(LIBSSL_CFLAGS)
-AC_SUBST(LIBSSL_LDFLAGS)
+AC_SUBST(LIBSSL_LIBS)
 AC_SUBST(LIBGD_CFLAGS)
 AC_SUBST(LIBGD_LDFLAGS)
 AC_SUBST(LIBNETSNMP_CFLAGS)
-AC_SUBST(LIBNETSNMP_LDFLAGS)
+AC_SUBST(LIBNETSNMP_LIBS)
 AC_SUBST(LIBUSB_CFLAGS)
-AC_SUBST(LIBUSB_LDFLAGS)
+AC_SUBST(LIBUSB_LIBS)
 AC_SUBST(LIBNEON_CFLAGS)
-AC_SUBST(LIBNEON_LDFLAGS)
+AC_SUBST(LIBNEON_LIBS)
 AC_SUBST(LIBPOWERMAN_CFLAGS)
-AC_SUBST(LIBPOWERMAN_LDFLAGS)
+AC_SUBST(LIBPOWERMAN_LIBS)
 AC_SUBST(DOC_BUILD_LIST)
 AC_SUBST(LIBWRAP_CFLAGS)
-AC_SUBST(LIBWRAP_LDFLAGS)
+AC_SUBST(LIBWRAP_LIBS)
 AC_SUBST(HAL_USER)
 AC_SUBST(HAL_DEVICE_MATCH_KEY)
 AC_SUBST(HAL_FDI_PATH)
 AC_SUBST(HAL_CALLOUTS_PATH)
 AC_SUBST(LIBHAL_CFLAGS)
-AC_SUBST(LIBHAL_LDFLAGS)
+AC_SUBST(LIBHAL_LIBS)
 AC_SUBST(DRIVER_BUILD_LIST)
 AC_SUBST(DRIVER_MAN_LIST)
 AC_SUBST(DRIVER_INSTALL_TARGET)
@@ -933,6 +935,15 @@ AC_OUTPUT([
  lib/libupsclient-config
  lib/libupsclient.pc
  lib/Makefile
+ scripts/augeas/Makefile
+ scripts/augeas/nutnutconf.aug
+ scripts/augeas/nutupsconf.aug
+ scripts/augeas/nutupsdconf.aug
+ scripts/augeas/nutupsdusers.aug
+ scripts/augeas/nutupsmonconf.aug
+ scripts/augeas/nutupsschedconf.aug
+ scripts/augeas/nuthostsconf.aug
+ scripts/augeas/nutupssetconf.aug
  scripts/hal/Makefile
  scripts/hal/ups-nut-device.fdi
  scripts/hotplug/Makefile

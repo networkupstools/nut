@@ -14,15 +14,6 @@ link:stable-hcl.html[compatible].
 This software is the combined effort of many
 link:acknowledgements.html[individuals and companies].
 
-WARNING: this website is under construction. Some pieces are still lacking, but
-you can check the link:http://old.networkupstools.org[old website].
-
-////////////////////////////////////////////////////////////////////////////////
-*FIXME*
-- replace the WARNING by a shiny presentation banner
-- create intro.txt to share the above text with UM intro
-////////////////////////////////////////////////////////////////////////////////
-
 News
 ----
 include::news.txt[]

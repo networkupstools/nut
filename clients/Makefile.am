@@ -3,7 +3,7 @@
 # by default, link programs in this directory with libcommon.a
 LDADD = ../common/libcommon.la libupsclient.la $(NETLIBS)
 if WITH_SSL
-  LDADD += $(LIBSSL_LDFLAGS)
+  LDADD += $(LIBSSL_LIBS)
 endif
 
 # Avoid per-target CFLAGS, because this will prevent re-use of object
@@ -48,6 +48,6 @@ upsstats_cgi_SOURCES = upsstats.c upsclient.h status.h upsstats.h	\
 libupsclient_la_SOURCES = upsclient.c upsclient.h
 libupsclient_la_LIBADD = ../common/libparseconf.la
 if WITH_SSL
-  libupsclient_la_LIBADD += $(LIBSSL_LDFLAGS)
+  libupsclient_la_LIBADD += $(LIBSSL_LIBS)
 endif
 libupsclient_la_LDFLAGS = -version-info 1:0:0

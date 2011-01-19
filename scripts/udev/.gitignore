@@ -1,7 +1,6 @@
-nut-usbups.rules
 52_nut-usbups.rules
-Makefile.in
 Makefile
-
-
+Makefile.in
+nut-usbups.rules
+nut-usbups.rules.in
 52-nut-usbups.rules

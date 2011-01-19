@@ -1,4 +1,4 @@
-SHARED_DEPS = nut-names.txt
+SHARED_DEPS = nut-names.txt asciidoc.conf
 
 IMAGE_FILES = images/asciidoc.png \
 	images/eaton-logo.png \
@@ -9,11 +9,13 @@ IMAGE_FILES = images/asciidoc.png \
 	images/simple.png \
 	images/advanced.png \
 	images/bigbox.png \
-	images/bizarre.png
+	images/bizarre.png \
+	images/old-cgi.png
 
 USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt	\
  configure.txt download.txt documentation.txt features.txt history.txt	\
- outlets.txt scheduling.txt security.txt support.txt user-manual.txt
+ outlets.txt scheduling.txt security.txt support.txt user-manual.txt \
+ stable-hcl.txt
 
 DEVELOPER_GUIDE_DEPS = contact-closure.txt design.txt developers.txt	\
  developer-guide.txt hid-subdrivers.txt macros.txt \
@@ -32,7 +34,7 @@ CABLES_IMAGES = images/cables/73-0724.png images/cables/940-0024C.jpg \
 
 EXTRA_DIST = $(SHARED_DEPS) $(USER_MANUAL_DEPS) $(DEVELOPER_GUIDE_DEPS) \
  $(CABLES_DEPS) FAQ.txt nut-hal.txt nut-qa.txt packager-guide.txt snmp.txt \
- $(IMAGE_FILES) $(CABLES_IMAGES)
+ $(IMAGE_FILES) $(CABLES_IMAGES) docinfo.xml
 
 ASCIIDOC_HTML_SINGLE = user-manual.html \
 	developer-guide.html \
@@ -75,15 +77,18 @@ clean-local:
 ### TODO: automatic dependency generation
 FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS)  $(SHARED_DEPS) ../README \
 	../INSTALL cables.txt ../UPGRADING ../TODO
-FULL_DEVELOPER_GUIDE_DEPS = $(DEVELOPER_GUIDE_DEPS)  $(SHARED_DEPS)
+FULL_DEVELOPER_GUIDE_DEPS = $(DEVELOPER_GUIDE_DEPS)  $(SHARED_DEPS) \
+	../scripts/augeas/README
 
 user-manual.html user-manual.chunked user-manual.pdf: $(FULL_USER_MANUAL_DEPS)
 developer-guide.html developer-guide.chunked developer-guide.pdf: $(FULL_DEVELOPER_GUIDE_DEPS)
 packager-guide.html packager-guide.chunked packager-guide.pdf: packager-guide.txt
 
 # Note: without the "-v", asciidoc (circa 8.6.2) sometimes hangs when
-# generating the chunked HTML:
-A2X_COMMON_OPTS = -v --attribute icons \
+# generating the chunked HTML. In this case, export the environment
+# variable ASCIIDOC_VERBOSE to "-v", ie:
+#   $ ASCIIDOC_VERBOSE=-v make
+A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
     --attribute localdate=`TZ=UTC date +%Y-%m-%d` \
     --attribute localtime=`TZ=UTC date +%H:%M:%S` \
     --attribute iconsdir=$(srcdir)/images \
@@ -92,12 +97,12 @@ A2X_COMMON_OPTS = -v --attribute icons \
     -a toc -a numbered --destination-dir=.
 
 .txt.html:
-	$(A2X) $(A2X_COMMON_OPTS) --format=xhtml $<
+	$(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml $<
 
 .txt.chunked:
-	$(A2X) $(A2X_COMMON_OPTS) --format=chunked $<
+	$(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked $<
 
-.txt.pdf:
-	$(A2X) $(A2X_COMMON_OPTS) --format=pdf $<
+.txt.pdf: docinfo.xml
+	$(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 $<
 
 .PHONY: html html-single pdf website

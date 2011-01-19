@@ -26,17 +26,17 @@
 
 extern const char *datapath;
 
-struct dlist_t {
+typedef struct dlist_s {
 	char	*name;
 	char	*desc;
-	struct	dlist_t	*next;
-};
+	struct dlist_s	*next;
+} dlist_t;
 
-	static	struct	dlist_t	*cmd_list = NULL, *var_list = NULL;
+static dlist_t	*cmd_list = NULL, *var_list = NULL;
 
-static void list_free(struct dlist_t *ptr)
+static void list_free(dlist_t *ptr)
 {
-	struct	dlist_t	*next;
+	dlist_t	*next;
 
 	while (ptr) {
 		next = ptr->next;
@@ -49,51 +49,39 @@ static void list_free(struct dlist_t *ptr)
 	}
 }
 
-static const char *list_get(const struct dlist_t *list, const char *name)
+static const char *list_get(const dlist_t *list, const char *name)
 {
-	const	struct	dlist_t	*tmp;
+	const dlist_t	*temp;
 
-	tmp = list;
+	for (temp = list; temp != NULL; temp = temp->next) {
 
-	while (tmp) {
-		if (!strcasecmp(tmp->name, name))
-			return tmp->desc;
-
-		tmp = tmp->next;
+		if (!strcasecmp(temp->name, name)) {
+			return temp->desc;
+		}
 	}
 
 	return NULL;
 }
 
-static void desc_add(struct dlist_t **list, const char *name, const char *desc)
+static void desc_add(dlist_t **list, const char *name, const char *desc)
 {
-	struct	dlist_t	*tmp, *last;
+	dlist_t	*temp;
 
-	tmp = last = *list;
-
-	while (tmp) {
-		last = tmp;
-
-		/* replace duplicates */
-		if (!strcasecmp(tmp->name, name)) {
-			free(tmp->desc);
-			tmp->desc = xstrdup(desc);
-			return;
+	for (temp = *list; temp != NULL; temp = temp->next) {
+		if (!strcasecmp(temp->name, name)) {
+			break;
 		}
-
-		tmp = tmp->next;
 	}
 
-	tmp = xmalloc(sizeof(struct dlist_t));
+	if (temp == NULL) {
+		temp = xcalloc(1, sizeof(*temp));
+		temp->name = xstrdup(name);
+		temp->next = *list;
+		*list = temp;
+	}
 
-	tmp->name = xstrdup(name);
-	tmp->desc = xstrdup(desc);
-	tmp->next = NULL;
-
-	if (last)
-		last->next = tmp;
-	else
-		*list = tmp;
+	free(temp->desc);
+	temp->desc = xstrdup(desc);
 }
 
 static void desc_file_err(const char *errmsg)
@@ -121,14 +109,13 @@ void desc_load(void)
 
 	while (pconf_file_next(&ctx)) {
 		if (pconf_parse_error(&ctx)) {
-			upslogx(LOG_ERR, "Parse error: %s:%d: %s",
-				fn, ctx.linenum, ctx.errmsg);
-
+			upslogx(LOG_ERR, "Parse error: %s:%d: %s", fn, ctx.linenum, ctx.errmsg);
 			continue;
 		}
-			
-		if (ctx.numargs < 3)
+
+		if (ctx.numargs < 3) {
 			continue;
+		}
 
 		if (!strcmp(ctx.arglist[0], "CMDDESC")) {
 			desc_add(&cmd_list, ctx.arglist[1], ctx.arglist[2]);

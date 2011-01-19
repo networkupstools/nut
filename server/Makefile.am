@@ -12,19 +12,19 @@ if WITH_SSL
 endif
 LDADD = ../common/libcommon.la ../common/libparseconf.la $(NETLIBS)
 if WITH_WRAP
-   LDADD += $(LIBWRAP_LDFLAGS)
+   LDADD += $(LIBWRAP_LIBS)
 endif
 if WITH_SSL
-   LDADD += $(LIBSSL_LDFLAGS)
+   LDADD += $(LIBSSL_LIBS)
 endif
 
 sbin_PROGRAMS = upsd
 EXTRA_PROGRAMS = sockdebug
 
-upsd_SOURCES = upsd.c user.c conf.c ssl.c sstate.c desc.c		\
+upsd_SOURCES = upsd.c user.c conf.c netssl.c sstate.c desc.c		\
  netget.c netmisc.c netlist.c netuser.c netset.c netinstcmd.c		\
  conf.h ctype.h desc.h netcmds.h neterr.h netget.h netinstcmd.h		\
- netlist.h netmisc.h netset.h netuser.h ssl.h sstate.h stype.h upsd.h   \
+ netlist.h netmisc.h netset.h netuser.h netssl.h sstate.h stype.h upsd.h   \
  upstype.h user-data.h user.h
 
 sockdebug_SOURCES = sockdebug.c

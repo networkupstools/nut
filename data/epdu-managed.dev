@@ -1,3 +1,8 @@
+# dummy-ups example device definition file
+#
+# Generated using:
+#  $ upsc ups@host > epdu-managed.dev
+
 device.mfr: EATON | Powerware
 device.model: DBQ10634/5
 device.serial: ADO6750531
@@ -63,4 +68,3 @@ ups.serial: ADO6750531
 ups.status: 
 ups.temperature: 49.00
 device.type: pdu
-

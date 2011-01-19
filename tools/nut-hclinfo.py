@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 #   Copyright (c) 2009 - Arnaud Quette <arnaud.quette@gmail.com>
@@ -35,7 +35,7 @@ rawHCL="../data/driver.list";
 
 # Website output
 webJsonHCL = "../docs/website/scripts/ups_data.js";
-webStaticHCL = "../docs/website/ups-html.txt";
+webStaticHCL = "../docs/ups-html.txt";
 
 # from http://wiki.python.org/moin/EscapingHtml
 

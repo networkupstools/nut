@@ -3,8 +3,6 @@ Project history
 ===============
 endif::website[]
 
-WARNING: this is a Work In Progress!
-
 This page is an attempt to document how everything came together.
 
 The Network UPS Tools team would like to warmly thank Russell Kroll.

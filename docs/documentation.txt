@@ -14,7 +14,7 @@ ifdef::website[]
 endif::website[]
 ifndef::website[]
 - link:../FAQ.html[FAQ - Frequently Asked Questions]
-- <<user-manual,NUT User Manual>>
+- linkdoc:user-manual[NUT user manual]
 - <<Cables_information,Cables information>>
 - link:../man/index.html#User_man[User manual pages]
 endif::website[]
@@ -30,8 +30,8 @@ ifdef::website[]
 - link:nut-qa.html[NUT Quality Assurance]
 endif::website[]
 ifndef::website[]
-- NUT Developer Guide (link:../developer-guide.chunked/index.html[online]) (link:../developer-guide.pdf[PDF])
-- NUT Packager Guide (link:../packager-guide.chunked/index.html[online]) (link:../packager-guide.pdf[PDF])
+- linkdoc:developer-guide[NUT Developer Guide]
+- linkdoc:packager-guide[NUT Packager Guide]
 - link:ups-protocols.html[UPS protocols library]
 - link:../man/index.html#Developer_man[Developer manual pages]
 - link:nut-qa.html[NUT Quality Assurance]
@@ -61,6 +61,7 @@ These are writeups by users of the software.
 - link:http://forums.gentoo.org/viewtopic-p-2663684.html[HOWTO: MGE Ellipse 300 on gentoo] '(nielchiano)'
 - link:http://deschis.blogspot.com/2006/07/cum-se-configureaz-un-ups-apollo-seria.html[Cum se configurează un UPS Apollo seria 1000F pe Linux] '(deschis, Romanian)'
 - link:http://buffalo.nas-central.org/wiki/Install_a_UPS_%28nut%29[Install a UPS (nut) on a Buffalo NAS] '(various authors)'
+- link:http://blog.pointbre.com/2903/nutnetwork-ups-tool-korean-guidebook.html[NUT Korean GuideBook] '(PointBre)'
 
 News articles and Press releases
 --------------------------------

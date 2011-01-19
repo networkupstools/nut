@@ -1,12 +1,9 @@
 :titles.underlines: "__","==","--","~~","^^"
 
-[[user-manual]]
 Network UPS Tools User Manual
 _____________________________
 :Author: Russell_Kroll,_Arnaud_Quette_and_Arjen_de_Korte
 :Author Initials: RK, AQ & ADK
-
-WARNING: this is a Work In Progress document.
 
 Introduction
 ============
@@ -142,7 +139,14 @@ include::nut-names.txt[]
 Appendix D: Hardware Compatibility List
 =======================================
 
-include hcl-stable.txt[]
+ifdef::website[]
+include::stable-hcl.txt[]
+endif::website[]
+
+ifndef::website[]
+Refer to the link:http://www.networkupstools.org/stable-hcl.html[online HCL].
+endif::website[]
+
 
 Appendix E: Documentation
 =========================

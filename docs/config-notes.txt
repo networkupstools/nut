@@ -9,6 +9,8 @@ There are many programs and <<Features,features>> in this
 package.  You should check out the <<Overview,NUT Overview>>
 and other accompanying documentation to see how it all works.
 
+NOTE: NUT does not currently provide proper graphical configuration tools.
+However, there is now support for linkdoc:developer-guide[Augeas,augeas_user].
 
 Details about the configuration files
 -------------------------------------
@@ -793,5 +795,5 @@ system with a 1:1 cord:supply ratio has more wires stuffed behind it, but
 it's much easier to move things around since any given UPS drives a smaller
 percentage of the overall power.
 
-More information can be found in the <<user-manual,NUT User Manual>>,
+More information can be found in the linkdoc:user-manual[NUT user manual],
 and the various link:../man/index.html[user manual pages].

@@ -1,0 +1,83 @@
+(*
+Module: NutUpsdUsers
+ Parses @CONFPATH@/upsd.users
+
+Author: Raphael Pinson <raphink@gmail.com>
+        Frederic Bohe  <fredericbohe@eaton.com>
+
+About: License
+  This file is licensed under the GPL.
+
+About: Lens Usage
+  Sample usage of this lens in augtool
+
+    * Print all users granted to send commands to UPS
+      > /files@CONFPATH@/upsd.users/fred/actions/SET
+
+About: Configuration files
+  This lens applies to @CONFPATH@/upsd.users. See <filter>.
+*)
+
+module NutUpsdUsers =
+  autoload upsd_users_xfm
+
+(************************************************************************
+ * Group:                 UPSD.USERS
+ *************************************************************************)
+
+(* general *)
+let del_spc  = Util.del_opt_ws ""
+let sep_spc  = Util.del_ws_spc
+let eol      = Util.eol
+let ip       = /[0-9A-Za-z\.:]+/
+let num      = /[0-9]+/
+let word     = /[^"#; \t\n]+/
+let empty    = Util.empty
+(* let netblock = /[0-9A-Za-z\.:\/]+/ *)
+let netblock = word
+let path     = word
+
+let upsd_users_comment  = IniFile.comment IniFile.comment_re IniFile.comment_default
+
+let upsd_users_sep      = IniFile.sep IniFile.sep_re IniFile.sep_default
+
+let upsd_users_fields   = "password"
+                        | "instcmds"
+
+let upsd_users_entry    = IniFile.indented_entry upsd_users_fields upsd_users_sep upsd_users_comment
+
+let upsd_users_actions_entry = [ key /SET|FSD/ ]
+
+let upsd_users_actions   = [ del_spc 
+                               . key "actions" . upsd_users_sep
+                               . del_spc
+                               . upsd_users_actions_entry
+                               . ( sep_spc . upsd_users_actions_entry )* 
+                               . ( upsd_users_comment|eol ) ]
+                               
+(* FIXME: NEEDED? can be all, or a list of instant commands *)
+let upsd_users_instcmds_entry = [ key /ALL|FSD/ ]
+
+let upsd_users_instcmds   = [ del_spc 
+                               . key "instcmds" . upsd_users_sep
+                               . del_spc
+                               . upsd_users_instcmds_entry
+                               . ( sep_spc . upsd_users_instcmds_entry )* 
+                               . ( upsd_users_comment|eol ) ]
+
+let upsd_users_upsmon    = [ del_spc
+                               . key "upsmon" . sep_spc
+                               . store /master|slave/ . eol ]
+
+let upsd_users_title    = IniFile.indented_title IniFile.record_re
+
+let upsd_users_record   = IniFile.record upsd_users_title (upsd_users_entry|upsd_users_actions|upsd_users_upsmon)
+
+let upsd_users_lns      = IniFile.lns upsd_users_record upsd_users_comment
+
+let upsd_users_filter = ( incl "@CONFPATH@/upsd.users" )
+			. Util.stdexcl
+
+let upsd_users_xfm = transform upsd_users_lns upsd_users_filter
+
+

@@ -5,8 +5,6 @@ _________________________________
 :Author: Russell_Kroll,_Arnaud_Quette,_Charles_Lepple_and_Peter_Selinger
 :Author Initials: RK, AQ, CL & PS
 
-WARNING: this is a Work In Progress document.
-
 Introduction
 ============
 
@@ -37,6 +35,10 @@ include::new-drivers.txt[]
 
 include::sock-protocol.txt[]
 
+
+[[augeas]]
+
+include::../scripts/augeas/README[]
 
 [[new-clients]]
 

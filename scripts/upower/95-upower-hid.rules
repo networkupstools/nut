@@ -18,6 +18,7 @@ ATTRS{idVendor}=="047c", ENV{UPOWER_VENDOR}="Dell"
 ATTRS{idVendor}=="050d", ENV{UPOWER_VENDOR}="Belkin"
 ATTRS{idVendor}=="051d", ENV{UPOWER_VENDOR}="APC"
 ATTRS{idVendor}=="06da", ENV{UPOWER_VENDOR}="Liebert"
+ATTRS{idVendor}=="075d", ENV{UPOWER_VENDOR}="iDowell"
 ATTRS{idVendor}=="0764", ENV{UPOWER_VENDOR}="Cyber Power Systems"
 ATTRS{idVendor}=="09ae", ENV{UPOWER_VENDOR}="TrippLite"
 ATTRS{idVendor}=="0d9f", ENV{UPOWER_VENDOR}="PowerCOM"
@@ -55,6 +56,9 @@ ATTRS{idVendor}=="051d", ATTRS{idProduct}=="0003", ENV{UPOWER_BATTERY_TYPE}="ups
 
 # Liebert
 ATTRS{idVendor}=="06da", ATTRS{idProduct}=="ffff", ENV{UPOWER_BATTERY_TYPE}="ups"
+
+# iDowell
+ATTRS{idVendor}=="075d", ATTRS{idProduct}=="0300", ENV{UPOWER_BATTERY_TYPE}="ups"
 
 # Cyber Power Systems
 ATTRS{idVendor}=="0764", ATTRS{idProduct}=="0005", ENV{UPOWER_BATTERY_TYPE}="ups"

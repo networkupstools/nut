@@ -296,6 +296,8 @@
 
 "ICS"	"pdu"	"1"	"8064 Ethernet Relay Interface"	"16 outlets"	"powerman-pdu (experimental)"
 
+"iDowell"	"ups"	"2"	"iBox UPS"	""	"usbhid-ups"
+
 "INELT"	"ups"	"2"	"Monolith 1000LT"	""	"blazer_ser"
 "INELT"	"ups"	"2"	"Monolith 3000RT"	""	"blazer_ser"
 
@@ -659,6 +661,8 @@
 "Repotec"	"ups"	"1"	"RPF525/625/800/1000"	""	"safenet"
 "Repotec"	"ups"	"1"	"RPT-800A"	""	"genericups upstype=13"
 "Repotec"	"ups"	"1"	"RPT-162A"	""	"genericups upstype=13"
+
+"Rocketfish"	"ups"	"2"	"RF-1000VA / RF-1025VA"	""	"usbhid-ups" 
 
 "SmartLabs"	"pdu"	"1"	"2412S Power Line Modem"	"for X10/Insteon"	"powerman-pdu (experimental)"
 

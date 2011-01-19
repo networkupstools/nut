@@ -8,7 +8,8 @@ ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = include common clients conf data docs drivers lib	\
   tools scripts server
 
-EXTRA_DIST = MAINTAINERS UPGRADING
+# COPYING is included automatically.
+EXTRA_DIST = LICENSE-GPL2 LICENSE-GPL3 MAINTAINERS UPGRADING
 
 # ----------------------------------------------------------------------
 # flags to pass to ./configure when calling "make distcheck" and "make
@@ -27,8 +28,12 @@ distcheck-light:
 	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_FLAGS)" distcheck
 
 # workaround the dist generated files that are also part of the distribution
-distcleancheck_listfiles = \
-	find . -type f -exec sh -c 'test -f $(srcdir)/{} || echo {}' ';'
+# Note that distcleancheck is disabled for now, while waiting for a proper
+# solution, that do not break older unix systems
+#distcleancheck_listfiles = \
+#	find . -type f -exec sh -c 'test -f $(srcdir)/{} || echo {}' ';'
+distcleancheck:
+	@:
 
 # Automatically generate the ChangeLog from SVN logs:
 MAINTAINERCLEAN_FILES = ChangeLog
