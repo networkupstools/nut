@@ -632,7 +632,10 @@ const char * confpath(void)
 #ifndef WIN32
 	const char *path = getenv("NUT_CONFPATH");
 #else
-	static const char *path = getfullpath(PATH_ETC);
+	static const char *path = NULL;
+	if (path == NULL) {
+		path = getfullpath(PATH_ETC);
+	}
 #endif
 	return (path != NULL && *path != '\0') ? path : CONFPATH;
 }
@@ -643,7 +646,10 @@ const char * dflt_statepath(void)
 #ifndef WIN32
 	const char *path = getenv("NUT_STATEPATH");
 #else
-	static const char *path = getfullpath(PATH_VAR_RUN);
+	static const char *path = NULL;
+	if (path == NULL) {
+		path = getfullpath(PATH_VAR_RUN);
+	}
 #endif
 	return (path != NULL && *path != '\0') ? path : STATEPATH;
 }
