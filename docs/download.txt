@@ -20,33 +20,24 @@ endif::website[]
 to do so.
 ================================================================================
 
-Stable tree: 2.4
+Stable tree: 2.6
 ~~~~~~~~~~~~~~~~
 
-link:http://www.networkupstools.org/source/2.4/nut-2.4.3.tar.gz[nut-2.4.3.tar.gz]
-link:http://www.networkupstools.org/source/2.4/nut-2.4.3.tar.gz.sig[signature]
-link:http://www.networkupstools.org/source/2.4/new-2.4.3.txt[release notes]
-link:http://www.networkupstools.org/source/2.4/ChangeLog[ChangeLog]
+link:http://www.networkupstools.org/source/2.6/nut-2.6.0.tar.gz[nut-2.6.0.tar.gz]
+link:http://www.networkupstools.org/source/2.6/nut-2.6.0.tar.gz.sig[signature]
+link:http://www.networkupstools.org/source/2.6/new-2.6.0.txt[release notes]
+link:http://www.networkupstools.org/source/2.6/ChangeLog[ChangeLog]
 
-You can also browse the link:http://www.networkupstools.org/source/2.4/[stable source directory].
+You can also browse the link:http://www.networkupstools.org/source/2.6/[stable source directory].
 
 
-Testing tree: 2.4.x-pre
+Testing tree: 2.6.x-pre
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-////////////////////////////////////////////////////////////////////////////////
 There is currently no testing release.
-////////////////////////////////////////////////////////////////////////////////
-
-There is currently a testing phase for the upcoming 2.6.0 release:
-
-link:http://www.networkupstools.org/source/2.6/testing/nut-2.6.0-pre1.tar.gz[nut-2.6.0-pre1.tar.gz]
-link:http://www.networkupstools.org/source/2.6/testing/nut-2.6.0-pre1.tar.gz.sig[signature]
-link:http://www.networkupstools.org/source/2.6/testing/new-2.6.0-pre1.txt[release notes]
-link:http://www.networkupstools.org/source/2.6/testing/ChangeLog[ChangeLog]
 
 
-Development tree: 2.5
+Development tree: 2.7
 ~~~~~~~~~~~~~~~~~~~~~
 
 Code repository
@@ -61,7 +52,7 @@ To retrieve the current development tree, use the following command:
 
 To generate the build scripts, you must call, from the 'trunk' directory:
 
-	$ ./nut-autoreconf
+	$ ./autogen.sh
 
 Then refer to the 
 ifdef::website[]

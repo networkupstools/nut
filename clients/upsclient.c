@@ -399,7 +399,7 @@ int upscli_sslcert(UPSCONN_t *ups, const char *file, const char *path, int verif
 		return -1;
 	}
 
-	SSL_CTX_set_verify(ups->ssl_ctx, ssl_mode, NULL);
+	SSL_set_verify(ups->ssl, ssl_mode, NULL);
 
 	return 1;
 }
