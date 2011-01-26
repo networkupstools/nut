@@ -5,6 +5,9 @@
 #include "upsconf.h"
 #include "dstate.h"
 #include "extstate.h"
+#ifdef WIN32
+#include "wincompat.h"
+#endif
 
 /* public functions & variables from main.c */
 extern const char	*progname, *upsname, *device_name;
