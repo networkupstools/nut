@@ -28,6 +28,7 @@
 #include "common.h"
 
 #define sleep(n) Sleep(1000 * n)
+#define strtok_r(a,b,c) strtok(a,b)
 
 /* Network compatibility */
 
