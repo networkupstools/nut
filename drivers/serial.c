@@ -26,8 +26,6 @@
 #include <grp.h>
 #include <pwd.h>
 #include <sys/ioctl.h>
-#else
-#include "wincompat.h"
 #endif
 #include <ctype.h>
 #include <sys/file.h>
