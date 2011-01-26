@@ -606,15 +606,15 @@ else !HAVE_ASCIIDOC
 	@echo "Not (re)building $@ manual page, since 'asciidoc' was not found."
 
 .txt.1:
-	@echo "Using existing $@ manual page, since 'asciidoc' was not found."
+	@echo "Using existing or faked $@ manual page, since 'asciidoc' was not found." > $@
 
 .txt.3:
-	@echo "Using existing $@ manual page, since 'asciidoc' was not found."
+	@echo "Using existing or faked $@ manual page, since 'asciidoc' was not found." > $@
 
 .txt.5:
-	@echo "Using existing $@ manual page, since 'asciidoc' was not found."
+	@echo "Using existing or faked $@ manual page, since 'asciidoc' was not found." > $@
 
 .txt.8:
-	@echo "Using existing $@ manual page, since 'asciidoc' was not found."
+	@echo "Using existing or faked $@ manual page, since 'asciidoc' was not found." > $@
 
 endif !HAVE_ASCIIDOC
