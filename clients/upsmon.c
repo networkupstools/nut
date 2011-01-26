@@ -73,7 +73,13 @@ static	char	*certpath = NULL;
 static	int	certverify = 0;		/* don't verify by default */
 static	int	forcessl = 0;		/* don't require ssl by default */
 
-static	int	userfsd = 0, use_pipe = 1, pipefd[2];
+static	int	userfsd = 0, pipefd[2];
+#ifndef WIN32
+static	int	use_pipe = 1;
+#else
+	/* Do not fork in WIN32 */
+static	int	use_pipe = 0;
+#endif
 
 static	utype_t	*firstups = NULL;
 
@@ -2088,7 +2094,9 @@ int main(int argc, char *argv[])
 
 		become_user(new_uid);
 	} else {
+#ifndef WIN32
 		upslogx(LOG_INFO, "Warning: running as one big root process by request (upsmon -p)");
+#endif
 		
 		writepid(prog);
 	}
