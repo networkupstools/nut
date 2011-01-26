@@ -130,6 +130,7 @@ Build and install NUT documentation file(s).
 The possible values are "html-single" for single page HTML, "html-chunked"
 for multi pages HTML, "pdf" for a PDF file or "auto" to build all the
 possible previous documentation formats.
+Verbose output can be enabled using: ASCIIDOC_VERBOSE=-v make
 
 This feature requires AsciiDoc 8.6.3 (http://www.methods.co.nz/asciidoc).
 
