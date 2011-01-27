@@ -17,6 +17,11 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifdef WIN32
+/* ST_CONNECTED is defined for WIN32 DDE (Dynamic Data Exchange) in ddeml.h */
+#undef ST_CONNECTED
+#endif
+
 /* flags for ups->status */
 
 #define ST_ONLINE      (1 << 0)       /* UPS is on line (OL)                  */
