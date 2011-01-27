@@ -129,11 +129,13 @@ void syslog(int priority, const char *fmt, ...)
 	vsnprintf(buf1, sizeof(buf1), fmt, ap);
 	va_end(ap);
 
-	/* Add progname */
+	/* Add progname to the formated message */
 	snprintf(buf2,sizeof(buf2),"%s - %s",EventLogName,buf1);
 
-	/* Add priority to create the whole frame */
-	*((DWORD *)buf1) = (DWORD)priority;
+	/* Create the frame */
+	/* first 4 bytes are priority */
+	memcpy(buf1,&priority,sizeof(DWORD));
+	/* then comes the message */
 	memcpy(buf1+sizeof(DWORD),buf2,sizeof(buf2));
 
 	pipe = CreateFile(
