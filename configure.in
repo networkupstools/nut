@@ -51,17 +51,27 @@ cgiexecdir='${exec_prefix}/cgi-bin'
 driverexecdir='${exec_prefix}/bin'
 htmldir='${prefix}/html'
 pkgconfigdir='${libdir}/pkgconfig'
-hotplugdir='/etc/hotplug'
-if test ! -d "${hotplugdir}"; then
-   hotplugdir=''
-fi
-udevdir='/lib/udev'
-if test ! -d "${udevdir}"; then
-   udevdir='/etc/udev'
-   if test ! -d "${udevdir}"; then
-      udevdir=''
-   fi
-fi
+
+dnl Disable Hotplug and udev support on Windows
+case ${target_os} in
+	mingw* )
+		hotplugdir=''
+		udevdir=''
+	;;
+	* )
+		hotplugdir='/etc/hotplug'
+		if test ! -d "${hotplugdir}"; then
+			hotplugdir=''
+		fi
+		udevdir='/lib/udev'
+		if test ! -d "${udevdir}"; then
+			udevdir='/etc/udev'
+			if test ! -d "${udevdir}"; then
+				udevdir=''
+			fi
+		fi
+	;;
+esac
 
 RUN_AS_USER="nobody"
 RUN_AS_GROUP="nobody"
