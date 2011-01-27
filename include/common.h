@@ -235,7 +235,7 @@ char *xstrdup(const char *string);
 #ifndef WIN32
 ssize_t select_read(const int fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec);
 #else
-ssize_t select_read(const serial_handler_t fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec);
+ssize_t select_read(serial_handler_t fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec);
 #endif
 ssize_t select_write(const int fd, const void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec);
 

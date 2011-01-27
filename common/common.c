@@ -1065,7 +1065,7 @@ ssize_t select_read(const int fd, void *buf, const size_t buflen, const time_t d
 	return read(fd, buf, buflen);
 }
 #else
-ssize_t select_read(const serial_handler_t fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec)
+ssize_t select_read(serial_handler_t fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec)
 {
 	/* This function is only called by serial drivers right now */
 	/* TODO: Assert below that resulting values fit in ssize_t range */
@@ -1082,7 +1082,7 @@ ssize_t select_read(const serial_handler_t fd, void *buf, const size_t buflen, c
 	TOut.ReadTotalTimeoutConstant = timeout;
 	SetCommTimeouts(fd->handle,&TOut);
 
-	res = w32_serial_read((serial_handler_t *)fd,buf,buflen,timeout);
+	res = w32_serial_read(fd,buf,buflen,timeout);
 
 	return res;
 }
