@@ -145,10 +145,10 @@ static void wall(const char *text)
 
 #ifdef WIN32
 typedef struct async_notify_s {
-	const char *notice;
+	char *notice;
 	int flags;
-	const char *ntype;
-	const char *upsname; } async_notify_t;
+	char *ntype;
+	char *upsname; } async_notify_t;
 
 static unsigned __stdcall async_notify(LPVOID param)
 {
@@ -173,11 +173,17 @@ static unsigned __stdcall async_notify(LPVOID param)
 
 			setenv("NOTIFYTYPE", data->ntype, 1);
 			if (system(exec) == -1) {
+				free(data->notice);
+				free(data->ntype);
+				free(data->upsname);
 				upslog_with_errno(LOG_ERR, "%s", __func__);
 			}
 		}
 	}
 
+	free(data->notice);
+	free(data->ntype);
+	free(data->upsname);
 	return 1;
 }
 #endif
@@ -231,10 +237,10 @@ static void notify(const char *notice, int flags, const char *ntype,
 #else
 	async_notify_t data;
 
-	data.notice = notice;
+	data.notice = strdup(notice);
 	data.flags = flags;
-	data.ntype = ntype;
-	data.upsname = upsname;
+	data.ntype = strdup(ntype);
+	data.upsname = strdup(upsname);
 
 	_beginthreadex(
 			NULL,	/* security FIXME */
