@@ -677,7 +677,7 @@ int select_read(const int fd, void *buf, const size_t buflen, const long d_sec, 
 	return read(fd, buf, buflen);
 }
 #else
-int select_read(const serial_handler_t * fd, void *buf, const size_t buflen, const long d_sec, const long d_usec)
+int select_read(serial_handler_t * fd, void *buf, const size_t buflen, const long d_sec, const long d_usec)
 {
 	/* This function is only called by serial drivers right now */
 	int res;
@@ -692,7 +692,7 @@ int select_read(const serial_handler_t * fd, void *buf, const size_t buflen, con
 	TOut.ReadTotalTimeoutConstant = timeout;
 	SetCommTimeouts(fd->handle,&TOut);
 
-	res = w32_serial_read((serial_handler_t *)fd,buf,buflen,timeout);
+	res = w32_serial_read(fd,buf,buflen,timeout);
 
 	return res;
 }
