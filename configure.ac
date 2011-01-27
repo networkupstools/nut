@@ -82,25 +82,38 @@ if test ! -d "${auglensdir}"; then
       auglensdir=''
    fi
 fi
-hotplugdir='/etc/hotplug'
-if test ! -d "${hotplugdir}"; then
-   hotplugdir=''
-fi
-udevdir='/lib/udev'
-if test ! -d "${udevdir}"; then
-   udevdir='/etc/udev'
-   if test ! -d "${udevdir}"; then
-      udevdir=''
-   fi
-fi
 
-devddir='/usr/local/etc/devd'
-if test ! -d "${devddir}"; then
-   devddir='/etc/devd'
-   if test ! -d "${devddir}"; then
-      devddir=''
-   fi
-fi
+dnl Disable Hotplug, DevD and udev support on Windows
+dnl (useful when cross-compiling)
+case "${target_os}" in
+    mingw* )
+        hotplugdir=''
+        udevdir=''
+        devddir=''
+    ;;
+    * )
+        hotplugdir='/etc/hotplug'
+        if test ! -d "${hotplugdir}"; then
+            hotplugdir=''
+        fi
+
+        udevdir='/lib/udev'
+        if test ! -d "${udevdir}"; then
+            udevdir='/etc/udev'
+            if test ! -d "${udevdir}"; then
+                udevdir=''
+            fi
+        fi
+
+        devddir='/usr/local/etc/devd'
+        if test ! -d "${devddir}"; then
+            devddir='/etc/devd'
+            if test ! -d "${devddir}"; then
+               devddir=''
+            fi
+        fi
+    ;;
+esac
 
 RUN_AS_USER="nobody"
 RUN_AS_GROUP="nobody"
