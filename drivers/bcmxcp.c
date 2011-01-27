@@ -130,7 +130,8 @@ upsdrv_info_t upsdrv_info = {
 	"Kjell Claesson <kjell.claesson@epost.tidanet.se>\n" \
 	"Tore Ørpetveit <tore@orpetveit.net>\n" \
 	"Wolfgang Ocker <weo@weo1.de>\n" \
-	"Oliver Wilcock",
+	"Oliver Wilcock\n" \
+	"Prachi Gandhi <prachisgandhi@eaton.com>",
 	DRV_STABLE,
 	{ &comm_upsdrv_info, NULL }
 };
@@ -140,7 +141,7 @@ static long int get_long(const unsigned char*);
 static float get_float(const unsigned char *data);
 static void init_meter_map(void);
 static void init_alarm_map(void);
-static void init_command_map(void);
+static void init_command_map(int size);
 static void init_config(void);
 static void init_limit(void);
 static void init_ups_meter_map(const unsigned char *map, unsigned char len);
@@ -580,20 +581,51 @@ void init_alarm_map()
 }
 
 /* Get information on UPS commands */
-void init_command_map()
+void init_command_map(int size)
 {
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
-	int res;
+	int res, iIndex = 0, ncounter, NumComms = 0;
+	char pTmp[PW_ANSWER_MAX_SIZE] ;
 
-	upsdebugx(1, "entering init_command_map()");
+	upsdebugx(1, "entering init_command_map(%i)", size);
 
 	res = command_read_sequence(PW_COMMAND_LIST_REQ, answer);
 	if (res <= 0)
 		upsdebugx(2, "No command list block.");
 	else
+	{
 		upsdebugx(2, "Command list block supported.");
-
-	/* FIXME: to be completed */
+			
+		res = answer[iIndex];
+		NumComms = (int)res; /* Number of commands implemented in this UPS */
+		upsdebugx(3, "comms %d", res);
+		iIndex++;
+		res = answer[iIndex]; /* Entry length - bytes reported for each command */
+		iIndex++;
+		upsdebugx(3, "bytes %d", res);
+		
+		/* Get command bytes if size of command block matches with size from standard ID block */
+		if (NumComms + 2 == size)
+		{
+			for (ncounter = 0; ncounter < NumComms; ncounter++)
+			{
+				snprintf (pTmp, sizeof(pTmp), "%d - %02x ", ncounter, answer[iIndex]);						
+				upsdebugx(3, pTmp);
+				
+				if (answer[iIndex] == PW_INIT_BAT_TEST)
+				{
+					dstate_addcmd ("test.battery.start");					
+				}
+				else if (answer[iIndex] == PW_INIT_SYS_TEST)
+				{
+					dstate_addcmd ("test.system.start");					
+				}				
+				iIndex++;
+			}
+		}
+		else
+			upsdebugx(1, "Invalid response received from Command List block");
+	}
 }
 
 void init_ups_meter_map(const unsigned char *map, unsigned char len)
@@ -1221,9 +1253,8 @@ void upsdrv_initinfo(void)
 	init_limit();
 
 	/* Get information on UPS commands */
-	init_command_map();
+	init_command_map(cmd_list_len);
 
-	/* FIXME: leave up to init_command_map() to add instant commands? */
 	dstate_addcmd("shutdown.return");
 	dstate_addcmd("shutdown.stayoff");
 	dstate_addcmd("test.battery.start");
@@ -1358,31 +1389,31 @@ void upsdrv_updateinfo(void)
 		status_init();
 
 		switch (status) {
-			case 0x50: /* On line, everything is fine */
+			case BCMXCP_STATUS_ONLINE: /* On line, everything is fine */
 				status_set("OL");
 				break;
-			case 0xf0: /* Off line */
+			case BCMXCP_STATUS_ONBATTERY: /* Off line */
 				if (bcmxcp_status.alarm_on_battery == 0)
 					status_set("OB");
 				break;
-			case 0xe0: /* Overload */
+			case BCMXCP_STATUS_OVERLOAD: /* Overload */
 				status_set("OL");
 				status_set("OVER");
 				break;
-			case 0x63: /* Trim */
+			case BCMXCP_STATUS_TRIM: /* Trim */
 				status_set("OL");
 				status_set("TRIM");
 				break;
-			case 0x62:
-			case 0x61: /* Boost */
+			case BCMXCP_STATUS_BOOST1:
+			case BCMXCP_STATUS_BOOST2: /* Boost */
 				status_set("OL");
 				status_set("BOOST");
 				break;
-			case 0x60: /* Bypass */
+			case BCMXCP_STATUS_BYPASS: /* Bypass */
 				status_set("OL");
 				status_set("BYPASS");
 				break;
-			case 0x10: /* Mostly off */
+			case BCMXCP_STATUS_OFF: /* Mostly off */
 				status_set("OFF");
 				break;
 			default: /* Unknown, assume it is OK... */
@@ -1450,16 +1481,16 @@ void upsdrv_shutdown(void)
 	*/
 	switch ((unsigned char) answer[0]) {
 
-		case 0x31: {
+		case BCMXCP_RETURN_ACCEPTED: {
 			upsdrv_comm_good();
 			upslogx(LOG_NOTICE,"Going down in %d sec", sec);
 			break;
 			}
-		case 0x33: {
+		case BCMXCP_RETURN_BUSY: {
 			fatalx(EXIT_FAILURE, "shutdown disabled by front panel");
 			break;
 			}
-		case 0x36: {
+		case BCMXCP_RETURN_INVALID_PARAMETER: {
 			fatalx(EXIT_FAILURE, "Invalid parameter");
 			break;
 			}
@@ -1505,17 +1536,17 @@ static int instcmd(const char *cmdname, const char *extra)
 
 		switch ((unsigned char) answer[0]) {
 
-			case 0x31: {
+			case BCMXCP_RETURN_ACCEPTED: {
 				upslogx(LOG_NOTICE,"Going down in %d sec", sec);
 				return STAT_INSTCMD_HANDLED;
 				break;
 				}
-			case 0x33: {
+			case BCMXCP_RETURN_BUSY: {
 				upslogx(LOG_NOTICE, "[%s] disbled by front panel", cmdname);
 				return STAT_INSTCMD_UNKNOWN;
 				break;
 				}
-			case 0x36: {
+			case BCMXCP_RETURN_INVALID_PARAMETER: {
 			upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
 				return STAT_INSTCMD_UNKNOWN;
 				break;
@@ -1550,17 +1581,17 @@ static int instcmd(const char *cmdname, const char *extra)
 
 		switch ((unsigned char) answer[0]) {
 
-			case 0x31: {
+			case BCMXCP_RETURN_ACCEPTED: {
 				upslogx(LOG_NOTICE,"Going down in %d sec", sec);
 				return STAT_INSTCMD_HANDLED;
 				break;
 				}
-			case 0x33: {
+			case BCMXCP_RETURN_BUSY: {
 				upslogx(LOG_NOTICE, "[%s] disabled by front panel", cmdname);
 				return STAT_INSTCMD_UNKNOWN;
 				break;
 				}
-			case 0x36: {
+			case BCMXCP_RETURN_INVALID_PARAMETER: {
 				upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
 				return STAT_INSTCMD_UNKNOWN;
 				break;
@@ -1588,17 +1619,17 @@ static int instcmd(const char *cmdname, const char *extra)
 
 		switch ((unsigned char) answer[0]) {
 
-			case 0x31: {
+			case BCMXCP_RETURN_ACCEPTED: {
 				upslogx(LOG_NOTICE,"[%s] Going down NOW", cmdname);
 				return STAT_INSTCMD_HANDLED;
 				break;
 				}
-			case 0x33: {
+			case BCMXCP_RETURN_BUSY: {
 				upslogx(LOG_NOTICE, "[%s] disbled by front panel", cmdname);
 				return STAT_INSTCMD_UNKNOWN;
 				break;
 				}
-			case 0x36: {
+			case BCMXCP_RETURN_INVALID_PARAMETER: {
 				upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
 				return STAT_INSTCMD_UNKNOWN;
 				break;
@@ -1630,17 +1661,17 @@ static int instcmd(const char *cmdname, const char *extra)
 
 		switch ((unsigned char) answer[0]) {
 
-			case 0x31: {
+			case BCMXCP_RETURN_ACCEPTED: {
 				upslogx(LOG_NOTICE,"[%s] Testing now", cmdname);
 				return STAT_INSTCMD_HANDLED;
 				break;
 				}
-			case 0x33: {
+			case BCMXCP_RETURN_BUSY: {
 				upslogx(LOG_NOTICE, "[%s] disabled by front panel", cmdname);
 				return STAT_INSTCMD_UNKNOWN;
 				break;
 				}
-			case 0x36: {
+			case BCMXCP_RETURN_INVALID_PARAMETER: {
 				upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
 				return STAT_INSTCMD_UNKNOWN;
 				break;
@@ -1656,7 +1687,49 @@ static int instcmd(const char *cmdname, const char *extra)
 			 answer from the test.
 			 Or return, as we may lose line power
 			 and need to do a shutdown.*/
+	}	
+	
+	if (!strcasecmp(cmdname, "test.system.start")) {
+		send_write_command(AUTHOR, 4);
+		
+		sleep(1);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
 
+		cbuf[0] = PW_INIT_SYS_TEST;
+		cbuf[1] = 0x01;			/* Initiate General system Test */
+								/* 0x02 = Schedule Battery Commissioning Test*/
+								/* 0x03 = Test Alternate AC Input */
+								/* 0x04 = Flash the Lights Test */
+								/* 0xFF = Report Systems Test Capabilities */
+		res = command_write_sequence(cbuf, 2, answer);
+		if (res <= 0) {
+			upslogx(LOG_ERR, "Short read from UPS");
+			dstate_datastale();
+			return -1;
+		}
+
+		switch ((unsigned char) answer[0]) {
+
+			case BCMXCP_RETURN_ACCEPTED: {
+				upslogx(LOG_NOTICE,"[%s] Testing now", cmdname);				
+				return STAT_INSTCMD_HANDLED;
+				break;
+				}
+			case BCMXCP_RETURN_BUSY: {
+				upslogx(LOG_NOTICE, "[%s] disabled by front panel", cmdname);
+				return STAT_INSTCMD_UNKNOWN;
+				break;
+				}
+			case BCMXCP_RETURN_INVALID_PARAMETER: {
+				upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
+				return STAT_INSTCMD_UNKNOWN;
+				break;
+				}
+			default: {
+				upslogx(LOG_NOTICE, "[%s] not supported", cmdname);
+				return STAT_INSTCMD_UNKNOWN;
+				break;
+				}
+		}	
 	}
 
 	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
