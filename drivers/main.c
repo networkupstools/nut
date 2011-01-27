@@ -498,7 +498,7 @@ int main(int argc, char **argv)
 	progname = xbasename(argv[0]);
 
 #ifdef WIN32
-	char * drv_name;
+	const char * drv_name;
 	drv_name = xbasename(argv[0]);
 	/* remove trailing .exe */
 	char * name = strrchr(drv_name,'.');
@@ -510,7 +510,7 @@ int main(int argc, char **argv)
 		}
 	}
 	else {
-		progname = drv_name;
+		progname = strdup(drv_name);
 	}
 #endif
 
@@ -677,4 +677,5 @@ int main(int argc, char **argv)
 	}
 
 	/* if we get here, the exit flag was set by a signal handler */
+	return 0;
 }
