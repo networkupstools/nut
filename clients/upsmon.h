@@ -20,6 +20,11 @@
 #ifndef NUT_UPSMON_H_SEEN
 #define NUT_UPSMON_H_SEEN 1
 
+#ifdef WIN32
+/* ST_CONNECTED is defined for WIN32 DDE (Dynamic Data Exchange) in ddeml.h */
+#undef ST_CONNECTED
+#endif
+
 /* flags for ups->status */
 
 #define ST_ONLINE      (1 << 0)       /* UPS is on line (OL)                      */
