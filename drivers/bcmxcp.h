@@ -330,6 +330,25 @@
 #define BCMXCP_METER_MAP_MAX 91 /* Max no of entries in BCM/XCP meter map */
 #define	BCMXCP_ALARM_MAP_MAX 240 /* Max no of entries in BCM/XCP alarm map (adjusted upwards to nearest multi of 8 */
 
+/* Return codes */
+#define BCMXCP_RETURN_ACCEPTED					0x31
+#define BCMXCP_RETURN_NOT_IMPLEMENTED			0x32
+#define BCMXCP_RETURN_BUSY						0x33
+#define BCMXCP_RETURN_UNRECOGNISED				0x34
+#define BCMXCP_RETURN_PARAMETER_OUT_OF_RANGE	0x35
+#define BCMXCP_RETURN_INVALID_PARAMETER			0x36
+#define BCMXCP_RETURN_ACCEPTED_PARAMETER_ADJUST	0x37
+
+/* UPS status */
+#define BCMXCP_STATUS_ONLINE	0x50
+#define BCMXCP_STATUS_ONBATTERY	0xf0
+#define BCMXCP_STATUS_OVERLOAD	0xe0
+#define BCMXCP_STATUS_TRIM		0x63
+#define BCMXCP_STATUS_BOOST1	0x61
+#define BCMXCP_STATUS_BOOST2	0x62
+#define BCMXCP_STATUS_BYPASS	0x60
+#define BCMXCP_STATUS_OFF		0x10
+
 typedef struct { /* Entry in BCM/XCP - UPS - NUT mapping table */
 	char *nut_entity;				/* The NUT variable name */
 	unsigned char format;				/* The format of the data - float, long etc */
