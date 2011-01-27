@@ -573,4 +573,6 @@ server: Internal server information
    | beeper.mute              | Temporarily mute UPS beeper/buzzer          |
    |--------------------------+---------------------------------------------|
    | beeper.toggle            | Toggle UPS beeper/buzzer                    |
+   |--------------------------+---------------------------------------------|
+   | test.system.start        | Start a system test                         |
    +------------------------------------------------------------------------+
