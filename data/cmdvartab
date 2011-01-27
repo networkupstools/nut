@@ -179,6 +179,7 @@ CMDDESC outlet.1.load.off "Turn off the load on outlet 1 immediately"
 CMDDESC outlet.1.load.on "Turn on the load on outlet 1 immediately"
 CMDDESC outlet.2.load.off "Turn off the load on outlet 2 immediately"
 CMDDESC outlet.2.load.on "Turn on the load on outlet 2 immediately"
+CMDDESC test.system.start "Start a system test"
 
 # The following two commands should *only* be defined when you need
 # to compose a 'shutdown.return' command by sending both a switch-off
