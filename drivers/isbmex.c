@@ -147,10 +147,12 @@ void upsdrv_initinfo(void)
 }
 
 static const char *getpacket(int *we_know){
+#ifndef WIN32
   fd_set readfds;
   struct timeval tv;
-  int bytes_per_packet=0;
   int ret;
+#endif
+  int bytes_per_packet=0;
   static const char *packet_id=NULL;
   static char buf[256];
   const char *s;
@@ -159,7 +161,7 @@ static const char *getpacket(int *we_know){
   
   bytes_per_packet=*we_know;
   D(printf("getpacket with %d\n",bytes_per_packet);)
-  
+#ifndef WIN32 
   FD_ZERO(&readfds);
   FD_SET(upsfd,&readfds);
 	/* Wait up to 2 seconds. */
@@ -175,17 +177,33 @@ static const char *getpacket(int *we_know){
   }
 
   r=read(upsfd,buf,255);
+#else
+  r = select_read(upsfd,buf,255,5,0);
+  if (r <= 0) {
+	s="Nothing received from UPS. Check cable conexion";
+	upslogx(LOG_ERR, "%s", s);
+	D(printf("%s\n",s);)
+	return NULL;
+  }
+#endif
   D(printf("%d bytes read: ",r);)
   buf[r]=0;
   if (bytes_per_packet && r < bytes_per_packet){
 	     ssize_t rr;
 	     D(printf("short read...\n");)
 	     usleep(500000);
+#ifndef WIN32
              tv.tv_sec = 2;
              tv.tv_usec = 0;
              ret=select(upsfd+1,  &readfds, NULL, NULL, &tv);
              if (!ret) return NULL;
 	     rr=read(upsfd,buf+r,255-r);
+#else
+             rr = select_read(upsfd,buf+r,255-r,2,0);
+             if (rr <= 0) {
+	     return NULL;
+             }
+#endif
 	     r += rr;
 	     if (r < bytes_per_packet) return NULL;
   }
