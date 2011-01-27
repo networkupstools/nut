@@ -85,10 +85,6 @@
 #define shutdown_how 2
 #endif
 
-#ifdef WIN32
-#define strtok_r(a,b,c) strtok(a,b)
-#endif
-
 static struct {
 	int	flags;
 	const	char	*str;

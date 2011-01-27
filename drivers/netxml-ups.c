@@ -50,8 +50,6 @@
 #ifdef WIN32 // FIXME ?? skip alarm handling
 #define HAVE_NE_SET_CONNECT_TIMEOUT  1
 #define HAVE_NE_SOCK_CONNECT_TIMEOUT 1
-//strtok for win32 is re-entrant 
-#define strtok_r(a,b,c) strtok(a,b)
 #endif
 
 /* driver description structure */

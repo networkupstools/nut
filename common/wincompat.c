@@ -41,6 +41,33 @@ int __cdecl usleep(useconds_t useconds)
 }
 #endif /* !HAVE_USLEEP */
 
+char * strtok_r(char *str, const char *delim, char **saveptr)
+{
+	char *token_start, *token_end;
+
+	/* Subsequent call ? */
+	token_start = str ? str : *saveptr;
+
+	/* Skip delim characters */
+	token_start += strspn(token_start, delim);
+	if (*token_start == '\0') {
+		/* No more token */
+		*saveptr = "";
+		return NULL;
+	}
+
+	/* Skip NO delim characters */
+	token_end = token_start + strcspn(token_start, delim);
+
+	/* Prepare token to be a null terminated string */
+	if (*token_end != '\0')
+		*token_end++ = '\0';
+
+	*saveptr = token_end;
+
+	return token_start;
+}
+
 int sktconnect(int fh, struct sockaddr * name, int len)
 {
 	int ret = connect(fh,name,len);
