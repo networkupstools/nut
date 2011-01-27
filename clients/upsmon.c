@@ -176,6 +176,7 @@ static unsigned __stdcall async_notify(LPVOID param)
 				free(data->notice);
 				free(data->ntype);
 				free(data->upsname);
+				free(data);
 				upslog_with_errno(LOG_ERR, "%s", __func__);
 			}
 		}
@@ -184,6 +185,7 @@ static unsigned __stdcall async_notify(LPVOID param)
 	free(data->notice);
 	free(data->ntype);
 	free(data->upsname);
+	free(data);
 	return 1;
 }
 #endif
@@ -235,18 +237,19 @@ static void notify(const char *notice, int flags, const char *ntype,
 
 	exit(EXIT_SUCCESS);
 #else
-	async_notify_t data;
+	async_notify_t * data;
 
-	data.notice = strdup(notice);
-	data.flags = flags;
-	data.ntype = strdup(ntype);
-	data.upsname = strdup(upsname);
+	data = malloc(sizeof(async_notify_t));
+	data->notice = strdup(notice);
+	data->flags = flags;
+	data->ntype = strdup(ntype);
+	data->upsname = strdup(upsname);
 
 	_beginthreadex(
 			NULL,	/* security FIXME */
 			0,	/* stack size */
 			async_notify,
-			(void *)&data,
+			(void *)data,
 			0,	/* Creation flags */
 			NULL	/* thread id */
 		      );
