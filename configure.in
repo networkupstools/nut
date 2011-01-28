@@ -848,12 +848,14 @@ dnl same for datadir
 conftemp="${datadir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
+DATADIR=${conftemp}
 AC_DEFINE_UNQUOTED(DATADIR, "${conftemp}", [Default path for data files])
 
 dnl same for bindir
 conftemp="${bindir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
+BINDIR=${conftemp}
 AC_DEFINE_UNQUOTED(BINDIR, "${conftemp}", [Default path for user executables])
 
 AC_SUBST(OS_NAME)
