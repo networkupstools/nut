@@ -35,6 +35,10 @@
 #include "mge-xml.h"
 #include "main.h" /* for testvar() */
 
+#ifdef WIN32
+#include "wincompat.h"
+#endif
+
 #define MGE_XML_VERSION		"MGEXML/0.36"
 
 #define MGE_XML_INITUPS		"/"
