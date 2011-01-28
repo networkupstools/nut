@@ -30,6 +30,17 @@
 #include "main.h"	/* for subdrv_info_t */
 #include "nut_stdint.h"	/* for uint16_t */
 
+/* porting stuff for WIN32 */
+#ifndef WIN32
+#define ERROR_FD (-1)
+#define VALID_FD(a) (a>0)
+#define TYPE_FD int
+#else
+#define ERROR_FD (NULL)
+#define VALID_FD(a) (a!=NULL)
+#define TYPE_FD serial_handler_t *
+#endif
+
 extern upsdrv_info_t comm_upsdrv_info; 
 
 /*!
