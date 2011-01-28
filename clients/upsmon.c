@@ -173,10 +173,6 @@ static unsigned __stdcall async_notify(LPVOID param)
 
 			setenv("NOTIFYTYPE", data->ntype, 1);
 			if (system(exec) == -1) {
-				free(data->notice);
-				free(data->ntype);
-				free(data->upsname);
-				free(data);
 				upslog_with_errno(LOG_ERR, "%s", __func__);
 			}
 		}
