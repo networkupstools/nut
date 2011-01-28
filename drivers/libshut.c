@@ -180,16 +180,16 @@ struct my_hid_descriptor {
 /*!
  * SHUT functions for HID marshalling
  */
-int shut_get_descriptor(int upsfd, unsigned char type,
+int shut_get_descriptor(TYPE_FD upsfd, unsigned char type,
 			unsigned char index, void *buf, int size);
-int shut_get_string_simple(int upsfd, int index,
+int shut_get_string_simple(TYPE_FD upsfd, int index,
 			   char *buf, size_t buflen);
-int libshut_get_report(int upsfd, int ReportId,
+int libshut_get_report(TYPE_FD upsfd, int ReportId,
 		       unsigned char *raw_buf, int ReportSize );
-int shut_set_report(int upsfd, int id, unsigned char *pkt, int reportlen);
-int libshut_get_interrupt(int upsfd, unsigned char *buf,
+int shut_set_report(TYPE_FD upsfd, int id, unsigned char *pkt, int reportlen);
+int libshut_get_interrupt(TYPE_FD upsfd, unsigned char *buf,
 			  int bufsize, int timeout);
-void libshut_close(int upsfd);
+void libshut_close(TYPE_FD upsfd);
 
 /* FIXME */
 const char * shut_strerror(void) { return ""; }
@@ -260,12 +260,12 @@ typedef union device_desc_data_t {
 } device_desc_data_t;
 #endif
 /* Low level SHUT (Serial HID UPS Transfer) routines  */
-void setline(int upsfd, int set);
-int shut_synchronise(int upsfd);
-int shut_wait_ack(int upsfd);
-int shut_interrupt_read(int upsfd, int ep, unsigned char *bytes,
+void setline(TYPE_FD upsfd, int set);
+int shut_synchronise(TYPE_FD upsfd);
+int shut_wait_ack(TYPE_FD upsfd);
+int shut_interrupt_read(TYPE_FD upsfd, int ep, unsigned char *bytes,
 			int size, int timeout);
-int shut_control_msg(int upsfd, int requesttype, int request, int value,
+int shut_control_msg(TYPE_FD upsfd, int requesttype, int request, int value,
 		     int index, unsigned char *bytes, int size, int timeout);
 
 /* Data portability */
@@ -288,8 +288,8 @@ static void align_request(struct shut_ctrltransfer_s *ctrl )
  * information. This callback should return a value > 0 if the device
  * is accepted, or < 1 if not.
  */
-int libshut_open(int *upsfd, SHUTDevice_t *curDevice, char *device_path,
-	int (*callback)(int upsfd, SHUTDevice_t *hd, unsigned char *rdbuf, int rdlen))
+int libshut_open(TYPE_FD *upsfd, SHUTDevice_t *curDevice, char *device_path,
+	int (*callback)(TYPE_FD upsfd, SHUTDevice_t *hd, unsigned char *rdbuf, int rdlen))
 {
 	int ret, res; 
 	unsigned char buf[20];
@@ -304,7 +304,7 @@ int libshut_open(int *upsfd, SHUTDevice_t *curDevice, char *device_path,
 	upsdebugx(2, "libshut_open: using port %s", device_path);
 
 	/* If device is still open, close it */
-	if (*upsfd > 0) {
+	if (VALID_FD(*upsfd)) {
 		ser_close(*upsfd, device_path);
 	}
 
@@ -471,9 +471,9 @@ int libshut_open(int *upsfd, SHUTDevice_t *curDevice, char *device_path,
 	return -1;
 }
 
-void libshut_close(int upsfd)
+void libshut_close(TYPE_FD upsfd)
 {
-	if (upsfd < 1) {
+	if (!VALID_FD(upsfd)) {
 		return;
 	}
 
@@ -483,10 +483,10 @@ void libshut_close(int upsfd)
 /* return the report of ID=type in report 
  * return -1 on failure, report length on success
  */
-int libshut_get_report(int upsfd, int ReportId,
+int libshut_get_report(TYPE_FD upsfd, int ReportId,
 		       unsigned char *raw_buf, int ReportSize )
 {
-	if (upsfd < 1) {
+	if (!VALID_FD(upsfd)) {
 		return 0;
 	}
 
@@ -501,12 +501,12 @@ int libshut_get_report(int upsfd, int ReportId,
 }
 
 /* return ReportSize upon success ; -1 otherwise */
-int libshut_set_report(int upsfd, int ReportId,
+int libshut_set_report(TYPE_FD upsfd, int ReportId,
 		       unsigned char *raw_buf, int ReportSize )
 {
 	int ret;
 	
-	if (upsfd < 1) {
+	if (!VALID_FD(upsfd)) {
 		return 0;
 	}
 		
@@ -525,11 +525,11 @@ int libshut_set_report(int upsfd, int ReportId,
 	return ((ret == 0) ? ReportSize : ret);
 }
 
-int libshut_get_string(int upsfd, int StringIdx, char *buf, size_t buflen)
+int libshut_get_string(TYPE_FD upsfd, int StringIdx, char *buf, size_t buflen)
 {
 	int ret;
 	
-	if (upsfd < 1) {
+	if (!VALID_FD(upsfd)) {
 		return -1;
 	}
 
@@ -542,12 +542,12 @@ int libshut_get_string(int upsfd, int StringIdx, char *buf, size_t buflen)
 	return ret;
 }
 
-int libshut_get_interrupt(int upsfd, unsigned char *buf,
+int libshut_get_interrupt(TYPE_FD upsfd, unsigned char *buf,
 			   int bufsize, int timeout)
 {
 	int ret;
 
-	if (upsfd < 1) {
+	if (!VALID_FD(upsfd)) {
 		return -1;
 	}
 
@@ -582,9 +582,9 @@ shut_communication_subdriver_t shut_subdriver = {
  * set : 1 to set comm
  * set : 0 to stop commupsh.
  */
-void setline(int upsfd, int set)
+void setline(TYPE_FD upsfd, int set)
 {
-	if (upsfd < 1) {
+	if (!VALID_FD(upsfd)) {
 		return;
 	}
 
@@ -607,7 +607,7 @@ void setline(int upsfd, int set)
  * return TRUE on success, FALSE on failure
  *
  *****************************************************************************/
-int shut_synchronise(int upsfd)
+int shut_synchronise(TYPE_FD upsfd)
 {
 	int retCode = 0;
 	u_char c = SHUT_SYNC, reply;
@@ -669,7 +669,7 @@ u_char shut_checksum(const u_char *buf, int bufsize)
 }
 
 
-int shut_packet_recv(int upsfd, u_char *Buf, int datalen)
+int shut_packet_recv(TYPE_FD upsfd, u_char *Buf, int datalen)
 {
 	u_char   Start[2];
 	u_char   Frame[8];
@@ -760,7 +760,7 @@ int shut_packet_recv(int upsfd, u_char *Buf, int datalen)
 }
 
 /**********************************************************************/
-int shut_interrupt_read(int upsfd, int ep, unsigned char *bytes, int size,
+int shut_interrupt_read(TYPE_FD upsfd, int ep, unsigned char *bytes, int size,
 		       int timeout)
 {
 /*
@@ -771,7 +771,7 @@ int shut_interrupt_read(int upsfd, int ep, unsigned char *bytes, int size,
 }
 
 /**********************************************************************/
-int shut_get_string_simple(int upsfd, int index,
+int shut_get_string_simple(TYPE_FD upsfd, int index,
 			   char *buf, size_t buflen)
 {
 	unsigned char tbuf[255];       /* Some devices choke on size > 255 */
@@ -819,7 +819,7 @@ int shut_get_string_simple(int upsfd, int index,
  * return 0 on success, -1 on failure, -2 on NACK
  *
  *********************************************************************/
-int shut_get_descriptor(int upsfd, unsigned char type,
+int shut_get_descriptor(TYPE_FD upsfd, unsigned char type,
 			unsigned char index, void *buf, int size)
 {
 	memset(buf, 0, size);
@@ -831,7 +831,7 @@ int shut_get_descriptor(int upsfd, unsigned char type,
 }
 
 /* Take care of a SHUT transfer (sending and receiving data) */
-int shut_control_msg(int upsfd, int requesttype, int request,
+int shut_control_msg(TYPE_FD upsfd, int requesttype, int request,
 		    int value, int index, unsigned char *bytes, int size, int timeout)
 {
 	unsigned char shut_pkt[11];
@@ -953,7 +953,7 @@ int shut_control_msg(int upsfd, int requesttype, int request,
  * returns 0 on success, -1 on error, -2 on NACK, -3 on NOTIFICATION
  * 
  *********************************************************************/
-int shut_wait_ack(int upsfd)
+int shut_wait_ack(TYPE_FD upsfd)
 {
 	int retCode = -1;
 	u_char c = '\0';
