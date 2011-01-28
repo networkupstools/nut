@@ -182,6 +182,7 @@ struct my_hid_descriptor {
 /*!
  * SHUT functions for HID marshalling
  */
+
 /* Expected evaluated types for the API after typedefs:
  * static int shut_get_descriptor(int upsfd, unsigned char type,
  *			   unsigned char index, void *buf, int size);
@@ -298,6 +299,7 @@ typedef union device_desc_data_t {
 #endif
 
 /* Low level SHUT (Serial HID UPS Transfer) routines  */
+
 /* Expected evaluated types for the API after typedefs:
 static void setline(int upsfd, int set);
 static int shut_synchronise(int upsfd);
@@ -360,6 +362,7 @@ static void align_request(struct shut_ctrltransfer_s *ctrl)
  * information. This callback should return a value > 0 if the device
  * is accepted, or < 1 if not.
  */
+
 /* Expected evaluated types for the API after typedefs:
  * static int libshut_open(int *arg_upsfd, SHUTDevice_t *curDevice, char *arg_device_path,
  *                  int (*callback)(int arg_upsfd, SHUTDevice_t *hd,
@@ -394,7 +397,7 @@ static int libshut_open(
 	upsdebugx(2, "libshut_open: using port %s", arg_device_path);
 
 	/* If device is still open, close it */
-	if (*arg_upsfd > 0) {
+	if (VALID_FD(*arg_upsfd)) {
 		ser_close(*arg_upsfd, arg_device_path);
 	}
 
@@ -657,7 +660,7 @@ static int libshut_open(
  */
 static void libshut_close(usb_dev_handle arg_upsfd)
 {
-	if (arg_upsfd < 1) {
+	if (!VALID_FD(arg_upsfd)) {
 		return;
 	}
 
@@ -677,7 +680,7 @@ static int libshut_get_report(
 	usb_ctrl_charbuf raw_buf,
 	usb_ctrl_charbufsize ReportSize)
 {
-	if (arg_upsfd < 1) {
+	if (!VALID_FD(arg_upsfd)) {
 		return 0;
 	}
 
@@ -704,7 +707,7 @@ static int libshut_set_report(
 {
 	int ret;
 
-	if (arg_upsfd < 1) {
+	if (!VALID_FD(arg_upsfd)) {
 		return 0;
 	}
 
@@ -742,7 +745,7 @@ static int libshut_get_string(
 {
 	int ret;
 
-	if (arg_upsfd < 1) {
+	if (!VALID_FD(arg_upsfd)) {
 		return -1;
 	}
 
@@ -767,7 +770,7 @@ static int libshut_get_interrupt(
 {
 	int ret;
 
-	if (arg_upsfd < 1) {
+	if (!VALID_FD(arg_upsfd)) {
 		return -1;
 	}
 
@@ -807,7 +810,7 @@ shut_communication_subdriver_t shut_subdriver = {
  */
 void setline(usb_dev_handle arg_upsfd, int set)
 {
-	if (arg_upsfd < 1) {
+	if (!VALID_FD(arg_upsfd)) {
 		return;
 	}
 
