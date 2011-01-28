@@ -175,8 +175,11 @@ You can choose to use one of them by specifying it with abuild option
 ('--with-nss' or '--with-openssl'). If any is specified, configure script will
 try to detect one of them and use it with a precedence for OpenSSL.
 
-OpenSSL backend usage.
-~~~~~~~~~~~~~~~~~~~~~~
+OpenSSL backend usage
+~~~~~~~~~~~~~~~~~~~~~
+
+This section describes how to enable NUT SSL support using
+link:http://www.openssl.org[OpenSSL].
 
 Install OpenSSL
 ^^^^^^^^^^^^^^^
@@ -330,14 +333,17 @@ that nobody can sniff your sessions without a large effort.  Setting
 this will make upsmon drop connections if the remote upsd doesn't
 support SSL, so don't use it unless all of them have it running.
 
-NSS backend usage.
-~~~~~~~~~~~~~~~~~~
+NSS backend usage
+~~~~~~~~~~~~~~~~~
+
+This section describes how to enable NUT SSL support using
+link:http://www.mozilla.org/projects/security/pki/nss/[Mozilla NSS].
 
 Install NSS
 ^^^^^^^^^^^
 
-Install link:http://www.mozilla.org/projects/security/pki/nss/ as usual, 
-either from source or binary packages.
+Install link:http://www.mozilla.org/projects/security/pki/nss/[Mozilla NSS] as
+usual, either from source or binary packages.
 
 Recompile and install NUT
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -403,11 +409,9 @@ database .db files) at the right place like in '/usr/local/ups/etc/':
 
 	mv cert_db /usr/local/ups/etc/
 
-upsd security configuration
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-upsd certificate database and self certificate
-++++++++++++++++++++++++++++++++++++++++++++++
+upsd (required): certificate database and self certificate
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Edit the upsd.conf to tell where find the certificate database:
 
@@ -421,8 +425,8 @@ and the password to decrypt private key associated to certificate:
 NOTE: Generally, the certificate name is the server domain name, but is not
 a hard rule. The certificate can be named as usefull.
 
-upsd client authentication
-++++++++++++++++++++++++++
+upsd (optional): client authentication
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 NOTE: This functionnality is disabled by default, to activate it, recompile
 nut with 'WITH_CLIENT_CERTIFICATE_VALIDATION' defined:
@@ -430,33 +434,20 @@ nut with 'WITH_CLIENT_CERTIFICATE_VALIDATION' defined:
 	make CFLAGS="-DWITH_CLIENT_CERTIFICATE_VALIDATION" 
 
 UPSD can accept three levels of client authentication. Just specify it with
-the directive 'CERTREQUEST' with the corresponding value in the upsd.conf file.
+the directive 'CERTREQUEST' with the corresponding value in the upsd.conf file:
 
-NO:: no client authentication.
-REQUEST:: a certificate is request to the client but it is not strictly validated.
+- NO: no client authentication.
+- REQUEST: a certificate is request to the client but it is not strictly validated.
 If the client does not send any certificate, the connexion is closed.
-REQUIRE:: a certificate is requested to the client and if it is not valid
+- REQUIRE: a certificate is requested to the client and if it is not valid
 (no validation chain) the connexion is closed.
 
 Like CA certificates, you can add many 'trusted' client and CA certificates
 in server's certificate databases.
 
-upsmon security configuration
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-upsmon certificate database and self certificate
-++++++++++++++++++++++++++++++++++++++++++++++++
-
-Like upsd, upsmon can need to authenticate itself (upsd's 'CERTREQUEST' directive
-set to 'REQUEST' or 'REQUIRE').
-It must access to a certificate (and its private key) in a certificate database
-configuring 'CERTPATH' and 'CERTIDENT' in upsmon.conf in the same way than upsd.
-
-	CERTPATH /usr/local/ups/etc/cert_db
-	CERTIDENT 'certificate name' 'database password'
-
-upsd authentication
-+++++++++++++++++++
+upsmon (required): upsd authentication
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When upsmon securely connect to an upsd, it must authenticate it.
 You must associate an upsd host name to security rules in upsmon.conf
@@ -483,6 +474,19 @@ dedicated 'CERTHOST' directive.
 
 If an host is not specified in a 'CERTHOST' directive, its expected certificate
 name is its hostname.
+
+
+upsmon (optional): certificate database and self certificate
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Like upsd, upsmon may need to authenticate itself (upsd's 'CERTREQUEST'
+directive set to 'REQUEST' or 'REQUIRE').
+It must access to a certificate (and its private key) in a certificate database
+configuring 'CERTPATH' and 'CERTIDENT' in upsmon.conf in the same way than upsd.
+
+	CERTPATH /usr/local/ups/etc/cert_db
+	CERTIDENT 'certificate name' 'database password'
+
 
 Restart upsd
 ~~~~~~~~~~~~
