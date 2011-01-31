@@ -164,6 +164,7 @@ void open_syslog(const char *progname)
 		upslogx(LOG_INFO, "Changing log level threshold not possible");
 		break;
 #endif
+	}
 #else
 	EventLogName = progname;
 #endif
