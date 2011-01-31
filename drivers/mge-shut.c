@@ -548,7 +548,7 @@ static int char_read (char *bytes, int size, int read_timeout)
 {
 	struct timeval serial_timeout;
 	fd_set readfs;
-	int read = 0;
+	int bytes_read = 0;
 	int rc = 0;
 	int now;
 
@@ -564,29 +564,29 @@ static int char_read (char *bytes, int size, int read_timeout)
 		return -2;			/* timeout */
 
 	if (FD_ISSET (upsfd, &readfs)) {
-		now = read (upsfd, bytes, size - read);
+		now = read (upsfd, bytes, size - bytes_read);
 
 		if (now < 0) {
 			return -1;
 		}
 		else {
 			bytes += now;
-			read += now;
+			bytes_read += now;
 		}
 	}
 	else {
 		return -1;
 	}
 #else
-	now = select_read(upsfd,bytes,size - read, serial_timeout.tv_sec, serial_timeout.tv_usec);
+	now = select_read(upsfd,bytes,size - bytes_read, serial_timeout.tv_sec, serial_timeout.tv_usec);
 	if( now == -1 ) {
 		return -1;
 	}
 	bytes += now;
-	read += now;
+	bytes_read += now;
 
-	return read;
 #endif
+	return bytes_read;
 }
 
 /**********************************************************************
