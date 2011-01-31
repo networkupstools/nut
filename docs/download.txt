@@ -69,9 +69,8 @@ use <<Snapshots,snapshots>>.
 Browse code
 ^^^^^^^^^^^
 
-You can also browse the code with link:http://svn.debian.org/wsvn/nut/trunk/?rev=0&sc=0[WebSvn].
-
-Or through the link:http://boxster.ghz.cc/projects/nut[Trac mirror],
+You can also browse the code with link:http://svn.debian.org/wsvn/nut/trunk/?rev=0&sc=0[WebSvn],
+or through the link:http://trac.networkupstools.org/projects/nut[Trac mirror],
 kindly hosted and maintained by Charles Lepple.
 
 [[Snapshots]]
