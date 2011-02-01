@@ -10,7 +10,7 @@ FORCE:
 if HAVE_MINGW_RESGEN
 
 winevent.rc winevent.h: winevent.mc
-	$(WINDMC) winevent.mc
+	$(WINDMC) $<
 
 winevent.o: winevent.rc winevent.h
 	$(WINDRES) winevent.rc winevent.o
@@ -24,6 +24,7 @@ nut_LDADD = ../../common/libcommon.la winevent.o
 
 halt_SOURCES = halt.c
 
+EXTRA_DIST = winevent.mc
 CLEANFILES = winevent.rc winevent.o winevent.h
 
 endif HAVE_MINGW_RESGEN
