@@ -646,7 +646,11 @@ int main(int argc, char **argv)
 	if (!command)
 		fatalx(EXIT_FAILURE, "Error: unrecognized command [%s]", argv[0]);
 
+#ifndef WIN32
 	driverpath = xstrdup(DRVPATH);	/* set default */
+#else
+	driverpath = getfullpath(NULL); /* Relative path in WIN32 */
+#endif
 
 	atexit(exit_cleanup);
 

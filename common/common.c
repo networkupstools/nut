@@ -305,12 +305,16 @@ char * getfullpath(char * relative_path)
 	if ( GetModuleFileName(NULL,buf,SMALLBUF) == 0 ) {
 		return NULL;
 	}
-	else {
-		char * last_slash = strrchr(buf,'\\');
-		*last_slash = 0;
+
+	/* remove trailing executable name and its preceeding slash*/
+	char * last_slash = strrchr(buf,'\\');
+	*last_slash = 0;
+
+	if( relative_path ) {
 		strncat(buf,relative_path,SMALLBUF);
-		return(xstrdup(buf));
 	}
+
+	return(xstrdup(buf));
 }
 #endif
 
