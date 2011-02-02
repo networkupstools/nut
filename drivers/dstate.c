@@ -180,7 +180,6 @@ static HANDLE sock_open(const char *fn)
 			FALSE, /* inital state = non signaled*/
 			NULL /* no name*/);
 	if(connect_overlapped.hEvent == NULL ) {
-		printf("CreateEvent failed.\n");
 		fatal_with_errno(EXIT_FAILURE, "Can't create event");
 	}
 
@@ -295,7 +294,6 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 #else
         result = WriteFile (conn->fd,buf,strlen(buf),&bytesWritten,NULL);
 	if( result == 0 ) {
-		printf("Write failed\n");
 		ret = 0;
 	}
 	else  {
@@ -667,7 +665,6 @@ static void sock_close(void)
 		FlushFileBuffers(sockfd);
 		CloseHandle(sockfd);
 		sockfd = INVALID_HANDLE_VALUE;
-		printf("sock_close Close %d\n",(int)sockfd);
 	}
 #endif
 
@@ -851,7 +848,7 @@ int dstate_poll_fds(struct timeval timeout, HANDLE extrafd)
 	}
 
 	if (ret == WAIT_FAILED) {
-		printf("waitfor failed\n");
+		upslog_with_errno(LOG_ERR, "waitfor failed");
 		return overrun;
 	}
 
