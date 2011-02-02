@@ -324,7 +324,7 @@ static void do_capabilities(void)
 		/* This should never happen since we only call
 		   this if the REQ_CAPABILITIES command is supported
 		*/
-		upslogx(LOG_ERR, "ERROR: APC cannot do capabilites but said it could!");
+		upslogx(LOG_ERR, "ERROR: APC cannot do capabilities but said it could!");
 		return;
 	}
 

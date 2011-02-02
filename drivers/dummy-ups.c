@@ -375,7 +375,7 @@ static int is_valid_data(const char* varname)
 	 * enforcing controls! We also need a way to automate
 	 * the update / sync process (with cmdvartab?!) */
 
-	upsdebugx(1, "Unknown data. Commiting anyway...");
+	upsdebugx(1, "Unknown data. Committing anyway...");
 	return 1;
 	/* return 0;*/
 }
@@ -395,7 +395,7 @@ static int is_valid_value(const char* varname, const char *value)
 	 * enforcing controls! We also need a way to automate
 	 * the update / sync process (with cmdvartab?) */
 
-	upsdebugx(1, "Unknown data. Commiting value anyway...");
+	upsdebugx(1, "Unknown data. Committing value anyway...");
 	return 1;
 	/* return 0;*/
 }

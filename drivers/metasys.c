@@ -62,12 +62,12 @@ static int instcmd(const char *cmdname, const char *extra);
 
 /*
 	Metasystem UPS data transfer are made with packet of the format:
-	STX		DATA_LENGHT		DATA		CHECKSUM
+	STX		DATA_LENGTH		DATA		CHECKSUM
 	where:
 	STX is 0x02 and is the start of transmission byte
-	DATA_LENGHT is number of data bytes + the checksum byte
+	DATA_LENGTH is number of data bytes + the checksum byte
 	DATA ......
-	CHECKSUM is the sum modulus 256 of all DATA bytes + DATA_LENGHT
+	CHECKSUM is the sum modulus 256 of all DATA bytes + DATA_LENGTH
 	
 	The answer from the UPS have the same packet format and the first
 	data byte is equal to the command that the ups is answering to
@@ -114,7 +114,7 @@ void dump_buffer(unsigned char *buffer, int buf_len) {
 }
 
 /* send a read command to the UPS, it retries 5 times before give up
-   it's a 4 byte request (STX, LENGHT, COMMAND and CHECKSUM) */
+   it's a 4 byte request (STX, LENGTH, COMMAND and CHECKSUM) */
 void send_read_command(char command) {
 	int retry, sent;
 	unsigned char buf[4];
@@ -122,9 +122,9 @@ void send_read_command(char command) {
 	sent = 0;
 	while ((sent != 4) && (retry < 5)) {
 		buf[0]=0x02; 			/* STX Start of Transmission */
-		buf[1]=0x02;			/* data lenght(data + checksum byte) */
+		buf[1]=0x02;			/* data length(data + checksum byte) */
 		buf[2]=command;			/* command to send */
-		buf[3]=buf[1] + buf[2];	/* checksum (sum modulus 256 of data bytes + lenght) */
+		buf[3]=buf[1] + buf[2];	/* checksum (sum modulus 256 of data bytes + length) */
 		if (retry == 4) send_zeros();	/* last retry is preceded by a serial reset...*/
 		sent = ser_send_buf(upsfd, buf, 4);
 		retry += 1;
@@ -134,29 +134,29 @@ void send_read_command(char command) {
 /* send a write command to the UPS, the write command and the value to be written are passed 
    with a char* buffer 
    it retries 5 times before give up */
-void send_write_command(unsigned char *command, int command_lenght) {
+void send_write_command(unsigned char *command, int command_length) {
 	int i, retry, sent, checksum;
 	unsigned char raw_buf[255];
 	
 	/* prepares the raw data */
 	raw_buf[0] = 0x02;		/* STX byte */
-	raw_buf[1] = (unsigned char)(command_lenght + 1);		/* data lenght + checksum */
-	memcpy(raw_buf+2, command, command_lenght);
-	command_lenght += 2;
+	raw_buf[1] = (unsigned char)(command_length + 1);		/* data length + checksum */
+	memcpy(raw_buf+2, command, command_length);
+	command_length += 2;
 	
 	/* calculate checksum */
 	checksum = 0;
-	for (i = 1; i < command_lenght; i++) checksum += raw_buf[i];
+	for (i = 1; i < command_length; i++) checksum += raw_buf[i];
 	checksum = checksum % 256;
-	raw_buf[command_lenght] = (unsigned char)checksum;
-	command_lenght +=1;
+	raw_buf[command_length] = (unsigned char)checksum;
+	command_length +=1;
 	
 	retry = 0;
 	sent = 0;
-	while ((sent != (command_lenght)) && (retry < 5)) {
+	while ((sent != (command_length)) && (retry < 5)) {
 		if (retry == 4) send_zeros();	/* last retry is preceded by a serial reset... */
-		sent = ser_send_buf(upsfd, raw_buf, (command_lenght));
-		if (sent != (command_lenght)) printf("Error sending command %d\n", raw_buf[2]);
+		sent = ser_send_buf(upsfd, raw_buf, (command_length));
+		if (sent != (command_length)) printf("Error sending command %d\n", raw_buf[2]);
 		retry += 1;
 	}	
 }
@@ -164,8 +164,8 @@ void send_write_command(unsigned char *command, int command_lenght) {
 
 /* get the answer of a command from the ups */
 int get_answer(unsigned char *data) {
-	unsigned char my_buf[255];	/* packet has a maximum lenght of 256 bytes */
-	int packet_lenght, checksum, i, res;
+	unsigned char my_buf[255];	/* packet has a maximum length of 256 bytes */
+	int packet_length, checksum, i, res;
 	/* Read STX byte */
 	res = ser_get_char(upsfd, my_buf, 1, 0);
 	if (res < 1) {
@@ -176,43 +176,43 @@ int get_answer(unsigned char *data) {
 		ser_comm_fail("Receive error (STX): packet not on start!!\n");
 		return -1;	
 	}
-	/* Read data lenght byte */
+	/* Read data length byte */
 	res = ser_get_char(upsfd, my_buf, 1, 0);
 	if (res < 1) {
-		ser_comm_fail("Receive error (lenght): %d!!!\n", res);
+		ser_comm_fail("Receive error (length): %d!!!\n", res);
 		return -1;	
 	}
-	packet_lenght = my_buf[0];
-	if (packet_lenght < 2) {
-		ser_comm_fail("Receive error (lenght): packet lenght %d!!!\n", packet_lenght);
+	packet_length = my_buf[0];
+	if (packet_length < 2) {
+		ser_comm_fail("Receive error (length): packet length %d!!!\n", packet_length);
 		return -1;	
 	}
-	/* Try to read all the remainig bytes (packet_lenght) */
-	res = ser_get_buf_len(upsfd, my_buf, packet_lenght, 1, 0);
-	if (res != packet_lenght) {
-		ser_comm_fail("Receive error (data): got %d bytes instead of %d!!!\n", res, packet_lenght);
+	/* Try to read all the remainig bytes (packet_length) */
+	res = ser_get_buf_len(upsfd, my_buf, packet_length, 1, 0);
+	if (res != packet_length) {
+		ser_comm_fail("Receive error (data): got %d bytes instead of %d!!!\n", res, packet_length);
 		return -1;	
 	}
 		
 	/* now we have the whole answer from the ups, we can checksum it 
-	   checksum byte is equal to the sum modulus 256 of all the data bytes + packet_lenght 
+	   checksum byte is equal to the sum modulus 256 of all the data bytes + packet_length
 	   (no STX no checksum byte itself) */
-	checksum = packet_lenght;
-	for (i = 0; i < (packet_lenght - 1); i++) checksum += my_buf[i];  
+	checksum = packet_length;
+	for (i = 0; i < (packet_length - 1); i++) checksum += my_buf[i];  
 	checksum = checksum % 256;
-	if (my_buf[packet_lenght-1] != checksum) {
-		ser_comm_fail("checksum error! got %x instad of %x, received %d bytes \n", my_buf[packet_lenght - 1], checksum, packet_lenght);
-		dump_buffer(my_buf, packet_lenght);
+	if (my_buf[packet_length-1] != checksum) {
+		ser_comm_fail("checksum error! got %x instad of %x, received %d bytes \n", my_buf[packet_length - 1], checksum, packet_length);
+		dump_buffer(my_buf, packet_length);
 		return -1;
 	}
-	packet_lenght-=1;		/* get rid of the checksum byte */
-	memcpy(data, my_buf, packet_lenght);
-	return packet_lenght;
+	packet_length-=1;		/* get rid of the checksum byte */
+	memcpy(data, my_buf, packet_length);
+	return packet_length;
 }
 
 /* send a read command and try get the answer, if something fails, it retries (5 times max)
    if it is on the 4th or 5th retry, it will flush the serial before sending commands
-   it returns the lenght of the received answer or -1 in case of failure */
+   it returns the length of the received answer or -1 in case of failure */
 int command_read_sequence(unsigned char command, unsigned char *data) {
 	int bytes_read = 0;
 	int retry = 0;
@@ -234,13 +234,13 @@ int command_read_sequence(unsigned char command, unsigned char *data) {
 
 /* send a write command and try get the answer, if something fails, it retries (5 times max)
    if it is on the 4th or 5th retry, it will flush the serial before sending commands
-   it returns the lenght of the received answer or -1 in case of failure */
-int command_write_sequence(unsigned char *command, int command_lenght, unsigned char *answer) {
+   it returns the length of the received answer or -1 in case of failure */
+int command_write_sequence(unsigned char *command, int command_length, unsigned char *answer) {
 	int bytes_read = 0;
 	int retry = 0;
 	
 	while ((bytes_read < 1) && (retry < 5)) {
-		send_write_command(command, command_lenght);
+		send_write_command(command, command_length);
 		bytes_read = get_answer(answer);
 		if (retry > 2) ser_flush_in(upsfd, "", 0);
 		retry += 1;
