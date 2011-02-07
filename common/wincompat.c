@@ -184,7 +184,7 @@ int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen, DWORD timeou
 
 	w4 = sh->io_status.hEvent;
 
-	upslogx(LOG_DEBUG,"w32_serial_read : ulen %d, vmin_ %d, vtime_ %d, hEvent %p", ulen, sh->vmin_, sh->vtime_,sh->io_status.hEvent);
+	upsdebugx(4,"w32_serial_read : ulen %d, vmin_ %d, vtime_ %d, hEvent %p", ulen, sh->vmin_, sh->vtime_,sh->io_status.hEvent);
 	if (!sh->overlapped_armed) {
 		SetCommMask (sh->handle, EV_RXCHAR);
 		ResetEvent (sh->io_status.hEvent);
@@ -213,7 +213,7 @@ int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen, DWORD timeou
 			goto err;
 		}
 		else if (ev) {
-			upslogx(LOG_ERR,"w32_serial_read : error detected %x", (int)ev);
+			upsdebugx(4,"w32_serial_read : error detected %x", (int)ev);
 		}
 		else if (st.cbInQue) {
 			inq = st.cbInQue;
@@ -236,13 +236,13 @@ int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen, DWORD timeou
 					case WAIT_OBJECT_0:
 						if (!GetOverlappedResult (sh->handle, &sh->io_status, &num, FALSE))
 							goto err;
-						upslogx(LOG_DEBUG,"w32_serial_read : characters are available on input buffer");
+						upsdebugx(4,"w32_serial_read : characters are available on input buffer");
 						break;
 					case WAIT_TIMEOUT:
 						CancelIo(sh->handle);
 						sh->overlapped_armed = 0;
 						ResetEvent (sh->io_status.hEvent);
-						upslogx(LOG_DEBUG,"w32_serial_read : timeout %d ms ellapsed", (int)timeout);
+						upsdebugx(4,"w32_serial_read : timeout %d ms ellapsed", (int)timeout);
 						return 0;
 					default:
 						goto err;
@@ -255,7 +255,7 @@ int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen, DWORD timeou
 		if (inq > ulen) {
 			inq = ulen;
 		}
-		upslogx(LOG_DEBUG,"w32_serial_read : Reading %d characters", (int)inq);
+		upsdebugx(4,"w32_serial_read : Reading %d characters", (int)inq);
 		if (ReadFile (sh->handle, ptr, min (inq, ulen), &num, &sh->io_status)) {
 			/* Got something */;
 		}
@@ -267,14 +267,14 @@ int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen, DWORD timeou
 		}
 
 		tot += num;
-		upslogx(LOG_DEBUG,"w32_serial_read : total characters read = %d", tot);
+		upsdebugx(4,"w32_serial_read : total characters read = %d", tot);
 		if (sh->vtime_ || !sh->vmin_ || !num)
 			break;
 		continue;
 
 err:
 		PurgeComm (sh->handle, PURGE_RXABORT);
-		upslogx(LOG_DEBUG,"w32_serial_read : err %d",(int)GetLastError());
+		upsdebugx(4,"w32_serial_read : err %d",(int)GetLastError());
 		if (GetLastError () == ERROR_OPERATION_ABORTED)
 			num = 0;
 		else
