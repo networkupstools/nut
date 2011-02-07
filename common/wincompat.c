@@ -333,7 +333,7 @@ serial_handler_t * w32_serial_open (const char *name, int flags)
 	   interface as POSIX open */
 	COMMTIMEOUTS to;
 
-	upslogx(LOG_INFO,"serial_open (%s)",name);
+	upslogx(LOG_INFO,"w32_serial_open (%s)",name);
 
 	serial_handler_t * sh;
 
@@ -385,7 +385,7 @@ serial_handler_t * w32_serial_open (const char *name, int flags)
 		upslogx (LOG_ERR,"couldn't set initial state for %s",name);
 
 	SetCommMask (sh->handle, EV_RXCHAR);
-	upslogx (LOG_INFO,"%p = serial_open (%s)",sh->handle,name);
+	upslogx (LOG_INFO,"%p = w32_serial_open (%s)",sh->handle,name);
 	return sh;
 }
 
