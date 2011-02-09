@@ -148,19 +148,23 @@ typedef struct async_notify_s {
 	char *notice;
 	int flags;
 	char *ntype;
-	char *upsname; } async_notify_t;
+	char *upsname;
+	char *date } async_notify_t;
 
 static unsigned __stdcall async_notify(LPVOID param)
 {
 	char	exec[LARGEBUF];
+	char	notice[LARGEBUF];
 
 	/* the following code is a copy of the content of the NOT WIN32 part of 
 	"notify" function below */
 
 	async_notify_t *data = (async_notify_t *)param;
 
-	if (flag_isset(data->flags, NOTIFY_WALL))
-		wall(data->notice);
+	if (flag_isset(data->flags, NOTIFY_WALL)) {
+		snprintf(notice,LARGEBUF,"%s: %s", data->date, data->notice);
+		wall(notice);
+	}
 
 	if (flag_isset(data->flags, NOTIFY_EXEC)) {
 		if (notifycmd != NULL) {
@@ -181,6 +185,7 @@ static unsigned __stdcall async_notify(LPVOID param)
 	free(data->notice);
 	free(data->ntype);
 	free(data->upsname);
+	free(data->date);
 	free(data);
 	return 1;
 }
@@ -234,12 +239,15 @@ static void notify(const char *notice, int flags, const char *ntype,
 	exit(EXIT_SUCCESS);
 #else
 	async_notify_t * data;
+	time_t t;
 
 	data = malloc(sizeof(async_notify_t));
 	data->notice = strdup(notice);
 	data->flags = flags;
 	data->ntype = strdup(ntype);
 	data->upsname = strdup(upsname);
+	t = time(NULL);
+	data->date = strdup(ctime(&t));
 
 	_beginthreadex(
 			NULL,	/* security FIXME */
