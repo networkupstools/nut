@@ -382,7 +382,7 @@ static int is_valid_data(const char* varname)
 	 * enforcing controls! We also need a way to automate
 	 * the update / sync process (with cmdvartab?!) */
 
-	upsdebugx(1, "Unknown data. Commiting anyway...");
+	upsdebugx(1, "Unknown data. Committing anyway...");
 	return 1;
 	/* return 0;*/
 }
@@ -402,7 +402,7 @@ static int is_valid_value(const char* varname, const char *value)
 	 * enforcing controls! We also need a way to automate
 	 * the update / sync process (with cmdvartab?) */
 
-	upsdebugx(1, "Unknown data. Commiting value anyway...");
+	upsdebugx(1, "Unknown data. Committing value anyway...");
 	return 1;
 	/* return 0;*/
 }
@@ -423,7 +423,7 @@ static int parse_data_file(HANDLE upsfd)
 #endif
 {
 	char	fn[SMALLBUF];
-	char	*ptr, *var_value = (char*) xmalloc(MAX_STRING_SIZE);
+	char	*ptr, var_value[MAX_STRING_SIZE];
 	int		value_args = 0, counter;
 	time_t	now;
 
@@ -540,7 +540,6 @@ static int parse_data_file(HANDLE upsfd)
 		pconf_finish(ctx);
 		free(ctx);
 		ctx=NULL;
-		free(var_value);
 	}
 	return 1;
 }

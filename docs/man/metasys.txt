@@ -44,7 +44,7 @@ BUGS
 This driver has been tested on Meta System HF Millennium 820 and 
 ally HF 1000 only.
 
-Any informations about the use of the driver with the other listed
+Any information about the use of the driver with the other listed
 UPS are really welcome.
 
 AUTHOR

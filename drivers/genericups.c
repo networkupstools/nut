@@ -146,12 +146,12 @@ void upsdrv_initinfo(void)
 	 */
 	if ((v = getval("OL")) != NULL) {
 		parse_input_signals(v, &upstab[upstype].line_ol, &upstab[upstype].val_ol);
-		upsdebugx(2, "parse_input_signals: OL overriden with %s\n", v);
+		upsdebugx(2, "parse_input_signals: OL overridden with %s\n", v);
 	}
 
 	if ((v = getval("LB")) != NULL) {
 		parse_input_signals(v, &upstab[upstype].line_bl, &upstab[upstype].val_bl);
-		upsdebugx(2, "parse_input_signals: LB overriden with %s\n", v);
+		upsdebugx(2, "parse_input_signals: LB overridden with %s\n", v);
 	}
 }
 
@@ -322,12 +322,12 @@ void upsdrv_initups(void)
 	 */
 	if ((v = getval("CP")) != NULL) {
 		parse_output_signals(v, &upstab[upstype].line_norm);
-		upsdebugx(2, "parse_output_signals: CP overriden with %s\n", v);
+		upsdebugx(2, "parse_output_signals: CP overridden with %s\n", v);
 	}
 
 	if ((v = getval("SD")) != NULL) {
 		parse_output_signals(v, &upstab[upstype].line_sd);
-		upsdebugx(2, "parse_output_signals: SD overriden with %s\n", v);
+		upsdebugx(2, "parse_output_signals: SD overridden with %s\n", v);
 	}
 
 	if (ioctl(upsfd, TIOCMSET, &upstab[upstype].line_norm)) {

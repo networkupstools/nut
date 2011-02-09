@@ -484,7 +484,7 @@ bool_t nut_snmp_get_str(const char *OID, char *buf, size_t buf_len, info_lkp_t *
 		len = snprintf(buf, buf_len, "%ld", *pdu->variables->val.integer / 100);
 		break;
 	default:
-		upslogx(LOG_ERR, "[%s] unhandled ASN 0x%x recieved from %s",
+		upslogx(LOG_ERR, "[%s] unhandled ASN 0x%x received from %s",
 			upsname?upsname:device_name, pdu->variables->type, OID);
 		return FALSE;
 		break;
@@ -524,7 +524,7 @@ bool_t nut_snmp_get_int(const char *OID, long *pval)
 		value = *pdu->variables->val.integer / 100;
 		break;
 	default:
-		upslogx(LOG_ERR, "[%s] unhandled ASN 0x%x recieved from %s",
+		upslogx(LOG_ERR, "[%s] unhandled ASN 0x%x received from %s",
 			upsname?upsname:device_name, pdu->variables->type, OID);
 		return FALSE;
 		break;
@@ -1459,7 +1459,7 @@ static int parse_mibconf_args(int numargs, char **arg)
 		if (ret == FALSE)
 			upslogx(LOG_ERR, "su_setvar: cannot set value %s for %s", arg[4], arg[3]);
 		else
-			upsdebugx(1, "su_setvar: sucessfully set %s to \"%s\"", arg[0], arg[4]);
+			upsdebugx(1, "su_setvar: successfully set %s to \"%s\"", arg[0], arg[4]);
 
 		return 1;
 	}

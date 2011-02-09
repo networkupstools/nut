@@ -26,7 +26,7 @@
 #include "usbhid-ups.h"
 #include "mge-hid.h"
 
-#define MGE_HID_VERSION		"MGE HID 1.19"
+#define MGE_HID_VERSION		"MGE HID 1.20"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -767,7 +767,7 @@ static hid_info_t mge_hid2nut[] =
 	/* Battery DC voltage too high! */
 	{ "BOOL", 0, 0, "UPS.BatterySystem.Battery.PresentStatus.VoltageTooHigh", NULL, NULL, 0, battvolthi_info },
 	{ "BOOL", 0, 0, "UPS.BatterySystem.Charger.PresentStatus.VoltageTooLow", NULL, NULL, 0, battvoltlo_info },
-	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.VoltageTooLow", NULL, NULL, 0, battvoltlo_info },
+	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.VoltageTooLow", NULL, NULL, 0, mge_onbatt_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.InternalFailure", NULL, NULL, 0, commfault_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.OverTemperature", NULL, NULL, 0, overheat_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ShutdownImminent", NULL, NULL, 0, shutdownimm_info },

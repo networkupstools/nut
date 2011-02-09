@@ -873,6 +873,7 @@ dnl same for bindir
 conftemp="${bindir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
+BINDIR=${conftemp}
 AC_DEFINE_UNQUOTED(BINDIR, "${conftemp}", [Default path for user executables])
 
 dnl same for sbindir
