@@ -412,7 +412,7 @@ static void upsconf_err(const char *errmsg)
 static int parse_data_file(int upsfd)
 {
 	char	fn[SMALLBUF];
-	char	*ptr, *var_value = (char*) xmalloc(MAX_STRING_SIZE);
+	char	*ptr, var_value[MAX_STRING_SIZE];
 	int		value_args = 0, counter;
 	time_t	now;
 
@@ -529,7 +529,6 @@ static int parse_data_file(int upsfd)
 		pconf_finish(ctx);
 		free(ctx);
 		ctx=NULL;
-		free(var_value);
 	}
 	return 1;
 }
