@@ -501,13 +501,13 @@ static int parse_data_file(int upsfd)
 		}
 		else
 		{
-			memset(var_value, 0, MAX_STRING_SIZE);
 			for (counter = 1, value_args = ctx->numargs ;
 				counter < value_args ; counter++)
 			{
-				if (counter != 1) /* don't append the first space separator */
-					strncat(var_value, " ", 1);
-				strncat(var_value, ctx->arglist[counter], MAX_STRING_SIZE);
+				if (counter == 1) /* don't append the first space separator */
+					snprintf(var_value, sizeof(var_value), "%s", ctx->arglist[counter]);
+				else
+					snprintfcat(var_value, sizeof(var_value), " %s", ctx->arglist[counter]);
 			}
 
 			if (setvar(ctx->arglist[0], var_value) == STAT_SET_UNKNOWN)
