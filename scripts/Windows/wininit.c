@@ -44,27 +44,42 @@ HANDLE				svc_stop = NULL;
 static SERVICE_STATUS		SvcStatus;
 static SERVICE_STATUS_HANDLE	SvcStatusHandle;
 
-static void print_event(DWORD priority, const char * string)
+static void print_event(DWORD priority, const char * fmt, ...)
 {
 	HANDLE EventSource;
+	va_list ap;
+	CHAR * buf;
+	int ret;
+
+	buf = xmalloc(LARGEBUF);
+
+	va_start(ap, fmt);
+	ret = vsnprintf(buf, LARGEBUF, fmt, ap);
+	va_end(ap);
+
+	if(ret<0) {
+		return;
+	}
 
 	EventSource = RegisterEventSource(NULL, SVCNAME);
 
 	if( NULL != EventSource ) {
-		ReportEvent(    EventSource,	/* event log handle */
+		ReportEvent( EventSource,	/* event log handle */
 				priority,	/* event type */
 				0,		/* event category */
 				SVC_EVENT,	/* event identifier */
 				NULL,		/* no security identifier*/
 				1,		/* size of string array */
 				0,		/* no binary data */
-				&string,	/* array of string */
+				&buf,	/* array of string */
 				NULL);		/* no binary data */
 
 		DeregisterEventSource(EventSource);
 
 	}
 
+	if( buf ) 
+		free(buf);
 }
 
 static void pipe_create()
@@ -214,7 +229,7 @@ static DWORD create_process(char * application, char * command)
 			);
 
 	if( res == 0 ) {
-		print_event(LOG_ERR, "Can't create process");
+		print_event(LOG_ERR, "Can't create process %s with command %s : %d", application, command, (int)GetLastError());
 		return 0;
 	}
 
