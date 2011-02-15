@@ -207,16 +207,17 @@ static void pipe_read(conn_t *conn)
 }
 
 /* returns PID of the newly created process or 0 on failure */
-static DWORD create_process(char * application, char * command)
+static DWORD create_process(char * command)
 {
 	STARTUPINFO StartupInfo;
 	PROCESS_INFORMATION ProcessInformation;
 	BOOL res;
+	DWORD LastError;
 
 	memset(&StartupInfo,0,sizeof(STARTUPINFO));
 
 	res = CreateProcess(
-			application,
+			NULL,
 			command,
 			NULL,
 			NULL,
@@ -227,9 +228,10 @@ static DWORD create_process(char * application, char * command)
 			&StartupInfo,
 			&ProcessInformation
 			);
+	LastError = GetLastError();
 
 	if( res == 0 ) {
-		print_event(LOG_ERR, "Can't create process %s with command %s : %d", application, command, (int)GetLastError());
+		print_event(LOG_ERR, "Can't create process %s : %d", command, LastError);
 		return 0;
 	}
 
@@ -239,33 +241,37 @@ static DWORD create_process(char * application, char * command)
 /* return PID of created process or 0 on failure */
 static DWORD run_drivers()
 {
-	char application[MAX_PATH];
 	char command[MAX_PATH];
+	char *path;
 
-	snprintf(application,sizeof(application),"%s/upsdrvctl.exe",BINDIR);
-	snprintf(command,sizeof(command),"upsdrvctl.exe start");
-	return create_process(application,command);
+	path = getfullpath(PATH_BIN);
+	snprintf(command,sizeof(command),"%s\\upsdrvctl.exe start",path);
+	free(path);
+	return create_process(command);
 }
 
 /* return PID of created process or 0 on failure */
 static DWORD stop_drivers()
 {
-	char application[MAX_PATH];
 	char command[MAX_PATH];
+	char *path;
 
-	snprintf(application,sizeof(application),"%s/upsdrvctl.exe",BINDIR);
-	snprintf(command,sizeof(command),"upsdrvctl.exe stop");
-	return create_process(application,command);
+	path = getfullpath(PATH_BIN);
+	snprintf(command,sizeof(command),"%s\\upsdrvctl.exe stop",path);
+	free(path);
+	return create_process(command);
 }
 
 /* return PID of created process or 0 on failure */
 static void run_upsd()
 {
-	char application[MAX_PATH];
 	char command[MAX_PATH];
-	snprintf(application,sizeof(application),"%s/upsd.exe",SBINDIR);
-	snprintf(command,sizeof(command),"upsd.exe");
-	upsd_pid = create_process(application,command);
+	char *path;
+
+	path = getfullpath(PATH_SBIN);
+	snprintf(command,sizeof(command),"%s\\upsd.exe",path);
+	free(path);
+	upsd_pid = create_process(command);
 }
 
 static void stop_upsd()
@@ -278,13 +284,13 @@ static void stop_upsd()
 /* return PID of created process or 0 on failure */
 static void run_upsmon()
 {
-	char application[MAX_PATH];
 	char command[MAX_PATH];
-	snprintf(application,sizeof(application),"%s/upsmon.exe",SBINDIR);
-	/* FIXME "-p" is to prevent the fork of upsmon.
-	Maybe this will need more investigation to avoid security breach ?? */
-	snprintf(command,sizeof(command),"upsmon.exe -p");
-	upsmon_pid = create_process(application,command);
+	char *path;
+
+	path = getfullpath(PATH_SBIN);
+	snprintf(command,sizeof(command),"%s\\upsmon.exe",path);
+	free(path);
+	upsmon_pid = create_process(command);
 }
 
 static void stop_upsmon()
