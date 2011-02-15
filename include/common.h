@@ -296,6 +296,8 @@ char * getfullpath(char * relative_path);
 #define PATH_ETC	"\\..\\etc"
 #define PATH_VAR_RUN "\\..\\var\\run"
 #define PATH_SHARE "\\..\\share"
+#define PATH_BIN "\\..\\bin"
+#define PATH_SBIN "\\..\\sbin"
 #endif /* WIN32*/
 
 #ifndef HAVE_USLEEP
