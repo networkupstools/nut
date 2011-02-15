@@ -722,6 +722,8 @@
 "Tripp-Lite"	"ups"	"2"	"AVR750U"	"USB"	"usbhid-ups"
 "Tripp-Lite"	"ups"	"2"	"ECO550UPS"	"USB"	"usbhid-ups"
 "Tripp-Lite"	"ups"	"2"	"SmartOnline SU1500RTXL2ua"	"USB"	"usbhid-ups"
+"Tripp-Lite"	"ups"	"2"	"Smart1000LCD"	"USB"	"usbhid-ups"
+"Tripp-Lite"	"ups"	"2"	"Smart1500LCD"	"USB"	"usbhid-ups"
 "Tripp-Lite"	"ups"	"2"	"smart2200RMXL2U"	"USB, newer models"	"usbhid-ups"
 
 "Trust"	"ups"	"2"	"UPS 1000 Management PW-4105"	""	"blazer_ser"
