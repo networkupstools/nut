@@ -25,6 +25,7 @@ Stable tree: 2.6
 
 link:http://www.networkupstools.org/source/2.6/nut-2.6.0.tar.gz[nut-2.6.0.tar.gz]
 link:http://www.networkupstools.org/source/2.6/nut-2.6.0.tar.gz.sig[signature]
+link:http://www.networkupstools.org/source/2.6/nut-2.6.0.tar.gz.sha256[SHA256 sum]
 link:http://www.networkupstools.org/source/2.6/new-2.6.0.txt[release notes]
 link:http://www.networkupstools.org/source/2.6/ChangeLog[ChangeLog]
 
