@@ -554,6 +554,7 @@
 "Mustek"	"ups"	"2"	"Powermust"	"2000VA USB"	"blazer_ser"
 "Mustek"	"ups"	"2"	"Powermust Office 650"	"USB"	"blazer_usb"
 "Mustek"	"ups"	"2"	"PowerMust 424 / 636 / 848"	"USB"	"blazer_usb"
+"Mustek"	"ups"	"2"	"Yukai PowerMust" "1000 USB (PID: 5161)"	"blazer_usb subdriver=cypress"
 "Mustek"	"ups"	"2"	"Various"	""	"blazer_ser"
 
 "Neus"	"ups"	"2"	"400va / 600va"	""	"blazer_ser"
