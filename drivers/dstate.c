@@ -639,7 +639,12 @@ void dstate_setflags(const char *var, int flags)
 	sttmp = state_tree_find(dtree_root, var);
 
 	if (!sttmp) {
-		upslogx(LOG_ERR, "dstate_setflags: base variable (%s) does not exist", var);
+		upslogx(LOG_ERR, "%s: base variable (%s) does not exist", __func__, var);
+		return;
+	}
+
+	if (sttmp->flags & ST_FLAG_IMMUTABLE) {
+		upslogx(LOG_WARNING, "%s: base variable (%s) is immutable", __func__, var);
 		return;
 	}
 

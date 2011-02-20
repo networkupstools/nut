@@ -117,16 +117,16 @@ immediately after setting this flag, or will report this as soons as the
 mains fails).  Instead it will use either of the following conditions to
 determine when the battery is low:
 
-		battery.charge < battery.charge.low
-		battery.runtime < battery.runtime.low
-
+	battery.charge < battery.charge.low
+	battery.runtime < battery.runtime.low
++
 The idea is to set the battery.charge.low and/or battery.runtime.low levels
 in *ups.conf* to a value that gives enough time to cleanly shutdown your
 system:
 
-		override.battery.charge.low = 30
-		override.battery.runtime.low = 180
-
+	override.battery.charge.low = 30
+	override.battery.runtime.low = 180
++
 In order for this to work, your UPS should be able to (reliably) report
 charge and/or runtime remaining on battery.  Use with caution!
 
@@ -138,6 +138,28 @@ long upsdrvctl will wait for the driver to finish starting.  This keeps your
 system from getting stuck due to a broken driver or UPS.
 +
 The default is 45 seconds.
+
+*default.<variable>*::
+
+Optional.  Set a default value for <variable> which is used in case the UPS
+doesn't provide a value, but will be overwritten if a value is available
+from the UPS:
+
+	default.input.voltage.nominal = 230
++
+The above will report the nominal input voltage to be 230, unless the UPS
+tells us differently.
+
+*override.<variable>*::
+
+Optional.  Set a value for <value> that overrides any value that may be read
+from the UPS.  Used for overriding values from the UPS that are clearly wrong
+(some devices report wrong values for battery voltage for instance):
+
+	override.battery.voltage.nominal = 12
++
+Use with caution!  This will only change the appearance of the variable to
+the outside world, internally in the UPS the original value is used.
 
 All other fields are passed through to the hardware-specific part of the
 driver.  See those manuals for the list of what is allowed.
