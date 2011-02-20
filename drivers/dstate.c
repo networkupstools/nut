@@ -32,7 +32,7 @@
 #include "state.h"
 #include "parseconf.h"
 
-	static int	sockfd = -1, stale = 1, alarm_active = 0;
+	static int	sockfd = -1, stale = 1, alarm_active = 0, ignorelb = 0;
 	static char	*sockfn = NULL;
 	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[ST_MAX_VALUE_LEN];
 	static st_tree_t	*dtree_root = NULL;
@@ -792,12 +792,21 @@ int dstate_is_stale(void)
 /* clean out the temp space for a new pass */
 void status_init(void)
 {
+	if (dstate_getinfo("driver.flag.ignorelb")) {
+		ignorelb = 1;
+	}
+
 	memset(status_buf, 0, sizeof(status_buf));
 }
 
 /* add a status element */
 void status_set(const char *buf)
 {
+	if (ignorelb && !strcasecmp(buf, "LB")) {
+		upsdebugx(2, "%s: ignoring LB flag from device", __func__);
+		return;
+	}
+
 	/* separate with a space if multiple elements are present */
 	if (strlen(status_buf) > 0) {
 		snprintfcat(status_buf, sizeof(status_buf), " %s", buf);
@@ -809,6 +818,31 @@ void status_set(const char *buf)
 /* write the status_buf into the externally visible dstate storage */
 void status_commit(void)
 {
+	while (ignorelb) {
+		const char	*val, *low;
+
+		val = dstate_getinfo("battery.charge");
+		low = dstate_getinfo("battery.charge.low");
+
+		if (val && low && (strtol(val, NULL, 10) < strtol(low, NULL, 10))) {
+			snprintfcat(status_buf, sizeof(status_buf), " LB");
+			upsdebugx(2, "%s: appending LB flag [charge '%s' below '%s']", __func__, val, low);
+			break;
+		}
+
+		val = dstate_getinfo("battery.runtime");
+		low = dstate_getinfo("battery.runtime.low");
+
+		if (val && low && (strtol(val, NULL, 10) < strtol(low, NULL, 10))) {
+			snprintfcat(status_buf, sizeof(status_buf), " LB");
+			upsdebugx(2, "%s: appending LB flag [runtime '%s' below '%s']", __func__, val, low);
+			break;
+		}
+
+		/* LB condition not detected */
+		break;
+	}
+
 	if (alarm_active) {
 		dstate_setinfo("ups.status", "ALARM %s", status_buf);
 	} else {
