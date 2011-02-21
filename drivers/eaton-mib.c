@@ -1,6 +1,6 @@
 /*  eaton-mib.c - data to monitor Eaton Aphel PDUs (Basic and Complex)
  *
- *  Copyright (C) 2008
+ *  Copyright (C) 2008 - 2010
  *  			Arnaud Quette <ArnaudQuette@Eaton.com>
  *
  *  Sponsored by Eaton <http://www.eaton.com>
@@ -25,7 +25,7 @@
 
 #include "eaton-mib.h"
 
-#define EATON_APHEL_MIB_VERSION	"0.4"
+#define EATON_APHEL_MIB_VERSION	"0.45"
 
 /* APHEL-GENESIS-II-MIB (monitored ePDU)
  * *************************************
@@ -86,8 +86,6 @@ static snmp_info_t eaton_aphel_genesisII_mib[] = {
 #define AR_BASE_OID					".1.3.6.1.4.1.534.6.6.6"
 
 #define APHEL2_OID_MODEL_NAME				AR_OID_MODEL_NAME
-
-/* Common Aphel / Raritan declaration */
 
 #define AR_OID_MODEL_NAME				AR_BASE_OID ".1.1.12.0"
 #define AR_OID_DEVICE_NAME				AR_BASE_OID ".1.1.13.0"
@@ -180,11 +178,20 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 
 	/* FIXME:
 	 * - delay for startup/shutdown sequence
-	 * - support for Ambient page
-		temperatureSensorCount" src="snmp:$sysoid.2.1.0
-		ambient.temperature src="snmp:$sysoid.2.2.1.3.$indiceSensor => seems dumb!
-		ambient.humidity src="snmp:$sysoid.2.4.1.3.$indiceSensor
+	 * - support for multiple Ambient sensors ( max. 8), starting at index '0'
+	 * 		ambient.%i.temperature => .1.3.6.1.4.1.534.6.6.6.2.2.1.3.%i
+	 * 		ambient.%i.humidity => .1.3.6.1.4.1.534.6.6.6.2.4.1.3.%i
 	 */
+
+	/* Ambient page */
+	/* We use critical levels, for both temperature and humidity,
+	 * since warning levels are also available! */
+	{ "ambient.temperature", 0, 1.0, ".1.3.6.1.4.1.534.6.6.6.2.2.1.3.0", NULL, SU_FLAG_OK, NULL, NULL },
+	{ "ambient.temperature.low", 0, 1.0, "1.3.6.1.4.1.534.6.6.6.2.2.1.6.0", NULL, SU_FLAG_OK, NULL, NULL },
+	{ "ambient.temperature.high", 0, 1.0, "1.3.6.1.4.1.534.6.6.6.2.2.1.7.0", NULL, SU_FLAG_OK, NULL, NULL },
+	{ "ambient.humidity", 0, 1.0, ".1.3.6.1.4.1.534.6.6.6.2.4.1.3.0", NULL, SU_FLAG_OK, NULL, NULL },
+	{ "ambient.humidity.low", 0, 1.0, ".1.3.6.1.4.1.534.6.6.6.2.4.1.6.0", NULL, SU_FLAG_OK, NULL, NULL },
+	{ "ambient.humidity.high", 0, 1.0, ".1.3.6.1.4.1.534.6.6.6.2.4.1.7.0", NULL, SU_FLAG_OK, NULL, NULL },
 
 	/* instant commands. */
 	/* Note that load.cycle might be replaced by / mapped on shutdown.reboot */
