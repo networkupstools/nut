@@ -405,7 +405,7 @@ int main(int argc, char **argv)
 	const char	*prog = xbasename(argv[0]);
 	char	*password = NULL, *username = NULL, *setvar = NULL;
 
-	while ((i = getopt(argc, argv, "+s:p:u:V")) != -1) {
+	while ((i = getopt(argc, argv, "+hs:p:u:V")) != -1) {
 		switch (i)
 		{
 		case 's':
@@ -420,6 +420,7 @@ int main(int argc, char **argv)
 		case 'V':
 			printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
 			exit(EXIT_SUCCESS);
+		case 'h':
 		default:
 			usage(prog);
 			exit(EXIT_SUCCESS);
