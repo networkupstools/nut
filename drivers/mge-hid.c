@@ -582,10 +582,16 @@ static models_name_t mge_model_names [] =
 	{ "PROTECTIONCENTER", "500", MGE_DEFAULT, "Protection Center 500" },
 	{ "PROTECTIONCENTER", "675", MGE_DEFAULT, "Protection Center 675" },
 
-	/* Protection Station */
+	/* Protection Station, supports Eco control */
 	{ "Protection Station", "500", MGE_PEGASUS, NULL },
 	{ "Protection Station", "650", MGE_PEGASUS, NULL },
 	{ "Protection Station", "800", MGE_PEGASUS, NULL },
+
+	/* Ellipse ECO, also supports Eco control */
+	{ "Ellipse ECO", "650", MGE_PEGASUS, NULL },
+	{ "Ellipse ECO", "800", MGE_PEGASUS, NULL },
+	{ "Ellipse ECO", "1200", MGE_PEGASUS, NULL },
+	{ "Ellipse ECO", "1600", MGE_PEGASUS, NULL },
 
 	/* Evolution models */
 	{ "Evolution", "500", MGE_DEFAULT, "Pulsar Evolution 500" },
