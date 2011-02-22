@@ -327,6 +327,8 @@ static int parse_nutconf(BOOL start_flag)
 				if( start_flag == NUT_START ) {
 					run_drivers();
 					run_upsd();
+					/* Wait a moment for the drivers to start */
+					Sleep(5000);
 					run_upsmon();
 					return 1;
 				}
@@ -530,6 +532,18 @@ static void SvcReady(void)
 	ReportSvcStatus( SERVICE_RUNNING, NO_ERROR, 0);
 }
 
+static void close_all(void)
+{
+	conn_t	*conn;
+
+	CloseHandle(pipe_connection_handle);
+	for (conn = connhead; conn; conn = conn->next) {
+		CloseHandle(conn->overlapped.hEvent);
+		CloseHandle(conn->handle);
+	}
+
+}
+
 static void WINAPI SvcMain( DWORD argc, LPTSTR *argv )
 {
 
@@ -593,6 +607,7 @@ static void WINAPI SvcMain( DWORD argc, LPTSTR *argv )
 			parse_nutconf(NUT_STOP);
 			if(service_flag) {
 				print_event(LOG_INFO, "Exiting");
+				close_all();
 				ReportSvcStatus( SERVICE_STOPPED, NO_ERROR, 0);
 			}
 			return;
