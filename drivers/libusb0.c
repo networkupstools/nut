@@ -48,6 +48,11 @@ upsdrv_info_t comm_upsdrv_info = {
 #define MAX_REPORT_SIZE         0x1800
 #define MAX_RETRY               3
 
+#ifdef WIN32
+/* This value is defined in the error.h file of the libusb-win32 sources */
+#define ETIMEDOUT 116
+#endif
+
 static void libusb_close(usb_dev_handle *udev);
 
 /*! Add USB-related driver variables with addvar() and dstate_setinfo().
@@ -596,11 +601,11 @@ static int libusb_strerror(const int ret, const char *desc)
 		upslogx(LOG_DEBUG, "%s: %s", desc, usb_strerror());
 		return ret;
 
-#ifndef WIN32
 	case -ETIMEDOUT:	/* Connection timed out */
 		upsdebugx(2, "%s: Connection timed out", desc);
 		return 0;
 
+#ifndef WIN32
 	case -EOVERFLOW:	/* Value too large for defined data type */
 # ifdef EPROTO
 	case -EPROTO:	/* Protocol error */

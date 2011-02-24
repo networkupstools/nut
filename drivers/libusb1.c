@@ -657,11 +657,11 @@ static int nut_libusb_strerror(const int ret, const char *desc)
 		upslogx(LOG_DEBUG, "%s: %s", desc, libusb_strerror((enum libusb_error)ret));
 		return ret;
 
-#ifndef WIN32
 	case LIBUSB_ERROR_TIMEOUT:	 /** Operation timed out */
 		upsdebugx(2, "%s: Connection timed out", desc);
 		return 0;
 
+#ifndef WIN32
 	case LIBUSB_ERROR_OVERFLOW:	 /** Overflow */
 # ifdef EPROTO
 /* FIXME: not sure how to map this one! */
