@@ -23,11 +23,11 @@ to do so.
 Stable tree: 2.6
 ~~~~~~~~~~~~~~~~
 
-link:http://www.networkupstools.org/source/2.6/nut-2.6.0.tar.gz[nut-2.6.0.tar.gz]
-link:http://www.networkupstools.org/source/2.6/nut-2.6.0.tar.gz.sig[signature]
-link:http://www.networkupstools.org/source/2.6/nut-2.6.0.tar.gz.sha256[SHA256 sum]
-link:http://www.networkupstools.org/source/2.6/new-2.6.0.txt[release notes]
-link:http://www.networkupstools.org/source/2.6/ChangeLog[ChangeLog]
+- link:http://www.networkupstools.org/source/2.6/nut-2.6.0.tar.gz[nut-2.6.0.tar.gz]
+- link:http://www.networkupstools.org/source/2.6/nut-2.6.0.tar.gz.sig[PGP/GPG signature]
+- SHA-256 sum: febaa230b6b5f0ad27d780851047527d36c8c7a34e557b3832d6d55174d7a0d5
+- link:http://www.networkupstools.org/source/2.6/new-2.6.0.txt[Release notes]
+- link:http://www.networkupstools.org/source/2.6/ChangeLog[ChangeLog]
 
 You can also browse the link:http://www.networkupstools.org/source/2.6/[stable source directory].
 
