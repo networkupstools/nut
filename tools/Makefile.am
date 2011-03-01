@@ -1,4 +1,6 @@
 
+SUBDIRS = nut-scanner
+
 EXTRA_DIST = nut-usbinfo.pl nut-hclinfo.py device-recorder.sh svn2cl.authors
 
 website:

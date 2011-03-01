@@ -1,0 +1,5 @@
+Makefile
+.deps
+Makefile.in
+nut-scanner
+nutscan-usb.h

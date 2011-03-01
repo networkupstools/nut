@@ -935,6 +935,7 @@ AC_OUTPUT([
  scripts/Makefile
  server/Makefile
  tools/Makefile
+ tools/nut-scanner/Makefile
  Makefile
 ])
 
