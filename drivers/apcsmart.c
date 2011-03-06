@@ -73,7 +73,7 @@ static apc_vartab_t *vartab_lookup_name(const char *var)
 /* FUTURE: change to use function pointers */
 
 /* convert APC formatting to NUT formatting */
-static const char *convert_data(apc_vartab_t *cmd_entry, char *upsval)
+static const char *convert_data(apc_vartab_t *cmd_entry, const char *upsval)
 {
 	static	char tmp[128];
 	int	tval;
@@ -294,7 +294,7 @@ static void do_capabilities(void)
 {
 	const	char	*ptr, *entptr;
 	char	upsloc, temp[512], cmd, loc, etmp[16], *endtemp;
-	int	nument, entlen, i, matrix, ret;
+	int	nument, entlen, i, matrix, ret, valid;
 	apc_vartab_t *vt;
 
 	upsdebugx(1, "APC - About to get capabilities string");
@@ -334,8 +334,8 @@ static void do_capabilities(void)
 	endtemp = &temp[0] + strlen(temp);
 
 	if (temp[0] != '#') {
-		printf("Unrecognized capability start char %c\n", temp[0]);
-		printf("Please report this error [%s]\n", temp);
+		upsdebugx(1, "Unrecognized capability start char %c", temp[0]);
+		upsdebugx(1, "Please report this error [%s]", temp);
 		upslogx(LOG_ERR, "ERROR: unknown capability start char %c!", 
 			temp[0]);
 
@@ -378,9 +378,10 @@ static void do_capabilities(void)
 		entptr = &ptr[4];
 
 		vt = vartab_lookup_char(cmd);
+		valid = vt && ((loc == upsloc) || (loc == '4'));
 
 		/* mark this as writable */
-		if (vt && ((loc == upsloc) || (loc == '4'))) {
+		if (valid) {
 			upsdebugx(1, "Supported capability: %02x (%c) - %s", 
 				cmd, loc, vt->name);
 
@@ -391,11 +392,10 @@ static void do_capabilities(void)
 		}
 
 		for (i = 0; i < nument; i++) {
-			snprintf(etmp, entlen + 1, "%s", entptr);
-
-			if (vt && ((loc == upsloc) || (loc == '4')))
-				dstate_addenum(vt->name, "%s",
-					convert_data(vt, etmp));
+			if (valid) {
+				snprintf(etmp, entlen + 1, "%s", entptr);
+				dstate_addenum(vt->name, "%s", convert_data(vt, etmp));
+			}
 
 			entptr += entlen;
 		}
@@ -1235,9 +1235,8 @@ void upsdrv_initups(void)
 
 	cable = getval("cable");
 
-	if (cable)
-		if (!strcasecmp(cable, ALT_CABLE_1))
-			init_serial_0095B();
+	if (cable && !strcasecmp(cable, ALT_CABLE_1))
+		init_serial_0095B();
 
 	/* make sure we wake up if the UPS sends alert chars to us */
 	extrafd = upsfd;
@@ -1257,6 +1256,8 @@ void upsdrv_help(void)
 
 void upsdrv_initinfo(void)
 {
+	const char *pmod, *pser;
+
 	if (!smartmode()) {
 		fatalx(EXIT_FAILURE, 
 			"Unable to detect an APC Smart protocol UPS on port %s\n"
@@ -1269,8 +1270,12 @@ void upsdrv_initinfo(void)
 
 	getbaseinfo();
 
-	printf("Detected %s [%s] on %s\n", dstate_getinfo("ups.model"),
-		dstate_getinfo("ups.serial"), device_path);
+	if (!(pmod = dstate_getinfo("ups.model")))
+		pmod = "\"unknown model\"";
+	if (!(pser = dstate_getinfo("ups.serial")))
+		pser = "unknown serial";
+
+	upsdebugx(1, "Detected %s [%s] on %s", pmod, pser, device_path);
 
 	setuphandlers();
 }
