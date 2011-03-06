@@ -477,10 +477,6 @@ static void protocol_verify(unsigned char cmd)
 {
 	int	i, found;
 
-	/* we might not care about this one */
-	if (strchr(CMD_IGN_CHARS, cmd))
-		return;
-
 	/* see if it's a variable */
 	for (i = 0; apc_vartab[i].name != NULL; i++) {
 

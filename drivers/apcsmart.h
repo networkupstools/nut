@@ -244,9 +244,6 @@ apc_cmdtab_t	apc_cmdtab[] =
 	{ NULL, 0, 0					}
 };
 
-/* things to ignore in protocol_verify - useless variables, etc. */
-#define CMD_IGN_CHARS "\032-78@.,~\047\177QHRTYayz)1IJ"
-
 /* compatibility with hardware that doesn't do APC_CMDSET ('a') */
 
 struct {
