@@ -252,8 +252,10 @@ static int query_ups(const char *var, int first)
 		return 0;
 	}
 
-	/* already known to not be supported? */
-	if (vt->flags & APC_IGNORE)
+	/*
+	 * not first run and already known to not be supported ?
+	 */
+	if (!first && !(vt->flags & APC_PRESENT))
 		return 0;
 
 	/* empty the input buffer (while allowing the alert handler to run) */
@@ -278,11 +280,10 @@ static int query_ups(const char *var, int first)
 
 	ser_comm_good();
 
-	if ((ret < 1) || (!strcmp(temp, "NA"))) {	/* not supported */
-		vt->flags |= APC_IGNORE;
+	if ((ret < 1) || (!strcmp(temp, "NA")))		/* not supported */
 		return 0;
-	}
 
+	vt->flags |= APC_PRESENT;
 	ptr = convert_data(vt, temp);
 	dstate_setinfo(vt->name, "%s", ptr);
 

@@ -77,7 +77,6 @@
 /* Driver command table flag values */
 
 #define APC_POLL	0x0001	/* Poll this variable regularly		*/
-#define APC_IGNORE	0x0002	/* Never poll this			*/
 #define APC_PRESENT	0x0004	/* Capability seen on this UPS		*/
 
 #define APC_RW		0x0010	/* read-write variable			*/
