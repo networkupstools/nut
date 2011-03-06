@@ -854,7 +854,7 @@ static int sdcmd_ATn(int cnt)
 
 	ser_send_char(upsfd, APC_CMD_GRACEDOWN);
 	usleep(CMDLONGDELAY);
-	ser_send_pace(upsfd, UPSDELAY, timer);
+	ser_send_pace(upsfd, UPSDELAY, "%s", timer);
 
 	ret = sdok();
 	if (ret || cnt == 3)
