@@ -1407,7 +1407,9 @@ static void setuphandlers(void)
 void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE, "cable", "Specify alternate cable (940-0095B)");
-	addvar(VAR_VALUE, "sdtype", "Specify shutdown type (1-3)");
+	addvar(VAR_VALUE, "wugrace", "Hard hibernate's wakeup grace");
+	addvar(VAR_VALUE, "sdtype", "Specify simple shutdown method (0-6)");
+	addvar(VAR_VALUE, "advorder", "Enable advanced shutdown control");
 }
 
 void upsdrv_initups(void)
@@ -1428,14 +1430,6 @@ void upsdrv_initups(void)
 
 void upsdrv_help(void)
 {
-	printf("\nShutdown types:\n");
-	printf("  0: soft shutdown or powerdown, depending on battery status\n");
-	printf("  1: soft shutdown followed by powerdown\n");
-	printf("  2: instant power off\n");
-	printf("  3: power off with grace period\n");
-	printf("  4: 'force OB' hack method for CS 350\n");
-	printf("Modes 0-1 will make the UPS come back when power returns\n");
-	printf("Modes 2-3 will make the UPS stay turned off when power returns\n");
 }
 
 void upsdrv_initinfo(void)
