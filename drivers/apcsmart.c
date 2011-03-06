@@ -788,101 +788,271 @@ static int smartmode(void)
 	return 0;	/* failure */
 }
 
+/*
+ * all shutdown commands should respond with 'OK' or '*'
+ */
+static int sdok(void)
+{
+	char temp[16];
+
+	ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, IGNCHARS, SER_WAIT_SEC, SER_WAIT_USEC);
+	upsdebugx(4, "sdok: got \"%s\"", temp);
+
+	if (!strcmp(temp, "*") || !strcmp(temp, "OK")) {
+		upsdebugx(4, "Last issued shutdown command succeeded");
+		return 1;
+	}
+
+	upsdebugx(1, "Last issued shutdown command failed");
+	return 0;
+}
+
+/* soft hibernate: S - working only when OB, otherwise ignored */
+static int sdcmd_S(int dummy)
+{
+	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
+
+	upsdebugx(1, "Issuing soft hibernate");
+	ser_send_char(upsfd, APC_CMD_SOFTDOWN);
+
+	return sdok();
+}
+
+/* soft hibernate, hack version for CS 350 */
+static int sdcmd_CS(int tval)
+{
+	upsdebugx(1, "Using CS 350 'force OB' shutdown method");
+	if (tval & APC_STAT_OL) {
+		upsdebugx(1, "On-line - forcing OB temporarily");
+		ser_send_char(upsfd, 'U');
+		usleep(UPSDELAY);
+	}
+	return sdcmd_S(tval);
+}
+
+/*
+ * hard hibernate: @nnn / @nn
+ * note: works differently for older and new models, see help function for
+ * detailed info
+ */
+static int sdcmd_ATn(int cnt)
+{
+	int n = 0, mmax, ret;
+	const char *strval;
+	char timer[4];
+
+	mmax = cnt == 2 ? 99 : 999;
+
+	if ((strval = getval("wugrace"))) {
+		errno = 0;
+		n = strtol(strval, NULL, 10);
+		if (errno || n < 0 || n > mmax)
+			n = 0;
+	}
+
+	snprintf(timer, sizeof(timer), "%.*d", cnt, n);
+
+	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
+	upsdebugx(1, "Issuing hard hibernate with %d minutes additional wakeup delay", n*6);
+
+	ser_send_char(upsfd, APC_CMD_GRACEDOWN);
+	usleep(CMDLONGDELAY);
+	ser_send_pace(upsfd, UPSDELAY, timer);
+
+	ret = sdok();
+	if (ret || cnt == 3)
+		return ret;
+
+	/*
+	 * "tricky" part - we tried @nn variation and it (unsurprisingly)
+	 * failed; we have to abort the sequence with something bogus to have
+	 * the clean state; newer upses will respond with 'NO', older will be
+	 * silent (YMMV);
+	 */
+	ser_send_char(upsfd, APC_CMD_GRACEDOWN);
+	usleep(UPSDELAY);
+	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
+
+	return 0;
+}
+
+/* shutdown: K - delayed poweroff */
+static int sdcmd_K(int dummy)
+{
+	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
+	upsdebugx(1, "Issuing delayed poweroff");
+
+	ser_send_char(upsfd, APC_CMD_SHUTDOWN);
+	usleep(CMDLONGDELAY);
+	ser_send_char(upsfd, APC_CMD_SHUTDOWN);
+
+	return sdok();
+}
+
+/* shutdown: Z - immediate poweroff */
+static int sdcmd_Z(int dummy)
+{
+	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
+	upsdebugx(1, "Issuing immediate poweroff");
+
+	ser_send_char(upsfd, APC_CMD_OFF);
+	usleep(CMDLONGDELAY);
+	ser_send_char(upsfd, APC_CMD_OFF);
+
+	return sdok();
+}
+
+static int (*sdlist[])(int) = {
+	sdcmd_S,
+	sdcmd_ATn,	/* for @nnn version */
+	sdcmd_K,
+	sdcmd_Z,
+	sdcmd_CS,
+	sdcmd_ATn,	/* for @nn version */
+};
+
+#define SDIDX_S		0
+#define SDIDX_AT3N	1
+#define SDIDX_K		2
+#define SDIDX_Z		3
+#define SDIDX_CS	4
+#define SDIDX_AT2N	5
+
+#define SDCNT 		6
+
+static void upsdrv_shutdown_simple(int status)
+{
+	unsigned int sdtype = 0;
+	char *strval;
+
+	if ((strval = getval("sdtype"))) {
+		errno = 0;
+		sdtype = strtol(strval, NULL, 10);
+		if (errno || sdtype < 0 || sdtype > 6)
+			sdtype = 0;
+	}
+
+	switch (sdtype) {
+
+	case 6:		/* hard hibernate */
+		sdcmd_ATn(3);
+		break;
+	case 5:		/* "hack nn" hard hibernate */
+		sdcmd_ATn(2);
+		break;
+	case 4:		/* special hack for CS 350 and similar models */
+		sdcmd_CS(status);
+		break;
+
+	case 3:		/* delayed poweroff */
+		sdcmd_K(0);
+		break;
+
+	case 2:		/* instant poweroff */
+		sdcmd_Z(0);
+		break;
+	case 1:
+		/*
+		 * Send a combined set of shutdown commands which can work
+		 * better if the UPS gets power during shutdown process
+		 * Specifically it sends both the soft shutdown 'S' and the
+		 * hard hibernate '@nnn' commands
+		 */
+		upsdebugx(1, "UPS - currently %s - sending soft/hard hibernate commands",
+			(status & APC_STAT_OL) ? "on-line" : "on battery");
+
+		/* S works only when OB */
+		if ((status & APC_STAT_OB) && sdcmd_S(0))
+			break;
+		sdcmd_ATn(3);
+		break;
+
+	default:
+		/*
+		 * Send @nnn or S, depending on OB / OL status
+		 */
+		if (status & APC_STAT_OL)		/* on line */
+			sdcmd_ATn(3);
+		else
+			sdcmd_S(0);
+	}
+}
+
+static void upsdrv_shutdown_advanced(int status)
+{
+	const char *strval;
+	const char deforder[] = {48 + SDIDX_S,
+				 48 + SDIDX_AT3N,
+				 48 + SDIDX_K,
+				 48 + SDIDX_Z,
+				  0};
+	size_t i;
+	int n;
+
+	strval = getval("advorder");
+
+	/* sanitize advorder */
+
+	if (!strval || !strlen(strval) || strlen(strval) > SDCNT)
+		strval = deforder;
+	for (i = 0; i < strlen(strval); i++) {
+		if (strval[i] - 48 < 0 || strval[i] - 48 >= SDCNT) {
+			strval = deforder;
+			break;
+		}
+	}
+
+	/*
+	 * try each method in the list with a little bit of handling in certain
+	 * cases
+	 */
+
+	for (i = 0; i < strlen(strval); i++) {
+		if (strval[i] - 48 == SDIDX_CS) {
+			n = status;
+		} else if (strval[i] - 48 == SDIDX_AT3N) {
+			n = 3;
+		} else if (strval[i] - 48 == SDIDX_AT2N) {
+			n = 2;
+		}
+		if (sdlist[strval[i] - 48](n))
+			break;	/* finish if command succeeded */
+	}
+}
+
 /* power down the attached load immediately */
 void upsdrv_shutdown(void)
 {
 	char	temp[32];
-	int	ret, tval, sdtype = 0;
+	int	ret, status;
 
 	if (!smartmode())
-		printf("Detection failed.  Trying a shutdown command anyway.\n");
+		upsdebugx(1, "SM detection failed. Trying a shutdown command anyway");
 
 	/* check the line status */
 
 	ret = ser_send_char(upsfd, APC_STATUS);
 
 	if (ret == 1) {
-		ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, 
+		ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR,
 			IGNCHARS, SER_WAIT_SEC, SER_WAIT_USEC);
 
 		if (ret < 1) {
-			printf("Status read failed!  Assuming on battery state\n");
-			tval = APC_STAT_LB | APC_STAT_OB;
+			upsdebugx(1, "Status read failed ! Assuming on battery state");
+			status = APC_STAT_LB | APC_STAT_OB;
 		} else {
-			tval = strtol(temp, 0, 16);
+			status = strtol(temp, 0, 16);
 		}
 
 	} else {
-		printf("Status request failed; assuming on battery state\n");
-		tval = APC_STAT_LB | APC_STAT_OB;
+		upsdebugx(1, "Status request failed; assuming on battery state");
+		status = APC_STAT_LB | APC_STAT_OB;
 	}
 
-	if (testvar("sdtype"))
-		sdtype = atoi(getval("sdtype"));
-
-	switch (sdtype) {
-
-	case 4:		/* special hack for CS 350 and similar models */
-		printf("Using CS 350 'force OB' shutdown method\n");
-
-		if (tval & APC_STAT_OL) {
-			printf("On line - forcing OB temporarily\n");
-			ser_send_char(upsfd, 'U');
-		}
-
-		ser_send_char(upsfd, 'S');
-		break;
-
-	case 3:		/* shutdown with grace period */
-		printf("Sending delayed power off command to UPS\n");
-
-		ser_send_char(upsfd, APC_CMD_SHUTDOWN);
-		usleep(CMDLONGDELAY);
-		ser_send_char(upsfd, APC_CMD_SHUTDOWN);
-
-		break;
-
-	case 2:		/* instant shutdown */
-		printf("Sending power off command to UPS\n");
-
-		ser_send_char(upsfd, APC_CMD_OFF);
-		usleep(CMDLONGDELAY);
-		ser_send_char(upsfd, APC_CMD_OFF);
-
-		break;
-
-	case 1:
-
-		/* Send a combined set of shutdown commands which can work better */
-		/* if the UPS gets power during shutdown process */
-		/* Specifically it sends both the soft shutdown 'S' */
-		/* and the powerdown after grace period - '@000' commands */
-		printf("UPS - currently %s - sending shutdown/powerdown\n",
-			(tval & APC_STAT_OL) ? "on-line" : "on battery");
-
-		ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
-		ser_send_pace(upsfd, UPSDELAY, "S@000");
-		break;
-
-	default:
-
-		/* @000 - shutdown after 'p' grace period             */
-		/*      - returns after 000 minutes (i.e. right away) */
-
-		/* S    - shutdown after 'p' grace period, only on battery */
-		/*        returns after 'e' charge % plus 'r' seconds      */
-
-		ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
-
-		if (tval & APC_STAT_OL) {		/* on line */
-			printf("On line, sending shutdown+return command...\n");
-			ser_send_pace(upsfd, UPSDELAY, "@000");
-		}
-		else {
-			printf("On battery, sending normal shutdown command...\n");
-			ser_send_char(upsfd, APC_CMD_SOFTDOWN);
-		}
-	}
+	if (testvar("advorder") && strcasecmp(getval("advorder"), "no"))
+		upsdrv_shutdown_advanced(status);
+	else
+		upsdrv_shutdown_simple(status);
 }
 
 /* 940-0095B support: set DTR, lower RTS */
