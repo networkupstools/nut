@@ -1102,6 +1102,7 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 	char	orig[256], temp[256];
 	const char	*ptr;
 
+	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
 	ret = ser_send_char(upsfd, vt->cmd);
 
 	if (ret != 1) {
@@ -1196,7 +1197,6 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 	char	temp[256];
 
 	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
-
 	ret = ser_send_char(upsfd, vt->cmd);
 
 	if (ret != 1) {
@@ -1299,6 +1299,7 @@ static int do_cmd(apc_cmdtab_t *ct)
 	int	ret;
 	char	buf[SMALLBUF];
 
+	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
 	ret = ser_send_char(upsfd, ct->cmd);
 
 	if (ret != 1) {
