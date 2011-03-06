@@ -260,28 +260,28 @@ struct {
 	{ "5ZM",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz/<>", 0 },
 	/* APC600 */
 	{ "6QD",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
-	{ "6QI",    "79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
+	{ "6QI",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
 	{ "6TD",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
 	{ "6TI",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
 	/* SmartUPS 900 */
-	{ "7QD",    "79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
-	{ "7QI",    "79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
-	{ "7TD",    "79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
-	{ "7TI",    "79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
+	{ "7QD",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
+	{ "7QI",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
+	{ "7TD",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
+	{ "7TI",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
 	/* SmartUPS 1250. */
 	{ "8QD",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
 	{ "8QI",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
-	{ "8TD",    "79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
-	{ "8TI",    "79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
+	{ "8TD",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
+	{ "8TI",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
 	/* CS 350 */
 	{ "5.4.D",	"\1ABPQRSUYbdfgjmnx9",	0 },
 	/* Smart-UPS 600 */
-	{ "D9",     "789ABCEFGKLMNOPQRSUVWXYZ", 0 },
-	{ "D8",     "789ABCEFGKLMNOPQRSUVWXYZ", 0 },
-	{ "D7",     "789ABCEFGKLMNOPQRSUVWXYZ", 0 },
-	{ "D6",     "789ABCEFGKLMNOPQRSUVWXYZ", 0 },
-	{ "D5",     "789ABCEFGKLMNOPQRSUVWXYZ", 0 },
-	{ "D4",     "789ABCEFGKLMNOPQRSUVWXYZ", 0 },
+	{  "D9",	"789ABCEFGKLMNOPQRSUVWXYZ", 0 },
+	{  "D8",	"789ABCEFGKLMNOPQRSUVWXYZ", 0 },
+	{  "D7",	"789ABCEFGKLMNOPQRSUVWXYZ", 0 },
+	{  "D6",	"789ABCEFGKLMNOPQRSUVWXYZ", 0 },
+	{  "D5",	"789ABCEFGKLMNOPQRSUVWXYZ", 0 },
+	{  "D4",	"789ABCEFGKLMNOPQRSUVWXYZ", 0 },
 
 	{ NULL,		NULL,			0 },
 };
