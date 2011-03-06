@@ -24,7 +24,7 @@
 #include "apcsmart.h"
 
 #define DRIVER_NAME	"APC Smart protocol driver"
-#define DRIVER_VERSION	"2.03"
+#define DRIVER_VERSION	"2.1"
 
 static upsdrv_info_t table_info = {
 	"APC command table",
@@ -38,8 +38,9 @@ static upsdrv_info_t table_info = {
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
 	DRIVER_VERSION,
-	"Russell Kroll <rkroll@exploits.org>\n" \
-	"Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk>",
+	"Russell Kroll <rkroll@exploits.org>\n"
+	"Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk>\n"
+	"Michal Soltys <soltys@ziu.info>",
 	DRV_STABLE,
 	{ &table_info, NULL }
 };
