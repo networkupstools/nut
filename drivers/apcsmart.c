@@ -441,7 +441,6 @@ static int update_status(void)
 	ups_status = strtol(buf, 0, 16) & 0xff;
 	ups_status_set();
 
-	status_commit();
 	dstate_dataok();
 
 	return 1;
