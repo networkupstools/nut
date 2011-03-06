@@ -28,15 +28,17 @@
 /* Basic UPS reply line structure */
 #define ENDCHAR 10		/* APC ends responses with LF */
 
-/* these two are only used during startup */
-#define IGNCHARS "\015+$|!~%?=*#&"	/* special characters to ignore */
+/* characters ignored by default */
+#define IGNCHARS "\015+$|!~%?=#&"	/* special characters to ignore */
+
+/* these one is used only during startup, due to ^Z sending certain characters such as # */
 #define MINIGNCHARS "\015+$|!"	/* minimum set of special characters to ignore */
 
 /* normal polls: characters we don't want to parse (including a few alerts) */
-#define POLL_IGNORE "\015?=*&|"
+#define POLL_IGNORE "\015&|"
 
-/* alert characters we care about - OL, OB, LB, not LB, RB */
-#define POLL_ALERT "$!%+#"
+/* alert characters we care about - OL, OB, LB, not LB, RB, OVER, not OVER */
+#define POLL_ALERT "$!%+#?="
 
 #define UPSDELAY	  50000	/* slow down multicharacter commands        */
 #define CMDLONGDELAY	1500000	/* some commands need a 1.5s gap for safety */

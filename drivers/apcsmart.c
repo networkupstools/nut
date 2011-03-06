@@ -178,6 +178,16 @@ static void alert_handler(char ch)
 			ups_status |= APC_STAT_RB;
 			break;
 
+		case '?':		/* set OVER */
+			upsdebugx(4, "alert_handler: OVER");
+			ups_status |= APC_STAT_OVER;
+			break;
+
+		case '=':		/* clear OVER */
+			upsdebugx(4, "alert_handler: not OVER");
+			ups_status &= ~APC_STAT_OVER;
+			break;
+
 		default:
 			upsdebugx(4, "alert_handler got 0x%02x (unhandled)", ch);
 			break;
