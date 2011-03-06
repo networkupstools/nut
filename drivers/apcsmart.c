@@ -541,27 +541,28 @@ static int firmware_table_lookup(void)
 	unsigned int	i, j;
 	char	buf[SMALLBUF];
 
-	upsdebugx(1, "Attempting firmware lookup");
+	upsdebugx(1, "Attempting firmware lookup using command 'V'");
 
-	ret = ser_send_char(upsfd, 'b');
+	ret = ser_send_char(upsfd, 'V');
 
 	if (ret != 1) {
-		upslog_with_errno(LOG_ERR, "getbaseinfo: ser_send_char failed");
+		upslog_with_errno(LOG_ERR, "firmware_table_lookup: ser_send_char failed");
 		return 0;
 	}
 
 	ret = ser_get_line(upsfd, buf, sizeof(buf), ENDCHAR, IGNCHARS, 
 		SER_WAIT_SEC, SER_WAIT_USEC);
 
-	/* see if this is an older version like an APC600 which doesn't
-	 * response to 'a' or 'b' queries
+        /*
+	 * Some UPSes support both 'V' and 'b'. As 'b' doesn't always return
+	 * firmware version, we attempt that only if 'V' doesn't work.
 	 */
 	if ((ret < 1) || (!strcmp(buf, "NA"))) {
-		upsdebugx(1, "Attempting to contact older Smart-UPS version");
-		ret = ser_send_char(upsfd, 'V');
+		upsdebugx(1, "Attempting firmware lookup using command 'b'");
+		ret = ser_send_char(upsfd, 'b');
 
 		if (ret != 1) {
-			upslog_with_errno(LOG_ERR, "getbaseinfo: ser_send_char failed");
+			upslog_with_errno(LOG_ERR, "firmware_table_lookup: ser_send_char failed");
 			return 0;
 		}
 
@@ -572,9 +573,9 @@ static int firmware_table_lookup(void)
 			upslog_with_errno(LOG_ERR, "firmware_table_lookup: ser_get_line failed");
 			return 0;
 		}
-
-		upsdebugx(2, "Firmware: [%s]", buf);
 	}
+
+	upsdebugx(2, "Firmware: [%s]", buf);
 
 	/* this will be reworked if we get a lot of these things */
 	if (!strcmp(buf, "451.2.I")) {
@@ -612,6 +613,10 @@ static void getbaseinfo(void)
 	int	ret = 0;
 	char 	*alrts, *cmds, temp[512];
 
+	/*
+	 *  try firmware lookup first; we could start with 'a', but older models
+	 *  sometimes return other things than a command set
+	 */
 	if (firmware_table_lookup() == 1)
 		return;
 
@@ -632,7 +637,6 @@ static void getbaseinfo(void)
 		SER_WAIT_SEC, SER_WAIT_USEC);
 
 	if ((ret < 1) || (!strcmp(temp, "NA"))) {
-
 		/* We have an old dumb UPS - go to specific code for old stuff */
 		oldapcsetup();
 		return;
