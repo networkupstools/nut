@@ -23,7 +23,7 @@
 #include "serial.h"
 #include "timehead.h"
 
-#define APC_TABLE_VERSION	"version 2.1"
+#define APC_TABLE_VERSION	"version 2.2"
 
 /* Basic UPS reply line structure */
 #define ENDCHAR 10		/* APC ends responses with LF */
@@ -109,14 +109,10 @@ typedef struct {
 
 apc_vartab_t	apc_vartab[] = {
 
+	{ "ups.firmware.old",  	0,			'V' },
 	{ "ups.firmware",  	0,			'b' },
 	{ "ups.firmware.aux",	0,			'v' },
 	{ "ups.model",		0,			0x01 },
-
-/* FUTURE: depends on variable naming scheme */
-#if 0
-	{ "ups.model.code",	0,			'V' },
-#endif
 
 	{ "ups.serial",		0,			'n' },
 	{ "ups.mfr.date", 	0,			'm' },
@@ -207,6 +203,7 @@ apc_vartab_t	apc_vartab[] = {
 #define APC_CMD_CALTOGGLE	'D'
 #define APC_CMD_SHUTDOWN	'K'
 #define APC_CMD_SOFTDOWN	'S'
+#define APC_CMD_GRACEDOWN	'@'
 #define APC_CMD_SIMPWF		'U'
 #define APC_CMD_BTESTTOGGLE	'W'
 #define APC_CMD_OFF		'Z'
@@ -232,6 +229,8 @@ apc_cmdtab_t	apc_cmdtab[] =
 	{ "test.battery.start",	0,			APC_CMD_BTESTTOGGLE },
 	{ "test.battery.stop",	0,			APC_CMD_BTESTTOGGLE },
 
+	{ "shutdown.return.grace",
+				APC_NASTY,		APC_CMD_GRACEDOWN  },
 	{ "shutdown.return",	APC_NASTY,		APC_CMD_SOFTDOWN  },
 	{ "shutdown.stayoff",	APC_NASTY|APC_REPEAT,	APC_CMD_SHUTDOWN  },
 
@@ -268,7 +267,12 @@ struct {
 	{ "7QI",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
 	{ "7TD",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
 	{ "7TI",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
-	/* SmartUPS 1250. */
+	/* SmartUPS 900I */
+	{ "7II",	"79ABCEFGKLMNOPQSUVWXYZcfg", 0 },
+	/* SmartUPS 2000I */
+	{ "9II",	"79ABCEFGKLMNOPQSUVWXYZcfg", 0 },
+	{ "9GI",	"79ABCEFGKLMNOPQSUVWXYZcfg", 0 },
+	/* SmartUPS 1250 */
 	{ "8QD",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
 	{ "8QI",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
 	{ "8TD",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
