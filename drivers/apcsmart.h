@@ -252,6 +252,8 @@ struct {
 	int	flags;
 } compat_tab[] = {
 	/* APC Matrix */
+	{ "0XI",	"789ABCDEFGKLMNOPQRSTUVWXYZcefgjklmnopqrsuwxz/<>\\^\014\026", 0 },
+	{ "0XM",	"789ABCDEFGKLMNOPQRSTUVWXYZcefgjklmnopqrsuwxz/<>\\^\014\026", 0 },
 	{ "0ZI",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz/<>", 0 },
 	{ "5UI",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz/<>", 0 },
 	{ "5ZM",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz/<>", 0 },
