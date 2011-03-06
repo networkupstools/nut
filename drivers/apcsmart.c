@@ -1011,6 +1011,9 @@ static void upsdrv_shutdown_advanced(int status)
 			n = 3;
 		} else if (strval[i] - 48 == SDIDX_AT2N) {
 			n = 2;
+		} else {
+			/* the value of 'n' needs to be set at this point, but it isn't */
+			continue;
 		}
 		if (sdlist[strval[i] - 48](n))
 			break;	/* finish if command succeeded */
