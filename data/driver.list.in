@@ -318,6 +318,8 @@
 "Infosec"	"ups"	"2"	"XP 500"	"USB"	"blazer_usb"
 "Infosec"	"ups"	"2"	"XP 1000"	""	"blazer_ser"
 
+"IPAR"	"ups"	"2"	"Mini Energy ME 800"	""	"blazer_usb"
+
 "IPMI"	"pdu"	"1"	""	""	"powerman-pdu (experimental)"
 
 "Ippon"	"ups"	"2"	"Back Power Pro 400/500/600/700/800"	""	"blazer_ser"
