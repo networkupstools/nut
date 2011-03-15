@@ -63,7 +63,7 @@ typedef int bool_t;
 #define CMD_PASSOFF 0x0006
 #define CMD_UPSCONT 0x0053
 
-/* xoff - xon protocol
+/* xoff - xon protocol */
 #define _SOH = 0x01; /* start of header */
 #define _EOT = 0x04; /* end of transmission */
 #define _ACK = 0x06; /* acknoledge (positive) */
