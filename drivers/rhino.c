@@ -73,7 +73,6 @@ typedef int bool_t;
 #define _NAK = 0x15; /* negative acknoledge */
 #define _SYN = 0x16; /* synchronous idle */
 #define _CAN = 0x18; /* cancel */
-*/
 
 static int const pacsize = 37; /* size of receive data package */
 
