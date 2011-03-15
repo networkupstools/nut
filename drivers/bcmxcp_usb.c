@@ -160,7 +160,7 @@ int get_answer(unsigned char *data, unsigned char command)
 			{
 				/* Clear any possible endpoint stalls */
 				usb_clear_halt(upsdev, 0x81);
-				//continue; // FIXME: seems a break would be better!
+				/* continue; */ /* FIXME: seems a break would be better! */
 				break;
 			}
 

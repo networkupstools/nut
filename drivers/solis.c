@@ -408,7 +408,7 @@ static int IsToday( unsigned char dweek, int nweek)
 
 	switch ( nweek )
 	{
-	case 0: // sunday
+	case 0: /* sunday */
 		return ( ( ( dweek & 0x40 ) == 0x40 ) );
 	case 1:
 		return ( ( ( dweek & 0x20 ) == 0x20 ) );
@@ -420,7 +420,7 @@ static int IsToday( unsigned char dweek, int nweek)
 		return ( ( ( dweek & 0x04 ) == 0x04 ) );
 	case 5:
 		return ( ( ( dweek & 0x02 ) == 0x02 ) );
-	case 6: // saturday
+	case 6: /* saturday */
 		return ( ( ( dweek & 0x01 ) == 0x01 ) );
 	}
 	
@@ -802,7 +802,7 @@ static void getbaseinfo(void)
 #else
 	char DaysOfWeek[7][4]={"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 #endif
-	char    mycmd[8]; // , ch;
+	char    mycmd[8]; 
 	char *str1, *str2, *str3, *str4, *strx;
 	unsigned char Pacote[25];
 	int  i, i1=0, i2=0, j=0, tam, tpac=25;
@@ -871,7 +871,7 @@ static void getbaseinfo(void)
 		}
 	}
 	    
-	} // end prgups 1 - 2
+	} /* end prgups 1 - 2 */
 
 	/* dummy read attempt to sync - throw it out */
 	snprintf(mycmd, sizeof(mycmd), "%c%c",CMD_UPSCONT, ENDCHAR);
@@ -879,7 +879,7 @@ static void getbaseinfo(void)
 
 	/* trying detect solis model */
 	while ( ( !detected ) && ( j < 20 ) )  {
-		temp[0] = 0; // flush temp buffer
+		temp[0] = 0; /* flush temp buffer */
 		tam = ser_get_buf_len(upsfd, temp, tpac, 3, 0);
 		if( tam == 25 ) {
 			for( i = 0 ; i < tam ; i++ ) {
@@ -1011,17 +1011,17 @@ static int instcmd(const char *cmdname, const char *extra)
 {
 
 	if (!strcasecmp(cmdname, "shutdown.return"))  {
-		// shutdown and restart
-		ser_send_char(upsfd, CMD_SHUTRET); // 0xDE
-		// ser_send_char(upsfd, ENDCHAR);
+		/* shutdown and restart */
+		ser_send_char(upsfd, CMD_SHUTRET); /* 0xDE */
+		/* ser_send_char(upsfd, ENDCHAR); */
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.stayoff"))
 	  {
-	    // shutdown now (one way)
-	    ser_send_char(upsfd, CMD_SHUT); // 0xDD
-	    // ser_send_char(upsfd, ENDCHAR);
+	    /* shutdown now (one way) */
+	    ser_send_char(upsfd, CMD_SHUT); /* 0xDD */
+	    /* ser_send_char(upsfd, ENDCHAR); */
 	    return STAT_INSTCMD_HANDLED;
 	  }
 
@@ -1082,7 +1082,7 @@ void upsdrv_shutdown(void)
 	/* on battery: send normal shutdown, ups will return by itself on utility */
 	/* on line: send shutdown+return, ups will cycle and return soon */
 
-	if (!SourceFail) {     // on line
+	if (!SourceFail) {     /* on line */
 	
 		printf("On line, sending shutdown+return command...\n");
 		ser_send_char(upsfd, CMD_SHUTRET );

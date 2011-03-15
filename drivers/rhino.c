@@ -22,7 +22,7 @@
    2005/10/26 - Version 0.40 - Operational-2 release
    2005/11/29 - Version 0.50 - rhino commands release
 
-
+   
    http://www.microsol.com.br
 
 */
@@ -64,27 +64,27 @@ typedef int bool_t;
 #define CMD_UPSCONT 0x0053
 
 /* xoff - xon protocol
-#define _SOH = 0x01; // start of header
-#define _EOT = 0x04; // end of transmission
-#define _ACK = 0x06; // acknoledge (positive)
-#define _DLE = 0x10; // data link escape
-#define _XOn = 0x11; // transmit on
-#define _XOff = 0x13; // transmit off
-#define _NAK = 0x15; // negative acknoledge
-#define _SYN = 0x16; // synchronous idle
-#define _CAN = 0x18; // cancel
+#define _SOH = 0x01; /* start of header */
+#define _EOT = 0x04; /* end of transmission */
+#define _ACK = 0x06; /* acknoledge (positive) */
+#define _DLE = 0x10; /* data link escape */
+#define _XOn = 0x11; /* transmit on */
+#define _XOff = 0x13; /* transmit off */
+#define _NAK = 0x15; /* negative acknoledge */
+#define _SYN = 0x16; /* synchronous idle */
+#define _CAN = 0x18; /* cancel */
 */
 
 static int const pacsize = 37; /* size of receive data package */
 
 /* autonomy calcule */
-static double  const AmpH = 40;       // Amperes-hora da bateria
-static double  const VbatMin = 126;   // Tensão mínina das baterias
-static double  const VbatNom = 144;   // Tensão nominal das baterias
-static double  const FM = 0.32;       // Fator multiplicativo de correção da autonomia
-static double  const FA = -2;         // Fator aditivo de correção da autonomia
-static double  const ConstInt = 250;  // Consumo interno sem o carregador
-static double  const Vin = 220;       // Tensão de entrada
+static double  const AmpH = 40;       /* Amperes-hora da bateria */
+static double  const VbatMin = 126;   /* Tensão mínina das baterias */
+static double  const VbatNom = 144;   /* Tensão nominal das baterias */
+static double  const FM = 0.32;       /* Fator multiplicativo de correção da autonomia */
+static double  const FA = -2;         /* Fator aditivo de correção da autonomia */
+static double  const ConstInt = 250;  /* Consumo interno sem o carregador */
+static double  const Vin = 220;       /* Tensão de entrada */
 
 static int Day, Month, Year;
 static int dian=0, mesn=0, anon=0, weekn=0;
@@ -93,8 +93,8 @@ static int ihour,imin, isec;
 /* char seman[4]; */
 
 /* int FExpansaoBateria; */
-// internal variables
-// package handshake ariables
+/* internal variables */
+/* package handshake variables */
 /* int ContadorEstouro; */
 static bool_t detected;
 static bool_t SourceFail, Out110, RedeAnterior, OcorrenciaDeFalha;
@@ -125,7 +125,7 @@ static int BoostVolt, Rendimento;
 static unsigned char StatusEntrada, StatusSaida, StatusBateria;
 /* events group */
 static unsigned char EventosRede, EventosSaida, EventosBateria;
-// Grupo de Programação
+/* Grupo de Programação */
 
 /* Methods */
 static void ScanReceivePack(void);
@@ -261,16 +261,16 @@ ScanReceivePack( void )
   if(  RecPack[0] ==0xC2 )
     {
       LimInfBattSrc = 174;
-      LimSupBattSrc = 192;//180????? carregador eh 180 (SCOPOS)
+      LimSupBattSrc = 192;/* 180????? carregador eh 180 (SCOPOS) */
       LimInfBattInv = 174;
-      LimSupBattInv = 192;//170????? (SCOPOS)
+      LimSupBattInv = 192;/* 170????? (SCOPOS) */
     }
   else
     {
       LimInfBattSrc = 138;
-      LimSupBattSrc = 162;//180????? carregador eh 180 (SCOPOS)
+      LimSupBattSrc = 162;/* 180????? carregador eh 180 (SCOPOS) */
       LimInfBattInv = 126;
-      LimSupBattInv = 156;//170????? (SCOPOS)
+      LimSupBattInv = 156;/* 170????? (SCOPOS) */
     }
   
   BattNonValue = 144;
@@ -300,10 +300,10 @@ ScanReceivePack( void )
   if(  BypassOn )
     OutVoltage = ( InVoltage * 1.0 / 2 ) + 5;
   
-  if(  SourceFail && RedeAnterior ) // falha pela primeira vez
+  if(  SourceFail && RedeAnterior ) /* falha pela primeira vez */
     OcorrenciaDeFalha = true;
   
-  if(  !( SourceFail ) && !( RedeAnterior ) ) // retorno da rede
+  if(  !( SourceFail ) && !( RedeAnterior ) ) /* retorno da rede */
     RetornoDaRede = true;
   
   if( !( SourceFail ) == RedeAnterior )
@@ -333,7 +333,7 @@ ScanReceivePack( void )
       RecPack[8] = 99; /* ??????????????????????????????????? */
     }
   
-  if(  OutputOn )     // Output Status
+  if(  OutputOn )     /* Output Status */
     StatusSaida = 2;
   else
     StatusSaida = 1;
@@ -341,7 +341,7 @@ ScanReceivePack( void )
   if(  OverCharge )
     StatusSaida = 3;
   
-  if(  CriticBatt ) // Battery Status
+  if(  CriticBatt ) /* Battery Status */
     StatusBateria = 4;
   else
     StatusBateria = 1;
@@ -494,7 +494,7 @@ send_command( int cmd )
 	  if( i == 1)
 	    chk = cmd;
 	  else
-	    chk = 0x00; // 0x20;
+	    chk = 0x00; /* 0x20; */
 	}
 
       ch = chk;
@@ -511,7 +511,7 @@ send_command( int cmd )
   kount = 0;
   while ( kount < 5 )
     {
-      /* ret = ser_send_buf_pace(upsfd, UPSDELAY, psend, sizes );// optional delay */
+      /* ret = ser_send_buf_pace(upsfd, UPSDELAY, psend, sizes ); */ /* optional delay */
       
       for(i=0; i < 19; i++)
 	{
@@ -564,7 +564,7 @@ static void getbaseinfo(void)
 	while ( ( !detected ) && ( j < 10 ) )
 	  {
 
-	    temp[0] = 0; // flush temp buffer
+	    temp[0] = 0; /* flush temp buffer */
 	    tam = ser_get_buf_len(upsfd, temp, pacsize, 3, 0);
 	    if( tam == 37 )
 	      {
@@ -628,10 +628,10 @@ static void getbaseinfo(void)
 	dstate_setinfo("input.transfer.high", "%03.1f", InUpLim); LimSupBattInv ?
 	*/
 
-	dstate_addcmd("shutdown.stayoff");	// CMD_SHUT
+	dstate_addcmd("shutdown.stayoff");	/* CMD_SHUT */
 	/* there is no reserved words for CMD_INON and CMD_INOFF yet */
-	/* dstate_addcmd("input.on");	// CMD_INON    = 1 */
-	/* dstate_addcmd("input.off");	// CMD_INOFF   = 2 */
+	/* dstate_addcmd("input.on"); */	/* CMD_INON    = 1 */
+	/* dstate_addcmd("input.off"); */	/* CMD_INOFF   = 2 */
 	dstate_addcmd("load.on");	/* CMD_OUTON   = 3 */
 	dstate_addcmd("load.off");	/* CMD_OUTOFF  = 4 */
 	dstate_addcmd("bypass.start");	/* CMD_PASSON  = 5 */
@@ -671,7 +671,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	
 	if (!strcasecmp(cmdname, "shutdown.stayoff"))
 	  {
-	    // shutdown now (one way)
+	    /* shutdown now (one way) */
 	    /* send_command( CMD_SHUT ); */
 	    sendshut();
 	    return STAT_INSTCMD_HANDLED;
@@ -679,7 +679,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "load.on"))
 	  {
-	    // liga Saida
+	    /* liga Saida */
 	    ret = send_command( 3 );
 	    if ( ret < 1 )
 	      upslogx(LOG_ERR, "send_command 3 failed");
@@ -688,7 +688,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "load.off"))
 	  {
-	    // desliga Saida
+	    /* desliga Saida */
 	    ret = send_command( 4 );
 	    if ( ret < 1 )
 	      upslogx(LOG_ERR, "send_command 4 failed");
@@ -697,7 +697,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "bypass.start"))
 	  {
-	    // liga Bypass
+	    /* liga Bypass */
 	    ret = send_command( 5 );
 	    if ( ret < 1 )
 	      upslogx(LOG_ERR, "send_command 5 failed");
@@ -706,7 +706,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "bypass.stop"))
 	  {
-	    // desliga Bypass
+	    /* desliga Bypass */
 	    ret = send_command( 6 );
 	    if ( ret < 1 )
 	      upslogx(LOG_ERR, "send_command 6 failed");
@@ -771,7 +771,7 @@ void upsdrv_shutdown(void)
 	/* on line: send normal shutdown, ups will return by itself on utility */
 	/* on battery: send shutdown+return, ups will cycle and return soon */
 
-	if (!SourceFail)     // on line
+	if (!SourceFail)     /* on line */
 	  {
 	    printf("On line, forcing shutdown command...\n");
 	    send_command( CMD_SHUT );
