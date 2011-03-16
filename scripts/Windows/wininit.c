@@ -323,7 +323,8 @@ static int parse_nutconf(BOOL start_flag)
 	while( fgets(buf,sizeof(buf),nutf) != NULL ) {
 		if(buf[0] != '#') {
 			if( strstr(buf,"none") != NULL ) {
-				return 1;
+				print_event(LOG_ERR, "NUT is configured to \"none\" in nut.conf, nothing is to be started.\n");
+				return 0;
 
 			}
 			if( strstr(buf,"standalone") != NULL ||
