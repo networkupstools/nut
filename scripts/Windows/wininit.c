@@ -61,6 +61,10 @@ static void print_event(DWORD priority, const char * fmt, ...)
 		return;
 	}
 
+	if( !service_flag ) {
+		upslogx(LOG_ERR, "EventLog : %s\n",buf);
+	}
+
 	EventSource = RegisterEventSource(NULL, SVCNAME);
 
 	if( NULL != EventSource ) {
@@ -643,6 +647,7 @@ int main(int argc, char **argv)
 				return SvcUninstall(SVCNAME);
 			case 'N':
 				service_flag = FALSE;
+				upslogx(LOG_ERR, "Running in non-service mode\n");
 				break;
 			default:
 				break;
