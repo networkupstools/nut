@@ -573,7 +573,9 @@ static void WINAPI SvcMain( DWORD argc, LPTSTR *argv )
 	/* parse nut.conf and start relevant processes */
 	if ( parse_nutconf(NUT_START) == 0 ) {
 		print_event(LOG_INFO, "exiting");
-		ReportSvcStatus( SERVICE_STOPPED, NO_ERROR, 0);
+		if( service_flag ) {
+			ReportSvcStatus( SERVICE_STOPPED, NO_ERROR, 0);
+		}
 		return;
 	}
 
