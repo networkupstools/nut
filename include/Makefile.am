@@ -2,8 +2,7 @@ EXTRA_DIST = attribute.h common.h extstate.h parseconf.h proto.h	\
  state.h timehead.h upsconf.h
 
 # http://www.gnu.org/software/automake/manual/automake.html#Clean
-BUILT_SOURCES = nut_version.h nut_stdint.h
-DISTCLEANFILES = nut_stdint.h
+BUILT_SOURCES = nut_version.h
 CLEANFILES = nut_version.h
 
 # magic to include SVN revision number in NUT version string
