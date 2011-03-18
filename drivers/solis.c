@@ -282,23 +282,12 @@ static unsigned char revertdays( unsigned char dweek )
 static int IsHour( char *strx, int qual )
 {
 
-	char shora[3], smin[3], sep[2];
-	int hora=0, min = 0, len = 0;
+	int hora=0, min = 0;
 
-	len = strlen( strx );
-	if ( len != 5 )
+	if ((strlen(strx) != 5) || (sscanf(strx, "%d:%d", hora, min) != 2)) {
 		return -1;
-	sscanf( strx, "%2s%1s%2s", shora, sep, smin);
-	if( sep[0] != ':' )
-		return -1;
-	if( (!isdigit( shora[0] )) || (!isdigit( shora[1] )) )
-		return -1;
-	if( (!isdigit( smin[0] )) || (!isdigit( smin[1] )) )
-		return -1;
+	}
 
-	hora = atoi( shora );
-	min = atoi( smin );
-	
 	if( qual ) {
 		dhour = hora;
 		dmin = min;
