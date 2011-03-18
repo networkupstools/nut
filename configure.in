@@ -112,7 +112,9 @@ case ${target_os} in
    hpux11* )
       dnl It seems like the thread safe string functions won't be included
       dnl on 64 bit HP-UX unless we define _REENTRANT
-      CFLAGS="${CFLAGS} -D_REENTRANT"
+      dnl We also need to define -munix=95 to make sure we use the correct
+      dnl interfaces for the socket handling
+      CFLAGS="${CFLAGS} -D_REENTRANT -munix=95"
       ;;
 esac
 
