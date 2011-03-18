@@ -700,8 +700,9 @@
 
 "SuperPower"	"ups"	"2"	"HP360, Hope-550"	""	"blazer_ser"
 
-"SVEN"	"ups"	"2"	"Power Pro+ series"	"USB"	"blazer_usb"
-"SVEN"	"ups"	"2"	"Power Smart RM 2000"	"USB"	"blazer_usb"
+"SVEN"	"ups"	"2"	"Power Pro+ series"	"USB"	"blazer_usb (USB ID 05b8:0000)"
+"SVEN"	"ups"	"1"	"Power Pro+ series"	"USB"	"richcomm_usb (USB ID 0925:1234)"
+"SVEN"	"ups"	"2"	"Power Smart RM 2000"	"USB"	"blazer_usb (USB ID 05b8:0000)"
 
 "Sweex"	"ups"	"1"	"500/1000"	"smart - shipped with SafeNet"	"safenet"
 "Sweex"	"ups"	"1"	"500/1000"	""	"genericups upstype=7"
