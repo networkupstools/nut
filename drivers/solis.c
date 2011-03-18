@@ -284,7 +284,7 @@ static int IsHour( char *strx, int qual )
 
 	int hora=0, min = 0;
 
-	if ((strlen(strx) != 5) || (sscanf(strx, "%d:%d", hora, min) != 2)) {
+	if ((strlen(strx) != 5) || (sscanf(strx, "%d:%d", &hora, &min) != 2)) {
 		return -1;
 	}
 
