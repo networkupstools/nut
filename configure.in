@@ -156,7 +156,6 @@ AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h sys/termios.h sys/time.h, [], []
 
 dnl ----------------------------------------------------------------------
 dnl Check for types and define possible replacements
-AX_CREATE_STDINT_H(include/nut_stdint.h)
 NUT_TYPE_SOCKLEN_T
 
 dnl ----------------------------------------------------------------------
