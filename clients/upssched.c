@@ -356,7 +356,11 @@ static void conn_add(int sockfd)
 	int	acc, ret;
 	conn_t	*tmp, *last;
 	struct	sockaddr_un	saddr;
+#if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED) 
+	int			salen;
+#else
 	socklen_t	salen;
+#endif
 
 	salen = sizeof(saddr);
 	acc = accept(sockfd, (struct sockaddr *) &saddr, &salen);
@@ -495,9 +499,6 @@ static void start_daemon(int lockfd)
 	struct	timeval	tv;
 	fd_set	rfds;
 	conn_t	*tmp, *tmpnext;
-	socklen_t	fromlen;
-
-	fromlen = sizeof(struct sockaddr);
 
 	us_serialize(SERIALIZE_INIT);
 
