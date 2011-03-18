@@ -1264,9 +1264,6 @@ Public License instead of this License.
                         <Component Id="powerpanel.exe" DiskId="1" Guid="A5529861-A361-4D59-8F3C-28C69358C668">
                             <File Id="powerpanel.exe" Name="powerpanel.exe" Source="..\..\..\drivers\.libs\powerpanel.exe" />
                         </Component>
-                        <Component Id="regex2.dll" DiskId="1" Guid="B4912619-28FD-44E7-AF66-C36923D6AFCE">
-                            <File Id="regex2.dll" Name="regex2.dll" Source="ImageFiles\Others\regex2.dll" />
-                        </Component>
                         <Component Id="rhino.exe" DiskId="1" Guid="C82FE681-FF0A-4C43-B7DE-3E79B33E7C48">
                             <File Id="rhino.exe" Name="rhino.exe" Source="..\..\..\drivers\.libs\rhino.exe" />
                         </Component>
@@ -1677,7 +1674,6 @@ Public License instead of this License.
                 <ComponentRef Id="skel.exe" />
                 <ComponentRef Id="nut.exe" />
                 <ComponentRef Id="powerpanel.exe" />
-                <ComponentRef Id="regex2.dll" />
                 <ComponentRef Id="rhino.exe" />
                 <ComponentRef Id="snmp_ups.exe" />
                 <ComponentRef Id="upscode2.exe" />
