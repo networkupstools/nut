@@ -1,35 +1,70 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-    <Product Language="1033" Id="878DBBDE-8551-4151-811A-686A7E4BD66B" Name="NUT - Network UPS Tools" Manufacturer="Eaton" Version="0.0.0.5" UpgradeCode="CAB45634-9010-4B36-A9BB-4D4F976F96FA">
+    <Product Language="1033" Id="878DBBDE-8551-4151-811A-686A7E4BD66B" Name="NUT-Network UPS Tools" Manufacturer="Eaton" Version="0.0.0.6" UpgradeCode="CAB45634-9010-4B36-A9BB-4D4F976F96FA">
         <Package Keywords="Installer,MSI,Database" Description="NUT" Comments="Contact:  Your local administrator" Manufacturer="Eaton Corporation" InstallerVersion="100" Languages="1033" Compressed="yes" SummaryCodepage="1252" />
         <UI>
             <Property Id="ErrorDialog"><![CDATA[ErrorDlg]]></Property>
             <Property Id="DefaultUIFont"><![CDATA[DlgFont8]]></Property>
-            <!--For Option Install Dialog Start-->
-            <Dialog Id="OptionInstallDlg" Width="370" Height="270" Title="[ProductName] [Setup]" NoMinimize="yes">
+            <!--For LibUSB Start-->
+            <Dialog Id="LibUSBDlg" Width="370" Height="270" Title="[ProductName] [Setup]" NoMinimize="yes">
                 <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="374" Height="44" TabSkip="no" Text="[BannerBitmap]" />
                 <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="374" Height="0" />
                 <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="[ButtonText_Next]">
                     <Publish Event="SetTargetPath" Value="TARGETDIR"><![CDATA[1]]></Publish>
                     <Publish Event="EndDialog" Value="Return"><![CDATA[1]]></Publish>
                 </Control>
-				<Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="[ButtonText_Back]">
+                <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="[ButtonText_Back]">
+                    <Publish Event="NewDialog" Value="OptionInstallDlg"><![CDATA[1]]></Publish>
+                </Control>
+                <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="[ButtonText_Cancel]">
+                    <Publish Event="SpawnDialog" Value="CancelDlg"><![CDATA[1]]></Publish>
+                </Control>
+                <Control Id="BottomLine" Type="Line" X="130" Y="234" Width="374" Height="2" />
+                <Control Id="Description1" Type="Text" X="26" Y="79" Width="330" Height="33" Transparent="yes" NoPrefix="yes">
+                    <Text>[DlgTitleFont]In order to use a USB UPS with [ProductName], you must install libUSB-win32 from</Text>
+                </Control>
+                <Control Id="Description2" Type="Text" X="26" Y="112" Width="328" Height="16" Transparent="yes" NoPrefix="yes">
+                    <Text>https://sourceforge.net/projects/libusb-win32/files/libusb-win32-releases/</Text>
+                </Control>
+                <Control Id="Description4" Type="Text" X="26" Y="139" Width="328" Height="11" Transparent="yes" NoPrefix="yes">
+                    <Text>[DlgTitleFont]and install the corresponding device driver using libUSB's Inf Wizard.</Text>
+                </Control>
+                <Control Id="Description3" Type="Text" X="26" Y="202" Width="270" Height="14" Transparent="yes" NoPrefix="yes">
+                    <Text>Click Next to continue [Wizard].</Text>
+                </Control>
+                <Control Type="Text" Id="LblNUT" Width="128" Height="17" X="4" Y="229" Disabled="yes" Text="Netowrk UPS Tools Installer (WiX)" />
+            </Dialog>
+            <!--For LibUSB End-->
+            <!--For Option Install Dialog Start-->
+            <Dialog Id="OptionInstallDlg" Width="370" Height="270" Title="[ProductName] [Setup]" NoMinimize="yes">
+                <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="[BannerBitmap]" />
+                <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="2" />
+                <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="[ButtonText_Next]">
+                    <Publish Event="NewDialog" Value="LibUSBDlg"><![CDATA[1]]></Publish>
+                </Control>
+                <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="[ButtonText_Back]">
                     <Publish Event="NewDialog" Value="AdminBrowseDlg"><![CDATA[1]]></Publish>
                 </Control>
                 <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="[ButtonText_Cancel]">
                     <Publish Event="SpawnDialog" Value="CancelDlg"><![CDATA[1]]></Publish>
                 </Control>
                 <Control Id="BottomLine" Type="Line" X="130" Y="234" Width="374" Height="2" />
-                <Control Id="Description1" Type="Text" X="40" Y="15" Width="284" Height="21" Transparent="yes" NoPrefix="yes">
-                    <Text>[DlgTitleFont][ProductName] relies on libUSB as a prerequisite, you have to install it.</Text>
+                <Control Id="Description1" Type="Text" X="20" Y="55" Width="335" Height="11" Transparent="yes" NoPrefix="yes">
+                    <Text>[DlgTitleFont][ProductName] installs the following libraries, location of licenses are -</Text>
                 </Control>
-                <Control Id="Description2" Type="Text" X="40" Y="71" Width="304" Height="34" Transparent="yes" NoPrefix="yes">
-                    <Text>If you plan to use NUT for UPS with USB connectivity, do not forget to install the corresponding libUSB's device driver using libUSB's Inf Wizard.</Text>
-                </Control>
-                <Control Id="Description3" Type="Text" X="40" Y="120" Width="270" Height="24" Transparent="yes" NoPrefix="yes">
+                <Control Id="Description3" Type="Text" X="20" Y="202" Width="270" Height="14" Transparent="yes" NoPrefix="yes">
                     <Text>Click Next to continue [Wizard].</Text>
                 </Control>
                 <Control Type="Text" Id="LblNUT" Width="128" Height="17" X="4" Y="229" Disabled="yes" Text="Netowrk UPS Tools Installer (WiX)" />
+                <Control Id="DllLink1" Type="Text" X="20" Y="80" Width="330" Height="20" Transparent="yes" NoPrefix="yes">
+                    <Text>1. msys-1.0.dll - http://sourceforge.net/projects/mingw/files/MSYS/BaseSystem/msys-core/msys-1.0.16-1/</Text>
+                </Control>
+                <Control Id="DllLink2" Type="Text" X="20" Y="118" Width="330" Height="26" Transparent="yes" NoPrefix="yes">
+                    <Text>2. msys-ssl-1.0.0.dll and msys-crypto-1.0.0.dll - http://sourceforge.net/projects/mingw/files/MSYS/openssl/openssl-1.0.0-1/</Text>
+                </Control>
+                <Control Id="DllLink3" Type="Text" X="20" Y="155" Width="330" Height="20" Transparent="yes" NoPrefix="yes">
+                    <Text> 3. libgnurx-0.dll - http://sourceforge.net/projects/mingw/files/UserContributed/regex/mingw-regex-2.5.1/</Text>
+                </Control>
             </Dialog>
             <!--For Option Install Dialog End-->
             <Dialog Id="ExitDialog" Width="370" Height="270" Title="[ProductName] [Setup]" NoMinimize="yes">
@@ -90,22 +125,22 @@
                 <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Default="yes" Cancel="yes" Text="[ButtonText_Cancel]">
                     <Publish Event="SpawnDialog" Value="CancelDlg"><![CDATA[1]]></Publish>
                 </Control>
-                <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="374" Height="44" TabSkip="no" Text="[BannerBitmap]" />
-                <Control Id="Text" Type="Text" X="35" Y="65" Width="300" Height="20">
-                    <Text>Please wait while the [Wizard] [Progress2] [ProductName].  This may take several minutes.</Text>
+                <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="[BannerBitmap]" />
+                <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="2" />
+                <Control Id="Text" Type="Text" X="35" Y="80" Width="250" Height="26">
+                    <Text>Please wait while the [Wizard] [Progress2] [ProductName]. This may take several minutes.</Text>
                 </Control>
-                <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="374" Height="0" />
                 <Control Id="BottomLine" Type="Line" X="130" Y="234" Width="374" Height="2" />
-                <Control Id="Title" Type="Text" X="20" Y="15" Width="200" Height="15" Transparent="yes" NoPrefix="yes">
+                <Control Id="Title" Type="Text" X="35" Y="60" Width="200" Height="15" Transparent="yes" NoPrefix="yes">
                     <Text>[DlgTitleFont][Progress1] [ProductName]</Text>
                 </Control>
-                <Control Id="ActionText" Type="Text" X="70" Y="100" Width="265" Height="10">
+                <Control Id="ActionText" Type="Text" X="35" Y="145" Width="265" Height="10">
                     <Subscribe Event="ActionText" Attribute="Text" />
                 </Control>
-                <Control Id="ProgressBar" Type="ProgressBar" X="35" Y="115" Width="300" Height="10" ProgressBlocks="yes" Text="Progress done">
+                <Control Id="ProgressBar" Type="ProgressBar" X="35" Y="158" Width="300" Height="10" ProgressBlocks="yes" Text="Progress done">
                     <Subscribe Event="SetProgress" Attribute="Progress" />
                 </Control>
-                <Control Id="StatusLabel" Type="Text" X="35" Y="100" Width="35" Height="10" Text="Status:" />
+                <Control Id="StatusLabel" Type="Text" X="35" Y="131" Width="35" Height="10" Text="Status:" />
                 <Control Type="Text" Id="LblNUT" Width="128" Height="17" X="4" Y="229" Text="Netowrk UPS Tools Installer (WiX)" Disabled="yes" />
             </Dialog>
             <Dialog Id="UserExit" Width="370" Height="270" Title="[ProductName] [Setup]" NoMinimize="yes">
@@ -134,25 +169,25 @@
                 <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="[ButtonText_Cancel]">
                     <Publish Event="SpawnDialog" Value="CancelDlg"><![CDATA[1]]></Publish>
                 </Control>
-                <Control Id="ComboLabel" Type="Text" X="25" Y="58" Width="44" Height="10" TabSkip="no" Text="&amp;Look in:" />
-                <Control Id="DirectoryCombo" Type="DirectoryCombo" X="70" Y="55" Width="220" Height="80" Property="TARGETDIR" Removable="yes" Fixed="yes" Remote="yes">
+                <Control Id="ComboLabel" Type="Text" X="25" Y="85" Width="44" Height="10" TabSkip="no" Text="&amp;Look in:" />
+                <Control Id="DirectoryCombo" Type="DirectoryCombo" X="70" Y="83" Width="220" Height="16" Property="TARGETDIR" Removable="yes" Fixed="yes" Remote="yes">
                     <Subscribe Event="IgnoreChange" Attribute="IgnoreChange" />
                 </Control>
-                <Control Id="Up" Type="PushButton" X="298" Y="55" Width="19" Height="19" ToolTip="Up One Level" Icon="yes" FixedSize="yes" IconSize="16" Text="Up">
+                <Control Id="Up" Type="PushButton" X="298" Y="82" Width="19" Height="19" ToolTip="Up One Level" Icon="yes" FixedSize="yes" IconSize="16" Text="Up">
                     <Publish Event="DirectoryListUp" Value="0"><![CDATA[1]]></Publish>
                 </Control>
-                <Control Id="NewFolder" Type="PushButton" X="325" Y="55" Width="19" Height="19" ToolTip="Create A New Folder" Icon="yes" FixedSize="yes" IconSize="16" Text="New">
+                <Control Id="NewFolder" Type="PushButton" X="325" Y="82" Width="19" Height="19" ToolTip="Create A New Folder" Icon="yes" FixedSize="yes" IconSize="16" Text="New">
                     <Publish Event="DirectoryListNew" Value="0"><![CDATA[1]]></Publish>
                 </Control>
-                <Control Id="DirectoryList" Type="DirectoryList" X="25" Y="83" Width="320" Height="110" Property="TARGETDIR" Sunken="yes" TabSkip="no" />
+                <Control Id="DirectoryList" Type="DirectoryList" X="25" Y="105" Width="320" Height="90" Property="TARGETDIR" Sunken="yes" TabSkip="no" />
                 <Control Id="PathLabel" Type="Text" X="25" Y="205" Width="59" Height="10" TabSkip="no" Text="&amp;Folder name:" />
-                <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="374" Height="44" TabSkip="no" Text="[BannerBitmap]" />
-                <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="374" Height="0" />
+                <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="[BannerBitmap]" />
+                <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="2" />
                 <Control Id="BottomLine" Type="Line" X="130" Y="234" Width="374" Height="2" />
-                <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="15" Transparent="yes" NoPrefix="yes">
+                <Control Id="Description" Type="Text" X="25" Y="65" Width="280" Height="15" Transparent="yes" NoPrefix="yes">
                     <Text>Browse to the destination folder</Text>
                 </Control>
-                <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes">
+                <Control Id="Title" Type="Text" X="25" Y="50" Width="200" Height="15" Transparent="yes" NoPrefix="yes">
                     <Text>[DlgTitleFont]Change current destination folder</Text>
                 </Control>
                 <Control Type="Text" Id="LblNUT" Width="128" Height="17" X="4" Y="229" Text="Netowrk UPS Tools Installer (WiX)" Disabled="yes">
@@ -208,19 +243,19 @@
                 <Control Id="Exit" Type="PushButton" X="166" Y="243" Width="56" Height="17" Text="[ButtonText_Exit]">
                     <Publish Event="EndDialog" Value="Exit"><![CDATA[1]]></Publish>
                 </Control>
-                <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="374" Height="44" TabSkip="no" Text="[BannerBitmap]" />
-                <Control Id="Text" Type="Text" X="20" Y="55" Width="330" Height="30">
+                <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="[BannerBitmap]" />
+                <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="2" />
+                <Control Id="Text" Type="Text" X="20" Y="80" Width="330" Height="30">
                     <Text>The following applications are using files that need to be updated by this setup. Close these applications and then click Retry to continue the installation or Cancel to exit it.</Text>
                 </Control>
-                <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="374" Height="0" />
                 <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="374" Height="0" />
-                <Control Id="Description" Type="Text" X="20" Y="23" Width="280" Height="20" Transparent="yes" NoPrefix="yes">
+                <Control Id="Description" Type="Text" X="20" Y="65" Width="280" Height="20" Transparent="yes" NoPrefix="yes">
                     <Text>Some files that need to be updated are currently in use.</Text>
                 </Control>
-                <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes">
+                <Control Id="Title" Type="Text" X="20" Y="50" Width="200" Height="15" Transparent="yes" NoPrefix="yes">
                     <Text>[DlgTitleFont]Files in Use</Text>
                 </Control>
-                <Control Id="List" Type="ListBox" X="20" Y="87" Width="330" Height="130" Property="FileInUseProcess" Sunken="yes" TabSkip="yes" />
+                <Control Id="List" Type="ListBox" X="20" Y="110" Width="330" Height="110" Property="FileInUseProcess" Sunken="yes" TabSkip="yes" />
             </Dialog>
             <Dialog Id="LicenseAgreementDlg" Width="370" Height="270" Title="[ProductName] License Agreement" NoMinimize="yes">
                 <Control Id="Buttons" Type="RadioButtonGroup" X="20" Y="187" Width="330" Height="40" Property="IAgree" />
@@ -235,7 +270,8 @@
                 <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="[ButtonText_Cancel]">
                     <Publish Event="SpawnDialog" Value="CancelDlg"><![CDATA[1]]></Publish>
                 </Control>
-                <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="374" Height="44" TabSkip="no" Text="[BannerBitmap]" />
+                <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="[BannerBitmap]" />
+                <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="2" />
                 <Control Id="AgreementText" Type="ScrollableText" X="20" Y="60" Width="330" Height="120" Sunken="yes" TabSkip="no">
                     <Text>{\rtf1\ansi\ansicpg1252\deff0\deftab720
             {\fonttbl{\f0\froman\fprq2 Times New Roman;}}
@@ -595,30 +631,23 @@ Public License instead of this License.
             }
 			</Text>
                 </Control>
-                <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="374" Height="0" />
                 <Control Id="BottomLine" Type="Line" X="130" Y="234" Width="374" Height="2" />
-                <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="15" Transparent="yes" NoPrefix="yes">
-                    <Text>Please read the following license agreement carefully</Text>
-                </Control>
-                <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes">
-                    <Text>[DlgTitleFont]End-User License Agreement</Text>
-                </Control>
                 <Control Type="Text" Id="LblNUT" Width="128" Height="17" X="4" Y="229" Disabled="yes" Text="Netowrk UPS Tools Installer (WiX)" />
             </Dialog>
             <Dialog Id="MaintenanceTypeDlg" Width="370" Height="270" Title="[ProductName] [Setup]" NoMinimize="yes">
-                <Control Id="RepairLabel" Type="Text" X="105" Y="78" Width="100" Height="10" TabSkip="no">
+                <Control Id="RepairLabel" Type="Text" X="105" Y="112" Width="100" Height="10" TabSkip="no">
                     <Text>[DlgTitleFont]Re&amp;pair</Text>
                 </Control>
-                <Control Id="RepairButton" Type="PushButton" X="50" Y="79" Width="38" Height="38" ToolTip="Repair Installation" Icon="yes" FixedSize="yes" IconSize="32" Text="[RepairIcon]">
+                <Control Id="RepairButton" Type="PushButton" X="50" Y="110" Width="38" Height="38" ToolTip="Repair Installation" Icon="yes" FixedSize="yes" IconSize="32" Text="[RepairIcon]">
                     <Publish Property="InstallMode" Value="Repair"><![CDATA[1]]></Publish>
                     <Publish Property="Progress1" Value="Repairing"><![CDATA[1]]></Publish>
                     <Publish Property="Progress2" Value="repaires"><![CDATA[1]]></Publish>
                     <Publish Event="NewDialog" Value="VerifyRepairDlg"><![CDATA[1]]></Publish>
                 </Control>
-                <Control Id="RemoveLabel" Type="Text" X="105" Y="148" Width="100" Height="10" TabSkip="no">
+                <Control Id="RemoveLabel" Type="Text" X="105" Y="173" Width="100" Height="10" TabSkip="no">
                     <Text>[DlgTitleFont]&amp;Remove</Text>
                 </Control>
-                <Control Id="RemoveButton" Type="PushButton" X="50" Y="141" Width="38" Height="38" ToolTip="Remove Installation" Icon="yes" FixedSize="yes" IconSize="32" Text="[RemoveIcon]">
+                <Control Id="RemoveButton" Type="PushButton" X="50" Y="170" Width="38" Height="38" ToolTip="Remove Installation" Icon="yes" FixedSize="yes" IconSize="32" Text="[RemoveIcon]">
                     <Publish Property="InstallMode" Value="Remove"><![CDATA[1]]></Publish>
                     <Publish Property="Progress1" Value="Removing"><![CDATA[1]]></Publish>
                     <Publish Property="Progress2" Value="removes"><![CDATA[1]]></Publish>
@@ -631,19 +660,19 @@ Public License instead of this License.
                 <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="[ButtonText_Cancel]">
                     <Publish Event="SpawnDialog" Value="CancelDlg"><![CDATA[1]]></Publish>
                 </Control>
-                <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="374" Height="44" TabSkip="no" Text="[BannerBitmap]" />
-                <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="374" Height="0" />
+                <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="[BannerBitmap]" />
+                <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="2" />
                 <Control Id="BottomLine" Type="Line" X="130" Y="234" Width="374" Height="2" />
-                <Control Id="Description" Type="Text" X="15" Y="22" Width="280" Height="20" Transparent="yes" NoPrefix="yes">
+                <Control Id="Description" Type="Text" X="50" Y="80" Width="280" Height="20" Transparent="yes" NoPrefix="yes">
                     <Text>Select the operation you wish to perform.</Text>
                 </Control>
-                <Control Id="Title" Type="Text" X="15" Y="6" Width="240" Height="15" Transparent="yes" NoPrefix="yes">
+                <Control Id="Title" Type="Text" X="50" Y="60" Width="240" Height="15" Transparent="yes" NoPrefix="yes">
                     <Text>[DlgTitleFont]Repair or Remove installation</Text>
                 </Control>
-                <Control Id="RemoveText" Type="Text" X="105" Y="162" Width="230" Height="20">
+                <Control Id="RemoveText" Type="Text" X="105" Y="192" Width="230" Height="20">
                     <Text>Removes [ProductName] from your computer.</Text>
                 </Control>
-                <Control Id="RepairText" Type="Text" X="105" Y="92" Width="230" Height="30">
+                <Control Id="RepairText" Type="Text" X="105" Y="125" Width="230" Height="30">
                     <Text>Repairs errors in the most recent installation state - fixes missing or corrupt files, shortcuts and registry entries.</Text>
                 </Control>
                 <Control Type="Text" Id="LblNUT" Width="128" Height="17" X="4" Y="229" Disabled="yes" Text="Netowrk UPS Tools Installer (WiX)" />
@@ -693,19 +722,19 @@ Public License instead of this License.
                 <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="[ButtonText_Cancel]">
                     <Publish Event="SpawnDialog" Value="CancelDlg"><![CDATA[1]]></Publish>
                 </Control>
-                <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="374" Height="44" TabSkip="no" Text="[BannerBitmap]" />
+                <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="[BannerBitmap]" />
+                <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="2" />
                 <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="[ButtonText_Back]">
                     <Publish Event="NewDialog" Value="MaintenanceTypeDlg"><![CDATA[InstallMode = "Repair"]]></Publish>
                 </Control>
-                <Control Id="Text" Type="Text" X="25" Y="70" Width="320" Height="20">
+                <Control Id="Text" Type="Text" X="30" Y="130" Width="320" Height="20">
                     <Text>Click Install to begin the installation.  If you want to review or change any of your installation settings, click Back.  Click Cancel to exit the wizard.</Text>
                 </Control>
-                <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="374" Height="0" />
                 <Control Id="BottomLine" Type="Line" X="130" Y="234" Width="374" Height="2" />
-                <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="15" Transparent="yes" NoPrefix="yes">
+                <Control Id="Description" Type="Text" X="30" Y="100" Width="280" Height="15" Transparent="yes" NoPrefix="yes">
                     <Text>The [Wizard] is ready to begin the [InstallMode] installation</Text>
                 </Control>
-                <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes">
+                <Control Id="Title" Type="Text" X="30" Y="75" Width="200" Height="15" Transparent="yes" NoPrefix="yes">
                     <Text>[DlgTitleFont]Ready to Install</Text>
                 </Control>
                 <Control Type="Text" Id="LblNUT" Width="128" Height="17" X="4" Y="229" Disabled="yes" Text="Netowrk UPS Tools Installer (WiX)" />
@@ -723,16 +752,16 @@ Public License instead of this License.
                 <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="[ButtonText_Cancel]">
                     <Publish Event="SpawnDialog" Value="CancelDlg"><![CDATA[1]]></Publish>
                 </Control>
-                <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="374" Height="44" TabSkip="no" Text="[BannerBitmap]" />
-                <Control Id="Text" Type="Text" X="25" Y="70" Width="320" Height="30">
+                <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="[BannerBitmap]" />
+                <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="2" />
+                <Control Id="Text" Type="Text" X="30" Y="130" Width="320" Height="30">
                     <Text>Click Remove to remove [ProductName] from your computer.  If you want to review or change any of your installation settings, click Back.  Click Cancel to exit the wizard.</Text>
                 </Control>
-                <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="374" Height="0" />
                 <Control Id="BottomLine" Type="Line" X="130" Y="234" Width="374" Height="2" />
-                <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="15" Transparent="yes" NoPrefix="yes">
+                <Control Id="Description" Type="Text" X="30" Y="100" Width="280" Height="15" Transparent="yes" NoPrefix="yes">
                     <Text>You have chosen to remove the program from your computer.</Text>
                 </Control>
-                <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes">
+                <Control Id="Title" Type="Text" X="30" Y="75" Width="200" Height="15" Transparent="yes" NoPrefix="yes">
                     <Text>[DlgTitleFont]Remove [ProductName]</Text>
                 </Control>
                 <Control Type="Text" Id="LblNUT" Width="128" Height="17" X="4" Y="229" Disabled="yes" Text="Netowrk UPS Tools Installer (WiX)" />
@@ -748,19 +777,19 @@ Public License instead of this License.
                 <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="[ButtonText_Cancel]">
                     <Publish Event="SpawnDialog" Value="CancelDlg"><![CDATA[1]]></Publish>
                 </Control>
-                <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="374" Height="44" TabSkip="no" Text="[BannerBitmap]" />
+                <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="[BannerBitmap]" />
+                <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="2" />
                 <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="[ButtonText_Back]">
                     <Publish Event="NewDialog" Value="MaintenanceTypeDlg"><![CDATA[1]]></Publish>
                 </Control>
-                <Control Id="Text" Type="Text" X="25" Y="70" Width="320" Height="30">
+                <Control Id="Text" Type="Text" X="30" Y="130" Width="320" Height="30">
                     <Text>Click Repair to repair the installation of [ProductName].  If you want to review or change any of your installation settings, click Back.  Click Cancel to exit the wizard.</Text>
                 </Control>
-                <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="374" Height="0" />
                 <Control Id="BottomLine" Type="Line" X="130" Y="234" Width="374" Height="2" />
-                <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="15" Transparent="yes" NoPrefix="yes">
+                <Control Id="Description" Type="Text" X="30" Y="100" Width="280" Height="15" Transparent="yes" NoPrefix="yes">
                     <Text>The [Wizard] is ready to begin the repair of [ProductName].</Text>
                 </Control>
-                <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes">
+                <Control Id="Title" Type="Text" X="30" Y="75" Width="200" Height="15" Transparent="yes" NoPrefix="yes">
                     <Text>[DlgTitleFont]Repair [ProductName]</Text>
                 </Control>
                 <Control Type="Text" Id="LblNUT" Width="128" Height="17" X="4" Y="229" Disabled="yes" Text="Netowrk UPS Tools Installer (WiX)" />
@@ -772,7 +801,8 @@ Public License instead of this License.
                 <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="[ButtonText_Cancel]">
                     <Publish Event="SpawnDialog" Value="CancelDlg"><![CDATA[1]]></Publish>
                 </Control>
-                <Control Id="Bitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="234" TabSkip="no" Text="[DialogBitmap]" />
+                <Control Id="Bitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="234" TabSkip="no" Text="[DialogBitmap]">
+                </Control>
                 <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Disabled="yes" Text="[ButtonText_Back]" />
                 <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="374" Height="0" />
                 <Control Id="Description" Type="Text" X="135" Y="70" Width="220" Height="30" Transparent="yes" NoPrefix="yes">
@@ -1124,24 +1154,24 @@ Public License instead of this License.
         <Property Id="IAgree"><![CDATA[No]]></Property>
         <Property Id="ComponentDownload"><![CDATA[ftp://anonymous@microsoft.com/components/]]></Property>
         <Property Id="BannerBitmap"><![CDATA[bannrbmp]]></Property>
-        <Property Id="DialogBitmap"><![CDATA[dlgbmp]]></Property>
+        <Property Id="DialogBitmap"><![CDATA[MainImageVer]]></Property>
         <AdminExecuteSequence>
             <Custom Action="SETDEFAULTPATH" Sequence="1">TARGETDIR=""</Custom>
         </AdminExecuteSequence>
         <InstallExecuteSequence>
             <RemoveExistingProducts After="InstallFinalize" />
         </InstallExecuteSequence>
-        <Binary Id="bannrbmp" SourceFile="ImageFiles\Binary\bannrbmp.ibd" />
-        <Binary Id="completi" SourceFile="ImageFiles\Binary\completi.ibd" />
-        <Binary Id="custicon" SourceFile="ImageFiles\Binary\custicon.ibd" />
-        <Binary Id="dlgbmp" SourceFile="ImageFiles\Binary\dlgbmp.ibd" />
-        <Binary Id="exclamic" SourceFile="ImageFiles\Binary\exclamic.ibd" />
-        <Binary Id="info" SourceFile="ImageFiles\Binary\info.ibd" />
-        <Binary Id="insticon" SourceFile="ImageFiles\Binary\insticon.ibd" />
-        <Binary Id="New" SourceFile="ImageFiles\Binary\New.ibd" />
-        <Binary Id="removico" SourceFile="ImageFiles\Binary\removico.ibd" />
-        <Binary Id="repairic" SourceFile="ImageFiles\Binary\repairic.ibd" />
-        <Binary Id="Up" SourceFile="ImageFiles\Binary\Up.ibd" />
+        <Binary Id="bannrbmp" SourceFile="ImageFiles\Images\NUT_wix_horizontal.bmp" />
+        <Binary Id="completi" SourceFile="ImageFiles\icons\completi.ico" />
+        <Binary Id="custicon" SourceFile="ImageFiles\icons\custicon.ico" />
+        <Binary Id="MainImageVer" SourceFile="ImageFiles\Images\NUT_wix_vertical.bmp" />
+        <Binary Id="exclamic" SourceFile="ImageFiles\icons\exclamic.ico" />
+        <Binary Id="info" SourceFile="ImageFiles\icons\info.ico" />
+        <Binary Id="insticon" SourceFile="ImageFiles\icons\insticon.ico" />
+        <Binary Id="New" SourceFile="ImageFiles\icons\New.ico" />
+        <Binary Id="removico" SourceFile="ImageFiles\icons\removico.ico" />
+        <Binary Id="repairic" SourceFile="ImageFiles\icons\repairic.ico" />
+        <Binary Id="Up" SourceFile="ImageFiles\icons\Up.ico" />
         <Media Id="1" Cabinet="product.cab" EmbedCab="yes" />
         <Directory Id="TARGETDIR" Name="SourceDir">
             <!--<Directory Id="ProgramFilesFolder" Name="PFiles"> -->
@@ -1628,13 +1658,6 @@ Public License instead of this License.
                 <RegistryValue Root="HKCU" Key="Software\Microsoft\[ProductName]" Name="installed" Type="integer" Value="1" KeyPath="yes" />
             </Component>
         </DirectoryRef>
-        <DirectoryRef Id="NUT">
-            <Directory Id="LibUSB.exe" Name="LibUSB">
-                <Component Id="LibUSB.exe" DiskId="1" Guid="1259925B-FC97-4282-8672-5FB69EBF1B73">
-                    <File Id="LibUSB.exe" Name="LibUSB.exe" Source="ImageFiles\libusb\libusb_win32.exe" />
-                </Component>
-            </Directory>
-        </DirectoryRef>
         <Feature Id="MyFeature" Title="NUT Installer for Windows" Level="1">
             <Feature Id="bin" Level="1" Title="NUT bin files for Windows">
                 <ComponentRef Id="libgnurx_0.dll" />
@@ -1793,18 +1816,10 @@ Public License instead of this License.
             <Feature Id="HKLM" Level="1">
                 <ComponentRef Id="RegistryEntries" />
             </Feature>
-            <!--Feature Id="LibUSB" Level="1">
-                <ComponentRef Id="LibUSB.exe" />
-            </Feature>-->
-            <Feature Id="LibUSB.exe" AllowAdvertise="yes" Level="1">
-                <ComponentRef Id="LibUSB.exe" />
-            </Feature>
             <ComponentRef Id="ApplicationShortcut" />
         </Feature>
         <Icon Id="icon.ico" SourceFile="ImageFiles\icons\powernut_logo.ico" />
         <Property Id="ARPPRODUCTICON" Value="icon.ico" />
-        <!-- Execute the Lib USB exe after coping the files of NUT-->
-        <CustomAction Id="InstallLibUSB" FileKey="LibUSB.exe" ExeCommand="" Execute="deferred" Return="asyncNoWait" Impersonate="no" />
         <!-- To Add Service in Service Table-->
         <!--Register NUT Service -->
         <CustomAction Id="RegisterNUTService" FileKey="nut.exe" ExeCommand="-I" Execute="deferred" Return="asyncNoWait" HideTarget="no" Impersonate="no" />
@@ -1816,7 +1831,7 @@ Public License instead of this License.
         <CustomAction Id="SETDEFAULTPATH" Property="TARGETDIR" Value="[ProgramFilesFolder]" Execute="firstSequence" />
         <InstallExecuteSequence>
             <Custom Action="SETDEFAULTPATH" Sequence="1">TARGETDIR=""</Custom>
-            <Custom Action="InstallLibUSB" Before="InstallFinalize" />
+            <!--<Custom Action="InstallLibUSB" Before="InstallFinalize" />-->
             <Custom Action="StopService" After="MsiUnpublishAssemblies">
             </Custom>
             <Custom Action="DeRegisterNUTService" After="MsiUnpublishAssemblies">
