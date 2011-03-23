@@ -343,6 +343,26 @@ using:
 
 where +-u+ specifies the USB bus number and +-a+ specifies the USB device index.
 
+[[Windows]]
+Windows
+~~~~~~~
+
+NUT comes in a .msi file. If you are using Windows 95, 98 or Me, you should install
+link:http://www.microsoft.com/downloads/en/details.aspx?familyid=cebbacd8-c094-4255-b702-de3bb768148f&displaylang=en[Windows Installer 2.0]
+from Microsoft site.
+If you are using Windows 2000 or NT 4.0, you can
+link:http://www.microsoft.com/downloads/en/details.aspx?FamilyID=4b6140f9-2d36-4977-8fa1-6f8a0f5dca8f&DisplayLang=en[download it here]
+.
+
+
+Run NUT-Installer.msi and follow the wizard indications.
+
+If you plan to use an UPS which is locally connected to an USB port, you have to install
+link:https://sourceforge.net/projects/libusb-win32/files/[libUSB-win32]
+on your system. Then you must install your device via libUSB's "Inf Wizard".
+
+If you have selected default directory, all configuration files are located in C:\Program Files\NUT\ups\etc
+
 
 You are now ready to configure NUT, and start testing and using it.
 
