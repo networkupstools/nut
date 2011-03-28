@@ -51,6 +51,7 @@
 	static OVERLAPPED connect_overlapped;
 	static char	*pipename = NULL;
 #endif
+	static int	ignorelb = 0;
 	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[ST_MAX_VALUE_LEN];
 	static st_tree_t	*dtree_root = NULL;
 	static conn_t	*connhead = NULL;
