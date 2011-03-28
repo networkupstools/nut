@@ -141,7 +141,6 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 {
 	int	id = pData->ReportID;
 	int	r;
-	unsigned char	buf[SMALLBUF];
 
 	if (rbuf->ts[id] + age > time(NULL)) {
 		/* buffered report is still good; nothing to do */
@@ -149,17 +148,14 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 		return 0;
 	}
 
-	r = comm_driver->get_report(udev, id, buf, sizeof(buf));
+	r = comm_driver->get_report(udev, id, rbuf->data[id], rbuf->len[id]);
 	if (r <= 0) {
 		return -1;
 	}
 
-	/* broken report descriptors are common, so store whatever we can */
-	memcpy(rbuf->data[id], buf, (r < rbuf->len[id]) ? r : rbuf->len[id]);
-
 	if (rbuf->len[id] != r) {
 		upsdebugx(2, "%s: expected %d bytes, but got %d instead", __func__, rbuf->len[id], r);
-		upsdebug_hex(3, "Report[err]", buf, r);
+		upsdebug_hex(3, "Report[err]", rbuf->data[id], r);
 	} else {
 		upsdebug_hex(3, "Report[get]", rbuf->data[id], rbuf->len[id]);
 	}

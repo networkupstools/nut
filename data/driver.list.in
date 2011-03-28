@@ -184,6 +184,7 @@
 "Delta"	"ups"	"1"	"GES602N"	""	"belkin"
 
 "Deltec"	"ups"	"1"	"PowerRite Pro II"	""	"genericups upstype=15"
+"Deltec"	"ups"	"4"	"PRM 450/700/1000/1500"	""	"upscode2"
 
 "Digital Loggers"	"pdu"	"1"	"LPC, EPCR2, DIN"	"8 outlets"	"powerman-pdu (experimental)"
 
@@ -196,6 +197,7 @@
 "Dynex"	"ups"	"2"	"DX-800U"	"USB"	"usbhid-ups"
 
 "Eaton"	"ups"	"5"	"Protection Station 500/650/800 VA"	"USB"	"usbhid-ups"
+"Eaton"	"ups"	"5"	"Ellipse ECO 650/800/1200/1600 VA"	"USB"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Ellipse ASR USBS 600/750/1000/1500 VA"	"USB cable"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Ellipse MAX USBS 600/850/1100/1500 VA"	"USB cable"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Evolution 650/850/1150/1550/2000 VA"	"USB port"	"usbhid-ups"
@@ -219,6 +221,7 @@
 "Eaton"	"ups"	"5"	"EX RT (SNMP)"	"NMC Transverse card (ref 66074)"	"snmp-ups (experimental)"
 "Eaton"	"ups"	"5"	"E Series NV UPS 400-2000 VA"	""	"blazer_usb"
 "Eaton"	"ups"	"5"	"E Series DX UPS 1-20 kVA"	""	"mge-utalk"
+"Eaton"	"ups"	"4"	"NetUPS SE 450/700/1000/1500"	""	"upscode2"
 "Eaton"	"ups"	"5"	"BladeUPS (SNMP)"	"ConnectUPS Web/SNMP Card"	"snmp-ups (experimental)"
 "Eaton"	"ups"	"5"	"various models (XML/HTTP mode)"	"NMC Minislot (Ref 66102)"	"netxml-ups (experimental)"
 "Eaton"	"ups"	"5"	"various models (SNMP mode)"	"NMC Minislot (Ref 66102)"	"snmp-ups (experimental)"
@@ -227,6 +230,7 @@
 "Eaton"	"pdu"	"5"	"ePDU Managed"	""	"snmp-ups (experimental)"
 "Eaton"	"pdu"	"5"	"ePDU Monitored"	""	"snmp-ups or netxml-ups"
 "Eaton"	"ups"	"5"	"Powerware 9130"	""	"bcmxcp or usbhid-ups"
+"Eaton"	"ups"	"5"	"Powerware 9140"	""	"bcmxcp"
 "Eaton"	"ups"	"5"	"Powerware 5130"	""	"usbhid-ups"
 "Eaton"	"ups"	"5"	"9395"	"Serial port"	"bcmxcp"
 "Eaton"	"ups"	"5"	"Best Ferrups"	"older ConnectUPS"	"snmp-ups"
@@ -247,6 +251,7 @@
 "Ever-Power"	"ups"	"1"	"625/1000"	""	"safenet"
 
 "Exide"	"ups"	"1"	"NetUPS SE"	""	"genericups upstype=15"
+"Exide"	"ups"	"4"	"NetUPS SE 450/700/1000/1500"	""	"upscode2"
 
 "Fenton Technologies"	"ups"	"1"	"PowerPal"	"P-series"	"safenet"
 "Fenton Technologies"	"ups"	"5"	"PowerPal"	"L-series"	"blazer_ser"
@@ -312,6 +317,8 @@
 "Infosec"	"ups"	"2"	"500XP"	""	"blazer_ser"
 "Infosec"	"ups"	"2"	"XP 500"	"USB"	"blazer_usb"
 "Infosec"	"ups"	"2"	"XP 1000"	""	"blazer_ser"
+
+"IPAR"	"ups"	"2"	"Mini Energy ME 800"	""	"blazer_usb"
 
 "IPMI"	"pdu"	"1"	""	""	"powerman-pdu (experimental)"
 
@@ -554,6 +561,7 @@
 "Mustek"	"ups"	"2"	"Powermust"	"2000VA USB"	"blazer_ser"
 "Mustek"	"ups"	"2"	"Powermust Office 650"	"USB"	"blazer_usb"
 "Mustek"	"ups"	"2"	"PowerMust 424 / 636 / 848"	"USB"	"blazer_usb"
+"Mustek"	"ups"	"2"	"Yukai PowerMust" "1000 USB (PID: 5161)"	"blazer_usb"
 "Mustek"	"ups"	"2"	"Various"	""	"blazer_ser"
 
 "Neus"	"ups"	"2"	"400va / 600va"	""	"blazer_ser"
@@ -692,8 +700,9 @@
 
 "SuperPower"	"ups"	"2"	"HP360, Hope-550"	""	"blazer_ser"
 
-"SVEN"	"ups"	"2"	"Power Pro+ series"	"USB"	"blazer_usb"
-"SVEN"	"ups"	"2"	"Power Smart RM 2000"	"USB"	"blazer_usb"
+"SVEN"	"ups"	"2"	"Power Pro+ series"	"USB"	"blazer_usb (USB ID 05b8:0000)"
+"SVEN"	"ups"	"1"	"Power Pro+ series"	"USB"	"richcomm_usb (USB ID 0925:1234)"
+"SVEN"	"ups"	"2"	"Power Smart RM 2000"	"USB"	"blazer_usb (USB ID 05b8:0000)"
 
 "Sweex"	"ups"	"1"	"500/1000"	"smart - shipped with SafeNet"	"safenet"
 "Sweex"	"ups"	"1"	"500/1000"	""	"genericups upstype=7"
@@ -722,6 +731,8 @@
 "Tripp-Lite"	"ups"	"2"	"AVR750U"	"USB"	"usbhid-ups"
 "Tripp-Lite"	"ups"	"2"	"ECO550UPS"	"USB"	"usbhid-ups"
 "Tripp-Lite"	"ups"	"2"	"SmartOnline SU1500RTXL2ua"	"USB"	"usbhid-ups"
+"Tripp-Lite"	"ups"	"2"	"Smart1000LCD"	"USB"	"usbhid-ups"
+"Tripp-Lite"	"ups"	"2"	"Smart1500LCD"	"USB"	"usbhid-ups"
 "Tripp-Lite"	"ups"	"2"	"smart2200RMXL2U"	"USB, newer models"	"usbhid-ups"
 
 "Trust"	"ups"	"2"	"UPS 1000 Management PW-4105"	""	"blazer_ser"

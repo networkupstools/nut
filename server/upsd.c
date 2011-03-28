@@ -485,7 +485,11 @@ static void parse_net(ctype_t *client)
 static void client_connect(stype_t *server)
 {
 	struct	sockaddr_storage csock;
+#if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED) 
+	int	clen;
+#else
 	socklen_t	clen;
+#endif
 	int		fd;
 	ctype_t		*client;
 

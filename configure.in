@@ -119,6 +119,14 @@ then
   CFLAGS="${CFLAGS} -Wall -Wsign-compare"
 fi
 
+case ${target_os} in
+   hpux11* )
+      dnl It seems like the thread safe string functions won't be included
+      dnl on 64 bit HP-UX unless we define _REENTRANT
+      CFLAGS="${CFLAGS} -D_REENTRANT"
+      ;;
+esac
+
 dnl optind handling:
 dnl need to check if unistd.h is enough, else try getopt.h, else need decls
 AC_CHECK_DECLS(optind, [], [
@@ -155,7 +163,6 @@ AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h sys/termios.h sys/time.h, [], []
 
 dnl ----------------------------------------------------------------------
 dnl Check for types and define possible replacements
-AX_CREATE_STDINT_H(include/nut_stdint.h)
 NUT_TYPE_SOCKLEN_T
 NUT_CHECK_SOCKETLIB
 

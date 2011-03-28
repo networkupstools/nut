@@ -25,20 +25,22 @@
 #include "serial.h"
 #include "timehead.h"
 
-#define APC_TABLE_VERSION	"version 2.1"
+#define APC_TABLE_VERSION	"version 2.2"
 
 /* Basic UPS reply line structure */
 #define ENDCHAR 10		/* APC ends responses with LF */
 
-/* these two are only used during startup */
-#define IGNCHARS "\015+$|!~%?=*#&"	/* special characters to ignore */
+/* characters ignored by default */
+#define IGNCHARS "\015+$|!~%?=#&"	/* special characters to ignore */
+
+/* these one is used only during startup, due to ^Z sending certain characters such as # */
 #define MINIGNCHARS "\015+$|!"	/* minimum set of special characters to ignore */
 
 /* normal polls: characters we don't want to parse (including a few alerts) */
-#define POLL_IGNORE "\015?=*&|"
+#define POLL_IGNORE "\015&|"
 
-/* alert characters we care about - OL, OB, LB, not LB, RB */
-#define POLL_ALERT "$!%+#"
+/* alert characters we care about - OL, OB, LB, not LB, RB, OVER, not OVER */
+#define POLL_ALERT "$!%+#?="
 
 #define UPSDELAY	  50000	/* slow down multicharacter commands        */
 #define CMDLONGDELAY	1500000	/* some commands need a 1.5s gap for safety */
@@ -79,7 +81,6 @@
 /* Driver command table flag values */
 
 #define APC_POLL	0x0001	/* Poll this variable regularly		*/
-#define APC_IGNORE	0x0002	/* Never poll this			*/
 #define APC_PRESENT	0x0004	/* Capability seen on this UPS		*/
 
 #define APC_RW		0x0010	/* read-write variable			*/
@@ -111,14 +112,10 @@ typedef struct {
 
 apc_vartab_t	apc_vartab[] = {
 
+	{ "ups.firmware.old",  	0,			'V' },
 	{ "ups.firmware",  	0,			'b' },
 	{ "ups.firmware.aux",	0,			'v' },
 	{ "ups.model",		0,			0x01 },
-
-/* FUTURE: depends on variable naming scheme */
-#if 0
-	{ "ups.model.code",	0,			'V' },
-#endif
 
 	{ "ups.serial",		0,			'n' },
 	{ "ups.mfr.date", 	0,			'm' },
@@ -209,6 +206,7 @@ apc_vartab_t	apc_vartab[] = {
 #define APC_CMD_CALTOGGLE	'D'
 #define APC_CMD_SHUTDOWN	'K'
 #define APC_CMD_SOFTDOWN	'S'
+#define APC_CMD_GRACEDOWN	'@'
 #define APC_CMD_SIMPWF		'U'
 #define APC_CMD_BTESTTOGGLE	'W'
 #define APC_CMD_OFF		'Z'
@@ -234,6 +232,8 @@ apc_cmdtab_t	apc_cmdtab[] =
 	{ "test.battery.start",	0,			APC_CMD_BTESTTOGGLE },
 	{ "test.battery.stop",	0,			APC_CMD_BTESTTOGGLE },
 
+	{ "shutdown.return.grace",
+				APC_NASTY,		APC_CMD_GRACEDOWN  },
 	{ "shutdown.return",	APC_NASTY,		APC_CMD_SOFTDOWN  },
 	{ "shutdown.stayoff",	APC_NASTY|APC_REPEAT,	APC_CMD_SHUTDOWN  },
 
@@ -246,9 +246,6 @@ apc_cmdtab_t	apc_cmdtab[] =
 	{ NULL, 0, 0					}
 };
 
-/* things to ignore in protocol_verify - useless variables, etc. */
-#define CMD_IGN_CHARS "\032-78@.,~\047\177QHRTYayz)1IJ"
-
 /* compatibility with hardware that doesn't do APC_CMDSET ('a') */
 
 struct {
@@ -257,33 +254,40 @@ struct {
 	int	flags;
 } compat_tab[] = {
 	/* APC Matrix */
+	{ "0XI",	"789ABCDEFGKLMNOPQRSTUVWXYZcefgjklmnopqrsuwxz/<>\\^\014\026", 0 },
+	{ "0XM",	"789ABCDEFGKLMNOPQRSTUVWXYZcefgjklmnopqrsuwxz/<>\\^\014\026", 0 },
 	{ "0ZI",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz/<>", 0 },
 	{ "5UI",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz/<>", 0 },
 	{ "5ZM",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz/<>", 0 },
 	/* APC600 */
 	{ "6QD",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
-	{ "6QI",    "79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
+	{ "6QI",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
 	{ "6TD",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
 	{ "6TI",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
 	/* SmartUPS 900 */
-	{ "7QD",    "79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
-	{ "7QI",    "79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
-	{ "7TD",    "79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
-	{ "7TI",    "79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
-	/* SmartUPS 1250. */
+	{ "7QD",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
+	{ "7QI",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
+	{ "7TD",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
+	{ "7TI",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
+	/* SmartUPS 900I */
+	{ "7II",	"79ABCEFGKLMNOPQSUVWXYZcfg", 0 },
+	/* SmartUPS 2000I */
+	{ "9II",	"79ABCEFGKLMNOPQSUVWXYZcfg", 0 },
+	{ "9GI",	"79ABCEFGKLMNOPQSUVWXYZcfg", 0 },
+	/* SmartUPS 1250 */
 	{ "8QD",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
 	{ "8QI",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
-	{ "8TD",    "79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
-	{ "8TI",    "79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
+	{ "8TD",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
+	{ "8TI",	"79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
 	/* CS 350 */
 	{ "5.4.D",	"\1ABPQRSUYbdfgjmnx9",	0 },
 	/* Smart-UPS 600 */
-	{ "D9",     "789ABCEFGKLMNOPQRSUVWXYZ", 0 },
-	{ "D8",     "789ABCEFGKLMNOPQRSUVWXYZ", 0 },
-	{ "D7",     "789ABCEFGKLMNOPQRSUVWXYZ", 0 },
-	{ "D6",     "789ABCEFGKLMNOPQRSUVWXYZ", 0 },
-	{ "D5",     "789ABCEFGKLMNOPQRSUVWXYZ", 0 },
-	{ "D4",     "789ABCEFGKLMNOPQRSUVWXYZ", 0 },
+	{  "D9",	"789ABCEFGKLMNOPQRSUVWXYZ", 0 },
+	{  "D8",	"789ABCEFGKLMNOPQRSUVWXYZ", 0 },
+	{  "D7",	"789ABCEFGKLMNOPQRSUVWXYZ", 0 },
+	{  "D6",	"789ABCEFGKLMNOPQRSUVWXYZ", 0 },
+	{  "D5",	"789ABCEFGKLMNOPQRSUVWXYZ", 0 },
+	{  "D4",	"789ABCEFGKLMNOPQRSUVWXYZ", 0 },
 
 	{ NULL,		NULL,			0 },
 };

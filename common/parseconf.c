@@ -129,7 +129,7 @@ static void add_arg_word(PCONF_CTX_t *ctx)
 			pconf_fatal(ctx, "realloc arglist failed");
 
 		ctx->argsize = realloc(ctx->argsize, 
-			sizeof(int *) * ctx->numargs);
+			sizeof(size_t) * ctx->numargs);
 
 		if (!ctx->argsize)
 			pconf_fatal(ctx, "realloc argsize failed");

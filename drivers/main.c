@@ -266,6 +266,11 @@ static int main_arg(char *var, char *val)
 		return 1;	/* handled */
 	}
 
+	if (!strcmp(var, "ignorelb")) {
+		dstate_setinfo("driver.flag.ignorelb", "enabled");
+		return 1;	/* handled */
+	}
+
 	/* any other flags are for the driver code */
 	if (!val)
 		return 0;
@@ -642,6 +647,28 @@ int main(int argc, char **argv)
 	/* get the base data established before allowing connections */
 	upsdrv_initinfo();
 	upsdrv_updateinfo();
+
+	if (dstate_getinfo("driver.flag.ignorelb")) {
+		int	have_lb_method = 0;
+
+		if (dstate_getinfo("battery.charge") && dstate_getinfo("battery.charge.low")) {
+			upslogx(LOG_INFO, "using 'battery.charge' to set battery low state");
+			have_lb_method++;
+		}
+
+		if (dstate_getinfo("battery.runtime") && dstate_getinfo("battery.runtime.low")) {
+			upslogx(LOG_INFO, "using 'battery.runtime' to set battery low state");
+			have_lb_method++;
+		}
+
+		if (!have_lb_method) {
+			fatalx(EXIT_FAILURE,
+				"The 'ignorelb' flag is set, but there is no way to determine the\n"
+				"battery state of charge.\n\n"
+				"Only set this flag if both 'battery.charge' and 'battery.charge.low'\n"
+				"and/or 'battery.runtime' and 'battery.runtime.low' are available.\n");
+		}
+	}
 
 	/* now we can start servicing requests */
 	dstate_init(progname, upsname);
