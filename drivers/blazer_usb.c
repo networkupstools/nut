@@ -255,16 +255,17 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 
 			/* "UPS No Ack" has a special meaning */
 			if (!strcasecmp(buf, "UPS No Ack")) {
+				upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
 				continue;
 			}
 
 			/* Replace the first byte of what we received with the correct one */
 			buf[0] = command[i].prefix;
 
+			upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
 			return ret;
 		}
 
-		upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
 		return 0;
 	}
 
