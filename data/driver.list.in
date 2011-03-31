@@ -230,7 +230,7 @@
 "Eaton"	"pdu"	"5"	"ePDU Managed"	""	"snmp-ups (experimental)"
 "Eaton"	"pdu"	"5"	"ePDU Monitored"	""	"snmp-ups or netxml-ups"
 "Eaton"	"ups"	"5"	"Powerware 9130"	""	"bcmxcp or usbhid-ups"
-"Eaton"	"ups"	"5"	"Powerware 9140"	""	"bcmxcp"
+"Eaton"	"ups"	"5"	"Powerware 9140"	""	"bcmxcp or usbhid-ups"
 "Eaton"	"ups"	"5"	"Powerware 5130"	""	"usbhid-ups"
 "Eaton"	"ups"	"5"	"9395"	"Serial port"	"bcmxcp"
 "Eaton"	"ups"	"5"	"Best Ferrups"	"older ConnectUPS"	"snmp-ups"
