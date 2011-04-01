@@ -309,6 +309,7 @@
 "Inform"	"ups"	"1"	"GUARD"	"Line Interactive AP model"	"powercom"
 "Inform"	"ups"	"2"	"Guard S 1500AP"	""	"blazer_ser"
 "Inform"	"ups"	"2"	"Informer Compact 1000VA"	""	"blazer_ser"
+"Inform"	"ups"	"2"	"Sinus SS 210"	""	"blazer_ser"
 
 "Infosec"	"ups"	"2"	"iPEL 350"	""	"blazer_ser"
 "Infosec"	"ups"	"2"	"iPEL 500"	""	"blazer_ser"
