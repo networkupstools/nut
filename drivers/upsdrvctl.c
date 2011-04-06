@@ -468,7 +468,11 @@ static void shutdown_driver(const ups_t *ups)
 
 	upsdebugx(1, "Shutdown UPS: %s", ups->upsname);
 
+#ifndef WIN32
 	snprintf(dfn, sizeof(dfn), "%s/%s", driverpath, ups->driver);
+#else
+	snprintf(dfn, sizeof(dfn), "%s/%s.exe", driverpath, ups->driver);
+#endif
 
 	argv[arg++] = dfn;
 	argv[arg++] = (char *)"-a";		/* FIXME: cast away const */
