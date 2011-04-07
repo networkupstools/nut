@@ -310,6 +310,7 @@ static int parse_nutconf(BOOL start_flag)
 	char	fn[SMALLBUF];
 	FILE	*nutf;
 	char	buf[SMALLBUF];
+	char	fullname[SMALLBUF];
 
 	snprintf(fn,sizeof(fn),"%s/nut.conf",confpath());
 
@@ -322,11 +323,6 @@ static int parse_nutconf(BOOL start_flag)
 
 	while( fgets(buf,sizeof(buf),nutf) != NULL ) {
 		if(buf[0] != '#') {
-			if( strstr(buf,"none") != NULL ) {
-				print_event(LOG_ERR, "NUT is configured to \"none\" in nut.conf, nothing is to be started.\n");
-				return 0;
-
-			}
 			if( strstr(buf,"standalone") != NULL ||
 					strstr(buf,"netserver") != NULL ) {
 				if( start_flag == NUT_START ) {
@@ -357,7 +353,9 @@ static int parse_nutconf(BOOL start_flag)
 		}
 	}
 
-	print_event(LOG_ERR,"No valid MODE in nut.conf");
+	GetFullPathName(fn,sizeof(fullname),fullname,NULL);
+	snprintf(buf,sizeof(buf),"nut disabled, please adjust the configuration to your needs. Then set MODE to a suitable value in %s to enable it.",fullname);
+	print_event(LOG_ERR,buf);
 	return 0;
 }
 
