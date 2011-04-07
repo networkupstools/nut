@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-    <Product Language="1033" Id="878DBBDE-8551-4151-811A-686A7E4BD66B" Name="NUT - Network UPS Tools" Manufacturer="Eaton" Version="0.0.0.6" UpgradeCode="CAB45634-9010-4B36-A9BB-4D4F976F96FA">
+    <Product Language="1033" Id="878DBBDE-8551-4151-811A-686A7E4BD66B" Name="NUT - Network UPS Tools" Manufacturer="Eaton" Version="2.6.0.1" UpgradeCode="CAB45634-9010-4B36-A9BB-4D4F976F96FA">
         <Package Keywords="Installer,MSI,Database" Description="NUT" Comments="Contact:  Your local administrator" Manufacturer="Eaton Corporation" InstallerVersion="100" Languages="1033" Compressed="yes" SummaryCodepage="1252" />
         <UI>
             <Property Id="ErrorDialog"><![CDATA[ErrorDlg]]></Property>
