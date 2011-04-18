@@ -392,8 +392,18 @@ int HIDGetItemValue(hid_dev_handle_t udev, const char *hidpath, double *Value, u
  */
 char *HIDGetIndexString(hid_dev_handle_t udev, const int Index, char *buf, size_t buflen)
 {
+	char *ptr = NULL;
+
 	if (comm_driver->get_string(udev, Index, buf, buflen) < 1)
+	{
 		buf[0] = '\0';
+	}
+	else
+	{
+		/* Check for extraneous end-of-line */
+		if( (ptr = strchr(buf, '\n')) != NULL)
+			*ptr = '\0';
+	}
 
 	return buf;
 }
