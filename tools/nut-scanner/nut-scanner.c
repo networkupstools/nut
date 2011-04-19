@@ -18,10 +18,11 @@
  */
 
 /* TODO list:
- * - split scan method into separate file (1 per bus)
- * - command line options
- * - network iterator (IPv4 and v6)
+ * - split scan method into separate .ch files (1 per bus / method)
+ * - compile as a lib, with an executable for command line options
+ * - network iterator (IPv4 and v6) for connect style scan
  * - handle XML/HTTP and SNMP answers
+ * - Avahi support
  * (...)
  * https://alioth.debian.org/pm/task.php?func=detailtask&project_task_id=477&group_id=30602&group_project_id=42
  */
@@ -245,13 +246,26 @@ static void list_nut_devices(char *target_hostname)
 /* #ifdef nothing apart libupsclient! */ 
 void scan_nut()
 {
-	printf("Scanning NUT bus:\n");
+	printf("Scanning NUT bus (old connect method):\n");
 
 	/* try on localhost first */
 	list_nut_devices(NULL);
 
 	/* FIXME: network range iterator IPv4 and IPv6*/
 
+}
+
+/* #ifdef nothing apart libupsclient! */ 
+void scan_nut_avahi()
+{
+	printf("Scanning NUT bus (DNS-SD method):\n");
+
+	/* Check avahi-browse code:
+	 * http://git.0pointer.de/?p=avahi.git;a=tree;f=avahi-utils;h=5655a104964258e7be32ada78794f73beb84e0dd;hb=HEAD
+	 *
+	 * Example service publication (counterpart of the above):
+	 * $ avahi-publish -s nut _upsd._tcp 3493 txtvers=1 protovers=1.0.0 type=standalone
+	 */
 }
 
 int main()
