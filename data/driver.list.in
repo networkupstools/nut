@@ -573,6 +573,8 @@
 "Nitram"	"ups"	"1"	"Elite 2002"	""	"genericups upstype=16"
 "Nitram"	"ups"	"1"	"Elite 2005"	""	"powerpanel"
 
+"NUMERIC"	"ups"	"2"	"3000 SW"	""	"blazer_ser"
+
 "Oneac"	"ups"	"1"	"ON400"	"advanced interface"	"oneac"
 "Oneac"	"ups"	"1"	"ON600"	"advanced interface"	"oneac"
 "Oneac"	"ups"	"1"	"ON900"	"advanced interface"	"oneac"
