@@ -112,6 +112,15 @@ static int flag_isset(int num, int flag)
 	return ((num & flag) == flag);
 }
 
+#ifdef WIN32
+static unsigned __stdcall async_wall(LPVOID param)
+{
+	char * text = (char *)param;
+	MessageBox(NULL,text,SVCNAME,MB_OK|MB_ICONEXCLAMATION|MB_SERVICE_NOTIFICATION);
+	free(text);
+}
+#endif
+
 static void wall(const char *text)
 {
 #ifndef WIN32
@@ -127,7 +136,15 @@ static void wall(const char *text)
 	fprintf(wf, "%s\n", text);
 	pclose(wf);
 #else
-	MessageBox(NULL,text,SVCNAME,MB_OK|MB_ICONEXCLAMATION|MB_SERVICE_NOTIFICATION);
+	char * data = strdup(text);
+	_beginthreadex(
+			NULL,	/* security FIXME */
+			0,	/* stack size */
+			async_wall,
+			(void *)data,
+			0,	/* Creation flags */
+			NULL	/* thread id */
+		);
 #endif
 } 
 
@@ -151,7 +168,7 @@ static unsigned __stdcall async_notify(LPVOID param)
 
 	if (flag_isset(data->flags, NOTIFY_WALL)) {
 		snprintf(notice,LARGEBUF,"%s: %s", data->date, data->notice);
-		wall(notice);
+		MessageBox(NULL,notice,SVCNAME,MB_OK|MB_ICONEXCLAMATION|MB_SERVICE_NOTIFICATION);
 	}
 
 	if (flag_isset(data->flags, NOTIFY_EXEC)) {
