@@ -304,6 +304,69 @@ static void stop_upsmon()
 	}
 }
 
+/* Return 0 if powerdown flag is set */
+static DWORD test_powerdownflag()
+{
+	char command[MAX_PATH];
+	char *path;
+	STARTUPINFO StartupInfo;
+	PROCESS_INFORMATION ProcessInformation;
+	BOOL res;
+	DWORD LastError;
+	DWORD status;
+	int i = 10;
+	int timeout = 500;
+
+	path = getfullpath(PATH_SBIN);
+	snprintf(command,sizeof(command),"%s\\upsmon.exe -K",path);
+	free(path);
+
+	memset(&StartupInfo,0,sizeof(STARTUPINFO));
+
+	res = CreateProcess(
+			NULL,
+			command,
+			NULL,
+			NULL,
+			FALSE,
+			CREATE_NEW_PROCESS_GROUP,
+			NULL,
+			NULL,
+			&StartupInfo,
+			&ProcessInformation
+			);
+	LastError = GetLastError();
+
+	if( res == 0 ) {
+		print_event(LOG_ERR, "Can't create process %s : %d", command, LastError);
+		return 1;
+	}
+
+	while( i > 0) {
+		res = GetExitCodeProcess(ProcessInformation.hProcess, &status);
+		if( res != 0) {
+			if( status != STILL_ACTIVE) {
+				return status;
+			}
+		}
+		Sleep(timeout);
+		i--;
+	}
+
+	return 1;
+}
+
+static DWORD shutdown_ups()
+{
+	char command[MAX_PATH];
+	char *path;
+
+	path = getfullpath(PATH_BIN);
+	snprintf(command,sizeof(command),"%s\\upsdrvctl.exe shutdown",path);
+	free(path);
+	return create_process(command);
+}
+
 /* return 0 on failure */
 static int parse_nutconf(BOOL start_flag)
 {
@@ -337,6 +400,11 @@ static int parse_nutconf(BOOL start_flag)
 					stop_upsd();
 					stop_drivers();
 					stop_upsmon();
+					/* Give a chance to upsmon to write the POWERDOWNFLAG  file */
+					Sleep(1000);
+					if( test_powerdownflag() == 0 ) {
+						shutdown_ups();
+					}
 					return 1;
 				}
 			}
