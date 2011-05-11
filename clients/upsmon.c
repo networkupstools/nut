@@ -116,6 +116,7 @@ static unsigned __stdcall async_wall(LPVOID param)
 	char * text = (char *)param;
 	MessageBox(NULL,text,SVCNAME,MB_OK|MB_ICONEXCLAMATION|MB_SERVICE_NOTIFICATION);
 	free(text);
+	return 0;
 }
 #endif
 
@@ -152,7 +153,7 @@ typedef struct async_notify_s {
 	int flags;
 	char *ntype;
 	char *upsname;
-	char *date } async_notify_t;
+	char *date; } async_notify_t;
 
 static unsigned __stdcall async_notify(LPVOID param)
 {
@@ -1474,6 +1475,8 @@ static void setup_signals(void)
 
 	sa.sa_handler = set_reload_flag;
 	sigaction(SIGCMD_RELOAD, &sa, NULL);
+#else
+	pipe_create(UPSMON_PIPE_NAME);
 #endif
 }
 
@@ -1975,6 +1978,10 @@ int main(int argc, char *argv[])
 	const char	*prog = xbasename(argv[0]);
 
 #ifdef WIN32
+	HANDLE		handles[MAXIMUM_WAIT_OBJECTS];
+	int		maxhandle = 0;
+	pipe_conn_t	*conn;
+
 	/* remove trailing .exe */
 	char * drv_name;
 	drv_name = (char *)xbasename(argv[0]);
@@ -1991,7 +1998,13 @@ int main(int argc, char *argv[])
 	}
 #endif
 
-	int	i, cmd = 0, checking_flag = 0;
+	int	i, checking_flag = 0;
+#ifndef WIN32
+	int cmd = 0;
+#else
+	const char * cmd = NULL;
+	DWORD ret;
+#endif
 
 	printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
 
@@ -2004,7 +2017,6 @@ int main(int argc, char *argv[])
 
 	while ((i = getopt(argc, argv, "+Dhic:f:pu:VK46")) != -1) {
 		switch (i) {
-#ifndef WIN32
 			case 'c':
 				if (!strncmp(optarg, "fsd", strlen(optarg)))
 					cmd = SIGCMD_FSD;
@@ -2017,7 +2029,6 @@ int main(int argc, char *argv[])
 				if (cmd == 0)
 					help(argv[0]);
 				break;
-#endif
 			case 'D':
 				nut_debug_level++;
 				break;
@@ -2054,7 +2065,11 @@ int main(int argc, char *argv[])
 	}
 
 	if (cmd) {
+#ifndef WIN32
 		sendsignal(prog, cmd);
+#else
+		send_to_named_pipe(UPSMON_PIPE_NAME,cmd);
+#endif
 		exit(EXIT_SUCCESS);
 	}
 
@@ -2154,9 +2169,63 @@ int main(int argc, char *argv[])
 #ifndef WIN32
 		/* reap children that have exited */
 		waitpid(-1, NULL, WNOHANG);
-#endif
 
 		sleep(sleepval);
+#else
+		maxhandle = 0;
+		memset(&handles,0,sizeof(handles));
+
+		/* Wait on the read IO of each connections */
+		for (conn = pipe_connhead; conn; conn = conn->next) {
+			handles[maxhandle] = conn->overlapped.hEvent;
+			maxhandle++;
+		}
+		/* Add the new pipe connected event */
+		handles[maxhandle] = pipe_connection_overlapped.hEvent;
+		maxhandle++;
+
+		ret = WaitForMultipleObjects(maxhandle,handles,FALSE,INFINITE);
+
+		if (ret == WAIT_FAILED) {
+			upslogx(LOG_ERR, "Wait failed");
+			exit(EXIT_FAILURE);
+		}
+
+		/* Retrieve the signaled connection */
+		for(conn = pipe_connhead; conn != NULL; conn = conn->next) {
+			if( conn->overlapped.hEvent == handles[ret-WAIT_OBJECT_0]) {
+				break;
+			}
+		}
+		/* a new pipe connection has been signaled */
+		if (handles[ret] == pipe_connection_overlapped.hEvent) {
+			pipe_connect();
+		}
+		/* one of the read event handle has been signaled */
+		else {
+			if( conn != NULL) {
+				if ( pipe_ready(conn) ) {
+					if (!strncmp(conn->buf, SIGCMD_FSD, sizeof(SIGCMD_FSD))) {
+						user_fsd(1);
+					}
+
+					else if (!strncmp(conn->buf, SIGCMD_RELOAD, sizeof(SIGCMD_RELOAD))) {
+						set_reload_flag(1);
+					}
+
+					else if (!strncmp(conn->buf, SIGCMD_STOP, sizeof(SIGCMD_STOP))) {
+						set_exit_flag(1);
+					}
+
+					else {
+						upslogx(LOG_ERR,"Unknown signal");
+					}
+
+					pipe_disconnect(conn);
+				}
+			}
+		}
+#endif
 	}
 
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
