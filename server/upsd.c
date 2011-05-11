@@ -86,6 +86,10 @@ typedef enum {
 	DRIVER = 1,
 	CLIENT,
 	SERVER
+#ifdef WIN32
+	,NAMED_PIPE
+#endif
+
 } handler_type_t;
 
 typedef struct {
@@ -98,7 +102,6 @@ typedef struct {
 static struct pollfd	*fds = NULL;
 #else
 static HANDLE		*fds = NULL;
-static HANDLE		stop_event;
 #endif
 static handler_t	*handler = NULL;
 
@@ -732,6 +735,11 @@ static void set_exit_flag(int sig)
 	exit_flag = sig;
 }
 
+static void set_reload_flag(int sig)
+{
+	reload_flag = 1;
+}
+
 /* service requests and check on new data */
 static void mainloop(void)
 {
@@ -740,6 +748,7 @@ static void mainloop(void)
 #else
 	DWORD	ret;
 	int 	nfds = 0;
+	pipe_conn_t * conn;
 #endif
 
 	upstype_t	*ups;
@@ -946,8 +955,17 @@ static void mainloop(void)
 		nfds++;
 	}
 
-	/* Add asynchronous exit request (CTRL+C) */
-	fds[nfds] = stop_event;
+	/* Wait on the read IO on named pipe  */
+	for (conn = pipe_connhead; conn; conn = conn->next) {
+		fds[nfds] = conn->overlapped.hEvent;
+		handler[nfds].type = NAMED_PIPE;
+		handler[nfds].data = (void *)conn;
+		nfds++;
+	}
+	/* Add the new named pipe connected event */
+	fds[nfds] = pipe_connection_overlapped.hEvent;
+	handler[nfds].type = NAMED_PIPE;
+	handler[nfds].data = NULL;
 	nfds++;
 
 	upsdebugx(2, "%s: wait for %d filedescriptors", __func__, nfds);
@@ -966,10 +984,6 @@ static void mainloop(void)
 		return;
 	}
 
-	if( fds[ret] == stop_event ) {
-		return;
-	}
-
 	switch(handler[ret].type) {
 		case DRIVER:
 			sstate_readline((upstype_t *)handler[ret].data);
@@ -979,6 +993,30 @@ static void mainloop(void)
 			break;
 		case SERVER:
 			client_connect((stype_t *)handler[ret].data);
+			break;
+		case NAMED_PIPE:
+			/* a new pipe connection has been signaled */
+			if (fds[ret] == pipe_connection_overlapped.hEvent) {
+				pipe_connect();
+			}
+			/* one of the read event handle has been signaled */
+			else {
+				pipe_conn_t * conn = handler[ret].data;
+				if ( pipe_ready(conn) ) {
+					if (!strncmp(conn->buf, SIGCMD_STOP, sizeof(SIGCMD_STOP))) {
+						set_exit_flag(1);
+					}
+					else if (!strncmp(conn->buf, SIGCMD_RELOAD, sizeof(SIGCMD_RELOAD))) {
+						set_reload_flag(1);
+					}
+					else {
+						upslogx(LOG_ERR,"Unknown signal"
+						       );
+					}
+
+					pipe_disconnect(conn);
+				}
+			}
 			break;
 		default:
 			upsdebugx(2, "%s: <unknown> has data available", __func__);
@@ -1008,28 +1046,6 @@ static void help(const char *progname)
 	exit(EXIT_SUCCESS);
 }
 
-#ifndef WIN32
-static void set_reload_flag(int sig)
-{
-	reload_flag = 1;
-}
-#endif
-
-#ifdef WIN32
-BOOL WINAPI CtrlEvent( DWORD dwCtrlType )
-{
-	if( dwCtrlType == CTRL_BREAK_EVENT  || dwCtrlType == CTRL_C_EVENT ) {
-		set_exit_flag(1);
-		SetEvent(stop_event);
-		/* Wait for the mainloop to exit */
-		while(1) {};
-		return TRUE;
-	}
-
-	return FALSE;
-}
-#endif
-
 static void setup_signals(void)
 {
 #ifndef WIN32
@@ -1053,11 +1069,7 @@ static void setup_signals(void)
 	sa.sa_handler = set_reload_flag;
 	sigaction(SIGHUP, &sa, NULL);
 #else
-	stop_event = CreateEvent(NULL, /* security */
-				FALSE, /* auto-reset */
-				FALSE, /* initial test = non signaled */
-				NULL /*no name */);
-	SetConsoleCtrlHandler(CtrlEvent,TRUE);
+	pipe_create(UPSD_PIPE_NAME);
 #endif
 }
 
@@ -1082,7 +1094,12 @@ void check_perms(const char *fn)
 
 int main(int argc, char **argv)
 {
-	int	i, cmd = 0;
+	int	i;
+#ifndef WIN32
+	int	cmd = 0;
+#else
+	const char * cmd = NULL;
+#endif
 	char	*chroot_path = NULL;
 	const char	*user = RUN_AS_USER;
 	struct passwd	*new_uid = NULL;
@@ -1124,7 +1141,6 @@ int main(int argc, char **argv)
 			case 'V':
 				/* do nothing - we already printed the banner */
 				exit(EXIT_SUCCESS);
-#ifndef WIN32
 			case 'c':
 				if (!strncmp(optarg, "reload", strlen(optarg)))
 					cmd = SIGCMD_RELOAD;
@@ -1135,7 +1151,6 @@ int main(int argc, char **argv)
 				if (cmd == 0)
 					help(progname);
 				break;
-#endif
 			case 'D':
 				nut_debug_level++;
 				break;
@@ -1154,7 +1169,11 @@ int main(int argc, char **argv)
 	}
 
 	if (cmd) {
+#ifndef WIN32
 		sendsignalfn(pidfn, cmd);
+#else
+		send_to_named_pipe(UPSD_PIPE_NAME,cmd);
+#endif
 		exit(EXIT_SUCCESS);
 	}
 
@@ -1194,7 +1213,7 @@ int main(int argc, char **argv)
 	/* default to system limit (may be overridden in upsd.conf */
 	maxconn = sysconf(_SC_OPEN_MAX);
 #else
-	maxconn = 64;  /*FIXME : silly value just to compile */
+	maxconn = 64;  /*FIXME : arbitrary value, need adjustement */
 #endif
 
 	/* handle upsd.conf */
