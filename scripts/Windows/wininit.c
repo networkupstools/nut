@@ -22,6 +22,7 @@
 #include "common.h"
 #include "config.h"
 #include "winevent.h"
+#include "wincompat.h"
 
 #define NUT_START	TRUE
 #define NUT_STOP	FALSE
@@ -36,9 +37,6 @@ typedef struct conn_s {
 
 static DWORD			upsd_pid = 0;
 static DWORD			upsmon_pid = 0;
-static HANDLE			pipe_connection_handle;
-static OVERLAPPED		pipe_connection_overlapped;
-static conn_t			*connhead = NULL;
 static BOOL			service_flag = TRUE;
 HANDLE				svc_stop = NULL;
 static SERVICE_STATUS		SvcStatus;
@@ -84,130 +82,6 @@ static void print_event(DWORD priority, const char * fmt, ...)
 
 	if( buf ) 
 		free(buf);
-}
-
-static void pipe_create()
-{
-	BOOL ret;
-
-	if( pipe_connection_overlapped.hEvent != 0 ) {
-		CloseHandle(pipe_connection_overlapped.hEvent);
-	}
-	memset(&pipe_connection_overlapped,0,sizeof(pipe_connection_overlapped));
-	pipe_connection_handle = CreateNamedPipe(
-			EVENTLOG_PIPE_NAME,	/* pipe name */
-			PIPE_ACCESS_INBOUND |	/* to server only */
-			FILE_FLAG_OVERLAPPED,	/* async IO */
-			PIPE_TYPE_MESSAGE |
-			PIPE_READMODE_MESSAGE |
-			PIPE_WAIT,
-			PIPE_UNLIMITED_INSTANCES, /* max. instances */
-			LARGEBUF,		/* output buffer size */
-			LARGEBUF,		/* input buffer size */
-			0,			/* client time-out */
-			NULL);	/* FIXME: default security attribute */
-
-	if (pipe_connection_handle == INVALID_HANDLE_VALUE) {
-		print_event(LOG_ERR,"Error creating named pipe");
-		fatal_with_errno(EXIT_FAILURE, "Can't create a state socket (windows named pipe)");
-	}
-
-	/* Prepare an async wait on a connection on the pipe */
-	pipe_connection_overlapped.hEvent = CreateEvent(NULL, /*Security*/
-			FALSE, /* auto-reset*/
-			FALSE, /* inital state = non signaled*/
-			NULL /* no name*/);
-	if(pipe_connection_overlapped.hEvent == NULL ) {
-		print_event(LOG_ERR,"Error creating event");
-		fatal_with_errno(EXIT_FAILURE, "Can't create event");
-	}
-
-	/* Wait for a connection */
-	ret = ConnectNamedPipe(pipe_connection_handle,&pipe_connection_overlapped);
-	if(ret == 0 && GetLastError() != ERROR_IO_PENDING ) {
-		print_event(LOG_ERR,"ConnectNamedPipe error");
-	}
-}
-
-static void pipe_connect()
-{
-	/* We have detected a connection on the opened pipe. So we start by saving its handle and create a new pipe for future connections */
-	conn_t *conn;
-
-	conn = xcalloc(1,sizeof(*conn));
-	conn->handle = pipe_connection_handle;
-
-	/* restart a new listening pipe */	
-	pipe_create();
-
-	/* A new pipe waiting for new client connection has been created. We could manage the current connection now */
-	/* Start a read operation on the newly connected pipe so we could wait on the event associated to this IO */
-	memset(&conn->overlapped,0,sizeof(conn->overlapped));
-	memset(conn->buf,0,sizeof(conn->buf));
-	conn->overlapped.hEvent = CreateEvent(NULL, /*Security*/
-			FALSE, /* auto-reset*/
-			FALSE, /* inital state = non signaled*/
-			NULL /* no name*/);
-	if(conn->overlapped.hEvent == NULL ) {
-		print_event(LOG_ERR,"Can't create event for reading event log");
-		return;
-	}
-
-	ReadFile (conn->handle,conn->buf,sizeof(conn->buf)-1,NULL,&(conn->overlapped)); /* -1 to be sure to have a trailling 0 */
-
-	if (connhead) {
-		conn->next = connhead;
-		connhead->prev = conn;
-	}
-
-	connhead = conn;
-}
-
-static void pipe_disconnect(conn_t *conn)
-{
-	if( conn->overlapped.hEvent != INVALID_HANDLE_VALUE) {
-		CloseHandle(conn->overlapped.hEvent);
-		conn->overlapped.hEvent = INVALID_HANDLE_VALUE;
-	}
-	if ( DisconnectNamedPipe(conn->handle) == 0 ) {
-		print_event(LOG_ERR,"DisconnectNamedPipe");
-	}
-
-	if (conn->prev) {
-		conn->prev->next = conn->next;
-	} else {
-		connhead = conn->next;
-	}
-
-	if (conn->next) {
-		conn->next->prev = conn->prev;
-	} else {
-		/* conntail = conn->prev; */
-	}
-
-	free(conn);
-}
-
-static void pipe_read(conn_t *conn)
-{
-	DWORD	bytesRead;
-	BOOL	res;
-	char	*buf = conn->buf;
-	DWORD	priority;
-
-	res = GetOverlappedResult(conn->handle, &conn->overlapped, &bytesRead, FALSE);
-	if( res == 0 ) {
-		print_event(LOG_ERR, "Read error");
-		pipe_disconnect(conn);
-		return;
-	}
-
-	/* a frame is a DWORD indicating priority followed by an array of char (not necessarily followed by a terminal 0 */
-	priority =*((DWORD *)buf);
-	buf = buf + sizeof(DWORD);
-	print_event(priority,buf);
-
-	pipe_disconnect(conn);
 }
 
 /* returns PID of the newly created process or 0 on failure */
@@ -280,8 +154,8 @@ static void run_upsd()
 
 static void stop_upsd()
 {
-	if ( GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT,upsd_pid) == 0 ) {
-		print_event(LOG_ERR, "Error sendind CTRL_BREAK to upsd");
+	if ( send_to_named_pipe( UPSD_PIPE_NAME, COMMAND_STOP ) ) {
+		print_event(LOG_ERR, "Error stoping upsd");
 	}
 }
 
@@ -299,7 +173,7 @@ static void run_upsmon()
 
 static void stop_upsmon()
 {
-	if ( GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT,upsmon_pid) == 0 ) {
+	if ( send_to_named_pipe( UPSMON_PIPE_NAME, COMMAND_STOP ) ) {
 		print_event(LOG_ERR, "Error sendind CTRL_BREAK to upsmon");
 	}
 }
@@ -605,12 +479,10 @@ static void SvcReady(void)
 
 static void close_all(void)
 {
-	conn_t	*conn;
+	pipe_conn_t	*conn;
 
-	CloseHandle(pipe_connection_handle);
-	for (conn = connhead; conn; conn = conn->next) {
-		CloseHandle(conn->overlapped.hEvent);
-		CloseHandle(conn->handle);
+	for (conn = pipe_connhead; conn; conn = conn->next) {
+		pipe_disconnect(conn);
 	}
 
 }
@@ -621,7 +493,9 @@ static void WINAPI SvcMain( DWORD argc, LPTSTR *argv )
 	DWORD	ret;
 	HANDLE	handles[MAXIMUM_WAIT_OBJECTS];
 	int	maxhandle = 0;
-	conn_t	*conn;
+	pipe_conn_t	*conn;
+	DWORD priority;
+	char * buf;
 
 	if(service_flag) {
 		SvcStart(SVCNAME);
@@ -635,7 +509,7 @@ static void WINAPI SvcMain( DWORD argc, LPTSTR *argv )
 	print_event(LOG_INFO,"Starting");
 
 	/* pipe for event log proxy */
-	pipe_create();
+	pipe_create(EVENTLOG_PIPE_NAME);
 
 	/* parse nut.conf and start relevant processes */
 	if ( parse_nutconf(NUT_START) == 0 ) {
@@ -655,7 +529,7 @@ static void WINAPI SvcMain( DWORD argc, LPTSTR *argv )
 		memset(&handles,0,sizeof(handles));
 
 		/* Wait on the read IO of each connections */
-		for (conn = connhead; conn; conn = conn->next) {
+		for (conn = pipe_connhead; conn; conn = conn->next) {
 			handles[maxhandle] = conn->overlapped.hEvent;
 			maxhandle++;
 		}
@@ -687,7 +561,7 @@ static void WINAPI SvcMain( DWORD argc, LPTSTR *argv )
 		} 
 
 		/* Retrieve the signaled connection */
-		for(conn = connhead; conn != NULL; conn = conn->next) {
+		for(conn = pipe_connhead; conn != NULL; conn = conn->next) {
 			if( conn->overlapped.hEvent == handles[ret-WAIT_OBJECT_0]) {
 				break;
 			}
@@ -699,7 +573,15 @@ static void WINAPI SvcMain( DWORD argc, LPTSTR *argv )
 		/* one of the read event handle has been signaled */
 		else {
 			if( conn != NULL) {
-				pipe_read(conn);
+				if( pipe_ready(conn) ) {
+					buf = conn->buf;
+					/* a frame is a DWORD indicating priority followed by an array of char (not necessarily followed by a terminal 0 */
+					priority =*((DWORD *)buf);
+					buf = buf + sizeof(DWORD);
+					print_event(priority,buf);
+
+					pipe_disconnect(conn);
+				}
 			}
 		}
 	}

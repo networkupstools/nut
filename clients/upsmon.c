@@ -130,6 +130,7 @@ static unsigned __stdcall async_wall(LPVOID param)
 	char * text = (char *)param;
 	MessageBox(NULL,text,SVCNAME,MB_OK|MB_ICONEXCLAMATION|MB_SERVICE_NOTIFICATION);
 	free(text);
+	return 0;
 }
 #endif
 
@@ -166,7 +167,7 @@ typedef struct async_notify_s {
 	int flags;
 	char *ntype;
 	char *upsname;
-	char *date } async_notify_t;
+	char *date; } async_notify_t;
 
 static unsigned __stdcall async_notify(LPVOID param)
 {
@@ -1679,6 +1680,8 @@ static void setup_signals(void)
 
 	sa.sa_handler = set_reload_flag;
 	sigaction(SIGCMD_RELOAD, &sa, NULL);
+#else
+	pipe_create(UPSMON_PIPE_NAME);
 #endif
 }
 
@@ -1968,7 +1971,9 @@ static void help(const char *arg_progname)
 	printf("		 - fsd: shutdown all primary-mode UPSes (use with caution)\n");
 	printf("		 - reload: reread configuration\n");
 	printf("		 - stop: stop monitoring and exit\n");
+#ifndef WIN32
 	printf("  -P <pid>	send the signal above to specified PID (bypassing PID file)\n");
+#endif
 	printf("  -D		raise debugging level (and stay foreground by default)\n");
 	printf("  -F		stay foregrounded even if no debugging is enabled\n");
 	printf("  -B		stay backgrounded even if debugging is bumped\n");
@@ -2206,10 +2211,21 @@ static void check_parent(void)
 int main(int argc, char *argv[])
 {
 	const char	*prog = xbasename(argv[0]);
-	int	i, cmd = 0, cmdret = -1, checking_flag = 0, foreground = -1;
+	int	i, cmdret = -1, checking_flag = 0, foreground = -1;
 	pid_t	oldpid = -1;
 
+#ifndef WIN32
+	int cmd = 0;
+#else
+	const char * cmd = NULL;
+	DWORD ret;
+#endif
+
 #ifdef WIN32
+	HANDLE		handles[MAXIMUM_WAIT_OBJECTS];
+	int		maxhandle = 0;
+	pipe_conn_t	*conn;
+
 	/* remove trailing .exe */
 	char * drv_name;
 	drv_name = (char *)xbasename(argv[0]);
@@ -2237,7 +2253,6 @@ int main(int argc, char *argv[])
 
 	while ((i = getopt(argc, argv, "+DFBhic:P:f:pu:VK46")) != -1) {
 		switch (i) {
-#ifndef WIN32
 			case 'c':
 				if (!strncmp(optarg, "fsd", strlen(optarg)))
 					cmd = SIGCMD_FSD;
@@ -2250,13 +2265,12 @@ int main(int argc, char *argv[])
 				if (cmd == 0)
 					help(argv[0]);
 				break;
-#endif
-
+#ifndef WIN32
 			case 'P':
 				if ((oldpid = parsepid(optarg)) < 0)
 					help(argv[0]);
 				break;
-
+#endif
 			case 'D':
 				nut_debug_level++;
 				break;
@@ -2311,23 +2325,32 @@ int main(int argc, char *argv[])
 	}
 
 	if (cmd) {
+#ifndef WIN32
 		if (oldpid < 0) {
 			cmdret = sendsignal(prog, cmd);
 		} else {
 			cmdret = sendsignalpid(oldpid, cmd);
 		}
-		/* exit(EXIT_SUCCESS); */
-		exit((cmdret == 0)?EXIT_SUCCESS:EXIT_FAILURE);
+#else
+		cmdret = send_to_named_pipe(UPSMON_PIPE_NAME, cmd);
+#endif
+		exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
 	}
 
 	/* otherwise, we are being asked to start.
 	 * so check if a previous instance is running by sending signal '0'
 	 * (Ie 'kill <pid> 0') */
+#ifndef WIN32
 	if (oldpid < 0) {
 		cmdret = sendsignal(prog, 0);
 	} else {
 		cmdret = sendsignalpid(oldpid, 0);
 	}
+#else
+	/* TODO: Fix that routine for a quiet probe? */
+	upslogx(LOG_ERR, "Probing if an earlier upsmon instance holds the pipe");
+	cmdret = send_to_named_pipe(UPSMON_PIPE_NAME, "");
+#endif
 	switch (cmdret) {
 	case 0:
 		printf("Fatal error: A previous upsmon instance is already running!\n");
@@ -2343,6 +2366,7 @@ int main(int argc, char *argv[])
 		break;
 
 	case -1:
+	case 1:	/* WIN32 */
 	default:
 		/* Just failed to send signal, no competitor running */
 		break;
@@ -2446,9 +2470,63 @@ int main(int argc, char *argv[])
 #ifndef WIN32
 		/* reap children that have exited */
 		waitpid(-1, NULL, WNOHANG);
-#endif
 
 		sleep(sleepval);
+#else
+		maxhandle = 0;
+		memset(&handles,0,sizeof(handles));
+
+		/* Wait on the read IO of each connections */
+		for (conn = pipe_connhead; conn; conn = conn->next) {
+			handles[maxhandle] = conn->overlapped.hEvent;
+			maxhandle++;
+		}
+		/* Add the new pipe connected event */
+		handles[maxhandle] = pipe_connection_overlapped.hEvent;
+		maxhandle++;
+
+		ret = WaitForMultipleObjects(maxhandle,handles,FALSE,INFINITE);
+
+		if (ret == WAIT_FAILED) {
+			upslogx(LOG_ERR, "Wait failed");
+			exit(EXIT_FAILURE);
+		}
+
+		/* Retrieve the signaled connection */
+		for(conn = pipe_connhead; conn != NULL; conn = conn->next) {
+			if( conn->overlapped.hEvent == handles[ret-WAIT_OBJECT_0]) {
+				break;
+			}
+		}
+		/* a new pipe connection has been signaled */
+		if (handles[ret] == pipe_connection_overlapped.hEvent) {
+			pipe_connect();
+		}
+		/* one of the read event handle has been signaled */
+		else {
+			if( conn != NULL) {
+				if ( pipe_ready(conn) ) {
+					if (!strncmp(conn->buf, SIGCMD_FSD, sizeof(SIGCMD_FSD))) {
+						user_fsd(1);
+					}
+
+					else if (!strncmp(conn->buf, SIGCMD_RELOAD, sizeof(SIGCMD_RELOAD))) {
+						set_reload_flag(1);
+					}
+
+					else if (!strncmp(conn->buf, SIGCMD_STOP, sizeof(SIGCMD_STOP))) {
+						set_exit_flag(1);
+					}
+
+					else {
+						upslogx(LOG_ERR,"Unknown signal");
+					}
+
+					pipe_disconnect(conn);
+				}
+			}
+		}
+#endif
 	}
 
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);

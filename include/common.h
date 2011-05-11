@@ -291,6 +291,8 @@ extern int optind;
 
 #define SVCNAME TEXT("Network UPS Tools")
 #define EVENTLOG_PIPE_NAME TEXT("\\\\.\\pipe\\nut")
+#define UPSMON_PIPE_NAME TEXT("\\\\.\\pipe\\upsmon")
+#define UPSD_PIPE_NAME TEXT("\\\\.\\pipe\\upsd")
 
 char * getfullpath(char * relative_path);
 #define PATH_ETC	"\\..\\etc"

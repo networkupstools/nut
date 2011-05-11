@@ -165,6 +165,177 @@ void syslog(int priority, const char *fmt, ...)
 	CloseHandle(pipe);
 }
 
+/* Signal emulation via NamedPipe */
+
+static HANDLE		pipe_connection_handle;
+OVERLAPPED		pipe_connection_overlapped;
+pipe_conn_t		*pipe_connhead = NULL;
+static const char	*named_pipe_name=NULL;
+
+void pipe_create(const char * pipe_name)
+{
+	BOOL ret;
+
+	/* save pipe name for further use in pipe_connect */
+	if( pipe_name == NULL ) {
+		if( named_pipe_name == NULL ) {
+			return;
+		}
+	}
+	else {
+		named_pipe_name = pipe_name;
+	}
+
+	if( pipe_connection_overlapped.hEvent != 0 ) {
+		CloseHandle(pipe_connection_overlapped.hEvent);
+	}
+	memset(&pipe_connection_overlapped,0,sizeof(pipe_connection_overlapped));
+	pipe_connection_handle = CreateNamedPipe(
+			named_pipe_name,
+			PIPE_ACCESS_INBOUND |   /* to server only */
+			FILE_FLAG_OVERLAPPED,   /* async IO */
+			PIPE_TYPE_MESSAGE |
+			PIPE_READMODE_MESSAGE |
+			PIPE_WAIT,
+			PIPE_UNLIMITED_INSTANCES, /* max. instances */
+			LARGEBUF,               /* output buffer size */
+			LARGEBUF,               /* input buffer size */
+			0,                      /* client time-out */
+			NULL);  /* FIXME: default security attribute */
+
+	if (pipe_connection_handle == INVALID_HANDLE_VALUE) {
+		upslogx(LOG_ERR,"Error creating named pipe");
+		fatal_with_errno(EXIT_FAILURE, "Can't create a state socket (windows named pipe)");
+	}
+
+	/* Prepare an async wait on a connection on the pipe */
+	pipe_connection_overlapped.hEvent = CreateEvent(NULL, /*Security*/
+			FALSE, /* auto-reset*/
+			FALSE, /* inital state = non signaled*/
+			NULL /* no name*/);
+	if(pipe_connection_overlapped.hEvent == NULL ) {
+		upslogx(LOG_ERR,"Error creating event");
+		fatal_with_errno(EXIT_FAILURE, "Can't create event");
+	}
+
+	/* Wait for a connection */
+	ret = ConnectNamedPipe(pipe_connection_handle,&pipe_connection_overlapped);
+	if(ret == 0 && GetLastError() != ERROR_IO_PENDING ) {
+		upslogx(LOG_ERR,"ConnectNamedPipe error");
+	}
+}
+
+void pipe_connect()
+{
+	/* We have detected a connection on the opened pipe. So we start by saving its handle and create a new pipe for future connections */
+	pipe_conn_t *conn;
+
+	conn = xcalloc(1,sizeof(*conn));
+	conn->handle = pipe_connection_handle;
+
+	/* restart a new listening pipe */
+	pipe_create(NULL);
+
+	/* A new pipe waiting for new client connection has been created. We could manage the current connection now */
+	/* Start a read operation on the newly connected pipe so we could wait on the event associated to this IO */
+	memset(&conn->overlapped,0,sizeof(conn->overlapped));
+	memset(conn->buf,0,sizeof(conn->buf));
+	conn->overlapped.hEvent = CreateEvent(NULL, /*Security*/
+			FALSE, /* auto-reset*/
+			FALSE, /* inital state = non signaled*/
+			NULL /* no name*/);
+	if(conn->overlapped.hEvent == NULL ) {
+		upslogx(LOG_ERR,"Can't create event for reading event log");
+		return;
+	}
+
+	ReadFile (conn->handle,conn->buf,sizeof(conn->buf)-1,NULL,&(conn->overlapped)); /* -1 to be sure to have a trailling 0 */
+
+	if (pipe_connhead) {
+		conn->next = pipe_connhead;
+		pipe_connhead->prev = conn;
+	}
+
+	pipe_connhead = conn;
+}
+
+void pipe_disconnect(pipe_conn_t *conn)
+{
+	if( conn->overlapped.hEvent != INVALID_HANDLE_VALUE) {
+		CloseHandle(conn->overlapped.hEvent);
+		conn->overlapped.hEvent = INVALID_HANDLE_VALUE;
+	}
+	if( conn->handle != INVALID_HANDLE_VALUE) {
+		CloseHandle(conn->handle);
+		conn->handle = INVALID_HANDLE_VALUE;
+	}
+	if ( DisconnectNamedPipe(conn->handle) == 0 ) {
+		upslogx(LOG_ERR,"DisconnectNamedPipe");
+	}
+
+	if (conn->prev) {
+		conn->prev->next = conn->next;
+	} else {
+		pipe_connhead = conn->next;
+	}
+
+	if (conn->next) {
+		conn->next->prev = conn->prev;
+	} else {
+		/* conntail = conn->prev; */
+	}
+
+	free(conn);
+}
+
+int pipe_ready(pipe_conn_t *conn)
+{
+	DWORD   bytesRead;
+	BOOL    res;
+
+	res = GetOverlappedResult(conn->handle, &conn->overlapped, &bytesRead, FALSE);
+	if( res == 0 ) {
+		upslogx(LOG_ERR, "Pipe read error");
+		pipe_disconnect(conn);
+		return 0;
+	}
+	return 1;
+}
+
+/* return 1 on error, 0 if OK */
+int send_to_named_pipe(const char * pipe_name, const char * data)
+{
+	HANDLE pipe;
+	BOOL result = FALSE;
+	DWORD bytesWritten = 0;
+
+	pipe = CreateFile(
+			pipe_name,
+			GENERIC_WRITE,
+			0,			/* no sharing */
+			NULL,			/* default security attributes FIXME */
+			OPEN_EXISTING,		/* opens existing pipe */
+			FILE_FLAG_OVERLAPPED,	/* enable async IO */
+			NULL);			/* no template file */
+
+
+	if (pipe == INVALID_HANDLE_VALUE) {
+		upslogx(LOG_ERR, "Cannot connect to upsmon Named Pipe");
+		return 1;
+	}
+
+	result = WriteFile (pipe,data,strlen(data)+1,&bytesWritten,NULL);
+
+	if (result == 0 || bytesWritten != strlen(data)+1 ) {
+		upslogx(LOG_ERR, "Error writing to %s Named Pipe",pipe_name);
+		CloseHandle(pipe);
+		return 1;
+	}
+
+	CloseHandle(pipe);
+	return 0;
+}
+
 /* Serial port wrapper inspired by : 
 http://serial-programming-in-win32-os.blogspot.com/2008/07/convert-linux-code-to-windows-serial.html */
 

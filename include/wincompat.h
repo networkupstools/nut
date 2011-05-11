@@ -70,6 +70,27 @@ void syslog(int priority, const char *fmt, ...);
 
 extern const char * EventLogName;
 
+/* Signal emulation via named pipe */
+typedef struct pipe_conn_s {
+	HANDLE		handle;
+	OVERLAPPED	overlapped;
+	char		buf[LARGEBUF];
+	struct pipe_conn_s	*prev;
+	struct pipe_conn_s	*next;
+} pipe_conn_t;
+
+extern pipe_conn_t *pipe_connhead;
+extern OVERLAPPED pipe_connection_overlapped;
+void pipe_create(const char * pipe_name);
+void pipe_connect();
+void pipe_disconnect(pipe_conn_t *conn);
+int pipe_ready(pipe_conn_t *conn);
+int send_to_named_pipe(const char * pipe_name, const char * data);
+
+#define COMMAND_FSD "COMMAND_FSD"
+#define COMMAND_STOP "COMMAND_STOP"
+#define COMMAND_RELOAD "COMMAND_RELOAD"
+
 /* serial function compatibility */
 
 typedef unsigned char   cc_t;

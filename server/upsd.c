@@ -105,6 +105,10 @@ typedef enum {
 	DRIVER = 1,
 	CLIENT,
 	SERVER
+#ifdef WIN32
+	,NAMED_PIPE
+#endif
+
 } handler_type_t;
 
 typedef struct {
@@ -137,7 +141,6 @@ static tracking_t	*tracking_list = NULL;
 static struct pollfd	*fds = NULL;
 #else
 static HANDLE		*fds = NULL;
-static HANDLE		stop_event;
 #endif
 static handler_t	*handler = NULL;
 
@@ -1027,7 +1030,14 @@ int nut_uuid_v4(char *uuid_str)
 
 static void set_exit_flag(int sig)
 {
+	NUT_UNUSED_VARIABLE(sig);
 	exit_flag = sig;
+}
+
+static void set_reload_flag(int sig)
+{
+	NUT_UNUSED_VARIABLE(sig);
+	reload_flag = 1;
 }
 
 /* service requests and check on new data */
@@ -1039,6 +1049,7 @@ static void mainloop(void)
 #else
 	DWORD	ret;
 	int 	nfds = 0;
+	pipe_conn_t * conn;
 #endif
 
 	upstype_t	*ups;
@@ -1306,8 +1317,17 @@ static void mainloop(void)
 		nfds++;
 	}
 
-	/* Add asynchronous exit request (CTRL+C) */
-	fds[nfds] = stop_event;
+	/* Wait on the read IO on named pipe  */
+	for (conn = pipe_connhead; conn; conn = conn->next) {
+		fds[nfds] = conn->overlapped.hEvent;
+		handler[nfds].type = NAMED_PIPE;
+		handler[nfds].data = (void *)conn;
+		nfds++;
+	}
+	/* Add the new named pipe connected event */
+	fds[nfds] = pipe_connection_overlapped.hEvent;
+	handler[nfds].type = NAMED_PIPE;
+	handler[nfds].data = NULL;
 	nfds++;
 
 	upsdebugx(2, "%s: wait for %d filedescriptors", __func__, nfds);
@@ -1326,10 +1346,6 @@ static void mainloop(void)
 		return;
 	}
 
-	if( fds[ret] == stop_event ) {
-		return;
-	}
-
 	switch(handler[ret].type) {
 		case DRIVER:
 			sstate_readline((upstype_t *)handler[ret].data);
@@ -1339,6 +1355,30 @@ static void mainloop(void)
 			break;
 		case SERVER:
 			client_connect((stype_t *)handler[ret].data);
+			break;
+		case NAMED_PIPE:
+			/* a new pipe connection has been signaled */
+			if (fds[ret] == pipe_connection_overlapped.hEvent) {
+				pipe_connect();
+			}
+			/* one of the read event handle has been signaled */
+			else {
+				pipe_conn_t * conn = handler[ret].data;
+				if ( pipe_ready(conn) ) {
+					if (!strncmp(conn->buf, SIGCMD_STOP, sizeof(SIGCMD_STOP))) {
+						set_exit_flag(1);
+					}
+					else if (!strncmp(conn->buf, SIGCMD_RELOAD, sizeof(SIGCMD_RELOAD))) {
+						set_reload_flag(1);
+					}
+					else {
+						upslogx(LOG_ERR,"Unknown signal"
+						       );
+					}
+
+					pipe_disconnect(conn);
+				}
+			}
 			break;
 		default:
 			upsdebugx(2, "%s: <unknown> has data available", __func__);
@@ -1360,7 +1400,9 @@ static void help(const char *arg_progname)
 	printf("		commands:\n");
 	printf("		 - reload: reread configuration files\n");
 	printf("		 - stop: stop process and exit\n");
+#ifndef WIN32
 	printf("  -P <pid>	send the signal above to specified PID (bypassing PID file)\n");
+#endif
 	printf("  -D		raise debugging level (and stay foreground by default)\n");
 	printf("  -F		stay foregrounded even if no debugging is enabled\n");
 	printf("  -FF		stay foregrounded and still save the PID file\n");
@@ -1374,29 +1416,6 @@ static void help(const char *arg_progname)
 	printf("  -6		IPv6 only\n");
 	exit(EXIT_SUCCESS);
 }
-
-#ifndef WIN32
-static void set_reload_flag(int sig)
-{
-	NUT_UNUSED_VARIABLE(sig);
-	reload_flag = 1;
-}
-#endif
-
-#ifdef WIN32
-BOOL WINAPI CtrlEvent( DWORD dwCtrlType )
-{
-	if( dwCtrlType == CTRL_BREAK_EVENT  || dwCtrlType == CTRL_C_EVENT ) {
-		set_exit_flag(1);
-		SetEvent(stop_event);
-		/* Wait for the mainloop to exit */
-		while(1) {};
-		return TRUE;
-	}
-
-	return FALSE;
-}
-#endif
 
 static void setup_signals(void)
 {
@@ -1428,11 +1447,7 @@ static void setup_signals(void)
 	sa.sa_handler = set_reload_flag;
 	sigaction(SIGHUP, &sa, NULL);
 #else
-	stop_event = CreateEvent(NULL, /* security */
-				FALSE, /* auto-reset */
-				FALSE, /* initial test = non signaled */
-				NULL /*no name */);
-	SetConsoleCtrlHandler(CtrlEvent,TRUE);
+	pipe_create(UPSD_PIPE_NAME);
 #endif
 }
 
@@ -1457,7 +1472,12 @@ void check_perms(const char *fn)
 
 int main(int argc, char **argv)
 {
-	int	i, cmd = 0, cmdret = 0, foreground = -1;
+	int	i, cmdret = 0, foreground = -1;
+#ifndef WIN32
+	int	cmd = 0;
+#else
+	const char * cmd = NULL;
+#endif
 	char	*chroot_path = NULL;
 	const char	*user = RUN_AS_USER;
 	struct passwd	*new_uid = NULL;
@@ -1504,7 +1524,6 @@ int main(int argc, char **argv)
 			case 'V':
 				/* do nothing - we already printed the banner */
 				exit(EXIT_SUCCESS);
-#ifndef WIN32
 			case 'c':
 				if (!strncmp(optarg, "reload", strlen(optarg)))
 					cmd = SIGCMD_RELOAD;
@@ -1515,13 +1534,12 @@ int main(int argc, char **argv)
 				if (cmd == 0)
 					help(progname);
 				break;
-#endif
-
+#ifndef WIN32
 			case 'P':
 				if ((oldpid = parsepid(optarg)) < 0)
 					help(progname);
 				break;
-
+#endif
 			case 'D':
 				nut_debug_level++;
 				break;
@@ -1560,22 +1578,32 @@ int main(int argc, char **argv)
 	}
 
 	if (cmd) {
+#ifndef WIN32
 		if (oldpid < 0) {
 			cmdret = sendsignalfn(pidfn, cmd);
 		} else {
 			cmdret = sendsignalpid(oldpid, cmd);
 		}
-		exit((cmdret == 0)?EXIT_SUCCESS:EXIT_FAILURE);
+#else
+		cmdret = send_to_named_pipe(UPSD_PIPE_NAME,cmd);
+#endif
+		exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
 	}
 
 	/* otherwise, we are being asked to start.
 	 * so check if a previous instance is running by sending signal '0'
 	 * (Ie 'kill <pid> 0') */
+#ifndef WIN32
 	if (oldpid < 0) {
 		cmdret = sendsignalfn(pidfn, 0);
 	} else {
 		cmdret = sendsignalpid(oldpid, 0);
 	}
+#else
+	/* TODO: Fix that routine for a quiet probe? */
+	upslogx(LOG_ERR, "Probing if an earlier upsd instance holds the pipe");
+	cmdret = send_to_named_pipe(UPSD_PIPE_NAME, "");
+#endif
 	switch (cmdret) {
 	case 0:
 		printf("Fatal error: A previous upsd instance is already running!\n");
@@ -1592,6 +1620,7 @@ int main(int argc, char **argv)
 		break;
 
 	case -1:
+	case 1:	/* WIN32 */
 	default:
 		/* Just failed to send signal, no competitor running */
 		break;
@@ -1625,7 +1654,7 @@ int main(int argc, char **argv)
 	/* FIXME: Check for overflows (and int size of nfds_t vs. long) - see get_max_pid_t() for example */
 	maxconn = (nfds_t)sysconf(_SC_OPEN_MAX);
 #else
-	maxconn = 64;  /*FIXME : silly value just to compile */
+	maxconn = 64;  /*FIXME : arbitrary value, need adjustement */
 #endif
 
 	/* handle upsd.conf */
