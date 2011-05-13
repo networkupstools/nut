@@ -62,39 +62,39 @@ struct type {
 	 * the COUNTER commands while others are known to work with the
 	 * seconds argument alone.
 	 */
-	struct deley_for_power_kill {
+	struct delay_for_power_kill {
 	    unsigned int  delay[2];   /* { minutes, seconds } */
 	    unsigned char minutesShouldBeUsed;
-	    /* 'n' in case the minutes value, which is deley[0], should
+	    /* 'n' in case the minutes value, which is delay[0], should
 		 * be skipped and not sent to the UPS. 
 		 */
 	} shutdown_arguments;
 	
-	/* parameters to calculate input and output freq., one pair for
-	 * each type:
-	 *  Each pair defines parameters for 1/(A*x+B) to calculate freq.
-	 *  from raw data
+	/* parameters to calculate input and output freq., one pair used for
+	 * both input and output functions:
+	 *  The pair [0],[1] defines parameters for 1/(A*x+B) to calculate freq.
+	 *  from raw data 'x'.
 	 */
 	float         freq[2];
 	
 	/* parameters to calculate load %, two pairs for each type:
-	 *  First pair defines the parameters for A*x+B to calculate load
-	 *  from raw data when offline and the second pair is used when
+	 *  First pair [0],[1] defines the parameters for A*x+B to calculate load
+	 *  from raw data when offline and the second pair [2],[3] is used when
 	 *  online
 	 */
 	float         loadpct[4];
 	
 	/* parameters to calculate battery %, five parameters for each type:
-	 *  First three params defines the parameters for A*x+B*y+C to calculate
+	 *  First three params [0],[1],[2] defines the parameters for A*x+B*y+C to calculate
 	 *  battery % (x is raw data, y is load %) when offline.
-	 *  Fourth and fifth parameters are used to calculate D*y+E when online.
+	 *  Fourth and fifth parameters [3],[4] are used to calculate D*x+E when online.
 	 */
 	float         battpct[5];
 
 	/* parameters to calculate utility and output voltage, two pairs for
 	 * each type:
-	 *  First pair defines the parameters for A*x+B to calculate utility
-	 *  from raw data when line voltage is >=220 and the second pair
+	 *  First pair [0],[1] defines the parameters for A*x+B to calculate utility
+	 *  from raw data when line voltage is >=220 and the second pair [2],[3]
 	 *  is used otherwise.
 	 */
 	float         voltage[4];
