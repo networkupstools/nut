@@ -1176,454 +1176,524 @@ Public License instead of this License.
         <Directory Id="TARGETDIR" Name="SourceDir">
             <!--<Directory Id="ProgramFilesFolder" Name="PFiles"> -->
             <Directory Id="NUT" Name="NUT">
-                <Directory Id="ups" Name="ups">
-                    <Directory Id="Others" Name="Others">
-                        <Component Id="StopService.bat" DiskId="1" Guid="2E9A0083-9381-4DA7-B702-A933DB859A98">
-                            <File Id="StopService.bat" Name="StopService.bat" Source="ImageFiles\Others\StopService.bat" />
-                        </Component>
-                        <Component Id="StartService.bat" DiskId="1" Guid="7569460F-8E27-4897-B81A-ED2D114ED62C">
-                            <File Id="StartService.bat" Name="StartService.bat" Source="ImageFiles\Others\StartService.bat" />
+                <Directory Id="others" Name="others">
+                    <Component Id="StopService.bat" DiskId="1" Guid="2E9A0083-9381-4DA7-B702-A933DB859A98">
+                        <File Id="StopService.bat" Name="StopService.bat" Source="ImageFiles\others\StopService.bat" />
+                    </Component>
+                    <Component Id="StartService.bat" DiskId="1" Guid="7569460F-8E27-4897-B81A-ED2D114ED62C">
+                        <File Id="StartService.bat" Name="StartService.bat" Source="ImageFiles\others\StartService.bat" />
+                    </Component>
+                </Directory>
+                <Directory Id="bin" Name="bin">
+                    <Component Id="libgnurx_0.dll" Guid="FCA308FC-B99F-4C8C-B69E-285BF4E8AA2B">
+                        <File Id="libgnurx_0.dll" Name="libgnurx-0.dll" Source="ImageFiles\others\libgnurx-0.dll" />
+                    </Component>
+                    <Component Id="apcsmart.exe" Guid="BEDE6095-3FAF-49C4-8AF4-8F0A2EDB8EAE">
+                        <File Id="apcsmart.exe" Name="apcsmart.exe" Source="..\..\..\drivers\.libs\apcsmart.exe" />
+                    </Component>
+                    <Component Id="bcmxcp.exe" Guid="245177E2-B689-4EAE-8D24-2ED609305673">
+                        <File Id="bcmxcp.exe" Name="bcmxcp.exe" Source="..\..\..\drivers\.libs\bcmxcp.exe" />
+                    </Component>
+                    <Component Id="bcmxcp_usb.exe" Guid="2F33A54E-B4B4-4296-8DF0-ED5338F54B5E">
+                        <File Id="bcmxcp_usb.exe" Name="bcmxcp_usb.exe" Source="..\..\..\drivers\.libs\bcmxcp_usb.exe" />
+                    </Component>
+                    <Component Id="belkin.exe" DiskId="1" Guid="9DF970DB-F84E-4F47-8A28-B978B2C00479">
+                        <File Id="belkin.exe" Name="belkin.exe" Source="..\..\..\drivers\.libs\belkin.exe" />
+                    </Component>
+                    <Component Id="belkinunv.exe" DiskId="1" Guid="8A6C5307-34EB-4ACF-B8C7-662B50F2CB08">
+                        <File Id="belkinunv.exe" Name="belkinunv.exe" Source="..\..\..\drivers\.libs\belkinunv.exe" />
+                    </Component>
+                    <Component Id="bestfcom.exe" DiskId="1" Guid="3679E5F6-C571-4EF5-97A1-253509FE98FA">
+                        <File Id="bestfcom.exe" Name="bestfcom.exe" Source="..\..\..\drivers\.libs\bestfcom.exe" />
+                    </Component>
+                    <Component Id="bestfortress.exe" DiskId="1" Guid="A1A5F5C3-BA61-463B-97F8-4A51BC7D1626">
+                        <File Id="bestfortress.exe" Name="bestfortress.exe" Source="..\..\..\drivers\.libs\bestfortress.exe" />
+                    </Component>
+                    <Component Id="bestuferrups.exe" DiskId="1" Guid="7D0CE09A-9B12-48C1-830F-060EC1F3CDC7">
+                        <File Id="bestuferrups.exe" Name="bestuferrups.exe" Source="..\..\..\drivers\.libs\bestuferrups.exe" />
+                    </Component>
+                    <Component Id="bestups.exe" DiskId="1" Guid="CC44CD8C-2A53-45CB-BCAD-4AE84D2B3CB5">
+                        <File Id="bestups.exe" Name="bestups.exe" Source="..\..\..\drivers\.libs\bestups.exe" />
+                    </Component>
+                    <Component Id="blazer_ser.exe" DiskId="1" Guid="9F5588D1-C743-4D86-A313-8AFF195812B7">
+                        <File Id="blazer_ser.exe" Name="blazer_ser.exe" Source="..\..\..\drivers\.libs\blazer_ser.exe" />
+                    </Component>
+                    <Component Id="blazer_usb.exe" DiskId="1" Guid="CAE4837A-9EDE-4CBC-9B70-5D0617CFE528">
+                        <File Id="blazer_usb.exe" Name="blazer_usb.exe" Source="..\..\..\drivers\.libs\blazer_usb.exe" />
+                    </Component>
+                    <Component Id="clone_outlet.exe" DiskId="1" Guid="4DCC0FD1-3C7E-4EFE-BCB1-73CC71F56210">
+                        <File Id="clone_outlet.exe" Name="clone-outlet.exe" Source="..\..\..\drivers\.libs\clone-outlet.exe" />
+                    </Component>
+                    <Component Id="clone.exe" DiskId="1" Guid="946FE69C-862D-4722-8094-228795F49027">
+                        <File Id="clone.exe" Name="clone.exe" Source="..\..\..\drivers\.libs\clone.exe" />
+                    </Component>
+                    <Component Id="dummy_ups.exe" DiskId="1" Guid="22C618A5-2E4D-4A16-BBFA-5E818F38859E">
+                        <File Id="dummy_ups.exe" Name="dummy-ups.exe" Source="..\..\..\drivers\.libs\dummy-ups.exe" />
+                    </Component>
+                    <Component Id="etapro.exe" DiskId="1" Guid="8FB9B686-059E-4FEE-BE24-A7104F958329">
+                        <File Id="etapro.exe" Name="etapro.exe" Source="..\..\..\drivers\.libs\etapro.exe" />
+                    </Component>
+                    <Component Id="everups.exe" DiskId="1" Guid="175F9CBC-D98F-4978-B60F-98399F4EBB52">
+                        <File Id="everups.exe" Name="everups.exe" Source="..\..\..\drivers\.libs\everups.exe" />
+                    </Component>
+                    <Component Id="gamatronic.exe" DiskId="1" Guid="D7091C2A-C138-40C3-83FA-6DA8C79A9FBD">
+                        <File Id="gamatronic.exe" Name="gamatronic.exe" Source="..\..\..\drivers\.libs\gamatronic.exe" />
+                    </Component>
+                    <Component Id="genericups.exe" DiskId="1" Guid="636E746A-95C6-48F1-BFA0-3FAB09533C37">
+                        <File Id="genericups.exe" Name="genericups.exe" Source="..\..\..\drivers\.libs\genericups.exe" />
+                    </Component>
+                    <Component Id="halt.exe" DiskId="1" Guid="16F04938-33B5-4CE0-892F-29918488B9AB">
+                        <File Id="halt.exe" Name="halt.exe" Source="..\.libs\halt.exe" />
+                    </Component>
+                    <Component Id="isbmex.exe" DiskId="1" Guid="08069108-6645-4A50-AF2F-88CD56684C4B">
+                        <File Id="isbmex.exe" Name="isbmex.exe" Source="..\..\..\drivers\.libs\isbmex.exe" />
+                    </Component>
+                    <Component Id="ivtscd.exe" DiskId="1" Guid="6ACB9216-7D55-4EE3-89D1-18793F4A079E">
+                        <File Id="ivtscd.exe" Name="ivtscd.exe" Source="..\..\..\drivers\.libs\ivtscd.exe" />
+                    </Component>
+                    <Component Id="liebert_esp2.exe" DiskId="1" Guid="E8D1AA73-FAC9-42E3-AE1E-27BEEC20112F">
+                        <File Id="liebert_esp2.exe" Name="liebert-esp2.exe" Source="..\..\..\drivers\.libs\liebert-esp2.exe" />
+                    </Component>
+                    <Component Id="liebert.exe" DiskId="1" Guid="AEDF572A-73CA-4F0E-ACE9-39F0944D87BC">
+                        <File Id="liebert.exe" Name="liebert.exe" Source="..\..\..\drivers\.libs\liebert.exe" />
+                    </Component>
+                    <Component Id="masterguard.exe" DiskId="1" Guid="FA8419CB-017C-4CDD-955D-C48ED6F5D150">
+                        <File Id="masterguard.exe" Name="masterguard.exe" Source="..\..\..\drivers\.libs\masterguard.exe" />
+                    </Component>
+                    <Component Id="metasys.exe" DiskId="1" Guid="E4EFC957-9335-4D83-AC2E-0635E4A8C87F">
+                        <File Id="metasys.exe" Name="metasys.exe" Source="..\..\..\drivers\.libs\metasys.exe" />
+                    </Component>
+                    <Component Id="mge_shut.exe" DiskId="1" Guid="90676576-1CFA-4831-AB48-01E73C4AAD00">
+                        <File Id="mge_shut.exe" Name="mge-shut.exe" Source="..\..\..\drivers\.libs\mge-shut.exe" />
+                    </Component>
+                    <Component Id="mge_utalk.exe" DiskId="1" Guid="E7DA6B73-F741-4A8A-B2B5-11F98567E67D">
+                        <File Id="mge_utalk.exe" Name="mge-utalk.exe" Source="..\..\..\drivers\.libs\mge-utalk.exe" />
+                    </Component>
+                    <Component Id="microdowell.exe" DiskId="1" Guid="99BE6B94-101D-45F3-A39C-B4A76814FF33">
+                        <File Id="microdowell.exe" Name="microdowell.exe" Source="..\..\..\drivers\.libs\microdowell.exe" />
+                    </Component>
+                    <Component Id="netxml_ups.exe" DiskId="1" Guid="6C70031A-E408-47B4-A7B9-7BC72B9AB616">
+                        <File Id="netxml_ups.exe" Name="netxml-ups.exe" Source="..\..\..\drivers\.libs\netxml-ups.exe" />
+                    </Component>
+                    <Component Id="newmge_shut.exe" DiskId="1" Guid="6EB29981-41DB-457A-AD3A-E8ADB49805CE">
+                        <File Id="newmge_shut.exe" Name="newmge-shut.exe" Source="..\..\..\drivers\.libs\newmge-shut.exe" />
+                    </Component>
+                    <Component Id="nut.exe" DiskId="1" Guid="B72AC066-5289-4571-BD0D-03C2C4701460">
+                        <File Id="nut.exe" Name="nut.exe" Source="..\.libs\nut.exe" />
+                    </Component>
+                    <Component Id="oneac.exe" DiskId="1" Guid="80B3598C-5180-4306-B14A-956EB9FEBDC6">
+                        <File Id="oneac.exe" Name="oneac.exe" Source="..\..\..\drivers\.libs\oneac.exe" />
+                    </Component>
+                    <Component Id="optiups.exe" DiskId="1" Guid="7268FAAB-31AF-418F-9951-E35DB10D19E1">
+                        <File Id="optiups.exe" Name="optiups.exe" Source="..\..\..\drivers\.libs\optiups.exe" />
+                    </Component>
+                    <Component Id="powercom.exe" DiskId="1" Guid="C634D325-860F-4994-9257-A3EBA7693986">
+                        <File Id="powercom.exe" Name="powercom.exe" Source="..\..\..\drivers\.libs\powercom.exe" />
+                    </Component>
+                    <Component Id="powerpanel.exe" DiskId="1" Guid="A5529861-A361-4D59-8F3C-28C69358C668">
+                        <File Id="powerpanel.exe" Name="powerpanel.exe" Source="..\..\..\drivers\.libs\powerpanel.exe" />
+                    </Component>
+                    <Component Id="rhino.exe" DiskId="1" Guid="C82FE681-FF0A-4C43-B7DE-3E79B33E7C48">
+                        <File Id="rhino.exe" Name="rhino.exe" Source="..\..\..\drivers\.libs\rhino.exe" />
+                    </Component>
+                    <Component Id="richcomm_usb.exe" DiskId="1" Guid="0503DDEF-3DDE-44BD-8687-05ECC462E0B8">
+                        <File Id="richcomm_usb.exe" Name="richcomm_usb.exe" Source="..\..\..\drivers\.libs\richcomm_usb.exe" />
+                    </Component>
+                    <Component Id="safenet.exe" DiskId="1" Guid="E6E9FA78-32A7-4113-B043-E3A257DC7526">
+                        <File Id="safenet.exe" Name="safenet.exe" Source="..\..\..\drivers\.libs\safenet.exe" />
+                    </Component>
+                    <Component Id="skel.exe" DiskId="1" Guid="AB8932D8-E94E-4D7E-843E-28A0082D03FD">
+                        <File Id="skel.exe" Name="skel.exe" Source="..\..\..\drivers\.libs\skel.exe" />
+                    </Component>
+                    <Component Id="snmp_ups.exe" DiskId="1" Guid="B8626239-0883-404F-BB0F-E086DC69DBBB">
+                        <File Id="snmp_ups.exe" Name="snmp-ups.exe" Source="..\..\..\drivers\.libs\snmp-ups.exe" />
+                    </Component>
+                    <Component Id="solis.exe" DiskId="1" Guid="5968D7EE-91E8-43D4-AFF3-9042B262671B">
+                        <File Id="solis.exe" Name="solis.exe" Source="..\..\..\drivers\.libs\solis.exe" />
+                    </Component>
+                    <Component Id="tripplite.exe" DiskId="1" Guid="A7197A85-1B30-4ADB-B7F4-6EEA01BA0D78">
+                        <File Id="tripplite.exe" Name="tripplite.exe" Source="..\..\..\drivers\.libs\tripplite.exe" />
+                    </Component>
+                    <Component Id="tripplitesu.exe" DiskId="1" Guid="78EA9D3B-23E2-435C-BFCC-E06C9261FE1A">
+                        <File Id="tripplitesu.exe" Name="tripplitesu.exe" Source="..\..\..\drivers\.libs\tripplitesu.exe" />
+                    </Component>
+                    <Component Id="tripplite_usb.exe" DiskId="1" Guid="CC96EB0B-A576-47A2-8272-3E6F7B6EF1F5">
+                        <File Id="tripplite_usb.exe" Name="tripplite_usb.exe" Source="..\..\..\drivers\.libs\tripplite_usb.exe" />
+                    </Component>
+                    <Component Id="upsc.exe" DiskId="1" Guid="1F97F705-DA93-4637-9B96-2558C26E95DF">
+                        <File Id="upsc.exe" Name="upsc.exe" Source="..\..\..\clients\.libs\upsc.exe" />
+                    </Component>
+                    <Component Id="upscmd.exe" DiskId="1" Guid="A3558D00-A094-4C1E-97B7-136B9B0ABAF4">
+                        <File Id="upscmd.exe" Name="upscmd.exe" Source="..\..\..\clients\.libs\upscmd.exe" />
+                    </Component>
+                    <Component Id="upscode2.exe" DiskId="1" Guid="73D8897D-0853-484A-9C48-591CF212DB76">
+                        <File Id="upscode2.exe" Name="upscode2.exe" Source="..\..\..\drivers\.libs\upscode2.exe" />
+                    </Component>
+                    <Component Id="upsdrvctl.exe" DiskId="1" Guid="A1542254-43BF-4194-ACA9-13AE2BC46C75">
+                        <File Id="upsdrvctl.exe" Name="upsdrvctl.exe" Source="..\..\..\drivers\.libs\upsdrvctl.exe" />
+                    </Component>
+                    <Component Id="upslog.exe" DiskId="1" Guid="3050E7CF-886C-4C19-89D7-92A19261C510">
+                        <File Id="upslog.exe" Name="upslog.exe" Source="..\..\..\clients\.libs\upslog.exe" />
+                    </Component>
+                    <Component Id="upsrw.exe" DiskId="1" Guid="FA0498D9-F1F7-42F1-953B-E9E197FCAF33">
+                        <File Id="upsrw.exe" Name="upsrw.exe" Source="..\..\..\clients\.libs\upsrw.exe" />
+                    </Component>
+                    <Component Id="upssched_cmd" DiskId="1" Guid="6F4E7E6A-63C4-4803-BEC4-63F94CE6CA0F">
+                        <File Id="upssched_cmd" Name="upssched-cmd" Source="..\..\..\clients\.libs\upssched.exe" />
+                    </Component>
+                    <Component Id="usbhid_ups.exe" DiskId="1" Guid="43DC5E0D-F6DD-43D4-B365-4931AC04D65E">
+                        <File Id="usbhid_ups.exe" Name="usbhid-ups.exe" Source="..\..\..\drivers\.libs\usbhid-ups.exe" />
+                    </Component>
+                    <Component Id="victronups.exe" DiskId="1" Guid="8C12FEA5-5950-4A5F-9BA5-D2E62C20004C">
+                        <File Id="victronups.exe" Name="victronups.exe" Source="..\..\..\drivers\.libs\victronups.exe" />
+                    </Component>
+                    <Component Id="msys_1.0.dll" DiskId="1" Guid="F5EDE598-7DCD-46D8-BAA5-BF640787F470">
+                        <File Id="msys_1.0.dll" Name="msys-1.0.dll" Source="ImageFiles\others\msys-1.0.dll" />
+                    </Component>
+                    <Component Id="msys_crypto_1.0.0.dll" DiskId="1" Guid="3DC7E566-82EA-48D3-9B54-BA6B5AB32DB2">
+                        <File Id="msys_crypto_1.0.0.dll" Name="msys-crypto-1.0.0.dll" Source="ImageFiles\others\msys-crypto-1.0.0.dll" />
+                    </Component>
+                    <Component Id="msys_ssl_1.0.0.dll" DiskId="1" Guid="C267BD52-3D05-4D2F-A761-DDD795694EAB">
+                        <File Id="msys_ssl_1.0.0.dll" Name="msys-ssl-1.0.0.dll" Source="ImageFiles\others\msys-ssl-1.0.0.dll" />
+                    </Component>
+                </Directory>
+                <Directory Id="cgi_bin" Name="cgi-bin">
+                    <Component Id="cgi_bin" DiskId="1" Guid="D000CE22-0919-45C7-906E-87AE9326C8A8">
+                        <File Id="cgi_bin" Name="cgi_bintmp" Source="ImageFiles\emptyDir\cgi-bin\temp.txt" />
+                    </Component>
+                </Directory>
+                <Directory Id="etc" Name="etc">
+                    <Component Id="nut.conf.sample" DiskId="1" Guid="43A50513-888F-4F60-9872-78726A68F872">
+                        <File Id="nut.conf.sample" Name="nut.conf.sample" Source="..\..\..\conf\nut.conf.sample" />
+                    </Component>
+                    <Component Id="ups.conf.sample" DiskId="1" Guid="1E1DC408-F96F-44D5-8245-984309288CA2">
+                        <File Id="ups.conf.sample" Name="ups.conf.sample" Source="..\..\..\conf\ups.conf.sample" />
+                    </Component>
+                    <Component Id="upsd.conf.sample" DiskId="1" Guid="82100A28-B2A7-49AC-902A-44D5AFAC4999">
+                        <File Id="upsd.conf.sample" Name="upsd.conf.sample" Source="..\..\..\conf\upsd.conf.sample" />
+                    </Component>
+                    <Component Id="upsd.users.sample" DiskId="1" Guid="0AEDB7E8-E5E6-4357-9193-DB585514ED78">
+                        <File Id="upsd.users.sample" Name="upsd.users.sample" Source="..\..\..\conf\upsd.users.sample" />
+                    </Component>
+                    <Component Id="upsmon.conf.sample" DiskId="1" Guid="98EE26CC-9E41-4E58-AA75-6B56DCB2ADFF">
+                        <File Id="upsmon.conf.sample" Name="upsmon.conf.sample" Source="..\..\..\conf\upsmon.conf.sample" />
+                    </Component>
+                    <Component Id="upssched.conf.sample" DiskId="1" Guid="AA0BF782-3CB2-4E40-A20F-E20B68201042">
+                        <File Id="upssched.conf.sample" Name="upssched.conf.sample" Source="..\..\..\conf\upssched.conf.sample" />
+                    </Component>
+                </Directory>
+                <Directory Id="html" Name="html">
+                    <Component Id="htmltmp" DiskId="1" Guid="6F816450-7CE1-47FB-9ED7-DFF7EDB5E99C">
+                        <File Id="htmltmp" Name="htmltmp" Source="ImageFiles\emptyDir\html\temp.txt" />
+                    </Component>
+                </Directory>
+                <Directory Id="include" Name="include">
+                    <Component Id="include" DiskId="1" Guid="DD763052-E5F8-4768-B499-2556E6073E98">
+                        <File Id="include" Name="tmpFile" Source="ImageFiles\emptyDir\include\temp.txt" />
+                    </Component>
+                </Directory>
+                <Directory Id="lib" Name="lib">
+                    <Component Id="libupsclient.a" DiskId="1" Guid="E95C7594-5818-460F-9BDE-99F2F29BA057">
+                        <File Id="libupsclient.a" Name="libupsclient.a" Source="..\..\..\clients\.libs\libupsclient.a" />
+                    </Component>
+                    <Component Id="libupsclient.la" DiskId="1" Guid="7F43526E-F1FC-4BAF-949F-FE495448C1D3">
+                        <File Id="libupsclient.la" Name="libupsclient.la" Source="..\..\..\clients\.libs\libupsclient.la" />
+                    </Component>
+                    <Directory Id="pkgconfig" Name="pkgconfig">
+                        <Component Id="pkgconfig" DiskId="1" Guid="213BA9E0-4780-4628-830F-FB2649FF4384">
+                            <File Id="pkgconfig" Name="pkgconfig" Source="ImageFiles\emptyDir\pkgconfig\temp.txt" />
                         </Component>
                     </Directory>
-                    <Directory Id="bin" Name="bin">
-                        <Component Id="libgnurx_0.dll" Guid="FCA308FC-B99F-4C8C-B69E-285BF4E8AA2B">
-                            <File Id="libgnurx_0.dll" Name="libgnurx-0.dll" Source="ImageFiles\Others\libgnurx-0.dll" />
+                </Directory>
+                <Directory Id="sbin" Name="sbin">
+                    <Component Id="upsd.exe" DiskId="1" Guid="25532A82-C7C5-499C-BC49-5CC469437FD3">
+                        <File Id="upsd.exe" Name="upsd.exe" Source="..\..\..\server\.libs\upsd.exe" />
+                    </Component>
+                    <Component Id="upsmon.exe" DiskId="1" Guid="140A5967-4494-4253-9F97-CFC3DC701696">
+                        <File Id="upsmon.exe" Name="upsmon.exe" Source="..\..\..\clients\.libs\upsmon.exe" />
+                    </Component>
+                    <Component Id="upssched.exe" DiskId="1" Guid="142F2FB6-1DEA-42E8-A9DF-C8088C49A63E">
+                        <File Id="upssched.exe" Name="upssched.exe" Source="..\..\..\clients\.libs\upssched.exe" />
+                    </Component>
+                    <Component Id="msys1.0.dll" DiskId="1" Guid="8545D6E5-4E32-42BB-A5B1-78D6267F52BD">
+                        <File Id="msys1.0.dll" Name="msys-1.0.dll" Source="ImageFiles\others\msys-1.0.dll" />
+                    </Component>
+                    <Component Id="msyscrypto_1.0.0.dll" DiskId="1" Guid="CA38C7F7-E73F-4695-B560-81F2DACB6BC1">
+                        <File Id="msyscrypto_1.0.0.dll" Name="msys-crypto-1.0.0.dll" Source="ImageFiles\others\msys-crypto-1.0.0.dll" />
+                    </Component>
+                    <Component Id="msysssl_1.0.0.dll" DiskId="1" Guid="044433C6-2D0A-468F-8764-7D1AE5196440">
+                        <File Id="msysssl_1.0.0.dll" Name="msys-ssl-1.0.0.dll" Source="ImageFiles\others\msys-ssl-1.0.0.dll" />
+                    </Component>
+                </Directory>
+                <Directory Id="share" Name="share">
+                    <Component Id="cmdvartab" DiskId="1" Guid="43A36793-630E-408E-A6F7-DF47BED6EDAB">
+                        <File Id="cmdvartab" Name="cmdvartab" Source="..\..\..\data\cmdvartab" />
+                    </Component>
+                    <Component Id="driver.list" DiskId="1" Guid="9FD9A5F7-257E-467E-A11A-520361E5AFF5">
+                        <File Id="driver.list" Name="driver.list" Source="..\..\..\data\driver.list" />
+                    </Component>
+                </Directory>
+                <Directory Id="docs" Name="docs">
+                    <Component Id="usermanual.html" Guid="59C13A85-0A75-45E0-AEB8-D47054566523">
+                        <File Id="USER_MANUAL.HTML" Name="user-manual.html" Source="..\..\..\docs\user-manual.html" />
+                    </Component>
+                    <Component Id="FAQ.html" Guid="425565E9-E6F5-4CC0-8D45-9AA7B1F3382F">
+                        <File Id="FAQ.HTML" Name="FAQ.html" Source="..\..\..\docs\FAQ.html" />
+                    </Component>
+                    <Component Id="docbookxsl.css" Guid="B9E83217-78FF-4D26-AE8F-C8B0A9639E14">
+                        <File Id="DOCBOOK_XSL.CSS" Name="docbook-xsl.css" Source="..\..\..\docs\docbook-xsl.css" />
+                    </Component>
+                    <Directory Id="man" Name="man">
+                        <Component Id="APCSMART.HTML" DiskId="1" Guid="69BDFFC7-D9CC-42DB-9254-3A87976E9196">
+                            <File Id="APCSMART.HTML" Name="apcsmart.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\apcsmart.html" />
                         </Component>
-                        <Component Id="apcsmart.exe" Guid="BEDE6095-3FAF-49C4-8AF4-8F0A2EDB8EAE">
-                            <File Id="apcsmart.exe" Name="apcsmart.exe" Source="..\..\..\drivers\.libs\apcsmart.exe" />
+                        <Component Id="BCMXCP.HTML" DiskId="1" Guid="C7AA3B2F-0202-443A-85BB-96375D6E7C64">
+                            <File Id="BCMXCP.HTML" Name="bcmxcp.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\bcmxcp.html" />
                         </Component>
-                        <Component Id="bcmxcp.exe" Guid="245177E2-B689-4EAE-8D24-2ED609305673">
-                            <File Id="bcmxcp.exe" Name="bcmxcp.exe" Source="..\..\..\drivers\.libs\bcmxcp.exe" />
+                        <Component Id="BCMXCP_USB.HTML" DiskId="1" Guid="46C84C12-9414-4519-8DA8-519DED7B774D">
+                            <File Id="BCMXCP_USB.HTML" Name="bcmxcp_usb.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\bcmxcp_usb.html" />
                         </Component>
-                        <Component Id="bcmxcp_usb.exe" Guid="2F33A54E-B4B4-4296-8DF0-ED5338F54B5E">
-                            <File Id="bcmxcp_usb.exe" Name="bcmxcp_usb.exe" Source="..\..\..\drivers\.libs\bcmxcp_usb.exe" />
+                        <Component Id="BELKIN.HTML" DiskId="1" Guid="89630C26-53CA-4D58-9B45-96E861EBF41D">
+                            <File Id="BELKIN.HTML" Name="belkin.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\belkin.html" />
                         </Component>
-                        <Component Id="belkin.exe" DiskId="1" Guid="9DF970DB-F84E-4F47-8A28-B978B2C00479">
-                            <File Id="belkin.exe" Name="belkin.exe" Source="..\..\..\drivers\.libs\belkin.exe" />
+                        <Component Id="BELKINUNV.HTML" DiskId="1" Guid="1F1EA890-4E35-4BC2-954D-8F87AC3DA41A">
+                            <File Id="BELKINUNV.HTML" Name="belkinunv.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\belkinunv.html" />
                         </Component>
-                        <Component Id="belkinunv.exe" DiskId="1" Guid="8A6C5307-34EB-4ACF-B8C7-662B50F2CB08">
-                            <File Id="belkinunv.exe" Name="belkinunv.exe" Source="..\..\..\drivers\.libs\belkinunv.exe" />
+                        <Component Id="BESTFCOM.HTML" DiskId="1" Guid="AF454A3A-6EF1-4F1A-844C-5534A11091F1">
+                            <File Id="BESTFCOM.HTML" Name="bestfcom.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\bestfcom.html" />
                         </Component>
-                        <Component Id="bestfcom.exe" DiskId="1" Guid="3679E5F6-C571-4EF5-97A1-253509FE98FA">
-                            <File Id="bestfcom.exe" Name="bestfcom.exe" Source="..\..\..\drivers\.libs\bestfcom.exe" />
+                        <Component Id="BESTFORTRESS.HTML" DiskId="1" Guid="A8534F2E-5A94-4AC7-9774-34BD69ED7D76">
+                            <File Id="BESTFORTRESS.HTML" Name="bestfortress.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\bestfortress.html" />
                         </Component>
-                        <Component Id="bestfortress.exe" DiskId="1" Guid="A1A5F5C3-BA61-463B-97F8-4A51BC7D1626">
-                            <File Id="bestfortress.exe" Name="bestfortress.exe" Source="..\..\..\drivers\.libs\bestfortress.exe" />
+                        <Component Id="BESTUFERRUPS.HTML" DiskId="1" Guid="5A5D960B-9894-4484-9C63-E5BAD0B3CFED">
+                            <File Id="BESTUFERRUPS.HTML" Name="bestuferrups.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\bestuferrups.html" />
                         </Component>
-                        <Component Id="bestuferrups.exe" DiskId="1" Guid="7D0CE09A-9B12-48C1-830F-060EC1F3CDC7">
-                            <File Id="bestuferrups.exe" Name="bestuferrups.exe" Source="..\..\..\drivers\.libs\bestuferrups.exe" />
+                        <Component Id="BESTUPS.HTML" DiskId="1" Guid="C6ED1527-CE73-4895-B12B-4DEFC0716779">
+                            <File Id="BESTUPS.HTML" Name="bestups.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\bestups.html" />
                         </Component>
-                        <Component Id="bestups.exe" DiskId="1" Guid="CC44CD8C-2A53-45CB-BCAD-4AE84D2B3CB5">
-                            <File Id="bestups.exe" Name="bestups.exe" Source="..\..\..\drivers\.libs\bestups.exe" />
+                        <Component Id="BLAZER.HTML" DiskId="1" Guid="29F38410-B0F2-4475-AF01-C3F2B5F29AA8">
+                            <File Id="BLAZER.HTML" Name="blazer.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\blazer.html" />
                         </Component>
-                        <Component Id="blazer_ser.exe" DiskId="1" Guid="9F5588D1-C743-4D86-A313-8AFF195812B7">
-                            <File Id="blazer_ser.exe" Name="blazer_ser.exe" Source="..\..\..\drivers\.libs\blazer_ser.exe" />
+                        <Component Id="CLONE.HTML" DiskId="1" Guid="CA920E20-5DD1-4BB0-B750-F72BDD5825C0">
+                            <File Id="CLONE.HTML" Name="clone.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\clone.html" />
                         </Component>
-                        <Component Id="blazer_usb.exe" DiskId="1" Guid="CAE4837A-9EDE-4CBC-9B70-5D0617CFE528">
-                            <File Id="blazer_usb.exe" Name="blazer_usb.exe" Source="..\..\..\drivers\.libs\blazer_usb.exe" />
+                        <Component Id="DUMMY_UPS.HTML" DiskId="1" Guid="E623E868-FEF2-4490-8518-16DDC1079BB2">
+                            <File Id="DUMMY_UPS.HTML" Name="dummy-ups.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\dummy-ups.html" />
                         </Component>
-                        <Component Id="clone_outlet.exe" DiskId="1" Guid="4DCC0FD1-3C7E-4EFE-BCB1-73CC71F56210">
-                            <File Id="clone_outlet.exe" Name="clone-outlet.exe" Source="..\..\..\drivers\.libs\clone-outlet.exe" />
+                        <Component Id="ETAPRO.HTML" DiskId="1" Guid="91EE7D9A-0C9A-4E5F-B0A9-78B04CE42E2D">
+                            <File Id="ETAPRO.HTML" Name="etapro.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\etapro.html" />
                         </Component>
-                        <Component Id="clone.exe" DiskId="1" Guid="946FE69C-862D-4722-8094-228795F49027">
-                            <File Id="clone.exe" Name="clone.exe" Source="..\..\..\drivers\.libs\clone.exe" />
+                        <Component Id="EVERUPS.HTML" DiskId="1" Guid="45DAE10B-E20B-4A60-806E-A37F53FEF97F">
+                            <File Id="EVERUPS.HTML" Name="everups.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\everups.html" />
                         </Component>
-                        <Component Id="dummy_ups.exe" DiskId="1" Guid="22C618A5-2E4D-4A16-BBFA-5E818F38859E">
-                            <File Id="dummy_ups.exe" Name="dummy-ups.exe" Source="..\..\..\drivers\.libs\dummy-ups.exe" />
+                        <Component Id="GAMATRONIC.HTML" DiskId="1" Guid="5373CC9C-E29A-4D73-B9FC-08E738B6BC7A">
+                            <File Id="GAMATRONIC.HTML" Name="gamatronic.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\gamatronic.html" />
                         </Component>
-                        <Component Id="etapro.exe" DiskId="1" Guid="8FB9B686-059E-4FEE-BE24-A7104F958329">
-                            <File Id="etapro.exe" Name="etapro.exe" Source="..\..\..\drivers\.libs\etapro.exe" />
+                        <Component Id="GENERICUPS.HTML" DiskId="1" Guid="622E468F-D7E2-4E25-8221-A9B26C9D6EC6">
+                            <File Id="GENERICUPS.HTML" Name="genericups.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\genericups.html" />
                         </Component>
-                        <Component Id="everups.exe" DiskId="1" Guid="175F9CBC-D98F-4978-B60F-98399F4EBB52">
-                            <File Id="everups.exe" Name="everups.exe" Source="..\..\..\drivers\.libs\everups.exe" />
+                        <Component Id="HOSTS.CONF.HTML" DiskId="1" Guid="B8050A81-EDA6-4613-ACB1-2E1755E534B9">
+                            <File Id="HOSTS.CONF.HTML" Name="hosts.conf.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\hosts.conf.html" />
                         </Component>
-                        <Component Id="gamatronic.exe" DiskId="1" Guid="D7091C2A-C138-40C3-83FA-6DA8C79A9FBD">
-                            <File Id="gamatronic.exe" Name="gamatronic.exe" Source="..\..\..\drivers\.libs\gamatronic.exe" />
+                        <Component Id="INDEX.HTML" DiskId="1" Guid="E4BEF902-0EA0-4D27-AA3D-FECCBDCCA57B">
+                            <File Id="INDEX.HTML" Name="index.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\index.html" />
                         </Component>
-                        <Component Id="genericups.exe" DiskId="1" Guid="636E746A-95C6-48F1-BFA0-3FAB09533C37">
-                            <File Id="genericups.exe" Name="genericups.exe" Source="..\..\..\drivers\.libs\genericups.exe" />
+                        <Component Id="ISBMEX.HTML" DiskId="1" Guid="19E05E3B-67D7-4BE9-9B1C-09A41A58C9D4">
+                            <File Id="ISBMEX.HTML" Name="isbmex.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\isbmex.html" />
                         </Component>
-                        <Component Id="halt.exe" DiskId="1" Guid="16F04938-33B5-4CE0-892F-29918488B9AB">
-                            <File Id="halt.exe" Name="halt.exe" Source="..\.libs\halt.exe" />
+                        <Component Id="IVTSCD.HTML" DiskId="1" Guid="C9C147A9-C9CD-4411-BF4A-2365E3A66152">
+                            <File Id="IVTSCD.HTML" Name="ivtscd.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\ivtscd.html" />
                         </Component>
-                        <Component Id="isbmex.exe" DiskId="1" Guid="08069108-6645-4A50-AF2F-88CD56684C4B">
-                            <File Id="isbmex.exe" Name="isbmex.exe" Source="..\..\..\drivers\.libs\isbmex.exe" />
+                        <Component Id="LIBUPSCLIENT_CONFIG.HTML" DiskId="1" Guid="BF0B94AC-F324-4088-86A1-0C973EE21A72">
+                            <File Id="LIBUPSCLIENT_CONFIG.HTML" Name="libupsclient-config.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\libupsclient-config.html" />
                         </Component>
-                        <Component Id="ivtscd.exe" DiskId="1" Guid="6ACB9216-7D55-4EE3-89D1-18793F4A079E">
-                            <File Id="ivtscd.exe" Name="ivtscd.exe" Source="..\..\..\drivers\.libs\ivtscd.exe" />
+                        <Component Id="LIEBERT_ESP2.HTML" DiskId="1" Guid="FC1BCC83-F3DB-40A9-8AC7-3096774174F0">
+                            <File Id="LIEBERT_ESP2.HTML" Name="liebert-esp2.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\liebert-esp2.html" />
                         </Component>
-                        <Component Id="liebert_esp2.exe" DiskId="1" Guid="E8D1AA73-FAC9-42E3-AE1E-27BEEC20112F">
-                            <File Id="liebert_esp2.exe" Name="liebert-esp2.exe" Source="..\..\..\drivers\.libs\liebert-esp2.exe" />
+                        <Component Id="LIEBERT.HTML" DiskId="1" Guid="39A39F71-6872-43D5-8402-B6C3FE1F0D53">
+                            <File Id="LIEBERT.HTML" Name="liebert.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\liebert.html" />
                         </Component>
-                        <Component Id="liebert.exe" DiskId="1" Guid="AEDF572A-73CA-4F0E-ACE9-39F0944D87BC">
-                            <File Id="liebert.exe" Name="liebert.exe" Source="..\..\..\drivers\.libs\liebert.exe" />
+                        <Component Id="MAN_INDEX.HTML" DiskId="1" Guid="5C97C76B-9751-4D36-8262-32073EC40CB7">
+                            <File Id="MAN_INDEX.HTML" Name="man-index.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\man-index.html" />
                         </Component>
-                        <Component Id="masterguard.exe" DiskId="1" Guid="FA8419CB-017C-4CDD-955D-C48ED6F5D150">
-                            <File Id="masterguard.exe" Name="masterguard.exe" Source="..\..\..\drivers\.libs\masterguard.exe" />
+                        <Component Id="MASTERGUARD.HTML" DiskId="1" Guid="D12FD78A-A19A-4027-BA25-4F0E2C01B1DD">
+                            <File Id="MASTERGUARD.HTML" Name="masterguard.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\masterguard.html" />
                         </Component>
-                        <Component Id="metasys.exe" DiskId="1" Guid="E4EFC957-9335-4D83-AC2E-0635E4A8C87F">
-                            <File Id="metasys.exe" Name="metasys.exe" Source="..\..\..\drivers\.libs\metasys.exe" />
+                        <Component Id="METASYS.HTML" DiskId="1" Guid="82BE0565-12ED-4510-8055-04146EE2D3B1">
+                            <File Id="METASYS.HTML" Name="metasys.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\metasys.html" />
                         </Component>
-                        <Component Id="mge_shut.exe" DiskId="1" Guid="90676576-1CFA-4831-AB48-01E73C4AAD00">
-                            <File Id="mge_shut.exe" Name="mge-shut.exe" Source="..\..\..\drivers\.libs\mge-shut.exe" />
+                        <Component Id="MGE_SHUT.HTML" DiskId="1" Guid="63AAE490-5AC0-4582-A3DF-AAB794C14002">
+                            <File Id="MGE_SHUT.HTML" Name="mge-shut.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\mge-shut.html" />
                         </Component>
-                        <Component Id="mge_utalk.exe" DiskId="1" Guid="E7DA6B73-F741-4A8A-B2B5-11F98567E67D">
-                            <File Id="mge_utalk.exe" Name="mge-utalk.exe" Source="..\..\..\drivers\.libs\mge-utalk.exe" />
+                        <Component Id="MGE_UTALK.HTML" DiskId="1" Guid="06C8B2B2-3FA2-428E-A67E-40C0A91BBACE">
+                            <File Id="MGE_UTALK.HTML" Name="mge-utalk.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\mge-utalk.html" />
                         </Component>
-                        <Component Id="microdowell.exe" DiskId="1" Guid="99BE6B94-101D-45F3-A39C-B4A76814FF33">
-                            <File Id="microdowell.exe" Name="microdowell.exe" Source="..\..\..\drivers\.libs\microdowell.exe" />
+                        <Component Id="MICRODOWELL.HTML" DiskId="1" Guid="E298A460-12D8-479F-AE5C-3E75DB2510E5">
+                            <File Id="MICRODOWELL.HTML" Name="microdowell.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\microdowell.html" />
                         </Component>
-                        <Component Id="netxml_ups.exe" DiskId="1" Guid="6C70031A-E408-47B4-A7B9-7BC72B9AB616">
-                            <File Id="netxml_ups.exe" Name="netxml-ups.exe" Source="..\..\..\drivers\.libs\netxml-ups.exe" />
+                        <Component Id="NETXML_UPS.HTML" DiskId="1" Guid="0DD5CF39-0099-40FC-AFAE-3582192FF3EC">
+                            <File Id="NETXML_UPS.HTML" Name="netxml-ups.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\netxml-ups.html" />
                         </Component>
-                        <Component Id="newmge_shut.exe" DiskId="1" Guid="6EB29981-41DB-457A-AD3A-E8ADB49805CE">
-                            <File Id="newmge_shut.exe" Name="newmge-shut.exe" Source="..\..\..\drivers\.libs\newmge-shut.exe" />
+                        <Component Id="NUT.CONF.HTML" DiskId="1" Guid="CB726F74-A5F8-405C-B491-83C2B9585080">
+                            <File Id="NUT.CONF.HTML" Name="nut.conf.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\nut.conf.html" />
                         </Component>
-                        <Component Id="nut.exe" DiskId="1" Guid="B72AC066-5289-4571-BD0D-03C2C4701460">
-                            <File Id="nut.exe" Name="nut.exe" Source="..\.libs\nut.exe" />
+                        <Component Id="NUTUPSDRV.HTML" DiskId="1" Guid="D39E659A-1D2A-4726-816B-BC5E38DAAE49">
+                            <File Id="NUTUPSDRV.HTML" Name="nutupsdrv.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\nutupsdrv.html" />
                         </Component>
-                        <Component Id="oneac.exe" DiskId="1" Guid="80B3598C-5180-4306-B14A-956EB9FEBDC6">
-                            <File Id="oneac.exe" Name="oneac.exe" Source="..\..\..\drivers\.libs\oneac.exe" />
+                        <Component Id="ONEAC.HTML" DiskId="1" Guid="B7FC10CA-5072-4900-88DA-A28FE36E4BDC">
+                            <File Id="ONEAC.HTML" Name="oneac.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\oneac.html" />
                         </Component>
-                        <Component Id="optiups.exe" DiskId="1" Guid="7268FAAB-31AF-418F-9951-E35DB10D19E1">
-                            <File Id="optiups.exe" Name="optiups.exe" Source="..\..\..\drivers\.libs\optiups.exe" />
+                        <Component Id="OPTIUPS.HTML" DiskId="1" Guid="B0D796F5-15F6-4C80-9BBB-4DD7D688DF39">
+                            <File Id="OPTIUPS.HTML" Name="optiups.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\optiups.html" />
                         </Component>
-                        <Component Id="powercom.exe" DiskId="1" Guid="C634D325-860F-4994-9257-A3EBA7693986">
-                            <File Id="powercom.exe" Name="powercom.exe" Source="..\..\..\drivers\.libs\powercom.exe" />
+                        <Component Id="POWERCOM.HTML" DiskId="1" Guid="9E732543-B829-4507-8D57-AC562430138A">
+                            <File Id="POWERCOM.HTML" Name="powercom.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\powercom.html" />
                         </Component>
-                        <Component Id="powerpanel.exe" DiskId="1" Guid="A5529861-A361-4D59-8F3C-28C69358C668">
-                            <File Id="powerpanel.exe" Name="powerpanel.exe" Source="..\..\..\drivers\.libs\powerpanel.exe" />
+                        <Component Id="POWERMAN_PDU.HTML" DiskId="1" Guid="85DFCF48-EC51-462E-A66E-A4D7965403A8">
+                            <File Id="POWERMAN_PDU.HTML" Name="powerman-pdu.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\powerman-pdu.html" />
                         </Component>
-                        <Component Id="rhino.exe" DiskId="1" Guid="C82FE681-FF0A-4C43-B7DE-3E79B33E7C48">
-                            <File Id="rhino.exe" Name="rhino.exe" Source="..\..\..\drivers\.libs\rhino.exe" />
+                        <Component Id="POWERPANEL.HTML" DiskId="1" Guid="6FF12312-F34D-4C2E-8FC8-70590B0EC8DF">
+                            <File Id="POWERPANEL.HTML" Name="powerpanel.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\powerpanel.html" />
                         </Component>
-                        <Component Id="richcomm_usb.exe" DiskId="1" Guid="0503DDEF-3DDE-44BD-8687-05ECC462E0B8">
-                            <File Id="richcomm_usb.exe" Name="richcomm_usb.exe" Source="..\..\..\drivers\.libs\richcomm_usb.exe" />
+                        <Component Id="RHINO.HTML" DiskId="1" Guid="E44E16E6-4806-4E00-B0AE-EA2BBD389534">
+                            <File Id="RHINO.HTML" Name="rhino.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\rhino.html" />
                         </Component>
-                        <Component Id="safenet.exe" DiskId="1" Guid="E6E9FA78-32A7-4113-B043-E3A257DC7526">
-                            <File Id="safenet.exe" Name="safenet.exe" Source="..\..\..\drivers\.libs\safenet.exe" />
+                        <Component Id="RICHCOMM_USB.HTML" DiskId="1" Guid="5D3E20BF-7213-4841-A5EA-3A29E8A1A784">
+                            <File Id="RICHCOMM_USB.HTML" Name="richcomm_usb.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\richcomm_usb.html" />
                         </Component>
-                        <Component Id="skel.exe" DiskId="1" Guid="AB8932D8-E94E-4D7E-843E-28A0082D03FD">
-                            <File Id="skel.exe" Name="skel.exe" Source="..\..\..\drivers\.libs\skel.exe" />
+                        <Component Id="SAFENET.HTML" DiskId="1" Guid="D0CD1DD9-D22C-4CDD-819D-69CE5EE76921">
+                            <File Id="SAFENET.HTML" Name="safenet.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\safenet.html" />
                         </Component>
-                        <Component Id="snmp_ups.exe" DiskId="1" Guid="B8626239-0883-404F-BB0F-E086DC69DBBB">
-                            <File Id="snmp_ups.exe" Name="snmp-ups.exe" Source="..\..\..\drivers\.libs\snmp-ups.exe" />
+                        <Component Id="SKEL.HTML" DiskId="1" Guid="005A258D-2C9C-4B6D-93D2-8583C0D129EE">
+                            <File Id="SKEL.HTML" Name="skel.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\skel.html" />
                         </Component>
-                        <Component Id="solis.exe" DiskId="1" Guid="5968D7EE-91E8-43D4-AFF3-9042B262671B">
-                            <File Id="solis.exe" Name="solis.exe" Source="..\..\..\drivers\.libs\solis.exe" />
+                        <Component Id="SNMP_UPS.HTML" DiskId="1" Guid="8EAA0754-3761-411B-8E88-C78433C1BF7D">
+                            <File Id="SNMP_UPS.HTML" Name="snmp-ups.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\snmp-ups.html" />
                         </Component>
-                        <Component Id="tripplite.exe" DiskId="1" Guid="A7197A85-1B30-4ADB-B7F4-6EEA01BA0D78">
-                            <File Id="tripplite.exe" Name="tripplite.exe" Source="..\..\..\drivers\.libs\tripplite.exe" />
+                        <Component Id="SOLIS.HTML" DiskId="1" Guid="5F02EA12-D4B9-4693-BE36-93A39ADBDBC2">
+                            <File Id="SOLIS.HTML" Name="solis.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\solis.html" />
                         </Component>
-                        <Component Id="tripplitesu.exe" DiskId="1" Guid="78EA9D3B-23E2-435C-BFCC-E06C9261FE1A">
-                            <File Id="tripplitesu.exe" Name="tripplitesu.exe" Source="..\..\..\drivers\.libs\tripplitesu.exe" />
+                        <Component Id="TRIPPLITE.HTML" DiskId="1" Guid="89D096B9-001C-4D13-83FA-A20AFD943940">
+                            <File Id="TRIPPLITE.HTML" Name="tripplite.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\tripplite.html" />
                         </Component>
-                        <Component Id="tripplite_usb.exe" DiskId="1" Guid="CC96EB0B-A576-47A2-8272-3E6F7B6EF1F5">
-                            <File Id="tripplite_usb.exe" Name="tripplite_usb.exe" Source="..\..\..\drivers\.libs\tripplite_usb.exe" />
+                        <Component Id="TRIPPLITESU.HTML" DiskId="1" Guid="3584A3E9-E8CE-4A6B-8337-4AB6D68FF6F5">
+                            <File Id="TRIPPLITESU.HTML" Name="tripplitesu.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\tripplitesu.html" />
                         </Component>
-                        <Component Id="upsc.exe" DiskId="1" Guid="1F97F705-DA93-4637-9B96-2558C26E95DF">
-                            <File Id="upsc.exe" Name="upsc.exe" Source="..\..\..\clients\.libs\upsc.exe" />
+                        <Component Id="TRIPPLITE_USB.HTML" DiskId="1" Guid="7B4D2431-3EBE-41B0-96BA-8B8A0449C2A2">
+                            <File Id="TRIPPLITE_USB.HTML" Name="tripplite_usb.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\tripplite_usb.html" />
                         </Component>
-                        <Component Id="upscmd.exe" DiskId="1" Guid="A3558D00-A094-4C1E-97B7-136B9B0ABAF4">
-                            <File Id="upscmd.exe" Name="upscmd.exe" Source="..\..\..\clients\.libs\upscmd.exe" />
+                        <Component Id="UPS.CONF.HTML" DiskId="1" Guid="E5DB3E0E-9EAB-4806-8AE9-E4887DE3FE65">
+                            <File Id="UPS.CONF.HTML" Name="ups.conf.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\ups.conf.html" />
                         </Component>
-                        <Component Id="upscode2.exe" DiskId="1" Guid="73D8897D-0853-484A-9C48-591CF212DB76">
-                            <File Id="upscode2.exe" Name="upscode2.exe" Source="..\..\..\drivers\.libs\upscode2.exe" />
+                        <Component Id="UPSC.HTML" DiskId="1" Guid="5AEDE9CB-7DBD-4F2B-B210-E35C012E174C">
+                            <File Id="UPSC.HTML" Name="upsc.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upsc.html" />
                         </Component>
-                        <Component Id="upsdrvctl.exe" DiskId="1" Guid="A1542254-43BF-4194-ACA9-13AE2BC46C75">
-                            <File Id="upsdrvctl.exe" Name="upsdrvctl.exe" Source="..\..\..\drivers\.libs\upsdrvctl.exe" />
+                        <Component Id="UPSCLIENT.HTML" DiskId="1" Guid="39AB12C2-752B-4A84-BD7B-1FB7B6DEF454">
+                            <File Id="UPSCLIENT.HTML" Name="upsclient.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upsclient.html" />
                         </Component>
-                        <Component Id="upslog.exe" DiskId="1" Guid="3050E7CF-886C-4C19-89D7-92A19261C510">
-                            <File Id="upslog.exe" Name="upslog.exe" Source="..\..\..\clients\.libs\upslog.exe" />
+                        <Component Id="UPSCLI_CONNECT.HTML" DiskId="1" Guid="F7E5D3B5-F3C0-4BC6-A1ED-61EC81FD1DE0">
+                            <File Id="UPSCLI_CONNECT.HTML" Name="upscli_connect.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upscli_connect.html" />
                         </Component>
-                        <Component Id="upsrw.exe" DiskId="1" Guid="FA0498D9-F1F7-42F1-953B-E9E197FCAF33">
-                            <File Id="upsrw.exe" Name="upsrw.exe" Source="..\..\..\clients\.libs\upsrw.exe" />
+                        <Component Id="UPSCLI_DISCONNECT.HTML" DiskId="1" Guid="57C12CEA-7610-4DB7-8A56-6483F60749F8">
+                            <File Id="UPSCLI_DISCONNECT.HTML" Name="upscli_disconnect.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upscli_disconnect.html" />
                         </Component>
-                        <Component Id="upssched_cmd" DiskId="1" Guid="6F4E7E6A-63C4-4803-BEC4-63F94CE6CA0F">
-                            <File Id="upssched_cmd" Name="upssched-cmd" Source="..\..\..\clients\.libs\upssched.exe" />
+                        <Component Id="UPSCLI_FD.HTML" DiskId="1" Guid="9F18933E-2F72-406E-B2D7-290822052484">
+                            <File Id="UPSCLI_FD.HTML" Name="upscli_fd.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upscli_fd.html" />
                         </Component>
-                        <Component Id="usbhid_ups.exe" DiskId="1" Guid="43DC5E0D-F6DD-43D4-B365-4931AC04D65E">
-                            <File Id="usbhid_ups.exe" Name="usbhid-ups.exe" Source="..\..\..\drivers\.libs\usbhid-ups.exe" />
+                        <Component Id="UPSCLI_GET.HTML" DiskId="1" Guid="E76A01CA-918A-4FA0-AADE-1FE5E08C35A5">
+                            <File Id="UPSCLI_GET.HTML" Name="upscli_get.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upscli_get.html" />
                         </Component>
-                        <Component Id="victronups.exe" DiskId="1" Guid="8C12FEA5-5950-4A5F-9BA5-D2E62C20004C">
-                            <File Id="victronups.exe" Name="victronups.exe" Source="..\..\..\drivers\.libs\victronups.exe" />
+                        <Component Id="UPSCLI_LIST_NEXT.HTML" DiskId="1" Guid="1B441915-1CF8-4CDC-88F3-27003B494D5D">
+                            <File Id="UPSCLI_LIST_NEXT.HTML" Name="upscli_list_next.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upscli_list_next.html" />
                         </Component>
-                        <Component Id="msys_1.0.dll" DiskId="1" Guid="F5EDE598-7DCD-46D8-BAA5-BF640787F470">
-                            <File Id="msys_1.0.dll" Name="msys-1.0.dll" Source="ImageFiles\Others\msys-1.0.dll" />
+                        <Component Id="UPSCLI_LIST_START.HTML" DiskId="1" Guid="75DDC32C-621A-4C4F-A987-8B4A51970162">
+                            <File Id="UPSCLI_LIST_START.HTML" Name="upscli_list_start.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upscli_list_start.html" />
                         </Component>
-                        <Component Id="msys_crypto_1.0.0.dll" DiskId="1" Guid="3DC7E566-82EA-48D3-9B54-BA6B5AB32DB2">
-                            <File Id="msys_crypto_1.0.0.dll" Name="msys-crypto-1.0.0.dll" Source="ImageFiles\Others\msys-crypto-1.0.0.dll" />
+                        <Component Id="UPSCLI_READLINE.HTML" DiskId="1" Guid="7549E734-EB07-496D-B2B1-ED333C04BB2D">
+                            <File Id="UPSCLI_READLINE.HTML" Name="upscli_readline.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upscli_readline.html" />
                         </Component>
-                        <Component Id="msys_ssl_1.0.0.dll" DiskId="1" Guid="C267BD52-3D05-4D2F-A761-DDD795694EAB">
-                            <File Id="msys_ssl_1.0.0.dll" Name="msys-ssl-1.0.0.dll" Source="ImageFiles\Others\msys-ssl-1.0.0.dll" />
+                        <Component Id="UPSCLI_SENDLINE.HTML" DiskId="1" Guid="55EF7354-64F9-42CE-80B0-04BFB845085E">
+                            <File Id="UPSCLI_SENDLINE.HTML" Name="upscli_sendline.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upscli_sendline.html" />
+                        </Component>
+                        <Component Id="UPSCLI_SPLITADDR.HTML" DiskId="1" Guid="293EB45A-6BAA-4100-8343-D938C3F9E2D4">
+                            <File Id="UPSCLI_SPLITADDR.HTML" Name="upscli_splitaddr.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upscli_splitaddr.html" />
+                        </Component>
+                        <Component Id="UPSCLI_SPLITNAME.HTML" DiskId="1" Guid="B4852890-9F8F-4FA3-8AF2-FDA998FDBFFD">
+                            <File Id="UPSCLI_SPLITNAME.HTML" Name="upscli_splitname.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upscli_splitname.html" />
+                        </Component>
+                        <Component Id="UPSCLI_SSL.HTML" DiskId="1" Guid="65DE31DB-AF4E-4427-B766-D3C2A9EAC94B">
+                            <File Id="UPSCLI_SSL.HTML" Name="upscli_ssl.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upscli_ssl.html" />
+                        </Component>
+                        <Component Id="UPSCLI_STRERROR.HTML" DiskId="1" Guid="38DB7894-68B5-4B92-90C4-F21615FC84F3">
+                            <File Id="UPSCLI_STRERROR.HTML" Name="upscli_strerror.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upscli_strerror.html" />
+                        </Component>
+                        <Component Id="UPSCLI_UPSERROR.HTML" DiskId="1" Guid="7FDB8E42-50BD-4403-A2FF-B1BAB45FBB8D">
+                            <File Id="UPSCLI_UPSERROR.HTML" Name="upscli_upserror.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upscli_upserror.html" />
+                        </Component>
+                        <Component Id="UPSCMD.HTML" DiskId="1" Guid="36F6C96D-FC38-4407-B423-ACABB6488DA0">
+                            <File Id="UPSCMD.HTML" Name="upscmd.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upscmd.html" />
+                        </Component>
+                        <Component Id="UPSCODE2.HTML" DiskId="1" Guid="A27D9B88-C40E-46E8-9A99-D4F01BF927E5">
+                            <File Id="UPSCODE2.HTML" Name="upscode2.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upscode2.html" />
+                        </Component>
+                        <Component Id="UPSD.CONF.HTML" DiskId="1" Guid="C5B8750F-F4BD-4256-A245-A302654B79A7">
+                            <File Id="UPSD.CONF.HTML" Name="upsd.conf.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upsd.conf.html" />
+                        </Component>
+                        <Component Id="UPSD.HTML" DiskId="1" Guid="24175B8A-9415-44CB-8DB1-76DB0C532866">
+                            <File Id="UPSD.HTML" Name="upsd.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upsd.html" />
+                        </Component>
+                        <Component Id="UPSD.USERS.HTML" DiskId="1" Guid="E77EFAE1-F316-45A2-A50C-B1787A485155">
+                            <File Id="UPSD.USERS.HTML" Name="upsd.users.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upsd.users.html" />
+                        </Component>
+                        <Component Id="UPSDRVCTL.HTML" DiskId="1" Guid="C59A9304-6547-4527-9474-24AB30D41E6D">
+                            <File Id="UPSDRVCTL.HTML" Name="upsdrvctl.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upsdrvctl.html" />
+                        </Component>
+                        <Component Id="UPSIMAGE.CGI.HTML" DiskId="1" Guid="EF59AD0B-3BF1-41D6-855D-D61589E3CE73">
+                            <File Id="UPSIMAGE.CGI.HTML" Name="upsimage.cgi.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upsimage.cgi.html" />
+                        </Component>
+                        <Component Id="UPSLOG.HTML" DiskId="1" Guid="C9F1518F-5423-49EF-B95C-C4FC052EDE2E">
+                            <File Id="UPSLOG.HTML" Name="upslog.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upslog.html" />
+                        </Component>
+                        <Component Id="UPSMON.CONF.HTML" DiskId="1" Guid="C917768D-EA09-4D77-B860-C60FE64E428B">
+                            <File Id="UPSMON.CONF.HTML" Name="upsmon.conf.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upsmon.conf.html" />
+                        </Component>
+                        <Component Id="UPSMON.HTML" DiskId="1" Guid="B92A320E-7522-4932-A329-DF1DD4CEB984">
+                            <File Id="UPSMON.HTML" Name="upsmon.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upsmon.html" />
+                        </Component>
+                        <Component Id="UPSRW.HTML" DiskId="1" Guid="2548CC7B-6978-4D28-A080-76413FBCF235">
+                            <File Id="UPSRW.HTML" Name="upsrw.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upsrw.html" />
+                        </Component>
+                        <Component Id="UPSSCHED.CONF.HTML" DiskId="1" Guid="1534B714-8FE1-454F-BACB-6ECAE18D56C2">
+                            <File Id="UPSSCHED.CONF.HTML" Name="upssched.conf.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upssched.conf.html" />
+                        </Component>
+                        <Component Id="UPSSCHED.HTML" DiskId="1" Guid="1F26A782-D3A4-4ABE-AF6E-6F4C05588899">
+                            <File Id="UPSSCHED.HTML" Name="upssched.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upssched.html" />
+                        </Component>
+                        <Component Id="UPSSET.CGI.HTML" DiskId="1" Guid="EDD8E9DE-F94A-448C-927E-C44E244936F9">
+                            <File Id="UPSSET.CGI.HTML" Name="upsset.cgi.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upsset.cgi.html" />
+                        </Component>
+                        <Component Id="UPSSET.CONF.HTML" DiskId="1" Guid="FB7A1325-7796-40C7-899B-02CEA58F7554">
+                            <File Id="UPSSET.CONF.HTML" Name="upsset.conf.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upsset.conf.html" />
+                        </Component>
+                        <Component Id="UPSSTATS.CGI.HTML" DiskId="1" Guid="5C3220E3-EAE6-471B-9960-2ED1DECF6E0C">
+                            <File Id="UPSSTATS.CGI.HTML" Name="upsstats.cgi.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upsstats.cgi.html" />
+                        </Component>
+                        <Component Id="UPSSTATS.HTML.HTML" DiskId="1" Guid="D13996A6-031B-44B6-A59E-AA2A1567D017">
+                            <File Id="UPSSTATS.HTML.HTML" Name="upsstats.html.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upsstats.html.html" />
+                        </Component>
+                        <Component Id="USBHID_UPS.HTML" DiskId="1" Guid="055F51D1-81B3-4493-BA8A-021FBDD9D4F8">
+                            <File Id="USBHID_UPS.HTML" Name="usbhid-ups.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\usbhid-ups.html" />
+                        </Component>
+                        <Component Id="VICTRONUPS.HTML" DiskId="1" Guid="493CBCF4-300F-489B-873A-90D39962300F">
+                            <File Id="VICTRONUPS.HTML" Name="victronups.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\victronups.html" />
                         </Component>
                     </Directory>
-                    <Directory Id="cgi_bin" Name="cgi-bin">
-                        <Component Id="cgi_bin" DiskId="1" Guid="D000CE22-0919-45C7-906E-87AE9326C8A8">
-                            <File Id="cgi_bin" Name="cgi_bintmp" Source="ImageFiles\emptyDir\cgi-bin\temp.txt" />
+                </Directory>
+                <Directory Id="var" Name="var">
+                    <Directory Id="run" Name="run">
+                        <Component Id="tmpFile" DiskId="1" Guid="C36CB85E-5B5A-48E7-AE64-A066DF16E397">
+                            <File Id="tmpFile" Name="tmpFile" Source="ImageFiles\emptyDir\run\temp.txt" />
                         </Component>
-                    </Directory>
-                    <Directory Id="etc" Name="etc">
-                        <Component Id="nut.conf.sample" DiskId="1" Guid="43A50513-888F-4F60-9872-78726A68F872">
-                            <File Id="nut.conf.sample" Name="nut.conf.sample" Source="..\..\..\conf\nut.conf.sample" />
-                        </Component>
-                        <Component Id="ups.conf.sample" DiskId="1" Guid="1E1DC408-F96F-44D5-8245-984309288CA2">
-                            <File Id="ups.conf.sample" Name="ups.conf.sample" Source="..\..\..\conf\ups.conf.sample" />
-                        </Component>
-                        <Component Id="upsd.conf.sample" DiskId="1" Guid="82100A28-B2A7-49AC-902A-44D5AFAC4999">
-                            <File Id="upsd.conf.sample" Name="upsd.conf.sample" Source="..\..\..\conf\upsd.conf.sample" />
-                        </Component>
-                        <Component Id="upsd.users.sample" DiskId="1" Guid="0AEDB7E8-E5E6-4357-9193-DB585514ED78">
-                            <File Id="upsd.users.sample" Name="upsd.users.sample" Source="..\..\..\conf\upsd.users.sample" />
-                        </Component>
-                        <Component Id="upsmon.conf.sample" DiskId="1" Guid="98EE26CC-9E41-4E58-AA75-6B56DCB2ADFF">
-                            <File Id="upsmon.conf.sample" Name="upsmon.conf.sample" Source="..\..\..\conf\upsmon.conf.sample" />
-                        </Component>
-                        <Component Id="upssched.conf.sample" DiskId="1" Guid="AA0BF782-3CB2-4E40-A20F-E20B68201042">
-                            <File Id="upssched.conf.sample" Name="upssched.conf.sample" Source="..\..\..\conf\upssched.conf.sample" />
-                        </Component>
-                    </Directory>
-                    <Directory Id="html" Name="html">
-                        <Component Id="htmltmp" DiskId="1" Guid="6F816450-7CE1-47FB-9ED7-DFF7EDB5E99C">
-                            <File Id="htmltmp" Name="htmltmp" Source="ImageFiles\emptyDir\html\temp.txt" />
-                        </Component>
-                    </Directory>
-                    <Directory Id="include" Name="include">
-                        <Component Id="include" DiskId="1" Guid="DD763052-E5F8-4768-B499-2556E6073E98">
-                            <File Id="include" Name="tmpFile" Source="ImageFiles\emptyDir\include\temp.txt" />
-                        </Component>
-                    </Directory>
-                    <Directory Id="lib" Name="lib">
-                        <Component Id="libupsclient.a" DiskId="1" Guid="E95C7594-5818-460F-9BDE-99F2F29BA057">
-                            <File Id="libupsclient.a" Name="libupsclient.a" Source="..\..\..\clients\.libs\libupsclient.a" />
-                        </Component>
-                        <Component Id="libupsclient.la" DiskId="1" Guid="7F43526E-F1FC-4BAF-949F-FE495448C1D3">
-                            <File Id="libupsclient.la" Name="libupsclient.la" Source="..\..\..\clients\.libs\libupsclient.la" />
-                        </Component>
-                        <Directory Id="pkgconfig" Name="pkgconfig">
-                            <Component Id="pkgconfig" DiskId="1" Guid="213BA9E0-4780-4628-830F-FB2649FF4384">
-                                <File Id="pkgconfig" Name="pkgconfig" Source="ImageFiles\emptyDir\pkgconfig\temp.txt" />
-                            </Component>
-                        </Directory>
-                    </Directory>
-                    <Directory Id="sbin" Name="sbin">
-                        <Component Id="upsd.exe" DiskId="1" Guid="25532A82-C7C5-499C-BC49-5CC469437FD3">
-                            <File Id="upsd.exe" Name="upsd.exe" Source="..\..\..\server\.libs\upsd.exe" />
-                        </Component>
-                        <Component Id="upsmon.exe" DiskId="1" Guid="140A5967-4494-4253-9F97-CFC3DC701696">
-                            <File Id="upsmon.exe" Name="upsmon.exe" Source="..\..\..\clients\.libs\upsmon.exe" />
-                        </Component>
-                        <Component Id="upssched.exe" DiskId="1" Guid="142F2FB6-1DEA-42E8-A9DF-C8088C49A63E">
-                            <File Id="upssched.exe" Name="upssched.exe" Source="..\..\..\clients\.libs\upssched.exe" />
-                        </Component>
-                        <Component Id="msys1.0.dll" DiskId="1" Guid="8545D6E5-4E32-42BB-A5B1-78D6267F52BD">
-                            <File Id="msys1.0.dll" Name="msys-1.0.dll" Source="ImageFiles\Others\msys-1.0.dll" />
-                        </Component>
-                        <Component Id="msyscrypto_1.0.0.dll" DiskId="1" Guid="CA38C7F7-E73F-4695-B560-81F2DACB6BC1">
-                            <File Id="msyscrypto_1.0.0.dll" Name="msys-crypto-1.0.0.dll" Source="ImageFiles\Others\msys-crypto-1.0.0.dll" />
-                        </Component>
-                        <Component Id="msysssl_1.0.0.dll" DiskId="1" Guid="044433C6-2D0A-468F-8764-7D1AE5196440">
-                            <File Id="msysssl_1.0.0.dll" Name="msys-ssl-1.0.0.dll" Source="ImageFiles\Others\msys-ssl-1.0.0.dll" />
-                        </Component>
-                    </Directory>
-                    <Directory Id="share" Name="share">
-                        <Component Id="cmdvartab" DiskId="1" Guid="43A36793-630E-408E-A6F7-DF47BED6EDAB">
-                            <File Id="cmdvartab" Name="cmdvartab" Source="..\..\..\data\cmdvartab" />
-                        </Component>
-                        <Component Id="driver.list" DiskId="1" Guid="9FD9A5F7-257E-467E-A11A-520361E5AFF5">
-                            <File Id="driver.list" Name="driver.list" Source="..\..\..\data\driver.list" />
-                        </Component>
-                        <Directory Id="man" Name="man">
-                            <Directory Id="man1" Name="man1">
-                                <Component Id="man1tmpFile" DiskId="1" Guid="FE440A00-5041-415F-8AEF-23B2A3AFB5E9">
-                                    <File Id="man1tmpFile" Name="man1tmpFile" Source="ImageFiles\emptyDir\man1\temp.txt" />
-                                </Component>
-                            </Directory>
-                            <Directory Id="man3" Name="man3">
-                                <Component Id="man3tmpFile" DiskId="1" Guid="CDBA403B-0FC3-41CE-8401-246EB00CA88B">
-                                    <File Id="man3tmpFile" Name="man3tmpFile" Source="ImageFiles\emptyDir\man3\temp.txt" />
-                                </Component>
-                            </Directory>
-                            <Directory Id="man5" Name="man5">
-                                <Component Id="nut.conf.5" DiskId="1" Guid="138BB30F-F843-4F42-85B7-D1F5D430B226">
-                                    <File Id="nut.conf.5" Name="nut.conf.5" Source="..\..\..\docs\man\nut.conf.5" />
-                                </Component>
-                                <Component Id="ups.conf.5" DiskId="1" Guid="ECA7541E-4207-48A2-94AE-97A1FF35FECF">
-                                    <File Id="ups.conf.5" Name="ups.conf.5" Source="..\..\..\docs\man\ups.conf.5" />
-                                </Component>
-                                <Component Id="upsd.conf.5" DiskId="1" Guid="709C53A9-56B2-46C9-961E-7CDE1EA40601">
-                                    <File Id="upsd.conf.5" Name="upsd.conf.5" Source="..\..\..\docs\man\upsd.conf.5" />
-                                </Component>
-                                <Component Id="upsd.users.5" DiskId="1" Guid="769E1B1E-0802-43D9-AA67-03507AC9ACD6">
-                                    <File Id="upsd.users.5" Name="upsd.users.5" Source="..\..\..\docs\man\upsd.users.5" />
-                                </Component>
-                                <Component Id="upsmon.conf.5" DiskId="1" Guid="77AC2707-707B-4FB0-9CC2-FA65B29BF158">
-                                    <File Id="upsmon.conf.5" Name="upsmon.conf.5" Source="..\..\..\docs\man\upsmon.conf.5" />
-                                </Component>
-                                <Component Id="upssched.conf.5" DiskId="1" Guid="8BF43A63-5A98-4F1B-9BD2-907068FC806A">
-                                    <File Id="upssched.conf.5" Name="upssched.conf.5" Source="..\..\..\docs\man\upssched.conf.5" />
-                                </Component>
-                            </Directory>
-                            <Directory Id="man8" Name="man8">
-                                <Component Id="apcsmart.8" DiskId="1" Guid="658FB0C9-FC74-4A19-8BE9-AF9ADE7BBD33">
-                                    <File Id="apcsmart.8" Name="apcsmart.8" Source="..\..\..\docs\man\apcsmart.8" />
-                                </Component>
-                                <Component Id="bcmxcp.8" DiskId="1" Guid="8A435737-8217-40A6-AF46-F63EFA3751DA">
-                                    <File Id="bcmxcp.8" Name="bcmxcp.8" Source="..\..\..\docs\man\bcmxcp.8" />
-                                </Component>
-                                <Component Id="bcmxcp_usb.8" DiskId="1" Guid="67DA891B-2062-4C68-8EE0-6DCF737BB892">
-                                    <File Id="bcmxcp_usb.8" Name="bcmxcp_usb.8" Source="..\..\..\docs\man\bcmxcp_usb.8" />
-                                </Component>
-                                <Component Id="belkin.8" DiskId="1" Guid="71B06188-0195-4827-8C64-DB4F4D2A3EEB">
-                                    <File Id="belkin.8" Name="belkin.8" Source="..\..\..\docs\man\belkin.8" />
-                                </Component>
-                                <Component Id="belkinunv.8" DiskId="1" Guid="A57CC0EF-6C43-401E-AA28-F2991A5D2E7F">
-                                    <File Id="belkinunv.8" Name="belkinunv.8" Source="..\..\..\docs\man\belkinunv.8" />
-                                </Component>
-                                <Component Id="bestfcom.8" DiskId="1" Guid="64B76663-2A9F-45E7-B6A3-A3DF3F4D0E6D">
-                                    <File Id="bestfcom.8" Name="bestfcom.8" Source="..\..\..\docs\man\bestfcom.8" />
-                                </Component>
-                                <Component Id="bestfortress.8" DiskId="1" Guid="80FA23CE-304E-4B32-B840-2795A6A14B56">
-                                    <File Id="bestfortress.8" Name="bestfortress.8" Source="..\..\..\docs\man\bestfortress.8" />
-                                </Component>
-                                <Component Id="bestuferrups.8" DiskId="1" Guid="AB3D34C8-D592-49DB-9470-392601A5B9C7">
-                                    <File Id="bestuferrups.8" Name="bestuferrups.8" Source="..\..\..\docs\man\bestuferrups.8" />
-                                </Component>
-                                <Component Id="bestups.8" DiskId="1" Guid="A34C5BDD-2790-488E-9E56-D8C4F7352615">
-                                    <File Id="bestups.8" Name="bestups.8" Source="..\..\..\docs\man\bestups.8" />
-                                </Component>
-                                <Component Id="blazer.8" DiskId="1" Guid="856FE695-A870-4FA0-9C88-10782F1742F6">
-                                    <File Id="blazer.8" Name="blazer.8" Source="..\..\..\docs\man\blazer.8" />
-                                </Component>
-                                <Component Id="clone.8" DiskId="1" Guid="7F733325-86AE-4750-9FD1-E40DB1D251E0">
-                                    <File Id="clone.8" Name="clone.8" Source="..\..\..\docs\man\clone.8" />
-                                </Component>
-                                <Component Id="dummy_ups.8" DiskId="1" Guid="DF3DDC40-BAE4-4126-8723-8FA7ECA14916">
-                                    <File Id="dummy_ups.8" Name="dummy-ups.8" Source="..\..\..\docs\man\dummy-ups.8" />
-                                </Component>
-                                <Component Id="etapro.8" DiskId="1" Guid="939F2CC1-5283-47AB-B10F-E6094506A520">
-                                    <File Id="etapro.8" Name="etapro.8" Source="..\..\..\docs\man\etapro.8" />
-                                </Component>
-                                <Component Id="everups.8" DiskId="1" Guid="448828A6-460F-46AE-9D6A-4CEFB83803B9">
-                                    <File Id="everups.8" Name="everups.8" Source="..\..\..\docs\man\everups.8" />
-                                </Component>
-                                <Component Id="gamatronic.8" DiskId="1" Guid="87739560-0A0D-4715-9E5F-946CC07E2934">
-                                    <File Id="gamatronic.8" Name="gamatronic.8" Source="..\..\..\docs\man\gamatronic.8" />
-                                </Component>
-                                <Component Id="genericups.8" DiskId="1" Guid="59350794-31EB-49E5-843B-CF7D50D329D3">
-                                    <File Id="genericups.8" Name="genericups.8" Source="..\..\..\docs\man\genericups.8" />
-                                </Component>
-                                <Component Id="isbmex.8" DiskId="1" Guid="26A46440-8656-4EBB-80E8-144FCD44074C">
-                                    <File Id="isbmex.8" Name="isbmex.8" Source="..\..\..\docs\man\isbmex.8" />
-                                </Component>
-                                <Component Id="ivtscd.8" DiskId="1" Guid="7A93F172-260E-45C7-8C7E-F0D47EDED0DF">
-                                    <File Id="ivtscd.8" Name="ivtscd.8" Source="..\..\..\docs\man\ivtscd.8" />
-                                </Component>
-                                <Component Id="liebert_esp2.8" DiskId="1" Guid="6F251C5D-CBF8-4F5B-AD70-82F61795EF3B">
-                                    <File Id="liebert_esp2.8" Name="liebert-esp2.8" Source="..\..\..\docs\man\liebert-esp2.8" />
-                                </Component>
-                                <Component Id="liebert.8" DiskId="1" Guid="C51200A5-0B31-469A-B657-427A4B9FD221">
-                                    <File Id="liebert.8" Name="liebert.8" Source="..\..\..\docs\man\liebert.8" />
-                                </Component>
-                                <Component Id="masterguard.8" DiskId="1" Guid="591D1177-D81C-4109-9DD8-5374E16D92B7">
-                                    <File Id="masterguard.8" Name="masterguard.8" Source="..\..\..\docs\man\masterguard.8" />
-                                </Component>
-                                <Component Id="metasys.8" DiskId="1" Guid="6A4F7D47-A8E0-446C-BC3F-D1E5A3845BAE">
-                                    <File Id="metasys.8" Name="metasys.8" Source="..\..\..\docs\man\metasys.8" />
-                                </Component>
-                                <Component Id="mge_shut.8" DiskId="1" Guid="7759380B-A860-4E1B-B597-7D224C779C69">
-                                    <File Id="mge_shut.8" Name="mge-shut.8" Source="..\..\..\docs\man\mge-shut.8" />
-                                </Component>
-                                <Component Id="mge_utalk.8" DiskId="1" Guid="212B2A44-9AC1-48E3-A735-F28EF9B07AC2">
-                                    <File Id="mge_utalk.8" Name="mge-utalk.8" Source="..\..\..\docs\man\mge-utalk.8" />
-                                </Component>
-                                <Component Id="microdowell.8" DiskId="1" Guid="0D60B121-8DF2-400C-932D-8963A17B14D4">
-                                    <File Id="microdowell.8" Name="microdowell.8" Source="..\..\..\docs\man\microdowell.8" />
-                                </Component>
-                                <Component Id="netxml_ups.8" DiskId="1" Guid="37226B53-6792-410C-BB18-8C65E1A21B9B">
-                                    <File Id="netxml_ups.8" Name="netxml-ups.8" Source="..\..\..\docs\man\netxml-ups.8" />
-                                </Component>
-                                <Component Id="nutupsdrv.8" DiskId="1" Guid="2685B955-7CE7-400E-9CA3-54B63A5B67F6">
-                                    <File Id="nutupsdrv.8" Name="nutupsdrv.8" Source="..\..\..\docs\man\nutupsdrv.8" />
-                                </Component>
-                                <Component Id="oneac.8" DiskId="1" Guid="89A1D09A-663C-4E9C-B685-9C61DF722C71">
-                                    <File Id="oneac.8" Name="oneac.8" Source="..\..\..\docs\man\oneac.8" />
-                                </Component>
-                                <Component Id="optiups.8" DiskId="1" Guid="8B3D0FBC-C251-440B-9E41-DDACC248D999">
-                                    <File Id="optiups.8" Name="optiups.8" Source="..\..\..\docs\man\optiups.8" />
-                                </Component>
-                                <Component Id="powercom.8" DiskId="1" Guid="6852740A-4300-446F-8A08-A7CF80B218D1">
-                                    <File Id="powercom.8" Name="powercom.8" Source="..\..\..\docs\man\powercom.8" />
-                                </Component>
-                                <Component Id="powerpanel.8" DiskId="1" Guid="1BA784AA-3C9E-46BB-A171-E554366F49A4">
-                                    <File Id="powerpanel.8" Name="powerpanel.8" Source="..\..\..\docs\man\powerpanel.8" />
-                                </Component>
-                                <Component Id="rhino.8" DiskId="1" Guid="A382E42D-614E-48B5-A32D-C6AFD4C07FD2">
-                                    <File Id="rhino.8" Name="rhino.8" Source="..\..\..\docs\man\rhino.8" />
-                                </Component>
-                                <Component Id="richcomm_usb.8" DiskId="1" Guid="B67661F7-5DC8-4E0D-9AB1-446B7050F1C1">
-                                    <File Id="richcomm_usb.8" Name="richcomm_usb.8" Source="..\..\..\docs\man\richcomm_usb.8" />
-                                </Component>
-                                <Component Id="safenet.8" DiskId="1" Guid="7AD197CD-0318-45FD-BB67-512807338747">
-                                    <File Id="safenet.8" Name="safenet.8" Source="..\..\..\docs\man\safenet.8" />
-                                </Component>
-                                <Component Id="snmp_ups.8" DiskId="1" Guid="FCCB4E46-9A66-433C-86C4-417BDDFE8388">
-                                    <File Id="snmp_ups.8" Name="snmp-ups.8" Source="..\..\..\docs\man\snmp-ups.8" />
-                                </Component>
-                                <Component Id="solis.8" DiskId="1" Guid="3E549B1B-F064-4927-ADCB-C8666829A971">
-                                    <File Id="solis.8" Name="solis.8" Source="..\..\..\docs\man\solis.8" />
-                                </Component>
-                                <Component Id="tripplite.8" DiskId="1" Guid="5F7BE7AC-D198-4A7F-A842-21E7C8B56161">
-                                    <File Id="tripplite.8" Name="tripplite.8" Source="..\..\..\docs\man\tripplite.8" />
-                                </Component>
-                                <Component Id="tripplitesu.8" DiskId="1" Guid="870E689B-5257-4E98-A29E-86AB25C7D192">
-                                    <File Id="tripplitesu.8" Name="tripplitesu.8" Source="..\..\..\docs\man\tripplitesu.8" />
-                                </Component>
-                                <Component Id="tripplite_usb.8" DiskId="1" Guid="E79C4C66-950F-47A1-903C-E0F8DD54BDD6">
-                                    <File Id="tripplite_usb.8" Name="tripplite_usb.8" Source="..\..\..\docs\man\tripplite_usb.8" />
-                                </Component>
-                                <Component Id="upsc.8" DiskId="1" Guid="CA00B5EB-BC9C-4FD3-94CA-E3401463B2CF">
-                                    <File Id="upsc.8" Name="upsc.8" Source="..\..\..\docs\man\upsc.8" />
-                                </Component>
-                                <Component Id="upscmd.8" DiskId="1" Guid="E793D2A2-1470-49E9-ABA3-E6B998A0D431">
-                                    <File Id="upscmd.8" Name="upscmd.8" Source="..\..\..\docs\man\upscmd.8" />
-                                </Component>
-                                <Component Id="upscode2.8" DiskId="1" Guid="1B98888C-DE57-4E70-8CEA-984E56D5ED65">
-                                    <File Id="upscode2.8" Name="upscode2.8" Source="..\..\..\docs\man\upscode2.8" />
-                                </Component>
-                                <Component Id="upsd.8" DiskId="1" Guid="3332CAFA-E48C-4BA9-9542-36A581EB130B">
-                                    <File Id="upsd.8" Name="upsd.8" Source="..\..\..\docs\man\upsd.8" />
-                                </Component>
-                                <Component Id="upsdrvctl.8" DiskId="1" Guid="C984E923-6656-4E79-8BDF-C2E52AAE40B1">
-                                    <File Id="upsdrvctl.8" Name="upsdrvctl.8" Source="..\..\..\docs\man\upsdrvctl.8" />
-                                </Component>
-                                <Component Id="upslog.8" DiskId="1" Guid="942743A6-0E90-4916-8A10-DB54C9841090">
-                                    <File Id="upslog.8" Name="upslog.8" Source="..\..\..\docs\man\upslog.8" />
-                                </Component>
-                                <Component Id="upsmon.8" DiskId="1" Guid="383FFEA3-FDC0-43A6-8216-1D9CB070DA72">
-                                    <File Id="upsmon.8" Name="upsmon.8" Source="..\..\..\docs\man\upsmon.8" />
-                                </Component>
-                                <Component Id="upsrw.8" DiskId="1" Guid="EBD2B0ED-9C09-4243-BB43-D75927341853">
-                                    <File Id="upsrw.8" Name="upsrw.8" Source="..\..\..\docs\man\upsrw.8" />
-                                </Component>
-                                <Component Id="upssched.8" DiskId="1" Guid="7C4ABE78-338D-4256-A4C3-7FD77ED8B53C">
-                                    <File Id="upssched.8" Name="upssched.8" Source="..\..\..\docs\man\upssched.8" />
-                                </Component>
-                                <Component Id="usbhid_ups.8" DiskId="1" Guid="CA149295-F214-4D69-BC8C-F59D8BD46EF8">
-                                    <File Id="usbhid_ups.8" Name="usbhid-ups.8" Source="..\..\..\docs\man\usbhid-ups.8" />
-                                </Component>
-                                <Component Id="victronups.8" DiskId="1" Guid="9869AFBC-AE11-42A0-9A0C-3257EF8E9FB5">
-                                    <File Id="victronups.8" Name="victronups.8" Source="..\..\..\docs\man\victronups.8" />
-                                </Component>
-                            </Directory>
-                        </Directory>
-                    </Directory>
-                    <Directory Id="var" Name="var">
-                        <Directory Id="run" Name="run">
-                            <Component Id="tmpFile" DiskId="1" Guid="C36CB85E-5B5A-48E7-AE64-A066DF16E397">
-                                <File Id="tmpFile" Name="tmpFile" Source="ImageFiles\emptyDir\run\temp.txt" />
-                            </Component>
-                        </Directory>
                     </Directory>
                 </Directory>
             </Directory>
@@ -1636,7 +1706,7 @@ Public License instead of this License.
             <Component Id="RegistryEntries" Guid="F0D02F68-DE8E-4BD2-927C-88DBC9ABC083">
                 <RegistryKey Root="HKLM" Key="SYSTEM\CurrentControlSet\Services\EventLog\Application\Network UPS Tools" Action="createAndRemoveOnUninstall">
                     <RegistryValue Type="integer" Name="TypesSupported" Value="7" KeyPath="yes" />
-                    <RegistryValue Type="string" Name="EventMessageFile" Value="[NUT]ups\bin\nut.exe" />
+                    <RegistryValue Type="string" Name="EventMessageFile" Value="[NUT]bin\nut.exe" />
                 </RegistryKey>
                 <RegistryKey Root="HKLM" Key="SYSTEM\CurrentControlSet\Services\Network UPS Tools" Action="createAndRemoveOnUninstall">
                 </RegistryKey>
@@ -1646,12 +1716,15 @@ Public License instead of this License.
         <!--Add Short cut in Start up Menu -->
         <DirectoryRef Id="ApplicationProgramsFolder">
             <Component Id="ApplicationShortcut" Guid="28EEB858-0240-4421-98FF-51B3B933594E">
-                <Shortcut Id="ApplicationStartMenuShortcut" Name="Start Service" Description="Network UPS Tools-NUT" Target="[Others]StartService.bat" WorkingDirectory="Others">
+                <Shortcut Id="ApplicationStartMenuShortcut" Name="Start Service" Description="Network UPS Tools-NUT" Target="[others]StartService.bat" WorkingDirectory="others">
                     <Icon Id="powernut_logo.ico" SourceFile="ImageFiles\icons\powernut_logo.ico" />
                 </Shortcut>
-                <Shortcut Id="ApplicationStopMenuShortcut" Name="Stop Service" Description="Network UPS Tools-NUT" Target="[Others]StopService.bat" WorkingDirectory="Others">
+                <Shortcut Id="ApplicationStopMenuShortcut" Name="Stop Service" Description="Network UPS Tools-NUT" Target="[others]StopService.bat" WorkingDirectory="others">
                     <Icon Id="powernut_Stop.ico" SourceFile="ImageFiles\icons\powernut_Stop.ico" />
                 </Shortcut>
+                <Shortcut Id="ShortcutUserManual" Name="User manual" Description="User manual" Target="[docs]user-manual.html" WorkingDirectory="docs" />
+                <Shortcut Id="ShortcutFAQ" Name="FAQ" Description="FAQ" Target="[docs]FAQ.HTML" WorkingDirectory="docs" />
+                <Shortcut Id="ShortcutMAN" Name="Man pages" Description="Man pages" Target="[man]INDEX.HTML" WorkingDirectory="man" />
                 <!-- Add Shortcut for uninstall in Start Up  menu-->
                 <Shortcut Id="UninstallProduct" Name="Uninstall NUT" Description="Uninstalls NUT" Target="[System64Folder]msiexec.exe" Arguments="/x [ProductCode]" />
                 <RemoveFolder Id="NUT" On="uninstall" />
@@ -1748,65 +1821,7 @@ Public License instead of this License.
             <Feature Id="share" Level="1" Title="NUT shared files and MAN pages for Windows">
                 <ComponentRef Id="cmdvartab" />
                 <ComponentRef Id="driver.list" />
-                <ComponentRef Id="nut.conf.5" />
-                <ComponentRef Id="ups.conf.5" />
-                <ComponentRef Id="upsd.conf.5" />
-                <ComponentRef Id="upsd.users.5" />
-                <ComponentRef Id="upsmon.conf.5" />
-                <ComponentRef Id="upssched.conf.5" />
-                <ComponentRef Id="upscmd.8" />
-                <ComponentRef Id="optiups.8" />
-                <ComponentRef Id="tripplite_usb.8" />
-                <ComponentRef Id="bcmxcp.8" />
-                <ComponentRef Id="isbmex.8" />
-                <ComponentRef Id="liebert_esp2.8" />
-                <ComponentRef Id="bestfortress.8" />
-                <ComponentRef Id="upsdrvctl.8" />
-                <ComponentRef Id="victronups.8" />
-                <ComponentRef Id="upsd.8" />
-                <ComponentRef Id="nutupsdrv.8" />
-                <ComponentRef Id="upsrw.8" />
-                <ComponentRef Id="apcsmart.8" />
-                <ComponentRef Id="masterguard.8" />
-                <ComponentRef Id="upsc.8" />
-                <ComponentRef Id="usbhid_ups.8" />
-                <ComponentRef Id="upssched.8" />
-                <ComponentRef Id="clone.8" />
-                <ComponentRef Id="powercom.8" />
-                <ComponentRef Id="powerpanel.8" />
-                <ComponentRef Id="bestups.8" />
-                <ComponentRef Id="rhino.8" />
-                <ComponentRef Id="liebert.8" />
-                <ComponentRef Id="mge_utalk.8" />
-                <ComponentRef Id="everups.8" />
-                <ComponentRef Id="blazer.8" />
-                <ComponentRef Id="genericups.8" />
-                <ComponentRef Id="mge_shut.8" />
-                <ComponentRef Id="bestuferrups.8" />
-                <ComponentRef Id="upsmon.8" />
-                <ComponentRef Id="dummy_ups.8" />
-                <ComponentRef Id="safenet.8" />
-                <ComponentRef Id="solis.8" />
-                <ComponentRef Id="upscode2.8" />
-                <ComponentRef Id="tripplitesu.8" />
-                <ComponentRef Id="richcomm_usb.8" />
-                <ComponentRef Id="oneac.8" />
-                <ComponentRef Id="netxml_ups.8" />
-                <ComponentRef Id="bestfcom.8" />
-                <ComponentRef Id="gamatronic.8" />
-                <ComponentRef Id="belkin.8" />
-                <ComponentRef Id="belkinunv.8" />
-                <ComponentRef Id="metasys.8" />
-                <ComponentRef Id="bcmxcp_usb.8" />
-                <ComponentRef Id="ivtscd.8" />
-                <ComponentRef Id="upslog.8" />
-                <ComponentRef Id="microdowell.8" />
-                <ComponentRef Id="etapro.8" />
-                <ComponentRef Id="snmp_ups.8" />
-                <ComponentRef Id="tripplite.8" />
                 <!--NUT temp files to create empty directory-->
-                <ComponentRef Id="man1tmpFile" />
-                <ComponentRef Id="man3tmpFile" />
                 <ComponentRef Id="tmpFile" />
                 <ComponentRef Id="cgi_bin" />
                 <ComponentRef Id="include" />
@@ -1816,10 +1831,99 @@ Public License instead of this License.
             <Feature Id="HKLM" Level="1">
                 <ComponentRef Id="RegistryEntries" />
             </Feature>
+            <Feature Id="Docs" Level="1">
+                <ComponentRef Id="usermanual.html" />
+                <ComponentRef Id="FAQ.html" />
+                <ComponentRef Id="docbookxsl.css" />
+            </Feature>
+            <Feature Id="Man" Level="1">
+                <ComponentRef Id="APCSMART.HTML" />
+                <ComponentRef Id="BCMXCP.HTML" />
+                <ComponentRef Id="BCMXCP_USB.HTML" />
+                <ComponentRef Id="BELKIN.HTML" />
+                <ComponentRef Id="BELKINUNV.HTML" />
+                <ComponentRef Id="BESTFCOM.HTML" />
+                <ComponentRef Id="BESTFORTRESS.HTML" />
+                <ComponentRef Id="BESTUFERRUPS.HTML" />
+                <ComponentRef Id="BESTUPS.HTML" />
+                <ComponentRef Id="BLAZER.HTML" />
+                <ComponentRef Id="CLONE.HTML" />
+                <ComponentRef Id="DUMMY_UPS.HTML" />
+                <ComponentRef Id="ETAPRO.HTML" />
+                <ComponentRef Id="EVERUPS.HTML" />
+                <ComponentRef Id="GAMATRONIC.HTML" />
+                <ComponentRef Id="GENERICUPS.HTML" />
+                <ComponentRef Id="HOSTS.CONF.HTML" />
+                <ComponentRef Id="INDEX.HTML" />
+                <ComponentRef Id="ISBMEX.HTML" />
+                <ComponentRef Id="IVTSCD.HTML" />
+                <ComponentRef Id="LIBUPSCLIENT_CONFIG.HTML" />
+                <ComponentRef Id="LIEBERT_ESP2.HTML" />
+                <ComponentRef Id="LIEBERT.HTML" />
+                <ComponentRef Id="MAN_INDEX.HTML" />
+                <ComponentRef Id="MASTERGUARD.HTML" />
+                <ComponentRef Id="METASYS.HTML" />
+                <ComponentRef Id="MGE_SHUT.HTML" />
+                <ComponentRef Id="MGE_UTALK.HTML" />
+                <ComponentRef Id="MICRODOWELL.HTML" />
+                <ComponentRef Id="NETXML_UPS.HTML" />
+                <ComponentRef Id="NUT.CONF.HTML" />
+                <ComponentRef Id="NUTUPSDRV.HTML" />
+                <ComponentRef Id="ONEAC.HTML" />
+                <ComponentRef Id="OPTIUPS.HTML" />
+                <ComponentRef Id="POWERCOM.HTML" />
+                <ComponentRef Id="POWERMAN_PDU.HTML" />
+                <ComponentRef Id="POWERPANEL.HTML" />
+                <ComponentRef Id="RHINO.HTML" />
+                <ComponentRef Id="RICHCOMM_USB.HTML" />
+                <ComponentRef Id="SAFENET.HTML" />
+                <ComponentRef Id="SKEL.HTML" />
+                <ComponentRef Id="SNMP_UPS.HTML" />
+                <ComponentRef Id="SOLIS.HTML" />
+                <ComponentRef Id="TRIPPLITE.HTML" />
+                <ComponentRef Id="TRIPPLITESU.HTML" />
+                <ComponentRef Id="TRIPPLITE_USB.HTML" />
+                <ComponentRef Id="UPS.CONF.HTML" />
+                <ComponentRef Id="UPSC.HTML" />
+                <ComponentRef Id="UPSCLIENT.HTML" />
+                <ComponentRef Id="UPSCLI_CONNECT.HTML" />
+                <ComponentRef Id="UPSCLI_DISCONNECT.HTML" />
+                <ComponentRef Id="UPSCLI_FD.HTML" />
+                <ComponentRef Id="UPSCLI_GET.HTML" />
+                <ComponentRef Id="UPSCLI_LIST_NEXT.HTML" />
+                <ComponentRef Id="UPSCLI_LIST_START.HTML" />
+                <ComponentRef Id="UPSCLI_READLINE.HTML" />
+                <ComponentRef Id="UPSCLI_SENDLINE.HTML" />
+                <ComponentRef Id="UPSCLI_SPLITADDR.HTML" />
+                <ComponentRef Id="UPSCLI_SPLITNAME.HTML" />
+                <ComponentRef Id="UPSCLI_SSL.HTML" />
+                <ComponentRef Id="UPSCLI_STRERROR.HTML" />
+                <ComponentRef Id="UPSCLI_UPSERROR.HTML" />
+                <ComponentRef Id="UPSCMD.HTML" />
+                <ComponentRef Id="UPSCODE2.HTML" />
+                <ComponentRef Id="UPSD.CONF.HTML" />
+                <ComponentRef Id="UPSD.HTML" />
+                <ComponentRef Id="UPSD.USERS.HTML" />
+                <ComponentRef Id="UPSDRVCTL.HTML" />
+                <ComponentRef Id="UPSIMAGE.CGI.HTML" />
+                <ComponentRef Id="UPSLOG.HTML" />
+                <ComponentRef Id="UPSMON.CONF.HTML" />
+                <ComponentRef Id="UPSMON.HTML" />
+                <ComponentRef Id="UPSRW.HTML" />
+                <ComponentRef Id="UPSSCHED.CONF.HTML" />
+                <ComponentRef Id="UPSSCHED.HTML" />
+                <ComponentRef Id="UPSSET.CGI.HTML" />
+                <ComponentRef Id="UPSSET.CONF.HTML" />
+                <ComponentRef Id="UPSSTATS.CGI.HTML" />
+                <ComponentRef Id="UPSSTATS.HTML.HTML" />
+                <ComponentRef Id="USBHID_UPS.HTML" />
+                <ComponentRef Id="VICTRONUPS.HTML" />
+            </Feature>
             <ComponentRef Id="ApplicationShortcut" />
         </Feature>
         <Icon Id="icon.ico" SourceFile="ImageFiles\icons\powernut_logo.ico" />
         <Property Id="ARPPRODUCTICON" Value="icon.ico" />
+        <Property Id="STARTNUT" Value="1" />
         <!-- To Add Service in Service Table-->
         <!--Register NUT Service -->
         <CustomAction Id="RegisterNUTService" FileKey="nut.exe" ExeCommand="-I" Execute="deferred" Return="asyncNoWait" HideTarget="no" Impersonate="no" />
