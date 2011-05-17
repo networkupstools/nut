@@ -148,6 +148,9 @@ MINSUPPLIES 1
 # off, consider setting the SHUTDOWNCMD temporarily to do something benign -
 # such as posting a message with 'logger' or 'wall' or 'mailx'. Do be careful
 # to plug the UPS back into the wall in a timely fashion.
+#
+# For Windows setup use something like:
+# SHUTDOWNCMD "C:\\WINDOWS\\system32\\shutdown.exe -s -t 0"
 
 SHUTDOWNCMD "/sbin/shutdown -h +0"
 
@@ -247,6 +250,9 @@ DEADTIME 15
 # Refer to the section:
 # [[UPS_shutdown]] "Configuring automatic shutdowns for low battery events"
 # or refer to the online version.
+#
+# For Windows setup use something like:
+# POWERDOWNFLAG "C:\\killpower"
 
 POWERDOWNFLAG /etc/killpower
 
