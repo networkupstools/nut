@@ -20,19 +20,22 @@
                     <Publish Event="SpawnDialog" Value="CancelDlg"><![CDATA[1]]></Publish>
                 </Control>
                 <Control Id="BottomLine" Type="Line" X="130" Y="234" Width="374" Height="2" />
-                <Control Id="Description1" Type="Text" X="26" Y="79" Width="330" Height="33" Transparent="yes" NoPrefix="yes">
-                    <Text>[DlgTitleFont]In order to use a USB UPS with [ProductName], you must install libUSB-win32 from</Text>
-                </Control>
-                <Control Id="Description2" Type="Text" X="26" Y="112" Width="328" Height="16" Transparent="yes" NoPrefix="yes">
-                    <Text>https://sourceforge.net/projects/libusb-win32/files/libusb-win32-releases/</Text>
-                </Control>
-                <Control Id="Description4" Type="Text" X="26" Y="139" Width="328" Height="11" Transparent="yes" NoPrefix="yes">
-                    <Text>[DlgTitleFont]and install the corresponding device driver using libUSB's Inf Wizard.</Text>
+                <Control Id="Description2" Type="Text" X="26" Y="116" Width="328" Height="74" Transparent="yes" NoPrefix="yes">
+                    <Text>If the automatic USB driver installation fails, you can try to install a driver manually. For this go to :
+
+https://sourceforge.net/projects/libusb-win32/files/libusb-win32-releases/
+
+After installling libusb-win32, run libUSB's Inf Wizard and choose your device.</Text>
                 </Control>
                 <Control Id="Description3" Type="Text" X="26" Y="202" Width="270" Height="14" Transparent="yes" NoPrefix="yes">
                     <Text>Click Next to continue [Wizard].</Text>
                 </Control>
                 <Control Type="Text" Id="LblNUT" Width="128" Height="17" X="4" Y="229" Disabled="yes" Text="Netowrk UPS Tools Installer (WiX)" />
+                <Control Type="CheckBox" Id="LibUSBDlgCheckBox" Width="118" Height="17" X="26" Y="86" Property="LIBUSBINSTALL" Text="Install libUSB driver." CheckBoxValue="yes">
+                </Control>
+                <Control Type="Text" Id="Description" Width="310" Height="20" X="26" Y="56">
+                    <Text>If you use a USB UPS, please plug it in now, so that we can try to install the relevant driver.</Text>
+                </Control>
             </Dialog>
             <!--For LibUSB End-->
             <!--For Option Install Dialog Start-->
@@ -49,7 +52,7 @@
                     <Publish Event="SpawnDialog" Value="CancelDlg"><![CDATA[1]]></Publish>
                 </Control>
                 <Control Id="BottomLine" Type="Line" X="130" Y="234" Width="374" Height="2" />
-                <Control Id="Description1" Type="Text" X="20" Y="55" Width="335" Height="11" Transparent="yes" NoPrefix="yes">
+                <Control Id="Description1" Type="Text" X="18" Y="55" Width="338" Height="11" Transparent="yes" NoPrefix="yes">
                     <Text>[DlgTitleFont][ProductName] installs the following libraries, location of licenses are -</Text>
                 </Control>
                 <Control Id="Description3" Type="Text" X="20" Y="202" Width="270" Height="14" Transparent="yes" NoPrefix="yes">
@@ -1183,6 +1186,9 @@ Public License instead of this License.
                     <Component Id="StartService.bat" DiskId="1" Guid="7569460F-8E27-4897-B81A-ED2D114ED62C">
                         <File Id="StartService.bat" Name="StartService.bat" Source="ImageFiles\others\StartService.bat" />
                     </Component>
+                    <Component Id="wdi" Guid="613DD26E-872F-4DF0-A963-70DCFBB300BB" DiskId="1">
+                        <File Id="wdi" Name="wdi-simple.exe" Source="ImageFiles\Others\wdi-simple.exe" />
+                    </Component>
                 </Directory>
                 <Directory Id="bin" Name="bin">
                     <Component Id="libgnurx_0.dll" Guid="FCA308FC-B99F-4C8C-B69E-285BF4E8AA2B">
@@ -1818,6 +1824,9 @@ Public License instead of this License.
             <Feature Id="StartService.bat" Level="1" Title="Start NUT Service">
                 <ComponentRef Id="StartService.bat" />
             </Feature>
+            <Feature Id="wdi" Level="1" Title="Install libUSB drivers">
+                <ComponentRef Id="wdi" />
+            </Feature>
             <Feature Id="share" Level="1" Title="NUT shared files and MAN pages for Windows">
                 <ComponentRef Id="cmdvartab" />
                 <ComponentRef Id="driver.list" />
@@ -1924,6 +1933,7 @@ Public License instead of this License.
         <Icon Id="icon.ico" SourceFile="ImageFiles\icons\powernut_logo.ico" />
         <Property Id="ARPPRODUCTICON" Value="icon.ico" />
         <Property Id="STARTNUT" Value="1" />
+        <Property Id="LIBUSBINSTALL" Value="1" />
         <!-- To Add Service in Service Table-->
         <!--Register NUT Service -->
         <CustomAction Id="RegisterNUTService" FileKey="nut.exe" ExeCommand="-I" Execute="deferred" Return="asyncNoWait" HideTarget="no" Impersonate="no" />
@@ -1933,6 +1943,7 @@ Public License instead of this License.
         <CustomAction Id="DeRegisterNUTService" FileKey="nut.exe" ExeCommand="-U" Execute="deferred" Return="asyncNoWait" HideTarget="no" Impersonate="no" />
         <!--SET DEFAULT PATH this action is required for Win XP OS as it used to show the Error message while chosing the path-->
         <CustomAction Id="SETDEFAULTPATH" Property="TARGETDIR" Value="[ProgramFilesFolder]" Execute="firstSequence" />
+        <CustomAction Execute="deferred" FileKey="wdi" Id="InstallLibUSB" Return="asyncWait" HideTarget="yes" ExeCommand="" Impersonate="no" />
         <InstallExecuteSequence>
             <Custom Action="SETDEFAULTPATH" Sequence="1">TARGETDIR=""</Custom>
             <!--<Custom Action="InstallLibUSB" Before="InstallFinalize" />-->
@@ -1941,6 +1952,7 @@ Public License instead of this License.
             <Custom Action="DeRegisterNUTService" After="MsiUnpublishAssemblies">
             </Custom>
             <Custom Action="RegisterNUTService" Before="InstallFinalize" />
+            <Custom Action="InstallLibUSB" Before="InstallFinalize">LIBUSBINSTALL=1</Custom>
         </InstallExecuteSequence>
     </Product>
 </Wix>
