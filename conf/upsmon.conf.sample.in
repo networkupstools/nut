@@ -107,6 +107,9 @@ MINSUPPLIES 1
 # upsmon runs this command when the system needs to be brought down.
 #
 # This should work just about everywhere ... if it doesn't, well, change it.
+#
+# For Windows setup use something like:
+# SHUTDOWNCMD "C:\\WINDOWS\\system32\\shutdown.exe -s -t 0"
 
 SHUTDOWNCMD "/sbin/shutdown -h +0"
 
@@ -193,6 +196,9 @@ DEADTIME 15
 # upsmon will create a file with this name in master mode when it's time
 # to shut down the load.  You should check for this file's existence in
 # your shutdown scripts and run 'upsdrvctl shutdown' if it exists.
+#
+# For Windows setup use something like:
+# POWERDOWNFLAG "C:\\killpower"
 #
 # See the shutdown.txt file in the docs subdirectory for more information.
 
