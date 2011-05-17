@@ -1,0 +1,1 @@
+To easily compile wdi-simple.exe, unzip a copy of libwdi on your disk, then copy wdi-simple.c and nutscan-usb.h into the "examples" subdirectory of libwdi directory. Then run ddk_build.cmd from the root of the libwdi directory.
