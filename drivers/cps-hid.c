@@ -74,6 +74,22 @@ static info_lkp_t cps_battvolt[] = {
 	{ 0, NULL, &cps_battvolt_fun }
 };
 
+/* returns statically allocated string - must not use it again before
+   done with result! */
+static const char *cps_battcharge_fun(double value)
+{
+	static char	buf[8];
+
+	/* clamp battery charge to 100% */
+	snprintf(buf, sizeof(buf), "%.0f", value < 100.0 ? value : 100.0);
+
+	return buf;
+}
+
+static info_lkp_t cps_battcharge[] = {
+	{ 0, NULL, &cps_battcharge_fun }
+};
+
 /* --------------------------------------------------------------- */
 /*      Vendor-specific usage table */
 /* --------------------------------------------------------------- */
@@ -106,7 +122,7 @@ static hid_info_t cps_hid2nut[] = {
   { "battery.mfr.date", 0, 0, "UPS.PowerSummary.iOEMInformation", NULL, "%s", 0, stringid_conversion },
   { "battery.charge.warning", 0, 0, "UPS.PowerSummary.WarningCapacityLimit", NULL, "%.0f", 0, NULL },
   { "battery.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
-  { "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", 0, NULL },
+  { "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%s", 0, cps_battcharge },
   { "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", 0, NULL },
   { "battery.runtime.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.RemainingTimeLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
   { "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%.0f", 0, NULL },

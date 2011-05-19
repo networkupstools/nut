@@ -26,7 +26,7 @@
 #include "usbhid-ups.h"
 #include "mge-hid.h"
 
-#define MGE_HID_VERSION		"MGE HID 1.20"
+#define MGE_HID_VERSION		"MGE HID 1.21"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -34,6 +34,9 @@
 
 /* Dell */
 #define DELL_VENDORID		0x047c
+
+/* Powerware */
+#define POWERWARE_VENDORID	0x0592
 
 #ifndef SHUT_MODE
 #include "usb-common.h"
@@ -46,6 +49,9 @@ static usb_device_id_t mge_usb_device_table[] = {
 
 	/* various models */
 	{ USB_DEVICE(DELL_VENDORID, 0xffff), NULL },
+
+	/* PW 9140 */
+	{ USB_DEVICE(POWERWARE_VENDORID, 0x0004), NULL },
 
 	/* Terminating entry */
 	{ -1, -1, NULL }

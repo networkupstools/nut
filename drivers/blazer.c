@@ -186,7 +186,7 @@ static int blazer_status(const char *cmd)
 	 *    01234567890123456789012345678901234567890123456
 	 *    0         1         2         3         4
 	 */
-	if (blazer_command(cmd, buf, sizeof(buf)) < 47) {
+	if (blazer_command(cmd, buf, sizeof(buf)) < 46) {
 		upsdebugx(2, "%s: short reply", __func__);
 		return -1;
 	}

@@ -230,7 +230,7 @@
 "Eaton"	"pdu"	"5"	"ePDU Managed"	""	"snmp-ups (experimental)"
 "Eaton"	"pdu"	"5"	"ePDU Monitored"	""	"snmp-ups or netxml-ups"
 "Eaton"	"ups"	"5"	"Powerware 9130"	""	"bcmxcp or usbhid-ups"
-"Eaton"	"ups"	"5"	"Powerware 9140"	""	"bcmxcp"
+"Eaton"	"ups"	"5"	"Powerware 9140"	""	"bcmxcp or usbhid-ups"
 "Eaton"	"ups"	"5"	"Powerware 5130"	""	"usbhid-ups"
 "Eaton"	"ups"	"5"	"9395"	"Serial port"	"bcmxcp"
 "Eaton"	"ups"	"5"	"Best Ferrups"	"older ConnectUPS"	"snmp-ups"
@@ -279,6 +279,8 @@
 "Gamatronic"	"ups"	"5"	"MS"	""	"gamatronic"
 "Gamatronic"	"ups"	"5"	"µPS3/1"	""	"gamatronic"
 
+"GE"	"ups"	"2"	"EP series"	""	"blazer_usb"
+
 "Geek Squad"	"ups"	"2"	"GS1285U"	"USB"	"usbhid-ups"
 
 "Gemini"	"ups"	"1"	"UPS625/UPS1000"	""	"safenet"
@@ -308,7 +310,8 @@
 
 "Inform"	"ups"	"1"	"GUARD"	"Line Interactive AP model"	"powercom"
 "Inform"	"ups"	"2"	"Guard S 1500AP"	""	"blazer_ser"
-"Inform"	"ups"	"2"	"Informer Compact 1000VA"	""	"blazer_ser"
+"Inform"	"ups"	"2"	"Informer Compact 1000-2000-3000 VA"	""	"blazer_ser"
+"Inform"	"ups"	"2"	"Sinus SS 210"	""	"blazer_ser"
 
 "Infosec"	"ups"	"2"	"iPEL 350"	""	"blazer_ser"
 "Infosec"	"ups"	"2"	"iPEL 500"	""	"blazer_ser"
@@ -570,6 +573,8 @@
 "Nitram"	"ups"	"1"	"Elite 2002"	""	"genericups upstype=16"
 "Nitram"	"ups"	"1"	"Elite 2005"	""	"powerpanel"
 
+"NUMERIC"	"ups"	"2"	"3000 SW"	""	"blazer_ser"
+
 "Oneac"	"ups"	"1"	"ON400"	"advanced interface"	"oneac"
 "Oneac"	"ups"	"1"	"ON600"	"advanced interface"	"oneac"
 "Oneac"	"ups"	"1"	"ON900"	"advanced interface"	"oneac"
@@ -670,7 +675,7 @@
 "Repotec"	"ups"	"1"	"RPT-800A"	""	"genericups upstype=13"
 "Repotec"	"ups"	"1"	"RPT-162A"	""	"genericups upstype=13"
 
-"Rocketfish"	"ups"	"2"	"RF-1000VA / RF-1025VA"	""	"usbhid-ups" 
+"Rocketfish"	"ups"	"2"	"RF-1000VA / RF-1025VA"	""	"usbhid-ups"
 
 "SmartLabs"	"pdu"	"1"	"2412S Power Line Modem"	"for X10/Insteon"	"powerman-pdu (experimental)"
 
