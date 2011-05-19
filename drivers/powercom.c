@@ -368,6 +368,7 @@ static int ups_getinfo(void)
 
 	/* optional dump of raw data */
 	if (nut_debug_level > 4) {
+		/* FIXME: use upsdebug_hex() ? */
 		printf("Raw data from UPS:\n");
 		for (i = 0; i < types[type].num_of_bytes_from_ups; i++) {
 	 		printf("%2d 0x%02x (%c)\n", i, raw_data[i], raw_data[i]>=0x20 ? raw_data[i] : ' ');
@@ -958,35 +959,46 @@ void upsdrv_initups(void)
 /* display help */
 void upsdrv_help(void)
 {
+	//               1         2         3         4         5         6         7         8
+	//      12345678901234567890123456789012345678901234567890123456789012345678901234567890 MAX
 	printf("\n");
 	printf("Specify UPS information in the ups.conf file.\n");
-	printf(" type:                Type of UPS: 'Trust','Egys','KP625AP','IMP','KIN','BNT','BNT-other' (default: 'Trust')\n");
-	printf("                      'BNT-other' is a special type intended for BNT 100-120V models, but can be used to override ALL models.\n");
+	printf(" type:          Type of UPS: 'Trust','Egys','KP625AP','IMP','KIN','BNT',\n");
+	printf("                 'BNT-other' (default: 'Trust')\n");
+	printf("                'BNT-other' is a special type intended for BNT 100-120V models,\n");
+	printf("                 but can be used to override ALL models.\n");
 	printf("You can additional specify these variables:\n");
-	printf(" manufacturer:        Manufacturer name (default: 'PowerCom')\n");
-	printf(" modelname:           Model name (default: 'Unknown' or autodetected)\n");
-	printf(" serialnumber:        Serial number (default: Unknown)\n");
-	printf(" shutdownArguments:   3 delay arguments for the shutdown operation: {{Minutes,Seconds},UseMinutes?}\n");
-	printf("                        where Minutes and Seconds are integer, UseMinutes? is either 'y' or 'n'.\n");
-	printf("You can specify these variables if not automagically detected for types 'IMP','KIN','BNT'\n");
-	printf(" linevoltage:         Line voltage: 110-120 or 220-240 (default: 230)\n");
-	printf(" numOfBytesFromUPS:   Number of bytes in a UPS frame: 16 is common, 11 for 'Trust'\n");
-	printf(" methodOfFlowControl: Flow control method for UPS: 'dtr0rts1' or 'no_flow_control'\n");
-	printf(" validationSequence:  3 pairs of validation values: {{I,V},{I,V},{I,V}}\n");
-	printf("                        where I is the index into BytesFromUPS (see numOfBytesFromUPS)\n");
-	printf("                          and V is the value for the ByteIndex to match.\n");
-	printf(" frequency:           Input & Output Frequency conversion values: {A, B}\n");
-	printf("                        used in function: 1/(A*x+B)\n");
-	printf("                        If the raw value x IS the frequency, then A=1/(raw^2), B=0\n");
-	printf(" loadPercentage:      Load conversion values for Battery and Line load: {BA,BB,LA,LB}\n");
-	printf("                        used in function: A*x+B\n");
-	printf("                        If the raw value x IS the Load Percent, then A=1, B=0\n");
-	printf(" batteryPercentage:   Battery conversion values for Battery and Line power: {A,B,C,D,E}\n");
-	printf("                        used in functions: (Battery) A*x+B*y+C, (Line) D*x+E\n");
-	printf("                        If the raw value x IS the Battery Percent, then A=1, B=0, C=0, D=1, E=0\n");
-	printf(" voltage:             Voltage conversion values for 240 and 120 voltage: {240A,240B,120A,120B}\n");
-	printf("                        Function: A*x+B\n");
-	printf("                        If the raw value x IS HALF the Voltage, then A=2, B=0\n\n");
+	printf(" manufacturer:  Manufacturer name (default: 'PowerCom')\n");
+	printf(" modelname:     Model name (default: 'Unknown' or autodetected)\n");
+	printf(" serialnumber:  Serial number (default: Unknown)\n");
+	printf(" shutdownArguments: 3 delay arguments for the shutdown operation:\n");
+	printf("                 {{Minutes,Seconds},UseMinutes?}\n");
+	printf("                where Minutes and Seconds are integer, UseMinutes? is either\n");
+	printf("                 'y' or 'n'.\n");
+	printf("You can specify these variables if not automagically detected for types\n");
+	printf("                'IMP','KIN','BNT'\n");
+	printf(" linevoltage:   Line voltage: 110-120 or 220-240 (default: 230)\n");
+	printf(" numOfBytesFromUPS: Number of bytes in a UPS frame: 16 is common, 11 for 'Trust'\n");
+	printf(" methodOfFlowControl: Flow control method for UPS:\n");
+	printf("                'dtr0rts1', 'dtr1' or 'no_flow_control'\n");
+	printf(" validationSequence: 3 pairs of validation values: {{I,V},{I,V},{I,V}}\n");
+	printf("                where I is the index into BytesFromUPS (see numOfBytesFromUPS)\n");
+	printf("                  and V is the value for the ByteIndex to match.\n");
+	printf(" frequency:     Input & Output Frequency conversion values: {A, B}\n");
+	printf("                 used in function: 1/(A*x+B)\n");
+	printf("                If the raw value x IS the frequency, then A=1/(x^2), B=0\n");
+	printf(" loadPercentage: Load conversion values for Battery and Line load: {BA,BB,LA,LB}\n");
+	printf("                 used in function: A*x+B\n");
+	printf("                If the raw value x IS the Load Percent, then A=1, B=0\n");
+	printf(" batteryPercentage: Battery conversion values for Battery and Line power:\n");
+	printf("                 {A,B,C,D,E}\n");
+	printf("                 used in functions: (Battery) A*x+B*y+C, (Line) D*x+E\n");
+	printf("                If the raw value x IS the Battery Percent, then\n");
+	printf("                 A=1, B=0, C=0, D=1, E=0\n");
+	printf(" voltage:       Voltage conversion values for 240 and 120 voltage:\n");
+	printf("                 {240A,240B,120A,120B}\n");
+	printf("                 used in function: A*x+B\n");
+	printf("                If the raw value x IS HALF the Voltage, then A=2, B=0\n\n");
 
 	printf("Example for BNT1500AP in ups.conf:\n");
 	printf("[BNT1500AP]\n");
@@ -1029,20 +1041,36 @@ void upsdrv_initinfo(void)
 /* define possible arguments */
 void upsdrv_makevartable(void)
 {
-	addvar(VAR_VALUE, "type",                "Type of UPS: 'Trust','Egys','KP625AP','IMP','KIN','BNT','BNT-other' (default: 'Trust')");
-	addvar(VAR_VALUE, "manufacturer",        "Manufacturer name (default: 'PowerCom')");
-	addvar(VAR_VALUE, "modelname",           "Model name [cannot be detected] (default: Unknown)");
-	addvar(VAR_VALUE, "serialnumber",        "Serial number [cannot be detected] (default: Unknown)");
-	addvar(VAR_VALUE, "shutdownArguments",   "Delay values for shutdown: Minutes, Seconds, UseMinutes?'y'or'n'");
-	addvar(VAR_VALUE, "linevoltage",         "Line voltage 110-120 or 220-240 V (default: 230)");
-	addvar(VAR_VALUE, "numOfBytesFromUPS",   "The number of bytes in a UPS frame");
-	addvar(VAR_VALUE, "methodOfFlowControl", "Flow control method for UPS: 'dtr0rts1' or 'no_flow_control'");
-	addvar(VAR_VALUE, "validationSequence",  "Validation values: ByteIndex, ByteValue x 3");
+		//        1         2         3         4         5         6         7         8
+		//2345678901234567890123456789012345678901234567890123456789012345678901234567890 MAX
+	addvar(VAR_VALUE, "type",
+		"Type of UPS: 'Trust','Egys','KP625AP','IMP','KIN','BNT','BNT-other'\n"
+		" (default: 'Trust')");
+	addvar(VAR_VALUE, "manufacturer",
+		"Manufacturer name (default: 'PowerCom')");
+	addvar(VAR_VALUE, "modelname",
+		"Model name [cannot be detected] (default: Unknown)");
+	addvar(VAR_VALUE, "serialnumber",
+		"Serial number [cannot be detected] (default: Unknown)");
+	addvar(VAR_VALUE, "shutdownArguments",
+		"Delay values for shutdown: Minutes, Seconds, UseMinutes?'y'or'n'");
+	addvar(VAR_VALUE, "linevoltage",
+		"Line voltage 110-120 or 220-240 V (default: 230)");
+	addvar(VAR_VALUE, "numOfBytesFromUPS",
+		"The number of bytes in a UPS frame");
+	addvar(VAR_VALUE, "methodOfFlowControl",
+		"Flow control method for UPS: 'dtr0rts1' or 'no_flow_control'");
+	addvar(VAR_VALUE, "validationSequence",
+		"Validation values: ByteIndex, ByteValue x 3");
 	if ( strcmp(types[type].name, "KIN") && strcmp(types[type].name, "BNT") && strcmp(types[type].name, "IMP")) {
-		addvar(VAR_VALUE, "frequency",         "Frequency conversion values: FreqFactor, FreqConst");
-		addvar(VAR_VALUE, "loadPercentage",    "Load conversion values: OffFactor, OffConst, OnFactor, OnConst");
-		addvar(VAR_VALUE, "batteryPercentage", "Battery conversion values: OffFactor, LoadFactor, OffConst, OnFactor, OnConst");
-		addvar(VAR_VALUE, "voltage",           "Voltage conversion values: 240VFactor, 240VConst, 120VFactor, 120VConst");
+		addvar(VAR_VALUE, "frequency",
+			"Frequency conversion values: FreqFactor, FreqConst");
+		addvar(VAR_VALUE, "loadPercentage",
+			"Load conversion values: OffFactor, OffConst, OnFactor, OnConst");
+		addvar(VAR_VALUE, "batteryPercentage",
+			"Battery conversion values: OffFactor, LoadFactor, OffConst, OnFactor, OnConst");
+		addvar(VAR_VALUE, "voltage",
+			"Voltage conversion values: 240VFactor, 240VConst, 120VFactor, 120VConst");
 	}
 }
 
