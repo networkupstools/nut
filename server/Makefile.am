@@ -12,10 +12,10 @@ if WITH_SSL
 endif
 LDADD = ../common/libcommon.la ../common/libparseconf.la $(NETLIBS)
 if WITH_WRAP
-   LDADD += $(LIBWRAP_LDFLAGS)
+   LDADD += $(LIBWRAP_LIBS)
 endif
 if WITH_SSL
-   LDADD += $(LIBSSL_LDFLAGS)
+   LDADD += $(LIBSSL_LIBS)
 endif
 
 sbin_PROGRAMS = upsd

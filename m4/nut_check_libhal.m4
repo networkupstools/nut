@@ -1,5 +1,5 @@
 dnl Check for LIBHAL compiler flags. On success, set nut_have_libhal="yes"
-dnl and set LIBHAL_CFLAGS and LIBHAL_LDFLAGS. On failure, set
+dnl and set LIBHAL_CFLAGS and LIBHAL_LIBS. On failure, set
 dnl nut_have_libhal="no". This macro can be run multiple times, but will
 dnl do the checking only once. 
 dnl NUT requires HAL version 0.5.8 at least
@@ -10,7 +10,7 @@ if test -z "${nut_have_libhal_seen}"; then
 	nut_have_libhal_seen=yes
 
 	CFLAGS_ORIG="${CFLAGS}"
-	LDFLAGS_ORIG="${LDFLAGS}"
+	LIBS_ORIG="${LIBS}"
 
 	AC_MSG_CHECKING(for libhal version via pkg-config (0.5.8 minimum required))
 	HAL_VERSION="`pkg-config --silence-errors --modversion hal 2>/dev/null`"
@@ -45,24 +45,24 @@ if test -z "${nut_have_libhal_seen}"; then
 
 	AC_MSG_CHECKING(for libhal ldflags)
 	AC_ARG_WITH(hal-libs,
-		AS_HELP_STRING([@<:@--with-hal-libs=LDFLAGS@:>@], [linker flags for the HAL library]),
+		AS_HELP_STRING([@<:@--with-hal-libs=LIBS@:>@], [linker flags for the HAL library]),
 	[
 		case "${withval}" in
 		yes|no)
 			AC_MSG_ERROR(invalid option --with(out)-hal-libs - see docs/configure.txt)
 			;;
 		*)
-			LDFLAGS="${withval}"
+			LIBS="${withval}"
 			;;
 		esac
 	], [
 		dnl also get libs from glib-2.0 to workaround a bug in dbus-glib
-		LDFLAGS="`pkg-config --silence-errors --libs hal dbus-glib-1 2>/dev/null`"
+		LIBS="`pkg-config --silence-errors --libs hal dbus-glib-1 2>/dev/null`"
 		if test "$?" != "0"; then
-			LDFLAGS="-lhal -ldbus-1 -lpthread"
+			LIBS="-lhal -ldbus-1 -lpthread"
 		fi
 	])
-	AC_MSG_RESULT([${LDFLAGS}])
+	AC_MSG_RESULT([${LIBS}])
 
 	dnl check if HAL is usable
 	AC_CHECK_HEADERS(libhal.h, [nut_have_libhal=yes], [nut_have_libhal=no], [AC_INCLUDES_DEFAULT])
@@ -72,10 +72,10 @@ if test -z "${nut_have_libhal_seen}"; then
 	if test "${nut_have_libhal}" = "yes"; then
 		AC_CHECK_FUNCS(g_timeout_add_seconds)
 		LIBHAL_CFLAGS="${CFLAGS}"
-		LIBHAL_LDFLAGS="${LDFLAGS}"
+		LIBHAL_LIBS="${LIBS}"
 	fi
 
 	CFLAGS="${CFLAGS_ORIG}"
-	LDFLAGS="${LDFLAGS_ORIG}"
+	LIBS="${LIBS_ORIG}"
 fi
 ])
