@@ -198,25 +198,25 @@ USBHID_UPS_SUBDRIVERS = apc-hid.c arduino-hid.c belkin-hid.c cps-hid.c explore-h
  openups-hid.c powervar-hid.c delta_ups-hid.c ever-hid.c legrand-hid.c salicru-hid.c
 usbhid_ups_SOURCES = usbhid-ups.c libhid.c $(LIBUSB_IMPL) hidparser.c	\
  usb-common.c $(USBHID_UPS_SUBDRIVERS)
-usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS) -lm
+usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
 tripplite_usb_SOURCES = tripplite_usb.c $(LIBUSB_IMPL) usb-common.c
-tripplite_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS) -lm
+tripplite_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
 bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c usb-common.c
-bcmxcp_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS) -lm
+bcmxcp_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
 blazer_usb_SOURCES = blazer.c blazer_usb.c $(LIBUSB_IMPL) usb-common.c
-blazer_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS) -lm
+blazer_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
 nutdrv_atcl_usb_SOURCES = nutdrv_atcl_usb.c usb-common.c
-nutdrv_atcl_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
+nutdrv_atcl_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
 
 richcomm_usb_SOURCES = richcomm_usb.c usb-common.c
-richcomm_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS)
+richcomm_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
 
 riello_usb_SOURCES = riello.c riello_usb.c $(LIBUSB_IMPL) usb-common.c
-riello_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LDFLAGS) -lm
+riello_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
 # HID-over-serial
 mge_shut_SOURCES = usbhid-ups.c libshut.c libhid.c hidparser.c mge-hid.c
@@ -305,7 +305,7 @@ endif
 if WITH_USB
 nutdrv_qx_CFLAGS += -DQX_USB
 nutdrv_qx_SOURCES += $(LIBUSB_IMPL) usb-common.c
-nutdrv_qx_LDADD += $(LIBUSB_LDFLAGS)
+nutdrv_qx_LDADD += $(LIBUSB_LIBS)
 endif
 NUTDRV_QX_SUBDRIVERS = nutdrv_qx_bestups.c nutdrv_qx_blazer-common.c	\
  nutdrv_qx_masterguard.c	\
