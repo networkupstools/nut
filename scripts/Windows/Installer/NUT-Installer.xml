@@ -1363,11 +1363,6 @@ Public License instead of this License.
                         <File Id="msys_ssl_1.0.0.dll" Name="msys-ssl-1.0.0.dll" Source="ImageFiles\others\msys-ssl-1.0.0.dll" />
                     </Component>
                 </Directory>
-                <Directory Id="cgi_bin" Name="cgi-bin">
-                    <Component Id="cgi_bin" DiskId="1" Guid="D000CE22-0919-45C7-906E-87AE9326C8A8">
-                        <File Id="cgi_bin" Name="cgi_bintmp" Source="ImageFiles\emptyDir\cgi-bin\temp.txt" />
-                    </Component>
-                </Directory>
                 <Directory Id="etc" Name="etc">
                     <Component Id="nut.conf.sample" DiskId="1" Guid="43A50513-888F-4F60-9872-78726A68F872">
                         <File Id="nut.conf.sample" Name="nut.conf.sample" Source="..\..\..\conf\nut.conf.sample" />
@@ -1388,16 +1383,6 @@ Public License instead of this License.
                         <File Id="upssched.conf.sample" Name="upssched.conf.sample" Source="..\..\..\conf\upssched.conf.sample" />
                     </Component>
                 </Directory>
-                <Directory Id="html" Name="html">
-                    <Component Id="htmltmp" DiskId="1" Guid="6F816450-7CE1-47FB-9ED7-DFF7EDB5E99C">
-                        <File Id="htmltmp" Name="htmltmp" Source="ImageFiles\emptyDir\html\temp.txt" />
-                    </Component>
-                </Directory>
-                <Directory Id="include" Name="include">
-                    <Component Id="include" DiskId="1" Guid="DD763052-E5F8-4768-B499-2556E6073E98">
-                        <File Id="include" Name="tmpFile" Source="ImageFiles\emptyDir\include\temp.txt" />
-                    </Component>
-                </Directory>
                 <Directory Id="lib" Name="lib">
                     <Component Id="libupsclient.a" DiskId="1" Guid="E95C7594-5818-460F-9BDE-99F2F29BA057">
                         <File Id="libupsclient.a" Name="libupsclient.a" Source="..\..\..\clients\.libs\libupsclient.a" />
@@ -1405,11 +1390,6 @@ Public License instead of this License.
                     <Component Id="libupsclient.la" DiskId="1" Guid="7F43526E-F1FC-4BAF-949F-FE495448C1D3">
                         <File Id="libupsclient.la" Name="libupsclient.la" Source="..\..\..\clients\.libs\libupsclient.la" />
                     </Component>
-                    <Directory Id="pkgconfig" Name="pkgconfig">
-                        <Component Id="pkgconfig" DiskId="1" Guid="213BA9E0-4780-4628-830F-FB2649FF4384">
-                            <File Id="pkgconfig" Name="pkgconfig" Source="ImageFiles\emptyDir\pkgconfig\temp.txt" />
-                        </Component>
-                    </Directory>
                 </Directory>
                 <Directory Id="sbin" Name="sbin">
                     <Component Id="upsd.exe" DiskId="1" Guid="25532A82-C7C5-499C-BC49-5CC469437FD3">
@@ -1832,10 +1812,6 @@ Public License instead of this License.
                 <ComponentRef Id="driver.list" />
                 <!--NUT temp files to create empty directory-->
                 <ComponentRef Id="tmpFile" />
-                <ComponentRef Id="cgi_bin" />
-                <ComponentRef Id="include" />
-                <ComponentRef Id="pkgconfig" />
-                <ComponentRef Id="htmltmp" />
             </Feature>
             <Feature Id="HKLM" Level="1">
                 <ComponentRef Id="RegistryEntries" />
