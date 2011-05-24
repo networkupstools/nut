@@ -1682,6 +1682,18 @@ Public License instead of this License.
                         </Component>
                     </Directory>
                 </Directory>
+                <Component Id="docs" Guid="F0F03082-23DA-403E-AE18-959B83E1DF1E">
+                    <File Id="UPGRADING" Name="UPGRADING" Source="..\..\..\UPGRADING" />
+                    <File Id="AUTHORS" Name="AUTHORS" Source="..\..\..\AUTHORS" />
+                    <File Id="COPYING" Name="COPYING" Source="..\..\..\COPYING" />
+                    <File Id="INSTALL" Name="INSTALL" Source="..\..\..\INSTALL" />
+                    <File Id="LICENSE_GPL2" Name="LICENSE-GPL2" Source="..\..\..\LICENSE-GPL2" />
+                    <File Id="LICENSE_GPL3" Name="LICENSE-GPL3" Source="..\..\..\LICENSE-GPL3" />
+                    <File Id="MAINTAINERS" Name="MAINTAINERS" Source="..\..\..\MAINTAINERS" />
+                    <File Id="NEWS" Name="NEWS" Source="..\..\..\NEWS" />
+                    <File Id="README" Name="README" Source="..\..\..\README" />
+                    <File Id="TODO" Name="TODO" Source="..\..\..\TODO" />
+                </Component>
             </Directory>
             <!--Add Short cut in Start up Menu -->
             <Directory Id="ProgramMenuFolder">
@@ -1905,6 +1917,7 @@ Public License instead of this License.
                 <ComponentRef Id="VICTRONUPS.HTML" />
             </Feature>
             <ComponentRef Id="ApplicationShortcut" />
+            <ComponentRef Id="docs" />
         </Feature>
         <Icon Id="icon.ico" SourceFile="ImageFiles\icons\powernut_logo.ico" />
         <Property Id="ARPPRODUCTICON" Value="icon.ico" />
