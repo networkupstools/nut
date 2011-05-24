@@ -1005,16 +1005,18 @@ static void upsdrv_shutdown_advanced(int status)
 	 */
 
 	for (i = 0; i < strlen(strval); i++) {
-		if (strval[i] - 48 == SDIDX_CS) {
-			n = status;
-		} else if (strval[i] - 48 == SDIDX_AT3N) {
-			n = 3;
-		} else if (strval[i] - 48 == SDIDX_AT2N) {
-			n = 2;
-		} else {
-			/* the value of 'n' needs to be set at this point, but it isn't */
-			continue;
+		switch (strval[i] - 48) {
+			case SDIDX_CS:
+				n = status;
+				break;
+			case SDIDX_AT3N:
+				n = 3;
+				break;
+			case SDIDX_AT2N:
+			default:
+				n = 2;
 		}
+
 		if (sdlist[strval[i] - 48](n))
 			break;	/* finish if command succeeded */
 	}
