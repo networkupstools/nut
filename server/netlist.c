@@ -204,7 +204,7 @@ static void list_ups(ctype_t *client)
 				utmp->name, esc);
 		
 		} else {
-			ret = sendback(client, "UPS %s \"Unavailable\"\n",
+			ret = sendback(client, "UPS %s \"Description unavailable\"\n",
 				 utmp->name);
 		}
 
