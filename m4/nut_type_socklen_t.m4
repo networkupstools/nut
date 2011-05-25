@@ -103,6 +103,7 @@ AC_DEFUN([NUT_PREREQ_SYS_H_SOCKET],
   if test $ac_cv_header_sys_socket_h = yes; then
     HAVE_SYS_SOCKET_H=1
     HAVE_WS2TCPIP_H=0
+    HAVE_WINSOCK2_H=0
   else
     HAVE_SYS_SOCKET_H=0
     dnl We cannot use AC_CHECK_HEADERS_ONCE here, because that would make
@@ -121,8 +122,8 @@ AC_DEFUN([NUT_PREREQ_SYS_H_SOCKET],
     else
       HAVE_WINSOCK2_H=0
     fi
-    AC_SUBST([HAVE_WINSOCK2_H])
   fi
+  AC_SUBST([HAVE_WINSOCK2_H])
   AC_SUBST([HAVE_SYS_SOCKET_H])
   AC_SUBST([HAVE_WS2TCPIP_H])
 ])
