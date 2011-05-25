@@ -29,12 +29,12 @@
 #include "netinstcmd.h"
 
 static void send_instcmd(ctype_t *client, const char *upsname, 
-	const char *cmdname)
+	const char *cmdname, const char *value)
 {
 	int	found;
 	upstype_t	*ups;
 	const	cmdlist_t  *ctmp;
-	char	sockcmd[SMALLBUF];
+	char	sockcmd[SMALLBUF], esc[SMALLBUF];
 
 	ups = get_ups_ptr(upsname);
 
@@ -70,11 +70,20 @@ static void send_instcmd(ctype_t *client, const char *upsname,
 		return;
 	}
 
-	upslogx(LOG_INFO, "Instant command: %s@%s did %s on %s",
-		client->username, client->addr, cmdname, 
-		ups->name);
+	/* see if the user has also passed a value for this command */
+	if (value != NULL) {
+		upslogx(LOG_INFO, "Instant command: %s@%s did %s with value \"%s\" on %s",
+			client->username, client->addr, cmdname, value, ups->name);
 
-	snprintf(sockcmd, sizeof(sockcmd), "INSTCMD %s\n", cmdname);
+		snprintf(sockcmd, sizeof(sockcmd), "INSTCMD %s %s\n",
+			cmdname, pconf_encode(value, esc, sizeof(esc)));
+	}
+	else  {
+		upslogx(LOG_INFO, "Instant command: %s@%s did %s on %s",
+			client->username, client->addr, cmdname, ups->name);
+
+		snprintf(sockcmd, sizeof(sockcmd), "INSTCMD %s\n", cmdname);
+	}
 
 	if (!sstate_sendline(ups, sockcmd)) {
 		upslogx(LOG_INFO, "Set command send failed");
@@ -82,6 +91,7 @@ static void send_instcmd(ctype_t *client, const char *upsname,
 		return;
 	}
 
+	/* FIXME: need to retrieve the cookie number */
 	sendback(client, "OK\n");
 }
 
@@ -92,7 +102,7 @@ void net_instcmd(ctype_t *client, int numarg, const char **arg)
 		return;
 	}
 	
-	/* INSTCMD <ups> <cmdname> */
-	send_instcmd(client, arg[0], arg[1]);
+	/* INSTCMD <ups> <cmdname> [<extra>]*/
+	send_instcmd(client, arg[0], arg[1], (numarg == 3)?arg[2]:NULL);
 	return;
 }
