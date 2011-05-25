@@ -492,7 +492,10 @@ void USBFreeExactMatcher(USBDeviceMatcher_t *matcher);
 void USBFreeRegexMatcher(USBDeviceMatcher_t *matcher);
 
 /* dummy USB function and macro, inspired from the Linux kernel
- * this allows USB information extraction */
+ * this allows USB information extraction
+ * CAUTION: only use with *valid* device identifiers, Ie the following is not
+ * valid (from blazer_usb, krauler subdriver): 0x0001:0x0000
+ */
 #define USB_DEVICE(vendorID, productID)	vendorID, productID
 
 typedef struct {
