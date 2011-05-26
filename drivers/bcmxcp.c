@@ -120,7 +120,7 @@ TODO List:
 #include "bcmxcp.h"
 
 #define DRIVER_NAME	"BCMXCP UPS driver"
-#define DRIVER_VERSION	"0.23"
+#define DRIVER_VERSION	"0.24"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -1176,17 +1176,20 @@ void upsdrv_initinfo(void)
 	iIndex += 1;
 
 	/* Size of command list block */
-	cmd_list_len = get_word(answer+iIndex);
+	if (iIndex < res)
+		cmd_list_len = get_word(answer+iIndex);
 	upsdebugx(2, "Length of command list: %d\n", cmd_list_len);
 	iIndex += 2;
 
 	/* Size of outlet monitoring block */
-	outlet_block_len = get_word(answer+iIndex);
+	if (iIndex < res)
+		outlet_block_len = get_word(answer+iIndex);
 	upsdebugx(2, "Length of outlet_block: %d\n", outlet_block_len);
 	iIndex += 2;
 
 	/* Size of the alarm block */
-	alarm_block_len = get_word(answer+iIndex);
+	if (iIndex < res)
+		alarm_block_len = get_word(answer+iIndex);
 	upsdebugx(2, "Length of alarm_block: %d\n", alarm_block_len);
 	/* End of UPS ID block request */
 
@@ -1209,7 +1212,8 @@ void upsdrv_initinfo(void)
 	init_limit();
 
 	/* Get information on UPS commands */
-	init_command_map();
+	if (cmd_list_len)
+		init_command_map();
 
 	/* FIXME: leave up to init_command_map() to add instant commands? */
 	dstate_addcmd("shutdown.return");
