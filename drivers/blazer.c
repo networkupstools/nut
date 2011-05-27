@@ -691,6 +691,9 @@ void upsdrv_updateinfo(void)
 	if (blazer_status(command[proto].status)) {
 
 		if (retry < MAXTRIES) {
+			upsdebugx(1, "Communications with UPS lost: status read failed!");
+			retry++;
+		} else if (retry == MAXTRIES) {
 			upslogx(LOG_WARNING, "Communications with UPS lost: status read failed!");
 			retry++;
 		} else {
@@ -723,7 +726,7 @@ void upsdrv_updateinfo(void)
 		lastpoll = now;
 	}
 
-	if (retry) {
+	if (retry > MAXTRIES) {
 		upslogx(LOG_NOTICE, "Communications with UPS re-established");
 	}
 
