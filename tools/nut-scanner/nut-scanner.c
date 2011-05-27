@@ -21,8 +21,8 @@
  * - split scan method into separate .ch files (1 per bus / method)
  * - compile as a lib, with an executable for command line options
  * - network iterator (IPv4 and v6) for connect style scan
- * - handle XML/HTTP and SNMP answers
- * - Avahi support
+ * - handle XML/HTTP and SNMP answers (need thread?)
+ * - Avahi support for NUT instances discovery
  * (...)
  * https://alioth.debian.org/pm/task.php?func=detailtask&project_task_id=477&group_id=30602&group_project_id=42
  */
@@ -97,7 +97,7 @@ void scan_usb()
 					continue;
 				}
 
-				/* need to get serial number */
+				/* we need to get serial number */
 				if (dev->descriptor.iSerialNumber) {
 					ret = usb_get_string_simple(udev, dev->descriptor.iSerialNumber,
 						string, sizeof(string));
