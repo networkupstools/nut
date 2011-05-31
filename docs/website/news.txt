@@ -1,3 +1,4 @@
+- May 19, 2011: link:download.html#_binary_packages[Beta NUT 2.6.0-1 package for Windows released]
 - January 14, 2011: 2.6.0 released
 - December 24, 2010: 2.6.0-pre1 released 
 - December 16, 2010: link:http://www.lestat.st/en/informatique/projets/nut-monitor[NUT-Monitor] 1.3 released
