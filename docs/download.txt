@@ -49,7 +49,7 @@ link:http://alioth.debian.org/[Debian Alioth server].
 
 To retrieve the current development tree, use the following command:
 
-	$ svn co svn://svn.debian.org/nut/trunk
+	$ svn co svn://anonscm.debian.org/nut/trunk
 
 To generate the build scripts, you must call, from the 'trunk' directory:
 
@@ -70,7 +70,7 @@ use <<Snapshots,snapshots>>.
 Browse code
 ^^^^^^^^^^^
 
-You can also browse the code with link:http://svn.debian.org/wsvn/nut/trunk/?rev=0&sc=0[WebSvn],
+You can also browse the code with link:http://alioth.debian.org/scm/?group_id=30602[WebSvn],
 or through the link:http://trac.networkupstools.org/projects/nut[Trac mirror],
 kindly hosted and maintained by Charles Lepple.
 
