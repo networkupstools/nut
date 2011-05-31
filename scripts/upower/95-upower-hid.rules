@@ -18,7 +18,7 @@ ATTRS{idVendor}=="047c", ENV{UPOWER_VENDOR}="Dell"
 ATTRS{idVendor}=="050d", ENV{UPOWER_VENDOR}="Belkin"
 ATTRS{idVendor}=="051d", ENV{UPOWER_VENDOR}="APC"
 ATTRS{idVendor}=="0592", ENV{UPOWER_VENDOR}="Powerware"
-ATTRS{idVendor}=="06da", ENV{UPOWER_VENDOR}="Liebert"
+ATTRS{idVendor}=="06da", ENV{UPOWER_VENDOR}="Phoenixtec"
 ATTRS{idVendor}=="075d", ENV{UPOWER_VENDOR}="iDowell"
 ATTRS{idVendor}=="0764", ENV{UPOWER_VENDOR}="Cyber Power Systems"
 ATTRS{idVendor}=="09ae", ENV{UPOWER_VENDOR}="TrippLite"
@@ -58,7 +58,7 @@ ATTRS{idVendor}=="051d", ATTRS{idProduct}=="0003", ENV{UPOWER_BATTERY_TYPE}="ups
 # Powerware
 ATTRS{idVendor}=="0592", ATTRS{idProduct}=="0004", ENV{UPOWER_BATTERY_TYPE}="ups"
 
-# Liebert
+# Phoenixtec
 ATTRS{idVendor}=="06da", ATTRS{idProduct}=="ffff", ENV{UPOWER_BATTERY_TYPE}="ups"
 
 # iDowell
