@@ -25,7 +25,7 @@ Stable tree: 2.6
 
 - link:http://www.networkupstools.org/source/2.6/nut-2.6.1.tar.gz[nut-2.6.1.tar.gz]
 - link:http://www.networkupstools.org/source/2.6/nut-2.6.1.tar.gz.sig[PGP/GPG signature]
-- SHA-256 sum: febaa230b6b5f0ad27d780851047527d36c8c7a34e557b3832d6d55174d7a0d5
+- SHA-256 sum: 4ba1d297a98190db0ae86eb31136c780f35e6d3f47ae845316b44eaa9245a86e
 - link:http://www.networkupstools.org/source/2.6/new-2.6.1.txt[Release notes]
 - link:http://www.networkupstools.org/source/2.6/ChangeLog[ChangeLog]
 
