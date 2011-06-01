@@ -3,6 +3,51 @@ If you're upgrading from an earlier version, see the UPGRADING file.
 For a complete list of changes, please refer to the ChangeLog file.
 
 ---------------------------------------------------------------------------
+Release notes for NUT 2.6.1 - what's new since 2.6.0:
+
+ - the various recent USB regressions have been definitely fixed.
+
+ - NUT now propose a variable to expose UPS efficiency (ups.efficiency).
+   Eaton 5 PX already uses it.
+
+ - the Perl module from Gabor Kiss (rewritten from Kit Peters') is now
+   distributed with NUT source code.
+
+ - support for new devices: Eaton Ellipse ECO, Powerware 9140, Eaton 5 PX, and
+   ambient sensor on Eaton ePDU managed ; GE EP series ; Inform Sinus SS 210 ;
+   IPAR Mini Energy ME 800 ; Mustek Yukai PowerMust 1000 USB ; Numeric 3000 SW ;
+   SVEN Power Pro+ series (recent models) ; Vivaldi EA200 LED.
+
+ - liebert-esp2: Improved Liebert ESP II support, including UPS shutdown
+   (poweroff), 1 and 3-phase input and output variables, and most
+   input / output / bypass / nominal variables. There is also a fix for the
+   USB to serial cable (Farkas Levente and Spiros Ioannou).
+
+ - powercom has improved PowerCom BNT 1500A and BNT-other support, along with
+   driver documentation and code conformance to the NUT rules (Keven L. Ates).
+
+ - apcsmart has more improved UPS poweroff support and options (Michal Soltys).
+
+ - blazer has also seen some improvements.
+
+ - usbhid-ups has completed a bit supported variables for APC and Eaton / MGE.
+
+ - on the quality assurance side, Eaton has worked on fixing a few non
+   conformances, like C++ style comments and warnings, using a newly developed
+   verification tool (Prachi Gandhi).
+
+ - fix remaining references to LIBSSL_LDFLAGS, instead of LIBSSL_LIBS,
+   which cause unresolved symbol on libupsclient users (Fabrice Coutadeur).
+
+ - the website has now a better support for Internet Explorer 6.
+
+ - graphic illustrations, used for the Features page on the website Features
+   and chapter of the user manual, have been refreshed (courtesy of Eaton).
+
+ - more bugfixes, cleanup and improvements, on both source code and
+   documentation.
+
+---------------------------------------------------------------------------
 Release notes for NUT 2.6.0 - what's new since 2.4.3:
 
  - the main focus of this release is the complete documentation revamping,
