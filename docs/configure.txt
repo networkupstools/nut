@@ -75,8 +75,8 @@ Build and install the upsclient library and header files.
 
 	--with-all (no default)
 
-Build and install all of the above (the serial, USB, and SNMP
-drivers, the CGI programs and HTML files, and the upsclient
+Build and install all of the above (the serial, USB, SNMP, XML/HTTP and
+PowerMan drivers, the CGI programs and HTML files, and the upsclient
 library).
 
 	--with-ssl (default: auto-detect)
