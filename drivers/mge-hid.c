@@ -498,7 +498,8 @@ static usage_lkp_t mge_usage_lkp[] = {
 	{ "HighHumidity",			0xffff0082 },
 	{ "LowTemperature",			0xffff0083 },
 	{ "HighTemperature",			0xffff0084 },
-	/* 0xffff0085-0xffff008f	=>	Reserved */
+	/* 0xffff0085-0xffff008f (minus 0xffff0086)	=>	Reserved */
+	{ "Efficiency",			0xffff0086 },
 	{ "Count",				0xffff0090 },
 	{ "Timer",				0xffff0091 },
 	{ "Interval",				0xffff0092 },
@@ -712,6 +713,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "battery.energysave", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Input.[3].EnergySaving", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
 
 	/* UPS page */
+	{ "ups.efficiency", 0, 0, "UPS.PowerConverter.Output.Efficiency", NULL, "%.0f", 0, NULL },
 	{ "ups.firmware", 0, 0, "UPS.PowerSummary.iVersion", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
 	{ "ups.load", 0, 0, "UPS.PowerSummary.PercentLoad", NULL, "%.0f", 0, NULL },
 	{ "ups.load.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.Flow.[4].ConfigPercentLoad", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
