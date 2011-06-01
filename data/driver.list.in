@@ -773,6 +773,8 @@
 
 "Viewsonic"	"ups"	"1"	"PowerES"	"420E"	"optiups"
 
+"Vivaldi"	"ups"	"1"	"EA200 LED"	"USB"	"richcomm_usb"
+
 "WinPower"	"ups"	"2"	"CPM-800"	""	"blazer_ser"
 
 "WTI"	"pdu"	"1"	"RPS-10"	"10 outlets"	"powerman-pdu (experimental)"
