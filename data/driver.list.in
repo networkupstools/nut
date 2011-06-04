@@ -643,6 +643,7 @@
 "PowerWalker"	"ups"	"2"	"Line-Interactive VI 400/800"	""	"blazer_ser"
 "PowerWalker"	"ups"	"2"	"Line-Interactive VI 600"	""	"blazer_ser"
 "PowerWalker"	"ups"	"2"	"Line-Interactive VI 1400"	""	"blazer_usb"
+"PowerWalker"	"ups"	"2"	"Line-Interactive VI 850 LCD"	""	"blazer_usb"
 
 "Powerware"	"ups"	"4"	"3110"	""	"genericups upstype=7"
 "Powerware"	"ups"	"4"	"3115"	""	"genericups upstype=11"
