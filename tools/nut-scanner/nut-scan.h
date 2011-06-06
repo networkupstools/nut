@@ -1,4 +1,4 @@
-/* scan_nut.h: detect remote NUT services
+/* nut-scan.h: detect NUT services
  * 
  *  Copyright (C) 2011 - Frederic Bohe <fredericbohe@eaton.com>
  *
@@ -17,4 +17,20 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include "device.h"
+
+/* Scanning */
+void scan_avahi();
+
+void scan_ipmi();
+
 void scan_nut();
+
+void scan_snmp();
+
+device_t * scan_usb();
+
+void scan_xml_http();
+
+/* Displaying */
+void display_ups_conf(device_t * device);

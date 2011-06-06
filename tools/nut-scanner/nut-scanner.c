@@ -29,14 +29,7 @@
 #include <stdlib.h>
 #include "config.h"
 
-#include "scan_usb.h"
-#include "scan_snmp.h"
-#include "scan_xml_http.h"
-#include "scan_nut.h"
-#include "scan_ipmi.h"
-#include "scan_avahi.h"
-#include "device.h"
-#include "display.h"
+#include "nut-scan.h"
 
 int main()
 {
