@@ -36,6 +36,9 @@ device_t * new_device()
 
 static void deep_free_device(device_t * device)
 {
+	options_t * current;
+	options_t * old;
+
 	if(device==NULL) {
 		return;
 	}
@@ -45,24 +48,30 @@ static void deep_free_device(device_t * device)
 	if(device->port) {
 		free(device->port);
 	}
-	switch( device->type) {
-		case TYPE_USB:
-			if(device->opt.usb_opt.vendor_name) {
-				free(device->opt.usb_opt.vendor_name);
-			}
-			if(device->opt.usb_opt.product_name) {
-				free(device->opt.usb_opt.product_name);
-			}
-			if(device->opt.usb_opt.serial_number) {
-				free(device->opt.usb_opt.serial_number);
-			}
-			if(device->opt.usb_opt.bus) {
-				free(device->opt.usb_opt.bus);
-			}
-			break;
-		default:
-			break;
+
+	current = &device->opt;
+
+	if(current->option != NULL) {
+		free(current->option);
 	}
+
+	if(current->value != NULL) {
+		free(current->value);
+	}
+
+	current = current->next;
+	while (current != NULL) {
+		if(current->option != NULL) {
+			free(current->option);
+		}
+
+		if(current->value != NULL) {
+			free(current->value);
+		}
+		old = current;
+		current = current->next;
+		free(old);
+	};
 
 	if(device->prev) {
 		device->prev->next = device->next;
@@ -87,4 +96,35 @@ void free_device(device_t * device)
 	}
 
 	free(device);
+}
+
+void add_option_to_device(device_t * device,char * option, char * value)
+{
+	options_t * opt;
+
+	opt = &(device->opt);
+	/* search for last entry */
+	if( opt->option != NULL ) {
+		while( opt->next != NULL ) {
+			opt = opt->next;
+		}
+
+		opt->next = malloc(sizeof(options_t));
+		opt = opt->next;
+		memset(opt,0,sizeof(options_t));
+	}
+
+	if( option != NULL ) {
+		opt->option = strdup(option);
+	}
+	else {
+		opt->option = NULL;
+	}
+
+	if( value != NULL ) {
+		opt->value = strdup(value);
+	}
+	else {
+		opt->value = NULL;
+	}
 }

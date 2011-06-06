@@ -121,22 +121,23 @@ device_t * scan_usb()
 					nut_dev->driver = strdup(driver_name);
 				}
 				nut_dev->port = strdup("auto");
-				nut_dev->opt.usb_opt.vendorid = dev->descriptor.idVendor;
-				nut_dev->opt.usb_opt.productid = dev->descriptor.idProduct;
+				sprintf(string,"%04X",dev->descriptor.idVendor);
+				add_option_to_device(nut_dev,"vendorid",string);
+				sprintf(string,"%04X",dev->descriptor.idProduct);
+				add_option_to_device(nut_dev,"productid",string);
 				if(device_name) {
-					nut_dev->opt.usb_opt.product_name = strdup(device_name);
+					add_option_to_device(nut_dev,"product",device_name);
 					free(device_name);
 				}
 				if(serialnumber) {
-					nut_dev->opt.usb_opt.serial_number = strdup(serialnumber);
+					add_option_to_device(nut_dev,"serial",serialnumber);
 					free(serialnumber);
 				}
 				if(vendor_name) {
-					nut_dev->opt.usb_opt.vendor_name = strdup(vendor_name);
+					add_option_to_device(nut_dev,"vendor",vendor_name);
 					free(vendor_name);
 				}
-				nut_dev->opt.usb_opt.bus = strdup(bus->dirname);
-				
+				add_option_to_device(nut_dev,"bus",bus->dirname);
 
 				if(current_nut_dev==NULL) {
 					current_nut_dev = nut_dev;

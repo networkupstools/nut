@@ -29,37 +29,10 @@ typedef enum device_type {
 	TYPE_IPMI
 } device_type_t;
 
-typedef struct usb_options {
-	int	vendorid;
-	int	productid;
-	char *	vendor_name;
-	char *	product_name;
-	char *	serial_number;
-	char *	bus;
-} usb_options_t;
-
-typedef struct snmp_options {
-} snmp_options_t;
-
-typedef struct xml_options {
-} xml_options_t;
-
-typedef struct nut_old_options {
-} nut_old_options_t;
-
-typedef struct nut_avahi_options {
-} nut_avahi_options_t;
-
-typedef struct ipmi_options {
-} ipmi_options_t;
-
-typedef union options {
-	usb_options_t           usb_opt;
-	snmp_options_t          snmp_opt;
-	xml_options_t           xml_opt;
-	nut_old_options_t       nut_old_opt;
-	nut_avahi_options_t     nut_avahi_opt;
-	ipmi_options_t          ipmi_opt;
+typedef struct options {
+	char *		option;
+	char *		value;
+	struct options*	next;
 } options_t;
 
 typedef struct device {
@@ -73,4 +46,5 @@ typedef struct device {
 
 device_t * new_device();
 void free_device(device_t * device);
+void add_option_to_device(device_t * device,char * option, char * value);
 #endif

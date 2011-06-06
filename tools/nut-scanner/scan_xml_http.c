@@ -58,5 +58,22 @@ void scan_xml_http()
         {
                 fprintf(stderr,"Error creating socket\n");
         }
+
+	/*XML*/
+	//        while (upscli_list_next(ups, numq, query, &numa, &answer) == 1) {
+
+	/* UPS <upsname> <description> */
+	//                if (numa < 3) {
+	//                        fprintf(stderr,"Error: insufficient data (got %d args, need at least 3)\n", numa);
+	//                        return;
+	//                }
+	/* FIXME: check for duplication by getting driver.port and device.serial
+	 * for comparison with other busses results */
+	/* FIXME:
+	 * - also print answer[2] if != "Unavailable"?
+	 * - for upsmon.conf or ups.conf (using dummy-ups)? */
+	//                printf("\t%s@%s\n", answer[1], hostname);
+	//        }
+
 }
 

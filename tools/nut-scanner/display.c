@@ -34,6 +34,7 @@ int nutdev_num = 1;
 void display_ups_conf(device_t * device)
 {
 	device_t * current_dev = device;
+	options_t * opt;
 
 	if(device==NULL) {
 		return;
@@ -49,49 +50,21 @@ void display_ups_conf(device_t * device)
 		printf("[nutdev%i]\n\tdriver=%s\n\tport=%s\n",
 				nutdev_num, current_dev->driver,
 				current_dev->port);
+
+		opt = &(current_dev->opt);
+
+		do {
+			if( opt->option != NULL ) {
+				printf("\t%s",opt->option);
+				if( opt->value != NULL ) {
+					printf("=%s", opt->value);
+				}
+				printf("\n");
+			}
+			opt = opt->next;
+		} while( opt != NULL );
+
 		nutdev_num++;
-
-		switch(current_dev->type) {
-			case TYPE_USB:
-				printf("\tvendorid=%04x\n",current_dev->opt.usb_opt.vendorid);
-				printf("\tproductid=%04x\n",current_dev->opt.usb_opt.productid);
-				if (current_dev->opt.usb_opt.vendor_name != NULL )
-				{
-					printf("\tvendor=%s\n", current_dev->opt.usb_opt.vendor_name);
-				}
-				if (current_dev->opt.usb_opt.product_name != NULL )
-				{
-					printf("\tproduct=%s\n", current_dev->opt.usb_opt.product_name);
-				}
-				if (current_dev->opt.usb_opt.serial_number != NULL )
-				{
-					printf("\tserial=%s\n", current_dev->opt.usb_opt.serial_number);
-				}
-				if (current_dev->opt.usb_opt.bus != NULL )
-				{
-					printf("\tbus=%s\n", current_dev->opt.usb_opt.bus);
-				}
-				break;
-
-				/*XML*/
-				//        while (upscli_list_next(ups, numq, query, &numa, &answer) == 1) {
-
-				/* UPS <upsname> <description> */
-				//                if (numa < 3) {
-				//                        fprintf(stderr,"Error: insufficient data (got %d args, need at least 3)\n", numa);
-				//                        return;
-				//                }
-				/* FIXME: check for duplication by getting driver.port and device.serial
-				 * for comparison with other busses results */
-				/* FIXME:
-				 * - also print answer[2] if != "Unavailable"?
-				 * - for upsmon.conf or ups.conf (using dummy-ups)? */
-				//                printf("\t%s@%s\n", answer[1], hostname);
-				//        }
-			default:
-				fprintf(stderr,"Unknown device type %d\n",current_dev->type);
-				break;
-		}
 
 		current_dev = current_dev->next;
 	}
