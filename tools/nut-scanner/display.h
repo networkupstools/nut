@@ -1,4 +1,4 @@
-/* scan_usb.h: detect NUT supported USB devices
+/* display.h: detect NUT supported USB devices
  * 
  *  Copyright (C) 2011 - Frederic Bohe <fredericbohe@eaton.com>
  *
