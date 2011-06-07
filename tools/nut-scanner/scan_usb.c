@@ -24,91 +24,92 @@
 #include <stdio.h>
 #include "device.h"
 
-static char* is_usb_device_supported(usb_device_id_t *usb_device_id_list, int dev_VendorID, int dev_ProductID)
+static char* is_usb_device_supported(usb_device_id_t *usb_device_id_list,
+					int dev_VendorID, int dev_ProductID)
 {
-        usb_device_id_t *usbdev;
+	usb_device_id_t *usbdev;
 
-        for (usbdev = usb_device_id_list; usbdev->driver_name != NULL; usbdev++) {
+	for (usbdev=usb_device_id_list; usbdev->driver_name != NULL; usbdev++) {
+		if ( (usbdev->vendorID == dev_VendorID)
+				&& (usbdev->productID == dev_ProductID) ) {
 
-                if ( (usbdev->vendorID == dev_VendorID)
-                        && (usbdev->productID == dev_ProductID) ) {
+			return usbdev->driver_name;
+		}
+	}
 
-                        return usbdev->driver_name;
-                }
-        }
-
-        return NULL;
+	return NULL;
 }
 
-/* return NULL if no error */
+/* return NULL if error */
 device_t * scan_usb()
 {
-        int ret;
-        char string[256];
-        char *driver_name = NULL;
-        char *serialnumber = NULL;
-        char *device_name = NULL;
-        char *vendor_name = NULL;
-        struct usb_device *dev;
-        struct usb_bus *bus;
-        usb_dev_handle *udev;
+	int ret;
+	char string[256];
+	char *driver_name = NULL;
+	char *serialnumber = NULL;
+	char *device_name = NULL;
+	char *vendor_name = NULL;
+	struct usb_device *dev;
+	struct usb_bus *bus;
+	usb_dev_handle *udev;
 
 	device_t * nut_dev = NULL;
 	device_t * current_nut_dev = NULL;
 
-        /* libusb base init */
-        usb_init();
-        usb_find_busses();
-        usb_find_devices();
+	/* libusb base init */
+	usb_init();
+	usb_find_busses();
+	usb_find_devices();
 
-        for (bus = usb_busses; bus; bus = bus->next) {
-                for (dev = bus->devices; dev; dev = dev->next) {
+	for (bus = usb_busses; bus; bus = bus->next) {
+		for (dev = bus->devices; dev; dev = dev->next) {
+			if ((driver_name =
+				is_usb_device_supported(usb_device_table,
+					dev->descriptor.idVendor,
+					dev->descriptor.idProduct)) != NULL) {
 
-                        /*printf("Checking USB device %04x:%04x (Bus: %s, Device: %s)\n",
-                                dev->descriptor.idVendor, dev->descriptor.idProduct,
-                                bus->dirname, dev->filename);*/
+				/* open the device */
+				udev = usb_open(dev);
+				if (!udev) {
+					fprintf(stderr,"Failed to open device, \
+						skipping. (%s)\n",
+						usb_strerror());
+					continue;
+				}
 
-                        if ((driver_name = is_usb_device_supported(usb_device_table,
-                                dev->descriptor.idVendor, dev->descriptor.idProduct)) != NULL) {
+				/* get serial number */
+				if (dev->descriptor.iSerialNumber) {
+					ret = usb_get_string_simple(udev,
+						dev->descriptor.iSerialNumber,
+						string, sizeof(string));
+					if (ret > 0) {
+						serialnumber = strdup(string);
+					}
+				}
+				/* get product name */
+				if (dev->descriptor.iProduct) {
+					ret = usb_get_string_simple(udev,
+						dev->descriptor.iProduct,
+						string, sizeof(string));
+					if (ret > 0) {
+						device_name = strdup(string);
+					}
+				}
 
-                                /*printf("=== supported...\n");*/
-
-                                /* open the device */
-                                udev = usb_open(dev);
-                                if (!udev) {
-                                        fprintf(stderr,"Failed to open device, skipping. (%s)\n", usb_strerror());
-                                        continue;
-                                }
-
-                                /* get serial number */
-                                if (dev->descriptor.iSerialNumber) {
-                                        ret = usb_get_string_simple(udev, dev->descriptor.iSerialNumber,
-                                                string, sizeof(string));
-                                        if (ret > 0) {
-                                                serialnumber = strdup(string);
-                                        }
-                                }
-                                /* get product name */
-                                if (dev->descriptor.iProduct) {
-                                        ret = usb_get_string_simple(udev, dev->descriptor.iProduct,
-                                                string, sizeof(string));
-                                        if (ret > 0) {
-                                                device_name = strdup(string);
-                                        }
-                                }
-
-                                /* get vendor name */
-                                if (dev->descriptor.iManufacturer) {
-                                        ret = usb_get_string_simple(udev, dev->descriptor.iManufacturer, 
-                                                string, sizeof(string));
-                                        if (ret > 0) {
-                                                vendor_name = strdup(string);
-                                        }
-                                }
+				/* get vendor name */
+				if (dev->descriptor.iManufacturer) {
+					ret = usb_get_string_simple(udev,
+						dev->descriptor.iManufacturer, 
+						string, sizeof(string));
+					if (ret > 0) {
+						vendor_name = strdup(string);
+					}
+				}
 
 				nut_dev = new_device();
 				if(nut_dev == NULL) {
-                                        fprintf(stderr,"Memory allocation error\n");
+					fprintf(stderr,"Memory allocation \
+					error\n");
 					free_device(current_nut_dev);
 					free(serialnumber);
 					free(device_name);
@@ -123,31 +124,38 @@ device_t * scan_usb()
 				nut_dev->port = strdup("auto");
 				sprintf(string,"%04X",dev->descriptor.idVendor);
 				add_option_to_device(nut_dev,"vendorid",string);
-				sprintf(string,"%04X",dev->descriptor.idProduct);
-				add_option_to_device(nut_dev,"productid",string);
+				sprintf(string,"%04X",
+					dev->descriptor.idProduct);
+				add_option_to_device(nut_dev,"productid",
+							string);
 				if(device_name) {
-					add_option_to_device(nut_dev,"product",device_name);
+					add_option_to_device(nut_dev,"product",
+								device_name);
 					free(device_name);
 				}
 				if(serialnumber) {
-					add_option_to_device(nut_dev,"serial",serialnumber);
+					add_option_to_device(nut_dev,"serial",
+								serialnumber);
 					free(serialnumber);
 				}
 				if(vendor_name) {
-					add_option_to_device(nut_dev,"vendor",vendor_name);
+					add_option_to_device(nut_dev,"vendor",
+								vendor_name);
 					free(vendor_name);
 				}
-				add_option_to_device(nut_dev,"bus",bus->dirname);
+				add_option_to_device(nut_dev,"bus",
+							bus->dirname);
 
 				current_nut_dev = add_device_to_device(
-						current_nut_dev,nut_dev);
-				
-                                memset (string, 0, 256);
+								current_nut_dev,
+								nut_dev);
 
-                                usb_close(udev);
-                        }
-                }
-        }
+				memset (string, 0, sizeof(string));
+
+				usb_close(udev);
+			}
+		}
+	}
 
 	return current_nut_dev;
 }

@@ -55,11 +55,13 @@ device_t * scan_xml_http(long usec_timeout)
 		sockAddress.sin_family = AF_INET;
 		sockAddress.sin_addr.s_addr = INADDR_BROADCAST;
 		sockAddress.sin_port = htons(port);
-		setsockopt(peerSocket, SOL_SOCKET, SO_BROADCAST, &sockopt_on, sizeof(sockopt_on));
+		setsockopt(peerSocket, SOL_SOCKET, SO_BROADCAST, &sockopt_on,
+				sizeof(sockopt_on));
 
 		/* Send scan request */
 		if(sendto(peerSocket, scanMsg, strlen(scanMsg), 0,
-					(struct sockaddr *)&sockAddress, sockAddressLength) <= 0)
+					(struct sockaddr *)&sockAddress,
+					sockAddressLength) <= 0)
 		{
 			fprintf(stderr,"Error sending Eaton <SCAN_REQUEST/>\n");
 		}
@@ -108,7 +110,8 @@ device_t * scan_xml_http(long usec_timeout)
 
                                 nut_dev = new_device();
                                 if(nut_dev == NULL) {
-                                        fprintf(stderr,"Memory allocation error\n");
+                                        fprintf(stderr,"Memory allocation \
+					error\n");
                                         return NULL;
                                 }
 
