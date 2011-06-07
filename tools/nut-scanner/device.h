@@ -47,4 +47,5 @@ typedef struct device {
 device_t * new_device();
 void free_device(device_t * device);
 void add_option_to_device(device_t * device,char * option, char * value);
+device_t * add_device_to_device(device_t * first, device_t * second);
 #endif

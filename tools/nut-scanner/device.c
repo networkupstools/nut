@@ -128,3 +128,56 @@ void add_option_to_device(device_t * device,char * option, char * value)
 		opt->value = NULL;
 	}
 }
+
+device_t * add_device_to_device(device_t * first, device_t * second)
+{
+	device_t * dev1=NULL;
+	device_t * dev2=NULL;
+
+	/* Get end of first device */
+	if( first != NULL) {
+		dev1 = first;
+		while(dev1->next != NULL) {
+			dev1 = dev1->next;
+		}
+	}
+	else {
+		if( second == NULL ) {
+			return NULL;
+		}
+		/* return end of second */
+		dev2 = second;
+		while(dev2->next != NULL) {
+			dev2 = dev2->next;
+		}
+		return dev2;
+	}
+
+	/* Get start of second */
+	if( second != NULL ) {
+		dev2 = second;
+		while(dev2->prev != NULL) {
+			dev2 = dev2->prev;
+		}
+	}
+	else {
+		/* return end of first */
+		dev1 = first;
+		while(dev1->next != NULL) {
+			dev1 = dev1->next;
+
+		}
+		return dev1;
+	}
+
+	/* join both */
+	dev1->next = dev2;
+	dev2->prev = dev1;
+
+	/* return end of both */
+        while(dev2->next != NULL) {
+                dev2 = dev2->next;
+	}
+
+	return dev2;
+}
