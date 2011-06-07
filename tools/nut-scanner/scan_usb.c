@@ -139,13 +139,8 @@ device_t * scan_usb()
 				}
 				add_option_to_device(nut_dev,"bus",bus->dirname);
 
-				if(current_nut_dev==NULL) {
-					current_nut_dev = nut_dev;
-				}
-				else {
-					current_nut_dev->next = nut_dev;
-					current_nut_dev  = nut_dev;
-				}
+				current_nut_dev = add_device_to_device(
+						current_nut_dev,nut_dev);
 				
                                 memset (string, 0, 256);
 
