@@ -49,7 +49,9 @@ int main()
 
 /*TODO*/
 	printf("Scanning XML/HTTP bus:\n");
-	scan_xml_http();
+	dev = scan_xml_http();
+	display_ups_conf(dev);
+	free_device(dev);
 
 /*TODO*/
 	printf("Scanning NUT bus (old connect method):\n");

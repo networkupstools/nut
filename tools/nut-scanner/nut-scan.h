@@ -30,7 +30,7 @@ void scan_snmp();
 
 device_t * scan_usb();
 
-void scan_xml_http();
+device_t * scan_xml_http();
 
 /* Displaying */
 void display_ups_conf(device_t * device);
