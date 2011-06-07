@@ -29,7 +29,7 @@
 
 #define BUF_SIZE	1024
 
-device_t * scan_xml_http()
+device_t * scan_xml_http(long usec_timeout)
 {
 	char *scanMsg = "<SCAN_REQUEST/>";
 	int port = 4679;
@@ -65,19 +65,17 @@ device_t * scan_xml_http()
 		}
 		else
 		{
-#define SELECT_TIMEOUT 2 /*FIXME : should be editable by user, not hard coded*/
-
 			FD_ZERO(&fds);
 			FD_SET(peerSocket,&fds);
 
-			timeout.tv_sec = SELECT_TIMEOUT;
-			timeout.tv_usec = 0;
+			timeout.tv_sec = usec_timeout / 1000000;
+			timeout.tv_usec = usec_timeout % 1000000;
 
 			while ((ret=select(peerSocket+1,&fds,NULL,NULL,
 						&timeout) )) {
 
-				timeout.tv_sec = SELECT_TIMEOUT;
-				timeout.tv_usec = 0;
+				timeout.tv_sec = usec_timeout / 1000000;
+				timeout.tv_usec = usec_timeout % 1000000;
 
 				if( ret == -1 ) {
 					fprintf(stderr,

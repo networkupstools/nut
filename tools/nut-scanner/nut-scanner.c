@@ -34,6 +34,8 @@
 int main()
 {
 	device_t * dev;
+	long xml_timeout = 1 * 1000 * 1000; /* in usec */
+
 #ifdef HAVE_USB_H
 	printf("Scanning USB bus:\n");
 	dev = scan_usb();
@@ -47,9 +49,8 @@ int main()
 	scan_snmp();
 #endif /* HAVE_NET_SNMP_NET_SNMP_CONFIG_H */
 
-/*TODO*/
 	printf("Scanning XML/HTTP bus:\n");
-	dev = scan_xml_http();
+	dev = scan_xml_http(xml_timeout);
 	display_ups_conf(dev);
 	free_device(dev);
 
