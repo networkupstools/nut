@@ -28,13 +28,47 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "config.h"
+#include <unistd.h>
+#include <getopt.h>
 
 #include "nut-scan.h"
 
-int main()
+#define DEFAULT_TIMEOUT 1
+
+const char optstring[] = "?ht:";
+const struct option longopts[] =
+	{{ "timeout",required_argument,NULL,'t' },
+	{ "help",no_argument,NULL,'h' },
+	{NULL,0,NULL,0}};
+
+
+int main(int argc, char *argv[])
 {
 	device_t * dev;
-	long xml_timeout = 1 * 1000 * 1000; /* in usec */
+	long timeout = DEFAULT_TIMEOUT*1000*1000; /* in usec */
+	int opt_ret;
+
+	while((opt_ret = getopt_long(argc, argv,optstring,longopts,NULL))!=-1) {
+
+		switch(opt_ret) {
+			case 't':
+				timeout = atol(optarg)*1000*1000; /*in usec*/
+				if( timeout == 0 ) {
+					fprintf(stderr,"Illegal timeout value, using default %ds\n", DEFAULT_TIMEOUT);
+					timeout = DEFAULT_TIMEOUT*1000*1000;
+				}
+				break;
+			case 'h':
+			case '?':
+			default:
+				puts("nut-scanner : detecting available UPS.\n");
+				puts("Options list:");
+				printf("\tt <timeout in seconds>: network operation timeout (default %d)\n",DEFAULT_TIMEOUT);
+				return 0;
+		}
+
+	}
+
 
 #ifdef HAVE_USB_H
 	printf("Scanning USB bus:\n");
@@ -50,7 +84,7 @@ int main()
 #endif /* HAVE_NET_SNMP_NET_SNMP_CONFIG_H */
 
 	printf("Scanning XML/HTTP bus:\n");
-	dev = scan_xml_http(xml_timeout);
+	dev = scan_xml_http(timeout);
 	display_ups_conf(dev);
 	free_device(dev);
 
