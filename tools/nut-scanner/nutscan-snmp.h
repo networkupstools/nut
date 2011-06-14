@@ -1,5 +1,4 @@
-/* nut-scan.h: detect NUT services
- * 
+/* nutscan-snmp
  *  Copyright (C) 2011 - Frederic Bohe <fredericbohe@eaton.com>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -17,20 +16,22 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "device.h"
+#ifndef DEVSCAN_SNMP_H
+#define DEVSCAN_SNMP_H
 
-/* Scanning */
-void scan_avahi();
+typedef struct {
+	char *		oid;
+	char *		mib;
+} snmp_device_id_t;
 
-void scan_ipmi();
+/* SNMP IDs device table */
+static snmp_device_id_t snmp_device_table[] = {
 
-void scan_nut();
+	{ ".1.3.6.1.4.1.17373.3.1.1.0", "aphel_genesisII" },
+	{ ".1.3.6.1.4.1.534.6.6.6.1.1.12.0", "aphel_revelation" },
+	{ ".1.3.6.1.4.1.705.1.1.1.0", "mge" },
+	/* Terminating entry */
+	{ NULL, NULL }
+};
+#endif /* DEVSCAN_SNMP_H */
 
-device_t * scan_snmp(char * start_ip, char * stop_ip,long usec_timeout);
-
-device_t * scan_usb();
-
-device_t * scan_xml_http(long usec_timeout);
-
-/* Displaying */
-void display_ups_conf(device_t * device);

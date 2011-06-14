@@ -30,14 +30,17 @@
 #include "config.h"
 #include <unistd.h>
 #include <getopt.h>
+#include <string.h>
 
 #include "nut-scan.h"
 
 #define DEFAULT_TIMEOUT 1
 
-const char optstring[] = "?ht:";
+const char optstring[] = "?ht:s:e:";
 const struct option longopts[] =
 	{{ "timeout",required_argument,NULL,'t' },
+	{ "start_ip",required_argument,NULL,'s' },
+	{ "end_ip",required_argument,NULL,'e' },
 	{ "help",no_argument,NULL,'h' },
 	{NULL,0,NULL,0}};
 
@@ -47,6 +50,8 @@ int main(int argc, char *argv[])
 	device_t * dev;
 	long timeout = DEFAULT_TIMEOUT*1000*1000; /* in usec */
 	int opt_ret;
+	char *	start_ip = NULL;
+	char *	end_ip = NULL;
 
 	while((opt_ret = getopt_long(argc, argv,optstring,longopts,NULL))!=-1) {
 
@@ -57,6 +62,13 @@ int main(int argc, char *argv[])
 					fprintf(stderr,"Illegal timeout value, using default %ds\n", DEFAULT_TIMEOUT);
 					timeout = DEFAULT_TIMEOUT*1000*1000;
 				}
+				break;
+			case 's':
+				start_ip = strdup(optarg);
+				end_ip = start_ip;
+				break;
+			case 'e':
+				end_ip = strdup(optarg);
 				break;
 			case 'h':
 			case '?':
@@ -78,9 +90,11 @@ int main(int argc, char *argv[])
 #endif /* HAVE_USB_H */
 
 #ifdef HAVE_NET_SNMP_NET_SNMP_CONFIG_H
-/*TODO*/
 	printf("Scanning SNMP bus:\n");
-	scan_snmp();
+	dev = scan_snmp(start_ip,end_ip,timeout);
+	display_ups_conf(dev);
+        free_device(dev);
+
 #endif /* HAVE_NET_SNMP_NET_SNMP_CONFIG_H */
 
 	printf("Scanning XML/HTTP bus:\n");
