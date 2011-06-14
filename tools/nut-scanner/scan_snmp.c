@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
+#include <pthread.h>
 #include "nutscan-snmp.h"
 
 #ifdef HAVE_NET_SNMP_NET_SNMP_CONFIG_H
@@ -32,13 +33,22 @@
 
 #define SysOID ".1.3.6.1.2.1.1.2"
 
-device_t * try_all_oid(struct snmp_session * session)
+device_t * dev_ret = NULL;
+#ifdef HAVE_PTHREAD
+pthread_mutex_t dev_mutex;
+pthread_t * thread_array = NULL;
+int thread_count = 0;
+#endif
+long g_usec_timeout ;
+
+void try_all_oid(void * handle)
 {
         oid name[MAX_OID_LEN];
         size_t name_len = MAX_OID_LEN;
 	struct snmp_pdu *pdu, *response = NULL;
 	int index = 0;
 	device_t * dev = NULL;
+	struct snmp_session * session;
 
 	while(snmp_device_table[index].oid != NULL) {
 
@@ -58,7 +68,7 @@ device_t * try_all_oid(struct snmp_session * session)
 
 		snmp_add_null_var(pdu, name, name_len);
 
-		snmp_synch_response(session,pdu, &response);
+		snmp_sess_synch_response(handle,pdu, &response);
 		if( response == NULL ) {
 			index++;
 			continue;
@@ -71,6 +81,7 @@ device_t * try_all_oid(struct snmp_session * session)
 			continue;
 		}
 
+		session = snmp_sess_session(handle);
 		/* SNMP device found */
 		dev = new_device();
 		dev->type = TYPE_SNMP;
@@ -78,27 +89,103 @@ device_t * try_all_oid(struct snmp_session * session)
 		dev->port = strdup(session->peername);
 		add_option_to_device(dev,"mibs",snmp_device_table[index].mib);
 
+#ifdef HAVE_PTHREAD
+		pthread_mutex_lock(&dev_mutex);
+#endif
+		dev_ret = add_device_to_device(dev_ret,dev);
+#ifdef HAVE_PTHREAD
+		pthread_mutex_unlock(&dev_mutex);
+#endif
+
 		snmp_free_pdu(response);
 		response = NULL;
 
-		return dev;
-
+		index++;
 	}
+}
+
+void * try_SysOID(void * arg)
+{
+	struct snmp_session snmp_sess;
+	void * handle;
+	struct snmp_pdu *pdu, *response = NULL;
+        oid name[MAX_OID_LEN];
+        size_t name_len = MAX_OID_LEN;
+	char * peername = (char *)arg;
+
+	/* Initialize session */
+	snmp_sess_init(&snmp_sess);
+
+	snmp_sess.peername = peername;
+
+	snmp_sess.version = SNMP_VERSION_1;
+	snmp_sess.community = (unsigned char *)"public";
+	snmp_sess.community_len = strlen("public");
+
+	snmp_sess.retries = 0;
+	snmp_sess.timeout = g_usec_timeout;
+
+	/* Open the session */
+	handle = snmp_sess_open(&snmp_sess); /* establish the session */
+	if (handle == NULL) {
+		fprintf(stderr,"Failed to open SNMP session for %s.\n",
+			peername);
+		free(peername);
+		return NULL;
+	}
+
+	/* create and send request. */
+	if (!snmp_parse_oid(SysOID, name, &name_len)) {
+		fprintf(stderr,"SNMP errors: %s\n",
+				snmp_api_errstring(snmp_errno));
+		snmp_sess_close(handle);
+		free(peername);
+		return NULL;
+	}
+
+	pdu = snmp_pdu_create(SNMP_MSG_GET);
+
+	if (pdu == NULL) {
+		fprintf(stderr,"Not enough memory\n");
+		free(peername);
+		return NULL;
+	}
+
+	snmp_add_null_var(pdu, name, name_len);
+
+	snmp_sess_synch_response(handle,
+			pdu, &response);
+
+	if (response) {
+		/* SNMP device found */
+		/* SysOID is supposed to give the required MIB. */
+		/* FIXME: until we are sure it gives the MIB for all devices, use the old method: */
+		/* try a list of known OID */
+		try_all_oid(handle);
+
+		snmp_free_pdu(response);
+		response = NULL;
+	}
+
+	snmp_sess_close(handle);
+	free(peername);
 
 	return NULL;
 }
+
 
 device_t * scan_snmp(char * start_ip, char * stop_ip,long usec_timeout)
 {
 	int addr;
 	struct in_addr current_addr;
 	struct in_addr stop_addr;
-	struct snmp_session snmp_sess, *snmp_sess_p;
-	struct snmp_pdu *pdu, *response = NULL;
-        oid name[MAX_OID_LEN];
-        size_t name_len = MAX_OID_LEN;
-	device_t * dev = NULL;
-	device_t * ret_dev = NULL;
+	char * peername = NULL;
+#ifdef HAVE_PTHREAD
+	pthread_t thread;
+	int i;
+#endif
+
+	g_usec_timeout = usec_timeout;
 
 	if( start_ip == NULL ) {
 		return NULL;
@@ -117,6 +204,10 @@ device_t * scan_snmp(char * start_ip, char * stop_ip,long usec_timeout)
 		return NULL;
 	}
 
+#ifdef HAVE_PTHREAD
+	pthread_mutex_init(&dev_mutex,NULL);
+#endif
+
 	/* Make sure current addr is lesser than stop addr */
 	if( ntohl(current_addr.s_addr) > ntohl(stop_addr.s_addr) ) {
 		addr = current_addr.s_addr;
@@ -124,66 +215,22 @@ device_t * scan_snmp(char * start_ip, char * stop_ip,long usec_timeout)
 		stop_addr.s_addr = addr;
 	}
 
+	/* Initialize the SNMP library */
+	init_snmp("nut-scanner");
+
 	while(1) {
 
-		/* Initialize the SNMP library */
-		init_snmp("nut-scanner");
-
-		/* Initialize session */
-		snmp_sess_init(&snmp_sess);
-
-		snmp_sess.peername = strdup(inet_ntoa(current_addr));
-
-		snmp_sess.version = SNMP_VERSION_1;
-		snmp_sess.community = (unsigned char *)"public";
-		snmp_sess.community_len = strlen("public");
-
-		snmp_sess.retries = 0;
-		snmp_sess.timeout = usec_timeout;
-		
-		/* Open the session */
-		snmp_sess_p = snmp_open(&snmp_sess); /* establish the session */
-		if (snmp_sess_p == NULL) {
-			fprintf(stderr,"Failed to open SNMP session for %s.\n",snmp_sess.peername);
-			free(snmp_sess.peername);
-			continue;
+		peername = strdup(inet_ntoa(current_addr));
+#ifdef HAVE_PTHREAD
+		if (pthread_create(&thread,NULL,try_SysOID,(void*)peername)==0){
+			thread_count++;
+			thread_array = realloc(thread_array,
+						thread_count*sizeof(pthread_t));
+			thread_array[thread_count-1] = thread;
 		}
-
-		/* create and send request. */
-		if (!snmp_parse_oid(SysOID, name, &name_len)) {
-			fprintf(stderr,"SNMP errors: %s\n",
-					snmp_api_errstring(snmp_errno));
-			snmp_close(snmp_sess_p);
-			free(snmp_sess.peername);
-			continue;
-		}
-
-		pdu = snmp_pdu_create(SNMP_MSG_GET);
-
-		if (pdu == NULL) {
-			fprintf(stderr,"Not enough memory\n");
-			exit(-1);
-		}
-
-		snmp_add_null_var(pdu, name, name_len);
-
-		snmp_synch_response(snmp_sess_p,
-				pdu, &response);
-
-		if (response) {
-			/* SNMP device found */
-			/* SysOID is supposed to give the required MIB. */
-			/* FIXME: until we are sure it gives the MIB for all devices, use the old method: */
-			/* try a list of known OID */
-			ret_dev = try_all_oid(snmp_sess_p);
-			dev = add_device_to_device(dev,ret_dev);
-
-			snmp_free_pdu(response);
-			response = NULL;
-		}
-
-		snmp_close(snmp_sess_p);
-		free(snmp_sess.peername);
+#else
+		try_SysOID((void *)peername);
+#endif
 		
 		/* Check if this is the last address to scan */
 		if(current_addr.s_addr == stop_addr.s_addr) {
@@ -195,7 +242,14 @@ device_t * scan_snmp(char * start_ip, char * stop_ip,long usec_timeout)
 
 	};
 
-	return dev;
+#ifdef HAVE_PTHREAD
+	for ( i=0; i < thread_count ; i++) {
+		pthread_join(thread_array[i],NULL);
+	}
+	pthread_mutex_destroy(&dev_mutex);
+#endif
+
+	return dev_ret;
 }
 #endif /* HAVE_NET_SNMP_NET_SNMP_CONFIG_H */
 
