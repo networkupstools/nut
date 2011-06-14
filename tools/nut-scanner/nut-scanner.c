@@ -75,7 +75,9 @@ int main(int argc, char *argv[])
 			default:
 				puts("nut-scanner : detecting available UPS.\n");
 				puts("Options list:");
-				printf("\tt <timeout in seconds>: network operation timeout (default %d)\n",DEFAULT_TIMEOUT);
+				printf("\t-t, --timeout\t<timeout in seconds>: network operation timeout (default %d).\n\n",DEFAULT_TIMEOUT);
+				printf("\t-s, --start_ip\t<IP address>: First IP address to scan.\n\n");
+				printf("\t-e, --end_ip\t<IP address>: Last IP address to scan.\n\n");
 				return 0;
 		}
 
