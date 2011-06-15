@@ -16,8 +16,22 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
+#ifndef NUT_SCAN_H
+#define NUT_SCAN_H
 
 #include "device.h"
+
+/* SNMP structure */
+typedef struct snmp_security {
+	char * community;
+	char * secLevel;
+	char * secName;
+	char * authPassword;
+	char * privPassword;
+	char * authProtocol;
+	char * privProtocol;
+	char * peername;
+} snmp_security_t;
 
 /* Scanning */
 void scan_avahi();
@@ -26,7 +40,7 @@ void scan_ipmi();
 
 void scan_nut();
 
-device_t * scan_snmp(char * start_ip, char * stop_ip,long usec_timeout);
+device_t * scan_snmp(char * start_ip, char * stop_ip,long usec_timeout, snmp_security_t * sec);
 
 device_t * scan_usb();
 
@@ -34,3 +48,5 @@ device_t * scan_xml_http(long usec_timeout);
 
 /* Displaying */
 void display_ups_conf(device_t * device);
+
+#endif

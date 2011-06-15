@@ -18,7 +18,7 @@
  */
 
 #include "config.h"
-#include "device.h"
+#include "nut-scan.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -116,16 +116,22 @@ void * try_SysOID(void * arg)
 	struct snmp_pdu *pdu, *response = NULL;
         oid name[MAX_OID_LEN];
         size_t name_len = MAX_OID_LEN;
-	char * peername = (char *)arg;
+	snmp_security_t * sec = (snmp_security_t *)arg;
 
 	/* Initialize session */
 	snmp_sess_init(&snmp_sess);
 
-	snmp_sess.peername = peername;
+	snmp_sess.peername = sec->peername;
 
 	snmp_sess.version = SNMP_VERSION_1;
-	snmp_sess.community = (unsigned char *)"public";
-	snmp_sess.community_len = strlen("public");
+	if( sec->community != NULL ) {
+		snmp_sess.community = (unsigned char *)sec->community;
+		snmp_sess.community_len = strlen(sec->community);
+	}
+	else {
+		snmp_sess.community = (unsigned char *)"public";
+		snmp_sess.community_len = strlen("public");
+	}
 
 	snmp_sess.retries = 0;
 	snmp_sess.timeout = g_usec_timeout;
@@ -134,9 +140,8 @@ void * try_SysOID(void * arg)
 	handle = snmp_sess_open(&snmp_sess); /* establish the session */
 	if (handle == NULL) {
 		fprintf(stderr,"Failed to open SNMP session for %s.\n",
-			peername);
-		free(peername);
-		return NULL;
+			sec->peername);
+		goto try_SysOID_free;
 	}
 
 	/* create and send request. */
@@ -144,16 +149,15 @@ void * try_SysOID(void * arg)
 		fprintf(stderr,"SNMP errors: %s\n",
 				snmp_api_errstring(snmp_errno));
 		snmp_sess_close(handle);
-		free(peername);
-		return NULL;
+		goto try_SysOID_free;
 	}
 
 	pdu = snmp_pdu_create(SNMP_MSG_GET);
 
 	if (pdu == NULL) {
 		fprintf(stderr,"Not enough memory\n");
-		free(peername);
-		return NULL;
+		snmp_sess_close(handle);
+		goto try_SysOID_free;
 	}
 
 	snmp_add_null_var(pdu, name, name_len);
@@ -173,7 +177,12 @@ void * try_SysOID(void * arg)
 	}
 
 	snmp_sess_close(handle);
-	free(peername);
+
+try_SysOID_free:
+	if( sec->peername ) {
+		free(sec->peername);
+	}
+	free(sec);
 
 	return NULL;
 }
@@ -205,17 +214,17 @@ void invert_IPv6(struct in6_addr * addr1, struct in6_addr * addr2)
 	}
 }
 
-device_t * scan_snmp(char * start_ip, char * stop_ip,long usec_timeout)
+device_t * scan_snmp(char * start_ip, char * stop_ip,long usec_timeout, snmp_security_t * sec)
 {
 	int addr;
 	struct in_addr current_addr;
 	struct in_addr stop_addr;
 	struct in6_addr current_addr6;
 	struct in6_addr stop_addr6;
-	char * peername = NULL;
 	enum network_type type = IPv4;
 	char buf[SMALLBUF];
 	int i;
+	snmp_security_t * tmp_sec;
 #ifdef HAVE_PTHREAD
 	pthread_t thread;
 #endif
@@ -282,23 +291,24 @@ device_t * scan_snmp(char * start_ip, char * stop_ip,long usec_timeout)
 	init_snmp("nut-scanner");
 
 	while(1) {
-
+		tmp_sec = malloc(sizeof(snmp_security_t));
+		memcpy(tmp_sec, sec, sizeof(snmp_security_t));
 		if( type == IPv4 ) {
-			peername = strdup(inet_ntoa(current_addr));
+			tmp_sec->peername = strdup(inet_ntoa(current_addr));
 		}
 		else { /* IPv6 */
-			peername = strdup(inet_ntop(AF_INET6,&current_addr6,buf,
+			tmp_sec->peername = strdup(inet_ntop(AF_INET6,&current_addr6,buf,
 							sizeof(buf)));
 		}
 #ifdef HAVE_PTHREAD
-		if (pthread_create(&thread,NULL,try_SysOID,(void*)peername)==0){
+		if (pthread_create(&thread,NULL,try_SysOID,(void*)tmp_sec)==0){
 			thread_count++;
 			thread_array = realloc(thread_array,
 						thread_count*sizeof(pthread_t));
 			thread_array[thread_count-1] = thread;
 		}
 #else
-		try_SysOID((void *)peername);
+		try_SysOID((void *)tmp_sec);
 #endif
 		if( type == IPv4 ) {
 			/* Check if this is the last address to scan */
@@ -329,6 +339,7 @@ device_t * scan_snmp(char * start_ip, char * stop_ip,long usec_timeout)
 		pthread_join(thread_array[i],NULL);
 	}
 	pthread_mutex_destroy(&dev_mutex);
+	free(thread_array);
 #endif
 
 	return dev_ret;

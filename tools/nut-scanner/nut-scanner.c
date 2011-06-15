@@ -36,11 +36,12 @@
 
 #define DEFAULT_TIMEOUT 1
 
-const char optstring[] = "?ht:s:e:";
+const char optstring[] = "?ht:s:e:c:";
 const struct option longopts[] =
 	{{ "timeout",required_argument,NULL,'t' },
 	{ "start_ip",required_argument,NULL,'s' },
 	{ "end_ip",required_argument,NULL,'e' },
+	{ "community",required_argument,NULL,'c' },
 	{ "help",no_argument,NULL,'h' },
 	{NULL,0,NULL,0}};
 
@@ -48,10 +49,13 @@ const struct option longopts[] =
 int main(int argc, char *argv[])
 {
 	device_t * dev;
+	snmp_security_t sec;
 	long timeout = DEFAULT_TIMEOUT*1000*1000; /* in usec */
 	int opt_ret;
 	char *	start_ip = NULL;
 	char *	end_ip = NULL;
+
+	memset(&sec,0,sizeof(sec));
 
 	while((opt_ret = getopt_long(argc, argv,optstring,longopts,NULL))!=-1) {
 
@@ -70,6 +74,9 @@ int main(int argc, char *argv[])
 			case 'e':
 				end_ip = strdup(optarg);
 				break;
+			case 'c':
+				sec.community = strdup(optarg);
+				break;
 			case 'h':
 			case '?':
 			default:
@@ -78,6 +85,8 @@ int main(int argc, char *argv[])
 				printf("\t-t, --timeout\t<timeout in seconds>: network operation timeout (default %d).\n\n",DEFAULT_TIMEOUT);
 				printf("\t-s, --start_ip\t<IP address>: First IP address to scan.\n\n");
 				printf("\t-e, --end_ip\t<IP address>: Last IP address to scan.\n\n");
+				printf("SNMP specific options :\n");
+				printf("\t-c, --community\t<SNMP community name>: Set SNMP v1 community name. (default = public)\n\n");
 				return 0;
 		}
 
@@ -93,7 +102,7 @@ int main(int argc, char *argv[])
 
 #ifdef HAVE_NET_SNMP_NET_SNMP_CONFIG_H
 	printf("Scanning SNMP bus:\n");
-	dev = scan_snmp(start_ip,end_ip,timeout);
+	dev = scan_snmp(start_ip,end_ip,timeout,&sec);
 	display_ups_conf(dev);
         free_device(dev);
 
