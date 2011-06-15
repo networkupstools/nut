@@ -146,6 +146,11 @@ AC_SEARCH_LIBS(connect, socket)
 AC_HEADER_TIME
 AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h sys/termios.h sys/time.h, [], [], [AC_INCLUDES_DEFAULT])
 
+# pthread related checks
+AC_SEARCH_LIBS([pthread_create], [pthread],
+       [AC_DEFINE(HAVE_PTHREAD, 1, [Define to enable pthread support code])],
+       [])
+
 dnl ----------------------------------------------------------------------
 dnl Check for types and define possible replacements
 AX_CREATE_STDINT_H(include/nut_stdint.h)
