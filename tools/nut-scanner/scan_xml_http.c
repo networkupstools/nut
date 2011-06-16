@@ -25,9 +25,26 @@
 #include <sys/select.h>
 #include <errno.h>
 #include <arpa/inet.h>
+#include <ne_xml.h>
+#include "common.h"
 #include "device.h"
 
 #define BUF_SIZE	1024
+
+static int startelm_cb(void *userdata, int parent, const char *nspace, const char *name, const char **atts) {
+	device_t * dev = (device_t *)userdata;
+	char buf[SMALLBUF];
+	int i = 0;
+	while( atts[i] != NULL ) {
+		if(strcmp(atts[i],"type") == 0) {
+			snprintf(buf,sizeof(buf),"\"%s\"",atts[i+1]);
+			add_option_to_device(dev,"desc",buf);
+			return 0;
+		}
+		i=i+2;
+	}
+	return 0;
+}
 
 device_t * scan_xml_http(long usec_timeout)
 {
@@ -99,9 +116,10 @@ device_t * scan_xml_http(long usec_timeout)
 					continue;
 				}
 
+
 				if( inet_ntop(AF_INET,
 						&(sockAddress.sin_addr),
-						buf,sizeof(buf)) == NULL ) {
+						string,sizeof(buf)) == NULL ) {
 					fprintf(stderr,
 						"Error converting IP address \
 						: %d\n",errno);
@@ -116,9 +134,16 @@ device_t * scan_xml_http(long usec_timeout)
                                 }
 
                                 nut_dev->type = TYPE_XML;
+				/* Try to read device type */
+				ne_xml_parser   *parser = ne_xml_create();
+				ne_xml_push_handler(parser, startelm_cb, NULL,
+								NULL, nut_dev);
+				ne_xml_parse(parser, buf, strlen(buf));
+				ne_xml_destroy(parser);
+
 				nut_dev->driver = strdup("netxml-ups");
-				sprintf(string,"http://%s",buf);
-				nut_dev->port = strdup(string);
+				sprintf(buf,"http://%s",string);
+				nut_dev->port = strdup(buf);
 
 				current_nut_dev = add_device_to_device(
 						current_nut_dev,nut_dev);
