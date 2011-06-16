@@ -316,9 +316,11 @@ void nut_snmp_init(const char *type, const char *hostname)
 			case SNMP_SEC_LEVEL_AUTHNOPRIV:
 				if (authPassword == NULL)
 					fatalx(EXIT_FAILURE, "authPassword is required for SNMPv3 in %s mode", secLevel);
+				break;
 			case SNMP_SEC_LEVEL_AUTHPRIV:
 				if ((authPassword == NULL) || (privPassword == NULL))
 					fatalx(EXIT_FAILURE, "authPassword and privPassword are required for SNMPv3 in %s mode", secLevel);
+				break;
 			default:
 			case SNMP_SEC_LEVEL_NOAUTH:
 				/* nothing else needed */
@@ -342,12 +344,15 @@ void nut_snmp_init(const char *type, const char *hostname)
 
 		/* set the authentication key to a MD5/SHA1 hashed version of our
 		 * passphrase (must be at least 8 characters long) */
-		if (generate_Ku(g_snmp_sess.securityAuthProto,
+		if(g_snmp_sess.securityLevel != SNMP_SEC_LEVEL_NOAUTH) {
+			if (generate_Ku(g_snmp_sess.securityAuthProto,
 				g_snmp_sess.securityAuthProtoLen,
-				(u_char *) privPassword, strlen(privPassword),
+				(u_char *) authPassword, strlen(authPassword),
 				g_snmp_sess.securityAuthKey,
-				&g_snmp_sess.securityAuthKeyLen) != SNMPERR_SUCCESS) {
-					fatalx(EXIT_FAILURE, "Error generating Ku from authentication pass phrase");
+				&g_snmp_sess.securityAuthKeyLen) !=
+				SNMPERR_SUCCESS) {
+				fatalx(EXIT_FAILURE, "Error generating Ku from authentication pass phrase");
+			}
 		}
 
 		privProtocol = testvar(SU_VAR_PRIVPROT) ? getval(SU_VAR_PRIVPROT) : "DES";
@@ -362,6 +367,20 @@ void nut_snmp_init(const char *type, const char *hostname)
 		}
 		else
 			fatalx(EXIT_FAILURE, "Bad SNMPv3 authProtocol: %s", authProtocol);
+
+		/* set the privacy key to a MD5/SHA1 hashed version of our
+		 * passphrase (must be at least 8 characters long) */
+		if(g_snmp_sess.securityLevel == SNMP_SEC_LEVEL_AUTHPRIV) {
+			g_snmp_sess.securityPrivKeyLen = USM_PRIV_KU_LEN;
+			if (generate_Ku(g_snmp_sess.securityAuthProto,
+				g_snmp_sess.securityAuthProtoLen,
+				(u_char *) privPassword, strlen(privPassword),
+				g_snmp_sess.securityPrivKey,
+				&g_snmp_sess.securityPrivKeyLen) !=
+				SNMPERR_SUCCESS) {
+				fatalx(EXIT_FAILURE, "Error generating Ku from privacy pass phrase");
+			}
+		}
 	}
 	else
 		fatalx(EXIT_FAILURE, "Bad SNMP version: %s", version);
