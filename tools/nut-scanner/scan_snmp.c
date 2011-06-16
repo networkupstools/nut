@@ -46,7 +46,7 @@ enum network_type {
 	IPv6
 };
 
-void try_all_oid(void * handle)
+void try_all_oid(void * arg)
 {
         oid name[MAX_OID_LEN];
         size_t name_len = MAX_OID_LEN;
@@ -54,6 +54,9 @@ void try_all_oid(void * handle)
 	int index = 0;
 	device_t * dev = NULL;
 	struct snmp_session * session;
+	snmp_security_t * sec = (snmp_security_t *)arg;
+	int status;
+	char buf[SMALLBUF];
 
 	while(snmp_device_table[index].oid != NULL) {
 
@@ -73,26 +76,66 @@ void try_all_oid(void * handle)
 
 		snmp_add_null_var(pdu, name, name_len);
 
-		snmp_sess_synch_response(handle,pdu, &response);
+		status = snmp_sess_synch_response(sec->handle,pdu, &response);
 		if( response == NULL ) {
 			index++;
 			continue;
 		}
 
-		if( response->errstat != SNMP_ERR_NOERROR) {
+		if(status!=STAT_SUCCESS||response->errstat!=SNMP_ERR_NOERROR||
+			response->variables == NULL ||
+			response->variables->name == NULL ||
+			snmp_oid_compare(response->variables->name,
+				response->variables->name_length,
+				name, name_len) != 0 || 
+			response->variables->val.string == NULL ) {
 			snmp_free_pdu(response);
 			response = NULL;
 			index++;
 			continue;
 		}
 
-		session = snmp_sess_session(handle);
+		session = snmp_sess_session(sec->handle);
 		/* SNMP device found */
 		dev = new_device();
 		dev->type = TYPE_SNMP;
 		dev->driver = strdup("snmp-ups");
 		dev->port = strdup(session->peername);
+		snprintf(buf,sizeof(buf),"\"%s\"",
+				 response->variables->val.string);
+		add_option_to_device(dev,"desc",buf);
 		add_option_to_device(dev,"mibs",snmp_device_table[index].mib);
+		/* SNMP v3 */
+		if( session->community == NULL || session->community[0] == 0) {
+			if( sec->secLevel ) {
+				add_option_to_device(dev,"secLevel",
+							sec->secLevel);
+			}
+			if( sec->secName ) {
+				add_option_to_device(dev,"secName",
+							sec->secName);
+			}
+			if( sec->authPassword ) {
+				add_option_to_device(dev,"authPassword",
+							sec->authPassword);
+			}
+			if( sec->privPassword ) {
+				add_option_to_device(dev,"privPassword",
+							sec->privPassword);
+			}
+			if( sec->authProtocol ) {
+				add_option_to_device(dev,"authProtocol",
+							sec->authProtocol);
+			}
+			if( sec->privProtocol ) {
+				add_option_to_device(dev,"privProtocol",
+							sec->privProtocol);
+			}
+		}
+		else {
+			add_option_to_device(dev,"community",
+						(char *)session->community);
+		}
 
 #ifdef HAVE_PTHREAD
 		pthread_mutex_lock(&dev_mutex);
@@ -109,6 +152,162 @@ void try_all_oid(void * handle)
 	}
 }
 
+int init_session(struct snmp_session * snmp_sess, snmp_security_t * sec)
+{
+	snmp_sess_init(snmp_sess);
+
+	snmp_sess->peername = sec->peername;
+
+	if( sec->community != NULL || sec->secLevel == NULL ) {
+		snmp_sess->version = SNMP_VERSION_1;
+		if( sec->community != NULL ) {
+			snmp_sess->community = (unsigned char *)sec->community;
+			snmp_sess->community_len = strlen(sec->community);
+		}
+		else {
+			snmp_sess->community = (unsigned char *)"public";
+			snmp_sess->community_len = strlen("public");
+		}
+	}
+	else { /* SNMP v3 */ 
+		snmp_sess->version = SNMP_VERSION_3;
+
+		/* Security level */
+		if (strcmp(sec->secLevel, "noAuthNoPriv") == 0)
+			snmp_sess->securityLevel = SNMP_SEC_LEVEL_NOAUTH;
+		else if (strcmp(sec->secLevel, "authNoPriv") == 0)
+			snmp_sess->securityLevel = SNMP_SEC_LEVEL_AUTHNOPRIV;
+		else if (strcmp(sec->secLevel, "authPriv") == 0)
+			snmp_sess->securityLevel = SNMP_SEC_LEVEL_AUTHPRIV;
+		else {
+			fprintf(stderr,"Bad SNMPv3 securityLevel: %s\n",
+								sec->secLevel);
+			return 0;
+		}
+
+		/* Security name */
+		if( sec->secName == NULL ) {
+			fprintf(stderr,"securityName is required for SNMPv3\n");
+			return 0;
+		}
+		snmp_sess->securityName = strdup(sec->secName);
+		snmp_sess->securityNameLen = strlen(snmp_sess->securityName);
+
+		/* Everything is ready for NOAUTH */
+		if( snmp_sess->securityLevel == SNMP_SEC_LEVEL_NOAUTH ) {
+			return 1;
+		}
+
+		/* Process mandatory fields, based on the security level */
+                switch (snmp_sess->securityLevel) {
+                        case SNMP_SEC_LEVEL_AUTHNOPRIV:
+                                if (sec->authPassword == NULL) {
+                                        fprintf(stderr,
+			"authPassword is required for SNMPv3 in %s mode\n",
+						sec->secLevel);
+					return 0;
+				}
+				break;
+                        case SNMP_SEC_LEVEL_AUTHPRIV:
+                                if ((sec->authPassword == NULL) ||
+					(sec->privPassword == NULL)) {
+                                        fprintf(stderr,
+	"authPassword and privPassword are required for SNMPv3 in %s mode\n",
+						sec->secLevel);
+					return 0;
+				}
+				break;
+                        default:
+                                /* nothing else needed */
+                                break;
+                }
+
+                /* Process authentication protocol and key */
+               	snmp_sess->securityAuthKeyLen = USM_AUTH_KU_LEN;
+
+		/* default to MD5 */
+		snmp_sess->securityAuthProto = usmHMACMD5AuthProtocol;
+		snmp_sess->securityAuthProtoLen =sizeof(usmHMACMD5AuthProtocol)/
+							sizeof(oid);
+
+		if( sec->authProtocol ) {
+			if (strcmp(sec->authProtocol, "SHA") == 0) {
+				snmp_sess->securityAuthProto =
+							usmHMACSHA1AuthProtocol;
+				snmp_sess->securityAuthProtoLen =
+					sizeof(usmHMACSHA1AuthProtocol)/
+					sizeof(oid);
+			}
+			else {
+				if (strcmp(sec->authProtocol, "MD5") != 0) {
+					fprintf(stderr,
+						"Bad SNMPv3 authProtocol: %s",
+						sec->authProtocol);
+					return 0;
+				}
+			}
+		}
+
+		/* set the authentication key to a MD5/SHA1 hashed version of
+		 * our passphrase (must be at least 8 characters long) */
+		if (generate_Ku(snmp_sess->securityAuthProto,
+					snmp_sess->securityAuthProtoLen,
+					(u_char *) sec->authPassword,
+					strlen(sec->authPassword),
+					snmp_sess->securityAuthKey,
+					&snmp_sess->securityAuthKeyLen)
+					!= SNMPERR_SUCCESS) {
+							fprintf(stderr,
+		"Error generating Ku from authentication pass phrase\n");
+							return 0;
+		}
+
+		/* Everything is ready for AUTHNOPRIV */
+		if( snmp_sess->securityLevel == SNMP_SEC_LEVEL_AUTHNOPRIV ) {
+			return 1;
+		}
+
+		/* default to DES */
+		snmp_sess->securityPrivProto=usmDESPrivProtocol;
+		snmp_sess->securityPrivProtoLen =
+			sizeof(usmDESPrivProtocol)/sizeof(oid);
+
+		if( sec->privProtocol ) {
+			if (strcmp(sec->privProtocol, "AES") == 0) {
+				snmp_sess->securityPrivProto=usmAESPrivProtocol;
+				snmp_sess->securityPrivProtoLen = 
+					sizeof(usmAESPrivProtocol)/sizeof(oid);
+			}
+			else {
+				if (strcmp(sec->privProtocol, "DES") != 0) {
+					fprintf(stderr,
+						"Bad SNMPv3 authProtocol: %s\n"
+						,sec->authProtocol);
+				return 0;
+				}
+			}
+		}
+
+		/* set the private key to a MD5/SHA hashed version of
+		 * our passphrase (must be at least 8 characters long) */
+		snmp_sess->securityPrivKeyLen = USM_PRIV_KU_LEN;
+		if (generate_Ku(snmp_sess->securityAuthProto,
+					snmp_sess->securityAuthProtoLen,
+					(u_char *) sec->privPassword,
+					strlen(sec->privPassword),
+					snmp_sess->securityPrivKey,
+					&snmp_sess->securityPrivKeyLen)
+					!= SNMPERR_SUCCESS) {
+							fprintf(stderr,
+		"Error generating Ku from private pass phrase\n");
+							return 0;
+		}
+
+	}
+
+	return 1;
+}
+
 void * try_SysOID(void * arg)
 {
 	struct snmp_session snmp_sess;
@@ -119,20 +318,10 @@ void * try_SysOID(void * arg)
 	snmp_security_t * sec = (snmp_security_t *)arg;
 
 	/* Initialize session */
-	snmp_sess_init(&snmp_sess);
-
-	snmp_sess.peername = sec->peername;
-
-	snmp_sess.version = SNMP_VERSION_1;
-	if( sec->community != NULL ) {
-		snmp_sess.community = (unsigned char *)sec->community;
-		snmp_sess.community_len = strlen(sec->community);
+	if( !init_session(&snmp_sess,sec) ) {
+		goto try_SysOID_free;
 	}
-	else {
-		snmp_sess.community = (unsigned char *)"public";
-		snmp_sess.community_len = strlen("public");
-	}
-
+	
 	snmp_sess.retries = 0;
 	snmp_sess.timeout = g_usec_timeout;
 
@@ -170,7 +359,8 @@ void * try_SysOID(void * arg)
 		/* SysOID is supposed to give the required MIB. */
 		/* FIXME: until we are sure it gives the MIB for all devices, use the old method: */
 		/* try a list of known OID */
-		try_all_oid(handle);
+		sec->handle = handle;
+		try_all_oid(sec);
 
 		snmp_free_pdu(response);
 		response = NULL;

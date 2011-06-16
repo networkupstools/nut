@@ -36,12 +36,18 @@
 
 #define DEFAULT_TIMEOUT 1
 
-const char optstring[] = "?ht:s:e:c:";
+const char optstring[] = "?ht:s:e:c:l:u:A:X:a:x:";
 const struct option longopts[] =
 	{{ "timeout",required_argument,NULL,'t' },
 	{ "start_ip",required_argument,NULL,'s' },
 	{ "end_ip",required_argument,NULL,'e' },
 	{ "community",required_argument,NULL,'c' },
+	{ "secLevel",required_argument,NULL,'l' },
+	{ "secName",required_argument,NULL,'u' },
+	{ "authPassword",required_argument,NULL,'A' },
+	{ "privPassword",required_argument,NULL,'X' },
+	{ "authProtocol",required_argument,NULL,'a' },
+	{ "privProtocol",required_argument,NULL,'x' },
 	{ "help",no_argument,NULL,'h' },
 	{NULL,0,NULL,0}};
 
@@ -77,16 +83,41 @@ int main(int argc, char *argv[])
 			case 'c':
 				sec.community = strdup(optarg);
 				break;
+			case 'l':
+				sec.secLevel = strdup(optarg);
+				break;
+			case 'u':
+				sec.secName = strdup(optarg);
+				break;
+			case 'A':
+				sec.authPassword = strdup(optarg);
+				break;
+			case 'X':
+				sec.privPassword = strdup(optarg);
+				break;
+			case 'a':
+				sec.authProtocol = strdup(optarg);
+				break;
+			case 'x':
+				sec.privProtocol = strdup(optarg);
+				break;
 			case 'h':
 			case '?':
 			default:
 				puts("nut-scanner : detecting available UPS.\n");
-				puts("Options list:");
-				printf("\t-t, --timeout\t<timeout in seconds>: network operation timeout (default %d).\n\n",DEFAULT_TIMEOUT);
-				printf("\t-s, --start_ip\t<IP address>: First IP address to scan.\n\n");
-				printf("\t-e, --end_ip\t<IP address>: Last IP address to scan.\n\n");
-				printf("SNMP specific options :\n");
-				printf("\t-c, --community\t<SNMP community name>: Set SNMP v1 community name. (default = public)\n\n");
+				puts("OPTIONS:");
+				printf("  -t, --timeout <timeout in seconds>: network operation timeout (default %d).\n",DEFAULT_TIMEOUT);
+				printf("  -s, --start_ip <IP address>: First IP address to scan.\n");
+				printf("  -e, --end_ip <IP address>: Last IP address to scan.\n");
+				printf("\nSNMP v1 specific options:\n");
+				printf("  -c, --community <community name>: Set SNMP v1 community name (default = public)\n");
+				printf("\nSNMP v3 specific options:\n");
+				printf("  -l, --secLevel <security level>: Set the securityLevel used for SNMPv3 messages (allowed: noAuthNoPriv,authNoPriv,authPriv)\n");
+				printf("  -u, --secName <security name>: Set the securityName used for authenticated SNMPv3 messages (mandatory if you set secLevel. No default)\n");
+				printf("  -a, --authProtocol <authentication protocol>: Set the authentication protocol (MD5 or SHA) used for authenticated SNMPv3 messages (default=MD5)\n");
+				printf("  -A, --authPassword <authentication pass phrase>: Set the authentication pass phrase used for authenticated SNMPv3 messages (mandatory if you set secLevel to authNoPriv or authPriv)\n");
+				printf("  -x, --privProtocol <privacy protocol>: Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages (default=DES)\n");
+				printf("  -X, --privPassword <privacy pass phrase>: Set the privacy pass phrase used for encrypted SNMPv3 messages (mandatory if you set secLevel to authPriv)\n");
 				return 0;
 		}
 
@@ -126,35 +157,4 @@ int main(int argc, char *argv[])
 	scan_ipmi();
 
 	return EXIT_SUCCESS;
-}
-
-int
-network_iterator (int argc, char *argv[])
-{
-    unsigned int iterator;
-    int ipStart[]={192,168,0,100};
-    int ipEnd[] = {192,168,10,100};
-
-    unsigned int startIP= (
-        ipStart[0] << 24 |
-        ipStart[1] << 16 |
-        ipStart[2] << 8 |
-        ipStart[3]);
-    unsigned int endIP= (
-        ipEnd[0] << 24 |
-        ipEnd[1] << 16 |
-        ipEnd[2] << 8 |
-        ipEnd[3]);
-
-    for (iterator=startIP; iterator < endIP; iterator++)
-    {
-        printf (" %d.%d.%d.%d\n",
-            (iterator & 0xFF000000)>>24,
-            (iterator & 0x00FF0000)>>16,
-            (iterator & 0x0000FF00)>>8,
-            (iterator & 0x000000FF)
-        );
-    }
-
-    return 0;
 }

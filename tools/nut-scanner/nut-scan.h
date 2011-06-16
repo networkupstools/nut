@@ -31,6 +31,7 @@ typedef struct snmp_security {
 	char * authProtocol;
 	char * privProtocol;
 	char * peername;
+	void * handle;
 } snmp_security_t;
 
 /* Scanning */
