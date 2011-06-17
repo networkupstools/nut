@@ -75,6 +75,7 @@ static const struct {
 	{ "megatec", "Q1\r", "F\r", "I\r" },
 	{ "mustek", "QS\r", "F\r", "I\r" },
 	{ "megatec/old", "D\r", "F\r", "I\r" },
+	{ "zinto", "Q1\r", "F\r", "FW?\r" },
 	{ NULL }
 };
 
@@ -472,6 +473,8 @@ void blazer_makevartable(void)
 
 	addvar(VAR_FLAG, "norating", "Skip reading rating information from UPS");
 	addvar(VAR_FLAG, "novendor", "Skip reading vendor information from UPS");
+
+	addvar(VAR_FLAG, "protocol", "Preselect communication protocol (skip autodetection)");
 }
 
 
@@ -594,11 +597,17 @@ static void blazer_initbattery(void)
 
 void blazer_initinfo(void)
 {
+	const char	*protocol = getval("protocol");
 	int	retry;
 
 	for (proto = 0; command[proto].status; proto++) {
 
 		int	ret;
+
+		if (protocol && strcasecmp(protocol, command[proto].name)) {
+			upsdebugx(2, "Skipping %s protocol...", command[proto].name);
+			continue;
+		}
 
 		upsdebugx(2, "Trying %s protocol...", command[proto].name);
 
