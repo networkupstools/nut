@@ -20,18 +20,24 @@
 #define DEVSCAN_SNMP_H
 
 typedef struct {
-	char *		oid;
-	char *		mib;
+        char *          oid;
+        char *          mib;
 } snmp_device_id_t;
 
 /* SNMP IDs device table */
 static snmp_device_id_t snmp_device_table[] = {
-
-	{ ".1.3.6.1.4.1.17373.3.1.1.0", "aphel_genesisII" },
-	{ ".1.3.6.1.4.1.534.6.6.6.1.1.12.0", "aphel_revelation" },
-	{ ".1.3.6.1.4.1.705.1.1.1.0", "mge" },
-	/* Terminating entry */
-	{ NULL, NULL }
+	{ "1.3.6.1.4.1.534.1.1.2.0" ,  "pw"},
+	{ "1.3.6.1.4.1.232.165.3.1.1.0" ,  "cpqpower"},
+	{ ".1.3.6.1.4.1.13742.1.1.12.0" ,  "raritan"},
+	{ "1.3.6.1.2.1.33.1.1.1.0" ,  "ietf"},
+	{ ".1.3.6.1.4.1.318.1.1.1.1.1.1.0" ,  "apcc"},
+	{ ".1.3.6.1.4.1.4779.1.3.5.2.1.24.1" ,  "baytech"},
+	{ ".1.3.6.1.4.1.4555.1.1.1.1.1.1.0" ,  "netvision"},
+	{ ".1.3.6.1.4.1.17373.3.1.1.0" ,  "aphel_genesisII"},
+	{ ".1.3.6.1.4.1.534.6.6.6.1.1.12.0" ,  "aphel_revelation"},
+	{ ".1.3.6.1.4.1.2947.1.1.2.0" ,  "bestpower"},
+	{ ".1.3.6.1.4.1.705.1.1.1.0" ,  "mge"},
+        /* Terminating entry */
+        { NULL, NULL }
 };
 #endif /* DEVSCAN_SNMP_H */
-
