@@ -29,8 +29,6 @@
 #include "common.h"
 #include "device.h"
 
-#define BUF_SIZE	1024
-
 static int startelm_cb(void *userdata, int parent, const char *nspace, const char *name, const char **atts) {
 	device_t * dev = (device_t *)userdata;
 	char buf[SMALLBUF];
@@ -58,8 +56,8 @@ device_t * scan_xml_http(long usec_timeout)
 	fd_set fds;
 	struct timeval timeout;
 	int ret;
-	char buf[BUF_SIZE];
-	char string[BUF_SIZE];
+	char buf[SMALLBUF];
+	char string[SMALLBUF];
 	ssize_t recv_size;
 
 	device_t * nut_dev = NULL;
