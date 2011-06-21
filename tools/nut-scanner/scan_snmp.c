@@ -57,6 +57,7 @@ void try_all_oid(void * arg)
 	snmp_security_t * sec = (snmp_security_t *)arg;
 	int status;
 	char buf[SMALLBUF];
+	size_t desc_size;
 
 	while(snmp_device_table[index].oid != NULL) {
 
@@ -103,10 +104,13 @@ void try_all_oid(void * arg)
 		dev->port = strdup(session->peername);
 		/* get the name aof the device and add "" */
 		memset(buf,0,sizeof(buf));
+		/* 3 is for 2 '"' characters + a ternimal 0 */
+		desc_size = response->variables->val_len > (sizeof(buf)-3)?
+						(sizeof(buf)-3):
+						response->variables->val_len;
+		memcpy(buf+1,response->variables->val.string,desc_size);
 		buf[0] = '"';
-		memcpy(buf+1,response->variables->val.string,
-			response->variables->val_len);
-		buf[1+response->variables->val_len] = '"';
+		buf[1+desc_size] = '"';
 		add_option_to_device(dev,"desc",buf);
 		add_option_to_device(dev,"mibs",snmp_device_table[index].mib);
 		/* SNMP v3 */
