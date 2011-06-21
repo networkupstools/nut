@@ -41,11 +41,6 @@ int thread_count = 0;
 #endif
 long g_usec_timeout ;
 
-enum network_type {
-	IPv4,
-	IPv6
-};
-
 void try_all_oid(void * arg)
 {
         oid name[MAX_OID_LEN];
@@ -385,119 +380,33 @@ try_SysOID_free:
 	return NULL;
 }
 
-void increment_IPv6(struct in6_addr * addr)
-{
-	addr->s6_addr32[3]=htonl((ntohl(addr->s6_addr32[3])+1));
-	if( addr->s6_addr32[3] == 0 ) {
-		addr->s6_addr32[2] = htonl((ntohl(addr->s6_addr32[2])+1));
-		if( addr->s6_addr32[2] == 0 ) {
-			addr->s6_addr32[1]=htonl((ntohl(addr->s6_addr32[1])+1));
-			if( addr->s6_addr32[1] == 0 ) {
-				addr->s6_addr32[0] =
-					htonl((ntohl(addr->s6_addr32[0])+1));
-			}
-		}
-	}
-}
-
-void invert_IPv6(struct in6_addr * addr1, struct in6_addr * addr2)
-{
-	int i;
-	unsigned long addr;
-
-	for( i=0; i<4; i++) {
-		addr = addr1->s6_addr32[i];
-		addr1->s6_addr32[i] = addr2->s6_addr32[i];
-		addr2->s6_addr32[i] = addr;
-	}
-}
-
 device_t * scan_snmp(char * start_ip, char * stop_ip,long usec_timeout, snmp_security_t * sec)
 {
-	int addr;
-	struct in_addr current_addr;
-	struct in_addr stop_addr;
-	struct in6_addr current_addr6;
-	struct in6_addr stop_addr6;
-	enum network_type type = IPv4;
-	char buf[SMALLBUF];
 	int i;
 	snmp_security_t * tmp_sec;
+	ip_iter_t ip;
+	char * ip_str = NULL;
+
 #ifdef HAVE_PTHREAD
 	pthread_t thread;
 #endif
 
 	g_usec_timeout = usec_timeout;
 
-	if( start_ip == NULL ) {
-		return NULL;
-	}
-
-	if( stop_ip == NULL ) {
-		stop_ip = start_ip;
-	}
-
-	if(!inet_aton(start_ip, &current_addr)) {
-		/*Try IPv6 detection */
-		type = IPv6;
-		if(!inet_pton(AF_INET6, start_ip, &current_addr6)){
-			fprintf(stderr,"Invalid address : %s\n",start_ip);
-			return NULL;
-		}
-	}
-
-	if( type == IPv4 ) {
-		if(!inet_aton(stop_ip, &stop_addr)) {
-			fprintf(stderr,"Invalid address : %s\n",stop_ip);
-			return NULL;
-		}
-	}
-	else {
-		if(!inet_pton(AF_INET6, stop_ip, &stop_addr6)){
-			fprintf(stderr,"Invalid address : %s\n",stop_ip);
-			return NULL;
-		}
-	}
-
 #ifdef HAVE_PTHREAD
 	pthread_mutex_init(&dev_mutex,NULL);
 #endif
 
-	/* Make sure current addr is lesser than stop addr */
-	if( type == IPv4 ) {
-		if( ntohl(current_addr.s_addr) > ntohl(stop_addr.s_addr) ) {
-			addr = current_addr.s_addr;
-			current_addr.s_addr = stop_addr.s_addr;
-			stop_addr.s_addr = addr;
-		}
-	}
-	else { /* IPv6 */
-		for( i=0; i<4; i++ ) {
-			if( ntohl(current_addr6.s6_addr32[i]) !=
-				ntohl(stop_addr6.s6_addr32[i]) ) {
-				if( ntohl(current_addr6.s6_addr32[i]) >
-					ntohl(stop_addr6.s6_addr32[i])) {
-					invert_IPv6(&current_addr6,
-							&stop_addr6);
-				}
-				break;
-			}
-		}
-	}
-
 	/* Initialize the SNMP library */
 	init_snmp("nut-scanner");
 
-	while(1) {
+	ip_str = ip_iter_init(&ip, start_ip, stop_ip);
+
+	while(ip_str != NULL) {
 		tmp_sec = malloc(sizeof(snmp_security_t));
 		memcpy(tmp_sec, sec, sizeof(snmp_security_t));
-		if( type == IPv4 ) {
-			tmp_sec->peername = strdup(inet_ntoa(current_addr));
-		}
-		else { /* IPv6 */
-			tmp_sec->peername = strdup(inet_ntop(AF_INET6,&current_addr6,buf,
-							sizeof(buf)));
-		}
+		tmp_sec->peername = ip_str;
+
 #ifdef HAVE_PTHREAD
 		if (pthread_create(&thread,NULL,try_SysOID,(void*)tmp_sec)==0){
 			thread_count++;
@@ -508,28 +417,7 @@ device_t * scan_snmp(char * start_ip, char * stop_ip,long usec_timeout, snmp_sec
 #else
 		try_SysOID((void *)tmp_sec);
 #endif
-		if( type == IPv4 ) {
-			/* Check if this is the last address to scan */
-			if(current_addr.s_addr == stop_addr.s_addr) {
-				break;
-			}
-			/* increment the address (need to pass address in host
-			   byte order, then pass back in network byte order */
-			current_addr.s_addr = htonl((ntohl(current_addr.s_addr)+
-								1));
-		}
-		else {
-			/* Check if this is the last address to scan */
-			if(current_addr6.s6_addr32[0]==stop_addr6.s6_addr32[0]&&
-			current_addr6.s6_addr32[1]==stop_addr6.s6_addr32[1]&&
-			current_addr6.s6_addr32[2]==stop_addr6.s6_addr32[2]&&
-			current_addr6.s6_addr32[3]==stop_addr6.s6_addr32[3]){
-				break;
-			}
-
-			increment_IPv6(&current_addr6);
-		}
-
+		ip_str = ip_iter_inc(&ip);
 	};
 
 #ifdef HAVE_PTHREAD

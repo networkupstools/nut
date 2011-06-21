@@ -1,7 +1,7 @@
 
 lib_LTLIBRARIES = libnut_scan.la
 libnut_scan_la_SOURCES = scan_xml_http.c scan_nut.c scan_avahi.c scan_ipmi.c \
-	device.c device.h display.c
+	device.c device.h ip.c ip.h display.c
 libnut_scan_la_LIBADD = ../../clients/libupsclient.la $(NETLIBS)
 libnut_scan_la_LDFLAGS = -version-info 1:0:0
 libnut_scan_la_CFLAGS = -I$(top_srcdir)/clients

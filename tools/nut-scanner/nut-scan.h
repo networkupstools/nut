@@ -20,6 +20,7 @@
 #define NUT_SCAN_H
 
 #include "device.h"
+#include "ip.h"
 
 /* SNMP structure */
 typedef struct snmp_security {
