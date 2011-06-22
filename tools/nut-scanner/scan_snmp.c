@@ -97,15 +97,9 @@ void try_all_oid(void * arg)
 		dev->type = TYPE_SNMP;
 		dev->driver = strdup("snmp-ups");
 		dev->port = strdup(session->peername);
-		/* get the name aof the device and add "" */
-		memset(buf,0,sizeof(buf));
-		/* 3 is for 2 '"' characters + a ternimal 0 */
-		desc_size = response->variables->val_len > (sizeof(buf)-3)?
-						(sizeof(buf)-3):
-						response->variables->val_len;
-		memcpy(buf+1,response->variables->val.string,desc_size);
-		buf[0] = '"';
-		buf[1+desc_size] = '"';
+		snprintf(buf,sizeof(buf),"\"%.*s\"",  
+				(int)response->variables->val_len,
+				response->variables->val.string);
 		add_option_to_device(dev,"desc",buf);
 		add_option_to_device(dev,"mibs",snmp_device_table[index].mib);
 		/* SNMP v3 */
