@@ -1,10 +1,10 @@
 
 lib_LTLIBRARIES = libnut_scan.la
 libnut_scan_la_SOURCES = scan_xml_http.c scan_nut.c scan_avahi.c scan_ipmi.c \
-	device.c device.h ip.c ip.h display.c
+	device.c device.h ip.c ip.h display.c nut-scan.h
 libnut_scan_la_LIBADD = ../../clients/libupsclient.la $(NETLIBS)
 libnut_scan_la_LDFLAGS = -version-info 1:0:0
-libnut_scan_la_CFLAGS = -I$(top_srcdir)/clients
+libnut_scan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include
 
 bin_PROGRAMS = nut-scanner
 nut_scanner_SOURCES = nut-scanner.c
@@ -29,3 +29,4 @@ if WITH_NEONXML
   libnut_scan_la_CFLAGS += $(LIBNEON_CFLAGS)
   libnut_scan_la_LIBADD += $(LIBNEON_LIBS)
 endif
+EXTRA_DIST = nutscan-usb.h nutscan-snmp.h
