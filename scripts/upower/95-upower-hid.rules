@@ -72,7 +72,11 @@ ATTRS{idVendor}=="051d", ATTRS{idProduct}=="0003", ENV{UPOWER_BATTERY_TYPE}="ups
 # Powerware
 ATTRS{idVendor}=="0592", ATTRS{idProduct}=="0004", ENV{UPOWER_BATTERY_TYPE}="ups"
 
+<<<<<<< HEAD
 # Phoenixtec Power Co., Ltd
+=======
+# Phoenixtec
+>>>>>>> Merge from trunk [[SVN:3002]] to [[SVN:3057]]
 ATTRS{idVendor}=="06da", ATTRS{idProduct}=="ffff", ENV{UPOWER_BATTERY_TYPE}="ups"
 
 # iDowell

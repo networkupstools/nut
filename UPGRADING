@@ -218,10 +218,6 @@ which makes it work with upsclient.
 
 - 'make install-misc' is now 'make install-lib'.  The misc directory
 has been gone for a long time, and the target was ambiguous.
-<<<<<<< HEAD
-=======
->>>>>>> switch UPGRADING information to AsciiDoc, and integrate these in the User Manual.
->>>>>>> Merge from the trunk -> porting the IPv6 code to Windows
 
 - The newapc driver has been renamed to apcsmart.  If you previously
 used newapc, make sure you delete the old binary and fix your 
