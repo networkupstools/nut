@@ -23,6 +23,7 @@ upsdrv_info_t comm_upsdrv_info = {
 };
 
 #define MAX_TRY 4
+#define MAX_TRY_OPENUSB 32
 
 /* Powerware */
 #define POWERWARE 0x0592
@@ -513,8 +514,7 @@ usb_dev_handle *nutusb_open(const char *port)
 	usb_find_devices();
 #endif /* WITH_LIBUSB_1_0 */
 
-
-	for (retry = 0; dev_h == NULL && retry < 32; retry++)
+	for (retry = 0; dev_h == NULL && retry < MAX_TRY_OPENUSB; retry++)
 	{
 		dev_h = open_powerware_usb();
 		if (!dev_h) {
@@ -526,7 +526,7 @@ usb_dev_handle *nutusb_open(const char *port)
 			errout = 0;
 
 #ifdef WIN32
-			if ((ret = usb_set_configuration(dev_h, 0)) < 0)
+			if ((ret = usb_set_configuration(dev_h, 1)) < 0)
 			{
 				upsdebugx(1, "Can't set POWERWARE USB configuration: %s", nut_usb_strerror(ret));
 				errout = 1;
