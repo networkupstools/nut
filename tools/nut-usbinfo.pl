@@ -196,7 +196,9 @@ sub find_usbdevs
 			my $VendorName="";
 
 			# special thing for backward declaration using #DEFINE
-			# Format: #define VENDORID 0x???? /* vendor name */
+			# Format:
+			# /* vendor name */
+			# #define VENDORID 0x????
 			if(!($VendorID=~/\dx(\d|\w)+/))
 			{
 				open my $fh,$nameFile or die "error open file $nameFile";
@@ -228,9 +230,12 @@ sub find_usbdevs
 					die "In file $nameFile, for product $ProductID, can't find the declaration of the constant";
 				}
 			}
-			
-			# store date (to be optimized)
-			$vendorName{$VendorID}=trim($VendorName);
+
+			# store data (to be optimized)
+			if (($vendorName{$VendorID} eq "") && ($VendorName))
+			{
+				$vendorName{$VendorID}=trim($VendorName);
+			}
 			$vendor{$VendorID}{$ProductID}{"comment"}=$lastComment;
 			# process the driver name
 			my $driver=$nameFile;

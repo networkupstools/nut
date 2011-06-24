@@ -3,7 +3,7 @@ dnl | Network UPS Tools: configure.in                                  |
 dnl +------------------------------------------------------------------+
 
 dnl NUT version number is defined here and *only* here (no more include/version)
-AC_INIT(nut, 2.6.0)
+AC_INIT(nut, 2.6.1)
 AC_CONFIG_SRCDIR(server/upsd.c)
 AC_CONFIG_MACRO_DIR([m4])
 echo "Network UPS Tools version ${PACKAGE_VERSION}"
@@ -171,7 +171,7 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all, 
-	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, hal, cgi, dev, neon, powerman]),
+	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, powerman, cgi, dev]),
 [
 	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
@@ -179,7 +179,6 @@ AC_ARG_WITH(all,
 		if test -z "${with_serial}"; then with_serial="${withval}"; fi
 		if test -z "${with_usb}"; then with_usb="${withval}"; fi
 		if test -z "${with_snmp}"; then with_snmp="${withval}"; fi
-		if test -z "${with_hal}"; then with_hal="${withval}"; fi
 		if test -z "${with_neon}"; then with_neon="${withval}"; fi
 		if test -z "${with_powerman}"; then with_powerman="${withval}"; fi
 		if test -z "${with_cgi}"; then with_cgi="${withval}"; fi
