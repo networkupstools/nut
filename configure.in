@@ -220,8 +220,13 @@ dnl ----------------------------------------------------------------------
 dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
+<<<<<<< HEAD
 AC_ARG_WITH(all,
 	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, cgi, dev, avahi]),
+=======
+AC_ARG_WITH(all, 
+	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, powerman, cgi, dev]),
+>>>>>>> Merge from trunk [[SVN:3002]] to [[SVN:3057]]
 [
 	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
