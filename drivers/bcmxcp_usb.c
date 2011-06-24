@@ -419,7 +419,7 @@ usb_dev_handle *nutusb_open(const char *port)
 			errout = 0;
 
 #ifdef WIN32
-			if (usb_set_configuration(dev_h, 0) < 0)
+			if (usb_set_configuration(dev_h, 1) < 0)
 			{
 				upsdebugx(1, "Can't set POWERWARE USB configuration: %s", usb_strerror());
 				errout = 1;
