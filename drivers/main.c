@@ -941,7 +941,39 @@ int main(int argc, char **argv)
 		}
 	}
 #endif
-	setup_signals();
+	/* Setup signals to communicate with driver once backgrounded. */
+	if ((nut_debug_level == 0) && (!do_forceshutdown)) {
+		char	buffer[SMALLBUF];
+
+		setup_signals();
+
+		snprintf(buffer, sizeof(buffer), "%s/%s-%s.pid", altpidpath(), progname, upsname);
+
+		/* Try to prevent that driver is started multiple times. If a PID file */
+		/* already exists, send a TERM signal to the process and try if it goes */
+		/* away. If not, retry a couple of times. */
+		for (i = 0; i < 3; i++) {
+			struct stat	st;
+
+			if (stat(buffer, &st) != 0) {
+				/* PID file not found */
+				break;
+			}
+
+			if (sendsignalfn(buffer, SIGTERM) != 0) {
+				/* Can't send signal to PID, assume invalid file */
+				break;
+			}
+
+			upslogx(LOG_WARNING, "Duplicate driver instance detected! Terminating other driver!");
+
+			/* Allow driver some time to quit */
+			sleep(5);
+		}
+
+		pidfn = xstrdup(buffer);
+		writepid(pidfn);	/* before backgrounding */
+	}
 
 	/* clear out callback handler data */
 	memset(&upsh, '\0', sizeof(upsh));
