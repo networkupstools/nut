@@ -36,7 +36,7 @@
 
 #define DEFAULT_TIMEOUT 1
 
-const char optstring[] = "?ht:s:e:c:l:u:A:X:a:x:";
+const char optstring[] = "?ht:s:e:c:l:u:A:X:a:x:p:";
 const struct option longopts[] =
 	{{ "timeout",required_argument,NULL,'t' },
 	{ "start_ip",required_argument,NULL,'s' },
@@ -48,6 +48,7 @@ const struct option longopts[] =
 	{ "privPassword",required_argument,NULL,'X' },
 	{ "authProtocol",required_argument,NULL,'a' },
 	{ "privProtocol",required_argument,NULL,'x' },
+	{ "port",required_argument,NULL,'p' },
 	{ "help",no_argument,NULL,'h' },
 	{NULL,0,NULL,0}};
 
@@ -60,6 +61,7 @@ int main(int argc, char *argv[])
 	int opt_ret;
 	char *	start_ip = NULL;
 	char *	end_ip = NULL;
+	char * port = NULL;
 
 	memset(&sec,0,sizeof(sec));
 
@@ -101,6 +103,9 @@ int main(int argc, char *argv[])
 			case 'x':
 				sec.privProtocol = strdup(optarg);
 				break;
+			case 'p':
+				port = strdup(optarg);
+				break;
 			case 'h':
 			case '?':
 			default:
@@ -109,8 +114,10 @@ int main(int argc, char *argv[])
 				printf("  -t, --timeout <timeout in seconds>: network operation timeout (default %d).\n",DEFAULT_TIMEOUT);
 				printf("  -s, --start_ip <IP address>: First IP address to scan.\n");
 				printf("  -e, --end_ip <IP address>: Last IP address to scan.\n");
+
 				printf("\nSNMP v1 specific options:\n");
 				printf("  -c, --community <community name>: Set SNMP v1 community name (default = public)\n");
+
 				printf("\nSNMP v3 specific options:\n");
 				printf("  -l, --secLevel <security level>: Set the securityLevel used for SNMPv3 messages (allowed: noAuthNoPriv,authNoPriv,authPriv)\n");
 				printf("  -u, --secName <security name>: Set the securityName used for authenticated SNMPv3 messages (mandatory if you set secLevel. No default)\n");
@@ -118,6 +125,9 @@ int main(int argc, char *argv[])
 				printf("  -A, --authPassword <authentication pass phrase>: Set the authentication pass phrase used for authenticated SNMPv3 messages (mandatory if you set secLevel to authNoPriv or authPriv)\n");
 				printf("  -x, --privProtocol <privacy protocol>: Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages (default=DES)\n");
 				printf("  -X, --privPassword <privacy pass phrase>: Set the privacy pass phrase used for encrypted SNMPv3 messages (mandatory if you set secLevel to authPriv)\n");
+
+				printf("\nNUT device specific options:\n");
+				printf("  -p, --port <port number>: Port number of remote NUT devices\n");
 				return 0;
 		}
 
@@ -144,9 +154,10 @@ int main(int argc, char *argv[])
 	display_ups_conf(dev);
 	free_device(dev);
 
-/*TODO*/
 	printf("Scanning NUT bus (old connect method):\n");
-	scan_nut();
+	dev = scan_nut(start_ip,end_ip,port);
+	display_ups_conf(dev);
+	free_device(dev);
 
 /*TODO*/
 	printf("Scanning NUT bus (via avahi):\n");

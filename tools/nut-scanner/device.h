@@ -24,8 +24,7 @@ typedef enum device_type {
 	TYPE_USB,
 	TYPE_SNMP,
 	TYPE_XML,
-	TYPE_NUT_OLD,
-	TYPE_NUT_AVAHI,
+	TYPE_NUT,
 	TYPE_IPMI
 } device_type_t;
 

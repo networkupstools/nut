@@ -33,11 +33,11 @@
 
 #define SysOID ".1.3.6.1.2.1.1.2"
 
-device_t * dev_ret = NULL;
+static device_t * dev_ret = NULL;
 #ifdef HAVE_PTHREAD
-pthread_mutex_t dev_mutex;
-pthread_t * thread_array = NULL;
-int thread_count = 0;
+static pthread_mutex_t dev_mutex;
+static pthread_t * thread_array = NULL;
+static int thread_count = 0;
 #endif
 long g_usec_timeout ;
 
@@ -380,16 +380,13 @@ device_t * scan_snmp(char * start_ip, char * stop_ip,long usec_timeout, snmp_sec
 	snmp_security_t * tmp_sec;
 	ip_iter_t ip;
 	char * ip_str = NULL;
-
 #ifdef HAVE_PTHREAD
 	pthread_t thread;
+
+	pthread_mutex_init(&dev_mutex,NULL);
 #endif
 
 	g_usec_timeout = usec_timeout;
-
-#ifdef HAVE_PTHREAD
-	pthread_mutex_init(&dev_mutex,NULL);
-#endif
 
 	/* Initialize the SNMP library */
 	init_snmp("nut-scanner");

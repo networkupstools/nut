@@ -40,13 +40,13 @@ void scan_avahi();
 
 void scan_ipmi();
 
-void scan_nut();
-
 device_t * scan_snmp(char * start_ip, char * stop_ip,long usec_timeout, snmp_security_t * sec);
 
 device_t * scan_usb();
 
 device_t * scan_xml_http(long usec_timeout);
+
+device_t * scan_nut(char * startIP, char * stopIP, char * port);
 
 /* Displaying */
 void display_ups_conf(device_t * device);
