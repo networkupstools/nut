@@ -68,8 +68,6 @@ static int (*sdlist[])(const void *) = {
 #define SDIDX_CS	4
 #define SDCNT 		((int)(sizeof(sdlist)/sizeof(sdlist[0])))
 
-#define SDTYPE_MAX	5
-
 static apc_vartab_t *vartab_lookup_char(char cmdchar)
 {
 	int	i;
@@ -94,6 +92,17 @@ static apc_vartab_t *vartab_lookup_name(const char *var)
 }
 
 /* FUTURE: change to use function pointers */
+
+static int rexhlp(const char *rex, const char *val)
+{
+	int ret;
+	regex_t mbuf;
+
+	regcomp(&mbuf, rex, REG_EXTENDED|REG_NOSUB);
+	ret = regexec(&mbuf, val, 0,0,0);
+	regfree(&mbuf);
+	return ret;
+}
 
 /* convert APC formatting to NUT formatting */
 /* TODO: handle errors better */
@@ -1358,20 +1367,6 @@ static int smartmode(int cnt)
 	return 0;	/* failure */
 }
 
-/* verify validity of ATn argument */
-static int validate_ATn_arg(const char *str)
-{
-	int i = 0;
-	if (!str || !*str)
-		return 0;
-	while (str[i] && i < 4) {
-		if (str[i] < '0' || str[i] > '9')
-			return -1;
-		i++;
-	}
-	return i < 4 ? i : -1;
-}
-
 /*
  * all shutdown commands should respond with 'OK' or '*'
  * apc_read() handles conversion to 'OK' so we care only about that one
@@ -1456,20 +1451,12 @@ static int sdcmd_AT(const void *str)
 	const char *awd = str;
 	char temp[APC_SBUF], *ptr;
 
-	cnt = validate_ATn_arg(awd);
-	if (cnt < 0) {
-		/* str (awd) is always sanitized outside, we should never get here */
-		upslogx(LOG_ERR, "sdcmd_ATn: invalid argument (%s)", awd);
-		awd = "001";
-		cnt = 3;
-	}
-
-	if (!awd) {
+	if (!awd)
 		awd = "000";
-		cnt = 3;
-	}
 
+	cnt = strlen(awd);
 	padto = cnt == 2 ? 2 : 3;
+
 	temp[0] = APC_CMD_GRACEDOWN;
 	ptr = temp + 1;
 	for (i = cnt; i < padto ; i++) {
@@ -1939,7 +1926,7 @@ static int do_cmd(const apc_cmdtab_t *ct)
 }
 
 /* some commands must be repeated in a window to execute */
-static int instcmd_chktime(apc_cmdtab_t *ct)
+static int instcmd_chktime(apc_cmdtab_t *ct, const char *ext)
 {
 	double	elapsed;
 	time_t	now;
@@ -1952,8 +1939,8 @@ static int instcmd_chktime(apc_cmdtab_t *ct)
 
 	/* you have to hit this in a small window or it fails */
 	if ((elapsed < MINCMDTIME) || (elapsed > MAXCMDTIME)) {
-		upsdebugx(1, "instcmd_chktime: outside window for %s (%2.0f)",
-				ct->name, elapsed);
+		upsdebugx(1, "instcmd_chktime: outside window for [%s %s] (%2.0f)",
+				ct->name, ext ? ext : "\b", elapsed);
 		return 0;
 	}
 
@@ -1966,37 +1953,41 @@ static int instcmd(const char *cmd, const char *ext)
 	apc_cmdtab_t *ct = NULL;
 
 	for (i = 0; apc_cmdtab[i].name != NULL; i++) {
+		/* main command must match */
 		if (strcasecmp(apc_cmdtab[i].name, cmd))
 			continue;
-		/* extra was provided and we care - check it */
-		if (ext && *ext && apc_cmdtab[i].ext) {
-			if (!strcmp(apc_cmdtab[i].ext, "!for")) {
-				/*
-				 * can't have that using && with the above,
-				 * if you're thinking about "fixing" it :)
-				 */
-				if (validate_ATn_arg(ext) < 0)
-					continue;
-			} else if (strcasecmp(apc_cmdtab[i].ext, ext))
+		/* extra was provided - check it */
+		if (ext && *ext) {
+			if (!apc_cmdtab[i].ext)
 				continue;
-		}
+			if (strlen(apc_cmdtab[i].ext) > 2) {
+				if (rexhlp(apc_cmdtab[i].ext, ext))
+					continue;
+			} else {
+				if (strcasecmp(apc_cmdtab[i].ext, ext))
+					continue;
+			}
+		} else if (apc_cmdtab[i].ext)
+			continue;
 		ct = &apc_cmdtab[i];
 		break;
 	}
 
 	if (!ct) {
-		upslogx(LOG_WARNING, "instcmd: unknown command [%s]", cmd);
+		upslogx(LOG_WARNING, "instcmd: unknown command [%s %s]", cmd,
+				ext ? ext : "\b");
 		return STAT_INSTCMD_INVALID;
 	}
 
 	if (!(ct->flags & APC_PRESENT)) {
-		upslogx(LOG_WARNING, "instcmd: command [%s] recognized, but"
-		       " not supported by your UPS model", cmd);
+		upslogx(LOG_WARNING, "instcmd: command [%s %s] recognized, but"
+		       " not supported by your UPS model", cmd,
+				ext ? ext : "\b");
 		return STAT_INSTCMD_INVALID;
 	}
 
 	/* first verify if the command is "nasty" */
-	if ((ct->flags & APC_NASTY) && !instcmd_chktime(ct))
+	if ((ct->flags & APC_NASTY) && !instcmd_chktime(ct, ext))
 		return STAT_INSTCMD_HANDLED;	/* future: again */
 
 	/* we're good to go, handle special stuff first, then generic cmd */
@@ -2017,13 +2008,14 @@ static int instcmd(const char *cmd, const char *ext)
 		return sdcmd_K(0);
 
 	if (!strcasecmp(cmd, "shutdown.return")) {
-		if (!ct->ext)
+		if (!ext || !*ext)
 			return sdcmd_S(0);
 
-		if (!strcmp(ct->ext, "!for"))
-			return sdcmd_AT(ext);
+		/* ext length is guaranteed by regex match above */
+		if (!strncasecmp(ext, "at", 2))
+			return sdcmd_AT(ext + 3);
 
-		if (!strcmp(ct->ext, "cs"))
+		if (!strncasecmp(ext, "cs", 2))
 			return sdcmd_CS(0);
 	}
 
@@ -2042,25 +2034,16 @@ static void setuphandlers(void)
 
 void upsdrv_makevartable(void)
 {
-	char str[128];
-
-	snprintf(str, sizeof(str), "%s%d%s",
-		"specify simple shutdown method (0 - ",
-		SDTYPE_MAX,
-		")"
-	);
-
 	addvar(VAR_VALUE, "cable", "specify alternate cable (940-0095B)");
 	addvar(VAR_VALUE, "awd", "hard hibernate's additional wakeup delay");
-	addvar(VAR_VALUE, "sdtype", str);
+	addvar(VAR_VALUE, "sdtype", "specify simple shutdown method (0 - " APC_SDMAX ")");
 	addvar(VAR_VALUE, "advorder", "enable advanced shutdown control");
 }
 
 void upsdrv_initups(void)
 {
-	int sdtype;
 	size_t i, len;
-	char *val, *eptr;
+	char *val;
 
 	if (!apc_ser_try())
 		fatalx(EXIT_FAILURE, "couldn't open port (%s)", device_path);
@@ -2068,14 +2051,12 @@ void upsdrv_initups(void)
 		fatalx(EXIT_FAILURE, "couldn't set options on port (%s)", device_path);
 
 	/* sanitize awd (additional waekup delay of '@' command) */
-	if (validate_ATn_arg((val = getval("awd"))) < 0)
-		fatalx(EXIT_FAILURE, "invalid value (%s) for option 'awd'", val);
+	if ((val = getval("awd")) && rexhlp(APC_AWDFMT, val)) {
+			fatalx(EXIT_FAILURE, "invalid value (%s) for option 'awd'", val);
+	}
 
 	/* sanitize sdtype */
-	if ((val = getval("sdtype"))) {
-		errno = 0;
-		sdtype = strtol(val, &eptr, 10);
-		if (errno || *eptr || sdtype < 0 || sdtype > SDTYPE_MAX)
+	if ((val = getval("sdtype")) && rexhlp(APC_SDFMT, val)) {
 			fatalx(EXIT_FAILURE, "invalid value (%s) for option 'sdtype'", val);
 	}
 

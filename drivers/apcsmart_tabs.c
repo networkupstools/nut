@@ -80,13 +80,17 @@ apc_vartab_t apc_vartab[] = {
 	 */
 };
 
-/* apc commands mapped to nut's instant commands */
+/*
+ * apc commands mapped to nut's instant commands extra values are either
+ * exactly 2-char prefix, or longer than 2-char extended regex
+ */
 apc_cmdtab_t apc_cmdtab[] = {
 	{ "test.panel.start",	0,	APC_CMD_FPTEST,		0 },
 	{ "test.failure.start",	0,	APC_CMD_SIMPWF,		0 },
 	{ "test.battery.start",	0,	APC_CMD_BTESTTOGGLE,	0 },
 	{ "test.battery.stop",	0,	APC_CMD_BTESTTOGGLE,	0 },
-	{ "shutdown.return",	"!for",	APC_CMD_GRACEDOWN,	APC_NASTY },
+	{ "shutdown.return",	"^at:[0-9]{1,3}$",
+				APC_CMD_GRACEDOWN,	APC_NASTY },
 	{ "shutdown.return",	"cs",	APC_CMD_SOFTDOWN,	APC_NASTY },
 	{ "shutdown.return",	0,	APC_CMD_SOFTDOWN,	APC_NASTY },
 	{ "shutdown.stayoff",	0,	APC_CMD_SHUTDOWN,	APC_NASTY|APC_REPEAT },
