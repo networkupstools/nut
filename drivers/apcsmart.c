@@ -526,14 +526,16 @@ static void remove_var(const char *cal, apc_vartab_t *vt)
 	else
 		fmt = "[0x%02x]";
 
-	strcpy(info, "%s: verified variable [%s] (APC: ");
-	strcat(info, fmt);
-	strcat(info, ") returned NA");
+	snprintf(info, sizeof(info), "%s%s%s",
+		"%s: verified variable [%s] (APC: ",
+		fmt,
+		") returned NA");
 	upsdebugx(1, info, cal, vt->name, vt->cmd);
 
-	strcpy(info, "%s: removing [%s] (APC: ");
-	strcat(info, fmt);
-	strcat(info, ")");
+	snprintf(info, sizeof(info), "%s%s%s",
+		"%s: removing [%s] (APC: ",
+		fmt,
+		")");
 	upsdebugx(1, info, cal, vt->name, vt->cmd);
 
 	vt->flags &= ~APC_PRESENT;
@@ -650,9 +652,11 @@ static int valid_cmd(char cmd, const char *val)
 		else
 			fmt = "[0x%02x]";
 
-		strcpy(info, "valid_cmd: cmd ");
-		strcat(info, fmt);
-		strcat(info, " failed regex match");
+		snprintf(info, sizeof(info), "%s%s%s",
+			"valid_cmd: cmd ",
+			fmt,
+			" failed regex match"
+		);
 		upslogx(LOG_WARNING, info, cmd);
 	}
 
@@ -951,17 +955,21 @@ static void protocol_verify(unsigned char cmd)
 
 			temp = preread_data(&apc_vartab[i]);
 			if (!temp || !valid_cmd(cmd, temp)) {
-				strcpy(info, "UPS variable [%s] - APC: ");
-				strcat(info, fmt);
-				strcat(info, " invalid or unreadable");
+				snprintf(info, sizeof(info), "%s%s%s",
+					"UPS variable [%s] - APC: ",
+					fmt,
+					" invalid or unreadable"
+				);
 				upsdebugx(3, info, apc_vartab[i].name, cmd);
 				return;
 			}
 
 			apc_vartab[i].flags |= APC_PRESENT;
 
-			strcpy(info, "UPS supports variable [%s] - APC: ");
-			strcat(info, fmt);
+			snprintf(info, sizeof(info), "%s%s",
+				"UPS supports variable [%s] - APC: ",
+				fmt
+			);
 			upsdebugx(3, info, apc_vartab[i].name, cmd);
 
 			dstate_setinfo(apc_vartab[i].name, "%s", temp);
@@ -987,8 +995,10 @@ static void protocol_verify(unsigned char cmd)
 	for (i = 0; apc_cmdtab[i].name != NULL; i++) {
 		if (apc_cmdtab[i].cmd == cmd) {
 
-			strcpy(info, "UPS supports command [%s] - APC: ");
-			strcat(info, fmt);
+			snprintf(info, sizeof(info), "%s%s",
+				"UPS supports command [%s] - APC: ",
+				fmt
+			);
 			upsdebugx(3, info, apc_cmdtab[i].name, cmd);
 
 			dstate_addcmd(apc_cmdtab[i].name);
@@ -1001,9 +1011,11 @@ static void protocol_verify(unsigned char cmd)
 	if (found || strchr(APC_UNR_CMDS, cmd))
 		return;
 
-	strcpy(info, "protocol_verify - APC: ");
-	strcat(info, fmt);
-	strcat(info, " unrecognized");
+	snprintf(info, sizeof(info), "%s%s%s",
+		"protocol_verify - APC: ",
+		fmt,
+		" unrecognized"
+	);
 	upsdebugx(1, info, cmd);
 }
 
