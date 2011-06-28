@@ -465,19 +465,17 @@ static int apc_read(char *buf, size_t buflen, int flags)
 			 */
 			if ((flags & SER_HA) && temp[i] == '*') {
 				/*
-				 * almost crazy, but suppose we could get
-				 * something else besides '*'; just in case eat
-				 * it - it's not real EOL after all
-				 * there's only need to eat it, if count > 0
-				 * timeout is not allowed either
+				 * a bit paranoid, but remember '*' is not real EOL;
+				 * there could be some firmware in existence, that
+				 * would send both string: 'OK\n' and alert: '*'.
+				 * Just in case, try to flush the input with small 1 sec.
+				 * timeout
 				 */
-				if (count) {
-					errno = 0;
-					ret = select_read(upsfd, temp, sizeof(temp), sec, usec);
-					if (ret <= 0) {
-						ser_comm_fail("%s", ret ? strerror(errno) : "timeout");
-						return ret;
-					}
+				errno = 0;
+				ret = select_read(upsfd, temp, sizeof(temp), 1, 0);
+				if (ret < 0) {
+					ser_comm_fail("%s", strerror(errno));
+					return ret;
 				}
 				buf[0] = 'O';
 				buf[1] = 'K';
