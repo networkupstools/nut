@@ -142,4 +142,7 @@
 #define APC_FW_OLD	'V'
 #define APC_FW_NEW	'b'
 
+#define APC_LBUF	512
+#define APC_SBUF	32
+
 #endif

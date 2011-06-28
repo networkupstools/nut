@@ -96,7 +96,7 @@ static apc_vartab_t *vartab_lookup_name(const char *var)
 /* TODO: handle errors better */
 static const char *convert_data(apc_vartab_t *cmd_entry, const char *upsval)
 {
-	static char temp[512];
+	static char temp[APC_LBUF];
 	int tval;
 
 	/* this should never happen */
@@ -417,7 +417,7 @@ static int apc_read(char *buf, size_t buflen, int flags)
 	const char *iset = IGN_CHARS, *aset = "";
 	size_t	count = 0;
 	int	i, ret, sec = 3, usec = 0;
-	char	temp[512];
+	char	temp[APC_LBUF];
 
 	if (upsfd == -1)
 		return 0;
@@ -513,7 +513,7 @@ static int apc_read(char *buf, size_t buflen, int flags)
 
 static void apc_flush(int flags)
 {
-	char temp[512];
+	char temp[APC_LBUF];
 
 	if (flags & SER_AA) {
 		tcflush(upsfd, TCOFLUSH);
@@ -552,7 +552,7 @@ static void remove_var(const char *cal, apc_vartab_t *vt)
 static int poll_data(apc_vartab_t *vt)
 {
 	int	ret;
-	char	temp[512];
+	char	temp[APC_LBUF];
 
 	if ((vt->flags & APC_PRESENT) == 0)
 		return 1;
@@ -645,7 +645,7 @@ static int query_ups(const char *var)
 static void do_capabilities(int qco)
 {
 	const	char	*ptr, *entptr;
-	char	upsloc, temp[512], cmd, loc, etmp[32], *endtemp;
+	char	upsloc, temp[APC_LBUF], cmd, loc, etmp[APC_SBUF], *endtemp;
 	int	nument, entlen, i, matrix, ret, valid;
 	apc_vartab_t *vt;
 
@@ -761,7 +761,7 @@ static void do_capabilities(int qco)
 static int update_status(void)
 {
 	int	ret;
-	char	buf[512];
+	char	buf[APC_LBUF];
 
 	upsdebugx(4, "update_status");
 
@@ -853,7 +853,7 @@ static void protocol_verify(unsigned char cmd)
 {
 	int i, found;
 	const char *fmt;
-	char info[64];
+	char info[256];
 
 	if (isprint(cmd))
 		fmt = "[%c]";
@@ -925,7 +925,7 @@ static int firmware_table_lookup(int *qco)
 {
 	int	ret;
 	unsigned int	i, j;
-	char	buf[512];
+	char	buf[APC_LBUF];
 
 	upsdebugx(1, "attempting firmware lookup using command 'V'");
 
@@ -996,7 +996,7 @@ static void getbaseinfo(void)
 {
 	unsigned int	i;
 	int	ret, qco;
-	char 	*alrts, *cmds, temp[512];
+	char 	*alrts, *cmds, temp[APC_LBUF];
 
 	/*
 	 *  try firmware lookup first; we could start with 'a', but older models
@@ -1063,7 +1063,7 @@ static void getbaseinfo(void)
 /* check for calibration status and either start or stop */
 static int do_cal(int start)
 {
-	char	temp[512];
+	char	temp[APC_LBUF];
 	int	tval, ret;
 
 	ret = apc_write(APC_STATUS);
@@ -1140,7 +1140,7 @@ static int do_cal(int start)
 static int smartmode(void)
 {
 	int	ret;
-	char	temp[512];
+	char	temp[APC_LBUF];
 
 	apc_flush(0);
 	ret = apc_write(APC_GOSMART);
@@ -1202,7 +1202,7 @@ static int validate_ATn_arg(const char *str)
 static int sdok(int ign)
 {
 	int ret;
-	char temp[32];
+	char temp[APC_SBUF];
 
 	/*
 	 * older upses on failed commands might just timeout, we cut down
@@ -1246,7 +1246,7 @@ static int sdcmd_S(const void *foo)
 static int sdcmd_CS(const void *foo)
 {
 	int ret;
-	char temp[32];
+	char temp[APC_SBUF];
 
 	upsdebugx(1, "using CS 350 'force OB' shutdown method");
 	if (ups_status & APC_STAT_OL) {
@@ -1276,7 +1276,7 @@ static int sdcmd_AT(const void *str)
 {
 	int ret, cnt, padto, i;
 	const char *awd = str;
-	char temp[32], *ptr;
+	char temp[APC_SBUF], *ptr;
 
 	cnt = validate_ATn_arg(awd);
 	if (cnt < 0) {
@@ -1456,7 +1456,7 @@ static void upsdrv_shutdown_advanced(void)
 /* power down the attached load immediately */
 void upsdrv_shutdown(void)
 {
-	char	temp[32];
+	char	temp[APC_LBUF];
 	int	ret;
 
 	if (!smartmode())
@@ -1527,7 +1527,7 @@ static void update_info_all(void)
 static int setvar_enum(apc_vartab_t *vt, const char *val)
 {
 	int	i, ret;
-	char	orig[512], temp[512];
+	char	orig[APC_LBUF], temp[APC_LBUF];
 	const char	*ptr;
 
 	apc_flush(SER_AA);
@@ -1624,7 +1624,7 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 {
 	unsigned int	i;
 	int	ret;
-	char	temp[512], *ptr;
+	char	temp[APC_LBUF], *ptr;
 
 	if (strlen(val) > APC_STRLEN) {
 		upslogx(LOG_ERR, "setvar_string: value (%s) too long", val);
@@ -1739,7 +1739,7 @@ static int do_loadon(void)
 static int do_cmd(const apc_cmdtab_t *ct)
 {
 	int ret;
-	char temp[512];
+	char temp[APC_LBUF];
 	const char *strerr;
 
 	apc_flush(SER_AA);
@@ -1913,7 +1913,7 @@ void upsdrv_initups(void)
 
 void upsdrv_cleanup(void)
 {
-	char temp[512];
+	char temp[APC_LBUF];
 
 	apc_flush(0);
 	/* try to bring the UPS out of smart mode */
@@ -2004,7 +2004,7 @@ void upsdrv_updateinfo(void)
 static int query_ups(const char *var, int first)
 {
 	int ret, i, j;
-	char temp[512];
+	char temp[APC_LBUF];
 	const char *ptr;
 	apc_vartab_t *vt, *vtn;
 
