@@ -1267,7 +1267,10 @@ static int sdcmd_Z(int dummy)
 
 	apc_write_rep(APC_CMD_OFF);
 
-	return sdok();
+	/* ups will not reply anything after this command */
+	apc_flush(0);
+	upsdebugx(1, "Load OFF command (apc:Z) executed.");
+	return STAT_INSTCMD_HANDLED;
 }
 
 static int (*sdlist[])(int) = {
