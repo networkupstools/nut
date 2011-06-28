@@ -1,6 +1,8 @@
 /* apcsmart_tabs.c - common tables for APC smart protocol units
  *
- * Copyright (C) 2011  Michal Soltys <soltys@ziu.info>
+ * Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
+ *           (C) 2000  Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk>
+ *           (C) 2011  Michal Soltys <soltys@ziu.info>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

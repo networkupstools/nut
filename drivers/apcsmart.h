@@ -34,10 +34,10 @@
  * $ OL
  * ! OB
  * % LB
- * + not LB
+ * + not LB anymore
  * # RB
  * ? OVER
- * = not OVER
+ * = not OVER anymore
  * * powering down now (only older models ?), handled by upsread()
  * 	otherwise ignored (it doesn't have to be in ignore sets)
  *
@@ -60,7 +60,7 @@
  */
 
 /* Basic UPS reply line structure */
-#define ENDCHAR 10		/* APC ends responses with LF */
+#define ENDCHAR 10		/* APC ends responses with LF (and CR, but it's IGNCRed) */
 
 /* what to ignore during alert aware serial reads */
 #define IGN_AACHARS "|&"
@@ -122,7 +122,7 @@
  * use them internally (e.g. [a]). If you decide to support them at some
  * point, remember about removing them from here !
  */
-#define APC_UNR_CMDS "\032\177')-8QRYayz"
+#define APC_UNR_CMDS "\032\177~')-8QRYayz"
 
 /* --------------- */
 

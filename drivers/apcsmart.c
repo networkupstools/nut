@@ -566,7 +566,6 @@ static const char *preread_data(apc_vartab_t *vt)
 	upsdebugx(4, "preread_data: %s", vt->name);
 
 	apc_flush(0);
-
 	ret = apc_write(vt->cmd);
 
 	if (ret != 1) {
@@ -599,7 +598,6 @@ static int poll_data(apc_vartab_t *vt)
 	upsdebugx(4, "poll_data: %s", vt->name);
 
 	apc_flush(SER_AA);
-
 	ret = apc_write(vt->cmd);
 
 	if (ret != 1) {
@@ -752,7 +750,6 @@ static void do_capabilities(int qco)
 		upslog_with_errno(LOG_ERR, "do_capabilities: apc_write failed");
 		return;
 	}
-
 	/*
 	 * note - apc_read() needs larger timeout grace and different
 	 * ignore set due to certain characters like '#' being received
@@ -852,7 +849,6 @@ static int update_status(void)
 	upsdebugx(4, "update_status");
 
 	apc_flush(SER_AA);
-
 	ret = apc_write(APC_STATUS);
 
 	if (ret != 1) {
@@ -898,7 +894,7 @@ static void deprecate_vars(void)
 		/* pre-read data, we have to verify it */
 		temp = preread_data(vt);
 		if (!temp || !valid_cmd(vt->cmd, temp)) {
-			upslogx(LOG_ERR, "deprecate_vars: %s is unreadable or invalid, deprecating", vt->name);
+			upslogx(LOG_ERR, "deprecate_vars: [%s] is unreadable or invalid, deprecating", vt->name);
 			vt->flags |= APC_DEPR;
 			vt->flags &= ~APC_PRESENT;
 			continue;
@@ -1297,6 +1293,7 @@ static int validate_ATn_arg(const char *str)
 /*
  * all shutdown commands should respond with 'OK' or '*'
  * apc_read() handles conversion to 'OK' so we care only about that one
+ * ign allows for timeout without assuming an error
  */
 static int sdok(int ign)
 {
@@ -1317,11 +1314,11 @@ static int sdok(int ign)
 	upsdebugx(4, "sdok: got \"%s\"", temp);
 
 	if ((!ret && ign) || !strcmp(temp, "OK")) {
-		upsdebugx(4, "sdok: last issued shutdown command succeeded");
+		upsdebugx(4, "sdok: last issued shutdown cmd succeeded");
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upsdebugx(1, "sdok: last issued shutdown command failed");
+	upsdebugx(1, "sdok: last issued shutdown cmd failed");
 	return STAT_INSTCMD_FAILED;
 }
 
@@ -1334,7 +1331,7 @@ static int sdcmd_S(const void *foo)
 	upsdebugx(1, "issuing soft hibernate");
 	ret = apc_write(APC_CMD_SOFTDOWN);
 	if (ret < 0) {
-		upslog_with_errno(LOG_ERR, "sdcmd_S: apc_write failed");
+		upslog_with_errno(LOG_ERR, "sdcmd_S: issuing 'S' failed");
 		return STAT_INSTCMD_FAILED;
 	}
 
@@ -1353,13 +1350,13 @@ static int sdcmd_CS(const void *foo)
 		upsdebugx(1, "status OL - forcing OB temporarily");
 		ret = apc_write(APC_CMD_SIMPWF);
 		if (ret < 0) {
-			upslog_with_errno(LOG_ERR, "sdcmd_CS: apc_write failed");
+			upslog_with_errno(LOG_ERR, "sdcmd_CS: issuing 'U' failed");
 			return STAT_INSTCMD_FAILED;
 		}
 		/* eat response */
 		ret = apc_read(temp, sizeof(temp), SER_D1);
 		if (ret < 0) {
-			upslog_with_errno(LOG_ERR, "sdcmd_CS: apc_read failed");
+			upslog_with_errno(LOG_ERR, "sdcmd_CS: 'U' returned nothing ?");
 			return STAT_INSTCMD_FAILED;
 		}
 	}
@@ -1368,8 +1365,8 @@ static int sdcmd_CS(const void *foo)
 
 /*
  * hard hibernate: @nnn / @nn
- * note: works differently for older and new models, see help function for
- * detailed info
+ * note: works differently for older and new models, see manual page for
+ * thorough explanation
  */
 static int sdcmd_AT(const void *str)
 {
@@ -1409,12 +1406,12 @@ static int sdcmd_AT(const void *str)
 #endif
 
 
-	apc_flush(0);
-	upsdebugx(1, "issuing hard hibernate with %d minutes additional wakeup delay", (int)strtol(awd, NULL, 10)*6);
+	upsdebugx(1, "issuing '@' with %d minutes a.w.d.", (int)strtol(awd, NULL, 10)*6);
 
+	apc_flush(0);
 	ret = apc_write_long(temp);
 	if (ret < 0) {
-		upslog_with_errno(LOG_ERR, "sdcmd_AT: apc_write_long failed");
+		upslog_with_errno(LOG_ERR, "sdcmd_AT: issuing '@' with %d digits failed", padto);
 		return STAT_INSTCMD_FAILED;
 	}
 
@@ -1440,12 +1437,12 @@ static int sdcmd_K(const void *foo)
 {
 	int ret;
 
-	apc_flush(0);
-	upsdebugx(1, "issuing delayed poweroff");
+	upsdebugx(1, "issuing 'K'");
 
+	apc_flush(0);
 	ret = apc_write_rep(APC_CMD_SHUTDOWN);
 	if (ret < 0) {
-		upslog_with_errno(LOG_ERR, "sdcmd_K: apc_write_rep failed");
+		upslog_with_errno(LOG_ERR, "sdcmd_K: issuing 'K' failed");
 		return STAT_INSTCMD_FAILED;
 	}
 
@@ -1457,12 +1454,12 @@ static int sdcmd_Z(const void *foo)
 {
 	int ret;
 
-	apc_flush(0);
-	upsdebugx(1, "issuing immediate poweroff");
+	upsdebugx(1, "issuing 'Z'");
 
+	apc_flush(0);
 	ret = apc_write_rep(APC_CMD_OFF);
 	if (ret < 0) {
-		upslog_with_errno(LOG_ERR, "sdcmd_Z: apc_write_rep failed");
+		upslog_with_errno(LOG_ERR, "sdcmd_Z: issuing 'Z' failed");
 		return STAT_INSTCMD_FAILED;
 	}
 
