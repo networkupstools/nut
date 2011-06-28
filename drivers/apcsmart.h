@@ -139,9 +139,11 @@
 #define APC_POLL	0x0001	/* Poll this variable regularly		*/
 #define APC_PRESENT	0x0002	/* Capability seen on this UPS		*/
 
-#define APC_RW		0x0010	/* read-write variable			*/
-#define APC_ENUM	0x0020	/* enumerated type			*/
-#define APC_STRING	0x0040	/* string				*/
+#define APC_RW		0x0004	/* read-write variable			*/
+#define APC_ENUM	0x0008	/* enumerated type			*/
+#define APC_STRING	0x0010	/* string				*/
+#define APC_MULTI	0x0020	/* there're other vars like that	*/
+#define APC_DEPR	0x0040	/* deprecated				*/
 
 #define APC_NASTY	0x0100	/* Nasty command - must be reconfirmed	*/
 #define APC_REPEAT	0x0200	/* Command needs sending twice		*/
@@ -166,15 +168,10 @@ typedef struct {
 	char		cmd;		/* command character	*/
 } apc_vartab_t;
 
+/*
+ * APC_MULTI variables *must* be list in order of preference
+ */
 apc_vartab_t apc_vartab[] = {
-
-	{ "ups.firmware.old",  	0,			'V' },
-	{ "ups.firmware",  	0,			'b' },
-	{ "ups.firmware.aux",	0,			'v' },
-	{ "ups.model",		0,			0x01 },
-
-	{ "ups.serial",		0,			'n' },
-	{ "ups.mfr.date", 	0,			'm' },
 
 	{ "ups.temperature", 	APC_POLL|APC_F_CELSIUS, 'C' },
 	{ "ups.load",  		APC_POLL|APC_F_PERCENT, 'P' },
@@ -252,6 +249,13 @@ apc_vartab_t apc_vartab[] = {
 	0x5C = load power (APC_POLL|APC_F_PERCENT)
 
 	 */
+	{ "ups.serial",		0,			'n' },
+	{ "ups.mfr.date", 	0,			'm' },
+
+	{ "ups.model",		0,			0x01 },
+	{ "ups.firmware.aux",	0,			'v' },
+	{ "ups.firmware",  	APC_MULTI,		'b' },
+	{ "ups.firmware",  	APC_MULTI,		'V' },
 
 	{NULL, 0, 0}
 };

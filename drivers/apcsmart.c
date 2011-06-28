@@ -66,7 +66,8 @@ static apc_vartab_t *vartab_lookup_name(const char *var)
 	int	i;
 
 	for (i = 0; apc_vartab[i].name != NULL; i++)
-		if (!strcasecmp(apc_vartab[i].name, var))
+		if (!(apc_vartab[i].flags & APC_DEPR) &&
+		    !strcasecmp(apc_vartab[i].name, var))
 			return &apc_vartab[i];
 
 	return NULL;
@@ -321,6 +322,30 @@ static int upsread(char *buf, size_t buflen, int flags)
 	return count;
 }
 
+static void remove_var(const char *cal, apc_vartab_t *vt)
+{
+	const char *fmt;
+	char info[256];
+
+	if (isprint(vt->cmd))
+		fmt = "[%c]";
+	else
+		fmt = "[0x%02x]";
+
+	strcpy(info, "%s: Verified variable [%s] (APC: ");
+	strcat(info, fmt);
+	strcat(info, ") returned NA.");
+	upsdebugx(1, info, cal, vt->name, vt->cmd);
+
+	strcpy(info, "%s: Removing [%s] (APC: ");
+	strcat(info, fmt);
+	strcat(info, ").");
+	upsdebugx(1, info, cal, vt->name, vt->cmd);
+
+	vt->flags &= ~APC_PRESENT;
+	dstate_delinfo(vt->name);
+}
+
 static int poll_data(apc_vartab_t *vt)
 {
 	int	ret;
@@ -344,11 +369,9 @@ static int poll_data(apc_vartab_t *vt)
 		return 0;
 	}
 
-	/* no longer supported by the hardware somehow */
-	if (!strcmp(tmp, "NA")) {
-		dstate_delinfo(vt->name);
-		return 1;
-	}
+	/* automagically no longer supported by the hardware somehow */
+	if (!strcmp(tmp, "NA"))
+		remove_var("poll_data", vt);
 
 	dstate_setinfo(vt->name, "%s", convert_data(vt, tmp));
 	dstate_dataok();
@@ -356,57 +379,84 @@ static int poll_data(apc_vartab_t *vt)
 	return 1;
 }
 
-/* check for support or just update a named variable */
+/*
+ * blindly check if variable is actually supported, update vartab accordingly,
+ * also get the value; could use some simplifying ...
+ */
 static int query_ups(const char *var, int first)
 {
-	int	ret;
-	char	temp[256];
-	const char	*ptr;
-	apc_vartab_t *vt;
-
-	vt = vartab_lookup_name(var);
-
-	if (!vt) {
-		upsdebugx(1, "query_ups: unknown variable %s", var);
-		return 0;
-	}
+	int ret, i, j;
+	char temp[256];
+	const char *ptr;
+	apc_vartab_t *vt, *vtn;
 
 	/*
-	 * not first run and already known to not be supported ?
+	 * at first run we know nothing about variable; we have to handle
+	 * APC_MULTI gracefully as well
 	 */
-	if (!first && !(vt->flags & APC_PRESENT))
-		return 0;
+	for (i = 0; apc_vartab[i].name != NULL; i++) {
+		vt = &apc_vartab[i];
+		if (strcmp(vt->name, var) || vt->flags & APC_DEPR)
+			continue;
+		/*
+		 * ok, found in table & not deprecated - if not the first run
+		 * and not present, bail out
+		 */
+		if (!first && !(vt->flags & APC_PRESENT))
+			break;
 
-	/* empty the input buffer (while allowing the alert handler to run) */
-	ret = ser_get_line_alert(upsfd, temp, sizeof(temp), ENDCHAR, 
-		POLL_IGNORE, POLL_ALERT, alert_handler, 0, 0);
+		/* found, [try to] get it */
 
-	ret = ser_send_char(upsfd, vt->cmd);
+		/* empty the input buffer (while allowing the alert handler to run) */
+		ret = ser_get_line_alert(upsfd, temp, sizeof(temp), ENDCHAR,
+				POLL_IGNORE, POLL_ALERT, alert_handler, 0, 0);
 
-	if (ret != 1) {
-		upslog_with_errno(LOG_ERR, "query_ups: ser_send_char failed");
-		return 0;
+		ret = ser_send_char(upsfd, vt->cmd);
+		if (ret != 1) {
+			upslog_with_errno(LOG_ERR, "query_ups: ser_send_char failed");
+			break;
+		}
+		ret = ser_get_line_alert(upsfd, temp, sizeof(temp), ENDCHAR,
+				POLL_IGNORE, POLL_ALERT, alert_handler, SER_WAIT_SEC,
+				SER_WAIT_USEC);
+
+		if (ret < 1 || !strcmp(temp, "NA")) {
+			if (first) {
+				if (vt->flags & APC_MULTI) {
+					vt->flags |= APC_DEPR;
+					continue;
+				}
+				upsdebugx(1, "query_ups: unknown variable %s", var);
+				break;
+			}
+			if (ret < 1)
+				ser_comm_fail("%s", ret ? strerror(errno) : "timeout");
+			else
+				/* automagically no longer supported by the hardware somehow */
+				remove_var("query_ups", vt);
+			break;
+		}
+
+		ser_comm_good();
+
+		vt->flags |= APC_PRESENT;
+		ptr = convert_data(vt, temp);
+		dstate_setinfo(vt->name, "%s", ptr);
+
+		/* supported, deprecate all the remaining ones */
+		if (first && vt->flags & APC_MULTI)
+			for (j = i + 1; apc_vartab[j].name != NULL; j++) {
+				vtn = &apc_vartab[j];
+				if (strcmp(vtn->name, vt->name))
+					continue;
+				vtn->flags |= APC_DEPR;
+				vtn->flags &= ~APC_PRESENT;
+			}
+
+		return 1; /* success */
 	}
 
-	ret = ser_get_line_alert(upsfd, temp, sizeof(temp), ENDCHAR, 
-		POLL_IGNORE, POLL_ALERT, alert_handler, SER_WAIT_SEC,
-		SER_WAIT_USEC);
-
-	if ((ret < 1) && (first == 0)) {
-		ser_comm_fail("%s", ret ? strerror(errno) : "timeout");
-		return 0;
-	}
-
-	ser_comm_good();
-
-	if ((ret < 1) || (!strcmp(temp, "NA")))		/* not supported */
-		return 0;
-
-	vt->flags |= APC_PRESENT;
-	ptr = convert_data(vt, temp);
-	dstate_setinfo(vt->name, "%s", ptr);
-
-	return 1;	/* success */
+	return 0;
 }
 
 static void do_capabilities(void)
@@ -555,6 +605,37 @@ static int update_status(void)
 	return 1;
 }
 
+/*
+ * This function iterates over vartab, deprecating nut:apc 1:n variables.  We
+ * prefer earliest present variable. All the other ones must be marked as
+ * deprecated and as not present.
+ */
+static void deprecate_vars(void)
+{
+	int i, j;
+	apc_vartab_t *vt, *vtn;
+
+	for (i = 0; apc_vartab[i].name != NULL; i++) {
+		vt = &apc_vartab[i];
+		if (!(vt->flags & APC_MULTI))
+			continue;
+		if (!(vt->flags & APC_PRESENT)) {
+			vt->flags |= APC_DEPR;
+			continue;
+		}
+		/* multi & present, deprecate all the remaining ones */
+		for (j = i + 1; apc_vartab[j].name != NULL; j++) {
+			vtn = &apc_vartab[j];
+			if (strcmp(vtn->name, vt->name))
+				continue;
+			vtn->flags |= APC_DEPR;
+			vtn->flags &= ~APC_PRESENT;
+		}
+		/* read preferred data */
+		poll_data(vt);
+	}
+}
+
 static void oldapcsetup(void)
 {
 	int	ret = 0;
@@ -583,20 +664,34 @@ static void oldapcsetup(void)
 
 static void protocol_verify(unsigned char cmd)
 {
-	int	i, found;
+	int i, found;
+	const char *fmt;
+	char info[64];
 
-	/* see if it's a variable */
+	if (isprint(cmd))
+		fmt = "[%c]";
+	else
+		fmt = "[0x%02x]";
+
+	/*
+	 * see if it's a variable
+	 * note: some nut variables map onto multiple APC ones (firmware)
+	 */
 	for (i = 0; apc_vartab[i].name != NULL; i++) {
-
-		/* 1:1 here, so the first match is the only match */
-
 		if (apc_vartab[i].cmd == cmd) {
-			upsdebugx(3, "UPS supports variable [%s]",
-				apc_vartab[i].name);
 
-			/* load initial data */
+			strcpy(info, "UPS supports variable [%s] - APC: ");
+			strcat(info, fmt);
+			upsdebugx(3, info, apc_vartab[i].name, cmd);
+
+			/* mark as present */
 			apc_vartab[i].flags |= APC_PRESENT;
-			poll_data(&apc_vartab[i]);
+
+			/* APC_MULTI are handled by deprecate_vars() */
+			if (!(apc_vartab[i].flags & APC_MULTI)) {
+				/* load initial data */
+				poll_data(&apc_vartab[i]);
+			}
 
 			/* handle special data for our two strings */
 			if (apc_vartab[i].flags & APC_STRING) {
@@ -606,21 +701,21 @@ static void protocol_verify(unsigned char cmd)
 
 				apc_vartab[i].flags |= APC_RW;
 			}
-
 			return;
 		}
 	}
 
-	/* check the command list */
-
-	/* some cmdchars map onto multiple commands (start and stop) */
-
+	/*
+	 * check the command list
+	 * some APC commands map onto multiple nut ones (start and stop)
+	 */
 	found = 0;
-
 	for (i = 0; apc_cmdtab[i].name != NULL; i++) {
 		if (apc_cmdtab[i].cmd == cmd) {
-			upsdebugx(2, "UPS supports command [%s]",
-				apc_cmdtab[i].name);
+
+			strcpy(info, "UPS supports command [%s] - APC: ");
+			strcat(info, fmt);
+			upsdebugx(3, info, apc_cmdtab[i].name, cmd);
 
 			dstate_addcmd(apc_cmdtab[i].name);
 
@@ -632,11 +727,10 @@ static void protocol_verify(unsigned char cmd)
 	if (found || strchr(APC_UNR_CMDS, cmd))
 		return;
 
-	if (isprint(cmd))
-		upsdebugx(1, "protocol_verify: 0x%02x [%c] unrecognized", 
-			cmd, cmd);
-	else
-		upsdebugx(1, "protocol_verify: 0x%02x unrecognized", cmd);
+	strcpy(info, "protocol_verify - APC: ");
+	strcat(info, fmt);
+	strcat(info, " unrecognized");
+	upsdebugx(1, info, cmd);
 }
 
 /* some hardware is a special case - hotwire the list of cmdchars */
@@ -703,6 +797,7 @@ static int firmware_table_lookup(void)
 			/* matched - run the cmdchars from the table */
 			for (j = 0; j < strlen(compat_tab[i].cmdchars); j++)
 				protocol_verify(compat_tab[i].cmdchars[j]);
+			deprecate_vars();
 
 			return 1;	/* matched */
 		}
@@ -768,6 +863,7 @@ static void getbaseinfo(void)
 
 	for (i = 0; i < strlen(cmds); i++)
 		protocol_verify(cmds[i]);
+	deprecate_vars();
 
 	/* if capabilities are supported, add them here */
 	if (strchr(cmds, APC_CAPABILITY))
