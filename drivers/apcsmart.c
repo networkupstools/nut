@@ -375,7 +375,35 @@ static void apc_flush(int flags)
 static int apc_write(unsigned char code)
 {
 	errno = 0;
+	if (upsfd == -1)
+		return 0;
 	return ser_send_char(upsfd, code);
+}
+
+static int apc_write_rep(unsigned char code)
+{
+	int ret;
+	errno = 0;
+	if (upsfd == -1)
+		return 0;
+
+	ret = ser_send_char(upsfd, code);
+	if (ret != 1)
+		return ret;
+	usleep(CMDLONGDELAY);
+	ret = ser_send_char(upsfd, code);
+	if (ret != 1)
+		return ret;
+	return 2;
+}
+
+static int apc_write_long(const char *code)
+{
+	errno = 0;
+	if (upsfd == -1)
+		return 0;
+
+	return ser_send_pace(upsfd, UPSDELAY, "%s", code);
 }
 
 /*
@@ -1474,13 +1502,13 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 
 	if (ret != 1) {
 		upslog_with_errno(LOG_ERR, "setvar_enum: apc_write failed");
-		return STAT_SET_HANDLED;	/* FUTURE: failed */
+		return STAT_SET_FAILED;
 	}
 
 	ret = apc_read(orig, sizeof(orig), SER_AL);
 
 	if ((ret < 1) || (!strcmp(orig, "NA")))
-		return STAT_SET_HANDLED;	/* FUTURE: failed */
+		return STAT_SET_FAILED;
 
 	ptr = convert_data(vt, orig);
 
@@ -1497,33 +1525,33 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 
 		if (ret != 1) {
 			upslog_with_errno(LOG_ERR, "setvar_enum: apc_write failed");
-			return STAT_SET_HANDLED;	/* FUTURE: failed */
+			return STAT_SET_FAILED;
 		}
 
 		/* this should return either OK (if rotated) or NO (if not) */
 		ret = apc_read(temp, sizeof(temp), SER_AL);
 
 		if ((ret < 1) || (!strcmp(temp, "NA")))
-			return STAT_SET_HANDLED;	/* FUTURE: failed */
+			return STAT_SET_FAILED;
 
 		/* sanity checks */
 		if (!strcmp(temp, "NO"))
-			return STAT_SET_HANDLED;	/* FUTURE: failed */
-		if (strcmp(temp, "OK") != 0)
-			return STAT_SET_HANDLED;	/* FUTURE: failed */
+			return STAT_SET_FAILED;
+		if (strcmp(temp, "OK"))
+			return STAT_SET_FAILED;
 
 		/* see what it rotated onto */
 		ret = apc_write(vt->cmd);
 
 		if (ret != 1) {
 			upslog_with_errno(LOG_ERR, "setvar_enum: apc_write failed");
-			return STAT_SET_HANDLED;	/* FUTURE: failed */
+			return STAT_SET_FAILED;
 		}
 
 		ret = apc_read(temp, sizeof(temp), SER_AL);
 
 		if ((ret < 1) || (!strcmp(temp, "NA")))
-			return STAT_SET_HANDLED;	/* FUTURE: failed */
+			return STAT_SET_FAILED;
 
 		ptr = convert_data(vt, temp);
 
@@ -1545,7 +1573,7 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 			upslogx(LOG_ERR, "setvar: variable %s wrapped",
 				vt->name);
 
-			return STAT_SET_HANDLED;	/* FUTURE: failed */
+			return STAT_SET_FAILED;
 		}			
 	}
 
@@ -1563,20 +1591,20 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 {
 	unsigned int	i;
 	int	ret;
-	char	temp[512];
+	char	temp[512], *ptr;
 
 	apc_flush(SER_AL);
 	ret = apc_write(vt->cmd);
 
 	if (ret != 1) {
 		upslog_with_errno(LOG_ERR, "setvar_string: apc_write failed");
-		return STAT_SET_HANDLED;	/* FUTURE: failed */
+		return STAT_SET_FAILED;
 	}
 
 	ret = apc_read(temp, sizeof(temp), SER_AL);
 
 	if ((ret < 1) || (!strcmp(temp, "NA")))
-		return STAT_SET_HANDLED;	/* FUTURE: failed */
+		return STAT_SET_FAILED;
 
 	/* suppress redundant changes - easier on the eeprom */
 	if (!strcmp(temp, val)) {
@@ -1586,48 +1614,32 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 		return STAT_SET_HANDLED;	/* FUTURE: no change */
 	}
 
-	ret = apc_write(APC_NEXTVAL);
+	temp[0] = APC_NEXTVAL;
+	temp[1] = '\0';
+	strncat(temp, val, APC_STRLEN);
+	ptr = temp + strlen(temp);
+	for (i = strlen(val); i < APC_STRLEN; i++)
+		*ptr++ = '\015';
+	*ptr = 0;
 
-	if (ret != 1) {
-		upslog_with_errno(LOG_ERR, "setvar_string: apc_write failed");
-		return STAT_SET_HANDLED;	/* FUTURE: failed */
-	}
+	ret = apc_write_long(ptr);
 
-	usleep(UPSDELAY);
-
-	for (i = 0; i < strlen(val); i++) {
-		ret = apc_write(val[i]);
-
-		if (ret != 1) {
-			upslog_with_errno(LOG_ERR, "setvar_string: apc_write failed");
-			return STAT_SET_HANDLED;	/* FUTURE: failed */
-		}
-
-		usleep(UPSDELAY);
-	}
-
-	/* pad to 8 chars with CRs */
-	for (i = strlen(val); i < APC_STRLEN; i++) {
-		ret = apc_write('\015');
-
-		if (ret != 1) {
-			upslog_with_errno(LOG_ERR, "setvar_string: apc_write failed");
-			return STAT_SET_HANDLED;	/* FUTURE: failed */
-		}
-
-		usleep(UPSDELAY);
+	/* TEST IT */
+	if ((size_t)ret != strlen(ptr)) {
+		upslog_with_errno(LOG_ERR, "setvar_string: apc_write_long failed");
+		return STAT_SET_FAILED;
 	}
 
 	ret = apc_read(temp, sizeof(temp), SER_AL);
 
 	if (ret < 1) {
 		upslogx(LOG_ERR, "setvar_string: short final read");
-		return STAT_SET_HANDLED;	/* FUTURE: failed */
+		return STAT_SET_FAILED;
 	}
 
 	if (!strcmp(temp, "NO")) {
 		upslogx(LOG_ERR, "setvar_string: got NO at final read");
-		return STAT_SET_HANDLED;	/* FUTURE: failed */
+		return STAT_SET_FAILED;
 	}
 
 	/* refresh data from the hardware */
@@ -1636,7 +1648,7 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 
 	upslogx(LOG_INFO, "SET %s='%s'", vt->name, val);
 
-	return STAT_SET_HANDLED;	/* FUTURE: failed */
+	return STAT_SET_HANDLED;	/* FUTURE: success */
 }
 
 static int setvar(const char *varname, const char *val)
@@ -1667,42 +1679,34 @@ static int setvar(const char *varname, const char *val)
 static int do_cmd(apc_cmdtab_t *ct)
 {
 	int	ret;
-	char	buf[512];
+	char	temp[512];
 
 	apc_flush(SER_AL);
-	ret = apc_write(ct->cmd);
 
-	if (ret != 1) {
-		upslog_with_errno(LOG_ERR, "do_cmd: apc_write failed");
-		return STAT_INSTCMD_HANDLED;		/* FUTURE: failed */
-	}
-
-	/* some commands have to be sent twice with a 1.5s gap */
-	if (ct->flags & APC_REPEAT) {
-		usleep(CMDLONGDELAY);
-
+	if (ct->flags & APC_REPEAT)
+		ret = apc_write_rep(ct->cmd);
+	else
 		ret = apc_write(ct->cmd);
 
-		if (ret != 1) {
-			upslog_with_errno(LOG_ERR, "do_cmd: apc_write failed");
-			return STAT_INSTCMD_HANDLED;	/* FUTURE: failed */
-		}
+	if (ret < 1) {
+		upslog_with_errno(LOG_ERR, "do_cmd: apc_write[_rep] failed");
+		return STAT_INSTCMD_FAILED;
 	}
 
-	ret = apc_read(buf, sizeof(buf), SER_AL);
+	ret = apc_read(temp, sizeof(temp), SER_AL);
 
 	if (ret < 1)
-		return STAT_INSTCMD_HANDLED;		/* FUTURE: failed */
+		return STAT_INSTCMD_FAILED;
 
-	if (strcmp(buf, "OK") != 0) {
+	if (strcmp(temp, "OK") != 0) {
 		upslogx(LOG_WARNING, "Got [%s] after command [%s]",
-			buf, ct->name);
+			temp, ct->name);
 
-		return STAT_INSTCMD_HANDLED;		/* FUTURE: failed */
+		return STAT_INSTCMD_FAILED;
 	}
 
 	upslogx(LOG_INFO, "Command: %s", ct->name);
-	return STAT_INSTCMD_HANDLED;			/* FUTURE: success */
+	return STAT_INSTCMD_HANDLED;
 }
 
 /* some commands must be repeated in a window to execute */
