@@ -20,7 +20,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include <sys/types.h>
 #include <sys/file.h>
+#include <regex.h>
 #include <ctype.h>
 
 #include "main.h"
@@ -516,10 +518,11 @@ static void apc_flush(int flags)
 	char temp[APC_LBUF];
 
 	if (flags & SER_AA) {
-		tcflush(upsfd, TCOFLUSH);
+		/* tcflush(upsfd, TCOFLUSH); */
 		apc_read(temp, sizeof(temp), SER_D0|SER_TO|flags);
 	} else {
-		tcflush(upsfd, TCIOFLUSH);
+		tcflush(upsfd, TCIFLUSH);
+		/* tcflush(upsfd, TCIOFLUSH); */
 		/* apc_read(temp, sizeof(temp), SER_D0|SER_TO); */
 		/* while(ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, IGN_CHARS, 0, 0) > 0); */
 	}
@@ -549,15 +552,47 @@ static void remove_var(const char *cal, apc_vartab_t *vt)
 	dstate_delinfo(vt->name);
 }
 
+static const char *preread_data(apc_vartab_t *vt)
+{
+	int ret;
+	char temp[APC_LBUF];
+
+	upsdebugx(4, "preread_data: %s", vt->name);
+
+	apc_flush(0);
+
+	ret = apc_write(vt->cmd);
+
+	if (ret != 1) {
+		upslogx(LOG_ERR, "preread_data: apc_write failed");
+		return 0;
+	}
+
+	ret = apc_read(temp, sizeof(temp), SER_TO);
+
+	if (ret < 0) {
+		upslogx(LOG_ERR, "preread_data: apc_read failed");
+		return 0;
+	}
+
+	if (!ret || !strcmp(temp, "NA")) {
+		upslogx(LOG_ERR, "preread_data: %s timed out or not supported", vt->name);
+		return 0;
+	}
+
+	return convert_data(vt, temp);
+}
 static int poll_data(apc_vartab_t *vt)
 {
 	int	ret;
 	char	temp[APC_LBUF];
 
-	if ((vt->flags & APC_PRESENT) == 0)
+	if (!(vt->flags & APC_PRESENT))
 		return 1;
 
 	upsdebugx(4, "poll_data: %s", vt->name);
+
+	apc_flush(SER_AA);
 
 	ret = apc_write(vt->cmd);
 
@@ -582,6 +617,25 @@ static int poll_data(apc_vartab_t *vt)
 	return 1;
 }
 
+static int dfa_fwnew(const char *val)
+{
+	int ret;
+	regex_t mbuf;
+	const char rex[] = "[[:alnum:]]+\\.[[:alnum:]]+\\.[[:alnum:]]+";
+	/* must be xx.yy.zz */
+	regcomp(&mbuf, rex, REG_EXTENDED|REG_NOSUB);
+	ret = regexec(&mbuf, val, 0,0,0);
+	regfree(&mbuf);
+	return !ret;
+}
+
+static int valid_var(const char *val, char cmd)
+{
+	if (cmd == APC_FW_NEW)
+		return dfa_fwnew(val);
+	return 1;
+}
+
 /*
  * blindly check if variable is actually supported, update vartab accordingly,
  * also get the value
@@ -589,9 +643,8 @@ static int poll_data(apc_vartab_t *vt)
  */
 static int query_ups(const char *var)
 {
-	int ret, i, j;
-	char temp[512];
-	const char *ptr;
+	int i, j;
+	const char *temp;
 	apc_vartab_t *vt, *vtn;
 
 	/*
@@ -605,15 +658,8 @@ static int query_ups(const char *var)
 
 		/* found, [try to] get it */
 
-		apc_flush(0);
-		ret = apc_write(vt->cmd);
-		if (ret != 1) {
-			upslog_with_errno(LOG_ERR, "query_ups: apc_write failed");
-			break;
-		}
-		ret = apc_read(temp, sizeof(temp), SER_TO);
-
-		if (ret < 1 || !strcmp(temp, "NA")) {
+		temp = preread_data(vt);
+		if (!temp || !valid_var(temp, vt->cmd)) {
 			if (vt->flags & APC_MULTI) {
 				vt->flags |= APC_DEPR;
 				continue;
@@ -623,8 +669,8 @@ static int query_ups(const char *var)
 		}
 
 		vt->flags |= APC_PRESENT;
-		ptr = convert_data(vt, temp);
-		dstate_setinfo(vt->name, "%s", ptr);
+		dstate_setinfo(vt->name, "%s", temp);
+		dstate_dataok();
 
 		/* supported, deprecate all the remaining ones */
 		if (vt->flags & APC_MULTI)
@@ -798,6 +844,7 @@ static int update_status(void)
 static void deprecate_vars(void)
 {
 	int i, j;
+	const char *temp;
 	apc_vartab_t *vt, *vtn;
 
 	for (i = 0; apc_vartab[i].name != NULL; i++) {
@@ -808,6 +855,15 @@ static void deprecate_vars(void)
 			vt->flags |= APC_DEPR;
 			continue;
 		}
+		/* pre-read data, we have to verify it */
+		temp = preread_data(vt);
+		if (!temp || !valid_var(temp, vt->cmd)) {
+			upslogx(LOG_ERR, "deprecate_vars: %s is unreadable or invalid, deprecating", vt->name);
+			vt->flags |= APC_DEPR;
+			vt->flags &= ~APC_PRESENT;
+			continue;
+		}
+
 		/* multi & present, deprecate all the remaining ones */
 		for (j = i + 1; apc_vartab[j].name != NULL; j++) {
 			vtn = &apc_vartab[j];
@@ -816,8 +872,9 @@ static void deprecate_vars(void)
 			vtn->flags |= APC_DEPR;
 			vtn->flags &= ~APC_PRESENT;
 		}
-		/* read preferred data */
-		poll_data(vt);
+
+		dstate_setinfo(vt->name, "%s", temp);
+		dstate_dataok();
 	}
 }
 
@@ -852,7 +909,7 @@ static void oldapcsetup(void)
 static void protocol_verify(unsigned char cmd)
 {
 	int i, found;
-	const char *fmt;
+	const char *fmt, *temp;
 	char info[256];
 
 	if (isprint(cmd))
@@ -866,19 +923,29 @@ static void protocol_verify(unsigned char cmd)
 	 */
 	for (i = 0; apc_vartab[i].name != NULL; i++) {
 		if (apc_vartab[i].cmd == cmd) {
+			if (apc_vartab[i].flags & APC_MULTI) {
+				/* APC_MULTI are handled by deprecate_vars() */
+				apc_vartab[i].flags |= APC_PRESENT;
+				return;
+			}
+
+			temp = preread_data(&apc_vartab[i]);
+			if (!temp || !valid_var(temp, cmd)) {
+				strcpy(info, "UPS variable [%s] - APC: ");
+				strcat(info, fmt);
+				strcat(info, " invalid or unreadable");
+				upsdebugx(3, info, apc_vartab[i].name, cmd);
+				return;
+			}
+
+			apc_vartab[i].flags |= APC_PRESENT;
 
 			strcpy(info, "UPS supports variable [%s] - APC: ");
 			strcat(info, fmt);
 			upsdebugx(3, info, apc_vartab[i].name, cmd);
 
-			/* mark as present */
-			apc_vartab[i].flags |= APC_PRESENT;
-
-			/* APC_MULTI are handled by deprecate_vars() */
-			if (!(apc_vartab[i].flags & APC_MULTI)) {
-				/* load initial data */
-				poll_data(&apc_vartab[i]);
-			}
+			dstate_setinfo(apc_vartab[i].name, "%s", temp);
+			dstate_dataok();
 
 			/* handle special data for our two strings */
 			if (apc_vartab[i].flags & APC_STRING) {
