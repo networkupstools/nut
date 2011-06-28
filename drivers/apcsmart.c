@@ -237,7 +237,7 @@ static int apc_ser_try(void)
 		lseek(fd, 0L, SEEK_SET);
 		ret = lockf(fd, F_TLOCK, 0L);
 #endif
-		if (ret)
+		if (ret < 0)
 			upslog_with_errno(LOG_ERR, "apc_ser_try: couldn't lock the port (%s)", device_path);
 	}
 
@@ -268,8 +268,9 @@ static int apc_ser_tear(void)
 	if (do_lock_port)
 		uu_unlock(xbasename(device_path));
 #endif
+	errno = 0;
 	ret = close(upsfd);
-	if (ret != 0)
+	if (ret < 0)
 		upslog_with_errno(LOG_ERR, "apc_ser_tear: couldn't close the port (%s)", device_path);
 	upsfd = -1;
 	extrafd = -1;
