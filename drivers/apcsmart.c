@@ -1215,6 +1215,7 @@ static int do_cal(int start)
 	return STAT_INSTCMD_HANDLED;			/* FUTURE: success */
 }
 
+#if 0
 /* get the UPS talking to us in smart mode */
 static int smartmode(void)
 {
@@ -1235,29 +1236,50 @@ static int smartmode(void)
 	}
 
 	return 1;
-#if 0
-	for (tries = 0; tries < 3; tries++) {
+}
+#endif
 
+/*
+ * get the UPS talking to us in smart mode
+ * note: this is weird overkill, but possibly excused due to some obscure
+ * hardware/firmware combinations; simpler version commmented out above, for
+ * now let's keep minimally adjusted old one
+ */
+static int smartmode(void)
+{
+	int ret, tries;
+	char temp[APC_LBUF];
+
+	for (tries = 0; tries < 5; tries++) {
+
+		apc_flush(0);
+		ret = apc_write(APC_GOSMART);
+
+		if (ret != 1) {
+			upslog_with_errno(LOG_ERR, "smartmode: issuing 'Y' failed");
+			return 0;
+		}
+		ret = apc_read(temp, sizeof(temp), SER_D1);
 		if (ret > 0 && !strcmp(temp, "SM"))
 			return 1;	/* success */
+		if (ret < 0) {
+			/* error, so we didn't timeout - wait a bit before retry */
+			sleep(1);
+		}
 
-		sleep(1);	/* wait before trying again */
-
-		/* it failed, so try to bail out of menus on newer units */
-
+		apc_flush(0);
 		ret = apc_write(27); /* ESC */
 
 		if (ret != 1) {
-			upslog_with_errno(LOG_ERR, "smartmode: apc_write failed");
+			upslog_with_errno(LOG_ERR, "smartmode: issuing ESC failed");
 			return 0;
 		}
 
 		/* eat the response (might be NA, might be something else) */
-		apc_read(temp, sizeof(temp), 0);
+		apc_read(temp, sizeof(temp), SER_TO|SER_D1);
 	}
 
 	return 0;	/* failure */
-#endif
 }
 
 /* verify validity of ATn argument */
