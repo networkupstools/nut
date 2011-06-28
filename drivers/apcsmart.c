@@ -407,9 +407,6 @@ static int apc_read(char *buf, size_t buflen, int flags)
 	if (flags & SER_D3) {
 		sec = 3; usec = 0;
 	}
-	if (flags & SER_D6) {
-		sec = 6; usec = 0;
-	}
 	if (flags & SER_AA) {
 		iset = IGN_AACHARS;
 		aset = ALERT_CHARS;
@@ -417,10 +414,12 @@ static int apc_read(char *buf, size_t buflen, int flags)
 	if (flags & SER_CC) {
 		iset = IGN_CCCHARS;
 		aset = "";
+		sec = 6; usec = 0;
 	}
 	if (flags & SER_CS) {
 		iset = IGN_CSCHARS;
 		aset = "";
+		sec = 6; usec = 0;
 	}
 
 	memset(buf, '\0', buflen);
@@ -854,7 +853,7 @@ static void do_capabilities(int qco)
 	 * note - apc_read() needs larger timeout grace and different
 	 * ignore set due to certain characters like '#' being received
 	 */
-	ret = apc_read(temp, sizeof(temp), SER_CC|SER_D6|SER_TO);
+	ret = apc_read(temp, sizeof(temp), SER_CC|SER_TO);
 
 	if ((ret < 1) || (!strcmp(temp, "NA"))) {
 
@@ -1197,7 +1196,7 @@ static void getbaseinfo(void)
 		return;
 	}
 
-	ret = apc_read(temp, sizeof(temp), SER_CS|SER_D6|SER_TO);
+	ret = apc_read(temp, sizeof(temp), SER_CS|SER_TO);
 
 	if ((ret < 1) || (!strcmp(temp, "NA")) || !valid_cmd(APC_CMDSET, temp)) {
 		/* We have an old dumb UPS - go to specific code for old stuff */

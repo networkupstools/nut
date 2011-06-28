@@ -95,12 +95,11 @@
 #define SER_DX	0x002	/* 200 ms for long/repeated cmds, in case of unexpected NAs */
 #define SER_D1	0x004	/* 1.5 sec. */
 #define SER_D3	0x008	/* 3 sec. (default) */
-#define SER_D6	0x010	/* 6 sec. */
-#define SER_AA	0x020	/* alert aware set */
-#define SER_CC	0x040	/* capability check ign set */
-#define SER_CS	0x080	/* command set ign set */
-#define SER_TO	0x100	/* timeout allowed */
-#define SER_HA	0x200	/* handle asterisk */
+#define SER_AA	0x010	/* alert aware set */
+#define SER_CC	0x020	/* capability check ign set */
+#define SER_CS	0x040	/* command set ign set */
+#define SER_TO	0x080	/* timeout allowed */
+#define SER_HA	0x100	/* handle asterisk */
 
 
 /* sets of the above (don't test against them, obviously */
