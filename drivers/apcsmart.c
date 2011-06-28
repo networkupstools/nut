@@ -443,6 +443,10 @@ static int apc_read(char *buf, size_t buflen, int flags)
 		iset = IGN_CCCHARS;
 		aset = "";
 	}
+	if (flags & SER_CS) {
+		iset = IGN_CSCHARS;
+		aset = "";
+	}
 
 	memset(buf, '\0', buflen);
 
@@ -621,26 +625,59 @@ static int dfa_fwnew(const char *val)
 {
 	int ret;
 	regex_t mbuf;
-	const char rex[] = "[[:alnum:]]+\\.[[:alnum:]]+\\.[[:alnum:]]+";
 	/* must be xx.yy.zz */
+	const char rex[] = "^[[:alnum:]]+\\.[[:alnum:]]+\\.[[:alnum:]]+$";
+
 	regcomp(&mbuf, rex, REG_EXTENDED|REG_NOSUB);
 	ret = regexec(&mbuf, val, 0,0,0);
 	regfree(&mbuf);
+	return ret;
+}
+
+static int dfa_cmdset(const char *val)
+{
+	int ret;
+	regex_t mbuf;
+	/*
+	 * must be #.alerts.commands ; we'll be a bit lax here
+	 */
+	const char rex[] = "^[0-9]\\.[^.]*\\.[^.]+$";
+
+	regcomp(&mbuf, rex, REG_EXTENDED|REG_NOSUB);
+	ret = regexec(&mbuf, val, 0,0,0);
+	regfree(&mbuf);
+	return ret;
+}
+
+static int valid_cmd(char cmd, const char *val)
+{
+	char info[256], *fmt;
+	int ret;
+
+	switch (cmd) {
+		case APC_FW_NEW:
+			ret = dfa_fwnew(val); break;
+		case APC_CMDSET:
+			ret = dfa_cmdset(val); break;
+		default:
+			return 1;
+	}
+	if (ret) {
+		if (isprint(cmd))
+			fmt = "[%c]";
+		else
+			fmt = "[0x%02x]";
+
+		strcpy(info, "valid_cmd: cmd ");
+		strcat(info, fmt);
+		strcat(info, " failed regex match");
+		upslogx(LOG_WARNING, info, cmd);
+	}
+
 	return !ret;
 }
 
-static int valid_var(const char *val, char cmd)
-{
-	if (cmd == APC_FW_NEW)
-		return dfa_fwnew(val);
-	return 1;
-}
-
-/*
- * blindly check if variable is actually supported, update vartab accordingly,
- * also get the value
- * query_ups() is used only during initialization, so we ignore alerts
- */
+/* query_ups() is called before any APC_PRESENT flags are determined */
 static int query_ups(const char *var)
 {
 	int i, j;
@@ -659,7 +696,7 @@ static int query_ups(const char *var)
 		/* found, [try to] get it */
 
 		temp = preread_data(vt);
-		if (!temp || !valid_var(temp, vt->cmd)) {
+		if (!temp || !valid_cmd(vt->cmd, temp)) {
 			if (vt->flags & APC_MULTI) {
 				vt->flags |= APC_DEPR;
 				continue;
@@ -857,7 +894,7 @@ static void deprecate_vars(void)
 		}
 		/* pre-read data, we have to verify it */
 		temp = preread_data(vt);
-		if (!temp || !valid_var(temp, vt->cmd)) {
+		if (!temp || !valid_cmd(vt->cmd, temp)) {
 			upslogx(LOG_ERR, "deprecate_vars: %s is unreadable or invalid, deprecating", vt->name);
 			vt->flags |= APC_DEPR;
 			vt->flags &= ~APC_PRESENT;
@@ -930,7 +967,7 @@ static void protocol_verify(unsigned char cmd)
 			}
 
 			temp = preread_data(&apc_vartab[i]);
-			if (!temp || !valid_var(temp, cmd)) {
+			if (!temp || !valid_cmd(cmd, temp)) {
 				strcpy(info, "UPS variable [%s] - APC: ");
 				strcat(info, fmt);
 				strcat(info, " invalid or unreadable");
@@ -1063,7 +1100,7 @@ static void getbaseinfo(void)
 {
 	unsigned int	i;
 	int	ret, qco;
-	char 	*alrts, *cmds, temp[APC_LBUF];
+	char 	*cmds, temp[APC_LBUF];
 
 	/*
 	 *  try firmware lookup first; we could start with 'a', but older models
@@ -1088,43 +1125,30 @@ static void getbaseinfo(void)
 		return;
 	}
 
-	ret = apc_read(temp, sizeof(temp), SER_TO|SER_D6);
+	ret = apc_read(temp, sizeof(temp), SER_CS|SER_D6|SER_TO);
 
-	if ((ret < 1) || (!strcmp(temp, "NA"))) {
+	if ((ret < 1) || (!strcmp(temp, "NA")) || !valid_cmd(APC_CMDSET, temp)) {
 		/* We have an old dumb UPS - go to specific code for old stuff */
+		upsdebugx(1, "APC - trying to handle unknown model");
 		oldapcsetup();
 		return;
 	}
 
-	upsdebugx(1, "APC - Parsing out command set");
+	upsdebugx(1, "APC - Parsing out supported cmds and vars");
 	/*
-	 * note that apc_read() above will filter commands overlapping with
-	 * alerts; we don't really care about those for the needed
-	 * functionality - but keep in mind 'a' reports them, should you ever
-	 * need them; in such case, it would be best to e.g. add SER_CS and
-	 * IGN_CSCHARS and adjust apc_read() accordingly
+	 * returned set is verified for validity above, so just extract
+	 * what's interesting for us
 	 */
- 	alrts = strchr(temp, '.');
-	if (alrts == NULL) {
-		fatalx(EXIT_FAILURE, "unable to split APC version string");
-	}
-	*alrts++ = 0;
-
-	cmds = strchr(alrts, '.');
-	if (cmds == NULL) {
-		fatalx(EXIT_FAILURE, "unable to find APC command string");
-	}
-	*cmds++ = 0;
-
-	for (i = 0; i < strlen(cmds); i++)
+	cmds = strrchr(temp, '.');
+	for (i = 1; i < strlen(cmds); i++)
 		protocol_verify(cmds[i]);
 	deprecate_vars();
 
 	/* if capabilities are supported, add them here */
-	if (strchr(cmds, APC_CAPS))
+	if (strchr(cmds, APC_CAPS)) {
 		do_capabilities(qco);
-
-	upsdebugx(1, "APC - UPS capabilities determined");
+		upsdebugx(1, "APC - UPS capabilities determined");
+	}
 }
 
 /* check for calibration status and either start or stop */
