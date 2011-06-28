@@ -1387,7 +1387,7 @@ static int sdcmd_AT(const void *str)
 	}
 
 	ret = sdok(0);
-	if (ret == STAT_INSTCMD_HANDLED || cnt == 3)
+	if (ret == STAT_INSTCMD_HANDLED || padto == 3)
 		return ret;
 
 	/*
