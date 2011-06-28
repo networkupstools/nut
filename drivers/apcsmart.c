@@ -373,40 +373,6 @@ static void alert_handler(char ch)
 	ups_status_set();
 }
 
-static int apc_write(unsigned char code)
-{
-	errno = 0;
-	if (upsfd == -1)
-		return 0;
-	return ser_send_char(upsfd, code);
-}
-
-static int apc_write_rep(unsigned char code)
-{
-	int ret;
-	errno = 0;
-	if (upsfd == -1)
-		return 0;
-
-	ret = ser_send_char(upsfd, code);
-	if (ret != 1)
-		return ret;
-	usleep(CMDLONGDELAY);
-	ret = ser_send_char(upsfd, code);
-	if (ret != 1)
-		return ret;
-	return 2;
-}
-
-static int apc_write_long(const char *code)
-{
-	errno = 0;
-	if (upsfd == -1)
-		return 0;
-
-	return ser_send_pace(upsfd, UPSDELAY, "%s", code);
-}
-
 /*
  * we need a tiny bit different processing due to '*' and canonical mode; the
  * function is subtly different from generic ser_get_line_alert()
@@ -422,6 +388,9 @@ static int apc_read(char *buf, size_t buflen, int flags)
 		return 0;
 	if (flags & SER_D0) {
 		sec = 0; usec = 0;
+	}
+	if (flags & SER_DX) {
+		sec = 0; usec = 200000;
 	}
 	if (flags & SER_D1) {
 		sec = 1; usec = 500000;
@@ -510,6 +479,74 @@ static int apc_read(char *buf, size_t buflen, int flags)
 
 	ser_comm_good();
 	return count;
+}
+static int apc_write(unsigned char code)
+{
+	errno = 0;
+	if (upsfd == -1)
+		return 0;
+	return ser_send_char(upsfd, code);
+}
+
+/*
+ * We have to watch out for NA, here;
+ * This is generally safe, as otherwise we will just timeout. The reason we do
+ * it, is that under certain conditions an ups might respond with NA for
+ * something it would normally handle (e.g. calling @ while being in powered
+ * off or hibernated state. If we keep sending the "arguments" after getting
+ * NA, they will be interpreted as commands, which is quite a bug :)
+ * Furthermore later flushes might not work properly, if the reply to those
+ * commands are generated with some delay.
+ *
+ * We also set errno to something usable, so outside upslog calls don't output
+ * confusing "success".
+ */
+static int apc_write_long(const char *code)
+{
+	char temp[APC_LBUF];
+	int ret;
+	errno = 0;
+
+	if (upsfd == -1)
+		return 0;
+
+	ret = ser_send_char(upsfd, *code);
+	if (ret != 1)
+		return ret;
+	/* peek for the answer - anything at this point is failure */
+	ret = apc_read(temp, sizeof(temp), SER_DX|SER_TO);
+	if (ret) {
+		errno = ECANCELED;
+		return -1;
+	}
+
+	return ser_send_pace(upsfd, 50000, "%s", code + 1);
+}
+
+static int apc_write_rep(unsigned char code)
+{
+	char temp[APC_LBUF];
+	int ret;
+	errno = 0;
+
+	if (upsfd == -1)
+		return 0;
+
+	ret = ser_send_char(upsfd, code);
+	if (ret != 1)
+		return ret;
+	/* peek for the answer - anything at this point is failure */
+	ret = apc_read(temp, sizeof(temp), SER_DX|SER_TO);
+	if (ret) {
+		errno = ECANCELED;
+		return -1;
+	}
+
+	usleep(1300000);
+	ret = ser_send_char(upsfd, code);
+	if (ret != 1)
+		return ret;
+	return 2;
 }
 
 /* all flags other than SER_AA are ignored */
