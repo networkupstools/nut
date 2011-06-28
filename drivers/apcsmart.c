@@ -66,10 +66,9 @@ static int (*sdlist[])(const void *) = {
 #define SDIDX_K		2
 #define SDIDX_Z		3
 #define SDIDX_CS	4
+#define SDCNT 		((int)(sizeof(sdlist)/sizeof(sdlist[0])))
 
-#define SDCNT 		5
 #define SDTYPE_MAX	5
-#define SDTYPE_MAXS	"5"
 
 static apc_vartab_t *vartab_lookup_char(char cmdchar)
 {
@@ -471,6 +470,7 @@ static int apc_read(char *buf, size_t buflen, int flags)
 				 * Just in case, try to flush the input with small 1 sec.
 				 * timeout
 				 */
+				memset(buf, '\0', buflen);
 				errno = 0;
 				ret = select_read(upsfd, temp, sizeof(temp), 1, 0);
 				if (ret < 0) {
@@ -479,7 +479,6 @@ static int apc_read(char *buf, size_t buflen, int flags)
 				}
 				buf[0] = 'O';
 				buf[1] = 'K';
-				buf[2] = '\0';
 				ser_comm_good();
 				return 2;
 			}
@@ -936,6 +935,10 @@ static void protocol_verify(unsigned char cmd)
 	const char *fmt, *temp;
 	char info[256];
 
+	/* don't bother with cmd/var we don't care about */
+	if (strchr(APC_UNR_CMDS, cmd))
+		return;
+
 	if (isprint(cmd))
 		fmt = "[%c]";
 	else
@@ -1008,7 +1011,7 @@ static void protocol_verify(unsigned char cmd)
 		}
 	}
 
-	if (found || strchr(APC_UNR_CMDS, cmd))
+	if (found)
 		return;
 
 	snprintf(info, sizeof(info), "%s%s%s",
@@ -1390,7 +1393,10 @@ static int sdcmd_AT(const void *str)
 
 	cnt = validate_ATn_arg(awd);
 	if (cnt < 0) {
+		/* str (awd) is always sanitized outside, we should never get here */
 		upslogx(LOG_ERR, "sdcmd_ATn: invalid argument (%s)", awd);
+		awd = "001";
+		cnt = 3;
 	}
 
 	if (!awd) {
@@ -1983,9 +1989,17 @@ static void setuphandlers(void)
 
 void upsdrv_makevartable(void)
 {
+	char str[128];
+
+	snprintf(str, sizeof(str), "%s%d%s",
+		"specify simple shutdown method (0 - ",
+		SDTYPE_MAX,
+		")"
+	);
+
 	addvar(VAR_VALUE, "cable", "specify alternate cable (940-0095B)");
 	addvar(VAR_VALUE, "awd", "hard hibernate's additional wakeup delay");
-	addvar(VAR_VALUE, "sdtype", "specify simple shutdown method (0-"SDTYPE_MAXS")");
+	addvar(VAR_VALUE, "sdtype", str);
 	addvar(VAR_VALUE, "advorder", "enable advanced shutdown control");
 }
 
