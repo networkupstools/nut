@@ -448,16 +448,16 @@ static int apc_read(char *buf, size_t buflen, int flags)
 		iset = IGN_AACHARS;
 		aset = ALERT_CHARS;
 	}
+	/* watch out for '*' during shutdown command */
+	if (flags & SER_AX) {
+		flags |= SER_SD;
+	}
 	/* "prep for shutdown" read */
 	if (flags & SER_SD) {
 		/* cut down timeout to 1.5 sec */
 		sec = 1;
 		usec = 500000;
 		flags |= SER_TO;
-	}
-	/* watch out for '*' during shutdown command */
-	if (flags & SER_AX) {
-		flags |= SER_SD;
 	}
 
 	memset(buf, '\0', buflen);
@@ -1954,10 +1954,9 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
-	int ret;
 	static int last_worked = 0;
-	static	time_t	last_full = 0;
-	time_t	now;
+	static time_t last_full = 0;
+	time_t now;
 
 	/* try to wake up a dead ups once in awhile */
 	while ((dstate_is_stale())) {
@@ -1969,14 +1968,14 @@ void upsdrv_updateinfo(void)
 		/* become aggressive */
 		if (++last_worked > 10) {
 			upslogx(LOG_ERR, "Attempting to reset serial port (%s).", device_path);
-			ret = apc_ser_tear() && apc_ser_try() && apc_ser_set() && smartmode();
-			if (ret) {
-				last_worked = 0;
-				ser_comm_good();
-				break;
-			}
+			if (!(apc_ser_tear() && apc_ser_try() && apc_ser_set()))
+				return;
 		}
-		return;
+		if (!smartmode())
+			return;
+
+		last_worked = 0;
+		break;
 	}
 
 	if (!update_status())
