@@ -47,11 +47,11 @@ static int ups_status = 0;
 
 /* some forwards */
 
-static int sdcmd_AT(const void *);
 static int sdcmd_S(const void *);
-static int sdcmd_CS(const void *);
+static int sdcmd_AT(const void *);
 static int sdcmd_K(const void *);
 static int sdcmd_Z(const void *);
+static int sdcmd_CS(const void *);
 
 static int (*sdlist[])(const void *) = {
 	sdcmd_S,
@@ -157,6 +157,13 @@ static const char *convert_data(apc_vartab_t *cmd_entry, const char *upsval)
 	return temp;
 }
 
+/*
+ * NOTE: apc_ser_* functions mimic serial.c (roughly)
+ * we have to do it, as we allow closing / reopening port during
+ * daemon activity, and serial functions provided by serial.c
+ * call fatalx (which at this stage is not allowed)
+ */
+
 static int apc_ser_set(void)
 {
 	struct termios tio;
@@ -200,6 +207,11 @@ static int apc_ser_set(void)
 
 	tcflush(upsfd, TCIOFLUSH);
 
+	/*
+	 * warn:
+	 * Note  that tcsetattr() returns success if any of the requested changes could be successfully carried out.
+	 * TODO
+	 */
 	errno = 0;
 	if (tcsetattr(upsfd, TCSANOW, &tio)) {
 		upslog_with_errno(LOG_ERR, "apc_ser_set: tcsetattr(%s)", device_path);
@@ -458,7 +470,7 @@ static int apc_read(char *buf, size_t buflen, int flags)
 				return count;
 			}
 			/*
-			 * '*' is set as a secondary EOL; return '*' only as a
+			 * '*' is set as a secondary EOL; convert to 'OK' only as a
 			 * reply to shutdown command in sdok(); otherwise next
 			 * select_read() will continue normally
 			 */
@@ -515,32 +527,6 @@ static void apc_flush(int flags)
 	}
 }
 
-static void remove_var(const char *cal, apc_vartab_t *vt)
-{
-	const char *fmt;
-	char info[256];
-
-	if (isprint(vt->cmd))
-		fmt = "[%c]";
-	else
-		fmt = "[0x%02x]";
-
-	snprintf(info, sizeof(info), "%s%s%s",
-		"%s: verified variable [%s] (APC: ",
-		fmt,
-		") returned NA");
-	upsdebugx(1, info, cal, vt->name, vt->cmd);
-
-	snprintf(info, sizeof(info), "%s%s%s",
-		"%s: removing [%s] (APC: ",
-		fmt,
-		")");
-	upsdebugx(1, info, cal, vt->name, vt->cmd);
-
-	vt->flags &= ~APC_PRESENT;
-	dstate_delinfo(vt->name);
-}
-
 static const char *preread_data(apc_vartab_t *vt)
 {
 	int ret;
@@ -570,6 +556,35 @@ static const char *preread_data(apc_vartab_t *vt)
 
 	return convert_data(vt, temp);
 }
+
+static void remove_var(const char *cal, apc_vartab_t *vt)
+{
+	const char *fmt;
+	char info[256];
+
+	if (isprint(vt->cmd))
+		fmt = "[%c]";
+	else
+		fmt = "[0x%02x]";
+
+	snprintf(info, sizeof(info), "%s%s%s",
+		"%s: verified variable [%s] (APC: ",
+		fmt,
+		") returned NA"
+	);
+	upsdebugx(1, info, cal, vt->name, vt->cmd);
+
+	snprintf(info, sizeof(info), "%s%s%s",
+		"%s: removing [%s] (APC: ",
+		fmt,
+		")"
+	);
+	upsdebugx(1, info, cal, vt->name, vt->cmd);
+
+	vt->flags &= ~APC_PRESENT;
+	dstate_delinfo(vt->name);
+}
+
 static int poll_data(apc_vartab_t *vt)
 {
 	int	ret;
@@ -639,12 +654,15 @@ static int valid_cmd(char cmd, const char *val)
 
 	switch (cmd) {
 		case APC_FW_NEW:
-			ret = dfa_fwnew(val); break;
+			ret = dfa_fwnew(val);
+			break;
 		case APC_CMDSET:
-			ret = dfa_cmdset(val); break;
+			ret = dfa_cmdset(val);
+			break;
 		default:
 			return 1;
 	}
+
 	if (ret) {
 		if (isprint(cmd))
 			fmt = "[%c]";
@@ -662,7 +680,10 @@ static int valid_cmd(char cmd, const char *val)
 	return !ret;
 }
 
-/* query_ups() is called before any APC_PRESENT flags are determined */
+/*
+ * query_ups() is called before any APC_PRESENT flags are determined;
+ * only for the variable provided
+ */
 static int query_ups(const char *var)
 {
 	int i, j;
@@ -708,6 +729,54 @@ static int query_ups(const char *var)
 	}
 
 	return 0;
+}
+
+/*
+ * This function iterates over vartab, deprecating nut:apc 1:n variables. We
+ * prefer earliest present variable. All the other ones must be marked as
+ * deprecated and as not present.
+ * This is intended to call after verifying the presence of variables.
+ * Otherwise it would take a while to execute due to preread_data()
+ */
+static void deprecate_vars(void)
+{
+	int i, j;
+	const char *temp;
+	apc_vartab_t *vt, *vtn;
+
+	for (i = 0; apc_vartab[i].name != NULL; i++) {
+		vt = &apc_vartab[i];
+		if (vt->flags & APC_DEPR)
+			/* already handled */
+			continue;
+
+		if (!(vt->flags & APC_MULTI))
+			continue;
+		if (!(vt->flags & APC_PRESENT)) {
+			vt->flags |= APC_DEPR;
+			continue;
+		}
+		/* pre-read data, we have to verify it */
+		temp = preread_data(vt);
+		if (!temp || !valid_cmd(vt->cmd, temp)) {
+			upslogx(LOG_ERR, "deprecate_vars: [%s] is unreadable or invalid, deprecating", vt->name);
+			vt->flags |= APC_DEPR;
+			vt->flags &= ~APC_PRESENT;
+			continue;
+		}
+
+		/* multi & present, deprecate all the remaining ones */
+		for (j = i + 1; apc_vartab[j].name != NULL; j++) {
+			vtn = &apc_vartab[j];
+			if (strcmp(vtn->name, vt->name))
+				continue;
+			vtn->flags |= APC_DEPR;
+			vtn->flags &= ~APC_PRESENT;
+		}
+
+		dstate_setinfo(vt->name, "%s", temp);
+		dstate_dataok();
+	}
 }
 
 static void do_capabilities(int qco)
@@ -855,48 +924,6 @@ static int update_status(void)
 	dstate_dataok();
 
 	return 1;
-}
-
-/*
- * This function iterates over vartab, deprecating nut:apc 1:n variables.  We
- * prefer earliest present variable. All the other ones must be marked as
- * deprecated and as not present.
- */
-static void deprecate_vars(void)
-{
-	int i, j;
-	const char *temp;
-	apc_vartab_t *vt, *vtn;
-
-	for (i = 0; apc_vartab[i].name != NULL; i++) {
-		vt = &apc_vartab[i];
-		if (!(vt->flags & APC_MULTI))
-			continue;
-		if (!(vt->flags & APC_PRESENT)) {
-			vt->flags |= APC_DEPR;
-			continue;
-		}
-		/* pre-read data, we have to verify it */
-		temp = preread_data(vt);
-		if (!temp || !valid_cmd(vt->cmd, temp)) {
-			upslogx(LOG_ERR, "deprecate_vars: [%s] is unreadable or invalid, deprecating", vt->name);
-			vt->flags |= APC_DEPR;
-			vt->flags &= ~APC_PRESENT;
-			continue;
-		}
-
-		/* multi & present, deprecate all the remaining ones */
-		for (j = i + 1; apc_vartab[j].name != NULL; j++) {
-			vtn = &apc_vartab[j];
-			if (strcmp(vtn->name, vt->name))
-				continue;
-			vtn->flags |= APC_DEPR;
-			vtn->flags &= ~APC_PRESENT;
-		}
-
-		dstate_setinfo(vt->name, "%s", temp);
-		dstate_dataok();
-	}
 }
 
 static void oldapcsetup(void)
@@ -1110,10 +1137,11 @@ static void getbaseinfo(void)
 
 	upsdebugx(2, "firmware not found in compatibility table - trying normal method");
 	upsdebugx(1, "APC - attempting to find command set");
-	/* Initially we ask the UPS what commands it takes
-	   If this fails we are going to need an alternate
-	   strategy - we can deal with that if it happens
-	*/
+	/*
+	 * Initially we ask the UPS what commands it takes If this fails we are
+	 * going to need an alternate strategy - we can deal with that if it
+	 * happens
+	 */
 
 	apc_flush(0);
 	ret = apc_write(APC_CMDSET);
@@ -1319,8 +1347,8 @@ static int sdok(int ign)
 
 	/*
 	 * older upses on failed commands might just timeout, we cut down
-	 * timeout grace in apc_read though
-	 * furthermore, Z will not reply with anything
+	 * timeout grace though
+	 * furthermore, command 'Z' will not reply with anything
 	 */
 	ret = apc_read(temp, sizeof(temp), SER_HA|SER_D1|SER_TO);
 	if (ret < 0) {
@@ -1412,21 +1440,7 @@ static int sdcmd_AT(const void *str)
 	}
 	strcpy(ptr, awd);
 
-#if 0
-	mmax = cnt == 2 ? 99 : 999;
-
-	if ((strval = getval("awd"))) {
-		errno = 0;
-		n = strtol(strval, NULL, 10);
-		if (errno || n < 0 || n > mmax)
-			n = 0;
-	}
-
-	snprintf(temp, sizeof(temp), "%c%.*d", APC_CMD_GRACEDOWN, cnt, n);
-#endif
-
-
-	upsdebugx(1, "issuing '@' with %d minutes a.w.d.", (int)strtol(awd, NULL, 10)*6);
+	upsdebugx(1, "issuing '@' with %d minutes of additional wakeup delay", (int)strtol(awd, NULL, 10)*6);
 
 	apc_flush(0);
 	ret = apc_write_long(temp);
@@ -1439,6 +1453,7 @@ static int sdcmd_AT(const void *str)
 	if (ret == STAT_INSTCMD_HANDLED || padto == 3)
 		return ret;
 
+	upslog_with_errno(LOG_ERR, "sdcmd_AT: command '@' with 2 digits doesn't work - try 3 digits");
 	/*
 	 * "tricky" part - we tried @nn variation and it (unsurprisingly)
 	 * failed; we have to abort the sequence with something bogus to have
@@ -1446,7 +1461,7 @@ static int sdcmd_AT(const void *str)
 	 * silent (YMMV);
 	 */
 	apc_write(APC_CMD_GRACEDOWN);
-	/* eat response */
+	/* eat response, allow it to timeout */
 	apc_read(temp, sizeof(temp), SER_D1|SER_TO);
 
 	return STAT_INSTCMD_FAILED;
@@ -1738,6 +1753,7 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 	int	ret;
 	char	temp[APC_LBUF], *ptr;
 
+	/* sanitize length */
 	if (strlen(val) > APC_STRLEN) {
 		upslogx(LOG_ERR, "setvar_string: value (%s) too long", val);
 		return STAT_SET_FAILED;
@@ -1843,7 +1859,7 @@ static int do_loadon(void)
 	 * the next status update)
 	 */
 
-	upsdebugx(1, "load N command (apc:^N) executed");
+	upsdebugx(1, "load-on command (apc:^N) executed");
 	return STAT_INSTCMD_HANDLED;
 }
 
@@ -1915,7 +1931,7 @@ static int instcmd(const char *cmd, const char *ext)
 	for (i = 0; apc_cmdtab[i].name != NULL; i++) {
 		if (strcasecmp(apc_cmdtab[i].name, cmd))
 			continue;
-		/* extra were provided and we care - check them */
+		/* extra was provided and we care - check it */
 		if (ext && *ext && apc_cmdtab[i].ext) {
 			if (!strcmp(apc_cmdtab[i].ext, "!for")) {
 				/*
@@ -2014,6 +2030,7 @@ void upsdrv_initups(void)
 	if (!apc_ser_set())
 		fatalx(EXIT_FAILURE, "couldn't set options on port (%s)", device_path);
 
+	/* sanitize awd (additional waekup delay of '@' command) */
 	if (validate_ATn_arg((val = getval("awd"))) < 0)
 		fatalx(EXIT_FAILURE, "invalid value (%s) for option 'awd'", val);
 
