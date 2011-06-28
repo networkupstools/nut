@@ -43,6 +43,30 @@ upsdrv_info_t upsdrv_info = {
 
 static int ups_status = 0;
 
+/* some forwards */
+
+static int sdcmd_AT(const void *);
+static int sdcmd_S(const void *);
+static int sdcmd_CS(const void *);
+static int sdcmd_K(const void *);
+static int sdcmd_Z(const void *);
+
+static int (*sdlist[])(const void *) = {
+	sdcmd_S,
+	sdcmd_AT,
+	sdcmd_K,
+	sdcmd_Z,
+	sdcmd_CS,
+};
+
+#define SDIDX_S		0
+#define SDIDX_AT	1
+#define SDIDX_K		2
+#define SDIDX_Z		3
+#define SDIDX_CS	4
+
+#define SDCNT 		5
+
 static apc_vartab_t *vartab_lookup_char(char cmdchar)
 {
 	int	i;
@@ -155,20 +179,18 @@ static int apc_ser_set(void)
 
 	tio.c_cflag = CS8 | CLOCAL | CREAD;
 
-	tio.c_lflag = ICANON;
-	tio.c_lflag &= ~ISIG;
+	tio.c_lflag = ICANON & ~ISIG;
 
-	tio.c_iflag = IGNCR | IGNPAR;
-	tio.c_iflag &= ~(IXON | IXOFF);
+	tio.c_iflag = (IGNCR | IGNPAR) & ~(IXON | IXOFF);
 
 	tio.c_oflag = 0;
 
 	tio.c_cc[VERASE] = _POSIX_VDISABLE;
 	tio.c_cc[VKILL]  = _POSIX_VDISABLE;
+	tio.c_cc[VEOF] = _POSIX_VDISABLE;
+	tio.c_cc[VEOL2] = _POSIX_VDISABLE;
 
 	tio.c_cc[VEOL] = '*';	/* specially handled in apc_read() */
-	tio.c_cc[VEOL2] = _POSIX_VDISABLE;
-	tio.c_cc[VEOF] = _POSIX_VDISABLE;
 
 	/*
 	 * unused in canonical mode:
@@ -472,13 +494,16 @@ static int apc_read(char *buf, size_t buflen, int flags)
 				 * almost crazy, but suppose we could get
 				 * something else besides '*'; just in case eat
 				 * it - it's not real EOL after all
+				 * there's only need to eat it, if count > 0
+				 * timeout is not allowed either
 				 */
-				errno = 0;
-				/* ret = select_read(upsfd, temp, sizeof(temp), 0, 0); */
-				ret = tcflush(upsfd, TCIFLUSH);
-				if (ret < 0) {
-					ser_comm_fail("%s", strerror(errno));
-					return ret;
+				if (count) {
+					errno = 0;
+					ret = select_read(upsfd, temp, sizeof(temp), sec, usec);
+					if (ret <= 0) {
+						ser_comm_fail("%s", ret ? strerror(errno) : "timeout");
+						return ret;
+					}
 				}
 				buf[0] = 'O';
 				buf[1] = 'K';
@@ -1156,51 +1181,88 @@ static int smartmode(void)
 #endif
 }
 
+/* verify validity of ATn argument */
+static int validate_ATn_arg(const char *str)
+{
+	int i = 0;
+	if (!str || !*str)
+		return 0;
+	while (str[i] && i < 4) {
+		if (str[i] < '0' || str[i] > '9')
+			return -1;
+		i++;
+	}
+	return i < 4 ? i : -1;
+}
+
 /*
  * all shutdown commands should respond with 'OK' or '*'
+ * apc_read() handles conversion to 'OK' so we care only about that one
  */
-static int sdok(void)
+static int sdok(int ign)
 {
+	int ret;
 	char temp[32];
 
 	/*
 	 * older upses on failed commands might just timeout, we cut down
 	 * timeout grace in apc_read though
+	 * furthermore, Z will not reply with anything
 	 */
-	apc_read(temp, sizeof(temp), SER_AX);
-	upsdebugx(4, "shutdown reply: got \"%s\"", temp);
+	ret = apc_read(temp, sizeof(temp), SER_AX);
+	if (ret < 0) {
+		upslog_with_errno(LOG_ERR, "sdok: apc_read failed");
+		return STAT_INSTCMD_FAILED;
+	}
 
-	if (!strcmp(temp, "OK")) {
-		upsdebugx(4, "Last issued shutdown command succeeded");
+	upsdebugx(4, "sdok: got \"%s\"", temp);
+
+	if ((!ret && ign) || !strcmp(temp, "OK")) {
+		upsdebugx(4, "sdok: last issued shutdown command succeeded");
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upsdebugx(1, "Last issued shutdown command failed");
+	upsdebugx(1, "sdok: last issued shutdown command failed");
 	return STAT_INSTCMD_FAILED;
 }
 
 /* soft hibernate: S - working only when OB, otherwise ignored */
-static int sdcmd_S(int dummy)
+static int sdcmd_S(const void *foo)
 {
+	int ret;
+
 	apc_flush(0);
 	upsdebugx(1, "Issuing soft hibernate");
-	apc_write(APC_CMD_SOFTDOWN);
+	ret = apc_write(APC_CMD_SOFTDOWN);
+	if (ret < 0) {
+		upslog_with_errno(LOG_ERR, "sdcmd_S: apc_write failed");
+		return STAT_INSTCMD_FAILED;
+	}
 
-	return sdok();
+	return sdok(0);
 }
 
-/* soft hibernate, hack version for CS 350 */
-static int sdcmd_CS(int status)
+/* soft hibernate, hack version for CS 350 & co. */
+static int sdcmd_CS(const void *foo)
 {
+	int ret;
 	char temp[32];
 
 	upsdebugx(1, "Using CS 350 'force OB' shutdown method");
-	if (status & APC_STAT_OL) {
+	if (ups_status & APC_STAT_OL) {
 		apc_flush(0);
 		upsdebugx(1, "On-line - forcing OB temporarily");
-		apc_write(APC_CMD_SIMPWF);
+		ret = apc_write(APC_CMD_SIMPWF);
+		if (ret < 0) {
+			upslog_with_errno(LOG_ERR, "sdcmd_CS: apc_write failed");
+			return STAT_INSTCMD_FAILED;
+		}
 		/* eat response */
-		apc_read(temp, sizeof(temp), SER_SD);
+		ret = apc_read(temp, sizeof(temp), SER_SD);
+		if (ret < 0) {
+			upslog_with_errno(LOG_ERR, "sdcmd_CS: apc_read failed");
+			return STAT_INSTCMD_FAILED;
+		}
 	}
 	return sdcmd_S(0);
 }
@@ -1210,12 +1272,31 @@ static int sdcmd_CS(int status)
  * note: works differently for older and new models, see help function for
  * detailed info
  */
-static int sdcmd_ATn(int cnt)
+static int sdcmd_AT(const void *str)
 {
-	int n = 0, mmax, ret;
-	const char *strval;
-	char temp[32];
+	int ret, cnt, padto, i;
+	const char *awd = str;
+	char temp[32], *ptr;
 
+	cnt = validate_ATn_arg(awd);
+	if (cnt < 0) {
+		upslogx(LOG_ERR, "sdcmd_ATn: invalid argument (%s)", awd);
+	}
+
+	if (!awd) {
+		awd = "000";
+		cnt = 3;
+	}
+
+	padto = cnt == 2 ? 2 : 3;
+	temp[0] = APC_CMD_GRACEDOWN;
+	ptr = temp + 1;
+	for (i = cnt; i < padto ; i++) {
+		*ptr++ = '0';
+	}
+	strcpy(ptr, awd);
+
+#if 0
 	mmax = cnt == 2 ? 99 : 999;
 
 	if ((strval = getval("wugrace"))) {
@@ -1226,13 +1307,19 @@ static int sdcmd_ATn(int cnt)
 	}
 
 	snprintf(temp, sizeof(temp), "%c%.*d", APC_CMD_GRACEDOWN, cnt, n);
+#endif
+
 
 	apc_flush(0);
-	upsdebugx(1, "Issuing hard hibernate with %d minutes additional wakeup delay", n*6);
+	upsdebugx(1, "Issuing hard hibernate with %d minutes additional wakeup delay", (int)strtol(awd, NULL, 10)*6);
 
-	apc_write_long(temp);
+	ret = apc_write_long(temp);
+	if (ret < 0) {
+		upslog_with_errno(LOG_ERR, "sdcmd_AT: apc_write_long failed");
+		return STAT_INSTCMD_FAILED;
+	}
 
-	ret = sdok();
+	ret = sdok(0);
 	if (ret == STAT_INSTCMD_HANDLED || cnt == 3)
 		return ret;
 
@@ -1250,70 +1337,59 @@ static int sdcmd_ATn(int cnt)
 }
 
 /* shutdown: K - delayed poweroff */
-static int sdcmd_K(int dummy)
+static int sdcmd_K(const void *foo)
 {
+	int ret;
+
 	apc_flush(0);
 	upsdebugx(1, "Issuing delayed poweroff");
 
-	apc_write_rep(APC_CMD_SHUTDOWN);
+	ret = apc_write_rep(APC_CMD_SHUTDOWN);
+	if (ret < 0) {
+		upslog_with_errno(LOG_ERR, "sdcmd_K: apc_write_rep failed");
+		return STAT_INSTCMD_FAILED;
+	}
 
-	return sdok();
+	return sdok(0);
 }
 
 /* shutdown: Z - immediate poweroff */
-static int sdcmd_Z(int dummy)
+static int sdcmd_Z(const void *foo)
 {
+	int ret;
+
 	apc_flush(0);
 	upsdebugx(1, "Issuing immediate poweroff");
 
-	apc_write_rep(APC_CMD_OFF);
+	ret = apc_write_rep(APC_CMD_OFF);
+	if (ret < 0) {
+		upslog_with_errno(LOG_ERR, "sdcmd_Z: apc_write_rep failed");
+		return STAT_INSTCMD_FAILED;
+	}
 
-	/* ups will not reply anything after this command */
-	apc_flush(0);
-	upsdebugx(1, "Load OFF command (apc:Z) executed.");
-	return STAT_INSTCMD_HANDLED;
+	/* note: ups will not reply anything after this command */
+	return sdok(1);
 }
 
-static int (*sdlist[])(int) = {
-	sdcmd_S,
-	sdcmd_ATn,	/* for @nnn version */
-	sdcmd_K,
-	sdcmd_Z,
-	sdcmd_CS,
-	sdcmd_ATn,	/* for @nn version */
-};
-
-#define SDIDX_S		0
-#define SDIDX_AT3N	1
-#define SDIDX_K		2
-#define SDIDX_Z		3
-#define SDIDX_CS	4
-#define SDIDX_AT2N	5
-
-#define SDCNT 		6
-
-static void upsdrv_shutdown_simple(int status)
+static void upsdrv_shutdown_simple(void)
 {
 	unsigned int sdtype = 0;
-	char *strval;
+	const char *val;
 
-	if ((strval = getval("sdtype"))) {
+	if ((val = getval("sdtype"))) {
 		errno = 0;
-		sdtype = strtol(strval, NULL, 10);
-		if (errno || sdtype < 0 || sdtype > 6)
+		sdtype = strtol(val, NULL, 10);
+		if (errno || sdtype < 0 || sdtype > 5)
 			sdtype = 0;
 	}
 
 	switch (sdtype) {
 
-	case 6:		/* hard hibernate */
-		sdcmd_ATn(3);
-		break;
-	case 5:		/* "hack nn" hard hibernate */
-		sdcmd_ATn(2);
+	case 5:		/* hard hibernate */
+		sdcmd_AT(getval("wugrace"));
 		break;
 	case 4:		/* special hack for CS 350 and similar models */
-		sdcmd_CS(status);
+		sdcmd_CS(0);
 		break;
 
 	case 3:		/* delayed poweroff */
@@ -1331,68 +1407,48 @@ static void upsdrv_shutdown_simple(int status)
 		 * hard hibernate '@nnn' commands
 		 */
 		upsdebugx(1, "UPS - currently %s - sending soft/hard hibernate commands",
-			(status & APC_STAT_OL) ? "on-line" : "on battery");
+			(ups_status & APC_STAT_OL) ? "on-line" : "on battery");
 
 		/* S works only when OB */
-		if ((status & APC_STAT_OB) && sdcmd_S(0) == STAT_INSTCMD_HANDLED)
+		if ((ups_status & APC_STAT_OB) && sdcmd_S(0) == STAT_INSTCMD_HANDLED)
 			break;
-		sdcmd_ATn(3);
+		sdcmd_AT(getval("wugrace"));
 		break;
 
 	default:
 		/*
 		 * Send @nnn or S, depending on OB / OL status
 		 */
-		if (status & APC_STAT_OL)		/* on line */
-			sdcmd_ATn(3);
+		if (ups_status & APC_STAT_OL)		/* on line */
+			sdcmd_AT(getval("wugrace"));
 		else
 			sdcmd_S(0);
 	}
 }
 
-static void upsdrv_shutdown_advanced(int status)
+static void upsdrv_shutdown_advanced(void)
 {
-	const char *strval;
-	const char deforder[] = {48 + SDIDX_S,
-				 48 + SDIDX_AT3N,
-				 48 + SDIDX_K,
-				 48 + SDIDX_Z,
-				  0};
-	size_t i;
-	int n;
+	const void *arg;
+	const char *val;
+	size_t i, len;
 
-	strval = getval("advorder");
-
-	/* sanitize advorder */
-
-	if (!strval || !strlen(strval) || strlen(strval) > SDCNT)
-		strval = deforder;
-	for (i = 0; i < strlen(strval); i++) {
-		if (strval[i] - 48 < 0 || strval[i] - 48 >= SDCNT) {
-			strval = deforder;
-			break;
-		}
-	}
+	val = getval("advorder");
+	len = strlen(val);
 
 	/*
 	 * try each method in the list with a little bit of handling in certain
 	 * cases
 	 */
-
-	for (i = 0; i < strlen(strval); i++) {
-		switch (strval[i] - 48) {
-			case SDIDX_CS:
-				n = status;
+	for (i = 0; i < len; i++) {
+		switch (val[i] - '0') {
+			case SDIDX_AT:
+				arg = getval("wugrace");
 				break;
-			case SDIDX_AT3N:
-				n = 3;
-				break;
-			case SDIDX_AT2N:
 			default:
-				n = 2;
+				arg = NULL;
 		}
 
-		if (sdlist[strval[i] - '0'](n) == STAT_INSTCMD_HANDLED)
+		if (sdlist[val[i] - '0'](arg) == STAT_INSTCMD_HANDLED)
 			break;	/* finish if command succeeded */
 	}
 }
@@ -1401,7 +1457,7 @@ static void upsdrv_shutdown_advanced(int status)
 void upsdrv_shutdown(void)
 {
 	char	temp[32];
-	int	ret, status;
+	int	ret;
 
 	if (!smartmode())
 		upsdebugx(1, "SM detection failed. Trying a shutdown command anyway");
@@ -1415,20 +1471,20 @@ void upsdrv_shutdown(void)
 
 		if (ret < 1) {
 			upsdebugx(1, "Status read failed ! Assuming on battery state");
-			status = APC_STAT_LB | APC_STAT_OB;
+			ups_status = APC_STAT_LB | APC_STAT_OB;
 		} else {
-			status = strtol(temp, 0, 16);
+			ups_status = strtol(temp, 0, 16);
 		}
 
 	} else {
 		upsdebugx(1, "Status request failed; assuming on battery state");
-		status = APC_STAT_LB | APC_STAT_OB;
+		ups_status = APC_STAT_LB | APC_STAT_OB;
 	}
 
 	if (testvar("advorder") && strcasecmp(getval("advorder"), "no"))
-		upsdrv_shutdown_advanced(status);
+		upsdrv_shutdown_advanced();
 	else
-		upsdrv_shutdown_simple(status);
+		upsdrv_shutdown_simple();
 }
 
 static void update_info_normal(void)
@@ -1570,6 +1626,11 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 	int	ret;
 	char	temp[512], *ptr;
 
+	if (strlen(val) > APC_STRLEN) {
+		upslogx(LOG_ERR, "setvar_string: value (%s) too long", val);
+		return STAT_SET_FAILED;
+	}
+
 	apc_flush(SER_AL);
 	ret = apc_write(vt->cmd);
 
@@ -1591,12 +1652,12 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 		return STAT_SET_HANDLED;	/* FUTURE: no change */
 	}
 
+	/* length sanitized above */
 	temp[0] = APC_NEXTVAL;
-	temp[1] = '\0';
-	strncat(temp, val, APC_STRLEN);
+	strcpy(temp + 1, val);
 	ptr = temp + strlen(temp);
 	for (i = strlen(val); i < APC_STRLEN; i++)
-		*ptr++ = '\015';
+		*ptr++ = '\015'; /* pad with CRs */
 	*ptr = 0;
 
 	ret = apc_write_long(ptr);
@@ -1651,21 +1712,48 @@ static int setvar(const char *varname, const char *val)
 	return STAT_SET_UNKNOWN;
 }
 
-/* actually send the instcmd's char to the ups */
-static int do_cmd(apc_cmdtab_t *ct)
+/* load on */
+static int do_loadon(void)
 {
-	int	ret;
-	char	temp[512];
+	int ret;
+	apc_flush(0);
+	upsdebugx(1, "Issuing load-on command.");
+
+	ret = apc_write_rep(APC_CMD_ON);
+	if (ret < 0) {
+		upslog_with_errno(LOG_ERR, "do_loadon: apc_write_rep failed");
+		return STAT_INSTCMD_FAILED;
+	}
+
+	/*
+	 * ups will not reply anything after this command, but might
+	 * generate brief OVER condition (which will be corrected on
+	 * the next status update)
+	 */
+
+	upsdebugx(1, "Load N command (apc:^N) executed.");
+	return STAT_INSTCMD_HANDLED;
+}
+
+/* actually send the instcmd's char to the ups */
+static int do_cmd(const apc_cmdtab_t *ct)
+{
+	int ret;
+	char temp[512];
+	const char *strerr;
 
 	apc_flush(SER_AL);
 
-	if (ct->flags & APC_REPEAT)
+	if (ct->flags & APC_REPEAT) {
 		ret = apc_write_rep(ct->cmd);
-	else
+		strerr = "apc_write_rep";
+	} else {
 		ret = apc_write(ct->cmd);
+		strerr = "apc_write";
+	}
 
 	if (ret < 1) {
-		upslog_with_errno(LOG_ERR, "do_cmd: apc_write[_rep] failed");
+		upslog_with_errno(LOG_ERR, "do_cmd: %s failed", strerr);
 		return STAT_INSTCMD_FAILED;
 	}
 
@@ -1674,7 +1762,7 @@ static int do_cmd(apc_cmdtab_t *ct)
 	if (ret < 1)
 		return STAT_INSTCMD_FAILED;
 
-	if (strcmp(temp, "OK") != 0) {
+	if (strcmp(temp, "OK")) {
 		upslogx(LOG_WARNING, "Got [%s] after command [%s]",
 			temp, ct->name);
 
@@ -1701,42 +1789,78 @@ static int instcmd_chktime(apc_cmdtab_t *ct)
 	if ((elapsed < MINCMDTIME) || (elapsed > MAXCMDTIME)) {
 		upsdebugx(1, "instcmd_chktime: outside window for %s (%2.0f)",
 				ct->name, elapsed);
-		return STAT_INSTCMD_HANDLED;		/* FUTURE: again */
+		return 0;
 	}
 
-	return do_cmd(ct);
+	return 1;
 }
 
-static int instcmd(const char *cmdname, const char *extra)
+static int instcmd(const char *cmd, const char *ext)
 {
-	int	i;
-	apc_cmdtab_t	*ct;
+	int i;
+	apc_cmdtab_t *ct = NULL;
 
-	ct = NULL;
-
-	for (i = 0; apc_cmdtab[i].name != NULL; i++)
-		if (!strcasecmp(apc_cmdtab[i].name, cmdname))
-			ct = &apc_cmdtab[i];
+	for (i = 0; apc_cmdtab[i].name != NULL; i++) {
+		if (strcasecmp(apc_cmdtab[i].name, cmd))
+			continue;
+		/* extra were provided and we care - check them */
+		if (ext && *ext && apc_cmdtab[i].ext) {
+			if (!strcmp(apc_cmdtab[i].ext, "!for")) {
+				/*
+				 * can't have that using && with the above,
+				 * if you're thinking about "fixing" it :)
+				 */
+				if (validate_ATn_arg(ext) < 0)
+					continue;
+			} else if (strcasecmp(apc_cmdtab[i].ext, ext))
+				continue;
+		}
+		ct = &apc_cmdtab[i];
+		break;
+	}
 
 	if (!ct) {
-		upslogx(LOG_WARNING, "instcmd: unknown command [%s]", cmdname);
-		return STAT_INSTCMD_UNKNOWN;
+		upslogx(LOG_WARNING, "instcmd: unknown command [%s]", cmd);
+		return STAT_INSTCMD_INVALID;
 	}
 
-	if ((ct->flags & APC_PRESENT) == 0) {
-		upslogx(LOG_WARNING, "instcmd: command [%s] is not supported",
-			cmdname);
-		return STAT_INSTCMD_UNKNOWN;
+	if (!(ct->flags & APC_PRESENT)) {
+		upslogx(LOG_WARNING, "instcmd: command [%s] recognized, but"
+		       " not supported by your UPS model", cmd);
+		return STAT_INSTCMD_INVALID;
 	}
 
-	if (!strcasecmp(cmdname, "calibrate.start"))
+	/* first verify if the command is "nasty" */
+	if ((ct->flags & APC_NASTY) && !instcmd_chktime(ct))
+		return STAT_INSTCMD_HANDLED;	/* future: again */
+
+	/* we're good to go, handle special stuff first, then generic cmd */
+
+	if (!strcasecmp(cmd, "calibrate.start"))
 		return do_cal(1);
 
-	if (!strcasecmp(cmdname, "calibrate.stop"))
+	if (!strcasecmp(cmd, "calibrate.stop"))
 		return do_cal(0);
 
-	if (ct->flags & APC_NASTY)
-		return instcmd_chktime(ct);
+	if (!strcasecmp(cmd, "load.on"))
+		return do_loadon();
+
+	if (!strcasecmp(cmd, "load.off"))
+		return sdcmd_Z(0);
+
+	if (!strcasecmp(cmd, "shutdown.stayoff"))
+		return sdcmd_K(0);
+
+	if (!strcasecmp(cmd, "shutdown.return")) {
+		if (!ct->ext)
+			return sdcmd_S(0);
+
+		if (!strcmp(ct->ext, "!for"))
+			return sdcmd_AT(ext);
+
+		if (!strcmp(ct->ext, "cs"))
+			return sdcmd_CS(0);
+	}
 
 	/* nothing special here */
 	return do_cmd(ct);
@@ -1755,16 +1879,36 @@ void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE, "cable", "Specify alternate cable (940-0095B)");
 	addvar(VAR_VALUE, "wugrace", "Hard hibernate's wakeup grace");
-	addvar(VAR_VALUE, "sdtype", "Specify simple shutdown method (0-6)");
+	addvar(VAR_VALUE, "sdtype", "Specify simple shutdown method (0-5)");
 	addvar(VAR_VALUE, "advorder", "Enable advanced shutdown control");
 }
 
 void upsdrv_initups(void)
 {
+	size_t i, len;
+	char *val;
+
 	if (!apc_ser_try())
 		fatalx(EXIT_FAILURE, "couldn't open port (%s)", device_path);
 	if (!apc_ser_set())
 		fatalx(EXIT_FAILURE, "couldn't set options on port (%s)", device_path);
+
+	if (validate_ATn_arg((val = getval("wugrace"))) < 0)
+		fatalx(EXIT_FAILURE, "Invalid value (%s) for option 'wugrace'.", val);
+
+	/* sanitize advorder */
+	if (!(val = getval("advorder")) || !strcasecmp(val, "no"))
+		return;
+
+	len = strlen(val);
+
+	if (!len || len > SDCNT)
+		fatalx(EXIT_FAILURE, "Invalid length of 'advorder' option (%s).", val);
+	for (i = 0; i < len; i++) {
+		if (val[i] < '0' || val[i] >= '0' + SDCNT) {
+			fatalx(EXIT_FAILURE, "Invalid characters in 'advorder' option (%s).", val);
+		}
+	}
 }
 
 void upsdrv_cleanup(void)
@@ -1925,5 +2069,4 @@ static int query_ups(const char *var, int first)
 
 	return 0;
 }
-
 #endif

@@ -80,21 +80,22 @@ apc_vartab_t apc_vartab[] = {
 
 /* apc commands mapped to nut's instant commands */
 apc_cmdtab_t apc_cmdtab[] = {
-	{ "load.off",			APC_CMD_OFF,		APC_NASTY|APC_REPEAT },
-	{ "load.on",			APC_CMD_ON,		APC_REPEAT },
-	{ "test.panel.start",		APC_CMD_FPTEST,		0 },
-	{ "test.failure.start",		APC_CMD_SIMPWF,		0 },
-	{ "test.battery.start",		APC_CMD_BTESTTOGGLE,	0 },
-	{ "test.battery.stop",		APC_CMD_BTESTTOGGLE,	0 },
-	{ "shutdown.return.grace",	APC_CMD_GRACEDOWN,	APC_NASTY },
-	{ "shutdown.return",		APC_CMD_SOFTDOWN,	APC_NASTY },
-	{ "shutdown.stayoff",		APC_CMD_SHUTDOWN,	APC_NASTY|APC_REPEAT },
-	{ "calibrate.start",		APC_CMD_CALTOGGLE,	0 },
-	{ "calibrate.stop",		APC_CMD_CALTOGGLE,	0 },
-	{ "bypass.start",		APC_CMD_BYPTOGGLE,	0 },
-	{ "bypass.stop",		APC_CMD_BYPTOGGLE,	0 },
+	{ "test.panel.start",	0,	APC_CMD_FPTEST,		0 },
+	{ "test.failure.start",	0,	APC_CMD_SIMPWF,		0 },
+	{ "test.battery.start",	0,	APC_CMD_BTESTTOGGLE,	0 },
+	{ "test.battery.stop",	0,	APC_CMD_BTESTTOGGLE,	0 },
+	{ "shutdown.return",	"!for",	APC_CMD_GRACEDOWN,	APC_NASTY },
+	{ "shutdown.return",	"cs",	APC_CMD_SOFTDOWN,	APC_NASTY },
+	{ "shutdown.return",	0,	APC_CMD_SOFTDOWN,	APC_NASTY },
+	{ "shutdown.stayoff",	0,	APC_CMD_SHUTDOWN,	APC_NASTY|APC_REPEAT },
+	{ "load.off",		0,	APC_CMD_OFF,		APC_NASTY|APC_REPEAT },
+	{ "load.on",		0,	APC_CMD_ON,		APC_REPEAT },
+	{ "bypass.start",	0,	APC_CMD_BYPTOGGLE,	0 },
+	{ "bypass.stop",	0,	APC_CMD_BYPTOGGLE,	0 },
+	{ "calibrate.start",	0,	APC_CMD_CALTOGGLE,	0 },
+	{ "calibrate.stop",	0,	APC_CMD_CALTOGGLE,	0 },
 
-	{ 0, 0, 0 }
+	{ 0, 0, 0, 0 }
 };
 
 /* compatibility with hardware that doesn't do APC_CMDSET ('a') */

@@ -81,7 +81,7 @@ typedef struct {
 } apc_vartab_t;
 
 typedef struct {
-	const char	*name;
+	const char	*name, *ext;
 	char		cmd;
 	int		flags;
 } apc_cmdtab_t;
