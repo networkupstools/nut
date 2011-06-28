@@ -917,12 +917,8 @@ static void deprecate_vars(void)
 
 static void oldapcsetup(void)
 {
-	int	ret = 0;
-
 	/* really old models ignore REQ_MODEL, so find them first */
-	ret = query_ups("ups.model");
-
-	if (ret != 1) {
+	if (!query_ups("ups.model")) {
 		/* force the model name */
 		dstate_setinfo("ups.model", "Smart-UPS");
 	}
@@ -933,7 +929,13 @@ static void oldapcsetup(void)
 
 	query_ups("ups.firmware");
 	query_ups("ups.serial");
-	query_ups("input.voltage"); /* This one may fail... no problem */
+	query_ups("input.voltage");
+	query_ups("battery.charge");
+	query_ups("battery.voltage");
+	query_ups("input.voltage");
+	query_ups("output.voltage");
+	query_ups("ups.temperature");
+	query_ups("ups.load");
 
 	update_status();
 
