@@ -754,7 +754,7 @@ static void do_capabilities(int qco)
 	 * note - apc_read() needs larger timeout grace and different
 	 * ignore set due to certain characters like '#' being received
 	 */
-	ret = apc_read(temp, sizeof(temp), SER_CC | SER_D6);
+	ret = apc_read(temp, sizeof(temp), SER_CC|SER_D6|SER_TO);
 
 	if ((ret < 1) || (!strcmp(temp, "NA"))) {
 
