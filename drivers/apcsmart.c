@@ -74,10 +74,19 @@ static apc_vartab_t *vartab_lookup_name(const char *var)
 /* FUTURE: change to use function pointers */
 
 /* convert APC formatting to NUT formatting */
+/* TODO: handle errors better */
 static const char *convert_data(apc_vartab_t *cmd_entry, const char *upsval)
 {
-	static	char tmp[128];
-	int	tval;
+	static char temp[512];
+	int tval;
+
+	/* this should never happen */
+	if (strlen(upsval) >= sizeof(temp)) {
+		upslogx(LOG_CRIT, "length of [%s] too long", cmd_entry->name);
+		strncpy(temp, upsval, sizeof(temp) - 1);
+		temp[sizeof(temp) - 1] = '\0';
+		return temp;
+	}
 
 	switch(cmd_entry->flags & APC_FORMATMASK) {
 		case APC_F_PERCENT:
@@ -88,24 +97,24 @@ static const char *convert_data(apc_vartab_t *cmd_entry, const char *upsval)
 		case APC_F_DEC:
 		case APC_F_SECONDS:
 		case APC_F_LEAVE:
-
 			/* no conversion for any of these */
-			return upsval;
+			strcpy(temp, upsval);
+			return temp;
 
 		case APC_F_HOURS:
 			/* convert to seconds */
 
 			tval = 60 * 60 * strtol(upsval, NULL, 10);
 
-			snprintf(tmp, sizeof(tmp), "%d", tval);
-			return tmp;
+			snprintf(temp, sizeof(temp), "%d", tval);
+			return temp;
 
 		case APC_F_MINUTES:
 			/* Convert to seconds - NUT standard time measurement */
 			tval = 60 * strtol(upsval, NULL, 10);
-			/* Ignore errors - Theres not much we can do */
-			snprintf(tmp, sizeof(tmp), "%d", tval);
-			return tmp;
+			/* Ignore errors - there's not much we can do */
+			snprintf(temp, sizeof(temp), "%d", tval);
+			return temp;
 
 		case APC_F_REASON:
 			switch (upsval[0]) {
@@ -115,12 +124,15 @@ static const char *convert_data(apc_vartab_t *cmd_entry, const char *upsval)
 				case 'T': return "line voltage notch or spike";
 				case 'O': return "no transfers yet since turnon";
 				case 'S': return "simulated power failure or UPS test";
-				default: return upsval;
+				default:
+					  strcpy(temp, upsval);
+					  return temp;
 			}
 	}
 
 	upslogx(LOG_NOTICE, "Unable to handle conversion of %s", cmd_entry->name);
-	return upsval;
+	strcpy(temp, upsval);
+	return temp;
 }
 
 static void ups_status_set(void)
