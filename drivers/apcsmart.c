@@ -1179,11 +1179,11 @@ static int sdok(void)
 
 	if (!strcmp(temp, "OK")) {
 		upsdebugx(4, "Last issued shutdown command succeeded");
-		return 1;
+		return STAT_INSTCMD_HANDLED;
 	}
 
 	upsdebugx(1, "Last issued shutdown command failed");
-	return 0;
+	return STAT_INSTCMD_FAILED;
 }
 
 /* soft hibernate: S - working only when OB, otherwise ignored */
@@ -1232,17 +1232,15 @@ static int sdcmd_ATn(int cnt)
 			n = 0;
 	}
 
-	snprintf(temp, sizeof(temp), "%.*d", cnt, n);
+	snprintf(temp, sizeof(temp), "%c%.*d", APC_CMD_GRACEDOWN, cnt, n);
 
 	apc_flush(0);
 	upsdebugx(1, "Issuing hard hibernate with %d minutes additional wakeup delay", n*6);
 
-	apc_write(APC_CMD_GRACEDOWN);
-	usleep(CMDLONGDELAY);
-	ser_send_pace(upsfd, UPSDELAY, "%s", temp);
+	apc_write_long(temp);
 
 	ret = sdok();
-	if (ret || cnt == 3)
+	if (ret == STAT_INSTCMD_HANDLED || cnt == 3)
 		return ret;
 
 	/*
@@ -1255,7 +1253,7 @@ static int sdcmd_ATn(int cnt)
 	/* eat response */
 	apc_read(temp, sizeof(temp), SER_SD);
 
-	return 0;
+	return STAT_INSTCMD_FAILED;
 }
 
 /* shutdown: K - delayed poweroff */
@@ -1264,9 +1262,7 @@ static int sdcmd_K(int dummy)
 	apc_flush(0);
 	upsdebugx(1, "Issuing delayed poweroff");
 
-	apc_write(APC_CMD_SHUTDOWN);
-	usleep(CMDLONGDELAY);
-	apc_write(APC_CMD_SHUTDOWN);
+	apc_write_rep(APC_CMD_SHUTDOWN);
 
 	return sdok();
 }
@@ -1277,9 +1273,7 @@ static int sdcmd_Z(int dummy)
 	apc_flush(0);
 	upsdebugx(1, "Issuing immediate poweroff");
 
-	apc_write(APC_CMD_OFF);
-	usleep(CMDLONGDELAY);
-	apc_write(APC_CMD_OFF);
+	apc_write_rep(APC_CMD_OFF);
 
 	return sdok();
 }
@@ -1344,7 +1338,7 @@ static void upsdrv_shutdown_simple(int status)
 			(status & APC_STAT_OL) ? "on-line" : "on battery");
 
 		/* S works only when OB */
-		if ((status & APC_STAT_OB) && sdcmd_S(0))
+		if ((status & APC_STAT_OB) && sdcmd_S(0) == STAT_INSTCMD_HANDLED)
 			break;
 		sdcmd_ATn(3);
 		break;
@@ -1402,7 +1396,7 @@ static void upsdrv_shutdown_advanced(int status)
 				n = 2;
 		}
 
-		if (sdlist[strval[i] - 48](n))
+		if (sdlist[strval[i] - 48](n) == STAT_INSTCMD_HANDLED)
 			break;	/* finish if command succeeded */
 	}
 }
