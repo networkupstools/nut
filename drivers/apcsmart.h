@@ -88,11 +88,26 @@
 #define APC_STRLEN	8
 
 /* how upsread() should behave */
+#if 0
 #define SER_AL  0x01		/* run with alarm handler */
 #define SER_TO  0x02		/* allow timeout without error */
 #define SER_CC  0x04		/* prepare for capability check (^Z) processing */
 #define SER_SD  0x08		/* prepare for shutdown command processing */
 #define SER_AX  0x10		/* prepare for '*' handling */
+#endif
+
+
+#define SER_D0	0x01	/* 0 sec., for flushes */
+#define SER_D1	0x02	/* 1.5 sec. */
+#define SER_D3	0x04	/* 3 sec. (default) */
+#define SER_D6	0x08	/* 6 sec. */
+#define SER_AA	0x10	/* alert aware set */
+#define SER_CC	0x20	/* capability check set */
+#define SER_TO	0x40	/* timeout allowed */
+#define SER_HA	0x80	/* handle asterisk */
+
+
+/* sets of the above (don't test against them, obviously */
 
 /*
  * Some cmd codes to ignore (nut doesn't expose those, though the driver might

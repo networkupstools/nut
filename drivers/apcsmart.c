@@ -270,7 +270,7 @@ static int apc_ser_try(void)
 }
 
 /*
- * forcefully tear down serial connection
+ * tear down serial connection
  */
 static int apc_ser_tear(void)
 {
@@ -374,19 +374,6 @@ static void alert_handler(char ch)
 	ups_status_set();
 }
 
-static void apc_flush(int flags)
-{
-	char temp[512];
-
-	if (flags & SER_AL) {
-		tcflush(upsfd, TCOFLUSH);
-		while(ser_get_line_alert(upsfd, temp, sizeof(temp), ENDCHAR, IGN_AACHARS, ALERT_CHARS, alert_handler, 0, 0) > 0);
-	} else {
-		tcflush(upsfd, TCIOFLUSH);
-		/* while(ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, IGN_CHARS, 0, 0) > 0); */
-	}
-}
-
 static int apc_write(unsigned char code)
 {
 	errno = 0;
@@ -434,30 +421,25 @@ static int apc_read(char *buf, size_t buflen, int flags)
 
 	if (upsfd == -1)
 		return 0;
-	/*
-	 * 3 sec is near the edge of how much this command can take until
-	 * ENDCHAR shows up in the input; bump to 6 seconds to be on the safe
-	 * side + update ignore set
-	 */
-	if (flags & SER_CC) {
-		iset = IGN_CCCHARS;
-		sec = 6;
+	if (flags & SER_D0) {
+		sec = 0; usec = 0;
 	}
-	/* alert aware read */
-	if (flags & SER_AL) {
+	if (flags & SER_D1) {
+		sec = 1; usec = 500000;
+	}
+	if (flags & SER_D3) {
+		sec = 3; usec = 0;
+	}
+	if (flags & SER_D6) {
+		sec = 6; usec = 0;
+	}
+	if (flags & SER_AA) {
 		iset = IGN_AACHARS;
 		aset = ALERT_CHARS;
 	}
-	/* watch out for '*' during shutdown command */
-	if (flags & SER_AX) {
-		flags |= SER_SD;
-	}
-	/* "prep for shutdown" read */
-	if (flags & SER_SD) {
-		/* cut down timeout to 1.5 sec */
-		sec = 1;
-		usec = 500000;
-		flags |= SER_TO;
+	if (flags & SER_CC) {
+		iset = IGN_CCCHARS;
+		aset = "";
 	}
 
 	memset(buf, '\0', buflen);
@@ -489,7 +471,7 @@ static int apc_read(char *buf, size_t buflen, int flags)
 			 * reply to shutdown command in sdok(); otherwise next
 			 * select_read() will continue normally
 			 */
-			if ((flags & SER_AX) && temp[i] == '*') {
+			if ((flags & SER_HA) && temp[i] == '*') {
 				/*
 				 * almost crazy, but suppose we could get
 				 * something else besides '*'; just in case eat
@@ -527,6 +509,20 @@ static int apc_read(char *buf, size_t buflen, int flags)
 
 	ser_comm_good();
 	return count;
+}
+
+static void apc_flush(int flags)
+{
+	char temp[512];
+
+	if (flags & SER_AA) {
+		tcflush(upsfd, TCOFLUSH);
+		apc_read(temp, sizeof(temp), SER_D0|SER_TO|flags);
+	} else {
+		tcflush(upsfd, TCIOFLUSH);
+		/* apc_read(temp, sizeof(temp), SER_D0|SER_TO); */
+		/* while(ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, IGN_CHARS, 0, 0) > 0); */
+	}
 }
 
 static void remove_var(const char *cal, apc_vartab_t *vt)
@@ -571,7 +567,7 @@ static int poll_data(apc_vartab_t *vt)
 		return 0;
 	}
 
-	if (apc_read(temp, sizeof(temp), SER_AL) < 1) {
+	if (apc_read(temp, sizeof(temp), SER_AA) < 1) {
 		dstate_datastale();
 		return 0;
 	}
@@ -589,6 +585,7 @@ static int poll_data(apc_vartab_t *vt)
 /*
  * blindly check if variable is actually supported, update vartab accordingly,
  * also get the value
+ * query_ups() is used only during initialization, so we ignore alerts
  */
 static int query_ups(const char *var)
 {
@@ -608,13 +605,13 @@ static int query_ups(const char *var)
 
 		/* found, [try to] get it */
 
-		apc_flush(SER_AL);
+		apc_flush(0);
 		ret = apc_write(vt->cmd);
 		if (ret != 1) {
 			upslog_with_errno(LOG_ERR, "query_ups: apc_write failed");
 			break;
 		}
-		ret = apc_read(temp, sizeof(temp), SER_AL|SER_TO);
+		ret = apc_read(temp, sizeof(temp), SER_TO);
 
 		if (ret < 1 || !strcmp(temp, "NA")) {
 			if (vt->flags & APC_MULTI) {
@@ -671,10 +668,10 @@ static void do_capabilities(int qco)
 	}
 
 	/*
-	 * note SER_CC - apc_read() needs larger timeout grace and different
+	 * note - apc_read() needs larger timeout grace and different
 	 * ignore set due to certain characters like '#' being received
 	 */
-	ret = apc_read(temp, sizeof(temp), SER_CC);
+	ret = apc_read(temp, sizeof(temp), SER_CC | SER_D6);
 
 	if ((ret < 1) || (!strcmp(temp, "NA"))) {
 
@@ -768,7 +765,7 @@ static int update_status(void)
 
 	upsdebugx(4, "update_status");
 
-	apc_flush(SER_AL);
+	apc_flush(SER_AA);
 
 	ret = apc_write(APC_STATUS);
 
@@ -778,7 +775,7 @@ static int update_status(void)
 		return 0;
 	}
 
-	ret = apc_read(buf, sizeof(buf), SER_AL);
+	ret = apc_read(buf, sizeof(buf), SER_AA);
 
 	if ((ret < 1) || (!strcmp(buf, "NA"))) {
 		dstate_datastale();
@@ -1024,7 +1021,7 @@ static void getbaseinfo(void)
 		return;
 	}
 
-	ret = apc_read(temp, sizeof(temp), SER_TO);
+	ret = apc_read(temp, sizeof(temp), SER_TO|SER_D6);
 
 	if ((ret < 1) || (!strcmp(temp, "NA"))) {
 		/* We have an old dumb UPS - go to specific code for old stuff */
@@ -1076,7 +1073,7 @@ static int do_cal(int start)
 		return STAT_INSTCMD_HANDLED;		/* FUTURE: failure */
 	}
 
-	ret = apc_read(temp, sizeof(temp), SER_AL);
+	ret = apc_read(temp, sizeof(temp), SER_AA);
 
 	/* if we can't check the current calibration status, bail out */
 	if ((ret < 1) || (!strcmp(temp, "NA")))
@@ -1102,7 +1099,7 @@ static int do_cal(int start)
 			return STAT_INSTCMD_HANDLED;	/* FUTURE: failure */
 		}
 
-		ret = apc_read(temp, sizeof(temp), SER_AL);
+		ret = apc_read(temp, sizeof(temp), SER_AA);
 
 		if ((ret < 1) || (!strcmp(temp, "NA")) || (!strcmp(temp, "NO"))) {
 			upslogx(LOG_WARNING, "stop calibration failed: %s",
@@ -1129,7 +1126,7 @@ static int do_cal(int start)
 		return STAT_INSTCMD_HANDLED;	/* FUTURE: failure */
 	}
 
-	ret = apc_read(temp, sizeof(temp), SER_AL);
+	ret = apc_read(temp, sizeof(temp), SER_AA);
 
 	if ((ret < 1) || (!strcmp(temp, "NA")) || (!strcmp(temp, "NO"))) {
 		upslogx(LOG_WARNING, "start calibration failed: %s", temp);
@@ -1212,7 +1209,7 @@ static int sdok(int ign)
 	 * timeout grace in apc_read though
 	 * furthermore, Z will not reply with anything
 	 */
-	ret = apc_read(temp, sizeof(temp), SER_AX);
+	ret = apc_read(temp, sizeof(temp), SER_HA|SER_D1|SER_TO);
 	if (ret < 0) {
 		upslog_with_errno(LOG_ERR, "sdok: apc_read failed");
 		return STAT_INSTCMD_FAILED;
@@ -1261,7 +1258,7 @@ static int sdcmd_CS(const void *foo)
 			return STAT_INSTCMD_FAILED;
 		}
 		/* eat response */
-		ret = apc_read(temp, sizeof(temp), SER_SD);
+		ret = apc_read(temp, sizeof(temp), SER_D1);
 		if (ret < 0) {
 			upslog_with_errno(LOG_ERR, "sdcmd_CS: apc_read failed");
 			return STAT_INSTCMD_FAILED;
@@ -1334,7 +1331,7 @@ static int sdcmd_AT(const void *str)
 	 */
 	apc_write(APC_CMD_GRACEDOWN);
 	/* eat response */
-	apc_read(temp, sizeof(temp), SER_SD);
+	apc_read(temp, sizeof(temp), SER_D1|SER_TO);
 
 	return STAT_INSTCMD_FAILED;
 }
@@ -1470,7 +1467,7 @@ void upsdrv_shutdown(void)
 	ret = apc_write(APC_STATUS);
 
 	if (ret == 1) {
-		ret = apc_read(temp, sizeof(temp), SER_SD);
+		ret = apc_read(temp, sizeof(temp), SER_D1);
 
 		if (ret < 1) {
 			upsdebugx(1, "status read failed ! assuming on battery state");
@@ -1533,7 +1530,7 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 	char	orig[512], temp[512];
 	const char	*ptr;
 
-	apc_flush(SER_AL);
+	apc_flush(SER_AA);
 	ret = apc_write(vt->cmd);
 
 	if (ret != 1) {
@@ -1541,7 +1538,7 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 		return STAT_SET_FAILED;
 	}
 
-	ret = apc_read(orig, sizeof(orig), SER_AL);
+	ret = apc_read(orig, sizeof(orig), SER_AA);
 
 	if ((ret < 1) || (!strcmp(orig, "NA")))
 		return STAT_SET_FAILED;
@@ -1565,7 +1562,7 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 		}
 
 		/* this should return either OK (if rotated) or NO (if not) */
-		ret = apc_read(temp, sizeof(temp), SER_AL);
+		ret = apc_read(temp, sizeof(temp), SER_AA);
 
 		if ((ret < 1) || (!strcmp(temp, "NA")))
 			return STAT_SET_FAILED;
@@ -1584,7 +1581,7 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 			return STAT_SET_FAILED;
 		}
 
-		ret = apc_read(temp, sizeof(temp), SER_AL);
+		ret = apc_read(temp, sizeof(temp), SER_AA);
 
 		if ((ret < 1) || (!strcmp(temp, "NA")))
 			return STAT_SET_FAILED;
@@ -1634,7 +1631,7 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 		return STAT_SET_FAILED;
 	}
 
-	apc_flush(SER_AL);
+	apc_flush(SER_AA);
 	ret = apc_write(vt->cmd);
 
 	if (ret != 1) {
@@ -1642,7 +1639,7 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 		return STAT_SET_FAILED;
 	}
 
-	ret = apc_read(temp, sizeof(temp), SER_AL);
+	ret = apc_read(temp, sizeof(temp), SER_AA);
 
 	if ((ret < 1) || (!strcmp(temp, "NA")))
 		return STAT_SET_FAILED;
@@ -1670,7 +1667,7 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 		return STAT_SET_FAILED;
 	}
 
-	ret = apc_read(temp, sizeof(temp), SER_AL);
+	ret = apc_read(temp, sizeof(temp), SER_AA);
 
 	if (ret < 1) {
 		upslogx(LOG_ERR, "setvar_string: short final read");
@@ -1745,7 +1742,7 @@ static int do_cmd(const apc_cmdtab_t *ct)
 	char temp[512];
 	const char *strerr;
 
-	apc_flush(SER_AL);
+	apc_flush(SER_AA);
 
 	if (ct->flags & APC_REPEAT) {
 		ret = apc_write_rep(ct->cmd);
@@ -1760,7 +1757,7 @@ static int do_cmd(const apc_cmdtab_t *ct)
 		return STAT_INSTCMD_FAILED;
 	}
 
-	ret = apc_read(temp, sizeof(temp), SER_AL);
+	ret = apc_read(temp, sizeof(temp), SER_AA);
 
 	if (ret < 1)
 		return STAT_INSTCMD_FAILED;
@@ -2029,13 +2026,13 @@ static int query_ups(const char *var, int first)
 		/* found, [try to] get it */
 
 		/* empty the input buffer (while allowing the alert handler to run) */
-		apc_flush(SER_AL);
+		apc_flush(SER_AA);
 		ret = apc_write(vt->cmd);
 		if (ret != 1) {
 			upslog_with_errno(LOG_ERR, "query_ups: apc_write failed");
 			break;
 		}
-		ret = apc_read(temp, sizeof(temp), SER_AL | (first ? SER_TO : 0));
+		ret = apc_read(temp, sizeof(temp), SER_AA | (first ? SER_TO : 0));
 
 		if (ret < 1 || !strcmp(temp, "NA")) {
 			if (first) {
