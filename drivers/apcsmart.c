@@ -503,18 +503,18 @@ static int apc_read(char *buf, size_t buflen, int flags)
 	return count;
 }
 
+/* all flags other than SER_AA are ignored */
 static void apc_flush(int flags)
 {
 	char temp[APC_LBUF];
 
 	if (flags & SER_AA) {
-		/* tcflush(upsfd, TCOFLUSH); */
-		apc_read(temp, sizeof(temp), SER_D0|SER_TO|flags);
+		tcflush(upsfd, TCOFLUSH);
+		while(apc_read(temp, sizeof(temp), SER_D0|SER_TO|SER_AA));
 	} else {
-		tcflush(upsfd, TCIFLUSH);
-		/* tcflush(upsfd, TCIOFLUSH); */
-		/* apc_read(temp, sizeof(temp), SER_D0|SER_TO); */
-		/* while(ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, IGN_CHARS, 0, 0) > 0); */
+		tcflush(upsfd, TCIOFLUSH);
+		/* tcflush(upsfd, TCIFLUSH); */
+		/* while(apc_read(temp, sizeof(temp), SER_D0|SER_TO)); */
 	}
 }
 
