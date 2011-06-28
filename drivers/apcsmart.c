@@ -1,40 +1,34 @@
 /*
-   apcsmart.c - driver for APC smart protocol units (originally "newapc")
-
-   Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
-             (C) 2000  Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk>
-             (C) 2011  Michal Soltys <soltys@ziu.info>
-
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-*/
+ * apcsmart.c - driver for APC smart protocol units (originally "newapc")
+ *
+ * Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
+ *           (C) 2000  Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk>
+ *           (C) 2011  Michal Soltys <soltys@ziu.info>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ */
 
 #include <sys/file.h>
+#include <ctype.h>
+
 #include "main.h"
 #include "serial.h"
+#include "timehead.h"
+
 #include "apcsmart.h"
-
-#define DRIVER_NAME	"APC Smart protocol driver"
-#define DRIVER_VERSION	"2.1"
-
-static upsdrv_info_t table_info = {
-	"APC command table",
-	APC_TABLE_VERSION,
-	NULL,
-	0,
-	{ NULL }
-};
+#include "apcsmart_tabs.h"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -44,12 +38,10 @@ upsdrv_info_t upsdrv_info = {
 	"Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk>\n"
 	"Michal Soltys <soltys@ziu.info>",
 	DRV_STABLE,
-	{ &table_info, NULL }
+	{ &apc_tab_info, NULL }
 };
 
-#define ALT_CABLE_1 "940-0095B"
-
-	static	int	ups_status = 0, quirk_capability_overflow = 0;
+static int ups_status = 0;
 
 static apc_vartab_t *vartab_lookup_char(char cmdchar)
 {
@@ -627,7 +619,7 @@ static int query_ups(const char *var)
 	return 0;
 }
 
-static void do_capabilities(void)
+static void do_capabilities(int qco)
 {
 	const	char	*ptr, *entptr;
 	char	upsloc, temp[512], cmd, loc, etmp[32], *endtemp;
@@ -700,7 +692,7 @@ static void do_capabilities(void)
 		if (ptr >= endtemp) {
 
 			/* if we expected this, just ignore it */
-			if (quirk_capability_overflow)
+			if (qco)
 				return;
 
 			fatalx(EXIT_FAILURE, 
@@ -906,7 +898,7 @@ static void protocol_verify(unsigned char cmd)
 }
 
 /* some hardware is a special case - hotwire the list of cmdchars */
-static int firmware_table_lookup(void)
+static int firmware_table_lookup(int *qco)
 {
 	int	ret;
 	unsigned int	i, j;
@@ -947,31 +939,31 @@ static int firmware_table_lookup(void)
 	upsdebugx(2, "Firmware: [%s]", buf);
 
 	/* this will be reworked if we get a lot of these things */
-	if (!strcmp(buf, "451.2.I")) {
-		quirk_capability_overflow = 1;
-		return 0;
-	}
+	if (!strcmp(buf, "451.2.I"))
+		/* quirk_capability_overflow */
+		*qco = 1;
 
-	for (i = 0; compat_tab[i].firmware != NULL; i++) {
-		if (!strcmp(compat_tab[i].firmware, buf)) {
+	if (!*qco)
+		for (i = 0; apc_compattab[i].firmware != NULL; i++) {
+			if (!strcmp(apc_compattab[i].firmware, buf)) {
 
-			upsdebugx(2, "Matched - cmdchars: %s",
-				compat_tab[i].cmdchars);
+				upsdebugx(2, "Matched - cmdchars: %s",
+						apc_compattab[i].cmdchars);
 
-			if (strspn(compat_tab[i].firmware, "05")) {
-				dstate_setinfo("ups.model", "Matrix-UPS");
-			} else {
-				dstate_setinfo("ups.model", "Smart-UPS");
+				if (strspn(apc_compattab[i].firmware, "05")) {
+					dstate_setinfo("ups.model", "Matrix-UPS");
+				} else {
+					dstate_setinfo("ups.model", "Smart-UPS");
+				}
+
+				/* matched - run the cmdchars from the table */
+				for (j = 0; j < strlen(apc_compattab[i].cmdchars); j++)
+					protocol_verify(apc_compattab[i].cmdchars[j]);
+				deprecate_vars();
+
+				return 1;	/* matched */
 			}
-
-			/* matched - run the cmdchars from the table */
-			for (j = 0; j < strlen(compat_tab[i].cmdchars); j++)
-				protocol_verify(compat_tab[i].cmdchars[j]);
-			deprecate_vars();
-
-			return 1;	/* matched */
 		}
-	}
 
 	upsdebugx(2, "Not found in table - trying normal method");
 	return 0;			
@@ -980,14 +972,14 @@ static int firmware_table_lookup(void)
 static void getbaseinfo(void)
 {
 	unsigned int	i;
-	int	ret = 0;
+	int	ret = 0, qco = 0;
 	char 	*alrts, *cmds, temp[512];
 
 	/*
 	 *  try firmware lookup first; we could start with 'a', but older models
 	 *  sometimes return other things than a command set
 	 */
-	if (firmware_table_lookup() == 1)
+	if (firmware_table_lookup(&qco) == 1)
 		return;
 
 	upsdebugx(1, "APC - Attempting to find command set");
@@ -1037,7 +1029,7 @@ static void getbaseinfo(void)
 
 	/* if capabilities are supported, add them here */
 	if (strchr(cmds, APC_CAPS))
-		do_capabilities();
+		do_capabilities(qco);
 
 	upsdebugx(1, "APC - UPS capabilities determined");
 }
@@ -1396,7 +1388,7 @@ static void upsdrv_shutdown_advanced(int status)
 				n = 2;
 		}
 
-		if (sdlist[strval[i] - 48](n) == STAT_INSTCMD_HANDLED)
+		if (sdlist[strval[i] - '0'](n) == STAT_INSTCMD_HANDLED)
 			break;	/* finish if command succeeded */
 	}
 }
@@ -1605,7 +1597,6 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 
 	ret = apc_write_long(ptr);
 
-	/* TEST IT */
 	if ((size_t)ret != strlen(ptr)) {
 		upslog_with_errno(LOG_ERR, "setvar_string: apc_write_long failed");
 		return STAT_SET_FAILED;
