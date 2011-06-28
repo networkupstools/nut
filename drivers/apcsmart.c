@@ -1299,7 +1299,7 @@ static int sdcmd_AT(const void *str)
 #if 0
 	mmax = cnt == 2 ? 99 : 999;
 
-	if ((strval = getval("wugrace"))) {
+	if ((strval = getval("awd"))) {
 		errno = 0;
 		n = strtol(strval, NULL, 10);
 		if (errno || n < 0 || n > mmax)
@@ -1386,7 +1386,7 @@ static void upsdrv_shutdown_simple(void)
 	switch (sdtype) {
 
 	case 5:		/* hard hibernate */
-		sdcmd_AT(getval("wugrace"));
+		sdcmd_AT(getval("awd"));
 		break;
 	case 4:		/* special hack for CS 350 and similar models */
 		sdcmd_CS(0);
@@ -1412,7 +1412,7 @@ static void upsdrv_shutdown_simple(void)
 		/* S works only when OB */
 		if ((ups_status & APC_STAT_OB) && sdcmd_S(0) == STAT_INSTCMD_HANDLED)
 			break;
-		sdcmd_AT(getval("wugrace"));
+		sdcmd_AT(getval("awd"));
 		break;
 
 	default:
@@ -1420,7 +1420,7 @@ static void upsdrv_shutdown_simple(void)
 		 * Send @nnn or S, depending on OB / OL status
 		 */
 		if (ups_status & APC_STAT_OL)		/* on line */
-			sdcmd_AT(getval("wugrace"));
+			sdcmd_AT(getval("awd"));
 		else
 			sdcmd_S(0);
 	}
@@ -1442,7 +1442,7 @@ static void upsdrv_shutdown_advanced(void)
 	for (i = 0; i < len; i++) {
 		switch (val[i] - '0') {
 			case SDIDX_AT:
-				arg = getval("wugrace");
+				arg = getval("awd");
 				break;
 			default:
 				arg = NULL;
@@ -1878,7 +1878,7 @@ static void setuphandlers(void)
 void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE, "cable", "Specify alternate cable (940-0095B)");
-	addvar(VAR_VALUE, "wugrace", "Hard hibernate's wakeup grace");
+	addvar(VAR_VALUE, "awd", "Hard hibernate's additional wakeup delay");
 	addvar(VAR_VALUE, "sdtype", "Specify simple shutdown method (0-5)");
 	addvar(VAR_VALUE, "advorder", "Enable advanced shutdown control");
 }
@@ -1893,8 +1893,8 @@ void upsdrv_initups(void)
 	if (!apc_ser_set())
 		fatalx(EXIT_FAILURE, "couldn't set options on port (%s)", device_path);
 
-	if (validate_ATn_arg((val = getval("wugrace"))) < 0)
-		fatalx(EXIT_FAILURE, "Invalid value (%s) for option 'wugrace'.", val);
+	if (validate_ATn_arg((val = getval("awd"))) < 0)
+		fatalx(EXIT_FAILURE, "Invalid value (%s) for option 'awd'.", val);
 
 	/* sanitize advorder */
 	if (!(val = getval("advorder")) || !strcasecmp(val, "no"))
