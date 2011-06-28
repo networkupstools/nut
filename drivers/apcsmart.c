@@ -3,6 +3,7 @@
 
    Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
              (C) 2000  Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk>
+             (C) 2011  Michal Soltys <soltys@ziu.info>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -774,9 +775,8 @@ static int smartmode(void)
 		ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, 
 			IGNCHARS, SER_WAIT_SEC, SER_WAIT_USEC);
 
-		if (ret > 0)
-			if (!strcmp(temp, "SM"))
-				return 1;	/* success */
+		if (ret > 0 && !strcmp(temp, "SM"))
+			return 1;	/* success */
 
 		sleep(1);	/* wait before trying again */
 
@@ -1479,7 +1479,7 @@ void upsdrv_updateinfo(void)
 
 	/* try to wake up a dead ups once in awhile */
 	if ((dstate_is_stale()) && (!smartmode())) {
-		ser_comm_fail("Communications with UPS lost - check cabling");
+		upslogx(LOG_ERR, "Communications with UPS lost - check cabling");
 
 		/* reset this so a full update runs when the UPS returns */
 		last_full = 0;

@@ -2,6 +2,7 @@
 
    Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
              (C) 2000  Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk>
+             (C) 2011  Michal Soltys <soltys@ziu.info>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -79,36 +80,36 @@
 /* Driver command table flag values */
 
 #define APC_POLL	0x0001	/* Poll this variable regularly		*/
-#define APC_PRESENT	0x0004	/* Capability seen on this UPS		*/
+#define APC_PRESENT	0x0002	/* Capability seen on this UPS		*/
 
 #define APC_RW		0x0010	/* read-write variable			*/
 #define APC_ENUM	0x0020	/* enumerated type			*/
 #define APC_STRING	0x0040	/* string				*/
 
-#define APC_NASTY	0x0100	/* Nasty command - take care		*/
+#define APC_NASTY	0x0100	/* Nasty command - must be reconfirmed	*/
 #define APC_REPEAT	0x0200	/* Command needs sending twice		*/
 
-#define APC_FORMATMASK	0xFF0000 /* Mask for apc data formats */
+#define APC_FORMATMASK	0xFF0000 /* Mask for apc data formats		*/
 
-#define APC_F_PERCENT	0x020000 /* Data in a percent format */
-#define APC_F_VOLT	0x030000 /* Data in a voltage format */
-#define APC_F_AMP	0x040000 /* Data in a current/amp format */
-#define APC_F_CELSIUS	0x050000 /* Data in a temp/C format */
-#define APC_F_HEX	0x060000 /* Data in a hex number format */
-#define APC_F_DEC	0x070000 /* Data in a decimal format */
-#define APC_F_SECONDS	0x100000 /* Time in seconds */
-#define APC_F_MINUTES	0x110000 /* Time in minutes */
-#define APC_F_HOURS	0x120000 /* Time in hours */
-#define APC_F_REASON	0x130000 /* Reason of transfer */
-#define APC_F_LEAVE	0	/* Just pass this through */
+#define APC_F_PERCENT	0x020000 /* Data in a percent format		*/
+#define APC_F_VOLT	0x030000 /* Data in a voltage format		*/
+#define APC_F_AMP	0x040000 /* Data in a current/amp format	*/
+#define APC_F_CELSIUS	0x050000 /* Data in a temp/C format		*/
+#define APC_F_HEX	0x060000 /* Data in a hex number format		*/
+#define APC_F_DEC	0x070000 /* Data in a decimal format		*/
+#define APC_F_SECONDS	0x100000 /* Time in seconds			*/
+#define APC_F_MINUTES	0x110000 /* Time in minutes			*/
+#define APC_F_HOURS	0x120000 /* Time in hours			*/
+#define APC_F_REASON	0x130000 /* Reason of transfer			*/
+#define APC_F_LEAVE	0x000000 /* Just pass this through		*/
 
 typedef struct {
-	const	char	*name;		/* the variable name */
-	unsigned int	flags;	 	/* various flags		*/
-	char		cmd;		/* command character */
+	const char	*name;		/* the variable name	*/
+	unsigned int	flags;	 	/* various flags	*/
+	char		cmd;		/* command character	*/
 } apc_vartab_t;
 
-apc_vartab_t	apc_vartab[] = {
+apc_vartab_t apc_vartab[] = {
 
 	{ "ups.firmware.old",  	0,			'V' },
 	{ "ups.firmware",  	0,			'b' },
@@ -195,7 +196,7 @@ apc_vartab_t	apc_vartab[] = {
 
 	 */
 
-	{NULL,		0,				0},
+	{NULL, 0, 0}
 };
 
 /* ------ instant commands ------ */
@@ -287,5 +288,5 @@ struct {
 	{  "D5",	"789ABCEFGKLMNOPQRSUVWXYZ", 0 },
 	{  "D4",	"789ABCEFGKLMNOPQRSUVWXYZ", 0 },
 
-	{ NULL,		NULL,			0 },
+	{ NULL, NULL, 0 }
 };
