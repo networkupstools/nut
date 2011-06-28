@@ -24,7 +24,7 @@
 #include "serial.h"
 #include "timehead.h"
 
-#define APC_TABLE_VERSION	"version 2.2"
+#define APC_TABLE_VERSION	"version 2.3"
 
 /*
  * alerts and other stuff for quick reference:
@@ -112,13 +112,18 @@
 #define APC_STAT_LB	64	/* low battery */
 #define APC_STAT_RB	128	/* replace battery */
 
-/* serial protocol: special commands - initialization and such */
+/*
+ * serial protocol: special commands - initialization and such
+ * these are not exposed as instant commands
+ */
 #define APC_STATUS	'Q'
 #define APC_GOSMART	'Y'
 #define APC_GODUMB	'R'
 #define APC_CMDSET	'a'
-#define APC_CAPABILITY	26	/* ^Z */
+#define APC_CAPS	'\032'	/* ^Z */
 #define APC_NEXTVAL	'-'
+#define APC_FW_OLD	'V'
+#define APC_FW_NEW	'b'
 
 /* --------------- */
 
@@ -136,8 +141,7 @@
 #define APC_NASTY	0x0100	/* Nasty command - must be reconfirmed	*/
 #define APC_REPEAT	0x0200	/* Command needs sending twice		*/
 
-#define APC_FORMATMASK	0xFF0000 /* Mask for apc data formats		*/
-
+#define APC_F_MASK	0xFF0000 /* Mask for apc data formats		*/
 #define APC_F_PERCENT	0x020000 /* Data in a percent format		*/
 #define APC_F_VOLT	0x030000 /* Data in a voltage format		*/
 #define APC_F_AMP	0x040000 /* Data in a current/amp format	*/
@@ -152,82 +156,60 @@
 
 typedef struct {
 	const char	*name;		/* the variable name	*/
+	char		cmd;		/* variable character	*/
 	unsigned int	flags;	 	/* various flags	*/
-	char		cmd;		/* command character	*/
 } apc_vartab_t;
 
 /*
- * APC_MULTI variables *must* be list in order of preference
+ * APC_MULTI variables *must* be listed in order of preference
  */
 apc_vartab_t apc_vartab[] = {
 
-	{ "ups.temperature", 	APC_POLL|APC_F_CELSIUS, 'C' },
-	{ "ups.load",  		APC_POLL|APC_F_PERCENT, 'P' },
+	{ "ups.temperature",		'C',	APC_POLL|APC_F_CELSIUS },
+	{ "ups.load",			'P',	APC_POLL|APC_F_PERCENT },
+	{ "ups.test.interval",		'E',	APC_F_HOURS },
+	{ "ups.test.result",		'X',	APC_POLL },
+	{ "ups.delay.start",		'r',	APC_F_SECONDS },
+	{ "ups.delay.shutdown",		'p',	APC_F_SECONDS },
+	{ "ups.id",			'c',	APC_STRING },
+	{ "ups.contacts",		'i',	APC_POLL|APC_F_HEX },
+	{ "ups.display.language",	'\014',	0 },
+	{ "input.voltage",		'L',	APC_POLL|APC_F_VOLT },
+	{ "input.frequency",		'F',	APC_POLL|APC_F_DEC },
+	{ "input.sensitivity",		's',	0 },
+	{ "input.quality",		'9',	APC_POLL|APC_F_HEX },
+	{ "input.transfer.low",		'l',	APC_F_VOLT },
+	{ "input.transfer.high",	'u',	APC_F_VOLT },
+	{ "input.transfer.reason",	'G',	APC_POLL|APC_F_REASON },
+	{ "input.voltage.maximum",	'M',	APC_POLL|APC_F_VOLT },
+	{ "input.voltage.minimum",	'N',	APC_POLL|APC_F_VOLT },
+	{ "output.current",		'/',	APC_POLL|APC_F_AMP },
+	{ "output.voltage",		'O',	APC_POLL|APC_F_VOLT },
+	{ "output.voltage.nominal",	'o',	APC_F_VOLT },
+	{ "ambient.humidity",		'h',	APC_POLL|APC_F_PERCENT },
+	{ "ambient.humidity.high",	'{',	APC_F_PERCENT },
+	{ "ambient.humidity.low",	'}',	APC_F_PERCENT },
+	{ "ambient.temperature",	't',	APC_POLL|APC_F_CELSIUS },
+	{ "ambient.temperature.high",	'[',	APC_F_CELSIUS },
+	{ "ambient.temperature.low",	']',	APC_F_CELSIUS },
+	{ "battery.date",		'x',	APC_STRING },
+	{ "battery.charge",		'f',	APC_POLL|APC_F_PERCENT },
+	{ "battery.charge.restart",	'e',	APC_F_PERCENT },
+	{ "battery.voltage",		'B',	APC_POLL|APC_F_VOLT },
+	{ "battery.voltage.nominal",	'g',	0 },
+	{ "battery.runtime",		'j',	APC_POLL|APC_F_MINUTES },
+	{ "battery.runtime.low",	'q',	APC_F_MINUTES },
+	{ "battery.packs",		'>',	APC_F_DEC },
+	{ "battery.packs.bad",		'<',	APC_F_DEC },
+	{ "battery.alarm.threshold",	'k',	0 },
+	{ "ups.serial",			'n',	0 },
+	{ "ups.mfr.date",		'm',	0 },
+	{ "ups.model",			'\001',	0 },
+	{ "ups.firmware.aux",		'v',	0 },
+	{ "ups.firmware",		'b',	APC_MULTI },
+	{ "ups.firmware",		'V',	APC_MULTI },
 
-	{ "ups.test.interval",  APC_F_HOURS,		'E' },
-	{ "ups.test.result", 	APC_POLL,     		'X' },
-
-	{ "ups.delay.start", 	APC_F_SECONDS,		'r' },
-	{ "ups.delay.shutdown",	APC_F_SECONDS,		'p' },
-
-	{ "ups.id",  		APC_STRING,		'c' },
-
-	{ "ups.contacts", 	APC_POLL|APC_F_HEX,	'i' },
-	{ "ups.display.language",
-			 	0,			0x0C },
-
-	{ "input.voltage", 	APC_POLL|APC_F_VOLT,	'L' },
-	{ "input.frequency", 	APC_POLL|APC_F_DEC,	'F' },
-	{ "input.sensitivity",	0,			's' },
-	{ "input.quality",  	APC_POLL|APC_F_HEX,	'9' },
-
-	{ "input.transfer.low",	APC_F_VOLT,		'l' },
-	{ "input.transfer.high",
-				APC_F_VOLT,		'u' },
-	{ "input.transfer.reason", 
-				APC_POLL|APC_F_REASON,	'G' },
-
-	{ "input.voltage.maximum",
-				APC_POLL|APC_F_VOLT,	'M' },
-	{ "input.voltage.minimum",
-				APC_POLL|APC_F_VOLT,	'N' },
-
-	{ "output.current", 	APC_POLL|APC_F_AMP,	'/' },
-	{ "output.voltage", 	APC_POLL|APC_F_VOLT,	'O' },
-	{ "output.voltage.nominal",  
-				APC_F_VOLT,		'o' },
-
-	{ "ambient.humidity",  	APC_POLL|APC_F_PERCENT,	'h' },
-	{ "ambient.humidity.high", 
-				APC_F_PERCENT,		'{' },
-	{ "ambient.humidity.low", 
-				APC_F_PERCENT,		'}' },
-
-	{ "ambient.temperature", 	
-				APC_POLL|APC_F_CELSIUS, 't' },
-	{ "ambient.temperature.high",	
-				APC_F_CELSIUS,		'[' },
-	{ "ambient.temperature.low", 	
-				APC_F_CELSIUS,		']' },
-
-	{ "battery.date",	APC_STRING,		'x' },
-
-	{ "battery.charge",  	APC_POLL|APC_F_PERCENT,	'f' },
-	{ "battery.charge.restart",  
-				APC_F_PERCENT,		'e' },
-
-	{ "battery.voltage", 	APC_POLL|APC_F_VOLT,	'B' },
-	{ "battery.voltage.nominal", 
-				0,			'g' },
-
-	{ "battery.runtime", 	APC_POLL|APC_F_MINUTES,	'j' },
-	{ "battery.runtime.low",
-			 	APC_F_MINUTES,		'q' },
-
-	{ "battery.packs", 	APC_F_DEC,		'>' },
-	{ "battery.packs.bad", 	APC_F_DEC,		'<' },
-	{ "battery.alarm.threshold", 
-				0,			'k' },
+	{ NULL, 0, 0 }
 	/* todo:
 
 	   I = alarm enable (hex field) - split into alarm.n.enable
@@ -237,69 +219,52 @@ apc_vartab_t apc_vartab[] = {
 	0x5C = load power (APC_POLL|APC_F_PERCENT)
 
 	 */
-	{ "ups.serial",		0,			'n' },
-	{ "ups.mfr.date", 	0,			'm' },
-
-	{ "ups.model",		0,			0x01 },
-	{ "ups.firmware.aux",	0,			'v' },
-	{ "ups.firmware",  	APC_MULTI,		'b' },
-	{ "ups.firmware",  	APC_MULTI,		'V' },
-
-	{NULL, 0, 0}
 };
 
 /* ------ instant commands ------ */
 
+#define APC_CMD_OFF		'Z'
+#define APC_CMD_ON		'\016'		/* ^N */
 #define APC_CMD_FPTEST		'A'
-#define APC_CMD_CALTOGGLE	'D'
-#define APC_CMD_SHUTDOWN	'K'
-#define APC_CMD_SOFTDOWN	'S'
-#define APC_CMD_GRACEDOWN	'@'
 #define APC_CMD_SIMPWF		'U'
 #define APC_CMD_BTESTTOGGLE	'W'
-#define APC_CMD_OFF		'Z'
-
-#define APC_CMD_ON		0x0E		/* ^N */
+#define APC_CMD_GRACEDOWN	'@'
+#define APC_CMD_SOFTDOWN	'S'
+#define APC_CMD_SHUTDOWN	'K'
+#define APC_CMD_CALTOGGLE	'D'
 #define APC_CMD_BYPTOGGLE	'^'
 
 typedef struct {
-	const	char	*name;
-	int	flags;
-	char	cmd;
+	const char	*name;
+	char		cmd;
+	int		flags;
 } apc_cmdtab_t;
 
 apc_cmdtab_t	apc_cmdtab[] =
 {
-	{ "load.off",		APC_NASTY|APC_REPEAT,	APC_CMD_OFF       },
-	{ "load.on",		APC_REPEAT,		APC_CMD_ON        },
+	{ "load.off",			APC_CMD_OFF,		APC_NASTY|APC_REPEAT },
+	{ "load.on",			APC_CMD_ON,		APC_REPEAT },
+	{ "test.panel.start",		APC_CMD_FPTEST,		0 },
+	{ "test.failure.start",		APC_CMD_SIMPWF,		0 },
+	{ "test.battery.start",		APC_CMD_BTESTTOGGLE,	0 },
+	{ "test.battery.stop",		APC_CMD_BTESTTOGGLE,	0 },
+	{ "shutdown.return.grace",	APC_CMD_GRACEDOWN,	APC_NASTY },
+	{ "shutdown.return",		APC_CMD_SOFTDOWN,	APC_NASTY },
+	{ "shutdown.stayoff",		APC_CMD_SHUTDOWN,	APC_NASTY|APC_REPEAT },
+	{ "calibrate.start",		APC_CMD_CALTOGGLE,	0 },
+	{ "calibrate.stop",		APC_CMD_CALTOGGLE,	0 },
+	{ "bypass.start",		APC_CMD_BYPTOGGLE,	0 },
+	{ "bypass.stop",		APC_CMD_BYPTOGGLE,	0 },
 
-	{ "test.panel.start",	0,			APC_CMD_FPTEST	  },
-
-	{ "test.failure.start",	0,			APC_CMD_SIMPWF    },
-
-	{ "test.battery.start",	0,			APC_CMD_BTESTTOGGLE },
-	{ "test.battery.stop",	0,			APC_CMD_BTESTTOGGLE },
-
-	{ "shutdown.return.grace",
-				APC_NASTY,		APC_CMD_GRACEDOWN  },
-	{ "shutdown.return",	APC_NASTY,		APC_CMD_SOFTDOWN  },
-	{ "shutdown.stayoff",	APC_NASTY|APC_REPEAT,	APC_CMD_SHUTDOWN  },
-
-	{ "calibrate.start",	0,			APC_CMD_CALTOGGLE },
-	{ "calibrate.stop",	0,			APC_CMD_CALTOGGLE },
-
-	{ "bypass.start",	0,			APC_CMD_BYPTOGGLE },
-	{ "bypass.stop",	0,			APC_CMD_BYPTOGGLE },
-
-	{ NULL, 0, 0					}
+	{ NULL, 0, 0 }
 };
 
 /* compatibility with hardware that doesn't do APC_CMDSET ('a') */
 
 struct {
-	const	char	*firmware;
-	const	char	*cmdchars;
-	int	flags;
+	const char	*firmware;
+	const char	*cmdchars;
+	int		flags;
 } compat_tab[] = {
 	/* APC Matrix */
 	{ "0XI",	"@789ABCDEFGKLMNOPQRSTUVWXYZcefgjklmnopqrsuwxz/<>\\^\014\026", 0 },

@@ -90,7 +90,7 @@ static const char *convert_data(apc_vartab_t *cmd_entry, const char *upsval)
 		return temp;
 	}
 
-	switch(cmd_entry->flags & APC_FORMATMASK) {
+	switch(cmd_entry->flags & APC_F_MASK) {
 		case APC_F_PERCENT:
 		case APC_F_VOLT:
 		case APC_F_AMP:
@@ -132,7 +132,7 @@ static const char *convert_data(apc_vartab_t *cmd_entry, const char *upsval)
 			}
 	}
 
-	upslogx(LOG_NOTICE, "Unable to handle conversion of %s", cmd_entry->name);
+	upslogx(LOG_NOTICE, "Unable to handle conversion of [%s]", cmd_entry->name);
 	strcpy(temp, upsval);
 	return temp;
 }
@@ -211,22 +211,30 @@ static void alert_handler(char ch)
 	ups_status_set();
 }
 
-static void upsflush(int flags)
+static void apc_flush(int flags)
 {
 	char temp[512];
 
 	if (flags & SER_AL) {
+		tcflush(upsfd, TCOFLUSH);
 		while(ser_get_line_alert(upsfd, temp, sizeof(temp), ENDCHAR, IGN_AACHARS, ALERT_CHARS, alert_handler, 0, 0) > 0);
 	} else {
-		while(ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, IGN_CHARS, 0, 0) > 0);
+		tcflush(upsfd, TCIOFLUSH);
+		/* while(ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, IGN_CHARS, 0, 0) > 0); */
 	}
+}
+
+static int apc_write(unsigned char code)
+{
+	errno = 0;
+	return ser_send_char(upsfd, code);
 }
 
 /*
  * we need a tiny bit different processing due to '*' and canonical mode; the
  * function is subtly different from generic ser_get_line_alert()
  */
-static int upsread(char *buf, size_t buflen, int flags)
+static int apc_read(char *buf, size_t buflen, int flags)
 {
 	const char *iset = IGN_CHARS, *aset = "";
 	size_t	count = 0;
@@ -262,6 +270,7 @@ static int upsread(char *buf, size_t buflen, int flags)
 	memset(buf, '\0', buflen);
 
 	while (count < buflen - 1) {
+		errno = 0;
 		ret = select_read(upsfd, temp, sizeof(temp), sec, usec);
 
 		/* error or no timeout allowed */
@@ -291,6 +300,7 @@ static int upsread(char *buf, size_t buflen, int flags)
 				 * something else besides '*'; just in case eat
 				 * it - it's not real EOL after all
 				 */
+				errno = 0;
 				ret = select_read(upsfd, temp, sizeof(temp), 0, 0);
 				if (ret < 0) {
 					ser_comm_fail("%s", strerror(errno));
@@ -347,31 +357,31 @@ static void remove_var(const char *cal, apc_vartab_t *vt)
 static int poll_data(apc_vartab_t *vt)
 {
 	int	ret;
-	char	tmp[SMALLBUF];
+	char	temp[512];
 
 	if ((vt->flags & APC_PRESENT) == 0)
 		return 1;
 
 	upsdebugx(4, "poll_data: %s", vt->name);
 
-	ret = ser_send_char(upsfd, vt->cmd);
+	ret = apc_write(vt->cmd);
 
 	if (ret != 1) {
-		upslogx(LOG_ERR, "poll_data: ser_send_char failed");
+		upslogx(LOG_ERR, "poll_data: apc_write failed");
 		dstate_datastale();
 		return 0;
 	}
 
-	if (upsread(tmp, sizeof(tmp), SER_AL) < 1) {
+	if (apc_read(temp, sizeof(temp), SER_AL) < 1) {
 		dstate_datastale();
 		return 0;
 	}
 
 	/* automagically no longer supported by the hardware somehow */
-	if (!strcmp(tmp, "NA"))
+	if (!strcmp(temp, "NA"))
 		remove_var("poll_data", vt);
 
-	dstate_setinfo(vt->name, "%s", convert_data(vt, tmp));
+	dstate_setinfo(vt->name, "%s", convert_data(vt, temp));
 	dstate_dataok();
 
 	return 1;
@@ -381,10 +391,12 @@ static int poll_data(apc_vartab_t *vt)
  * blindly check if variable is actually supported, update vartab accordingly,
  * also get the value; could use some simplifying ...
  */
+/*
+ * simplify - first is implied now */
 static int query_ups(const char *var, int first)
 {
 	int ret, i, j;
-	char temp[256];
+	char temp[512];
 	const char *ptr;
 	apc_vartab_t *vt, *vtn;
 
@@ -406,13 +418,13 @@ static int query_ups(const char *var, int first)
 		/* found, [try to] get it */
 
 		/* empty the input buffer (while allowing the alert handler to run) */
-		upsflush(SER_AL);
-		ret = ser_send_char(upsfd, vt->cmd);
+		apc_flush(SER_AL);
+		ret = apc_write(vt->cmd);
 		if (ret != 1) {
-			upslog_with_errno(LOG_ERR, "query_ups: ser_send_char failed");
+			upslog_with_errno(LOG_ERR, "query_ups: apc_write failed");
 			break;
 		}
-		ret = upsread(temp, sizeof(temp), SER_AL | (first ? SER_TO : 0));
+		ret = apc_read(temp, sizeof(temp), SER_AL | (first ? SER_TO : 0));
 
 		if (ret < 1 || !strcmp(temp, "NA")) {
 			if (first) {
@@ -452,7 +464,7 @@ static int query_ups(const char *var, int first)
 static void do_capabilities(void)
 {
 	const	char	*ptr, *entptr;
-	char	upsloc, temp[512], cmd, loc, etmp[16], *endtemp;
+	char	upsloc, temp[512], cmd, loc, etmp[32], *endtemp;
 	int	nument, entlen, i, matrix, ret, valid;
 	apc_vartab_t *vt;
 
@@ -467,18 +479,18 @@ static void do_capabilities(void)
 		upsloc = 0;
 
 	/* get capability string */
-	ret = ser_send_char(upsfd, APC_CAPABILITY);		/* ^Z */
+	ret = apc_write(APC_CAPS);
 
 	if (ret != 1) {
-		upslog_with_errno(LOG_ERR, "do_capabilities: ser_send_char failed");
+		upslog_with_errno(LOG_ERR, "do_capabilities: apc_write failed");
 		return;
 	}
 
 	/*
-	 * note SER_CC - upsread() needs larger timeout grace and different
+	 * note SER_CC - apc_read() needs larger timeout grace and different
 	 * ignore set due to certain characters like '#' being received
 	 */
-	ret = upsread(temp, sizeof(temp), SER_CC);
+	ret = apc_read(temp, sizeof(temp), SER_CC);
 
 	if ((ret < 1) || (!strcmp(temp, "NA"))) {
 
@@ -486,7 +498,7 @@ static void do_capabilities(void)
 		/* This should never happen since we only call
 		   this if the REQ_CAPABILITIES command is supported
 		*/
-		upslogx(LOG_ERR, "ERROR: APC cannot do capabilities but said it could!");
+		upslogx(LOG_ERR, "ERROR: APC cannot do capabilities but said it could !");
 		return;
 	}
 
@@ -568,21 +580,21 @@ static void do_capabilities(void)
 static int update_status(void)
 {
 	int	ret;
-	char	buf[SMALLBUF];
+	char	buf[512];
 
 	upsdebugx(4, "update_status");
 
-	upsflush(SER_AL);
+	apc_flush(SER_AL);
 
-	ret = ser_send_char(upsfd, APC_STATUS);
+	ret = apc_write(APC_STATUS);
 
 	if (ret != 1) {
-		upslog_with_errno(LOG_ERR, "update_status: ser_send_char failed");
+		upslog_with_errno(LOG_ERR, "update_status: apc_write failed");
 		dstate_datastale();
 		return 0;
 	}
 
-	ret = upsread(buf, sizeof(buf), SER_AL);
+	ret = apc_read(buf, sizeof(buf), SER_AL);
 
 	if ((ret < 1) || (!strcmp(buf, "NA"))) {
 		dstate_datastale();
@@ -730,18 +742,18 @@ static int firmware_table_lookup(void)
 {
 	int	ret;
 	unsigned int	i, j;
-	char	buf[SMALLBUF];
+	char	buf[512];
 
 	upsdebugx(1, "Attempting firmware lookup using command 'V'");
 
-	ret = ser_send_char(upsfd, 'V');
+	ret = apc_write(APC_FW_OLD);
 
 	if (ret != 1) {
-		upslog_with_errno(LOG_ERR, "firmware_table_lookup: ser_send_char failed");
+		upslog_with_errno(LOG_ERR, "firmware_table_lookup: apc_write failed");
 		return 0;
 	}
 
-	ret = upsread(buf, sizeof(buf), SER_TO);
+	ret = apc_read(buf, sizeof(buf), SER_TO);
 
         /*
 	 * Some UPSes support both 'V' and 'b'. As 'b' doesn't always return
@@ -749,17 +761,17 @@ static int firmware_table_lookup(void)
 	 */
 	if ((ret < 1) || (!strcmp(buf, "NA"))) {
 		upsdebugx(1, "Attempting firmware lookup using command 'b'");
-		ret = ser_send_char(upsfd, 'b');
+		ret = apc_write(APC_FW_NEW);
 
 		if (ret != 1) {
-			upslog_with_errno(LOG_ERR, "firmware_table_lookup: ser_send_char failed");
+			upslog_with_errno(LOG_ERR, "firmware_table_lookup: apc_write failed");
 			return 0;
 		}
 
-		ret = upsread(buf, sizeof(buf), SER_TO);
+		ret = apc_read(buf, sizeof(buf), SER_TO);
 
 		if (ret < 1) {
-			upslog_with_errno(LOG_ERR, "firmware_table_lookup: upsread failed");
+			upslog_with_errno(LOG_ERR, "firmware_table_lookup: apc_read failed");
 			return 0;
 		}
 	}
@@ -816,14 +828,14 @@ static void getbaseinfo(void)
 	   strategy - we can deal with that if it happens
 	*/
 
-	ret = ser_send_char(upsfd, APC_CMDSET);
+	ret = apc_write(APC_CMDSET);
 
 	if (ret != 1) {
-		upslog_with_errno(LOG_ERR, "getbaseinfo: ser_send_char failed");
+		upslog_with_errno(LOG_ERR, "getbaseinfo: apc_write failed");
 		return;
 	}
 
-	ret = upsread(temp, sizeof(temp), SER_TO);
+	ret = apc_read(temp, sizeof(temp), SER_TO);
 
 	if ((ret < 1) || (!strcmp(temp, "NA"))) {
 		/* We have an old dumb UPS - go to specific code for old stuff */
@@ -833,11 +845,11 @@ static void getbaseinfo(void)
 
 	upsdebugx(1, "APC - Parsing out command set");
 	/*
-	 * note that upsread() above will filter commands overlapping with
+	 * note that apc_read() above will filter commands overlapping with
 	 * alerts; we don't really care about those for the needed
 	 * functionality - but keep in mind 'a' reports them, should you ever
-	 * need them; in such case, it would be best to e.g. add SER_CS,
-	 * IGN_CSCHARS and adjust upsread() accordingly
+	 * need them; in such case, it would be best to e.g. add SER_CS and
+	 * IGN_CSCHARS and adjust apc_read() accordingly
 	 */
  	alrts = strchr(temp, '.');
 	if (alrts == NULL) {
@@ -856,7 +868,7 @@ static void getbaseinfo(void)
 	deprecate_vars();
 
 	/* if capabilities are supported, add them here */
-	if (strchr(cmds, APC_CAPABILITY))
+	if (strchr(cmds, APC_CAPS))
 		do_capabilities();
 
 	upsdebugx(1, "APC - UPS capabilities determined");
@@ -865,17 +877,17 @@ static void getbaseinfo(void)
 /* check for calibration status and either start or stop */
 static int do_cal(int start)
 {
-	char	temp[256];
+	char	temp[512];
 	int	tval, ret;
 
-	ret = ser_send_char(upsfd, APC_STATUS);
+	ret = apc_write(APC_STATUS);
 
 	if (ret != 1) {
-		upslog_with_errno(LOG_ERR, "do_cal: ser_send_char failed");
+		upslog_with_errno(LOG_ERR, "do_cal: apc_write failed");
 		return STAT_INSTCMD_HANDLED;		/* FUTURE: failure */
 	}
 
-	ret = upsread(temp, sizeof(temp), SER_AL);
+	ret = apc_read(temp, sizeof(temp), SER_AL);
 
 	/* if we can't check the current calibration status, bail out */
 	if ((ret < 1) || (!strcmp(temp, "NA")))
@@ -894,14 +906,14 @@ static int do_cal(int start)
 
 		upslogx(LOG_INFO, "Stopping runtime calibration");
 
-		ret = ser_send_char(upsfd, APC_CMD_CALTOGGLE);
+		ret = apc_write(APC_CMD_CALTOGGLE);
 
 		if (ret != 1) {
-			upslog_with_errno(LOG_ERR, "do_cal: ser_send_char failed");
+			upslog_with_errno(LOG_ERR, "do_cal: apc_write failed");
 			return STAT_INSTCMD_HANDLED;	/* FUTURE: failure */
 		}
 
-		ret = upsread(temp, sizeof(temp), SER_AL);
+		ret = apc_read(temp, sizeof(temp), SER_AL);
 
 		if ((ret < 1) || (!strcmp(temp, "NA")) || (!strcmp(temp, "NO"))) {
 			upslogx(LOG_WARNING, "Stop calibration failed: %s", 
@@ -921,14 +933,14 @@ static int do_cal(int start)
 
 	upslogx(LOG_INFO, "Starting runtime calibration");
 
-	ret = ser_send_char(upsfd, APC_CMD_CALTOGGLE);
+	ret = apc_write(APC_CMD_CALTOGGLE);
 
 	if (ret != 1) {
-		upslog_with_errno(LOG_ERR, "do_cal: ser_send_char failed");
+		upslog_with_errno(LOG_ERR, "do_cal: apc_write failed");
 		return STAT_INSTCMD_HANDLED;	/* FUTURE: failure */
 	}
 
-	ret = upsread(temp, sizeof(temp), SER_AL);
+	ret = apc_read(temp, sizeof(temp), SER_AL);
 
 	if ((ret < 1) || (!strcmp(temp, "NA")) || (!strcmp(temp, "NO"))) {
 		upslogx(LOG_WARNING, "Start calibration failed: %s", temp);
@@ -942,18 +954,18 @@ static int do_cal(int start)
 static int smartmode(void)
 {
 	int	ret, tries;
-	char	temp[256];
+	char	temp[512];
 
 	for (tries = 0; tries < 5; tries++) {
 
-		ret = ser_send_char(upsfd, APC_GOSMART);
+		ret = apc_write(APC_GOSMART);
 
 		if (ret != 1) {
-			upslog_with_errno(LOG_ERR, "smartmode: ser_send_char failed");
+			upslog_with_errno(LOG_ERR, "smartmode: apc_write failed");
 			return 0;
 		}
 
-		ret = upsread(temp, sizeof(temp), SER_TO);
+		ret = apc_read(temp, sizeof(temp), SER_TO);
 
 		if (ret > 0 && !strcmp(temp, "SM"))
 			return 1;	/* success */
@@ -962,15 +974,15 @@ static int smartmode(void)
 
 		/* it failed, so try to bail out of menus on newer units */
 
-		ret = ser_send_char(upsfd, 27);	/* ESC */
+		ret = apc_write(27); /* ESC */
 
 		if (ret != 1) {
-			upslog_with_errno(LOG_ERR, "smartmode: ser_send_char failed");
+			upslog_with_errno(LOG_ERR, "smartmode: apc_write failed");
 			return 0;
 		}
 
 		/* eat the response (might be NA, might be something else) */
-		upsread(temp, sizeof(temp), SER_TO);
+		apc_read(temp, sizeof(temp), SER_TO);
 	}
 
 	return 0;	/* failure */
@@ -981,13 +993,13 @@ static int smartmode(void)
  */
 static int sdok(void)
 {
-	char temp[16];
+	char temp[32];
 
 	/*
 	 * older upses on failed commands might just timeout, we cut down
-	 * timeout grace in upsread though
+	 * timeout grace in apc_read though
 	 */
-	upsread(temp, sizeof(temp), SER_AX);
+	apc_read(temp, sizeof(temp), SER_AX);
 	upsdebugx(4, "shutdown reply: got \"%s\"", temp);
 
 	if (!strcmp(temp, "OK")) {
@@ -1002,9 +1014,9 @@ static int sdok(void)
 /* soft hibernate: S - working only when OB, otherwise ignored */
 static int sdcmd_S(int dummy)
 {
-	upsflush(0);
+	apc_flush(0);
 	upsdebugx(1, "Issuing soft hibernate");
-	ser_send_char(upsfd, APC_CMD_SOFTDOWN);
+	apc_write(APC_CMD_SOFTDOWN);
 
 	return sdok();
 }
@@ -1012,15 +1024,15 @@ static int sdcmd_S(int dummy)
 /* soft hibernate, hack version for CS 350 */
 static int sdcmd_CS(int status)
 {
-	char temp[16];
+	char temp[32];
 
 	upsdebugx(1, "Using CS 350 'force OB' shutdown method");
 	if (status & APC_STAT_OL) {
-		upsflush(0);
+		apc_flush(0);
 		upsdebugx(1, "On-line - forcing OB temporarily");
-		ser_send_char(upsfd, 'U');
+		apc_write(APC_CMD_SIMPWF);
 		/* eat response */
-		upsread(temp, sizeof(temp), SER_SD);
+		apc_read(temp, sizeof(temp), SER_SD);
 	}
 	return sdcmd_S(0);
 }
@@ -1034,7 +1046,7 @@ static int sdcmd_ATn(int cnt)
 {
 	int n = 0, mmax, ret;
 	const char *strval;
-	char temp[16];
+	char temp[32];
 
 	mmax = cnt == 2 ? 99 : 999;
 
@@ -1047,10 +1059,10 @@ static int sdcmd_ATn(int cnt)
 
 	snprintf(temp, sizeof(temp), "%.*d", cnt, n);
 
-	upsflush(0);
+	apc_flush(0);
 	upsdebugx(1, "Issuing hard hibernate with %d minutes additional wakeup delay", n*6);
 
-	ser_send_char(upsfd, APC_CMD_GRACEDOWN);
+	apc_write(APC_CMD_GRACEDOWN);
 	usleep(CMDLONGDELAY);
 	ser_send_pace(upsfd, UPSDELAY, "%s", temp);
 
@@ -1064,9 +1076,9 @@ static int sdcmd_ATn(int cnt)
 	 * the clean state; newer upses will respond with 'NO', older will be
 	 * silent (YMMV);
 	 */
-	ser_send_char(upsfd, APC_CMD_GRACEDOWN);
+	apc_write(APC_CMD_GRACEDOWN);
 	/* eat response */
-	upsread(temp, sizeof(temp), SER_SD);
+	apc_read(temp, sizeof(temp), SER_SD);
 
 	return 0;
 }
@@ -1074,12 +1086,12 @@ static int sdcmd_ATn(int cnt)
 /* shutdown: K - delayed poweroff */
 static int sdcmd_K(int dummy)
 {
-	upsflush(0);
+	apc_flush(0);
 	upsdebugx(1, "Issuing delayed poweroff");
 
-	ser_send_char(upsfd, APC_CMD_SHUTDOWN);
+	apc_write(APC_CMD_SHUTDOWN);
 	usleep(CMDLONGDELAY);
-	ser_send_char(upsfd, APC_CMD_SHUTDOWN);
+	apc_write(APC_CMD_SHUTDOWN);
 
 	return sdok();
 }
@@ -1087,12 +1099,12 @@ static int sdcmd_K(int dummy)
 /* shutdown: Z - immediate poweroff */
 static int sdcmd_Z(int dummy)
 {
-	upsflush(0);
+	apc_flush(0);
 	upsdebugx(1, "Issuing immediate poweroff");
 
-	ser_send_char(upsfd, APC_CMD_OFF);
+	apc_write(APC_CMD_OFF);
 	usleep(CMDLONGDELAY);
-	ser_send_char(upsfd, APC_CMD_OFF);
+	apc_write(APC_CMD_OFF);
 
 	return sdok();
 }
@@ -1231,10 +1243,10 @@ void upsdrv_shutdown(void)
 
 	/* check the line status */
 
-	ret = ser_send_char(upsfd, APC_STATUS);
+	ret = apc_write(APC_STATUS);
 
 	if (ret == 1) {
-		ret = upsread(temp, sizeof(temp), SER_SD);
+		ret = apc_read(temp, sizeof(temp), SER_SD);
 
 		if (ret < 1) {
 			upsdebugx(1, "Status read failed ! Assuming on battery state");
@@ -1301,18 +1313,18 @@ static void update_info_all(void)
 static int setvar_enum(apc_vartab_t *vt, const char *val)
 {
 	int	i, ret;
-	char	orig[256], temp[256];
+	char	orig[512], temp[512];
 	const char	*ptr;
 
-	upsflush(SER_AL);
-	ret = ser_send_char(upsfd, vt->cmd);
+	apc_flush(SER_AL);
+	ret = apc_write(vt->cmd);
 
 	if (ret != 1) {
-		upslog_with_errno(LOG_ERR, "setvar_enum: ser_send_char failed");
+		upslog_with_errno(LOG_ERR, "setvar_enum: apc_write failed");
 		return STAT_SET_HANDLED;	/* FUTURE: failed */
 	}
 
-	ret = upsread(orig, sizeof(orig), SER_AL);
+	ret = apc_read(orig, sizeof(orig), SER_AL);
 
 	if ((ret < 1) || (!strcmp(orig, "NA")))
 		return STAT_SET_HANDLED;	/* FUTURE: failed */
@@ -1328,15 +1340,15 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 	}
 
 	for (i = 0; i < 6; i++) {
-		ret = ser_send_char(upsfd, APC_NEXTVAL);
+		ret = apc_write(APC_NEXTVAL);
 
 		if (ret != 1) {
-			upslog_with_errno(LOG_ERR, "setvar_enum: ser_send_char failed");
+			upslog_with_errno(LOG_ERR, "setvar_enum: apc_write failed");
 			return STAT_SET_HANDLED;	/* FUTURE: failed */
 		}
 
 		/* this should return either OK (if rotated) or NO (if not) */
-		ret = upsread(temp, sizeof(temp), SER_AL);
+		ret = apc_read(temp, sizeof(temp), SER_AL);
 
 		if ((ret < 1) || (!strcmp(temp, "NA")))
 			return STAT_SET_HANDLED;	/* FUTURE: failed */
@@ -1348,14 +1360,14 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 			return STAT_SET_HANDLED;	/* FUTURE: failed */
 
 		/* see what it rotated onto */
-		ret = ser_send_char(upsfd, vt->cmd);
+		ret = apc_write(vt->cmd);
 
 		if (ret != 1) {
-			upslog_with_errno(LOG_ERR, "setvar_enum: ser_send_char failed");
+			upslog_with_errno(LOG_ERR, "setvar_enum: apc_write failed");
 			return STAT_SET_HANDLED;	/* FUTURE: failed */
 		}
 
-		ret = upsread(temp, sizeof(temp), SER_AL);
+		ret = apc_read(temp, sizeof(temp), SER_AL);
 
 		if ((ret < 1) || (!strcmp(temp, "NA")))
 			return STAT_SET_HANDLED;	/* FUTURE: failed */
@@ -1369,7 +1381,8 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 			upslogx(LOG_INFO, "SET %s='%s'", vt->name, val);
 
 			/* refresh data from the hardware */
-			query_ups(vt->name, 0);
+			poll_data(vt);
+			/* query_ups(vt->name, 0); */
 
 			return STAT_SET_HANDLED;	/* FUTURE: success */
 		}
@@ -1387,7 +1400,8 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 		vt->name);
 
 	/* refresh data from the hardware */
-	query_ups(vt->name, 0);
+	poll_data(vt);
+	/* query_ups(vt->name, 0); */
 
 	return STAT_SET_HANDLED;
 }
@@ -1396,17 +1410,17 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 {
 	unsigned int	i;
 	int	ret;
-	char	temp[256];
+	char	temp[512];
 
-	upsflush(SER_AL);
-	ret = ser_send_char(upsfd, vt->cmd);
+	apc_flush(SER_AL);
+	ret = apc_write(vt->cmd);
 
 	if (ret != 1) {
-		upslog_with_errno(LOG_ERR, "setvar_string: ser_send_char failed");
+		upslog_with_errno(LOG_ERR, "setvar_string: apc_write failed");
 		return STAT_SET_HANDLED;	/* FUTURE: failed */
 	}
 
-	ret = upsread(temp, sizeof(temp), SER_AL);
+	ret = apc_read(temp, sizeof(temp), SER_AL);
 
 	if ((ret < 1) || (!strcmp(temp, "NA")))
 		return STAT_SET_HANDLED;	/* FUTURE: failed */
@@ -1419,20 +1433,20 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 		return STAT_SET_HANDLED;	/* FUTURE: no change */
 	}
 
-	ret = ser_send_char(upsfd, APC_NEXTVAL);
+	ret = apc_write(APC_NEXTVAL);
 
 	if (ret != 1) {
-		upslog_with_errno(LOG_ERR, "setvar_string: ser_send_char failed");
+		upslog_with_errno(LOG_ERR, "setvar_string: apc_write failed");
 		return STAT_SET_HANDLED;	/* FUTURE: failed */
 	}
 
 	usleep(UPSDELAY);
 
 	for (i = 0; i < strlen(val); i++) {
-		ret = ser_send_char(upsfd, val[i]);
+		ret = apc_write(val[i]);
 
 		if (ret != 1) {
-			upslog_with_errno(LOG_ERR, "setvar_string: ser_send_char failed");
+			upslog_with_errno(LOG_ERR, "setvar_string: apc_write failed");
 			return STAT_SET_HANDLED;	/* FUTURE: failed */
 		}
 
@@ -1441,17 +1455,17 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 
 	/* pad to 8 chars with CRs */
 	for (i = strlen(val); i < APC_STRLEN; i++) {
-		ret = ser_send_char(upsfd, 13);
+		ret = apc_write('\015');
 
 		if (ret != 1) {
-			upslog_with_errno(LOG_ERR, "setvar_string: ser_send_char failed");
+			upslog_with_errno(LOG_ERR, "setvar_string: apc_write failed");
 			return STAT_SET_HANDLED;	/* FUTURE: failed */
 		}
 
 		usleep(UPSDELAY);
 	}
 
-	ret = upsread(temp, sizeof(temp), SER_AL);
+	ret = apc_read(temp, sizeof(temp), SER_AL);
 
 	if (ret < 1) {
 		upslogx(LOG_ERR, "setvar_string: short final read");
@@ -1464,7 +1478,8 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 	}
 
 	/* refresh data from the hardware */
-	query_ups(vt->name, 0);
+	poll_data(vt);
+	/* query_ups(vt->name, 0); */
 
 	upslogx(LOG_INFO, "SET %s='%s'", vt->name, val);
 
@@ -1499,13 +1514,13 @@ static int setvar(const char *varname, const char *val)
 static int do_cmd(apc_cmdtab_t *ct)
 {
 	int	ret;
-	char	buf[SMALLBUF];
+	char	buf[512];
 
-	upsflush(SER_AL);
-	ret = ser_send_char(upsfd, ct->cmd);
+	apc_flush(SER_AL);
+	ret = apc_write(ct->cmd);
 
 	if (ret != 1) {
-		upslog_with_errno(LOG_ERR, "do_cmd: ser_send_char failed");
+		upslog_with_errno(LOG_ERR, "do_cmd: apc_write failed");
 		return STAT_INSTCMD_HANDLED;		/* FUTURE: failed */
 	}
 
@@ -1513,15 +1528,15 @@ static int do_cmd(apc_cmdtab_t *ct)
 	if (ct->flags & APC_REPEAT) {
 		usleep(CMDLONGDELAY);
 
-		ret = ser_send_char(upsfd, ct->cmd);
+		ret = apc_write(ct->cmd);
 
 		if (ret != 1) {
-			upslog_with_errno(LOG_ERR, "do_cmd: ser_send_char failed");
+			upslog_with_errno(LOG_ERR, "do_cmd: apc_write failed");
 			return STAT_INSTCMD_HANDLED;	/* FUTURE: failed */
 		}
 	}
 
-	ret = upsread(buf, sizeof(buf), SER_AL);
+	ret = apc_read(buf, sizeof(buf), SER_AL);
 
 	if (ret < 1)
 		return STAT_INSTCMD_HANDLED;		/* FUTURE: failed */
