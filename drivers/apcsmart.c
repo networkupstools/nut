@@ -1020,7 +1020,7 @@ static void protocol_verify(unsigned char cmd)
 }
 
 /* some hardware is a special case - hotwire the list of cmdchars */
-static int firmware_table_lookup(int *qco)
+static int firmware_table_lookup(void)
 {
 	int	ret;
 	unsigned int	i, j;
@@ -1062,11 +1062,9 @@ static int firmware_table_lookup(int *qco)
 	upsdebugx(2, "firmware: [%s]", buf);
 
 	/* this will be reworked if we get a lot of these things */
-	if (!strcmp(buf, "451.2.I")) {
+	if (!strcmp(buf, "451.2.I"))
 		/* quirk_capability_overflow */
-		*qco = 1;
 		return 2;
-	}
 
 	for (i = 0; apc_compattab[i].firmware != NULL; i++) {
 		if (!strcmp(apc_compattab[i].firmware, buf)) {
@@ -1102,7 +1100,7 @@ static void getbaseinfo(void)
 	 *  try firmware lookup first; we could start with 'a', but older models
 	 *  sometimes return other things than a command set
 	 */
-	qco = firmware_table_lookup(&qco);
+	qco = firmware_table_lookup();
 	if (qco == 1)
 		/* found compat */
 		return;
