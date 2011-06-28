@@ -1243,12 +1243,12 @@ static int smartmode(void)
  * hardware/firmware combinations; simpler version commmented out above, for
  * now let's keep minimally adjusted old one
  */
-static int smartmode(void)
+static int smartmode(int cnt)
 {
 	int ret, tries;
 	char temp[APC_LBUF];
 
-	for (tries = 0; tries < 5; tries++) {
+	for (tries = 0; tries < cnt; tries++) {
 
 		apc_flush(0);
 		ret = apc_write(APC_GOSMART);
@@ -1555,7 +1555,7 @@ void upsdrv_shutdown(void)
 	char	temp[APC_LBUF];
 	int	ret;
 
-	if (!smartmode())
+	if (!smartmode(1))
 		upsdebugx(1, "SM detection failed. Trying a shutdown command anyway");
 
 	/* check the line status */
@@ -2034,7 +2034,7 @@ void upsdrv_initinfo(void)
 {
 	const char *pmod, *pser;
 
-	if (!smartmode()) {
+	if (!smartmode(5)) {
 		fatalx(EXIT_FAILURE,
 			"unable to detect an APC Smart protocol UPS on port %s\n"
 			"check the cabling, port name or model name and try again", device_path
@@ -2075,7 +2075,7 @@ void upsdrv_updateinfo(void)
 			if (!(apc_ser_tear() && apc_ser_try() && apc_ser_set()))
 				return;
 		}
-		if (!smartmode())
+		if (!smartmode(1))
 			return;
 
 		last_worked = 0;
