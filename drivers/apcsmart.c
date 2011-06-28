@@ -211,25 +211,9 @@ static void alert_handler(char ch)
 	ups_status_set();
 }
 
-static int read_buf(char *buf, size_t buflen)
-{
-	int	ret;
-
-	ret = ser_get_line_alert(upsfd, buf, buflen, ENDCHAR, POLL_IGNORE,
-		POLL_ALERT, alert_handler, SER_WAIT_SEC, SER_WAIT_USEC);
-
-	if (ret < 1) {
-		ser_comm_fail("%s", ret ? strerror(errno) : "timeout");
-		return ret;
-	}
-
-	ser_comm_good();
-	return ret;
-}
-
 static void upsflush(int flags)
 {
-	char temp[64];
+	char temp[512];
 
 	if (flags & SER_AL) {
 		while(ser_get_line_alert(upsfd, temp, sizeof(temp), ENDCHAR, IGN_AACHARS, ALERT_CHARS, alert_handler, 0, 0) > 0);
@@ -249,25 +233,28 @@ static int upsread(char *buf, size_t buflen, int flags)
 	int	i, ret, sec = 3, usec = 0;
 	char	temp[512];
 
+	/*
+	 * 3 sec is near the edge of how much this command can take until
+	 * ENDCHAR shows up in the input; bump to 6 seconds to be on the safe
+	 * side + update ignore set
+	 */
 	if (flags & SER_CC) {
 		iset = IGN_CCCHARS;
-		/*
-		 * 3 sec is near the edge of how much this command can take
-		 * until ENDCHAR shows up in the input; bump to 6 seconds
-		 * to be on the safe side
-		 */
 		sec = 6;
 	}
+	/* alert aware read */
 	if (flags & SER_AL) {
 		iset = IGN_AACHARS;
 		aset = ALERT_CHARS;
 	}
+	/* "prep for shutdown" read */
 	if (flags & SER_SD) {
 		/* cut down timeout to 1.5 sec */
 		sec = 1;
 		usec = 500000;
 		flags |= SER_TO;
 	}
+	/* watch out for '*' during shutdown command */
 	if (flags & SER_AX) {
 		flags |= SER_SD;
 	}
@@ -299,10 +286,21 @@ static int upsread(char *buf, size_t buflen, int flags)
 			 * select_read() will continue normally
 			 */
 			if ((flags & SER_AX) && temp[i] == '*') {
-				buf[0] = '*';
-				buf[1] = '\0';
+				/*
+				 * almost crazy, but suppose we could get
+				 * something else besides '*'; just in case eat
+				 * it - it's not real EOL after all
+				 */
+				ret = select_read(upsfd, temp, sizeof(temp), 0, 0);
+				if (ret < 0) {
+					ser_comm_fail("%s", strerror(errno));
+					return ret;
+				}
+				buf[0] = 'O';
+				buf[1] = 'K';
+				buf[2] = '\0';
 				ser_comm_good();
-				return 1;
+				return 2;
 			}
 			/* ignore set */
 			if (strchr(iset, temp[i]) || temp[i] == '*') {
@@ -364,7 +362,7 @@ static int poll_data(apc_vartab_t *vt)
 		return 0;
 	}
 
-	if (read_buf(tmp, sizeof(tmp)) < 1) {
+	if (upsread(tmp, sizeof(tmp), SER_AL) < 1) {
 		dstate_datastale();
 		return 0;
 	}
@@ -408,17 +406,13 @@ static int query_ups(const char *var, int first)
 		/* found, [try to] get it */
 
 		/* empty the input buffer (while allowing the alert handler to run) */
-		ret = ser_get_line_alert(upsfd, temp, sizeof(temp), ENDCHAR,
-				POLL_IGNORE, POLL_ALERT, alert_handler, 0, 0);
-
+		upsflush(SER_AL);
 		ret = ser_send_char(upsfd, vt->cmd);
 		if (ret != 1) {
 			upslog_with_errno(LOG_ERR, "query_ups: ser_send_char failed");
 			break;
 		}
-		ret = ser_get_line_alert(upsfd, temp, sizeof(temp), ENDCHAR,
-				POLL_IGNORE, POLL_ALERT, alert_handler, SER_WAIT_SEC,
-				SER_WAIT_USEC);
+		ret = upsread(temp, sizeof(temp), SER_AL | (first ? SER_TO : 0));
 
 		if (ret < 1 || !strcmp(temp, "NA")) {
 			if (first) {
@@ -429,15 +423,11 @@ static int query_ups(const char *var, int first)
 				upsdebugx(1, "query_ups: unknown variable %s", var);
 				break;
 			}
-			if (ret < 1)
-				ser_comm_fail("%s", ret ? strerror(errno) : "timeout");
-			else
-				/* automagically no longer supported by the hardware somehow */
+			/* automagically no longer supported by the hardware somehow */
+			if (ret > 0)
 				remove_var("query_ups", vt);
 			break;
 		}
-
-		ser_comm_good();
 
 		vt->flags |= APC_PRESENT;
 		ptr = convert_data(vt, temp);
@@ -484,9 +474,11 @@ static void do_capabilities(void)
 		return;
 	}
 
-	/* note different IGN set since ^Z returns things like # */
-	ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, 
-		MINIGNCHARS, SER_WAIT_SEC, SER_WAIT_USEC);
+	/*
+	 * note SER_CC - upsread() needs larger timeout grace and different
+	 * ignore set due to certain characters like '#' being received
+	 */
+	ret = upsread(temp, sizeof(temp), SER_CC);
 
 	if ((ret < 1) || (!strcmp(temp, "NA"))) {
 
@@ -580,7 +572,7 @@ static int update_status(void)
 
 	upsdebugx(4, "update_status");
 
-	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
+	upsflush(SER_AL);
 
 	ret = ser_send_char(upsfd, APC_STATUS);
 
@@ -590,7 +582,7 @@ static int update_status(void)
 		return 0;
 	}
 
-	ret = read_buf(buf, sizeof(buf));
+	ret = upsread(buf, sizeof(buf), SER_AL);
 
 	if ((ret < 1) || (!strcmp(buf, "NA"))) {
 		dstate_datastale();
@@ -749,8 +741,7 @@ static int firmware_table_lookup(void)
 		return 0;
 	}
 
-	ret = ser_get_line(upsfd, buf, sizeof(buf), ENDCHAR, IGNCHARS, 
-		SER_WAIT_SEC, SER_WAIT_USEC);
+	ret = upsread(buf, sizeof(buf), SER_TO);
 
         /*
 	 * Some UPSes support both 'V' and 'b'. As 'b' doesn't always return
@@ -765,11 +756,10 @@ static int firmware_table_lookup(void)
 			return 0;
 		}
 
-		ret = ser_get_line(upsfd, buf, sizeof(buf), ENDCHAR, IGNCHARS,
-			SER_WAIT_SEC, SER_WAIT_USEC);
+		ret = upsread(buf, sizeof(buf), SER_TO);
 
 		if (ret < 1) {
-			upslog_with_errno(LOG_ERR, "firmware_table_lookup: ser_get_line failed");
+			upslog_with_errno(LOG_ERR, "firmware_table_lookup: upsread failed");
 			return 0;
 		}
 	}
@@ -833,8 +823,7 @@ static void getbaseinfo(void)
 		return;
 	}
 
-	ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, IGNCHARS, 
-		SER_WAIT_SEC, SER_WAIT_USEC);
+	ret = upsread(temp, sizeof(temp), SER_TO);
 
 	if ((ret < 1) || (!strcmp(temp, "NA"))) {
 		/* We have an old dumb UPS - go to specific code for old stuff */
@@ -843,12 +832,13 @@ static void getbaseinfo(void)
 	}
 
 	upsdebugx(1, "APC - Parsing out command set");
-	/* We have the version.alert.cmdchars string
-	   NB the alert chars are normally in IGNCHARS
-	   so will have been pretty much edited out.
-	   You will need to change the ser_get_line above if
-	   you want to check those out too....
-	*/
+	/*
+	 * note that upsread() above will filter commands overlapping with
+	 * alerts; we don't really care about those for the needed
+	 * functionality - but keep in mind 'a' reports them, should you ever
+	 * need them; in such case, it would be best to e.g. add SER_CS,
+	 * IGN_CSCHARS and adjust upsread() accordingly
+	 */
  	alrts = strchr(temp, '.');
 	if (alrts == NULL) {
 		fatalx(EXIT_FAILURE, "Unable to split APC version string");
@@ -885,7 +875,7 @@ static int do_cal(int start)
 		return STAT_INSTCMD_HANDLED;		/* FUTURE: failure */
 	}
 
-	ret = read_buf(temp, sizeof(temp));
+	ret = upsread(temp, sizeof(temp), SER_AL);
 
 	/* if we can't check the current calibration status, bail out */
 	if ((ret < 1) || (!strcmp(temp, "NA")))
@@ -911,7 +901,7 @@ static int do_cal(int start)
 			return STAT_INSTCMD_HANDLED;	/* FUTURE: failure */
 		}
 
-		ret = read_buf(temp, sizeof(temp));
+		ret = upsread(temp, sizeof(temp), SER_AL);
 
 		if ((ret < 1) || (!strcmp(temp, "NA")) || (!strcmp(temp, "NO"))) {
 			upslogx(LOG_WARNING, "Stop calibration failed: %s", 
@@ -938,7 +928,7 @@ static int do_cal(int start)
 		return STAT_INSTCMD_HANDLED;	/* FUTURE: failure */
 	}
 
-	ret = read_buf(temp, sizeof(temp));
+	ret = upsread(temp, sizeof(temp), SER_AL);
 
 	if ((ret < 1) || (!strcmp(temp, "NA")) || (!strcmp(temp, "NO"))) {
 		upslogx(LOG_WARNING, "Start calibration failed: %s", temp);
@@ -963,8 +953,7 @@ static int smartmode(void)
 			return 0;
 		}
 
-		ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, 
-			IGNCHARS, SER_WAIT_SEC, SER_WAIT_USEC);
+		ret = upsread(temp, sizeof(temp), SER_TO);
 
 		if (ret > 0 && !strcmp(temp, "SM"))
 			return 1;	/* success */
@@ -981,8 +970,7 @@ static int smartmode(void)
 		}
 
 		/* eat the response (might be NA, might be something else) */
-		ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, 
-			IGNCHARS, SER_WAIT_SEC, SER_WAIT_USEC);
+		upsread(temp, sizeof(temp), SER_TO);
 	}
 
 	return 0;	/* failure */
@@ -995,10 +983,14 @@ static int sdok(void)
 {
 	char temp[16];
 
-	ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, IGNCHARS, SER_WAIT_SEC, SER_WAIT_USEC);
-	upsdebugx(4, "sdok: got \"%s\"", temp);
+	/*
+	 * older upses on failed commands might just timeout, we cut down
+	 * timeout grace in upsread though
+	 */
+	upsread(temp, sizeof(temp), SER_AX);
+	upsdebugx(4, "shutdown reply: got \"%s\"", temp);
 
-	if (!strcmp(temp, "*") || !strcmp(temp, "OK")) {
+	if (!strcmp(temp, "OK")) {
 		upsdebugx(4, "Last issued shutdown command succeeded");
 		return 1;
 	}
@@ -1010,8 +1002,7 @@ static int sdok(void)
 /* soft hibernate: S - working only when OB, otherwise ignored */
 static int sdcmd_S(int dummy)
 {
-	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
-
+	upsflush(0);
 	upsdebugx(1, "Issuing soft hibernate");
 	ser_send_char(upsfd, APC_CMD_SOFTDOWN);
 
@@ -1019,15 +1010,19 @@ static int sdcmd_S(int dummy)
 }
 
 /* soft hibernate, hack version for CS 350 */
-static int sdcmd_CS(int tval)
+static int sdcmd_CS(int status)
 {
+	char temp[16];
+
 	upsdebugx(1, "Using CS 350 'force OB' shutdown method");
-	if (tval & APC_STAT_OL) {
+	if (status & APC_STAT_OL) {
+		upsflush(0);
 		upsdebugx(1, "On-line - forcing OB temporarily");
 		ser_send_char(upsfd, 'U');
-		usleep(UPSDELAY);
+		/* eat response */
+		upsread(temp, sizeof(temp), SER_SD);
 	}
-	return sdcmd_S(tval);
+	return sdcmd_S(0);
 }
 
 /*
@@ -1039,7 +1034,7 @@ static int sdcmd_ATn(int cnt)
 {
 	int n = 0, mmax, ret;
 	const char *strval;
-	char timer[4];
+	char temp[16];
 
 	mmax = cnt == 2 ? 99 : 999;
 
@@ -1050,14 +1045,14 @@ static int sdcmd_ATn(int cnt)
 			n = 0;
 	}
 
-	snprintf(timer, sizeof(timer), "%.*d", cnt, n);
+	snprintf(temp, sizeof(temp), "%.*d", cnt, n);
 
-	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
+	upsflush(0);
 	upsdebugx(1, "Issuing hard hibernate with %d minutes additional wakeup delay", n*6);
 
 	ser_send_char(upsfd, APC_CMD_GRACEDOWN);
 	usleep(CMDLONGDELAY);
-	ser_send_pace(upsfd, UPSDELAY, "%s", timer);
+	ser_send_pace(upsfd, UPSDELAY, "%s", temp);
 
 	ret = sdok();
 	if (ret || cnt == 3)
@@ -1070,8 +1065,8 @@ static int sdcmd_ATn(int cnt)
 	 * silent (YMMV);
 	 */
 	ser_send_char(upsfd, APC_CMD_GRACEDOWN);
-	usleep(UPSDELAY);
-	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
+	/* eat response */
+	upsread(temp, sizeof(temp), SER_SD);
 
 	return 0;
 }
@@ -1079,7 +1074,7 @@ static int sdcmd_ATn(int cnt)
 /* shutdown: K - delayed poweroff */
 static int sdcmd_K(int dummy)
 {
-	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
+	upsflush(0);
 	upsdebugx(1, "Issuing delayed poweroff");
 
 	ser_send_char(upsfd, APC_CMD_SHUTDOWN);
@@ -1092,7 +1087,7 @@ static int sdcmd_K(int dummy)
 /* shutdown: Z - immediate poweroff */
 static int sdcmd_Z(int dummy)
 {
-	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
+	upsflush(0);
 	upsdebugx(1, "Issuing immediate poweroff");
 
 	ser_send_char(upsfd, APC_CMD_OFF);
@@ -1239,8 +1234,7 @@ void upsdrv_shutdown(void)
 	ret = ser_send_char(upsfd, APC_STATUS);
 
 	if (ret == 1) {
-		ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR,
-			IGNCHARS, SER_WAIT_SEC, SER_WAIT_USEC);
+		ret = upsread(temp, sizeof(temp), SER_SD);
 
 		if (ret < 1) {
 			upsdebugx(1, "Status read failed ! Assuming on battery state");
@@ -1310,7 +1304,7 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 	char	orig[256], temp[256];
 	const char	*ptr;
 
-	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
+	upsflush(SER_AL);
 	ret = ser_send_char(upsfd, vt->cmd);
 
 	if (ret != 1) {
@@ -1318,7 +1312,7 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 		return STAT_SET_HANDLED;	/* FUTURE: failed */
 	}
 
-	ret = read_buf(orig, sizeof(orig));
+	ret = upsread(orig, sizeof(orig), SER_AL);
 
 	if ((ret < 1) || (!strcmp(orig, "NA")))
 		return STAT_SET_HANDLED;	/* FUTURE: failed */
@@ -1342,7 +1336,7 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 		}
 
 		/* this should return either OK (if rotated) or NO (if not) */
-		ret = read_buf(temp, sizeof(temp));
+		ret = upsread(temp, sizeof(temp), SER_AL);
 
 		if ((ret < 1) || (!strcmp(temp, "NA")))
 			return STAT_SET_HANDLED;	/* FUTURE: failed */
@@ -1361,7 +1355,7 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 			return STAT_SET_HANDLED;	/* FUTURE: failed */
 		}
 
-		ret = read_buf(temp, sizeof(temp));
+		ret = upsread(temp, sizeof(temp), SER_AL);
 
 		if ((ret < 1) || (!strcmp(temp, "NA")))
 			return STAT_SET_HANDLED;	/* FUTURE: failed */
@@ -1404,7 +1398,7 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 	int	ret;
 	char	temp[256];
 
-	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
+	upsflush(SER_AL);
 	ret = ser_send_char(upsfd, vt->cmd);
 
 	if (ret != 1) {
@@ -1412,7 +1406,7 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 		return STAT_SET_HANDLED;	/* FUTURE: failed */
 	}
 
-	ret = read_buf(temp, sizeof(temp));
+	ret = upsread(temp, sizeof(temp), SER_AL);
 
 	if ((ret < 1) || (!strcmp(temp, "NA")))
 		return STAT_SET_HANDLED;	/* FUTURE: failed */
@@ -1457,7 +1451,7 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 		usleep(UPSDELAY);
 	}
 
-	ret = read_buf(temp, sizeof(temp));
+	ret = upsread(temp, sizeof(temp), SER_AL);
 
 	if (ret < 1) {
 		upslogx(LOG_ERR, "setvar_string: short final read");
@@ -1507,7 +1501,7 @@ static int do_cmd(apc_cmdtab_t *ct)
 	int	ret;
 	char	buf[SMALLBUF];
 
-	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
+	upsflush(SER_AL);
 	ret = ser_send_char(upsfd, ct->cmd);
 
 	if (ret != 1) {
@@ -1527,7 +1521,7 @@ static int do_cmd(apc_cmdtab_t *ct)
 		}
 	}
 
-	ret = read_buf(buf, sizeof(buf));
+	ret = upsread(buf, sizeof(buf), SER_AL);
 
 	if (ret < 1)
 		return STAT_INSTCMD_HANDLED;		/* FUTURE: failed */
@@ -1619,7 +1613,8 @@ void upsdrv_makevartable(void)
 
 void upsdrv_initups(void)
 {
-	char	*cable;
+	struct termios tio;
+	char *cable;
 
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
@@ -1628,6 +1623,27 @@ void upsdrv_initups(void)
 
 	if (cable && !strcasecmp(cable, ALT_CABLE_1))
 		init_serial_0095B();
+
+	/* enable canonical processing */
+	memset(&tio, 0, sizeof(tio));
+	if (tcgetattr(upsfd, &tio) != 0)
+		fatal_with_errno(EXIT_FAILURE, "tcgetattr(%s)", device_path);
+
+	tio.c_lflag |= ICANON;
+	tio.c_lflag &= ~ISIG;
+
+	tio.c_iflag |= IGNCR;
+	tio.c_iflag &= ~(IXON | IXOFF);
+
+	tio.c_cc[VERASE] = _POSIX_VDISABLE;
+	tio.c_cc[VKILL]  = _POSIX_VDISABLE;
+
+	tio.c_cc[VEOL] = '*';	/* specially handled in upsread() */
+	tio.c_cc[VEOL2] = _POSIX_VDISABLE;
+	tio.c_cc[VEOF] = _POSIX_VDISABLE;
+
+	if (tcsetattr(upsfd, TCSANOW, &tio) != 0)
+		fatal_with_errno(EXIT_FAILURE, "tcsetattr(%s)", device_path);
 
 	/* make sure we wake up if the UPS sends alert chars to us */
 	extrafd = upsfd;
