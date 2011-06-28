@@ -20,6 +20,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include <sys/file.h>
 #include "main.h"
 #include "serial.h"
 #include "apcsmart.h"
@@ -137,6 +138,153 @@ static const char *convert_data(apc_vartab_t *cmd_entry, const char *upsval)
 	return temp;
 }
 
+static int apc_ser_set(void)
+{
+	struct termios tio;
+	char *cable;
+
+#if 0
+	if (upsfd == -1) {
+		upslog_with_errno(LOG_EMERG, "apc_ser_set: programming error ! port (%s) should be opened !", device_path);
+		return 0;
+	}
+#endif
+	if (upsfd == -1)
+		return 0;
+
+	memset(&tio, 0, sizeof(tio));
+	errno = 0;
+	if (tcgetattr(upsfd, &tio)) {
+		upslog_with_errno(LOG_ERR, "apc_ser_set: tcgetattr(%s)", device_path);
+		return 0;
+	}
+
+	/* set port mode: common stuff, canonical processing, speed */
+
+	tio.c_cflag = CS8 | CLOCAL | CREAD;
+
+	tio.c_lflag = ICANON;
+	tio.c_lflag &= ~ISIG;
+
+	tio.c_iflag = IGNCR | IGNPAR;
+	tio.c_iflag &= ~(IXON | IXOFF);
+
+	tio.c_oflag = 0;
+
+	tio.c_cc[VERASE] = _POSIX_VDISABLE;
+	tio.c_cc[VKILL]  = _POSIX_VDISABLE;
+
+	tio.c_cc[VEOL] = '*';	/* specially handled in apc_read() */
+	tio.c_cc[VEOL2] = _POSIX_VDISABLE;
+	tio.c_cc[VEOF] = _POSIX_VDISABLE;
+
+	/*
+	 * unused in canonical mode:
+	tio.c_cc[VMIN] = 1;
+	tio.c_cc[VTIME] = 0;
+	*/
+
+	cfsetispeed(&tio, B2400);
+	cfsetospeed(&tio, B2400);
+
+	tcflush(upsfd, TCIOFLUSH);
+
+	errno = 0;
+	if (tcsetattr(upsfd, TCSANOW, &tio)) {
+		upslog_with_errno(LOG_ERR, "apc_ser_set: tcsetattr(%s)", device_path);
+		return 0;
+	}
+
+	cable = getval("cable");
+	if (cable && !strcasecmp(cable, ALT_CABLE_1)) {
+		if (ser_set_dtr(upsfd, 1) == -1) {
+			upslog_with_errno(LOG_ERR, "apc_ser_set: ser_set_dtr() failed (%s)", device_path);
+			return 0;
+		}
+		if (ser_set_rts(upsfd, 0) == -1) {
+			upslog_with_errno(LOG_ERR, "apc_ser_set: ser_set_rts() failed (%s)", device_path);
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
+/*
+ * try to [re]open serial port
+ */
+static int apc_ser_try(void)
+{
+	int fd, ret;
+
+#if 0
+	if (upsfd >= 0)
+		return 1;
+#endif
+	if (upsfd >= 0) {
+		upslog_with_errno(LOG_EMERG, "apc_ser_try: programming error ! port (%s) should be closed !", device_path);
+		return 0;
+	}
+
+	errno = 0;
+	fd = open(device_path, O_RDWR | O_NOCTTY | O_EXCL | O_NONBLOCK);
+
+	if (fd < 0) {
+		upslog_with_errno(LOG_CRIT, "apc_ser_try: couldn't [re]open serial port (%s)", device_path);
+		return 0;
+	}
+
+	if (do_lock_port) {
+		errno = 0;
+		ret = 0;
+#ifdef HAVE_UU_LOCK
+		ret = uu_lock(xbasename(device_path));
+#elif defined(HAVE_FLOCK)
+		ret = flock(fd, LOCK_EX | LOCK_NB);
+#elif defined(HAVE_LOCKF)
+		lseek(fd, 0L, SEEK_SET);
+		ret = lockf(fd, F_TLOCK, 0L);
+#endif
+		if (ret)
+			upslog_with_errno(LOG_ERR, "apc_ser_try: couldn't lock the port (%s)", device_path);
+	}
+
+	upsfd = fd;
+	extrafd = fd;
+
+	return 1;
+}
+
+/*
+ * forcefully tear down serial connection
+ */
+static int apc_ser_tear(void)
+{
+	int ret;
+
+#if 0
+	if (upsfd == -1) {
+		upslog_with_errno(LOG_EMERG, "apc_ser_tear: programming error ! port (%s) should be opened !", device_path);
+		return 0;
+	}
+#endif
+	if (upsfd == -1)
+		return 1;
+
+	tcflush(upsfd, TCIOFLUSH);
+#ifdef HAVE_UU_LOCK
+	if (do_lock_port)
+		uu_unlock(xbasename(device_path));
+#endif
+	ret = close(upsfd);
+	if (ret != 0)
+		upslog_with_errno(LOG_ERR, "apc_ser_tear: couldn't close the port (%s)", device_path);
+	upsfd = -1;
+	extrafd = -1;
+
+	return 1;
+}
+
 static void ups_status_set(void)
 {
 	status_init();
@@ -241,6 +389,8 @@ static int apc_read(char *buf, size_t buflen, int flags)
 	int	i, ret, sec = 3, usec = 0;
 	char	temp[512];
 
+	if (upsfd == -1)
+		return 0;
 	/*
 	 * 3 sec is near the edge of how much this command can take until
 	 * ENDCHAR shows up in the input; bump to 6 seconds to be on the safe
@@ -280,9 +430,11 @@ static int apc_read(char *buf, size_t buflen, int flags)
 		}
 		/* ok, timeout is acceptable */
 		if (ret == 0 && (flags & SER_TO)) {
-			break;
+			/* but it doesn't imply ser_comm_good */
+			return count;
 		}
 
+		/* parse input */
 		for (i = 0; i < ret; i++) {
 			/* standard "line received" condition */
 			if ((count == buflen - 1) || (temp[i] == ENDCHAR)) {
@@ -301,7 +453,8 @@ static int apc_read(char *buf, size_t buflen, int flags)
 				 * it - it's not real EOL after all
 				 */
 				errno = 0;
-				ret = select_read(upsfd, temp, sizeof(temp), 0, 0);
+				/* ret = select_read(upsfd, temp, sizeof(temp), 0, 0); */
+				ret = tcflush(upsfd, TCIFLUSH);
 				if (ret < 0) {
 					ser_comm_fail("%s", strerror(errno));
 					return ret;
@@ -953,19 +1106,25 @@ static int do_cal(int start)
 /* get the UPS talking to us in smart mode */
 static int smartmode(void)
 {
-	int	ret, tries;
+	int	ret;
 	char	temp[512];
 
-	for (tries = 0; tries < 5; tries++) {
+	apc_flush(0);
+	ret = apc_write(APC_GOSMART);
+	if (ret != 1) {
+		upslog_with_errno(LOG_ERR, "smartmode: apc_write failed");
+		return 0;
+	}
+	ret = apc_read(temp, sizeof(temp), 0);
 
-		ret = apc_write(APC_GOSMART);
+	if ((ret < 1) || (!strcmp(temp, "NA")) || (!strcmp(temp, "NO"))) {
+		upslogx(LOG_CRIT, "Enabling smartmode failed !");
+		return 0;
+	}
 
-		if (ret != 1) {
-			upslog_with_errno(LOG_ERR, "smartmode: apc_write failed");
-			return 0;
-		}
-
-		ret = apc_read(temp, sizeof(temp), SER_TO);
+	return 1;
+#if 0
+	for (tries = 0; tries < 3; tries++) {
 
 		if (ret > 0 && !strcmp(temp, "SM"))
 			return 1;	/* success */
@@ -982,10 +1141,11 @@ static int smartmode(void)
 		}
 
 		/* eat the response (might be NA, might be something else) */
-		apc_read(temp, sizeof(temp), SER_TO);
+		apc_read(temp, sizeof(temp), 0);
 	}
 
 	return 0;	/* failure */
+#endif
 }
 
 /*
@@ -1264,13 +1424,6 @@ void upsdrv_shutdown(void)
 		upsdrv_shutdown_advanced(status);
 	else
 		upsdrv_shutdown_simple(status);
-}
-
-/* 940-0095B support: set DTR, lower RTS */
-static void init_serial_0095B(void)
-{
-	ser_set_dtr(upsfd, 1);
-	ser_set_rts(upsfd, 0);
 }
 
 static void update_info_normal(void)
@@ -1628,40 +1781,21 @@ void upsdrv_makevartable(void)
 
 void upsdrv_initups(void)
 {
-	struct termios tio;
-	char *cable;
+	if (!apc_ser_try())
+		fatalx(EXIT_FAILURE, "couldn't open port (%s)", device_path);
+	if (!apc_ser_set())
+		fatalx(EXIT_FAILURE, "couldn't set options on port (%s)", device_path);
+}
 
-	upsfd = ser_open(device_path);
-	ser_set_speed(upsfd, device_path, B2400);
+void upsdrv_cleanup(void)
+{
+	char temp[512];
 
-	cable = getval("cable");
-
-	if (cable && !strcasecmp(cable, ALT_CABLE_1))
-		init_serial_0095B();
-
-	/* enable canonical processing */
-	memset(&tio, 0, sizeof(tio));
-	if (tcgetattr(upsfd, &tio) != 0)
-		fatal_with_errno(EXIT_FAILURE, "tcgetattr(%s)", device_path);
-
-	tio.c_lflag |= ICANON;
-	tio.c_lflag &= ~ISIG;
-
-	tio.c_iflag |= IGNCR;
-	tio.c_iflag &= ~(IXON | IXOFF);
-
-	tio.c_cc[VERASE] = _POSIX_VDISABLE;
-	tio.c_cc[VKILL]  = _POSIX_VDISABLE;
-
-	tio.c_cc[VEOL] = '*';	/* specially handled in upsread() */
-	tio.c_cc[VEOL2] = _POSIX_VDISABLE;
-	tio.c_cc[VEOF] = _POSIX_VDISABLE;
-
-	if (tcsetattr(upsfd, TCSANOW, &tio) != 0)
-		fatal_with_errno(EXIT_FAILURE, "tcsetattr(%s)", device_path);
-
-	/* make sure we wake up if the UPS sends alert chars to us */
-	extrafd = upsfd;
+	apc_flush(0);
+	/* try to bring the UPS out of smart mode */
+	apc_write(APC_GODUMB);
+	apc_read(temp, sizeof(temp), SER_TO);
+	apc_ser_tear();
 }
 
 void upsdrv_help(void)
@@ -1696,19 +1830,30 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
+	int ret;
+	static int last_worked = 0;
 	static	time_t	last_full = 0;
 	time_t	now;
 
 	/* try to wake up a dead ups once in awhile */
-	if ((dstate_is_stale()) && (!smartmode())) {
-		upslogx(LOG_ERR, "Communications with UPS lost - check cabling");
+	while ((dstate_is_stale())) {
+		upslogx(LOG_ERR, "Communications with UPS lost - check cabling.");
 
 		/* reset this so a full update runs when the UPS returns */
 		last_full = 0;
+
+		/* become aggressive */
+		if (++last_worked > 10) {
+			upslogx(LOG_ERR, "Attempting to reset serial port (%s).", device_path);
+			ret = apc_ser_tear() && apc_ser_try() && apc_ser_set() && smartmode();
+			if (ret) {
+				last_worked = 0;
+				ser_comm_good();
+				break;
+			}
+		}
 		return;
 	}
-
-	ser_comm_good();
 
 	if (!update_status())
 		return;
@@ -1724,12 +1869,4 @@ void upsdrv_updateinfo(void)
 	}
 
 	update_info_normal();
-}
-
-void upsdrv_cleanup(void)
-{
-	/* try to bring the UPS out of smart mode */
-	ser_send_char(upsfd, APC_GODUMB);
-
-	ser_close(upsfd, device_path);
 }
