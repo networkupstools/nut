@@ -570,11 +570,9 @@ static int poll_data(apc_vartab_t *vt)
 
 /*
  * blindly check if variable is actually supported, update vartab accordingly,
- * also get the value; could use some simplifying ...
+ * also get the value
  */
-/*
- * simplify - first is implied now */
-static int query_ups(const char *var, int first)
+static int query_ups(const char *var)
 {
 	int ret, i, j;
 	char temp[512];
@@ -589,36 +587,23 @@ static int query_ups(const char *var, int first)
 		vt = &apc_vartab[i];
 		if (strcmp(vt->name, var) || vt->flags & APC_DEPR)
 			continue;
-		/*
-		 * ok, found in table & not deprecated - if not the first run
-		 * and not present, bail out
-		 */
-		if (!first && !(vt->flags & APC_PRESENT))
-			break;
 
 		/* found, [try to] get it */
 
-		/* empty the input buffer (while allowing the alert handler to run) */
 		apc_flush(SER_AL);
 		ret = apc_write(vt->cmd);
 		if (ret != 1) {
 			upslog_with_errno(LOG_ERR, "query_ups: apc_write failed");
 			break;
 		}
-		ret = apc_read(temp, sizeof(temp), SER_AL | (first ? SER_TO : 0));
+		ret = apc_read(temp, sizeof(temp), SER_AL|SER_TO);
 
 		if (ret < 1 || !strcmp(temp, "NA")) {
-			if (first) {
-				if (vt->flags & APC_MULTI) {
-					vt->flags |= APC_DEPR;
-					continue;
-				}
-				upsdebugx(1, "query_ups: unknown variable %s", var);
-				break;
+			if (vt->flags & APC_MULTI) {
+				vt->flags |= APC_DEPR;
+				continue;
 			}
-			/* automagically no longer supported by the hardware somehow */
-			if (ret > 0)
-				remove_var("query_ups", vt);
+			upsdebugx(1, "query_ups: unknown variable %s", var);
 			break;
 		}
 
@@ -627,7 +612,7 @@ static int query_ups(const char *var, int first)
 		dstate_setinfo(vt->name, "%s", ptr);
 
 		/* supported, deprecate all the remaining ones */
-		if (first && vt->flags & APC_MULTI)
+		if (vt->flags & APC_MULTI)
 			for (j = i + 1; apc_vartab[j].name != NULL; j++) {
 				vtn = &apc_vartab[j];
 				if (strcmp(vtn->name, vt->name))
@@ -826,7 +811,7 @@ static void oldapcsetup(void)
 	int	ret = 0;
 
 	/* really old models ignore REQ_MODEL, so find them first */
-	ret = query_ups("ups.model", 1);
+	ret = query_ups("ups.model");
 
 	if (ret != 1) {
 		/* force the model name */
@@ -834,17 +819,19 @@ static void oldapcsetup(void)
 	}
 
 	/* see if this might be an old Matrix-UPS instead */
-	if (query_ups("output.current", 1))
+	if (query_ups("output.current"))
 		dstate_setinfo("ups.model", "Matrix-UPS");
 
-	query_ups("ups.serial", 1);
-	query_ups("input.voltage", 1); /* This one may fail... no problem */
+	query_ups("ups.firmware");
+	query_ups("ups.serial");
+	query_ups("input.voltage"); /* This one may fail... no problem */
 
 	update_status();
 
-	/* If we have come down this path then we dont do capabilities and
-	   other shiny features
-	*/
+	/*
+	 * If we have come down this path then we dont do capabilities and
+	 * other shiny features.
+	 */
 }
 
 static void protocol_verify(unsigned char cmd)
@@ -1874,3 +1861,80 @@ void upsdrv_updateinfo(void)
 
 	update_info_normal();
 }
+
+#if 0
+
+/* old version for reference, if we wanted to get back to it */
+/*
+ * blindly check if variable is actually supported, update vartab accordingly,
+ * also get the value; could use some simplifying ...
+ */
+static int query_ups(const char *var, int first)
+{
+	int ret, i, j;
+	char temp[512];
+	const char *ptr;
+	apc_vartab_t *vt, *vtn;
+
+	/*
+	 * at first run we know nothing about variable; we have to handle
+	 * APC_MULTI gracefully as well
+	 */
+	for (i = 0; apc_vartab[i].name != NULL; i++) {
+		vt = &apc_vartab[i];
+		if (strcmp(vt->name, var) || vt->flags & APC_DEPR)
+			continue;
+		/*
+		 * ok, found in table & not deprecated - if not the first run
+		 * and not present, bail out
+		 */
+		if (!first && !(vt->flags & APC_PRESENT))
+			break;
+
+		/* found, [try to] get it */
+
+		/* empty the input buffer (while allowing the alert handler to run) */
+		apc_flush(SER_AL);
+		ret = apc_write(vt->cmd);
+		if (ret != 1) {
+			upslog_with_errno(LOG_ERR, "query_ups: apc_write failed");
+			break;
+		}
+		ret = apc_read(temp, sizeof(temp), SER_AL | (first ? SER_TO : 0));
+
+		if (ret < 1 || !strcmp(temp, "NA")) {
+			if (first) {
+				if (vt->flags & APC_MULTI) {
+					vt->flags |= APC_DEPR;
+					continue;
+				}
+				upsdebugx(1, "query_ups: unknown variable %s", var);
+				break;
+			}
+			/* automagically no longer supported by the hardware somehow */
+			if (ret > 0)
+				remove_var("query_ups", vt);
+			break;
+		}
+
+		vt->flags |= APC_PRESENT;
+		ptr = convert_data(vt, temp);
+		dstate_setinfo(vt->name, "%s", ptr);
+
+		/* supported, deprecate all the remaining ones */
+		if (first && vt->flags & APC_MULTI)
+			for (j = i + 1; apc_vartab[j].name != NULL; j++) {
+				vtn = &apc_vartab[j];
+				if (strcmp(vtn->name, vt->name))
+					continue;
+				vtn->flags |= APC_DEPR;
+				vtn->flags &= ~APC_PRESENT;
+			}
+
+		return 1; /* success */
+	}
+
+	return 0;
+}
+
+#endif
