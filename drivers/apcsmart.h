@@ -62,15 +62,27 @@
 
 /* characters ignored by default */
 #define IGNCHARS "\015+$|!~%?=#&"	/* special characters to ignore */
-
 /* these one is used only during startup, due to ^Z sending certain characters such as # */
 #define MINIGNCHARS "\015+$|!"	/* minimum set of special characters to ignore */
-
 /* normal polls: characters we don't want to parse (including a few alerts) */
 #define POLL_IGNORE "\015&|"
-
 /* alert characters we care about - OL, OB, LB, not LB, RB, OVER, not OVER */
 #define POLL_ALERT "$!%+#?="
+
+/* what to ignore during alert aware serial reads */
+#define IGN_AACHARS "|&"
+
+/* what alert_handler() should care about */
+#define ALERT_CHARS "$!%+#?="
+
+/* characters ignored by alertless reads */
+#define IGN_CHARS IGN_AACHARS ALERT_CHARS
+
+/*
+ * these ones are used only during capability read, due to ^Z sending certain
+ * characters such as #; it seems it could be equal to just IGN_CHARS w/o #
+ */
+#define IGN_CCCHARS "|$!+"	/* capability check ignore set */
 
 #define UPSDELAY	  50000	/* slow down multicharacter commands        */
 #define CMDLONGDELAY	1500000	/* some commands need a 1.5s gap for safety */

@@ -226,6 +226,101 @@ static int read_buf(char *buf, size_t buflen)
 	return ret;
 }
 
+static void upsflush(int flags)
+{
+	char temp[64];
+
+	if (flags & SER_AL) {
+		while(ser_get_line_alert(upsfd, temp, sizeof(temp), ENDCHAR, IGN_AACHARS, ALERT_CHARS, alert_handler, 0, 0) > 0);
+	} else {
+		while(ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, IGN_CHARS, 0, 0) > 0);
+	}
+}
+
+/*
+ * we need a tiny bit different processing due to '*' and canonical mode; the
+ * function is subtly different from generic ser_get_line_alert()
+ */
+static int upsread(char *buf, size_t buflen, int flags)
+{
+	const char *iset = IGN_CHARS, *aset = "";
+	size_t	count = 0;
+	int	i, ret, sec = 3, usec = 0;
+	char	temp[512];
+
+	if (flags & SER_CC) {
+		iset = IGN_CCCHARS;
+		/*
+		 * 3 sec is near the edge of how much this command can take
+		 * until ENDCHAR shows up in the input; bump to 6 seconds
+		 * to be on the safe side
+		 */
+		sec = 6;
+	}
+	if (flags & SER_AL) {
+		iset = IGN_AACHARS;
+		aset = ALERT_CHARS;
+	}
+	if (flags & SER_SD) {
+		/* cut down timeout to 1.5 sec */
+		sec = 1;
+		usec = 500000;
+		flags |= SER_TO;
+	}
+	if (flags & SER_AX) {
+		flags |= SER_SD;
+	}
+
+	memset(buf, '\0', buflen);
+
+	while (count < buflen - 1) {
+		ret = select_read(upsfd, temp, sizeof(temp), sec, usec);
+
+		/* error or no timeout allowed */
+		if (ret < 0 || (ret == 0 && !(flags & SER_TO))) {
+			ser_comm_fail("%s", ret ? strerror(errno) : "timeout");
+			return ret;
+		}
+		/* ok, timeout is acceptable */
+		if (ret == 0 && (flags & SER_TO)) {
+			break;
+		}
+
+		for (i = 0; i < ret; i++) {
+			/* standard "line received" condition */
+			if ((count == buflen - 1) || (temp[i] == ENDCHAR)) {
+				ser_comm_good();
+				return count;
+			}
+			/*
+			 * '*' is set as a secondary EOL; return '*' only as a
+			 * reply to shutdown command in sdok(); otherwise next
+			 * select_read() will continue normally
+			 */
+			if ((flags & SER_AX) && temp[i] == '*') {
+				buf[0] = '*';
+				buf[1] = '\0';
+				ser_comm_good();
+				return 1;
+			}
+			/* ignore set */
+			if (strchr(iset, temp[i]) || temp[i] == '*') {
+				continue;
+			}
+			/* alert set */
+			if (strchr(aset, temp[i])) {
+				alert_handler(temp[i]);
+				continue;
+			}
+
+			buf[count++] = temp[i];
+		}
+	}
+
+	ser_comm_good();
+	return count;
+}
+
 static int poll_data(apc_vartab_t *vt)
 {
 	int	ret;
