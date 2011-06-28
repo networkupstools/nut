@@ -104,6 +104,13 @@
 #define SER_SD  0x08		/* prepare for shutdown command processing */
 #define SER_AX  0x10		/* prepare for '*' handling */
 
+/*
+ * Some cmd codes to ignore (nut doesn't expose those, though the driver might
+ * use them internally (e.g. [a]). If you decide to support them at some
+ * point, remember about removing them from here !
+ */
+#define APC_UNR_CMDS "\032\177')-8QRYayz"
+
 /* --------------- */
 
 /* status bits */

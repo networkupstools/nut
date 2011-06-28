@@ -629,7 +629,7 @@ static void protocol_verify(unsigned char cmd)
 		}
 	}
 
-	if (found)
+	if (found || strchr(APC_UNR_CMDS, cmd))
 		return;
 
 	if (isprint(cmd))
