@@ -26,6 +26,37 @@
 
 #define APC_TABLE_VERSION	"version 2.2"
 
+/*
+ * alerts and other stuff for quick reference:
+ *
+ * $ OL
+ * ! OB
+ * % LB
+ * + not LB
+ * # RB
+ * ? OVER
+ * = not OVER
+ * * powering down now (only older models ?), handled by upsread()
+ * 	otherwise ignored (it doesn't have to be in ignore sets)
+ *
+ * | eeprom change
+ * & check alarm register for fail
+ * ~ ???
+ */
+
+/*
+ * old ones for reference:
+ * 	#define IGNCHARS "\015+$|!~%?=#&"
+ * 	#define POLL_IGNORE "\015&|"
+ *	#define POLL_ALERT "$!%+#?="
+ *	#define MINIGNCHARS "\015+$|!"
+ * notice ~ that was present in IGNCHARS, but not in POLL_IGNORE - this kinda
+ * didn't make sense (?); new versions doesn't filter ~, but keep that in mind
+ * in case something obscure surfaces
+ * due to switch to ICANON tty mode, we removed \015 from ignored characters,
+ * as it's handled by IGNCR at read() level
+ */
+
 /* Basic UPS reply line structure */
 #define ENDCHAR 10		/* APC ends responses with LF */
 
@@ -53,6 +84,13 @@
 
 /* it only does two strings, and they're both the same length */
 #define APC_STRLEN	8
+
+/* how upsread() should behave */
+#define SER_AL  0x01		/* run with alarm handler */
+#define SER_TO  0x02		/* allow timeout without error */
+#define SER_CC  0x04		/* prepare for capability check (^Z) processing */
+#define SER_SD  0x08		/* prepare for shutdown command processing */
+#define SER_AX  0x10		/* prepare for '*' handling */
 
 /* --------------- */
 
