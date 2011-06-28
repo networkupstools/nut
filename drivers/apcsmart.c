@@ -745,6 +745,7 @@ static void do_capabilities(int qco)
 		upsloc = 0;
 
 	/* get capability string */
+	apc_flush(0);
 	ret = apc_write(APC_CAPS);
 
 	if (ret != 1) {
@@ -1037,6 +1038,7 @@ static int firmware_table_lookup(int *qco)
 
 	upsdebugx(1, "attempting firmware lookup using command 'V'");
 
+	apc_flush(0);
 	ret = apc_write(APC_FW_OLD);
 
 	if (ret != 1) {
@@ -1122,6 +1124,7 @@ static void getbaseinfo(void)
 	   strategy - we can deal with that if it happens
 	*/
 
+	apc_flush(0);
 	ret = apc_write(APC_CMDSET);
 
 	if (ret != 1) {
@@ -1161,6 +1164,7 @@ static int do_cal(int start)
 	char	temp[APC_LBUF];
 	int	tval, ret;
 
+	apc_flush(SER_AA);
 	ret = apc_write(APC_STATUS);
 
 	if (ret != 1) {
