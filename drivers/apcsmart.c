@@ -68,6 +68,8 @@ static int (*sdlist[])(const void *) = {
 #define SDIDX_CS	4
 
 #define SDCNT 		5
+#define SDTYPE_MAX	5
+#define SDTYPE_MAXS	"5"
 
 static apc_vartab_t *vartab_lookup_char(char cmdchar)
 {
@@ -1469,12 +1471,8 @@ static void upsdrv_shutdown_simple(void)
 	unsigned int sdtype = 0;
 	const char *val;
 
-	if ((val = getval("sdtype"))) {
-		errno = 0;
+	if ((val = getval("sdtype")))
 		sdtype = strtol(val, NULL, 10);
-		if (errno || sdtype < 0 || sdtype > 5)
-			sdtype = 0;
-	}
 
 	switch (sdtype) {
 
@@ -1972,14 +1970,15 @@ void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE, "cable", "specify alternate cable (940-0095B)");
 	addvar(VAR_VALUE, "awd", "hard hibernate's additional wakeup delay");
-	addvar(VAR_VALUE, "sdtype", "specify simple shutdown method (0-5)");
+	addvar(VAR_VALUE, "sdtype", "specify simple shutdown method (0-"SDTYPE_MAXS")");
 	addvar(VAR_VALUE, "advorder", "enable advanced shutdown control");
 }
 
 void upsdrv_initups(void)
 {
+	int sdtype;
 	size_t i, len;
-	char *val;
+	char *val, *eptr;
 
 	if (!apc_ser_try())
 		fatalx(EXIT_FAILURE, "couldn't open port (%s)", device_path);
@@ -1989,17 +1988,24 @@ void upsdrv_initups(void)
 	if (validate_ATn_arg((val = getval("awd"))) < 0)
 		fatalx(EXIT_FAILURE, "invalid value (%s) for option 'awd'", val);
 
+	/* sanitize sdtype */
+	if ((val = getval("sdtype"))) {
+		errno = 0;
+		sdtype = strtol(val, &eptr, 10);
+		if (errno || *eptr || sdtype < 0 || sdtype > SDTYPE_MAX)
+			fatalx(EXIT_FAILURE, "invalid value (%s) for option 'sdtype'", val);
+	}
+
 	/* sanitize advorder */
-	if (!(val = getval("advorder")) || !strcasecmp(val, "no"))
-		return;
+	if ((val = getval("advorder")) && strcasecmp(val, "no")) {
+		len = strlen(val);
 
-	len = strlen(val);
-
-	if (!len || len > SDCNT)
-		fatalx(EXIT_FAILURE, "invalid length of 'advorder' option (%s)", val);
-	for (i = 0; i < len; i++) {
-		if (val[i] < '0' || val[i] >= '0' + SDCNT) {
-			fatalx(EXIT_FAILURE, "invalid characters in 'advorder' option (%s)", val);
+		if (!len || len > SDCNT)
+			fatalx(EXIT_FAILURE, "invalid length of 'advorder' option (%s)", val);
+		for (i = 0; i < len; i++) {
+			if (val[i] < '0' || val[i] >= '0' + SDCNT) {
+				fatalx(EXIT_FAILURE, "invalid characters in 'advorder' option (%s)", val);
+			}
 		}
 	}
 }
