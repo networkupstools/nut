@@ -1,4 +1,5 @@
 EXTRA_DIST = README \
+avahi/nut.service.in \
 HP-UX/Makefile \
 HP-UX/nut-drvctl \
 HP-UX/nut-drvctl.sh \

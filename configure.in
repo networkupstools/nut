@@ -894,6 +894,7 @@ AC_SUBST(SERLIBS)
 AC_SUBST(STATEPATH)
 AC_SUBST(CONFPATH)
 AC_SUBST(BINDIR)
+AC_SUBST(PORT)
 AC_SUBST(RUN_AS_USER)
 AC_SUBST(RUN_AS_GROUP)
 AC_SUBST(SUN_LIBUSB)
@@ -931,6 +932,7 @@ AC_OUTPUT([
  scripts/augeas/nutupsschedconf.aug
  scripts/augeas/nuthostsconf.aug
  scripts/augeas/nutupssetconf.aug
+ scripts/avahi/nut.service
  scripts/hal/Makefile
  scripts/hal/ups-nut-device.fdi
  scripts/hotplug/Makefile
