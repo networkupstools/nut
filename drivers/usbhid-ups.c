@@ -1480,16 +1480,21 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		case ERROR_BUSY:      /* Device or resource busy */
 			upslog_with_errno(LOG_CRIT, "Got disconnected by another driver");
 			goto fallthrough_reconnect;
+
 #if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
 		case -EPERM:		/* Operation not permitted */
 #endif
 		case ERROR_NO_DEVICE: /* No such device */
 		case ERROR_ACCESS:    /* Permission denied */
 		case ERROR_IO:        /* I/O error */
+		case ERROR_NOT_FOUND: /* No such file or directory */
 #if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
 		case -ENXIO:		/* No such device or address */
 #endif
-		case ERROR_NOT_FOUND: /* No such file or directory */
+#ifdef WIN32
+		case ERROR_INVALID_PARAM:		/* Invalid argument */
+		case ERROR_NO_MEM:		/* Out of memory */
+#endif
 		fallthrough_reconnect:
 			/* Uh oh, got to reconnect! */
 			hd = NULL;
@@ -1547,7 +1552,6 @@ static bool_t hid_ups_walk(walkmode_t mode)
 			if (!(item->hidflags & HU_FLAG_ENUM) || !(item->info_flags & ST_FLAG_RW)) {
 				continue;
 			}
-
 			/* Loop on all existing values */
 			for (info_lkp = item->hid2info; info_lkp != NULL
 				&& info_lkp->nut_value != NULL; info_lkp++) {

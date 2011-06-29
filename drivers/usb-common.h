@@ -170,6 +170,8 @@
  #define ERROR_OVERFLOW		LIBUSB_ERROR_OVERFLOW
  #define ERROR_PIPE			LIBUSB_ERROR_PIPE
  #define ERROR_TIMEOUT		LIBUSB_ERROR_TIMEOUT
+ #define ERROR_NO_MEM		LIBUSB_ERROR_NO_MEM
+ #define ERROR_INVALID_PARAM		LIBUSB_ERROR_INVALID_PARAM
 
  /* Functions, including range-checks to convert data types of the two APIs.
   * Follows an example from libusb-1.0 headers that liberally cast int args
@@ -433,6 +435,8 @@
  #define ERROR_OVERFLOW		-EOVERFLOW
  #define ERROR_PIPE			-EPIPE
  #define ERROR_TIMEOUT		-ETIMEDOUT
+ #define ERROR_NO_MEM		-ENOMEM
+ #define ERROR_INVALID_PARAM		-EINVAL
 
  /* Functions for which simple mappings seem to suffice (no build warnings emitted): */
  #define nut_usb_strerror(a)	usb_strerror()
