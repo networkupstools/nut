@@ -1002,6 +1002,7 @@ int dstate_poll_fds(struct timeval timeout, HANDLE extrafd)
 	HANDLE	rfds[32];
 	conn_t	*conn;
         struct timeval  now;
+	DWORD   timeout_ms;
 
 /*
 	if (extrafd != -1) {
@@ -1027,6 +1028,8 @@ int dstate_poll_fds(struct timeval timeout, HANDLE extrafd)
 		timeout.tv_usec -= now.tv_usec;
 	}
 
+	timeout_ms = (timeout.tv_sec * 1000) + (timeout.tv_usec / 1000);
+
 /* Wait on the read IO of each connections */
 	for (conn = connhead; conn; conn = conn->next) {
 		rfds[maxfd] = conn->read_overlapped.hEvent;
@@ -1035,12 +1038,11 @@ int dstate_poll_fds(struct timeval timeout, HANDLE extrafd)
 	/* Add the connect event */
 	rfds[maxfd] = connect_overlapped.hEvent;
 	maxfd++;
-
 	ret = WaitForMultipleObjects( 
-				maxfd,	// number of objects in array
-				rfds,	// array of objects
-				FALSE,	// wait for any object
-				timeout.tv_sec); // five-second wait
+				maxfd,	/* number of objects in array */
+				rfds,	/* array of objects */
+				FALSE,	/* wait for any object */
+				timeout_ms); /* timeout in millisecond */
 
 	if (ret == WAIT_TIMEOUT) {
 		return 1;	/* timer expired */
