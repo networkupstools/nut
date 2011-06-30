@@ -2485,7 +2485,7 @@ int main(int argc, char *argv[])
 		handles[maxhandle] = pipe_connection_overlapped.hEvent;
 		maxhandle++;
 
-		ret = WaitForMultipleObjects(maxhandle,handles,FALSE,sleepval);
+		ret = WaitForMultipleObjects(maxhandle,handles,FALSE,sleepval*1000);
 
 		if (ret == WAIT_FAILED) {
 			upslogx(LOG_ERR, "Wait failed");
