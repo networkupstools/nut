@@ -603,8 +603,26 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 			LARGEBUF);
 	
 
-	if (use_strerror)
+	if (use_strerror) {
 		snprintfcat(buf, sizeof(buf), ": %s", strerror(errno));
+#ifdef WIN32
+		LPVOID WinBuf;
+		DWORD WinErr = GetLastError();
+		FormatMessage(
+				FORMAT_MESSAGE_MAX_WIDTH_MASK |
+				FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+				FORMAT_MESSAGE_FROM_SYSTEM |
+				FORMAT_MESSAGE_IGNORE_INSERTS,
+				NULL,
+				WinErr,
+				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+				(LPTSTR) &WinBuf,
+				0, NULL );
+
+		snprintfcat(buf, sizeof(buf), " [%s]", WinBuf);
+		LocalFree(WinBuf);
+#endif
+	}
 
 	if (nut_debug_level > 0) {
 		static struct timeval	start = { 0, 0 };
