@@ -649,6 +649,10 @@ static int libusb_get_report(
 		usb_subdriver.hid_rep_index,
 		raw_buf, ReportSize, USB_TIMEOUT);
 
+#ifdef WIN32
+	errno = -ret;
+#endif
+
 	/* Ignore "protocol stall" (for unsupported request) on control endpoint */
 	if (ret == -EPIPE) {
 		return 0;
@@ -679,6 +683,10 @@ static int libusb_set_report(
 		ReportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
 		usb_subdriver.hid_rep_index,
 		raw_buf, ReportSize, USB_TIMEOUT);
+
+#ifdef WIN32
+	errno = -ret;
+#endif
 
 	/* Ignore "protocol stall" (for unsupported request) on control endpoint */
 	if (ret == -EPIPE) {
@@ -728,6 +736,10 @@ static int libusb_get_string(
 
 	ret = usb_get_string_simple(udev, StringIdx, buf, (size_t)buflen);
 
+#ifdef WIN32
+	errno = -ret;
+#endif
+
 	return libusb_strerror(ret, __func__);
 }
 
@@ -749,6 +761,10 @@ static int libusb_get_interrupt(
 
 	/* Interrupt EP is USB_ENDPOINT_IN with offset defined in hid_ep_in, which is 0 by default, unless overridden in subdriver. */
 	ret = usb_interrupt_read(udev, USB_ENDPOINT_IN + usb_subdriver.hid_ep_in, (char *)buf, bufsize, timeout);
+
+#ifdef WIN32
+	errno = -ret;
+#endif
 
 	/* Clear stall condition */
 	if (ret == -EPIPE) {
