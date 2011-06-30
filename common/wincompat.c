@@ -353,6 +353,8 @@ int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen, DWORD timeou
 	HANDLE w4;
 	DWORD minchars = sh->vmin_ ?: ulen;
 
+	errno = 0;
+
 	w4 = sh->io_status.hEvent;
 
 	upsdebugx(4,"w32_serial_read : ulen %d, vmin_ %d, vtime_ %d, hEvent %p", ulen, sh->vmin_, sh->vtime_,sh->io_status.hEvent);
@@ -414,6 +416,7 @@ int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen, DWORD timeou
 						sh->overlapped_armed = 0;
 						ResetEvent (sh->io_status.hEvent);
 						upsdebugx(4,"w32_serial_read : timeout %d ms ellapsed", (int)timeout);
+						errno = EIO;
 						return 0;
 					default:
 						goto err;
@@ -450,6 +453,7 @@ err:
 			num = 0;
 		else
 		{
+			errno = EIO;
 			tot = -1;
 			break;
 		}
@@ -464,6 +468,8 @@ int w32_serial_write (serial_handler_t * sh, const void *ptr, size_t len)
 {
 	DWORD bytes_written;
 	OVERLAPPED write_status;
+
+	errno = 0;
 
 	memset (&write_status, 0, sizeof (write_status));
 	write_status.hEvent = CreateEvent (NULL, TRUE, FALSE, NULL);
@@ -495,6 +501,7 @@ int w32_serial_write (serial_handler_t * sh, const void *ptr, size_t len)
 
 err:
 	CloseHandle(write_status.hEvent);
+	errno = EIO;
 	return -1;
 }
 
@@ -503,6 +510,8 @@ serial_handler_t * w32_serial_open (const char *name, int flags)
 	/* flags are currently ignored, it's here just to have the same
 	   interface as POSIX open */
 	COMMTIMEOUTS to;
+
+	errno = 0;
 
 	upslogx(LOG_INFO,"w32_serial_open (%s)",name);
 
@@ -515,6 +524,7 @@ serial_handler_t * w32_serial_open (const char *name, int flags)
 
 	if(sh->handle == INVALID_HANDLE_VALUE) {
 		upslogx(LOG_ERR,"could not open %s",name);
+		errno = EPERM;
 		return NULL;
 	}
 
@@ -570,6 +580,8 @@ int w32_serial_close (serial_handler_t * sh)
 	}
 	free(sh);
 
+	errno = 0;
+
 	return 0;
 }
 
@@ -580,17 +592,23 @@ int tcsendbreak (serial_handler_t * sh, int duration)
 {
 	unsigned int sleeptime = 300000;
 
+	errno = 0;
+
 	if (duration > 0)
 		sleeptime *= duration;
 
-	if (SetCommBreak (sh->handle) == 0)
+	if (SetCommBreak (sh->handle) == 0) {
+		errno = EIO;
 		return -1;
+	}
 
 	/* FIXME: need to send zero bits during duration */
 	usleep (sleeptime);
 
-	if (ClearCommBreak (sh->handle) == 0)
+	if (ClearCommBreak (sh->handle) == 0) {
+		errno = EIO;
 		return -1;
+	}
 
 	upslogx(LOG_DEBUG,"0 = tcsendbreak (%d)", duration);
 
@@ -600,8 +618,12 @@ int tcsendbreak (serial_handler_t * sh, int duration)
 /* tcdrain: POSIX 7.2.2.1 */
 int tcdrain (serial_handler_t * sh)
 {
-	if (FlushFileBuffers (sh->handle) == 0)
+	errno = 0;
+
+	if (FlushFileBuffers (sh->handle) == 0) {
+		errno = EIO;
 		return -1;
+	}
 
 	return 0;
 }
@@ -612,6 +634,8 @@ int tcflow (serial_handler_t * sh, int action)
 	DWORD win32action = 0;
 	DCB dcb;
 	char xchar;
+
+	errno = 0;
 
 	upslogx(LOG_DEBUG,"action %d", action);
 
@@ -640,8 +664,10 @@ int tcflow (serial_handler_t * sh, int action)
 			break;
 	}
 
-	if (EscapeCommFunction (sh->handle, win32action) == 0)
+	if (EscapeCommFunction (sh->handle, win32action) == 0) {
+		errno = EIO;
 		return -1;
+	}
 
 	return 0;
 }
@@ -650,6 +676,8 @@ int tcflow (serial_handler_t * sh, int action)
 int tcflush (serial_handler_t * sh, int queue)
 {
 	int max;
+
+	errno = 0;
 
 	if (queue == TCOFLUSH || queue == TCIOFLUSH)
 		PurgeComm (sh->handle, PURGE_TXABORT | PURGE_TXCLEAR);
@@ -685,6 +713,8 @@ TCSAFLUSH: flush output and discard input, then change attributes.
 	DCB ostate, state;
 	unsigned int ovtime = sh->vtime_, ovmin = sh->vmin_;
 
+	errno = 0;
+
 	upslogx(LOG_DEBUG, "action %d", action);
 	if ((action == TCSADRAIN) || (action == TCSAFLUSH))
 	{
@@ -695,8 +725,10 @@ TCSAFLUSH: flush output and discard input, then change attributes.
 		PurgeComm (sh->handle, (PURGE_RXABORT | PURGE_RXCLEAR));
 
 	/* get default/last comm state */
-	if (!GetCommState (sh->handle, &ostate))
+	if (!GetCommState (sh->handle, &ostate)) {
+		errno = EIO;
 		return -1;
+	}
 
 	state = ostate;
 
@@ -746,6 +778,7 @@ TCSAFLUSH: flush output and discard input, then change attributes.
 		default:
 			/* Unsupported baud rate! */
 			upslogx(LOG_ERR,"Invalid t->c_ospeed %d", t->c_ospeed);
+			errno = EINVAL;
 			return -1;
 	}
 
@@ -769,6 +802,7 @@ TCSAFLUSH: flush output and discard input, then change attributes.
 			/* Unsupported byte size! */
 			upslogx(LOG_ERR,"Invalid t->c_cflag byte size %d",
 					t->c_cflag & CSIZE);
+			errno = EINVAL;
 			return -1;
 	}
 
@@ -936,8 +970,10 @@ TCSAFLUSH: flush output and discard input, then change attributes.
 
 	upslogx(LOG_DEBUG,"vtime %d, vmin %d\n", sh->vtime_, sh->vmin_);
 
-	if (ovmin == sh->vmin_ && ovtime == sh->vtime_)
+	if (ovmin == sh->vmin_ && ovtime == sh->vtime_) {
+		errno = EINVAL;
 		return 0;
+	}
 
 	memset (&to, 0, sizeof (to));
 
@@ -974,6 +1010,7 @@ TCSAFLUSH: flush output and discard input, then change attributes.
 	if (!res)
 	{
 		upslogx(LOG_ERR,"SetCommTimeout failed");
+		errno = EIO;
 		return -1;
 	}
 
@@ -985,9 +1022,13 @@ int tcgetattr (serial_handler_t * sh, struct termios *t)
 {
 	DCB state;
 
+	errno = 0;
+
 	/* Get current Win32 comm state */
-	if (GetCommState (sh->handle, &state) == 0)
+	if (GetCommState (sh->handle, &state) == 0) {
+		errno = EIO;
 		return -1;
+	}
 
 	/* for safety */
 	memset (t, 0, sizeof (*t));
@@ -1036,6 +1077,7 @@ int tcgetattr (serial_handler_t * sh, struct termios *t)
 		default:
 			/* Unsupported baud rate! */
 			upslogx(LOG_ERR,"Invalid baud rate %d", (int)state.BaudRate);
+			errno = EINVAL;
 			return -1;
 	}
 
@@ -1058,6 +1100,7 @@ int tcgetattr (serial_handler_t * sh, struct termios *t)
 		default:
 			/* Unsupported byte size! */
 			upslogx(LOG_ERR,"Invalid byte size %d", state.ByteSize);
+			errno = EINVAL;
 			return -1;
 	}
 
