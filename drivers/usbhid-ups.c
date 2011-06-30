@@ -1491,10 +1491,6 @@ static bool_t hid_ups_walk(walkmode_t mode)
 #if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
 		case -ENXIO:		/* No such device or address */
 #endif
-#ifdef WIN32
-		case ERROR_INVALID_PARAM:		/* Invalid argument */
-		case ERROR_NO_MEM:		/* Out of memory */
-#endif
 		fallthrough_reconnect:
 			/* Uh oh, got to reconnect! */
 			hd = NULL;
