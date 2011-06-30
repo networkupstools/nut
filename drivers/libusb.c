@@ -418,6 +418,10 @@ static int libusb_get_report(usb_dev_handle *udev, int ReportId, unsigned char *
 		ReportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
 		0, raw_buf, ReportSize, USB_TIMEOUT);
 
+#ifdef WIN32
+	errno = -ret;
+#endif
+
 	/* Ignore "protocol stall" (for unsupported request) on control endpoint */
 	if (ret == -EPIPE) {
 		return 0;
@@ -440,6 +444,10 @@ static int libusb_set_report(usb_dev_handle *udev, int ReportId, unsigned char *
 		ReportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
 		0, raw_buf, ReportSize, USB_TIMEOUT);
 
+#ifdef WIN32
+	errno = -ret;
+#endif
+
 	/* Ignore "protocol stall" (for unsupported request) on control endpoint */
 	if (ret == -EPIPE) {
 		return 0;
@@ -458,6 +466,10 @@ static int libusb_get_string(usb_dev_handle *udev, int StringIdx, char *buf, siz
 
 	ret = usb_get_string_simple(udev, StringIdx, buf, buflen);
 
+#ifdef WIN32
+	errno = -ret;
+#endif
+
 	return libusb_strerror(ret, __func__);
 }
 
@@ -472,6 +484,9 @@ static int libusb_get_interrupt(usb_dev_handle *udev, unsigned char *buf, int bu
 	/* FIXME: hardcoded interrupt EP => need to get EP descr for IF descr */
 	ret = usb_interrupt_read(udev, 0x81, (char *)buf, bufsize, timeout);
 
+#ifdef WIN32
+	errno = -ret;
+#endif
 	/* Clear stall condition */
 	if (ret == -EPIPE) {
 		ret = usb_clear_halt(udev, 0x81);
