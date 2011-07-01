@@ -25,7 +25,7 @@ S: Status:
    (add others as necessary)
 
 In the case of drivers, "maintained" should only be used if you have
-access to the hardware in question for testing.   
+access to the hardware in question for testing.
 
 Drivers
 =======
@@ -40,10 +40,6 @@ M: aquette.dev@gmail.com
 M: arnaud.quette@mgeups.com
 S: Maintained or Supported: dummy-ups, usbhid-ups, mge-shut, newmge-shut
                             mge-utalk, snmp-ups, HAL support
-
-P: Arjen de Korte
-M: arjen@de-korte.org
-S: Maintained: safenet, genericups, powerpanel, netxml-ups, usbhid-ups
 
 P: Fabio Di Niro
 M: blaxwan@users.sourceforge.net
