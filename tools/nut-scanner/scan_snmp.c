@@ -52,7 +52,6 @@ void try_all_oid(void * arg)
 	snmp_security_t * sec = (snmp_security_t *)arg;
 	int status;
 	char buf[SMALLBUF];
-	size_t desc_size;
 
 	while(snmp_device_table[index].oid != NULL) {
 
