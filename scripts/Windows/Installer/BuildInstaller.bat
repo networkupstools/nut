@@ -15,7 +15,7 @@ REM copy DLL files from system
 copy /Y %MSYS_BIN_DIR%msys-1.0.dll .\ImageFiles\Others
 copy /Y %MSYS_BIN_DIR%msys-crypto-1.0.0.dll .\ImageFiles\Others
 copy /Y %MSYS_BIN_DIR%msys-ssl-1.0.0.dll .\ImageFiles\Others
-copy /Y %MINGW_BIN_DIR%libgnurx-0.dll .\ImageFiles\Others
+copy /Y %MSYS_BIN_DIR%msys-regex-1.dll .\ImageFiles\Others
 
 REM use "candle.exe" to create the "object" file
 candle.exe "%NUT-XML-FILE%" -out "%wixobjName%" >"log.txt"
