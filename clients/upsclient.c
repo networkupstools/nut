@@ -30,6 +30,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <fcntl.h>
 
 #include "upsclient.h"
 #include "timehead.h"
@@ -393,12 +394,17 @@ int upscli_sslcert(UPSCONN_t *ups, const char *file, const char *path, int verif
 
 #endif	/* HAVE_SSL */
 
-int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
+int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,struct timeval * timeout)
 {
 	int	sock_fd;
 	struct addrinfo	hints, *res, *ai;
 	char			sport[NI_MAXSERV];
 	int			v;
+	fd_set 			wfds;
+	int			ret;
+	int			error;
+	socklen_t		error_size;
+	long			fd_flags;
 
 	if (!ups) {
 		return -1;
@@ -466,7 +472,37 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 			continue;
 		}
 
+		/* non blocking connect */
+		if(timeout != NULL) {
+			fd_flags = fcntl(sock_fd, F_GETFL);
+			fd_flags |= O_NONBLOCK;
+			fcntl(sock_fd, F_SETFL, fd_flags);
+		}
+
 		while ((v = connect(sock_fd, ai->ai_addr, ai->ai_addrlen)) < 0) {
+			if(errno == EINPROGRESS) {
+				FD_ZERO(&wfds);
+				FD_SET(sock_fd, &wfds);
+				ret = select(sock_fd+1,NULL,&wfds,NULL,
+						timeout);
+				if (FD_ISSET(sock_fd, &wfds)) {
+					error_size = sizeof(error);
+					getsockopt(sock_fd,SOL_SOCKET,SO_ERROR,
+							&error,&error_size);
+					if( error == 0) {
+						/* connect successful */
+						v = 0;
+						break;
+					}
+					errno = error;
+				}
+				else {
+					/* Timeout */
+					v = -1;
+					break;
+				}
+			}
+
 			switch (errno)
 			{
 			case EAFNOSUPPORT:
@@ -484,6 +520,13 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 		if (v < 0) {
 			close(sock_fd);
 			continue;
+		}
+
+		/* switch back to blocking operation */
+		if(timeout != NULL) {
+			fd_flags = fcntl(sock_fd, F_GETFL);
+			fd_flags &= ~O_NONBLOCK;
+			fcntl(sock_fd, F_SETFL, fd_flags);
 		}
 
 		ups->fd = sock_fd;
@@ -527,6 +570,11 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 	}
 		
 	return 0;
+}
+
+int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
+{
+	return upscli_tryconnect(ups,host,port,flags,NULL);
 }
 
 /* map upsd error strings back to upsclient internal numbers */
