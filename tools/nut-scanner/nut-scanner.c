@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
 	free_device(dev);
 
 	printf("Scanning NUT bus (old connect method):\n");
-	dev = scan_nut(start_ip,end_ip,port);
+	dev = scan_nut(start_ip,end_ip,port,timeout);
 	display_ups_conf(dev);
 	free_device(dev);
 

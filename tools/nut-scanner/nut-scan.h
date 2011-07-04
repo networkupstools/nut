@@ -46,7 +46,7 @@ device_t * scan_usb();
 
 device_t * scan_xml_http(long usec_timeout);
 
-device_t * scan_nut(char * startIP, char * stopIP, char * port);
+device_t * scan_nut(char * startIP, char * stopIP, char * port, long usec_timeout);
 
 /* Displaying */
 void display_ups_conf(device_t * device);
