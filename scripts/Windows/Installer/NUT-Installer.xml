@@ -65,8 +65,8 @@ After installling libusb-win32, run libUSB's Inf Wizard and choose your device.<
                 <Control Id="DllLink2" Type="Text" X="20" Y="118" Width="330" Height="26" Transparent="yes" NoPrefix="yes">
                     <Text>2. msys-ssl-1.0.0.dll and msys-crypto-1.0.0.dll - http://sourceforge.net/projects/mingw/files/MSYS/openssl/openssl-1.0.0-1/</Text>
                 </Control>
-                <Control Id="DllLink3" Type="Text" X="20" Y="155" Width="330" Height="20" Transparent="yes" NoPrefix="yes">
-                    <Text> 3. libgnurx-0.dll - http://sourceforge.net/projects/mingw/files/UserContributed/regex/mingw-regex-2.5.1/</Text>
+                <Control Id="DllLink3" Type="Text" X="20" Y="155" Width="330" Height="28" Transparent="yes" NoPrefix="yes">
+                    <Text> 3. msys-regex-1.dll - http://sourceforge.net/projects/mingw/files/MSYS/BaseSystem/regex/regex-1.20090805-2/</Text>
                 </Control>
             </Dialog>
             <!--For Option Install Dialog End-->
@@ -1191,8 +1191,8 @@ Public License instead of this License.
                     </Component>
                 </Directory>
                 <Directory Id="bin" Name="bin">
-                    <Component Id="libgnurx_0.dll" Guid="FCA308FC-B99F-4C8C-B69E-285BF4E8AA2B">
-                        <File Id="libgnurx_0.dll" Name="libgnurx-0.dll" Source="ImageFiles\others\libgnurx-0.dll" />
+                    <Component Id="msys_regex_1.dll" Guid="FCA308FC-B99F-4C8C-B69E-285BF4E8AA2B">
+                        <File Id="msys_regex_1.dll" Name="msys-regex-1.dll" Source="ImageFiles\others\msys-regex-1.dll" />
                     </Component>
                     <Component Id="apcsmart.exe" Guid="BEDE6095-3FAF-49C4-8AF4-8F0A2EDB8EAE">
                         <File Id="apcsmart.exe" Name="apcsmart.exe" Source="..\..\..\drivers\.libs\apcsmart.exe" />
@@ -1731,7 +1731,7 @@ Public License instead of this License.
         </DirectoryRef>
         <Feature Id="MyFeature" Title="NUT Installer for Windows" Level="1">
             <Feature Id="bin" Level="1" Title="NUT bin files for Windows">
-                <ComponentRef Id="libgnurx_0.dll" />
+                <ComponentRef Id="msys_regex_1.dll" />
                 <ComponentRef Id="apcsmart.exe" />
                 <ComponentRef Id="bcmxcp.exe" />
                 <ComponentRef Id="bcmxcp_usb.exe" />
