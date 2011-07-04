@@ -99,6 +99,8 @@ int __cdecl main(int argc, char** argv)
 					oprintf("Installing driver\n");
 					r = wdi_install_driver(&dev, ext_dir, inf_name, &oid);
 					oprintf("%s\n", wdi_strerror(r));
+					oprintf("You should now unplug and re-plug your device to finish driver's installation.\nHit enter when it's done.\n");
+					getc(stdin);
 				}
 			}
 			index++;
@@ -107,7 +109,7 @@ int __cdecl main(int argc, char** argv)
 
 	// No plugged USB device matches
 	if (!matching_device_found) {
-		oprintf("No known UPS device found.\nTry installing libUSB manually.\nHit a key to continue\n");
+		oprintf("No known UPS device found.\nTry installing libUSB manually.\nHit enter to continue\n");
 		getc(stdin);
 	}
 
