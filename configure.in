@@ -281,6 +281,9 @@ fi
 
 AM_CONDITIONAL(WITH_NEONXML, test "${nut_with_neon}" = "yes")
 NUT_REPORT_FEATURE([build neon based XML driver], [${nut_with_neon}])
+if test "${nut_with_neon}" = "yes"; then
+   AC_DEFINE_UNQUOTED(WITH_NEON, 1, [Define to enable Neon XML/HTTP support])
+fi
 
 dnl ----------------------------------------------------------------------
 

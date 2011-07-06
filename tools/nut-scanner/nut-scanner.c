@@ -185,12 +185,14 @@ int main(int argc, char *argv[])
 	}
 #endif /* HAVE_NET_SNMP_NET_SNMP_CONFIG_H */
 
+#ifdef WITH_NEON
 	if( allow_all || allow_xml) {
 		printf("Scanning XML/HTTP bus:\n");
 		dev = scan_xml_http(timeout);
 		display_ups_conf(dev);
 		free_device(dev);
 	}
+#endif
 
 	if( allow_all || allow_oldnut) {
 		printf("Scanning NUT bus (old connect method):\n");
