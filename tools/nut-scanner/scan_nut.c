@@ -88,7 +88,7 @@ static void * list_nut_devices(void * arg)
 			dev = new_device();
 			dev->type = TYPE_NUT;
 			dev->driver = strdup("nutclient");
-			if( asprintf(&dev->port,"\"%s@%s\"",answer[1],hostname)
+			if( asprintf(&dev->port,"%s@%s",answer[1],hostname)
 					!= -1) {
 #ifdef HAVE_PTHREAD
 				pthread_mutex_lock(&dev_mutex);
