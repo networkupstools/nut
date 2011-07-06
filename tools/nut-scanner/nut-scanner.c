@@ -36,7 +36,7 @@
 
 #define DEFAULT_TIMEOUT 1
 
-const char optstring[] = "?ht:s:e:c:l:u:A:X:a:x:p:";
+const char optstring[] = "?ht:s:e:c:l:u:A:X:a:x:p:CUSMO";
 const struct option longopts[] =
 	{{ "timeout",required_argument,NULL,'t' },
 	{ "start_ip",required_argument,NULL,'s' },
@@ -49,6 +49,11 @@ const struct option longopts[] =
 	{ "authProtocol",required_argument,NULL,'a' },
 	{ "privProtocol",required_argument,NULL,'x' },
 	{ "port",required_argument,NULL,'p' },
+	{ "complete_scan",no_argument,NULL,'C' },
+	{ "usb_scan",no_argument,NULL,'U' },
+	{ "snmp_scan",no_argument,NULL,'S' },
+	{ "xml_scan",no_argument,NULL,'M' },
+	{ "oldnut_scan",no_argument,NULL,'O' },
 	{ "help",no_argument,NULL,'h' },
 	{NULL,0,NULL,0}};
 
@@ -62,6 +67,11 @@ int main(int argc, char *argv[])
 	char *	start_ip = NULL;
 	char *	end_ip = NULL;
 	char * port = NULL;
+	int allow_all = 0;
+	int allow_usb = 0;
+	int allow_snmp = 0;
+	int allow_xml = 0;
+	int allow_oldnut = 0;
 
 	memset(&sec,0,sizeof(sec));
 
@@ -106,11 +116,31 @@ int main(int argc, char *argv[])
 			case 'p':
 				port = strdup(optarg);
 				break;
+			case 'C':
+				allow_all = 1;
+				break;
+			case 'U':
+				allow_usb = 1;
+				break;
+			case 'S':
+				allow_snmp = 1;
+				break;
+			case 'M':
+				allow_xml = 1;
+				break;
+			case 'O':
+				allow_oldnut = 1;
+				break;
 			case 'h':
 			case '?':
 			default:
 				puts("nut-scanner : detecting available UPS.\n");
 				puts("OPTIONS:");
+				printf("  -C, --complete_scan : Scan all availbale devices (default).\n");
+				printf("  -U, --usb_scan : Scan USB devices.\n");
+				printf("  -S, --snmp_scan : Scan SNMP devices.\n");
+				printf("  -M, --xml_scan : Scan XML/HTTP devices.\n");
+				printf("  -O, --oldnut_scan : Scan NUT devices (old method).\n");
 				printf("  -t, --timeout <timeout in seconds>: network operation timeout (default %d).\n",DEFAULT_TIMEOUT);
 				printf("  -s, --start_ip <IP address>: First IP address to scan.\n");
 				printf("  -e, --end_ip <IP address>: Last IP address to scan.\n");
@@ -133,31 +163,41 @@ int main(int argc, char *argv[])
 
 	}
 
+	if( !allow_usb && !allow_snmp && !allow_xml && !allow_oldnut) {
+		allow_all = 1;
+	}
 
 #ifdef HAVE_USB_H
-	printf("Scanning USB bus:\n");
-	dev = scan_usb();
-	display_ups_conf(dev);
-	free_device(dev);
+	if( allow_all || allow_usb) {
+		printf("Scanning USB bus:\n");
+		dev = scan_usb();
+		display_ups_conf(dev);
+		free_device(dev);
+	}
 #endif /* HAVE_USB_H */
 
 #ifdef HAVE_NET_SNMP_NET_SNMP_CONFIG_H
-	printf("Scanning SNMP bus:\n");
-	dev = scan_snmp(start_ip,end_ip,timeout,&sec);
-	display_ups_conf(dev);
-        free_device(dev);
-
+	if( allow_all || allow_snmp) {
+		printf("Scanning SNMP bus:\n");
+		dev = scan_snmp(start_ip,end_ip,timeout,&sec);
+		display_ups_conf(dev);
+		free_device(dev);
+	}
 #endif /* HAVE_NET_SNMP_NET_SNMP_CONFIG_H */
 
-	printf("Scanning XML/HTTP bus:\n");
-	dev = scan_xml_http(timeout);
-	display_ups_conf(dev);
-	free_device(dev);
+	if( allow_all || allow_xml) {
+		printf("Scanning XML/HTTP bus:\n");
+		dev = scan_xml_http(timeout);
+		display_ups_conf(dev);
+		free_device(dev);
+	}
 
-	printf("Scanning NUT bus (old connect method):\n");
-	dev = scan_nut(start_ip,end_ip,port,timeout);
-	display_ups_conf(dev);
-	free_device(dev);
+	if( allow_all || allow_oldnut) {
+		printf("Scanning NUT bus (old connect method):\n");
+		dev = scan_nut(start_ip,end_ip,port,timeout);
+		display_ups_conf(dev);
+		free_device(dev);
+	}
 
 /*TODO*/
 	printf("Scanning NUT bus (via avahi):\n");
