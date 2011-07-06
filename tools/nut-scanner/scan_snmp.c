@@ -51,7 +51,6 @@ void try_all_oid(void * arg)
 	struct snmp_session * session;
 	snmp_security_t * sec = (snmp_security_t *)arg;
 	int status;
-	char buf[SMALLBUF];
 
 	while(snmp_device_table[index].oid != NULL) {
 
@@ -96,10 +95,8 @@ void try_all_oid(void * arg)
 		dev->type = TYPE_SNMP;
 		dev->driver = strdup("snmp-ups");
 		dev->port = strdup(session->peername);
-		snprintf(buf,sizeof(buf),"\"%.*s\"",  
-				(int)response->variables->val_len,
-				response->variables->val.string);
-		add_option_to_device(dev,"desc",buf);
+		add_option_to_device(dev,"desc",
+					(char*)response->variables->val.string);
 		add_option_to_device(dev,"mibs",snmp_device_table[index].mib);
 		/* SNMP v3 */
 		if( session->community == NULL || session->community[0] == 0) {

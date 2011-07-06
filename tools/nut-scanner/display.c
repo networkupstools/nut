@@ -47,7 +47,7 @@ void display_ups_conf(device_t * device)
 
 	/* Display each devices */
 	do {
-		printf("[nutdev%i]\n\tdriver=%s\n\tport=%s\n",
+		printf("[nutdev%i]\n\tdriver = \"%s\"\n\tport = \"%s\"\n",
 				nutdev_num, current_dev->driver,
 				current_dev->port);
 
@@ -57,7 +57,7 @@ void display_ups_conf(device_t * device)
 			if( opt->option != NULL ) {
 				printf("\t%s",opt->option);
 				if( opt->value != NULL ) {
-					printf("=%s", opt->value);
+					printf(" = \"%s\"", opt->value);
 				}
 				printf("\n");
 			}
