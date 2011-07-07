@@ -20,7 +20,6 @@ Active members
 ~~~~~~~~~~~~~~
 
 - Arnaud Quette: project leader (since 2005), Debian packager and jack of all trades
-- Arjen de Korte: senior lieutenant
 - Charles Lepple: senior lieutenant
 - Kjell Claesson: senior developer
 - Alexander Gordeev: junior developer
@@ -34,6 +33,7 @@ Retired members
 ~~~~~~~~~~~~~~~
 
 - Russell Kroll: Founder, and project leader from 1996 to 2005
+- Arjen de Korte: senior lieutenant
 - Peter Selinger: senior lieutenant
 - Carlos Rodrigues: author of the "megatec" drivers, removing the numerous
 drivers for Megatec / Q1 protocol. These drivers have now been replaced by
