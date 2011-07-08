@@ -87,7 +87,7 @@ They also proposes NUT as an alternative to its software for
 link:http://www.microdowell.com/fra/download.html[Linux / Unix].
 
 - link:http://pcmups.com.tw[Powercom], through Alexey Morozov, has provided
-link:ups-protocol.html[extensive information] on its USB/HID devices, along
+link:ups-protocols.html[extensive information] on its USB/HID devices, along
 with development units.
 
 Appliances manufacturers
