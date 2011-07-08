@@ -36,11 +36,12 @@
 
 #define DEFAULT_TIMEOUT 1
 
-const char optstring[] = "?ht:s:e:c:l:u:A:X:a:x:p:CUSMO";
+const char optstring[] = "?ht:s:e:c:l:u:A:X:a:x:p:CUSMOm:";
 const struct option longopts[] =
 	{{ "timeout",required_argument,NULL,'t' },
 	{ "start_ip",required_argument,NULL,'s' },
 	{ "end_ip",required_argument,NULL,'e' },
+	{ "mask_cidr",required_argument,NULL,'m' },
 	{ "community",required_argument,NULL,'c' },
 	{ "secLevel",required_argument,NULL,'l' },
 	{ "secName",required_argument,NULL,'u' },
@@ -66,12 +67,16 @@ int main(int argc, char *argv[])
 	int opt_ret;
 	char *	start_ip = NULL;
 	char *	end_ip = NULL;
+	char *	cidr = NULL;
 	char * port = NULL;
 	int allow_all = 0;
 	int allow_usb = 0;
 	int allow_snmp = 0;
 	int allow_xml = 0;
 	int allow_oldnut = 0;
+
+
+
 
 	memset(&sec,0,sizeof(sec));
 
@@ -91,6 +96,9 @@ int main(int argc, char *argv[])
 				break;
 			case 'e':
 				end_ip = strdup(optarg);
+				break;
+			case 'm':
+				cidr = strdup(optarg);
 				break;
 #ifdef HAVE_NET_SNMP_NET_SNMP_CONFIG_H
 			case 'c':
@@ -177,6 +185,10 @@ int main(int argc, char *argv[])
 				return 0;
 		}
 
+	}
+
+	if( cidr ) {
+		cidr_to_ip(cidr, &start_ip, &end_ip);
 	}
 
 	if( !allow_usb && !allow_snmp && !allow_xml && !allow_oldnut) {

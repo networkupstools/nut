@@ -38,4 +38,5 @@ typedef struct ip_iter {
 
 char * ip_iter_init(ip_iter_t *, char * startIP, char * stopIP);
 char * ip_iter_inc(ip_iter_t *);
+int cidr_to_ip(char * cidr, char ** start_ip, char ** stop_ip);
 #endif

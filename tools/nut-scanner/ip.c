@@ -148,3 +148,101 @@ char * ip_iter_inc(ip_iter_t * ip)
 	}
 }
 
+int cidr_to_ip(char * cidr, char ** start_ip, char ** stop_ip)
+{
+	char * first_ip;
+	char * mask;
+	char * saveptr = NULL;
+	ip_iter_t ip;
+	int mask_val;
+	long long mask_bit;
+	char buf[SMALLBUF];
+
+	*start_ip = NULL;
+	*stop_ip = NULL;
+
+	first_ip = strtok_r(cidr,"/",&saveptr);
+	if( first_ip == NULL) {
+		return 0;
+	}
+	mask = strtok_r(NULL,"/",&saveptr);
+	if( mask == NULL ) {
+		return 0;
+	}
+
+	mask_val = atoi(mask);
+
+        /* Detecting IPv4 vs IPv6 */
+	ip.type = IPv4;
+        if(!inet_aton(first_ip, &ip.start)) {
+                /*Try IPv6 detection */
+                ip.type = IPv6;
+                if(!inet_pton(AF_INET6, first_ip, &ip.start6)){
+                        return 0;
+                }
+        }
+
+	if( ip.type == IPv4 ) {
+
+		mask_bit = 0x100000000;
+		mask_bit >>= mask_val;
+		mask_bit--;
+		ip.stop.s_addr = htonl(ntohl(ip.start.s_addr)|mask_bit);
+		ip.start.s_addr = htonl(ntohl(ip.start.s_addr)&(~mask_bit));
+
+		*start_ip = strdup(inet_ntoa(ip.start));
+		*stop_ip = strdup(inet_ntoa(ip.stop));
+		return 1;
+	}
+	else {
+                inet_pton(AF_INET6, first_ip, &ip.stop6);
+		if( mask_val < 96 ) {
+			ip.stop6.s6_addr32[3] = 0xffffffff;
+			ip.start6.s6_addr32[3] = 0;
+			if( mask_val < 64 ) {
+				ip.stop6.s6_addr32[2] = 0xffffffff;
+				ip.start6.s6_addr32[2] = 0;
+				if( mask_val < 32 ) {
+					ip.stop6.s6_addr32[1] = 0xffffffff;
+					ip.start6.s6_addr32[1] = 0;
+					mask_bit = 0x100000000;
+					mask_bit >>= mask_val;
+					mask_bit--;
+					ip.stop6.s6_addr32[0] = htonl(ntohl(ip.start6.s6_addr32[0])|mask_bit);
+					ip.start6.s6_addr32[0] = htonl(ntohl(ip.start6.s6_addr32[0])&(~mask_bit));
+				}
+				else {
+					mask_val -= 32;
+					mask_bit = 0x100000000;
+					mask_bit >>= mask_val;
+					mask_bit--;
+					ip.stop6.s6_addr32[1] = htonl(ntohl(ip.start6.s6_addr32[1])|mask_bit);
+					ip.start6.s6_addr32[1] = htonl(ntohl(ip.start6.s6_addr32[1])&(~mask_bit));
+				}
+			}
+			else {
+				mask_val -= 64;
+				mask_bit = 0x100000000;
+				mask_bit >>= mask_val;
+				mask_bit--;
+				ip.stop6.s6_addr32[2] = htonl(ntohl(ip.start6.s6_addr32[2])|mask_bit);
+				ip.start6.s6_addr32[2] = htonl(ntohl(ip.start6.s6_addr32[2])&(~mask_bit));
+			}
+		}
+		else {
+			mask_val -= 96;
+			mask_bit = 0x100000000;
+			mask_bit >>= mask_val;
+			mask_bit--;
+			ip.stop6.s6_addr32[3] = htonl(ntohl(ip.start6.s6_addr32[3])|mask_bit);
+			ip.start6.s6_addr32[3] = htonl(ntohl(ip.start6.s6_addr32[3])&(~mask_bit));
+		}
+
+		inet_ntop(AF_INET6,&ip.start6,buf,sizeof(buf));
+		*start_ip = strdup(buf);
+		inet_ntop(AF_INET6,&ip.stop6,buf,sizeof(buf));
+		*stop_ip = strdup(buf);
+	}
+
+	return 1;
+}
