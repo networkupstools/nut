@@ -37,9 +37,9 @@ S: Maintained: apcsmart, belkin, bestups, cyberpower, dummycons,
 
 P: Arnaud Quette
 M: aquette.dev@gmail.com
-M: arnaud.quette@mgeups.com
+M: ArnaudQuette@eaton.com
 S: Maintained or Supported: dummy-ups, usbhid-ups, mge-shut, newmge-shut
-                            mge-utalk, snmp-ups, HAL support
+                            mge-utalk, snmp-ups, ...
 
 P: Fabio Di Niro
 M: blaxwan@users.sourceforge.net
