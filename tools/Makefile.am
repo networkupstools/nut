@@ -1,15 +1,16 @@
 
-# Force build in ./ before nut-scanner 
+# Force build in ./ before nut-scanner, to have nutscan-{usb,snmp}.h
+# built before going into the nut-scanner sub-directory
 SUBDIRS = . nut-scanner
 
 EXTRA_DIST = nut-usbinfo.pl nut-hclinfo.py device-recorder.sh svn2cl.authors nut-snmpinfo.py
 
-all:
+all: nut-scanner-deps 
 
-nut-scanner-snmp-deps:
+nut-scanner-deps:
 	@if python -c 1; then \
 		echo "Regenerating the SNMP helper files."; \
-		[ -z $(distdir) ] && $(top_srcdir)/tools/nut-snmpinfo.py || $(distdir)/nut-snmpinfo.py; \
+		$(top_srcdir)/tools/nut-snmpinfo.py; \
 	else \
 		echo "----------------------------------------------------------------------"; \
 		echo "Warning: Python is not available."; \
@@ -17,18 +18,15 @@ nut-scanner-snmp-deps:
 		echo "----------------------------------------------------------------------"; \
 	fi
 
-nut-scanner-usb-deps:
 	@if perl -e 1; then \
 		echo "Regenerating the USB helper files."; \
-		[ -z $(distdir) ] && $(top_srcdir)/tools/nut-usbinfo.pl || $(distdir)/nut-usbinfo.pl; \
+		$(top_srcdir)/tools/nut-usbinfo.pl; \
 	else \
 		echo "----------------------------------------------------------------------"; \
 		echo "Warning: Perl is not available."; \
 		echo "Skipping the USB helper files regeneration."; \
 		echo "----------------------------------------------------------------------"; \
 	fi
-	
-nut-scanner-deps: nut-scanner-snmp-deps nut-scanner-usb-deps
 
 website:
 	@if python -c pass; then \
@@ -44,6 +42,25 @@ website:
 # call the USB info script upon "make dist", and if Perl is present
 # call the SNMP info script upon "make dist", and if Python is present
 # and call both for building nut-scanner
-dist-hook: nut-scanner-deps
+dist-hook:
+	@if python -c 1; then \
+		echo "Regenerating the SNMP helper files."; \
+		$(distdir)/nut-snmpinfo.py; \
+	else \
+		echo "----------------------------------------------------------------------"; \
+		echo "Warning: Python is not available."; \
+		echo "Skipping the SNMP helper files regeneration."; \
+		echo "----------------------------------------------------------------------"; \
+	fi
+
+	@if perl -e 1; then \
+		echo "Regenerating the USB helper files."; \
+		$(distdir)/nut-usbinfo.pl; \
+	else \
+		echo "----------------------------------------------------------------------"; \
+		echo "Warning: Perl is not available."; \
+		echo "Skipping the USB helper files regeneration."; \
+		echo "----------------------------------------------------------------------"; \
+	fi
 
 .PHONY: nut-scanner-deps nut-scanner-snmp-deps nut-scanner-usb-deps
