@@ -1,3 +1,4 @@
+BUILT_SOURCES = nutscan-usb.h nutscan-snmp.h
 
 nutscan-usb.h nutscan-snmp.h:
 	cd ..; $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
