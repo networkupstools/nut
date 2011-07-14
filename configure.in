@@ -329,7 +329,7 @@ if test "${nut_with_ipmi}" != "no"; then
       dnl Prefer FreeIPMI over OpenIPMI otherwise
       NUT_CHECK_LIBFREEIPMI
       if test "${nut_have_freeipmi}" != "yes"; then
-         ²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²nut_with_ipmi="no"
+         nut_with_ipmi="no"
          AC_MSG_ERROR(["OpenIPMI not found, required for IPMI support"])
          dnl NUT_CHECK_OPENIPMI
          dnl if test "${nut_have_openipmi}" != "yes"; then
