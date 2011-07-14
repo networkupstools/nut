@@ -110,7 +110,7 @@ fi
 
 case ${target_os} in
    hpux11* )
-      dnl It seems like the thread safe string functions won't be included
+      dnl It seems like the thread safe string functions will not be included
       dnl on 64 bit HP-UX unless we define _REENTRANT
       CFLAGS="${CFLAGS} -D_REENTRANT"
       ;;
@@ -162,8 +162,8 @@ dnl ----------------------------------------------------------------------
 dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
-AC_ARG_WITH(all, 
-	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, powerman, cgi, dev]),
+AC_ARG_WITH(all,
+	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, cgi, dev]),
 [
 	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
@@ -175,6 +175,7 @@ AC_ARG_WITH(all,
 		if test -z "${with_powerman}"; then with_powerman="${withval}"; fi
 		if test -z "${with_cgi}"; then with_cgi="${withval}"; fi
 		if test -z "${with_dev}"; then with_dev="${withval}"; fi
+		if test -z "${with_ipmi}"; then with_ipmi="${withval}"; fi
 		AC_MSG_RESULT("${withval}")
 	else
 		AC_MSG_RESULT(not given)
@@ -298,6 +299,56 @@ fi
 
 AM_CONDITIONAL(WITH_LIBPOWERMAN, test "${nut_with_powerman}" = "yes")
 NUT_REPORT_FEATURE([build Powerman PDU client driver], [${nut_with_powerman}])
+
+dnl ----------------------------------------------------------------------
+dnl Check for with-ipmi, and --with-freeipmi (or --with-openipmi)
+dnl Only one can be enabled at a time, with a preference for FreeIPMI
+dnl if both are available (since it is the only one supported ATM!!)
+
+nut_ipmi_lib=""
+
+NUT_ARG_WITH([ipmi], [build and install IPMI PSU driver], [auto])
+NUT_ARG_WITH([freeipmi], [enable IPMI support using FreeIPMI], [auto])
+dnl NUT_ARG_WITH([openipmi], [enable IPMI support using OpenIPMI], [auto])
+
+dnl ${nut_with_ipmi}: any value except "yes" or "no" is treated as "auto". 
+if test "${nut_with_ipmi}" != "no"; then
+   dnl check if FreeIPMI (and maybe later OpenIPMI) was explicitly requested
+   if test "${nut_with_freeipmi}" = "yes"; then
+      NUT_CHECK_LIBFREEIPMI
+      if test "${nut_have_freeipmi}" != "yes"; then
+         AC_MSG_ERROR(["GNU FreeIPMI not found, required for IPMI support"])
+      fi
+   elif test "${nut_with_openipmi}" = "yes"; then
+      AC_MSG_ERROR(["OpenIPMI is not yet supported"])
+      dnl NUT_CHECK_LIBOPENIPMI
+      dnl if test "${nut_have_openipmi}" != "yes"; then
+      dnl    AC_MSG_ERROR(["OpenIPMI not found, required for IPMI support"])
+      dnl fi
+   else
+      dnl Prefer FreeIPMI over OpenIPMI otherwise
+      NUT_CHECK_LIBFREEIPMI
+      if test "${nut_have_freeipmi}" != "yes"; then
+         ²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²nut_with_ipmi="no"
+         AC_MSG_ERROR(["OpenIPMI not found, required for IPMI support"])
+         dnl NUT_CHECK_OPENIPMI
+         dnl if test "${nut_have_openipmi}" != "yes"; then
+         dnl    nut_with_ipmi="no"
+         dnl    AC_MSG_ERROR(["GNU FreeIPMI and OpenIPMI neither found, required for IPMI support"])
+         dnl else
+         dnl    nut_with_freeipmi="yes"
+         dnl fi
+      else
+         nut_with_freeipmi="yes"
+      fi
+   fi
+fi
+
+AM_CONDITIONAL(WITH_IPMI, test "${nut_with_ipmi}" = "yes")
+AM_CONDITIONAL(WITH_FREEIPMI, test "${nut_with_freeipmi}" = "yes")
+dnl AM_CONDITIONAL(WITH_OPENIPMI, test "${nut_with_openipmi}" = "yes")
+
+NUT_REPORT_FEATURE([build IPMI driver], [${nut_with_ipmi} ${nut_ipmi_lib}])
 
 dnl ----------------------------------------------------------------------
 dnl Check for --with-ssl
@@ -877,6 +928,8 @@ AC_SUBST(LIBNEON_CFLAGS)
 AC_SUBST(LIBNEON_LIBS)
 AC_SUBST(LIBPOWERMAN_CFLAGS)
 AC_SUBST(LIBPOWERMAN_LIBS)
+AC_SUBST(LIBIPMI_CFLAGS)
+AC_SUBST(LIBIPMI_LIBS)
 AC_SUBST(DOC_BUILD_LIST)
 AC_SUBST(LIBWRAP_CFLAGS)
 AC_SUBST(LIBWRAP_LIBS)

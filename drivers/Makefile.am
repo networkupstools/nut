@@ -29,6 +29,9 @@ endif
 if WITH_LIBPOWERMAN
   AM_CFLAGS += $(LIBPOWERMAN_CFLAGS)
 endif
+if WITH_IPMI
+  AM_CFLAGS += $(LIBIPMI_CFLAGS)
+endif
 
 SERIAL_DRIVERLIST = apcsmart bcmxcp belkin belkinunv bestfcom	\
  bestfortress bestuferrups bestups dummy-ups etapro everups 	\
@@ -70,6 +73,9 @@ if WITH_NEONXML
 endif
 if WITH_LIBPOWERMAN
    driverexec_PROGRAMS += powerman-pdu
+endif
+if WITH_IPMI
+   driverexec_PROGRAMS += nut-ipmipsu
 endif
 else
    driverexec_PROGRAMS += skel
@@ -200,6 +206,13 @@ netxml_ups_LDADD = $(LDADD_DRIVERS) $(LIBNEON_LIBS)
 powerman_pdu_SOURCES = powerman-pdu.c
 powerman_pdu_LDADD = $(LDADD) $(LIBPOWERMAN_LIBS)
 
+# IPMI PSU
+nut_ipmipsu_SOURCES = nut-ipmipsu.c
+if WITH_FREEIPMI
+  nut_ipmipsu_SOURCES += nut-libfreeipmi.c 
+endif
+nut_ipmipsu_LDADD = $(LDADD) $(LIBIPMI_LIBS)
+
 # ----------------------------------------------------------------------
 # List of header files. The purpose of this list is not dependency
 # tracking (which is automatic), but to ensure these files are
@@ -210,7 +223,7 @@ dist_noinst_HEADERS = apc-mib.h apc-hid.h apcsmart.h baytech-mib.h bcmxcp.h	\
  dstate-hal.h dummy-ups.h eaton-mib.h explore-hid.h gamatronic.h genericups.h	\
  hidparser.h hidtypes.h ietf-mib.h libhid.h libshut.h libusb.h liebert-hid.h	\
  main.h main-hal.h mge-hid.h mge-mib.h mge-shut.h mge-utalk.h		\
- mge-xml.h microdowell.h netvision-mib.h netxml-ups.h oneac.h		\
+ mge-xml.h microdowell.h netvision-mib.h netxml-ups.h nut-ipmi.h oneac.h		\
  powercom.h powerpanel.h powerp-bin.h powerp-txt.h powerware-mib.h raritan-pdu-mib.h	\
  safenet.h serial.h snmp-ups.h solis.h tripplite.h tripplite-hid.h 			\
  upshandler.h usb-common.h usbhid-ups.h powercom-hid.h compaq-mib.h idowell-hid.h

@@ -7,8 +7,9 @@
 #   during 'make dist'
 # - HTML files are built upon request, if AsciiDoc is available,
 # - groff update will only happen if AsciiDoc is available too,
-# - all this can probably (and hopefully) by improved, but I've not
-# found a way to do pattern replacement on the fly for target deps!
+# - all this can probably (and hopefully) be improved, but I've not
+#   found a way to do pattern replacement on the fly for target deps!
+#   FIXME: investigate an autogen.sh hook
 # - Ref: http://www.gnu.org/software/hello/manual/automake/Man-pages.html
 
 # Base configuration and client manpages, always installed
@@ -351,6 +352,16 @@ endif
 
 HTML_POWERMAN_MANS = powerman-pdu.html
 
+# (--with-ipmi)
+SRC_IPMIPSU_PAGES = nut-ipmipsu.txt
+MAN_IPMIPSU_PAGES = nut-ipmipsu.8
+
+if WITH_IPMI
+   man8_MANS += $(MAN_IPMIPSU_PAGES)
+endif
+
+HTML_IPMIPSU_MANS = nut-ipmipsu.html
+
 # SOME_DRIVERS
 endif
 
@@ -365,7 +376,8 @@ MAN_MANS = \
 	$(MAN_SNMP_PAGES) \
 	$(MAN_USB_LIBUSB_PAGES) \
 	$(MAN_NETXML_PAGES) \
-	$(MAN_POWERMAN_PAGES)
+	$(MAN_POWERMAN_PAGES) \
+	$(MAN_IPMIPSU_PAGES)
 
 # distribute everything, even those not installed by default
 # Note that 'dist' target requires AsciiDoc!
@@ -379,6 +391,7 @@ EXTRA_DIST = \
 	$(SRC_USB_LIBUSB_PAGES) \
 	$(SRC_NETXML_PAGES) \
 	$(SRC_POWERMAN_PAGES) \
+	$(SRC_IPMIPSU_PAGES) \
 	$(MAN_MANS) \
 	asciidoc.conf
 
@@ -391,7 +404,8 @@ HTML_MANS = \
 	$(HTML_SNMP_MANS) \
 	$(HTML_USB_LIBUSB_MANS) \
 	$(HTML_NETXML_MANS) \
-	$(HTML_POWERMAN_MANS)
+	$(HTML_POWERMAN_MANS) \
+	$(HTML_IPMIPSU_MANS)
 
 all:
 

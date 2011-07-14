@@ -35,6 +35,14 @@ This allows to interact with the Powerman daemon, and the numerous
 Power Distribution Units (PDU) supported by the project.
 Note that you need to install powerman development package or files.
 
+	--with-ipmi
+	--with-freeipmi
+
+Build and install IPMI PSU driver (default: auto-detect)
+This allows to monitor numerous Power Supply Units (PSU) found
+on servers.
+Note that you need to install freeipmi development package or files.
+
 	--with-drivers=<driver>,<driver>,...
 
 Specify exactly which driver or drivers to build and install (this
