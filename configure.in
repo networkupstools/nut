@@ -319,26 +319,38 @@ if test "${nut_with_ipmi}" != "no"; then
       if test "${nut_have_freeipmi}" != "yes"; then
          AC_MSG_ERROR(["GNU FreeIPMI not found, required for IPMI support"])
       fi
-   elif test "${nut_with_openipmi}" = "yes"; then
-      AC_MSG_ERROR(["OpenIPMI is not yet supported"])
+      dnl Implies --with-ipmi
+      nut_with_ipmi="yes"
+   dnl elif test "${nut_with_openipmi}" = "yes"; then
+      dnl AC_MSG_ERROR(["OpenIPMI is not yet supported"])
       dnl NUT_CHECK_LIBOPENIPMI
       dnl if test "${nut_have_openipmi}" != "yes"; then
       dnl    AC_MSG_ERROR(["OpenIPMI not found, required for IPMI support"])
       dnl fi
+      dnl    Implies --with-ipmi
+      dnl    nut_with_ipmi="yes"
    else
       dnl Prefer FreeIPMI over OpenIPMI otherwise
       NUT_CHECK_LIBFREEIPMI
       if test "${nut_have_freeipmi}" != "yes"; then
+         if test "${nut_with_ipmi}" = "yes"; then
+            AC_MSG_ERROR(["FreeIPMI not found, required for IPMI support"])
+         fi
          nut_with_ipmi="no"
-         AC_MSG_ERROR(["OpenIPMI not found, required for IPMI support"])
          dnl NUT_CHECK_OPENIPMI
          dnl if test "${nut_have_openipmi}" != "yes"; then
+         dnl    if test "${nut_with_ipmi}" = "yes"; then
+         dnl       AC_MSG_ERROR(["GNU FreeIPMI and OpenIPMI neither found, required for IPMI support"])
+         dnl    fi
          dnl    nut_with_ipmi="no"
-         dnl    AC_MSG_ERROR(["GNU FreeIPMI and OpenIPMI neither found, required for IPMI support"])
          dnl else
-         dnl    nut_with_freeipmi="yes"
+         dnl    Implies --with-ipmi
+         dnl    nut_with_ipmi="yes"
+         dnl    nut_with_openipmi="yes"
          dnl fi
       else
+         dnl Implies --with-ipmi
+         nut_with_ipmi="yes"
          nut_with_freeipmi="yes"
       fi
    fi
