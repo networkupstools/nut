@@ -15,6 +15,7 @@ if test -z "${nut_have_libfreeipmi_seen}"; then
 
 	AC_MSG_CHECKING(for FreeIPMI version via pkg-config)
 	dnl pkg-config support requires Freeipmi 1.0.5, released on Thu Jun 30 2011
+	dnl but NUT should only require 0.8.5 or 1.0.1 (comment from upstream Al Chu)
 	FREEIPMI_VERSION="`pkg-config --silence-errors --modversion libfreeipmi 2>/dev/null`"
 	if test "$?" = "0" -a -n "${FREEIPMI_VERSION}"; then
 		CFLAGS="`pkg-config --silence-errors --cflags libfreeipmi 2>/dev/null`"
@@ -60,6 +61,10 @@ if test -z "${nut_have_libfreeipmi_seen}"; then
 	dnl check if freeipmi is usable
 	AC_CHECK_HEADERS(freeipmi/freeipmi.h, [nut_have_freeipmi=yes], [nut_have_freeipmi=no], [AC_INCLUDES_DEFAULT])
 	AC_CHECK_FUNCS(ipmi_ctx_create, [], [nut_have_freeipmi=no])
+	dnl when version cannot be tested (prior to 1.0.5, with no pkg-config)
+	dnl we have to check for some specific functions
+	AC_CHECK_FUNCS(ipmi_ctx_find_inband, [], [nut_have_freeipmi=no])
+	AC_CHECK_FUNCS(ipmi_fru_parse_ctx_create, [], [nut_have_freeipmi=no])
 
 	if test "${nut_have_freeipmi}" = "yes"; then
 		nut_with_ipmi="yes"
