@@ -1004,6 +1004,7 @@ AC_OUTPUT([
  scripts/hotplug/libhidups
  scripts/python/Makefile
  scripts/udev/Makefile
+ scripts/udev/nut-ipmipsu.rules
  scripts/udev/nut-usbups.rules
  scripts/Makefile
  server/Makefile

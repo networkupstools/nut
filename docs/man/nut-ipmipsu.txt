@@ -36,6 +36,14 @@ INSTALLATION
 This driver is not built by default.  You can build it by using
 "configure --with-ipmi=yes".
 
+You also need to give proper permissions on the local IPMI device file
+(/dev/ipmi0 for example) to allow the NUT user to access it.
+
+An udev rules file (nut-ipmipsu.rules) is provided and automatically installed
+on udev enabled system. This file is generally installed in /etc/udev/rules.d/
+or /lib/udev/rules.d/ on newer systems, to address the permission settings
+problem. For more information, refer to nut/scripts/udev/README.
+
 INSTANT COMMANDS
 ----------------
 
