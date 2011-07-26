@@ -17,6 +17,9 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
+ * TODO list:
+ * - PSU sensor monitoring (how to find the right one?)
+ * - dump all value at init, so that we can check for other interesting data
  */
 
 #include "main.h"
@@ -196,8 +199,6 @@ void upsdrv_makevartable(void)
 
 void upsdrv_initups(void)
 {
-	int ret, found = 0;
-
 	upsdebugx(1, "upsdrv_initups...");
 
 	/* port can be expressed using:
@@ -211,7 +212,7 @@ void upsdrv_initups(void)
 	}
 	/* else... <psuX> to select PSU number X */
 
-	/* Open IPMI using the above 
+	/* Open IPMI using the above */
 	nutipmi_open(ipmi_id, &ipmi_dev);
 
 	/* upsfd = ser_open(device_path); */
