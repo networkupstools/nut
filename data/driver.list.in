@@ -605,6 +605,7 @@
 "Opti-UPS"	"ups"	"1"	"PowerES"	"420E"	"optiups"
 
 "Orvaldi Power Protection"	"ups"	"2"	"various"	"not 400 or 600"	"blazer_ser"
+"Orvaldi Power Protection"	"ups"	"2"	"750 / 900SP"	""	"blazer_usb"
 
 "Phasak"	"ups"	"2"	"400VA / 600VA"	""	"blazer_ser"
 
