@@ -230,12 +230,9 @@ sub find_usbdevs
 					die "In file $nameFile, for product $ProductID, can't find the declaration of the constant";
 				}
 			}
-
-			# store data (to be optimized)
-			if (($vendorName{$VendorID} eq "") && ($VendorName))
-			{
-				$vendorName{$VendorID}=trim($VendorName);
-			}
+			
+			# store date (to be optimized)
+			$vendorName{$VendorID}=trim($VendorName);
 			$vendor{$VendorID}{$ProductID}{"comment"}=$lastComment;
 			# process the driver name
 			my $driver=$nameFile;
