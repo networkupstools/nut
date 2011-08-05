@@ -613,7 +613,7 @@ AC_MSG_RESULT(${ALTPIDPATH})
 
 AC_MSG_CHECKING(driver path)
 AC_ARG_WITH(drvpath,
-	AS_HELP_STRING([--with-drvpath=PATH], [where to install ups drivers (EPREFIX/bin)]),
+	AS_HELP_STRING([--with-drvpath=PATH], [where to install UPS drivers (EPREFIX/bin)]),
 [
 	case "${withval}" in
 	yes|no)
@@ -772,7 +772,7 @@ AC_ARG_WITH(drivers,
 	AS_HELP_STRING([m4_version_prereq(2.62,
 		[@<:@--with-drivers=driver@<:@,driver@:>@@:>@],
 		[[[[--with-drivers=driver@<:@,driver@:>@]]]])],
-	[Only use specific drivers (all)]),
+	[Only build specific drivers (all)]),
 [
 	case "${withval}" in
 	yes|no)
