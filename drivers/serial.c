@@ -224,22 +224,28 @@ int ser_set_rts(int fd, int state)
 #else
 int ser_set_dtr(serial_handler_t * fd, int state)
 {
-	DCB dcb;
+	DWORD action;
 
-	GetCommState(fd->handle, &dcb);
-	dcb.fDtrControl = state;
-
-	return SetCommState(fd->handle,&dcb);
+	if(state == 0) {
+		action = CLRDTR;
+	}
+	else {
+		action = SETDTR;
+	}
+	return EscapeCommFunction(fd->handle,action);
 }
 
 int ser_set_rts(serial_handler_t * fd, int state)
 {
-	DCB dcb;
+	DWORD action;
 
-	GetCommState(fd->handle, &dcb);
-	dcb.fRtsControl = state;
-
-	return SetCommState(fd->handle,&dcb);
+	if(state == 0) {
+		action = CLRRTS;
+	}
+	else {
+		action = SETRTS;
+	}
+	return EscapeCommFunction(fd->handle,action);
 }
 #endif
 
