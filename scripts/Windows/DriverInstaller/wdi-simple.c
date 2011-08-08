@@ -99,7 +99,12 @@ int __cdecl main(int argc, char** argv)
 					oprintf("Installing driver\n");
 					r = wdi_install_driver(&dev, ext_dir, inf_name, &oid);
 					oprintf("%s\n", wdi_strerror(r));
-					oprintf("You should now unplug and re-plug your device to finish driver's installation.\nHit enter when it's done.\n");
+					if( r == WDI_SUCCESS ) {
+						oprintf("You should now unplug and re-plug your device to finish driver's installation.\nHit enter when it's done.\n");
+					}
+					else {
+						oprintf("An error occured while installing driver.\nTry installing libUSB manually.\nHit enter to continue\n");
+					}
 					getc(stdin);
 				}
 			}
