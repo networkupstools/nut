@@ -2492,6 +2492,10 @@ int main(int argc, char *argv[])
 			exit(EXIT_FAILURE);
 		}
 
+		if (ret == WAIT_TIMEOUT) {
+			continue;
+		}
+
 		/* Retrieve the signaled connection */
 		for(conn = pipe_connhead; conn != NULL; conn = conn->next) {
 			if( conn->overlapped.hEvent == handles[ret-WAIT_OBJECT_0]) {
