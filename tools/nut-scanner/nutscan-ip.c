@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "ip.h"
+#include "nutscan-ip.h"
 #include <stdio.h>
 #include "common.h"
 
@@ -49,7 +49,7 @@ static void invert_IPv6(struct in6_addr * addr1, struct in6_addr * addr2)
 }
 
 /* Return the first ip or NULL if error */
-char * ip_iter_init(ip_iter_t * ip, char * startIP, char * stopIP)
+char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, char * startIP, char * stopIP)
 {
 	int addr;
 	int i;
@@ -118,7 +118,7 @@ char * ip_iter_init(ip_iter_t * ip, char * startIP, char * stopIP)
 /* return the next IP
 return NULL if there is no more IP
 */
-char * ip_iter_inc(ip_iter_t * ip)
+char * nutscan_ip_iter_inc(nutscan_ip_iter_t * ip)
 {
 	char buf[SMALLBUF];
 
@@ -148,12 +148,12 @@ char * ip_iter_inc(ip_iter_t * ip)
 	}
 }
 
-int cidr_to_ip(char * cidr, char ** start_ip, char ** stop_ip)
+int nutscan_cidr_to_ip(char * cidr, char ** start_ip, char ** stop_ip)
 {
 	char * first_ip;
 	char * mask;
 	char * saveptr = NULL;
-	ip_iter_t ip;
+	nutscan_ip_iter_t ip;
 	int mask_val;
 	long long mask_bit;
 	char buf[SMALLBUF];

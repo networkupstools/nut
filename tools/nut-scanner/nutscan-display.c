@@ -27,14 +27,14 @@
 
 #include "config.h"
 #include <stdio.h>
-#include "device.h"
+#include "nutscan-device.h"
 
 int nutdev_num = 1;
 
-void display_ups_conf(device_t * device)
+void nutscan_display_ups_conf(nutscan_device_t * device)
 {
-	device_t * current_dev = device;
-	options_t * opt;
+	nutscan_device_t * current_dev = device;
+	nutscan_options_t * opt;
 
 	if(device==NULL) {
 		return;

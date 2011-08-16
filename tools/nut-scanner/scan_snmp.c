@@ -33,7 +33,7 @@
 
 #define SysOID ".1.3.6.1.2.1.1.2"
 
-static device_t * dev_ret = NULL;
+static nutscan_device_t * dev_ret = NULL;
 #ifdef HAVE_PTHREAD
 static pthread_mutex_t dev_mutex;
 static pthread_t * thread_array = NULL;
@@ -47,9 +47,9 @@ void try_all_oid(void * arg)
         size_t name_len = MAX_OID_LEN;
 	struct snmp_pdu *pdu, *response = NULL;
 	int index = 0;
-	device_t * dev = NULL;
+	nutscan_device_t * dev = NULL;
 	struct snmp_session * session;
-	snmp_security_t * sec = (snmp_security_t *)arg;
+	nutscan_snmp_t * sec = (nutscan_snmp_t *)arg;
 	int status;
 	char * desc;
 
@@ -92,52 +92,53 @@ void try_all_oid(void * arg)
 
 		session = snmp_sess_session(sec->handle);
 		/* SNMP device found */
-		dev = new_device();
+		dev = nutscan_new_device();
 		dev->type = TYPE_SNMP;
 		dev->driver = strdup("snmp-ups");
 		dev->port = strdup(session->peername);
 		desc = strndup((char*)response->variables->val.string,
 				(int)response->variables->val_len);
-		add_option_to_device(dev,"desc",
+		nutscan_add_option_to_device(dev,"desc",
 					(char*)response->variables->val.string);
 		free(desc);
-		add_option_to_device(dev,"mibs",snmp_device_table[index].mib);
+		nutscan_add_option_to_device(dev,"mibs",
+						snmp_device_table[index].mib);
 		/* SNMP v3 */
 		if( session->community == NULL || session->community[0] == 0) {
 			if( sec->secLevel ) {
-				add_option_to_device(dev,"secLevel",
+				nutscan_add_option_to_device(dev,"secLevel",
 							sec->secLevel);
 			}
 			if( sec->secName ) {
-				add_option_to_device(dev,"secName",
+				nutscan_add_option_to_device(dev,"secName",
 							sec->secName);
 			}
 			if( sec->authPassword ) {
-				add_option_to_device(dev,"authPassword",
+				nutscan_add_option_to_device(dev,"authPassword",
 							sec->authPassword);
 			}
 			if( sec->privPassword ) {
-				add_option_to_device(dev,"privPassword",
+				nutscan_add_option_to_device(dev,"privPassword",
 							sec->privPassword);
 			}
 			if( sec->authProtocol ) {
-				add_option_to_device(dev,"authProtocol",
+				nutscan_add_option_to_device(dev,"authProtocol",
 							sec->authProtocol);
 			}
 			if( sec->privProtocol ) {
-				add_option_to_device(dev,"privProtocol",
+				nutscan_add_option_to_device(dev,"privProtocol",
 							sec->privProtocol);
 			}
 		}
 		else {
-			add_option_to_device(dev,"community",
+			nutscan_add_option_to_device(dev,"community",
 						(char *)session->community);
 		}
 
 #ifdef HAVE_PTHREAD
 		pthread_mutex_lock(&dev_mutex);
 #endif
-		dev_ret = add_device_to_device(dev_ret,dev);
+		dev_ret = nutscan_add_device_to_device(dev_ret,dev);
 #ifdef HAVE_PTHREAD
 		pthread_mutex_unlock(&dev_mutex);
 #endif
@@ -149,7 +150,7 @@ void try_all_oid(void * arg)
 	}
 }
 
-int init_session(struct snmp_session * snmp_sess, snmp_security_t * sec)
+int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 {
 	snmp_sess_init(snmp_sess);
 
@@ -312,7 +313,7 @@ void * try_SysOID(void * arg)
 	struct snmp_pdu *pdu, *response = NULL;
         oid name[MAX_OID_LEN];
         size_t name_len = MAX_OID_LEN;
-	snmp_security_t * sec = (snmp_security_t *)arg;
+	nutscan_snmp_t * sec = (nutscan_snmp_t *)arg;
 
 	/* Initialize session */
 	if( !init_session(&snmp_sess,sec) ) {
@@ -374,11 +375,11 @@ try_SysOID_free:
 	return NULL;
 }
 
-device_t * scan_snmp(char * start_ip, char * stop_ip,long usec_timeout, snmp_security_t * sec)
+nutscan_device_t * nutscan_scan_snmp(char * start_ip, char * stop_ip,long usec_timeout, nutscan_snmp_t * sec)
 {
 	int i;
-	snmp_security_t * tmp_sec;
-	ip_iter_t ip;
+	nutscan_snmp_t * tmp_sec;
+	nutscan_ip_iter_t ip;
 	char * ip_str = NULL;
 #ifdef HAVE_PTHREAD
 	pthread_t thread;
@@ -391,11 +392,11 @@ device_t * scan_snmp(char * start_ip, char * stop_ip,long usec_timeout, snmp_sec
 	/* Initialize the SNMP library */
 	init_snmp("nut-scanner");
 
-	ip_str = ip_iter_init(&ip, start_ip, stop_ip);
+	ip_str = nutscan_ip_iter_init(&ip, start_ip, stop_ip);
 
 	while(ip_str != NULL) {
-		tmp_sec = malloc(sizeof(snmp_security_t));
-		memcpy(tmp_sec, sec, sizeof(snmp_security_t));
+		tmp_sec = malloc(sizeof(nutscan_snmp_t));
+		memcpy(tmp_sec, sec, sizeof(nutscan_snmp_t));
 		tmp_sec->peername = ip_str;
 
 #ifdef HAVE_PTHREAD
@@ -408,7 +409,7 @@ device_t * scan_snmp(char * start_ip, char * stop_ip,long usec_timeout, snmp_sec
 #else
 		try_SysOID((void *)tmp_sec);
 #endif
-		ip_str = ip_iter_inc(&ip);
+		ip_str = nutscan_ip_iter_inc(&ip);
 	};
 
 #ifdef HAVE_PTHREAD

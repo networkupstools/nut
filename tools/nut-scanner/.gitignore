@@ -3,3 +3,4 @@ Makefile
 Makefile.in
 nut-scanner
 nutscan-usb.h
+nutscan-snmp.h

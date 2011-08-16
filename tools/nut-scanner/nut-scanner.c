@@ -61,8 +61,8 @@ const struct option longopts[] =
 
 int main(int argc, char *argv[])
 {
-	device_t * dev;
-	snmp_security_t sec;
+	nutscan_device_t * dev;
+	nutscan_snmp_t sec;
 	long timeout = DEFAULT_TIMEOUT*1000*1000; /* in usec */
 	int opt_ret;
 	char *	start_ip = NULL;
@@ -74,9 +74,6 @@ int main(int argc, char *argv[])
 	int allow_snmp = 0;
 	int allow_xml = 0;
 	int allow_oldnut = 0;
-
-
-
 
 	memset(&sec,0,sizeof(sec));
 
@@ -188,7 +185,7 @@ int main(int argc, char *argv[])
 	}
 
 	if( cidr ) {
-		cidr_to_ip(cidr, &start_ip, &end_ip);
+		nutscan_cidr_to_ip(cidr, &start_ip, &end_ip);
 	}
 
 	if( !allow_usb && !allow_snmp && !allow_xml && !allow_oldnut) {
@@ -198,44 +195,54 @@ int main(int argc, char *argv[])
 #ifdef HAVE_USB_H
 	if( allow_all || allow_usb) {
 		printf("Scanning USB bus:\n");
-		dev = scan_usb();
-		display_ups_conf(dev);
-		free_device(dev);
+		dev = nutscan_scan_usb();
+		nutscan_display_ups_conf(dev);
+		nutscan_free_device(dev);
 	}
 #endif /* HAVE_USB_H */
 
 #ifdef HAVE_NET_SNMP_NET_SNMP_CONFIG_H
 	if( allow_all || allow_snmp) {
-		printf("Scanning SNMP bus:\n");
-		dev = scan_snmp(start_ip,end_ip,timeout,&sec);
-		display_ups_conf(dev);
-		free_device(dev);
+		if( start_ip == NULL ) {
+			printf("No start IP, skipping SNMP\n");
+		}
+		else {
+			printf("Scanning SNMP bus:\n");
+			dev = nutscan_scan_snmp(start_ip,end_ip,timeout,&sec);
+			nutscan_display_ups_conf(dev);
+			nutscan_free_device(dev);
+		}
 	}
 #endif /* HAVE_NET_SNMP_NET_SNMP_CONFIG_H */
 
 #ifdef WITH_NEON
 	if( allow_all || allow_xml) {
 		printf("Scanning XML/HTTP bus:\n");
-		dev = scan_xml_http(timeout);
-		display_ups_conf(dev);
-		free_device(dev);
+		dev = nutscan_scan_xml_http(timeout);
+		nutscan_display_ups_conf(dev);
+		nutscan_free_device(dev);
 	}
 #endif
 
 	if( allow_all || allow_oldnut) {
-		printf("Scanning NUT bus (old connect method):\n");
-		dev = scan_nut(start_ip,end_ip,port,timeout);
-		display_ups_conf(dev);
-		free_device(dev);
+		if( start_ip == NULL ) {
+			printf("No start IP, skipping NUT bus (old connect method)\n");
+		}
+		else {
+			printf("Scanning NUT bus (old connect method):\n");
+			dev = nutscan_scan_nut(start_ip,end_ip,port,timeout);
+			nutscan_display_ups_conf(dev);
+			nutscan_free_device(dev);
+		}
 	}
 
 /*TODO*/
 	printf("Scanning NUT bus (via avahi):\n");
-	scan_avahi();
+	nutscan_scan_avahi();
 
 /*TODO*/
 	printf("Scanning IPMI bus:\n");
-	scan_ipmi();
+	nutscan_scan_ipmi();
 
 	return EXIT_SUCCESS;
 }

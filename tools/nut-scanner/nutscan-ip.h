@@ -1,4 +1,4 @@
-/* device.h: definition of a container describing a NUT device
+/* ip.h: iterator for IPv4 or IPv6 addresses
  * 
  *  Copyright (C) 2011 - Frederic Bohe <fredericbohe@eaton.com>
  *
@@ -16,35 +16,27 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
-#ifndef SCAN_DEVICE
-#define SCAN_DEVICE
+#ifndef SCAN_IP
+#define SCAN_IP
 
-typedef enum device_type {
-	TYPE_NONE=0,
-	TYPE_USB,
-	TYPE_SNMP,
-	TYPE_XML,
-	TYPE_NUT,
-	TYPE_IPMI
-} device_type_t;
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
-typedef struct options {
-	char *		option;
-	char *		value;
-	struct options*	next;
-} options_t;
+enum network_type {
+        IPv4,
+        IPv6
+};
 
-typedef struct device {
-	device_type_t	type;
-	char *		driver;
-	char *		port;
-	options_t	opt;
-	struct device * prev;
-	struct device * next;
-} device_t;
+typedef struct nutscan_ip_iter {
+	enum network_type	type;
+        struct in_addr		start;
+        struct in_addr		stop;
+        struct in6_addr		start6;
+        struct in6_addr		stop6;
+} nutscan_ip_iter_t;
 
-device_t * new_device();
-void free_device(device_t * device);
-void add_option_to_device(device_t * device,char * option, char * value);
-device_t * add_device_to_device(device_t * first, device_t * second);
+char * nutscan_ip_iter_init(nutscan_ip_iter_t *, char * startIP, char * stopIP);
+char * nutscan_ip_iter_inc(nutscan_ip_iter_t *);
+int nutscan_cidr_to_ip(char * cidr, char ** start_ip, char ** stop_ip);
 #endif

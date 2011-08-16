@@ -16,28 +16,28 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
-#include "device.h"
+#include "nutscan-device.h"
 #include <stdlib.h>
 #include <string.h>
 
-device_t * new_device()
+nutscan_device_t * nutscan_new_device()
 {
-	device_t * device;
+	nutscan_device_t * device;
 
-	device = malloc(sizeof(device_t));
+	device = malloc(sizeof(nutscan_device_t));
 	if( device==NULL) {
 		return NULL;
 	}
 
-	memset(device,0,sizeof(device_t));
+	memset(device,0,sizeof(nutscan_device_t));
 
 	return device;
 }
 
-static void deep_free_device(device_t * device)
+static void deep_free_device(nutscan_device_t * device)
 {
-	options_t * current;
-	options_t * old;
+	nutscan_options_t * current;
+	nutscan_options_t * old;
 
 	if(device==NULL) {
 		return;
@@ -83,7 +83,7 @@ static void deep_free_device(device_t * device)
 	free(device);
 }
 
-void free_device(device_t * device)
+void nutscan_free_device(nutscan_device_t * device)
 {
 	if(device==NULL) {
 		return;
@@ -98,9 +98,9 @@ void free_device(device_t * device)
 	free(device);
 }
 
-void add_option_to_device(device_t * device,char * option, char * value)
+void nutscan_add_option_to_device(nutscan_device_t * device,char * option, char * value)
 {
-	options_t * opt;
+	nutscan_options_t * opt;
 
 	opt = &(device->opt);
 	/* search for last entry */
@@ -109,9 +109,9 @@ void add_option_to_device(device_t * device,char * option, char * value)
 			opt = opt->next;
 		}
 
-		opt->next = malloc(sizeof(options_t));
+		opt->next = malloc(sizeof(nutscan_options_t));
 		opt = opt->next;
-		memset(opt,0,sizeof(options_t));
+		memset(opt,0,sizeof(nutscan_options_t));
 	}
 
 	if( option != NULL ) {
@@ -129,10 +129,10 @@ void add_option_to_device(device_t * device,char * option, char * value)
 	}
 }
 
-device_t * add_device_to_device(device_t * first, device_t * second)
+nutscan_device_t * nutscan_add_device_to_device(nutscan_device_t * first, nutscan_device_t * second)
 {
-	device_t * dev1=NULL;
-	device_t * dev2=NULL;
+	nutscan_device_t * dev1=NULL;
+	nutscan_device_t * dev2=NULL;
 
 	/* Get end of first device */
 	if( first != NULL) {

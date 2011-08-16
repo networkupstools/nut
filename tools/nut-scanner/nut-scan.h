@@ -19,11 +19,11 @@
 #ifndef NUT_SCAN_H
 #define NUT_SCAN_H
 
-#include "device.h"
-#include "ip.h"
+#include <nutscan-device.h>
+#include <nutscan-ip.h>
 
 /* SNMP structure */
-typedef struct snmp_security {
+typedef struct nutscan_snmp {
 	char * community;
 	char * secLevel;
 	char * secName;
@@ -33,22 +33,25 @@ typedef struct snmp_security {
 	char * privProtocol;
 	char * peername;
 	void * handle;
-} snmp_security_t;
+} nutscan_snmp_t;
+
+/* IP helper */
+int nutscan_cidr_to_ip(char * cidr, char ** start_ip, char ** stop_ip);
 
 /* Scanning */
-void scan_avahi();
+void nutscan_scan_avahi();
 
-void scan_ipmi();
+void nutscan_scan_ipmi();
 
-device_t * scan_snmp(char * start_ip, char * stop_ip,long usec_timeout, snmp_security_t * sec);
+nutscan_device_t * nutscan_scan_snmp(char * start_ip, char * stop_ip,long usec_timeout, nutscan_snmp_t * sec);
 
-device_t * scan_usb();
+nutscan_device_t * nutscan_scan_usb();
 
-device_t * scan_xml_http(long usec_timeout);
+nutscan_device_t * nutscan_scan_xml_http(long usec_timeout);
 
-device_t * scan_nut(char * startIP, char * stopIP, char * port, long usec_timeout);
+nutscan_device_t * nutscan_scan_nut(char * startIP, char * stopIP, char * port, long usec_timeout);
 
 /* Displaying */
-void display_ups_conf(device_t * device);
+void nutscan_display_ups_conf(nutscan_device_t * device);
 
 #endif

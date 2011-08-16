@@ -23,7 +23,7 @@
 #include "common.h"
 #include <pthread.h>
 
-static device_t * dev_ret = NULL;
+static nutscan_device_t * dev_ret = NULL;
 #ifdef HAVE_PTHREAD
 static pthread_mutex_t dev_mutex;
 static pthread_t * thread_array = NULL;
@@ -47,7 +47,7 @@ static void * list_nut_devices(void * arg)
 	char **answer;
 	char *hostname = NULL;
 	UPSCONN_t *ups = malloc(sizeof(*ups));
-	device_t * dev = NULL;
+	nutscan_device_t * dev = NULL;
 
 	tv.tv_sec = nut_arg->timeout / (1000*1000);
 	tv.tv_usec = nut_arg->timeout % (1000*1000);
@@ -85,7 +85,7 @@ static void * list_nut_devices(void * arg)
 		 * - also print answer[2] if != "Unavailable"?
 		 * - for upsmon.conf or ups.conf (using dummy-ups)? */
 		if (numa >= 3) {
-			dev = new_device();
+			dev = nutscan_new_device();
 			dev->type = TYPE_NUT;
 			dev->driver = strdup("nutclient");
 			if( asprintf(&dev->port,"%s@%s",answer[1],hostname)
@@ -93,7 +93,7 @@ static void * list_nut_devices(void * arg)
 #ifdef HAVE_PTHREAD
 				pthread_mutex_lock(&dev_mutex);
 #endif
-				dev_ret = add_device_to_device(dev_ret,dev);
+				dev_ret = nutscan_add_device_to_device(dev_ret,dev);
 #ifdef HAVE_PTHREAD
 				pthread_mutex_unlock(&dev_mutex);
 #endif
@@ -107,9 +107,9 @@ static void * list_nut_devices(void * arg)
 	return NULL;
 }
 
-device_t * scan_nut(char* startIP, char* stopIP, char* port,long usec_timeout)
+nutscan_device_t * nutscan_scan_nut(char* startIP, char* stopIP, char* port,long usec_timeout)
 {
-	ip_iter_t ip;
+	nutscan_ip_iter_t ip;
 	char * ip_str = NULL;
 	char * ip_dest = NULL;
 	char buf[SMALLBUF];
@@ -132,7 +132,7 @@ device_t * scan_nut(char* startIP, char* stopIP, char* port,long usec_timeout)
 		}
 	}
 
-	ip_str = ip_iter_init(&ip,startIP,stopIP);
+	ip_str = nutscan_ip_iter_init(&ip,startIP,stopIP);
 
 	while( ip_str != NULL )
 	{
@@ -168,7 +168,7 @@ device_t * scan_nut(char* startIP, char* stopIP, char* port,long usec_timeout)
 		list_nut_devices(nut_arg);
 #endif
 		free(ip_str);
-		ip_str = ip_iter_inc(&ip);
+		ip_str = nutscan_ip_iter_inc(&ip);
 	}
 
 #ifdef HAVE_PTHREAD

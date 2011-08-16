@@ -19,7 +19,7 @@
 
 #include "config.h"
 
-void scan_avahi()
+void nutscan_scan_avahi()
 {
 //        printf("Scanning NUT bus (DNS-SD method):\n");
 

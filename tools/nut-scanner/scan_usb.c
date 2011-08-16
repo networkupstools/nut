@@ -22,7 +22,7 @@
 #include "upsclient.h"
 #include "nutscan-usb.h"
 #include <stdio.h>
-#include "device.h"
+#include "nutscan-device.h"
 
 static char* is_usb_device_supported(usb_device_id_t *usb_device_id_list,
 					int dev_VendorID, int dev_ProductID)
@@ -41,7 +41,7 @@ static char* is_usb_device_supported(usb_device_id_t *usb_device_id_list,
 }
 
 /* return NULL if error */
-device_t * scan_usb()
+nutscan_device_t * nutscan_scan_usb()
 {
 	int ret;
 	char string[256];
@@ -53,8 +53,8 @@ device_t * scan_usb()
 	struct usb_bus *bus;
 	usb_dev_handle *udev;
 
-	device_t * nut_dev = NULL;
-	device_t * current_nut_dev = NULL;
+	nutscan_device_t * nut_dev = NULL;
+	nutscan_device_t * current_nut_dev = NULL;
 
 	/* libusb base init */
 	usb_init();
@@ -106,11 +106,11 @@ device_t * scan_usb()
 					}
 				}
 
-				nut_dev = new_device();
+				nut_dev = nutscan_new_device();
 				if(nut_dev == NULL) {
 					fprintf(stderr,"Memory allocation \
 					error\n");
-					free_device(current_nut_dev);
+					nutscan_free_device(current_nut_dev);
 					free(serialnumber);
 					free(device_name);
 					free(vendor_name);
@@ -123,30 +123,34 @@ device_t * scan_usb()
 				}
 				nut_dev->port = strdup("auto");
 				sprintf(string,"%04X",dev->descriptor.idVendor);
-				add_option_to_device(nut_dev,"vendorid",string);
+				nutscan_add_option_to_device(nut_dev,"vendorid",
+								string);
 				sprintf(string,"%04X",
 					dev->descriptor.idProduct);
-				add_option_to_device(nut_dev,"productid",
+				nutscan_add_option_to_device(nut_dev,"productid",
 							string);
 				if(device_name) {
-					add_option_to_device(nut_dev,"product",
+					nutscan_add_option_to_device(nut_dev,
+								"product",
 								device_name);
 					free(device_name);
 				}
 				if(serialnumber) {
-					add_option_to_device(nut_dev,"serial",
+					nutscan_add_option_to_device(nut_dev,
+								"serial",
 								serialnumber);
 					free(serialnumber);
 				}
 				if(vendor_name) {
-					add_option_to_device(nut_dev,"vendor",
+					nutscan_add_option_to_device(nut_dev,
+								"vendor",
 								vendor_name);
 					free(vendor_name);
 				}
-				add_option_to_device(nut_dev,"bus",
+				nutscan_add_option_to_device(nut_dev,"bus",
 							bus->dirname);
 
-				current_nut_dev = add_device_to_device(
+				current_nut_dev = nutscan_add_device_to_device(
 								current_nut_dev,
 								nut_dev);
 

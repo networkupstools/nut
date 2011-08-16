@@ -27,16 +27,16 @@
 #include <arpa/inet.h>
 #include <ne_xml.h>
 #include "common.h"
-#include "device.h"
+#include "nutscan-device.h"
 
 static int startelm_cb(void *userdata, int parent, const char *nspace, const char *name, const char **atts) {
-	device_t * dev = (device_t *)userdata;
+	nutscan_device_t * dev = (nutscan_device_t *)userdata;
 	char buf[SMALLBUF];
 	int i = 0;
 	while( atts[i] != NULL ) {
 		if(strcmp(atts[i],"type") == 0) {
 			snprintf(buf,sizeof(buf),"\"%s\"",atts[i+1]);
-			add_option_to_device(dev,"desc",buf);
+			nutscan_add_option_to_device(dev,"desc",buf);
 			return 0;
 		}
 		i=i+2;
@@ -44,7 +44,7 @@ static int startelm_cb(void *userdata, int parent, const char *nspace, const cha
 	return 0;
 }
 
-device_t * scan_xml_http(long usec_timeout)
+nutscan_device_t * nutscan_scan_xml_http(long usec_timeout)
 {
 	char *scanMsg = "<SCAN_REQUEST/>";
 	int port = 4679;
@@ -60,8 +60,8 @@ device_t * scan_xml_http(long usec_timeout)
 	char string[SMALLBUF];
 	ssize_t recv_size;
 
-	device_t * nut_dev = NULL;
-	device_t * current_nut_dev = NULL;
+	nutscan_device_t * nut_dev = NULL;
+	nutscan_device_t * current_nut_dev = NULL;
 
 
 	if((peerSocket = socket(AF_INET, SOCK_DGRAM, 0)) != -1)
@@ -124,7 +124,7 @@ device_t * scan_xml_http(long usec_timeout)
 					continue;
 				}
 
-                                nut_dev = new_device();
+                                nut_dev = nutscan_new_device();
                                 if(nut_dev == NULL) {
                                         fprintf(stderr,"Memory allocation \
 					error\n");
@@ -143,7 +143,7 @@ device_t * scan_xml_http(long usec_timeout)
 				sprintf(buf,"http://%s",string);
 				nut_dev->port = strdup(buf);
 
-				current_nut_dev = add_device_to_device(
+				current_nut_dev = nutscan_add_device_to_device(
 						current_nut_dev,nut_dev);
 
 			}
