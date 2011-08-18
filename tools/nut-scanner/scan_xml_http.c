@@ -35,7 +35,7 @@ static int startelm_cb(void *userdata, int parent, const char *nspace, const cha
 	int i = 0;
 	while( atts[i] != NULL ) {
 		if(strcmp(atts[i],"type") == 0) {
-			snprintf(buf,sizeof(buf),"\"%s\"",atts[i+1]);
+			snprintf(buf,sizeof(buf),"%s",atts[i+1]);
 			nutscan_add_option_to_device(dev,"desc",buf);
 			return 0;
 		}
