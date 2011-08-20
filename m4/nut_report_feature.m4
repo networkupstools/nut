@@ -5,7 +5,8 @@ AC_DEFUN([NUT_REPORT],
       nut_report_feature_flag="1"
       ac_clean_files="${ac_clean_files} conf_nut_report_feature"
       echo > conf_nut_report_feature
-      echo -e "Configuration summary:\n======================" >> conf_nut_report_feature
+      echo "Configuration summary:" >> conf_nut_report_feature
+      echo "======================" >> conf_nut_report_feature
    fi
    echo "$1: $2" >> conf_nut_report_feature
 ])
