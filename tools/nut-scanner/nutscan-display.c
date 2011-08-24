@@ -17,24 +17,24 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-
-/* Parseable output
- *  bus_type: driver=driver,port=port,[,serial,vendorid,productid,mibs,...]
- *  USB: driver=usbhid-ups,port=auto,serial=XXX,vendorid=0x0463,productid=0xffff,
- *  SNMP: driver=snmp-ups,port=ip_address,mibs=...
- */
-
-
 #include "config.h"
 #include <stdio.h>
 #include "nutscan-device.h"
 
-int nutdev_num = 1;
+char nutscan_device_type_string[TYPE_END][6] = {
+        "NONE",
+        "USB",
+        "SNMP",
+        "XML",
+        "NUT",
+        "IPMI",
+        "AVAHI" };
 
 void nutscan_display_ups_conf(nutscan_device_t * device)
 {
 	nutscan_device_t * current_dev = device;
 	nutscan_options_t * opt;
+	int nutdev_num = 1;
 
 	if(device==NULL) {
 		return;
@@ -65,6 +65,45 @@ void nutscan_display_ups_conf(nutscan_device_t * device)
 		} while( opt != NULL );
 
 		nutdev_num++;
+
+		current_dev = current_dev->next;
+	}
+	while( current_dev != NULL );
+}
+
+void nutscan_display_parsable(nutscan_device_t * device)
+{
+	nutscan_device_t * current_dev = device;
+	nutscan_options_t * opt;
+
+	if(device==NULL) {
+		return;
+	}
+
+	/* Find start of the list */
+	while(current_dev->prev != NULL) {
+		current_dev = current_dev->prev;
+	}
+
+	/* Display each devices */
+	do {
+		printf("%s:driver=\"%s\",port=\"%s\"",
+			nutscan_device_type_string[current_dev->type],
+			current_dev->driver,
+			current_dev->port);
+
+		opt = &(current_dev->opt);
+
+		do {
+			if( opt->option != NULL ) {
+				printf(",%s",opt->option);
+				if( opt->value != NULL ) {
+					printf("=\"%s\"", opt->value);
+				}
+			}
+			opt = opt->next;
+		} while( opt != NULL );
+		printf("\n");
 
 		current_dev = current_dev->next;
 	}

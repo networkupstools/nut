@@ -53,5 +53,6 @@ nutscan_device_t * nutscan_scan_nut(char * startIP, char * stopIP, char * port, 
 
 /* Displaying */
 void nutscan_display_ups_conf(nutscan_device_t * device);
+void nutscan_display_parsable(nutscan_device_t * device);
 
 #endif

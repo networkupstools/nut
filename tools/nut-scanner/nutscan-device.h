@@ -25,7 +25,9 @@ typedef enum nutscan_device_type {
 	TYPE_SNMP,
 	TYPE_XML,
 	TYPE_NUT,
-	TYPE_IPMI
+	TYPE_IPMI,
+	TYPE_AVAHI,
+	TYPE_END
 } nutscan_device_type_t;
 
 typedef struct nutscan_options {
