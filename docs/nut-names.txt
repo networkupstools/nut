@@ -320,7 +320,7 @@ battery: Any battery details
 | battery.packs           | Number of battery packs         | 001
 | battery.packs.bad       | Number of bad battery packs     | 000
 | battery.type            | Battery chemistry (opaque
-                            (opaque string)                 | PbAc
+                            string)                         | PbAc
 | battery.protection      | Prevent deep discharge of
                             battery                         | yes
 | battery.energysave      | Switch off when running on
