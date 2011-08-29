@@ -26,7 +26,7 @@
 #include "usbhid-ups.h"
 #include "mge-hid.h"
 
-#define MGE_HID_VERSION		"MGE HID 1.21"
+#define MGE_HID_VERSION		"MGE HID 1.22"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -74,7 +74,8 @@ typedef enum {
 		MGE_PULSAR_M_2200,
 		MGE_PULSAR_M_3000,
 		MGE_PULSAR_M_3000_XL,
-	MGE_PEGASUS = 0x400
+	MGE_PEGASUS = 0x400,
+	MGE_3S
 } models_type_t;
 
 static models_type_t	mge_type = MGE_DEFAULT;
@@ -279,14 +280,16 @@ info_lkp_t mge_onbatt_info[] = {
 	{ 0, "online", NULL },
 	{ 0, NULL, NULL }
 };
-/* allow limiting to ups.model ~= Protection Station */
+
+/* allow limiting to ups.model = Protection Station, Ellipse Eco
+ * and 3S (US 750 and AUS 700 only!) */
 static const char *eaton_check_pegasus_fun(double value)
 {
 	switch (mge_type & 0xFF00)	/* Ignore model byte */
 	{
 	case MGE_PEGASUS:
+	case MGE_3S:
 		break;
-
 	default:
 		return NULL;
 	}
@@ -599,6 +602,12 @@ static models_name_t mge_model_names [] =
 	{ "Ellipse ECO", "800", MGE_PEGASUS, NULL },
 	{ "Ellipse ECO", "1200", MGE_PEGASUS, NULL },
 	{ "Ellipse ECO", "1600", MGE_PEGASUS, NULL },
+
+	/* 3S, also supports Eco control on some models (AUS 700 and US 750)*/
+	{ "3S", "450", MGE_DEFAULT, NULL }, /* US only */
+	{ "3S", "550", MGE_DEFAULT, NULL }, /* US 120V + EU 230V + AUS 240V */
+	{ "3S", "700", MGE_3S, NULL }, /* EU 230V + AUS 240V (w/ eco control) */
+	{ "3S", "750", MGE_3S, NULL }, /* US 120V (w/ eco control) */
 
 	/* Evolution models */
 	{ "Evolution", "500", MGE_DEFAULT, "Pulsar Evolution 500" },

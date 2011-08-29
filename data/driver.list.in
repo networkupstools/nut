@@ -199,6 +199,7 @@
 "Dynex"	"ups"	"1"	"975AVR"	""	"genericups upstype=7"
 "Dynex"	"ups"	"2"	"DX-800U"	"USB"	"usbhid-ups"
 
+"Eaton"	"ups"	"5"	"3S"	""	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Protection Station 500/650/800 VA"	"USB"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Ellipse ECO 650/800/1200/1600 VA"	"USB"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Ellipse ASR USBS 600/750/1000/1500 VA"	"USB cable"	"usbhid-ups"
