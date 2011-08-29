@@ -27,6 +27,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include "config.h"
 #include <unistd.h>
 #include <getopt.h>
@@ -36,7 +37,7 @@
 
 #define DEFAULT_TIMEOUT 1
 
-const char optstring[] = "?ht:s:e:c:l:u:A:X:a:x:p:CUSMOm:NP";
+const char optstring[] = "?ht:s:e:c:l:u:A:X:a:x:p:CUSMOm:NPq";
 const struct option longopts[] =
 	{{ "timeout",required_argument,NULL,'t' },
 	{ "start_ip",required_argument,NULL,'s' },
@@ -57,9 +58,25 @@ const struct option longopts[] =
 	{ "oldnut_scan",no_argument,NULL,'O' },
 	{ "disp_nut_conf",no_argument,NULL,'N' },
 	{ "disp_parsable",no_argument,NULL,'P' },
+	{ "quiet",no_argument,NULL,'q' },
 	{ "help",no_argument,NULL,'h' },
 	{NULL,0,NULL,0}};
 
+int printq(int quiet,const char *fmt, ...)
+{
+	va_list ap;
+	int ret;
+
+	if(quiet) {
+		return 0;
+	}
+
+        va_start(ap, fmt);
+        ret = vprintf(fmt, ap);
+        va_end(ap);
+
+	return ret;
+}
 
 int main(int argc, char *argv[])
 {
@@ -76,6 +93,7 @@ int main(int argc, char *argv[])
 	int allow_snmp = 0;
 	int allow_xml = 0;
 	int allow_oldnut = 0;
+	int quiet = 0;
 	void (*display_func)(nutscan_device_t * device);
 
 	memset(&sec,0,sizeof(sec));
@@ -155,6 +173,9 @@ int main(int argc, char *argv[])
 			case 'P':
 				display_func = nutscan_display_parsable;
 				break;
+			case 'q':
+				quiet = 1;
+				break;
 			case 'h':
 			case '?':
 			default:
@@ -208,7 +229,7 @@ int main(int argc, char *argv[])
 
 #ifdef HAVE_USB_H
 	if( allow_all || allow_usb) {
-		printf("Scanning USB bus:\n");
+		printq(quiet,"Scanning USB bus:\n");
 		dev = nutscan_scan_usb();
 		display_func(dev);
 		nutscan_free_device(dev);
@@ -218,10 +239,10 @@ int main(int argc, char *argv[])
 #ifdef HAVE_NET_SNMP_NET_SNMP_CONFIG_H
 	if( allow_all || allow_snmp) {
 		if( start_ip == NULL ) {
-			printf("No start IP, skipping SNMP\n");
+			printq(quiet,"No start IP, skipping SNMP\n");
 		}
 		else {
-			printf("Scanning SNMP bus:\n");
+			printq(quiet,"Scanning SNMP bus:\n");
 			dev = nutscan_scan_snmp(start_ip,end_ip,timeout,&sec);
 			display_func(dev);
 			nutscan_free_device(dev);
@@ -231,7 +252,7 @@ int main(int argc, char *argv[])
 
 #ifdef WITH_NEON
 	if( allow_all || allow_xml) {
-		printf("Scanning XML/HTTP bus:\n");
+		printq(quiet,"Scanning XML/HTTP bus:\n");
 		dev = nutscan_scan_xml_http(timeout);
 		display_func(dev);
 		nutscan_free_device(dev);
@@ -240,10 +261,10 @@ int main(int argc, char *argv[])
 
 	if( allow_all || allow_oldnut) {
 		if( start_ip == NULL ) {
-			printf("No start IP, skipping NUT bus (old connect method)\n");
+			printq(quiet,"No start IP, skipping NUT bus (old connect method)\n");
 		}
 		else {
-			printf("Scanning NUT bus (old connect method):\n");
+			printq(quiet,"Scanning NUT bus (old connect method):\n");
 			dev = nutscan_scan_nut(start_ip,end_ip,port,timeout);
 			display_func(dev);
 			nutscan_free_device(dev);
@@ -251,11 +272,11 @@ int main(int argc, char *argv[])
 	}
 
 /*TODO*/
-	printf("Scanning NUT bus (via avahi):\n");
+	printq(quiet,"Scanning NUT bus (via avahi):\n");
 	nutscan_scan_avahi();
 
 /*TODO*/
-	printf("Scanning IPMI bus:\n");
+	printq(quiet,"Scanning IPMI bus:\n");
 	nutscan_scan_ipmi();
 
 	return EXIT_SUCCESS;
