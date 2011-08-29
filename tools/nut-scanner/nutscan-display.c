@@ -34,7 +34,7 @@ void nutscan_display_ups_conf(nutscan_device_t * device)
 {
 	nutscan_device_t * current_dev = device;
 	nutscan_options_t * opt;
-	int nutdev_num = 1;
+	static int nutdev_num = 1;
 
 	if(device==NULL) {
 		return;
