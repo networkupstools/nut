@@ -265,14 +265,14 @@ static int apc_ser_try(void)
 	if (do_lock_port) {
 		errno = 0;
 		ret = 0;
-		#ifdef HAVE_UU_LOCK
+#ifdef HAVE_UU_LOCK
 		ret = uu_lock(xbasename(device_path));
-		#elif defined(HAVE_FLOCK)
+#elif defined(HAVE_FLOCK)
 		ret = flock(fd, LOCK_EX | LOCK_NB);
-		#elif defined(HAVE_LOCKF)
+#elif defined(HAVE_LOCKF)
 		lseek(fd, 0L, SEEK_SET);
 		ret = lockf(fd, F_TLOCK, 0L);
-		#endif
+#endif
 		if (ret < 0)
 			upslog_with_errno(LOG_ERR, "apc_ser_try: couldn't lock the port (%s)", device_path);
 	}
@@ -294,10 +294,10 @@ static int apc_ser_tear(void)
 		return 1;
 
 	tcflush(upsfd, TCIOFLUSH);
-	#ifdef HAVE_UU_LOCK
+#ifdef HAVE_UU_LOCK
 	if (do_lock_port)
 		uu_unlock(xbasename(device_path));
-	#endif
+#endif
 	errno = 0;
 	ret = close(upsfd);
 	if (ret < 0)
