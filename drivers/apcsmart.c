@@ -166,146 +166,75 @@ static const char *convert_data(apc_vartab_t *cmd_entry, const char *upsval)
 	return temp;
 }
 
-/*
- * NOTE: apc_ser_* functions mimic serial.c (roughly)
- * we have to do it, as we allow closing / reopening port during
- * daemon activity, and serial functions provided by serial.c
- * call fatalx (which at this stage is not allowed)
- */
-
-static int apc_ser_set(void)
+static void apc_ser_set(void)
 {
-	struct termios tio;
+	struct termios tio, tio_chk;
 	char *cable;
 
-	if (upsfd == -1)
-		return 0;
+	/*
+	 * this must be called before the rest, as ser_set_speed() performs
+	 * early initialization of the port, apart from changing speed
+	 */
+	ser_set_speed(upsfd, device_path, B2400);
 
 	memset(&tio, 0, sizeof(tio));
 	errno = 0;
-	if (tcgetattr(upsfd, &tio)) {
-		upslog_with_errno(LOG_ERR, "apc_ser_set: tcgetattr(%s)", device_path);
-		return 0;
-	}
 
-	/* set port mode: common stuff, canonical processing, speed */
+	if (tcgetattr(upsfd, &tio))
+		fatal_with_errno(EXIT_FAILURE, "tcgetattr(%s)", device_path);
 
-	tio.c_cflag = CS8 | CLOCAL | CREAD;
+	/* set port mode: common stuff, canonical processing */
 
-	tio.c_lflag = ICANON & ~ISIG;
+	tio.c_cflag |= (CS8 | CLOCAL | CREAD);
 
-	tio.c_iflag = (IGNCR | IGNPAR) & ~(IXON | IXOFF);
+	tio.c_lflag |= ICANON;
+	tio.c_lflag &= ~ISIG;
+
+	tio.c_iflag |= (IGNCR | IGNPAR);
+	tio.c_iflag &= ~(IXON | IXOFF);
 
 	tio.c_oflag = 0;
 
+	tio.c_cc[VEOL] = '*';	/* specially handled in apc_read() */
+
+#ifdef _POSIX_VDISABLE
 	tio.c_cc[VERASE] = _POSIX_VDISABLE;
 	tio.c_cc[VKILL]  = _POSIX_VDISABLE;
 	tio.c_cc[VEOF] = _POSIX_VDISABLE;
 	tio.c_cc[VEOL2] = _POSIX_VDISABLE;
+#endif
 
-	tio.c_cc[VEOL] = '*';	/* specially handled in apc_read() */
-
-	/*
-	 * unused in canonical mode:
+#if 0
+	/* unused in canonical mode: */
 	tio.c_cc[VMIN] = 1;
 	tio.c_cc[VTIME] = 0;
-	*/
+#endif
 
-	cfsetispeed(&tio, B2400);
-	cfsetospeed(&tio, B2400);
-
-	tcflush(upsfd, TCIOFLUSH);
+	if (tcflush(upsfd, TCIOFLUSH))
+		fatal_with_errno(EXIT_FAILURE, "tcflush(%s)", device_path);
 
 	/*
 	 * warn:
-	 * Note  that tcsetattr() returns success if any of the requested changes could be successfully carried out.
-	 * TODO
+	 * Note, that tcsetattr() returns success if /any/ of the requested
+	 * changes could be successfully carried out. Thus the more complicated
+	 * test.
 	 */
-	errno = 0;
-	if (tcsetattr(upsfd, TCSANOW, &tio)) {
-		upslog_with_errno(LOG_ERR, "apc_ser_set: tcsetattr(%s)", device_path);
-		return 0;
-	}
+	if (tcsetattr(upsfd, TCSANOW, &tio))
+		fatal_with_errno(EXIT_FAILURE, "tcsetattr(%s)", device_path);
+
+	memset(&tio_chk, 0, sizeof(tio_chk));
+	if (tcgetattr(upsfd, &tio_chk))
+		fatal_with_errno(EXIT_FAILURE, "tcgetattr(%s)", device_path);
+	if (memcmp(&tio_chk, &tio, sizeof(tio)))
+		fatalx(EXIT_FAILURE, "unable to set the required attributes (%s)", device_path);
 
 	cable = getval("cable");
 	if (cable && !strcasecmp(cable, ALT_CABLE_1)) {
-		if (ser_set_dtr(upsfd, 1) == -1) {
-			upslog_with_errno(LOG_ERR, "apc_ser_set: ser_set_dtr() failed (%s)", device_path);
-			return 0;
-		}
-		if (ser_set_rts(upsfd, 0) == -1) {
-			upslog_with_errno(LOG_ERR, "apc_ser_set: ser_set_rts() failed (%s)", device_path);
-			return 0;
-		}
+		if (ser_set_dtr(upsfd, 1) == -1)
+			fatalx(EXIT_FAILURE, "ser_set_dtr() failed (%s)", device_path);
+		if (ser_set_rts(upsfd, 0) == -1)
+			fatalx(EXIT_FAILURE, "ser_set_rts() failed (%s)", device_path);
 	}
-
-	return 1;
-}
-
-/*
- * try to [re]open serial port
- */
-static int apc_ser_try(void)
-{
-	int fd, ret;
-
-	if (upsfd >= 0) {
-		upslog_with_errno(LOG_EMERG, "apc_ser_try: programming error ! port (%s) should be closed !", device_path);
-		return 0;
-	}
-
-	errno = 0;
-	fd = open(device_path, O_RDWR | O_NOCTTY | O_EXCL | O_NONBLOCK);
-
-	if (fd < 0) {
-		upslog_with_errno(LOG_CRIT, "apc_ser_try: couldn't [re]open serial port (%s)", device_path);
-		return 0;
-	}
-
-	if (do_lock_port) {
-		errno = 0;
-		ret = 0;
-#ifdef HAVE_UU_LOCK
-		ret = uu_lock(xbasename(device_path));
-#elif defined(HAVE_FLOCK)
-		ret = flock(fd, LOCK_EX | LOCK_NB);
-#elif defined(HAVE_LOCKF)
-		lseek(fd, 0L, SEEK_SET);
-		ret = lockf(fd, F_TLOCK, 0L);
-#endif
-		if (ret < 0)
-			upslog_with_errno(LOG_ERR, "apc_ser_try: couldn't lock the port (%s)", device_path);
-	}
-
-	upsfd = fd;
-	extrafd = fd;
-
-	return 1;
-}
-
-/*
- * tear down serial connection
- */
-static int apc_ser_tear(void)
-{
-	int ret;
-
-	if (upsfd == -1)
-		return 1;
-
-	tcflush(upsfd, TCIOFLUSH);
-#ifdef HAVE_UU_LOCK
-	if (do_lock_port)
-		uu_unlock(xbasename(device_path));
-#endif
-	errno = 0;
-	ret = close(upsfd);
-	if (ret < 0)
-		upslog_with_errno(LOG_ERR, "apc_ser_tear: couldn't close the port (%s)", device_path);
-	upsfd = -1;
-	extrafd = -1;
-
-	return 1;
 }
 
 static void ups_status_set(void)
@@ -2044,10 +1973,8 @@ void upsdrv_initups(void)
 	size_t i, len;
 	char *val;
 
-	if (!apc_ser_try())
-		fatalx(EXIT_FAILURE, "couldn't open port (%s)", device_path);
-	if (!apc_ser_set())
-		fatalx(EXIT_FAILURE, "couldn't set options on port (%s)", device_path);
+	upsfd = extrafd = ser_open(device_path);
+	apc_ser_set();
 
 	/* sanitize awd (additional waekup delay of '@' command) */
 	if ((val = getval("awd")) && rexhlp(APC_AWDFMT, val)) {
@@ -2081,7 +2008,7 @@ void upsdrv_cleanup(void)
 	/* try to bring the UPS out of smart mode */
 	apc_write(APC_GODUMB);
 	apc_read(temp, sizeof(temp), SER_TO);
-	apc_ser_tear();
+	ser_close(upsfd, device_path);
 }
 
 void upsdrv_help(void)
@@ -2121,23 +2048,21 @@ void upsdrv_updateinfo(void)
 	time_t now;
 
 	/* try to wake up a dead ups once in awhile */
-	while ((dstate_is_stale())) {
+	if (dstate_is_stale()) {
 		upslogx(LOG_ERR, "communications with UPS lost - check cabling");
 
 		/* reset this so a full update runs when the UPS returns */
 		last_full = 0;
 
-		/* become aggressive */
-		if (++last_worked > 10) {
-			upslogx(LOG_ERR, "attempting to reset serial port (%s)", device_path);
-			if (!(apc_ser_tear() && apc_ser_try() && apc_ser_set()))
-				return;
-		}
+		if (++last_worked < 10)
+			return;
+
+		/* become aggressive after a few tries */
+		upslogx(LOG_ERR, "attempting to re-enable smart mode");
 		if (!smartmode(1))
 			return;
 
 		last_worked = 0;
-		break;
 	}
 
 	if (!update_status())
