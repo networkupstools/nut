@@ -4,7 +4,7 @@ nutscan-usb.h nutscan-snmp.h:
 	cd ..; $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
 
 lib_LTLIBRARIES = libnutscan.la
-libnutscan_la_SOURCES = scan_nut.c scan_avahi.c scan_ipmi.c \
+libnutscan_la_SOURCES = scan_nut.c scan_ipmi.c \
 	nutscan-device.c nutscan-ip.c nutscan-display.c
 libnutscan_la_LIBADD = ../../clients/libupsclient.la $(NETLIBS)
 libnutscan_la_LDFLAGS = -version-info 1:0:0
@@ -33,6 +33,11 @@ if WITH_NEONXML
   libnutscan_la_SOURCES += scan_xml_http.c
   libnutscan_la_CFLAGS += $(LIBNEON_CFLAGS)
   libnutscan_la_LIBADD += $(LIBNEON_LIBS)
+endif
+if WITH_AVAHI
+  libnutscan_la_SOURCES += scan_avahi.c
+  libnutscan_la_CFLAGS += $(LIBAVAHI_CFLAGS)
+  libnutscan_la_LIBADD += $(LIBAVAHI_LIBS)
 endif
 
 dist_noinst_HEADERS = nut-scan.h nutscan-usb.h nutscan-snmp.h nutscan-device.h nutscan-ip.h 

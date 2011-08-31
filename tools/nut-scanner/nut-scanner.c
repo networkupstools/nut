@@ -37,7 +37,7 @@
 
 #define DEFAULT_TIMEOUT 1
 
-const char optstring[] = "?ht:s:e:c:l:u:A:X:a:x:p:CUSMOm:NPq";
+const char optstring[] = "?ht:s:e:c:l:u:W:X:w:x:p:CUSMOAm:NPq";
 const struct option longopts[] =
 	{{ "timeout",required_argument,NULL,'t' },
 	{ "start_ip",required_argument,NULL,'s' },
@@ -46,9 +46,9 @@ const struct option longopts[] =
 	{ "community",required_argument,NULL,'c' },
 	{ "secLevel",required_argument,NULL,'l' },
 	{ "secName",required_argument,NULL,'u' },
-	{ "authPassword",required_argument,NULL,'A' },
+	{ "authPassword",required_argument,NULL,'W' },
 	{ "privPassword",required_argument,NULL,'X' },
-	{ "authProtocol",required_argument,NULL,'a' },
+	{ "authProtocol",required_argument,NULL,'w' },
 	{ "privProtocol",required_argument,NULL,'x' },
 	{ "port",required_argument,NULL,'p' },
 	{ "complete_scan",no_argument,NULL,'C' },
@@ -56,6 +56,7 @@ const struct option longopts[] =
 	{ "snmp_scan",no_argument,NULL,'S' },
 	{ "xml_scan",no_argument,NULL,'M' },
 	{ "oldnut_scan",no_argument,NULL,'O' },
+	{ "avahi_scan",no_argument,NULL,'A' },
 	{ "disp_nut_conf",no_argument,NULL,'N' },
 	{ "disp_parsable",no_argument,NULL,'P' },
 	{ "quiet",no_argument,NULL,'q' },
@@ -93,6 +94,7 @@ int main(int argc, char *argv[])
 	int allow_snmp = 0;
 	int allow_xml = 0;
 	int allow_oldnut = 0;
+	int allow_avahi = 0;
 	int quiet = 0;
 	void (*display_func)(nutscan_device_t * device);
 
@@ -130,13 +132,13 @@ int main(int argc, char *argv[])
 			case 'u':
 				sec.secName = strdup(optarg);
 				break;
-			case 'A':
+			case 'W':
 				sec.authPassword = strdup(optarg);
 				break;
 			case 'X':
 				sec.privPassword = strdup(optarg);
 				break;
-			case 'a':
+			case 'w':
 				sec.authProtocol = strdup(optarg);
 				break;
 			case 'x':
@@ -167,6 +169,9 @@ int main(int argc, char *argv[])
 			case 'O':
 				allow_oldnut = 1;
 				break;
+			case 'A':
+				allow_avahi = 1;
+				break;
 			case 'N':
 				display_func = nutscan_display_ups_conf;
 				break;
@@ -192,6 +197,7 @@ int main(int argc, char *argv[])
 				printf("  -M, --xml_scan : Scan XML/HTTP devices.\n");
 #endif
 				printf("  -O, --oldnut_scan : Scan NUT devices (old method).\n");
+				printf("  -A, --avahi_scan : Scan NUT devices (avahi method).\n");
 				printf("  -t, --timeout <timeout in seconds>: network operation timeout (default %d).\n",DEFAULT_TIMEOUT);
 				printf("  -s, --start_ip <IP address>: First IP address to scan.\n");
 				printf("  -e, --end_ip <IP address>: Last IP address to scan.\n");
@@ -223,7 +229,8 @@ int main(int argc, char *argv[])
 		nutscan_cidr_to_ip(cidr, &start_ip, &end_ip);
 	}
 
-	if( !allow_usb && !allow_snmp && !allow_xml && !allow_oldnut) {
+	if( !allow_usb && !allow_snmp && !allow_xml && !allow_oldnut &&
+		!allow_avahi) {
 		allow_all = 1;
 	}
 
@@ -271,9 +278,14 @@ int main(int argc, char *argv[])
 		}
 	}
 
-/*TODO*/
-	printq(quiet,"Scanning NUT bus (via avahi):\n");
-	nutscan_scan_avahi();
+#ifdef HAVE_AVAHI_CLIENT_CLIENT_H
+	if( allow_all || allow_avahi) {
+		printq(quiet,"Scanning NUT bus (avahi method):\n");
+		dev = nutscan_scan_avahi();
+		display_func(dev);
+		nutscan_free_device(dev);
+	}
+#endif
 
 /*TODO*/
 	printq(quiet,"Scanning IPMI bus:\n");

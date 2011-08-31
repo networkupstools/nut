@@ -161,7 +161,7 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all, 
-	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, hal, cgi, dev, neon, powerman]),
+	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, hal, cgi, dev, neon, powerman, avahi]),
 [
 	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
@@ -174,6 +174,7 @@ AC_ARG_WITH(all,
 		if test -z "${with_powerman}"; then with_powerman="${withval}"; fi
 		if test -z "${with_cgi}"; then with_cgi="${withval}"; fi
 		if test -z "${with_dev}"; then with_dev="${withval}"; fi
+		if test -z "${with_avahi}"; then with_avahi="${withval}"; fi
 		AC_MSG_RESULT("${withval}")
 	else
 		AC_MSG_RESULT(not given)
@@ -209,6 +210,7 @@ NUT_ARG_WITH([neon], [build and install neon based XML/HTTP driver], [auto])
 NUT_CHECK_LIBNEON
 NUT_ARG_WITH([powerman], [build and install Powerman PDU client driver], [auto])
 NUT_CHECK_LIBPOWERMAN
+NUT_CHECK_LIBAVAHI
 
 dnl ----------------------------------------------------------------------
 dnl additional USB-related checks
@@ -283,6 +285,23 @@ AM_CONDITIONAL(WITH_NEONXML, test "${nut_with_neon}" = "yes")
 NUT_REPORT_FEATURE([build neon based XML driver], [${nut_with_neon}])
 if test "${nut_with_neon}" = "yes"; then
    AC_DEFINE_UNQUOTED(WITH_NEON, 1, [Define to enable Neon XML/HTTP support])
+fi
+
+dnl ----------------------------------------------------------------------
+dnl checks related to --with-avahi
+
+dnl ${nut_with_avahi}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_avahi}" = "yes" -a "${nut_have_avahi}" != "yes"; then
+   AC_MSG_ERROR(["avahi libraries not found"])
+fi
+
+if test "${nut_with_avahi}" != "no"; then
+   nut_with_avahi="${nut_have_avahi}"
+fi
+
+AM_CONDITIONAL(WITH_AVAHI, test "${nut_with_avahi}" = "yes")
+if test "${nut_with_avahi}" = "yes"; then
+   AC_DEFINE_UNQUOTED(WITH_AVAHI, 1, [Define to enable avahi support])
 fi
 
 dnl ----------------------------------------------------------------------
@@ -877,6 +896,8 @@ AC_SUBST(LIBUSB_CFLAGS)
 AC_SUBST(LIBUSB_LIBS)
 AC_SUBST(LIBNEON_CFLAGS)
 AC_SUBST(LIBNEON_LIBS)
+AC_SUBST(LIBAVAHI_CFLAGS)
+AC_SUBST(LIBAVAHI_LIBS)
 AC_SUBST(LIBPOWERMAN_CFLAGS)
 AC_SUBST(LIBPOWERMAN_LIBS)
 AC_SUBST(DOC_BUILD_LIST)
