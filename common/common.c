@@ -244,6 +244,7 @@ int sendsignalfn(const char *pidfn, int sig)
 
 	if (fgets(buf, sizeof(buf), pidf) == NULL) {
 		upslogx(LOG_NOTICE, "Failed to read pid from %s", pidfn);
+		fclose(pidf);
 		return -1;
 	}	
 
@@ -251,6 +252,7 @@ int sendsignalfn(const char *pidfn, int sig)
 
 	if (pid < 2) {
 		upslogx(LOG_NOTICE, "Ignoring invalid pid number %d", pid);
+		fclose(pidf);
 		return -1;
 	}
 
@@ -259,6 +261,7 @@ int sendsignalfn(const char *pidfn, int sig)
 
 	if (ret < 0) {
 		perror("kill");
+		fclose(pidf);
 		return -1;
 	}
 
@@ -267,9 +270,11 @@ int sendsignalfn(const char *pidfn, int sig)
 
 	if (ret < 0) {
 		perror("kill");
+		fclose(pidf);
 		return -1;
 	}
 
+	fclose(pidf);
 	return 0;
 }
 
