@@ -36,7 +36,7 @@ typedef struct nutscan_ip_iter {
         struct in6_addr		stop6;
 } nutscan_ip_iter_t;
 
-char * nutscan_ip_iter_init(nutscan_ip_iter_t *, char * startIP, char * stopIP);
+char * nutscan_ip_iter_init(nutscan_ip_iter_t *, const char * startIP, const char * stopIP);
 char * nutscan_ip_iter_inc(nutscan_ip_iter_t *);
-int nutscan_cidr_to_ip(char * cidr, char ** start_ip, char ** stop_ip);
+int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip);
 #endif

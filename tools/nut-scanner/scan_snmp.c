@@ -375,7 +375,7 @@ try_SysOID_free:
 	return NULL;
 }
 
-nutscan_device_t * nutscan_scan_snmp(char * start_ip, char * stop_ip,long usec_timeout, nutscan_snmp_t * sec)
+nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip,long usec_timeout, nutscan_snmp_t * sec)
 {
 	int i;
 	nutscan_snmp_t * tmp_sec;

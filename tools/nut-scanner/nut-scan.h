@@ -36,18 +36,18 @@ typedef struct nutscan_snmp {
 } nutscan_snmp_t;
 
 /* IP helper */
-int nutscan_cidr_to_ip(char * cidr, char ** start_ip, char ** stop_ip);
+int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip);
 
 /* Scanning */
 void nutscan_scan_ipmi();
 
-nutscan_device_t * nutscan_scan_snmp(char * start_ip, char * stop_ip,long usec_timeout, nutscan_snmp_t * sec);
+nutscan_device_t * nutscan_scan_snmp(const char * start_ip,const char * stop_ip,long usec_timeout, nutscan_snmp_t * sec);
 
 nutscan_device_t * nutscan_scan_usb();
 
 nutscan_device_t * nutscan_scan_xml_http(long usec_timeout);
 
-nutscan_device_t * nutscan_scan_nut(char * startIP, char * stopIP, char * port, long usec_timeout);
+nutscan_device_t * nutscan_scan_nut(const char * startIP, const char * stopIP, const char * port, long usec_timeout);
 
 nutscan_device_t * nutscan_scan_avahi(void);
 

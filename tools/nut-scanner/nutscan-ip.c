@@ -49,7 +49,7 @@ static void invert_IPv6(struct in6_addr * addr1, struct in6_addr * addr2)
 }
 
 /* Return the first ip or NULL if error */
-char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, char * startIP, char * stopIP)
+char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, const char * startIP, const char * stopIP)
 {
 	int addr;
 	int i;
@@ -148,8 +148,9 @@ char * nutscan_ip_iter_inc(nutscan_ip_iter_t * ip)
 	}
 }
 
-int nutscan_cidr_to_ip(char * cidr, char ** start_ip, char ** stop_ip)
+int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 {
+	char * cidr_tok;
 	char * first_ip;
 	char * mask;
 	char * saveptr = NULL;
@@ -161,7 +162,8 @@ int nutscan_cidr_to_ip(char * cidr, char ** start_ip, char ** stop_ip)
 	*start_ip = NULL;
 	*stop_ip = NULL;
 
-	first_ip = strtok_r(cidr,"/",&saveptr);
+	cidr_tok = strdup(cidr);
+	first_ip = strtok_r(cidr_tok,"/",&saveptr);
 	if( first_ip == NULL) {
 		return 0;
 	}
@@ -169,6 +171,7 @@ int nutscan_cidr_to_ip(char * cidr, char ** start_ip, char ** stop_ip)
 	if( mask == NULL ) {
 		return 0;
 	}
+	free(cidr_tok);
 
 	mask_val = atoi(mask);
 
