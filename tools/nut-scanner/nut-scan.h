@@ -35,9 +35,6 @@ typedef struct nutscan_snmp {
 	void * handle;
 } nutscan_snmp_t;
 
-/* IP helper */
-int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip);
-
 /* Scanning */
 void nutscan_scan_ipmi();
 

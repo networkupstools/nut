@@ -63,7 +63,7 @@ const struct option longopts[] =
 	{ "help",no_argument,NULL,'h' },
 	{NULL,0,NULL,0}};
 
-int printq(int quiet,const char *fmt, ...)
+static int printq(int quiet,const char *fmt, ...)
 {
 	va_list ap;
 	int ret;

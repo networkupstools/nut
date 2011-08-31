@@ -41,7 +41,7 @@ static int thread_count = 0;
 #endif
 long g_usec_timeout ;
 
-void try_all_oid(void * arg)
+static void try_all_oid(void * arg)
 {
         oid name[MAX_OID_LEN];
         size_t name_len = MAX_OID_LEN;
@@ -150,7 +150,7 @@ void try_all_oid(void * arg)
 	}
 }
 
-int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
+static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 {
 	snmp_sess_init(snmp_sess);
 
@@ -306,7 +306,7 @@ int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 	return 1;
 }
 
-void * try_SysOID(void * arg)
+static void * try_SysOID(void * arg)
 {
 	struct snmp_session snmp_sess;
 	void * handle;
