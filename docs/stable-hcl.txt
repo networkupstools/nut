@@ -3,8 +3,15 @@ Hardware compatibility list
 ===========================
 endif::website[]
 
-NOTE: Before you buy, take a look at the link:acknowledgements.html[Acknowledgements]
-for information about which drivers are developed with the support of the manufacturer. 
+[NOTE]
+================================================================================
+
+Before you buy, take a look at the link:acknowledgements.html[Acknowledgements]
+for information about which drivers are developed with the support of the manufacturer.
+
+Be sure to also read the <<footnotes,footnotes>>.
+
+================================================================================
 
 ifdef::website[]
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -85,6 +92,7 @@ include::ups-html.txt[]
 
 endif::website[]
 
+[[footnotes]]
 [NOTE]
 ================================================================================
 
@@ -111,12 +119,23 @@ between the set of developers and the set of owners of that hardware.
 The way to fix it is to turn a developer into an owner or an owner into a
 developer.
 
-*Omissions or errors*
+*Report new devices, omissions or errors*
 
-There is a lot of UPS hardware for sale, and it's possible that we have missed
-listing some that are supported.
+There is a lot of power devices hardware for sale, and it's possible
+that we have missed listing some that are supported, or made an error.
 
-Please report any omissions so that this list can be as accurate as possible. 
+So that this list can be as accurate as possible, please report any
+omissions to the
+link:http://lists.alioth.debian.org/mailman/listinfo/nut-upsuser[NUT Users]
+mailing list, with *[HCL]* in the subject and including the following
+information:
+
+- Device manufacturer and name,
+- upsc output (upsrw and upscmd outputs are also welcome),
+- link:docs/user-manual.chunked/ar01s06.html#Shutdown_design[shutdown sequence]
+testing results,
+- a link to an online description is also appreciated.
+
 
 *Pointing the present HCL*
 

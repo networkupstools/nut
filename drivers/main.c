@@ -358,7 +358,6 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 	}
 
 	/* everything else must be for the driver */
-
 	storeval(var, val);
 }
 
@@ -556,10 +555,6 @@ int main(int argc, char **argv)
 			"Error: you must specify a port name in ups.conf. Try -h for help.");
 	}
 
-	pidfn = xmalloc(SMALLBUF);
-
-	snprintf(pidfn, SMALLBUF, "%s/%s-%s.pid", altpidpath(), progname, upsname);
-
 	upsdebugx(1, "debug level is '%d'", nut_debug_level);
 
 	new_uid = get_user_pwent(user);
@@ -574,7 +569,39 @@ int main(int argc, char **argv)
 	if ((!do_forceshutdown) && (chdir(dflt_statepath())))
 		fatal_with_errno(EXIT_FAILURE, "Can't chdir to %s", dflt_statepath());
 
-	setup_signals();
+	/* Setup signals to communicate with driver once backgrounded. */
+	if ((nut_debug_level == 0) && (!do_forceshutdown)) {
+		char	buffer[SMALLBUF];
+
+		setup_signals();
+
+		snprintf(buffer, sizeof(buffer), "%s/%s-%s.pid", altpidpath(), progname, upsname);
+
+		/* Try to prevent that driver is started multiple times. If a PID file */
+		/* already exists, send a TERM signal to the process and try if it goes */
+		/* away. If not, retry a couple of times. */
+		for (i = 0; i < 3; i++) {
+			struct stat	st;
+
+			if (stat(buffer, &st) != 0) {
+				/* PID file not found */
+				break;
+			}
+
+			if (sendsignalfn(buffer, SIGTERM) != 0) {
+				/* Can't send signal to PID, assume invalid file */
+				break;
+			}
+
+			upslogx(LOG_WARNING, "Duplicate driver instance detected! Terminating other driver!");
+
+			/* Allow driver some time to quit */
+			sleep(5);
+		}
+
+		pidfn = xstrdup(buffer);
+		writepid(pidfn);	/* before backgrounding */
+	}
 
 	/* clear out callback handler data */
 	memset(&upsh, '\0', sizeof(upsh));
@@ -643,7 +670,7 @@ int main(int argc, char **argv)
 
 	if (nut_debug_level == 0) {
 		background();
-		writepid(pidfn);
+		writepid(pidfn);	/* PID changes when backgrounding */
 	}
 
 	while (!exit_flag) {

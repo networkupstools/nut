@@ -24,7 +24,7 @@
 #include "apcsmart.h"
 
 #define DRIVER_NAME	"APC Smart protocol driver"
-#define DRIVER_VERSION	"2.03"
+#define DRIVER_VERSION	"2.1"
 
 static upsdrv_info_t table_info = {
 	"APC command table",
@@ -38,8 +38,9 @@ static upsdrv_info_t table_info = {
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
 	DRIVER_VERSION,
-	"Russell Kroll <rkroll@exploits.org>\n" \
-	"Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk>",
+	"Russell Kroll <rkroll@exploits.org>\n"
+	"Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk>\n"
+	"Michal Soltys <soltys@ziu.info>",
 	DRV_STABLE,
 	{ &table_info, NULL }
 };
@@ -73,7 +74,7 @@ static apc_vartab_t *vartab_lookup_name(const char *var)
 /* FUTURE: change to use function pointers */
 
 /* convert APC formatting to NUT formatting */
-static const char *convert_data(apc_vartab_t *cmd_entry, char *upsval)
+static const char *convert_data(apc_vartab_t *cmd_entry, const char *upsval)
 {
 	static	char tmp[128];
 	int	tval;
@@ -178,6 +179,16 @@ static void alert_handler(char ch)
 			ups_status |= APC_STAT_RB;
 			break;
 
+		case '?':		/* set OVER */
+			upsdebugx(4, "alert_handler: OVER");
+			ups_status |= APC_STAT_OVER;
+			break;
+
+		case '=':		/* clear OVER */
+			upsdebugx(4, "alert_handler: not OVER");
+			ups_status &= ~APC_STAT_OVER;
+			break;
+
 		default:
 			upsdebugx(4, "alert_handler got 0x%02x (unhandled)", ch);
 			break;
@@ -252,8 +263,10 @@ static int query_ups(const char *var, int first)
 		return 0;
 	}
 
-	/* already known to not be supported? */
-	if (vt->flags & APC_IGNORE)
+	/*
+	 * not first run and already known to not be supported ?
+	 */
+	if (!first && !(vt->flags & APC_PRESENT))
 		return 0;
 
 	/* empty the input buffer (while allowing the alert handler to run) */
@@ -278,11 +291,10 @@ static int query_ups(const char *var, int first)
 
 	ser_comm_good();
 
-	if ((ret < 1) || (!strcmp(temp, "NA"))) {	/* not supported */
-		vt->flags |= APC_IGNORE;
+	if ((ret < 1) || (!strcmp(temp, "NA")))		/* not supported */
 		return 0;
-	}
 
+	vt->flags |= APC_PRESENT;
 	ptr = convert_data(vt, temp);
 	dstate_setinfo(vt->name, "%s", ptr);
 
@@ -293,7 +305,7 @@ static void do_capabilities(void)
 {
 	const	char	*ptr, *entptr;
 	char	upsloc, temp[512], cmd, loc, etmp[16], *endtemp;
-	int	nument, entlen, i, matrix, ret;
+	int	nument, entlen, i, matrix, ret, valid;
 	apc_vartab_t *vt;
 
 	upsdebugx(1, "APC - About to get capabilities string");
@@ -333,8 +345,8 @@ static void do_capabilities(void)
 	endtemp = &temp[0] + strlen(temp);
 
 	if (temp[0] != '#') {
-		printf("Unrecognized capability start char %c\n", temp[0]);
-		printf("Please report this error [%s]\n", temp);
+		upsdebugx(1, "Unrecognized capability start char %c", temp[0]);
+		upsdebugx(1, "Please report this error [%s]", temp);
 		upslogx(LOG_ERR, "ERROR: unknown capability start char %c!", 
 			temp[0]);
 
@@ -377,9 +389,10 @@ static void do_capabilities(void)
 		entptr = &ptr[4];
 
 		vt = vartab_lookup_char(cmd);
+		valid = vt && ((loc == upsloc) || (loc == '4'));
 
 		/* mark this as writable */
-		if (vt && ((loc == upsloc) || (loc == '4'))) {
+		if (valid) {
 			upsdebugx(1, "Supported capability: %02x (%c) - %s", 
 				cmd, loc, vt->name);
 
@@ -390,11 +403,10 @@ static void do_capabilities(void)
 		}
 
 		for (i = 0; i < nument; i++) {
-			snprintf(etmp, entlen + 1, "%s", entptr);
-
-			if (vt && ((loc == upsloc) || (loc == '4')))
-				dstate_addenum(vt->name, "%s",
-					convert_data(vt, etmp));
+			if (valid) {
+				snprintf(etmp, entlen + 1, "%s", entptr);
+				dstate_addenum(vt->name, "%s", convert_data(vt, etmp));
+			}
 
 			entptr += entlen;
 		}
@@ -430,7 +442,6 @@ static int update_status(void)
 	ups_status = strtol(buf, 0, 16) & 0xff;
 	ups_status_set();
 
-	status_commit();
 	dstate_dataok();
 
 	return 1;
@@ -465,10 +476,6 @@ static void oldapcsetup(void)
 static void protocol_verify(unsigned char cmd)
 {
 	int	i, found;
-
-	/* we might not care about this one */
-	if (strchr(CMD_IGN_CHARS, cmd))
-		return;
 
 	/* see if it's a variable */
 	for (i = 0; apc_vartab[i].name != NULL; i++) {
@@ -531,27 +538,28 @@ static int firmware_table_lookup(void)
 	unsigned int	i, j;
 	char	buf[SMALLBUF];
 
-	upsdebugx(1, "Attempting firmware lookup");
+	upsdebugx(1, "Attempting firmware lookup using command 'V'");
 
-	ret = ser_send_char(upsfd, 'b');
+	ret = ser_send_char(upsfd, 'V');
 
 	if (ret != 1) {
-		upslog_with_errno(LOG_ERR, "getbaseinfo: ser_send_char failed");
+		upslog_with_errno(LOG_ERR, "firmware_table_lookup: ser_send_char failed");
 		return 0;
 	}
 
 	ret = ser_get_line(upsfd, buf, sizeof(buf), ENDCHAR, IGNCHARS, 
 		SER_WAIT_SEC, SER_WAIT_USEC);
 
-	/* see if this is an older version like an APC600 which doesn't
-	 * response to 'a' or 'b' queries
+        /*
+	 * Some UPSes support both 'V' and 'b'. As 'b' doesn't always return
+	 * firmware version, we attempt that only if 'V' doesn't work.
 	 */
 	if ((ret < 1) || (!strcmp(buf, "NA"))) {
-		upsdebugx(1, "Attempting to contact older Smart-UPS version");
-		ret = ser_send_char(upsfd, 'V');
+		upsdebugx(1, "Attempting firmware lookup using command 'b'");
+		ret = ser_send_char(upsfd, 'b');
 
 		if (ret != 1) {
-			upslog_with_errno(LOG_ERR, "getbaseinfo: ser_send_char failed");
+			upslog_with_errno(LOG_ERR, "firmware_table_lookup: ser_send_char failed");
 			return 0;
 		}
 
@@ -562,9 +570,9 @@ static int firmware_table_lookup(void)
 			upslog_with_errno(LOG_ERR, "firmware_table_lookup: ser_get_line failed");
 			return 0;
 		}
-
-		upsdebugx(2, "Firmware: [%s]", buf);
 	}
+
+	upsdebugx(2, "Firmware: [%s]", buf);
 
 	/* this will be reworked if we get a lot of these things */
 	if (!strcmp(buf, "451.2.I")) {
@@ -602,6 +610,10 @@ static void getbaseinfo(void)
 	int	ret = 0;
 	char 	*alrts, *cmds, temp[512];
 
+	/*
+	 *  try firmware lookup first; we could start with 'a', but older models
+	 *  sometimes return other things than a command set
+	 */
 	if (firmware_table_lookup() == 1)
 		return;
 
@@ -622,7 +634,6 @@ static void getbaseinfo(void)
 		SER_WAIT_SEC, SER_WAIT_USEC);
 
 	if ((ret < 1) || (!strcmp(temp, "NA"))) {
-
 		/* We have an old dumb UPS - go to specific code for old stuff */
 		oldapcsetup();
 		return;
@@ -774,101 +785,276 @@ static int smartmode(void)
 	return 0;	/* failure */
 }
 
+/*
+ * all shutdown commands should respond with 'OK' or '*'
+ */
+static int sdok(void)
+{
+	char temp[16];
+
+	ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, IGNCHARS, SER_WAIT_SEC, SER_WAIT_USEC);
+	upsdebugx(4, "sdok: got \"%s\"", temp);
+
+	if (!strcmp(temp, "*") || !strcmp(temp, "OK")) {
+		upsdebugx(4, "Last issued shutdown command succeeded");
+		return 1;
+	}
+
+	upsdebugx(1, "Last issued shutdown command failed");
+	return 0;
+}
+
+/* soft hibernate: S - working only when OB, otherwise ignored */
+static int sdcmd_S(int dummy)
+{
+	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
+
+	upsdebugx(1, "Issuing soft hibernate");
+	ser_send_char(upsfd, APC_CMD_SOFTDOWN);
+
+	return sdok();
+}
+
+/* soft hibernate, hack version for CS 350 */
+static int sdcmd_CS(int tval)
+{
+	upsdebugx(1, "Using CS 350 'force OB' shutdown method");
+	if (tval & APC_STAT_OL) {
+		upsdebugx(1, "On-line - forcing OB temporarily");
+		ser_send_char(upsfd, 'U');
+		usleep(UPSDELAY);
+	}
+	return sdcmd_S(tval);
+}
+
+/*
+ * hard hibernate: @nnn / @nn
+ * note: works differently for older and new models, see help function for
+ * detailed info
+ */
+static int sdcmd_ATn(int cnt)
+{
+	int n = 0, mmax, ret;
+	const char *strval;
+	char timer[4];
+
+	mmax = cnt == 2 ? 99 : 999;
+
+	if ((strval = getval("wugrace"))) {
+		errno = 0;
+		n = strtol(strval, NULL, 10);
+		if (errno || n < 0 || n > mmax)
+			n = 0;
+	}
+
+	snprintf(timer, sizeof(timer), "%.*d", cnt, n);
+
+	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
+	upsdebugx(1, "Issuing hard hibernate with %d minutes additional wakeup delay", n*6);
+
+	ser_send_char(upsfd, APC_CMD_GRACEDOWN);
+	usleep(CMDLONGDELAY);
+	ser_send_pace(upsfd, UPSDELAY, "%s", timer);
+
+	ret = sdok();
+	if (ret || cnt == 3)
+		return ret;
+
+	/*
+	 * "tricky" part - we tried @nn variation and it (unsurprisingly)
+	 * failed; we have to abort the sequence with something bogus to have
+	 * the clean state; newer upses will respond with 'NO', older will be
+	 * silent (YMMV);
+	 */
+	ser_send_char(upsfd, APC_CMD_GRACEDOWN);
+	usleep(UPSDELAY);
+	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
+
+	return 0;
+}
+
+/* shutdown: K - delayed poweroff */
+static int sdcmd_K(int dummy)
+{
+	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
+	upsdebugx(1, "Issuing delayed poweroff");
+
+	ser_send_char(upsfd, APC_CMD_SHUTDOWN);
+	usleep(CMDLONGDELAY);
+	ser_send_char(upsfd, APC_CMD_SHUTDOWN);
+
+	return sdok();
+}
+
+/* shutdown: Z - immediate poweroff */
+static int sdcmd_Z(int dummy)
+{
+	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
+	upsdebugx(1, "Issuing immediate poweroff");
+
+	ser_send_char(upsfd, APC_CMD_OFF);
+	usleep(CMDLONGDELAY);
+	ser_send_char(upsfd, APC_CMD_OFF);
+
+	return sdok();
+}
+
+static int (*sdlist[])(int) = {
+	sdcmd_S,
+	sdcmd_ATn,	/* for @nnn version */
+	sdcmd_K,
+	sdcmd_Z,
+	sdcmd_CS,
+	sdcmd_ATn,	/* for @nn version */
+};
+
+#define SDIDX_S		0
+#define SDIDX_AT3N	1
+#define SDIDX_K		2
+#define SDIDX_Z		3
+#define SDIDX_CS	4
+#define SDIDX_AT2N	5
+
+#define SDCNT 		6
+
+static void upsdrv_shutdown_simple(int status)
+{
+	unsigned int sdtype = 0;
+	char *strval;
+
+	if ((strval = getval("sdtype"))) {
+		errno = 0;
+		sdtype = strtol(strval, NULL, 10);
+		if (errno || sdtype < 0 || sdtype > 6)
+			sdtype = 0;
+	}
+
+	switch (sdtype) {
+
+	case 6:		/* hard hibernate */
+		sdcmd_ATn(3);
+		break;
+	case 5:		/* "hack nn" hard hibernate */
+		sdcmd_ATn(2);
+		break;
+	case 4:		/* special hack for CS 350 and similar models */
+		sdcmd_CS(status);
+		break;
+
+	case 3:		/* delayed poweroff */
+		sdcmd_K(0);
+		break;
+
+	case 2:		/* instant poweroff */
+		sdcmd_Z(0);
+		break;
+	case 1:
+		/*
+		 * Send a combined set of shutdown commands which can work
+		 * better if the UPS gets power during shutdown process
+		 * Specifically it sends both the soft shutdown 'S' and the
+		 * hard hibernate '@nnn' commands
+		 */
+		upsdebugx(1, "UPS - currently %s - sending soft/hard hibernate commands",
+			(status & APC_STAT_OL) ? "on-line" : "on battery");
+
+		/* S works only when OB */
+		if ((status & APC_STAT_OB) && sdcmd_S(0))
+			break;
+		sdcmd_ATn(3);
+		break;
+
+	default:
+		/*
+		 * Send @nnn or S, depending on OB / OL status
+		 */
+		if (status & APC_STAT_OL)		/* on line */
+			sdcmd_ATn(3);
+		else
+			sdcmd_S(0);
+	}
+}
+
+static void upsdrv_shutdown_advanced(int status)
+{
+	const char *strval;
+	const char deforder[] = {48 + SDIDX_S,
+				 48 + SDIDX_AT3N,
+				 48 + SDIDX_K,
+				 48 + SDIDX_Z,
+				  0};
+	size_t i;
+	int n;
+
+	strval = getval("advorder");
+
+	/* sanitize advorder */
+
+	if (!strval || !strlen(strval) || strlen(strval) > SDCNT)
+		strval = deforder;
+	for (i = 0; i < strlen(strval); i++) {
+		if (strval[i] - 48 < 0 || strval[i] - 48 >= SDCNT) {
+			strval = deforder;
+			break;
+		}
+	}
+
+	/*
+	 * try each method in the list with a little bit of handling in certain
+	 * cases
+	 */
+
+	for (i = 0; i < strlen(strval); i++) {
+		switch (strval[i] - 48) {
+			case SDIDX_CS:
+				n = status;
+				break;
+			case SDIDX_AT3N:
+				n = 3;
+				break;
+			case SDIDX_AT2N:
+			default:
+				n = 2;
+		}
+
+		if (sdlist[strval[i] - 48](n))
+			break;	/* finish if command succeeded */
+	}
+}
+
 /* power down the attached load immediately */
 void upsdrv_shutdown(void)
 {
 	char	temp[32];
-	int	ret, tval, sdtype = 0;
+	int	ret, status;
 
 	if (!smartmode())
-		printf("Detection failed.  Trying a shutdown command anyway.\n");
+		upsdebugx(1, "SM detection failed. Trying a shutdown command anyway");
 
 	/* check the line status */
 
 	ret = ser_send_char(upsfd, APC_STATUS);
 
 	if (ret == 1) {
-		ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, 
+		ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR,
 			IGNCHARS, SER_WAIT_SEC, SER_WAIT_USEC);
 
 		if (ret < 1) {
-			printf("Status read failed!  Assuming on battery state\n");
-			tval = APC_STAT_LB | APC_STAT_OB;
+			upsdebugx(1, "Status read failed ! Assuming on battery state");
+			status = APC_STAT_LB | APC_STAT_OB;
 		} else {
-			tval = strtol(temp, 0, 16);
+			status = strtol(temp, 0, 16);
 		}
 
 	} else {
-		printf("Status request failed; assuming on battery state\n");
-		tval = APC_STAT_LB | APC_STAT_OB;
+		upsdebugx(1, "Status request failed; assuming on battery state");
+		status = APC_STAT_LB | APC_STAT_OB;
 	}
 
-	if (testvar("sdtype"))
-		sdtype = atoi(getval("sdtype"));
-
-	switch (sdtype) {
-
-	case 4:		/* special hack for CS 350 and similar models */
-		printf("Using CS 350 'force OB' shutdown method\n");
-
-		if (tval & APC_STAT_OL) {
-			printf("On line - forcing OB temporarily\n");
-			ser_send_char(upsfd, 'U');
-		}
-
-		ser_send_char(upsfd, 'S');
-		break;
-
-	case 3:		/* shutdown with grace period */
-		printf("Sending delayed power off command to UPS\n");
-
-		ser_send_char(upsfd, APC_CMD_SHUTDOWN);
-		usleep(CMDLONGDELAY);
-		ser_send_char(upsfd, APC_CMD_SHUTDOWN);
-
-		break;
-
-	case 2:		/* instant shutdown */
-		printf("Sending power off command to UPS\n");
-
-		ser_send_char(upsfd, APC_CMD_OFF);
-		usleep(CMDLONGDELAY);
-		ser_send_char(upsfd, APC_CMD_OFF);
-
-		break;
-
-	case 1:
-
-		/* Send a combined set of shutdown commands which can work better */
-		/* if the UPS gets power during shutdown process */
-		/* Specifically it sends both the soft shutdown 'S' */
-		/* and the powerdown after grace period - '@000' commands */
-		printf("UPS - currently %s - sending shutdown/powerdown\n",
-			(tval & APC_STAT_OL) ? "on-line" : "on battery");
-
-		ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
-		ser_send_pace(upsfd, UPSDELAY, "S@000");
-		break;
-
-	default:
-
-		/* @000 - shutdown after 'p' grace period             */
-		/*      - returns after 000 minutes (i.e. right away) */
-
-		/* S    - shutdown after 'p' grace period, only on battery */
-		/*        returns after 'e' charge % plus 'r' seconds      */
-
-		ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
-
-		if (tval & APC_STAT_OL) {		/* on line */
-			printf("On line, sending shutdown+return command...\n");
-			ser_send_pace(upsfd, UPSDELAY, "@000");
-		}
-		else {
-			printf("On battery, sending normal shutdown command...\n");
-			ser_send_char(upsfd, APC_CMD_SOFTDOWN);
-		}
-	}
+	if (testvar("advorder") && strcasecmp(getval("advorder"), "no"))
+		upsdrv_shutdown_advanced(status);
+	else
+		upsdrv_shutdown_simple(status);
 }
 
 /* 940-0095B support: set DTR, lower RTS */
@@ -921,6 +1107,7 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 	char	orig[256], temp[256];
 	const char	*ptr;
 
+	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
 	ret = ser_send_char(upsfd, vt->cmd);
 
 	if (ret != 1) {
@@ -1015,7 +1202,6 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 	char	temp[256];
 
 	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
-
 	ret = ser_send_char(upsfd, vt->cmd);
 
 	if (ret != 1) {
@@ -1118,6 +1304,7 @@ static int do_cmd(apc_cmdtab_t *ct)
 	int	ret;
 	char	buf[SMALLBUF];
 
+	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
 	ret = ser_send_char(upsfd, ct->cmd);
 
 	if (ret != 1) {
@@ -1222,7 +1409,9 @@ static void setuphandlers(void)
 void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE, "cable", "Specify alternate cable (940-0095B)");
-	addvar(VAR_VALUE, "sdtype", "Specify shutdown type (1-3)");
+	addvar(VAR_VALUE, "wugrace", "Hard hibernate's wakeup grace");
+	addvar(VAR_VALUE, "sdtype", "Specify simple shutdown method (0-6)");
+	addvar(VAR_VALUE, "advorder", "Enable advanced shutdown control");
 }
 
 void upsdrv_initups(void)
@@ -1234,9 +1423,8 @@ void upsdrv_initups(void)
 
 	cable = getval("cable");
 
-	if (cable)
-		if (!strcasecmp(cable, ALT_CABLE_1))
-			init_serial_0095B();
+	if (cable && !strcasecmp(cable, ALT_CABLE_1))
+		init_serial_0095B();
 
 	/* make sure we wake up if the UPS sends alert chars to us */
 	extrafd = upsfd;
@@ -1244,18 +1432,12 @@ void upsdrv_initups(void)
 
 void upsdrv_help(void)
 {
-	printf("\nShutdown types:\n");
-	printf("  0: soft shutdown or powerdown, depending on battery status\n");
-	printf("  1: soft shutdown followed by powerdown\n");
-	printf("  2: instant power off\n");
-	printf("  3: power off with grace period\n");
-	printf("  4: 'force OB' hack method for CS 350\n");
-	printf("Modes 0-1 will make the UPS come back when power returns\n");
-	printf("Modes 2-3 will make the UPS stay turned off when power returns\n");
 }
 
 void upsdrv_initinfo(void)
 {
+	const char *pmod, *pser;
+
 	if (!smartmode()) {
 		fatalx(EXIT_FAILURE, 
 			"Unable to detect an APC Smart protocol UPS on port %s\n"
@@ -1268,8 +1450,12 @@ void upsdrv_initinfo(void)
 
 	getbaseinfo();
 
-	printf("Detected %s [%s] on %s\n", dstate_getinfo("ups.model"),
-		dstate_getinfo("ups.serial"), device_path);
+	if (!(pmod = dstate_getinfo("ups.model")))
+		pmod = "\"unknown model\"";
+	if (!(pser = dstate_getinfo("ups.serial")))
+		pser = "unknown serial";
+
+	upsdebugx(1, "Detected %s [%s] on %s", pmod, pser, device_path);
 
 	setuphandlers();
 }

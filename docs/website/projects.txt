@@ -144,6 +144,11 @@ A Perl module to talk to an UPS via NUT (Network UPS Tools) upsd.
 Hardware projects involving NUT
 -------------------------------
 
+link:http://www.dell.com/us/business/p/powervault-nx3500/pd[Dell PowerVault NX3500]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Dell is using NUT to protect the new PowerVault NX3500 storage devices.
+
 link:http://www.opengear.com/UPS.html[OpenGear]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

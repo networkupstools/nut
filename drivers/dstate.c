@@ -223,8 +223,11 @@ static void sock_connect(int sock)
 	int	fd, ret;
 	conn_t	*conn;
 	struct sockaddr_un sa;
+#if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED) 
+	int	salen;
+#else
 	socklen_t	salen;
-
+#endif
 	salen = sizeof(sa);
 	fd = accept(sock, (struct sockaddr *) &sa, &salen);
 

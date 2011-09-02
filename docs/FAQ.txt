@@ -299,15 +299,12 @@ things depending on what's supported:
   it into powering up whenever line power is present
 - Teach a monkey to watch the machine and press the power button
   when the outage is over.
-
   This might work, but it creates high produce bills.
 
 If you can't use one of the first two options, give the board to
 an enemy.  Let them worry about it.
 
-== My PowerMac G4 won't power back up by itself (into Linux) after the UPS shuts down.  What can I do about this?
-
-*Answer 1*
+== My Mac won't power back up by itself into Linux after the UPS shuts down.  What can I do about this?
 
 This is about the same situation as the ATX question above, only
 worse.  Earlier Macs apparently supported a hack where you could
@@ -324,15 +321,20 @@ From Usenet post <6boftzxz51.fsf@ecc-office.sp.cs.cmu.edu>:
 
     autoboot.adb contains these three bytes (in hex):  01 13 01
 
-Unfortunately, the hardware has evolved and there is no good
-equivalent for this hack on today's systems.
+Later PowerPC Macs with a PMU and the appropriate kernel driver can achieve the
+same effect with the following command:
 
-If you find out how to do this, please send me some mail, since
-this affects one of my systems and my stop-gap solution is getting
-cranky.
+   echo server_mode=1 > /proc/pmu/options
 
-Note: this question has been in the FAQ for over a year and 
-there's still no answer.  Let me guess: everyone who runs a server
+The following pages have some slightly more kludgy answers which involve the
+use of `setpci`, and are highly model-specific:
+
+ - http://mythic-beasts.com/support/macminicolo_howto.html
+ - http://superuser.com/questions/212434/reboot-after-power-failure-for-mac-running-ubuntu
+ - http://ubuntuforums.org/showthread.php?t=1209576
+
+Note: this question has been in the FAQ for several years now, and 
+there's still no clean answer.  Let me guess: everyone who runs a server
 on Mac hardware has a team of trained monkeys, and feeds them
 by growing bananas in the tropical environment formed by waste heat
 from the equipment. 
@@ -341,14 +343,14 @@ The rest of us are still waiting for the answer.  Booting into the
 Mac OS to frob the "file server" panel is not an acceptable
 solution.
 
-*Answer 2*
+== My Mac won't power back up by itself into Mac OS X after the UPS shuts down.  What can I do about this?
 
-If you're on OS X, this is relatively simple to fix.  Go to system
-preferences, click on energy saver, click on the options tab, check
-"Restart automatically after a power failure".
+This is relatively simple to fix.  If you have console or VNC access, log in as
+an administrator, go to System Preferences, click on energy saver, click on the
+options tab, check "Restart automatically after a power failure".
 
-If you're on some other OS, hope they've figured out how to duplicate
-the above in a non-simian manner.
+Alternatively, you can connect via SSH and run "sudo pmset autorestart 1" to
+achieve the same effect.
 
 == I want to keep the drivers and upsd in their own security domains. How can this be accomplished?
 

@@ -62,6 +62,8 @@
 "APC"	"ups"	"1"	"Back-UPS"	"940-0023A cable"	"genericups upstype=9"
 "APC"	"ups"	"1"	"Back-UPS Office"	"940-0119A cable"	"genericups upstype=12"
 "APC"	"ups"	"1"	"Back-UPS RS 500"	"custom non-USB cable"	"genericups upstype=20"
+"APC"	"ups"	"3"	"Smart-UPS RT XL"	"AP9618 SNMP monitoring card"	"snmp-ups"
+"APC"	"ups"	"3"	"(various)"	"AP9618 SNMP monitoring card"	"snmp-ups"
 "APC"	"pdu"	"1"	"Masterswitch"	"940-0020 cable"	"genericups upstype=12"
 "APC"	"pdu"	"1"	"AP9210"	"8 outlets"	"powerman-pdu (experimental)"
 "APC"	"pdu"	"1"	"AP79xx"	"8 to 24 outlets"	"powerman-pdu (experimental)"
@@ -154,6 +156,7 @@
 "Cyber Power Systems"	"ups"	"2"	"Value 400E"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"2"	"Value 600E"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"2"	"Value 800E"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"ups"	"2"	"CP1000AVRLCD"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"2"	"CP1350AVRLCD"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"2"	"CP1500AVRLCD"	"USB"	"usbhid-ups"
 
@@ -196,6 +199,7 @@
 "Dynex"	"ups"	"1"	"975AVR"	""	"genericups upstype=7"
 "Dynex"	"ups"	"2"	"DX-800U"	"USB"	"usbhid-ups"
 
+"Eaton"	"ups"	"5"	"3S"	""	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Protection Station 500/650/800 VA"	"USB"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Ellipse ECO 650/800/1200/1600 VA"	"USB"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Ellipse ASR USBS 600/750/1000/1500 VA"	"USB cable"	"usbhid-ups"
@@ -206,6 +210,7 @@
 "Eaton"	"ups"	"5"	"EX 2200/3000/3000 XL VA"	"USB port"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"EX 1000 RT2U / 1500 RT2U"	"USB port"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"MX 5/8/10/15/20 kVA"	"USB port"	"usbhid-ups"
+"Eaton"	"ups"	"5"	"5 PX"	"USB port"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Nova AVR 625/1250"	"USB"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Ellipse ASR USBS 600/750/1000/1500 VA"	"Serial cable"	"mge-shut or newmge-shut"
 "Eaton"	"ups"	"5"	"Ellipse MAX USBS 600/850/1100/1500 VA"	"Serial cable"	"mge-shut or newmge-shut"
@@ -215,6 +220,7 @@
 "Eaton"	"ups"	"5"	"EX 2200/3000/3000 XL VA"	"Serial port"	"mge-shut or newmge-shut"
 "Eaton"	"ups"	"5"	"EX 1000 RT2U / 1500 RT2U"	"Serial port"	"mge-shut or newmge-shut"
 "Eaton"	"ups"	"5"	"MX 5/8/10/15/20 kVA"	"Serial port"	"mge-shut or newmge-shut"
+"Eaton"	"ups"	"5"	"5 PX"	"Serial port"	"mge-shut or newmge-shut"
 "Eaton"	"ups"	"5"	"EX RT 1:1 7/11 kVA"	""	"mge-shut or newmge-shut"
 "Eaton"	"ups"	"5"	"EX RT 3:1 5/7/11 kVA"	""	"mge-shut or newmge-shut"
 "Eaton"	"ups"	"5"	"EX RT (XML/HTTP)"	"NMC Transverse card (ref 66074)"	"netxml-ups (experimental)"
@@ -230,6 +236,7 @@
 "Eaton"	"pdu"	"5"	"ePDU Managed"	""	"snmp-ups (experimental)"
 "Eaton"	"pdu"	"5"	"ePDU Monitored"	""	"snmp-ups or netxml-ups"
 "Eaton"	"ups"	"5"	"Powerware 9130"	""	"bcmxcp or usbhid-ups"
+"Eaton"	"ups"	"5"	"Powerware 9140"	""	"bcmxcp or usbhid-ups"
 "Eaton"	"ups"	"5"	"Powerware 5130"	""	"usbhid-ups"
 "Eaton"	"ups"	"5"	"9395"	"Serial port"	"bcmxcp"
 "Eaton"	"ups"	"5"	"Best Ferrups"	"older ConnectUPS"	"snmp-ups"
@@ -278,6 +285,8 @@
 "Gamatronic"	"ups"	"5"	"MS"	""	"gamatronic"
 "Gamatronic"	"ups"	"5"	"µPS3/1"	""	"gamatronic"
 
+"GE"	"ups"	"2"	"EP series"	""	"blazer_usb"
+
 "Geek Squad"	"ups"	"2"	"GS1285U"	"USB"	"usbhid-ups"
 
 "Gemini"	"ups"	"1"	"UPS625/UPS1000"	""	"safenet"
@@ -307,7 +316,8 @@
 
 "Inform"	"ups"	"1"	"GUARD"	"Line Interactive AP model"	"powercom"
 "Inform"	"ups"	"2"	"Guard S 1500AP"	""	"blazer_ser"
-"Inform"	"ups"	"2"	"Informer Compact 1000VA"	""	"blazer_ser"
+"Inform"	"ups"	"2"	"Informer Compact 1000-2000-3000 VA"	""	"blazer_ser"
+"Inform"	"ups"	"2"	"Sinus SS 210"	""	"blazer_ser"
 
 "Infosec"	"ups"	"2"	"iPEL 350"	""	"blazer_ser"
 "Infosec"	"ups"	"2"	"iPEL 500"	""	"blazer_ser"
@@ -316,6 +326,8 @@
 "Infosec"	"ups"	"2"	"500XP"	""	"blazer_ser"
 "Infosec"	"ups"	"2"	"XP 500"	"USB"	"blazer_usb"
 "Infosec"	"ups"	"2"	"XP 1000"	""	"blazer_ser"
+
+"IPAR"	"ups"	"2"	"Mini Energy ME 800"	""	"blazer_usb"
 
 "IPMI"	"pdu"	"1"	""	""	"powerman-pdu (experimental)"
 
@@ -567,6 +579,8 @@
 "Nitram"	"ups"	"1"	"Elite 2002"	""	"genericups upstype=16"
 "Nitram"	"ups"	"1"	"Elite 2005"	""	"powerpanel"
 
+"NUMERIC"	"ups"	"2"	"3000 SW"	""	"blazer_ser"
+
 "Oneac"	"ups"	"1"	"ON400"	"advanced interface"	"oneac"
 "Oneac"	"ups"	"1"	"ON600"	"advanced interface"	"oneac"
 "Oneac"	"ups"	"1"	"ON900"	"advanced interface"	"oneac"
@@ -593,6 +607,7 @@
 "Opti-UPS"	"ups"	"1"	"PowerES"	"420E"	"optiups"
 
 "Orvaldi Power Protection"	"ups"	"2"	"various"	"not 400 or 600"	"blazer_ser"
+"Orvaldi Power Protection"	"ups"	"2"	"750 / 900SP"	""	"blazer_usb"
 
 "Phasak"	"ups"	"2"	"400VA / 600VA"	""	"blazer_ser"
 
@@ -617,6 +632,8 @@
 "Powercom"	"ups"	"4"	"(various)"	"USB (<= 2009 models, product id: 0002)"	"powercom (requires 'usbserial' kernel module)"
 "Powercom"	"ups"	"5"	"(various)"	"USB (2009 models, product id: 00a?)"	"usbhid-ups (experimental)"
 
+"POWEREX"	"ups"	"2"	"VI 1000 LED"	""	"blazer_usb"
+
 "PowerGuard"	"ups"	"2"	"PG-600"	""	"blazer_ser"
 
 "PowerKinetics"	"ups"	"1"	"9001"	""	"genericups upstype=17"
@@ -633,6 +650,7 @@
 "PowerWalker"	"ups"	"2"	"Line-Interactive VI 400/800"	""	"blazer_ser"
 "PowerWalker"	"ups"	"2"	"Line-Interactive VI 600"	""	"blazer_ser"
 "PowerWalker"	"ups"	"2"	"Line-Interactive VI 1400"	""	"blazer_usb"
+"PowerWalker"	"ups"	"2"	"Line-Interactive VI 850 LCD"	""	"blazer_usb"
 
 "Powerware"	"ups"	"4"	"3110"	""	"genericups upstype=7"
 "Powerware"	"ups"	"4"	"3115"	""	"genericups upstype=11"
@@ -667,7 +685,7 @@
 "Repotec"	"ups"	"1"	"RPT-800A"	""	"genericups upstype=13"
 "Repotec"	"ups"	"1"	"RPT-162A"	""	"genericups upstype=13"
 
-"Rocketfish"	"ups"	"2"	"RF-1000VA / RF-1025VA"	""	"usbhid-ups" 
+"Rocketfish"	"ups"	"2"	"RF-1000VA / RF-1025VA"	""	"usbhid-ups"
 
 "SmartLabs"	"pdu"	"1"	"2412S Power Line Modem"	"for X10/Insteon"	"powerman-pdu (experimental)"
 
@@ -697,8 +715,10 @@
 
 "SuperPower"	"ups"	"2"	"HP360, Hope-550"	""	"blazer_ser"
 
-"SVEN"	"ups"	"2"	"Power Pro+ series"	"USB"	"blazer_usb"
-"SVEN"	"ups"	"2"	"Power Smart RM 2000"	"USB"	"blazer_usb"
+"SVEN"	"ups"	"2"	"Power Pro+ series"	"USB"	"blazer_usb (USB ID ffff:0000)"
+"SVEN"	"ups"	"2"	"Power Pro+ series"	"USB"	"blazer_usb (USB ID 05b8:0000)"
+"SVEN"	"ups"	"1"	"Power Pro+ series"	"USB"	"richcomm_usb (USB ID 0925:1234)"
+"SVEN"	"ups"	"2"	"Power Smart RM 2000"	"USB"	"blazer_usb (USB ID 05b8:0000)"
 
 "Sweex"	"ups"	"1"	"500/1000"	"smart - shipped with SafeNet"	"safenet"
 "Sweex"	"ups"	"1"	"500/1000"	""	"genericups upstype=7"
@@ -761,6 +781,8 @@
 "Victron/IMV"	"ups"	"1"	"Lite"	"crack cable"	"genericups upstype=10"
 
 "Viewsonic"	"ups"	"1"	"PowerES"	"420E"	"optiups"
+
+"Vivaldi"	"ups"	"1"	"EA200 LED"	"USB"	"richcomm_usb"
 
 "WinPower"	"ups"	"2"	"CPM-800"	""	"blazer_ser"
 

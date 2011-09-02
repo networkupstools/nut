@@ -78,6 +78,11 @@ Setting this flag will make the driver skip this step.
 Some UPSes will lock up if you attempt to read vendor information from them.
 Setting this flag will make the driver skip this step.
 
+*protocol =* 'string'::
+
+Skip autodetection of the protocol to use and only use the one specified.
+Supported values 'megatec', 'megatec/old', 'mustek' and 'zinto'.
+
 *runtimecal =* 'value,value,value,value'::
 
 Parameter used in the (optional) runtime estimation. This takes two runtimes
@@ -203,7 +208,7 @@ BATTERY CHARGE
 --------------
 
 Due to popular demand, this driver will report a guesstimated *battery.charge*
-and optionally *battery.runtime*, provided you specified a couple of the 
+and optionally *battery.runtime*, provided you specified a couple of the
 <<_extra_arguments,EXTRA ARGUMENTS>> listed above.
 
 If you specify both *battery.voltage.high* and *battery.voltage.low* in
@@ -259,7 +264,7 @@ You need to use 'cablepower'
 
 This parameter can simply be discarded, since it was a wrong understanding
 of the specification.
- 
+
 KNOWN PROBLEMS
 --------------
 

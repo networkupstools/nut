@@ -86,6 +86,9 @@ ups: General unit information
                           panel (*** opaque)           | E
 | ups.contacts          | UPS external contact sensors
                           (*** opaque)                 | F0
+| ups.efficiency        | Efficiency of the UPS (ratio
+                          of the output current on the
+                          input current) (percent)     | 95
 | ups.power             | Current value of apparent
                           power (Volt-Amps)            | 500
 | ups.power.nominal     | Nominal value of apparent
@@ -317,7 +320,7 @@ battery: Any battery details
 | battery.packs           | Number of battery packs         | 001
 | battery.packs.bad       | Number of bad battery packs     | 000
 | battery.type            | Battery chemistry (opaque
-                            (opaque string)                 | PbAc
+                            string)                         | PbAc
 | battery.protection      | Prevent deep discharge of
                             battery                         | yes
 | battery.energysave      | Switch off when running on
@@ -363,6 +366,8 @@ outlet: Smart outlet management
 
 NOTE: *n* stands for the outlet index. For more information, refer to the
 NUT outlets management and PDU notes chapter of the user manual.
+A special case is "outlet.0" which is equivalent to "outlet", and
+represent the whole set of outlets of the device.
 
 [options="header"]
 |===============================================================================

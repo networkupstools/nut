@@ -23,10 +23,10 @@ to do so.
 Stable tree: 2.6
 ~~~~~~~~~~~~~~~~
 
-- link:http://www.networkupstools.org/source/2.6/nut-2.6.0.tar.gz[nut-2.6.0.tar.gz]
-- link:http://www.networkupstools.org/source/2.6/nut-2.6.0.tar.gz.sig[PGP/GPG signature]
-- SHA-256 sum: febaa230b6b5f0ad27d780851047527d36c8c7a34e557b3832d6d55174d7a0d5
-- link:http://www.networkupstools.org/source/2.6/new-2.6.0.txt[Release notes]
+- link:http://www.networkupstools.org/source/2.6/nut-2.6.1.tar.gz[nut-2.6.1.tar.gz]
+- link:http://www.networkupstools.org/source/2.6/nut-2.6.1.tar.gz.sig[PGP/GPG signature]
+- SHA-256 sum: 4ba1d297a98190db0ae86eb31136c780f35e6d3f47ae845316b44eaa9245a86e
+- link:http://www.networkupstools.org/source/2.6/new-2.6.1.txt[Release notes]
 - link:http://www.networkupstools.org/source/2.6/ChangeLog[ChangeLog]
 
 You can also browse the link:http://www.networkupstools.org/source/2.6/[stable source directory].
@@ -49,7 +49,7 @@ link:http://alioth.debian.org/[Debian Alioth server].
 
 To retrieve the current development tree, use the following command:
 
-	$ svn co svn://svn.debian.org/nut/trunk
+	$ svn co svn://anonscm.debian.org/nut/trunk
 
 To generate the build scripts, you must call, from the 'trunk' directory:
 
@@ -70,7 +70,7 @@ use <<Snapshots,snapshots>>.
 Browse code
 ^^^^^^^^^^^
 
-You can also browse the code with link:http://svn.debian.org/wsvn/nut/trunk/?rev=0&sc=0[WebSvn],
+You can also browse the code with link:http://alioth.debian.org/scm/?group_id=30602[WebSvn],
 or through the link:http://trac.networkupstools.org/projects/nut[Trac mirror],
 kindly hosted and maintained by Charles Lepple.
 
@@ -113,5 +113,6 @@ link:http://www.openbsd.org/cgi-bin/cvsweb/ports/sysutils/nut/[OpenBSD].
 link:http://pdb.finkproject.org/pdb/package.php/nut[Fink],
 link:http://trac.macports.org/browser/trunk/dports/sysutils/nut/Portfile[MacPorts]
 
-- Windows (client side only):
-link:http://csociety.ecn.purdue.edu/~delpha/winnut/[WinNUT]
+- Windows (complete port, Beta):
+link:http://www.networkupstools.org/source/2.6/NUT-Installer-2.6.0-1.msi[Windows MSI installer 2.6.0-1]
+

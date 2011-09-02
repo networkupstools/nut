@@ -75,6 +75,7 @@ static const struct {
 	{ "megatec", "Q1\r", "F\r", "I\r" },
 	{ "mustek", "QS\r", "F\r", "I\r" },
 	{ "megatec/old", "D\r", "F\r", "I\r" },
+	{ "zinto", "Q1\r", "F\r", "FW?\r" },
 	{ NULL }
 };
 
@@ -186,7 +187,7 @@ static int blazer_status(const char *cmd)
 	 *    01234567890123456789012345678901234567890123456
 	 *    0         1         2         3         4
 	 */
-	if (blazer_command(cmd, buf, sizeof(buf)) < 47) {
+	if (blazer_command(cmd, buf, sizeof(buf)) < 46) {
 		upsdebugx(2, "%s: short reply", __func__);
 		return -1;
 	}
@@ -472,6 +473,8 @@ void blazer_makevartable(void)
 
 	addvar(VAR_FLAG, "norating", "Skip reading rating information from UPS");
 	addvar(VAR_FLAG, "novendor", "Skip reading vendor information from UPS");
+
+	addvar(VAR_FLAG, "protocol", "Preselect communication protocol (skip autodetection)");
 }
 
 
@@ -594,11 +597,17 @@ static void blazer_initbattery(void)
 
 void blazer_initinfo(void)
 {
+	const char	*protocol = getval("protocol");
 	int	retry;
 
 	for (proto = 0; command[proto].status; proto++) {
 
 		int	ret;
+
+		if (protocol && strcasecmp(protocol, command[proto].name)) {
+			upsdebugx(2, "Skipping %s protocol...", command[proto].name);
+			continue;
+		}
 
 		upsdebugx(2, "Trying %s protocol...", command[proto].name);
 
@@ -691,6 +700,9 @@ void upsdrv_updateinfo(void)
 	if (blazer_status(command[proto].status)) {
 
 		if (retry < MAXTRIES) {
+			upsdebugx(1, "Communications with UPS lost: status read failed!");
+			retry++;
+		} else if (retry == MAXTRIES) {
 			upslogx(LOG_WARNING, "Communications with UPS lost: status read failed!");
 			retry++;
 		} else {
@@ -723,7 +735,7 @@ void upsdrv_updateinfo(void)
 		lastpoll = now;
 	}
 
-	if (retry) {
+	if (retry > MAXTRIES) {
 		upslogx(LOG_NOTICE, "Communications with UPS re-established");
 	}
 

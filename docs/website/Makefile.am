@@ -50,6 +50,7 @@ ASCIIDOC_PARAMS = --unsafe --backend=xhtml11 \
     --attribute scriptsdir=$(srcdir)/scripts \
     --attribute=badges \
     --attribute=website \
+    --attribute=quirks \
     --attribute=revision=$(PACKAGE_VERSION) \
     --attribute localdate=`TZ=UTC date +%Y-%m-%d` \
     --attribute localtime=`TZ=UTC date +%H:%M:%S` \

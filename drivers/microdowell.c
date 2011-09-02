@@ -221,13 +221,13 @@ unsigned char * CmdSerial(unsigned char *OutBuffer, int Len, unsigned char *RetB
    unsigned char *p ;
 	int BuffLen ;
 
-	// The default error code (no received character)
+	/* The default error code (no received character) */
 	ErrCode = ERR_COM_NO_CHARS ;
 
    SendCmdToSerial(OutBuffer, Len) ;
-	usleep(10000) ; // small delay (1/100 s))
+	usleep(10000) ; /* small delay (1/100 s) */
 
-	// get chars until timeout
+	/* get chars until timeout */
 	BuffLen = 0 ;
 	while (ser_get_char(upsfd, TmpBuff, 0, 10000) == 1)
 		{

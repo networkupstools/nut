@@ -3,12 +3,13 @@
 # This file is optional.  You may delete it to save resources, but
 # clients will receive "Unavailable" for any description requests.
 #
-# *** NOTE *** : When updating this file, also update docs/new-names.txt
+# *** NOTE *** : When updating this file, also update docs/nut-names.txt
 
 VARDESC ups.alarm "UPS alarms"
 VARDESC ups.status "UPS status"
 VARDESC ups.time "Internal UPS clock time"
 VARDESC ups.date "Internal UPS clock date"
+VARDESC ups.efficiency "Efficiency of the UPS"
 VARDESC ups.model "UPS model"
 VARDESC ups.mfr "UPS manufacturer"
 VARDESC ups.mfr.date "UPS manufacturing date"

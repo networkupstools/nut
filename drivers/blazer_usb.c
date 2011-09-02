@@ -255,16 +255,17 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 
 			/* "UPS No Ack" has a special meaning */
 			if (!strcasecmp(buf, "UPS No Ack")) {
+				upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
 				continue;
 			}
 
 			/* Replace the first byte of what we received with the correct one */
 			buf[0] = command[i].prefix;
 
+			upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
 			return ret;
 		}
 
-		upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
 		return 0;
 	}
 
@@ -295,13 +296,21 @@ static void *krauler_subdriver(void)
 }
 
 
+static void *phoenix_subdriver(void)
+{
+	subdriver_command = &phoenix_command;
+	return NULL;
+}
+
+
 static usb_device_id_t blazer_usb_id[] = {
 	{ USB_DEVICE(0x05b8, 0x0000), &cypress_subdriver },	/* Agiler UPS */
-	{ USB_DEVICE(0x0001, 0x0000), &krauler_subdriver },	/* Krauler UP-M500VA */
-	{ USB_DEVICE(0xffff, 0x0000), &krauler_subdriver },	/* Ablerex 625L USB */
+	{            0x0001, 0x0000,  &krauler_subdriver },	/* Krauler UP-M500VA */
+	{            0xffff, 0x0000,  &krauler_subdriver },	/* Ablerex 625L USB */
 	{ USB_DEVICE(0x0665, 0x5161), &cypress_subdriver },	/* Belkin F6C1200-UNV */
 	{ USB_DEVICE(0x06da, 0x0003), &ippon_subdriver },	/* Mustek Powermust */
 	{ USB_DEVICE(0x0f03, 0x0001), &cypress_subdriver },	/* Unitek Alpha 1200Sx */
+	{ USB_DEVICE(0x14f0, 0x00c9), &phoenix_subdriver },	/* GE EP series */
 	/* end of list */
 	{-1, -1, NULL}
 };
