@@ -3,7 +3,7 @@ dnl | Network UPS Tools: configure.in                                  |
 dnl +------------------------------------------------------------------+
 
 dnl NUT version number is defined here and *only* here (no more include/version)
-AC_INIT(nut, 2.6.0)
+AC_INIT(nut, 2.6.1)
 AC_CONFIG_SRCDIR(server/upsd.c)
 AC_CONFIG_MACRO_DIR([m4])
 echo "Network UPS Tools version ${PACKAGE_VERSION}"
@@ -108,6 +108,14 @@ then
   CFLAGS="${CFLAGS} -Wall -Wsign-compare"
 fi
 
+case ${target_os} in
+   hpux11* )
+      dnl It seems like the thread safe string functions will not be included
+      dnl on 64 bit HP-UX unless we define _REENTRANT
+      CFLAGS="${CFLAGS} -D_REENTRANT"
+      ;;
+esac
+
 dnl optind handling:
 dnl need to check if unistd.h is enough, else try getopt.h, else need decls
 AC_CHECK_DECLS(optind, [], [
@@ -153,15 +161,14 @@ AC_SEARCH_LIBS([pthread_create], [pthread],
 
 dnl ----------------------------------------------------------------------
 dnl Check for types and define possible replacements
-AX_CREATE_STDINT_H(include/nut_stdint.h)
 NUT_TYPE_SOCKLEN_T
 
 dnl ----------------------------------------------------------------------
 dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
-AC_ARG_WITH(all, 
-	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, hal, cgi, dev, neon, powerman, avahi]),
+AC_ARG_WITH(all,
+	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, cgi, dev, avahi]),
 [
 	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
@@ -169,12 +176,12 @@ AC_ARG_WITH(all,
 		if test -z "${with_serial}"; then with_serial="${withval}"; fi
 		if test -z "${with_usb}"; then with_usb="${withval}"; fi
 		if test -z "${with_snmp}"; then with_snmp="${withval}"; fi
-		if test -z "${with_hal}"; then with_hal="${withval}"; fi
 		if test -z "${with_neon}"; then with_neon="${withval}"; fi
 		if test -z "${with_powerman}"; then with_powerman="${withval}"; fi
 		if test -z "${with_cgi}"; then with_cgi="${withval}"; fi
 		if test -z "${with_dev}"; then with_dev="${withval}"; fi
 		if test -z "${with_avahi}"; then with_avahi="${withval}"; fi
+		if test -z "${with_ipmi}"; then with_ipmi="${withval}"; fi
 		AC_MSG_RESULT("${withval}")
 	else
 		AC_MSG_RESULT(not given)
@@ -319,6 +326,68 @@ fi
 
 AM_CONDITIONAL(WITH_LIBPOWERMAN, test "${nut_with_powerman}" = "yes")
 NUT_REPORT_FEATURE([build Powerman PDU client driver], [${nut_with_powerman}])
+
+dnl ----------------------------------------------------------------------
+dnl Check for with-ipmi, and --with-freeipmi (or --with-openipmi)
+dnl Only one can be enabled at a time, with a preference for FreeIPMI
+dnl if both are available (since it is the only one supported ATM!!)
+
+nut_ipmi_lib=""
+
+NUT_ARG_WITH([ipmi], [build and install IPMI PSU driver], [auto])
+NUT_ARG_WITH([freeipmi], [enable IPMI support using FreeIPMI], [auto])
+dnl NUT_ARG_WITH([openipmi], [enable IPMI support using OpenIPMI], [auto])
+
+dnl ${nut_with_ipmi}: any value except "yes" or "no" is treated as "auto". 
+if test "${nut_with_ipmi}" != "no"; then
+   dnl check if FreeIPMI (and maybe later OpenIPMI) was explicitly requested
+   if test "${nut_with_freeipmi}" = "yes"; then
+      NUT_CHECK_LIBFREEIPMI
+      if test "${nut_have_freeipmi}" != "yes"; then
+         AC_MSG_ERROR(["GNU FreeIPMI not found, required for IPMI support"])
+      fi
+      dnl Implies --with-ipmi
+      nut_with_ipmi="yes"
+   dnl elif test "${nut_with_openipmi}" = "yes"; then
+      dnl AC_MSG_ERROR(["OpenIPMI is not yet supported"])
+      dnl NUT_CHECK_LIBOPENIPMI
+      dnl if test "${nut_have_openipmi}" != "yes"; then
+      dnl    AC_MSG_ERROR(["OpenIPMI not found, required for IPMI support"])
+      dnl fi
+      dnl    Implies --with-ipmi
+      dnl    nut_with_ipmi="yes"
+   else
+      dnl Prefer FreeIPMI over OpenIPMI otherwise
+      NUT_CHECK_LIBFREEIPMI
+      if test "${nut_have_freeipmi}" != "yes"; then
+         if test "${nut_with_ipmi}" = "yes"; then
+            AC_MSG_ERROR(["FreeIPMI not found, required for IPMI support"])
+         fi
+         nut_with_ipmi="no"
+         dnl NUT_CHECK_OPENIPMI
+         dnl if test "${nut_have_openipmi}" != "yes"; then
+         dnl    if test "${nut_with_ipmi}" = "yes"; then
+         dnl       AC_MSG_ERROR(["GNU FreeIPMI and OpenIPMI neither found, required for IPMI support"])
+         dnl    fi
+         dnl    nut_with_ipmi="no"
+         dnl else
+         dnl    Implies --with-ipmi
+         dnl    nut_with_ipmi="yes"
+         dnl    nut_with_openipmi="yes"
+         dnl fi
+      else
+         dnl Implies --with-ipmi
+         nut_with_ipmi="yes"
+         nut_with_freeipmi="yes"
+      fi
+   fi
+fi
+
+AM_CONDITIONAL(WITH_IPMI, test "${nut_with_ipmi}" = "yes")
+AM_CONDITIONAL(WITH_FREEIPMI, test "${nut_with_freeipmi}" = "yes")
+dnl AM_CONDITIONAL(WITH_OPENIPMI, test "${nut_with_openipmi}" = "yes")
+
+NUT_REPORT_FEATURE([build IPMI driver], [${nut_with_ipmi} ${nut_ipmi_lib}])
 
 dnl ----------------------------------------------------------------------
 dnl Check for --with-ssl
@@ -571,7 +640,7 @@ AC_MSG_RESULT(${ALTPIDPATH})
 
 AC_MSG_CHECKING(driver path)
 AC_ARG_WITH(drvpath,
-	AS_HELP_STRING([--with-drvpath=PATH], [where to install ups drivers (EPREFIX/bin)]),
+	AS_HELP_STRING([--with-drvpath=PATH], [where to install UPS drivers (EPREFIX/bin)]),
 [
 	case "${withval}" in
 	yes|no)
@@ -730,7 +799,7 @@ AC_ARG_WITH(drivers,
 	AS_HELP_STRING([m4_version_prereq(2.62,
 		[@<:@--with-drivers=driver@<:@,driver@:>@@:>@],
 		[[[[--with-drivers=driver@<:@,driver@:>@]]]])],
-	[Only use specific drivers (all)]),
+	[Only build specific drivers (all)]),
 [
 	case "${withval}" in
 	yes|no)
@@ -900,6 +969,8 @@ AC_SUBST(LIBAVAHI_CFLAGS)
 AC_SUBST(LIBAVAHI_LIBS)
 AC_SUBST(LIBPOWERMAN_CFLAGS)
 AC_SUBST(LIBPOWERMAN_LIBS)
+AC_SUBST(LIBIPMI_CFLAGS)
+AC_SUBST(LIBIPMI_LIBS)
 AC_SUBST(DOC_BUILD_LIST)
 AC_SUBST(LIBWRAP_CFLAGS)
 AC_SUBST(LIBWRAP_LIBS)
@@ -917,6 +988,7 @@ AC_SUBST(SERLIBS)
 AC_SUBST(STATEPATH)
 AC_SUBST(CONFPATH)
 AC_SUBST(BINDIR)
+AC_SUBST(PORT)
 AC_SUBST(RUN_AS_USER)
 AC_SUBST(RUN_AS_GROUP)
 AC_SUBST(SUN_LIBUSB)
@@ -954,12 +1026,14 @@ AC_OUTPUT([
  scripts/augeas/nutupsschedconf.aug
  scripts/augeas/nuthostsconf.aug
  scripts/augeas/nutupssetconf.aug
+ scripts/avahi/nut.service
  scripts/hal/Makefile
  scripts/hal/ups-nut-device.fdi
  scripts/hotplug/Makefile
  scripts/hotplug/libhidups
  scripts/python/Makefile
  scripts/udev/Makefile
+ scripts/udev/nut-ipmipsu.rules
  scripts/udev/nut-usbups.rules
  scripts/Makefile
  server/Makefile
