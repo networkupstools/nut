@@ -51,7 +51,7 @@ static void try_all_oid(void * arg)
 	struct snmp_session * session;
 	nutscan_snmp_t * sec = (nutscan_snmp_t *)arg;
 	int status;
-	char * desc;
+	char * buf;
 
 	while(snmp_device_table[index].oid != NULL) {
 
@@ -96,11 +96,10 @@ static void try_all_oid(void * arg)
 		dev->type = TYPE_SNMP;
 		dev->driver = strdup("snmp-ups");
 		dev->port = strdup(session->peername);
-		desc = strndup((char*)response->variables->val.string,
+		buf = strndup((char*)response->variables->val.string,
 				(int)response->variables->val_len);
-		nutscan_add_option_to_device(dev,"desc",
-					(char*)response->variables->val.string);
-		free(desc);
+		nutscan_add_option_to_device(dev,"desc",buf);
+		free(buf);
 		nutscan_add_option_to_device(dev,"mibs",
 						snmp_device_table[index].mib);
 		/* SNMP v3 */
@@ -131,8 +130,10 @@ static void try_all_oid(void * arg)
 			}
 		}
 		else {
-			nutscan_add_option_to_device(dev,"community",
-						(char *)session->community);
+	                buf = strndup((char*)session->community,
+                                session->community_len);
+			nutscan_add_option_to_device(dev,"community",buf);
+	                free(buf);
 		}
 
 #ifdef HAVE_PTHREAD
