@@ -1,8 +1,8 @@
 Java NUT Client files
----------------------
+~~~~~~~~~~~~~~~~~~~~~
 
 This directory contains various NUT Client related java source files, written by
-Emilien Kia, sponsored by Eaton France, and released under GPL v2.
+Emilien Kia, sponsored by Eaton, and released under GPL v2.
 
 * "jNut": this directory contains maven project and source files for jNut,
 which is a Java abstraction bundle to access NUT server(s).

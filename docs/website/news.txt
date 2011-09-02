@@ -1,3 +1,4 @@
+- September 2, 2011: link:download.html#_java_packages[jNUT (NUT Java support) 0.1-SNAPSHOT released]
 - July 4, 2011: link:download.html#_binary_packages[Beta NUT 2.6.1-1 package for Windows released]
 - June 8, 2011: link:http://www.dell.com/us/business/p/powervault-nx3500/pd[Dell PowerVault NX3500] use NUT for power protection
 - June 1, 2011: 2.6.1 released
@@ -10,29 +11,4 @@
 - May 12, 2010: link:http://www.lestat.st/informatique/projets/nut-monitor-en[NUT-Monitor] 1.2 released
 - March 22, 2010: link:http://knut.prynych.cz[KNutClient] 1.0
 - February 23, 2010: 2.4.3 released
-- February 19, 2010: 2.4.2 released 
-- February 17, 2009: 2.4.1 released
-- January 28, 2009: 2.4.0 released
-- January 21, 2009: 2.4.0-pre2 released
-- December 24, 2008: 2.4.0-pre1 released
-- July 7, 2008: Client activity: new client NUT-Monitor
-- June 27, 2008: Client activity: new Python class PyNUT
-- June 19, 2008: Client activity: KNutClient 0.9.4
-- May 7, 2008: 2.2.2 released
-- April 25, 2008: 2.2.2-pre3 released
-- April 15, 2008: 2.2.2-pre2 released
-- April 2, 2008: 2.2.2-pre1 released
-- December 21, 2007: 2.2.1 released
-- December 17, 2007: 2.2.1-pre2 released
-- October 4, 2007: 2.2.1-pre1 released
-- August 31, 2007: Client activity: UPS Monitor link update
-- August 31, 2007: Client activity: Windows NUT client 1.5.0
-- July 5, 2007: 2.2.0 released
-- June 26, 2007: 2.2.0-pre2 released
-- June 5, 2007: Client activity: collectd NUT plugin
-- June 4, 2007: 2.2.0-pre1 released
-- April 10, 2007: Client activity: KNutClient 0.9.3
-- January 15, 2007: 2.0.5 released
-- January 8, 2007: Client activity: Windows NUT client
-- January 4, 2007: 2.0.5-pre2 released
-- December 20, 2006: 2.0.5-pre1 released 
+- February 19, 2010: 2.4.2 released

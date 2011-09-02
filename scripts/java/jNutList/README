@@ -1,18 +1,18 @@
 jNutList example application
------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This directory contains source files for the jNutList application.
 It allows to connect to an UPSD then retrieve devices and their variables.
 It is a little example application to show how to use jNut.
 
 jNutList building
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 
 As jNut, jNutList is a maven project so a maven environment must be set.
 Please reffer to jNut building notes.
 
 jNutList running
-~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^
 
 jNutList can be run launching it in a console:
 

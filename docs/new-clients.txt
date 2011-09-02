@@ -123,3 +123,11 @@ multiple UPS units).
 
  print $other_ups{MFR}, " ", $other_ups{MODEL}, "\n";
 
+Java
+----
+
+include::../scripts/java/README[]
+
+include::../scripts/java/jNut/README[]
+
+include::../scripts/java/jNutList/README[]
