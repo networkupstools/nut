@@ -41,7 +41,7 @@
 
 #define DEFAULT_TIMEOUT 5
 
-const char optstring[] = "?ht:s:e:c:l:u:W:X:w:x:p:CUSMOAm:NPq";
+const char optstring[] = "?ht:s:e:c:l:u:W:X:w:x:p:CUSMOAm:NPqI";
 const struct option longopts[] =
 	{{ "timeout",required_argument,NULL,'t' },
 	{ "start_ip",required_argument,NULL,'s' },
@@ -61,29 +61,15 @@ const struct option longopts[] =
 	{ "xml_scan",no_argument,NULL,'M' },
 	{ "oldnut_scan",no_argument,NULL,'O' },
 	{ "avahi_scan",no_argument,NULL,'A' },
+	{ "ipmi_scan",no_argument,NULL,'I' },
 	{ "disp_nut_conf",no_argument,NULL,'N' },
 	{ "disp_parsable",no_argument,NULL,'P' },
 	{ "quiet",no_argument,NULL,'q' },
 	{ "help",no_argument,NULL,'h' },
 	{NULL,0,NULL,0}};
 
-static nutscan_device_t *dev_usb = NULL;
-static nutscan_device_t *dev_snmp = NULL;
-static nutscan_device_t *dev_xml = NULL;
-static nutscan_device_t *dev_nut_old = NULL;
-static nutscan_device_t *dev_avahi = NULL;
-#ifdef HAVE_PTHREAD
-static pthread_mutex_t dev_usb_mutex;
-static pthread_mutex_t dev_snmp_mutex;
-static pthread_mutex_t dev_xml_mutex;
-static pthread_mutex_t dev_nut_old_mutex;
-static pthread_mutex_t dev_avahi_mutex;
-static pthread_t thread_usb;
-static pthread_t thread_snmp;
-static pthread_t thread_xml;
-static pthread_t thread_nut_old;
-static pthread_t thread_avahi;
-#endif
+static nutscan_device_t *dev[TYPE_END];
+static pthread_t thread[TYPE_END];
 
 static long timeout = DEFAULT_TIMEOUT*1000*1000; /* in usec */
 static char *	start_ip = NULL;
@@ -91,38 +77,51 @@ static char *	end_ip = NULL;
 static char * port = NULL;
 
 #ifdef HAVE_PTHREAD
+#ifdef HAVE_USB_H
 static void * run_usb(void * arg)
 {
-	dev_usb = nutscan_scan_usb();
+	dev[TYPE_USB] = nutscan_scan_usb();
 	return NULL;
 }
-
+#endif
+#ifdef HAVE_NET_SNMP_NET_SNMP_CONFIG_H
 static void * run_snmp(void * arg)
 {
 	nutscan_snmp_t * sec = (nutscan_snmp_t *)arg;
 
-	dev_snmp = nutscan_scan_snmp(start_ip,end_ip,timeout,sec);
-	return NULL;
-}
-
-static void * run_xml(void * arg)
-{
-	dev_xml = nutscan_scan_xml_http(timeout);
-	return NULL;
-}
-
-static void * run_nut_old(void * arg)
-{
-	dev_nut_old = nutscan_scan_nut(start_ip,end_ip,port,timeout);
-	return NULL;
-}
-
-static void * run_avahi(void * arg)
-{
-	dev_avahi = nutscan_scan_avahi();
+	dev[TYPE_SNMP] = nutscan_scan_snmp(start_ip,end_ip,timeout,sec);
 	return NULL;
 }
 #endif
+#ifdef WITH_NEON
+static void * run_xml(void * arg)
+{
+	dev[TYPE_XML] = nutscan_scan_xml_http(timeout);
+	return NULL;
+}
+#endif
+
+static void * run_nut_old(void * arg)
+{
+	dev[TYPE_NUT] = nutscan_scan_nut(start_ip,end_ip,port,timeout);
+	return NULL;
+}
+
+#ifdef HAVE_AVAHI_CLIENT_CLIENT_H
+static void * run_avahi(void * arg)
+{
+	dev[TYPE_AVAHI] = nutscan_scan_avahi();
+	return NULL;
+}
+#endif
+#ifdef WITH_IPMI
+static void * run_ipmi(void * arg)
+{
+	dev[TYPE_IPMI] = nutscan_scan_ipmi();
+	return NULL;
+}
+#endif
+#endif /* HAVE_PTHREAD */
 static int printq(int quiet,const char *fmt, ...)
 {
 	va_list ap;
@@ -150,6 +149,7 @@ int main(int argc, char *argv[])
 	int allow_xml = 0;
 	int allow_oldnut = 0;
 	int allow_avahi = 0;
+	int allow_ipmi = 0;
 	int quiet = 0;
 	void (*display_func)(nutscan_device_t * device);
 
@@ -229,6 +229,11 @@ int main(int argc, char *argv[])
 				allow_avahi = 1;
 				break;
 #endif
+#ifdef WITH_IPMI
+			case 'I':
+				allow_ipmi = 1;
+				break;
+#endif
 			case 'N':
 				display_func = nutscan_display_ups_conf;
 				break;
@@ -256,6 +261,9 @@ int main(int argc, char *argv[])
 				printf("  -O, --oldnut_scan : Scan NUT devices (old method).\n");
 #ifdef WITH_AVAHI
 				printf("  -A, --avahi_scan : Scan NUT devices (avahi method).\n");
+#endif
+#ifdef WITH_IPMI
+				printf("  -I, --ipmi_scan : Scan IPMI devices.\n");
 #endif
 				printf("  -t, --timeout <timeout in seconds>: network operation timeout (default %d).\n",DEFAULT_TIMEOUT);
 				printf("  -s, --start_ip <IP address>: First IP address to scan.\n");
@@ -289,7 +297,7 @@ int main(int argc, char *argv[])
 	}
 
 	if( !allow_usb && !allow_snmp && !allow_xml && !allow_oldnut &&
-		!allow_avahi) {
+		!allow_avahi && !allow_ipmi ) {
 		allow_all = 1;
 	}
 
@@ -297,10 +305,9 @@ int main(int argc, char *argv[])
 	if( allow_all || allow_usb) {
 		printq(quiet,"Scanning USB bus.\n");
 #ifdef HAVE_PTHREAD
-		pthread_mutex_init(&dev_usb_mutex,NULL);
-		pthread_create(&thread_usb,NULL,run_usb,NULL);
+		pthread_create(&thread[TYPE_USB],NULL,run_usb,NULL);
 #else
-		dev_usb = nutscan_scan_usb();
+		dev[TYPE_USB] = nutscan_scan_usb();
 #endif
 	}
 #endif /* HAVE_USB_H */
@@ -313,10 +320,9 @@ int main(int argc, char *argv[])
 		else {
 			printq(quiet,"Scanning SNMP bus.\n");
 #ifdef HAVE_PTHREAD
-			pthread_mutex_init(&dev_snmp_mutex,NULL);
-			pthread_create(&thread_snmp,NULL,run_snmp,&sec);
+			pthread_create(&thread[TYPE_SNMP],NULL,run_snmp,&sec);
 #else
-			dev_snmp = nutscan_scan_snmp(start_ip,end_ip,timeout,&sec);
+			dev[TYPE_SNMP] = nutscan_scan_snmp(start_ip,end_ip,timeout,&sec);
 #endif
 		}
 	}
@@ -326,10 +332,9 @@ int main(int argc, char *argv[])
 	if( allow_all || allow_xml) {
 		printq(quiet,"Scanning XML/HTTP bus.\n");
 #ifdef HAVE_PTHREAD
-		pthread_mutex_init(&dev_xml_mutex,NULL);
-		pthread_create(&thread_xml,NULL,run_xml,NULL);
+		pthread_create(&thread[TYPE_XML],NULL,run_xml,NULL);
 #else
-		dev_xml = nutscan_scan_xml_http(timeout);
+		dev[TYPE_XML] = nutscan_scan_xml_http(timeout);
 #endif
 	}
 #endif
@@ -341,10 +346,9 @@ int main(int argc, char *argv[])
 		else {
 			printq(quiet,"Scanning NUT bus (old connect method).\n");
 #ifdef HAVE_PTHREAD
-			pthread_mutex_init(&dev_nut_old_mutex,NULL);
-			pthread_create(&thread_nut_old,NULL,run_nut_old,NULL);
+			pthread_create(&thread[TYPE_NUT],NULL,run_nut_old,NULL);
 #else
-			dev_nut_old = nutscan_scan_nut(start_ip,end_ip,port,timeout);
+			dev[TYPE_NUT] = nutscan_scan_nut(start_ip,end_ip,port,timeout);
 #endif
 		}
 	}
@@ -353,39 +357,64 @@ int main(int argc, char *argv[])
 	if( allow_all || allow_avahi) {
 		printq(quiet,"Scanning NUT bus (avahi method).\n");
 #ifdef HAVE_PTHREAD
-		pthread_mutex_init(&dev_avahi_mutex,NULL);
-		pthread_create(&thread_avahi,NULL,run_avahi,NULL);
+		pthread_create(&thread[TYPE_AVAHI],NULL,run_avahi,NULL);
 #else
-		dev_avahi = nutscan_scan_avahi();
+		dev[TYPE_AVAHI] = nutscan_scan_avahi();
 #endif
 	}
 #endif
 
-/*TODO*/
-	printq(quiet,"Scanning IPMI bus.\n");
-	nutscan_scan_ipmi();
+#ifdef WITH_IPMI
+	if( allow_all || allow_ipmi) {
+		printq(quiet,"Scanning IPMI bus.\n");
+#ifdef HAVE_PTHREAD
+		pthread_create(&thread[TYPE_IPMI],NULL,run_ipmi,NULL);
+#else
+		dev[TYPE_IPMI] = nutscan_scan_ipmi();
+#endif
+	}
+#endif
 
 #ifdef HAVE_PTHREAD
-	pthread_join(thread_usb,NULL);
-	pthread_join(thread_snmp,NULL);
-	pthread_join(thread_xml,NULL);
-	pthread_join(thread_nut_old,NULL);
-	pthread_join(thread_avahi,NULL);
+#ifdef HAVE_USB_H
+	pthread_join(thread[TYPE_USB],NULL);
 #endif
-	display_func(dev_usb);
-	nutscan_free_device(dev_usb);
+#ifdef HAVE_NET_SNMP_NET_SNMP_CONFIG_H
+	pthread_join(thread[TYPE_SNMP],NULL);
+#endif
+#ifdef WITH_NEON
+	pthread_join(thread[TYPE_XML],NULL);
+#endif
+	pthread_join(thread[TYPE_NUT],NULL);
+#ifdef HAVE_AVAHI_CLIENT_CLIENT_H
+	pthread_join(thread[TYPE_AVAHI],NULL);
+#endif
+#ifdef WITH_IPMI
+	pthread_join(thread[TYPE_IPMI],NULL);
+#endif
+#endif /* HAVE_PTHREAD */
 
-	display_func(dev_snmp);
-	nutscan_free_device(dev_snmp);
-
-	display_func(dev_xml);
-	nutscan_free_device(dev_xml);
-
-	display_func(dev_nut_old);
-	nutscan_free_device(dev_nut_old);
-
-	display_func(dev_avahi);
-	nutscan_free_device(dev_avahi);
-
+#ifdef HAVE_USB_H
+	display_func(dev[TYPE_USB]);
+	nutscan_free_device(dev[TYPE_USB]);
+#endif
+#ifdef HAVE_NET_SNMP_NET_SNMP_CONFIG_H
+	display_func(dev[TYPE_SNMP]);
+	nutscan_free_device(dev[TYPE_SNMP]);
+#endif
+#ifdef WITH_NEON
+	display_func(dev[TYPE_XML]);
+	nutscan_free_device(dev[TYPE_XML]);
+#endif
+	display_func(dev[TYPE_NUT]);
+	nutscan_free_device(dev[TYPE_NUT]);
+#ifdef HAVE_AVAHI_CLIENT_CLIENT_H
+	display_func(dev[TYPE_AVAHI]);
+	nutscan_free_device(dev[TYPE_AVAHI]);
+#endif
+#ifdef WITH_IPMI
+	display_func(dev[TYPE_IPMI]);
+	nutscan_free_device(dev[TYPE_IPMI]);
+#endif
 	return EXIT_SUCCESS;
 }
