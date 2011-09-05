@@ -20,7 +20,7 @@
 #include <config.h>
 #endif
 
-#ifdef WITH_IPMI
+#ifdef HAVE_FREEIPMI_FREEIPMI_H
 #include "nut-scan.h"
 #include "common.h"
 
@@ -29,4 +29,4 @@ nutscan_device_t *  nutscan_scan_ipmi()
 {
 	return NULL
 }
-#endif
+#endif /* HAVE_FREEIPMI_FREEIPMI_H */

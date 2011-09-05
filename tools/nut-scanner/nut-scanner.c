@@ -114,7 +114,7 @@ static void * run_avahi(void * arg)
 	return NULL;
 }
 #endif
-#ifdef WITH_IPMI
+#ifdef HAVE_FREEIPMI_FREEIPMI_H
 static void * run_ipmi(void * arg)
 {
 	dev[TYPE_IPMI] = nutscan_scan_ipmi();
@@ -229,7 +229,7 @@ int main(int argc, char *argv[])
 				allow_avahi = 1;
 				break;
 #endif
-#ifdef WITH_IPMI
+#ifdef HAVE_FREEIPMI_FREEIPMI_H
 			case 'I':
 				allow_ipmi = 1;
 				break;
@@ -262,7 +262,7 @@ int main(int argc, char *argv[])
 #ifdef WITH_AVAHI
 				printf("  -A, --avahi_scan : Scan NUT devices (avahi method).\n");
 #endif
-#ifdef WITH_IPMI
+#ifdef HAVE_FREEIPMI_FREEIPMI_H
 				printf("  -I, --ipmi_scan : Scan IPMI devices.\n");
 #endif
 				printf("  -t, --timeout <timeout in seconds>: network operation timeout (default %d).\n",DEFAULT_TIMEOUT);
@@ -364,7 +364,7 @@ int main(int argc, char *argv[])
 	}
 #endif
 
-#ifdef WITH_IPMI
+#ifdef HAVE_FREEIPMI_FREEIPMI_H
 	if( allow_all || allow_ipmi) {
 		printq(quiet,"Scanning IPMI bus.\n");
 #ifdef HAVE_PTHREAD
@@ -389,7 +389,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_AVAHI_CLIENT_CLIENT_H
 	pthread_join(thread[TYPE_AVAHI],NULL);
 #endif
-#ifdef WITH_IPMI
+#ifdef HAVE_FREEIPMI_FREEIPMI_H
 	pthread_join(thread[TYPE_IPMI],NULL);
 #endif
 #endif /* HAVE_PTHREAD */
@@ -412,7 +412,7 @@ int main(int argc, char *argv[])
 	display_func(dev[TYPE_AVAHI]);
 	nutscan_free_device(dev[TYPE_AVAHI]);
 #endif
-#ifdef WITH_IPMI
+#ifdef HAVE_FREEIPMI_FREEIPMI_H
 	display_func(dev[TYPE_IPMI]);
 	nutscan_free_device(dev[TYPE_IPMI]);
 #endif

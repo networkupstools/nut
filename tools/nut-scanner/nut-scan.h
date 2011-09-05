@@ -54,7 +54,7 @@ nutscan_device_t * nutscan_scan_nut(const char * startIP, const char * stopIP, c
 nutscan_device_t * nutscan_scan_avahi(void);
 #endif
 
-#ifdef WITH_IPMI
+#ifdef HAVE_FREEIPMI_FREEIPMI_H
 nutscan_device_t *  nutscan_scan_ipmi(void);
 #endif
 
