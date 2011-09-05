@@ -18,6 +18,7 @@
  */
 
 #include "config.h"
+#ifdef WITH_NEON
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <string.h>
@@ -157,4 +158,4 @@ nutscan_device_t * nutscan_scan_xml_http(long usec_timeout)
 
 	return current_nut_dev;
 }
-
+#endif /* WITH_NEON */

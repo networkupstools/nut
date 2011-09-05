@@ -18,6 +18,9 @@
  */
 
 #include "config.h"
+
+#ifdef HAVE_NET_SNMP_NET_SNMP_CONFIG_H
+
 #include "nut-scan.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -31,7 +34,6 @@
 #include "nutscan-snmp.h"
 #include "common.h"
 
-#ifdef HAVE_NET_SNMP_NET_SNMP_CONFIG_H
 
 #define SysOID ".1.3.6.1.2.1.1.2"
 
