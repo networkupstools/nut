@@ -25,7 +25,9 @@
 #include <stdio.h>
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
+#ifdef HAVE_PTHREAD
 #include <pthread.h>
+#endif
 #include "nutscan-snmp.h"
 #include "common.h"
 
