@@ -27,6 +27,6 @@
 /* TODO */
 nutscan_device_t *  nutscan_scan_ipmi()
 {
-	return NULL
+	return NULL;
 }
 #endif /* HAVE_FREEIPMI_FREEIPMI_H */
