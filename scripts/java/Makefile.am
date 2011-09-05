@@ -12,5 +12,4 @@ jNut/src/main/java/org/networkupstools/jnut/Variable.java \
 jNut/src/test/java/org/networkupstools/jnut/ClientTest.java \
 jNutList/pom.xml \
 jNutList/README \
-jNutList/src/main/java/org/networkupstools/jnutlist/AppList.java \
-jNutList/src/test/java/org/networkupstools/jnuttest/AppTest.java
+jNutList/src/main/java/org/networkupstools/jnutlist/AppList.java
