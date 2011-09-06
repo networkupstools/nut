@@ -123,3 +123,13 @@ multiple UPS units).
 
  print $other_ups{MFR}, " ", $other_ups{MODEL}, "\n";
 
+Java
+----
+
+This chapter presents the new Java support for NUT, called jNut.
+
+include::../scripts/java/README[]
+
+include::../scripts/java/jNut/README[]
+
+include::../scripts/java/jNutList/README[]

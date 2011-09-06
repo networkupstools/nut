@@ -1031,6 +1031,7 @@ AC_OUTPUT([
  scripts/hal/ups-nut-device.fdi
  scripts/hotplug/Makefile
  scripts/hotplug/libhidups
+ scripts/java/Makefile
  scripts/python/Makefile
  scripts/udev/Makefile
  scripts/udev/nut-ipmipsu.rules

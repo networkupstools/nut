@@ -116,3 +116,9 @@ link:http://trac.macports.org/browser/trunk/dports/sysutils/nut/Portfile[MacPort
 - Windows (complete port, Beta):
 link:http://www.networkupstools.org/source/2.6/NUT-Installer-2.6.0-1.msi[Windows MSI installer 2.6.0-1]
 
+
+Java packages
+-------------
+
+- NUT Java support (client side, Beta)
+link:http://www.networkupstools.org/package/java/jNut-0.1-SNAPSHOT.tar.gz[jNUT 0.1-SNAPSHOT]

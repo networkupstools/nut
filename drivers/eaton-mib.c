@@ -33,6 +33,7 @@
  */
 
 #define APHEL1_OID_MIB						".1.3.6.1.4.1.17373"
+#define APHEL1_SYSOID						APHEL1_OID_MIB
 #define APHEL1_OID_MODEL_NAME				".1.3.6.1.4.1.17373.3.1.1.0"
 #define APHEL1_OID_FIRMREV					".1.3.6.1.4.1.17373.3.1.2.0"
 #define APHEL1_OID_DEVICE_NAME				".1.3.6.1.4.1.17373.3.1.3.0"
@@ -83,9 +84,9 @@ static snmp_info_t eaton_aphel_genesisII_mib[] = {
 /* APHEL PDU-MIB - Revelation MIB (Managed ePDU)
  * ********************************************* */
 
-#define AR_BASE_OID					".1.3.6.1.4.1.534.6.6.6"
-
-#define APHEL2_OID_MODEL_NAME				AR_OID_MODEL_NAME
+#define AR_BASE_OID						".1.3.6.1.4.1.534.6.6.6"
+#define APHEL2_SYSOID					AR_BASE_OID
+#define APHEL2_OID_MODEL_NAME			AR_OID_MODEL_NAME
 
 #define AR_OID_MODEL_NAME				AR_BASE_OID ".1.1.12.0"
 #define AR_OID_DEVICE_NAME				AR_BASE_OID ".1.1.13.0"
@@ -207,5 +208,5 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL, NULL }
 };
 
-mib2nut_info_t	aphel_genesisII = { "aphel_genesisII", EATON_APHEL_MIB_VERSION, "", APHEL1_OID_MODEL_NAME, eaton_aphel_genesisII_mib };
-mib2nut_info_t	aphel_revelation = { "aphel_revelation", EATON_APHEL_MIB_VERSION, "", APHEL2_OID_MODEL_NAME, eaton_aphel_revelation_mib };
+mib2nut_info_t	aphel_genesisII = { "aphel_genesisII", EATON_APHEL_MIB_VERSION, "", APHEL1_OID_MODEL_NAME, eaton_aphel_genesisII_mib, APHEL1_SYSOID };
+mib2nut_info_t	aphel_revelation = { "aphel_revelation", EATON_APHEL_MIB_VERSION, "", APHEL2_OID_MODEL_NAME, eaton_aphel_revelation_mib, APHEL2_SYSOID };

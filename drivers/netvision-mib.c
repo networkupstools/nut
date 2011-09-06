@@ -25,6 +25,8 @@
 
 #define NETVISION_MIB_VERSION			"0.1"
 
+#define NETVISION_SYSOID				".1.3.6.1.4.1.4555.1.1.1"
+
 /* SNMP OIDs set */
 #define NETVISION_OID_UPS_MIB			".1.3.6.1.4.1.4555.1.1.1.1"
 #define NETVISION_OID_UPSIDENTMODEL		".1.3.6.1.4.1.4555.1.1.1.1.1.1.0"
@@ -118,4 +120,4 @@ static snmp_info_t netvision_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	netvision = { "netvision", NETVISION_MIB_VERSION, "", NETVISION_OID_UPSIDENTMODEL, netvision_mib };
+mib2nut_info_t	netvision = { "netvision", NETVISION_MIB_VERSION, "", NETVISION_OID_UPSIDENTMODEL, netvision_mib, NETVISION_SYSOID };
