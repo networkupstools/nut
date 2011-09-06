@@ -75,6 +75,10 @@ for each OID request we made), instead of sending many small packets
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 
+/* Force numeric OIDs by disabling MIB loading */
+#define DISABLE_MIB_LOADING 1
+
+
 #define DEFAULT_POLLFREQ	30		/* in seconds */
 
 /* use explicit booleans */
@@ -193,11 +197,13 @@ typedef struct {
 #define SU_ERR_RATE 100	/* only print every nth error once limiting starts */
 
 typedef struct {
-	const char *mib_name;
-	const char *mib_version;
-	const char *oid_pwr_status;
-	const char *oid_auto_check;
-	snmp_info_t *snmp_info; /* pointer to the good Snmp2Nut lookup data */
+	const char	*mib_name;
+	const char	*mib_version;
+	const char	*oid_pwr_status;
+	const char	*oid_auto_check;	/* FIXME: rename to SysOID */
+	snmp_info_t	*snmp_info;			/* pointer to the good Snmp2Nut lookup data */
+	const char	*sysOID;			/* OID to match against sysOID, aka MIB
+									 * main entry point */
 
 } mib2nut_info_t;
 
