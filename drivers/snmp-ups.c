@@ -79,7 +79,7 @@ const char *mibvers;
 static void disable_transfer_oids(void);
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.50"
+#define DRIVER_VERSION		"0.51"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -257,11 +257,19 @@ void upsdrv_cleanup(void)
 
 void nut_snmp_init(const char *type, const char *hostname)
 {
+	char *ns_options = NULL;
 	const char *community, *version;
 	const char *secLevel = NULL, *authPassword, *privPassword;
 	const char *authProtocol, *privProtocol;
 
 	upsdebugx(2, "SNMP UPS driver : entering nut_snmp_init(%s)", type);
+
+	/* Force numeric OIDs resolution (ie, do not resolve to textual names)
+	 * This is mostly for the convenience of debug output */
+	ns_options = snmp_out_toggle_options("n");
+	if (ns_options != NULL) {
+		upsdebugx(2, "Failed to enable numeric OIDs resolution");
+	}
 
 	/* Initialize the SNMP library */
 	init_snmp(type);
