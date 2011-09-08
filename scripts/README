@@ -8,7 +8,8 @@ specific USB devices,
 - Python Client module and application,
 - Perl client module,
 - Augeas support lenses and modules for NUT,
-- Java client library and test application.
+- Java client library and test application,
+- systemd support files.
 
 They have either been contributed by users of the software, or by the NUT Team
 itself.

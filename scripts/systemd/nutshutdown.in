@@ -1,0 +1,2 @@
+#!/bin/sh
+upsmon -K >/dev/null 2>&1 && upsdrvctl shutdown
