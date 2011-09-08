@@ -38,6 +38,7 @@
 
 static AvahiSimplePoll *simple_poll = NULL;
 static nutscan_device_t * dev_ret = NULL;
+static long avahi_usec_timeout = 0;
 
 static void update_device(const char * host_name,const char *ip, uint16_t port,char * text, int proto)
 {
@@ -112,10 +113,9 @@ static void update_device(const char * host_name,const char *ip, uint16_t port,c
 
 	/* If no device published in avahi data, try to get the device by
 	connecting directly to upsd */
-	/* FIXME, hard coded time out to 1 second */
 	if( !device_found) {
 		snprintf(buf,sizeof(buf),"%u",port);
-		dev = nutscan_scan_nut(ip,ip,buf,1*1000*1000);
+		dev = nutscan_scan_nut(ip,ip,buf,avahi_usec_timeout);
 		if(dev) {
 			dev_ret = nutscan_add_device_to_device(dev_ret,dev);
 		}
@@ -263,7 +263,7 @@ static void client_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UN
 	}
 }
 
-nutscan_device_t * nutscan_scan_avahi()
+nutscan_device_t * nutscan_scan_avahi(long usec_timeout)
 {
 	/* Example service publication 
 	 * $ avahi-publish -s nut _upsd._tcp 3493 txtvers=1 protovers=1.0.0 device_list="dev1;dev2"
@@ -272,6 +272,8 @@ nutscan_device_t * nutscan_scan_avahi()
 	AvahiServiceBrowser *sb = NULL;
 	int error;
 	int ret = 1;
+
+	avahi_usec_timeout = usec_timeout;
 
 	/* Allocate main loop object */
 	if (!(simple_poll = avahi_simple_poll_new())) {

@@ -17,14 +17,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/* TODO list:
- * - network iterator (IPv4 and v6) for connect style scan
- * - handle XML/HTTP and SNMP answers (need thread?)
- * - Avahi support for NUT instances discovery
- * (...)
- * https://alioth.debian.org/pm/task.php?func=detailtask&project_task_id=477&group_id=30602&group_project_id=42
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -110,7 +102,7 @@ static void * run_nut_old(void * arg)
 #ifdef HAVE_AVAHI_CLIENT_CLIENT_H
 static void * run_avahi(void * arg)
 {
-	dev[TYPE_AVAHI] = nutscan_scan_avahi();
+	dev[TYPE_AVAHI] = nutscan_scan_avahi(timeout);
 	return NULL;
 }
 #endif
@@ -248,7 +240,7 @@ int main(int argc, char *argv[])
 			default:
 				puts("nut-scanner : detecting available UPS.\n");
 				puts("OPTIONS:");
-				printf("  -C, --complete_scan : Scan all availbale devices (default).\n");
+				printf("  -C, --complete_scan : Scan all available devices (default).\n");
 #ifdef HAVE_USB_H
 				printf("  -U, --usb_scan : Scan USB devices.\n");
 #endif
@@ -274,7 +266,7 @@ int main(int argc, char *argv[])
 				printf("  -c, --community <community name>: Set SNMP v1 community name (default = public)\n");
 
 				printf("\nSNMP v3 specific options:\n");
-				printf("  -l, --secLevel <security level>: Set the securityLevel used for SNMPv3 messages (allowed: noAuthNoPriv,authNoPriv,authPriv)\n");
+				printf("  -l, --secLevel <security level>: Set the securityLevel used for SNMPv3 messages (allowed values: noAuthNoPriv,authNoPriv,authPriv)\n");
 				printf("  -u, --secName <security name>: Set the securityName used for authenticated SNMPv3 messages (mandatory if you set secLevel. No default)\n");
 				printf("  -a, --authProtocol <authentication protocol>: Set the authentication protocol (MD5 or SHA) used for authenticated SNMPv3 messages (default=MD5)\n");
 				printf("  -A, --authPassword <authentication pass phrase>: Set the authentication pass phrase used for authenticated SNMPv3 messages (mandatory if you set secLevel to authNoPriv or authPriv)\n");
@@ -285,7 +277,7 @@ int main(int argc, char *argv[])
 				printf("\nNUT device specific options:\n");
 				printf("  -p, --port <port number>: Port number of remote NUT devices\n");
 				printf("\ndisplay specific options:\n");
-				printf("  -N, --disp_nut_conf : Display result in the nut.conf format\n");
+				printf("  -N, --disp_nut_conf : Display result in the ups.conf format\n");
 				printf("  -P, --disp_parsable : Display result in a parsable format\n");
 				return 0;
 		}

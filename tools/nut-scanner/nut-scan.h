@@ -51,7 +51,7 @@ nutscan_device_t * nutscan_scan_xml_http(long usec_timeout);
 nutscan_device_t * nutscan_scan_nut(const char * startIP, const char * stopIP, const char * port, long usec_timeout);
 
 #ifdef HAVE_AVAHI_CLIENT_CLIENT_H
-nutscan_device_t * nutscan_scan_avahi(void);
+nutscan_device_t * nutscan_scan_avahi(long usec_timeout);
 #endif
 
 #ifdef HAVE_FREEIPMI_FREEIPMI_H
