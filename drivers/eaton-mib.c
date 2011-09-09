@@ -208,5 +208,138 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL, NULL }
 };
 
+/* Eaton PDU-MIB - Marlin MIB
+ * ************************** */
+
+#define EATON_MARLIN_MIB_VERSION	"0.05"
+#define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
+#define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
+
+static info_lkp_t marlin_outlet_status_info[] = {
+	{ 0, "off" },
+	{ 1, "on" },
+	{ 2, "pendingOff" }, /* transitional status */
+	{ 3, "pendingOn" }, /* transitional status */
+	{ 0, NULL }
+};
+
+/* Snmp2NUT lookup table for Eaton Marlin MIB */
+static snmp_info_t eaton_marlin_mib[] = {
+	/* Device page */
+	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON",
+		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
+	{ "device.model", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0",
+		"Eaton Powerware ePDU", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
+	{ "device.serial", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.1.2.1.4.0",
+		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
+	{ "device.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu",
+		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
+	/* FIXME: need RFC validation on this variable
+	 * { "device.part", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.1.2.1.3.0",
+		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL }, */
+
+	/* UPS page */
+	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON",
+		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
+	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, "1.3.6.1.4.1.534.6.6.7.1.2.1.2.0",
+		"Eaton Powerware ePDU", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
+
+	/*	FIXME: use unitName.0	(ePDU)?
+	 * { "ups.id", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_DEVICE_NAME,
+		"unknown", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL }, */
+	{ "ups.serial", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.1.2.1.4.0",
+		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
+	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.1.2.1.5.0",
+		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
+	{ "ups.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu",
+		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
+	/* TODO:
+	 * The below possibly requires (?) the use of
+	 * 	int snprint_hexstring(char *buf, size_t buf_len, const u_char *, size_t);
+	 * { "ups.macaddr", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.2.1.2.2.1.6.2",
+		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
+	 * + date reformating callback
+	 *   2011-8-29,16:27:25.0,+1:0
+	 *   Hex-STRING: 07 DB 08 1D 10 0C 36 00 2B 01 00 00 
+	 * { "ups.date", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.1.2.1.8.0",
+		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
+	 * { "ups.time", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.1.2.1.8.0",
+		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
+	 */
+
+	/* Input page */
+	{ "input.phases", 0, 1, ".1.3.6.1.4.1.534.6.6.7.1.2.1.20.0", NULL, SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
+	/* inputType.0.1	singlePhase  (1) 		iso.3.6.1.4.1.534.6.6.7.3.1.1.2.0.1 */
+	{ "input.frequency", 0, 0.1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.3.0.1", NULL, 0, NULL, NULL },
+	{ "input.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.3.0.1.1", NULL, 0, NULL, NULL },
+	/* FIXME: check multiplier */
+	{ "input.current", 0, 0.01, ".1.3.6.1.4.1.534.6.6.7.3.3.1.4.0.1.1", NULL, 0, NULL, NULL },
+
+	/* Ambient page */
+	/* We use critical levels, for both temperature and humidity,
+	 * since warning levels are also available! */
+	{ "ambient.temperature", 0, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.1.1.4.0.1", NULL, SU_FLAG_OK, NULL, NULL },
+	{ "ambient.temperature.low", 0, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.1.1.7.0.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "ambient.temperature.high", 0, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.1.1.9.0.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "ambient.humidity", 0, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.2.1.4.0.1", NULL, SU_FLAG_OK, NULL, NULL },
+	{ "ambient.humidity.low", 0, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.2.1.7.0.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "ambient.humidity.high", 0, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.2.1.9.0.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+
+	/* Outlet page */
+	{ "outlet.id", 0, 1, NULL, "0", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
+	{ "outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, NULL, "All outlets",
+		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
+	{ "outlet.count", 0, 1, ".1.3.6.1.4.1.534.6.6.7.1.2.1.22.0", "0", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
+	/* The below ones are the same as the input.* equivalent */
+	{ "outlet.frequency", 0, 0.1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.3.0.1", NULL, 0, NULL, NULL },
+	{ "outlet.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.3.0.1.1", NULL, 0, NULL, NULL },
+	{ "outlet.current", 0, 0.01, ".1.3.6.1.4.1.534.6.6.7.3.3.1.4.0.1.1", NULL, 0, NULL, NULL },
+	/* There is also a .2 available (ie .1.3.6.1.4.1.534.6.6.7.3.4.1.3.0.1.2) */
+	{ "outlet.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.4.0.1.2", NULL, 0, NULL, NULL },
+	/* There is also a .2 available (ie .1.3.6.1.4.1.534.6.6.7.3.4.1.3.0.1.2) */
+	{ "outlet.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.0.1.1", NULL, 0, NULL, NULL },
+
+	/* outlet template definition
+	 * Indexes start from 1, ie outlet.1 => <OID>.1 */
+	{ "outlet.%i.switchable", 0, 1, ".1.3.6.1.4.1.534.6.6.7.6.6.1.3.0.%i", "yes", SU_FLAG_STATIC | SU_OUTLET, NULL, NULL },
+	/* Note: the first definition is used to determine the base index (ie 0 or 1) */
+	{ "outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.1.1.3.0.%i", NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_OUTLET, NULL, NULL },
+	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.6.1.2.0.%i",
+		NULL, SU_FLAG_OK | SU_OUTLET, &marlin_outlet_status_info[0], NULL },
+	/* FIXME: or use ".1.3.6.1.4.1.534.6.6.7.6.1.1.2.0.1", though it's related to groups! */
+	{ "outlet.%i.id", 0, 1, NULL, "%i", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK | SU_OUTLET, NULL, NULL },
+	{ "outlet.%i.current", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.4.1.3.0.%i", NULL, SU_OUTLET, NULL, NULL },
+	{ "outlet.%i.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.6.5.1.3.0.%i", NULL, SU_OUTLET, NULL, NULL },
+	{ "outlet.%i.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.3.1.2.0.%i", NULL, SU_OUTLET, NULL, NULL },
+	{ "outlet.%i.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.6.5.1.2.0.%i", NULL, SU_OUTLET, NULL, NULL },
+
+	/* TODO: handle statistics
+	 * outletWh.0.1
+	 * outletWhTimer.0.1
+	 */
+
+	/* instant commands. */
+	/* Notes:
+	 * - load.cycle might be replaced by / mapped on shutdown.reboot 
+	 * - outletControl{Off,On,Reboot}Cmd values:
+	 * 		0-n : Timer
+	 * 		-1 : Cancel
+	 * 		we currently use "0", so instant On | Off | Reboot... */
+	/* no counterpart found!
+	{ "outlet.load.off", 0, DO_OFF, AR_OID_OUTLET_STATUS ".0", NULL, SU_TYPE_CMD, NULL, NULL },
+	{ "outlet.load.on", 0, DO_ON, AR_OID_OUTLET_STATUS ".0", NULL, SU_TYPE_CMD, NULL, NULL },
+	{ "outlet.load.cycle", 0, DO_CYCLE, AR_OID_OUTLET_STATUS ".0", NULL, SU_TYPE_CMD, NULL, NULL }, */
+
+	/* TODO: handle delays */
+	{ "outlet.%i.load.off", 0, 0, ".1.3.6.1.4.1.534.6.6.7.6.6.1.3.0.%i", NULL, SU_TYPE_CMD | SU_OUTLET, NULL, NULL },
+	{ "outlet.%i.load.on", 0, 0, ".1.3.6.1.4.1.534.6.6.7.6.6.1.4.0.%i", NULL, SU_TYPE_CMD | SU_OUTLET, NULL, NULL },
+	{ "outlet.%i.load.cycle", 0, 0, ".1.3.6.1.4.1.534.6.6.7.6.6.1.5.0.%i", NULL, SU_TYPE_CMD | SU_OUTLET, NULL, NULL },
+
+	/* end of structure. */
+	{ NULL, 0, 0, NULL, NULL, 0, NULL, NULL }
+};
+
 mib2nut_info_t	aphel_genesisII = { "aphel_genesisII", EATON_APHEL_MIB_VERSION, "", APHEL1_OID_MODEL_NAME, eaton_aphel_genesisII_mib, APHEL1_SYSOID };
 mib2nut_info_t	aphel_revelation = { "aphel_revelation", EATON_APHEL_MIB_VERSION, "", APHEL2_OID_MODEL_NAME, eaton_aphel_revelation_mib, APHEL2_SYSOID };
+mib2nut_info_t	eaton_marlin = { "eaton_epdu", EATON_MARLIN_MIB_VERSION, "", EATON_MARLIN_OID_MODEL_NAME, eaton_marlin_mib, EATON_MARLIN_SYSOID };
+
