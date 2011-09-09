@@ -339,7 +339,15 @@ Here are the steps that occur when a critical power event happens:
 
 1. The UPS goes on battery
 
-2. The UPS reaches low battery (a "critical" UPS)
+2. The UPS reaches low battery (a "critical" UPS), that is to say
+   upsc displays:
++
+   ups.status: OB LB
++
+The exact behavior depends on the specific device, and is related to:
+
+   - battery.charge and battery.charge.low
+   - battery.runtime and battery.runtime.low
 
 3. The upsmon master notices and sets "FSD" - the "forced shutdown"
    flag to tell all slave systems that it will soon power down the load.
@@ -566,9 +574,10 @@ Testing shutdowns
 ^^^^^^^^^^^^^^^^^
 
 UPS equipment varies from manufacturer to manufacturer and even within
-model lines.  You should test the shutdown sequence on your systems before
-leaving them unattended.  A successful sequence is one where the OS halts
-before the battery runs out, and the system restarts when power returns.
+model lines.  You should test the <<Shutdown_design,shutdown sequence>>
+on your systems before leaving them unattended.  A successful sequence
+is one where the OS halts before the battery runs out, and the system
+restarts when power returns.
 
 The first step is to see how upsdrvctl will behave without actually turning off
 power. To do so, use the '-t' argument:
