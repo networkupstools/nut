@@ -35,7 +35,7 @@
 #include "common.h"
 
 
-#define SysOID ".1.3.6.1.2.1.1.2"
+#define SysOID ".1.3.6.1.2.1.1.2.0"
 
 static nutscan_device_t * dev_ret = NULL;
 #ifdef HAVE_PTHREAD
@@ -45,108 +45,127 @@ static int thread_count = 0;
 #endif
 long g_usec_timeout ;
 
-static void try_all_oid(void * arg)
+static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response,char * mib)
 {
-        oid name[MAX_OID_LEN];
-        size_t name_len = MAX_OID_LEN;
-	struct snmp_pdu *pdu, *response = NULL;
-	int index = 0;
 	nutscan_device_t * dev = NULL;
 	struct snmp_session * session;
-	nutscan_snmp_t * sec = (nutscan_snmp_t *)arg;
-	int status;
 	char * buf;
 
-	while(snmp_device_table[index].oid != NULL) {
-
-		/* create and send request. */
-		name_len = MAX_OID_LEN;
-		if (!snmp_parse_oid(snmp_device_table[index].oid, name, &name_len)) {
-			index++;
-			continue;
+	session = snmp_sess_session(sec->handle);
+	/* SNMP device found */
+	dev = nutscan_new_device();
+	dev->type = TYPE_SNMP;
+	dev->driver = strdup("snmp-ups");
+	dev->port = strdup(session->peername);
+	buf = strndup((char*)response->variables->val.string,
+			(int)response->variables->val_len);
+	nutscan_add_option_to_device(dev,"desc",buf);
+	free(buf);
+	nutscan_add_option_to_device(dev,"mibs",mib);
+	/* SNMP v3 */
+	if( session->community == NULL || session->community[0] == 0) {
+		if( sec->secLevel ) {
+			nutscan_add_option_to_device(dev,"secLevel",
+					sec->secLevel);
 		}
-
-		pdu = snmp_pdu_create(SNMP_MSG_GET);
-
-		if (pdu == NULL) {
-			index++;
-			continue;
+		if( sec->secName ) {
+			nutscan_add_option_to_device(dev,"secName",
+					sec->secName);
 		}
-
-		snmp_add_null_var(pdu, name, name_len);
-
-		status = snmp_sess_synch_response(sec->handle,pdu, &response);
-		if( response == NULL ) {
-			index++;
-			continue;
+		if( sec->authPassword ) {
+			nutscan_add_option_to_device(dev,"authPassword",
+					sec->authPassword);
 		}
+		if( sec->privPassword ) {
+			nutscan_add_option_to_device(dev,"privPassword",
+					sec->privPassword);
+		}
+		if( sec->authProtocol ) {
+			nutscan_add_option_to_device(dev,"authProtocol",
+					sec->authProtocol);
+		}
+		if( sec->privProtocol ) {
+			nutscan_add_option_to_device(dev,"privProtocol",
+					sec->privProtocol);
+		}
+	}
+	else {
+		buf = strndup((char*)session->community,
+				session->community_len);
+		nutscan_add_option_to_device(dev,"community",buf);
+		free(buf);
+	}
 
-		if(status!=STAT_SUCCESS||response->errstat!=SNMP_ERR_NOERROR||
+#ifdef HAVE_PTHREAD
+	pthread_mutex_lock(&dev_mutex);
+#endif
+	dev_ret = nutscan_add_device_to_device(dev_ret,dev);
+#ifdef HAVE_PTHREAD
+	pthread_mutex_unlock(&dev_mutex);
+#endif
+
+}
+
+static struct snmp_pdu * scan_snmp_get_manufacturer(char* oid_str,void* handle)
+{
+        size_t name_len;
+        oid name[MAX_OID_LEN];
+	struct snmp_pdu *pdu, *response = NULL;
+	int status;
+	int index = 0;
+
+	/* create and send request. */
+	name_len = MAX_OID_LEN;
+	if (!snmp_parse_oid(oid_str, name, &name_len)) {
+		index++;
+		return NULL;
+	}
+
+	pdu = snmp_pdu_create(SNMP_MSG_GET);
+
+	if (pdu == NULL) {
+		index++;
+		return NULL;
+	}
+
+	snmp_add_null_var(pdu, name, name_len);
+
+	status = snmp_sess_synch_response(handle,pdu, &response);
+	if( response == NULL ) {
+		index++;
+		return NULL;
+	}
+
+	if(status!=STAT_SUCCESS||response->errstat!=SNMP_ERR_NOERROR||
 			response->variables == NULL ||
 			response->variables->name == NULL ||
 			snmp_oid_compare(response->variables->name,
 				response->variables->name_length,
 				name, name_len) != 0 || 
 			response->variables->val.string == NULL ) {
-			snmp_free_pdu(response);
-			response = NULL;
+		snmp_free_pdu(response);
+		index++;
+		return NULL;
+	}
+
+	return response;
+}
+
+static void try_all_oid(void * arg)
+{
+	struct snmp_pdu *response = NULL;
+	int index = 0;
+	nutscan_snmp_t * sec = (nutscan_snmp_t *)arg;
+
+	while(snmp_device_table[index].oid != NULL) {
+
+		response = scan_snmp_get_manufacturer(snmp_device_table[index].oid,sec->handle);
+		if( response == NULL ) {
 			index++;
 			continue;
 		}
 
-		session = snmp_sess_session(sec->handle);
-		/* SNMP device found */
-		dev = nutscan_new_device();
-		dev->type = TYPE_SNMP;
-		dev->driver = strdup("snmp-ups");
-		dev->port = strdup(session->peername);
-		buf = strndup((char*)response->variables->val.string,
-				(int)response->variables->val_len);
-		nutscan_add_option_to_device(dev,"desc",buf);
-		free(buf);
-		nutscan_add_option_to_device(dev,"mibs",
-						snmp_device_table[index].mib);
-		/* SNMP v3 */
-		if( session->community == NULL || session->community[0] == 0) {
-			if( sec->secLevel ) {
-				nutscan_add_option_to_device(dev,"secLevel",
-							sec->secLevel);
-			}
-			if( sec->secName ) {
-				nutscan_add_option_to_device(dev,"secName",
-							sec->secName);
-			}
-			if( sec->authPassword ) {
-				nutscan_add_option_to_device(dev,"authPassword",
-							sec->authPassword);
-			}
-			if( sec->privPassword ) {
-				nutscan_add_option_to_device(dev,"privPassword",
-							sec->privPassword);
-			}
-			if( sec->authProtocol ) {
-				nutscan_add_option_to_device(dev,"authProtocol",
-							sec->authProtocol);
-			}
-			if( sec->privProtocol ) {
-				nutscan_add_option_to_device(dev,"privProtocol",
-							sec->privProtocol);
-			}
-		}
-		else {
-	                buf = strndup((char*)session->community,
-                                session->community_len);
-			nutscan_add_option_to_device(dev,"community",buf);
-	                free(buf);
-		}
-
-#ifdef HAVE_PTHREAD
-		pthread_mutex_lock(&dev_mutex);
-#endif
-		dev_ret = nutscan_add_device_to_device(dev_ret,dev);
-#ifdef HAVE_PTHREAD
-		pthread_mutex_unlock(&dev_mutex);
-#endif
+		scan_snmp_add_device(sec,response,snmp_device_table[index].mib);
 
 		snmp_free_pdu(response);
 		response = NULL;
@@ -319,6 +338,8 @@ static void * try_SysOID(void * arg)
         oid name[MAX_OID_LEN];
         size_t name_len = MAX_OID_LEN;
 	nutscan_snmp_t * sec = (nutscan_snmp_t *)arg;
+	int index = 0;
+	int sysoid_found = 0;
 
 	/* Initialize session */
 	if( !init_session(&snmp_sess,sec) ) {
@@ -358,12 +379,48 @@ static void * try_SysOID(void * arg)
 			pdu, &response);
 
 	if (response) {
+		sec->handle = handle;
+
 		/* SNMP device found */
 		/* SysOID is supposed to give the required MIB. */
-		/* FIXME: until we are sure it gives the MIB for all devices, use the old method: */
+
+		/* Check if the received OID match with a known sysOID */
+		if(response->variables != NULL &&
+				response->variables->val.objid != NULL){
+			while(snmp_device_table[index].oid != NULL) {
+				if(snmp_device_table[index].sysoid == NULL ) {
+					index++;
+					continue;
+				}
+				name_len = MAX_OID_LEN;
+				if (!snmp_parse_oid(
+					snmp_device_table[index].sysoid,
+					name, &name_len)) {
+					index++;
+					continue;
+				}
+
+				if ( snmp_oid_compare(
+					response->variables->val.objid,
+					response->variables->val_len/sizeof(oid),
+					name, name_len) == 0 ) {
+					/* we have found a relevent sysoid */
+					snmp_free_pdu(response);
+					response = scan_snmp_get_manufacturer(
+						snmp_device_table[index].oid,
+						handle);
+					scan_snmp_add_device(sec,response,
+						snmp_device_table[index].mib);
+					sysoid_found = 1;
+				}
+				index++;
+			}
+		}
+
 		/* try a list of known OID */
-		sec->handle = handle;
-		try_all_oid(sec);
+		if( !sysoid_found ) {
+			try_all_oid(sec);
+		}
 
 		snmp_free_pdu(response);
 		response = NULL;

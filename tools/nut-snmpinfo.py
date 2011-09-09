@@ -72,6 +72,7 @@ output_file.write( "\n" )
 output_file.write( "typedef struct {\n" )
 output_file.write( "        char *          oid;\n" )
 output_file.write( "        char *          mib;\n" )
+output_file.write( "        char *       sysoid;\n" )
 output_file.write( "} snmp_device_id_t;\n" )
 output_file.write( "\n" )
 output_file.write( "/* SNMP IDs device table */\n" )
@@ -90,7 +91,16 @@ for filename in glob.glob('../drivers/*-mib.c'):
 			mib = line2[0]
 			#line2[3] is the OID of the device model name which
 			#could be made of #define const and string.
-			line = line2[3].lstrip(" ")
+			source_oid = line2[3]
+			#line2[5] is the SysOID of the device which
+			#could be made of #define const and string.
+			if len(line2) >= 6:
+				source_sysoid = line2[5]
+			else:
+				source_sysoid = "NULL"
+
+			#decode source_oid
+			line = source_oid.lstrip(" ")
 			line2 = line.split(" ")
 
 			oid = ""
@@ -101,9 +111,27 @@ for filename in glob.glob('../drivers/*-mib.c'):
 				else:
 					oid = oid + expand_define(filename,elem);
 
-			output_file.write( "\t{ \"" + oid + "\" , " + mib + "},\n" )
+			#decode source_sysoid
+			line = source_sysoid.lstrip(" ")
+			line = line.rstrip(" ")
+			line2 = line.split(" ")
+
+ 			sysoid = ""
+			for elem in line2:
+				if elem[0] == "\"":
+					clean_elem = re.sub("\"", "", elem)
+					sysoid = sysoid+clean_elem
+				else:
+					sysoid = sysoid + expand_define(filename,elem);
+
+			if sysoid == "":
+				sysoid = "NULL"
+			else:
+				sysoid = "\"" + sysoid + "\""
+
+			output_file.write( "\t{ \"" + oid + "\" , " + mib + ", " + sysoid + "},\n" )
 
 output_file.write( "        /* Terminating entry */\n" )
-output_file.write( "        { NULL, NULL }\n" )
+output_file.write( "        { NULL, NULL, NULL}\n" )
 output_file.write( "};\n" )
 output_file.write( "#endif /* DEVSCAN_SNMP_H */\n" )
