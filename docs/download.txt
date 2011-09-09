@@ -101,7 +101,7 @@ link:http://packages.gentoo.org/package/sys-power/nut[Gentoo Linux],
 Mandriva,
 link:https://admin.fedoraproject.org/pkgdb/acls/name/nut[Red Hat / Fedora],
 link:http://software.opensuse.org/search[Novell Suse / openSUSE],
-link:https://forum.openwrt.org/viewtopic.php?id=26269[OpenWrt]
+link:https://forum.openwrt.org/viewtopic.php?id=26269[OpenWrt],
 link:http://packages.ubuntu.com/nut[Ubuntu].
 
 - BSD systems:
