@@ -126,15 +126,17 @@ that we have missed listing some that are supported, or made an error.
 
 So that this list can be as accurate as possible, please report any
 omissions to the
-link:http://lists.alioth.debian.org/mailman/listinfo/nut-upsuser[NUT Users]
-mailing list, with *[HCL]* in the subject and including the following
-information:
+link:http://lists.alioth.debian.org/mailman/listinfo/nut-upsdev[NUT Developers]
+mailing list, including the following information:
 
-- Device manufacturer and name,
-- upsc output (upsrw and upscmd outputs are also welcome),
-- link:docs/user-manual.chunked/ar01s06.html#Shutdown_design[shutdown sequence]
+- mail subject: [HCL] <Manufacturer> <Device> supported by <driver>
+replacing Manufacturer, Device and driver by your specific values,
+- mail body:
+  - Device manufacturer and name,
+  - upsc output (upsrw and upscmd outputs are also welcome),
+  - link:docs/user-manual.chunked/ar01s06.html#Shutdown_design[shutdown sequence]
 testing results,
-- a link to an online description is also appreciated.
+  - a link to an online description is also appreciated.
 
 
 *Pointing the present HCL*
@@ -153,9 +155,9 @@ The form of the URL is the following:
 |==========================================================================
 |       <filter-name>        | <filter-value>
 |       support-level        | a number from '1' to '5'
-.3+^.^| device-type          | 'ups' for uninterruptible power supply
-                             | 'pdu' for power distribution unit
-                             | 'scd' for solar controller device 
+.3+^.^| device-type          | - 'ups' for uninterruptible power supply
+                             | - 'pdu' for power distribution unit
+                             | - 'scd' for solar controller device 
 |       manufacturer         | a manufacturer name from the selection list
 |       model                | a model name from the selection list
 .3+^.^| connection           | 'USB'
