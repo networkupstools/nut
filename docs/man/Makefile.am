@@ -74,6 +74,13 @@ HTML_CLIENT_MANS = \
 	upsrw.html \
 	upssched.html
 
+SRC_TOOL_PAGES = nut-scanner.txt
+
+MAN_TOOL_PAGES = nut-scanner.8
+
+man8_MANS += $(MAN_TOOL_PAGES)
+
+HTML_TOOL_MANS = nut-scanner.html
 
 # CGI (--with-cgi) related manpages
 SRC_CGI_PAGES = \
@@ -125,6 +132,19 @@ SRC_DEV_PAGES = \
 	upscli_ssl.txt \
 	upscli_strerror.txt \
 	upscli_upserror.txt \
+	nutscan_scan_snmp.txt \
+	nutscan_scan_usb.txt \
+	nutscan_scan_xml_http.txt \
+	nutscan_scan_nut.txt \
+	nutscan_scan_avahi.txt \
+	nutscan_scan_ipmi.txt \
+	nutscan_display_ups_conf.txt \
+	nutscan_display_parsable.txt \
+	nutscan_cidr_to_ip.txt \
+	nutscan_new_device.txt \
+	nutscan_free_device.txt \
+	nutscan_add_option_to_device.txt \
+	nutscan_add_device_to_device.txt \
 	libupsclient-config.txt \
 	skel.txt
 
@@ -142,7 +162,20 @@ MAN3_DEV_PAGES = \
 	upscli_splitname.3 \
 	upscli_ssl.3 \
 	upscli_strerror.3 \
-	upscli_upserror.3
+	upscli_upserror.3 \
+	nutscan_scan_snmp.3 \
+	nutscan_scan_usb.3 \
+	nutscan_scan_xml_http.3 \
+	nutscan_scan_nut.3 \
+	nutscan_scan_avahi.3 \
+	nutscan_scan_ipmi.3 \
+	nutscan_display_ups_conf.3 \
+	nutscan_display_parsable.3 \
+	nutscan_cidr_to_ip.3 \
+	nutscan_new_device.3 \
+	nutscan_free_device.3 \
+	nutscan_add_option_to_device.3 \
+	nutscan_add_device_to_device.3
 
 MAN1_DEV_PAGES = \
 	libupsclient-config.1
@@ -171,6 +204,19 @@ HTML_DEV_MANS = \
 	upscli_ssl.html \
 	upscli_strerror.html \
 	upscli_upserror.html \
+	nutscan_scan_snmp.html \
+	nutscan_scan_usb.html \
+	nutscan_scan_xml_http.html \
+	nutscan_scan_nut.html \
+	nutscan_scan_avahi.html \
+	nutscan_scan_ipmi.html \
+	nutscan_display_ups_conf.html \
+	nutscan_display_parsable.html \
+	nutscan_cidr_to_ip.html \
+	nutscan_new_device.html \
+	nutscan_free_device.html \
+	nutscan_add_option_to_device.html \
+	nutscan_add_device_to_device.html \
 	libupsclient-config.html \
 	skel.html
 
@@ -368,6 +414,7 @@ endif
 MAN_MANS = \
 	$(MAN_CONF_PAGES) \
 	$(MAN_CLIENT_PAGES) \
+	$(MAN_TOOL_PAGES) \
 	$(MAN5_CGI_PAGES) \
 	$(MAN8_CGI_PAGES) \
 	$(MAN1_DEV_PAGES) \
@@ -384,6 +431,7 @@ MAN_MANS = \
 EXTRA_DIST = \
 	$(SRC_CONF_PAGES) \
 	$(SRC_CLIENT_PAGES) \
+	$(SRC_TOOL_PAGES) \
 	$(SRC_CGI_PAGES) \
 	$(SRC_DEV_PAGES) \
 	$(SRC_SERIAL_PAGES) \
@@ -398,6 +446,7 @@ EXTRA_DIST = \
 HTML_MANS = \
 	$(HTML_CONF_MANS) \
 	$(HTML_CLIENT_MANS) \
+	$(HTML_TOOL_MANS) \
 	$(HTML_CGI_MANS) \
 	$(HTML_DEV_MANS) \
 	$(HTML_SERIAL_MANS) \

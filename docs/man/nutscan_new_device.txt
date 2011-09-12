@@ -1,0 +1,33 @@
+NUTSCAN_NEW_DEVICE(3)
+======================
+
+NAME
+----
+
+nutscan_new_device - Create a new nutscan_device_t structure.
+
+SYNOPSIS
+--------
+
+ #include <nut-scan.h>
+
+ nutscan_device_t * nutscan_new_device();
+
+DESCRIPTION
+-----------
+
+The *nutscan_new_device()* function allocates a new `nutscan_device_type_t` structure.
+
+RETURN VALUE
+------------
+
+The *nutscan_new_device()* function returns the newly allocated `nutscan_device_type_t` structure
+
+SEE ALSO
+--------
+linkman:nutscan_scan_usb[3], linkman:nutscan_scan_xml_http[3], 
+linkman:nutscan_scan_nut[3], linkman:nutscan_scan_avahi[3], 
+linkman:nutscan_scan_ipmi[3], linkman:nutscan_scan_snmp[3]
+linkman:nutscan_display_ups_conf[3], linkman:nutscan_display_parsable[3]
+linkman:nutscan_free_device[3], linkman:nutscan_add_option_to_device[3]
+linkman:nutscan_add_device_to_device[3]
