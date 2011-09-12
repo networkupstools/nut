@@ -186,6 +186,7 @@ else
 # (--with-serial)
 SRC_SERIAL_PAGES = \
 	apcsmart.txt	\
+	apcsmart-old.txt	\
 	bcmxcp.txt 	\
 	belkin.txt 	\
 	belkinunv.txt	\
@@ -223,6 +224,7 @@ SRC_SERIAL_PAGES = \
 
 MAN_SERIAL_PAGES = \
 	apcsmart.8	\
+	apcsmart-old.8	\
 	bcmxcp.8 	\
 	belkin.8 	\
 	belkinunv.8	\
@@ -264,6 +266,7 @@ endif
 
 HTML_SERIAL_MANS = \
 	apcsmart.html	\
+	apcsmart-old.html	\
 	bcmxcp.html 	\
 	belkin.html 	\
 	belkinunv.html	\
