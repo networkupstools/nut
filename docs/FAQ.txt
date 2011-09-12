@@ -518,9 +518,9 @@ usbhid-ups driver uses libusb (which is available for a wide range of
 operating systems) and libhid (currently, a modified internal version
 of it).
 
-As of NUT 2.2, usbhid-ups completely replaces the legacy hidups driver
-and provide support for various manufacturers. At that time, it will
-be renamed to usbhid-ups.
+As of NUT 2.2, usbhid-ups completely replaces the legacy hidups driver,
+and provides support for various manufacturers. At that time, newhidups was
+renamed to usbhid-ups.
 
 usbhid-ups is built automatically if possible (libusb development files
 need to be installed) and installed by the "make install" command.

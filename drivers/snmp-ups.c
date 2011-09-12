@@ -53,6 +53,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&powerware,
 	&aphel_genesisII,
 	&aphel_revelation,
+	&eaton_marlin,
 	&raritan,
 	&baytech,
 	&compaq,
@@ -79,7 +80,7 @@ const char *mibvers;
 static void disable_transfer_oids(void);
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.55"
+#define DRIVER_VERSION		"0.56"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -708,13 +709,19 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 	if (SU_TYPE(su_info_p) == SU_TYPE_CMD)
 		return;
 
-	if (strcasecmp(su_info_p->info_type, "ups.status")) {
+	if (strcasecmp(su_info_p->info_type, "ups.status"))
+	{
 		if (value != NULL)
 			dstate_setinfo(su_info_p->info_type, "%s", value);
 		else
 			dstate_setinfo(su_info_p->info_type, "%s", su_info_p->dfl);
+
 		dstate_setflags(su_info_p->info_type, su_info_p->info_flags);
 		dstate_setaux(su_info_p->info_type, su_info_p->info_len);
+
+		/* Commit the current value, to avoid staleness with huge
+		 * data collections on slow devices */
+		 dstate_dataok();
 	}
 }
 
@@ -970,17 +977,25 @@ void free_info(snmp_info_t *su_info_p)
 int base_snmp_outlet_index(const char *OID_template)
 {
 	int base_index = outlet_index_base;
+	char test_OID[SU_INFOSIZE];
 
 	if (outlet_index_base == -1)
 	{
 		/* not initialised yet */
-		char test_OID[SU_INFOSIZE];
-		for (base_index = 0 ; base_index < 2 ; base_index++) {
-			sprintf(test_OID, OID_template, base_index);
-			if (nut_snmp_get(test_OID) != NULL)
-				break;
+		/* Workaround for Eaton Marlin, while waiting for a FW fix and
+		* a driver rewrite (advanced hooks) */
+		if ((mibname != NULL) && (!strncmp(mibname, "eaton_epdu", 11)))
+		{
+			upsdebugx(3, "Appying Eaton Marlin workaround");
+			outlet_index_base = base_index = 1;
+		} else {
+			for (base_index = 0 ; base_index < 2 ; base_index++) {
+				sprintf(test_OID, OID_template, base_index);
+				if (nut_snmp_get(test_OID) != NULL)
+					break;
+			}
+			outlet_index_base = base_index;
 		}
-		outlet_index_base = base_index;
 	}
 	upsdebugx(3, "base_snmp_outlet_index: %i", outlet_index_base);
 	return base_index;
@@ -1184,8 +1199,9 @@ bool_t snmp_ups_walk(int mode)
 			instantiate_info(su_info_p, &cur_info_p);
 
 			for (cur_outlet_number = base_snmp_outlet_index(su_info_p->OID) ;
-					cur_outlet_number < outlet_count ; cur_outlet_number++) {
-
+					cur_outlet_number < (outlet_count + base_snmp_outlet_index(su_info_p->OID)) ;
+					cur_outlet_number++)
+			{
 				cur_nut_index = cur_outlet_number + base_nut_outlet_offset();
 				sprintf((char*)cur_info_p.info_type, su_info_p->info_type,
 						cur_nut_index);

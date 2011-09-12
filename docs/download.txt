@@ -101,7 +101,7 @@ link:http://packages.gentoo.org/package/sys-power/nut[Gentoo Linux],
 Mandriva,
 link:https://admin.fedoraproject.org/pkgdb/acls/name/nut[Red Hat / Fedora],
 link:http://software.opensuse.org/search[Novell Suse / openSUSE],
-link:https://forum.openwrt.org/viewtopic.php?id=26269[OpenWrt]
+link:https://forum.openwrt.org/viewtopic.php?id=26269[OpenWrt],
 link:http://packages.ubuntu.com/nut[Ubuntu].
 
 - BSD systems:
@@ -114,7 +114,7 @@ link:http://pdb.finkproject.org/pdb/package.php/nut[Fink],
 link:http://trac.macports.org/browser/trunk/dports/sysutils/nut/Portfile[MacPorts]
 
 - Windows (complete port, Beta):
-link:http://www.networkupstools.org/source/2.6/NUT-Installer-2.6.0-1.msi[Windows MSI installer 2.6.0-1]
+link:http://www.networkupstools.org/source/2.6/NUT-Installer-2.6.1-1.msi[Windows MSI installer 2.6.1-1]
 
 
 Java packages
