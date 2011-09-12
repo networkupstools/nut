@@ -364,7 +364,16 @@ static int apc_read(char *buf, size_t buflen, int flags)
 		}
 		/* ok, timeout is acceptable */
 		if (ret == 0 && (flags & SER_TO)) {
-			/* but it doesn't imply ser_comm_good */
+			/*
+			 * but it doesn't imply ser_comm_good
+			 *
+			 * to be more precise - we might be in comm_fail
+			 * condition, trying to "nudge" the UPS with some
+			 * command obviously expecting timeout if the comm is
+			 * still lost. This would result with filling logs with
+			 * confusing comm lost/comm re-established pairs. Thus
+			 * - just return here.
+			 */
 			return count;
 		}
 
@@ -2049,7 +2058,8 @@ void upsdrv_updateinfo(void)
 
 	/* try to wake up a dead ups once in awhile */
 	if (dstate_is_stale()) {
-		upslogx(LOG_ERR, "communications with UPS lost - check cabling");
+		if (!last_worked)
+			upsdebugx(LOG_DEBUG, "upsdrv_updateinfo: comm lost");
 
 		/* reset this so a full update runs when the UPS returns */
 		last_full = 0;
@@ -2058,7 +2068,7 @@ void upsdrv_updateinfo(void)
 			return;
 
 		/* become aggressive after a few tries */
-		upslogx(LOG_ERR, "attempting to re-enable smart mode");
+		upsdebugx(LOG_DEBUG, "upsdrv_updateinfo: nudging ups with 'Y', iteration #%d ...", last_worked);
 		if (!smartmode(1))
 			return;
 
