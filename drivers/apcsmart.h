@@ -109,7 +109,7 @@
  * use them internally (e.g. [a]). If you decide to support them at some
  * point, remember about removing them from here !
  */
-#define APC_UNR_CMDS "\032\177~')-8QRYayz"
+#define APC_UNR_CMDS "\032\177~')-+8QRYayz"
 
 /* --------------- */
 
