@@ -33,9 +33,9 @@ division isn\'t strict by any means, and the borders between those are pretty fu
     eeprom; You won\'t find them listed anywhere on APC's site either. The support
     for those will be usually based on driver\'s compatibility tables, or if the
     model (firmware) is not listed in those - the driver will try to follow the very
-    basic subset of features, while still remaining useful. Despite "smart" tagname,
-    they often tend to behave in pretty dumb way (see the section below about
-    shutdown behaviour).
+    basic subset of features, while still trying to remain useful. Despite
+    "smart" tagname, they often tend to behave in pretty dumb way (see the
+    section below about shutdown behaviour).
 +
 --
 .Example models:
@@ -47,7 +47,7 @@ division isn\'t strict by any means, and the borders between those are pretty fu
     These models usually come from late 1990s / pre-2009 times. They are often
     referred as "3rd. gen". For the most part, they have programmable eeprom,
     report supported commands and capabilites, and should work just fine with the
-    apcsmart.
+    apcsmart driver.
 
 "microlink" models::
     WARNING: these are not _natively_ supported by apcsmart (or apcupsd for that
@@ -55,13 +55,13 @@ division isn\'t strict by any means, and the borders between those are pretty fu
     go back to its proprietry roots and all the new models (SMT, SMX, SURTD) use
     completely different protocol and cables. If you purchased a new APC ups,
     that uses cable with rj45 on the one end, and db-9 on the other - then you
-    have such model.  Your only option to support it through *NUT* is to
+    have such model. Your only option to support it through *NUT* is to
     purchase "legacy communications card" - part #AP9620 (google \'AP9620' for
     more details). Or if that\'s not an option, rely on official software.
 
 Another thing to remember is that Smart protocol is not USB protocol. If you
 have ups with both USB and serial ports, then depending on how you connect it,
-you will either need apcsmart or usbhid-ups driver.
+you will need either apcsmart or usbhid-ups driver.
 
 CABLING
 -------
@@ -171,10 +171,11 @@ There\'re 3 options used to control shutdown behaviour.
     previous section for more info). Otherwise standard 3 digits variation is
     used. *Note: the time unit is 6 minutes !*
 
-Note that *sdtype* and *advorder* are mutually exclusive. If *advorder* is provided,
-*sdtype* is ignored. If *advorder* is set to \'no', *sdtype* is used instead.
+Keep in mind that *sdtype* and *advorder* are mutually exclusive. If *advorder*
+is provided, *sdtype* is ignored. If *advorder* is set to \'no', *sdtype* is
+used instead.
 
-If nothing is provided, *NUT* will assume *sdtype*=0 - which is perfectly fine
+If nothing is provided, *NUT* will assume *sdtype*=0 - which is generally fine
 for anything not too ancient or not too quirky.
 
 SDTYPE
@@ -225,7 +226,7 @@ IGNORING LB STATE
 
 APC units - even if they report LB mode - will not go into shutdown
 automatically. This gives us even more control with reference to "when to
-actually shutdown psu". Since version 2.6.1, NUT supports *ignorelb* option in
+actually shutdown psu". Since version 2.6.2, NUT supports *ignorelb* option in
 driver\'s section of linkman:ups.conf[5]. When such option is in effect,
 the core driver will ignore LB state as reported by specific driver and 
 start shutdown basing the decision _only_ on two conditions:
@@ -271,6 +272,9 @@ remaining runtime (especially right after going into OB state). *ignorelb*
 option and *$$override.*$$* let you remain in control of the ups, not ups in control
 of you.
 
+Furthermore, this allows to specify conditions similary to how it's done in
+apcupsd daemon, so it should be welcome by people used to that software.
+
 
 SUPPORTED INSTANT COMMANDS
 --------------------------
@@ -292,7 +296,7 @@ executes "instant poweroff"
 All the above commands must be issued 2nd time to have any effect (no less than 3
 seconds, and no more than 15 seconds after the initial call). Those commands are
 mostly useful for manual testing, when your machine is not powered by the ups
-you\'re testing (obviously).
+you\'re testing.
 
 Other supported commands:
 
@@ -321,10 +325,9 @@ AUTHOR
 
 Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk> (drawing
 heavily on the original apcsmart driver by Russell Kroll). This driver
-was called newapc for a time and was renamed in the 1.5 series.
-
-Since 2011, the driver is maintained by Michal Soltys <soltys@ziu.info>. The
-drivers has gained a load of new fatures as well.
+was called newapc for a time and was renamed in the 1.5 series. In 2.6.2
+it was renamed to apcsmart-old, being superseded by updated version with
+new features, which is maintained by Michal Soltys <soltys@ziu.info>
 
 SEE ALSO
 --------
