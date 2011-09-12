@@ -65,6 +65,8 @@ typedef struct {
 
 const char *upscli_strerror(UPSCONN_t *ups);
 
+int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags, struct timeval *tv);
+
 int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags);
 
 /* --- functions that only use the new names --- */
