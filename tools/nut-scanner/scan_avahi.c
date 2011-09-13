@@ -53,8 +53,8 @@ static void update_device(const char * host_name,const char *ip, uint16_t port,c
 	char * device = NULL;
 	char * device_saveptr = NULL;
 	int device_found = 0;
-	int ret;
 	char buf[6];
+	int buf_size;
 
 	if( text == NULL ) {
 		return;
@@ -93,12 +93,28 @@ static void update_device(const char * host_name,const char *ip, uint16_t port,c
 			}
 
 			if( port != PORT) {
-				ret = asprintf(&dev->port,"%s@%s:%u",device,host_name,port);
+				/* +5+1+1+1 is for : 
+				 - port number (max 65535 so 5 characters),
+				 - '@' and ':' characters
+				 - terminating 0 */
+				buf_size = strlen(device)+strlen(host_name)+
+						5+1+1+1;
+				dev->port=malloc(buf_size);
+				if(dev->port) {
+					snprintf(dev->port,buf_size,"%s@%s:%u",
+							device,host_name,port);
+				}
 			}
 			else {
-				ret = asprintf(&dev->port,"%s@%s",device,host_name);
+				/*+1+1 is for '@' character and terminating 0 */
+				buf_size = strlen(device)+strlen(host_name)+1+1;
+				dev->port=malloc(buf_size);
+				if(dev->port) {
+					snprintf(dev->port,buf_size,"%s@%s",
+							device,host_name);
+				}
 			}
-			if( ret != -1) {
+			if( dev->port ) {
 				dev_ret = nutscan_add_device_to_device(dev_ret,dev);
 			}
 			else {
@@ -131,12 +147,19 @@ static void update_device(const char * host_name,const char *ip, uint16_t port,c
 				nutscan_add_option_to_device(dev,"desc","IPv6");
 			}
 			if( port != PORT) {
-				ret = asprintf(&dev->port,"%s:%u",host_name,port);
+				/*+1+1 is for ':' character and terminating 0 */
+				/*buf is the string containing the port number*/
+				buf_size = strlen(host_name)+strlen(buf)+1+1;
+				dev->port=malloc(buf_size);
+				if(dev->port) {
+					snprintf(dev->port,buf_size,"%s:%s",
+							host_name,buf);
+				}
 			}
 			else {
-				ret = asprintf(&dev->port,"%s",host_name);
+				dev->port=strdup(host_name);
 			}
-			if( ret != -1) {
+			if( dev->port ) {
 				dev_ret = nutscan_add_device_to_device(dev_ret,dev);
 			}
 			else {

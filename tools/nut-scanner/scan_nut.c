@@ -46,6 +46,7 @@ static void * list_nut_devices(void * arg)
 	char *hostname = NULL;
 	UPSCONN_t *ups = malloc(sizeof(*ups));
 	nutscan_device_t * dev = NULL;
+	int buf_size;
 
 	tv.tv_sec = nut_arg->timeout / (1000*1000);
 	tv.tv_usec = nut_arg->timeout % (1000*1000);
@@ -86,8 +87,12 @@ static void * list_nut_devices(void * arg)
 			dev = nutscan_new_device();
 			dev->type = TYPE_NUT;
 			dev->driver = strdup("nutclient");
-			if( asprintf(&dev->port,"%s@%s",answer[1],hostname)
-					!= -1) {
+			/* +1+1 is for '@' character and terminnating 0 */
+			buf_size = strlen(answer[1])+strlen(hostname)+1+1;
+			dev->port = malloc(buf_size);
+			if( dev->port ) {
+				snprintf(dev->port,buf_size,"%s@%s",answer[1],
+						hostname);
 #ifdef HAVE_PTHREAD
 				pthread_mutex_lock(&dev_mutex);
 #endif
