@@ -12,7 +12,7 @@ libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include
 
 bin_PROGRAMS = nut-scanner
 nut_scanner_SOURCES = nut-scanner.c
-nut_scanner_CFLAGS = -I$(top_srcdir)/clients
+nut_scanner_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include
 nut_scanner_LDADD = libnutscan.la
 
 if WITH_SSL
