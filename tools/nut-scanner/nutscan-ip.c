@@ -156,14 +156,14 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 	char * saveptr = NULL;
 	nutscan_ip_iter_t ip;
 	int mask_val;
-	long long mask_bit;
+	long mask_bit;
 	char buf[SMALLBUF];
 
 	*start_ip = NULL;
 	*stop_ip = NULL;
 
 	cidr_tok = strdup(cidr);
-	first_ip = strtok_r(cidr_tok,"/",&saveptr);
+	first_ip = strdup(strtok_r(cidr_tok,"/",&saveptr));
 	if( first_ip == NULL) {
 		return 0;
 	}
@@ -181,20 +181,28 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
                 /*Try IPv6 detection */
                 ip.type = IPv6;
                 if(!inet_pton(AF_INET6, first_ip, &ip.start6)){
+			free(first_ip);
                         return 0;
                 }
         }
 
 	if( ip.type == IPv4 ) {
 
-		mask_bit = 0x100000000;
-		mask_bit >>= mask_val;
-		mask_bit--;
+		if( mask_val > 0 ) {
+			mask_val --;
+			mask_bit = 0x80000000;
+			mask_bit >>= mask_val;
+			mask_bit--;
+		}
+		else {
+			mask_bit = 0xffffffff;
+		}
 		ip.stop.s_addr = htonl(ntohl(ip.start.s_addr)|mask_bit);
 		ip.start.s_addr = htonl(ntohl(ip.start.s_addr)&(~mask_bit));
 
 		*start_ip = strdup(inet_ntoa(ip.start));
 		*stop_ip = strdup(inet_ntoa(ip.stop));
+		free(first_ip);
 		return 1;
 	}
 	else {
@@ -208,35 +216,59 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 				if( mask_val < 32 ) {
 					ip.stop6.s6_addr32[1] = 0xffffffff;
 					ip.start6.s6_addr32[1] = 0;
-					mask_bit = 0x100000000;
-					mask_bit >>= mask_val;
-					mask_bit--;
+					if( mask_val > 0 ) {
+						mask_val --;
+						mask_bit = 0x80000000;
+						mask_bit >>= mask_val;
+						mask_bit--;
+					}
+					else {
+						mask_bit = 0xffffffff;
+					}
 					ip.stop6.s6_addr32[0] = htonl(ntohl(ip.start6.s6_addr32[0])|mask_bit);
 					ip.start6.s6_addr32[0] = htonl(ntohl(ip.start6.s6_addr32[0])&(~mask_bit));
 				}
 				else {
 					mask_val -= 32;
-					mask_bit = 0x100000000;
-					mask_bit >>= mask_val;
-					mask_bit--;
+					if( mask_val > 0 ) {
+						mask_val --;
+						mask_bit = 0x80000000;
+						mask_bit >>= mask_val;
+						mask_bit--;
+					}
+					else {
+						mask_bit = 0xffffffff;
+					}
 					ip.stop6.s6_addr32[1] = htonl(ntohl(ip.start6.s6_addr32[1])|mask_bit);
 					ip.start6.s6_addr32[1] = htonl(ntohl(ip.start6.s6_addr32[1])&(~mask_bit));
 				}
 			}
 			else {
 				mask_val -= 64;
-				mask_bit = 0x100000000;
-				mask_bit >>= mask_val;
-				mask_bit--;
+				if( mask_val > 0 ) {
+					mask_val --;
+					mask_bit = 0x80000000;
+					mask_bit >>= mask_val;
+					mask_bit--;
+				}
+				else {
+					mask_bit = 0xffffffff;
+				}
 				ip.stop6.s6_addr32[2] = htonl(ntohl(ip.start6.s6_addr32[2])|mask_bit);
 				ip.start6.s6_addr32[2] = htonl(ntohl(ip.start6.s6_addr32[2])&(~mask_bit));
 			}
 		}
 		else {
 			mask_val -= 96;
-			mask_bit = 0x100000000;
-			mask_bit >>= mask_val;
-			mask_bit--;
+			if( mask_val > 0 ) {
+				mask_val --;
+				mask_bit = 0x80000000;
+				mask_bit >>= mask_val;
+				mask_bit--;
+			}
+			else {
+				mask_bit = 0xffffffff;
+			}
 			ip.stop6.s6_addr32[3] = htonl(ntohl(ip.start6.s6_addr32[3])|mask_bit);
 			ip.start6.s6_addr32[3] = htonl(ntohl(ip.start6.s6_addr32[3])&(~mask_bit));
 		}
@@ -247,5 +279,6 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 		*stop_ip = strdup(buf);
 	}
 
+	free(first_ip);
 	return 1;
 }
