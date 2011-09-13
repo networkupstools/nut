@@ -128,6 +128,13 @@ AC_CHECK_DECLS(optind, [], [
 	], [AC_INCLUDES_DEFAULT])
 ], [AC_INCLUDES_DEFAULT])
 
+dnl do a 2nd check to ensure inclusion of getopt.h, in case optind is known
+AC_CHECK_HEADERS(getopt.h, [
+	AC_DEFINE(NEED_GETOPT_H, 1, [Define if getopt.h is needed])
+], [
+	AC_DEFINE(NEED_GETOPT_DECLS, 1, [Define to use explicit getopt declarations])
+], [AC_INCLUDES_DEFAULT])
+
 dnl FreeBSD serial locking compatibility - look for uu_lock in libutil.h
 AC_CHECK_DECLS(uu_lock, [
 	AC_DEFINE(HAVE_UU_LOCK, 1, [Use uu_lock for locking (FreeBSD)])
