@@ -135,6 +135,9 @@ AC_CHECK_HEADERS(getopt.h, [
 	AC_DEFINE(NEED_GETOPT_DECLS, 1, [Define to use explicit getopt declarations])
 ], [AC_INCLUDES_DEFAULT])
 
+dnl also check for getopt_long
+AC_CHECK_FUNCS(getopt_long)
+
 dnl FreeBSD serial locking compatibility - look for uu_lock in libutil.h
 AC_CHECK_DECLS(uu_lock, [
 	AC_DEFINE(HAVE_UU_LOCK, 1, [Use uu_lock for locking (FreeBSD)])

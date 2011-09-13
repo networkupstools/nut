@@ -22,18 +22,19 @@
 #include <stdarg.h>
 #include "config.h"
 #include <unistd.h>
-#include <getopt.h>
 #include <string.h>
 #ifdef HAVE_PTHREAD
 #include <pthread.h>
 #endif
 
-
+#include "common.h"
 #include "nut-scan.h"
 
 #define DEFAULT_TIMEOUT 5
 
 const char optstring[] = "?ht:s:e:c:l:u:W:X:w:x:p:CUSMOAm:NPqI";
+
+#ifdef HAVE_GETOPT_LONG
 const struct option longopts[] =
 	{{ "timeout",required_argument,NULL,'t' },
 	{ "start_ip",required_argument,NULL,'s' },
@@ -59,6 +60,9 @@ const struct option longopts[] =
 	{ "quiet",no_argument,NULL,'q' },
 	{ "help",no_argument,NULL,'h' },
 	{NULL,0,NULL,0}};
+#else
+#define getopt_long(a,b,c,d,e)	getopt(a,b,c) 
+#endif /* HAVE_GETOPT_LONG */
 
 static nutscan_device_t *dev[TYPE_END];
 static pthread_t thread[TYPE_END];
@@ -149,7 +153,7 @@ int main(int argc, char *argv[])
 
 	display_func = nutscan_display_ups_conf;
 
-	while((opt_ret = getopt_long(argc, argv,optstring,longopts,NULL))!=-1) {
+	while((opt_ret = getopt_long(argc, argv, optstring, longopts, NULL))!=-1) {
 
 		switch(opt_ret) {
 			case 't':
