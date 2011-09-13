@@ -1693,8 +1693,7 @@ int setvar (const char *varname, const char *val)
 {
 	unsigned char answer[128], cbuf[5];
 	char namebuf[MAX_NUT_NAME_LENGTH];
-	int res, outlet_num;
-	int16_t sec;	/* limit the size of the timer, to avoid overflow */
+	int res, sec, outlet_num;
 	int onOff_setting = PW_AUTO_OFF_DELAY;
 
 	upsdebugx(1, "entering setvar(%s, %s)", varname, val);
@@ -1740,8 +1739,6 @@ int setvar (const char *varname, const char *val)
 	cbuf[3] = sec&0xff;					/* Delay in seconds LSB */
 	cbuf[4] = sec>>8;					/* Delay in seconds MSB */
 
-upsdebugx(1, "MSB = %d", sec>>8);
-upsdebug_hex(1, "cbuf", cbuf, 5);
 	res = command_write_sequence(cbuf, 5, answer);
 	if (res <= 0) {
 		upslogx(LOG_ERR, "Short read from UPS");
