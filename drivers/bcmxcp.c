@@ -19,6 +19,9 @@
 
  ojw0000 2007Apr5 Oliver Wilcock - modified to control individual load segments (outlet.2.shutdown.return) on Powerware PW5125.
 
+ Modified to support setvar for outlet.n.delay.start by Rich Wrenn (RFW) 9-3-11.
+ Modified to support setvar for outlet.n.delay.shutdown by Arnaud Quette, 9-12-11 
+
 This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation; either version 2 of the License, or
@@ -109,18 +112,22 @@ TODO List:
 
 	Implement support for Password Authorization (XCP spec, §4.3.2)
 
-	Implement support for settable variables (upsh.setvar)
+	Complete support for settable variables (upsh.setvar)
 */
 
 
 #include "main.h"
 #include <math.h>		/* For ldexp() */
 #include <float.h> 		/*for FLT_MAX */
+#include "nut_stdint.h" /* for uint8_t, uint16_t, uint32_t, ... */
 #include "bcmxcp_io.h"
 #include "bcmxcp.h"
 
 #define DRIVER_NAME	"BCMXCP UPS driver"
-#define DRIVER_VERSION	"0.24"
+#define DRIVER_VERSION	"0.25"
+
+#define MAX_NUT_NAME_LENGTH		128
+#define NUT_OUTLET_POSITION		7
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -148,6 +155,7 @@ static void init_ups_alarm_map(const unsigned char *map, unsigned char len);
 static void decode_meter_map_entry(const unsigned char *entry, const unsigned char format, char* value);
 static int init_outlet(unsigned char len);
 static int instcmd(const char *cmdname, const char *extra);
+static int setvar (const char *varname, const char *val);
 
 
 const char *FreqTol[3] = {"+/-2%", "+/-5%", "+/-7"};
@@ -881,8 +889,8 @@ int init_outlet(unsigned char len)
 	res = command_read_sequence(PW_OUT_MON_BLOCK_REQ, answer);
 	if (res <= 0)
 		fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
-else
-	upsdebugx(1, "init_outlet(%i), res=%i", len, res);
+	else
+		upsdebugx(1, "init_outlet(%i), res=%i", len, res);
 
 	num_outlet = answer[iIndex++];
 	upsdebugx(2, "Number of outlets: %d\n", num_outlet);
@@ -906,12 +914,16 @@ else
 		upsdebugx(2, "Auto delay off: %d\n", auto_dly_off);
 		snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.delay.shutdown", num);
 		dstate_setinfo(outlet_name, "%d", auto_dly_off);
+        dstate_setflags(outlet_name, ST_FLAG_RW | ST_FLAG_STRING);
+        dstate_setaux(outlet_name, 5);
 
 		auto_dly_on = get_word(answer+iIndex);
 		iIndex += 2;
 		upsdebugx(2, "Auto delay on: %d\n", auto_dly_on);
 		snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.delay.start", num);
 		dstate_setinfo(outlet_name, "%d", auto_dly_on);
+        dstate_setflags(outlet_name, ST_FLAG_RW | ST_FLAG_STRING);
+        dstate_setaux(outlet_name, 5);
 	}
 
 	return num_outlet;
@@ -1221,6 +1233,7 @@ void upsdrv_initinfo(void)
 	dstate_addcmd("test.battery.start");
 
 	upsh.instcmd = instcmd;
+    upsh.setvar = setvar;
 
 	return;
 }
@@ -1465,9 +1478,11 @@ void upsdrv_shutdown(void)
 
 static int instcmd(const char *cmdname, const char *extra)
 {
-	unsigned char answer[5], cbuf[6];
-
+	unsigned char answer[128], cbuf[6];
+	char varname[32];
+	const char *varvalue = NULL;
 	int res, sec;
+	int sddelay = 0x03;	/* outlet off in 3 seconds, by default */
 
 	upsdebugx(1, "entering instcmd(%s)", cmdname);
 
@@ -1480,9 +1495,15 @@ static int instcmd(const char *cmdname, const char *extra)
 
 		sleep(1);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
 
+		/* Get the shutdown delay, if any */
+		snprintf(varname, sizeof(varname)-1, "outlet.%c.delay.shutdown", cmdname[7]);
+		if ((varvalue = dstate_getinfo(varname)) != NULL) {
+			sddelay = atoi(dstate_getinfo(varname));
+		}
+
 		cbuf[0] = PW_LOAD_OFF_RESTART;
-		cbuf[1] = 0x03; /* outlet off in 3 seconds */
-		cbuf[2] = 0x00; /* high byte of the 2 byte time argument */
+		cbuf[1] = sddelay & 0xff;
+		cbuf[2] = sddelay >> 8;		/* high byte of the 2 byte time argument */
 		cbuf[3] = ( '1' == cmdname[7] ? 0x01 : 0x02); /* which outlet load segment?  Assumes '1' or '2' at position 8 of the command string. */
 
 		/* ojw00000 the following copied from command "shutdown.return" below 2007Apr5 */
@@ -1586,7 +1607,7 @@ static int instcmd(const char *cmdname, const char *extra)
 				break;
 				}
 			case 0x33: {
-				upslogx(LOG_NOTICE, "[%s] disbled by front panel", cmdname);
+				upslogx(LOG_NOTICE, "[%s] disabled by front panel", cmdname);
 				return STAT_INSTCMD_UNKNOWN;
 				break;
 				}
@@ -1596,7 +1617,8 @@ static int instcmd(const char *cmdname, const char *extra)
 				break;
 				}
 			default: {
-				upslogx(LOG_NOTICE, "[%s] not supported", cmdname);
+				upslogx(LOG_NOTICE, "[%s] not supported (code %c)",
+					cmdname, (unsigned char) answer[0]);
 				return STAT_INSTCMD_UNKNOWN;
 				break;
 				}
@@ -1666,4 +1688,100 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "shutdown_delay", "Specify shutdown delay (seconds)");
 	addvar(VAR_VALUE, "baud_rate", "Specify communication speed (ex: 9600)");
 }
+
+int setvar (const char *varname, const char *val)
+{
+	unsigned char answer[128], cbuf[5];
+	char namebuf[MAX_NUT_NAME_LENGTH];
+	int res, outlet_num;
+	int16_t sec;	/* limit the size of the timer, to avoid overflow */
+	int onOff_setting = PW_AUTO_OFF_DELAY;
+
+	upsdebugx(1, "entering setvar(%s, %s)", varname, val);
+
+	strncpy(namebuf, varname, sizeof(namebuf));
+	namebuf[NUT_OUTLET_POSITION] = 'n'; /* Assumes a maximum of 9 outlets */
+
+	if ( (strcasecmp(namebuf, "outlet.n.delay.start")) &&
+		(strcasecmp(namebuf, "outlet.n.delay.shutdown")) ) {
+			return STAT_SET_UNKNOWN;
+	}
+
+	if (outlet_block_len <= 8) {
+		return STAT_SET_INVALID;
+	}
+
+	if (!strcasecmp(namebuf, "outlet.n.delay.start")) {
+		onOff_setting = PW_AUTO_ON_DELAY;
+	}
+
+	send_write_command(AUTHOR, 4);
+	/* Need to. Have to wait at least 0.25 sec max 16 sec */
+	sleep (1);
+
+	outlet_num = varname[NUT_OUTLET_POSITION] - '0';
+	if (outlet_num < 1 || outlet_num > 9) {
+		return STAT_SET_INVALID;
+	}
+
+	sec = atoi(val);
+	/* Check value:
+	 *	0-32767 are valid values
+	 *	-1 means no Automatic off or restart
+	 * for Auto Off Delay:
+	 *	0-30 are valid but ill-advised */
+	if (sec < -1 || sec > 0x7FFF) {
+		return STAT_SET_INVALID;
+	}
+
+	cbuf[0] = PW_SET_OUTLET_COMMAND;	/* Cmd */
+	cbuf[1] = onOff_setting;			/* Set Auto Off (1) or On (2) Delay */
+	cbuf[2] = outlet_num;				/* Outlet number */
+	cbuf[3] = sec&0xff;					/* Delay in seconds LSB */
+	cbuf[4] = sec>>8;					/* Delay in seconds MSB */
+
+upsdebugx(1, "MSB = %d", sec>>8);
+upsdebug_hex(1, "cbuf", cbuf, 5);
+	res = command_write_sequence(cbuf, 5, answer);
+	if (res <= 0) {
+		upslogx(LOG_ERR, "Short read from UPS");
+		dstate_datastale();
+		return -1;
+	}
+
+	switch ((unsigned char) answer[0]) {
+
+		case 0x31: {
+			upslogx(LOG_NOTICE,"Outlet %d %s delay set to %d sec",
+				outlet_num, (onOff_setting == PW_AUTO_ON_DELAY)?"start":"shutdown", sec);
+			dstate_setinfo(varname, "%d", sec);
+			return STAT_SET_HANDLED;
+			break;
+			}
+		case 0x33: {
+			upslogx(LOG_NOTICE, "Set [%s] failed due to UPS busy", varname);
+			/* TODO: we should probably retry... */
+			return STAT_SET_UNKNOWN;
+			break;
+			}
+		case 0x35: {
+			upslogx(LOG_NOTICE, "Set [%s %s] failed due to parameter out of range", varname, val);
+			return STAT_SET_UNKNOWN;
+			break;
+			}
+		case 0x36: {
+			upslogx(LOG_NOTICE, "Set [%s %s] failed due to invalid parameter", varname, val);
+			return STAT_SET_UNKNOWN;
+			break;
+			}
+		default: {
+			upslogx(LOG_NOTICE, "Set [%s] not supported", varname);
+			return STAT_SET_FAILED;
+			break;
+			}
+	}
+
+	return STAT_SET_INVALID;
+}
+
 
