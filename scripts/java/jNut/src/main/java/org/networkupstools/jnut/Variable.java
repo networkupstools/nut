@@ -26,7 +26,7 @@ import java.io.IOException;
  * It can be used to get and set its value (if possible).
  * A Variable object can be retrieved from Device instance and can not be constructed directly.
  * 
- * @author Emilien Kia <EmilienKia@eaton.com>
+ * @author <a href="mailto:EmilienKia@eaton.com">Emilien Kia</a>
  */
 public class Variable {
     /**

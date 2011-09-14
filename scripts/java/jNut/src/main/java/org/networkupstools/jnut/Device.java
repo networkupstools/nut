@@ -27,7 +27,7 @@ import java.util.ArrayList;
  * It can retrieve its description, its number of logins, its variable and command lists.
  * A Device object can be retrieved from Client instance and can not be constructed directly.
  * 
- * @author Emilien Kia <EmilienKia@eaton.com>
+ * @author <a href="mailto:EmilienKia@eaton.com">Emilien Kia</a>
  */
 public class Device {
     

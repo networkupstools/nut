@@ -31,7 +31,7 @@ package org.networkupstools.jnut;
  * to error code returns by UPSD (like 'ACCESS-DENIED', 'UNKNOWN-UPS' ...).
  * An extra string embed a more descriptive english message.
  * 
- * @author Emilien Kia <EmilienKia@eaton.com>
+ * @author <a href="mailto:EmilienKia@eaton.com">Emilien Kia</a>
  */
 public class NutException extends java.lang.Exception{
 

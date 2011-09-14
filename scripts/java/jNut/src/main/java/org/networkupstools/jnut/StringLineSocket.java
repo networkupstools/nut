@@ -29,7 +29,7 @@ import java.net.UnknownHostException;
  * Class representing a socket, internally used to communicate with UPSD.
  * Abstract some stream mechanisms.
  * 
- * @author Emilien Kia <EmilienKia@eaton.com>
+ * @author <a href="mailto:EmilienKia@eaton.com">Emilien Kia</a>
  */
 class StringLineSocket {
     

@@ -45,7 +45,7 @@ import java.util.ArrayList;
  * Note: Retrieved values are not valid along the time, they are valid at the
  * precise moment they are retrieved.
  * 
- * @author Emilien Kia <EmilienKia@eaton.com>
+ * @author <a href="mailto:EmilienKia@eaton.com">Emilien Kia</a>
  */
 public class Client {
     
