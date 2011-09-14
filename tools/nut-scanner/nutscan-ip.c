@@ -23,29 +23,23 @@
 
 static void increment_IPv6(struct in6_addr * addr)
 {
-        addr->s6_addr32[3]=htonl((ntohl(addr->s6_addr32[3])+1));
-        if( addr->s6_addr32[3] == 0 ) {
-                addr->s6_addr32[2] = htonl((ntohl(addr->s6_addr32[2])+1));
-                if( addr->s6_addr32[2] == 0 ) {
-                        addr->s6_addr32[1]=htonl((ntohl(addr->s6_addr32[1])+1));
-                        if( addr->s6_addr32[1] == 0 ) {
-                                addr->s6_addr32[0] =
-                                        htonl((ntohl(addr->s6_addr32[0])+1));
-                        }
-                }
-        }
+	int i;
+
+	for( i=15 ; i>= 0 ; i--) {
+		addr->s6_addr[i]++;
+		if( addr->s6_addr[i] != 0) {
+			break;
+		}
+	}
 }
 
 static void invert_IPv6(struct in6_addr * addr1, struct in6_addr * addr2)
 {
-        int i;
-        unsigned long addr;
+	struct in6_addr addr;
 
-        for( i=0; i<4; i++) {
-                addr = addr1->s6_addr32[i];
-                addr1->s6_addr32[i] = addr2->s6_addr32[i];
-                addr2->s6_addr32[i] = addr;
-        }
+	memcpy(addr.s6_addr,addr1->s6_addr,sizeof(addr.s6_addr));
+	memcpy(addr1->s6_addr,addr2->s6_addr,sizeof(addr.s6_addr));
+	memcpy(addr2->s6_addr,addr.s6_addr,sizeof(addr.s6_addr));
 }
 
 /* Return the first ip or NULL if error */
@@ -98,13 +92,10 @@ char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, const char * startIP, const 
 		return strdup(inet_ntoa(ip->start));
         }
         else { /* IPv6 */
-                for( i=0; i<4; i++ ) {
-                        if( ntohl(ip->start6.s6_addr32[i]) !=
-                                ntohl(ip->stop6.s6_addr32[i]) ) {
-                                if( ntohl(ip->start6.s6_addr32[i]) >
-                                        ntohl(ip->stop6.s6_addr32[i])) {
-                                        invert_IPv6(&ip->start6,
-                                                        &ip->stop6);
+                for( i=0; i<16; i++ ) {
+                        if( ip->start6.s6_addr[i] !=ip->stop6.s6_addr[i] ) {
+                                if(ip->start6.s6_addr[i]>ip->stop6.s6_addr[i]){
+                                        invert_IPv6(&ip->start6,&ip->stop6);
                                 }
                                 break;
                         }
@@ -135,10 +126,8 @@ char * nutscan_ip_iter_inc(nutscan_ip_iter_t * ip)
 	}
 	else {
 		/* Check if this is the last address to scan */
-		if(ip->start6.s6_addr32[0]==ip->stop6.s6_addr32[0]&&
-			ip->start6.s6_addr32[1]==ip->stop6.s6_addr32[1]&&
-			ip->start6.s6_addr32[2]==ip->stop6.s6_addr32[2]&&
-			ip->start6.s6_addr32[3]==ip->stop6.s6_addr32[3]){
+		if( memcmp(&ip->start6.s6_addr, &ip->stop6.s6_addr,
+				sizeof(ip->start6.s6_addr)) == 0 ) {
 			return NULL;
 		}
 
@@ -156,6 +145,7 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 	char * saveptr = NULL;
 	nutscan_ip_iter_t ip;
 	int mask_val;
+	int mask_byte;
 	long mask_bit;
 	char buf[SMALLBUF];
 
@@ -207,70 +197,15 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 	}
 	else {
                 inet_pton(AF_INET6, first_ip, &ip.stop6);
-		if( mask_val < 96 ) {
-			ip.stop6.s6_addr32[3] = 0xffffffff;
-			ip.start6.s6_addr32[3] = 0;
-			if( mask_val < 64 ) {
-				ip.stop6.s6_addr32[2] = 0xffffffff;
-				ip.start6.s6_addr32[2] = 0;
-				if( mask_val < 32 ) {
-					ip.stop6.s6_addr32[1] = 0xffffffff;
-					ip.start6.s6_addr32[1] = 0;
-					if( mask_val > 0 ) {
-						mask_val --;
-						mask_bit = 0x80000000;
-						mask_bit >>= mask_val;
-						mask_bit--;
-					}
-					else {
-						mask_bit = 0xffffffff;
-					}
-					ip.stop6.s6_addr32[0] = htonl(ntohl(ip.start6.s6_addr32[0])|mask_bit);
-					ip.start6.s6_addr32[0] = htonl(ntohl(ip.start6.s6_addr32[0])&(~mask_bit));
-				}
-				else {
-					mask_val -= 32;
-					if( mask_val > 0 ) {
-						mask_val --;
-						mask_bit = 0x80000000;
-						mask_bit >>= mask_val;
-						mask_bit--;
-					}
-					else {
-						mask_bit = 0xffffffff;
-					}
-					ip.stop6.s6_addr32[1] = htonl(ntohl(ip.start6.s6_addr32[1])|mask_bit);
-					ip.start6.s6_addr32[1] = htonl(ntohl(ip.start6.s6_addr32[1])&(~mask_bit));
-				}
-			}
-			else {
-				mask_val -= 64;
-				if( mask_val > 0 ) {
-					mask_val --;
-					mask_bit = 0x80000000;
-					mask_bit >>= mask_val;
-					mask_bit--;
-				}
-				else {
-					mask_bit = 0xffffffff;
-				}
-				ip.stop6.s6_addr32[2] = htonl(ntohl(ip.start6.s6_addr32[2])|mask_bit);
-				ip.start6.s6_addr32[2] = htonl(ntohl(ip.start6.s6_addr32[2])&(~mask_bit));
-			}
-		}
-		else {
-			mask_val -= 96;
-			if( mask_val > 0 ) {
-				mask_val --;
-				mask_bit = 0x80000000;
-				mask_bit >>= mask_val;
-				mask_bit--;
-			}
-			else {
-				mask_bit = 0xffffffff;
-			}
-			ip.stop6.s6_addr32[3] = htonl(ntohl(ip.start6.s6_addr32[3])|mask_bit);
-			ip.start6.s6_addr32[3] = htonl(ntohl(ip.start6.s6_addr32[3])&(~mask_bit));
+
+		mask_byte = mask_val / 8;
+		if( mask_byte < 16 ) {
+			memset( &(ip.stop6.s6_addr[mask_byte+1]), 0xFF, 15 - mask_byte);
+			memset( &(ip.start6.s6_addr[mask_byte+1]), 0x00, 15 - mask_byte);
+
+			mask_bit = (0x100 >> mask_val%8)-1;
+			ip.stop6.s6_addr[mask_byte] |= mask_bit;
+			ip.start6.s6_addr[mask_byte] &= (~mask_bit);
 		}
 
 		inet_ntop(AF_INET6,&ip.start6,buf,sizeof(buf));
