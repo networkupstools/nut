@@ -80,10 +80,14 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 	dev->type = TYPE_SNMP;
 	dev->driver = strdup("snmp-ups");
 	dev->port = strdup(session->peername);
-	buf = strndup((char*)response->variables->val.string,
-			(int)response->variables->val_len);
-	nutscan_add_option_to_device(dev,"desc",buf);
-	free(buf);
+	buf = malloc( response->variables->val_len + 1 );
+	if( buf ) {
+		memcpy(buf,response->variables->val.string,
+			response->variables->val_len);
+		buf[response->variables->val_len]=0;
+		nutscan_add_option_to_device(dev,"desc",buf);
+		free(buf);
+	}
 	nutscan_add_option_to_device(dev,"mibs",mib);
 	/* SNMP v3 */
 	if( session->community == NULL || session->community[0] == 0) {
@@ -113,10 +117,14 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 		}
 	}
 	else {
-		buf = strndup((char*)session->community,
+		buf = malloc( session->community_len + 1 );
+		if( buf ) {
+			memcpy(buf,session->community,
 				session->community_len);
-		nutscan_add_option_to_device(dev,"community",buf);
-		free(buf);
+			buf[session->community_len]=0;
+			nutscan_add_option_to_device(dev,"community",buf);
+			free(buf);
+		}
 	}
 
 #ifdef HAVE_PTHREAD
