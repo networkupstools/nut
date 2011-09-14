@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "config.h"
+#include "common.h"
 
 #ifdef HAVE_NET_SNMP_NET_SNMP_CONFIG_H
 
@@ -58,7 +58,6 @@
 #include <pthread.h>
 #endif
 #include "nutscan-snmp.h"
-#include "common.h"
 
 
 #define SysOID ".1.3.6.1.2.1.1.2.0"
