@@ -26,6 +26,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <stdio.h>
+#include <string.h>
 
 /* workaround for buggy Net-SNMP config
  * from drivers/snmp-ups.h */

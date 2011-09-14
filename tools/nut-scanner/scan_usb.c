@@ -22,6 +22,7 @@
 #include "upsclient.h"
 #include "nutscan-usb.h"
 #include <stdio.h>
+#include <string.h>
 #include "nutscan-device.h"
 
 static char* is_usb_device_supported(usb_device_id_t *usb_device_id_list,
