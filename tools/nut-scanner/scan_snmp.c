@@ -50,8 +50,6 @@
 #undef PACKAGE_TARNAME
 #endif
 
-#endif
-
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 #ifdef HAVE_PTHREAD
