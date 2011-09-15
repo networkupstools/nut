@@ -20,7 +20,10 @@
 #include "common.h"
 #include "upsclient.h"
 #include "nut-scan.h"
+#ifdef HAVE_PTHREAD
 #include <pthread.h>
+#endif
+
 
 static nutscan_device_t * dev_ret = NULL;
 #ifdef HAVE_PTHREAD
