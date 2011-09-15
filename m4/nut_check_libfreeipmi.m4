@@ -18,12 +18,12 @@ if test -z "${nut_have_libfreeipmi_seen}"; then
 	dnl but NUT should only require 0.8.5 or 1.0.1 (comment from upstream Al Chu)
 	FREEIPMI_VERSION="`pkg-config --silence-errors --modversion libfreeipmi 2>/dev/null`"
 	if test "$?" = "0" -a -n "${FREEIPMI_VERSION}"; then
-		CFLAGS="`pkg-config --silence-errors --cflags libfreeipmi 2>/dev/null`"
-		LIBS="`pkg-config --silence-errors --libs libfreeipmi 2>/dev/null`"
+		CFLAGS="`pkg-config --silence-errors --cflags libfreeipmi libipmimonitoring 2>/dev/null`"
+		LIBS="`pkg-config --silence-errors --libs libfreeipmi libipmimonitoring 2>/dev/null`"
 	else
 		FREEIPMI_VERSION="none"
 		CFLAGS=""
-		LIBS="-lfreeipmi"
+		LIBS="-lfreeipmi -lipmimonitoring"
 	fi
 	AC_MSG_RESULT(${FREEIPMI_VERSION} found)
 
@@ -58,13 +58,15 @@ if test -z "${nut_have_libfreeipmi_seen}"; then
 	], [])
 	AC_MSG_RESULT([${LIBS}])
 
-	dnl check if freeipmi is usable
+	dnl check if freeipmi is usable with our current flags
 	AC_CHECK_HEADERS(freeipmi/freeipmi.h, [nut_have_freeipmi=yes], [nut_have_freeipmi=no], [AC_INCLUDES_DEFAULT])
-	AC_CHECK_FUNCS(ipmi_ctx_create, [], [nut_have_freeipmi=no])
+	AC_CHECK_HEADERS(ipmi_monitoring.h, [], [nut_have_freeipmi=no], [AC_INCLUDES_DEFAULT])
+	AC_SEARCH_LIBS([ipmi_ctx_create], [freeipmi], [], [nut_have_freeipmi=no])
 	dnl when version cannot be tested (prior to 1.0.5, with no pkg-config)
 	dnl we have to check for some specific functions
-	AC_CHECK_FUNCS(ipmi_ctx_find_inband, [], [nut_have_freeipmi=no])
-	AC_CHECK_FUNCS(ipmi_fru_parse_ctx_create, [], [nut_have_freeipmi=no])
+	AC_SEARCH_LIBS([ipmi_ctx_find_inband], [freeipmi], [], [nut_have_freeipmi=no])
+	AC_SEARCH_LIBS([ipmi_fru_parse_ctx_create], [freeipmi], [], [nut_have_freeipmi=no])
+	AC_SEARCH_LIBS([ipmi_monitoring_init], [ipmimonitoring], [], [nut_have_freeipmi=no])
 
 	if test "${nut_have_freeipmi}" = "yes"; then
 		nut_with_ipmi="yes"

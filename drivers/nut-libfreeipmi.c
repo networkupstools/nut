@@ -1,9 +1,12 @@
 /*  nut-libfreeipmi.c - NUT IPMI backend, using FreeIPMI
  *
- *  Copyright (C) 2011 - Arnaud Quette <arnaud.quette@free.fr>
+ *  Copyright (C)
+ *    2011 - Arnaud Quette <arnaud.quette@free.fr>
+ *    2011 - Albert Chu <chu11@llnl.gov>
  *
- *  Based on the sample code 'ipmmi-fru-example.c', from FreeIPMI
- *    
+ *  Based on the sample codes 'ipmi-fru-example.c', 'frulib.c' and
+ *    'ipmimonitoring-sensors.c', from FreeIPMI
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -13,7 +16,6 @@
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
- *
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
@@ -25,21 +27,30 @@
 #include <string.h>
 #include <time.h>
 #include <freeipmi/freeipmi.h>
-/* need libipmimonitoring (not yet available as package)
- * #include <ipmi_monitoring.h>
-#include <ipmi_monitoring_bitmasks.h> */
+#include <ipmi_monitoring.h>
+#include <ipmi_monitoring_bitmasks.h>
 #include "common.h"
 #include "nut-ipmi.h"
+#include "dstate.h"
 
 /* FreeIPMI defines */
 #define IPMI_FRU_STR_BUFLEN    1024
-/* haven't seen a motherboard with more than 2-3 so far, 64 should be more than enough */
+/* haven't seen a motherboard with more than 2-3 so far,
+ * 64 should be more than enough */
 #define IPMI_FRU_CUSTOM_FIELDS 64
 
-/* FreeIPMI contexts */
+/* FreeIPMI contexts and configuration*/
 ipmi_ctx_t ipmi_ctx = NULL;
 ipmi_fru_parse_ctx_t fru_parse_ctx = NULL;
-/* ipmi_monitoring_ctx_t ctx = NULL; */
+ipmi_sdr_cache_ctx_t sdr_cache_ctx = NULL;
+ipmi_sdr_parse_ctx_t sdr_parse_ctx = NULL;
+ipmi_monitoring_ctx_t mon_ctx = NULL;
+struct ipmi_monitoring_ipmi_config ipmi_config;
+
+/* FIXME: freeipmi auto selects a cache based on the hostname you are
+ * connecting too, but this is probably fine for you
+ */
+#define CACHE_LOCATION "/tmp/sdrcache"
 
 /* Support functions */
 static const char* libfreeipmi_getfield (uint8_t language_code,
@@ -53,8 +64,13 @@ static int libfreeipmi_get_psu_info (const void *areabuf,
 static int libfreeipmi_get_board_info (const void *areabuf,
 	uint8_t area_length, IPMIDevice_t *ipmi_dev);
 
+static int libfreeipmi_get_sensors_info (IPMIDevice_t *ipmi_dev);
 
-int nutipmi_open(int ipmi_id, IPMIDevice_t *ipmi_dev)
+
+/*******************************************************************************
+ * Implementation
+ ******************************************************************************/
+int nut_ipmi_open(int ipmi_id, IPMIDevice_t *ipmi_dev)
 {
 	int ret = -1;
 	uint8_t areabuf[IPMI_FRU_PARSE_AREA_SIZE_MAX+1];
@@ -116,8 +132,8 @@ int nutipmi_open(int ipmi_id, IPMIDevice_t *ipmi_dev)
 			ipmi_fru_parse_ctx_errormsg (fru_parse_ctx));
 	}
 
-	/* Set IPMI identifier
-	ipmi_dev->ipmi_id = ipmi_id; */
+	/* Set IPMI identifier */
+	ipmi_dev->ipmi_id = ipmi_id;
 
 	do
 	{
@@ -161,18 +177,21 @@ int nutipmi_open(int ipmi_id, IPMIDevice_t *ipmi_dev)
 					}
 					break;
 				default:
-					upsdebugx (5, "FRU: discarding FRU Area Type Read: %02Xh\n", area_type);
+					upsdebugx (5, "FRU: discarding FRU Area Type Read: %02Xh", area_type);
 					break;
 			}
 		}
 	} while ((ret = ipmi_fru_parse_next (fru_parse_ctx)) == 1);
 
 	/* check for errors */
-	if (ret < 0)
-	{
+	if (ret < 0) {
 		libfreeipmi_cleanup();
-		fatal_with_errno(EXIT_FAILURE, "ipmi_fru_parse_next: %s\n",
+		fatal_with_errno(EXIT_FAILURE, "ipmi_fru_parse_next: %s",
 			ipmi_fru_parse_ctx_errormsg (fru_parse_ctx));
+	}
+	else {
+		/* Get all related sensors information */
+		libfreeipmi_get_sensors_info (ipmi_dev);
 	}
 
 	/* cleanup context */
@@ -181,7 +200,7 @@ int nutipmi_open(int ipmi_id, IPMIDevice_t *ipmi_dev)
 	return (0);
 }
 
-void nutipmi_close(void)
+void nut_ipmi_close(void)
 {
 	upsdebugx(1, "nutipmi_close...");
 
@@ -206,7 +225,7 @@ static const char* libfreeipmi_getfield (uint8_t language_code,
 													strbuf,
 													&strbuflen) < 0)
 		{
-			upsdebugx (2, "ipmi_fru_parse_type_length_field_to_string: %s\n",
+			upsdebugx (2, "ipmi_fru_parse_type_length_field_to_string: %s",
 				ipmi_fru_parse_ctx_errormsg (fru_parse_ctx));
 			return NULL;
 		}
@@ -236,20 +255,31 @@ static float libfreeipmi_get_voltage (uint8_t voltage_code)
 static void libfreeipmi_cleanup()
 {
 	/* cleanup */
-	if (fru_parse_ctx)
-	{
+	if (fru_parse_ctx) {
 		ipmi_fru_parse_close_device_id (fru_parse_ctx);
 		ipmi_fru_parse_ctx_destroy (fru_parse_ctx);
 	}
 
-	if (ipmi_ctx)
-	{
+	if (sdr_cache_ctx) {
+		ipmi_sdr_cache_ctx_destroy (sdr_cache_ctx);
+	}
+
+	if (sdr_parse_ctx) {
+		ipmi_sdr_parse_ctx_destroy (sdr_parse_ctx);
+	}
+
+	if (ipmi_ctx) {
 		ipmi_ctx_close (ipmi_ctx);
 		ipmi_ctx_destroy (ipmi_ctx);
 	}
+
+	if (mon_ctx) {
+		ipmi_monitoring_ctx_destroy (mon_ctx);
+	}
 }
 
-/* Get generic board information (manufacturer and model names, serial, ...) */
+/* Get generic board information (manufacturer and model names, serial, ...)
+ * from IPMI FRU */
 static int libfreeipmi_get_psu_info (const void *areabuf,
 										uint8_t area_length,
 										IPMIDevice_t *ipmi_dev)
@@ -326,7 +356,7 @@ static int libfreeipmi_get_psu_info (const void *areabuf,
 	return (0);
 }
 
-/* Get specific PSU information */
+/* Get specific PSU information from IPMI FRU */
 static int libfreeipmi_get_board_info (const void *areabuf,
 	uint8_t area_length, IPMIDevice_t *ipmi_dev)
 {
@@ -368,15 +398,17 @@ static int libfreeipmi_get_board_info (const void *areabuf,
 			IPMI_FRU_CUSTOM_FIELDS) < 0)
 	{
 		libfreeipmi_cleanup();
-		fatalx(EXIT_FAILURE, "ipmi_fru_parse_board_info_area: %s\n",
+		fatalx(EXIT_FAILURE, "ipmi_fru_parse_board_info_area: %s",
 			ipmi_fru_parse_ctx_errormsg (fru_parse_ctx));
 	}
 
 
-	if (IPMI_FRU_LANGUAGE_CODE_VALID (language_code))
-		printf ("  FRU Board Language: %s\n", ipmi_fru_language_codes[language_code]);
-	else
-		printf ("  FRU Board Language Code: %02Xh\n", language_code);
+	if (IPMI_FRU_LANGUAGE_CODE_VALID (language_code)) {
+		upsdebugx (5, "FRU Board Language: %s", ipmi_fru_language_codes[language_code]);
+	}
+	else {
+		upsdebugx (5, "FRU Board Language Code: %02Xh", language_code);
+	}
 
 	/* Posix says individual calls need not clear/set all portions of
 	 * 'struct tm', thus passing 'struct tm' between functions could
@@ -389,7 +421,7 @@ static int libfreeipmi_get_board_info (const void *areabuf,
 
 	/* Store values */
 	ipmi_dev->date = xstrdup(mfg_date_time_buf);
-	upsdebugx(2, "FRU Board Manufacturing Date/Time: %s\n", ipmi_dev->date);
+	upsdebugx(2, "FRU Board Manufacturing Date/Time: %s", ipmi_dev->date);
 
 	if ((string = libfreeipmi_getfield (language_code, &board_manufacturer)) != NULL)
 		ipmi_dev->manufacturer = xstrdup(string);
@@ -412,4 +444,489 @@ static int libfreeipmi_get_board_info (const void *areabuf,
 		ipmi_dev->part = NULL;
 
 	return (0);
+}
+
+
+/* Get the sensors list & values, specific to the given FRU ID
+ * Return -1 on error, or the number of sensors found otherwise */
+static int libfreeipmi_get_sensors_info (IPMIDevice_t *ipmi_dev)
+{
+	uint8_t sdr_record[IPMI_SDR_CACHE_MAX_SDR_RECORD_LENGTH];
+	uint8_t record_type, logical_physical_fru_device, logical_fru_device_device_slave_address;
+	uint8_t tmp_entity_id, tmp_entity_instance;
+	int sdr_record_len;
+	uint16_t record_count;
+	int found_device_id = 0;
+	uint16_t record_id;
+	uint8_t entity_id, entity_instance;
+	int i;
+
+	if (ipmi_ctx == NULL)
+		return (-1);
+
+	/* Clear the sensors list */
+	ipmi_dev->sensors_count = 0;
+	memset(ipmi_dev->sensors_id_list, 0, sizeof(ipmi_dev->sensors_id_list));
+
+	if (!(sdr_cache_ctx = ipmi_sdr_cache_ctx_create ()))
+	{
+		libfreeipmi_cleanup();
+		fatal_with_errno(EXIT_FAILURE, "ipmi_sdr_cache_ctx_create()");
+	}
+
+	if (!(sdr_parse_ctx = ipmi_sdr_parse_ctx_create ()))
+	{
+		libfreeipmi_cleanup();
+		fatal_with_errno(EXIT_FAILURE, "ipmi_sdr_parse_ctx_create()");
+	}
+
+	if (ipmi_sdr_cache_open (sdr_cache_ctx, ipmi_ctx, CACHE_LOCATION) < 0)
+	{
+		if (ipmi_sdr_cache_ctx_errnum (sdr_cache_ctx) != IPMI_SDR_CACHE_ERR_CACHE_READ_CACHE_DOES_NOT_EXIST)
+		{
+			libfreeipmi_cleanup();
+			fatal_with_errno(EXIT_FAILURE, "ipmi_sdr_cache_open: %s",
+				ipmi_sdr_cache_ctx_errormsg (sdr_cache_ctx));
+		}
+	}
+
+	if (ipmi_sdr_cache_ctx_errnum (sdr_cache_ctx) == IPMI_SDR_CACHE_ERR_CACHE_READ_CACHE_DOES_NOT_EXIST)
+	{
+		if (ipmi_sdr_cache_create (sdr_cache_ctx,
+				 ipmi_ctx, CACHE_LOCATION,
+				 IPMI_SDR_CACHE_CREATE_FLAGS_DEFAULT,
+				 IPMI_SDR_CACHE_VALIDATION_FLAGS_DEFAULT,
+				 NULL, NULL) < 0)
+		{
+			libfreeipmi_cleanup();
+			fatal_with_errno(EXIT_FAILURE, "ipmi_sdr_cache_create: %s",
+				ipmi_sdr_cache_ctx_errormsg (sdr_cache_ctx));
+		}
+
+		if (ipmi_sdr_cache_open (sdr_cache_ctx,
+				ipmi_ctx, CACHE_LOCATION) < 0)
+		{
+			if (ipmi_sdr_cache_ctx_errnum (sdr_cache_ctx) != IPMI_SDR_CACHE_ERR_CACHE_READ_CACHE_DOES_NOT_EXIST)
+			{
+			libfreeipmi_cleanup();
+			fatal_with_errno(EXIT_FAILURE, "ipmi_sdr_cache_open: %s",
+				ipmi_sdr_cache_ctx_errormsg (sdr_cache_ctx));
+			}
+		}
+	}
+
+	if (ipmi_sdr_cache_record_count (sdr_cache_ctx, &record_count) < 0)
+	{
+		fprintf (stderr,
+			"ipmi_sdr_cache_record_count: %s",
+			ipmi_sdr_cache_ctx_errormsg (sdr_cache_ctx));
+		goto cleanup;
+	}
+
+	for (i = 0; i < record_count; i++, ipmi_sdr_cache_next (sdr_cache_ctx))
+	{
+		memset (sdr_record, '\0', IPMI_SDR_CACHE_MAX_SDR_RECORD_LENGTH);
+		if ((sdr_record_len = ipmi_sdr_cache_record_read (sdr_cache_ctx,
+				sdr_record,
+				IPMI_SDR_CACHE_MAX_SDR_RECORD_LENGTH)) < 0)
+		{
+			fprintf (stderr, "ipmi_sdr_cache_record_read: %s",
+				ipmi_sdr_cache_ctx_errormsg (sdr_cache_ctx));
+			goto cleanup;
+		}
+
+		if (ipmi_sdr_parse_record_id_and_type (sdr_parse_ctx,
+				sdr_record,
+				sdr_record_len,
+				NULL,
+				&record_type) < 0)
+		{
+			fprintf (stderr, "ipmi_sdr_parse_record_id_and_type: %s",
+				ipmi_sdr_parse_ctx_errormsg (sdr_parse_ctx));
+			goto cleanup;
+		}
+
+		if (record_type != IPMI_SDR_FORMAT_FRU_DEVICE_LOCATOR_RECORD)
+			continue;
+
+		if (ipmi_sdr_parse_fru_device_locator_parameters (sdr_parse_ctx,
+				sdr_record,
+				sdr_record_len,
+				NULL,
+				&logical_fru_device_device_slave_address,
+				NULL,
+				NULL,
+				&logical_physical_fru_device,
+				NULL) < 0)
+		{
+			fprintf (stderr, "ipmi_sdr_parse_fru_device_locator_parameters: %s",
+				ipmi_sdr_parse_ctx_errormsg (sdr_parse_ctx));
+			goto cleanup;
+		}
+
+		if (logical_physical_fru_device
+			&& logical_fru_device_device_slave_address == ipmi_dev->ipmi_id)
+		{
+			found_device_id++;
+
+			if (ipmi_sdr_parse_fru_entity_id_and_instance (sdr_parse_ctx,
+					sdr_record,
+					sdr_record_len,
+					&entity_id,
+					&entity_instance) < 0)
+			{
+				fprintf (stderr,
+					"ipmi_sdr_parse_fru_entity_id_and_instance: %s",
+					ipmi_sdr_parse_ctx_errormsg (sdr_parse_ctx));
+				goto cleanup;
+			}
+			break;
+		}
+	}
+
+	if (!found_device_id)
+	{
+		fprintf (stderr, "Couldn't find device id %d", ipmi_dev->ipmi_id);
+		goto cleanup;
+	}
+	else
+		upsdebugx(1, "Found device id %d", ipmi_dev->ipmi_id);
+
+	if (ipmi_sdr_cache_first (sdr_cache_ctx) < 0)
+	{
+		fprintf (stderr, "ipmi_sdr_cache_first: %s", 
+			ipmi_sdr_cache_ctx_errormsg (sdr_cache_ctx));
+		goto cleanup;
+	}
+
+	for (i = 0; i < record_count; i++, ipmi_sdr_cache_next (sdr_cache_ctx))
+	{
+		/* uint8_t sdr_record[IPMI_SDR_CACHE_MAX_SDR_RECORD_LENGTH];
+		uint8_t record_type, tmp_entity_id, tmp_entity_instance;
+		int sdr_record_len; */
+
+		memset (sdr_record, '\0', IPMI_SDR_CACHE_MAX_SDR_RECORD_LENGTH);
+		if ((sdr_record_len = ipmi_sdr_cache_record_read (sdr_cache_ctx,
+				sdr_record,
+				IPMI_SDR_CACHE_MAX_SDR_RECORD_LENGTH)) < 0)
+		{
+			fprintf (stderr, "ipmi_sdr_cache_record_read: %s",
+				ipmi_sdr_cache_ctx_errormsg (sdr_cache_ctx));
+			goto cleanup;
+		}
+
+		if (ipmi_sdr_parse_record_id_and_type (sdr_parse_ctx,
+				sdr_record,
+				sdr_record_len,
+				&record_id,
+				&record_type) < 0)
+		{
+			fprintf (stderr, "ipmi_sdr_parse_record_id_and_type: %s",
+				ipmi_sdr_parse_ctx_errormsg (sdr_parse_ctx));
+			goto cleanup;
+		}
+
+		upsdebugx (5, "Checking record %i (/%i)", record_id, record_count);
+
+		if (record_type != IPMI_SDR_FORMAT_FULL_SENSOR_RECORD
+			&& record_type != IPMI_SDR_FORMAT_COMPACT_SENSOR_RECORD
+			&& record_type != IPMI_SDR_FORMAT_EVENT_ONLY_RECORD) {
+			continue;
+		}
+
+		if (ipmi_sdr_parse_entity_id_instance_type (sdr_parse_ctx,
+				sdr_record,
+				sdr_record_len,
+				&tmp_entity_id,
+				&tmp_entity_instance,
+				NULL) < 0)
+		{
+			fprintf (stderr, "ipmi_sdr_parse_entity_instance_type: %s",
+				ipmi_sdr_parse_ctx_errormsg (sdr_parse_ctx));
+			goto cleanup;
+		}
+
+		if (tmp_entity_id == entity_id
+			&& tmp_entity_instance == entity_instance)
+		{
+			upsdebugx (1, "Found record id = %u for device id %u",
+				record_id, ipmi_dev->ipmi_id);
+
+			/* Add it to the tracked list */
+			ipmi_dev->sensors_id_list[ipmi_dev->sensors_count] = record_id;
+			ipmi_dev->sensors_count++;
+		}
+	}
+
+
+cleanup:
+	/* Cleanup */
+	if (sdr_cache_ctx) {
+		ipmi_sdr_cache_ctx_destroy (sdr_cache_ctx);
+	}
+
+	if (sdr_parse_ctx) {
+		ipmi_sdr_parse_ctx_destroy (sdr_parse_ctx);
+	}
+
+	return ipmi_dev->sensors_count;
+}
+
+
+/*
+=> Nominal conditions
+
+
+Record ID, Sensor Name, Sensor Number, Sensor Type, Sensor State, Sensor Reading, Sensor Units, Sensor Event/Reading Type Code, Sensor Event Bitmask, Sensor Event String
+52, Presence, 84, Entity Presence, Nominal, N/A, N/A, 6Fh, 1h, 'Entity Present'
+57, Status, 100, Power Supply, Nominal, N/A, N/A, 6Fh, 1h, 'Presence detected'
+116, Current, 148, Current, Nominal, 0.20, A, 1h, C0h, 'OK'
+118, Voltage, 150, Voltage, Nominal, 236.00, V, 1h, C0h, 'OK'
+
+=> Power failure conditions
+
+Record ID, Sensor Name, Sensor Number, Sensor Type, Sensor State, Sensor Reading, Sensor Units, Sensor Event/Reading Type Code, Sensor Event Bitmask, Sensor Event String
+52, Presence, 84, Entity Presence, Nominal, N/A, N/A, 6Fh, 1h, 'Entity Present'
+57, Status, 100, Power Supply, Critical, N/A, N/A, 6Fh, 9h, 'Presence detected' 'Power Supply input lost (AC/DC)'
+
+=> PSU removed
+
+Record ID, Sensor Name, Sensor Number, Sensor Type, Sensor State, Sensor Reading, Sensor Units, Sensor Event/Reading Type Code, Sensor Event Bitmask, Sensor Event String
+52, Presence, 84, Entity Presence, Critical, N/A, N/A, 6Fh, 2h, 'Entity Absent'
+57, Status, 100, Power Supply, Critical, N/A, N/A, 6Fh, 8h, 'Power Supply input lost (AC/DC)'
+
+*/
+
+int nut_ipmi_monitoring_init()
+{
+	int errnum;
+
+	if (ipmi_monitoring_init (0, &errnum) < 0) {
+		upsdebugx (1, "ipmi_monitoring_init() error: %s", ipmi_monitoring_ctx_strerror (errnum));
+		return -1;
+	}
+
+	if (!(mon_ctx = ipmi_monitoring_ctx_create ())) {
+		upsdebugx (1, "ipmi_monitoring_ctx_create() failed");
+		return -1;
+	}
+
+	/* FIXME: replace "/tmp" by a proper place, using mkdtemp() or similar */
+	if (ipmi_monitoring_ctx_sdr_cache_directory (mon_ctx, "/tmp") < 0) {
+		upsdebugx (1, "ipmi_monitoring_ctx_sdr_cache_directory() error: %s",
+					ipmi_monitoring_ctx_errormsg (mon_ctx));
+		return -1;
+	}
+
+	if (ipmi_monitoring_ctx_sensor_config_file (mon_ctx, NULL) < 0) {
+		upsdebugx (1, "ipmi_monitoring_ctx_sensor_config_file() error: %s",
+					ipmi_monitoring_ctx_errormsg (mon_ctx));
+		return -1;
+	}
+	return 0;
+}
+
+int nut_ipmi_get_sensors_status(IPMIDevice_t *ipmi_dev)
+{
+	/* It seems we don't need more! */
+	unsigned int sensor_reading_flags = IPMI_MONITORING_SENSOR_READING_FLAGS_IGNORE_NON_INTERPRETABLE_SENSORS;
+	int sensor_count, i, str_count;
+	int psu_status = PSU_STATUS_UNKNOWN;
+	int retval = 0;
+
+	if (mon_ctx == NULL) {
+		upsdebugx (1, "Monitoring context not initialized!");
+		return -1;
+	}
+
+	/* Monitor only the list of sensors found previously */
+	if ((sensor_count = ipmi_monitoring_sensor_readings_by_record_id (mon_ctx,
+																		NULL, /* hostname is NULL for In-band communication */
+																		NULL, /* FIXME: needed? ipmi_config */
+																		sensor_reading_flags,
+																		ipmi_dev->sensors_id_list,
+																		ipmi_dev->sensors_count,
+																		NULL,
+																		NULL)) < 0)
+	{
+		upsdebugx (1, "ipmi_monitoring_sensor_readings_by_record_id() error: %s",
+					ipmi_monitoring_ctx_errormsg (mon_ctx));
+		return -1;
+	}
+
+	for (i = 0; i < sensor_count; i++, ipmi_monitoring_sensor_iterator_next (mon_ctx))
+	{
+		int record_id, sensor_type;
+		int sensor_bitmask_type = -1;
+		/* int sensor_reading_type, sensor_state; */
+		char **sensor_bitmask_strings = NULL;
+		void *sensor_reading = NULL;
+
+		if ((record_id = ipmi_monitoring_sensor_read_record_id (mon_ctx)) < 0)
+		{
+			upsdebugx (1, "ipmi_monitoring_sensor_read_record_id() error: %s",
+						ipmi_monitoring_ctx_errormsg (mon_ctx));
+			continue;
+		}
+
+		if ((sensor_type = ipmi_monitoring_sensor_read_sensor_type (mon_ctx)) < 0)
+		{
+			upsdebugx (1, "ipmi_monitoring_sensor_read_sensor_type() error: %s",
+						ipmi_monitoring_ctx_errormsg (mon_ctx));
+			continue;
+		}
+
+		/* should we consider this for ALARM?
+		 * IPMI_MONITORING_STATE_NOMINAL
+		 * IPMI_MONITORING_STATE_WARNING
+		 * IPMI_MONITORING_STATE_CRITICAL
+		 * if ((sensor_state = ipmi_monitoring_sensor_read_sensor_state (mon_ctx)) < 0)
+		 * ... */
+
+		if ((sensor_reading = ipmi_monitoring_sensor_read_sensor_reading (mon_ctx)) < 0)
+		{
+			upsdebugx (1, "ipmi_monitoring_sensor_read_sensor_reading() error: %s",
+						ipmi_monitoring_ctx_errormsg (mon_ctx));
+		}
+
+		/* This can be needed to interpret sensor_reading format!
+		if ((sensor_reading_type = ipmi_monitoring_sensor_read_sensor_reading_type (ctx)) < 0)
+		{
+			upsdebugx (1, "ipmi_monitoring_sensor_read_sensor_reading_type() error: %s",
+						ipmi_monitoring_ctx_errormsg (mon_ctx));
+		} */
+
+		if ((sensor_bitmask_type = ipmi_monitoring_sensor_read_sensor_bitmask_type (mon_ctx)) < 0)
+		{
+			upsdebugx (1, "ipmi_monitoring_sensor_read_sensor_bitmask_type() error: %s",
+						ipmi_monitoring_ctx_errormsg (mon_ctx));
+			continue;
+		}
+
+		if ((sensor_bitmask_strings = ipmi_monitoring_sensor_read_sensor_bitmask_strings (mon_ctx)) < 0)
+		{
+			upsdebugx (1, "ipmi_monitoring_sensor_read_sensor_bitmask_strings() error: %s",
+						ipmi_monitoring_ctx_errormsg (mon_ctx));
+			continue;
+		}
+
+		/* Only the few possibly interesting sensors are considered */
+		switch (sensor_type)
+		{
+			case IPMI_MONITORING_SENSOR_TYPE_TEMPERATURE:
+				ipmi_dev->temperature = *((double *)sensor_reading);
+				upsdebugx (3, "Temperature: %.2f", *((double *)sensor_reading));
+				dstate_setinfo("ambient.temperature", "%.2f", *((double *)sensor_reading));
+				break;
+			case IPMI_MONITORING_SENSOR_TYPE_VOLTAGE:
+				ipmi_dev->voltage =  *((double *)sensor_reading);
+				upsdebugx (3, "Voltage: %.2f", *((double *)sensor_reading));
+				dstate_setinfo("input.voltage", "%.2f", *((double *)sensor_reading));
+				break;
+			case IPMI_MONITORING_SENSOR_TYPE_CURRENT:
+				ipmi_dev->input_current = *((double *)sensor_reading);
+				upsdebugx (3, "Current: %.2f", *((double *)sensor_reading));
+				dstate_setinfo("input.current", "%.2f", *((double *)sensor_reading));
+				break;
+
+			case IPMI_MONITORING_SENSOR_TYPE_POWER_SUPPLY:
+				/* Possible values:
+				 * 'Presence detected'
+				 * 'Power Supply input lost (AC/DC)' => maps to status:OFF */
+				upsdebugx (3, "Power Supply: status string");
+				if (sensor_bitmask_type == IPMI_MONITORING_SENSOR_BITMASK_TYPE_UNKNOWN) {
+					upsdebugx(3, "No status string");
+				}
+				str_count = 0;
+				while (sensor_bitmask_strings[str_count])
+				{
+					upsdebugx (3, "\t'%s'", sensor_bitmask_strings[str_count]);
+					if (!strncmp("Power Supply input lost (AC/DC)",
+							sensor_bitmask_strings[str_count],
+							strlen("Power Supply input lost (AC/DC)"))) {
+								psu_status = PSU_POWER_FAILURE;		/* = status OFF */
+					}
+					str_count++;
+				}
+				break;
+			case IPMI_MONITORING_SENSOR_TYPE_ENTITY_PRESENCE:
+				/* Possible values:
+				 * 'Entity Present' => maps to status:OL
+				 * 'Entity Absent' (PSU has been removed!) => declare staleness */
+				upsdebugx (3, "Entity Presence: status string");
+				if (sensor_bitmask_type == IPMI_MONITORING_SENSOR_BITMASK_TYPE_UNKNOWN) {
+					upsdebugx(3, "No status string");
+				}
+				str_count = 0;
+				while (sensor_bitmask_strings[str_count])
+				{
+					upsdebugx (3, "\t'%s'", sensor_bitmask_strings[str_count]);
+					if (!strncmp("Entity Present",
+							sensor_bitmask_strings[str_count],
+							strlen("Entity Present"))) {
+								psu_status = PSU_PRESENT;
+					}
+					else if (!strncmp("Entity Absent",
+							sensor_bitmask_strings[str_count],
+							strlen("Entity Absent"))) {
+								psu_status = PSU_ABSENT;
+					}
+					str_count++;
+				}
+				break;
+			/* Not sure of the values of these, so get as much as possible... */
+			case IPMI_MONITORING_SENSOR_TYPE_POWER_UNIT:
+				upsdebugx (3, "Power Unit: status string");
+				str_count = 0;
+				while (sensor_bitmask_strings[str_count])
+				{
+					upsdebugx (3, "\t'%s'", sensor_bitmask_strings[str_count]);
+					str_count++;
+				}
+				break;
+			case IPMI_MONITORING_SENSOR_TYPE_SYSTEM_ACPI_POWER_STATE:
+				upsdebugx (3, "System ACPI Power State: status string");
+				str_count = 0;
+				while (sensor_bitmask_strings[str_count])
+				{
+					upsdebugx (3, "\t'%s'", sensor_bitmask_strings[str_count]);
+					str_count++;
+				}
+				break;
+			case IPMI_MONITORING_SENSOR_TYPE_BATTERY:
+				upsdebugx (3, "Battery: status string");
+				str_count = 0;
+				while (sensor_bitmask_strings[str_count])
+				{
+					upsdebugx (3, "\t'%s'", sensor_bitmask_strings[str_count]);
+					str_count++;
+				}
+				break;
+		}
+	}
+	
+	/* Process status if needed */
+	if (psu_status != PSU_STATUS_UNKNOWN) {
+
+		status_init();
+
+		switch (psu_status)
+		{
+			case PSU_PRESENT:
+				status_set("OL");
+				break;
+			case PSU_ABSENT:
+				status_set("OFF");
+				/* Declare stale */
+				retval = -1;
+				break;
+			case PSU_POWER_FAILURE:
+				status_set("OFF");
+				break;
+		}
+	
+		status_commit();
+	}
+
+	return retval;
 }

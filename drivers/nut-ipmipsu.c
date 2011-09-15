@@ -26,7 +26,7 @@
 #include "nut-ipmi.h"
 
 #define DRIVER_NAME	"IPMI PSU driver"
-#define DRIVER_VERSION	"0.01"
+#define DRIVER_VERSION	"0.05"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -37,9 +37,12 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
-
-/* Hostname, NULL for In-band communication, non-null for a hostname */
-char *hostname = NULL; 
+/* Note on device.status
+ * OL: present and providing power
+ * OFF: present but not providing power (power cable removed)
+ * stale: not present (PSU removed)
+ * 	=> should we prefer RB, MISSING, ABSENT, ???
+ */
 
 /* Abstract structure to allow different IPMI implementation
  * We currently use FreeIPMI, but OpenIPMI and others are serious
@@ -83,25 +86,35 @@ void upsdrv_initinfo(void)
 	/* FIXME: move to device.id */
 	dstate_setinfo("ups.id", "%i", ipmi_id);
 	/* FIXME: move to device.realpower.nominal */
-	dstate_setinfo("ups.realpower.nominal", "%i", ipmi_dev.overall_capacity);
-	dstate_setinfo("input.voltage.minimum", "%i", ipmi_dev.input_minvoltage);
-	dstate_setinfo("input.voltage.maximum", "%i", ipmi_dev.input_maxvoltage);
-	dstate_setinfo("input.frequency.low", "%i", ipmi_dev.input_minfreq);
-	dstate_setinfo("input.frequency.high", "%i", ipmi_dev.input_maxfreq);
+	if (ipmi_dev.overall_capacity != -1)
+		dstate_setinfo("ups.realpower.nominal", "%i", ipmi_dev.overall_capacity);
+
+	if (ipmi_dev.input_minvoltage != -1)
+		dstate_setinfo("input.voltage.minimum", "%i", ipmi_dev.input_minvoltage);
+
+	if (ipmi_dev.input_maxvoltage != -1)
+		dstate_setinfo("input.voltage.maximum", "%i", ipmi_dev.input_maxvoltage);
+
+	if (ipmi_dev.input_minfreq != -1)
+		dstate_setinfo("input.frequency.low", "%i", ipmi_dev.input_minfreq);
+
+	if (ipmi_dev.input_maxfreq != -1)
+		dstate_setinfo("input.frequency.high", "%i", ipmi_dev.input_maxfreq);
+
 	/* FIXME: move to device.voltage */
-	dstate_setinfo("ups.voltage", "%i", ipmi_dev.voltage);
+	if (ipmi_dev.voltage != -1)
+		dstate_setinfo("ups.voltage", "%i", ipmi_dev.voltage);
 
+	if (nut_ipmi_monitoring_init() != 0)
+		fatalx(EXIT_FAILURE, "Can't initialize IPMI monitoring");
 
-/* device.status
- * OL: present and providing power
- * OFF: present but not providing power (power cable removed)
- * ??: not present (PSU removed) => RB, MISSING, ABSENT, ???
- */
-
-	/* note: for a transition period, these data are redundant! */
-	/* dstate_setinfo("device.mfr", "skel manufacturer"); */
-	/* dstate_setinfo("device.model", "longrun 15000"); */
-
+	if (nut_ipmi_get_sensors_status(&ipmi_dev) != 0) {
+		upsdebugx(1, "Error while updating sensors values");
+		dstate_datastale();
+	}
+	else {
+		dstate_dataok();
+	}
 
 	/* upsh.instcmd = instcmd; */
 }
@@ -112,20 +125,13 @@ void upsdrv_updateinfo(void)
 
 	/* FIXME: implement sensors monitoring */
 
-	dstate_dataok();
-
-	/* status_init();
-	 *
-	 * if (ol)
-	 * 	status_set("OL");
-	 * else
-	 * 	status_set("OB");
-	 * ...
-	 *
-	 * status_commit();
-	 *
-	 * dstate_dataok();
-	 */
+	if (nut_ipmi_get_sensors_status(&ipmi_dev) != 0) {
+		upsdebugx(1, "Error while updating sensors values");
+		dstate_datastale();
+	}
+	else {
+		dstate_dataok();
+	}
 
 	/*
 	 * poll_interval = 2;
@@ -134,20 +140,7 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
-
-	/* maybe try to detect the UPS here, but try a shutdown even if
-	   it doesn't respond at first if possible */
-
-	/* replace with a proper shutdown function */
 	fatalx(EXIT_FAILURE, "shutdown not supported");
-
-	/* you may have to check the line status since the commands
-	   for toggling power are frequently different for OL vs. OB */
-
-	/* OL: this must power cycle the load if possible */
-
-	/* OB: the load must remain off until the power returns */
 }
 
 /*
@@ -189,12 +182,11 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "authtype",
 			"Authentication type to use during lan session activation");
 	addvar(VAR_VALUE, "type",
-		"Type of the device to match ('psu' for \"Power Supply\")"); */
+		"Type of the device to match ('psu' for \"Power Supply\")");
 	
 	addvar(VAR_VALUE, "serial", "Serial number to match a specific device");
-
 	addvar(VAR_VALUE, "fruid", "FRU identifier to match a specific device");
-	addvar(VAR_VALUE, "sensorid", "Sensor identifier to match a specific device");
+	addvar(VAR_VALUE, "sensorid", "Sensor identifier to match a specific device"); */
 }
 
 void upsdrv_initups(void)
@@ -202,7 +194,7 @@ void upsdrv_initups(void)
 	upsdebugx(1, "upsdrv_initups...");
 
 	/* port can be expressed using:
-	 * "id?" for device ID 0x?
+	 * "id?" for device (FRU) ID 0x?
 	 * "psu?" for PSU number ?
 	 */ 
 	if (!strncmp( device_path, "id", 2))
@@ -212,35 +204,27 @@ void upsdrv_initups(void)
 	}
 	/* else... <psuX> to select PSU number X */
 
+	/* Clear the interface structure */
+	ipmi_dev.ipmi_id = -1;
+	ipmi_dev.manufacturer = NULL;
+	ipmi_dev.product = NULL;
+	ipmi_dev.serial = NULL;
+	ipmi_dev.part = NULL;
+	ipmi_dev.date = NULL;
+	ipmi_dev.overall_capacity = -1;
+	ipmi_dev.input_minvoltage = -1;
+	ipmi_dev.input_maxvoltage = -1;
+	ipmi_dev.input_minfreq = -1;
+	ipmi_dev.input_maxfreq = -1;
+	ipmi_dev.voltage = -1;
+	ipmi_dev.sensors_count = 0;
+	ipmi_dev.status = -1;
+	ipmi_dev.input_voltage = -1;
+	ipmi_dev.input_current = -1;
+	ipmi_dev.temperature = -1;
+
 	/* Open IPMI using the above */
-	nutipmi_open(ipmi_id, &ipmi_dev);
-
-	/* upsfd = ser_open(device_path); */
-	/* ser_set_speed(upsfd, device_path, B1200); */
-
-	/* probe ups type */
-
-	/* to get variables and flags from the command line, use this:
-	 *
-	 * first populate with upsdrv_buildvartable above, then...
-	 *
-	 *                   set flag foo : /bin/driver -x foo
-	 * set variable 'cable' to '1234' : /bin/driver -x cable=1234
-	 *
-	 * to test flag foo in your code:
-	 *
-	 * 	if (testvar("foo"))
-	 * 		do_something();
-	 *
-	 * to show the value of cable:
-	 *
-	 *      if ((cable = getval("cable")))
-	 *		printf("cable is set to %s\n", cable);
-	 *	else
-	 *		printf("cable is not set!\n");
-	 *
-	 * don't use NULL pointers - test the return result first!
-	 */
+	nut_ipmi_open(ipmi_id, &ipmi_dev);
 
 	/* the upsh handlers can't be done here, as they get initialized
 	 * shortly after upsdrv_initups returns to main.
@@ -251,10 +235,6 @@ void upsdrv_initups(void)
 
 void upsdrv_cleanup(void)
 {
-	/* free(dynamic_mem); */
-	/* ser_close(upsfd, device_path); */
-
 	upsdebugx(1, "upsdrv_cleanup...");
-
-	nutipmi_close();
+	nut_ipmi_close();
 }
