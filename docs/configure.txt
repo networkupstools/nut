@@ -41,7 +41,8 @@ Note that you need to install powerman development package or files.
 Build and install IPMI PSU driver (default: auto-detect)
 This allows to monitor numerous Power Supply Units (PSU) found
 on servers.
-Note that you need to install freeipmi development package or files.
+Note that you need to install freeipmi (0.8.5 or higher) development package or
+files.
 
 	--with-drivers=<driver>,<driver>,...
 
