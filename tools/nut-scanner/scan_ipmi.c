@@ -16,13 +16,10 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
+#include "common.h"
 
 #ifdef HAVE_FREEIPMI_FREEIPMI_H
 #include "nut-scan.h"
-#include "common.h"
 
 /* TODO */
 nutscan_device_t *  nutscan_scan_ipmi()

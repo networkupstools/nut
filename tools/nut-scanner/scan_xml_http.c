@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "config.h"
+#include "common.h"
 #ifdef WITH_NEON
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -27,7 +27,6 @@
 #include <errno.h>
 #include <arpa/inet.h>
 #include <ne_xml.h>
-#include "common.h"
 #include "nutscan-device.h"
 
 static int startelm_cb(void *userdata, int parent, const char *nspace, const char *name, const char **atts) {

@@ -20,14 +20,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include "config.h"
+#include "common.h"
 #include <unistd.h>
 #include <string.h>
 #ifdef HAVE_PTHREAD
 #include <pthread.h>
 #endif
 
-#include "common.h"
 #include "nut-scan.h"
 
 #define DEFAULT_TIMEOUT 5
