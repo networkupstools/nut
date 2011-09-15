@@ -844,7 +844,10 @@ int nut_ipmi_get_sensors_status(IPMIDevice_t *ipmi_dev)
 					if (!strncmp("Power Supply input lost (AC/DC)",
 							sensor_bitmask_strings[str_count],
 							strlen("Power Supply input lost (AC/DC)"))) {
-								psu_status = PSU_POWER_FAILURE;		/* = status OFF */
+								/* Don't override PSU absence! */
+								if (psu_status != PSU_ABSENT) {
+									psu_status = PSU_POWER_FAILURE;	/* = status OFF */
+								}
 					}
 					str_count++;
 				}
