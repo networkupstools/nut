@@ -48,7 +48,7 @@ sysconfig directory (ie /etc/nut, /usr/local/ups/etc, ...) is prepended.
 
 For instance:
 
-    [dummy]
+	[dummy]
 		driver = dummy-ups
 		port = evolution500.dev
 		desc = "dummy-ups in dummy mode"
