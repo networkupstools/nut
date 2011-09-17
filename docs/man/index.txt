@@ -34,6 +34,10 @@ Clients commands
 - linkman:upscmd[8]
 - linkman:upsrw[8]
 
+Configuration commands
+~~~~~~~~~~~~~~~~~~~~~~
+
+- linkman:nut-scanner[8]
 
 CGI programs
 ~~~~~~~~~~~~
@@ -99,6 +103,10 @@ Developer manual pages
 - linkman:libupsclient-config[1]
 - linkman:skel[8]
 
+[[devclient]]
+Client library
+~~~~~~~~~~~~~~
+
 - linkman:upsclient[3]
 - linkman:upscli_connect[3]
 - linkman:upscli_disconnect[3]
@@ -114,3 +122,20 @@ Developer manual pages
 - linkman:upscli_strerror[3]
 - linkman:upscli_upserror[3]
 
+[[devscan]]
+Device discovery library
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+- linkman:nutscan_scan_usb[3]
+- linkman:nutscan_scan_snmp[3]
+- linkman:nutscan_scan_xml_http[3]
+- linkman:nutscan_scan_nut[3]
+- linkman:nutscan_scan_avahi[3]
+- linkman:nutscan_scan_ipmi[3]
+- linkman:nutscan_display_parsable[3]
+- linkman:nutscan_display_ups_conf[3]
+- linkman:nutscan_new_device[3]
+- linkman:nutscan_free_device[3]
+- linkman:nutscan_add_device_to_device[3]
+- linkman:nutscan_add_option_to_device[3]
+- linkman:nutscan_cidr_to_ip[3]
