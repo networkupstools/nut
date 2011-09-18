@@ -40,7 +40,13 @@ if WITH_AVAHI
   libnutscan_la_LIBADD += $(LIBAVAHI_LIBS)
 endif
 
-dist_noinst_HEADERS = nut-scan.h nutscan-usb.h nutscan-snmp.h nutscan-device.h nutscan-ip.h 
+dist_noinst_HEADERS = nutscan-usb.h nutscan-snmp.h
+
+if WITH_DEV
+ include_HEADERS = nut-scan.h nutscan-device.h nutscan-ip.h
+else
+ dist_noinst_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h
+endif
 
 CLEANFILES = nutscan-usb.h nutscan-snmp.h
 
