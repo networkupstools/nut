@@ -8,7 +8,7 @@ AM_CFLAGS = -I$(top_srcdir)/include
 FORCE:
 
 noinst_LTLIBRARIES = libparseconf.la libcommon.la
-libparseconf_la_SOURCES =  parseconf.c
+libparseconf_la_SOURCES = parseconf.c
 
 libcommon_la_SOURCES = common.c state.c upsconf.c ../include/nut_version.h
 # ensure inclusion of local implementation of missing systems functions
