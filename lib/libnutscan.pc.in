@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: libnutscan
+Description: Power devices discovery with Network UPS Tools
+Version: @PACKAGE_VERSION@
+Libs: -L${libdir} -lnutscan
+Cflags: -I${includedir}

@@ -1055,6 +1055,7 @@ AC_OUTPUT([
  include/Makefile
  lib/libupsclient-config
  lib/libupsclient.pc
+ lib/libnutscan.pc
  lib/Makefile
  scripts/augeas/Makefile
  scripts/augeas/nutnutconf.aug
