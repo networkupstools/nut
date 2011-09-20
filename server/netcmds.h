@@ -17,7 +17,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#include "ctype.h"
+#include "nut_ctype.h"
 
 #include "ssl.h"
 #include "netget.h"
@@ -31,7 +31,7 @@
 
 struct {
 	const	char	*name;
-	void	(*func)(ctype_t *client, int numargs, const char **arg);
+	void	(*func)(nut_ctype_t *client, int numargs, const char **arg);
 	int	flags;
 } netcmds[] = {
 	{ "VER",	net_ver,	0		},

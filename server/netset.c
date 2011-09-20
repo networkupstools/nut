@@ -27,7 +27,7 @@
 
 #include "netset.h"
 
-static void set_var(ctype_t *client, const char *upsname, const char *var,
+static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 	const char *newval)
 {
 	upstype_t	*ups;
@@ -125,7 +125,7 @@ static void set_var(ctype_t *client, const char *upsname, const char *var,
 	sendback(client, "OK\n");
 }
 
-void net_set(ctype_t *client, int numarg, const char **arg)
+void net_set(nut_ctype_t *client, int numarg, const char **arg)
 {
 	if (numarg < 4) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);

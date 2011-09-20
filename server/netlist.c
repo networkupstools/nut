@@ -28,7 +28,7 @@
 
 	extern	upstype_t	*firstups;	/* for list_ups */
 
-static int tree_dump(st_tree_t *node, ctype_t *client, const char *ups,
+static int tree_dump(st_tree_t *node, nut_ctype_t *client, const char *ups,
 	int rw, int fsd)
 {
 	int	ret;
@@ -78,7 +78,7 @@ static int tree_dump(st_tree_t *node, ctype_t *client, const char *ups,
 	return 1;
 }
 
-static void list_rw(ctype_t *client, const char *upsname)
+static void list_rw(nut_ctype_t *client, const char *upsname)
 {
 	const   upstype_t *ups;
 
@@ -101,7 +101,7 @@ static void list_rw(ctype_t *client, const char *upsname)
 	sendback(client, "END LIST RW %s\n", upsname);
 }
 
-static void list_var(ctype_t *client, const char *upsname)
+static void list_var(nut_ctype_t *client, const char *upsname)
 {
 	const   upstype_t *ups;
 
@@ -124,7 +124,7 @@ static void list_var(ctype_t *client, const char *upsname)
 	sendback(client, "END LIST VAR %s\n", upsname);
 }
 
-static void list_cmd(ctype_t *client, const char *upsname)
+static void list_cmd(nut_ctype_t *client, const char *upsname)
 {
 	const   upstype_t *ups;
 	cmdlist_t	*ctmp;
@@ -150,7 +150,7 @@ static void list_cmd(ctype_t *client, const char *upsname)
 	sendback(client, "END LIST CMD %s\n", upsname);
 }
 
-static void list_enum(ctype_t *client, const char *upsname, const char *var)
+static void list_enum(nut_ctype_t *client, const char *upsname, const char *var)
 {
 	const   upstype_t *ups;
 	const	st_tree_t	*node;
@@ -185,7 +185,7 @@ static void list_enum(ctype_t *client, const char *upsname, const char *var)
 	sendback(client, "END LIST ENUM %s %s\n", upsname, var);
 }
 
-static void list_ups(ctype_t *client)
+static void list_ups(nut_ctype_t *client)
 {
 	upstype_t	*utmp;
 	char	esc[SMALLBUF];
@@ -217,7 +217,7 @@ static void list_ups(ctype_t *client)
 	sendback(client, "END LIST UPS\n");
 }	
 
-void net_list(ctype_t *client, int numarg, const char **arg)
+void net_list(nut_ctype_t *client, int numarg, const char **arg)
 {
 	if (numarg < 1) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);

@@ -27,7 +27,7 @@
 
 #include "netget.h"
 
-static void get_numlogins(ctype_t *client, const char *upsname)
+static void get_numlogins(nut_ctype_t *client, const char *upsname)
 {
 	const	upstype_t	*ups;
 
@@ -44,7 +44,7 @@ static void get_numlogins(ctype_t *client, const char *upsname)
 	sendback(client, "NUMLOGINS %s %d\n", upsname, ups->numlogins);
 }
 
-static void get_upsdesc(ctype_t *client, const char *upsname)
+static void get_upsdesc(nut_ctype_t *client, const char *upsname)
 {
 	const	upstype_t	*ups;
 	char	esc[SMALLBUF];
@@ -69,7 +69,7 @@ static void get_upsdesc(ctype_t *client, const char *upsname)
 	}
 }
 
-static void get_desc(ctype_t *client, const char *upsname, const char *var)
+static void get_desc(nut_ctype_t *client, const char *upsname, const char *var)
 {
 	const	upstype_t	*ups;
 	const	char	*desc;
@@ -92,7 +92,7 @@ static void get_desc(ctype_t *client, const char *upsname, const char *var)
 		sendback(client, "DESC %s %s \"Description unavailable\"\n", upsname, var);
 }
 
-static void get_cmddesc(ctype_t *client, const char *upsname, const char *cmd)
+static void get_cmddesc(nut_ctype_t *client, const char *upsname, const char *cmd)
 {
 	const	upstype_t	*ups;
 	const	char	*desc;
@@ -116,7 +116,7 @@ static void get_cmddesc(ctype_t *client, const char *upsname, const char *cmd)
 			upsname, cmd);
 }
 
-static void get_type(ctype_t *client, const char *upsname, const char *var)
+static void get_type(nut_ctype_t *client, const char *upsname, const char *var)
 {
 	char	buf[SMALLBUF];
 	const	upstype_t	*ups;
@@ -159,7 +159,7 @@ static void get_type(ctype_t *client, const char *upsname, const char *var)
 	sendback(client, "TYPE %s %s UNKNOWN\n", upsname, var);
 }		
 
-static void get_var_server(ctype_t *client, const char *upsname, const char *var)
+static void get_var_server(nut_ctype_t *client, const char *upsname, const char *var)
 {
 	if (!strcasecmp(var, "server.info")) {
 		sendback(client, "VAR %s server.info "
@@ -178,7 +178,7 @@ static void get_var_server(ctype_t *client, const char *upsname, const char *var
 	send_err(client, NUT_ERR_VAR_NOT_SUPPORTED);
 }
 
-static void get_var(ctype_t *client, const char *upsname, const char *var)
+static void get_var(nut_ctype_t *client, const char *upsname, const char *var)
 {
 	const	upstype_t	*ups;
 	const	char	*val;
@@ -213,7 +213,7 @@ static void get_var(ctype_t *client, const char *upsname, const char *var)
 		sendback(client, "VAR %s %s \"%s\"\n", upsname, var, val);
 }
 
-void net_get(ctype_t *client, int numarg, const char **arg)
+void net_get(nut_ctype_t *client, int numarg, const char **arg)
 {
 	if (numarg < 2) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
