@@ -64,7 +64,6 @@ const struct option longopts[] =
 #endif /* HAVE_GETOPT_LONG */
 
 static nutscan_device_t *dev[TYPE_END];
-static pthread_t thread[TYPE_END];
 
 static long timeout = DEFAULT_TIMEOUT*1000*1000; /* in usec */
 static char *	start_ip = NULL;
@@ -72,6 +71,8 @@ static char *	end_ip = NULL;
 static char * port = NULL;
 
 #ifdef HAVE_PTHREAD
+static pthread_t thread[TYPE_END];
+
 #ifdef HAVE_USB_H
 static void * run_usb(void * arg)
 {
