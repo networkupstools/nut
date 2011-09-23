@@ -20,6 +20,9 @@
 #include "nutscan-ip.h"
 #include <stdio.h>
 #include "common.h"
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
 
 static void increment_IPv6(struct in6_addr * addr)
 {
@@ -42,12 +45,38 @@ static void invert_IPv6(struct in6_addr * addr1, struct in6_addr * addr2)
 	memcpy(addr2->s6_addr,addr.s6_addr,sizeof(addr.s6_addr));
 }
 
+static int ntop( struct in_addr * ip, char * host, size_t host_size)
+{
+	struct sockaddr_in in;
+	memset(&in,0,sizeof(struct sockaddr_in));
+	in.sin_addr = *ip;
+	in.sin_family = AF_INET;
+	return getnameinfo((struct sockaddr *)&in,
+				sizeof(struct sockaddr_in),
+				host,host_size,NULL,0,NI_NUMERICHOST);
+}
+
+static int ntop6( struct in6_addr * ip, char * host, size_t host_size)
+{
+	struct sockaddr_in6 in6;
+	memset(&in6,0,sizeof(struct sockaddr_in6));
+	memcpy( &in6.sin6_addr, ip, sizeof(struct in6_addr) );
+	in6.sin6_family = AF_INET6;
+	return getnameinfo((struct sockaddr *)&in6,
+				sizeof(struct sockaddr_in6),
+				host,host_size,NULL,0,NI_NUMERICHOST);
+}
+
 /* Return the first ip or NULL if error */
 char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, const char * startIP, const char * stopIP)
 {
 	int addr;
 	int i;
-	char buf[SMALLBUF];
+	struct addrinfo hints;
+	struct addrinfo *res;
+	struct sockaddr_in * s_in;
+	struct sockaddr_in6 * s_in6;
+	char host[SMALLBUF];
 
 	if( startIP == NULL ) {
 		return NULL;
@@ -57,29 +86,51 @@ char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, const char * startIP, const 
 		stopIP = startIP;
 	}
 
+	memset(&hints,0,sizeof(struct addrinfo));
+	hints.ai_family = AF_INET;
+
 	ip->type = IPv4;
 	/* Detecting IPv4 vs IPv6 */
-	if(!inet_aton(startIP, &ip->start)) {
+	if(getaddrinfo(startIP,NULL,&hints,&res) != 0) {
 		/*Try IPv6 detection */
 		ip->type = IPv6;
-		if(!inet_pton(AF_INET6, startIP, &ip->start6)){
+		hints.ai_family = AF_INET6;
+		if(getaddrinfo(startIP,NULL,&hints,&res) != 0) {
 			fprintf(stderr,"Invalid address : %s\n",startIP);
 			return NULL;
 		}
+		
+		s_in6 = (struct sockaddr_in6 *)res->ai_addr;
+		memcpy(&ip->start6,&s_in6->sin6_addr,sizeof(struct in6_addr));
+		freeaddrinfo(res);
+	}
+	else {
+		s_in = (struct sockaddr_in *)res->ai_addr;
+		ip->start = s_in->sin_addr;
+		freeaddrinfo(res);
 	}
 
 	/* Compute stop IP */
         if( ip->type == IPv4 ) {
-                if(!inet_aton(stopIP, &ip->stop)) {
+		hints.ai_family = AF_INET;
+		if(getaddrinfo(stopIP,NULL,&hints,&res) != 0) {
                         fprintf(stderr,"Invalid address : %s\n",stopIP);
                         return NULL;
                 }
+
+		s_in = (struct sockaddr_in *)res->ai_addr;
+		ip->stop = s_in->sin_addr;
+		freeaddrinfo(res);
         }
         else {
-                if(!inet_pton(AF_INET6, stopIP, &ip->stop6)){
+		hints.ai_family = AF_INET6;
+		if(getaddrinfo(stopIP,NULL,&hints,&res) != 0) {
                         fprintf(stderr,"Invalid address : %s\n",stopIP);
                         return NULL;
                 }
+		s_in6 = (struct sockaddr_in6 *)res->ai_addr;
+		memcpy(&ip->stop6,&s_in6->sin6_addr,sizeof(struct in6_addr));
+		freeaddrinfo(res);
         }
 
         /* Make sure start IP is lesser than stop IP */
@@ -89,7 +140,12 @@ char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, const char * startIP, const 
                         ip->start.s_addr = ip->stop.s_addr;
                         ip->stop.s_addr = addr;
                 }
-		return strdup(inet_ntoa(ip->start));
+
+		if( ntop(&ip->start, host, sizeof(host)) != 0 ) {
+			return NULL;
+		}
+
+		return strdup(host);
         }
         else { /* IPv6 */
                 for( i=0; i<16; i++ ) {
@@ -100,7 +156,12 @@ char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, const char * startIP, const 
                                 break;
                         }
                 }
-		return strdup(inet_ntop(AF_INET6,&ip->start6,buf,sizeof(buf)));
+
+		if( ntop6(&ip->start6, host, sizeof(host)) != 0 ) {
+			return NULL;
+		}
+
+		return strdup(host);
         }
 
 
@@ -111,7 +172,7 @@ return NULL if there is no more IP
 */
 char * nutscan_ip_iter_inc(nutscan_ip_iter_t * ip)
 {
-	char buf[SMALLBUF];
+	char host[SMALLBUF];
 
 	if( ip->type == IPv4 ) {
 		/* Check if this is the last address to scan */
@@ -122,7 +183,11 @@ char * nutscan_ip_iter_inc(nutscan_ip_iter_t * ip)
 		   byte order, then pass back in network byte order */
 		ip->start.s_addr = htonl((ntohl(ip->start.s_addr)+1));
 
-		return strdup(inet_ntoa(ip->start));
+		if( ntop(&ip->start, host, sizeof(host)) != 0 ) {
+			return NULL;
+		}
+	
+		return strdup(host);
 	}
 	else {
 		/* Check if this is the last address to scan */
@@ -132,8 +197,11 @@ char * nutscan_ip_iter_inc(nutscan_ip_iter_t * ip)
 		}
 
 		increment_IPv6(&ip->start6);
+		if( ntop6(&ip->start6, host, sizeof(host)) != 0 ) {
+			return NULL;
+		}
 
-		return strdup(inet_ntop(AF_INET6,&ip->start6,buf,sizeof(buf)));
+		return strdup(host);
 	}
 }
 
@@ -147,7 +215,11 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 	int mask_val;
 	int mask_byte;
 	long mask_bit;
-	char buf[SMALLBUF];
+	char host[SMALLBUF];
+	struct addrinfo hints;
+	struct addrinfo *res;
+	struct sockaddr_in * s_in;
+	struct sockaddr_in6 * s_in6;
 
 	*start_ip = NULL;
 	*stop_ip = NULL;
@@ -166,15 +238,31 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 	mask_val = atoi(mask);
 
         /* Detecting IPv4 vs IPv6 */
+	memset(&hints,0,sizeof(struct addrinfo));
+	hints.ai_family = AF_INET;
+	hints.ai_flags = AI_NUMERICSERV;
+
 	ip.type = IPv4;
-        if(!inet_aton(first_ip, &ip.start)) {
-                /*Try IPv6 detection */
-                ip.type = IPv6;
-                if(!inet_pton(AF_INET6, first_ip, &ip.start6)){
+	/* Detecting IPv4 vs IPv6 */
+	if(getaddrinfo(first_ip,NULL,&hints,&res) != 0) {
+		/*Try IPv6 detection */
+		ip.type = IPv6;
+		hints.ai_family = AF_INET6;
+		int ret;
+		if((ret=getaddrinfo(first_ip,NULL,&hints,&res)) != 0) {
 			free(first_ip);
-                        return 0;
-                }
-        }
+			return 0;
+		}
+		
+		s_in6 = (struct sockaddr_in6 *)res->ai_addr;
+		memcpy(&ip.start6,&s_in6->sin6_addr,sizeof(struct in6_addr));
+		freeaddrinfo(res);
+	}
+	else {
+		s_in = (struct sockaddr_in *)res->ai_addr;
+		ip.start = s_in->sin_addr;
+		freeaddrinfo(res);
+	}
 
 	if( ip.type == IPv4 ) {
 
@@ -190,13 +278,31 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 		ip.stop.s_addr = htonl(ntohl(ip.start.s_addr)|mask_bit);
 		ip.start.s_addr = htonl(ntohl(ip.start.s_addr)&(~mask_bit));
 
-		*start_ip = strdup(inet_ntoa(ip.start));
-		*stop_ip = strdup(inet_ntoa(ip.stop));
+		if( ntop(&ip.start, host, sizeof(host)) != 0 ) {
+			*start_ip = NULL;
+			*stop_ip = NULL;
+			return 0;
+		}
+		*start_ip = strdup(host);
+
+		if( ntop(&ip.stop, host, sizeof(host)) != 0 ) {
+			free(*start_ip);
+			*start_ip = NULL;
+			*stop_ip = NULL;
+			return 0;
+		}
+		*stop_ip = strdup(host);
+
 		free(first_ip);
 		return 1;
 	}
 	else {
-                inet_pton(AF_INET6, first_ip, &ip.stop6);
+		if(getaddrinfo(first_ip,NULL,&hints,&res) != 0) {
+			return 0;
+		}
+		s_in6 = (struct sockaddr_in6 *)res->ai_addr;
+		memcpy(&ip.stop6,&s_in6->sin6_addr,sizeof(struct in6_addr));
+		freeaddrinfo(res);
 
 		mask_byte = mask_val / 8;
 		if( mask_byte < 16 ) {
@@ -208,10 +314,20 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 			ip.start6.s6_addr[mask_byte] &= (~mask_bit);
 		}
 
-		inet_ntop(AF_INET6,&ip.start6,buf,sizeof(buf));
-		*start_ip = strdup(buf);
-		inet_ntop(AF_INET6,&ip.stop6,buf,sizeof(buf));
-		*stop_ip = strdup(buf);
+		if( ntop6(&ip.start6, host, sizeof(host)) != 0 ) {
+			*start_ip = NULL;
+			*stop_ip = NULL;
+			return 0;
+		}
+		*start_ip = strdup(host);
+
+		if( ntop6(&ip.stop6, host, sizeof(host)) != 0 ) {
+			free(*start_ip);
+			*start_ip = NULL;
+			*stop_ip = NULL;
+			return 0;
+		}
+		*stop_ip = strdup(host);
 	}
 
 	free(first_ip);

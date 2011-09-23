@@ -19,8 +19,6 @@
 #ifndef SCAN_IP
 #define SCAN_IP
 
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
 
 enum network_type {

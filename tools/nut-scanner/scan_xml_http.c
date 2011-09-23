@@ -19,13 +19,13 @@
 
 #include "common.h"
 #ifdef WITH_NEON
-#include <netinet/in.h>
 #include <sys/socket.h>
+#include <netdb.h>
+#include <arpa/inet.h>
 #include <string.h>
 #include <stdio.h>
 #include <sys/select.h>
 #include <errno.h>
-#include <arpa/inet.h>
 #include <ne_xml.h>
 #include "nutscan-device.h"
 
@@ -114,10 +114,12 @@ nutscan_device_t * nutscan_scan_xml_http(long usec_timeout)
 					continue;
 				}
 
+			        if( getnameinfo(
+					(struct sockaddr *)&sockAddress,
+                               		sizeof(struct sockaddr_in),string,
+	                                sizeof(string),NULL,0,
+					NI_NUMERICHOST) != 0) {
 
-				if( inet_ntop(AF_INET,
-						&(sockAddress.sin_addr),
-						string,sizeof(buf)) == NULL ) {
 					fprintf(stderr,
 						"Error converting IP address \
 						: %d\n",errno);
