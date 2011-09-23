@@ -18,7 +18,7 @@
  */
 #include "common.h"
 
-#ifdef HAVE_FREEIPMI_FREEIPMI_H
+#ifdef WITH_IPMI
 #include "nut-scan.h"
 
 /* TODO */
@@ -26,4 +26,4 @@ nutscan_device_t *  nutscan_scan_ipmi()
 {
 	return NULL;
 }
-#endif /* HAVE_FREEIPMI_FREEIPMI_H */
+#endif /* WITH_IPMI */

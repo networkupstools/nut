@@ -18,7 +18,8 @@
  */
 
 #include "common.h"
-#ifdef HAVE_USB_H
+
+#ifdef WITH_USB
 #include "upsclient.h"
 #include "nutscan-usb.h"
 #include <stdio.h>
@@ -164,5 +165,5 @@ nutscan_device_t * nutscan_scan_usb()
 
 	return current_nut_dev;
 }
-#endif /* HAVE_USB_H */
+#endif /* WITH_USB */
 

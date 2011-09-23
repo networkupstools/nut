@@ -36,27 +36,27 @@ typedef struct nutscan_snmp {
 } nutscan_snmp_t;
 
 /* Scanning */
-#ifdef HAVE_NET_SNMP_NET_SNMP_CONFIG_H
+#ifdef WITH_SNMP
 nutscan_device_t * nutscan_scan_snmp(const char * start_ip,const char * stop_ip,long usec_timeout, nutscan_snmp_t * sec);
-#endif
+#endif /* WITH_SNMP */
 
-#ifdef HAVE_USB_H
+#ifdef WITH_USB
 nutscan_device_t * nutscan_scan_usb();
-#endif
+#endif /* WITH_USB */
 
 #ifdef WITH_NEON
 nutscan_device_t * nutscan_scan_xml_http(long usec_timeout);
-#endif
+#endif /* WITH_NEON */
 
 nutscan_device_t * nutscan_scan_nut(const char * startIP, const char * stopIP, const char * port, long usec_timeout);
 
-#ifdef HAVE_AVAHI_CLIENT_CLIENT_H
+#ifdef WITH_AVAHI
 nutscan_device_t * nutscan_scan_avahi(long usec_timeout);
-#endif
+#endif /* WITH_AVAHI */
 
-#ifdef HAVE_FREEIPMI_FREEIPMI_H
+#ifdef WITH_IPMI
 nutscan_device_t *  nutscan_scan_ipmi(void);
-#endif
+#endif /* WITH_IPMI */
 
 /* Displaying */
 void nutscan_display_ups_conf(nutscan_device_t * device);

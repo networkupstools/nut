@@ -19,7 +19,7 @@
 
 #include "common.h"
 
-#ifdef HAVE_NET_SNMP_NET_SNMP_CONFIG_H
+#ifdef WITH_SNMP
 
 #include "nut-scan.h"
 #include <sys/socket.h>
@@ -513,6 +513,6 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 
 	return dev_ret;
 }
-#endif /* HAVE_NET_SNMP_NET_SNMP_CONFIG_H */
+#endif /* WITH_SNMP */
 
 

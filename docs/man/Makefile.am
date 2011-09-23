@@ -385,7 +385,7 @@ HTML_USB_LIBUSB_MANS = \
 SRC_NETXML_PAGES = netxml-ups.txt
 MAN_NETXML_PAGES = netxml-ups.8
 
-if WITH_NEONXML
+if WITH_NEON
    man8_MANS += $(MAN_NETXML_PAGES)
 endif
 

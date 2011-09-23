@@ -67,7 +67,8 @@ images/:
 $(IMAGE_FILES): images/
 	cp -f ../$@ images/
 
-
+# Keep using 'HAVE_ASCIIDOC', instead of 'WITH_ASCIIDOC' since we have
+# an explicit target
 if HAVE_ASCIIDOC
 website: $(WEBSITE_FILES) $(WEBSITE_DEPS) $(IMAGE_FILES) $(SCRIPT_FILES) \
 	$(LAYOUT_FILES) scripts/ups_data.js ../stable-hcl.txt ../ups-html.txt \

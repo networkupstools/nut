@@ -210,6 +210,7 @@ NUT_ARG_WITH([dev], [build and install the development files], [no])
 NUT_ARG_WITH([serial], [build and install serial drivers], [yes])
 NUT_ARG_WITH([usb], [build and install USB drivers], [auto])
 NUT_ARG_WITH([doc], [build and install documentation], [no])
+NUT_ARG_WITH([avahi], [build and install Avahi support], [no])
 
 dnl ----------------------------------------------------------------------
 dnl Check for presence and compiler flags of various libraries
@@ -255,8 +256,9 @@ dnl ${nut_with_serial}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_serial}" != "no"; then
   nut_with_serial="yes"
 fi
-AM_CONDITIONAL(WITH_SERIAL, test "${nut_with_serial}" = "yes")
-NUT_REPORT_FEATURE([build serial drivers], [${nut_with_serial}])
+
+NUT_REPORT_FEATURE([build serial drivers], [${nut_with_serial}], [],
+					[WITH_SERIAL], [Define to enable serial support])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-usb
@@ -270,8 +272,8 @@ if test "${nut_with_usb}" != "no"; then
    nut_with_usb="${nut_have_libusb}"
 fi
 
-AM_CONDITIONAL(WITH_USB, test "${nut_with_usb}" = "yes")
-NUT_REPORT_FEATURE([build USB drivers], [${nut_with_usb}])
+NUT_REPORT_FEATURE([build USB drivers], [${nut_with_usb}], [],
+					[WITH_USB], [Define to enable USB support])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-snmp
@@ -285,8 +287,8 @@ if test "${nut_with_snmp}" != "no"; then
    nut_with_snmp="${nut_have_libnetsnmp}"
 fi
 
-AM_CONDITIONAL(WITH_SNMP, test "${nut_with_snmp}" = "yes")
-NUT_REPORT_FEATURE([build SNMP drivers], [${nut_with_snmp}])
+NUT_REPORT_FEATURE([build SNMP drivers], [${nut_with_snmp}], [],
+					[WITH_SNMP], [Define to enable SNMP support])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-neon
@@ -300,11 +302,8 @@ if test "${nut_with_neon}" != "no"; then
    nut_with_neon="${nut_have_neon}"
 fi
 
-AM_CONDITIONAL(WITH_NEONXML, test "${nut_with_neon}" = "yes")
-NUT_REPORT_FEATURE([build neon based XML driver], [${nut_with_neon}])
-if test "${nut_with_neon}" = "yes"; then
-   AC_DEFINE_UNQUOTED(WITH_NEON, 1, [Define to enable Neon XML/HTTP support])
-fi
+NUT_REPORT_FEATURE([build neon based XML driver], [${nut_with_neon}], [],
+					[WITH_NEON], [Define to enable Neon HTTP support])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-avahi
@@ -318,10 +317,8 @@ if test "${nut_with_avahi}" != "no"; then
    nut_with_avahi="${nut_have_avahi}"
 fi
 
-AM_CONDITIONAL(WITH_AVAHI, test "${nut_with_avahi}" = "yes")
-if test "${nut_with_avahi}" = "yes"; then
-   AC_DEFINE_UNQUOTED(WITH_AVAHI, 1, [Define to enable avahi support])
-fi
+NUT_REPORT_FEATURE([enable Avahi support], [${nut_with_avahi}], [],
+					[WITH_AVAHI], [Define to enable Avahi support])
 
 dnl ----------------------------------------------------------------------
 
@@ -336,8 +333,8 @@ if test "${nut_with_powerman}" != "no"; then
    nut_with_powerman="${nut_have_libpowerman}"
 fi
 
-AM_CONDITIONAL(WITH_LIBPOWERMAN, test "${nut_with_powerman}" = "yes")
-NUT_REPORT_FEATURE([build Powerman PDU client driver], [${nut_with_powerman}])
+NUT_REPORT_FEATURE([build Powerman PDU client driver], [${nut_with_powerman}], [],
+					[WITH_LIBPOWERMAN], [Define to enable Powerman PDU support])
 
 dnl ----------------------------------------------------------------------
 dnl Check for with-ipmi, and --with-freeipmi (or --with-openipmi)
@@ -368,6 +365,7 @@ if test "${nut_with_ipmi}" != "no"; then
       dnl fi
       dnl    Implies --with-ipmi
       dnl    nut_with_ipmi="yes"
+      dnl    AC_DEFINE(WITH_OPENIPMI, 1, [Define to enable IPMI support using OpenIPMI])
    else
       dnl Prefer FreeIPMI over OpenIPMI otherwise
       NUT_CHECK_LIBFREEIPMI
@@ -391,15 +389,20 @@ if test "${nut_with_ipmi}" != "no"; then
          dnl Implies --with-ipmi
          nut_with_ipmi="yes"
          nut_with_freeipmi="yes"
+         AC_DEFINE(WITH_FREEIPMI, 1, [Define to enable IPMI support using FreeIPMI])
       fi
    fi
 fi
 
-AM_CONDITIONAL(WITH_IPMI, test "${nut_with_ipmi}" = "yes")
+
+NUT_REPORT_FEATURE([build IPMI driver], [${nut_with_ipmi}], [${nut_ipmi_lib}],
+					[WITH_IPMI], [Define to enable IPMI support])
+
+dnl Note: we still have to manually enable complementary AC_DEFINEs (see above)
+dnl and AM_CONDITIONALs (see below)...
 AM_CONDITIONAL(WITH_FREEIPMI, test "${nut_with_freeipmi}" = "yes")
 dnl AM_CONDITIONAL(WITH_OPENIPMI, test "${nut_with_openipmi}" = "yes")
 
-NUT_REPORT_FEATURE([build IPMI driver], [${nut_with_ipmi} ${nut_ipmi_lib}])
 
 dnl ----------------------------------------------------------------------
 dnl Check for --with-ssl
@@ -420,8 +423,8 @@ if test "${nut_with_ssl}" != "no"; then
    nut_with_ssl="${nut_have_libssl}"
 fi
 
-AM_CONDITIONAL(WITH_SSL, test "${nut_with_ssl}" = "yes")
-NUT_REPORT_FEATURE([enable SSL development code], [${nut_with_ssl}])
+NUT_REPORT_FEATURE([enable SSL development code], [${nut_with_ssl}], [],
+					[WITH_SSL], [Define to enable SSL development code])
 
 dnl ----------------------------------------------------------------------
 dnl Check for --with-wrap
@@ -442,8 +445,8 @@ if test "${nut_with_wrap}" != "no"; then
    nut_with_wrap="${nut_have_libwrap}"
 fi
 
-AM_CONDITIONAL(WITH_WRAP, test "${nut_with_wrap}" = "yes")
-NUT_REPORT_FEATURE([enable libwrap (tcp-wrappers) support], [${nut_with_wrap}])
+NUT_REPORT_FEATURE([enable libwrap (tcp-wrappers) support], [${nut_with_wrap}], [],
+					[WITH_WRAP], [Define to enable libwrap (tcp-wrappers) support])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-cgi
@@ -464,8 +467,8 @@ if test "${nut_with_cgi}" != "no"; then
    nut_with_cgi="${nut_have_libgd}"
 fi
 
-AM_CONDITIONAL(WITH_CGI, test "${nut_with_cgi}" = "yes")
-NUT_REPORT_FEATURE([build CGI programs], [${nut_with_cgi}])
+NUT_REPORT_FEATURE([build CGI programs], [${nut_with_cgi}], [],
+					[WITH_CGI], [Define to enable CGI (HTTP) support])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-hal
@@ -488,7 +491,8 @@ if test "${nut_with_hal}" != "no"; then
 fi
 
 AM_CONDITIONAL(WITH_HAL, test "${nut_with_hal}" = "yes")
-NUT_REPORT_FEATURE([enable HAL support], [${nut_with_hal}])
+NUT_REPORT_FEATURE([enable HAL support], [${nut_with_hal}], [],
+					[WITH_HAL], [Define to enable HAL support])
 
 dnl ----------------------------------------------------------------------
 
@@ -584,8 +588,12 @@ AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [8.6.3], [
 	nut_have_asciidoc="no"
 ])
 
+NUT_REPORT_FEATURE([build and install documentation], [${nut_with_doc}], [],
+					[WITH_ASCIIDOC], [Define to enable Asciidoc support])
+
+dnl Notes: we also keep HAVE_ASCIIDOC for implicit targets, such as manpage
+dnl building
 AM_CONDITIONAL([HAVE_ASCIIDOC], [test "${nut_have_asciidoc}" = "yes"])
-NUT_REPORT_FEATURE([build and install documentation], [${nut_with_doc}])
 
 if test "${nut_with_doc}" = "yes"; then
 	NUT_REPORT([only build specific documentation format], [${DOC_BUILD_LIST}])
@@ -604,7 +612,8 @@ else
   AC_DISABLE_STATIC
 fi
 AM_CONDITIONAL(WITH_DEV, test "${nut_with_dev}" = "yes")
-NUT_REPORT_FEATURE([build and install the development files], [${nut_with_dev}])
+NUT_REPORT_FEATURE([build and install the development files], [${nut_with_dev}], [],
+					[WITH_DEV], [Define to enable development files support])
 
 dnl ----------------------------------------------------------------------
 

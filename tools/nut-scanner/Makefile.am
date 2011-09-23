@@ -29,7 +29,7 @@ if WITH_SNMP
   libnutscan_la_CFLAGS += $(LIBNETSNMP_CFLAGS)
   libnutscan_la_LIBADD += $(LIBNETSNMP_LIBS)
 endif
-if WITH_NEONXML
+if WITH_NEON
   libnutscan_la_SOURCES += scan_xml_http.c
   libnutscan_la_CFLAGS += $(LIBNEON_CFLAGS)
   libnutscan_la_LIBADD += $(LIBNEON_LIBS)

@@ -73,14 +73,14 @@ static char * port = NULL;
 #ifdef HAVE_PTHREAD
 static pthread_t thread[TYPE_END];
 
-#ifdef HAVE_USB_H
+#ifdef WITH_USB
 static void * run_usb(void * arg)
 {
 	dev[TYPE_USB] = nutscan_scan_usb();
 	return NULL;
 }
 #endif
-#ifdef HAVE_NET_SNMP_NET_SNMP_CONFIG_H
+#ifdef WITH_SNMP
 static void * run_snmp(void * arg)
 {
 	nutscan_snmp_t * sec = (nutscan_snmp_t *)arg;
@@ -103,14 +103,14 @@ static void * run_nut_old(void * arg)
 	return NULL;
 }
 
-#ifdef HAVE_AVAHI_CLIENT_CLIENT_H
+#ifdef WITH_AVAHI
 static void * run_avahi(void * arg)
 {
 	dev[TYPE_AVAHI] = nutscan_scan_avahi(timeout);
 	return NULL;
 }
 #endif
-#ifdef HAVE_FREEIPMI_FREEIPMI_H
+#ifdef WITH_FREEIPMI
 static void * run_ipmi(void * arg)
 {
 	dev[TYPE_IPMI] = nutscan_scan_ipmi();
@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
 			case 'm':
 				cidr = strdup(optarg);
 				break;
-#ifdef HAVE_NET_SNMP_NET_SNMP_CONFIG_H
+#ifdef WITH_SNMP
 			case 'c':
 				sec.community = strdup(optarg);
 				break;
@@ -195,28 +195,26 @@ int main(int argc, char *argv[])
 			case 'x':
 				sec.privProtocol = strdup(optarg);
 				break;
-#endif
+			case 'S':
+				allow_snmp = 1;
+				break;
+#endif /* WITH_SNMP */
 			case 'p':
 				port = strdup(optarg);
 				break;
 			case 'C':
 				allow_all = 1;
 				break;
-#ifdef HAVE_USB_H
+#ifdef WITH_USB
 			case 'U':
 				allow_usb = 1;
 				break;
-#endif
-#ifdef HAVE_NET_SNMP_NET_SNMP_CONFIG_H
-			case 'S':
-				allow_snmp = 1;
-				break;
-#endif
+#endif /* WITH_USB */
 #ifdef WITH_NEON
 			case 'M':
 				allow_xml = 1;
 				break;
-#endif
+#endif /* WITH_NEON */
 			case 'O':
 				allow_oldnut = 1;
 				break;
@@ -224,12 +222,12 @@ int main(int argc, char *argv[])
 			case 'A':
 				allow_avahi = 1;
 				break;
-#endif
-#ifdef HAVE_FREEIPMI_FREEIPMI_H
+#endif /* WITH_AVAHI */
+#ifdef WITH_IPMI
 			case 'I':
 				allow_ipmi = 1;
 				break;
-#endif
+#endif /* WITH_IPMI */
 			case 'N':
 				display_func = nutscan_display_ups_conf;
 				break;
@@ -242,30 +240,30 @@ int main(int argc, char *argv[])
 			case 'h':
 			case '?':
 			default:
-				puts("nut-scanner : detecting available UPS.\n");
+				puts("nut-scanner : detecting available power devices.\n");
 				puts("OPTIONS:");
 				printf("  -C, --complete_scan : Scan all available devices (default).\n");
-#ifdef HAVE_USB_H
+#ifdef WITH_USB
 				printf("  -U, --usb_scan : Scan USB devices.\n");
-#endif
-#ifdef HAVE_NET_SNMP_NET_SNMP_CONFIG_H
+#endif /* WITH_USB */
+#ifdef WITH_SNMP
 				printf("  -S, --snmp_scan : Scan SNMP devices.\n");
-#endif
+#endif /* WITH_SNMP */
 #ifdef WITH_NEON
 				printf("  -M, --xml_scan : Scan XML/HTTP devices.\n");
-#endif
+#endif /* WITH_NEON */
 				printf("  -O, --oldnut_scan : Scan NUT devices (old method).\n");
 #ifdef WITH_AVAHI
 				printf("  -A, --avahi_scan : Scan NUT devices (avahi method).\n");
-#endif
-#ifdef HAVE_FREEIPMI_FREEIPMI_H
+#endif /* WITH_AVAHI */
+#ifdef WITH_IPMI
 				printf("  -I, --ipmi_scan : Scan IPMI devices.\n");
-#endif
+#endif /* WITH_IPMI */
 				printf("  -t, --timeout <timeout in seconds>: network operation timeout (default %d).\n",DEFAULT_TIMEOUT);
 				printf("  -s, --start_ip <IP address>: First IP address to scan.\n");
 				printf("  -e, --end_ip <IP address>: Last IP address to scan.\n");
 
-#ifdef HAVE_NET_SNMP_NET_SNMP_CONFIG_H
+#ifdef WITH_SNMP
 				printf("\nSNMP v1 specific options:\n");
 				printf("  -c, --community <community name>: Set SNMP v1 community name (default = public)\n");
 
@@ -276,10 +274,10 @@ int main(int argc, char *argv[])
 				printf("  -A, --authPassword <authentication pass phrase>: Set the authentication pass phrase used for authenticated SNMPv3 messages (mandatory if you set secLevel to authNoPriv or authPriv)\n");
 				printf("  -x, --privProtocol <privacy protocol>: Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages (default=DES)\n");
 				printf("  -X, --privPassword <privacy pass phrase>: Set the privacy pass phrase used for encrypted SNMPv3 messages (mandatory if you set secLevel to authPriv)\n");
-#endif
+#endif /* WITH_SNMP */
 
-				printf("\nNUT device specific options:\n");
-				printf("  -p, --port <port number>: Port number of remote NUT devices\n");
+				printf("\nNUT specific options:\n");
+				printf("  -p, --port <port number>: Port number of remote NUT upsd\n");
 				printf("\ndisplay specific options:\n");
 				printf("  -N, --disp_nut_conf : Display result in the ups.conf format\n");
 				printf("  -P, --disp_parsable : Display result in a parsable format\n");
@@ -297,18 +295,18 @@ int main(int argc, char *argv[])
 		allow_all = 1;
 	}
 
-#ifdef HAVE_USB_H
+#ifdef WITH_USB
 	if( allow_all || allow_usb) {
 		printq(quiet,"Scanning USB bus.\n");
 #ifdef HAVE_PTHREAD
 		pthread_create(&thread[TYPE_USB],NULL,run_usb,NULL);
 #else
 		dev[TYPE_USB] = nutscan_scan_usb();
-#endif
+#endif /* HAVE_PTHREAD */
 	}
-#endif /* HAVE_USB_H */
+#endif /* WITH_USB */
 
-#ifdef HAVE_NET_SNMP_NET_SNMP_CONFIG_H
+#ifdef WITH_SNMP
 	if( allow_all || allow_snmp) {
 		if( start_ip == NULL ) {
 			printq(quiet,"No start IP, skipping SNMP\n");
@@ -319,10 +317,10 @@ int main(int argc, char *argv[])
 			pthread_create(&thread[TYPE_SNMP],NULL,run_snmp,&sec);
 #else
 			dev[TYPE_SNMP] = nutscan_scan_snmp(start_ip,end_ip,timeout,&sec);
-#endif
+#endif /* HAVE_PTHREAD */
 		}
 	}
-#endif /* HAVE_NET_SNMP_NET_SNMP_CONFIG_H */
+#endif /* WITH_SNMP */
 
 #ifdef WITH_NEON
 	if( allow_all || allow_xml) {
@@ -331,9 +329,9 @@ int main(int argc, char *argv[])
 		pthread_create(&thread[TYPE_XML],NULL,run_xml,NULL);
 #else
 		dev[TYPE_XML] = nutscan_scan_xml_http(timeout);
-#endif
+#endif /* HAVE_PTHREAD */
 	}
-#endif
+#endif /* WITH_NEON */
 
 	if( allow_all || allow_oldnut) {
 		if( start_ip == NULL ) {
@@ -345,72 +343,72 @@ int main(int argc, char *argv[])
 			pthread_create(&thread[TYPE_NUT],NULL,run_nut_old,NULL);
 #else
 			dev[TYPE_NUT] = nutscan_scan_nut(start_ip,end_ip,port,timeout);
-#endif
+#endif /* HAVE_PTHREAD */
 		}
 	}
 
-#ifdef HAVE_AVAHI_CLIENT_CLIENT_H
+#ifdef WITH_AVAHI
 	if( allow_all || allow_avahi) {
 		printq(quiet,"Scanning NUT bus (avahi method).\n");
 #ifdef HAVE_PTHREAD
 		pthread_create(&thread[TYPE_AVAHI],NULL,run_avahi,NULL);
 #else
 		dev[TYPE_AVAHI] = nutscan_scan_avahi();
-#endif
+#endif /* HAVE_PTHREAD */
 	}
-#endif
+#endif /* WITH_AVAHI */
 
-#ifdef HAVE_FREEIPMI_FREEIPMI_H
+#ifdef WITH_IPMI
 	if( allow_all || allow_ipmi) {
 		printq(quiet,"Scanning IPMI bus.\n");
 #ifdef HAVE_PTHREAD
 		pthread_create(&thread[TYPE_IPMI],NULL,run_ipmi,NULL);
 #else
 		dev[TYPE_IPMI] = nutscan_scan_ipmi();
-#endif
+#endif /* HAVE_PTHREAD */
 	}
-#endif
-
-#ifdef HAVE_PTHREAD
-#ifdef HAVE_USB_H
-	pthread_join(thread[TYPE_USB],NULL);
-#endif
-#ifdef HAVE_NET_SNMP_NET_SNMP_CONFIG_H
-	pthread_join(thread[TYPE_SNMP],NULL);
-#endif
-#ifdef WITH_NEON
-	pthread_join(thread[TYPE_XML],NULL);
-#endif
-	pthread_join(thread[TYPE_NUT],NULL);
-#ifdef HAVE_AVAHI_CLIENT_CLIENT_H
-	pthread_join(thread[TYPE_AVAHI],NULL);
-#endif
-#ifdef HAVE_FREEIPMI_FREEIPMI_H
-	pthread_join(thread[TYPE_IPMI],NULL);
-#endif
 #endif /* HAVE_PTHREAD */
 
-#ifdef HAVE_USB_H
+#ifdef HAVE_PTHREAD
+#ifdef WITH_USB
+	pthread_join(thread[TYPE_USB],NULL);
+#endif /* WITH_USB */
+#ifdef WITH_SNMP
+	pthread_join(thread[TYPE_SNMP],NULL);
+#endif /* WITH_SNMP */
+#ifdef WITH_NEON
+	pthread_join(thread[TYPE_XML],NULL);
+#endif /* WITH_NEON */
+	pthread_join(thread[TYPE_NUT],NULL);
+#ifdef WITH_AVAHI
+	pthread_join(thread[TYPE_AVAHI],NULL);
+#endif /* WITH_AVAHI */
+#ifdef WITH_IPMI
+	pthread_join(thread[TYPE_IPMI],NULL);
+#endif /* WITH_IPMI */
+#endif /* HAVE_PTHREAD */
+
+#ifdef WITH_USB
 	display_func(dev[TYPE_USB]);
 	nutscan_free_device(dev[TYPE_USB]);
-#endif
-#ifdef HAVE_NET_SNMP_NET_SNMP_CONFIG_H
+#endif /* WITH_USB */
+#ifdef WITH_SNMP
 	display_func(dev[TYPE_SNMP]);
 	nutscan_free_device(dev[TYPE_SNMP]);
-#endif
+#endif /* WITH_SNMP */
 #ifdef WITH_NEON
 	display_func(dev[TYPE_XML]);
 	nutscan_free_device(dev[TYPE_XML]);
-#endif
+#endif /* WITH_NEON */
 	display_func(dev[TYPE_NUT]);
 	nutscan_free_device(dev[TYPE_NUT]);
-#ifdef HAVE_AVAHI_CLIENT_CLIENT_H
+#ifdef WITH_AVAHI
 	display_func(dev[TYPE_AVAHI]);
 	nutscan_free_device(dev[TYPE_AVAHI]);
-#endif
-#ifdef HAVE_FREEIPMI_FREEIPMI_H
+#endif /* WITH_AVAHI */
+#ifdef WITH_IPMI
 	display_func(dev[TYPE_IPMI]);
 	nutscan_free_device(dev[TYPE_IPMI]);
-#endif
+#endif /* WITH_IPMI */
 	return EXIT_SUCCESS;
 }

@@ -72,8 +72,7 @@ if test -z "${nut_have_libfreeipmi_seen}"; then
 		nut_with_ipmi="yes"
 		nut_ipmi_lib="(FreeIPMI)"
 		nut_have_libipmi="yes"
-		AC_DEFINE(WITH_IPMI, 1, [Define to enable IPMI support])
-		AC_DEFINE(WITH_FREEIPMI, 1, [Define to enable IPMI support using FreeIPMI])
+		AC_DEFINE(HAVE_FREEIPMI, 1, [Define if FreeIPMI support is available])
 		LIBIPMI_CFLAGS="${CFLAGS}"
 		LIBIPMI_LIBS="${LIBS}"
 	fi

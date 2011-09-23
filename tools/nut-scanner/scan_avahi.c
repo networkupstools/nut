@@ -18,7 +18,7 @@
  */
 #include "common.h"
 
-#ifdef HAVE_AVAHI_CLIENT_CLIENT_H
+#ifdef WITH_AVAHI
 #include "nut-scan.h"
 
 #include <stdio.h>
@@ -335,4 +335,4 @@ fail:
 
 	return dev_ret;
 }
-#endif /* HAVE_AVAHI_CLIENT_CLIENT_H */
+#endif /* WITH_AVAHI */
