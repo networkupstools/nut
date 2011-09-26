@@ -50,4 +50,4 @@ libupsclient_la_LIBADD = ../common/libparseconf.la
 if WITH_SSL
   libupsclient_la_LIBADD += $(LIBSSL_LIBS)
 endif
-libupsclient_la_LDFLAGS = -version-info 1:0:0
+libupsclient_la_LDFLAGS = -version-info 2:0:1
