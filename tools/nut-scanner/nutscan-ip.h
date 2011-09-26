@@ -20,6 +20,7 @@
 #define SCAN_IP
 
 #include <arpa/inet.h>
+#include <netinet/in.h>
 
 enum network_type {
         IPv4,
