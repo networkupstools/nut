@@ -240,7 +240,6 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
         /* Detecting IPv4 vs IPv6 */
 	memset(&hints,0,sizeof(struct addrinfo));
 	hints.ai_family = AF_INET;
-	hints.ai_flags = AI_NUMERICSERV;
 
 	ip.type = IPv4;
 	/* Detecting IPv4 vs IPv6 */
