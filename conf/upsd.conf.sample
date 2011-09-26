@@ -3,6 +3,8 @@
 # This file contains access control data, you should keep it secure.
 #
 # It should only be readable by the user that upsd becomes.  See the FAQ.
+#
+# Each entry below provides usage and default value.
 
 # =======================================================================
 # MAXAGE <seconds>
@@ -27,14 +29,19 @@
 # =======================================================================
 # LISTEN <address> [<port>]
 # LISTEN 127.0.0.1 3493
+# LISTEN ::1 3493
 #
-# This defaults to the localhost listening address and port 3493.  You
+# This defaults to the localhost listening addresses and port 3493.  You
 # may specify each interface you want upsd to listen on for connections,
 # optionally with a port number.
 #
 # You may need this if you have multiple interfaces on your machine and
 # you don't want upsd to listen to all interfaces (for instance on a
 # firewall, you may not want to listen to the external interface).
+#
+# You may also need this in case of IP v4 or v6 disabled kernel, to
+# restrict listening to the type that is enabled. Otherwise, upsd will
+# fail to start.
 #
 # This will only be read at startup of upsd.  If you make changes here,
 # you'll need to restart upsd, reload will have no effect.
