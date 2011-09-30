@@ -108,6 +108,7 @@
 "Belkin"	"ups"	"2"	"Universal UPS F6H350ukUNV"	"serial port"	"blazer_ser"
 "Belkin"	"ups"	"2"	"Universal UPS F6H500ukUNV"	"serial port"	"blazer_ser"
 "Belkin"	"ups"	"2"	"Universal UPS F6H650ukUNV"	"serial port"	"blazer_ser"
+"Belkin"	"ups"	"2"	"F6S600auUSB"	"USB"	"blazer_usb"
 
 "Best Power"	"ups"	"1"	"Fortress (older)"	""	"bestfortress"
 "Best Power"	"ups"	"1"	"Fortress (newer)"	""	"bestups"
