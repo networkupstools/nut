@@ -25,7 +25,7 @@
 #include "powercom-hid.h"
 #include "usb-common.h"
 
-#define POWERCOM_HID_VERSION	"PowerCOM HID 0.2"
+#define POWERCOM_HID_VERSION	"PowerCOM HID 0.3"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* PowerCOM */
@@ -43,6 +43,8 @@ static usb_device_id_t powercom_usb_device_table[] = {
 	{ USB_DEVICE(POWERCOM_VENDORID, 0x00a5), NULL },
 	/* PowerCOM BNT - Black Knight Pro */
 	{ USB_DEVICE(POWERCOM_VENDORID, 0x00a6), NULL },
+	/* PowerCOM BNT-xxxAP */
+	{ USB_DEVICE(POWERCOM_VENDORID, 0x0004), NULL },
 
 	/* Terminating entry */
 	{ -1, -1, NULL }

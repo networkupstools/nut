@@ -632,6 +632,7 @@
 "Powercom"	"ups"	"5"	"WOW"	"USB (2009 models, product id: 00a4)"	"usbhid-ups (experimental)"
 "Powercom"	"ups"	"4"	"(various)"	"USB (<= 2009 models, product id: 0002)"	"powercom (requires 'usbserial' kernel module)"
 "Powercom"	"ups"	"5"	"(various)"	"USB (2009 models, product id: 00a?)"	"usbhid-ups (experimental)"
+"Powercom"	"ups"	"5"	"BNT-xxxAP"	"USB (product id: 0004)"	"usbhid-ups (experimental)"
 
 "POWEREX"	"ups"	"2"	"VI 1000 LED"	""	"blazer_usb"
 
