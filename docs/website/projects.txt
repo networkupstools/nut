@@ -51,6 +51,10 @@ link:http://csociety.ecn.purdue.edu/~delpha/winnut/[WinNUT]
 
 WinNUT is a partial port of the client side of Network UPS Tools (NUT) to Windows.
 
+NOTE: WinNUT is currently being replaced by a full port to Windows, part of the
+official NUT distribution. link:download.html#_binary_packages[MSI packages]
+are available too.
+
 link:http://wmnut.mgeops.org/[WMNUT]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
