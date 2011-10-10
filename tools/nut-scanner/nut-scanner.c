@@ -262,6 +262,7 @@ int main(int argc, char *argv[])
 				printf("  -t, --timeout <timeout in seconds>: network operation timeout (default %d).\n",DEFAULT_TIMEOUT);
 				printf("  -s, --start_ip <IP address>: First IP address to scan.\n");
 				printf("  -e, --end_ip <IP address>: Last IP address to scan.\n");
+				printf("  -m, --mask_cidr <IP address/mask>: Give a range of IP using CIDR notation.\n");
 
 #ifdef WITH_SNMP
 				printf("\nSNMP v1 specific options:\n");

@@ -79,6 +79,10 @@ NETWORK OPTIONS
 
   Set the last IP (IPv4 or IPv6) when a range of IP is required (SNMP, old_nut). If this parameter is omitted, only the 'start IP' is scanned. If 'end IP' is lesser than 'start IP', both parameter are internally permuted.
 
+*-m* | *--mask_cidr* 'IP address/mask'::
+
+  Set a range of IP using CIDR notation.
+
 NUT DEVICE OPTION
 -----------------
 
