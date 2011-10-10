@@ -25,7 +25,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
+#include "timehead.h"
 #include <freeipmi/freeipmi.h>
 #include <ipmi_monitoring.h>
 #include <ipmi_monitoring_bitmasks.h>

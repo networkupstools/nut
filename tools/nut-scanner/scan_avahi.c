@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
-#include <time.h>
+#include "timehead.h"
 
 #include <avahi-client/client.h>
 #include <avahi-client/lookup.h>
