@@ -20,26 +20,26 @@ endif::website[]
 to do so.
 ================================================================================
 
-Stable tree: 2.6
-~~~~~~~~~~~~~~~~
+Stable tree:
+~~~~~~~~~~~~
 
-- link:http://www.networkupstools.org/source/2.6/nut-2.6.2.tar.gz[nut-2.6.2.tar.gz]
-- link:http://www.networkupstools.org/source/2.6/nut-2.6.2.tar.gz.sig[PGP/GPG signature]
-- SHA-256 sum: 343554add0713348f8b09bca8d83eee2eb2ae8bad9cdad9a39e0f0e2d0f5d375
-- link:http://www.networkupstools.org/source/2.6/new-2.6.2.txt[Release notes]
-- link:http://www.networkupstools.org/source/2.6/ChangeLog[ChangeLog]
+- link:http://www.networkupstools.org/source/@TREE_VERSION@/nut-@PACKAGE_VERSION@.tar.gz[nut-@PACKAGE_VERSION@.tar.gz]
+- link:http://www.networkupstools.org/source/@TREE_VERSION@/nut-@PACKAGE_VERSION@.tar.gz.sig[PGP/GPG signature]
+- SHA-256 sum: <FIXME: replace by the actual SHA-256 sum (post dist action)>
+- link:http://www.networkupstools.org/source/@TREE_VERSION@/new-@PACKAGE_VERSION@.txt[Release notes]
+- link:http://www.networkupstools.org/source/@TREE_VERSION@/ChangeLog[ChangeLog]
 
-You can also browse the link:http://www.networkupstools.org/source/2.6/[stable source directory].
+You can also browse the link:http://www.networkupstools.org/source/@TREE_VERSION@/[stable source directory].
 
 
-Testing tree: 2.6.x-pre
-~~~~~~~~~~~~~~~~~~~~~~~
+Testing tree:
+~~~~~~~~~~~~~
 
 There is currently no testing release.
 
 
-Development tree: 2.7
-~~~~~~~~~~~~~~~~~~~~~
+Development tree:
+~~~~~~~~~~~~~~~~~
 
 Code repository
 ^^^^^^^^^^^^^^^

@@ -14,7 +14,7 @@ IMAGE_FILES = images/asciidoc.png \
 SHARED_DEPS = nut-names.txt asciidoc.conf
 
 USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt	\
- configure.txt download.txt documentation.txt features.txt history.txt	\
+ configure.txt documentation.txt features.txt history.txt	\
  outlets.txt scheduling.txt security.txt support.txt user-manual.txt \
  stable-hcl.txt
 
@@ -76,9 +76,9 @@ clean-local:
 	rm -rf *.pdf *.html *.chunked docbook-xsl.css
 
 ### TODO: automatic dependency generation
-# Add other directory deps (not for local EXTRA_DIST)
+# Add other directory deps (not for local EXTRA_DIST) and generated contents
 FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS) $(SHARED_DEPS) ../README \
-	../INSTALL ../UPGRADING ../TODO
+	../INSTALL ../UPGRADING ../TODO download.txt ups-html.txt
 FULL_DEVELOPER_GUIDE_DEPS = $(DEVELOPER_GUIDE_DEPS) $(SHARED_DEPS) \
 	../scripts/augeas/README ../TODO ../lib/README
 
