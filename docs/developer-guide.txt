@@ -40,6 +40,12 @@ include::sock-protocol.txt[]
 
 include::../scripts/augeas/README[]
 
+
+[[devscan]]
+
+include::../tools/nut-scanner/README[]
+
+
 [[new-clients]]
 
 include::new-clients.txt[]
