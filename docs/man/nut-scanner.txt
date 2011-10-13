@@ -124,6 +124,26 @@ SNMP V3 OPTIONS
 
   Set the 'privacy pass phrase' used for encrypted SNMPv3 messages. This parameter is mandatory if you set 'security level' to authPriv.
 
+EXAMPLES
+--------
+
+To scan USB devices only:
+
+*nut-scanner -U*
+
+To scan SNMP v1 device with public ommunity on address range 192.168.0.0 to 192.168.0.255:
+
+*nut-scanner -S -s 192.168.0.0 -e 192.168.0.255*
+
+The same using CIDR notation:
+
+*nut-scanner -S -m 192.168.0.0/24*
+
+To scan NUT servers with a timeout of 10s on IP range 192.168.0.0 to 192.168.0.128 using CIDR notation:
+
+*nut-scanner -O -t 10 -m 192.168.0.0/25*
+
+
 SEE ALSO
 --------
 
