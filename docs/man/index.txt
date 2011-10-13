@@ -126,6 +126,7 @@ Client library
 Device discovery library
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
+- linkman:nutscan[3]
 - linkman:nutscan_scan_usb[3]
 - linkman:nutscan_scan_snmp[3]
 - linkman:nutscan_scan_xml_http[3]
