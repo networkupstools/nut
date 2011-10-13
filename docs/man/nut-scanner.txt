@@ -15,7 +15,8 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-*nut-scanner* scans available communication buses and display any NUT compatible device it has found.
+*nut-scanner* scans available communication buses and displays any
+NUT-compatible devices it has found.
 
 OPTIONS
 -------
@@ -42,11 +43,11 @@ BUS OPTIONS
 
 *-U* | *--usb_scan*::
 
-  List all NUT compatible USB devices currently plugged in.
+  List all NUT-compatible USB devices currently plugged in.
 
 *-S* | *--snmp_scan*::
 
-  Scan SNMP devices. Require at least a 'start IP', and optionnaly an 'end IP'. See specific SNMP OPTIONS for community and security settings.
+  Scan SNMP devices. Requires at least a 'start IP', and optionally, an 'end IP'. See specific SNMP OPTIONS for community and security settings.
 
 *-M* | *--xml_scan*::
 
@@ -58,7 +59,7 @@ BUS OPTIONS
 
 *-A* | *--avahi_scan*::
 
-  Scan NUT servers using avahi request on the current network interfaces. No IP required.
+  Scan NUT servers using Avahi request on the current network interfaces. No IP required.
 
 *-I* | *--ipmi_scan*::
 
@@ -77,7 +78,7 @@ NETWORK OPTIONS
 
 *-e* | *--end_ip* 'end IP'::
 
-  Set the last IP (IPv4 or IPv6) when a range of IP is required (SNMP, old_nut). If this parameter is omitted, only the 'start IP' is scanned. If 'end IP' is lesser than 'start IP', both parameter are internally permuted.
+  Set the last IP (IPv4 or IPv6) when a range of IP is required (SNMP, old_nut). If this parameter is omitted, only the 'start IP' is scanned. If 'end IP' is less than 'start IP', both parameters are internally permuted.
 
 *-m* | *--mask_cidr* 'IP address/mask'::
 
@@ -86,7 +87,7 @@ NETWORK OPTIONS
 NUT DEVICE OPTION
 -----------------
 
-*-p* | *--port <port number* 'port number'::
+*-p* | *--port* 'port number'::
 
   Set the port number of scanned NUT devices (default 3493).
 
@@ -131,7 +132,7 @@ To scan USB devices only:
 
 *nut-scanner -U*
 
-To scan SNMP v1 device with public ommunity on address range 192.168.0.0 to 192.168.0.255:
+To scan SNMP v1 device with public community on address range 192.168.0.0 to 192.168.0.255:
 
 *nut-scanner -S -s 192.168.0.0 -e 192.168.0.255*
 
@@ -139,7 +140,7 @@ The same using CIDR notation:
 
 *nut-scanner -S -m 192.168.0.0/24*
 
-To scan NUT servers with a timeout of 10s on IP range 192.168.0.0 to 192.168.0.128 using CIDR notation:
+To scan NUT servers with a timeout of 10 seconds on IP range 192.168.0.0 to 192.168.0.128 using CIDR notation:
 
 *nut-scanner -O -t 10 -m 192.168.0.0/25*
 
