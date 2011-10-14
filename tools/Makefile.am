@@ -1,3 +1,4 @@
+# TODO: remove redundancies!
 
 # Force build in ./ before nut-scanner, to have nutscan-{usb,snmp}.h
 # built before going into the nut-scanner sub-directory
@@ -60,6 +61,16 @@ dist-hook:
 		echo "----------------------------------------------------------------------"; \
 		echo "Warning: Perl is not available."; \
 		echo "Skipping the USB helper files regeneration."; \
+		echo "----------------------------------------------------------------------"; \
+	fi
+
+	@if python -c pass; then \
+		echo "Regenerating the HTML and JSON formated HCL tables."; \
+		$(distdir)/nut-hclinfo.py; \
+	else \
+		echo "----------------------------------------------------------------------"; \
+		echo "Warning: Python is not available."; \
+		echo "Skipping the HTML and JSON formated HCL tables regeneration."; \
 		echo "----------------------------------------------------------------------"; \
 	fi
 

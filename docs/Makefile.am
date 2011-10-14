@@ -75,10 +75,16 @@ endif !HAVE_ASCIIDOC
 clean-local:
 	rm -rf *.pdf *.html *.chunked docbook-xsl.css
 
+# Static HCL is generated automatically
+# This is more of a harness, since this file should have already been
+# generated, due to the top level Makefile SUBDIRS ordering (tools before docs)
+ups-html.txt:
+	cd ../tools; $(MAKE) $(AM_MAKEFLAGS) website
+
 ### TODO: automatic dependency generation
-# Add other directory deps (not for local EXTRA_DIST)
+# Add other directory deps (not for local EXTRA_DIST) and generated contents
 FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS) $(SHARED_DEPS) ../README \
-	../INSTALL ../UPGRADING ../TODO
+	../INSTALL ../UPGRADING ../TODO ups-html.txt
 FULL_DEVELOPER_GUIDE_DEPS = $(DEVELOPER_GUIDE_DEPS) $(SHARED_DEPS) \
 	../scripts/augeas/README ../TODO ../lib/README \
 	../tools/nut-scanner/README
