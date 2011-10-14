@@ -35,6 +35,11 @@ dnl # reason is that the SVN revision should be computed at compile time,
 dnl # not configure time.
 dnl AC_DEFINE_UNQUOTED(UPS_VERSION, "${PACKAGE_VERSION}", [NUT version])
 
+dnl However, automatically define the tree version (mostly for AC_SUBST)
+TREE_VERSION="`echo ${PACKAGE_VERSION} | awk '{ print substr($0,1,3) }'`"
+AC_DEFINE_UNQUOTED(TREE_VERSION, "${TREE_VERSION}", [NUT tree version])
+
+
 dnl Fix this early so we can expand with eval later
 test "${prefix}" = "NONE" && prefix="${ac_default_prefix}"
 test "${exec_prefix}" = "NONE" && exec_prefix='${prefix}'
@@ -1001,6 +1006,7 @@ BINDIR=${conftemp}
 AC_DEFINE_UNQUOTED(BINDIR, "${conftemp}", [Default path for user executables])
 
 AC_SUBST(OS_NAME)
+AC_SUBST(TREE_VERSION)
 AC_SUBST(LIBSSL_CFLAGS)
 AC_SUBST(LIBSSL_LIBS)
 AC_SUBST(LIBGD_CFLAGS)

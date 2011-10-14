@@ -52,6 +52,7 @@ ASCIIDOC_PARAMS = --unsafe --backend=xhtml11 \
     --attribute=website \
     --attribute=quirks \
     --attribute=revision=$(PACKAGE_VERSION) \
+    --attribute tree_version=@TREE_VERSION@ \
     --attribute localdate=`TZ=UTC date +%Y-%m-%d` \
     --attribute localtime=`TZ=UTC date +%H:%M:%S` \
     --attribute=date="`TZ=UTC date`"

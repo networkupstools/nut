@@ -103,6 +103,7 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
     --attribute iconsdir=$(srcdir)/images \
     --attribute=badges \
     --attribute=external_title \
+    --attribute tree_version=@TREE_VERSION@ \
     -a toc -a numbered --destination-dir=.
 
 .txt.html:
