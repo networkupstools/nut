@@ -13,6 +13,7 @@ IMAGE_FILES = images/asciidoc.png \
 	images/bigbox.png \
 	images/bizarre.png \
 	images/note.png \
+	images/nut-logo.png \
 	images/warning.png
 
 FAVICON_FILES = faviconut.ico faviconut.png

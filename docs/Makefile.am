@@ -1,6 +1,7 @@
 IMAGE_FILES = images/asciidoc.png \
 	images/eaton-logo.png \
 	images/nut_layering.png \
+	images/nut-logo.png \
 	images/note.png \
 	images/warning.png \
 	images/blue-arrow.png \
