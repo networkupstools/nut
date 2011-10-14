@@ -30,12 +30,13 @@ nut-scanner-deps:
 	fi
 
 website:
-	@if python -c pass; then \
+	@if python -c "import json,simplejson,lxml"; then \
 		echo "Regenerating the HTML and JSON formated HCL tables."; \
 		$(top_srcdir)/tools/nut-hclinfo.py; \
 	else \
 		echo "----------------------------------------------------------------------"; \
-		echo "Warning: Python is not available."; \
+		echo "Warning: either Python, or a required module (json, simplejson, lxml) "; \
+		echo "is not available."; \
 		echo "Skipping the HTML and JSON formated HCL tables regeneration."; \
 		echo "----------------------------------------------------------------------"; \
 	fi
@@ -64,12 +65,13 @@ dist-hook:
 		echo "----------------------------------------------------------------------"; \
 	fi
 
-	@if python -c pass; then \
+	@if python -c "import json,simplejson,lxml"; then \
 		echo "Regenerating the HTML and JSON formated HCL tables."; \
 		$(distdir)/nut-hclinfo.py; \
 	else \
 		echo "----------------------------------------------------------------------"; \
-		echo "Warning: Python is not available."; \
+		echo "Warning: either Python, or a required module (json, simplejson, lxml) "; \
+		echo "is not available."; \
 		echo "Skipping the HTML and JSON formated HCL tables regeneration."; \
 		echo "----------------------------------------------------------------------"; \
 	fi
