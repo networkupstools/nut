@@ -531,7 +531,6 @@
 "MGE UPS SYSTEMS"	"ups"	"5"	"various models (XML/HTTP mode)"	"NMC Minislot (Ref 66102)"	"netxml-ups (experimental)"
 "MGE UPS SYSTEMS"	"ups"	"5"	"various models (SNMP mode)"	"NMC Minislot (Ref 66102)"	"snmp-ups (experimental)"
 "MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar (XML/HTTP mode)"	"SNMP/Web Minislot card (ref 66244)"	"netxml-ups (experimental)"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar (XML/HTTP mode)"	"SNMP/Web Minislot card (ref 66244)"	"netxml-ups (experimental)"
 "MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar (SNMP mode)"	"SNMP/Web Minislot card (ref 66244)"	"snmp-ups (experimental)"
 "MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar / Comet / Galaxy (SNMP)"	"SNMP card (ref 66062)"	"snmp-ups (experimental)"
 "MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar (SNMP)"	"SNMP card (ref 66045)"	"snmp-ups (experimental)"
