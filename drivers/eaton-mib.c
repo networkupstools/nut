@@ -25,7 +25,7 @@
 
 #include "eaton-mib.h"
 
-#define EATON_APHEL_MIB_VERSION	"0.45"
+#define EATON_APHEL_MIB_VERSION	"0.46"
 
 /* APHEL-GENESIS-II-MIB (monitored ePDU)
  * *************************************
@@ -67,14 +67,14 @@ static snmp_info_t eaton_aphel_genesisII_mib[] = {
 
 	/* Outlet page */
 	/* we can't use template since there is no counterpart to outlet.count */
-	{ "outlet.1.current", 0, 0.001, APHEL1_OID_OUTLET_CURRENT ".1.0", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "outlet.2.current", 0, 0.001, APHEL1_OID_OUTLET_CURRENT ".2.0", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "outlet.3.current", 0, 0.001, APHEL1_OID_OUTLET_CURRENT ".3.0", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "outlet.4.current", 0, 0.001, APHEL1_OID_OUTLET_CURRENT ".4.0", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "outlet.5.current", 0, 0.001, APHEL1_OID_OUTLET_CURRENT ".5.0", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "outlet.6.current", 0, 0.001, APHEL1_OID_OUTLET_CURRENT ".6.0", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "outlet.7.current", 0, 0.001, APHEL1_OID_OUTLET_CURRENT ".7.0", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "outlet.8.current", 0, 0.001, APHEL1_OID_OUTLET_CURRENT ".8.0", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "outlet.1.current", 0, 0.1, APHEL1_OID_OUTLET_CURRENT ".1.0", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "outlet.2.current", 0, 0.1, APHEL1_OID_OUTLET_CURRENT ".2.0", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "outlet.3.current", 0, 0.1, APHEL1_OID_OUTLET_CURRENT ".3.0", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "outlet.4.current", 0, 0.1, APHEL1_OID_OUTLET_CURRENT ".4.0", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "outlet.5.current", 0, 0.1, APHEL1_OID_OUTLET_CURRENT ".5.0", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "outlet.6.current", 0, 0.1, APHEL1_OID_OUTLET_CURRENT ".6.0", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "outlet.7.current", 0, 0.1, APHEL1_OID_OUTLET_CURRENT ".7.0", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "outlet.8.current", 0, 0.1, APHEL1_OID_OUTLET_CURRENT ".8.0", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL, NULL }
