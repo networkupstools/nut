@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include "common.h"
+#include "nut_version.h"
 #include <unistd.h>
 #include <string.h>
 #ifdef HAVE_PTHREAD
@@ -31,7 +32,7 @@
 
 #define DEFAULT_TIMEOUT 5
 
-const char optstring[] = "?ht:s:e:c:l:u:W:X:w:x:p:CUSMOAm:NPqI";
+const char optstring[] = "?ht:s:e:c:l:u:W:X:w:x:p:CUSMOAm:NPqIV";
 
 #ifdef HAVE_GETOPT_LONG
 const struct option longopts[] =
@@ -58,6 +59,7 @@ const struct option longopts[] =
 	{ "disp_parsable",no_argument,NULL,'P' },
 	{ "quiet",no_argument,NULL,'q' },
 	{ "help",no_argument,NULL,'h' },
+	{ "version",no_argument,NULL,'V' },
 	{NULL,0,NULL,0}};
 #else
 #define getopt_long(a,b,c,d,e)	getopt(a,b,c) 
@@ -237,6 +239,9 @@ int main(int argc, char *argv[])
 			case 'q':
 				quiet = 1;
 				break;
+			case 'V':
+				printf("Network UPS Tools - %s\n", NUT_VERSION_MACRO);
+				exit(EXIT_SUCCESS);
 			case 'h':
 			case '?':
 			default:
