@@ -95,6 +95,19 @@ access method,
 
 Refer to the upsd(8) and upsd.conf(5) manpages for more information.
 
+== I get a 'not listening on...' error from upsd.
+
+Verify your LISTEN directive. It should be one of the valid IP addresses for
+the computer running upsd (or 0.0.0.0, which is INADDR_ANY), not an address for
+a client.
+
+The LISTEN directive lets you pick which interface upsd listens on. If you are
+trying to limit the clients which can connect to upsd, you either need to use
+tcp-wrappers or kernel firewall rules.
+
+This isn't a NUT-specific limitation - it applies equally to your web server or
+mailer daemon.
+
 == I have an APC Smart-UPS connected with a grey APC serial cable and it won't work. 
 
 The Back-UPS type in the genericups driver works but then I don't get to use
