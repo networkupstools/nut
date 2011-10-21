@@ -125,6 +125,17 @@ SNMP V3 OPTIONS
 
   Set the 'privacy pass phrase' used for encrypted SNMPv3 messages. This parameter is mandatory if you set 'security level' to authPriv.
 
+MISCELLANEOUS OPTIONS
+---------------------
+
+*-V* | *--version*::
+
+  Display NUT version.
+
+*-a* | *--available*::
+
+  Display available bus that can be scanned , depending on how the binary has been compiled. (OLDNUT, USB, SNMP, XML, AVAHI, IPMI).
+
 EXAMPLES
 --------
 
