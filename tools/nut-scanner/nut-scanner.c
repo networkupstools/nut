@@ -270,22 +270,22 @@ int main(int argc, char *argv[])
 			default:
 				puts("nut-scanner : detecting available power devices.\n");
 				puts("OPTIONS:");
-				printf("  -C, --complete_scan : Scan all available devices (default).\n");
+				printf("  -C, --complete_scan: Scan all available devices (default).\n");
 #ifdef WITH_USB
-				printf("  -U, --usb_scan : Scan USB devices.\n");
+				printf("  -U, --usb_scan: Scan USB devices.\n");
 #endif /* WITH_USB */
 #ifdef WITH_SNMP
-				printf("  -S, --snmp_scan : Scan SNMP devices.\n");
+				printf("  -S, --snmp_scan: Scan SNMP devices.\n");
 #endif /* WITH_SNMP */
 #ifdef WITH_NEON
-				printf("  -M, --xml_scan : Scan XML/HTTP devices.\n");
+				printf("  -M, --xml_scan: Scan XML/HTTP devices.\n");
 #endif /* WITH_NEON */
-				printf("  -O, --oldnut_scan : Scan NUT devices (old method).\n");
+				printf("  -O, --oldnut_scan: Scan NUT devices (old method).\n");
 #ifdef WITH_AVAHI
-				printf("  -A, --avahi_scan : Scan NUT devices (avahi method).\n");
+				printf("  -A, --avahi_scan: Scan NUT devices (avahi method).\n");
 #endif /* WITH_AVAHI */
 #ifdef WITH_IPMI
-				printf("  -I, --ipmi_scan : Scan IPMI devices.\n");
+				printf("  -I, --ipmi_scan: Scan IPMI devices.\n");
 #endif /* WITH_IPMI */
 				printf("  -t, --timeout <timeout in seconds>: network operation timeout (default %d).\n",DEFAULT_TIMEOUT);
 				printf("  -s, --start_ip <IP address>: First IP address to scan.\n");
@@ -308,8 +308,8 @@ int main(int argc, char *argv[])
 				printf("\nNUT specific options:\n");
 				printf("  -p, --port <port number>: Port number of remote NUT upsd\n");
 				printf("\ndisplay specific options:\n");
-				printf("  -N, --disp_nut_conf : Display result in the ups.conf format\n");
-				printf("  -P, --disp_parsable : Display result in a parsable format\n");
+				printf("  -N, --disp_nut_conf: Display result in the ups.conf format\n");
+				printf("  -P, --disp_parsable: Display result in a parsable format\n");
 				printf("\nMiscellaneous options:\n");
 				printf("  -V, --version: Display NUT version\n");
 				printf("  -a, --available: Display available bus that can be scanned\n");
