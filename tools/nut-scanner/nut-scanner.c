@@ -32,6 +32,8 @@
 
 #define DEFAULT_TIMEOUT 5
 
+#define ERR_BAD_OPTION	(-1)
+
 const char optstring[] = "?ht:s:e:c:l:u:W:X:w:x:p:CUSMOAm:NPqIV";
 
 #ifdef HAVE_GETOPT_LONG
@@ -150,6 +152,7 @@ int main(int argc, char *argv[])
 	int allow_ipmi = 0;
 	int quiet = 0;
 	void (*display_func)(nutscan_device_t * device);
+	int ret_code = EXIT_SUCCESS;
 
 	memset(&sec,0,sizeof(sec));
 
@@ -242,8 +245,9 @@ int main(int argc, char *argv[])
 			case 'V':
 				printf("Network UPS Tools - %s\n", NUT_VERSION_MACRO);
 				exit(EXIT_SUCCESS);
-			case 'h':
 			case '?':
+				ret_code = ERR_BAD_OPTION;
+			case 'h':
 			default:
 				puts("nut-scanner : detecting available power devices.\n");
 				puts("OPTIONS:");
@@ -287,7 +291,7 @@ int main(int argc, char *argv[])
 				printf("\ndisplay specific options:\n");
 				printf("  -N, --disp_nut_conf : Display result in the ups.conf format\n");
 				printf("  -P, --disp_parsable : Display result in a parsable format\n");
-				return 0;
+				return ret_code;
 		}
 
 	}
