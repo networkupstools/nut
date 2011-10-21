@@ -34,7 +34,7 @@
 
 #define ERR_BAD_OPTION	(-1)
 
-const char optstring[] = "?ht:s:e:c:l:u:W:X:w:x:p:CUSMOAm:NPqIV";
+const char optstring[] = "?ht:s:e:c:l:u:W:X:w:x:p:CUSMOAm:NPqIVa";
 
 #ifdef HAVE_GETOPT_LONG
 const struct option longopts[] =
@@ -62,6 +62,7 @@ const struct option longopts[] =
 	{ "quiet",no_argument,NULL,'q' },
 	{ "help",no_argument,NULL,'h' },
 	{ "version",no_argument,NULL,'V' },
+	{ "available",no_argument,NULL,'a' },
 	{NULL,0,NULL,0}};
 #else
 #define getopt_long(a,b,c,d,e)	getopt(a,b,c) 
@@ -245,6 +246,24 @@ int main(int argc, char *argv[])
 			case 'V':
 				printf("Network UPS Tools - %s\n", NUT_VERSION_MACRO);
 				exit(EXIT_SUCCESS);
+			case 'a':
+				printf("OLDNUT\n");
+#ifdef WITH_USB
+				printf("USB\n");
+#endif
+#ifdef WITH_SNMP
+				printf("SNMP\n");
+#endif
+#ifdef WITH_NEON
+				printf("XML\n");
+#endif
+#ifdef WITH_AVAHI
+				printf("AVAHI\n");
+#endif
+#ifdef WITH_IPMI
+				printf("IPMI\n");
+#endif
+				exit(EXIT_SUCCESS);
 			case '?':
 				ret_code = ERR_BAD_OPTION;
 			case 'h':
@@ -291,6 +310,9 @@ int main(int argc, char *argv[])
 				printf("\ndisplay specific options:\n");
 				printf("  -N, --disp_nut_conf : Display result in the ups.conf format\n");
 				printf("  -P, --disp_parsable : Display result in a parsable format\n");
+				printf("\nMiscellaneous options:\n");
+				printf("  -V, --version: Display NUT version\n");
+				printf("  -a, --available: Display available bus that can be scanned\n");
 				return ret_code;
 		}
 
