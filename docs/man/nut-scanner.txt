@@ -136,6 +136,10 @@ MISCELLANEOUS OPTIONS
 
   Display available bus that can be scanned , depending on how the binary has been compiled. (OLDNUT, USB, SNMP, XML, AVAHI, IPMI).
 
+*-q* | *--quiet*::
+
+  Display only scan result. No information on currently scanned bus is displayed.
+
 EXAMPLES
 --------
 

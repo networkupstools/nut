@@ -313,6 +313,7 @@ int main(int argc, char *argv[])
 				printf("\nMiscellaneous options:\n");
 				printf("  -V, --version: Display NUT version\n");
 				printf("  -a, --available: Display available bus that can be scanned\n");
+				printf("  -q, --quiet: Display only scan result. No information on currently scanned bus is displayed.\n");
 				return ret_code;
 		}
 
