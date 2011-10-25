@@ -291,7 +291,6 @@ nutscan_device_t * nutscan_scan_avahi(long usec_timeout)
 	AvahiClient *client = NULL;
 	AvahiServiceBrowser *sb = NULL;
 	int error;
-	int ret = 1;
 
 	avahi_usec_timeout = usec_timeout;
 
@@ -318,8 +317,6 @@ nutscan_device_t * nutscan_scan_avahi(long usec_timeout)
 
 	/* Run the main loop */
 	avahi_simple_poll_loop(simple_poll);
-
-	ret = 0;
 
 fail:
 
