@@ -73,6 +73,9 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 	char * buf;
 
 	session = snmp_sess_session(sec->handle);
+	if(session == NULL) {
+		return;
+	}
 	/* SNMP device found */
 	dev = nutscan_new_device();
 	dev->type = TYPE_SNMP;
@@ -363,7 +366,7 @@ static void * try_SysOID(void * arg)
 {
 	struct snmp_session snmp_sess;
 	void * handle;
-	struct snmp_pdu *pdu, *response = NULL;
+	struct snmp_pdu *pdu, *response = NULL, *resp = NULL;
         oid name[MAX_OID_LEN];
         size_t name_len = MAX_OID_LEN;
 	nutscan_snmp_t * sec = (nutscan_snmp_t *)arg;
@@ -434,13 +437,15 @@ static void * try_SysOID(void * arg)
 					response->variables->val_len/sizeof(oid),
 					name, name_len) == 0 ) {
 					/* we have found a relevent sysoid */
-					snmp_free_pdu(response);
-					response = scan_snmp_get_manufacturer(
+					resp = scan_snmp_get_manufacturer(
 						snmp_device_table[index].oid,
 						handle);
-					scan_snmp_add_device(sec,response,
-						snmp_device_table[index].mib);
-					sysoid_found = 1;
+					if( resp != NULL ) {
+						scan_snmp_add_device(sec,resp,
+							snmp_device_table[index].mib);
+						sysoid_found = 1;
+						snmp_free_pdu(resp);
+					}
 				}
 				index++;
 			}
