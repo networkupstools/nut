@@ -193,8 +193,6 @@ static void apc_ser_set(void)
 	tio.c_iflag |= (IGNCR | IGNPAR);
 	tio.c_iflag &= ~(IXON | IXOFF);
 
-	tio.c_oflag = 0;
-
 	tio.c_cc[VEOL] = '*';	/* specially handled in apc_read() */
 
 #ifdef _POSIX_VDISABLE
