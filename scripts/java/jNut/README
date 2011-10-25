@@ -69,3 +69,9 @@ ping-pong mecanism itself.
 
 At present time, jNut do not support SSL connection. It is planned for near
 future.
+
+Changelog
+^^^^^^^^^
+* "0.2": Add nut-scanner.
+* "0.1": Initial version with basic dialog with UPSD.
+

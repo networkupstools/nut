@@ -4,7 +4,7 @@
 
   <groupId>org.networkupstools</groupId>
   <artifactId>jNut</artifactId>
-  <version>0.1-SNAPSHOT</version>
+  <version>0.2-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>jNut</name>
