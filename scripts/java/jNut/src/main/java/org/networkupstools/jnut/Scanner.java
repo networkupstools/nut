@@ -276,7 +276,7 @@ public class Scanner {
      * @param name Name of the parameter.
      * @return Value of the parameter, null if not found.
      */
-    public String setParam(String name) {
+    public String getParam(String name) {
         if (config == null) {
             return (String)config.get(name);
         }
