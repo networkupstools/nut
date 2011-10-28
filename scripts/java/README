@@ -12,3 +12,8 @@ way, without having to know the NUT protocol.
 * "jNutList": this directory contains maven project and source files for
 jNutList, a simple Java example program using jNut which connect to an UPSD,
 lists its ups and their variables and commands.
+
+* "jNutWebAPI": this directory contains maven project and source files for
+jNutWebAPI, a simple Java web archive to access nut informations via REST
+web services.
+
