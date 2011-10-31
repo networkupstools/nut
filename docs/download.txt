@@ -121,4 +121,7 @@ Java packages
 -------------
 
 - NUT Java support (client side, Beta)
-link:http://www.networkupstools.org/package/java/jNut-0.1-SNAPSHOT.tar.gz[jNUT 0.1-SNAPSHOT]
+link:http://www.networkupstools.org/package/java/jNut-0.2-SNAPSHOT.tar.gz[jNUT 0.2-SNAPSHOT]
+
+- NUT Java Web support (client side using REST, Beta)
+link:http://www.networkupstools.org/package/java/jNutWebAPI-0.2-SNAPSHOT-src.tar.gz[jNutWebAPI 0.2-SNAPSHOT (sources)]

@@ -1,3 +1,4 @@
+- October 31, 2011: link:download.html#_java_packages[jNUT and jNutWebAPI 0.2-SNAPSHOT released]
 - September 15, 2011: 2.6.2 released
 - September 2, 2011: link:download.html#_java_packages[jNUT (NUT Java support) 0.1-SNAPSHOT released]
 - July 4, 2011: link:download.html#_binary_packages[Beta NUT 2.6.1-1 package for Windows released]
