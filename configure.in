@@ -1086,6 +1086,7 @@ AC_OUTPUT([
  scripts/hal/ups-nut-device.fdi
  scripts/hotplug/Makefile
  scripts/hotplug/libhidups
+ scripts/HP-UX/nut.psf
  scripts/java/Makefile
  scripts/python/Makefile
  scripts/systemd/Makefile
