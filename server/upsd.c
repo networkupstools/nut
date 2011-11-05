@@ -3,6 +3,7 @@
    Copyright (C)
 	1999	Russell Kroll <rkroll@exploits.org>
 	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2011	Arnaud Quette <arnaud.quette.free.fr>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -234,9 +235,10 @@ static void setuptcp(stype_t *server)
 
 	freeaddrinfo(res);
 
-	/* don't fail silently */
+	/* leave up to the caller, server_load(), to fail silently if there is
+	 * no other valid LISTEN interface */
 	if (server->sock_fd < 0) {
-		fatalx(EXIT_FAILURE, "not listening on %s port %s", server->addr, server->port);
+		upslogx(LOG_ERR, "not listening on %s port %s", server->addr, server->port);
 	} else {
 		upslogx(LOG_INFO, "listening on %s port %s", server->addr, server->port);
 	}
@@ -560,6 +562,11 @@ void server_load(void)
 
 	for (server = firstaddr; server; server = server->next) {
 		setuptcp(server);
+	}
+	
+	/* check if we have at least 1 valid LISTEN interface */
+	if (firstaddr->sock_fd < 0) {
+		fatalx(EXIT_FAILURE, "no listening interface available");
 	}
 }
 
