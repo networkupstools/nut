@@ -73,7 +73,10 @@ definition described below.
 If your 940-0024C cable is broken or missing, use this diagram to build
 a clone:
 
-http://www.networkupstools.org/cables/940-0024C.jpg
+http://www.networkupstools.org/cables.html#_940_0024c_clone
+
+NOTE: It was reported, that the 940-0024E cable uses the same wiring as the
+940-0024C one.
 
 You can specify alternate cable in linkman:ups.conf[5]:
 
