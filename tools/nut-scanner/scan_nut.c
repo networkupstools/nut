@@ -205,11 +205,21 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 	char * ip_str = NULL;
 	char * ip_dest = NULL;
 	char buf[SMALLBUF];
-	struct sigaction oldact;
 	int change_action_handler = 0;
 	int i;
+#ifndef WIN32
+	struct sigaction oldact;
+#endif
 	struct scan_nut_arg *nut_arg;
+
+#ifdef WIN32
+	WSADATA WSAdata;
+	WSAStartup(2,&WSAdata);
+	atexit((void(*)(void))WSACleanup);
+#endif
+
 #ifdef HAVE_PTHREAD
+	int i;
 	pthread_t thread;
 	pthread_t * thread_array = NULL;
 	int thread_count = 0;
@@ -221,6 +231,8 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
                 return NULL;
         }
 
+#ifndef WIN32
+	int change_action_handler = 0;
 	/* Ignore SIGPIPE if the caller hasn't set a handler for it yet */
 	if( sigaction(SIGPIPE, NULL, &oldact) == 0 ) {
 		if( oldact.sa_handler == SIG_DFL ) {
@@ -228,6 +240,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 			signal(SIGPIPE,SIG_IGN);
 		}
 	}
+#endif
 
 	ip_str = nutscan_ip_iter_init(&ip,startIP,stopIP);
 
@@ -276,9 +289,11 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 	free(thread_array);
 #endif
 
+#ifndef WIN32
 	if(change_action_handler) {
 		signal(SIGPIPE,SIG_DFL);
 	}
+#endif
 
 	return nutscan_rewind_device(dev_ret);
 }

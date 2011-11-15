@@ -1,0 +1,19 @@
+Java NUT Client files
+~~~~~~~~~~~~~~~~~~~~~
+
+This directory contains various NUT Client related java source files, written by
+Emilien Kia, sponsored by Eaton, and released under GPL v2.
+
+* "jNut": this directory contains maven project and source files for jNut,
+which is a Java abstraction bundle to access NUT server(s).
+You can use it in Java programs to access NUT's upsd data server in a simple
+way, without having to know the NUT protocol.
+
+* "jNutList": this directory contains maven project and source files for
+jNutList, a simple Java example program using jNut which connect to an UPSD,
+lists its ups and their variables and commands.
+
+* "jNutWebAPI": this directory contains maven project and source files for
+jNutWebAPI, a simple Java web archive to access nut informations via REST
+web services.
+

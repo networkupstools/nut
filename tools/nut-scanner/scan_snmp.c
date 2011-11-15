@@ -22,7 +22,10 @@
 
 #ifdef WITH_SNMP
 
+#ifndef WIN32
 #include <sys/socket.h>
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <ltdl.h>
@@ -373,6 +376,7 @@ static void try_all_oid(void * arg)
 		scan_snmp_add_device(sec,response,snmp_device_table[index].mib);
 
 		(*nut_snmp_free_pdu)(response);
+		snmp_free_pdu(response);
 		response = NULL;
 
 		index++;
@@ -654,6 +658,13 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	nutscan_ip_iter_t ip;
 	char * ip_str = NULL;
 #ifdef HAVE_PTHREAD
+
+#ifdef WIN32
+        WSADATA WSAdata;
+        WSAStartup(2,&WSAdata);
+        atexit((void(*)(void))WSACleanup);
+#endif
+
 	pthread_t thread;
 
 	pthread_mutex_init(&dev_mutex,NULL);

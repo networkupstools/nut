@@ -360,6 +360,7 @@ static void resolve_callback(
 	switch (event) {
 		case AVAHI_RESOLVER_FAILURE:
 			fprintf(stderr, "(Resolver) Failed to resolve service '%s' of type '%s' in domain '%s': %s\n", name, type, domain, (*nut_avahi_strerror)((*nut_avahi_client_errno)((*nut_avahi_service_resolver_get_client)(r))));
+			fprintf(stderr, "(Resolver) Failed to resolve service '%s' of type '%s' in domain '%s': %s\n", name, type, domain, avahi_strerror(avahi_client_errno(avahi_service_resolver_get_client(r))));
 			break;
 
 		case AVAHI_RESOLVER_FOUND: {
