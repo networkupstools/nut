@@ -1,8 +1,9 @@
-/* ctype.h - client data definitions for upsd
+/* nut_ctype.h - client data definitions for upsd
 
    Copyright (C)
 	2002	Russell Kroll <rkroll@exploits.org>
 	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2011	Arnaud Quette <arnaud.quette@free.fr>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -19,8 +20,8 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#ifndef CTYPE_H_SEEN
-#define CTYPE_H_SEEN 1
+#ifndef NUT_CTYPE_H_SEEN
+#define NUT_CTYPE_H_SEEN 1
 
 #ifdef HAVE_SSL
 #include <openssl/err.h>
@@ -30,7 +31,7 @@
 #include "parseconf.h"
 
 /* client structure */
-typedef struct ctype_s {
+typedef struct nut_ctype_s {
 	char	*addr;
 	int	sock_fd;
 	time_t	last_heard;
@@ -48,11 +49,11 @@ typedef struct ctype_s {
 	PCONF_CTX_t	ctx;
 
 	/* doubly linked list */
-	struct ctype_s	*prev;
-	struct ctype_s	*next;
+	struct nut_ctype_s	*prev;
+	struct nut_ctype_s	*next;
 #ifdef WIN32
 	HANDLE Event;
 #endif
-} ctype_t;
+} nut_ctype_t;
 
-#endif	/* CTYPE_H_SEEN */
+#endif	/* NUT_CTYPE_H_SEEN */

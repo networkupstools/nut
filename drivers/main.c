@@ -366,7 +366,6 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 	}
 
 	/* everything else must be for the driver */
-
 	storeval(var, val);
 }
 

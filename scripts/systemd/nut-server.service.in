@@ -1,0 +1,12 @@
+[Unit]
+Description=Network UPS Tools - power devices information server
+After=local-fs.target network.target nut-driver.service
+Requires=nut-driver.service
+Before=nut-monitor.service
+
+[Service]
+ExecStart=/usr/sbin/upsd 
+Type=forking
+
+[Install]
+WantedBy=multi-user.target

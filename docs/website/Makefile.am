@@ -13,6 +13,7 @@ IMAGE_FILES = images/asciidoc.png \
 	images/bigbox.png \
 	images/bizarre.png \
 	images/note.png \
+	images/nut-logo.png \
 	images/warning.png
 
 FAVICON_FILES = faviconut.ico faviconut.png
@@ -52,6 +53,7 @@ ASCIIDOC_PARAMS = --unsafe --backend=xhtml11 \
     --attribute=website \
     --attribute=quirks \
     --attribute=revision=$(PACKAGE_VERSION) \
+    --attribute tree_version=@TREE_VERSION@ \
     --attribute localdate=`TZ=UTC date +%Y-%m-%d` \
     --attribute localtime=`TZ=UTC date +%H:%M:%S` \
     --attribute=date="`TZ=UTC date`"
@@ -67,7 +69,8 @@ images/:
 $(IMAGE_FILES): images/
 	cp -f ../$@ images/
 
-
+# Keep using 'HAVE_ASCIIDOC', instead of 'WITH_ASCIIDOC' since we have
+# an explicit target
 if HAVE_ASCIIDOC
 website: $(WEBSITE_FILES) $(WEBSITE_DEPS) $(IMAGE_FILES) $(SCRIPT_FILES) \
 	$(LAYOUT_FILES) scripts/ups_data.js ../stable-hcl.txt ../ups-html.txt \

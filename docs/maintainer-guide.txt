@@ -1,0 +1,81 @@
+NUT Maintainer Guide
+____________________
+:Author: Arnaud_Quette
+:Author Initials: AQ
+
+Introduction
+============
+
+...
+
+Mailing lists administration
+============================
+
+NUT provides various
+link:https://alioth.debian.org/mail/?group_id=30602[mailing list], to support
+users and developers. These can administered at the following addresses:
+
+- link:http://lists.alioth.debian.org/cgi-bin/mailman/admin/nut-upsuser[Nut-upsuser]
+- link:http://lists.alioth.debian.org/cgi-bin/mailman/admin/nut-upsdev[Nut-upsdev]
+- nut-tracker
+- nut-packaging
+
+The password is the same for all administrators, and is provided to any new
+NUT admin.
+
+Best moderation practices
+-------------------------
+
+These are the general rules that apply to mailing list moderation:
+
+- non subscribed:
+  - ACCEPT: complete entry submission (ie no need for further mail)
+  - ACCEPT: foreign reply to cross mailing list post (ex: reply from FreeIPMI
+    Al Chu to a mail from Arnaud on upsdev...)
+  - ACCEPT: people that are already members, with another address.
+
+- spams: always DISCARD, not REJECT, and apply a general ban to this address.
+
+- big messages:
+  - source code commits: forward the header, which mentions the changes, but
+    not the actual changes details.
+  - others (users feedback): ask for attachment compression, or using a link
+    to store the file(s).
+
+- other (ie report or request requiring more than 1 mail): REJECT with a
+message explaining the reason. The following can serve as a base:
+
+	Dear XXX,
+	Your message to the nut-upsXXX mailing was rejected because you must
+	suscribe to the mailing list. This is just to eradicate spam noise from
+	the mailing list.
+	
+	Use the following link to subscribe to this mailing list:
+	https://lists.alioth.debian.org/mailman/listinfo/nut-upsXXX
+	
+	where 'XXX' can be replaced by 'user', 'dev' or 'packaging'.
+
+	NUT maintainers
+
+
+///////////////////////////////////////////////////////////////////////////////
+!! DRAFT !!
+
+Release process
+===============
+
+New process:
+- we will only work on the trunk for the day to day bugfixing and
+standard modifications (what was mostly happening in Testing
+currently),
+- the trunk will be used to generate the testing releases (only using
+the tags, after a small freeze period),
+- bigger changes, invasive modifications and cutting edge developments
+will have to be addressed in separate branches, until stabilization.
+When things are ok and validated to enter the trunk, merging these
+branches into the trunk can happen.
+I insist on the *validation* to enter the trunk, since some changes
+might have to wait for major releases, to match our current release
+process.
+
+///////////////////////////////////////////////////////////////////////////////

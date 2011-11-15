@@ -15,6 +15,13 @@ image::images/cables/940-0024C.jpg[APCC 940-0024C clone diagram]
 
 NOTE: The original 940-0024C diagram was contributed by Steve Draper.
 
+940-0024E clone
+~~~~~~~~~~~~~~~
+
+*Reported by Jonathan Laventhol*
+
+This cable is said to use the same wiring as 940-0024C clone.
+
 940-0024C clone for Macs
 ~~~~~~~~~~~~~~~~~~~~~~~~
 

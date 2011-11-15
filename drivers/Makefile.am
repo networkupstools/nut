@@ -23,19 +23,22 @@ endif
 if WITH_SNMP
   AM_CFLAGS += $(LIBNETSNMP_CFLAGS)
 endif
-if WITH_NEONXML
+if WITH_NEON
   AM_CFLAGS += $(LIBNEON_CFLAGS)
 endif
 if WITH_LIBPOWERMAN
   AM_CFLAGS += $(LIBPOWERMAN_CFLAGS)
 endif
+if WITH_IPMI
+  AM_CFLAGS += $(LIBIPMI_CFLAGS)
+endif
 
-SERIAL_DRIVERLIST = apcsmart bcmxcp belkin belkinunv bestfcom	\
+SERIAL_DRIVERLIST = bcmxcp belkin belkinunv bestfcom	\
  bestfortress bestuferrups bestups dummy-ups etapro everups 	\
  gamatronic genericups isbmex liebert liebert-esp2 masterguard metasys	\
  mge-shut mge-utalk microdowell newmge-shut oneac optiups powercom rhino 	\
  safenet skel solis tripplite tripplitesu upscode2 victronups powerpanel \
- blazer_ser clone clone-outlet ivtscd
+ blazer_ser clone clone-outlet ivtscd apcsmart apcsmart-old
 SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
  blazer_usb richcomm_usb
@@ -65,11 +68,14 @@ if WITH_HAL
    halexecdir = $(HAL_CALLOUTS_PATH)
    halexec_PROGRAMS = $(HAL_DRIVERLIST)
 endif
-if WITH_NEONXML
+if WITH_NEON
    driverexec_PROGRAMS += $(NEONXML_DRIVERLIST)
 endif
 if WITH_LIBPOWERMAN
    driverexec_PROGRAMS += powerman-pdu
+endif
+if WITH_IPMI
+   driverexec_PROGRAMS += nut-ipmipsu
 endif
 else
    driverexec_PROGRAMS += skel
@@ -86,7 +92,9 @@ upsdrvctl_SOURCES = upsdrvctl.c
 upsdrvctl_LDADD = $(LDADD_COMMON)
 
 # serial drivers: all of them use standard LDADD and CFLAGS
-apcsmart_SOURCES = apcsmart.c
+apcsmart_SOURCES = apcsmart.c apcsmart_tabs.c
+apcsmart_LDADD = $(LDADD) -lregex
+apcsmart_old_SOURCES = apcsmart-old.c
 bcmxcp_SOURCES = bcmxcp.c bcmxcp_ser.c
 bcmxcp_LDADD = $(LDADD) -lm
 belkin_SOURCES = belkin.c
@@ -200,20 +208,28 @@ netxml_ups_LDADD = $(LDADD_DRIVERS) $(LIBNEON_LIBS)
 powerman_pdu_SOURCES = powerman-pdu.c
 powerman_pdu_LDADD = $(LDADD) $(LIBPOWERMAN_LIBS)
 
+# IPMI PSU
+nut_ipmipsu_SOURCES = nut-ipmipsu.c
+if WITH_FREEIPMI
+  nut_ipmipsu_SOURCES += nut-libfreeipmi.c 
+endif
+nut_ipmipsu_LDADD = $(LDADD) $(LIBIPMI_LIBS)
+
 # ----------------------------------------------------------------------
 # List of header files. The purpose of this list is not dependency
 # tracking (which is automatic), but to ensure these files are
 # distributed by "make dist".
 
-dist_noinst_HEADERS = apc-mib.h apc-hid.h apcsmart.h baytech-mib.h bcmxcp.h	\
+dist_noinst_HEADERS = apc-mib.h apc-hid.h baytech-mib.h bcmxcp.h	\
  bcmxcp_io.h belkin.h belkin-hid.h bestpower-mib.h blazer.h cps-hid.h dstate.h \
  dstate-hal.h dummy-ups.h eaton-mib.h explore-hid.h gamatronic.h genericups.h	\
  hidparser.h hidtypes.h ietf-mib.h libhid.h libshut.h libusb.h liebert-hid.h	\
  main.h main-hal.h mge-hid.h mge-mib.h mge-shut.h mge-utalk.h		\
- mge-xml.h microdowell.h netvision-mib.h netxml-ups.h oneac.h		\
+ mge-xml.h microdowell.h netvision-mib.h netxml-ups.h nut-ipmi.h oneac.h		\
  powercom.h powerpanel.h powerp-bin.h powerp-txt.h powerware-mib.h raritan-pdu-mib.h	\
  safenet.h serial.h snmp-ups.h solis.h tripplite.h tripplite-hid.h 			\
- upshandler.h usb-common.h usbhid-ups.h powercom-hid.h compaq-mib.h idowell-hid.h
+ upshandler.h usb-common.h usbhid-ups.h powercom-hid.h compaq-mib.h idowell-hid.h \
+ apcsmart.h apcsmart_tabs.h apcsmart-old.h
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,

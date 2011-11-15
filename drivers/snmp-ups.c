@@ -3,7 +3,7 @@
  *  Based on NetSNMP API (Simple Network Management Protocol V1-2)
  *
  *  Copyright (C)
- *	2002 - 2010	Arnaud Quette <arnaud.quette@free.fr>
+ *	2002 - 2011	Arnaud Quette <arnaud.quette@free.fr>
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
@@ -53,6 +53,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&powerware,
 	&aphel_genesisII,
 	&aphel_revelation,
+	&eaton_marlin,
 	&raritan,
 	&baytech,
 	&compaq,
@@ -79,7 +80,7 @@ const char *mibvers;
 static void disable_transfer_oids(void);
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.50"
+#define DRIVER_VERSION		"0.56"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -100,6 +101,9 @@ time_t lastpoll = 0;
 /* outlet OID index start with 0 or 1,
  * automatically guessed at the first pass */
 int outlet_index_base = -1;
+
+/* sysOID location */
+#define SYSOID_OID	".1.3.6.1.2.1.1.2.0"
 
 /* ---------------------------------------------
  * driver functions implementations
@@ -144,6 +148,7 @@ void upsdrv_updateinfo(void)
 	upsdebugx(1,"SNMP UPS driver : entering upsdrv_updateinfo()");
 
 	/* only update every pollfreq */
+	/* FIXME: update status (SU_STATUS_*), à la usbhid-ups, in between */
 	if (time(NULL) > (lastpoll + pollfreq)) {
 
 		status_init();
@@ -257,11 +262,19 @@ void upsdrv_cleanup(void)
 
 void nut_snmp_init(const char *type, const char *hostname)
 {
+	char *ns_options = NULL;
 	const char *community, *version;
 	const char *secLevel = NULL, *authPassword, *privPassword;
 	const char *authProtocol, *privProtocol;
 
 	upsdebugx(2, "SNMP UPS driver : entering nut_snmp_init(%s)", type);
+
+	/* Force numeric OIDs resolution (ie, do not resolve to textual names)
+	 * This is mostly for the convenience of debug output */
+	ns_options = snmp_out_toggle_options("n");
+	if (ns_options != NULL) {
+		upsdebugx(2, "Failed to enable numeric OIDs resolution");
+	}
 
 	/* Initialize the SNMP library */
 	init_snmp(type);
@@ -466,6 +479,8 @@ bool_t nut_snmp_get_str(const char *OID, char *buf, size_t buf_len, info_lkp_t *
 	size_t len = 0;
 	struct snmp_pdu *pdu;
 
+	upsdebugx(3, "Entering nut_snmp_get_str()");
+
 	/* zero out buffer. */
 	memset(buf, 0, buf_len);
 
@@ -502,11 +517,13 @@ bool_t nut_snmp_get_str(const char *OID, char *buf, size_t buf_len, info_lkp_t *
 		/* convert timeticks to seconds */
 		len = snprintf(buf, buf_len, "%ld", *pdu->variables->val.integer / 100);
 		break;
+	case ASN_OBJECT_ID:
+		len = snprint_objid (buf, buf_len, pdu->variables->val.objid, pdu->variables->val_len / sizeof(oid));
+		break;
 	default:
-		upslogx(LOG_ERR, "[%s] unhandled ASN 0x%x received from %s",
+		upsdebugx(2, "[%s] unhandled ASN 0x%x received from %s",
 			upsname?upsname:device_name, pdu->variables->type, OID);
 		return FALSE;
-		break;
 	}
 
 	snmp_free_pdu(pdu);
@@ -692,13 +709,19 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 	if (SU_TYPE(su_info_p) == SU_TYPE_CMD)
 		return;
 
-	if (strcasecmp(su_info_p->info_type, "ups.status")) {
+	if (strcasecmp(su_info_p->info_type, "ups.status"))
+	{
 		if (value != NULL)
 			dstate_setinfo(su_info_p->info_type, "%s", value);
 		else
 			dstate_setinfo(su_info_p->info_type, "%s", su_info_p->dfl);
+
 		dstate_setflags(su_info_p->info_type, su_info_p->info_flags);
 		dstate_setaux(su_info_p->info_type, su_info_p->info_len);
+
+		/* Commit the current value, to avoid staleness with huge
+		 * data collections on slow devices */
+		 dstate_dataok();
 	}
 }
 
@@ -732,36 +755,119 @@ snmp_info_t *su_find_info(const char *type)
 	return NULL;
 }
 
+/* Try to find the MIB using sysOID matching.
+ * Return a pointer to a mib2nut definition if found, NULL otherwise */
+mib2nut_info_t *match_sysoid()
+{
+	char sysOID_buf[LARGEBUF];
+	oid device_sysOID[MAX_OID_LEN];
+	size_t device_sysOID_len = MAX_OID_LEN;
+	oid mib2nut_sysOID[MAX_OID_LEN];
+	size_t mib2nut_sysOID_len = MAX_OID_LEN;
+	int i;
+
+	/* Retrieve sysOID value of this device */
+	if (nut_snmp_get_str(SYSOID_OID, sysOID_buf, sizeof(sysOID_buf), NULL))
+	{
+		upsdebugx(1, "match_sysoid: device sysOID value = %s", sysOID_buf);
+
+		/* Build OIDs for comparison */
+		if (!read_objid(sysOID_buf, device_sysOID, &device_sysOID_len))
+		{
+			upsdebugx(2, "match_sysoid: can't build device_sysOID %s: %s",
+				sysOID_buf, snmp_api_errstring(snmp_errno));
+
+			return FALSE;
+		}
+
+		/* Now, iterate on mib2nut definitions */
+		for (i = 0; mib2nut[i] != NULL; i++)
+		{
+			upsdebugx(1, "match_sysoid: checking MIB %s", mib2nut[i]->mib_name);
+
+			if (mib2nut[i]->sysOID == NULL)
+				continue;
+
+			/* Clear variables */
+			memset(mib2nut_sysOID, 0, MAX_OID_LEN);
+			mib2nut_sysOID_len = MAX_OID_LEN;
+
+			if (!read_objid(mib2nut[i]->sysOID, mib2nut_sysOID, &mib2nut_sysOID_len))
+			{
+				upsdebugx(2, "match_sysoid: can't build OID %s: %s",
+					sysOID_buf, snmp_api_errstring(snmp_errno));
+
+				/* Try to continue anyway! */
+				continue;
+			}
+			/* Now compare these */
+			upsdebugx(1, "match_sysoid: comparing %s with %s", sysOID_buf, mib2nut[i]->sysOID);
+			if (!netsnmp_oid_equals(device_sysOID, device_sysOID_len, mib2nut_sysOID, mib2nut_sysOID_len))
+			{
+				upsdebugx(2, "match_sysoid: sysOID matches MIB '%s'!", mib2nut[i]->mib_name);
+				return mib2nut[i];
+			}
+		}
+		/* Yell all to call for user report */
+		upslogx(LOG_ERR, "No matching MIB found for sysOID '%s'! " \
+			"Please report it to NUT developers, with the 'mib' paramater for your devices",
+			sysOID_buf);
+	}
+	else
+		upsdebugx(2, "Can't get sysOID value");
+
+	return NULL;
+}
+
 /* Load the right snmp_info_t structure matching mib parameter */
 bool_t load_mib2nut(const char *mib)
 {
 	int	i;
 	char	buf[LARGEBUF];
+	mib2nut_info_t *m2n = NULL;
 
 	upsdebugx(2, "SNMP UPS driver : entering load_mib2nut(%s)", mib);
 
-	/* FIXME: first try SysOID (.1.3.6.1.2.1.1.2)
-	 * to speed up detection if mib==auto
-	 * This is an indirection on the MIB's entry point
-	 * examples:
-	 * APHEL-GENESIS-II-MIB => .iso.org.dod.internet.private.enterprises.17373
-	 * APHEL Revelation MIB => .iso.org.dod.internet.private.enterprises.534.6.6.6
-	 */
-	for (i = 0; mib2nut[i] != NULL; i++) {
-		if (strcmp(mib, "auto") && strcmp(mib, mib2nut[i]->mib_name)) {
-			continue;
+	/* First, try to match against sysOID, if no MIB was provided.
+	 * This should speed up init stage
+	 * (Note: sysOID points the device main MIB entry point) */
+	if (!strcmp(mib, "auto"))
+	{
+		upsdebugx(1, "trying the new match_sysoid() method");
+		m2n = match_sysoid();
+	}
+
+	/* Otherwise, revert to the classic method */
+	if (m2n == NULL)
+	{
+		for (i = 0; mib2nut[i] != NULL; i++) {
+			/* Is there already a MIB name provided? */
+			if (strcmp(mib, "auto") && strcmp(mib, mib2nut[i]->mib_name)) {
+				continue;
+			}
+			upsdebugx(1, "load_mib2nut: trying classic method with '%s' mib", mib2nut[i]->mib_name);
+
+			/* Classic method: test an OID specific to this MIB */
+			if (!nut_snmp_get_str(mib2nut[i]->oid_auto_check, buf, sizeof(buf), NULL)) {
+				continue;
+			}
+			/* MIB found */
+			m2n = mib2nut[i];
+			break;
 		}
-		upsdebugx(1, "load_mib2nut: trying %s mib", mib2nut[i]->mib_name);
-		if (!nut_snmp_get_str(mib2nut[i]->oid_auto_check, buf, sizeof(buf), NULL)) {
-			continue;
-		}
-		snmp_info = mib2nut[i]->snmp_info;
-		OID_pwr_status = mib2nut[i]->oid_pwr_status;
-		mibname = mib2nut[i]->mib_name;
-		mibvers = mib2nut[i]->mib_version;
+	}
+
+	/* Store the result, if any */
+	if (m2n != NULL)
+	{
+		snmp_info = m2n->snmp_info;
+		OID_pwr_status = m2n->oid_pwr_status;
+		mibname = m2n->mib_name;
+		mibvers = m2n->mib_version;
 		upsdebugx(1, "load_mib2nut: using %s mib", mibname);
 		return TRUE;
 	}
+
 	/* Did we find something or is it really an unknown mib */
 	if (strcmp(mib, "auto") != 0) {
 		fatalx(EXIT_FAILURE, "Unknown mibs value: %s", mib);
@@ -871,17 +977,25 @@ void free_info(snmp_info_t *su_info_p)
 int base_snmp_outlet_index(const char *OID_template)
 {
 	int base_index = outlet_index_base;
+	char test_OID[SU_INFOSIZE];
 
 	if (outlet_index_base == -1)
 	{
 		/* not initialised yet */
-		char test_OID[SU_INFOSIZE];
-		for (base_index = 0 ; base_index < 2 ; base_index++) {
-			sprintf(test_OID, OID_template, base_index);
-			if (nut_snmp_get(test_OID) != NULL)
-				break;
+		/* Workaround for Eaton Marlin, while waiting for a FW fix and
+		* a driver rewrite (advanced hooks) */
+		if ((mibname != NULL) && (!strncmp(mibname, "eaton_epdu", 11)))
+		{
+			upsdebugx(3, "Appying Eaton Marlin workaround");
+			outlet_index_base = base_index = 1;
+		} else {
+			for (base_index = 0 ; base_index < 2 ; base_index++) {
+				sprintf(test_OID, OID_template, base_index);
+				if (nut_snmp_get(test_OID) != NULL)
+					break;
+			}
+			outlet_index_base = base_index;
 		}
-		outlet_index_base = base_index;
 	}
 	upsdebugx(3, "base_snmp_outlet_index: %i", outlet_index_base);
 	return base_index;
@@ -1085,8 +1199,9 @@ bool_t snmp_ups_walk(int mode)
 			instantiate_info(su_info_p, &cur_info_p);
 
 			for (cur_outlet_number = base_snmp_outlet_index(su_info_p->OID) ;
-					cur_outlet_number < outlet_count ; cur_outlet_number++) {
-
+					cur_outlet_number < (outlet_count + base_snmp_outlet_index(su_info_p->OID)) ;
+					cur_outlet_number++)
+			{
 				cur_nut_index = cur_outlet_number + base_nut_outlet_offset();
 				sprintf((char*)cur_info_p.info_type, su_info_p->info_type,
 						cur_nut_index);

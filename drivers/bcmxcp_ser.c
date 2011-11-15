@@ -197,7 +197,7 @@ int get_answer(unsigned char *data, unsigned char command)
 static int command_sequence(unsigned char *command, int command_length, unsigned char *answer)
 {
 	int	bytes_read, retry = 0;
-	
+
 	while (retry++ < PW_MAX_TRY) {
 
 		if (retry == PW_MAX_TRY) {

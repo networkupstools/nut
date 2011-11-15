@@ -478,7 +478,8 @@ void upsdrv_shutdown(void)
 {
 	char buf[BUFFLEN];
 	/*  static time_t lastcmd = 0; */
-	
+	memset(buf, 0, sizeof(buf));
+
 	if (sdtype == SD_RETURN) {
 		/* enable automatic restart */
 		mge_command(buf, sizeof(buf), "Sx 5");

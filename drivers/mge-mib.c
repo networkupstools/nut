@@ -28,8 +28,12 @@
 
 #define MGE_MIB_VERSION	"0.4"
 
+/* TODO:
+ * - MGE PDU MIB and sysOID (".1.3.6.1.4.1.705.2") */
+
 /* SNMP OIDs set */
 #define MGE_BASE_OID		".1.3.6.1.4.1.705.1"
+#define MGE_SYSOID			MGE_BASE_OID
 #define MGE_OID_MODEL_NAME	MGE_BASE_OID ".1.1.0"
 
 static info_lkp_t mge_lowbatt_info[] = {
@@ -83,6 +87,7 @@ static snmp_info_t mge_mib[] = {
 	{ "ups.serial", ST_FLAG_STRING, SU_INFOSIZE, MGE_BASE_OID ".1.7.0", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "ups.firmware.aux", ST_FLAG_STRING, SU_INFOSIZE, MGE_BASE_OID ".12.12.0", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, MGE_BASE_OID ".5.14.0", "", SU_FLAG_OK | SU_STATUS_BATT, mge_lowbatt_info },
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, MGE_BASE_OID ".5.16.0", "", SU_FLAG_OK | SU_STATUS_BATT, mge_lowbatt_info },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, MGE_BASE_OID ".7.3.0", "", SU_FLAG_OK | SU_STATUS_BATT, mge_onbatt_info },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, MGE_BASE_OID ".7.4.0", "", SU_FLAG_OK | SU_STATUS_BATT, mge_bypass_info },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, MGE_BASE_OID ".7.8.0", "", SU_FLAG_OK | SU_STATUS_BATT, mge_boost_info },
@@ -156,4 +161,4 @@ static snmp_info_t mge_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	mge = { "mge", MGE_MIB_VERSION, "", MGE_OID_MODEL_NAME, mge_mib };
+mib2nut_info_t	mge = { "mge", MGE_MIB_VERSION, "", MGE_OID_MODEL_NAME, mge_mib, MGE_SYSOID };

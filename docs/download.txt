@@ -20,26 +20,26 @@ endif::website[]
 to do so.
 ================================================================================
 
-Stable tree: 2.6
-~~~~~~~~~~~~~~~~
+Stable tree: {tree_version}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- link:http://www.networkupstools.org/source/2.6/nut-2.6.1.tar.gz[nut-2.6.1.tar.gz]
-- link:http://www.networkupstools.org/source/2.6/nut-2.6.1.tar.gz.sig[PGP/GPG signature]
-- SHA-256 sum: 4ba1d297a98190db0ae86eb31136c780f35e6d3f47ae845316b44eaa9245a86e
-- link:http://www.networkupstools.org/source/2.6/new-2.6.1.txt[Release notes]
-- link:http://www.networkupstools.org/source/2.6/ChangeLog[ChangeLog]
+- link:http://www.networkupstools.org/source/{tree_version}/nut-{revision}.tar.gz[nut-{revision}.tar.gz]
+- link:http://www.networkupstools.org/source/{tree_version}/nut-{revision}.tar.gz.sig[PGP/GPG signature]
+- SHA-256 sum: 343554add0713348f8b09bca8d83eee2eb2ae8bad9cdad9a39e0f0e2d0f5d375
+- link:http://www.networkupstools.org/source/{tree_version}/new-{revision}.txt[Release notes]
+- link:http://www.networkupstools.org/source/{tree_version}/ChangeLog[ChangeLog]
 
-You can also browse the link:http://www.networkupstools.org/source/2.6/[stable source directory].
+You can also browse the link:http://www.networkupstools.org/source/{tree_version}/[stable source directory].
 
 
-Testing tree: 2.6.x-pre
-~~~~~~~~~~~~~~~~~~~~~~~
+Testing tree: {tree_version}.x-pre
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 There is currently no testing release.
 
 
-Development tree: 2.7
-~~~~~~~~~~~~~~~~~~~~~
+Development tree:
+~~~~~~~~~~~~~~~~~
 
 Code repository
 ^^^^^^^^^^^^^^^
@@ -101,7 +101,7 @@ link:http://packages.gentoo.org/package/sys-power/nut[Gentoo Linux],
 Mandriva,
 link:https://admin.fedoraproject.org/pkgdb/acls/name/nut[Red Hat / Fedora],
 link:http://software.opensuse.org/search[Novell Suse / openSUSE],
-link:https://forum.openwrt.org/viewtopic.php?id=26269[OpenWrt]
+link:https://forum.openwrt.org/viewtopic.php?id=26269[OpenWrt],
 link:http://packages.ubuntu.com/nut[Ubuntu].
 
 - BSD systems:
@@ -114,5 +114,14 @@ link:http://pdb.finkproject.org/pdb/package.php/nut[Fink],
 link:http://trac.macports.org/browser/trunk/dports/sysutils/nut/Portfile[MacPorts]
 
 - Windows (complete port, Beta):
-link:http://www.networkupstools.org/source/2.6/NUT-Installer-2.6.0-1.msi[Windows MSI installer 2.6.0-1]
+link:http://www.networkupstools.org/source/2.6/NUT-Installer-2.6.1-1.msi[Windows MSI installer 2.6.1-1]
 
+
+Java packages
+-------------
+
+- NUT Java support (client side, Beta)
+link:http://www.networkupstools.org/package/java/jNut-0.2-SNAPSHOT.tar.gz[jNUT 0.2-SNAPSHOT]
+
+- NUT Java Web support (client side using REST, Beta)
+link:http://www.networkupstools.org/package/java/jNutWebAPI-0.2-SNAPSHOT-src.tar.gz[jNutWebAPI 0.2-SNAPSHOT (sources)]

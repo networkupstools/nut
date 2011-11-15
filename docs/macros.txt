@@ -48,13 +48,16 @@ directory.
 	through the OS_NAME variable, but may be useful for other purposes in the
 	future.
 
-- NUT_REPORT_FEATURE(FEATURE, VALUE) 
+- NUT_REPORT_FEATURE(FEATURE, VALUE, VARIABLE, DESCRIPTION) 
 
 	Schedule a line for the end-of-configuration feature summary.  The
 	FEATURE is a descriptive string such that the sentence "Checking
 	whether to FEATURE" makes sense, and VALUE describes the decision
 	taken (typically yes or no). The feature is also reported to the
 	terminal.
+
+	Also use VARIABLE and DESCRIPTION for defining AM_CONDITIONAL and
+	AC_DEFINE (only if VALUE = "yes"). VARIABLE is of the form 'WITH_<NAME>'.
 
 - NUT_REPORT(FEATURE, VALUE)
 

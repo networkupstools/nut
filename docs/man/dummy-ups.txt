@@ -20,7 +20,7 @@ Dummy Mode
 ~~~~~~~~~~
 
 *dummy-ups* looks like a standard device driver to linkman:upsd[8] and 
-allows to change any value for testing purposes.  It is both interactive,
+allows one to change any value for testing purposes.  It is both interactive,
 controllable through the linkman:upsrw[1] and linkman:upscmd[1] commands (or
 equivalent graphical tool), and batchable through script files. It can be
 configured, launched and used as any other real driver.  This mode is mostly
@@ -48,7 +48,7 @@ sysconfig directory (ie /etc/nut, /usr/local/ups/etc, ...) is prepended.
 
 For instance:
 
-    [dummy]
+	[dummy]
 		driver = dummy-ups
 		port = evolution500.dev
 		desc = "dummy-ups in dummy mode"
@@ -124,7 +124,7 @@ It also helps the NUT Quality Assurance effort, by automating some tests on the
 NUT framework.
 
 It now offers a repeater mode. This will help in building the Meta UPS approach,
-which allows to build a virtual device, composed of several other devices
+which allows one to build a virtual device, composed of several other devices
 (either UPS, PDUs).
 
 BUGS

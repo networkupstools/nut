@@ -4,9 +4,9 @@
 ACLOCAL_AMFLAGS = -I m4
 
 # subdirectories to build and distribute. The order matters, as
-# several subdirectories depend on stuff in "common" being built first
-SUBDIRS = include common clients conf data docs drivers lib	\
-  tools scripts server
+# several subdirectories depend on stuff in "common" or tools being built first
+SUBDIRS = include common clients conf data tools docs drivers lib	\
+  scripts server
 
 # COPYING is included automatically.
 EXTRA_DIST = LICENSE-GPL2 LICENSE-GPL3 MAINTAINERS UPGRADING
@@ -37,7 +37,10 @@ distcleancheck:
 
 # Automatically generate the ChangeLog from SVN logs:
 MAINTAINERCLEAN_FILES = ChangeLog
-ChangeLog: tools/svn2cl.authors
+# Force ChangeLog regeneration upon make dist (due to inexistant 'dummy-stamp'),
+# in case it has already been generated previously
+dummy-stamp:
+ChangeLog: tools/svn2cl.authors dummy-stamp
 	svn2cl --group-by-day --include-rev --authors=$< --revision 'HEAD:2332' --output=$@ || \
 		echo "svn2cl failed to generate the ChangeLog. See http://trac.networkupstools.org/projects/nut/timeline" > $@
 

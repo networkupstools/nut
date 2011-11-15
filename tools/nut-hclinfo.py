@@ -29,6 +29,7 @@ except ImportError:
   
 import re
 import sys
+import os, errno
 
 # HCL file location and name
 rawHCL="../data/driver.list";
@@ -238,13 +239,21 @@ def buildHTMLTable(deviceData):
             
     table.append(tbody)
     
-    
     return etree.tostring(table, pretty_print=True)
-    
+
+# main program
 deviceData = buildData(rawHCL)
 
 # Dump device data as JSON
 jsonData = "var UPSData = %s" % json.dumps(deviceData, encoding="utf-8")
+
+# First, check if target directory exists (which is not the case for 'dist')
+dir = os.path.dirname(webJsonHCL)
+try:
+    os.makedirs(dir)
+except OSError:
+    pass
+
 try:
     file = open(webJsonHCL, "w")
     file.write(jsonData)

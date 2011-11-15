@@ -44,6 +44,7 @@ AC_DEFUN_ONCE([NUT_OS_FUNCTIONS],
 
 AC_DEFUN([NUT_CHECK_OS],
 [
+    m4_pattern_allow([^PKG_TARGET$])
     # Look for all possible source of OS name resolution
     # 1) we look for a LSB release info file
 	eval "dist_search_path=\"

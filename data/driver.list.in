@@ -62,6 +62,8 @@
 "APC"	"ups"	"1"	"Back-UPS"	"940-0023A cable"	"genericups upstype=9"
 "APC"	"ups"	"1"	"Back-UPS Office"	"940-0119A cable"	"genericups upstype=12"
 "APC"	"ups"	"1"	"Back-UPS RS 500"	"custom non-USB cable"	"genericups upstype=20"
+"APC"	"ups"	"3"	"Smart-UPS RT XL"	"AP9618 SNMP monitoring card"	"snmp-ups"
+"APC"	"ups"	"3"	"(various)"	"AP9618 SNMP monitoring card"	"snmp-ups"
 "APC"	"pdu"	"1"	"Masterswitch"	"940-0020 cable"	"genericups upstype=12"
 "APC"	"pdu"	"1"	"AP9210"	"8 outlets"	"powerman-pdu (experimental)"
 "APC"	"pdu"	"1"	"AP79xx"	"8 to 24 outlets"	"powerman-pdu (experimental)"
@@ -106,6 +108,7 @@
 "Belkin"	"ups"	"2"	"Universal UPS F6H350ukUNV"	"serial port"	"blazer_ser"
 "Belkin"	"ups"	"2"	"Universal UPS F6H500ukUNV"	"serial port"	"blazer_ser"
 "Belkin"	"ups"	"2"	"Universal UPS F6H650ukUNV"	"serial port"	"blazer_ser"
+"Belkin"	"ups"	"2"	"F6S600auUSB"	"USB"	"blazer_usb"
 
 "Best Power"	"ups"	"1"	"Fortress (older)"	""	"bestfortress"
 "Best Power"	"ups"	"1"	"Fortress (newer)"	""	"bestups"
@@ -154,6 +157,7 @@
 "Cyber Power Systems"	"ups"	"2"	"Value 400E"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"2"	"Value 600E"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"2"	"Value 800E"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"ups"	"2"	"CP1000AVRLCD"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"2"	"CP1350AVRLCD"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"2"	"CP1500AVRLCD"	"USB"	"usbhid-ups"
 
@@ -196,6 +200,7 @@
 "Dynex"	"ups"	"1"	"975AVR"	""	"genericups upstype=7"
 "Dynex"	"ups"	"2"	"DX-800U"	"USB"	"usbhid-ups"
 
+"Eaton"	"ups"	"5"	"3S"	""	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Protection Station 500/650/800 VA"	"USB"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Ellipse ECO 650/800/1200/1600 VA"	"USB"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Ellipse ASR USBS 600/750/1000/1500 VA"	"USB cable"	"usbhid-ups"
@@ -526,7 +531,6 @@
 "MGE UPS SYSTEMS"	"ups"	"5"	"various models (XML/HTTP mode)"	"NMC Minislot (Ref 66102)"	"netxml-ups (experimental)"
 "MGE UPS SYSTEMS"	"ups"	"5"	"various models (SNMP mode)"	"NMC Minislot (Ref 66102)"	"snmp-ups (experimental)"
 "MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar (XML/HTTP mode)"	"SNMP/Web Minislot card (ref 66244)"	"netxml-ups (experimental)"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar (XML/HTTP mode)"	"SNMP/Web Minislot card (ref 66244)"	"netxml-ups (experimental)"
 "MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar (SNMP mode)"	"SNMP/Web Minislot card (ref 66244)"	"snmp-ups (experimental)"
 "MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar / Comet / Galaxy (SNMP)"	"SNMP card (ref 66062)"	"snmp-ups (experimental)"
 "MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar (SNMP)"	"SNMP card (ref 66045)"	"snmp-ups (experimental)"
@@ -603,6 +607,7 @@
 "Opti-UPS"	"ups"	"1"	"PowerES"	"420E"	"optiups"
 
 "Orvaldi Power Protection"	"ups"	"2"	"various"	"not 400 or 600"	"blazer_ser"
+"Orvaldi Power Protection"	"ups"	"2"	"750 / 900SP"	""	"blazer_usb"
 
 "Phasak"	"ups"	"2"	"400VA / 600VA"	""	"blazer_ser"
 
@@ -626,6 +631,9 @@
 "Powercom"	"ups"	"5"	"WOW"	"USB (2009 models, product id: 00a4)"	"usbhid-ups (experimental)"
 "Powercom"	"ups"	"4"	"(various)"	"USB (<= 2009 models, product id: 0002)"	"powercom (requires 'usbserial' kernel module)"
 "Powercom"	"ups"	"5"	"(various)"	"USB (2009 models, product id: 00a?)"	"usbhid-ups (experimental)"
+"Powercom"	"ups"	"5"	"BNT-xxxAP"	"USB (product id: 0004)"	"usbhid-ups (experimental)"
+
+"POWEREX"	"ups"	"2"	"VI 1000 LED"	""	"blazer_usb"
 
 "PowerGuard"	"ups"	"2"	"PG-600"	""	"blazer_ser"
 
@@ -708,6 +716,7 @@
 
 "SuperPower"	"ups"	"2"	"HP360, Hope-550"	""	"blazer_ser"
 
+"SVEN"	"ups"	"2"	"Power Pro+ series"	"USB"	"blazer_usb (USB ID ffff:0000)"
 "SVEN"	"ups"	"2"	"Power Pro+ series"	"USB"	"blazer_usb (USB ID 05b8:0000)"
 "SVEN"	"ups"	"1"	"Power Pro+ series"	"USB"	"richcomm_usb (USB ID 0925:1234)"
 "SVEN"	"ups"	"2"	"Power Smart RM 2000"	"USB"	"blazer_usb (USB ID 05b8:0000)"

@@ -1,8 +1,7 @@
-SHARED_DEPS = nut-names.txt asciidoc.conf
-
 IMAGE_FILES = images/asciidoc.png \
 	images/eaton-logo.png \
 	images/nut_layering.png \
+	images/nut-logo.png \
 	images/note.png \
 	images/warning.png \
 	images/blue-arrow.png \
@@ -11,6 +10,9 @@ IMAGE_FILES = images/asciidoc.png \
 	images/bigbox.png \
 	images/bizarre.png \
 	images/old-cgi.png
+
+# Only track here the local deps
+SHARED_DEPS = nut-names.txt asciidoc.conf
 
 USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt	\
  configure.txt download.txt documentation.txt features.txt history.txt	\
@@ -74,11 +76,19 @@ endif !HAVE_ASCIIDOC
 clean-local:
 	rm -rf *.pdf *.html *.chunked docbook-xsl.css
 
+# Static HCL is generated automatically
+# This is more of a harness, since this file should have already been
+# generated, due to the top level Makefile SUBDIRS ordering (tools before docs)
+ups-html.txt:
+	cd ../tools; $(MAKE) $(AM_MAKEFLAGS) website
+
 ### TODO: automatic dependency generation
-FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS)  $(SHARED_DEPS) ../README \
-	../INSTALL cables.txt ../UPGRADING ../TODO
-FULL_DEVELOPER_GUIDE_DEPS = $(DEVELOPER_GUIDE_DEPS)  $(SHARED_DEPS) \
-	../scripts/augeas/README
+# Add other directory deps (not for local EXTRA_DIST) and generated contents
+FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS) $(SHARED_DEPS) ../README \
+	../INSTALL ../UPGRADING ../TODO
+FULL_DEVELOPER_GUIDE_DEPS = $(DEVELOPER_GUIDE_DEPS) $(SHARED_DEPS) \
+	../scripts/augeas/README ../TODO ../lib/README \
+	../tools/nut-scanner/README
 
 user-manual.html user-manual.chunked user-manual.pdf: $(FULL_USER_MANUAL_DEPS)
 developer-guide.html developer-guide.chunked developer-guide.pdf: $(FULL_DEVELOPER_GUIDE_DEPS)
@@ -94,6 +104,7 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
     --attribute iconsdir=$(srcdir)/images \
     --attribute=badges \
     --attribute=external_title \
+    --attribute tree_version=@TREE_VERSION@ \
     -a toc -a numbered --destination-dir=.
 
 .txt.html:

@@ -3,6 +3,79 @@ If you're upgrading from an earlier version, see the UPGRADING file.
 For a complete list of changes, please refer to the ChangeLog file.
 
 ---------------------------------------------------------------------------
+Release notes for NUT 2.6.2 - what's new since 2.6.1:
+
+ - NUT can now monitor power supply units (PSU) in servers, through IPMI, using
+   the new experimental 'nut-ipmipsu' driver. Users are encouraged to test it,
+   and send feedback and debug output to the development mailing list.
+   This requires GNU FreeIPMI (0.8.5 or higher) development package or files.
+   Thanks goes to Al Chu, FreeIPMI project leader, for his help during this
+   development.
+
+ - NUT now provides a tool, called 'nut-scanner', to discover supported devices,
+   both local and remote. nut-scanner will help to ease the configuration step,
+   and power infrastructure discovery.
+   This development, sponsored by Eaton, supports the following methods:
+   * USB,
+   * SNMP,
+   * XML/HTTP (from Eaton),
+   * NUT servers, using the classic connect or Avahi / mDNS methods.
+   
+   IPMI support will be added in the next release.
+   A separate library, called 'libnutscan', is also available to provide these
+   feature. Future NUT releases will provides binding for the supported
+   languages (Perl, Python and Java).
+
+ - NUT now provides a Java interface called 'jNut'.
+   This development, sponsored by Eaton, is currently limited to the client
+   interface. But it will be broaden to device discovery and configuration in
+   the future.
+   For more info, refer to nut/scripts/java/README, or the developer guide
+   (chapter 'Creating new client'). Javadoc documentation is also provided,
+   along with Java archives (.jar) in the Download section. 
+
+ - support for new devices: Eaton 3S ; Cyber Power Systems CP1000AVRLCD ; 
+   various APC models equiped with APC AP9618 management card, including APC
+   Smart-UPS RT XL ;  Orvaldi 750 / 900SP ; POWEREX VI 1000 LED ; PowerWalker
+   VI 850 LCD ; SVEN Power Pro+ series (USB ID ffff:0000).
+
+ - A regression has been fixed in udev rules file. This previously caused
+   permission issues to owners of some USB devices.
+
+ - Avahi support has been added, for NUT mDNS publication, through a static
+   service file (nut/scripts/avahi/nut.service).
+
+ - usbhid-ups has had Eaton completion: some features have been improved, such
+   as 'output.voltage.nominal' ; 3S Eco control support has been added, along
+   with battery.runtime.low and end of battery life (life cycle monitoring)
+   support ; new measurements for 5 PX are also supported now (outlet power
+   factor, power, real power and current).
+
+ - apcsmart has been updated to support more variables and features ; the
+   previous driver is however still available as 'apcsmart-old', in case of
+   issues.
+
+ - bcmxcp now supports per outlet startup and shutdown delays setting ; shutdown
+   delay is also used, when available, for outlet.n.shutdown.return instead of
+   the default 3 seconds.
+
+ - snmp-ups.c has a new initialization method, that uses sysObjectID, which is
+   a pointer to the prefered MIB of the device, to detect supported devices.
+   This speeds up even more init stage and should render void the use of 'mib'
+   option. SNMP v3 session initialisation has also been fixed, and Eaton PDU
+   support has been completed.
+
+ - Initial support has been added for systemd, the System and Service Manager
+   from RedHat.
+
+ - The chapter 'NUT configuration management with Augeas' of the developer guide
+   has received some completion: a complete Python Augeas example code is now
+   provided.
+
+ - Finally, after years of dedication to NUT, Arjen de Korte is now retired.
+   Sincere thanks to you Arjen from us all.
+ 
+---------------------------------------------------------------------------
 Release notes for NUT 2.6.1 - what's new since 2.6.0:
 
  - the various recent USB regressions have been definitely fixed.

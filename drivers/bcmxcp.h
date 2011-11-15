@@ -42,6 +42,24 @@
 #define PW_INIT_BAT_TEST	(unsigned char)0xB1 /* Initiate battery test command. length 3 */
 #define PW_INIT_SYS_TEST	(unsigned char)0xB2 /* Initiate general system test command. length 2 */
 
+/* Define the XCP ACK block responses */
+#define XCPRESP_ACK        0x31     /* Accepted and executed */
+#define XCPRESP_NOT_IMPL   0x32     /* Recognized, but not implemented */
+#define XCPRESP_BUSY       0x33     /* Recognized, but Busy and not executed */
+#define XCPRESP_UNRECOGN   0x34     /* Unrecognized cmd */
+#define XCPRESP_OUT_RANGE  0x35     /* Parameter was out of range; not executed */
+#define XCPRESP_PRM_INVLD  0x36     /* Parameter invalid; not executed */
+#define XCPRESP_PRM_ADJST  0x37     /* Parameter adjusted to nearest good value */
+#define XCPRESP_PRM_RDONLY 0x38     /* Parameter is Read-only - cannot be written (at this privilege level) */
+
+/* Outlet operations */
+#define PW_ALL_OUTLETS			0
+#define PW_AUTO_OFF_DELAY		1
+#define PW_AUTO_ON_DELAY		2
+/* 0 means Abort countdown */
+#define PW_TURN_OFF_DELAY		3
+#define PW_TURN_ON_DELAY		4
+
 /* Config block offsets */
 #define BCMXCP_CONFIG_BLOCK_MACHINE_TYPE_CODE 		0
 #define BCMXCP_CONFIG_BLOCK_MODEL_NUMBER	 	2

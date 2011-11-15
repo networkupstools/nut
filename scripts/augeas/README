@@ -203,3 +203,59 @@ Test the conformity testing module
 Existing configuration files can be tested for conformity. To do so, use:
  
 	$ augparse -I ./ ./test_nut.aug
+
+
+Complete configuration wizard example
+-------------------------------------
+
+Here is a Python example that generate a complete and usable standalone configuration:
+
+--------------------------------------------------------------------------------
+import augeas
+
+device_name="dev1"
+driver_name="usbhid-ups"
+port_name="auto"
+
+a = augeas.augeas()
+  
+# Generate nut.conf
+a.set("/files/etc/nut/nut.conf/MODE", "standalone")
+
+# Generate ups.conf
+# FIXME: chroot, driverpath?
+a.set(("/files/etc/nut/ups.conf/%s/driver" % device_name), driver_name)
+a.set(("/files/etc/nut/ups.conf/%s/port" % device_name), port_name)
+
+# Generate upsd.conf
+a.set("/files/etc/nut/upsd.conf/#comment[1]", "just to touch the file!")
+
+# Generate upsd.users
+user = "admin"
+a.set(("/files/etc/nut/upsd.users/%s/password" % user), "dummypass")
+a.set(("/files/etc/nut/upsd.users/%s/actions/SET" % user), "")
+# FIXME: instcmds lens should be fixed, as per the above rule
+a.set(("/files/etc/nut/upsd.users/%s/instcmds" % user), "ALL")
+
+monuser = "monuser"
+monpasswd = "******"
+a.set(("/files/etc/nut/upsd.users/%s/password" % monuser), monpasswd)
+a.set(("/files/etc/nut/upsd.users/%s/upsmon" % monuser), "master")
+
+# Generate upsmon.conf
+a.set("/files/etc/nut/upsmon.conf/MONITOR/system/upsname", device_name)
+# Note: we prefer to omit localhost, not to be bound to a specific
+# entry in /etc/hosts, and thus be more generic
+#a.set("/files/etc/nut/upsmon.conf/MONITOR/system/hostname", "localhost")
+a.set("/files/etc/nut/upsmon.conf/MONITOR/powervalue", "1")
+a.set("/files/etc/nut/upsmon.conf/MONITOR/username", monuser)
+a.set("/files/etc/nut/upsmon.conf/MONITOR/password", monpasswd)
+a.set("/files/etc/nut/upsmon.conf/MONITOR/type", "master")
+
+# FIXME: glitch on the generated content
+a.set("/files/etc/nut/upsmon.conf/SHUTDOWNCMD", "/sbin/shutdown -h +0")
+
+# save config
+a.save()
+a.close()
+--------------------------------------------------------------------------------

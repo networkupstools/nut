@@ -17,9 +17,7 @@ Makefile.in
 config.guess
 config.sub
 ltmain.sh
-
 depcomp
-
 install-sh
-
 missing
+.deps

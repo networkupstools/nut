@@ -25,16 +25,16 @@
 #include <openssl/ssl.h>
 #endif
 
-#include "ctype.h"
+#include "nut_ctype.h"
 
 extern char	*certfile;
 
 void ssl_init(void);
-void ssl_finish(ctype_t *client);
+void ssl_finish(nut_ctype_t *client);
 
-int ssl_read(ctype_t *client, char *buf, size_t buflen);
-int ssl_write(ctype_t *client, const char *buf, size_t buflen);
+int ssl_read(nut_ctype_t *client, char *buf, size_t buflen);
+int ssl_write(nut_ctype_t *client, const char *buf, size_t buflen);
 
-void net_starttls(ctype_t *client, int numarg, const char **arg);
+void net_starttls(nut_ctype_t *client, int numarg, const char **arg);
 
 #endif	/* SSL_H_SEEN */

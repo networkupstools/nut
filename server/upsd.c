@@ -3,6 +3,7 @@
    Copyright (C)
 	1999	Russell Kroll <rkroll@exploits.org>
 	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2011	Arnaud Quette <arnaud.quette.free.fr>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -41,7 +42,7 @@
 #endif
 
 #include "user.h"
-#include "ctype.h"
+#include "nut_ctype.h"
 #include "stype.h"
 #include "ssl.h"
 #include "sstate.h"
@@ -73,8 +74,8 @@ int	deny_severity = LOG_WARNING;
 	/* everything else */
 	const char	*progname;
 
-static ctype_t	*firstclient = NULL;
-/* static ctype_t	*lastclient = NULL; */
+static nut_ctype_t	*firstclient = NULL;
+/* static nut_ctype_t	*lastclient = NULL; */
 
 	/* default is to listen on all local interfaces */
 static stype_t	*firstaddr = NULL;
@@ -235,6 +236,8 @@ static void setuptcp(stype_t *server)
 			close(sock_fd);
 			continue;
 		}
+
+/* WSAEventSelect automatically set the socket to nonblocking mode */
 #ifndef WIN32
 		if ((v = fcntl(sock_fd, F_GETFL, 0)) == -1) {
 			fatal_with_errno(EXIT_FAILURE, "setuptcp: fcntl(get)");
@@ -266,9 +269,10 @@ static void setuptcp(stype_t *server)
 
 	freeaddrinfo(res);
 
-	/* don't fail silently */
+	/* leave up to the caller, server_load(), to fail silently if there is
+	 * no other valid LISTEN interface */
 	if (server->sock_fd < 0) {
-		fatalx(EXIT_FAILURE, "not listening on %s port %s", server->addr, server->port);
+		upslogx(LOG_ERR, "not listening on %s port %s", server->addr, server->port);
 	} else {
 		upslogx(LOG_INFO, "listening on %s port %s", server->addr, server->port);
 	}
@@ -296,7 +300,7 @@ static void declogins(const char *upsname)
 }
 
 /* disconnect a client connection and free all related memory */
-static void client_disconnect(ctype_t *client)
+static void client_disconnect(nut_ctype_t *client)
 {
 	if (!client) {
 		return;
@@ -343,7 +347,7 @@ static void client_disconnect(ctype_t *client)
 }
 
 /* send the buffer <sendbuf> of length <sendlen> to host <dest> */
-int sendback(ctype_t *client, const char *fmt, ...)
+int sendback(nut_ctype_t *client, const char *fmt, ...)
 {
 	int	res, len;
 	char ans[NUT_NET_ANSWER_MAX+1];
@@ -377,7 +381,7 @@ int sendback(ctype_t *client, const char *fmt, ...)
 }
 
 /* just a simple wrapper for now */
-int send_err(ctype_t *client, const char *errtype)
+int send_err(nut_ctype_t *client, const char *errtype)
 {
 	if (!client) {
 		return -1;
@@ -391,7 +395,7 @@ int send_err(ctype_t *client, const char *errtype)
 /* disconnect anyone logged into this UPS */
 void kick_login_clients(const char *upsname)
 {
-	ctype_t	*client, *cnext;
+	nut_ctype_t	*client, *cnext;
 
 	for (client = firstclient; client; client = cnext) {
 
@@ -410,7 +414,7 @@ void kick_login_clients(const char *upsname)
 }
 
 /* make sure a UPS is sane - connected, with fresh data */
-int ups_available(const upstype_t *ups, ctype_t *client)
+int ups_available(const upstype_t *ups, nut_ctype_t *client)
 {
 	if (ups->sock_fd < 0) {
 		send_err(client, NUT_ERR_DRIVER_NOT_CONNECTED);
@@ -427,7 +431,7 @@ int ups_available(const upstype_t *ups, ctype_t *client)
 }
 
 /* check flags and access for an incoming command from the network */
-static void check_command(int cmdnum, ctype_t *client, int numarg, 
+static void check_command(int cmdnum, nut_ctype_t *client, int numarg, 
 	const char **arg)
 {
 	if (netcmds[cmdnum].flags & FLAG_USER) {
@@ -462,7 +466,7 @@ static void check_command(int cmdnum, ctype_t *client, int numarg,
 }
 
 /* parse requests from the network */
-static void parse_net(ctype_t *client)
+static void parse_net(nut_ctype_t *client)
 {
 	int	i;
 
@@ -494,7 +498,7 @@ static void client_connect(stype_t *server)
 	socklen_t	clen;
 #endif
 	int		fd;
-	ctype_t		*client;
+	nut_ctype_t		*client;
 
 	clen = sizeof(csock);
 	fd = accept(server->sock_fd, (struct sockaddr *) &csock, &clen);
@@ -541,7 +545,7 @@ static void client_connect(stype_t *server)
 }
 
 /* read tcp messages and handle them */
-static void client_readline(ctype_t *client)
+static void client_readline(nut_ctype_t *client)
 {
 	char	buf[SMALLBUF];
 	int	i, ret;
@@ -606,6 +610,11 @@ void server_load(void)
 	for (server = firstaddr; server; server = server->next) {
 		setuptcp(server);
 	}
+	
+	/* check if we have at least 1 valid LISTEN interface */
+	if (firstaddr->sock_fd < 0) {
+		fatalx(EXIT_FAILURE, "no listening interface available");
+	}
 }
 
 void server_free(void)
@@ -630,7 +639,7 @@ void server_free(void)
 
 static void client_free(void)
 {
-	ctype_t		*client, *cnext;
+	nut_ctype_t		*client, *cnext;
 
 	/* cleanup client fds */
 	for (client = firstclient; client; client = cnext) {
@@ -737,7 +746,7 @@ static void mainloop(void)
 #endif
 
 	upstype_t	*ups;
-	ctype_t		*client, *cnext;
+	nut_ctype_t		*client, *cnext;
 	stype_t		*server;
 	time_t	now;
 
@@ -840,7 +849,7 @@ static void mainloop(void)
 				sstate_disconnect((upstype_t *)handler[i].data);
 				break;
 			case CLIENT:
-				client_disconnect((ctype_t *)handler[i].data);
+				client_disconnect((nut_ctype_t *)handler[i].data);
 				break;
 			case SERVER:
 				upsdebugx(2, "%s: server disconnected", __func__);
@@ -861,7 +870,7 @@ static void mainloop(void)
 				sstate_readline((upstype_t *)handler[i].data);
 				break;
 			case CLIENT:
-				client_readline((ctype_t *)handler[i].data);
+				client_readline((nut_ctype_t *)handler[i].data);
 				break;
 			case SERVER:
 				client_connect((stype_t *)handler[i].data);
@@ -974,7 +983,7 @@ static void mainloop(void)
 			sstate_readline((upstype_t *)handler[ret].data);
 			break;
 		case CLIENT:
-			client_readline((ctype_t *)handler[ret].data);
+			client_readline((nut_ctype_t *)handler[ret].data);
 			break;
 		case SERVER:
 			client_connect((stype_t *)handler[ret].data);

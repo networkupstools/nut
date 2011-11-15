@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
 #ifndef WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -402,14 +403,22 @@ int upscli_sslcert(UPSCONN_t *ups, const char *file, const char *path, int verif
 
 #endif	/* HAVE_SSL */
 
-int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
+int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,struct timeval * timeout)
 {
 	int	sock_fd = 0;
 	struct addrinfo	hints, *res, *ai;
 	char			sport[NI_MAXSERV];
 	int			v;
+	fd_set 			wfds;
+	socklen_t		error_size;
+	int			error;
 
-#ifdef WIN32
+#ifndef WIN32
+	long			fd_flags;
+#else
+	HANDLE event = NULL;
+	unsigned long argp;
+
 	WSADATA WSAdata;
 	WSAStartup(2,&WSAdata);
 #endif
@@ -479,7 +488,53 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 			continue;
 		}
 
+		/* non blocking connect */
+		if(timeout != NULL) {
+#ifndef WIN32
+			fd_flags = fcntl(sock_fd, F_GETFL);
+			fd_flags |= O_NONBLOCK;
+			fcntl(sock_fd, F_SETFL, fd_flags);
+		}
+#else
+			event = CreateEvent(NULL, /* Security */
+					FALSE, /* auto-reset */
+					FALSE, /* initial state */
+					NULL); /* no name */
+
+		/* Associate socket event to the socket via its Event object */
+			WSAEventSelect( sock_fd, event, FD_CONNECT );
+			CloseHandle(event);
+		}
+#endif
+
 		while ((v = connect(sock_fd, ai->ai_addr, ai->ai_addrlen)) < 0) {
+#ifndef WIN32
+			if(errno == EINPROGRESS) {
+#else
+			if(errno == WSAEWOULDBLOCK) {
+#endif
+				FD_ZERO(&wfds);
+				FD_SET(sock_fd, &wfds);
+				select(sock_fd+1,NULL,&wfds,NULL,
+						timeout);
+				if (FD_ISSET(sock_fd, &wfds)) {
+					error_size = sizeof(error);
+					getsockopt(sock_fd,SOL_SOCKET,SO_ERROR,
+							&error,&error_size);
+					if( error == 0) {
+						/* connect successful */
+						v = 0;
+						break;
+					}
+					errno = error;
+				}
+				else {
+					/* Timeout */
+					v = -1;
+					break;
+				}
+			}
+
 			switch (errno)
 			{
 			case EAFNOSUPPORT:
@@ -498,6 +553,18 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 			close(sock_fd);
 			continue;
 		}
+
+		/* switch back to blocking operation */
+#ifndef WIN32
+		if(timeout != NULL) {
+			fd_flags = fcntl(sock_fd, F_GETFL);
+			fd_flags &= ~O_NONBLOCK;
+			fcntl(sock_fd, F_SETFL, fd_flags);
+		}
+#else
+			argp = 0;
+			ioctlsocket(sock_fd,FIONBIO,&argp);
+#endif
 
 		ups->fd = sock_fd;
 		ups->upserror = 0;
@@ -540,6 +607,11 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 	}
 		
 	return 0;
+}
+
+int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
+{
+	return upscli_tryconnect(ups,host,port,flags,NULL);
 }
 
 /* map upsd error strings back to upsclient internal numbers */
@@ -1005,9 +1077,6 @@ int upscli_disconnect(UPSCONN_t *ups)
 	ups->host = NULL;
 
 	if (ups->fd < 0) {
-#ifdef WIN32
-		WSACleanup();
-#endif
 		return 0;
 	}
 
@@ -1030,10 +1099,6 @@ int upscli_disconnect(UPSCONN_t *ups)
 
 	close(ups->fd);
 	ups->fd = -1;
-
-#ifdef WIN32
-	WSACleanup();
-#endif
 
 	return 0;
 }

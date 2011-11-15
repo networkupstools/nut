@@ -28,7 +28,7 @@
 
 #include "netinstcmd.h"
 
-static void send_instcmd(ctype_t *client, const char *upsname, 
+static void send_instcmd(nut_ctype_t *client, const char *upsname, 
 	const char *cmdname, const char *value)
 {
 	int	found;
@@ -95,7 +95,7 @@ static void send_instcmd(ctype_t *client, const char *upsname,
 	sendback(client, "OK\n");
 }
 
-void net_instcmd(ctype_t *client, int numarg, const char **arg)
+void net_instcmd(nut_ctype_t *client, int numarg, const char **arg)
 {
 	if (numarg < 2) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);

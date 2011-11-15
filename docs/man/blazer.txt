@@ -224,12 +224,12 @@ battery.charge =  ------------------------------------------ x 100 %
                   battery.voltage.high - battery.voltage.low
 
 There is a way to get better readings without disconnecting the load but this
-requires to keep track on how much (and how fast) current is going in- and out of
-the battery. If you specified the *runtimecal*, the driver will attempt to do
-this. Note however, that this heavily relies on the values you enter and that the
-UPS must be able to report the load as well. There are quite a couple of devices
-that report 0 % (or any other fixed value) at all times, in which case this
-obviously doesn't work.
+requires one to keep track on how much (and how fast) current is going in- and
+out of the battery. If you specified the *runtimecal*, the driver will attempt
+to do this. Note however, that this heavily relies on the values you enter and
+that the UPS must be able to report the load as well. There are quite a couple
+of devices that report 0 % (or any other fixed value) at all times, in which
+case this obviously doesn't work.
 
 The driver also has no way of determining the degradation of the battery capacity
 over time, so you'll have to deal with this yourself (by adjusting the values

@@ -59,7 +59,7 @@ Turn off the load on outlet 'n' and return when power is back.
 TODO LIST
 ---------
 
-Report UPS statistics informations::
+Report UPS statistics information::
 BCM/XCP supports reporting of UPS statistics data.
 
 Change settings::

@@ -1,1 +1,1 @@
-void net_list(ctype_t *client, int numarg, const char **arg);
+void net_list(nut_ctype_t *client, int numarg, const char **arg);

@@ -34,6 +34,11 @@ h1 {
   padding: 0.8em 20px;
 }
 
+#layout-logo {
+  float: left;
+  padding: 5px 20px 5px 10px;
+}
+
 #layout-title {
   font-family: monospace;
   font-size: 3.5em;
