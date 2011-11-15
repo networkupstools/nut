@@ -44,6 +44,7 @@ website:
 # call the USB info script upon "make dist", and if Perl is present
 # call the SNMP info script upon "make dist", and if Python is present
 # and call both for building nut-scanner
+# also generate HCL data files
 dist-hook:
 	@if python -c 1; then \
 		echo "Regenerating the SNMP helper files."; \
