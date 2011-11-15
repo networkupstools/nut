@@ -24,8 +24,12 @@
 #ifndef SCAN_IP
 #define SCAN_IP
 
+#ifndef WIN32
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#else
+#include <common.h>
+#endif
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */

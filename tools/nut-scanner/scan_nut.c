@@ -219,9 +219,18 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 	char * ip_str = NULL;
 	char * ip_dest = NULL;
 	char buf[SMALLBUF];
+#ifndef WIN32
 	struct sigaction oldact;
+#endif
 	int change_action_handler = 0;
 	struct scan_nut_arg *nut_arg;
+
+#ifdef WIN32
+	WSADATA WSAdata;
+	WSAStartup(2,&WSAdata);
+	atexit((void(*)(void))WSACleanup);
+#endif
+
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE
 	sem_t * semaphore = nutscan_semaphore();
@@ -272,6 +281,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 		return NULL;
 	}
 
+#ifndef WIN32
 	/* Ignore SIGPIPE if the caller hasn't set a handler for it yet */
 	if (sigaction(SIGPIPE, NULL, &oldact) == 0) {
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
@@ -286,6 +296,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 # pragma GCC diagnostic pop
 #endif
 	}
+#endif
 
 	ip_str = nutscan_ip_iter_init(&ip, startIP, stopIP);
 
@@ -527,6 +538,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 # endif /* HAVE_SEMAPHORE */
 #endif /* HAVE_PTHREAD */
 
+#ifndef WIN32
 	if (change_action_handler) {
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
 # pragma GCC diagnostic push
@@ -537,6 +549,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 # pragma GCC diagnostic pop
 #endif
 	}
+#endif
 
 	return nutscan_rewind_device(dev_ret);
 }

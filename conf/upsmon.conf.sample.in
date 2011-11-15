@@ -151,6 +151,10 @@ MINSUPPLIES 1
 #
 # For Windows setup use something like:
 # SHUTDOWNCMD "C:\\WINDOWS\\system32\\shutdown.exe -s -t 0"
+# If you have command line using space character you have to add double quote to them, like this:
+# SHUTDOWNCMD "\"C:\\Program Files\\some command.bat\" -first_arg -second_arg"
+# Or use the old DOS 8.3 file name, like this:
+# SHUTDOWNCMD "C:\\PROGRA~1\\SOMECO~1.bat -first_arg -second_arg"
 
 SHUTDOWNCMD "/sbin/shutdown -h +0"
 

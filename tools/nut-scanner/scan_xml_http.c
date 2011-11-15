@@ -29,14 +29,22 @@
 #include "nut-scan.h"
 
 #ifdef WITH_NEON
+#ifndef WIN32
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <sys/select.h>
+#else
+/* Those 2 files for support of getaddrinfo, getnameinfo and freeaddrinfo
+   on Windows 2000 and older versions */
+#include <ws2tcpip.h>
+#include <wspiapi.h>
+#endif
+
 #include <string.h>
 #include <stdio.h>
-#include <sys/select.h>
 #include <errno.h>
 #include <ne_xml.h>
 #include <ltdl.h>
@@ -185,6 +193,12 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 	char string[SMALLBUF];
 	ssize_t recv_size;
 	int i;
+
+#ifdef WIN32
+        WSADATA WSAdata;
+        WSAStartup(2,&WSAdata);
+        atexit((void(*)(void))WSACleanup);
+#endif
 
 	nutscan_device_t * nut_dev = NULL;
 	if (sec != NULL) {

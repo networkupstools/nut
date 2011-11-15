@@ -1,6 +1,7 @@
 # Network UPS Tools: common
 
 AM_CFLAGS = -I$(top_srcdir)/include
+AM_LDFLAGS = -no-undefined
 
 noinst_LTLIBRARIES = libparseconf.la libcommon.la libcommonclient.la
 libparseconf_la_SOURCES = parseconf.c

@@ -38,7 +38,7 @@ if HAVE_CXX11
   lib_LTLIBRARIES += libnutclientstub.la
 endif
 if WITH_DEV
- include_HEADERS = upsclient.h ../include/parseconf.h nutclient.h nutclientmem.h
+ include_HEADERS = upsclient.h $(top_srcdir)/include/parseconf.h nutclient.h nutclientmem.h
 endif
 if WITH_CGI
  cgiexec_PROGRAMS = upsstats.cgi upsimage.cgi upsset.cgi
@@ -61,7 +61,9 @@ upsstats_cgi_SOURCES = upsstats.c upsclient.h status.h upsstats.h	\
  upsimagearg.h cgilib.c cgilib.h
 
 # not LDADD.
+<<<<<<< HEAD
 libupsclient_la_SOURCES = upsclient.c upsclient.h
+libupsclient_la_SOURCES += $(top_srcdir)/common/wincompat.c $(top_srcdir)/common/common.c
 #libupsclient_la_LIBADD = $(top_builddir)/common/libcommonclient.la
 libupsclient_la_LIBADD = $(top_builddir)/common/libparseconf.la
 if WITH_SSL
@@ -70,11 +72,15 @@ endif
 
 # Below we set API versions of public libraries
 # http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
+<<<<<<< HEAD
 # Note that changes here may have to be reflected in packaging (the shared
 # object .so names would differ)
 
 # libupsclient version information
 libupsclient_la_LDFLAGS = -version-info 6:0:0 -export-symbols-regex ^upscli_
+=======
+libupsclient_la_LDFLAGS = -version-info 3:1:0 -no-undefined
+>>>>>>> Merge from trunk [[SVN:3060]] to [[SVN:3318]]
 
 if HAVE_CXX11
 # libnutclient version information and build

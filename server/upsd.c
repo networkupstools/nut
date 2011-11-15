@@ -280,6 +280,8 @@ static void setuptcp(stype_t *server)
 			close(sock_fd);
 			continue;
 		}
+
+/* WSAEventSelect automatically set the socket to nonblocking mode */
 #ifndef WIN32
 		if ((v = fcntl(sock_fd, F_GETFL, 0)) == -1) {
 			fatal_with_errno(EXIT_FAILURE, "setuptcp: fcntl(get)");
@@ -1351,7 +1353,7 @@ static void mainloop(void)
 			sstate_readline((upstype_t *)handler[ret].data);
 			break;
 		case CLIENT:
-			client_readline((ctype_t *)handler[ret].data);
+			client_readline((nut_ctype_t *)handler[ret].data);
 			break;
 		case SERVER:
 			client_connect((stype_t *)handler[ret].data);

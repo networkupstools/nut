@@ -145,6 +145,12 @@ CLEANFILES = *.xml *.html *.pdf *-spellchecked docbook-xsl.css
 clean-local:
 	rm -rf *.chunked *.bak tmp
 
+# Static HCL is generated automatically
+# This is more of a harness, since this file should have already been
+# generated, due to the top level Makefile SUBDIRS ordering (tools before docs)
+ups-html.txt:
+	cd ../tools; $(MAKE) $(AM_MAKEFLAGS) website
+
 ### TODO: automatic dependency generation
 # Add other directory deps (not for local EXTRA_DIST) and generated contents
 FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS) $(SHARED_DEPS) ../README \

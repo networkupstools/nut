@@ -29,7 +29,10 @@
 
 #ifdef WITH_SNMP
 
+#ifndef WIN32
 #include <sys/socket.h>
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <ltdl.h>
@@ -504,6 +507,7 @@ static void try_all_oid(void * arg, const char * mib_found)
 		}
 
 		(*nut_snmp_free_pdu)(response);
+		snmp_free_pdu(response);
 		response = NULL;
 
 		index++;
@@ -913,6 +917,13 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	sem_t   semaphore_scantype_inst;
 	sem_t * semaphore_scantype = &semaphore_scantype_inst;
 # endif /* HAVE_SEMAPHORE */
+
+# ifdef WIN32
+	WSADATA WSAdata;
+	WSAStartup(2,&WSAdata);
+	atexit((void(*)(void))WSACleanup);
+# endif
+
 	pthread_t thread;
 	nutscan_thread_t * thread_array = NULL;
 	size_t thread_count = 0, i;

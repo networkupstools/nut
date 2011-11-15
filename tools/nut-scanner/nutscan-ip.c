@@ -27,8 +27,13 @@
 #include <stdio.h>
 #include "common.h"
 #include <sys/types.h>
+#ifndef WIN32
 #include <sys/socket.h>
 #include <netdb.h>
+#else
+#define AI_NUMERICSERV NI_NUMERICSERV
+#include "wincompat.h"
+#endif
 
 static void increment_IPv6(struct in6_addr * addr)
 {

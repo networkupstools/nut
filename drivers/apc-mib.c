@@ -59,6 +59,17 @@
  *  ref: ftp://ftp.apc.com/apc/public/software/pnetmib/mib/404/powernet404.mib
  */
 
+/* Other APC sysOID:
+ * 
+ * examples found on the Net and other sources:
+ *   'enterprises.apc.products.system.smartUPS.smartUPS700'
+ *   '.1.3.6.1.4.1.318.1.3.4.5': ApcRPDU,
+ *   '.1.3.6.1.4.1.318.1.3.4.4': ApcMSP
+ */
+
+/* TODO: find the right sysOID for this MIB 
+ * Ie ".1.3.6.1.4.1.318.1.1.1" or ".1.3.6.1.4.1.318" or? */
+
 /* info elements */
 
 #define APCC_OID_BATT_STATUS	".1.3.6.1.4.1.318.1.1.1.2.1.1.0"
