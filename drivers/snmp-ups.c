@@ -1127,7 +1127,6 @@ int base_snmp_outlet_index(const char *OID_template)
 			if (nut_snmp_get(test_OID) != NULL)
 				break;
 		}
-		outlet_index_base = base_index;
 	}
 	upsdebugx(3, "base_snmp_outlet_index: %i", outlet_index_base);
 	return base_index;

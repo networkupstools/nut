@@ -42,19 +42,19 @@ static int	ssl_initialized = 0;
 #ifndef HAVE_SSL
 
 /* stubs for non-ssl compiles */
-void net_starttls(ctype_t *client, int numarg, const char **arg)
+void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
 {
 	send_err(client, NUT_ERR_FEATURE_NOT_SUPPORTED);
 	return;
 }
 
-int ssl_write(ctype_t *client, const char *buf, size_t buflen)
+int ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
 {
 	upslogx(LOG_ERR, "ssl_write called but SSL wasn't compiled in");
 	return -1;
 }
 
-int ssl_read(ctype_t *client, char *buf, size_t buflen)
+int ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 {
 	upslogx(LOG_ERR, "ssl_read called but SSL wasn't compiled in");
 	return -1;
@@ -65,7 +65,7 @@ void ssl_init(void)
 	ssl_initialized = 0;	/* keep gcc quiet */
 }
 
-void ssl_finish(ctype_t *client)
+void ssl_finish(nut_ctype_t *client)
 {
 	if (client->ssl) {
 		upslogx(LOG_ERR, "ssl_finish found active SSL connection but SSL wasn't compiled in");
@@ -87,7 +87,7 @@ static void ssl_debug(void)
 	}
 }
 
-void net_starttls(ctype_t *client, int numarg, const char **arg)
+void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
 {
 	if (client->ssl) {
 		send_err(client, NUT_ERR_ALREADY_SSL_MODE);
@@ -200,7 +200,7 @@ static int ssl_error(SSL *ssl, int ret)
 	return -1;
 }
 	
-static int ssl_accept(ctype_t *client)
+static int ssl_accept(nut_ctype_t *client)
 {
 	int	ret;
 
@@ -222,7 +222,7 @@ static int ssl_accept(ctype_t *client)
 	return -1;
 }
 
-int ssl_read(ctype_t *client, char *buf, size_t buflen)
+int ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 {
 	int	ret;
 
@@ -241,7 +241,7 @@ int ssl_read(ctype_t *client, char *buf, size_t buflen)
 	return ret;
 }
 
-int ssl_write(ctype_t *client, const char *buf, size_t buflen)
+int ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
 {
 	int	ret;
 
@@ -252,7 +252,7 @@ int ssl_write(ctype_t *client, const char *buf, size_t buflen)
 	return ret;
 }
 
-void ssl_finish(ctype_t *client)
+void ssl_finish(nut_ctype_t *client)
 {
 	if (client->ssl) {
 		SSL_free(client->ssl);

@@ -81,6 +81,7 @@ static char *	start_ip = NULL;
 static char *	end_ip = NULL;
 static char * port = NULL;
 static char * serial_ports = NULL;
+>>>>>>> Merge from trunk [[SVN:3060]] to [[SVN:3318]]
 
 #ifdef HAVE_PTHREAD
 static pthread_t thread[TYPE_END];
@@ -141,6 +142,9 @@ int printq(int quiet,const char *fmt, ...)
 	va_start(ap, fmt);
 	ret = vprintf(fmt, ap);
 	va_end(ap);
+        va_start(ap, fmt);
+        ret = vprintf(fmt, ap);
+        va_end(ap);
 
 	return ret;
 }

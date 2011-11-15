@@ -34,6 +34,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
 #ifndef WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -849,9 +850,13 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,stru
 	fd_set 			wfds;
 	int			error;
 	socklen_t		error_size;
-	long			fd_flags;
 
-#ifdef WIN32
+#ifndef WIN32
+	long			fd_flags;
+#else
+	HANDLE event = NULL;
+	unsigned long argp;
+
 	WSADATA WSAdata;
 	WSAStartup(2,&WSAdata);
 #endif
@@ -923,6 +928,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,stru
 
 		/* non blocking connect */
 		if(timeout != NULL) {
+#ifndef WIN32
 			fd_flags = fcntl(sock_fd, F_GETFL);
 			fd_flags |= O_NONBLOCK;
 			fcntl(sock_fd, F_SETFL, fd_flags);
@@ -930,6 +936,24 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,stru
 
 		while ((v = connect(sock_fd, ai->ai_addr, ai->ai_addrlen)) < 0) {
 			if(errno == EINPROGRESS) {
+#else
+			event = CreateEvent(NULL, /* Security */
+					FALSE, /* auto-reset */
+					FALSE, /* initial state */
+					NULL); /* no name */
+
+		/* Associate socket event to the socket via its Event object */
+			WSAEventSelect( sock_fd, event, FD_CONNECT );
+			CloseHandle(event);
+		}
+#endif
+
+		while ((v = connect(sock_fd, ai->ai_addr, ai->ai_addrlen)) < 0) {
+#ifndef WIN32
+			if(errno == EINPROGRESS) {
+#else
+			if(errno == WSAEWOULDBLOCK) {
+#endif
 				FD_ZERO(&wfds);
 				FD_SET(sock_fd, &wfds);
 				select(sock_fd+1,NULL,&wfds,NULL,
@@ -972,11 +996,16 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,stru
 		}
 
 		/* switch back to blocking operation */
+#ifndef WIN32
 		if(timeout != NULL) {
 			fd_flags = fcntl(sock_fd, F_GETFL);
 			fd_flags &= ~O_NONBLOCK;
 			fcntl(sock_fd, F_SETFL, fd_flags);
 		}
+#else
+			argp = 0;
+			ioctlsocket(sock_fd,FIONBIO,&argp);
+#endif
 
 		ups->fd = sock_fd;
 		ups->upserror = 0;
@@ -1513,9 +1542,6 @@ int upscli_disconnect(UPSCONN_t *ups)
 	ups->host = NULL;
 
 	if (ups->fd < 0) {
-#ifdef WIN32
-		WSACleanup();
-#endif
 		return 0;
 	}
 
@@ -1539,10 +1565,6 @@ int upscli_disconnect(UPSCONN_t *ups)
 
 	close(ups->fd);
 	ups->fd = -1;
-
-#ifdef WIN32
-	WSACleanup();
-#endif
 
 	return 0;
 }

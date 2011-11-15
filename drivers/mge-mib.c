@@ -32,6 +32,9 @@
 /* TODO:
  * - MGE PDU MIB and sysOID (".1.3.6.1.4.1.705.2") */
 
+/* TODO:
+ * - MGE PDU MIB and sysOID (".1.3.6.1.4.1.705.2") */
+
 /* SNMP OIDs set */
 #define MGE_BASE_OID		".1.3.6.1.4.1.705.1"
 #define MGE_SYSOID			MGE_BASE_OID

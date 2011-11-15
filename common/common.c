@@ -345,6 +345,7 @@ int sendsignalfn(const char *pidfn, int sig)
 		return -1;
 	}
 #endif
+	fclose(pidf);
 	return 0;
 }
 

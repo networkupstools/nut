@@ -20,14 +20,22 @@
 #include "common.h"
 #include "nut-scan.h"
 #ifdef WITH_NEON
+#ifndef WIN32
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <sys/select.h>
+#else
+/* Those 2 files for support of getaddrinfo, getnameinfo and freeaddrinfo
+   on Windows 2000 and older versions */
+#include <ws2tcpip.h>
+#include <wspiapi.h>
+#endif
+
 #include <string.h>
 #include <stdio.h>
-#include <sys/select.h>
 #include <errno.h>
 #include <ne_xml.h>
 #include <ltdl.h>
@@ -99,7 +107,6 @@ err:
 	lt_dlexit();
         return 0;
 }
-
 static int startelm_cb(void *userdata, int parent, const char *nspace, const char *name, const char **atts) {
 	nutscan_device_t * dev = (nutscan_device_t *)userdata;
 	char buf[SMALLBUF];
@@ -130,6 +137,12 @@ nutscan_device_t * nutscan_scan_xml_http(long usec_timeout)
 	char buf[SMALLBUF];
 	char string[SMALLBUF];
 	ssize_t recv_size;
+
+#ifdef WIN32
+        WSADATA WSAdata;
+        WSAStartup(2,&WSAdata);
+        atexit((void(*)(void))WSACleanup);
+#endif
 
 	nutscan_device_t * nut_dev = NULL;
 	nutscan_device_t * current_nut_dev = NULL;

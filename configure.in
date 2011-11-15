@@ -220,13 +220,8 @@ dnl ----------------------------------------------------------------------
 dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
-<<<<<<< HEAD
 AC_ARG_WITH(all,
 	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, cgi, dev, avahi]),
-=======
-AC_ARG_WITH(all, 
-	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, powerman, cgi, dev]),
->>>>>>> Merge from trunk [[SVN:3002]] to [[SVN:3057]]
 [
 	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
@@ -387,6 +382,74 @@ fi
 
 NUT_REPORT_FEATURE([build Powerman PDU client driver], [${nut_with_powerman}], [],
 					[WITH_LIBPOWERMAN], [Define to enable Powerman PDU support])
+
+dnl ----------------------------------------------------------------------
+dnl Check for with-ipmi, and --with-freeipmi (or --with-openipmi)
+dnl Only one can be enabled at a time, with a preference for FreeIPMI
+dnl if both are available (since it is the only one supported ATM!!)
+
+nut_ipmi_lib=""
+
+NUT_ARG_WITH([ipmi], [build and install IPMI PSU driver], [auto])
+NUT_ARG_WITH([freeipmi], [enable IPMI support using FreeIPMI], [auto])
+dnl NUT_ARG_WITH([openipmi], [enable IPMI support using OpenIPMI], [auto])
+
+dnl ${nut_with_ipmi}: any value except "yes" or "no" is treated as "auto". 
+if test "${nut_with_ipmi}" != "no"; then
+   dnl check if FreeIPMI (and maybe later OpenIPMI) was explicitly requested
+   if test "${nut_with_freeipmi}" = "yes"; then
+      NUT_CHECK_LIBFREEIPMI
+      if test "${nut_have_freeipmi}" != "yes"; then
+         AC_MSG_ERROR(["GNU FreeIPMI not found, required for IPMI support"])
+      fi
+      dnl Implies --with-ipmi
+      nut_with_ipmi="yes"
+   dnl elif test "${nut_with_openipmi}" = "yes"; then
+      dnl AC_MSG_ERROR(["OpenIPMI is not yet supported"])
+      dnl NUT_CHECK_LIBOPENIPMI
+      dnl if test "${nut_have_openipmi}" != "yes"; then
+      dnl    AC_MSG_ERROR(["OpenIPMI not found, required for IPMI support"])
+      dnl fi
+      dnl    Implies --with-ipmi
+      dnl    nut_with_ipmi="yes"
+      dnl    AC_DEFINE(WITH_OPENIPMI, 1, [Define to enable IPMI support using OpenIPMI])
+   else
+      dnl Prefer FreeIPMI over OpenIPMI otherwise
+      NUT_CHECK_LIBFREEIPMI
+      if test "${nut_have_freeipmi}" != "yes"; then
+         if test "${nut_with_ipmi}" = "yes"; then
+            AC_MSG_ERROR(["FreeIPMI not found, required for IPMI support"])
+         fi
+         nut_with_ipmi="no"
+         dnl NUT_CHECK_OPENIPMI
+         dnl if test "${nut_have_openipmi}" != "yes"; then
+         dnl    if test "${nut_with_ipmi}" = "yes"; then
+         dnl       AC_MSG_ERROR(["GNU FreeIPMI and OpenIPMI neither found, required for IPMI support"])
+         dnl    fi
+         dnl    nut_with_ipmi="no"
+         dnl else
+         dnl    Implies --with-ipmi
+         dnl    nut_with_ipmi="yes"
+         dnl    nut_with_openipmi="yes"
+         dnl fi
+      else
+         dnl Implies --with-ipmi
+         nut_with_ipmi="yes"
+         nut_with_freeipmi="yes"
+         AC_DEFINE(WITH_FREEIPMI, 1, [Define to enable IPMI support using FreeIPMI])
+      fi
+   fi
+fi
+
+
+NUT_REPORT_FEATURE([build IPMI driver], [${nut_with_ipmi}], [${nut_ipmi_lib}],
+					[WITH_IPMI], [Define to enable IPMI support])
+
+dnl Note: we still have to manually enable complementary AC_DEFINEs (see above)
+dnl and AM_CONDITIONALs (see below)...
+AM_CONDITIONAL(WITH_FREEIPMI, test "${nut_with_freeipmi}" = "yes")
+dnl AM_CONDITIONAL(WITH_OPENIPMI, test "${nut_with_openipmi}" = "yes")
+
 
 dnl ----------------------------------------------------------------------
 dnl Check for with-ipmi, and --with-freeipmi (or --with-openipmi)
@@ -730,6 +793,7 @@ fi
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-dev
 
+AC_LIBTOOL_WIN32_DLL
 dnl We only init libtool there to allow AC_DISABLE_STATIC
 AC_PROG_LIBTOOL
 
@@ -1241,6 +1305,7 @@ AC_OUTPUT([
  scripts/avahi/nut.service
  man/Makefile
  scripts/Windows/Makefile
+ scripts/avahi/nut.service
  scripts/hal/Makefile
  scripts/hal/ups-nut-device.fdi
  scripts/hotplug/Makefile
@@ -1258,6 +1323,9 @@ AC_OUTPUT([
  scripts/Solaris/postinstall
  scripts/Solaris/preremove
  scripts/Solaris/nut 
+ scripts/java/Makefile
+ scripts/python/Makefile
+ scripts/systemd/Makefile
  scripts/udev/Makefile
  scripts/udev/nut-ipmipsu.rules
  scripts/udev/nut-usbups.rules

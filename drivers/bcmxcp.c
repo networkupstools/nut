@@ -1656,6 +1656,12 @@ static int instcmd(const char *cmdname, const char *extra)
 			sddelay = atoi(varvalue);
 		}
 
+		/* Get the shutdown delay, if any */
+		snprintf(varname, sizeof(varname)-1, "outlet.%c.delay.shutdown", cmdname[7]);
+		if ((varvalue = dstate_getinfo(varname)) != NULL) {
+			sddelay = atoi(dstate_getinfo(varname));
+		}
+
 		cbuf[0] = PW_LOAD_OFF_RESTART;
 		cbuf[1] = sddelay & 0xff;
 		cbuf[2] = sddelay >> 8;     /* high byte of the 2 byte time argument */
