@@ -110,3 +110,5 @@ snmp build-snmp install-snmp install-snmp-mgr install-snmp-man:
 setver:
 	@echo "Error: 'make setver' no longer exists."
 	@echo "Edit configure.in to set version number."
+package:
+	cd scripts/Solaris; make package
