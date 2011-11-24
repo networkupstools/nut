@@ -47,17 +47,20 @@
 #include "ietf-mib.h"
 
 static mib2nut_info_t *mib2nut[] = {
+#ifndef EATON_MODE
 	&apc,
-	&mge,
 	&netvision,
+	&raritan,
+	&baytech,
+	&compaq,
+#endif
+	&bestpower,
+	&mge,
 	&powerware,
 	&aphel_genesisII,
 	&aphel_revelation,
 	&eaton_marlin,
-	&raritan,
-	&baytech,
-	&compaq,
-	&bestpower,
+#ifndef EATON_MODE
 	/*
 	 * Prepend vendor specific MIB mappings before IETF, so that
 	 * if a device supports both IETF and vendor specific MIB,
@@ -65,6 +68,7 @@ static mib2nut_info_t *mib2nut[] = {
 	 */
 	&ietf,
 	/* end of structure. */
+#endif
 	NULL
 };
 

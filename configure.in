@@ -216,6 +216,7 @@ NUT_ARG_WITH([serial], [build and install serial drivers], [yes])
 NUT_ARG_WITH([usb], [build and install USB drivers], [auto])
 NUT_ARG_WITH([doc], [build and install documentation], [no])
 NUT_ARG_WITH([avahi], [build and install Avahi support], [auto])
+NUT_ARG_WITH([eaton_sdk], [build and install Eaton SDK], [no])
 
 dnl ----------------------------------------------------------------------
 dnl Check for presence and compiler flags of various libraries
@@ -602,6 +603,19 @@ AM_CONDITIONAL([HAVE_ASCIIDOC], [test "${nut_have_asciidoc}" = "yes"])
 
 if test "${nut_with_doc}" = "yes"; then
 	NUT_REPORT([only build specific documentation format], [${DOC_BUILD_LIST}])
+fi
+
+dnl ----------------------------------------------------------------------
+dnl ----------------------------------------------------------------------
+dnl checks related to --with-eaton_sdk
+if test "${nut_with_eaton_sdk}" = "yes"; then
+        DOC_BUILD_LIST="${DOC_BUILD_LIST} eaton-sdk.pdf"
+        dnl Hide feature reporting, apart when enabled!
+        NUT_REPORT_FEATURE([enable Eaton SDK], [${nut_with_eaton_sdk}], [],
+                        [WITH_EATON_SDK], [Define to enable Eaton SDK])
+else
+        dnl Otherwise, ensure that Automake is happy
+        AM_CONDITIONAL([WITH_EATON_SDK], false)
 fi
 
 dnl ----------------------------------------------------------------------

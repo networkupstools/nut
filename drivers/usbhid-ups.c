@@ -37,7 +37,7 @@
 
 /* include all known subdrivers */
 #include "mge-hid.h"
-#ifndef SHUT_MODE
+#ifndef EATON_MODE
 	#include "explore-hid.h"
 	#include "apc-hid.h"
 	#include "belkin-hid.h"
@@ -50,11 +50,11 @@
 
 /* master list of avaiable subdrivers */
 static subdriver_t *subdriver_list[] = {
-#ifndef SHUT_MODE
+#ifndef EATON_MODE
 	&explore_subdriver,
 #endif
 	&mge_subdriver,
-#ifndef SHUT_MODE
+#ifndef EATON_MODE
 	&apc_subdriver,
 	&belkin_subdriver,
 	&cps_subdriver,

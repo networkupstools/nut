@@ -1,0 +1,1038 @@
+﻿:titles.underlines: "__","==","--","~~","^^"
+
+Eaton Software Development Kit
+______________________________
+:Author: Frederic_Bohe
+:Author Initials: FB
+
+Introduction
+============
+
+Eaton SDK allows your applications to connect to Eaton devices and retrieve
+their internal data. Eaton SDK extensively uses the
+link:http://www.networkupstools.org[NUT - Network UPS Tools] Opensource
+framework (supported by Eaton), to do so.
+
+This document provides the full documentation for using the Eaton SDK libraries
+integration, on Linux and Microsoft Windows platforms, in <<SDK,chapter 3>>.
+
+In case using the SDK libraries is not possible in your project, for legal or
+technical reasons (refer to the <<Legal, Legal limitations>> and
+<<SDK_limitation,SDK limitation>>), you will find alternatives methods on using
+the NUT framework with your application in the following chapters:
+
+- <<Full_framework,Chapter 4>> describes how to interact with the full NUT
+framework,
+- <<Partial_framework,Chapter 5>> explains how to use directly NUT
+drivers,
+- <<Reimplementation,Chapter 6>> contains some hints on how to
+re-implement the device specific protocol.
+
+
+[[Legal]]
+
+Legal limitations
+=================
+
+The Network UPS Tools Opensource framework is a GNU General Public License (GPL)
+software that provides support for many different UPSs and PDUs.
+
+GPL software have some legal and technical implication, when used with
+proprietary software. You should consider these very seriously before making a
+choice and using the present SDK.
+
+WARNING: Eaton will not be responsible for an illegal use of this SDK or the
+other documented approaches. In case of doubt, please consider consulting an IT
+specialized attorney.
+
+
+Here are some references that may help you understand these limitations and
+constraints:
+
+link:http://www.gnu.org/licenses/gpl-faq.html[http://www.gnu.org/licenses/gpl-faq.html]
+
+link:http://en.wikipedia.org/wiki/GNU_General_Public_License#Linking_and_derived_works[http://en.wikipedia.org/wiki/GNU_General_Public_License#Linking_and_derived_works]
+
+link:http://stackoverflow.com/questions/1876442/usage-of-gpl-plugins-for-proprietary-software[http://stackoverflow.com/questions/1876442/usage-of-gpl-plugins-for-proprietary-software]
+
+link:http://itmanagement.earthweb.com/osrc/article.php/3801396/Bruce-Perens-Combining-GPL-and-Proprietary-Software.htm[http://itmanagement.earthweb.com/osrc/article.php/3801396/Bruce-Perens-Combining-GPL-and-Proprietary-Software.htm]
+
+link:http://blog.milkingthegnu.org/2008/04/gpl-for-dummies.html[http://blog.milkingthegnu.org/2008/04/gpl-for-dummies.html]
+
+[[SDK]]
+
+Eaton SDK
+=========
+
+NOTE: Using the Eaton SDK raise a number of legal concerns which are discussed
+in <<Legal,chapter 2>>.
+
+[[SDK_limitation]]
+Limitation
+----------
+
+Using the Eaton SDK library approach, an application can only manage one device!
+If you need to manage more than one device, please contact the Eaton Opensource
+team, or refer to the other possible approaches detailed in the present
+document, and presented in the <<_introduction,Introduction>> chapter.
+
+How does it work?
+-----------------
+
+The SDK consists in several libraries allowing to access Eaton's UPS/PDU in
+several ways. Your application may link to one of those libraries to access an
+UPS/PDU.
+
+To use this library, your application has to initialize it first by calling
+libeaton_init function.
+
+--------------------------------------
+void libeaton_init(char * device)
+--------------------------------------
+
+The device parameter depends on the library you are using and is discussed in
+the relevant chapter here after.
+
+Now you can call function to read or write variables of your device. You can
+also request your device to execute instant commands.
+Each of these function get variable name or command name. A list of all existing
+variable and commands can be found in <<nut-names,appendix A>>. Note that this
+gives all existing variables and commands, not all available variables and
+commands , which depends on the device type.
+
+To read a variable, use the libeaton_read function in conjunction with the
+libeaton_update function:
+
+--------------------------------------
+void libeaton_update(void);
+const char *libeaton_read(const char *varname)
+--------------------------------------
+libeaton_read returns a pointer to a string containing the value of the
+variable or NULL if an error occurred.
+It points to a string managed by the library you must not try to free it.
+libeaton_read returns data which were gathered in the last call to
+libeaton_update. It's up to your application to call  libeaton_update in
+order to have fresh data (but remember this may be time consuming, especially
+for serial connections).
+You must call libeaton_update at least once before calling libeaton_read or
+it will fail.
+
+To write a variable, use the libeaton_write function:
+
+--------------------------------------
+int libeaton_write (const char *varname, const char *val)
+--------------------------------------
+libeaton_write returns 0 if the variable was successfully written.
+
+To call an instant command, use the libeaton_command function:
+
+--------------------------------------
+int libeaton_command(const char *cmdname, const char *extradata)
+--------------------------------------
+libeaton_command return 0 if the command was successfully issued.
+
+
+Once done with your device you should call libeaton_free function to free
+internals data.
+--------------------------------------
+void libeaton_free()
+--------------------------------------
+
+
+Building your application with the SDK
+--------------------------------------
+
+For all environment and all type of connection, you need all the followings
+files available in your include path: attribute.h, common.h, config.h,
+libeaton.h, proto.h and timehead.h. You may need to add the -I<path-to-include>
+option to the build command lines provided in this document to point to those
+include files.
+
+You may have to link with libeaton shared libraries. To do so the relevant
+libeaton shared library must be available for your compiler. So you have 
+to add the correct "-L <path-to-library>" to the build command lines provided in
+this document to point to those libraries.
+
+Depending the type of connection you may need additional external libraries
+(net-snmp, neon...) which are described in the relevant chapter. 
+
+Linux build
+~~~~~~~~~~~
+
+On Linux, building with the SDK has been tested using GCC. +
+For static link you will need the corresponding ``.a'' file. +
+For dynamic link you will need the corresponding ``.so'' file for compilation 
+and ``.so'', ``.so.0'' and ``.so.0.0.0'' in you libs path for execution.
+
+Windows build
+~~~~~~~~~~~~~
+
+On Windows, building with the SDK has been tested with GCC in MinGW environment
+and CL in MS Visual Studio 10 environment.
+
+Building SNMP application
+-------------------------
+
+You must call libeaton_init with your device's IP.
+
+This is a sample code displaying the device status:
+
+--------------------------------------
+#include "common.h"
+#include "libeaton.h"
+
+int main(void)
+{
+        /* This will contains the result of our request to the device */
+        const char * status;
+
+        /* init the library */
+        libeaton_init("192.168.0.17");
+
+        /* This is the real request to the device to update internal database.
+        This may be time consuming */
+        libeaton_update();
+
+        /* Here we get the status of the device from the database */
+        status = libeaton_read("ups.status");
+
+        printf("%s\n",status);
+
+        /* Free SDK internals */
+        libeaton_free();
+
+        exit(EXIT_SUCCESS);
+}
+--------------------------------------
+
+Save this code in the file test.c
+
+Linux build
+~~~~~~~~~~~
+
+You need link:http://www.net-snmp.org/download.html[net-snmp library] available
+on your system.
+Make sure “ net-snmp-config” command is available.
+Building statically:
+
+--------------------------------------
+gcc test.c -I<path-to-include> <path-to-lib>/libeaton_snmp.a `net-snmp-config --base-lib-cflags --libs` -o test
+--------------------------------------
+
+Building with shared object:
+
+--------------------------------------
+gcc test.c -I<path-to-include> -L <path-to-lib> -leaton_snmp `net-snmp-config --base-lib-cflags --libs` -o test
+--------------------------------------
+
+Windows build
+~~~~~~~~~~~~~
+
+With MSVC
+^^^^^^^^^
+
+You will need the libeaton_snmp.lib file. This is how to create it from
+libeaton_snmp-0.dll.
+
+--------------------------------------
+pexports libeaton_snmp-0.dll > libeaton_snmp.def
+lib /machine:i386 /def:libeaton_snmp.def
+--------------------------------------
+
+Then you can link it to your application.
+
+--------------------------------------
+cl test.c -DWIN32 libeaton_snmp.lib
+--------------------------------------
+
+You need libnetsnmp-30.dll, libregex-1.dll and libeaton_snmp-0.dll
+in your path to run the resulting executable.
+
+With MinGW
+^^^^^^^^^^
+
+Building statically:
+
+--------------------------------------
+gcc test.c -I<path-to-include> libeaton_snmp.a libnetsnmp.a libregex.a -lws2_32
+--------------------------------------
+
+Building with shared object:
+
+--------------------------------------
+gcc test.c -I<path-to-include> libeaton_snmp.dll.a libcommon.dll.a
+--------------------------------------
+
+You need libnetsnmp-30.dll, libregex-1.dll and  libeaton_snmp-0.dll
+in your path to run the resulting executable.
+
+Building XML/HTTP application
+-----------------------------
+
+You must call libeaton_init with your device's URL.
+
+This is a sample code displaying the device status:
+
+--------------------------------------
+#include "common.h"
+#include "libeaton.h"
+
+int main(void)
+{
+        /* This will contains the result of our request to the device */
+        const char * status;
+
+        /* init the library */
+        libeaton_init("http://192.168.0.17");
+
+        /* This is the real request to the device to update internal database.
+        This may be time consuming */
+        libeaton_update();
+
+        /* Here we get the status of the device from the database */
+        status = libeaton_read("ups.status");
+
+        printf("%s\n",status);
+
+        /* Free SDK internals */
+        libeaton_free();
+
+        exit(EXIT_SUCCESS);
+}
+--------------------------------------
+
+Save this code in the file test.c
+
+Linux build
+~~~~~~~~~~~
+
+You need link:http://www.webdav.org/neon/[neon library] available on your
+system.
+Make sure “ pkg-config neon” command is available.
+
+Building statically:
+
+--------------------------------------
+gcc test.c -I<path-to-include> <path-to-lib>/libeaton_xmlpdc.a `pkg-config --cflags --libs neon` -o test
+--------------------------------------
+
+Building with shared object:
+
+--------------------------------------
+gcc test.c -I<path-to-include> -L <path-to-lib> -leaton_xmlpdc `pkg-config --cflags --libs neon` -o test
+--------------------------------------
+
+Windows build
+~~~~~~~~~~~~~
+
+With MSVC
+^^^^^^^^^
+
+You will need the libeaton_xmlpdc.lib file. This is how to create it from
+libeaton_xmlpdc-0.dll.
+
+--------------------------------------
+pexports libeaton_xmlpdc-0.dll > libeaton_xmlpdc.def
+lib /machine:i386 /def:libeaton_xmlpdc.def
+--------------------------------------
+
+Then you can link it to your application.
+
+--------------------------------------
+cl test.c -DWIN32 libeaton_xmlpdc.lib
+--------------------------------------
+
+You need libneon-27.dll,  libeaton_xmlpdc-0.dll, libexpat-1.dll, libiconv-2.dll,
+libintl-8.dll and libz-1.dll in your path to run the resulting executable.
+
+With MinGW
+^^^^^^^^^^
+
+Building statically:
+
+--------------------------------------
+gcc test.c -I<path-to-include> libeaton_xmlpdc.a libneon.a libintl.a libexpat.a libiconv.a -lws2_32
+--------------------------------------
+
+Building with shared object:
+
+--------------------------------------
+gcc test.c -I<path-to-include> libeaton_xmlpdc.dll.a
+--------------------------------------
+
+You need libneon-27.dll,  libeaton_xmlpdc-0.dll, libexpat-1.dll, libiconv-2.dll,
+libintl-8.dll and libz-1.dll in your path to run the resulting executable.
+
+Building USB HID application
+----------------------------
+
+You must call libeaton_init with NULL as a parameter.
+
+This is a sample code displaying the device status:
+
+--------------------------------------
+#include "common.h"
+#include "libeaton.h"
+
+int main(void)
+{
+        /* This will contains the result of our request to the device */
+        const char * status;
+
+        /* init the library */
+        libeaton_init(NULL);
+
+        /* This is the real request to the device to update internal database.
+        This may be time consuming */
+        libeaton_update();
+
+        /* Here we get the status of the device from the database */
+        status = libeaton_read("ups.status");
+
+        printf("%s\n",status);
+
+        /* Free SDK internals */
+        libeaton_free();
+
+        exit(EXIT_SUCCESS);
+}
+--------------------------------------
+
+Save this code in the file test.c
+
+Linux build
+~~~~~~~~~~~
+
+You need link:http://www.libusb.org/[libusb library] available on your system.
+Make sure “ pkg-config libusb” command is available.
+Building statically:
+
+--------------------------------------
+gcc test.c -I<path-to-include> <path-to-lib>/libeaton_usbhid.a `pkg-config --cflags --libs libusb` -o test
+--------------------------------------
+
+Building with shared object:
+
+--------------------------------------
+gcc test.c -I<path-to-include> -L <path-to-lib> -leaton_usbhid `pkg-config --cflags --libs libusb` -o test
+--------------------------------------
+
+Windows build
+~~~~~~~~~~~~~
+
+You must install a libusb driver for your device. You can either install the
+device driver (NOT the filter driver) from the official
+link:http://www.libusb.org/wiki/libusb-win32[libusb-win32 binaries] or use the
+wdi-simple.exe of the
+link:http://www.networkupstools.org/download.html[NUT Windows' package] which
+install it automatically.
+
+With MSVC
+^^^^^^^^^
+
+You will need the libeaton_usbhid.lib file. This is how to create it from
+libeaton_usbhid-0.dll.
+
+--------------------------------------
+pexports libeaton_usbhid-0.dll > libeaton_usbhid.def
+lib /machine:i386 /def:libeaton_usbhid.def
+--------------------------------------
+
+Then you can link it to your application.
+
+--------------------------------------
+cl test.c -DWIN32 libeaton_usbhid.lib
+--------------------------------------
+
+You need libeaton_usbhid-0.dll, libregex-1.dll and libusb0.dll 
+in your path to run the resulting executable.
+
+With MinGW
+^^^^^^^^^^
+
+Building statically:
+
+--------------------------------------
+gcc test.c -I<path-to-include> libeaton_usbhid.a libusb.a libgnu.a -lws2_32
+--------------------------------------
+
+You need libusb0.dll in your path to run the resulting executable.
+
+Building with shared object:
+
+--------------------------------------
+gcc test.c -I<path-to-include> libeaton_usbhid.dll.a
+--------------------------------------
+
+You need libeaton_usbhid-0.dll, libregex-1.dll and libusb0.dll
+in your path to run the resulting executable.
+
+Building USB XCP application
+----------------------------
+
+You must call libeaton_init with NULL as a parameter.
+
+This is a sample code displaying the device status:
+
+--------------------------------------
+#include "common.h"
+#include "libeaton.h"
+
+int main(void)
+{
+        /* This will contains the result of our request to the device */
+        const char * status;
+
+        /* init the library */
+        libeaton_init(NULL);
+
+        /* This is the real request to the device to update internal database.
+        This may be time consuming */
+        libeaton_update();
+
+        /* Here we get the status of the device from the database */
+        status = libeaton_read("ups.status");
+
+        printf("%s\n",status);
+
+        /* Free SDK internals */
+        libeaton_free();
+
+        exit(EXIT_SUCCESS);
+}
+--------------------------------------
+
+Save this code in the file test.c
+
+Linux build
+~~~~~~~~~~~
+
+You need link:http://www.libusb.org/[libusb library] available on your system.
+Make sure “ pkg-config libusb” command is available.
+Building statically:
+
+--------------------------------------
+gcc test.c -I<path-to-include> <path-to-lib>/libeaton_usbxcp.a `pkg-config --cflags --libs libusb` -o test
+--------------------------------------
+
+Building with shared object:
+
+--------------------------------------
+gcc test.c -I<path-to-include> -L <path-to-lib> -leaton_usbxcp `pkg-config --cflags --libs libusb` -o test
+--------------------------------------
+
+Windows build
+~~~~~~~~~~~~~
+
+You must install a libusb driver for your device. You can either install the
+device driver (NOT the filter driver) from the official
+link:http://www.libusb.org/wiki/libusb-win32[libusb-win32 binaries] or use the
+wdi-simple.exe of the
+link:http://www.networkupstools.org/download.html[NUT Windows' package] which
+install it automatically.
+
+With MSVC
+^^^^^^^^^
+
+You will need the libeaton_usbxcp.lib file. This is how to create it from
+libeaton_usbxcp-0.dll.
+
+--------------------------------------
+pexports libeaton_usbxcp-0.dll > libeaton_usbxcp.def
+lib /machine:i386 /def:libeaton_usbxcp.def
+--------------------------------------
+
+Then you can link it to your application.
+
+--------------------------------------
+cl test.c -DWIN32 libeaton_usbxcp.lib
+--------------------------------------
+
+You need libeaton_usbxcp-0.dll, libregex-1.dll and libusb0.dll
+in your path to run the resulting executable.
+
+With MinGW
+^^^^^^^^^^
+
+Building statically:
+
+--------------------------------------
+gcc test.c -I<path-to-include> libeaton_usbxcp.a libusb.a libgnu.a -lws2_32
+--------------------------------------
+
+You need libusb0.dll in your path to run the resulting executable.
+
+Building with shared object:
+
+--------------------------------------
+gcc test.c -I<path-to-include> libeaton_usbxcp.dll.a
+--------------------------------------
+
+You need libeaton_usbxcp-0.dll, libregex-1.dll and libusb0.dll
+in your path to run the resulting executable.
+
+Building serial XCP application
+-------------------------------
+
+You must call libeaton_init with the name of the serial port device.
+On Linux, it is something like "/dev/tty0" or "/dev/ttyUSB0".
+On windows, it is something like "COM1".
+
+Note that the initialization phase may be very long (about 30 seconds).
+
+This is a sample code displaying the device status:
+
+--------------------------------------
+#include "common.h"
+#include "libeaton.h"
+
+int main(void)
+{
+        /* This will contains the result of our request to the device */
+        const char * status;
+
+        /* init the library */
+        libeaton_init("/dev/tty0");
+
+        /* This is the real request to the device to update internal database.
+        This may be time consuming */
+        libeaton_update();
+
+        /* Here we get the status of the device from the database */
+        status = libeaton_read("ups.status");
+
+        printf("%s\n",status);
+
+        /* Free SDK internals */
+        libeaton_free();
+
+        exit(EXIT_SUCCESS);
+}
+--------------------------------------
+
+Save this code in the file test.c
+
+Linux build
+~~~~~~~~~~~
+
+Building statically:
+
+--------------------------------------
+gcc test.c -I<path-to-include> <path-to-lib>/libeaton_serialxcp.a -o test
+--------------------------------------
+
+Building with shared object:
+
+--------------------------------------
+gcc test.c -I<path-to-include> -L <path-to-lib> -leaton_serialxcp -o test
+--------------------------------------
+
+Windows build
+~~~~~~~~~~~~~
+
+With MSVC
+^^^^^^^^^
+
+You will need the libeaton_serialxcp.lib file. This is how to create it from
+libeaton_serialxcp-0.dll.
+
+--------------------------------------
+pexports libeaton_serialxcp-0.dll > libeaton_serialxcp.def
+lib /machine:i386 /def:libeaton_serialxcp.def
+--------------------------------------
+
+Then you can link it to your application.
+
+--------------------------------------
+cl test.c -DWIN32 libeaton_serialxcp.lib
+--------------------------------------
+
+You need libeaton_serialxcp-0.dll in
+your path to run the resulting executable.
+
+With MinGW
+^^^^^^^^^^
+
+Building statically:
+
+--------------------------------------
+gcc test.c -I<path-to-include> libeaton_serialxcp.a -lws2_32
+--------------------------------------
+
+Building with shared object:
+
+--------------------------------------
+gcc test.c -I<path-to-include> libeaton_serialxcp.dll.a
+--------------------------------------
+
+You need libeaton_serialxcp-0.dll in
+your path to run the resulting executable.
+
+Building SHUT application
+-------------------------
+
+You must call libeaton_init with the name of the serial port device.
+On Linux, it is something like "/dev/tty0" or "/dev/ttyUSB0".
+On windows, it is something like "COM1".
+
+Note that the initialization phase may be very long (about 20 seconds).
+
+This is a sample code displaying the device status:
+
+--------------------------------------
+#include "common.h"
+#include "libeaton.h"
+
+int main(void)
+{
+        /* This will contains the result of our request to the device */
+        const char * status;
+
+        /* init the library */
+        libeaton_init("/dev/tty0");
+
+        /* This is the real request to the device to update internal database.
+        This may be time consuming */
+        libeaton_update();
+
+        /* Here we get the status of the device from the database */
+        status = libeaton_read("ups.status");
+
+        printf("%s\n",status);
+
+        /* Free SDK internals */
+        libeaton_free();
+
+        exit(EXIT_SUCCESS);
+}
+--------------------------------------
+
+Save this code in the file test.c
+
+Linux build
+~~~~~~~~~~~
+
+Building statically:
+
+--------------------------------------
+gcc test.c -I<path-to-include> <path-to-lib>/libeaton_shut.a -o test
+--------------------------------------
+
+Building with shared object:
+
+--------------------------------------
+gcc test.c -I<path-to-include> -L <path-to-lib> -leaton_shut -o test
+--------------------------------------
+
+Windows build
+~~~~~~~~~~~~~
+
+With MSVC
+^^^^^^^^^
+
+You will need the libeaton_shut.lib file. This is how to create it from
+libeaton_shut-0.dll.
+
+--------------------------------------
+pexports libeaton_shut-0.dll > libeaton_shut.def
+lib /machine:i386 /def:libeaton_shut.def
+--------------------------------------
+
+Then you can link it to your application.
+
+--------------------------------------
+cl test.c -DWIN32 libeaton_shut.lib
+--------------------------------------
+
+You need libeaton_shut-0.dll in your
+path to run the resulting executable.
+
+With MinGW
+^^^^^^^^^^
+
+Building statically:
+
+--------------------------------------
+gcc test.c -I<path-to-include> libeaton_shut.a -lws2_32
+--------------------------------------
+
+Building with shared object:
+
+--------------------------------------
+gcc test.c -I<path-to-include> libeaton_shut.dll.a
+--------------------------------------
+
+You need libeaton_shut-0.dll in your path to run the resulting executable.
+
+[[Full_framework]]
+
+Using the complete NUT framework
+================================
+
+NOTE: This approach does not suffer the limitation of the 'library SDK', as
+presented in the <<SDK_limitation,SDK limitation>> chapter!
+
+The NUT framework basically consists in a server (upsd) connected to drivers
+(which are themselves connected to device). Once this framework is running,
+clients can access device data and send commands via the upsd server.
+
+image:images/nut_layering.png[NUT architecture]
+
+There is a number of client applications available with NUT (upsc, upsmon...),
+which can serve as reference implementations. You can also write your own using
+the upsclient library. This is discussed in the
+link:http://www.networkupstools.org/docs/developer-guide.chunked/ar01s07.html[NUT documentation].
+
+WARNING: NUT libupsclient is licensed under GNU GPL. Refer to the chapter
+<<Legal, Legal limitations>> for more information.
+
+As stated in the above link, if you can't use the upsclient library, you can
+still directly access the nut server by implementing the 'client - server'
+protocol which is documented
+link:http://www.networkupstools.org/docs/developer-guide.chunked/ar01s08.html[here].
+
+
+[[Partial_framework]]
+
+Using part of the NUT framework
+===============================
+
+NOTE: This approach does not suffer the limitation of the 'library SDK', as
+presented in the <<SDK_limitation,SDK limitation>> chapter!
+
+As presented in the <<Full_framework,previous chapter>>, the NUT framework
+consists of driver(s) connected to a server.
+
+You may choose to not use the server and to connect directly to the driver. For
+information on how to interface with the NUT drivers, refer to
+link:http://www.networkupstools.org/docs/developer-guide.chunked/ar01s05.html[the protocol].
+
+For a Linux minimalistic implementation of this method, you can also refer to
+the
+link:http://anonscm.debian.org/viewvc/nut/trunk/server/sockdebug.c?view=markup[server/sockdebug.c]
+debug program, that can be found in the NUT sources.
+
+
+[[Reimplementation]]
+
+Protocol re-implementation
+==========================
+
+You may choose not to use NUT at all and directly re-implement the communication
+protocol with the device. In this case you may find useful information
+hereafter.
+
+USB and shut
+------------
+
+Example of specific protocol reimplementation, for USB/HID with an Eaton
+Protection Station
+
+
+
+1) Get the data topology
+
+Using the NUT - Network UPS Tools 'usbhid-ups' driver, launch it with debug
+level 1:
+
+--------------------------------------
+$ /path/to/usbhid-ups -D -a <device name>
+
+   2.632336	Using subdriver: MGE HID 1.27
+   (...)
+   3.432575	Path: UPS.PowerSummary.PresentStatus.ACPresent, Type: Feature, ReportID: 0x01, Offset: 0, Size: 1, Value: 1
+   3.432618	Path: UPS.PowerSummary.PresentStatus.ACPresent, Type: Input, ReportID: 0x01, Offset: 0, Size: 1, Value: 1
+   (...)
+   3.569335	Path: UPS.PowerSummary.RunTimeToEmpty, Type: Feature, ReportID: 0x06, Offset: 8, Size: 32, Value: 1171
+   3.569357	Path: UPS.PowerSummary.RunTimeToEmpty, Type: Input, ReportID: 0x06, Offset: 8, Size: 32, Value: 1171
+   3.671941	Detected a UPS: EATON/Protection Station 650
+--------------------------------------
+
+The above is only a small excerpt of data provided by USB/HID devices.
+It shows the various data that are available for a specific device, and how to
+request these and extract the result.
+
+You can then switch to debug level 3 (ie "-DDD") to see the raw USB frames:
+
+--------------------------------------
+$ /path/to/usbhid-ups -DDD -a <device name>
+
+   2.623379	Using subdriver: MGE HID 1.27
+   (...)
+   3.425409	Report[get]: (4 bytes) => 01 25 00 00
+   3.425454	Path: UPS.PowerSummary.PresentStatus.ACPresent, Type: Feature, ReportID: 0x01, Offset: 0, Size: 1, Value: 1
+   (...)
+--------------------------------------
+
+
+
+2) Understand how to use these information
+
+------------------
+Report[get]: (4 bytes) => 01 25 00 00
+------------------
+
+This line means that the device send us 4 bytes. The first one is the ReportID
+(here : 0x01), then we have 3 data bytes.
+
+------------------
+Path: UPS.PowerSummary.PresentStatus.ACPresent, Type: Feature, ReportID: 0x01, Offset: 0, Size: 1, Value: 1
+------------------
+
+This line is the interpretation of the above data by NUT. It says that it is the ReportID 0x01 and that at offset 0 (in bits) we have a data of size 1 (in bits)
+with a value of 1 (0x25 = 00100101).
+This data HID path is
+UPS.PowerSummary.PresentStatus.ACPresent. This means that this device is on-line
+.
+"Type: Feature" means that this data is a "status" data which is fetched by the
+application.
+On the contrary you can have "Type: Input" which are "events" sent
+asynchronously by the UPS. This tutorial will focus on "Feature" data as it is
+simpler to implement.
+
+Let's see another example.
+
+------------------
+Report[buf]: (6 bytes) => 06 64 93 04 00 00
+Path: UPS.PowerSummary.RunTimeToEmpty, Type: Input, ReportID: 0x06, Offset: 8, Size: 32, Value: 1171
+------------------
+
+This is the reportID 0x06, in which we have at offset 8 (bits, so the third byte
+of the frame after the reportID byte and the 8 first data bits) 32 bits of data
+(4 bytes) with a value of 1171 (0x00000493).
+
+
+3) Sample code
+
+This example illustrate the retrieving of the power status, that is to say if
+the device is operating on battery or from line power.
+
+------------------
+
+#include <stdio.h>
+#include <usb.h>	/* libusb header file */
+
+#define EATON_MGE_VENDORID		0x0463
+
+int main()
+{
+	unsigned char buf[20];
+	struct usb_device *dev;
+	struct usb_bus *bus;
+	usb_dev_handle *usbdev;
+	int ret, reportId;
+
+	/* libusb base init */
+	usb_init();
+	usb_find_busses();
+	usb_find_devices();
+
+	/* Enumerate USB busses to find the right device */
+	for (bus = usb_busses; bus; bus = bus->next) {
+		for (dev = bus->devices; dev; dev = dev->next) {
+
+			if (dev->descriptor.idVendor == EATON_MGE_VENDORID) {
+				/* You may also want to check the device identifier using
+					dev->descriptor.idProduct */
+
+				printf("USB UPS found\n");
+
+				/* Now open the device */
+				usbdev = usb_open(dev);
+
+				/* And claim the first interface.
+				This may need several tries, and (for Linux) a call to
+				usb_detach_kernel_driver_np()
+				to replace the Integrated power management */
+
+#ifdef WIN32
+                                usb_set_configuration(usbdev,1);
+#endif
+
+				usb_claim_interface(usbdev, 0);
+
+				/* Send a request to get UPS.PowerSummary.PresentStatus.ACPresent */
+				reportId = 1;
+				ret = usb_control_msg(usbdev,
+					USB_ENDPOINT_IN + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+					0x01, /* HID_REPORT_GET */
+					reportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
+					0, buf, 128, /* ask for a large ReportSize */
+					5000); /* 5 seconds timeout */ 
+
+				printf("Received %i bytes\n");
+
+				/* Now process the answer, and get the power status */
+				if (ret > 0) {
+					/* Data bit extraction logic :
+					/* First byte of report is report ID:
+					   Bit = bufOffset + 8; */
+					/* Offset: 0, Size: 1 (in bit(s)) */
+					/* Buf[Bit >> 3] & (1 << (Bit & 7)); */
+					if ((buf[1] >> 0 & 01) == 1)
+						printf("UPS is online\n");
+					else
+						printf("UPS is on battery\n");
+				}
+			}
+		}
+	}
+	exit (EXIT_SUCCESS);
+}
+------------------
+
+NOTE: in order to execute this program, you will need to have proper permissions
+to access the device. Either run it as 'root', or preferably use udev (on Linux)
+or equivalent system to set the proper rights to access the device.
+
+Compile with 'gcc testusb.c -lusb'... +
+Test by running the program, a first time with AC present:
+
+$ sudo ./a.out +
+USB UPS found +
+Received 4 bytes +
+UPS is online +
+
+Then a second time after having removed the main power:
+
+$ sudo ./a.out +
+USB UPS found +
+Received 4 bytes +
+UPS is on battery +
+
+
+NOTE:  Another approach to communicate directly with USB devices is to use
+convenient HID library such link:http://www.signal11.us/oss/hidapi/[hidapi].
+
+
+4) SHUT implementation
+
+For SHUT reimplementation, you may have a look in the
+link:http://old.networkupstools.org/protocols/mge/[Simplified SHUT protocol]
+document.
+
+You should also have a look at
+link:http://alioth.debian.org/scm/browser.php?group_id=30602[libshut.c] file for
+a reference implementation.
+
+XCP
+---
+
+XCP protocol specifications are on line
+link:http://old.networkupstools.org/protocols/eaton/[here].
+
+You can find a reference implementation in the NUT source tree in
+link:http://alioth.debian.org/scm/browser.php?group_id=30602[bcmxcp* files].
+
+SNMP
+----
+
+You can find useful lookup table in the NUT source tree in
+link:http://alioth.debian.org/scm/browser.php?group_id=30602[*-mib.c files].
+
+
+[[nut-names]]
+Appendix A: NUT command and variable naming scheme
+==================================================
+
+include::nut-names.txt[]

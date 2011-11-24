@@ -176,7 +176,7 @@ richcomm_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
 # HID-over-serial
 newmge_shut_SOURCES = usbhid-ups.c libshut.c libhid.c hidparser.c mge-hid.c
 # per-target CFLAGS are necessary here
-newmge_shut_CFLAGS = $(AM_CFLAGS) -DSHUT_MODE
+newmge_shut_CFLAGS = $(AM_CFLAGS) -DSHUT_MODE -DEATON_MODE
 newmge_shut_LDADD = $(LDADD)
 
 # SNMP
@@ -243,5 +243,67 @@ libdummy_a_SOURCES = main.c dstate.c serial.c
 
 EXTRA_LIBRARIES += libnuthalmain.a
 libnuthalmain_a_SOURCES = main-hal.c dstate-hal.c usb-common.c
+
+# Eaton libs
+if WITH_EATON_SDK
+if WITH_USB
+  LIBEATON_USB = libeaton_usbhid.la libeaton_usbxcp.la
+endif
+if WITH_SNMP
+  LIBEATON_SNMP = libeaton_snmp.la
+endif
+if WITH_NEON
+  LIBEATON_NEON = libeaton_xmlpdc.la
+endif
+if WITH_SERIAL
+  LIBEATON_SERIAL = libeaton_shut.la libeaton_serialxcp.la
+endif
+lib_LTLIBRARIES = 	$(LIBEATON_USB) \
+			$(LIBEATON_SNMP) \
+			$(LIBEATON_NEON) \
+			$(LIBEATON_SERIAL)
+
+if WITH_USB
+libeaton_usbhid_la_SOURCES = mge-hid.c usbhid-ups.c \
+ libhid.c libusb.c hidparser.c usb-common.c libeaton.c
+libeaton_usbhid_la_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS) -DEATON_MODE
+libeaton_usbhid_la_LIBADD = $(LIBUSB_LIBS) ../common/libcommon.la
+libeaton_usbhid_la_LDFLAGS = -version-info 0:0:0 -no-undefined
+
+libeaton_usbxcp_la_SOURCES = bcmxcp.c usb-common.c libeaton.c bcmxcp_usb.c
+libeaton_usbxcp_la_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
+libeaton_usbxcp_la_LIBADD = $(LIBUSB_LIBS) ../common/libcommon.la
+libeaton_usbxcp_la_LDFLAGS = -version-info 0:0:0 -no-undefined
+endif
+
+if WITH_SNMP
+libeaton_snmp_la_SOURCES = snmp-ups.c eaton-mib.c mge-mib.c powerware-mib.c \
+ietf-mib.c libeaton.c bestpower-mib.c
+libeaton_snmp_la_CFLAGS = $(AM_CFLAGS) $(LIBNETSNMP_CFLAGS) -DEATON_MODE
+libeaton_snmp_la_LIBADD = $(LIBNETSNMP_LIBS) ../common/libcommon.la
+libeaton_snmp_la_LDFLAGS = -version-info 0:0:0 -no-undefined
+endif
+
+if WITH_NEON
+libeaton_xmlpdc_la_SOURCES = mge-xml.c netxml-ups.c libeaton.c
+libeaton_xmlpdc_la_CFLAGS = $(AM_CFLAGS) $(LIBNEON_CFLAGS)
+libeaton_xmlpdc_la_LIBADD = $(LIBNEON_LIBS) ../common/libcommon.la
+libeaton_xmlpdc_la_LDFLAGS = -version-info 0:0:0 -no-undefined
+endif
+
+if WITH_SERIAL
+libeaton_shut_la_SOURCES = usbhid-ups.c libshut.c libhid.c hidparser.c \
+mge-hid.c serial.c libeaton.c
+libeaton_shut_la_CFLAGS = $(AM_CFLAGS) -DSHUT_MODE -DEATON_MODE
+libeaton_shut_la_LIBADD = ../common/libcommon.la
+libeaton_shut_la_LDFLAGS = -version-info 0:0:0 -no-undefined
+
+libeaton_serialxcp_la_SOURCES = bcmxcp.c bcmxcp_ser.c serial.c libeaton.c
+libeaton_serialxcp_la_CFLAGS = $(AM_CFLAGS)
+libeaton_serialxcp_la_LIBADD = ../common/libcommon.la
+libeaton_serialxcp_la_LDFLAGS = -version-info 0:0:0 -no-undefined
+endif
+
+endif #EATON_SDK
 
 MOSTLYCLEANFILES = libnuthalmain.a

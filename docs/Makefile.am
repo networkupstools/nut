@@ -36,7 +36,7 @@ CABLES_IMAGES = images/cables/73-0724.png images/cables/940-0024C.jpg \
 
 EXTRA_DIST = $(SHARED_DEPS) $(USER_MANUAL_DEPS) $(DEVELOPER_GUIDE_DEPS) \
  $(CABLES_DEPS) FAQ.txt nut-hal.txt nut-qa.txt packager-guide.txt snmp.txt \
- $(IMAGE_FILES) $(CABLES_IMAGES) docinfo.xml
+ $(IMAGE_FILES) $(CABLES_IMAGES) docinfo.xml eaton-sdk.txt eaton-sdk-docinfo.xml
 
 ASCIIDOC_HTML_SINGLE = user-manual.html \
 	developer-guide.html \
@@ -65,6 +65,9 @@ pdf: $(ASCIIDOC_PDF)
 # also build the HTML manpages with these targets
 html-single: $(ASCIIDOC_HTML_SINGLE)
 html-chunked: $(ASCIIDOC_HTML_CHUNKED)
+
+eaton-sdk.pdf: eaton-sdk.txt eaton-sdk-docinfo.xml
+	$(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo $<
 
 if HAVE_ASCIIDOC
 website: html-chunked pdf
