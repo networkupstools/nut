@@ -18,9 +18,10 @@ RedHat/upsd.in \
 RedHat/upsmon \
 RedHat/upsmon.in \
 Solaris8/S99upsmon \
+Solaris/pkginfo.in \
 subdriver/path-to-subdriver.sh \
 upower/95-upower-hid.rules \
 Windows/halt.c \
 Windows/Makefile
 
-SUBDIRS = augeas hal hotplug java python systemd udev
+SUBDIRS = augeas hal hotplug java python systemd udev Solaris
