@@ -9,5 +9,5 @@ PSTAMP=" "
 DESCRIPTION="Network UPS Tools (NUT) is a client/server monitoring system that allows computers
 	to share uninterruptible power supply (UPS) and power distribution unit (PDU) hardware. 
 	Clients access the hardware through the server, and are notified whenever the power status changes."
-BASEDIR="/usr/local/ups"
+BASEDIR="@prefix@"
 CLASSES="none"
