@@ -19,6 +19,9 @@
  *
  */
 
+#ifndef NUT_IPMI_H
+#define NUT_IPMI_H
+
 typedef enum {
 	PSU_STATUS_UNKNOWN = 1,
 	PSU_PRESENT,			/* = status OL */
@@ -54,4 +57,7 @@ typedef struct IPMIDevice_s {
 int nut_ipmi_open(int ipmi_id, IPMIDevice_t *ipmi_dev);
 void nut_ipmi_close(void);
 int nut_ipmi_monitoring_init();
-int ipmi_get_sensors_status(IPMIDevice_t *ipmi_dev);
+int nut_ipmi_get_sensors_status(IPMIDevice_t *ipmi_dev);
+
+#endif /* NUT_IPMI_H */
+
