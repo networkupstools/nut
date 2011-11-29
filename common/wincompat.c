@@ -397,8 +397,9 @@ int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen, DWORD timeou
 			}
 			else if (WaitCommEvent (sh->handle, &ev, &sh->io_status)) {
 				/* WaitCommEvent succeeded */
-				if (!ev)
+				if (!ev) {
 					continue;
+				}
 			}
 			else if (GetLastError () != ERROR_IO_PENDING) {
 				goto err;
@@ -407,8 +408,9 @@ int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen, DWORD timeou
 				sh->overlapped_armed = 1;
 				switch (WaitForSingleObject (w4,timeout)) {
 					case WAIT_OBJECT_0:
-						if (!GetOverlappedResult (sh->handle, &sh->io_status, &num, FALSE))
+						if (!GetOverlappedResult (sh->handle, &sh->io_status, &num, FALSE)) {
 							goto err;
+						}
 						upsdebugx(4,"w32_serial_read : characters are available on input buffer");
 						break;
 					case WAIT_TIMEOUT:
@@ -443,15 +445,17 @@ int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen, DWORD timeou
 
 		tot += num;
 		upsdebugx(4,"w32_serial_read : total characters read = %d", tot);
-		if (sh->vtime_ || !sh->vmin_ || !num)
+		if (sh->vtime_ || !sh->vmin_ || !num) {
 			break;
+		}
 		continue;
 
 err:
 		PurgeComm (sh->handle, PURGE_RXABORT);
 		upsdebugx(4,"w32_serial_read : err %d",(int)GetLastError());
-		if (GetLastError () == ERROR_OPERATION_ABORTED)
+		if (GetLastError () == ERROR_OPERATION_ABORTED) {
 			num = 0;
+		}
 		else
 		{
 			errno = EIO;
