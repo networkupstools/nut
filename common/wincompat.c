@@ -414,13 +414,15 @@ int w32_serial_read (serial_handler_t * sh, void *ptr, size_t ulen, DWORD timeou
 						upsdebugx(4,"w32_serial_read : characters are available on input buffer");
 						break;
 					case WAIT_TIMEOUT:
-						CancelIo(sh->handle);
-						sh->overlapped_armed = 0;
-						ResetEvent (sh->io_status.hEvent);
-						upsdebugx(4,"w32_serial_read : timeout %d ms ellapsed", (int)timeout);
-						SetLastError(WAIT_TIMEOUT);
-						errno = 0;
-						return 0;
+						if(!tot) {
+							CancelIo(sh->handle);
+							sh->overlapped_armed = 0;
+							ResetEvent (sh->io_status.hEvent);
+							upsdebugx(4,"w32_serial_read : timeout %d ms ellapsed", (int)timeout);
+							SetLastError(WAIT_TIMEOUT);
+							errno = 0;
+							return 0;
+						}
 					default:
 						goto err;
 				}
