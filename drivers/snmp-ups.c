@@ -80,7 +80,7 @@ const char *mibvers;
 static void disable_transfer_oids(void);
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.56"
+#define DRIVER_VERSION		"0.57"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -982,20 +982,12 @@ int base_snmp_outlet_index(const char *OID_template)
 	if (outlet_index_base == -1)
 	{
 		/* not initialised yet */
-		/* Workaround for Eaton Marlin, while waiting for a FW fix and
-		* a driver rewrite (advanced hooks) */
-		if ((mibname != NULL) && (!strncmp(mibname, "eaton_epdu", 11)))
-		{
-			upsdebugx(3, "Appying Eaton Marlin workaround");
-			outlet_index_base = base_index = 1;
-		} else {
-			for (base_index = 0 ; base_index < 2 ; base_index++) {
-				sprintf(test_OID, OID_template, base_index);
-				if (nut_snmp_get(test_OID) != NULL)
-					break;
-			}
-			outlet_index_base = base_index;
+		for (base_index = 0 ; base_index < 2 ; base_index++) {
+			sprintf(test_OID, OID_template, base_index);
+			if (nut_snmp_get(test_OID) != NULL)
+				break;
 		}
+		outlet_index_base = base_index;
 	}
 	upsdebugx(3, "base_snmp_outlet_index: %i", outlet_index_base);
 	return base_index;
