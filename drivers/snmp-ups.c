@@ -44,6 +44,7 @@
 #include "baytech-mib.h"
 #include "compaq-mib.h"
 #include "bestpower-mib.h"
+#include "cyberpower-mib.h"
 #include "ietf-mib.h"
 
 static mib2nut_info_t *mib2nut[] = {
@@ -58,6 +59,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&baytech,
 	&compaq,
 	&bestpower,
+	&cyberpower,
 	/*
 	 * Prepend vendor specific MIB mappings before IETF, so that
 	 * if a device supports both IETF and vendor specific MIB,
@@ -80,7 +82,7 @@ const char *mibvers;
 static void disable_transfer_oids(void);
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.57"
+#define DRIVER_VERSION		"0.58"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
