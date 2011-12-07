@@ -30,6 +30,73 @@
 #include <errno.h>
 #include <ne_xml.h>
 #include "nutscan-device.h"
+#include <ltdl.h>
+
+/* dynamic link library stuff */
+static lt_dlhandle dl_handle = NULL;
+static const char *dl_error = NULL;
+
+static void (*nut_ne_xml_push_handler)(ne_xml_parser *p,
+                         ne_xml_startelm_cb *startelm,
+                         ne_xml_cdata_cb *cdata,
+                         ne_xml_endelm_cb *endelm,
+                         void *userdata);
+static void (*nut_ne_xml_destroy)(ne_xml_parser *p);
+static ne_xml_parser * (*nut_ne_xml_create)(void);
+static int (*nut_ne_xml_parse)(ne_xml_parser *p, const char *block, size_t len);
+
+/* return 0 on error */
+static int load_neon_library()
+{
+
+        if( dl_handle != NULL ) {
+                /* if previous init failed */
+                if( dl_handle == (void *)1 ) {
+                        return 0;
+                }
+                /* init has already been done */
+                return 1;
+        }
+
+        if( lt_dlinit() != 0 ) {
+                fprintf(stderr, "Error initializing lt_init\n");
+                return 0;
+        }
+
+        dl_handle = lt_dlopenext("libneon");
+        if (!dl_handle) {
+                dl_error = lt_dlerror();
+                goto err;
+        }
+
+        lt_dlerror();      /* Clear any existing error */
+        *(void **) (&nut_ne_xml_push_handler) = lt_dlsym(dl_handle,
+							"ne_xml_push_handler");
+        if ((dl_error = lt_dlerror()) != NULL)  {
+                goto err;
+        }
+
+        *(void **) (&nut_ne_xml_destroy) = lt_dlsym(dl_handle,"ne_xml_destroy");
+        if ((dl_error = lt_dlerror()) != NULL)  {
+                goto err;
+        }
+
+        *(void **) (&nut_ne_xml_create) = lt_dlsym(dl_handle,"ne_xml_create");
+        if ((dl_error = lt_dlerror()) != NULL)  {
+                goto err;
+        }
+
+        *(void **) (&nut_ne_xml_parse) = lt_dlsym(dl_handle,"ne_xml_parse");
+        if ((dl_error = lt_dlerror()) != NULL)  {
+                goto err;
+        }
+
+        return 1;
+err:
+        fprintf(stderr, "%s\n", dl_error);
+        dl_handle = (void *)1;
+        return 0;
+}
 
 static int startelm_cb(void *userdata, int parent, const char *nspace, const char *name, const char **atts) {
 	nutscan_device_t * dev = (nutscan_device_t *)userdata;
@@ -62,9 +129,12 @@ nutscan_device_t * nutscan_scan_xml_http(long usec_timeout)
 	char string[SMALLBUF];
 	ssize_t recv_size;
 
+	if (!load_neon_library()) {
+		return NULL;
+	}
+
 	nutscan_device_t * nut_dev = NULL;
 	nutscan_device_t * current_nut_dev = NULL;
-
 
 	if((peerSocket = socket(AF_INET, SOCK_DGRAM, 0)) != -1)
 	{
@@ -137,11 +207,11 @@ nutscan_device_t * nutscan_scan_xml_http(long usec_timeout)
 
                                 nut_dev->type = TYPE_XML;
 				/* Try to read device type */
-				ne_xml_parser   *parser = ne_xml_create();
-				ne_xml_push_handler(parser, startelm_cb, NULL,
-								NULL, nut_dev);
-				ne_xml_parse(parser, buf, strlen(buf));
-				ne_xml_destroy(parser);
+				ne_xml_parser *parser = (*nut_ne_xml_create)();
+				(*nut_ne_xml_push_handler)(parser, startelm_cb,
+							NULL, NULL, nut_dev);
+				(*nut_ne_xml_parse)(parser, buf, strlen(buf));
+				(*nut_ne_xml_destroy)(parser);
 
 				nut_dev->driver = strdup("netxml-ups");
 				sprintf(buf,"http://%s",string);

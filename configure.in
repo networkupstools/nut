@@ -6,6 +6,7 @@ dnl NUT version number is defined here and *only* here (no more include/version)
 AC_INIT(nut, 2.6.2)
 AC_CONFIG_SRCDIR(server/upsd.c)
 AC_CONFIG_MACRO_DIR([m4])
+AC_CONFIG_AUX_DIR([libltdl/config])
 echo "Network UPS Tools version ${PACKAGE_VERSION}"
 AC_CANONICAL_SYSTEM
 NUT_CHECK_OS
@@ -609,6 +610,14 @@ dnl checks related to --with-dev
 
 dnl We only init libtool there to allow AC_DISABLE_STATIC
 AC_PROG_LIBTOOL
+
+LT_CONFIG_LTDL_DIR([libltdl])
+     
+# Configure libtool with dlopen support if possible
+LT_INIT([dlopen])
+     
+# Enable building of the convenience libltdl library
+LTDL_INIT([convenience])
 
 dnl ${nut_with_dev}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_dev}" != "no"; then
