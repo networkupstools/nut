@@ -6,7 +6,6 @@ dnl NUT version number is defined here and *only* here (no more include/version)
 AC_INIT(nut, 2.6.2)
 AC_CONFIG_SRCDIR(server/upsd.c)
 AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_AUX_DIR([libltdl/config])
 echo "Network UPS Tools version ${PACKAGE_VERSION}"
 AC_CANONICAL_SYSTEM
 NUT_CHECK_OS
@@ -454,6 +453,29 @@ fi
 NUT_REPORT_FEATURE([enable libwrap (tcp-wrappers) support], [${nut_with_wrap}], [],
 					[WITH_WRAP], [Define to enable libwrap (tcp-wrappers) support])
 
+
+dnl ----------------------------------------------------------------------
+dnl Check for --with-libltdl
+
+NUT_ARG_WITH([libltdl], [enable libltdl (Libtool dlopen abstraction) support], [auto])
+
+dnl ${nut_with_libltdl}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_libltdl}" != "no"; then
+   dnl check for libltdl compiler flags
+   NUT_CHECK_LIBLTDL
+fi
+
+if test "${nut_with_libltdl}" = "yes" -a "${nut_have_libltdl}" != "yes"; then
+   AC_MSG_ERROR(["libltdl not found"])
+fi
+
+if test "${nut_with_libltdl}" != "no"; then
+   nut_with_libltdl="${nut_have_libltdl}"
+fi
+
+NUT_REPORT_FEATURE([enable libltdl (Libtool dlopen abstraction) support], [${nut_with_libltdl}], [],
+					[WITH_LIBLTDL], [Define to enable libltdl (Libtool dlopen abstraction) support])
+
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-cgi
 
@@ -611,13 +633,13 @@ dnl checks related to --with-dev
 dnl We only init libtool there to allow AC_DISABLE_STATIC
 AC_PROG_LIBTOOL
 
-LT_CONFIG_LTDL_DIR([libltdl])
+#LT_CONFIG_LTDL_DIR([libltdl])
      
 # Configure libtool with dlopen support if possible
-LT_INIT([dlopen])
+#LT_INIT([dlopen])
      
 # Enable building of the convenience libltdl library
-LTDL_INIT([convenience])
+#LTDL_INIT([convenience])
 
 dnl ${nut_with_dev}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_dev}" != "no"; then
@@ -1035,6 +1057,8 @@ AC_SUBST(LIBIPMI_LIBS)
 AC_SUBST(DOC_BUILD_LIST)
 AC_SUBST(LIBWRAP_CFLAGS)
 AC_SUBST(LIBWRAP_LIBS)
+AC_SUBST(LIBLTDL_CFLAGS)
+AC_SUBST(LIBLTDL_LIBS)
 AC_SUBST(HAL_USER)
 AC_SUBST(HAL_DEVICE_MATCH_KEY)
 AC_SUBST(HAL_FDI_PATH)
