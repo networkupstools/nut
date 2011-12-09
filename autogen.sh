@@ -32,4 +32,4 @@ fi
 
 # now we can safely call autoreconf
 echo "Calling autoreconf..."
-autoreconf -i --force
+autoreconf -i
