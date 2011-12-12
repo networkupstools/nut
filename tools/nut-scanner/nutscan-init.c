@@ -47,6 +47,6 @@ void nutscan_init(void)
 	nutscan_avail_avahi = nutscan_load_avahi_library();
 #endif
 #ifdef WITH_FREEIPMI
-	nutscan_ipmi_avahi = nutscan_load_ipmi_library();
+	nutscan_avail_ipmi = nutscan_load_ipmi_library();
 #endif
 }
