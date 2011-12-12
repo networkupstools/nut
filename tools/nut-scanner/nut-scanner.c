@@ -417,7 +417,7 @@ display_help:
 			nutscan_avail_avahi = 0;
 		}
 #else
-		dev[TYPE_AVAHI] = nutscan_scan_avahi();
+		dev[TYPE_AVAHI] = nutscan_scan_avahi(timeout);
 #endif /* HAVE_PTHREAD */
 	}
 
