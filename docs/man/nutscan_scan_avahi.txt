@@ -18,6 +18,8 @@ DESCRIPTION
 
 The *nutscan_scan_avahi()* function try to detect NUT service and its associated devcies. It uses the AVAHI library to do so.
 
+You MUST call linkman:nutscan_init[3] before using this function.
+
 This function waits up to 'usec_timeout' microseconds before considering an IP address does not respond.
 
 RETURN VALUE
@@ -27,6 +29,7 @@ The *nutscan_scan_avahi()* function returns a pointer to a `nutscan_device_t` st
 
 SEE ALSO
 --------
+linkman:nutscan_init[3],
 linkman:nutscan_scan_usb[3], linkman:nutscan_scan_xml_http[3], 
 linkman:nutscan_scan_nut[3], linkman:nutscan_scan_snmp[3], 
 linkman:nutscan_scan_ipmi[3], linkman:nutscan_display_ups_conf[3], 

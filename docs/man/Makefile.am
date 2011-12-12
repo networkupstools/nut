@@ -146,6 +146,7 @@ SRC_DEV_PAGES = \
 	nutscan_free_device.txt \
 	nutscan_add_option_to_device.txt \
 	nutscan_add_device_to_device.txt \
+	nutscan_init.txt \
 	libupsclient-config.txt \
 	skel.txt
 
@@ -177,7 +178,8 @@ MAN3_DEV_PAGES = \
 	nutscan_new_device.3 \
 	nutscan_free_device.3 \
 	nutscan_add_option_to_device.3 \
-	nutscan_add_device_to_device.3
+	nutscan_add_device_to_device.3 \
+	nutscan_init.3
 
 MAN1_DEV_PAGES = \
 	libupsclient-config.1
@@ -220,6 +222,7 @@ HTML_DEV_MANS = \
 	nutscan_free_device.html \
 	nutscan_add_option_to_device.html \
 	nutscan_add_device_to_device.html \
+	nutscan_init.html \
 	libupsclient-config.html \
 	skel.html
 
