@@ -18,15 +18,14 @@
  */
 
 #include "common.h"
+#include "nut-scan.h"
 
 #ifdef WITH_USB
 #include "upsclient.h"
 #include "nutscan-usb.h"
 #include <stdio.h>
 #include <string.h>
-#include "nutscan-device.h"
 #include <ltdl.h>
-#include "nutscan-init.h"
 
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;

@@ -18,6 +18,7 @@
  */
 
 #include "common.h"
+#include "nut-scan.h"
 #ifdef WITH_NEON
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -29,9 +30,7 @@
 #include <sys/select.h>
 #include <errno.h>
 #include <ne_xml.h>
-#include "nutscan-device.h"
 #include <ltdl.h>
-#include "nutscan-init.h"
 
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;

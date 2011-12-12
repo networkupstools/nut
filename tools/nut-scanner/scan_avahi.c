@@ -17,9 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 #include "common.h"
+#include "nut-scan.h"
 
 #ifdef WITH_AVAHI
-#include "nut-scan.h"
 
 #include <stdio.h>
 #include <assert.h>
