@@ -30,6 +30,10 @@ int nutscan_load_ipmi_library()
 /* TODO */
 nutscan_device_t *  nutscan_scan_ipmi()
 {
+        if( !nutscan_avail_ipmi ) {
+                return NULL;
+        }
+
 	return NULL;
 }
 #else /* WITH_IPMI */

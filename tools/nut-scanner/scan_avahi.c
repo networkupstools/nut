@@ -461,6 +461,10 @@ nutscan_device_t * nutscan_scan_avahi(long usec_timeout)
 	AvahiServiceBrowser *sb = NULL;
 	int error;
 
+	if( !nutscan_avail_avahi ) {
+		return NULL;
+	}
+
 	avahi_usec_timeout = usec_timeout;
 
 	/* Allocate main loop object */

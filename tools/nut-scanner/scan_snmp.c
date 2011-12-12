@@ -663,6 +663,11 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	pthread_mutex_init(&lib_mutex,NULL);
 #endif
 
+        if( !nutscan_avail_snmp ) {
+                return NULL;
+        }
+
+
 	g_usec_timeout = usec_timeout;
 
 	/* Initialize the SNMP library */

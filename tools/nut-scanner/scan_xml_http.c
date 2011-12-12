@@ -31,6 +31,7 @@
 #include <ne_xml.h>
 #include "nutscan-device.h"
 #include <ltdl.h>
+#include "nutscan-init.h"
 
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;
@@ -131,6 +132,10 @@ nutscan_device_t * nutscan_scan_xml_http(long usec_timeout)
 
 	nutscan_device_t * nut_dev = NULL;
 	nutscan_device_t * current_nut_dev = NULL;
+
+        if( !nutscan_avail_xml_http ) {
+                return NULL;
+        }
 
 	if((peerSocket = socket(AF_INET, SOCK_DGRAM, 0)) != -1)
 	{
