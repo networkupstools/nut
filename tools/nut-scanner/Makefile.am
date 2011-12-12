@@ -9,7 +9,8 @@ if WITH_LIBLTDL
  lib_LTLIBRARIES = libnutscan.la
 endif
 libnutscan_la_SOURCES = scan_nut.c scan_ipmi.c \
-	nutscan-device.c nutscan-ip.c nutscan-display.c nutscan-init.c
+	nutscan-device.c nutscan-ip.c nutscan-display.c nutscan-init.c \
+	scan_usb.c scan_snmp.c scan_xml_http.c scan_avahi.c
 libnutscan_la_LIBADD = ../../clients/libupsclient.la $(NETLIBS) $(LIBLTDL_LIBS)
 libnutscan_la_LDFLAGS = -version-info 1:0:0
 libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include $(LIBLTDL_CFLAGS)
@@ -23,19 +24,15 @@ if WITH_SSL
   libnutscan_la_LIBADD += $(LIBSSL_LIBS)
 endif
 if WITH_USB
-  libnutscan_la_SOURCES += scan_usb.c
   libnutscan_la_CFLAGS += $(LIBUSB_CFLAGS)
 endif
 if WITH_SNMP
-  libnutscan_la_SOURCES += scan_snmp.c
   libnutscan_la_CFLAGS += $(LIBNETSNMP_CFLAGS)
 endif
 if WITH_NEON
-  libnutscan_la_SOURCES += scan_xml_http.c
   libnutscan_la_CFLAGS += $(LIBNEON_CFLAGS)
 endif
 if WITH_AVAHI
-  libnutscan_la_SOURCES += scan_avahi.c
   libnutscan_la_CFLAGS += $(LIBAVAHI_CFLAGS)
 endif
 
