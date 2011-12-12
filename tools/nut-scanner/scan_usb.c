@@ -41,7 +41,7 @@ static usb_dev_handle * (*nut_usb_open)(struct usb_device *dev);
 static int (*nut_usb_find_devices)(void);
 
 /* return 0 on error */
-static int load_usb_library()
+int nutscan_load_usb_library()
 {
         if( dl_handle != NULL ) {
                 /* if previous init failed */
@@ -140,10 +140,6 @@ nutscan_device_t * nutscan_scan_usb()
 	struct usb_device *dev;
 	struct usb_bus *bus;
 	usb_dev_handle *udev;
-
-        if (!load_usb_library()) {
-                return NULL;
-        }
 
 	nutscan_device_t * nut_dev = NULL;
 	nutscan_device_t * current_nut_dev = NULL;
@@ -254,6 +250,11 @@ nutscan_device_t * nutscan_scan_usb()
 	}
 
 	return current_nut_dev;
+}
+#else /* WITH_USB */
+nutscan_device_t * nutscan_scan_usb()
+{
+	return NULL;
 }
 #endif /* WITH_USB */
 

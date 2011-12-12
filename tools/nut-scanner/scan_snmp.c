@@ -97,7 +97,7 @@ static oid * (*nut_usmHMACSHA1AuthProtocol);
 static oid * (*nut_usmDESPrivProtocol);
 
 /* return 0 on error */
-static int load_snmp_library()
+int nutscan_load_snmp_library()
 {
 #ifdef HAVE_PTHREAD
 	pthread_mutex_lock(&lib_mutex);
@@ -663,10 +663,6 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	pthread_mutex_init(&lib_mutex,NULL);
 #endif
 
-	if (!load_snmp_library()) {
-		return NULL;
-	}
-
 	g_usec_timeout = usec_timeout;
 
 	/* Initialize the SNMP library */
@@ -701,6 +697,11 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 #endif
 
 	return dev_ret;
+}
+#else /* WITH_SNMP */
+nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip,long usec_timeout, nutscan_snmp_t * sec)
+{
+	return NULL;
 }
 #endif /* WITH_SNMP */
 

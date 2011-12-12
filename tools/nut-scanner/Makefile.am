@@ -9,7 +9,7 @@ if WITH_LIBLTDL
  lib_LTLIBRARIES = libnutscan.la
 endif
 libnutscan_la_SOURCES = scan_nut.c scan_ipmi.c \
-	nutscan-device.c nutscan-ip.c nutscan-display.c
+	nutscan-device.c nutscan-ip.c nutscan-display.c nutscan-init.c
 libnutscan_la_LIBADD = ../../clients/libupsclient.la $(NETLIBS) $(LIBLTDL_LIBS)
 libnutscan_la_LDFLAGS = -version-info 1:0:0
 libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include $(LIBLTDL_CFLAGS)

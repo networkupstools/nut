@@ -82,7 +82,7 @@ static char * (*nut_avahi_address_snprint)(char *ret_s, size_t length, const Ava
 static const AvahiPoll* (*nut_avahi_simple_poll_get)(AvahiSimplePoll *s);
 
 /* return 0 on error */
-static int load_avahi_library()
+int nutscan_load_avahi_library()
 {
         if( dl_handle != NULL ) {
                 /* if previous init failed */
@@ -461,10 +461,6 @@ nutscan_device_t * nutscan_scan_avahi(long usec_timeout)
 	AvahiServiceBrowser *sb = NULL;
 	int error;
 
-	if (!load_avahi_library()) {
-		return NULL;
-	}
-
 	avahi_usec_timeout = usec_timeout;
 
 	/* Allocate main loop object */
@@ -504,5 +500,11 @@ fail:
 		(*nut_avahi_simple_poll_free)(simple_poll);
 
 	return dev_ret;
+}
+#else  /* WITH_AVAHI */
+/* stub function */
+nutscan_device_t * nutscan_scan_avahi(long usec_timeout)
+{
+	return NULL;
 }
 #endif /* WITH_AVAHI */

@@ -1,4 +1,4 @@
-/* scan_ipmi.c: detect NUT supported Power Supply Units
+/* nutscan-init.c: init functions for nut scanner library
  * 
  *  Copyright (C) 2011 - Frederic Bohe <fredericbohe@eaton.com>
  *
@@ -16,26 +16,37 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
+
 #include "common.h"
-#include "nut-scan.h"
 
-#ifdef WITH_IPMI
+int nutscan_avail_avahi = 0;
+int nutscan_avail_ipmi = 0;
+int nutscan_avail_nut = 1;
+int nutscan_avail_snmp = 0;
+int nutscan_avail_usb = 0;
+int nutscan_avail_xml_http = 0;
 
-/* Return 0 on error */
-int nutscan_load_ipmi_library()
-{
-	return 0;
-}
+int nutscan_load_usb_library(void);
+int nutscan_load_snmp_library(void);
+int nutscan_load_neon_library(void);
+int nutscan_load_avahi_library(void);
+int nutscan_load_ipmi_library(void);
 
-/* TODO */
-nutscan_device_t *  nutscan_scan_ipmi()
+void nutscan_init(void)
 {
-	return NULL;
+#ifdef WITH_USB
+	nutscan_avail_usb = nutscan_load_usb_library();
+#endif
+#ifdef WITH_SNMP
+	nutscan_avail_snmp = nutscan_load_snmp_library();
+#endif
+#ifdef WITH_NEON
+	nutscan_avail_xml_http = nutscan_load_neon_library();
+#endif
+#ifdef WITH_AVAHI
+	nutscan_avail_avahi = nutscan_load_avahi_library();
+#endif
+#ifdef WITH_FREEIPMI
+	nutscan_ipmi_avahi = nutscan_load_ipmi_library();
+#endif
 }
-#else /* WITH_IPMI */
-/* stub function */
-nutscan_device_t *  nutscan_scan_ipmi()
-{
-	return NULL;
-}
-#endif /* WITH_IPMI */

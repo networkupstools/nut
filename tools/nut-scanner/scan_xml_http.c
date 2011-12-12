@@ -46,7 +46,7 @@ static ne_xml_parser * (*nut_ne_xml_create)(void);
 static int (*nut_ne_xml_parse)(ne_xml_parser *p, const char *block, size_t len);
 
 /* return 0 on error */
-static int load_neon_library()
+int nutscan_load_neon_library()
 {
 
         if( dl_handle != NULL ) {
@@ -128,10 +128,6 @@ nutscan_device_t * nutscan_scan_xml_http(long usec_timeout)
 	char buf[SMALLBUF];
 	char string[SMALLBUF];
 	ssize_t recv_size;
-
-	if (!load_neon_library()) {
-		return NULL;
-	}
 
 	nutscan_device_t * nut_dev = NULL;
 	nutscan_device_t * current_nut_dev = NULL;
@@ -230,5 +226,10 @@ nutscan_device_t * nutscan_scan_xml_http(long usec_timeout)
 
 
 	return current_nut_dev;
+}
+#else /* WITH_NEON */
+nutscan_device_t * nutscan_scan_xml_http(long usec_timeout)
+{
+	return NULL;
 }
 #endif /* WITH_NEON */

@@ -1,4 +1,4 @@
-/* scan_ipmi.c: detect NUT supported Power Supply Units
+/* nutscan-init.h: initialisation data
  * 
  *  Copyright (C) 2011 - Frederic Bohe <fredericbohe@eaton.com>
  *
@@ -16,26 +16,15 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
-#include "common.h"
-#include "nut-scan.h"
+#ifndef SCAN_INIT
+#define SCAN_INIT
 
-#ifdef WITH_IPMI
+extern int nutscan_avail_avahi;
+extern int nutscan_avail_ipmi;
+extern int nutscan_avail_nut;
+extern int nutscan_avail_snmp;
+extern int nutscan_avail_usb;
+extern int nutscan_avail_xml_http;
 
-/* Return 0 on error */
-int nutscan_load_ipmi_library()
-{
-	return 0;
-}
-
-/* TODO */
-nutscan_device_t *  nutscan_scan_ipmi()
-{
-	return NULL;
-}
-#else /* WITH_IPMI */
-/* stub function */
-nutscan_device_t *  nutscan_scan_ipmi()
-{
-	return NULL;
-}
-#endif /* WITH_IPMI */
+void nutscan_init(void);
+#endif
