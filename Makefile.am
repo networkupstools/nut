@@ -5,8 +5,8 @@ ACLOCAL_AMFLAGS = -I m4
 
 # subdirectories to build and distribute. The order matters, as
 # several subdirectories depend on stuff in "common" or tools being built first
-SUBDIRS = include common clients conf data tools docs drivers lib	\
-  scripts server
+SUBDIRS = include common clients conf data tools docs drivers \
+  lib scripts server
 
 # COPYING is included automatically.
 EXTRA_DIST = LICENSE-GPL2 LICENSE-GPL3 MAINTAINERS UPGRADING

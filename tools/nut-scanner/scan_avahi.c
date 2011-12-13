@@ -17,9 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 #include "common.h"
+#include "nut-scan.h"
 
 #ifdef WITH_AVAHI
-#include "nut-scan.h"
 
 #include <stdio.h>
 #include <assert.h>
@@ -32,6 +32,175 @@
 #include <avahi-common/simple-watch.h>
 #include <avahi-common/malloc.h>
 #include <avahi-common/error.h>
+
+#include <ltdl.h>
+
+/* dynamic link library stuff */
+static lt_dlhandle dl_handle = NULL;
+static const char *dl_error = NULL;
+
+static AvahiClient* (*nut_avahi_service_browser_get_client)(AvahiServiceBrowser *);
+static int (*nut_avahi_simple_poll_loop)(AvahiSimplePoll *s);
+static void (*nut_avahi_client_free)(AvahiClient *client);
+static int (*nut_avahi_client_errno)(AvahiClient*);
+static void (*nut_avahi_free)(void *p);
+static void (*nut_avahi_simple_poll_quit)(AvahiSimplePoll *s);
+static AvahiClient* (*nut_avahi_client_new)(
+		const AvahiPoll *poll_api,
+		AvahiClientFlags flags,
+		AvahiClientCallback callback,
+		void *userdata,
+		int *error);
+static void (*nut_avahi_simple_poll_free)(AvahiSimplePoll *s);
+static AvahiServiceResolver * (*nut_avahi_service_resolver_new)(
+		AvahiClient *client,
+		AvahiIfIndex interface,
+		AvahiProtocol protocol,
+		const char *name,
+		const char *type,
+		const char *domain,
+		AvahiProtocol aprotocol,
+		AvahiLookupFlags flags,
+		AvahiServiceResolverCallback callback,
+		void *userdata);
+static const char * (*nut_avahi_strerror)(int error);
+static AvahiClient* (*nut_avahi_service_resolver_get_client)(AvahiServiceResolver *);
+static AvahiServiceBrowser* (*nut_avahi_service_browser_new)(
+		AvahiClient *client,
+		AvahiIfIndex interface,
+		AvahiProtocol protocol,
+		const char *type,
+		const char *domain,
+		AvahiLookupFlags flags,
+		AvahiServiceBrowserCallback callback,
+		void *userdata);
+static int (*nut_avahi_service_resolver_free)(AvahiServiceResolver *r);
+static AvahiSimplePoll *(*nut_avahi_simple_poll_new)(void);
+static char* (*nut_avahi_string_list_to_string)(AvahiStringList *l);
+static int (*nut_avahi_service_browser_free)(AvahiServiceBrowser *);
+static char * (*nut_avahi_address_snprint)(char *ret_s, size_t length, const AvahiAddress *a);
+static const AvahiPoll* (*nut_avahi_simple_poll_get)(AvahiSimplePoll *s);
+
+/* return 0 on error */
+int nutscan_load_avahi_library()
+{
+        if( dl_handle != NULL ) {
+                /* if previous init failed */
+                if( dl_handle == (void *)1 ) {
+                        return 0;
+                }
+                /* init has already been done */
+                return 1;
+        }
+
+        if( lt_dlinit() != 0 ) {
+                fprintf(stderr, "Error initializing lt_init\n");
+                return 0;
+        }
+
+        dl_handle = lt_dlopenext("libavahi-client");
+        if (!dl_handle) {
+                dl_error = lt_dlerror();
+                goto err;
+        }
+        lt_dlerror();      /* Clear any existing error */
+        *(void **) (&nut_avahi_service_browser_get_client) = lt_dlsym(dl_handle, "avahi_service_browser_get_client");
+        if ((dl_error = lt_dlerror()) != NULL)  {
+                goto err;
+        }
+
+        *(void **) (&nut_avahi_simple_poll_loop) = lt_dlsym(dl_handle, "avahi_simple_poll_loop");
+        if ((dl_error = lt_dlerror()) != NULL)  {
+                goto err;
+        }
+
+        *(void **) (&nut_avahi_client_free) = lt_dlsym(dl_handle, "avahi_client_free");
+        if ((dl_error = lt_dlerror()) != NULL)  {
+                goto err;
+        }
+
+        *(void **) (&nut_avahi_client_errno) = lt_dlsym(dl_handle, "avahi_client_errno");
+        if ((dl_error = lt_dlerror()) != NULL)  {
+                goto err;
+        }
+
+        *(void **) (&nut_avahi_free) = lt_dlsym(dl_handle, "avahi_free");
+        if ((dl_error = lt_dlerror()) != NULL)  {
+                goto err;
+        }
+
+        *(void **) (&nut_avahi_simple_poll_quit) = lt_dlsym(dl_handle, "avahi_simple_poll_quit");
+        if ((dl_error = lt_dlerror()) != NULL)  {
+                goto err;
+        }
+
+        *(void **) (&nut_avahi_client_new) = lt_dlsym(dl_handle, "avahi_client_new");
+        if ((dl_error = lt_dlerror()) != NULL)  {
+                goto err;
+        }
+
+        *(void **) (&nut_avahi_simple_poll_free) = lt_dlsym(dl_handle, "avahi_simple_poll_free");
+        if ((dl_error = lt_dlerror()) != NULL)  {
+                goto err;
+        }
+
+        *(void **) (&nut_avahi_service_resolver_new) = lt_dlsym(dl_handle, "avahi_service_resolver_new");
+        if ((dl_error = lt_dlerror()) != NULL)  {
+                goto err;
+        }
+
+        *(void **) (&nut_avahi_strerror) = lt_dlsym(dl_handle, "avahi_strerror");
+        if ((dl_error = lt_dlerror()) != NULL)  {
+                goto err;
+        }
+
+        *(void **) (&nut_avahi_service_resolver_get_client) = lt_dlsym(dl_handle, "avahi_service_resolver_get_client");
+        if ((dl_error = lt_dlerror()) != NULL)  {
+                goto err;
+        }
+
+        *(void **) (&nut_avahi_service_browser_new) = lt_dlsym(dl_handle, "avahi_service_browser_new");
+        if ((dl_error = lt_dlerror()) != NULL)  {
+                goto err;
+        }
+
+        *(void **) (&nut_avahi_service_resolver_free) = lt_dlsym(dl_handle, "avahi_service_resolver_free");
+        if ((dl_error = lt_dlerror()) != NULL)  {
+                goto err;
+        }
+
+        *(void **) (&nut_avahi_simple_poll_new) = lt_dlsym(dl_handle, "avahi_simple_poll_new");
+        if ((dl_error = lt_dlerror()) != NULL)  {
+                goto err;
+        }
+
+        *(void **) (&nut_avahi_string_list_to_string) = lt_dlsym(dl_handle, "avahi_string_list_to_string");
+        if ((dl_error = lt_dlerror()) != NULL)  {
+                goto err;
+        }
+
+        *(void **) (&nut_avahi_service_browser_free) = lt_dlsym(dl_handle, "avahi_service_browser_free");
+        if ((dl_error = lt_dlerror()) != NULL)  {
+                goto err;
+        }
+
+        *(void **) (&nut_avahi_address_snprint) = lt_dlsym(dl_handle, "avahi_address_snprint");
+        if ((dl_error = lt_dlerror()) != NULL)  {
+                goto err;
+        }
+
+        *(void **) (&nut_avahi_simple_poll_get) = lt_dlsym(dl_handle, "avahi_simple_poll_get");
+        if ((dl_error = lt_dlerror()) != NULL)  {
+                goto err;
+        }
+
+        return 1;
+err:
+        fprintf(stderr, "%s\n", dl_error);
+        dl_handle = (void *)1;
+        return 0;
+}
+/* end of dynamic link library stuff */
 
 static AvahiSimplePoll *simple_poll = NULL;
 static nutscan_device_t * dev_ret = NULL;
@@ -187,7 +356,7 @@ static void resolve_callback(
 
 	switch (event) {
 		case AVAHI_RESOLVER_FAILURE:
-			fprintf(stderr, "(Resolver) Failed to resolve service '%s' of type '%s' in domain '%s': %s\n", name, type, domain, avahi_strerror(avahi_client_errno(avahi_service_resolver_get_client(r))));
+			fprintf(stderr, "(Resolver) Failed to resolve service '%s' of type '%s' in domain '%s': %s\n", name, type, domain, (*nut_avahi_strerror)((*nut_avahi_client_errno)((*nut_avahi_service_resolver_get_client)(r))));
 			break;
 
 		case AVAHI_RESOLVER_FOUND: {
@@ -195,8 +364,8 @@ static void resolve_callback(
 
 /*			fprintf(stderr, "Service '%s' of type '%s' in domain '%s':\n", name, type, domain); */
 
-			avahi_address_snprint(a, sizeof(a), address);
-			t = avahi_string_list_to_string(txt);
+			(*nut_avahi_address_snprint)(a, sizeof(a), address);
+			t = (*nut_avahi_string_list_to_string)(txt);
 /*
 			fprintf(stderr,
 				"\t%s:%u (%s)\n"
@@ -217,11 +386,11 @@ static void resolve_callback(
 				!!(flags & AVAHI_LOOKUP_RESULT_CACHED));
 */
 			update_device(host_name,a,port,t,address->proto);
-			avahi_free(t);
+			(*nut_avahi_free)(t);
 		}
 	}
 
-	avahi_service_resolver_free(r);
+	(*nut_avahi_service_resolver_free)(r);
 }
 
 static void browse_callback(
@@ -243,8 +412,8 @@ static void browse_callback(
 	switch (event) {
 		case AVAHI_BROWSER_FAILURE:
 
-			fprintf(stderr, "(Browser) %s\n", avahi_strerror(avahi_client_errno(avahi_service_browser_get_client(b))));
-			avahi_simple_poll_quit(simple_poll);
+			fprintf(stderr, "(Browser) %s\n", (*nut_avahi_strerror)((*nut_avahi_client_errno)((*nut_avahi_service_browser_get_client)(b))));
+			(*nut_avahi_simple_poll_quit)(simple_poll);
 			return;
 
 		case AVAHI_BROWSER_NEW:
@@ -255,8 +424,8 @@ static void browse_callback(
 			   the callback function is called the server will free
 			   the resolver for us. */
 
-			if (!(avahi_service_resolver_new(c, interface, protocol, name, type, domain, AVAHI_PROTO_UNSPEC, 0, resolve_callback, c)))
-				fprintf(stderr, "Failed to resolve service '%s': %s\n", name, avahi_strerror(avahi_client_errno(c)));
+			if (!((*nut_avahi_service_resolver_new)(c, interface, protocol, name, type, domain, AVAHI_PROTO_UNSPEC, 0, resolve_callback, c)))
+				fprintf(stderr, "Failed to resolve service '%s': %s\n", name, (*nut_avahi_strerror)((*nut_avahi_client_errno)(c)));
 
 			break;
 
@@ -265,7 +434,7 @@ static void browse_callback(
 			break;
 
 		case AVAHI_BROWSER_ALL_FOR_NOW:
-			avahi_simple_poll_quit(simple_poll);
+			(*nut_avahi_simple_poll_quit)(simple_poll);
 		case AVAHI_BROWSER_CACHE_EXHAUSTED:
 /*			fprintf(stderr, "(Browser) %s\n", event == AVAHI_BROWSER_CACHE_EXHAUSTED ? "CACHE_EXHAUSTED" : "ALL_FOR_NOW"); */
 			break;
@@ -278,8 +447,8 @@ static void client_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UN
 	/* Called whenever the client or server state changes */
 
 	if (state == AVAHI_CLIENT_FAILURE) {
-		fprintf(stderr, "Server connection failure: %s\n", avahi_strerror(avahi_client_errno(c)));
-		avahi_simple_poll_quit(simple_poll);
+		fprintf(stderr, "Server connection failure: %s\n", (*nut_avahi_strerror)((*nut_avahi_client_errno)(c)));
+		(*nut_avahi_simple_poll_quit)(simple_poll);
 	}
 }
 
@@ -292,44 +461,54 @@ nutscan_device_t * nutscan_scan_avahi(long usec_timeout)
 	AvahiServiceBrowser *sb = NULL;
 	int error;
 
+	if( !nutscan_avail_avahi ) {
+		return NULL;
+	}
+
 	avahi_usec_timeout = usec_timeout;
 
 	/* Allocate main loop object */
-	if (!(simple_poll = avahi_simple_poll_new())) {
+	if (!(simple_poll = (*nut_avahi_simple_poll_new)())) {
 		fprintf(stderr, "Failed to create simple poll object.\n");
 		goto fail;
 	}
 
 	/* Allocate a new client */
-	client = avahi_client_new(avahi_simple_poll_get(simple_poll), 0, client_callback, NULL, &error);
+	client = (*nut_avahi_client_new)((*nut_avahi_simple_poll_get)(simple_poll), 0, client_callback, NULL, &error);
 
 	/* Check wether creating the client object succeeded */
 	if (!client) {
-		fprintf(stderr, "Failed to create client: %s\n", avahi_strerror(error));
+		fprintf(stderr, "Failed to create client: %s\n", (*nut_avahi_strerror)(error));
 		goto fail;
 	}
 
 	/* Create the service browser */
-	if (!(sb = avahi_service_browser_new(client, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, "_upsd._tcp", NULL, 0, browse_callback, client))) {
-		fprintf(stderr, "Failed to create service browser: %s\n", avahi_strerror(avahi_client_errno(client)));
+	if (!(sb = (*nut_avahi_service_browser_new)(client, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, "_upsd._tcp", NULL, 0, browse_callback, client))) {
+		fprintf(stderr, "Failed to create service browser: %s\n", (*nut_avahi_strerror)((*nut_avahi_client_errno)(client)));
 		goto fail;
 	}
 
 	/* Run the main loop */
-	avahi_simple_poll_loop(simple_poll);
+	(*nut_avahi_simple_poll_loop)(simple_poll);
 
 fail:
 
 	/* Cleanup things */
 	if (sb)
-		avahi_service_browser_free(sb);
+		(*nut_avahi_service_browser_free)(sb);
 
 	if (client)
-		avahi_client_free(client);
+		(*nut_avahi_client_free)(client);
 
 	if (simple_poll)
-		avahi_simple_poll_free(simple_poll);
+		(*nut_avahi_simple_poll_free)(simple_poll);
 
 	return dev_ret;
+}
+#else  /* WITH_AVAHI */
+/* stub function */
+nutscan_device_t * nutscan_scan_avahi(long usec_timeout)
+{
+	return NULL;
 }
 #endif /* WITH_AVAHI */

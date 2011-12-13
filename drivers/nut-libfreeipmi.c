@@ -21,6 +21,22 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
+ TODO:
+ * add power control support (ipmipower): seems OOB only!
+  -n, --on                   Power on the target hosts.
+  -f, --off                  Power off the target hosts.
+  -c, --cycle                Power cycle the target hosts.
+  -r, --reset                Reset the target hosts.
+  -s, --stat                 Get power status of the target hosts.
+      --pulse                Send power diagnostic interrupt to target hosts.
+      --soft                 Initiate a soft-shutdown of the OS via ACPI.
+      --on-if-off            Issue a power on command instead of a power cycle
+                             or hard reset command if the remote machine's
+                             power is currently off.
+      --wait-until-off       Regularly query the remote BMC and return only
+                             after the machine has powered off.
+      --wait-until-on        Regularly query the remote BMC and return only
+
  */
 
 #include <stdlib.h>
@@ -711,6 +727,7 @@ int nut_ipmi_monitoring_init()
 		return -1;
 	}
 
+#if HAVE_FREEIPMI_MONITORING
 	/* FIXME: replace "/tmp" by a proper place, using mkdtemp() or similar */
 	if (ipmi_monitoring_ctx_sdr_cache_directory (mon_ctx, "/tmp") < 0) {
 		upsdebugx (1, "ipmi_monitoring_ctx_sdr_cache_directory() error: %s",
@@ -723,6 +740,8 @@ int nut_ipmi_monitoring_init()
 					ipmi_monitoring_ctx_errormsg (mon_ctx));
 		return -1;
 	}
+#endif /* HAVE_FREEIPMI_MONITORING */
+
 	return 0;
 }
 
@@ -739,6 +758,7 @@ int nut_ipmi_get_sensors_status(IPMIDevice_t *ipmi_dev)
 		return -1;
 	}
 
+#if HAVE_FREEIPMI_MONITORING
 	/* Monitor only the list of sensors found previously */
 	if ((sensor_count = ipmi_monitoring_sensor_readings_by_record_id (mon_ctx,
 																		NULL, /* hostname is NULL for In-band communication */
@@ -930,6 +950,7 @@ int nut_ipmi_get_sensors_status(IPMIDevice_t *ipmi_dev)
 	
 		status_commit();
 	}
+#endif /* HAVE_FREEIPMI_MONITORING */
 
 	return retval;
 }

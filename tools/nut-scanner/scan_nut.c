@@ -122,7 +122,6 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 	int change_action_handler = 0;
 	int i;
 	struct scan_nut_arg *nut_arg;
-
 #ifdef HAVE_PTHREAD
 	pthread_t thread;
 	pthread_t * thread_array = NULL;
@@ -130,6 +129,10 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 
 	pthread_mutex_init(&dev_mutex,NULL);
 #endif
+
+        if( !nutscan_avail_nut ) {
+                return NULL;
+        }
 
 	/* Ignore SIGPIPE if the caller hasn't set a handler for it yet */
 	if( sigaction(SIGPIPE, NULL, &oldact) == 0 ) {

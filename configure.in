@@ -453,6 +453,29 @@ fi
 NUT_REPORT_FEATURE([enable libwrap (tcp-wrappers) support], [${nut_with_wrap}], [],
 					[WITH_WRAP], [Define to enable libwrap (tcp-wrappers) support])
 
+
+dnl ----------------------------------------------------------------------
+dnl Check for --with-libltdl
+
+NUT_ARG_WITH([libltdl], [enable libltdl (Libtool dlopen abstraction) support], [auto])
+
+dnl ${nut_with_libltdl}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_libltdl}" != "no"; then
+   dnl check for libltdl compiler flags
+   NUT_CHECK_LIBLTDL
+fi
+
+if test "${nut_with_libltdl}" = "yes" -a "${nut_have_libltdl}" != "yes"; then
+   AC_MSG_ERROR(["libltdl not found"])
+fi
+
+if test "${nut_with_libltdl}" != "no"; then
+   nut_with_libltdl="${nut_have_libltdl}"
+fi
+
+NUT_REPORT_FEATURE([enable libltdl (Libtool dlopen abstraction) support], [${nut_with_libltdl}], [],
+					[WITH_LIBLTDL], [Define to enable libltdl (Libtool dlopen abstraction) support])
+
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-cgi
 
@@ -1026,6 +1049,8 @@ AC_SUBST(LIBIPMI_LIBS)
 AC_SUBST(DOC_BUILD_LIST)
 AC_SUBST(LIBWRAP_CFLAGS)
 AC_SUBST(LIBWRAP_LIBS)
+AC_SUBST(LIBLTDL_CFLAGS)
+AC_SUBST(LIBLTDL_LIBS)
 AC_SUBST(HAL_USER)
 AC_SUBST(HAL_DEVICE_MATCH_KEY)
 AC_SUBST(HAL_FDI_PATH)

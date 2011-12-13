@@ -15,7 +15,8 @@ if test -z "${nut_have_libfreeipmi_seen}"; then
 
 	AC_MSG_CHECKING(for FreeIPMI version via pkg-config)
 	dnl pkg-config support requires Freeipmi 1.0.5, released on Thu Jun 30 2011
-	dnl but NUT should only require 0.8.5 or 1.0.1 (comment from upstream Al Chu)
+	dnl but NUT should only require 0.8.5 (for nut-scanner) and 1.0.1 (for
+	dnl nut-ipmipsu) (comment from upstream Al Chu)
 	FREEIPMI_VERSION="`pkg-config --silence-errors --modversion libfreeipmi 2>/dev/null`"
 	if test "$?" = "0" -a -n "${FREEIPMI_VERSION}"; then
 		CFLAGS="`pkg-config --silence-errors --cflags libfreeipmi libipmimonitoring 2>/dev/null`"
@@ -66,7 +67,9 @@ if test -z "${nut_have_libfreeipmi_seen}"; then
 	dnl we have to check for some specific functions
 	AC_SEARCH_LIBS([ipmi_ctx_find_inband], [freeipmi], [], [nut_have_freeipmi=no])
 	AC_SEARCH_LIBS([ipmi_fru_parse_ctx_create], [freeipmi], [], [nut_have_freeipmi=no])
-	AC_SEARCH_LIBS([ipmi_monitoring_init], [ipmimonitoring], [], [nut_have_freeipmi=no])
+
+	AC_SEARCH_LIBS([ipmi_monitoring_init], [ipmimonitoring], [nut_have_freeipmi_monitoring=yes], [nut_have_freeipmi_monitoring=no])
+	AC_SEARCH_LIBS([ipmi_monitoring_sensor_read_record_id], [ipmimonitoring], [], [nut_have_freeipmi_monitoring=no])
 
 	if test "${nut_have_freeipmi}" = "yes"; then
 		nut_with_ipmi="yes"
@@ -75,6 +78,10 @@ if test -z "${nut_have_libfreeipmi_seen}"; then
 		AC_DEFINE(HAVE_FREEIPMI, 1, [Define if FreeIPMI support is available])
 		LIBIPMI_CFLAGS="${CFLAGS}"
 		LIBIPMI_LIBS="${LIBS}"
+	fi
+
+	if test "${nut_have_freeipmi_monitoring}" = "yes"; then
+		AC_DEFINE(HAVE_FREEIPMI_MONITORING, 1, [Define if FreeIPMI monitoring support is available])
 	fi
 
 	dnl restore original CFLAGS and LIBS
