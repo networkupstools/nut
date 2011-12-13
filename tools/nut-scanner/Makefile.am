@@ -35,6 +35,9 @@ endif
 if WITH_AVAHI
   libnutscan_la_CFLAGS += $(LIBAVAHI_CFLAGS)
 endif
+if WITH_IPMI
+  libnutscan_la_CFLAGS += $(LIBIPMI_CFLAGS)
+endif
 
 dist_noinst_HEADERS = nutscan-usb.h nutscan-snmp.h
 
