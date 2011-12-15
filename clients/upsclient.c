@@ -401,7 +401,6 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,stru
 	char			sport[NI_MAXSERV];
 	int			v;
 	fd_set 			wfds;
-	int			ret;
 	int			error;
 	socklen_t		error_size;
 	long			fd_flags;
@@ -483,7 +482,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,stru
 			if(errno == EINPROGRESS) {
 				FD_ZERO(&wfds);
 				FD_SET(sock_fd, &wfds);
-				ret = select(sock_fd+1,NULL,&wfds,NULL,
+				select(sock_fd+1,NULL,&wfds,NULL,
 						timeout);
 				if (FD_ISSET(sock_fd, &wfds)) {
 					error_size = sizeof(error);

@@ -747,18 +747,19 @@ int nut_ipmi_monitoring_init()
 
 int nut_ipmi_get_sensors_status(IPMIDevice_t *ipmi_dev)
 {
+	int retval = -1;
+
+#if HAVE_FREEIPMI_MONITORING
 	/* It seems we don't need more! */
 	unsigned int sensor_reading_flags = IPMI_MONITORING_SENSOR_READING_FLAGS_IGNORE_NON_INTERPRETABLE_SENSORS;
 	int sensor_count, i, str_count;
 	int psu_status = PSU_STATUS_UNKNOWN;
-	int retval = 0;
 
 	if (mon_ctx == NULL) {
 		upsdebugx (1, "Monitoring context not initialized!");
 		return -1;
 	}
 
-#if HAVE_FREEIPMI_MONITORING
 	/* Monitor only the list of sensors found previously */
 	if ((sensor_count = ipmi_monitoring_sensor_readings_by_record_id (mon_ctx,
 																		NULL, /* hostname is NULL for In-band communication */

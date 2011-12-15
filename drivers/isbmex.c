@@ -323,10 +323,10 @@ void upsdrv_shutdown(void)
 	 * work, else:*/
 /*	fatalx(EXIT_FAILURE, "Shutdown only supported with the Generic Driver, type 6 and special cable");  */
 	/*fatalx(EXIT_FAILURE, "shutdown not supported");*/
-	int i, ret;
+	int i;
 	for(i=0;i<=5;i++)
 	{
-		ret = ser_send_char(upsfd, '#');
+		ser_send_char(upsfd, '#');
 		usleep(50000);
 	}
 }

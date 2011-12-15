@@ -796,7 +796,6 @@ int shut_packet_recv (u_char *Buf, int datalen)
 	u_short  Pos=0;
 	u_char   Retry=0;
 	int recv;
-	shut_data_t   sdata;
 
 	upsdebugx (4, "entering shut_packet_recv (%i)", datalen);
 
@@ -804,7 +803,6 @@ int shut_packet_recv (u_char *Buf, int datalen)
 	{
 		if(serial_read (DEFAULT_TIMEOUT, &Start[0]) >= 0)
 		{
-			sdata.shut_pkt.bType = Start[0];
 			if(Start[0]==SHUT_SYNC)
 			{
 				upsdebugx (4, "received SYNC token");
@@ -819,7 +817,6 @@ int shut_packet_recv (u_char *Buf, int datalen)
 				{
 					upsdebug_hex(3, "Receive", Start, 2);
 					Size=Start[1]&0x0F;
-					sdata.shut_pkt.bLength = Size;
 					for(recv=0;recv<Size;recv++)
 						if(serial_read (DEFAULT_TIMEOUT, &Frame[recv]) < 0)
 							break;
