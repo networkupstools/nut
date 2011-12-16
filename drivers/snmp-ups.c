@@ -1212,6 +1212,7 @@ bool_t snmp_ups_walk(int mode)
 
 					/* add outlet instant commands to the info database. */
 					if (SU_TYPE(su_info_p) == SU_TYPE_CMD) {
+						/* FIXME: only add if "su_ups_get(cur_info_p) == TRUE" */
 						if (mode == SU_WALKMODE_INIT)
 							dstate_addcmd(cur_info_p.info_type);
 					}
