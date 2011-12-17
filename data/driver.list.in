@@ -200,6 +200,7 @@
 
 "Dynamix"	"ups"	"2"	"UPS1700D"	""	"blazer_ser"
 "Dynamix"	"ups"	"2"	"UPS-650VA"	""	"blazer_ser"
+"Dynamix"	"ups"	"2"	"650VA"	"USB"	"blazer_usb langid_fix=0x0409"
 
 "Dynex"	"ups"	"1"	"975AVR"	""	"genericups upstype=7"
 "Dynex"	"ups"	"2"	"DX-800U"	"USB"	"usbhid-ups"
@@ -355,6 +356,8 @@
 
 "Krauler"	"ups"	"2"	"UP-D1200VA"	"USB"	"blazer_usb"
 "Krauler"	"ups"	"2"	"UP-M500VA"	"USB"	"blazer_usb"
+
+"LDLC"	"ups"	"2"	"UPS-1200D"	""	"blazer_usb langid_fix=0x4095"
 
 "Lestar"	"ups"	"2"	"MD-800E"	""	"blazer_ser"
 
@@ -733,6 +736,7 @@
 "Sysgration"	"ups"	"2"	"UPGUARDS Pro650"	""	"blazer_ser"
 
 "Tecnoware"	"ups"	"2"	"Easy Power 1200"	""	"blazer_ser"
+"Tecnoware"	"ups"	"2"	"UPS ERA LCD 0.65"	""	"blazer_usb langid_fix=0x409"
 
 "Tripp-Lite"	"ups"	"1"	"INTERNETOFFICE700"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"ups"	"2"	"OMNIVS1000"	"USB"	"tripplite_usb"
@@ -777,10 +781,12 @@
 "Various"	"ups"	"4"	"(various)"	"SEC protocol"	"gamatronic"
 "Various"	"ups"	"1"	"(various)"	"Generic RUPS model"	"genericups upstype=4"
 "Various"	"ups"	"1"	"(various)"	"Generic RUPS 2000 (Megatec M2501 cable)"	"genericups upstype=21"
-"Various"	"ups"	"2"	"(various)"	"Q1 / Megatec protocol"	"blazer_ser"
+"Various"	"ups"	"2"	"(various serial)"	"Q1 / Megatec protocol"	"blazer_ser"
+"Various"	"ups"	"2"	"(various USB)"	"Q1 / Megatec protocol"	"blazer_usb"
 "Various"	"ups"	"2"	"(various)"	"PhoenixTec protocol"	"bestups"
 "Various"	"ups"	"3"	"(various)"	"SNMP - RFC 1628"	"snmp-ups (experimental)"
 "Various"	"ups"	"1"	"(various)"	"Safenet software"	"safenet"
+"Various"	"ups"	"2"	"(Various USB)"	"UPSilon 2000 software"	"blazer_usb langid_fix=0x409"
 
 "Victron/IMV"	"ups"	"1"	"(various)"	""	"victronups"
 "Victron/IMV"	"ups"	"1"	"Lite"	"crack cable"	"genericups upstype=10"

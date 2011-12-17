@@ -5,6 +5,7 @@
  * found online at "http://www.networkupstools.org/protocols/megatec.html".
  *
  * Copyright (C) 2003-2009  Arjen de Korte <adkorte-guest@alioth.debian.org>
+ * Copyright (C) 2011  Arnaud Quette <arnaud.quette@free.fr>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,13 +28,14 @@
 #include "blazer.h"
 
 #define DRIVER_NAME	"Megatec/Q1 protocol USB driver"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_VERSION	"0.04"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
 	DRIVER_VERSION,
-	"Arjen de Korte <adkorte-guest@alioth.debian.org>",
+	"Arjen de Korte <adkorte-guest@alioth.debian.org>\n" \
+	"Arnaud Quette <arnaud.quette@free.fr>",
 	DRV_BETA,
 	{ NULL }
 };
@@ -43,6 +45,7 @@ static usb_dev_handle		*udev = NULL;
 static USBDevice_t		usbdevice;
 static USBDeviceMatcher_t	*reopen_matcher = NULL;
 static USBDeviceMatcher_t	*regex_matcher = NULL;
+static int					langid_fix = -1;
 
 static int (*subdriver_command)(const char *cmd, char *buf, size_t buflen) = NULL;
 
@@ -246,11 +249,46 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 		for (retry = 0; retry < 10; retry++) {
 			int	ret;
 
-			ret = usb_get_string_simple(udev, command[i].index, buf, buflen);
+			if (testvar("langid_fix")) {
+				/* Hardcode lang to 0x4095 */
+				ret = usb_get_string(udev, command[i].index, 0x4095, buf, buflen);
+			}
+			else {
+				ret = usb_get_string_simple(udev, command[i].index, buf, buflen);
+			}
 
 			if (ret <= 0) {
 				upsdebugx(3, "read: %s", ret ? usb_strerror() : "timeout");
 				return ret;
+			}
+
+			/* this may serve in the future */
+			upsdebugx(1, "received %d (%d)", ret, buf[0]);
+
+			if (langid_fix != -1) {
+				/* Limit this check, at least for now */
+				/* Invalid receive size - message corrupted */
+				if (ret != buf[0]) 
+				{
+					upsdebugx(1, "size mismatch: %d / %d", ret, buf[0]);
+					continue;
+				}
+
+				/* Simple unicode -> ASCII inplace conversion
+				 * FIXME: this code is at least shared with mge-shut/libshut
+				 * Create a common function? */
+				unsigned int di, si, size = buf[0];
+				for (di = 0, si = 2; si < size; si += 2) {
+					if (di >= (buflen - 1))
+						break;
+
+					if (buf[si + 1]) /* high byte */
+						buf[di++] = '?';
+					else
+						buf[di++] = buf[si];
+				}
+				buf[di] = 0;
+				ret = di;
 			}
 
 			/* "UPS No Ack" has a special meaning */
@@ -449,6 +487,8 @@ void upsdrv_makevartable(void)
 
 	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
 
+	addvar(VAR_VALUE, "langid_fix", "Apply the language ID workaround to the krauler subdriver (0x409 or 0x4095)");
+
 	blazer_makevartable();
 }
 
@@ -467,7 +507,8 @@ void upsdrv_initups(void)
 		{ NULL }
 	};
 
-	int	ret;
+	int	ret, langid;
+	char	tbuf[255]; /* Some devices choke on size > 255 */
 	char	*regex_array[6];
 
 	char	*subdrv = getval("subdriver");
@@ -478,6 +519,17 @@ void upsdrv_initups(void)
 	regex_array[3] = getval("product");
 	regex_array[4] = getval("serial");
 	regex_array[5] = getval("bus");
+
+	/* check for language ID workaround (#1) */
+	if (getval("langid_fix")) {
+		/* skip "0x" prefix and set back to hexadecimal */
+		if (sscanf(getval("langid_fix") + 2, "%x", &langid_fix) != 1) {
+			upslogx(LOG_NOTICE, "Error enabling language ID workaround");
+		}
+		else {
+			upsdebugx(2, "language ID workaround enabled (using '0x%x')", langid_fix);
+		}
+	}
 
 	/* pick up the subdriver name if set explicitly */
 	if (subdrv) {
@@ -542,6 +594,23 @@ void upsdrv_initups(void)
 
 	dstate_setinfo("ups.vendorid", "%04x", usbdevice.VendorID);
 	dstate_setinfo("ups.productid", "%04x", usbdevice.ProductID);
+
+	/* check for language ID workaround (#2) */
+	if (langid_fix != -1) {
+		/* Future improvement:
+		 *   Asking for the zero'th index is special - it returns a string
+		 *   descriptor that contains all the language IDs supported by the
+		 *   device. Typically there aren't many - often only one. The
+		 *   language IDs are 16 bit numbers, and they start at the third byte
+		 *   in the descriptor. See USB 2.0 specification, section 9.6.7, for
+		 *   more information on this.
+		 * This should allow automatic application of the workaround */
+		ret = usb_get_string(udev, 0, 0, tbuf, sizeof(tbuf));
+		if (ret >= 4) {
+			langid = tbuf[2] | (tbuf[3] << 8);
+			upsdebugx(1, "First supported language ID: 0x%x (please report to the NUT maintainer!)", langid);
+		}
+	}
 #endif
 	blazer_initups();
 }
