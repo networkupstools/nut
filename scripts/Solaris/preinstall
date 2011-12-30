@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# Create group nut
+
+/usr/sbin/groupadd -g 102 nut
+
+# Create user for installing "Network UPS Tools"
+
+/usr/sbin/useradd -c "Network UPS Tools" -u 102 -d /export/home/nut -m nut
+
+# Do nut configuration - here with dummy ups
+
+

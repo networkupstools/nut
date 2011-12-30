@@ -1,0 +1,14 @@
+#!/bin/sh
+
+expected_platform="SOLINTEL170"
+
+platform=`uname -n`
+
+if [ ${platform} != ${expected_platform} ]
+	then echo "\nThis package must be installed on ${expected_platform} \n"
+	echo "\nAborting Installation.\n"
+	exit 1
+else
+	echo "Checkinstall complete"
+fi
+exit 0

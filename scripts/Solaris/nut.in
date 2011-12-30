@@ -1,0 +1,48 @@
+#!/sbin/sh
+
+#Postinstall script to start nut services
+
+NUT_DIR="@prefix@"
+
+ups_stop () {
+
+	${NUT_DIR}/bin/upsdrvctl stop > /dev/null 2>&1
+}
+
+ups_start () {
+	echo "in ups start function"
+	/usr/local/bin/python nut_config.py	
+	$NUT_DIR/bin/upsdrvctl start #> /dev/null 2>&1
+	$NUT_DIR/sbin/upsd #> /dev/null 2>&1
+	$NUT_DIR/sbin/upsmon #> /dev/null 2>&1
+}
+
+case $1 in
+'start')
+	echo "before ups start"	
+	ups_start
+	echo "after ups start"	
+	;;
+
+'stop')
+	ups_stop
+	;;
+
+'restart')
+	ups_stop
+	while pgrep upsd > /dev/null
+	do
+		sleep 1
+	done
+	ups_start
+	;;
+
+*)
+	echo ""
+	echo "Usage: '$0' {start | stop | restart }"
+	echo ""
+	exit 64
+	;; 
+
+esac
+exit $?
