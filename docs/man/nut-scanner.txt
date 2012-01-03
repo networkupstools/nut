@@ -109,11 +109,11 @@ SNMP V3 OPTIONS
 
   Set the 'security name' used for authenticated SNMPv3 messages. This parameter is mandatory if you set 'security level'.
 
-*-a* | *--authProtocol* 'authentication protocol'::
+*-w* | *--authProtocol* 'authentication protocol'::
 
   Set the 'authentication protocol' used for authenticated SNMPv3 messages. Allowed values are MD5 or SHA. Default value is MD5.
 
-*-A* | *--authPassword* 'authentication pass phrase'::
+*-W* | *--authPassword* 'authentication pass phrase'::
 
   Set the 'authentication pass phrase' used for authenticated SNMPv3 messages. This parameter is mandatory if you set 'security level' to authNoPriv or authPriv.
 
