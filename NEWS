@@ -3,6 +3,57 @@ If you're upgrading from an earlier version, see the UPGRADING file.
 For a complete list of changes, please refer to the ChangeLog file.
 
 ---------------------------------------------------------------------------
+Release notes for NUT 2.6.3 - what's new since 2.6.2:
+
+ - nut-scanner is now more portable, and provides more coherent option names.
+   IPMI support has also been added, to discover local power supplies.
+   This version brings weak runtime dependencies in libnutscan, which allows to
+   compile nut-scanner with all options and to run according to the available
+   dependencies (USB, SNMP, IPMI, ...).
+
+ - libnutscan now provides pkg-config support and the needed header files are
+   distributed. Some documentation is also available in the developer guide and
+   manual pages have been updated and completed.
+
+ - support for new devices: Cyber Power Systems with SNMP RMCARD (100, 201,
+   202 and 301) ; Dynamix 650VA USB ; LDLC UPS-1200D ; Tecnoware UPS ERA LCD
+   0.65 ; Powercom BNT-xxxAP (USB ID 0d9f:0004) ; Various USB devices using
+   UPSilon 2000 software.
+
+ - apcsmart has received minor correction.
+
+ - bcmxcp_usb now handles disconnection issues and reconnection mechanism.
+
+ - blazer_usb enables again inclusion of buggy USB Device and Vendor IDs in
+   udev rules file ; language ID support has been added for USB units from
+   LDLC, Dynamix and other no names.
+
+ - nut-ipmipsu has also received some improvements.
+
+ - snmp-ups has fixed outlets reported current in aphel_genesisII MIB ;
+   MGE 3 phases handles better low battery condition ; support for Cyber Power
+   Systems with SNMP RMCARD has been added ; support of the newer Eaton ePDUs
+   has been improved.
+
+ - upsd doesn't anymore fail to start if at least one of the listening
+   interface is available. This is needed on systems where either IPv4 or IPv6
+   is disabled, and no explicit LISTEN directive has been specified.
+
+ - Avahi support is now automatically enabled, upon detection
+
+ - jNut (NUT Java interface) adds device discovery support, through a
+   nut-scanner wrapper ; jNutWebAPI, a HTTP/JSON web service interface, has
+   also been added to interact with upsd and nut-scanner.
+
+ - Base files for HPUX packaging have been added. This is still a work in
+   progress.
+
+ - Compilation on IBM Aix has been fixed (namespace conflict with ctypes).
+ 
+ - more bugfixes, cleanup and improvements, on both source code and
+   documentation.
+ 
+---------------------------------------------------------------------------
 Release notes for NUT 2.6.2 - what's new since 2.6.1:
 
  - NUT can now monitor power supply units (PSU) in servers, through IPMI, using
