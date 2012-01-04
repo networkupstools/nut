@@ -25,7 +25,7 @@ Stable tree: {tree_version}
 
 - link:http://www.networkupstools.org/source/{tree_version}/nut-{revision}.tar.gz[nut-{revision}.tar.gz]
 - link:http://www.networkupstools.org/source/{tree_version}/nut-{revision}.tar.gz.sig[PGP/GPG signature]
-- SHA-256 sum: 343554add0713348f8b09bca8d83eee2eb2ae8bad9cdad9a39e0f0e2d0f5d375
+- SHA-256 sum: 34913b729d2032faaf6f31e800a400bcd874f1f4daacae6fe0d388bd235b633a
 - link:http://www.networkupstools.org/source/{tree_version}/new-{revision}.txt[Release notes]
 - link:http://www.networkupstools.org/source/{tree_version}/ChangeLog[ChangeLog]
 
