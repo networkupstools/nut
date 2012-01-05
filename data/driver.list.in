@@ -200,7 +200,7 @@
 
 "Dynamix"	"ups"	"2"	"UPS1700D"	""	"blazer_ser"
 "Dynamix"	"ups"	"2"	"UPS-650VA"	""	"blazer_ser"
-"Dynamix"	"ups"	"2"	"650VA"	"USB"	"blazer_usb langid_fix=0x0409"
+"Dynamix"	"ups"	"2"	"650VA/1000VA"	"USB"	"blazer_usb langid_fix=0x0409"
 
 "Dynex"	"ups"	"1"	"975AVR"	""	"genericups upstype=7"
 "Dynex"	"ups"	"2"	"DX-800U"	"USB"	"usbhid-ups"
