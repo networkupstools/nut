@@ -3,7 +3,7 @@
  *  Based on NetSNMP API (Simple Network Management Protocol V1-2)
  *
  *  Copyright (C)
- *	2002 - 2011	Arnaud Quette <arnaud.quette@free.fr>
+ *	2002 - 2012	Arnaud Quette <arnaud.quette@free.fr>
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
@@ -82,7 +82,7 @@ const char *mibvers;
 static void disable_transfer_oids(void);
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.58"
+#define DRIVER_VERSION		"0.59"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -811,8 +811,9 @@ mib2nut_info_t *match_sysoid()
 			}
 		}
 		/* Yell all to call for user report */
-		upslogx(LOG_ERR, "No matching MIB found for sysOID '%s'! " \
-			"Please report it to NUT developers, with the 'mib' paramater for your devices",
+		upslogx(LOG_ERR, "No matching MIB found for sysOID '%s'!\n" \
+			"Please report it to NUT developers, with an 'upsc' output for your device.\n" \
+			"Going back to the classic MIB detection method.",
 			sysOID_buf);
 	}
 	else
