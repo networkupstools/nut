@@ -287,9 +287,8 @@ void upsdrv_initinfo(void)
 				*p = '\0';
 				si_data1 = atoi(buf);
 				v = p+1;
+			  	p = strchr(v, ' ');
 			  }
-
-			  p = strchr(v, ' ');
 
 			  if ( p != NULL ) {
 				*p = '\0';
