@@ -388,7 +388,7 @@ usb_dev_handle *nutusb_open(const char *port)
 	usb_find_busses();
 	usb_find_devices();
 
-	for (retry = 0; retry <= MAX_TRY ; retry++)
+	for (retry = 0; retry < MAX_TRY ; retry++)
 	{
 		dev_h = open_powerware_usb();
 		if (!dev_h) {
