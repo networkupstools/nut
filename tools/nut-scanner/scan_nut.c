@@ -59,17 +59,20 @@ static void * list_nut_devices(void * arg)
 	if (upscli_splitaddr(target_hostname, &hostname, &port) != 0) {
 		free(target_hostname);
 		free(nut_arg);
+		free(ups);
 		return NULL;
 	}
 	if (upscli_tryconnect(ups, hostname, port,UPSCLI_CONN_TRYSSL,&tv) < 0) {
 		free(target_hostname);
 		free(nut_arg);
+		free(ups);
 		return NULL;
 	}
 
 	if(upscli_list_start(ups, numq, query) < 0) {
 		free(target_hostname);
 		free(nut_arg);
+		free(ups);
 		return NULL;
 	}
 
@@ -78,6 +81,7 @@ static void * list_nut_devices(void * arg)
 		if (numa < 3) {
 			free(target_hostname);
 			free(nut_arg);
+			free(ups);
 			return NULL;
 		}
 		/* FIXME: check for duplication by getting driver.port and device.serial
@@ -109,6 +113,7 @@ static void * list_nut_devices(void * arg)
 
 	free(target_hostname);
 	free(nut_arg);
+	free(ups);
 	return NULL;
 }
 
