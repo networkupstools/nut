@@ -1104,11 +1104,11 @@ void upsdrv_initinfo(void)
 
 		dstate_setinfo("ups.firmware", "%s", pTmp);
 
-		free(pTmp);
-
 		/* Increment index to point at end of CPU bytes. */
 		iIndex += len * 2;
 	}
+
+	free(pTmp);
 
 	/* Get rating in kVA, if present */
 	if ((iRating = answer[iIndex++]) > 0)
