@@ -792,11 +792,10 @@ static void getbaseinfo(void)
 	unsigned char Pacote[25];
 	int  i, i1=0, i2=0, j=0, tam, tpac=25;
 
-	time_t *tmt;
+	time_t tmt;
 	struct tm *now;
-	tmt  = ( time_t * ) malloc( sizeof( time_t ) );
-	time( tmt );
-	now = localtime( tmt );
+	time( &tmt );
+	now = localtime( &tmt );
 	dian = now->tm_mday;
 	mesn = now->tm_mon+1;
 	anon = now->tm_year+1900;
@@ -956,11 +955,10 @@ static void getupdateinfo(void)
 	int tam, isday, hourn, minn;
 
 	/* time update and programable shutdown block */
-	time_t *tmt;
+	time_t tmt;
 	struct tm *now;
-	tmt  = ( time_t * ) malloc( sizeof( time_t ) );
-	time( tmt );
-	now = localtime( tmt );
+	time( &tmt );
+	now = localtime( &tmt );
 	hourn = now->tm_hour;
 	minn = now->tm_min;
         weekn = now->tm_wday;

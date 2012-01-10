@@ -540,13 +540,12 @@ static void getbaseinfo(void)
 	unsigned char  temp[256];
 	unsigned char Pacote[37];
 	int  tam, i, j=0;
-	time_t *tmt;
+	time_t tmt;
 	struct tm *now;
 	const char *Model;
 
-	tmt  = ( time_t * ) malloc( sizeof( time_t ) );
-	time( tmt );
-	now = localtime( tmt );
+	time( &tmt );
+	now = localtime( &tmt );
 	dian = now->tm_mday;
 	mesn = now->tm_mon+1;
 	anon = now->tm_year+1900;
