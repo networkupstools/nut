@@ -318,7 +318,9 @@ static int st_tree_dump_conn(st_tree_t *node, conn_t *conn)
 			snprintfcat(flist, sizeof(flist), " STRING");
 		}
 
-		send_to_one(conn, "SETFLAGS %s\n", flist);
+		if (!send_to_one(conn, "SETFLAGS %s\n", flist)) {
+			return 0;
+		}
 	}
 
 	if (node->right) {
