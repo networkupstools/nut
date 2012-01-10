@@ -210,7 +210,7 @@ nutscan_device_t * nutscan_scan_xml_http(long usec_timeout)
 				ne_xml_parser *parser = (*nut_ne_xml_create)();
 				(*nut_ne_xml_push_handler)(parser, startelm_cb,
 							NULL, NULL, nut_dev);
-				(*nut_ne_xml_parse)(parser, buf, strlen(buf));
+				(*nut_ne_xml_parse)(parser, buf, recv_size);
 				(*nut_ne_xml_destroy)(parser);
 
 				nut_dev->driver = strdup("netxml-ups");
