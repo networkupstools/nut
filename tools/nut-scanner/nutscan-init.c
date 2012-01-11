@@ -21,7 +21,7 @@
 
 int nutscan_avail_avahi = 0;
 int nutscan_avail_ipmi = 0;
-int nutscan_avail_nut = 1;
+int nutscan_avail_nut = 0;
 int nutscan_avail_snmp = 0;
 int nutscan_avail_usb = 0;
 int nutscan_avail_xml_http = 0;
@@ -31,6 +31,7 @@ int nutscan_load_snmp_library(void);
 int nutscan_load_neon_library(void);
 int nutscan_load_avahi_library(void);
 int nutscan_load_ipmi_library(void);
+int nutscan_load_upsclient_library(void);
 
 void nutscan_init(void)
 {
@@ -49,4 +50,5 @@ void nutscan_init(void)
 #ifdef WITH_FREEIPMI
 	nutscan_avail_ipmi = nutscan_load_ipmi_library();
 #endif
+	nutscan_avail_nut = nutscan_load_upsclient_library();
 }
