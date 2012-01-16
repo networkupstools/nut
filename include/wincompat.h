@@ -27,6 +27,7 @@
 
 #include "common.h"
 
+#define system(a) win_system(a)
 #define sleep(n) Sleep(1000 * n)
 char * strtok_r(char *str, const char *delim, char **saveptr);
 
@@ -63,6 +64,9 @@ const char* inet_ntop(int af, const void* src, char* dst, int cnt);
 /* not from MS docs : */
 #define EAI_SYSTEM	WSANO_RECOVERY
 #define EAFNOSUPPORT	WSAEAFNOSUPPORT
+
+/* "system" function */
+int win_system(const char * command);
 
 /* syslog compatibility */
 
