@@ -107,6 +107,25 @@ const char* inet_ntop(int af, const void* src, char* dst, int cnt){
 	return dst;
 }
 
+/* "system" call seems to handle path with blank name incorrectly */
+int win_system(const char * command)
+{
+	BOOL res;
+	STARTUPINFO si;
+	PROCESS_INFORMATION pi;
+
+	memset(&si,0,sizeof(si));
+
+	res = CreateProcess(NULL,command,NULL,NULL,FALSE,CREATE_NEW_PROCESS_GROUP,NULL,NULL,&si,&pi);
+
+	if( res != 0 ) {
+		return 0;
+	}
+
+	return -1;
+}
+
+
 /* syslog sends a message through a pipe to the wininit service. Which is
    in charge of adding an event in the Windows event logger.
    The message is made of 4 bytes containing the priority followed by an array
