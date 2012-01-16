@@ -162,7 +162,6 @@ static int sock_open(const char *fn)
 		fatal_with_errno(EXIT_FAILURE, "listen(%d, %d) failed", fd, DS_LISTEN_BACKLOG);
 	}
 #else
-static void sock_connect(HANDLE sock);
 static HANDLE sock_open(const char *fn)
 {
 	HANDLE fd;
