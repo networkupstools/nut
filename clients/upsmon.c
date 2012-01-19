@@ -1183,7 +1183,11 @@ static int parse_conf_arg(int numargs, char **arg)
 		checkmode(arg[0], powerdownflag, arg[1], reload_flag);
 
 		free(powerdownflag);
+#ifndef WIN32
 		powerdownflag = xstrdup(arg[1]);
+#else
+		powerdownflag = filter_path(arg[1]);
+#endif
 
 		if (!reload_flag)
 			upslogx(LOG_INFO, "Using power down flag file %s",
