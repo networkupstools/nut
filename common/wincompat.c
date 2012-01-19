@@ -115,14 +115,40 @@ int win_system(const char * command)
 	PROCESS_INFORMATION pi;
 
 	memset(&si,0,sizeof(si));
+	si.cb = sizeof(si);
+	memset(&pi,0,sizeof(pi));
 
-	res = CreateProcess(NULL,command,NULL,NULL,FALSE,CREATE_NEW_PROCESS_GROUP,NULL,NULL,&si,&pi);
+	res = CreateProcess(NULL,command,NULL,NULL,FALSE,0,NULL,NULL,&si,&pi);
 
 	if( res != 0 ) {
 		return 0;
 	}
 
 	return -1;
+}
+
+/* the " character is forbiden in Windows files , so we filter this character
+in data file paths to be coherent with command line which require " to
+distinguish the command from its parameter. This avoid complicated
+explanation in the documentation */
+char * filter_path(const char * source)
+{
+	char * res;
+	int i,j;
+
+	if( source == NULL ) {
+		return NULL;
+	}
+
+	res = xmalloc(strlen(source));
+	for(i=0,j=0;i<=strlen(source);i++) {
+		if(source[i] != '"') {
+			res[j] = source[i];
+			j++;
+		}
+	}
+
+	return res;
 }
 
 

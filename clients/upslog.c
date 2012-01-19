@@ -427,6 +427,9 @@ int main(int argc, char **argv)
 
 			case 'l':
 				logfn = optarg;
+#ifdef WIN32
+				logfn = filter_path(optarg);
+#endif
 				break;
 
 			case 'i':
@@ -472,6 +475,9 @@ int main(int argc, char **argv)
 	if (argc >= 3) {
 		monhost = argv[0];
 		logfn = argv[1];
+#ifdef WIN32
+		logfn = filter_path(argv[1]);
+#endif
 		interval = atoi(argv[2]);
 	}
 

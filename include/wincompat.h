@@ -30,6 +30,7 @@
 #define system(a) win_system(a)
 #define sleep(n) Sleep(1000 * n)
 char * strtok_r(char *str, const char *delim, char **saveptr);
+char * filter_path(const char * source);
 
 /* Network compatibility */
 
