@@ -929,10 +929,9 @@ static int get_lock(const char *fn)
 #else
 static HANDLE get_lock(const char *fn)
 {
-	return CreateFile(fn,0,FILE_SHARE_DELETE,NULL,CREATE_NEW,FILE_ATTRIBUTE_NORMAL,NULL);
-#endif
-
+	return CreateFile(fn,GENERIC_ALL,0,NULL,CREATE_NEW,FILE_ATTRIBUTE_NORMAL,NULL);
 }
+#endif
 
 /* try to connect to bg process, and start one if necessary */
 #ifndef WIN32
@@ -1010,7 +1009,7 @@ static HANDLE check_parent(const char *cmd, const char *arg2)
 		/* we didn't get the lock - must be two upsscheds running */
 
 		/* blow this away in case we crashed before */
-		unlink(lockfn);
+		DeleteFile(lockfn);
 
 		/* give the other one a chance to start it, then try again */
 		usleep(250000);
@@ -1231,7 +1230,11 @@ static int conf_arg(int numargs, char **arg)
 
 	/* LOCKFN <filename> */
 	if (!strcmp(arg[0], "LOCKFN")) {
+#ifndef WIN32
 		lockfn = xstrdup(arg[1]);
+#else
+		lockfn = filter_path(arg[1]);
+#endif
 		return 1;
 	}
 
