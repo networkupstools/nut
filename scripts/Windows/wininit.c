@@ -93,6 +93,8 @@ static DWORD create_process(char * command)
 	DWORD LastError;
 
 	memset(&StartupInfo,0,sizeof(STARTUPINFO));
+	StartupInfo.cb = sizeof(StartupInfo);
+	memset(&ProcessInformation,0,sizeof(ProcessInformation));
 
 	res = CreateProcess(
 			NULL,
