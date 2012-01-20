@@ -25,6 +25,8 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#else
+#include "wincompat.h"
 #endif
 
 #include "upsclient.h"
@@ -96,7 +98,6 @@ static void do_setvar(const char *varname, char *uin, const char *pass)
 	if (uin) {
 		snprintf(user, sizeof(user), "%s", uin);
 	} else {
-#ifndef WIN32
 		memset(user, '\0', sizeof(user));
 
 		pw = getpwuid(getuid());
@@ -130,9 +131,6 @@ static void do_setvar(const char *varname, char *uin, const char *pass)
 		if (!pass) {
 			fatal_with_errno(EXIT_FAILURE, "getpass failed");
 		}
-#else
-		fatalx(EXIT_FAILURE, "No username available");
-#endif
 	}
 
 	/* Check if varname is in VAR=VALUE form */
