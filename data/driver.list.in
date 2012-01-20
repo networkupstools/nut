@@ -693,6 +693,10 @@
 "Repotec"	"ups"	"1"	"RPT-800A"	""	"genericups upstype=13"
 "Repotec"	"ups"	"1"	"RPT-162A"	""	"genericups upstype=13"
 
+"Riello"	"ups"	"3"	"Riello Sentinel SDL 6000-7"	"Netman Plus 102 SNMP Card"	"snmp-ups"
+"Riello"	"ups"	"3"	"Riello Sentinel Dual SDH 1000-7"	"Netman Plus 102 SNMP Card"	"snmp-ups"
+"Riello"	"ups"	"3"	"(various)"	"Netman Plus 102 SNMP Card"	"snmp-ups"
+
 "Rocketfish"	"ups"	"2"	"RF-1000VA / RF-1025VA"	""	"usbhid-ups"
 
 "SmartLabs"	"pdu"	"1"	"2412S Power Line Modem"	"for X10/Insteon"	"powerman-pdu (experimental)"
