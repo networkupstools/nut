@@ -28,6 +28,8 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#else
+#include "wincompat.h"
 #endif
 
 #include "nut_stdint.h"
@@ -355,7 +357,6 @@ int main(int argc, char **argv)
 		fatalx(EXIT_FAILURE, "Error: old command names are not supported");
 	}
 
-#ifndef WIN32
 	if (!have_un) {
 		struct passwd	*pw;
 
@@ -396,7 +397,7 @@ int main(int argc, char **argv)
 
 		snprintf(password, sizeof(password), "%s", pwtmp);
 	}
-#endif	/* WIN32 */
+
 	snprintf(buf, sizeof(buf), "USERNAME %s\n", username);
 
 	if (upscli_sendline(ups, buf, strlen(buf)) < 0) {

@@ -23,6 +23,61 @@ extern int errno;
 
 const char * EventLogName = NULL;
 
+struct passwd wincompat_passwd;
+char wincompat_user_name[SMALLBUF];
+char wincompat_password[SMALLBUF];
+
+uid_t getuid(void)
+{
+	DWORD size = sizeof(wincompat_user_name);
+	if( !GetUserName(wincompat_user_name,&size) ) {
+		return NULL;
+	}
+
+	return wincompat_user_name;
+}
+
+struct passwd *getpwuid(uid_t uid)
+{
+	wincompat_passwd.pw_name = uid;
+	wincompat_passwd.pw_uid = 0;
+	return &wincompat_passwd;
+}
+
+char *getpass( const char *prompt)
+{
+	HANDLE hStdin;
+	DWORD mode;
+
+	hStdin = GetStdHandle(STD_INPUT_HANDLE);
+	if(hStdin == INVALID_HANDLE_VALUE) {
+		return NULL;
+	}
+
+	printf("%s",prompt);
+
+	GetConsoleMode( hStdin, &mode );
+	mode &= ~ENABLE_ECHO_INPUT;
+	SetConsoleMode( hStdin , mode);
+
+	if (fgets(wincompat_password, sizeof(wincompat_password), stdin) == NULL) {
+		upsdebug_with_errno(LOG_INFO, "%s", __func__);
+		return NULL;
+	}
+
+	/* deal with that pesky newline */
+	if (strlen(wincompat_password) > 1) {
+		wincompat_password[strlen(wincompat_password) - 1] = '\0';
+	};
+
+	hStdin = GetStdHandle(STD_INPUT_HANDLE);
+	GetConsoleMode( hStdin, &mode );
+	mode |= ENABLE_ECHO_INPUT;
+	SetConsoleMode( hStdin , mode);
+
+	return wincompat_password;
+}
+
 #ifndef HAVE_USLEEP
 /* Verbatim from
 http://cygwin.com/cgi-bin/cvsweb.cgi/~checkout~/src/winsup/mingw/mingwex/usleep.c?rev=1.2&cvsroot=src */

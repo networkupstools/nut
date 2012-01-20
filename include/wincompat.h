@@ -27,6 +27,16 @@
 
 #include "common.h"
 
+typedef const char * uid_t;
+struct passwd {
+	const char		*pw_name;
+	int			pw_uid;	/* Fake value, alwaus set to 0 */
+};
+
+uid_t getuid(void);
+struct passwd *getpwuid(uid_t uid);
+char *getpass( const char *prompt);
+
 #define system(a) win_system(a)
 #define sleep(n) Sleep(1000 * n)
 char * strtok_r(char *str, const char *delim, char **saveptr);
