@@ -82,7 +82,7 @@ const char *mibvers;
 static void disable_transfer_oids(void);
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.60"
+#define DRIVER_VERSION		"0.65"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -155,7 +155,7 @@ void upsdrv_updateinfo(void)
 	upsdebugx(1,"SNMP UPS driver : entering upsdrv_updateinfo()");
 
 	/* only update every pollfreq */
-	/* FIXME: update status (SU_STATUS_*), à la usbhid-ups, in between */
+	/* FIXME: only update status (SU_STATUS_*), à la usbhid-ups, in between */
 	if (time(NULL) > (lastpoll + pollfreq)) {
 
 		status_init();
@@ -183,7 +183,28 @@ void upsdrv_shutdown(void)
 	never send this command to the UPS. This is not an error,
 	but a limitation of the interface used.
 	*/
-	fatalx(EXIT_SUCCESS, "SNMP doesn't support shutdown in system halt script");
+
+	upsdebugx(1, "upsdrv_shutdown...");
+
+	/* Try to shutdown with delay */
+	if (su_instcmd("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
+		/* Shutdown successful */
+		return;
+	}
+
+	/* If the above doesn't work, try shutdown.reboot */
+	if (su_instcmd("shutdown.reboot", NULL) == STAT_INSTCMD_HANDLED) {
+		/* Shutdown successful */
+		return;
+	}
+
+	/* If the above doesn't work, try load.off.delay */
+	if (su_instcmd("load.off.delay", NULL) == STAT_INSTCMD_HANDLED) {
+		/* Shutdown successful */
+		return;
+	}
+
+	fatalx(EXIT_FAILURE, "Shutdown failed!");
 }
 
 void upsdrv_help(void)
@@ -256,6 +277,22 @@ void upsdrv_initups(void)
 	else
 		fatalx(EXIT_FAILURE, "%s MIB wasn't found on %s", mibs, g_snmp_sess.peername);
 		/* FIXME: "No supported device detected" */
+
+	if (su_find_info("load.off.delay")) {
+		/* Adds default with a delay value of '0' (= immediate) */
+		dstate_addcmd("load.off");
+	}
+
+	if (su_find_info("load.on.delay")) {
+		/* Adds default with a delay value of '0' (= immediate) */
+		dstate_addcmd("load.on");
+	}
+
+	if (su_find_info("load.off.delay") && su_find_info("load.on.delay")) {
+		/* Add composite instcmds (require setting multiple OID values) */
+		dstate_addcmd("shutdown.return");
+		dstate_addcmd("shutdown.stayoff");
+	}
 }
 
 void upsdrv_cleanup(void)
@@ -885,7 +922,7 @@ bool_t load_mib2nut(const char *mib)
 }
 
 /* find the OID value matching that INFO_* value */
-long su_find_valinfo(info_lkp_t *oid2info, char* value)
+long su_find_valinfo(info_lkp_t *oid2info, const char* value)
 {
 	info_lkp_t *info_lkp;
 
@@ -1340,6 +1377,7 @@ int su_setvar(const char *varname, const char *val)
 	snmp_info_t *su_info_p = NULL;
 	bool_t status;
 	int retval = STAT_SET_FAILED;
+	int value = -1;
 
 	upsdebugx(2, "entering su_setvar(%s, %s)", varname, val);
 
@@ -1416,7 +1454,15 @@ int su_setvar(const char *varname, const char *val)
 	if (su_info_p->info_flags & ST_FLAG_STRING) {
 		status = nut_snmp_set_str(su_info_p->OID, val);
 	} else {
-		status = nut_snmp_set_int(su_info_p->OID, strtol(val, NULL, 0));
+		/* non string data may imply a value lookup */
+		if (su_info_p->oid2info) {
+			value = su_find_valinfo(su_info_p->oid2info, val);
+		}
+		else {
+			value = strtol(val, NULL, 0);
+		}
+		/* Actually apply the new value */
+		status = nut_snmp_set_int(su_info_p->OID, value);
 	}
 
 	if (status == FALSE)
@@ -1492,7 +1538,50 @@ int su_instcmd(const char *cmdname, const char *extradata)
 		}
 	}
 
+	/* Sanity check */
 	if (!su_info_p || !su_info_p->info_type || !(su_info_p->flags & SU_FLAG_OK)) {
+
+		/* Check for composite commands */
+		if (!strcasecmp(cmdname, "load.on")) {
+			return su_instcmd("load.on.delay", "0");
+		}
+
+		if (!strcasecmp(cmdname, "load.off")) {
+			return su_instcmd("load.off.delay", "0");
+		}
+
+		if (!strcasecmp(cmdname, "shutdown.return")) {
+			int	ret;
+
+			/* Ensure "ups.start.auto" is set to "yes", if supported */
+			if (dstate_getinfo("ups.start.auto")) {
+				su_setvar("ups.start.auto", "yes");
+			}
+
+			ret = su_instcmd("load.on.delay", dstate_getinfo("ups.delay.start"));
+			if (ret != STAT_INSTCMD_HANDLED) {
+				return ret;
+			}
+
+			return su_instcmd("load.off.delay", dstate_getinfo("ups.delay.shutdown"));
+		}
+
+		if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+			int	ret;
+
+			/* Ensure "ups.start.auto" is set to "no", if supported */
+			if (dstate_getinfo("ups.start.auto")) {
+				su_setvar("ups.start.auto", "no");
+			}
+
+			ret = su_instcmd("load.on.delay", "-1");
+			if (ret != STAT_INSTCMD_HANDLED) {
+				return ret;
+			}
+
+			return su_instcmd("load.off.delay", dstate_getinfo("ups.delay.shutdown"));
+		}
+
 		upsdebugx(2, "su_instcmd: %s unavailable", cmdname);
 
 		if (!strncmp(cmdname, "outlet", 6))
@@ -1501,7 +1590,7 @@ int su_instcmd(const char *cmdname, const char *extradata)
 		return STAT_INSTCMD_UNKNOWN;
 	}
 
-	/* set value. */
+	/* set value, using the provided one, or the default one otherwise */
 	if (su_info_p->info_flags & ST_FLAG_STRING) {
 		status = nut_snmp_set_str(su_info_p->OID, extradata ? extradata : su_info_p->dfl);
 	} else {

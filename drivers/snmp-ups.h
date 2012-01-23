@@ -78,7 +78,7 @@ for each OID request we made), instead of sending many small packets
 /* Force numeric OIDs by disabling MIB loading */
 #define DISABLE_MIB_LOADING 1
 
-
+/* Parameters default values */
 #define DEFAULT_POLLFREQ	30		/* in seconds */
 
 /* use explicit booleans */
@@ -234,7 +234,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p);
 bool_t load_mib2nut(const char *mib);
 
 const char *su_find_infoval(info_lkp_t *oid2info, long value);
-long su_find_valinfo(info_lkp_t *oid2info, char* value);
+long su_find_valinfo(info_lkp_t *oid2info, const char* value);
 
 int su_setvar(const char *varname, const char *val);
 int su_instcmd(const char *cmdname, const char *extradata);
