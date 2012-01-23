@@ -82,7 +82,7 @@ const char *mibvers;
 static void disable_transfer_oids(void);
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.59"
+#define DRIVER_VERSION		"0.60"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -122,13 +122,18 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("driver.version.internal", "%s", version);
 
 	/* add instant commands to the info database.
-	 * outlet commands are processed during initial walk */
+	 * outlet commands are processed later, during initial walk */
 	for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++)
 	{
 		su_info_p->flags |= SU_FLAG_OK;
 		if ((SU_TYPE(su_info_p) == SU_TYPE_CMD)
-			&& !(su_info_p->flags & SU_OUTLET))
-			dstate_addcmd(su_info_p->info_type);
+			&& !(su_info_p->flags & SU_OUTLET)) {
+			/* first check that this OID actually exists */
+			if (nut_snmp_get(su_info_p->OID) != NULL) {
+				dstate_addcmd(su_info_p->info_type);
+				upsdebugx(1, "upsdrv_initinfo(): adding command '%s'", su_info_p->info_type);
+			}
+		}
 	}
 
 	if (testvar("notransferoids"))
