@@ -196,6 +196,17 @@ For static link you will need the corresponding ``.a'' file. +
 For dynamic link you will need the corresponding ``.so'' file for compilation 
 and ``.so'', ``.so.0'' and ``.so.0.0.0'' in you libs path for execution.
 
+For dynamic link, you will also need to point the system linker at
+Eaton SDK library. To do so, just use the environment variable
+'LD_LIBRARY_PATH' the following way:
+
+	$ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/path/to/eaton_so_libraries
+
+For example, if Eaton SDK dynamic libraries reside in /opt/eaton/lib, use:
+
+	$ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/eaton/lib
+
+
 Windows build
 ~~~~~~~~~~~~~
 
