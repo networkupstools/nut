@@ -22,6 +22,10 @@
 #include "config.h"
 #include "dstate.h"
 
+#define LIBEATON_REVISION "2"
+#define LIBEATON_VERSION PACKAGE_VERSION "-" LIBEATON_REVISION
+char libeaton_version[SMALLBUF] = LIBEATON_VERSION;
+
 /* public functions & variables from main.c */
 char *device_path;
 int upsfd;
@@ -299,6 +303,9 @@ void dstate_addcmd(const char *cmdname)
 /* libeaton API */
 void libeaton_init(char * device)
 {
+	if( nut_debug_level > 0 ) {
+		printf("libeaton version : %s\n",libeaton_version);
+	}
 	device_path = device;
 
         upsdrv_initups();
