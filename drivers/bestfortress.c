@@ -34,7 +34,7 @@
 #endif
 
 #define DRIVER_NAME             "Best Fortress UPS driver"
-#define DRIVER_VERSION  "0.03"
+#define DRIVER_VERSION  "0.04"
 
 /* driver description structure */
 upsdrv_info_t   upsdrv_info = {
@@ -218,7 +218,8 @@ void upsdrv_updateinfo(void)
 			}
 		} while (temp[2] == 0);
 
-		upsdebugx(1, "upsdrv_updateinfo: received %i bytes", recv);
+		upsdebugx(1, "upsdrv_updateinfo: received %i bytes (try %i)", recv, retry);
+		upsdebug_hex(5, "buffer", temp, recv);
 
 		/*syslog (LOG_DAEMON | LOG_NOTICE,"ups: got '%s'\n", p);*/
 		/* status example:
