@@ -607,7 +607,7 @@ Building serial XCP application
 -------------------------------
 
 You must call libeaton_init with the name of the serial port device.
-On Linux, it is something like "/dev/tty0" or "/dev/ttyUSB0".
+On Linux, it is something like "/dev/ttyS0" or "/dev/ttyUSB0".
 On windows, it is something like "COM1".
 
 Note that the initialization phase may be very long (about 30 seconds).
@@ -624,7 +624,7 @@ int main(void)
         const char * status;
 
         /* init the library */
-        libeaton_init("/dev/tty0");
+        libeaton_init("/dev/ttyS0");
 
         /* This is the real request to the device to update internal database.
         This may be time consuming */
@@ -704,7 +704,7 @@ Building SHUT application
 -------------------------
 
 You must call libeaton_init with the name of the serial port device.
-On Linux, it is something like "/dev/tty0" or "/dev/ttyUSB0".
+On Linux, it is something like "/dev/ttyS0" or "/dev/ttyUSB0".
 On windows, it is something like "COM1".
 
 Note that the initialization phase may be very long (about 20 seconds).
@@ -721,7 +721,7 @@ int main(void)
         const char * status;
 
         /* init the library */
-        libeaton_init("/dev/tty0");
+        libeaton_init("/dev/ttyS0");
 
         /* This is the real request to the device to update internal database.
         This may be time consuming */
