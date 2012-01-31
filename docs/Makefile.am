@@ -66,8 +66,9 @@ pdf: $(ASCIIDOC_PDF)
 html-single: $(ASCIIDOC_HTML_SINGLE)
 html-chunked: $(ASCIIDOC_HTML_CHUNKED)
 
-eaton-sdk.pdf: eaton-sdk.txt eaton-sdk-docinfo.xml
-	$(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo $<
+eaton-sdk.pdf: eaton-sdk.txt eaton-sdk-docinfo.xml nut-names.txt
+	$(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf \
+	--attribute=docinfo --attribute=eaton_sdk $<
 
 if HAVE_ASCIIDOC
 website: html-chunked pdf
