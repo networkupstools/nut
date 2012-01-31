@@ -23,3 +23,4 @@ const char *libeaton_read(const char *varname);
 void libeaton_update(void);
 int libeaton_write(const char *varname, const char *val);
 int libeaton_command(const char *cmdname, const char *extradata);
+const char * libeaton_dump_all(void);

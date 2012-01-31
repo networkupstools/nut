@@ -45,9 +45,6 @@ extern upsdrv_info_t    upsdrv_info;
 
 /* fake dstate (driver interface with upsd) */
 int dstate_addenum(const char *var, const char *fmt, ...) { return 0; }
-void dstate_setflags(const char *var, int flags) { ; }
-void dstate_setaux(const char *var, int aux) { ; }
-void dstate_addcmd(const char *cmdname) { ; }
 int dstate_delinfo(const char *var) { return 0; }
 /* not needed
  * void dstate_init(const char *prog, const char *devname):
@@ -172,11 +169,17 @@ void alarm_commit(void)
 }
 
 /* Variable cache managment */
-char **info_name = NULL;
-char **info_data = NULL;
-int num_info = 0;
+static int num_info = 0;
+static char **info_name = NULL;
+static char **info_data = NULL;
+static int *info_aux = NULL;
+static int *info_flags = NULL;
+static int num_cmd = 0;
+static char **info_cmd = NULL;
+static char dump_buffer[LARGEBUF];
 
-int dstate_setinfo(const char *var, const char *fmt, ...) {
+int dstate_setinfo(const char *var, const char *fmt, ...)
+{
 
         char    value[ST_MAX_VALUE_LEN];
         va_list ap;
@@ -210,6 +213,18 @@ int dstate_setinfo(const char *var, const char *fmt, ...) {
                 return 0;
         }
 
+        info_flags = realloc(info_flags,sizeof(int) * num_info);
+        if(info_flags == NULL) {
+                num_info--;
+                return 0;
+        }
+
+        info_aux = realloc(info_aux,sizeof(int) * num_info);
+        if(info_aux == NULL) {
+                num_info--;
+                return 0;
+        }
+
         info_name[num_info-1] = strdup(var);
         if( info_name[num_info-1] == NULL ) {
                 num_info--;
@@ -222,10 +237,14 @@ int dstate_setinfo(const char *var, const char *fmt, ...) {
                 return 0;
         }
 
+	info_flags[num_info-1] = 0;
+	info_aux[num_info-1] = 0;
+
         return 1;
 }
 
-const char *dstate_getinfo(const char *var) {
+const char *dstate_getinfo(const char *var)
+{
         int i;
 
         for( i=0; i<num_info; i++) {
@@ -236,6 +255,47 @@ const char *dstate_getinfo(const char *var) {
         return NULL;
 }
 
+void dstate_setflags(const char *var, int flags)
+{
+	int i;
+
+        for( i=0; i<num_info; i++) {
+                if(strcmp(info_name[i],var) == 0) {
+                        info_flags[i] |= flags;
+			return;
+                }
+        }
+}
+
+void dstate_setaux(const char *var, int aux)
+{
+	int i;
+
+        for( i=0; i<num_info; i++) {
+                if(strcmp(info_name[i],var) == 0) {
+                        info_aux[i] = aux;
+			return;
+                }
+        }
+}
+
+void dstate_addcmd(const char *cmdname)
+{
+        num_cmd++;
+
+        info_cmd = realloc(info_cmd,sizeof(char *) * num_cmd);
+        if(info_cmd == NULL) {
+                num_cmd--;
+                return;
+        }
+
+        info_cmd[num_cmd-1] = strdup(cmdname);
+        if( info_cmd[num_cmd-1] == NULL ) {
+                num_cmd--;
+                return;
+        }
+}
+
 /* libeaton API */
 void libeaton_init(char * device)
 {
@@ -243,6 +303,7 @@ void libeaton_init(char * device)
 
         upsdrv_initups();
         upsdrv_initinfo();
+
 }
 
 void libeaton_free()
@@ -281,3 +342,31 @@ void libeaton_update(void)
 {
 	upsdrv_updateinfo();
 }
+
+const char * libeaton_dump_all(void)
+{
+	int i;
+
+	dump_buffer[0]=0;
+
+	for(i = 0 ; i < num_info ; i++) {
+		if( info_flags[i] & ST_FLAG_RW ) {
+			sprintf(dump_buffer+strlen(dump_buffer),
+					"VAR_RW\t%s\t%s\n",info_name[i],
+					info_data[i]);
+		}
+		else {
+			sprintf(dump_buffer+strlen(dump_buffer),
+					"VAR_RO\t%s\t%s\n",info_name[i],
+					info_data[i]);
+		}
+	}
+
+	for(i = 0 ; i < num_cmd ; i++) {
+		sprintf(dump_buffer+strlen(dump_buffer),
+				"CMD\t%s\n",info_cmd[i]);
+	}
+
+	return dump_buffer;
+}
+
