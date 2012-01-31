@@ -8,18 +8,21 @@ ______________________________
 Introduction
 ============
 
-Eaton SDK allows your applications to connect to Eaton devices and retrieve
-their internal data. Eaton SDK extensively uses the
-link:http://www.networkupstools.org[NUT - Network UPS Tools] Opensource
-framework (supported by Eaton), to do so.
+The Eaton Software Development Kit (“SDK”) allows your applications to connect
+to certain Eaton devices and retrieve certain internal data. Eaton SDK
+extensively uses the link:http://www.networkupstools.org[NUT - Network UPS Tools]
+Opensource framework (supported by Eaton), to do so.
 
-This document provides the full documentation for using the Eaton SDK libraries
+WARNING: This version of Eaton SDK is tagged Beta, and is currently only
+intended for evaluation purpose.
+
+This document provides the documentation for using the Eaton SDK libraries
 integration, on Linux and Microsoft Windows platforms, in <<SDK,chapter 3>>.
 
-In case using the SDK libraries is not possible in your project, for legal or
-technical reasons (refer to the <<Legal, Legal limitations>> and
-<<SDK_limitation,SDK limitation>>), you will find alternatives methods on using
-the NUT framework with your application in the following chapters:
+In case using the SDK libraries is not possible in your project (refer e.g. to
+the <<Legal, Legal limitations>> and <<SDK_limitation,SDK limitation>>), you
+will find alternatives methods on using the NUT framework with your application
+in the following chapters:
 
 - <<Full_framework,Chapter 4>> describes how to interact with the full NUT
 framework,
@@ -35,37 +38,63 @@ Legal limitations
 =================
 
 The Network UPS Tools Opensource framework is a GNU General Public License (GPL)
-software that provides support for many different UPSs and PDUs.
+software that provides support for many different UPSs and PDUs. We expressly
+make the license terms of the GNU GPL applicable to this SDK solution, and by
+using the SDK you also accept to abide by these license terms; please see below. 
 
-GPL software have some legal and technical implication, when used with
-proprietary software. You should consider these very seriously before making a
-choice and using the present SDK.
+GPL software have legal and technical implications, and generally can not be
+used with proprietary software. You should consider these very seriously before
+making a choice and using the present SDK.
 
-WARNING: Eaton will not be responsible for an illegal use of this SDK or the
-other documented approaches. In case of doubt, please consider consulting an IT
-specialized attorney.
-
+WARNING: Eaton recommends to use this SDK or the other documented approaches
+only as described in this document or the attached documentation. 
+Eaton does not warrant completeness, correctness and permanent availability of
+the data and information retrieved by using the SDK (unless required by
+applicable law). Eaton does not assume any liability (unless required by
+applicable law), for damages resulting from the use of the SDK, or data or
+information retrieved by using SDK. 
 
 Here are some references that may help you understand these limitations and
-constraints:
+constraints: link:http://www.gnu.org/licenses/gpl-faq.html[GPL FAQ].
 
-link:http://www.gnu.org/licenses/gpl-faq.html[http://www.gnu.org/licenses/gpl-faq.html]
+Please also respect the following notice, which is compulsory for using the GPL:
 
-link:http://en.wikipedia.org/wiki/GNU_General_Public_License#Linking_and_derived_works[http://en.wikipedia.org/wiki/GNU_General_Public_License#Linking_and_derived_works]
+Copyright (C) 2011 - 2012 Eaton Industries France - Frédéric Bohe, Arnaud Quette
 
-link:http://stackoverflow.com/questions/1876442/usage-of-gpl-plugins-for-proprietary-software[http://stackoverflow.com/questions/1876442/usage-of-gpl-plugins-for-proprietary-software]
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
 
-link:http://itmanagement.earthweb.com/osrc/article.php/3801396/Bruce-Perens-Combining-GPL-and-Proprietary-Software.htm[http://itmanagement.earthweb.com/osrc/article.php/3801396/Bruce-Perens-Combining-GPL-and-Proprietary-Software.htm]
+This program is distributed in the hope that it will be useful,but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
-link:http://blog.milkingthegnu.org/2008/04/gpl-for-dummies.html[http://blog.milkingthegnu.org/2008/04/gpl-for-dummies.html]
+You should have received a copy of the GNU General Public License along with
+this program.  If not, see <http://www.gnu.org/licenses/>. 
+
+
+Support information
+===================
+
+In case you become aware of any malfunctions of this solution, we kindly ask you
+to inform us using the following 
+link:http://pqtools.eaton.com/form/support/index_soft.php?lang=eng[support form].
+
+In this case, please use 'Eaton Open Source' as 'Software used', and mention
+'Eaton SDK' in your message, with the details of your issue.
+
+We recommend to only obtain this software from original Eaton sources, and to
+check for updates regularly, so that you can enjoy the latest functionalities.
+
 
 [[SDK]]
 
 Eaton SDK
 =========
 
-NOTE: Using the Eaton SDK raise a number of legal concerns which are discussed
-in <<Legal,chapter 2>>.
+NOTE: before using the Eaton SDK, please review secion 2 regarding legal limitations. If in doubt, 
+chapter 2 references several documents to guide you through the licensing. <<Legal,chapter 2>>.
 
 [[SDK_limitation]]
 Limitation
@@ -73,17 +102,20 @@ Limitation
 
 Using the Eaton SDK library approach, an application can only manage one device!
 If you need to manage more than one device, please contact the Eaton Opensource
-team, or refer to the other possible approaches detailed in the present
-document, and presented in the <<_introduction,Introduction>> chapter.
+team, or refer to the other possible approaches detailed in other chapters of this 
+user's guide as shown in the <<_introduction,Introduction>> chapter.
+
+Please, also note that Eaton SDK is not yet Multi thread safe. Thus, you need
+to pay attention to have at most one thread that call Eaton SDK functions.
 
 How does it work?
 -----------------
 
-The SDK consists in several libraries allowing to access Eaton's UPS/PDU in
-several ways. Your application may link to one of those libraries to access an
+The SDK consists of several libraries allowing access to Eaton's UPS/PDU in
+several ways. Your application may link to one of those libraries to access a
 UPS/PDU.
 
-To use this library, your application has to initialize it first by calling
+To use this library, your application must initialize it first by calling
 libeaton_init function.
 
 --------------------------------------
@@ -91,14 +123,14 @@ void libeaton_init(char * device)
 --------------------------------------
 
 The device parameter depends on the library you are using and is discussed in
-the relevant chapter here after.
+the relevant in following chapters.
 
 Now you can call function to read or write variables of your device. You can
 also request your device to execute instant commands.
-Each of these function get variable name or command name. A list of all existing
-variable and commands can be found in <<nut-names,appendix A>>. Note that this
+Each of these functions gets the variable name or command name. A list of all existing
+variables and commands can be found in <<nut-names,appendix A>>. Note that this
 gives all existing variables and commands, not all available variables and
-commands , which depends on the device type.
+commands, which depend on the device type.
 
 To read a variable, use the libeaton_read function in conjunction with the
 libeaton_update function:
@@ -133,7 +165,7 @@ libeaton_command return 0 if the command was successfully issued.
 
 
 Once done with your device you should call libeaton_free function to free
-internals data.
+internal data.
 --------------------------------------
 void libeaton_free()
 --------------------------------------
@@ -142,18 +174,18 @@ void libeaton_free()
 Building your application with the SDK
 --------------------------------------
 
-For all environment and all type of connection, you need all the followings
+For all environments and all type of connections, you need all of the following
 files available in your include path: attribute.h, common.h, config.h,
 libeaton.h, proto.h and timehead.h. You may need to add the -I<path-to-include>
 option to the build command lines provided in this document to point to those
-include files.
+header files.
 
 You may have to link with libeaton shared libraries. To do so the relevant
 libeaton shared library must be available for your compiler. So you have 
 to add the correct "-L <path-to-library>" to the build command lines provided in
 this document to point to those libraries.
 
-Depending the type of connection you may need additional external libraries
+Depending the type of connection, you may need additional external libraries
 (net-snmp, neon...) which are described in the relevant chapter. 
 
 Linux build
@@ -183,7 +215,7 @@ This is a sample code displaying the device status:
 
 int main(void)
 {
-        /* This will contains the result of our request to the device */
+        /* This contains the result of our request to the device */
         const char * status;
 
         /* init the library */
@@ -212,7 +244,7 @@ Linux build
 
 You need link:http://www.net-snmp.org/download.html[net-snmp library] available
 on your system.
-Make sure “ net-snmp-config” command is available.
+Make sure “net-snmp-config” command is available.
 Building statically:
 
 --------------------------------------
@@ -279,7 +311,7 @@ This is a sample code displaying the device status:
 
 int main(void)
 {
-        /* This will contains the result of our request to the device */
+        /* This will contain the result of our request to the device */
         const char * status;
 
         /* init the library */
@@ -308,7 +340,7 @@ Linux build
 
 You need link:http://www.webdav.org/neon/[neon library] available on your
 system.
-Make sure “ pkg-config neon” command is available.
+Make sure “pkg-config neon” command is available.
 
 Building statically:
 
@@ -376,7 +408,7 @@ This is a sample code displaying the device status:
 
 int main(void)
 {
-        /* This will contains the result of our request to the device */
+        /* This will contain the result of our request to the device */
         const char * status;
 
         /* init the library */
@@ -404,7 +436,7 @@ Linux build
 ~~~~~~~~~~~
 
 You need link:http://www.libusb.org/[libusb library] available on your system.
-Make sure “ pkg-config libusb” command is available.
+Make sure “pkg-config libusb” command is available.
 Building statically:
 
 --------------------------------------
@@ -508,7 +540,7 @@ Linux build
 ~~~~~~~~~~~
 
 You need link:http://www.libusb.org/[libusb library] available on your system.
-Make sure “ pkg-config libusb” command is available.
+Make sure “pkg-config libusb” command is available.
 Building statically:
 
 --------------------------------------
@@ -1036,3 +1068,4 @@ Appendix A: NUT command and variable naming scheme
 ==================================================
 
 include::nut-names.txt[]
+
