@@ -132,6 +132,9 @@ variables and commands can be found in <<nut-names,appendix A>>. Note that this
 gives all existing variables and commands, not all available variables and
 commands, which depend on the device type.
 
+To have the list of available commands and variables of your device you can use
+the libeaton_dump_all function.
+
 To read a variable, use the libeaton_read function in conjunction with the
 libeaton_update function:
 
@@ -163,12 +166,43 @@ int libeaton_command(const char *cmdname, const char *extradata)
 --------------------------------------
 libeaton_command return 0 if the command was successfully issued.
 
+To list available commands and variables:
+
+--------------------------------------
+char * libeaton_dump_all()
+--------------------------------------
+libeaton_dump_all returns a pointer to a buffer containing the available commands and variables for the current device.
+This list contains several strings in the form :
+
+type<tab>command or variable name<tab>value
+
+    * type is one of VAR_RO, VAR_RW or CMD
+    * value is only available for variable
+
+This is a sample output:
+
+--------------------------------------
+VAR_RO	ups.mfr	Eaton
+VAR_RW	outlet.1.delay.shutdown	10
+CMD	outlet.1.shutdown.return
+--------------------------------------
 
 Once done with your device you should call libeaton_free function to free
 internal data.
+
 --------------------------------------
 void libeaton_free()
 --------------------------------------
+
+This is for debugging and support purpose :
+
+--------------------------------------
+int libeaton_debug_level
+--------------------------------------
+You can set this variable to a value from 1 to 5 for more or less verbosity of
+the library (0 is no debug output).
+If you ask for support you will probably be asked to set this variable to a
+value of 3 or above.
 
 
 Building your application with the SDK
