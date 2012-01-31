@@ -47,8 +47,14 @@ ups: General unit information
                           (opaque string)              | 12:34
 | ups.date              | Internal UPS clock date
                           (opaque string)              | 01-02-03
+ifndef::eaton_sdk[]
 | ups.model             | UPS model                    | SMART-UPS 700
 | ups.mfr               | UPS manufacturer             | APC
+endif::eaton_sdk[]
+ifdef::eaton_sdk[]
+| ups.model             | UPS model                    | Eaton 5PX 1500
+| ups.mfr               | UPS manufacturer             | EATON
+endif::eaton_sdk[]
 | ups.mfr.date          | UPS manufacturing date
                           (opaque string)              | 10/17/96
 | ups.serial            | UPS serial number (opaque    
