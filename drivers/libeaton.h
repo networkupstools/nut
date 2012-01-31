@@ -17,6 +17,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#define libeaton_debug_level nut_debug_level
 void libeaton_init(const char *);
 void libeaton_free();
 const char *libeaton_read(const char *varname);
