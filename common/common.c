@@ -513,9 +513,9 @@ void *xrealloc(void *ptr, size_t size)
 	return p;
 }
 
-char *xstrdup(const char *string)
+char *xstrdup(const char *str)
 {
-	char *p = strdup(string);
+	char *p = strdup(str);
 
 	if (p == NULL)
 		fatal_with_errno(EXIT_FAILURE, "%s", oom_msg);

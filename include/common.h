@@ -109,7 +109,7 @@ extern int nut_log_level;
 void *xmalloc(size_t size);
 void *xcalloc(size_t number, size_t size);
 void *xrealloc(void *ptr, size_t size);
-char *xstrdup(const char *string);
+char *xstrdup(const char *str);
 
 char *rtrim(char *in, const char sep);
 
