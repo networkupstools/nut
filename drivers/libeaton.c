@@ -71,14 +71,9 @@ int testvar(const char *var) { return 0; }
 unsigned int    poll_interval = 2;
 struct ups_handler      upsh;
 
-extern char *device_path;
-
 void upsdrv_initinfo(void);
 void upsdrv_initups(void);
 void upsdrv_updateinfo(void);
-
-int instcmd(const char *cmdname, const char *extradata);
-int setvar (const char *varname, const char *val);
 
 /* ups.status management functions */
 static int alarm_active = 0, ignorelb = 0;
@@ -180,7 +175,7 @@ static int *info_aux = NULL;
 static int *info_flags = NULL;
 static int num_cmd = 0;
 static char **info_cmd = NULL;
-static char dump_buffer[LARGEBUF];
+static char * dump_buffer=NULL;
 
 int dstate_setinfo(const char *var, const char *fmt, ...)
 {
@@ -353,25 +348,41 @@ void libeaton_update(void)
 const char * libeaton_dump_all(void)
 {
 	int i;
+	int size = 0;
+	char buf[SMALLBUF];
 
-	dump_buffer[0]=0;
+	if(dump_buffer!=NULL) {
+		free(dump_buffer);
+	}
 
 	for(i = 0 ; i < num_info ; i++) {
 		if( info_flags[i] & ST_FLAG_RW ) {
-			sprintf(dump_buffer+strlen(dump_buffer),
-					"VAR_RW\t%s\t%s\n",info_name[i],
-					info_data[i]);
+			sprintf(buf,
+				"VAR_RW\t%s\t%s\n",info_name[i],
+				info_data[i]);
+			dump_buffer = realloc(dump_buffer,size+strlen(buf)+1);
+			memcpy(dump_buffer+size,buf,strlen(buf));
+			size = size + strlen(buf);
+			dump_buffer[size] = 0;
 		}
 		else {
-			sprintf(dump_buffer+strlen(dump_buffer),
-					"VAR_RO\t%s\t%s\n",info_name[i],
-					info_data[i]);
+			sprintf(buf,
+				"VAR_RO\t%s\t%s\n",info_name[i],
+				info_data[i]);
+			dump_buffer = realloc(dump_buffer,size+strlen(buf)+1);
+			memcpy(dump_buffer+size,buf,strlen(buf));
+			size = size + strlen(buf);
+			dump_buffer[size] = 0;
 		}
 	}
 
 	for(i = 0 ; i < num_cmd ; i++) {
-		sprintf(dump_buffer+strlen(dump_buffer),
-				"CMD\t%s\n",info_cmd[i]);
+		sprintf(buf,
+			"CMD\t%s\n",info_cmd[i]);
+		dump_buffer = realloc(dump_buffer,size+strlen(buf)+1);
+		memcpy(dump_buffer+size,buf,strlen(buf));
+		size = size + strlen(buf);
+		dump_buffer[size] = 0;
 	}
 
 	return dump_buffer;
