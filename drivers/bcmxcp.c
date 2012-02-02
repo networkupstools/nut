@@ -6,8 +6,10 @@
  * emes -at- geomer.de *
  * All rights reserved.*
 
- Copyright (C) 2004 Kjell Claesson <kjell.claesson-at-epost.tidanet.se>
- and Tore Ørpetveit <tore-at-orpetveit.net>
+ Copyright (C)
+   2004 Kjell Claesson <kjell.claesson-at-epost.tidanet.se>
+   2004 Tore Ørpetveit <tore-at-orpetveit.net>
+   2011 - 2012 Arnaud Quette <ArnaudQuette@Eaton.com>
 
  Thanks to Tore Ørpetveit <tore-at-orpetveit.net> that sent me the
  manuals for bcm/xcp.
@@ -124,7 +126,7 @@ TODO List:
 #include "bcmxcp.h"
 
 #define DRIVER_NAME	"BCMXCP UPS driver"
-#define DRIVER_VERSION	"0.25"
+#define DRIVER_VERSION	"0.26"
 
 #define MAX_NUT_NAME_LENGTH		128
 #define NUT_OUTLET_POSITION		7
@@ -157,6 +159,7 @@ static int init_outlet(unsigned char len);
 static int instcmd(const char *cmdname, const char *extra);
 static int setvar (const char *varname, const char *val);
 
+static const char *nut_find_infoval(info_lkp_t *xcp2info, const double value);
 
 const char *FreqTol[3] = {"+/-2%", "+/-5%", "+/-7"};
 const char *ABMStatus[4] = {"Charging", "Discharging", "Floating", "Resting"};
@@ -165,6 +168,23 @@ unsigned char AUTHOR[4] = {0xCF, 0x69, 0xE8, 0xD5};
 int nphases = 0;
 int outlet_block_len = 0;
 const char *cpu_name[5] = {"Cont:", "Inve:", "Rect:", "Netw:", "Disp:"};
+
+
+
+/* Battery test results */
+info_lkp_t batt_test_info[] = {
+	{ 0, "No test initiated", NULL },
+	{ 1, "In progress", NULL },
+	{ 2, "Done and passed", NULL },
+	{ 3, "Aborted", NULL },
+	{ 4, "Done and error", NULL },
+	{ 5, "Test scheduled", NULL },
+	/* Not sure about the meaning of the below ones! */
+	{ 6, NULL, NULL }, /* The string was present but it has now been removed */
+	{ 7, NULL, NULL }, /* The string was not installed at the last power up */
+	{ 0, NULL, NULL }
+};
+
 
 /* get_word function from nut driver metasys.c */
 int get_word(const unsigned char *buffer)	/* return an integer reading a word in the supplied buffer */
@@ -583,7 +603,12 @@ void init_alarm_map()
 	bcmxcp_alarm_map[BCMXCP_ALARM_CHARGER_ON_COMMAND].alarm_desc = "CHARGER_ON_COMMAND";
 	bcmxcp_alarm_map[BCMXCP_ALARM_CHARGER_OFF_COMMAND].alarm_desc = "CHARGER_OFF_COMMAND";
 	bcmxcp_alarm_map[BCMXCP_ALARM_UPS_NORMAL].alarm_desc = "UPS_NORMAL";
+	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_PHASE_ROTATION].alarm_desc = "INVERTER_PHASE_ROTATION";
+	bcmxcp_alarm_map[BCMXCP_ALARM_UPS_OFF].alarm_desc = "UPS_OFF";
 	bcmxcp_alarm_map[BCMXCP_ALARM_EXTERNAL_COMMUNICATION_FAILURE].alarm_desc = "EXTERNAL_COMMUNICATION_FAILURE";
+	bcmxcp_alarm_map[BCMXCP_ALARM_BATTERY_TEST_INPROGRESS].alarm_desc = "BATTERY_TEST_INPROGRESS";
+	bcmxcp_alarm_map[BCMXCP_ALARM_SYSTEM_TEST_INPROGRESS].alarm_desc = "SYSTEM_TEST_INPROGRESS";
+	bcmxcp_alarm_map[BCMXCP_ALARM_BATTERY_TEST_ABORTED].alarm_desc = "BATTERY_TEST_ABORTED";
 
 }
 
@@ -936,7 +961,7 @@ void init_config(void)
 	int voltage = 0, res, len;
 	char sValue[17];
 
-	res = command_read_sequence(PW_CONFIG_BLOC_REQ, answer);
+	res = command_read_sequence(PW_CONFIG_BLOCK_REQ, answer);
 	if (res <= 0)
 		fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
 
@@ -1244,6 +1269,8 @@ void upsdrv_updateinfo(void)
 	char sValue[128];
 	int iIndex, res;
 	float output, max_output, fValue = 0.0f;
+	int batt_status = 0;
+	const char	*nutvalue;
 
 	/* Get info from UPS */
 	res = command_read_sequence(PW_METER_BLOCK_REQ, answer);
@@ -1332,6 +1359,14 @@ void upsdrv_updateinfo(void)
 					if (iIndex == BCMXCP_ALARM_BATTERY_LOW) {
 						bcmxcp_status.alarm_low_battery = 1;
 					}
+
+					if (iIndex == BCMXCP_ALARM_BATTERY_TEST_FAILED) {
+						bcmxcp_status.alarm_replace_battery = 1;
+					}
+
+					if (iIndex == BCMXCP_ALARM_BATTERY_NEEDS_SERVICE) {
+						bcmxcp_status.alarm_replace_battery = 1;
+					}
 				}
 			}
 		}
@@ -1404,8 +1439,36 @@ void upsdrv_updateinfo(void)
 			status_set("OB");
 		if (bcmxcp_status.alarm_low_battery)
 			status_set("LB");
+		if (bcmxcp_status.alarm_replace_battery)
+			status_set("RB");
 
 		status_commit();
+	}
+
+	/* Get battery info from UPS, if exist */
+	res = command_read_sequence(PW_BATTERY_REQ, answer);
+	if (res <= 0)
+	{
+		upsdebugx(1, "Failed to read Battery Status from UPS");
+	}
+	else
+	{
+		/* Only parse the status (first byte)
+		 *  Powerware 5115 RM output:
+		 *   02 00 78 1d 42 00 e0 17 42 1e 00 00 00 00 00 00 00 00 00 01 03
+		 *  Powerware 9130 output:
+		 *   03 0a d7 25 42 0a d7 25 42 00 9a 19 6d 43 cd cc 4c 3e 01 00 01 03
+		 */
+		upsdebug_hex(2, "Battery Status", answer, res);
+		batt_status = answer[0];
+
+		if ((nutvalue = nut_find_infoval(batt_test_info, batt_status)) != NULL) {
+			dstate_setinfo("ups.test.result", "%s", nutvalue);
+			upsdebugx(2, "Battery Status = %s (%i)", nutvalue, batt_status);
+		}
+		else {
+			upsdebugx(1, "Failed to extract Battery Status from answer");
+		}
 	}
 
 	dstate_dataok();
@@ -1626,6 +1689,9 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	}
 
+	/* Note: test result will be parsed from Battery status block,
+	 * part of the update loop, and published into ups.test.result
+	 */
 	if (!strcasecmp(cmdname, "test.battery.start")) {
 		send_write_command(AUTHOR, 4);
 
@@ -1665,12 +1731,6 @@ static int instcmd(const char *cmdname, const char *extra)
 				break;
 				}
 		}
-		/* Get test info from UPS ?
-			 Should we wait for 50 sec and get the
-			 answer from the test.
-			 Or return, as we may lose line power
-			 and need to do a shutdown.*/
-
 	}
 
 	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
@@ -1781,4 +1841,28 @@ int setvar (const char *varname, const char *val)
 	return STAT_SET_INVALID;
 }
 
+/*******************************
+ * Extracted from usbhid-ups.c *
+ *******************************/
 
+/* find the NUT value matching that XCP Item value */
+static const char *nut_find_infoval(info_lkp_t *xcp2info, const double value)
+{
+	info_lkp_t	*info_lkp;
+
+	/* if a conversion function is defined, use 'value' as argument for it */
+	if (xcp2info->fun != NULL) {
+		return xcp2info->fun(value);
+	}
+
+	/* use 'value' as an index for a lookup in an array */
+	for (info_lkp = xcp2info; info_lkp->nut_value != NULL; info_lkp++) {
+		if (info_lkp->xcp_value == (long)value) {
+			upsdebugx(5, "nut_find_infoval: found %s (value: %ld)", info_lkp->nut_value, (long)value);
+			return info_lkp->nut_value;
+		}
+	}
+
+	upsdebugx(3, "hu_find_infoval: no matching INFO_* value for this XCP value (%g)", value);
+	return NULL;
+}
