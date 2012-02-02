@@ -96,6 +96,7 @@ AC_CHECK_FUNCS(flock lockf fcvt fcvtl)
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
 AC_CHECK_FUNCS(on_exit strptime setlogmask)
+AC_CHECK_FUNCS(usleep)
 AC_CHECK_DECLS(LOG_UPTO, [], [], [#include <syslog.h>])
 
 dnl the following may add stuff to LIBOBJS (is this still needed?)
