@@ -22,7 +22,7 @@
 #include "config.h"
 #include "dstate.h"
 
-#define LIBEATON_REVISION "2"
+#define LIBEATON_REVISION "3"
 #define LIBEATON_VERSION PACKAGE_VERSION "-" LIBEATON_REVISION
 char libeaton_version[SMALLBUF] = LIBEATON_VERSION;
 
