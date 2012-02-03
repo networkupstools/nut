@@ -63,7 +63,6 @@ void dstate_dataok(void) { ; }
 void dstate_datastale(void) { ; }
 
 /* fake main (driver core) */
-void do_upsconf_args(char *confupsname, char *var, char *val) { ; }
 void addvar(int vartype, const char *name, const char *desc) { ; }
 char *getval(const char *var) { return NULL; }
 int testvar(const char *var) { return 0; }
