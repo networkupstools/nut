@@ -41,7 +41,7 @@ MAINTAINERCLEAN_FILES = ChangeLog
 # in case it has already been generated previously
 dummy-stamp:
 ChangeLog: tools/svn2cl.authors dummy-stamp
-	svn2cl --group-by-day --include-rev --authors=$< --revision 'HEAD:2332' --output=$@ || \
+	svn2cl --group-by-day --include-rev --authors=$< --reparagraph --revision 'HEAD:2332' --output=$@ || \
 		echo "svn2cl failed to generate the ChangeLog. See http://trac.networkupstools.org/projects/nut/timeline" > $@
 
 if HAVE_ASCIIDOC
