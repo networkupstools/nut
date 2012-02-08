@@ -124,6 +124,7 @@ void libeaton_init(char * device)
 
 The device parameter depends on the library you are using and is discussed in
 the relevant in following chapters.
+You may want to fine tune your device (for SNMP configuration for exemple). In this case you must call libeaton_set_var BEFORE libeaton_init (see below).
 
 Now you can call function to read or write variables of your device. You can
 also request your device to execute instant commands.
@@ -172,9 +173,9 @@ To list available commands and variables:
 char * libeaton_dump_all()
 --------------------------------------
 libeaton_dump_all returns a pointer to a buffer containing the available commands and variables for the current device.
-This list contains several strings in the form :
+This list contains several lines in the form :
 
-type<tab>command or variable name<tab>value
+type<tab>command or variable name<tab>value<CR>or<EOF>
 
     * type is one of VAR_RO, VAR_RW or CMD
     * value is only available for variable
@@ -185,6 +186,34 @@ This is a sample output:
 VAR_RO	ups.mfr	Eaton
 VAR_RW	outlet.1.delay.shutdown	10
 CMD	outlet.1.shutdown.return
+--------------------------------------
+
+You may want to fine tune the behavior of the SDK. For this, you can use:
+
+--------------------------------------
+int libeaton_set_var(const char *var, char *val)
+--------------------------------------
+
+This allows to set a specific SDK variable to a given value.
+THIS MUST BE CALLED BEFORE libeaton_init !
+This is especially useful for SNMP v1 community and SNMP v3 configuration.
+The list of available variable can be obtained with a call to:
+
+--------------------------------------
+const char * libeaton_dump_var(void)
+--------------------------------------
+
+This returns a buffer containing severals lines in the form :
+
+type<tab>variable name<tab>variable description<CR>or<EOF>
+
+    * type is one of VAR_VALUE or VAR_FLAG
+
+This is a sample output:
+
+--------------------------------------
+VAR_VALUE	community	Set community name (default=public)
+VAR_FLAG	notransferoids	Disable transfer OIDs
 --------------------------------------
 
 Once done with your device you should call libeaton_free function to free
