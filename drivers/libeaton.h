@@ -25,3 +25,5 @@ void libeaton_update(void);
 int libeaton_write(const char *varname, const char *val);
 int libeaton_command(const char *cmdname, const char *extradata);
 const char * libeaton_dump_all(void);
+const char * libeaton_dump_var(void);
+int libeaton_set_var(const char *var, char *val);

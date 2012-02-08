@@ -27,6 +27,19 @@
 char libeaton_version[SMALLBUF] = LIBEATON_VERSION;
 
 /* public functions & variables from main.c */
+#define VAR_FLAG        0x0001  /* argument is a flag (no value needed) */
+#define VAR_VALUE       0x0002  /* argument requires a value setting    */
+#define VAR_SENSITIVE   0x0004  /* do not publish in driver.parameter   */
+
+/* extended variable table - used for -x defines/flags */
+typedef struct vartab_s {
+        int     vartype;        /* VAR_* value, below                    */
+        char    *var;           /* left side of =, or whole word if none */
+        char    *val;           /* right side of =                       */
+        char    *desc;          /* 40 character description for -h text  */
+        int     found;          /* set once encountered, for testvar()   */
+        struct vartab_s *next;
+} vartab_t;
 char *device_path;
 int upsfd;
 int  exit_flag = 0;
@@ -35,6 +48,7 @@ const char *progname = "NUT SDK";
 const char *upsname = NULL;
 const char *device_name = NULL;
 int extrafd;
+static vartab_t *vartab_h = NULL;
 
 /* subdriver description structure */
 typedef struct upsdrv_info_s {
@@ -62,17 +76,14 @@ int dstate_delinfo(const char *var) { return 0; }
 void dstate_dataok(void) { ; }
 void dstate_datastale(void) { ; }
 
-/* fake main (driver core) */
-void addvar(int vartype, const char *name, const char *desc) { ; }
-char *getval(const char *var) { return NULL; }
-int testvar(const char *var) { return 0; }
-
 unsigned int    poll_interval = 2;
 struct ups_handler      upsh;
 
 void upsdrv_initinfo(void);
 void upsdrv_initups(void);
 void upsdrv_updateinfo(void);
+
+void upsdrv_makevartable(void);
 
 /* ups.status management functions */
 static int alarm_active = 0, ignorelb = 0;
@@ -175,6 +186,7 @@ static int *info_flags = NULL;
 static int num_cmd = 0;
 static char **info_cmd = NULL;
 static char * dump_buffer=NULL;
+static char * var_buffer=NULL;
 
 int dstate_setinfo(const char *var, const char *fmt, ...)
 {
@@ -352,6 +364,7 @@ const char * libeaton_dump_all(void)
 
 	if(dump_buffer!=NULL) {
 		free(dump_buffer);
+		dump_buffer=NULL;
 	}
 
 	for(i = 0 ; i < num_info ; i++) {
@@ -387,3 +400,182 @@ const char * libeaton_dump_all(void)
 	return dump_buffer;
 }
 
+/* Copy from drivers/main.c */
+/* retrieve the value of variable <var> if possible */
+char *getval(const char *var)
+{
+        vartab_t        *tmp = vartab_h;
+
+        while (tmp) {
+                if (!strcasecmp(tmp->var, var))
+                        return(tmp->val);
+                tmp = tmp->next;
+        }
+
+        return NULL;
+}
+
+/* Copy from drivers/main.c */
+/* see if <var> has been defined, even if no value has been given to it */
+int testvar(const char *var)
+{
+        vartab_t        *tmp = vartab_h;
+
+        while (tmp) {
+                if (!strcasecmp(tmp->var, var))
+                        return tmp->found;
+                tmp = tmp->next;
+        }
+
+        return 0;       /* not found */
+}
+
+
+/* Copy from drivers/main.c */
+/* callback from driver - create the table for -x/conf entries */
+void addvar(int vartype, const char *name, const char *desc)
+{
+        vartab_t        *tmp, *last;
+
+        tmp = last = vartab_h;
+
+        while (tmp) {
+                last = tmp;
+                tmp = tmp->next;
+        }
+
+        tmp = xmalloc(sizeof(vartab_t));
+
+        tmp->vartype = vartype;
+        tmp->var = xstrdup(name);
+        tmp->val = NULL;
+        tmp->desc = xstrdup(desc);
+        tmp->found = 0;
+        tmp->next = NULL;
+
+        if (last)
+                last->next = tmp;
+        else
+                vartab_h = tmp;
+}
+
+/* Copy from drivers/main.c */
+/* store these in dstate as driver.(parameter|flag) */
+static void dparam_setinfo(const char *var, const char *val)
+{
+        char    vtmp[SMALLBUF];
+
+        /* store these in dstate for debugging and other help */
+        if (val) {
+                snprintf(vtmp, sizeof(vtmp), "driver.parameter.%s", var);
+                dstate_setinfo(vtmp, "%s", val);
+                return;
+        }
+
+        /* no value = flag */
+
+        snprintf(vtmp, sizeof(vtmp), "driver.flag.%s", var);
+        dstate_setinfo(vtmp, "enabled");
+}
+
+/* Copy from drivers/main.c */
+/* cram var [= <val>] data into storage */
+/* return -1 on error */
+static int storeval(const char *var, char *val)
+{
+        vartab_t        *tmp, *last;
+
+        if (!strncasecmp(var, "override.", 9)) {
+                dstate_setinfo(var+9, "%s", val);
+                dstate_setflags(var+9, ST_FLAG_IMMUTABLE);
+                return 0;
+        }
+
+        if (!strncasecmp(var, "default.", 8)) {
+                dstate_setinfo(var+8, "%s", val);
+                return 0;
+        }
+
+        tmp = last = vartab_h;
+
+        while (tmp) {
+                last = tmp;
+
+                /* sanity check */
+                if (!tmp->var) {
+                        tmp = tmp->next;
+                        continue;
+                }
+
+                /* later definitions overwrite earlier ones */
+                if (!strcasecmp(tmp->var, var)) {
+                        free(tmp->val);
+
+                        if (val)
+                                tmp->val = xstrdup(val);
+
+                        /* don't keep things like SNMP community strings */
+                        if ((tmp->vartype & VAR_SENSITIVE) == 0)
+                                dparam_setinfo(var, val);
+
+                        tmp->found = 1;
+                        return 0;
+                }
+
+                tmp = tmp->next;
+        }
+
+	return -1;
+}
+
+int libeaton_set_var(const char *var, char *val)
+{
+	if(!vartab_h) {
+		upsdrv_makevartable();
+	}
+	return storeval(var,val);
+}
+
+const char * libeaton_dump_var(void)
+{
+	vartab_t        *tmp;
+	int size = 0;
+	char buf[SMALLBUF];
+
+	if(var_buffer!=NULL) {
+		free(var_buffer);
+		var_buffer=NULL;
+	}
+
+	if(!vartab_h) {
+		upsdrv_makevartable();
+	}
+
+        if (vartab_h) {
+                tmp = vartab_h;
+
+                while (tmp) {
+			if (tmp->vartype & VAR_VALUE) {
+				sprintf(buf,"VAR_VALUE\t%s\t%s\n",
+						tmp->var, tmp->desc);
+				var_buffer = realloc(var_buffer,
+							size+strlen(buf)+1);
+				memcpy(var_buffer+size,buf,strlen(buf));
+				size = size + strlen(buf);
+				var_buffer[size] = 0;
+			}
+			if (tmp->vartype & VAR_FLAG) {
+				sprintf(buf,"VAR_FLAG\t%s\t%s\n",
+						tmp->var, tmp->desc);
+				var_buffer = realloc(var_buffer,
+							size+strlen(buf)+1);
+				memcpy(var_buffer+size,buf,strlen(buf));
+				size = size + strlen(buf);
+				var_buffer[size] = 0;
+			}
+			tmp = tmp->next;
+		}
+        }
+
+	return var_buffer;
+}
