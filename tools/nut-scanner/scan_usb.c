@@ -37,7 +37,10 @@ static char * (*nut_usb_strerror)(void);
 static void (*nut_usb_init)(void);
 static int (*nut_usb_get_string_simple)(usb_dev_handle *dev, int index,
 		char *buf, size_t buflen);
+#ifndef WIN32
 static struct usb_bus * (*nut_usb_busses);
+#endif
+static struct usb_bus * (*nut_usb_get_busses)();
 static usb_dev_handle * (*nut_usb_open)(struct usb_device *dev);
 static int (*nut_usb_find_devices)(void);
 
@@ -90,7 +93,14 @@ int nutscan_load_usb_library()
                 goto err;
         }
 
+#ifndef WIN32
         *(void **) (&nut_usb_busses) = lt_dlsym(dl_handle, "usb_busses");
+        if ((dl_error = lt_dlerror()) != NULL)  {
+                goto err;
+        }
+#endif
+        *(void **) (&nut_usb_get_busses) = lt_dlsym(dl_handle,
+						"usb_get_busses");
         if ((dl_error = lt_dlerror()) != NULL)  {
                 goto err;
         }
@@ -155,7 +165,11 @@ nutscan_device_t * nutscan_scan_usb()
 	(*nut_usb_find_busses)();
 	(*nut_usb_find_devices)();
 
+#ifndef WIN32
 	for (bus = (*nut_usb_busses); bus; bus = bus->next) {
+#else
+	for (bus = (*nut_usb_get_busses)(); bus; bus = bus->next) {
+#endif
 		for (dev = bus->devices; dev; dev = dev->next) {
 			if ((driver_name =
 				is_usb_device_supported(usb_device_table,
@@ -256,6 +270,11 @@ nutscan_device_t * nutscan_scan_usb()
 	}
 
 	return nutscan_rewind_device(current_nut_dev);
+}
+#else /* WITH_USB */
+nutscan_device_t * nutscan_scan_usb()
+{
+	return NULL;
 }
 #else /* WITH_USB */
 nutscan_device_t * nutscan_scan_usb()
