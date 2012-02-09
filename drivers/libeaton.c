@@ -76,7 +76,7 @@ int dstate_delinfo(const char *var) { return 0; }
 void dstate_dataok(void) { ; }
 void dstate_datastale(void) { ; }
 
-/* For Windows compilation */
+/* Needed for all dynamically linked libraries */
 void do_upsconf_args(char *confupsname, char *var, char *val) { ; }
 
 unsigned int    poll_interval = 2;
