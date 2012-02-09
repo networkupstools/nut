@@ -177,6 +177,8 @@ int main(int argc, char *argv[])
 
 	nutscan_init();
 
+	nutscan_init();
+
 	display_func = nutscan_display_ups_conf;
 
 	while((opt_ret = getopt_long(argc, argv, optstring, longopts, NULL))!=-1) {

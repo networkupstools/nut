@@ -251,4 +251,9 @@ nutscan_device_t * nutscan_scan_xml_http(long usec_timeout)
 {
 	return NULL;
 }
+#else /* WITH_NEON */
+nutscan_device_t * nutscan_scan_xml_http(long usec_timeout)
+{
+	return NULL;
+}
 #endif /* WITH_NEON */

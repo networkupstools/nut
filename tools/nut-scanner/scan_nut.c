@@ -211,7 +211,6 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 	struct sigaction oldact;
 #endif
 	struct scan_nut_arg *nut_arg;
-
 #ifdef WIN32
 	WSADATA WSAdata;
 	WSAStartup(2,&WSAdata);

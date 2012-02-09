@@ -229,11 +229,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 	usb_device_close(*handlep);
 #endif
 
-#ifndef WIN32
 	for (bus = usb_busses; bus; bus = bus->next) {
-#else
-	for (bus = usb_get_busses(); bus; bus = bus->next) {
-#endif
 
 		struct usb_device	*dev;
 		usb_dev_handle		*handle;

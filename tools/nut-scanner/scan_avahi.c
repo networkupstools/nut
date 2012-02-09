@@ -515,4 +515,10 @@ nutscan_device_t * nutscan_scan_avahi(long usec_timeout)
 {
 	return NULL;
 }
+#else  /* WITH_AVAHI */
+/* stub function */
+nutscan_device_t * nutscan_scan_avahi(long usec_timeout)
+{
+	return NULL;
+}
 #endif /* WITH_AVAHI */
