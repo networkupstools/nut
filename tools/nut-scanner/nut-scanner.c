@@ -413,6 +413,8 @@ int main(int argc, char *argv[])
 
 	nutscan_init();
 
+	nutscan_init();
+
 	display_func = nutscan_display_ups_conf;
 
 	/* Parse command line options -- Second loop: everything else */

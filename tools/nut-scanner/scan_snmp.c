@@ -1192,6 +1192,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 
 #else /* WITH_SNMP */
 
+/* stub function */
 nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip,
                                      useconds_t usec_timeout, nutscan_snmp_t * sec)
 {

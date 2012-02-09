@@ -326,6 +326,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 		usb_close(*handlep);
 #endif
 
+<<<<<<< HEAD
 #if WITH_LIBUSB_1_0
 	libusb_device **devlist;
 	ssize_t devcount = 0;
@@ -348,11 +349,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 #else  /* => WITH_LIBUSB_0_1 */
 	struct usb_bus	*bus;
 
-# ifndef WIN32
 	for (bus = usb_busses; bus; bus = bus->next) {
-# else
-	for (bus = usb_get_busses(); bus; bus = bus->next) {
-# endif
 
 		struct usb_device	*dev;
 		usb_dev_handle		*handle;
