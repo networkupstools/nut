@@ -20,8 +20,8 @@
 #define PW_STATUS_REQ 		(unsigned char)0x33 /* On Line, On Bypass, ...  length 1-2 */
 #define PW_METER_BLOCK_REQ	(unsigned char)0x34 /* Current UPS status (Load, utility,...) length 1 */
 #define PW_CUR_ALARM_REQ	(unsigned char)0x35 /* Current alarm and event request.	length 1 */
-#define PW_CONFIG_BLOC_REQ	(unsigned char)0x36 /* Model serial#, ... length 1 */
-#define PW_BAT_TEST_REQ		(unsigned char)0x3B /* Charging, floating, ... length 1 */
+#define PW_CONFIG_BLOCK_REQ	(unsigned char)0x36 /* Model serial#, ... length 1 */
+#define PW_BATTERY_REQ		(unsigned char)0x3B /* Charging, floating, ... length 1 */
 #define PW_LIMIT_BLOCK_REQ	(unsigned char)0x3C /* Configuration (Bypass thresholds,...).	length 1 */
 #define PW_TEST_RESULT_REQ	(unsigned char)0x3F /* ??. length 1 */
 #define PW_COMMAND_LIST_REQ	(unsigned char)0x40 /* Available commands. length 1 */
@@ -342,10 +342,15 @@
 #define BCMXCP_ALARM_CHARGER_ON_COMMAND			235
 #define BCMXCP_ALARM_CHARGER_OFF_COMMAND		236
 #define BCMXCP_ALARM_UPS_NORMAL				237
-#define BCMXCP_ALARM_EXTERNAL_COMMUNICATION_FAILURE	238
+#define BCMXCP_ALARM_INVERTER_PHASE_ROTATION	238
+#define BCMXCP_ALARM_UPS_OFF					239
+#define BCMXCP_ALARM_EXTERNAL_COMMUNICATION_FAILURE	240
+#define BCMXCP_ALARM_BATTERY_TEST_INPROGRESS	256
+#define BCMXCP_ALARM_SYSTEM_TEST_INPROGRESS		257
+#define BCMXCP_ALARM_BATTERY_TEST_ABORTED		258
 
 #define BCMXCP_METER_MAP_MAX 91 /* Max no of entries in BCM/XCP meter map */
-#define	BCMXCP_ALARM_MAP_MAX 240 /* Max no of entries in BCM/XCP alarm map (adjusted upwards to nearest multi of 8 */
+#define	BCMXCP_ALARM_MAP_MAX 260 /* Max no of entries in BCM/XCP alarm map (adjusted upwards to nearest multi of 8 */
 
 typedef struct { /* Entry in BCM/XCP - UPS - NUT mapping table */
 	const char *nut_entity;				/* The NUT variable name */
@@ -370,6 +375,7 @@ typedef	struct {				/* A place to store status info and other data not for NUT *
 	unsigned int shutdowndelay;	 	/* Shutdown delay in seconds, from ups.conf */
 	int alarm_on_battery;			/* On Battery alarm active? */
 	int alarm_low_battery;			/* Battery Low alarm active? */
+	int alarm_replace_battery;		/* Battery needs replacement! */
 }	BCMXCP_STATUS_t;
 
 BCMXCP_STATUS_t
@@ -377,6 +383,14 @@ BCMXCP_STATUS_t
 
 int checksum_test(const unsigned char*);
 unsigned char calc_checksum(const unsigned char *buf);
-	
+
+/* from usbhid-ups.h */
+typedef struct {
+	const long	xcp_value;	/* XCP value */
+	const char	*nut_value;	/* NUT value */
+	const char	*(*fun)(double xcp_value);	/* optional XCP to NUT mapping */
+	double	(*nuf)(const char *nut_value);		/* optional NUT to HID mapping */
+} info_lkp_t;
+
 #endif /*_POWERWARE_H */
 

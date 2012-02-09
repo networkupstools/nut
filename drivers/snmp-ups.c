@@ -3,7 +3,7 @@
  *  Based on NetSNMP API (Simple Network Management Protocol V1-2)
  *
  *  Copyright (C)
- *	2002 - 2011	Arnaud Quette <arnaud.quette@free.fr>
+ *	2002 - 2012	Arnaud Quette <arnaud.quette@free.fr>
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
@@ -44,6 +44,7 @@
 #include "baytech-mib.h"
 #include "compaq-mib.h"
 #include "bestpower-mib.h"
+#include "cyberpower-mib.h"
 #include "ietf-mib.h"
 
 static mib2nut_info_t *mib2nut[] = {
@@ -58,6 +59,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&baytech,
 	&compaq,
 	&bestpower,
+	&cyberpower,
 	/*
 	 * Prepend vendor specific MIB mappings before IETF, so that
 	 * if a device supports both IETF and vendor specific MIB,
@@ -80,7 +82,7 @@ const char *mibvers;
 static void disable_transfer_oids(void);
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.56"
+#define DRIVER_VERSION		"0.65"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -120,13 +122,18 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("driver.version.internal", "%s", version);
 
 	/* add instant commands to the info database.
-	 * outlet commands are processed during initial walk */
+	 * outlet commands are processed later, during initial walk */
 	for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++)
 	{
 		su_info_p->flags |= SU_FLAG_OK;
 		if ((SU_TYPE(su_info_p) == SU_TYPE_CMD)
-			&& !(su_info_p->flags & SU_OUTLET))
-			dstate_addcmd(su_info_p->info_type);
+			&& !(su_info_p->flags & SU_OUTLET)) {
+			/* first check that this OID actually exists */
+			if (nut_snmp_get(su_info_p->OID) != NULL) {
+				dstate_addcmd(su_info_p->info_type);
+				upsdebugx(1, "upsdrv_initinfo(): adding command '%s'", su_info_p->info_type);
+			}
+		}
 	}
 
 	if (testvar("notransferoids"))
@@ -148,7 +155,7 @@ void upsdrv_updateinfo(void)
 	upsdebugx(1,"SNMP UPS driver : entering upsdrv_updateinfo()");
 
 	/* only update every pollfreq */
-	/* FIXME: update status (SU_STATUS_*), à la usbhid-ups, in between */
+	/* FIXME: only update status (SU_STATUS_*), à la usbhid-ups, in between */
 	if (time(NULL) > (lastpoll + pollfreq)) {
 
 		status_init();
@@ -176,7 +183,28 @@ void upsdrv_shutdown(void)
 	never send this command to the UPS. This is not an error,
 	but a limitation of the interface used.
 	*/
-	fatalx(EXIT_SUCCESS, "SNMP doesn't support shutdown in system halt script");
+
+	upsdebugx(1, "upsdrv_shutdown...");
+
+	/* Try to shutdown with delay */
+	if (su_instcmd("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
+		/* Shutdown successful */
+		return;
+	}
+
+	/* If the above doesn't work, try shutdown.reboot */
+	if (su_instcmd("shutdown.reboot", NULL) == STAT_INSTCMD_HANDLED) {
+		/* Shutdown successful */
+		return;
+	}
+
+	/* If the above doesn't work, try load.off.delay */
+	if (su_instcmd("load.off.delay", NULL) == STAT_INSTCMD_HANDLED) {
+		/* Shutdown successful */
+		return;
+	}
+
+	fatalx(EXIT_FAILURE, "Shutdown failed!");
 }
 
 void upsdrv_help(void)
@@ -249,6 +277,22 @@ void upsdrv_initups(void)
 	else
 		fatalx(EXIT_FAILURE, "%s MIB wasn't found on %s", mibs, g_snmp_sess.peername);
 		/* FIXME: "No supported device detected" */
+
+	if (su_find_info("load.off.delay")) {
+		/* Adds default with a delay value of '0' (= immediate) */
+		dstate_addcmd("load.off");
+	}
+
+	if (su_find_info("load.on.delay")) {
+		/* Adds default with a delay value of '0' (= immediate) */
+		dstate_addcmd("load.on");
+	}
+
+	if (su_find_info("load.off.delay") && su_find_info("load.on.delay")) {
+		/* Add composite instcmds (require setting multiple OID values) */
+		dstate_addcmd("shutdown.return");
+		dstate_addcmd("shutdown.stayoff");
+	}
 }
 
 void upsdrv_cleanup(void)
@@ -809,8 +853,9 @@ mib2nut_info_t *match_sysoid()
 			}
 		}
 		/* Yell all to call for user report */
-		upslogx(LOG_ERR, "No matching MIB found for sysOID '%s'! " \
-			"Please report it to NUT developers, with the 'mib' paramater for your devices",
+		upslogx(LOG_ERR, "No matching MIB found for sysOID '%s'!\n" \
+			"Please report it to NUT developers, with an 'upsc' output for your device.\n" \
+			"Going back to the classic MIB detection method.",
 			sysOID_buf);
 	}
 	else
@@ -877,7 +922,7 @@ bool_t load_mib2nut(const char *mib)
 }
 
 /* find the OID value matching that INFO_* value */
-long su_find_valinfo(info_lkp_t *oid2info, char* value)
+long su_find_valinfo(info_lkp_t *oid2info, const char* value)
 {
 	info_lkp_t *info_lkp;
 
@@ -982,20 +1027,12 @@ int base_snmp_outlet_index(const char *OID_template)
 	if (outlet_index_base == -1)
 	{
 		/* not initialised yet */
-		/* Workaround for Eaton Marlin, while waiting for a FW fix and
-		* a driver rewrite (advanced hooks) */
-		if ((mibname != NULL) && (!strncmp(mibname, "eaton_epdu", 11)))
-		{
-			upsdebugx(3, "Appying Eaton Marlin workaround");
-			outlet_index_base = base_index = 1;
-		} else {
-			for (base_index = 0 ; base_index < 2 ; base_index++) {
-				sprintf(test_OID, OID_template, base_index);
-				if (nut_snmp_get(test_OID) != NULL)
-					break;
-			}
-			outlet_index_base = base_index;
+		for (base_index = 0 ; base_index < 2 ; base_index++) {
+			sprintf(test_OID, OID_template, base_index);
+			if (nut_snmp_get(test_OID) != NULL)
+				break;
 		}
+		outlet_index_base = base_index;
 	}
 	upsdebugx(3, "base_snmp_outlet_index: %i", outlet_index_base);
 	return base_index;
@@ -1218,6 +1255,7 @@ bool_t snmp_ups_walk(int mode)
 
 					/* add outlet instant commands to the info database. */
 					if (SU_TYPE(su_info_p) == SU_TYPE_CMD) {
+						/* FIXME: only add if "su_ups_get(cur_info_p) == TRUE" */
 						if (mode == SU_WALKMODE_INIT)
 							dstate_addcmd(cur_info_p.info_type);
 					}
@@ -1339,6 +1377,7 @@ int su_setvar(const char *varname, const char *val)
 	snmp_info_t *su_info_p = NULL;
 	bool_t status;
 	int retval = STAT_SET_FAILED;
+	int value = -1;
 
 	upsdebugx(2, "entering su_setvar(%s, %s)", varname, val);
 
@@ -1415,7 +1454,15 @@ int su_setvar(const char *varname, const char *val)
 	if (su_info_p->info_flags & ST_FLAG_STRING) {
 		status = nut_snmp_set_str(su_info_p->OID, val);
 	} else {
-		status = nut_snmp_set_int(su_info_p->OID, strtol(val, NULL, 0));
+		/* non string data may imply a value lookup */
+		if (su_info_p->oid2info) {
+			value = su_find_valinfo(su_info_p->oid2info, val);
+		}
+		else {
+			value = strtol(val, NULL, 0);
+		}
+		/* Actually apply the new value */
+		status = nut_snmp_set_int(su_info_p->OID, value);
 	}
 
 	if (status == FALSE)
@@ -1491,7 +1538,50 @@ int su_instcmd(const char *cmdname, const char *extradata)
 		}
 	}
 
+	/* Sanity check */
 	if (!su_info_p || !su_info_p->info_type || !(su_info_p->flags & SU_FLAG_OK)) {
+
+		/* Check for composite commands */
+		if (!strcasecmp(cmdname, "load.on")) {
+			return su_instcmd("load.on.delay", "0");
+		}
+
+		if (!strcasecmp(cmdname, "load.off")) {
+			return su_instcmd("load.off.delay", "0");
+		}
+
+		if (!strcasecmp(cmdname, "shutdown.return")) {
+			int	ret;
+
+			/* Ensure "ups.start.auto" is set to "yes", if supported */
+			if (dstate_getinfo("ups.start.auto")) {
+				su_setvar("ups.start.auto", "yes");
+			}
+
+			ret = su_instcmd("load.on.delay", dstate_getinfo("ups.delay.start"));
+			if (ret != STAT_INSTCMD_HANDLED) {
+				return ret;
+			}
+
+			return su_instcmd("load.off.delay", dstate_getinfo("ups.delay.shutdown"));
+		}
+
+		if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+			int	ret;
+
+			/* Ensure "ups.start.auto" is set to "no", if supported */
+			if (dstate_getinfo("ups.start.auto")) {
+				su_setvar("ups.start.auto", "no");
+			}
+
+			ret = su_instcmd("load.on.delay", "-1");
+			if (ret != STAT_INSTCMD_HANDLED) {
+				return ret;
+			}
+
+			return su_instcmd("load.off.delay", dstate_getinfo("ups.delay.shutdown"));
+		}
+
 		upsdebugx(2, "su_instcmd: %s unavailable", cmdname);
 
 		if (!strncmp(cmdname, "outlet", 6))
@@ -1500,7 +1590,7 @@ int su_instcmd(const char *cmdname, const char *extradata)
 		return STAT_INSTCMD_UNKNOWN;
 	}
 
-	/* set value. */
+	/* set value, using the provided one, or the default one otherwise */
 	if (su_info_p->info_flags & ST_FLAG_STRING) {
 		status = nut_snmp_set_str(su_info_p->OID, extradata ? extradata : su_info_p->dfl);
 	} else {

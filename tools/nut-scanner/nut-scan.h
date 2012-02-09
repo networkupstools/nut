@@ -19,6 +19,7 @@
 #ifndef NUT_SCAN_H
 #define NUT_SCAN_H
 
+#include <nutscan-init.h>
 #include <nutscan-device.h>
 #include <nutscan-ip.h>
 
@@ -36,27 +37,17 @@ typedef struct nutscan_snmp {
 } nutscan_snmp_t;
 
 /* Scanning */
-#ifdef WITH_SNMP
 nutscan_device_t * nutscan_scan_snmp(const char * start_ip,const char * stop_ip,long usec_timeout, nutscan_snmp_t * sec);
-#endif /* WITH_SNMP */
 
-#ifdef WITH_USB
 nutscan_device_t * nutscan_scan_usb();
-#endif /* WITH_USB */
 
-#ifdef WITH_NEON
 nutscan_device_t * nutscan_scan_xml_http(long usec_timeout);
-#endif /* WITH_NEON */
 
 nutscan_device_t * nutscan_scan_nut(const char * startIP, const char * stopIP, const char * port, long usec_timeout);
 
-#ifdef WITH_AVAHI
 nutscan_device_t * nutscan_scan_avahi(long usec_timeout);
-#endif /* WITH_AVAHI */
 
-#ifdef WITH_IPMI
 nutscan_device_t *  nutscan_scan_ipmi(void);
-#endif /* WITH_IPMI */
 
 /* Display functions */
 void nutscan_display_ups_conf(nutscan_device_t * device);

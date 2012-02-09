@@ -92,14 +92,13 @@ long int get_long(unsigned char *buffer) {	/* return a long integer reading 4 by
 	d=buffer[3];
 	result = (256*256*256*d) + (256*256*c) + (256*b) + a;
 	return result;
-}	
-	
+}
+
 void send_zeros(void) {				/* send 100 times the value 0x00.....it seems to be used for resetting */
 	unsigned char buf[100];				/* the ups serial port */
-	int i;
-	
+
 	memset(buf, '\0', sizeof(buf));
-	i = ser_send_buf(upsfd, buf, sizeof(buf));
+	ser_send_buf(upsfd, buf, sizeof(buf));
 	return;
 }
 

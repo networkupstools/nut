@@ -55,6 +55,11 @@ string, you just escape it.
 The \ can actually be used to escape any character, but you only really
 need it for \, ", and # as they have special meanings to the parser.
 
+When using file names with space characters, you may end up having tricky
+things since you need to write them inside "" which must be escaped:
+
+	NOTIFYCMD "\"c:\\path with space\\notifyme\" \"c:\\path with space\\name\""
+
 # is the comment character.  Anything after an unescaped # is ignored.
 
 Something like this...

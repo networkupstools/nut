@@ -1,9 +1,9 @@
 /*  compaq-mib.c - data to monitor SNMP UPS with NUT
  *
- *  Copyright (C) 2002-2006
- *  			Arnaud Quette <arnaud.quette@free.fr>
- *  			Niels Baggesen <niels@baggesen.net>
- *  			Philip Ward <p.g.ward@stir.ac.uk>
+ *  Copyright (C)
+ *    2002-2012 Arnaud Quette <arnaud.quette@free.fr>
+ *    2002-2006 Niels Baggesen <niels@baggesen.net>
+ *    2002-2006 Philip Ward <p.g.ward@stir.ac.uk>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
  *
@@ -29,10 +29,11 @@
 
 #include "compaq-mib.h"
 
-#define CPQPOWER_MIB_VERSION	"1.0"
+#define CPQPOWER_MIB_VERSION	"1.1"
 
 /* SNMP OIDs set */
-#define CPQPOWER_OID_UPS_MIB          "1.3.6.1.4.1.232.165.3"
+#define CPQPOWER_OID_UPS_MIB			"1.3.6.1.4.1.232.165.3"
+#define CPQPOWER_SYSOID					CPQPOWER_OID_UPS_MIB
 
 #define CPQPOWER_OID_MFR_NAME         CPQPOWER_OID_UPS_MIB ".1.1.0"	/* UPS-MIB::upsIdentManufacturer */
 #define CPQPOWER_OID_MODEL_NAME       CPQPOWER_OID_UPS_MIB ".1.2.0"	/* UPS-MIB::upsIdentModel */
@@ -205,4 +206,4 @@ static snmp_info_t cpqpower_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	compaq = { "cpqpower", CPQPOWER_MIB_VERSION, "", CPQPOWER_OID_MFR_NAME, cpqpower_mib };
+mib2nut_info_t	compaq = { "cpqpower", CPQPOWER_MIB_VERSION, "", CPQPOWER_OID_MFR_NAME, cpqpower_mib, CPQPOWER_SYSOID };

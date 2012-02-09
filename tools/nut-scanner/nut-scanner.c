@@ -78,14 +78,11 @@ static char * port = NULL;
 #ifdef HAVE_PTHREAD
 static pthread_t thread[TYPE_END];
 
-#ifdef WITH_USB
 static void * run_usb(void * arg)
 {
 	dev[TYPE_USB] = nutscan_scan_usb();
 	return NULL;
 }
-#endif
-#ifdef WITH_SNMP
 static void * run_snmp(void * arg)
 {
 	nutscan_snmp_t * sec = (nutscan_snmp_t *)arg;
@@ -93,14 +90,11 @@ static void * run_snmp(void * arg)
 	dev[TYPE_SNMP] = nutscan_scan_snmp(start_ip,end_ip,timeout,sec);
 	return NULL;
 }
-#endif
-#ifdef WITH_NEON
 static void * run_xml(void * arg)
 {
 	dev[TYPE_XML] = nutscan_scan_xml_http(timeout);
 	return NULL;
 }
-#endif
 
 static void * run_nut_old(void * arg)
 {
@@ -108,20 +102,16 @@ static void * run_nut_old(void * arg)
 	return NULL;
 }
 
-#ifdef WITH_AVAHI
 static void * run_avahi(void * arg)
 {
 	dev[TYPE_AVAHI] = nutscan_scan_avahi(timeout);
 	return NULL;
 }
-#endif
-#ifdef WITH_FREEIPMI
 static void * run_ipmi(void * arg)
 {
 	dev[TYPE_IPMI] = nutscan_scan_ipmi();
 	return NULL;
 }
-#endif
 #endif /* HAVE_PTHREAD */
 static int printq(int quiet,const char *fmt, ...)
 {
@@ -157,6 +147,8 @@ int main(int argc, char *argv[])
 
 	memset(&sec,0,sizeof(sec));
 
+	nutscan_init();
+
 	display_func = nutscan_display_ups_conf;
 
 	while((opt_ret = getopt_long(argc, argv, optstring, longopts, NULL))!=-1) {
@@ -179,61 +171,87 @@ int main(int argc, char *argv[])
 			case 'm':
 				cidr = strdup(optarg);
 				break;
-#ifdef WITH_SNMP
 			case 'c':
+				if(!nutscan_avail_snmp) {
+					goto display_help;
+				}
 				sec.community = strdup(optarg);
 				break;
 			case 'l':
+				if(!nutscan_avail_snmp) {
+					goto display_help;
+				}
 				sec.secLevel = strdup(optarg);
 				break;
 			case 'u':
+				if(!nutscan_avail_snmp) {
+					goto display_help;
+				}
 				sec.secName = strdup(optarg);
 				break;
 			case 'W':
+				if(!nutscan_avail_snmp) {
+					goto display_help;
+				}
 				sec.authPassword = strdup(optarg);
 				break;
 			case 'X':
+				if(!nutscan_avail_snmp) {
+					goto display_help;
+				}
 				sec.privPassword = strdup(optarg);
 				break;
 			case 'w':
+				if(!nutscan_avail_snmp) {
+					goto display_help;
+				}
 				sec.authProtocol = strdup(optarg);
 				break;
 			case 'x':
+				if(!nutscan_avail_snmp) {
+					goto display_help;
+				}
 				sec.privProtocol = strdup(optarg);
 				break;
 			case 'S':
+				if(!nutscan_avail_snmp) {
+					goto display_help;
+				}
 				allow_snmp = 1;
 				break;
-#endif /* WITH_SNMP */
 			case 'p':
 				port = strdup(optarg);
 				break;
 			case 'C':
 				allow_all = 1;
 				break;
-#ifdef WITH_USB
 			case 'U':
+				if(!nutscan_avail_usb) {
+					goto display_help;
+				}
 				allow_usb = 1;
 				break;
-#endif /* WITH_USB */
-#ifdef WITH_NEON
 			case 'M':
+				if(!nutscan_avail_xml_http) {
+					goto display_help;
+				}
 				allow_xml = 1;
 				break;
-#endif /* WITH_NEON */
 			case 'O':
 				allow_oldnut = 1;
 				break;
-#ifdef WITH_AVAHI
 			case 'A':
+				if(!nutscan_avail_avahi) {
+					goto display_help;
+				}
 				allow_avahi = 1;
 				break;
-#endif /* WITH_AVAHI */
-#ifdef WITH_IPMI
 			case 'I':
+				if(!nutscan_avail_ipmi) {
+					goto display_help;
+				}
 				allow_ipmi = 1;
 				break;
-#endif /* WITH_IPMI */
 			case 'N':
 				display_func = nutscan_display_ups_conf;
 				break;
@@ -248,62 +266,63 @@ int main(int argc, char *argv[])
 				exit(EXIT_SUCCESS);
 			case 'a':
 				printf("OLDNUT\n");
-#ifdef WITH_USB
-				printf("USB\n");
-#endif
-#ifdef WITH_SNMP
-				printf("SNMP\n");
-#endif
-#ifdef WITH_NEON
-				printf("XML\n");
-#endif
-#ifdef WITH_AVAHI
-				printf("AVAHI\n");
-#endif
-#ifdef WITH_IPMI
-				printf("IPMI\n");
-#endif
+				if(nutscan_avail_usb) {
+					printf("USB\n");
+				}
+				if(nutscan_avail_snmp) {
+					printf("SNMP\n");
+				}
+				if(nutscan_avail_xml_http) {
+					printf("XML\n");
+				}
+				if(nutscan_avail_avahi) {
+					printf("AVAHI\n");
+				}
+				if(nutscan_avail_ipmi) {
+					printf("IPMI\n");	
+				}
 				exit(EXIT_SUCCESS);
 			case '?':
 				ret_code = ERR_BAD_OPTION;
 			case 'h':
 			default:
+display_help:
 				puts("nut-scanner : detecting available power devices.\n");
 				puts("OPTIONS:");
 				printf("  -C, --complete_scan: Scan all available devices (default).\n");
-#ifdef WITH_USB
-				printf("  -U, --usb_scan: Scan USB devices.\n");
-#endif /* WITH_USB */
-#ifdef WITH_SNMP
-				printf("  -S, --snmp_scan: Scan SNMP devices.\n");
-#endif /* WITH_SNMP */
-#ifdef WITH_NEON
-				printf("  -M, --xml_scan: Scan XML/HTTP devices.\n");
-#endif /* WITH_NEON */
+				if( nutscan_avail_usb ) {
+					printf("  -U, --usb_scan: Scan USB devices.\n");
+				}
+				if( nutscan_avail_snmp ) {
+					printf("  -S, --snmp_scan: Scan SNMP devices.\n");
+				}
+				if( nutscan_avail_xml_http ) {
+					printf("  -M, --xml_scan: Scan XML/HTTP devices.\n");
+				}
 				printf("  -O, --oldnut_scan: Scan NUT devices (old method).\n");
-#ifdef WITH_AVAHI
-				printf("  -A, --avahi_scan: Scan NUT devices (avahi method).\n");
-#endif /* WITH_AVAHI */
-#ifdef WITH_IPMI
-				printf("  -I, --ipmi_scan: Scan IPMI devices.\n");
-#endif /* WITH_IPMI */
+				if( nutscan_avail_avahi ) {
+					printf("  -A, --avahi_scan: Scan NUT devices (avahi method).\n");
+				}
+				if( nutscan_avail_ipmi ) {
+					printf("  -I, --ipmi_scan: Scan IPMI devices.\n");
+				}
 				printf("  -t, --timeout <timeout in seconds>: network operation timeout (default %d).\n",DEFAULT_TIMEOUT);
 				printf("  -s, --start_ip <IP address>: First IP address to scan.\n");
 				printf("  -e, --end_ip <IP address>: Last IP address to scan.\n");
 				printf("  -m, --mask_cidr <IP address/mask>: Give a range of IP using CIDR notation.\n");
 
-#ifdef WITH_SNMP
-				printf("\nSNMP v1 specific options:\n");
-				printf("  -c, --community <community name>: Set SNMP v1 community name (default = public)\n");
+				if( nutscan_avail_snmp ) {
+					printf("\nSNMP v1 specific options:\n");
+					printf("  -c, --community <community name>: Set SNMP v1 community name (default = public)\n");
 
-				printf("\nSNMP v3 specific options:\n");
-				printf("  -l, --secLevel <security level>: Set the securityLevel used for SNMPv3 messages (allowed values: noAuthNoPriv,authNoPriv,authPriv)\n");
-				printf("  -u, --secName <security name>: Set the securityName used for authenticated SNMPv3 messages (mandatory if you set secLevel. No default)\n");
-				printf("  -a, --authProtocol <authentication protocol>: Set the authentication protocol (MD5 or SHA) used for authenticated SNMPv3 messages (default=MD5)\n");
-				printf("  -A, --authPassword <authentication pass phrase>: Set the authentication pass phrase used for authenticated SNMPv3 messages (mandatory if you set secLevel to authNoPriv or authPriv)\n");
-				printf("  -x, --privProtocol <privacy protocol>: Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages (default=DES)\n");
-				printf("  -X, --privPassword <privacy pass phrase>: Set the privacy pass phrase used for encrypted SNMPv3 messages (mandatory if you set secLevel to authPriv)\n");
-#endif /* WITH_SNMP */
+					printf("\nSNMP v3 specific options:\n");
+					printf("  -l, --secLevel <security level>: Set the securityLevel used for SNMPv3 messages (allowed values: noAuthNoPriv,authNoPriv,authPriv)\n");
+					printf("  -u, --secName <security name>: Set the securityName used for authenticated SNMPv3 messages (mandatory if you set secLevel. No default)\n");
+					printf("  -w, --authProtocol <authentication protocol>: Set the authentication protocol (MD5 or SHA) used for authenticated SNMPv3 messages (default=MD5)\n");
+					printf("  -W, --authPassword <authentication pass phrase>: Set the authentication pass phrase used for authenticated SNMPv3 messages (mandatory if you set secLevel to authNoPriv or authPriv)\n");
+					printf("  -x, --privProtocol <privacy protocol>: Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages (default=DES)\n");
+					printf("  -X, --privPassword <privacy pass phrase>: Set the privacy pass phrase used for encrypted SNMPv3 messages (mandatory if you set secLevel to authPriv)\n");
+				}
 
 				printf("\nNUT specific options:\n");
 				printf("  -p, --port <port number>: Port number of remote NUT upsd\n");
@@ -328,120 +347,128 @@ int main(int argc, char *argv[])
 		allow_all = 1;
 	}
 
-#ifdef WITH_USB
-	if( allow_all || allow_usb) {
+	if( allow_all ) {
+		allow_usb = 1;
+		allow_snmp = 1;
+		allow_xml = 1;
+		allow_oldnut = 1;
+		allow_avahi = 1;
+		allow_ipmi = 1;
+	}
+
+	if( allow_usb && nutscan_avail_usb ) {
 		printq(quiet,"Scanning USB bus.\n");
 #ifdef HAVE_PTHREAD
-		pthread_create(&thread[TYPE_USB],NULL,run_usb,NULL);
+		if(pthread_create(&thread[TYPE_USB],NULL,run_usb,NULL)) {
+			nutscan_avail_usb = 0;
+		}
 #else
 		dev[TYPE_USB] = nutscan_scan_usb();
 #endif /* HAVE_PTHREAD */
 	}
-#endif /* WITH_USB */
 
-#ifdef WITH_SNMP
-	if( allow_all || allow_snmp) {
+	if( allow_snmp && nutscan_avail_snmp ) {
 		if( start_ip == NULL ) {
 			printq(quiet,"No start IP, skipping SNMP\n");
 		}
 		else {
 			printq(quiet,"Scanning SNMP bus.\n");
 #ifdef HAVE_PTHREAD
-			pthread_create(&thread[TYPE_SNMP],NULL,run_snmp,&sec);
+			if( pthread_create(&thread[TYPE_SNMP],NULL,run_snmp,&sec)) {
+				nutscan_avail_snmp = 0;
+			}
 #else
 			dev[TYPE_SNMP] = nutscan_scan_snmp(start_ip,end_ip,timeout,&sec);
 #endif /* HAVE_PTHREAD */
 		}
 	}
-#endif /* WITH_SNMP */
 
-#ifdef WITH_NEON
-	if( allow_all || allow_xml) {
+	if( allow_xml && nutscan_avail_xml_http) {
 		printq(quiet,"Scanning XML/HTTP bus.\n");
 #ifdef HAVE_PTHREAD
-		pthread_create(&thread[TYPE_XML],NULL,run_xml,NULL);
+		if(pthread_create(&thread[TYPE_XML],NULL,run_xml,NULL)) {
+			nutscan_avail_xml_http = 0;
+		}
 #else
 		dev[TYPE_XML] = nutscan_scan_xml_http(timeout);
 #endif /* HAVE_PTHREAD */
 	}
-#endif /* WITH_NEON */
 
-	if( allow_all || allow_oldnut) {
+	if( allow_oldnut && nutscan_avail_nut) {
 		if( start_ip == NULL ) {
 			printq(quiet,"No start IP, skipping NUT bus (old connect method)\n");
 		}
 		else {
 			printq(quiet,"Scanning NUT bus (old connect method).\n");
 #ifdef HAVE_PTHREAD
-			pthread_create(&thread[TYPE_NUT],NULL,run_nut_old,NULL);
+			if(pthread_create(&thread[TYPE_NUT],NULL,run_nut_old,NULL)) {
+				nutscan_avail_nut = 0;
+			}
 #else
 			dev[TYPE_NUT] = nutscan_scan_nut(start_ip,end_ip,port,timeout);
 #endif /* HAVE_PTHREAD */
 		}
 	}
 
-#ifdef WITH_AVAHI
-	if( allow_all || allow_avahi) {
+	if( allow_avahi && nutscan_avail_avahi) {
 		printq(quiet,"Scanning NUT bus (avahi method).\n");
 #ifdef HAVE_PTHREAD
-		pthread_create(&thread[TYPE_AVAHI],NULL,run_avahi,NULL);
+		if(pthread_create(&thread[TYPE_AVAHI],NULL,run_avahi,NULL)) {
+			nutscan_avail_avahi = 0;
+		}
 #else
-		dev[TYPE_AVAHI] = nutscan_scan_avahi();
+		dev[TYPE_AVAHI] = nutscan_scan_avahi(timeout);
 #endif /* HAVE_PTHREAD */
 	}
-#endif /* WITH_AVAHI */
 
-#ifdef WITH_IPMI
-	if( allow_all || allow_ipmi) {
+	if( allow_ipmi  && nutscan_avail_ipmi) {
 		printq(quiet,"Scanning IPMI bus.\n");
 #ifdef HAVE_PTHREAD
-		pthread_create(&thread[TYPE_IPMI],NULL,run_ipmi,NULL);
+		if(pthread_create(&thread[TYPE_IPMI],NULL,run_ipmi,NULL)) {
+			nutscan_avail_ipmi = 0;
+		}
 #else
 		dev[TYPE_IPMI] = nutscan_scan_ipmi();
 #endif /* HAVE_PTHREAD */
 	}
-#endif /* HAVE_PTHREAD */
 
 #ifdef HAVE_PTHREAD
-#ifdef WITH_USB
-	pthread_join(thread[TYPE_USB],NULL);
-#endif /* WITH_USB */
-#ifdef WITH_SNMP
-	pthread_join(thread[TYPE_SNMP],NULL);
-#endif /* WITH_SNMP */
-#ifdef WITH_NEON
-	pthread_join(thread[TYPE_XML],NULL);
-#endif /* WITH_NEON */
-	pthread_join(thread[TYPE_NUT],NULL);
-#ifdef WITH_AVAHI
-	pthread_join(thread[TYPE_AVAHI],NULL);
-#endif /* WITH_AVAHI */
-#ifdef WITH_IPMI
-	pthread_join(thread[TYPE_IPMI],NULL);
-#endif /* WITH_IPMI */
+	if( allow_usb && nutscan_avail_usb ) {
+		pthread_join(thread[TYPE_USB],NULL);
+	}
+	if( allow_snmp && nutscan_avail_snmp ) {
+		pthread_join(thread[TYPE_SNMP],NULL);
+	}
+	if( allow_xml && nutscan_avail_xml_http ) {
+		pthread_join(thread[TYPE_XML],NULL);
+	}
+	if( allow_oldnut && nutscan_avail_nut ) {
+		pthread_join(thread[TYPE_NUT],NULL);
+	}
+	if( allow_avahi && nutscan_avail_avahi ) {
+		pthread_join(thread[TYPE_AVAHI],NULL);
+	}
+	if( allow_ipmi && nutscan_avail_ipmi ) {
+		pthread_join(thread[TYPE_IPMI],NULL);
+	}
 #endif /* HAVE_PTHREAD */
 
-#ifdef WITH_USB
 	display_func(dev[TYPE_USB]);
 	nutscan_free_device(dev[TYPE_USB]);
-#endif /* WITH_USB */
-#ifdef WITH_SNMP
+
 	display_func(dev[TYPE_SNMP]);
 	nutscan_free_device(dev[TYPE_SNMP]);
-#endif /* WITH_SNMP */
-#ifdef WITH_NEON
+
 	display_func(dev[TYPE_XML]);
 	nutscan_free_device(dev[TYPE_XML]);
-#endif /* WITH_NEON */
+
 	display_func(dev[TYPE_NUT]);
 	nutscan_free_device(dev[TYPE_NUT]);
-#ifdef WITH_AVAHI
+
 	display_func(dev[TYPE_AVAHI]);
 	nutscan_free_device(dev[TYPE_AVAHI]);
-#endif /* WITH_AVAHI */
-#ifdef WITH_IPMI
+
 	display_func(dev[TYPE_IPMI]);
 	nutscan_free_device(dev[TYPE_IPMI]);
-#endif /* WITH_IPMI */
 	return EXIT_SUCCESS;
 }

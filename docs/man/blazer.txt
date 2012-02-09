@@ -156,6 +156,14 @@ Select a serial-over-USB subdriver to use. You have a choice between *phoenix*,
 *ippon*, *cypress*, and *krauler*. When using this option, it is mandatory to also
 specify the *vendorid* and *productid*.
 
+*langid_fix =* 'value'::
+
+Apply the language ID workaround to the krauler subdriver. This is mandatory
+for some devices to work (LDLC, Dynamix and others). You must to provide
+*value* (0x409 or 0x4095), according to your device entry in NUT hardware
+compatibility list (HCL).
+
+
 UPS COMMANDS
 ------------
 
@@ -298,3 +306,4 @@ Internet Resources:
 ~~~~~~~~~~~~~~~~~~~
 
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT HCL: http://www.networkupstools.org/stable-hcl.html

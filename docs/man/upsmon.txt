@@ -13,7 +13,7 @@ SYNOPSIS
 
 *upsmon* -c 'command'
 
-*upsmon* [-D] [-p] [-u 'user']
+*upsmon* [-D] [-K] [-p] [-u 'user']
 
 DESCRIPTION
 -----------

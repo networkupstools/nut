@@ -477,55 +477,48 @@ static int
 send_command( int cmd )
 {
 
-  int i, chk, checksum=0, iend=18, sizes, ret, kount; /*, j, uc; */
-  unsigned char ch, psend[19];
-  sizes = 19;
-  checksum = 0;
+  int i, chk, checksum = 0, iend = 18, sizes = 19, ret, kount; /*, j, uc; */
+  unsigned char ch, psend[sizes];
   
   /* mounting buffer to send */
 
-  for(i = 0; i < iend; i++ )
-    {
-      if ( i == 0 )
-	chk = 0x01;
-      else
+	for(i = 0; i < iend; i++ )
 	{
-	  if( i == 1)
-	    chk = cmd;
-	  else
-	    chk = 0x00; /* 0x20; */
+		if ( i == 0 )
+			chk = 0x01;
+		else
+		{
+			if( i == 1)
+				chk = cmd;
+			else
+				chk = 0x00; /* 0x20; */
+		}
+
+		ch = chk;
+		psend[i] = ch; /* psend[0 - 17] */
+		if( i > 0 )  /* psend[0] not computed */
+			checksum = checksum + chk;
 	}
 
-      ch = chk;
-      psend[i] = ch; /* psend[0 - 17] */
-      if( i > 0 )  /* psend[0] not computed */
-	checksum = checksum + chk;
-    }
+	ch = checksum;
+	ch = (~( ch) ); /* not ch  */
+	psend[iend] = ch;
 
-  ch = checksum;
-  ch = (~( ch) ); /* not ch  */
-  psend[iend] = ch;
-
-  /* send five times the command */
-  kount = 0;
-  while ( kount < 5 )
-    {
-      /* ret = ser_send_buf_pace(upsfd, UPSDELAY, psend, sizes ); */ /* optional delay */
-      
-      for(i=0; i < 19; i++)
+	/* send five times the command */
+	kount = 0;
+	while ( kount < 5 )
 	{
-	  ret = ser_send_char( upsfd, psend[i] );
-	  /* usleep ( UPSDELAY ); sending without delay */
+		/* ret = ser_send_buf_pace(upsfd, UPSDELAY, psend, sizes ); */ /* optional delay */
+
+		for(i = 0 ; i < sizes ; i++)
+		{
+			ret = ser_send_char( upsfd, psend[i] );
+			/* usleep ( UPSDELAY ); sending without delay */
+		}
+		usleep( UPSDELAY ); /* delay between sent command */
+		kount++;
 	}
-      
-      usleep( UPSDELAY ); /* delay between sent command */
-
-      kount++;
-    }
-
-
-  return ret;
-
+	return ret;
 }
 
 static void sendshut( void )
@@ -644,17 +637,6 @@ static void getupdateinfo(void)
 {
 	unsigned char  temp[256];
 	int tam;
-
-        int hours, mins;
- 
-        /* time update */
-        time_t *tmt;
-        struct tm *now;
-        tmt  = ( time_t * ) malloc( sizeof( time_t ) );
-        time( tmt );
-        now = localtime( tmt );
-        hours = now->tm_hour;
-        mins = now->tm_min;
 
 	temp[0] = 0; /* flush temp buffer */
 	tam = ser_get_buf_len(upsfd, temp, pacsize, 3, 0);

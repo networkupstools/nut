@@ -1,7 +1,7 @@
 /* usbhid-ups.c - Driver for USB and serial (MGE SHUT) HID UPS units
  *
  * Copyright (C)
- *   2003-2009 Arnaud Quette <arnaud.quette@gmail.com>
+ *   2003-2012 Arnaud Quette <arnaud.quette@gmail.com>
  *   2005      John Stamp <kinsayder@hotmail.com>
  *   2005-2006 Peter Selinger <selinger@users.sourceforge.net>
  *   2007-2009 Arjen de Korte <adkorte-guest@alioth.debian.org>
@@ -27,7 +27,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION		"0.35"
+#define DRIVER_VERSION		"0.36"
 
 #include "main.h"
 #include "libhid.h"
@@ -556,6 +556,11 @@ int instcmd(const char *cmdname, const char *extradata)
 		if (!strcasecmp(cmdname, "shutdown.return")) {
 			int	ret;
 
+			/* Ensure "ups.start.auto" is set to "yes", if supported */
+			if (dstate_getinfo("ups.start.auto")) {
+				setvar("ups.start.auto", "yes");
+			}
+
 			ret = instcmd("load.on.delay", dstate_getinfo("ups.delay.start"));
 			if (ret != STAT_INSTCMD_HANDLED) {
 				return ret;
@@ -566,6 +571,11 @@ int instcmd(const char *cmdname, const char *extradata)
 
 		if (!strcasecmp(cmdname, "shutdown.stayoff")) {
 			int	ret;
+
+			/* Ensure "ups.start.auto" is set to "no", if supported */
+			if (dstate_getinfo("ups.start.auto")) {
+				setvar("ups.start.auto", "no");
+			}
 
 			ret = instcmd("load.on.delay", "-1");
 			if (ret != STAT_INSTCMD_HANDLED) {

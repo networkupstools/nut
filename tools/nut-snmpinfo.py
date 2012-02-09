@@ -79,7 +79,7 @@ output_file.write( "/* SNMP IDs device table */\n" )
 output_file.write( "static snmp_device_id_t snmp_device_table[] = {\n" )
 
 for filename in glob.glob('../drivers/*-mib.c'):
-	list_of_line = file(filename,'r').read().split(';')
+	list_of_line = open(filename,'r').read().split(';')
 	for line in list_of_line:
 		if "mib2nut_info_t" in line:
 			#clean up line
@@ -116,7 +116,7 @@ for filename in glob.glob('../drivers/*-mib.c'):
 			line = line.rstrip(" ")
 			line2 = line.split(" ")
 
- 			sysoid = ""
+			sysoid = ""
 			for elem in line2:
 				if elem[0] == "\"":
 					clean_elem = re.sub("\"", "", elem)

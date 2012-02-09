@@ -208,6 +208,11 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 */
+	/* FIXME: the below is only valid if (mode == MODE_DUMMY)
+	 * if (mode == MODE_REPEATER) => forward
+	 * if (mode == MODE_META) => ?
+	 */
+
 	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
 	return STAT_INSTCMD_UNKNOWN;
 }
@@ -265,6 +270,10 @@ static int setvar(const char *varname, const char *val)
 
 	upsdebugx(2, "entering setvar(%s, %s)", varname, val);
 
+	/* FIXME: the below is only valid if (mode == MODE_DUMMY)
+	 * if (mode == MODE_REPEATER) => forward
+	 * if (mode == MODE_META) => ?
+	 */
 	if (!strncmp(varname, "ups.status", 10))
 	{
 		status_init();

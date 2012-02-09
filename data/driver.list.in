@@ -160,6 +160,10 @@
 "Cyber Power Systems"	"ups"	"2"	"CP1000AVRLCD"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"2"	"CP1350AVRLCD"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"2"	"CP1500AVRLCD"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"ups"	"3"	"RMCARD100"	""	"snmp-ups"
+"Cyber Power Systems"	"ups"	"3"	"RMCARD201"	""	"snmp-ups"
+"Cyber Power Systems"	"ups"	"3"	"RMCARD202"	""	"snmp-ups"
+"Cyber Power Systems"	"ups"	"3"	"RMCARD301"	""	"snmp-ups"
 
 "Cyclades"	"pdu"	"1"	"PM8"	"8 outlets"	"powerman-pdu (experimental)"
 "Cyclades"	"pdu"	"1"	"PM10"	"10 outlets"	"powerman-pdu (experimental)"
@@ -196,6 +200,7 @@
 
 "Dynamix"	"ups"	"2"	"UPS1700D"	""	"blazer_ser"
 "Dynamix"	"ups"	"2"	"UPS-650VA"	""	"blazer_ser"
+"Dynamix"	"ups"	"2"	"650VA/1000VA"	"USB"	"blazer_usb langid_fix=0x0409"
 
 "Dynex"	"ups"	"1"	"975AVR"	""	"genericups upstype=7"
 "Dynex"	"ups"	"2"	"DX-800U"	"USB"	"usbhid-ups"
@@ -351,6 +356,8 @@
 
 "Krauler"	"ups"	"2"	"UP-D1200VA"	"USB"	"blazer_usb"
 "Krauler"	"ups"	"2"	"UP-M500VA"	"USB"	"blazer_usb"
+
+"LDLC"	"ups"	"2"	"UPS-1200D"	""	"blazer_usb langid_fix=0x4095"
 
 "Lestar"	"ups"	"2"	"MD-800E"	""	"blazer_ser"
 
@@ -686,6 +693,10 @@
 "Repotec"	"ups"	"1"	"RPT-800A"	""	"genericups upstype=13"
 "Repotec"	"ups"	"1"	"RPT-162A"	""	"genericups upstype=13"
 
+"Riello"	"ups"	"3"	"Riello Sentinel SDL 6000-7"	"Netman Plus 102 SNMP Card"	"snmp-ups"
+"Riello"	"ups"	"3"	"Riello Sentinel Dual SDH 1000-7"	"Netman Plus 102 SNMP Card"	"snmp-ups"
+"Riello"	"ups"	"3"	"(various)"	"Netman Plus 102 SNMP Card"	"snmp-ups"
+
 "Rocketfish"	"ups"	"2"	"RF-1000VA / RF-1025VA"	""	"usbhid-ups"
 
 "SmartLabs"	"pdu"	"1"	"2412S Power Line Modem"	"for X10/Insteon"	"powerman-pdu (experimental)"
@@ -729,6 +740,7 @@
 "Sysgration"	"ups"	"2"	"UPGUARDS Pro650"	""	"blazer_ser"
 
 "Tecnoware"	"ups"	"2"	"Easy Power 1200"	""	"blazer_ser"
+"Tecnoware"	"ups"	"2"	"UPS ERA LCD 0.65"	""	"blazer_usb langid_fix=0x409"
 
 "Tripp-Lite"	"ups"	"1"	"INTERNETOFFICE700"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"ups"	"2"	"OMNIVS1000"	"USB"	"tripplite_usb"
@@ -773,10 +785,12 @@
 "Various"	"ups"	"4"	"(various)"	"SEC protocol"	"gamatronic"
 "Various"	"ups"	"1"	"(various)"	"Generic RUPS model"	"genericups upstype=4"
 "Various"	"ups"	"1"	"(various)"	"Generic RUPS 2000 (Megatec M2501 cable)"	"genericups upstype=21"
-"Various"	"ups"	"2"	"(various)"	"Q1 / Megatec protocol"	"blazer_ser"
+"Various"	"ups"	"2"	"(various serial)"	"Q1 / Megatec protocol"	"blazer_ser"
+"Various"	"ups"	"2"	"(various USB)"	"Q1 / Megatec protocol"	"blazer_usb"
 "Various"	"ups"	"2"	"(various)"	"PhoenixTec protocol"	"bestups"
 "Various"	"ups"	"3"	"(various)"	"SNMP - RFC 1628"	"snmp-ups (experimental)"
 "Various"	"ups"	"1"	"(various)"	"Safenet software"	"safenet"
+"Various"	"ups"	"2"	"(Various USB)"	"UPSilon 2000 software"	"blazer_usb langid_fix=0x409"
 
 "Victron/IMV"	"ups"	"1"	"(various)"	""	"victronups"
 "Victron/IMV"	"ups"	"1"	"Lite"	"crack cable"	"genericups upstype=10"

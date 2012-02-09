@@ -183,7 +183,7 @@ newmge_shut_LDADD = $(LDADD)
 # SNMP
 snmp_ups_SOURCES = snmp-ups.c apc-mib.c baytech-mib.c compaq-mib.c eaton-mib.c \
  ietf-mib.c mge-mib.c netvision-mib.c powerware-mib.c raritan-pdu-mib.c \
- bestpower-mib.c
+ bestpower-mib.c cyberpower-mib.c
 snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS)
 
 # HAL
@@ -229,7 +229,7 @@ dist_noinst_HEADERS = apc-mib.h apc-hid.h baytech-mib.h bcmxcp.h	\
  powercom.h powerpanel.h powerp-bin.h powerp-txt.h powerware-mib.h raritan-pdu-mib.h	\
  safenet.h serial.h snmp-ups.h solis.h tripplite.h tripplite-hid.h 			\
  upshandler.h usb-common.h usbhid-ups.h powercom-hid.h compaq-mib.h idowell-hid.h \
- apcsmart.h apcsmart_tabs.h apcsmart-old.h
+ apcsmart.h apcsmart_tabs.h apcsmart-old.h cyberpower-mib.h
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,

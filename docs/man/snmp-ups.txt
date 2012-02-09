@@ -46,6 +46,9 @@ Various BayTech PDUs
 *cpqpower*::
 HP/Compaq AF401A management card, perhaps others
 
+*cyberpower*::
+Cyberpower RMCARD201. Should also support RMCARD100 (net version), RMCARD202 and RMCARD301
+
 EXTRA ARGUMENTS
 ---------------
 

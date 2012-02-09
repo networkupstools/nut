@@ -7,6 +7,11 @@ This file lists changes that affect users who installed older versions
 of this software.  When upgrading from an older version, be sure to
 check this file to see if you need to make changes to your system.
 
+Changes from 2.6.2 to 2.6.3
+---------------------------
+
+- nothing that affects upgraded systems.
+
 Changes from 2.6.1 to 2.6.2
 ---------------------------
 
@@ -197,7 +202,6 @@ which makes it work with upsclient.
 
 - 'make install-misc' is now 'make install-lib'.  The misc directory
 has been gone for a long time, and the target was ambiguous.
->>>>>>> switch UPGRADING information to AsciiDoc, and integrate these in the User Manual.
 
 - The newapc driver has been renamed to apcsmart.  If you previously
 used newapc, make sure you delete the old binary and fix your 

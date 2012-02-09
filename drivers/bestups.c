@@ -23,7 +23,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Best UPS driver"
-#define DRIVER_VERSION	"1.05"
+#define DRIVER_VERSION	"1.06"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -422,6 +422,7 @@ void upsdrv_help(void)
 void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE, "nombattvolt", "Override nominal battery voltage");
+	addvar(VAR_VALUE, "battvoltmult", "Battery voltage multiplier");
 	addvar(VAR_VALUE, "ID", "Force UPS ID response string");
 }
 

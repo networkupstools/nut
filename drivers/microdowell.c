@@ -191,24 +191,23 @@ int CheckErrCode(unsigned char * Buff)
 
 void SendCmdToSerial(unsigned char *Buff, int Len)
 {
-   int i, ret ;
-   unsigned char Tmp[20], Xor ;
+	int i;
+	unsigned char Tmp[20], Xor ;
 
-   Tmp[0] = STX_CHAR ;
-   Xor = Tmp[1] = (unsigned char) (Len & 0x1f) ;
-   for (i=0 ; i < Tmp[1] ; i++)
-      {
-      Tmp[i+2] = Buff[i] ;
-      Xor ^= Buff[i] ;
-      }
-   Tmp[Len+2] = Xor ;
+	Tmp[0] = STX_CHAR ;
+	Xor = Tmp[1] = (unsigned char) (Len & 0x1f) ;
+	for (i=0 ; i < Tmp[1] ; i++)
+	{
+		Tmp[i+2] = Buff[i] ;
+		Xor ^= Buff[i] ;
+	}
+	Tmp[Len+2] = Xor ;
 
 	upsdebug_hex(4, "->UPS", Tmp, Len+3) ;
 
 	/* flush serial port */
-	ret = ser_flush_in(upsfd, "", 0) ; /* empty input buffer */
-
-	ret = ser_send_buf(upsfd, Tmp, Len+3) ; /* send data to the UPS */
+	ser_flush_in(upsfd, "", 0) ; /* empty input buffer */
+	ser_send_buf(upsfd, Tmp, Len+3) ; /* send data to the UPS */
 }
 
 

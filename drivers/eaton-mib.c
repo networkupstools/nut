@@ -211,7 +211,7 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.05"
+#define EATON_MARLIN_MIB_VERSION	"0.06"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
@@ -220,6 +220,14 @@ static info_lkp_t marlin_outlet_status_info[] = {
 	{ 1, "on" },
 	{ 2, "pendingOff" }, /* transitional status */
 	{ 3, "pendingOn" }, /* transitional status */
+	{ 0, NULL }
+};
+
+/* Ugly hack: having the matching OID present means that the outlet is
+ * switchable. So, it should not require this value lookup */
+static info_lkp_t outlet_switchability_info[] = {
+	{ -1, "yes" },
+	{ 0, "yes" },
 	{ 0, NULL }
 };
 
@@ -301,7 +309,6 @@ static snmp_info_t eaton_marlin_mib[] = {
 
 	/* outlet template definition
 	 * Indexes start from 1, ie outlet.1 => <OID>.1 */
-	{ "outlet.%i.switchable", 0, 1, ".1.3.6.1.4.1.534.6.6.7.6.6.1.3.0.%i", "yes", SU_FLAG_STATIC | SU_OUTLET, NULL, NULL },
 	/* Note: the first definition is used to determine the base index (ie 0 or 1) */
 	{ "outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.1.1.3.0.%i", NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_OUTLET, NULL, NULL },
 	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.6.1.2.0.%i",
@@ -312,6 +319,8 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "outlet.%i.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.6.5.1.3.0.%i", NULL, SU_OUTLET, NULL, NULL },
 	{ "outlet.%i.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.3.1.2.0.%i", NULL, SU_OUTLET, NULL, NULL },
 	{ "outlet.%i.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.6.5.1.2.0.%i", NULL, SU_OUTLET, NULL, NULL },
+	/* FIXME: handle non switchable units (only measurements), which do not expose this OID */
+	{ "outlet.%i.switchable", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.6.1.3.0.%i", "no", SU_FLAG_STATIC | SU_FLAG_OK, &outlet_switchability_info[0], NULL },
 
 	/* TODO: handle statistics
 	 * outletWh.0.1

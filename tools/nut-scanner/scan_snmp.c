@@ -18,16 +18,17 @@
  */
 
 #include "common.h"
+#include "nut-scan.h"
 
 #ifdef WITH_SNMP
 
-#include "nut-scan.h"
 #ifndef WIN32
 #include <sys/socket.h>
 #endif
 
 #include <stdio.h>
 #include <string.h>
+#include <ltdl.h>
 
 /* workaround for buggy Net-SNMP config
  * from drivers/snmp-ups.h */
@@ -69,13 +70,177 @@ static int thread_count = 0;
 #endif
 long g_usec_timeout ;
 
+/* dynamic link library stuff */
+static lt_dlhandle dl_handle = NULL;
+static const char *dl_error = NULL;
+
+static void (*nut_init_snmp)(const char *type);
+static void (*nut_snmp_sess_init)(netsnmp_session * session);
+static void * (*nut_snmp_sess_open)(struct snmp_session *session);
+static int (*nut_snmp_sess_close)(void *handle);
+static struct snmp_session * (*nut_snmp_sess_session)(void *handle); 
+static void * (*nut_snmp_parse_oid)(const char *input, oid *objid,
+		size_t *objidlen);
+static struct snmp_pdu * (*nut_snmp_pdu_create) (int command );
+netsnmp_variable_list * (*nut_snmp_add_null_var)(netsnmp_pdu *pdu,
+			const oid *objid, size_t objidlen);
+static int (*nut_snmp_sess_synch_response) (void *sessp, netsnmp_pdu *pdu,
+			netsnmp_pdu **response);
+static int (*nut_snmp_oid_compare) (const oid *in_name1, size_t len1,
+			const oid *in_name2, size_t len2);
+static void (*nut_snmp_free_pdu) (netsnmp_pdu *pdu);
+static int (*nut_generate_Ku)(const oid * hashtype, u_int hashtype_len,
+			u_char * P, size_t pplen, u_char * Ku, size_t * kulen);
+static const char * (*nut_snmp_api_errstring) (int snmp_errnumber);
+static int (*nut_snmp_errno);
+static oid * (*nut_usmAESPrivProtocol);
+static oid * (*nut_usmHMACMD5AuthProtocol);
+static oid * (*nut_usmHMACSHA1AuthProtocol);
+static oid * (*nut_usmDESPrivProtocol);
+
+/* return 0 on error */
+int nutscan_load_snmp_library()
+{
+	if( dl_handle != NULL ) {
+		/* if previous init failed */
+		if( dl_handle == (void *)1 ) {
+			return 0;
+		}
+		/* init has already been done */
+		return 1;
+	}
+
+        if( lt_dlinit() != 0 ) {
+                fprintf(stderr, "Error initializing lt_init\n");
+                return 0;
+        }
+
+	dl_handle = lt_dlopenext("libnetsnmp");
+	if (!dl_handle) {
+		dl_error = lt_dlerror();
+		goto err;
+	}
+
+	lt_dlerror();	/* Clear any existing error */
+	*(void **) (&nut_init_snmp) = lt_dlsym(dl_handle, "init_snmp");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
+
+	*(void **) (&nut_snmp_sess_init) = lt_dlsym(dl_handle,
+							"snmp_sess_init");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
+
+	*(void **) (&nut_snmp_sess_open) = lt_dlsym(dl_handle,
+							"snmp_sess_open");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
+
+	*(void **) (&nut_snmp_sess_close) = lt_dlsym(dl_handle,
+							"snmp_sess_close");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
+
+	*(void **) (&nut_snmp_sess_session) = lt_dlsym(dl_handle,
+							"snmp_sess_session");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
+
+	*(void **) (&nut_snmp_parse_oid) = lt_dlsym(dl_handle,
+							"snmp_parse_oid");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
+
+	*(void **) (&nut_snmp_pdu_create) = lt_dlsym(dl_handle,
+							"snmp_pdu_create");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
+
+	*(void **) (&nut_snmp_add_null_var) = lt_dlsym(dl_handle,
+							"snmp_add_null_var");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
+
+	*(void **) (&nut_snmp_sess_synch_response) = lt_dlsym(dl_handle,
+						"snmp_sess_synch_response");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
+
+	*(void **) (&nut_snmp_oid_compare) = lt_dlsym(dl_handle,
+							"snmp_oid_compare");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
+
+	*(void **) (&nut_snmp_free_pdu) = lt_dlsym(dl_handle,"snmp_free_pdu");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
+
+	*(void **) (&nut_generate_Ku) = lt_dlsym(dl_handle, "generate_Ku");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
+
+	*(void **) (&nut_snmp_api_errstring) = lt_dlsym(dl_handle,
+							"snmp_api_errstring");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
+
+	*(void **) (&nut_snmp_errno) = lt_dlsym(dl_handle, "snmp_errno");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
+
+	*(void **) (&nut_usmAESPrivProtocol) = lt_dlsym(dl_handle,
+							"usmAESPrivProtocol");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
+
+	*(void **) (&nut_usmHMACMD5AuthProtocol) = lt_dlsym(dl_handle,
+						"usmHMACMD5AuthProtocol");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
+
+	*(void **) (&nut_usmHMACSHA1AuthProtocol) = lt_dlsym(dl_handle,
+						"usmHMACSHA1AuthProtocol");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
+
+	*(void **) (&nut_usmDESPrivProtocol) = lt_dlsym(dl_handle,
+						"usmDESPrivProtocol");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
+
+	return 1;
+err:
+	fprintf(stderr, "%s\n", dl_error);
+	dl_handle = (void *)1;
+	return 0;
+}
+/* end of dynamic link library stuff */
+
 static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response,char * mib)
 {
 	nutscan_device_t * dev = NULL;
 	struct snmp_session * session;
 	char * buf;
 
-	session = snmp_sess_session(sec->handle);
+	session = (*nut_snmp_sess_session)(sec->handle);
 	if(session == NULL) {
 		return;
 	}
@@ -151,21 +316,21 @@ static struct snmp_pdu * scan_snmp_get_manufacturer(char* oid_str,void* handle)
 
 	/* create and send request. */
 	name_len = MAX_OID_LEN;
-	if (!snmp_parse_oid(oid_str, name, &name_len)) {
+	if (!(*nut_snmp_parse_oid)(oid_str, name, &name_len)) {
 		index++;
 		return NULL;
 	}
 
-	pdu = snmp_pdu_create(SNMP_MSG_GET);
+	pdu = (*nut_snmp_pdu_create)(SNMP_MSG_GET);
 
 	if (pdu == NULL) {
 		index++;
 		return NULL;
 	}
 
-	snmp_add_null_var(pdu, name, name_len);
+	(*nut_snmp_add_null_var)(pdu, name, name_len);
 
-	status = snmp_sess_synch_response(handle,pdu, &response);
+	status = (*nut_snmp_sess_synch_response)(handle,pdu, &response);
 	if( response == NULL ) {
 		index++;
 		return NULL;
@@ -174,11 +339,11 @@ static struct snmp_pdu * scan_snmp_get_manufacturer(char* oid_str,void* handle)
 	if(status!=STAT_SUCCESS||response->errstat!=SNMP_ERR_NOERROR||
 			response->variables == NULL ||
 			response->variables->name == NULL ||
-			snmp_oid_compare(response->variables->name,
+			(*nut_snmp_oid_compare)(response->variables->name,
 				response->variables->name_length,
 				name, name_len) != 0 || 
 			response->variables->val.string == NULL ) {
-		snmp_free_pdu(response);
+		(*nut_snmp_free_pdu)(response);
 		index++;
 		return NULL;
 	}
@@ -202,7 +367,7 @@ static void try_all_oid(void * arg)
 
 		scan_snmp_add_device(sec,response,snmp_device_table[index].mib);
 
-		snmp_free_pdu(response);
+		(*nut_snmp_free_pdu)(response);
 		response = NULL;
 
 		index++;
@@ -211,7 +376,7 @@ static void try_all_oid(void * arg)
 
 static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 {
-	snmp_sess_init(snmp_sess);
+	(*nut_snmp_sess_init)(snmp_sess);
 
 	snmp_sess->peername = sec->peername;
 
@@ -283,16 +448,17 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
                	snmp_sess->securityAuthKeyLen = USM_AUTH_KU_LEN;
 
 		/* default to MD5 */
-		snmp_sess->securityAuthProto = usmHMACMD5AuthProtocol;
-		snmp_sess->securityAuthProtoLen =sizeof(usmHMACMD5AuthProtocol)/
-							sizeof(oid);
+		snmp_sess->securityAuthProto = (*nut_usmHMACMD5AuthProtocol);
+		snmp_sess->securityAuthProtoLen =
+				sizeof((*nut_usmHMACMD5AuthProtocol))/
+				sizeof(oid);
 
 		if( sec->authProtocol ) {
 			if (strcmp(sec->authProtocol, "SHA") == 0) {
 				snmp_sess->securityAuthProto =
-							usmHMACSHA1AuthProtocol;
+						(*nut_usmHMACSHA1AuthProtocol);
 				snmp_sess->securityAuthProtoLen =
-					sizeof(usmHMACSHA1AuthProtocol)/
+					sizeof((*nut_usmHMACSHA1AuthProtocol))/
 					sizeof(oid);
 			}
 			else {
@@ -307,7 +473,7 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 
 		/* set the authentication key to a MD5/SHA1 hashed version of
 		 * our passphrase (must be at least 8 characters long) */
-		if (generate_Ku(snmp_sess->securityAuthProto,
+		if ((*nut_generate_Ku)(snmp_sess->securityAuthProto,
 					snmp_sess->securityAuthProtoLen,
 					(u_char *) sec->authPassword,
 					strlen(sec->authPassword),
@@ -325,15 +491,17 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 		}
 
 		/* default to DES */
-		snmp_sess->securityPrivProto=usmDESPrivProtocol;
+		snmp_sess->securityPrivProto=(*nut_usmDESPrivProtocol);
 		snmp_sess->securityPrivProtoLen =
-			sizeof(usmDESPrivProtocol)/sizeof(oid);
+			sizeof((*nut_usmDESPrivProtocol))/sizeof(oid);
 
 		if( sec->privProtocol ) {
 			if (strcmp(sec->privProtocol, "AES") == 0) {
-				snmp_sess->securityPrivProto=usmAESPrivProtocol;
+				snmp_sess->securityPrivProto=
+						(*nut_usmAESPrivProtocol);
 				snmp_sess->securityPrivProtoLen = 
-					sizeof(usmAESPrivProtocol)/sizeof(oid);
+					sizeof((*nut_usmAESPrivProtocol))/
+					sizeof(oid);
 			}
 			else {
 				if (strcmp(sec->privProtocol, "DES") != 0) {
@@ -348,7 +516,7 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 		/* set the private key to a MD5/SHA hashed version of
 		 * our passphrase (must be at least 8 characters long) */
 		snmp_sess->securityPrivKeyLen = USM_PRIV_KU_LEN;
-		if (generate_Ku(snmp_sess->securityAuthProto,
+		if ((*nut_generate_Ku)(snmp_sess->securityAuthProto,
 					snmp_sess->securityAuthProtoLen,
 					(u_char *) sec->privPassword,
 					strlen(sec->privPassword),
@@ -385,7 +553,7 @@ static void * try_SysOID(void * arg)
 	snmp_sess.timeout = g_usec_timeout;
 
 	/* Open the session */
-	handle = snmp_sess_open(&snmp_sess); /* establish the session */
+	handle = (*nut_snmp_sess_open)(&snmp_sess); /* establish the session */
 	if (handle == NULL) {
 		fprintf(stderr,"Failed to open SNMP session for %s.\n",
 			sec->peername);
@@ -393,24 +561,24 @@ static void * try_SysOID(void * arg)
 	}
 
 	/* create and send request. */
-	if (!snmp_parse_oid(SysOID, name, &name_len)) {
+	if (!(*nut_snmp_parse_oid)(SysOID, name, &name_len)) {
 		fprintf(stderr,"SNMP errors: %s\n",
-				snmp_api_errstring(snmp_errno));
-		snmp_sess_close(handle);
+				(*nut_snmp_api_errstring)((*nut_snmp_errno)));
+		(*nut_snmp_sess_close)(handle);
 		goto try_SysOID_free;
 	}
 
-	pdu = snmp_pdu_create(SNMP_MSG_GET);
+	pdu = (*nut_snmp_pdu_create)(SNMP_MSG_GET);
 
 	if (pdu == NULL) {
 		fprintf(stderr,"Not enough memory\n");
-		snmp_sess_close(handle);
+		(*nut_snmp_sess_close)(handle);
 		goto try_SysOID_free;
 	}
 
-	snmp_add_null_var(pdu, name, name_len);
+	(*nut_snmp_add_null_var)(pdu, name, name_len);
 
-	snmp_sess_synch_response(handle,
+	(*nut_snmp_sess_synch_response)(handle,
 			pdu, &response);
 
 	if (response) {
@@ -428,14 +596,14 @@ static void * try_SysOID(void * arg)
 					continue;
 				}
 				name_len = MAX_OID_LEN;
-				if (!snmp_parse_oid(
+				if (!(*nut_snmp_parse_oid)(
 					snmp_device_table[index].sysoid,
 					name, &name_len)) {
 					index++;
 					continue;
 				}
 
-				if ( snmp_oid_compare(
+				if ( (*nut_snmp_oid_compare)(
 					response->variables->val.objid,
 					response->variables->val_len/sizeof(oid),
 					name, name_len) == 0 ) {
@@ -447,7 +615,7 @@ static void * try_SysOID(void * arg)
 						scan_snmp_add_device(sec,resp,
 							snmp_device_table[index].mib);
 						sysoid_found = 1;
-						snmp_free_pdu(resp);
+						(*nut_snmp_free_pdu)(resp);
 					}
 				}
 				index++;
@@ -459,11 +627,11 @@ static void * try_SysOID(void * arg)
 			try_all_oid(sec);
 		}
 
-		snmp_free_pdu(response);
+		(*nut_snmp_free_pdu)(response);
 		response = NULL;
 	}
 
-	snmp_sess_close(handle);
+	(*nut_snmp_sess_close)(handle);
 
 try_SysOID_free:
 	if( sec->peername ) {
@@ -493,10 +661,15 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	pthread_mutex_init(&dev_mutex,NULL);
 #endif
 
+        if( !nutscan_avail_snmp ) {
+                return NULL;
+        }
+
+
 	g_usec_timeout = usec_timeout;
 
 	/* Initialize the SNMP library */
-	init_snmp("nut-scanner");
+	(*nut_init_snmp)("nut-scanner");
 
 	ip_str = nutscan_ip_iter_init(&ip, start_ip, stop_ip);
 
@@ -527,6 +700,11 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 #endif
 
 	return dev_ret;
+}
+#else /* WITH_SNMP */
+nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip,long usec_timeout, nutscan_snmp_t * sec)
+{
+	return NULL;
 }
 #endif /* WITH_SNMP */
 

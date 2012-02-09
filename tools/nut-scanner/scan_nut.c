@@ -23,7 +23,19 @@
 #ifdef HAVE_PTHREAD
 #include <pthread.h>
 #endif
+#include <ltdl.h>
 
+/* dynamic link library stuff */
+static lt_dlhandle dl_handle = NULL;
+static const char *dl_error = NULL;
+
+static int (*nut_upscli_splitaddr)(const char *buf,char **hostname, int *port);
+static int (*nut_upscli_tryconnect)(UPSCONN_t *ups, const char *host, int port,
+					int flags,struct timeval * timeout);
+static int (*nut_upscli_list_start)(UPSCONN_t *ups, unsigned int numq,
+					const char **query);
+static int (*nut_upscli_list_next)(UPSCONN_t *ups, unsigned int numq,
+			const char **query,unsigned int *numa, char ***answer);
 
 static nutscan_device_t * dev_ret = NULL;
 #ifdef HAVE_PTHREAD
@@ -34,6 +46,63 @@ struct scan_nut_arg {
 	char * hostname;
 	long timeout;
 };
+
+/* return 0 on error */
+int nutscan_load_upsclient_library()
+{
+
+        if( dl_handle != NULL ) {
+                /* if previous init failed */
+                if( dl_handle == (void *)1 ) {
+                        return 0;
+                }
+                /* init has already been done */
+                return 1;
+        }
+
+        if( lt_dlinit() != 0 ) {
+                fprintf(stderr, "Error initializing lt_init\n");
+                return 0;
+        }
+
+        dl_handle = lt_dlopenext("libupsclient");
+        if (!dl_handle) {
+                dl_error = lt_dlerror();
+                goto err;
+        }
+
+        lt_dlerror();      /* Clear any existing error */
+
+        *(void **) (&nut_upscli_splitaddr) = lt_dlsym(dl_handle,
+                                                        "upscli_splitaddr");
+        if ((dl_error = lt_dlerror()) != NULL)  {
+                goto err;
+        }
+
+        *(void **) (&nut_upscli_tryconnect) = lt_dlsym(dl_handle,
+							"upscli_tryconnect");
+        if ((dl_error = lt_dlerror()) != NULL)  {
+                goto err;
+        }
+
+        *(void **) (&nut_upscli_list_start) = lt_dlsym(dl_handle,
+							"upscli_list_start");
+        if ((dl_error = lt_dlerror()) != NULL)  {
+                goto err;
+        }
+
+        *(void **) (&nut_upscli_list_next) = lt_dlsym(dl_handle,
+							"upscli_list_next");
+        if ((dl_error = lt_dlerror()) != NULL)  {
+                goto err;
+        }
+
+        return 1;
+err:
+        fprintf(stderr, "%s\n", dl_error);
+        dl_handle = (void *)1;
+        return 0;
+}
 
 /* FIXME: SSL support */
 static void * list_nut_devices(void * arg)
@@ -56,24 +125,24 @@ static void * list_nut_devices(void * arg)
 	query[0] = "UPS";
 	numq = 1;
 
-	if (upscli_splitaddr(target_hostname, &hostname, &port) != 0) {
+	if ((*nut_upscli_splitaddr)(target_hostname, &hostname, &port) != 0) {
 		free(target_hostname);
 		free(nut_arg);
 		return NULL;
 	}
-	if (upscli_tryconnect(ups, hostname, port,UPSCLI_CONN_TRYSSL,&tv) < 0) {
-		free(target_hostname);
-		free(nut_arg);
-		return NULL;
-	}
-
-	if(upscli_list_start(ups, numq, query) < 0) {
+	if ((*nut_upscli_tryconnect)(ups, hostname, port,UPSCLI_CONN_TRYSSL,&tv) < 0) {
 		free(target_hostname);
 		free(nut_arg);
 		return NULL;
 	}
 
-	while (upscli_list_next(ups, numq, query, &numa, &answer) == 1) {
+	if((*nut_upscli_list_start)(ups, numq, query) < 0) {
+		free(target_hostname);
+		free(nut_arg);
+		return NULL;
+	}
+
+	while ((*nut_upscli_list_next)(ups,numq, query, &numa, &answer) == 1) {
 		/* UPS <upsname> <description> */
 		if (numa < 3) {
 			free(target_hostname);
@@ -122,7 +191,6 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 	struct sigaction oldact;
 #endif
 	struct scan_nut_arg *nut_arg;
-
 #ifdef WIN32
 	WSADATA WSAdata;
 	WSAStartup(2,&WSAdata);
@@ -138,6 +206,9 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 	pthread_mutex_init(&dev_mutex,NULL);
 #endif
 
+	if( !nutscan_avail_nut ) {
+		return NULL;
+	}
 #ifndef WIN32
 	int change_action_handler = 0;
 	/* Ignore SIGPIPE if the caller hasn't set a handler for it yet */

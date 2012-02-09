@@ -56,9 +56,6 @@ static void get_upsdesc(nut_ctype_t *client, const char *upsname)
 		return;
 	}
 
-	if (!ups_available(ups, client))
-		return;
-
 	if (ups->desc) {
 		pconf_encode(ups->desc, esc, sizeof(esc));
 		sendback(client, "UPSDESC %s \"%s\"\n", upsname, esc);

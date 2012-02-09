@@ -410,8 +410,8 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,stru
 	char			sport[NI_MAXSERV];
 	int			v;
 	fd_set 			wfds;
-	socklen_t		error_size;
 	int			error;
+	socklen_t	error_size;
 
 #ifndef WIN32
 	long			fd_flags;

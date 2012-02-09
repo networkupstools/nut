@@ -678,7 +678,8 @@ int shut_packet_recv(TYPE_FD upsfd, u_char *Buf, int datalen)
 	u_short  Pos=0;
 	u_char   Retry=0;
 	int recv;
-	shut_data_t   sdata;
+	/* FIXME: use this
+	 * shut_data_t   sdata; */
 	
 	upsdebugx (4, "entering shut_packet_recv (%i)", datalen);
 	
@@ -687,7 +688,7 @@ int shut_packet_recv(TYPE_FD upsfd, u_char *Buf, int datalen)
 		/* if(serial_read (SHUT_TIMEOUT, &Start[0]) > 0) */
 		if(ser_get_char(upsfd, &Start[0], SHUT_TIMEOUT/1000, 0) > 0)
 		{
-			sdata.shut_pkt.bType = Start[0];
+			/* sdata.shut_pkt.bType = Start[0]; */
 			if(Start[0]==SHUT_SYNC)
 			{
 				upsdebugx (4, "received SYNC token");
@@ -702,7 +703,7 @@ int shut_packet_recv(TYPE_FD upsfd, u_char *Buf, int datalen)
 				{
 					upsdebug_hex(4, "Receive", Start, 2);
 					Size=Start[1]&0x0F;
-					sdata.shut_pkt.bLength = Size;
+					/* sdata.shut_pkt.bLength = Size; */
 					for(recv=0;recv<Size;recv++)
 					{
 						/* if(serial_read (SHUT_TIMEOUT, &Frame[recv]) < 1) */

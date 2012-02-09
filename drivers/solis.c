@@ -320,7 +320,6 @@ static void confups( void )
 {
 
 	int i, chks = 0;
-	unsigned char tst;
 
 	ConfigPack[0] = 0xCF;
 	ConfigPack[1] = ihour;
@@ -339,8 +338,6 @@ static void confups( void )
 	/* MSB zero */
 	ConfigPack[10] = ConfigPack[10] & (~(0x80));
 
-	tst = ConfigPack[10];
-
 	for(i=0; i < 11; i++)
 	  chks = chks + ConfigPack[i];
 
@@ -355,9 +352,8 @@ static void confups( void )
 static void prnInfo( void )
 {
 
-	int iw, sunday=0, monday=0, tuesday=0, wednesday=0, thursday=0, friday=0, saturday=0;
+	int sunday=0, monday=0, tuesday=0, wednesday=0, thursday=0, friday=0, saturday=0;
 	unsigned char dweek;
-	iw = weekn;
 
 	printf( UPS_DATE, Year, Month, Day );
 	printf( SYS_DATE, anon, mesn, dian, seman );
