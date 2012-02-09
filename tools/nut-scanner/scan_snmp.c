@@ -62,7 +62,6 @@
 static nutscan_device_t * dev_ret = NULL;
 #ifdef HAVE_PTHREAD
 static pthread_mutex_t dev_mutex;
-static pthread_mutex_t lib_mutex;
 static pthread_t * thread_array = NULL;
 static int thread_count = 0;
 #endif
@@ -99,10 +98,6 @@ static oid * (*nut_usmDESPrivProtocol);
 /* return 0 on error */
 int nutscan_load_snmp_library()
 {
-#ifdef HAVE_PTHREAD
-	pthread_mutex_lock(&lib_mutex);
-#endif
-
 	if( dl_handle != NULL ) {
 		/* if previous init failed */
 		if( dl_handle == (void *)1 ) {
@@ -228,16 +223,10 @@ int nutscan_load_snmp_library()
 		goto err;
 	}
 
-#ifdef HAVE_PTHREAD
-	pthread_mutex_unlock(&dev_mutex);
-#endif
 	return 1;
 err:
 	fprintf(stderr, "%s\n", dl_error);
 	dl_handle = (void *)1;
-#ifdef HAVE_PTHREAD
-	pthread_mutex_unlock(&dev_mutex);
-#endif
 	return 0;
 }
 /* end of dynamic link library stuff */
@@ -660,7 +649,6 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	pthread_t thread;
 
 	pthread_mutex_init(&dev_mutex,NULL);
-	pthread_mutex_init(&lib_mutex,NULL);
 #endif
 
         if( !nutscan_avail_snmp ) {
