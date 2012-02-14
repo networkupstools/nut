@@ -750,6 +750,7 @@
 "Tripp-Lite"	"ups"	"1"	"SMART700USB"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"ups"	"1"	"SMART1500RM2U"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"ups"	"1"	"SMART550USB"	"USB"	"tripplite_usb"
+"Tripp-Lite"	"ups"	"1"	"OMNISMART500"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"ups"	"1"	"SMART2200RMXL2U"	"USB, older models"	"tripplite_usb (experimental)"
 "Tripp-Lite"	"ups"	"1"	"SmartUPS"	""	"tripplite"
 "Tripp-Lite"	"ups"	"1"	"SmartOnline"	""	"tripplitesu"
