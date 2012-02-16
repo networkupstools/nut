@@ -86,11 +86,13 @@ fi
 dnl Disable Hotplug, DevD and udev support on Windows
 dnl (useful when cross-compiling)
 case "${target_os}" in
-    mingw* )
+    *mingw* )
+        dnl TODO: Actually detect it? See also nut_check_libusb.m4 for same.
+        LIBREGEX_LIBS='-lregex'
         hotplugdir=''
         udevdir=''
         devddir=''
-    ;;
+        ;;
     * )
         hotplugdir='/etc/hotplug'
         if test ! -d "${hotplugdir}"; then
@@ -112,7 +114,7 @@ case "${target_os}" in
                devddir=''
             fi
         fi
-    ;;
+        ;;
 esac
 
 RUN_AS_USER="nobody"
@@ -2511,6 +2513,7 @@ AC_SUBST(LIBGD_CFLAGS)
 AC_SUBST(LIBGD_LDFLAGS)
 AC_SUBST(LIBNETSNMP_CFLAGS)
 AC_SUBST(LIBNETSNMP_LIBS)
+AC_SUBST(LIBREGEX_LIBS)
 AC_SUBST(LIBUSB_CFLAGS)
 AC_SUBST(LIBUSB_LIBS)
 AC_SUBST(LIBNEON_CFLAGS)
