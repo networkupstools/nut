@@ -93,7 +93,7 @@ upsdrvctl_LDADD = $(LDADD_COMMON)
 
 # serial drivers: all of them use standard LDADD and CFLAGS
 apcsmart_SOURCES = apcsmart.c apcsmart_tabs.c
-apcsmart_LDADD = $(LDADD) -lregex
+apcsmart_LDADD = $(LDADD) $(LIBREGEX_LIBS)
 apcsmart_old_SOURCES = apcsmart-old.c
 bcmxcp_SOURCES = bcmxcp.c bcmxcp_ser.c
 bcmxcp_LDADD = $(LDADD) -lm

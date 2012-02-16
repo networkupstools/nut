@@ -61,7 +61,8 @@ pkgconfigdir='${libdir}/pkgconfig'
 
 dnl Disable Hotplug and udev support on Windows
 case ${target_os} in
-	mingw* )
+	*mingw* )
+		LIBREGEX_LIBS='-lregex'
 		hotplugdir=''
 		udevdir=''
 	;;
@@ -1056,6 +1057,7 @@ AC_DEFINE_UNQUOTED(SBINDIR, "${conftemp}", [Default path for super user executab
 AC_SUBST(OS_NAME)
 AC_SUBST(TREE_VERSION)
 AC_SUBST(LIBSSL_CFLAGS)
+AC_SUBST(LIBREGEX_LIBS)
 AC_SUBST(LIBSSL_LIBS)
 AC_SUBST(LIBGD_CFLAGS)
 AC_SUBST(LIBGD_LDFLAGS)
