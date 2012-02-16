@@ -610,6 +610,7 @@
 
 "Online"	"ups"	"1"	"P-Series"	""	"genericups upstype=14"
 "Online"	"ups"	"1"	"Zinto D"	""	"optiups"
+"Online"	"ups"	"2"	"Yunto YQ450"	""	"blazer_usb"
 
 "OnLite"	"ups"	"2"	"AQUA"	"50"	"blazer_ser"
 
