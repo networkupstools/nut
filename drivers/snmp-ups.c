@@ -70,6 +70,10 @@ static mib2nut_info_t *mib2nut[] = {
 	NULL
 };
 
+struct snmp_session g_snmp_sess, *g_snmp_sess_p;
+const char *OID_pwr_status;
+int g_pwr_battery;
+int pollfreq; /* polling frequency */
 int input_phases, output_phases, bypass_phases;
 
 /* pointer to the Snmp2Nut lookup table */
