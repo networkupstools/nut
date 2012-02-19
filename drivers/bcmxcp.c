@@ -186,6 +186,15 @@ info_lkp_t batt_test_info[] = {
 };
 
 
+/* allocate storage for shared variables (extern in bcmxcp.h) */
+BCMXCP_METER_MAP_ENTRY_t
+	bcmxcp_meter_map[BCMXCP_METER_MAP_MAX];
+BCMXCP_ALARM_MAP_ENTRY_t
+	bcmxcp_alarm_map[BCMXCP_ALARM_MAP_MAX];
+BCMXCP_STATUS_t
+	bcmxcp_status;
+
+
 /* get_word function from nut driver metasys.c */
 int get_word(const unsigned char *buffer)	/* return an integer reading a word in the supplied buffer */
 {
