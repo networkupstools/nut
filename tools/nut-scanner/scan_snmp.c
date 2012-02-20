@@ -56,6 +56,12 @@
 #endif
 #include "nutscan-snmp.h"
 
+/* Address API change */
+#ifndef usmAESPrivProtocol
+#define USMAESPRIVPROTOCOL "usmAES128PrivProtocol"
+#else
+#define USMAESPRIVPROTOCOL "usmAESPrivProtocol"
+#endif
 
 #define SysOID ".1.3.6.1.2.1.1.2.0"
 
@@ -200,7 +206,7 @@ int nutscan_load_snmp_library()
 	}
 
 	*(void **) (&nut_usmAESPrivProtocol) = lt_dlsym(dl_handle,
-							"usmAESPrivProtocol");
+							USMAESPRIVPROTOCOL);
 	if ((dl_error = lt_dlerror()) != NULL)  {
 		goto err;
 	}

@@ -47,6 +47,11 @@
 #include "cyberpower-mib.h"
 #include "ietf-mib.h"
 
+/* Address API change */
+#ifndef usmAESPrivProtocol
+#define usmAESPrivProtocol usmAES128PrivProtocol
+#endif
+
 static mib2nut_info_t *mib2nut[] = {
 	&apc,
 	&mge,
@@ -86,7 +91,7 @@ const char *mibvers;
 static void disable_transfer_oids(void);
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.65"
+#define DRIVER_VERSION		"0.66"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
