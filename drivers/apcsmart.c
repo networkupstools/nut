@@ -464,7 +464,8 @@ static int apc_write_long(const char *code)
 		return -1;
 	}
 
-	return ser_send_pace(upsfd, 50000, "%s", code + 1);
+	ret = ser_send_pace(upsfd, 50000, "%s", code + 1);
+	return ret < 0 ? ret : ret + 1;
 }
 
 static int apc_write_rep(unsigned char code)
@@ -1747,9 +1748,9 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 		*ptr++ = '\015'; /* pad with CRs */
 	*ptr = 0;
 
-	ret = apc_write_long(ptr);
+	ret = apc_write_long(temp);
 
-	if ((size_t)ret != strlen(ptr)) {
+	if (ret != APC_STRLEN + 1) {
 		upslog_with_errno(LOG_ERR, "setvar_string: apc_write_long failed");
 		return STAT_SET_FAILED;
 	}
