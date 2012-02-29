@@ -2,7 +2,7 @@
  * blazer.c: driver core for Megatec/Q1 protocol based UPSes
  *
  * A document describing the protocol implemented by this driver can be
- * found online at "http://www.networkupstools.org/protocols/megatec.html".
+ * found online at http://www.networkupstools.org/ups-protocols/megatec.html
  *
  * Copyright (C) 2008,2009 - Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
