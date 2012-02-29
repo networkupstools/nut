@@ -286,6 +286,26 @@ This replaces the old "ENUM" command.
 NOTE: this does not support the old "SELECTED" notation.  You must
 request the current value separately.
 
+CLIENTS
+~~~~~~~
+
+Form:
+
+	LIST CLIENTS <device_name>
+
+Response:
+
+	BEGIN LIST CLIENTS
+	CLIENT <client IP address> <device name>
+	...
+	END LIST CLIENTS
+
+	BEGIN LIST CLIENTS
+	CLIENT ::1 ups1
+	CLIENT ::1 ups2
+	CLIENT 192.168.1.2 ups2
+	END LIST CLIENTS
+
 SET
 ---
 
