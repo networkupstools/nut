@@ -73,7 +73,6 @@ extern nut_ctype_t	*firstclient;
 
 #define SIGCMD_STOP	SIGTERM
 #define SIGCMD_RELOAD	SIGHUP
-#define SIGCMD_INFO	SIGUSR1
 
 /* awkward way to make a string out of a numeric constant */
 
