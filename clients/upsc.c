@@ -1,6 +1,7 @@
 /* upsc - simple "client" to test communications 
 
    Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
+   Copyright (C) 2012  Arnaud Quette <arnaud.quette@free.fr>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -34,6 +35,7 @@ static void usage(const char *prog)
 
 	printf("usage: %s -l | -L [<hostname>[:port]]\n", prog);
 	printf("       %s <ups> [<variable>]\n", prog);
+	printf("       %s -c <ups>\n", prog);
 
 	printf("\nDemo program to display UPS variables.\n\n");
 
@@ -46,6 +48,10 @@ static void usage(const char *prog)
 	printf("  <ups>      - upsd server, <upsname>[@<hostname>[:<port>]] form\n");
 	printf("  <variable> - optional, display this variable only.\n");
 	printf("               Default: list all variables for <host>\n");
+
+	printf("\nThird form (lists clients connected to a device):\n");
+	printf("  -c         - lists each client connected on <ups>, one per line.\n");
+	printf("  <ups>      - upsd server, <upsname>[@<hostname>[:<port>]] form\n");
 }
 
 static void printvar(const char *var)
@@ -155,6 +161,39 @@ static void list_upses(int verbose)
 	}
 }
 
+static void list_clients(const char *devname)
+{
+	int		ret;
+	unsigned int	numq, numa;
+	const char	*query[4];
+	char		**answer;
+
+	query[0] = "CLIENT";
+	query[1] = devname;
+	numq = 2;
+
+	ret = upscli_list_start(ups, numq, query);
+
+	if (ret < 0) {
+		/* check for an old upsd */
+		if (upscli_upserror(ups) == UPSCLI_ERR_UNKCOMMAND) {
+			fatalx(EXIT_FAILURE, "Error: upsd is too old to support this query");
+		}
+
+		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
+	}
+
+	while ((ret=upscli_list_next(ups, numq, query, &numa, &answer)) == 1) {
+
+		/* CLIENT <upsname> <address> */
+		if (numa < 3) {
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %d args, need at least 3)", numa);
+		}
+
+		printf("%s\n", answer[2]);
+	}
+}
+
 static void clean_exit(void)
 {
 	if (ups) {
@@ -169,10 +208,10 @@ static void clean_exit(void)
 int main(int argc, char **argv)
 {
 	int	i, port;
-	int	varlist = 0, verbose = 0;
+	int	varlist = 0, clientlist = 0, verbose = 0;
 	const char	*prog = xbasename(argv[0]);
 
-	while ((i = getopt(argc, argv, "+hlLV")) != -1) {
+	while ((i = getopt(argc, argv, "+hlLcV")) != -1) {
 
 		switch (i)
 		{
@@ -180,6 +219,9 @@ int main(int argc, char **argv)
 			verbose = 1;
 		case 'l':
 			varlist = 1;
+			break;
+		case 'c':
+			clientlist = 1;
 			break;
 
 		case 'V':
@@ -216,6 +258,11 @@ int main(int argc, char **argv)
 
 	if (varlist) {
 		list_upses(verbose);
+		exit(EXIT_SUCCESS);
+	}
+
+	if (clientlist) {
+		list_clients(upsname);
 		exit(EXIT_SUCCESS);
 	}
 
