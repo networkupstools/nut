@@ -67,11 +67,13 @@ void check_perms(const char *fn);
 extern int		maxage, maxconn;
 extern char		*statepath, *datapath;
 extern upstype_t	*firstups;
+extern nut_ctype_t	*firstclient;
 
 /* map commands onto signals */
 
 #define SIGCMD_STOP	SIGTERM
 #define SIGCMD_RELOAD	SIGHUP
+#define SIGCMD_INFO	SIGUSR1
 
 /* awkward way to make a string out of a numeric constant */
 

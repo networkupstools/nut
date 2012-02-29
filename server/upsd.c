@@ -65,7 +65,7 @@ int	deny_severity = LOG_WARNING;
 	/* everything else */
 	const char	*progname;
 
-static nut_ctype_t	*firstclient = NULL;
+    nut_ctype_t	*firstclient = NULL;
 /* static nut_ctype_t	*lastclient = NULL; */
 
 	/* default is to listen on all local interfaces */
@@ -92,7 +92,7 @@ static handler_t	*handler = NULL;
 static char	pidfn[SMALLBUF];
 
 	/* set by signal handlers */
-static int	reload_flag = 0, exit_flag = 0;
+static int	reload_flag = 0, exit_flag = 0, info_flag = 0;
 
 static const char *inet_ntopW (struct sockaddr_storage *s)
 {
@@ -664,6 +664,22 @@ void poll_reload(void)
 	handler = xrealloc(handler, maxconn * sizeof(*handler));
 }
 
+/* log client info */
+static void client_info(void)
+{
+	nut_ctype_t		*client, *cnext;
+
+	if (firstclient) {
+		/* show connected clients */
+		for (client = firstclient; client; client = cnext) {
+			cnext = client->next;
+			upslogx(LOG_INFO, "Client %s connected to UPS [%s]\n",
+					client->addr, client->loginups);
+		}
+	} else
+		upslogx(LOG_INFO, "There aren't any connected clients\n");
+}
+
 /* service requests and check on new data */
 static void mainloop(void)
 {
@@ -680,6 +696,11 @@ static void mainloop(void)
 		conf_reload();
 		poll_reload();
 		reload_flag = 0;
+	}
+
+	if (info_flag) {
+		client_info();
+		info_flag = 0;
 	}
 
 	/* scan through driver sockets */
@@ -818,6 +839,7 @@ static void help(const char *progname)
 	printf("		commands:\n");
 	printf("		 - reload: reread configuration files\n");
 	printf("		 - stop: stop process and exit\n");
+	printf("		 - info: print client information via syslog and exit\n");
 	printf("  -D		raise debugging level\n");
 	printf("  -h		display this help\n");
 	printf("  -r <dir>	chroots to <dir>\n");
@@ -838,6 +860,11 @@ static void set_reload_flag(int sig)
 static void set_exit_flag(int sig)
 {
 	exit_flag = sig;
+}
+
+static void set_info_flag(int sig)
+{
+	info_flag = 1;
 }
 
 static void setup_signals(void)
@@ -861,6 +888,10 @@ static void setup_signals(void)
 	/* handle reloading */
 	sa.sa_handler = set_reload_flag;
 	sigaction(SIGHUP, &sa, NULL);
+
+	/* Show connectd clients */
+	sa.sa_handler = set_info_flag;
+	sigaction(SIGCMD_INFO, &sa, NULL);
 }
 
 void check_perms(const char *fn)
@@ -926,6 +957,8 @@ int main(int argc, char **argv)
 					cmd = SIGCMD_RELOAD;
 				if (!strncmp(optarg, "stop", strlen(optarg)))
 					cmd = SIGCMD_STOP;
+				if (!strncmp(optarg, "info", strlen(optarg)))
+					cmd = SIGCMD_INFO;
 
 				/* bad command given */
 				if (cmd == 0)

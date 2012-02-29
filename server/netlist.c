@@ -26,7 +26,8 @@
 
 #include "netlist.h"
 
-	extern	upstype_t	*firstups;	/* for list_ups */
+extern	upstype_t	*firstups;	/* for list_ups */
+extern	nut_ctype_t *firstclient;	/* for list_clients */
 
 static int tree_dump(st_tree_t *node, nut_ctype_t *client, const char *ups,
 	int rw, int fsd)
@@ -217,6 +218,38 @@ static void list_ups(nut_ctype_t *client)
 	sendback(client, "END LIST UPS\n");
 }	
 
+static void list_clients(nut_ctype_t *client, const char *upsname)
+{
+	const   upstype_t *ups;
+	nut_ctype_t		*c, *cnext;
+	ups = NULL;
+
+	if (strcasecmp(upsname, "")) {
+		ups = get_ups_ptr(upsname);
+		if (!ups) {
+			send_err(client, NUT_ERR_UNKNOWN_UPS);
+			return;
+		}
+	}
+
+	if (!sendback(client, "BEGIN LIST CLIENTS\n"))
+		return;
+
+	if (firstclient) {
+		int	ret;
+		/* show connected clients */
+		for (c = firstclient; c; c = cnext) {
+			if (c->loginups && (!ups || !strcasecmp(c->loginups, ups->name))) {
+				ret = sendback(client, "CLIENT %s %s\n", c->addr, c->loginups);
+				if (!ret)
+					return;
+			}
+			cnext = c->next;
+		}
+	}
+	sendback(client, "END LIST CLIENTS\n");
+}
+
 void net_list(nut_ctype_t *client, int numarg, const char **arg)
 {
 	if (numarg < 1) {
@@ -227,6 +260,12 @@ void net_list(nut_ctype_t *client, int numarg, const char **arg)
 	/* LIST UPS */
 	if (!strcasecmp(arg[0], "UPS")) {
 		list_ups(client);
+		return;
+	}
+
+	/* LIST CLIENTS */
+	if (!strcasecmp(arg[0], "CLIENTS") && (numarg == 1)) {
+		list_clients(client, "");
 		return;
 	}
 
@@ -250,6 +289,12 @@ void net_list(nut_ctype_t *client, int numarg, const char **arg)
 	/* LIST CMD UPS */
 	if (!strcasecmp(arg[0], "CMD")) {
 		list_cmd(client, arg[1]);
+		return;
+	}
+
+	/* LIST CLIENTS */
+	if (!strcasecmp(arg[0], "CLIENTS")) {
+		list_clients(client, arg[1]);
 		return;
 	}
 
