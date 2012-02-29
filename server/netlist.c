@@ -220,16 +220,14 @@ static void list_ups(nut_ctype_t *client)
 
 static void list_clients(nut_ctype_t *client, const char *upsname)
 {
-	const   upstype_t *ups;
+	const upstype_t *ups;
 	nut_ctype_t		*c, *cnext;
-	ups = NULL;
 
-	if (strcasecmp(upsname, "")) {
-		ups = get_ups_ptr(upsname);
-		if (!ups) {
-			send_err(client, NUT_ERR_UNKNOWN_UPS);
-			return;
-		}
+	ups = get_ups_ptr(upsname);
+
+	if (!ups) {
+		send_err(client, NUT_ERR_UNKNOWN_UPS);
+		return;
 	}
 
 	if (!sendback(client, "BEGIN LIST CLIENTS\n"))
@@ -263,12 +261,6 @@ void net_list(nut_ctype_t *client, int numarg, const char **arg)
 		return;
 	}
 
-	/* LIST CLIENTS */
-	if (!strcasecmp(arg[0], "CLIENTS") && (numarg == 1)) {
-		list_clients(client, "");
-		return;
-	}
-
 	if (numarg < 2) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
 		return;
@@ -292,7 +284,7 @@ void net_list(nut_ctype_t *client, int numarg, const char **arg)
 		return;
 	}
 
-	/* LIST CLIENTS */
+	/* LIST CLIENTS UPS*/
 	if (!strcasecmp(arg[0], "CLIENTS")) {
 		list_clients(client, arg[1]);
 		return;
