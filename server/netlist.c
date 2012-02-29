@@ -230,7 +230,7 @@ static void list_clients(nut_ctype_t *client, const char *upsname)
 		return;
 	}
 
-	if (!sendback(client, "BEGIN LIST CLIENTS\n"))
+	if (!sendback(client, "BEGIN LIST CLIENT %s\n", upsname))
 		return;
 
 	if (firstclient) {
@@ -238,14 +238,14 @@ static void list_clients(nut_ctype_t *client, const char *upsname)
 		/* show connected clients */
 		for (c = firstclient; c; c = cnext) {
 			if (c->loginups && (!ups || !strcasecmp(c->loginups, ups->name))) {
-				ret = sendback(client, "CLIENT %s %s\n", c->addr, c->loginups);
+				ret = sendback(client, "CLIENT %s %s\n", c->loginups, c->addr);
 				if (!ret)
 					return;
 			}
 			cnext = c->next;
 		}
 	}
-	sendback(client, "END LIST CLIENTS\n");
+	sendback(client, "END LIST CLIENT %s\n", upsname);
 }
 
 void net_list(nut_ctype_t *client, int numarg, const char **arg)
@@ -284,8 +284,8 @@ void net_list(nut_ctype_t *client, int numarg, const char **arg)
 		return;
 	}
 
-	/* LIST CLIENTS UPS*/
-	if (!strcasecmp(arg[0], "CLIENTS")) {
+	/* LIST CLIENT UPS */
+	if (!strcasecmp(arg[0], "CLIENT")) {
 		list_clients(client, arg[1]);
 		return;
 	}
