@@ -150,20 +150,21 @@ The form of the URL is the following:
 
 	http://www.networkupstools.org/stable-hcl.html?<filter-name>=<filter-value>
 
-.Possible values for <filter-name> and <filter-value>
-[cols="^,^",options="header"]
-|==========================================================================
-|       <filter-name>        | <filter-value>
-|       support-level        | a number from '1' to '5'
-.3+^.^| device-type          | - 'ups' for uninterruptible power supply
-                             | - 'pdu' for power distribution unit
-                             | - 'scd' for solar controller device 
-|       manufacturer         | a manufacturer name from the selection list
-|       model                | a model name from the selection list
-.3+^.^| connection           | 'USB'
-                             | 'Serial'
-                             | 'Network'
-|==========================================================================
+.Possible values
+[options="header,autowidth",style="asciidoc",cols="<,<"]
+|===================================================================
+|<filter-name>        |<filter-value>
+|support-level        |a number from '1' to '5'
+|device-type          |- 'ups' for uninterruptible power supply
+                       - 'pdu' for power distribution unit
+                       - 'psu' for power supply unit
+                       - 'scd' for solar controller device 
+|manufacturer         |a manufacturer name from the selection list
+|model                |a model name from the selection list
+|connection           |- 'USB'
+                       - 'Serial'
+                       - 'Network'
+|===================================================================
 
 You can finally combine multiple filters, using ampersand (*&*).
 
