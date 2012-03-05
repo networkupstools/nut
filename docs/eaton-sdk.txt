@@ -273,8 +273,8 @@ For example, if Eaton SDK dynamic libraries reside in /opt/eaton/lib, use:
 Windows build
 ~~~~~~~~~~~~~
 
-On Windows, building with the SDK has been tested with GCC in MinGW environment
-and CL in MS Visual Studio 10 environment. +
+On Windows, building with the SDK has been tested with GCC 4.6.1 in MinGW
+environment and CL in MS Visual Studio 10 environment. +
 You will need GCC 4.6.1 or newer to compile your application with the SDK.
 
 Building SNMP application
