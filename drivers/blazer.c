@@ -526,6 +526,22 @@ static void blazer_initbattery(void)
 {
 	const char	*val;
 
+	/* If no values were provided by the user in ups.conf, try to guesstimate
+	 * battery.charge, but announce it! */
+	if ((batt.volt.nom != 1) && (batt.volt.high == -1) && (batt.volt.high == -1)) {
+		upslogx(LOG_INFO, "No values provided for battery high/low voltages in ups.conf\n");
+
+		/* Basic formula, which should cover most cases */
+		batt.volt.low = 104 * batt.volt.nom / 120;
+		batt.volt.high = 130 * batt.volt.nom / 120;
+
+		/* Publish these data too */
+		dstate_setinfo("battery.voltage.low", "%.2f", batt.volt.low);
+		dstate_setinfo("battery.voltage.high", "%.2f", batt.volt.high);
+		
+		upslogx(LOG_INFO, "Using 'guestimation' (low: %f, high: %f)!", batt.volt.low, batt.volt.high);
+	}
+
 	val = getval("runtimecal");
 	if (val) {
 		double	rh, lh, rl, ll;
