@@ -4,7 +4,9 @@
  * A document describing the protocol implemented by this driver can be
  * found online at http://www.networkupstools.org/ups-protocols/megatec.html
  *
- * Copyright (C) 2008,2009 - Arjen de Korte <adkorte-guest@alioth.debian.org>
+ * Copyright (C)
+ *   2008,2009 - Arjen de Korte <adkorte-guest@alioth.debian.org>
+ *   2012 - Arnaud Quette <ArnaudQuette@Eaton.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -280,6 +282,7 @@ static int blazer_status(const char *cmd)
 
 	if (val[6] == '1') {	/* Shutdown Active */
 		alarm_set("Shutdown imminent!");
+		status_set("FSD");
 	}
 
 	alarm_commit();
