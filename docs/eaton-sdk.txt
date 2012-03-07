@@ -678,6 +678,128 @@ gcc test.c -I<path-to-include> libeaton_usbxcp.dll.a
 You need libeaton_usbxcp-0.dll, libregex-1.dll and libusb0.dll
 in your path to run the resulting executable.
 
+Building USB blazer application
+-------------------------------
+
+You must call libeaton_init with NULL as a parameter.
+
+This is a sample code displaying the device status:
+
+--------------------------------------
+#include "common.h"
+#include "libeaton.h"
+
+const char *dstate_getinfo(const char *var);
+
+int main(void)
+{
+        /* This will contains the result of our request to the device */
+        const char * status;
+
+	/* Init battery charge estimation, based on a nominal battery voltage
+	   = 12 V with the following formula
+	   low_batt_voltage = 104 * nominal_batt_voltage / 120;
+	   high_batt_voltage = 130 * nominal_batt_voltage / 120;
+
+	   This may need to be adapted to your specific device
+	 */
+	dstate_setinfo("battery.voltage.low", "10.4");
+	dstate_setinfo("battery.voltage.high", "13.0");
+
+        /* init the library */
+        libeaton_init(NULL);
+
+        /* This is the real request to the device to update internal database.
+        This may be time consuming */
+        libeaton_update();
+
+        /* Here we get the status of the device from the database */
+        status = libeaton_read("ups.status");
+
+        printf("%s\n",status);
+
+        /* Free SDK internals */
+        libeaton_free();
+
+        exit(EXIT_SUCCESS);
+}
+--------------------------------------
+
+Save this code in the file test.c
+
+Note that the code involving the dstate_setinfo function is used to
+guestimate the battery charge, since these devices do not give it directly.
+If you do not need the battery charge, you don't need this additional code.
+
+Linux build
+~~~~~~~~~~~
+
+You need link:http://www.libusb.org/[libusb library] available on your system.
+Make sure “pkg-config libusb” command is available.
+Building statically:
+
+--------------------------------------
+gcc test.c -I<path-to-include> <path-to-lib>/libeaton_usbblazer.a `pkg-config --cflags --libs libusb` -lm -o test
+--------------------------------------
+
+Building with shared object:
+
+--------------------------------------
+gcc test.c -I<path-to-include> -L <path-to-lib> -leaton_usbblazer `pkg-config --cflags --libs libusb` -o test
+--------------------------------------
+
+Windows build
+~~~~~~~~~~~~~
+
+You must install a libusb driver for your device. You can either install the
+device driver (NOT the filter driver) from the official
+link:http://www.libusb.org/wiki/libusb-win32[libusb-win32 binaries] or use the
+wdi-simple.exe of the
+link:http://www.networkupstools.org/download.html[NUT Windows' package] which
+install it automatically.
+
+With MSVC
+^^^^^^^^^
+
+You will need the libeaton_usbblazer.lib file. This is how to create it from
+libeaton_usbblazer-0.dll.
+
+--------------------------------------
+pexports libeaton_usbblazer-0.dll > libeaton_usbblazer.def
+lib /machine:i386 /def:libeaton_usbblazer.def
+--------------------------------------
+
+Then you can link it to your application.
+
+--------------------------------------
+cl test.c -DWIN32 libeaton_usbblazer.lib
+--------------------------------------
+
+You need libeaton_usbblazer-0.dll, libregex-1.dll and libusb0.dll
+in your path to run the resulting executable.
+
+With MinGW
+^^^^^^^^^^
+
+Building statically:
+
+--------------------------------------
+gcc test.c -I<path-to-include> libeaton_usbblazer.a libusb.a libgnu.a -lws2_32
+--------------------------------------
+
+You need libusb0.dll in your path to run the resulting
+executable.
+
+Building with shared object:
+
+--------------------------------------
+gcc test.c -I<path-to-include> libeaton_usbblazer.dll.a
+--------------------------------------
+
+You need libeaton_usbblazer-0.dll, libregex-1.dll and libusb0.dll
+in your path to run the resulting executable.
+
+
 Building serial XCP application
 -------------------------------
 

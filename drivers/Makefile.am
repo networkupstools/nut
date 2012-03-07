@@ -247,7 +247,7 @@ libnuthalmain_a_SOURCES = main-hal.c dstate-hal.c usb-common.c
 # Eaton libs
 if WITH_EATON_SDK
 if WITH_USB
-  LIBEATON_USB = libeaton_usbhid.la libeaton_usbxcp.la
+  LIBEATON_USB = libeaton_usbhid.la libeaton_usbxcp.la libeaton_usbblazer.la
 endif
 if WITH_SNMP
   LIBEATON_SNMP = libeaton_snmp.la
@@ -274,6 +274,11 @@ libeaton_usbxcp_la_SOURCES = bcmxcp.c usb-common.c libeaton.c bcmxcp_usb.c
 libeaton_usbxcp_la_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
 libeaton_usbxcp_la_LIBADD = $(LIBUSB_LIBS) ../common/libcommon.la
 libeaton_usbxcp_la_LDFLAGS = -version-info 0:0:0 -no-undefined
+
+libeaton_usbblazer_la_SOURCES = blazer.c blazer_usb.c libusb.c usb-common.c libeaton.c
+libeaton_usbblazer_la_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
+libeaton_usbblazer_la_LIBADD = $(LIBUSB_LIBS) ../common/libcommon.la -lm
+libeaton_usbblazer_la_LDFLAGS = -version-info 0:0:0 -no-undefined
 endif
 
 if WITH_SNMP
