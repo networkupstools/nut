@@ -32,6 +32,9 @@
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
 #include "usb-common.h"
 #include "nut_libusb.h"
+#ifdef WIN32
+#include "wincompat.h"
+#endif
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 0.1)"
 #define USB_DRIVER_VERSION	"0.43"
@@ -47,11 +50,6 @@ upsdrv_info_t comm_upsdrv_info = {
 
 #define MAX_REPORT_SIZE         0x1800
 #define MAX_RETRY               3
-
-#ifdef WIN32
-/* This value is defined in the error.h file of the libusb-win32 sources */
-#define ETIMEDOUT 116
-#endif
 
 static void libusb_close(usb_dev_handle *udev);
 

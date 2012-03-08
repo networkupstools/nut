@@ -32,6 +32,9 @@
 #include "nut_libusb.h"
 #include "usb-common.h"
 #include "blazer.h"
+#ifdef WIN32
+#include "wincompat.h"
+#endif
 
 #define DRIVER_NAME	"Megatec/Q1 protocol USB driver"
 #define DRIVER_VERSION	"0.14"
@@ -133,10 +136,8 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 			usb_clear_halt(udev, 0x81);
 			break;
 
-#ifndef WIN32 /*FIXME*/
 		case ERROR_TIMEOUT: /** Operation or Connection timed out */
 			break;
-#endif
 		}
 
 		if (ret < 0) {
@@ -206,9 +207,7 @@ static int ippon_command(const char *cmd, char *buf, size_t buflen)
 			0x09, 0x2, 0, (usb_ctrl_charbuf)&tmp[i], 8, 1000);
 
 		if (ret <= 0) {
-#ifndef WIN32 /*FIXME*/
 			upsdebugx(3, "send: %s", (ret != ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out");
-#endif
 			return ret;
 		}
 	}
@@ -225,9 +224,7 @@ static int ippon_command(const char *cmd, char *buf, size_t buflen)
 	 * will happen after successfully writing a command to the UPS)
 	 */
 	if (ret <= 0) {
-#ifndef WIN32 /*FIXME*/
 		upsdebugx(3, "read: %s", (ret != ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out");
-#endif
 		return ret;
 	}
 
@@ -503,8 +500,8 @@ ssize_t blazer_command(const char *cmd, char *buf, size_t buflen)
 		udev = NULL;
 		break;
 
-#ifndef WIN32
 	case ERROR_TIMEOUT:  /* Connection timed out */
+#ifndef WIN32
 	case ERROR_OVERFLOW: /* Value too large for defined data type */
 # if EPROTO && WITH_LIBUSB_0_1
 	case -EPROTO:		/* Protocol error */
