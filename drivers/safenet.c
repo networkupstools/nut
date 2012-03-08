@@ -372,11 +372,7 @@ void upsdrv_updateinfo(void)
 	 * [A...J].
 	 */
 	for (i = 1; i < 12; i++) {
-#ifndef WIN32
 		command[i] = (random() % 10) + 'A';
-#else
-		command[i] = (rand() % 10) + 'A';
-#endif
 	}
 
 	/*

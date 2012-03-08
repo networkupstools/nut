@@ -74,7 +74,7 @@ static void ups_create(const char *fn, const char *name, const char *desc)
 #ifdef WIN32
 	memset(&temp->read_overlapped,0,sizeof(temp->read_overlapped));
 	memset(temp->buf,0,sizeof(temp->buf));
-	temp->read_overlapped.hEvent = CreateEvent(NULL, /*Security*/
+	temp->read_overlapped.hEvent = CreateEvent(NULL, /* Security */
 						FALSE, /* auto-reset*/
 						FALSE, /* initial state = non signaled */
 						NULL /* no name */);

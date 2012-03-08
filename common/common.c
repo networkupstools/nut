@@ -29,7 +29,6 @@
 #include <dirent.h>
 #include <sys/un.h>
 #else
-#include <windows.h>
 #include <wincompat.h>
 #endif
 
@@ -475,7 +474,6 @@ int sendsignalfn(const char *pidfn, int sig)
 	ret = GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT,pid);
 	fclose(pidf);
 	if (ret == 0) {
-		upslogx(LOG_ERR, "GenerateConsoleCtrlEvent error : %d", (int)GetLastError());
 		return -1;
 	}
 	return 0;

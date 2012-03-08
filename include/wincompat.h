@@ -32,6 +32,7 @@
  */
 #define ETIMEDOUT 116
 
+#define random() rand()
 typedef const char * uid_t;
 struct passwd {
 	const char		*pw_name;
