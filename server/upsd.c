@@ -302,9 +302,9 @@ static void setuptcp(stype_t *server)
 	}
 
 #ifdef WIN32
-		server->Event = CreateEvent(NULL, /*Security,*/
-				FALSE, /*auo-reset */
-				FALSE, /*initial state*/
+		server->Event = CreateEvent(NULL, /* Security */
+				FALSE, /* auto-reset */
+				FALSE, /* initial state */
 				NULL); /* no name */
 
 		/* Associate socket event to the socket via its Event object */
