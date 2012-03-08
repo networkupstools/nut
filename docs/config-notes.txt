@@ -74,6 +74,20 @@ escape it.
 
 Much better.
 
+The = character should be used with care too. There should be only one
+"simple" = character in a line: between the parameter name and its value.
+All other = characters should be either escaped or whithin "quotes".
+
+	password = 123=123
+
+... is incorrect. You should use:
+
+	password = 123\=123
+
+... or :
+
+	password = "123=123"
+
 Line spanning
 ~~~~~~~~~~~~~
 
