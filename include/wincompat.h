@@ -27,6 +27,9 @@
 
 #include "common.h"
 
+/* This value is defined in the error.h file of the libusb-win32 sources */
+#define ETIMEDOUT 116
+
 typedef const char * uid_t;
 struct passwd {
 	const char		*pw_name;
