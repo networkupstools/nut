@@ -32,6 +32,9 @@
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
 #include "usb-common.h"
 #include "libusb.h"
+#ifdef WIN32
+#include "wincompat.h"
+#endif
 
 /* USB standard state 5000, but we've decreased it to
  * improve reactivity */
@@ -51,10 +54,6 @@ upsdrv_info_t comm_upsdrv_info = {
 
 #define MAX_REPORT_SIZE         0x1800
 
-#ifdef WIN32
-/* This value is defined in the error.h file of the libusb-win32 sources */
-#define ETIMEDOUT 116
-#endif
 static void libusb_close(usb_dev_handle *udev);
 
 /* From usbutils: workaround libusb API goofs:  "byte" should never be sign extended;
