@@ -326,6 +326,8 @@ void libeaton_free()
 {
         int i;
 
+	upsdrv_cleanup();
+
         for(i=0; i<num_info ; i++){
                 free(info_name[i]);
                 free(info_data[i]);
