@@ -500,7 +500,9 @@ ssize_t blazer_command(const char *cmd, char *buf, size_t buflen)
 		udev = NULL;
 		break;
 
-	case ERROR_TIMEOUT:  /* Connection timed out */
+	case ERROR_TIMEOUT:	/* Connection timed out */
+/* libusb-win32 does not know EPROTO and EOVERFLOW,
+ * it only returns EIO for any IO errors */
 #ifndef WIN32
 	case ERROR_OVERFLOW: /* Value too large for defined data type */
 # if EPROTO && WITH_LIBUSB_0_1

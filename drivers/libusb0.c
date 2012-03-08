@@ -603,6 +603,8 @@ static int libusb_strerror(const int ret, const char *desc)
 		upsdebugx(2, "%s: Connection timed out", desc);
 		return 0;
 
+/* libusb-win32 does not know EPROTO and EOVERFLOW,
+ * it only returns EIO for any IO errors */
 #ifndef WIN32
 	case -EOVERFLOW:	/* Value too large for defined data type */
 # ifdef EPROTO
