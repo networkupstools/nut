@@ -25,7 +25,6 @@
 #include <pwd.h>
 #include <grp.h>
 #else
-#include <windows.h>
 #include <wincompat.h>
 #endif
 
@@ -341,7 +340,6 @@ int sendsignalfn(const char *pidfn, int sig)
 #else
 	ret = GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT,pid);
 	if (ret == 0) {
-		upslogx(LOG_ERR, "GenerateConsoleCtrlEvent error : %d", (int)GetLastError());
 		return -1;
 	}
 #endif
