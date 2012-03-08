@@ -34,6 +34,9 @@
 #include "usbhid-ups.h"
 #include "hidparser.h"
 #include "hidtypes.h"
+#ifdef WIN32
+#include "wincompat.h"
+#endif
 
 /* include all known subdrivers */
 #include "mge-hid.h"
@@ -1267,8 +1270,8 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		case 0:
 			continue;
 
-#ifndef WIN32
 		case -ETIMEDOUT:	/* Connection timed out */
+#ifndef WIN32
 		case -EOVERFLOW:	/* Value too large for defined data type */
 		case -EPROTO:		/* Protocol error */
 #endif
