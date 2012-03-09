@@ -45,46 +45,46 @@ configuration directive for some reason.  You can do that too.
 
 	NOTIFYCMD "/bin/notifyme -foo -bar \"hi there\" -baz"
 
-In other words, \ can be used to escape the ".
+In other words, *\* can be used to escape the *"*.
 
-Finally, for the situation where you need to put the \ character into your
+Finally, for the situation where you need to put the *\* character into your
 string, you just escape it.
 
 	NOTIFYCMD "/bin/notifyme c:\\dos\\style\\path"
 
-The \ can actually be used to escape any character, but you only really
-need it for \, ", and # as they have special meanings to the parser.
+The *\* can actually be used to escape any character, but you only really
+need it for *\*, *"*, and *#* as they have special meanings to the parser.
 
 When using file names with space characters, you may end up having tricky
-things since you need to write them inside "" which must be escaped:
+things since you need to write them inside *""* which must be escaped:
 
 	NOTIFYCMD "\"c:\\path with space\\notifyme\" \"c:\\path with space\\name\""
 
-# is the comment character.  Anything after an unescaped # is ignored.
+*#* is the comment character.  Anything after an unescaped *#* is ignored.
 
 Something like this...
 
 	identity = my#1ups
 
-... will actually turn into "identity = my", since the # stops the 
-parsing. If you really need to have a # in your configuration, then
+... will actually turn into "identity = my", since the *#* stops the 
+parsing. If you really need to have a *#* in your configuration, then
 escape it.
 
 	identity = my\#1ups
 
 Much better.
 
-The = character should be used with care too. There should be only one
-"simple" = character in a line: between the parameter name and its value.
-All other = characters should be either escaped or whithin "quotes".
+The *=* character should be used with care too. There should be only one
+"simple" *=* character in a line: between the parameter name and its value.
+All other *=* characters should be either escaped or whithin "quotes".
 
 	password = 123=123
 
-... is incorrect. You should use:
+ ... is incorrect. You should use:
 
 	password = 123\=123
 
-... or :
+ ... or :
 
 	password = "123=123"
 
@@ -95,7 +95,7 @@ You can put a backslash at the end of the line to join it to the next
 one.  This creates one virtual line that is composed of more than one
 physical line.
 
-Also, if you leave the "" quote container open before a newline, it will
+Also, if you leave the *""* quote container open before a newline, it will
 keep scanning until it reaches another one.  If you see bizarre behavior
 in your configuration files, check for an unintentional instance of
 quotes spanning multiple lines.
