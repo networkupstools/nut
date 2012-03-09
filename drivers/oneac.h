@@ -1,4 +1,3 @@
-/*
 /* oneac.h - Driver for Oneac UPS using the Advanced Interface.
  *
  * Copyright (C)
