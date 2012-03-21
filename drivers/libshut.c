@@ -970,7 +970,7 @@ int shut_wait_ack(int upsfd)
 		upsdebugx (2, "shut_wait_ack(): NACK received");
 		retCode = -2;
 	}
-	else if ((c & SHUT_PKT_LAST) == SHUT_TYPE_NOTIFY)
+	else if ((c & ~SHUT_PKT_LAST) == SHUT_TYPE_NOTIFY)
 	{
 		upsdebugx (2, "shut_wait_ack(): NOTIFY received");
 		retCode = -3;
