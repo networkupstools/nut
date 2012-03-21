@@ -610,7 +610,7 @@ void setline(int upsfd, int set)
 int shut_synchronise(int upsfd)
 {
 	int retCode = 0;
-	u_char c = SHUT_SYNC, reply;
+	u_char c = SHUT_SYNC_OFF, reply;
 	int try;
 		
 	upsdebugx (2, "entering shut_synchronise()");
@@ -691,6 +691,12 @@ int shut_packet_recv(int upsfd, u_char *Buf, int datalen)
 			if(Start[0]==SHUT_SYNC)
 			{
 				upsdebugx (4, "received SYNC token");
+				memcpy(Buf, Start, 1);
+				return 1;
+			}
+			else if(Start[0]==SHUT_SYNC_OFF)
+			{
+				upsdebugx (4, "received SYNC_OFF token");
 				memcpy(Buf, Start, 1);
 				return 1;
 			}
@@ -875,8 +881,10 @@ int shut_control_msg(int upsfd, int requesttype, int request,
 				upsdebug_hex(4, "data", bytes, data_size);
 			}
 		}
-		else
-			data_size = (size >= 8) ? 8 : remaining_size;
+		else {
+			/* Always 8 bytes payload for GET_REPORT with SHUT */
+			data_size = 8;
+		}
 		
 		/* Forge the SHUT Frame */
 		shut_pkt[0] = SHUT_TYPE_REQUEST + ( ((requesttype == REQUEST_TYPE_SET_REPORT) && (remaining_size>8))? 0 : SHUT_PKT_LAST);

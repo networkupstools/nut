@@ -7,6 +7,11 @@
 
 #include "timehead.h"
 
+/* Have to wait at least 0,25 sec max 16 sec */
+/* 1 second is too short for PW9120 (leads to communication errors).
+   So we set it to 2 seconds */
+#define PW_SLEEP 2
+
 #define PW_MAX_TRY 3 /* How many times we try to send data. */
 
 #define PW_COMMAND_START_BYTE (unsigned char)0xAB
