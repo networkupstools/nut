@@ -882,8 +882,10 @@ int shut_control_msg(int upsfd, int requesttype, int request,
 				upsdebug_hex(4, "data", bytes, data_size);
 			}
 		}
-		else
-			data_size = (size >= 8) ? 8 : remaining_size;
+		else {
+			/* Always 8 bytes payload for GET_REPORT with SHUT */
+			data_size = 8;
+		}
 		
 		/* Forge the SHUT Frame */
 		shut_pkt[0] = SHUT_TYPE_REQUEST + ( ((requesttype == REQUEST_TYPE_SET_REPORT) && (remaining_size>8))? 0 : SHUT_PKT_LAST);
