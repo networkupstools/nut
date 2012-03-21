@@ -610,7 +610,7 @@ void setline(int upsfd, int set)
 int shut_synchronise(int upsfd)
 {
 	int retCode = 0;
-	u_char c = SHUT_SYNC, reply;
+	u_char c = SHUT_SYNC_OFF, reply;
 	int try;
 		
 	upsdebugx (2, "entering shut_synchronise()");
@@ -692,6 +692,12 @@ int shut_packet_recv(int upsfd, u_char *Buf, int datalen)
 			if(Start[0]==SHUT_SYNC)
 			{
 				upsdebugx (4, "received SYNC token");
+				memcpy(Buf, Start, 1);
+				return 1;
+			}
+			else if(Start[0]==SHUT_SYNC_OFF)
+			{
+				upsdebugx (4, "received SYNC_OFF token");
 				memcpy(Buf, Start, 1);
 				return 1;
 			}
