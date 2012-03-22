@@ -708,7 +708,13 @@ int shut_packet_recv(int upsfd, u_char *Buf, int datalen)
 				{
 					upsdebug_hex(4, "Receive", Start, 2);
 					Size=Start[1]&0x0F;
-					sdata.shut_pkt.bLength = Size;
+					if( Size > 8 ) {
+						upsdebugx (4, "shut_packet_recv: invalid frame size = %d", Size);
+						ser_send_char(upsfd, SHUT_NOK);
+						Retry++;
+						break;
+					}
+					/* sdata.shut_pkt.bLength = Size; */
 					for(recv=0;recv<Size;recv++)
 					{
 						/* if(serial_read (SHUT_TIMEOUT, &Frame[recv]) < 1) */
