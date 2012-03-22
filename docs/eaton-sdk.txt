@@ -78,8 +78,9 @@ Support information
 ===================
 
 In case you become aware of any malfunctions of this solution, we kindly ask you
-to inform us using the following 
-link:http://pqtools.eaton.com/form/support/index_soft.php?lang=eng[support form].
+to inform us using the following support form:
+
+link:http://pqtools.eaton.com/form/support/index_soft.php?lang=eng[http://pqtools.eaton.com/form/support/index_soft.php?lang=eng].
 
 In this case, please use 'Eaton Open Source' as 'Software used', and mention
 'Eaton SDK' in your message, with the details of your issue.
