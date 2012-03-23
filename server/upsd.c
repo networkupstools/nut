@@ -1,9 +1,9 @@
 /* upsd.c - watches ups state files and answers queries 
 
    Copyright (C)
-	1999	Russell Kroll <rkroll@exploits.org>
-	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
-	2011	Arnaud Quette <arnaud.quette.free.fr>
+	1999		Russell Kroll <rkroll@exploits.org>
+	2008		Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2011 - 2012	Arnaud Quette <arnaud.quette.free.fr>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -953,6 +953,15 @@ int main(int argc, char **argv)
 	if (cmd) {
 		sendsignalfn(pidfn, cmd);
 		exit(EXIT_SUCCESS);
+	}
+
+	/* otherwise, we are being asked to start.
+	 * so check if a previous instance is running by sending signal '0'
+	 * (Ie 'kill <pid> 0') */
+	if (sendsignalfn(pidfn, 0) == 0) {
+		printf("Fatal error: A previous upsd instance is already running!\n");
+		printf("Either stop the previous instance first, or use the 'reload' command.\n");
+		exit(EXIT_FAILURE);
 	}
 
 	argc -= optind;
