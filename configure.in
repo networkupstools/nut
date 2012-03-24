@@ -1118,6 +1118,7 @@ AC_OUTPUT([
  scripts/udev/Makefile
  scripts/udev/nut-ipmipsu.rules
  scripts/udev/nut-usbups.rules
+ scripts/ufw/nut.ufw.profile
  scripts/Makefile
  server/Makefile
  tools/Makefile
