@@ -420,14 +420,14 @@ int send_to_named_pipe(const char * pipe_name, const char * data)
 
 
 	if (pipe == INVALID_HANDLE_VALUE) {
-		upslogx(LOG_ERR, "Cannot connect to upsmon Named Pipe");
+		upslogx(LOG_ERR, "Cannot connect to named pipe : %s",pipe_name);
 		return 1;
 	}
 
 	result = WriteFile (pipe,data,strlen(data)+1,&bytesWritten,NULL);
 
 	if (result == 0 || bytesWritten != strlen(data)+1 ) {
-		upslogx(LOG_ERR, "Error writing to %s Named Pipe",pipe_name);
+		upslogx(LOG_ERR, "Error writing to named pipe : %s",pipe_name);
 		CloseHandle(pipe);
 		return 1;
 	}
