@@ -610,7 +610,7 @@ void setline(TYPE_FD upsfd, int set)
 int shut_synchronise(TYPE_FD upsfd)
 {
 	int retCode = 0;
-	u_char c = SHUT_SYNC, reply;
+	u_char c = SHUT_SYNC_OFF, reply;
 	int try;
 		
 	upsdebugx (2, "entering shut_synchronise()");
@@ -695,6 +695,12 @@ int shut_packet_recv(TYPE_FD upsfd, u_char *Buf, int datalen)
 				memcpy(Buf, Start, 1);
 				return 1;
 			}
+			else if(Start[0]==SHUT_SYNC_OFF)
+			{
+				upsdebugx (4, "received SYNC_OFF token");
+				memcpy(Buf, Start, 1);
+				return 1;
+			}
 			else 
 			{
 				/* if((serial_read (SHUT_TIMEOUT, &Start[1]) > 0) && */
@@ -703,6 +709,12 @@ int shut_packet_recv(TYPE_FD upsfd, u_char *Buf, int datalen)
 				{
 					upsdebug_hex(4, "Receive", Start, 2);
 					Size=Start[1]&0x0F;
+					if( Size > 8 ) {
+						upsdebugx (4, "shut_packet_recv: invalid frame size = %d", Size);
+						ser_send_char(upsfd, SHUT_NOK);
+						Retry++;
+						break;
+					}
 					/* sdata.shut_pkt.bLength = Size; */
 					for(recv=0;recv<Size;recv++)
 					{
@@ -876,8 +888,10 @@ int shut_control_msg(TYPE_FD upsfd, int requesttype, int request,
 				upsdebug_hex(4, "data", bytes, data_size);
 			}
 		}
-		else
-			data_size = (size >= 8) ? 8 : remaining_size;
+		else {
+			/* Always 8 bytes payload for GET_REPORT with SHUT */
+			data_size = 8;
+		}
 		
 		/* Forge the SHUT Frame */
 		shut_pkt[0] = SHUT_TYPE_REQUEST + ( ((requesttype == REQUEST_TYPE_SET_REPORT) && (remaining_size>8))? 0 : SHUT_PKT_LAST);
@@ -970,7 +984,7 @@ int shut_wait_ack(TYPE_FD upsfd)
 		upsdebugx (2, "shut_wait_ack(): NACK received");
 		retCode = -2;
 	}
-	else if ((c & SHUT_PKT_LAST) == SHUT_TYPE_NOTIFY)
+	else if ((c & ~SHUT_PKT_LAST) == SHUT_TYPE_NOTIFY)
 	{
 		upsdebugx (2, "shut_wait_ack(): NOTIFY received");
 		retCode = -3;

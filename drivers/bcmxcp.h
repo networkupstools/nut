@@ -7,6 +7,11 @@
 
 #include "timehead.h"
 
+/* Have to wait at least 0,25 sec max 16 sec */
+/* 1 second is too short for PW9120 (leads to communication errors).
+   So we set it to 2 seconds */
+#define PW_SLEEP 2
+
 #define PW_MAX_TRY 3 /* How many times we try to send data. */
 
 #define PW_COMMAND_START_BYTE (unsigned char)0xAB
@@ -358,7 +363,7 @@ typedef struct { /* Entry in BCM/XCP - UPS - NUT mapping table */
 	unsigned int meter_block_index;			/* The position of this meter in the UPS meter block */
 }	BCMXCP_METER_MAP_ENTRY_t;
 
-BCMXCP_METER_MAP_ENTRY_t
+extern BCMXCP_METER_MAP_ENTRY_t
 	bcmxcp_meter_map[BCMXCP_METER_MAP_MAX];
 
 typedef	struct { /* Entry in BCM/XCP - UPS mapping table */
@@ -366,7 +371,7 @@ typedef	struct { /* Entry in BCM/XCP - UPS mapping table */
 	const char *alarm_desc;			/* Description of this alarm */
 }	BCMXCP_ALARM_MAP_ENTRY_t;
 
-BCMXCP_ALARM_MAP_ENTRY_t
+extern BCMXCP_ALARM_MAP_ENTRY_t
 	bcmxcp_alarm_map[BCMXCP_ALARM_MAP_MAX];
 
 typedef	struct {				/* A place to store status info and other data not for NUT */
@@ -378,7 +383,7 @@ typedef	struct {				/* A place to store status info and other data not for NUT *
 	int alarm_replace_battery;		/* Battery needs replacement! */
 }	BCMXCP_STATUS_t;
 
-BCMXCP_STATUS_t
+extern BCMXCP_STATUS_t
 	bcmxcp_status;
 
 int checksum_test(const unsigned char*);

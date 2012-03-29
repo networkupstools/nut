@@ -31,8 +31,6 @@
 /* handle arguments separated by parseconf */
 static void conf_args(int numargs, char **arg)
 {
-	char	*ep;
-
 	if (numargs < 1)
 		return;
 
@@ -46,15 +44,6 @@ static void conf_args(int numargs, char **arg)
 		return;
 	}
 
-	/* handle 'foo=bar' (compressed form) */
-	ep = strchr(arg[0], '=');
-	if (ep) {
-		*ep = '\0';
-
-		do_upsconf_args(ups_section, arg[0], ep+1);
-		return;
-	}
-
 	/* handle 'foo' (flag) */
 	if (numargs == 1) {
 		do_upsconf_args(ups_section, arg[0], NULL);
@@ -64,7 +53,7 @@ static void conf_args(int numargs, char **arg)
 	if (numargs < 3)
 		return;
 
-	/* handle 'foo = bar' (split form) */
+	/* handle 'foo = bar', 'foo=bar', 'foo =bar' or 'foo= bar' forms */
 	if (!strcmp(arg[1], "=")) {
 		do_upsconf_args(ups_section, arg[0], arg[2]);
 		return;

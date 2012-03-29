@@ -69,6 +69,7 @@ void check_perms(const char *fn);
 extern int		maxage, maxconn;
 extern char		*statepath, *datapath;
 extern upstype_t	*firstups;
+extern nut_ctype_t	*firstclient;
 
 /* map commands onto signals */
 #ifndef WIN32

@@ -186,6 +186,15 @@ info_lkp_t batt_test_info[] = {
 };
 
 
+/* allocate storage for shared variables (extern in bcmxcp.h) */
+BCMXCP_METER_MAP_ENTRY_t
+	bcmxcp_meter_map[BCMXCP_METER_MAP_MAX];
+BCMXCP_ALARM_MAP_ENTRY_t
+	bcmxcp_alarm_map[BCMXCP_ALARM_MAP_MAX];
+BCMXCP_STATUS_t
+	bcmxcp_status;
+
+
 /* get_word function from nut driver metasys.c */
 int get_word(const unsigned char *buffer)	/* return an integer reading a word in the supplied buffer */
 {
@@ -1491,7 +1500,7 @@ void upsdrv_shutdown(void)
 		 it doesn't respond at first if possible */
 	send_write_command(AUTHOR, 4);
 
-	sleep(1);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
+	sleep(PW_SLEEP);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
 
 	cbuf[0] = PW_LOAD_OFF_RESTART;
 	cbuf[1] = (unsigned char)(bcmxcp_status.shutdowndelay & 0x00ff);	/* "delay" sec delay for shutdown, */
@@ -1556,7 +1565,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	    ) {
 		send_write_command(AUTHOR, 4);
 
-		sleep(1);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
+		sleep(PW_SLEEP);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
 
 		/* Get the shutdown delay, if any */
 		snprintf(varname, sizeof(varname)-1, "outlet.%c.delay.shutdown", cmdname[7]);
@@ -1609,7 +1618,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		send_write_command(AUTHOR, 4);
 
-		sleep(1);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
+		sleep(PW_SLEEP);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
 
 		cbuf[0] = PW_LOAD_OFF_RESTART;
 		cbuf[1] = (unsigned char)(bcmxcp_status.shutdowndelay & 0x00ff);	/* "delay" sec delay for shutdown, */
@@ -1653,7 +1662,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
 		send_write_command(AUTHOR, 4);
 
-		sleep(1);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
+		sleep(PW_SLEEP);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
 
 		res = command_read_sequence(PW_UPS_OFF, answer);
 		if (res <= 0) {
@@ -1695,7 +1704,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "test.battery.start")) {
 		send_write_command(AUTHOR, 4);
 
-		sleep(1);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
+		sleep(PW_SLEEP);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
 
 		cbuf[0] = PW_INIT_BAT_TEST;
 		cbuf[1] = 0x0A;			/* 10 sec start delay for test.*/
@@ -1775,8 +1784,7 @@ int setvar (const char *varname, const char *val)
 	}
 
 	send_write_command(AUTHOR, 4);
-	/* Need to. Have to wait at least 0.25 sec max 16 sec */
-	sleep (1);
+	sleep(PW_SLEEP);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
 
 	outlet_num = varname[NUT_OUTLET_POSITION] - '0';
 	if (outlet_num < 1 || outlet_num > 9) {

@@ -47,6 +47,11 @@
 #include "cyberpower-mib.h"
 #include "ietf-mib.h"
 
+/* Address API change */
+#ifndef usmAESPrivProtocol
+#define usmAESPrivProtocol usmAES128PrivProtocol
+#endif
+
 static mib2nut_info_t *mib2nut[] = {
 	&apc,
 	&mge,
@@ -70,6 +75,10 @@ static mib2nut_info_t *mib2nut[] = {
 	NULL
 };
 
+struct snmp_session g_snmp_sess, *g_snmp_sess_p;
+const char *OID_pwr_status;
+int g_pwr_battery;
+int pollfreq; /* polling frequency */
 int input_phases, output_phases, bypass_phases;
 
 /* pointer to the Snmp2Nut lookup table */
@@ -82,7 +91,7 @@ const char *mibvers;
 static void disable_transfer_oids(void);
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.65"
+#define DRIVER_VERSION		"0.66"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {

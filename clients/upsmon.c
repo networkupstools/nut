@@ -1,6 +1,8 @@
 /* upsmon - monitor power status over the 'net (talks to upsd via TCP)
 
-   Copyright (C) 1998  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+     1998  Russell Kroll <rkroll@exploits.org>
+     2012  Arnaud Quette <arnaud.quette.free.fr>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -1063,7 +1065,7 @@ static void addups(int reloading, const char *sys, const char *pvs,
 	else
 		upslogx(LOG_INFO, "UPS: %s (monitoring only)", tmp->sys);
 
-	tmp->upsname = tmp->hostname = NULL;	
+	tmp->upsname = tmp->hostname = NULL;
 
 	if (upscli_splitname(tmp->sys, &tmp->upsname, &tmp->hostname, 
 		&tmp->port) != 0) {
@@ -2098,6 +2100,15 @@ int main(int argc, char *argv[])
 		exit(EXIT_SUCCESS);
 	}
 
+	/* otherwise, we are being asked to start.
+	 * so check if a previous instance is running by sending signal '0'
+	 * (Ie 'kill <pid> 0') */
+	if (sendsignal(prog, 0) == 0) {
+		printf("Fatal error: A previous upsmon instance is already running!\n");
+		printf("Either stop the previous instance first, or use the 'reload' command.\n");
+		exit(EXIT_FAILURE);
+	}
+
 	argc -= optind;
 	argv += optind;
 
@@ -2114,6 +2125,8 @@ int main(int argc, char *argv[])
 	/* we may need to get rid of a flag from a previous shutdown */
 	if (powerdownflag != NULL)
 		clear_pdflag();
+	/* FIXME (else): POWERDOWNFLAG is not defined!!
+	 * => fallback to a default value */
 
 	if (totalpv < minsupplies) {
 		printf("\nFatal error: insufficient power configured!\n\n");

@@ -242,10 +242,10 @@ void su_shutdown_ups(void);
 
 void read_mibconf(char *mib);
 
-struct snmp_session g_snmp_sess, *g_snmp_sess_p;
-const char *OID_pwr_status;
-int g_pwr_battery;
-int pollfreq; /* polling frequency */
+extern struct snmp_session g_snmp_sess, *g_snmp_sess_p;
+extern const char *OID_pwr_status;
+extern int g_pwr_battery;
+extern int pollfreq; /* polling frequency */
 extern int input_phases, output_phases, bypass_phases;
 
 #endif /* SNMP_UPS_H */

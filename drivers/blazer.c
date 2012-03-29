@@ -2,9 +2,11 @@
  * blazer.c: driver core for Megatec/Q1 protocol based UPSes
  *
  * A document describing the protocol implemented by this driver can be
- * found online at "http://www.networkupstools.org/protocols/megatec.html".
+ * found online at http://www.networkupstools.org/ups-protocols/megatec.html
  *
- * Copyright (C) 2008,2009 - Arjen de Korte <adkorte-guest@alioth.debian.org>
+ * Copyright (C)
+ *   2008,2009 - Arjen de Korte <adkorte-guest@alioth.debian.org>
+ *   2012 - Arnaud Quette <ArnaudQuette@Eaton.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -280,6 +282,7 @@ static int blazer_status(const char *cmd)
 
 	if (val[6] == '1') {	/* Shutdown Active */
 		alarm_set("Shutdown imminent!");
+		status_set("FSD");
 	}
 
 	alarm_commit();
@@ -522,6 +525,22 @@ void blazer_initups(void)
 static void blazer_initbattery(void)
 {
 	const char	*val;
+
+	/* If no values were provided by the user in ups.conf, try to guesstimate
+	 * battery.charge, but announce it! */
+	if ((batt.volt.nom != 1) && (batt.volt.high == -1) && (batt.volt.high == -1)) {
+		upslogx(LOG_INFO, "No values provided for battery high/low voltages in ups.conf\n");
+
+		/* Basic formula, which should cover most cases */
+		batt.volt.low = 104 * batt.volt.nom / 120;
+		batt.volt.high = 130 * batt.volt.nom / 120;
+
+		/* Publish these data too */
+		dstate_setinfo("battery.voltage.low", "%.2f", batt.volt.low);
+		dstate_setinfo("battery.voltage.high", "%.2f", batt.volt.high);
+		
+		upslogx(LOG_INFO, "Using 'guestimation' (low: %f, high: %f)!", batt.volt.low, batt.volt.high);
+	}
 
 	val = getval("runtimecal");
 	if (val) {

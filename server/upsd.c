@@ -1,9 +1,9 @@
 /* upsd.c - watches ups state files and answers queries 
 
    Copyright (C)
-	1999	Russell Kroll <rkroll@exploits.org>
-	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
-	2011	Arnaud Quette <arnaud.quette.free.fr>
+	1999		Russell Kroll <rkroll@exploits.org>
+	2008		Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2011 - 2012	Arnaud Quette <arnaud.quette.free.fr>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -74,7 +74,7 @@ int	deny_severity = LOG_WARNING;
 	/* everything else */
 	const char	*progname;
 
-static nut_ctype_t	*firstclient = NULL;
+nut_ctype_t	*firstclient = NULL;
 /* static nut_ctype_t	*lastclient = NULL; */
 
 	/* default is to listen on all local interfaces */
@@ -1169,6 +1169,15 @@ int main(int argc, char **argv)
 		send_to_named_pipe(UPSD_PIPE_NAME,cmd);
 #endif
 		exit(EXIT_SUCCESS);
+	}
+
+	/* otherwise, we are being asked to start.
+	 * so check if a previous instance is running by sending signal '0'
+	 * (Ie 'kill <pid> 0') */
+	if (sendsignalfn(pidfn, 0) == 0) {
+		printf("Fatal error: A previous upsd instance is already running!\n");
+		printf("Either stop the previous instance first, or use the 'reload' command.\n");
+		exit(EXIT_FAILURE);
 	}
 
 	argc -= optind;

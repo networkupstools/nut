@@ -240,6 +240,13 @@ static int findwordstart(PCONF_CTX_t *ctx)
 
 	/* at this point the word just started */
 	addchar(ctx);
+
+	/* if the first character is a '=' this is considered a whole word */
+	if (ctx->ch == '=') {
+		endofword(ctx);
+		return STATE_FINDWORDSTART;
+	}
+
 	return STATE_COLLECT;
 }	
 
@@ -322,6 +329,14 @@ static int collect(PCONF_CTX_t *ctx)
 	/* space means the word is done */
 	if (isspace(ctx->ch)) {
 		endofword(ctx);
+
+		return STATE_FINDWORDSTART;
+	}
+
+	/* '=' means the word is done and the = is a single char word*/
+	if (ctx->ch == '=') {
+		endofword(ctx);
+		findwordstart(ctx);
 
 		return STATE_FINDWORDSTART;
 	}

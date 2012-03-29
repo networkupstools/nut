@@ -29,7 +29,7 @@
 #define LIEBERT_HID_VERSION     "Liebert HID 0.3"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
-/* Phoenixtec */
+/* Phoenixtec Power Co., Ltd */
 #define LIEBERT_VENDORID	0x06da
 
 /* USB IDs device table */

@@ -31,7 +31,7 @@
 #endif
 
 #define DRIVER_NAME	"Megatec/Q1 protocol USB driver"
-#define DRIVER_VERSION	"0.04"
+#define DRIVER_VERSION	"0.06"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -67,7 +67,7 @@ static int cypress_command(const char *cmd, char *buf, size_t buflen)
 		/* Write data in 8-byte chunks */
 		/* ret = usb->set_report(udev, 0, (unsigned char *)&tmp[i], 8); */
 		ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
-			0x09, 0x200, 0, &tmp[i], 8, 1000);
+			0x09, 0x200, 0, &tmp[i], 8, 5000);
 
 		if (ret <= 0) {
 			upsdebugx(3, "send: %s", ret ? usb_strerror() : "timeout");
@@ -349,6 +349,7 @@ static usb_device_id_t blazer_usb_id[] = {
 	{ USB_DEVICE(0x0001, 0x0000), &krauler_subdriver },	/* Krauler UP-M500VA */
 	{ USB_DEVICE(0xffff, 0x0000), &krauler_subdriver },	/* Ablerex 625L USB */
 	{ USB_DEVICE(0x0665, 0x5161), &cypress_subdriver },	/* Belkin F6C1200-UNV */
+	{ USB_DEVICE(0x06da, 0x0002), &cypress_subdriver },	/* Online Yunto YQ450 */
 	{ USB_DEVICE(0x06da, 0x0003), &ippon_subdriver },	/* Mustek Powermust */
 	{ USB_DEVICE(0x0f03, 0x0001), &cypress_subdriver },	/* Unitek Alpha 1200Sx */
 	{ USB_DEVICE(0x14f0, 0x00c9), &phoenix_subdriver },	/* GE EP series */

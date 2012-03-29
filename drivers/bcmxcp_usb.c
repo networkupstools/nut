@@ -299,6 +299,7 @@ int command_write_sequence(unsigned char *command, int command_length, unsigned	
 
 	while ((bytes_read < 1) && (retry < 5)) {
 		send_write_command(command, command_length);
+		sleep(PW_SLEEP);
 		bytes_read = get_answer(answer, command[0]);
 		retry ++;
 	}
