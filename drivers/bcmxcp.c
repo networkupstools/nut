@@ -1653,12 +1653,6 @@ static int instcmd(const char *cmdname, const char *extra)
 		/* Get the shutdown delay, if any */
 		snprintf(varname, sizeof(varname)-1, "outlet.%c.delay.shutdown", cmdname[7]);
 		if ((varvalue = dstate_getinfo(varname)) != NULL) {
-			sddelay = atoi(varvalue);
-		}
-
-		/* Get the shutdown delay, if any */
-		snprintf(varname, sizeof(varname)-1, "outlet.%c.delay.shutdown", cmdname[7]);
-		if ((varvalue = dstate_getinfo(varname)) != NULL) {
 			sddelay = atoi(dstate_getinfo(varname));
 		}
 

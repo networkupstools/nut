@@ -90,7 +90,7 @@ at different loads. Typically, this uses the runtime at full load and the
 runtime at half load. For instance, if your UPS has a rated runtime of 240
 seconds at full load and 720 seconds at half load, you would enter
 +
-    runtimecal = 270,100,720,50
+    runtimecal = 240,100,720,50
 +
 The first load should always be higher than the second. If you have values
 available for loads other than 100 and 50 % respectively, you can use those
