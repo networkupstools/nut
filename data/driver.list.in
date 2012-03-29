@@ -802,6 +802,11 @@
 "Various"	"ups"	"3"	"(various)"	"SNMP - RFC 1628"	"snmp-ups (experimental)"
 "Various"	"ups"	"1"	"(various)"	"Safenet software"	"safenet"
 "Various"	"ups"	"2"	"(Various USB)"	"UPSilon 2000 software"	"blazer_usb langid_fix=0x409"
+"Various"	"ups"	"2"	"(Various serial)"	"WinPower software"	"blazer_ser"
+"Various"	"ups"	"2"	"(Various USB)"	"WinPower software"	"blazer_usb"
+"Various"	"ups"	"2"	"Various Innova T"	"(USB ID 06da:0201)"	"blazer_ser or blazer_usb"
+"Various"	"ups"	"2"	"Various Innova RT"	"(USB ID 06da:0005)"	"blazer_ser or blazer_usb"
+"Various"	"ups"	"2"	"Various Innova 3/1 T"	"(USB ID 06da:0004)"	"blazer_ser or blazer_usb"
 
 "Victron/IMV"	"ups"	"1"	"(various)"	""	"victronups"
 "Victron/IMV"	"ups"	"1"	"Lite"	"crack cable"	"genericups upstype=10"

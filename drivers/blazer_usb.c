@@ -5,7 +5,7 @@
  * found online at "http://www.networkupstools.org/protocols/megatec.html".
  *
  * Copyright (C) 2003-2009  Arjen de Korte <adkorte-guest@alioth.debian.org>
- * Copyright (C) 2011  Arnaud Quette <arnaud.quette@free.fr>
+ * Copyright (C) 2011-2012  Arnaud Quette <arnaud.quette@free.fr>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@
 #include "blazer.h"
 
 #define DRIVER_NAME	"Megatec/Q1 protocol USB driver"
-#define DRIVER_VERSION	"0.06"
+#define DRIVER_VERSION	"0.07"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -348,6 +348,9 @@ static usb_device_id_t blazer_usb_id[] = {
 	{ USB_DEVICE(0x0665, 0x5161), &cypress_subdriver },	/* Belkin F6C1200-UNV */
 	{ USB_DEVICE(0x06da, 0x0002), &cypress_subdriver },	/* Online Yunto YQ450 */
 	{ USB_DEVICE(0x06da, 0x0003), &ippon_subdriver },	/* Mustek Powermust */
+	{ USB_DEVICE(0x06da, 0x0004), &cypress_subdriver },	/* Phoenixtec Innova 3/1 T */
+	{ USB_DEVICE(0x06da, 0x0005), &cypress_subdriver },	/* Phoenixtec Innova RT */
+	{ USB_DEVICE(0x06da, 0x0201), &cypress_subdriver },	/* Phoenixtec Innova T */
 	{ USB_DEVICE(0x0f03, 0x0001), &cypress_subdriver },	/* Unitek Alpha 1200Sx */
 	{ USB_DEVICE(0x14f0, 0x00c9), &phoenix_subdriver },	/* GE EP series */
 	/* end of list */
