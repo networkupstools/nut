@@ -87,10 +87,8 @@ size_t max_threads_netsnmp = 0; /* 10240; */
 
 #endif /* HAVE_PTHREAD */
 
-#ifdef WIN32
 /* Stub for libupsclient */
 void do_upsconf_args(char *confupsname, char *var, char *val) {;};
-#endif
 
 void nutscan_init(void)
 {
