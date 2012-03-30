@@ -471,10 +471,23 @@ int sendsignalfn(const char *pidfn, int sig)
 	fclose(pidf);
 	return ret;
 #else
-	ret = GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT,pid);
-	fclose(pidf);
-	if (ret == 0) {
-		return -1;
+	if (sig == 0) {
+		HANDLE proc;
+		proc = OpenProcess(READ_CONTROL, FALSE, pid);
+		CloseHandle(proc);
+		fclose(pidf);
+
+		if (proc == NULL) {
+			return -1;
+		}
+	}
+	else {
+		ret = GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, pid);
+		fclose(pidf);
+
+		if (ret == 0) {
+			return -1;
+		}
 	}
 	return 0;
 #endif
