@@ -12,7 +12,7 @@
 #include <usb.h>
 
 #define SUBDRIVER_NAME	"USB communication subdriver"
-#define SUBDRIVER_VERSION	"0.19"
+#define SUBDRIVER_VERSION	"0.20"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -104,6 +104,7 @@ void send_read_command(unsigned char command)
 		buf[1] = 0x01;                    /* data length */
 		buf[2] = command;                 /* command to send */
 		buf[3] = calc_checksum(buf);      /* checksum */
+		upsdebug_hex (3, "send_read_command", buf, 4);
 		usb_set_descriptor(upsdev, USB_DT_STRING, 4, buf, 4); /* FIXME: Ignore error */
 	}
 }
@@ -122,6 +123,7 @@ void send_write_command(unsigned char *command, int command_length)
 		/* Add checksum */
 		sbuf[command_length] = calc_checksum(sbuf);
 		command_length += 1;
+		upsdebug_hex (3, "send_write_command", sbuf, command_length);
 		usb_set_descriptor(upsdev, USB_DT_STRING, 4, sbuf, command_length);  /* FIXME: Ignore error */
 	}
 }
