@@ -23,17 +23,22 @@ Variables
 device: General unit information
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-NOTE: these data will be redundant with some ups.* information
+NOTE: some of these data will be redundant with ups.* information
 during a transition period. The ups.* data will then be removed.
 
 [options="header"]
-|========================================================================
-| Name           | Description                          | Example value
-| device.model   | Device model                         | BladeUPS
-| device.mfr     | Device manufacturer                  | Eaton
-| device.serial  | Device serial number (opaque string) | WS9643050926
-| device.type    | Device type (ups, pdu, scd)          | ups
-|========================================================================
+|====================================================================================
+| Name                | Description                                | Example value
+| device.model        | Device model                               | BladeUPS
+| device.mfr          | Device manufacturer                        | Eaton
+| device.serial       | Device serial number (opaque string)       | WS9643050926
+| device.type         | Device type (ups, pdu, scd, psu)           | ups
+| device.description  | Device description (opaque string)         | Some ups
+| device.contact      | Device administrator name (opaque string)  | John Doe
+| device.location     | Device physical location (opaque string)   | 1rst floor
+| device.part         | Device part number (opaque string)         | 123456789
+| device.macaddr      | Physical network address of the device     | 68:b5:99:f5:89:27 
+|=====================================================================================
 
 ups: General unit information
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -299,36 +304,38 @@ battery: Any battery details
 
 [options="header"]
 |===============================================================================
-| Name                    | Description                     | Example value
-| battery.charge          | Battery charge (percent)        | 100.0
+| Name                    | Description                       | Example value
+| battery.charge          | Battery charge (percent)          | 100.0
 | battery.charge.low      | Remaining battery level when
-                            UPS switches to LB (percent)    | 20
+                            UPS switches to LB (percent)      | 20
 | battery.charge.restart  | Minimum battery level for
-                            UPS restart after power-off     | 20
+                            UPS restart after power-off       | 20
 | battery.charge.warning  | Battery level when UPS switches
-                            to "Warning" state (percent)    | 50
-| battery.voltage         | Battery voltage (V)             | 24.84
-| battery.capacity        | Battery capacity (Ah)           | 7.2
-| battery.current         | Battery current (A)             | 1.19
-| battery.temperature     | Battery temperature (degrees C) | 050.7
-| battery.voltage.nominal | Nominal battery voltage (V)     | 024
+                            to "Warning" state (percent)      | 50
+| battery.voltage         | Battery voltage (V)               | 24.84
+| battery.capacity        | Battery capacity (Ah)             | 7.2
+| battery.current         | Battery current (A)               | 1.19
+| battery.temperature     | Battery temperature (degrees C)   | 050.7
+| battery.voltage.nominal | Nominal battery voltage (V)       | 024
 | battery.runtime         | Battery runtime (seconds)
-                            Remaining battery runtime       | 1080
+                            Remaining battery runtime         | 1080
 | battery.runtime.low     | when UPS switches to LB
-                            (seconds)                       | 180
-| battery.alarm.threshold | Battery alarm threshold         | 0 (immediate)
+                            (seconds)                         | 180
+| battery.runtime.restart | Minimum battery runtime for UPS
+                            restart after power-off (seconds) | 120
+| battery.alarm.threshold | Battery alarm threshold           | 0 (immediate)
 | battery.date            | Battery change date (opaque
-                            string)                         | 11/14/00
+                            string)                           | 11/14/00
 | battery.mfr.date        | Battery manufacturing date 
-                            (opaque string)                 | 2005/04/02
-| battery.packs           | Number of battery packs         | 001
-| battery.packs.bad       | Number of bad battery packs     | 000
+                            (opaque string)                   | 2005/04/02
+| battery.packs           | Number of battery packs           | 001
+| battery.packs.bad       | Number of bad battery packs       | 000
 | battery.type            | Battery chemistry (opaque
-                            string)                         | PbAc
+                            string)                           | PbAc
 | battery.protection      | Prevent deep discharge of
-                            battery                         | yes
+                            battery                           | yes
 | battery.energysave      | Switch off when running on
-                            battery and no/low load         | no
+                            battery and no/low load           | no
 |===============================================================================
 
 
@@ -389,13 +396,19 @@ represent the whole set of outlets of the device.
 | outlet.n.autoswitch.charge.low | Remaining battery level to
                                    power off this outlet
                                    (percent)                  | 80
+| outlet.n.battery.charge.low    | Remaining battery level to
+                                   power off this outlet
+                                   (percent)                  | 80
 | outlet.n.delay.shutdown        | Interval to wait before
                                    shutting down this outlet
                                    (seconds)                  | 180
-
 | outlet.n.delay.start           | Interval to wait before
                                    restarting this outlet
-                                   (seconds)                  | 120
+                                   (seconds)                   | 120
+| outlet.n.timer.shutdown        | Time before the outlet load
+                                   will be shutdown (seconds)  | 20
+| outlet.n.timer.start           | Time before the outlet load
+                                   will be started (seconds)   | 30
 | outlet.n.current               | Current (A)                | 0.19
 | outlet.n.current.maximum       | Maximum seen current (A)   | 0.56
 | outlet.n.realpower             | Current value of real
@@ -409,7 +422,6 @@ represent the whole set of outlets of the device.
                                    to or greater than 1)      | 1.41
 | outlet.n.power                 | Apparent power (VA)        | 46
 |===============================================================================
-
 
 driver: Internal driver information
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -446,6 +458,8 @@ Instant commands
 | Name                     | Description
 | load.off                 | Turn off the load immediately
 | load.on                  | Turn on the load immediately
+| load.off.delay           | Turn off the load possibly after a delay 
+| load.on.delay            | Turn on the load possibly after a delay 
 | shutdown.return          | Turn off the load possibly after a delay 
                              and return when power is back
 | shutdown.stayoff         | Turn off the load possibly after a delay
@@ -472,4 +486,9 @@ Instant commands
 | beeper.disable           | Disable UPS beeper/buzzer
 | beeper.mute              | Temporarily mute UPS beeper/buzzer
 | beeper.toggle            | Toggle UPS beeper/buzzer
+| outlet.n.shutdown.return | Turn off the outlet possibly after a delay 
+                             and return when power is back
+| outlet.n.load.off        | Turn off the outlet immediately
+| outlet.n.load.on         | Turn on the outlet immediately
+| outlet.n.load.cycle      | Power cycle the outlet immediately
 |========================================================================
