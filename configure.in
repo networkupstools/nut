@@ -203,7 +203,11 @@ AC_CHECK_DECLS(__func__, [], [
 		AC_DEFINE(__func__, __LINE__, [Replace missing  __func__ declaration])
 	], [AC_INCLUDES_DEFAULT])
 ], [AC_INCLUDES_DEFAULT])
-	      
+
+dnl Solaris compatibility - check for -lnsl and -lsocket
+AC_SEARCH_LIBS(gethostbyname, nsl)
+AC_SEARCH_LIBS(connect, socket)
+
 AC_HEADER_TIME
 AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h sys/termios.h sys/time.h, [], [], [AC_INCLUDES_DEFAULT])
 
@@ -1205,7 +1209,6 @@ eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
 NUT_DATADIR=${conftemp}
 AC_DEFINE_UNQUOTED(NUT_DATADIR, "${conftemp}", [Default path for data files])
-
 dnl same for bindir
 conftemp="${bindir}"
 eval conftemp=\"${conftemp}\"
@@ -1254,6 +1257,7 @@ AC_SUBST(LIBHAL_LIBS)
 AC_SUBST(DRIVER_BUILD_LIST)
 AC_SUBST(DRIVER_MAN_LIST)
 AC_SUBST(DRIVER_INSTALL_TARGET)
+AC_SUBST(NETLIBS)
 AC_SUBST(SERLIBS)
 AC_SUBST(PIDPATH)
 AC_SUBST(STATEPATH)
