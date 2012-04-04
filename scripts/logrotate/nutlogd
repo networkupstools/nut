@@ -1,0 +1,24 @@
+# Log rotation configuration for NUT:
+#   Rotate NUT log file(s) either monthly or when exceeding 5 Mb
+#
+# For more information, refer to logrotate(8) manual page:
+#   http://linuxcommand.org/man_pages/logrotate8.html
+#
+# To install this file, use:
+# $ cp nutlogd /etc/logrotate.d/
+# $ chmod 644 /etc/logrotate.d/nutlogd
+# $ chown root.root /etc/logrotate.d/nutlogd 
+#
+# Log files must have "nut-" prefix and ".log" suffix
+
+/var/log/nut-*.log {
+    missingok
+    notifempty
+    size=5M
+    rotate 12
+    monthly
+    postrotate
+        /usr/bin/killall -HUP upslog
+    endscript
+}
+
