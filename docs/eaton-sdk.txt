@@ -40,7 +40,7 @@ Legal limitations
 The Network UPS Tools Opensource framework is a GNU General Public License (GPL)
 software that provides support for many different UPSs and PDUs. We expressly
 make the license terms of the GNU GPL applicable to this SDK solution, and by
-using the SDK you also accept to abide by these license terms; please see below. 
+using the SDK you also accept to abide by these license terms; please see below.
 
 GPL software have legal and technical implications, and generally can not be
 used with proprietary software. You should consider these very seriously before
@@ -72,6 +72,52 @@ PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>. 
+
+Complementary information
+-------------------------
+
+According to the FSF, "The GPL does not require you to release your modified
+version, or any part of it. You are free to make modifications and use them
+*privately*, without ever releasing them.":
+
+link:http://www.gnu.org/licenses/gpl-faq.html#GPLRequireSourcePostedPublic[]
+
+However if one releases a GPL-licensed entity to the public, there is an issue
+regarding linking: namely, if a proprietary program uses a GPL library, is the
+proprietary program in violation of the GPL?
+
+For application that are released publically, Eaton understanding of this
+linking is the following:
+
+.Linking directly GPL code with proprietary code
+[options="autowidth",grid="none",frame="none",halign="center",valign="middle",cols="^,^"]
+|===============================================================================
+|image:images/gpl-link1.png[] |Using directly the SDK library, either
+dynamically or statically linked, is considered as a derivative work. Thus,
+*it requires the proprietary code to be released under the GNU GPL, as illustrated*.
+|===============================================================================
+
+.Linking indirectly GPL code with proprietary code
+[options="autowidth",grid="none",frame="none",halign="center",valign="middle",cols="^,^"]
+|===============================================================================
+|image:images/gpl-link2.png[] |Using indirectly the SDK library, either
+dynamically or statically linked, through a wrapper library is considered as a
+derivative work. Thus, *it requires the proprietary code to be released under
+the GNU GPL, as illustrated*.
+|===============================================================================
+
+.Interface indirectly GPL program with proprietary program
+[options="autowidth",grid="none",frame="none",halign="center",valign="middle",cols="^,^"]
+|===============================================================================
+|image:images/gpl-link3.png[] |Using indirectly the SDK library, either
+dynamically or statically linked, through network socket, RPC calls, system
+execution of commands, or any means that clearly separate programs, is not
+considered as a derivative work. Thus, *it does not require the proprietary
+code to be released under GNU GPL, as illustrated*.
+
+This can be summed up as using directly the full NUT framework, as described in
+<<Full_framework,Chapter 4>>.
+|===============================================================================
 
 
 Support information
