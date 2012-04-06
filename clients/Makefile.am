@@ -45,11 +45,11 @@ upsstats_cgi_SOURCES = upsstats.c upsclient.h status.h upsstats.h	\
  upsimagearg.h cgilib.c cgilib.h
 
 # not LDADD.
-if HAVE_WINSOCK2_H
+if HAVE_WINDOWS_SOCKETS
   libupsclient_la_SOURCES = upsclient.c upsclient.h ../common/wincompat.c ../common/common.c
-else
+else !HAVE_WINDOWS_SOCKETS
   libupsclient_la_SOURCES = upsclient.c upsclient.h
-endif
+endif !HAVE_WINDOWS_SOCKETS
 libupsclient_la_LIBADD = ../common/libparseconf.la
 if WITH_SSL
   libupsclient_la_LIBADD += $(LIBSSL_LIBS)
