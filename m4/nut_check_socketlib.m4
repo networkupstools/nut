@@ -36,4 +36,6 @@ AC_DEFUN([NUT_CHECK_SOCKETLIB],
     fi
   fi
   AC_SUBST([NETLIBS])
+
+  AM_CONDITIONAL([HAVE_WINDOWS_SOCKETS], [test  "$nut_cv_func_wsastartup" = "yes"])
 ])

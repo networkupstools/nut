@@ -62,7 +62,7 @@ upsstats_cgi_SOURCES = upsstats.c upsclient.h status.h upsstats.h	\
 
 # not LDADD.
 libupsclient_la_SOURCES = upsclient.c upsclient.h
-if HAVE_WINSOCK2_H
+if HAVE_WINDOWS_SOCKETS
   libupsclient_la_SOURCES += $(top_srcdir)/common/wincompat.c $(top_srcdir)/common/common.c
 endif
 #libupsclient_la_LIBADD = $(top_builddir)/common/libcommonclient.la
@@ -78,7 +78,7 @@ endif
 
 # libupsclient version information
 libupsclient_la_LDFLAGS = -version-info 6:0:0 -export-symbols-regex ^upscli_
-if HAVE_WINSOCK2_H
+if HAVE_WINDOWS_SOCKETS
   # Many versions of MingW seem to fail without this
   libupsclient_la_LDFLAGS += -no-undefined
 endif
