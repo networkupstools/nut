@@ -61,9 +61,10 @@ upsstats_cgi_SOURCES = upsstats.c upsclient.h status.h upsstats.h	\
  upsimagearg.h cgilib.c cgilib.h
 
 # not LDADD.
-<<<<<<< HEAD
 libupsclient_la_SOURCES = upsclient.c upsclient.h
-libupsclient_la_SOURCES += $(top_srcdir)/common/wincompat.c $(top_srcdir)/common/common.c
+if HAVE_WINSOCK2_H
+  libupsclient_la_SOURCES += $(top_srcdir)/common/wincompat.c $(top_srcdir)/common/common.c
+endif
 #libupsclient_la_LIBADD = $(top_builddir)/common/libcommonclient.la
 libupsclient_la_LIBADD = $(top_builddir)/common/libparseconf.la
 if WITH_SSL
@@ -72,15 +73,15 @@ endif
 
 # Below we set API versions of public libraries
 # http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
-<<<<<<< HEAD
 # Note that changes here may have to be reflected in packaging (the shared
 # object .so names would differ)
 
 # libupsclient version information
 libupsclient_la_LDFLAGS = -version-info 6:0:0 -export-symbols-regex ^upscli_
-=======
-libupsclient_la_LDFLAGS = -version-info 3:1:0 -no-undefined
->>>>>>> Merge from trunk [[SVN:3060]] to [[SVN:3318]]
+if HAVE_WINSOCK2_H
+  # Many versions of MingW seem to fail without this
+  libupsclient_la_LDFLAGS += -no-undefined
+endif
 
 if HAVE_CXX11
 # libnutclient version information and build
