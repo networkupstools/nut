@@ -28,13 +28,15 @@
  *   * other (9130) need more processing (0128 => 1.28)
  *   ...
  * - better handling of input.transfer.* (need dstate_addrange)
+ * - outlet management logic (Ie, for outlet.X.load.{on,off}.delay
+ * 		=> use outlet.X.delay.{start,stop}
  */
- 
+
 #include "main.h"		/* for getval() */
 #include "usbhid-ups.h"
 #include "mge-hid.h"
 
-#define MGE_HID_VERSION		"MGE HID 1.28"
+#define MGE_HID_VERSION		"MGE HID 1.30"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -45,6 +47,9 @@
 
 /* Powerware */
 #define POWERWARE_VENDORID	0x0592
+
+/* Hewlett Packard */
+#define HP_VENDORID 0x03f0
 
 #ifndef SHUT_MODE
 #include "usb-common.h"
@@ -60,6 +65,14 @@ static usb_device_id_t mge_usb_device_table[] = {
 
 	/* PW 9140 */
 	{ USB_DEVICE(POWERWARE_VENDORID, 0x0004), NULL },
+
+	/* R/T3000 */
+	{ USB_DEVICE(HP_VENDORID, 0x1fe5), NULL },
+	/* R/T3000 */
+	{ USB_DEVICE(HP_VENDORID, 0x1fe6), NULL },
+	/* various models */
+	{ USB_DEVICE(HP_VENDORID, 0x1fe7), NULL },
+	{ USB_DEVICE(HP_VENDORID, 0x1fe8), NULL },
 
 	/* Terminating entry */
 	{ -1, -1, NULL }
@@ -1005,6 +1018,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.1.status", 0, 0, "UPS.OutletSystem.Outlet.[2].PresentStatus.SwitchOn/Off", NULL, "%s", 0, on_off_info },
 	/* For low end models, with 1 non backup'ed outlet */
 	{ "outlet.1.status", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, "%s", 0, on_off_info },
+	/* FIXME: change to outlet.1.battery.charge.low, as in mge-xml.c?! */
 	{ "outlet.1.autoswitch.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet.[2].RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "outlet.1.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[2].ShutdownTimer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "outlet.1.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[2].StartupTimer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
@@ -1142,20 +1156,37 @@ static int mge_claim(HIDDevice_t *hd) {
 
 	switch (status) {
 
-		case POSSIBLY_SUPPORTED:
-			/* by default, reject, unless the productid option is given */
-			if (getval("productid")) {
-				return 1;
-			}
-			possibly_supported("Eaton / MGE", hd);
-			return 0;
+	case POSSIBLY_SUPPORTED:
 
-		case SUPPORTED:
-			return 1;
+		switch (hd->VendorID)
+		{
+			case HP_VENDORID:
+			case DELL_VENDORID:
+				/* by default, reject, unless the productid option is given */
+				if (getval("productid")) {
+					return 1;
+				}
 
-		case NOT_SUPPORTED:
-		default:
-			return 0;
+				/*
+				 * this vendor makes lots of USB devices that are
+				 * not a UPS, so don't use possibly_supported here
+				 */
+				return 0;
+			default: /* Valid for Eaton */
+				/* by default, reject, unless the productid option is given */
+				if (getval("productid")) {
+					return 1;
+				}
+				possibly_supported("Eaton / MGE", hd);
+				return 0;
+		}
+
+	case SUPPORTED:
+		return 1;
+
+	case NOT_SUPPORTED:
+	default:
+		return 0;
 	}
 #else
 			return 1;
