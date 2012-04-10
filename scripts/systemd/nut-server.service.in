@@ -5,7 +5,7 @@ Requires=nut-driver.service
 Before=nut-monitor.service
 
 [Service]
-ExecStart=/usr/sbin/upsd 
+ExecStart=@SBINDIR@/upsd 
 Type=forking
 
 [Install]
