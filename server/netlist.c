@@ -186,6 +186,41 @@ static void list_enum(nut_ctype_t *client, const char *upsname, const char *var)
 	sendback(client, "END LIST ENUM %s %s\n", upsname, var);
 }
 
+static void list_range(nut_ctype_t *client, const char *upsname, const char *var)
+{
+	const   upstype_t *ups;
+	const	st_tree_t	*node;
+	const	range_t	*rtmp;
+
+	ups = get_ups_ptr(upsname);
+
+	if (!ups) {
+		send_err(client, NUT_ERR_UNKNOWN_UPS);
+		return;
+	}
+
+	if (!ups_available(ups, client))
+		return;
+
+	node = sstate_getnode(ups, var);
+
+	if (!node) {
+		send_err(client, NUT_ERR_VAR_NOT_SUPPORTED);
+		return;
+	}
+
+	if (!sendback(client, "BEGIN LIST RANGE %s %s\n", upsname, var))
+		return;
+
+	for (rtmp = node->range_list; rtmp != NULL; rtmp = rtmp->next) {
+		if (!sendback(client, "RANGE %s %s \"%i\" \"%i\"\n",
+			upsname, var, rtmp->min, rtmp->max))
+			return;
+	}
+
+	sendback(client, "END LIST ENUM %s %s\n", upsname, var);
+}
+
 static void list_ups(nut_ctype_t *client)
 {
 	upstype_t	*utmp;
@@ -298,6 +333,12 @@ void net_list(nut_ctype_t *client, int numarg, const char **arg)
 	/* LIST ENUM UPS VARNAME */
 	if (!strcasecmp(arg[0], "ENUM")) {
 		list_enum(client, arg[1], arg[2]);
+		return;
+	}
+
+	/* LIST RANGE UPS VARNAME */
+	if (!strcasecmp(arg[0], "RANGE")) {
+		list_range(client, arg[1], arg[2]);
 		return;
 	}
 

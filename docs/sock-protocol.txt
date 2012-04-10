@@ -43,16 +43,16 @@ DELINFO
 ADDENUM
 ~~~~~~~
 
-	ADDENUM <varname> "<value>"
+	ADDRANGE <varname> <minvalue> <maxvalue>
 
-	ADDENUM input.transfer.low "95"
+	ADDRANGE input.transfer.low 95 100
 
-DELENUM
-~~~~~~~
+DELRANGE
+~~~~~~~~
 
-	DELENUM <varname> "<value>"
+	DELRANGE <varname> <minvalue> <maxvalue>
 
-	DELENUM input.transfer.low "98"
+	DELRANGE input.transfer.low 95 100
 
 SETAUX
 ~~~~~~

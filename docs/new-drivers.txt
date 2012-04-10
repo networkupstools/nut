@@ -612,6 +612,15 @@ enumerated.  You should add each one to make it available to the client:
 	dstate_addenum("input.transfer.low", "99");
 	dstate_addenum("input.transfer.low", "105");
 
+Range values
+------------
+
+If you have a variable that support values comprised in one or more ranges,
+you should add each one to make it available to the client:
+
+	dstate_addrange("input.transfer.low", 90, 95);
+	dstate_addrange("input.transfer.low", 100, 105);
+
 Writable strings
 ----------------
 
