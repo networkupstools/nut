@@ -1,7 +1,7 @@
 /*  tripplite-hid.c - data to monitor Tripp Lite USB/HID devices with NUT
  *
  *  Copyright (C)
- *	2003 - 2005 Arnaud Quette <arnaud.quette@free.fr>
+ *	2003 - 2012 Arnaud Quette <arnaud.quette@free.fr>
  *	2005 - 2006 Peter Selinger <selinger@users.sourceforge.net>
  *	2008 - 2009 Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
@@ -29,7 +29,7 @@
 #include "tripplite-hid.h"
 #include "usb-common.h"
 
-#define TRIPPLITE_HID_VERSION "TrippLite HID 0.7"
+#define TRIPPLITE_HID_VERSION "TrippLite HID 0.8"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 
@@ -111,14 +111,14 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 
 	/* e.g. ? */
 	{ USB_DEVICE(HP_VENDORID, 0x0001), battery_scale_1dot0 },
-	/* HP R1500 G2 INTL */
+	/* HP R1500 G2 and G3 INTL */
 	{ USB_DEVICE(HP_VENDORID, 0x1fe0), battery_scale_1dot0 },
 	/* HP T750 G2 */
 	{ USB_DEVICE(HP_VENDORID, 0x1fe1), battery_scale_1dot0 },
 	/* e.g. ? */
 	{ USB_DEVICE(HP_VENDORID, 0x1fe2), battery_scale_1dot0 },
+	/* HP T1500 G3 */
 	{ USB_DEVICE(HP_VENDORID, 0x1fe3), battery_scale_1dot0 },
-	{ USB_DEVICE(HP_VENDORID, 0x1fe5), battery_scale_1dot0 },
 	/* HP T750 INTL */
 	{ USB_DEVICE(HP_VENDORID, 0x1f06), battery_scale_1dot0 },
 	/* HP T1000 INTL */
@@ -276,6 +276,9 @@ static hid_info_t tripplite_hid2nut[] = {
 
 #endif /* USBHID_UPS_TRIPPLITE_DEBUG */
 
+	/* Device page */
+	{ "device.part", 0, 0, "UPS.TLCustom.[1].iUPSPartNumber", NULL, "%.0f", 0, stringid_conversion },
+
 	/* Battery page */
 	{ "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", 0, NULL },
 	{ "battery.charge", 0, 0, "UPS.BatterySystem.Battery.RemainingCapacity", NULL, "%.0f", 0, NULL },
@@ -307,6 +310,10 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ "ups.power", 0, 0, "UPS.OutletSystem.Outlet.ActivePower", NULL, "%.1f", 0, NULL },
 	{ "ups.power", 0, 0, "UPS.PowerConverter.Output.ActivePower", NULL, "%.1f", 0, NULL },
 	{ "ups.load", 0, 0, "UPS.OutletSystem.Outlet.PercentLoad", NULL, "%.0f", 0, NULL },
+	/* FIXME: what is the conversion format for this one?
+	 * Example on HP T1500 G3
+	 * UPS.TLCustom.[1].UPSFirmwareVersion, Type: Feature, ReportID: 0x0f, Offset: 0, Size: 16, Value: 262 */
+	{ "ups.firmware", 0, 0, "UPS.TLCustom.[1].UPSFirmwareVersion", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 
 	/* Number of seconds left before the watchdog reboots the UPS (0 = disabled) */
 	{ "ups.watchdog.status", 0, 0, "UPS.OutletSystem.Outlet.TLWatchdog", NULL, "%.0f", 0, NULL },
@@ -397,12 +404,15 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ "beeper.mute", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "3", HU_TYPE_CMD, NULL },
 
 	/* FIXME (to be tested): HP specific (may conflict or differ from TL implementation!)
-	 * - to be enabled, once {ups,device}.part is validated
-	 * { "device.part", 0, 0, "UPS.TLCustom.[1].iUPSPartNumber", NULL, "%.0f", 0, stringid_conversion },
 	 * { "outlet.count", 0, 0, "UPS.TLCustom.[1].OutletCount", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 	 * { "outlet.status", 0, 0, "UPS.TLCustom.[1].OutletState", NULL, "%.0f", HU_FLAG_STATIC, NULL },
-	 * - what is the conversion format for this one?
-	 * { "ups.firmware", 0, 0, "UPS.TLCustom.[1].UPSFirmwareVersion", NULL, "%.0f", HU_FLAG_STATIC, NULL },
+		0.284486	Path: UPS.TLCustom.[1].ffff00ff, Type: Feature, ReportID: 0xff, Offset: 0, Size: 8, Value: 255
+		0.285276	Path: UPS.TLCustom.[1].OutletCount, Type: Feature, ReportID: 0x6d, Offset: 0, Size: 8, Value: 1
+		0.286260	Path: UPS.TLCustom.[1].OutletState, Type: Feature, ReportID: 0x70, Offset: 0, Size: 8, Value: 1
+		0.287248	Path: UPS.TLCustom.[1].CommunicationVersion, Type: Feature, ReportID: 0x0e, Offset: 0, Size: 16, Value: 262
+		0.288901	Path: UPS.TLCustom.[1].CommunicationProtocolVersion, Type: Feature, ReportID: 0x6c, Offset: 0, Size: 16, Value: 2560
+		0.289903	Path: UPS.TLCustom.[1].TLDelayBeforeStartup, Type: Feature, ReportID: 0x71, Offset: 0, Size: 16, Value: 65535
+		0.290854	Path: UPS.TLCustom.[1].AutoOnDelay, Type: Feature, ReportID: 0x72, Offset: 0, Size: 16, Value: 65535
 	 */
 
 	/* end of structure. */
