@@ -22,7 +22,7 @@ DEFAULT_INTERVAL=5
 # temporary files location
 TEMP_DIR="/tmp"
 
-# output to dummy-device.dev by default
+# output this file by default
 DEFAULT_OUTPUT="dummy-device.seq"
 
 # Process command line parameters
