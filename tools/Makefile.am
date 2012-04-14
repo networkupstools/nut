@@ -4,7 +4,7 @@
 # built before going into the nut-scanner sub-directory
 SUBDIRS = . nut-scanner
 
-EXTRA_DIST = nut-usbinfo.pl nut-hclinfo.py device-recorder.sh svn2cl.authors nut-snmpinfo.py
+EXTRA_DIST = nut-usbinfo.pl nut-hclinfo.py nut-recorder.sh svn2cl.authors nut-snmpinfo.py
 
 all: nut-scanner-deps 
 

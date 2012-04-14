@@ -119,7 +119,7 @@ Device recording
 ----------------
 
 To complete dummy-ups, NUT provides a device recorder script called
-'device-recorder.sh' and located in the 'tools/' directory of the
+'nut-recorder.sh' and located in the 'tools/' directory of the
 NUT source tree.
 
 This script uses 'upsc' to record device information, and stores
@@ -131,7 +131,7 @@ Its usage is the following:
 
 For example, to record information from the device 'myups' every 10 seconds:
 
-	tools/device-recorder.sh myups@localhost myups.seq 10
+	nut-recorder.sh myups@localhost myups.seq 10
 
 During the recording, you will want to generate power events, such as power
 failure and restoration. These will be tracked in the simulation files, and be

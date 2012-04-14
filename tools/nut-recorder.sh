@@ -1,16 +1,20 @@
 #!/bin/sh
 ################################################################################
 #
-# device-recorder.sh
-#   A script to record device running sequence and dump it in a .seq format
-#   The .seq file can then be used by dummy-ups to replay the sequence.
+# nut-recorder
+#   An utility to record device running sequence (Ie power failures or any
+#   other change) and dump it in a .seq format
+#   The .seq file can then be used by the 'dummy-ups driver to replay the
+#   sequence.
 #
 ################################################################################
 # FIXME:
-#  - implement PAUSE / RESUME (do not increment TIMER) on pressing space
+#  - implement PAUSE / RESUME (do not increment TIMER) on pressing space (?)
+#  - implement support for creating either .dev (static dump) or .seq
+#  - implement dump of instcmd and upsrw
 ################################################################################
 
-strUsage="Usage: dummy-recorder.sh <device-name> [output-file] [interval]"
+strUsage="Usage: nut-recorder <device-name> [output-file] [interval]"
 
 # log data each 5 seconds
 DEFAULT_INTERVAL=5
