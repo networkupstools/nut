@@ -181,7 +181,7 @@ static unsigned __stdcall async_notify(LPVOID param)
 
 	if (flag_isset(data->flags, NOTIFY_WALL)) {
 		snprintf(notice,LARGEBUF,"%s: %s", data->date, data->notice);
-		MessageBox(NULL,notice,SVCNAME,MB_OK|MB_ICONEXCLAMATION|MB_SERVICE_NOTIFICATION);
+		wall(notice);
 	}
 
 	if (flag_isset(data->flags, NOTIFY_EXEC)) {
