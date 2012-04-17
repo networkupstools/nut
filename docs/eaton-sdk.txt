@@ -607,7 +607,7 @@ With MinGW
 Building statically:
 
 --------------------------------------
-gcc test.c -I<path-to-include> libeaton_usbhid.a libusb.a libgnu.a -lws2_32
+gcc test.c -I<path-to-include> libeaton_usbhid.a libusb.a libregex.a -lws2_32
 --------------------------------------
 
 You need libusb0.dll in your path to run the resulting executable.
@@ -711,7 +711,7 @@ With MinGW
 Building statically:
 
 --------------------------------------
-gcc test.c -I<path-to-include> libeaton_usbxcp.a libusb.a libgnu.a -lws2_32
+gcc test.c -I<path-to-include> libeaton_usbxcp.a libusb.a libregex.a -lws2_32
 --------------------------------------
 
 You need libusb0.dll in your path to run the resulting executable.
@@ -831,7 +831,7 @@ With MinGW
 Building statically:
 
 --------------------------------------
-gcc test.c -I<path-to-include> libeaton_usbblazer.a libusb.a libgnu.a -lws2_32
+gcc test.c -I<path-to-include> libeaton_usbblazer.a libusb.a libregex.a -lws2_32
 --------------------------------------
 
 You need libusb0.dll in your path to run the resulting
