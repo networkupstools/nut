@@ -5,15 +5,15 @@
 
 #include "config.h"
 
+#ifndef WIN32
 #if defined(HAVE_SYS_TERMIOS_H)
 #  include <sys/termios.h>      /* for speed_t */
 #else
-#ifndef WIN32
 #  include <termios.h>
+#endif
 #else
 #include "common.h"
 #include "wincompat.h"
-#endif
 #endif /* HAVE_SYS_TERMIOS_H */
 
 /* limit the amount of spew that goes in the syslog when we lose the UPS */
