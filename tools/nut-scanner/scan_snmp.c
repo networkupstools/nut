@@ -74,6 +74,7 @@ static int thread_count = 0;
 long g_usec_timeout ;
 
 /* dynamic link library stuff */
+static char * libname = "libnetsnmp";
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
 
@@ -118,7 +119,7 @@ int nutscan_load_snmp_library()
                 return 0;
         }
 
-	dl_handle = lt_dlopenext("libnetsnmp");
+	dl_handle = lt_dlopenext(libname);
 	if (!dl_handle) {
 		dl_error = lt_dlerror();
 		goto err;
@@ -231,7 +232,7 @@ int nutscan_load_snmp_library()
 
 	return 1;
 err:
-	fprintf(stderr, "%s\n", dl_error);
+        fprintf(stderr, "Cannot load SNMP library (%s) : %s. SNMP search disabled.\n", libname, dl_error);
 	dl_handle = (void *)1;
 	return 0;
 }
