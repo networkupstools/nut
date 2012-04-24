@@ -74,13 +74,13 @@ HTML_CLIENT_MANS = \
 	upsrw.html \
 	upssched.html
 
-SRC_TOOL_PAGES = nut-scanner.txt
+SRC_TOOL_PAGES = nut-scanner.txt nut-recorder.txt
 
-MAN_TOOL_PAGES = nut-scanner.8
+MAN_TOOL_PAGES = nut-scanner.8 nut-recorder.8
 
 man8_MANS += $(MAN_TOOL_PAGES)
 
-HTML_TOOL_MANS = nut-scanner.html
+HTML_TOOL_MANS = nut-scanner.html nut-recorder.html
 
 # CGI (--with-cgi) related manpages
 SRC_CGI_PAGES = \

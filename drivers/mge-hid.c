@@ -1,6 +1,6 @@
-/*  mge-hid.c - data to monitor MGE UPS SYSTEMS HID (USB and serial) devices
+/*  mge-hid.c - data to monitor Eaton / MGE HID (USB and serial) devices
  *
- *  Copyright (C) 2003 - 2009
+ *  Copyright (C) 2003 - 2012
  *  			Arnaud Quette <arnaud.quette@free.fr>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
@@ -22,11 +22,21 @@
  *
  */
 
+/* TODO list:
+ * - better processing of FW info:
+ *   * some models (HP R5000) include firmware.aux (00.01.0021;00.01.00)
+ *   * other (9130) need more processing (0128 => 1.28)
+ *   ...
+ * - better handling of input.transfer.* (need dstate_addrange)
+ * - outlet management logic (Ie, for outlet.X.load.{on,off}.delay
+ * 		=> use outlet.X.delay.{start,stop}
+ */
+
 #include "main.h"		/* for getval() */
 #include "usbhid-ups.h"
 #include "mge-hid.h"
 
-#define MGE_HID_VERSION		"MGE HID 1.27"
+#define MGE_HID_VERSION		"MGE HID 1.30"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -37,6 +47,9 @@
 
 /* Powerware */
 #define POWERWARE_VENDORID	0x0592
+
+/* Hewlett Packard */
+#define HP_VENDORID 0x03f0
 
 #ifndef SHUT_MODE
 #include "usb-common.h"
@@ -52,6 +65,14 @@ static usb_device_id_t mge_usb_device_table[] = {
 
 	/* PW 9140 */
 	{ USB_DEVICE(POWERWARE_VENDORID, 0x0004), NULL },
+
+	/* R/T3000 */
+	{ USB_DEVICE(HP_VENDORID, 0x1fe5), NULL },
+	/* R/T3000 */
+	{ USB_DEVICE(HP_VENDORID, 0x1fe6), NULL },
+	/* various models */
+	{ USB_DEVICE(HP_VENDORID, 0x1fe7), NULL },
+	{ USB_DEVICE(HP_VENDORID, 0x1fe8), NULL },
 
 	/* Terminating entry */
 	{ -1, -1, NULL }
@@ -323,6 +344,53 @@ static info_lkp_t pegasus_threshold_info[] = {
 	{ 10, "10", eaton_check_pegasus_fun },
 	{ 25, "25", eaton_check_pegasus_fun },
 	{ 60, "60", eaton_check_pegasus_fun },
+	{ 0, NULL, NULL }
+};
+
+/* allow limiting standard yes/no info (here, to enable ECO mode) to
+ * ups.model = Protection Station, Ellipse Eco and 3S (US 750 and AUS 700 only!)
+ * this allows to enable special flags used in hid_info_t entries (Ie RW) */
+static const char *pegasus_yes_no_info_fun(double value)
+{
+	switch (mge_type & 0xFF00)	/* Ignore model byte */
+	{
+	case MGE_PEGASUS:
+		break;
+	case MGE_3S:
+		/* Only consider non European models */
+		if (country_code != COUNTRY_EUROPE)
+			break;
+	default:
+		return NULL;
+	}
+
+	return (value == 0) ? "no" : "yes";
+}
+
+/* Conversion back of yes/no info */
+static double pegasus_yes_no_info_nuf(const char *value)
+{
+	switch (mge_type & 0xFF00)	/* Ignore model byte */
+	{
+	case MGE_PEGASUS:
+		break;
+	case MGE_3S:
+		/* Only consider non European models */
+		if (country_code != COUNTRY_EUROPE)
+			break;
+	default:
+		return 0;
+	}
+
+	if (!strncmp(value, "yes", 3))
+		return 1;
+	else
+		return 0;
+}
+
+info_lkp_t pegasus_yes_no_info[] = {
+	{ 0, "no", pegasus_yes_no_info_fun, pegasus_yes_no_info_nuf },
+	{ 1, "yes", pegasus_yes_no_info_fun, pegasus_yes_no_info_nuf },
 	{ 0, NULL, NULL }
 };
 
@@ -941,7 +1009,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.power", 0, 0, "UPS.OutletSystem.Outlet.[1].ApparentPower", NULL, "%.0f", 0, NULL },
 	{ "outlet.realpower", 0, 0, "UPS.OutletSystem.Outlet.[1].ActivePower", NULL, "%.0f", 0, NULL },
 	{ "outlet.current", 0, 0, "UPS.OutletSystem.Outlet.[1].Current", NULL, "%.2f", 0, NULL },
-	{ "outlet.powerfactor", 0, 0, "UPS.OutletSystem.Outlet.[1].PowerFactor", NULL, "%.2f", 0, NULL }, // "%s", 0, mge_powerfactor_conversion },
+	{ "outlet.powerfactor", 0, 0, "UPS.OutletSystem.Outlet.[1].PowerFactor", NULL, "%.2f", 0, NULL }, /* "%s", 0, mge_powerfactor_conversion }, */
 
 	/* First outlet */
 	{ "outlet.1.id", 0, 0, "UPS.OutletSystem.Outlet.[2].OutletID", NULL, "%.0f", HU_FLAG_STATIC, NULL },
@@ -950,18 +1018,22 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.1.status", 0, 0, "UPS.OutletSystem.Outlet.[2].PresentStatus.SwitchOn/Off", NULL, "%s", 0, on_off_info },
 	/* For low end models, with 1 non backup'ed outlet */
 	{ "outlet.1.status", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, "%s", 0, on_off_info },
+	/* FIXME: change to outlet.1.battery.charge.low, as in mge-xml.c?! */
 	{ "outlet.1.autoswitch.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet.[2].RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "outlet.1.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[2].ShutdownTimer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "outlet.1.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[2].StartupTimer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "outlet.1.power", 0, 0, "UPS.OutletSystem.Outlet.[2].ApparentPower", NULL, "%.0f", 0, NULL },
 	{ "outlet.1.realpower", 0, 0, "UPS.OutletSystem.Outlet.[2].ActivePower", NULL, "%.0f", 0, NULL },
 	{ "outlet.1.current", 0, 0, "UPS.OutletSystem.Outlet.[2].Current", NULL, "%.2f", 0, NULL },
-	{ "outlet.1.powerfactor", 0, 0, "UPS.OutletSystem.Outlet.[2].PowerFactor", NULL, "%.2f", 0, NULL }, // "%s", 0, mge_powerfactor_conversion },
+	{ "outlet.1.powerfactor", 0, 0, "UPS.OutletSystem.Outlet.[2].PowerFactor", NULL, "%.2f", 0, NULL }, /* "%s", 0, mge_powerfactor_conversion }, */
 	/* Second outlet */
 	{ "outlet.2.id", 0, 0, "UPS.OutletSystem.Outlet.[3].OutletID", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 	{ "outlet.2.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[3].OutletID", NULL, "PowerShare Outlet 2", HU_FLAG_ABSENT, NULL },
-	/* needed for Pegasus to enable master/slave mode */
-	{ "outlet.2.switchable", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet.[3].PresentStatus.Switchable", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
+	/* needed for Pegasus to enable master/slave mode:
+	 * FIXME: rename to something more suitable (outlet.?) */
+	{ "outlet.2.switchable", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet.[3].PresentStatus.Switchable", NULL, "%s", HU_FLAG_SEMI_STATIC, pegasus_yes_no_info },
+	/* Generic version (RO) for other models */
+	{ "outlet.2.switchable", 0, 0, "UPS.OutletSystem.Outlet.[3].PresentStatus.Switchable", NULL, "%s", 0, yes_no_info },
 	{ "outlet.2.status", 0, 0, "UPS.OutletSystem.Outlet.[3].PresentStatus.SwitchOn/Off", NULL, "%s", 0, on_off_info },
 	{ "outlet.2.autoswitch.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet.[3].RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "outlet.2.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[3].ShutdownTimer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
@@ -969,7 +1041,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.2.power", 0, 0, "UPS.OutletSystem.Outlet.[3].ApparentPower", NULL, "%.0f", 0, NULL },
 	{ "outlet.2.realpower", 0, 0, "UPS.OutletSystem.Outlet.[3].ActivePower", NULL, "%.0f", 0, NULL },
 	{ "outlet.2.current", 0, 0, "UPS.OutletSystem.Outlet.[3].Current", NULL, "%.2f", 0, NULL },
-	{ "outlet.2.powerfactor", 0, 0, "UPS.OutletSystem.Outlet.[3].PowerFactor", NULL, "%.2f", 0, NULL }, // "%s", 0, mge_powerfactor_conversion },
+	{ "outlet.2.powerfactor", 0, 0, "UPS.OutletSystem.Outlet.[3].PowerFactor", NULL, "%.2f", 0, NULL }, /* "%s", 0, mge_powerfactor_conversion }, */
 
 	/* instant commands. */
 	/* splited into subset while waiting for extradata support
@@ -1084,20 +1156,37 @@ static int mge_claim(HIDDevice_t *hd) {
 
 	switch (status) {
 
-		case POSSIBLY_SUPPORTED:
-			/* by default, reject, unless the productid option is given */
-			if (getval("productid")) {
-				return 1;
-			}
-			possibly_supported("Eaton / MGE", hd);
-			return 0;
+	case POSSIBLY_SUPPORTED:
 
-		case SUPPORTED:
-			return 1;
+		switch (hd->VendorID)
+		{
+			case HP_VENDORID:
+			case DELL_VENDORID:
+				/* by default, reject, unless the productid option is given */
+				if (getval("productid")) {
+					return 1;
+				}
 
-		case NOT_SUPPORTED:
-		default:
-			return 0;
+				/*
+				 * this vendor makes lots of USB devices that are
+				 * not a UPS, so don't use possibly_supported here
+				 */
+				return 0;
+			default: /* Valid for Eaton */
+				/* by default, reject, unless the productid option is given */
+				if (getval("productid")) {
+					return 1;
+				}
+				possibly_supported("Eaton / MGE", hd);
+				return 0;
+		}
+
+	case SUPPORTED:
+		return 1;
+
+	case NOT_SUPPORTED:
+	default:
+		return 0;
 	}
 #else
 			return 1;

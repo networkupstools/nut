@@ -28,6 +28,7 @@
 #include <ltdl.h>
 
 /* dynamic link library stuff */
+static char * libname = "libusb";
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
 static int (*nut_usb_close)(usb_dev_handle *dev);
@@ -60,7 +61,7 @@ int nutscan_load_usb_library()
 		return 0;
 	}
 
-        dl_handle = lt_dlopenext("libusb");
+        dl_handle = lt_dlopenext(libname);
         if (!dl_handle) {
                 dl_error = lt_dlerror();
                 goto err;
@@ -116,8 +117,9 @@ int nutscan_load_usb_library()
 
         return 1;
 err:
-        fprintf(stderr, "%s\n", dl_error);
+        fprintf(stderr, "Cannot load USB library (%s) : %s. USB search disabled.\n", libname, dl_error);
         dl_handle = (void *)1;
+	lt_dlexit();
         return 0;
 }
 /* end of dynamic link library stuff */

@@ -36,6 +36,9 @@ ATTRS{idVendor}=="03f0", ATTRS{idProduct}=="1fe1", ENV{UPOWER_BATTERY_TYPE}="ups
 ATTRS{idVendor}=="03f0", ATTRS{idProduct}=="1fe2", ENV{UPOWER_BATTERY_TYPE}="ups"
 ATTRS{idVendor}=="03f0", ATTRS{idProduct}=="1fe3", ENV{UPOWER_BATTERY_TYPE}="ups"
 ATTRS{idVendor}=="03f0", ATTRS{idProduct}=="1fe5", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="03f0", ATTRS{idProduct}=="1fe6", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="03f0", ATTRS{idProduct}=="1fe7", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="03f0", ATTRS{idProduct}=="1fe8", ENV{UPOWER_BATTERY_TYPE}="ups"
 
 # Eaton
 ATTRS{idVendor}=="0463", ATTRS{idProduct}=="0001", ENV{UPOWER_BATTERY_TYPE}="ups"

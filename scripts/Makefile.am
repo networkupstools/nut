@@ -7,6 +7,7 @@ HP-UX/nut-upsd \
 HP-UX/nut-upsd.sh \
 HP-UX/nut-upsmon \
 HP-UX/nut-upsmon.sh \
+logrotate/nutlogd \
 misc/nut.bash_completion \
 misc/osd-notify \
 perl/Nut.pm \

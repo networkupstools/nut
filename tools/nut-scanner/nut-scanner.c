@@ -470,5 +470,8 @@ display_help:
 
 	display_func(dev[TYPE_IPMI]);
 	nutscan_free_device(dev[TYPE_IPMI]);
+
+	nutscan_free();
+
 	return EXIT_SUCCESS;
 }

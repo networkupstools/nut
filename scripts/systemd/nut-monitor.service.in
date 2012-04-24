@@ -3,8 +3,8 @@ Description=Network UPS Tools - power device monitor and shutdown controller
 After=local-fs.target network.target nut-server.service
 
 [Service]
-ExecStart=/usr/sbin/upsmon
-PIDFile=/var/run/nut/upsmon.pid
+ExecStart=@SBINDIR@/upsmon
+PIDFile=@PIDPATH@/upsmon.pid
 Type=forking
 
 [Install]

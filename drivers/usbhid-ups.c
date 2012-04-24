@@ -27,7 +27,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION		"0.36"
+#define DRIVER_VERSION		"0.37"
 
 #include "main.h"
 #include "libhid.h"
@@ -483,7 +483,17 @@ static const char *kelvin_celsius_conversion_fun(double value)
 {
 	static char buf[20];
 
-	snprintf(buf, sizeof(buf), "%.1f", value - 273.15);
+	/* check if the value is in the Kelvin range, to
+	 * detect buggy value (already expressed in °C), as found
+	 * on some HP implementation */
+	if ((value >= 273) && (value <= 373)) {
+		/* the value is indeed in °K */
+		snprintf(buf, sizeof(buf), "%.1f", value - 273.15);
+	}
+	else {
+		/* else, this is actually °C, not °K! */
+		snprintf(buf, sizeof(buf), "%.1f", value);
+	}
 
 	return buf;
 }

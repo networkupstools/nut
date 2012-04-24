@@ -38,7 +38,7 @@ Configuration commands
 ~~~~~~~~~~~~~~~~~~~~~~
 
 - linkman:nut-scanner[8]
-
+ 
 CGI programs
 ~~~~~~~~~~~~
 
@@ -101,6 +101,7 @@ Developer manual pages
 ----------------------
 
 - linkman:libupsclient-config[1]
+- linkman:nut-recorder[8]
 - linkman:skel[8]
 
 [[devclient]]

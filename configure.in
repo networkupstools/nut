@@ -1056,7 +1056,8 @@ dnl same for sbindir
 conftemp="${sbindir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
-AC_DEFINE_UNQUOTED(SBINDIR, "${conftemp}", [Default path for super user executables])
+SBINDIR=${conftemp}
+AC_DEFINE_UNQUOTED(SBINDIR, "${conftemp}", [Default path for system executables])
 
 AC_SUBST(OS_NAME)
 AC_SUBST(TREE_VERSION)
@@ -1093,6 +1094,7 @@ AC_SUBST(DRIVER_MAN_LIST)
 AC_SUBST(DRIVER_INSTALL_TARGET)
 AC_SUBST(NETLIBS)
 AC_SUBST(SERLIBS)
+AC_SUBST(PIDPATH)
 AC_SUBST(STATEPATH)
 AC_SUBST(CONFPATH)
 AC_SUBST(BINDIR)
@@ -1148,6 +1150,10 @@ AC_OUTPUT([
  scripts/java/Makefile
  scripts/python/Makefile
  scripts/systemd/Makefile
+ scripts/systemd/nut-driver.service
+ scripts/systemd/nut-monitor.service
+ scripts/systemd/nut-server.service
+ scripts/systemd/nutshutdown
  scripts/udev/Makefile
  scripts/udev/nut-ipmipsu.rules
  scripts/udev/nut-usbups.rules

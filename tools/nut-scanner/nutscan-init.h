@@ -27,4 +27,5 @@ extern int nutscan_avail_usb;
 extern int nutscan_avail_xml_http;
 
 void nutscan_init(void);
+void nutscan_free(void);
 #endif

@@ -18,6 +18,7 @@
  */
 
 #include "common.h"
+#include <ltdl.h>
 
 int nutscan_avail_avahi = 0;
 int nutscan_avail_ipmi = 0;
@@ -54,4 +55,26 @@ void nutscan_init(void)
 	nutscan_avail_ipmi = nutscan_load_ipmi_library();
 #endif
 	nutscan_avail_nut = nutscan_load_upsclient_library();
+}
+
+void nutscan_free(void)
+{
+	if( nutscan_avail_usb ) {
+		lt_dlexit();
+	}
+	if( nutscan_avail_snmp ) {
+		lt_dlexit();
+	}
+	if( nutscan_avail_xml_http ) {
+		lt_dlexit();
+	}
+	if( nutscan_avail_avahi ) {
+		lt_dlexit();
+	}
+	if( nutscan_avail_ipmi ) {
+		lt_dlexit();
+	}
+	if( nutscan_avail_nut ) {
+		lt_dlexit();
+	}
 }
