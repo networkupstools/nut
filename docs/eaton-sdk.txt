@@ -13,9 +13,6 @@ to certain Eaton devices and retrieve certain internal data. Eaton SDK
 extensively uses the link:http://www.networkupstools.org[NUT - Network UPS Tools]
 Opensource framework (supported by Eaton), to do so.
 
-WARNING: This version of Eaton SDK is tagged Beta, and is currently only
-intended for evaluation purpose.
-
 This document provides the documentation for using the Eaton SDK libraries
 integration, on Linux and Microsoft Windows platforms, in <<SDK,chapter 3>>.
 
@@ -86,8 +83,8 @@ However if one releases a GPL-licensed entity to the public, there is an issue
 regarding linking: namely, if a proprietary program uses a GPL library, is the
 proprietary program in violation of the GPL?
 
-For application that are released publically, Eaton understanding of this
-linking is the following:
+For application that are released publically, you may consider the following
+understanding:
 
 .Linking directly GPL code with proprietary code
 [options="autowidth",grid="none",frame="none",halign="center",valign="middle",cols="^,^"]

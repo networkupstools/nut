@@ -1,5 +1,14 @@
 <revhistory>
   <revision>
+    <revnumber>0.6</revnumber>
+    <date>2012-04-24</date>
+    <authorinitials>A. Quette</authorinitials>
+    <revremark>
+      Remove the Beta warning, change reference from libgnu.a to libregex.a,
+      and clarify legal information, with regard to publication and linkage.
+    </revremark>
+  </revision>
+  <revision>
     <revnumber>0.5</revnumber>
     <date>2012-04-04</date>
     <authorinitials>A. Quette</authorinitials>
