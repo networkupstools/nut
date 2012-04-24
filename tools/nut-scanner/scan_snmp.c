@@ -234,6 +234,7 @@ int nutscan_load_snmp_library()
 err:
         fprintf(stderr, "Cannot load SNMP library (%s) : %s. SNMP search disabled.\n", libname, dl_error);
 	dl_handle = (void *)1;
+	lt_dlexit();
 	return 0;
 }
 /* end of dynamic link library stuff */

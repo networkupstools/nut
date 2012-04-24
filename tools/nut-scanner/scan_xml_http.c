@@ -96,6 +96,7 @@ int nutscan_load_neon_library()
 err:
         fprintf(stderr, "Cannot load XML library (%s) : %s. XML search disabled.\n", libname, dl_error);
         dl_handle = (void *)1;
+	lt_dlexit();
         return 0;
 }
 

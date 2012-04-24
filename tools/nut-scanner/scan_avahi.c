@@ -200,6 +200,7 @@ err:
         fprintf(stderr, "Cannot load AVAHI library (%s) : %s. AVAHI search disabled.\n", libname, dl_error);
 
         dl_handle = (void *)1;
+	lt_dlexit();
         return 0;
 }
 /* end of dynamic link library stuff */

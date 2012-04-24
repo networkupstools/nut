@@ -102,6 +102,7 @@ int nutscan_load_upsclient_library()
 err:
         fprintf(stderr, "Cannot load NUT library (%s) : %s. NUT search disabled.\n", libname, dl_error);
         dl_handle = (void *)1;
+	lt_dlexit();
         return 0;
 }
 

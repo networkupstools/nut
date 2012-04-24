@@ -166,6 +166,7 @@ int nutscan_load_ipmi_library()
 err:
         fprintf(stderr, "Cannot load IPMI library (%s) : %s. IPMI search disabled.\n", libname, dl_error);
 	dl_handle = (void *)1;
+	lt_dlexit();
 	return 0;
 }
 /* end of dynamic link library stuff */
