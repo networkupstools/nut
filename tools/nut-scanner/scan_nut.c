@@ -90,12 +90,11 @@ int nutscan_load_upsclient_library(const char *libname_path)
 	lt_dlerror();      /* Clear any existing error */
 
 	*(void **) (&nut_upscli_splitaddr) = lt_dlsym(dl_handle,
-													"upscli_splitaddr");
+						"upscli_splitaddr");
 	if ((dl_error = lt_dlerror()) != NULL) {
 			goto err;
 	}
 
-<<<<<<< HEAD
 	*(void **) (&nut_upscli_tryconnect) = lt_dlsym(dl_handle,
 						"upscli_tryconnect");
 	if ((dl_error = lt_dlerror()) != NULL) {
@@ -121,68 +120,13 @@ int nutscan_load_upsclient_library(const char *libname_path)
 	}
 
 	return 1;
+
 err:
-	fprintf(stderr, "Cannot load NUT library (%s) : %s. NUT search disabled.\n", libname_path, dl_error);
+	fprintf(stderr,
+		"Cannot load NUT library (%s) : %s. NUT search disabled.\n",
+		libname_path, dl_error);
 	dl_handle = (void *)1;
 	lt_dlexit();
-=======
-	if( dl_handle != NULL ) {
-		/* if previous init failed */
-		if( dl_handle == (void *)1 ) {
-			return 0;
-		}
-		/* init has already been done */
-		return 1;
-	}
-
-	if( lt_dlinit() != 0 ) {
-		fprintf(stderr, "Error initializing lt_init\n");
-		return 0;
-	}
-
-	dl_handle = lt_dlopenext("libupsclient");
-	if (!dl_handle) {
-		dl_error = lt_dlerror();
-		goto err;
-	}
-
-	lt_dlerror();	/* Clear any existing error */
-
-	*(void **) (&nut_upscli_splitaddr) = lt_dlsym(dl_handle,
-			"upscli_splitaddr");
-	if ((dl_error = lt_dlerror()) != NULL)  {
-		goto err;
-	}
-
-	*(void **) (&nut_upscli_tryconnect) = lt_dlsym(dl_handle,
-			"upscli_tryconnect");
-	if ((dl_error = lt_dlerror()) != NULL)  {
-		goto err;
-	}
-
-	*(void **) (&nut_upscli_list_start) = lt_dlsym(dl_handle,
-			"upscli_list_start");
-	if ((dl_error = lt_dlerror()) != NULL)  {
-		goto err;
-	}
-
-	*(void **) (&nut_upscli_list_next) = lt_dlsym(dl_handle,
-			"upscli_list_next");
-	if ((dl_error = lt_dlerror()) != NULL)  {
-		goto err;
-	}
-
-        *(void **) (&nut_upscli_disconnect) = lt_dlsym(dl_handle,
-							"upscli_disconnect");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
-
-        return 1;
-err:
-	fprintf(stderr, "%s\n", dl_error);
-	dl_handle = (void *)1;
->>>>>>> Fix indentation
 	return 0;
 }
 
