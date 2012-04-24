@@ -67,7 +67,7 @@ int nutscan_load_upsclient_library()
 		return 0;
 	}
 
-	dl_handle = lt_dlopenext("libupsclient");
+	dl_handle = lt_dlopenext(libname);
 	if (!dl_handle) {
 		dl_error = lt_dlerror();
 		goto err;
@@ -107,8 +107,9 @@ int nutscan_load_upsclient_library()
 
         return 1;
 err:
-	fprintf(stderr, "%s\n", dl_error);
+	fprintf(stderr, "Cannot load NUT library (%s) : %s. NUT search disabled.\n", libname, dl_error);
 	dl_handle = (void *)1;
+	lt_dlexit();
 	return 0;
 }
 
