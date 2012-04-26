@@ -11,7 +11,7 @@ SET NUT-XML-FILE=NUT-Installer.xml
 SET wixobjName=NUT-Installer.wixobj
 SET msiPackageName=NUT-Installer.msi
 
-REM copy DLL files from system
+echo copy DLL files from MSYS
 copy /Y %MSYS_BIN_DIR%msys-1.0.dll .\ImageFiles\Others
 copy /Y %MSYS_BIN_DIR%msys-crypto-1.0.0.dll .\ImageFiles\Others
 copy /Y %MSYS_BIN_DIR%msys-ssl-1.0.0.dll .\ImageFiles\Others
