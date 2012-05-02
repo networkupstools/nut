@@ -1191,6 +1191,12 @@ Public License instead of this License.
                     </Component>
                 </Directory>
                 <Directory Id="bin" Name="bin">
+                    <Component Id="libltdl_7.dll" Guid="C0CDD346-03DE-492A-9AF0-95670A61C6A6">
+                        <File Id="libltdl_7.dll" Name="libltdl-7.dll" Source="ImageFiles\others\libltdl-7.dll" />
+                    </Component>
+                    <Component Id="pthreadgc2.dll" Guid="B0BDD2BA-3F2B-4852-93D4-CEC227463F63">
+                        <File Id="pthreadgc2.dll" Name="pthreadgc2.dll" Source="ImageFiles\others\pthreadgc2.dll" />
+                    </Component>
                     <Component Id="libregex_1.dll" Guid="7566404C-5230-472B-A227-1B8CC1B54755">
                         <File Id="libregex_1.dll" Name="libregex-1.dll" Source="ImageFiles\others\libregex-1.dll" />
                     </Component>
@@ -1199,6 +1205,21 @@ Public License instead of this License.
                     </Component>
                     <Component Id="libnetsnmp_30.dll" Guid="15663639-AF90-403C-B354-1E5BCA5046D9">
                         <File Id="libnetsnmp_30.dll" Name="libnetsnmp-30.dll" Source="ImageFiles\others\libnetsnmp-30.dll" />
+                    </Component>
+                    <Component Id="libexpat_1.dll" Guid="4A405CE9-AE15-4693-AC65-E3AAC32CF918">
+                        <File Id="libexpat_1.dll" Name="libexpat-1.dll" Source="ImageFiles\others\libexpat-1.dll" />
+                    </Component>
+                    <Component Id="libgcc_s_dw2_1.dll" Guid="072D47CE-2504-4D07-937F-9E4ABCA0A38F">
+                        <File Id="libgcc_s_dw2_1.dll" Name="libgcc_s_dw2-1.dll" Source="ImageFiles\others\libgcc_s_dw2-1.dll" />
+                    </Component>
+                    <Component Id="libiconv_2.dll" Guid="2E68663B-1D4B-422C-8870-63B0A2B8B396">
+                        <File Id="libiconv_2.dll" Name="libiconv-2.dll" Source="ImageFiles\others\libiconv-2.dll" />
+                    </Component>
+                    <Component Id="libintl_8.dll" Guid="1F9098A5-DB0B-4B65-A85D-222BDFFFD9E9">
+                        <File Id="libintl_8.dll" Name="libintl-8.dll" Source="ImageFiles\others\libintl-8.dll" />
+                    </Component>
+                    <Component Id="libz_1.dll" Guid="9F8DFF6E-95D8-4084-83AA-9304D1E72BA1">
+                        <File Id="libz_1.dll" Name="libz-1.dll" Source="ImageFiles\others\libz-1.dll" />
                     </Component>
                     <Component Id="apcsmart.exe" Guid="BEDE6095-3FAF-49C4-8AF4-8F0A2EDB8EAE">
                         <File Id="apcsmart.exe" Name="apcsmart.exe" Source="..\..\..\drivers\.libs\apcsmart.exe" />
@@ -1756,6 +1777,13 @@ Public License instead of this License.
         <Feature Id="MyFeature" Title="NUT Installer for Windows" Level="1">
             <Feature Id="bin" Level="1" Title="NUT bin files for Windows">
                 <ComponentRef Id="libregex_1.dll" />
+                <ComponentRef Id="libltdl_7.dll" />
+                <ComponentRef Id="pthreadgc2.dll" />
+                <ComponentRef Id="libexpat_1.dll" />
+                <ComponentRef Id="libgcc_s_dw2_1.dll" />
+                <ComponentRef Id="libiconv_2.dll" />
+                <ComponentRef Id="libintl_8.dll" />
+                <ComponentRef Id="libz_1.dll" />
                 <ComponentRef Id="libneon_27.dll" />
                 <ComponentRef Id="libnetsnmp_30.dll" />
                 <ComponentRef Id="apcsmart.exe" />
