@@ -213,7 +213,7 @@ char * filter_path(const char * source)
    of chars containing the message to display (no terminal 0 required here) */
 void syslog(int priority, const char *fmt, ...)
 {
-	char buf1[LARGEBUF];
+	char buf1[LARGEBUF+sizeof(DWORD)];
 	char buf2[LARGEBUF];
 	va_list ap;
 	HANDLE pipe;
