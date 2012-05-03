@@ -524,7 +524,7 @@ int shut_wait_ack (void)
 		upsdebugx (2, "shut_wait_ack(): NACK received");
 		return -2;
 	}
-	else if ((c[0] & SHUT_PKT_LAST) == SHUT_TYPE_NOTIFY) {
+	else if ((c[0] & 0x0f) == SHUT_TYPE_NOTIFY) {
 		upsdebugx (2, "shut_wait_ack(): NOTIFY received");
 		return -3;
 	}
@@ -835,8 +835,11 @@ int shut_packet_recv (u_char *Buf, int datalen)
 
 						shut_token_send(SHUT_OK);
 
-						if(Start[0]&SHUT_PKT_LAST) {
-							if ((Start[0]&SHUT_PKT_LAST) == SHUT_TYPE_NOTIFY) {
+
+						/* Check if there are more data to receive */
+						if((Start[0] & 0xf0) == SHUT_PKT_LAST) {
+							/* Check if it's a notification */
+							if ((Start[0] & 0x0f) == SHUT_TYPE_NOTIFY) {
 							/* TODO: process notification (dropped for now) */
 								upsdebugx (4, "=> notification");
 								datalen+=Pos;

@@ -734,13 +734,15 @@ int shut_packet_recv(int upsfd, u_char *Buf, int datalen)
 						Buf+=Size;
 						Pos+=Size;
 						Retry=0;
-					
+
 						ser_send_char(upsfd, SHUT_OK);
 						/* shut_token_send(SHUT_OK); */
 
-						if(Start[0]&SHUT_PKT_LAST)
+						/* Check if there are more data to receive */
+						if((Start[0] & 0xf0) == SHUT_PKT_LAST)
 						{
-							if ((Start[0]&SHUT_PKT_LAST) == SHUT_TYPE_NOTIFY)
+							/* Check if it's a notification */
+							if ((Start[0] & 0x0f) == SHUT_TYPE_NOTIFY)
 							{
 								/* TODO: process notification (dropped for now) */
 								upsdebugx (4, "=> notification");
@@ -748,7 +750,7 @@ int shut_packet_recv(int upsfd, u_char *Buf, int datalen)
 								Pos=0;
 							}
 							else
-						                return Pos;
+								return Pos;
 						}
 						else
 							upsdebugx (4, "need more data (%i)!", datalen);
@@ -984,7 +986,7 @@ int shut_wait_ack(int upsfd)
 		upsdebugx (2, "shut_wait_ack(): NACK received");
 		retCode = -2;
 	}
-	else if ((c & ~SHUT_PKT_LAST) == SHUT_TYPE_NOTIFY)
+	else if ((c & 0x0f) == SHUT_TYPE_NOTIFY)
 	{
 		upsdebugx (2, "shut_wait_ack(): NOTIFY received");
 		retCode = -3;
