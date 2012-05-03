@@ -794,10 +794,7 @@ static void redefine_ups(utype_t *ups, int pv, const char *un,
 
 			free(ups->un);
 
-			if (un)
-				ups->un = xstrdup(un);
-			else
-				ups->un = NULL;
+			ups->un = xstrdup(un);
 
 			/* 
 			 * if not logged in force a reconnection since this
