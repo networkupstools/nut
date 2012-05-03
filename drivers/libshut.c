@@ -41,7 +41,7 @@
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
 
 #define SHUT_DRIVER_NAME	"SHUT communication driver"
-#define SHUT_DRIVER_VERSION	"0.82"
+#define SHUT_DRIVER_VERSION	"0.83"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {

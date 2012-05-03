@@ -1,6 +1,6 @@
 /*  mge-shut.c - monitor MGE UPS for NUT with SHUT protocol
  *
- *  Copyright (C) 2002 - 2008
+ *  Copyright (C) 2002 - 2012
  *     Arnaud Quette <arnaud.quette@gmail.com>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://opensource.mgeups.com/>
@@ -37,7 +37,7 @@
 /* --------------------------------------------------------------- */
 
 #define DRIVER_NAME	"Eaton / SHUT driver"
-#define DRIVER_VERSION	"0.69"
+#define DRIVER_VERSION	"0.70"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
