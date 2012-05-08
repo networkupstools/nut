@@ -111,4 +111,7 @@ setver:
 	@echo "Error: 'make setver' no longer exists."
 	@echo "Edit configure.in to set version number."
 package:
+	make
+	make install
 	cd scripts/Solaris; make package
+	make uninstall
