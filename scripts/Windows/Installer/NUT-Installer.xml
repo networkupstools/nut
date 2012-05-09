@@ -1440,6 +1440,9 @@ Public License instead of this License.
                     <Component Id="upsmon.exe" DiskId="1" Guid="140A5967-4494-4253-9F97-CFC3DC701696">
                         <File Id="upsmon.exe" Name="upsmon.exe" Source="..\..\..\clients\.libs\upsmon.exe" />
                     </Component>
+                    <Component Id="message.exe" DiskId="1" Guid="82F5C9BB-95A5-4000-B3C5-F8032016EC33">
+                        <File Id="message.exe" Name="message.exe" Source="..\..\..\clients\.libs\message.exe" />
+                    </Component>
                     <Component Id="libupsclient_1_2.dll" DiskId="1" Guid="9F297F2A-6A54-40B0-90D8-AAB5D8354D69">
                         <File Id="libupsclient_1_2.dll" Name="libupsclient-1.dll" Source="..\..\..\clients\.libs\libupsclient-1.dll" />
                     </Component>
@@ -1864,6 +1867,7 @@ Public License instead of this License.
             <Feature Id="sbin" Level="1" Title="NUT sbin files for Windows">
                 <ComponentRef Id="upsd.exe" />
                 <ComponentRef Id="upsmon.exe" />
+                <ComponentRef Id="message.exe" />
                 <ComponentRef Id="libupsclient_1_2.dll" />
                 <ComponentRef Id="upssched.exe" />
                 <ComponentRef Id="msys1.0.dll" />
