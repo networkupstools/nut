@@ -124,16 +124,6 @@ static int flag_isset(int num, int flag)
 	return ((num & flag) == flag);
 }
 
-#ifdef WIN32
-static unsigned __stdcall async_wall(LPVOID param)
-{
-	char * text = (char *)param;
-	MessageBox(NULL,text,SVCNAME,MB_OK|MB_ICONEXCLAMATION|MB_SERVICE_NOTIFICATION);
-	free(text);
-	return 0;
-}
-#endif
-
 static void wall(const char *text)
 {
 #ifndef WIN32
@@ -149,15 +139,23 @@ static void wall(const char *text)
 	fprintf(wf, "%s\n", text);
 	pclose(wf);
 #else
-	char * data = strdup(text);
-	_beginthreadex(
-			NULL,	/* security FIXME */
-			0,	/* stack size */
-			async_wall,
-			(void *)data,
-			0,	/* Creation flags */
-			NULL	/* thread id */
-		);
+	#define MESSAGE_CMD "message.exe"
+	char * command;
+
+	/* first +1 is for the space between message and text
+	   second +1 is for trailing 0 
+	   +2 is for "" */
+	command = malloc (strlen(MESSAGE_CMD) + 1 + 2 + strlen(text) + 1);
+	if( command == NULL ) {
+		upslog_with_errno(LOG_NOTICE, "Not enough memory for wall");
+		return;
+	}
+
+	sprintf(command,"%s \"%s\"",MESSAGE_CMD,text);
+	if ( system(command) != 0 ) {
+		upslog_with_errno(LOG_NOTICE, "Can't invoke wall");
+	}
+	free(command);
 #endif
 }
 
