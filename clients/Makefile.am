@@ -19,7 +19,11 @@ endif
 
 bin_PROGRAMS = upsc upslog upsrw upscmd
 dist_bin_SCRIPTS = upssched-cmd
+if HAVE_WINDOWS_SOCKETS
+sbin_PROGRAMS = upsmon upssched message
+else !HAVE_WINDOWS_SOCKETS
 sbin_PROGRAMS = upsmon upssched
+endif !HAVE_WINDOWS_SOCKETS
 lib_LTLIBRARIES = libupsclient.la
 if WITH_DEV
  include_HEADERS = upsclient.h ../include/parseconf.h
@@ -33,6 +37,9 @@ upscmd_SOURCES = upscmd.c upsclient.h
 upsrw_SOURCES = upsrw.c upsclient.h
 upslog_SOURCES = upslog.c upsclient.h upslog.h
 upsmon_SOURCES = upsmon.c upsmon.h upsclient.h
+if HAVE_WINDOWS_SOCKETS
+message_SOURCES = message.c
+endif
 
 upssched_SOURCES = upssched.c upssched.h
 upssched_LDADD = ../common/libcommon.la ../common/libparseconf.la $(NETLIBS)
