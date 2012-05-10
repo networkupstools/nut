@@ -71,6 +71,15 @@ PowerKinetics
 
 - PowerKinetics MiniCOL protocol - courtesy of PowerKinetics technical support
 
+Riello
+~~~~~~
+
+All these document are officially provided by Riello
+
+- link:ups-protocols/riello/PSGPSER-0104.pdf[GPSER protocol]
+- link:ups-protocols/riello/PSSENTR-0100.pdf[Sentry HPS / HTS protocol]
+- link:ups-protocols/riello/Riello_UPS_protocol_list.pdf[UPS protocol list]
+
 Standard protocols
 ~~~~~~~~~~~~~~~~~~
 
