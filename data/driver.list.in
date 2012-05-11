@@ -263,8 +263,8 @@
 "ETA"	"ups"	"1"	"mini+UPS"	"WinNT/Upsoft cable"	"genericups upstype=7"
 "ETA"	"ups"	"1"	"mini+UPS PRO"	"UPS Explorer cable"	"etapro"
 
-"Ever UPS"	"ups"	"1"	"NET *-DPC"	""	"everups"
-"Ever UPS"	"ups"	"1"	"AP *-PRO"	""	"everups"
+"Ever"	"ups"	"1"	"NET *-DPC"	""	"everups"
+"Ever"	"ups"	"1"	"AP *-PRO"	""	"everups"
 
 "Ever-Power"	"ups"	"1"	"625/1000"	""	"safenet"
 
