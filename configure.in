@@ -594,7 +594,7 @@ no)
 	if test -z "${DOC_NOBUILD_LIST}"; then
 		nut_with_doc="yes"
 	else
-		AC_MSG_ERROR(["Asciidoc is required for documentation support and missing"])
+		AC_MSG_ERROR(["Unable to build ${DOC_NOBUILD_LIST} documentation"])
 	fi
 	;;
 esac
