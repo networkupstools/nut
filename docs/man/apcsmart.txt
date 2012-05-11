@@ -70,13 +70,16 @@ This driver expects to see a 940-0024C cable or a clone by default. You
 can switch to the 940-0095B dual-mode cable support with the \'cable='
 definition described below.
 
-If your 940-0024C cable is broken or missing, use this diagram to build
+If your 940-xx24X cable is broken or missing, use this diagram to build
 a clone:
 
 http://www.networkupstools.org/cables.html#_940_0024c_clone
 
-NOTE: It was reported, that the 940-0024E cable uses the same wiring as the
-940-0024C one.
+NOTE:  The "xx" is either "00" for a short cable, or the number of feet
+of a longer cable.  The "X" is a letter representing the minor revision
+of the physical cable and its connectors ("C" and "E" are commonly found
+revisions).  All minor revisions should use the same pin-outs and
+wiring.
 
 You can specify alternate cable in linkman:ups.conf[5]:
 
