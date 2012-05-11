@@ -78,6 +78,12 @@
 
 "Appro"	"pdu"	"1"	"SWPDU"	"48 outlets"	"powerman-pdu (experimental)"
 
+"ATEK"	"ups"	"2"	"Defensor 1K Tower / Rack"	"USB"	"blazer_usb"
+"ATEK"	"ups"	"2"	"Defensor 2K Tower / Rack"	"USB"	"blazer_usb"
+"ATEK"	"ups"	"2"	"Defensor 3K Tower / Rack"	"USB"	"blazer_usb"
+"ATEK"	"ups"	"2"	"Defensor 6K Tower / Rack"	"USB"	"blazer_usb"
+"ATEK"	"ups"	"2"	"Defensor 10K Tower / Rack"	"USB"	"blazer_usb"
+
 "Atlantis Land"	"ups"	"2"	"A03-P826"	""	"blazer_ser"
 
 "Baytech"	"pdu"	"1"	"RPC3"	"8 outlets"	"powerman-pdu (experimental)"
