@@ -160,7 +160,7 @@ trigger it (*awd* option, or argument to one of the supported instant commands).
 SHUTDOWN CONTROL BY NUT
 -----------------------
 
-There\'re 3 options used to control shutdown behaviour.
+There are three options used to control the shutdown behaviour.
 
 *sdtype*=[0-5]::
     This option takes a single digit (0-5) as an argument. See below for
