@@ -8,7 +8,7 @@
 # must recurse into BEFORE processing the current directory.
 #
 # These python scripts must be moved into a sub-directory, and _only_
-# executed IFF they need to be, and all the nut-scanner sources need
+# executed IF they need to be, and all the nut-scanner sources need
 # to be moved out of a sub-directory into this directory.
 #
 # Anyway, for the time being, we force build in ./ before nut-scanner,
