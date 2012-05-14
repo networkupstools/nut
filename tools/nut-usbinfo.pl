@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
-#   Current Version : 1.1
-#   Copyright (C) 2008 - 2011
+#   Current Version : 1.2
+#   Copyright (C) 2008 - 2012
 #            Arnaud Quette <arnaud.quette@gmail.com>
 #            dloic (loic.dardant AT gmail DOT com)
 #
@@ -20,7 +20,11 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-   
+
+# TODO list:
+# - rewrite using glob, as in other helper scripts
+# - manage deps in Makefile.am
+
 use File::Find;
 use strict;
 
@@ -211,7 +215,8 @@ sub gen_usb_files
 
 sub find_usbdevs
 {
-	return $File::Find::prune = 1 if $_ eq '.svn';
+	# maybe there's an option to turn off all .* files, but anyway this is stupid
+	return $File::Find::prune = 1 if ($_ eq '.svn') || ($_ =~ /^\.#/);
 
 	my $nameFile=$_;
 	my $lastComment="";
