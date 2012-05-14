@@ -36,7 +36,7 @@
 #include "usbhid-ups.h"
 #include "mge-hid.h"
 
-#define MGE_HID_VERSION		"MGE HID 1.30"
+#define MGE_HID_VERSION		"MGE HID 1.31"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -516,7 +516,7 @@ static info_lkp_t nominal_output_voltage_info[] = {
 /*      Vendor-specific usage table */
 /* --------------------------------------------------------------- */
 
-/* MGE UPS SYSTEMS usage table */
+/* Eaton / MGE HID usage table */
 static usage_lkp_t mge_usage_lkp[] = {
 	{ "Undefined",				0xffff0000 },
 	{ "STS",				0xffff0001 },
@@ -542,7 +542,7 @@ static usage_lkp_t mge_usage_lkp[] = {
 	{ "EventID",				0xffff001f },
 	{ "CircuitBreaker",			0xffff0020 },
 	{ "TransferForbidden",			0xffff0021 },
-	{ "OverallAlarm",			0xffff0022 },
+	{ "OverallAlarm",			0xffff0022 }, /* renamed to Alarm in Eaton SW! */
 	{ "Dephasing",				0xffff0023 },
 	{ "BypassBreaker",			0xffff0024 },
 	{ "PowerModule",			0xffff0025 },
@@ -554,8 +554,9 @@ static usage_lkp_t mge_usage_lkp[] = {
 	{ "NotificationStatus",			0xffff002b },
 	{ "ProtectionLost",			0xffff002c },
 	{ "ConfigurationFailure",			0xffff002d },
+	{ "CompatibilityFailure",			0xffff002e },
 	/* 0xffff002e-0xffff003f	=>	Reserved */
-	{ "SwitchType",				0xffff0040 },
+	{ "SwitchType",				0xffff0040 }, /* renamed to Type in Eaton SW! */
 	{ "ConverterType",			0xffff0041 },
 	{ "FrequencyConverterMode",		0xffff0042 },
 	{ "AutomaticRestart",			0xffff0043 },
@@ -624,8 +625,12 @@ static usage_lkp_t mge_usage_lkp[] = {
 	{ "HighHumidity",			0xffff0082 },
 	{ "LowTemperature",			0xffff0083 },
 	{ "HighTemperature",			0xffff0084 },
-	/* 0xffff0085-0xffff008f (minus 0xffff0086)	=>	Reserved */
+	{ "ECOControl",			0xffff0085 },
 	{ "Efficiency",			0xffff0086 },
+	{ "ABMEnable",			0xffff0087 },
+	{ "NegativeCurrent",	0xffff0088 },
+	{ "AutomaticStart",		0xffff0089 },
+	/* 0xffff008a-0xffff008f	=>	Reserved */
 	{ "Count",				0xffff0090 },
 	{ "Timer",				0xffff0091 },
 	{ "Interval",				0xffff0092 },
@@ -637,16 +642,26 @@ static usage_lkp_t mge_usage_lkp[] = {
 	{ "Code",				0xffff0098 },
 	{ "DataValid",				0xffff0099 },
 	{ "ToggleTimer",				0xffff009a },
-	/* 0xffff009b-0xffff009f	=>	Reserved */
-	{ "PDU",				0xffff00a0 },
+	{ "BypassTransferDelay",		0xffff009b },
+	{ "HysteresysVoltageTransfer",	0xffff009c },
+	{ "SlewRate",					0xffff009d },
+	/* 0xffff009e-0xffff009f	=>	Reserved */
+	{ "PDU",					0xffff00a0 },
 	{ "Breaker",				0xffff00a1 },
 	{ "BreakerID",				0xffff00a2 },
-	{ "OverVoltage",				0xffff00a3 },
+	{ "OverVoltage",			0xffff00a3 },
 	{ "Tripped",				0xffff00a4 },
 	{ "OverEnergy",				0xffff00a5 },
-	{ "OverHumidity",				0xffff00a6 },
-	{ "LCDControl",				0xffff00a6 },
-	/* 0xffff00a8-0xffff00df	=>	Reserved */
+	{ "OverHumidity",			0xffff00a6 },
+	{ "ConfigurationReset",		0xffff00a7 }, /* renamed from LCDControl in Eaton SW! */
+	{ "Level",			0xffff00a8 },
+	{ "PDUType",			0xffff00a9 },
+	{ "ReactivePower",			0xffff00aa },
+	{ "Pole",			0xffff00ab },
+	{ "PoleID",			0xffff00ac },
+	{ "Reset",			0xffff00ad },
+	{ "WatchdogReset",			0xffff00ae },
+	/* 0xffff00af-0xffff00df	=>	Reserved */
 	{ "COPIBridge",				0xffff00e0 },
 	/* 0xffff00e1-0xffff00ef	=>	Reserved */
 	{ "iModel",				0xffff00f0 },
@@ -654,7 +669,8 @@ static usage_lkp_t mge_usage_lkp[] = {
 	{ "iTechnicalLevel",		0xffff00f2 },
 	{ "iPartNumber",			0xffff00f3 },
 	{ "iReferenceNumber",		0xffff00f4 },
-	/* 0xffff00f5-0xffff00ff	=>	Reserved */
+	{ "iGang",					0xffff00f5 },
+	/* 0xffff00f6-0xffff00ff	=>	Reserved */
 
 	/* end of table */
 	{ NULL, 0 }
