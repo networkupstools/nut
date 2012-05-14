@@ -303,7 +303,8 @@
 "Gamatronic"	"ups"	"5"	"MS"	""	"gamatronic"
 "Gamatronic"	"ups"	"5"	"µPS3/1"	""	"gamatronic"
 
-"GE"	"ups"	"2"	"EP series"	""	"blazer_usb"
+"GE Digital Energy"	"ups"	"2"	"EP Series"	""	"blazer_usb"
+"GE Digital Energy"	"ups"	"2"	"GT Series 1000/1500/2000/3000 VA Rack/Tower"	"UL-version"	"blazer_ser"
 
 "Geek Squad"	"ups"	"2"	"GS1285U"	"USB"	"usbhid-ups"
 
