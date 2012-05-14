@@ -145,15 +145,15 @@ int open_subspace(char *ship, int privacy)
 }
 --------------------------------------------------------------------------------
 
-The basic idea is that I try to group things into functions, and then
+The basic idea is that we try to group things into functions, and then
 find ways to drop out of them when we can't go any further.  There's
 another way to program this involving a big else chunk and a bunch of
 braces, and it can be hard to follow.  You can read this from top to
 bottom and have a pretty good idea of what's going on without having to
 track too much { } nesting and indenting.
 
-I don't really care for pretentiousVariableNamingSchemes, but you can
-probably get away with it in your own driver that I will never have to
+We don't really care for pretentiousVariableNamingSchemes, but you can
+probably get away with it in your own driver that we will never have to
 touch.  If your function or variable names start pushing important code
 off the right margin of the screen, expect them to meet the byte
 chainsaw sooner or later.
@@ -171,8 +171,13 @@ without inflicting much pain on other developers.  If you use a space,
 then you've fixed the spacing in stone and have really annoyed half of
 the people out there.
 
+Note that tabs apply only to *indenting*.  Alignment of text after any
+non-tab character has appeared on the line must be done by spaces in
+order for it to remain at the same alignment when someone views tabs at
+a different widths.
+
 If you write something that uses spaces, you may get away with it in a
-driver that's relatively secluded.  However, if I have to work on that
+driver that's relatively secluded.  However, if we have to work on that
 code, expect it to get reformatted according to the above.
 
 Patches to existing code that don't conform to the coding style being
