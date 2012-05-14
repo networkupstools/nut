@@ -224,7 +224,7 @@ static void apc_ser_set(void)
 	if (tcgetattr(upsfd, &tio_chk))
 		fatal_with_errno(EXIT_FAILURE, "tcgetattr(%s)", device_path);
 	if (memcmp(&tio_chk, &tio, sizeof(tio)))
-		upslogx(LOG_ERR, "WARNING: unable to set /all/ required attributes (%s)", device_path);
+		upslogx(LOG_NOTICE, "%s: device reports different attributes than what were set", device_path);
 
 	cable = getval("cable");
 	if (cable && !strcasecmp(cable, ALT_CABLE_1)) {

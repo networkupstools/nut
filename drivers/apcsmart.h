@@ -24,7 +24,7 @@
 #define __apcsmart_h__
 
 #define DRIVER_NAME	"APC Smart protocol driver"
-#define DRIVER_VERSION	"3.0"
+#define DRIVER_VERSION	"3.01"
 
 #define ALT_CABLE_1 "940-0095B"
 
