@@ -1584,6 +1584,8 @@ if test "x$WINDMC" != "xnone" -a "x$WINDRES" != "xnone" ; then
 fi
 
 AM_CONDITIONAL([HAVE_MINGW_RESGEN], [test "${nut_have_mingw_resgen}" = "yes"])
+dnl Also define a generic AM_CONDITIONAL for general Windows compilation
+AM_CONDITIONAL([HAVE_WINDOWS], [test "${nut_have_mingw_resgen}" = "yes"])
 
 dnl ----------------------------------------------------------------------
 
