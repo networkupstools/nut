@@ -115,14 +115,14 @@
 
 /* status bits */
 
-#define APC_STAT_CAL	0x01	/* calibration */
-#define APC_STAT_TRIM	0x02	/* SmartTrim */
-#define APC_STAT_BOOST	0x04	/* SmartBoost */
-#define APC_STAT_OL	0x08	/* on line */
-#define APC_STAT_OB	0x10	/* on battery */
-#define APC_STAT_OVER	0x20	/* overload */
-#define APC_STAT_LB	0x40	/* low battery */
-#define APC_STAT_RB	0x80	/* replace battery */
+#define APC_STAT_CAL   (1 << 0)        /* calibration */
+#define APC_STAT_TRIM  (1 << 1)        /* SmartTrim */
+#define APC_STAT_BOOST (1 << 2)        /* SmartBoost */
+#define APC_STAT_OL    (1 << 3)        /* on line */
+#define APC_STAT_OB    (1 << 4)        /* on battery */
+#define APC_STAT_OVER  (1 << 5)        /* overload */
+#define APC_STAT_LB    (1 << 6)        /* low battery */
+#define APC_STAT_RB    (1 << 7)        /* replace battery */
 
 /*
  * serial protocol: special commands - initialization and such
