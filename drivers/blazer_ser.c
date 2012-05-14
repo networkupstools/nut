@@ -26,7 +26,7 @@
 #include "blazer.h"
 
 #define DRIVER_NAME	"Megatec/Q1 protocol serial driver"
-#define DRIVER_VERSION	"1.52"
+#define DRIVER_VERSION	"1.53"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -58,7 +58,7 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 		return ret;
 	}
 
-	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
+	upsdebugx(3, "send: '%.*s'", (int)strcspn(cmd, "\r"), cmd);
 
 	ret = ser_get_buf(upsfd, buf, buflen, SER_WAIT_SEC, 0);
 
@@ -67,7 +67,7 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 		return ret;
 	}
 
-	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+	upsdebugx(3, "read: '%.*s'", (int)strcspn(buf, "\r"), buf);
 	return ret;
 #else
 	const struct {
