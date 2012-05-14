@@ -16,9 +16,10 @@ SUPPORTED HARDWARE
 ------------------
 
 The blazer driver is known to work with various UPSes from Blazer, Energy
-Sistem, Fenton Technologies, Mustek and many others. The NUT compatibility
-table lists all the known supported models. Keep in mind, however, that
-other models not listed there may also be supported, but haven't been tested.
+Sistem, Fenton Technologies, General Electric, Mustek and many others.
+The NUT compatibility table lists all the known supported models. Keep
+in mind, however, that other models not listed there may also be supported,
+but haven't been tested.
 
 All devices with a serial interface (use the *blazer_ser* driver) and
 many with a USB interface (use the *blazer_usb* driver) are supported.
