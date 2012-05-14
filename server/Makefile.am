@@ -24,7 +24,7 @@ if WITH_SSL
 endif
 
 sbin_PROGRAMS = upsd
-EXTRA_PROGRAMS = sockdebug pipedebug
+EXTRA_PROGRAMS = sockdebug
 
 upsd_SOURCES = upsd.c user.c conf.c netssl.c sstate.c desc.c		\
  netget.c netmisc.c netlist.c netuser.c netset.c netinstcmd.c		\
@@ -32,9 +32,11 @@ upsd_SOURCES = upsd.c user.c conf.c netssl.c sstate.c desc.c		\
  netlist.h netmisc.h netset.h netuser.h ssl.h sstate.h stype.h upsd.h   \
  upstype.h user-data.h user.h
 
-sockdebug_SOURCES = sockdebug.c
-
-pipedebug_SOURCES = pipedebug.c
+if HAVE_WINDOWS
+  sockdebug_SOURCES = pipedebug.c
+else !HAVE_WINDOWS
+  sockdebug_SOURCES = sockdebug.c
+endif !HAVE_WINDOWS
 
 dummy:
 
