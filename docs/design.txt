@@ -128,7 +128,7 @@ This scenario requires some configuration, obviously:
 2. upsd has a valid UPS entry in ups.conf for this UPS.
 
 	[myups]
-		driver = upsdriver
+		driver = nutupsdrv
 		port = /dev/ttySx
 
 3. upsd has a valid user for upsmon in upsd.users.
