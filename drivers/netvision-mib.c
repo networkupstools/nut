@@ -23,7 +23,7 @@
 
 #include "netvision-mib.h"
 
-#define NETVISION_MIB_VERSION			"0.1"
+#define NETVISION_MIB_VERSION			"0.2"
 
 #define NETVISION_SYSOID				".1.3.6.1.4.1.4555.1.1.1"
 
@@ -37,11 +37,11 @@
 /* UPS Battery */
 #define NETVISION_OID_BATTERYSTATUS		".1.3.6.1.4.1.4555.1.1.1.1.2.1.0"
 static info_lkp_t netvision_batt_info[] = {
-	{ 2, "" }, /* battery normal */
-	{ 3, "LB" }, /* battery low */
-	{ 4, "LB" }, /* battery depleted */
+	{ 2, "" },        /* battery normal      */
+	{ 3, "LB" },      /* battery low         */
+	{ 4, "LB" },      /* battery depleted    */
 	{ 5, "DISCHRG" }, /* battery discharging */
-	{ 6, "RB" },  /* battery failure */
+	{ 6, "RB" },      /* battery failure     */
 	{ 0, "NULL" }
 };
 
@@ -76,15 +76,15 @@ static info_lkp_t netvision_batt_info[] = {
 #define NETVISION_OID_OUTPUT_SOURCE	".1.3.6.1.4.1.4555.1.1.1.1.4.1.0"
 
 static info_lkp_t netvision_output_info[] = {
-	{ 1, "" },   /* output source other   */
-	{ 2, "" },   /* output source none    */
-	{ 3, "OL" },     /* output source normal  */
+	{ 1, "" },          /* output source other   */
+	{ 2, "" },          /* output source none    */
+	{ 3, "OL" },        /* output source normal  */
 	{ 4, "OL BYPASS" }, /* output source bypass  */
-	{ 5, "OB" },     /* output source battery */
+	{ 5, "OB" },        /* output source battery */
 	{ 6, "OL BOOST" },  /* output source booster */
 	{ 7, "OL TRIM" },   /* output source reducer */
-	{ 8, "" },   /* output source standby */
-	{ 9, "" },   /* output source ecomode */
+	{ 8, "OL" },        /* output source standby */
+	{ 9, "" },          /* output source ecomode */
 	{ 0, "NULL" }
 };
 
