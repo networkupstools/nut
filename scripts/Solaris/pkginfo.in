@@ -1,6 +1,6 @@
 PKG="NUT"
 NAME="Network UPS Tools"
-ARCH="Solaris_Intel"
+ARCH="@OS_NAME@"
 VERSION="@PACKAGE_VERSION@"
 CATEGORY="application"
 VENDOR="http://www.networkupstools.org"

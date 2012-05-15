@@ -115,3 +115,4 @@ package:
 	make install
 	cd scripts/Solaris; make package
 	make uninstall
+	rm -rf @prefix@
