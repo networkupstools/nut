@@ -304,42 +304,40 @@ battery: Any battery details
 
 [options="header"]
 |===============================================================================
-| Name                    | Description                       | Example value
-| battery.charge          | Battery charge (percent)          | 100.0
+| Name                    | Description                         | Example value
+| battery.charge          | Battery charge (percent)            | 100.0
 | battery.charge.low      | Remaining battery level when
-                            UPS switches to LB (percent)      | 20
+                            UPS switches to LB (percent)        | 20
 | battery.charge.restart  | Minimum battery level for
-                            UPS restart after power-off       | 20
+                            UPS restart after power-off         | 20
 | battery.charge.warning  | Battery level when UPS switches
-                            to "Warning" state (percent)      | 50
-| battery.voltage         | Battery voltage (V)               | 24.84
-| battery.voltage.nominal | Nominal battery voltage (V)       | 024
+                            to "Warning" state (percent)        | 50
+| battery.voltage         | Battery voltage (V)                 | 24.84
+| battery.voltage.nominal | Nominal battery voltage (V)         | 024
 | battery.voltage.low     | Minimum battery voltage, that
-                            triggers FSD status               | 21,52
+                            triggers FSD status                 | 21,52
 | battery.voltage.high    | Maximum battery voltage
-                            (Ie battery.charge = 100)         | 26,9
-| battery.capacity        | Battery capacity (Ah)             | 7.2
-| battery.current         | Battery current (A)               | 1.19
-| battery.temperature     | Battery temperature (degrees C)   | 050.7
-| battery.runtime         | Battery runtime (seconds)
-                            Remaining battery runtime         | 1080
-| battery.runtime.low     | when UPS switches to LB
-                            (seconds)                         | 180
+                            (Ie battery.charge = 100)           | 26,9
+| battery.capacity        | Battery capacity (Ah)               | 7.2
+| battery.current         | Battery current (A)                 | 1.19
+| battery.temperature     | Battery temperature (degrees C)     | 050.7
+| battery.runtime         | Battery runtime (seconds)           | 1080
+| battery.runtime.low     | Remaining battery runtime when
+                            UPS switches to LB (seconds)        | 180
 | battery.runtime.restart | Minimum battery runtime for UPS
-                            restart after power-off (seconds) | 120
-| battery.alarm.threshold | Battery alarm threshold           | 0 (immediate)
-| battery.date            | Battery change date (opaque
-                            string)                           | 11/14/00
+                            restart after power-off (seconds)   | 120
+| battery.alarm.threshold | Battery alarm threshold             | 0 (immediate)
+| battery.date            | Battery change date (opaque string) | 11/14/00
 | battery.mfr.date        | Battery manufacturing date 
-                            (opaque string)                   | 2005/04/02
-| battery.packs           | Number of battery packs           | 001
-| battery.packs.bad       | Number of bad battery packs       | 000
+                            (opaque string)                     | 2005/04/02
+| battery.packs           | Number of battery packs             | 001
+| battery.packs.bad       | Number of bad battery packs         | 000
 | battery.type            | Battery chemistry (opaque
-                            string)                           | PbAc
+                            string)                             | PbAc
 | battery.protection      | Prevent deep discharge of
-                            battery                           | yes
+                            battery                             | yes
 | battery.energysave      | Switch off when running on
-                            battery and no/low load           | no
+                            battery and no/low load             | no
 |===============================================================================
 
 
