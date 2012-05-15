@@ -1,8 +1,8 @@
-EXTRA_DIST = makelocal.sh prototype
+EXTRA_DIST = makelocal.sh 
 
 package: makelocal.sh pkginfo
 	$ cd @prefix@; $ find . -print | pkgproto > prototype1
-	$ cp makelocal.sh precheck.py pkginfo nut checkinstall preinstall postinstall preremove postremove preproto.pl @prefix@ 
+	$ cp makelocal.sh precheck.py pkginfo nut preinstall postinstall preremove postremove preproto.pl @prefix@ 
 	$ cd @prefix@; perl preproto.pl
 	$ cd @prefix@; python precheck.py	
 	$ cd @prefix@; rm -f prototype1	
