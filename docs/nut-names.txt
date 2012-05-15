@@ -313,10 +313,14 @@ battery: Any battery details
 | battery.charge.warning  | Battery level when UPS switches
                             to "Warning" state (percent)      | 50
 | battery.voltage         | Battery voltage (V)               | 24.84
+| battery.voltage.nominal | Nominal battery voltage (V)       | 024
+| battery.voltage.low     | Minimum battery voltage, that
+                            triggers FSD status               | 21,52
+| battery.voltage.high    | Maximum battery voltage
+                            (Ie battery.charge = 100)         | 26,9
 | battery.capacity        | Battery capacity (Ah)             | 7.2
 | battery.current         | Battery current (A)               | 1.19
 | battery.temperature     | Battery temperature (degrees C)   | 050.7
-| battery.voltage.nominal | Nominal battery voltage (V)       | 024
 | battery.runtime         | Battery runtime (seconds)
                             Remaining battery runtime         | 1080
 | battery.runtime.low     | when UPS switches to LB
