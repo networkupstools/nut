@@ -249,7 +249,7 @@ Valid with/without context (ie. per phase or aggregated/averaged)
 | current               | Current (A)
 | current.maximum       | Maximum seen current (A)
 | current.minimum       | Minimum seen current (A)
-| peakcurrent           | Peak current
+| current.peak          | Peak current
 | voltage               | Voltage (V)
 | voltage.nominal       | Nominal voltage (V)
 | voltage.maximum       | Maximum seen voltage (V)

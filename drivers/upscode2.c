@@ -45,7 +45,7 @@
 #include <math.h>
 
 #define DRIVER_NAME	"UPScode II UPS driver"
-#define DRIVER_VERSION	"0.87"
+#define DRIVER_VERSION	"0.88"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -309,9 +309,9 @@ static simple_t simple[] = {
 	{ "MOIL1", t_value, "output.current" },
 	{ "MOIL2", t_value, "output.L2.current" },
 	{ "MOIL3", t_value, "output.L3.current" },
-	{ "MOIP1", t_value, "output.peakcurrent" },
-	{ "MOIP2", t_value, "output.L2.peakcurrent" },
-	{ "MOIP3", t_value, "output.L3.peakcurrent" },
+	{ "MOIP1", t_value, "output.current.peak" },
+	{ "MOIP2", t_value, "output.L2.current.peak" },
+	{ "MOIP3", t_value, "output.L3.current.peak" },
 	{ "MOPL1", t_value, "output.realpower", 0, &kilo_to_unity },
 	{ "MOPL2", t_value, "output.L2.realpower", 0, &kilo_to_unity },
 	{ "MOPL3", t_value, "output.L3.realpower", 0, &kilo_to_unity },
@@ -780,7 +780,7 @@ void upsdrv_updateinfo(void)
 			change_name(simple,
 				"output.current", "output.L1.current");
 			change_name(simple,
-				"output.peakcurrent", "output.L1.peakcurrent");
+				"output.current.peak", "output.L1.current.peak");
 			change_name(simple,
 				"output.realpower", "output.L1.realpower");
 			change_name(simple,
