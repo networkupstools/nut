@@ -1619,54 +1619,6 @@ int su_instcmd(const char *cmdname, const char *extradata)
 	return retval;
 }
 
-/* TODO: complete rewrite */
-void su_shutdown_ups(void)
-{
-	int sdtype = 0;
-	long pwr_status;
-
-	if (nut_snmp_get_int(OID_pwr_status, &pwr_status) == FALSE)
-		fatalx(EXIT_FAILURE, "cannot determine UPS status");
-
-	if (testvar(SU_VAR_SDTYPE))
-		sdtype = atoi(getval(SU_VAR_SDTYPE));
-
-	/* logic from newapc.c */
-	switch (sdtype) {
-	case 3:		/* shutdown with grace period */
-		upslogx(LOG_INFO, "sending delayed power off command to UPS");
-		su_instcmd("shutdown.stayoff", "0");
-		break;
-	case 2:		/* instant shutdown */
-		upslogx(LOG_INFO, "sending power off command to UPS");
-		su_instcmd("load.off", "0");
-		break;
-	case 1:
-		/* Send a combined set of shutdown commands which can work better */
-		/* if the UPS gets power during shutdown process */
-		/* Specifically it sends both the soft shutdown 'S' */
-		/* and the powerdown after grace period - '@000' commands */
-/*		upslogx(LOG_INFO, "UPS - sending shutdown/powerdown");
-		if (pwr_status == g_pwr_battery)
-			su_ups_instcmd(CMD_SOFTDOWN, 0, 0);
-		su_ups_instcmd(CMD_SDRET, 0, 0);
-		break;
-*/
-	default:
-		/* if on battery... */
-/*		if (pwr_status == su_find_valinfo(info_lkp_t *oid2info, "OB")) {
-			upslogx(LOG_INFO,
-				"UPS is on battery, sending shutdown command...");
-			su_ups_instcmd(CMD_SOFTDOWN, 0, 0);
-		} else {
-			upslogx(LOG_INFO, "UPS is online, sending shutdown+return command...");
-			su_ups_instcmd(CMD_SDRET, 0, 0);
-		}
-*/
-		break;
-	}
-}
-
 /* FIXME: the below functions can be removed since these were for loading
  * the mib2nut information from a file instead of the .h definitions... */
 /* return 1 if usable, 0 if not */
