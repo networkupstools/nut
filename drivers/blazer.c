@@ -428,6 +428,13 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
+		/*
+		 * Note: "S01R0001" and "S01R0002" may not work on early (GE)
+		 * firmware versions.  The failure mode is that the UPS turns
+		 * off and never returns.  The fix is to push the return value
+		 * up by 2, i.e. S01R0003, and it will return online properly.
+		 * (thus the default of ondelay=3 mins)
+		 */
 		if (offdelay < 60) {
 			snprintf(buf, sizeof(buf), "S.%dR%04d\r", offdelay / 6, ondelay);
 		} else {
