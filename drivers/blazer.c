@@ -225,9 +225,9 @@ static int blazer_status(const char *cmd)
 	}
 
 	if (val[7] == '1') {	/* Beeper On */
-		dstate_setinfo("beeper.status", "enabled");
+		dstate_setinfo("ups.beeper.status", "enabled");
 	} else {
-		dstate_setinfo("beeper.status", "disabled");
+		dstate_setinfo("ups.beeper.status", "disabled");
 	}
 
 	if (val[4] == '1') {	/* UPS Type is Standby (0 is On_line) */
