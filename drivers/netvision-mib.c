@@ -1,8 +1,9 @@
 /*  netvision-mib.c - data to monitor Socomec Sicon UPS equipped
  *  with Netvision WEB/SNMP card/external box with NUT
  *
- *  Copyright (C) 2004
- *  			Thanos Chatziathanassiou <tchatzi@arx.net>
+ *  Copyright (C)
+ *  	2004	Thanos Chatziathanassiou <tchatzi@arx.net>
+ *  	2012	Manuel Bouyer <bouyer@NetBSD.org>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,7 +24,7 @@
 
 #include "netvision-mib.h"
 
-#define NETVISION_MIB_VERSION			"0.2"
+#define NETVISION_MIB_VERSION			"0.3"
 
 #define NETVISION_SYSOID				".1.3.6.1.4.1.4555.1.1.1"
 
@@ -51,8 +52,12 @@ static info_lkp_t netvision_batt_info[] = {
 #define NETVISION_OID_BATT_VOLTS		".1.3.6.1.4.1.4555.1.1.1.1.2.5.0"
 
 #define NETVISION_OID_INPUT_NUM_LINES		".1.3.6.1.4.1.4555.1.1.1.1.3.1.0" /* 1phase or 3phase UPS input */
+#define NETVISION_OID_INPUT_FREQ		".1.3.6.1.4.1.4555.1.1.1.1.3.2.0"
 #define NETVISION_OID_OUTPUT_NUM_LINES		".1.3.6.1.4.1.4555.1.1.1.1.4.3.0" /* 1phase or 3phase UPS output */
+#define NETVISION_OID_OUTPUT_FREQ		".1.3.6.1.4.1.4555.1.1.1.1.4.2.0"
 
+#define NETVISION_OID_BYPASS_FREQ		".1.3.6.1.4.1.4555.1.1.1.1.5.1.0"
+#define NETVISION_OID_BYPASS_NUM_LINES		".1.3.6.1.4.1.4555.1.1.1.1.5.2.0" /* 1phase or 3phase UPS input */
 /*
 	three phase ups provide input/output/load for each phase
 	in case of one-phase output, only _P1 should be used
@@ -62,18 +67,30 @@ static info_lkp_t netvision_batt_info[] = {
 #define NETVISION_OID_OUT_CURRENT_P1	".1.3.6.1.4.1.4555.1.1.1.1.4.4.1.3.1"
 #define NETVISION_OID_OUT_LOAD_PCT_P1	".1.3.6.1.4.1.4555.1.1.1.1.4.4.1.4.1"
 #define NETVISION_OID_IN_VOLTAGE_P1	".1.3.6.1.4.1.4555.1.1.1.1.3.3.1.5.1"
+#define NETVISION_OID_IN_CURRENT_P1	".1.3.6.1.4.1.4555.1.1.1.1.3.3.1.3.1"
+#define NETVISION_OID_BY_VOLTAGE_P1	".1.3.6.1.4.1.4555.1.1.1.1.5.3.1.2.1"
+#define NETVISION_OID_BY_CURRENT_P1	".1.3.6.1.4.1.4555.1.1.1.1.5.3.1.3.1"
 
 #define NETVISION_OID_OUT_VOLTAGE_P2	".1.3.6.1.4.1.4555.1.1.1.1.4.4.1.2.2"
 #define NETVISION_OID_OUT_CURRENT_P2	".1.3.6.1.4.1.4555.1.1.1.1.4.4.1.3.2"
 #define NETVISION_OID_OUT_LOAD_PCT_P2	".1.3.6.1.4.1.4555.1.1.1.1.4.4.1.4.2"
 #define NETVISION_OID_IN_VOLTAGE_P2	".1.3.6.1.4.1.4555.1.1.1.1.3.3.1.5.2"
+#define NETVISION_OID_IN_CURRENT_P2	".1.3.6.1.4.1.4555.1.1.1.1.3.3.1.3.2"
+#define NETVISION_OID_BY_VOLTAGE_P2	".1.3.6.1.4.1.4555.1.1.1.1.5.3.1.2.2"
+#define NETVISION_OID_BY_CURRENT_P2	".1.3.6.1.4.1.4555.1.1.1.1.5.3.1.3.2"
 
 #define NETVISION_OID_OUT_VOLTAGE_P3	".1.3.6.1.4.1.4555.1.1.1.1.4.4.1.2.3"
 #define NETVISION_OID_OUT_CURRENT_P3	".1.3.6.1.4.1.4555.1.1.1.1.4.4.1.3.3"
 #define NETVISION_OID_OUT_LOAD_PCT_P3	".1.3.6.1.4.1.4555.1.1.1.1.4.4.1.4.3"
 #define NETVISION_OID_IN_VOLTAGE_P3	".1.3.6.1.4.1.4555.1.1.1.1.3.3.1.5.3"
+#define NETVISION_OID_IN_CURRENT_P3	".1.3.6.1.4.1.4555.1.1.1.1.3.3.1.3.3"
+#define NETVISION_OID_BY_VOLTAGE_P3	".1.3.6.1.4.1.4555.1.1.1.1.5.3.1.2.3"
+#define NETVISION_OID_BY_CURRENT_P3	".1.3.6.1.4.1.4555.1.1.1.1.5.3.1.3.3"
 
 #define NETVISION_OID_OUTPUT_SOURCE	".1.3.6.1.4.1.4555.1.1.1.1.4.1.0"
+
+#define NETVISION_OID_CONTROL_STATUS 	     ".1.3.6.1.4.1.4555.1.1.1.1.8.1"
+#define NETVISION_OID_CONTROL_SHUTDOWN_DELAY ".1.3.6.1.4.1.4555.1.1.1.1.8.2"
 
 static info_lkp_t netvision_output_info[] = {
 	{ 1, "" },          /* output source other   */
@@ -104,12 +121,45 @@ static snmp_info_t netvision_mib[] = {
 		SU_FLAG_OK | SU_STATUS_PWR, &netvision_output_info[0] },
 
 	/* ups load */
-	{ "ups.load", 0, 1, NETVISION_OID_OUT_LOAD_PCT_P1, 0, SU_FLAG_OK, NULL },
+	{ "ups.load", 0, 1, NETVISION_OID_OUT_LOAD_PCT_P1, 0, SU_INPUT_1, NULL },
 
 	/*ups input,output voltage, output frquency phase 1 */
-	{ "input.voltage", 0, 0.1, NETVISION_OID_IN_VOLTAGE_P1, 0, SU_FLAG_OK, NULL },
-	{ "output.voltage", 0, 0.1, NETVISION_OID_OUT_VOLTAGE_P1, 0, SU_FLAG_OK, NULL },
-	{ "output.current", 0, 0.1, NETVISION_OID_OUT_CURRENT_P1, 0, SU_FLAG_OK, NULL },
+	{ "input.phases", 0, 1.0, NETVISION_OID_INPUT_NUM_LINES, 0, SU_FLAG_SETINT, NULL, &input_phases },
+	{ "input.frequency", 0, 0.1, NETVISION_OID_INPUT_FREQ, 0, SU_FLAG_OK, NULL },
+	{ "input.voltage", 0, 0.1, NETVISION_OID_IN_VOLTAGE_P1, 0, SU_INPUT_1, NULL },
+	{ "input.current", 0, 0.1, NETVISION_OID_IN_CURRENT_P1, 0, SU_INPUT_1, NULL },
+	{ "input.L1-N.voltage", 0, 0.1, NETVISION_OID_IN_VOLTAGE_P1, 0, SU_INPUT_3, NULL },
+	{ "input.L1.current", 0, 0.1, NETVISION_OID_IN_CURRENT_P1, 0, SU_INPUT_3, NULL },
+	{ "input.L2-N.voltage", 0, 0.1, NETVISION_OID_IN_VOLTAGE_P2, 0, SU_INPUT_3, NULL },
+	{ "input.L2.current", 0, 0.1, NETVISION_OID_IN_CURRENT_P2, 0, SU_INPUT_3, NULL },
+	{ "input.L3-N.voltage", 0, 0.1, NETVISION_OID_IN_VOLTAGE_P3, 0, SU_INPUT_3, NULL },
+	{ "input.L3.current", 0, 0.1, NETVISION_OID_IN_CURRENT_P3, 0, SU_INPUT_3, NULL },
+
+	{ "output.phases", 0, 1.0, NETVISION_OID_OUTPUT_NUM_LINES, 0, SU_FLAG_SETINT, NULL, &output_phases },
+	{ "output.frequency", 0, 0.1, NETVISION_OID_OUTPUT_FREQ, 0, SU_FLAG_OK, NULL },
+	{ "output.voltage", 0, 0.1, NETVISION_OID_OUT_VOLTAGE_P1, 0, SU_OUTPUT_1, NULL },
+	{ "output.current", 0, 0.1, NETVISION_OID_OUT_CURRENT_P1, 0, SU_OUTPUT_1, NULL },
+	{ "output.load", 0, 1.0, NETVISION_OID_OUT_LOAD_PCT_P1, 0, SU_OUTPUT_1, NULL },
+	{ "output.L1-N.voltage", 0, 0.1, NETVISION_OID_OUT_VOLTAGE_P1, 0, SU_OUTPUT_3, NULL },
+	{ "output.L1.current", 0, 0.1, NETVISION_OID_OUT_CURRENT_P1, 0, SU_OUTPUT_3, NULL },
+	{ "output.L1.power.percent", 0, 1.0, NETVISION_OID_OUT_LOAD_PCT_P1, 0, SU_OUTPUT_3, NULL },
+	{ "output.L2-N.voltage", 0, 0.1, NETVISION_OID_OUT_VOLTAGE_P2, 0, SU_OUTPUT_3, NULL },
+	{ "output.L2.current", 0, 0.1, NETVISION_OID_OUT_CURRENT_P2, 0, SU_OUTPUT_3, NULL },
+	{ "output.L2.power.percent", 0, 1.0, NETVISION_OID_OUT_LOAD_PCT_P2, 0, SU_OUTPUT_3, NULL },
+	{ "output.L3-N.voltage", 0, 0.1, NETVISION_OID_OUT_VOLTAGE_P3, 0, SU_OUTPUT_3, NULL },
+	{ "output.L3.current", 0, 0.1, NETVISION_OID_OUT_CURRENT_P3, 0, SU_OUTPUT_3, NULL },
+	{ "output.L3.power.percent", 0, 1.0, NETVISION_OID_OUT_LOAD_PCT_P3, 0, SU_OUTPUT_3, NULL },
+
+	{ "input.bypass.phases", 0, 1.0, NETVISION_OID_BYPASS_NUM_LINES, 0, SU_FLAG_SETINT, NULL, &bypass_phases },
+	{ "input.bypass.frequency", 0, 0.1, NETVISION_OID_BYPASS_FREQ, 0, SU_FLAG_OK, NULL },
+	{ "input.bypass.voltage", 0, 0.1, NETVISION_OID_BY_VOLTAGE_P1, 0, SU_BYPASS_1, NULL },
+	{ "input.bypass.current", 0, 0.1, NETVISION_OID_BY_CURRENT_P1, 0, SU_BYPASS_1, NULL },
+	{ "input.bypass.L1-N.voltage", 0, 0.1, NETVISION_OID_BY_VOLTAGE_P1, 0, SU_BYPASS_3, NULL },
+	{ "input.bypass.L1.current", 0, 0.1, NETVISION_OID_BY_CURRENT_P1, 0, SU_BYPASS_3, NULL },
+	{ "input.bypass.L2-N.voltage", 0, 0.1, NETVISION_OID_BY_VOLTAGE_P2, 0, SU_BYPASS_3, NULL },
+	{ "input.bypass.L2.current", 0, 0.1, NETVISION_OID_BY_CURRENT_P2, 0, SU_BYPASS_3, NULL },
+	{ "input.bypass.L3-N.voltage", 0, 0.1, NETVISION_OID_BY_VOLTAGE_P3, 0, SU_BYPASS_3, NULL },
+	{ "input.bypass.L3.current", 0, 0.1, NETVISION_OID_BY_CURRENT_P3, 0, SU_BYPASS_3, NULL },
 
 	/* battery info */
 	{ "battery.charge", 0, 1, NETVISION_OID_BATT_CHARGE, "", SU_FLAG_OK, NULL },
