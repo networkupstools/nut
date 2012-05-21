@@ -1,4 +1,4 @@
-# PSF file for Network UPS Tools /usr/local/ups				  11/2/2011
+# PSF file for Network UPS Tools 				  11/2/2011
 # 
 # Useful commands:
 #
@@ -52,25 +52,25 @@ product
 		revision	@PACKAGE_VERSION@
 
 #Including "conf" files under "/usr/local/ups/etc/nut".
-		file -u 644 -g bin -o bin ../../conf/ups.conf.sample		/usr/local/ups/etc/ups.conf
-		file -u 644 -g bin -o bin ../../conf/upsd.conf.sample     	/usr/local/ups/etc/upsd.conf
-		file -u 644 -g bin -o bin ../../conf/upsd.users.sample    	/usr/local/ups/etc/upsd.users
+		file -u 644 -g bin -o bin @top_srcdir@/conf/ups.conf.sample		@prefix@/etc/ups.conf
+		file -u 644 -g bin -o bin @top_srcdir@/conf/upsd.conf.sample     	@prefix@/etc/upsd.conf
+		file -u 644 -g bin -o bin @top_srcdir@/conf/upsd.users.sample    	@prefix@/etc/upsd.users
 
 #Including "server" files under "/usr/local/ups/sbin".		
-		file -u 755 -g bin -o bin ../../server/upsd 				/usr/local/ups/sbin/upsd
-		file -u 755 -g bin -o bin ../../drivers/upsdrvctl 			/usr/local/ups/sbin/upsdrvctl
+		file -u 755 -g bin -o bin @top_srcdir@/server/upsd 				@prefix@/sbin/upsd
+		file -u 755 -g bin -o bin @top_srcdir@/drivers/upsdrvctl 			@prefix@/sbin/upsdrvctl
 
 #Including "share" files under "/usr/local/ups/share".
-		file -u 644 -g bin -o bin ../../data/cmdvartab		/usr/local/ups/share/cmdvartab
-		file -u 644 -g bin -o bin ../../data/driver.list	/usr/local/ups/share/driver.list
+		file -u 644 -g bin -o bin @top_srcdir@/data/cmdvartab		@prefix@/share/cmdvartab
+		file -u 644 -g bin -o bin @top_srcdir@/data/driver.list	@prefix@/share/driver.list
 
 #Including required "libupsclient1" under "/usr/local/ups/lib"
-		file -u 755 -g bin -o bin ../../clients/.libs/libupsclient.so.1		/usr/local/ups/lib/libupsclient.so.1
-		file -u 555 -g bin -o bin ../../clients/.libs/libupsclient.so.1.0	/usr/local/ups/lib/libupsclient.so.1.0			
+		file -u 755 -g bin -o bin @top_srcdir@/clients/.libs/libupsclient.so.2		@prefix@/lib/libupsclient.so.2
+		file -u 555 -g bin -o bin @top_srcdir@/clients/.libs/libupsclient.so.2.0	@prefix@/lib/libupsclient.so.2.0			
 		
 #Including required UPS drivers files under "/usr/local/ups/bin/".
 #such as "nut-snmp", "nut-xml or netxml-ups"
-		directory 	../../drivers=/usr/local/ups/bin/
+		directory 	@top_srcdir@/drivers=@prefix@/bin/
 		#file_permissions -u 755 -g bin -o bin
 		file *
 	
@@ -275,21 +275,21 @@ product
 		title 		"nut-client"
 		revision	@PACKAGE_VERSION@
 
-		file -u 755 -g bin -o bin ../../clients/upsc		/usr/local/ups/bin/upsc
-		file -u 755 -g bin -o bin ../../clients/upscmd		/usr/local/ups/bin/upscmd
-		file -u 755 -g bin -o bin ../../clients/upslog		/usr/local/ups/bin/upslog
-		file -u 755 -g bin -o bin ../../clients/upsrw		/usr/local/ups/bin/upsrw
-		file -u 755 -g bin -o bin ../../clients/upsmon 		/usr/local/ups/sbin/upsmon
-		file -u 755 -g bin -o bin ../../clients/upssched 	/usr/local/ups/sbin/upssched
+		file -u 755 -g bin -o bin @top_srcdir@/clients/upsc		@prefix@/bin/upsc
+		file -u 755 -g bin -o bin @top_srcdir@/clients/upscmd		@prefix@/bin/upscmd
+		file -u 755 -g bin -o bin @top_srcdir@/clients/upslog		@prefix@/bin/upslog
+		file -u 755 -g bin -o bin @top_srcdir@/clients/upsrw		@prefix@/bin/upsrw
+		file -u 755 -g bin -o bin @top_srcdir@/clients/upsmon 		@prefix@/sbin/upsmon
+		file -u 755 -g bin -o bin @top_srcdir@/clients/upssched 	@prefix@/sbin/upssched
 
 #Including "conf" files under "/usr/local/ups/etc".	
-		file -u 644 -g bin -o bin ../../conf/nut.conf.sample   		/usr/local/ups/etc/nut.conf
-		file -u 644 -g bin -o bin ../../conf/upsmon.conf.sample   	/usr/local/ups/etc/upsmon.conf
-		file -u 644 -g bin -o bin ../../conf/upssched.conf.sample	/usr/local/ups/etc/upssched.conf
+		file -u 644 -g bin -o bin @top_srcdir@/conf/nut.conf.sample   		@prefix@/etc/nut.conf
+		file -u 644 -g bin -o bin @top_srcdir@/conf/upsmon.conf.sample   	@prefix@/etc/upsmon.conf
+		file -u 644 -g bin -o bin @top_srcdir@/conf/upssched.conf.sample	@prefix@/etc/upssched.conf
 
 #Need to check if "libupsclient1" required for Client again.
-		#file -u 755 -g bin -o bin ../../clients/.libs/libupsclient.so.1		/usr/local/ups/lib/libupsclient.so.1
-		#file -u 555 -g bin -o bin ../../clients/.libs/libupsclient.so.1.0		/usr/local/ups/lib/libupsclient.so.1.0	
+		#file -u 755 -g bin -o bin @top_srcdir@/clients/.libs/libupsclient.so.1		@prefix@/lib/libupsclient.so.1
+		#file -u 555 -g bin -o bin @top_srcdir@/clients/.libs/libupsclient.so.1.0		@prefix@/lib/libupsclient.so.1.0	
 	end
 # ----------------------------------------
 #Including "libupsclient1-dev" files.
@@ -298,13 +298,13 @@ product
 		title 		"libupsclient1-dev"
 		revision	@PACKAGE_VERSION@
 		
-		file -u 755 -g bin -o bin ../../clients/.libs/libupsclient.a	/usr/local/ups/lib/libupsclient.a
-		file -u 755 -g bin -o bin ../../clients/.libs/libupsclient.la	/usr/local/ups/lib/libupsclient.la
-		file -u 755 -g bin -o bin ../../clients/.libs/libupsclient.so	/usr/local/ups/lib/libupsclient.so
-		file -u 644 -g bin -o bin ../../include/parseconf.h				/usr/include/parseconf.h
-		file -u 644 -g bin -o bin ../../clients/upsclient.h				/usr/include/upsclient.h
-		#file -u 755 -g bin -o bin ../../clients/.libs/libupsclient.so	/usr/lib/libupsclient.so
-		file -u 755 -g bin -o bin ../../lib/libupsclient.pc				/usr/lib/pkgconfig/libupsclient.pc
+		file -u 755 -g bin -o bin @top_srcdir@/clients/.libs/libupsclient.a	@prefix@/lib/libupsclient.a
+		file -u 755 -g bin -o bin @top_srcdir@/clients/.libs/libupsclient.la	@prefix@/lib/libupsclient.la
+		file -u 755 -g bin -o bin @top_srcdir@/clients/.libs/libupsclient.so	@prefix@/lib/libupsclient.so
+		file -u 644 -g bin -o bin @top_srcdir@/include/parseconf.h				/usr/include/parseconf.h
+		file -u 644 -g bin -o bin @top_srcdir@/clients/upsclient.h				/usr/include/upsclient.h
+		#file -u 755 -g bin -o bin @top_srcdir@/clients/.libs/libupsclient.so	/usr/lib/libupsclient.so
+		file -u 755 -g bin -o bin @top_srcdir@/lib/libupsclient.pc				/usr/lib/pkgconfig/libupsclient.pc
 	end
 # ----------------------------------------
 
@@ -314,15 +314,15 @@ product
 		title 		"nut-cgi"
 		revision	@PACKAGE_VERSION@
 		
-		file -u 644 -g bin -o bin ../../conf/hosts.conf.sample				/etc/nut/hosts.conf
-		file -u 644 -g bin -o bin ../../conf/upsset.conf.sample				/etc/nut/upsset.conf
-		#file -u 644 -g bin -o bin ../../conf/upsstats-single.html.sample	/etc/nut/upsstats-single.html
-		#file -u 644 -g bin -o bin ../../conf/upsstats.html.sample			/etc/nut/upsstats.html
+		file -u 644 -g bin -o bin @top_srcdir@/conf/hosts.conf.sample				/etc/nut/hosts.conf
+		file -u 644 -g bin -o bin @top_srcdir@/conf/upsset.conf.sample				/etc/nut/upsset.conf
+		#file -u 644 -g bin -o bin @top_srcdir@/conf/upsstats-single.html.sample	/etc/nut/upsstats-single.html
+		#file -u 644 -g bin -o bin @top_srcdir@/conf/upsstats.html.sample			/etc/nut/upsstats.html
 
-		#file -u 644 -g bin -o bin ../../data/html/bottom.html			/usr/share/nut/www/bottom.html
-		#file -u 644 -g bin -o bin ../../data/html/header.html			/usr/share/nut/www/header.html
-		#file -u 644 -g bin -o bin ../../data/html/index.html			/usr/share/nut/www/index.html
-		#file -u 644 -g bin -o bin ../../data/html/nut-banner.png		/usr/share/nut/www/nut-banner.png
+		#file -u 644 -g bin -o bin @top_srcdir@/data/html/bottom.html			/usr/share/nut/www/bottom.html
+		#file -u 644 -g bin -o bin @top_srcdir@/data/html/header.html			/usr/share/nut/www/header.html
+		#file -u 644 -g bin -o bin @top_srcdir@/data/html/index.html			/usr/share/nut/www/index.html
+		#file -u 644 -g bin -o bin @top_srcdir@/data/html/nut-banner.png		/usr/share/nut/www/nut-banner.png
 	end
 # ----------------------------------------
 
@@ -344,7 +344,7 @@ product
 		title		"libups-nut-perl"
 		revision	@PACKAGE_VERSION@
 		
-		file -u 644 -g bin -o bin ../../scripts/perl/Nut.pm				/usr/share/perl5/UPS/Nut.pm
+		file -u 644 -g bin -o bin @top_srcdir@/scripts/perl/Nut.pm				/usr/share/perl5/UPS/Nut.pm
 	end
 # ----------------------------------------	
 
@@ -354,16 +354,16 @@ product
 		title		"nut-monitor"
 		revision	@PACKAGE_VERSION@
 		
-		file -u 644 -g bin -o bin ../../scripts/python/app/NUT-Monitor								/usr/bin/NUT-Monitor
-		file -u 644 -g bin -o bin ../../scripts/python/app/nut-monitor.desktop						/usr/share/applications/nut-monitor.desktop
-		file -u 644 -g bin -o bin ../../scripts/python/app/locale/fr/LC_MESSAGES/NUT-Monitor.mo		/usr/share/locale/fr/LC_MESSAGES/NUT-Monitor.mo
-		file -u 644 -g bin -o bin ../../scripts/python/app/gui-1.3.glade							/usr/share/nut-monitor/gui-1.3.glade
-		file -u 644 -g bin -o bin ../../scripts/python/app/pixmaps/on_battery.png					/usr/share/nut-monitor/pixmaps/on_battery.png
-		file -u 644 -g bin -o bin ../../scripts/python/app/pixmaps/on_line.png						/usr/share/nut-monitor/pixmaps/on_line.png
-		file -u 644 -g bin -o bin ../../scripts/python/app/pixmaps/var-ro.png						/usr/share/nut-monitor/pixmaps/var-ro.png
-		file -u 644 -g bin -o bin ../../scripts/python/app/pixmaps/var-rw.png						/usr/share/nut-monitor/pixmaps/var-rw.png
-		file -u 644 -g bin -o bin ../../scripts/python/app/pixmaps/warning.png						/usr/share/nut-monitor/pixmaps/warning.png
-		file -u 644 -g bin -o bin ../../scripts/python/app/nut-monitor.png							/usr/share/pixmaps/nut-monitor.png
+		file -u 644 -g bin -o bin @top_srcdir@/scripts/python/app/NUT-Monitor								/usr/bin/NUT-Monitor
+		file -u 644 -g bin -o bin @top_srcdir@/scripts/python/app/nut-monitor.desktop						/usr/share/applications/nut-monitor.desktop
+		file -u 644 -g bin -o bin @top_srcdir@/scripts/python/app/locale/fr/LC_MESSAGES/NUT-Monitor.mo		/usr/share/locale/fr/LC_MESSAGES/NUT-Monitor.mo
+		file -u 644 -g bin -o bin @top_srcdir@/scripts/python/app/gui-1.3.glade							/usr/share/nut-monitor/gui-1.3.glade
+		file -u 644 -g bin -o bin @top_srcdir@/scripts/python/app/pixmaps/on_battery.png					/usr/share/nut-monitor/pixmaps/on_battery.png
+		file -u 644 -g bin -o bin @top_srcdir@/scripts/python/app/pixmaps/on_line.png						/usr/share/nut-monitor/pixmaps/on_line.png
+		file -u 644 -g bin -o bin @top_srcdir@/scripts/python/app/pixmaps/var-ro.png						/usr/share/nut-monitor/pixmaps/var-ro.png
+		file -u 644 -g bin -o bin @top_srcdir@/scripts/python/app/pixmaps/var-rw.png						/usr/share/nut-monitor/pixmaps/var-rw.png
+		file -u 644 -g bin -o bin @top_srcdir@/scripts/python/app/pixmaps/warning.png						/usr/share/nut-monitor/pixmaps/warning.png
+		file -u 644 -g bin -o bin @top_srcdir@/scripts/python/app/nut-monitor.png							/usr/share/pixmaps/nut-monitor.png
 	end
 	
 # ----------------------------------------
