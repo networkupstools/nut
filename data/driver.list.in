@@ -78,6 +78,16 @@
 
 "Appro"	"pdu"	"1"	"SWPDU"	"48 outlets"	"powerman-pdu (experimental)"
 
+"ARTronic"	"ups"	"2"	"ARTon Millenium 1/2/3/6/10 kVA"	"Serial"	"blazer_ser"
+"ARTronic"	"ups"	"2"	"ARTon Millenium 3.1 10/15/20 kVA"	"Serial"	"blazer_ser"
+"ARTronic"	"ups"	"2"	"ARTon Titanium 6/10 kVA"	"Serial"	"blazer_ser"
+"ARTronic"	"ups"	"2"	"ARTon Titanium 3.1 10/15/20 kVA"	"Serial"	"blazer_ser"
+"ARTronic"	"ups"	"2"	"ARTon Optimum 1/2/3/6/10 kVA"	"Serial"	"blazer_ser"
+"ARTronic"	"ups"	"2"	"ARTon Titanium Plus 1/2/3 kVA"	"USB"	"blazer_usb"
+"ARTronic"	"ups"	"2"	"ARTon Platinium 6/10 kVA"	"USB"	"blazer_usb"
+"ARTronic"	"ups"	"2"	"ARTon Platinium Combo 3.1 10/15/20 kVA"	"USB"	"blazer_usb"
+"ARTronic"	"ups"	"2"	"ARTon Platinium RT 1/2/3/6/10 kVA"	"USB"	"blazer_usb"
+
 "ATEK"	"ups"	"2"	"Defensor 1K Tower / Rack"	"USB"	"blazer_usb"
 "ATEK"	"ups"	"2"	"Defensor 2K Tower / Rack"	"USB"	"blazer_usb"
 "ATEK"	"ups"	"2"	"Defensor 3K Tower / Rack"	"USB"	"blazer_usb"
