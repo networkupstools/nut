@@ -410,6 +410,11 @@
 
 "Kebo"	"ups"	"2"	"1200D/D Series"	""	"blazer_ser"
 
+"KOLFF"	"ups"	"2"	"BLACK NOVA 1K/2K/3K/6K/10K/20K TOWER"	""	"blazer_usb"
+"KOLFF"	"ups"	"2"	"BLACK NOVA 1K/2K/3K/6K/10K/20K XL TOWER"	""	"blazer_usb"
+"KOLFF"	"ups"	"2"	"BLACK NOVA 1K/1.5K/2K/3K/6K/10K RACK"	""	"blazer_usb"
+"KOLFF"	"ups"	"2"	"BLACK NOVA 1K/1.5K/2K/3K/6K/10K XL RACK"	""	"blazer_usb"
+
 "Krauler"	"ups"	"2"	"UP-D1200VA"	"USB"	"blazer_usb"
 "Krauler"	"ups"	"2"	"UP-M500VA"	"USB"	"blazer_usb"
 
