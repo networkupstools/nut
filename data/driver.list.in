@@ -621,6 +621,11 @@
 "MicroDowell"	"ups"	"5"	"Enterprise N60"	""	"microdowell"
 "MicroDowell"	"ups"	"5"	"Enterprise HiBox ST"	""	"microdowell"
 
+"Microline"	"ups"	"2"	"C-Lion Innova RT 2K/3K"	""	"blazer_usb"
+"Microline"	"ups"	"2"	"C-Lion Innova RT 6K/10K (Parallel)"	""	"blazer_usb"
+"Microline"	"ups"	"2"	"C-Lion Innova Tower 6K/10K"	""	"blazer_usb"
+"Microline"	"ups"	"2"	"C-Lion Innova Combo 10K/20K (3/1)"	""	"blazer_usb"
+
 "Microsol"	"ups"	"4"	"Solis 1.0"	"1000VA"	"solis"
 "Microsol"	"ups"	"4"	"Solis 1.5"	"1500VA"	"solis"
 "Microsol"	"ups"	"4"	"Solis 2.0"	"2000VA"	"solis"
