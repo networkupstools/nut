@@ -138,6 +138,12 @@
 "Best Power"	"ups"	"1"	"Micro-Ferrups"	""	"bestuferrups"
 "Best Power"	"ups"	"1"	"Fortress/Ferrups"	"f-command support"	"bestfcom"
 
+"Borri"	"ups"	"2"	"B400-010-B/B400-020-B/B400-030-B/B400-010-C/B400-020-C/B400-030-C"	""	"blazer_usb"
+"Borri"	"ups"	"2"	"B400-R010-B/B400-R020-B/B400-R030-B/B400-R010-C/B400-R020-C/B400-R030-C"	""	"blazer_usb"
+"Borri"	"ups"	"2"	"B500-060-B/B500-100-B/B500-060-C/B500-100-C"	""	"blazer_usb"
+"Borri"	"ups"	"2"	"B500-R060-B/B500-R100-B"	""	"blazer_usb"
+"Borri"	"ups"	"2"	"B500EVO-100-B/B500EVO-200-B"	""	"blazer_usb"
+
 "Chloride"	"ups"	"2"	"Desk Power 650"	"serial port"	"blazer_ser"
 
 "Cito Power"	"ups"	"2"	"CPG-SR1000"	""	"blazer_ser"
