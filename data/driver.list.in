@@ -155,6 +155,10 @@
 "Compaq"	"ups"	"4"	"R3000 XR"	""	"bcmxcp"
 "Compaq"	"ups"	"4"	"R5500 XR"	""	"bcmxcp"
 
+"COVER ENERGY SA"	"ups"	"2"	"COVER PRM 1K/2K/3K/6K/10K"	""	"blazer_usb"
+"COVER ENERGY SA"	"ups"	"2"	"COVER PRM 1K/2K/3K/6K/10K EC"	""	"blazer_usb"
+"COVER ENERGY SA"	"ups"	"2"	"COVER PRM 6K/10K PR"	""	"blazer_usb"
+
 "Cyber Power Systems"	"ups"	"1"	"320AVR"	""	"powerpanel"
 "Cyber Power Systems"	"ups"	"1"	"500AVR"	""	"powerpanel"
 "Cyber Power Systems"	"ups"	"1"	"650AVR"	""	"powerpanel"
