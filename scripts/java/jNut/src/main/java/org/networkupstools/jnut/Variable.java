@@ -116,5 +116,5 @@ public class Variable {
         }
     }
     
-    // TODO Add query for type and enum values
+    // TODO Add query for type, enum and range values
 }
