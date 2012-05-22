@@ -48,13 +48,13 @@ static int ups_status = 0;
 /*
  * Aix compatible names
  */
-# if defined(VWERSE) && !defined(VWERASE)
-#  define VWERASE VWERSE
-# endif /* VWERSE && !VWERASE */
+#if defined(VWERSE) && !defined(VWERASE)
+#define VWERASE VWERSE
+#endif /* VWERSE && !VWERASE */
 
-# if defined(VDISCRD) && !defined(VDISCARD)
-#  define VDISCARD VDISCRD
-# endif /* VDISCRD && !VDISCARD */
+#if defined(VDISCRD) && !defined(VDISCARD)
+#define VDISCARD VDISCRD
+#endif /* VDISCRD && !VDISCARD */
 
 
 #ifndef CTRL
@@ -92,8 +92,8 @@ static int ups_status = 0;
 #define CLNEXT   CONTROL('V')
 #endif
 #ifndef CMIN
-# define CMIN		CEOF
-#endif /* CMIN */
+#define CMIN		CEOF
+#endif
 #ifndef CQUIT
 #define CQUIT    CONTROL('\\')
 #endif
@@ -113,8 +113,8 @@ static int ups_status = 0;
 #define CSUSP    CONTROL('Z')
 #endif
 #ifndef CTIME
-# define CTIME		CEOL
-#endif /* CTIME */
+#define CTIME		CEOL
+#endif
 #ifndef CWERASE
 #define CWERASE  CONTROL('W')
 #endif
@@ -342,7 +342,9 @@ static void apc_ser_set(void)
 			{ "lnext",      VLNEXT,         CLNEXT },
 			{ "min",        VMIN,           CMIN },
 			{ "quit",       VQUIT,          CQUIT },
+#ifdef VREPRINT
 			{ "reprint",    VREPRINT,       CREPRINT },
+#endif
 			{ "start",      VSTART,         CSTART },
 #ifdef VSTATUS
 			{ "status",     VSTATUS,        CSTATUS },
