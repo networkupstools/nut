@@ -28,6 +28,24 @@ Embedded quotes are escaped with backslashes.  Embedded backslashes are
 also escaped by representing them as \\.  This protocol is intended to
 be interpreted with parseconf (NUT parser) or something similar.
 
+Revision history
+----------------
+
+Here's a table to present the various changes that happened to the
+NUT network protocol, over the time:
+
+[options="header",style="asciidoc",cols="^.^,^.^,<"]
+|===============================================================================
+|Protocol version |NUT version |Description
+|1.0              |< 1.5.0     |Original protocol (legacy version)
+|1.1              |>= 1.5.0    |Original protocol (without old commands)
+.2+|1.2        .2+|>= 2.6.4    |Add "LIST CLIENTS" and "NETVER" commands
+                               |Add ranges of values for writable variables
+|===============================================================================
+
+NOTE: any new version of the protocol implies an update of NUT_NETVERSION
+in *configure.in*.
+
 GET
 ---
 
@@ -446,15 +464,16 @@ Response:
 
 This tells upsd to switch to TLS mode internally, so all future
 communications will be encrypted.  You must also change to TLS mode in
-the client after receiving the OK, or the connection will be useless.	
+the client after receiving the OK, or the connection will be useless.
 
 Other commands
 --------------
 
 - HELP: lists the commands supported by this server
 - VER: shows the version of the server currently in use
+- NETVER: shows the version of the network protocol currently in use
 
-These two are not intended to be used directly by programs.  Humans can
+These three are not intended to be used directly by programs.  Humans can
 make use of this program by using telnet or netcat.  If you use
 telnet, make sure you don't have it set to negotiate extra options.
 upsd doesn't speak telnet and will probably misunderstand your first
