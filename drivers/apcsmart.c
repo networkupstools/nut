@@ -45,6 +45,81 @@ upsdrv_info_t upsdrv_info = {
 
 static int ups_status = 0;
 
+/*
+ * Aix compatible names
+ */
+# if defined(VWERSE) && !defined(VWERASE)
+#  define VWERASE VWERSE
+# endif /* VWERSE && !VWERASE */
+
+# if defined(VDISCRD) && !defined(VDISCARD)
+#  define VDISCARD VDISCRD
+# endif /* VDISCRD && !VDISCARD */
+
+
+#ifndef CTRL
+#define CONTROL(x)	(x&037)
+#else
+#define CONTROL		CTRL
+#endif
+
+/*
+ * Allow use of system default characters if defined and reasonable.
+ * These are based on the BSD ttydefaults.h
+ */
+#ifndef CDISCARD
+#define CDISCARD CONTROL('O')
+#endif
+#ifndef CDSUSP
+#define CDSUSP   CONTROL('Y')
+#endif
+#ifndef CEOF
+#define CEOF     CONTROL('D')
+#endif
+#ifndef CEOL
+#define CEOL	 0xff		/* was 0 */
+#endif
+#ifndef CERASE
+#define CERASE   0177
+#endif
+#ifndef CINTR
+#define CINTR    CONTROL('C')
+#endif
+#ifndef CKILL
+#define CKILL	 CONTROL('U')	/* was '@' */
+#endif
+#ifndef CLNEXT
+#define CLNEXT   CONTROL('V')
+#endif
+#ifndef CMIN
+# define CMIN		CEOF
+#endif /* CMIN */
+#ifndef CQUIT
+#define CQUIT    CONTROL('\\')
+#endif
+#ifndef CRPRNT
+#define CRPRNT   CONTROL('R')
+#endif
+#ifndef CREPRINT
+#define CREPRINT CRPRNT
+#endif
+#ifndef CSTART
+#define CSTART   CONTROL('Q')
+#endif
+#ifndef CSTOP
+#define CSTOP    CONTROL('S')
+#endif
+#ifndef CSUSP
+#define CSUSP    CONTROL('Z')
+#endif
+#ifndef CTIME
+# define CTIME		CEOL
+#endif /* CTIME */
+#ifndef CWERASE
+#define CWERASE  CONTROL('W')
+#endif
+
+
 /* some forwards */
 
 static int sdcmd_S(const void *);
@@ -250,7 +325,9 @@ static void apc_ser_set(void)
 			u_char def;
 		};
 		const struct cchar cchars1[] = {
+#ifdef VDISCARD
 			{ "discard",    VDISCARD,       CDISCARD },
+#endif
 #ifdef VDSUSP
 			{ "dsusp",      VDSUSP,         CDSUSP },
 #endif
@@ -258,7 +335,9 @@ static void apc_ser_set(void)
 			{ "eol",        VEOL,           CEOL },
 			{ "eol2",       VEOL2,          CEOL },
 			{ "erase",      VERASE,         CERASE },
+#ifdef VINTR
 			{ "intr",       VINTR,          CINTR },
+#endif
 			{ "kill",       VKILL,          CKILL },
 			{ "lnext",      VLNEXT,         CLNEXT },
 			{ "min",        VMIN,           CMIN },
