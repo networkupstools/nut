@@ -3,6 +3,7 @@
    Copyright (C)
 	2003	Russell Kroll <rkroll@exploits.org>
 	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2012	Arnaud Quette <arnaud.quette@free.fr>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -35,6 +36,7 @@ const char *sstate_getinfo(const upstype_t *ups, const char *var);
 int sstate_getflags(const upstype_t *ups, const char *var);
 int sstate_getaux(const upstype_t *ups, const char *var);
 const enum_t *sstate_getenumlist(const upstype_t *ups, const char *var);
+const range_t *sstate_getrangelist(const upstype_t *ups, const char *var);
 const cmdlist_t *sstate_getcmdlist(const upstype_t *ups);
 void sstate_makeinfolist(const upstype_t *ups, char *buf, size_t bufsize);
 void sstate_makerwlist(const upstype_t *ups, char *buf, size_t bufsize);

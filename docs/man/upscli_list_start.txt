@@ -37,6 +37,7 @@ Some examples are:
  - LIST RW <ups>
  - LIST CMD <ups>
  - LIST ENUM <ups> <var>
+ - LIST RANGE <ups> <var>
 
 QUERY FORMATTING
 ----------------

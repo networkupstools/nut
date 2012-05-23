@@ -267,6 +267,61 @@ static void do_enum(const char *varname)
 	}
 }
 
+static void do_range(const char *varname)
+{
+	int	ret;
+	unsigned int	numq, numa;
+	char	**answer;
+	const char	*query[4], *val;
+	int ival, min, max;
+
+	/* get current value */
+	val = get_data("VAR", varname);
+
+	if (!val) {
+		fatalx(EXIT_FAILURE, "do_range: can't get current value of %s", varname);
+	}
+
+	ival = atoi(val);
+
+	query[0] = "RANGE";
+	query[1] = upsname;
+	query[2] = varname;
+	numq = 3;
+
+	ret = upscli_list_start(ups, numq, query);
+
+	if (ret < 0) {
+		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
+	}
+
+	ret = upscli_list_next(ups, numq, query, &numa, &answer);
+
+	printf("Type: RANGE\n");
+
+	while (ret == 1) {
+
+		/* RANGE <upsname> <varname> <min> <max> */
+
+		if (numa < 5) {
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %d args, need at least 4)", numa);
+		}
+
+		min = atoi(answer[3]);
+		max = atoi(answer[4]);
+
+		printf("Option: \"%i-%i\"", min, max);
+
+		if ((ival >= min) && (ival <= max)) {
+			printf(" SELECTED");
+		}
+
+		printf("\n");
+
+		ret = upscli_list_next(ups, numq, query, &numa, &answer);
+	}
+}
+
 static void do_type(const char *varname)
 {
 	int	ret;
@@ -291,6 +346,11 @@ static void do_type(const char *varname)
 
 		if (!strcasecmp(answer[i], "ENUM")) {
 			do_enum(varname);
+			return;
+		}
+
+		if (!strcasecmp(answer[i], "RANGE")) {
+			do_range(varname);
 			return;
 		}
 

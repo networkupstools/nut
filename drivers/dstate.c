@@ -3,6 +3,7 @@
    Copyright (C)
 	2003	Russell Kroll <rkroll@exploits.org>
 	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2012	Arnaud Quette <arnaud.quette@free.fr>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -273,6 +274,7 @@ static int st_tree_dump_conn(st_tree_t *node, conn_t *conn)
 {
 	int	ret;
 	enum_t	*etmp;
+	range_t	*rtmp;
 
 	if (!node) {
 		return 1;	/* not an error */
@@ -293,6 +295,13 @@ static int st_tree_dump_conn(st_tree_t *node, conn_t *conn)
 	/* send any enums */
 	for (etmp = node->enum_list; etmp; etmp = etmp->next) {
 		if (!send_to_one(conn, "ADDENUM %s \"%s\"\n", node->var, etmp->val)) {
+			return 0;
+		}
+	}
+
+	/* send any ranges */
+	for (rtmp = node->range_list; rtmp; rtmp = rtmp->next) {
+		if (!send_to_one(conn, "ADDRANGE %s %i %i\n", node->var, rtmp->min, rtmp->max)) {
 			return 0;
 		}
 	}
@@ -635,6 +644,19 @@ int dstate_addenum(const char *var, const char *fmt, ...)
 	return ret;
 }
 
+int dstate_addrange(const char *var, const int min, const int max)
+{
+	int	ret;
+
+	ret = state_addrange(dtree_root, var, min, max);
+
+	if (ret == 1) {
+		send_to_all("ADDRANGE %s  %i %i\n", var, min, max);
+	}
+
+	return ret;
+}
+
 void dstate_setflags(const char *var, int flags)
 {
 	st_tree_t	*sttmp;
@@ -736,6 +758,20 @@ int dstate_delenum(const char *var, const char *val)
 	/* update listeners */
 	if (ret == 1) {
 		send_to_all("DELENUM %s \"%s\"\n", var, val);
+	}
+
+	return ret;
+}
+
+int dstate_delrange(const char *var, const int min, const int max)
+{
+	int	ret;
+
+	ret = state_delrange(dtree_root, var, min, max);
+
+	/* update listeners */
+	if (ret == 1) {
+		send_to_all("DELRANGE %s \"%i %i\"\n", var, min, max);
 	}
 
 	return ret;

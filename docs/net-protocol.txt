@@ -124,8 +124,10 @@ Response:
 - 'RW': this variable may be set to another value with SET
 - 'ENUM': an enumerated type, which supports a few specific values
 - 'STRING:n': this is a string of maximum length n
+- 'RANGE': this is an integer, comprised in the range (see LIST RANGE)
 
-ENUM and STRING are usually associated with RW, but not always.
+ENUM, STRING and RANGE are usually associated with RW, but not always.
+The default <type>, when omitted, is integer.
 
 This replaces the old "VARTYPE" command.
 
@@ -303,6 +305,27 @@ This replaces the old "ENUM" command.
 
 NOTE: this does not support the old "SELECTED" notation.  You must
 request the current value separately.
+
+RANGE
+~~~~~
+
+Form:
+
+	LIST RANGE <upsname> <varname>
+	LIST RANGE su700 input.transfer.low
+
+Response:
+
+	BEGIN LIST RANGE <upsname> <varname>
+	RANGE <upsname> <varname> "<min>" "<max>"
+	...
+	END LIST RANGE <upsname> <varname>
+
+	BEGIN LIST RANGE su700 input.transfer.low
+	RANGE su700 input.transfer.low "90" "100"
+	RANGE su700 input.transfer.low "102" "105"
+	...
+	END LIST RANGE su700 input.transfer.low
 
 CLIENT
 ~~~~~~
