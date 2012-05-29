@@ -26,7 +26,7 @@
 #include "blazer.h"
 
 #define DRIVER_NAME	"Megatec/Q1 protocol serial driver"
-#define DRIVER_VERSION	"1.54"
+#define DRIVER_VERSION	"1.55"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -37,7 +37,7 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
-#define SER_WAIT_SEC	1
+#define SER_WAIT_SEC	1 /* 3 seconds for Best UPS */
 
 /*
  * Generic command processing function. Send a command and read a reply.
