@@ -171,6 +171,13 @@ static void addchar(PCONF_CTX_t *ctx)
 
 	wbuflen = strlen(ctx->wordbuf);
 
+	/* CVE-2012-2944: only allow the subset Ascii charset from Space to ~ */
+	if ((ctx->ch < 0x20) || (ctx->ch > 0x7f)) {
+		fprintf(stderr, "addchar: discarding invalid character (0x%02x)!\n",
+				ctx->ch);
+		return;
+	}
+
 	if (ctx->wordlen_limit != 0) {
 		if (wbuflen >= ctx->wordlen_limit) {
 
