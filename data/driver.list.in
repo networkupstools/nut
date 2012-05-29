@@ -423,6 +423,8 @@
 
 "Lestar"	"ups"	"2"	"MD-800E"	""	"blazer_ser"
 
+"Lexis"	"ups"	"2"	"X-Power Tigra 1kVA"	""	"blazer_ser or bestups"
+
 "Liebert"	"ups"	"2"	"ITON 600VA"	""	"blazer_ser"
 "Liebert"	"ups"	"5"	"UPStation GXT2"	"contact-closure cable"	"liebert"
 "Liebert"	"ups"	"1"	"GXT2-3000RT230"	""	"liebert-esp2 (experimental)"
