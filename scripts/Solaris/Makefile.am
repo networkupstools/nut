@@ -7,5 +7,11 @@ package: makelocal.sh pkginfo
 	$ cd @prefix@; python precheck.py	
 	$ cd @prefix@; rm -f prototype1	
 	$ cd @prefix@; ./makelocal.sh
-	$ cp @prefix@/NUT_solaris_package.local.gz $(srcdir)	
-	$ mv NUT_solaris_package.local.gz NUT_solaris_package@PACKAGE_VERSION@.local.gz
+	$ cp @prefix@/*.gz $(srcdir)
+	if test `uname -p` = "i386"; then \
+		mv NUT_solaris_package.local.gz NUT_solaris_i386_package@PACKAGE_VERSION@.local.gz; \
+	else \
+		if test `uname -p` = "sparc"; then \
+			mv NUT_solaris_package.local.gz NUT_solaris_sparc_package@PACKAGE_VERSION@.local.gz; \
+		fi; \
+	fi;

@@ -118,7 +118,7 @@ package:
 	else \
 		if test `uname -s` = "SunOS"; then \
 			make; \
-			rm -rf @prefix@; \	
+			rm -rf @prefix@; \
 			make install; \
 			cd scripts/Solaris; \
 			make package; \
