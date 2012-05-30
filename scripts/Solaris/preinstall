@@ -2,16 +2,14 @@
 
 # Create group nut
 
-egrep -i "nut" /etc/group
-if [$? -eq 1]; then
+grep -w "nut" /etc/group
+if [ $? -eq 1 ]; then
 	/usr/sbin/groupadd nut
+fi
 
 # Create user for installing "Network UPS Tools"
 
-egrep -i "nut" /etc/passwd
-if [$? -eq 1]; then
+grep -w "nut" /etc/passwd
+if [ $? -eq 1 ]; then
 	/usr/sbin/useradd -c "Network UPS Tools" -d /export/home/nut -m nut
-
-# Do nut configuration - here with dummy ups
-
-
+fi
