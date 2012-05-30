@@ -190,6 +190,7 @@
 "Cyber Power Systems"	"ups"	"2"	"CP1000AVRLCD"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"2"	"CP1350AVRLCD"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"2"	"CP1500AVRLCD"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"ups"	"2"	"CP1000PFCLCD"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"3"	"RMCARD100"	""	"snmp-ups"
 "Cyber Power Systems"	"ups"	"3"	"RMCARD201"	""	"snmp-ups"
 "Cyber Power Systems"	"ups"	"3"	"RMCARD202"	""	"snmp-ups"
