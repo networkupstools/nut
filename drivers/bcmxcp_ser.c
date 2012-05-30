@@ -6,7 +6,7 @@
 #define PW_MAX_BAUD 5
 
 #define SUBDRIVER_NAME	"RS-232 communication subdriver"
-#define SUBDRIVER_VERSION	"0.18"
+#define SUBDRIVER_VERSION	"0.19"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -44,6 +44,8 @@ static void send_command(unsigned char *command, int command_length)
 	/* Add checksum */
 	sbuf[command_length] = calc_checksum(sbuf);
 	command_length += 1;
+
+	upsdebug_hex (3, "send_command", sbuf, command_length);
 
 	while (retry++ < PW_MAX_TRY) {
 
@@ -189,6 +191,7 @@ int get_answer(unsigned char *data, unsigned char command)
 
 	}
 
+	upsdebug_hex (5, "get_answer", data, end_length);
 	ser_comm_good();
 
 	return end_length;
