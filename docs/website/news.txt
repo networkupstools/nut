@@ -1,3 +1,4 @@
+- May 31, 2012: 2.6.4 released, including link:http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2012-2944[CVE-2012-2944] fix
 - May 10, 2012: link:http://wmnut.mgeops.org[WMNut] 0.63 released
 - May 9, 2012: Official publication of Riello communication protocols
 - May 2, 2012: link:download.html#_binary_packages[Beta NUT 2.6.3-3 package for Windows released]

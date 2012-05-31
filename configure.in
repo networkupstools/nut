@@ -3,7 +3,7 @@ dnl | Network UPS Tools: configure.in                                  |
 dnl +------------------------------------------------------------------+
 
 dnl NUT version number is defined here and *only* here (no more include/version)
-AC_INIT(nut, 2.6.3)
+AC_INIT(nut, 2.6.4)
 AC_CONFIG_SRCDIR(server/upsd.c)
 AC_CONFIG_MACRO_DIR([m4])
 echo "Network UPS Tools version ${PACKAGE_VERSION}"
