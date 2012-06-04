@@ -57,7 +57,7 @@ actions are:
 	FSD;; set the forced shutdown flag in the UPS.  This is
 equivalent to an "on battery + low battery" situation for the purposes
 of monitoring.
-+
+
 The list of actions is expected to grow in the future.
 
 *instcmds*::

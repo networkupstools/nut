@@ -29,8 +29,6 @@
 
 #define NETVISION_SYSOID				".1.3.6.1.4.1.4555.1.1.1"
 
-#define NETVISION_SYSOID				".1.3.6.1.4.1.4555.1.1.1"
-
 /* SNMP OIDs set */
 #define NETVISION_OID_UPS_MIB			".1.3.6.1.4.1.4555.1.1.1.1"
 #define NETVISION_OID_UPSIDENTMODEL		".1.3.6.1.4.1.4555.1.1.1.1.1.1.0"

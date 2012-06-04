@@ -356,6 +356,14 @@ static void apc_ser_set(void)
 	if (tcsetattr(upsfd, TCSANOW, &tio))
 		fatal_with_errno(EXIT_FAILURE, "%s: tcsetattr(%s)", __func__, device_path);
 
+	/* clear status flags so that they don't affect our binary compare */
+#ifdef PENDIN
+	tio.c_lflag &= ~PENDIN;
+#endif
+#ifdef FLUSHO
+	tio.c_lflag &= ~FLUSHO;
+#endif
+
 	memset(&tio_chk, 0, sizeof(tio_chk));
 	if (tcgetattr(upsfd, &tio_chk))
 		fatal_with_errno(EXIT_FAILURE, "%s: tcgetattr(%s)", __func__, device_path);

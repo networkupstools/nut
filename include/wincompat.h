@@ -140,6 +140,8 @@ int tcflush (serial_handler_t * sh, int queue);
 #define HAVE_CFSETISPEED
 void cfsetispeed(struct termios * t, speed_t speed);
 void cfsetospeed(struct termios * t, speed_t speed);
+speed_t cfgetispeed(const struct termios *t);
+speed_t cfgetospeed(const struct termios *t);
 
 #define _POSIX_VDISABLE '\0'
 

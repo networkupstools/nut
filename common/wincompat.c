@@ -1301,4 +1301,14 @@ void cfsetospeed(struct termios * t, speed_t speed)
 {
 	t->c_ispeed = t->c_ospeed = speed;	
 }
+speed_t cfgetispeed(const struct termios *t)
+{
+	return t->c_ispeed;
+}
+
+speed_t cfgetospeed(const struct termios *t)
+{
+	return t->c_ospeed;
+}
+
 #endif

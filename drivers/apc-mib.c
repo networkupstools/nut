@@ -63,8 +63,15 @@
  * 
  * examples found on the Net and other sources:
  *   'enterprises.apc.products.system.smartUPS.smartUPS700'
+ *  - from fence agents
  *   '.1.3.6.1.4.1.318.1.3.4.5': ApcRPDU,
  *   '.1.3.6.1.4.1.318.1.3.4.4': ApcMSP
+ *  - from Bill Seligman
+ *   .1.3.6.1.4.1.318.1.3.2.11
+ *   .1.3.6.1.4.1.318.1.3.2.12
+ *   .1.3.6.1.4.1.318.1.3.27
+ *   .1.3.6.1.4.1.318.1.3.2.7
+ *   .1.3.6.1.4.1.318.1.3.2.8
  */
 
 /* TODO: find the right sysOID for this MIB 
