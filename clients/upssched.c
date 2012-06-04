@@ -1084,7 +1084,7 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 
 		/* we're connected now */
 #ifndef WIN32
-		ret = write(pipefd, buf, strlen(buf));
+		ret = write(pipefd, enc, strlen(enc));
 
 		/* if we can't send the whole thing, loop back and try again */
 		if ((ret < 1) || (ret != (int) strlen(enc))) {
