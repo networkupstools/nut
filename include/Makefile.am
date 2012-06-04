@@ -26,3 +26,9 @@ nut_version.h: FORCE
 	-rm -f _nut_version.h
 
 FORCE:
+
+# counter part of BUILT_SOURCES: since nut_version is not a direct
+# deps of a local target, we must clean it by ourself before the
+# distribution
+dist-hook:
+	rm -f $(distdir)/nut_version.h

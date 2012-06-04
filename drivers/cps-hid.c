@@ -52,7 +52,7 @@ static usb_device_id_t cps_usb_device_table[] = {
 	{ USB_DEVICE(CPS_VENDORID, 0x0005), NULL },
 	/* Dynex DX-800U? */
 	{ USB_DEVICE(CPS_VENDORID, 0x0501), &cps_battery_scale },
-	/* OR2200LCDRM2U, OR700LCDRM1U */
+	/* OR2200LCDRM2U, OR700LCDRM1U, PR6000LCDRTXL5U */
 	{ USB_DEVICE(CPS_VENDORID, 0x0601), NULL },
 
 	/* Terminating entry */

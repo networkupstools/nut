@@ -93,12 +93,6 @@ static	struct sigaction sa;
 static	sigset_t nut_upsmon_sigmask;
 #endif
 
-#ifdef SHUT_RDWR
-#define	shutdown_how SHUT_RDWR
-#else
-#define	shutdown_how 2
-#endif
-
 static void setflag(int *val, int flag)
 {
 	*val |= flag;
@@ -805,7 +799,7 @@ static void recalc(void)
 			}
 
 		/* note: we assume that a UPS that isn't critical must be OK *
-		 *							     *
+		 *                                                           *
 		 * this means a UPS we've never heard from is assumed OL     *
 		 * whether this is really the best thing to do is undecided  */
 
@@ -818,12 +812,12 @@ static void recalc(void)
 		ups = ups->next;
 	}
 
-	/* upsdebugx(3, "Current power value: %d", val_ol);
-	upsdebugx(3, "Minimum power value: %d", minsupplies); */
+	upsdebugx(3, "Current power value: %d", val_ol);
+	upsdebugx(3, "Minimum power value: %d", minsupplies);
 
 	if (val_ol < minsupplies)
 		forceshutdown();
-}		
+}
 
 static void ups_low_batt(utype_t *ups)
 {
@@ -901,10 +895,7 @@ static void redefine_ups(utype_t *ups, int pv, const char *un,
 
 			free(ups->un);
 
-			if (un)
-				ups->un = xstrdup(un);
-			else
-				ups->un = NULL;
+			ups->un = xstrdup(un);
 
 			/* 
 			 * if not logged in force a reconnection since this

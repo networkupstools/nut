@@ -264,7 +264,7 @@ You should see just one line in response:
 	OL
 
 OL means your system is running on line power.  If it says something
-else (like OB - on battery, or LB - low battery), your driver was 
+else (like OB - on battery, or LB - low battery), your driver was
 probably misconfigured during the <<Driver_configuration, Driver configuration>>
 step.  If you reconfigure the driver, use 'upsdrvctl stop' to stop it, then
 start it again as shown in the <<Starting_drivers, Starting driver(s)>> step.

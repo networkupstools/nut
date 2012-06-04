@@ -7,6 +7,14 @@ This file lists changes that affect users who installed older versions
 of this software.  When upgrading from an older version, be sure to
 check this file to see if you need to make changes to your system.
 
+Changes from 2.6.3 to 2.6.4
+---------------------------
+
+- users are encouraged to update to NUT 2.6.4, to fix upsd vulnerability
+(CVE-2012-2944: upsd can be remotely crashed)
+- users of the bestups driver are encouraged to switch to blazer_ser,
+since bestups will soon be deprecated.
+
 Changes from 2.6.2 to 2.6.3
 ---------------------------
 

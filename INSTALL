@@ -222,7 +222,7 @@ the 'nut' package, and optionaly the following:
 ////////////////////////////////////////////////////////////////////////////////
 
 Configuration files are located in /etc/nut.
-nut.conf must be edited to be able to invoke /etc/init.d/nut
+linkman:nut.conf[5] must be edited to be able to invoke /etc/init.d/nut
 
 NOTE: Ubuntu users can access the APT URL installation by clicking on link:apt://nut[this link].
 

@@ -146,6 +146,11 @@ static void get_type(nut_ctype_t *client, const char *upsname, const char *var)
 		return;
 	}
 
+	if (node->range_list) {
+		sendback(client, "%s RANGE\n", buf);
+		return;
+	}
+
 	if (node->flags & ST_FLAG_STRING) {
 		sendback(client, "%s STRING:%d\n", buf, node->aux);
 		return;

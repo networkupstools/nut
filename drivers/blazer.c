@@ -225,9 +225,9 @@ static int blazer_status(const char *cmd)
 	}
 
 	if (val[7] == '1') {	/* Beeper On */
-		dstate_setinfo("beeper.status", "enabled");
+		dstate_setinfo("ups.beeper.status", "enabled");
 	} else {
-		dstate_setinfo("beeper.status", "disabled");
+		dstate_setinfo("ups.beeper.status", "disabled");
 	}
 
 	if (val[4] == '1') {	/* UPS Type is Standby (0 is On_line) */
@@ -428,6 +428,13 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
+		/*
+		 * Note: "S01R0001" and "S01R0002" may not work on early (GE)
+		 * firmware versions.  The failure mode is that the UPS turns
+		 * off and never returns.  The fix is to push the return value
+		 * up by 2, i.e. S01R0003, and it will return online properly.
+		 * (thus the default of ondelay=3 mins)
+		 */
 		if (offdelay < 60) {
 			snprintf(buf, sizeof(buf), "S.%dR%04d\r", offdelay / 6, ondelay);
 		} else {
@@ -453,11 +460,14 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 	}
 
 	/*
-	 * If a command is invalid, it will be echoed back
+	 * If a command is invalid, it will be echoed back.
+	 * As an exception, Best UPS units will report "ACK" in case of success!
 	 */
 	if (blazer_command(buf, buf, sizeof(buf)) > 0) {
-		upslogx(LOG_ERR, "instcmd: command [%s] failed", cmdname);
-		return STAT_INSTCMD_FAILED;
+		if (strncmp(buf, "ACK", 3)) {
+			upslogx(LOG_ERR, "instcmd: command [%s] failed", cmdname);
+			return STAT_INSTCMD_FAILED;
+		}
 	}
 
 	upslogx(LOG_INFO, "instcmd: command [%s] handled", cmdname);

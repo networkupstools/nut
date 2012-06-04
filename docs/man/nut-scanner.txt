@@ -18,6 +18,15 @@ DESCRIPTION
 *nut-scanner* scans available communication buses and displays any
 NUT-compatible devices it has found.
 
+INSTALLATION
+------------
+
+*nut-scanner* is always built by default. However, available options
+(USB, SNMP, IPMI, ...) will vary according to the available compile time
+and runtime dependencies. For example, if Net-SNMP is installed, thus
+providing libsnmp (.so or .dll) and headers, both during compilation
+and runtime, then SNMP discovery will be available.
+
 OPTIONS
 -------
 *-h*::
@@ -158,7 +167,6 @@ The same using CIDR notation:
 To scan NUT servers with a timeout of 10 seconds on IP range 192.168.0.0 to 192.168.0.128 using CIDR notation:
 
 *nut-scanner -O -t 10 -m 192.168.0.0/25*
-
 
 SEE ALSO
 --------

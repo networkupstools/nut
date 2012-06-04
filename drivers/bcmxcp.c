@@ -1138,11 +1138,11 @@ void upsdrv_initinfo(void)
 
 		dstate_setinfo("ups.firmware", "%s", pTmp);
 
-		free(pTmp);
-
 		/* Increment index to point at end of CPU bytes. */
 		iIndex += len * 2;
 	}
+
+	free(pTmp);
 
 	/* Get rating in kVA, if present */
 	if ((iRating = answer[iIndex++]) > 0)
@@ -1570,7 +1570,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		/* Get the shutdown delay, if any */
 		snprintf(varname, sizeof(varname)-1, "outlet.%c.delay.shutdown", cmdname[7]);
 		if ((varvalue = dstate_getinfo(varname)) != NULL) {
-			sddelay = atoi(dstate_getinfo(varname));
+			sddelay = atoi(varvalue);
 		}
 
 		cbuf[0] = PW_LOAD_OFF_RESTART;

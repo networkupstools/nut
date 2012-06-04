@@ -1,6 +1,8 @@
 /* netmisc.c - miscellaneous network handlers for upsd (VER, HELP, FSD)
 
-   Copyright (C) 2003  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+    2003  Russell Kroll <rkroll@exploits.org>
+    2012  Arnaud Quette <arnaud.quette.free.fr>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -36,6 +38,16 @@ void net_ver(nut_ctype_t *client, int numarg, const char **arg)
 
 	sendback(client, "Network UPS Tools upsd %s - http://www.networkupstools.org/\n",
 		UPS_VERSION);
+}
+
+void net_netver(nut_ctype_t *client, int numarg, const char **arg)
+{
+	if (numarg != 0) {
+		send_err(client, NUT_ERR_INVALID_ARGUMENT);
+		return;
+	}
+
+	sendback(client, "%s\n", NUT_NETVERSION);
 }
 
 void net_help(nut_ctype_t *client, int numarg, const char **arg)

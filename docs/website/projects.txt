@@ -192,6 +192,12 @@ link:http://www.readynas.com/?page_id=92[Netgear ReadyNAS]
 The RAIDiator firmware for the ReadyNAS product line includes NUT to either
 monitor a local USB UPS, or to connect as a slave to a NUT server.
 
+link:http://www.thecus.com[Thecus NAS]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Thecus NAS firmware includes NUT for UPS support. The
+link:http://www.thecus.com/Downloads/Compatible_List/UPS_List_v1.0_ALL.pdf[following list of devices] is known to be supported.
+
 link:http://www.webbastards.com/projects/[lcd-nut]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  

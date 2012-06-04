@@ -12,7 +12,7 @@
 #include <usb.h>
 
 #define SUBDRIVER_NAME	"USB communication subdriver"
-#define SUBDRIVER_VERSION	"0.20"
+#define SUBDRIVER_VERSION	"0.21"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -268,7 +268,8 @@ int get_answer(unsigned char *data, unsigned char command)
 		end_length += length;
 		my_buf += length + 5;
 	}
-	upsdebugx(4, "get_answer: exiting (len=%d)", end_length);
+
+	upsdebug_hex (5, "get_answer", data, end_length);
 	return end_length;
 }
 
@@ -391,7 +392,7 @@ usb_dev_handle *nutusb_open(const char *port)
 	usb_find_busses();
 	usb_find_devices();
 
-	for (retry = 0; retry <= MAX_TRY ; retry++)
+	for (retry = 0; retry < MAX_TRY ; retry++)
 	{
 		dev_h = open_powerware_usb();
 		if (!dev_h) {

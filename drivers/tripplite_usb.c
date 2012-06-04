@@ -504,24 +504,30 @@ static int hex2d(const unsigned char *start, unsigned int len)
 static const char *hexascdump(unsigned char *msg, size_t len)
 {
 	size_t i;
-	static unsigned char buf[256], *bufp;
+	static unsigned char buf[256];
+	unsigned char *bufp, *end;
 
 	bufp = buf;
+	end = bufp + sizeof(buf);
 	buf[0] = 0;
 
 	/* Dump each byte in hex: */
-	for(i=0; i<len; i++) {
+	for(i=0; i<len && end-bufp>=3; i++) {
 		bufp += sprintf((char *)bufp, "%02x ", msg[i]);
 	}
 
 	/* Dump single-quoted string with printable version of each byte: */
-	*bufp++ = '\'';
-	for(i=0; i<len; i++) {
+	if (end-bufp > 0) *bufp++ = '\'';
+
+	for(i=0; i<len && end-bufp>0; i++) {
 		*bufp++ = toprint(msg[i]);
 	}
-	*bufp++ = '\'';
+	if (end-bufp > 0) *bufp++ = '\'';
 
-	*bufp++ = '\0';
+	if (end-bufp > 0)
+		*bufp = '\0';
+	else
+		*--end='\0';
 
 	return (char *)buf;
 }

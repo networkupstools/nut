@@ -171,7 +171,6 @@ typedef struct {
 #define SU_VAR_VERSION		"snmp_version"
 #define SU_VAR_MIBS			"mibs"
 #define SU_VAR_POLLFREQ		"pollfreq"
-#define SU_VAR_SDTYPE		"sdtype"
 /* SNMP v3 related parameters */
 #define SU_VAR_SECLEVEL		"secLevel"
 #define SU_VAR_SECNAME		"secName"

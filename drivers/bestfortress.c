@@ -33,8 +33,8 @@
 #define        inline  __inline
 #endif
 
-#define DRIVER_NAME             "Best Fortress UPS driver"
-#define DRIVER_VERSION  "0.04"
+#define DRIVER_NAME     "Best Fortress UPS driver"
+#define DRIVER_VERSION  "0.05"
 
 /* driver description structure */
 upsdrv_info_t   upsdrv_info = {
@@ -210,7 +210,7 @@ void upsdrv_updateinfo(void)
 	int loadva;
 	int len, recv;
 	int retry;
-
+	char ch;
 	int checksum_ok, is_online=1, is_off, low_batt, trimming, boosting;
 
 	upsdebugx(1, "upsdrv_updateinfo");
@@ -218,17 +218,20 @@ void upsdrv_updateinfo(void)
 	for (retry = 0; retry < 5; ++retry) {
 		upsflushin (0, 0, "\r ");
 		upssend ("f\r");
+		while (ser_get_char(upsfd, &ch, 0, UPSDELAY) > 0 && ch != '\n'); /* response starts with \r\n */
+		temp[2] = 0;
 		do {
-			if ( (recv = upsrecv (temp+2, sizeof temp - 2, ENDCHAR, IGNCHARS)) <= 0) {
+			if ((recv = upsrecv (temp+2, sizeof temp - 2, ENDCHAR, IGNCHARS)) <= 0) {
 				upsflushin (0, 0, "\r ");
 				upssend ("f\r");
+				while (ser_get_char(upsfd, &ch, 0, UPSDELAY) > 0 && ch != '\n'); /* response starts with \r\n */
 			}
 		} while (temp[2] == 0);
 
 		upsdebugx(1, "upsdrv_updateinfo: received %i bytes (try %i)", recv, retry);
 		upsdebug_hex(5, "buffer", temp, recv);
 
-		/*syslog (LOG_DAEMON | LOG_NOTICE,"ups: got '%s'\n", p);*/
+		/* syslog (LOG_DAEMON | LOG_NOTICE,"ups: got %d chars '%s'\n", recv, temp + 2); */
 		/* status example:
 		   000000000001000000000000012201210000001200014500000280600000990025000000000301BE
 		   000000000001000000000000012401230000001200014800000280600000990025000000000301B7

@@ -54,6 +54,20 @@ DELENUM
 
 	DELENUM input.transfer.low "98"
 
+ADDRANGE
+~~~~~~~~
+
+	ADDRANGE <varname> <minvalue> <maxvalue>
+
+	ADDRANGE input.transfer.low 95 100
+
+DELRANGE
+~~~~~~~~
+
+	DELRANGE <varname> <minvalue> <maxvalue>
+
+	DELRANGE input.transfer.low 95 100
+
 SETAUX
 ~~~~~~
 

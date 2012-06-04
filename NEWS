@@ -3,6 +3,125 @@ If you're upgrading from an earlier version, see the UPGRADING file.
 For a complete list of changes, please refer to the ChangeLog file.
 
 ---------------------------------------------------------------------------
+Release notes for NUT 2.6.4 - what's new since 2.6.3:
+
+ - This release Fix an important vulnerability in upsd
+   (CVE-2012-2944: upsd can be remotely crashed)
+
+   NUT server (upsd), from versions 2.4.0 to 2.6.3, are exposed to
+   crashes when receiving random data from the network.
+   This issue is related to the way NUT parses characters,
+   especially from the network. Non printable characters were missed
+   from strings operation (such as strlen), but still copied to the
+   buffer, causing an overflow.
+   Thus, fix NUT parser, to only allow the subset Ascii charset from
+   Space to ~
+   (Reported by Sebastian Pohle, Alioth bug #313636, CVE-2012-2944)
+
+   A separate patch, which applies to any faulty version, is also available:
+   http://trac.networkupstools.org/projects/nut/changeset/3633
+
+   For more information, refer to the Common Vulnerabilities and Exposures:
+   http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2012-2944
+
+ - A static source code analysis has been done by Michal Hlavinka from RedHat,
+   using Coverity (12 issues fixed).
+
+ - Add new "LIST CLIENTS" and "NETVER" commands to NUT network protocol.
+   "NETVER" allows to retrieve the Network protocol version, while
+   "LIST CLIENTS" provides the list of clients connected to a device.
+   Refer to the developer guide, "Network protocol information" section for
+   more information.
+
+ - Support of ranges of values for writable variables has been added, to
+   complete the existing enumerated values mechanism. This will start to
+   appear in some drivers soon, beginning with Eaton. Refer to the developer
+   guide, "Creating a new driver..." section for more information.
+
+ - PyNUT.py has been updated to version 1.2.2, adding support for
+   LIST CLIENTS, FSD, HELP and VER (Rene Martín Rodríguez)
+
+ - support for new devices:
+   AEG Power Solutions PROTECT HOME
+   more APC SNMP cards
+   ATEK Defensor range
+   all Borri models
+   all COVER ENERGY SA
+   CyberPower OR700LCDRM1U, PR6000LCDRTXL5U and CP1000PFCLCD
+   Dell UPS Network Management Card
+   Dynamix 1000VA USB
+   Eaton Management Card Contact (ref 66104)
+   EVER POWERLINE RT / 11 / 31 and DUO II Pro
+   GE Digital Energy GT Series 1000-3000 VA
+   Gtec models
+   all recent HP serial / USB UPS (G2, G3 and R/T models, ) and HP UPS
+    Management Module
+   Ippon INNOVA RT
+   KOLFF BLACK NOVA
+   Lexis X-power Tigra 1kVA
+   Microline C-Lion Innova
+   Online Yunto YQ450
+   PowerShield Defender 1200VA
+   PowerWalker Online VFI LCD, Line-Interactive VI LCD and Line-Interactive VI
+   Riello Netman Plus 102 SNMP Card
+   Tripp-Lite OMNISMART500 
+
+ - apcsmart has received some fixes to work better on Mac OS X, and in general
+
+ - bcmxcp has improved support for battery status, and better supports
+   PW9120 units
+
+ - bestfortress has improved Best Fortress LI675VA support
+
+ - blazer_ser and blazer_usb now try to automatically estimate high and low
+   voltages, to be able to calculate battery charge ; support for online
+   Innova UPS (T, RT and 3/1 T) has been added ; Best UPS support has been
+   improved, to prepare for superseeding bestups driver
+
+ - bestups has also received some care, though users are encouraged to switch
+   to blazer_ser, since bestups will soon be deprecated.
+
+ - newmge-shut has been heavilly improved.  However, replacement of the
+   current mge-shut has been postponed to the next release, due to the CVE
+   issue.
+
+ - oneac 0.80 improves support for all families of Oneac (EG, ON, OZ and OB),
+   including more data and instant commands (Bill Elliot).
+
+ - usbhid-ups: for Eaton devices, ups.start.auto is now automatically adjusted
+   for shutdown.{return,stayoff} to behave as expected ; Liebert firmwares with
+   incorrect exponents have also been addressed.
+
+ - snmp-ups now provides support for UPS shutdown, based on usbhid-ups
+   mechanisms (composite commands and fallback). Composite commands are also
+   supported now. This means, for example, that if 'shutdown.return' is not
+   supported, a combination of 'load.off' + 'load.on' may be used ;
+   Actual validity of instant commands is now tested before commands addition ;
+   Eaton/MGE MIB has been cleaned and completed ; 3-phases support has been
+   added to Socomec Netvision MIB ; HP/Compaq MIB has been completed, with
+   thresholds, nominal values and more commands.
+
+ - nut-scanner now also has libupsclient has a weak runtime dependency ; more
+   docs and bugfixes have also happened.
+
+ - Provide an Uncomplicated Firewall (UFW) profile (nut.ufw.profile)
+
+ - Riello protocols have been officially published in NUT protocols library:
+   http://www.networkupstools.org/ups-protocols.html#_riello
+ 
+ - Duplicate instances of upsd / upsmon are now detected upon startup
+
+ - NUT variables namespace has been completed with missing variables and
+   commands that are already known and standard
+
+ - upslog now comes with a companion file, for logrotate configuration 
+
+ - more devices embed NUT for power protection, now including Thecus NAS range
+
+ - more bugfixes, cleanup and improvements, on both source code and
+   documentation, with a good bunch from Greg A. Woods.
+ 
+---------------------------------------------------------------------------
 Release notes for NUT 2.6.3 - what's new since 2.6.2:
 
  - nut-scanner is now more portable, and provides more coherent option names.

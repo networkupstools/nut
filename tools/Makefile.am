@@ -1,13 +1,29 @@
 # TODO: remove redundancies!
 
-# Force build in ./ before nut-scanner, to have nutscan-{usb,snmp}.h
-# built before going into the nut-scanner sub-directory
+# XXX this does not work with Automake!!!
+#
+# In fact the very concept is entirely antithetical to Automake.
+#
+# SUBDIRS are explicitly a listing of all the directories that make
+# must recurse into BEFORE processing the current directory.
+#
+# These python scripts must be moved into a sub-directory, and _only_
+# executed IF they need to be, and all the nut-scanner sources need
+# to be moved out of a sub-directory into this directory.
+#
+# Anyway, for the time being, we force build in ./ before nut-scanner,
+# to have nutscan-{usb,snmp}.h built before going into the nut-scanner
+# sub-directory
 SUBDIRS = . nut-scanner
 
 EXTRA_DIST = nut-usbinfo.pl nut-hclinfo.py nut-recorder.sh svn2cl.authors nut-snmpinfo.py
 
 all: nut-scanner-deps 
 
+# XXX these rules are all bogus!  They cause un-named target files to
+# always be rebuilt!  None of that is ever the right way to use make,
+# and especially not Automake.  Explicit filenames and their exact
+# dependencies need to be properly listed.
 nut-scanner-deps:
 	@if python -c 1; then \
 		echo "Regenerating the SNMP helper files."; \

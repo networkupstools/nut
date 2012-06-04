@@ -53,14 +53,14 @@ division isn\'t strict by any means, and the borders between those are pretty fu
     WARNING: these are not _natively_ supported by apcsmart (or apcupsd for that
     matter, if you\'re wondering). Around 2007 APC (now APC Schneider) decided to
     go back to its proprietry roots and all the new models (SMT, SMX, SURTD) use
-    completely different protocol and cables. If you purchased a new APC ups,
+    completely different protocol and cables. If you purchased a new APC UPS,
     that uses cable with rj45 on the one end, and db-9 on the other - then you
     have such model. Your only option to support it through *NUT* is to
     purchase "legacy communications card" - part #AP9620 (google \'AP9620' for
     more details). Or if that\'s not an option, rely on official software.
 
 Another thing to remember is that Smart protocol is not USB protocol. If you
-have ups with both USB and serial ports, then depending on how you connect it,
+have UPS with both USB and serial ports, then depending on how you connect it,
 you will need either apcsmart or usbhid-ups driver.
 
 CABLING
@@ -70,13 +70,16 @@ This driver expects to see a 940-0024C cable or a clone by default. You
 can switch to the 940-0095B dual-mode cable support with the \'cable='
 definition described below.
 
-If your 940-0024C cable is broken or missing, use this diagram to build
+If your 940-xx24X cable is broken or missing, use this diagram to build
 a clone:
 
 http://www.networkupstools.org/cables.html#_940_0024c_clone
 
-NOTE: It was reported, that the 940-0024E cable uses the same wiring as the
-940-0024C one.
+NOTE:  The "xx" is either "00" for a short cable, or the number of feet
+of a longer cable.  The "X" is a letter representing the minor revision
+of the physical cable and its connectors ("C" and "E" are commonly found
+revisions).  All minor revisions should use the same pin-outs and
+wiring.
 
 You can specify alternate cable in linkman:ups.conf[5]:
 
@@ -99,12 +102,12 @@ behaviour quite a bit, depending on the model.
 
     "old" models:::
         The behaviour here is unfortunately pretty primitive - when the power
-        returns, the ups just wakes up. No grace periods, no min. battery
+        returns, the UPS just wakes up. No grace periods, no min. battery
         charge condition, etc. This is probably not what you want.
 
     "new" models:::
         The behaviour here is as expected - the power is cut off after the
-        eeprom defined grace period. The ups will wake up when the power
+        eeprom defined grace period. The UPS will wake up when the power
         returns, after the eeprom defined delay AND if the eeprom defined min.
         battery charge level is met. The delay is counted from the power\'s
         return.
@@ -125,13 +128,13 @@ command if your UPS supports it (and is not too old, see below).
 +
 --
     "old" models:::
-        The behaviour is - unfortunately - similary primitive to *S*. The ups
+        The behaviour is - unfortunately - similary primitive to *S*. The UPS
         unconditionally wakes up after $$nnn*6$$ minutes - *it doesn\'t care if the
         power returned !* If nnn = 000, then UPS will do precisely nothing. On
         those models you\'re better specifying nnn > 0, if you can estimate
         the kind of power problems that might be happening in your environment.
         Another thing to consider with "old" models - you might lose the
-        connection with the ups, until it wakes up (with *S*, the serial
+        connection with the UPS, until it wakes up (with *S*, the serial
         connection is kept alive).
 
     "new" models:::
@@ -147,17 +150,17 @@ NUT also supports such variation. You have to provide exactly 2 digits to
 trigger it (*awd* option, or argument to one of the supported instant commands).
 
 *K* (delayed poweroff)::
-    This is permanent poweroff - the ups will not wake up automatically. On
+    This is permanent poweroff - the UPS will not wake up automatically. On
     newer units, it will respect applicable eeprom variables.
 
 *Z* (instant poweroff)::
-    This is also permanent poweroff - the ups will not wake up automatically. The
-    poweroff is executed immediately.
+    This is also permanent poweroff - the UPS will not wake up automatically.
+    The poweroff is executed immediately.
 
 SHUTDOWN CONTROL BY NUT
 -----------------------
 
-There\'re 3 options used to control shutdown behaviour.
+There are three options used to control the shutdown behaviour.
 
 *sdtype*=[0-5]::
     This option takes a single digit (0-5) as an argument. See below for
@@ -188,7 +191,7 @@ The values permitted are from 0 to 5. Only one can be specified. Anything else
 will cause apcsmart to exit.
 
 0::
-issue soft hibernate (*S*) if the ups is running on batteries, otherwise issue
+issue soft hibernate (*S*) if the UPS is running on batteries, otherwise issue
 hard hibernate (*@*)
 1::
 issue soft hibernate (*S*) (if on batteries), and if it fails (or on mains) -
@@ -208,7 +211,7 @@ ADVORDER
 ~~~~~~~~
 
 The argument is either a word \'no', or a string of 1 - 5 digits in [0 - 4]
-range. Each digit maps to the one of shutdown methods supported by APC upses.
+range. Each digit maps to the one of shutdown methods supported by APC UPSes.
 Methods listed in this way are tried in order, until one of them succedes.
 
 If *advorder* is undefined or set to \'no', *sdtype* is used instead.
@@ -245,11 +248,11 @@ is not checked. If you want to explicitly disable one of the conditions, simply
 override the right hand variable causing the condition to always evaluate to
 false (you can even provide negative numbers).
 
-APC upses don\'t have battery.charge.low - you will have to define it if you want
+APC UPSes don\'t have battery.charge.low - you will have to define it if you want
 to use such condition (prefix the variable with override. or default.).
 
 "New" units have battery.runtime.low, but depending on battery quality, firmware
-version, calibration and ups load - this variable can be underestimated quite a bit -
+version, calibration and UPS load - this variable can be underestimated quite a bit -
 especially right after going into OB state. This in turn can cause LB to be
 asserted, which under normal conditions will cause *NUT* to initiate the
 shutdown. You might want to disable this condition entirely, when relying on
@@ -272,7 +275,7 @@ This would cause apcsmart to go into shutdown _only_ if detected battery charge
 You could ask - why bother ? Well, the reason is already hinted above. APC units
 can be very picky about the batteries, and their firmware can underestimate the
 remaining runtime (especially right after going into OB state). *ignorelb*
-option and *$$override.*$$* let you remain in control of the ups, not ups in control
+option and *$$override.*$$* let you remain in control of the UPS, not UPS in control
 of you.
 
 Furthermore, this allows to specify conditions similary to how it's done in
@@ -298,7 +301,7 @@ executes "instant poweroff"
 
 All the above commands must be issued 2nd time to have any effect (no less than 3
 seconds, and no more than 15 seconds after the initial call). Those commands are
-mostly useful for manual testing, when your machine is not powered by the ups
+mostly useful for manual testing, when your machine is not powered by the UPS
 you\'re testing.
 
 Other supported commands:

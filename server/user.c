@@ -113,6 +113,9 @@ static void user_add_instcmd(const char *cmd)
 		}
 	}
 
+	upsdebugx(2, "user_add_instcmd: adding '%s' for %s",
+				cmd, curr_user->username);
+
 	tmp = xcalloc(1, sizeof(*tmp));
 
 	tmp->cmd = xstrdup(cmd);
@@ -156,6 +159,9 @@ static void user_add_action(const char *act)
 			"user section");
 		return;
 	}
+
+	upsdebugx(2, "user_add_action: adding '%s' for %s",
+				act, curr_user->username);
 
 	curr_user->firstaction = addaction(curr_user->firstaction, act);
 }

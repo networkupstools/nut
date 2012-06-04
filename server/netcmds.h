@@ -35,6 +35,7 @@ struct {
 	int	flags;
 } netcmds[] = {
 	{ "VER",	net_ver,	0		},
+	{ "NETVER",	net_netver,	0		},
 	{ "HELP",	net_help,	0		},
 	{ "STARTTLS",	net_starttls,	0		},
 

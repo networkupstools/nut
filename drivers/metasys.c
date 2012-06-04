@@ -108,7 +108,7 @@ void dump_buffer(unsigned char *buffer, int buf_len) {
 	int i;
 	for (i = 0; i < buf_len; i++) { 
 		printf("byte %d: %x\n", i, buffer[i]);	
-	}	
+	}
 	return;
 }
 
@@ -127,7 +127,7 @@ void send_read_command(char command) {
 		if (retry == 4) send_zeros();	/* last retry is preceded by a serial reset...*/
 		sent = ser_send_buf(upsfd, buf, 4);
 		retry += 1;
-	}	
+	}
 }
 
 /* send a write command to the UPS, the write command and the value to be written are passed 
@@ -136,20 +136,20 @@ void send_read_command(char command) {
 void send_write_command(unsigned char *command, int command_length) {
 	int i, retry, sent, checksum;
 	unsigned char raw_buf[255];
-	
+
 	/* prepares the raw data */
 	raw_buf[0] = 0x02;		/* STX byte */
 	raw_buf[1] = (unsigned char)(command_length + 1);		/* data length + checksum */
 	memcpy(raw_buf+2, command, command_length);
 	command_length += 2;
-	
+
 	/* calculate checksum */
 	checksum = 0;
 	for (i = 1; i < command_length; i++) checksum += raw_buf[i];
 	checksum = checksum % 256;
 	raw_buf[command_length] = (unsigned char)checksum;
 	command_length +=1;
-	
+
 	retry = 0;
 	sent = 0;
 	while ((sent != (command_length)) && (retry < 5)) {
@@ -157,7 +157,7 @@ void send_write_command(unsigned char *command, int command_length) {
 		sent = ser_send_buf(upsfd, raw_buf, (command_length));
 		if (sent != (command_length)) printf("Error sending command %d\n", raw_buf[2]);
 		retry += 1;
-	}	
+	}
 }
 
 
@@ -192,7 +192,7 @@ int get_answer(unsigned char *data) {
 		ser_comm_fail("Receive error (data): got %d bytes instead of %d!!!\n", res, packet_length);
 		return -1;	
 	}
-		
+
 	/* now we have the whole answer from the ups, we can checksum it 
 	   checksum byte is equal to the sum modulus 256 of all the data bytes + packet_length
 	   (no STX no checksum byte itself) */
@@ -215,7 +215,7 @@ int get_answer(unsigned char *data) {
 int command_read_sequence(unsigned char command, unsigned char *data) {
 	int bytes_read = 0;
 	int retry = 0;
-	
+
 	while ((bytes_read < 1) && (retry < 5)) {
 		send_read_command(command);
 		bytes_read = get_answer(data);
@@ -806,7 +806,7 @@ void upsdrv_updateinfo(void)
 				printf("status unknown \n");
 				break;
 		}
-		status_commit();	
+		status_commit();
 		dstate_dataok();
 	}
 	return;
@@ -815,8 +815,7 @@ void upsdrv_updateinfo(void)
 void upsdrv_shutdown(void)
 {
 	unsigned char command[10], answer[10];
-	
-	
+
 	/* Ensure that the ups is configured for automatically
 	   restart after a complete battery discharge 
 	   and when the power comes back after a shutdown */
@@ -831,14 +830,14 @@ void upsdrv_shutdown(void)
 		command[5]=0x01;					/* autorestart after battery depleted enabled */
 		command_write_sequence(command, 6, answer);
 	}
-	
+
 	/* shedule a shutdown in 120 seconds */
 	command[0]=UPS_SET_SCHEDULING;		
 	command[1]=0x96;					/* remaining  */
 	command[2]=0x00;					/* time		 */
 	command[3]=0x00;					/* to */
 	command[4]=0x00;					/* shutdown 150 secs */
-			
+
 	/* restart time has been set to 1 instead of 0 for avoiding
 		a bug in some ups firmware */
 	command[5]=0x01;					/* programmed */
@@ -860,7 +859,7 @@ static int instcmd(const char *cmdname, const char *extra)
 {
 	unsigned char command[10], answer[10];
 	int res;
-	
+
 	if (!strcasecmp(cmdname, "beeper.off")) {
 		/* compatibility mode for old command */
 		upslogx(LOG_WARNING,
@@ -892,7 +891,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		command[2]=0x00;					/* time		 */
 		command[3]=0x00;					/* to */
 		command[4]=0x00;					/* shutdown 30 secs */
-				
+
 		command[5]=0x01;					/* programmed */
 		command[6]=0x00;					/* time		 */
 		command[7]=0x00;					/* to */
@@ -900,7 +899,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		command_write_sequence(command, 9, answer);
 		return STAT_INSTCMD_HANDLED;
 	}
-	
+
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
 		/* shedule a shutdown in 30 seconds with no restart (-1) */
 		command[0]=UPS_SET_SCHEDULING;		
@@ -916,7 +915,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		command_write_sequence(command, 9, answer);
 		return STAT_INSTCMD_HANDLED;
 	}
-	
+
 	if (!strcasecmp(cmdname, "shutdown.stop")) {
 		/* set shutdown and restart time to -1 (no shutdown, no restart) */
 		command[0]=UPS_SET_SCHEDULING;		
@@ -943,7 +942,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		command_write_sequence(command, 2, answer);
 		return STAT_INSTCMD_HANDLED;
 	}
-	
+
 	if (!strcasecmp(cmdname, "test.failure.stop")) {
 		/* restore standard mode (mains power) */
 		command[0]=UPS_SET_BATTERY_TEST;
@@ -954,7 +953,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		command_write_sequence(command, 2, answer);
 		return STAT_INSTCMD_HANDLED;
 	}
-	
+
 	if (!strcasecmp(cmdname, "test.battery.start")) {
 		/* launch battery test */
 		command[0]=UPS_SET_BATTERY_TEST;		
@@ -996,7 +995,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		upslogx(LOG_NOTICE, "test battery byte 1 = %x", answer[1]);
 		return STAT_INSTCMD_HANDLED;
 	}
-	
+
 	if (!strcasecmp(cmdname, "beeper.enable")) {
 		/* set buzzer to not muted */
 		command[0]=UPS_SET_BUZZER_MUTE;		
@@ -1007,7 +1006,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		command_write_sequence(command, 2, answer);
 		return STAT_INSTCMD_HANDLED;
 	}
-	
+
 	if (!strcasecmp(cmdname, "beeper.mute")) {
 		/* set buzzer to muted */
 		command[0]=UPS_SET_BUZZER_MUTE;		
