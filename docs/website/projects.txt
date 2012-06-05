@@ -55,11 +55,11 @@ NOTE: WinNUT is currently being replaced by a full port to Windows, part of the
 official NUT distribution. link:download.html#_binary_packages[MSI packages]
 are available too.
 
-link:http://wmnut.mgeops.org/[WMNUT]
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+link:http://wmnut.networkupstools.org[WMNUT]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-WMNut is a program to monitor multiple UPSs statistics through the NUT (Network
-UPS Tools) framework on Linux and other systems. 
+WMNut is a dockapp program to monitor multiple UPSs statistics through the NUT
+(Network UPS Tools) framework on Linux and other systems. 
 
 Network Management Systems (NMS) integration
 --------------------------------------------

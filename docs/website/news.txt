@@ -1,3 +1,4 @@
+- June 5, 2012: link:http://wmnut.networkupstools.org[WMNut] 0.64 released, and move hosting
 - June 4, 2012: link:download.html#_binary_packages[Beta NUT 2.6.4-1 package for Windows released]
 - May 31, 2012: 2.6.4 released, including link:http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2012-2944[CVE-2012-2944] fix
 - May 10, 2012: link:http://wmnut.mgeops.org[WMNut] 0.63 released
