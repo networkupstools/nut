@@ -677,6 +677,7 @@
 "Oneac"	"ups"	"1"	"ON2000XIU"	"advanced interface"	"oneac"
 
 "Online"	"ups"	"1"	"P-Series"	""	"genericups upstype=14"
+"Online"	"ups"	"2"	"Zinto A"	""	"blazer_usb"
 "Online"	"ups"	"1"	"Zinto D"	""	"optiups"
 "Online"	"ups"	"2"	"Yunto YQ450"	""	"blazer_usb"
 
