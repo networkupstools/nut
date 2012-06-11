@@ -256,10 +256,10 @@ Valid with/without context (ie. per phase or aggregated/averaged)
 | voltage.minimum       | Minimum seen voltage (V)
 | power                 | Apparent power (VA)
 | power.maximum         | Maximum seen apparent power (VA)
-| power.minimum         | Maximum seen apparent power (VA)
+| power.minimum         | Minimum seen apparent power (VA)
 | power.percent         | Percentage of apparent power related to maximum load
-| power.maximum.percent | Max seen percentage of apparent power
-| power.minimum.percent | Min seen percentage of apparent power
+| power.maximum.percent | Maximum seen percentage of apparent power
+| power.minimum.percent | Minimum seen percentage of apparent power
 | realpower             | Real power (W)
 | powerfactor           | Power Factor (dimensionless value between 0.00 and 1.00)
 | crestfactor           | Crest Factor (dimensionless value greater or equal to 1)
