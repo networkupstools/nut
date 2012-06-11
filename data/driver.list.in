@@ -768,6 +768,8 @@
 "Raritan"	"pdu"	"3"	"Metered PDU - Raritan PM"	"no report, but should be supported"	"snmp-ups (experimental)"
 "Raritan"	"pdu"	"3"	"Switched PDU - Raritan RPC"	"no report, but should be supported"	"snmp-ups (experimental)"
 
+"REDi"	"ups"	"2"	"Blazer 400VA / 600VA / 800VA"	""	"blazer_ser"
+
 "Repotec"	"ups"	"1"	"RPF525/625/800/1000"	""	"safenet"
 "Repotec"	"ups"	"1"	"RPT-800A"	""	"genericups upstype=13"
 "Repotec"	"ups"	"1"	"RPT-162A"	""	"genericups upstype=13"
