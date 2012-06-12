@@ -54,7 +54,7 @@ upsdrv_info_t
 
 This structure tracks several description information about the driver:
 
- * *name*:    the driver full name, for banner printing.
+ * *name*:    the driver full name, for banner printing and "driver.name" variable.
  * *version*: the driver's own version. For sub driver information, refer below
               to sub_upsdrv_info. This value has the form "X.YZ", and is
               published by main as "driver.version.internal".
