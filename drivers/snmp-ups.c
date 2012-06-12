@@ -91,7 +91,7 @@ const char *mibvers;
 static void disable_transfer_oids(void);
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.66"
+#define DRIVER_VERSION		"0.67"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -122,13 +122,10 @@ int outlet_index_base = -1;
 void upsdrv_initinfo(void)
 {
 	snmp_info_t *su_info_p;
-	char version[128];
 
 	upsdebugx(1, "SNMP UPS driver : entering upsdrv_initinfo()");
 
-	snprintf(version, sizeof version, "%s (mib: %s %s)",
-		DRIVER_VERSION, mibname, mibvers);
-	dstate_setinfo("driver.version.internal", "%s", version);
+	dstate_setinfo("driver.version.data", "%s MIB %s", mibname, mibvers);
 
 	/* add instant commands to the info database.
 	 * outlet commands are processed later, during initial walk */
