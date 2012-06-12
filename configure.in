@@ -325,7 +325,11 @@ if test "${nut_with_ssl}" != "no"; then
          if test "${nut_have_libnss}" != "yes"; then
             nut_with_ssl="no"
             AC_MSG_ERROR(["Mozilla NSS and OpenSSL neither found, required for SSL support"])
+         else
+            nut_with_nss="${nut_have_libnss}"
          fi
+      else
+         nut_with_openssl="${nut_have_openssl}"
       fi
    fi
 fi
