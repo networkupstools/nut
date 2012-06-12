@@ -75,7 +75,6 @@
 	battery.temperature
 	battery.voltage
 	battery.voltage.nominal
-	driver.version.internal
 	input.frequency
 	input.sensitivity (RW) (1)
 	input.transfer.high (RW)

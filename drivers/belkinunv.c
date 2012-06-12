@@ -36,7 +36,6 @@
    battery.runtime
    battery.voltage
    battery.voltage.nominal
-   driver.version.internal
    input.frequency
    input.frequency.nominal      e.g. 60 for 60Hz
    input.sensitivity            (RW) normal/medium/low

@@ -855,7 +855,6 @@ void upsdrv_initinfo(void)
 	upsdebugx(1, "upsdrv_initinfo...");
 
 	dstate_setinfo("driver.version.data", "%s", subdriver->name);
-	dstate_setinfo("driver.version.internal", DRIVER_VERSION);
 
 	/* init polling frequency */
 	val = getval(HU_VAR_POLLFREQ);
