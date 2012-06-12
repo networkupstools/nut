@@ -433,8 +433,7 @@ driver: Internal driver information
 | Name                    | Description                  | Example value
 | driver.name             | Driver name                  | usbhid-ups
 | driver.version          | Driver version (NUT release) | X.Y.Z
-| driver.version.internal | Internal driver version
-                            (if tracked separately)      | 1.23.45
+| driver.version.internal | Internal driver version      | 1.23.45
 | driver.parameter.xxx    | Parameter xxx (ups.conf or
                             cmdline -x) setting          | (varies)
 | driver.flag.xxx         | Flag xxx (ups.conf or
