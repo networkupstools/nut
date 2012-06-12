@@ -122,6 +122,10 @@ and use HAL support.
 Build and install Avahi support, to publish NUT server availability
 using mDNS protocol.
 
+	--with-libltdl (default: auto-detect)
+
+Enable libltdl (Libtool dlopen abstraction) support.
+This is required to build nut-scanner.
 
 Other configuration options
 ---------------------------

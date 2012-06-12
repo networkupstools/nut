@@ -482,6 +482,10 @@ fi
 NUT_REPORT_FEATURE([enable libltdl (Libtool dlopen abstraction) support], [${nut_with_libltdl}], [],
 					[WITH_LIBLTDL], [Define to enable libltdl (Libtool dlopen abstraction) support])
 
+dnl Explicitely report if we are building nut-scanner or not
+dnl since it requires libltdl
+NUT_REPORT([build nut-scanner], [${nut_with_libltdl}])
+
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-cgi
 
