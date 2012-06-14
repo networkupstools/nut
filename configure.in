@@ -950,7 +950,7 @@ AC_ARG_WITH([systemdsystemunitdir],
 	esac
 ], [])
 if test -n "${systemdsystemunitdir}"; then
-	systemdsystemshutdowndir="/lib/systemd/system-shutdown"
+	systemdsystemshutdowndir="${libdir}/systemd/system-shutdown"
 	AC_MSG_RESULT(using ${systemdsystemunitdir})
 else
 	AC_MSG_RESULT(no)
