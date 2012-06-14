@@ -33,9 +33,9 @@ with `make` and `make install` as usual. This must be done before
 building other (non-NUT) programs which depend on them.
 
 For more information, refer to the linkman:upsclient[3],
-manual page and the various
-link:man/index.html#Developer_man[upscli_*(3)] functions documentation
-referenced in the same file.
+manual page and the various link:../man/index.html#devclient[upscli_*(3)]
+functions documentation referenced in the same file.
+
 
 Configuration helpers
 ~~~~~~~~~~~~~~~~~~~~~
