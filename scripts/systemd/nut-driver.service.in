@@ -4,7 +4,7 @@ After=local-fs.target network.target
 StopWhenUnneeded=yes
 
 [Service]
-ExecStart=@SBINDIR@/upsdrvctl start
-ExecStop=@SBINDIR@/upsdrvctl stop
+ExecStart=@driverexecdir@/upsdrvctl start
+ExecStop=@driverexecdir@/upsdrvctl stop
 Type=forking
 
