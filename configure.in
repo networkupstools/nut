@@ -89,6 +89,7 @@ AC_PROG_CC
 dnl Needed for per-target flags
 AM_PROG_CC_C_O
 AC_PROG_CPP
+AC_PROG_CXX
 AC_PROG_INSTALL
 AC_PROG_EGREP
 AC_PATH_PROG(AR, ar)
@@ -112,6 +113,19 @@ AC_CHECK_FUNCS(vsnprintf snprintf, [], [
 ])
 
 AC_REPLACE_FUNCS(setenv strerror atexit)
+
+
+dnl
+dnl Tests for CppUnit availability and usability
+dnl Using CppUnit implies C++ support!
+dnl Theoretically, libcppunit-dev will pull up to g++, through libstdc++...
+dnl AM_PATH_CPPUNIT(1.9.6)
+
+PKG_CHECK_MODULES(CPPUNIT, cppunit, have_cppunit=true, have_cppunit=false)
+if test "${have_cppunit}" != "yes" ; then
+	AC_MSG_WARN([libcppunit not found.])
+fi
+AM_CONDITIONAL(HAVE_CPPUNIT, test "${have_cppunit}" = "yes")
 
 dnl
 dnl Only use these when compiling with gcc
@@ -1151,6 +1165,7 @@ AC_OUTPUT([
  server/Makefile
  tools/Makefile
  tools/nut-scanner/Makefile
+ tests/Makefile
  Makefile
 ])
 
