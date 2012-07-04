@@ -694,7 +694,7 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 		snprintfcat(buf, sizeof(buf), " \"%s\"",
 			pconf_encode(arg2, enc, sizeof(enc)));
 
-	snprintfcat(enc, sizeof(enc), "%s\n", buf);
+	snprintf(enc, sizeof(enc), "%s\n", buf);
 
 	/* see if the parent needs to be started (and maybe start it) */
 
