@@ -70,8 +70,8 @@ This driver will report various information related to a PSU, including:
  - status of the PSU:
 
    * 'OL' means that the PSU is present and providing power,
-   * 'OB' means that the PSU is present but not providing power (power cable removed),
-   * 'stale' means that the PSU is not present (ie physically removed).
+   * 'OFF' means that the PSU is present but not providing power (power cable removed),
+   * 'stale' (no data) means that the PSU is not present (ie physically removed).
 
 Here is an example output for a Dell r610 server:
 
