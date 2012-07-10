@@ -1,10 +1,11 @@
 /*  eaton-mib.c - data to monitor Eaton Aphel PDUs (Basic and Complex)
  *
- *  Copyright (C) 2008 - 2010
- *  			Arnaud Quette <ArnaudQuette@Eaton.com>
+ *  Copyright (C) 2008 - 2012
+ * 		Arnaud Quette <arnaud.quette@gmail.com>
+ * 		Arnaud Quette <ArnaudQuette@Eaton.com>
  *
- *  Sponsored by Eaton <http://www.eaton.com>
- *   and MGE Office Protection Systems <http://www.mgeops.com>
+ *  Supported by Eaton <http://www.eaton.com>
+ *   and previously MGE Office Protection Systems <http://www.mgeops.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -348,7 +349,112 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL, NULL }
 };
 
+/* Pulizzi Monitored ePDU (Basic model, SNMP only)
+ * FIXME: to be completed
+ * 
+ * Warning: there are 2 versions:
+ * - SA built MI.mib (old MIB)
+ * 		#define PULIZZI1_OID_MIB			".1.3.6.1.4.1.20677.3.1.1"
+ * 		#define PULIZZI1_OID_MODEL_NAME		".1.3.6.1.4.1.20677.3.1.1.1.2.0"
+ * - Eaton-Powerware-Monitored-ePDU_1.0.E.mib (new MIB) Vertical SW
+ */
+
+
+/* Pulizzi Switched ePDU */
+
+#define EATON_PULIZZI_SW_MIB_VERSION	"0.1"
+
+#define PULIZZI_SW_OID_MIB			".1.3.6.1.4.1.20677.3.1.1"
+#define PULIZZI_SW_OID_MODEL_NAME		".1.3.6.1.4.1.20677.2.1.1.0"
+
+/* Some buggy FW also report sysOID = ".1.3.6.1.4.1.20677.1" */
+#define EATON_PULIZZI_SWITCHED1_SYSOID			".1.3.6.1.4.1.20677.1"
+#define EATON_PULIZZI_SWITCHED2_SYSOID			".1.3.6.1.4.1.20677.2"
+
+
+static info_lkp_t pulizzi_sw_outlet_status_info[] = {
+	{ 1, "on" },
+	{ 2, "off" },
+	{ 0, NULL }
+};
+
+/* simply remap the above status to "yes" */
+static info_lkp_t pulizzi_sw_outlet_switchability_info[] = {
+	{ 1, "yes" },
+	{ 2, "yes" },
+	{ 0, NULL }
+};
+
+/* Snmp2NUT lookup table for Eaton Pulizzi Switched ePDU MIB */
+static snmp_info_t eaton_pulizzi_switched_mib[] = {
+	/* Device page */
+	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON | Powerware",
+		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
+	{ "device.model", ST_FLAG_STRING, SU_INFOSIZE, PULIZZI_SW_OID_MODEL_NAME,
+		"Switched ePDU", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
+	{ "device.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu",
+		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
+
+	/* UPS page */
+	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON",
+		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
+	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, PULIZZI_SW_OID_MODEL_NAME,
+		"Switched ePDU", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
+	 /* FIXME: to be moved to the device collection! */
+	{ "ups.date", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.20677.2.1.4.0",
+		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
+	{ "ups.time", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.20677.2.1.3.0",
+		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
+	{ "ups.macaddr", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.20677.2.2.6.0",
+		"unknown", 0, NULL, NULL },
+
+	/* Outlet page */
+	/* Note: outlet.count is deduced, with guestimate_outlet_count() */
+	{ "outlet.id", 0, 1, NULL, "0", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
+	{ "outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, NULL, "All outlets",
+		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
+
+	{ "outlet.current", 0, 1.0, ".1.3.6.1.4.1.20677.2.8.6.4.2.0", NULL, 0, NULL, NULL },
+	{ "outlet.voltage", 0, 1.0, ".1.3.6.1.4.1.20677.2.8.6.4.1.0", NULL, 0, NULL, NULL },
+	{ "outlet.power", 0, 1.0, ".1.3.6.1.4.1.20677.2.8.6.4.3.0", NULL, 0, NULL, NULL },
+
+	/* outlet template definition
+	 * Notes:
+	 * - indexes start from 1, ie outlet.1 => <OID>.1
+	 * - the first definition is used to determine the base index (ie 0 or 1)
+	 * - outlet.count is estimated, based on the below OID iteration capabilities */
+	{ "outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.20677.2.6.1.%i.1.0", NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_OUTLET, NULL, NULL },
+	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.20677.2.6.3.%i.0",
+		NULL, SU_FLAG_OK | SU_OUTLET, &pulizzi_sw_outlet_status_info[0], NULL },
+	{ "outlet.%i.id", 0, 1, NULL, "%i", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK | SU_OUTLET, NULL, NULL },
+	/* we use the same OID as outlet.n.status..., to expose switchability */
+	{ "outlet.%i.switchable", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.20677.2.6.3.%i.0", "yes", SU_FLAG_STATIC | SU_FLAG_OK | SU_OUTLET, &pulizzi_sw_outlet_switchability_info[0], NULL },
+	/* FIXME: need to be added to the namespace! */
+	{ "outlet.%i.delay.reboot", ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.4.1.20677.2.6.1.%i.5.0", NULL, SU_OUTLET, NULL, NULL },
+	/* "outlet1SequenceTime" is used for global sequence */
+	{ "outlet.%i.delay.start", ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.4.1.20677.2.6.1.%i.4.0", NULL, SU_OUTLET, NULL, NULL },
+
+	/* instant commands. */
+	/* FIXME: not exposed as "outlet.load...", or otherwise specific processing applies (template instanciation) */
+	{ "load.on", 0, 1, ".1.3.6.1.4.1.20677.2.6.2.1.0", NULL, SU_TYPE_CMD, NULL, NULL },
+	{ "load.off", 0, 2, ".1.3.6.1.4.1.20677.2.6.2.1.0", NULL, SU_TYPE_CMD, NULL, NULL },
+	{ "load.on.delay", 0, 3, ".1.3.6.1.4.1.20677.2.6.2.1.0", NULL, SU_TYPE_CMD, NULL, NULL },
+	{ "load.off.delay", 0, 4, ".1.3.6.1.4.1.20677.2.6.2.1.0", NULL, SU_TYPE_CMD, NULL, NULL },
+
+	/* WARNING: outlet 1 => index 2! */
+	{ "outlet.%i.load.on", 0, 1, ".1.3.6.1.4.1.20677.2.6.2.%i.0", NULL, SU_TYPE_CMD | SU_OUTLET | SU_CMD_OFFSET, NULL, NULL },
+	{ "outlet.%i.load.off", 0, 2, ".1.3.6.1.4.1.20677.2.6.2.%i.0", NULL, SU_TYPE_CMD | SU_OUTLET | SU_CMD_OFFSET, NULL, NULL },
+	{ "outlet.%i.load.cycle", 0, 3, ".1.3.6.1.4.1.20677.2.6.2.%i.0", NULL, SU_TYPE_CMD | SU_OUTLET | SU_CMD_OFFSET, NULL, NULL },
+
+	/* end of structure. */
+	{ NULL, 0, 0, NULL, NULL, 0, NULL, NULL }
+};
+
+
 mib2nut_info_t	aphel_genesisII = { "aphel_genesisII", EATON_APHEL_MIB_VERSION, "", APHEL1_OID_MODEL_NAME, eaton_aphel_genesisII_mib, APHEL1_SYSOID };
 mib2nut_info_t	aphel_revelation = { "aphel_revelation", EATON_APHEL_MIB_VERSION, "", APHEL2_OID_MODEL_NAME, eaton_aphel_revelation_mib, APHEL2_SYSOID };
 mib2nut_info_t	eaton_marlin = { "eaton_epdu", EATON_MARLIN_MIB_VERSION, "", EATON_MARLIN_OID_MODEL_NAME, eaton_marlin_mib, EATON_MARLIN_SYSOID };
 
+/*mib2nut_info_t	pulizzi_monitored = { "pulizzi_monitored", EATON_PULIZZI_MIB_VERSION, "", PULIZZI1_OID_MODEL_NAME, eaton_pulizzi_monitored_mib, PULIZZI1_OID_MIB };*/
+mib2nut_info_t	pulizzi_switched1 = { "pulizzi_switched1", EATON_PULIZZI_SW_MIB_VERSION, "", EATON_PULIZZI_SWITCHED1_SYSOID, eaton_pulizzi_switched_mib, EATON_PULIZZI_SWITCHED1_SYSOID };
+mib2nut_info_t	pulizzi_switched2 = { "pulizzi_switched2", EATON_PULIZZI_SW_MIB_VERSION, "", EATON_PULIZZI_SWITCHED1_SYSOID, eaton_pulizzi_switched_mib, EATON_PULIZZI_SWITCHED2_SYSOID };

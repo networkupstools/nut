@@ -132,13 +132,18 @@ typedef struct {
 						 				 * disable the other providers */
 #define SU_FLAG_SETINT		(1 << 6)	/* save value */
 #define SU_OUTLET			(1 << 7)	/* outlet template definition */
+#define SU_CMD_OFFSET		(1 << 8)	/* Add +1 to the OID index */
 /* Notes on outlet templates usage:
  * - outlet.count MUST exist and MUST be declared before any outlet template
+ * Otherwise, the driver will try to determine it by itself...
  * - the first outlet template MUST NOT be a server side variable (ie MUST have
  *   a valid OID) in order to detect the base SNMP index (0 or 1)
  */
 
-/* status string components */
+/* status string components
+ * FIXME: these should be removed, since there is no added value.
+ * Ie, this can be guessed from info->type! */
+ 
 #define SU_STATUS_PWR		(0 << 8)	/* indicates power status element */
 #define SU_STATUS_BATT		(1 << 8)	/* indicates battery status element */
 #define SU_STATUS_CAL		(2 << 8)	/* indicates calibration status element */

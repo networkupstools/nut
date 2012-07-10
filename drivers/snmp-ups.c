@@ -60,6 +60,8 @@ static mib2nut_info_t *mib2nut[] = {
 	&aphel_genesisII,
 	&aphel_revelation,
 	&eaton_marlin,
+	&pulizzi_switched1,
+	&pulizzi_switched2,
 	&raritan,
 	&baytech,
 	&compaq,
@@ -91,7 +93,7 @@ const char *mibvers;
 static void disable_transfer_oids(void);
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.67"
+#define DRIVER_VERSION		"0.68"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -952,7 +954,7 @@ const char *su_find_infoval(info_lkp_t *oid2info, long value)
 	info_lkp_t *info_lkp;
 
 	for (info_lkp = oid2info; (info_lkp != NULL) &&
-		(strcmp(info_lkp->info_value, "NULL")); info_lkp++) {
+		(strcmp(info_lkp->info_value, "NULL")) && (info_lkp->info_value != NULL); info_lkp++) {
 
 		if (info_lkp->oid_value == value) {
 			upsdebugx(1, "su_find_infoval: found %s (value: %ld)",
@@ -1050,6 +1052,32 @@ int base_snmp_outlet_index(const char *OID_template)
 int base_nut_outlet_offset(void)
 {
 	return (outlet_index_base==0)?1:0;
+}
+
+/* try to determine the number of outlets, using a template definition,
+ * that we walk, until we can't get anymore values */
+static int guestimate_outlet_count(const char *OID_template)
+{
+	int base_index = 0;
+	char test_OID[SU_INFOSIZE];
+	int base_count;
+
+	upsdebugx(1, "guestimate_outlet_count(%s)", OID_template);
+
+	/* Determine if OID index starts from 0 or 1? */
+	sprintf(test_OID, OID_template, base_index);
+	if (nut_snmp_get(test_OID) == NULL)
+		base_index++;
+
+	/* Now, actually iterate */
+	for (base_count = 0 ;  ; base_count++) {
+		sprintf(test_OID, OID_template, base_index + base_count);
+		if (nut_snmp_get(test_OID) == NULL)
+			break;
+	}
+
+	upsdebugx(3, "guestimate_outlet_count: %i", base_count);
+	return base_count;
 }
 
 /* process a single data from a walk */
@@ -1233,10 +1261,20 @@ bool_t snmp_ups_walk(int mode)
 
 			if(dstate_getinfo("outlet.count") == NULL) {
 				/* FIXME: should we disable it?
-				 * su_info_p->flags &= ~SU_FLAG_OK; */
-				continue;
+				 * su_info_p->flags &= ~SU_FLAG_OK;
+				 * or rely on guestimation? */
+				if ((outlet_count = guestimate_outlet_count(su_info_p->OID)) == -1) {
+					/* Failed */
+					continue;
+				}
+				else {
+					/* Publish the count estimation */
+					dstate_setinfo("outlet.count", "%i", outlet_count);
+				}
 			}
-			outlet_count = atoi(dstate_getinfo("outlet.count"));
+			else {
+				outlet_count = atoi(dstate_getinfo("outlet.count"));
+			}
 
 			/* general init of data using the template */
 			instantiate_info(su_info_p, &cur_info_p);
@@ -1492,11 +1530,14 @@ int su_instcmd(const char *cmdname, const char *extradata)
 	snmp_info_t *su_info_p = NULL;
 	int status;
 	int retval = STAT_INSTCMD_FAILED;
+	int cmd_offset = 0;
 
 	upsdebugx(2, "entering su_instcmd(%s, %s)", cmdname, extradata);
 
-	if (strncmp(cmdname, "outlet", 6))
+	/* FIXME: this should only apply if strchr(%)! */
+	if (strncmp(cmdname, "outlet", 6)) {
 		su_info_p = su_find_info(cmdname);
+	}
 	else {
 		snmp_info_t *tmp_info_p;
 		char *outlet_number_ptr = strchr(cmdname, '.');
@@ -1536,8 +1577,15 @@ int su_instcmd(const char *cmdname, const char *extradata)
 		}
 		/* adapt the OID */
 		if (su_info_p->OID != NULL) {
+			/* Workaround buggy Eaton Pulizzi implementation
+			 * which have different offsets index for data & commands! */
+			if (su_info_p->flags & SU_CMD_OFFSET) {
+				upsdebugx(3, "Adding command offset");
+				cmd_offset++;
+			}
+
 			sprintf((char *)su_info_p->OID, tmp_info_p->OID,
-				outlet_number - base_nut_outlet_offset());
+				outlet_number - base_nut_outlet_offset() + cmd_offset);
 		} else {
 			free_info(su_info_p);
 			return STAT_INSTCMD_UNKNOWN;
