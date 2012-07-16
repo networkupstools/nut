@@ -1,6 +1,7 @@
 /* scan_ipmi.c: detect NUT supported Power Supply Units
  * 
- *  Copyright (C) 2011 - Arnaud Quette <arnaud.quette@free.fr>
+ *  Copyright (C)
+ *    2011 - 2012  Arnaud Quette <arnaud.quette@free.fr>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -35,8 +36,12 @@ static const char *dl_error = NULL;
 
 static int (*nut_ipmi_fru_parse_close_device_id) (ipmi_fru_parse_ctx_t ctx);
 static void (*nut_ipmi_fru_parse_ctx_destroy) (ipmi_fru_parse_ctx_t ctx);
+#ifdef HAVE_FREEIPMI_11X_12X
+static void (*nut_ipmi_sdr_ctx_destroy) (ipmi_sdr_ctx_t ctx);
+#else /* HAVE_FREEIPMI_11X_12X */
 static void (*nut_ipmi_sdr_cache_ctx_destroy) (ipmi_sdr_cache_ctx_t ctx);
 static void (*nut_ipmi_sdr_parse_ctx_destroy) (ipmi_sdr_parse_ctx_t ctx);
+#endif /* HAVE_FREEIPMI_11X_12X */
 static ipmi_fru_parse_ctx_t (*nut_ipmi_fru_parse_ctx_create) (ipmi_ctx_t ipmi_ctx);
 static int (*nut_ipmi_fru_parse_ctx_set_flags) (ipmi_fru_parse_ctx_t ctx, unsigned int flags);
 static int (*nut_ipmi_fru_parse_open_device_id) (ipmi_fru_parse_ctx_t ctx, uint8_t fru_device_id);
@@ -97,6 +102,15 @@ int nutscan_load_ipmi_library()
 			goto err;
 	}
 
+#ifdef HAVE_FREEIPMI_11X_12X
+
+	*(void **) (&nut_ipmi_sdr_ctx_destroy) = lt_dlsym(dl_handle, "ipmi_sdr_ctx_destroy");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+			goto err;
+	}
+
+#else /* HAVE_FREEIPMI_11X_12X */
+
 	*(void **) (&nut_ipmi_sdr_cache_ctx_destroy) = lt_dlsym(dl_handle, "ipmi_sdr_cache_ctx_destroy");
 	if ((dl_error = lt_dlerror()) != NULL)  {
 			goto err;
@@ -106,6 +120,7 @@ int nutscan_load_ipmi_library()
 	if ((dl_error = lt_dlerror()) != NULL)  {
 			goto err;
 	}
+#endif /* HAVE_FREEIPMI_11X_12X */
 
 	*(void **) (&nut_ipmi_fru_parse_ctx_create) = lt_dlsym(dl_handle, "ipmi_fru_parse_ctx_create");
 	if ((dl_error = lt_dlerror()) != NULL)  {
@@ -172,14 +187,27 @@ err:
 /* end of dynamic link library stuff */
 
 /* Cleanup IPMI contexts */
+#ifdef HAVE_FREEIPMI_11X_12X
+static void nut_freeipmi_cleanup(ipmi_fru_parse_ctx_t fru_parse_ctx,
+								 ipmi_sdr_ctx_t sdr_ctx)
+#else /* HAVE_FREEIPMI_11X_12X */
 static void nut_freeipmi_cleanup(ipmi_fru_parse_ctx_t fru_parse_ctx,
 								 ipmi_sdr_cache_ctx_t sdr_cache_ctx,
 								 ipmi_sdr_parse_ctx_t sdr_parse_ctx)
+#endif /* HAVE_FREEIPMI_11X_12X */
 {
 	if (fru_parse_ctx) {
 		(*nut_ipmi_fru_parse_close_device_id) (fru_parse_ctx);
 		(*nut_ipmi_fru_parse_ctx_destroy) (fru_parse_ctx);
 	}
+
+#ifdef HAVE_FREEIPMI_11X_12X
+
+	if (sdr_ctx) {
+		(*nut_ipmi_sdr_ctx_destroy) (sdr_ctx);
+	}
+
+#else /* HAVE_FREEIPMI_11X_12X */
 
 	if (sdr_cache_ctx) {
 		(*nut_ipmi_sdr_cache_ctx_destroy) (sdr_cache_ctx);
@@ -188,6 +216,8 @@ static void nut_freeipmi_cleanup(ipmi_fru_parse_ctx_t fru_parse_ctx,
 	if (sdr_parse_ctx) {
 		(*nut_ipmi_sdr_parse_ctx_destroy) (sdr_parse_ctx);
 	}
+
+#endif /* HAVE_FREEIPMI_11X_12X */
 }
 
 /* Return 1 if supported, 0 otherwise */
@@ -198,8 +228,12 @@ int is_ipmi_device_supported(ipmi_ctx_t ipmi_ctx, int ipmi_id)
 	unsigned int area_length = 0;
 	uint8_t areabuf[IPMI_FRU_PARSE_AREA_SIZE_MAX+1];
 	ipmi_fru_parse_ctx_t fru_parse_ctx = NULL;
+#ifdef HAVE_FREEIPMI_11X_12X
+	ipmi_sdr_ctx_t sdr_ctx = NULL;
+#else /* HAVE_FREEIPMI_11X_12X */
 	ipmi_sdr_cache_ctx_t sdr_cache_ctx = NULL;
 	ipmi_sdr_parse_ctx_t sdr_parse_ctx = NULL;
+#endif /* HAVE_FREEIPMI_11X_12X */
 
 	/* Parse FRU information */
 	if (!(fru_parse_ctx = (*nut_ipmi_fru_parse_ctx_create) (ipmi_ctx)))
@@ -211,13 +245,21 @@ int is_ipmi_device_supported(ipmi_ctx_t ipmi_ctx, int ipmi_id)
 	/* lots of motherboards calculate checksums incorrectly */
 	if ((*nut_ipmi_fru_parse_ctx_set_flags) (fru_parse_ctx, IPMI_FRU_PARSE_FLAGS_SKIP_CHECKSUM_CHECKS) < 0)
 	{
+#ifdef HAVE_FREEIPMI_11X_12X
+		nut_freeipmi_cleanup(fru_parse_ctx, sdr_ctx);
+#else
 		nut_freeipmi_cleanup(fru_parse_ctx, sdr_cache_ctx, sdr_parse_ctx);
+#endif /* HAVE_FREEIPMI_11X_12X */
 		return 0;
 	}
 
 	if ((*nut_ipmi_fru_parse_open_device_id) (fru_parse_ctx, ipmi_id) < 0)
 	{
+#ifdef HAVE_FREEIPMI_11X_12X
+		nut_freeipmi_cleanup(fru_parse_ctx, sdr_ctx);
+#else
 		nut_freeipmi_cleanup(fru_parse_ctx, sdr_cache_ctx, sdr_parse_ctx);
+#endif /* HAVE_FREEIPMI_11X_12X */
 		return 0;
 	}
 
@@ -235,7 +277,11 @@ int is_ipmi_device_supported(ipmi_ctx_t ipmi_ctx, int ipmi_id)
 											areabuf,
 											IPMI_FRU_PARSE_AREA_SIZE_MAX) < 0)
 		{
+#ifdef HAVE_FREEIPMI_11X_12X
+			nut_freeipmi_cleanup(fru_parse_ctx, sdr_ctx);
+#else
 			nut_freeipmi_cleanup(fru_parse_ctx, sdr_cache_ctx, sdr_parse_ctx);
+#endif /* HAVE_FREEIPMI_11X_12X */
 			return 0;
 		}
 
@@ -244,14 +290,22 @@ int is_ipmi_device_supported(ipmi_ctx_t ipmi_ctx, int ipmi_id)
 			if (area_type == IPMI_FRU_PARSE_AREA_TYPE_MULTIRECORD_POWER_SUPPLY_INFORMATION)
 			{
 				/* Found a POWER_SUPPLY record */
+#ifdef HAVE_FREEIPMI_11X_12X
+				nut_freeipmi_cleanup(fru_parse_ctx, sdr_ctx);
+#else
 				nut_freeipmi_cleanup(fru_parse_ctx, sdr_cache_ctx, sdr_parse_ctx);
+#endif /* HAVE_FREEIPMI_11X_12X */
 				return 1;
 			}
 		}
 	} while ((ret = (*nut_ipmi_fru_parse_next) (fru_parse_ctx)) == 1);
 
 	/* No need for further errors checking */
+#ifdef HAVE_FREEIPMI_11X_12X
+	nut_freeipmi_cleanup(fru_parse_ctx, sdr_ctx);
+#else
 	nut_freeipmi_cleanup(fru_parse_ctx, sdr_cache_ctx, sdr_parse_ctx);
+#endif /* HAVE_FREEIPMI_11X_12X */
 	return 0;
 }
 
@@ -297,7 +351,7 @@ nutscan_device_t *  nutscan_scan_ipmi()
 		return NULL;
 	}
 
-	/* Loop through all possible devices */
+	/* Loop through all possible components */
 	for (ipmi_id = 0 ; ipmi_id <= IPMI_FRU_DEVICE_ID_MAX ; ipmi_id++) {
 
 		if (is_ipmi_device_supported(ipmi_ctx, ipmi_id)) {

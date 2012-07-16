@@ -1,6 +1,7 @@
 /* nut-scanner.c: a tool to detect NUT supported devices
  * 
- *  Copyright (C) 2011 - Arnaud Quette <arnaud.quette@free.fr>
+ *  Copyright (C)
+ *    2011 - 2012  Arnaud Quette <arnaud.quette@free.fr>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -122,16 +123,16 @@ static int printq(int quiet,const char *fmt, ...)
 		return 0;
 	}
 
-        va_start(ap, fmt);
-        ret = vprintf(fmt, ap);
-        va_end(ap);
+	va_start(ap, fmt);
+	ret = vprintf(fmt, ap);
+	va_end(ap);
 
 	return ret;
 }
 
 int main(int argc, char *argv[])
 {
-	nutscan_snmp_t sec;
+	nutscan_snmp_t snmp_sec;
 	int opt_ret;
 	char *	cidr = NULL;
 	int allow_all = 0;
@@ -145,7 +146,7 @@ int main(int argc, char *argv[])
 	void (*display_func)(nutscan_device_t * device);
 	int ret_code = EXIT_SUCCESS;
 
-	memset(&sec,0,sizeof(sec));
+	memset(&snmp_sec, 0, sizeof(snmp_sec));
 
 	nutscan_init();
 
@@ -175,43 +176,43 @@ int main(int argc, char *argv[])
 				if(!nutscan_avail_snmp) {
 					goto display_help;
 				}
-				sec.community = strdup(optarg);
+				snmp_sec.community = strdup(optarg);
 				break;
 			case 'l':
 				if(!nutscan_avail_snmp) {
 					goto display_help;
 				}
-				sec.secLevel = strdup(optarg);
+				snmp_sec.secLevel = strdup(optarg);
 				break;
 			case 'u':
 				if(!nutscan_avail_snmp) {
 					goto display_help;
 				}
-				sec.secName = strdup(optarg);
+				snmp_sec.secName = strdup(optarg);
 				break;
 			case 'W':
 				if(!nutscan_avail_snmp) {
 					goto display_help;
 				}
-				sec.authPassword = strdup(optarg);
+				snmp_sec.authPassword = strdup(optarg);
 				break;
 			case 'X':
 				if(!nutscan_avail_snmp) {
 					goto display_help;
 				}
-				sec.privPassword = strdup(optarg);
+				snmp_sec.privPassword = strdup(optarg);
 				break;
 			case 'w':
 				if(!nutscan_avail_snmp) {
 					goto display_help;
 				}
-				sec.authProtocol = strdup(optarg);
+				snmp_sec.authProtocol = strdup(optarg);
 				break;
 			case 'x':
 				if(!nutscan_avail_snmp) {
 					goto display_help;
 				}
-				sec.privProtocol = strdup(optarg);
+				snmp_sec.privProtocol = strdup(optarg);
 				break;
 			case 'S':
 				if(!nutscan_avail_snmp) {
@@ -374,11 +375,11 @@ display_help:
 		else {
 			printq(quiet,"Scanning SNMP bus.\n");
 #ifdef HAVE_PTHREAD
-			if( pthread_create(&thread[TYPE_SNMP],NULL,run_snmp,&sec)) {
+			if( pthread_create(&thread[TYPE_SNMP],NULL,run_snmp,&snmp_sec)) {
 				nutscan_avail_snmp = 0;
 			}
 #else
-			dev[TYPE_SNMP] = nutscan_scan_snmp(start_ip,end_ip,timeout,&sec);
+			dev[TYPE_SNMP] = nutscan_scan_snmp(start_ip,end_ip,timeout,&snmp_sec);
 #endif /* HAVE_PTHREAD */
 		}
 	}
