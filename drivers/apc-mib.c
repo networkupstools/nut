@@ -1,8 +1,9 @@
 /*  apc-mib.c - data to monitor APC SNMP devices (Powernet MIB) with NUT
  *
- *  Copyright (C) 2002-2003
- *  			Dmitry Frolov <frolov@riss-telecom.ru>
- *  			Arnaud Quette <arnaud.quette@free.fr>
+ *  Copyright (C)
+ *    2002-2003 - Dmitry Frolov <frolov@riss-telecom.ru>
+ *    2002-2012 - Arnaud Quette <arnaud.quette@free.fr>
+ *    2012 - Chew Hong Gunn <hglinux@gunnet.org> (high precision values)
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
  *
@@ -25,7 +26,7 @@
 
 #include "apc-mib.h"
 
-#define APCC_MIB_VERSION	"1.1"
+#define APCC_MIB_VERSION	"1.2"
 
 /* Other APC sysOID:
  * 
@@ -44,6 +45,15 @@
 
 /* TODO: find the right sysOID for this MIB 
  * Ie ".1.3.6.1.4.1.318.1.1.1" or ".1.3.6.1.4.1.318" or? */
+
+/*     .1.3.6.1.4.1.318.1.1.1
+ *       enterprise^
+ *       apc ---------^
+ *       products ------^
+ *       hardware --------^
+ *       ups ---------------^
+ *  ref: ftp://ftp.apc.com/apc/public/software/pnetmib/mib/404/powernet404.mib
+ */
 
 /* info elements */
 
@@ -107,6 +117,19 @@ static info_lkp_t apcc_sensitivity_modes[] = {
     { 0, "NULL" }
 };
 
+#define APCC_OID_TRANSFERREASON "1.3.6.1.4.1.318.1.1.1.3.2.5.0"
+static info_lkp_t apcc_transfer_reasons[] = {
+    { 1, "noTransfer" },
+    { 2, "highLineVoltage" },
+    { 3, "brownout" },
+    { 4, "blackout" },
+    { 5, "smallMomentarySag" },
+    { 6, "deepMomentarySag" },
+    { 7, "smallMomentarySpike" },
+    { 8, "largeMomentarySpike" },
+    { 9, "selfTest" },
+    { 10, "rateOfVoltageChange" }
+};
 
 /* --- */
 
@@ -130,7 +153,12 @@ static snmp_info_t apcc_mib[] = {
 	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.318.1.1.1.1.1.1.0", "Generic Powernet SNMP device", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "ups.serial", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.318.1.1.1.1.2.3.0", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "ups.mfr.date", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.318.1.1.1.1.2.2.0", "", SU_FLAG_OK | SU_FLAG_STATIC, NULL },
+	{ "input.voltage", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.3.3.1.0", "", SU_FLAG_OK | SU_FLAG_NEGINVALID | SU_FLAG_UNIQUE, NULL },
+	{ "input.voltage.maximum", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.3.3.2.0", "", SU_FLAG_OK | SU_FLAG_NEGINVALID | SU_FLAG_UNIQUE, NULL },
+	{ "input.voltage.minimum", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.3.3.3.0", "", SU_FLAG_OK | SU_FLAG_NEGINVALID | SU_FLAG_UNIQUE, NULL },
 	{ "input.voltage", 0, 1, ".1.3.6.1.4.1.318.1.1.1.3.2.1.0", "", SU_FLAG_OK, NULL },
+	{ "input.voltage.maximum", 0, 1, ".1.3.6.1.4.1.318.1.1.1.3.2.2.0", "", SU_FLAG_OK, NULL },
+	{ "input.voltage.minimum", 0, 1, ".1.3.6.1.4.1.318.1.1.1.3.2.3.0", "", SU_FLAG_OK, NULL },
 	{ "input.phases", ST_FLAG_STRING, 2, ".1.3.6.1.4.1.318.1.1.1.9.2.2.1.2.1", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "input.L1-L2.voltage", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.2.3.1.3.1.1.1", "", SU_FLAG_OK|SU_FLAG_NEGINVALID, NULL },
 	{ "input.L2-L3.voltage", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.2.3.1.3.1.1.2", "", SU_FLAG_OK|SU_FLAG_NEGINVALID, NULL },
@@ -151,9 +179,11 @@ static snmp_info_t apcc_mib[] = {
 	{ "input.L2.current.minimum", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.9.2.3.1.8.1.1.2", "", SU_FLAG_OK|SU_FLAG_NEGINVALID, NULL },
 	{ "input.L3.current.minimum", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.9.2.3.1.8.1.1.3", "", SU_FLAG_OK|SU_FLAG_NEGINVALID, NULL },
 	{ "input.frequency", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.9.2.2.1.4.1", "", SU_FLAG_OK|SU_FLAG_NEGINVALID|SU_FLAG_UNIQUE, NULL },
+	{ "input.frequency", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.3.3.4.0", "", SU_FLAG_OK|SU_FLAG_NEGINVALID|SU_FLAG_UNIQUE, NULL },
 	{ "input.frequency", 0, 1, ".1.3.6.1.4.1.318.1.1.1.3.2.4.0", "", SU_FLAG_OK, NULL },
 	{ "input.transfer.low", ST_FLAG_STRING | ST_FLAG_RW, 3, ".1.3.6.1.4.1.318.1.1.1.5.2.3.0", "", SU_TYPE_INT | SU_FLAG_OK, NULL },
 	{ "input.transfer.high", ST_FLAG_STRING | ST_FLAG_RW, 3, ".1.3.6.1.4.1.318.1.1.1.5.2.2.0", "", SU_TYPE_INT | SU_FLAG_OK, NULL },
+    { "input.transfer.reason", ST_FLAG_STRING, 1, APCC_OID_TRANSFERREASON, "", SU_TYPE_INT | SU_FLAG_OK, apcc_transfer_reasons },
 	{ "input.sensitivity", ST_FLAG_STRING | ST_FLAG_RW, 1, APCC_OID_SENSITIVITY, "", SU_TYPE_INT | SU_FLAG_OK, apcc_sensitivity_modes },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, APCC_OID_POWER_STATUS, "OFF",
 		SU_FLAG_OK | SU_STATUS_PWR, apcc_pwr_info },
@@ -163,27 +193,37 @@ static snmp_info_t apcc_mib[] = {
 		SU_FLAG_OK | SU_STATUS_CAL, apcc_cal_info },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, APCC_OID_NEEDREPLBATT, "",
 		SU_FLAG_OK | SU_STATUS_RB, apcc_battrepl_info },
+	{ "ups.temperature", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.2.3.2.0", "", SU_FLAG_OK|SU_FLAG_UNIQUE, NULL },
 	{ "ups.temperature", 0, 1, ".1.3.6.1.4.1.318.1.1.1.2.2.2.0", "", SU_FLAG_OK, NULL },
+	{ "ups.load", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.4.3.3.0", "", SU_FLAG_OK|SU_FLAG_NEGINVALID|SU_FLAG_UNIQUE, NULL },
 	{ "ups.load", 0, 1, ".1.3.6.1.4.1.318.1.1.1.4.2.3.0", "", SU_FLAG_OK, NULL },
 	{ "ups.firmware", ST_FLAG_STRING, 16, ".1.3.6.1.4.1.318.1.1.1.1.2.1.0", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "ups.delay.shutdown", ST_FLAG_STRING | ST_FLAG_RW, 3, ".1.3.6.1.4.1.318.1.1.1.5.2.10.0", "", SU_FLAG_OK, NULL },
 	{ "ups.delay.start", ST_FLAG_STRING | ST_FLAG_RW, 3, ".1.3.6.1.4.1.318.1.1.1.5.2.9.0", "", SU_FLAG_OK, NULL },
+	{ "battery.charge", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.2.3.1.0", "", SU_FLAG_OK|SU_FLAG_NEGINVALID|SU_FLAG_UNIQUE, NULL },
 	{ "battery.charge", 0, 1, ".1.3.6.1.4.1.318.1.1.1.2.2.1.0", "", SU_FLAG_OK, NULL },
 	{ "battery.charge.restart", ST_FLAG_STRING | ST_FLAG_RW, 3, ".1.3.6.1.4.1.318.1.1.1.5.2.6.0", "", SU_TYPE_INT | SU_FLAG_OK, NULL },
 	{ "battery.runtime", 0, 1, ".1.3.6.1.4.1.318.1.1.1.2.2.3.0", "", SU_FLAG_OK, NULL },
 	{ "battery.runtime.low", ST_FLAG_STRING | ST_FLAG_RW, 3, ".1.3.6.1.4.1.318.1.1.1.5.2.8.0", "", SU_FLAG_OK, NULL },
+	{ "battery.voltage", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.2.3.4.0", "", SU_FLAG_OK|SU_FLAG_NEGINVALID|SU_FLAG_UNIQUE, NULL },
 	{ "battery.voltage", 0, 1, ".1.3.6.1.4.1.318.1.1.1.2.2.8.0", "", SU_FLAG_OK, NULL },
 	{ "battery.voltage.nominal", 0, 1, ".1.3.6.1.4.1.318.1.1.1.2.2.7.0", "", SU_FLAG_OK, NULL },
+	{ "battery.current", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.2.3.5.0", "", SU_FLAG_OK|SU_FLAG_UNIQUE, NULL },
 	{ "battery.current", 0, 1, ".1.3.6.1.4.1.318.1.1.1.2.2.9.0", "", SU_FLAG_OK, NULL },
+	{ "battery.current.total", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.2.3.6.0", "", SU_FLAG_OK, NULL },
 	{ "battery.packs", 0, 1, ".1.3.6.1.4.1.318.1.1.1.2.2.5.0", "", SU_FLAG_OK, NULL },
 	{ "battery.packs.bad", 0, 1, ".1.3.6.1.4.1.318.1.1.1.2.2.6.0", "", SU_FLAG_OK, NULL },
 	{ "battery.date", ST_FLAG_STRING | ST_FLAG_RW, 8, ".1.3.6.1.4.1.318.1.1.1.2.1.3.0", "", SU_FLAG_OK | SU_FLAG_STATIC | SU_TYPE_STRING, NULL },
 	{ "ups.id", ST_FLAG_STRING | ST_FLAG_RW, 8, ".1.3.6.1.4.1.318.1.1.1.1.1.2.0", "", SU_FLAG_OK | SU_FLAG_STATIC | SU_TYPE_STRING, NULL },
 	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, APCC_OID_TESTDIAGRESULTS, "", SU_FLAG_OK, apcc_testdiag_results },
+	{ "ups.test.date", ST_FLAG_STRING | ST_FLAG_RW, 8, ".1.3.6.1.4.1.318.1.1.1.7.2.4.0", "", SU_FLAG_OK | SU_FLAG_STATIC | SU_TYPE_STRING, NULL },
+	{ "output.voltage", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.4.3.1.0", "", SU_FLAG_OK | SU_FLAG_UNIQUE, NULL },
 	{ "output.voltage", 0, 1, ".1.3.6.1.4.1.318.1.1.1.4.2.1.0", "", SU_FLAG_OK, NULL },
 	{ "output.phases", ST_FLAG_STRING, 2, ".1.3.6.1.4.1.318.1.1.1.9.3.2.1.2.1", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "output.frequency", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.9.3.2.1.4.1", "", SU_FLAG_OK|SU_FLAG_NEGINVALID|SU_FLAG_UNIQUE, NULL },
+	{ "output.frequency", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.4.3.2.0", "", SU_FLAG_OK|SU_FLAG_NEGINVALID|SU_FLAG_UNIQUE, NULL },
 	{ "output.frequency", 0, 1, ".1.3.6.1.4.1.318.1.1.1.4.2.2.0", "", SU_FLAG_OK, NULL },
+	{ "output.current", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.4.3.4.0", "", SU_FLAG_OK|SU_FLAG_NEGINVALID|SU_FLAG_UNIQUE, NULL },
 	{ "output.current", 0, 1, ".1.3.6.1.4.1.318.1.1.1.4.2.4.0", "", SU_FLAG_OK, NULL },
 	{ "output.L1-L2.voltage", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.3.1.1.1", "", SU_FLAG_OK|SU_FLAG_NEGINVALID, NULL },
 	{ "output.L2-L3.voltage", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.3.3.1.3.1.1.2", "", SU_FLAG_OK|SU_FLAG_NEGINVALID, NULL },
@@ -220,11 +260,11 @@ static snmp_info_t apcc_mib[] = {
 	/* Measure-UPS ambient variables */
 /* Environmental sensors (AP9612TH and others) */
 	{ "ambient.temperature", 0, 1, ".1.3.6.1.4.1.318.1.1.2.1.1.0", "", SU_FLAG_OK, NULL },
-	{ "ambient.temperature.high", 0, 1, ".1.3.6.1.4.1.318.1.1.10.1.2.2.1.3.1", "", SU_FLAG_OK, NULL },
-	{ "ambient.temperature.low", 0, 1, ".1.3.6.1.4.1.318.1.1.10.1.2.2.1.4.1", "", SU_FLAG_OK, NULL },
+	{ "ambient.1.temperature.alarm.high", 0, 1, ".1.3.6.1.4.1.318.1.1.10.1.2.2.1.3.1", "", SU_FLAG_OK, NULL },
+	{ "ambient.1.temperature.alarm.low", 0, 1, ".1.3.6.1.4.1.318.1.1.10.1.2.2.1.4.1", "", SU_FLAG_OK, NULL },
 	{ "ambient.humidity", 0, 1, ".1.3.6.1.4.1.318.1.1.2.1.2.0", "", SU_FLAG_OK, NULL },
-	{ "ambient.humidity.high", 0, 1, ".1.3.6.1.4.1.318.1.1.10.1.2.2.1.6.1", "", SU_FLAG_OK, NULL },
-	{ "ambient.humidity.low", 0, 1, ".1.3.6.1.4.1.318.1.1.10.1.2.2.1.7.1", "", SU_FLAG_OK, NULL },
+	{ "ambient.1.humidity.alarm.high", 0, 1, ".1.3.6.1.4.1.318.1.1.10.1.2.2.1.6.1", "", SU_FLAG_OK, NULL },
+	{ "ambient.1.humidity.alarm.low", 0, 1, ".1.3.6.1.4.1.318.1.1.10.1.2.2.1.7.1", "", SU_FLAG_OK, NULL },
 
 	/* IEM ambient variables */
 /* IEM: integrated environment monitor probe */
