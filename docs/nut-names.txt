@@ -87,6 +87,8 @@ ups: General unit information
                           (seconds)                    | 1209600 (two weeks)
 | ups.test.result       | Results of last self test
                           (opaque string)              | Bad battery pack
+| ups.test.date         | Date of last self test
+                          (opaque string)              | 07/17/12
 | ups.display.language  | Language to use on front
                           panel (*** opaque)           | E
 | ups.contacts          | UPS external contact sensors
@@ -320,6 +322,7 @@ battery: Any battery details
                             (Ie battery.charge = 100)           | 26,9
 | battery.capacity        | Battery capacity (Ah)               | 7.2
 | battery.current         | Battery current (A)                 | 1.19
+| battery.current.total   | Total battery current (A)           | 1.19
 | battery.temperature     | Battery temperature (degrees C)     | 050.7
 | battery.runtime         | Battery runtime (seconds)           | 1080
 | battery.runtime.low     | Remaining battery runtime when
@@ -343,6 +346,11 @@ battery: Any battery details
 
 ambient: Conditions from external probe equipment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+NOTE: multiple sensors can be exposed using the indexed notation. For example,
+'ambient.temperature' is equivalent to 'ambient.1.temperature', which represent
+the temperature from the first sensor. Further sensors can use subsequent
+indexes '2' to 'n'.
 
 [options="header"]
 |===============================================================================
