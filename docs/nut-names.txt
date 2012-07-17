@@ -347,37 +347,39 @@ battery: Any battery details
 ambient: Conditions from external probe equipment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-NOTE: multiple sensors can be exposed using the indexed notation. For example,
-'ambient.temperature' is equivalent to 'ambient.1.temperature', which represent
-the temperature from the first sensor. Further sensors can use subsequent
-indexes '2' to 'n'.
+NOTE: multiple sensors can be exposed using the indexed notation.
+'ambient.*', without index or using '0', relates to the embedded sensor.
+For example: 'ambient.temperature' represent the embedded sensor temperature.
+Other sensors (external, communication card, ...) can use indexes
+from '1' to 'n'. For example: 'ambient.1.temperature' for the first external
+sensor temperature.
 
 [options="header"]
 |===============================================================================
 | Name                              | Description                | Example value
-| ambient.temperature               | Ambient temperature
+| ambient.n.temperature             | Ambient temperature
                                       (degrees C)                | 25.40
-| ambient.temperature.alarm         | Temperature alarm
+| ambient.n.temperature.alarm       | Temperature alarm
                                       (enabled/disabled)         | enabled
-| ambient.temperature.high          | Temperature threshold high
+| ambient.n.temperature.high        | Temperature threshold high
                                       (degrees C)                | 40
-| ambient.temperature.low           | Temperature threshold low
+| ambient.n.temperature.low         | Temperature threshold low
                                       (degrees C)                | 5
-| ambient.temperature.maximum       | Maximum temperature seen
+| ambient.n.temperature.maximum     | Maximum temperature seen
                                       (degrees C)                | 37.6
-| ambient.temperature.minimum       | Minimum temperature seen
+| ambient.n.temperature.minimum     | Minimum temperature seen
                                       (degrees C)                | 18.1
-| ambient.humidity                  | Ambient relative humidity
+| ambient.n.humidity                | Ambient relative humidity
                                       (percent)                  | 038.8
-| ambient.humidity.alarm            | Relative humidity alarm
+| ambient.n.humidity.alarm          | Relative humidity alarm
                                       (enabled/disabled)         | enabled
-| ambient.humidity.high             | Relative humidity
+| ambient.n.humidity.high           | Relative humidity
                                       threshold high (percent)   | 80
-| ambient.humidity.low              | Relative humidity
+| ambient.n.humidity.low            | Relative humidity
                                       threshold high (percent)   | 10
-| ambient.humidity.maximum          | Maximum relative humidity
+| ambient.n.humidity.maximum        | Maximum relative humidity
                                       seen (percent)             | 60
-| ambient.humidity.minimum          | Minimum relative humidity
+| ambient.n.humidity.minimum        | Minimum relative humidity
                                       seen (percent)             | 13
 |===============================================================================
 
