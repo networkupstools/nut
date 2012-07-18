@@ -46,6 +46,8 @@
 
 "AEC"	"ups"	"1"	"MiniGuard UPS 700"	"Megatec M2501 cable"	"genericups upstype=21"
 
+"AEG Power Solutions"	"ups"	"2"	"PROTECT HOME"	""	"blazer_ser or blazer_usb"
+
 "APC"	"ups"	"1"	"Back-UPS Pro"	""	"apcsmart"
 "APC"	"ups"	"1"	"Matrix-UPS"	""	"apcsmart"
 "APC"	"ups"	"1"	"Smart-UPS"	""	"apcsmart"
@@ -62,6 +64,8 @@
 "APC"	"ups"	"1"	"Back-UPS"	"940-0023A cable"	"genericups upstype=9"
 "APC"	"ups"	"1"	"Back-UPS Office"	"940-0119A cable"	"genericups upstype=12"
 "APC"	"ups"	"1"	"Back-UPS RS 500"	"custom non-USB cable"	"genericups upstype=20"
+"APC"	"ups"	"3"	"Smart-UPS RT XL"	"AP9618 SNMP monitoring card"	"snmp-ups"
+"APC"	"ups"	"3"	"(various)"	"AP9618 SNMP monitoring card"	"snmp-ups"
 "APC"	"pdu"	"1"	"Masterswitch"	"940-0020 cable"	"genericups upstype=12"
 "APC"	"pdu"	"1"	"AP9210"	"8 outlets"	"powerman-pdu (experimental)"
 "APC"	"pdu"	"1"	"AP79xx"	"8 to 24 outlets"	"powerman-pdu (experimental)"
@@ -73,6 +77,22 @@
 "Apollo"	"ups"	"1"	"1000F"	""	"genericups upstype=4"
 
 "Appro"	"pdu"	"1"	"SWPDU"	"48 outlets"	"powerman-pdu (experimental)"
+
+"ARTronic"	"ups"	"2"	"ARTon Millenium 1/2/3/6/10 kVA"	"Serial"	"blazer_ser"
+"ARTronic"	"ups"	"2"	"ARTon Millenium 3.1 10/15/20 kVA"	"Serial"	"blazer_ser"
+"ARTronic"	"ups"	"2"	"ARTon Titanium 6/10 kVA"	"Serial"	"blazer_ser"
+"ARTronic"	"ups"	"2"	"ARTon Titanium 3.1 10/15/20 kVA"	"Serial"	"blazer_ser"
+"ARTronic"	"ups"	"2"	"ARTon Optimum 1/2/3/6/10 kVA"	"Serial"	"blazer_ser"
+"ARTronic"	"ups"	"2"	"ARTon Titanium Plus 1/2/3 kVA"	"USB"	"blazer_usb"
+"ARTronic"	"ups"	"2"	"ARTon Platinium 6/10 kVA"	"USB"	"blazer_usb"
+"ARTronic"	"ups"	"2"	"ARTon Platinium Combo 3.1 10/15/20 kVA"	"USB"	"blazer_usb"
+"ARTronic"	"ups"	"2"	"ARTon Platinium RT 1/2/3/6/10 kVA"	"USB"	"blazer_usb"
+
+"ATEK"	"ups"	"2"	"Defensor 1K Tower / Rack"	"USB"	"blazer_usb"
+"ATEK"	"ups"	"2"	"Defensor 2K Tower / Rack"	"USB"	"blazer_usb"
+"ATEK"	"ups"	"2"	"Defensor 3K Tower / Rack"	"USB"	"blazer_usb"
+"ATEK"	"ups"	"2"	"Defensor 6K Tower / Rack"	"USB"	"blazer_usb"
+"ATEK"	"ups"	"2"	"Defensor 10K Tower / Rack"	"USB"	"blazer_usb"
 
 "Atlantis Land"	"ups"	"2"	"A03-P826"	""	"blazer_ser"
 
@@ -106,16 +126,23 @@
 "Belkin"	"ups"	"2"	"Universal UPS F6H350ukUNV"	"serial port"	"blazer_ser"
 "Belkin"	"ups"	"2"	"Universal UPS F6H500ukUNV"	"serial port"	"blazer_ser"
 "Belkin"	"ups"	"2"	"Universal UPS F6H650ukUNV"	"serial port"	"blazer_ser"
+"Belkin"	"ups"	"2"	"F6S600auUSB"	"USB"	"blazer_usb"
 
 "Best Power"	"ups"	"1"	"Fortress (older)"	""	"bestfortress"
-"Best Power"	"ups"	"1"	"Fortress (newer)"	""	"bestups"
-"Best Power"	"ups"	"1"	"Fortress Telecom"	""	"bestups"
-"Best Power"	"ups"	"1"	"Axxium Rackmount"	""	"bestups"
-"Best Power"	"ups"	"1"	"Patriot Pro"	""	"bestups"
-"Best Power"	"ups"	"1"	"Patriot Pro II"	""	"bestups"
+"Best Power"	"ups"	"1"	"Fortress (newer)"	""	"blazer_ser or bestups"
+"Best Power"	"ups"	"1"	"Fortress Telecom"	""	"blazer_ser or bestups"
+"Best Power"	"ups"	"1"	"Axxium Rackmount"	""	"blazer_ser or bestups"
+"Best Power"	"ups"	"1"	"Patriot Pro"	""	"blazer_ser or bestups"
+"Best Power"	"ups"	"1"	"Patriot Pro II"	""	"blazer_ser or bestups"
 "Best Power"	"ups"	"1"	"Patriot"	"INT51 cable"	"genericups upstype=6"
 "Best Power"	"ups"	"1"	"Micro-Ferrups"	""	"bestuferrups"
 "Best Power"	"ups"	"1"	"Fortress/Ferrups"	"f-command support"	"bestfcom"
+
+"Borri"	"ups"	"2"	"B400-010-B/B400-020-B/B400-030-B/B400-010-C/B400-020-C/B400-030-C"	""	"blazer_usb"
+"Borri"	"ups"	"2"	"B400-R010-B/B400-R020-B/B400-R030-B/B400-R010-C/B400-R020-C/B400-R030-C"	""	"blazer_usb"
+"Borri"	"ups"	"2"	"B500-060-B/B500-100-B/B500-060-C/B500-100-C"	""	"blazer_usb"
+"Borri"	"ups"	"2"	"B500-R060-B/B500-R100-B"	""	"blazer_usb"
+"Borri"	"ups"	"2"	"B500EVO-100-B/B500EVO-200-B"	""	"blazer_usb"
 
 "Chloride"	"ups"	"2"	"Desk Power 650"	"serial port"	"blazer_ser"
 
@@ -127,6 +154,10 @@
 "Compaq"	"ups"	"4"	"R3000h"	""	"upscode2"
 "Compaq"	"ups"	"4"	"R3000 XR"	""	"bcmxcp"
 "Compaq"	"ups"	"4"	"R5500 XR"	""	"bcmxcp"
+
+"COVER ENERGY SA"	"ups"	"2"	"COVER PRM 1K/2K/3K/6K/10K"	""	"blazer_usb"
+"COVER ENERGY SA"	"ups"	"2"	"COVER PRM 1K/2K/3K/6K/10K EC"	""	"blazer_usb"
+"COVER ENERGY SA"	"ups"	"2"	"COVER PRM 6K/10K PR"	""	"blazer_usb"
 
 "Cyber Power Systems"	"ups"	"1"	"320AVR"	""	"powerpanel"
 "Cyber Power Systems"	"ups"	"1"	"500AVR"	""	"powerpanel"
@@ -151,39 +182,50 @@
 "Cyber Power Systems"	"ups"	"2"	"AE550"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"3"	"CP 1500C"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"3"	"OR2200LCDRM2U"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"ups"	"3"	"OR700LCDRM1U"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"ups"	"3"	"PR6000LCDRTXL5U"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"2"	"Value 400E"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"2"	"Value 600E"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"2"	"Value 800E"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"ups"	"2"	"CP1000AVRLCD"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"2"	"CP1350AVRLCD"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"2"	"CP1500AVRLCD"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"ups"	"2"	"CP1000PFCLCD"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"ups"	"3"	"RMCARD100"	""	"snmp-ups"
+"Cyber Power Systems"	"ups"	"3"	"RMCARD201"	""	"snmp-ups"
+"Cyber Power Systems"	"ups"	"3"	"RMCARD202"	""	"snmp-ups"
+"Cyber Power Systems"	"ups"	"3"	"RMCARD301"	""	"snmp-ups"
 
 "Cyclades"	"pdu"	"1"	"PM8"	"8 outlets"	"powerman-pdu (experimental)"
 "Cyclades"	"pdu"	"1"	"PM10"	"10 outlets"	"powerman-pdu (experimental)"
 
-"Dell"	"ups"	"5"	"Tower 500W LV / HV"	"USB port"	"usbhid-ups"
 "Dell"	"ups"	"5"	"Tower 500W LV / HV"	"Serial port"	"newmge-shut"
-"Dell"	"ups"	"5"	"Rack/Tower 1000W LV / HV"	"USB port"	"usbhid-ups"
 "Dell"	"ups"	"5"	"Rack/Tower 1000W LV / HV"	"Serial port"	"newmge-shut"
-"Dell"	"ups"	"5"	"Rack/Tower 1500W LV"	"USB port"	"usbhid-ups"
 "Dell"	"ups"	"5"	"Rack/Tower 1500W LV"	"Serial port"	"newmge-shut"
-"Dell"	"ups"	"5"	"Rack/Tower 1920W LV / HV"	"USB port"	"usbhid-ups"
 "Dell"	"ups"	"5"	"Rack/Tower 1920W LV / HV"	"Serial port"	"newmge-shut"
-"Dell"	"ups"	"5"	"Rack/Tower 2300W LV"	"USB port"	"usbhid-ups"
 "Dell"	"ups"	"5"	"Rack/Tower 2300W LV"	"Serial port"	"newmge-shut"
-"Dell"	"ups"	"5"	"Rack/Tower 2700W LV / HV"	"USB port"	"usbhid-ups"
 "Dell"	"ups"	"5"	"Rack/Tower 2700W LV / HV"	"Serial port"	"newmge-shut"
-"Dell"	"ups"	"5"	"Short Depth Rack 2700W Online LV / HV"	"High Efficiency, USB port"	"usbhid-ups"
 "Dell"	"ups"	"5"	"Short Depth Rack 2700W Online LV / HV"	"High Efficiency, Serial port"	"newmge-shut"
-"Dell"	"ups"	"5"	"Rack 3750W High Efficiency Online HV"	"USB port"	"usbhid-ups"
 "Dell"	"ups"	"5"	"Rack 3750W High Efficiency Online HV"	"Serial port"	"newmge-shut"
-"Dell"	"ups"	"5"	"Rack 4200W High Efficiency Online HV"	"USB port"	"usbhid-ups"
 "Dell"	"ups"	"5"	"Rack 4200W High Efficiency Online HV"	"Serial port"	"newmge-shut"
-"Dell"	"ups"	"5"	"Rack 5600W HV"	"USB port"	"usbhid-ups"
 "Dell"	"ups"	"5"	"Rack 5600W HV"	"Serial port"	"newmge-shut"
+"Dell"	"ups"	"5"	"Tower 500W LV / HV"	"USB port"	"usbhid-ups"
+"Dell"	"ups"	"5"	"Rack/Tower 1000W LV / HV"	"USB port"	"usbhid-ups"
+"Dell"	"ups"	"5"	"Rack/Tower 1500W LV"	"USB port"	"usbhid-ups"
+"Dell"	"ups"	"5"	"Rack/Tower 1920W LV / HV"	"USB port"	"usbhid-ups"
+"Dell"	"ups"	"5"	"Rack/Tower 2300W LV"	"USB port"	"usbhid-ups"
+"Dell"	"ups"	"5"	"Rack/Tower 2700W LV / HV"	"USB port"	"usbhid-ups"
+"Dell"	"ups"	"5"	"Short Depth Rack 2700W Online LV / HV"	"High Efficiency, USB port"	"usbhid-ups"
+"Dell"	"ups"	"5"	"Rack 3750W High Efficiency Online HV"	"USB port"	"usbhid-ups"
+"Dell"	"ups"	"5"	"Rack 4200W High Efficiency Online HV"	"USB port"	"usbhid-ups"
+"Dell"	"ups"	"5"	"Rack 5600W HV"	"USB port"	"usbhid-ups"
+"Dell"	"ups"	"5"	"Various (SNMP mode)"	"UPS Network Management Card "	"snmp-ups"
+"Dell"	"ups"	"5"	"Various (XML/HTTP mode)"	"UPS Network Management Card "	"netxml-ups (experimental)"
 
 "Delta"	"ups"	"1"	"GES602N"	""	"belkin"
 
 "Deltec"	"ups"	"1"	"PowerRite Pro II"	""	"genericups upstype=15"
+"Deltec"	"ups"	"4"	"PRM 450/700/1000/1500"	""	"upscode2"
 
 "Digital Loggers"	"pdu"	"1"	"LPC, EPCR2, DIN"	"8 outlets"	"powerman-pdu (experimental)"
 
@@ -191,11 +233,14 @@
 
 "Dynamix"	"ups"	"2"	"UPS1700D"	""	"blazer_ser"
 "Dynamix"	"ups"	"2"	"UPS-650VA"	""	"blazer_ser"
+"Dynamix"	"ups"	"2"	"650VA/1000VA"	"USB"	"blazer_usb langid_fix=0x0409"
 
 "Dynex"	"ups"	"1"	"975AVR"	""	"genericups upstype=7"
 "Dynex"	"ups"	"2"	"DX-800U"	"USB"	"usbhid-ups"
 
+"Eaton"	"ups"	"5"	"3S"	""	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Protection Station 500/650/800 VA"	"USB"	"usbhid-ups"
+"Eaton"	"ups"	"5"	"Ellipse ECO 650/800/1200/1600 VA"	"USB"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Ellipse ASR USBS 600/750/1000/1500 VA"	"USB cable"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Ellipse MAX USBS 600/850/1100/1500 VA"	"USB cable"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Evolution 650/850/1150/1550/2000 VA"	"USB port"	"usbhid-ups"
@@ -204,6 +249,7 @@
 "Eaton"	"ups"	"5"	"EX 2200/3000/3000 XL VA"	"USB port"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"EX 1000 RT2U / 1500 RT2U"	"USB port"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"MX 5/8/10/15/20 kVA"	"USB port"	"usbhid-ups"
+"Eaton"	"ups"	"5"	"5 PX"	"USB port"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Nova AVR 625/1250"	"USB"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Ellipse ASR USBS 600/750/1000/1500 VA"	"Serial cable"	"mge-shut or newmge-shut"
 "Eaton"	"ups"	"5"	"Ellipse MAX USBS 600/850/1100/1500 VA"	"Serial cable"	"mge-shut or newmge-shut"
@@ -213,20 +259,25 @@
 "Eaton"	"ups"	"5"	"EX 2200/3000/3000 XL VA"	"Serial port"	"mge-shut or newmge-shut"
 "Eaton"	"ups"	"5"	"EX 1000 RT2U / 1500 RT2U"	"Serial port"	"mge-shut or newmge-shut"
 "Eaton"	"ups"	"5"	"MX 5/8/10/15/20 kVA"	"Serial port"	"mge-shut or newmge-shut"
+"Eaton"	"ups"	"5"	"5 PX"	"Serial port"	"mge-shut or newmge-shut"
 "Eaton"	"ups"	"5"	"EX RT 1:1 7/11 kVA"	""	"mge-shut or newmge-shut"
 "Eaton"	"ups"	"5"	"EX RT 3:1 5/7/11 kVA"	""	"mge-shut or newmge-shut"
 "Eaton"	"ups"	"5"	"EX RT (XML/HTTP)"	"NMC Transverse card (ref 66074)"	"netxml-ups (experimental)"
 "Eaton"	"ups"	"5"	"EX RT (SNMP)"	"NMC Transverse card (ref 66074)"	"snmp-ups (experimental)"
 "Eaton"	"ups"	"5"	"E Series NV UPS 400-2000 VA"	""	"blazer_usb"
 "Eaton"	"ups"	"5"	"E Series DX UPS 1-20 kVA"	""	"mge-utalk"
+"Eaton"	"ups"	"4"	"NetUPS SE 450/700/1000/1500"	""	"upscode2"
 "Eaton"	"ups"	"5"	"BladeUPS (SNMP)"	"ConnectUPS Web/SNMP Card"	"snmp-ups (experimental)"
-"Eaton"	"ups"	"5"	"various models (XML/HTTP mode)"	"NMC Minislot (Ref 66102)"	"netxml-ups (experimental)"
-"Eaton"	"ups"	"5"	"various models (SNMP mode)"	"NMC Minislot (Ref 66102)"	"snmp-ups (experimental)"
+"Eaton"	"ups"	"5"	"various models (XML/HTTP mode)"	"NMC Minislot (ref 66102)"	"netxml-ups (experimental)"
+"Eaton"	"ups"	"5"	"various models (SNMP mode)"	"NMC Minislot (ref 66102)"	"snmp-ups (experimental)"
 "Eaton"	"ups"	"5"	"various models (XML/HTTP mode)"	"SNMP/Web Minislot card (ref 66244)"	"netxml-ups (experimental)"
 "Eaton"	"ups"	"5"	"various models (SNMP mode)"	"SNMP/Web Minislot card (ref 66244)"	"snmp-ups (experimental)"
-"Eaton"	"pdu"	"5"	"ePDU Managed"	""	"snmp-ups (experimental)"
+"Eaton"	"ups"	"5"	"various models (serial mode)"	"Management Card Contact (ref 66104)"	"mge-shut or mge-utalk"
+"Eaton"	"pdu"	"5"	"ePDU Managed"	""	"snmp-ups"
+"Eaton"	"pdu"	"5"	"ePDU Switched"	""	"snmp-ups"
 "Eaton"	"pdu"	"5"	"ePDU Monitored"	""	"snmp-ups or netxml-ups"
 "Eaton"	"ups"	"5"	"Powerware 9130"	""	"bcmxcp or usbhid-ups"
+"Eaton"	"ups"	"5"	"Powerware 9140"	""	"bcmxcp or usbhid-ups"
 "Eaton"	"ups"	"5"	"Powerware 5130"	""	"usbhid-ups"
 "Eaton"	"ups"	"5"	"9395"	"Serial port"	"bcmxcp"
 "Eaton"	"ups"	"5"	"Best Ferrups"	"older ConnectUPS"	"snmp-ups"
@@ -241,12 +292,19 @@
 "ETA"	"ups"	"1"	"mini+UPS"	"WinNT/Upsoft cable"	"genericups upstype=7"
 "ETA"	"ups"	"1"	"mini+UPS PRO"	"UPS Explorer cable"	"etapro"
 
-"Ever UPS"	"ups"	"1"	"NET *-DPC"	""	"everups"
-"Ever UPS"	"ups"	"1"	"AP *-PRO"	""	"everups"
-
-"Ever-Power"	"ups"	"1"	"625/1000"	""	"safenet"
+"EVER"	"ups"	"1"	"NET DPC series"	"Serial port"	"everups"
+"EVER"	"ups"	"1"	"AP Pro series"	"Serial port"	"everups"
+"EVER"	"ups"	"1"	"625/1000"	""	"safenet"
+"EVER"	"ups"	"2"	"POWERLINE RT 1-3kVA series"	"Serial port"	"blazer_ser"
+"EVER"	"ups"	"2"	"POWERLINE RT 6-10kVA series"	"Serial port"	"blazer_ser"
+"EVER"	"ups"	"2"	"POWERLINE 11 series"	"Serial port"	"blazer_ser"
+"EVER"	"ups"	"2"	"POWERLINE 31 series"	"Serial port"	"blazer_ser"
+"EVER"	"ups"	"2"	"DUO II Pro series"	"USB port"	"blazer_usb"
+"EVER"	"ups"	"2"	"POWERLINE RT 1-3kVA series"	"USB port"	"blazer_usb"
+"EVER"	"ups"	"2"	"POWERLINE RT 6-10kVA series"	"USB port"	"blazer_usb"
 
 "Exide"	"ups"	"1"	"NetUPS SE"	""	"genericups upstype=15"
+"Exide"	"ups"	"4"	"NetUPS SE 450/700/1000/1500"	""	"upscode2"
 
 "Fenton Technologies"	"ups"	"1"	"PowerPal"	"P-series"	"safenet"
 "Fenton Technologies"	"ups"	"5"	"PowerPal"	"L-series"	"blazer_ser"
@@ -274,22 +332,41 @@
 "Gamatronic"	"ups"	"5"	"MS"	""	"gamatronic"
 "Gamatronic"	"ups"	"5"	"µPS3/1"	""	"gamatronic"
 
+"GE Digital Energy"	"ups"	"2"	"EP Series"	""	"blazer_usb"
+"GE Digital Energy"	"ups"	"2"	"GT Series 1000/1500/2000/3000 VA Rack/Tower"	"UL-version"	"blazer_ser"
+
 "Geek Squad"	"ups"	"2"	"GS1285U"	"USB"	"usbhid-ups"
 
 "Gemini"	"ups"	"1"	"UPS625/UPS1000"	""	"safenet"
 
+"Gtec"	"ups"	"2"	"ZP120N-1K / ZP120N-1KS / ZP120N-2K / ZP120N-2KS / ZP120N-3K / ZP120N-3KS"	""	"blazer_usb"
+"Gtec"	"ups"	"2"	"ZP120N-6K / ZP120N-6KS / ZP120N-10K-11 / ZP120N-10KS-11"	""	"blazer_usb"
+"Gtec"	"ups"	"2"	"ZP120N-10K-31-00 / ZP120N-10K-31-07 / ZP120N-10K-31-09 / ZP120N-10K-31-99 / ZP120N-20K"	"USB port"	"blazer_usb"
+"Gtec"	"ups"	"2"	"AP160N-1K / AP160LCD-1K-KS / AP160N-2K / AP160LCD-2K-KS / AP160N-3K / AP160LCD-3K-KS / AP160N-6K-PDU / AP160N-10K-PDU"	"USB port"	"blazer_usb"
+"Gtec"	"ups"	"2"	"ZP120N-10K-31-00 / ZP120N-10K-31-07 / ZP120N-10K-31-09 / ZP120N-10K-31-99 / ZP120N-20K"	"Serial port"	"blazer_ser"
+"Gtec"	"ups"	"2"	"AP160N-1K / AP160LCD-1K-KS / AP160N-2K / AP160LCD-2K-KS / AP160N-3K / AP160LCD-3K-KS / AP160N-6K-PDU / AP160N-10K-PDU"	"Serial port"	"blazer_ser"
+
 "HP"	"ups"	"1"	"PowerTrust 2997A"	"HP 5061-2575 cable"	"apcsmart"
+"HP"	"ups"	"3"	"T750 G2"	"Serial port"	"bcmxcp"
+"HP"	"ups"	"3"	"T1000 G3"	"Serial port"	"bcmxcp"
+"HP"	"ups"	"3"	"T1500 G3"	"Serial port"	"bcmxcp"
+"HP"	"ups"	"3"	"R1500 G2"	"Serial port"	"bcmxcp"
 "HP"	"ups"	"4"	"R3000 XR"	""	"bcmxcp"
 "HP"	"ups"	"4"	"R5500 XR"	""	"bcmxcp"
-"HP"	"ups"	"2"	"R1500 G2"	""	"bcmxcp"
-"HP"	"ups"	"2"	"R/T 2200 G2"	""	"usbhid-ups"
-"HP"	"ups"	"2"	"T500"	"older models"	"bcmxcp_usb"
-"HP"	"ups"	"2"	"T750 INTL"	""	"usbhid-ups"
-"HP"	"ups"	"2"	"T750"	"older models"	"bcmxcp_usb"
-"HP"	"ups"	"2"	"T1000 INTL"	""	"usbhid-ups"
-"HP"	"ups"	"2"	"T1500 INTL"	""	"usbhid-ups"
-"HP"	"ups"	"2"	"T750 G2"	""	"usbhid-ups"
-"HP"	"ups"	"2"	"R1500 G2 INTL"	""	"usbhid-ups"
+"HP"	"ups"	"3"	"T500 / T750"	"older models, USB port"	"bcmxcp_usb"
+"HP"	"ups"	"3"	"R/T3000"	"Serial port"	"mge-shut or newmge-shut"
+"HP"	"ups"	"3"	"R5000 / R7000"	"Serial port"	"mge-shut or newmge-shut"
+"HP"	"ups"	"3"	"T750 INTL"	""	"usbhid-ups"
+"HP"	"ups"	"3"	"T1000 INTL"	""	"usbhid-ups"
+"HP"	"ups"	"3"	"T1500 INTL"	""	"usbhid-ups"
+"HP"	"ups"	"3"	"T750 G2"	"USB port"	"usbhid-ups"
+"HP"	"ups"	"3"	"T1000 G3"	"USB port"	"usbhid-ups"
+"HP"	"ups"	"3"	"T1500 G3"	"USB port"	"usbhid-ups"
+"HP"	"ups"	"3"	"R1500 G2 INTL"	"USB port"	"usbhid-ups"
+"HP"	"ups"	"3"	"R/T 2200 G2"	""	"usbhid-ups"
+"HP"	"ups"	"3"	"R/T3000"	"USB port"	"usbhid-ups"
+"HP"	"ups"	"3"	"R5000 / R7000"	"USB port"	"usbhid-ups"
+"HP"	"ups"	"4"	"Various (SNMP mode)"	"HP UPS Management Module "	"snmp-ups"
 "HP"	"pdu"	"1"	"HP3488 Switch/Control Unit"	""	"powerman-pdu (experimental)"
 
 "IBM"	"pdu"	"1"	"Blade Center Management Module"	"15 outlets"	"powerman-pdu (experimental)"
@@ -303,7 +380,8 @@
 
 "Inform"	"ups"	"1"	"GUARD"	"Line Interactive AP model"	"powercom"
 "Inform"	"ups"	"2"	"Guard S 1500AP"	""	"blazer_ser"
-"Inform"	"ups"	"2"	"Informer Compact 1000VA"	""	"blazer_ser"
+"Inform"	"ups"	"2"	"Informer Compact 1000-2000-3000 VA"	""	"blazer_ser"
+"Inform"	"ups"	"2"	"Sinus SS 210"	""	"blazer_ser"
 
 "Infosec"	"ups"	"2"	"iPEL 350"	""	"blazer_ser"
 "Infosec"	"ups"	"2"	"iPEL 500"	""	"blazer_ser"
@@ -312,6 +390,8 @@
 "Infosec"	"ups"	"2"	"500XP"	""	"blazer_ser"
 "Infosec"	"ups"	"2"	"XP 500"	"USB"	"blazer_usb"
 "Infosec"	"ups"	"2"	"XP 1000"	""	"blazer_ser"
+
+"IPAR"	"ups"	"2"	"Mini Energy ME 800"	""	"blazer_usb"
 
 "IPMI"	"pdu"	"1"	""	""	"powerman-pdu (experimental)"
 
@@ -325,6 +405,7 @@
 "Ippon"	"ups"	"2"	"Smart Winner 750/1000/1500/2000/3000"	"USB"	"blazer_usb (experimental)"
 "Ippon"	"ups"	"2"	"(various)"	""	"blazer_ser"
 "Ippon"	"ups"	"2"	"(various)"	"USB"	"blazer_usb"
+"Ippon"	"ups"	"2"	"INNOVA RT 1K/1.5K/2K/3K"	""	"blazer_usb"
 
 "IVT"	"scd"	"1"	"SCD series"	""	"ivtscd"
 
@@ -332,10 +413,19 @@
 
 "Kebo"	"ups"	"2"	"1200D/D Series"	""	"blazer_ser"
 
+"KOLFF"	"ups"	"2"	"BLACK NOVA 1K/2K/3K/6K/10K/20K TOWER"	""	"blazer_usb"
+"KOLFF"	"ups"	"2"	"BLACK NOVA 1K/2K/3K/6K/10K/20K XL TOWER"	""	"blazer_usb"
+"KOLFF"	"ups"	"2"	"BLACK NOVA 1K/1.5K/2K/3K/6K/10K RACK"	""	"blazer_usb"
+"KOLFF"	"ups"	"2"	"BLACK NOVA 1K/1.5K/2K/3K/6K/10K XL RACK"	""	"blazer_usb"
+
 "Krauler"	"ups"	"2"	"UP-D1200VA"	"USB"	"blazer_usb"
 "Krauler"	"ups"	"2"	"UP-M500VA"	"USB"	"blazer_usb"
 
+"LDLC"	"ups"	"2"	"UPS-1200D"	""	"blazer_usb langid_fix=0x4095"
+
 "Lestar"	"ups"	"2"	"MD-800E"	""	"blazer_ser"
+
+"Lexis"	"ups"	"2"	"X-Power Tigra 1kVA"	""	"blazer_ser or bestups"
 
 "Liebert"	"ups"	"2"	"ITON 600VA"	""	"blazer_ser"
 "Liebert"	"ups"	"5"	"UPStation GXT2"	"contact-closure cable"	"liebert"
@@ -514,7 +604,6 @@
 "MGE UPS SYSTEMS"	"ups"	"5"	"various models (XML/HTTP mode)"	"NMC Minislot (Ref 66102)"	"netxml-ups (experimental)"
 "MGE UPS SYSTEMS"	"ups"	"5"	"various models (SNMP mode)"	"NMC Minislot (Ref 66102)"	"snmp-ups (experimental)"
 "MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar (XML/HTTP mode)"	"SNMP/Web Minislot card (ref 66244)"	"netxml-ups (experimental)"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar (XML/HTTP mode)"	"SNMP/Web Minislot card (ref 66244)"	"netxml-ups (experimental)"
 "MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar (SNMP mode)"	"SNMP/Web Minislot card (ref 66244)"	"snmp-ups (experimental)"
 "MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar / Comet / Galaxy (SNMP)"	"SNMP card (ref 66062)"	"snmp-ups (experimental)"
 "MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar (SNMP)"	"SNMP card (ref 66045)"	"snmp-ups (experimental)"
@@ -537,6 +626,11 @@
 "MicroDowell"	"ups"	"5"	"Enterprise N60"	""	"microdowell"
 "MicroDowell"	"ups"	"5"	"Enterprise HiBox ST"	""	"microdowell"
 
+"Microline"	"ups"	"2"	"C-Lion Innova RT 2K/3K"	""	"blazer_usb"
+"Microline"	"ups"	"2"	"C-Lion Innova RT 6K/10K (Parallel)"	""	"blazer_usb"
+"Microline"	"ups"	"2"	"C-Lion Innova Tower 6K/10K"	""	"blazer_usb"
+"Microline"	"ups"	"2"	"C-Lion Innova Combo 10K/20K (3/1)"	""	"blazer_usb"
+
 "Microsol"	"ups"	"4"	"Solis 1.0"	"1000VA"	"solis"
 "Microsol"	"ups"	"4"	"Solis 1.5"	"1500VA"	"solis"
 "Microsol"	"ups"	"4"	"Solis 2.0"	"2000VA"	"solis"
@@ -554,6 +648,7 @@
 "Mustek"	"ups"	"2"	"Powermust"	"2000VA USB"	"blazer_ser"
 "Mustek"	"ups"	"2"	"Powermust Office 650"	"USB"	"blazer_usb"
 "Mustek"	"ups"	"2"	"PowerMust 424 / 636 / 848"	"USB"	"blazer_usb"
+"Mustek"	"ups"	"2"	"Yukai PowerMust" "1000 USB (PID: 5161)"	"blazer_usb"
 "Mustek"	"ups"	"2"	"Various"	""	"blazer_ser"
 
 "Neus"	"ups"	"2"	"400va / 600va"	""	"blazer_ser"
@@ -561,6 +656,8 @@
 "Nitram"	"ups"	"1"	"Elite 500"	""	"genericups upstype=8"
 "Nitram"	"ups"	"1"	"Elite 2002"	""	"genericups upstype=16"
 "Nitram"	"ups"	"1"	"Elite 2005"	""	"powerpanel"
+
+"NUMERIC"	"ups"	"2"	"3000 SW"	""	"blazer_ser"
 
 "Oneac"	"ups"	"1"	"ON400"	"advanced interface"	"oneac"
 "Oneac"	"ups"	"1"	"ON600"	"advanced interface"	"oneac"
@@ -581,13 +678,16 @@
 "Oneac"	"ups"	"1"	"ON2000XIU"	"advanced interface"	"oneac"
 
 "Online"	"ups"	"1"	"P-Series"	""	"genericups upstype=14"
+"Online"	"ups"	"2"	"Zinto A"	""	"blazer_usb"
 "Online"	"ups"	"1"	"Zinto D"	""	"optiups"
+"Online"	"ups"	"2"	"Yunto YQ450"	""	"blazer_usb"
 
 "OnLite"	"ups"	"2"	"AQUA"	"50"	"blazer_ser"
 
 "Opti-UPS"	"ups"	"1"	"PowerES"	"420E"	"optiups"
 
 "Orvaldi Power Protection"	"ups"	"2"	"various"	"not 400 or 600"	"blazer_ser"
+"Orvaldi Power Protection"	"ups"	"2"	"750 / 900SP"	""	"blazer_usb"
 
 "Phasak"	"ups"	"2"	"400VA / 600VA"	""	"blazer_ser"
 
@@ -611,6 +711,9 @@
 "Powercom"	"ups"	"5"	"WOW"	"USB (2009 models, product id: 00a4)"	"usbhid-ups (experimental)"
 "Powercom"	"ups"	"4"	"(various)"	"USB (<= 2009 models, product id: 0002)"	"powercom (requires 'usbserial' kernel module)"
 "Powercom"	"ups"	"5"	"(various)"	"USB (2009 models, product id: 00a?)"	"usbhid-ups (experimental)"
+"Powercom"	"ups"	"5"	"BNT-xxxAP"	"USB (product id: 0004)"	"usbhid-ups (experimental)"
+
+"POWEREX"	"ups"	"2"	"VI 1000 LED"	""	"blazer_usb"
 
 "PowerGuard"	"ups"	"2"	"PG-600"	""	"blazer_ser"
 
@@ -621,13 +724,21 @@
 "PowerMan"	"ups"	"2"	"RealSmart 1000"	""	"blazer_ser"
 "PowerMan"	"ups"	"1"	"BackPro"	""	"genericups upstype=4"
 
+"PowerShield"	"ups"	"2"	"Defender 1200VA"	""	"blazer_usb"
+
 "PowerTech"	"ups"	"1"	"Comp1000"	"DTR cable power"	"genericups upstype=3"
 "PowerTech"	"ups"	"2"	"SMK-800"	""	"blazer_ser"
 
 "PowerWalker"	"ups"	"2"	"Line-Interactive VI 1000"	""	"blazer_ser"
 "PowerWalker"	"ups"	"2"	"Line-Interactive VI 400/800"	""	"blazer_ser"
 "PowerWalker"	"ups"	"2"	"Line-Interactive VI 600"	""	"blazer_ser"
+"PowerWalker"	"ups"	"2"	"Line-Interactive VI 600 SE"	""	"blazer_usb"
+"PowerWalker"	"ups"	"2"	"Line-Interactive VI 800 SE"	""	"blazer_usb"
 "PowerWalker"	"ups"	"2"	"Line-Interactive VI 1400"	""	"blazer_usb"
+"PowerWalker"	"ups"	"2"	"Line-Interactive VI 2000"	""	"blazer_usb"
+"PowerWalker"	"ups"	"2"	"Line-Interactive VI 850 LCD"	""	"blazer_usb"
+"PowerWalker"	"ups"	"2"	"Online VFI 1000RT/1500RT/2000RT/3000RT/6000RT/10000RT LCD"	""	"blazer_usb"
+"PowerWalker"	"ups"	"2"	"Line-Interactive VI 1000RT/1500RT/2000RT/3000RT LCD"	""	"blazer_usb"
 
 "Powerware"	"ups"	"4"	"3110"	""	"genericups upstype=7"
 "Powerware"	"ups"	"4"	"3115"	""	"genericups upstype=11"
@@ -658,27 +769,34 @@
 "Raritan"	"pdu"	"3"	"Metered PDU - Raritan PM"	"no report, but should be supported"	"snmp-ups (experimental)"
 "Raritan"	"pdu"	"3"	"Switched PDU - Raritan RPC"	"no report, but should be supported"	"snmp-ups (experimental)"
 
+"REDi"	"ups"	"2"	"Blazer 400VA / 600VA / 800VA"	""	"blazer_ser"
+
 "Repotec"	"ups"	"1"	"RPF525/625/800/1000"	""	"safenet"
 "Repotec"	"ups"	"1"	"RPT-800A"	""	"genericups upstype=13"
 "Repotec"	"ups"	"1"	"RPT-162A"	""	"genericups upstype=13"
 
-"Rocketfish"	"ups"	"2"	"RF-1000VA / RF-1025VA"	""	"usbhid-ups" 
+"Riello"	"ups"	"3"	"Riello Sentinel SDL 6000-7"	"Netman Plus 102 SNMP Card"	"snmp-ups"
+"Riello"	"ups"	"3"	"Riello Sentinel Dual SDH 1000-7"	"Netman Plus 102 SNMP Card"	"snmp-ups"
+"Riello"	"ups"	"3"	"(various)"	"Netman Plus 102 SNMP Card"	"snmp-ups"
+
+"Rocketfish"	"ups"	"2"	"RF-1000VA / RF-1025VA"	""	"usbhid-ups"
 
 "SmartLabs"	"pdu"	"1"	"2412S Power Line Modem"	"for X10/Insteon"	"powerman-pdu (experimental)"
 
 "SMS (Brazil)"	"ups"	"2"	"Manager III"	""	"blazer_ser"
 
 "SOLA"	"ups"	"1"	"305"	"cable INT-0025C"	"genericups upstype=7"
-"SOLA"	"ups"	"1"	"325"	""	"bestups"
-"SOLA"	"ups"	"1"	"520"	""	"bestups"
-"SOLA"	"ups"	"1"	"610"	"use ID= in ups.conf"	"bestups"
-"SOLA"	"ups"	"1"	"620"	""	"bestups"
+"SOLA"	"ups"	"1"	"325"	""	"blazer_ser or bestups"
+"SOLA"	"ups"	"1"	"520"	""	"blazer_ser or bestups"
+"SOLA"	"ups"	"1"	"610"	"use ID= in ups.conf"	"blazer_ser or bestups"
+"SOLA"	"ups"	"1"	"620"	""	"blazer_ser or bestups"
 "SOLA"	"ups"	"4"	"330"	""	"blazer_ser"
 
 "SOLA/BASIC Mexico"	"ups"	"1"	"various"	"ISBMEX protocol"	"isbmex"
 
-"Socomec"	"ups"	"2"	"NeTYS-PE 600VA"	""	"blazer_ser"
+"Socomec Sicon"	"ups"	"2"	"NeTYS-PE 600VA"	""	"blazer_ser"
 "Socomec Sicon"	"ups"	"1"	"Egys"	"420 VA"	"powercom"
+"Socomec Sicon"	"ups"	"3"	"MASTERYS 3/3 SYSTEM 60 kVA"	"Net Vision v5.05 SNMP card"	"snmp-ups (experimental)"
 "Socomec Sicon"	"ups"	"3"	"Netvision"	"UPS equipped with Netvision WEB/SNMP card/external box"	"snmp-ups (experimental)"
 
 "Soltec"	"ups"	"1"	"Winmate 525/625/800/1000"	""	"safenet"
@@ -692,8 +810,10 @@
 
 "SuperPower"	"ups"	"2"	"HP360, Hope-550"	""	"blazer_ser"
 
-"SVEN"	"ups"	"2"	"Power Pro+ series"	"USB"	"blazer_usb"
-"SVEN"	"ups"	"2"	"Power Smart RM 2000"	"USB"	"blazer_usb"
+"SVEN"	"ups"	"2"	"Power Pro+ series"	"USB"	"blazer_usb (USB ID ffff:0000)"
+"SVEN"	"ups"	"2"	"Power Pro+ series"	"USB"	"blazer_usb (USB ID 05b8:0000)"
+"SVEN"	"ups"	"1"	"Power Pro+ series"	"USB"	"richcomm_usb (USB ID 0925:1234)"
+"SVEN"	"ups"	"2"	"Power Smart RM 2000"	"USB"	"blazer_usb (USB ID 05b8:0000)"
 
 "Sweex"	"ups"	"1"	"500/1000"	"smart - shipped with SafeNet"	"safenet"
 "Sweex"	"ups"	"1"	"500/1000"	""	"genericups upstype=7"
@@ -703,6 +823,7 @@
 "Sysgration"	"ups"	"2"	"UPGUARDS Pro650"	""	"blazer_ser"
 
 "Tecnoware"	"ups"	"2"	"Easy Power 1200"	""	"blazer_ser"
+"Tecnoware"	"ups"	"2"	"UPS ERA LCD 0.65"	""	"blazer_usb langid_fix=0x409"
 
 "Tripp-Lite"	"ups"	"1"	"INTERNETOFFICE700"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"ups"	"2"	"OMNIVS1000"	"USB"	"tripplite_usb"
@@ -710,6 +831,7 @@
 "Tripp-Lite"	"ups"	"1"	"SMART700USB"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"ups"	"1"	"SMART1500RM2U"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"ups"	"1"	"SMART550USB"	"USB"	"tripplite_usb"
+"Tripp-Lite"	"ups"	"1"	"OMNISMART500"	"USB"	"tripplite_usb"
 "Tripp-Lite"	"ups"	"1"	"SMART2200RMXL2U"	"USB, older models"	"tripplite_usb (experimental)"
 "Tripp-Lite"	"ups"	"1"	"SmartUPS"	""	"tripplite"
 "Tripp-Lite"	"ups"	"1"	"SmartOnline"	""	"tripplitesu"
@@ -722,6 +844,8 @@
 "Tripp-Lite"	"ups"	"2"	"AVR750U"	"USB"	"usbhid-ups"
 "Tripp-Lite"	"ups"	"2"	"ECO550UPS"	"USB"	"usbhid-ups"
 "Tripp-Lite"	"ups"	"2"	"SmartOnline SU1500RTXL2ua"	"USB"	"usbhid-ups"
+"Tripp-Lite"	"ups"	"2"	"Smart1000LCD"	"USB"	"usbhid-ups"
+"Tripp-Lite"	"ups"	"2"	"Smart1500LCD"	"USB"	"usbhid-ups"
 "Tripp-Lite"	"ups"	"2"	"smart2200RMXL2U"	"USB, newer models"	"usbhid-ups"
 
 "Trust"	"ups"	"2"	"UPS 1000 Management PW-4105"	""	"blazer_ser"
@@ -745,15 +869,24 @@
 "Various"	"ups"	"4"	"(various)"	"SEC protocol"	"gamatronic"
 "Various"	"ups"	"1"	"(various)"	"Generic RUPS model"	"genericups upstype=4"
 "Various"	"ups"	"1"	"(various)"	"Generic RUPS 2000 (Megatec M2501 cable)"	"genericups upstype=21"
-"Various"	"ups"	"2"	"(various)"	"Q1 / Megatec protocol"	"blazer_ser"
-"Various"	"ups"	"2"	"(various)"	"PhoenixTec protocol"	"bestups"
+"Various"	"ups"	"2"	"(various serial)"	"Q1 / Megatec protocol"	"blazer_ser"
+"Various"	"ups"	"2"	"(various USB)"	"Q1 / Megatec protocol"	"blazer_usb"
+"Various"	"ups"	"2"	"(various)"	"PhoenixTec protocol"	"blazer_ser or bestups"
 "Various"	"ups"	"3"	"(various)"	"SNMP - RFC 1628"	"snmp-ups (experimental)"
 "Various"	"ups"	"1"	"(various)"	"Safenet software"	"safenet"
+"Various"	"ups"	"2"	"(Various USB)"	"UPSilon 2000 software"	"blazer_usb langid_fix=0x409"
+"Various"	"ups"	"2"	"(Various serial)"	"WinPower software"	"blazer_ser"
+"Various"	"ups"	"2"	"(Various USB)"	"WinPower software"	"blazer_usb"
+"Various"	"ups"	"2"	"Various Innova T"	"(USB ID 06da:0201)"	"blazer_ser or blazer_usb"
+"Various"	"ups"	"2"	"Various Innova RT"	"(USB ID 06da:0005)"	"blazer_ser or blazer_usb"
+"Various"	"ups"	"2"	"Various Innova 3/1 T"	"(USB ID 06da:0004)"	"blazer_ser or blazer_usb"
 
 "Victron/IMV"	"ups"	"1"	"(various)"	""	"victronups"
 "Victron/IMV"	"ups"	"1"	"Lite"	"crack cable"	"genericups upstype=10"
 
 "Viewsonic"	"ups"	"1"	"PowerES"	"420E"	"optiups"
+
+"Vivaldi"	"ups"	"1"	"EA200 LED"	"USB"	"richcomm_usb"
 
 "WinPower"	"ups"	"2"	"CPM-800"	""	"blazer_ser"
 

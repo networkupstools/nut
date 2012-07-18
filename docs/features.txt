@@ -235,5 +235,4 @@ The other systems are Slaves of UPS 2.
 Image credits
 -------------
 
-Thanks to Luc Descotils and Arnaud Quette at Eaton for providing shiny
-cleaned-up graphics.
+Thanks to Eaton for providing shiny modern graphics.

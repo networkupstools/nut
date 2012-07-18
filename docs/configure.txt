@@ -28,6 +28,22 @@ Note that you need to install libsnmp development package or files.
 Build and install the XML drivers (default: auto-detect)
 Note that you need to install neon development package or files.
 
+	--with-powerman
+
+Build and install Powerman PDU client driver (default: auto-detect)
+This allows to interact with the Powerman daemon, and the numerous
+Power Distribution Units (PDU) supported by the project.
+Note that you need to install powerman development package or files.
+
+	--with-ipmi
+	--with-freeipmi
+
+Build and install IPMI PSU driver (default: auto-detect)
+This allows to monitor numerous Power Supply Units (PSU) found
+on servers.
+Note that you need to install freeipmi (0.8.5 or higher) development package or
+files.
+
 	--with-drivers=<driver>,<driver>,...
 
 Specify exactly which driver or drivers to build and install (this
@@ -48,16 +64,6 @@ If you need to build more drivers later on, you will need to rerun
 configure with a different list. To make it build all of the
 drivers from scratch again, run 'make clean' before starting.
 
-	--with-doc=<output-format(s)>  (default: no)
-
-Build and install NUT documentation file(s).
-The possible values are "html-single" for single page HTML, "html-chunked"
-for multi pages HTML, "pdf" for a PDF file or "auto" to build all the
-possible previous documentation formats.
-Verbose output can be enabled using: ASCIIDOC_VERBOSE=-v make
-
-This feature requires AsciiDoc 8.6.3 (http://www.methods.co.nz/asciidoc).
-
 
 Optional features
 -----------------
@@ -69,14 +75,24 @@ CGI configuration files. This is not enabled by default, as they
 are only useful on web servers. See data/html/README for additional
 information on how to set up CGI programs.
 
+	--with-doc=<output-format(s)>  (default: no)
+
+Build and install NUT documentation file(s).
+The possible values are "html-single" for single page HTML, "html-chunked"
+for multi pages HTML, "pdf" for a PDF file or "auto" to build all the
+possible previous documentation formats.
+Verbose output can be enabled using: ASCIIDOC_VERBOSE=-v make
+
+This feature requires AsciiDoc 8.6.3 (http://www.methods.co.nz/asciidoc).
+
 	--with-lib (default: no)
 
 Build and install the upsclient library and header files. 
 
 	--with-all (no default)
 
-Build and install all of the above (the serial, USB, and SNMP
-drivers, the CGI programs and HTML files, and the upsclient
+Build and install all of the above (the serial, USB, SNMP, XML/HTTP and
+PowerMan drivers, the CGI programs and HTML files, and the upsclient
 library).
 
     --with-ssl (default: auto-detect)
@@ -103,13 +119,16 @@ If you own a USB unit, only protect your local system and run the
 Gnome or KDE desktop, this will enable a full Plug & Play usage.
 See docs/nut-hal.txt for additional information on how to set up
 and use HAL support.
- 
-	--with-powerman  (default: auto-detect)
 
-Build and install Powerman PDU client driver.
-This allows to interact with the Powerman daemon, and the numerous
-Power Distribution Units (PDU) supported by the project.
+	--with-avahi (default: auto-detect)
 
+Build and install Avahi support, to publish NUT server availability
+using mDNS protocol.
+
+	--with-libltdl (default: auto-detect)
+
+Enable libltdl (Libtool dlopen abstraction) support.
+This is required to build nut-scanner.
 
 Other configuration options
 ---------------------------

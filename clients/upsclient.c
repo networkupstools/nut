@@ -30,6 +30,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <fcntl.h>
 
 #include "upsclient.h"
 #include "common.h"
@@ -278,6 +279,11 @@ int upscli_init(int certverify, const char *certpath,
 {
 #ifdef WITH_OPENSSL
 	int ret, ssl_mode = SSL_VERIFY_NONE;
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+	const SSL_METHOD	*ssl_method;
+#else
+	SSL_METHOD	*ssl_method;
+#endif
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 	SECStatus	status;
 #endif /* WITH_OPENSSL | WITH_NSS */
@@ -293,7 +299,13 @@ int upscli_init(int certverify, const char *certpath,
 	SSL_library_init();
 	SSL_load_error_strings();
 
-	ssl_ctx = SSL_CTX_new(TLSv1_client_method());
+	ssl_method = TLSv1_client_method();
+
+	if (!ssl_method) {
+		return 0;
+	}
+
+	ssl_ctx = SSL_CTX_new(ssl_method);
 	if (!ssl_ctx) {
 		upslogx(LOG_ERR, "Can not initialize SSL context");
 		return -1;
@@ -539,6 +551,7 @@ static int net_read(UPSCONN_t *ups, char *buf, size_t buflen)
 {
 	int	ret;
 
+#ifdef HAVE_SSL
 	if (ups->ssl) {
 #ifdef WITH_OPENSSL
 		ret = SSL_read(ups->ssl, buf, buflen);
@@ -552,6 +565,7 @@ static int net_read(UPSCONN_t *ups, char *buf, size_t buflen)
 
 		return ret;
 	}
+#endif
 
 	ret = upscli_select_read(ups->fd, buf, buflen, 5, 0);
 
@@ -598,6 +612,7 @@ static int net_write(UPSCONN_t *ups, const char *buf, size_t buflen)
 {
 	int	ret;
 
+#ifdef HAVE_SSL
 	if (ups->ssl) {
 #ifdef WITH_OPENSSL
 		ret = SSL_write(ups->ssl, buf, buflen);
@@ -611,6 +626,7 @@ static int net_write(UPSCONN_t *ups, const char *buf, size_t buflen)
 
 		return ret;
 	}
+#endif
 
 	ret = upscli_select_write(ups->fd, buf, buflen, 0, 0);
 
@@ -809,14 +825,17 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 
 #endif /* WITH_SSL */
 
-
-int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
+int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,struct timeval * timeout)
 {
 	int				sock_fd;
 	struct addrinfo	hints, *res, *ai;
 	char			sport[NI_MAXSERV];
 	int				v, certverify, tryssl, forcessl, ret;
 	HOST_CERT_t*	hostcert;
+	fd_set 			wfds;
+	int			error;
+	socklen_t		error_size;
+	long			fd_flags;
 
 	if (!ups) {
 		return -1;
@@ -884,7 +903,37 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 			continue;
 		}
 
+		/* non blocking connect */
+		if(timeout != NULL) {
+			fd_flags = fcntl(sock_fd, F_GETFL);
+			fd_flags |= O_NONBLOCK;
+			fcntl(sock_fd, F_SETFL, fd_flags);
+		}
+
 		while ((v = connect(sock_fd, ai->ai_addr, ai->ai_addrlen)) < 0) {
+			if(errno == EINPROGRESS) {
+				FD_ZERO(&wfds);
+				FD_SET(sock_fd, &wfds);
+				select(sock_fd+1,NULL,&wfds,NULL,
+						timeout);
+				if (FD_ISSET(sock_fd, &wfds)) {
+					error_size = sizeof(error);
+					getsockopt(sock_fd,SOL_SOCKET,SO_ERROR,
+							&error,&error_size);
+					if( error == 0) {
+						/* connect successful */
+						v = 0;
+						break;
+					}
+					errno = error;
+				}
+				else {
+					/* Timeout */
+					v = -1;
+					break;
+				}
+			}
+
 			switch (errno)
 			{
 			case EAFNOSUPPORT:
@@ -902,6 +951,13 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 		if (v < 0) {
 			close(sock_fd);
 			continue;
+		}
+
+		/* switch back to blocking operation */
+		if(timeout != NULL) {
+			fd_flags = fcntl(sock_fd, F_GETFL);
+			fd_flags &= ~O_NONBLOCK;
+			fcntl(sock_fd, F_SETFL, fd_flags);
 		}
 
 		ups->fd = sock_fd;
@@ -969,6 +1025,11 @@ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 	}
 	
 	return 0;
+}
+
+int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
+{
+	return upscli_tryconnect(ups,host,port,flags,NULL);
 }
 
 /* map upsd error strings back to upsclient internal numbers */

@@ -258,6 +258,11 @@ static int main_arg(char *var, char *val)
 		return 1;	/* handled */
 	}
 
+	if (!strcmp(var, "ignorelb")) {
+		dstate_setinfo("driver.flag.ignorelb", "enabled");
+		return 1;	/* handled */
+	}
+
 	/* any other flags are for the driver code */
 	if (!val)
 		return 0;
@@ -353,7 +358,6 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 	}
 
 	/* everything else must be for the driver */
-
 	storeval(var, val);
 }
 
@@ -551,10 +555,6 @@ int main(int argc, char **argv)
 			"Error: you must specify a port name in ups.conf. Try -h for help.");
 	}
 
-	pidfn = xmalloc(SMALLBUF);
-
-	snprintf(pidfn, SMALLBUF, "%s/%s-%s.pid", altpidpath(), progname, upsname);
-
 	upsdebugx(1, "debug level is '%d'", nut_debug_level);
 
 	new_uid = get_user_pwent(user);
@@ -569,7 +569,39 @@ int main(int argc, char **argv)
 	if ((!do_forceshutdown) && (chdir(dflt_statepath())))
 		fatal_with_errno(EXIT_FAILURE, "Can't chdir to %s", dflt_statepath());
 
-	setup_signals();
+	/* Setup signals to communicate with driver once backgrounded. */
+	if ((nut_debug_level == 0) && (!do_forceshutdown)) {
+		char	buffer[SMALLBUF];
+
+		setup_signals();
+
+		snprintf(buffer, sizeof(buffer), "%s/%s-%s.pid", altpidpath(), progname, upsname);
+
+		/* Try to prevent that driver is started multiple times. If a PID file */
+		/* already exists, send a TERM signal to the process and try if it goes */
+		/* away. If not, retry a couple of times. */
+		for (i = 0; i < 3; i++) {
+			struct stat	st;
+
+			if (stat(buffer, &st) != 0) {
+				/* PID file not found */
+				break;
+			}
+
+			if (sendsignalfn(buffer, SIGTERM) != 0) {
+				/* Can't send signal to PID, assume invalid file */
+				break;
+			}
+
+			upslogx(LOG_WARNING, "Duplicate driver instance detected! Terminating other driver!");
+
+			/* Allow driver some time to quit */
+			sleep(5);
+		}
+
+		pidfn = xstrdup(buffer);
+		writepid(pidfn);	/* before backgrounding */
+	}
 
 	/* clear out callback handler data */
 	memset(&upsh, '\0', sizeof(upsh));
@@ -591,7 +623,7 @@ int main(int argc, char **argv)
 	 * when its a pdu! */
 	dstate_setinfo("device.type", "ups");
 
-	/* publish the top-level data: version number, driver name */
+	/* publish the top-level data: version numbers, driver name */
 	dstate_setinfo("driver.version", "%s", UPS_VERSION);
 	dstate_setinfo("driver.version.internal", "%s", upsdrv_info.version);
 	dstate_setinfo("driver.name", "%s", progname);
@@ -599,6 +631,28 @@ int main(int argc, char **argv)
 	/* get the base data established before allowing connections */
 	upsdrv_initinfo();
 	upsdrv_updateinfo();
+
+	if (dstate_getinfo("driver.flag.ignorelb")) {
+		int	have_lb_method = 0;
+
+		if (dstate_getinfo("battery.charge") && dstate_getinfo("battery.charge.low")) {
+			upslogx(LOG_INFO, "using 'battery.charge' to set battery low state");
+			have_lb_method++;
+		}
+
+		if (dstate_getinfo("battery.runtime") && dstate_getinfo("battery.runtime.low")) {
+			upslogx(LOG_INFO, "using 'battery.runtime' to set battery low state");
+			have_lb_method++;
+		}
+
+		if (!have_lb_method) {
+			fatalx(EXIT_FAILURE,
+				"The 'ignorelb' flag is set, but there is no way to determine the\n"
+				"battery state of charge.\n\n"
+				"Only set this flag if both 'battery.charge' and 'battery.charge.low'\n"
+				"and/or 'battery.runtime' and 'battery.runtime.low' are available.\n");
+		}
+	}
 
 	/* now we can start servicing requests */
 	dstate_init(progname, upsname);
@@ -616,7 +670,7 @@ int main(int argc, char **argv)
 
 	if (nut_debug_level == 0) {
 		background();
-		writepid(pidfn);
+		writepid(pidfn);	/* PID changes when backgrounding */
 	}
 
 	while (!exit_flag) {

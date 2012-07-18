@@ -71,6 +71,7 @@ const char *upscli_strerror(UPSCONN_t *ups);
 int upscli_init(int certverify, const char *certpath, const char *certname, const char *certpasswd);
 int upscli_cleanup();
 
+int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags, struct timeval *tv);
 int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags);
 
 void upscli_add_host_cert(const char* hostname, const char* certname, int certverify, int forcessl);

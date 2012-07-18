@@ -23,7 +23,7 @@ UPS that is RFC 1628 (UPS MIB) compliant, e.g. MGE UPS SYSTEMS, Liebert, perhaps
 MGE UPS SYSTEMS and MGE Office Protection Systems devices with SNMP cards (ref 66062, 66045, 66074 and 66244)
 
 *apcc*::
-APC AP9606 APC Web/SNMP management card, perhaps others
+APC AP9605, AP9606, AP9617, and AP9618 APC network management cards, as well as any others supporting the APC POWERNET MIB
 
 *netvision*::
 Socomec Sicon UPS with Netvision Web/SNMP management card/external box
@@ -45,6 +45,9 @@ Various BayTech PDUs
 
 *cpqpower*::
 HP/Compaq AF401A management card, perhaps others
+
+*cyberpower*::
+Cyberpower RMCARD201. Should also support RMCARD100 (net version), RMCARD202 and RMCARD301
 
 EXTRA ARGUMENTS
 ---------------

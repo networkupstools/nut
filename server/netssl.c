@@ -149,7 +149,7 @@ static int ssl_error(PRFileDesc *ssl, int ret)
 static SECStatus AuthCertificate(CERTCertDBHandle *arg, PRFileDesc *fd,
 	PRBool checksig, PRBool isServer)
 {
-	ctype_t *client  = (ctype_t *)SSL_RevealPinArg(fd);
+	nut_ctype_t *client  = (nut_ctype_t *)SSL_RevealPinArg(fd);
 	SECStatus status = SSL_AuthCertificate(arg, fd, checksig, isServer);
 	upslogx(LOG_INFO, "Intend to authenticate client %s : %s.",
 		client?client->addr:"(unnamed)",
@@ -157,7 +157,7 @@ static SECStatus AuthCertificate(CERTCertDBHandle *arg, PRFileDesc *fd,
 	return status;
 }
 
-static SECStatus BadCertHandler(ctype_t *arg, PRFileDesc *fd)
+static SECStatus BadCertHandler(nut_ctype_t *arg, PRFileDesc *fd)
 {
 	upslogx(LOG_WARNING, "Certificate validation failed for %s",
 		(arg&&arg->addr)?arg->addr:"<unnamed>");
@@ -173,7 +173,7 @@ static SECStatus BadCertHandler(ctype_t *arg, PRFileDesc *fd)
 #endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
 }
 
-static void HandshakeCallback(PRFileDesc *fd, ctype_t *client_data)
+static void HandshakeCallback(PRFileDesc *fd, nut_ctype_t *client_data)
 {
 	upslogx(LOG_INFO, "SSL handshake done successfully with client %s",
 		client_data->addr);
@@ -353,7 +353,7 @@ void ssl_cleanup(void)
 }
 
 
-void net_starttls(ctype_t *client, int numarg, const char **arg)
+void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
 {
 #ifdef WITH_OPENSSL
 	int ret;
@@ -503,7 +503,7 @@ void net_starttls(ctype_t *client, int numarg, const char **arg)
 	client->ssl_connected = 1;
 }
 
-void ssl_finish(ctype_t *client)
+void ssl_finish(nut_ctype_t *client)
 {
 	if (client->ssl) {
 #ifdef WITH_OPENSSL
@@ -517,7 +517,7 @@ void ssl_finish(ctype_t *client)
 	}
 }
 
-int ssl_read(ctype_t *client, char *buf, size_t buflen)
+int ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 {
 	int	ret;
 
@@ -539,7 +539,7 @@ int ssl_read(ctype_t *client, char *buf, size_t buflen)
 	return ret;
 }
 
-int ssl_write(ctype_t *client, const char *buf, size_t buflen)
+int ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
 {
 	int	ret;
 
@@ -569,26 +569,26 @@ void ssl_cleanup(void)
 {
 }
 
-void net_starttls(ctype_t *client, int numarg, const char **arg)
+void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
 {
 	send_err(client, NUT_ERR_FEATURE_NOT_SUPPORTED);
 	return;
 }
 
-void ssl_finish(ctype_t *client)
+void ssl_finish(nut_ctype_t *client)
 {
 	if (client->ssl) {
 		upslogx(LOG_ERR, "ssl_finish found active SSL connection but SSL wasn't compiled in");
 	}
 }
 
-int ssl_write(ctype_t *client, const char *buf, size_t buflen)
+int ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
 {
 	upslogx(LOG_ERR, "ssl_write called but SSL wasn't compiled in");
 	return -1;
 }
 
-int ssl_read(ctype_t *client, char *buf, size_t buflen)
+int ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 {
 	upslogx(LOG_ERR, "ssl_read called but SSL wasn't compiled in");
 	return -1;

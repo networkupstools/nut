@@ -247,8 +247,7 @@ void sec_poll ( int pollflag ) {
 
 void upsdrv_initinfo(void)
 {
-
-    int msglen, e, v;
+    int msglen, v;
     char *a,*p,avail_list[300];
  
     /* find out which variables/commands this UPS supports */
@@ -264,7 +263,6 @@ void upsdrv_initinfo(void)
     if (strlen(avail_list) == 0){
      fatalx(EXIT_FAILURE, "No available variables found!");}
     a = avail_list;
-    e = 0;
    while ((p = strtok(a, ",")) != NULL) {  
     a = NULL;
     v = atoi(p);

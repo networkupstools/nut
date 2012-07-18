@@ -66,6 +66,11 @@ have with a driver to a developer/maintainer, before sending them debugging
 output.  More often than not, if you just pick a level, the output may be
 either too limited or too verbose to be of any use.
 
+*-q*::
+Raise log level threshold.  Use this multiple times to log more details.
++
+The debugging comment above also applies here.
+ 
 *-i* 'interval'::
 Set the poll interval for the device.
 

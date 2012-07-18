@@ -1,0 +1,4 @@
+# This file is generated and installed by the Network UPS Tools package.
+# It sets the correct device permissions for nut-ipmipsu driver.
+
+KERNEL=="ipmi*", MODE="664", GROUP="@RUN_AS_GROUP@"

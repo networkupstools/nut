@@ -1,6 +1,8 @@
 /* upsmon - monitor power status over the 'net (talks to upsd via TCP)
 
-   Copyright (C) 1998  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+     1998  Russell Kroll <rkroll@exploits.org>
+     2012  Arnaud Quette <arnaud.quette.free.fr>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -80,12 +82,6 @@ static int 	opt_af = AF_UNSPEC;
 	/* signal handling things */
 static	struct sigaction sa;
 static	sigset_t nut_upsmon_sigmask;
-
-#ifdef SHUT_RDWR
-#define	shutdown_how SHUT_RDWR
-#else
-#define	shutdown_how 2
-#endif
 
 static void setflag(int *val, int flag)
 {
@@ -698,7 +694,7 @@ static void recalc(void)
 			}
 
 		/* note: we assume that a UPS that isn't critical must be OK *
-		 *							     *
+		 *                                                           *
 		 * this means a UPS we've never heard from is assumed OL     *
 		 * whether this is really the best thing to do is undecided  */
 
@@ -711,12 +707,12 @@ static void recalc(void)
 		ups = ups->next;
 	}
 
-	/* upsdebugx(3, "Current power value: %d", val_ol);
-	upsdebugx(3, "Minimum power value: %d", minsupplies); */
+	upsdebugx(3, "Current power value: %d", val_ol);
+	upsdebugx(3, "Minimum power value: %d", minsupplies);
 
 	if (val_ol < minsupplies)
 		forceshutdown();
-}		
+}
 
 static void ups_low_batt(utype_t *ups)
 {
@@ -794,10 +790,7 @@ static void redefine_ups(utype_t *ups, int pv, const char *un,
 
 			free(ups->un);
 
-			if (un)
-				ups->un = xstrdup(un);
-			else
-				ups->un = NULL;
+			ups->un = xstrdup(un);
 
 			/* 
 			 * if not logged in force a reconnection since this
@@ -956,7 +949,7 @@ static void addups(int reloading, const char *sys, const char *pvs,
 	else
 		upslogx(LOG_INFO, "UPS: %s (monitoring only)", tmp->sys);
 
-	tmp->upsname = tmp->hostname = NULL;	
+	tmp->upsname = tmp->hostname = NULL;
 
 	if (upscli_splitname(tmp->sys, &tmp->upsname, &tmp->hostname, 
 		&tmp->port) != 0) {
@@ -1931,6 +1924,15 @@ int main(int argc, char *argv[])
 		exit(EXIT_SUCCESS);
 	}
 
+	/* otherwise, we are being asked to start.
+	 * so check if a previous instance is running by sending signal '0'
+	 * (Ie 'kill <pid> 0') */
+	if (sendsignal(prog, 0) == 0) {
+		printf("Fatal error: A previous upsmon instance is already running!\n");
+		printf("Either stop the previous instance first, or use the 'reload' command.\n");
+		exit(EXIT_FAILURE);
+	}
+
 	argc -= optind;
 	argv += optind;
 
@@ -1947,6 +1949,8 @@ int main(int argc, char *argv[])
 	/* we may need to get rid of a flag from a previous shutdown */
 	if (powerdownflag != NULL)
 		clear_pdflag();
+	/* FIXME (else): POWERDOWNFLAG is not defined!!
+	 * => fallback to a default value */
 
 	if (totalpv < minsupplies) {
 		printf("\nFatal error: insufficient power configured!\n\n");

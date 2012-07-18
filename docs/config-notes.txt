@@ -10,7 +10,11 @@ package.  You should check out the <<Overview,NUT Overview>>
 and other accompanying documentation to see how it all works.
 
 NOTE: NUT does not currently provide proper graphical configuration tools.
-However, there is now support for linkdoc:developer-guide[Augeas,augeas_user].
+However, there is now support for linkdoc:developer-guide[Augeas,augeas_user],
+which will enable the easier creation of configuration tools.
+Moreover, linkman:nut-scanner[8] is available to discover supported devices
+(USB, SNMP, Eaton XML/HTTP and IPMI) and NUT servers (using Avahi or the classic
+connection method).
 
 Details about the configuration files
 -------------------------------------
@@ -41,29 +45,48 @@ configuration directive for some reason.  You can do that too.
 
 	NOTIFYCMD "/bin/notifyme -foo -bar \"hi there\" -baz"
 
-In other words, \ can be used to escape the ".
+In other words, *\* can be used to escape the *"*.
 
-Finally, for the situation where you need to put the \ character into your
+Finally, for the situation where you need to put the *\* character into your
 string, you just escape it.
 
 	NOTIFYCMD "/bin/notifyme c:\\dos\\style\\path"
 
-The \ can actually be used to escape any character, but you only really
-need it for \, ", and # as they have special meanings to the parser.
+The *\* can actually be used to escape any character, but you only really
+need it for *\*, *"*, and *#* as they have special meanings to the parser.
 
-# is the comment character.  Anything after an unescaped # is ignored.
+When using file names with space characters, you may end up having tricky
+things since you need to write them inside *""* which must be escaped:
+
+	NOTIFYCMD "\"c:\\path with space\\notifyme\" \"c:\\path with space\\name\""
+
+*#* is the comment character.  Anything after an unescaped *#* is ignored.
 
 Something like this...
 
 	identity = my#1ups
 
-... will actually turn into "identity = my", since the # stops the 
-parsing. If you really need to have a # in your configuration, then
+... will actually turn into "identity = my", since the *#* stops the 
+parsing. If you really need to have a *#* in your configuration, then
 escape it.
 
 	identity = my\#1ups
 
 Much better.
+
+The *=* character should be used with care too. There should be only one
+"simple" *=* character in a line: between the parameter name and its value.
+All other *=* characters should be either escaped or whithin "quotes".
+
+	password = 123=123
+
+ ... is incorrect. You should use:
+
+	password = 123\=123
+
+ ... or :
+
+	password = "123=123"
 
 Line spanning
 ~~~~~~~~~~~~~
@@ -72,7 +95,7 @@ You can put a backslash at the end of the line to join it to the next
 one.  This creates one virtual line that is composed of more than one
 physical line.
 
-Also, if you leave the "" quote container open before a newline, it will
+Also, if you leave the *""* quote container open before a newline, it will
 keep scanning until it reaches another one.  If you see bizarre behavior
 in your configuration files, check for an unintentional instance of
 quotes spanning multiple lines.
@@ -241,7 +264,7 @@ You should see just one line in response:
 	OL
 
 OL means your system is running on line power.  If it says something
-else (like OB - on battery, or LB - low battery), your driver was 
+else (like OB - on battery, or LB - low battery), your driver was
 probably misconfigured during the <<Driver_configuration, Driver configuration>>
 step.  If you reconfigure the driver, use 'upsdrvctl stop' to stop it, then
 start it again as shown in the <<Starting_drivers, Starting driver(s)>> step.
@@ -339,7 +362,15 @@ Here are the steps that occur when a critical power event happens:
 
 1. The UPS goes on battery
 
-2. The UPS reaches low battery (a "critical" UPS)
+2. The UPS reaches low battery (a "critical" UPS), that is to say
+   upsc displays:
++
+   ups.status: OB LB
++
+The exact behavior depends on the specific device, and is related to:
+
+   - battery.charge and battery.charge.low
+   - battery.runtime and battery.runtime.low
 
 3. The upsmon master notices and sets "FSD" - the "forced shutdown"
    flag to tell all slave systems that it will soon power down the load.
@@ -567,9 +598,10 @@ Testing shutdowns
 ^^^^^^^^^^^^^^^^^
 
 UPS equipment varies from manufacturer to manufacturer and even within
-model lines.  You should test the shutdown sequence on your systems before
-leaving them unattended.  A successful sequence is one where the OS halts
-before the battery runs out, and the system restarts when power returns.
+model lines.  You should test the <<Shutdown_design,shutdown sequence>>
+on your systems before leaving them unattended.  A successful sequence
+is one where the OS halts before the battery runs out, and the system
+restarts when power returns.
 
 The first step is to see how upsdrvctl will behave without actually turning off
 power. To do so, use the '-t' argument:

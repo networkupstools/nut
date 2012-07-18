@@ -41,7 +41,7 @@
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
 
 #define SHUT_DRIVER_NAME	"SHUT communication driver"
-#define SHUT_DRIVER_VERSION	"0.82"
+#define SHUT_DRIVER_VERSION	"0.83"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -610,7 +610,7 @@ void setline(int upsfd, int set)
 int shut_synchronise(int upsfd)
 {
 	int retCode = 0;
-	u_char c = SHUT_SYNC, reply;
+	u_char c = SHUT_SYNC_OFF, reply;
 	int try;
 		
 	upsdebugx (2, "entering shut_synchronise()");
@@ -678,7 +678,8 @@ int shut_packet_recv(int upsfd, u_char *Buf, int datalen)
 	u_short  Pos=0;
 	u_char   Retry=0;
 	int recv;
-	shut_data_t   sdata;
+	/* FIXME: use this
+	 * shut_data_t   sdata; */
 	
 	upsdebugx (4, "entering shut_packet_recv (%i)", datalen);
 	
@@ -687,10 +688,16 @@ int shut_packet_recv(int upsfd, u_char *Buf, int datalen)
 		/* if(serial_read (SHUT_TIMEOUT, &Start[0]) > 0) */
 		if(ser_get_char(upsfd, &Start[0], SHUT_TIMEOUT/1000, 0) > 0)
 		{
-			sdata.shut_pkt.bType = Start[0];
+			/* sdata.shut_pkt.bType = Start[0]; */
 			if(Start[0]==SHUT_SYNC)
 			{
 				upsdebugx (4, "received SYNC token");
+				memcpy(Buf, Start, 1);
+				return 1;
+			}
+			else if(Start[0]==SHUT_SYNC_OFF)
+			{
+				upsdebugx (4, "received SYNC_OFF token");
 				memcpy(Buf, Start, 1);
 				return 1;
 			}
@@ -702,7 +709,13 @@ int shut_packet_recv(int upsfd, u_char *Buf, int datalen)
 				{
 					upsdebug_hex(4, "Receive", Start, 2);
 					Size=Start[1]&0x0F;
-					sdata.shut_pkt.bLength = Size;
+					if( Size > 8 ) {
+						upsdebugx (4, "shut_packet_recv: invalid frame size = %d", Size);
+						ser_send_char(upsfd, SHUT_NOK);
+						Retry++;
+						break;
+					}
+					/* sdata.shut_pkt.bLength = Size; */
 					for(recv=0;recv<Size;recv++)
 					{
 						/* if(serial_read (SHUT_TIMEOUT, &Frame[recv]) < 1) */
@@ -721,13 +734,15 @@ int shut_packet_recv(int upsfd, u_char *Buf, int datalen)
 						Buf+=Size;
 						Pos+=Size;
 						Retry=0;
-					
+
 						ser_send_char(upsfd, SHUT_OK);
 						/* shut_token_send(SHUT_OK); */
 
-						if(Start[0]&SHUT_PKT_LAST)
+						/* Check if there are more data to receive */
+						if((Start[0] & 0xf0) == SHUT_PKT_LAST)
 						{
-							if ((Start[0]&SHUT_PKT_LAST) == SHUT_TYPE_NOTIFY)
+							/* Check if it's a notification */
+							if ((Start[0] & 0x0f) == SHUT_TYPE_NOTIFY)
 							{
 								/* TODO: process notification (dropped for now) */
 								upsdebugx (4, "=> notification");
@@ -735,7 +750,7 @@ int shut_packet_recv(int upsfd, u_char *Buf, int datalen)
 								Pos=0;
 							}
 							else
-						                return Pos;
+								return Pos;
 						}
 						else
 							upsdebugx (4, "need more data (%i)!", datalen);
@@ -875,8 +890,10 @@ int shut_control_msg(int upsfd, int requesttype, int request,
 				upsdebug_hex(4, "data", bytes, data_size);
 			}
 		}
-		else
-			data_size = (size >= 8) ? 8 : remaining_size;
+		else {
+			/* Always 8 bytes payload for GET_REPORT with SHUT */
+			data_size = 8;
+		}
 		
 		/* Forge the SHUT Frame */
 		shut_pkt[0] = SHUT_TYPE_REQUEST + ( ((requesttype == REQUEST_TYPE_SET_REPORT) && (remaining_size>8))? 0 : SHUT_PKT_LAST);
@@ -969,7 +986,7 @@ int shut_wait_ack(int upsfd)
 		upsdebugx (2, "shut_wait_ack(): NACK received");
 		retCode = -2;
 	}
-	else if ((c & SHUT_PKT_LAST) == SHUT_TYPE_NOTIFY)
+	else if ((c & 0x0f) == SHUT_TYPE_NOTIFY)
 	{
 		upsdebugx (2, "shut_wait_ack(): NOTIFY received");
 		retCode = -3;

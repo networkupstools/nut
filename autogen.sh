@@ -6,7 +6,7 @@
 # re-generate files needed by configure, and created otherwise at 'dist' time
 if [ ! -f scripts/augeas/nutupsconf.aug.in ]
 then
-	if python -c pass; then
+	if python -c "import re,glob,codecs"; then
 		echo "Regenerating Augeas ups.conf lens..."
 		cd scripts/augeas && ./gen-nutupsconf-aug.py && cd ../..
 	else

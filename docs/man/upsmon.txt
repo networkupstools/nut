@@ -13,7 +13,7 @@ SYNOPSIS
 
 *upsmon* -c 'command'
 
-*upsmon* [-D] [-p] [-u 'user']
+*upsmon* [-D] [-K] [-p] [-u 'user']
 
 DESCRIPTION
 -----------
@@ -25,7 +25,7 @@ power events.
 
 upsmon can monitor multiple systems using a single process.  Every UPS
 that is defined in the linkman:upsmon.conf[5] configuration file is assigned
-a power value and a type (slave or master).  
+a power value and a type (*slave* or *master*).
 
 OPTIONS
 -------

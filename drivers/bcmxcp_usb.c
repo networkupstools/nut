@@ -12,7 +12,7 @@
 #include <usb.h>
 
 #define SUBDRIVER_NAME	"USB communication subdriver"
-#define SUBDRIVER_VERSION	"0.18"
+#define SUBDRIVER_VERSION	"0.21"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -22,6 +22,8 @@ upsdrv_info_t comm_upsdrv_info = {
 	0,
 	{ NULL }
 };
+
+#define MAX_TRY 4
 
 /* Powerware */
 #define POWERWARE	0x0592
@@ -95,29 +97,35 @@ static	unsigned int	comm_failures = 0;
 /* Functions implementations */
 void send_read_command(unsigned char command)
 {
-        unsigned char buf[4];
+	unsigned char buf[4];
 
-	buf[0] = PW_COMMAND_START_BYTE;
-	buf[1] = 0x01;                    /* data length */
-	buf[2] = command;                 /* command to send */
-	buf[3] = calc_checksum(buf);      /* checksum */
-	usb_set_descriptor(upsdev, USB_DT_STRING, 4, buf, 4); /* FIXME: Ignore error */
+	if (upsdev) {
+		buf[0] = PW_COMMAND_START_BYTE;
+		buf[1] = 0x01;                    /* data length */
+		buf[2] = command;                 /* command to send */
+		buf[3] = calc_checksum(buf);      /* checksum */
+		upsdebug_hex (3, "send_read_command", buf, 4);
+		usb_set_descriptor(upsdev, USB_DT_STRING, 4, buf, 4); /* FIXME: Ignore error */
+	}
 }
 
 void send_write_command(unsigned char *command, int command_length)
 {
 	unsigned char sbuf[128];
 
-	/* Prepare the send buffer */
-	sbuf[0] = PW_COMMAND_START_BYTE;
-	sbuf[1] = (unsigned char)(command_length);
-	memcpy(sbuf+2, command, command_length);
-	command_length += 2;
+	if (upsdev) {
+		/* Prepare the send buffer */
+		sbuf[0] = PW_COMMAND_START_BYTE;
+		sbuf[1] = (unsigned char)(command_length);
+		memcpy(sbuf+2, command, command_length);
+		command_length += 2;
 
-	/* Add checksum */
-	sbuf[command_length] = calc_checksum(sbuf);
-	command_length += 1;
-	usb_set_descriptor(upsdev, USB_DT_STRING, 4, sbuf, command_length);  /* FIXME: Ignore error */
+		/* Add checksum */
+		sbuf[command_length] = calc_checksum(sbuf);
+		command_length += 1;
+		upsdebug_hex (3, "send_write_command", sbuf, command_length);
+		usb_set_descriptor(upsdev, USB_DT_STRING, 4, sbuf, command_length);  /* FIXME: Ignore error */
+	}
 }
 
 /* get the answer of a command from the ups. And check that the answer is for this command */
@@ -127,6 +135,9 @@ int get_answer(unsigned char *data, unsigned char command)
 	int length, end_length, res, endblock, bytes_read, ellapsed_time;
 	unsigned char block_number, sequence, seq_num;
 	struct timeval start_time, now;
+
+	if (upsdev == NULL)
+		return -1;
 
 	length = 1;			/* non zero to enter the read loop */
 	end_length = 0;		/* total length of sequence(s), not counting header(s) */
@@ -160,7 +171,7 @@ int get_answer(unsigned char *data, unsigned char command)
 			{
 				/* Clear any possible endpoint stalls */
 				usb_clear_halt(upsdev, 0x81);
-				//continue; // FIXME: seems a break would be better!
+				/* continue; */ /* FIXME: seems a break would be better! */
 				break;
 			}
 
@@ -257,7 +268,8 @@ int get_answer(unsigned char *data, unsigned char command)
 		end_length += length;
 		my_buf += length + 5;
 	}
-	upsdebugx(4, "get_answer: exiting (len=%d)", end_length);
+
+	upsdebug_hex (5, "get_answer", data, end_length);
 	return end_length;
 }
 
@@ -287,10 +299,11 @@ int command_write_sequence(unsigned char *command, int command_length, unsigned	
 {
 	int bytes_read = 0;
 	int retry = 0;
-	
+
 	while ((bytes_read < 1) && (retry < 5)) {
 		send_write_command(command, command_length);
-		bytes_read = get_answer(answer, command[0]);		
+		sleep(PW_SLEEP);
+		bytes_read = get_answer(answer, command[0]);
 		retry ++;
 	}
 
@@ -322,12 +335,10 @@ void upsdrv_cleanup(void)
 
 void upsdrv_reconnect(void)
 {
-	
 	upslogx(LOG_WARNING, "RECONNECT USB DEVICE\n");
 	nutusb_close(upsdev, "USB");
 	upsdev = NULL;
-	sleep(3);
-	upsdrv_initups();	
+	upsdrv_initups();
 }
 
 /* USB functions */
@@ -370,64 +381,72 @@ static usb_dev_handle *open_powerware_usb(void)
 
 usb_dev_handle *nutusb_open(const char *port)
 {
-	static int     libusb_init = 0;
 	int            dev_claimed = 0;
 	usb_dev_handle *dev_h = NULL;
-	int            retry;
-	
-	if (!libusb_init)
-	{
-		/* Initialize Libusb */
-		usb_init();
-		libusb_init = 1;
-		usb_find_busses();
-		usb_find_devices();
-	}
+	int            retry, errout = 0;
 
-	for (retry = 0; dev_h == NULL && retry < 32; retry++)
-	{
-		struct timespec t = {5, 0};
+	upsdebugx(1, "entering nutusb_open()");
 
+	/* Initialize Libusb */
+	usb_init();
+	usb_find_busses();
+	usb_find_devices();
+
+	for (retry = 0; retry < MAX_TRY ; retry++)
+	{
 		dev_h = open_powerware_usb();
 		if (!dev_h) {
-			upslogx(LOG_WARNING, "Can't open POWERWARE USB device, retrying ...");
-			if (nanosleep(&t, NULL) < 0 && errno == EINTR)
-				break;
+			upsdebugx(1, "Can't open POWERWARE USB device");
+			errout = 1;
+		}
+		else {
+			upsdebugx(1, "device %s opened successfully", usb_device(dev_h)->filename);
+			errout = 0;
+
+			if (usb_claim_interface(dev_h, 0) < 0)
+			{
+				upsdebugx(1, "Can't claim POWERWARE USB interface: %s", usb_strerror());
+				errout = 1;
+			}
+			else {
+				dev_claimed = 1;
+				errout = 0;
+			}
+/* FIXME: the above part of the opening can go into common... up to here at least */
+
+			if (usb_clear_halt(dev_h, 0x81) < 0)
+			{
+				upsdebugx(1, "Can't reset POWERWARE USB endpoint: %s", usb_strerror());
+				errout = 1;
+			}
+			else
+				errout = 0;
+		}
+
+		/* Test if we succeeded */
+		if ( (dev_h != NULL) && dev_claimed && (errout == 0) )
+			break;
+		else {
+			/* Clear errors, and try again */
+			errout = 0;
 		}
 	}
-	
-	if (!dev_h)
-	{
-		upslogx(LOG_ERR, "Can't open POWERWARE USB device");
-		goto errout;
-	}
+
+	if (!dev_h && !dev_claimed && retry == MAX_TRY)
+		errout = 1;
 	else
-		upsdebugx(1, "device %s opened successfully", usb_device(dev_h)->filename);
+		return dev_h;
 
-	if (usb_claim_interface(dev_h, 0) < 0)
-	{
-		upslogx(LOG_ERR, "Can't claim POWERWARE USB interface: %s", usb_strerror());
-		goto errout;
-	}
-	else
-		dev_claimed = 1;
-/* FIXME: this part of the opening can go into common... up to here at least */
-
-	if (usb_clear_halt(dev_h, 0x81) < 0)
-	{
-		upslogx(LOG_ERR, "Can't reset POWERWARE USB endpoint: %s", usb_strerror());
-		goto errout;
-	}
-	return dev_h;
-
-errout:
 	if (dev_h && dev_claimed)
 		usb_release_interface(dev_h, 0);
+
 	if (dev_h)
 		usb_close(dev_h);
 
-	nutusb_open_error(port);
-	return 0;
+	if (errout == 1)
+		nutusb_open_error(port);
+
+	return NULL;
 }
 
 /* FIXME: this part can go into common... */
@@ -463,14 +482,16 @@ void nutusb_comm_fail(const char *fmt, ...)
 
 	/* once it's past the limit, only log once every USB_ERR_LIMIT calls */
 	if ((comm_failures > USB_ERR_LIMIT) &&
-		((comm_failures % USB_ERR_LIMIT) != 0))
+		((comm_failures % USB_ERR_LIMIT) != 0)) {
+		/* Try reconnection */
+		upsdrv_reconnect();
 		return;
+	}
 
 	/* generic message if the caller hasn't elaborated */
 	if (!fmt)
 	{
-		upslogx(LOG_WARNING, "Communications with UPS lost"
-			" - check cabling");
+		upslogx(LOG_WARNING, "Communications with UPS lost - check cabling");
 		return;
 	}
 

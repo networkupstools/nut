@@ -1,0 +1,77 @@
+jNut library
+~~~~~~~~~~~~
+
+This directory contains source files for the jNut library,
+which is a Java abstraction bundle to access NUT server(s).
+You can use it in Java programs to access NUT's upsd data server in a simple
+way, without having to know the NUT protocol.
+
+jNut building requirements
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+jNut requires to be build :
+- A Java JDK 6 correctly set in environment (ie bin folder in path)
+- A Maven 3 installation set in environment (ie bin folder in path) with
+sufficient configuration (internet connection, local repository) to let maven
+get all plugins to make processes.
+
+jNut is written in Java SE 1.4 and is tuned to be compiled to Java 1.4 code
+level so most of environment can use it.
+
+jNut building
+^^^^^^^^^^^^^
+
+Once JDK and Maven installed and configured, just go into the jNut directory
+and type:
+
+	mvn install
+
+The produced package called 'jNut-x.x-xxx.jar' is located in 'target'
+subdirectory.
+
+jNut javadoc
+^^^^^^^^^^^^
+
+You can generate jNut javadoc by typing:
+
+	mvn javadoc:javadoc
+
+Documentation will be generated in 'target/site/apidocs' subdirectory and its
+entry point is located at 'target/site/apidocs/index.html'.
+
+Workspace cleaning
+^^^^^^^^^^^^^^^^^^
+
+The jNut workspace can be cleaned by removing the 'target' subdirectory or by
+typing:
+
+	mvn clean
+
+Unit test notes
+^^^^^^^^^^^^^^^
+
+jNut sources embed some unit tests in the 'src/test/java' subdirectory.
+These tests are based on JUnit and are executed between compilation and
+packaging phases at each build.
+
+Implementation notes
+^^^^^^^^^^^^^^^^^^^^
+
+Currently, jNut is not thread safe. It is not protected against concurrent
+queries but queries to different clients can be done in parallel as there are
+done on different sockets.
+
+Moreover, jNut have no connection preservation system so servers can break down
+connections due to timeout.
+Application using retrieved data must forget them when a disconnection occurs.
+If the application want to maintain the connection, it must implement a
+ping-pong mecanism itself.
+
+At present time, jNut do not support SSL connection. It is planned for near
+future.
+
+Changelog
+^^^^^^^^^
+* "0.2": Add nut-scanner.
+* "0.1": Initial version with basic dialog with UPSD.
+

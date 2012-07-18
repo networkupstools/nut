@@ -20,6 +20,8 @@
 #ifndef PARSECONF_H_SEEN
 #define PARSECONF_H_SEEN 1
 
+#include <stdio.h>
+
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 extern "C" {

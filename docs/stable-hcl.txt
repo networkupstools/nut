@@ -3,8 +3,15 @@ Hardware compatibility list
 ===========================
 endif::website[]
 
-NOTE: Before you buy, take a look at the link:acknowledgements.html[Acknowledgements]
-for information about which drivers are developed with the support of the manufacturer. 
+[NOTE]
+================================================================================
+
+Before you buy, take a look at the link:acknowledgements.html[Acknowledgements]
+for information about which drivers are developed with the support of the manufacturer.
+
+Be sure to also read the <<footnotes,footnotes>>.
+
+================================================================================
 
 ifdef::website[]
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -85,6 +92,7 @@ include::ups-html.txt[]
 
 endif::website[]
 
+[[footnotes]]
 [NOTE]
 ================================================================================
 
@@ -111,12 +119,25 @@ between the set of developers and the set of owners of that hardware.
 The way to fix it is to turn a developer into an owner or an owner into a
 developer.
 
-*Omissions or errors*
+*Report new devices, omissions or errors*
 
-There is a lot of UPS hardware for sale, and it's possible that we have missed
-listing some that are supported.
+There is a lot of power devices hardware for sale, and it's possible
+that we have missed listing some that are supported, or made an error.
 
-Please report any omissions so that this list can be as accurate as possible. 
+So that this list can be as accurate as possible, please report any
+omissions to the
+link:http://lists.alioth.debian.org/mailman/listinfo/nut-upsdev[NUT Developers]
+mailing list, including the following information:
+
+- mail subject: [HCL] <Manufacturer> <Device> supported by <driver>
+replacing Manufacturer, Device and driver by your specific values,
+- mail body:
+  - Device manufacturer and name,
+  - upsc output (upsrw and upscmd outputs are also welcome),
+  - link:docs/user-manual.chunked/ar01s06.html#Shutdown_design[shutdown sequence]
+testing results,
+  - a link to an online description is also appreciated.
+
 
 *Pointing the present HCL*
 
@@ -129,20 +150,21 @@ The form of the URL is the following:
 
 	http://www.networkupstools.org/stable-hcl.html?<filter-name>=<filter-value>
 
-.Possible values for <filter-name> and <filter-value>
-[cols="^,^",options="header"]
-|==========================================================================
-|       <filter-name>        | <filter-value>
-|       support-level        | a number from '1' to '5'
-.3+^.^| device-type          | 'ups' for uninterruptible power supply
-                             | 'pdu' for power distribution unit
-                             | 'scd' for solar controller device 
-|       manufacturer         | a manufacturer name from the selection list
-|       model                | a model name from the selection list
-.3+^.^| connection           | 'USB'
-                             | 'Serial'
-                             | 'Network'
-|==========================================================================
+.Possible values
+[options="header,autowidth",style="asciidoc",cols="<,<"]
+|===================================================================
+|<filter-name>        |<filter-value>
+|support-level        |a number from '1' to '5'
+|device-type          |- 'ups' for uninterruptible power supply
+                       - 'pdu' for power distribution unit
+                       - 'psu' for power supply unit
+                       - 'scd' for solar controller device 
+|manufacturer         |a manufacturer name from the selection list
+|model                |a model name from the selection list
+|connection           |- 'USB'
+                       - 'Serial'
+                       - 'Network'
+|===================================================================
 
 You can finally combine multiple filters, using ampersand (*&*).
 

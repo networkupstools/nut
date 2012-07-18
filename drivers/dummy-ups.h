@@ -1,7 +1,7 @@
 /* dummy-ups.h - NUT testing driver and repeater
 
    Copyright (C)
-       2005 - 2010  Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
+       2005 - 2012  Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,11 +18,15 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-/* This file list all valid data with their type and info.
- * this are then enable through a definition file, specified
+/* This file lists all valid data with their type and info.
+ * 
+ * These are then enabled through a definition file, specified
  * as the "port" parameter (only the file name, not the path).
+ *
  * The format of this file is the same as an upsc dump:
+ *
  * <varname>: <value>
+ *
  * FIXME: use cmdvartab for conformance checking
  * ...
  * Once the driver is loaded:
@@ -36,24 +40,31 @@
 /* Struct & data for ups.status processing                         */
 /* --------------------------------------------------------------- */
 
+#if 0  /* XXX status lookup table not currently used???? */
+/*
+ * Status lookup table type definition
+ */
 typedef struct {
-	const char	*status_str;	/* ups.status string */
-	int	status_value;	/* ups.status value */
+	const char  *status_str;    /* ups.status string */
+	int          status_value;  /* ups.status flag bit */
 } status_lkp_t;
 
-#define STATUS_CAL		1       /* calibration */
-#define STATUS_TRIM		2       /* SmartTrim */
-#define STATUS_BOOST	4       /* SmartBoost */
-#define STATUS_OL		8       /* on line */
-#define STATUS_OB		16      /* on battery */
-#define STATUS_OVER		32      /* overload */
-#define STATUS_LB		64      /* low battery */
-#define STATUS_RB		128     /* replace battery */
-#define STATUS_BYPASS	256		/* on bypass */
-#define STATUS_OFF		512		/* ups is off */
-#define STATUS_CHRG		1024	/* charging */
-#define STATUS_DISCHRG	2048	/* discharging */
+#define STATUS_CAL             (1 << 0)        /* calibration */
+#define STATUS_TRIM            (1 << 1)        /* SmartTrim */
+#define STATUS_BOOST           (1 << 2)        /* SmartBoost */
+#define STATUS_OL              (1 << 3)        /* on line */
+#define STATUS_OB              (1 << 4)        /* on battery */
+#define STATUS_OVER            (1 << 5)        /* overload */
+#define STATUS_LB              (1 << 6)        /* low battery */
+#define STATUS_RB              (1 << 7)        /* replace battery */
+#define STATUS_BYPASS          (1 << 8)        /* on bypass */
+#define STATUS_OFF             (1 << 9)        /* ups is off */
+#define STATUS_CHRG            (1 << 10)       /* charging */
+#define STATUS_DISCHRG         (1 << 11)       /* discharging */
 
+/*
+ * Status lookup table
+ */
 status_lkp_t status_info[] = {
   { "CAL", STATUS_CAL },
   { "TRIM", STATUS_TRIM },
@@ -69,7 +80,7 @@ status_lkp_t status_info[] = {
   { "DISCHRG", STATUS_DISCHRG },
   { "NULL", 0 },
 };
-/* from usbhid-ups.h */
+#endif /* 0 -- not currently used??? */
 
 typedef struct {
 	char	hid_value;	/* HID value */
@@ -96,7 +107,6 @@ typedef struct {
 /* data flags */
 #define DU_FLAG_NONE			0
 #define DU_FLAG_INIT			1		/* intialy show element to upsd */
-#define DU_TYPE_CMD			2		
 
 /* --------------------------------------------------------------- */
 /*  Data table (all possible info from NUT, then enable upon cong  */
@@ -166,16 +176,16 @@ battery.alarm.threshold
 battery.date
 battery.packs
 battery.packs.bad
-
-ambient.temperature
-ambient.temperature.alarm
-ambient.temperature.high
-ambient.temperature.low
-ambient.humidity
-ambient.humidity.alarm
-ambient.humidity.high
-ambient.humidity.low
-
+*/
+	{ "ambient.temperature", ST_FLAG_RW, 1, NULL, DU_FLAG_NONE, NULL },
+	{ "ambient.temperature.alarm", ST_FLAG_RW, 1, NULL, DU_FLAG_NONE, NULL },
+	{ "ambient.temperature.high", ST_FLAG_RW, 1, NULL, DU_FLAG_NONE, NULL },
+	{ "ambient.temperature.low", ST_FLAG_RW, 1, NULL, DU_FLAG_NONE, NULL },
+	{ "ambient.humidity", ST_FLAG_RW, 1, NULL, DU_FLAG_NONE, NULL },
+	{ "ambient.humidity.alarm", ST_FLAG_RW, 1, NULL, DU_FLAG_NONE, NULL },
+	{ "ambient.humidity.high", ST_FLAG_RW, 1, NULL, DU_FLAG_NONE, NULL },
+	{ "ambient.humidity.low", ST_FLAG_RW, 1, NULL, DU_FLAG_NONE, NULL },
+/*
 FIXME: how to manage these?
 outlet.n.id
 outlet.n.desc

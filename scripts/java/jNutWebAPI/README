@@ -1,0 +1,104 @@
+jNutWebAPI Web Application
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This directory contains source files for the jNutWebAPI web application,
+which is a Java web application (WAR) to access NUT server(s).
+You can deploy it in any web archive container (like tomcat) to access
+NUT's upsd data server in a simple way, without having to know the NUT
+protocol or manipulate nut-scanner if installed locally.
+
+jNutWebAPI building requirements
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+jNutWebAPI requires to be build :
+- A Java JDK 6 correctly set in environment (ie bin folder in path)
+- A Maven 3 installation set in environment (ie bin folder in path) with
+sufficient configuration (internet connection, local repository) to let maven
+get all plugins to make processes.
+- jNut built and installed in the local maven repository (see jNut README).
+
+jNutWebAPI is written in Java SE 6.
+
+jNutWebAPI building
+^^^^^^^^^^^^^^^^^^^
+
+Once JDK and Maven installed and configured, just go into the jNut directory
+and type:
+
+	mvn install
+
+The produced package called 'jNutWebAPI-xxx-SNAPSHOT.war' is located in
+'target' subdirectory.
+
+
+Workspace cleaning
+^^^^^^^^^^^^^^^^^^
+
+The jNutWebAPI workspace can be cleaned by removing the 'target' subdirectory
+or by typing:
+
+	mvn clean
+
+Deloyment and Web access
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following is dedicated to a local Apache Tomcat server listening on 8080
+port with managment access rights correctly set.
+
+You can deploy the jNutWebAPI in tomcat by uploading the war file throw the
+deploy section of the manager page accessed at http://localhost:8080/manager.
+Then you can access webapp at
+
+	http://localhost:8080/jNutWebAPI-0.2-SNAPSHOT/nut
+
+You have two parts :
+- UPSD communication with the subdirectory /servers
+- nut-scanner interface with the subdirectory /scan
+
+UPSD communication
+^^^^^^^^^^^^^^^^^^
+
+Accessed at http://localhost:8080/jNutWebAPI-0.2-SNAPSHOT/nut/servers and
+subpathes, you can query some data from upsd.
+'{host}', '{device}', '{variable}' represent host, device and variable names.
+Informations are report on the form of a valid JSON object or array.
+
+	.../nut/servers/{host}
+
+will query the device list registered in the UPSD of the specified host.
+
+	.../nut/servers/{host}/{device}
+
+will query the device description.
+
+	.../nut/servers/{host}/{device}/vars
+
+will query available variables of the specified device.
+
+	.../nut/servers/{host}/{device}/vars/{variable}
+
+will query the specified variable value.
+
+nut-scanner interface
+^^^^^^^^^^^^^^^^^^^^^
+
+Accessed at http://localhost:8080/jNutWebAPI-0.2-SNAPSHOT/nut/scan with some
+optionnal parameters, it basically access to a local nut-scanner executable
+(/usr/local/ups/bin/nut-scanner by default).
+
+It will return a list of succinct descriptors of devices with driver and port
+(in the nut sense).
+
+You can specify a start and end IP range by specifying parameters:
+
+	.../nut/scan?start=192.168.1.1&end=192.168.1.24
+
+or a CIDR mask:
+
+	.../nut/scan?mask=192.168.1.1/24
+
+Changelog
+^^^^^^^^^
+* "0.2": Add nut-scanner.
+* "0.1": Initial version with basic dialog with UPSD.
+

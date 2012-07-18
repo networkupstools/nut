@@ -75,6 +75,10 @@ for each OID request we made), instead of sending many small packets
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 
+/* Force numeric OIDs by disabling MIB loading */
+#define DISABLE_MIB_LOADING 1
+
+/* Parameters default values */
 #define DEFAULT_POLLFREQ	30		/* in seconds */
 
 /* use explicit booleans */
@@ -128,13 +132,18 @@ typedef struct {
 						 				 * disable the other providers */
 #define SU_FLAG_SETINT		(1 << 6)	/* save value */
 #define SU_OUTLET			(1 << 7)	/* outlet template definition */
+#define SU_CMD_OFFSET		(1 << 8)	/* Add +1 to the OID index */
 /* Notes on outlet templates usage:
  * - outlet.count MUST exist and MUST be declared before any outlet template
+ * Otherwise, the driver will try to determine it by itself...
  * - the first outlet template MUST NOT be a server side variable (ie MUST have
  *   a valid OID) in order to detect the base SNMP index (0 or 1)
  */
 
-/* status string components */
+/* status string components
+ * FIXME: these should be removed, since there is no added value.
+ * Ie, this can be guessed from info->type! */
+ 
 #define SU_STATUS_PWR		(0 << 8)	/* indicates power status element */
 #define SU_STATUS_BATT		(1 << 8)	/* indicates battery status element */
 #define SU_STATUS_CAL		(2 << 8)	/* indicates calibration status element */
@@ -167,7 +176,6 @@ typedef struct {
 #define SU_VAR_VERSION		"snmp_version"
 #define SU_VAR_MIBS			"mibs"
 #define SU_VAR_POLLFREQ		"pollfreq"
-#define SU_VAR_SDTYPE		"sdtype"
 /* SNMP v3 related parameters */
 #define SU_VAR_SECLEVEL		"secLevel"
 #define SU_VAR_SECNAME		"secName"
@@ -193,11 +201,13 @@ typedef struct {
 #define SU_ERR_RATE 100	/* only print every nth error once limiting starts */
 
 typedef struct {
-	const char *mib_name;
-	const char *mib_version;
-	const char *oid_pwr_status;
-	const char *oid_auto_check;
-	snmp_info_t *snmp_info; /* pointer to the good Snmp2Nut lookup data */
+	const char	*mib_name;
+	const char	*mib_version;
+	const char	*oid_pwr_status;
+	const char	*oid_auto_check;	/* FIXME: rename to SysOID */
+	snmp_info_t	*snmp_info;			/* pointer to the good Snmp2Nut lookup data */
+	const char	*sysOID;			/* OID to match against sysOID, aka MIB
+									 * main entry point */
 
 } mib2nut_info_t;
 
@@ -228,7 +238,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p);
 bool_t load_mib2nut(const char *mib);
 
 const char *su_find_infoval(info_lkp_t *oid2info, long value);
-long su_find_valinfo(info_lkp_t *oid2info, char* value);
+long su_find_valinfo(info_lkp_t *oid2info, const char* value);
 
 int su_setvar(const char *varname, const char *val);
 int su_instcmd(const char *cmdname, const char *extradata);
@@ -236,10 +246,10 @@ void su_shutdown_ups(void);
 
 void read_mibconf(char *mib);
 
-struct snmp_session g_snmp_sess, *g_snmp_sess_p;
-const char *OID_pwr_status;
-int g_pwr_battery;
-int pollfreq; /* polling frequency */
+extern struct snmp_session g_snmp_sess, *g_snmp_sess_p;
+extern const char *OID_pwr_status;
+extern int g_pwr_battery;
+extern int pollfreq; /* polling frequency */
 extern int input_phases, output_phases, bypass_phases;
 
 #endif /* SNMP_UPS_H */

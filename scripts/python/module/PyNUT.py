@@ -28,6 +28,13 @@
 # 2010-07-23 David Goncalves - Version 1.2
 #            Changed GetRWVars function that fails is the UPS is not
 #            providing such vars.
+#
+# 2011-07-05 René Martín Rodríguez <rmrodri@ull.es> - Version 1.2.1
+#            Added support for FSD, HELP and VER commands
+#
+# 2012-02-07 René Martín Rodríguez <rmrodri@ull.es> - Version 1.2.2
+#            Added support for LIST CLIENTS command
+#
 
 import telnetlib
 
@@ -42,8 +49,8 @@ class PyNUTClient :
     __timeout     = None
     __srv_handler = None
 
-    __version     = "1.2"
-    __release     = "2010-07-23"
+    __version     = "1.2.2"
+    __release     = "2012-02-07"
 
 
     def __init__( self, host="127.0.0.1", port=3493, login=None, password=None, debug=False, timeout=5 ) :
@@ -247,3 +254,78 @@ Returns OK on success or raises an error
             return( "OK" )
         else :
             raise Exception, result.replace( "\n", "" )
+
+    def FSD( self, ups="") :
+        """ Send FSD command
+
+Returns OK on success or raises an error
+        """
+
+        if self.__debug :
+            print( "[DEBUG] MASTER called..." )
+
+        self.__srv_handler.write( "MASTER %s\n" % ups )
+        result = self.__srv_handler.read_until( "\n" )
+        if ( result != "OK MASTER-GRANTED\n" ) :
+            raise Exception, ( "Master level function are not available", "" )
+
+        if self.__debug :
+            print( "[DEBUG] FSD called..." )
+        self.__srv_handler.write( "FSD %s\n" % ups )
+        result = self.__srv_handler.read_until( "\n" )
+        if ( result == "OK FSD-SET\n" ) :
+            return( "OK" )
+        else :
+            raise Exception, result.replace( "\n", "" )
+
+    def help(self) :
+        """ Send HELP command
+        """
+
+        if self.__debug :
+            print( "[DEBUG] HELP called..." )
+
+        self.__srv_handler.write( "HELP\n")
+        return self.__srv_handler.read_until( "\n" )
+
+    def ver(self) :
+        """ Send VER command
+        """
+
+        if self.__debug :
+            print( "[DEBUG] VER called..." )
+
+        self.__srv_handler.write( "VER\n")
+        return self.__srv_handler.read_until( "\n" )
+
+    def ListClients( self, ups = None ) :
+        """ Returns the list of connected clients from the NUT server
+
+The result is a dictionary containing 'key->val' pairs of 'UPSName' and a list of clients
+        """
+        if self.__debug :
+            print( "[DEBUG] ListClients from server" )
+
+        if ups and (ups not in self.GetUPSList()):
+            raise Exception, "%s is not a valid UPS" % ups
+
+        if ups:
+            self.__srv_handler.write( "LIST CLIENTS %s\n" % ups)
+        else:
+            self.__srv_handler.write( "LIST CLIENTS\n" )
+        result = self.__srv_handler.read_until( "\n" )
+        if result != "BEGIN LIST CLIENTS\n" :
+            raise Exception, result.replace( "\n", "" )
+
+        result = self.__srv_handler.read_until( "END LIST CLIENTS\n" )
+        ups_list = {}
+
+        for line in result.split( "\n" ):
+            if line[:6] == "CLIENT" :
+                host, ups = line[7:].split(' ')
+                ups.replace(' ', '')
+                if not ups in ups_list:
+                    ups_list[ups] = []
+                ups_list[ups].append(host)
+
+        return( ups_list )

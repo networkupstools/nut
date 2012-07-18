@@ -7,8 +7,9 @@
 #   during 'make dist'
 # - HTML files are built upon request, if AsciiDoc is available,
 # - groff update will only happen if AsciiDoc is available too,
-# - all this can probably (and hopefully) by improved, but I've not
-# found a way to do pattern replacement on the fly for target deps!
+# - all this can probably (and hopefully) be improved, but I've not
+#   found a way to do pattern replacement on the fly for target deps!
+#   FIXME: investigate an autogen.sh hook
 # - Ref: http://www.gnu.org/software/hello/manual/automake/Man-pages.html
 
 # Base configuration and client manpages, always installed
@@ -73,6 +74,13 @@ HTML_CLIENT_MANS = \
 	upsrw.html \
 	upssched.html
 
+SRC_TOOL_PAGES = nut-scanner.txt nut-recorder.txt
+
+MAN_TOOL_PAGES = nut-scanner.8 nut-recorder.8
+
+man8_MANS += $(MAN_TOOL_PAGES)
+
+HTML_TOOL_MANS = nut-scanner.html nut-recorder.html
 
 # CGI (--with-cgi) related manpages
 SRC_CGI_PAGES = \
@@ -127,6 +135,21 @@ SRC_DEV_PAGES = \
 	upscli_ssl.txt \
 	upscli_strerror.txt \
 	upscli_upserror.txt \
+	nutscan.txt \
+	nutscan_scan_snmp.txt \
+	nutscan_scan_usb.txt \
+	nutscan_scan_xml_http.txt \
+	nutscan_scan_nut.txt \
+	nutscan_scan_avahi.txt \
+	nutscan_scan_ipmi.txt \
+	nutscan_display_ups_conf.txt \
+	nutscan_display_parsable.txt \
+	nutscan_cidr_to_ip.txt \
+	nutscan_new_device.txt \
+	nutscan_free_device.txt \
+	nutscan_add_option_to_device.txt \
+	nutscan_add_device_to_device.txt \
+	nutscan_init.txt \
 	libupsclient-config.txt \
 	skel.txt
 
@@ -147,7 +170,22 @@ MAN3_DEV_PAGES = \
 	upscli_splitname.3 \
 	upscli_ssl.3 \
 	upscli_strerror.3 \
-	upscli_upserror.3
+	upscli_upserror.3 \
+	nutscan.3 \
+	nutscan_scan_snmp.3 \
+	nutscan_scan_usb.3 \
+	nutscan_scan_xml_http.3 \
+	nutscan_scan_nut.3 \
+	nutscan_scan_avahi.3 \
+	nutscan_scan_ipmi.3 \
+	nutscan_display_ups_conf.3 \
+	nutscan_display_parsable.3 \
+	nutscan_cidr_to_ip.3 \
+	nutscan_new_device.3 \
+	nutscan_free_device.3 \
+	nutscan_add_option_to_device.3 \
+	nutscan_add_device_to_device.3 \
+	nutscan_init.3
 
 MAN1_DEV_PAGES = \
 	libupsclient-config.1
@@ -179,6 +217,21 @@ HTML_DEV_MANS = \
 	upscli_ssl.html \
 	upscli_strerror.html \
 	upscli_upserror.html \
+	nutscan.html \
+	nutscan_scan_snmp.html \
+	nutscan_scan_usb.html \
+	nutscan_scan_xml_http.html \
+	nutscan_scan_nut.html \
+	nutscan_scan_avahi.html \
+	nutscan_scan_ipmi.html \
+	nutscan_display_ups_conf.html \
+	nutscan_display_parsable.html \
+	nutscan_cidr_to_ip.html \
+	nutscan_new_device.html \
+	nutscan_free_device.html \
+	nutscan_add_option_to_device.html \
+	nutscan_add_device_to_device.html \
+	nutscan_init.html \
 	libupsclient-config.html \
 	skel.html
 
@@ -194,6 +247,7 @@ else
 # (--with-serial)
 SRC_SERIAL_PAGES = \
 	apcsmart.txt	\
+	apcsmart-old.txt	\
 	bcmxcp.txt 	\
 	belkin.txt 	\
 	belkinunv.txt	\
@@ -231,6 +285,7 @@ SRC_SERIAL_PAGES = \
 
 MAN_SERIAL_PAGES = \
 	apcsmart.8	\
+	apcsmart-old.8	\
 	bcmxcp.8 	\
 	belkin.8 	\
 	belkinunv.8	\
@@ -272,6 +327,7 @@ endif
 
 HTML_SERIAL_MANS = \
 	apcsmart.html	\
+	apcsmart-old.html	\
 	bcmxcp.html 	\
 	belkin.html 	\
 	belkinunv.html	\
@@ -344,7 +400,7 @@ HTML_USB_LIBUSB_MANS = \
 SRC_NETXML_PAGES = netxml-ups.txt
 MAN_NETXML_PAGES = netxml-ups.8
 
-if WITH_NEONXML
+if WITH_NEON
    man8_MANS += $(MAN_NETXML_PAGES)
 endif
 
@@ -360,12 +416,23 @@ endif
 
 HTML_POWERMAN_MANS = powerman-pdu.html
 
+# (--with-ipmi)
+SRC_IPMIPSU_PAGES = nut-ipmipsu.txt
+MAN_IPMIPSU_PAGES = nut-ipmipsu.8
+
+if WITH_IPMI
+   man8_MANS += $(MAN_IPMIPSU_PAGES)
+endif
+
+HTML_IPMIPSU_MANS = nut-ipmipsu.html
+
 # SOME_DRIVERS
 endif
 
 MAN_MANS = \
 	$(MAN_CONF_PAGES) \
 	$(MAN_CLIENT_PAGES) \
+	$(MAN_TOOL_PAGES) \
 	$(MAN5_CGI_PAGES) \
 	$(MAN8_CGI_PAGES) \
 	$(MAN1_DEV_PAGES) \
@@ -374,13 +441,15 @@ MAN_MANS = \
 	$(MAN_SNMP_PAGES) \
 	$(MAN_USB_LIBUSB_PAGES) \
 	$(MAN_NETXML_PAGES) \
-	$(MAN_POWERMAN_PAGES)
+	$(MAN_POWERMAN_PAGES) \
+	$(MAN_IPMIPSU_PAGES)
 
 # distribute everything, even those not installed by default
 # Note that 'dist' target requires AsciiDoc!
 EXTRA_DIST = \
 	$(SRC_CONF_PAGES) \
 	$(SRC_CLIENT_PAGES) \
+	$(SRC_TOOL_PAGES) \
 	$(SRC_CGI_PAGES) \
 	$(SRC_DEV_PAGES) \
 	$(SRC_SERIAL_PAGES) \
@@ -388,18 +457,22 @@ EXTRA_DIST = \
 	$(SRC_USB_LIBUSB_PAGES) \
 	$(SRC_NETXML_PAGES) \
 	$(SRC_POWERMAN_PAGES) \
-	$(MAN_MANS)
+	$(SRC_IPMIPSU_PAGES) \
+	$(MAN_MANS) \
+	asciidoc.conf
 
 HTML_MANS = \
 	$(HTML_CONF_MANS) \
 	$(HTML_CLIENT_MANS) \
+	$(HTML_TOOL_MANS) \
 	$(HTML_CGI_MANS) \
 	$(HTML_DEV_MANS) \
 	$(HTML_SERIAL_MANS) \
 	$(HTML_SNMP_MANS) \
 	$(HTML_USB_LIBUSB_MANS) \
 	$(HTML_NETXML_MANS) \
-	$(HTML_POWERMAN_MANS)
+	$(HTML_POWERMAN_MANS) \
+	$(HTML_IPMIPSU_MANS)
 
 all:
 

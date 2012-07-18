@@ -29,6 +29,10 @@
  * http://powerquality.eaton.com/Support/Software-Drivers/Downloads/connectivity-firmware/bestpwr2.mib
  */
 
+/* TODO: find the right sysOID for this MIB
+ * #define BESTPOWER_SYSOID			".1.3.6.1.4.1.2947???"
+ */
+
 static info_lkp_t bestpower_power_status[] = {
 	{ 1, "OL" },
 	{ 2, "OB" },

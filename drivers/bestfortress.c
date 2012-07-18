@@ -33,8 +33,8 @@
 #define        inline  __inline
 #endif
 
-#define DRIVER_NAME             "Best Fortress UPS driver"
-#define DRIVER_VERSION  "0.02"
+#define DRIVER_NAME     "Best Fortress UPS driver"
+#define DRIVER_VERSION  "0.05"
 
 /* driver description structure */
 upsdrv_info_t   upsdrv_info = {
@@ -116,7 +116,7 @@ static int checksum (char * s)
 	int sum;
 	for (i = 40, sum = 0; s[0] && s[1] && i > 0; i--, s += 2) {
 		sum += (fromhex (s[0]) << 4) + fromhex (s[1]);
-	}
+	} 
 	return sum;
 }
 
@@ -201,22 +201,30 @@ void upsdrv_updateinfo(void)
 	char temp[256];
 	char *p;
 	int loadva;
-	int len;
+	int len, recv;
 	int retry;
-
+	char ch;
 	int checksum_ok, is_online=1, is_off, low_batt, trimming, boosting;
+
+	upsdebugx(1, "upsdrv_updateinfo");
 
 	for (retry = 0; retry < 5; ++retry) {
 		upsflushin (0, 0, "\r ");
 		upssend ("f\r");
+		while (ser_get_char(upsfd, &ch, 0, UPSDELAY) > 0 && ch != '\n'); /* response starts with \r\n */
+		temp[2] = 0;
 		do {
-			if (upsrecv (temp+2, sizeof temp - 2, ENDCHAR, IGNCHARS) <= 0) {
+			if ((recv = upsrecv (temp+2, sizeof temp - 2, ENDCHAR, IGNCHARS)) <= 0) {
 				upsflushin (0, 0, "\r ");
 				upssend ("f\r");
+				while (ser_get_char(upsfd, &ch, 0, UPSDELAY) > 0 && ch != '\n'); /* response starts with \r\n */
 			}
 		} while (temp[2] == 0);
 
-		/*syslog (LOG_DAEMON | LOG_NOTICE,"ups: got '%s'\n", p);*/
+		upsdebugx(1, "upsdrv_updateinfo: received %i bytes (try %i)", recv, retry);
+		upsdebug_hex(5, "buffer", temp, recv);
+
+		/* syslog (LOG_DAEMON | LOG_NOTICE,"ups: got %d chars '%s'\n", recv, temp + 2); */
 		/* status example:
 		   000000000001000000000000012201210000001200014500000280600000990025000000000301BE
 		   000000000001000000000000012401230000001200014800000280600000990025000000000301B7
@@ -248,6 +256,8 @@ void upsdrv_updateinfo(void)
 	}
 
 	if (!checksum_ok) {
+		upsdebugx(2, "checksum corruption");
+		upsdebug_hex(3, "buffer", temp, len);
 		dstate_datastale();
 		return;
 	}

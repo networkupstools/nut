@@ -23,17 +23,22 @@ Variables
 device: General unit information
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-NOTE: these data will be redundant with some ups.* information
+NOTE: some of these data will be redundant with ups.* information
 during a transition period. The ups.* data will then be removed.
 
 [options="header"]
-|========================================================================
-| Name           | Description                          | Example value
-| device.model   | Device model                         | BladeUPS
-| device.mfr     | Device manufacturer                  | Eaton
-| device.serial  | Device serial number (opaque string) | WS9643050926
-| device.type    | Device type (ups, pdu, scd)          | ups
-|========================================================================
+|====================================================================================
+| Name                | Description                                | Example value
+| device.model        | Device model                               | BladeUPS
+| device.mfr          | Device manufacturer                        | Eaton
+| device.serial       | Device serial number (opaque string)       | WS9643050926
+| device.type         | Device type (ups, pdu, scd, psu)           | ups
+| device.description  | Device description (opaque string)         | Some ups
+| device.contact      | Device administrator name (opaque string)  | John Doe
+| device.location     | Device physical location (opaque string)   | 1rst floor
+| device.part         | Device part number (opaque string)         | 123456789
+| device.macaddr      | Physical network address of the device     | 68:b5:99:f5:89:27 
+|=====================================================================================
 
 ups: General unit information
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -82,10 +87,15 @@ ups: General unit information
                           (seconds)                    | 1209600 (two weeks)
 | ups.test.result       | Results of last self test
                           (opaque string)              | Bad battery pack
+| ups.test.date         | Date of last self test
+                          (opaque string)              | 07/17/12
 | ups.display.language  | Language to use on front
                           panel (*** opaque)           | E
 | ups.contacts          | UPS external contact sensors
                           (*** opaque)                 | F0
+| ups.efficiency        | Efficiency of the UPS (ratio
+                          of the output current on the
+                          input current) (percent)     | 95
 | ups.power             | Current value of apparent
                           power (Volt-Amps)            | 500
 | ups.power.nominal     | Nominal value of apparent
@@ -107,6 +117,10 @@ ups: General unit information
                           (enabled or disabled)        | yes
 |===============================================================================
 
+NOTE: When present, the value of *ups.start.auto* has an impact on shutdown.*
+commands. For the sake of coherence, shutdown commands will set *ups.start.auto*
+to the right value before issuing the command. Ie, shutdown.stayoff will first
+set *ups.start.auto* to *no*, while shutdown.return will set it to *yes*.
 
 input: Incoming line/power information
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -237,17 +251,17 @@ Valid with/without context (ie. per phase or aggregated/averaged)
 | current               | Current (A)
 | current.maximum       | Maximum seen current (A)
 | current.minimum       | Minimum seen current (A)
-| peakcurrent           | Peak current
+| current.peak          | Peak current
 | voltage               | Voltage (V)
 | voltage.nominal       | Nominal voltage (V)
 | voltage.maximum       | Maximum seen voltage (V)
 | voltage.minimum       | Minimum seen voltage (V)
 | power                 | Apparent power (VA)
 | power.maximum         | Maximum seen apparent power (VA)
-| power.minimum         | Maximum seen apparent power (VA)
+| power.minimum         | Minimum seen apparent power (VA)
 | power.percent         | Percentage of apparent power related to maximum load
-| power.maximum.percent | Max seen percentage of apparent power
-| power.minimum.percent | Min seen percentage of apparent power
+| power.maximum.percent | Maximum seen percentage of apparent power
+| power.minimum.percent | Minimum seen percentage of apparent power
 | realpower             | Real power (W)
 | powerfactor           | Power Factor (dimensionless value between 0.00 and 1.00)
 | crestfactor           | Crest Factor (dimensionless value greater or equal to 1)
@@ -292,68 +306,80 @@ battery: Any battery details
 
 [options="header"]
 |===============================================================================
-| Name                    | Description                     | Example value
-| battery.charge          | Battery charge (percent)        | 100.0
+| Name                    | Description                         | Example value
+| battery.charge          | Battery charge (percent)            | 100.0
 | battery.charge.low      | Remaining battery level when
-                            UPS switches to LB (percent)    | 20
+                            UPS switches to LB (percent)        | 20
 | battery.charge.restart  | Minimum battery level for
-                            UPS restart after power-off     | 20
+                            UPS restart after power-off         | 20
 | battery.charge.warning  | Battery level when UPS switches
-                            to "Warning" state (percent)    | 50
-| battery.voltage         | Battery voltage (V)             | 24.84
-| battery.capacity        | Battery capacity (Ah)           | 7.2
-| battery.current         | Battery current (A)             | 1.19
-| battery.temperature     | Battery temperature (degrees C) | 050.7
-| battery.voltage.nominal | Nominal battery voltage (V)     | 024
-| battery.runtime         | Battery runtime (seconds)
-                            Remaining battery runtime       | 1080
-| battery.runtime.low     | when UPS switches to LB
-                            (seconds)                       | 180
-| battery.alarm.threshold | Battery alarm threshold         | 0 (immediate)
-| battery.date            | Battery change date (opaque
-                            string)                         | 11/14/00
+                            to "Warning" state (percent)        | 50
+| battery.voltage         | Battery voltage (V)                 | 24.84
+| battery.voltage.nominal | Nominal battery voltage (V)         | 024
+| battery.voltage.low     | Minimum battery voltage, that
+                            triggers FSD status                 | 21,52
+| battery.voltage.high    | Maximum battery voltage
+                            (Ie battery.charge = 100)           | 26,9
+| battery.capacity        | Battery capacity (Ah)               | 7.2
+| battery.current         | Battery current (A)                 | 1.19
+| battery.current.total   | Total battery current (A)           | 1.19
+| battery.temperature     | Battery temperature (degrees C)     | 050.7
+| battery.runtime         | Battery runtime (seconds)           | 1080
+| battery.runtime.low     | Remaining battery runtime when
+                            UPS switches to LB (seconds)        | 180
+| battery.runtime.restart | Minimum battery runtime for UPS
+                            restart after power-off (seconds)   | 120
+| battery.alarm.threshold | Battery alarm threshold             | 0 (immediate)
+| battery.date            | Battery change date (opaque string) | 11/14/00
 | battery.mfr.date        | Battery manufacturing date 
-                            (opaque string)                 | 2005/04/02
-| battery.packs           | Number of battery packs         | 001
-| battery.packs.bad       | Number of bad battery packs     | 000
+                            (opaque string)                     | 2005/04/02
+| battery.packs           | Number of battery packs             | 001
+| battery.packs.bad       | Number of bad battery packs         | 000
 | battery.type            | Battery chemistry (opaque
-                            (opaque string)                 | PbAc
+                            string)                             | PbAc
 | battery.protection      | Prevent deep discharge of
-                            battery                         | yes
+                            battery                             | yes
 | battery.energysave      | Switch off when running on
-                            battery and no/low load         | no
+                            battery and no/low load             | no
 |===============================================================================
 
 
 ambient: Conditions from external probe equipment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+NOTE: multiple sensors can be exposed using the indexed notation.
+'ambient.*', without index or using '0', relates to the embedded sensor.
+For example: 'ambient.temperature' represent the embedded sensor temperature.
+Other sensors (external, communication card, ...) can use indexes
+from '1' to 'n'. For example: 'ambient.1.temperature' for the first external
+sensor temperature.
+
 [options="header"]
 |===============================================================================
 | Name                              | Description                | Example value
-| ambient.temperature               | Ambient temperature
+| ambient.n.temperature             | Ambient temperature
                                       (degrees C)                | 25.40
-| ambient.temperature.alarm         | Temperature alarm
+| ambient.n.temperature.alarm       | Temperature alarm
                                       (enabled/disabled)         | enabled
-| ambient.temperature.high          | Temperature threshold high
+| ambient.n.temperature.high        | Temperature threshold high
                                       (degrees C)                | 40
-| ambient.temperature.low           | Temperature threshold low
+| ambient.n.temperature.low         | Temperature threshold low
                                       (degrees C)                | 5
-| ambient.temperature.maximum       | Maximum temperature seen
+| ambient.n.temperature.maximum     | Maximum temperature seen
                                       (degrees C)                | 37.6
-| ambient.temperature.minimum       | Minimum temperature seen
+| ambient.n.temperature.minimum     | Minimum temperature seen
                                       (degrees C)                | 18.1
-| ambient.humidity                  | Ambient relative humidity
+| ambient.n.humidity                | Ambient relative humidity
                                       (percent)                  | 038.8
-| ambient.humidity.alarm            | Relative humidity alarm
+| ambient.n.humidity.alarm          | Relative humidity alarm
                                       (enabled/disabled)         | enabled
-| ambient.humidity.high             | Relative humidity
+| ambient.n.humidity.high           | Relative humidity
                                       threshold high (percent)   | 80
-| ambient.humidity.low              | Relative humidity
+| ambient.n.humidity.low            | Relative humidity
                                       threshold high (percent)   | 10
-| ambient.humidity.maximum          | Maximum relative humidity
+| ambient.n.humidity.maximum        | Maximum relative humidity
                                       seen (percent)             | 60
-| ambient.humidity.minimum          | Minimum relative humidity
+| ambient.n.humidity.minimum        | Minimum relative humidity
                                       seen (percent)             | 13
 |===============================================================================
 
@@ -363,6 +389,8 @@ outlet: Smart outlet management
 
 NOTE: *n* stands for the outlet index. For more information, refer to the
 NUT outlets management and PDU notes chapter of the user manual.
+A special case is "outlet.0" which is equivalent to "outlet", and
+represent the whole set of outlets of the device.
 
 [options="header"]
 |===============================================================================
@@ -380,13 +408,19 @@ NUT outlets management and PDU notes chapter of the user manual.
 | outlet.n.autoswitch.charge.low | Remaining battery level to
                                    power off this outlet
                                    (percent)                  | 80
+| outlet.n.battery.charge.low    | Remaining battery level to
+                                   power off this outlet
+                                   (percent)                  | 80
 | outlet.n.delay.shutdown        | Interval to wait before
                                    shutting down this outlet
                                    (seconds)                  | 180
-
 | outlet.n.delay.start           | Interval to wait before
                                    restarting this outlet
-                                   (seconds)                  | 120
+                                   (seconds)                   | 120
+| outlet.n.timer.shutdown        | Time before the outlet load
+                                   will be shutdown (seconds)  | 20
+| outlet.n.timer.start           | Time before the outlet load
+                                   will be started (seconds)   | 30
 | outlet.n.current               | Current (A)                | 0.19
 | outlet.n.current.maximum       | Maximum seen current (A)   | 0.56
 | outlet.n.realpower             | Current value of real
@@ -401,7 +435,6 @@ NUT outlets management and PDU notes chapter of the user manual.
 | outlet.n.power                 | Apparent power (VA)        | 46
 |===============================================================================
 
-
 driver: Internal driver information
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -410,8 +443,9 @@ driver: Internal driver information
 | Name                    | Description                  | Example value
 | driver.name             | Driver name                  | usbhid-ups
 | driver.version          | Driver version (NUT release) | X.Y.Z
-| driver.version.internal | Internal driver version
-                            (if tracked separately)      | 1.23.45
+| driver.version.internal | Internal driver version      | 1.23.45
+| driver.version.data     | Version of the internal data
+                            mapping, for generic drivers | Eaton HID 1.31
 | driver.parameter.xxx    | Parameter xxx (ups.conf or
                             cmdline -x) setting          | (varies)
 | driver.flag.xxx         | Flag xxx (ups.conf or
@@ -437,6 +471,8 @@ Instant commands
 | Name                     | Description
 | load.off                 | Turn off the load immediately
 | load.on                  | Turn on the load immediately
+| load.off.delay           | Turn off the load possibly after a delay 
+| load.on.delay            | Turn on the load possibly after a delay 
 | shutdown.return          | Turn off the load possibly after a delay 
                              and return when power is back
 | shutdown.stayoff         | Turn off the load possibly after a delay
@@ -463,4 +499,9 @@ Instant commands
 | beeper.disable           | Disable UPS beeper/buzzer
 | beeper.mute              | Temporarily mute UPS beeper/buzzer
 | beeper.toggle            | Toggle UPS beeper/buzzer
+| outlet.n.shutdown.return | Turn off the outlet possibly after a delay 
+                             and return when power is back
+| outlet.n.load.off        | Turn off the outlet immediately
+| outlet.n.load.on         | Turn on the outlet immediately
+| outlet.n.load.cycle      | Power cycle the outlet immediately
 |========================================================================

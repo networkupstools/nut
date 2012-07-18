@@ -235,7 +235,6 @@ void upsdrv_initinfo(void)
 
 	/* manufacturer -------------------------------------------- */
 	dstate_setinfo("ups.mfr", "MGE UPS SYSTEMS");
-	dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION);
 	
 	/* loop until we have at status */
 	tries = 0;
@@ -287,9 +286,8 @@ void upsdrv_initinfo(void)
 				*p = '\0';
 				si_data1 = atoi(buf);
 				v = p+1;
+			  	p = strchr(v, ' ');
 			  }
-
-			  p = strchr(v, ' ');
 
 			  if ( p != NULL ) {
 				*p = '\0';
@@ -465,7 +463,8 @@ void upsdrv_shutdown(void)
 {
 	char buf[BUFFLEN];
 	/*  static time_t lastcmd = 0; */
-	
+	memset(buf, 0, sizeof(buf));
+
 	if (sdtype == SD_RETURN) {
 		/* enable automatic restart */
 		mge_command(buf, sizeof(buf), "Sx 5");

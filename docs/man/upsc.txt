@@ -12,6 +12,8 @@ SYNOPSIS
 
 *upsc* 'ups' ['variable']
 
+*upsc* -c 'ups'
+
 DESCRIPTION
 -----------
 
@@ -32,6 +34,10 @@ OPTIONS
   provided by the remote upsd(8) from ups.conf(5). The hostname defaults to
   "localhost".  You may optionally add a colon and a port number to override the
   default port.
+
+*-c* 'ups'::
+
+  Lists each client connected on 'ups', one name per line.
 
 'ups'::
 
@@ -68,6 +74,15 @@ syntax:
     $ for UPS in `upsc -l mybox:1234`; do
         upsc $UPS ups.status
     done
+
+To list clients connected on "myups":
+
+    $ upsc -c myups
+    127.0.0.1
+    ::1
+    192.168.1.2
+
+
 
 DIAGNOSTICS
 -----------

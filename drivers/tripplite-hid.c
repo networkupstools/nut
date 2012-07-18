@@ -1,7 +1,7 @@
 /*  tripplite-hid.c - data to monitor Tripp Lite USB/HID devices with NUT
  *
  *  Copyright (C)
- *	2003 - 2005 Arnaud Quette <arnaud.quette@free.fr>
+ *	2003 - 2012 Arnaud Quette <arnaud.quette@free.fr>
  *	2005 - 2006 Peter Selinger <selinger@users.sourceforge.net>
  *	2008 - 2009 Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
@@ -29,7 +29,7 @@
 #include "tripplite-hid.h"
 #include "usb-common.h"
 
-#define TRIPPLITE_HID_VERSION "TrippLite HID 0.6"
+#define TRIPPLITE_HID_VERSION "TrippLite HID 0.8"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 
@@ -109,6 +109,16 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x4007), battery_scale_1dot0 },
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x4008), battery_scale_1dot0 },
 
+	/* e.g. ? */
+	{ USB_DEVICE(HP_VENDORID, 0x0001), battery_scale_1dot0 },
+	/* HP R1500 G2 and G3 INTL */
+	{ USB_DEVICE(HP_VENDORID, 0x1fe0), battery_scale_1dot0 },
+	/* HP T750 G2 */
+	{ USB_DEVICE(HP_VENDORID, 0x1fe1), battery_scale_1dot0 },
+	/* e.g. ? */
+	{ USB_DEVICE(HP_VENDORID, 0x1fe2), battery_scale_1dot0 },
+	/* HP T1500 G3 */
+	{ USB_DEVICE(HP_VENDORID, 0x1fe3), battery_scale_1dot0 },
 	/* HP T750 INTL */
 	{ USB_DEVICE(HP_VENDORID, 0x1f06), battery_scale_1dot0 },
 	/* HP T1000 INTL */
@@ -117,10 +127,6 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 	{ USB_DEVICE(HP_VENDORID, 0x1f09), battery_scale_1dot0 },
 	/* HP R/T 2200 INTL (like SMART2200RMXL2U) */
 	{ USB_DEVICE(HP_VENDORID, 0x1f0a), battery_scale_1dot0 },
-	/* HP R1500 G2 INTL */
-	{ USB_DEVICE(HP_VENDORID, 0x1fe0), battery_scale_1dot0 },
-	/* HP T750 G2 */
-	{ USB_DEVICE(HP_VENDORID, 0x1fe1), battery_scale_1dot0 },
 
 	/* Terminating entry */
 	{ -1, -1, NULL }
@@ -174,19 +180,41 @@ static info_lkp_t tripplite_battvolt[] = {
 /* TRIPPLITE usage table */
 static usage_lkp_t tripplite_usage_lkp[] = {
 	/* currently unknown:
-	   ffff0010, 00ff0001, ffff007d, ffff00c0, ffff00c1, ffff00c2,
+	   00ff0001, ffff007d, ffff00c0, ffff00c1, ffff00c2,
 	   ffff00c3, ffff00c4, ffff00c5, ffff00d2, ffff0091, ffff00c7 */
 
+	{ "TLCustom",	0xffff0010 },
+	{ "TLDelayBeforeStartup",	0xffff0056 }, /* in minutes */
 	{ "TLLowVoltageTransferMax",	0xffff0057 },
 	{ "TLLowVoltageTransferMin",	0xffff0058 },
 	{ "TLHighVoltageTransferMax",	0xffff0059 },
 	{ "TLHighVoltageTransferMin",	0xffff005a },
+	/* Outlet state:
+	 * 1-	On/Closed
+	 * 2-	Off/Open
+	 * 3-	On with pending off
+	 * 4-	Off with pending on
+	 * 5-	Unknown
+	 * 6-	Resolved/Unknown
+	 * 7-	Failed and Closed
+	 * 8-	Failed and Open */
+	{ "OutletState",	0xffff007a },
+	{ "OutletCount",	0xffff007b },	/* Number of load segments */
+	{ "UPSFirmwareVersion",	0xffff007c },
+	{ "CommunicationProtocolVersion",	0xffff007d },	/* HID protocol version */
+	{ "CommunicationVersion",	0xffff007e },	/* USB firmware version */
+	{ "iUPSPartNumber",	0xffff007f },	/* String index to Part Number */
+	{ "AutoOnDelay",	0xffff0080 },	/* '0' (no delay) to 'n' (delay in seconds) */
 	{ "TLWatchdog",			0xffff0092 },
+	{ "TLOutletsAvailableMask",		0xffff0095 },
+	{ "TLOutletsStatusMask",		0xffff0096 },
 
 	/* it looks like Tripp Lite confused pages 0x84 and 0x85 for the
 	   following 4 items, on some OMNI1000LCD devices. */
 	{ "TLCharging",			0x00840044 },  /* conflicts with HID spec! */
-	{ "TLDischarging",		0x00840045 },  /* conflicts with HID spec! */
+	/* conflicts with HID spec (and HP implementation) for TrippLite!
+	 * Refer to tripplite_discharging_info */
+	{ "TLDischarging",		0x00840045 },
 	{ "TLNeedReplacement",		0x0084004b },
 	{ "TLACPresent",		0x008400d0 },
 	{ NULL, 0 }
@@ -209,19 +237,19 @@ static hid_info_t tripplite_hid2nut[] = {
 
 	/* unmapped variables - meaning unknown */
 	{ "UPS.Flow.0xffff0097", 0, 0, "UPS.Flow.0xffff0097", NULL, "%.0f", 0, NULL },
-	{ "UPS.0xffff0010.[1].0xffff0075", 0, 0, "UPS.0xffff0010.[1].0xffff0075", NULL, "%.0f", 0, NULL },
-	{ "UPS.0xffff0010.[1].0xffff0076", 0, 0, "UPS.0xffff0010.[1].0xffff0076", NULL, "%.0f", 0, NULL },
-	{ "UPS.0xffff0010.[1].0xffff007c", 0, 0, "UPS.0xffff0010.[1].0xffff007c", NULL, "%.0f", 0, NULL },
-	{ "UPS.0xffff0010.[1].0xffff007d", 0, 0, "UPS.0xffff0010.[1].0xffff007d", NULL, "%.0f", 0, NULL },
-	{ "UPS.0xffff0010.[1].0xffff00e0", 0, 0, "UPS.0xffff0010.[1].0xffff00e0", NULL, "%.0f", 0, NULL },
-	{ "UPS.0xffff0010.[1].0xffff00e1", 0, 0, "UPS.0xffff0010.[1].0xffff00e1", NULL, "%.0f", 0, NULL },
-	{ "UPS.0xffff0010.[1].0xffff00e2", 0, 0, "UPS.0xffff0010.[1].0xffff00e2", NULL, "%.0f", 0, NULL },
-	{ "UPS.0xffff0010.[1].0xffff00e3", 0, 0, "UPS.0xffff0010.[1].0xffff00e3", NULL, "%.0f", 0, NULL },
-	{ "UPS.0xffff0010.[1].0xffff00e4", 0, 0, "UPS.0xffff0010.[1].0xffff00e4", NULL, "%.0f", 0, NULL },
-	{ "UPS.0xffff0010.[1].0xffff00e5", 0, 0, "UPS.0xffff0010.[1].0xffff00e5", NULL, "%.0f", 0, NULL },
-	{ "UPS.0xffff0010.[1].0xffff00e6", 0, 0, "UPS.0xffff0010.[1].0xffff00e6", NULL, "%.0f", 0, NULL },
-	{ "UPS.0xffff0010.[1].0xffff00e7", 0, 0, "UPS.0xffff0010.[1].0xffff00e7", NULL, "%.0f", 0, NULL },
-	{ "UPS.0xffff0010.[1].0xffff00e8", 0, 0, "UPS.0xffff0010.[1].0xffff00e8", NULL, "%.0f", 0, NULL },
+	{ "UPS.TLCustom.[1].0xffff0075", 0, 0, "UPS.TLCustom.[1].0xffff0075", NULL, "%.0f", 0, NULL },
+	{ "UPS.TLCustom.[1].0xffff0076", 0, 0, "UPS.TLCustom.[1].0xffff0076", NULL, "%.0f", 0, NULL },
+	{ "UPS.TLCustom.[1].0xffff007c", 0, 0, "UPS.TLCustom.[1].0xffff007c", NULL, "%.0f", 0, NULL },
+	{ "UPS.TLCustom.[1].0xffff007d", 0, 0, "UPS.TLCustom.[1].0xffff007d", NULL, "%.0f", 0, NULL },
+	{ "UPS.TLCustom.[1].0xffff00e0", 0, 0, "UPS.TLCustom.[1].0xffff00e0", NULL, "%.0f", 0, NULL },
+	{ "UPS.TLCustom.[1].0xffff00e1", 0, 0, "UPS.TLCustom.[1].0xffff00e1", NULL, "%.0f", 0, NULL },
+	{ "UPS.TLCustom.[1].0xffff00e2", 0, 0, "UPS.TLCustom.[1].0xffff00e2", NULL, "%.0f", 0, NULL },
+	{ "UPS.TLCustom.[1].0xffff00e3", 0, 0, "UPS.TLCustom.[1].0xffff00e3", NULL, "%.0f", 0, NULL },
+	{ "UPS.TLCustom.[1].0xffff00e4", 0, 0, "UPS.TLCustom.[1].0xffff00e4", NULL, "%.0f", 0, NULL },
+	{ "UPS.TLCustom.[1].0xffff00e5", 0, 0, "UPS.TLCustom.[1].0xffff00e5", NULL, "%.0f", 0, NULL },
+	{ "UPS.TLCustom.[1].0xffff00e6", 0, 0, "UPS.TLCustom.[1].0xffff00e6", NULL, "%.0f", 0, NULL },
+	{ "UPS.TLCustom.[1].0xffff00e7", 0, 0, "UPS.TLCustom.[1].0xffff00e7", NULL, "%.0f", 0, NULL },
+	{ "UPS.TLCustom.[1].0xffff00e8", 0, 0, "UPS.TLCustom.[1].0xffff00e8", NULL, "%.0f", 0, NULL },
 	{ "UPS.0xffff0015.[1].0xffff00c0", 0, 0, "UPS.0xffff0015.[1].0xffff00c0", NULL, "%.0f", 0, NULL },
 	{ "UPS.0xffff0015.[1].0xffff00c1", 0, 0, "UPS.0xffff0015.[1].0xffff00c1", NULL, "%.0f", 0, NULL },
 	{ "UPS.0xffff0015.[1].0xffff00c2", 0, 0, "UPS.0xffff0015.[1].0xffff00c2", NULL, "%.0f", 0, NULL },
@@ -231,7 +259,6 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ "UPS.0xffff0015.[1].0xffff00d2", 0, 0, "UPS.0xffff0015.[1].0xffff00d2", NULL, "%.0f", 0, NULL },
 	{ "UPS.0xffff0015.[1].0xffff00d3", 0, 0, "UPS.0xffff0015.[1].0xffff00d3", NULL, "%.0f", 0, NULL },
 	{ "UPS.0xffff0015.[1].0xffff00d6", 0, 0, "UPS.0xffff0015.[1].0xffff00d6", NULL, "%.0f", 0, NULL },
-	{ "UPS.OutletSystem.Outlet.0xffff0056", 0, 0, "UPS.OutletSystem.Outlet.0xffff0056", NULL, "%.0f", 0, NULL },
 	{ "UPS.OutletSystem.Outlet.0xffff0081", 0, 0, "UPS.OutletSystem.Outlet.0xffff0081", NULL, "%.0f", 0, NULL },
 	{ "UPS.OutletSystem.Outlet.0xffff0091", 0, 0, "UPS.OutletSystem.Outlet.0xffff0091", NULL, "%.0f", 0, NULL },
 	{ "UPS.OutletSystem.Outlet.0xffff0093", 0, 0, "UPS.OutletSystem.Outlet.0xffff0093", NULL, "%.0f", 0, NULL },
@@ -249,6 +276,9 @@ static hid_info_t tripplite_hid2nut[] = {
 
 #endif /* USBHID_UPS_TRIPPLITE_DEBUG */
 
+	/* Device page */
+	{ "device.part", 0, 0, "UPS.TLCustom.[1].iUPSPartNumber", NULL, "%.0f", 0, stringid_conversion },
+
 	/* Battery page */
 	{ "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", 0, NULL },
 	{ "battery.charge", 0, 0, "UPS.BatterySystem.Battery.RemainingCapacity", NULL, "%.0f", 0, NULL },
@@ -262,8 +292,16 @@ static hid_info_t tripplite_hid2nut[] = {
 
 	/* UPS page */
 	{ "ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.OutletSystem.Outlet.DelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_FLAG_ABSENT, NULL},
+	{ "ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.OutletSystem.Outlet.TLDelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_FLAG_ABSENT, NULL},
+	/* FIXME
+	{ "ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 6, "UPS.TLCustom.[1].TLDelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_FLAG_ABSENT, NULL},
+	{ "ups.timer.start", 0, 0, "UPS.TLCustom.[1].DelayBeforeStartup", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
+	- what's the right notion behind this one?
+	{ "ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 6, "UPS.TLCustom.[1].AutoOnDelay", NULL, DEFAULT_ONDELAY, 0, NULL},
+	*/
 	{ "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.OutletSystem.Outlet.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_FLAG_ABSENT, NULL},
 	{ "ups.timer.start", 0, 0, "UPS.OutletSystem.Outlet.DelayBeforeStartup", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
+	{ "ups.timer.start", 0, 0, "UPS.OutletSystem.Outlet.TLDelayBeforeStartup", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
 	{ "ups.timer.shutdown", 0, 0, "UPS.OutletSystem.Outlet.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
 	{ "ups.timer.reboot", 0, 0, "UPS.OutletSystem.Outlet.DelayBeforeReboot", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL },
 	{ "ups.test.result", 0, 0, "UPS.BatterySystem.Test", NULL, "%s", 0, test_read_info },
@@ -272,6 +310,10 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ "ups.power", 0, 0, "UPS.OutletSystem.Outlet.ActivePower", NULL, "%.1f", 0, NULL },
 	{ "ups.power", 0, 0, "UPS.PowerConverter.Output.ActivePower", NULL, "%.1f", 0, NULL },
 	{ "ups.load", 0, 0, "UPS.OutletSystem.Outlet.PercentLoad", NULL, "%.0f", 0, NULL },
+	/* FIXME: what is the conversion format for this one?
+	 * Example on HP T1500 G3
+	 * UPS.TLCustom.[1].UPSFirmwareVersion, Type: Feature, ReportID: 0x0f, Offset: 0, Size: 16, Value: 262 */
+	{ "ups.firmware", 0, 0, "UPS.TLCustom.[1].UPSFirmwareVersion", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 
 	/* Number of seconds left before the watchdog reboots the UPS (0 = disabled) */
 	{ "ups.watchdog.status", 0, 0, "UPS.OutletSystem.Outlet.TLWatchdog", NULL, "%.0f", 0, NULL },
@@ -288,10 +330,16 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL, NULL, 0, replacebatt_info },
 	/* repeat some of the above for faulty usage codes (seen on OMNI1000LCD, untested) */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.TLACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, online_info },
+	/* "Redundant" definition to deal with the conflict between
+	 * TrippLite units, wrongly defining 0x00840045 as "TLDischarging"
+	 * and HP which uses the standard 0x00840045 (as ConfigPercentLoad).
+	 * Note that this path should not exist on HP devices. */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.TLDischarging", NULL, NULL, HU_FLAG_QUICK_POLL, discharging_info },
+	/* Otherwise, define the version for HP devices */
+	{ "ups.load.nominal", 0, 0, "UPS.Flow.ConfigPercentLoad", NULL, "%.0f", 0, NULL },
+
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.TLCharging", NULL, NULL, HU_FLAG_QUICK_POLL, charging_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.TLNeedReplacement", NULL, NULL, 0, replacebatt_info },
-
 	{ "BOOL", 0, 0, "UPS.PowerConverter.PresentStatus.VoltageOutOfRange", NULL, NULL, 0, vrange_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.PresentStatus.Buck", NULL, NULL, 0, trim_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.PresentStatus.Boost", NULL, NULL, 0, boost_info },
@@ -338,6 +386,7 @@ static hid_info_t tripplite_hid2nut[] = {
 
 	{ "load.off.delay", 0, 0, "UPS.OutletSystem.Outlet.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_TYPE_CMD, NULL },
 	{ "load.on.delay", 0, 0, "UPS.OutletSystem.Outlet.DelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_TYPE_CMD, NULL },
+	{ "load.on.delay", 0, 0, "UPS.OutletSystem.Outlet.TLDelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_TYPE_CMD, NULL },
 
 	{ "shutdown.stop", 0, 0, "UPS.OutletSystem.Outlet.DelayBeforeShutdown", NULL, "-1", HU_TYPE_CMD, NULL },
 	{ "shutdown.reboot", 0, 0, "UPS.OutletSystem.Outlet.DelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL },
@@ -353,6 +402,18 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ "beeper.disable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "1", HU_TYPE_CMD, NULL },
 	{ "beeper.enable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },
 	{ "beeper.mute", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "3", HU_TYPE_CMD, NULL },
+
+	/* FIXME (to be tested): HP specific (may conflict or differ from TL implementation!)
+	 * { "outlet.count", 0, 0, "UPS.TLCustom.[1].OutletCount", NULL, "%.0f", HU_FLAG_STATIC, NULL },
+	 * { "outlet.status", 0, 0, "UPS.TLCustom.[1].OutletState", NULL, "%.0f", HU_FLAG_STATIC, NULL },
+		0.284486	Path: UPS.TLCustom.[1].ffff00ff, Type: Feature, ReportID: 0xff, Offset: 0, Size: 8, Value: 255
+		0.285276	Path: UPS.TLCustom.[1].OutletCount, Type: Feature, ReportID: 0x6d, Offset: 0, Size: 8, Value: 1
+		0.286260	Path: UPS.TLCustom.[1].OutletState, Type: Feature, ReportID: 0x70, Offset: 0, Size: 8, Value: 1
+		0.287248	Path: UPS.TLCustom.[1].CommunicationVersion, Type: Feature, ReportID: 0x0e, Offset: 0, Size: 16, Value: 262
+		0.288901	Path: UPS.TLCustom.[1].CommunicationProtocolVersion, Type: Feature, ReportID: 0x6c, Offset: 0, Size: 16, Value: 2560
+		0.289903	Path: UPS.TLCustom.[1].TLDelayBeforeStartup, Type: Feature, ReportID: 0x71, Offset: 0, Size: 16, Value: 65535
+		0.290854	Path: UPS.TLCustom.[1].AutoOnDelay, Type: Feature, ReportID: 0x72, Offset: 0, Size: 16, Value: 65535
+	 */
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, NULL, 0, NULL }

@@ -2,3 +2,4 @@ Makefile
 Makefile.in
 libupsclient-config
 libupsclient.pc
+libnutscan.pc

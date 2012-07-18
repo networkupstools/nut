@@ -22,7 +22,7 @@
    2005/10/26 - Version 0.40 - Operational-2 release
    2005/11/29 - Version 0.50 - rhino commands release
 
-
+   
    http://www.microsol.com.br
 
 */
@@ -63,28 +63,27 @@ typedef int bool_t;
 #define CMD_PASSOFF 0x0006
 #define CMD_UPSCONT 0x0053
 
-/* xoff - xon protocol
-#define _SOH = 0x01; // start of header
-#define _EOT = 0x04; // end of transmission
-#define _ACK = 0x06; // acknoledge (positive)
-#define _DLE = 0x10; // data link escape
-#define _XOn = 0x11; // transmit on
-#define _XOff = 0x13; // transmit off
-#define _NAK = 0x15; // negative acknoledge
-#define _SYN = 0x16; // synchronous idle
-#define _CAN = 0x18; // cancel
-*/
+/* xoff - xon protocol */
+#define _SOH = 0x01; /* start of header */
+#define _EOT = 0x04; /* end of transmission */
+#define _ACK = 0x06; /* acknoledge (positive) */
+#define _DLE = 0x10; /* data link escape */
+#define _XOn = 0x11; /* transmit on */
+#define _XOff = 0x13; /* transmit off */
+#define _NAK = 0x15; /* negative acknoledge */
+#define _SYN = 0x16; /* synchronous idle */
+#define _CAN = 0x18; /* cancel */
 
 static int const pacsize = 37; /* size of receive data package */
 
 /* autonomy calcule */
-static double  const AmpH = 40;       // Amperes-hora da bateria
-static double  const VbatMin = 126;   // Tensão mínina das baterias
-static double  const VbatNom = 144;   // Tensão nominal das baterias
-static double  const FM = 0.32;       // Fator multiplicativo de correção da autonomia
-static double  const FA = -2;         // Fator aditivo de correção da autonomia
-static double  const ConstInt = 250;  // Consumo interno sem o carregador
-static double  const Vin = 220;       // Tensão de entrada
+static double  const AmpH = 40;       /* Amperes-hora da bateria */
+static double  const VbatMin = 126;   /* Tensão mínina das baterias */
+static double  const VbatNom = 144;   /* Tensão nominal das baterias */
+static double  const FM = 0.32;       /* Fator multiplicativo de correção da autonomia */
+static double  const FA = -2;         /* Fator aditivo de correção da autonomia */
+static double  const ConstInt = 250;  /* Consumo interno sem o carregador */
+static double  const Vin = 220;       /* Tensão de entrada */
 
 static int Day, Month, Year;
 static int dian=0, mesn=0, anon=0, weekn=0;
@@ -93,8 +92,8 @@ static int ihour,imin, isec;
 /* char seman[4]; */
 
 /* int FExpansaoBateria; */
-// internal variables
-// package handshake ariables
+/* internal variables */
+/* package handshake variables */
 /* int ContadorEstouro; */
 static bool_t detected;
 static bool_t SourceFail, Out110, RedeAnterior, OcorrenciaDeFalha;
@@ -125,7 +124,7 @@ static int BoostVolt, Rendimento;
 static unsigned char StatusEntrada, StatusSaida, StatusBateria;
 /* events group */
 static unsigned char EventosRede, EventosSaida, EventosBateria;
-// Grupo de Programação
+/* Grupo de Programação */
 
 /* Methods */
 static void ScanReceivePack(void);
@@ -261,16 +260,16 @@ ScanReceivePack( void )
   if(  RecPack[0] ==0xC2 )
     {
       LimInfBattSrc = 174;
-      LimSupBattSrc = 192;//180????? carregador eh 180 (SCOPOS)
+      LimSupBattSrc = 192;/* 180????? carregador eh 180 (SCOPOS) */
       LimInfBattInv = 174;
-      LimSupBattInv = 192;//170????? (SCOPOS)
+      LimSupBattInv = 192;/* 170????? (SCOPOS) */
     }
   else
     {
       LimInfBattSrc = 138;
-      LimSupBattSrc = 162;//180????? carregador eh 180 (SCOPOS)
+      LimSupBattSrc = 162;/* 180????? carregador eh 180 (SCOPOS) */
       LimInfBattInv = 126;
-      LimSupBattInv = 156;//170????? (SCOPOS)
+      LimSupBattInv = 156;/* 170????? (SCOPOS) */
     }
   
   BattNonValue = 144;
@@ -300,10 +299,10 @@ ScanReceivePack( void )
   if(  BypassOn )
     OutVoltage = ( InVoltage * 1.0 / 2 ) + 5;
   
-  if(  SourceFail && RedeAnterior ) // falha pela primeira vez
+  if(  SourceFail && RedeAnterior ) /* falha pela primeira vez */
     OcorrenciaDeFalha = true;
   
-  if(  !( SourceFail ) && !( RedeAnterior ) ) // retorno da rede
+  if(  !( SourceFail ) && !( RedeAnterior ) ) /* retorno da rede */
     RetornoDaRede = true;
   
   if( !( SourceFail ) == RedeAnterior )
@@ -333,7 +332,7 @@ ScanReceivePack( void )
       RecPack[8] = 99; /* ??????????????????????????????????? */
     }
   
-  if(  OutputOn )     // Output Status
+  if(  OutputOn )     /* Output Status */
     StatusSaida = 2;
   else
     StatusSaida = 1;
@@ -341,7 +340,7 @@ ScanReceivePack( void )
   if(  OverCharge )
     StatusSaida = 3;
   
-  if(  CriticBatt ) // Battery Status
+  if(  CriticBatt ) /* Battery Status */
     StatusBateria = 4;
   else
     StatusBateria = 1;
@@ -478,55 +477,48 @@ static int
 send_command( int cmd )
 {
 
-  int i, chk, checksum=0, iend=18, sizes, ret, kount; /*, j, uc; */
-  unsigned char ch, psend[19];
-  sizes = 19;
-  checksum = 0;
+  int i, chk, checksum = 0, iend = 18, sizes = 19, ret, kount; /*, j, uc; */
+  unsigned char ch, psend[sizes];
   
   /* mounting buffer to send */
 
-  for(i = 0; i < iend; i++ )
-    {
-      if ( i == 0 )
-	chk = 0x01;
-      else
+	for(i = 0; i < iend; i++ )
 	{
-	  if( i == 1)
-	    chk = cmd;
-	  else
-	    chk = 0x00; // 0x20;
+		if ( i == 0 )
+			chk = 0x01;
+		else
+		{
+			if( i == 1)
+				chk = cmd;
+			else
+				chk = 0x00; /* 0x20; */
+		}
+
+		ch = chk;
+		psend[i] = ch; /* psend[0 - 17] */
+		if( i > 0 )  /* psend[0] not computed */
+			checksum = checksum + chk;
 	}
 
-      ch = chk;
-      psend[i] = ch; /* psend[0 - 17] */
-      if( i > 0 )  /* psend[0] not computed */
-	checksum = checksum + chk;
-    }
+	ch = checksum;
+	ch = (~( ch) ); /* not ch  */
+	psend[iend] = ch;
 
-  ch = checksum;
-  ch = (~( ch) ); /* not ch  */
-  psend[iend] = ch;
-
-  /* send five times the command */
-  kount = 0;
-  while ( kount < 5 )
-    {
-      /* ret = ser_send_buf_pace(upsfd, UPSDELAY, psend, sizes );// optional delay */
-      
-      for(i=0; i < 19; i++)
+	/* send five times the command */
+	kount = 0;
+	while ( kount < 5 )
 	{
-	  ret = ser_send_char( upsfd, psend[i] );
-	  /* usleep ( UPSDELAY ); sending without delay */
+		/* ret = ser_send_buf_pace(upsfd, UPSDELAY, psend, sizes ); */ /* optional delay */
+
+		for(i = 0 ; i < sizes ; i++)
+		{
+			ret = ser_send_char( upsfd, psend[i] );
+			/* usleep ( UPSDELAY ); sending without delay */
+		}
+		usleep( UPSDELAY ); /* delay between sent command */
+		kount++;
 	}
-      
-      usleep( UPSDELAY ); /* delay between sent command */
-
-      kount++;
-    }
-
-
-  return ret;
-
+	return ret;
 }
 
 static void sendshut( void )
@@ -548,13 +540,12 @@ static void getbaseinfo(void)
 	unsigned char  temp[256];
 	unsigned char Pacote[37];
 	int  tam, i, j=0;
-	time_t *tmt;
+	time_t tmt;
 	struct tm *now;
 	const char *Model;
 
-	tmt  = ( time_t * ) malloc( sizeof( time_t ) );
-	time( tmt );
-	now = localtime( tmt );
+	time( &tmt );
+	now = localtime( &tmt );
 	dian = now->tm_mday;
 	mesn = now->tm_mon+1;
 	anon = now->tm_year+1900;
@@ -564,7 +555,7 @@ static void getbaseinfo(void)
 	while ( ( !detected ) && ( j < 10 ) )
 	  {
 
-	    temp[0] = 0; // flush temp buffer
+	    temp[0] = 0; /* flush temp buffer */
 	    tam = ser_get_buf_len(upsfd, temp, pacsize, 3, 0);
 	    if( tam == 37 )
 	      {
@@ -628,10 +619,10 @@ static void getbaseinfo(void)
 	dstate_setinfo("input.transfer.high", "%03.1f", InUpLim); LimSupBattInv ?
 	*/
 
-	dstate_addcmd("shutdown.stayoff");	// CMD_SHUT
+	dstate_addcmd("shutdown.stayoff");	/* CMD_SHUT */
 	/* there is no reserved words for CMD_INON and CMD_INOFF yet */
-	/* dstate_addcmd("input.on");	// CMD_INON    = 1 */
-	/* dstate_addcmd("input.off");	// CMD_INOFF   = 2 */
+	/* dstate_addcmd("input.on"); */	/* CMD_INON    = 1 */
+	/* dstate_addcmd("input.off"); */	/* CMD_INOFF   = 2 */
 	dstate_addcmd("load.on");	/* CMD_OUTON   = 3 */
 	dstate_addcmd("load.off");	/* CMD_OUTOFF  = 4 */
 	dstate_addcmd("bypass.start");	/* CMD_PASSON  = 5 */
@@ -645,17 +636,6 @@ static void getupdateinfo(void)
 {
 	unsigned char  temp[256];
 	int tam;
-
-        int hours, mins;
- 
-        /* time update */
-        time_t *tmt;
-        struct tm *now;
-        tmt  = ( time_t * ) malloc( sizeof( time_t ) );
-        time( tmt );
-        now = localtime( tmt );
-        hours = now->tm_hour;
-        mins = now->tm_min;
 
 	temp[0] = 0; /* flush temp buffer */
 	tam = ser_get_buf_len(upsfd, temp, pacsize, 3, 0);
@@ -671,7 +651,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	
 	if (!strcasecmp(cmdname, "shutdown.stayoff"))
 	  {
-	    // shutdown now (one way)
+	    /* shutdown now (one way) */
 	    /* send_command( CMD_SHUT ); */
 	    sendshut();
 	    return STAT_INSTCMD_HANDLED;
@@ -679,7 +659,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "load.on"))
 	  {
-	    // liga Saida
+	    /* liga Saida */
 	    ret = send_command( 3 );
 	    if ( ret < 1 )
 	      upslogx(LOG_ERR, "send_command 3 failed");
@@ -688,7 +668,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "load.off"))
 	  {
-	    // desliga Saida
+	    /* desliga Saida */
 	    ret = send_command( 4 );
 	    if ( ret < 1 )
 	      upslogx(LOG_ERR, "send_command 4 failed");
@@ -697,7 +677,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "bypass.start"))
 	  {
-	    // liga Bypass
+	    /* liga Bypass */
 	    ret = send_command( 5 );
 	    if ( ret < 1 )
 	      upslogx(LOG_ERR, "send_command 5 failed");
@@ -706,7 +686,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "bypass.stop"))
 	  {
-	    // desliga Bypass
+	    /* desliga Bypass */
 	    ret = send_command( 6 );
 	    if ( ret < 1 )
 	      upslogx(LOG_ERR, "send_command 6 failed");
@@ -771,7 +751,7 @@ void upsdrv_shutdown(void)
 	/* on line: send normal shutdown, ups will return by itself on utility */
 	/* on battery: send shutdown+return, ups will cycle and return soon */
 
-	if (!SourceFail)     // on line
+	if (!SourceFail)     /* on line */
 	  {
 	    printf("On line, forcing shutdown command...\n");
 	    send_command( CMD_SHUT );

@@ -17,6 +17,13 @@ typedef struct enum_s {
 	struct enum_s	*next;
 } enum_t;
 
+/* RANGE boundaries */
+typedef struct range_s {
+	int min;
+	int max;
+	struct range_s	*next;
+} range_t;
+
 /* list of instant commands */
 typedef struct cmdlist_s {
         char    *name;

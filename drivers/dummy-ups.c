@@ -40,7 +40,7 @@
 #include "dummy-ups.h"
 
 #define DRIVER_NAME	"Device simulation and repeater driver"
-#define DRIVER_VERSION	"0.12"
+#define DRIVER_VERSION	"0.13"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info =
@@ -201,6 +201,11 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 */
+	/* FIXME: the below is only valid if (mode == MODE_DUMMY)
+	 * if (mode == MODE_REPEATER) => forward
+	 * if (mode == MODE_META) => ?
+	 */
+
 	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
 	return STAT_INSTCMD_UNKNOWN;
 }
@@ -258,6 +263,10 @@ static int setvar(const char *varname, const char *val)
 
 	upsdebugx(2, "entering setvar(%s, %s)", varname, val);
 
+	/* FIXME: the below is only valid if (mode == MODE_DUMMY)
+	 * if (mode == MODE_REPEATER) => forward
+	 * if (mode == MODE_META) => ?
+	 */
 	if (!strncmp(varname, "ups.status", 10))
 	{
 		status_init();
@@ -375,7 +384,7 @@ static int is_valid_data(const char* varname)
 	 * enforcing controls! We also need a way to automate
 	 * the update / sync process (with cmdvartab?!) */
 
-	upsdebugx(1, "Unknown data. Commiting anyway...");
+	upsdebugx(1, "Unknown data. Committing anyway...");
 	return 1;
 	/* return 0;*/
 }
@@ -395,7 +404,7 @@ static int is_valid_value(const char* varname, const char *value)
 	 * enforcing controls! We also need a way to automate
 	 * the update / sync process (with cmdvartab?) */
 
-	upsdebugx(1, "Unknown data. Commiting value anyway...");
+	upsdebugx(1, "Unknown data. Committing value anyway...");
 	return 1;
 	/* return 0;*/
 }
@@ -412,7 +421,7 @@ static void upsconf_err(const char *errmsg)
 static int parse_data_file(int upsfd)
 {
 	char	fn[SMALLBUF];
-	char	*ptr, *var_value = (char*) xmalloc(MAX_STRING_SIZE);
+	char	*ptr, var_value[MAX_STRING_SIZE];
 	int		value_args = 0, counter;
 	time_t	now;
 
@@ -501,13 +510,13 @@ static int parse_data_file(int upsfd)
 		}
 		else
 		{
-			memset(var_value, 0, MAX_STRING_SIZE);
 			for (counter = 1, value_args = ctx->numargs ;
 				counter < value_args ; counter++)
 			{
-				if (counter != 1) /* don't append the first space separator */
-					strncat(var_value, " ", 1);
-				strncat(var_value, ctx->arglist[counter], MAX_STRING_SIZE);
+				if (counter == 1) /* don't append the first space separator */
+					snprintf(var_value, sizeof(var_value), "%s", ctx->arglist[counter]);
+				else
+					snprintfcat(var_value, sizeof(var_value), " %s", ctx->arglist[counter]);
 			}
 
 			if (setvar(ctx->arglist[0], var_value) == STAT_SET_UNKNOWN)
@@ -529,7 +538,6 @@ static int parse_data_file(int upsfd)
 		pconf_finish(ctx);
 		free(ctx);
 		ctx=NULL;
-		free(var_value);
 	}
 	return 1;
 }

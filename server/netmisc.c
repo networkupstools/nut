@@ -1,6 +1,8 @@
 /* netmisc.c - miscellaneous network handlers for upsd (VER, HELP, FSD)
 
-   Copyright (C) 2003  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+    2003  Russell Kroll <rkroll@exploits.org>
+    2012  Arnaud Quette <arnaud.quette.free.fr>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -27,7 +29,7 @@
 
 #include "netmisc.h"
 
-void net_ver(ctype_t *client, int numarg, const char **arg)
+void net_ver(nut_ctype_t *client, int numarg, const char **arg)
 {
 	if (numarg != 0) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
@@ -38,7 +40,17 @@ void net_ver(ctype_t *client, int numarg, const char **arg)
 		UPS_VERSION);
 }
 
-void net_help(ctype_t *client, int numarg, const char **arg)
+void net_netver(nut_ctype_t *client, int numarg, const char **arg)
+{
+	if (numarg != 0) {
+		send_err(client, NUT_ERR_INVALID_ARGUMENT);
+		return;
+	}
+
+	sendback(client, "%s\n", NUT_NETVERSION);
+}
+
+void net_help(nut_ctype_t *client, int numarg, const char **arg)
 {
 	if (numarg != 0) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
@@ -49,7 +61,7 @@ void net_help(ctype_t *client, int numarg, const char **arg)
 		" USERNAME PASSWORD STARTTLS\n");
 }
 
-void net_fsd(ctype_t *client, int numarg, const char **arg)
+void net_fsd(nut_ctype_t *client, int numarg, const char **arg)
 {
 	upstype_t	*ups;
 

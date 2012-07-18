@@ -1,9 +1,9 @@
 /*  ietf-mib.c - data to monitor SNMP UPS (RFC 1628 compliant) with NUT
  *
  *  Copyright (C) 2002-2006
- *  			Arnaud Quette <arnaud.quette@free.fr>
- *  			Niels Baggesen <niels@baggesen.net>
- *				Arjen de Korte <adkorte-guest@alioth.debian.org>
+ *	2002-2012	Arnaud Quette <arnaud.quette@free.fr>
+ *	2002-2006	Niels Baggesen <niels@baggesen.net>
+ *	2002-2006	Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
  *
@@ -26,10 +26,11 @@
 
 #include "ietf-mib.h"
 
-#define IETF_MIB_VERSION	"1.3"
+#define IETF_MIB_VERSION	"1.4"
 
 /* SNMP OIDs set */
 #define IETF_OID_UPS_MIB	"1.3.6.1.2.1.33.1."
+#define IETF_SYSOID			".1.3.6.1.2.1.33"
 
 /* #define DEBUG */
 
@@ -262,7 +263,7 @@ static snmp_info_t ietf_mib[] = {
 	{ "output.power.nominal", 0, 1.0, IETF_OID_UPS_MIB "9.5.0", "", 0, NULL }, /* upsConfigOutputVA */
 	{ "output.realpower.nominal", 0, 1.0, IETF_OID_UPS_MIB "9.6.0", "", 0, NULL }, /* upsConfigOutputPower */
 	{ "battery.runtime.low", 0, 60.0, IETF_OID_UPS_MIB "9.7.0", "", 0, NULL }, /* upsConfigLowBattTime */
-	{ "beeper.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "9.8.0", "", 0, ietf_beeper_status_info }, /* upsConfigAudibleStatus */
+	{ "ups.beeper.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "9.8.0", "", 0, ietf_beeper_status_info }, /* upsConfigAudibleStatus */
 	{ "beeper.disable", 0, 1, IETF_OID_UPS_MIB "9.8.0", "", SU_TYPE_CMD, NULL },
 	{ "beeper.enable", 0, 2, IETF_OID_UPS_MIB "9.8.0", "", SU_TYPE_CMD, NULL },
 	{ "beeper.mute", 0, 3, IETF_OID_UPS_MIB "9.8.0", "", SU_TYPE_CMD, NULL },
@@ -273,4 +274,4 @@ static snmp_info_t ietf_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	ietf = { "ietf", IETF_MIB_VERSION, IETF_OID_UPS_MIB "4.1.0", IETF_OID_UPS_MIB "1.1.0", ietf_mib };
+mib2nut_info_t	ietf = { "ietf", IETF_MIB_VERSION, IETF_OID_UPS_MIB "4.1.0", IETF_OID_UPS_MIB "1.1.0", ietf_mib, IETF_SYSOID };

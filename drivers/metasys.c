@@ -62,12 +62,12 @@ static int instcmd(const char *cmdname, const char *extra);
 
 /*
 	Metasystem UPS data transfer are made with packet of the format:
-	STX		DATA_LENGHT		DATA		CHECKSUM
+	STX		DATA_LENGTH		DATA		CHECKSUM
 	where:
 	STX is 0x02 and is the start of transmission byte
-	DATA_LENGHT is number of data bytes + the checksum byte
+	DATA_LENGTH is number of data bytes + the checksum byte
 	DATA ......
-	CHECKSUM is the sum modulus 256 of all DATA bytes + DATA_LENGHT
+	CHECKSUM is the sum modulus 256 of all DATA bytes + DATA_LENGTH
 	
 	The answer from the UPS have the same packet format and the first
 	data byte is equal to the command that the ups is answering to
@@ -92,14 +92,13 @@ long int get_long(unsigned char *buffer) {	/* return a long integer reading 4 by
 	d=buffer[3];
 	result = (256*256*256*d) + (256*256*c) + (256*b) + a;
 	return result;
-}	
-	
+}
+
 void send_zeros(void) {				/* send 100 times the value 0x00.....it seems to be used for resetting */
 	unsigned char buf[100];				/* the ups serial port */
-	int i;
-	
+
 	memset(buf, '\0', sizeof(buf));
-	i = ser_send_buf(upsfd, buf, sizeof(buf));
+	ser_send_buf(upsfd, buf, sizeof(buf));
 	return;
 }
 
@@ -109,12 +108,12 @@ void dump_buffer(unsigned char *buffer, int buf_len) {
 	int i;
 	for (i = 0; i < buf_len; i++) { 
 		printf("byte %d: %x\n", i, buffer[i]);	
-	}	
+	}
 	return;
 }
 
 /* send a read command to the UPS, it retries 5 times before give up
-   it's a 4 byte request (STX, LENGHT, COMMAND and CHECKSUM) */
+   it's a 4 byte request (STX, LENGTH, COMMAND and CHECKSUM) */
 void send_read_command(char command) {
 	int retry, sent;
 	unsigned char buf[4];
@@ -122,50 +121,50 @@ void send_read_command(char command) {
 	sent = 0;
 	while ((sent != 4) && (retry < 5)) {
 		buf[0]=0x02; 			/* STX Start of Transmission */
-		buf[1]=0x02;			/* data lenght(data + checksum byte) */
+		buf[1]=0x02;			/* data length(data + checksum byte) */
 		buf[2]=command;			/* command to send */
-		buf[3]=buf[1] + buf[2];	/* checksum (sum modulus 256 of data bytes + lenght) */
+		buf[3]=buf[1] + buf[2];	/* checksum (sum modulus 256 of data bytes + length) */
 		if (retry == 4) send_zeros();	/* last retry is preceded by a serial reset...*/
 		sent = ser_send_buf(upsfd, buf, 4);
 		retry += 1;
-	}	
+	}
 }
 
 /* send a write command to the UPS, the write command and the value to be written are passed 
    with a char* buffer 
    it retries 5 times before give up */
-void send_write_command(unsigned char *command, int command_lenght) {
+void send_write_command(unsigned char *command, int command_length) {
 	int i, retry, sent, checksum;
 	unsigned char raw_buf[255];
-	
+
 	/* prepares the raw data */
 	raw_buf[0] = 0x02;		/* STX byte */
-	raw_buf[1] = (unsigned char)(command_lenght + 1);		/* data lenght + checksum */
-	memcpy(raw_buf+2, command, command_lenght);
-	command_lenght += 2;
-	
+	raw_buf[1] = (unsigned char)(command_length + 1);		/* data length + checksum */
+	memcpy(raw_buf+2, command, command_length);
+	command_length += 2;
+
 	/* calculate checksum */
 	checksum = 0;
-	for (i = 1; i < command_lenght; i++) checksum += raw_buf[i];
+	for (i = 1; i < command_length; i++) checksum += raw_buf[i];
 	checksum = checksum % 256;
-	raw_buf[command_lenght] = (unsigned char)checksum;
-	command_lenght +=1;
-	
+	raw_buf[command_length] = (unsigned char)checksum;
+	command_length +=1;
+
 	retry = 0;
 	sent = 0;
-	while ((sent != (command_lenght)) && (retry < 5)) {
+	while ((sent != (command_length)) && (retry < 5)) {
 		if (retry == 4) send_zeros();	/* last retry is preceded by a serial reset... */
-		sent = ser_send_buf(upsfd, raw_buf, (command_lenght));
-		if (sent != (command_lenght)) printf("Error sending command %d\n", raw_buf[2]);
+		sent = ser_send_buf(upsfd, raw_buf, (command_length));
+		if (sent != (command_length)) printf("Error sending command %d\n", raw_buf[2]);
 		retry += 1;
-	}	
+	}
 }
 
 
 /* get the answer of a command from the ups */
 int get_answer(unsigned char *data) {
-	unsigned char my_buf[255];	/* packet has a maximum lenght of 256 bytes */
-	int packet_lenght, checksum, i, res;
+	unsigned char my_buf[255];	/* packet has a maximum length of 256 bytes */
+	int packet_length, checksum, i, res;
 	/* Read STX byte */
 	res = ser_get_char(upsfd, my_buf, 1, 0);
 	if (res < 1) {
@@ -176,47 +175,47 @@ int get_answer(unsigned char *data) {
 		ser_comm_fail("Receive error (STX): packet not on start!!\n");
 		return -1;	
 	}
-	/* Read data lenght byte */
+	/* Read data length byte */
 	res = ser_get_char(upsfd, my_buf, 1, 0);
 	if (res < 1) {
-		ser_comm_fail("Receive error (lenght): %d!!!\n", res);
+		ser_comm_fail("Receive error (length): %d!!!\n", res);
 		return -1;	
 	}
-	packet_lenght = my_buf[0];
-	if (packet_lenght < 2) {
-		ser_comm_fail("Receive error (lenght): packet lenght %d!!!\n", packet_lenght);
+	packet_length = my_buf[0];
+	if (packet_length < 2) {
+		ser_comm_fail("Receive error (length): packet length %d!!!\n", packet_length);
 		return -1;	
 	}
-	/* Try to read all the remainig bytes (packet_lenght) */
-	res = ser_get_buf_len(upsfd, my_buf, packet_lenght, 1, 0);
-	if (res != packet_lenght) {
-		ser_comm_fail("Receive error (data): got %d bytes instead of %d!!!\n", res, packet_lenght);
+	/* Try to read all the remainig bytes (packet_length) */
+	res = ser_get_buf_len(upsfd, my_buf, packet_length, 1, 0);
+	if (res != packet_length) {
+		ser_comm_fail("Receive error (data): got %d bytes instead of %d!!!\n", res, packet_length);
 		return -1;	
 	}
-		
+
 	/* now we have the whole answer from the ups, we can checksum it 
-	   checksum byte is equal to the sum modulus 256 of all the data bytes + packet_lenght 
+	   checksum byte is equal to the sum modulus 256 of all the data bytes + packet_length
 	   (no STX no checksum byte itself) */
-	checksum = packet_lenght;
-	for (i = 0; i < (packet_lenght - 1); i++) checksum += my_buf[i];  
+	checksum = packet_length;
+	for (i = 0; i < (packet_length - 1); i++) checksum += my_buf[i];  
 	checksum = checksum % 256;
-	if (my_buf[packet_lenght-1] != checksum) {
-		ser_comm_fail("checksum error! got %x instad of %x, received %d bytes \n", my_buf[packet_lenght - 1], checksum, packet_lenght);
-		dump_buffer(my_buf, packet_lenght);
+	if (my_buf[packet_length-1] != checksum) {
+		ser_comm_fail("checksum error! got %x instad of %x, received %d bytes \n", my_buf[packet_length - 1], checksum, packet_length);
+		dump_buffer(my_buf, packet_length);
 		return -1;
 	}
-	packet_lenght-=1;		/* get rid of the checksum byte */
-	memcpy(data, my_buf, packet_lenght);
-	return packet_lenght;
+	packet_length-=1;		/* get rid of the checksum byte */
+	memcpy(data, my_buf, packet_length);
+	return packet_length;
 }
 
 /* send a read command and try get the answer, if something fails, it retries (5 times max)
    if it is on the 4th or 5th retry, it will flush the serial before sending commands
-   it returns the lenght of the received answer or -1 in case of failure */
+   it returns the length of the received answer or -1 in case of failure */
 int command_read_sequence(unsigned char command, unsigned char *data) {
 	int bytes_read = 0;
 	int retry = 0;
-	
+
 	while ((bytes_read < 1) && (retry < 5)) {
 		send_read_command(command);
 		bytes_read = get_answer(data);
@@ -234,13 +233,13 @@ int command_read_sequence(unsigned char command, unsigned char *data) {
 
 /* send a write command and try get the answer, if something fails, it retries (5 times max)
    if it is on the 4th or 5th retry, it will flush the serial before sending commands
-   it returns the lenght of the received answer or -1 in case of failure */
-int command_write_sequence(unsigned char *command, int command_lenght, unsigned char *answer) {
+   it returns the length of the received answer or -1 in case of failure */
+int command_write_sequence(unsigned char *command, int command_length, unsigned char *answer) {
 	int bytes_read = 0;
 	int retry = 0;
 	
 	while ((bytes_read < 1) && (retry < 5)) {
-		send_write_command(command, command_lenght);
+		send_write_command(command, command_length);
 		bytes_read = get_answer(answer);
 		if (retry > 2) ser_flush_in(upsfd, "", 0);
 		retry += 1;
@@ -317,8 +316,6 @@ void upsdrv_initinfo(void)
 	dstate_setflags("ups.test.result", ST_FLAG_STRING | ST_FLAG_RW);
 	  dstate_setaux("ups.test.result", 20);
 	
-	/* Fixed variables */
-	dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION);
 	/* UPS INFO READ */
 	res = command_read_sequence(UPS_INFO, my_answer);
 	if (res < 0) fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
@@ -807,7 +804,7 @@ void upsdrv_updateinfo(void)
 				printf("status unknown \n");
 				break;
 		}
-		status_commit();	
+		status_commit();
 		dstate_dataok();
 	}
 	return;
@@ -816,8 +813,7 @@ void upsdrv_updateinfo(void)
 void upsdrv_shutdown(void)
 {
 	unsigned char command[10], answer[10];
-	
-	
+
 	/* Ensure that the ups is configured for automatically
 	   restart after a complete battery discharge 
 	   and when the power comes back after a shutdown */
@@ -832,14 +828,14 @@ void upsdrv_shutdown(void)
 		command[5]=0x01;					/* autorestart after battery depleted enabled */
 		command_write_sequence(command, 6, answer);
 	}
-	
+
 	/* shedule a shutdown in 120 seconds */
 	command[0]=UPS_SET_SCHEDULING;		
 	command[1]=0x96;					/* remaining  */
 	command[2]=0x00;					/* time		 */
 	command[3]=0x00;					/* to */
 	command[4]=0x00;					/* shutdown 150 secs */
-			
+
 	/* restart time has been set to 1 instead of 0 for avoiding
 		a bug in some ups firmware */
 	command[5]=0x01;					/* programmed */
@@ -861,7 +857,7 @@ static int instcmd(const char *cmdname, const char *extra)
 {
 	unsigned char command[10], answer[10];
 	int res;
-	
+
 	if (!strcasecmp(cmdname, "beeper.off")) {
 		/* compatibility mode for old command */
 		upslogx(LOG_WARNING,
@@ -893,7 +889,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		command[2]=0x00;					/* time		 */
 		command[3]=0x00;					/* to */
 		command[4]=0x00;					/* shutdown 30 secs */
-				
+
 		command[5]=0x01;					/* programmed */
 		command[6]=0x00;					/* time		 */
 		command[7]=0x00;					/* to */
@@ -901,7 +897,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		command_write_sequence(command, 9, answer);
 		return STAT_INSTCMD_HANDLED;
 	}
-	
+
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
 		/* shedule a shutdown in 30 seconds with no restart (-1) */
 		command[0]=UPS_SET_SCHEDULING;		
@@ -917,7 +913,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		command_write_sequence(command, 9, answer);
 		return STAT_INSTCMD_HANDLED;
 	}
-	
+
 	if (!strcasecmp(cmdname, "shutdown.stop")) {
 		/* set shutdown and restart time to -1 (no shutdown, no restart) */
 		command[0]=UPS_SET_SCHEDULING;		
@@ -944,7 +940,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		command_write_sequence(command, 2, answer);
 		return STAT_INSTCMD_HANDLED;
 	}
-	
+
 	if (!strcasecmp(cmdname, "test.failure.stop")) {
 		/* restore standard mode (mains power) */
 		command[0]=UPS_SET_BATTERY_TEST;
@@ -955,7 +951,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		command_write_sequence(command, 2, answer);
 		return STAT_INSTCMD_HANDLED;
 	}
-	
+
 	if (!strcasecmp(cmdname, "test.battery.start")) {
 		/* launch battery test */
 		command[0]=UPS_SET_BATTERY_TEST;		
@@ -997,7 +993,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		upslogx(LOG_NOTICE, "test battery byte 1 = %x", answer[1]);
 		return STAT_INSTCMD_HANDLED;
 	}
-	
+
 	if (!strcasecmp(cmdname, "beeper.enable")) {
 		/* set buzzer to not muted */
 		command[0]=UPS_SET_BUZZER_MUTE;		
@@ -1008,7 +1004,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		command_write_sequence(command, 2, answer);
 		return STAT_INSTCMD_HANDLED;
 	}
-	
+
 	if (!strcasecmp(cmdname, "beeper.mute")) {
 		/* set buzzer to muted */
 		command[0]=UPS_SET_BUZZER_MUTE;		

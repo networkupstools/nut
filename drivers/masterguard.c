@@ -469,8 +469,6 @@ void upsdrv_initinfo(void)
         	dstate_setinfo("ups.model", "%s", name);
 	if( strlen( firmware ) > 0 )
         	dstate_setinfo("ups.firmware", "%s", firmware);
-
-	dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION);
 }
 
 /********************************************************************

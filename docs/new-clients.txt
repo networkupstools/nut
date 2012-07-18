@@ -32,31 +32,19 @@ installing these files. The libraries can then be built and installed
 with `make` and `make install` as usual. This must be done before
 building other (non-NUT) programs which depend on them.
 
-For more information, refer to the link:man/upsclient.html[upsclient(3)],
-manual page and the various
-link:man/index.html#Developer_man[upscli_*(3)] functions documentation
-referenced in the same file.
+For more information, refer to the linkman:upsclient[3],
+manual page and the various link:../man/index.html#devclient[upscli_*(3)]
+functions documentation referenced in the same file.
+
 
 Configuration helpers
 ~~~~~~~~~~~~~~~~~~~~~
 
 NUT provides helper scripts to ease the configuration step of your program, by
-detecting the right compilation and link flags:
+detecting the right compilation and link flags.
 
-- one for platforms providing pkg-config,
-- and the other (libupsclient-config) for platforms not providing pkg-config.
-
-If you have pkg-config installed, and you need to find the location of the NUT
-client include files, add the output of the following command to your build
-system (which can be combined with other pkg-config invocations):
-
-   pkg-config libupsclient --cflags
-
-If you don't have pkg-config, use this:
-
-   libupsclient-config --cflags
-
-Reference: man page: link:man/libupsclient-config.html[libupsclient-config(1)]
+For more information, refer to a
+<<lib-info,Appendix B: NUT libraries complementary information>>.
 
 Python
 ------
@@ -123,3 +111,13 @@ multiple UPS units).
 
  print $other_ups{MFR}, " ", $other_ups{MODEL}, "\n";
 
+Java
+----
+
+This chapter presents the new Java support for NUT, called jNut.
+
+include::../scripts/java/README[]
+
+include::../scripts/java/jNut/README[]
+
+include::../scripts/java/jNutList/README[]

@@ -116,7 +116,7 @@ int USBNewExactMatcher(USBDeviceMatcher_t **matcher, USBDevice_t *hd)
 	USBDevice_t		*data;
 
 	m = malloc(sizeof(*m));
-	if (!matcher) {
+	if (!m) {
 		return -1;
 	}
 

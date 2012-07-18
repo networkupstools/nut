@@ -54,7 +54,7 @@ upsdrv_info_t
 
 This structure tracks several description information about the driver:
 
- * *name*:    the driver full name, for banner printing.
+ * *name*:    the driver full name, for banner printing and "driver.name" variable.
  * *version*: the driver's own version. For sub driver information, refer below
               to sub_upsdrv_info. This value has the form "X.YZ", and is
               published by main as "driver.version.internal".
@@ -208,15 +208,25 @@ Possible values for status_set:
 	OVER    - UPS is overloaded
 	TRIM    - UPS is trimming incoming voltage (called "buck" in some hardware)
 	BOOST   - UPS is boosting incoming voltage
+	FSD     - Forced Shutdown (restricted use, see the note below)
 
 Anything else will not be recognized by the usual clients.  Coordinate
 with the nut-upsdev list before creating something new, since there will be
 duplication and ugliness otherwise.
 
-NOTE: upsd injects "FSD" by itself following that command by a master
-upsmon process.  Drivers must not set that value.
+[NOTE]
+================================================================================
 
-NOTE: the OL and OB flags are an indication of the input line status only.
+- upsd injects "FSD" by itself following that command by a master upsmon
+process.  Drivers must not set that value, apart from specific cases (see
+below).
+
+- As an exception, drivers may set "FSD" when an imminent shutdown has been
+detected. In this case, the "on battery + low battery" condition should not be
+met. Otherwise, setting status to "OB LB" should be prefered.
+
+- the OL and OB flags are an indication of the input line status only.
+================================================================================
 
 UPS alarms
 ----------
@@ -601,6 +611,15 @@ enumerated.  You should add each one to make it available to the client:
 	dstate_addenum("input.transfer.low", "95");
 	dstate_addenum("input.transfer.low", "99");
 	dstate_addenum("input.transfer.low", "105");
+
+Range values
+------------
+
+If you have a variable that support values comprised in one or more ranges,
+you should add each one to make it available to the client:
+
+	dstate_addrange("input.transfer.low", 90, 95);
+	dstate_addrange("input.transfer.low", 100, 105);
 
 Writable strings
 ----------------

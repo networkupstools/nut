@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
-#   Current Version : 1.0
-#   Copyright (C) 2008 - 2010
+#   Current Version : 1.2
+#   Copyright (C) 2008 - 2012
 #            Arnaud Quette <arnaud.quette@gmail.com>
 #            dloic (loic.dardant AT gmail DOT com)
 #
@@ -20,7 +20,11 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-   
+
+# TODO list:
+# - rewrite using glob, as in other helper scripts
+# - manage deps in Makefile.am
+
 use File::Find;
 use strict;
 
@@ -42,6 +46,26 @@ my $outputUPower="../scripts/upower/95-upower-hid.rules";
 my $tmpOutputUPower;
 # mfr header flag
 my $upowerMfrHeaderDone = 0;
+
+# NUT device scanner - C header
+my $outputDevScanner = "./nut-scanner/nutscan-usb.h";
+
+my $GPL_header = "\
+ *  Copyright (C) 2011 - Arnaud Quette <arnaud.quette\@free.fr>\
+ *\
+ *  This program is free software; you can redistribute it and/or modify\
+ *  it under the terms of the GNU General Public License as published by\
+ *  the Free Software Foundation; either version 2 of the License, or\
+ *  (at your option) any later version.\
+ *\
+ *  This program is distributed in the hope that it will be useful,\
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of\
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\
+ *  GNU General Public License for more details.\
+ *\
+ *  You should have received a copy of the GNU General Public License\
+ *  along with this program; if not, write to the Free Software\
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA";
 
 # array of products indexed by vendorID 
 my %vendor;
@@ -93,6 +117,16 @@ sub gen_usb_files
 	print $outputUPower '# only support USB, else ignore'."\n".'SUBSYSTEM!="usb", GOTO="up_hid_end"'."\n\n";
 	print $outputUPower '# if usbraw device, ignore'."\n".'KERNEL!="hiddev*", GOTO="up_hid_end"'."\n\n";
 	print $outputUPower '# if an interface, ignore'."\n".'ENV{DEVTYPE}=="usb_interface", GOTO="up_hid_end"'."\n\n";
+
+	# Device scanner header
+	open my $outputDevScanner, ">$outputDevScanner" || die "error $outputDevScanner : $!";
+	print $outputDevScanner '/* nutscan-usb'.$GPL_header."\n */\n\n";
+	print $outputDevScanner "#ifndef DEVSCAN_USB_H\n#define DEVSCAN_USB_H\n\n";
+	print $outputDevScanner "#include <usb.h>\n";
+	print $outputDevScanner "#include \"nut_stdint.h\"\t/* for uint16_t */\n\n";
+	# vid, pid, driver
+	print $outputDevScanner "typedef struct {\n\tuint16_t\tvendorID;\n\tuint16_t\tproductID;\n\tchar*\tdriver_name;\n} usb_device_id_t;\n\n";
+	print $outputDevScanner "/* USB IDs device table */\nstatic usb_device_id_t usb_device_table[] = {\n\n";
 
 	# generate the file in alphabetical order (first for VendorID, then for ProductID)
 	foreach my $vendorId (sort { lc $a cmp lc $b } keys  %vendorName)
@@ -154,6 +188,9 @@ sub gen_usb_files
 				$tmpOutputUPower = $tmpOutputUPower."\", ATTRS{idProduct}==\"".removeHexPrefix($productId)."\",";
 				$tmpOutputUPower = $tmpOutputUPower.' ENV{UPOWER_BATTERY_TYPE}="ups"'."\n";
 			}
+
+			# Device scanner entry
+			print $outputDevScanner "\t{ ".$vendorId.', '.$productId.", \"".$vendor{$vendorId}{$productId}{"driver"}."\" },\n";
 		}
 		# HAL vendor footer
 		print $outHAL "      </match>\n";
@@ -171,11 +208,15 @@ sub gen_usb_files
 	print $outputUPower $tmpOutputUPower;
 	# ...and print footer
 	print $outputUPower "\n".'LABEL="up_hid_end"'."\n";
+
+	# Device scanner footer
+	print $outputDevScanner "\t/* Terminating entry */\n\t{ -1, -1, NULL }\n};\n#endif /* DEVSCAN_USB_H */\n\n";
 }
 
 sub find_usbdevs
 {
-	return $File::Find::prune = 1 if $_ eq '.svn';
+	# maybe there's an option to turn off all .* files, but anyway this is stupid
+	return $File::Find::prune = 1 if ($_ eq '.svn') || ($_ =~ /^\.#/);
 
 	my $nameFile=$_;
 	my $lastComment="";
@@ -196,7 +237,9 @@ sub find_usbdevs
 			my $VendorName="";
 
 			# special thing for backward declaration using #DEFINE
-			# Format: #define VENDORID 0x???? /* vendor name */
+			# Format:
+			# /* vendor name */
+			# #define VENDORID 0x????
 			if(!($VendorID=~/\dx(\d|\w)+/))
 			{
 				open my $fh,$nameFile or die "error open file $nameFile";
@@ -228,9 +271,13 @@ sub find_usbdevs
 					die "In file $nameFile, for product $ProductID, can't find the declaration of the constant";
 				}
 			}
-			
+
 			# store date (to be optimized)
-			$vendorName{$VendorID}=trim($VendorName);
+			# and don't overwritte actual vendor names with empty values
+			if( (!$vendorName{$VendorID}) or (($vendorName{$VendorID} eq "") and ($VendorName ne "")) )
+			{
+				$vendorName{$VendorID}=trim($VendorName);
+			}
 			$vendor{$VendorID}{$ProductID}{"comment"}=$lastComment;
 			# process the driver name
 			my $driver=$nameFile;

@@ -356,7 +356,11 @@ static void conn_add(int sockfd)
 	int	acc, ret;
 	conn_t	*tmp, *last;
 	struct	sockaddr_un	saddr;
+#if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED) 
+	int			salen;
+#else
 	socklen_t	salen;
+#endif
 
 	salen = sizeof(saddr);
 	acc = accept(sockfd, (struct sockaddr *) &saddr, &salen);
@@ -495,9 +499,6 @@ static void start_daemon(int lockfd)
 	struct	timeval	tv;
 	fd_set	rfds;
 	conn_t	*tmp, *tmpnext;
-	socklen_t	fromlen;
-
-	fromlen = sizeof(struct sockaddr);
 
 	us_serialize(SERIALIZE_INIT);
 
@@ -693,7 +694,7 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 		snprintfcat(buf, sizeof(buf), " \"%s\"",
 			pconf_encode(arg2, enc, sizeof(enc)));
 
-	snprintfcat(buf, sizeof(buf), "\n");
+	snprintf(enc, sizeof(enc), "%s\n", buf);
 
 	/* see if the parent needs to be started (and maybe start it) */
 
@@ -714,10 +715,10 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 
 		/* we're connected now */
 
-		ret = write(pipefd, buf, strlen(buf));
+		ret = write(pipefd, enc, strlen(enc));
 
 		/* if we can't send the whole thing, loop back and try again */
-		if ((ret < 1) || (ret != (int) strlen(buf))) {
+		if ((ret < 1) || (ret != (int) strlen(enc))) {
 			upslogx(LOG_ERR, "write failed, trying again");
 			close(pipefd);
 			continue;
