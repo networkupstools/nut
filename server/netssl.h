@@ -1,4 +1,4 @@
-/* ssl.h - ssl support prototypes for upsd
+/* netssl.h - ssl support prototypes for upsd
 
    Copyright (C) 2002  Russell Kroll <rkroll@exploits.org>
 

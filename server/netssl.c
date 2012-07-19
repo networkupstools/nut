@@ -1,4 +1,4 @@
-/* ssl.c - Interface to OpenSSL for upsd
+/* netssl.c - Interface to OpenSSL for upsd
 
    Copyright (C)
 	2002	Russell Kroll <rkroll@exploits.org>
@@ -29,7 +29,7 @@
 
 #include "upsd.h"
 #include "neterr.h"
-#include "ssl.h"
+#include "netssl.h"
 
 char	*certfile = NULL;
 
