@@ -41,7 +41,6 @@
 	#include <sslerr.h>
 #endif /* WITH_NSS */
 
-
 char	*certfile = NULL;
 char	*certname = NULL;
 char	*certpasswd = NULL;
@@ -49,9 +48,47 @@ char	*certpasswd = NULL;
 #ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
 int certrequest = 0;
 #endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
-int	ssl_initialized = 0;
 
-#ifdef WITH_SSL
+static int	ssl_initialized = 0;
+
+#ifndef WITH_SSL
+
+/* stubs for non-ssl compiles */
+void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
+{
+	send_err(client, NUT_ERR_FEATURE_NOT_SUPPORTED);
+	return;
+}
+
+int ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
+{
+	upslogx(LOG_ERR, "ssl_write called but SSL wasn't compiled in");
+	return -1;
+}
+
+int ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
+{
+	upslogx(LOG_ERR, "ssl_read called but SSL wasn't compiled in");
+	return -1;
+}
+
+void ssl_init(void)
+{
+	ssl_initialized = 0;	/* keep gcc quiet */
+}
+
+void ssl_finish(nut_ctype_t *client)
+{
+	if (client->ssl) {
+		upslogx(LOG_ERR, "ssl_finish found active SSL connection but SSL wasn't compiled in");
+	}
+}
+
+void ssl_cleanup(void)
+{
+}
+
+#else
 
 #ifdef WITH_OPENSSL
 
@@ -104,7 +141,6 @@ static int ssl_error(SSL *ssl, int ret)
 
 static CERTCertificate *cert;
 static SECKEYPrivateKey *privKey;
-
 
 static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry, 
 		void *arg)
@@ -181,177 +217,6 @@ static void HandshakeCallback(PRFileDesc *fd, nut_ctype_t *client_data)
 
 
 #endif /* WITH_OPENSSL | WITH_NSS */
-
-
-void ssl_init()
-{
-#ifdef WITH_NSS
-	SECStatus status;
-#endif /* WITH_NSS */
-
-	if (!certfile) {
-		return;
-	}
-
-	check_perms(certfile);
-
-#ifdef WITH_OPENSSL
-
-	SSL_library_init();
-	SSL_load_error_strings();
-	OpenSSL_add_ssl_algorithms();
-
-	if ((ssl_ctx = SSL_CTX_new(TLSv1_server_method())) == NULL) {
-		fatal_with_errno(EXIT_FAILURE, "SSL_CTX_new");
-	}
-
-	if (SSL_CTX_use_PrivateKey_file(ssl_ctx, certfile, SSL_FILETYPE_PEM) != 1) {
-		ssl_debug();
-		upslogx(LOG_ERR, "SSL_CTX_use_PrivateKey_file(%s) failed", certfile);
-		return;
-	}
-
-	if (SSL_CTX_use_certificate_chain_file(ssl_ctx, certfile) != 1) {
-		upslogx(LOG_ERR, "SSL_CTX_use_certificate_chain_file(%s) failed", certfile);
-		return;
-	}
-
-	if (SSL_CTX_check_private_key(ssl_ctx) != 1) {
-		upslogx(LOG_ERR, "SSL_CTX_check_private_key(%s) failed", certfile);
-		return;
-	}
-
-	SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_NONE, NULL);
-
-	if (SSL_CTX_set_cipher_list(ssl_ctx, "HIGH:@STRENGTH") != 1) {
-		fatalx(EXIT_FAILURE, "SSL_CTX_set_cipher_list");
-	}
-
-	ssl_initialized = 1;
-		
-#elif defined(WITH_NSS) /* WITH_OPENSSL */
-
-	if (!certname || certname[0]==0 ) {
-		upslogx(LOG_ERR, "The SSL certificate name is not specified.");
-		return;
-	}
-
-	PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);
-	
-	PK11_SetPasswordFunc(nss_password_callback);
-	
-	if (certfile)
-		/* Note: this call can generate memory leaks not resolvable
-		 * by any release function.
-		 * Probably NSS key module object allocation and
-		 * probably NSS key db object allocation too. */
-		status = NSS_Init(certfile);
-	else
-		status = NSS_NoDB_Init(NULL);
-	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not initialize SSL context");
-		nss_error("upscli_init / NSS_[NoDB]_Init");	
-		return;
-	}
-	
-	status = NSS_SetDomesticPolicy();
-	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not initialize SSL policy");
-		nss_error("upscli_init / NSS_SetDomesticPolicy");
-		return;
-	}
-
-	/* Default server cache config */
-	status = SSL_ConfigServerSessionIDCache(0, 0, 0, NULL);
-	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not initialize SSL server cache");
-		nss_error("upscli_init / SSL_ConfigServerSessionIDCache");
-		return;
-	}
-	
-	status = SSL_OptionSetDefault(SSL_ENABLE_SSL3, PR_TRUE);
-	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not enable SSLv3");
-		nss_error("upscli_init / SSL_OptionSetDefault(SSL_ENABLE_SSL3)");
-		return;
-	}
-	status = SSL_OptionSetDefault(SSL_ENABLE_TLS, PR_TRUE);
-	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not enable TLSv1");
-		nss_error("upscli_init / SSL_OptionSetDefault(SSL_ENABLE_TLS)");
-		return;
-	}
-
-#ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
-	if (certrequest < NETSSL_CERTREQ_NO &&
-		certrequest > NETSSL_CERTREQ_REQUEST) {
-		upslogx(LOG_ERR, "Invalid certificate requirement");
-		return;
-	}
-
-	if (certrequest == NETSSL_CERTREQ_REQUEST || 
-		certrequest == NETSSL_CERTREQ_REQUIRE ) {
-		status = SSL_OptionSetDefault(SSL_REQUEST_CERTIFICATE, PR_TRUE);
-		if (status != SECSuccess) {
-			upslogx(LOG_ERR, "Can not enable certificate request");
-			nss_error("upscli_init / SSL_OptionSetDefault(SSL_REQUEST_CERTIFICATE)");
-			return;
-		}
-	}
-
-	if (certrequest == NETSSL_CERTREQ_REQUIRE ) {
-		status = SSL_OptionSetDefault(SSL_REQUIRE_CERTIFICATE, PR_TRUE);
-		if (status != SECSuccess) {
-			upslogx(LOG_ERR, "Can not enable certificate requirement");
-			nss_error("upscli_init / SSL_OptionSetDefault(SSL_REQUIRE_CERTIFICATE)");
-			return;
-		}
-	}
-#endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
-	
-	cert = PK11_FindCertFromNickname(certname, NULL);
-	if(cert==NULL)	{
-		upslogx(LOG_ERR, "Can not find server certificate");
-		nss_error("upscli_init / PK11_FindCertFromNickname");
-		return;
-	}
-	
-	privKey = PK11_FindKeyByAnyCert(cert, NULL);
-	if(privKey==NULL){
-		upslogx(LOG_ERR, "Can not find private key associate to server certificate");
-		nss_error("upscli_init / PK11_FindKeyByAnyCert");
-		return;
-	}
-		
-	ssl_initialized = 1;
-#else /* WITH_OPENSSL | WITH_NSS */
-	upslogx(LOG_ERR, "ssl_init called but SSL wasn't compiled in");
-#endif /* WITH_OPENSSL | WITH_NSS */
-}
-
-void ssl_cleanup(void)
-{
-#ifdef WITH_OPENSSL
-	if (ssl_ctx) {
-		SSL_CTX_free(ssl_ctx);
-		ssl_ctx = NULL;
-	}
-#elif defined(WITH_NSS) /* WITH_OPENSSL */
-	CERT_DestroyCertificate(cert);
-    SECKEY_DestroyPrivateKey(privKey);
-	NSS_Shutdown();
-	PR_Cleanup();
-	/* Called to release memory arena used by NSS/NSPR.
-	 * Prevent to show all PL_ArenaAllocate mem alloc as leaks.
-	 * https://developer.mozilla.org/en/NSS_Memory_allocation
-	 */
-	PL_ArenaFinish();
-#else /* WITH_OPENSSL | WITH_NSS */
-	/* Do nothing */
-#endif /* WITH_OPENSSL | WITH_NSS */
-	ssl_initialized = 0;
-}
-
 
 void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
 {
@@ -497,24 +362,165 @@ void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
 			return;
 		}
 	}
-
-#endif /* WITH_OPENSSL | WITH_NSS */
-
 	client->ssl_connected = 1;
+#endif /* WITH_OPENSSL | WITH_NSS */
 }
 
-void ssl_finish(nut_ctype_t *client)
+void ssl_init(void)
 {
-	if (client->ssl) {
-#ifdef WITH_OPENSSL
-		SSL_free(client->ssl);
-#elif defined(WITH_NSS)
-		PR_Shutdown(client->ssl, PR_SHUTDOWN_BOTH);
-		PR_Close(client->ssl);
-#endif /* WITH_OPENSSL | WITH_NSS */
-		client->ssl_connected = 0;
-		client->ssl = NULL;
+#ifdef WITH_NSS
+	SECStatus status;
+#elif defined(WITH_OPENSSL)
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+	const SSL_METHOD	*ssl_method;
+#else
+	SSL_METHOD	*ssl_method;
+#endif
+#endif /* WITH_NSS|WITH_OPENSSL */
+
+	if (!certfile) {
+		return;
 	}
+
+	check_perms(certfile);
+
+#ifdef WITH_OPENSSL
+
+	SSL_load_error_strings();
+	SSL_library_init();
+
+	if ((ssl_method = TLSv1_server_method()) == NULL) {
+		ssl_debug();
+		fatalx(EXIT_FAILURE, "TLSv1_server_method failed");
+	}
+
+	if ((ssl_ctx = SSL_CTX_new(ssl_method)) == NULL) {
+		ssl_debug();
+		fatalx(EXIT_FAILURE, "SSL_CTX_new failed");
+	}
+
+	if (SSL_CTX_use_certificate_chain_file(ssl_ctx, certfile) != 1) {
+		ssl_debug();
+		fatalx(EXIT_FAILURE, "SSL_CTX_use_certificate_chain_file(%s) failed", certfile);
+	}
+
+	if (SSL_CTX_use_PrivateKey_file(ssl_ctx, certfile, SSL_FILETYPE_PEM) != 1) {
+		ssl_debug();
+		fatalx(EXIT_FAILURE, "SSL_CTX_use_PrivateKey_file(%s) failed", certfile);
+	}
+
+	if (SSL_CTX_check_private_key(ssl_ctx) != 1) {
+		ssl_debug();
+		fatalx(EXIT_FAILURE, "SSL_CTX_check_private_key(%s) failed", certfile);
+	}
+
+	if (SSL_CTX_set_cipher_list(ssl_ctx, "HIGH:@STRENGTH") != 1) {
+		ssl_debug();
+		fatalx(EXIT_FAILURE, "SSL_CTX_set_cipher_list failed");
+	}
+
+	SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_NONE, NULL);
+
+	ssl_initialized = 1;
+		
+#elif defined(WITH_NSS) /* WITH_OPENSSL */
+
+	if (!certname || certname[0]==0 ) {
+		upslogx(LOG_ERR, "The SSL certificate name is not specified.");
+		return;
+	}
+
+	PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);
+	
+	PK11_SetPasswordFunc(nss_password_callback);
+	
+	if (certfile)
+		/* Note: this call can generate memory leaks not resolvable
+		 * by any release function.
+		 * Probably NSS key module object allocation and
+		 * probably NSS key db object allocation too. */
+		status = NSS_Init(certfile);
+	else
+		status = NSS_NoDB_Init(NULL);
+	if (status != SECSuccess) {
+		upslogx(LOG_ERR, "Can not initialize SSL context");
+		nss_error("upscli_init / NSS_[NoDB]_Init");	
+		return;
+	}
+	
+	status = NSS_SetDomesticPolicy();
+	if (status != SECSuccess) {
+		upslogx(LOG_ERR, "Can not initialize SSL policy");
+		nss_error("upscli_init / NSS_SetDomesticPolicy");
+		return;
+	}
+
+	/* Default server cache config */
+	status = SSL_ConfigServerSessionIDCache(0, 0, 0, NULL);
+	if (status != SECSuccess) {
+		upslogx(LOG_ERR, "Can not initialize SSL server cache");
+		nss_error("upscli_init / SSL_ConfigServerSessionIDCache");
+		return;
+	}
+	
+	status = SSL_OptionSetDefault(SSL_ENABLE_SSL3, PR_TRUE);
+	if (status != SECSuccess) {
+		upslogx(LOG_ERR, "Can not enable SSLv3");
+		nss_error("upscli_init / SSL_OptionSetDefault(SSL_ENABLE_SSL3)");
+		return;
+	}
+	status = SSL_OptionSetDefault(SSL_ENABLE_TLS, PR_TRUE);
+	if (status != SECSuccess) {
+		upslogx(LOG_ERR, "Can not enable TLSv1");
+		nss_error("upscli_init / SSL_OptionSetDefault(SSL_ENABLE_TLS)");
+		return;
+	}
+
+#ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
+	if (certrequest < NETSSL_CERTREQ_NO &&
+		certrequest > NETSSL_CERTREQ_REQUEST) {
+		upslogx(LOG_ERR, "Invalid certificate requirement");
+		return;
+	}
+
+	if (certrequest == NETSSL_CERTREQ_REQUEST || 
+		certrequest == NETSSL_CERTREQ_REQUIRE ) {
+		status = SSL_OptionSetDefault(SSL_REQUEST_CERTIFICATE, PR_TRUE);
+		if (status != SECSuccess) {
+			upslogx(LOG_ERR, "Can not enable certificate request");
+			nss_error("upscli_init / SSL_OptionSetDefault(SSL_REQUEST_CERTIFICATE)");
+			return;
+		}
+	}
+
+	if (certrequest == NETSSL_CERTREQ_REQUIRE ) {
+		status = SSL_OptionSetDefault(SSL_REQUIRE_CERTIFICATE, PR_TRUE);
+		if (status != SECSuccess) {
+			upslogx(LOG_ERR, "Can not enable certificate requirement");
+			nss_error("upscli_init / SSL_OptionSetDefault(SSL_REQUIRE_CERTIFICATE)");
+			return;
+		}
+	}
+#endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
+	
+	cert = PK11_FindCertFromNickname(certname, NULL);
+	if(cert==NULL)	{
+		upslogx(LOG_ERR, "Can not find server certificate");
+		nss_error("upscli_init / PK11_FindCertFromNickname");
+		return;
+	}
+	
+	privKey = PK11_FindKeyByAnyCert(cert, NULL);
+	if(privKey==NULL){
+		upslogx(LOG_ERR, "Can not find private key associate to server certificate");
+		nss_error("upscli_init / PK11_FindKeyByAnyCert");
+		return;
+	}
+		
+	ssl_initialized = 1;
+#else /* WITH_OPENSSL | WITH_NSS */
+	upslogx(LOG_ERR, "ssl_init called but SSL wasn't compiled in");
+#endif /* WITH_OPENSSL | WITH_NSS */
 }
 
 int ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
@@ -558,40 +564,39 @@ int ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
 	return ret;
 }
 
-#else /* WITH_SSL */
-
-void ssl_init(void)
+void ssl_finish(nut_ctype_t *client)
 {
-	ssl_initialized = 0;	/* keep gcc quiet */
+	if (client->ssl) {
+#ifdef WITH_OPENSSL
+		SSL_free(client->ssl);
+#elif defined(WITH_NSS)
+		PR_Shutdown(client->ssl, PR_SHUTDOWN_BOTH);
+		PR_Close(client->ssl);
+#endif /* WITH_OPENSSL | WITH_NSS */
+		client->ssl_connected = 0;
+		client->ssl = NULL;
+	}
 }
 
 void ssl_cleanup(void)
 {
-}
-
-void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
-{
-	send_err(client, NUT_ERR_FEATURE_NOT_SUPPORTED);
-	return;
-}
-
-void ssl_finish(nut_ctype_t *client)
-{
-	if (client->ssl) {
-		upslogx(LOG_ERR, "ssl_finish found active SSL connection but SSL wasn't compiled in");
+#ifdef WITH_OPENSSL
+	if (ssl_ctx) {
+		SSL_CTX_free(ssl_ctx);
+		ssl_ctx = NULL;
 	}
-}
-
-int ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
-{
-	upslogx(LOG_ERR, "ssl_write called but SSL wasn't compiled in");
-	return -1;
-}
-
-int ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
-{
-	upslogx(LOG_ERR, "ssl_read called but SSL wasn't compiled in");
-	return -1;
+#elif defined(WITH_NSS) /* WITH_OPENSSL */
+	CERT_DestroyCertificate(cert);
+    SECKEY_DestroyPrivateKey(privKey);
+	NSS_Shutdown();
+	PR_Cleanup();
+	/* Called to release memory arena used by NSS/NSPR.
+	 * Prevent to show all PL_ArenaAllocate mem alloc as leaks.
+	 * https://developer.mozilla.org/en/NSS_Memory_allocation
+	 */
+	PL_ArenaFinish();
+#endif /* WITH_OPENSSL | WITH_NSS */
+	ssl_initialized = 0;
 }
 
 #endif /* WITH_SSL */

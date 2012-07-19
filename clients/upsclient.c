@@ -551,7 +551,7 @@ static int net_read(UPSCONN_t *ups, char *buf, size_t buflen)
 {
 	int	ret;
 
-#ifdef HAVE_SSL
+#ifdef WITH_SSL
 	if (ups->ssl) {
 #ifdef WITH_OPENSSL
 		ret = SSL_read(ups->ssl, buf, buflen);
@@ -612,7 +612,7 @@ static int net_write(UPSCONN_t *ups, const char *buf, size_t buflen)
 {
 	int	ret;
 
-#ifdef HAVE_SSL
+#ifdef WITH_SSL
 	if (ups->ssl) {
 #ifdef WITH_OPENSSL
 		ret = SSL_write(ups->ssl, buf, buflen);
