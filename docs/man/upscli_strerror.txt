@@ -11,13 +11,13 @@ SYNOPSIS
 
  #include <upsclient.h>
 
- char *upscli_strerror(UPSCONN *ups);
+ char *upscli_strerror(UPSCONN_t *ups);
 
 DESCRIPTION
 -----------
 
 The *upscli_strerror*() function takes the pointer 'ups' to a
-`UPSCONN` state structure and returns a string describing the last error
+`UPSCONN_t` state structure and returns a string describing the last error
 which occurred on this connection.  The string is valid until the next
 call to *upscli_strerror*().
 

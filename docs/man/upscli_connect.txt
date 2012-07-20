@@ -11,12 +11,12 @@ SYNOPSIS
 
  #include <upsclient.h>
 
- int upscli_connect(UPSCONN *ups, const char *host, int port, int flags);
+ int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags);
 
 DESCRIPTION
 -----------
 The *upscli_connect()* function takes the pointer 'ups' to a
-`UPSCONN` state structure and opens a TCP connection to the 'host' on
+`UPSCONN_t` state structure and opens a TCP connection to the 'host' on
 the given 'port'.
 
 'flags' may be either `UPSCLI_CONN_TRYSSL` to try a SSL
@@ -34,7 +34,7 @@ descriptors.
 RETURN VALUE
 ------------
 
-The *upscli_connect()* function modifies the `UPSCONN` structure and
+The *upscli_connect()* function modifies the `UPSCONN_t` structure and
 returns 0 on success, or -1 if an error occurs.
 
 SEE ALSO

@@ -92,7 +92,7 @@ FULL_DEVELOPER_GUIDE_DEPS = $(DEVELOPER_GUIDE_DEPS) $(SHARED_DEPS) \
 
 user-manual.html user-manual.chunked user-manual.pdf: $(FULL_USER_MANUAL_DEPS)
 developer-guide.html developer-guide.chunked developer-guide.pdf: $(FULL_DEVELOPER_GUIDE_DEPS)
-packager-guide.html packager-guide.chunked packager-guide.pdf: packager-guide.txt
+packager-guide.html packager-guide.chunked packager-guide.pdf: packager-guide.txt asciidoc.conf
 
 # Note: without the "-v", asciidoc (circa 8.6.2) sometimes hangs when
 # generating the chunked HTML. In this case, export the environment

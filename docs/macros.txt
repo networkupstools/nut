@@ -11,15 +11,15 @@ directory.
 	Check for the corresponding type in the system header files, and
 	#define a replacement if necessary.
 
-- Macro: NUT_CHECK_LIBGD
-- Macro: NUT_CHECK_LIBHAL
-- Macro: NUT_CHECK_LIBNEON
-- Macro: NUT_CHECK_LIBNETSNMP
-- Macro: NUT_CHECK_LIBPOWERMAN
-- Macro: NUT_CHECK_LIBOPENSSL
-- Macro: NUT_CHECK_LIBNSS
-- Macro: NUT_CHECK_LIBUSB
-- Macro: NUT_CHECK_LIBWRAP
+- NUT_CHECK_LIBGD
+- NUT_CHECK_LIBHAL
+- NUT_CHECK_LIBNEON
+- NUT_CHECK_LIBNETSNMP
+- NUT_CHECK_LIBPOWERMAN
+- NUT_CHECK_LIBOPENSSL
+- NUT_CHECK_LIBNSS
+- NUT_CHECK_LIBUSB
+- NUT_CHECK_LIBWRAP
 
 	Determine the compiler flags for the corresponding library. On
 	success, set nut_have_libxxx="yes" and set LIBXXX_CFLAGS and

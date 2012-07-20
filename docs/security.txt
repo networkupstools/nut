@@ -61,7 +61,7 @@ Administrative commands such as setting variables and the instant commands
 are powerful, and access to them needs to be restricted.
 
 NUT provides an internal mechanism to do so, through
-link:man/upsd.users.html[upsd.users(5)].
+linkman:upsd.users[5].
 
 This file defines who may access instant commands and settings, and what
 is available.
@@ -78,7 +78,7 @@ You can also create an 'administrator' user with full power using:
 		instcmds = all
 
 For more information on how to restrict actions and instant commands, refer
-to link:man/upsd.users.html[upsd.users(5)] manual page.
+to linkman:upsd.users[5] manual page.
 
 NOTE: NUT administrative user definitions should be used in conjunction with
 <<TCP_Wrappers,TCP Wrappers>>.
@@ -95,7 +95,7 @@ There are various ways to do so.
 NUT LISTEN directive
 ~~~~~~~~~~~~~~~~~~~~
 
-link:man/upsd.conf.html[upsd.conf(5)].
+linkman:upsd.conf[5].
 
    LISTEN interface port
 
@@ -298,6 +298,15 @@ Clean up the temporary files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	rm -f upsd.crt upsd.key
+
+Restart upsd
+^^^^^^^^^^^^
+
+It should come back up without any complaints.  If it says something
+about keys or certificates, then you probably missed a step.
+
+If you run upsd as a separate user id (like nutsrv), make sure that
+user can read the upsd.pem file.
 
 Point upsmon at the certificates
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -572,6 +581,10 @@ has been granted.  That is (purposely) impossible here, since NUT is the
 combined effort of many people, and all of them would have to agree to a
 license change.  This is actually a feature, since it means nobody can
 unilaterally run off with the source - not even the NUT team.
+
+Note that the replacement of OpenSSL by Mozilla Network Security Services
+(NSS) is scheduled in the future, to avoid the above licensing issues.
+
 
 chrooting and other forms of paranoia
 -------------------------------------

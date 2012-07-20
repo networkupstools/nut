@@ -11,13 +11,13 @@ SYNOPSIS
 
  #include <upsclient.h>
 
- int upscli_upserror(UPSCONN *ups);
+ int upscli_upserror(UPSCONN_t *ups);
 
 DESCRIPTION
 -----------
 
 The *upscli_upserror*() function takes the pointer 'ups' to a
-`UPSCONN` state structure and returns the value of the internal error
+`UPSCONN_t` state structure and returns the value of the internal error
 number, if any. 
 
 This is typically used to check for certain error values like

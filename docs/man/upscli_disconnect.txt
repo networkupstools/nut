@@ -11,13 +11,13 @@ SYNOPSIS
 
  #include <upsclient.h>
 
- int upscli_disconnect(UPSCONN *ups);
+ int upscli_disconnect(UPSCONN_t *ups);
 
 DESCRIPTION
 -----------
 The *upscli_disconnect()* function takes the pointer 'ups' to a
-`UPSCONN` state structure, shuts down the connection to the server, and 
-frees dynamic memory used by the state structure.  The `UPSCONN` structure
+`UPSCONN_t` state structure, shuts down the connection to the server, and 
+frees dynamic memory used by the state structure.  The `UPSCONN_t` structure
 is no longer valid after this function is called.
 
 This function must be called, or your program will leak memory and

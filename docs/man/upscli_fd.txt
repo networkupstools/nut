@@ -11,13 +11,13 @@ SYNOPSIS
 
  #include <upsclient.h>
 
- int upscli_fd(UPSCONN *ups);
+ int upscli_fd(UPSCONN_t *ups);
 
 DESCRIPTION
 -----------
 
 The *upscli_fd()* function takes the pointer 'ups' to a
-`UPSCONN` state structure and returns the value of the file descriptor
+`UPSCONN_t` state structure and returns the value of the file descriptor
 for that connection, if any.
 
 This may be useful for determining if the connection to linkman:upsd[8]

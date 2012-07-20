@@ -10,13 +10,13 @@ SYNOPSIS
 
  #include <upsclient.h>
 
- int upscli_get(UPSCONN *ups, int numq, const char **query,
+ int upscli_get(UPSCONN_t *ups, int numq, const char **query,
 			int *numa, char ***answer)
 
 DESCRIPTION
 -----------
 The *upscli_get()* function takes the pointer 'ups' to a
-`UPSCONN` state structure, and the pointer 'query' to an array of
+`UPSCONN_t` state structure, and the pointer 'query' to an array of
 'numq' query elements.  It builds a properly-formatted request from
 those elements and transmits it to linkman:upsd[8].
 

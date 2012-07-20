@@ -11,14 +11,14 @@ SYNOPSIS
 
  #include <upsclient.h>
 
- int upscli_list_next(UPSCONN *ups, int numq, const char **query,
+ int upscli_list_next(UPSCONN_t *ups, int numq, const char **query,
 			int *numa, char ***answer)
 
 DESCRIPTION
 -----------
 
 The *upscli_list_next()* function takes the pointer 'ups' to a
-`UPSCONN` state structure, and the pointer 'query' to an array of
+`UPSCONN_t` state structure, and the pointer 'query' to an array of
 'numq' query elements.  It performs a read from the network and
 expects to find either another list item or the end of a list.
 
