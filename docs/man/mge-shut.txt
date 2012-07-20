@@ -64,8 +64,7 @@ Make sure you use the correct unit in your configuration.
 *notification*='num'::
 Set notification type to 1 (no), 2 (light) or 3 (yes).
 +
-The default value is 3 (yes) because of some early Ellipse models which
-need it.
+This argument is ignored. It is only here for backward compatibility.
 
 KNOWN ISSUES
 ------------
