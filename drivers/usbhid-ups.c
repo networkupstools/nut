@@ -742,6 +742,8 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "productid", "Regular expression to match UPS Product numerical ID (4 digits hexadecimal)");
 	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
 	addvar(VAR_FLAG, "explore", "Diagnostic matching of unsupported UPS");
+#else
+	addvar(VAR_VALUE, "notification", "Set notification type, (ignored, only for backward compatibility)");
 #endif
 }
 
