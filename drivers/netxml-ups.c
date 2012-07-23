@@ -47,7 +47,7 @@
 /** *_OBJECT query multi-part body boundary */
 #define FORM_POST_BOUNDARY "NUT-NETXML-UPS-OBJECTS"
 
-#ifdef WIN32 // FIXME ?? skip alarm handling
+#ifdef WIN32 /* FIXME ?? skip alarm handling */
 #define HAVE_NE_SET_CONNECT_TIMEOUT  1
 #define HAVE_NE_SOCK_CONNECT_TIMEOUT 1
 #endif

@@ -77,6 +77,15 @@
 /* TODO: find the right sysOID for this MIB 
  * Ie ".1.3.6.1.4.1.318.1.1.1" or ".1.3.6.1.4.1.318" or? */
 
+/*     .1.3.6.1.4.1.318.1.1.1
+ *       enterprise^
+ *       apc ---------^
+ *       products ------^
+ *       hardware --------^
+ *       ups ---------------^
+ *  ref: ftp://ftp.apc.com/apc/public/software/pnetmib/mib/404/powernet404.mib
+ */
+
 /* info elements */
 
 #define APCC_OID_BATT_STATUS	".1.3.6.1.4.1.318.1.1.1.2.1.1.0"
