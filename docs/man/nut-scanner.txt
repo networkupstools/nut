@@ -21,11 +21,11 @@ NUT-compatible devices it has found.
 INSTALLATION
 ------------
 
-*nut-scanner* is always built by default. However, available options
-(USB, SNMP, IPMI, ...) will vary according to the available compile time
-and runtime dependencies. For example, if Net-SNMP is installed, thus
-providing libsnmp (.so or .dll) and headers, both during compilation
-and runtime, then SNMP discovery will be available.
+*nut-scanner* is only built if libltdl (part of libtool development suite)
+is available. Available options (USB, SNMP, IPMI, ...) will vary according
+to the available compile time and runtime dependencies. For example, if
+Net-SNMP is installed, thus providing libsnmp (.so or .dll) and headers,
+both during compilation and runtime, then SNMP discovery will be available.
 
 OPTIONS
 -------

@@ -19,7 +19,7 @@
 
 #include "nut_ctype.h"
 
-#include "ssl.h"
+#include "netssl.h"
 #include "netget.h"
 #include "netset.h"
 #include "netlist.h"

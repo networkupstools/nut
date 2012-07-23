@@ -31,7 +31,7 @@
 #endif
 
 #define DRIVER_NAME	"Megatec/Q1 protocol USB driver"
-#define DRIVER_VERSION	"0.08"
+#define DRIVER_VERSION	"0.09"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -354,6 +354,7 @@ static usb_device_id_t blazer_usb_id[] = {
 	{ USB_DEVICE(0x06da, 0x0004), &cypress_subdriver },	/* Phoenixtec Innova 3/1 T */
 	{ USB_DEVICE(0x06da, 0x0005), &cypress_subdriver },	/* Phoenixtec Innova RT */
 	{ USB_DEVICE(0x06da, 0x0201), &cypress_subdriver },	/* Phoenixtec Innova T */
+	{ USB_DEVICE(0x06da, 0x0601), &phoenix_subdriver },	/* Online Zinto A */
 	{ USB_DEVICE(0x0f03, 0x0001), &cypress_subdriver },	/* Unitek Alpha 1200Sx */
 	{ USB_DEVICE(0x14f0, 0x00c9), &phoenix_subdriver },	/* GE EP series */
 	/* end of list */

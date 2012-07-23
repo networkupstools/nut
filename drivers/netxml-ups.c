@@ -38,7 +38,7 @@
 #include <ne_socket.h>
 
 #define DRIVER_NAME	"network XML UPS"
-#define DRIVER_VERSION	"0.30"
+#define DRIVER_VERSION	"0.31"
 #ifdef WIN32 /* FIXME ?? skip alarm handling */
 #define HAVE_NE_SET_CONNECT_TIMEOUT  1
 #define HAVE_NE_SOCK_CONNECT_TIMEOUT 1
@@ -96,7 +96,7 @@ void upsdrv_initinfo(void)
 			continue;
 		}
 
-		dstate_setinfo("driver.version.internal", "%s", subdriver->version);
+		dstate_setinfo("driver.version.data", "%s", subdriver->version);
 
 		if (testvar("subscribe") && (netxml_alarm_subscribe(subdriver->subscribe) == NE_OK)) {
 			extrafd = ne_sock_fd(sock);

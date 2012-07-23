@@ -62,11 +62,10 @@ static int ups_status = 0;
 #define VDISCARD VDISCRD
 #endif /* VDISCRD && !VDISCARD */
 
-
 #ifndef CTRL
-#define CONTROL(x)	(x&037)
+#define CONTROL(x) (x&037)
 #else
-#define CONTROL		CTRL
+#define CONTROL CTRL
 #endif
 
 /*
@@ -77,54 +76,53 @@ static int ups_status = 0;
 #define CDISCARD CONTROL('O')
 #endif
 #ifndef CDSUSP
-#define CDSUSP   CONTROL('Y')
+#define CDSUSP	 CONTROL('Y')
 #endif
 #ifndef CEOF
-#define CEOF     CONTROL('D')
+#define CEOF	 CONTROL('D')
 #endif
 #ifndef CEOL
 #define CEOL	 0xff		/* was 0 */
 #endif
 #ifndef CERASE
-#define CERASE   0177
+#define CERASE	 0177
 #endif
 #ifndef CINTR
-#define CINTR    CONTROL('C')
+#define CINTR	 CONTROL('C')
 #endif
 #ifndef CKILL
 #define CKILL	 CONTROL('U')	/* was '@' */
 #endif
 #ifndef CLNEXT
-#define CLNEXT   CONTROL('V')
+#define CLNEXT	 CONTROL('V')
 #endif
 #ifndef CMIN
-#define CMIN		CEOF
+#define CMIN	 CEOF
 #endif
 #ifndef CQUIT
-#define CQUIT    CONTROL('\\')
+#define CQUIT	 CONTROL('\\')
 #endif
 #ifndef CRPRNT
-#define CRPRNT   CONTROL('R')
+#define CRPRNT	 CONTROL('R')
 #endif
 #ifndef CREPRINT
 #define CREPRINT CRPRNT
 #endif
 #ifndef CSTART
-#define CSTART   CONTROL('Q')
+#define CSTART	 CONTROL('Q')
 #endif
 #ifndef CSTOP
-#define CSTOP    CONTROL('S')
+#define CSTOP	 CONTROL('S')
 #endif
 #ifndef CSUSP
-#define CSUSP    CONTROL('Z')
+#define CSUSP	 CONTROL('Z')
 #endif
 #ifndef CTIME
-#define CTIME		CEOL
+#define CTIME	 CEOL
 #endif
 #ifndef CWERASE
 #define CWERASE  CONTROL('W')
 #endif
-
 
 /* some forwards */
 
@@ -147,7 +145,7 @@ static int (*sdlist[])(const void *) = {
 #define SDIDX_K		2
 #define SDIDX_Z		3
 #define SDIDX_CS	4
-#define SDCNT 		((int)(sizeof(sdlist)/sizeof(sdlist[0])))
+#define SDCNT		((int)(sizeof(sdlist)/sizeof(sdlist[0])))
 
 static apc_vartab_t *vartab_lookup_char(char cmdchar)
 {
@@ -247,6 +245,84 @@ static const char *convert_data(apc_vartab_t *cmd_entry, const char *upsval)
 	return temp;
 }
 
+/* report differences if tcsetattr != tcgetattr, return otherwise */
+static void apc_ser_diff(struct termios *tioset, struct termios *tioget)
+{
+	size_t i;
+	const char dir[] = { 's', 'g' };
+	struct termios *tio[] = { tioset, tioget };
+	struct cchar {
+		const char *name;
+		int sub;
+		u_char def;
+	};
+	const struct cchar cchars1[] = {
+#ifdef VDISCARD
+		{ "discard",	VDISCARD,	CDISCARD },
+#endif
+#ifdef VDSUSP
+		{ "dsusp",	VDSUSP,		CDSUSP },
+#endif
+		{ "eof",	VEOF,		CEOF },
+		{ "eol",	VEOL,		CEOL },
+		{ "eol2",	VEOL2,		CEOL },
+		{ "erase",	VERASE,		CERASE },
+#ifdef VINTR
+		{ "intr",	VINTR,		CINTR },
+#endif
+		{ "kill",	VKILL,		CKILL },
+		{ "lnext",	VLNEXT,		CLNEXT },
+		{ "min",	VMIN,		CMIN },
+		{ "quit",	VQUIT,		CQUIT },
+#ifdef VREPRINT
+		{ "reprint",	VREPRINT,	CREPRINT },
+#endif
+		{ "start",	VSTART,		CSTART },
+#ifdef VSTATUS
+		{ "status",	VSTATUS,	CSTATUS },
+#endif
+		{ "stop",	VSTOP,		CSTOP },
+		{ "susp",	VSUSP,		CSUSP },
+		{ "time",	VTIME,		CTIME },
+		{ "werase",	VWERASE,	CWERASE },
+		{ NULL },
+	}, *cp;
+
+	/* clear status flags so that they don't affect our binary compare */
+#if defined(PENDIN) || defined(FLUSHO)
+	for (i = 0; i < sizeof(tio)/sizeof(tio[0]); i++) {
+#ifdef PENDIN
+		tio[i]->c_lflag &= ~PENDIN;
+#endif
+#ifdef FLUSHO
+		tio[i]->c_lflag &= ~FLUSHO;
+#endif
+	}
+#endif /* defined(PENDIN) || defined(FLUSHO) */
+
+	if (!memcmp(tio[0], tio[1], sizeof(*tio[0])))
+		return;
+
+	upslogx(LOG_NOTICE, "%s: device reports different attributes than what were set", device_path);
+
+	/*
+	 * According to the manual the most common problem is mis-matched
+	 * combinations of input and output baud rates. If the combination is
+	 * not supported then neither are changed. This should not be a
+	 * problem here since we set them both to the same extremely common
+	 * rate of 2400.
+	 */
+
+	for (i = 0; i < sizeof(tio)/sizeof(tio[0]); i++) {
+		upsdebugx(1, "tc%cetattr(): gfmt1:cflag=%x:iflag=%x:lflag=%x:oflag=%x:", dir[i],
+				(unsigned int) tio[i]->c_cflag, (unsigned int) tio[i]->c_iflag,
+				(unsigned int) tio[i]->c_lflag, (unsigned int) tio[i]->c_oflag);
+		for (cp = cchars1; cp->name; ++cp)
+			upsdebugx(1, "\t%s=%x:", cp->name, tio[i]->c_cc[cp->sub]);
+		upsdebugx(1, "\tispeed=%d:ospeed=%d", (int) cfgetispeed(tio[i]), (int) cfgetospeed(tio[i]));
+	}
+}
+
 static void apc_ser_set(void)
 {
 	struct termios tio, tio_chk;
@@ -304,92 +380,11 @@ static void apc_ser_set(void)
 	if (tcsetattr(upsfd, TCSANOW, &tio))
 		fatal_with_errno(EXIT_FAILURE, "tcsetattr(%s)", device_path);
 
-	/* clear status flags so that they don't affect our binary compare */
-#ifdef PENDIN
-	tio.c_lflag &= ~PENDIN;
-#endif
-#ifdef FLUSHO
-	tio.c_lflag &= ~FLUSHO;
-#endif
-
 	memset(&tio_chk, 0, sizeof(tio_chk));
 	if (tcgetattr(upsfd, &tio_chk))
 		fatal_with_errno(EXIT_FAILURE, "tcgetattr(%s)", device_path);
 
-	/* clear status flags so that they don't affect our binary compare */
-#ifdef PENDIN
-	tio_chk.c_lflag &= ~PENDIN;
-#endif
-#ifdef FLUSHO
-	tio_chk.c_lflag &= ~FLUSHO;
-#endif
-
-	if (memcmp(&tio_chk, &tio, sizeof(tio))) {
-		struct cchar {
-			const char *name;
-			int sub;
-			u_char def;
-		};
-		const struct cchar cchars1[] = {
-#ifdef VDISCARD
-			{ "discard",    VDISCARD,       CDISCARD },
-#endif
-#ifdef VDSUSP
-			{ "dsusp",      VDSUSP,         CDSUSP },
-#endif
-			{ "eof",        VEOF,           CEOF },
-			{ "eol",        VEOL,           CEOL },
-			{ "eol2",       VEOL2,          CEOL },
-			{ "erase",      VERASE,         CERASE },
-#ifdef VINTR
-			{ "intr",       VINTR,          CINTR },
-#endif
-			{ "kill",       VKILL,          CKILL },
-			{ "lnext",      VLNEXT,         CLNEXT },
-			{ "min",        VMIN,           CMIN },
-			{ "quit",       VQUIT,          CQUIT },
-#ifdef VREPRINT
-			{ "reprint",    VREPRINT,       CREPRINT },
-#endif
-			{ "start",      VSTART,         CSTART },
-#ifdef VSTATUS
-			{ "status",     VSTATUS,        CSTATUS },
-#endif
-			{ "stop",       VSTOP,          CSTOP },
-			{ "susp",       VSUSP,          CSUSP },
-			{ "time",       VTIME,          CTIME },
-			{ "werase",     VWERASE,        CWERASE },
-			{ .name = NULL },
-		};
-		const struct cchar *cp;
-		struct termios *tp;
-
-		upslogx(LOG_NOTICE, "%s: device reports different attributes than what were set", device_path);
-
-		/*
-		 * According to the manual the most common problem is
-		 * mis-matched combinations of input and output baud rates.  If
-		 * the combination is not supported then neither are changed.
-		 * This should not be a problem here since we set them both to
-		 * the same extremely common rate of 2400.
-		 */
-
-		tp = &tio;
-		upsdebugx(1, "tcsetattr(): gfmt1:cflag=%x:iflag=%x:lflag=%x:oflag=%x:",
-					(unsigned int) tp->c_cflag, (unsigned int) tp->c_iflag,
-					(unsigned int) tp->c_lflag, (unsigned int) tp->c_oflag);
-		for (cp = cchars1; cp->name; ++cp)
-			upsdebugx(1, "\t%s=%x:", cp->name, tp->c_cc[cp->sub]);
-		upsdebugx(1, "\tispeed=%d:ospeed=%d", (int) cfgetispeed(tp), (int) cfgetospeed(tp));
-
-		tp = &tio_chk;
-		upsdebugx(1, "tcgetattr(): gfmt1:cflag=%x:iflag=%x:lflag=%x:oflag=%x:",
-					(unsigned int) tp->c_cflag, (unsigned int) tp->c_iflag,
-					(unsigned int) tp->c_lflag, (unsigned int) tp->c_oflag);
-		for (cp = cchars1; cp->name; ++cp)
-			upsdebugx(1, "\t%s=%x:", cp->name, tp->c_cc[cp->sub]);
-		upsdebugx(1, "\tispeed=%d:ospeed=%d", (int) cfgetispeed(tp), (int) cfgetospeed(tp));
-	}
+	apc_ser_diff(&tio, &tio_chk);
 
 	cable = getval("cable");
 	if (cable && !strcasecmp(cable, ALT_CABLE_1)) {

@@ -131,8 +131,6 @@ not supported by all hardware.
 
 *battery.voltage.nominal*::
 
-*driver.version.internal*::
-
 *input.frequency*::
 
 *input.frequency.nominal*::

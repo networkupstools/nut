@@ -1,6 +1,7 @@
-/* ssl.h - ssl support prototypes for upsd
+/* example - CppUnit unit test example
 
-   Copyright (C) 2002  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+	2012	Emilien Kia <emilienkia-guest@alioth.debian.org>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -16,25 +17,46 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
+#include <cppunit/extensions/HelperMacros.h>
 
-#ifndef SSL_H_SEEN
-#define SSL_H_SEEN 1
+class ExampleTest : public CppUnit::TestFixture
+{
+  CPPUNIT_TEST_SUITE( ExampleTest );
+    CPPUNIT_TEST( testOne );
+  CPPUNIT_TEST_SUITE_END();
 
-#ifdef HAVE_SSL
-#include <openssl/err.h>
-#include <openssl/ssl.h>
-#endif
+public:
+  void setUp();
+  void tearDown();
 
-#include "nut_ctype.h"
+  void testOne();
+};
 
-extern char	*certfile;
+// Registers the fixture into the 'registry'
+CPPUNIT_TEST_SUITE_REGISTRATION( ExampleTest );
 
-void ssl_init(void);
-void ssl_finish(nut_ctype_t *client);
 
-int ssl_read(nut_ctype_t *client, char *buf, size_t buflen);
-int ssl_write(nut_ctype_t *client, const char *buf, size_t buflen);
+void ExampleTest::setUp()
+{
+}
 
-void net_starttls(nut_ctype_t *client, int numarg, const char **arg);
 
-#endif	/* SSL_H_SEEN */
+void ExampleTest::tearDown()
+{
+}
+
+
+void ExampleTest::testOne()
+{
+  // Set up
+  int i = 1;
+  float f = 1.0;
+
+  // Process
+  int cast = (int)f;
+
+  // Check
+  CPPUNIT_ASSERT_EQUAL( i, cast );
+}
+
+

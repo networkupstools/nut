@@ -666,7 +666,7 @@ int main(int argc, char **argv)
 	 * when its a pdu! */
 	dstate_setinfo("device.type", "ups");
 
-	/* publish the top-level data: version number, driver name */
+	/* publish the top-level data: version numbers, driver name */
 	dstate_setinfo("driver.version", "%s", UPS_VERSION);
 	dstate_setinfo("driver.version.internal", "%s", upsdrv_info.version);
 	dstate_setinfo("driver.name", "%s", progname);

@@ -316,8 +316,6 @@ void upsdrv_initinfo(void)
 	dstate_setflags("ups.test.result", ST_FLAG_STRING | ST_FLAG_RW);
 	  dstate_setaux("ups.test.result", 20);
 	
-	/* Fixed variables */
-	dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION);
 	/* UPS INFO READ */
 	res = command_read_sequence(UPS_INFO, my_answer);
 	if (res < 0) fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");

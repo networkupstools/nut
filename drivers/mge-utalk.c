@@ -248,7 +248,6 @@ void upsdrv_initinfo(void)
 
 	/* manufacturer -------------------------------------------- */
 	dstate_setinfo("ups.mfr", "MGE UPS SYSTEMS");
-	dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION);
 	
 	/* loop until we have at status */
 	tries = 0;

@@ -95,8 +95,12 @@
 #define GETX_BATT_REPLACED	'+'		/* yymmdd */
 #define	GETX_DATE_RESP_SIZE	6
 
+/* FIXME: Both of the following constants are unused, and the first is not
+ * valid C syntax (breaks LLVM). */
+#if 0
 #define GETX_UNIT_KVA		''''	/* Read as xxx.xx */
 #define GETX_UNIT_WATTS		"''"	/* 2-character string request */
+#endif
 #define GETX_LOW_OUT_ALLOW	'['		/* Tap up or inverter at this point */
 #define GETX_HI_OUT_ALLOW	']'		/* Tap down or inverter at this point */
 #define GETX_NOTIFY_DELAY	','		/* Secs of delay for power fail alert */

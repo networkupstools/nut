@@ -850,8 +850,6 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("ups.mfr.date", "%04d/%02d/%02d", ups.YearOfProd, ups.MonthOfProd, ups.DayOfProd) ;
 	dstate_setinfo("battery.packs", "%d", ups.BatteryNumber) ;
 
-	dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION) ;
-
 	/* Register the available variables. */
 	dstate_setinfo("ups.delay.start", "%d", ups.WakeUpDelay);
 	dstate_setflags("ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING);

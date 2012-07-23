@@ -1,6 +1,7 @@
 /*  nut-ipmipsu.c - Driver for IPMI Power Supply Units (PSU)
  *
- *  Copyright (C) 2011 - Arnaud Quette <arnaud.quette@free.fr>
+ *  Copyright (C)
+ *    2011 - 2012  Arnaud Quette <arnaud.quette@free.fr>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,7 +27,7 @@
 #include "nut-ipmi.h"
 
 #define DRIVER_NAME	"IPMI PSU driver"
-#define DRIVER_VERSION	"0.06"
+#define DRIVER_VERSION	"0.07"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -61,9 +62,6 @@ void upsdrv_initinfo(void)
 	upsdebugx(1, "Detected a PSU: %s/%s",
 		ipmi_dev.manufacturer ? ipmi_dev.manufacturer : "unknown",
 		ipmi_dev.product ? ipmi_dev.product : "unknown");
-
-	dstate_setinfo("driver.version.data", "%s", DRIVER_NAME);
-	dstate_setinfo("driver.version.internal", DRIVER_VERSION);
 
 	dstate_setinfo ("device.type", "psu");
 

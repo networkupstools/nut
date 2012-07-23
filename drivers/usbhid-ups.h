@@ -37,11 +37,13 @@ extern hid_dev_handle_t	udev;
 extern bool_t	 	use_interrupt_pipe;	/* Set to FALSE if interrupt reports should not be used */
 
 /* Driver's parameters */
+#define HU_VAR_LOWBATT		"lowbatt"
 #define HU_VAR_ONDELAY		"ondelay"
 #define HU_VAR_OFFDELAY		"offdelay"
 #define HU_VAR_POLLFREQ		"pollfreq"
 
 /* Parameters default values */
+#define DEFAULT_LOWBATT		"30"	/* percentage of battery charge to consider the UPS in low battery state  */
 #define DEFAULT_ONDELAY		"30"	/* Delay between return of utility power */
 					/* and powering up of load, in seconds */
 					/* CAUTION: ondelay > offdelay */

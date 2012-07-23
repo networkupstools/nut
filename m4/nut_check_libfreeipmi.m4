@@ -71,6 +71,10 @@ if test -z "${nut_have_libfreeipmi_seen}"; then
 	AC_SEARCH_LIBS([ipmi_monitoring_init], [ipmimonitoring], [nut_have_freeipmi_monitoring=yes], [nut_have_freeipmi_monitoring=no])
 	AC_SEARCH_LIBS([ipmi_monitoring_sensor_read_record_id], [ipmimonitoring], [], [nut_have_freeipmi_monitoring=no])
 
+	dnl Check for FreeIPMI 1.1.X / 1.2.X which implies API changes!
+	AC_SEARCH_LIBS([ipmi_sdr_cache_ctx_destroy], [freeipmi], [nut_have_freeipmi_11x_12x=no], [])
+	AC_SEARCH_LIBS([ipmi_sdr_ctx_destroy], [freeipmi], [nut_have_freeipmi_11x_12x=yes], [nut_have_freeipmi_11x_12x=no])
+
 	if test "${nut_have_freeipmi}" = "yes"; then
 		nut_with_ipmi="yes"
 		nut_ipmi_lib="(FreeIPMI)"
@@ -78,6 +82,10 @@ if test -z "${nut_have_libfreeipmi_seen}"; then
 		AC_DEFINE(HAVE_FREEIPMI, 1, [Define if FreeIPMI support is available])
 		LIBIPMI_CFLAGS="${CFLAGS}"
 		LIBIPMI_LIBS="${LIBS}"
+	fi
+
+	if test "${nut_have_freeipmi_11x_12x}" = "yes"; then
+		AC_DEFINE(HAVE_FREEIPMI_11X_12X, 1, [Define if FreeIPMI 1.1.X / 1.2.X support is available])
 	fi
 
 	if test "${nut_have_freeipmi_monitoring}" = "yes"; then

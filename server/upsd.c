@@ -44,7 +44,7 @@
 #include "user.h"
 #include "nut_ctype.h"
 #include "stype.h"
-#include "ssl.h"
+#include "netssl.h"
 #include "sstate.h"
 #include "desc.h"
 #include "neterr.h"
