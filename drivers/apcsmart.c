@@ -354,14 +354,6 @@ static void apc_ser_set(void)
 	if (tcsetattr(upsfd, TCSANOW, &tio))
 		fate("tcsetattr(%s)", device_path);
 
-	/* clear status flags so that they don't affect our binary compare */
-#ifdef PENDIN
-	tio.c_lflag &= ~PENDIN;
-#endif
-#ifdef FLUSHO
-	tio.c_lflag &= ~FLUSHO;
-#endif
-
 	memset(&tio_chk, 0, sizeof(tio_chk));
 	if (tcgetattr(upsfd, &tio_chk))
 		fate("tcgetattr(%s)", device_path);
