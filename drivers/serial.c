@@ -276,24 +276,26 @@ int ser_get_dcd(int fd)
 #else
 int ser_get_dsr(serial_handler_t * fd)
 {
-	DCB dcb;
+	int flags;
 
-	GetCommState(fd->handle, &dcb);
-	return dcb.fOutxDsrFlow;
+	w32_getcomm(fd->handle, &flags);
+	return (flags & TIOCM_DSR);
 }
 
 int ser_get_cts(serial_handler_t * fd)
 {
-	DCB dcb;
+	int flags;
 
-	GetCommState(fd->handle, &dcb);
-	return dcb.fOutxCtsFlow;
+	w32_getcomm(fd->handle, &flags);
+	return (flags & TIOCM_CTS);
 }
 
 int ser_get_dcd(serial_handler_t * fd)
 {
-	/*FIXME*/
-	return 0;
+	int flags;
+
+	w32_getcomm(fd->handle, &flags);
+	return (flags & TIOCM_CD);
 }
 
 #endif

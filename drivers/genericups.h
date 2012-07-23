@@ -19,8 +19,6 @@
 #ifndef NUT_GENERICUPS_H_SEEN
 #define NUT_GENERICUPS_H_SEEN 1
 
-/* TODO : port this to WIN32 */
-# ifndef WIN32
 static struct {
 	const	char	*mfr;			/* value for INFO_MFR	*/
 	const	char	*model;			/* value for INFO_MODEL	*/
@@ -337,5 +335,4 @@ static struct {
 	}
 };
 
-# endif	/* WIN32 */
 #endif	/* NUT_GENERICUPS_H_SEEN */

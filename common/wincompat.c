@@ -436,6 +436,53 @@ int send_to_named_pipe(const char * pipe_name, const char * data)
 	return 0;
 }
 
+int w32_setcomm ( serial_handler_t * h, int flags )
+{
+	int ret = 0;
+
+	if( flags & TIOCM_DTR ) {
+		if( !EscapeCommFunction(h->handle,SETDTR) ) {
+			errno = EIO;
+			ret = -1;
+		}
+	}
+	else {
+		if( !EscapeCommFunction(h->handle,CLRDTR) ) {
+			errno = EIO;
+			ret = -1;
+		}
+	}
+
+	if( flags & TIOCM_RTS ) {
+		if( !EscapeCommFunction(h->handle,SETRTS) ) {
+			errno = EIO;
+			ret = -1;
+		}
+	}
+	else {
+		if( !EscapeCommFunction(h->handle,CLRRTS) ) {
+			errno = EIO;
+			ret = -1;
+		}
+	}
+
+	return ret;
+}
+
+int w32_getcomm ( serial_handler_t * h, int * flags )
+{
+	BOOL ret_val;
+	DWORD f = *flags;
+
+	ret_val = GetCommModemStatus(h->handle, &f);
+	if (ret_val == 0) {
+		errno = EIO;
+		return -1;
+	}
+
+	return 0;
+}
+
 /* Serial port wrapper inspired by : 
 http://serial-programming-in-win32-os.blogspot.com/2008/07/convert-linux-code-to-windows-serial.html */
 

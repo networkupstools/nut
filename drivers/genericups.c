@@ -40,8 +40,6 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
-/* TODO : port this to WIN32 */
-#ifndef WIN32
 	static	int	upstype = -1;
 
 static void parse_output_signals(const char *value, int *line)
@@ -222,7 +220,11 @@ void upsdrv_updateinfo(void)
 {
 	int	flags, ol, bl, rb, bypass, ret;
 
+#ifndef WIN32
 	ret = ioctl(upsfd, TIOCMGET, &flags);
+#else
+	ret = w32_getcomm( upsfd, &flags );
+#endif
 
 	if (ret != 0) {
 		upslog_with_errno(LOG_INFO, "ioctl failed");
@@ -320,8 +322,10 @@ void upsdrv_shutdown(void)
 
 	if (flags == TIOCM_ST) {
 
+#ifndef WIN32
 #ifndef HAVE_TCSENDBREAK
 		fatalx(EXIT_FAILURE, "Need to send a BREAK, but don't have tcsendbreak!");
+#endif
 #endif
 
 		ret = tcsendbreak(upsfd, 4901);
@@ -333,7 +337,11 @@ void upsdrv_shutdown(void)
 		return;
 	}
 
+#ifndef WIN32
 	ret = ioctl(upsfd, TIOCMSET, &flags);
+#else
+	ret = w32_setcomm(upsfd,flags);
+#endif
 
 	if (ret != 0) {
 		fatal_with_errno(EXIT_FAILURE, "ioctl TIOCMSET");
@@ -430,22 +438,18 @@ void upsdrv_initups(void)
 		upsdebugx(2, "parse_output_signals: SD overridden with %s\n", v);
 	}
 
+#ifndef WIN32
 	if (ioctl(upsfd, TIOCMSET, &upstab[upstype].line_norm)) {
+#else
+	if (w32_setcomm(upsfd,&upstab[upstype].line_norm)) {
+#endif
 		fatal_with_errno(EXIT_FAILURE, "ioctl TIOCMSET");
 	}
+
+	
 }
 
 void upsdrv_cleanup(void)
 {
 	ser_close(upsfd, device_path);
 }
-
-#else /*WIN32 TODO just stubs for the moment, to be ported*/
-void upsdrv_makevartable(void) {};
-void upsdrv_shutdown(void) {};
-void upsdrv_help(void) {};
-void upsdrv_initups(void) {};
-void upsdrv_cleanup(void) {};
-void upsdrv_initinfo(void) {};
-void upsdrv_updateinfo(void) {};
-#endif

@@ -114,6 +114,10 @@ int send_to_named_pipe(const char * pipe_name, const char * data);
 
 /* serial function compatibility */
 
+int w32_setcomm ( serial_handler_t * h, int flags );
+int w32_getcomm ( serial_handler_t * h, int * flags );
+int tcsendbreak (serial_handler_t * sh, int duration);
+
 typedef unsigned char   cc_t;
 typedef unsigned int    speed_t;
 typedef unsigned int    tcflag_t;
@@ -301,4 +305,11 @@ speed_t cfgetospeed(const struct termios *t);
 #define TCSADRAIN       1
 #define TCSAFLUSH       2
 
+#define TIOCM_DTR	0x0001
+#define TIOCM_RTS	0x0002
+#define TIOCM_ST	0x0004
+#define TIOCM_CTS	MS_CTS_ON /* 0x0010*/
+#define TIOCM_DSR	MS_DSR_ON /* 0x0020*/
+#define TIOCM_RNG	MS_RING_ON /*0x0040*/
+#define TIOCM_CD	MS_RLSD_ON /*0x0080*/
 #endif
