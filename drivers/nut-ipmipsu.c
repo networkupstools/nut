@@ -63,9 +63,6 @@ void upsdrv_initinfo(void)
 		ipmi_dev.manufacturer ? ipmi_dev.manufacturer : "unknown",
 		ipmi_dev.product ? ipmi_dev.product : "unknown");
 
-	dstate_setinfo("driver.version.data", "%s", DRIVER_NAME);
-	dstate_setinfo("driver.version.internal", DRIVER_VERSION);
-
 	dstate_setinfo ("device.type", "psu");
 
 	/* Publish information from the IPMI structure */
