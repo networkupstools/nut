@@ -706,7 +706,7 @@
 "Powercom"	"ups"	"4"	"Imperial"	""	"powercom"
 "Powercom"	"ups"	"5"	"Imperial"	"USB (2009 models, product id: 00a2)"	"usbhid-ups (experimental)"
 "Powercom"	"ups"	"4"	"Vanguard"	""	"blazer_ser"
-"Powercom"	"ups"	"5"	"Vanguard"	"USB (2009 models, product id: 00a5)"	"usbhid-ups (experimental)"
+"Powercom"	"ups"	"5"	"Vanguard"	"USB (2009 models, product id: 0004 or 00a5)"	"usbhid-ups (experimental)"
 "Powercom"	"ups"	"4"	"WOW"	"USB (<= 2009 models, product id: 0002)"	"powercom (requires 'usbserial' kernel module)"
 "Powercom"	"ups"	"5"	"WOW"	"USB (2009 models, product id: 00a4)"	"usbhid-ups (experimental)"
 "Powercom"	"ups"	"4"	"(various)"	"USB (<= 2009 models, product id: 0002)"	"powercom (requires 'usbserial' kernel module)"
