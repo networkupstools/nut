@@ -1308,8 +1308,8 @@ Public License instead of this License.
                     <Component Id="netxml_ups.exe" DiskId="1" Guid="6C70031A-E408-47B4-A7B9-7BC72B9AB616">
                         <File Id="netxml_ups.exe" Name="netxml-ups.exe" Source="..\..\..\drivers\.libs\netxml-ups.exe" />
                     </Component>
-                    <Component Id="newmge_shut.exe" DiskId="1" Guid="6EB29981-41DB-457A-AD3A-E8ADB49805CE">
-                        <File Id="newmge_shut.exe" Name="newmge-shut.exe" Source="..\..\..\drivers\.libs\newmge-shut.exe" />
+                    <Component Id="oldmge_shut.exe" DiskId="1" Guid="6EB29981-41DB-457A-AD3A-E8ADB49805CE">
+                        <File Id="oldmge_shut.exe" Name="oldmge-shut.exe" Source="..\..\..\drivers\.libs\oldmge-shut.exe" />
                     </Component>
                     <Component Id="nut.exe" DiskId="1" Guid="B72AC066-5289-4571-BD0D-03C2C4701460">
                         <File Id="nut.exe" Name="nut.exe" Source="..\.libs\nut.exe" />
@@ -1841,7 +1841,7 @@ Public License instead of this License.
                 <ComponentRef Id="richcomm_usb.exe" />
                 <ComponentRef Id="tripplite.exe" />
                 <ComponentRef Id="upsdrvctl.exe" />
-                <ComponentRef Id="newmge_shut.exe" />
+                <ComponentRef Id="oldmge_shut.exe" />
                 <ComponentRef Id="ups.conf.sample" />
                 <ComponentRef Id="msys_1.0.dll" />
                 <ComponentRef Id="msys_crypto_1.0.0.dll" />
