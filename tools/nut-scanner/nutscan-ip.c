@@ -31,6 +31,10 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #else
+/* Those 2 files for support of getaddrinfo, getnameinfo and freeaddrinfo
+   on Windows 2000 and older versions */
+#include <ws2tcpip.h>
+#include <wspiapi.h>
 #define AI_NUMERICSERV NI_NUMERICSERV
 #include "wincompat.h"
 #endif

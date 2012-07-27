@@ -40,6 +40,10 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #else
+/* Those 2 files for support of getaddrinfo, getnameinfo and freeaddrinfo
+   on Windows 2000 and older versions */
+#include <ws2tcpip.h>
+#include <wspiapi.h>
 /* This override network system calls to adapt to Windows specificity */
 #define W32_NETWORK_CALL_OVERRIDE
 #include "wincompat.h"

@@ -53,10 +53,6 @@
 #ifndef WIN32
 #include <syslog.h>
 #else
-/* We need windows XP or above (for getaddrinfo and freeaddrinfo) */
-#ifndef WINVER
-#define  WINVER 0x0501
-#endif
 #include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
