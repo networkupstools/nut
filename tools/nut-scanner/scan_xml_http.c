@@ -26,6 +26,11 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#else
+/* Those 2 files for support of getaddrinfo, getnameinfo and freeaddrinfo
+   on Windows 2000 and older versions */
+#include <ws2tcpip.h>
+#include <wspiapi.h>
 #endif
 
 #include <string.h>
