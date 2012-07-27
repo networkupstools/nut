@@ -436,11 +436,11 @@ int send_to_named_pipe(const char * pipe_name, const char * data)
 	return 0;
 }
 
-int w32_setcomm ( serial_handler_t * h, int flags )
+int w32_setcomm ( serial_handler_t * h, int * flags )
 {
 	int ret = 0;
 
-	if( flags & TIOCM_DTR ) {
+	if( *flags & TIOCM_DTR ) {
 		if( !EscapeCommFunction(h->handle,SETDTR) ) {
 			errno = EIO;
 			ret = -1;
@@ -453,7 +453,7 @@ int w32_setcomm ( serial_handler_t * h, int flags )
 		}
 	}
 
-	if( flags & TIOCM_RTS ) {
+	if( *flags & TIOCM_RTS ) {
 		if( !EscapeCommFunction(h->handle,SETRTS) ) {
 			errno = EIO;
 			ret = -1;
@@ -472,7 +472,7 @@ int w32_setcomm ( serial_handler_t * h, int flags )
 int w32_getcomm ( serial_handler_t * h, int * flags )
 {
 	BOOL ret_val;
-	DWORD f = *flags;
+	DWORD f;
 
 	ret_val = GetCommModemStatus(h->handle, &f);
 	if (ret_val == 0) {
@@ -480,6 +480,8 @@ int w32_getcomm ( serial_handler_t * h, int * flags )
 		return -1;
 	}
 
+	*flags = f;
+	
 	return 0;
 }
 
@@ -716,10 +718,12 @@ serial_handler_t * w32_serial_open (const char *name, int flags)
 	state.fDtrControl = DTR_CONTROL_ENABLE; /* assert DTR */
 	state.fDsrSensitivity = FALSE; /* don't assert DSR */
 	state.fAbortOnError = TRUE;
+
 	if (!SetCommState (sh->handle, &state))
 		upslogx (LOG_ERR,"couldn't set initial state for %s",name);
 
 	SetCommMask (sh->handle, EV_RXCHAR);
+
 	upslogx (LOG_INFO,"%p = w32_serial_open (%s)",sh->handle,name);
 	return sh;
 }

@@ -340,7 +340,7 @@ void upsdrv_shutdown(void)
 #ifndef WIN32
 	ret = ioctl(upsfd, TIOCMSET, &flags);
 #else
-	ret = w32_setcomm(upsfd,flags);
+	ret = w32_setcomm(upsfd,&flags);
 #endif
 
 	if (ret != 0) {

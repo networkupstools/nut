@@ -114,7 +114,7 @@ int send_to_named_pipe(const char * pipe_name, const char * data);
 
 /* serial function compatibility */
 
-int w32_setcomm ( serial_handler_t * h, int flags );
+int w32_setcomm ( serial_handler_t * h, int * flags );
 int w32_getcomm ( serial_handler_t * h, int * flags );
 int tcsendbreak (serial_handler_t * sh, int duration);
 
