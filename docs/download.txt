@@ -126,3 +126,14 @@ link:http://www.networkupstools.org/package/java/jNut-0.2-SNAPSHOT.tar.gz[jNUT 0
 
 - NUT Java Web support (client side using REST, Beta)
 link:http://www.networkupstools.org/package/java/jNutWebAPI-0.2-SNAPSHOT-src.tar.gz[jNutWebAPI 0.2-SNAPSHOT (sources)]
+
+Virtualization packages
+-----------------------
+
+VMware
+~~~~~~
+
+- NUT client for ESXI 5.0 (offsite, René Garcia)
+
+  * link:http://rene.margar.fr/2012/05/client-nut-pour-esxi-5-0/[blog entry (French)]
+  * link:http://rene.margar.fr/downloads/NutClient-ESXi500-1.0.2.tar.gz[VIB package]
