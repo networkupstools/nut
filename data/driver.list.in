@@ -856,6 +856,8 @@
 "UNITEK"	"ups"	"2"	"Alpha 1000is"	""	"blazer_ser"
 "UNITEK"	"ups"	"2"	"Alpha 500"	""	"blazer_ser"
 "UNITEK"	"ups"	"2"	"Alpha 500 ipE"	""	"blazer_ser"
+"UNITEK"	"ups"	"2"	"Alpha650ipF"	"USB"	"blazer_usb"
+"UNITEK"	"ups"	"2"	"Alpha650ipE"	"USB"	"blazer_usb"
 "UNITEK"	"ups"	"2"	"Alpha 2600"	""	"blazer_ser"
 "UNITEK"	"ups"	"2"	"Alpha 1200Sx"	"USB"	"blazer_usb"
 "UNITEK"	"ups"	"2"	"Alpha 1250xD"	"USB"	"blazer_usb"
