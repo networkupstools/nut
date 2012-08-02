@@ -366,13 +366,12 @@ void pipe_disconnect(pipe_conn_t *conn)
 		conn->overlapped.hEvent = INVALID_HANDLE_VALUE;
 	}
 	if( conn->handle != INVALID_HANDLE_VALUE) {
+		if ( DisconnectNamedPipe(conn->handle) == 0 ) {
+			upslogx(LOG_ERR,"DisconnectNamedPipe error : %d",GetLastError());
+		}
 		CloseHandle(conn->handle);
 		conn->handle = INVALID_HANDLE_VALUE;
 	}
-	if ( DisconnectNamedPipe(conn->handle) == 0 ) {
-		upslogx(LOG_ERR,"DisconnectNamedPipe");
-	}
-
 	if (conn->prev) {
 		conn->prev->next = conn->next;
 	} else {
