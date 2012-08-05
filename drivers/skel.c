@@ -33,7 +33,8 @@ upsdrv_info_t upsdrv_info = {
 
 void upsdrv_initinfo(void)
 {
-	/* try to detect the UPS here - call fatal_with_errno(EXIT_FAILURE, ) if it fails */
+	/* try to detect the UPS here - call fatal_with_errno(EXIT_FAILURE, ...)
+	 * or fatalx(EXIT_FAILURE, ...) if it fails */
 
 	/* dstate_setinfo("ups.mfr", "skel manufacturer"); */
 	/* dstate_setinfo("ups.model", "longrun 15000"); */
@@ -158,7 +159,7 @@ void upsdrv_initups(void)
 
 	/* to get variables and flags from the command line, use this:
 	 *
-	 * first populate with upsdrv_buildvartable above, then...
+	 * first populate with upsdrv_makevartable() above, then...
 	 *
 	 *                   set flag foo : /bin/driver -x foo
 	 * set variable 'cable' to '1234' : /bin/driver -x cable=1234
