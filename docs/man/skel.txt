@@ -43,6 +43,7 @@ CABLING
 //////////////////////////////////////////
 
 EXTRA ARGUMENTS
+---------------
 This driver also supports the following optional settings:
 
 *option1*='num'::
@@ -67,6 +68,15 @@ script, or additional libraries as prerequisites.
 
 INSTALLATION
 ------------
+
+//////////////////////////////////////////
+
+//////////////////////////////////////////
+Optional: use DIAGNOSTICS to describe troubleshooting techniques that are
+longer than what can be conveniently described in the driver error messages.
+
+DIAGNOSTICS
+-----------
 
 //////////////////////////////////////////
 
