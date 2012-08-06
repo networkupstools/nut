@@ -515,7 +515,7 @@ static void WINAPI SvcMain( DWORD argc, LPTSTR *argv )
 
 	/* A service has no console, so do has its children. */
 	/* So if we want to be able to send CTRL+BREAK signal we must */
-	/* create a console which will be inheritated by children */
+	/* create a console which will be inherited by children */
 	AllocConsole();
 
 	print_event(LOG_INFO,"Starting");
