@@ -552,7 +552,7 @@ int sendsignal(const char *progname, int sig)
 #else
 	char * path;
 	path = getfullpath(PATH_VAR_RUN);
-	if( path == NULL ) {
+	if (path == NULL) {
 		snprintf(fn, sizeof(fn), "%s\\%s.pid", PIDPATH, progname);
 	}
 	else {

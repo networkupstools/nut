@@ -620,6 +620,32 @@ static void doshutdown(void)
 
 		set_pdflag();
 
+#ifdef WIN32
+		SC_HANDLE SCManager;
+		SC_HANDLE Service;
+		SERVICE_STATUS Status;
+
+		SCManager = OpenSCManager(
+				NULL,	/* local computer */
+				NULL,	/* ServiceActive database */
+				SC_MANAGER_ALL_ACCESS); /* full access rights */
+
+		if (NULL == SCManager) {
+			upslogx(LOG_ERR, "OpenSCManager failed (%d)\n", (int)GetLastError());
+		}
+		else {
+			Service = OpenService(SCManager,SVCNAME,SERVICE_STOP);
+			if (Service == NULL) {
+				upslogx(LOG_ERR,"OpenService  failed (%d)\n", (int)GetLastError());
+			}
+			else {
+				ControlService(Service,SERVICE_CONTROL_STOP,&Status);
+				/* Give time to the service to stop */
+				Sleep(2000);
+			}
+		}
+#endif
+
 		sret = system(shutdowncmd);
 
 		if (sret != 0)
@@ -2339,41 +2365,6 @@ int main(int argc, char *argv[])
 		exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
 	}
 
-	/* otherwise, we are being asked to start.
-	 * so check if a previous instance is running by sending signal '0'
-	 * (Ie 'kill <pid> 0') */
-#ifndef WIN32
-	if (oldpid < 0) {
-		cmdret = sendsignal(prog, 0);
-	} else {
-		cmdret = sendsignalpid(oldpid, 0);
-	}
-#else
-	/* TODO: Fix that routine for a quiet probe? */
-	upslogx(LOG_ERR, "Probing if an earlier upsmon instance holds the pipe");
-	cmdret = send_to_named_pipe(UPSMON_PIPE_NAME, "");
-#endif
-	switch (cmdret) {
-	case 0:
-		printf("Fatal error: A previous upsmon instance is already running!\n");
-		printf("Either stop the previous instance first, or use the 'reload' command.\n");
-		exit(EXIT_FAILURE);
-
-	case -3:
-	case -2:
-		upslogx(LOG_WARNING, "Could not %s PID file "
-			"to see if previous upsmon instance is "
-			"already running!\n",
-			(cmdret == -3 ? "find" : "parse"));
-		break;
-
-	case -1:
-	case 1:	/* WIN32 */
-	default:
-		/* Just failed to send signal, no competitor running */
-		break;
-	}
-
 	argc -= optind;
 	argv += optind;
 
@@ -2391,6 +2382,38 @@ int main(int argc, char *argv[])
 
 	if (checking_flag)
 		exit(check_pdflag());
+
+	/* otherwise, we are being asked to start.
+	 * so check if a previous instance is running by sending signal '0'
+	 * (Ie 'kill <pid> 0') */
+#ifndef WIN32
+	if (oldpid < 0) {
+#endif
+		cmdret = sendsignal(prog, 0);
+#ifndef WIN32
+	} else {
+		cmdret = sendsignalpid(oldpid, 0);
+	}
+#endif
+	switch (cmdret) {
+	case 0:
+		printf("Fatal error: A previous upsmon instance is already running!\n");
+		printf("Either stop the previous instance first, or use the 'reload' command.\n");
+		exit(EXIT_FAILURE);
+
+	case -3:
+	case -2:
+		upslogx(LOG_WARNING, "Could not %s PID file "
+			"to see if previous upsmon instance is "
+			"already running!\n",
+			(cmdret == -3 ? "find" : "parse"));
+		break;
+
+	case -1:
+	default:
+		/* Just failed to send signal, no competitor running */
+		break;
+	}
 
 	if (shutdowncmd == NULL)
 		printf("Warning: no shutdown command defined!\n");
