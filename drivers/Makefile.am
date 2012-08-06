@@ -46,9 +46,10 @@ USB_DRIVERLIST = $(USB_LIBUSB_DRIVERLIST)
 HAL_DRIVERLIST = hald-addon-usbhid-ups hald-addon-bcmxcp_usb \
  hald-addon-tripplite_usb hald-addon-blazer_usb
 NEONXML_DRIVERLIST = netxml-ups
+MACOSX_DRIVERLIST = macosx-ups
 
 # distribute all drivers, even ones that are not built by default
-EXTRA_PROGRAMS = $(SERIAL_DRIVERLIST) $(SNMP_DRIVERLIST) $(USB_DRIVERLIST) $(NEONXML_DRIVERLIST)
+EXTRA_PROGRAMS = $(SERIAL_DRIVERLIST) $(SNMP_DRIVERLIST) $(USB_DRIVERLIST) $(NEONXML_DRIVERLIST) $(MACOSX_DRIVERLIST)
 
 # construct the list of drivers to build
 if SOME_DRIVERS
@@ -76,6 +77,9 @@ if WITH_LIBPOWERMAN
 endif
 if WITH_IPMI
    driverexec_PROGRAMS += nut-ipmipsu
+endif
+if WITH_MACOSX
+   driverexec_PROGRAMS += $(MACOSX_DRIVERLIST)
 endif
 else
    driverexec_PROGRAMS += skel
@@ -213,6 +217,11 @@ if WITH_FREEIPMI
   nut_ipmipsu_SOURCES += nut-libfreeipmi.c 
 endif
 nut_ipmipsu_LDADD = $(LDADD) $(LIBIPMI_LIBS)
+
+# Mac OS X metadriver
+macosx_ups_LDADD = $(LDADD_DRIVERS)
+macosx_ups_LDFLAGS = $(LDFLAGS) -framework IOKit -framework CoreFoundation
+macosx_ups_SOURCES = macosx-ups.c
 
 # ----------------------------------------------------------------------
 # List of header files. The purpose of this list is not dependency

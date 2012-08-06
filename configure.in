@@ -430,6 +430,25 @@ dnl AM_CONDITIONAL(WITH_OPENIPMI, test "${nut_with_openipmi}" = "yes")
 
 
 dnl ----------------------------------------------------------------------
+dnl The Mac OS X meta-driver looks at IOKit Power Sources keys managed by
+dnl the internal USB UPS driver.
+dnl
+dnl FIXME: be slightly more clever here:
+
+NUT_ARG_WITH([macosx_ups], [build and install Mac OS X Power Sources meta-driver], [auto])
+if test "${nut_with_macosx_ups}" != no; then
+   if test -d /System/Library/Frameworks/IOKit.framework/ ; then
+      nut_with_macosx_ups="yes"
+   else
+      nut_with_macosx_ups="no"
+   fi
+fi
+
+NUT_REPORT_FEATURE([build Mac OS X meta-driver],
+			[${nut_with_macosx_ups}], [${nut_macosx_ups_lib}],
+			[WITH_MACOSX], [Define to enable Mac OS X meta-driver])
+
+dnl ----------------------------------------------------------------------
 dnl Check for --with-ssl
 
 NUT_ARG_WITH([ssl], [enable SSL development code], [auto])
