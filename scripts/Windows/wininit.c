@@ -198,6 +198,8 @@ static DWORD test_powerdownflag()
 	free(path);
 
 	memset(&StartupInfo,0,sizeof(STARTUPINFO));
+	StartupInfo.cb = sizeof(StartupInfo);
+	memset(&ProcessInformation,0,sizeof(ProcessInformation));
 
 	res = CreateProcess(
 			NULL,
@@ -265,22 +267,30 @@ static int parse_nutconf(BOOL start_flag)
 			if( strstr(buf,"standalone") != NULL ||
 					strstr(buf,"netserver") != NULL ) {
 				if( start_flag == NUT_START ) {
+					print_event(LOG_INFO,"Starting drivers");
 					run_drivers();
+					print_event(LOG_INFO,"Starting upsd");
 					run_upsd();
 					/* Wait a moment for the drivers to start */
 					Sleep(5000);
+					print_event(LOG_INFO,"Starting upsmon");
 					run_upsmon();
 					return 1;
 				}
 				else {
+					print_event(LOG_INFO,"stop upsd");
 					stop_upsd();
+					print_event(LOG_INFO,"stop drivers");
 					stop_drivers();
+					print_event(LOG_INFO,"stop upsmon");
 					stop_upsmon();
 					/* Give a chance to upsmon to write the POWERDOWNFLAG  file */
 					Sleep(1000);
 					if( test_powerdownflag() == 0 ) {
+						print_event(LOG_INFO,"shutdown ups");
 						shutdown_ups();
 					}
+					print_event(LOG_INFO,"End of NUT stop");
 					return 1;
 				}
 			}
