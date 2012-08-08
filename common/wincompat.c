@@ -275,6 +275,7 @@ static const char	*named_pipe_name=NULL;
 void pipe_create(const char * pipe_name)
 {
 	BOOL ret;
+	char pipe_full_name[SMALLBUF];
 
 	/* save pipe name for further use in pipe_connect */
 	if( pipe_name == NULL ) {
@@ -286,12 +287,14 @@ void pipe_create(const char * pipe_name)
 		named_pipe_name = pipe_name;
 	}
 
+	snprintf(pipe_full_name,sizeof(pipe_full_name),"\\\\.\\pipe\\%s",named_pipe_name);
+	
 	if( pipe_connection_overlapped.hEvent != 0 ) {
 		CloseHandle(pipe_connection_overlapped.hEvent);
 	}
 	memset(&pipe_connection_overlapped,0,sizeof(pipe_connection_overlapped));
 	pipe_connection_handle = CreateNamedPipe(
-			named_pipe_name,
+			pipe_full_name,
 			PIPE_ACCESS_INBOUND |   /* to server only */
 			FILE_FLAG_OVERLAPPED,   /* async IO */
 			PIPE_TYPE_MESSAGE |
@@ -419,14 +422,12 @@ int send_to_named_pipe(const char * pipe_name, const char * data)
 
 
 	if (pipe == INVALID_HANDLE_VALUE) {
-		upslogx(LOG_ERR, "Cannot connect to named pipe : %s",pipe_name);
 		return 1;
 	}
 
 	result = WriteFile (pipe,data,strlen(data)+1,&bytesWritten,NULL);
 
 	if (result == 0 || bytesWritten != strlen(data)+1 ) {
-		upslogx(LOG_ERR, "Error writing to named pipe : %s",pipe_name);
 		CloseHandle(pipe);
 		return 1;
 	}

@@ -46,7 +46,8 @@ const char	*progname = NULL, *upsname = NULL, *device_name = NULL;
 #ifndef WIN32
 	int	extrafd = -1;
 #else
-	HANDLE			extrafd = INVALID_HANDLE_VALUE;
+	HANDLE	extrafd = INVALID_HANDLE_VALUE;
+	static HANDLE	mutex = INVALID_HANDLE_VALUE;
 #endif
 
 /* for ser_open */
@@ -648,28 +649,23 @@ static void exit_cleanup(void)
 
 	dstate_free();
 	vartab_free();
+
+#ifdef WIN32
+	if(mutex != INVALID_HANDLE_VALUE) {
+		ReleaseMutex(mutex);
+		CloseHandle(mutex);
+	}
+#endif
 }
 
-static void set_exit_flag(int sig)
+void set_exit_flag(int sig)
 {
 	exit_flag = sig;
 }
 
-#ifdef WIN32
-BOOL WINAPI CtrlEvent( DWORD dwCtrlType )
-{
-	if( dwCtrlType == CTRL_BREAK_EVENT  || dwCtrlType == CTRL_C_EVENT ) {
-		set_exit_flag(1);
-		return TRUE;
-	}
-
-	return FALSE;
-}
-#endif
-
+#ifndef WIN32
 static void setup_signals(void)
 {
-#ifndef WIN32
 	struct sigaction	sa;
 
 	sigemptyset(&sa.sa_mask);
@@ -690,10 +686,8 @@ static void setup_signals(void)
 #endif
 	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGPIPE, &sa, NULL);
-#else
-	SetConsoleCtrlHandler(CtrlEvent,TRUE);
-#endif
 }
+#endif
 
 int main(int argc, char **argv)
 {
@@ -715,9 +709,9 @@ int main(int argc, char **argv)
 	const char * drv_name;
 	drv_name = xbasename(argv[0]);
 	/* remove trailing .exe */
-	char * name = strrchr(drv_name,'.');
-	if( name != NULL ) {
-		if(strcasecmp(name, ".exe") == 0 ) {
+	char * dot = strrchr(drv_name,'.');
+	if( dot != NULL ) {
+		if(strcasecmp(dot, ".exe") == 0 ) {
 			progname = strdup(drv_name);
 			char * t = strrchr(progname,'.');
 			*t = 0;
@@ -974,6 +968,42 @@ int main(int argc, char **argv)
 		pidfn = xstrdup(buffer);
 		writepid(pidfn);	/* before backgrounding */
 	}
+#else
+		char	name[SMALLBUF];
+
+		snprintf(name,sizeof(name), "%s-%s",progname,upsname);
+
+		mutex = CreateMutex(NULL,TRUE,name);
+		if(mutex == NULL ) {
+			if( GetLastError() != ERROR_ACCESS_DENIED ) {
+				fatalx(EXIT_FAILURE, "Can not create mutex %s : %d.\n",name,(int)GetLastError());
+			}
+		}
+
+		if (GetLastError() == ERROR_ALREADY_EXISTS || GetLastError() == ERROR_ACCESS_DENIED) {
+			upslogx(LOG_WARNING, "Duplicate driver instance detected! Terminating other driver!");
+			for(i=0;i<10;i++) {
+				DWORD res;
+				sendsignal(name, COMMAND_STOP);
+				if(mutex != NULL ) {
+					res = WaitForSingleObject(mutex,1000);
+					if(res==WAIT_OBJECT_0) {
+						break;
+					}
+				}
+				else {
+					sleep(1);
+					mutex = CreateMutex(NULL,TRUE,name);
+					if(mutex != NULL ) {
+						break;
+					}
+				}
+			}
+			if(i >= 10 ) {
+				fatalx(EXIT_FAILURE, "Can not terminate the previous driver.\n");
+			}
+		}
+#endif
 
 	/* clear out callback handler data */
 	memset(&upsh, '\0', sizeof(upsh));

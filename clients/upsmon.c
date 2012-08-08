@@ -89,6 +89,7 @@ static	int	use_pipe = 1;
 #else
 	/* Do not fork in WIN32 */
 static	int	use_pipe = 0;
+static HANDLE   mutex = INVALID_HANDLE_VALUE;
 #endif
 
 static	utype_t	*firstups = NULL;
@@ -1657,6 +1658,13 @@ static void upsmon_cleanup(void)
 	}
 
 	upscli_cleanup();
+
+#ifdef WIN32
+	if(mutex != INVALID_HANDLE_VALUE) {
+		ReleaseMutex(mutex);
+		CloseHandle(mutex);
+	}
+#endif
 }
 
 static void user_fsd(int sig)
@@ -2360,7 +2368,7 @@ int main(int argc, char *argv[])
 			cmdret = sendsignalpid(oldpid, cmd);
 		}
 #else
-		cmdret = send_to_named_pipe(UPSMON_PIPE_NAME, cmd);
+		cmdret = sendsignal(UPSMON_PIPE_NAME, cmd);
 #endif
 		exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
 	}
@@ -2388,13 +2396,23 @@ int main(int argc, char *argv[])
 	 * (Ie 'kill <pid> 0') */
 #ifndef WIN32
 	if (oldpid < 0) {
-#endif
 		cmdret = sendsignal(prog, 0);
-#ifndef WIN32
 	} else {
 		cmdret = sendsignalpid(oldpid, 0);
 	}
+#else
+	mutex = CreateMutex(NULL,TRUE,UPSMON_PIPE_NAME);
+	if(mutex == NULL ) {
+		if( GetLastError() != ERROR_ACCESS_DENIED ) {
+			fatalx(EXIT_FAILURE, "Can not create mutex %s : %d.\n",UPSMON_PIPE_NAME,(int)GetLastError());
+		}
+	}
+
+	cmdret = -1; /* unknown, maybe ok */
+	if (GetLastError() == ERROR_ALREADY_EXISTS || GetLastError() == ERROR_ACCESS_DENIED)
+		cmdret = 0; /* known conflict */
 #endif
+
 	switch (cmdret) {
 	case 0:
 		printf("Fatal error: A previous upsmon instance is already running!\n");

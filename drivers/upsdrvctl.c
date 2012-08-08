@@ -26,6 +26,8 @@
 #include <sys/stat.h>
 #ifndef WIN32
 #include <sys/wait.h>
+#else
+#include "wincompat.h"
 #endif
 
 #include "proto.h"
@@ -153,6 +155,7 @@ static void stop_driver(const ups_t *ups)
 
 	upsdebugx(1, "Stopping UPS: %s", ups->upsname);
 
+#ifndef WIN32
 	snprintf(pidfn, sizeof(pidfn), "%s/%s-%s.pid", altpidpath(),
 		ups->driver, ups->upsname);
 	ret = stat(pidfn, &fs);
@@ -170,12 +173,20 @@ static void stop_driver(const ups_t *ups)
 		return;
 	}
 
+#else
+	snprintf(pidfn, sizeof(pidfn), "%s-%s",ups->driver, ups->upsname);
+#endif
+
 	upsdebugx(2, "Sending signal to %s", pidfn);
 
 	if (testmode)
 		return;
 
+#ifndef WIN32
 	ret = sendsignalfn(pidfn, SIGTERM);
+#else
+	ret = sendsignal(pidfn, COMMAND_STOP);
+#endif
 
 	if (ret < 0) {
 		upslog_with_errno(LOG_ERR, "Stopping %s failed", pidfn);

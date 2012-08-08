@@ -144,6 +144,7 @@ static tracking_t	*tracking_list = NULL;
 static struct pollfd	*fds = NULL;
 #else
 static HANDLE		*fds = NULL;
+static HANDLE		mutex = INVALID_HANDLE_VALUE;
 #endif
 static handler_t	*handler = NULL;
 
@@ -781,6 +782,13 @@ static void upsd_cleanup(void)
 
 	free(fds);
 	free(handler);
+
+#ifdef WIN32
+	if(mutex != INVALID_HANDLE_VALUE) {
+		ReleaseMutex(mutex);
+		CloseHandle(mutex);
+	}
+#endif
 }
 
 static void poll_reload(void)
@@ -1496,6 +1504,21 @@ int main(int argc, char **argv)
 	datapath = xstrdup(NUT_DATADIR);
 #else
 	datapath = getfullpath(PATH_SHARE);
+
+	/* remove trailing .exe */
+	char * drv_name;
+	drv_name = (char *)xbasename(argv[0]);
+	char * name = strrchr(drv_name,'.');
+	if( name != NULL ) {
+		if(strcasecmp(name, ".exe") == 0 ) {
+			progname = strdup(drv_name);
+			char * t = strrchr(progname,'.');
+			*t = 0;
+		}
+	}
+	else {
+		progname = drv_name;
+	}
 #endif
 
 	/* set up some things for later */
@@ -1590,7 +1613,7 @@ int main(int argc, char **argv)
 			cmdret = sendsignalpid(oldpid, cmd);
 		}
 #else
-		cmdret = send_to_named_pipe(UPSD_PIPE_NAME,cmd);
+		cmdret = sendsignal(UPSD_PIPE_NAME,cmd);
 #endif
 		exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
 	}
@@ -1605,10 +1628,18 @@ int main(int argc, char **argv)
 		cmdret = sendsignalpid(oldpid, 0);
 	}
 #else
-	/* TODO: Fix that routine for a quiet probe? */
-	upslogx(LOG_ERR, "Probing if an earlier upsd instance holds the pipe");
-	cmdret = send_to_named_pipe(UPSD_PIPE_NAME, "");
+	mutex = CreateMutex(NULL,TRUE,UPSD_PIPE_NAME);
+	if(mutex == NULL ) {
+		if( GetLastError() != ERROR_ACCESS_DENIED ) {
+			fatalx(EXIT_FAILURE, "Can not create mutex %s : %d.\n",UPSD_PIPE_NAME,(int)GetLastError());
+		}
+	}
+
+	cmdret = -1; /* unknown, maybe ok */
+	if (GetLastError() == ERROR_ALREADY_EXISTS || GetLastError() == ERROR_ACCESS_DENIED)
+		cmdret = 0; /* known conflict */
 #endif
+
 	switch (cmdret) {
 	case 0:
 		printf("Fatal error: A previous upsd instance is already running!\n");

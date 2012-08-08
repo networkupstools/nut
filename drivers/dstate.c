@@ -798,6 +798,12 @@ static void sock_read(conn_t *conn)
 		return;
 	}
 	ret = bytesRead;
+
+	/* Special case for signals */
+	if (!strncmp(conn->buf, COMMAND_STOP, sizeof(COMMAND_STOP))) {
+		set_exit_flag(1);
+		return;
+	}
 #endif
 
 	for (i = 0; i < ret; i++) {
@@ -887,12 +893,8 @@ char * dstate_init(const char *prog, const char *devname)
 		snprintf(sockname, sizeof(sockname), "%s/%s", dflt_statepath(), prog);
 	}
 #else
-	/* FIXME: use dflt_statepath() instead of hardcoded value ?*/
-	if (devname) {
-		snprintf(sockname, sizeof(sockname), "\\\\.\\pipe\\%s-%s", prog, devname);
-	} else {
-		snprintf(sockname, sizeof(sockname), "\\\\.\\pipe\\%s", prog);
-	}
+	/* upsname (and so devname) is now mandatory so no need to test it */
+	snprintf(sockname, sizeof(sockname), "\\\\.\\pipe\\%s-%s", prog, devname);
 	pipename = strdup(sockname);
 #endif
 
@@ -1028,7 +1030,7 @@ int dstate_poll_fds(struct timeval timeout, HANDLE extrafd)
 
 	timeout_ms = (timeout.tv_sec * 1000) + (timeout.tv_usec / 1000);
 
-/* Wait on the read IO of each connections */
+	/* Wait on the read IO of each connections */
 	for (conn = connhead; conn; conn = conn->next) {
 		rfds[maxfd] = conn->read_overlapped.hEvent;
 		maxfd++;
@@ -1036,6 +1038,7 @@ int dstate_poll_fds(struct timeval timeout, HANDLE extrafd)
 	/* Add the connect event */
 	rfds[maxfd] = connect_overlapped.hEvent;
 	maxfd++;
+
 	ret = WaitForMultipleObjects( 
 				maxfd,	/* number of objects in array */
 				rfds,	/* array of objects */

@@ -131,7 +131,11 @@ void writepid(const char *name);
 pid_t parsepid(const char *buf);
 
 /* send a signal to another running process */
+#ifndef WIN32
 int sendsignal(const char *progname, int sig);
+#else
+int sendsignal(const char *progname, const char * sig);
+#endif
 
 int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 3, 4)));
@@ -150,7 +154,12 @@ int sendsignalpid(pid_t pid, int sig);
  * -2   PID file not parsable
  * -1   Error sending signal
  */
+#ifndef WIN32
+/* open <pidfn>, get the pid, then send it <sig> */
 int sendsignalfn(const char *pidfn, int sig);
+#else
+int sendsignalfn(const char *pidfn, const char * sig);
+#endif
 
 const char *xbasename(const char *file);
 
@@ -286,9 +295,9 @@ extern int optind;
 #define closelog()
 
 #define SVCNAME TEXT("Network UPS Tools")
-#define EVENTLOG_PIPE_NAME TEXT("\\\\.\\pipe\\nut")
-#define UPSMON_PIPE_NAME TEXT("\\\\.\\pipe\\upsmon")
-#define UPSD_PIPE_NAME TEXT("\\\\.\\pipe\\upsd")
+#define EVENTLOG_PIPE_NAME TEXT("nut")
+#define UPSMON_PIPE_NAME TEXT("upsmon")
+#define UPSD_PIPE_NAME TEXT("upsd")
 
 char * getfullpath(char * relative_path);
 #define PATH_ETC	"\\..\\etc"
