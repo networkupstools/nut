@@ -156,7 +156,7 @@ static void run_upsd()
 
 static void stop_upsd()
 {
-	if ( send_to_named_pipe( UPSD_PIPE_NAME, COMMAND_STOP ) ) {
+	if ( sendsignal( UPSD_PIPE_NAME, COMMAND_STOP ) ) {
 		print_event(LOG_ERR, "Error stoping upsd");
 	}
 }
@@ -175,7 +175,7 @@ static void run_upsmon()
 
 static void stop_upsmon()
 {
-	if ( send_to_named_pipe( UPSMON_PIPE_NAME, COMMAND_STOP ) ) {
+	if ( sendsignal( UPSMON_PIPE_NAME, COMMAND_STOP ) ) {
 		print_event(LOG_ERR, "Error sendind CTRL_BREAK to upsmon");
 	}
 }

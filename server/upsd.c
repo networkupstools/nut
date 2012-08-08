@@ -105,6 +105,7 @@ typedef struct {
 static struct pollfd	*fds = NULL;
 #else
 static HANDLE		*fds = NULL;
+static HANDLE		mutex = INVALID_HANDLE_VALUE;
 #endif
 static handler_t	*handler = NULL;
 
@@ -703,6 +704,13 @@ static void upsd_cleanup(void)
 
 	free(fds);
 	free(handler);
+
+#ifdef WIN32
+	if(mutex != INVALID_HANDLE_VALUE) {
+		ReleaseMutex(mutex);
+		CloseHandle(mutex);
+	}
+#endif
 }
 
 void poll_reload(void)
@@ -1109,6 +1117,21 @@ int main(int argc, char **argv)
 	datapath = xstrdup(NUT_DATADIR);
 #else
 	datapath = getfullpath(PATH_SHARE);
+
+	/* remove trailing .exe */
+	char * drv_name;
+	drv_name = (char *)xbasename(argv[0]);
+	char * name = strrchr(drv_name,'.');
+	if( name != NULL ) {
+		if(strcasecmp(name, ".exe") == 0 ) {
+			progname = strdup(drv_name);
+			char * t = strrchr(progname,'.');
+			*t = 0;
+		}
+	}
+	else {
+		progname = drv_name;
+	}
 #endif
 
 	/* set up some things for later */
@@ -1169,7 +1192,7 @@ int main(int argc, char **argv)
 #ifndef WIN32
 		sendsignalfn(pidfn, cmd);
 #else
-		send_to_named_pipe(UPSD_PIPE_NAME,cmd);
+		sendsignal(UPSD_PIPE_NAME,cmd);
 #endif
 		exit(EXIT_SUCCESS);
 	}
@@ -1177,7 +1200,18 @@ int main(int argc, char **argv)
 	/* otherwise, we are being asked to start.
 	 * so check if a previous instance is running by sending signal '0'
 	 * (Ie 'kill <pid> 0') */
+#ifndef WIN32
 	if (sendsignalfn(pidfn, 0) == 0) {
+#else
+	mutex = CreateMutex(NULL,TRUE,UPSD_PIPE_NAME);
+	if(mutex == NULL ) {
+		if( GetLastError() != ERROR_ACCESS_DENIED ) {
+			fatalx(EXIT_FAILURE, "Can not create mutex %s : %d.\n",UPSD_PIPE_NAME,(int)GetLastError());
+		}
+	}
+
+        if (GetLastError() == ERROR_ALREADY_EXISTS || GetLastError() == ERROR_ACCESS_DENIED) {
+#endif
 		printf("Fatal error: A previous upsd instance is already running!\n");
 		printf("Either stop the previous instance first, or use the 'reload' command.\n");
 		exit(EXIT_FAILURE);

@@ -81,6 +81,7 @@ static	int	use_pipe = 1;
 #else
 	/* Do not fork in WIN32 */
 static	int	use_pipe = 0;
+static HANDLE   mutex = INVALID_HANDLE_VALUE;
 #endif
 
 static	utype_t	*firstups = NULL;
@@ -1437,6 +1438,13 @@ static void upsmon_cleanup(void)
 	for (i = 0; notifylist[i].name != NULL; i++) {
 		free(notifylist[i].msg);
 	}
+
+#ifdef WIN32
+	if(mutex != INVALID_HANDLE_VALUE) {
+		ReleaseMutex(mutex);
+		CloseHandle(mutex);
+	}
+#endif
 }
 
 static void user_fsd(int sig)
@@ -2110,7 +2118,7 @@ int main(int argc, char *argv[])
 #ifndef WIN32
 		sendsignal(prog, cmd);
 #else
-		send_to_named_pipe(UPSMON_PIPE_NAME,cmd);
+		sendsignal(UPSMON_PIPE_NAME, cmd);
 #endif
 		exit(EXIT_SUCCESS);
 	}
@@ -2128,7 +2136,18 @@ int main(int argc, char *argv[])
 	/* otherwise, we are being asked to start.
 	 * so check if a previous instance is running by sending signal '0'
 	 * (Ie 'kill <pid> 0') */
+#ifndef WIN32
 	if (sendsignal(prog, 0) == 0) {
+#else
+	mutex = CreateMutex(NULL,TRUE,UPSMON_PIPE_NAME);
+	if(mutex == NULL ) {
+		if( GetLastError() != ERROR_ACCESS_DENIED ) {
+			fatalx(EXIT_FAILURE, "Can not create mutex %s : %d.\n",UPSMON_PIPE_NAME,(int)GetLastError());
+		}
+	}
+
+	if (GetLastError() == ERROR_ALREADY_EXISTS || GetLastError() == ERROR_ACCESS_DENIED) {
+#endif
 		printf("Fatal error: A previous upsmon instance is already running!\n");
 		printf("Either stop the previous instance first, or use the 'reload' command.\n");
 		exit(EXIT_FAILURE);
