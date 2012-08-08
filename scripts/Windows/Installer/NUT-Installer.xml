@@ -1723,13 +1723,6 @@ Public License instead of this License.
                         </Component>
                     </Directory>
                 </Directory>
-                <Directory Id="var" Name="var">
-                    <Directory Id="run" Name="run">
-                        <Component Id="tmpFile" DiskId="1" Guid="C36CB85E-5B5A-48E7-AE64-A066DF16E397">
-                            <File Id="tmpFile" Name="tmpFile" Source="ImageFiles\emptyDir\run\temp.txt" />
-                        </Component>
-                    </Directory>
-                </Directory>
                 <Component Id="docs" Guid="F0F03082-23DA-403E-AE18-959B83E1DF1E">
                     <File Id="UPGRADING" Name="UPGRADING" Source="..\..\..\UPGRADING" />
                     <File Id="AUTHORS" Name="AUTHORS" Source="..\..\..\AUTHORS" />
@@ -1887,7 +1880,6 @@ Public License instead of this License.
                 <ComponentRef Id="cmdvartab" />
                 <ComponentRef Id="driver.list" />
                 <!--NUT temp files to create empty directory-->
-                <ComponentRef Id="tmpFile" />
             </Feature>
             <Feature Id="HKLM" Level="1">
                 <ComponentRef Id="RegistryEntries" />
