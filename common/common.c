@@ -245,31 +245,16 @@ char * getfullpath(char * relative_path)
 /* drop off a pidfile for this process */
 void writepid(const char *name)
 {
+#ifndef WIN32
 	char	fn[SMALLBUF];
 	FILE	*pidf;
 	int	mask;
 
 	/* use full path if present, else build filename in PIDPATH */
-#ifndef WIN32
 	if (*name == '/')
-#else
-	if(name[1] == ':')
-#endif
 		snprintf(fn, sizeof(fn), "%s", name);
 	else {
-#ifndef WIN32
 		snprintf(fn, sizeof(fn), "%s/%s.pid", PIDPATH, name);
-#else
-		char * path;
-		path = getfullpath(PATH_VAR_RUN);
-		if( path == NULL ) {
-			snprintf(fn, sizeof(fn), "%s/%s.pid", PIDPATH, name);
-		}
-		else {
-			snprintf(fn, sizeof(fn), "%s/%s.pid", path, name);
-			free(path);
-		}
-#endif
 	}
 
 	mask = umask(022);
@@ -283,21 +268,20 @@ void writepid(const char *name)
 	}
 
 	umask(mask);
+#endif
 }
 
 /* open pidfn, get the pid, then send it sig */
+#ifndef WIN32
 int sendsignalfn(const char *pidfn, int sig)
 {
 	char	buf[SMALLBUF];
 	FILE	*pidf;
 	int	pid;
-#ifndef WIN32
 	int	ret;
-#else
-	BOOL	ret;
-#endif
 
 	pidf = fopen(pidfn, "r");
+
 	if (!pidf) {
 		upslog_with_errno(LOG_NOTICE, "fopen %s", pidfn);
 		return -1;
@@ -317,7 +301,6 @@ int sendsignalfn(const char *pidfn, int sig)
 		return -1;
 	}
 
-#ifndef WIN32
 	/* see if this is going to work first */
 	ret = kill(pid, 0);
 
@@ -336,29 +319,24 @@ int sendsignalfn(const char *pidfn, int sig)
 		return -1;
 	}
 
-	fclose(pidf);
-#else
-	if( sig == 0 ) {
-		HANDLE proc;
-		proc = OpenProcess(READ_CONTROL,FALSE,pid);
-		CloseHandle( proc);
-		if( proc == NULL ) {
-			fclose(pidf);
-			return -1;
-		}
-	}
-	else {
-		ret = GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT,pid);
-
-		if (ret == 0) {
-			fclose(pidf);
-			return -1;
-		}
-	}
-#endif
-	fclose(pidf);
 	return 0;
 }
+#else
+int sendsignalfn(const char *pidfn, const char * sig)
+{
+	char	buf[SMALLBUF];
+	BOOL	ret;
+
+	snprintf(buf, sizeof(buf), "\\\\.\\pipe\\%s", pidfn);
+	ret = send_to_named_pipe(buf,sig);
+
+	if (ret != 0) {
+		return -1;
+	}
+
+	return 0;
+}
+#endif
 
 int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 {
@@ -378,26 +356,20 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 }
 
 /* lazy way to send a signal if the program uses the PIDPATH */
+#ifndef WIN32
 int sendsignal(const char *progname, int sig)
 {
 	char	fn[SMALLBUF];
 
-#ifndef WIN32
 	snprintf(fn, sizeof(fn), "%s/%s.pid", PIDPATH, progname);
-#else
-	char * path;
-	path = getfullpath(PATH_VAR_RUN);
-	if( path == NULL ) {
-		snprintf(fn, sizeof(fn), "%s\\%s.pid", PIDPATH, progname);
-	}
-	else {
-		snprintf(fn, sizeof(fn), "%s\\%s.pid", path, progname);
-		free(path);
-	}
-#endif
-
 	return sendsignalfn(fn, sig);
 }
+#else
+int sendsignal(const char *progname, const char * sig)
+{
+	return sendsignalfn(progname, sig);
+}
+#endif
 
 const char *xbasename(const char *file)
 {
@@ -445,7 +417,7 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 				(LPTSTR) &WinBuf,
 				0, NULL );
 
-		snprintfcat(buf, sizeof(buf), " [%s]", WinBuf);
+		snprintfcat(buf, sizeof(buf), " [%s]", (char *)WinBuf);
 		LocalFree(WinBuf);
 #endif
 	}
@@ -506,13 +478,9 @@ const char * dflt_statepath(void)
 /* Return the alternate path for pid files */
 const char * altpidpath(void) 
 {
-#ifndef WIN32
 #ifdef ALTPIDPATH
 	return ALTPIDPATH;
 #else
-	return dflt_statepath();
-#endif
-#else /* WIN32 */
 	return dflt_statepath();
 #endif
 }
