@@ -12,6 +12,36 @@ if test -z "${nut_have_libltdl_seen}"; then
 	LIBS_ORIG="${LIBS}"
 	LIBS=""
 
+	AC_MSG_CHECKING(for libltdl cflags)
+	AC_ARG_WITH(libltdl-includes,
+		AS_HELP_STRING([@<:@--with-libltdl-includes=CFLAGS@:>@], [include flags for the libltdl library]),
+	[
+		case "${withval}" in
+		yes|no)
+			AC_MSG_ERROR(invalid option --with(out)-libltdl-includes - see docs/configure.txt)
+			;;
+		*)
+			CFLAGS="${withval}"
+			;;
+		esac
+	], [])
+	AC_MSG_RESULT([${CFLAGS}])
+
+	AC_MSG_CHECKING(for libltdl ldflags)
+	AC_ARG_WITH(libltdl-libs,
+		AS_HELP_STRING([@<:@--with-libltdl-libs=LIBS@:>@], [linker flags for the libltdl library]),
+	[
+		case "${withval}" in
+		yes|no)
+			AC_MSG_ERROR(invalid option --with(out)-libltdl-libs - see docs/configure.txt)
+			;;
+		*)
+			LIBS="${withval}"
+			;;
+		esac
+	], [])
+	AC_MSG_RESULT([${LIBS}])
+
 	AC_CHECK_HEADERS(ltdl.h, [nut_have_libltdl=yes], [nut_have_libltdl=no], [AC_INCLUDES_DEFAULT])
 	AC_SEARCH_LIBS(lt_dlinit, ltdl, [], [nut_have_libltdl=no])
 

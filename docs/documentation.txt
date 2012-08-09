@@ -46,6 +46,7 @@ These are general information about UPS and PDU.
 - link:http://tldp.org/HOWTO/UPS-HOWTO/[UPS HOWTO] (The Linux Documentation Project)
 - link:http://en.wikipedia.org/wiki/Uninterruptible_power_supply[UPS on Wikipedia]
 - link:http://en.wikipedia.org/wiki/Power_distribution_unit[PDU on Wikipedia]
+- link:http://en.wikipedia.org/wiki/Solar_controller[Solar controller on Wikipedia]
 - link:http://www.pcguide.com/ref/power/ext/ups/over.htm[UPS on The PC Guide]
 
 These are writeups by users of the software.

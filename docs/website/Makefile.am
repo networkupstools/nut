@@ -6,7 +6,7 @@ EXTRA_DIST = news.txt projects.txt website.txt \
 	$(FAVICON_FILES)
 
 IMAGE_FILES = images/asciidoc.png \
-	images/eaton-logo.png \
+	images/hostedby.png \
 	images/blue-arrow.png \
 	images/simple.png \
 	images/advanced.png \

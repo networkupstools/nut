@@ -417,6 +417,15 @@ endif
 
 HTML_IPMIPSU_MANS = nut-ipmipsu.html
 
+SRC_MACOSX_PAGES = macosx-ups.txt
+MAN_MACOSX_PAGES = macosx-ups.8
+
+if WITH_MACOSX
+   man8_MANS += $(MAN_MACOSX_PAGES)
+endif
+
+HTML_MACOSX_MANS = macosx-ups.html
+
 # SOME_DRIVERS
 endif
 
@@ -433,7 +442,8 @@ MAN_MANS = \
 	$(MAN_USB_LIBUSB_PAGES) \
 	$(MAN_NETXML_PAGES) \
 	$(MAN_POWERMAN_PAGES) \
-	$(MAN_IPMIPSU_PAGES)
+	$(MAN_IPMIPSU_PAGES) \
+	$(MAN_MACOSX_PAGES)
 
 # distribute everything, even those not installed by default
 # Note that 'dist' target requires AsciiDoc!
@@ -449,6 +459,7 @@ EXTRA_DIST = \
 	$(SRC_NETXML_PAGES) \
 	$(SRC_POWERMAN_PAGES) \
 	$(SRC_IPMIPSU_PAGES) \
+	$(SRC_MACOSX_PAGES) \
 	$(MAN_MANS) \
 	asciidoc.conf
 
@@ -463,7 +474,8 @@ HTML_MANS = \
 	$(HTML_USB_LIBUSB_MANS) \
 	$(HTML_NETXML_MANS) \
 	$(HTML_POWERMAN_MANS) \
-	$(HTML_IPMIPSU_MANS)
+	$(HTML_IPMIPSU_MANS) \
+	$(HTML_MACOSX_MANS)
 
 all:
 
