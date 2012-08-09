@@ -115,6 +115,8 @@ ups: General unit information
                           battery                      | yes
 | ups.start.reboot      | UPS coldstarts from battery
                           (enabled or disabled)        | yes
+| ups.shutdown          | Enable or disable UPS
+                          shutdown ability (poweroff)  | enabled
 |===============================================================================
 
 NOTE: When present, the value of *ups.start.auto* has an impact on shutdown.*
