@@ -115,7 +115,7 @@ link:http://pdb.finkproject.org/pdb/package.php/nut[Fink],
 link:http://trac.macports.org/browser/trunk/dports/sysutils/nut/Portfile[MacPorts]
 
 - Windows (complete port, Beta):
-link:http://www.networkupstools.org/source/2.6/NUT-Installer-2.6.4-1.msi[Windows MSI installer 2.6.4-1]
+link:http://www.networkupstools.org/package/windows/NUT-Installer-2.6.5-1.msi[Windows MSI installer 2.6.5-1]
 
 
 Java packages
