@@ -1479,247 +1479,307 @@ Public License instead of this License.
                     </Component>
                     <Directory Id="man" Name="man">
                         <Component Id="APCSMART.HTML" DiskId="1" Guid="69BDFFC7-D9CC-42DB-9254-3A87976E9196">
-                            <File Id="APCSMART.HTML" Name="apcsmart.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\apcsmart.html" />
+                            <File Id="APCSMART.HTML" Name="apcsmart.html" Source="..\..\..\docs\man\apcsmart.html" />
+                        </Component>
+                        <Component Id="APCSMART_OLD.HTML" DiskId="1" Guid="87315532-9414-413C-A70A-569D70EBC5C4">
+                            <File Id="APCSMART_OLD.HTML" Name="apcsmart-old.html" Source="..\..\..\docs\man\apcsmart-old.html" />
                         </Component>
                         <Component Id="BCMXCP.HTML" DiskId="1" Guid="C7AA3B2F-0202-443A-85BB-96375D6E7C64">
-                            <File Id="BCMXCP.HTML" Name="bcmxcp.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\bcmxcp.html" />
+                            <File Id="BCMXCP.HTML" Name="bcmxcp.html" Source="..\..\..\docs\man\bcmxcp.html" />
                         </Component>
                         <Component Id="BCMXCP_USB.HTML" DiskId="1" Guid="46C84C12-9414-4519-8DA8-519DED7B774D">
-                            <File Id="BCMXCP_USB.HTML" Name="bcmxcp_usb.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\bcmxcp_usb.html" />
+                            <File Id="BCMXCP_USB.HTML" Name="bcmxcp_usb.html" Source="..\..\..\docs\man\bcmxcp_usb.html" />
                         </Component>
                         <Component Id="BELKIN.HTML" DiskId="1" Guid="89630C26-53CA-4D58-9B45-96E861EBF41D">
-                            <File Id="BELKIN.HTML" Name="belkin.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\belkin.html" />
+                            <File Id="BELKIN.HTML" Name="belkin.html" Source="..\..\..\docs\man\belkin.html" />
                         </Component>
                         <Component Id="BELKINUNV.HTML" DiskId="1" Guid="1F1EA890-4E35-4BC2-954D-8F87AC3DA41A">
-                            <File Id="BELKINUNV.HTML" Name="belkinunv.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\belkinunv.html" />
+                            <File Id="BELKINUNV.HTML" Name="belkinunv.html" Source="..\..\..\docs\man\belkinunv.html" />
                         </Component>
                         <Component Id="BESTFCOM.HTML" DiskId="1" Guid="AF454A3A-6EF1-4F1A-844C-5534A11091F1">
-                            <File Id="BESTFCOM.HTML" Name="bestfcom.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\bestfcom.html" />
+                            <File Id="BESTFCOM.HTML" Name="bestfcom.html" Source="..\..\..\docs\man\bestfcom.html" />
                         </Component>
                         <Component Id="BESTFORTRESS.HTML" DiskId="1" Guid="A8534F2E-5A94-4AC7-9774-34BD69ED7D76">
-                            <File Id="BESTFORTRESS.HTML" Name="bestfortress.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\bestfortress.html" />
+                            <File Id="BESTFORTRESS.HTML" Name="bestfortress.html" Source="..\..\..\docs\man\bestfortress.html" />
                         </Component>
                         <Component Id="BESTUFERRUPS.HTML" DiskId="1" Guid="5A5D960B-9894-4484-9C63-E5BAD0B3CFED">
-                            <File Id="BESTUFERRUPS.HTML" Name="bestuferrups.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\bestuferrups.html" />
+                            <File Id="BESTUFERRUPS.HTML" Name="bestuferrups.html" Source="..\..\..\docs\man\bestuferrups.html" />
                         </Component>
                         <Component Id="BESTUPS.HTML" DiskId="1" Guid="C6ED1527-CE73-4895-B12B-4DEFC0716779">
-                            <File Id="BESTUPS.HTML" Name="bestups.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\bestups.html" />
+                            <File Id="BESTUPS.HTML" Name="bestups.html" Source="..\..\..\docs\man\bestups.html" />
                         </Component>
                         <Component Id="BLAZER.HTML" DiskId="1" Guid="29F38410-B0F2-4475-AF01-C3F2B5F29AA8">
-                            <File Id="BLAZER.HTML" Name="blazer.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\blazer.html" />
+                            <File Id="BLAZER.HTML" Name="blazer.html" Source="..\..\..\docs\man\blazer.html" />
                         </Component>
                         <Component Id="CLONE.HTML" DiskId="1" Guid="CA920E20-5DD1-4BB0-B750-F72BDD5825C0">
-                            <File Id="CLONE.HTML" Name="clone.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\clone.html" />
+                            <File Id="CLONE.HTML" Name="clone.html" Source="..\..\..\docs\man\clone.html" />
                         </Component>
                         <Component Id="DUMMY_UPS.HTML" DiskId="1" Guid="E623E868-FEF2-4490-8518-16DDC1079BB2">
-                            <File Id="DUMMY_UPS.HTML" Name="dummy-ups.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\dummy-ups.html" />
+                            <File Id="DUMMY_UPS.HTML" Name="dummy-ups.html" Source="..\..\..\docs\man\dummy-ups.html" />
                         </Component>
                         <Component Id="ETAPRO.HTML" DiskId="1" Guid="91EE7D9A-0C9A-4E5F-B0A9-78B04CE42E2D">
-                            <File Id="ETAPRO.HTML" Name="etapro.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\etapro.html" />
+                            <File Id="ETAPRO.HTML" Name="etapro.html" Source="..\..\..\docs\man\etapro.html" />
                         </Component>
                         <Component Id="EVERUPS.HTML" DiskId="1" Guid="45DAE10B-E20B-4A60-806E-A37F53FEF97F">
-                            <File Id="EVERUPS.HTML" Name="everups.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\everups.html" />
+                            <File Id="EVERUPS.HTML" Name="everups.html" Source="..\..\..\docs\man\everups.html" />
                         </Component>
                         <Component Id="GAMATRONIC.HTML" DiskId="1" Guid="5373CC9C-E29A-4D73-B9FC-08E738B6BC7A">
-                            <File Id="GAMATRONIC.HTML" Name="gamatronic.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\gamatronic.html" />
+                            <File Id="GAMATRONIC.HTML" Name="gamatronic.html" Source="..\..\..\docs\man\gamatronic.html" />
                         </Component>
                         <Component Id="GENERICUPS.HTML" DiskId="1" Guid="622E468F-D7E2-4E25-8221-A9B26C9D6EC6">
-                            <File Id="GENERICUPS.HTML" Name="genericups.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\genericups.html" />
+                            <File Id="GENERICUPS.HTML" Name="genericups.html" Source="..\..\..\docs\man\genericups.html" />
                         </Component>
                         <Component Id="HOSTS.CONF.HTML" DiskId="1" Guid="B8050A81-EDA6-4613-ACB1-2E1755E534B9">
-                            <File Id="HOSTS.CONF.HTML" Name="hosts.conf.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\hosts.conf.html" />
+                            <File Id="HOSTS.CONF.HTML" Name="hosts.conf.html" Source="..\..\..\docs\man\hosts.conf.html" />
                         </Component>
                         <Component Id="INDEX.HTML" DiskId="1" Guid="E4BEF902-0EA0-4D27-AA3D-FECCBDCCA57B">
-                            <File Id="INDEX.HTML" Name="index.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\index.html" />
+                            <File Id="INDEX.HTML" Name="index.html" Source="..\..\..\docs\man\index.html" />
                         </Component>
                         <Component Id="ISBMEX.HTML" DiskId="1" Guid="19E05E3B-67D7-4BE9-9B1C-09A41A58C9D4">
-                            <File Id="ISBMEX.HTML" Name="isbmex.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\isbmex.html" />
+                            <File Id="ISBMEX.HTML" Name="isbmex.html" Source="..\..\..\docs\man\isbmex.html" />
                         </Component>
                         <Component Id="IVTSCD.HTML" DiskId="1" Guid="C9C147A9-C9CD-4411-BF4A-2365E3A66152">
-                            <File Id="IVTSCD.HTML" Name="ivtscd.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\ivtscd.html" />
+                            <File Id="IVTSCD.HTML" Name="ivtscd.html" Source="..\..\..\docs\man\ivtscd.html" />
                         </Component>
                         <Component Id="LIBUPSCLIENT_CONFIG.HTML" DiskId="1" Guid="BF0B94AC-F324-4088-86A1-0C973EE21A72">
-                            <File Id="LIBUPSCLIENT_CONFIG.HTML" Name="libupsclient-config.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\libupsclient-config.html" />
+                            <File Id="LIBUPSCLIENT_CONFIG.HTML" Name="libupsclient-config.html" Source="..\..\..\docs\man\libupsclient-config.html" />
                         </Component>
                         <Component Id="LIEBERT_ESP2.HTML" DiskId="1" Guid="FC1BCC83-F3DB-40A9-8AC7-3096774174F0">
-                            <File Id="LIEBERT_ESP2.HTML" Name="liebert-esp2.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\liebert-esp2.html" />
+                            <File Id="LIEBERT_ESP2.HTML" Name="liebert-esp2.html" Source="..\..\..\docs\man\liebert-esp2.html" />
                         </Component>
                         <Component Id="LIEBERT.HTML" DiskId="1" Guid="39A39F71-6872-43D5-8402-B6C3FE1F0D53">
-                            <File Id="LIEBERT.HTML" Name="liebert.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\liebert.html" />
+                            <File Id="LIEBERT.HTML" Name="liebert.html" Source="..\..\..\docs\man\liebert.html" />
+                        </Component>
+                        <Component Id="MACOSX_UPS.HTML" DiskId="1" Guid="69D276C6-4E79-4E5A-82CA-F0846E6E4B4D">
+                            <File Id="MACOSX_UPS.HTML" Name="macosx-ups.html" Source="..\..\..\docs\man\macosx-ups.html" />
                         </Component>
                         <Component Id="MAN_INDEX.HTML" DiskId="1" Guid="5C97C76B-9751-4D36-8262-32073EC40CB7">
-                            <File Id="MAN_INDEX.HTML" Name="man-index.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\man-index.html" />
+                            <File Id="MAN_INDEX.HTML" Name="man-index.html" Source="..\..\..\docs\man\man-index.html" />
                         </Component>
                         <Component Id="MASTERGUARD.HTML" DiskId="1" Guid="D12FD78A-A19A-4027-BA25-4F0E2C01B1DD">
-                            <File Id="MASTERGUARD.HTML" Name="masterguard.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\masterguard.html" />
+                            <File Id="MASTERGUARD.HTML" Name="masterguard.html" Source="..\..\..\docs\man\masterguard.html" />
                         </Component>
                         <Component Id="METASYS.HTML" DiskId="1" Guid="82BE0565-12ED-4510-8055-04146EE2D3B1">
-                            <File Id="METASYS.HTML" Name="metasys.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\metasys.html" />
+                            <File Id="METASYS.HTML" Name="metasys.html" Source="..\..\..\docs\man\metasys.html" />
                         </Component>
                         <Component Id="MGE_SHUT.HTML" DiskId="1" Guid="63AAE490-5AC0-4582-A3DF-AAB794C14002">
-                            <File Id="MGE_SHUT.HTML" Name="mge-shut.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\mge-shut.html" />
+                            <File Id="MGE_SHUT.HTML" Name="mge-shut.html" Source="..\..\..\docs\man\mge-shut.html" />
                         </Component>
                         <Component Id="MGE_UTALK.HTML" DiskId="1" Guid="06C8B2B2-3FA2-428E-A67E-40C0A91BBACE">
-                            <File Id="MGE_UTALK.HTML" Name="mge-utalk.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\mge-utalk.html" />
+                            <File Id="MGE_UTALK.HTML" Name="mge-utalk.html" Source="..\..\..\docs\man\mge-utalk.html" />
                         </Component>
                         <Component Id="MICRODOWELL.HTML" DiskId="1" Guid="E298A460-12D8-479F-AE5C-3E75DB2510E5">
-                            <File Id="MICRODOWELL.HTML" Name="microdowell.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\microdowell.html" />
+                            <File Id="MICRODOWELL.HTML" Name="microdowell.html" Source="..\..\..\docs\man\microdowell.html" />
                         </Component>
                         <Component Id="NETXML_UPS.HTML" DiskId="1" Guid="0DD5CF39-0099-40FC-AFAE-3582192FF3EC">
-                            <File Id="NETXML_UPS.HTML" Name="netxml-ups.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\netxml-ups.html" />
+                            <File Id="NETXML_UPS.HTML" Name="netxml-ups.html" Source="..\..\..\docs\man\netxml-ups.html" />
                         </Component>
                         <Component Id="NUT.CONF.HTML" DiskId="1" Guid="CB726F74-A5F8-405C-B491-83C2B9585080">
-                            <File Id="NUT.CONF.HTML" Name="nut.conf.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\nut.conf.html" />
+                            <File Id="NUT.CONF.HTML" Name="nut.conf.html" Source="..\..\..\docs\man\nut.conf.html" />
+                        </Component>
+                        <Component Id="NUT_IPMIPSU.HTML" DiskId="1" Guid="569787A8-4671-4F4C-BD27-E1B70E75984F">
+                            <File Id="NUT_IPMIPSU.HTML" Name="nut-ipmipsu.html" Source="..\..\..\docs\man\nut-ipmipsu.html" />
+                        </Component>
+                        <Component Id="NUT_RECORDER.HTML" DiskId="1" Guid="6FA2C1AD-2204-47BC-B6BF-FF49A5B98AFE">
+                            <File Id="NUT_RECORDER.HTML" Name="nut-recorder.html" Source="..\..\..\docs\man\nut-recorder.html" />
+                        </Component>
+                        <Component Id="NUTSCAN.HTML" DiskId="1" Guid="93113A1C-A813-455A-9BDA-24F246592379">
+                            <File Id="NUTSCAN.HTML" Name="nutscan.html" Source="..\..\..\docs\man\nutscan.html" />
+                        </Component>
+                        <Component Id="NUTSCAN_ADD_DEVICE_TO_DEVICE.HTML" DiskId="1" Guid="02CC61E3-BBB3-477F-A178-779CDBD67DA7">
+                            <File Id="NUTSCAN_ADD_DEVICE_TO_DEVICE.HTML" Name="nutscan_add_device_to_device.html" Source="..\..\..\docs\man\nutscan_add_device_to_device.html" />
+                        </Component>
+                        <Component Id="NUTSCAN_ADD_OPTION_TO_DEVICE.HTML" DiskId="1" Guid="B53C436C-246E-40AE-962C-CA1D47582FD2">
+                            <File Id="NUTSCAN_ADD_OPTION_TO_DEVICE.HTML" Name="nutscan_add_option_to_device.html" Source="..\..\..\docs\man\nutscan_add_option_to_device.html" />
+                        </Component>
+                        <Component Id="NUTSCAN_CIDR_TO_IP.HTML" DiskId="1" Guid="16BDD620-9419-4236-98BA-0D00C0096678">
+                            <File Id="NUTSCAN_CIDR_TO_IP.HTML" Name="nutscan_cidr_to_ip.html" Source="..\..\..\docs\man\nutscan_cidr_to_ip.html" />
+                        </Component>
+                        <Component Id="NUTSCAN_DISPLAY_PARSABLE.HTML" DiskId="1" Guid="7B796D75-02E2-479A-B884-CC4AF7813F8B">
+                            <File Id="NUTSCAN_DISPLAY_PARSABLE.HTML" Name="nutscan_display_parsable.html" Source="..\..\..\docs\man\nutscan_display_parsable.html" />
+                        </Component>
+                        <Component Id="NUTSCAN_DISPLAY_UPS_CONF.HTML" DiskId="1" Guid="860ACD1F-7EC1-4903-957A-291A045D3C80">
+                            <File Id="NUTSCAN_DISPLAY_UPS_CONF.HTML" Name="nutscan_display_ups_conf.html" Source="..\..\..\docs\man\nutscan_display_ups_conf.html" />
+                        </Component>
+                        <Component Id="NUTSCAN_FREE_DEVICE.HTML" DiskId="1" Guid="5BD0B0FC-37FC-41D6-84E5-461A9D2341C7">
+                            <File Id="NUTSCAN_FREE_DEVICE.HTML" Name="nutscan_free_device.html" Source="..\..\..\docs\man\nutscan_free_device.html" />
+                        </Component>
+                        <Component Id="NUTSCAN_INIT.HTML" DiskId="1" Guid="931BCA08-B638-4E29-997B-753CAFB8D8DA">
+                            <File Id="NUTSCAN_INIT.HTML" Name="nutscan_init.html" Source="..\..\..\docs\man\nutscan_init.html" />
+                        </Component>
+                        <Component Id="NUTSCAN_NEW_DEVICE.HTML" DiskId="1" Guid="547515FB-83EA-4495-A079-1447322CA516">
+                            <File Id="NUTSCAN_NEW_DEVICE.HTML" Name="nutscan_new_device.html" Source="..\..\..\docs\man\nutscan_new_device.html" />
+                        </Component>
+                        <Component Id="NUTSCAN_SCAN_AVAHI.HTML" DiskId="1" Guid="8755D99B-A70F-4AE0-823E-BFFF87CB6CDC">
+                            <File Id="NUTSCAN_SCAN_AVAHI.HTML" Name="nutscan_scan_avahi.html" Source="..\..\..\docs\man\nutscan_scan_avahi.html" />
+                        </Component>
+                        <Component Id="NUTSCAN_SCAN_IPMI.HTML" DiskId="1" Guid="143DD122-E8EB-4343-8B62-416983349827">
+                            <File Id="NUTSCAN_SCAN_IPMI.HTML" Name="nutscan_scan_ipmi.html" Source="..\..\..\docs\man\nutscan_scan_ipmi.html" />
+                        </Component>
+                        <Component Id="NUTSCAN_SCAN_NUT.HTML" DiskId="1" Guid="226FDC28-524A-4DBC-B4A4-7A9638456892">
+                            <File Id="NUTSCAN_SCAN_NUT.HTML" Name="nutscan_scan_nut.html" Source="..\..\..\docs\man\nutscan_scan_nut.html" />
+                        </Component>
+                        <Component Id="NUTSCAN_SCAN_SNMP.HTML" DiskId="1" Guid="7FA6FACA-CA07-4398-9C10-6EAF997C9703">
+                            <File Id="NUTSCAN_SCAN_SNMP.HTML" Name="nutscan_scan_snmp.html" Source="..\..\..\docs\man\nutscan_scan_snmp.html" />
+                        </Component>
+                        <Component Id="NUTSCAN_SCAN_USB.HTML" DiskId="1" Guid="75FA3BE2-5625-4E68-87EC-B4982BD25B75">
+                            <File Id="NUTSCAN_SCAN_USB.HTML" Name="nutscan_scan_usb.html" Source="..\..\..\docs\man\nutscan_scan_usb.html" />
+                        </Component>
+                        <Component Id="NUTSCAN_SCAN_XML_HTTP.HTML" DiskId="1" Guid="2A67C9EB-0F5D-444D-A572-95A9CB8D9170">
+                            <File Id="NUTSCAN_SCAN_XML_HTTP.HTML" Name="nutscan_scan_xml_http.html" Source="..\..\..\docs\man\nutscan_scan_xml_http.html" />
+                        </Component>
+                        <Component Id="NUT_SCANNER.HTML" DiskId="1" Guid="6B92A1AD-CFD0-4D69-9D91-31ECC741DBE4">
+                            <File Id="NUT_SCANNER.HTML" Name="nut-scanner.html" Source="..\..\..\docs\man\nut-scanner.html" />
                         </Component>
                         <Component Id="NUTUPSDRV.HTML" DiskId="1" Guid="D39E659A-1D2A-4726-816B-BC5E38DAAE49">
-                            <File Id="NUTUPSDRV.HTML" Name="nutupsdrv.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\nutupsdrv.html" />
+                            <File Id="NUTUPSDRV.HTML" Name="nutupsdrv.html" Source="..\..\..\docs\man\nutupsdrv.html" />
                         </Component>
                         <Component Id="ONEAC.HTML" DiskId="1" Guid="B7FC10CA-5072-4900-88DA-A28FE36E4BDC">
-                            <File Id="ONEAC.HTML" Name="oneac.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\oneac.html" />
+                            <File Id="ONEAC.HTML" Name="oneac.html" Source="..\..\..\docs\man\oneac.html" />
                         </Component>
                         <Component Id="OPTIUPS.HTML" DiskId="1" Guid="B0D796F5-15F6-4C80-9BBB-4DD7D688DF39">
-                            <File Id="OPTIUPS.HTML" Name="optiups.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\optiups.html" />
+                            <File Id="OPTIUPS.HTML" Name="optiups.html" Source="..\..\..\docs\man\optiups.html" />
                         </Component>
                         <Component Id="POWERCOM.HTML" DiskId="1" Guid="9E732543-B829-4507-8D57-AC562430138A">
-                            <File Id="POWERCOM.HTML" Name="powercom.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\powercom.html" />
+                            <File Id="POWERCOM.HTML" Name="powercom.html" Source="..\..\..\docs\man\powercom.html" />
                         </Component>
                         <Component Id="POWERMAN_PDU.HTML" DiskId="1" Guid="85DFCF48-EC51-462E-A66E-A4D7965403A8">
-                            <File Id="POWERMAN_PDU.HTML" Name="powerman-pdu.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\powerman-pdu.html" />
+                            <File Id="POWERMAN_PDU.HTML" Name="powerman-pdu.html" Source="..\..\..\docs\man\powerman-pdu.html" />
                         </Component>
                         <Component Id="POWERPANEL.HTML" DiskId="1" Guid="6FF12312-F34D-4C2E-8FC8-70590B0EC8DF">
-                            <File Id="POWERPANEL.HTML" Name="powerpanel.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\powerpanel.html" />
+                            <File Id="POWERPANEL.HTML" Name="powerpanel.html" Source="..\..\..\docs\man\powerpanel.html" />
                         </Component>
                         <Component Id="RHINO.HTML" DiskId="1" Guid="E44E16E6-4806-4E00-B0AE-EA2BBD389534">
-                            <File Id="RHINO.HTML" Name="rhino.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\rhino.html" />
+                            <File Id="RHINO.HTML" Name="rhino.html" Source="..\..\..\docs\man\rhino.html" />
                         </Component>
                         <Component Id="RICHCOMM_USB.HTML" DiskId="1" Guid="5D3E20BF-7213-4841-A5EA-3A29E8A1A784">
-                            <File Id="RICHCOMM_USB.HTML" Name="richcomm_usb.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\richcomm_usb.html" />
+                            <File Id="RICHCOMM_USB.HTML" Name="richcomm_usb.html" Source="..\..\..\docs\man\richcomm_usb.html" />
                         </Component>
                         <Component Id="SAFENET.HTML" DiskId="1" Guid="D0CD1DD9-D22C-4CDD-819D-69CE5EE76921">
-                            <File Id="SAFENET.HTML" Name="safenet.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\safenet.html" />
+                            <File Id="SAFENET.HTML" Name="safenet.html" Source="..\..\..\docs\man\safenet.html" />
                         </Component>
                         <Component Id="SKEL.HTML" DiskId="1" Guid="005A258D-2C9C-4B6D-93D2-8583C0D129EE">
-                            <File Id="SKEL.HTML" Name="skel.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\skel.html" />
+                            <File Id="SKEL.HTML" Name="skel.html" Source="..\..\..\docs\man\skel.html" />
                         </Component>
                         <Component Id="SNMP_UPS.HTML" DiskId="1" Guid="8EAA0754-3761-411B-8E88-C78433C1BF7D">
-                            <File Id="SNMP_UPS.HTML" Name="snmp-ups.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\snmp-ups.html" />
+                            <File Id="SNMP_UPS.HTML" Name="snmp-ups.html" Source="..\..\..\docs\man\snmp-ups.html" />
                         </Component>
                         <Component Id="SOLIS.HTML" DiskId="1" Guid="5F02EA12-D4B9-4693-BE36-93A39ADBDBC2">
-                            <File Id="SOLIS.HTML" Name="solis.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\solis.html" />
+                            <File Id="SOLIS.HTML" Name="solis.html" Source="..\..\..\docs\man\solis.html" />
                         </Component>
                         <Component Id="TRIPPLITE.HTML" DiskId="1" Guid="89D096B9-001C-4D13-83FA-A20AFD943940">
-                            <File Id="TRIPPLITE.HTML" Name="tripplite.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\tripplite.html" />
+                            <File Id="TRIPPLITE.HTML" Name="tripplite.html" Source="..\..\..\docs\man\tripplite.html" />
                         </Component>
                         <Component Id="TRIPPLITESU.HTML" DiskId="1" Guid="3584A3E9-E8CE-4A6B-8337-4AB6D68FF6F5">
-                            <File Id="TRIPPLITESU.HTML" Name="tripplitesu.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\tripplitesu.html" />
+                            <File Id="TRIPPLITESU.HTML" Name="tripplitesu.html" Source="..\..\..\docs\man\tripplitesu.html" />
                         </Component>
                         <Component Id="TRIPPLITE_USB.HTML" DiskId="1" Guid="7B4D2431-3EBE-41B0-96BA-8B8A0449C2A2">
-                            <File Id="TRIPPLITE_USB.HTML" Name="tripplite_usb.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\tripplite_usb.html" />
+                            <File Id="TRIPPLITE_USB.HTML" Name="tripplite_usb.html" Source="..\..\..\docs\man\tripplite_usb.html" />
                         </Component>
                         <Component Id="UPS.CONF.HTML" DiskId="1" Guid="E5DB3E0E-9EAB-4806-8AE9-E4887DE3FE65">
-                            <File Id="UPS.CONF.HTML" Name="ups.conf.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\ups.conf.html" />
+                            <File Id="UPS.CONF.HTML" Name="ups.conf.html" Source="..\..\..\docs\man\ups.conf.html" />
                         </Component>
                         <Component Id="UPSC.HTML" DiskId="1" Guid="5AEDE9CB-7DBD-4F2B-B210-E35C012E174C">
-                            <File Id="UPSC.HTML" Name="upsc.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upsc.html" />
+                            <File Id="UPSC.HTML" Name="upsc.html" Source="..\..\..\docs\man\upsc.html" />
                         </Component>
                         <Component Id="UPSCLIENT.HTML" DiskId="1" Guid="39AB12C2-752B-4A84-BD7B-1FB7B6DEF454">
-                            <File Id="UPSCLIENT.HTML" Name="upsclient.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upsclient.html" />
+                            <File Id="UPSCLIENT.HTML" Name="upsclient.html" Source="..\..\..\docs\man\upsclient.html" />
                         </Component>
                         <Component Id="UPSCLI_CONNECT.HTML" DiskId="1" Guid="F7E5D3B5-F3C0-4BC6-A1ED-61EC81FD1DE0">
-                            <File Id="UPSCLI_CONNECT.HTML" Name="upscli_connect.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upscli_connect.html" />
+                            <File Id="UPSCLI_CONNECT.HTML" Name="upscli_connect.html" Source="..\..\..\docs\man\upscli_connect.html" />
                         </Component>
                         <Component Id="UPSCLI_DISCONNECT.HTML" DiskId="1" Guid="57C12CEA-7610-4DB7-8A56-6483F60749F8">
-                            <File Id="UPSCLI_DISCONNECT.HTML" Name="upscli_disconnect.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upscli_disconnect.html" />
+                            <File Id="UPSCLI_DISCONNECT.HTML" Name="upscli_disconnect.html" Source="..\..\..\docs\man\upscli_disconnect.html" />
                         </Component>
                         <Component Id="UPSCLI_FD.HTML" DiskId="1" Guid="9F18933E-2F72-406E-B2D7-290822052484">
-                            <File Id="UPSCLI_FD.HTML" Name="upscli_fd.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upscli_fd.html" />
+                            <File Id="UPSCLI_FD.HTML" Name="upscli_fd.html" Source="..\..\..\docs\man\upscli_fd.html" />
                         </Component>
                         <Component Id="UPSCLI_GET.HTML" DiskId="1" Guid="E76A01CA-918A-4FA0-AADE-1FE5E08C35A5">
-                            <File Id="UPSCLI_GET.HTML" Name="upscli_get.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upscli_get.html" />
+                            <File Id="UPSCLI_GET.HTML" Name="upscli_get.html" Source="..\..\..\docs\man\upscli_get.html" />
                         </Component>
                         <Component Id="UPSCLI_LIST_NEXT.HTML" DiskId="1" Guid="1B441915-1CF8-4CDC-88F3-27003B494D5D">
-                            <File Id="UPSCLI_LIST_NEXT.HTML" Name="upscli_list_next.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upscli_list_next.html" />
+                            <File Id="UPSCLI_LIST_NEXT.HTML" Name="upscli_list_next.html" Source="..\..\..\docs\man\upscli_list_next.html" />
                         </Component>
                         <Component Id="UPSCLI_LIST_START.HTML" DiskId="1" Guid="75DDC32C-621A-4C4F-A987-8B4A51970162">
-                            <File Id="UPSCLI_LIST_START.HTML" Name="upscli_list_start.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upscli_list_start.html" />
+                            <File Id="UPSCLI_LIST_START.HTML" Name="upscli_list_start.html" Source="..\..\..\docs\man\upscli_list_start.html" />
                         </Component>
                         <Component Id="UPSCLI_READLINE.HTML" DiskId="1" Guid="7549E734-EB07-496D-B2B1-ED333C04BB2D">
-                            <File Id="UPSCLI_READLINE.HTML" Name="upscli_readline.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upscli_readline.html" />
+                            <File Id="UPSCLI_READLINE.HTML" Name="upscli_readline.html" Source="..\..\..\docs\man\upscli_readline.html" />
                         </Component>
                         <Component Id="UPSCLI_SENDLINE.HTML" DiskId="1" Guid="55EF7354-64F9-42CE-80B0-04BFB845085E">
-                            <File Id="UPSCLI_SENDLINE.HTML" Name="upscli_sendline.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upscli_sendline.html" />
+                            <File Id="UPSCLI_SENDLINE.HTML" Name="upscli_sendline.html" Source="..\..\..\docs\man\upscli_sendline.html" />
                         </Component>
                         <Component Id="UPSCLI_SPLITADDR.HTML" DiskId="1" Guid="293EB45A-6BAA-4100-8343-D938C3F9E2D4">
-                            <File Id="UPSCLI_SPLITADDR.HTML" Name="upscli_splitaddr.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upscli_splitaddr.html" />
+                            <File Id="UPSCLI_SPLITADDR.HTML" Name="upscli_splitaddr.html" Source="..\..\..\docs\man\upscli_splitaddr.html" />
                         </Component>
                         <Component Id="UPSCLI_SPLITNAME.HTML" DiskId="1" Guid="B4852890-9F8F-4FA3-8AF2-FDA998FDBFFD">
-                            <File Id="UPSCLI_SPLITNAME.HTML" Name="upscli_splitname.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upscli_splitname.html" />
+                            <File Id="UPSCLI_SPLITNAME.HTML" Name="upscli_splitname.html" Source="..\..\..\docs\man\upscli_splitname.html" />
                         </Component>
                         <Component Id="UPSCLI_SSL.HTML" DiskId="1" Guid="65DE31DB-AF4E-4427-B766-D3C2A9EAC94B">
-                            <File Id="UPSCLI_SSL.HTML" Name="upscli_ssl.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upscli_ssl.html" />
+                            <File Id="UPSCLI_SSL.HTML" Name="upscli_ssl.html" Source="..\..\..\docs\man\upscli_ssl.html" />
                         </Component>
                         <Component Id="UPSCLI_STRERROR.HTML" DiskId="1" Guid="38DB7894-68B5-4B92-90C4-F21615FC84F3">
-                            <File Id="UPSCLI_STRERROR.HTML" Name="upscli_strerror.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upscli_strerror.html" />
+                            <File Id="UPSCLI_STRERROR.HTML" Name="upscli_strerror.html" Source="..\..\..\docs\man\upscli_strerror.html" />
                         </Component>
                         <Component Id="UPSCLI_UPSERROR.HTML" DiskId="1" Guid="7FDB8E42-50BD-4403-A2FF-B1BAB45FBB8D">
-                            <File Id="UPSCLI_UPSERROR.HTML" Name="upscli_upserror.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upscli_upserror.html" />
+                            <File Id="UPSCLI_UPSERROR.HTML" Name="upscli_upserror.html" Source="..\..\..\docs\man\upscli_upserror.html" />
                         </Component>
                         <Component Id="UPSCMD.HTML" DiskId="1" Guid="36F6C96D-FC38-4407-B423-ACABB6488DA0">
-                            <File Id="UPSCMD.HTML" Name="upscmd.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upscmd.html" />
+                            <File Id="UPSCMD.HTML" Name="upscmd.html" Source="..\..\..\docs\man\upscmd.html" />
                         </Component>
                         <Component Id="UPSCODE2.HTML" DiskId="1" Guid="A27D9B88-C40E-46E8-9A99-D4F01BF927E5">
-                            <File Id="UPSCODE2.HTML" Name="upscode2.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upscode2.html" />
+                            <File Id="UPSCODE2.HTML" Name="upscode2.html" Source="..\..\..\docs\man\upscode2.html" />
                         </Component>
                         <Component Id="UPSD.CONF.HTML" DiskId="1" Guid="C5B8750F-F4BD-4256-A245-A302654B79A7">
-                            <File Id="UPSD.CONF.HTML" Name="upsd.conf.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upsd.conf.html" />
+                            <File Id="UPSD.CONF.HTML" Name="upsd.conf.html" Source="..\..\..\docs\man\upsd.conf.html" />
                         </Component>
                         <Component Id="UPSD.HTML" DiskId="1" Guid="24175B8A-9415-44CB-8DB1-76DB0C532866">
-                            <File Id="UPSD.HTML" Name="upsd.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upsd.html" />
+                            <File Id="UPSD.HTML" Name="upsd.html" Source="..\..\..\docs\man\upsd.html" />
                         </Component>
                         <Component Id="UPSD.USERS.HTML" DiskId="1" Guid="E77EFAE1-F316-45A2-A50C-B1787A485155">
-                            <File Id="UPSD.USERS.HTML" Name="upsd.users.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upsd.users.html" />
+                            <File Id="UPSD.USERS.HTML" Name="upsd.users.html" Source="..\..\..\docs\man\upsd.users.html" />
                         </Component>
                         <Component Id="UPSDRVCTL.HTML" DiskId="1" Guid="C59A9304-6547-4527-9474-24AB30D41E6D">
-                            <File Id="UPSDRVCTL.HTML" Name="upsdrvctl.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upsdrvctl.html" />
+                            <File Id="UPSDRVCTL.HTML" Name="upsdrvctl.html" Source="..\..\..\docs\man\upsdrvctl.html" />
                         </Component>
                         <Component Id="UPSIMAGE.CGI.HTML" DiskId="1" Guid="EF59AD0B-3BF1-41D6-855D-D61589E3CE73">
-                            <File Id="UPSIMAGE.CGI.HTML" Name="upsimage.cgi.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upsimage.cgi.html" />
+                            <File Id="UPSIMAGE.CGI.HTML" Name="upsimage.cgi.html" Source="..\..\..\docs\man\upsimage.cgi.html" />
                         </Component>
                         <Component Id="UPSLOG.HTML" DiskId="1" Guid="C9F1518F-5423-49EF-B95C-C4FC052EDE2E">
-                            <File Id="UPSLOG.HTML" Name="upslog.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upslog.html" />
+                            <File Id="UPSLOG.HTML" Name="upslog.html" Source="..\..\..\docs\man\upslog.html" />
                         </Component>
                         <Component Id="UPSMON.CONF.HTML" DiskId="1" Guid="C917768D-EA09-4D77-B860-C60FE64E428B">
-                            <File Id="UPSMON.CONF.HTML" Name="upsmon.conf.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upsmon.conf.html" />
+                            <File Id="UPSMON.CONF.HTML" Name="upsmon.conf.html" Source="..\..\..\docs\man\upsmon.conf.html" />
                         </Component>
                         <Component Id="UPSMON.HTML" DiskId="1" Guid="B92A320E-7522-4932-A329-DF1DD4CEB984">
-                            <File Id="UPSMON.HTML" Name="upsmon.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upsmon.html" />
+                            <File Id="UPSMON.HTML" Name="upsmon.html" Source="..\..\..\docs\man\upsmon.html" />
                         </Component>
                         <Component Id="UPSRW.HTML" DiskId="1" Guid="2548CC7B-6978-4D28-A080-76413FBCF235">
-                            <File Id="UPSRW.HTML" Name="upsrw.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upsrw.html" />
+                            <File Id="UPSRW.HTML" Name="upsrw.html" Source="..\..\..\docs\man\upsrw.html" />
                         </Component>
                         <Component Id="UPSSCHED.CONF.HTML" DiskId="1" Guid="1534B714-8FE1-454F-BACB-6ECAE18D56C2">
-                            <File Id="UPSSCHED.CONF.HTML" Name="upssched.conf.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upssched.conf.html" />
+                            <File Id="UPSSCHED.CONF.HTML" Name="upssched.conf.html" Source="..\..\..\docs\man\upssched.conf.html" />
                         </Component>
                         <Component Id="UPSSCHED.HTML" DiskId="1" Guid="1F26A782-D3A4-4ABE-AF6E-6F4C05588899">
-                            <File Id="UPSSCHED.HTML" Name="upssched.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upssched.html" />
+                            <File Id="UPSSCHED.HTML" Name="upssched.html" Source="..\..\..\docs\man\upssched.html" />
                         </Component>
                         <Component Id="UPSSET.CGI.HTML" DiskId="1" Guid="EDD8E9DE-F94A-448C-927E-C44E244936F9">
-                            <File Id="UPSSET.CGI.HTML" Name="upsset.cgi.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upsset.cgi.html" />
+                            <File Id="UPSSET.CGI.HTML" Name="upsset.cgi.html" Source="..\..\..\docs\man\upsset.cgi.html" />
                         </Component>
                         <Component Id="UPSSET.CONF.HTML" DiskId="1" Guid="FB7A1325-7796-40C7-899B-02CEA58F7554">
-                            <File Id="UPSSET.CONF.HTML" Name="upsset.conf.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upsset.conf.html" />
+                            <File Id="UPSSET.CONF.HTML" Name="upsset.conf.html" Source="..\..\..\docs\man\upsset.conf.html" />
                         </Component>
                         <Component Id="UPSSTATS.CGI.HTML" DiskId="1" Guid="5C3220E3-EAE6-471B-9960-2ED1DECF6E0C">
-                            <File Id="UPSSTATS.CGI.HTML" Name="upsstats.cgi.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upsstats.cgi.html" />
+                            <File Id="UPSSTATS.CGI.HTML" Name="upsstats.cgi.html" Source="..\..\..\docs\man\upsstats.cgi.html" />
                         </Component>
                         <Component Id="UPSSTATS.HTML.HTML" DiskId="1" Guid="D13996A6-031B-44B6-A59E-AA2A1567D017">
-                            <File Id="UPSSTATS.HTML.HTML" Name="upsstats.html.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\upsstats.html.html" />
+                            <File Id="UPSSTATS.HTML.HTML" Name="upsstats.html.html" Source="..\..\..\docs\man\upsstats.html.html" />
                         </Component>
                         <Component Id="USBHID_UPS.HTML" DiskId="1" Guid="055F51D1-81B3-4493-BA8A-021FBDD9D4F8">
-                            <File Id="USBHID_UPS.HTML" Name="usbhid-ups.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\usbhid-ups.html" />
+                            <File Id="USBHID_UPS.HTML" Name="usbhid-ups.html" Source="..\..\..\docs\man\usbhid-ups.html" />
                         </Component>
                         <Component Id="VICTRONUPS.HTML" DiskId="1" Guid="493CBCF4-300F-489B-873A-90D39962300F">
-                            <File Id="VICTRONUPS.HTML" Name="victronups.html" Source="..\..\..\..\..\..\..\..\..\Documents and Settings\C9983617\Desktop\partage\man\victronups.html" />
+                            <File Id="VICTRONUPS.HTML" Name="victronups.html" Source="..\..\..\docs\man\victronups.html" />
                         </Component>
                     </Directory>
                 </Directory>
@@ -1891,6 +1951,7 @@ Public License instead of this License.
             </Feature>
             <Feature Id="Man" Level="1">
                 <ComponentRef Id="APCSMART.HTML" />
+                <ComponentRef Id="APCSMART_OLD.HTML" />
                 <ComponentRef Id="BCMXCP.HTML" />
                 <ComponentRef Id="BCMXCP_USB.HTML" />
                 <ComponentRef Id="BELKIN.HTML" />
@@ -1913,6 +1974,7 @@ Public License instead of this License.
                 <ComponentRef Id="LIBUPSCLIENT_CONFIG.HTML" />
                 <ComponentRef Id="LIEBERT_ESP2.HTML" />
                 <ComponentRef Id="LIEBERT.HTML" />
+                <ComponentRef Id="MACOSX_UPS.HTML" />
                 <ComponentRef Id="MAN_INDEX.HTML" />
                 <ComponentRef Id="MASTERGUARD.HTML" />
                 <ComponentRef Id="METASYS.HTML" />
@@ -1921,6 +1983,24 @@ Public License instead of this License.
                 <ComponentRef Id="MICRODOWELL.HTML" />
                 <ComponentRef Id="NETXML_UPS.HTML" />
                 <ComponentRef Id="NUT.CONF.HTML" />
+                <ComponentRef Id="NUT_IPMIPSU.HTML" />
+                <ComponentRef Id="NUT_RECORDER.HTML" />
+                <ComponentRef Id="NUTSCAN.HTML" />
+                <ComponentRef Id="NUTSCAN_ADD_DEVICE_TO_DEVICE.HTML" />
+                <ComponentRef Id="NUTSCAN_ADD_OPTION_TO_DEVICE.HTML" />
+                <ComponentRef Id="NUTSCAN_CIDR_TO_IP.HTML" />
+                <ComponentRef Id="NUTSCAN_DISPLAY_PARSABLE.HTML" />
+                <ComponentRef Id="NUTSCAN_DISPLAY_UPS_CONF.HTML" />
+                <ComponentRef Id="NUTSCAN_FREE_DEVICE.HTML" />
+                <ComponentRef Id="NUTSCAN_INIT.HTML" />
+                <ComponentRef Id="NUTSCAN_NEW_DEVICE.HTML" />
+                <ComponentRef Id="NUTSCAN_SCAN_AVAHI.HTML" />
+                <ComponentRef Id="NUTSCAN_SCAN_IPMI.HTML" />
+                <ComponentRef Id="NUTSCAN_SCAN_NUT.HTML" />
+                <ComponentRef Id="NUTSCAN_SCAN_SNMP.HTML" />
+                <ComponentRef Id="NUTSCAN_SCAN_USB.HTML" />
+                <ComponentRef Id="NUTSCAN_SCAN_XML_HTTP.HTML" />
+                <ComponentRef Id="NUT_SCANNER.HTML" />
                 <ComponentRef Id="NUTUPSDRV.HTML" />
                 <ComponentRef Id="ONEAC.HTML" />
                 <ComponentRef Id="OPTIUPS.HTML" />
