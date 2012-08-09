@@ -72,6 +72,7 @@ Drivers
 - linkman:ivtscd[8]
 - linkman:liebert[8]
 - linkman:liebert-esp2[8]
+- linkman:macosx-ups[8]
 - linkman:masterguard[8]
 - linkman:metasys[8]
 - linkman:mge-shut[8]
