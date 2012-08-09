@@ -9,19 +9,5 @@
 - May 2, 2012: link:download.html#_binary_packages[Beta NUT 2.6.3-3 package for Windows released]
 - April 26, 2012: link:download.html#_binary_packages[Beta NUT 2.6.3-1 package for Windows released]
 - January 4, 2012: 2.6.3 released
-- October 31, 2011: link:download.html#_java_packages[jNUT and jNutWebAPI 0.2-SNAPSHOT released]
-- September 15, 2011: 2.6.2 released
-- September 2, 2011: link:download.html#_java_packages[jNUT (NUT Java support) 0.1-SNAPSHOT released]
-- July 4, 2011: link:download.html#_binary_packages[Beta NUT 2.6.1-1 package for Windows released]
-- June 8, 2011: link:http://www.dell.com/us/business/p/powervault-nx3500/pd[Dell PowerVault NX3500] use NUT for power protection
-- June 1, 2011: 2.6.1 released
-- May 19, 2011: link:download.html#_binary_packages[Beta NUT 2.6.0-1 package for Windows released]
-- January 14, 2011: 2.6.0 released
-- December 24, 2010: 2.6.0-pre1 released 
-- December 16, 2010: link:http://www.lestat.st/en/informatique/projets/nut-monitor[NUT-Monitor] 1.3 released
-- July 22, 2010: new client link:http://www.revpol.com/xymon_nut_scripts[Hobbit (Xymon) monitor plugin]
-- July 2, 2010: link:http://knut.prynych.cz[KNutClient] 1.0.3 and link update
-- May 12, 2010: link:http://www.lestat.st/informatique/projets/nut-monitor-en[NUT-Monitor] 1.2 released
-- March 22, 2010: link:http://knut.prynych.cz[KNutClient] 1.0
-- February 23, 2010: 2.4.3 released
-- February 19, 2010: 2.4.2 released
+
+link:old-news.html[Older news]
