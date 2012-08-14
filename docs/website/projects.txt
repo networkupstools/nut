@@ -157,6 +157,8 @@ NOTE: UPS::Nut is part of NUT since version NUT 2.6.1.
 Hardware projects involving NUT
 -------------------------------
 
+This is an incomplete list of the hardware known to embed NUT.
+
 link:http://www.dell.com/us/business/p/powervault-nx3500/pd[Dell PowerVault NX3500]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -197,6 +199,12 @@ link:http://www.thecus.com[Thecus NAS]
 
 Thecus NAS firmware includes NUT for UPS support. The
 link:http://www.thecus.com/Downloads/Compatible_List/UPS_List_v1.0_ALL.pdf[following list of devices] is known to be supported.
+
+
+link:http://www.buffalotech.com[Buffalo NAS]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Buffalo TeraStation NAS (Business-class) include NUT for UPS support.
 
 link:http://www.webbastards.com/projects/[lcd-nut]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

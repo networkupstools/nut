@@ -1,0 +1,104 @@
+MACOSX-UPS(8)
+=============
+
+NAME
+----
+macosx-ups - monitor for Mac OS X built-in UPS and battery driver
+
+NOTE
+----
+This man page only documents the hardware-specific features of the
+*macosx-ups* driver.  For information about the core driver, see
+linkman:nutupsdrv[8].
+
+SUPPORTED HARDWARE
+------------------
+*macosx-ups* supports any USB HID Power Device Class (PDC) UPS which is
+matched by the Mac OS X built-in drivers. It also can monitor a laptop
+internal battery as though it were an UPS.
+
+If the UPS is visible in the Energy Saver preferences pane of System
+Preferences, this driver should be able to monitor it.
+
+
+EXTRA ARGUMENTS
+----------------
+*port*='regex'::
+The *port* parameter in the configuration file can be a case-insensitive
+extended regular expression (see *regex*(3) for details) to match against
+specific UPS and battery names.
++
+The traditional NUT auto-detection value of "auto" will be changed to "/UPS".
+To test this driver against the internal battery of a laptop, a value such as
+"battery" can be used.
+
+*model*='regex'::
+Likewise, if you have more than one UPS, it may be necessary to specify a
+*model* name to match against. This parameter is also a case-insensitive
+extended regular expression.
+
+//////////////////////////////////////////
+This driver also supports the following optional settings:
+
+*option1*='num'::
+Set the value of ... to 'num'. Contrast with *option2*.
+ 
+*option2*='string'::
+Some other option.
+//////////////////////////////////////////
+
+//////////////////////////////////////////
+Optional: list supported instant commands here:
+
+INSTANT COMMANDS
+----------------
+
+*instcmd1*::
+Command 1.
+//////////////////////////////////////////
+
+DIAGNOSTICS
+-----------
+
+If the driver cannot find an UPS, first open System Preferences and see if
+there is an "UPS" tab on the Energy Saver panel. If so, re-run the driver with
+the *-D* flag to list the names of the power sources found.
+
+KNOWN ISSUES AND BUGS
+---------------------
+
+This driver is a monitoring-only driver, and cannot shut down an UPS on its
+own. However, this should not be a problem in practice: it is monitoring the
+built-in Mac OS X UPS driver, which has configuration options for several
+shutdown scenarios. Consult the Energy Saver control panel or *pmset*(8) for
+more information.
+
+The default distribution of *apcupsd* installs a kernel extension which
+prevents Mac OS X from attaching to the UPS. In order to use this driver after
+installing apcupsd, you must first run the `apcupsd-uninstall` script and
+reboot.
+
+Note that other UPS monitoring solutions may show more detail than what is
+provided by the built-in Mac OS X driver. In particular, voltages other than
+the battery voltage, as well as current and frequency, are typically not
+shown. It may be possible to monitor these values with *apcupsd* (for APC
+hardware only) or linkman:usbhid-ups[8].
+
+AUTHORS
+-------
+Charles Lepple <clepple+nut at gmail.com>
+
+SEE ALSO
+--------
+
+linkman:usbhid-ups[8], *pmset*(8), *regex*(3)
+
+The core driver:
+~~~~~~~~~~~~~~~~
+linkman:nutupsdrv[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The apcupsd home page: http://www.apcupsd.org/

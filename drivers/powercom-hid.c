@@ -43,7 +43,7 @@ static usb_device_id_t powercom_usb_device_table[] = {
 	{ USB_DEVICE(POWERCOM_VENDORID, 0x00a5), NULL },
 	/* PowerCOM BNT - Black Knight Pro */
 	{ USB_DEVICE(POWERCOM_VENDORID, 0x00a6), NULL },
-	/* PowerCOM BNT-xxxAP */
+	/* PowerCOM Vanguard and BNT-xxxAP */
 	{ USB_DEVICE(POWERCOM_VENDORID, 0x0004), NULL },
 
 	/* Terminating entry */

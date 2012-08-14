@@ -3,6 +3,55 @@ If you're upgrading from an earlier version, see the UPGRADING file.
 For a complete list of changes, please refer to the ChangeLog file.
 
 ---------------------------------------------------------------------------
+Release notes for NUT 2.6.5 - what's new since 2.6.4:
+
+ - This release Fix an important regression in upssched:
+   any upssched.conf command that takes a second argument resulted in
+   a defective frame sent to the parent process. Thus, the command was
+   not executed (report and patch from Oliver Schonefeld)
+
+ - Website hosting: free NUT from Eaton website hosting
+   NUT website (http://www.networkupstools.org) is no more hosted by Eaton.
+   Arnaud Quette (NUT project leader) has taken over NUT hosting on his own,
+   to give NUT back some independance.
+   This effort is also part of a logic to stop crediting Eaton for
+   contributions from others (especially Arnaud Quette, as an individual).
+   The new hosting service is located, as for Arnaud's blog
+   (http://arnaud.quette.fr) on Gandi servers, using PaaS. This will allow
+   more flexibility and automation of the release process
+
+ - macosx-ups: new OS X Power Sources meta-driver
+   Mac OS X provides UPS status information in a format similar to
+   what is shown for laptop batteries. This driver will convert that
+   information into a format compatible with NUT (Charles Lepple).
+
+ - support for new devices:
+   Eaton ePDU Switched
+   Online Zinto A (USB ID 0x06da:0x0601)
+   REDi Blazer 400VA / 600VA / 800VA
+   UNITEK Alpha650ipF and Alpha650ipE (USB ID 0x0f03:0x0001)
+
+ - mge-shut driver has been replaced by a new implementation (newmge-shut).
+   In case of issue with this new version, users can revert to oldmge-shut.
+
+ - First NUT virtualization package: NUT now supports integration with
+   VMware ESXI 5.0, through a native VIB package. This is, for the time
+   being, an external effort from René Garcia (refer to the Download section
+   on NUT website). But work is underway to improve this integration, and
+   include it in the NUT source tree  
+
+ - IPMI support (nut-ipmipsu driver and nut-scanner): prepare for supporting
+   API changes in upcoming FreeIPMI versions 1.1.x and 1.2.x.
+
+ - snmp-ups now supports high precision values for APC, and more variables
+
+ - the NUT variables and commands namespace has been fixed and
+   completed, with the known and used variables that were missing.
+
+ - more bugfixes, cleanup and improvements, on both source code and
+   documentation.
+
+---------------------------------------------------------------------------
 Release notes for NUT 2.6.4 - what's new since 2.6.3:
 
  - This release Fix an important vulnerability in upsd
@@ -168,10 +217,10 @@ Release notes for NUT 2.6.3 - what's new since 2.6.2:
    progress.
 
  - Compilation on IBM Aix has been fixed (namespace conflict with ctypes).
- 
+
  - more bugfixes, cleanup and improvements, on both source code and
    documentation.
- 
+
 ---------------------------------------------------------------------------
 Release notes for NUT 2.6.2 - what's new since 2.6.1:
 

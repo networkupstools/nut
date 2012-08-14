@@ -1,5 +1,5 @@
 IMAGE_FILES = images/asciidoc.png \
-	images/eaton-logo.png \
+	images/hostedby.png \
 	images/nut_layering.png \
 	images/nut-logo.png \
 	images/note.png \

@@ -717,6 +717,10 @@ void upsdrv_makevartable(void)
 
 	upsdebugx(1, "upsdrv_makevartable...");
 
+        snprintf(temp, sizeof(temp), "Set low battery level, in %% (default=%s).", DEFAULT_LOWBATT);
+        addvar (VAR_VALUE, HU_VAR_LOWBATT, temp);
+
+
 	snprintf(temp, sizeof(temp), "Set shutdown delay, in seconds (default=%s)", DEFAULT_OFFDELAY);
 	addvar(VAR_VALUE, HU_VAR_OFFDELAY, temp);
 
@@ -738,6 +742,8 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "productid", "Regular expression to match UPS Product numerical ID (4 digits hexadecimal)");
 	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
 	addvar(VAR_FLAG, "explore", "Diagnostic matching of unsupported UPS");
+#else
+	addvar(VAR_VALUE, "notification", "Set notification type, (ignored, only for backward compatibility)");
 #endif
 }
 
@@ -936,6 +942,14 @@ void upsdrv_initups(void)
 
 	if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
 		fatalx(EXIT_FAILURE, "Can't initialize data from HID UPS");
+	}
+
+	if (dstate_getinfo("battery.charge.low")) {
+		/* Retrieve user defined battery settings */
+		val = getval(HU_VAR_LOWBATT);
+		if (val) {
+			dstate_setinfo("battery.charge.low", "%ld", strtol(val, NULL, 10));
+		}
 	}
 
 	if (dstate_getinfo("ups.delay.start")) {

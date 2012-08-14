@@ -36,7 +36,7 @@ endif
 SERIAL_DRIVERLIST = bcmxcp belkin belkinunv bestfcom	\
  bestfortress bestuferrups bestups dummy-ups etapro everups 	\
  gamatronic genericups isbmex liebert liebert-esp2 masterguard metasys	\
- mge-shut mge-utalk microdowell newmge-shut oneac optiups powercom rhino 	\
+ oldmge-shut mge-utalk microdowell mge-shut oneac optiups powercom rhino 	\
  safenet skel solis tripplite tripplitesu upscode2 victronups powerpanel \
  blazer_ser clone clone-outlet ivtscd apcsmart apcsmart-old
 SNMP_DRIVERLIST = snmp-ups
@@ -46,9 +46,10 @@ USB_DRIVERLIST = $(USB_LIBUSB_DRIVERLIST)
 HAL_DRIVERLIST = hald-addon-usbhid-ups hald-addon-bcmxcp_usb \
  hald-addon-tripplite_usb hald-addon-blazer_usb
 NEONXML_DRIVERLIST = netxml-ups
+MACOSX_DRIVERLIST = macosx-ups
 
 # distribute all drivers, even ones that are not built by default
-EXTRA_PROGRAMS = $(SERIAL_DRIVERLIST) $(SNMP_DRIVERLIST) $(USB_DRIVERLIST) $(NEONXML_DRIVERLIST)
+EXTRA_PROGRAMS = $(SERIAL_DRIVERLIST) $(SNMP_DRIVERLIST) $(USB_DRIVERLIST) $(NEONXML_DRIVERLIST) $(MACOSX_DRIVERLIST)
 
 # construct the list of drivers to build
 if SOME_DRIVERS
@@ -76,6 +77,9 @@ if WITH_LIBPOWERMAN
 endif
 if WITH_IPMI
    driverexec_PROGRAMS += nut-ipmipsu
+endif
+if WITH_MACOSX
+   driverexec_PROGRAMS += $(MACOSX_DRIVERLIST)
 endif
 else
    driverexec_PROGRAMS += skel
@@ -114,7 +118,7 @@ liebert_SOURCES = liebert.c
 liebert_esp2_SOURCES = liebert-esp2.c
 masterguard_SOURCES = masterguard.c
 metasys_SOURCES = metasys.c
-mge_shut_SOURCES = mge-shut.c hidparser.c
+oldmge_shut_SOURCES = mge-shut.c hidparser.c
 mge_utalk_SOURCES = mge-utalk.c
 microdowell_SOURCES = microdowell.c
 oneac_SOURCES = oneac.c
@@ -174,10 +178,10 @@ richcomm_usb_SOURCES = richcomm_usb.c usb-common.c
 richcomm_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
 
 # HID-over-serial
-newmge_shut_SOURCES = usbhid-ups.c libshut.c libhid.c hidparser.c mge-hid.c
+mge_shut_SOURCES = usbhid-ups.c libshut.c libhid.c hidparser.c mge-hid.c
 # per-target CFLAGS are necessary here
-newmge_shut_CFLAGS = $(AM_CFLAGS) -DSHUT_MODE
-newmge_shut_LDADD = $(LDADD)
+mge_shut_CFLAGS = $(AM_CFLAGS) -DSHUT_MODE
+mge_shut_LDADD = $(LDADD)
 
 # SNMP
 snmp_ups_SOURCES = snmp-ups.c apc-mib.c baytech-mib.c compaq-mib.c eaton-mib.c \
@@ -213,6 +217,11 @@ if WITH_FREEIPMI
   nut_ipmipsu_SOURCES += nut-libfreeipmi.c 
 endif
 nut_ipmipsu_LDADD = $(LDADD) $(LIBIPMI_LIBS)
+
+# Mac OS X metadriver
+macosx_ups_LDADD = $(LDADD_DRIVERS)
+macosx_ups_LDFLAGS = $(LDFLAGS) -framework IOKit -framework CoreFoundation
+macosx_ups_SOURCES = macosx-ups.c
 
 # ----------------------------------------------------------------------
 # List of header files. The purpose of this list is not dependency

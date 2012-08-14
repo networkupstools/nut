@@ -4,7 +4,7 @@ POWERCOM(8)
 NAME  
 ----
 
-powercom - UPS driver for Powercom/Trust/Advice UPS equipment
+powercom - UPS driver for serial Powercom/Trust/Advice UPS equipment
 
 NOTE
 ----
@@ -14,9 +14,13 @@ linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
-This driver supports many similar kinds of UPS hardware.  The most common 
-ones are the Trust 425/625, Powercom, and Advice Partner/King PR750.  
-Others using the same protocol may also work.
+This driver supports many similar kinds of serial UPS hardware (as well as a
+few USB UPS models with USB-to-serial adapters).  The most common ones are the
+Trust 425/625, Powercom, and Advice Partner/King PR750.  Others using the same
+protocol may also work. For USB connections, you might need linkman:usbhid-ups[8].
+
+For more specific guidance on which driver is applicable for a USB connection,
+see the NUT Hardware Compatibility List (HCL).
 
 EXTRA ARGUMENTS
 ---------------

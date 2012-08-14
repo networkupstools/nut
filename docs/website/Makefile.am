@@ -1,12 +1,12 @@
 # FIXME: do we really have to distribute these many Kb too?
 # RCS should be enough, and website generation should use
 # source from subversion tags!
-EXTRA_DIST = news.txt projects.txt website.txt \
+EXTRA_DIST = news.txt old-news.txt projects.txt website.txt \
 	ups-protocols.txt $(LAYOUT).conf $(SCRIPT_FILES) $(LAYOUT_FILES) \
 	$(FAVICON_FILES)
 
 IMAGE_FILES = images/asciidoc.png \
-	images/eaton-logo.png \
+	images/hostedby.png \
 	images/blue-arrow.png \
 	images/simple.png \
 	images/advanced.png \
@@ -30,8 +30,8 @@ SCRIPT_FILES = scripts/filter_png.js \
 
 WEBSITE_FILES = index.html projects.html stable-hcl.html \
 	documentation.html acknowledgements.html features.html \
-	ups-protocols.html \
-	cables.html nut-qa.html download.html support.html
+	ups-protocols.html cables.html nut-qa.html download.html \
+	support.html old-news.html
 
 WEBSITE_DEPS = ../user-manual.chunked ../packager-guide.chunked \
 	../FAQ.html ../developer-guide.chunked \
