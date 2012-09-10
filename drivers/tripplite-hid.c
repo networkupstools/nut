@@ -41,13 +41,13 @@
 static double	battery_scale = 1.0;
 
 /* Specific handlers for USB device matching */
-static void *battery_scale_1dot0(void)
+static void *battery_scale_1dot0(USBDevice_t *device)
 {
 	/* FIXME: we could remove this one since it's the default! */
 	battery_scale = 1.0;
 	return NULL;
 }
-static void *battery_scale_0dot1(void)
+static void *battery_scale_0dot1(USBDevice_t *device)
 {
 	battery_scale = 0.1;
 	return NULL;
@@ -435,8 +435,7 @@ static const char *tripplite_format_serial(HIDDevice_t *hd) {
  * the device is supported by this subdriver, else 0. */
 static int tripplite_claim(HIDDevice_t *hd) {
 
-	int status = is_usb_device_supported(tripplite_usb_device_table, hd->VendorID,
-								 hd->ProductID);
+	int status = is_usb_device_supported(tripplite_usb_device_table, hd);
 
 	switch (status)
 	{

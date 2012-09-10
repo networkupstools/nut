@@ -51,7 +51,7 @@ static int usb_set_powerware(usb_dev_handle *udev, unsigned char type, unsigned 
 	return usb_control_msg(udev, USB_ENDPOINT_OUT, USB_REQ_SET_DESCRIPTOR, (type << 8) + index, 0, buf, size, 1000);
 }
 
-static void *powerware_ups(void) {
+static void *powerware_ups(USBDevice_t *device) {
 	usb_set_descriptor = &usb_set_powerware;
 	return NULL;
 }
@@ -62,7 +62,7 @@ static int usb_set_phoenixtec(usb_dev_handle *udev, unsigned char type, unsigned
 	return usb_control_msg(udev, 0x42, 0x0d, (0x00 << 8) + 0x0, 0, buf, size, 1000);
 }
 
-static void *phoenixtec_ups(void) {
+static void *phoenixtec_ups(USBDevice_t *device) {
 	usb_set_descriptor = &usb_set_phoenixtec;
 	return NULL;
 }
@@ -359,7 +359,8 @@ static usb_dev_handle *open_powerware_usb(void)
 {
 	struct usb_bus *busses = usb_get_busses();  
 	struct usb_bus *bus;
-    
+	USBDevice_t curDevice;
+
 	for (bus = busses; bus; bus = bus->next)
 	{
 		struct usb_device *dev;
@@ -370,8 +371,18 @@ static usb_dev_handle *open_powerware_usb(void)
 				continue;
 			}
 
-			if (is_usb_device_supported(pw_usb_device_table,
-				dev->descriptor.idVendor, dev->descriptor.idProduct) == SUPPORTED) {
+			curDevice.VendorID = dev->descriptor.idVendor;
+			curDevice.ProductID = dev->descriptor.idProduct;
+			curDevice.Bus = strdup(bus->dirname);
+
+			/* FIXME: we should also retrieve
+			 * dev->descriptor.iManufacturer
+			 * dev->descriptor.iProduct
+			 * dev->descriptor.iSerialNumber
+			 * as in libusb.c->libusb_open()
+			 * This is part of the things to put in common... */
+
+			if (is_usb_device_supported(pw_usb_device_table, &curDevice) == SUPPORTED) {
 				return usb_open(dev);
 			}
 		}

@@ -1174,8 +1174,7 @@ static const char *mge_format_serial(HIDDevice_t *hd) {
 static int mge_claim(HIDDevice_t *hd) {
 
 #ifndef SHUT_MODE
-	int status = is_usb_device_supported(mge_usb_device_table, hd->VendorID,
-								 hd->ProductID);
+	int status = is_usb_device_supported(mge_usb_device_table, hd);
 
 	switch (status) {
 

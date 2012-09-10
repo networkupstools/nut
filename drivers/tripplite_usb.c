@@ -348,7 +348,7 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 
 static int subdriver_match_func(USBDevice_t *hd, void *privdata)
 {
-	switch (is_usb_device_supported(tripplite_usb_device_table, hd->VendorID, hd->ProductID))
+	switch (is_usb_device_supported(tripplite_usb_device_table, hd))
 	{
 	case SUPPORTED:
 		return 1;

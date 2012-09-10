@@ -40,7 +40,7 @@
  */
 static double	battery_scale = 1;
 
-static void *cps_battery_scale(void)
+static void *cps_battery_scale(USBDevice_t *device)
 {
 	battery_scale = 0.667;
 	return NULL;
@@ -193,8 +193,7 @@ static const char *cps_format_serial(HIDDevice_t *hd) {
  * the device is supported by this subdriver, else 0. */
 static int cps_claim(HIDDevice_t *hd) {
 
-	int status = is_usb_device_supported(cps_usb_device_table, hd->VendorID,
-								 hd->ProductID);
+	int status = is_usb_device_supported(cps_usb_device_table, hd);
 
 	switch (status) {
 

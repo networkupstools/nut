@@ -37,7 +37,7 @@
 #define APC_VENDORID 0x051d
 
 /* Don't use interrupt pipe on 5G models (used by proprietary protocol) */
-static void *disable_interrupt_pipe(void)
+static void *disable_interrupt_pipe(USBDevice_t *device)
 {
 	if (use_interrupt_pipe == TRUE) {
 		upslogx(LOG_INFO, "interrupt pipe disabled (add 'pollonly' flag to 'ups.conf' to get rid of this message)");
@@ -437,8 +437,7 @@ static const char *apc_format_serial(HIDDevice_t *hd) {
  * the device is supported by this subdriver, else 0. */
 static int apc_claim(HIDDevice_t *hd) {
 
-	int status = is_usb_device_supported(apc_usb_device_table, hd->VendorID,
-								 hd->ProductID);
+	int status = is_usb_device_supported(apc_usb_device_table, hd);
 
 	switch (status) {
 
