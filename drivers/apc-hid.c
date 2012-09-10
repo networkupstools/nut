@@ -36,6 +36,9 @@
 /* APC */
 #define APC_VENDORID 0x051d
 
+/* Tweaks */
+#define TWEAK_BACK_UPS_ES "Back-UPS ES"
+
 /* Don't use interrupt pipe on 5G models (used by proprietary protocol) */
 static void *disable_interrupt_pipe(USBDevice_t *device)
 {
@@ -46,10 +49,24 @@ static void *disable_interrupt_pipe(USBDevice_t *device)
 	return NULL;
 }
 
+/* Some models need special tweaks */
+static void *general_apc_check(USBDevice_t *device)
+{
+	/* "Back-UPS ES" overflows on ReportID 0x0c, which
+	 * contains UPS.PowerSummary.RemainingCapacity. This results
+	 * in battery.charge not being exposed, and IO error on Windows,
+	 * causing endless reconnection or driver's failure */
+	if (!strncmp(device->Product, TWEAK_BACK_UPS_ES,
+			strlen(TWEAK_BACK_UPS_ES))) {
+		max_report_size = 1;
+	}
+	return NULL;
+}
+
 /* USB IDs device table */
 static usb_device_id_t apc_usb_device_table[] = {
 	/* various models */
-	{ USB_DEVICE(APC_VENDORID, 0x0002), NULL },
+	{ USB_DEVICE(APC_VENDORID, 0x0002), general_apc_check },
 	/* various 5G models */
 	{ USB_DEVICE(APC_VENDORID, 0x0003), disable_interrupt_pipe },
 
